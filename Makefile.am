@@ -179,8 +179,15 @@ maintainer-check: automake aclocal
 	  exit 1; \
 	fi
 	@if grep -v SHELL $(srcdir)/tests/*.test | grep '\$$MAKE .*=' ; then \
-	  echo 'Rewrite "$$MAKE foo=bar" as "foo=bar $$MAKE -e" in the above lines,' 1>&2; \
+	  echo 'Rewrite "$$MAKE foo=bar" as "foo=bar $$MAKE -e SHELL=/bin/sh" in the above lines,' 1>&2; \
 	  echo 'it is more portable.' 1>&2; \
+	  exit 1; \
+	fi
+## On NetBSD (1.5) and OSF, the $SHELL variable is still inherited from
+## the environment.
+	@if grep '$$MAKE.*-e' $(srcdir)/tests/*.test | grep -v '-e.*SHELL' ; then \
+	  echo 'Always overwrite SHELL when using "$$MAKE -e".' 1>&2; \
+	  echo 'Use "$$MAKE -e SHELL=/bin/sh" in the above lines.' 1>&2; \
 	  exit 1; \
 	fi
 	@if egrep 'SHELL=.*\$$MAKE' $(srcdir)/tests/*.test; then \
