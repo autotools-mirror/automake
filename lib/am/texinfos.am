@@ -123,7 +123,13 @@ install-info-am: $(INFO_DEPS)
 ## the Debian install-info.  FIXME: once Debian install-info goes
 ## away, we can remove this hack.  Debian install-info v1.8.3
 ## prints version info to stderr.
-	@if $(SHELL) -c 'install-info --version 2>&1 | sed 1q | fgrep -s -v -i debian' >/dev/null 2>&1; then \
+##
+## Do not use
+##    install-info --version 2>&1 | sed 1q | fgrep -s -v -i debian
+## as if install-info does not exist, fgrep -v will be happy, and
+## therefore the code will be triggered although install-info is missing.
+	@if (install-info --version && \
+	     install-info --version | fgrep -i -v debian) >/dev/null 2>&1; then \
 	  list='$(INFO_DEPS)'; \
 	  for file in $$list; do \
 ## Run `:' after install-info in case install-info fails.  We really
@@ -157,7 +163,8 @@ uninstall-info-am:
 ## Run two loops here so that we can handle PRE_UNINSTALL and
 ## NORMAL_UNINSTALL correctly.  Debian install-info v1.8.3 prints
 ## version info to stderr.
-	@if $(SHELL) -c 'install-info --version 2>&1 | sed 1q | fgrep -s -v -i debian' >/dev/null 2>&1; then \
+	@if (install-info --version && \
+	     install-info --version | fgrep -i -v debian) >/dev/null 2>&1; then \
 	  list='$(INFO_DEPS)'; \
 	  for file in $$list; do \
 ## install-info needs the actual info file.  We use the installed one,
