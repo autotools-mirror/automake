@@ -222,11 +222,7 @@ conditions). Return 0 otherwise.
 sub true ($ )
 {
   my ($self) = @_;
-  # We cache 'true' so that simplify() can use the value if it's available.
-  return $self->{'true'} if defined $self->{'true'};
-  my $res = $self->invert->false;
-  $self->{'true'} = $res;
-  return $res;
+  return $self->invert->false;
 }
 
 =item C<$str = $set-E<gt>string>
@@ -343,6 +339,11 @@ Calling C<$set-E<gt>invert> will return the following C<DisjConditions>.
     (new Automake::Condition ("A_TRUE", "B_FALSE"),
      new Automake::Condition ("A_FALSE", "B_TRUE"));
 
+We implement the inversion by a product-of-sums to sum-of-products
+conversion using repeated multiplications.  Because of the way we
+implement multiplication, the result of inversion is in canonical
+prime implicant form.
+
 =cut
 
 sub invert($ )
@@ -375,249 +376,18 @@ sub invert($ )
   return $res;
 }
 
-=item C<$simp = $set-E<gt>simplify>
+=item C<$self-E<gt>simplify>
 
-Find prime implicants and return a simplified C<DisjConditions>.
+Return a C<Disjunction> which is a simplified canonical form of C<$self>.
+This canonical form contains only prime implicants, but it can contain
+non-essential prime implicants.
 
 =cut
-
-sub _simplify ($)		# Based on Quine-McCluskey's algorithm.
-{
-  my ($self) = @_;
-
-  # If we know this DisjConditions is always true, we have nothing to do.
-  # Use the cached value if true if available.  Never call true()
-  # as this would call invert() which can be slow.
-  return new Automake::DisjConditions TRUE
-    if $self->{'hash'}{&TRUE} || $self->{'true'};
-
-  my $nvars = 0;
-  my %var_rank;
-  my @rank_var;
-
-  # Initialization.
-  # Translate and-terms into bit string pairs: [$true, $false].
-  #
-  # Each variable is given a bit position in the strings.
-  #
-  # The first string in the pair tells wether a variable is
-  # uncomplemented in the term.
-  # The second string tells whether a variable is complemented.
-  # If a variable does not appear in the term, then its
-  # corresponding bit is unset in both strings.
-
-  # Order the resulting bit string pairs by the number of
-  # variables involved:
-  #   @{$subcubes[2]} is the list of string pairs involving two variables.
-  # (Level 0 is used for "TRUE".)
-  my @subcubes;
-  for my $and_conds ($self->conds)
-    {
-      my $true = 0;		# Bit string for uncomplemented variables.
-      my $false = 0;		# Bit string for complemented variables.
-
-      my @conds = $and_conds->conds;
-      for my $cond (@conds)
-	{
-	  # Which variable is this conditional about?
-	  confess "can't parse `$cond'"
-	    unless $cond =~ /^(.*_)(FALSE|TRUE)$/;
-
-	  # Get the variabe's rank, or assign it a new one.
-	  my $rank = $var_rank{$1};
-	  if (! defined $rank)
-	    {
-	      $rank = $nvars++;
-
-	      # FIXME: simplify() cannot work with more that 31 variables.
-	      # We need a bitset implementation to allow more variables.
-	      # For now we just return the input, as is, not simplified.
-	      return $self if $rank >= 31;
-
-	      $var_rank{$1} = $rank;
-	      $rank_var[$rank] = $1;
-	    }
-
-	  # Fire the relevant bit in the strings.
-	  if ($2 eq 'FALSE')
-	    {
-	      $false |= 1 << $rank;
-	    }
-	  else
-	    {
-	      $true |= 1 << $rank;
-	    }
-	}
-
-      # Register this term.
-      push @{$subcubes[1 + $#conds]}, [$true, $false];
-    }
-
-  # Real work.  Let's combine terms.
-
-  # Process terms in diminishing size order.  Those
-  # involving the maximum number of variables first.
-  for (my $m = $#subcubes; $m > 0; --$m)
-    {
-      my $m_subcubes = $#{$subcubes[$m]};
-
-      # Consider all terms with $m variables.
-      for (my $j = 0; $j <= $m_subcubes; ++$j)
-	{
-	  my $tj = $subcubes[$m][$j];
-	  my $jtrue = $tj->[0];
-	  my $jfalse = $tj->[1];
-
-	  # Compare them with all other terms with $m variables.
-	COMBINATION:
-	  for (my $k = $j + 1; $k <= $m_subcubes; ++$k)
-	    {
-	      my $tk = $subcubes[$m][$k];
-	      my $ktrue = $tk->[0];
-	      my $kfalse = $tk->[1];
-
-	      # Two terms can combine if they differ only by one variable
-	      # (i.e., a bit here), which is complemented in one term
-	      # and uncomplemented in the other.
-	      my $true  = $jtrue  ^ $ktrue;
-	      my $false = $jfalse ^ $kfalse;
-	      next COMBINATION if $true != $false;
-	      # There should be exactly one bit set.
-	      # (`$true & ($true - 1)' unsets the rightmost 1 bit in $true.)
-	      next COMBINATION if $true == 0 || $true & ($true - 1);
-
-	      # At this point we know we can combine the two terms.
-
-	      # Mark these two terms as "combined", so they will be
-	      # deleted after we have processed all other combinations.
-	      $tj->[2] = 1;
-	      $tk->[2] = 1;
-
-	      # Actually combine the two terms.
-	      my $ctrue  = $jtrue  & $ktrue;
-	      my $cfalse = $jfalse & $kfalse;
-
-	      # Don't add the combined term if it already exists.
-	    DUP_SEARCH:
-	      for my $c (@{$subcubes[$m - 1]})
-		{
-		  next DUP_SEARCH  if $ctrue  != $c->[0];
-		  next COMBINATION if $cfalse == $c->[1];
-		}
-	      push @{$subcubes[$m - 1]}, [$ctrue, $cfalse];
-	    }
-	}
-
-      # Delete all covered terms.
-      for (my $j = 0; $j <= $m_subcubes; ++$j)
-	{
-	  delete $subcubes[$m][$j] if $subcubes[$m][$j][2];
-	}
-    }
-
-  # Finally merge bit strings back into a Automake::DisjConditions.
-
-  # If level 0 has been filled, we've found `TRUE'.  No need to translate
-  # anything.
-  return new Automake::DisjConditions TRUE if $#{$subcubes[0]} >= 0;
-
-  # Otherwise, translate uncombined terms in other levels.
-
-  my @or_conds = ();
-  # Process terms in diminishing size order.  Those
-  # involving the maximum number of variables first.
-  for (my $m = 1; $m <= $#subcubes; ++$m)
-    {
-      my $m_subcubes = $#{$subcubes[$m]};
-      # Consider all terms with $m variables.
-      for (my $j = 0; $j <= $m_subcubes; ++$j)
-	{
-	  my $tj = $subcubes[$m][$j];
-	  next unless $tj;	# Skip deleted terms.
-	  my $jtrue  = $tj->[0];
-	  my $jfalse = $tj->[1];
-
-	  # Filter-out implied terms.
-	  #
-	  # An and-term at level N might cover and-terms at level M>N.
-	  # We need to mark all these covered terms so that they are
-	  # not output in the result formula.
-	  #
-	  # If $tj was generated by combining two terms at level N+1,
-	  # there two terms are already marked.  However there might be
-	  # implied terms deeper.
-	  #
-	  #    For instance consider this input: "A_TRUE | A_TRUE C_FALSE".
-	  #
-	  #    This can also occur with and-term generated by the
-	  #    combining algorith.  E.g., consider
-	  #    "A_TRUE B_TRUE" | "A_TRUE B_FALSE" | "A_TRUE C_FALSE D_FALSE"
-	  #     - at level 3 we can't combine "A_TRUE C_FALSE D_FALSE"
-	  #     - at level 2 we can combine "A_TRUE B_TRUE" | "A_TRUE B_FALSE"
-	  #       into "A_TRUE
-	  #     - at level 1 we an't combine "A_TRUE"
-	  #    so without more simplification we would output
-	  #    "A_TRUE | A_TRUE C_FALSE D_FALSE"
-	  #
-	  # So let's filter-out and-terms which are implied by other
-	  # and-terms. An and-term $tk is implied by an and-term $tj if $k
-	  # involves more variables than $tj (i.e., N>M) and if
-	  # all variables occurring in $tk also occur in A in the
-	  # same state (complemented or uncomplemented.)
-	  for (my $n = $m + 1; $n <= $#subcubes; ++$n)
-	    {
-	      my $n_subcubes = $#{$subcubes[$n]};
-	      for (my $k = 0; $k <= $n_subcubes; ++$k)
-		{
-		  my $tk = $subcubes[$n][$k];
-		  next unless $tk; # Skip deleted terms.
-		  my $ktrue = $tk->[0];
-		  my $kfalse = $tk->[1];
-
-		  next unless $ktrue == ($ktrue | $jtrue);
-		  next unless $kfalse == ($kfalse | $jfalse);
-
-		  delete $subcubes[$n][$k];
-		}
-	    }
-
-	  # Translate $tj.
-	  my @and_conds = ();
-	  my $rank = 0;
-	  while ($jtrue > 0)
-	    {
-	      if ($jtrue & 1)
-		{
-		  push @and_conds, $rank_var[$rank] . 'TRUE';
-		}
-	      $jtrue >>= 1;
-	      ++$rank;
-	    }
-	  $rank = 0;
-	  while ($jfalse > 0)
-	    {
-	      if ($jfalse & 1)
-		{
-		  push @and_conds, $rank_var[$rank] . 'FALSE';
-		}
-	      $jfalse >>= 1;
-	      ++$rank;
-	    }
-
-	  push @or_conds, new Automake::Condition @and_conds if @and_conds;
-	}
-    }
-
-  return new Automake::DisjConditions @or_conds;
-}
 
 sub simplify ($)
 {
   my ($self) = @_;
-  return $self->{'simplify'} if defined $self->{'simplify'};
-  my $res = $self->_simplify ;
-  $self->{'simplify'} = $res;
-  return $res;
+  return $self->invert->invert;
 }
 
 =item C<$self-E<gt>sub_conditions ($cond)>

@@ -114,10 +114,7 @@ sub test_simplify ()
 		             ["BAR_TRUE",  "BAZ_TRUE"],
 		             ["BAR_FALSE", "BAZ_TRUE"],
 		 ["FOO_FALSE"]],
-		# Note that this could be further simplified to
-		# [["FOO_FALSE"], ["BAZ_TRUE"], ["BAR_FALSE"]]
-		# but simplify isn't able to detect this.
-		[["FOO_FALSE"], ["BAZ_TRUE"], ["BAR_FALSE", "FOO_TRUE"]]],
+		[["FOO_FALSE"], ["BAZ_TRUE"], ["BAR_FALSE"]]],
 
 	       [[["B_TRUE"],
 		 ["A_FALSE", "B_TRUE"]],
@@ -126,10 +123,7 @@ sub test_simplify ()
 	       [[["B_TRUE"],
 		 ["A_FALSE", "B_FALSE", "C_TRUE"],
 		 ["A_FALSE", "B_FALSE", "C_FALSE"]],
-		# Note that this could be further simplified to
-		# [["A_FALSE"], ["B_TRUE"]]
-		# but simplify isn't able to detect this.
-		[["A_FALSE", "B_FALSE"], ["B_TRUE"]]],
+		[["A_FALSE"], ["B_TRUE"]]],
 
 	       [[["B_TRUE"],
 		 ["A_FALSE", "B_FALSE", "C_TRUE"],
