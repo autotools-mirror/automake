@@ -1118,6 +1118,14 @@ sub generate_makefile
 	return;
     }
 
+    # If OBJEXT/EXEEXT were not set in configure.in, do it, it
+    # simplifies our task, and anyway starting with Autoconf 2.50, it
+    # will always be defined, and this code will be dead.
+    $output_vars .= "EXEEXT =\n"
+      unless $seen_exeext;
+    $output_vars .= "OBJEXT = o\n"
+      unless $seen_objext;
+
     # Must do this after reading .am file.  See read_main_am_file to
     # understand weird tricks we play there with variables.
     &define_variable ('subdir', $relative_dir);
@@ -1312,8 +1320,7 @@ sub get_object_extension
     my ($out) = @_;
 
     # Maybe require libtool library object files.
-    my $extension = '.o';
-    $extension = '.$(OBJEXT)' if $seen_objext;
+    my $extension = '.$(OBJEXT)';
     $extension = '.lo' if ($out =~ /\.la$/);
 
     if (! $included_generic_compile)
@@ -1337,8 +1344,7 @@ sub get_object_extension
 			  &transform ('DEFAULT_INCLUDES' => $default_include));
 
 	$output_rules .=
-	  &file_contents ('compile',
-			  &transform ('OBJEXT' => $seen_objext));
+	  &file_contents ('compile');
 
 	# If using X, include some extra variable definitions.  NOTE
 	# we don't want to force these into CFLAGS or anything,
@@ -1352,8 +1358,7 @@ sub get_object_extension
 	    }
 	}
 
-	push (@suffixes, '.c', '.o');
-	push (@suffixes, '.obj') if $seen_objext;
+	push (@suffixes, '.c', '.o', '.obj');
 
 	$included_generic_compile = 1;
     }
@@ -1395,26 +1400,25 @@ sub get_object_extension
 	    # Generate rules to build ansi2knr.  If it is in some
 	    # other directory, then generate dependencies but have the
 	    # rule just run elsewhere.
-	    my $objext = $seen_objext ? ".\$(OBJEXT)" : ".o";
 	    $output_rules .= ($options{'ansi2knr'} . ': '
-			      . $options{'ansi2knr'} . $objext . "\n");
+			      . $options{'ansi2knr'} . '.$(OBJEXT)' . "\n");
 	    if ($options{'ansi2knr'} eq 'ansi2knr')
 	    {
-		$output_rules .= ("\t\$(LINK) ansi2knr" . $objext
+		$output_rules .= ("\t\$(LINK) ansi2knr.\$(OBJEXT)"
 				  . " \$(LIBS)\n"
-				  . "ansi2knr" . $objext
+				  . 'ansi2knr.$(OBJEXT)'
 				  . ": \$(CONFIG_HEADER)\n\n");
 	    }
 	    else
 	    {
 		$output_rules .= ("\tcd " . dirname ($options{'ansi2knr'})
-				  . " && \$(MAKE) \$(AM_MAKEFLAGS) "
+				  . ' && $(MAKE) $(AM_MAKEFLAGS) '
 				  . "ansi2knr\n\n");
 		# This is required for non-GNU makes.
-	        $output_rules .= ($options{'ansi2knr'} . $objext . ":\n");
+	        $output_rules .= ($options{'ansi2knr'} . '.$(OBJEXT)' . ":\n");
 		$output_rules .= ("\tcd " . dirname ($options{'ansi2knr'})
-				  . " && \$(MAKE) \$(AM_MAKEFLAGS)"
-				  . " ansi2knr" . $objext . "\n\n");
+				  . ' && $(MAKE) $(AM_MAKEFLAGS)'
+				  . ' ansi2knr.$(OBJEXT)' . "\n\n");
 	    }
 
 	    # Make sure ansi2knr can be found: if no path specified,
@@ -1490,8 +1494,7 @@ sub finish_languages
 	    # FIXME: Using cygpath should be somehow conditional.
 	    $output_rules .= (".$ext.obj:\n"
 			      . $full
-			      . " \`cygpath -w \$<\`\n")
-		if $seen_objext;
+			      . " \`cygpath -w \$<\`\n");
 	    $output_rules .= (".$ext.lo:\n"
 			      . "\t\$(LT"
 			      . $language_map{$lang . '-compiler-name'}
@@ -1908,7 +1911,7 @@ sub handle_single_transform_list
         {
             my $depfile = $object;
             $depfile =~ s/\.([^.]*)$/.P$1/;
-            $depfile =~ s/\$\(OBJEXT\)$/o/ if $seen_objext;
+            $depfile =~ s/\$\(OBJEXT\)$/o/;
             $dep_files{'$(DEPDIR)/' . $depfile} = 1;
         }
     }
@@ -2299,15 +2302,8 @@ sub handle_programs
 	    $xlink = $linker ? $linker : 'LINK';
 	}
 
-	my $exeext = '';
-	if ($seen_exeext && $one_file !~ /\./)
-	{
-	    $exeext = '$(EXEEXT)';
-	}
-
 	$output_rules .= &file_contents ('program',
-					 &transform ('EXEEXT'   => $exeext,
-						     'PROGRAM'  => $one_file,
+					 &transform ('PROGRAM'  => $one_file,
 						     'XPROGRAM' => $xname,
 						     'XLINK'    => $xlink));
     }
@@ -3224,7 +3220,6 @@ sub add_depend2
     # First include code for ordinary objects.
     my $xform = &transform ('PFX'  => $pfx,
 			    'FPFX' => $fpfx,
-			    'OBJEXT'  => $seen_objext,
 			    'LIBTOOL' => $seen_libtool,
 			    'AMDEP'   => $use_dependencies);
 
@@ -4897,11 +4892,6 @@ sub check_cygnus
     {
 	&am_conf_error ("\`AM_MAINTAINER_MODE' required when --cygnus specified");
     }
-
-    if (! $seen_exeext)
-    {
-	&am_conf_error ("\`AC_EXEEXT' required when --cygnus specified");
-    }
 }
 
 # Do any extra checking for GNU standards.
@@ -5157,9 +5147,9 @@ sub lang_c_finish
 			      . '; else echo ' . $base . '.c; fi` '
 			      . "| sed 's/^# \\([0-9]\\)/#line \\1/' "
 			      . '| $(ANSI2KNR) > ' . $base . "_.c\n");
- 	    push (@objects, $base . '_'
-		  . ($seen_objext ? '.$(OBJEXT)' : '.o'));
- 	    push (@objects, $base . '_.lo') if $seen_libtool;
+ 	    push (@objects, $base . '_.$(OBJEXT)');
+ 	    push (@objects, $base . '_.lo')
+	      if $seen_libtool;
  	}
 
  	# Make all _.o (and _.lo) files depend on ansi2knr.
@@ -7118,7 +7108,7 @@ sub am_install_var
 
 	    # A blatant hack: we rewrite each _PROGRAMS primary to
 	    # include EXEEXT when in Cygwin32 mode.
-	    if ($seen_exeext && $primary eq 'PROGRAMS')
+	    if ($primary eq 'PROGRAMS')
 	    {
 		my @conds = &variable_conditions ($one_name);
 
