@@ -191,6 +191,35 @@ aix)
   rm -f "$tmpdepfile"
   ;;
 
+tru64)
+   # The Tru64 AIX compiler uses -MD to generate dependencies as a side
+   # effect.  `cc -MD -o foo.o ...' puts the dependencies into `foo.o.d'.
+   # Subdirectories are respected.
+
+   tmpdepfile="$object.d"
+   if test "$libtool" = yes; then
+      "$@" -Wc,-MD
+   else
+      "$@" -MD
+   fi
+
+   stat=$?
+   if test $stat -eq 0; then :
+   else
+      rm -f "$tmpdepfile"
+      exit $stat
+   fi
+
+   if test -f "$tmpdepfile"; then
+      sed -e "s,^.*\.[a-z]*:,$object:," < "$tmpdepfile" > "$depfile"
+      # That's a space and a tab in the [].
+      sed -e 's,^.*\.[a-z]*:[ 	]*,,' -e 's,$,:,' < "$tmpdepfile" >> "$depfile"
+   else
+      echo "#dummy" > "$depfile"
+   fi
+   rm -f "$tmpdepfile"
+   ;;
+
 #nosideeffect)
   # This comment above is used by automake to tell side-effect
   # dependency tracking mechanisms from slower ones.
