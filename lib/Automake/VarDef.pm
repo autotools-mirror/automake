@@ -24,7 +24,7 @@ require Exporter;
 use vars '@ISA', '@EXPORT';
 @ISA = qw/Exporter/;
 @EXPORT = qw (&VAR_AUTOMAKE &VAR_CONFIGURE &VAR_MAKEFILE
-	      &VAR_ASIS &VAR_PRETTY &VAR_SILENT);
+	      &VAR_ASIS &VAR_PRETTY &VAR_SILENT &VAR_SORTED);
 
 =head1 NAME
 
@@ -87,11 +87,13 @@ use constant VAR_AUTOMAKE => 0; # Variable defined by Automake.
 use constant VAR_CONFIGURE => 1;# Variable defined in configure.ac.
 use constant VAR_MAKEFILE => 2; # Variable defined in Makefile.am.
 
-=item C<VAR_ASIS>, C<VAR_PRETTY>, C<VAR_SILENT>
+=item C<VAR_ASIS>, C<VAR_PRETTY>, C<VAR_SILENT>, C<VAR_SORTED>
 
-Possible print styles.  C<VAR_ASIS> variable should be output as-is.
-C<VAR_PRETTY> variable are wrapped on multiple lines if they cannot
-fit on one.  Finally, C<VAR_SILENT> variable are not output at all.
+Possible print styles.  C<VAR_ASIS> variables should be output as-is.
+C<VAR_PRETTY> variables are wrapped on multiple lines if they cannot
+fit on one.  C<VAR_SILENT> variables are not output at all.  Finally,
+C<VAR_SORTED> variables should be sorted and then handled as
+C<VAR_PRETTY> variables.
 
 C<VAR_SILENT> variables can also be overridden silently (unlike the
 other kinds of variables whose overridding may sometimes produce
@@ -104,6 +106,7 @@ use constant VAR_ASIS => 0;	# Output as-is.
 use constant VAR_PRETTY => 1;	# Pretty printed on output.
 use constant VAR_SILENT => 2;	# Not output.  (Can also be
 				# overridden silently.)
+use constant VAR_SORTED => 3;	# Sorted and pretty-printed.
 
 =back
 
@@ -131,8 +134,8 @@ C<VAR_AUTOMAKE>, C<VAR_CONFIGURE>, or C<VAR_MAKEFILE> (see these
 definitions).
 
 Finally, C<$pretty> tells how the variable should be output, and can
-be one of C<VAR_ASIS>, C<VAR_PRETTY>, or C<VAR_SILENT> (see these
-definitions).
+be one of C<VAR_ASIS>, C<VAR_PRETTY>, or C<VAR_SILENT>, or
+C<VAR_SORTED> (see these definitions).
 
 =cut
 

@@ -630,7 +630,14 @@ sub output ($@)
       my $equals = $def->type eq ':' ? ':=' : '=';
       my $str = $cond->subst_string;
 
-      if ($def->pretty == VAR_PRETTY)
+
+      if ($def->pretty == VAR_ASIS)
+	{
+	  my $output_var = "$name $equals $val";
+	  $output_var =~ s/^/$str/meg;
+	  $res .= "$output_var\n";
+	}
+      elsif ($def->pretty == VAR_PRETTY)
 	{
 	  # Suppress escaped new lines.  &makefile_wrap will
 	  # add them back, maybe at other places.
@@ -638,11 +645,13 @@ sub output ($@)
 	  $res .= makefile_wrap ("$str$name $equals", "$str\t",
 				 split (' ' , $val));
 	}
-      else			# VAR_ASIS
+      else # ($def->pretty == VAR_SORTED)
 	{
-	  my $output_var = "$name $equals $val";
-	  $output_var =~ s/^/$str/meg;
-	  $res .= "$output_var\n";
+	  # Suppress escaped new lines.  &makefile_wrap will
+	  # add them back, maybe at other places.
+	  $val =~ s/\\$//mg;
+	  $res .= makefile_wrap ("$str$name $equals", "$str\t",
+				 sort (split (' ' , $val)));
 	}
     }
   return $res;
@@ -934,10 +943,10 @@ assignment.
 C<$where>: the C<Location> of the assignment.
 
 C<$pretty>: whether C<$value> should be pretty printed (one of
-C<VAR_ASIS>, C<VAR_PRETTY>, or C<VAR_SILENT>, defined by by
-L<Automake::VarDef>).  C<$pretty> applies only to real assignments.
-I.e., it doesn't apply to a C<+=> assignment (except when part of it
-is being done as a conditional C<=> assignment).
+C<VAR_ASIS>, C<VAR_PRETTY>, C<VAR_SILENT>, or C<VAR_SORTED>, defined
+by by L<Automake::VarDef>).  C<$pretty> applies only to real
+assignments.  I.e., it does not apply to a C<+=> assignment (except
+when part of it is being done as a conditional C<=> assignment).
 
 This function will all run any hook registered with the C<hook>
 function.
@@ -955,9 +964,10 @@ sub define ($$$$$$$$)
     unless ref $where;
 
   prog_error "pretty argument missing"
-    unless defined $pretty && ($pretty == VAR_PRETTY
-			       || $pretty == VAR_ASIS
-			       || $pretty == VAR_SILENT);
+    unless defined $pretty && ($pretty == VAR_ASIS
+			       || $pretty == VAR_PRETTY
+			       || $pretty == VAR_SILENT
+			       || $pretty == VAR_SORTED);
 
   # We will adjust the owner of this variable unless told otherwise.
   my $adjust_owner = 1;
