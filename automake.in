@@ -5228,7 +5228,9 @@ sub pretty_print_rule
 # $STRING
 # &conditional_string(@COND-STACK)
 # --------------------------------
-# Build a string de
+# Build a string which denotes the conditional in @COND-STACK.  Some
+# simplifications are done: `TRUE' entries are elided, and any `FALSE'
+# entry results in a return of `FALSE'.
 sub conditional_string
 {
   my (@stack) = @_;
@@ -5732,10 +5734,26 @@ sub variable_conditions ($)
     my @uniq_list;
 
     %vars_scanned = ();
-    foreach my $cond (&variable_conditions_sub ($var, '', ()))
+
+    my @new_conds = &variable_conditions_sub ($var, '', ());
+    # Now we want to return all permutations of the subvariable
+    # conditions.
+    my %allconds = ();
+    foreach my $item (@new_conds)
     {
+	foreach (split (' ', $item))
+	{
+	    s/^(.*)_(TRUE|FALSE)$/$1_TRUE/;
+	    $allconds{$_} = 1;
+	}
+    }
+    @new_conds = &variable_conditions_permutations (sort keys %allconds);
+
+    foreach my $cond (@new_conds)
+    {
+	my $reduce = &variable_conditions_reduce (split (' ', $cond));
         next
-	  if $cond eq 'FALSE';
+	    if $reduce eq 'FALSE';
 	$uniqify{$cond} = 1;
     }
 
@@ -5764,8 +5782,9 @@ sub variable_conditionally_defined ($)
 
 # &variable_conditions_sub ($VAR, $PARENT, @PARENT_CONDS)
 # -------------------------------------------------------
-# A subroutine of variable_conditions.  We only return conditions
-# which are true for all the conditions in @PARENT_CONDS.
+# A subroutine of variable_conditions.  This returns all the
+# conditions of $VAR which are satisfiable when all of @PARENT_CONDS
+# are true.
 sub variable_conditions_sub
 {
     my ($var, $parent, @parent_conds) = @_;
@@ -5779,13 +5798,18 @@ sub variable_conditions_sub
     $vars_scanned{$var} = 1;
 
     my @this_conds = ();
+    # Examine every condition under which $VAR is defined.
     foreach my $vcond (keys %{$var_value{$var}})
     {
+	# If this condition cannot be true when the parent conditions
+	# are true, then skip it.
 	next
 	  if ! conditionals_true_when ((@parent_conds), ($vcond));
 
 	push (@this_conds, $vcond);
 
+	# If $VAR references some other variable, then compute the
+	# conditions for that subvariable.
 	push (@parent_conds, $vcond);
 	my @subvar_conds = ();
 	foreach (split (' ', $var_value{$var}{$vcond}))
@@ -5796,15 +5820,25 @@ sub variable_conditions_sub
 	    # Handle variable substitutions.
 	    if (/^\$\{(.*)\}$/ || /^\$\((.*)\)$/)
 	    {
-		push (@subvar_conds,
-		      &variable_conditions_sub ($1, $var, @parent_conds));
+
+		# Here we compute all the conditions under which the
+		# subvariable is defined.  Then we go through and add
+		# $VCOND to each.
+		my @svc = &variable_conditions_sub ($1, $var, @parent_conds);
+		foreach my $item (@svc)
+		{
+		    my $val = conditional_string ($vcond, split (' ', $item));
+		    $val ||= 'TRUE';
+		    push (@subvar_conds, $val);
+		}
 	    }
 	}
 	pop (@parent_conds);
 
 	# If there are no conditional subvariables, then we want to
 	# return this condition.  Otherwise, we want to return the
-	# permutations of the subvariables.
+	# permutations of the subvariables, taking into account the
+	# conditions of $VAR.
 	if (! @subvar_conds)
 	{
 	    push (@new_conds, $vcond);
@@ -5818,23 +5852,6 @@ sub variable_conditions_sub
     # Unset our entry in vars_scanned.  We only care about recursive
     # definitions.
     delete $vars_scanned{$var};
-
-    # If there are no parents, then this call is the top level call.
-    if (! $parent)
-      {
-	# Now we want to return all permutations of the subvariable
-	# conditions.
-	my %allconds = ();
-	foreach my $item (@new_conds)
-	{
-	    foreach (split (' ', $item))
-	    {
-		s/^(.*)_(TRUE|FALSE)$/$1_TRUE/;
-		$allconds{$_} = 1;
-	    }
-	}
-	return &variable_conditions_permutations (sort keys %allconds);
-      }
 
     # If we are being called on behalf of another variable, we need to
     # return all possible permutations of the conditions.  We have
