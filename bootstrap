@@ -1,0 +1,94 @@
+#! /bin/sh
+
+# This script helps bootstrap automake, when checked out from CVS.
+#
+# Copyright 2002 Free Software Foundation, Inc.
+# written by Pavel Roskin <proski@gnu.org> September 2002
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+
+
+# Don't ignore failures
+set -e
+
+# Find perl.  Not as good as autoconf would do, but good enough.
+if test -z "$PERL"; then
+	PERL="`which perl 2>/dev/null`"
+fi
+
+if test -z $PERL; then
+	echo "Cannot find perl" 2>&1
+	exit 1
+fi
+
+# Variables to substitute
+VERSION=`sed -ne '/AC_INIT/s/^[^[]*\[[^[]*\[\([^]]*\)\].*$/\1/p' configure.in`
+PACKAGE=automake
+datadir=.
+
+# Read the rule for calculating APIVERSION and execute it
+apiver_cmd=`sed -ne '/^APIVERSION=/p' configure.in`
+eval $apiver_cmd
+
+# Sanity checks
+if test -z "$VERSION"; then
+	echo "Cannot find VERSION" 2>&1
+	exit 1
+fi
+
+if test -z "$APIVERSION"; then
+	echo "Cannot find VERSION" 2>&1
+	exit 1
+fi
+
+# Make a dummy versioned directory for aclocal
+rm -rf aclocal-$APIVERSION
+mkdir aclocal-$APIVERSION
+rm -rf automake-$APIVERSION
+ln -s lib automake-$APIVERSION
+
+# Create temporary replacement for aclocal
+sed -e "s%@PERL@%$PERL%g" \
+    -e "s%@VERSION@%$VERSION%g" \
+    -e "s%@APIVERSION@%$APIVERSION%g" \
+    -e "s%@PACKAGE@%$PACKAGE%g" \
+    -e "s%@datadir@%$datadir%g" \
+    aclocal.in >aclocal.tmp
+
+# Create temporary replacement for amversion.m4
+sed -e "s%@PERL@%$PERL%g" \
+    -e "s%@VERSION@%$VERSION%g" \
+    -e "s%@APIVERSION@%$APIVERSION%g" \
+    -e "s%@PACKAGE@%$PACKAGE%g" \
+    -e "s%@datadir@%$datadir%g" \
+    m4/amversion.in >aclocal-$APIVERSION/amversion-tmp.m4
+
+# Run aclocal
+$PERL ./aclocal.tmp -I m4
+
+# Create temporary replacement for automake
+sed -e "s%@PERL@%$PERL%g" \
+    -e "s%@VERSION@%$VERSION%g" \
+    -e "s%@APIVERSION@%$APIVERSION%g" \
+    -e "s%@PACKAGE@%$PACKAGE%g" \
+    -e "s%@datadir@%$datadir%g" \
+    automake.in >automake.tmp
+
+# Run automake
+$PERL ./automake.tmp
+
+# Remove temporary files and directories
+rm -rf aclocal-$APIVERSION automake-$APIVERSION
+rm -f aclocal.tmp automake.tmp
