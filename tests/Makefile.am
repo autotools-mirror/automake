@@ -405,6 +405,7 @@ pr307.test \
 prefix.test \
 primary.test \
 primary2.test \
+primary3.test \
 proginst.test \
 python.test \
 python2.test \

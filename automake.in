@@ -1071,17 +1071,12 @@ sub shadow_unconditionally ($$)
   return "\$($varname)"
 }
 
-# get_object_extension ($OUT)
-# ---------------------------
-# Return object extension.  Just once, put some code into the output.
-# OUT is the name of the output file
-sub get_object_extension
+# get_object_extension ($EXTENSION)
+# ---------------------------------
+# Prefix $EXTENSION with $U if ansi2knr is in use.
+sub get_object_extension ($)
 {
-    my ($out) = @_;
-
-    # Maybe require libtool library object files.
-    my $extension = '.$(OBJEXT)';
-    $extension = '.lo' if ($out =~ /\.la$/);
+    my ($extension) = @_;
 
     # Check for automatic de-ANSI-fication.
     $extension = '$U' . $extension
@@ -2299,7 +2294,7 @@ sub handle_programs
       my ($where, $one_file) = @$pair;
 
       my $seen_libobjs = 0;
-      my $obj = &get_object_extension ($one_file);
+      my $obj = get_object_extension '.$(OBJEXT)';
 
       # Strip any $(EXEEXT) suffix the user might have added, or this
       # will confuse &handle_source_transform and &check_canonical_spelling.
@@ -2419,7 +2414,7 @@ sub handle_libraries
       $where->push_context ("while processing library `$onelib'");
       $where->set (INTERNAL->get);
 
-      my $obj = &get_object_extension ($onelib);
+      my $obj = get_object_extension '.$(OBJEXT)';
 
       # Canonicalize names and check for misspellings.
       my $xlib = &check_canonical_spelling ($onelib, '_LIBADD', '_SOURCES',
@@ -2569,7 +2564,7 @@ sub handle_ltlibraries
       my ($where, $onelib) = @$pair;
 
       my $seen_libobjs = 0;
-      my $obj = &get_object_extension ($onelib);
+      my $obj = get_object_extension '.lo';
 
       # Canonicalize names and check for misspellings.
       my $xlib = &check_canonical_spelling ($onelib, '_LIBADD', '_LDFLAGS',
