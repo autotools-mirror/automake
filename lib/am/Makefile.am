@@ -138,3 +138,16 @@ path-check: distdir
 	  status=$$?; \
 	  chmod -R a+w $(distdir) > /dev/null 2>&1; rm -rf $(distdir); \
 	  exit $$status
+
+## Program to use to fetch files.
+WGET = wget
+
+## We assume all these are at ftp.gnu.org.
+## FIXME: `missing'
+FETCHFILES = config/config.guess config/config.sub 
+
+## Fetch the latest versions of files we care about.
+fetch:
+	cd $(srcdir) && \
+	$(WGET) ftp://ftp.gnu.org/gnu/config/config.guess \
+	$(WGET) ftp://ftp.gnu.org/gnu/config/config.sub \
