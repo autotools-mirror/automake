@@ -12,18 +12,20 @@ dvi:: $(DVIS)
 
 install:: install-info
 
-# FIXME: not sure what to do about install-info program.  We look in
-# `pwd` because there might be a newer file there than in srcdir.
+# Look in both . and srcdir because the info pages might have been
+# rebuilt in the build directory.  Can't cd to srcdir; that might
+# break a possible install-sh reference.
 install-info: $(INFO_DEPS)
 	$(top_srcdir)/mkinstalldirs $(infodir)
-	cd $(srcdir);				\
-	for file in `cd $(srcdir); echo *.info*`; do \
+	for file in $(INFO_DEPS); do		\
 	  if test -f $$file; then		\
 	    d=.;				\
 	  else					\
-	    d=$(srcdir);			\
+	    d=${srcdir};			\
 	  fi;					\
-	  $(INSTALL_DATA) $$d/$$file $(infodir)/$$file; \
+	  for ifile in $${file}*; do		\
+	    $(INSTALL_DATA) $$d/$$ifile $(infodir)/$$file; \
+	  done;					\
 	  if $(SHELL) -c 'install-info --version' >/dev/null 2>&1; then \
 	    install-info --infodir=$(infodir) $$d/$$file; \
 	  else					\
