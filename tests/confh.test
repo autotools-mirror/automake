@@ -1,0 +1,31 @@
+#! /bin/sh
+
+# Test to make sure config.h works in a subdir.
+# Report from Alexandre Oliva.
+
+. $srcdir/defs || exit 1
+
+cat > configure.in << 'END'
+PACKAGE=nonesuch
+VERSION=nonesuch
+AC_ARG_PROGRAM
+AC_PROG_INSTALL
+AM_CONFIG_HEADER(include/config.h)
+AC_OUTPUT(Makefile)
+END
+
+: > Makefile.am
+: > acconfig.h
+
+mkdir include
+: > include/config.h.in
+
+$AUTOMAKE || exit 1
+
+grep '^DIST_COMMON =.* acconfig.h' Makefile.in || exit 1
+grep 'stamp-h.in:.*acconfig.h' Makefile.in || exit 1
+
+# Make sure re-running automake generates same Makefile.in.
+mv Makefile.in save
+$AUTOMAKE || exit 1
+cmp Makefile.in save
