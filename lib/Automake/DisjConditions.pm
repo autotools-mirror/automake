@@ -1,4 +1,4 @@
-# Copyright (C) 1997, 2001, 2002, 2003  Free Software Foundation, Inc.
+# Copyright (C) 1997, 2001, 2002, 2003, 2004  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -60,6 +60,9 @@ Automake::DisjConditions - record a disjunction of Conditions
   # Return a human readable string representing the DisjConditions.
   #   "(COND1 and !COND2) or (!COND3)"
   my $str = $set->human;
+
+  # Merge (OR) several DisjConditions.
+  my $all = $set->merge($set2, $set3, ...)
 
   # Invert a DisjConditions, i.e., create a new DisjConditions
   # that complements $set.
@@ -286,6 +289,23 @@ sub human ($ )
     }
   $self->{'human'} = $res;
   return $res;
+}
+
+
+=item C<$newcond = $cond-E<gt>merge (@otherconds)>
+
+Return a new C<DisjConditions> which is the disjunction of
+C<$cond> and C<@otherconds>.  Items in C<@otherconds> can be
+@C<Condition>s or C<DisjConditions>.
+
+=cut
+
+sub merge ($@)
+{
+  my ($self, @otherconds) = @_;
+  new Automake::DisjConditions (
+    map { $_->isa ("Automake::DisjConditions") ? $_->conds : $_ }
+        ($self, @otherconds));
 }
 
 

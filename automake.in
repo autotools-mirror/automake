@@ -2386,7 +2386,6 @@ sub handle_ltlibraries
 				 'noinst', 'lib', 'pkglib', 'check');
   return if ! @liblist;
 
-  my %instdirs;
   my @prefix = am_primary_prefixes ('LTLIBRARIES', 0, 'lib', 'pkglib',
 				    'noinst', 'check');
 
@@ -2396,6 +2395,8 @@ sub handle_ltlibraries
       $var->requires_variables ('Libtool library used', 'LIBTOOL');
     }
 
+  my %instdirs = ();
+  my %instconds = ();
   my %liblocations = ();	# Location (in Makefile.am) of each library.
 
   foreach my $key (@prefix)
@@ -2403,39 +2404,66 @@ sub handle_ltlibraries
       # Get the installation directory of each library.
       (my $dir = $key) =~ s/^nobase_//;
       my $var = rvar ($key . '_LTLIBRARIES');
-      for my $pair ($var->value_as_list_recursive (location => 1))
-	{
-	  my ($where, $lib) = @$pair;
-	  # We reject libraries which are installed in several places,
-	  # because we don't handle this in the rules (think `-rpath').
-	  #
-	  # However, we allow the same library to be listed many times
-	  # for the same directory.  This is for users who need setups
-	  # like
-	  #   if COND1
-	  #     lib_LTLIBRARIES = libfoo.la
-	  #   endif
-	  #   if COND2
-	  #     lib_LTLIBRARIES = libfoo.la
-	  #   endif
-	  #
-	  # Actually this will also allow
-	  #   lib_LTLIBRARIES = libfoo.la libfoo.la
-	  # Diagnosing this case doesn't seem worth the plain (we'd
-	  # have to fill $instdirs on a per-condition basis, check
-	  # implied conditions, etc.)
-	  if (defined $instdirs{$lib} && $instdirs{$lib} ne $dir)
-	    {
-	      error ($where, "`$lib' is already going to be installed in "
-		     . "`$instdirs{$lib}'", partial => 1);
-	      error ($liblocations{$lib}, "`$lib' previously declared here");
-	    }
-	  else
-	    {
-	      $instdirs{$lib} = $dir;
-	      $liblocations{$lib} = $where->clone;
-	    }
-	}
+
+      # We reject libraries which are installed in several places
+      # in the same condition, because we can only specify one
+      # `-rpath' option.
+      $var->traverse_recursively
+	(sub
+	 {
+	   my ($var, $val, $cond, $full_cond) = @_;
+	   my $hcond = $full_cond->human;
+	   my $where = $var->rdef ($cond)->location;
+	   # A library cannot be installed in different directory
+	   # in overlapping conditions.
+	   if (exists $instconds{$val})
+	     {
+	       my ($msg, $acond) =
+		 $instconds{$val}->ambiguous_p ($val, $full_cond);
+
+	       if ($msg)
+		 {
+		   error ($where, $msg, partial => 1);
+
+		   my $dirtxt = "installed in `$dir'";
+		   $dirtxt = "built for `$dir'"
+		     if $dir eq 'EXTRA' || $dir eq 'noinst' || $dir eq 'check';
+		   my $dircond =
+		     $full_cond->true ? "" : " in condition $hcond";
+
+		   error ($where, "`$val' should be $dirtxt$dircond ...",
+			  partial => 1);
+
+		   my $hacond = $acond->human;
+		   my $adir = $instdirs{$val}{$acond};
+		   my $adirtxt = "installed in `$adir'";
+		   $adirtxt = "built for `$adir'"
+		     if ($adir eq 'EXTRA' || $adir eq 'noinst'
+			 || $adir eq 'check');
+		   my $adircond = $acond->true ? "" : " in condition $hacond";
+
+		   my $onlyone = ($dir ne $adir) ?
+		     ("\nLibtool libraries can be built for only one "
+		      . "destination.") : "";
+
+		   error ($liblocations{$val}{$acond},
+			  "... and should also be $adirtxt$adircond.$onlyone");
+		   return;
+		 }
+	     }
+	   else
+	     {
+	       $instconds{$val} = new Automake::DisjConditions;
+	     }
+	   $instdirs{$val}{$full_cond} = $dir;
+	   $liblocations{$val}{$full_cond} = $where;
+	   $instconds{$val} = $instconds{$val}->merge ($full_cond);
+	 },
+	 sub
+	 {
+	   return ();
+	 },
+         skip_ac_subst => 1);
     }
 
   foreach my $pair (@liblist)
@@ -2505,21 +2533,36 @@ sub handle_ltlibraries
 	  $xlink = $linker ? $linker : 'LINK';
 	}
 
-      my $rpath;
-      if ($instdirs{$onelib} eq 'EXTRA'
-	  || $instdirs{$onelib} eq 'noinst'
-	  || $instdirs{$onelib} eq 'check')
-	{
-	  # It's an EXTRA_ library, so we can't specify -rpath,
-	  # because we don't know where the library will end up.
-	  # The user probably knows, but generally speaking automake
-	  # doesn't -- and in fact configure could decide
-	  # dynamically between two different locations.
-	  $rpath = '';
-	}
-      else
-	{
-	  $rpath = ('-rpath $(' . $instdirs{$onelib} . 'dir)');
+      my $rpathvar = "am_${xlib}_rpath";
+      my $rpath = "\$($rpathvar)";
+      foreach my $rcond ($instconds{$onelib}->conds)
+        {
+	  my $val;
+	  if ($instdirs{$onelib}{$rcond} eq 'EXTRA'
+	      || $instdirs{$onelib}{$rcond} eq 'noinst'
+	      || $instdirs{$onelib}{$rcond} eq 'check')
+	    {
+	      # It's an EXTRA_ library, so we can't specify -rpath,
+	      # because we don't know where the library will end up.
+	      # The user probably knows, but generally speaking automake
+	      # doesn't -- and in fact configure could decide
+	      # dynamically between two different locations.
+	      $val = '';
+	    }
+	  else
+	    {
+	      $val = ('-rpath $(' . $instdirs{$onelib}{$rcond} . 'dir)');
+	    }
+	  if ($rcond->true)
+	    {
+	      # If $rcond is true there is only one condition and
+	      # there is no point defining an helper variable.
+	      $rpath = $val;
+	    }
+	  else
+	    {
+	      define_pretty_variable ($rpathvar, $rcond, INTERNAL, $val);
+	    }
 	}
 
       # If the resulting library lies into a subdirectory,
