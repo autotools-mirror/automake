@@ -568,6 +568,12 @@ sub scan_file ($$$)
 sub strip_redundant_includes (%)
 {
   my %files = @_;
+
+  # Always include acinclude.m4, even if it does not appear to be used.
+  $files{'acinclude.m4'} = 1 if -f 'acinclude.m4';
+  # File included by $configure_ac are redundant.
+  $files{$configure_ac} = 1;
+
   # Files at the end of @file_order should override those at the beginning,
   # so it is important to preserve these trailing files.  We can remove
   # a file A if it is going to be output before a file B that includes
@@ -582,18 +588,17 @@ sub strip_redundant_includes (%)
 	  verb "$ifile is already included by $file";
 	}
     }
+
+  # configure.ac is implicitly included.
+  delete $files{$configure_ac};
+
   return %files;
 }
 
 sub trace_used_macros ()
 {
   my %files = map { $map{$_} => 1 } keys %macro_seen;
-  $files{'acinclude.m4'} = 1 if -f 'acinclude.m4';
-  # File included by $configure_ac are redundant.
-  $files{$configure_ac} = 1;
   %files = strip_redundant_includes %files;
-  # configure.ac is implicitly included.
-  delete $files{$configure_ac};
 
   my $traces = ($ENV{AUTOM4TE} || 'autom4te');
   $traces .= " --language Autoconf-without-aclocal-m4 ";
@@ -665,12 +670,8 @@ sub write_aclocal ($@)
 	if (exists $map_traced_defs{$m}
 	    && $map{$m} eq $map_traced_defs{$m});
     }
-  # Always include acinclude.m4, even if it does not appear to be used.
-  $files{'acinclude.m4'} = 1 if -f 'acinclude.m4';
   # Do not explicitly include a file that is already indirectly included.
   %files = strip_redundant_includes %files;
-  # Never include configure.ac :)
-  delete $files{$configure_ac};
 
   my $installed = 0;
 
