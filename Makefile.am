@@ -344,6 +344,6 @@ fetch:
 	    cp Fetchdir/$$file $(srcdir)/lib/$$file; \
 	  fi; \
 	done; \
-	test $$stat = 1 && \
+	test $$stat = 0 || \
 	  echo "See Fetchdir/update.patch for a log of the changes."; \
 	exit $$stat
