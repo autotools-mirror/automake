@@ -95,7 +95,7 @@ non-object).
 =cut
 
 my $_SUFFIX_RULE_PATTERN =
-  '^(\.[a-zA-Z0-9_(){}$+@]+)(\.[a-zA-Z0-9_(){}$+@]+)' . "\$";
+  '^(\.[a-zA-Z0-9_(){}$+@\-]+)(\.[a-zA-Z0-9_(){}$+@\-]+)' . "\$";
 
 # Suffixes found during a run.
 use vars '@_suffixes';
