@@ -1,5 +1,5 @@
-#! /bin/sh
-# Copyright (C) 2002, 2003, 2004  Free Software Foundation, Inc.
+#!/bin/sh
+# Copyright (C) 2004  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -18,52 +18,52 @@
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-# Make sure that --program-transform works.
+# Check for conditional library with a conditional directory.
+# Report from Ralf Corsepius
 
-required=gcc
-. ./defs || exit 1
+. ./defs
 
 set -e
 
-cat >>configure.in <<'END'
-AC_PROG_CC
+cat >>configure.in <<'EOF'
+AM_CONDITIONAL([INC], [test -z "$two"])
 AC_OUTPUT
-END
-
-cat >Makefile.am <<'EOF'
-bin_PROGRAMS = h
-bin_SCRIPTS = h.sh
-man_MANS = h.1
-
-test-install: install
-	test -f inst/bin/gnu-h$(EXEEXT)
-	test -f inst/bin/gnu-h.sh
-	test -f inst/man/man1/gnu-h.1
 EOF
 
-cat >h.c <<'EOF'
-int
-main ()
-{
-  return 0;
-}
-EOF
+cat >>Makefile.am <<'EOF'
+if INC
+include_foodir = $(includedir)/foo
+include_foo_HEADERS = foo.h
+else
+bardir = $(bindir)
+dist_bar_SCRIPTS = x.sh
+endif
 
-: > h.sh
-: > h.1
+foo.h x.sh:
+	:>$@
+EOF
 
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 
-./configure --program-prefix=gnu- --prefix `pwd`/inst
-$MAKE
-$MAKE test-install
-$MAKE uninstall
-test `find inst/foo -type f -print | wc -l` = 0
-
-# Opportunistically test for installdirs.
-rm -rf inst
+mkdir nowhere
+chmod a-w nowhere
+./configure --prefix=`pwd`/nowhere --bindir=`pwd`/bin --includedir=`pwd`/inc
 $MAKE installdirs
-test -d inst/bin
-test -d inst/man/man1
+test ! -d bin
+test -d inc/foo
+test ! -f inc/foo/foo.h
+rm -rf inc
+$MAKE install
+test ! -d bin
+test -f inc/foo/foo.h
+rm -rf inc
+./configure two=two \
+            --prefix=`pwd`/nowhere --bindir=`pwd`/bin --includedir=`pwd`/inc
+$MAKE install
+test ! -d inc
+test -f bin/x.sh
+$MAKE installdirs
+test ! -d inc
+test -d bin
