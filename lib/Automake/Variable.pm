@@ -1323,12 +1323,13 @@ sub _do_recursive_traversal ($$&&$$)
 		  $to = $3;
 		  $from = quotemeta $2;
 		}
-	      push @_substfroms, $from;
-	      push @_substtos, $to;
 
 	      my $subvar = var ($subvarname);
 	      # Don't recurse into undefined variables.
 	      next unless $subvar;
+
+	      push @_substfroms, $from;
+	      push @_substtos, $to;
 
 	      my @res = $subvar->_do_recursive_traversal ($parent,
 							  $fun_item,
