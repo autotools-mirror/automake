@@ -1,0 +1,69 @@
+#! /bin/sh
+
+# Check that info files are built in $(srcdir).
+
+required='GNUmake makeinfo'
+. $srcdir/defs || exit 1
+
+set -e
+
+echo AC_OUTPUT >> configure.in
+
+cat > Makefile.am << 'END'
+info_TEXINFOS = main.texi
+END
+
+cat > main.texi << 'END'
+\input texinfo
+@setfilename main.info
+@settitle main
+@node Top
+Hello walls.
+@include version.texi
+@bye
+END
+
+$ACLOCAL
+$AUTOMAKE --add-missing
+$AUTOCONF
+
+mkdir build
+cd build
+../configure
+$MAKE
+test -f main.info
+
+cd ..
+rm -rf build
+./configure
+$MAKE
+test -f main.info
+
+# Make sur stamp-vti is older that version.texi.
+# (A common situation in a real tree.)
+# This is needed to test the "subtle" issue described below.
+test -f stamp-vti
+test -f version.texi
+sleep 2
+touch stamp-vti
+
+$MAKE distclean
+test -f stamp-vti
+test -f version.texi
+
+mkdir build
+cd build
+../configure
+$MAKE
+# main.info should not be rebuilt in the current directory, since
+# it's up-to-date in $(srcdir).
+# This can be caused by a subtle issue related to VPATH handling
+# of version.texi (see also the comment in texi-vers.am): because
+# stamp-vti is newer than version.texi, the `version.texi: stamp-vti'
+# rule is always triggered.  Still that's not a reason for `make'
+# to think `version.texi' has been created...
+test ! -f main.info
+$MAKE dvi
+test -f main.dvi
+
+$MAKE distcheck

@@ -3525,6 +3525,74 @@ sub scan_texinfo_file
     return ($outfile, $vfile, (sort keys %clean_files));
 }
 
+# output_texinfo_build_rules ($SOURCE, $DEST, @DEPENDENCIES)
+# ----------------------------------------------------------
+# SOURCE - the source Texinfo file
+# DEST - the destination Info file
+# DEPENDENCIES - known dependencies
+sub output_texinfo_build_rules ($$@)
+{
+  my ($source, $dest, @deps) = @_;
+
+  # Split `a.texi' into `a' and `.texi'.
+  my ($spfx, $ssfx) = ($source =~ /^(.*?)(\.[^.]*)?$/);
+  my ($dpfx, $dsfx) = ($dest =~ /^(.*?)(\.[^.]*)?$/);
+
+  $ssfx ||= "";
+  $dsfx ||= "";
+
+  # We can output two kinds of rules: the "generic" rules
+  # use Make suffix rules and are appropritate when
+  # $source and $dest lie in the current directory; the "specifix"
+  # rules is needed in the other case.
+  #
+  # The former are output only once (this is not really apparent
+  # here, but just remember that some logic deeper in Automake will
+  # not output the same rule twice); while the later need to be output
+  # for each Texinfo source.
+  my $generic;
+  my $makeinfoflags;
+  my $sdir = dirname $source;
+  if ($sdir eq '.' && dirname ($dest) eq '.')
+    {
+      $generic = 1;
+      $makeinfoflags = '-I $(srcdir)';
+    }
+  else
+    {
+      $generic = 0;
+      $makeinfoflags = "-I $sdir -I \$(srcdir)/$sdir";
+    }
+
+  # If the resulting file lie into a subdirectory,
+  # make sure this directory will exist.
+  my $dirstamp = require_build_directory_maybe ($dest);
+
+  # It is wrong to make $SOURCE dependent on $DIRSTAMP, because
+  # $SOURCE is distributed and $DIRSTAMP is not.  A generated file
+  # should never be dependent upon a non-distributed built file.
+  #
+  # So don't do that:
+  #
+  #   push @deps, $dirstamp;
+  #
+  # Instead we append all dirstamps to the $(am__texinfo_dirstamps)
+  # variable and have this variable in the dependencies of
+  # info, dvi, etc.  (FIXME: this is not done yet -- support for
+  # Texinfo files in subdirectories is not complete.)
+  macro_define ('am__texinfo_dirstamps', VAR_AUTOMAKE, '+', 'TRUE',
+		$dirstamp, 'internal');
+
+  $output_rules .= &file_contents ('texibuild',
+                                   GENERIC       => $generic,
+                                   SOURCE_SUFFIX => $ssfx,
+                                   SOURCE => ($generic ? '$<' : $source),
+                                   DEST_PREFIX   => $dpfx,
+                                   DEST_SUFFIX   => $dsfx,
+                                   MAKEINFOFLAGS => $makeinfoflags,
+                                   DEPS          => "@deps");
+}
+
 
 # ($DO-SOMETHING, $TEXICLEANS)
 # handle_texinfo_helper ()
@@ -3545,7 +3613,6 @@ sub handle_texinfo_helper
     my @texi_cleans;
     my $canonical;
 
-    my %texi_suffixes;
     foreach my $info_cursor (@texis)
     {
         my $infobase = $info_cursor;
@@ -3557,7 +3624,6 @@ sub handle_texinfo_helper
 	    err_am "texinfo file `$info_cursor' has unrecognized extension";
 	    next;
 	  }
-	$texi_suffixes{$1} = 1;
 
 	# If 'version.texi' is referenced by input file, then include
 	# automatic versioning capability.
@@ -3565,6 +3631,14 @@ sub handle_texinfo_helper
 	  &scan_texinfo_file ("$relative_dir/$info_cursor")
 	    or next;
 	push (@texi_cleans, @clean_files);
+
+	# If the Texinfo source is in a subdirectory, create the
+	# resulting info in this subdirectory.  If it is in the
+	# current directory, try hard to not prefix "./" because
+	# it breaks the generic rules.
+	my $outdir = dirname ($info_cursor) . '/';
+	$outdir = "" if $outdir eq './';
+	$out_file =  $outdir . $out_file;
 
 	if ($vtexi)
 	{
@@ -3601,20 +3675,18 @@ sub handle_texinfo_helper
 	    {
 		$conf_dir = '$(srcdir)/';
 	    }
-	    $output_rules .= &file_contents ('texi-vers',
-					     ('TEXI'  => $info_cursor,
-					      'VTI'   => $vti,
-					      'VTEXI' => $vtexi,
-					      'MDDIR' => $conf_dir));
+		    $output_rules .= &file_contents ('texi-vers',
+					     TEXI     => $info_cursor,
+					     VTI      => $vti,
+					     STAMPVTI => "${outdir}stamp-$vti",
+					     VTEXI    => "$outdir$vtexi",
+					     MDDIR    => $conf_dir);
 	}
 
 	# If user specified file_TEXINFOS, then use that as explicit
 	# dependency list.
 	@texi_deps = ();
-	push (@texi_deps, $info_cursor);
-	# Prefix with $(srcdir) because some version of make won't
-	# work if the target has it and the dependency doesn't.
-	push (@texi_deps, '$(srcdir)/' . $vtexi) if $vtexi;
+	push (@texi_deps, "$outdir$vtexi") if $vtexi;
 
 	my $canonical = &canonicalize ($infobase);
 	if (variable_defined ($canonical . "_TEXINFOS"))
@@ -3623,13 +3695,8 @@ sub handle_texinfo_helper
 	    &push_dist_common ('$(' . $canonical . '_TEXINFOS)');
 	}
 
-	$output_rules .= ("\n" . $out_file . ": "
-			  . "@texi_deps"
-			  . "\n" . $infobase . ".dvi: "
-			  . "@texi_deps"
-			  . "\n" . $infobase . ".pdf: "
-			  . "@texi_deps"
-			  . "\n");
+	output_texinfo_build_rules ($info_cursor, $out_file,
+				    @texi_deps);
 
 	push (@info_deps_list, $out_file);
 	push (@dvis_list, $infobase . '.dvi');
@@ -3663,13 +3730,7 @@ sub handle_texinfo_helper
         $texinfodir = '$(srcdir)';
 	$need_texi_file = 1;
     }
-
-    foreach my $txsfx (sort keys %texi_suffixes)
-    {
-	$output_rules .= &file_contents ('texibuild',
-					 ('TEXINFODIR' => $texinfodir,
-					  'SUFFIX'     => $txsfx));
-    }
+    &define_variable ('am__TEXINFO_TEX_DIR', $texinfodir);
 
     # The return value.
     my $texiclean = &pretty_print_internal ("", "\t  ", @texi_cleans);
