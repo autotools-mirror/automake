@@ -276,7 +276,8 @@ xsource.test \
 yacc.test \
 yacc2.test \
 yacc3.test \
-yaccpp.test
+yaccpp.test \
+yaccpvath.test
 
 EXTRA_DIST = defs ChangeLog-old $(TESTS)
 
