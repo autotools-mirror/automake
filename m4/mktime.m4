@@ -1,4 +1,4 @@
-#serial 3
+#serial 4
 
 dnl From Jim Meyering.
 dnl FIXME: this should migrate into libit.
@@ -23,6 +23,17 @@ changequote(<<, >>)dnl
 # endif
 #endif
 
+#if HAVE_UNISTD_H
+# include <unistd.h>
+#endif
+
+#if !HAVE_ALARM
+# define alarm(X) /* empty */
+#endif
+
+/* Work around redefinition to rpl_putenv by other config tests.  */
+#undef putenv
+
 static time_t time_t_max;
 
 /* Values we'll use to set the TZ environment variable.  */
@@ -41,6 +52,23 @@ mktime_test (now)
     exit (1);
   now = time_t_max - now;
   if ((lt = localtime (&now)) && mktime (lt) != now)
+    exit (1);
+}
+
+static void
+irix_6_4_bug ()
+{
+  /* Based on code from Ariel Faigon.  */
+  struct tm tm;
+  tm.tm_year = 96;
+  tm.tm_mon = 3;
+  tm.tm_mday = 0;
+  tm.tm_hour = 0;
+  tm.tm_min = 0;
+  tm.tm_sec = 0;
+  tm.tm_isdst = -1;
+  mktime (&tm);
+  if (tm.tm_mon != 2 || tm.tm_mday != 31)
     exit (1);
 }
 
@@ -98,6 +126,7 @@ main ()
         bigtime_test (j);
       bigtime_test (j - 1);
     }
+  irix_6_4_bug ();
   exit (0);
 }
 	      >>,
