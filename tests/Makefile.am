@@ -100,7 +100,6 @@ confdeps.test \
 confdist.test \
 confh.test \
 confh4.test \
-confh5.test \
 config.test \
 confincl.test \
 confsub.test \

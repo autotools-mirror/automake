@@ -96,5 +96,16 @@ AC_PROVIDE_IFELSE([AC_PROG_CXX],
                   [define([AC_PROG_CXX],
                           defn([AC_PROG_CXX])[_AM_DEPENDENCIES(CXX)])])dnl
 ])
-_AM_CONFIG_HEADER_INSINUATE
 ])
+
+
+# When config.status generates a header, we must update the stamp-h file.
+# This file resides in the same directory as the config header
+# that is generated.  The stamp files are numbered to have different names.
+
+# Autoconf calls _AC_AM_CONFIG_HEADER_HOOK (when defined) in the
+# loop where config.status creates the headers, so we can generate
+# our stamp files there.
+AC_DEFUN([_AC_AM_CONFIG_HEADER_HOOK],
+[_am_stamp_count=`expr ${_am_stamp_count-0} + 1`
+echo "timestamp for $1" >`AS_DIRNAME([$1])`/stamp-h[]$_am_stamp_count])
