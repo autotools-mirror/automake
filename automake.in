@@ -1552,6 +1552,33 @@ sub handle_dist_worker
 	}
     }
 
+    # Scan EXTRA_DIST to see if we need to distribute anything from a
+    # subdir.  If so, add it to the list.  I didn't want to do this
+    # originally, but there were so many requests that I finally
+    # relented.
+    local (@dist_dirs);
+    if (&variable_defined ('EXTRA_DIST'))
+    {
+	foreach (&variable_value_as_list ('EXTRA_DIST'))
+	{
+	    next if /^\@.*\@$/;
+	    next unless s,/+[^/]+$,,;
+	    push (@dist_dirs, $_)
+		unless $_ eq '.';
+	}
+    }
+    if (&variable_defined ('EXTRA_DIST_DIRS'))
+    {
+	push (@dist_dirs, &variable_value_as_list ('EXTRA_DIST_DIRS'));
+    }
+    if (@dist_dirs)
+    {
+	# Prepend $(distdir) to each directory given.
+	grep ($_ = '$(distdir)/' . $_, @dist_dirs);
+	$output_rules .= "\t";
+	&pretty_print_rule ('$(mkinstalldirs)', "\t   ", @dist_dirs);
+    }
+
     # In loop, test for file existence because sometimes a file gets
     # included in DISTFILES twice.  For example this happens when a
     # single source file is used in building more than one program.
