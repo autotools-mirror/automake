@@ -1,4 +1,4 @@
-# serial 6						-*- Autoconf -*-
+# serial 7						-*- Autoconf -*-
 
 # Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004
 # Free Software Foundation, Inc.
@@ -85,7 +85,9 @@ AC_CACHE_CHECK([dependency style of $depcc],
     : > sub/conftest.c
     for i in 1 2 3 4 5 6; do
       echo '#include "conftst'$i'.h"' >> sub/conftest.c
-      : > sub/conftst$i.h
+      # Using `: > sub/conftst$i.h' creates only sub/conftst1.h with
+      # Solaris 8's {/usr,}/bin/sh.
+      touch sub/conftst$i.h
     done
     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
 
