@@ -38,4 +38,4 @@ with_target_subdir="$with_target_subdir"
 ac_configure_args="${multilib_arg} ${ac_configure_args}"
 multi_basedir="$multi_basedir"
 CONFIG_SHELL=${CONFIG_SHELL-/bin/sh}
-CC="$CC"]))dnl
+CC="$CC"])])dnl
