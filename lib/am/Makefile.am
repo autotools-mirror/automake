@@ -16,6 +16,9 @@ libraries-clean.am scripts-clean.am programs-clean.am data-clean.am
 
 DIST_OTHER = automake.in
 
+# Gross.
+DIST_SUBDIRS = samples/cpio/*Makefile.am
+
 # The following requires a fixed version of the Emacs 19.30 etags.
 ETAGS_ARGS = automake.in --lang=none \
  --regex='/^@node[ \t]+\([^,]+\)/\1/' automake.texi

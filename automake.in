@@ -479,7 +479,7 @@ sub handle_texinfo
     # automatic versioning capability.
     system ("grep version.texi " . $relative_dir . "/" . $texis[0]
 	    . " > /dev/null 2>&1");
-    if (!$?)
+    if (! ($? >> 8))
     {
 	# Got a hit.
 	push (@texis, 'version.texi');
@@ -730,6 +730,17 @@ sub handle_configure
 	&require_file ($NORMAL, 'configure.in');
 	# FIXME require 'configure'?  What if autoconf hasn't been run
 	# yet?
+
+	if (defined $contents{'SUBDIRS'})
+	{
+	    # We required AC_PROG_MAKE_SET.
+	    system ("grep AC_PROG_MAKE_SET configure.in > /dev/null 2>&1");
+	    if ($? >> 8)
+	    {
+		# Nope.
+		&am_error ("AC_PROG_MAKE_SET must be used in configure.in");
+	    }
+	}
 
 	if (-f 'aclocal.m4')
 	{
