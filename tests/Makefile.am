@@ -130,6 +130,7 @@ java.test \
 javaprim.test \
 javasubst.test \
 ldadd.test \
+ldflags.test \
 lex.test \
 lex2.test \
 lex3.test \
