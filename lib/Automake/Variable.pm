@@ -37,10 +37,9 @@ use vars '@ISA', '@EXPORT', '@EXPORT_OK';
 	      variable_delete
 	      variable_dump variables_dump
 	      variable_defined
-	      variable_assert
 	      examine_variable
 	      require_variables require_variables_for_variable
-	      variable_value variable_value_as_list
+	      variable_value
 	      output_variables);
 
 =head1 NAME
@@ -525,23 +524,25 @@ sub not_always_defined_in_cond ($$)
 	    ->multiply ($cond);
 }
 
-=item C<$bool = $var-E<gt>check_defined_unconditionally ($parent)>
+=item C<$bool = $var-E<gt>check_defined_unconditionally ([$parent, $parent_cond])>
 
-Warn if the variable is conditionally defined.  C<$parent>
-is the name of the parent variable, to display in error message.
+Warn if the variable is conditionally defined.  C<$parent> is the name
+of the parent variable, and C<$parent_cond> the condition of the parent
+definition.  These two variables are used to display diagnostics.
 
 =cut
 
-sub check_defined_unconditionally ($;$)
+sub check_defined_unconditionally ($;$$)
 {
-  my ($self, $parent) = @_;
+  my ($self, $parent, $parent_cond) = @_;
+
   if (!$self->conditions->true)
     {
       if ($parent)
 	{
-	  msg_var ('unsupported', $parent,
-		   "automake does not support conditional definition of "
-		   . $self->name . " in $parent");
+	  msg_cond_var ('unsupported', $parent_cond, $parent,
+			"automake does not support conditional definition of "
+			. $self->name . " in $parent");
 	}
       else
 	{
@@ -552,7 +553,7 @@ sub check_defined_unconditionally ($;$)
     }
 }
 
-=item C<$str = $var->output ([@conds])>
+=item C<$str = $var-E<gt>output ([@conds])>
 
 Format all the definitions of C<$var> if C<@cond> is not specified,
 else only that corresponding to C<@cond>.
@@ -561,18 +562,19 @@ else only that corresponding to C<@cond>.
 
 sub output ($@)
 {
-  my ($var, @conds) = @_;
+  my ($self, @conds) = @_;
 
-  @conds = $var->conditions->conds
+  @conds = $self->conditions->conds
     unless @conds;
 
   my $res = '';
-  my $name = $var->name;
+  my $name = $self->name;
 
   foreach my $cond (@conds)
     {
-      my $def = $var->def ($cond);
-      prog_error ("unknown condition `" . $cond->human . "' for `$var'")
+      my $def = $self->def ($cond);
+      prog_error ("unknown condition `" . $cond->human . "' for `"
+		  . $self->name . "'")
 	unless $def;
 
       next
@@ -601,6 +603,62 @@ sub output ($@)
     }
   return $res;
 }
+
+=item C<@values = $var-E<gt>value_as_list ($cond, [$parent, $parent_cond])>
+
+Get the value of C<$var> as a list, given a specified condition,
+without recursing through any subvariables.
+
+C<$cond> is the condition of interest.  C<$var> does not need
+to be defined for condition C<$cond> exactly, but it needs
+to be defined for at most one condition implied by C<$cond>.
+
+C<$parent> and C<$parent_cond> designate the name and the condition
+of the parent variable, i.e., the variable in which C<$var> is
+being expanded.  These are used in diagnostics.
+
+For example, if C<A> is defined as "C<foo $(B) bar>" in condition
+C<TRUE>, calling C<rvar ('A')->value_as_list (TRUE)> will return
+C<("foo", "$(B)", "bar")>.
+
+=cut
+
+sub value_as_list($$;$$)
+{
+  my ($self, $cond, $parent, $parent_cond) = @_;
+  my @result;
+
+  # Get value for given condition
+  my $onceflag;
+  foreach my $vcond ($self->conditions->conds)
+    {
+      my $val = $self->rdef ($vcond)->value;
+
+      if ($vcond->true_when ($cond))
+	{
+	  # If there is more than one definitions of $var matching
+	  # $cond then we are in trouble: tell the user we need a
+	  # paddle.  Continue by merging results from all conditions,
+	  # although it doesn't make much sense.
+	  $self->check_defined_unconditionally ($parent, $parent_cond)
+	    if $onceflag;
+	  $onceflag = 1;
+
+	  # Strip backslashes
+	  $val =~ s/\\(\n|$)/ /g;
+
+	  foreach (split (' ', $val))
+	    {
+	      # If a comment seen, just leave.
+	      last if /^#/;
+
+	      push (@result, $_);
+	    }
+	}
+    }
+  return @result;
+}
+
 
 =back
 
@@ -1116,26 +1174,6 @@ sub variable_defined ($;$)
   return 1;
 }
 
-=item C<$bool = variable_assert ($varname, $where)>
-
-Make sure a variable exists in any condition, issue an error message
-otherwise.  C<$varname> is the variable name, and C<$where> is the
-name of a macro which refers to C<$varname>.
-
-=cut
-
-sub variable_assert ($$)
-{
-  my ($var, $where) = @_;
-
-  return 1
-    if variable_defined $var;
-
-  require_variables ($where, "variable `$var' is used", TRUE, $var);
-
-  return 0;
-}
-
 =item C<examine_variable ($varname)>
 
 Mark a variable as examined.
@@ -1240,63 +1278,6 @@ sub variable_value ($)
     $v->check_defined_unconditionally;
     return $v->rdef (TRUE)->value;
 }
-
-=item C<@values = variable_value_as_list ($varname, $cond, [$parent])>
-
-Get the value of a variable given a specified condition. without
-recursing through any subvariables.
-
-C<$varname> is the variable name.  C<$cond> is the condition of interest.
-C<$parent> is the variable in which the variable is used: this is used
-only for error messages.
-
-For example, if C<A> is defined as "C<foo $(B) bar>" in condition
-C<TRUE>, calling C<variable_value_as_list ('A', TRUE)> will return
-C<("foo", "$(B)", "bar")>.
-
-=cut
-
-sub variable_value_as_list($$;$)
-{
-  my ($var, $cond, $parent) = @_;
-  my @result;
-
-  # Check defined
-  return
-    unless variable_assert $var, $parent;
-
-  my $v = rvar ($var);
-
-  # Get value for given condition
-  my $onceflag;
-  foreach my $vcond ($v->conditions->conds)
-    {
-      my $val = $v->rdef ($vcond)->value;
-
-      if ($vcond->true_when ($cond))
-	{
-	  # Unless variable is not defined conditionally, there should only
-	  # be one value of $vcond true when $cond.
-
-	  &check_variable_defined_unconditionally ($var, $parent)
-	    if $onceflag;
-	  $onceflag = 1;
-
-	  # Strip backslashes
-	  $val =~ s/\\(\n|$)/ /g;
-
-	  foreach (split (' ', $val))
-	    {
-	      # If a comment seen, just leave.
-	      last if /^#/;
-
-	      push (@result, $_);
-	    }
-	}
-    }
-  return @result;
-}
-
 
 =item C<$str = output_variables>
 
