@@ -8947,13 +8947,26 @@ sub require_variables ($$$@)
   my $res = 0;
   $reason .= ' but ' unless $reason eq '';
 
+ VARIABLE:
   foreach my $var (@vars)
     {
       # Nothing to do if the variable exists.  The $configure_vars test
       # needed for strange variables like AMDEPBACKSLASH or ANSI2KNR
       # that are AC_SUBST'ed but never macro_define'd.
-      next if ((exists $var_value{$var} && exists $var_value{$var}{$cond})
-	       || exists $configure_vars{$var});
+      next VARIABLE
+	if ((exists $var_value{$var} && exists $var_value{$var}{$cond})
+	    || exists $configure_vars{$var});
+
+      # If the variable exists but was not defined in $cond,
+      # look for any definition implied by $cond.
+      if (exists $var_value{$var})
+	{
+	  for my $vcond (keys %{$var_value{$var}})
+	    {
+	      next VARIABLE
+		if (conditional_true_when ($vcond, $cond));
+	    }
+	}
 
       ++$res;
 

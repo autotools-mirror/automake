@@ -90,6 +90,7 @@ cond21.test \
 cond22.test \
 cond23.test \
 cond24.test \
+cond25.test \
 condd.test \
 condincl.test \
 condincl2.test \
