@@ -79,6 +79,13 @@ maintainer-check: automake aclocal
 	  echo "Found too many uses of '\$${' in the lines above." 1>&2; \
 	  exit 1;				\
 	else :; fi
+## Make sure `rm' is called with `-f'.
+	@if egrep '\<rm ([^-]|\-[^f ]*\>)' \
+	          $(srcdir)/[a-z]*.am $(srcdir)/tests/*.test | \
+	      fgrep -v '##'; then \
+	  echo "Suspicious 'rm' invocation." 1>&2; \
+	  exit 1;				\
+	else :; fi
 ## Make sure all invocations of mkinstalldirs are correct.
 	@if fgrep -n 'mkinstalldirs' $(srcdir)/[a-z]*.am | \
 	      fgrep -v '$$(mkinstalldirs)'; then \
