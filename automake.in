@@ -821,11 +821,13 @@ sub get_object_extension
 	    else
 	    {
 		$output_rules .= ("\tcd " . &dirname ($options{'ansi2knr'})
-				  . " && \$(MAKE) ansi2knr\n\n");
+				  . " && \$(MAKE) \$(AM_MAKEFLAGS) "
+				  . "ansi2knr\n\n");
 		# This is required for non-GNU makes.
 	        $output_rules .= ($options{'ansi2knr'} . ".o:\n");
 		$output_rules .= ("\tcd " . &dirname ($options{'ansi2knr'})
-				  . " && \$(MAKE) ansi2knr.o\n\n");
+				  . " && \$(MAKE) \$(AM_MAKEFLAGS) "
+				  . "ansi2knr.o\n\n");
 	    }
 
 	    # Make sure ansi2knr can be found: if no path specified,
@@ -2282,12 +2284,12 @@ sub handle_man_pages
     # Generate list of install dirs.
     $output_rules .= ("install-man: \$(MANS)\n"
 		      . "\t\@\$(NORMAL_INSTALL)\n");
-    &pretty_print_rule ("\t\$(MAKE)", "\t ", @namelist);
+    &pretty_print_rule ("\t\$(MAKE) \$(AM_MAKEFLAGS)", "\t ", @namelist);
     push (@phony, 'install-man');
 
     $output_rules .= "uninstall-man:\n\t\@\$(NORMAL_UNINSTALL)\n";
     grep ($_ = 'un' . $_, @namelist);
-    &pretty_print_rule ("\t\$(MAKE)", "\t ", @namelist);
+    &pretty_print_rule ("\t\$(MAKE) \$(AM_MAKEFLAGS)", "\t ", @namelist);
     push (@phony, 'uninstall-man');
 
     $output_vars .= &file_contents ('mans-vars');
@@ -2319,7 +2321,8 @@ sub handle_tags
 			  . "\tlist=\'\$(SUBDIRS)\'; for subdir in \$\$list; do \\\n"
 			  # Never fail here if a subdir fails; it
 			  # isn't important.
-			  . "\t  (cd \$\$subdir && \$(MAKE) tags); \\\n"
+			  . "\t  (cd \$\$subdir"
+			  . " && \$(MAKE) \$(AM_MAKEFLAGS) tags); \\\n"
 			  . "\tdone\n");
 	push (@tag_deps, 'tags-recursive');
 	push (@phony, 'tags-recursive');
@@ -2526,7 +2529,8 @@ sub handle_dist_worker
 	     . "\t" . '  || mkdir $(distdir)/$$subdir ' . "\\\n"
 	     . "\t" . '  || exit 1; ' . "\\\n"
 	     . "\t" . '  chmod 777 $(distdir)/$$subdir; ' . "\\\n"
-	     . "\t" . '  (cd $$subdir && $(MAKE) top_distdir=../$('
+	     . "\t" . '  (cd $$subdir'
+	     . ' && $(MAKE) $(AM_MAKEFLAGS) top_distdir=../$('
 	     . (($relative_dir eq '.') ? 'distdir' : 'top_distdir')
 	     . ') distdir=../$(distdir)/$$subdir distdir) ' . "\\\n"
 	     . "\t" . '    || exit 1; ' . "\\\n"
@@ -2543,7 +2547,9 @@ sub handle_dist_worker
     {
 	# We must explicitly set distdir and top_distdir for these
 	# sub-makes.
-	$output_rules .= "\t\$(MAKE) top_distdir=\"\$(top_distdir)\" distdir=\"\$(distdir)\" $targ\n";
+	$output_rules .= ("\t\$(MAKE) \$(AM_MAKEFLAGS)"
+			  . " top_distdir=\"\$(top_distdir)\""
+			  . " distdir=\"\$(distdir)\" $targ\n");
     }
 
     push (@phony, 'distdir');
@@ -2644,7 +2650,8 @@ distcheck: dist
 	mkdir $(distdir)/=inst
 	dc_install_base=`cd $(distdir)/=inst && pwd`; \\'
 			  . (defined $contents{'distcheck-hook'}
-			     ? "\t\$(MAKE) distcheck-hook"
+			     ? ("\t\$(MAKE) \$(AM_MAKEFLAGS)"
+				. " distcheck-hook")
 			     : '')
 			  . '
 	cd $(distdir)/=build \\
@@ -2652,12 +2659,12 @@ distcheck: dist
 
 			  . ($seen_gettext ? '--with-included-gettext ' : '')
 			  . '--srcdir=.. --prefix=$$dc_install_base \\
-	  && $(MAKE) \\
-	  && $(MAKE) dvi \\
-	  && $(MAKE) check \\
-	  && $(MAKE) install \\
-	  && $(MAKE) installcheck \\
-	  && $(MAKE) dist
+	  && $(MAKE) $(AM_MAKEFLAGS) \\
+	  && $(MAKE) $(AM_MAKEFLAGS) dvi \\
+	  && $(MAKE) $(AM_MAKEFLAGS) check \\
+	  && $(MAKE) $(AM_MAKEFLAGS) install \\
+	  && $(MAKE) $(AM_MAKEFLAGS) installcheck \\
+	  && $(MAKE) $(AM_MAKEFLAGS) dist
 	-rm -rf $(distdir)
 	@echo "========================"; \\
 	echo "$(distdir).tar.gz is ready for distribution"; \\
@@ -3494,7 +3501,9 @@ sub handle_merge_targets
 		# using parallel makes.  Instead we handle things
 		# explicitly.
 		$output_rules .= ("all-recursive-am: ${local_headers}"
-				  . "\n\t" . '$(MAKE) all-recursive'
+				  . "\n\t"
+				  . '$(MAKE) $(AM_MAKEFLAGS)'
+				  . " all-recursive"
 				  . "\n\n");
 		push (@hackall, 'all-recursive-am');
 		push (@phony, 'all-recursive-am');
@@ -3567,7 +3576,9 @@ sub handle_merge_targets
     $output_rules .= "\t\@\$(NORMAL_INSTALL)\n";
     if (defined $contents{'install-exec-hook'})
     {
-	$output_rules .= "\t" . '$(MAKE) install-exec-hook' . "\n";
+	$output_rules .= ("\t"
+			  . '$(MAKE) $(AM_MAKEFLAGS) install-exec-hook'
+			  . "\n");
     }
     $output_rules .= "\n";
     push (@install, 'install-exec') if !$recursive_install;
@@ -3579,7 +3590,9 @@ sub handle_merge_targets
     $output_rules .= "\t\@\$(NORMAL_INSTALL)\n";
     if (defined $contents{'install-data-hook'})
     {
-	$output_rules .= "\t" . '$(MAKE) install-data-hook' . "\n";
+	$output_rules .= ("\t"
+			  . '$(MAKE) $(AM_MAKEFLAGS) install-data-hook'
+			  . "\n");
     }
     $output_rules .= "\n";
     push (@install, 'install-data') if !$recursive_install;
@@ -3610,7 +3623,7 @@ sub handle_merge_targets
     # Generate the new 'install-strip' target.  Must set
     # INSTALL_SCRIPT to avoid stripping scripts.
     $output_rules .= ("install-strip:\n\t"
-		      . '$(MAKE) INSTALL_PROGRAM=\'$(INSTALL_PROGRAM) -s\' INSTALL_SCRIPT=\'$(INSTALL_PROGRAM)\' install'
+		      . '$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM=\'$(INSTALL_PROGRAM) -s\' INSTALL_SCRIPT=\'$(INSTALL_PROGRAM)\' install'
 		      . "\n");
 }
 
@@ -3671,7 +3684,7 @@ sub do_check_merge_target
     # provide any real synchronization facilities?  The official
     # answer is that you can push the dependencies out to the leaves
     # of the dependency tree.  That seems fairly gross to me.
-    &pretty_print_rule ("\t\$(MAKE)", "\t  ", @check_tests)
+    &pretty_print_rule ("\t\$(MAKE) \$(AM_MAKEFLAGS)", "\t  ", @check_tests)
 	if @check_tests;
 }
 
