@@ -6119,6 +6119,7 @@ sub read_am_file
 	    }
 	    # Value here doesn't matter; for targets we only note
 	    # existence.
+# FIXME: I don't understand the next line at all, it seems dead wrong --akim
 	    $contents{$1} = 1;
 	    $targets{$1} = 1;
 	    my $cond_string = join ('', @conditional_stack);
@@ -6390,15 +6391,14 @@ sub read_main_am_file
     }
 
     # Generate copyright header for generated Makefile.in.
-    local ($ov) = $output_vars;
+    my $ov = $output_vars;
     $output_vars = ("# $in_file_name generated automatically by automake "
 		   . $VERSION . " from $am_file_name\n");
     $output_vars .= $gen_copyright;
 
     # Now go through and delete all the variables that the user did
     # not change.
-    local ($var);
-    foreach $var (keys %saved_contents)
+    foreach my $var (keys %saved_contents)
     {
 	if ($contents{$var} eq $saved_contents{$var})
 	{
@@ -6411,7 +6411,6 @@ sub read_main_am_file
     # end.
     &define_standard_variables;
     $output_vars .= $ov;
-
 }
 
 ################################################################
@@ -7126,8 +7125,9 @@ sub am_install_var
 	    # include EXEEXT when in Cygwin32 mode.
 	    if ($seen_exeext && $primary eq 'PROGRAMS')
 	    {
-		local (@conds) = &variable_conditions ($one_name);
-		local (@one_binlist);
+		my @conds = &variable_conditions ($one_name);
+
+		# FIXME: This code is mad, rewrite!
 
 		# FIXME: this definitely loses aesthetically; it
 		# redefines $ONE_NAME.  Instead we should arrange for
@@ -7136,7 +7136,7 @@ sub am_install_var
 
 		if (! @conds)
 		{
-		    @one_binlist = ();
+		    my @one_binlist = ();
 		    foreach $rcurs (&variable_value_as_list ($one_name, ''))
 		    {
 			if ($rcurs =~ /\./ || $rcurs =~ /^\@.*\@$/)
@@ -7154,14 +7154,13 @@ sub am_install_var
 		}
 		else
 		{
-		    local ($cond);
 		    local ($condvals) = '';
-		    foreach $cond (@conds)
+		    foreach my $cond (@conds)
 		    {
-			@one_binlist = ();
-			local (@condval) = &variable_value_as_list ($one_name,
-								    $cond);
-			foreach $rcurs (@condval)
+			my @one_binlist = ();
+			my @condval = &variable_value_as_list ($one_name,
+							       $cond);
+			foreach my $rcurs (@condval)
 			{
 			    if ($rcurs =~ /\./ || $rcurs =~ /^\@.*\@$/)
 			    {
