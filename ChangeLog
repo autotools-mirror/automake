@@ -1,3 +1,35 @@
+2003-04-10  Alexandre Duret-Lutz  <adl@gnu.org>
+
+	Retain all variable definitions until the whole Makefile.am has
+	been processed, then output all variables in one step, at the top
+	of Makefile.in.  (Older revisions used to output user variables
+	before generating Automake targets, and to mix Automake variables
+	with Automake targets, preventing redefinitions of previously
+	output variables.)
+
+	* automake.in (%var_pretty): New variable.
+	(VAR_ASIS, VAR_PRETTY): New constants.
+	(@var_list): Rename as ...
+	(@var_order): ... this.
+	(initialize_per_input): Clear %var_pretty.
+	(handle_variables): New function, extracted from ...
+	(read_main_am_file): ... here.
+	(generate_makefile): Call handle_variable after everything else.
+	(handle_dist): Use define_pretty_variable, not pretty_print.
+	(pretty_print): Delete.
+	(macro_define): Augment with $COMMENT and $PRETTY parameters.
+	Update %var_comment, %var_pretty, and @var_order.  Adjust callers.
+	(variable_pretty_output): Merge with ...
+	(variable_output): ... this, and choose the prettiness on a
+	per-condition basis.
+	(append_comments): Delete.  This work is now done by macro_define.
+	(read_am_file, file_contents_internal): Don't call append_comments
+	nor update @var_list, adjust calls to macro_define.
+	(handle_subdirs): Don't explicitly output RECURSIVE_TARGETS,
+	just mark it as VAR_PRETTY.
+	* tests/exeext.test: Make sure bin_PROGRAMS is output only once.
+	Report from Jim Meyering.
+
 2003-04-06  Alexandre Duret-Lutz  <adl@gnu.org>
 
 	* automake.in (handle_installdirs): Rename as ...

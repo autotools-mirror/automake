@@ -514,17 +514,26 @@ my @suffixes;
 # - $var_type{$VAR}{$COND} is how it has been defined (`', `+', or `:'),
 # - $var_owner{$VAR}{$COND} tells who owns the variable (VAR_AUTOMAKE,
 #     VAR_CONFIGURE, or VAR_MAKEFILE).
+# - $var_pretty{$VAR}{$COND} records how one variable should be output
+#     (VAR_PRETTY or VAR_ASIS).
 my %var_value;	  tie %var_value, 'Tie::RefHash::Nestable';
 my %var_location; tie %var_location, 'Tie::RefHash::Nestable';
 my %var_comment;  tie %var_comment, 'Tie::RefHash::Nestable';
 my %var_type;     tie %var_type, 'Tie::RefHash::Nestable';
 my %var_owner;    tie %var_owner, 'Tie::RefHash::Nestable';
+my %var_pretty;   tie %var_pretty, 'Tie::RefHash::Nestable';
 # Possible values for var_owner.  Defined so that the owner of
 # a variable can only be increased (e.g Automake should not
 # override a configure or Makefile variable).
 use constant VAR_AUTOMAKE => 0; # Variable defined by Automake.
 use constant VAR_CONFIGURE => 1;# Variable defined in configure.ac.
 use constant VAR_MAKEFILE => 2; # Variable defined in Makefile.am.
+# Possible values for var_output.
+use constant VAR_ASIS => 0;
+use constant VAR_PRETTY => 1;
+# The order in which variables should be output.  (May contain
+# duplicates -- only the first occurence matters.)
+my @var_order;
 
 # This holds a 1 if a particular variable was examined.
 my %content_seen;
@@ -683,10 +692,6 @@ my %linkers_used;
 # True if we need `LINK' defined.  This is a hack.
 my $need_link;
 
-# This is the list of such variables to output.
-# FIXME: Might be useless actually.
-my @var_list;
-
 # Was get_object_extension run?
 # FIXME: This is a hack. a better switch should be found.
 my $get_object_extension_was_run;
@@ -737,6 +742,7 @@ sub initialize_per_input ()
     %var_comment = ();
     %var_type = ();
     %var_owner = ();
+    %var_pretty = ();
 
     %content_seen = ();
 
@@ -846,7 +852,7 @@ sub initialize_per_input ()
 
     $need_link = 0;
 
-    @var_list = ();
+    @var_order = ();
 
     $get_object_extension_was_run = 0;
 
@@ -1541,7 +1547,8 @@ sub generate_makefile
 
     # Re-init SOURCES.  FIXME: other code shouldn't depend on this
     # (but currently does).
-    macro_define ('SOURCES', VAR_AUTOMAKE, '', TRUE, "@sources", INTERNAL);
+    macro_define ('SOURCES', VAR_AUTOMAKE, '', TRUE, "@sources", '',
+		  INTERNAL, VAR_PRETTY);
     define_pretty_variable ('DIST_SOURCES', TRUE, INTERNAL, @dist_sources);
 
     &handle_multilib;
@@ -1574,6 +1581,10 @@ sub generate_makefile
     &handle_install;
     &handle_clean;
     &handle_factored_dependencies;
+
+    # Comes last, because all the above procedures may have
+    # defined or overridden variables.
+    &handle_variables;
 
     check_typos ();
 
@@ -4197,7 +4208,7 @@ sub handle_dist
     check_variable_defined_unconditionally ('DIST_COMMON');
     my @dist_common = split (' ', variable_value ('DIST_COMMON', TRUE));
     @dist_common = uniq (sort for_dist_common (@dist_common));
-    pretty_print ('DIST_COMMON = ', "\t", @dist_common);
+    define_pretty_variable ('DIST_COMMON', TRUE, INTERNAL, @dist_common);
 
     # Now that we've processed DIST_COMMON, disallow further attempts
     # to set it.
@@ -4344,7 +4355,7 @@ sub handle_subdirs
     }
 
     $output_rules .= &file_contents ('subdirs', new Automake::Location);
-    variable_pretty_output ('RECURSIVE_TARGETS', TRUE);
+    $var_pretty{'RECURSIVE_TARGETS'}{&TRUE} = VAR_PRETTY; # Gross!
 }
 
 
@@ -6011,12 +6022,6 @@ sub pretty_print_internal
     return $result;
 }
 
-# Pretty-print something and append to output_vars.
-sub pretty_print
-{
-    $output_vars .= &pretty_print_internal (@_);
-}
-
 # Pretty-print something and append to output_rules.
 sub pretty_print_rule
 {
@@ -6253,18 +6258,40 @@ sub variable_not_always_defined_in_cond ($$)
 	    ->multiply ($cond);
 }
 
-# &macro_define($VAR, $OWNER, $TYPE, $COND, $VALUE, $WHERE)
-# -------------------------------------------------------------
-# The $VAR can go from Automake to user, but not the converse.
-sub macro_define ($$$$$$)
+# &macro_define($VAR, $OWNER, $TYPE, $COND, $VALUE, $COMMENT, $WHERE, $PRETTY)
+# ----------------------------------------------------------------------------
+#  $VAR      the name of the variable
+#  $OWNER    owner of the variable (one of VAR_MAKEFILE,
+#              VAR_CONFIGURE, or VAR_AUTOMAKE)
+#  $TYPE     the type of the assignment (`' for `FOO = bar',
+#              `:' for `FOO := bar', and `+' for `FOO += bar')
+#  $COND     the DisjConditions in which $VAR is being defined
+#  $VALUE    the value assigned to $VAR in condition $COND
+#  $COMMENT  any comment (`# bla.') associated with the assignment.
+#  $WHERE    the Location of the assignment
+#  $PRETTY   whether $VALUE should be pretty printed (one of
+#              VAR_ASIS or VAR_PRETTY)
+#
+# Notes:
+#  - Variables can be overriden, provided the new owner is not weaker
+#    (VAR_AUTOMAKE < VAR_CONFIGURE < VAR_MAKEFILE)
+#  - $PRETTY applies only to real assignment.  I.e., it doesn't
+#    apply to a `+=' assignment (except when part of it is being
+#    done as a conditional `=' assignment).
+#  - Comments from `+=' assignments stack with comments from the last `='
+#    assignment.
+sub macro_define ($$$$$$$$)
 {
-  my ($var, $owner, $type, $cond, $value, $where) = @_;
+  my ($var, $owner, $type, $cond, $value, $comment, $where, $pretty) = @_;
 
   prog_error "$cond is not a reference"
     unless ref $where;
 
   prog_error "$where is not a reference"
     unless ref $where;
+
+  prog_error "pretty argument missing"
+    unless defined $pretty && ($pretty == VAR_PRETTY || $pretty == VAR_ASIS);
 
   # We will adjust the owner of this variable unless told otherwise.
   my $adjust_owner = 1;
@@ -6308,11 +6335,24 @@ sub macro_define ($$$$$$)
     }
   $var_type{$var}{$cond} = $type;
 
+  # If there's a comment, make sure it is \n-terminated.
+  if ($comment)
+    {
+      chomp $comment;
+      $comment .= "\n";
+    }
+  else
+    {
+      $comment = '';
+    }
+
   # Differentiate assignment types.
 
   # 1. append (+=) to a variable defined for current condition
   if ($type eq '+' && exists $var_value{$var}{$cond})
     {
+      $var_comment{$var}{$cond} .= $comment;
+
       if (chomp $var_value{$var}{$cond})
 	{
 	  # Insert a backslash before a trailing newline.
@@ -6369,9 +6409,9 @@ sub macro_define ($$$$$$)
 		my $hvar = "am__append_$num";
 		$appendvar{$key} = $hvar;
 		&macro_define ($hvar, VAR_AUTOMAKE, '+',
-			       $cond, $value, $where);
-		push @var_list, $hvar;
+			       $cond, $value, $comment, $where, $pretty);
 		# Now HVAR is to be added to VAR.
+		$comment = '';
 		$value = "\$($hvar)";
 	      }
 	}
@@ -6400,7 +6440,8 @@ sub macro_define ($$$$$$)
 	    }
 	  else
 	    {
-	      &macro_define ($var, $owner, '+', $vcond, $value, $where);
+	      &macro_define ($var, $owner, '+', $vcond, $value, $comment,
+			     $where, $pretty);
 	    }
 	}
       # Don't adjust the owner.  The above &macro_define did it in the
@@ -6436,6 +6477,9 @@ sub macro_define ($$$$$$)
 	  # locations for `+='.  Ideally I suppose we would associate
 	  # line numbers with random bits of text.
 	  $var_location{$var}{$cond} = $where->clone;
+	  $var_comment{$var}{$cond} = $comment;
+	  $var_pretty{$var}{$cond} = $pretty;
+	  push (@var_order, $var);
 	}
     }
 
@@ -6920,43 +6964,21 @@ sub variable_output ($@)
       my $equals = $var_type{$var}{$cond} eq ':' ? ':=' : '=';
       my $output_var = "$var $equals $val";
       my $str = $cond->subst_string;
-      $output_var =~ s/^/$str/meg;
-      $output_vars .= $output_var . "\n";
-    }
-}
 
-
-# &variable_pretty_output ($VAR, [@CONDS])
-# ----------------------------------------
-# Likewise, but pretty, i.e., we *split* the values at spaces.   Use only
-# with variables holding filenames.
-sub variable_pretty_output ($@)
-{
-  my ($var, @conds) = @_;
-
-  @conds = variable_conditions ($var)->conds
-    unless @conds;
-
-  foreach my $cond (@conds)
-    {
-      prog_error ("unknown condition `$cond' for `$var'")
-	unless exists $var_value{$var}{$cond};
-
-      if (exists $var_comment{$var} && exists $var_comment{$var}{$cond})
+      if ($var_pretty{$var}{$cond} == VAR_PRETTY)
 	{
-	  $output_vars .= $var_comment{$var}{$cond};
+	  # Suppress escaped new lines.  &pretty_print_internal will
+	  # add them back, maybe at other places.
+	  $val =~ s/\\$//mg;
+	  $output_vars .= pretty_print_internal ("$str$var $equals",
+						 "$str\t",
+						 split (' ' , $val));
 	}
-
-      my $val = $var_value{$var}{$cond};
-      my $equals = $var_type{$var}{$cond} eq ':' ? ':=' : '=';
-      my $make_condition = $cond->subst_string;
-      # Suppress escaped new lines.  &pretty_print_internal will
-      # add them back, maybe at other places.
-      $val =~ s/\\$//mg;
-
-      $output_vars .= pretty_print_internal ("$make_condition$var $equals",
-					     "$make_condition\t",
-					     split (' ' , $val));
+      else			# VAR_ASIS
+	{
+	  $output_var =~ s/^/$str/meg;
+	  $output_vars .= $output_var . "\n";
+	}
     }
 }
 
@@ -6975,8 +6997,8 @@ sub define_pretty_variable ($$$@)
 
     if (! variable_defined ($var, $cond))
     {
-        macro_define ($var, VAR_AUTOMAKE, '', $cond, "@value", $where);
-	variable_pretty_output ($var, $cond);
+        macro_define ($var, VAR_AUTOMAKE, '', $cond, "@value", '', $where,
+		      VAR_PRETTY);
 	$content_seen{$var} = 1;
     }
 }
@@ -7006,8 +7028,7 @@ sub define_configure_variable ($)
       && ! grep { $_ eq $var } (qw(ANSI2KNR AMDEPBACKSLASH)))
     {
       macro_define ($var, VAR_CONFIGURE, '', TRUE,
-		    subst $var, $configure_vars{$var});
-      variable_pretty_output ($var, TRUE);
+		    subst $var, '', $configure_vars{$var}, VAR_ASIS);
     }
 }
 
@@ -7389,20 +7410,6 @@ sub check_trailing_slash ($\$)
 }
 
 
-# &append_comments ($VARIABLE, $SPACING, $COMMENT)
-# ------------------------------------------------
-# Append $COMMENT to the other comments for $VARIABLE, using
-# $SPACING as separator.
-sub append_comments ($$$$)
-{
-    my ($cond, $var, $spacing, $comment) = @_;
-    $var_comment{$var}{$cond} .= $spacing
-	if (!defined $var_comment{$var}{$cond}
-	    || $var_comment{$var}{$cond} !~ /\n$/o);
-    $var_comment{$var}{$cond} .= $comment;
-}
-
-
 # &read_am_file ($AMFILE, $WHERE)
 # -------------------------------
 # Read Makefile.am and set up %contents.  Simultaneously copy lines
@@ -7538,13 +7545,12 @@ sub read_am_file ($$)
 
 	      if (!/\\$/)
 		{
-		  append_comments ($cond, $last_var_name, $spacing, $comment);
-		  $comment = $spacing = '';
 		  macro_define ($last_var_name, VAR_MAKEFILE,
 				$last_var_type, $cond,
-				$last_var_value, $last_where)
+				$last_var_value, $comment,
+				$last_where, VAR_ASIS)
 		    if $cond != FALSE;
-		  push (@var_list, $last_var_name);
+		  $comment = $spacing = '';
 		}
 	    }
 	}
@@ -7598,15 +7604,11 @@ sub read_am_file ($$)
 
 	    if (!/\\$/)
 	      {
-		# Accumulating variables must not be output.
-		append_comments ($cond, $last_var_name, $spacing, $comment);
-		$comment = $spacing = '';
-
 		macro_define ($last_var_name, VAR_MAKEFILE,
 			      $last_var_type, $cond,
-			      $last_var_value, $last_where)
+			      $last_var_value, $comment, $last_where, VAR_ASIS)
 		  if $cond != FALSE;
-		push (@var_list, $last_var_name);
+		$comment = $spacing = '';
 	      }
 	}
         elsif (/$INCLUDE_PATTERN/o)
@@ -7687,7 +7689,6 @@ sub define_standard_variables
     foreach my $var (sort keys %configure_vars)
     {
         &define_configure_variable ($var);
-        push (@var_list, $var);
     }
 
     # ... hence, we restore $output_vars.
@@ -7718,13 +7719,22 @@ sub read_main_am_file
 
     # Read user file, which might override some of our values.
     &read_am_file ($amfile, new Automake::Location);
+}
 
-    # Output all the Automake variables.  If the user changed one,
-    # then it is now marked as VAR_CONFIGURE or VAR_MAKEFILE.
-    foreach my $var (uniq @var_list)
+
+# handle_variables ()
+# -------------------
+# Ouput definitions for all variables.
+sub handle_variables ()
+{
+  my @vars = uniq @var_order;
+
+  # Output all the Automake variables.  If the user changed one,
+  # then it is now marked as VAR_CONFIGURE or VAR_MAKEFILE.
+  foreach my $var (@vars)
     {
-      # Some variables, like AMDEPBACKSLASH are in @var_list
-      # but don't have a owner.  This is good, because we don't want
+      # Some variables, like AMDEPBACKSLASH are in @var_order
+      # but don't have an owner.  This is good, because we don't want
       # to output them.
       foreach my $cond (keys %{$var_owner{$var}})
 	{
@@ -7733,9 +7743,9 @@ sub read_main_am_file
 	}
     }
 
-    # Now dump the user variables that were defined.  We do it in the same
-    # order in which they were defined (skipping duplicates).
-    foreach my $var (uniq @var_list)
+  # Now dump the user variables that were defined.  We do it in the same
+  # order in which they were defined (skipping duplicates).
+  foreach my $var (@vars)
     {
       foreach my $cond (keys %{$var_owner{$var}})
 	{
@@ -8016,12 +8026,9 @@ sub file_contents_internal ($$$%)
 
 	    $is_rule = 0;
 
-	    # Accumulating variables must not be output.
-	    append_comments ($cond, $var, $spacing, $comment);
 	    macro_define ($var, $is_am ? VAR_AUTOMAKE : VAR_MAKEFILE,
-			  $type, $cond, $val, $where)
+			  $type, $cond, $val, $comment, $where, VAR_ASIS)
 	      if $cond != FALSE;
-	    push (@var_list, $var);
 
 	    # If the user has set some variables we were in charge
 	    # of (which is detected by the first reading of
@@ -8714,7 +8721,8 @@ sub push_dist_common
 {
   prog_error "push_dist_common run after handle_dist"
     if $handle_dist_run;
-  macro_define ('DIST_COMMON', VAR_AUTOMAKE, '+', TRUE, "@_", INTERNAL);
+  macro_define ('DIST_COMMON', VAR_AUTOMAKE, '+', TRUE, "@_", '',
+		INTERNAL, VAR_PRETTY);
 }
 
 
