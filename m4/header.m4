@@ -62,7 +62,7 @@ AS_ESCAPE(_AM_DIRNAME(patsubst([$1],
 AC_DEFUN([_AM_CONFIG_HEADER],
 [# Add the stamp file to the list of files AC keeps track of,
 # along with our hook.
-AC_CONFIG_HEADERS([$1],
+_AM_AC_CONFIG_HEADERS([$1],
                   [# update the timestamp
 echo 'timestamp for $1' >"_AM_STAMP([$1])"
 $2],
@@ -75,3 +75,20 @@ $2],
 AC_DEFUN([AM_CONFIG_HEADER],
 [AC_FOREACH([_AM_File], [$1], [_AM_CONFIG_HEADER(_AM_File, [$2], [$3])])
 ])# AM_CONFIG_HEADER
+
+
+# _AM_CONFIG_HEADER_INSINUATE
+# ---------------------------
+# Replace AC_CONFIG_HEADERS with our AM_CONFIG_HEADER.
+# We don't care about AC_CONFIG_HEADER (without S): it's an obsolete
+# Autoconf macro which will simply call AC_CONFIG_HEADERS (with S).
+AC_DEFUN([_AM_CONFIG_HEADER_INSINUATE], [
+dnl Since the substitution is only effective after AM_INIT_AUTOMAKE,
+dnl make sure AC_CONFIG_HEADERS is not called before.
+AC_BEFORE([AM_INIT_AUTOMAKE], [AC_CONFIG_HEADERS])dnl
+dnl Save the previous AC_CONFIG_HEADERS definition
+m4_rename([AC_CONFIG_HEADERS], [_AM_AC_CONFIG_HEADERS])dnl
+dnl Setup ours.
+dnl (Don't use m4_copy because we are tracing AM_CONFIG_HEADER.)
+AC_DEFUN([AC_CONFIG_HEADERS], [AM_CONFIG_HEADER($][@)])dnl
+])
