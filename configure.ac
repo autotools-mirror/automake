@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-# Copyright (C) 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003
+# Copyright (C) 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004
 # Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -36,7 +36,7 @@ AC_CANONICAL_BUILD
 # bothered by `missing'.
 am_AUTOCONF=${AUTOCONF-autoconf}
 
-AM_INIT_AUTOMAKE([1.6 dist-bzip2])
+AM_INIT_AUTOMAKE([1.6 dist-bzip2 filename-length-max=99])
 
 # The API version is the base version.  We must guarantee
 # compatibility for all releases with the same API version.

@@ -271,6 +271,11 @@ sub _process_option_list (\%$@)
 	{
 	  # Explicitly recognize these.
 	}
+      elsif ($_ =~ /^filename-length-max=(\d+)$/)
+	{
+	  delete $options->{$_};
+	  $options->{'filename-length-max'} = [$_, $1];
+	}
       elsif ($_ eq 'tar-v7' || $_ eq 'tar-ustar' || $_ eq 'tar-pax')
 	{
 	  error ($where,
