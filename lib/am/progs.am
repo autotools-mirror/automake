@@ -32,11 +32,16 @@ install-%DIR%PROGRAMS: $(%DIR%_PROGRAMS)
 ## Funny invocation because Makefile variable can be empty, leading to
 ## a syntax error in sh.
 	@list='$(%DIR%_PROGRAMS)'; for p in $$list; do \
-	  if test -f $$p; then \
+## On Cygwin with libtool test won't see `foo.exe' but instead `foo'.
+## So we check for both.
+	  p1=`echo $$p|sed 's/$(EXEEXT)$$//'`; \
+	  if test -f $$p \
+?LIBTOOL?	     || test -f $$p1 \
+	  ; then \
 ## Note that we explicitly set the libtool mode.  This avoids any
 ## lossage if the install program doesn't have a name that libtool
 ## expects.
-	    f=`echo $$p|sed 's/$(EXEEXT)$$//;$(transform);s/$$/$(EXEEXT)/'`; \
+	    f=`echo $$p1|sed '$(transform);s/$$/$(EXEEXT)/'`; \
 ?LIBTOOL?	   echo " $(INSTALL_PROGRAM_ENV) $(LIBTOOL) --mode=install $(INSTALL_PROGRAM) $$p $(DESTDIR)$(%NDIR%dir)/$$f"; \
 ?LIBTOOL?	   $(INSTALL_PROGRAM_ENV) $(LIBTOOL) --mode=install $(INSTALL_PROGRAM) $$p $(DESTDIR)$(%NDIR%dir)/$$f; \
 ?!LIBTOOL?	   echo " $(INSTALL_PROGRAM_ENV) $(INSTALL_PROGRAM) $$p $(DESTDIR)$(%NDIR%dir)/$$f"; \
