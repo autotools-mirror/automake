@@ -191,6 +191,7 @@ libobj7.test \
 libobj8.test \
 libobj9.test \
 libobj10.test \
+libobj11.test \
 library.test \
 libtool.test \
 libtool2.test \
