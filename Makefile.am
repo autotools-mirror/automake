@@ -27,15 +27,18 @@ SUBDIRS = . m4 lib tests
 bin_SCRIPTS = automake aclocal
 info_TEXINFOS = automake.texi
 
+CLEANFILES = $(bin_SCRIPTS)
+AUTOMAKESOURCES = automake.in aclocal.in
 
-TAGS_FILES = automake.in aclocal.in
+TAGS_FILES = $(AUTOMAKESOURCES)
 
 # The following requires a fixed version of the Emacs 19.30 etags.
 ETAGS_ARGS = --lang=none \
  --regex='/^@node[ \t]+\([^,]+\)/\1/' $(srcdir)/automake.texi
 TAGS_DEPENDENCIES = automake.texi
 
-EXTRA_DIST = ChangeLog.1996 ChangeLog.1998 ChangeLog.2000 ChangeLog.2001
+EXTRA_DIST = ChangeLog.1996 ChangeLog.1998 ChangeLog.2000 ChangeLog.2001 \
+  $(AUTOMAKESOURCES)
 
 ## Make versioned links.  We only run the transform on the root name;
 ## then we make a versioned link with the transformed base name.  This
@@ -74,6 +77,12 @@ automake: automake.in Makefile
 aclocal: aclocal.in Makefile
 	$(do_subst) < $(srcdir)/aclocal.in > aclocal
 	chmod +x aclocal
+
+## The master location for mdate-sh, is lib/mdate-sh.
+## This is where `make fetch' will install new versions.
+## Make sure we also update the copy used by Automake.
+mdate-sh: lib/mdate-sh
+	cp lib/mdate-sh $@
 
 ################################################################
 ##
@@ -288,8 +297,14 @@ WGET = wget
 
 ## Files that we fetch and which we compare against.
 ## FIXME should be a lot more here
-FETCHFILES = config.guess config.sub texinfo.tex Automake/XFile.pm INSTALL \
-	install-sh
+FETCHFILES = \
+Automake/Struct.pm \
+Automake/XFile.pm \
+INSTALL \
+config.guess \
+config.sub \
+install-sh \
+texinfo.tex
 
 ## Fetch the latest versions of files we care about.
 fetch:
@@ -300,10 +315,12 @@ fetch:
 	$(WGET) ftp://ftp.gnu.org/gnu/config/config.guess; \
 	$(WGET) ftp://ftp.gnu.org/gnu/config/config.sub; \
 	$(WGET) ftp://ftp.gnu.org/gnu/texinfo/texinfo.tex; \
+	$(WGET) http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~/autoconf/autoconf/lib/Autom4te/Struct.pm?content-type=text/plain -O Automake/Struct.pm; \
 	$(WGET) http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~/autoconf/autoconf/lib/Autom4te/XFile.pm?content-type=text/plain -O Automake/XFile.pm; \
 	$(WGET) http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~/autoconf/autoconf/config/install-sh?content-type=text/plain -O install-sh; \
 	$(WGET) http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~/autoconf/autoconf/INSTALL?content-type=text/plain -O INSTALL)
-	perl -pi -e 's/Autom4te::/Automake::/g' Fetchdir/Automake/XFile.pm
+	perl -pi -e 's/Autom4te::/Automake::/g' \
+	  Fetchdir/Automake/Struct.pm Fetchdir/Automake/XFile.pm
 ## Don't exit after test because we want to give as many errors as
 ## possible.
 	@stat=0; for file in $(FETCHFILES); do \
