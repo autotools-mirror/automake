@@ -687,14 +687,6 @@ my @var_list;
 # FIXME: This is a hack. a better switch should be found.
 my $get_object_extension_was_run;
 
-# Contains a stack of `from' parts of variable substitutions currently in
-# force.
-my @substfroms;
-
-# Contains a stack of `to' parts of variable substitutions currently in
-# force.
-my @substtos;
-
 # This keeps track of all variables defined by subobjname.
 # The value stored is the variable names.
 # The key has the form "(COND1)VAL1(COND2)VAL2..." where VAL1 and VAL2
@@ -712,7 +704,6 @@ my %appendvar = ();
 ## --------------------------------- ##
 sub register_language (%);
 sub file_contents_internal ($$$%);
-sub define_objects_from_sources ($$$$$$$$);
 
 
 # &initialize_per_input ()
@@ -2545,7 +2536,135 @@ sub handle_single_transform_list ($$$$@)
     return @result;
 }
 
-# ($LINKER, $OBJVAR)
+# traverse_variable_recursively ($VAR, &FUN_ITEM, &FUN_COLLECT)
+# -------------------------------------------------------------
+# Split the value of the variable named VAR on space, and
+# traverse its componants recursively, for all conditions.
+#
+# We distinguish to kinds of items in the content of VARNAME.
+# Terms that look like `$(foo)' or `${foo}' are subvarible
+# and cause recursion.  Other terms are assumed to be filenames.
+#
+# Each time a filename is encountered, &FUN_ITEM is called with the
+# following arguements:
+#   ($var,        -- the variable we are currently traversing
+#    $val,        -- the item (i.e., filename) to process
+#    $cond,       -- the conditions for the $var definitions we are examinating
+#    @cond_stack) -- other conditions inherited from parent variables during
+#                    recursion
+# &FUN_ITEM may return a list of items, they will be passed to &FUN_STRORE
+# later on.   Define &FUN_ITEM as `undef' when it serve no purpose, this
+# will speed things up.
+#
+# Once all items of a variable have been processed, the
+# result (of the calls to &FUN_ITEMS, or of recursive
+# traversals of subvariables) are passed to &FUN_COLLECT.
+# &FUN_STORE receive two arguments:
+#   ($var,        -- the variable being traversed
+#    \@condlist,  -- a \list of [$cond, @results] pairs
+#                    where each $cond appear only once, and @result
+#                    are all the results for this condition.
+#    @cond_stack) -- oter conditions inherited from parent variables during
+#                    recursion
+# &FUN_COLLECT may return a list of items, that will be used as the
+# result of &traverse_variable_recursively (the top-level, or
+# it's recursive calls).
+
+# Contains a stack of `from' and `to' parts of variable
+# substitutions currently in force.
+my @substfroms;
+my @substtos;
+
+sub traverse_variable_recursively ($&&)
+{
+  %vars_scanned = ();
+  @substfroms = ();
+  @substtos = ();
+  my ($var, @rest) = @_;
+  return traverse_variable_recursively_worker ($var, $var, @rest)
+}
+
+# The guts of &traverse_variable_recursively.
+sub traverse_variable_recursively_worker ($$&&)
+{
+  my ($var, $parent, $fun_item, $fun_collect, @cond_stack) = @_;
+
+  if (defined $vars_scanned{$var})
+    {
+      err_var $var, "variable `$var' recursively defined";
+      return undef;
+    }
+  $vars_scanned{$var} = 1;
+
+  my @allresults = ();
+  foreach my $cond (variable_conditions ($var)->conds)
+    {
+      my @result;
+      foreach my $val (&variable_value_as_list ($var, $cond, $parent))
+	{
+	  # If $val is a variable (i.e. ${foo} or $(bar), not a filename),
+	  # handle the sub variable recursively.
+	  # (Backslashes between bracklets, before `}' and `)' are required
+	  # only of Emacs's indentation.)
+	  if ($val =~ /^\$\{([^\}]*)\}$/ || $val =~ /^\$\(([^\)]*)\)$/)
+	    {
+	      my $subvar = $1;
+
+	      # If the user uses a losing variable name, just ignore it.
+	      # This isn't ideal, but people have requested it.
+	      next if ($subvar =~ /\@.*\@/);
+
+
+	      # See if the variable is actually a substitution reference
+	      my ($from, $to);
+	      my @temp_list;
+	      if ($subvar =~ /$SUBST_REF_PATTERN/o)
+		{
+		  $subvar = $1;
+		  $to = $3;
+		  $from = quotemeta $2;
+		}
+	      push @substfroms, $from;
+	      push @substtos, $to;
+
+	      my $res =
+		&traverse_variable_recursively_worker ($subvar, $parent,
+						       $fun_item, $fun_collect,
+						       $cond, @cond_stack);
+	      push (@result, $res);
+
+	      pop @substfroms;
+	      pop @substtos;
+	    }
+	    elsif ($fun_item) # $var is a filename we must process
+	    {
+	      my $substnum=$#substfroms;
+	      while ($substnum >= 0)
+		{
+		  $val =~ s/$substfroms[$substnum]$/$substtos[$substnum]/
+		    if defined $substfroms[$substnum];
+		  $substnum -= 1;
+		}
+
+	      # Make sure you update the doc of &traverse_variable_recursively
+	      # if you change the prototype of &fun_item.
+	      my @transformed = &$fun_item ($var, $val, $cond, @cond_stack);
+	      push (@result, @transformed);
+	    }
+	}
+      push (@allresults, [$cond, @result]);
+    }
+
+  # We only care about _recursive_ variable definitions.  The user
+  # is free to use the same variable several times in the same definition.
+  delete $vars_scanned{$var};
+
+  # Make sure you update the doc of &traverse_variable_recursively
+  # if you change the prototype of &fun_collect.
+  return &$fun_collect ($var, \@allresults, @cond_stack);
+}
+
+# $LINKER
 # define_objects_from_sources ($VAR, $OBJVAR, $NODEFINE, $ONE_FILE,
 #                              $OBJ, $PARENT, $TOPPARENT, $WHERE)
 # ---------------------------------------------------------------------
@@ -2564,101 +2683,44 @@ sub handle_single_transform_list ($$$$@)
 #   $WHERE context into which this definition is done
 #
 # Result is a pair ($LINKER, $OBJVAR):
-#    $LINKER is a boolean, true if a linker is needed to deal with the objects,
-#    $OBJVAR is the name of the variable defined to hold the objects.
-#
-# %linkers_used, %vars_scanned, @substfroms and @substtos should be cleared
-# before use:
-#   %linkers_used variable will be set to contain the linkers desired.
-#   %vars_scanned will be used to check for recursive definitions.
-#   @substfroms and @substtos will be used to keep a stack of variable
-#   substitutions to be applied.
-#
+#    $LINKER is a boolean, true if a linker is needed to deal with the objects
 sub define_objects_from_sources ($$$$$$$$)
 {
-    my ($var, $objvar, $nodefine, $one_file, $obj,
-	$parent, $topparent, $where) = @_;
+  my ($var, $objvar, $nodefine, $one_file, $obj,
+      $parent, $topparent, $where) = @_;
 
-    if (defined $vars_scanned{$var})
-    {
-	err_var $var, "variable `$var' recursively defined";
-	return ("", $objvar || "ERROR");
-    }
-    $vars_scanned{$var} = 1;
+  my $needlinker = "";
 
-    my $needlinker = "";
-    my @allresults = ();
-    foreach my $cond (variable_conditions ($var)->conds)
-    {
-	my @result;
-	foreach my $val (&variable_value_as_list ($var, $cond, $parent))
-	{
-	    # If $val is a variable (i.e. ${foo} or $(bar), not a filename),
-	    # handle the sub variable recursively.
-	    if ($val =~ /^\$\{([^}]*)\}$/ || $val =~ /^\$\(([^)]*)\)$/)
-	    {
-		my $subvar = $1;
-
-		# If the user uses a losing variable name, just ignore it.
-		# This isn't ideal, but people have requested it.
-		next if ($subvar =~ /\@.*\@/);
-
-		# See if the variable is actually a substitution reference
-		my ($from, $to);
-		my @temp_list;
-		if ($subvar =~ /$SUBST_REF_PATTERN/o)
-		{
-		    $subvar = $1;
-		    $to = $3;
-		    $from = quotemeta $2;
-		}
-		push @substfroms, $from;
-		push @substtos, $to;
-
-		my ($temp, $varname)
-		    = define_objects_from_sources ($subvar, undef,
-						   $nodefine, $one_file,
-						   $obj, $var, $topparent,
-						   $where);
-
-		push (@result, '$('. $varname . ')');
-		$needlinker ||= $temp;
-
-		pop @substfroms;
-		pop @substtos;
-	    }
-	    else # $var is a filename
-	    {
-	        my $substnum=$#substfroms;
-	        while ($substnum >= 0)
-		{
-		    $val =~ s/$substfroms[$substnum]$/$substtos[$substnum]/
-			if defined $substfroms[$substnum];
-		    $substnum -= 1;
-		}
-
-		my (@transformed) =
-		      &handle_single_transform_list ($var, $topparent, $one_file, $obj, $val);
-		push (@result, @transformed);
-		$needlinker = "true" if @transformed;
-	    }
-	}
-	push (@allresults, [$cond, @result]);
-    }
-    # Find a name for the variable, unless imposed.
-    $objvar = subobjname (@allresults) unless defined $objvar;
-    # Define _OBJECTS conditionally
-    unless ($nodefine)
-    {
-	foreach my $pair (@allresults)
-	{
-	    my ($cond, @result) = @$pair;
-	    define_pretty_variable ($objvar, $cond, $where, @result);
-	}
-    }
-
-    delete $vars_scanned{$var};
-    return ($needlinker, $objvar);
+  my $res =
+    traverse_variable_recursively
+    ($var,
+     # The transfom code to run on each filename.
+     sub {
+       my ($subvar, $val, @cond_stack) = @_;
+       my @trans = &handle_single_transform_list ($subvar, $topparent,
+						  $one_file, $obj, $val);
+       $needlinker = "true" if @trans;
+       return @trans;
+     },
+     # The code that define the variable holding the result
+     # of the recursive transformation of a subvariable.
+     sub {
+       my ($subvar, $allresults, @cond_stack) = @_;
+       # Find a name for the variable, unless this is the top-variable
+       # for which we want to use $objvar.
+       my $varname = ($var ne $subvar) ? subobjname (@$allresults) : $objvar;
+       # Define _OBJECTS conditionally
+       unless ($nodefine)
+	 {
+	   foreach my $pair (@$allresults)
+	     {
+	       my ($cond, @result) = @$pair;
+	       define_pretty_variable ($varname, $cond, $where, @result);
+	     }
+	 }
+       return "\$($varname)";
+     });
+  return $needlinker;
 }
 
 
@@ -2760,8 +2822,7 @@ sub handle_source_transform
 	    # am__VAR_DIST variable which contains all possible values,
 	    # and add this variable to DIST_SOURCES.
 	    my $distvar = "$var";
-	    my @conds = variable_conditions_recursive ($var)->conds;
-	    if (@conds && $conds[0] != TRUE)
+	    if (variable_conditionally_defined ($var))
 	      {
 		$distvar = "am__${var}_DIST";
 		my @files =
@@ -2771,15 +2832,11 @@ sub handle_source_transform
 	    push @dist_sources, "\$($distvar)"
 	  }
 
-	@substfroms = ();
-	@substtos = ();
-	%vars_scanned = ();
-	my ($temp, $objvar) =
+	$needlinker ||=
 	    define_objects_from_sources ($var,
 					 $xpfx . $one_file . '_OBJECTS',
 					 $prefix =~ /EXTRA_/,
 					 $one_file, $obj, $var, $var, $where);
-	$needlinker ||= $temp;
     }
     if ($needlinker)
     {
@@ -2834,6 +2891,8 @@ sub handle_lib_objects
       if ! variable_defined ($var);
 
     my $ret = 0;
+    # FIXME: Should define am__LDADD_n variables using
+    # traverse_variable_recursively to limit combinatorial explosion.
     foreach my $cond (variable_conditions_recursive ($var)->conds)
       {
 	if (&handle_lib_objects_cond ($xname, $var, $cond))
@@ -6488,11 +6547,11 @@ sub examine_variable
 
 # If the variable is not defined conditionally, and is not defined in
 # terms of any variables which are defined conditionally, then this
-# returns the empty list.
+# returns TRUE.
 
 # If the variable is defined conditionally, but is not defined in
 # terms of any variables which are defined conditionally, then this
-# returns the list of conditions for which the variable is defined.
+# returns the disjounctions of conditions for which the variable is defined.
 
 # If the variable is defined in terms of any variables which are
 # defined conditionally, then this returns a full set of permutations
@@ -6504,13 +6563,28 @@ sub variable_conditions_recursive ($)
 {
   my ($var) = @_;
 
-  %vars_scanned = ();
+  my %condition_seen = ();
 
-  my @new_conds = variable_conditions_recursive_sub ($var, TRUE);
+  traverse_variable_recursively
+    ($var,
+     # Nothing to do on filenames.
+     undef,
+     # Record each condition seen
+     sub {
+       my ($subvar, $allresults, @cond_stack) = @_;
+       foreach my $pair (@$allresults)
+	 {
+	   my ($cond, @result) = @$pair;
+	   my $c = $cond->merge (@cond_stack);
+	   # Store $c both as key and $value, keys() do not return
+	   # blessed objects.
+	   $condition_seen{$c} = $c;
+	 }
+     });
 
   # Now we want to return all permutations of the subvariable
   # conditions.
-  return (new Automake::DisjConditions @new_conds)->permutations;
+  return (new Automake::DisjConditions (values %condition_seen)->permutations);
 }
 
 
@@ -6549,7 +6623,7 @@ sub variable_conditionally_defined ($)
     foreach my $cond (variable_conditions_recursive ($var)->conds)
       {
 	return 1
-	  unless $cond =~ /^TRUE|FALSE$/;
+	  unless $cond == TRUE;
       }
     return 0;
 }
@@ -6603,97 +6677,6 @@ sub check_variable_expansions ($$)
 	       "$var: non-POSIX variable name$gnuext");
 	}
     }
-}
-
-# &variable_conditions_recursive_sub ($VAR, $PARENT)
-# -------------------------------------------------------
-# A subroutine of variable_conditions_recursive.  This returns all the
-# conditions of $VAR, including those of any sub-variables.
-sub variable_conditions_recursive_sub
-{
-    my ($var, $parent) = @_;
-    my @new_conds = ();
-
-    if (defined $vars_scanned{$var})
-    {
-        err_var $parent, "variable `$var' recursively defined";
-	return ();
-    }
-    $vars_scanned{$var} = 1;
-
-    my @this_conds = ();
-    # Examine every condition under which $VAR is defined.
-    foreach my $vcond (variable_conditions ($var)->conds)
-    {
-      push (@this_conds, $vcond);
-
-      # If $VAR references some other variable, then compute the
-      # conditions for that subvariable.
-      my @subvar_conds = ();
-      foreach my $varname (scan_variable_expansions $var_value{$var}{$vcond})
-	{
-	  if ($varname =~ /$SUBST_REF_PATTERN/o)
-	    {
-	      $varname = $1;
-	    }
-
-	  # Here we compute all the conditions under which the
-	  # subvariable is defined.  Then we go through and add
-	  # $VCOND to each.
-	  my @svc = variable_conditions_recursive_sub ($varname, $var);
-	  foreach my $item (@svc)
-	    {
-	      push (@subvar_conds, $vcond->merge ($item));
-	    }
-	}
-
-      # If there are no conditional subvariables, then we want to
-      # return this condition.  Otherwise, we want to return the
-      # permutations of the subvariables, taking into account the
-      # conditions of $VAR.
-      if (! @subvar_conds)
-	{
-	  push (@new_conds, $vcond);
-	}
-      else
-	{
-	  push (@new_conds, Automake::Condition::reduce (@subvar_conds));
-	}
-    }
-
-    # Unset our entry in vars_scanned.  We only care about recursive
-    # definitions.
-    delete $vars_scanned{$var};
-
-    # If we are being called on behalf of another variable, we need to
-    # return all possible permutations of the conditions.  We have
-    # already handled everything in @this_conds along with their
-    # subvariables.  We now need to add any permutations that are not
-    # in @this_conds.
-    foreach my $this_cond (@this_conds)
-    {
-      my @perms =
-	  (new Automake::DisjConditions $this_cond)->permutations->conds;
-	foreach my $perm (@perms)
-	{
-	    my $ok = 1;
-	    foreach my $scan (@this_conds)
-	    {
-		if ($perm->true_when ($scan) || $scan->true_when ($perm))
-		{
-		    $ok = 0;
-		    last;
-		}
-	    }
-	    next if ! $ok;
-
-	    # This permutation was not already handled, and is valid
-	    # for the parents.
-	    push (@new_conds, $perm);
-	}
-    }
-
-    return @new_conds;
 }
 
 
@@ -8161,6 +8144,7 @@ sub append_exeext ($)
   prog_error "append_exeext ($macro)"
     unless $macro =~ /_PROGRAMS$/;
 
+  # FIXME: we should use traverse_variable_recursively to fix PR/352.
   my @conds = variable_conditions_recursive ($macro)->conds;
 
   my @condvals;

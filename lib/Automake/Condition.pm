@@ -206,17 +206,17 @@ sub new ($;@)
   return $self;
 }
 
-=item C<$newcond = $cond-E<gt>merge ($othercond)>
+=item C<$newcond = $cond-E<gt>merge (@otherconds)>
 
 Return a new condition which is the conjunction of
-C<$cond> and C<$othercond>.
+C<$cond> and C<@otherconds>.
 
 =cut
 
-sub merge ($$)
+sub merge ($@)
 {
-  my ($self, $other) = @_;
-  new Automake::Condition $self->conds, $other->conds;
+  my ($self, @otherconds) = @_;
+  new Automake::Condition (map { $_->conds } ($self, @otherconds));
 }
 
 =item C<$newcond = $cond-E<gt>merge_conds (@conds)>
