@@ -54,6 +54,7 @@ colon7.test \
 comment.test \
 comment2.test \
 comment3.test \
+comment4.test \
 compile_f_c_cxx.test \
 cond.test \
 cond2.test \
