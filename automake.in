@@ -147,9 +147,6 @@ $config_header_line = 0;
 # relative to this directory.
 $output_directory = '.';
 
-# Relative location of top build directory.
-$top_builddir = '';
-
 # List of Makefile.am's to process, and their corresponding outputs.
 @input_files = ();
 %output_files = ();
@@ -6353,34 +6350,16 @@ sub read_am_file
 # twice.
 sub define_standard_variables
 {
-    $top_builddir = backname ($relative_dir);
     $output_vars .=
         &file_contents ('header-vars',
-			&transform ('top_builddir' => $top_builddir));
+			&transform_cond
+			('BUILD'    => $seen_canonical == $AC_CANONICAL_SYSTEM,
+			 'HOST'     => $seen_canonical,
+			 'TARGET'   => $seen_canonical == $AC_CANONICAL_SYSTEM)
+			. &transform
+			('top_builddir' => backname ($relative_dir)));
 
-    # Generate some useful variables when AC_CANONICAL_* used.  FIXME:
-    # this should use generic %configure_vars method.
-    if ($seen_canonical)
-    {
-	local ($curs, %vars);
-	$vars{'host_alias'} = 'host_alias';
-	$vars{'host_triplet'} = 'host';
-	if ($seen_canonical == $AC_CANONICAL_SYSTEM)
-	{
-	    $vars{'build_alias'} = 'build_alias';
-	    $vars{'build_triplet'} = 'build';
-	    $vars{'target_alias'} = 'target_alias';
-	    $vars{'target_triplet'} = 'target';
-	}
-	foreach $curs (sort keys %vars)
-	{
-	    $output_vars .= "$curs = \@$vars{$curs}\@\n";
-	    $contents{$curs} = "\@$vars{$curs}\@";
-	}
-    }
-
-    local ($curs);
-    foreach $curs (sort keys %configure_vars)
+    foreach my $curs (sort keys %configure_vars)
     {
 	&define_configure_variable ($curs);
     }
