@@ -18,59 +18,42 @@
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-# Test the += diagnostics.
+# Make sure Automake simplify conditions in diagnostics.
 
 . ./defs || exit 1
 
+set -e
+
 cat >>configure.in <<EOF
-AM_CONDITIONAL(COND1, true)
-AM_CONDITIONAL(COND2, true)
-AM_CONDITIONAL(COND3, true)
+AC_PROG_CC
+AM_CONDITIONAL([A], [:])
+AM_CONDITIONAL([B], [:])
+AM_CONDITIONAL([C], [:])
+AM_CONDITIONAL([D], [:])
 EOF
 
 cat > Makefile.am << 'END'
-if COND1
-  C = c
-if COND2
-    A = a
-    B = aa
-    C += cc
+if A
+if !B
+  RANLIB = anb
 else
-    A = b
-    B = bb
+  RANLIB = ab
 endif
-  A += c
-else
-  A = d
 endif
-A += e
-
-if COND3
-  A += f
-  B = cc
+if C
+  RANLIB = c
 endif
-B += dd
+if !C
+if D
+  RANLIB = ncd
+endif
+endif
+EXTRA_LIBRARIES = libfoo.a
 END
 
-$ACLOCAL || exit 1
+$ACLOCAL
 $AUTOMAKE 2>stderr && exit 1
-
-cat stderr # for debugging
-
-# We expect the following diagnostic:
-#
-# Makefile.am:19: Cannot apply `+=' because `B' is not defined in
-# Makefile.am:19: the following conditions:
-# Makefile.am:19:   COND1_FALSE COND3_FALSE
-# Makefile.am:19: Either define `B' in these conditions, or use
-# Makefile.am:19: `+=' in the same conditions as the definitions.
-#
-# It would be nice if Automake could print only COND3_FALSE and
-# COND1_FALSE (merging the last two conditions), so we'll support
-# this case in the check too.
-
-grep ':   COND1_FALSE COND3_FALSE$' stderr || exit 1
-# Make sure there is exactly one missing condition.
+cat stderr
+grep '^Makefile.am:.*:   A_FALSE C_FALSE D_FALSE$' stderr
+# Is there only one missing condition?
 test `grep ':  ' stderr | wc -l` = 1 || exit 1
-
-:

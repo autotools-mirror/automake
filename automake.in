@@ -6184,7 +6184,7 @@ sub variable_not_always_defined_in_cond ($$)
       push @res, $icond
 	if ($cond->true_when ($icond)); # (3)
     }
-  return @res;
+  return (new Automake::ConditionalSet @res)->simplify;
 }
 
 # &macro_define($VAR, $OWNER, $TYPE, $COND, $VALUE, $WHERE)
@@ -6326,13 +6326,14 @@ sub macro_define ($$$$$$)
 	  #   X += Z
 	  # should be rejected because X is not defined for all conditions
 	  # where `+=' applies.
-	  my @undef_cond = variable_not_always_defined_in_cond $var, $cond;
-	  if (@undef_cond != 0)
+	  my $undef_cond = variable_not_always_defined_in_cond $var, $cond;
+	  if (! $undef_cond->false)
 	    {
 	      err ($where,
 		   "Cannot apply `+=' because `$var' is not defined "
 		   . "in\nthe following conditions:\n  "
-		   . join ("\n  ", map { $_->string } @undef_cond)
+		   . join ("\n  ",
+			   map { $_->string } $undef_cond->conds)
 		   . "\nEither define `$var' in these conditions,"
 		   . " or use\n`+=' in the same conditions as"
 		   . " the definitions.");
@@ -8961,15 +8962,15 @@ sub require_variables ($$$@)
 	if ((exists $var_value{$var} && exists $var_value{$var}{$cond})
 	    || exists $configure_vars{$var});
 
-      my @undef_cond = variable_not_always_defined_in_cond $var, $cond;
+      my $undef_cond = variable_not_always_defined_in_cond $var, $cond;
       next VARIABLE
-	unless @undef_cond;
+	if $undef_cond->false;
 
       my $text = "$reason`$var' is undefined\n";
-      if (@undef_cond && $undef_cond[0] != TRUE)
+      if (! $undef_cond->true)
 	{
 	  $text .= ("in the following conditions:\n  "
-		    . join ("\n  ", map { $_->string } @undef_cond));
+		    . join ("\n  ", map { $_->string } $undef_cond->conds));
 	}
 
       ++$res;
