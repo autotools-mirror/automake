@@ -252,6 +252,7 @@ Frequently Asked Questions about Automake
 * distcleancheck::              Files left in build directory after distclean
 * Flag Variables Ordering::     CFLAGS vs. AM_CFLAGS vs. mumble_CFLAGS
 * renamed objects::             Why are object files sometimes renamed?
+* Per-Object Flags::            How to simulate per-object flags?
 * Multiple Outputs::            Writing rules for tools with many output files
 
 History of Automake
@@ -7399,6 +7400,7 @@ lists.
 * distcleancheck::              Files left in build directory after distclean
 * Flag Variables Ordering::     CFLAGS vs. AM_CFLAGS vs. mumble_CFLAGS
 * renamed objects::             Why are object files sometimes renamed?
+* Per-Object Flags::            How to simulate per-object flags?
 * Multiple Outputs::            Writing rules for tools with many output files
 @end menu
 
@@ -8093,6 +8095,7 @@ overrides the global @code{LDADD} variable (which is not a user
 variable), and @code{mumble_LIBADD} exists only as a per-target
 variable.  (@pxref{Program and Library Variables}.)
 
+
 @node renamed objects
 @section Why are object files sometimes renamed?
 
@@ -8135,6 +8138,76 @@ false_SOURCES = false.c version.c
 Note that the renaming of objects is also affected by the
 @code{_SHORTNAME} variable (@pxref{Program and Library Variables}).
 
+
+@node Per-Object Flags
+@section Per-Object Flags Emulation
+@cindex Per-object flags, emulated
+
+@display
+One of my source files needs to be compiled with different flags.  How
+do I do?
+@end display
+
+Automake supports per-program and per-library compilation flags (see
+@ref{Program and Library Variables} and @ref{Flag Variables
+Ordering}).  With this you can define compilation flags that apply to
+all files compiled for a target.  For instance in
+
+@example
+bin_PROGRAMS = foo
+foo_SOURCES = foo.c foo.h bar.c bar.h main.c
+foo_CFLAGS = -some -flags
+@end example
+
+@noindent
+@file{foo-foo.o}, @file{foo-bar.o}, and @file{foo-main.o} will all be
+compiled with @code{-some -flags}.  (If you wonder about the names of
+these object files, see @ref{renamed objects}.)  Note that
+@code{foo_CFLAGS} gives the flags to use when compiling all the C
+sources of the @emph{program} @code{foo}, it has nothing to do with
+@file{foo.c} or @file{foo-foo.o} specifically.
+
+What if @file{foo.c} needs to be compiled into @file{foo.o} using some
+specific flags, that none of the other files require?  Obviously
+per-program flags are not directly applicable here.  Something like
+per-object flags are expected, i.e., flags that would be used only
+when creating @file{foo-foo.o}.  Automake does not support that,
+however this is easy to simulate using a library that contains only
+that object, and compiling this library with per-library flags.
+
+@example
+bin_PROGRAMS = foo
+foo_SOURCES = bar.c bar.h main.c
+foo_CFLAGS = -some -flags
+foo_LDADD = libfoo.a
+noinst_LIBRARIES = libfoo.a
+libfoo_a_SOURCES = foo.c foo.h
+libfoo_a_CFLAGS = -some -other -flags
+@end example
+
+Here @file{foo-bar.o} and @file{foo-main.o} will all be
+compiled with @code{-some -flags}, while @file{libfoo_a-foo.o} will
+be compiled using @code{-some -other -flags}.  Eventually, all
+three objects will be linked to form @file{foo}.
+
+This trick can also be achieved using Libtool convenience libraries,
+i.e., @code{noinst_LTLIBRARIES = libfoo.la} (@pxref{Libtool
+Convenience Libraries}).
+
+Another tempting idea to implement per-object flags is to override the
+compile rules @command{automake} would output for these files.
+Automake will not define a rule for a target you have defined, so you
+could think about defining the @code{foo-foo.o: foo.c} rule yourself.
+We recommend against this, because this is error prone.  For instance
+if you add such a rule to the first example, it will break the day you
+decide to remove @code{foo_CFLAGS} (because @file{foo.c} will then be
+compiled as @file{foo.o} instead of @file{foo-foo.o}, see @ref{renamed
+objects}).  Also in order to support dependency tracking, the two
+@file{.o}/@file{.obj} extensions, and all the other flags variables
+involved in a compilation, you will end up modifying a copy of the
+rule previously output by @command{automake} for this file.  If a new
+release of Automake generates a different rule, your copy will need to
+be updated by hand.
 
 @node Multiple Outputs
 @section Handling Tools that Produce Many Outputs
@@ -9574,5 +9647,5 @@ The number of test cases in the test suite.
 @c  LocalWords:  syscalls perlhist acl pm multitable headitem fdl appendixsec
 @c  LocalWords:  LTALLOCA MALLOC malloc memcmp strdup alloca libcompat xyz DFOO
 @c  LocalWords:  unprefixed buildable preprocessed DBAZ DDATADIR WARNINGCFLAGS
-@c  LocalWords:  LIBFOOCFLAGS LIBFOOLDFLAGS ftable testSubDir
+@c  LocalWords:  LIBFOOCFLAGS LIBFOOLDFLAGS ftable testSubDir obj
 @c  LocalWords:  barexec Pinard's
