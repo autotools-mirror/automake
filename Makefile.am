@@ -8,14 +8,14 @@ SUBDIRS = tests m4
 bin_SCRIPTS = automake aclocal
 info_TEXINFOS = automake.texi
 
-pkgdata_DATA = clean-kr.am clean.am clean-hdr.am compile-kr.am comp-vars.am \
-compile.am data.am dejagnu.am depend.am depend2.am dist-vars.am	\
-footer.am header.am header-vars.am kr-extra.am libs.am library.am \
-libtool.am ltlib.am ltlibrary.am mans-vars.am program.am progs.am \
-remake-hdr.am remake.am scripts.am subdirs.am tags.am tags-clean.am \
-texi-vers.am texinfos.am libs-clean.am ltlib-clean.am progs-clean.am \
-data-clean.am COPYING INSTALL texinfo.tex ansi2knr.c ansi2knr.1	\
-lisp.am lisp-clean.am
+pkgdata_DATA = clean-kr.am clean.am clean-hdr.am compile-kr.am \
+comp-vars.am compile.am data.am dejagnu.am depend.am depend2.am	\
+dist-vars.am footer.am header.am header-vars.am kr-extra.am libs.am \
+library.am libtool.am ltlib.am ltlibrary.am mans-vars.am program.am \
+progs.am remake-hdr.am remake.am scripts.am subdirs.am tags.am \
+tags-clean.am texi-vers.am texinfos.am libs-clean.am ltlib-clean.am \
+progs-clean.am data-clean.am COPYING INSTALL texinfo.tex ansi2knr.c \
+ansi2knr.1 lisp.am lisp-clean.am
 
 ## These must all be executable when installed.
 pkgdata_SCRIPTS = config.guess config.sub install-sh interlock \
