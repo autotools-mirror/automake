@@ -1062,6 +1062,26 @@ sub backname ($)
 
 ################################################################
 
+# Pattern that matches all know input extensions (i.e. extensions used
+# by the languages supported by Automake).  Using this pattern
+# (instead of `\..*$') to match extensions allows Automake to support
+# dot-less extensions.
+my $KNOWN_EXTENSIONS_PATTERN = "";
+my @known_extensions_list = ();
+
+# accept_extensions (@EXTS)
+# -------------------------
+# Update $KNOWN_EXTENSIONS_PATTERN to recognize the extensions
+# listed @EXTS.  Extensions should contain a dot if needed.
+sub accept_extensions (@)
+{
+    push @known_extensions_list, @_;
+    $KNOWN_EXTENSIONS_PATTERN =
+	'(?:' . join ('|', map (quotemeta, @known_extensions_list)) . ')';
+}
+
+################################################################
+
 # Parse command line.
 sub parse_arguments ()
 {
@@ -1724,7 +1744,7 @@ sub handle_single_transform_list ($$$$@)
         # is in effect.
 
         # Split file name into base and extension.
-        next if ! /^(?:(.*)\/)?([^\/]*)(\..*?)$/;
+        next if ! /^(?:(.*)\/)?([^\/]*)($KNOWN_EXTENSIONS_PATTERN)$/;
         my $full = $_;
         my $directory = $1 || '';
         my $base = $2;
@@ -5128,7 +5148,7 @@ sub lang_yacc_target_hook
 	|| (variable_defined ('YFLAGS')
 	    && &variable_value ('YFLAGS') =~ /$DASH_D_PATTERN/o))
     {
-	(my $output_base = $output) =~ s/\..*$//;
+	(my $output_base = $output) =~ s/$KNOWN_EXTENSIONS_PATTERN$//;
 	my $header = $output_base . '.h';
 
 	# Found a `-d' that applies to the compilation of this file.
@@ -5311,6 +5331,9 @@ sub register_language (%)
     # Fill indexes.
     grep ($extension_map{$_} = $lang->name, @{$lang->extensions});
     $languages{$lang->name} = $lang;
+
+    # Update the pattern of known extensions.
+    accept_extensions (@{$lang->extensions});
 }
 
 # derive_suffix ($EXT, $OBJ)
@@ -6314,7 +6337,7 @@ sub variable_value_as_list
 # @VALUE
 # &variable_value_as_list_recursive_worker ($VAR, $COND, $PARENT)
 # ---------------------------------------------------------------
-# Return contents of variable as list, split as whitespace.  This will
+# Return contents of VAR as a list, split on whitespace.  This will
 # recursively follow $(...) and ${...} inclusions.  It preserves @...@
 # substitutions.  If COND is 'all', then all values under all
 # conditions should be returned; if COND is a particular condition
