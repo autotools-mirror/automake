@@ -348,6 +348,7 @@ recurs2.test \
 remake.test \
 remake2.test \
 remake3.test \
+remake4.test \
 req.test \
 reqd.test \
 reqd2.test \
