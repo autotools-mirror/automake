@@ -20,7 +20,7 @@ AC_DEFUN([AM_MISSING_INSTALL_SH],
 if test -z "$install_sh"; then
    for install_sh in "$ac_aux_dir/install-sh" \
                      "$ac_aux_dir/install.sh" \
-                     "${am_missing_run}${ac_auxdir}/install-sh";
+                     "${am_missing_run}${ac_aux_dir}/install-sh";
    do
      test -f "$install_sh" && break
    done
