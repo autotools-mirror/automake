@@ -1,7 +1,56 @@
-New in 1.8.0a:
+Bug fixed in 1.8.0a:
 
-* Fix Config.pm import error with old Perl versions (at least 5.005_03).
-  One symptom is that aclocal could not find its macro directory.
+* Bugs introduced by 1.8:
+
+  - Fix Config.pm import error with old Perl versions (at least
+    5.005_03).  One symptom is that aclocal could not find its macro
+    directory.
+
+  - Automake 1.8 used `mkdir -m 0755 -p --' to ensure that directories
+    created by `make install' are always world readable, even if the
+    installer happens to have an overly restrictive umask (e.g. 077).
+    This was a mistake and has been reverted.  There are at least two
+    reasons why we must not use `-m 0755':
+      - it causes special bits like SGID to be ignored,
+      - it may be too restrictive (some setups expect 775 directories).
+
+  - Honor definitions in m4_included files.  aclocal 1.8 had been
+    updated to check m4_included files for new requirements, but
+    forgot that these m4_included files can also provide new
+    definitions.
+
+    This principally affected packages that were m4_including files in
+    a way that aclocal would not have to duplicate entire M4 files
+    into aclocal.m4.  Since aclocal 1.8.x will precisely output
+    m4_includes for local M4 files, we recommend that you clean up
+    your setup, removing all manual m4_includes and letting aclocal
+    output them.
+
+  - Output detailed menus in the Info version if the Automake manual,
+    so that Emacs can locate the indexes.
+
+* Long-standing bugs:
+
+  - Fix an unexpected diagnostic occurring when users attempt
+    to override some internal variables that Automake appends to.
+
+  - aclocal now scans configure.ac for macro definitions (PR/319).
+
+  - Fix a portability issue with OSF1/Tru64 Make.  If a directory
+    distributes files which are outside itself (this usually occurs
+    when using AC_CONFIG_AUX_DIR([../dir]) to use auxiliary files
+    from a parent package), then `make distcheck' fails due to an
+    optimization performed by OSF1/Tru64 Make in its VPATH handling.
+    (tests/subpkg2.test failure)
+
+* Spurious failures in test suite:
+
+  - tests/libtool5.test, tests/ltcond.test, tests/ltcond2.test,
+    tests/ltconv.test: fix failures with CVS Libtool.
+  - tests/aclocal6.test: fix failure if autom4te.cache is disabled.
+  - tests/txinfo24.test, tests/txinfo25.test, tests/txinfo28.test:
+    fix failures with old Texinfo versions.
+
 
 New in 1.8:
 
