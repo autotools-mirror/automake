@@ -38,6 +38,7 @@ footer.am \
 header-vars.am \
 header.am \
 install.am \
+inst-vars.am \
 java.am \
 lang-compile.am \
 lex.am \
