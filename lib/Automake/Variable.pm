@@ -180,7 +180,7 @@ my %_ac_macro_for_var =
    );
 
 # The name of the configure.ac file.
-my $configure_ac = require_configure_ac;
+my $configure_ac = find_configure_ac;
 
 # Variables that can be overriden without complaint from -Woverride
 my %_silent_variable_override =

@@ -221,6 +221,7 @@ gnits.test \
 gnits2.test \
 gnits3.test \
 header.test \
+help.test \
 implicit.test \
 include.test \
 include2.test \
