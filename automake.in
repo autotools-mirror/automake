@@ -1898,39 +1898,21 @@ sub handle_source_transform
 		unless $prefix =~ /EXTRA_/;
 	    push (@dist_sources, '$(' . $prefix . $one_file . "_SOURCES)")
 		unless $prefix =~ /^nodist_/;
-	    my @conds = &variable_conditions ($var);
-	    if (! @conds)
-	    {
-		@files = &variable_value_as_list ($var, '');
-	    }
-	    else
-	    {
-		foreach my $cond (@conds)
-		{
-		    @files = &variable_value_as_list ($var, $cond);
-		    ($temp, @result) =
-			&handle_single_transform_list ($var, $one_file, $obj,
-						       @files);
-		    $linker = $temp if $linker eq '';
+	    variable_dump ($var);
+	    foreach my $cond (keys %{$conditional{$var}})
+	      {
+		@files = &variable_value_as_list ($var, $cond);
+		($temp, @result) =
+		  &handle_single_transform_list ($var, $one_file, $obj,
+						 @files);
+		$linker = $temp if $linker eq '';
 
-		    # Define _OBJECTS conditionally.
-		    &define_pretty_variable ($xpfx . $one_file . '_OBJECTS',
-					     $cond, @result)
-			unless $prefix =~ /EXTRA_/;
-		}
-
-		next;
-	    }
+		# Define _OBJECTS conditionally.
+		&define_pretty_variable ($xpfx . $one_file . '_OBJECTS',
+					 $cond, @result)
+		  unless $prefix =~ /EXTRA_/;
+	      }
 	}
-
-	# Avoid defining needless variables.
-	next if (scalar @files == 0);
-
-	($temp, @result) = &handle_single_transform_list ($var, $one_file,
-							  $obj, @files);
-	$linker = $temp if $linker eq '';
-	&define_pretty_variable ($xpfx . $one_file . "_OBJECTS", '', @result)
-	    unless $prefix =~ /EXTRA_/;
     }
 
     my @keys = sort keys %used_pfx;
@@ -6618,28 +6600,22 @@ sub read_main_am_file
 	  if $done{$var};
 	$done{$var} = 1;
 
+	variable_dump ($var);
 	# Don't process Automake variables.
 	next
 	  if $var_is_am{$var};
 
 	$output_vars .= $am_vars{$var};
-	if ($conditional{$var})
-	{
-	    foreach my $vcond (sort by_condition keys %{$conditional{$var}})
-	    {
-	        my $val = ${$conditional{$var}}{$vcond};
-	        my $output_var = ($var . ' '
-				  . $def_type{$var} . "= "
-				  . $val);
-	        $output_var =~ s/^/&make_condition ($vcond)/meg;
-		$output_vars .= $output_var . "\n";
-	    }
-	}
-	else
-	{
-	    $output_vars .= ($var . ' ' . $def_type{$var} . '= '
-			     . variable_value ($var) . "\n");
-	}
+
+	foreach my $vcond (sort by_condition keys %{$conditional{$var}})
+	  {
+	    my $val = $conditional{$var}{$vcond};
+	    my $output_var = ($var . ' '
+			      . $def_type{$var} . "= "
+			      . $val);
+	    $output_var =~ s/^/&make_condition ($vcond)/meg;
+	    $output_vars .= $output_var . "\n";
+	  }
     }
 
     # Generate copyright header for generated Makefile.in.
