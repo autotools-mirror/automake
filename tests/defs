@@ -16,12 +16,28 @@ test -z "$VERBOSE" && {
    exec > /dev/null 2>&1
 }
 
+# User can override various tools used.
+test -z "$PERL" && PERL=perl
+test -z "$MAKE" && MAKE=make
+test -z "$AUTOCONF" && AUTOCONF=autoconf
+test -z "$AUTOHEADER" && AUTOHEADER=autoheader
+
 if test -n "$required"
 then
   for tool in $required
   do
-    echo "$me: running $tool --version"
-    ( $tool --version ) || exit 77
+    # Check that each required tool is present.
+    case $tool in
+      GNUmake)
+	echo "$me: running $MAKE --version"
+	( $MAKE --version ) || exit 77
+	;;
+      # Generic case: the tool must support --version.
+      *)
+	echo "$me: running $tool --version"
+	( $tool --version ) || exit 77
+	;;
+    esac
   done
 fi
 
@@ -60,12 +76,6 @@ AC_PROG_MAKE_SET
 AC_CONFIG_FILES([Makefile])
 END
 
-# User can set PERL to change the perl interpreter used.
-test -z "$PERL" && PERL=perl
-
-# User can set MAKE to choose which make to use.  Must use GNU make.
-test -z "$MAKE" && MAKE=make
-
 # Unset some MAKE... variables that may cause $MAKE to act like a
 # recursively invoked sub-make.  Any $MAKE invocation in a test is
 # conceptually an independent invocation, not part of the main
@@ -74,17 +84,6 @@ unset MFLAGS
 unset MAKEFLAGS
 unset MAKELEVEL
 unset DESTDIR
-
-if ($MAKE --version) > /dev/null 2>&1; then
-   needs_gnu_make=:
-else
-   needs_gnu_make='exit 77'
-fi
-
-# User can set which tools from Autoconf to use.
-test -z "$AUTOCONF" && AUTOCONF=autoconf
-test -z "$AUTOHEADER" && AUTOHEADER=autoheader
-
 
 echo "=== Running test $0"
 
