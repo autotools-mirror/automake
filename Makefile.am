@@ -22,20 +22,14 @@
 
 ## We need `.' in SUBDIRS because we want `check' to build `.' before
 ## tests.
-SUBDIRS = . m4 lib tests
+SUBDIRS = . doc m4 lib tests
 
 bin_SCRIPTS = automake aclocal
-info_TEXINFOS = automake.texi
 
 CLEANFILES = $(bin_SCRIPTS)
 AUTOMAKESOURCES = automake.in aclocal.in
 
 TAGS_FILES = $(AUTOMAKESOURCES)
-
-# The following requires a fixed version of the Emacs 19.30 etags.
-ETAGS_ARGS = --lang=none \
- --regex='/^@node[ \t]+\([^,]+\)/\1/' $(srcdir)/automake.texi
-TAGS_DEPENDENCIES = automake.texi
 
 EXTRA_DIST = ChangeLog.96 ChangeLog.98 ChangeLog.00 ChangeLog.01 ChangeLog.02 \
   $(AUTOMAKESOURCES)
