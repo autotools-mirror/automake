@@ -426,6 +426,9 @@ sub add_file ($)
     }
 }
 
+# Point to the documentation for underquoted AC_DEFUN only once.
+my $underquoted_manual_once = 0;
+
 # Scan a single M4 file.  Return contents.
 sub scan_file ($)
 {
@@ -444,6 +447,15 @@ sub scan_file ($)
 
       if (/$ac_defun_rx/)
 	{
+	  if (! defined $1)
+	    {
+	      print STDERR "$file:$.: underquoted definition of $2\n";
+	      print STDERR "$file:$.: run info '(automake)Extending aclocal'\n"
+		. "or see http://sources.redhat.com/automake/"
+		. "automake.html#Extending%20aclocal\n"
+		unless $underquoted_manual_once;
+	      $underquoted_manual_once = 1;
+	    }
 	  if (! defined $map{$1 || $2})
 	    {
 	      print STDERR "aclocal: found macro $1 in $file: $.\n"
