@@ -281,7 +281,11 @@ sub generate_makefile
     &handle_installdirs;
     &handle_clean;
 
-    if (! open (GM_FILE, "> " $output_directory . '/' . $makefile . ".in"))
+    if (! -d ($output_directory . '/' . $relative_dir))
+    {
+	&mkdir ($output_directory . '/' . $relative_dir);
+    }
+    if (! open (GM_FILE, "> " . $output_directory . '/' . $makefile . ".in"))
     {
 	print STDERR "automake: cannot open ", $makefile, ".in: ", $!, "\n";
 	$exit_status = 1;
@@ -451,6 +455,13 @@ sub handle_libraries
     local ($onelib, $munge);
     foreach $onelib (@liblist)
     {
+	if (! defined $contents{$onelib . '_LIBADD'})
+	{
+	    # Generate support for conditional objection inclusion in
+	    # libraries.
+	    $output_vars .= $onelib . "_LIBADD =\n";
+	}
+
 	($munge = $onefile) =~ s/@LIBRARY@/$onelib/g;
 	$output_rules .= $munge;
     }
@@ -1211,6 +1222,13 @@ sub dirname
     }
 
     return $sub;
+}
+
+# Make a directory.
+sub mkdir
+{
+    local ($dirname) = @_;
+    system ("mkdir", $dirname);
 }
 
 ################################################################
