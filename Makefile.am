@@ -3,22 +3,16 @@ DISTCLEANFILES = automake
 
 TEXINFOS = automake.texi version.texi
 
-amdatadir = $(datadir)/automake
-am_DATA = clean-kr.am clean.am compile-kr.am compile-vars.am compile.am \
-depend.am dist-subd-top.am dist-subd-vars.am dist-subd.am dist-vars.am \
-dist.am footer.am header-vars.am header.am libprograms.am libraries-vars.am \
-libraries.am library.am mans-vars.am mans.am program.am programs.am \
-remake-hdr.am remake-subd.am remake.am scripts.am subdirs.am tags.am \
-tags-subd.am texinfos-vars.am texinfos.am hack-make.sed nl-remove.sed
+PACKAGEDATA = clean-kr.am clean.am compile-kr.am compile-vars.am \
+compile.am data.am depend.am dist-subd-top.am dist-subd-vars.am \
+dist-subd.am dist-vars.am dist.am footer.am header-vars.am header.am \
+libprograms.am libraries-vars.am libraries.am library.am mans-vars.am \
+mans.am program.am programs.am remake-hdr.am remake-subd.am remake.am \
+scripts.am subdirs.am tags.am tags-subd.am texinfos-vars.am texinfos.am \
+data.sed hack-make.sed nl-remove.sed packagedata.sed
 
 DIST_OTHER = automake.in stamp-vti $(am_DATA)
 DIST_SUBDIRS = RCS samples
-
-install:: $(am_DATA)
-	$(srcdir)/mkinstalldirs $(amdatadir)
-	for i in $(am_DATA); do			\
-	  $(INSTALL_DATA) $(srcdir)/$$i $(amdatadir)/$$i; \
-	done
 
 automake: automake.in
 	CONFIG_FILES=$@ CONFIG_HEADERS= ./config.status
