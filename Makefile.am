@@ -8,8 +8,6 @@ SUBDIRS = tests m4
 
 bin_SCRIPTS = automake aclocal
 info_TEXINFOS = automake.texi
-# SUBDIRS = intl po
-# CONFIG_HEADER = config.h
 
 pkgdata_DATA = clean-kr.am clean.am compile-kr.am compile-vars.am \
 compile.am data.am dejagnu.am depend.am depend2.am dist-vars.am footer.am \
@@ -23,7 +21,8 @@ ansi2knr.1 aclocal.m4 lisp.am lisp-clean.am
 ## These must all be executable when installed.
 pkgdata_SCRIPTS = config.guess config.sub install-sh interlock mdate-sh \
 mkinstalldirs elisp-comp ylwrap acinstall
-EXTRA_DIST = acinstall
+
+EXTRA_DIST = acinstall $(pkgdata_DATA)
 
 # The following requires a fixed version of the Emacs 19.30 etags.
 ETAGS_ARGS = automake.in aclocal.in --lang=none \
@@ -37,6 +36,12 @@ installcheck-local:
 	for file in $(pkgdata_SCRIPTS); do \
 	  $(PERL) -e "exit ! -x '$(pkgdatadir)/$$file';" || exit 1; \
 	done
+
+################################################################
+##
+## Everything past here is useful to the maintainer, but probably not
+## to anybody else
+##
 
 # Some simple checks, and then ordinary check.  These are only really
 # guaranteed to work on my machine.
