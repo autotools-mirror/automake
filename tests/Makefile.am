@@ -216,6 +216,7 @@ gcj5.test \
 getopt.test \
 gettext.test \
 gettext2.test \
+gnumake.test \
 gnuwarn.test \
 gnuwarn2.test \
 gnits.test \
