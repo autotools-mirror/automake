@@ -238,10 +238,6 @@ supported.  This operator appends its right hand argument to the macro
 specified on the left.  Automake will translate the operator into
 an ordinary @samp{=} operator; @samp{+=} will thus work with any make program.
 
-Note that it is only valid to append to a macro in the same conditional
-context as the macro was originally defined. @xref{Conditional Append}, for
-more information.
-
 Automake tries to group comments with adjoining targets and macro
 definitions in an intelligent way.
 @c FIXME: What does this imply practically?
@@ -2015,17 +2011,17 @@ When using conditionals like this you don't need to use the
 @samp{EXTRA_} variable, because Automake will examine the contents of
 each variable to construct the complete list of source files.
 
-If your program uses a lot of files, you will probably prefer to use an
-intermediate variable to hold conditional sources.
+If your program uses a lot of files, you will probably prefer a
+conditional @code{+=}.
 
 @example
 bin_PROGRAMS = hello
+hello_SOURCES = hello-common.c
 if LINUX
-hello_cond = hello-linux.c
+hello_cond += hello-linux.c
 else
-hello_cond = hello-generic.c
+hello_cond += hello-generic.c
 endif
-hello_SOURCES = hello-common.c $(hello_cond)
 @end example
 
 @node Conditional Programs,  , Conditional Sources, A Program
@@ -4459,30 +4455,6 @@ endif !DEBUG
 
 @noindent
 Unbalanced conditions are errors.
-
-@anchor{Conditional Append}
-Conditionals do not interact very smoothly with the append operator.
-In particular, an append must happen in the same conditional context as
-the original assignment.  This means that the following will not work:
-
-@example
-DBG = foo
-if DEBUG
-DBG += bar
-endif DEBUG
-@end example
-
-The behaviour which is probably desired in this situation can be obtained
-using a temporary variable:
-
-@example
-if DEBUG
-TMP_DBG = bar
-endif DEBUG
-DBG = foo $(TMP_DBG)
-@end example
-
-This restriction may be lifted in future versions of automake.
 
 Note that conditionals in Automake are not the same as conditionals in
 GNU Make.  Automake conditionals are checked at configure time by the

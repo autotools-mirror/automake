@@ -608,6 +608,11 @@ my %require_file_found = ();
 # The key is the variable _content_, and the value is the variable name.
 my %subobjvar = ();
 
+# This hash records helper variables used to implement '+=' in conditionals.
+# Keys have the form "VAR:CONDITIONS".  The value associated to a key is
+# the named of the helper variable used to append to VAR in CONDITIONS.
+my %appendvar = ();
+
 ## --------------------------------- ##
 ## Forward subroutine declarations.  ##
 ## --------------------------------- ##
@@ -746,6 +751,8 @@ sub initialize_per_input ()
     %require_file_found = ();
 
     %subobjvar = ();
+
+    %appendvar = ();
 }
 
 
@@ -5590,6 +5597,18 @@ sub conditional_ambiguous_p ($$)
     my ($var, $cond) = @_;
     foreach my $vcond (keys %{$var_value{$var}})
     {
+       # Note that these rules doesn't consider the following
+       # example as ambiguous.
+       #
+       #   if COND1
+       #     FOO = foo
+       #   endif
+       #   if COND2
+       #     FOO = bar
+       #   endif
+       #
+       # It's up to the user to not define COND1 and COND2
+       # simultaneously.
        my $message;
        if ($vcond eq $cond)
        {
@@ -5649,7 +5668,9 @@ sub macro_define ($$$$$$)
   $value =~ s/\\$//mg
     if $type eq '+' && $var_is_am;
 
-  # Differentiate the first assignment (including with `+=').
+  # Differentiate assignment types.
+
+  # 1. append (+=) to a variable defined for current condition
   if ($type eq '+' && defined $var_value{$var}{$cond})
     {
       if (chomp $var_value{$var}{$cond})
@@ -5664,6 +5685,63 @@ sub macro_define ($$$$$$)
 	}
        $var_value{$var}{$cond} .= $value;
     }
+  # 2. append (+=) to a variable defined for *another* condition
+  elsif ($type eq '+' && keys %{$var_value{$var}})
+    {
+      # * Generally, $cond is not TRUE.  For instance:
+      #     FOO = foo
+      #     if COND
+      #       FOO += bar
+      #     endif
+      #   In this case, we declare an helper variable conditionally,
+      #   and append it to FOO:
+      #     FOO = foo $(am__append_1)
+      #     @COND_TRUE@am__append_1 = bar
+      #   Of course if FOO is defined under several conditions, we add
+      #   $(am__append_1) to each definitions.
+      #
+      # * If $cond is TRUE, we don't need the helper variable.  E.g., in
+      #     if COND1
+      #       FOO = foo1
+      #     else
+      #       FOO = foo2
+      #     endif
+      #     FOO += bar
+      #   we can add bar directly to all definition of FOO, and output
+      #     @COND_TRUE@FOO = foo1 bar
+      #     @COND_FALSE@FOO = foo2 bar
+
+      # Do we need an helper variable?
+      if ($cond ne 'TRUE')
+        {
+	    # Does the helper variable already exists?
+	    my $key = "$var:$cond";
+	    if (exists $appendvar{$key})
+	      {
+		# Yes, let's simply append to it.
+		$var = $appendvar{$key};
+		$var_is_am = 1;
+	      }
+	    else
+	      {
+		# No, create it.
+		my $num = 1 + keys (%appendvar);
+		my $hvar = "am__append_$num";
+		$appendvar{$key} = $hvar;
+		&macro_define ($hvar, 1, '+', $cond, $value, $where);
+		push @var_list, $hvar;
+		# Now HVAR is to be added to VAR.
+		$value = "\$($hvar)";
+	      }
+	}
+
+      # Add VALUE to all definitions of VAR.
+      foreach my $vcond (keys %{$var_value{$var}})
+        {
+	    &macro_define ($var, $var_is_am, '+', $vcond, $value, $where);
+	}
+    }
+  # 3. first assignment (=, :=, or +=)
   else
     {
       # The first assignment to a macro sets its location.  Ideally I
