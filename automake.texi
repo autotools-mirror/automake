@@ -2272,12 +2272,16 @@ endif
 
 @node Conditional Programs,  , Conditional Sources, A Program
 @subsection Conditional compilation of programs
+@cindex Conditional programs
+@cindex Programs, conditional
 
-Sometimes it is useful to determine the programs that are to be built at
-configure time.  For instance, GNU @code{cpio} only builds @code{mt} and
-@code{rmt} under special circumstances.
+Sometimes it is useful to determine the programs that are to be built
+at configure time.  For instance, GNU @code{cpio} only builds
+@code{mt} and @code{rmt} under special circumstances.  The means to
+achieve conditional compilation of programs are the same you can use
+to compile source files conditionally: substitutions or conditionals.
 
-@cindex EXTRA_PROGRAMS, defined
+@subsubsection Conditional programs using @code{configure} substitutions
 
 In this case, you must notify Automake of all the programs that can
 possibly be built, but at the same time cause the generated
@@ -2286,9 +2290,37 @@ This is done by having @code{configure} substitute values into each
 @samp{_PROGRAMS} definition, while listing all optionally built programs
 in @code{EXTRA_PROGRAMS}.
 @vindex EXTRA_PROGRAMS
+@cindex EXTRA_PROGRAMS, defined
 
-Of course you can use Automake conditionals to determine the programs to
-be built.
+@example
+bin_PROGRAMS = cpio pax $(MT)
+libexec_PROGRAMS = $(RMT)
+EXTRA_PROGRAMS = mt rmt
+@end example
+
+As explained in @ref{EXEEXT}, Automake will rewrite
+@code{bin_PROGRAMS}, @code{libexec_PROGRAMS}, and
+@code{EXTRA_PROGRAMS}, appending @code{$(EXEEXT)} to each binary.
+Obviously it cannot rewrite values obtained at run-time through
+@code{configure} substitutions, therefore you should take care of
+appending @code{$(EXEEXT)} yourself, as in @code{AC_SUBST([MT],
+['mt$@{EXEEXT@}'])}.
+
+@subsubsection Conditional programs using Automake conditionals
+
+You can also use Automake conditionals (@pxref{Conditionals}) to
+select programs to be built.  In this case you don't have to worry
+about @code{$(EXEEXT)} or @code{EXTRA_PROGRAMS}.
+
+@example
+bin_PROGRAMS = cpio pax
+if WANT_MT
+  bin_PROGRAMS += mt
+endif
+if WANT_RMT
+  libexec_PROGRAMS = rmt
+endif
+@end example
 
 
 @node A Library, A Shared Library, A Program, Programs
