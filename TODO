@@ -9,9 +9,6 @@ have 'make check' print tests which are skipped
 we need a document describing automake from the end user's point of view
 eg describe INSTALL_HEADER there, among other things
 
-* dist-all
-Don't run distdir each time.
-
 * maintainer-clean
 
 Akim:
@@ -37,34 +34,26 @@ Tom:
 > subdir.
 
 *
-    Alexandre Oliva:
-    > Hmm...  Interesting.  It must have been a side effect of the enabling
-    > of forced `relink' on GNU/Linux/x86.  Anyway, on platforms that
-    > actually require relinking, this problem remains, and I see no way to
-    > overcome it other than arranging for automake to install libraries
-    > before executables, as you suggest.  This shouldn't be a big problem,
-    > anyway.
-    >
-    > A bigger problem could show up if two libraries in the same directory,
-    > one dependent on the other, are installed concurrently.  If relinking
-    > is needed for the dependent library, we have a problem.  It appears to
-    > me that user will have to live without `make -j install', in this
-    > case.
+Alexandre Oliva:
+> Hmm...  Interesting.  It must have been a side effect of the enabling
+> of forced `relink' on GNU/Linux/x86.  Anyway, on platforms that
+> actually require relinking, this problem remains, and I see no way to
+> overcome it other than arranging for automake to install libraries
+> before executables, as you suggest.  This shouldn't be a big problem,
+> anyway.
+>
+> A bigger problem could show up if two libraries in the same directory,
+> one dependent on the other, are installed concurrently.  If relinking
+> is needed for the dependent library, we have a problem.  It appears to
+> me that user will have to live without `make -j install', in this
+> case.
 
-    Alex Hornby
-    > Here's an Automake patch and changelog entry allow make -j install on
-    > such degenerate systems (and Linux with buggy libtool <g>)
-    >
-    > If you install to locations other that bin_ and lib_ then a larger fix
-    > is necessary, but this should fix the 90% case.
-
-* in depend2.am, in specialization case, what if @SOURCE@ is found
-  in srcdir?  We can't depend on $<!  We must search explicitly.
-  this is a very serious problem!
-  one solution would be to make built-source handling smarter and
-  a bit more strict.  For instance require that built sources
-  have an associated target.  In this case we must also handle suffix
-  rules and the like.
+Alex Hornby
+> Here's an Automake patch and changelog entry allow make -j install on
+> such degenerate systems (and Linux with buggy libtool <g>)
+>
+> If you install to locations other that bin_ and lib_ then a larger fix
+> is necessary, but this should fix the 90% case.
 
 * Document why putting @FOO@ in _SOURCES doesn't work.
   This must be done for 1.5
@@ -96,7 +85,7 @@ Tom:
 
 * support prog_LIBS as override for LIBS
 
-* Scan configure.in using the same trick that autoheader uses.
+* Scan configure.in using traces as autoheader does.
   This will be much more reliable.
 
 * Test subdir-objects option with yacc, lex, ansi2knr
@@ -108,9 +97,10 @@ Tom:
   try to find a losing compiler and see if it really works.
   (actually: hack config.cache and do it)
 
-* We're using `$<' in explicit rules when using per-exe flags
-  per-exe flags don't work for CPPFLAGS/YFLAGS/LFLAGS.  Fix.
-  LIBOBJS shouldn't be used when there are per-exe flags (?)
+* per-exe flags
+** We're using `$<' in explicit rules when using per-exe flags
+** per-exe flags don't work for CPPFLAGS/YFLAGS/LFLAGS.  Fix.
+** LIBOBJS shouldn't be used when there are per-exe flags (?)
 
 * Need a way to pass flags to makeinfo
   esp --no-split
@@ -154,16 +144,103 @@ Tom:
   when given multiple headers.  Write a test.
 
 * Currently don't correctly handle multiple inputs to a config header.
+  [ this should no matter in the future as acconfig.h and so on are
+    obsoleted by the AH series of macros.]
 
 * header stamp files still in wrong dirs.
   stamp-h.in must be in dir with h.in file
   stamp-h must be in dir with output file
 
+* conditionals and macros
+  Our current scheme cause combinatoric explosion.
+
+  In fact, to be honest, I no longer understand very well why we perform
+  such a closure.  I mean, as is, Automake transforms (this is
+  cond3.test)
+
+    | bin_PROGRAMS = targ
+    |
+    | if ONE
+    | SONE = one.c
+    | else
+    | SONE =
+    | endif
+    |
+    | if TWO
+    | STWO = two.c
+    | else
+    | STWO =
+    | endif
+    |
+    | if THREE
+    | STHREE = three.c
+    | else
+    | STHREE =
+    | endif
+    |
+    | targ_SOURCES = $(SONE) $(STWO) $(STHREE)
+
+  into
+
+    | @ONE_FALSE@@THREE_FALSE@@TWO_TRUE@am_targ_OBJECTS = two.$(OBJEXT)
+    | @ONE_FALSE@@THREE_FALSE@@TWO_FALSE@am_targ_OBJECTS =
+    | @ONE_FALSE@@THREE_TRUE@@TWO_TRUE@am_targ_OBJECTS = two.$(OBJEXT) \
+    | @ONE_FALSE@@THREE_TRUE@@TWO_TRUE@ three.$(OBJEXT)
+    | @ONE_FALSE@@THREE_TRUE@@TWO_FALSE@am_targ_OBJECTS = three.$(OBJEXT)
+    | @ONE_TRUE@@THREE_FALSE@@TWO_TRUE@am_targ_OBJECTS = one.$(OBJEXT) \
+    | @ONE_TRUE@@THREE_FALSE@@TWO_TRUE@ two.$(OBJEXT)
+    | @ONE_TRUE@@THREE_FALSE@@TWO_FALSE@am_targ_OBJECTS = one.$(OBJEXT)
+    | @ONE_TRUE@@THREE_TRUE@@TWO_TRUE@am_targ_OBJECTS = one.$(OBJEXT) \
+    | @ONE_TRUE@@THREE_TRUE@@TWO_TRUE@ two.$(OBJEXT) three.$(OBJEXT)
+    | @ONE_TRUE@@THREE_TRUE@@TWO_FALSE@am_targ_OBJECTS = one.$(OBJEXT) \
+    | @ONE_TRUE@@THREE_TRUE@@TWO_FALSE@ three.$(OBJEXT)
+
+  why don't we just output
+
+    | @ONE_TRUE@am_SONE_OBJECTS = one.$(OBJEXT)
+    | @ONE_FALSE@am_SONE_OBJECTS =
+    |
+    | @TWO_TRUE@am_STWO_OBJECTS = two.$(OBJEXT)
+    | @TWO_FALSE@am_STWO_OBJECTS =
+    |
+    | @THREE_TRUE@am_STHREE_OBJECTS = three.$(OBJEXT)
+    | @THREE_FALSE@am_STHREE_OBJECTS =
+    |
+    | am_targ_OBJECTS = $(am_SONE_OBJECTS) $(am_STWO_OBJECTS) $(am_STHREE_OBJECTS)
+
+  which means also, why do we look for the closure of PROGRAMS, instead
+  of just adding $(EXEEXT) to all its components and sub components
+  (i.e., inside sub vars such as $(SONE) above being a sub var of
+  targ_SOURCES)?
+
+
+  Aaaaaaaaaaah!  I think I know... Must be because of `+='.
+
+  Hm... No.  Indeed we transform
+
+    | FOO = foo
+    | if BAR
+    | FOO += BAR
+    | endif
+
+  into
+
+    | @BAR_TRUE@FOO = foo bar
+    | @BAR_FALSE@FOO = foo
+
+  but this seems good to me too?
+
+    | FOO = foo $(BAR_FOO)
+    | @BAR_TRUE@BAR_FOO = bar
+    | @BAR_FALSE@BAR_FOO =
+
+
 * foo=bar
   if cond
   foo += joe
   endif
-  ... this ought to work.  The fix is probably complicated
+  ... this ought to work.  The fix is probably complicated, but might
+  come for free when we rewrite the handling of conditionals.
 
 * `distcheck' and `dist' should depend on `all'
 
@@ -227,14 +304,11 @@ DONE: but needs to be documented
       2.0 thing ]
 
 * make sure `missing' defines are generated
-* if no AM_INIT_AUTOMAKE, then don't handle `missing' stuff.
-  Yuck!
+
 * missing should handle install -d and rmdir -p (for uninstall)
 
-* a couple ways to be smarter:
-  - notice when a .c file is a target somewhere, and auto-add it to
+* notice when a .c file is a target somewhere, and auto-add it to
     BUILT_SOURCES
-  - notice a target of the form `.x.y:' and assume it is a suffix rule
 
 * NORMAL_INSTALL / NORMAL_UNINSTALL -vs- recursive rules
   [ requires changes to the standard ]
@@ -246,7 +320,7 @@ DONE: but needs to be documented
 
 * *all* installed scripts should support --version, --help
 
-For now I guess I'll just have automake give an error if it encounters
+* For now I guess I'll just have automake give an error if it encounters
 non-C source in a libtool library specification.
 
 * must split $obj into two parts: one for libtool and one for
@@ -266,9 +340,7 @@ non-C source in a libtool library specification.
 should clean up texinfos.am; one rule is repeated 3 times, but
 shouldn't be
 
-should always use perl -w
-
-rewrite in guile (RMS request)
+* rewrite in guile (RMS request)
 at the same time, consider adding a GUI
 could use the same parsing code for the GUI and the standalone version
 that means figuring out a better representation of internal state
@@ -445,28 +517,28 @@ things to be removed.  This would be a lot nicer looking.  Note that
 the install targets probably should not be merged; it is sometimes
 useful to only install a small part.
 
-Clean up the output:
-* Order rules sensibly
-* Ensure every line has a purpose.  Omit unused stuff
-* Eliminate extraneous rules when possible (eg 'install-am' stuff)
-* Make sure vertical spacing is correct
+* Clean up the output:
+** Order rules sensibly
+** Ensure every line has a purpose.  Omit unused stuff
+** Eliminate extraneous rules when possible (eg 'install-am' stuff)
+** Make sure vertical spacing is correct
 Omit program transform vars from header if no program installed.  This
 is currently pretty hard to do.  (But with beautification code it
 would probably be easy)
 
-Lex, yacc support:
-* It would be nice to automatically support using bison's better features
+* Lex, yacc support:
+** It would be nice to automatically support using bison's better features
   to rename the output files.  This requires autoconf support
-* Consider supporting syntax from autoconf "derived:source", eg:
+** Consider supporting syntax from autoconf "derived:source", eg:
 	y.tab.c:perly.y
   for yacc and lex source
-* what if you use flex and the option to avoid -lfl?
+** what if you use flex and the option to avoid -lfl?
   should support this?
 
-Multi-language support:
-* should have mapping of file extensions to languages
-* should automatically handle the linking issue (special-case C++)
-* must get compile rules for various languages; FORTRAN probably
+* Multi-language support:
+** should have mapping of file extensions to languages
+** should automatically handle the linking issue (special-case C++)
+** must get compile rules for various languages; FORTRAN probably
   most important unimplemented language
 This should be integrated in some way with Per's idea.
 Eg .f.o rules should be recognized & auto-handled in _SOURCES
@@ -672,19 +744,6 @@ could eliminate a common source of problems.
   Bug or feature?
   [ the consensus on Gnits is that this isn't required.
     doubters can work around it anyway ]
-
-* make the auto-dep code crash if GNU make not in use?
-  (doesn't it already?)
-
-Looked at a program called 'ezmake', which seems to do something
-similar.  The only idea there that is possibly worth stealing is using
-globs in definitions.  Also has negations.  Eg in a directory with
-files a.c, b.c and c.c, the line:
-	foo_SOURCES = *.c ~c.c
-would be equivalent to:
-	foo_SOURCES = a.c b.c
-Is this worth implementing?
-  [ No... it is more reliable to spell everything out. ]
 
 Scan source directories and warn about missing files, eg .c/.h files
 that aren't mentioned?

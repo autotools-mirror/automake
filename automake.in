@@ -2783,8 +2783,8 @@ sub scan_texinfo_file
 
     my $infobase = basename ($filename);
     $infobase =~ s/\.te?xi(nfo)?$//;
-    my %clean_files;
-    grep { $clean_files{"$infobase.$_"} = 1    } @clean_suffixes;
+    # FIXME: I don't understand why, but I can't use "$infobase.$_" => 1.
+    my %clean_files = map { "$infobase" . ".$_" => 1 } @clean_suffixes;
     grep { delete $clean_files{"$infobase.$_"} } @syncodeindexes;
     return ($outfile, $vfile, (sort keys %clean_files));
 }
@@ -3223,8 +3223,7 @@ sub handle_dist
 		     'GETTEXT'        => $seen_gettext);
 
     # Prepend $(distdir) to each directory given.
-    my %rewritten;
-    grep ($rewritten{'$(distdir)/' . $_} = 1, keys %dist_dirs);
+    my %rewritten = map { '$(distdir)/' . "$_" => 1 } keys %dist_dirs;
     $transform{'DISTDIRS'} = join (' ', sort keys %rewritten);
 
     # If we have SUBDIRS, create all dist subdirectories and do
@@ -3734,8 +3733,7 @@ sub handle_gettext
     # each po file is mentioned in ALL_LINGUAS.
     if ($seen_linguas)
     {
-	my %linguas = ();
-	grep ($linguas{$_} = 1, split (' ', $all_linguas));
+	my %linguas = map { $_ => 1 } split (' ', $all_linguas);
 
 	foreach (<po/*.po>)
 	{
@@ -3790,8 +3788,7 @@ sub handle_footer
 			     ? &variable_value_as_list ('SUFFIXES', '')
 			     : ());
 
-	my %suffixes;
-	grep ($suffixes{$_} = 1, @suffixes);
+	my %suffixes = map { $_ => 1 } @suffixes;
 	delete @suffixes{@user_suffixes};
 
 	$output_header .= (".SUFFIXES: "
@@ -4026,7 +4023,7 @@ sub handle_factored_dependencies
     }
 
     # All the required targets are phony.
-    grep { &depend ('.PHONY', $_) } keys %required_targets;
+    depend ('.PHONY', keys %required_targets);
 
     # Actually output gathered targets.
     foreach (sort target_cmp keys %dependencies)
@@ -4090,8 +4087,8 @@ sub handle_emacs_lisp
     return if ! @elfiles;
 
     # Generate .elc files.
-    grep ($_ .= 'c', @elfiles);
-    &define_pretty_variable ('ELCFILES', '', @elfiles);
+    my @elcfiles = map { $_ . 'c' } @elfiles;
+    &define_pretty_variable ('ELCFILES', '', @elcfiles);
 
     push (@all, '$(ELCFILES)');
 
@@ -6931,8 +6928,7 @@ sub am_primary_prefixes
 {
     my ($primary, $can_dist, @prefixes) = @_;
 
-    my %valid;
-    grep ($valid{$_} = 0, @prefixes);
+    my %valid = map { $_ => 0 } @prefixes;
     $valid{'EXTRA'} = 0;
     foreach my $varname (keys %var_value)
     {
