@@ -6,6 +6,7 @@ TESTS = mdate.test vtexi.test acoutput.test instexec.test checkall.test \
 acoutnoq.test acouttbs.test libobj.test proginst.test acoutqnl.test \
 confincl.test spelling.test prefix.test badprog.test depend.test exdir.test \
 canon.test installsh.test empty.test rulepat.test insh.test canon2.test \
-target.test extra.test noinst.test instman.test
+target.test extra.test noinst.test instman.test mkinstall.test auxdir.test \
+canon3.test mdate2.test
 
 EXTRA_DIST = defs $(TESTS)

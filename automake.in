@@ -145,6 +145,10 @@ $seen_arg_prog = 0;
 $seen_libtool = 0;
 $libtool_line = 0;
 
+# TRUE if we've seen jm_MAINTAINER_MODE.
+$seen_maint_mode = 0;
+
+
 # Charsets used by maintainer and in distribution.  MAINT_CHARSET is
 # handled in a funny way: if seen in the top-level Makefile.am, it is
 # used for every directory which does not specify a different value.
@@ -324,10 +328,20 @@ sub generate_makefile
     &initialize_per_input;
     $relative_dir = &dirname ($makefile);
 
-    # AC_CANONICAL_HOST and AC_CANONICAL_SYSTEM need config.guess and
-    # config.sub.
-    &require_config_file ($FOREIGN, 'config.guess', 'config.sub')
-	if $relative_dir eq '.' && $seen_canonical;
+    # At the toplevel directory, we might need config.guess, config.sub
+    # or libtool.
+    if ($relative_dir eq '.')
+    {
+ 	# libtool requires some files.
+ 	&require_conf_file_with_conf_line ($libtool_line, $FOREIGN,
+ 					   'config.sub', 'config.guess',
+ 					   'libtool') if $seen_libtool;
+
+        # AC_CANONICAL_HOST and AC_CANONICAL_SYSTEM need config.guess and
+        # config.sub.
+        &require_config_file ($FOREIGN, 'config.guess', 'config.sub')
+	    if $seen_canonical;
+    }
 
     # We still need Makefile.in here, because sometimes the `dist'
     # target doesn't re-run automake.
@@ -499,7 +513,9 @@ sub get_object_extension
 # Handle SOURCE->OBJECT transform for one program or library.
 sub handle_source_transform
 {
-    local ($one_file, $obj) = @_;
+    # one_file is canonical name.  unxformed is given name.  obj is
+    # object extension.
+    local ($one_file, $unxformed, $obj) = @_;
     local ($objpat) = $obj;
     $objpat =~ s/(\W)/\\$1/g;
 
@@ -525,12 +541,12 @@ sub handle_source_transform
 	}
 	elsif ($prefix eq '')
 	{
-	    $output_vars .= ($one_file . "_SOURCES = " . $one_file . ".c\n"
-			     . $one_file . "_OBJECTS = ". $one_file
+	    $output_vars .= ($one_file . "_SOURCES = " . $unxformed . ".c\n"
+			     . $one_file . "_OBJECTS = ". $unxformed
 			     . $obj . "\n");
-	    push (@sources, $one_file . '.c');
-	    push (@objects, $one_file . $obj);
-	    $source_list = $one_file . ".c ";
+	    push (@sources, $unxformed . '.c');
+	    push (@objects, $unxformed . $obj);
+	    $source_list = $unxformed . ".c ";
 	}
 	else
 	{
@@ -669,7 +685,7 @@ sub handle_programs
 	    }
 	}
 
-	&handle_source_transform ($xname, $obj);
+	&handle_source_transform ($xname, $one_file, $obj);
 
 	if (&variable_defined ($xname . "_LDADD"))
 	{
@@ -700,14 +716,7 @@ sub handle_libraries
 					'lib', 'pkglib', 'noinst', 'check');
     return if ! @liblist;
 
-    if ($seen_libtool)
-    {
-	# libtool requires some files.
-	&require_conf_file_with_conf_line ($libtool_line, $FOREIGN,
-					   'config.sub', 'config.guess',
-					   'libtool');
-    }
-    elsif (! $seen_ranlib)
+    if (! $seen_ranlib)
     {
 	# FIXME need am_line_error here.  But we don't know which
 	# variable exists.  Must add a loop...  No.  Must have
@@ -751,7 +760,7 @@ sub handle_libraries
 	    $output_vars .= $onelib . "_LIBADD =\n";
 	}
 
-	&handle_source_transform ($onelib, $obj);
+	&handle_source_transform ($onelib, $onelib, $obj);
 
 	$output_rules .=
 	    &file_contents_with_transform ('s/\@LIBRARY\@/' . $onelib . '/go',
@@ -1236,6 +1245,25 @@ sub handle_dist
     # Generate 'dist' target, and maybe dist-shar.
     if ($relative_dir eq '.')
     {
+	# Rule to check whether a distribution is viable.
+	$output_rules .= '# This target untars the dist file and tries a VPATH configuration.  Then
+# it guarantees that the distribution is self-contained by making another
+# tarfile.
+distcheck: dist
+	rm -rf $(distdir)
+	$(TAR) zxf $(distdir).tar.gz
+	mkdir $(distdir)/$(distdir)
+	cd $(distdir)/$(distdir) \\
+	  && ../configure --srcdir=.. \\
+	  && $(MAKE) \\
+	  && $(MAKE) check \\
+	  && $(MAKE) dist
+	rm -rf $(distdir)
+	@echo "========================"; \\
+	echo "$(distdir).tar.gz is ready for distribution"; \\
+	echo "========================"
+';
+
 	$output_rules .= 'dist: distdir' . "\n\t";
 	$output_rules .= 'chmod -R a+r $(distdir)' . "\n\t";
 	$output_rules .= '$(TAR) chozf $(distdir).tar.gz $(distdir)';
@@ -1351,6 +1379,9 @@ sub handle_configure
     &am_line_error ('SUBDIRS', "AC_PROG_MAKE_SET must be used in configure.in")
 	if &variable_defined ('SUBDIRS') && ! $seen_make_set;
 
+    # Look for some files we need.  Always check for these.
+    &require_config_file ($FOREIGN, 'install-sh', 'mkinstalldirs');
+
     local ($top_reldir);
     if ($relative_dir ne '.')
     {
@@ -1366,9 +1397,6 @@ sub handle_configure
 	    &push_dist_common ('aclocal.m4');
 	}
 	$output_rules .= &file_contents ('remake');
-
-	# Look for some files we need.
-	&require_config_file ($FOREIGN, 'install-sh', 'mkinstalldirs');
 
 	&am_error
 	    ("\`install.sh' is an anachronism; use \`install-sh' instead")
@@ -1414,7 +1442,7 @@ sub handle_configure
     }
 
     # Set location of mkinstalldirs.
-    if ($config_aux_dir ne '.')
+    if ($config_aux_dir ne '.' && $config_aux_dir ne '')
     {
 	$output_vars .= 'mkinstalldirs = ' . $config_aux_dir;
     }
@@ -2038,10 +2066,12 @@ sub scan_configure
 	$seen_prog_install = 2 if ! $seen_prog_install && /fp_PROG_INSTALL/;
 	$seen_arg_prog = 1 if /AC_ARG_PROGRAM/;
 	$seen_ranlib = 1 if /AC_PROG_RANLIB/;
+        $seen_maint_mode = 1 if /jm_MAINTAINER_MODE/;
 
         if (/AC_PROG_LIBTOOL/ || /gm_PROG_LIBTOOL/)
 	{
 	    $seen_libtool = 1;
+	    $seen_ranlib = 2;
 	    $libtool_line = $.;
 	}
     }
@@ -2230,6 +2260,9 @@ sub read_am_file
 	$_ .= "\n"
 	    unless substr ($_, -1, 1) eq "\n";
 
+	$_ =~ s/\@MAINT\@//g
+	    unless $seen_maint_mode;
+
 	if (/$IGNORE_PATTERN/o)
 	{
 	    # Merely delete comments beginning with two hashes.
@@ -2360,7 +2393,8 @@ sub initialize_global_constants
 	(
 	 "README", "THANKS", "TODO", "NEWS", "COPYING", "COPYING.LIB",
 	 "INSTALL", "ABOUT-NLS", "ChangeLog", "configure", "configure.in",
-	 "config.guess", "config.sub", "AUTHORS", "BACKLOG", "ABOUT-GNU"
+	 "config.guess", "config.sub", "AUTHORS", "BACKLOG", "ABOUT-GNU",
+	 "libversion.in"
 	 );
 
     # Commonly used files we auto-include, but only sometimes.
@@ -2501,6 +2535,9 @@ sub file_contents_with_transform
 
     while (<FC_FILE>)
     {
+	$_ =~ s/\@MAINT\@//g
+	    unless $seen_maint_mode;
+
 	eval $command;
 
 	if (/$IGNORE_PATTERN/o)
@@ -2574,7 +2611,7 @@ sub file_contents
 }
 
 # Handle `where_HOW' variable magic.  Does all lookups, generates
-# install code,and possibly generates code to define the primary
+# install code, and possibly generates code to define the primary
 # variable.  The first argument is the name of the .am file to munge,
 # the second argument is the primary variable (eg HEADERS), and all
 # subsequent arguments are possible installation locations.  Returns
