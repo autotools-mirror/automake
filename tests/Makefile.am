@@ -28,15 +28,16 @@ link_f_cxx.test link_f_only.test lisp.test mdate.test mdate2.test \
 mkinst2.test mkinstall.test noinst.test number.test objc.test \
 obsolete.test order.test outdir.test output.test output2.test \
 output3.test output4.test output5.test package.test parse.test \
-pluseq.test prefix.test primary.test primary2.test proginst.test \
-ranlib.test recurs.test recurs2.test remake.test remake2.test req.test \
-rulepat.test scripts.test seenc.test sinclude.test spell.test \
-spell2.test spell3.test spelling.test stamph.test stdlib.test \
-subdir.test subdir2.test subst.test symlink.test syntax.test tags.test \
-tagsub.test target.test texinfo.test texinfo2.test texinfo3.test \
-texinfo4.test texinfo5.test texinfo6.test texinfo7.test unused.test \
-version.test version2.test version3.test vpath.test vtexi.test \
-vtexi2.test whoami.test xsource.test yacc.test yaccpp.test
+pluseq.test pluseq2.test prefix.test primary.test primary2.test	\
+proginst.test ranlib.test recurs.test recurs2.test remake.test \
+remake2.test req.test rulepat.test scripts.test seenc.test \
+sinclude.test spell.test spell2.test spell3.test spelling.test \
+stamph.test stdlib.test subdir.test subdir2.test subst.test \
+symlink.test syntax.test tags.test tagsub.test target.test \
+texinfo.test texinfo2.test texinfo3.test texinfo4.test texinfo5.test \
+texinfo6.test texinfo7.test unused.test version.test version2.test \
+version3.test vpath.test vtexi.test vtexi2.test whoami.test \
+xsource.test yacc.test yaccpp.test
 
 EXTRA_DIST = defs $(TESTS)
 
