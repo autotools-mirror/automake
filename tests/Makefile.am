@@ -6,6 +6,7 @@ TESTS =	\
 acinclude.test \
 aclibobj.test \
 aclocal.test \
+aclocal2.test \
 aclocali.test \
 aclocali1.test \
 aclocalii.test \

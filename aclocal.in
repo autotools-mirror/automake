@@ -80,10 +80,16 @@ $output_file = 'aclocal.m4';
 $verbose = 0;
 
 # Matches a macro definition.
-$ac_defun_rx = "A[CU]_DEFUN\\(\\[?([^],)\n]+)\\]?";
+#   AC_DEFUN([macroname], ...)
+# or
+#   AC_DEFUN(macroname, ...)
+# When macroname is `['-quoted , we accept any character in the name,
+# except `]'.  Otherwise macroname stops on the first `]', `,', `)',
+# or `\n' encountered.
+$ac_defun_rx = "A[CU]_DEFUN\\((?:\\[([^]]+)\\]|([^],)\n]+))";
 
 # Matches an AC_REQUIRE line.
-$ac_require_rx = "AC_REQUIRE\\(\\[?([^])]*)\\]?\\)";
+$ac_require_rx = "AC_REQUIRE\\((?:\\[([^]]+)\\]|([^],)\n]+))\\)";
 
 
 
@@ -310,10 +316,8 @@ sub scan_m4_files (@)
     my $search = "sub search {\nmy \$found = 0;\n";
     foreach my $key (reverse sort keys %map)
     {
-	# EXPR is a regexp matching the name of the macro.
-	(my $expr = $key) =~ s/(\W)/\\$1/g;
-	$search .= ('if (/\b' . $key . '\b/) { & add_macro (' . $key
-		    . '); $found = 1; }' . "\n");
+	$search .= ('if (/\b\Q' . $key . '\E(?!\w)/) { & add_macro ("' . $key
+		    . '"); $found = 1; }' . "\n");
     }
     $search .= "return \$found;\n};\n";
     eval $search;
@@ -363,7 +367,7 @@ sub add_file ($)
 
 	if (/$ac_require_rx/g)
 	{
-	    push (@rlist, $1);
+	    push (@rlist, $1 || $2);
 	}
 
 	# The search function is constructed dynamically by
@@ -401,9 +405,9 @@ sub scan_file ($)
 
 	if (/$ac_defun_rx/)
 	{
-	    if (! defined $map{$1})
+	    if (! defined $map{$1 || $2})
 	    {
-		$map{$1} = $file;
+		$map{$1 || $2} = $file;
 	    }
 
 	    # Note: we used to give an error here if we saw a

@@ -1,0 +1,45 @@
+#! /bin/sh
+# Copyright (C) 2002  Free Software Foundation, Inc.
+#
+# This file is part of GNU Automake.
+#
+# GNU Automake is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# GNU Automake is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with autoconf; see the file COPYING.  If not, write to
+# the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA 02111-1307, USA.
+
+# Make sure aclocal works with macro that have parentheses in their
+# name.  Report from Tamara L. Dahlgren and Tom Epperly.
+
+. ./defs || exit 1
+
+set -e
+
+mkdir m4
+cat >m4/f90.m4 <<EOF
+AC_DEFUN([AM_LANG_PREPROC(Fortran 90)], [...something...])
+EOF
+
+cat >acinclude.m4 <<EOF
+AC_DEFUN([AM_FUBAR],
+[AC_REQUIRE([AM_LANG_PREPROC(Fortran 90)])])
+EOF
+
+cat >>configure.in <<EOF
+AM_FUBAR
+EOF
+
+$ACLOCAL -I m4 2>stderr
+cat stderr
+grep AM_LANG_PREPROC stderr && exit 1
+$FGREP 'AC_DEFUN([AM_LANG_PREPROC(Fortran 90)' aclocal.m4
