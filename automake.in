@@ -1371,7 +1371,7 @@ sub generate_makefile
 
 # $BOOL
 # process_option_list ($CONFIG, @OPTIONS)
-# ------------------------------
+# ---------------------------------------
 # Process a list of options.  Return 1 on error, 0 otherwise.
 # This is a helper for handle_options.  CONFIG is true if we're
 # handling global options.
@@ -1379,7 +1379,7 @@ sub process_option_list
 {
   my ($config, @list) = @_;
 
-  # FIXME: We should disallow conditional deffinitions of AUTOMAKE_OPTIONS.
+  # FIXME: We should disallow conditional definitions of AUTOMAKE_OPTIONS.
   my $where = ($config ?
 	       $seen_init_automake :
 	       rvar ('AUTOMAKE_OPTIONS')->rdef (TRUE)->location);
@@ -1405,6 +1405,7 @@ sub process_option_list
       elsif ($_ eq 'no-installman' || $_ eq 'no-installinfo'
 	     || $_ eq 'dist-shar' || $_ eq 'dist-zip'
 	     || $_ eq 'dist-tarZ' || $_ eq 'dist-bzip2'
+	     || $_ eq 'no-dist-gzip'
 	     || $_ eq 'dejagnu' || $_ eq 'no-texinfo.tex'
 	     || $_ eq 'readme-alpha' || $_ eq 'check-news'
 	     || $_ eq 'subdir-objects' || $_ eq 'nostdinc'
@@ -3825,6 +3826,18 @@ sub handle_dist
     # `make dist' isn't used in a Cygnus-style tree.
     # Omit the rules so that people don't try to use them.
     return if $cygnus_mode;
+
+    # At least one of the archive formats must be enabled.
+    if ($relative_dir eq '.')
+      {
+	my $archive_defined = $options{'no-dist-gzip'} ? 0 : 1;
+	$archive_defined ||=
+	  grep { $options{"dist-$_"} } ('shar', 'zip', 'tarZ', 'bzip2');
+	error ($options{'no-dist-gzip'}, 
+	       "no-dist-gzip specified but no dist-* specified, "
+	       . "at least one archive format must be enabled")
+	  unless $archive_defined;
+      }
 
     # Look for common files that should be included in distribution.
     # If the aux dir is set, and it does not have a Makefile.am, then
@@ -6644,10 +6657,11 @@ sub make_paragraphs ($%)
 		     'MAINTAINER-MODE'
 		     => $seen_maint_mode ? subst ('MAINTAINER_MODE_TRUE') : '',
 
-		     'SHAR'        => $options{'dist-shar'} || 0,
 		     'BZIP2'       => $options{'dist-bzip2'} || 0,
-		     'ZIP'         => $options{'dist-zip'} || 0,
 		     'COMPRESS'    => $options{'dist-tarZ'} || 0,
+		     'GZIP'        => $options{'no-dist-gzip'} ? 0 : 1,
+		     'SHAR'        => $options{'dist-shar'} || 0,
+		     'ZIP'         => $options{'dist-zip'} || 0,
 
 		     'INSTALL-INFO' => !$options{'no-installinfo'},
 		     'INSTALL-MAN'  => !$options{'no-installman'},
