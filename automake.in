@@ -398,7 +398,7 @@ die "automake: no \`Makefile.am' found or specified\n"
     if ! @input_files;
 
 # Now do all the work on each file.
-foreach $am_file (@input_files)
+foreach my $am_file (@input_files)
 {
     if (! -f ($am_file . '.am'))
     {
@@ -930,8 +930,8 @@ sub get_object_extension
 	# because not all programs will necessarily use X.
 	if ($seen_path_xtra)
 	{
-	    local ($var);
-	    foreach $var ('X_CFLAGS', 'X_LIBS', 'X_EXTRA_LIBS', 'X_PRE_LIBS')
+	    foreach my $var ('X_CFLAGS',
+			     'X_LIBS', 'X_EXTRA_LIBS', 'X_PRE_LIBS')
 	    {
 		&define_configure_variable ($var);
 	    }
@@ -1030,18 +1030,18 @@ sub get_object_extension
 # Call finish function for each language that was used.
 sub finish_languages
 {
-    local ($ltcompile, $ltlink) = &libtool_compiler;
+    my ($ltcompile, $ltlink) = &libtool_compiler;
 
-    local ($ext, $name, $lang, %done);
-    local ($non_c) = 1;
-    foreach $ext (sort keys %extension_seen)
+    my %done;
+    my $non_c = 1;
+    foreach my $ext (sort keys %extension_seen)
     {
-	$lang = $extension_map{$ext};
+	my $lang = $extension_map{$ext};
 
 	# Generate the appropriate rules for this extension.  If
 	# dependency tracking was requested, and this extension
 	# supports it, then we don't generate the rule here.
-	local ($comp) = '';
+	my $comp = '';
 
 	if ($use_dependencies && $language_map{$lang . '-autodep'} ne 'no')
 	{
@@ -1065,10 +1065,10 @@ sub finish_languages
 		}
 	    }
 
-	    local ($full) = ("\t\$("
-			     . $language_map{$lang . '-compiler-name'}
-			     . ") "
-			     . $outarg);
+	    my $full = ("\t\$("
+			. $language_map{$lang . '-compiler-name'}
+			. ") "
+			. $outarg);
 	    $output_rules .= (".$ext.o:\n"
 			      . $full
 			      . " \$<\n");
@@ -1109,7 +1109,7 @@ sub finish_languages
 	}
 
 	# Compute the function name of the finisher and then call it.
-	$name = 'lang_' . $lang . '_finish';
+	my $name = 'lang_' . $lang . '_finish';
 	& $name ();
     }
 
@@ -1126,7 +1126,8 @@ sub finish_languages
 				       $language_map{'c-compile'});
 	}
 	&define_variable ('CCLD', '$(CC)');
-	&define_variable ('LINK', $ltlink . '$(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
+	&define_variable ('LINK',
+			  $ltlink . '$(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
     }
 }
 
@@ -1192,12 +1193,12 @@ sub output_lex_build_rule
 # do this check.
 sub check_libobjs_sources
 {
-    local ($one_file, $unxformed) = @_;
+    my ($one_file, $unxformed) = @_;
 
-    local ($prefix, $file, @files);
-    foreach $prefix ('', 'EXTRA_', 'dist_', 'nodist_',
-		     'dist_EXTRA_', 'nodist_EXTRA_')
+    foreach my $prefix ('', 'EXTRA_', 'dist_', 'nodist_',
+			'dist_EXTRA_', 'nodist_EXTRA_')
     {
+        my @files;
 	if (&variable_defined ($prefix . $one_file . '_SOURCES'))
 	{
 	    @files = &variable_value_as_list (($prefix
@@ -1213,7 +1214,7 @@ sub check_libobjs_sources
 	    next;
 	}
 
-	foreach $file (@files)
+	foreach my $file (@files)
 	{
 	    if (defined $libsources{$file})
 	    {
@@ -1519,10 +1520,10 @@ sub handle_source_transform
 	return;
     }
 
-    local (@files, @result, $prefix, $temp, $xpfx);
-    local (%used_pfx) = ();
-    foreach $prefix ('', 'EXTRA_', 'dist_', 'nodist_',
-		     'dist_EXTRA_', 'nodist_EXTRA_')
+    my (@files, @result, $temp, $xpfx);
+    my %used_pfx = ();
+    foreach my $prefix ('', 'EXTRA_', 'dist_', 'nodist_',
+			'dist_EXTRA_', 'nodist_EXTRA_')
     {
 	# We are going to define _OBJECTS variables using the prefix.
 	# Then we glom them all together.  So we can't use the null
@@ -1549,8 +1550,7 @@ sub handle_source_transform
 	    }
 	    else
 	    {
-		local ($cond);
-		foreach $cond (@conds)
+		foreach my $cond (@conds)
 		{
 		    @files = &variable_value_as_list ($var, $cond);
 		    ($temp, @result) =
@@ -1637,9 +1637,8 @@ sub handle_lib_objects
     }
     else
     {
-	local ($cond);
 	$ret = 0;
-	foreach $cond (@conds)
+	foreach my $cond (@conds)
 	{
 	    if (&handle_lib_objects_cond ($xname, $var, $lex_seen, $cond))
 	    {
@@ -1658,13 +1657,12 @@ sub handle_lib_objects_cond
 
     # We recognize certain things that are commonly put in LIBADD or
     # LDADD.
-    local ($lsearch);
     local (@dep_list) = ();
 
     local ($seen_libobjs) = 0;
     local ($flagvar) = 0;
 
-    foreach $lsearch (&variable_value_as_list ($var, $cond))
+    foreach my $lsearch (&variable_value_as_list ($var, $cond))
     {
 	# Skip -lfoo and -Ldir; these are explicitly allowed.
 	next if $lsearch =~ /^-[lL]/;
@@ -1707,8 +1705,7 @@ sub handle_lib_objects_cond
 		&am_line_error ($var, "\@$1" . "LIBOBJS\@ seen but never set in \`$configure_ac'");
 	    }
 
-	    local ($iter, $rewrite);
-	    foreach $iter (keys %libsources)
+	    foreach my $iter (keys %libsources)
 	    {
 		if ($iter =~ /\.([cly])$/)
 		{
@@ -1722,7 +1719,8 @@ sub handle_lib_objects_cond
 		}
 		elsif ($iter ne 'alloca.c')
 		{
-		    ($rewrite = $iter) =~ s/\.c$/.P$myobjext/;
+		    my $rewrite = $iter;
+		    $rewrite =~ s/\.c$/.P$myobjext/;
 		    $dep_files{'$(DEPDIR)/' . $rewrite} = 1;
 		    ($rewrite = $iter) =~ s/(\W)/\\$1/g;
 		    $rewrite = "^" . $rewrite . "\$";
@@ -1778,8 +1776,7 @@ sub check_canonical_spelling
     $xname = &canonicalize ($name);
     if ($xname ne $name)
     {
-	local ($xt);
-	foreach $xt (@suffixes)
+	foreach my $xt (@suffixes)
 	{
 	    &am_line_error ($name . $xt,
 			    "invalid variable \`" . $name . $xt
@@ -1809,10 +1806,10 @@ sub handle_programs
 	unless $seen_arg_prog;
     $seen_arg_prog = 1;
 
-    local ($one_file, $xname, $munge);
+    local ($xname, $munge);
 
     local ($seen_libobjs) = 0;
-    foreach $one_file (@proglist)
+    foreach my $one_file (@proglist)
     {
 	local ($obj) = &get_object_extension ($one_file);
 
@@ -1904,7 +1901,7 @@ sub handle_programs
 
     if ($seen_libobjs)
     {
-	foreach $one_file (@proglist)
+	foreach my $one_file (@proglist)
 	{
 	    $xname = &canonicalize ($one_file);
 
@@ -1935,8 +1932,7 @@ sub handle_libraries
 					   'noinst', 'check');
     if (! defined $configure_vars{'RANLIB'})
     {
-	local ($key);
-	foreach $key (keys %valid)
+	foreach my $key (keys %valid)
 	{
 	    if (&variable_defined ($key . '_LIBRARIES'))
 	    {
@@ -1949,11 +1945,10 @@ sub handle_libraries
 	}
     }
 
-    local ($onelib);
     local ($munge);
     local ($xlib);
     local ($seen_libobjs) = 0;
-    foreach $onelib (@liblist)
+    foreach my $onelib (@liblist)
     {
 	# Check that the library fits the standard naming convention.
 	if ($onelib !~ /^lib.*\.a$/)
@@ -2007,7 +2002,7 @@ sub handle_libraries
 
     if ($seen_libobjs)
     {
-	foreach $onelib (@liblist)
+	foreach my $onelib (@liblist)
 	{
 	    $xlib = &canonicalize ($onelib);
 	    if (&variable_defined ($xlib . '_LIBADD'))
@@ -2036,8 +2031,7 @@ sub handle_ltlibraries
     local (%valid) = &am_primary_prefixes ('LTLIBRARIES', 0, 'lib', 'pkglib',
 					   'noinst', 'check');
 
-    local ($key);
-    foreach $key (keys %valid)
+    foreach my $key (keys %valid)
     {
 	if (&variable_defined ($key . '_LTLIBRARIES'))
 	{
@@ -2065,11 +2059,10 @@ sub handle_ltlibraries
 	}
     }
 
-    local ($onelib);
     local ($munge);
     local ($xlib);
     local ($seen_libobjs) = 0;
-    foreach $onelib (@liblist)
+    foreach my $onelib (@liblist)
     {
 	local ($obj) = &get_object_extension ($onelib);
 
@@ -2167,7 +2160,7 @@ sub handle_ltlibraries
 
     if ($seen_libobjs)
     {
-	foreach $onelib (@liblist)
+	foreach my $onelib (@liblist)
 	{
 	    $xlib = &canonicalize ($onelib);
 	    if (&variable_defined ($xlib . '_LIBADD'))
@@ -2182,11 +2175,10 @@ sub handle_ltlibraries
 # EXTRA_ variables don't contain configure substitutions.
 sub check_typos
 {
-    local ($varname, $primary);
-    foreach $varname (keys %contents)
+    foreach my $varname (keys %contents)
     {
-	foreach $primary ('_SOURCES', '_LIBADD', '_LDADD', '_LDFLAGS',
-			  '_DEPENDENCIES')
+	foreach my $primary ('_SOURCES', '_LIBADD', '_LDADD', '_LDFLAGS',
+			     '_DEPENDENCIES')
 	{
 	    if ($varname =~ /$primary$/ && ! $content_seen{$varname})
 	    {
@@ -2214,8 +2206,7 @@ sub handle_scripts
     local (%valid) = &am_primary_prefixes ('SCRIPTS', 1, 'bin', 'sbin',
 					   'libexec', 'pkgdata',
 					   'noinst', 'check');
-    local ($key);
-    foreach $key (keys %valid)
+    foreach my $key (keys %valid)
     {
 	if ($key ne 'noinst'
 	    && $key ne 'check'
@@ -3062,15 +3053,15 @@ sub handle_aclocal_m4
 	{
 	    # Scan all -I directories for m4 files.  These are our
 	    # dependencies.
-	    local ($examine_next, $amdir) = 0;
-	    foreach $amdir (&variable_value_as_list ('ACLOCAL_AMFLAGS', ''))
+	    my $examine_next = 0;
+	    foreach my $amdir (&variable_value_as_list ('ACLOCAL_AMFLAGS', ''))
 	    {
 		if ($examine_next)
 		{
 		    $examine_next = 0;
 		    if ($amdir !~ /^\// && -d $amdir)
 		    {
-			foreach $ac_dep (&my_glob ($amdir . '/*.m4'))
+			foreach my $ac_dep (&my_glob ($amdir . '/*.m4'))
 			{
 			    $ac_dep =~ s/^\.\/+//;
 			    push (@ac_deps, $ac_dep)
@@ -3109,10 +3100,10 @@ sub handle_aclocal_m4
 # If 0 then files that require this addition will simply be ignored.
 sub rewrite_inputs_into_dependencies
 {
-    local ($add_srcdir, @inputs) = @_;
-    local ($single, @newinputs);
+    my ($add_srcdir, @inputs) = @_;
+    my @newinputs;
 
-    foreach $single (@inputs)
+    foreach my $single (@inputs)
     {
 	if (dirname ($single) eq $relative_dir)
 	{
@@ -3131,9 +3122,7 @@ sub rewrite_inputs_into_dependencies
 # We need the name of the input file, to do proper remaking rules.
 sub handle_configure
 {
-    local ($local, $input, @secondary_inputs) = @_;
-
-    local ($top_reldir);
+    my ($local, $input, @secondary_inputs) = @_;
 
     my $input_base = basename ($input);
     my $local_base = basename ($local);
@@ -3187,6 +3176,7 @@ sub handle_configure
 		      . ' CONFIG_HEADERS= CONFIG_LINKS= $(SHELL) ./config.status'
 		      . "\n\n");
 
+    my $top_reldir;
     if ($relative_dir ne '.')
     {
 	# In subdirectory.
@@ -3207,14 +3197,14 @@ sub handle_configure
     }
 
     # If we have a configure header, require it.
-    local (@local_fullnames) = @config_fullnames;
-    local (@local_names) = @config_names;
-    local ($hdr_index) = 0;
-    local ($distclean_config) = '';
+    my @local_fullnames = @config_fullnames;
+    my @local_names = @config_names;
+    my $hdr_index = 0;
+    my $distclean_config = '';
     foreach my $one_hdr (@config_headers)
     {
-	local ($one_fullname) = shift (@local_fullnames);
-	local ($one_name) = shift (@local_names);
+	my $one_fullname = shift (@local_fullnames);
+	my $one_name = shift (@local_names);
 	$hdr_index += 1;
 	my $header_dir = dirname ($one_name);
 
@@ -3333,7 +3323,7 @@ sub handle_configure
 		    "\`CONFIG_HEADER' is an anachronism; now determined from \`$configure_ac'")
 	if &variable_defined ('CONFIG_HEADER');
 
-    local ($config_header) = '';
+    my $config_header = '';
     foreach my $one_name (@config_names)
     {
 	# Generate CONFIG_HEADER define.
@@ -3357,12 +3347,12 @@ sub handle_configure
 
     # Now look for other files in this directory which must be remade
     # by config.status, and generate rules for them.
-    local (@actual_other_files) = ();
-    local ($file, $local);
-    local (@inputs, @rewritten_inputs, $single);
-    local ($need_rewritten);
+    my @actual_other_files = ();
     foreach my $lfile (@other_input_files)
     {
+        my ($file, $local);
+	my (@inputs, @rewritten_inputs);
+	my ($need_rewritten);
 	if ($lfile =~ /^([^:]*):(.*)$/)
 	{
 	    # This is the ":" syntax of AC_OUTPUT.
@@ -3402,7 +3392,7 @@ sub handle_configure
 	# Makefile, and we are currently doing `.', then we create a
 	# rule to rebuild the file in the subdir.
 	next if -f $file . '.am';
-	local ($fd) = dirname ($file);
+	my $fd = dirname ($file);
 	if ($fd ne $relative_dir)
 	{
 	    if ($relative_dir eq '.' && ! &is_make_dir ($fd))
@@ -3451,10 +3441,9 @@ sub handle_configure
 # Handle C headers.
 sub handle_headers
 {
-    local (@r);
-    @r = &am_install_var ('-defaultdist', 'header', 'HEADERS', 'include',
-			  'oldinclude', 'pkginclude',
-			  'noinst', 'check');
+    my @r = &am_install_var ('-defaultdist', 'header', 'HEADERS', 'include',
+			     'oldinclude', 'pkginclude',
+			     'noinst', 'check');
     foreach (@r)
     {
 	next unless /\.(.*)$/;
@@ -3604,8 +3593,7 @@ sub handle_merge_targets
     local ($makefile) = @_;
 
     # There are a few install-related variables that you should not define.
-    local ($var);
-    foreach $var ('PRE_INSTALL', 'POST_INSTALL', 'NORMAL_INSTALL')
+    foreach my $var ('PRE_INSTALL', 'POST_INSTALL', 'NORMAL_INSTALL')
     {
 	if (&variable_defined ($var))
 	{
@@ -3618,8 +3606,7 @@ sub handle_merge_targets
     # right enough.
     unshift (@all, basename ($makefile));
 
-    local ($one_name);
-    foreach $one_name (@config_names)
+    foreach my $one_name (@config_names)
     {
 	push (@all, basename ($one_name))
 	    if dirname ($one_name) eq $relative_dir;
@@ -3640,9 +3627,8 @@ sub handle_merge_targets
 			"\`install-info-local' target defined but \`no-installinfo' option not in use");
     }
 
-    local ($utarg);
-    foreach $utarg ('uninstall-data-local', 'uninstall-data-hook',
-		    'uninstall-exec-local', 'uninstall-exec-hook')
+    foreach my $utarg ('uninstall-data-local', 'uninstall-data-hook',
+		       'uninstall-exec-local', 'uninstall-exec-hook')
     {
 	if (&target_defined ($utarg))
 	{
@@ -3660,11 +3646,10 @@ sub handle_merge_targets
 
     if (@all || &variable_defined ('BUILT_SOURCES'))
     {
-	local ($one_name);
-	local ($local_headers) = '';
+	my $local_headers = '';
 	$local_headers = '$(BUILT_SOURCES)'
 	    if &variable_defined ('BUILT_SOURCES');
-	foreach $one_name (@config_names)
+	foreach my $one_name (@config_names)
 	{
 	    if (dirname ($one_name) eq $relative_dir)
 	    {
@@ -4011,8 +3996,8 @@ sub handle_emacs_lisp
 # Handle Python
 sub handle_python
 {
-    local (@pyfiles) = &am_install_var ('-defaultdist', 'python', 'PYTHON',
-					'python', 'noinst');
+    my @pyfiles = &am_install_var ('-defaultdist', 'python', 'PYTHON',
+				   'python', 'noinst');
     return if ! @pyfiles;
 
     # Found some python.
@@ -4037,9 +4022,9 @@ sub handle_python
 # Handle Java.
 sub handle_java
 {
-    local (@sourcelist) = &am_install_var ('-candist', '-clean',
-					   'java', 'JAVA',
-					   'java', 'noinst', 'check');
+    my @sourcelist = &am_install_var ('-candist', '-clean',
+				      'java', 'JAVA',
+				      'java', 'noinst', 'check');
     return if ! @sourcelist;
 
     &define_variable ('JAVAC', 'javac');
@@ -4283,7 +4268,7 @@ sub scan_one_autoconf_file
 	elsif (/LIBOBJS="(.*)\s+\$LIBOBJS"/
 	       || /LIBOBJS="\$LIBOBJS\s+(.*)"/)
 	{
-	    foreach $libobj_iter (split (' ', $1))
+	    foreach my $libobj_iter (split (' ', $1))
 	    {
 		if ($libobj_iter =~ /^(.*)\.o(bj)?$/
 		    || $libobj_iter =~ /^(.*)\.\$ac_objext$/
@@ -4401,8 +4386,7 @@ sub scan_one_autoconf_file
  		    if $1 eq 'C';
 
 	    $config_header_line = $.;
-	    local ($one_hdr);
-	    foreach $one_hdr (split (' ', &unquote_m4_arg ($2)))
+	    foreach my $one_hdr (split (' ', &unquote_m4_arg ($2)))
 	    {
 		push (@config_fullnames, $one_hdr);
 		if ($one_hdr =~ /^([^:]+):(.+)$/)
@@ -4551,7 +4535,6 @@ sub scan_autoconf_files
 
     local ($in_ac_output, $in_ac_replace) = (0, 0);
     local (%make_list, @make_input_list);
-    local ($libobj_iter);
 
     warn "automake: both \`configure.ac' and \`configure.in' present:"
          . " ignoring \`configure.in'\n"
@@ -4857,8 +4840,7 @@ sub lang_c_finish
     # Push all libobjs files onto de_ansi_files.  We actually only
     # push files which exist in the current directory, and which are
     # genuine source files.
-    local ($file);
-    foreach $file (keys %libsources)
+    foreach my $file (keys %libsources)
     {
 	if ($file =~ /^(.*)\.[cly]$/ && -f "$relative_dir/$file")
 	{
@@ -4869,8 +4851,8 @@ sub lang_c_finish
     if (defined $options{'ansi2knr'} && keys %de_ansi_files)
     {
  	# Make all _.c files depend on their corresponding .c files.
- 	local ($base, @objects);
- 	foreach $base (sort keys %de_ansi_files)
+ 	my @objects;
+ 	foreach my $base (sort keys %de_ansi_files)
  	{
 	    # Each _.c file must depend on ansi2knr; otherwise it
 	    # might be used in a parallel build before it is built.
@@ -4946,11 +4928,11 @@ sub lang_yacc_finish
     return if defined $language_scratch{'yacc-done'};
     $language_scratch{'yacc-done'} = 1;
 
-    local ($file, $base, $hname, $cname);
+    local ($base, $hname, $cname);
     local (%seen_suffix) = ();
     local (@yacc_files) = sort keys %yacc_sources;
     local ($yacc_count) = scalar (@yacc_files);
-    foreach $file (@yacc_files)
+    foreach my $file (@yacc_files)
     {
 	$file =~ /(\..*)$/;
 	&output_yacc_build_rule ($1, $yacc_count > 1)
@@ -5011,9 +4993,9 @@ sub lang_lex_finish
     $language_scratch{'lex-done'} = 1;
 
     local (%seen_suffix) = ();
-    local ($file, $cname);
-    local ($lex_count) = scalar (keys %lex_sources);
-    foreach $file (sort keys %lex_sources)
+    my $cname;
+    my $lex_count = scalar (keys %lex_sources);
+    foreach my $file (sort keys %lex_sources)
     {
 	$file =~ /(\..*)$/;
 	&output_lex_build_rule ($1, $lex_count > 1)
@@ -5136,9 +5118,9 @@ sub lang_java_finish
 # A helper which computes a sorted list of all extensions for LANG.
 sub lang_extensions
 {
-    local ($lang) = @_;
-    local ($key, @r);
-    foreach $key (sort keys %extension_seen)
+    my ($lang) = @_;
+    my @r;
+    foreach my $key (sort keys %extension_seen)
     {
 	push (@r, '.' . $key) if $extension_map{$key} eq $lang;
     }
@@ -5209,7 +5191,7 @@ sub saw_sources_p
 # (sans `.').
 sub register_language
 {
-    local ($language, @options) = @_;
+    my ($language, @options) = @_;
 
     # Set the defaults.
     $language_map{$language . '-ansi-p'} = 0;
@@ -5217,8 +5199,7 @@ sub register_language
     $language_map{$language . '-autodep'} = 'no';
     $language_map{$language . '-derived-autodep'} = 'no';
 
-    local ($iter);
-    foreach $iter (@options)
+    foreach my $iter (@options)
     {
 	if ($iter =~ /^(.*)=(.*)$/)
 	{
@@ -5608,9 +5589,8 @@ sub variable_conditions_sub
 	    &variable_conditions_permutations (split('@', $this_cond));
 	foreach my $perm (@perms)
 	{
-	    local ($scan);
-	    local ($ok) = 1;
-	    foreach $scan (@this_conds)
+	    my $ok = 1;
+	    foreach my $scan (@this_conds)
 	    {
 		if (&conditional_true_when ($perm, $scan)
 		    || &conditional_true_when ($scan, $perm))
@@ -5674,9 +5654,8 @@ sub variable_conditions_permutations
     $neg =~ s/TRUE$/TRUEO/;
     $neg =~ s/FALSE$/TRUE/;
     $neg =~ s/TRUEO$/FALSE/;
-    local (@ret);
-    local ($sub);
-    foreach $sub (&variable_conditions_permutations (@comps))
+    my @ret;
+    foreach my $sub (&variable_conditions_permutations (@comps))
     {
 	push (@ret, '@' . $comp . '@' . $sub);
 	push (@ret, '@' . $neg . '@' . $sub);
@@ -6927,12 +6906,12 @@ sub transform_cond (%)
 # * `zar_PRIMARY' is a variable.
 sub am_primary_prefixes
 {
-    local ($primary, $can_dist, @prefixes) = @_;
+    my ($primary, $can_dist, @prefixes) = @_;
 
-    local (%valid, $varname);
+    my %valid;
     grep ($valid{$_} = 0, @prefixes);
     $valid{'EXTRA'} = 0;
-    foreach $varname (keys %contents)
+    foreach my $varname (keys %contents)
     {
 	if ($varname =~ /^(nobase_)?(dist_|nodist_)?(.*)_$primary$/)
 	{
@@ -6971,14 +6950,9 @@ sub am_primary_prefixes
 # Usage is: am_install_var (OPTION..., file, HOW, where...)
 sub am_install_var
 {
-    local (@args) = @_;
+    my (@args) = @_;
 
-    local ($do_clean) = 0;
-    local ($do_require) = 1;
-    local ($can_dist) = 0;
-    local ($default_dist) = 0;
-
-    local ($ltxform);
+    my $ltxform;
     if (defined $configure_vars{'LIBTOOL'})
     {
 	# Transform '@LIBTOOL ...@' to '$(LIBTOOL) ...'
@@ -6990,7 +6964,7 @@ sub am_install_var
 	$ltxform = 's/\@LIBTOOL([^\@]*)\@//;';
     }
 
-    local ($cygxform);
+    my $cygxform;
     if (! $seen_exeext)
     {
 	$cygxform = 's/\@EXEEXT\@//g;';
@@ -7000,6 +6974,10 @@ sub am_install_var
 	$cygxform = 's/\@EXEEXT\@/\$(EXEEXT)/g;';
     }
 
+    my $do_clean = 0;
+    my $do_require = 1;
+    my $can_dist = 0;
+    my $default_dist = 0;
     while (@args)
     {
 	if ($args[0] eq '-clean')
@@ -7026,10 +7004,7 @@ sub am_install_var
 	shift (@args);
     }
 
-    local ($file, $primary, @prefixes) = @args;
-
-    local (@used) = ();
-    local (@result) = ();
+    my ($file, $primary, @prefixes) = @args;
 
     # Now that configure substitutions are allowed in where_HOW
     # variables, it is an error to actually define the primary.  We
@@ -7052,19 +7027,18 @@ sub am_install_var
 
     # If a primary includes a configure substitution, then the EXTRA_
     # form is required.  Otherwise we can't properly do our job.
-    local ($require_extra);
-    local ($warned_about_extra) = 0;
+    my $require_extra;
+    my $warned_about_extra = 0;
 
-    local ($clean_file) = $file . '-clean';
-    local ($one_name);
-    local ($X);
-    local ($nodir_name);
-    local ($strip_subdir) = 1;
-    foreach $X (sort keys %valid)
+    my @used = ();
+    my @result = ();
+
+    foreach my $X (sort keys %valid)
     {
-	$one_name = $X . '_' . $primary;
+	my $one_name = $X . '_' . $primary;
 	if (&variable_defined ($one_name))
 	{
+	    my $strip_subdir = 1;
 	    # If subdir prefix should be preserved, do so.
 	    if ($X =~ /^nobase_/)
 	    {
@@ -7072,6 +7046,7 @@ sub am_install_var
 		$X =~ s/^nobase_//;
 	    }
 
+	    my $nodir_name;
 	    # If files should be distributed, do so.
 	    if ($can_dist)
 	    {
@@ -7089,8 +7064,7 @@ sub am_install_var
 
 	    # Append actual contents of where_PRIMARY variable to
 	    # result.
-	    local ($rcurs);
-	    foreach $rcurs (&variable_value_as_list ($one_name, 'all'))
+	    foreach my $rcurs (&variable_value_as_list ($one_name, 'all'))
 	    {
 		# Skip configure substitutions.  Possibly bogus.
 		if ($rcurs =~ /^\@.*\@$/)
@@ -7137,7 +7111,7 @@ sub am_install_var
 		if (! @conds)
 		{
 		    my @one_binlist = ();
-		    foreach $rcurs (&variable_value_as_list ($one_name, ''))
+		    foreach my $rcurs (&variable_value_as_list ($one_name, ''))
 		    {
 			if ($rcurs =~ /\./ || $rcurs =~ /^\@.*\@$/)
 			{
@@ -7199,7 +7173,7 @@ sub am_install_var
 	    if ($do_clean)
 	    {
 		$output_rules .=
-		  &file_contents ($clean_file,
+		  &file_contents ($file . '-clean',
 				  &transform ('DIR' => $X)
 				  . $cygxform);
 
@@ -7289,12 +7263,12 @@ sub is_make_dir
     local ($dir) = @_;
     if (! $make_dirs_set)
     {
-	foreach $iter (@configure_input_files)
+	foreach my $iter (@configure_input_files)
 	{
 	    $make_dirs{dirname ($iter)} = 1;
 	}
 	# We also want to notice Makefile.in's.
-	foreach $iter (@other_input_files)
+	foreach my $iter (@other_input_files)
 	{
 	    if ($iter =~ /Makefile\.in$/)
 	    {
@@ -7344,12 +7318,12 @@ sub maybe_push_required_file
 # which the first file was found) before return.
 sub require_file_internal
 {
-    local ($is_configure, $line, $mystrict, @files) = @_;
-    local ($file, $fullfile);
-    local ($found_it, $dangling_sym, $errfile, $errdir);
-    local ($save_dir);
+    my ($is_configure, $line, $mystrict, @files) = @_;
+    my $fullfile;
+    my ($found_it, $dangling_sym, $errfile, $errdir);
+    my $save_dir;
 
-    foreach $file (@files)
+    foreach my $file (@files)
     {
 	# If we've already looked for it, we're done.
 	next if defined $require_file_found{$file};
@@ -7357,7 +7331,7 @@ sub require_file_internal
 
 	$found_it = 0;
 	$dangling_sym = 0;
-	foreach $dir (@require_file_paths)
+	foreach my $dir (@require_file_paths)
 	{
 	    if ($dir eq '.')
 	    {
@@ -7548,10 +7522,7 @@ sub require_conf_file_with_conf_line
 # Push a list of files onto dist_common.
 sub push_dist_common
 {
-    local (@files) = @_;
-    local ($file);
-
-    foreach $file (@files)
+    foreach my $file (@_)
     {
 	if (! defined $dist_common{$file})
 	{
@@ -7767,9 +7738,9 @@ EOF
 
     print "\nFiles which are automatically distributed, if found:\n";
     $~ = "USAGE_FORMAT";
-    local ($last, $iter, @lcomm);
+    my ($last, @lcomm);
     $last = '';
-    foreach $iter (sort ((@common_files, @common_sometimes)))
+    foreach my $iter (sort ((@common_files, @common_sometimes)))
     {
 	push (@lcomm, $iter) unless $iter eq $last;
 	$last = $iter;
