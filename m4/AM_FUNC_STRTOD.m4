@@ -2,6 +2,14 @@ dnl From Jim Meyering.
 
 # serial 1
 
+# @defmac AC_FUNC_STRTOD
+# @maindex FUNC_STRTOD
+# @ovindex LIBOBJS
+# If the @code{strtod} function is not available, or does not work
+# correctly (like the one on SunOS 5.4), add @samp{strtod.o} to output
+# variable @code{LIBOBJS}.
+# @end defmac
+
 AC_DEFUN(AM_FUNC_STRTOD,
 [AC_CACHE_CHECK(for working strtod, am_cv_func_strtod,
 [AC_TRY_RUN([

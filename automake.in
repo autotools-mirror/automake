@@ -902,7 +902,11 @@ sub handle_lib_objects
 	    local ($iter, $rewrite);
 	    foreach $iter (keys %libsources)
 	    {
-		if ($iter ne 'alloca.c')
+		if ($iter =~ /\.h$/)
+		{
+		    &require_file_with_line ($var, $FOREIGN, $iter);
+		}
+		elsif ($iter ne 'alloca.c')
 		{
 		    ($rewrite = $iter) =~ s/\.c$/.P/;
 		    $dep_files{'.deps/' . $rewrite} = 1;
@@ -2622,9 +2626,8 @@ sub scan_configure
 	{
 	    $libsources{'fileblocks.c'} = 1;
 	}
-	elsif (/(AC|fp)_FUNC_FNMATCH/)
+	elsif (/AM_FUNC_FNMATCH/)
 	{
-	    # AC_FUNC_FNMATCH is just wishful thinking at this point.
 	    $libsources{'fnmatch.c'} = 1;
 	}
 	elsif (/AC_REPLACE_FUNCS\s*\((.*)\)/)
@@ -2634,7 +2637,7 @@ sub scan_configure
 		$libsources{$_ . '.c'} = 1;
 	    }
 	}
-	elsif (/AC_REPLACE_GNU_GETOPT/)
+	elsif (/A[CM]_REPLACE_GNU_GETOPT/)
 	{
 	    $libsources{'getopt.c'} = 1;
 	    $libsources{'getopt1.c'} = 1;
@@ -2642,6 +2645,13 @@ sub scan_configure
 	elsif (/AM_FUNC_STRTOD/)
 	{
 	    $libsources{'strtod.c'} = 1;
+	}
+	elsif (/AM_WITH_REGEX/)
+	{
+	    $libsources{'rx.c'} = 1;
+	    $libsources{'rx.h'} = 1;
+	    $libsources{'regex.c'} = 1;
+	    $libsources{'regex.h'} = 1;
 	}
 	elsif (/LIBOBJS="(.*)\s+\$LIBOBJS"/
 	       || /LIBOBJS="\$LIBOBJS\s+(.*)"/)
@@ -2655,7 +2665,7 @@ sub scan_configure
 	    }
 	}
 
-	if (/(fp_PROG_INSTALL|fp_C_PROTOTYPES|jm_MAINTAINER_MODE)/)
+	if (/(fp_FUNC_FNMATCH|fp_PROG_INSTALL|fp_C_PROTOTYPES|jm_MAINTAINER_MODE)/)
 	{
 	    &am_conf_line_error ($., "\`$1' is obsolete; use corresponding \`AM_' macro");
 	}
@@ -3214,6 +3224,7 @@ sub initialize_global_constants
 	 );
 
     $USAGE = "\
+  -a, --add-missing     add missing standard files to package
   --amdir=DIR           directory storing config files
   --build-dir=DIR       directory where build being done (for dependencies)
   --foreign             same as --strictness=foreign
@@ -3221,13 +3232,12 @@ sub initialize_global_constants
   --gnu                 same as --strictness=gnu
   --help                print this help, then exit
   -i, --include-deps    include generated dependencies in Makefile.in
-  -a, --add-missing     add missing standard files to package
   --no-force            only update Makefile.in's that are out of date
   -o DIR, --output-dir=DIR
                         put generated Makefile.in's into DIR
+  --srcdir-name=DIR     name used for srcdir (for dependencies)
   -s LEVEL, --strictness=LEVEL
                         set strictness level.  LEVEL is foreign, gnu, gnits
-  --srcdir-name=DIR     name used for srcdir (for dependencies)
   -v, --verbose         verbosely list files processed
   --version             print version number, then exit\n";
 

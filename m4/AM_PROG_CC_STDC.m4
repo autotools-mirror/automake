@@ -41,8 +41,10 @@ do
 choke me
 #endif
 ], [/* DYNIX/ptx V4.1.3 can't compile sys/stat.h with -Xc -D__EXTENSIONS__. */
-#include <sys/types.h>
-#include <sys/stat.h>
+#ifdef _SEQUENT_
+# include <sys/types.h>
+# include <sys/stat.h>
+#endif
 int test (int i, double x);
 struct s1 {int (*f) (int a);};
 struct s2 {int (*f) (double a);};],
