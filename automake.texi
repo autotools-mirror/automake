@@ -3339,6 +3339,8 @@ disallowed.
 @cindex Installation support
 @cindex make install support
 
+@section Basics of installation
+
 Naturally, Automake handles the details of actually installing your
 program once it has been built.  All files named by the various
 primaries are automatically installed in the appropriate places when the
@@ -3368,26 +3370,21 @@ nobase_include_HEADERS = stdio.h sys/types.h
 Will install @file{stdio.h} in @code{$(includedir)} and @file{types.h}
 in @code{$(includedir)/sys}.
 
+@section The two parts of install
+
 Automake generates separate @code{install-data} and @code{install-exec}
 targets, in case the installer is installing on multiple machines which
 share directory structure---these targets allow the machine-independent
-parts to be installed only once.  The @code{install} target depends on
-both of these targets.
+parts to be installed only once.  @code{install-exec} installs
+platform-dependent files, and @code{install-data} installs
+platform-independent files.  The @code{install} target depends on both
+of these targets.  While Automake tries to automatically segregate
+objects into the correct category, the @file{Makefile.am} author is, in
+the end, responsible for making sure this is done correctly.
 @trindex install-data
 @trindex install-exec
 @trindex install
-
-Automake also generates an @code{uninstall} target, an
-@code{installdirs} target, and an @code{install-strip} target.
-@trindex uninstall
-@trindex installdirs
-@trindex install-strip
-
-It is possible to extend this mechanism by defining an
-@code{install-exec-local} or @code{install-data-local} target.  If these
-targets exist, they will be run at @samp{make install} time.
-@trindex install-exec-local
-@trindex install-data-local
+@cindex Install, two parts of
 
 Variables using the standard directory prefixes @samp{data},
 @samp{info}, @samp{man}, @samp{include}, @samp{oldinclude},
@@ -3403,6 +3400,24 @@ Any variable using a user-defined directory prefix with @samp{exec} in
 the name (e.g. @samp{myexecbin_PROGRAMS} is installed by
 @samp{install-exec}.  All other user-defined prefixes are installed by
 @samp{install-data}.
+
+@section Extending installation
+
+It is possible to extend this mechanism by defining an
+@code{install-exec-local} or @code{install-data-local} target.  If these
+targets exist, they will be run at @samp{make install} time.  These
+rules can do almost anything; care is required.
+@trindex install-exec-local
+@trindex install-data-local
+
+Automake also supports two install hooks, @code{install-exec-hook} and
+@code{install-data-hook}.  These hooks are run after all other install
+rules of the appropriate type, exec or data, have completed.  So, for
+instance, it is possible to perform post-installation modifications
+using an install hook.
+@cindex Install hook
+
+@section Staged installs
 
 @vindex DESTDIR
 Automake generates support for the @samp{DESTDIR} variable in all
@@ -3424,6 +3439,26 @@ would install @file{/tmp/staging/gnu/bin/foo} and
 This feature is commonly used to build install images and packages.  For
 more information, see @ref{Makefile Conventions, , , standards, The GNU
 Coding Standards}.
+
+Support for @samp{DESTDIR} is implemented by coding it directly into the
+install rules.  If your @file{Makefile.am} uses a local install rule
+(e.g., @code{install-exec-local}) or an install hook, then you must
+write that code to repsect @samp{DESTDIR}.
+
+@section Rules for the user
+
+Automake also generates an @code{uninstall} target, an
+@code{installdirs} target, and an @code{install-strip} target.
+@trindex uninstall
+@trindex installdirs
+@trindex install-strip
+
+Automake supports @code{uninstall-local} and @code{uninstall-hook}.
+There is no notion of separate uninstalls for ``exec'' and ``data'', as
+that does not make sense.
+
+Note that @code{uninstall} is not meant as a replacement for a real
+packaging tool.
 
 
 @node Clean, Dist, Install, Top
@@ -3580,6 +3615,13 @@ configured and built.  Your @code{distcheck-hook} can do almost
 anything, though as always caution is advised.  Generally this hook is
 used to check for potential distribution errors not caught by the
 standard mechanism.
+
+@section The types of distributions
+
+By default Automake generates a @samp{.tar.gz} file when asked to create
+a distribution.  However, some projects prefer different packaging
+formats.  Automake accomodates most of these using options;
+@ref{Options}.
 
 
 @node Tests, Options, Dist, Top
