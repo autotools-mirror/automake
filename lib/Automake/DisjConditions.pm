@@ -1,31 +1,48 @@
-package Automake::ConditionalSet;
+# Copyright (C) 1997, 2001, 2002, 2003  Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+# 02111-1307, USA.
+
+package Automake::DisjConditions;
 
 use Carp;
 use strict;
-use Automake::Conditional qw/TRUE FALSE/;
+use Automake::Condition qw/TRUE FALSE/;
 
 =head1 NAME
 
-Automake::ConditionalSet - record a disjunction of conditions
+Automake::DisjConditions - record a disjunction of Conditions
 
 =head1 SYNOPSIS
 
-  use Automake::Conditional;
-  use Automake::ConditionalSet;
+  use Automake::Condition;
+  use Automake::DisjConditions;
 
-  # Create a conditional to represent "COND1 and not COND2".
-  my $cond = new Automake::Conditional "COND1_TRUE", "COND2_FALSE";
-  # Create a conditional to represent "not COND3".
-  my $other = new Automake::Conditional "COND3_FALSE";
+  # Create a Condition to represent "COND1 and not COND2".
+  my $cond = new Automake::Condition "COND1_TRUE", "COND2_FALSE";
+  # Create a Condition to represent "not COND3".
+  my $other = new Automake::Condition "COND3_FALSE";
 
-  # Create a ConditionalSet to represent
+  # Create a DisjConditions to represent
   #   "(COND1 and not COND2) or (not COND3)"
-  my $set = new Automake::ConditionalSet $cond, $other;
+  my $set = new Automake::DisjConditions $cond, $other;
 
-  # Return the list of Conditionals involved in $set.
+  # Return the list of Conditions involved in $set.
   my @conds = $set->conds;
 
-  # Return one of the Conditional involved in $set.
+  # Return one of the Condition involved in $set.
   my $cond = $set->one_cond;
 
   # Return true iff $set is always true (i.e. its subconditions
@@ -36,33 +53,33 @@ Automake::ConditionalSet - record a disjunction of conditions
   # only false conditions).
   if ($set->false) { ... }
 
-  # Return a string representing the ConditionalSet.
+  # Return a string representing the DisjConditions.
   #   "COND1_TRUE COND2_FALSE | COND3_FALSE"
   my $str = $set->string;
 
-  # Return a human readable string representing the ConditionalSet.
+  # Return a human readable string representing the DisjConditions.
   #   "(COND1 and !COND2) or (!COND3)"
   my $str = $set->human;
 
-  # Build a new ConditionalSet from the permuation of all
-  # subconditions appearing in $set.
+  # Build a new DisjConditions from the permuation of all
+  # Conditions appearing in $set.
   my $perm = $set->permutations;
 
-  # Invert a ConditionalSet, i.e., create a new ConditionalSet
+  # Invert a DisjConditions, i.e., create a new DisjConditions
   # that complements $set.
   my $inv = $set->invert;
 
-  # Multiply two ConditionalSets.
+  # Multiply two DisjConditions.
   my $prod = $set1->multiply ($set2)
 
-  # Return the subconditions of a ConditionalSet with respect to
-  # a Conditional.  See the description for a real example.
+  # Return the subconditions of a DisjConditions with respect to
+  # a Condition.  See the description for a real example.
   my $subconds = $set->sub_conditions ($cond)
 
 =head1 DESCRIPTION
 
-A C<ConditionalSet> is a disjunction of atomic conditions.  In
-Automake they are used to represent the conditions into which Makefile
+A C<DisjConditions> is a disjunction of C<Condition>s.  In Automake
+they are used to represent the conditions into which Makefile
 variables and Makefile rules are defined.
 
 If the variable C<VAR> is defined as
@@ -78,35 +95,37 @@ If the variable C<VAR> is defined as
     endif
   endif
 
-then it will be associated a C<ConditionalSet> created with
+then it will be associated a C<DisjConditions> created with
 the following statement.
 
-  new Automake::ConditionalSet
-    (new Automake::Conditional ("COND1_TRUE", "COND2_TRUE"),
-     new Automake::Conditional ("COND3_FALSE", "COND4_TRUE"));
+  new Automake::DisjConditions
+    (new Automake::Condition ("COND1_TRUE", "COND2_TRUE"),
+     new Automake::Condition ("COND3_FALSE", "COND4_TRUE"));
 
-As you can see, a C<ConditionalSet> is made from a list of
-C<Conditional>s.  Since C<ConditionalSet> is a disjunction, and
-C<Conditional> is a conjunction, the above can be read as
+As you can see, a C<DisjConditions> is made from a list of
+C<Condition>s.  Since C<DisjConditions> is a disjunction, and
+C<Condition> is a conjunction, the above can be read as
 follows.
 
   (COND1 and COND2) or ((not COND3) and COND4)
 
-Like C<Conditional> objects, a C<ConditionalSet> object is unisque
-with respect to its conditions.  Two C<ConditionalSet> objects created
+That's indeed the condition into which C<VAR> has a value.
+
+Like C<Condition> objects, a C<DisjConditions> object is unique
+with respect to its conditions.  Two C<DisjConditions> objects created
 for the same set of conditions will have the same adress.  This makes
-it easy to compare C<ConditionalSet>s: just compare the references.
+it easy to compare C<DisjConditions>s: just compare the references.
 
 =head2 Methods
 
 =over 4
 
-=item C<$set = new Automake::ConditionalSet [@conds]>
+=item C<$set = new Automake::DisjConditions [@conds]>
 
-Create a C<ConditionalSet> object from the list of C<Conditional>
+Create a C<DisjConditions> object from the list of C<Condition>
 objects passed in arguments.
 
-If the C<@conds> list is empty, the C<ConditionalSet> is assumed to be
+If the C<@conds> list is empty, the C<DisjConditions> is assumed to be
 false.
 
 As explained previously, the reference (object) returned is unique
@@ -115,10 +134,10 @@ ignored.
 
 =cut
 
-# Keys in this hash are ConditionalSet strings. Values are the
-# associated object ConditionalSet.  This is used by `new' to reuse
-# ConditionalSet objects with identical conditions.
-use vars '%_conditional_set_singletons';
+# Keys in this hash are DisjConditions strings. Values are the
+# associated object DisjConditions.  This is used by `new' to reuse
+# DisjConditions objects with identical conditions.
+use vars '%_disjcondition_singletons';
 
 sub new ($;@)
 {
@@ -131,12 +150,12 @@ sub new ($;@)
   for my $cond (@conds)
     {
       confess "`$cond' isn't a reference" unless ref $cond;
-      confess "`$cond' isn't an Automake::Conditional"
-	unless $cond->isa ("Automake::Conditional");
+      confess "`$cond' isn't an Automake::Condition"
+	unless $cond->isa ("Automake::Condition");
 
       # This is a disjunction of conditions, so we drop
       # false conditions.  We'll always treat an "empty"
-      # ConditionalSet as false for this reason.
+      # DisjConditions as false for this reason.
       next if $cond->false;
 
       # Store conditions as keys AND as values, because blessed
@@ -147,17 +166,17 @@ sub new ($;@)
     }
 
   my $key = $self->string;
-  if (exists $_conditional_set_singletons{$key})
+  if (exists $_disjcondition_singletons{$key})
     {
-      return $_conditional_set_singletons{$key};
+      return $_disjcondition_singletons{$key};
     }
-  $_conditional_set_singletons{$key} = $self;
+  $_disjcondition_singletons{$key} = $self;
   return $self;
 }
 
 =item C<@conds = $set-E<gt>conds>
 
-Return the list of C<Conditional> objects involved in C<$set>.
+Return the list of C<Condition> objects involved in C<$set>.
 
 =cut
 
@@ -173,7 +192,7 @@ sub conds ($ )
 
 =item C<$cond = $set-E<gt>one_cond>
 
-Return one C<Conditional> object involved in C<$set>.
+Return one C<Condition> object involved in C<$set>.
 
 =cut
 
@@ -185,8 +204,8 @@ sub one_cond ($)
 
 =item C<$et = $set-E<gt>false>
 
-Return 1 iff the C<ConditionalSet> object is always false (i.e., if it
-is empty, or if it contains only false C<Conditional>s). Return 0
+Return 1 iff the C<DisjConditions> object is always false (i.e., if it
+is empty, or if it contains only false C<Condition>s). Return 0
 otherwise.
 
 =cut
@@ -199,7 +218,7 @@ sub false ($ )
 
 =item C<$et = $set-E<gt>true>
 
-Return 1 iff the C<ConditionalSet> object is always true (i.e. covers all
+Return 1 iff the C<DisjConditions> object is always true (i.e. covers all
 conditions). Return 0 otherwise.
 
 =cut
@@ -216,7 +235,7 @@ sub true ($ )
 
 =item C<$str = $set-E<gt>string>
 
-Build a string which denotes the C<ConditionalSet>.
+Build a string which denotes the C<DisjConditions>.
 
 =cut
 
@@ -242,7 +261,7 @@ sub string ($ )
 
 =item C<$cond-E<gt>human>
 
-Build a human readable string which denotes the C<ConditionalSet>.
+Build a human readable string which denotes the C<DisjConditions>.
 
 =cut
 
@@ -295,8 +314,8 @@ sub _permutations_worker (@)
     }
   if (! @ret)
     {
-      push (@ret, new Automake::Conditional $cond);
-      push (@ret, new Automake::Conditional $neg);
+      push (@ret, new Automake::Condition $cond);
+      push (@ret, new Automake::Condition $neg);
     }
 
   return @ret;
@@ -304,25 +323,25 @@ sub _permutations_worker (@)
 
 =item C<$perm = $set-E<gt>permutations>
 
-Return a permutations of the subconditions involved in a C<ConditionalSet>.
+Return a permutations of the conditions involved in a C<DisjConditions>.
 
-For instance consider this initial C<ConditionalSet>.
+For instance consider this initial C<DisjConditions>.
 
-  my $set = new Automake::ConditionalSet
-    (new Automake::Conditional ("COND1_TRUE", "COND2_TRUE"),
-     new Automake::Conditional ("COND3_FALSE", "COND2_TRUE"));
+  my $set = new Automake::DisjConditions
+    (new Automake::Condition ("COND1_TRUE", "COND2_TRUE"),
+     new Automake::Condition ("COND3_FALSE", "COND2_TRUE"));
 
-Calling C<$set-E<gt>permutations> will return the following Conditional set.
+Calling C<$set-E<gt>permutations> will return the following DisjConditions.
 
-  new Automake::ConditionalSet
-    (new Automake::Conditional ("COND1_TRUE", "COND2_TRUE", "COND3_TRUE"),
-     new Automake::Conditional ("COND1_FALSE","COND2_TRUE", "COND3_TRUE"),
-     new Automake::Conditional ("COND1_TRUE", "COND2_FALSE","COND3_TRUE"),
-     new Automake::Conditional ("COND1_FALSE","COND2_FALSE","COND3_TRUE"),
-     new Automake::Conditional ("COND1_TRUE", "COND2_TRUE", "COND3_FALSE"),
-     new Automake::Conditional ("COND1_FALSE","COND2_TRUE", "COND3_FALSE"),
-     new Automake::Conditional ("COND1_TRUE", "COND2_FALSE","COND3_FALSE"),
-     new Automake::Conditional ("COND1_FALSE","COND2_FALSE","COND3_FALSE"));
+  new Automake::DisjConditions
+    (new Automake::Condition ("COND1_TRUE", "COND2_TRUE", "COND3_TRUE"),
+     new Automake::Condition ("COND1_FALSE","COND2_TRUE", "COND3_TRUE"),
+     new Automake::Condition ("COND1_TRUE", "COND2_FALSE","COND3_TRUE"),
+     new Automake::Condition ("COND1_FALSE","COND2_FALSE","COND3_TRUE"),
+     new Automake::Condition ("COND1_TRUE", "COND2_TRUE", "COND3_FALSE"),
+     new Automake::Condition ("COND1_FALSE","COND2_TRUE", "COND3_FALSE"),
+     new Automake::Condition ("COND1_TRUE", "COND2_FALSE","COND3_FALSE"),
+     new Automake::Condition ("COND1_FALSE","COND2_FALSE","COND3_FALSE"));
 
 =cut
 
@@ -347,7 +366,7 @@ sub permutations ($ )
   # An empty permutation is TRUE, because we ignore TRUE conditions
   # in the recursions.
   @res = (TRUE) unless @res;
-  my $res = new Automake::ConditionalSet @res;
+  my $res = new Automake::DisjConditions @res;
 
   $self->{'permutations'} = $res;
 
@@ -358,26 +377,26 @@ sub permutations ($ )
 
 Multiply two conditional sets.
 
-  my $set1 = new Automake::ConditionalSet
-    (new Automake::Conditional ("A_TRUE"),
-     new Automake::Conditional ("B_TRUE"));
-  my $set2 = new Automake::ConditionalSet
-    (new Automake::Conditional ("C_FALSE"),
-     new Automake::Conditional ("D_FALSE"));
+  my $set1 = new Automake::DisjConditions
+    (new Automake::Condition ("A_TRUE"),
+     new Automake::Condition ("B_TRUE"));
+  my $set2 = new Automake::DisjConditions
+    (new Automake::Condition ("C_FALSE"),
+     new Automake::Condition ("D_FALSE"));
 
 C<$set1-E<gt>multiply ($set2)> will return
 
-  new Automake::ConditionalSet
-    (new Automake::Conditional ("A_TRUE", "C_FALSE"),
-     new Automake::Conditional ("B_TRUE", "C_FALSE"),;
-     new Automake::Conditional ("A_TRUE", "D_FALSE"),
-     new Automake::Conditional ("B_TRUE", "D_FALSE"));
+  new Automake::DisjConditions
+    (new Automake::Condition ("A_TRUE", "C_FALSE"),
+     new Automake::Condition ("B_TRUE", "C_FALSE"),;
+     new Automake::Condition ("A_TRUE", "D_FALSE"),
+     new Automake::Condition ("B_TRUE", "D_FALSE"));
 
-The argument can also be a C<Conditional>.
+The argument can also be a C<Condition>.
 
 =cut
 
-# Same as multiply() but take a list of Conditonal as second argument.
+# Same as multiply() but take a list of Conditonals as second argument.
 # We use this in invert().
 sub _multiply ($@)
 {
@@ -390,30 +409,30 @@ sub _multiply ($@)
 	  push @res, $selfcond->merge ($setcond);
 	}
     }
-  return new Automake::ConditionalSet @res;
+  return new Automake::DisjConditions @res;
 }
 
 sub multiply ($$)
 {
   my ($self, $set) = @_;
-  return $self->_multiply ($set) if $set->isa('Automake::Conditional');
+  return $self->_multiply ($set) if $set->isa('Automake::Condition');
   return $self->_multiply ($set->conds);
 }
 
 =item C<$inv = $set-E<gt>invert>
 
-Invert a C<ConditionalSet>.  Return a C<ConditionalSet> which is true
+Invert a C<DisjConditions>.  Return a C<DisjConditions> which is true
 when C<$set> is false, and vice-versa.
 
-  my $set = new Automake::ConditionalSet
-    (new Automake::Conditional ("A_TRUE", "B_TRUE"),
-     new Automake::Conditional ("A_FALSE", "B_FALSE"));
+  my $set = new Automake::DisjConditions
+    (new Automake::Condition ("A_TRUE", "B_TRUE"),
+     new Automake::Condition ("A_FALSE", "B_FALSE"));
 
-Calling C<$set-E<gt>invert> will return the following C<ConditionalSet>.
+Calling C<$set-E<gt>invert> will return the following C<DisjConditions>.
 
-  new Automake::ConditionalSet
-    (new Automake::Conditional ("A_TRUE", "B_FALSE"),
-     new Automake::Conditional ("A_FALSE", "B_TRUE"));
+  new Automake::DisjConditions
+    (new Automake::Condition ("A_TRUE", "B_FALSE"),
+     new Automake::Condition ("A_FALSE", "B_TRUE"));
 
 =cut
 
@@ -423,8 +442,8 @@ sub invert($ )
 
   return $self->{'invert'} if defined $self->{'invert'};
 
-  # The invert of an empty ConditionalSet is TRUE.
-  my $res = new Automake::ConditionalSet TRUE;
+  # The invert of an empty DisjConditions is TRUE.
+  my $res = new Automake::DisjConditions TRUE;
 
   #   !((a.b)+(c.d)+(e.f))
   # = (!a+!b).(!c+!d).(!e+!f)
@@ -449,7 +468,7 @@ sub invert($ )
 
 =item C<$simp = $set->simplify>
 
-Find prime implicants and return a simplified C<ConditionalSet>.
+Find prime implicants and return a simplified C<DisjConditions>.
 
 =cut
 
@@ -457,10 +476,10 @@ sub _simplify ($)		# Based on Quine-McCluskey's algorithm.
 {
   my ($self) = @_;
 
-  # If we know this ConditionalSet is always true, we have nothing to do.
+  # If we know this DisjConditions is always true, we have nothing to do.
   # Use the cached value if true if available.  Never call true()
   # as this would call invert() which can be slow.
-  return new Automake::ConditionalSet TRUE
+  return new Automake::DisjConditions TRUE
     if $self->{'hash'}{&TRUE} || $self->{'true'};
 
   my $nvars = 0;
@@ -491,7 +510,7 @@ sub _simplify ($)		# Based on Quine-McCluskey's algorithm.
       my @conds = $and_conds->conds;
       for my $cond (@conds)
 	{
-	  # Which variable is this condition about?
+	  # Which variable is this conditional about?
 	  confess "can't parse `$cond'"
 	    unless $cond =~ /^(.*_)(FALSE|TRUE)$/;
 
@@ -587,11 +606,11 @@ sub _simplify ($)		# Based on Quine-McCluskey's algorithm.
 	}
     }
 
-  # Finally merge bit strings back into a Automake::ConditionalSet.
+  # Finally merge bit strings back into a Automake::DisjConditions.
 
   # If level 0 has been filled, we've found `TRUE'.  No need to translate
   # anything.
-  return new Automake::ConditionalSet TRUE if $#{$subcubes[0]} >= 0;
+  return new Automake::DisjConditions TRUE if $#{$subcubes[0]} >= 0;
 
   # Otherwise, translate uncombined terms in other levels.
 
@@ -676,11 +695,11 @@ sub _simplify ($)		# Based on Quine-McCluskey's algorithm.
 	      ++$rank;
 	    }
 
-	  push @or_conds, new Automake::Conditional @and_conds if @and_conds;
+	  push @or_conds, new Automake::Condition @and_conds if @and_conds;
 	}
     }
 
-  return new Automake::ConditionalSet @or_conds;
+  return new Automake::DisjConditions @or_conds;
 }
 
 sub simplify ($)
@@ -699,20 +718,20 @@ C<$cond> stripped.
 
 For instance, consider:
 
-  my $a = new Automake::ConditionalSet
-    (new Automake::Conditional ("A_TRUE", "B_TRUE"),
-     new Automake::Conditional ("A_TRUE", "C_FALSE"),
-     new Automake::Conditional ("A_TRUE", "B_FALSE", "C_TRUE"),
-     new Automake::Conditional ("A_FALSE"));
-  my $b = new Automake::ConditionalSet
-    (new Automake::Conditional ("A_TRUE", "B_FALSE"));
+  my $a = new Automake::DisjConditions
+    (new Automake::Condition ("A_TRUE", "B_TRUE"),
+     new Automake::Condition ("A_TRUE", "C_FALSE"),
+     new Automake::Condition ("A_TRUE", "B_FALSE", "C_TRUE"),
+     new Automake::Condition ("A_FALSE"));
+  my $b = new Automake::DisjConditions
+    (new Automake::Condition ("A_TRUE", "B_FALSE"));
 
 Calling C<$a-E<gt>sub_conditions ($b)> will return the following
-C<ConditionalSet>.
+C<DisjConditions>.
 
-  new Automake::ConditionalSet
-    (new Automake::Conditional ("C_FALSE"), # From A_TRUE C_FALSE
-     new Automake::Conditional ("C_TRUE")); # From A_TRUE B_FALSE C_TRUE"
+  new Automake::DisjConditions
+    (new Automake::Condition ("C_FALSE"), # From A_TRUE C_FALSE
+     new Automake::Condition ("C_TRUE")); # From A_TRUE B_FALSE C_TRUE"
 
 =cut
 
@@ -720,27 +739,27 @@ sub sub_conditions ($$)
 {
   my ($self, $subcond) = @_;
 
-  # Make $subcond blindingly apparent in the ConditionalSet.
+  # Make $subcond blindingly apparent in the DisjConditions.
   # For instance `$a->_multiply($b)' (from the POD example) is:
-  #   new Automake::ConditionalSet
-  # 	(new Automake::Conditional ("FALSE"),
-  # 	 new Automake::Conditional ("A_TRUE", "B_FALSE", "C_FALSE"),
-  # 	 new Automake::Conditional ("A_TRUE", "B_FALSE", "C_TRUE"),
-  # 	 new Automake::Conditional ("FALSE"));
+  #   new Automake::DisjConditions
+  # 	(new Automake::Condition ("FALSE"),
+  # 	 new Automake::Condition ("A_TRUE", "B_FALSE", "C_FALSE"),
+  # 	 new Automake::Condition ("A_TRUE", "B_FALSE", "C_TRUE"),
+  # 	 new Automake::Condition ("FALSE"));
   my $prod = $self->_multiply ($subcond);
 
-  # Now, strip $subcond from the remaining (i.e., non-false) Conditionals.
+  # Now, strip $subcond from the remaining (i.e., non-false) Conditions.
   my @res;
   foreach my $c ($prod->conds)
     {
       push @res, $c->strip ($subcond) unless $c->false;
     }
-  return new Automake::ConditionalSet @res;
+  return new Automake::DisjConditions @res;
 }
 
 =head1 SEE ALSO
 
-L<Automake::Conditional>.
+L<Automake::Condition>.
 
 =head1 HISTORY
 
@@ -748,9 +767,8 @@ C<AM_CONDITIONAL>s and supporting code were added to Automake 1.1o by
 Ian Lance Taylor <ian@cygnus.org> in 1997.  Since then it has been
 improved by Tom Tromey <tromey@redhat.com>, Richard Boulton
 <richard@tartarus.org>, Raja R Harinath <harinath@cs.umn.edu>, Akim
-Demaille <akim@epita.fr>, and Pavel Roskin <proski@gnu.org>.
-Alexandre Duret-Lutz <adl@gnu.org> extracted the code out of Automake
-to create this package in 2002.
+Demaille <akim@epita.fr>, Pavel Roskin <proski@gnu.org>, and
+Alexandre Duret-Lutz <adl@gnu.org>.
 
 =cut
 

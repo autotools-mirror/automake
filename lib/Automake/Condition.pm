@@ -1,4 +1,4 @@
-# Copyright (C) 1997, 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 1997, 2001, 2002, 2003  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 
-package Automake::Conditional;
+package Automake::Condition;
 use strict;
 use Carp;
 
@@ -26,22 +26,22 @@ use vars '@ISA', '@EXPORT_OK';
 
 =head1 NAME
 
-Automake::Conditional - record a conjunction of conditions
+Automake::Condition - record a conjunction of conditionals
 
 =head1 SYNOPSIS
 
-  use Automake::Conditional;
+  use Automake::Condition;
 
-  # Create a conditional to represent "COND1 and not COND2".
-  my $cond = new Automake::Conditional "COND1_TRUE", "COND2_FALSE";
-  # Create a conditional to represent "not COND3".
-  my $other = new Automake::Conditional "COND3_FALSE";
+  # Create a condition to represent "COND1 and not COND2".
+  my $cond = new Automake::Condition "COND1_TRUE", "COND2_FALSE";
+  # Create a condition to represent "not COND3".
+  my $other = new Automake::Condition "COND3_FALSE";
 
-  # Create a conditional to represent
+  # Create a condition to represent
   #   "COND1 and not COND2 and not COND3".
   my $both = $cond->merge ($other);
 
-  # Likewise, but using a list of atomic conditional strings
+  # Likewise, but using a list of conditional strings
   my $both2 = $cond->merge_conds ("COND3_FALSE");
 
   # Strip from $both any subconditions which are in $other.
@@ -57,15 +57,15 @@ Automake::Conditional - record a conjunction of conditions
   # Is $cond always false? (Not in this example)
   if ($cond->false) { ... }
 
-  # Return the list of conditions as a string:
+  # Return the list of conditionals as a string:
   #  "COND1_TRUE COND2_FALSE"
   my $str = $cond->string;
 
-  # Return the list of conditions as a human readable string:
+  # Return the list of conditionals as a human readable string:
   #  "COND1 and !COND2"
   my $str = $cond->human;
 
-  # Return the list of conditions as a AC_SUBST-style string:
+  # Return the list of conditionals as a AC_SUBST-style string:
   #  "@COND1_TRUE@@COND2_FALSE@"
   my $subst = $cond->subst_string;
 
@@ -80,19 +80,20 @@ Automake::Conditional - record a conjunction of conditions
   # (Not in this example)
   if ($cond->implies_any ($other, $both)) { ... }
 
-  # Remove superfluous conditions.
+  # Remove superfluous conditionals.
   # (Returns @cons = ($both) in this example, because
   # $other and $cond are implied by $both.)
-  @conds = Automake::Conditional::reduce ($other, $both, $cond);
+  @conds = Automake::Condition::reduce ($other, $both, $cond);
 
-  # Invert a Conditional.  This returns a list of Conditionals.
+  # Invert a Condition.  This returns a list of Conditions.
   @conds = $both->not;
 
 =head1 DESCRIPTION
 
-A C<Conditional> is a conjunction of atomic conditions.  In Automake they
-are used to represent the conditions into which Makefile variables and
-Makefile rules are defined.
+A C<Condition> is a conjunction of conditionals (i.e., atomic conditions
+defined in F<configure.ac> by C<AM_CONDITIONAL>.  In Automake they
+are used to represent the conditions into which F<Makefile> variables and
+F<Makefile> rules are defined.
 
 If the variable C<VAR> is defined as
 
@@ -102,67 +103,67 @@ If the variable C<VAR> is defined as
     endif
   endif
 
-then it will be associated a C<Conditional> created with
+then it will be associated a C<Condition> created with
 the following statement.
 
-  new Automake::Conditional "COND1_TRUE", "COND2_TRUE";
+  new Automake::Condition "COND1_TRUE", "COND2_TRUE";
 
-Remember that a C<Conditional> is a I<conjunction> of conditions, so
-the above C<Conditional> means C<VAR> is defined when C<COND1> is true
+Remember that a C<Condition> is a I<conjunction> of conditionals, so
+the above C<Condition> means C<VAR> is defined when C<COND1>
 B<and> C<COND2> are true. There is no way to express disjunctions
-(i.e., I<or>s) with this class (see L<ConditionalSet>).
+(i.e., I<or>s) with this class (but see L<DisjConditions>).
 
-Another point worth to mention is that each C<Conditional> object is
-unique with respect to its conditions.  Two C<Conditional> objects
-created for the same set of conditions will have the same adress.
-This makes it easy to compare C<Conditional>s, just compare the
+Another point worth to mention is that each C<Condition> object is
+unique with respect to its conditionals.  Two C<Condition> objects
+created for the same set of conditionals will have the same adress.
+This makes it easy to compare C<Condition>s, just compare the
 references.
 
-  my $c1 = new Automake::Conditional "COND1_TRUE", "COND2_TRUE";
-  my $c2 = new Automake::Conditional "COND1_TRUE", "COND2_TRUE";
+  my $c1 = new Automake::Condition "COND1_TRUE", "COND2_TRUE";
+  my $c2 = new Automake::Condition "COND1_TRUE", "COND2_TRUE";
   $c1 == $c2;  # True!
 
 =head2 Methods
 
 =over 4
 
-=item C<$cond = new Automake::Conditional [@conds]>
+=item C<$cond = new Automake::Condition [@conds]>
 
-Return a C<Conditional> objects for the conjunctions of conditions
+Return a C<Condition> objects for the conjunctions of conditionals
 listed in C<@conds> as strings.
 
 An item in C<@conds> should be either C<"FALSE">, C<"TRUE">, or have
 the form C<"NAME_FALSE"> or C<"NAME_TRUE"> where C<NAME> can be
 anything (in practice C<NAME> should be the name of a conditional
 declared in F<configure.ac> with C<AM_CONDITIONAL>, but it's not
-C<Automake::Conditional>'s responsability to ensure this).
+C<Automake::Condition>'s responsability to ensure this).
 
 An empty C<@conds> means C<"TRUE">.
 
 As explained previously, the reference (object) returned is unique
 with respect to C<@conds>.  For this purpose, duplicate elements are
 ignored, and C<@conds> is rewriten as C<("FALSE")> if it contains
-C<"FALSE"> or two contradictory conditions (such as C<"NAME_FALSE">
+C<"FALSE"> or two contradictory conditionals (such as C<"NAME_FALSE">
 and C<"NAME_TRUE">.)
 
 Therefore the following two statements create the same object (they
-both create the C<"FALSE"> conditional).
+both create the C<"FALSE"> condition).
 
-  my $c3 = new Automake::Conditional "COND1_TRUE", "COND1_FALSE";
-  my $c4 = new Automake::Conditional "COND2_TRUE", "FALSE";
+  my $c3 = new Automake::Condition "COND1_TRUE", "COND1_FALSE";
+  my $c4 = new Automake::Condition "COND2_TRUE", "FALSE";
   $c3 == $c4;   # True!
   $c3 == FALSE; # True!
 
 =cut
 
-# Keys in this hash are conditionnal strings. Values are the
+# Keys in this hash are conditional strings. Values are the
 # associated object conditions.  This is used by `new' to reuse
-# Conditional objects with identical conditions.
-use vars '%_conditional_singletons';
+# Condition objects with identical conditionals.
+use vars '%_condition_singletons';
 # Do NOT reset this hash here.  It's already empty by default,
-# and any reset would otherwise occur AFTER the `TRUE' and `FALSE'
+# and any setting would otherwise occur AFTER the `TRUE' and `FALSE'
 # constants definitions.
-#   %_conditional_singletons = ();
+#   %_condition_singletons = ();
 
 sub new ($;@)
 {
@@ -180,10 +181,10 @@ sub new ($;@)
       next if $cond eq 'TRUE';
 
       # Catch some common programming errors:
-      # - A conditional passed to new
+      # - A Condition passed to new
       confess "`$cond' is a reference, expected a string" if ref $cond;
-      # - A conditional passed as a string to new
-      confess "`$cond' doesn't look like a condition" if $cond =~ /::/;
+      # - A Condition passed as a string to new
+      confess "`$cond' does not look like a condition" if $cond =~ /::/;
 
       # Detect cases when @conds can be simplified to FALSE.
       if (($cond eq 'FALSE' && $#conds > 0)
@@ -197,11 +198,11 @@ sub new ($;@)
     }
 
   my $key = $self->string;
-  if (exists $_conditional_singletons{$key})
+  if (exists $_condition_singletons{$key})
     {
-      return $_conditional_singletons{$key};
+      return $_condition_singletons{$key};
     }
-  $_conditional_singletons{$key} = $self;
+  $_condition_singletons{$key} = $self;
   return $self;
 }
 
@@ -215,13 +216,13 @@ C<$cond> and C<$othercond>.
 sub merge ($$)
 {
   my ($self, $other) = @_;
-  new Automake::Conditional $self->conds, $other->conds;
+  new Automake::Condition $self->conds, $other->conds;
 }
 
 =item C<$newcond = $cond-E<gt>merge_conds (@conds)>
 
 Return a new condition which is the conjunction of C<$cond> and
-C<@conds>, where C<@conds> is a list of atomic condition strings, as
+C<@conds>, where C<@conds> is a list of conditional strings, as
 passed to C<new>.
 
 =cut
@@ -229,12 +230,12 @@ passed to C<new>.
 sub merge_conds ($@)
 {
   my ($self, @conds) = @_;
-  new Automake::Conditional $self->conds, @conds;
+  new Automake::Condition $self->conds, @conds;
 }
 
 =item C<$newcond = $cond-E<gt>strip ($minuscond)>
 
-Return a new condition which has all the subconditions of C<$cond>
+Return a new condition which has all the conditionals of C<$cond>
 except those of C<$minuscond>.  This is the opposite of C<merge>.
 
 =cut
@@ -247,12 +248,12 @@ sub strip ($$)
     {
       push @res, $cond unless $minus->has ($cond);
     }
-  return new Automake::Conditional @res;
+  return new Automake::Condition @res;
 }
 
 =item C<@list = $cond-E<gt>conds>
 
-Return the set of conditions defining C<$cond>, as strings.  Note that
+Return the set of conditionals defining C<$cond>, as strings.  Note that
 this might not be exactly the list passed to C<new> (or a
 concatenation of such lists if C<merge> was used), because of the
 cleanup mentioned in C<new>'s description.
@@ -302,7 +303,7 @@ sub true ($ )
 
 =item C<$cond-E<gt>string>
 
-Build a string which denotes the conditional.
+Build a string which denotes the condition.
 
 For instance using the C<$cond> definition from L<SYNOPSYS>,
 C<$cond-E<gt>string> will return C<"COND1_TRUE COND2_FALSE">.
@@ -330,7 +331,7 @@ sub string ($ )
 
 =item C<$cond-E<gt>human>
 
-Build a human readable string which denotes the conditional.
+Build a human readable string which denotes the condition.
 
 For instance using the C<$cond> definition from L<SYNOPSYS>,
 C<$cond-E<gt>string> will return C<"COND1 and !COND2">.
@@ -466,9 +467,9 @@ sub implies_any ($@)
 
 =item C<$cond-E<gt>not>
 
-Return a negation of @<$cond> as a list of C<Conditional>s.
-This list should be used to construct a C<ConditionalSet>
-(we cannot return a C<ConditionalSet> from C<Automake::Conditional>,
+Return a negation of @<$cond> as a list of C<Condition>s.
+This list should be used to construct a C<DisjConditions>
+(we cannot return a C<DisjConditions> from C<Automake::Condition>,
 because that would make these two packages interdependent).
 
 =cut
@@ -480,7 +481,7 @@ sub not ($ )
   my @res;
   for my $cond ($self->conds)
     {
-      push @res, new Automake::Conditional &condition_negate ($cond);
+      push @res, new Automake::Condition &conditional_negate ($cond);
     }
   $self->{'not'} = [@res];
   return @res;
@@ -500,12 +501,12 @@ The C<"FALSE"> conditional.
 
 =cut
 
-use constant TRUE => new Automake::Conditional "TRUE";
-use constant FALSE => new Automake::Conditional "FALSE";
+use constant TRUE => new Automake::Condition "TRUE";
+use constant FALSE => new Automake::Condition "FALSE";
 
 =item C<reduce (@conds)>
 
-Filter a list of conditionals so that only the exclusive ones are
+Filter a list of conditions so that only the exclusive ones are
 retained.  For example, if both C<COND1_TRUE COND2_TRUE> and
 C<COND1_TRUE> are in the list, discard the latter.
 If the input list is empty, return C<(TRUE)>.
@@ -535,13 +536,13 @@ sub reduce (@)
   return @ret;
 }
 
-=item C<condition_negate ($condstr)>
+=item C<conditional_negate ($condstr)>
 
-Negate a condition string.
+Negate a conditional string.
 
 =cut
 
-sub condition_negate ($)
+sub conditional_negate ($)
 {
   my ($cond) = @_;
 
@@ -554,16 +555,15 @@ sub condition_negate ($)
 
 =head1 SEE ALSO
 
-L<Automake::ConditionalSet>.
+L<Automake::DisjConditions>.
 
 =head1 HISTORY
 
 C<AM_CONDITIONAL>s and supporting code were added to Automake 1.1o by
 Ian Lance Taylor <ian@cygnus.org> in 1997.  Since then it has been
 improved by Tom Tromey <tromey@redhat.com>, Richard Boulton
-<richard@tartarus.org>, Raja R Harinath <harinath@cs.umn.edu>, and
-Akim Demaille <akim@epita.fr>.  Alexandre Duret-Lutz <adl@gnu.org>
-extracted the code out of Automake to create this package in 2002.
+<richard@tartarus.org>, Raja R Harinath <harinath@cs.umn.edu>,
+Akim Demaille <akim@epita.fr>, and  Alexandre Duret-Lutz <adl@gnu.org>.
 
 =cut
 

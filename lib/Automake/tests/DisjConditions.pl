@@ -1,4 +1,4 @@
-# Copyright (C) 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 2001, 2002, 2003  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -17,20 +17,20 @@
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-use Automake::Conditional qw/TRUE FALSE/;
-use Automake::ConditionalSet;
+use Automake::Condition qw/TRUE FALSE/;
+use Automake::DisjConditions;
 
 sub test_basics ()
 {
-  my $cond = new Automake::Conditional "COND1_TRUE", "COND2_FALSE";
-  my $other = new Automake::Conditional "COND3_FALSE";
-  my $set1 = new Automake::ConditionalSet $cond, $other;
-  my $set2 = new Automake::ConditionalSet $other, $cond;
+  my $cond = new Automake::Condition "COND1_TRUE", "COND2_FALSE";
+  my $other = new Automake::Condition "COND3_FALSE";
+  my $set1 = new Automake::DisjConditions $cond, $other;
+  my $set2 = new Automake::DisjConditions $other, $cond;
   return 1 unless $set1 == $set2;
   return 1 if $set1->false;
   return 1 if $set1->true;
-  return 1 unless (new Automake::ConditionalSet)->false;
-  return 1 if (new Automake::ConditionalSet)->true;
+  return 1 unless (new Automake::DisjConditions)->false;
+  return 1 if (new Automake::DisjConditions)->true;
 }
 
 sub build_set (@)
@@ -39,9 +39,9 @@ sub build_set (@)
   my @set = ();
   for my $cond (@conds)
     {
-      push @set, new Automake::Conditional @$cond;
+      push @set, new Automake::Condition @$cond;
     }
-  return new Automake::ConditionalSet @set;
+  return new Automake::DisjConditions @set;
 }
 
 sub test_permutations ()
@@ -302,7 +302,7 @@ sub test_simplify ()
 
       # Also exercize invert() while we are at it.
 
-      # FIXME: Don't run invert() with too much conditionals, this is too slow.
+      # FIXME: Don't run invert() with too much conditions, this is too slow.
       next if $#{$t->[0][0]} > 8;
 
       my $inv1 = $set->invert->simplify;
@@ -366,7 +366,7 @@ sub test_sub_conditions ()
   for my $t (@tests)
     {
       my $t1 = build_set @{$t->[0]};
-      my $t2 = new Automake::Conditional @{$t->[1]};
+      my $t2 = new Automake::Condition @{$t->[1]};
       my $t3 = build_set @{$t->[2]};
 
       # Make sure simplify() yields the expected result.

@@ -1,4 +1,4 @@
-# Copyright (C) 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 2001, 2002, 2003  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -17,7 +17,7 @@
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-use Automake::Conditional qw/TRUE FALSE/;
+use Automake::Condition qw/TRUE FALSE/;
 
 sub test_basics ()
 {
@@ -33,7 +33,7 @@ sub test_basics ()
 
   for (@tests)
     {
-      my $a = new Automake::Conditional @{$_->[0]};
+      my $a = new Automake::Condition @{$_->[0]};
       return 1 if $_->[1] != $a->true;
       return 1 if $_->[1] != ($a == TRUE);
       return 1 if $_->[2] != $a->false;
@@ -49,8 +49,8 @@ sub test_true_when ()
   my $failed = 0;
 
   my @tests = (# [When,
-	       #  [Implied-Conditionals],
-	       #  [Not-Implied-Conditionals]]
+	       #  [Implied-Conditions],
+	       #  [Not-Implied-Conditions]]
 	       [['TRUE'],
 		[['TRUE']],
 		[['A_TRUE'], ['A_TRUE', 'B_FALSE'], ['FALSE']]],
@@ -63,10 +63,10 @@ sub test_true_when ()
 
   for my $t (@tests)
     {
-      my $a = new Automake::Conditional @{$t->[0]};
+      my $a = new Automake::Condition @{$t->[0]};
       for my $u (@{$t->[1]})
 	{
-	  my $b = new Automake::Conditional @$u;
+	  my $b = new Automake::Condition @$u;
 	  if (! $b->true_when ($a))
 	    {
 	      print "`" . $b->string .
@@ -76,7 +76,7 @@ sub test_true_when ()
 	}
       for my $u (@{$t->[2]})
 	{
-	  my $b = new Automake::Conditional @$u;
+	  my $b = new Automake::Condition @$u;
 	  if ($b->true_when ($a))
 	    {
 	      print "`" . $b->string .
@@ -127,7 +127,7 @@ sub test_reduce ()
 	       [["BAR FOO", "BAR", "TRUE"], ["BAR FOO"]],
 
 	       # Check that reduction happens even when there are
-	       # two conditionals to remove.
+	       # two conditions to remove.
 	       [["FOO", "FOO BAR", "BAR"], ["FOO BAR"]],
 	       [["FOO", "FOO BAR", "BAZ", "FOO BAZ"], ["FOO BAR", "FOO BAZ"]],
 	       [["FOO", "FOO BAR", "BAZ", "FOO BAZ", "FOO BAZ BAR"],
@@ -136,7 +136,7 @@ sub test_reduce ()
 	       # Duplicated condionals should be removed
 	       [["FOO", "BAR", "BAR"], ["BAR,FOO"]],
 
-	       # Equivalent conditionals in different forms should be
+	       # Equivalent conditions in different forms should be
 	       # reduced: which one is left is unfortunately order
 	       # dependent.
 	       [["BAR FOO", "FOO BAR"], ["FOO BAR"]],
@@ -146,10 +146,10 @@ sub test_reduce ()
   foreach (@tests)
     {
       my ($inref, $outref) = @$_;
-      my @inconds = map { new Automake::Conditional $_ } @$inref;
-      my @outconds = map { (new Automake::Conditional $_)->string } @$outref;
+      my @inconds = map { new Automake::Condition $_ } @$inref;
+      my @outconds = map { (new Automake::Condition $_)->string } @$outref;
       my @res =
-	map { $_->string } (Automake::Conditional::reduce (@inconds));
+	map { $_->string } (Automake::Condition::reduce (@inconds));
       my $result = join (",", sort @res);
       my $exresult = join (",", @outconds);
 

@@ -117,8 +117,8 @@ use Automake::XFile;
 use Automake::Channels;
 use Automake::ChannelDefs;
 use Automake::Location;
-use Automake::Conditional qw/TRUE FALSE/;
-use Automake::ConditionalSet;
+use Automake::Condition qw/TRUE FALSE/;
+use Automake::DisjConditions;
 use File::Basename;
 use Tie::RefHash;
 use Carp;
@@ -546,7 +546,8 @@ my %target_owner;  tie %target_owner, 'Tie::RefHash::Nestable';
 use constant TARGET_AUTOMAKE => 0; # Target defined by Automake.
 use constant TARGET_USER => 1;	# Target defined in the user's Makefile.am.
 
-# This is the conditional stack.
+# This is the conditional stack, updated on if/else/endif, and
+# used to build Condition objects.
 my @cond_stack;
 
 # This holds the set of included files.
@@ -700,7 +701,7 @@ my @substtos;
 # are the values of the variable for condition COND1 and COND2.
 my %subobjvar = ();
 
-# This hash records helper variables used to implement '+=' in conditionals.
+# This hash records helper variables used to implement conditional '+='.
 # Keys have the form "VAR:CONDITIONS".  The value associated to a key is
 # the named of the helper variable used to append to VAR in CONDITIONS.
 my %appendvar = ();
@@ -1860,7 +1861,7 @@ sub handle_languages
 	    # make can't handle backslashes for continuing comments on
 	    # the following line.
 	    define_pretty_variable ('DEP_FILES',
-				    new Automake::Conditional ('AMDEP_TRUE'),
+				    new Automake::Condition ('AMDEP_TRUE'),
 				    INTERNAL, @deplist);
 
 	    # Generate each `include' individually.  Irix 6 make will
@@ -2354,7 +2355,7 @@ sub handle_single_transform_list ($$$$@)
                 my $dname = $derived;
                 if (variable_defined ($derived . '_SHORTNAME'))
                 {
-                    # FIXME: should use the same conditional as
+                    # FIXME: should use the same Condition as
                     # the _SOURCES variable.  But this is really
                     # silly overkill -- nobody should have
                     # conditional shortnames.
@@ -2951,7 +2952,7 @@ sub handle_lib_objects_cond
   if ($xname ne '')
     {
       my $depvar = $xname . '_DEPENDENCIES';
-      if ((conditional_ambiguous_p ($depvar, $cond,
+      if ((condition_ambiguous_p ($depvar, $cond,
 				    variable_conditions ($depvar)))[0] ne '')
 	{
 	  # Note that we've examined this.
@@ -4097,7 +4098,7 @@ sub handle_dist
     # relented.
     if (variable_defined ('EXTRA_DIST'))
     {
-	# FIXME: This should be fixed to work with conditionals.  That
+	# FIXME: This should be fixed to work with conditions.  That
 	# will require only making the entries in %dist_dirs under the
 	# appropriate condition.  This is meaningful if the nature of
 	# the distribution should depend upon the configure options
@@ -5867,9 +5868,9 @@ sub pretty_print_rule
 ################################################################
 
 
-## ------------------------------ ##
-## Handling the condition stack.  ##
-## ------------------------------ ##
+## -------------------------------- ##
+## Handling the conditional stack.  ##
+## -------------------------------- ##
 
 
 # $STRING
@@ -5880,7 +5881,7 @@ sub make_conditional_string ($$)
   my ($negate, $cond) = @_;
   $cond = "${cond}_TRUE"
     unless $cond =~ /^TRUE|FALSE$/;
-  $cond = Automake::Conditional::condition_negate ($cond)
+  $cond = Automake::Condition::conditional_negate ($cond)
     if $negate;
   return $cond;
 }
@@ -5898,7 +5899,7 @@ sub cond_stack_if ($$$)
 
   push (@cond_stack, make_conditional_string ($negate, $cond));
 
-  return new Automake::Conditional (@cond_stack);
+  return new Automake::Condition (@cond_stack);
 }
 
 
@@ -5916,7 +5917,7 @@ sub cond_stack_else ($$$)
     }
 
   $cond_stack[$#cond_stack] =
-    Automake::Conditional::condition_negate ($cond_stack[$#cond_stack]);
+    Automake::Condition::conditional_negate ($cond_stack[$#cond_stack]);
 
   # If $COND is given, check against it.
   if (defined $cond)
@@ -5928,7 +5929,7 @@ sub cond_stack_else ($$$)
 	if $cond_stack[$#cond_stack] ne $cond;
     }
 
-  return new Automake::Conditional (@cond_stack);
+  return new Automake::Condition (@cond_stack);
 }
 
 
@@ -5958,7 +5959,7 @@ sub cond_stack_endif ($$$)
 
   pop @cond_stack;
 
-  return new Automake::Conditional (@cond_stack);
+  return new Automake::Condition (@cond_stack);
 }
 
 
@@ -5970,17 +5971,17 @@ sub cond_stack_endif ($$$)
 ## ------------------------ ##
 
 
-# check_ambiguous_conditional ($VAR, $COND, $WHERE)
+# check_ambiguous_condition ($VAR, $COND, $WHERE)
 # -------------------------------------------------
 # Check for an ambiguous conditional.  This is called when a variable
 # is being defined conditionally.  If we already know about a
 # definition that is true under the same conditions, then we have an
 # ambiguity.
-sub check_ambiguous_conditional ($$$)
+sub check_ambiguous_condition ($$$)
 {
   my ($var, $cond, $where) = @_;
   my ($message, $ambig_cond) =
-    conditional_ambiguous_p ($var, $cond, variable_conditions ($var));
+    condition_ambiguous_p ($var, $cond, variable_conditions ($var));
   if ($message)
     {
       msg 'syntax', $where, "$message ...", partial => 1;
@@ -5990,14 +5991,14 @@ sub check_ambiguous_conditional ($$$)
 }
 
 # $STRING, $AMBIG_COND
-# conditional_ambiguous_p ($WHAT, $COND, $CONDSET)
+# condition_ambiguous_p ($WHAT, $COND, $CONDSET)
 # ----------------------------------------------
-# Check for an ambiguous conditional.  Return an error message and
+# Check for an ambiguous condition.  Return an error message and
 # the other condition involved if we have one, two empty strings otherwise.
 #   WHAT:    the thing being defined
-#   COND:    the Conditional under which it is being defined
-#   CONDSET: the ConditionalSet under which it had already been defined
-sub conditional_ambiguous_p ($$$)
+#   COND:    the Condition under which it is being defined
+#   CONDSET: the DisjConditions under which it had already been defined
+sub condition_ambiguous_p ($$$)
 {
   my ($var, $cond, $condset) = @_;
 
@@ -6062,7 +6063,7 @@ sub conditional_ambiguous_p ($$$)
 #   C = mumble
 #
 # we should have (we display result as conditional strings in this
-# illustration, but we really return ConditionalSet objects):
+# illustration, but we really return DisjConditions objects):
 #   variable_not_always_defined_in_cond ('A', 'COND1_TRUE COND2_TRUE')
 #     => ()
 #   variable_not_always_defined_in_cond ('A', 'COND1_TRUE')
@@ -6265,7 +6266,7 @@ sub macro_define ($$$$$$)
 	  # There must be no previous value unless the user is redefining
 	  # an Automake variable or an AC_SUBST variable for an existing
 	  # condition.
-	  check_ambiguous_conditional ($var, $cond, $where)
+	  check_ambiguous_condition ($var, $cond, $where)
 	    unless (exists $var_owner{$var}{$cond}
 		    && (($var_owner{$var}{$cond} == VAR_AUTOMAKE
 			 && $owner != VAR_AUTOMAKE)
@@ -6486,7 +6487,8 @@ sub examine_variable
 
 # &variable_conditions_recursive ($VAR)
 # -------------------------------------
-# Return the set of conditions for which a variable is defined.
+# Return the set of conditions (as a DisjConditions)
+# for which a variable is defined.
 
 # If the variable is not defined conditionally, and is not defined in
 # terms of any variables which are defined conditionally, then this
@@ -6512,7 +6514,7 @@ sub variable_conditions_recursive ($)
 
   # Now we want to return all permutations of the subvariable
   # conditions.
-  return (new Automake::ConditionalSet @new_conds)->permutations;
+  return (new Automake::DisjConditions @new_conds)->permutations;
 }
 
 
@@ -6527,7 +6529,7 @@ sub variable_conditions ($)
 {
     my ($var) = @_;
     my @conds = keys %{$var_value{$var}};
-    return new Automake::ConditionalSet @conds;
+    return new Automake::DisjConditions @conds;
 }
 
 
@@ -6539,7 +6541,7 @@ sub target_conditions ($)
 {
     my ($target) = @_;
     my @conds = keys %{$targets{$target}};
-    return new Automake::ConditionalSet @conds;
+    return new Automake::DisjConditions @conds;
 }
 
 # $BOOLEAN
@@ -6659,7 +6661,7 @@ sub variable_conditions_recursive_sub
 	}
       else
 	{
-	  push (@new_conds, Automake::Conditional::reduce (@subvar_conds));
+	  push (@new_conds, Automake::Condition::reduce (@subvar_conds));
 	}
     }
 
@@ -6675,7 +6677,7 @@ sub variable_conditions_recursive_sub
     foreach my $this_cond (@this_conds)
     {
       my @perms =
-	  (new Automake::ConditionalSet $this_cond)->permutations->conds;
+	  (new Automake::DisjConditions $this_cond)->permutations->conds;
 	foreach my $perm (@perms)
 	{
 	    my $ok = 1;
@@ -6829,7 +6831,6 @@ sub value_to_list ($$$$$)
 #           "TRUE" condition will be returned.
 #   $PARENT is the variable in which the variable is used: this is used
 #           only for error messages.
-# Returns the list of conditions.
 # For example, if A is defined as "foo $(B) bar", and B is defined as
 # "baz", this will return ("foo", "$(B)", "bar")
 sub variable_value_as_list
@@ -6879,12 +6880,11 @@ sub variable_value_as_list
 # recursively follow $(...) and ${...} inclusions.  It preserves @...@
 # substitutions.  If COND is 'all', then all values under all
 # conditions should be returned; if COND is a particular condition
-# (all conditions are surrounded by @...@) then only the value for
-# that condition should be returned; otherwise, warn if VAR is
-# conditionally defined.  If PARENT is specified, it is the name of
-# the including variable; this is only used for error reports.
-# If $LOC_WANTED is set, return a list of [$location, @values] instead
-# of a list of @values.
+# then only the value for that condition should be returned;
+# otherwise, warn if VAR is conditionally defined.  If PARENT is
+# specified, it is the name of the including variable; this is only
+# used for error reports.  If $LOC_WANTED is set, return a list of
+# [$location, @values] instead of a list of @values.
 sub variable_value_as_list_recursive_worker ($$$$)
 {
     my ($var, $cond, $parent, $loc_wanted) = @_;
@@ -7037,7 +7037,7 @@ sub variable_loc_and_value_as_list_recursive ($$;$)
 # &define_pretty_variable ($VAR, $COND, $WHERE, @VALUE)
 # -----------------------------------------------------
 # Like define_variable, but the value is a list, and the variable may
-# be defined conditionally.  The second argument is the conditional
+# be defined conditionally.  The second argument is the Condition
 # under which the value should be defined; this should be the empty
 # string to define the variable unconditionally.  The third argument
 # is a list holding the values to use for the variable.  The value is
@@ -7201,9 +7201,9 @@ sub register_suffix_rule ($$$)
 # Define a new rule.  $TARGET is the rule name.  $SOURCE
 # is the filename the rule comes from.  $OWNER is the
 # owner of the rule (TARGET_AUTOMAKE or TARGET_USER).
-# $COND is the condition string under which the rule is defined.
-# $WHERE is the location where the rule is defined.
-# Returns a (possibly empty) list of conditions where the rule
+# $COND is the Condition under which the rule is defined.
+# $WHERE is the Location where the rule is defined.
+# Returns a (possibly empty) list of Conditions where the rule
 # should be defined.
 sub rule_define ($$$$$)
 {
@@ -7290,7 +7290,7 @@ sub rule_define ($$$$$)
 		  # 		   "... `$target' previously defined here");
 		}
 	      # Return so we don't redefine the rule in our tables,
-	      # don't check for ambiguous conditional, etc.  The rule
+	      # don't check for ambiguous condition, etc.  The rule
 	      # will be output anyway beauce &read_am_file ignore the
 	      # return code.
 	      return ();
@@ -7340,7 +7340,7 @@ sub rule_define ($$$$$)
 
   # Check ambiguous conditional definitions.
   my ($message, $ambig_cond) =
-    conditional_ambiguous_p ($target, $cond, target_conditions ($target));
+    condition_ambiguous_p ($target, $cond, target_conditions ($target));
   if ($message)			# We have an ambiguty.
     {
       if ($owner == TARGET_USER)
@@ -7354,7 +7354,7 @@ sub rule_define ($$$$$)
       else
 	{
 	  # FIXME: for Automake rules, we can't diagnose ambiguities yet.
-	  # The point is that Automake doesn't propagate conditionals
+	  # The point is that Automake doesn't propagate conditions
 	  # everywhere.  For instance &handle_PROGRAMS doesn't care if
 	  # bin_PROGRAMS was defined conditionally or not.
 	  # On the following input
@@ -7368,7 +7368,7 @@ sub rule_define ($$$$$)
 	  # in condition TRUE (which conflicts with COND1).  Fixing
 	  # this in &handle_PROGRAMS and siblings seems hard: you'd
 	  # have to explain &file_contents what to do with a
-	  # conditional.  So for now we do our best *here*.  If `foo:'
+	  # condition.  So for now we do our best *here*.  If `foo:'
 	  # was already defined in condition COND1 and we want to define
 	  # it in condition TRUE, then define it only in condition !COND1.
 	  # (See cond14.test and cond15.test for some test cases.)
@@ -7522,7 +7522,7 @@ sub read_am_file ($$)
     # sure it is the same on exit.  This lets us conditonally include
     # other files.
     my @saved_cond_stack = @cond_stack;
-    my $cond = new Automake::Conditional (@cond_stack);
+    my $cond = new Automake::Condition (@cond_stack);
 
     my $last_var_name = '';
     my $last_var_type = '';
@@ -7568,7 +7568,7 @@ sub read_am_file ($$)
 	{
 	    if ($prev_state == IN_RULE_DEF)
 	    {
-	      my $cond = new Automake::Conditional @cond_stack;
+	      my $cond = new Automake::Condition @cond_stack;
 	      $output_trailer .= $cond->subst_string;
 	      $output_trailer .= $_;
 	    }
@@ -7629,7 +7629,7 @@ sub read_am_file ($$)
 	    check_variable_expansions ($_, $where);
 
 	    $output_trailer .= $comment . $spacing;
-	    my $cond = new Automake::Conditional @cond_stack;
+	    my $cond = new Automake::Condition @cond_stack;
 	    $output_trailer .= $cond->subst_string;
             $output_trailer .= $_;
 	    $comment = $spacing = '';
@@ -7702,7 +7702,7 @@ sub read_am_file ($$)
 	    $prev_state = IN_RULE_DEF;
 	    check_variable_expansions ($_, $where);
 	    $output_trailer .= $comment . $spacing;
-	    my $cond = new Automake::Conditional @cond_stack;
+	    my $cond = new Automake::Condition @cond_stack;
 	    $output_trailer .= $cond->subst_string;
 	    $output_trailer .= $_;
 	    $comment = $spacing = '';
@@ -7931,7 +7931,7 @@ sub file_contents_internal ($$$%)
     # sure it is the same on exit.  This lets us conditonally include
     # other files.
     my @saved_cond_stack = @cond_stack;
-    my $cond = new Automake::Conditional (@cond_stack);
+    my $cond = new Automake::Condition (@cond_stack);
 
     foreach (make_paragraphs ($file, %transform))
     {
@@ -8019,7 +8019,7 @@ sub file_contents_internal ($$$%)
 	      # in %dependencies and $targets will have two rules).
 
 	      # FIXME: 2. The logic here is not able to output a
-	      # multi-paragraph rule several time (e.g. for each conditional
+	      # multi-paragraph rule several time (e.g. for each condition
 	      # it is defined for) because it only knows the first paragraph.
 
 	      # FIXME: 3. We are not robust to people defining a subset
