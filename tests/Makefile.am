@@ -25,7 +25,7 @@ colon2.test colon3.test remake.test output.test output2.test \
 remake2.test output3.test output4.test colneq2.test subst.test \
 defun2.test yaccpp.test texinfo3.test texinfo4.test tagsub.test	\
 cxxlibobj.test seenc.test cygwin32.test lisp.test stamph.test \
-ldadd.test version2.test conf2.test cond.test cond2.test
+ldadd.test version2.test conf2.test cond.test cond2.test xsource.test
 
 EXTRA_DIST = defs $(TESTS)
 
