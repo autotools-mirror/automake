@@ -37,7 +37,10 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 transform = @program_transform_name@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
 PERL = @PERL@
+PACKAGE = @PACKAGE@
+VERSION = @VERSION@
 
 AUTOMAKE_OPTIONS = gnits
 MAINT_CHARSET = latin1
@@ -84,9 +87,6 @@ configure.in elisp-comp install-sh interlock mdate-sh mkinstalldirs \
 stamp-vti texinfo.tex version.texi ylwrap
 
 
-PACKAGE = @PACKAGE@
-VERSION = @VERSION@
-
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) \
 	$(TEXINFOS) $(MANS) $(EXTRA_DIST)
 
@@ -95,7 +95,7 @@ default: all
 
 .SUFFIXES:
 .SUFFIXES: .texi .texinfo .info .dvi
-$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in 
+$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL) 
 	cd $(top_srcdir) && automake --gnits Makefile
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status $(BUILT_SOURCES)
@@ -117,12 +117,13 @@ aclocal: $(top_builddir)/config.status aclocal.in
 install-binSCRIPTS: $(bin_SCRIPTS)
 	$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(bindir)
-	list="$(bin_SCRIPTS)"; for p in $$list; do \
+	@list="$(bin_SCRIPTS)"; for p in $$list; do \
 	  if test -f $$p; then \
+	    echo "$(INSTALL_SCRIPT) $$p $(bindir)/`echo $$p|sed '$(transform)'`"; \
 	    $(INSTALL_SCRIPT) $$p $(bindir)/`echo $$p|sed '$(transform)'`; \
 	  else if test -f $(srcdir)/$$p; then \
-	    $(INSTALL_SCRIPT) $(srcdir)/$$p \
-	      $(bindir)/`echo $$p|sed '$(transform)'`; \
+	    echo "$(INSTALL_SCRIPT) $(srcdir)/$$p $(bindir)/`echo $$p|sed '$(transform)'`"; \
+	    $(INSTALL_SCRIPT) $(srcdir)/$$p $(bindir)/`echo $$p|sed '$(transform)'`; \
 	  else :; fi; fi; \
 	done
 
@@ -134,12 +135,13 @@ uninstall-binSCRIPTS:
 install-pkgdataSCRIPTS: $(pkgdata_SCRIPTS)
 	$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(pkgdatadir)
-	list="$(pkgdata_SCRIPTS)"; for p in $$list; do \
+	@list="$(pkgdata_SCRIPTS)"; for p in $$list; do \
 	  if test -f $$p; then \
+	    echo "$(INSTALL_SCRIPT) $$p $(pkgdatadir)/`echo $$p|sed '$(transform)'`"; \
 	    $(INSTALL_SCRIPT) $$p $(pkgdatadir)/`echo $$p|sed '$(transform)'`; \
 	  else if test -f $(srcdir)/$$p; then \
-	    $(INSTALL_SCRIPT) $(srcdir)/$$p \
-	      $(pkgdatadir)/`echo $$p|sed '$(transform)'`; \
+	    echo "$(INSTALL_SCRIPT) $(srcdir)/$$p $(pkgdatadir)/`echo $$p|sed '$(transform)'`"; \
+	    $(INSTALL_SCRIPT) $(srcdir)/$$p $(pkgdatadir)/`echo $$p|sed '$(transform)'`; \
 	  else :; fi; fi; \
 	done
 
@@ -195,16 +197,18 @@ DVIPS = dvips
 install-info-am: $(INFO_DEPS)
 	$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(infodir)
-	for file in $(INFO_DEPS); do \
+	@for file in $(INFO_DEPS); do \
 	  for ifile in `cd $(srcdir) && echo $$file $$file-[0-9] $$file-[0-9][0-9]`; do \
 	    if test -f $(srcdir)/$$ifile; then \
+	      echo "$(INSTALL_DATA) $(srcdir)/$$ifile $(infodir)/$$ifile"; \
 	      $(INSTALL_DATA) $(srcdir)/$$ifile $(infodir)/$$ifile; \
 	    else : ; fi; \
 	  done; \
 	done
 	$(POST_INSTALL)
-	if $(SHELL) -c 'install-info --version' >/dev/null 2>&1; then \
+	@if $(SHELL) -c 'install-info --version' >/dev/null 2>&1; then \
 	  for file in $(INFO_DEPS); do \
+	    echo "install-info --info-dir=$(infodir) $(infodir)/$$file";\
 	    install-info --info-dir=$(infodir) $(infodir)/$$file; :;\
 	  done; \
 	else : ; fi
@@ -243,10 +247,12 @@ maintainer-clean-info:
 install-pkgdataDATA: $(pkgdata_DATA)
 	$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(pkgdatadir)
-	list="$(pkgdata_DATA)"; for p in $$list; do \
+	@list="$(pkgdata_DATA)"; for p in $$list; do \
 	  if test -f $(srcdir)/$$p; then \
+	    echo "$(INSTALL_DATA) $(srcdir)/$$p $(pkgdatadir)/$$p"; \
 	    $(INSTALL_DATA) $(srcdir)/$$p $(pkgdatadir)/$$p; \
 	  else if test -f $$p; then \
+	    echo "$(INSTALL_DATA) $$p $(pkgdatadir)/$$p"; \
 	    $(INSTALL_DATA) $$p $(pkgdatadir)/$$p; \
 	  fi; fi; \
 	done
@@ -270,9 +276,10 @@ installdirs-recursive install-recursive uninstall-recursive  \
 check-recursive installcheck-recursive info-recursive dvi-recursive \
 mostlyclean-recursive clean-recursive distclean-recursive \
 maintainer-clean-recursive:
-	for subdir in $(SUBDIRS); do		\
+	@for subdir in $(SUBDIRS); do \
 	  target=`echo $@ | sed s/-recursive//`; \
-	  (cd $$subdir && $(MAKE) $$target)	\
+	  echo "Making $$target in $$subdir"; \
+	  (cd $$subdir && $(MAKE) $$target) \
 	   || case "$(MFLAGS)" in *k*) fail=yes;; *) exit 1;; esac; \
 	done && test -z "$$fail"
 tags-recursive:

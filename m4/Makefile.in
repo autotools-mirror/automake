@@ -37,7 +37,10 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 transform = @program_transform_name@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
 PERL = @PERL@
+PACKAGE = @PACKAGE@
+VERSION = @VERSION@
 
 AUTOMAKE_OPTIONS = gnits
 MAINT_CHARSET = latin1
@@ -55,9 +58,6 @@ DATA =  $(m4data_DATA)
 DIST_COMMON =  Makefile.am Makefile.in
 
 
-PACKAGE = @PACKAGE@
-VERSION = @VERSION@
-
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) \
 	$(TEXINFOS) $(MANS) $(EXTRA_DIST)
 
@@ -65,10 +65,10 @@ TAR = tar
 default: all
 
 .SUFFIXES:
-$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in 
+$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL) 
 	cd $(top_srcdir) && automake --gnits m4/Makefile
 
-m4/Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status $(BUILT_SOURCES)
+Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status $(BUILT_SOURCES)
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
@@ -76,10 +76,12 @@ m4/Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status $(BUILT_SOURCES
 install-m4dataDATA: $(m4data_DATA)
 	$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(m4datadir)
-	list="$(m4data_DATA)"; for p in $$list; do \
+	@list="$(m4data_DATA)"; for p in $$list; do \
 	  if test -f $(srcdir)/$$p; then \
+	    echo "$(INSTALL_DATA) $(srcdir)/$$p $(m4datadir)/$$p"; \
 	    $(INSTALL_DATA) $(srcdir)/$$p $(m4datadir)/$$p; \
 	  else if test -f $$p; then \
+	    echo "$(INSTALL_DATA) $$p $(m4datadir)/$$p"; \
 	    $(INSTALL_DATA) $$p $(m4datadir)/$$p; \
 	  fi; fi; \
 	done
