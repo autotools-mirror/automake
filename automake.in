@@ -928,27 +928,33 @@ sub handle_yacc_lex_cxx
 # compiled with C or C++, depending on the extension of the YACC file.
 sub output_yacc_build_rule
 {
-    local ($yacc_suffix, $use_interlock) = @_;
-    local ($c_suffix);
+    local ($yacc_suffix, $use_interlock, $c_suffix) = @_;
 
+    local ($c_suffix, $suffix);
     ($c_suffix = $yacc_suffix) =~ tr/y/c/;
-    push (@suffixes, $yacc_suffix);
-    $output_rules .= "$yacc_suffix$c_suffix:\n\t";
+    push (@suffixes, $yacc_suffix, $c_suffix, '.h');
 
-    if ($use_interlock)
+    # Generate rule for c/c++ and header file.  Probably should only
+    # do header if `yacc -d' is run.
+    foreach $suffix ($c_suffix, '.h')
     {
-	$output_rules .= '$(SHELL) $(INTERLOCK) =yacclockdir $(YLWRAP)'
-	    . ' "$(YACC)" y.tab.c $*' . $c_suffix 
-	    . ' y.tab.h $*.h -- $(YFLAGS) $<';
-    }
-    else
-    {
-	$output_rules .= ('$(YACC) $(YFLAGS) $< && mv y.tab.c $@' . "\n"
-			  . "\tif test -f y.tab.h; then \\\n"
-			  . "\tif cmp -s y.tab.h \$*.h; then rm -f y.tab.h; else mv y.tab.h \$*.h; fi; \\\n"
+	$output_rules .= "$yacc_suffix$suffix:\n\t";
+
+	if ($use_interlock)
+	{
+	    $output_rules .= ('$(SHELL) $(INTERLOCK) =yacclockdir $(YLWRAP)'
+			      . ' "$(YACC)" y.tab.c $*' . $suffix 
+			      . ' y.tab.h $*.h -- $(YFLAGS) $<');
+	}
+	else
+	{
+	    $output_rules .= ('$(YACC) $(YFLAGS) $< && mv y.tab.c $@' . "\n"
+			      . "\tif test -f y.tab.h; then \\\n"
+			      . "\tif cmp -s y.tab.h \$*.h; then rm -f y.tab.h; else mv y.tab.h \$*.h; fi; \\\n"
 			  . "\telse :; fi");
+	}
+	$output_rules .= "\n";
     }
-    $output_rules .= "\n";
 }
 
 sub output_lex_build_rule
@@ -3074,7 +3080,16 @@ sub handle_footer
     $output_header .= ".SUFFIXES:\n";
     if (@suffixes)
     {
-	$output_header .= ".SUFFIXES: " . join (' ', @suffixes) . "\n";
+
+	# Make sure suffixes has unique elements.  Sort them to ensure
+	# the output remains consistent.
+	local (%suffixes);
+
+	grep ($suffixes{$_} = 1, @suffixes);
+
+	$output_header .= (".SUFFIXES: "
+			   . join (' ', sort keys %suffixes)
+			   . "\n");
     }
     $output_trailer .= &file_contents ('footer');
 }
