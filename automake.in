@@ -673,7 +673,7 @@ sub handle_yacc_lex_cxx
 	$output_rules .= ".y.c:\n\t";
 	if ($yacc_count > 1)
 	{
-	    $output_rules .= '$(INTERLOCK) =yacclockdir $(YLWRAP) "$(YACC)" y.tab.c $*.c y.tab.h $*.h -- $(YFLAGS) $<';
+	    $output_rules .= '$(SHELL) $(INTERLOCK) =yacclockdir $(YLWRAP) "$(YACC)" y.tab.c $*.c y.tab.h $*.h -- $(YFLAGS) $<';
 	}
 	else
 	{
@@ -697,7 +697,7 @@ sub handle_yacc_lex_cxx
 	$output_rules .= ".l.c:\n\t";
 	if ($lex_count > 1)
 	{
-	    $output_rules .= '$(INTERLOCK) =lexlockdir $(YLWRAP) "$(LEX)" $(LEX_OUTPUT_ROOT).c $@ -- $(LFLAGS) $<';
+	    $output_rules .= '$(SHELL) $(INTERLOCK) =lexlockdir $(YLWRAP) "$(LEX)" $(LEX_OUTPUT_ROOT).c $@ -- $(LFLAGS) $<';
 	}
 	else
 	{
@@ -2072,11 +2072,13 @@ sub handle_configure
     # Set location of mkinstalldirs.
     if ($config_aux_dir ne '.' && $config_aux_dir ne '')
     {
-	&define_variable ('mkinstalldirs', $config_aux_dir . '/mkinstalldirs');
+	&define_variable ('mkinstalldirs', ('$(SHELL) ' . $config_aux_dir
+					    . '/mkinstalldirs'));
     }
     else
     {
-	&define_variable ('mkinstalldirs', '$(top_srcdir)/mkinstalldirs');
+	&define_variable ('mkinstalldirs',
+			  '$(SHELL) $(top_srcdir)/mkinstalldirs');
     }
 
     &am_line_error ('CONFIG_HEADER',
