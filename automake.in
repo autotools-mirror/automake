@@ -7007,6 +7007,11 @@ sub read_am_file ($)
     my $blank = 0;
     my $saw_bk = 0;
 
+    use constant IN_VAR_DEF => 0;
+    use constant IN_RULE_DEF => 1;
+    use constant IN_COMMENT => 2;
+    my $prev_state = IN_RULE_DEF;
+
     while ($_ = $am_file->getline)
     {
 	if (/$IGNORE_PATTERN/o)
@@ -7036,6 +7041,7 @@ sub read_am_file ($)
 	    $blank = 1;
 	    $comment .= $spacing . $_;
 	    $spacing = '';
+	    $prev_state = IN_COMMENT;
 	}
 	else
 	{
@@ -7050,7 +7056,6 @@ sub read_am_file ($)
     my @saved_cond_stack = @cond_stack;
     my $cond = conditional_string (@cond_stack);
 
-    my $was_rule = 0;
     my $last_var_name = '';
     my $last_var_type = '';
     my $last_var_value = '';
@@ -7088,15 +7093,20 @@ sub read_am_file ($)
 	    $spacing = '';
 	    file_error ($here, "comment following trailing backslash")
 		if $saw_bk && $comment eq '';
+	    $prev_state = IN_COMMENT;
 	}
 	elsif ($saw_bk)
 	{
-	    if ($was_rule)
+	    if ($prev_state == IN_RULE_DEF)
 	    {
 	        $output_trailer .= &make_condition (@cond_stack);
 		$output_trailer .= $_;
 	    }
-	    else
+	    elsif ($prev_state == IN_COMMENT)
+	    {
+		$comment .= $spacing . $_;
+	    }
+	    else # $prev_state == IN_VAR_DEF
 	    {
 	      $last_var_value .= ' '
 		unless $last_var_value =~ /\s$/;
@@ -7131,7 +7141,7 @@ sub read_am_file ($)
 	elsif (/$RULE_PATTERN/o)
 	{
 	    # Found a rule.
-	    $was_rule = 1;
+	    $prev_state = IN_RULE_DEF;
 
 	    rule_define ($1, 0, $cond, $here);
 
@@ -7143,7 +7153,7 @@ sub read_am_file ($)
 	elsif (/$ASSIGNMENT_PATTERN/o)
 	{
 	    # Found a macro definition.
-	    $was_rule = 0;
+	    $prev_state = IN_VAR_DEF;
 	    $last_var_name = $1;
 	    $last_var_type = $2;
 	    $last_var_value = $3;
@@ -7191,7 +7201,7 @@ sub read_am_file ($)
         {
 	    # This isn't an error; it is probably a continued rule.
 	    # In fact, this is what we assume.
-	    $was_rule = 1;
+	    $prev_state = IN_RULE_DEF;
 	    $output_trailer .= $comment . $spacing;
 	    $output_trailer .= &make_condition  (@cond_stack);
 	    $output_trailer .= $_;
