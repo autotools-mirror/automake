@@ -1,6 +1,6 @@
 /* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved. */
 
-/*$Id: ansi2knr.c,v 1.13 2001/05/20 05:59:43 tromey Exp $*/
+/*$Id: ansi2knr.c,v 1.13.6.1 2003/09/06 05:40:16 eggert Exp $*/
 /* Convert ANSI C function definitions to K&R ("traditional C") syntax */
 
 /*
@@ -64,7 +64,7 @@ program under the GPL.
 
 	lpd 2000-04-12 backs out Eggert's changes because of bugs:
 	- concatlits didn't declare the type of its bufend argument;
-	- concatlits didn't't recognize when it was inside a comment;
+	- concatlits didn't recognize when it was inside a comment;
 	- scanstring could scan backward past the beginning of the string; when
 	- the check for \ + newline in scanstring was unnecessary.
 

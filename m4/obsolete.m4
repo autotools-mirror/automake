@@ -23,7 +23,7 @@
 
 # We put here only the macros whose substitution is not an Automake
 # macro; otherwise including this file would trigger dependencies for
-# all the subsitutions.  Generally, obsolete Automake macros are
+# all the substitutions.  Generally, obsolete Automake macros are
 # better AU_DEFUNed in the same file as their replacement, or alone in
 # a separate file (see obsol-gt.m4 or obsol-lt.m4 for instance).
 
