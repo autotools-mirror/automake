@@ -4386,16 +4386,20 @@ sub handle_clean ($)
 
 # &target_cmp ($A, $B)
 # --------------------
-# Subroutine for &handle_factored_dependencies to let `.PHONY' be last.
+# Subroutine for &handle_factored_dependencies to let `.PHONY' and
+# other `.TARGETS' be last.
 sub target_cmp
 {
-    return 0
-        if $a eq $b;
-    return -1
-        if $b eq '.PHONY';
-    return 1
-        if $a eq '.PHONY';
-    return $a cmp $b;
+  return 0 if $a eq $b;
+
+  my $a1 = substr ($a, 0, 1);
+  my $b1 = substr ($b, 0, 1);
+  if ($a1 ne $b1)
+    {
+      return -1 if $b1 eq '.';
+      return 1 if $a1 eq '.';
+    }
+  return $a cmp $b;
 }
 
 
@@ -4440,6 +4444,7 @@ sub handle_factored_dependencies
 	  $actions{"$_-am"} .=
 	    ("\t\@\$(NORMAL_INSTALL)\n"
 	     . "\t" . '$(MAKE) $(AM_MAKEFLAGS) ' . "$_-hook\n");
+	  depend ('.MAKE', "$_-am");
 	}
     }
 
@@ -4462,8 +4467,9 @@ sub handle_factored_dependencies
       # to append dependencies.  This would not work if Automake
       # refrained from defining its own .PHONY target as it does
       # with other overridden targets.
+      # Likewise for `.MAKE'.
       my @undefined_conds = (TRUE,);
-      if ($_ ne '.PHONY')
+      if ($_ ne '.PHONY' && $_ ne '.MAKE')
 	{
 	  @undefined_conds =
 	    Automake::Rule::define ($_, 'internal',

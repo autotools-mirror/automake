@@ -1,4 +1,4 @@
-# Copyright (C) 2003  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2004  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -349,6 +349,8 @@ sub reset()
 
      # Phoning.
      '.PHONY'               => [],
+     # Recursive install targets (so `make -n install' works for BSD Make).
+     '.MAKE'		    => [],
      );
   %actions = ();
 }
