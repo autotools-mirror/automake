@@ -41,6 +41,7 @@ $COMMENT_PATTERN = "^#";
 $RULE_PATTERN = "^([\$a-zA-Z_.][-.a-zA-Z0-9_(){}/]*) *:";
 $MACRO_PATTERN = "^([A-Za-z][A-Za-z0-9_]*)[ \t]*=[ \t]*(.*)\$";
 $BOGUS_MACRO_PATTERN = "^([^ \t]*)[ \t]*=[ \t]*(.*)\$";
+$GNITS_VERSION_PATTERN = "[0-9]+\\.[0-9]+([a-z]|\\.[0-9]+)";
 
 # Constants to define the "strictness" level.
 $FOREIGN = 0;
@@ -178,6 +179,9 @@ $seen_maint_mode = 0;
 $seen_package = 0;
 $seen_version = 0;
 
+# Actual version we've seen.
+$package_version = '';
+
 # TRUE if we've seen AM_PATH_LISPDIR.
 $seen_lispdir = 0;
 
@@ -189,7 +193,7 @@ $seen_lispdir = 0;
 # distributions of other packages, and thus require their own charset
 # info.  However, the DIST_CHARSET must be the same for the entire
 # package; it can only be set at top-level.
-# FIXME this yields bugs when rebuilding.  What to do?  Always
+# FIXME: this yields bugs when rebuilding.  What to do?  Always
 # read (and sometimes discard) top-level Makefile.am?
 $maint_charset = '';
 $dist_charset = 'utf8';		# recode doesn't support this yet.
@@ -215,7 +219,7 @@ die "automake: no \`Makefile.am' found or specified\n"
 # Now do all the work on each file.
 foreach $am_file (@input_files)
 {
-    # FIXME should support the AC_OUTPUT ":" syntax here.
+    # FIXME: should support the AC_OUTPUT ":" syntax here.
     if (! -f ($am_file . '.am'))
     {
 	&am_error ('no such file');
@@ -429,7 +433,7 @@ sub generate_makefile
     # This must be run after all the sources are scanned.
     &handle_yacc_lex_cxx;
 
-    # Re-init SOURCES and OBJECTS.  FIXME other code shouldn't depend
+    # Re-init SOURCES and OBJECTS.  FIXME: other code shouldn't depend
     # on this (but currently does).
     $contents{'SOURCES'} = join (' ', @sources);
     $contents{'OBJECTS'} = join (' ', @objects);
@@ -460,7 +464,7 @@ sub generate_makefile
     {
 	local ($am_time) = (stat ($makefile . '.am'))[9];
 	local ($in_time) = (stat ($out_file))[9];
-	# FIXME how to do unsigned comparison?
+	# FIXME: how to do unsigned comparison?
 	if ($am_time < $in_time)
 	{
 	    # No need to update.
@@ -641,7 +645,7 @@ sub handle_yacc_lex_cxx
 
 	if (! $seen_prog_yacc)
 	{
-	    # FIXME should include a reference line.  FIXME maybe
+	    # FIXME: should include a reference line.  FIXME: maybe
 	    # directly reference AC_PROG_YACC somehow?
 	    &am_error ("yacc source seen but \`YACC' not defined in \`configure.in'\n");
 	}
@@ -676,7 +680,7 @@ sub handle_yacc_lex_cxx
     {
 	# If there is more than one distinct yacc (resp lex) source
 	# file in a given directory, then the `interlock' program is
-	# required to allow parallel builds to work correctly.  FIXME
+	# required to allow parallel builds to work correctly.  FIXME:
 	# for now, no line number.
 	&require_config_file ($FOREIGN, 'interlock', 'ylwrap');
 	$output_vars .= ('INTERLOCK = ' . $config_aux_dir . "/interlock\n"
@@ -820,7 +824,7 @@ sub handle_source_transform
 		}
 		else
 		{
-		    # FORTRAN support.  FIXME not finished.
+		    # FORTRAN support.  FIXME: not finished.
 		    s/\.f90$/$obj/g;
 		    s/\.for$/$obj/g;
 
@@ -829,7 +833,7 @@ sub handle_source_transform
 		    # Objective-C.
 		    s/\.[cylfFsmM]$/$obj/g;
 
-		    # FIXME of course, this should only happen for C
+		    # FIXME: of course, this should only happen for C
 		    # source.  The multi-language support must really
 		    # be cleaned up more globally.
 		    $seen_c_source = 1;
@@ -1558,7 +1562,7 @@ sub handle_dist
     # Keys of %dist_common are names of files to distributed.  We put
     # README first because it then becomes easier to make a
     # Usenet-compliant shar file (in these, README must be first).
-    # FIXME do more ordering of files here.
+    # FIXME: do more ordering of files here.
     local (@coms);
     if (defined $dist_common{'README'})
     {
@@ -1797,7 +1801,7 @@ sub handle_dependencies
     }
     else
     {
-	# FIXME consider requiring --build-dir here.  What about case
+	# FIXME: consider requiring --build-dir here.  What about case
 	# where this is done via an option?
 
 	# Include any auto-generated deps that are present.  Note that
@@ -1898,7 +1902,7 @@ sub handle_aclocal_m4
     }
     else
     {
-	# FIXME how to tell if aclocal.m4 should be automatically
+	# FIXME: how to tell if aclocal.m4 should be automatically
 	# regenerated?
     }
 
@@ -1943,8 +1947,8 @@ sub handle_configure
 	# If we have a configure header, require it.
 	if ($config_header)
 	{
-	    # FIXME this restriction should be lifted.
-	    # FIXME first see if it is even needed as-is.
+	    # FIXME: this restriction should be lifted.
+	    # FIXME: first see if it is even needed as-is.
 	    &am_conf_line_error ($config_header_line,
 				 "argument to AC_CONFIG_HEADER contains \`/'\n")
 		if ($config_header =~ /\//);
@@ -2024,7 +2028,7 @@ sub handle_configure
 	    # Normal usage.
 	    $input = $local . '.in';
 	}
-	# FIXME when using autoconf ":" syntax, should we set CONFIG_FILES
+	# FIXME: when using autoconf ":" syntax, should we set CONFIG_FILES
 	# to $local:$input?
 	$output_rules .= ($local . ': '
 			  . '$(top_builddir)/config.status ' . $input . "\n"
@@ -2417,10 +2421,10 @@ sub do_one_clean_target
 	    push (@deps, $last_name . $target . " ");
 	}
     }
-    # FIXME not sure if I like the tabs here.
+    # FIXME: not sure if I like the tabs here.
     &pretty_print_rule ($name . $target . ": ", "\t\t", @deps);
 
-    # FIXME shouldn't we really print these messages before running
+    # FIXME: shouldn't we really print these messages before running
     # the dependencies?
     if ($name . $target eq 'maintainer-clean')
     {
@@ -2512,7 +2516,7 @@ sub handle_tests
     {
 	push (@check, 'check-TESTS');
 	push (@phony, 'check-TESTS');
-	# FIXME use $(SHELL) here?  That is what Ulrich suggests.
+	# FIXME: use $(SHELL) here?  That is what Ulrich suggests.
 	# Maybe a new macro, $(TEST_SHELL), a la $(CONFIG_SHELL)?  For
 	# now we just execute the file directly; this allows test
 	# files which are compiled -- a possibly useful feature.
@@ -2581,7 +2585,7 @@ sub handle_emacs_lisp
 ################################################################
 
 # Scan configure.in for interesting things.
-# FIXME ensure VERSION, PACKAGE are set.
+# FIXME: ensure VERSION, PACKAGE are set.
 sub scan_configure
 {
     open (CONFIGURE, 'configure.in')
@@ -2736,13 +2740,14 @@ sub scan_configure
 				|| /AC_(PATH|CHECK)_PROGS?\(YACC/);
 
         # This macro handles several different things.
-        if (/AM_INIT_AUTOMAKE/)
+        if (/AM_INIT_AUTOMAKE\([^,]*,([^)]+)\)/)
 	{
 	    $seen_make_set = 1;
 	    $seen_package = 1;
 	    $seen_version = 1;
 	    $seen_arg_prog = 1;
 	    $seen_prog_install = 2;
+	    $package_version = $1;
 	}
 
 	# Some things required by Automake.
@@ -2755,7 +2760,16 @@ sub scan_configure
         $seen_decl_yytext = 1 if /AC_DECL_YYTEXT/;
         $seen_maint_mode = 1 if /AM_MAINTAINER_MODE/;
         $seen_package = 1 if /PACKAGE=/;
-        $seen_version = 1 if /VERSION=/;
+
+        if (/VERSION=(\S+)/)
+	{
+	    $seen_version = 1;
+	    $package_version = $1;
+	}
+        elsif (/VERSION=/)
+	{
+	    $seen_version = 1;
+	}
 
         # Weird conditionals here because it is always allowed to
         # upgrade to AM_PROG_INSTALL but never to downgrade to
@@ -2822,10 +2836,23 @@ sub check_gnu_standards
 # Do any extra checking for GNITS standards.
 sub check_gnits_standards
 {
-    if ($strictness >= $GNITS && -f $relative_dir . '/COPYING.LIB')
+    if ($strictness >= $GNITS)
     {
-	&am_error
-	    ("\`${relative_dir}/COPYING.LIB' disallowed by Gnits standards");
+	if (-f $relative_dir . '/COPYING.LIB')
+	{
+	    &am_error ("\`${relative_dir}/COPYING.LIB' disallowed by Gnits standards");
+	}
+
+	if ($package_version !~ /^$GNITS_VERSION_PATTERN$/)
+	{
+	    &am_error ("version \`$package_version' doesn't follow Gnits standards");
+	}
+	elsif (defined $1 && -f 'README-alpha' && $relative_dir eq '.')
+	{
+	    # This means we have an alpha release.  See
+	    # GNITS_VERSION_PATTERN for details.
+	    &require_file ($GNITS, 'README-alpha');
+	}
     }
 
     if ($relative_dir eq '.')
@@ -3065,7 +3092,7 @@ sub read_am_file
 		$output_vars .= $_;
 		$saw_bk = /\\$/;
 		# Chop newline and backslash if this line is
-		# continued.  FIXME maybe ensure trailing whitespace
+		# continued.  FIXME: maybe ensure trailing whitespace
 		# exists?
 		chop if $saw_bk;
 		chop if $saw_bk;
@@ -3443,7 +3470,7 @@ sub am_primary_prefixes
 # subsequent arguments are possible installation locations.  Returns
 # list of all values of all _HOW targets.
 #
-# FIXME this should be rewritten to be cleaner.  It should be broken
+# FIXME: this should be rewritten to be cleaner.  It should be broken
 # up into multiple functions.
 #
 # Usage is: am_install_var (OPTION..., file, HOW, where...)
@@ -3615,7 +3642,7 @@ sub require_file_internal
 	    if (-f $fullfile)
 	    {
 		$found_it = 1;
-		# FIXME Once again, special-case `.'.
+		# FIXME: Once again, special-case `.'.
 		&push_dist_common ($file)
 		    if $dir eq $relative_dir || $dir eq '.';
 		$save_dir = $dir;
@@ -3647,7 +3674,7 @@ sub require_file_internal
 			system ('cp', $am_dir . '/' . $file, $errfile);
 		    }
 
-		    # FIXME this is a hack.  Should have am_warn.
+		    # FIXME: this is a hack.  Should have am_warn.
 		    local ($save) = $exit_status;
 		    if ($is_configure)
 		    {
@@ -3845,7 +3872,7 @@ sub am_line_error
 # Like am_error, but while scanning configure.in.
 sub am_conf_error
 {
-    # FIXME can run in subdirs.
+    # FIXME: can run in subdirs.
     warn "automake: configure.in: ", join (' ', @_), "\n";
     $exit_status = 1;
 }
