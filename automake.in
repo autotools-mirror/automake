@@ -318,14 +318,26 @@ $obsolete_rx = '(' . join ('|', keys %obsolete_macros) . ')';
 # internally supported.
 &initialize_global_constants;
 
-&register_language ('c', 'ansi-p=1', 'autodep=',
+&register_language ('c', 'ansi-p=1', 'autodep=', 'flags=CFLAGS',
+		    'compile=$(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)',
+		    'compiler-name=COMPILE',
+		    'output-arg=-c',
 		    'c');
-&register_language ('cxx', 'linker=CXXLINK', 'autodep=CXX',
+&register_language ('cxx', 'linker=CXXLINK', 'autodep=CXX', 'flags=CXXFLAGS',
+		    'compile=$(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)',
+		    'compiler-name=CXXCOMPILE',
+		    'output-arg=-c -o $@',
 		    'c++', 'cc', 'cpp', 'cxx', 'C');
 &register_language ('objc', 'linker=OBJCLINK', 'autodep=OBJC',
+		    'flags=OBJCFLAGS',
+		    'compile=$(OBJC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_OBJCFLAGS) $(OBJCFLAGS)',
+		    'compiler-name=OBJCCOMPILE',
+		    'output-arg=-c -o $@',
                     'm');
 &register_language ('header',
 		    'h', 'H', 'hxx', 'h++', 'hh', 'hpp', 'inc');
+
+# For now, yacc and lex can't be handled on a per-exe basis.
 &register_language ('yacc', 'ansi-p=1',
 		    'y');
 &register_language ('yaccxx', 'linker=CXXLINK',
@@ -334,15 +346,34 @@ $obsolete_rx = '(' . join ('|', keys %obsolete_macros) . ')';
 		    'l');
 &register_language ('lexxx', 'linker=CXXLINK',
 		    'l++', 'll', 'lxx', 'lpp');
+
 &register_language ('asm',
+		    'flags=CFLAGS', # FIXME: asmflags?
+		    'compile=$(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)', # FIXME: a different compiler?
+		    'compiler-name=COMPILE',
+		    'output-arg=-c',
 		    's', 'S');
-&register_language ('f77', 'linker=F77LINK',
+
+&register_language ('f77', 'linker=F77LINK', 'flags=FFLAGS',
+		    'compile=$(F77) $(AM_FFLAGS) $(FFLAGS)',
+		    'compiler-name=F77COMPILE',
+		    'output-arg=-c -o $@',
 		    'f', 'for', 'f90');
-&register_language ('ppf77', 'linker=F77LINK',
+&register_language ('ppf77', 'linker=F77LINK', 'flags=FFLAGS',
+		    'compile=$(F77) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_FFLAGS) $(FFLAGS)',
+		    'compiler-name=PPF77COMPILE',
+		    'output-arg=-c -o $@',
 		    'F');
 &register_language ('ratfor', 'linker=F77LINK',
+		    'flags=RFLAGS', # FIXME also FFLAGS.
+		    'compile=$(F77) $(AM_FFLAGS) $(FFLAGS) $(AM_RFLAGS) $(RFLAGS)',
+		    'compiler-name=RCOMPILE',
+		    'output-arg=-c -o $@',
 		    'r');
-&register_language ('java', 'linker=GCJLINK', 'autodep=GCJ',
+&register_language ('java', 'linker=GCJLINK', 'autodep=GCJ', 'flags=GCJFLAGS',
+		    'compile=$(GCJ) $(DEFS) $(INCLUDES) $(AM_GCJFLAGS) $(GCJFLAGS)',
+		    'compiler-name=GCJCOMPILE',
+		    'output-arg=-c -o $@',
 		    'java', 'class', 'zip', 'jar');
 
 
@@ -818,13 +849,7 @@ sub get_object_extension
 	$output_vars .= &file_contents_with_transform ($xform,
 						       'comp-vars');
 
-	$xform = (($use_dependencies
-		   ? 's/^NOTDEPEND.*$//;'
-		   : 's/^NOTDEPEND//;')
-		  . ($seen_objext ? 's/^OBJEXT//;' : 's/^OBJEXT.*$//;')
-		  . 's/\@MINUSO\@/'
-		  . (defined $options{'subdir-objects'} ? '-o \$\@' : '')
-		  . '/;');
+	$xform = $seen_objext ? 's/^OBJEXT//;' : 's/^OBJEXT.*$//;';
 	$output_rules .= &file_contents_with_transform ($xform, 'compile');
 
 	&push_phony_cleaners ('compile');
@@ -951,9 +976,62 @@ sub finish_languages
     foreach $ext (sort keys %extension_seen)
     {
 	$lang = $extension_map{$ext};
+
+	# Generate the appropriate rules for this extension.
+	local ($comp) = '';
+	if (defined $language_map{$lang . '-compile'})
+	{
+	    $comp = $language_map{$lang . '-compile'};
+
+	    local ($outarg) = $language_map{$lang . '-output-arg'};
+	    if ($language_map{$lang . '-flags'} eq 'CFLAGS')
+	    {
+		# C compilers don't always support -c -o.
+		if (defined $options{'subdir-objects'})
+		{
+		    $outarg .= ' -o $@';
+		}
+	    }
+
+	    local ($full) = ("\t\$("
+			     . $language_map{$lang . '-compiler-name'}
+			     . ") "
+			     . $outarg);
+	    $output_rules .= (".$ext.o:\n"
+			      . $full
+			      . " \$<\n");
+	    # FIXME: Using cygpath should be somehow conditional.
+	    $output_rules .= ("$ext.obj:\n"
+			      . $full
+			      . " \`cygpath -w \$<\`\n")
+		if $seen_objext;
+	    $output_rules .= ("$ext.lo:\n"
+			      . "\t\$(LT"
+			      . $language_map{$lang . '-compiler-name'}
+			      . ") "
+			      . $outarg
+			      . " \$<\n")
+		if $seen_libtool;
+	}
+
+	push (@suffixes, $ext);
+
+	# The rest of the loop is done once per language.
 	next if defined $done{$lang};
 	$done{$lang} = 1;
+
 	$non_c = 0 if $lang !~ /(objc|cxx|f77|ratfor)$/;
+
+	if ($comp ne '')
+	{
+	    &define_compiler_variable ($language_map{$lang . '-compiler-name'},
+				       $ltcompile, $comp);
+	}
+	# The compiler's flag must be a configure variable.
+	if (defined $language_map{$lang . '-flag'})
+	{
+	    &define_configure_variable ($language_map{$lang . '-flag'});
+	}
 
 	# Compute the function name of the finisher and then call it.
 	$name = 'lang_' . $lang . '_finish';
@@ -965,11 +1043,15 @@ sub finish_languages
     # it.
     if (! $non_c || scalar keys %suffix_rules > 0)
     {
-	local ($ltcompile, $ltlink) = &libtool_compiler;
+	if (! defined $done{'c'})
+	{
+	    local ($ltcompile, $ltlink) = &libtool_compiler;
 
-	&define_configure_variable ('CFLAGS');
-	&define_compiler_variable ('COMPILE', $ltcompile,
-				   '$(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)');
+	    &define_configure_variable ($language_map{'c-flag'});
+	    &define_compiler_variable ($language_map{'c-compiler-name'},
+				       $ltcompile,
+				       $language_map{'c-compile'});
+	}
 	&define_variable ('CCLD', '$(CC)');
 	&define_variable ('LINK', $ltlink . '$(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
     }
@@ -1071,6 +1153,7 @@ sub check_libobjs_sources
 
 # Does much of the actual work for handle_source_transform.
 # Arguments are:
+#   name of resulting executable or library ("derived")
 #   object extension (e.g., `$U.lo')
 #   list of source files to transform
 # Result is a list
@@ -1078,7 +1161,7 @@ sub check_libobjs_sources
 #   remaining elements are names of objects
 sub handle_single_transform_list
 {
-    local ($obj, @files) = @_;
+    local ($derived, $obj, @files) = @_;
     local (@result) = ();
     local ($nonansi_obj) = $obj;
     $nonansi_obj =~ s/_//g;
@@ -1104,6 +1187,11 @@ sub handle_single_transform_list
 
 	    local ($xbase) = $base;
 
+	    # We must generate a rule for the object if it requires
+	    # its own flags.
+	    local ($rule) = '';
+	    local ($renamed) = 0;
+
 	    local ($lang) = $extension_map{$extension};
 	    if ($lang)
 	    {
@@ -1127,12 +1215,77 @@ sub handle_single_transform_list
 		    $object = $base . $nonansi_obj;
 		}
 
+		if ($language_map{$lang . '-flags'} ne ''
+		    && &variable_defined ($derived . '_'
+					  . $language_map{$lang . '-flags'}))
+		{
+		    # We have a per-executable flag in effect for this
+		    # object.  In this case we rewrite the object's
+		    # name to ensure it is unique.  We also require
+		    # the `compile' program to deal with compilers
+		    # where `-c -o' does not work.
+
+		    # We choose the name `DERIVED-OBJECT' to ensure
+		    # (1) uniqueness, and (2) continuity between
+		    # invocations.  However, this will result in a
+		    # name that is too long for losing systems, in
+		    # some situations.  So we provide _SHORTNAME to
+		    # override.
+
+		    local ($dname) = $derived;
+		    if (&variable_defined ($derived . '_SHORTNAME'))
+		    {
+			# FIXME: should use the same conditional as
+			# the _SOURCES variable.  But this is really
+			# silly overkill -- nobody should have
+			# conditional shortnames.
+			$dname = &variable_value ($derived . '_SHORTNAME');
+		    }
+		    $object = $dname . '-' . $object;
+
+		    &require_file ($FOREIGN, 'compile')
+			if $lang eq 'c';
+
+		    if (! defined $language_map{$lang . '-compile'})
+		    {
+			print STDERR "automake: programming error: $lang flags defined without compiler\n";
+			exit 1;
+		    }
+		    # Compute the rule to compile this object.
+		    local ($flag) = $language_map{$lang . '-flags'};
+		    local ($val) = "(${derived}_${flag}";
+		    ($rule = $language_map{$lang . '-compile'}) =~    
+			s/\($flag/$val/;
+
+		    $rule .= $language_map{$lang . '-output-arg'};
+		    # For C we have to add the -o, because the
+		    # standard rule doesn't include it.
+		    if ($language_map{$lang . '-flags'} eq 'CFLAGS')
+		    {
+			$rule .= ' -o $@';
+		    }
+
+		    $renamed = 1;
+		}
+
 		# If rewrite said it was ok, put the object into a
 		# subdir.
 		if ($r == $LANG_SUBDIR && $directory ne '')
 		{
 		    $object = $directory . '/' . $object;
 		    $xbase = $directory . '/' . $base;
+		}
+
+		# If doing dependency tracking, then we can't print
+		# the rule.
+		if ($use_dependencies
+		    && $rule ne ''
+		    && $language_map{$lang . '-autodep'} ne 'no')
+		{
+		    $rule = '';
+		    $lang_specific_files{$lang} .= (' ' . $derived
+						    . ' ' . $full
+						    . ' ' . $object);
 		}
 	    }
  	    elsif ($extension =~ /^$source_suffix_pattern$/) 
@@ -1167,7 +1320,7 @@ sub handle_single_transform_list
 
 		# If file is in subdirectory, we need explicit
 		# dependency.
-		if ($directory ne '')
+		if ($directory ne '' || $renamed)
 		{
 		    push (@dep_list, $full);
 		}
@@ -1215,7 +1368,23 @@ sub handle_single_transform_list
 		    }
 		}
 
-		&pretty_print_rule ($object . ':', "\t", @dep_list);
+		&pretty_print_rule ($object . ':', "\t", @dep_list)
+		    if scalar @dep_list > 0 || $rule ne '';
+
+		# Print the rule if we have one.
+		if ($rule ne '')
+		{
+		    # Turn `$@' into name of our object file.
+		    local ($xform);
+		    ($xform = $object) =~ s,/,\\/,g;
+		    $rule =~ s/\$\@/$xform/;
+		    # FIXME: we use $< in an explicit rule here.
+		    # We can't use $(srcdir)/<file> because we don't
+		    # actually know it is in srcdir.
+		    $rule .= ' $<';
+		    # FIXME: handle .lo and .obj as well.
+		    $output_rules .= "\t" . $rule . "\n";
+		}
 	    }
 
 	    # Transform .o or $o file into .P file (for automatic
@@ -1280,8 +1449,9 @@ sub handle_source_transform
 		foreach $cond (@conds)
 		{
 		    @files = &variable_value_as_list ($var, $cond);
-		    ($temp, @result) = &handle_single_transform_list ($obj,
-								      @files);
+		    ($temp, @result) =
+			&handle_single_transform_list ($one_file, $obj,
+						       @files);
 		    $linker = $temp if $linker eq '';
 
 		    # Define _OBJECTS conditionally.
@@ -1305,7 +1475,8 @@ sub handle_source_transform
 	$used_pfx{$xpfx} = 1
 	    unless $prefix =~ /EXTRA_/;
 
-	($temp, @result) = &handle_single_transform_list ($obj, @files);
+	($temp, @result) = &handle_single_transform_list ($one_file, $obj,
+							  @files);
 	$linker = $temp if $linker eq '';
 	&define_pretty_variable ($xpfx . $one_file . "_OBJECTS", '', @result)
 	    unless $prefix =~ /EXTRA_/;
@@ -1320,7 +1491,8 @@ sub handle_source_transform
 	push (@objects, $unxformed . $obj);
 	push (@files, $unxformed . '.c');
 
-	($temp, @result) = &handle_single_transform_list ($obj, @files);
+	($temp, @result) = &handle_single_transform_list ($one_file, $obj,
+							  @files);
 	$linker = $temp if $linker eq '';
 	&define_pretty_variable ($one_file . "_OBJECTS", '', @result)
     }
@@ -1350,11 +1522,6 @@ sub handle_built_sources
 	    last;
 	}
     }
-
-    # We don't care about the return value of this function.  We just
-    # want to make sure to update %dep_files with the contents of
-    # BUILT_SOURCES.
-    &handle_single_transform_list (".o", @sources);
 }
 
 # Special-case @ALLOCA@ and @LIBOBJS@ in _LDADD or _LIBADD variables.
@@ -1467,10 +1634,16 @@ sub handle_lib_objects_cond
 		{
 		    ($rewrite = $iter) =~ s/\.c$/.P/;
 		    $dep_files{'.deps/' . $rewrite} = 1;
-		    &require_file_with_line ($var, $FOREIGN, $iter)
-		      unless &variable_defined ('BUILT_SOURCES')
-			&& grep ('^' . (($rewrite = $iter) =~ s/(\W)/\\\1/g) . '$',
-				 &variable_value_as_list ('BUILT_SOURCES', 'all'));
+		    ($rewrite = $iter) =~ s/(\W)/\\$1/g;
+		    $rewrite = "^" . $rewrite . "\$";
+		    # Only require the file if it is not a built source.
+		    if (! &variable_defined ('BUILT_SOURCES')
+			|| ! grep (/$rewrite/,
+				   &variable_value_as_list ('BUILT_SOURCES',
+							    'all')))
+		    {
+			&require_file_with_line ($var, $FOREIGN, $iter);
+		    }
 		}
 	    }
 	}
@@ -1503,7 +1676,7 @@ sub check_canonical_spelling
     local ($xname, $xt);
 
     ($xname = $name) =~ tr/A-Za-z0-9_/_/c;
-    $xname =~ s/^([0-9_])/AM\1/;
+    $xname =~ s/^([0-9_])/AM$1/;
     if ($xname ne $name)
     {
 	local ($xt);
@@ -2835,6 +3008,57 @@ sub scan_dependency_file
     close (DEP_FILE);
 }
 
+# A subroutine of handle_dependencies.  This function includes
+# `depend2' with appropriate transformations.
+sub add_depend2
+{
+    local ($lang) = @_;
+
+    # First include code for ordinary objects.
+    local ($key) = $lang . '-autodep';
+    local ($xform, $ext);
+    $xform = ('s/\@COMPILE\@/\$(' . $language_map{$key} . 'COMPILE)/g;'
+	      . 's/\@LTCOMPILE\@/\$(LT' . $language_map{$key} . 'COMPILE)/g;'
+	      . 's/\@OBJ\@/%.o/g;'
+	      . 's/\@LTOBJ\@/%.lo/g;');
+    foreach $ext (&lang_extensions ($lang))
+    {
+	$output_rules .= &file_contents_with_transform ('s/\@SOURCE\@/%'
+							. $ext . '/g;'
+							. $xform,
+							'depend2');
+    }
+
+    # Now include code for each specially handled object with this
+    # language.
+    local (@list) = grep ($_ ne '', split (' ', $lang_specific_files{$lang}));
+    local ($max) = scalar @list;
+    local ($i) = 0;
+    local ($derived, $source, $obj);
+    while ($i < $max)
+    {
+	$derived = $list[$i];
+	($source = $list[$i + 1]) =~ s,([/\$]),\\$1,g;
+	($obj = $list[$i + 2]) =~ s,([/\$]),\\$1,g;
+	$i += 3;
+
+	local ($flag) = $language_map{$lang . '-flags'};
+	local ($val) = "(${derived}_${flag}";
+	($rule = $language_map{$lang . '-compile'}) =~    
+	    s/\($flag/$val/;
+
+	$rule =~ s,([/\$]),\\$1,g;
+
+	$xform = ('s/\@COMPILE\@/' . $rule . '/g;'
+		  . 's/\@LTCOMPILE\@/\$(LIBTOOL) --mode=compile ' . $rule
+		  . '/g;'
+		  . 's/\@OBJ\@/' . $obj . '.o/g;'
+		  . 's/\@LTOBJ\@/' . $obj . '.lo/g;'
+		  . 's/\@SOURCE\@/' . $source . '/g;');
+	$output_rules .= &file_contents_with_transform ($xform, 'depend2');
+    }
+}
+
 # Handle auto-dependency code.
 sub handle_dependencies
 {
@@ -2855,18 +3079,10 @@ sub handle_dependencies
 	    local ($key, $lang, $ext, $xform);
 	    foreach $key (sort keys %language_map)
 	    {
-		next unless $key =~ /^(.*)-autodep$/;
-		next if $language_map{$key} eq 'no';
-		$lang = $1;
-
-		$xform = 's/\@PFX\@/' . $language_map{$key} . '/g;';
-		foreach $ext (&lang_extensions ($lang))
+		if ($key =~ /^(.*)-autodep$/
+		    && $language_map{$key} ne 'no')
 		{
-		    $output_rules .=
-			&file_contents_with_transform ('s/\@EXT\@/'
-						       . $ext . '/g;'
-						       . $xform,
-						       'depend2');
+		    &add_depend2 ($1);
 		}
 	    }
 	}
@@ -4833,39 +5049,14 @@ sub lang_c_finish
 
 sub lang_cxx_finish
 {
-    local (@cxx_list) = &lang_extensions ('cxx');
-    local ($cxx_count) = scalar @cxx_list;
-    if ($cxx_count)
+    local ($ltcompile, $ltlink) = &libtool_compiler;
+
+    &define_variable ('CXXLD', '$(CXX)');
+    &define_variable ('CXXLINK', $ltlink . '$(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
+
+    if (! defined $configure_vars{'CXX'})
     {
-	push (@suffixes, @cxx_list);
-
-	local ($ltcompile, $ltlink) = &libtool_compiler;
-
-	&define_configure_variable ("CXXFLAGS");
-	&define_compiler_variable ('CXXCOMPILE', $ltcompile, '$(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)');
-
-	&define_variable ('CXXLD', '$(CXX)');
-	&define_variable ('CXXLINK', $ltlink . '$(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
-
-	local ($ext);
-	foreach $ext (@cxx_list)
-	{
-	    # Every known C++ compiler supports both -c and -o.
-	    $output_rules .= ("$ext.o:\n"
-			      . "\t\$(CXXCOMPILE) -c -o \$\@ \$<\n");
-	    # FIXME: Using cygpath should be somehow conditional.
-	    $output_rules .= ("$ext.obj:\n"
-			      . "\t\$(CXXCOMPILE) -c -o \$\@ `cygpath -w \$<`\n")
-		if ($seen_objext);
-	    $output_rules .= ("$ext.lo:\n"
-			      . "\t\$(LTCXXCOMPILE) -c -o \$\@ \$<\n")
-		if ($seen_libtool);
-	}
-
-	if (! defined $configure_vars{'CXX'})
-	{
-	    &am_error ("C++ source seen but \`CXX' not defined in \`configure.in'");
-	}
+	&am_error ("C++ source seen but \`CXX' not defined in \`configure.in'");
     }
 }
 
@@ -5009,67 +5200,21 @@ sub lang_asm_finish
 {
     # We need the C code for assembly.
     &lang_c_finish;
-
-    # We also need our own rules.
-    local ($minuso) = '';
-    if (defined $options{'subdir-objects'})
-    {
-	$minuso = '-o $@ ';
-    }
-    local (@asm_list) = &lang_extensions ('am');
-    local ($ext);
-    foreach $ext (@asm_list)
-    {
-	$output_rules .= ("$ext.o:\n"
-			  . "\t\$(COMPILE) -c " . $minuso . "\$<\n");
-	# FIXME: Using cygpath should be somehow conditional.
-	$output_rules .= ("$ext.obj:\n"
-			  . "\t\$(COMPILE) -c " . $minuso
-			  . "`cygpath -w \$<`\n")
-	    if $seen_objext;
-	$output_rules .= ("$ext.lo:\n"
-			  . "\t\$(LTCOMPILE) -c -o \$\@ \$<\n")
-	    if $seen_libtool;
-    }
-
-    push (@suffixes, @asm_list);
 }
 
 sub lang_f77_finish
 {
-    local (@f77_list) = &lang_extensions ('f77');
-    local ($f77_count) = scalar @f77_list;
-    if ($f77_count)
+    # FIXME: this function can be called more than once.  We should
+    # arrange for it to only do anything the first time through.
+
+    local ($ltcompile, $ltlink) = &libtool_compiler;
+
+    &define_variable ('F77LD', '$(F77)');
+    &define_variable ('F77LINK', $ltlink . '$(F77LD) $(AM_FFLAGS) $(FFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
+
+    if (! defined $configure_vars{'F77'})
     {
-	push (@suffixes, @f77_list);
-
-	local ($ltcompile, $ltlink) = &libtool_compiler;
-
-	&define_configure_variable ('FFLAGS');
-	&define_compiler_variable ('F77COMPILE', $ltcompile,
-				   '$(F77) $(AM_FFLAGS) $(FFLAGS)');
-
-	&define_variable ('F77LD', '$(F77)');
-	&define_variable ('F77LINK', $ltlink . '$(F77LD) $(AM_FFLAGS) $(FFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
-
-	local ($ext);
-	foreach $ext (@f77_list)
-	{
-	    $output_rules .= ("$ext.o:\n"
-			      . "\t\$(F77COMPILE) -c \$<\n");
-	    # FIXME: Using cygpath should be somehow conditional.
-	    $output_rules .= ("$ext.obj:\n"
-			      . "\t\$(F77COMPILE) -c `cygpath -w \$<`\n")
-		if ($seen_objext);
-	    $output_rules .= ("$ext.lo:\n"
-			      . "\t\$(LTF77COMPILE) -c \$<\n")
-		if ($seen_libtool);
-	}
-
-	if (! defined $configure_vars{'F77'})
-	{
-	    &am_error ("Fortran 77 source seen but \`F77' not defined in \`configure.in'");
-	}
+	&am_error ("Fortran 77 source seen but \`F77' not defined in \`configure.in'");
     }
 }
 
@@ -5089,103 +5234,30 @@ sub lang_f77_finish
 # available).
 sub lang_ppf77_finish
 {
-    local ($ext) = 'F';
-    last unless $extension_seen{$ext};
-
-    $ext = '.' . $ext;
-    push (@suffixes, $ext);
-
-    local ($ltcompile, $ltlink) = &libtool_compiler;
-
-    &define_configure_variable ('FFLAGS');
-    &define_compiler_variable ('F77COMPILE', $ltcompile,
-			       '$(F77) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_FFLAGS) $(FFLAGS)');
-
-    &define_variable ('F77LD', '$(F77)');
-    &define_variable ('F77LINK', $ltlink . '$(F77LD) $(AM_FFLAGS) $(FFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
-
-    $output_rules .= ("$ext.o:\n"
-		      . "\t\$(F77COMPILE) -c \$<\n");
-    # FIXME: Using cygpath should be somehow conditional.
-    $output_rules .= ("$ext.obj:\n"
-		      . "\t\$(F77COMPILE) -c `cygpath -w \$<`\n")
-	if ($seen_objext);
-    $output_rules .= ("$ext.lo:\n"
-		      . "\t\$(LTF77COMPILE) -c \$<\n")
-	if ($seen_libtool);
+    &lang_f77_finish;
 
     # We also handle the case of preprocessing `.F' files into `.f'
     # files.
-    $output_rules .= ("$ext.f:\n"
+    $output_rules .= (".F.f:\n"
 		      . "\t\$(F77COMPILE) -F \$<\n");
-
-    if (! defined $configure_vars{'F77'})
-    {
-	&am_error ("Fortran 77 source seen but \`F77' not defined in \`configure.in'");
-    }
 }
 
 sub lang_ratfor_finish
 {
-    local ($ext) = 'r';
-    last unless $extension_seen{$ext};
-    $ext = '.' . $ext;
-    push (@suffixes, $ext);
-
-    local ($ltcompile, $ltlink) = &libtool_compiler;
-
-    &define_configure_variable ('FFLAGS');
-    &define_configure_variable ('RFLAGS');
-    &define_variable ('RCOMPILE', $ltcompile,
-		      '$(F77) $(AM_FFLAGS) $(FFLAGS) $(AM_RFLAGS) $(RFLAGS)');
-
-    &define_variable ('F77LD', '$(F77)');
-    &define_variable ('F77LINK', $ltlink . '$(F77LD) $(AM_FFLAGS) $(FFLAGS) $(AM_RFLAGS) $(RFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
-
-    $output_rules .= ("$ext.o:\n"
-		      . "\t\$(RCOMPILE) -c \$<\n");
-    # FIXME: Using cygpath should be somehow conditional.
-    $output_rules .= ("$ext.obj:\n"
-		      . "\t\$(RCOMPILE) -c `cygpath -w \$<`\n")
-	if ($seen_objext);
-    $output_rules .= ("$ext.lo:\n"
-		      . "\t\$(LTRCOMPILE) -c \$<\n")
-	if ($seen_libtool);
+    &lang_f77_finish;
 
     # We also handle the case of preprocessing `.r' files into `.f'
     # files.
-    $output_rules .= ("$ext.f:\n"
+    $output_rules .= (".r.f:\n"
 		      . "\t\$(RCOMPILE) -F \$<\n");
-
-    if (! defined $configure_vars{'F77'})
-    {
-	&am_error ("Ratfor source seen but \`F77' not defined in \`configure.in'");
-    }
 }
 
 sub lang_objc_finish
 {
-    push (@suffixes, '.m');
-
     local ($ltcompile, $ltlink) = &libtool_compiler;
-
-    &define_configure_variable ("OBJCFLAGS");
-    &define_compiler_variable ('OBJCCOMPILE', $ltcompile,
-			       '$(OBJC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_OBJCFLAGS) $(OBJCFLAGS)');
 
     &define_variable ('OBJCLD', '$(OBJC)');
     &define_variable ('OBJCLINK', $ltlink . '$(OBJCLD) $(AM_OBJCFLAGS) $(OBJCFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
-
-    # All known ObjC compilers support -c and -o together.
-    $output_rules .= (".m.o:\n"
-                      . "\t\$(OBJCCOMPILE) -c -o \$\@ \$<\n");
-    # FIXME: Using cygpath should be somehow conditional.
-    $output_rules .= (".m.obj:\n"
-                      . "\t\$(OBJCCOMPILE) -c -o \$\@ `cygpath -w \$<`\n")
-        if ($seen_objext);
-    $output_rules .= (".m.lo:\n"
-                      . "\t\$(LTOBJCCOMPILE) -c -o \$\@ \$<\n")
-        if ($seen_libtool);
 
     if (! defined $configure_vars{'OBJC'})
     {
@@ -5195,32 +5267,10 @@ sub lang_objc_finish
 
 sub lang_java_finish
 {
-    local (@java_list) = &lang_extensions ('java');
-    push (@suffixes, @java_list);
-
     local ($ltcompile, $ltlink) = &libtool_compiler;
-
-    &define_configure_variable ("GCJFLAGS");
-    &define_compiler_variable ('GCJCOMPILE', $ltcompile,
-			       '$(GCJ) $(DEFS) $(INCLUDES) $(AM_GCJFLAGS) $(GCJFLAGS)');
 
     &define_variable ('GCJLD', '$(GCJ)');
     &define_variable ('GCJLINK', $ltlink . '$(GCJLD) $(AM_GCJFLAGS) $(GCJFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
-
-    local ($ext);
-    foreach $ext (@java_list)
-    {
-	# All known Java compilers support -c and -o together.
-	$output_rules .= (".${ext}.o:\n"
-			  . "\t\$(GCJCOMPILE) -c -o \$\@ \$<\n");
-	# FIXME: Using cygpath should be somehow conditional.
-	$output_rules .= (".${ext}.obj:\n"
-			  . "\t\$(GCJCOMPILE) -c -o \$\@ `cygpath -w \$<`\n")
-	    if $seen_objext;
-	$output_rules .= (".${ext}.lo:\n"
-			  . "\t\$(LTGCJCOMPILE) -c -o \$\@ \$<\n")
-	    if $seen_libtool;
-    }
 
     if (! defined $configure_vars{'GCJ'})
     {
@@ -6806,6 +6856,10 @@ sub initialize_per_input
     # This is random scratch space for the language finish functions.
     # Don't randomly overwrite it; examine other uses of keys first.
     %language_scratch = ();
+
+    # We keep track of which objects need special (per-executable)
+    # handling on a per-language basis.
+    %lang_specific_files = ();
 }
 
 
