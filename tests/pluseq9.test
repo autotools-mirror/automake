@@ -1,0 +1,60 @@
+#! /bin/sh
+
+# Test the += diagnostics.
+
+. $srcdir/defs || exit 1
+
+cat >>configure.in <<EOF
+AM_CONDITIONAL(COND1, true)
+AM_CONDITIONAL(COND2, true)
+AM_CONDITIONAL(COND3, true)
+EOF
+
+cat > Makefile.am << 'END'
+if COND1
+if COND2
+    A = a
+    B = aa
+else
+    A = b
+    B = bb
+endif
+  A += c
+else
+  A = d
+endif
+A += e
+
+if COND3
+  A += f
+  B = cc
+endif
+B += dd
+END
+
+$ACLOCAL || exit 1
+$AUTOMAKE 2>stderr && exit 1
+
+cat stderr # for debugging
+
+# We expect the following diagnostic:
+#
+# Makefile.am:19: Cannot apply `+=' because `B' is not defined in
+# Makefile.am:19: the following conditions:
+# Makefile.am:19:   COND3_FALSE
+# Makefile.am:19:   COND1_FALSE COND2_FALSE
+# Makefile.am:19:   COND1_FALSE COND2_TRUE
+# Makefile.am:19: Either define `B' in these conditions, or use
+# Makefile.am:19: `+=' in the same conditions as the definitions.
+#
+# It would be nice if Automake could print only COND3_FALSE and
+# COND1_FALSE (merging the last two conditions), so we'll support
+# this case in the check too.
+
+# Are COND3_FALSE and COND1_FALSE mentioned?
+grep ':.*COND3_FALSE$' stderr || exit 1
+grep ':.*COND1_FALSE' stderr || exit 1
+# Make sure there are no more than three missing conditions.
+test `grep ':  ' stderr | wc -l` -le 3 || exit 1
+
+:

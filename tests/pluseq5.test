@@ -14,5 +14,21 @@ INCLUDES += def
 END
 
 $ACLOCAL || exit 1
-$AUTOMAKE || exit 0
-exit 1
+$AUTOMAKE 2>stderr && exit 1
+
+cat stderr # for debugging
+
+# We expect the following diagnostic:
+#
+# Makefile.am:4: Cannot apply `+=' because `INCLUDES' is not defined in
+# Makefile.am:4: the following conditions:
+# Makefile.am:4:   CHECK_FALSE
+# Makefile.am:4: Either define `INCLUDES' in these conditions, or use
+# Makefile.am:4: `+=' in the same conditions as the definitions.
+
+# Is CHECK_FALSE mentioned?
+grep ':.*CHECK_FALSE$' stderr || exit 1
+# Is there only one missing condition?
+test `grep ':  ' stderr | wc -l` = 1 || exit 1
+
+:

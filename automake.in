@@ -5351,6 +5351,10 @@ sub conditional_true_when ($$)
     # Make a hash holding all the values from $WHEN.
     my %cond_vals = map { $_ => 1 } split (' ', $when);
 
+    # Nothing is true when FALSE (not even FALSE itself, but it
+    # shouldn't hurt if you decide to change that).
+    return 0 if exists $cond_vals{'FALSE'};
+
     # Check each component of $cond, which looks `COND1 COND2'.
     foreach my $comp (split (' ', $cond))
     {
@@ -5376,18 +5380,30 @@ sub conditional_is_redundant ($@)
 {
     my ($cond, @whens) = @_;
 
-    if (@whens == 0)
-    {
-	return 1 if conditional_true_when ($cond, "");
-    }
-    else
-    {
-	foreach my $when (@whens)
-	{
-	    return 1 if conditional_true_when ($cond, $when);
-	}
-    }
+    @whens = ("") if @whens == 0;
 
+    foreach my $when (@whens)
+    {
+	return 1 if conditional_true_when ($cond, $when);
+    }
+    return 0;
+}
+
+
+# $BOOLEAN
+# &conditional_implies_one_of ($COND, @CONDS)
+# -------------------------------------------
+# Returns true iff $COND implies one of the conditions in @CONDS.
+sub conditional_implies_one_of ($@)
+{
+    my ($cond, @conds) = @_;
+
+    @conds = ("") if @conds == 0;
+
+    foreach my $c (@conds)
+    {
+	return 1 if conditional_true_when ($c, $cond);
+    }
     return 0;
 }
 
@@ -5618,6 +5634,85 @@ sub conditional_ambiguous_p ($$)
     return '';
 }
 
+# @MISSING_CONDS
+# variable_not_always_defined_in_cond ($VAR, $COND)
+# ---------------------------------------------
+# Check whether $VAR is always defined for condition $COND.
+# Return a list of conditions where the definition is missing.
+#
+# For instance, given
+#
+#   if COND1
+#     if COND2
+#       A = foo
+#       D = d1
+#     else
+#       A = bar
+#       D = d2
+#     endif
+#   else
+#     D = d3
+#   endif
+#   if COND3
+#     A = baz
+#     B = mumble
+#   endif
+#   C = mumble
+#
+# we should have:
+#   variable_not_always_defined_in_cond ('A', 'COND1_TRUE COND2_TRUE')
+#     => ()
+#   variable_not_always_defined_in_cond ('A', 'COND1_TRUE')
+#     => ()
+#   variable_not_always_defined_in_cond ('A', 'TRUE')
+#     => ("COND1_FALSE COND2_FALSE COND3_FALSE",
+#         "COND1_FALSE COND2_TRUE COND3_FALSE",
+#         "COND1_TRUE COND2_FALSE COND3_FALSE",
+#         "COND1_TRUE COND2_TRUE COND3_FALSE")
+#   variable_not_always_defined_in_cond ('B', 'COND1_TRUE')
+#     => ("COND3_FALSE")
+#   variable_not_always_defined_in_cond ('C', 'COND1_TRUE')
+#     => ()
+#   variable_not_always_defined_in_cond ('D', 'TRUE')
+#     => ()
+#   variable_not_always_defined_in_cond ('Z', 'TRUE')
+#     => ("TRUE")
+#
+sub variable_not_always_defined_in_cond ($$)
+{
+    my ($var, $cond) = @_;
+
+    # It's easy to answer if the variable is not defined.
+    return ("TRUE",) unless exists $var_value{$var};
+
+    # How does it work?  Let's take the second example:
+    #
+    #   variable_not_always_defined_in_cond ('A', 'COND1_TRUE')
+    #
+    # (1) First, we get the list of conditions where A is defined:
+    #
+    #   ("COND1_TRUE COND2_TRUE", "COND1_TRUE COND2_FALSE", "COND3_TRUE")
+    #
+    # (2) Then we generate the set of inverted conditions:
+    #
+    #   ("COND1_FALSE COND2_TRUE COND3_FALSE",
+    #    "COND1_FALSE COND2_FALSE COND3_FALSE")
+    #
+    # (3) Finally we remove these conditions which are not implied by
+    #     COND1_TRUE.  This yields an empty list and we are done.
+
+    my @res = ();
+    my @cond_defs = keys %{$var_value{$var}}; # (1)
+    foreach my $icond (invert_conditions (@cond_defs)) # (2)
+    {
+	prog_error ("invert_conditions returned an input condition")
+	    if exists $var_value{$var}{$icond};
+
+	push @res, $icond
+	    if (conditional_true_when ($cond, $icond)); # (3)
+    }
+    return @res;
+}
 
 # &macro_define($VAR, $VAR_IS_AM, $TYPE, $COND, $VALUE, $WHERE)
 # -------------------------------------------------------------
@@ -5727,7 +5822,29 @@ sub macro_define ($$$$$$)
       # Add VALUE to all definitions of VAR.
       foreach my $vcond (keys %{$var_value{$var}})
         {
-	    &macro_define ($var, $var_is_am, '+', $vcond, $value, $where);
+	  # We have a bit of error detection to do here.
+	  # This:
+	  #   if COND1
+	  #     X = Y
+	  #   endif
+	  #   X += Z
+	  # should be rejected because X is not defined for all conditions
+	  # where `+=' applies.
+	  my @undef_cond = variable_not_always_defined_in_cond $var, $cond;
+	  if (@undef_cond != 0)
+	    {
+	      file_error ($where,
+			  "Cannot apply `+=' because `$var' is not defined "
+			  . "in\nthe following conditions:\n  "
+			  . join ("\n  ", @undef_cond)
+			  . "\nEither define `$var' in these conditions,"
+			  . " or use\n`+=' in the same conditions as"
+			  . " the definitions.");
+	    }
+	  else
+	    {
+	      &macro_define ($var, $var_is_am, '+', $vcond, $value, $where);
+	    }
 	}
     }
   # 3. first assignment (=, :=, or +=)
@@ -5933,6 +6050,7 @@ sub variable_conditions_recursive ($)
     %vars_scanned = ();
 
     my @new_conds = variable_conditions_recursive_sub ($var, '');
+
     # Now we want to return all permutations of the subvariable
     # conditions.
     my %allconds = ();
@@ -6131,25 +6249,49 @@ sub variable_conditions_reduce
 # are never true for any of the input conditionals, and when taken
 # together with the input conditionals cover all possible cases.
 #
-# For example: invert_conditions("A_TRUE B_TRUE", "A_FALSE B_FALSE") will
-# return ("A_FALSE B_TRUE", "A_TRUE B_FALSE")
+# For example:
+#   invert_conditions("A_TRUE B_TRUE", "A_FALSE B_FALSE")
+#     => ("A_FALSE B_TRUE", "A_TRUE B_FALSE")
+#
+#   invert_conditions("A_TRUE B_TRUE", "A_TRUE B_FALSE", "A_FALSE")
+#     => ()
 sub invert_conditions
 {
     my (@conds) = @_;
 
     my @notconds = ();
-    foreach my $cond (@conds)
+
+    # Generate all permutation for all inputs.
+    my @perm =
+	map { variable_conditions_permutations (split(' ', $_)); } @conds;
+    # Remove redundant conditions.
+    @perm = variable_conditions_reduce @perm;
+
+    # Now remove all conditions which imply one of the input conditions.
+    foreach my $perm (@perm)
     {
-	foreach my $perm (variable_conditions_permutations (split(' ', $cond)))
-	{
-	    push @notconds, $perm
-		    if ! conditional_is_redundant ($perm, @conds);
-	}
+	push @notconds, $perm
+	    if ! conditional_implies_one_of ($perm, @conds);
     }
-    return variable_conditions_reduce (@notconds);
+    return @notconds;
 }
 
 # Return a list of permutations of a conditional string.
+# (But never output FALSE conditions, they are useless.)
+#
+# Examples:
+#   variable_conditions_permutations ("FOO_FALSE", "BAR_TRUE")
+#     => ("FOO_FALSE BAR_FALSE",
+#         "FOO_FALSE BAR_TRUE",
+#         "FOO_TRUE BAR_FALSE",
+#         "FOO_TRUE BAR_TRUE")
+#   variable_conditions_permutations ("FOO_FALSE", "TRUE")
+#     => ("FOO_FALSE TRUE",
+#         "FOO_TRUE TRUE")
+#   variable_conditions_permutations ("TRUE")
+#     => ("TRUE")
+#   variable_conditions_permutations ("FALSE")
+#     => ("TRUE")
 sub variable_conditions_permutations
 {
     my (@comps) = @_;
@@ -6163,13 +6305,13 @@ sub variable_conditions_permutations
     my @ret;
     foreach my $sub (variable_conditions_permutations (@comps))
     {
-	push (@ret, "$comp $sub");
-	push (@ret, "$neg $sub");
+	push (@ret, "$comp $sub") if $comp ne 'FALSE';
+	push (@ret, "$neg $sub") if $neg ne 'FALSE';
     }
     if (! @ret)
     {
-	push (@ret, $comp);
-	push (@ret, $neg);
+	push (@ret, $comp) if $comp ne 'FALSE';
+	push (@ret, $neg) if $neg ne 'FALSE';
     }
     return @ret;
 }
