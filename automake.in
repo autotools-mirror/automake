@@ -1328,31 +1328,6 @@ sub get_object_extension
 	    {
 		&require_file_with_line ('AUTOMAKE_OPTIONS', $FOREIGN,
 					 'ansi2knr.c', 'ansi2knr.1');
-		$output_rules .= &file_contents ('kr-extra');
-	    }
-
-	    # Generate rules to build ansi2knr.  If it is in some
-	    # other directory, then generate dependencies but have the
-	    # rule just run elsewhere.
-	    $output_rules .= ($options{'ansi2knr'} . ': '
-			      . $options{'ansi2knr'} . '.$(OBJEXT)' . "\n");
-	    if ($options{'ansi2knr'} eq 'ansi2knr')
-	    {
-		$output_rules .= ("\t\$(LINK) ansi2knr.\$(OBJEXT)"
-				  . " \$(LIBS)\n"
-				  . 'ansi2knr.$(OBJEXT)'
-				  . ": \$(CONFIG_HEADER)\n\n");
-	    }
-	    else
-	    {
-		$output_rules .= ("\tcd " . dirname ($options{'ansi2knr'})
-				  . ' && $(MAKE) $(AM_MAKEFLAGS) '
-				  . "ansi2knr\n\n");
-		# This is required for non-GNU makes.
-	        $output_rules .= ($options{'ansi2knr'} . '.$(OBJEXT)' . ":\n");
-		$output_rules .= ("\tcd " . dirname ($options{'ansi2knr'})
-				  . ' && $(MAKE) $(AM_MAKEFLAGS)'
-				  . ' ansi2knr.$(OBJEXT)' . "\n\n");
 	    }
 
 	    # Make sure ansi2knr can be found: if no path specified,
@@ -1371,7 +1346,12 @@ sub get_object_extension
 		&define_variable ("ANSI2KNR", $options{'ansi2knr'});
 	    }
 
-	    $output_rules .= &file_contents ('clean-kr');
+	    my $ansi2knr_dir = '';
+	    $ansi2knr_dir = dirname ($options{'ansi2knr'})
+	      if $options{'ansi2knr'} ne 'ansi2knr';
+
+	    $output_rules .= &file_contents ('ansi2knr',
+					     ('ANSI2KNR-DIR' => $ansi2knr_dir));
 
 	    $included_knr_compile = 1;
 	}
