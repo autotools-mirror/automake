@@ -10,6 +10,7 @@ remake-hdr.am remake-subd.am remake.am subdirs.am texinfos-vars.am \
 texinfos.am
 
 DIST_OTHER = TODO automake.in $(am_DATA)
+DIST_SUBDIRS = RCS samples
 
 install:: $(am_DATA)
 	$(srcdir)/mkinstalldirs $(amdatadir)
