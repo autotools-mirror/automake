@@ -125,20 +125,29 @@ sgi)
     exit $stat
   fi
   rm -f "$depfile" 
-  echo "$object : \\" > "$depfile"
 
-  # Clip off the initial element (the dependent). Don't try to be
-  # clever and remove the tr invocations, as IRIX sed won't handle
-  # lines with more than 8192 characters.
-  tr ' ' '
+  if test -f "$tmpdepfile"; then  # yes, the sourcefile depend on other files
+    echo "$object : \\" > "$depfile"
+
+    # Clip off the initial element (the dependent). Don't try to be
+    # clever and replace this with sed code, as IRIX sed won't handle
+    # lines with more than a fixed number of characters (4096 in
+    # IRIX 6.2 sed, 8192 in IRIX 6.5).
+    tr ' ' '
 ' < "$tmpdepfile" | sed 's/^[^\.]*\.o://' | tr '
 ' ' ' >> $depfile
 
-  tr ' ' '
+    tr ' ' '
 ' < "$tmpdepfile" | \
 ## Some versions of the HPUX 10.20 sed can't process this invocation
 ## correctly.  Breaking it into two sed invocations is a workaround.
-    sed -e 's/^\\$//' -e '/^$/d' -e '/:$/d' | sed -e 's/$/ :/' >> "$depfile"
+      sed -e 's/^\\$//' -e '/^$/d' -e '/:$/d' | sed -e 's/$/ :/' >> "$depfile"
+  else
+    # The sourcefile does not contain any dependencies, so just
+    # store a dummy comment line, to avoid errors with the Makefile
+    # "include basename.Plo" scheme.
+    echo "#dummy" > "$depfile"
+  fi
   rm -f "$tmpdepfile"
   ;;
 
