@@ -4440,56 +4440,57 @@ sub scan_autoconf_config_files
 # &scan_autoconf_traces ($FILENAME)
 # ---------------------------------
 # FIXME: For the time being, we don't care about the FILENAME.
-sub scan_autoconf_traces
+sub scan_autoconf_traces ($)
 {
-    my ($filename) = @_;
+  my ($filename) = @_;
 
-    my $traces = "$ENV{amtraces} ";
+  my $traces = "$ENV{amtraces} ";
 
-    $traces .= ' -t AC_CONFIG_FILES';
-    $traces .= ' -t AC_LIBSOURCE';
-    $traces .= ' -t AC_SUBST';
+  $traces .= ' --trace=AC_CONFIG_FILES';
+  $traces .= ' --trace=AC_LIBSOURCE';
+  $traces .= ' --trace=AC_SUBST';
+  $traces .= ' --trace=AM_CONDITIONAL';
+  $traces .= ' --trace=AM_INIT_AUTOMAKE';
 
-    my $tracefh = new Automake::XFile ("$traces |");
-    print "$me: reading $traces\n" if $verbose;
+  my $tracefh = new Automake::XFile ("$traces |");
+  verbose "reading $traces";
 
-    while ($_ = $tracefh->getline)
+  while ($_ = $tracefh->getline)
     {
-        chomp;
-        my ($file, $line, $macro, @args) = split /:/;
-	my $here = "$file:$line";
+      chomp;
+      my ($file, $line, @args) = split /:/;
+      my $macro = $args[0];
+      my $here = "$file:$line";
 
-	# Alphabetical ordering please.
-        if ($macro eq 'AC_CONFIG_FILES')
+      # Alphabetical ordering please.
+      if ($macro eq 'AC_CONFIG_FILES')
 	{
-	    # Look at potential Makefile.am's.
-	    &scan_autoconf_config_files ($args[0]);
+	  # Look at potential Makefile.am's.
+	  &scan_autoconf_config_files ($args[1]);
 	}
-        elsif ($macro eq 'AC_LIBSOURCE')
+      elsif ($macro eq 'AC_LIBSOURCE')
 	{
-	    my $source = "$args[0].c";
-	    # We should actually also `close' the sources: getopt.c
-	    # wants getopt.h etc.  But actually it should be done in the
-	    # macro itself, i.e., we have to first fix Autoconf to extend
-	    # _AC_LIBOBJ_DECL and use it the in various macros.
-	    if (!defined $libsources{$source})
-	        {
-		    print STDERR "traces: discovered $source\n";
-		    $libsources{$source} = $here;
-	        }
+	  # We should actually also `close' the sources: getopt.c
+	  # wants getopt.h etc.  But actually it should be done in the
+	  # macro itself, i.e., we have to first fix Autoconf to extend
+	  # _AC_LIBOBJ_DECL and use it the in various macros.
+	  $libsources{$args[1]} = $here;
 	}
-        elsif ($macro eq 'AC_SUBST')
+      elsif ($macro eq 'AC_SUBST')
 	{
-	    if (!defined $configure_vars{$args[0]})
-	        {
-		    print STDERR "traces: discovered AC_SUBST($args[0])\n";
-		    $configure_vars{$args[0]} = $here;
-	        }
+	  $configure_vars{$args[1]} = $here;
+	}
+      elsif ($macro eq 'AM_CONDITIONAL')
+	{
+	  $configure_cond{$args[1]} = $here;
+	}
+      elsif ($macro eq 'AM_INIT_AUTOMAKE')
+	{
+	  $package_version = $args[2];
+	  $package_version_line = $.;
+	  $seen_init_automake = 1;
 	}
     }
-
-    $tracefh->close
-	|| die "$me: close: $traces: $!\n";
 }
 
 
@@ -4832,17 +4833,19 @@ sub scan_autoconf_files
     die "$me: `configure.ac' or `configure.in' is required\n"
         if !$configure_ac;
 
-    &scan_one_autoconf_file ($configure_ac);
-    &scan_one_autoconf_file ('aclocal.m4')
-	if -f 'aclocal.m4';
-
     if (defined $ENV{'amtraces'})
     {
-        warn '$me: Autoconf traces is an experimental feature';
-        warn '$me: use at your own risks';
+        print STDERR "$me: Autoconf traces is an experimental feature\n";
+        print STDERR "$me: use at your own risks\n";
 
-        &scan_autoconf_traces ($configure_ac);
+        scan_autoconf_traces ($configure_ac);
     }
+    else
+      {
+	scan_one_autoconf_file ($configure_ac);
+	scan_one_autoconf_file ('aclocal.m4')
+	  if -f 'aclocal.m4';
+      }
 
     # Set input and output files if not specified by user.
     if (! @input_files)
