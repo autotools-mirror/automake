@@ -1134,7 +1134,20 @@ sub handle_libraries
 	    @outlist = ();
 	    foreach $onelib (&variable_value_as_list ($onedir . '_LIBRARIES'))
 	    {
-		push (@outlist, 'lib' . $onelib . '.a');
+		# FIXME: configure substitutions are just preserved.
+		# So your configure.in must say MYLIB=libfoo.a instead
+		# of MYLIB=foo.  Otherwise, you end up with an entry
+		# like lib@MYLIB@.a in LIBFILES, which can turn into
+		# "lib.a" -- major lossage.  Something better must be
+		# done here.
+		if (/^@.*@$/)
+		{
+		    push (@outlist, $onelib);
+		}
+		else
+		{
+		    push (@outlist, 'lib' . $onelib . '.a');
+		}
 	    }
 	    &define_pretty_variable ($onedir . '_LIBFILES', @outlist);
 	}
