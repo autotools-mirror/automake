@@ -53,3 +53,4 @@ strip.m4
 
 nodist_m4data_DATA = amversion.m4
 DISTCLEANFILES = amversion.m4
+EXTRA_DIST = dirlist

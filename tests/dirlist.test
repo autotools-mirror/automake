@@ -1,0 +1,26 @@
+#! /bin/sh
+
+# Check dirlist support.
+# This test relies on m4/dirlist
+
+. $srcdir/defs || exit 1
+
+cat > configure.in <<EOF
+AC_INIT
+AM_INIT_GUILE_MODULE
+EOF
+
+mkdir dirlist-test
+
+cat >>dirlist-test/dirlist-check.m4 << 'END'
+AC_DEFUN([AM_INIT_GUILE_MODULE],[
+. $srcdir/../GUILE-VERSION
+AM_INIT_AUTOMAKE($PACKAGE, $VERSION)
+AC_CONFIG_AUX_DIR(..)
+module=[$1]
+AC_SUBST(module)])
+END
+
+$ACLOCAL || exit 1
+
+grep 'DEFUN.*AM_INIT_GUILE_MODULE' aclocal.m4

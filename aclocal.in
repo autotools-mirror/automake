@@ -46,6 +46,11 @@ $prefix = "@prefix@";
 # Note also that the versioned directory is handled later.
 $acdir = "@datadir@/aclocal";
 $default_acdir = $acdir;
+# contains a list of directories, one per line, to be added
+# to the dirlist in addition to $acdir, as if -I had been
+# added to the command line.  If acdir has been redirected,
+# we will also check the specified acdir (this is done later).
+$default_dirlist = "$default_acdir/dirlist";
 
 # Some globals.
 
@@ -174,6 +179,26 @@ sub parse_arguments
     {
 	print $acdir, "\n";
 	exit 0;
+    }
+
+    $default_dirlist="$acdir/dirlist"
+	if $acdir ne $default_acdir;
+
+    if (open (DEFAULT_DIRLIST, $default_dirlist))
+    {
+	while (<DEFAULT_DIRLIST>)
+	{
+	    # Ignore '#' lines.
+	    next if /^#/;
+	    # strip off newlines and end-of-line comments
+	    s/\s*\#.*$//;
+	    chomp ($contents=$_);
+	    if (-d $contents )
+	    {
+		push (@dirlist, $contents);
+	    }   
+	}
+	close (DEFAULT_DIRLIST);
     }
 
     # Search the versioned directory near the end, and then the
