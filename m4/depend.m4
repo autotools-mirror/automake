@@ -45,9 +45,23 @@ else
 
    if test "$am_cv_[$1]_dependencies_compiler_type" = none; then
       # -o /dev/null avoids selecting -M for a compiler that would
-      # output dependencies to the object file
-      if test -n "`$depcc -M conftest.c -o /dev/null 2>/dev/null`"; then
+      # output dependencies to the object file.
+      # The grep tries to ignore compilers that actually output
+      # something other than dependency information when given the -M
+      # argument (in particular, linker map information).
+      rm -f conftest.P
+      if $depcc -M conftest.c -o /dev/null >conftest.P 2>/dev/null &&
+	 grep "conftest.h" conftest.P > /dev/null; then
 	 am_cv_[$1]_dependencies_compiler_type=dashmstdout
+      fi
+   fi
+
+   if test "$am_cv_[$1]_dependencies_compiler_type" = none; then
+      rm -f conftest.P
+      touch conftest.P
+      if ${MAKEDEPEND-makedepend} -o.o -fconftest.P conftest.c 2>/dev/null &&
+	grep "conftest.h" conftest.P > /dev/null; then
+	 am_cv_[$1]_dependencies_compiler_type=makedepend
       fi
    fi
 

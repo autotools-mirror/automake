@@ -122,6 +122,42 @@ dashmstdout)
   rm -f "$tmpdepfile"
   ;;
 
+makedepend)
+  # X makedepend
+  (
+    shift
+    cleared=no
+    for arg in "$@"; do
+      case $cleared in no)
+        set ""; shift
+	cleared=yes
+      esac
+      case "$arg" in
+        -D*|-I*)
+	  set fnord "$@" "$arg"; shift;;
+	-*)
+	  ;;
+	*)
+	  set fnord "$@" "$arg"; shift;;
+      esac
+    done
+    obj_suffix="`echo $object | sed 's/^.*\././'`"
+    touch "$tmpdepfile"
+    ${MAKEDEPEND-makedepend} 2>/dev/null -o"$obj_suffix" -f"$tmpdepfile" "$@"
+  ) &
+  proc=$!
+  "$@"
+  stat=$?
+  wait "$proc"
+  if test "$stat" != 0; then exit $stat; fi
+  rm -f "$depfile" 
+  cat < "$tmpdepfile" > "$depfile"
+  tail +3 "$tmpdepfile" | tr ' ' '
+' | \
+    sed -e 's/^\\$//' -e '/^$/d' -e '/:$/d' -e 's/$/ :/' >> "$depfile"
+  rm -f "$tmpdepfile" "$tmpdepfile".bak
+  ;;
+
 cpp)
   # Important note: in order to support this mode, a compiler *must*
   # always write the proprocessed file to stdout, regardless of -o,
