@@ -252,6 +252,10 @@ maintainer-check: automake aclocal
 	@if test `grep -E '^[^#]*@[A-Za-z_0-9]+@' automake | wc -l` -ne 0; then \
 	  echo "Unresolved @...@ substitution in automake" 1>&2; \
 	  exit 1; \
+	fi; \
+	if grep -E "[^\'\"]\\\$$\(DESTDIR" $(srcdir)/lib/am/*.am; then \
+	  echo 'Suspicious unquoted DESTDIR uses.' 1>&2 ; \
+	  exit 1; \
 	fi
 
 
