@@ -660,7 +660,9 @@ my @substtos;
 my %require_file_found = ();
 
 # This keeps track of all variables defined by subobjname.
-# The key is the variable _content_, and the value is the variable name.
+# The value stored is the variable names.
+# The key has the form "(COND1)VAL1(COND2)VAL2..." where VAL1 and VAL2
+# are the values of the variable for condition COND1 and COND2.
 my %subobjvar = ();
 
 ## --------------------------------- ##
@@ -2190,7 +2192,7 @@ sub handle_single_transform_list ($$$$@)
     return @result;
 }
 
-# $BOOL
+# ($LINKER, $OBJVAR)
 # define_objects_from_sources ($VAR, $OBJVAR, $NODEFINE, $ONE_FILE,
 #                              $OBJ, $PARENT, $TOPPARENT)
 # ---------------------------------------------------------------------
@@ -2230,6 +2232,7 @@ sub define_objects_from_sources ($$$$$$$)
     $vars_scanned{$var} = 1;
 
     my $needlinker = "";
+    my @allresults = ();
     foreach my $cond (variable_conditions ($var))
     {
 	my @result;
@@ -2284,12 +2287,18 @@ sub define_objects_from_sources ($$$$$$$)
 		$needlinker = "true" if @transformed;
 	    }
 	}
-
-	# Find an name for the variable, unless imposed.
-        $objvar = subobjname (@result) unless defined $objvar;
-	# Define _OBJECTS conditionally.
-	define_pretty_variable ($objvar, $cond, (@result))
-	    unless $nodefine;
+	push (@allresults, [$cond, @result]);
+    }
+    # Find a name for the variable, unless imposed.
+    $objvar = subobjname (@allresults) unless defined $objvar;
+    # Define _OBJECTS conditionally
+    unless ($nodefine)
+    {
+	foreach my $pair (@allresults)
+	{
+	    my ($cond, @result) = @$pair;
+	    define_pretty_variable ($objvar, $cond, @result);
+	}
     }
 
     delete $vars_scanned{$var};
@@ -2298,11 +2307,12 @@ sub define_objects_from_sources ($$$$$$$)
 
 
 # $VARNAME
-# subobjname (@OBJECTS)
-# ---------------------
-# Return a name for an object variable that holds @OBJECTS.
+# subobjname (@DEFINITIONS)
+# -------------------------
+# Return a name for an object variable that with definitions @DEFINITIONS.
+# @DEFINITIONS is a list of pair [$COND, @OBJECTS].
 #
-# If we already have an object variable containing @OBJECTS, reuse it.
+# If we already have an object variable containing @DEFINITIONS, reuse it.
 # This way, we avoid combinatorial explosion of the generated
 # variables.  Especially, in a Makefile such as:
 #
@@ -2332,7 +2342,12 @@ sub define_objects_from_sources ($$$$$$$)
 # small C programs, all testing the same set of source files.
 sub subobjname (@)
 {
-    my $key = "@_";
+    my $key = '';
+    foreach my $pair (@_)
+    {
+	my ($cond, @values) = @$pair;
+	$key .= "($cond)@values";
+    }
 
     return $subobjvar{$key} if exists $subobjvar{$key};
 
