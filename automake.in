@@ -2746,8 +2746,9 @@ sub check_typos ()
   # It is ok if the user sets this particular variable.
   set_seen 'AM_LDFLAGS';
 
-  foreach my $varname (variables)
+  foreach my $var (variables)
     {
+      my $varname = $var->name;
       # A configure variable is always legitimate.
       next if exists $configure_vars{$varname};
 
@@ -2762,8 +2763,6 @@ sub check_typos ()
 	    }
 	}
       next unless $check;
-
-      my $var = rvar $varname;
 
       for my $cond ($var->conditions->conds)
 	{
@@ -6544,9 +6543,8 @@ sub am_primary_prefixes ($$@)
   local $_;
   my %valid = map { $_ => 0 } @prefixes;
   $valid{'EXTRA'} = 0;
-  foreach my $varname (variables)
+  foreach my $var (variables)
     {
-      my $var = var $varname;
       # Automake is allowed to define variables that look like primaries
       # but which aren't.  E.g. INSTALL_sh_DATA.
       # Autoconf can also define variables like INSTALL_DATA, so
@@ -6554,11 +6552,10 @@ sub am_primary_prefixes ($$@)
       # redefined in Makefile.am).
       # FIXME: We should make sure that these variables are not
       # conditionally defined (or else adjust the condition below).
-      if ($var)
-	{
-	  my $def = $var->def (TRUE);
-	  next if $def && $def->owner != VAR_MAKEFILE;
-	}
+      my $def = $var->def (TRUE);
+      next if $def && $def->owner != VAR_MAKEFILE;
+
+      my $varname = $var->name;
 
       if ($varname =~ /^(nobase_)?(dist_|nodist_)?(.*)_$primary$/)
 	{

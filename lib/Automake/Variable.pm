@@ -299,7 +299,7 @@ variables defined so far.)
 use vars '%_variable_dict';
 sub variables ()
 {
-  return keys %_variable_dict;
+  return values %_variable_dict;
 }
 
 =item C<Automake::Variable::reset>
@@ -812,9 +812,7 @@ sub has_conditional_contents ($)
 
 =item C<$string = $var-E<gt>dump>
 
-=item C<$string = Automake::Variable::dump ($varname)>
-
-Return a string describing all we know about C<$var> (or C<$varname>).
+Return a string describing all we know about C<$var>.
 For debugging.
 
 =cut
@@ -823,15 +821,10 @@ sub dump ($)
 {
   my ($self) = @_;
 
-  my $v = ref $self ? $self : var $self;
-
-  return "$self does not exist\n"
-    unless $v;
-
-  my $text = $v->name . ": \n  {\n";
-  foreach my $vcond ($v->conditions->conds)
+  my $text = $self->name . ": \n  {\n";
+  foreach my $vcond ($self->conditions->conds)
     {
-      $text .= "    " . $vcond->human . " => " . $v->rdef ($vcond)->dump;
+      $text .= "    " . $vcond->human . " => " . $self->rdef ($vcond)->dump;
     }
   $text .= "  }\n";
   return $text;
@@ -1158,7 +1151,7 @@ sub define ($$$$$$$$)
 		   "... overrides Automake variable `$var' defined here");
 	    }
 	  verb ("refusing to override the user definition of:\n"
-		. Automake::Variable::dump $var
+		. $self->dump
 		."with `" . $cond->human . "' => `$value'");
 	}
       else
@@ -1236,9 +1229,9 @@ sub variables_dump ()
   my ($var) = @_;
 
   my $text = "All variables:\n{\n";
-  foreach my $var (sort variables)
+  foreach my $var (sort { $a->name cmp $b->name } variables)
     {
-      $text .= Automake::Variable::dump $var;
+      $text .= $var->dump;
     }
   $text .= "}\n";
   return $text;
