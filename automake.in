@@ -447,7 +447,7 @@ sub parse_arguments
 	if ($arglist[0] eq "--version")
 	{
 	    print "automake (GNU $PACKAGE) $VERSION\n\n";
-	    print "Copyright 2000 Free Software Foundation, Inc.\n";
+	    print "Copyright 2000, 2001 Free Software Foundation, Inc.\n";
 	    print "This is free software; see the source for copying conditions.  There is NO\n";
 	    print "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n";
 	    print "Written by Tom Tromey <tromey\@cygnus.com>\n";
@@ -3312,37 +3312,14 @@ sub handle_configure
 	    }
 	    else
 	    {
-		local (@rel_out_path);
-		# FIXME this chunk of code should be its own sub.
-		# It is used elsewhere.
-		foreach (split (/\//, $relative_dir))
-		{
-		    next if $_ eq '' || $_ eq '.';
-		    if ($_ eq '..')
-		    {
-			# FIXME: actually this is an error.
-			pop @rel_out_path;
-		    }
-		    else
-		    {
-			push (@rel_out_path, '..');
-		    }
-		}
-		if (@rel_out_path)
-		{
-		    $ch_sans_dir = join ('/', @rel_out_path) . '/' . $one_hdr;
-		}
-		else
-		{
-		    $ch_sans_dir = $one_hdr;
-		}
+	        $ch_sans_dir = backname ($relative_dir) . '/' . $one_hdr;
 	    }
 
 	    &require_file_with_conf_line ($config_header_line,
 					  $FOREIGN, $ch_sans_dir);
 
 	    # Header defined and in this directory.
-	    local (@files);
+	    my @files;
 	    if (-f $one_name . '.top')
 	    {
 		push (@files, "${cn_sans_dir}.top");
@@ -3363,27 +3340,25 @@ sub handle_configure
 		}
 		else
 		{
-		    # Strange quoting because this gets fed through
-		    # Perl.
 		    push (@files, '$(top_srcdir)/acconfig.h');
 		}
 	    }
 
-	    local ($stamp_name) = 'stamp-h';
+	    my ($stamp_name) = 'stamp-h';
 	    $stamp_name .= "${hdr_index}" if scalar (@config_headers) > 1;
 
-	    local ($xform) = '';
+            my $xform = '';
+            my $out_dir = &dirname ($ch_sans_dir);
 
 	    $xform = &transform ('CONFIGURE_AC'       => $configure_ac,
 				 'FILES'              => join (' ', @files),
 				 'CONFIG_HEADER'      => $cn_sans_dir,
 				 'CONFIG_HEADER_IN'   => $ch_sans_dir,
 				 'CONFIG_HEADER_FULL' => $one_fullname,
-				 'STAMP'          => "$stamp_dir$stamp_name");
+                                 'STAMP'            => "$stamp_dir$stamp_name",
+                                 'SRC_STAMP'        => "$out_dir/$stamp_name");
 
-	    local ($out_dir) = &dirname ($ch_sans_dir);
-	    $xform .= &transform ('SRC_STAMP' => "${out_dir}/${stamp_name}");
-	    $output_rules .= &file_contents ('remake-hdr', $xform);
+            $output_rules .= &file_contents ('remake-hdr', $xform);
 
 	    &create ("${relative_dir}/${out_dir}/${stamp_name}.in");
 	    &require_file_with_conf_line ($config_header_line, $FOREIGN,
@@ -3799,6 +3774,7 @@ sub handle_merge_targets
 		      . "\n");
     &depend ('.PHONY', 'install-strip');
 }
+
 
 # Helper for handle_merge_targets.  Note that handle_merge_targets
 # relies on the fact that this doesn't add an extra \n at the end.
@@ -6496,23 +6472,7 @@ sub read_am_file
 # twice.
 sub define_standard_variables
 {
-    # Compute relative location of the top object directory.
-    local (@topdir) = ();
-    foreach (split (/\//, $relative_dir))
-    {
-	next if $_ eq '.' || $_ eq '';
-	if ($_ eq '..')
-	{
-	    pop @topdir;
-	}
-	else
-	{
-	    push (@topdir, '..');
-	}
-    }
-    @topdir = ('.') if ! @topdir;
-
-    $top_builddir = join ('/', @topdir);
+    $top_builddir = backname ($relative_dir);
     $output_vars .=
         &file_contents ('header-vars',
 			&transform ('top_builddir' => $top_builddir));
@@ -6707,7 +6667,7 @@ sub initialize_global_constants
 
     # Copyright on generated Makefile.ins.
     $gen_copyright = "\
-# Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000
+# Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001
 # Free Software Foundation, Inc.
 # This Makefile.in is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -7834,26 +7794,60 @@ sub set_strictness
 
 ################################################################
 
+# $DIRNAME
+# &dirname ($FILE)
+# ----------------
 # Return directory name of file.
-sub dirname
+sub dirname ($)
 {
-    local ($file) = @_;
-    local ($sub);
+    my ($file) = @_;
+    my ($sub);
 
     ($sub = $file) =~ s,/+[^/]+$,,g;
     $sub = '.' if $sub eq $file;
     return $sub;
 }
 
+
+# $BASENAME
+# &basename ($FILE)
+# -----------------
 # Return file name of a file.
-sub basename
+sub basename ($)
 {
-    local ($file) = @_;
-    local ($sub);
+    my ($file) = @_;
+    my $sub;
 
     ($sub = $file) =~s,^.*/+,,g;
     return $sub;
 }
+
+
+# $BACKPATH
+# &backname ($REL-DIR)
+# --------------------
+# If I `cd $REL-DIR', then to come back, I should `cd $BACKPATH'.
+# For instance `src/foo' => `../..'.
+# Works with non strictly increasing paths, i.e., `src/../lib' => `..'.
+sub backname ($)
+{
+    my ($file) = @_;
+    my (@res);
+    foreach (split (/\//, $file))
+    {
+	next if $_ eq '.' || $_ eq '';
+	if ($_ eq '..')
+	{
+	    pop @res;
+	}
+	else
+	{
+	    push (@res, '..');
+	}
+    }
+    return join ('/', @res) || '.';
+}
+
 
 # Ensure a file exists.
 sub create
