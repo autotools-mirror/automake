@@ -61,10 +61,6 @@ Automake::DisjConditions - record a disjunction of Conditions
   #   "(COND1 and !COND2) or (!COND3)"
   my $str = $set->human;
 
-  # Build a new DisjConditions from the permuation of all
-  # Conditions appearing in $set.
-  my $perm = $set->permutations;
-
   # Invert a DisjConditions, i.e., create a new DisjConditions
   # that complements $set.
   my $inv = $set->invert;
@@ -292,86 +288,6 @@ sub human ($ )
   return $res;
 }
 
-
-sub _permutations_worker (@)
-{
-  my @conds = @_;
-  return () unless @conds;
-
-  my $cond = shift @conds;
-
-  # Ignore "TRUE" conditions, since they add nothing to permutations.
-  return &_permutations_worker (@conds) if $cond eq "TRUE";
-
-  (my $neg = $cond) =~ s/TRUE$/FALSE/;
-
-  # Recurse.
-  my @ret = ();
-  foreach my $c (&_permutations_worker (@conds))
-    {
-      push (@ret, $c->merge_conds ($cond));
-      push (@ret, $c->merge_conds ($neg));
-    }
-  if (! @ret)
-    {
-      push (@ret, new Automake::Condition $cond);
-      push (@ret, new Automake::Condition $neg);
-    }
-
-  return @ret;
-}
-
-=item C<$perm = $set-E<gt>permutations>
-
-Return a permutations of the conditions involved in a C<DisjConditions>.
-
-For instance consider this initial C<DisjConditions>.
-
-  my $set = new Automake::DisjConditions
-    (new Automake::Condition ("COND1_TRUE", "COND2_TRUE"),
-     new Automake::Condition ("COND3_FALSE", "COND2_TRUE"));
-
-Calling C<$set-E<gt>permutations> will return the following DisjConditions.
-
-  new Automake::DisjConditions
-    (new Automake::Condition ("COND1_TRUE", "COND2_TRUE", "COND3_TRUE"),
-     new Automake::Condition ("COND1_FALSE","COND2_TRUE", "COND3_TRUE"),
-     new Automake::Condition ("COND1_TRUE", "COND2_FALSE","COND3_TRUE"),
-     new Automake::Condition ("COND1_FALSE","COND2_FALSE","COND3_TRUE"),
-     new Automake::Condition ("COND1_TRUE", "COND2_TRUE", "COND3_FALSE"),
-     new Automake::Condition ("COND1_FALSE","COND2_TRUE", "COND3_FALSE"),
-     new Automake::Condition ("COND1_TRUE", "COND2_FALSE","COND3_FALSE"),
-     new Automake::Condition ("COND1_FALSE","COND2_FALSE","COND3_FALSE"));
-
-=cut
-
-sub permutations ($ )
-{
-  my ($self) = @_;
-
-  return $self->{'permutations'} if defined $self->{'permutations'};
-
-  my %atomic_conds = ();
-
-  for my $conditional ($self->conds)
-    {
-      for my $cond ($conditional->conds)
-	{
-	  $cond =~ s/FALSE$/TRUE/;
-	  $atomic_conds{$cond} = 1;
-	}
-    }
-
-  my @res = _permutations_worker (keys %atomic_conds);
-  # An empty permutation is TRUE, because we ignore TRUE conditions
-  # in the recursions.
-  @res = (TRUE) unless @res;
-  my $res = new Automake::DisjConditions @res;
-
-  $self->{'permutations'} = $res;
-
-  return $res;
-}
 
 =item C<$prod = $set1->multiply ($set2)>
 

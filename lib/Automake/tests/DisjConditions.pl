@@ -44,61 +44,6 @@ sub build_set (@)
   return new Automake::DisjConditions @set;
 }
 
-sub test_permutations ()
-{
-  my @tests = ([[["FALSE"]],
-	        [["TRUE"]]],
-
-	       [[["TRUE"]],
-	        [["TRUE"]]],
-
-	       [[["COND1_TRUE", "COND2_TRUE"],
-		 ["COND3_FALSE", "COND2_TRUE"]],
-		[["COND1_FALSE","COND2_FALSE","COND3_FALSE"],
-		 ["COND1_TRUE", "COND2_FALSE","COND3_FALSE"],
-		 ["COND1_FALSE","COND2_TRUE", "COND3_FALSE"],
-		 ["COND1_TRUE", "COND2_TRUE", "COND3_FALSE"],
-		 ["COND1_FALSE","COND2_FALSE","COND3_TRUE"],
-		 ["COND1_TRUE", "COND2_FALSE","COND3_TRUE"],
-		 ["COND1_FALSE","COND2_TRUE", "COND3_TRUE"],
-		 ["COND1_TRUE", "COND2_TRUE", "COND3_TRUE"]]],
-
-	       [[["COND1_TRUE", "COND2_TRUE"],
-		 ["TRUE"]],
-		[["COND1_TRUE", "COND2_TRUE"],
-		 ["COND1_FALSE", "COND2_TRUE"],
-		 ["COND1_FALSE", "COND2_FALSE"],
-		 ["COND1_TRUE", "COND2_FALSE"]]],
-
-	       [[["COND1_TRUE", "COND2_TRUE"],
-		 ["FALSE"]],
-		[["COND1_TRUE", "COND2_TRUE"],
-		 ["COND1_FALSE", "COND2_TRUE"],
-		 ["COND1_FALSE", "COND2_FALSE"],
-		 ["COND1_TRUE", "COND2_FALSE"]]],
-
-	       [[["COND1_TRUE"],
-		 ["COND2_FALSE"]],
-		[["COND1_TRUE", "COND2_TRUE"],
-		 ["COND1_FALSE", "COND2_TRUE"],
-		 ["COND1_FALSE", "COND2_FALSE"],
-		 ["COND1_TRUE", "COND2_FALSE"]]]
-	       );
-
-  for my $t (@tests)
-    {
-      my $set = build_set @{$t->[0]};
-      my $res = build_set @{$t->[1]};
-      my $per = $set->permutations;
-      if ($per != $res)
-	{
-	  print " (P) " . $per->string . ' != ' . $res->string . "\n";
-	  return 1;
-	}
-    }
-  return 0;
-}
-
 sub test_invert ()
 {
   my @tests = ([[["FALSE"]],
@@ -302,7 +247,7 @@ sub test_simplify ()
 
       # Also exercize invert() while we are at it.
 
-      # FIXME: Don't run invert() with too much conditions, this is too slow.
+      # FIXME: Can't run invert() with too much conditions, this is too slow.
       next if $#{$t->[0][0]} > 8;
 
       my $inv1 = $set->invert->simplify;
@@ -381,7 +326,6 @@ sub test_sub_conditions ()
 }
 
 exit (test_basics
-      || test_permutations
       || test_invert
       || test_simplify
       || test_sub_conditions);
