@@ -93,7 +93,6 @@ This edition documents version @value{VERSION}.
 * configure::                   Scanning configure.ac or configure.in
 * Top level::                   The top-level Makefile.am
 * Alternative::                 An alternative approach to subdirectories
-* Rebuilding::                  Automatic rebuilding of Makefile
 * Programs::                    Building programs and libraries
 * Other objects::               Other derived objects
 * Other GNU Tools::             Other GNU Tools
@@ -102,6 +101,7 @@ This edition documents version @value{VERSION}.
 * Clean::                       What gets cleaned
 * Dist::                        What goes in a distribution
 * Tests::                       Support for test suites
+* Rebuilding::                  Automatic rebuilding of Makefile
 * Options::                     Changing Automake's behavior
 * Miscellaneous::               Miscellaneous rules
 * Include::                     Including extra files in an Automake template.
@@ -1879,6 +1879,7 @@ henceforth be visible to @command{autoconf}.  However if it contains
 numerous macros, it will rapidly become difficult to maintain, and it
 will be almost impossible to share macros between package.
 
+@vindex ACLOCAL_AMFLAGS
 The second possibility, which we do recommend, is to write each macro
 in its own file and gather all these files in a directory.  This
 directory is usually called @file{m4/}.  To build @file{aclocal.m4},
@@ -2200,24 +2201,6 @@ either @samp{dist_} or @samp{nodist_} (@pxref{Dist}).  For instance:
 @example
 nobase_dist_pkgdata_DATA = images/vortex.pgm
 @end example
-
-@node Rebuilding
-@chapter Rebuilding Makefiles
-
-Automake generates rules to automatically rebuild @file{Makefile}s,
-@file{configure}, and other derived files like @file{Makefile.in}.
-
-If you are using @code{AM_MAINTAINER_MODE} in @file{configure.ac}, then
-these automatic rebuilding rules are only enabled in maintainer mode.
-
-Sometimes you need to run @code{aclocal} with an argument like @code{-I}
-to tell it where to find @file{.m4} files.  Since sometimes @code{make}
-will automatically run @code{aclocal}, you need a way to specify these
-arguments.  You can do this by defining @code{ACLOCAL_AMFLAGS}; this
-holds arguments which are passed verbatim to @code{aclocal}.  This variable
-is only useful in the top-level @file{Makefile.am}.
-@vindex ACLOCAL_AMFLAGS
-
 
 @node Programs
 @chapter Building Programs and Libraries
@@ -5459,6 +5442,100 @@ In either case, the testing is done via @samp{make check}.
 The @code{installcheck} target is available to the user as a way to
 run any tests after the package has been installed.  You can add tests
 to this by writing an @code{installcheck-local} rule.
+
+
+@node Rebuilding
+@chapter Rebuilding Makefiles
+@cindex rebuild rules
+
+Automake generates rules to automatically rebuild @file{Makefile}s,
+@file{configure}, and other derived files like @file{Makefile.in}.
+
+@cvindex AM_MAINTAINER_MODE
+If you are using @code{AM_MAINTAINER_MODE} in @file{configure.ac}, then
+these automatic rebuilding rules are only enabled in maintainer mode.
+
+@vindex ACLOCAL_AMFLAGS
+Sometimes you need to run @code{aclocal} with an argument like @code{-I}
+to tell it where to find @file{.m4} files.  Since sometimes @code{make}
+will automatically run @code{aclocal}, you need a way to specify these
+arguments.  You can do this by defining @code{ACLOCAL_AMFLAGS}; this
+holds arguments which are passed verbatim to @code{aclocal}.  This variable
+is only useful in the top-level @file{Makefile.am}.
+
+@vindex CONFIG_STATUS_DEPENDENCIES
+@vindex CONFIGURE_DEPENDENCIES
+@cindex @file{version.sh}, example
+@cindex @file{version.m4}, example
+
+Sometimes it is convenient to supplement the rebuild rules for
+@file{configure} or @file{config.status} with additional dependencies.
+The variables @code{CONFIGURE_DEPENDENCIES} and
+@code{CONFIG_STATUS_DEPENDENCIES} can be used to list these extra
+dependencies.  These variable should be defined in all
+@file{Makefile}s of the tree (because these two rebuild rules are
+output in all them), so it is safer and easier to @code{AC_SUBST} them
+from @file{configure.ac}.  For instance the following statement will
+cause @file{configure} to be rerun each time @file{version.sh} is
+changed.
+@example
+AC_SUBST([CONFIG_STATUS_DEPENDENCIES], ['$(top_srcdir)/version.sh'])
+@end example
+@noindent
+Note the @code{$(top_srcdir)/} in the filename.  Since this variable
+is to be used in all @file{Makefile}s, its value must be sensible at
+any level in the build hierarchy.
+
+Beware not to mistake @code{CONFIGURE_DEPENDENCIES} for
+@code{CONFIG_STATUS_DEPENDENCIES}.
+
+@code{CONFIGURE_DEPENDENCIES} adds dependencies to the
+@file{configure} rule, whose effect is to run @code{autoconf}.  This
+variable should be seldom used, because @code{automake} already tracks
+@code{m4_include}d files.  However it can be useful when playing
+tricky games with @code{m4_esyscmd} or similar non-recommendable
+macros with side effects.
+
+@code{CONFIG_STATUS_DEPENDENCIES} adds dependencies to the
+@file{config.status} rule, whose effect is to run @file{configure}.
+This variable should therefore carry any non-standard source that may
+be read as a side effect of running configure, like @file{version.sh}
+in the example above.
+
+Speaking of @file{version.sh} scripts, we recommend against them
+today.  They are mainly used when the version of a package is updated
+automatically by a script (e.g., in daily builds).  Here is what some
+old-style @file{configure.ac}s may look like:
+@example
+AC_INIT
+. $srcdir/version.sh
+AM_INIT_AUTOMAKE([name], $VERSION_NUMBER)
+@dots{}
+@end example
+@noindent
+Here, @file{version.sh} is a shell fragment that sets
+@code{VERSION_NUMBER}.  The problem with this example is that
+@code{automake} cannot track dependencies (listing @file{version.sh}
+in @code{CONFIG_STATUS_DEPENDENCIES}, and distributing this file is up
+to the user), and that it uses the obsolete form of @code{AC_INIT} and
+@code{AM_INIT_AUTOMAKE}.  Upgrading to the new syntax is not
+straightforward, because shell variables are not allowed in
+@code{AC_INIT}'s arguments.  We recommend that @file{version.sh} be
+replaced by an M4 file that is included by @file{configure.ac}:
+@example
+m4_include([version.m4])
+AC_INIT([name], VERSION_NUMBER)
+AM_INIT_AUTOMAKE
+@dots{}
+@end example
+@noindent
+Here @file{version.m4} could contain something like
+@code{m4_define([VERSION_NUMBER], [1.2])}.  The advantage of this
+second form is that @code{automake} will take care of the dependencies
+when defining the rebuild rule, and will also distribute the file
+automatically.  An inconvenient is that @code{autoconf} will now be
+rerun each time the version number is bumped, when only
+@file{configure} had to be rerun in the previous setup.
 
 
 @node Options
