@@ -135,7 +135,7 @@ my $ac_defun_rx =
 my $ac_require_rx = "AC_REQUIRE\\((?:\\[([^]]+)\\]|([^],)\n]+))\\)";
 
 # Matches an m4_include line
-my $m4_include_rx = "(?:m4_)?s?include\\((?:\\[([^]]+)\\]|([^],)\n]+))\\)";
+my $m4_include_rx = "(?:m4_)?(s?)include\\((?:\\[([^]]+)\\]|([^],)\n]+))\\)";
 
 # Match a serial number
 my $serial_line_rx = '^#\s*serial\s+(\S*)';
@@ -351,7 +351,10 @@ sub scan_configure_dep ($)
 
       while (/$m4_include_rx/go)
 	{
-	  push (@ilist, $1 || $2);
+	  my $ifile = $2 || $3;
+	  # Skip missing `sinclude'd files.
+	  next if $1 eq 's' && ! -f $ifile;
+	  push @ilist, $ifile;
 	}
 
       while (/$ac_require_rx/go)
@@ -525,7 +528,9 @@ sub scan_file ($$$)
 
       while ($line =~ /$m4_include_rx/go)
 	{
-	  my $ifile = $1 || $2;
+	  my $ifile = $2 || $3;
+	  # Skip missing `sinclude'd files.
+	  next if $1 eq 's' && ! -f $ifile;
 	  # m4_include is relative to the directory of the file which
 	  # perform the include, but we want paths relative to the
 	  # directory where aclocal is run.  Do not use
