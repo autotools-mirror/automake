@@ -72,7 +72,6 @@ SCRIPTS =  $(bin_SCRIPTS) $(pkgdata_SCRIPTS)
 
 MAKEINFO = makeinfo
 TEXI2DVI = texi2dvi
-INFOS = automake.info automake.info[-0-9]*
 INFO_DEPS = automake.info
 DVIS = automake.dvi
 TEXINFOS = automake.texi
@@ -89,9 +88,7 @@ PACKAGE = @PACKAGE@
 VERSION = @VERSION@
 
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) \
-	$(TEXINFOS) $(INFOS) $(MANS) $(EXTRA_DIST)
-DEP_DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) \
-	$(TEXINFOS) $(INFO_DEPS) $(MANS) $(EXTRA_DIST)
+	$(TEXINFOS) $(MANS) $(EXTRA_DIST)
 
 TAR = tar
 default: all
@@ -100,7 +97,7 @@ aclocal.m4: configure.in
 	cd $(srcdir) && aclocal
 
 $(srcdir)/Makefile.in: Makefile.am configure.in
-	cd $(srcdir) && automake --strictness=@STRICTNESS@ Makefile
+	cd $(srcdir) && automake --strictness=gnits Makefile
 
 # For an explanation of the following Makefile rules, see node
 # `Automatic Remaking' in GNU Autoconf documentation.
@@ -215,6 +212,16 @@ uninstall-info:
 	  test -z $ii || install-info --info-dir=$(infodir) --remove $$file; \
 	done
 
+dist-info: $(INFO_DEPS)
+	for base in $(INFO_DEPS); do \
+	  d=$(srcdir); \
+	  for file in `cd $$d && eval echo $$base*`; do \
+	    test -f $(distdir)/$$file \
+	    || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
+	    || cp -p $$d/$$file $(distdir)/$$file; \
+	  done; \
+	done
+
 mostlyclean-info:
 	rm -f automake.aux automake.cp automake.cps automake.dvi automake.fn \
 	  automake.fns automake.ky automake.log automake.pg \
@@ -225,7 +232,7 @@ clean-info:
 distclean-info:
 
 maintainer-clean-info:
-	rm -f $(INFOS)
+	for i in $(INFO_DEPS); do rm `eval echo $i*`; done
 
 install-pkgdataDATA: $(pkgdata_DATA)
 	$(NORMAL_INSTALL)
@@ -319,7 +326,7 @@ dist-all: distdir
 	-chmod -R a+r $(distdir)
 	$(TAR) chozf $(distdir).tar.gz $(distdir)
 	rm -rf $(distdir)
-distdir: $(DEP_DISTFILES)
+distdir: $(DISTFILES)
 	@if sed 15q $(srcdir)/NEWS | fgrep -e "$(VERSION)" > /dev/null; then :; else \
 	  echo "NEWS not updated; not releasing" 1>&2; \
 	  exit 1; \
@@ -330,10 +337,11 @@ distdir: $(DEP_DISTFILES)
 	here=`pwd`; distdir=`cd $(distdir) && pwd` \
 	  && cd $(srcdir) \
 	  && automake --include-deps --build-dir=$$here --srcdir-name=$(srcdir) --output-dir=$$distdir --strictness=gnits
-	@for file in `cd $(srcdir) && echo $(DISTFILES)`; do \
+	@for file in $(DISTFILES); do \
+	  d=$(srcdir); \
 	  test -f $(distdir)/$$file \
-	  || ln $(srcdir)/$$file $(distdir)/$$file 2> /dev/null \
-	  || cp -p $(srcdir)/$$file $(distdir)/$$file; \
+	  || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
+	  || cp -p $$d/$$file $(distdir)/$$file; \
 	done
 	for subdir in $(SUBDIRS); do		\
 	  test -d $(distdir)/$$subdir		\
@@ -343,6 +351,7 @@ distdir: $(DEP_DISTFILES)
 	  (cd $$subdir && $(MAKE) distdir=../$(distdir)/$$subdir distdir) \
 	    || exit 1; \
 	done
+	$(MAKE) distdir="$(distdir)" dist-info
 info: $(INFO_DEPS) info-recursive
 dvi: $(DVIS) dvi-recursive
 check: all-am
