@@ -47,11 +47,11 @@ echo timestamp >"AS_ESCAPE(_AM_DIRNAME(]_AM_Dest[))/stamp-h]_AM_Config_Header_In
 # -----------------
 # Like AS_DIRNAME, only do it during macro expansion
 AC_DEFUN([_AM_DIRNAME],
-       [m4_if(m4_regexp([$1], [^.*[^/]//*[^/][^/]*/*$]), -1,
-	      m4_if(m4_regexp([$1], [^//\([^/]\|$\)]), -1,
-		    m4_if(m4_regexp([$1], [^/.*]), -1,
+       [m4_if(regexp([$1], [^.*[^/]//*[^/][^/]*/*$]), -1,
+	      m4_if(regexp([$1], [^//\([^/]\|$\)]), -1,
+		    m4_if(regexp([$1], [^/.*]), -1,
 			  [.],
-			  m4_patsubst([$1], [^\(/\).*], [\1])),
-		    m4_patsubst([$1], [^\(//\)\([^/].*\|$\)], [\1])),
-	      m4_patsubst([$1], [^\(.*[^/]\)//*[^/][^/]*/*$], [\1]))[]dnl
+			  patsubst([$1], [^\(/\).*], [\1])),
+		    patsubst([$1], [^\(//\)\([^/].*\|$\)], [\1])),
+	      patsubst([$1], [^\(.*[^/]\)//*[^/][^/]*/*$], [\1]))[]dnl
 ]) # _AM_DIRNAME
