@@ -11,8 +11,6 @@ bin_SCRIPTS = automake aclocal
 info_TEXINFOS = automake.texi
 
 
-dist_pkgdata_DATA = COPYING INSTALL
-
 TAGS_FILES = automake.in aclocal.in
 
 # The following requires a fixed version of the Emacs 19.30 etags.
