@@ -20,19 +20,36 @@
 
 # Test to make sure .info-less @setfilename works.
 
+required='makeinfo tex'
 . ./defs || exit 1
 
 set -e
+
+echo AC_OUTPUT >> configure.in
 
 cat > Makefile.am << 'END'
 info_TEXINFOS = textutils.texi
 END
 
-echo '@setfilename textutils' > textutils.texi
-: > texinfo.tex
+cat > textutils.texi <<EOF
+\input texinfo
+@setfilename textutils
+@settitle main
+@node Top
+Hello walls.
+@bye
+EOF
 
 $ACLOCAL
-$AUTOMAKE
+$AUTOCONF
+$AUTOMAKE --add-missing
 
 grep '^INFO_DEPS.*textutils$' Makefile.in
-grep '^.texi:$' Makefile.in
+
+# We should not use single suffix inference rules (with separate
+# dependencies), this confuses Solaris make.
+grep '^.texi:$' Makefile.in && exit 1
+grep '^textutils: textutils.texi' Makefile.in
+
+./configure
+$MAKE distcheck

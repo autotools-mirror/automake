@@ -3732,14 +3732,28 @@ sub output_texinfo_build_rules ($$@)
       $makeinfoflags = "-I $sdir -I \$(srcdir)/$sdir";
     }
 
+  # We cannot use a suffix rule to build info files with
+  # an empty extension.  Otherwise we would output a single suffix
+  # inference rule, with separate dependencies, as in
+  #    .texi:
+  #	       $(MAKEINFO) ...
+  #    foo.info: foo.texi
+  # which confuse Solaris make.  (See the Autoconf manual for details.)
+  # Therefore we use a specific rule in this case.  This applies
+  # to info files only (dvi and pdf files always have an extension).
+  my $generic_info = ($generic && $dsfx) ? 1 : 0;
+
   # If the resulting file lie into a subdirectory,
   # make sure this directory will exist.
   my $dirstamp = require_build_directory_maybe ($dest);
 
   $output_rules .= &file_contents ('texibuild',
                                    GENERIC       => $generic,
+                                   GENERIC_INFO  => $generic_info,
                                    SOURCE_SUFFIX => $ssfx,
                                    SOURCE => ($generic ? '$<' : $source),
+                                   SOURCE_INFO   => ($generic_info ?
+						     '$<' : $source),
                                    SOURCE_REAL   => $source,
                                    DEST_PREFIX   => $dpfx,
                                    DEST_SUFFIX   => $dsfx,
