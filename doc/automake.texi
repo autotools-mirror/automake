@@ -14,7 +14,7 @@ This manual is for @acronym{GNU} Automake (version @value{VERSION},
 Makefiles from template files.
 
 Copyright @copyright{} 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002,
-2003, 2004 Free Software Foundation, Inc.
+2003, 2004, 2005 Free Software Foundation, Inc.
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document
@@ -1301,7 +1301,93 @@ will generate the first @file{.in} input file for which a @file{.am}
 file exists.  If no such file exists the output file is not considered
 to be Automake generated.
 
-Files created by @code{AC_CONFIG_FILES} are removed by @code{make distclean}.
+Files created by @code{AC_CONFIG_FILES}, be they Automake
+@file{Makefile}s or not, are all removed by @code{make distclean}.
+Their inputs are automatically distributed, except for input that
+turns out the be the outputs of prior @code{AC_CONFIG_FILES} commands.
+Finally, rebuild rules are generated in the Automake @file{Makefile}
+in the subdirectory of the output file, if there is one, or in the
+top-level @file{Makefile} otherwise.
+
+The above machinery (cleaning, distributing, and rebuilding) works
+fine only if the @code{AC_CONFIG_FILES} specifications contain only
+literals.  If part of the specification uses shell variables,
+@command{automake} will not be able to fulfil this setup, and you will
+have to complete the missing bits by hand.  For instance on
+
+@example
+file=input
+@dots{}
+AC_CONFIG_FILES([output:$file],, [file=$file])
+@end example
+
+@noindent
+@command{automake} will output rules to clean @file{output}, and
+rebuild it.  However the rebuild rule will not depend on @file{input},
+and this file will not be distributed either.  (You must add
+@code{EXTRA_DIST = input} to your @file{Makefile} if @file{input} is a
+source file.)
+
+Similarly
+
+@example
+file=output
+file2=out:in
+@dots{}
+AC_CONFIG_FILES([$file:input],, [file=$file])
+AC_CONFIG_FILES([$file2],, [file2=$file2])
+@end example
+
+@noindent
+will only cause @file{input} to be distributed.  No file will be
+cleaned automatically (add @code{DISTCLEANFILES = output out}
+yourself), and no rebuild rule will be output.
+
+Obviously @command{automake} cannot guess what value @code{$file} is
+going to hold later when @file{configure} is run, and it cannot use
+the shell variable @code{$file} in a @file{Makefile}.  However, if you
+make reference to @code{$file} as @code{$@{file@}} (i.e., in a way
+that is compatible with @command{make}'s syntax) and furthermore use
+@code{AC_SUBST} to ensure that @code{$@{file@}} is meaningful in a
+@file{Makefile}, then @command{automake} will be able to use
+@code{$@{file@}} to generate all these rules.  For instance here is
+how the Automake package itself generates versioned scripts for its
+test suite:
+
+@example
+AC_SUBST([APIVERSION], @dots{})
+@dots{}
+AC_CONFIG_FILES([tests/aclocal-$@{APIVERSION@}:tests/aclocal.in],
+                [chmod +x tests/aclocal-$@{APIVERSION@}],
+                [APIVERSION=$APIVERSION])
+AC_CONFIG_FILES([tests/automake-$@{APIVERSION@}:tests/automake.in],
+                [chmod +x tests/automake-$@{APIVERSION@}])
+@end example
+
+@noindent
+Here cleaning, distributing, and rebuilding are done automatically,
+because @code{$@{APIVERSION@}} is know at @code{make}-time.
+
+Note that you should not use shell variables to declare
+@file{Makefile} files for which @command{automake} must create
+@file{Makefile.in}.  Even @code{AC_SUBST} does not help here, because
+@command{automake} needs to know the filename at run-time in order to
+check whether @file{Makefile.am} exists.  (In the very hairy case that
+your setup requires such use of variables, you will have to tell
+Automake which @file{Makefile.in}s to generate on the command-line.)
+
+To summarize:
+@itemize @bullet
+@item
+Use literals for @file{Makefile}s, and for other files whenever possible.
+@item
+Use @code{$file} (or @code{$@{file@}} without @code{AC_SUBST([file])})
+for files that @command{automake} should ignore.
+@item
+Use @code{$@{file@}} and @code{AC_SUBST([file])} for files
+that @command{automake} should not ignore.
+@end itemize
+
 @end table
 
 
@@ -1322,10 +1408,18 @@ Automake will generate rules to rebuild these headers.  Older versions
 of Automake required the use of @code{AM_CONFIG_HEADER}
 (@pxref{Macros}); this is no longer the case today.
 
+As for @code{AC_CONFIG_FILES} (@pxref{Requirements}), parts of the
+specification using shell variables will be ignored as far as
+cleaning, distributing, and rebuilding is concerned.
+
 @item AC_CONFIG_LINKS
-Automake will generate rules to remove @file{configure} generated links on
-@code{make distclean} and to distribute named source files as part of
-@code{make dist}.
+Automake will generate rules to remove @file{configure} generated
+links on @code{make distclean} and to distribute named source files as
+part of @code{make dist}.
+
+As for @code{AC_CONFIG_FILES} (@pxref{Requirements}), parts of the
+specification using shell variables will be ignored as far as cleaning
+and distributing is concerned.  (There is no rebuild rules for links.)
 
 @item AC_CONFIG_AUX_DIR
 Automake will look for various helper scripts, such as

@@ -3734,6 +3734,25 @@ sub scan_aclocal_m4 ()
 }
 
 
+# Helper function for substitute_ac_subst_variables.
+sub substitute_ac_subst_variables_worker($)
+{
+  my ($token) = @_;
+  return "\@$token\@" if var $token;
+  return "\${$token\}";
+}
+
+# substitute_ac_subst_variables ($TEXT)
+# -------------------------------------
+# Replace any occurence of ${FOO} in $TEXT by @FOO@ if FOO is an AC_SUBST
+# variable.
+sub substitute_ac_subst_variables ($)
+{
+  my ($text) = @_;
+  $text =~ s/\${([^ \t=:+{}]+)}/&substitute_ac_subst_variables_worker ($1)/ge;
+  return $text;
+}
+
 # @DEPENDENCIES
 # &prepend_srcdir (@INPUTS)
 # -------------------------
@@ -3775,6 +3794,9 @@ sub rewrite_inputs_into_dependencies ($@)
 
   for my $i (@inputs)
     {
+      # We cannot create dependencies on shell variables.
+      next if (substitute_ac_subst_variables $i) =~ /\$/;
+
       if (exists $ac_config_files_location{$i})
 	{
 	  my $di = dirname $i;
@@ -3795,7 +3817,7 @@ sub rewrite_inputs_into_dependencies ($@)
 	{
 	  msg ('error', $ac_config_files_location{$file},
 	       "required file `$i' not found")
-	    unless exists $output_files{$i} || -f $i;
+	    unless $i =~ /\$/ || exists $output_files{$i} || -f $i;
 	  ($i) = prepend_srcdir ($i);
 	  push_dist_common ($i);
 	}
@@ -3894,7 +3916,10 @@ sub handle_configure ($$$@)
 	  # This will also distribute all inputs.
 	  @ins = rewrite_inputs_into_dependencies ($config_h_path, @ins);
 
-	  # Header defined and in this directory.
+	  # Cannot define rebuild rules for filenames with shell variables.
+	  next if (substitute_ac_subst_variables $config_h_path) =~ /\$/;
+
+	  # Header defined in this directory.
 	  my @files;
 	  if (-f $config_h_path . '.top')
 	    {
@@ -4033,6 +4058,9 @@ sub handle_configure ($$$@)
 
       my @rewritten_inputs = rewrite_inputs_into_dependencies ($file, @inputs);
 
+      # Cannot output rules for shell variables.
+      next if (substitute_ac_subst_variables $local) =~ /\$/;
+
       $output_rules .= ($local . ': '
 			. '$(top_builddir)/config.status '
 			. "@rewritten_inputs\n"
@@ -4055,7 +4083,7 @@ sub handle_configure ($$$@)
       my $where = $ac_config_files_location{$link};
 
       # Skip destinations that contain shell variables.
-      if ($link !~ /\$/)
+      if ((substitute_ac_subst_variables $link) !~ /\$/)
 	{
 	  # We skip links that aren't in this directory.  However, if
 	  # the link's directory does not have a Makefile, and we are
@@ -4078,7 +4106,7 @@ sub handle_configure ($$$@)
 	}
 
       # Do not process sources that contain shell variables.
-      if ($file !~ /\$/)
+      if ((substitute_ac_subst_variables $file) !~ /\$/)
 	{
 	  my $fd = dirname ($file);
 
