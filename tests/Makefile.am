@@ -198,6 +198,7 @@ insh2.test \
 install2.test \
 installdir.test \
 installsh.test \
+installsh2.test \
 instdata.test \
 instdata2.test \
 instexec.test \
