@@ -292,6 +292,7 @@ lisp2.test \
 lisp3.test \
 lisp4.test \
 lisp5.test \
+lisp6.test \
 listval.test \
 location.test \
 ltcond.test \
