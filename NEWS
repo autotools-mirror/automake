@@ -19,6 +19,37 @@ New in 1.9a:
 
   - aclocal now also supports -Wmumble and -Wno-mumble options.
 
+  - Per-target flags are now correctly handled in link rules.
+
+    For instance maude_CFLAGS correctly overrides AM_CFLAGS; likewise
+    for maude_LDFLAGS and AM_LDFLAGS.  Previous versions bogusly
+    preferred AM_CFLAGS over maude_CFLAGS while linking, and they
+    used both AM_LDFLAGS and maude_LDFLAGS on the same link command.
+
+    The fix for compiler flags (i.e., using maude_CFLAGS instead of
+    AM_CFLAGS) should not hurt any package since that is how _CFLAGS
+    is expected to work (and actually works during compilation).
+
+    However using maude_LDFLAGS "instead of" AM_LDFLAGS rather than
+    "in addition to" breaks backward compatibility with older versions.
+    If your package used both variables, as in
+
+      AM_LDFLAGS = common flags
+      bin_PROGRAMS = a b c
+      a_LDFLAGS = more flags
+      ...
+
+    and assumed *_LDFLAGS would sum up, you should rewrite it as
+
+      AM_LDFLAGS = common flags
+      bin_PROGRAMS = a b c
+      a_LDFLAGS = $(AM_LDFLAGS) more flags
+      ...
+
+    This new behavior of *_LDFLAGS is more coherent with other
+    per-target variables, and the way *_LDFLAGS variables were
+    considered internally.
+
   - New targets mandated by GNU Coding Standards:
       install-dvi
       install-html

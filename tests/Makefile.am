@@ -302,6 +302,7 @@ libtool5.test \
 libtool6.test \
 libtool7.test \
 libtool8.test \
+libtool9.test \
 license.test \
 link_c_cxx.test	\
 link_dist.test \

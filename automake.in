@@ -403,6 +403,8 @@ my $configure_dist_common = '';
 
 # This maps languages names onto objects.
 my %languages = ();
+# Maps each linker variable onto a language object.
+my %link_languages = ();
 
 # List of targets we must always output.
 # FIXME: Complete, and remove falsely required targets.
@@ -1923,7 +1925,7 @@ sub handle_source_transform ($$$$%)
     # object extension.
     my ($one_file, $unxformed, $obj, $where, %transform) = @_;
 
-    my ($linker) = '';
+    my $linker = '';
 
     # No point in continuing if _OBJECTS is defined.
     return if reject_var ($one_file . '_OBJECTS',
@@ -2353,15 +2355,7 @@ sub handle_programs
       set_seen ($xname . '_LDFLAGS');
 
       # Determine program to use for link.
-      my $xlink;
-      if (var ($xname . '_LINK'))
-	{
-	  $xlink = $xname . '_LINK';
-	}
-      else
-	{
-	  $xlink = $linker ? $linker : 'LINK';
-	}
+      my $xlink = &define_per_target_linker_variable ($linker, $xname);
 
       # If the resulting program lies into a subdirectory,
       # make sure this directory will exist.
@@ -2648,15 +2642,7 @@ sub handle_ltlibraries
 					     NONLIBTOOL => 0, LIBTOOL => 1);
 
       # Determine program to use for link.
-      my $xlink;
-      if (var ($xlib . '_LINK'))
-	{
-	  $xlink = $xlib . '_LINK';
-	}
-      else
-	{
-	  $xlink = $linker ? $linker : 'LINK';
-	}
+      my $xlink = &define_per_target_linker_variable ($linker, $xlib);
 
       my $rpathvar = "am_${xlib}_rpath";
       my $rpath = "\$($rpathvar)";
@@ -5574,6 +5560,20 @@ sub register_language (%)
   # Fill indexes.
   $extension_map{$_} = $lang->name foreach @{$lang->extensions};
   $languages{$lang->name} = $lang;
+  my $link = $lang->linker;
+  if ($link)
+    {
+      if (exists $link_languages{$link})
+	{
+	  prog_error ("`$link' has different definitions in "
+		      . $lang->name . " and " . $link_languages{$link}->name)
+	    if $lang->link ne $link_languages{$link}->link;
+	}
+      else
+	{
+	  $link_languages{$link} = $lang;
+	}
+    }
 
   # Update the pattern of known extensions.
   accept_extensions (@{$lang->extensions});
@@ -5821,7 +5821,6 @@ sub define_linker_variable ($)
 {
     my ($lang) = @_;
 
-    my ($var, $value) = ($lang->lder, $lang->ld);
     my $libtool_tag = '';
     $libtool_tag = '--tag=' . $lang->libtool_tag . ' '
       if $lang->libtool_tag && exists $libtool_tags{$lang->libtool_tag};
@@ -5834,6 +5833,53 @@ sub define_linker_variable ($)
 			. "\$(LIBTOOLFLAGS) --mode=link " : '')
 		       . $lang->link),
 		      INTERNAL);
+}
+
+sub define_per_target_linker_variable ($$)
+{
+  my ($linker, $target) = @_;
+
+  # If the user wrote a custom link command, we don't define ours.
+  return "${target}_LINK"
+    if set_seen "${target}_LINK";
+
+  my $xlink = $linker ? $linker : 'LINK';
+
+  my $lang = $link_languages{$xlink};
+  prog_error "Unknown language for linker variable `$xlink'"
+    unless $lang;
+
+  my $link_command = $lang->link;
+  if (var 'LIBTOOL')
+    {
+      my $libtool_tag = '';
+      $libtool_tag = '--tag=' . $lang->libtool_tag . ' '
+	if $lang->libtool_tag && exists $libtool_tags{$lang->libtool_tag};
+
+      $link_command =
+	"\$(LIBTOOL) $libtool_tag\$(AM_LIBTOOLFLAGS) \$(LIBTOOLFLAGS) "
+	. "--mode=link " . $link_command;
+    }
+
+  # Rewrite each occurrence of `AM_$flag' in the link
+  # command into `${derived}_$flag' if it exists.
+  my $orig_command = $link_command;
+  my @flags = (@{$lang->flags}, 'LDFLAGS');
+  push @flags, 'LIBTOOLFLAGS' if var 'LIBTOOL';
+  for my $flag (@flags)
+    {
+      my $val = "${target}_$flag";
+      $link_command =~ s/\(AM_$flag\)/\($val\)/
+	if set_seen ($val);
+    }
+
+  # If the computed command is the same as the generic command, use
+  # the command linker variable.
+  return $lang->linker
+    if $link_command eq $orig_command;
+
+  &define_variable ("${target}_LINK", $link_command, INTERNAL);
+  return "${target}_LINK";
 }
 
 ################################################################
