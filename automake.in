@@ -1126,13 +1126,14 @@ sub check_libobjs_sources
 
 # Does much of the actual work for handle_source_transform.
 # Arguments are:
+#   pattern matching object extension (e.g., .o)
 #   list of source files to transform
 # Result is a list
 #   first element is name of linker to use (empty string for default linker)
 #   remaining elements are names of `.o's
 sub handle_single_transform_list
 {
-    local (@files) = @_;
+    local ($objpat, @files) = @_;
     local ($linker) = '';
     local (@result) = ();
     local ($nonansi_obj) = $obj;
@@ -1225,6 +1226,7 @@ sub handle_single_transform_list
  	    {
 		# We just rewrite it.  Maybe we should do more.
 		s//.$suffix_rules{$1}/;
+		$objpat = "\\." . $suffix_rules{$1};
  	    }
 	    else
 	    {
@@ -1296,7 +1298,8 @@ sub handle_source_transform
 		foreach $cond (@conds)
 		{
 		    @files = &variable_value_as_list ($var, $cond);
-		    ($temp, @result) = &handle_single_transform_list (@files);
+		    ($temp, @result) = &handle_single_transform_list ($objpat,
+								      @files);
 		    $linker = $temp if $linker eq '';
 
 		    # We have to have a new name for each such
@@ -1324,7 +1327,7 @@ sub handle_source_transform
 	    push (@files, $unxformed . '.c');
 	}
 
-	($temp, @result) = &handle_single_transform_list (@files);
+	($temp, @result) = &handle_single_transform_list ($objpat, @files);
 	$linker = $temp if $linker eq '';
 	&define_pretty_variable ($one_file . "_OBJECTS", '', @result)
 	    unless $prefix eq 'EXTRA_';
@@ -1354,7 +1357,7 @@ sub handle_built_sources
     # We don't care about the return value of this function.  We just
     # want to make sure to update %dep_files with the contents of
     # BUILT_SOURCES.
-    &handle_single_transform_list (@sources);
+    &handle_single_transform_list ("\\.o", @sources);
 }
 
 # Special-case @ALLOCA@ and @LIBOBJS@ in _LDADD or _LIBADD variables.
