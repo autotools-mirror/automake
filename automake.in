@@ -157,6 +157,11 @@ $libtool_line = 0;
 $maint_charset = '';
 $dist_charset = 'utf8';		# recode doesn't support this yet.
 
+# Name of input file ("Makefile.in") and output file ("Makefile.am").
+# These have no directory components.
+$am_file_name = '';
+$in_file_name = '';
+
 
 
 &initialize_global_constants;
@@ -310,6 +315,10 @@ sub generate_makefile
 {
     local ($makefile) = @_;
 
+    ($am_file_name = $makefile) =~ s/^.*\///;
+    $in_file_name = $am_file_name . '.in';
+    $am_file_name .= '.am';
+
     print "automake: creating ", $makefile, ".in\n" if $verbose;
 
     &initialize_per_input;
@@ -322,7 +331,7 @@ sub generate_makefile
 
     # We still need Makefile.in here, because sometimes the `dist'
     # target doesn't re-run automake.
-    &push_dist_common ('Makefile.in', 'Makefile.am');
+    &push_dist_common ($in_file_name, $am_file_name);
     push (@sources, '$(SOURCES)') if defined $contents{'SOURCES'};
     push (@objects, '$(OBJECTS)') if defined $contents{'OBJECTS'};
 
@@ -2084,8 +2093,8 @@ sub read_am_file
     open (AM_FILE, $amfile) || die "automake: couldn't open \`$amfile': $!\n";
     print "automake: reading $amfile\n" if $verbose;
 
-    $output_vars .= ("# Makefile.in generated automatically by automake "
-		     . $VERSION . " from Makefile.am\n");
+    $output_vars .= ("# $in_file_name generated automatically by automake "
+		     . $VERSION . " from $am_file_name\n");
 
     # Generate copyright for generated Makefile.in.
     $output_vars .= $gen_copyright;
