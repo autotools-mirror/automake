@@ -245,7 +245,8 @@ WGET = wget
 
 ## Files that we fetch and which we compare against.
 ## FIXME should be a lot more here
-FETCHFILES = config.guess config.sub texinfo.tex Automake/XFile.pm INSTALL
+FETCHFILES = config.guess config.sub texinfo.tex Automake/XFile.pm INSTALL \
+	install-sh
 
 ## Fetch the latest versions of files we care about.
 fetch:
@@ -257,6 +258,7 @@ fetch:
 	$(WGET) ftp://ftp.gnu.org/gnu/config/config.sub; \
 	$(WGET) ftp://ftp.gnu.org/gnu/texinfo/texinfo.tex; \
 	$(WGET) http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~/autoconf/autoconf/lib/Autom4te/XFile.pm?content-type=text/plain -O Automake/XFile.pm; \
+	$(WGET) http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~/autoconf/autoconf/config/install-sh?content-type=text/plain -O install-sh; \
 	$(WGET) http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~/autoconf/autoconf/INSTALL?content-type=text/plain -O INSTALL)
 	perl -pi -e 's/Autom4te::/Automake::/g' Fetchdir/Automake/XFile.pm
 ## Don't exit after test because we want to give as many errors as
