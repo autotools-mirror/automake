@@ -25,5 +25,5 @@ if test "x${GCJFLAGS-unset}" = xunset; then
    GCJFLAGS="-g -O2"
 fi
 AC_SUBST(GCJFLAGS)
-_AM_DEPENDENCIES(GCJ)
+_AM_IF_OPTION([no-dependencies],, [_AM_DEPENDENCIES(GCJ)])
 ])
