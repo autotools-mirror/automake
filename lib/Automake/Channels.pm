@@ -421,6 +421,7 @@ sub _print_message ($$%)
     {
       # Prefix with any partial message send so far.
       $msg = $partial . $msg;
+      $partial = '';
     }
 
   # Check for duplicate message if requested.

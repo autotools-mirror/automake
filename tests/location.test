@@ -51,10 +51,28 @@ END
 $ACLOCAL
 $AUTOMAKE 2>stderr && exit 1
 cat stderr
-grep 'Makefile\.am:1:.*program.*libfoo\.a' stderr
-grep 'Makefile\.am:3:.*library.*libfoo\.a' stderr
-grep 'Makefile\.am:6:.*program.*ctags' stderr
-grep 'redefinition of.*libfoo\.a' stderr
-grep 'redefinition of.*ctags' stderr
-grep 'Makefile.am:12: VAR multiply defined in condition TRUE' stderr
-grep 'Makefile.am:8: ... .VAR. previously defined here' stderr
+
+# Smash the useless difference of lib file locations.
+sed 's,^.*lib/am/\([a-z]*\.am\),\1,' stderr >observed
+cat >expected <<\EOF
+Makefile.am:12: VAR multiply defined in condition TRUE ...
+Makefile.am:8: ... `VAR' previously defined here
+automake: libfoo_a_OBJECTS should not be defined
+Makefile.am:3:   while processing library `libfoo.a'
+automake: use `libfoo_a_LDADD', not `libfoo_a_LIBADD'
+Makefile.am:3:   while processing library `libfoo.a'
+library.am: deprecated feature: target `libfoo.a' overrides `libfoo.a$(EXEEXT)'
+library.am: change your target to read `libfoo.a$(EXEEXT)'
+Makefile.am:3:   while processing library `libfoo.a'
+program.am: target `libfoo.a$(EXEEXT)' was defined here
+Makefile.am:1:   while processing program `libfoo.a'
+program.am: redefinition of `libfoo.a' in condition `TRUE'...
+Makefile.am:1:   while processing program `libfoo.a'
+library.am: ... `libfoo.a' previously defined here
+Makefile.am:3:   while processing library `libfoo.a'
+tags.am: redefinition of `ctags' in condition `TRUE'...
+program.am: ... `ctags' previously defined here
+Makefile.am:6:   while processing program `ctags'
+EOF
+
+diff expected observed || exit 1
