@@ -2789,22 +2789,23 @@ sub scan_texinfo_file
 }
 
 
-# handle_texinfo ()
+# ($DO-SOMETHING, $TEXICLEANS)
+# handle_texinfo_helper ()
 # -----------------
-# Handle all Texinfo source.
-sub handle_texinfo
+# Handle all Texinfo source; helper for handle_texinfo
+sub handle_texinfo_helper
 {
     &am_line_error ('TEXINFOS',
 		    "`TEXINFOS' is an anachronism; use `info_TEXINFOS'")
 	if &variable_defined ('TEXINFOS');
-    return if (! &variable_defined ('info_TEXINFOS')
-	       && ! &variable_defined ('html_TEXINFOS'));
+    return (0, '') if (! &variable_defined ('info_TEXINFOS')
+		       && ! &variable_defined ('html_TEXINFOS'));
 
     if (&variable_defined ('html_TEXINFOS'))
     {
 	&am_line_error ('html_TEXINFOS',
 			"HTML generation not yet supported");
-	return;
+	return (0, '');
     }
 
     my @texis = &variable_value_as_list ('info_TEXINFOS', 'all');
@@ -2928,9 +2929,8 @@ sub handle_texinfo
 					  'SUFFIX'     => $txsfx));
     }
 
+    # The return value.
     my $texiclean = &pretty_print_internal ("", "\t  ", @texi_cleans);
-    $output_rules .=  &file_contents ('texinfos',
-				      ('TEXICLEAN' => $texiclean));
 
     push (@dist_targets, 'dist-info');
 
@@ -2964,6 +2964,19 @@ sub handle_texinfo
 	    &require_file_with_line ('info_TEXINFOS', $FOREIGN, 'texinfo.tex');
 	}
     }
+
+    return (1, $texiclean);
+}
+
+# handle_texinfo ()
+# -----------------
+# Handle all Texinfo source.
+sub handle_texinfo
+{
+    my ($do_something, $texiclean) = handle_texinfo_helper ();
+    $output_rules .=  &file_contents ('texinfos',
+				      ('TEXICLEAN' => $texiclean,
+				       'LOCAL-TEXIS' => $do_something));
 }
 
 # Handle any man pages.

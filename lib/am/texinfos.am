@@ -21,6 +21,7 @@
 ## Variables.  ##
 ## ----------- ##
 
+if %?LOCAL-TEXIS%
 if ! %?CYGNUS%
 MAKEINFO = @MAKEINFO@
 TEXI2DVI = texi2dvi
@@ -41,15 +42,19 @@ TEXI2DVI = `if test -f $(top_srcdir)/../texinfo/util/texi2dvi; then \
              echo texi2dvi; \
            fi`
 endif %?CYGNUS%
+endif %?LOCAL-TEXIS%
+
 
 ## ---------- ##
 ## Building.  ##
 ## ---------- ##
 
 ## The way to make PostScript, for those who want it.
+if %?LOCAL-TEXIS%
 DVIPS = dvips
 .dvi.ps:
 	$(DVIPS) $< -o $@
+endif %?LOCAL-TEXIS%
 
 .PHONY: info info-am dvi dvi-am
 if %?SUBDIRS%
@@ -61,8 +66,13 @@ info: info-am
 dvi: dvi-am
 endif !%?SUBDIRS%
 
+if %?LOCAL-TEXIS%
 info-am: $(INFO_DEPS)
 dvi-am: $(DVIS)
+else ! %?LOCAL-TEXIS%
+info-am:
+dvi-am:
+endif ! %?LOCAL-TEXIS%
 
 
 ## ------------ ##
@@ -79,8 +89,10 @@ dvi-am: $(DVIS)
 ## TEXINFOS primary are always installed in infodir, hence install-data
 ## is hard coded.
 if %?INSTALL-INFO%
+if %?LOCAL-TEXIS%
 _am_installdirs += $(DESTDIR)$(infodir)
 install-data-am: install-info-am
+endif %?LOCAL-TEXIS%
 if %?SUBDIRS%
 RECURSIVE_TARGETS += install-info-recursive
 .PHONY install-info: install-info-recursive
@@ -88,6 +100,8 @@ else !%?SUBDIRS%
 .PHONY install-info: install-info-am
 endif !%?SUBDIRS%
 endif %?INSTALL-INFO%
+
+if %?LOCAL-TEXIS%
 install-info-am: $(INFO_DEPS)
 	@$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(DESTDIR)$(infodir)
@@ -123,6 +137,9 @@ install-info-am: $(INFO_DEPS)
 	    install-info --info-dir=$(DESTDIR)$(infodir) $(DESTDIR)$(infodir)/$$file || :;\
 	  done; \
 	else : ; fi
+else ! %?LOCAL-TEXIS%
+install-info-am:
+endif ! %?LOCAL-TEXIS%
 
 
 ## -------------- ##
@@ -134,6 +151,7 @@ install-info-am: $(INFO_DEPS)
 ?!SUBDIRS?.PHONY uninstall-info: uninstall-info-am
 ?INSTALL-INFO?uninstall-am: uninstall-info-am
 
+if %?LOCAL-TEXIS%
 uninstall-info-am:
 	$(PRE_UNINSTALL)
 ## Run two loops here so that we can handle PRE_UNINSTALL and
@@ -156,7 +174,11 @@ uninstall-info-am:
 	     rm -f $$file $$file-[0-9] $$file-[0-9][0-9]; \
 	   else :; fi); \
 	done
+else ! %?LOCAL-TEXIS%
+uninstall-info-am:
+endif ! %?LOCAL-TEXIS%
 
+if %?LOCAL-TEXIS%
 .PHONY: dist-info
 dist-info: $(INFO_DEPS)
 	list='$(INFO_DEPS)'; \
@@ -170,7 +192,7 @@ dist-info: $(INFO_DEPS)
 	    || cp -p $$d/$$file $(distdir)/$$file; \
 	  done; \
 	done
-
+endif %?LOCAL-TEXIS%
 
 
 ## ---------- ##
@@ -180,6 +202,7 @@ dist-info: $(INFO_DEPS)
 ## The funny name is due to --cygnus influence; in Cygnus mode,
 ## `clean-info' is a target that users can use.
 
+if %?LOCAL-TEXIS%
 .PHONY: mostlyclean-aminfo
 mostlyclean-am: mostlyclean-aminfo
 mostlyclean-aminfo:
@@ -199,3 +222,4 @@ maintainer-clean-aminfo:
 
 ?CYGNUS?.PHONY: clean-info
 ?CYGNUS?clean-info: mostlyclean-aminfo
+endif %?LOCAL-TEXIS%
