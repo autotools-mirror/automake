@@ -443,6 +443,7 @@ subobjname.test \
 subpkg.test \
 subpkg2.test \
 subst.test \
+subst2.test \
 substref.test \
 substtarg.test \
 suffix.test \

@@ -516,8 +516,18 @@ sub output ($@)
 	  # Suppress escaped new lines.  &makefile_wrap will
 	  # add them back, maybe at other places.
 	  $val =~ s/\\$//mg;
-	  $res .= makefile_wrap ("$str$name $equals", "$str\t",
-				 split (' ' , $val));
+	  my $wrap = makefile_wrap ("$str$name $equals", "$str\t",
+				    split (' ', $val));
+
+	  # If the last line of the definition is made only of
+	  # @substitutions@, append an empty variable to make sure it
+	  # cannot be substituted as a blank line (that would confuse
+	  # HP-UX Make).
+	  $wrap = makefile_wrap ("$str$name $equals", "$str\t",
+				 split (' ', $val), '$(am__empty)')
+	    if $wrap =~ /\n(\s*@\w+@)+\s*$/;
+
+	  $res .= $wrap;
 	}
       else # ($def->pretty == VAR_SORTED)
 	{
@@ -1029,7 +1039,7 @@ sub variable_delete ($@)
     }
 }
 
-=item C<$str = variables_dump ($varname)>
+=item C<$str = variables_dump>
 
 Return a string describing all we know about all variables.
 For debugging.
@@ -1038,8 +1048,6 @@ For debugging.
 
 sub variables_dump ()
 {
-  my ($var) = @_;
-
   my $text = "All variables:\n{\n";
   foreach my $var (sort { $a->name cmp $b->name } variables)
     {
@@ -1473,7 +1481,9 @@ sub transform_variable_recursively ($$$$$&)
 	   # we are trying to override a user variable.  Delete
 	   # the old variable first.
 	   variable_delete ($varname) if $varname eq $var->name;
-	   # Define for all conditions.
+	   # Define for all conditions.  Make sure we define
+	   # an empty variable in condition TRUE otherwise.
+	   @allresults = ([TRUE, '']) unless @allresults;
 	   foreach my $pair (@allresults)
 	     {
 	       my ($cond, @result) = @$pair;
