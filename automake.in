@@ -4715,7 +4715,7 @@ sub scan_autoconf_files
 	if $seen_pythondir;
 
     # Preserve dist_common for later.
-    $configure_dist_common = variable_value ('DIST_COMMON', 'TRUE');
+    $configure_dist_common = variable_value ('DIST_COMMON', 'TRUE') || '';
 }
 
 ################################################################
@@ -6422,6 +6422,7 @@ sub read_am_file
     my $last_var_name = '';
     my $last_var_type = '';
     my $last_var_value = '';
+    # FIXME: shouldn't use $_ in this loop; it is too big.
     while ($_)
     {
 	$_ .= "\n"
@@ -6431,6 +6432,8 @@ sub read_am_file
 	# used by users.  @MAINT@ is an anachronism now.
 	$_ =~ s/\@MAINT\@//g
 	    unless $seen_maint_mode;
+
+	my $new_saw_bk = /\\$/;
 
 	if (/$IGNORE_PATTERN/o)
 	{
@@ -6567,7 +6570,7 @@ sub read_am_file
 	    $comment = $spacing = '';
 	}
 
-	$saw_bk = /\\$/;
+	$saw_bk = $new_saw_bk;
         $_ = $am_file->getline;
     }
 
