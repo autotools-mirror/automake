@@ -46,8 +46,8 @@ install-exec-hook:
 	  f="`echo $$p|sed '$(transform)'`"; \
 	  fv="$$f-$(APIVERSION)"; \
 	  rm -f $(DESTDIR)$(bindir)/$$fv; \
-	  echo " ln $(DESTDIR)$(bindir)/$$f $(DESTDIR)$(bindir)/$$fv"; \
-	  ln $(DESTDIR)$(bindir)/$$f $(DESTDIR)$(bindir)/$$fv; \
+	  echo " $(LN) $(DESTDIR)$(bindir)/$$f $(DESTDIR)$(bindir)/$$fv"; \
+	  $(LN) $(DESTDIR)$(bindir)/$$f $(DESTDIR)$(bindir)/$$fv; \
 	done
 
 uninstall-hook:
