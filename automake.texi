@@ -1105,11 +1105,11 @@ distributed with Autoconf version 2.13 and later.  @xref{Particular
 Programs, , Particular Program Checks, autoconf, The Autoconf Manual}.
 @cvindex AC_PROG_FC
 
-@item AM_F77_LIBRARY_LDFLAGS
+@item AC_F77_LIBRARY_LDFLAGS
 This is required for programs and shared libraries that are a mixture of
 languages that include Fortran 77 (@pxref{Mixing Fortran 77 With C and
 C++}).  @xref{Macros, , Autoconf macros supplied with Automake}.
-@cvindex AM_F77_LIBRARY_LDFLAGS
+@cvindex AC_F77_LIBRARY_LDFLAGS
 
 @item AM_PROG_LIBTOOL
 Automake will turn on processing for @code{libtool} (@pxref{Top, ,
@@ -1378,35 +1378,6 @@ library is used, @file{regex.o} is put into @samp{LIBOBJS}, and
 the @samp{rx} regular expression library is used, and @file{rx.o} is put
 into @samp{LIBOBJS}.
 
-@item AM_F77_LIBRARY_LDFLAGS
-@ovindex FLIBS
-Determine the linker flags (e.g. @samp{-L} and @samp{-l}) for the
-@dfn{Fortran 77 intrinsic and run-time libraries} that are required to
-successfully link a Fortran 77 program or shared library.  The output
-variable @code{FLIBS} is set to these flags.
-
-This macro is intended to be used in those situations when it is
-necessary to mix, e.g. C++ and Fortran 77 source code into a single
-program or shared library (@pxref{Mixing Fortran 77 With C and C++}).
-
-For example, if object files from a C++ and Fortran 77 compiler must be
-linked together, then the C++ compiler/linker must be used for linking
-(since special C++-ish things need to happen at link time like calling
-global constructors, instantiating templates, enabling exception
-support, etc.).
-
-However, the Fortran 77 intrinsic and run-time libraries must be linked
-in as well, but the C++ compiler/linker doesn't know by default how to
-add these Fortran 77 libraries.  Hence, the macro
-@code{AM_F77_LIBRARY_LDFLAGS} was created to determine these Fortran 77
-libraries.
-
-Nearly all of this macro came from the @code{OCTAVE_FLIBS} Autoconf
-macro from @uref{http://www.che.wisc.edu/octave/, Octave}.  Specifically
-the file @*
-@file{octave-2.0.13/aclocal.m4} was used almost verbatim, and full
-credit should go to @email{jwe@@bevo.che.wisc.edu, John W. Eaton} for
-writing this extremely useful macro.  Thank you John.
 @end table
 
 
@@ -2029,10 +2000,7 @@ also contains some support for creating programs and shared libraries
 that are a mixture of Fortran 77 and other languages (@pxref{Mixing
 Fortran 77 With C and C++}).
 
-Some of these issues are covered in the following sections.  For the
-details of how Fortran 77 support was integrated into Automake, see
-@ref{Top, , Introduction, am-f77, Adding Fortran 77 Support to
-Automake}.
+These issues are covered in the following sections.
 
 @menu
 * Preprocessing Fortran 77::    
@@ -2109,8 +2077,6 @@ Fortran 77, C and C++ compilers on nearly all platforms.  However,
 @code{cfortran} is not yet Free Software, but it will be in the next
 major release.}.
 
-@cindex FLIBS, defined
-
 @page
 Automake can help in two ways:
 
@@ -2124,21 +2090,24 @@ Automatic selection of the appropriate linker flags (e.g. @samp{-L} and
 @samp{-l}) to pass to the automatically selected linker in order to link
 in the appropriate Fortran 77 intrinsic and run-time libraries.
 
+@cindex FLIBS, defined
 These extra Fortran 77 linker flags are supplied in the output variable
-@code{FLIBS} by the @code{AM_F77_LIBRARY_LDFLAGS} Autoconf macro
-supplied with Automake (@pxref{Macros, , Autoconf macros supplied with
-Automake}).
+@code{FLIBS} by the @code{AC_F77_LIBRARY_LDFLAGS} Autoconf macro
+supplied with newer versions of Autoconf (Autoconf version 2.13 and
+later).  @xref{Fortran 77 Compiler Characteristics, , , autoconf, The
+Autoconf}.
 @end enumerate
 
 If Automake detects that a program or shared library (as mentioned in
 some @code{_PROGRAMS} or @code{_LTLIBRARIES} primary) contains source
 code that is a mixture of Fortran 77 and C and/or C++, then it requires
-that the macro @code{AM_F77_LIBRARY_LDFLAGS} be called in
-@file{configure.in}, and that @code{@@FLIBS@@} appear in the appropriate
-@code{_LDADD} (for programs) or @code{_LIBADD} (for shared libraries)
-variables.  It is the responsibility of the person writing the
-@file{Makefile.am} to make sure that @code{@@FLIBS@@} appears in the
-appropriate @code{_LDADD} or @code{_LIBADD} variable.
+that the macro @code{AC_F77_LIBRARY_LDFLAGS} be called in
+@file{configure.in}, and that either @code{$(FLIBS)} or @code{@@FLIBS@@}
+appear in the appropriate @code{_LDADD} (for programs) or @code{_LIBADD}
+(for shared libraries) variables.  It is the responsibility of the
+person writing the @file{Makefile.am} to make sure that @code{$(FLIBS)}
+or @code{@@FLIBS@@} appears in the appropriate @code{_LDADD} or
+@code{_LIBADD} variable.
 
 @cindex Mixed language example
 @cindex Example, mixed language
@@ -2152,10 +2121,10 @@ foo_LDADD    = libfoo.la @@FLIBS@@
 
 pkglib_LTLIBRARIES = libfoo.la
 libfoo_la_SOURCES  = bar.f baz.c zardoz.cc
-libfoo_la_LIBADD   = @@FLIBS@@
+libfoo_la_LIBADD   = $(FLIBS)
 @end example
 
-In this case, Automake will insist that @code{AM_F77_LIBRARY_LDFLAGS}
+In this case, Automake will insist that @code{AC_F77_LIBRARY_LDFLAGS}
 is mentioned in @file{configure.in}.  Also, if @code{@@FLIBS@@} hadn't
 been mentioned in @code{foo_LDADD} and @code{libfoo_la_LIBADD}, then
 Automake would have issued a warning.
