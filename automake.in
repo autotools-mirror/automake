@@ -210,6 +210,9 @@ $seen_exeext = 0;
 # TRUE if we've seen AC_OBJEXT.
 $seen_objext = 0;
 
+# TRUE if we've seen AC_ENABLE_MULTILIB.
+$seen_multilib = 0;
+
 # Hash table of discovered configure substitutions.  Keys are names,
 # values are `FILE:LINE' strings which are used by error message
 # generation.
@@ -608,6 +611,7 @@ sub generate_makefile
     $contents{'SOURCES'} = join (' ', @sources);
     $contents{'OBJECTS'} = join (' ', @objects);
 
+    &handle_multilib;
     &handle_texinfo;
     &handle_emacs_lisp;
     &handle_java;
@@ -2209,6 +2213,16 @@ sub handle_tags
 	# to fail because some subdirectory failed.
 	$output_rules .= "tags: TAGS\nTAGS:\n\n";
     }
+}
+
+# Handle multilib support.
+sub handle_multilib
+{
+    return unless $seen_multilib;
+
+    $output_rules .= &file_contents ('multilib.am');
+    &push_phony_cleaners ('multi');
+    push (@phony, 'all-multi', 'install-multi');
 }
 
 # Worker for handle_dist.
@@ -4185,6 +4199,8 @@ sub scan_one_configure_file
 	    # never downgrade (if we've seen AC_CANONICAL_SYSTEM).
 	    $seen_canonical = $AC_CANONICAL_HOST if ! $seen_canonical;
 	}
+
+	$seen_multilib = 1 if (/AM_ENABLE_MULTILIB/);
 
 	if (/$AM_CONDITIONAL_PATTERN/o)
 	{
