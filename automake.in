@@ -35,7 +35,7 @@ $am_dir = "@datadir@/@PACKAGE@";
 
 
 # Constants to define the "strictness" level.
-$LENIENT = 0;
+$NORMAL = 0;
 $GNU = 1;
 $GNITS = 2;
 
@@ -288,7 +288,7 @@ sub get_object_extension
 
 	if (defined $contents{'@kr@'})
 	{
-	    $dir_holds_sources = '.${kr}o';
+	    $dir_holds_sources = '.$(kr)o';
 	    push (@suffixes, '._c', '._o');
 
 	    &require_file ($NORMAL, 'ansi2knr.c');
@@ -333,8 +333,8 @@ sub handle_source_transform
 	    &am_error ($one_file . '_OBJECTS', 'should not be defined');
 	}
 
-	@result = ('${' . $one_file . "_SOURCES}",
-		   '${' . $one_file . "_OBJECTS}");
+	@result = ('$(' . $one_file . "_SOURCES)",
+		   '$(' . $one_file . "_OBJECTS)");
     }
     else
     {
@@ -368,8 +368,8 @@ sub handle_programs
     local ($obj) = &get_object_extension;
 
     local (@sources, @objects);
-    push (@sources, '${SOURCES}') if (defined $contents{'SOURCES'});
-    push (@objects, '${OBJECTS}') if (defined $contents{'OBJECTS'});
+    push (@sources, '$(SOURCES)') if (defined $contents{'SOURCES'});
+    push (@objects, '$(OBJECTS)') if (defined $contents{'OBJECTS'});
 
     local ($one_file);
     local ($sadd, $oadd);
@@ -419,7 +419,7 @@ sub handle_programs
 	    if (! defined $contents{$one_file . "_LDADD"})
 	    {
 		# User didn't define prog_LDADD override.  So do it.
-		$output_vars .= $one_file . '_LDADD = ${LDADD}' . "\n";
+		$output_vars .= $one_file . '_LDADD = $(LDADD)' . "\n";
 	    }
 
 	    ($munge = $fcont) =~ s/\@PROGRAM\@/$one_file/g;
@@ -1300,7 +1300,8 @@ sub am_install_var
     {
 	if (defined $contents{$_ . '_' . $primary})
 	{
-	    push (@used, '${' . $_ . '_' . $primary . '}');
+	    push (@all, '$(' . $_ . '_' . $primary . ')');
+	    push (@used, '$(' . $_ . '_' . $primary . ')');
 	    if ($_ eq 'noinst')
 	    {
 		# Objects in noinst_FOO never get installed.
@@ -1311,7 +1312,7 @@ sub am_install_var
 	    $output_rules .= $munge;
 
 	    push (@uninstall, 'uninstall-' . $_ . $primary);
-	    push (@installdirs, '${' . $_ . 'dir}');
+	    push (@installdirs, '$(' . $_ . 'dir)');
 	    if ($exec_dir_p{$_})
 	    {
 		push (@install_exec, 'install-' . $_ . $primary);
