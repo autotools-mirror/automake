@@ -1265,7 +1265,7 @@ sub get_object_extension
 
     # Check for automatic de-ANSI-fication.
     $extension = '$U' . $extension
-      if defined $options{'ansi2knr'};
+      if $options{'ansi2knr'};
 
     $get_object_extension_was_run = 1;
 
@@ -1366,7 +1366,7 @@ sub handle_languages
 	    $output_flag = '-o'
 	      if (! $output_flag
 		  && $lang->name eq 'c'
-		  && defined $options{'subdir-objects'});
+		  && $options{'subdir-objects'});
 
 	    # Compute a possible derived extension.
 	    # This is not used by depend2.am.
@@ -1828,7 +1828,7 @@ sub handle_single_transform_list ($$$$@)
                 my $obj_sans_ext = substr ($object, 0,
 					   - length ($this_obj_ext));
 		my $full_ansi = $full;
-		if ($lang->ansi && defined $options{'ansi2knr'})
+		if ($lang->ansi && $options{'ansi2knr'})
 		  {
 		    $full_ansi =~ s/$KNOWN_EXTENSIONS_PATTERN$/\$U$&/;
 		    $obj_sans_ext .= '$U';
@@ -2297,7 +2297,7 @@ sub handle_compile ()
 
     # Boilerplate.
     my $default_includes = '';
-    if (! defined $options{'nostdinc'})
+    if (! $options{'nostdinc'})
       {
 	$default_includes = ' -I. -I$(srcdir)';
 
@@ -2338,7 +2338,7 @@ sub handle_compile ()
     $output_rules .= "$coms$rules";
 
     # Check for automatic de-ANSI-fication.
-    if (defined $options{'ansi2knr'})
+    if ($options{'ansi2knr'})
       {
 	my ($ansi2knr_filename, $ansi2knr_where) = @{$options{'ansi2knr'}};
 	my $ansi2knr_dir = '';
@@ -3092,7 +3092,7 @@ sub handle_texinfo_helper ($)
 
   push (@dist_targets, 'dist-info');
 
-  if (! defined $options{'no-installinfo'})
+  if (! $options{'no-installinfo'})
     {
       # Make sure documentation is made and installed first.  Use
       # $(INFO_DEPS), not 'info', because otherwise recursive makes
@@ -3114,7 +3114,7 @@ sub handle_texinfo_helper ($)
   # Do some error checking.  Note that this file is not required
   # when in Cygnus mode; instead we defined TEXINFO_TEX explicitly
   # up above.
-  if ($need_texi_file && ! defined $options{'no-texinfo.tex'})
+  if ($need_texi_file && ! $options{'no-texinfo.tex'})
     {
       if ($need_texi_file > 1)
 	{
@@ -3218,10 +3218,8 @@ sub handle_man_pages
 				 new Automake::Location,
 				 MANS => "@mans");
 
-  if (! defined $options{'no-installman'})
-    {
-      push (@all, '$(MANS)');
-    }
+  push (@all, '$(MANS)')
+    unless $options{'no-installman'};
 }
 
 # Handle DATA variables.
@@ -4255,7 +4253,7 @@ sub handle_factored_dependencies
   reject_target ('install-info-local',
 		 "`install-info-local' target defined but "
 		 . "`no-installinfo' option not in use")
-    unless defined $options{'no-installinfo'};
+    unless $options{'no-installinfo'};
 
   # Install the -local hooks.
   foreach (keys %dependencies)
@@ -4330,7 +4328,7 @@ sub handle_tests_dejagnu
 # Handle TESTS variable and other checks.
 sub handle_tests
 {
-  if (defined $options{'dejagnu'})
+  if ($options{'dejagnu'})
     {
       &handle_tests_dejagnu;
     }
@@ -4425,7 +4423,7 @@ sub handle_java
 # Handle some of the minor options.
 sub handle_minor_options
 {
-  if (defined $options{'readme-alpha'})
+  if ($options{'readme-alpha'})
     {
       if ($relative_dir eq '.')
 	{
@@ -4784,7 +4782,7 @@ sub check_gnu_standards
     {
       msg ('error-gnu', $options{$opt},
 	   "option `$opt' disallowed by GNU standards")
-	if (defined $options{$opt});
+	if $options{$opt};
     }
 }
 
@@ -4817,7 +4815,7 @@ sub check_gnits_standards
 # when a subdir object should be used.
 sub lang_sub_obj
 {
-    return defined $options{'subdir-objects'} ? LANG_SUBDIR : LANG_PROCESS;
+    return $options{'subdir-objects'} ? LANG_SUBDIR : LANG_PROCESS;
 }
 
 # Rewrite a single C source file.
@@ -4825,14 +4823,14 @@ sub lang_c_rewrite
 {
   my ($directory, $base, $ext) = @_;
 
-  if (defined $options{'ansi2knr'} && $base =~ /_$/)
+  if ($options{'ansi2knr'} && $base =~ /_$/)
     {
       # FIXME: include line number in error.
       err_am "C source file `$base.c' would be deleted by ansi2knr rules";
     }
 
   my $r = LANG_PROCESS;
-  if (defined $options{'subdir-objects'})
+  if ($options{'subdir-objects'})
     {
       $r = LANG_SUBDIR;
       $base = $directory . '/' . $base
@@ -4966,7 +4964,7 @@ sub lang_c_finish
 	}
     }
 
-    if (defined $options{'ansi2knr'} && keys %de_ansi_files)
+    if ($options{'ansi2knr'} && keys %de_ansi_files)
     {
  	# Make all _.c files depend on their corresponding .c files.
  	my @objects;
@@ -5579,7 +5577,7 @@ sub rule_define ($$$$$)
       && $target_name{$noexe}{$cond} ne $target)
     {
       # The no-exeext option enables this feature.
-      if (! defined $options{'no-exeext'})
+      if (! $options{'no-exeext'})
 	{
 	  msg ('obsolete', $targets{$noexe}{$cond},
 	       "deprecated feature: target `$noexe' overrides "
