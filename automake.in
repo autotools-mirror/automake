@@ -430,8 +430,12 @@ sub generate_makefile
 	if &variable_defined ('OBJECTS');
 
     # This is always the default target.  This gives us freedom to do
-    # things in whatever order is convenient.
-    $output_rules .= "default: all\n\n";
+    # things in whatever order is convenient.  Note that we set up
+    # $output_header here so that we can insert some text just after
+    # the "default" target, but before any other targets.  In
+    # particular we want to support the .SUFFIX hack here; this is
+    # documented elsewhere.
+    $output_header = "default: all\n\n";
     push (@phony, 'default');
 
     &read_am_file ($makefile . '.am');
@@ -507,6 +511,7 @@ sub generate_makefile
     print "automake: creating ", $makefile, ".in\n" if $verbose;
 
     print GM_FILE $output_vars;
+    print GM_FILE $output_header;
     print GM_FILE $output_rules;
     print GM_FILE $output_trailer;
 
@@ -1039,6 +1044,8 @@ sub handle_lib_objects
 	# dependency list.  Autoconf substitutions are not pushed;
 	# rarely is a new dependency substituted into (eg) foo_LDADD
 	# -- but "bad things (eg -lX11) are routinely substituted.
+	# Note that LIBOBJS and ALLOCA are exceptions to this rule,
+	# and handled specially below.
 	push (@dep_list, $lsearch)
 	    unless $lsearch =~ /^\@.*\@$/;
 
@@ -1046,6 +1053,7 @@ sub handle_lib_objects
 	# means adding entries to dep_files.
 	if ($lsearch eq '@LIBOBJS@')
 	{
+	    push (@dep_list, $lsearch);
 	    $seen_libobjs = 1;
 	    if (! keys %libsources)
 	    {
@@ -1069,6 +1077,7 @@ sub handle_lib_objects
 	}
 	elsif ($lsearch eq '@ALLOCA@')
 	{
+	    push (@dep_files, $lsearch);
 	    &am_line_error ($var,
 			    "\@ALLOCA\@ seen but \`AC_FUNC_ALLOCA' not in \`configure.in'")
 		if ! defined $libsources{'alloca.c'};
@@ -2430,18 +2439,21 @@ sub handle_footer
 	$output_vars .= "\n";
     }
 
-    if (defined $contents{'SUFFIXES'})
+    if (&variable_defined ('SUFFIXES'))
     {
 	# Push actual suffixes, and not $(SUFFIXES).  Some versions of
 	# make do not like variable substitutions on the .SUFFIXES
 	# line.
-	push (@suffixes, split (' ', $contents{'SUFFIXES'}));
+	push (@suffixes, &variable_value_as_list ('SUFFIXES'));
     }
 
-    $output_trailer .= ".SUFFIXES:\n";
+    # Note: AIX 4.1 /bin/make will fail if any suffix rule appears
+    # before .SUFFIXES.  So we make sure that .SUFFIXES appears before
+    # anything else, by sticking it right after the default: target.
+    $output_header .= ".SUFFIXES:\n";
     if (@suffixes)
     {
-	$output_trailer .= ".SUFFIXES: " . join (' ', @suffixes) . "\n";
+	$output_header .= ".SUFFIXES: " . join (' ', @suffixes) . "\n";
     }
     $output_trailer .= &file_contents ('footer');
 }
@@ -3791,6 +3803,7 @@ sub initialize_per_input
     $output_rules = '';
     $output_vars = '';
     $output_trailer = '';
+    $output_header = '';
 
     # Suffixes found during a run.
     @suffixes = ();
