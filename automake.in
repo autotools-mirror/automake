@@ -6030,19 +6030,23 @@ sub cond_stack_endif ($$$)
 ## ------------------------ ##
 
 
-# check_ambiguous_conditional ($VAR, $COND)
-# -----------------------------------------
+# check_ambiguous_conditional ($VAR, $COND, $WHERE)
+# -------------------------------------------------
 # Check for an ambiguous conditional.  This is called when a variable
 # is being defined conditionally.  If we already know about a
 # definition that is true under the same conditions, then we have an
 # ambiguity.
-sub check_ambiguous_conditional ($$)
+sub check_ambiguous_conditional ($$$)
 {
-  my ($var, $cond) = @_;
+  my ($var, $cond, $where) = @_;
   my ($message, $ambig_cond) =
     conditional_ambiguous_p ($var, $cond, keys %{$var_value{$var}});
-  err_var $var, "$message\n" . macro_dump ($var)
-    if $message;
+  if ($message)
+    {
+      err $where, "$message ...";
+      err_var ($var, "... `$var' previously defined here.");
+      verb (macro_dump ($var));
+    }
 }
 
 # $STRING, $AMBIG_COND
@@ -6338,7 +6342,7 @@ sub macro_define ($$$$$$)
 	  # There must be no previous value unless the user is redefining
 	  # an Automake variable or an AC_SUBST variable for an existing
 	  # condition.
-	  check_ambiguous_conditional ($var, $cond)
+	  check_ambiguous_conditional ($var, $cond, $where)
 	    unless (exists $var_value{$var}{$cond}
 		    && (($var_owner{$var} == VAR_AUTOMAKE
 			 && $owner != VAR_AUTOMAKE)
