@@ -34,6 +34,11 @@ use IO::File;
 
 my $me = basename ($0);
 
+
+## ----------- ##
+## Constants.  ##
+## ----------- ##
+
 # Parameters set by configure.  Not to be changed.  NOTE: assign
 # VERSION as string so that eg version 0.30 will print correctly.
 my $VERSION = "@VERSION@";
@@ -79,6 +84,53 @@ my $FOREIGN = 0;
 my $GNU = 1;
 my $GNITS = 2;
 
+# Values for AC_CANONICAL_*
+my $AC_CANONICAL_HOST = 1;
+my $AC_CANONICAL_SYSTEM = 2;
+
+# Files installed by libtoolize.
+my @libtoolize_files = ('ltmain.sh', 'config.guess', 'config.sub');
+# ltconfig appears here for compatibility with old versions of libtool.
+my @libtoolize_sometimes = ('ltconfig', 'ltcf-c.sh', 'ltcf-cxx.sh',
+			 'ltcf-gcj.sh');
+
+# Commonly found files we look for and automatically include in
+# DISTFILES.
+my @common_files =
+  (
+   'README', 'THANKS', 'TODO', 'NEWS', 'COPYING', 'COPYING.LIB',
+   'INSTALL', 'ABOUT-NLS', 'ChangeLog', 'configure.ac',
+   'configure.in', 'configure', 'config.guess', 'config.sub',
+   'AUTHORS', 'BACKLOG', 'ABOUT-GNU', 'libversion.in',
+   'mdate-sh', 'mkinstalldirs', 'install-sh', 'texinfo.tex',
+   'ansi2knr.c', 'ansi2knr.1', 'elisp-comp',
+   # ltconfig appears here for compatibility with old versions
+   # of libtool.
+   'ylwrap', 'acinclude.m4', @libtoolize_files, @libtoolize_sometimes,
+   'missing', 'depcomp', 'compile', 'py-compile'
+  );
+
+# Commonly used files we auto-include, but only sometimes.
+my @common_sometimes =
+  (
+   'aclocal.m4', 'acconfig.h', 'config.h.top',
+   'config.h.bot', 'stamp-h.in', 'stamp-vti'
+  );
+
+# Copyright on generated Makefile.ins.
+my $gen_copyright = "\
+# Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001
+# Free Software Foundation, Inc.
+# This Makefile.in is free software; the Free Software Foundation
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+";
+
 # These constants are returned by lang_*_rewrite functions.
 # LANG_SUBDIR means that the resulting object file should be in a
 # subdir if the source file is.  In this case the file name cannot
@@ -105,11 +157,55 @@ my %exec_dir_p =
    'pkglib'	=> 1,
    'pkginclude'	=> 0
   );
+
+# Map from obsolete macros to hints for new macros.
+# If you change this, change the corresponding list in aclocal.in.
+# FIXME: should just put this into a single file.
+my %obsolete_macros =
+    (
+     'AC_FEATURE_CTYPE', "use \`AC_HEADER_STDC'",
+     'AC_FEATURE_ERRNO', "add \`strerror' to \`AC_REPLACE_FUNCS(...)'",
+     'AC_FEATURE_EXIT', '',
+     'AC_SYSTEM_HEADER', '',
+
+     # Note that we do not handle this one, because it is still run
+     # from AM_CONFIG_HEADER.  So we deal with it specially in
+     # &scan_autoconf_files.
+     # 'AC_CONFIG_HEADER', "use \`AM_CONFIG_HEADER'",
+
+     'fp_C_PROTOTYPES', "use \`AM_C_PROTOTYPES'",
+     'fp_PROG_CC_STDC', "use \`AM_PROG_CC_STDC'",
+     'fp_PROG_INSTALL', "use \`AC_PROG_INSTALL'",
+     'fp_WITH_DMALLOC', "use \`AM_WITH_DMALLOC'",
+     'fp_WITH_REGEX', "use \`AM_WITH_REGEX'",
+     'gm_PROG_LIBTOOL', "use \`AM_PROG_LIBTOOL'",
+     'jm_MAINTAINER_MODE', "use \`AM_MAINTAINER_MODE'",
+     'md_TYPE_PTRDIFF_T', "use \`AM_TYPE_PTRDIFF_T'",
+     'ud_PATH_LISPDIR', "use \`AM_PATH_LISPDIR'",
+     'ud_GNU_GETTEXT', "use \`AM_GNU_GETTEXT'",
+
+     # Now part of autoconf proper, under a different name.
+     'AM_FUNC_FNMATCH', "use \`AC_FUNC_FNMATCH'",
+     'fp_FUNC_FNMATCH', "use \`AC_FUNC_FNMATCH'",
+     'AM_SANITY_CHECK_CC', "automatically done by \`AC_PROG_CC'",
+     'AM_PROG_INSTALL', "use \`AC_PROG_INSTALL'",
+     'AM_EXEEXT', "use \`AC_EXEEXT'",
+     'AM_CYGWIN32', "use \`AC_CYGWIN'",
+     'AM_MINGW32', "use \`AC_MINGW32'",
+     'AM_FUNC_MKTIME', "use \`AC_FUNC_MKTIME'",
+
+# These aren't quite obsolete.
+#      'md_PATH_PROG',
+     );
+
+# Regexp to match the above macros.
+my $obsolete_rx = '(\b' . join ('\b|\b', keys %obsolete_macros) . '\b)';
 
 
-# Variables global to entire run.
 
-# Variables related to the options.
+## ---------------------------------- ##
+## Variables related to the options.  ##
+## ---------------------------------- ##
 
 # TRUE if we should always generate Makefile.in.
 my $force_generation = 1;
@@ -143,24 +239,10 @@ my $copy_missing = 0;
 # TRUE if we should always update files that we know about.
 my $force_missing = 0;
 
-# List of targets we must always output.
-# FIXME: Complete, and remove falsely required targets.
-my %required_targets =
-  (
-   'all'          => 1,
-   'install'      => 1,
-   'install-data' => 1,
-   'install-exec' => 1,
 
-   # FIXME: Not required, temporary hacks.
-   'install-data-am' => 1,
-   'install-exec-am' => 1,
-   'installcheck-am' => 1,
-
-   'install-man' => 1,
-  );
-
-# Variables filled during files scanning.
+## ---------------------------------------- ##
+## Variables filled during files scanning.  ##
+## ---------------------------------------- ##
 
 # Name of the top autoconf input: `configure.ac' or `configure.in'.
 my $configure_ac = '';
@@ -238,12 +320,6 @@ my $seen_arg_prog = 0;
 my $seen_libtool = 0;
 my $libtool_line = 0;
 
-# Files installed by libtoolize.
-my @libtoolize_files = ('ltmain.sh', 'config.guess', 'config.sub');
-# ltconfig appears here for compatibility with old versions of libtool.
-my @libtoolize_sometimes = ('ltconfig', 'ltcf-c.sh', 'ltcf-cxx.sh',
-			 'ltcf-gcj.sh');
-
 # TRUE if we've seen AM_MAINTAINER_MODE.
 my $seen_maint_mode = 0;
 
@@ -307,49 +383,6 @@ my $cygnus_mode = 0;
 # Hash table of AM_CONDITIONAL variables seen in configure.
 my %configure_cond = ();
 
-# Map from obsolete macros to hints for new macros.
-# If you change this, change the corresponding list in aclocal.in.
-# FIXME: should just put this into a single file.
-my %obsolete_macros =
-    (
-     'AC_FEATURE_CTYPE', "use \`AC_HEADER_STDC'",
-     'AC_FEATURE_ERRNO', "add \`strerror' to \`AC_REPLACE_FUNCS(...)'",
-     'AC_FEATURE_EXIT', '',
-     'AC_SYSTEM_HEADER', '',
-
-     # Note that we do not handle this one, because it is still run
-     # from AM_CONFIG_HEADER.  So we deal with it specially in
-     # &scan_autoconf_files.
-     # 'AC_CONFIG_HEADER', "use \`AM_CONFIG_HEADER'",
-
-     'fp_C_PROTOTYPES', "use \`AM_C_PROTOTYPES'",
-     'fp_PROG_CC_STDC', "use \`AM_PROG_CC_STDC'",
-     'fp_PROG_INSTALL', "use \`AC_PROG_INSTALL'",
-     'fp_WITH_DMALLOC', "use \`AM_WITH_DMALLOC'",
-     'fp_WITH_REGEX', "use \`AM_WITH_REGEX'",
-     'gm_PROG_LIBTOOL', "use \`AM_PROG_LIBTOOL'",
-     'jm_MAINTAINER_MODE', "use \`AM_MAINTAINER_MODE'",
-     'md_TYPE_PTRDIFF_T', "use \`AM_TYPE_PTRDIFF_T'",
-     'ud_PATH_LISPDIR', "use \`AM_PATH_LISPDIR'",
-     'ud_GNU_GETTEXT', "use \`AM_GNU_GETTEXT'",
-
-     # Now part of autoconf proper, under a different name.
-     'AM_FUNC_FNMATCH', "use \`AC_FUNC_FNMATCH'",
-     'fp_FUNC_FNMATCH', "use \`AC_FUNC_FNMATCH'",
-     'AM_SANITY_CHECK_CC', "automatically done by \`AC_PROG_CC'",
-     'AM_PROG_INSTALL', "use \`AC_PROG_INSTALL'",
-     'AM_EXEEXT', "use \`AC_EXEEXT'",
-     'AM_CYGWIN32', "use \`AC_CYGWIN'",
-     'AM_MINGW32', "use \`AC_MINGW32'",
-     'AM_FUNC_MKTIME', "use \`AC_FUNC_MKTIME'",
-
-# These aren't quite obsolete.
-#      'md_PATH_PROG',
-     );
-
-# Regexp to match the above macros.
-my $obsolete_rx = '(\b' . join ('\b|\b', keys %obsolete_macros) . '\b)';
-
 # This maps extensions onto language names.
 my %extension_map = ();
 
@@ -360,10 +393,28 @@ my %language_map = ();
 # discovered while scanning configure.ac.  We might distribute these
 # in the top-level Makefile.in.
 my %configure_dist_common = ();
-
 
-# Initialize global constants and our list of languages that are
-# internally supported.
+# List of targets we must always output.
+# FIXME: Complete, and remove falsely required targets.
+my %required_targets =
+  (
+   'all'          => 1,
+   'install'      => 1,
+   'install-data' => 1,
+   'install-exec' => 1,
+
+   # FIXME: Not required, temporary hacks.
+   'install-data-am' => 1,
+   'install-exec-am' => 1,
+   'installcheck-am' => 1,
+
+   'install-man' => 1,
+  );
+
+
+################################################################
+
+# Initialize our list of languages that are internally supported.
 &initialize_global_constants;
 
 &register_language ('c', 'ansi-p=1', 'autodep=', 'flags=CFLAGS',
@@ -432,6 +483,7 @@ my %configure_dist_common = ();
 		    'pure=yes',
 		    'java', 'class', 'zip', 'jar');
 
+################################################################
 
 # Parse command line.
 &parse_arguments;
@@ -6301,50 +6353,6 @@ sub read_main_am_file
 }
 
 ################################################################
-
-sub initialize_global_constants
-{
-    # Values for AC_CANONICAL_*
-    $AC_CANONICAL_HOST = 1;
-    $AC_CANONICAL_SYSTEM = 2;
-
-    # Commonly found files we look for and automatically include in
-    # DISTFILES.
-    @common_files =
-	(
-	 'README', 'THANKS', 'TODO', 'NEWS', 'COPYING', 'COPYING.LIB',
-	 'INSTALL', 'ABOUT-NLS', 'ChangeLog', 'configure.ac',
-	 'configure.in', 'configure', 'config.guess', 'config.sub',
-	 'AUTHORS', 'BACKLOG', 'ABOUT-GNU', 'libversion.in',
-	 'mdate-sh', 'mkinstalldirs', 'install-sh', 'texinfo.tex',
-	 'ansi2knr.c', 'ansi2knr.1', 'elisp-comp',
-	 # ltconfig appears here for compatibility with old versions
-	 # of libtool.
-	 'ylwrap', 'acinclude.m4', @libtoolize_files, @libtoolize_sometimes,
-	 'missing', 'depcomp', 'compile', 'py-compile'
-	 );
-
-    # Commonly used files we auto-include, but only sometimes.
-    @common_sometimes =
-	(
-	 'aclocal.m4', 'acconfig.h', 'config.h.top',
-	 'config.h.bot', 'stamp-h.in', 'stamp-vti'
-	 );
-
-    # Copyright on generated Makefile.ins.
-    $gen_copyright = "\
-# Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001
-# Free Software Foundation, Inc.
-# This Makefile.in is free software; the Free Software Foundation
-# gives unlimited permission to copy and/or distribute it,
-# with or without modifications, as long as this notice is preserved.
-
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
-# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE.
-";
-}
 
 # (Re)-Initialize per-Makefile.am variables.
 sub initialize_per_input
