@@ -1928,8 +1928,16 @@ sub handle_texinfo
 		if ! $done;
 	    ++$done;
 
-	    local ($conf_pat);
-	    ($conf_pat = $config_aux_dir) =~ s/(\W)/\\$1/g;
+	    local ($conf_pat, $conf_dir);
+	    if ($config_aux_dir eq '.')
+	    {
+		$conf_dir = '$(srcdir)/';
+	    }
+	    else
+	    {
+		$conf_dir = $config_aux_dir;
+	    }
+	    ($conf_pat = $conf_dir) =~ s/(\W)/\\$1/g;
 	    $output_rules .=
 		&file_contents_with_transform
 		    ('s/\@TEXI\@/' . $info_cursor . '/g; '
@@ -2040,6 +2048,7 @@ sub handle_texinfo
 		      . "maintainer-clean-aminfo:\n\t"
 		      # Eww.  But how else can we find all the output
 		      # files from makeinfo?
+		      . ($cygnus_mode ? '' : 'cd $(srcdir) && ')
 		      . 'for i in $(INFO_DEPS); do' . " \\\n"
 		      . "\t" . '  rm -f $$i;' . " \\\n"
 		      . "\t" . '  if test "`echo $$i-[0-9]*`" != "$$i-[0-9]*"; then' . " \\\n"
