@@ -50,7 +50,7 @@ $AC_CONFIG_AUX_DIR_PATTERN = "AC_CONFIG_AUX_DIR\\(([^)]+)\\)";
 $AM_INIT_AUTOMAKE_PATTERN = "AM_INIT_AUTOMAKE\\([^,]*,([^)]+)\\)";
 $AM_PACKAGE_VERSION_PATTERN = "^\\s*\\[?([^]\\s]+)\\]?\\s*\$";
 # Note that there is no AC_PATH_TOOL.  But we don't really care.
-$AC_CHECK_PATTERN = "AC_(CHECK|PATH)_(PROG|PROGS|TOOL)\\(\\[?([^]),]+)";
+$AC_CHECK_PATTERN = "AC_(CHECK|PATH)_(PROG|PROGS|TOOL)\\(\\[?(\\w+)";
 # Just check for alphanumeric in AC_SUBST.  If you do AC_SUBST(5),
 # then too bad.
 $AC_SUBST_PATTERN = "AC_SUBST\\(\\[?(\\w+)";
@@ -858,7 +858,7 @@ sub handle_yacc_lex_cxx
 			  $ltcompile . '$(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)')
 	    if ($seen_libtool);
 
-	&define_variable ('CXXLINK', $libtool . '$(CXX) $(LDFLAGS) -o $@');
+	&define_variable ('CXXLINK', $ltlink . '$(CXX) $(LDFLAGS) -o $@');
 
 	local ($ext);
 	foreach $ext (@cxx_list)
@@ -1869,7 +1869,7 @@ sub handle_texinfo
     # Find these programs wherever they may lie.  Yes, this has
     # intimate knowledge of the structure of the texinfo distribution.
     &define_program_variable ('MAKEINFO', 'build', 'texinfo/makeinfo',
-			      'makeinfo');
+			      '@MAKEINFO@');
     &define_program_variable ('TEXI2DVI', 'src', 'texinfo/util',
 			      'texi2dvi');
 
@@ -2101,7 +2101,7 @@ sub handle_dist_worker
 		 # weirdness.
 		 '	here=`pwd`; distdir=`cd $(distdir) && pwd` \\
 	  && cd $(srcdir) \\
-	  && automake --include-deps --build-dir=$$here --srcdir-name=$(srcdir) --output-dir=$$distdir '
+	  && $(AUTOMAKE) --include-deps --build-dir=$$here --srcdir-name=$(srcdir) --output-dir=$$distdir '
 		 # Set strictness of output.
 		 . ($cygnus_mode ? '--cygnus' : ('--' . $strictness_name))
 		 . "\n"
@@ -2556,7 +2556,7 @@ sub handle_aclocal_m4
     local ($regen_aclocal) = 0;
     if (-f 'aclocal.m4')
     {
-	&define_variable ("ACLOCAL", '$(top_srcdir)/aclocal.m4');
+	&define_variable ("ACLOCAL_M4", '$(top_srcdir)/aclocal.m4');
 	&push_dist_common ('aclocal.m4');
 
 	if (open (ACLOCAL, '< aclocal.m4'))
@@ -2609,7 +2609,7 @@ sub handle_aclocal_m4
 	&pretty_print_rule ("\$(srcdir)/aclocal.m4:", "\t\t", @ac_deps);
 
 	$output_rules .=  ("\t"
-			   . 'cd $(srcdir) && aclocal'
+			   . 'cd $(srcdir) && $(ACLOCAL)'
 			   . (&variable_defined ('ACLOCAL_AMFLAGS')
 			      ? ' $(ACLOCAL_AMFLAGS)' : '')
 			   . "\n");
@@ -2682,9 +2682,9 @@ sub handle_configure
 		      . ': '
 		      . ($seen_maint_mode ? '@MAINT@ ' : '')
 		      . $amfile . ' '
-		      . '$(top_srcdir)/configure.in $(ACLOCAL) '
+		      . '$(top_srcdir)/configure.in $(ACLOCAL_M4) '
 		      . join (' ', @rewritten) . "\n"
-		      . "\tcd \$(top_srcdir) && automake "
+		      . "\tcd \$(top_srcdir) && \$(AUTOMAKE) "
 		      . ($cygnus_mode ? '--cygnus' : ('--' . $strictness_name))
 		      . ' ' . $input . $colon_infile . "\n\n");
 
@@ -4678,15 +4678,15 @@ sub am_install_var
 
     local ($ltxform);
     if (defined $configure_vars{'LIBTOOL'})
-	    {
+    {
 	# Transform '@LIBTOOL ...@' to '$(LIBTOOL) ...'
 	$ltxform = 's/\@LIBTOOL([^\@]*)\@/\$(LIBTOOL) $1/;';
-	    }
-	    else
-	    {
+    }
+    else
+    {
 	# Delete '@LIBTOOL ...@'
 	$ltxform = 's/\@LIBTOOL([^\@]*)\@//;';
-	    }
+    }
 
     while (@args)
     {
