@@ -60,39 +60,45 @@ $output_file = 'aclocal.m4';
 # How much to say.
 $verbosity = 0;
 
-@obsolete_macros =
+# Map from obsolete macros to hints for new macros.
+# If you change this, change the corresponding list in automake.in.
+# FIXME: should just put this into a single file.
+%obsolete_macros =
     (
-     'AC_FEATURE_CTYPE',
-     'AC_FEATURE_ERRNO',
-     'AC_FEATURE_EXIT',
-     'AC_SYSTEM_HEADER',
-     'fp_C_PROTOTYPES',
-     'fp_FUNC_FNMATCH',
-     'fp_PROG_CC_STDC',
-     'fp_PROG_INSTALL',
-     'fp_WITH_DMALLOC',
-     'fp_WITH_REGEX',
-     'gm_PROG_LIBTOOL',
-     'jm_MAINTAINER_MODE',
-     'md_TYPE_PTRDIFF_T',
-     'ud_PATH_LISPDIR',
-     'ud_GNU_GETTEXT',
+     'AC_FEATURE_CTYPE', "use \`AC_HEADER_STDC'",
+     'AC_FEATURE_ERRNO', "add \`strerror' to \`AC_REPLACE_FUNCS(...)'",
+     'AC_FEATURE_EXIT', '',
+     'AC_SYSTEM_HEADER', '',
+
+     # Note that we do not handle this one, because it is still run
+     # from AM_CONFIG_HEADER.  So we deal with it specially in
+     # scan_configure.
+     # 'AC_CONFIG_HEADER', "use \`AM_CONFIG_HEADER'",
+
+     'fp_C_PROTOTYPES', "use \`AM_C_PROTOTYPES'",
+     'fp_PROG_CC_STDC', "use \`AM_PROG_CC_STDC'",
+     'fp_PROG_INSTALL', "use \`AC_PROG_INSTALL'",
+     'fp_WITH_DMALLOC', "use \`AM_WITH_DMALLOC'",
+     'fp_WITH_REGEX', "use \`AM_WITH_REGEX'",
+     'gm_PROG_LIBTOOL', "use \`AM_PROG_LIBTOOL'",
+     'jm_MAINTAINER_MODE', "use \`AM_MAINTAINER_MODE'",
+     'md_TYPE_PTRDIFF_T', "use \`AM_TYPE_PTRDIFF_T'",
+     'ud_PATH_LISPDIR', "use \`AM_PATH_LISPDIR'",
 
      # Now part of autoconf proper, under a different name.
-     'AM_FUNC_FNMATCH',
-     'AM_SANITY_CHECK_CC',
-     'AM_PROG_INSTALL',
-     'AM_EXEEXT',
-     'AM_CYGWIN32',
-     'AM_MINGW32',
+     'AM_FUNC_FNMATCH', "use \`AC_FUNC_FNMATCH'",
+     'fp_FUNC_FNMATCH', "use \`AC_FUNC_FNMATCH'",
+     'AM_SANITY_CHECK_CC', "automatically done by \`AC_PROG_CC'",
+     'AM_PROG_INSTALL', "use \`AC_PROG_INSTALL'",
+     'AM_EXEEXT', "use \`AC_EXEEXT'",
+     'AM_CYGWIN32', "use \`AC_CYGWIN32'",
+     'AM_MINGW32', "use \`AC_MINGW32'",
 
 # These aren't quite obsolete.
 #      'md_PATH_PROG',
-#      'ud_LC_MESSAGES',
-#      'ud_WITH_NLS'
      );
 
-$obsolete_rx = '(' . join ('|', @obsolete_macros) . ')';
+$obsolete_rx = '(' . join ('|', keys %obsolete_macros) . ')';
 
 # Matches a macro definition.
 $ac_defun_rx = "AC_DEFUN\\(\\[?([^],)\n]+)\\]?";
@@ -216,8 +222,12 @@ sub scan_configure
 
 	if (/$obsolete_rx/o)
 	{
-	    chop;
-	    warn "aclocal: configure.in: $.: obsolete macro \`$_'\n";
+	    local ($hint) = '';
+	    if ($obsolete_macros{$1} ne '')
+	    {
+		$hint = '; ' . $obsolete_macros{$1};
+	    }
+	    warn "aclocal: configure.in: $.: \`$1' is obsolete$hint\n";
 	    $exit_status = 1;
 	    next;
 	}
