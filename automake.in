@@ -516,13 +516,19 @@ my %content_seen;
 
 # This holds the names which are targets.  These also appear in
 # %contents.  $targets{TARGET}{COND} is the location of the definition
-# of TARGET for condition COND.
+# of TARGET for condition COND.  TARGETs should not include
+# a trailing $(EXEEXT), we record this in %target_name.
 my %targets;
 
 # $target_source{TARGET}{COND} is the filename where TARGET
 # were defined for condition COND.  Note this must be a
 # filename, *without* any line number.
 my %target_source;
+
+# $target_name{TARGET}{COND} is the real name of TARGET (in condition COND).
+# The real name is often TARGET or TARGET$(EXEEXT), and TARGET never
+# contain $(EXEEXT)
+my %target_name;
 
 # $target_owner{TARGET}{COND} the owner of TARGET in condition COND.
 my %target_owner;
@@ -728,6 +734,7 @@ sub initialize_per_input ()
 
     %targets = ();
     %target_source = ();
+    %target_name = ();
     %target_owner = ();
 
     @cond_stack = ();
@@ -7426,7 +7433,10 @@ sub rule_define ($$$$$)
   # For now `foo:' will override `foo$(EXEEXT):'.  This is temporary,
   # though, so we emit a warning.
   (my $noexe = $target) =~ s,\$\(EXEEXT\)$,,;
-  if ($noexe ne $target && exists $targets{$noexe}{$cond})
+  if ($noexe ne $target
+      && exists $targets{$noexe}
+      && exists $targets{$noexe}{$cond}
+      && $target_name{$noexe}{$cond} ne $target)
     {
       # The no-exeext option enables this feature.
       if (! defined $options{'no-exeext'})
@@ -7439,6 +7449,9 @@ sub rule_define ($$$$$)
       return ();
     }
 
+  # For now on, strip off $(EXEEXT) from $target, so we can diagnose
+  # a clash if `ctags$(EXEEXT):' is redefined after `ctags:'.
+  my $realtarget = $target;
   $target = $noexe;
 
   # A GNU make-style pattern rule has a single "%" in the target name.
@@ -7456,6 +7469,9 @@ sub rule_define ($$$$$)
       prog_error ("\$target_source{$target}{$cond} exists, but \$targets"
 		  . " doesn't.")
 	unless exists $targets{$target}{$cond};
+      prog_error ("\$target_source{$target}{$cond} exists, but \$target_name"
+		  . " doesn't.")
+	unless exists $target_name{$target}{$cond};
 
       my $oldowner  = $target_owner{$target}{$cond};
 
@@ -7589,6 +7605,7 @@ sub rule_define ($$$$$)
       $targets{$target}{$c} = $where;
       $target_source{$target}{$c} = $source;
       $target_owner{$target}{$c} = $owner;
+      $target_name{$target}{$c} = $realtarget;
     }
 
   # Check the rule for being a suffix rule. If so, store in a hash.
