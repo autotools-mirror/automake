@@ -170,6 +170,7 @@ gcj2.test \
 gcj3.test \
 gcj4.test \
 gnits.test \
+gnits2.test \
 header.test \
 implicit.test \
 include.test \

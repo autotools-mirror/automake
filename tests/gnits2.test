@@ -1,0 +1,78 @@
+#! /bin/sh
+
+# Test to ensure std-options checking is correct.
+
+required=gcc
+. $srcdir/defs || exit 1
+
+cat >> configure.in << 'END'
+AC_PROG_CC
+AC_OUTPUT
+END
+
+cat > Makefile.am << 'END'
+AUTOMAKE_OPTIONS = gnits
+noinst_PROGRAMS = fubar2
+bin_PROGRAMS = fubar fine
+fubar_SOURCES = fubar.c
+fubar2_SOURCES = fubar2.c
+fine_SOURCES = fine.c
+END
+
+echo 'main(int argc, char **argv) { exit(0); }' > fubar.c
+echo 'main(int argc, char **argv) { exit(0); }' > fubar2.c
+
+cat > fine.c << 'END'
+#include <stdio.h>
+main(int argc, char **argv) {
+  puts ("Which version? Which usage?");
+  exit(0);
+}
+END
+
+cat > check.sed << 'END'
+/fubar does not/ {
+  s/.*/0/
+  H
+}
+/fubar2 does not/ {
+  s/.*/1/
+  H
+}
+/fine does not/ {
+  s/.*/1/
+  H
+}
+$!d
+
+g
+/^\n0\n0$/! {
+  s/.*/1/
+  q
+}
+s/.*/0/
+END
+
+# Files required by Gnits.
+: > INSTALL
+: > NEWS
+: > README
+: > COPYING
+: > AUTHORS
+: > ChangeLog
+: > THANKS
+
+set -e
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE -a
+
+mkdir sub
+cd sub
+
+../configure --prefix=`pwd`/../inst-dir
+$MAKE all
+$MAKE install
+exit `$MAKE installcheck 2>&1 | sed -f ../check.sed`
+
