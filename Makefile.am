@@ -143,7 +143,8 @@ WGET = wget
 
 ## Files that we fetch and which we compare against.
 ## FIXME should be a lot more here
-FETCHFILES = config.guess config.sub
+## Sadly we can't fetch ansi2knr.1 from the same location :-(
+FETCHFILES = config.guess config.sub ansi2knr.c
 
 ## Fetch the latest versions of files we care about.
 fetch:
@@ -152,7 +153,8 @@ fetch:
 ## If a get fails then that is a problem.
 	(cd Fetchdir && \
 	$(WGET) ftp://ftp.gnu.org/gnu/config/config.guess; \
-	$(WGET) ftp://ftp.gnu.org/gnu/config/config.sub)
+	$(WGET) ftp://ftp.gnu.org/gnu/config/config.sub; \
+	$(WGET) ftp://ftp.cs.wisc.edu/ghost/ansi2knr.c)
 ## Don't exit after test because we want to give as many errors as
 ## possible.
 	@stat=0; for file in $(FETCHFILES); do \
