@@ -33,13 +33,13 @@ endif %?TOPDIR_P%
 ## --------------------- ##
 
 ## This rule remakes the Makefile.in.
-%MAKEFILE-IN%: %MAINTAINER-MODE% %MAKEFILE-AM% %MAKEFILE-IN-DEPS% $(top_srcdir)/%CONFIGURE-AC% $(ACLOCAL_M4) %CONFIGURE_DEPS%
+%MAKEFILE-IN%: %MAINTAINER-MODE% %MAKEFILE-AM% %MAKEFILE-IN-DEPS% $(top_srcdir)/%CONFIGURE-AC% $(ACLOCAL_M4) $(am__configure_deps)
 ## If configure.ac or one of configure's dependencies has changed, all
 ## Makefile.in are to be updated; it is then more efficient to run
 ## automake on all the Makefiles at once.  It also allow Automake to be
 ## run for newly added directories.
 	@for dep in $?; do \
-	  case '$(top_srcdir)/%CONFIGURE-AC% $(ACLOCAL_M4) %CONFIGURE_DEPS%' in \
+	  case '$(top_srcdir)/%CONFIGURE-AC% $(ACLOCAL_M4) $(am__configure_deps)' in \
 	    *$$dep*) \
 ?TOPDIR_P?	      echo ' cd $(srcdir) && $(AUTOMAKE) --%STRICTNESS% %USE-DEPS%'; \
 ?TOPDIR_P?	      cd $(srcdir) && $(AUTOMAKE) --%STRICTNESS% %USE-DEPS%; \
@@ -84,14 +84,14 @@ if %?TOPDIR_P%
 ## don't exist.  This is especially important for configure, since it
 ## won't be created until autoconf is run -- which might be after
 ## automake is run.
-DIST_COMMON += configure %CONFIGURE-AC%
+DIST_COMMON += configure %CONFIGURE-AC% $(am__configure_deps)
 endif %?TOPDIR_P%
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 ?TOPDIR_P?	$(SHELL) ./config.status --recheck
 ?!TOPDIR_P?	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
-$(top_srcdir)/configure: %MAINTAINER-MODE% $(top_srcdir)/%CONFIGURE-AC% $(ACLOCAL_M4) $(CONFIGURE_DEPENDENCIES) %CONFIGURE_DEPS%
+$(top_srcdir)/configure: %MAINTAINER-MODE% $(top_srcdir)/%CONFIGURE-AC% $(ACLOCAL_M4) $(CONFIGURE_DEPENDENCIES) $(am__configure_deps)
 ?TOPDIR_P?	cd $(srcdir) && $(AUTOCONF)
 ?!TOPDIR_P?	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
@@ -106,9 +106,9 @@ $(top_srcdir)/configure: %MAINTAINER-MODE% $(top_srcdir)/%CONFIGURE-AC% $(ACLOCA
 ## Whenever a configure dependency changes we need to rebuild
 ## aclocal.m4 too.  Changing configure.ac, or any file included by
 ## aclocal.m4 might require adding more files to aclocal.m4.  Hence
-## the %CONFIGURE_DEPS% dependency.
+## the $(am__configure_deps) dependency.
 if %?REGEN-ACLOCAL-M4%
-$(ACLOCAL_M4): %MAINTAINER-MODE% $(top_srcdir)/%CONFIGURE-AC% %ACLOCAL_M4_DEPS% %CONFIGURE_DEPS%
+$(ACLOCAL_M4): %MAINTAINER-MODE% $(top_srcdir)/%CONFIGURE-AC% %ACLOCAL_M4_DEPS% $(am__configure_deps)
 ?TOPDIR_P?	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
 ?!TOPDIR_P?	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 endif %?REGEN-ACLOCAL-M4%
