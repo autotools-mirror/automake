@@ -4713,14 +4713,44 @@ sub handle_gettext
       return;
     }
 
-  my @subdirs = &variable_value_as_list_recursive ('SUBDIRS', 'all');
-  msg_var 'syntax', 'SUBDIRS', "AM_GNU_GETTEXT used but `po' not in SUBDIRS"
-    if ! grep ($_ eq 'po', @subdirs);
-  # intl/ is not required when AM_GNU_GETTEXT is called with
-  # the `external' option.
-  msg_var 'syntax', 'SUBDIRS', "AM_GNU_GETTEXT used but `intl' not in SUBDIRS"
-    if (! $seen_gettext_external
-	&& ! grep ($_ eq 'intl', @subdirs));
+  # Perform some sanity checks to help users get the right setup.
+  # We disable these tests when po/ doesn't exist in order not to disallow
+  # unusual gettext setups.
+  #
+  # Bruno Haible:
+  # | The idea is:
+  # |
+  # |  1) If a package doesn't have a directory po/ at top level, it
+  # |     will likely have multiple po/ directories in subpackages.
+  # |
+  # |  2) It is useful to warn for the absence of intl/ if AM_GNU_GETTEXT
+  # |     is used without 'external'. It is also useful to warn for the
+  # |     presence of intl/ if AM_GNU_GETTEXT([external]) is used. Both
+  # |     warnings apply only to the usual layout of packages, therefore
+  # |     they should both be disabled if no po/ directory is found at
+  # |     top level.
+
+  if (-d 'po')
+    {
+      my @subdirs = &variable_value_as_list_recursive ('SUBDIRS', 'all');
+
+      msg_var ('syntax', 'SUBDIRS',
+	       "AM_GNU_GETTEXT used but `po' not in SUBDIRS")
+	if ! grep ($_ eq 'po', @subdirs);
+
+      # intl/ is not required when AM_GNU_GETTEXT is called with
+      # the `external' option.
+      msg_var ('syntax', 'SUBDIRS',
+	       "AM_GNU_GETTEXT used but `intl' not in SUBDIRS")
+	if (! $seen_gettext_external
+	    && ! grep ($_ eq 'intl', @subdirs));
+
+      # intl/ should not be used with AM_GNU_GETTEXT([external])
+      msg_var ('syntax', 'SUBDIRS',
+	       "`intl' should not be in SUBDIRS when "
+	       . "AM_GNU_GETTEXT([external]) is used")
+	if ($seen_gettext_external && grep ($_ eq 'intl', @subdirs));
+    }
 
   require_file ($ac_gettext_location, GNU, 'ABOUT-NLS');
 }
