@@ -103,7 +103,7 @@ exit $exit_status;
 ################################################################
 
 # Print usage and exit.
-sub usage
+sub usage ($)
 {
     local ($status) = @_;
 
@@ -125,7 +125,7 @@ Report bugs to <bug-automake\@gnu.org>.\n";
 }
 
 # Parse command line.
-sub parse_arguments
+sub parse_arguments (@)
 {
     local (@arglist) = @_;
     local (@dirlist);
@@ -157,7 +157,7 @@ sub parse_arguments
 	elsif ($arglist[0] eq '--version')
 	{
 	    print "aclocal (GNU $PACKAGE) $VERSION\n\n";
-	    print "Copyright 2002 Free Software Foundation, Inc.\n";
+	    print "Copyright (C) 2002 Free Software Foundation, Inc.\n";
 	    print "This is free software; see the source for copying conditions.  There is NO\n";
 	    print "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n";
 	    print "Written by Tom Tromey <tromey\@redhat.com>\n";
@@ -220,7 +220,7 @@ sub parse_arguments
 
 ################################################################
 
-sub scan_configure
+sub scan_configure ()
 {
     die "aclocal: `configure.ac' or `configure.in' is required\n"
         if !$configure_ac;
@@ -258,7 +258,7 @@ sub scan_configure
 ################################################################
 
 # Check macros in acinclude.m4.  If one is not used, warn.
-sub check_acinclude
+sub check_acinclude ()
 {
     local ($key);
 
@@ -276,7 +276,7 @@ sub check_acinclude
 ################################################################
 
 # Scan all the installed m4 files and construct a map.
-sub scan_m4_files
+sub scan_m4_files (@)
 {
     local (@dirlist) = @_;
 
@@ -325,7 +325,7 @@ sub scan_m4_files
 ################################################################
 
 # Add a macro to the output.
-sub add_macro
+sub add_macro ($)
 {
     local ($macro) = @_;
 
@@ -347,7 +347,7 @@ sub add_macro
 }
 
 # Add a file to output.
-sub add_file
+sub add_file ($)
 {
     local ($file) = @_;
 
@@ -356,19 +356,17 @@ sub add_file
     $file_seen{$file} = 1;
 
     $output .= $file_contents{$file} . "\n";
-    local ($a, @rlist);
+    my (@rlist);
     foreach (split ("\n", $file_contents{$file}))
     {
-	# This is a hack for Perl 4.
-	$a = $_;
-	if ($a =~ /$ac_require_rx/g)
-	{
-	    push (@rlist, $1);
-	}
-
 	# Remove comments from current line.
 	s/\bdnl\b.*$//;
 	s/\#.*$//;
+
+	if (/$ac_require_rx/g)
+	{
+	    push (@rlist, $1);
+	}
 
 	# The search function is constructed dynamically by
 	# scan_m4_files.  The last parenthethical match makes sure we
@@ -390,7 +388,7 @@ sub add_file
 }
 
 # Scan a single M4 file.  Return contents.
-sub scan_file
+sub scan_file ($)
 {
     local ($file) = @_;
 
@@ -426,7 +424,7 @@ sub scan_file
 ################################################################
 
 # Write output.
-sub write_aclocal
+sub write_aclocal ()
 {
     return if ! length ($output);
 
@@ -443,7 +441,7 @@ sub write_aclocal
     print $out
 "# generated automatically by aclocal $VERSION -*- Autoconf -*-
 
-# Copyright 1996, 1997, 1998, 1999, 2000, 2001, 2002
+# Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002
 # Free Software Foundation, Inc.
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
