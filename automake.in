@@ -7878,31 +7878,41 @@ EOF
 	$last = $iter;
     }
 
-    my ($one, $two, $three, $four, $max);
+    my @four;
     print "\nFiles which are automatically distributed, if found:\n";
     format USAGE_FORMAT =
   @<<<<<<<<<<<<<<<<   @<<<<<<<<<<<<<<<<   @<<<<<<<<<<<<<<<<   @<<<<<<<<<<<<<<<<
-  $one,               $two,               $three,             $four
+  $four[0],           $four[1],           $four[2],           $four[3]
 .
     $~ = "USAGE_FORMAT";
-    $max = int (($#lcomm + 1) / 4);
 
-    for (my $i = 0; $i < $max; ++$i)
+    my $cols = 4;
+    my $rows = int(@lcomm / $cols);
+    my $rest = @lcomm % $cols;
+
+    if ($rest)
     {
-	$one = $lcomm[$i];
-	$two = $lcomm[$max + $i];
-	$three = $lcomm[2 * $max + $i];
-	$four = $lcomm[3 * $max + $i];
-	write;
+	$rows++;
+    }
+    else
+    {
+	$rest = $cols;
     }
 
-    my $mod = ($#lcomm + 1) % 4;
-    if ($mod != 0)
+    for (my $y = 0; $y < $rows; $y++)
     {
-	$one = $lcomm[$max];
-	$two = ($mod > 1) ? $lcomm[2 * $max] : '';
-	$three = ($mod > 2) ? $lcomm[3 * $max] : '';
-	$four = ($mod > 3) ? $lcomm[4 * $max] : '';
+	@four = ("", "", "", "");
+	for (my $x = 0; $x < $cols; $x++)
+	{
+	    last if $y + 1 == $rows && $x == $rest;
+
+	    my $idx = (($x > $rest)
+		       ?  ($rows * $rest + ($rows - 1) * ($x - $rest))
+		       : ($rows * $x));
+
+	    $idx += $y;
+	    $four[$x] = $lcomm[$idx];
+	}
 	write;
     }
 
