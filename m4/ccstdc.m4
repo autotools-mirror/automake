@@ -27,7 +27,9 @@ AC_BEFORE([$0], [AC_C_CONST])
 dnl Force this before AC_PROG_CPP.  Some cpp's, eg on HPUX, require
 dnl a magic option to avoid problems with ANSI preprocessor commands
 dnl like #elif.
-AC_BEFORE([$0], [AC_PROG_CPP])
+dnl FIXME: can't do this because then AC_AIX won't work due to a
+dnl circular dependency.
+dnl AC_BEFORE([$0], [AC_PROG_CPP])
 AC_MSG_CHECKING(for ${CC-cc} option to accept ANSI C)
 AC_CACHE_VAL(am_cv_prog_cc_stdc,
 [am_cv_prog_cc_stdc=no
