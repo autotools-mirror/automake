@@ -339,7 +339,6 @@ proginst.test \
 python.test \
 python2.test \
 python3.test \
-ranlib.test \
 recurs.test \
 recurs2.test \
 remake.test \

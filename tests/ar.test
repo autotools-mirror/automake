@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 2001, 2002, 2003  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -18,26 +18,28 @@
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-# Test for setting AR in configure.in.
+# Make sure that AR, ARFLAGS, and RANLIB can be substituted from configure.in.
 
 . ./defs || exit 1
 
-cat > configure.in << 'END'
-AC_INIT
-AM_INIT_AUTOMAKE($me, 1.0)
-AC_PROG_CC
-AC_PROG_RANLIB
-AC_PATH_PROG(AR, arppc)
-AC_CONFIG_FILES(Makefile)
+set -e
+
+cat >> configure.in << 'END'
+AC_SUBST([AR], ['echo it works'])
+AC_SUBST([ARFLAGS], ['>'])
+AC_SUBST([RANLIB], ['echo really works >>'])
+AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
 lib_LIBRARIES = libfoo.a
-libfoo_a_SOURCES = maude.c
+libfoo_a_SOURCES =
 END
 
-$ACLOCAL || exit 1
-$AUTOMAKE || exit 1
-
-grep 'AR = ar' Makefile.in && exit 1
-exit 0
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
+./configure
+$MAKE
+grep 'it works' libfoo.a
+grep 'really works' libfoo.a
