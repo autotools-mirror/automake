@@ -5755,6 +5755,8 @@ sub variable_conditions ($)
     %vars_scanned = ();
     foreach my $cond (&variable_conditions_sub ($var, '', ()))
     {
+        next
+	  if $cond eq 'FALSE';
 	$uniqify{$cond} = 1;
     }
 
@@ -5918,9 +5920,15 @@ sub variable_conditions_reduce
     my @ret = ();
     foreach my $cond (@conds)
     {
-	next
-	  if ! conditionals_true_when (($cond), (@ret));
-	push (@ret, $cond);
+        # FALSE is absorbent.
+        if ($cond eq 'FALSE')
+	  {
+	    return ('FALSE');
+	  }
+	elsif (conditionals_true_when (($cond), (@ret)))
+	  {
+	    push (@ret, $cond);
+	  }
     }
 
     return @ret;
