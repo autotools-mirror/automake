@@ -324,9 +324,6 @@ my $ac_output_line = 0;
 my @config_aux_path = ('.', '..', '../..');
 my $config_aux_dir = '';
 
-# Whether AC_PROG_MAKE_SET has been seen in configure.ac.
-my $seen_make_set = 0;
-
 # Whether AM_GNU_GETTEXT has been seen in configure.ac.
 my $seen_gettext = 0;
 # Line number at which AM_GNU_GETTEXT seen.
@@ -339,18 +336,12 @@ my $all_linguas = '';
 # Line number at which it appears.
 my $all_linguas_line = 0;
 
-# 1 if AC_PROG_INSTALL seen.
-my $seen_prog_install = 0;
-
 # TRUE if AC_DECL_YYTEXT was seen.
 my $seen_decl_yytext = 0;
 
 # TRUE if we've seen AC_CANONICAL_(HOST|SYSTEM).  The presence of
 # AC_CHECK_TOOL also sets this.
 my $seen_canonical = 0;
-
-# TRUE if we've seen AC_ARG_PROGRAM.
-my $seen_arg_prog = 0;
 
 # TRUE if we've seen AC_PROG_LIBTOOL.
 my $seen_libtool = 0;
@@ -1434,6 +1425,56 @@ sub output_lex_build_rule
 				      'C_SUFFIX'   => $c_suffix));
 }
 
+    if ($use_dependencies)
+    {
+	# Include auto-dep code.  Don't include it if DEP_FILES would
+	# be empty.
+	if (&saw_sources_p (0) && keys %dep_files)
+	{
+	    my $config_aux_dir_specified = ($config_aux_dir ne '.'
+					    && $config_aux_dir ne '');
+
+	    # Set $require_file_found{'depcomp'} if the depcomp file exists,
+	    # before calling require_config_file on `depcomp'.  This makes
+	    # require_file_internal skip its buggy existence test that would
+	    # make automake fail (with `required file `lib/depcomp' not found')
+	    # when AC_CONFIG_AUX_DIR is not set.  See tests/subdir4.test.
+	    my $depcomp_dir = ($config_aux_dir_specified ? $config_aux_dir
+			       : '.');
+	    $require_file_found{'depcomp'} = 1 if -f "$depcomp_dir/depcomp";
+
+	    # Set location of depcomp.
+	    my $prefix = ($config_aux_dir_specified ? $config_aux_dir
+			  : '$(top_srcdir)');
+
+	    &define_variable ('depcomp', "\$(SHELL) $prefix/depcomp");
+
+	    &require_config_file ($FOREIGN, 'depcomp');
+
+	    my @deplist = sort keys %dep_files;
+
+	    # We define this as a conditional variable because BSD
+	    # make can't handle backslashes for continuing comments on
+	    # the following line.
+	    &define_pretty_variable ('DEP_FILES', 'AMDEP_TRUE', @deplist);
+
+	    # Generate each `include' individually.  Irix 6 make will
+	    # not properly include several files resulting from a
+	    # variable expansion; generating many separate includes
+	    # seems safest.
+	    $output_rules .= "\n";
+	    foreach my $iter (@deplist)
+ 	    {
+		$output_rules .= '@AMDEP_TRUE@@_am_include@ ' . $iter . "\n";
+	    }
+
+	    $output_rules .= &file_contents ('depend');
+	}
+    }
+    else
+    {
+	&define_variable ('depcomp', '');
+    }
 
 # Check to make sure a source defined in LIBOBJS is not explicitly
 # mentioned.  This is a separate function (as opposed to being inlined
@@ -2082,12 +2123,6 @@ sub handle_programs
 				    'noinst', 'check');
     return if ! @proglist;
 
-    # If a program is installed, this is required.  We only want this
-    # error to appear once.
-    &am_conf_error ("AC_ARG_PROGRAM must be used")
-	unless $seen_arg_prog;
-    $seen_arg_prog = 1;
-
     my $seen_libobjs = 0;
     foreach my $one_file (@proglist)
     {
@@ -2480,15 +2515,6 @@ sub handle_scripts
 	    $scripts_installed = 1;
 	    # push (@check_tests, 'check-' . $key . 'SCRIPTS');
 	}
-    }
-
-    if ($scripts_installed)
-    {
-	# If a program is installed, this is required.  We only want this
-	# error to appear once.
-	&am_conf_error ("AC_ARG_PROGRAM must be used")
-	    unless $seen_arg_prog;
-	$seen_arg_prog = 1;
     }
 }
 
@@ -4508,17 +4534,10 @@ sub scan_one_autoconf_file
         # This macro handles several different things.
         if (/$AM_INIT_AUTOMAKE_PATTERN/o)
 	{
-	    $seen_make_set = 1;
-	    $seen_arg_prog = 1;
-	    $seen_prog_install = 1;
 	    ($package_version = $1) =~ s/$AM_PACKAGE_VERSION_PATTERN/$1/o;
 	    $package_version_line = $.;
 	    $seen_init_automake = 1;
 	}
-
-	# Some things required by Automake.
-	$seen_make_set = 1 if /AC_PROG_MAKE_SET/;
-	$seen_arg_prog = 1 if /AC_ARG_PROGRAM/;
 
 	if (/AM_PROG_LEX/)
 	{
@@ -4571,7 +4590,6 @@ sub scan_one_autoconf_file
 	    $configure_cond{'MAINTAINER_MODE'} = 1;
 	}
 
-	$seen_prog_install = 1 if /AC_PROG_INSTALL/;
         $seen_lispdir = 1 if /AM_PATH_LISPDIR/;
 
         if (/AM_PATH_PYTHON/)
@@ -4666,14 +4684,6 @@ sub scan_autoconf_files
 
     &am_conf_error ("`AM_INIT_AUTOMAKE' must be used")
 	if ! $seen_init_automake;
-
-    # Always require AC_PROG_MAKE_SET.  We might randomly use $(MAKE)
-    # for our own reasons.
-    &am_conf_error ("`AC_PROG_MAKE_SET' must be used")
-	if ! $seen_make_set;
-
-    &am_conf_error ("`AC_PROG_INSTALL' must be used")
-      if ! $seen_prog_install;
 
     # Look for some files we need.  Always check for these.  This
     # check must be done for every run, even those where we are only
