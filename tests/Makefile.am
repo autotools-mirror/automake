@@ -2,7 +2,7 @@
 
 AUTOMAKE_OPTIONS = gnits
 
-XFAIL_TESTS = ldflags.test
+XFAIL_TESTS = ldflags.test pr72.test
 TESTS =	\
 acinclude.test \
 aclocal.test \
@@ -192,6 +192,7 @@ ppf77.test \
 pr2.test \
 pr9.test \
 pr19.test \
+pr72.test \
 prefix.test \
 primary.test \
 primary2.test \
