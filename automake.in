@@ -224,6 +224,9 @@ $seen_objext = 0;
 # TRUE if we've seen AC_ENABLE_MULTILIB.
 $seen_multilib = 0;
 
+# TRUE if we've seen AM_PROG_CC_C_O
+$seen_cc_c_o = 0;
+
 # Hash table of discovered configure substitutions.  Keys are names,
 # values are `FILE:LINE' strings which are used by error message
 # generation.
@@ -726,7 +729,8 @@ sub handle_options
 		   || $_ eq 'dist-shar' || $_ eq 'dist-zip'
 		   || $_ eq 'dist-tarZ' || $_ eq 'dist-bzip2'
 		   || $_ eq 'dejagnu' || $_ eq 'no-texinfo.tex'
-		   || $_ eq 'readme-alpha' || $_ eq 'check-news')
+		   || $_ eq 'readme-alpha' || $_ eq 'check-news'
+		   || $_ eq 'subdir-objects')
 	    {
 		# Explicitly recognize these.
 	    }
@@ -1098,8 +1102,7 @@ sub handle_single_transform_list
 		# Found the language, so see what it says.
 		local ($subr) = 'lang_' . $lang . '_rewrite';
 		# Note: computed subr call.
-		# FIXME: should pass directory to this function.
-		local ($r) = & $subr ($base, $extension);
+		local ($r) = & $subr ($directory, $base, $extension);
 		# Skip this entry if we were asked not to process it.
 		next if $r == $LANG_IGNORE;
 
@@ -1164,26 +1167,37 @@ sub handle_single_transform_list
 		# sure the subdir exists at build time.
 		if ($object =~ /\//)
 		{
+		    # FIXME: check that $DIRECTORY is somewhere in the
+		    # project
+
+		    # We don't allow `..' in object file names for
+		    # *any* source, not just Java.  For Java it just
+		    # doesn't make sense, but in general it is
+		    # a problem because we can't pick a good name for
+		    # the .deps entry.
 		    if ($object =~ /(\/|^)\.\.\//)
 		    {
 			&am_error ("\`$full' contains \`..' component but should not");
 		    }
 
+		    push (@dep_list, $directory . '/.dirstamp');
+
+		    # If we're generating dependencies, we also want
+		    # to make sure that the appropriate subdir of the
+		    # .deps directory is created.
+		    if ($use_dependencies)
+		    {
+			push (@dep_list, '.deps/' . $directory . '/.dirstamp');
+		    }
+
 		    if (! defined $directory_map{$directory})
 		    {
 			$directory_map{$directory} = 1;
-
-			push (@dep_list, $directory . '/.dirstamp');
 			$output_rules .= ($directory . "/.dirstamp:\n"
 					  . "\t\@\$(mkinstalldirs) $directory\n"
 					  . "\t\@: > $directory/.dirstamp\n");
-
-			# If we're generating dependencies, we also
-			# want to make sure that the appropriate
-			# subdir of the .deps directory is created.
 			if ($use_dependencies)
 			{
-			    push (@dep_list, '.deps/' . $directory . '/.dirstamp');
 			    $output_rules .= ('.deps/' . $directory
 					      . "/.dirstamp:\n"
 					      . "\t\@\$(mkinstalldirs) .deps/$directory\n"
@@ -4277,6 +4291,9 @@ sub scan_one_configure_file
 	    $configure_vars{'OBJEXT'} = $filename . ':' . $.;
 	}
 
+	# Check for `-c -o' code.
+	$seen_cc_c_o = 1 if /AM_PROG_CC_C_O/;
+
 	# Check for NLS support.
 	if (/AM_GNU_GETTEXT/)
 	{
@@ -4573,7 +4590,7 @@ sub check_gnits_standards
 # Functions to handle files of each language.
 
 # Each `lang_X_rewrite' function follows a simple formula:
-# * Args are the base name and extension of the file.
+# * Args are the directory, base name and extension of the file.
 # * Return value is 1 if file is to be dealt with, 0 otherwise.
 # Much of the actual processing is handled in handle_single_transform_list.
 # These functions exist so that auxiliary information can be recorded
@@ -4584,7 +4601,7 @@ sub check_gnits_standards
 # Rewrite a single C source file.
 sub lang_c_rewrite
 {
-    local ($base, $ext) = @_;
+    local ($directory, $base, $ext) = @_;
 
     if (defined $options{'ansi2knr'} && $base =~ /_$/)
     {
@@ -4592,8 +4609,26 @@ sub lang_c_rewrite
 	&am_error ("C source file \`$base.c' would be deleted by ansi2knr rules");
     }
 
+    local ($r) = $LANG_PROCESS;
+    if (defined $options{'subdir-objects'})
+    {
+	$r = $LANG_SUBDIR;
+	$base = $directory . '/' . $base;
+
+	if (! $seen_cc_c_o)
+	{
+	    # Only give error once.
+	    $seen_cc_c_o = 1;
+	    # FIXME: line number.
+	    &am_error ("C objects in subdir but \`AM_PROG_CC_C_O' not in \`configure.in'");
+	}
+
+	&require_file ($FOREIGN, 'compile')
+	    if $relative_dir eq '.';
+    }
+
     $de_ansi_files{$base} = 1;
-    return $LANG_PROCESS;
+    return $r;
 }
 
 # Rewrite a single C++ source file.
@@ -4612,9 +4647,9 @@ sub lang_header_rewrite
 # Rewrite a single yacc file.
 sub lang_yacc_rewrite
 {
-    local ($base, $ext) = @_;
+    local ($directory, $base, $ext) = @_;
 
-    &lang_c_rewrite ($base, $ext);
+    &lang_c_rewrite ($directory, $base, $ext);
     $yacc_sources{$base . '.' . $ext} = 1;
     $ext =~ tr/y/c/;
     &saw_extension ('c');
@@ -4625,7 +4660,7 @@ sub lang_yacc_rewrite
 # Rewrite a single yacc++ file.
 sub lang_yaccxx_rewrite
 {
-    local ($base, $ext) = @_;
+    local ($directory, $base, $ext) = @_;
 
     $yacc_sources{$base . '.' . $ext} = 1;
     $ext =~ tr/y/c/;
@@ -4637,9 +4672,9 @@ sub lang_yaccxx_rewrite
 # Rewrite a single lex file.
 sub lang_lex_rewrite
 {
-    local ($base, $ext) = @_;
+    local ($directory, $base, $ext) = @_;
 
-    &lang_c_rewrite ($base, $ext);
+    &lang_c_rewrite ($directory, $base, $ext);
     $lex_sources{$base . '.' . $ext} = 1;
     $ext =~ tr/l/c/;
     &saw_extension ('c');
@@ -4650,7 +4685,7 @@ sub lang_lex_rewrite
 # Rewrite a single lex++ file.
 sub lang_lexxx_rewrite
 {
-    local ($base, $ext) = @_;
+    local ($directory, $base, $ext) = @_;
 
     $lex_sources{$base . '.' . $ext} = 1;
     $ext =~ tr/l/c/;
@@ -6474,7 +6509,7 @@ sub initialize_global_constants
 	 "libversion.in", "mdate-sh", "mkinstalldirs", "install-sh",
 	 'texinfo.tex', "ansi2knr.c", "ansi2knr.1", 'elisp-comp',
 	 'ylwrap', 'acinclude.m4', @libtoolize_files,
-	 'missing'
+	 'missing', 'compile'
 	 );
 
     # Commonly used files we auto-include, but only sometimes.
