@@ -28,8 +28,12 @@ dist_perllib_DATA = \
   DisjConditions.pm \
   FileUtils.pm \
   General.pm \
+  Item.pm \
+  ItemDef.pm \
   Location.pm \
   Options.pm \
+  Rule.pm \
+  RuleDef.pm \
   Struct.pm \
   Variable.pm \
   VarDef.pm \

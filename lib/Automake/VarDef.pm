@@ -19,10 +19,11 @@ package Automake::VarDef;
 use strict;
 use Carp;
 use Automake::ChannelDefs;
+use Automake::ItemDef;
 
 require Exporter;
 use vars '@ISA', '@EXPORT';
-@ISA = qw/Exporter/;
+@ISA = qw/Automake::ItemDef Exporter/;
 @EXPORT = qw (&VAR_AUTOMAKE &VAR_CONFIGURE &VAR_MAKEFILE
 	      &VAR_ASIS &VAR_PRETTY &VAR_SILENT &VAR_SORTED);
 
@@ -112,9 +113,12 @@ use constant VAR_SORTED => 3;	# Sorted and pretty-printed.
 
 =head2 Methods
 
+C<VarDef> defines the following methods in addition to those inherited
+from L<Automake::ItemDef>.
+
 =over 4
 
-=item C<my $def = Automake::new ($varname, $value, $comment, $location, $type, $owner, $pretty)>
+=item C<my $def = new Automake::VarDef ($varname, $value, $comment, $location, $type, $owner, $pretty)>
 
 Create a new Makefile-variable definition.  C<$varname> is the name of
 the variable being defined and C<$value> its value.
@@ -150,17 +154,11 @@ sub new ($$$$$$$$)
       error $location, "$var must be set with `=' before using `+='";
     }
 
-  my $self = {
-    value => $value,
-    comment => $comment,
-    location => $location,
-    type => $type,
-    owner => $owner,
-    pretty => $pretty,
-    seen => 0,
-  };
-  bless $self, $class;
-
+  my $self = Automake::ItemDef::new ($class, $comment, $location, $owner);
+  $self->{'value'} = $value;
+  $self->{'type'} = $type;
+  $self->{'pretty'} = $pretty;
+  $self->{'seen'} = 0;
   return $self;
 }
 
@@ -192,13 +190,7 @@ sub append ($$$)
 
 =item C<$def-E<gt>value>
 
-=item C<$def-E<gt>comment>
-
-=item C<$def-E<gt>location>
-
 =item C<$def-E<gt>type>
-
-=item C<$def-E<gt>owner>
 
 =item C<$def-E<gt>pretty>
 
@@ -213,28 +205,10 @@ sub value ($)
   return $self->{'value'};
 }
 
-sub comment ($)
-{
-  my ($self) = @_;
-  return $self->{'comment'};
-}
-
-sub location ($)
-{
-  my ($self) = @_;
-  return $self->{'location'};
-}
-
 sub type ($)
 {
   my ($self) = @_;
   return $self->{'type'};
-}
-
-sub owner ($)
-{
-  my ($self) = @_;
-  return $self->{'owner'};
 }
 
 sub pretty ($)
@@ -330,7 +304,7 @@ sub dump ($)
 
 =head1 SEE ALSO
 
-L<Automake::Variable>.
+L<Automake::Variable>, L<Automake::ItemDef>.
 
 =cut
 

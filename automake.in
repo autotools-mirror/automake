@@ -135,9 +135,10 @@ use Automake::Options;
 use Automake::Version;
 use Automake::Variable;
 use Automake::VarDef;
+use Automake::Rule;
+use Automake::RuleDef;
 use Automake::Wrap 'makefile_wrap';
 use File::Basename;
-use Tie::RefHash;
 use Carp;
 
 ## ----------- ##
@@ -165,8 +166,6 @@ my $TARGET_PATTERN='[$a-zA-Z_.@%][-.a-zA-Z0-9_(){}/$+@%]*';
 my $RULE_PATTERN =
   "^($TARGET_PATTERN(?:(?:\\\\\n|\\s)+$TARGET_PATTERN)*) *:([^=].*|)\$";
 
-my $SUFFIX_RULE_PATTERN =
-    '^(\.[a-zA-Z0-9_(){}$+@]+)(\.[a-zA-Z0-9_(){}$+@]+)' . "\$";
 # Only recognize leading spaces, not leading tabs.  If we recognize
 # leading tabs here then we need to make the reader smarter, because
 # otherwise it will think rules like `foo=bar; \' are errors.
@@ -412,10 +411,6 @@ my %required_targets =
 # should distribute depcomp -- has been generated.)
 my $automake_needs_to_reprocess_all_files = 0;
 
-# Same as $suffix_rules (declared below), but records only the
-# default rules supplied by the languages Automake supports.
-my $suffix_rules_default;
-
 # If a file name appears as a key in this hash, then it has already
 # been checked for.  This variable is local to the "require file"
 # functions.
@@ -447,30 +442,6 @@ my $output_trailer;
 my $output_all;
 my $output_header;
 
-# Suffixes found during a run.
-my @suffixes;
-
-# This holds the names which are targets.  These also appear in
-# %contents.  $targets{TARGET}{COND} is the location of the definition
-# of TARGET for condition COND.  TARGETs should not include
-# a trailing $(EXEEXT), we record this in %target_name.
-my %targets;       tie %targets, 'Tie::RefHash::Nestable';
-
-# $target_source{TARGET}{COND} is the filename where TARGET
-# were defined for condition COND.  Note this must be a
-# filename, *without* any line number.
-my %target_source; tie %target_source, 'Tie::RefHash::Nestable';
-
-# $target_name{TARGET}{COND} is the real name of TARGET (in condition COND).
-# The real name is often TARGET or TARGET$(EXEEXT), and TARGET never
-# contain $(EXEEXT)
-my %target_name;   tie %target_name, 'Tie::RefHash::Nestable';
-
-# $target_owner{TARGET}{COND} the owner of TARGET in condition COND.
-my %target_owner;  tie %target_owner, 'Tie::RefHash::Nestable';
-use constant TARGET_AUTOMAKE => 0; # Target defined by Automake.
-use constant TARGET_USER => 1;	# Target defined in the user's Makefile.am.
-
 # This is the conditional stack, updated on if/else/endif, and
 # used to build Condition objects.
 my @cond_stack;
@@ -487,27 +458,6 @@ my %dist_dirs;
 my @all;
 my @check;
 my @check_tests;
-
-# Holds the dependencies of targets which dependencies are factored.
-# Typically, `.PHONY' will appear in plenty of *.am files, but must
-# be output once.  Arguably all pure dependencies could be subject
-# to this factorization, but it is not unpleasant to have paragraphs
-# in Makefile: keeping related stuff altogether.
-my %dependencies;
-
-# &depend ($CATEGORY, @DEPENDENDEES)
-# ----------------------------------
-# The target $CATEGORY depends on @DEPENDENDEES.
-sub depend ($@)
-{
-  my ($category, @dependendees) = @_;
-  push (@{$dependencies{$category}}, @dependendees);
-}
-
-
-# Holds the factored actions.  Tied to %DEPENDENCIES, i.e., filled
-# only when keys exists in %DEPENDENCIES.
-my %actions;
 
 # Keys in this hash table are files to delete.  The associated
 # value tells when this should happen (MOSTLY_CLEAN, DIST_CLEAN, etc.)
@@ -556,27 +506,6 @@ my @dist_targets;
 # trailing `/'.
 my %de_ansi_files;
 
-# This maps the source extension for all suffix rule seen to
-# a \hash whose keys are the possible output extensions.
-#
-# Note that this is transitively closed by construction:
-# if we have
-#       exists $suffix_rules{$ext1}{$ext2}
-#    && exists $suffix_rules{$ext2}{$ext3}
-# then we also have
-#       exists $suffix_rules{$ext1}{$ext3}
-#
-# So it's easy to check whether '.foo' can be transformed to '.$(OBJEXT)'
-# by checking whether $suffix_rules{'.foo'}{'.$(OBJEXT)'} exist.  This
-# will work even if transforming '.foo' to '.$(OBJEXT)' involves a chain
-# of several suffix rules.
-#
-# The value of `$suffix_rules{$ext1}{$ext2}' is the a pair
-# `[ $next_sfx, $dist ]' where `$next_sfx' is target suffix
-# for the next rule to use to reach '$ext2', and `$dist' the
-# distance to `$ext2'.
-my $suffix_rules;
-
 # This is the name of the redirect `all' target to use.
 my $all_target;
 
@@ -609,32 +538,14 @@ my $get_object_extension_was_run;
 
 ################################################################
 
-# Pattern that matches all know input extensions (i.e. extensions used
-# by the languages supported by Automake).  Using this pattern
-# (instead of `\..*$') to match extensions allows Automake to support
-# dot-less extensions.
-my $KNOWN_EXTENSIONS_PATTERN = "";
-my @known_extensions_list = ();
-
-# accept_extensions (@EXTS)
-# -------------------------
-# Update $KNOWN_EXTENSIONS_PATTERN to recognize the extensions
-# listed @EXTS.  Extensions should contain a dot if needed.
-sub accept_extensions (@)
-{
-    push @known_extensions_list, @_;
-    $KNOWN_EXTENSIONS_PATTERN =
-	'(?:' . join ('|', map (quotemeta, @known_extensions_list)) . ')';
-}
-
 # var_SUFFIXES_trigger ($TYPE, $VALUE)
 # ------------------------------------
-# This is called automagically by macro_define() when SUFFIXES
+# This is called by Automake::Variable::define() when SUFFIXES
 # is defined ($TYPE eq '') or appended ($TYPE eq '+').
 # The work here needs to be performed as a side-effect of the
 # macro_define() call because SUFFIXES definitions impact
-# on $KNOWN_EXTENSIONS_PATTERN, and $KNOWN_EXTENSIONS_PATTERN
-# are used when parsing the input am file.
+# on $KNOWN_EXTENSIONS_PATTERN which is used used when parsing
+# the input am file.
 sub var_SUFFIXES_trigger ($$)
 {
     my ($type, $value) = @_;
@@ -671,15 +582,9 @@ sub initialize_per_input ()
     $output_all = '';
     $output_header = '';
 
-    @suffixes = ();
-
     Automake::Options::reset;
     Automake::Variable::reset;
-
-    %targets = ();
-    %target_source = ();
-    %target_name = ();
-    %target_owner = ();
+    Automake::Rule::reset;
 
     @cond_stack = ();
 
@@ -690,52 +595,6 @@ sub initialize_per_input ()
     @all = ();
     @check = ();
     @check_tests = ();
-
-    %dependencies =
-      (
-       # Texinfoing.
-       'dvi'      => [],
-       'dvi-am'   => [],
-       'pdf'      => [],
-       'pdf-am'   => [],
-       'ps'       => [],
-       'ps-am'    => [],
-       'info'     => [],
-       'info-am'  => [],
-       'html'     => [],
-       'html-am'  => [],
-
-       # Installing/uninstalling.
-       'install-data-am'      => [],
-       'install-exec-am'      => [],
-       'uninstall-am'         => [],
-
-       'install-man'	      => [],
-       'uninstall-man'	      => [],
-
-       'install-info'         => [],
-       'install-info-am'      => [],
-       'uninstall-info'       => [],
-
-       'installcheck-am'      => [],
-
-       # Cleaning.
-       'clean-am'             => [],
-       'mostlyclean-am'       => [],
-       'maintainer-clean-am'  => [],
-       'distclean-am'         => [],
-       'clean'                => [],
-       'mostlyclean'          => [],
-       'maintainer-clean'     => [],
-       'distclean'            => [],
-
-       # Tarballing.
-       'dist-all'             => [],
-
-       # Phoning.
-       '.PHONY'               => []
-      );
-    %actions = ();
 
     %clean_files = ();
 
@@ -752,18 +611,6 @@ sub initialize_per_input ()
     @dist_targets = ();
 
     %de_ansi_files = ();
-
-
-    # The first time we initialize the variables,
-    # we save the value of $suffix_rules.
-    if (defined $suffix_rules_default)
-      {
-	$suffix_rules = $suffix_rules_default;
-      }
-    else
-      {
-	$suffix_rules_default = $suffix_rules;
-      }
 
     $all_target = '';
 
@@ -1002,22 +849,6 @@ register_language ('name' => 'java',
 
 # Error reporting functions.
 
-# err_target ($TARGETNAME, $MESSAGE, [%OPTIONS])
-# ----------------------------------------------
-# Uncategorized errors about targets.
-sub err_target ($$;%)
-{
-  msg_target ('error', @_);
-}
-
-# err_cond_target ($COND, $TARGETNAME, $MESSAGE, [%OPTIONS])
-# ----------------------------------------------------------
-# Uncategorized errors about conditional targets.
-sub err_cond_target ($$$;%)
-{
-  msg_cond_target ('error', @_);
-}
-
 # err_am ($MESSAGE, [%OPTIONS])
 # -----------------------------
 # Uncategorized errors about the current Makefile.am.
@@ -1032,26 +863,6 @@ sub err_am ($;%)
 sub err_ac ($;%)
 {
   msg_ac ('error', @_);
-}
-
-# msg_cond_target ($CHANNEL, $COND, $TARGETNAME, $MESSAGE, [%OPTIONS])
-# --------------------------------------------------------------------
-# Messages about conditional targets.
-sub msg_cond_target ($$$$;%)
-{
-  my ($channel, $cond, $target, $msg, %opts) = @_;
-  msg $channel, $targets{$target}{$cond}, $msg, %opts;
-}
-
-# msg_target ($CHANNEL, $TARGETNAME, $MESSAGE, [%OPTIONS])
-# --------------------------------------------------------
-# Messages about targets.
-sub msg_target ($$$;%)
-{
-  my ($channel, $target, $msg, %opts) = @_;
-  # Don't know which condition is concerned.  Pick any.
-  my $cond = target_conditions ($target)->one_cond;
-  msg_cond_target ($channel, $cond, $target, $msg, %opts);
 }
 
 # msg_am ($CHANNEL, $MESSAGE, [%OPTIONS])
@@ -1070,20 +881,6 @@ sub msg_ac ($$;%)
 {
   my ($channel, $msg, %opts) = @_;
   msg $channel, $configure_ac, $msg, %opts;
-}
-
-# $BOOL
-# reject_target ($VAR, $ERROR_MSG)
-# --------------------------------
-sub reject_target ($$)
-{
-  my ($target, $msg) = @_;
-  if (target_defined ($target))
-    {
-      err_target $target, $msg;
-      return 1;
-    }
-  return 0;
 }
 
 ################################################################
@@ -1515,8 +1312,7 @@ sub handle_languages
     # suffix rule was learned), don't bother with the C stuff.  But if
     # anything else creeps in, then use it.
     $needs_c = 1
-      if $need_link || ((scalar keys %$suffix_rules)
-			- (scalar keys %$suffix_rules_default)) > 1;
+      if $need_link || suffix_rules_count > 1;
 
     if ($needs_c)
       {
@@ -3274,7 +3070,7 @@ sub handle_dist
     {
       if (-f ($relative_dir . "/" . $cfile)
 	  # The file might be absent, but if it can be built it's ok.
-	  || exists $targets{$cfile})
+	  || rule $cfile)
 	{
 	  &push_dist_common ($cfile);
 	}
@@ -3349,7 +3145,7 @@ sub handle_dist
     }
 
   # Rule to check whether a distribution is viable.
-  my %transform = ('DISTCHECK-HOOK' => &target_defined ('distcheck-hook'),
+  my %transform = ('DISTCHECK-HOOK' => !! rule 'distcheck-hook',
 		   'GETTEXT' => $seen_gettext && !$seen_gettext_external);
 
   # Prepend $(distdir) to each directory given.
@@ -3399,7 +3195,7 @@ sub handle_dist
   # allows users to do random weird things to the distribution
   # before it is packaged up.
   push (@dist_targets, 'dist-hook')
-    if &target_defined ('dist-hook');
+    if rule 'dist-hook';
   $transform{'DIST-TARGETS'} = join(' ', @dist_targets);
 
   $output_rules .= &file_contents ('distdir',
@@ -3918,17 +3714,18 @@ sub handle_footer
     $output_vars .= 'SOURCES = ' . variable_value ('SOURCES') . "\n\n"
       if variable_value ('SOURCES');
 
-    reject_target ('.SUFFIXES',
-		   "use variable `SUFFIXES', not target `.SUFFIXES'");
+    reject_rule ('.SUFFIXES',
+		 "use variable `SUFFIXES', not target `.SUFFIXES'");
 
     # Note: AIX 4.1 /bin/make will fail if any suffix rule appears
     # before .SUFFIXES.  So we make sure that .SUFFIXES appears before
     # anything else, by sticking it right after the default: target.
     $output_header .= ".SUFFIXES:\n";
     my $suffixes = var 'SUFFIXES';
+    my @suffixes = Automake::Rule::suffixes;
     if (@suffixes || $suffixes)
     {
-	# Make sure suffixes has unique elements.  Sort them to ensure
+	# Make sure SUFFIXES has unique elements.  Sort them to ensure
 	# the output remains consistent.  However, $(SUFFIXES) is
 	# always at the start of the list, unsorted.  This is done
 	# because make will choose rules depending on the ordering of
@@ -3961,7 +3758,7 @@ sub handle_install ()
 			     ? (" \$(BUILT_SOURCES)\n"
 				. "\t\$(MAKE) \$(AM_MAKEFLAGS)")
 			     : ''),
-     'installdirs-local' => (target_defined ('installdirs-local')
+     'installdirs-local' => (rule 'installdirs-local'
 			     ? ' installdirs-local' : ''),
      am__installdirs => variable_value ('am__installdirs') || '');
 }
@@ -3987,7 +3784,7 @@ sub handle_all ($)
       }
 
     # Install `all' hooks.
-    if (&target_defined ("all-local"))
+    if (rule "all-local")
     {
       push (@all, "all-local");
       &depend ('.PHONY', "all-local");
@@ -4036,7 +3833,7 @@ sub handle_all ($)
 # Handle check merge target specially.
 sub do_check_merge_target ()
 {
-  if (target_defined ('check-local'))
+  if (rule 'check-local')
     {
       # User defined local form of target.  So include it.
       push @check_tests, 'check-local';
@@ -4146,16 +3943,16 @@ sub handle_factored_dependencies
     {
       my $x = $utarg;
       $x =~ s/(data|exec)-//;
-      reject_target ($utarg, "use `$x', not `$utarg'");
+      reject_rule ($utarg, "use `$x', not `$utarg'");
     }
 
-  reject_target ('install-local',
-		 "use `install-data-local' or `install-exec-local', "
-		 . "not `install-local'");
+  reject_rule ('install-local',
+	       "use `install-data-local' or `install-exec-local', "
+	       . "not `install-local'");
 
-  reject_target ('install-info-local',
-		 "`install-info-local' target defined but "
-		 . "`no-installinfo' option not in use")
+  reject_rule ('install-info-local',
+	       "`install-info-local' target defined but "
+	       . "`no-installinfo' option not in use")
     unless option 'no-installinfo';
 
   # Install the -local hooks.
@@ -4163,10 +3960,10 @@ sub handle_factored_dependencies
     {
       # Hooks are installed on the -am targets.
       s/-am$// or next;
-      if (&target_defined ("$_-local"))
+      if (rule "$_-local")
 	{
 	  depend ("$_-am", "$_-local");
-	  &depend ('.PHONY', "$_-local");
+	  depend ('.PHONY', "$_-local");
 	}
     }
 
@@ -4174,7 +3971,7 @@ sub handle_factored_dependencies
   # FIXME: Why not be as liberal as we are with -local hooks?
   foreach ('install-exec', 'install-data', 'uninstall')
     {
-      if (&target_defined ("$_-hook"))
+      if (rule ("$_-hook"))
 	{
 	  $actions{"$_-am"} .=
 	    ("\t\@\$(NORMAL_INSTALL)\n"
@@ -4205,7 +4002,8 @@ sub handle_factored_dependencies
       if ($_ ne '.PHONY')
 	{
 	  @undefined_conds =
-	    rule_define ($_, 'internal', TARGET_AUTOMAKE, TRUE, INTERNAL);
+	    Automake::Rule::define ($_, 'internal',
+				    RULE_AUTOMAKE, TRUE, INTERNAL);
 	}
       my @uniq_deps = uniq (sort @{$dependencies{$_}});
       foreach my $cond (@undefined_conds)
@@ -5120,7 +4918,7 @@ sub register_language (%)
     {
       foreach my $dest (&{$lang->output_extensions} ($suffix))
 	{
-	  &register_suffix_rule ('internal', $suffix, $dest);
+	  register_suffix_rule (INTERNAL, $suffix, $dest);
 	}
     }
 }
@@ -5260,18 +5058,6 @@ sub cond_stack_endif ($$$)
 ## ------------------------ ##
 
 
-# @CONDS
-# target_conditions ($TARGET)
-# ---------------------------
-# Get the list of conditions that a target is defined with.
-sub target_conditions ($)
-{
-    my ($target) = @_;
-    my @conds = keys %{$targets{$target}};
-    return new Automake::DisjConditions @conds;
-}
-
-
 # &define_pretty_variable ($VAR, $COND, $WHERE, @VALUE)
 # -----------------------------------------------------
 # Like define_variable, but the value is a list, and the variable may
@@ -5372,350 +5158,6 @@ sub define_linker_variable ($)
 		       . $lang->link),
 		      INTERNAL);
 }
-
-################################################################
-
-## ---------------- ##
-## Handling rules.  ##
-## ---------------- ##
-
-sub register_suffix_rule ($$$)
-{
-  my ($where, $src, $dest) = @_;
-
-  verb "Sources ending in $src become $dest";
-  push @suffixes, $src, $dest;
-
-  # When tranforming sources to objects, Automake uses the
-  # %suffix_rules to move from each source extension to
-  # `.$(OBJEXT)', not to `.o' or `.obj'.  However some people
-  # define suffix rules for `.o' or `.obj', so internally we will
-  # consider these extensions equivalent to `.$(OBJEXT)'.  We
-  # CANNOT rewrite the target (i.e., automagically replace `.o'
-  # and `.obj' by `.$(OBJEXT)' in the output), or warn the user
-  # that (s)he'd better use `.$(OBJEXT)', because Automake itself
-  # output suffix rules for `.o' or `.obj'...
-  $dest = '.$(OBJEXT)' if ($dest eq '.o' || $dest eq '.obj');
-
-  # Reading the comments near the declaration of $suffix_rules might
-  # help to understand the update of $suffix_rules that follows...
-
-  # Register $dest as a possible destination from $src.
-  # We might have the create the \hash.
-  if (exists $suffix_rules->{$src})
-    {
-      $suffix_rules->{$src}{$dest} = [ $dest, 1 ];
-    }
-  else
-    {
-      $suffix_rules->{$src} = { $dest => [ $dest, 1 ] };
-    }
-
-  # If we know how to transform $dest in something else, then
-  # we know how to transform $src in that "something else".
-  if (exists $suffix_rules->{$dest})
-    {
-      for my $dest2 (keys %{$suffix_rules->{$dest}})
-	{
-	  my $dist = $suffix_rules->{$dest}{$dest2}[1] + 1;
-	  # Overwrite an existing $src->$dest2 path only if
-	  # the path via $dest which is shorter.
-	  if (! exists $suffix_rules->{$src}{$dest2}
-	      || $suffix_rules->{$src}{$dest2}[1] > $dist)
-	    {
-	      $suffix_rules->{$src}{$dest2} = [ $dest, $dist ];
-	    }
-	}
-    }
-
-  # Similarly, any extension that can be derived into $src
-  # can be derived into the same extenstions as $src can.
-  my @dest2 = keys %{$suffix_rules->{$src}};
-  for my $src2 (keys %$suffix_rules)
-    {
-      if (exists $suffix_rules->{$src2}{$src})
-	{
-	  for my $dest2 (@dest2)
-	    {
-	      my $dist = $suffix_rules->{$src}{$dest2} + 1;
-	      # Overwrite an existing $src2->$dest2 path only if
-	      # the path via $src is shorter.
-	      if (! exists $suffix_rules->{$src2}{$dest2}
-		  || $suffix_rules->{$src2}{$dest2}[1] > $dist)
-		{
-		  $suffix_rules->{$src2}{$dest2} = [ $src, $dist ];
-		}
-	    }
-	}
-    }
-}
-
-# @CONDS
-# rule_define ($TARGET, $SOURCE, $OWNER, $COND, $WHERE)
-# -----------------------------------------------------
-# Define a new rule.  $TARGET is the rule name.  $SOURCE
-# is the filename the rule comes from.  $OWNER is the
-# owner of the rule (TARGET_AUTOMAKE or TARGET_USER).
-# $COND is the Condition under which the rule is defined.
-# $WHERE is the Location where the rule is defined.
-# Returns a (possibly empty) list of Conditions where the rule
-# should be defined.
-sub rule_define ($$$$$)
-{
-  my ($target, $source, $owner, $cond, $where) = @_;
-
-  prog_error "$where is not a reference"
-    unless ref $where;
-  prog_error "$cond is not a reference"
-    unless ref $cond;
-
-  # Don't even think about defining a rule in condition FALSE.
-  return () if $cond == FALSE;
-
-  # For now `foo:' will override `foo$(EXEEXT):'.  This is temporary,
-  # though, so we emit a warning.
-  (my $noexe = $target) =~ s,\$\(EXEEXT\)$,,;
-  if ($noexe ne $target
-      && exists $targets{$noexe}
-      && exists $targets{$noexe}{$cond}
-      && $target_name{$noexe}{$cond} ne $target)
-    {
-      # The no-exeext option enables this feature.
-      if (! option 'no-exeext')
-	{
-	  msg ('obsolete', $targets{$noexe}{$cond},
-	       "deprecated feature: target `$noexe' overrides "
-	       . "`$noexe\$(EXEEXT)'\n"
-	       . "change your target to read `$noexe\$(EXEEXT)'");
-	  msg ('obsolete', $where, "target `$target' was defined here");
-	}
-      # Don't `return ()' now, as this might hide target clashes
-      # detected below.
-    }
-
-  # For now on, strip off $(EXEEXT) from $target, so we can diagnose
-  # a clash if `ctags$(EXEEXT):' is redefined after `ctags:'.
-  my $realtarget = $target;
-  $target = $noexe;
-
-  # A GNU make-style pattern rule has a single "%" in the target name.
-  msg ('portability', $where,
-       "`%'-style pattern rules are a GNU make extension")
-    if $target =~ /^[^%]*%[^%]*$/;
-
-  # Diagnose target redefinitions.
-  if (exists $target_source{$target}{$cond})
-    {
-      # Sanity checks.
-      prog_error ("\$target_source{$target}{$cond} exists, but \$target_owner"
-		  . " doesn't.")
-	unless exists $target_owner{$target}{$cond};
-      prog_error ("\$target_source{$target}{$cond} exists, but \$targets"
-		  . " doesn't.")
-	unless exists $targets{$target}{$cond};
-      prog_error ("\$target_source{$target}{$cond} exists, but \$target_name"
-		  . " doesn't.")
-	unless exists $target_name{$target}{$cond};
-
-      my $oldowner  = $target_owner{$target}{$cond};
-
-      # Don't mention true conditions in diagnostics.
-      my $condmsg =
-	$cond == TRUE ? '' : " in condition `" . $cond->human . "'";
-
-      if ($owner == TARGET_USER)
-	{
-	  if ($oldowner == TARGET_USER)
-	    {
-	      # Ignore `%'-style pattern rules.  We'd need the
-	      # dependencies to detect duplicates, and they are
-	      # already diagnosed as unportable by -Wportability.
-	      if ($target !~ /^[^%]*%[^%]*$/)
-		{
-		  ## FIXME: Presently we can't diagnose duplcate user rules
-		  ## because we doesn't distinguish rules with commands
-		  ## from rules that only add dependencies.  E.g.,
-		  ##   .PHONY: foo
-		  ##   .PHONY: bar
-		  ## is legitimate. (This is phony.test.)
-
-		  # msg ('syntax', $where,
-		  #      "redefinition of `$target'$condmsg...", partial => 1);
-		  # msg_cond_target ('syntax', $cond, $target,
-		  # 		   "... `$target' previously defined here");
-		}
-	      # Return so we don't redefine the rule in our tables,
-	      # don't check for ambiguous condition, etc.  The rule
-	      # will be output anyway beauce &read_am_file ignore the
-	      # return code.
-	      return ();
-	    }
-	  else
-	    {
-	      # Since we parse the user Makefile.am before reading
-	      # the Automake fragments, this condition should never happen.
-	      prog_error ("user target `$target' seen after Automake's "
-			  . "definition\nfrom `$targets{$target}$condmsg'");
-	    }
-	}
-      else # $owner == TARGET_AUTOMAKE
-	{
-	  if ($oldowner == TARGET_USER)
-	    {
-	      # -am targets listed in %dependencies support a -local
-	      # variant.  If the user tries to override TARGET or
-	      # TARGET-am for which there exists a -local variant,
-	      # just tell the user to use it.
-	      my $hint = 0;
-	      my $noam = $target;
-	      $noam =~ s/-am$//;
-	      if (exists $dependencies{"$noam-am"})
-		{
-		  $hint = "consider using $target-local instead of $target";
-		}
-
-	      msg_cond_target ('override', $cond, $target,
-			       "user target `$target' defined here"
-			       . "$condmsg...", partial => 1);
-	      msg ('override', $where,
-		   "... overrides Automake target `$target' defined here",
-		   partial => $hint);
-	      msg_cond_target ('override', $cond, $target, $hint)
-		if $hint;
-
-	      # Don't overwrite the user definition of TARGET.
-	      return ();
-	    }
-	  else # $oldowner == TARGET_AUTOMAKE
-	    {
-	      # Automake should ignore redefinitions of its own
-	      # rules if they came from the same file.  This makes
-	      # it easier to process a Makefile fragment several times.
-	      # Hower it's an error if the target is defined in many
-	      # files.  E.g., the user might be using bin_PROGRAMS = ctags
-	      # which clashes with our `ctags' rule.
-	      # (It would be more accurate if we had a way to compare
-	      # the *content* of both rules.  Then $targets_source would
-	      # be useless.)
-	      my $oldsource = $target_source{$target}{$cond};
-	      return () if $source eq $oldsource;
-
-	      msg ('syntax', $where, "redefinition of `$target'$condmsg...",
-		   partial => 1);
-	      msg_cond_target ('syntax', $cond, $target,
-			       "... `$target' previously defined here");
-	      return ();
-	    }
-	}
-      # Never reached.
-      prog_error ("Unreachable place reached.");
-    }
-
-  # Conditions for which the rule should be defined.
-  my @conds = $cond;
-
-  # Check ambiguous conditional definitions.
-  my ($message, $ambig_cond) =
-    target_conditions ($target)->ambiguous_p ($target, $cond);
-  if ($message)			# We have an ambiguty.
-    {
-      if ($owner == TARGET_USER)
-	{
-	  # For user rules, just diagnose the ambiguity.
-	  msg 'syntax', $where, "$message ...", partial => 1;
-	  msg_cond_target ('syntax', $ambig_cond, $target,
-			   "... `$target' previously defined here");
-	  return ();
-	}
-      else
-	{
-	  # FIXME: for Automake rules, we can't diagnose ambiguities yet.
-	  # The point is that Automake doesn't propagate conditions
-	  # everywhere.  For instance &handle_PROGRAMS doesn't care if
-	  # bin_PROGRAMS was defined conditionally or not.
-	  # On the following input
-	  #   if COND1
-	  #   foo:
-	  #           ...
-	  #   else
-	  #   bin_PROGRAMS = foo
-	  #   endif
-	  # &handle_PROGRAMS will attempt to define a `foo:' rule
-	  # in condition TRUE (which conflicts with COND1).  Fixing
-	  # this in &handle_PROGRAMS and siblings seems hard: you'd
-	  # have to explain &file_contents what to do with a
-	  # condition.  So for now we do our best *here*.  If `foo:'
-	  # was already defined in condition COND1 and we want to define
-	  # it in condition TRUE, then define it only in condition !COND1.
-	  # (See cond14.test and cond15.test for some test cases.)
-	  my $defined_conds = target_conditions ($target);
-	  @conds = ();
-	  for my $undefined_cond ($defined_conds->invert->conds)
-	    {
-	      push @conds, $cond->merge ($undefined_cond);
-	    }
-	  # No conditions left to define the rule.
-	  # Warn, because our workaround is meaningless in this case.
-	  if (scalar @conds == 0)
-	    {
-	      msg 'syntax', $where, "$message ...", partial => 1;
-	      msg_cond_target ('syntax', $ambig_cond, $target,
-			       "... `$target' previously defined here");
-	      return ();
-	    }
-	}
-    }
-
-  # Finally define this rule.
-  for my $c (@conds)
-    {
-      $targets{$target}{$c} = $where->clone;
-      $target_source{$target}{$c} = $source;
-      $target_owner{$target}{$c} = $owner;
-      $target_name{$target}{$c} = $realtarget;
-    }
-
-  # We honor inference rules with multiple targets because many
-  # make support this and people use it.  However this is disallowed
-  # by POSIX.  We'll print a warning later.
-  my $target_count = 0;
-  my $inference_rule_count = 0;
-  for my $t (split (' ', $target))
-    {
-      ++$target_count;
-      # Check the rule for being a suffix rule. If so, store in a hash.
-      # Either it's a rule for two known extensions...
-      if ($t =~ /^($KNOWN_EXTENSIONS_PATTERN)($KNOWN_EXTENSIONS_PATTERN)$/
-	  # ...or it's a rule with unknown extensions (.i.e, the rule
-	  # looks like `.foo.bar:' but `.foo' or `.bar' are not
-	  # declared in SUFFIXES and are not known language
-	  # extensions).  Automake will complete SUFFIXES from
-	  # @suffixes automatically (see handle_footer).
-	  || ($t =~ /$SUFFIX_RULE_PATTERN/o && accept_extensions($1)))
-	{
-	  ++$inference_rule_count;
-	  register_suffix_rule ($where, $1, $2);
-	}
-    }
-
-  # POSIX allow multiple targets befor the colon, but disallow
-  # definitions of multiple Inference rules.  It's also
-  # disallowed to mix plain targets with inference rules.
-  msg ('portability', $where,
-       "Inference rules can have only one target before the colon (POSIX).")
-    if $inference_rule_count > 0 && $target_count > 1;
-
-  return @conds;
-}
-
-
-# See if a target exists.
-sub target_defined
-{
-    my ($target) = @_;
-    return exists $targets{$target};
-}
-
 
 ################################################################
 
@@ -5904,7 +5346,7 @@ sub read_am_file ($$)
 	    # For now we have to output all definitions of user rules
 	    # and can't diagnose duplicates (see the comment in
 	    # rule_define). So we go on and ignore the return value.
-	    rule_define ($1, $amfile, TARGET_USER, $cond, $where);
+	    Automake::Rule::define ($1, $amfile, RULE_USER, $cond, $where);
 
 	    check_variable_expansions ($_, $where);
 
@@ -6295,9 +5737,9 @@ sub file_contents_internal ($$$%)
 		  # Free-lance dependency.  Output the rule for all the
 		  # targets instead of one by one.
 		  my @undefined_conds =
-		    rule_define ($targets, $file,
-				 $is_am ? TARGET_AUTOMAKE : TARGET_USER,
-				 $cond, $where);
+		    Automake::Rule::define ($targets, $file,
+					    $is_am ? RULE_AUTOMAKE : RULE_USER,
+					    $cond, $where);
 		  for my $undefined_cond (@undefined_conds)
 		    {
 		      my $condparagraph = $paragraph;
@@ -6903,7 +6345,7 @@ sub require_file_internal ($$@)
 		# the Makefile, don't print anything.  This allows files
 		# like README, AUTHORS, or THANKS to be generated.
 		next
-		  if !$suppress && target_defined ($file);
+		  if !$suppress && rule $file;
 
 		msg ($suppress ? 'note' : 'error', $where, "$message$trailer");
 	    }

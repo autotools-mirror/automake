@@ -18,9 +18,11 @@
 package Automake::Variable;
 use strict;
 use Carp;
+
 use Automake::Channels;
 use Automake::ChannelDefs;
 use Automake::Configure_ac;
+use Automake::Item;
 use Automake::VarDef;
 use Automake::Condition qw (TRUE FALSE);
 use Automake::DisjConditions;
@@ -29,7 +31,7 @@ use Automake::Wrap 'makefile_wrap';
 
 require Exporter;
 use vars '@ISA', '@EXPORT', '@EXPORT_OK';
-@ISA = qw/Exporter/;
+@ISA = qw/Automake::Item Exporter/;
 @EXPORT = qw (err_var msg_var msg_cond_var reject_var
 	      var rvar vardef rvardef
 	      variables
@@ -122,7 +124,7 @@ or even
 
 The I<r> variants of the C<var>, C<def>, and C<vardef> methods add an
 extra test to ensure that the lookup succeeded, and will diagnose
-failures as internal errors (which a message which is much more
+failures as internal errors (with a message which is much more
 informative than Perl's warning about calling a method on a
 non-object).
 
@@ -240,16 +242,15 @@ sub msg_var ($$$;%)
   msg_cond_var $channel, $cond, $v, $msg, %opts;
 }
 
-=item C<reject_var ($varname, $error_msg)>
+=item C<$bool = reject_var ($varname, $error_msg)>
 
-Bail out with C<$ERROR_MSG> if a variable with name C<$VARNAME> has
+Bail out with C<$error_msg> if a variable with name C<$varname> has
 been defined.
+
+Return true iff C<$varname> is defined.
 
 =cut
 
-# $BOOL
-# reject_var ($VARNAME, $ERROR_MSG)
-# -----------------------------
 sub reject_var ($$)
 {
   my ($var, $msg) = @_;
@@ -333,7 +334,7 @@ sub var ($)
 =item C<vardef ($varname, $cond)>
 
 Return the C<Automake::VarDef> object for the variable named
-C<$varname> if defined in condition C<$cond>.  Return the empty list
+C<$varname> if defined in condition C<$cond>.  Return false
 if the condition or the variable does not exist.
 
 =cut
@@ -379,7 +380,7 @@ sub rvar ($)
 
 Return the C<Automake::VarDef> object for the variable named
 C<$varname> if defined in condition C<$cond>.  Abort with an internal
-error if the variable or the variable does not exist.
+error if the condition or the variable does not exist.
 
 =cut
 
@@ -393,7 +394,10 @@ sub rvardef ($$)
 
 =head2 Methods
 
-Here are the methods of the C<Automake::Variable> instances.
+C<Automake::Variable> is a subclass of C<Automake::Item>.  See
+that package for inherited methods.
+
+Here are the methods specific to the C<Automake::Variable> instances.
 Use the C<define> function, described latter, to create such objects.
 
 =over 4
@@ -406,90 +410,10 @@ Use the C<define> function, described latter, to create such objects.
 sub _new ($$)
 {
   my ($class, $name) = @_;
-  my $self = {
-    name => $name,
-    defs => {},
-    conds => {},
-    scanned => 0,
-  };
-  bless $self, $class;
+  my $self = Automake::Item::new ($class, $name);
+  $self->{'scanned'} = 0;
   $_variable_dict{$name} = $self;
   return $self;
-}
-
-=item C<$var-E<gt>name>
-
-Return the name of C<$var>.
-
-=cut
-
-sub name ($)
-{
-  my ($self) = @_;
-  return $self->{'name'};
-}
-
-=item C<$var-E<gt>def ($cond)>
-
-Return the C<Automake::VarDef> definition for this variable in
-condition C<$cond>, if it exists.  Return 0 otherwise.
-
-=cut
-
-sub def ($$)
-{
-  my ($self, $cond) = @_;
-  return $self->{'defs'}{$cond} if exists $self->{'defs'}{$cond};
-  return 0;
-}
-
-=item C<$var-E<gt>rdef ($cond)>
-
-Return the C<Automake::VarDef> definition for this variable in
-condition C<$cond>.  Abort with an internal error if the variable was
-not defined under this condition.
-
-The I<r> in front of C<def> stands for I<required>.  One
-should call C<rdef> to assert the conditional definition's existence.
-
-=cut
-
-sub rdef ($$)
-{
-  my ($self, $cond) = @_;
-  my $d = $self->def ($cond);
-  prog_error ("undefined condition `" . $cond->human . "' for `"
-	      . $self->name . "'\n" . $self->dump)
-    unless $d;
-  return $d;
-}
-
-# Add a new VarDef to an existing Variable.  This is a private
-# function.  Our public interface is the `define' function.
-sub _set ($$$)
-{
-  my ($self, $cond, $def) = @_;
-  $self->{'defs'}{$cond} = $def;
-  $self->{'conds'}{$cond} = $cond;
-}
-
-=item C<$var-E<gt>conditions>
-
-Return an L<Automake::DisjConditions> describing the conditions that
-that a variable is defined with, without recursing through the
-conditions of any subvariables.
-
-These are all the conditions for which is would be safe to call
-C<rdef>.
-
-=cut
-
-sub conditions ($)
-{
-  my ($self) = @_;
-  prog_error ("self is not a reference")
-    unless ref $self;
-  return new Automake::DisjConditions (values %{$self->{'conds'}});
 }
 
 # _check_ambiguous_condition ($SELF, $COND, $WHERE)
@@ -512,63 +436,6 @@ sub _check_ambiguous_condition ($$$)
       msg_var ('syntax', $var, "... `$var' previously defined here");
       verb ($self->dump);
     }
-}
-
-=item C<@missing_conds = $var-E<gt>not_always_defined_in_cond ($cond)>
-
-Check whether C<$var> is always defined for condition C<$cond>.
-Return a list of conditions where the definition is missing.
-
-For instance, given
-
-  if COND1
-    if COND2
-      A = foo
-      D = d1
-    else
-      A = bar
-      D = d2
-    endif
-  else
-    D = d3
-  endif
-  if COND3
-    A = baz
-    B = mumble
-  endif
-  C = mumble
-
-we should have (we display result as conditional strings in this
-illustration, but we really return DisjConditions objects):
-
-  var ('A')->not_always_defined_in_cond ('COND1_TRUE COND2_TRUE')
-    => ()
-  var ('A')->not_always_defined_in_cond ('COND1_TRUE')
-    => ()
-  var ('A')->not_always_defined_in_cond ('TRUE')
-    => ("COND1_FALSE COND3_FALSE")
-  var ('B')->not_always_defined_in_cond ('COND1_TRUE')
-    => ("COND1_TRUE COND3_FALSE")
-  var ('C')->not_always_defined_in_cond ('COND1_TRUE')
-    => ()
-  var ('D')->not_always_defined_in_cond ('TRUE')
-    => ()
-  var ('Z')->not_always_defined_in_cond ('TRUE')
-    => ("TRUE")
-
-=cut
-
-sub not_always_defined_in_cond ($$)
-{
-  my ($self, $cond) = @_;
-
-  # Compute the subconditions where $var isn't defined.
-  return
-    $self->conditions
-      ->sub_conditions ($cond)
-	->invert
-	  ->simplify
-	    ->multiply ($cond);
 }
 
 =item C<$bool = $var-E<gt>check_defined_unconditionally ([$parent, $parent_cond])>
@@ -1114,7 +981,7 @@ sub define ($$$$$$$$)
 	  # line numbers with random bits of text.
 	  $def = new Automake::VarDef ($var, $value, $comment, $where->clone,
 				       $type, $owner, $pretty);
-	  $self->_set ($cond, $def);
+	  $self->set ($cond, $def);
 	  push @_var_order, $var;
 
 	  # No need to adjust the owner later as we have overridden
