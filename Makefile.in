@@ -142,8 +142,8 @@ uninstall-pkgdataSCRIPTS:
 version.texi: stamp-vti
 
 stamp-vti: automake.texi $(top_srcdir)/configure.in
-	echo "@set UPDATED `cd $(srcdir) && $(SHELL) mdate-sh automake.texi`" \
-	  > vti.tmp
+	echo "@set UPDATED `cd $(srcdir) \
+	  && $(SHELL) ./mdate-sh automake.texi`" > vti.tmp
 	echo "@set EDITION $(VERSION)" >> vti.tmp
 	echo "@set VERSION $(VERSION)" >> vti.tmp
 	if cmp -s vti.tmp $(srcdir)/version.texi; then \
@@ -258,7 +258,7 @@ maintainer-clean-tags:
 
 distdir = $(PACKAGE)-$(VERSION)
 dist: $(DEP_DISTFILES)
-	@if sed 15q NEWS | grep -e "$(VERSION)" > /dev/null; then :; else \
+	@if sed 15q $(srcdir)/NEWS | grep -e "$(VERSION)" > /dev/null; then :; else \
 	  echo "NEWS not updated; not releasing" 1>&2; \
 	  exit 1;				\
 	fi
@@ -313,8 +313,7 @@ all: all-recursive all-am
 install-strip:
 	$(MAKE) INSTALL_PROGRAM='$(INSTALL_PROGRAM) -s' install
 installdirs: installdirs-recursive
-	$(top_srcdir)/mkinstalldirs  $(bindir) $(pkgdatadir) $(infodir) \
-		$(pkgdatadir)
+	./mkinstalldirs  $(bindir) $(pkgdatadir) $(infodir) $(pkgdatadir)
 
 
 mostlyclean-generic:
@@ -384,7 +383,7 @@ installcheck-local:
 # * make sure the scripts don't use 'true'
 # * expect no instances of '${...}'
 # These are only really guaranteed to work on my machine.
-maintainer-check: automake check
+maintainer-check: automake
 	$(PERL) -c -w automake
 	@if grep '^[^#].*true' $(srcdir)/[a-z]*.am; then \
 	  echo "can't use 'true' in GNU Makefile" 1>&2; \
@@ -397,6 +396,7 @@ maintainer-check: automake check
 	if $(SHELL) -c 'perl4.036 -v' >/dev/null 2>&1; then \
 	  perl4.036 -c -w automake; \
 	else :; fi
+	$(MAKE) check
 
 # Tag before making distribution.  Also, don't make a distribution if
 # checks fail.  Also, make sure the NEWS file is up-to-date.

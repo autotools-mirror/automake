@@ -49,7 +49,8 @@ installcheck-local:
 # * make sure the scripts don't use 'true'
 # * expect no instances of '${...}'
 # These are only really guaranteed to work on my machine.
-maintainer-check: automake check
+maintainer-check: automake
+## Do syntax, etc, checks before make check.
 	$(PERL) -c -w automake
 	@if grep '^[^#].*true' $(srcdir)/[a-z]*.am; then \
 	  echo "can't use 'true' in GNU Makefile" 1>&2; \
@@ -62,6 +63,7 @@ maintainer-check: automake check
 	if $(SHELL) -c 'perl4.036 -v' >/dev/null 2>&1; then \
 	  perl4.036 -c -w automake; \
 	else :; fi
+	$(MAKE) check
 
 # Tag before making distribution.  Also, don't make a distribution if
 # checks fail.  Also, make sure the NEWS file is up-to-date.

@@ -138,6 +138,9 @@ $seen_canonical = 0;
 # TRUE if we've seen AC_PROG_RANLIB.
 $seen_ranlib = 0;
 
+# TRUE if we've seen AC_ARG_PROGRAM.
+$seen_arg_prog = 0;
+
 # Charsets used by maintainer and in distribution.  MAINT_CHARSET is
 # handled in a funny way: if seen in the top-level Makefile.am, it is
 # used for every directory which does not specify a different value.
@@ -610,6 +613,12 @@ sub handle_programs
 					 'noinst', 'check');
     return if ! @proglist;
 
+    # If a program is installed, this is required.  We only want this
+    # error to appear once.
+    &am_conf_error ("AC_ARG_PROGRAM must be used in configure.in")
+	unless $seen_arg_prog;
+    $seen_arg_prog = 1;
+
     local ($obj) = &get_object_extension;
     local ($one_file, $xname, $munge);
 
@@ -733,6 +742,15 @@ sub handle_scripts
 
     # We really only want a boolean value.
     $scripts_installed = 1 if $scripts_installed;
+
+    if ($scripts_installed)
+    {
+	# If a program is installed, this is required.  We only want this
+	# error to appear once.
+	&am_conf_error ("AC_ARG_PROGRAM must be used in configure.in")
+	    unless $seen_arg_prog;
+	$seen_arg_prog = 1;
+    }
 }
 
 # Search a file for a "version.texi" Texinfo include.  Return the name
@@ -803,19 +821,21 @@ sub handle_texinfo
 	    &push_dist_common ($vtexi, 'stamp-' . $vti);
 	    push (@clean, $vti);
 
+	    # Only require once.
+	    &require_conf_file_with_line ('info_TEXINFOS', $FOREIGN,
+					  'mdate-sh')
+		if ! $done;
+	    ++$done;
+
 	    $output_rules .=
 		&file_contents_with_transform
 		    ('s/\@TEXI\@/' . $info_cursor . '/g; '
 		     . 's/\@VTI\@/' . $vti . '/g; '
-		     . 's/\@VTEXI\@/' . $vtexi . '/g',
+		     . 's/\@VTEXI\@/' . $vtexi . '/g;'
+		     . 's,\@MDDIR\@,' . $config_aux_dir . ',g;',
 		     'texi-version');
 
 	    &push_phony_cleaners ($vti);
-
-	    # Only require once.
-	    &require_file_with_line ('info_TEXINFOS', $FOREIGN, 'mdate-sh')
-		if ! $done;
-	    ++$done;
 	}
 
 	# If user specified file_TEXINFOS, then use that as explicit
@@ -1079,20 +1099,6 @@ sub handle_dist_worker
 ';
     }
 
-    # Make verbatim copies of some subdirectories if required.  This
-    # is a hack which might go away.
-    if (defined $contents{'DIST_SUBDIRS'})
-    {
-	&am_line_error ('DIST_SUBDIRS',
-			"\`DIST_SUBDIRS' is deprecated; make a new \`Makefile.am' instead");
-
-	$output_rules .= '	@for dir in $(DIST_SUBDIRS); do		\\
-	  echo copying directory $$dir;		\\
-	  tar chf - $$dir | (cd $(distdir) && tar xBpf -); \\
-	done
-';
-    }
-
     # Finalize.
     if ($relative_dir eq '.')
     {
@@ -1119,11 +1125,6 @@ sub handle_dist
 	if defined $contents{'MAINT_CHARSET'};
     $maint_charset = $local_maint_charset
 	if $relative_dir eq '.';
-
-    &am_line_error
-	('DIST_OTHER',
-	 "\`DIST_OTHER' is an anachronism; use \`EXTRA_DIST' instead")
-	    if defined $contents{'DIST_OTHER'};
 
     if (defined $contents{'DIST_CHARSET'})
     {
@@ -1301,8 +1302,7 @@ sub handle_configure
 	$output_rules .= &file_contents ('remake');
 
 	# Look for some files we need.
-	&require_config_file ($FOREIGN, 'install-sh');
-	&require_file ($FOREIGN, 'mkinstalldirs');
+	&require_config_file ($FOREIGN, 'install-sh', 'mkinstalldirs');
 
 	&am_error
 	    ("\`install.sh' is an anachronism; use \`install-sh' instead")
@@ -1493,7 +1493,7 @@ sub handle_installdirs
     push (@phony, 'installdirs');
     if (@installdirs)
     {
-	&pretty_print_rule ("\t\$(top_srcdir)/mkinstalldirs ", "\t\t",
+	&pretty_print_rule ("\t$config_aux_dir/mkinstalldirs ", "\t\t",
 			    @installdirs);
     }
     $output_rules .= "\n";
@@ -1788,7 +1788,6 @@ sub scan_configure
     %libsources = ();
 
     local ($in_ac_output, @make_list) = 0;
-    local ($seen_arg_prog) = 0;
     local ($libobj_iter);
     while (<CONFIGURE>)
     {
@@ -1911,8 +1910,7 @@ sub scan_configure
 				|| /AC_SUBST\(YACC\)/
 				|| /AC_(PATH|CHECK)_PROGS?\(YACC/);
 
-	# Some things required by Automake.  FIXME We only really
-	# require AC_ARG_PROGRAM if any program is installed.
+	# Some things required by Automake.
 	$seen_make_set = 1 if /AC_PROG_MAKE_SET/;
 	$seen_prog_install = 1 if ! $seen_prog_install && /AC_PROG_INSTALL/;
 	$seen_prog_install = 2 if ! $seen_prog_install && /fp_PROG_INSTALL/;
@@ -1922,9 +1920,6 @@ sub scan_configure
 
     # Set input files if not specified by user.
     @input_files = @make_list if (! @input_files);
-
-    &am_conf_error ("AC_ARG_PROGRAM must be used in configure.in")
-	unless $seen_arg_prog;
 
     close (CONFIGURE);
 }
@@ -2581,104 +2576,26 @@ sub am_install_var
 
 ################################################################
 
-# Verify that the file must exist in the current directory.
-# Usage: require_file (isconfigure, line_number, strictness, file)
-# strictness is the strictness level at which this file becomes
-# required.
+# This variable is local to the "require file" set of functions.
+@require_file_paths = ();
+
+# Verify that the file must exist in the current directory.  Usage:
+# require_file (isconfigure, line_number, strictness, file) strictness
+# is the strictness level at which this file becomes required.  Must
+# set require_file_paths before calling this function.
+# require_file_paths is set to hold a single directory (the one in
+# which the first file was found) before return.
 sub require_file_internal
 {
     local ($is_configure, $line, $mystrict, @files) = @_;
     local ($file, $fullfile);
-
-    foreach $file (@files)
-    {
-	$fullfile = $relative_dir . "/" . $file;
-
-	if (-f $fullfile)
-	{
-	    &push_dist_common ($file);
-	}
-	elsif ($strictness >= $mystrict)
-	{
-	    # Only install missing files according to our desired
-	    # strictness level.
-	    if ($add_missing && -f ($am_dir . '/' . $file))
-	    {
-		# Install the missing file.  Symlink if we can, copy
-		# if we must.
-		if ($symlink_exists)
-		{
-		    symlink ($am_dir . '/' . $file, $fullfile);
-		}
-		else
-		{
-		    system ('cp', $am_dir . '/' . $file, $fullfile);
-		}
-
-		# FIXME this is a hack.  Should have am_warn.
-		local ($save) = $exit_status;
-		if ($is_configure)
-		{
-		    &am_conf_line_error
-			($line,
-			 "required file \"$fullfile\" not found; installing");
-		}
-		else
-		{
-		    &am_line_error
-			($line,
-			 "required file \"$fullfile\" not found; installing");
-		}
-		$exit_status = $save;
-	    }
-	    else
-	    {
-		# Only an error if strictness constraint violated.
-		if ($is_configure)
-		{
-		    &am_conf_line_error
-			($line, "required file \"$fullfile\" not found");
-		}
-		else
-		{
-		    &am_line_error
-			($line, "required file \"$fullfile\" not found");
-		}
-	    }
-	}
-    }
-}
-
-# Like require_file_with_line, but error messages refer to
-# configure.in, not the current Makefile.am.
-sub require_file_with_conf_line
-{
-    &require_file_internal (1, @_);
-}
-
-sub require_file_with_line
-{
-    &require_file_internal (0, @_);
-}
-
-sub require_file
-{
-    &require_file_internal (0, '', @_);
-}
-
-# Require a file that is also required by Autoconf.  Looks in
-# configuration path, as specified by AC_CONFIG_AUX_DIR.
-sub require_config_file
-{
-    local ($mystrict, @files) = @_;
-    local ($file, $dir);
-    local ($found_it);
-    local ($errfile);
+    local ($found_it, $errfile);
+    local ($save_dir);
 
     foreach $file (@files)
     {
 	$found_it = 0;
-	foreach $dir (@config_aux_path)
+	foreach $dir (@require_file_paths)
 	{
 	    $fullfile = $dir . "/" . $file;
 
@@ -2692,18 +2609,17 @@ sub require_config_file
 	    {
 		$found_it = 1;
 		&push_dist_common ($file) if $dir eq $relative_dir;
-
-		# The first config file found set the config aux path
-		# for all other files.
-		@config_aux_path = $dir;
-		$config_aux_dir = '$(top_srcdir)';
-		$config_aux_dir .= '/' . $dir
-		    unless $dir eq '.';
-
+		$save_dir = $dir;
 		last;
 	    }
 	}
-	if (! $found_it)
+
+	if ($found_it)
+	{
+	    # Prune the path list.
+	    @require_file_paths = $save_dir;
+	}
+	else
 	{
 	    if ($strictness >= $mystrict)
 	    {
@@ -2724,17 +2640,91 @@ sub require_config_file
 
 		    # FIXME this is a hack.  Should have am_warn.
 		    local ($save) = $exit_status;
-		    &am_error
-			("required file \"$errfile\" not found; installing");
+		    if ($is_configure)
+		    {
+			&am_conf_line_error
+			    ($line,
+			     "required file \"$errfile\" not found; installing");
+		    }
+		    else
+		    {
+			&am_line_error
+			    ($line,
+			     "required file \"$errfile\" not found; installing");
+		    }
 		    $exit_status = $save;
 		}
 		else
 		{
 		    # Only an error if strictness constraint violated.
-		    &am_error ("required file \"$errfile\" not found");
+		    if ($is_configure)
+		    {
+			&am_conf_line_error
+			    ($line, "required file \"$errfile\" not found");
+		    }
+		    else
+		    {
+			&am_line_error
+			    ($line, "required file \"$errfile\" not found");
+		    }
 		}
 	    }
 	}
+    }
+}
+
+# Like require_file_with_line, but error messages refer to
+# configure.in, not the current Makefile.am.
+sub require_file_with_conf_line
+{
+    @require_file_paths = '.';
+    &require_file_internal (1, @_);
+}
+
+sub require_file_with_line
+{
+    @require_file_paths = '.';
+    &require_file_internal (0, @_);
+}
+
+sub require_file
+{
+    @require_file_paths = '.';
+    &require_file_internal (0, '', @_);
+}
+
+# Require a file that is also required by Autoconf.  Looks in
+# configuration path, as specified by AC_CONFIG_AUX_DIR.
+sub require_config_file
+{
+    @require_file_paths = @config_aux_path;
+    &require_file_internal (0, '', @_);
+    local ($dir) = $require_file_paths[0];
+    @config_aux_path = @require_file_paths;
+    if ($dir eq '.')
+    {
+	$config_aux_dir = '.';
+    }
+    else
+    {
+	$config_aux_dir = '$(top_srcdir)/' . $dir;
+    }
+}
+
+# Assumes that the line number is in configure.in.
+sub require_conf_file_with_line
+{
+    @require_file_paths = @config_aux_path;
+    &require_file_internal (1, @_);
+    local ($dir) = $require_file_paths[0];
+    @config_aux_path = @require_file_paths;
+    if ($dir eq '.')
+    {
+	$config_aux_dir = '.';
+    }
+    else
+    {
+	$config_aux_dir = '$(top_srcdir)/' . $dir;
     }
 }
 
