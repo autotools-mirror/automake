@@ -3227,8 +3227,12 @@ sub handle_subdirs
     $output_rules .= &file_contents ('subdirs');
 }
 
-# Handle aclocal.m4.
-sub handle_aclocal_m4
+
+# @DEPENDENCIES
+# &scan_aclocal_m4
+# ----------------
+# If aclocal.m4 creation is automated, return the list of its dependencies.
+sub scan_aclocal_m4
 {
     my $regen_aclocal = 0;
     if (-f 'aclocal.m4')
@@ -3256,55 +3260,46 @@ sub handle_aclocal_m4
 	$acinclude = 1;
     }
 
+    return ()
+      unless $regen_aclocal;
+
     # Note that it might be possible that aclocal.m4 doesn't exist but
     # should be auto-generated.  This case probably isn't very
     # important.
-    if ($regen_aclocal)
-    {
-	my @ac_deps = (($seen_maint_mode ? "\@MAINTAINER_MODE_TRUE\@": "") ,
-		       $configure_ac,
-		       ($acinclude ? ' acinclude.m4' : ''));
+    my @ac_deps = ($acinclude ? ' acinclude.m4' : '');
 
-	if (&variable_defined ('ACLOCAL_M4_SOURCES'))
+    if (&variable_defined ('ACLOCAL_M4_SOURCES'))
+    {
+	push (@ac_deps, '$(ACLOCAL_M4_SOURCES)');
+    }
+    elsif (&variable_defined ('ACLOCAL_AMFLAGS'))
+    {
+	# Scan all -I directories for m4 files.  These are our
+	# dependencies.
+	my $examine_next = 0;
+	foreach my $amdir (&variable_value_as_list ('ACLOCAL_AMFLAGS', ''))
 	{
-	    push (@ac_deps, "\$(ACLOCAL_M4_SOURCES)");
-	}
-	elsif (&variable_defined ('ACLOCAL_AMFLAGS'))
-	{
-	    # Scan all -I directories for m4 files.  These are our
-	    # dependencies.
-	    my $examine_next = 0;
-	    foreach my $amdir (&variable_value_as_list ('ACLOCAL_AMFLAGS', ''))
+	    if ($examine_next)
 	    {
-		if ($examine_next)
+		$examine_next = 0;
+		if ($amdir !~ /^\// && -d $amdir)
 		{
-		    $examine_next = 0;
-		    if ($amdir !~ /^\// && -d $amdir)
+		    foreach my $ac_dep (&my_glob ($amdir . '/*.m4'))
 		    {
-			foreach my $ac_dep (&my_glob ($amdir . '/*.m4'))
-			{
-			    $ac_dep =~ s/^\.\/+//;
-			    push (@ac_deps, $ac_dep)
-				unless $ac_dep eq "aclocal.m4"
-				    || $ac_dep eq "acinclude.m4";
-			}
+			$ac_dep =~ s/^\.\/+//;
+			push (@ac_deps, $ac_dep)
+			  unless $ac_dep eq "aclocal.m4"
+			    || $ac_dep eq "acinclude.m4";
 		    }
 		}
-		elsif ($amdir eq '-I')
-		{
-		    $examine_next = 1;
-		}
+	    }
+	    elsif ($amdir eq '-I')
+	    {
+		$examine_next = 1;
 	    }
 	}
-
-	&pretty_print_rule ("\$(ACLOCAL_M4):", "\t\t", @ac_deps);
-
-	$output_rules .=  ("\t"
-			   . 'cd $(srcdir) && $(ACLOCAL)'
-			   . (&variable_defined ('ACLOCAL_AMFLAGS')
-			      ? ' $(ACLOCAL_AMFLAGS)' : '')
-			   . "\n");
     }
+    return @ac_deps;
 }
 
 # Rewrite a list of input files into a form suitable to put on a
@@ -3361,6 +3356,15 @@ sub handle_configure
 
     my @rewritten = &rewrite_inputs_into_dependencies (1, @secondary_inputs);
 
+    my @aclocal_m4_deps;
+    if ($relative_dir eq '.')
+    {
+        @aclocal_m4_deps = &scan_aclocal_m4 ();
+	&examine_variable ('CONFIG_STATUS_DEPENDENCIES');
+	&examine_variable ('CONFIGURE_DEPENDENCIES');
+    }
+
+
     $output_rules .=
       &file_contents ('configure',
 		      ('MAKEFILE'
@@ -3381,11 +3385,12 @@ sub handle_configure
 		       'USE-DEPS'
 		       => $cmdline_use_dependencies ? '' : ' --ignore-deps',
 		       'MAKEFILE-AM-SOURCES'
-		       =>  "$input$colon_infile"));
+		       =>  "$input$colon_infile",
+		       'ACLOCAL_M4_DEPS'
+		       => join (' ', @aclocal_m4_deps)));
 
     if ($relative_dir eq '.')
     {
-	&handle_aclocal_m4;
 	&examine_variable ('CONFIG_STATUS_DEPENDENCIES');
 	&examine_variable ('CONFIGURE_DEPENDENCIES');
 
