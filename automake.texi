@@ -71,7 +71,8 @@ approved by the Free Software Foundation.
 @top
 
 This file documents the GNU AutoMake package for creating GNU
-Standards-compliant Makefiles from template files.
+Standards-compliant Makefiles from template files.  This edition
+documents version @value{VERSION}.
 
 @menu
 * Introduction::                AutoMake's purpose
@@ -272,9 +273,9 @@ configure time, you may define @samp{AM_LIBRARIES} to supply
 
 For a given library @samp{zot}, the sources are taken to be in
 @samp{@var{zot}_SOURCES}, just as for programs.  Note that libraries and
-programs share one namespace in @code{automake}: you cannot build a
-library in the a directory that has the same base name as a program in
-the same directory.
+programs share one namespace in @code{automake}: one directory cannot
+contain both a library (``liblob.a'') and a program (``lob'') with the
+same name.
 
 Here is how the @file{libcpio.a} library is built in the GNU cpio
 distribution's @file{lib} subdirectory:
@@ -311,8 +312,45 @@ goodbye_SOURCES = goodbye.c
 @node Docs
 @section Texinfo and Man Pages
 
+@subsection Texinfo
+If the current directory contains Texinfo source, you must declare it
+with the @samp{TEXINFOS} macro.
 Note that Texinfo source must end in the @file{.texi} extension
-(@file{.texinfo} won't work)
+(@file{.texinfo} won't work).
+Currently the Texinfo support is in flux.  Some ideas which might be
+implemented:
+
+@itemize @bullet
+@item
+Automatic support for generating a @file{version.texi} file.  This file
+conventionally holds macro definitions recording the date of the last
+change to the manual, and the version number of the package.
+
+@item
+Better support for installing only the correct info files.
+@end itemize
+
+@code{automake} will warn if a directory containing Texinfo source does
+not also contain the file @file{texinfo.tex}.  (I'm not sure if this is
+a good rule or not.  Comments?)
+
+
+@subsection Man pages
+A package can also include man pages.  (Though see the GNU standards on
+this matter.  FIXME xref).
+Man pages are declared using the @samp{MANS} macro.
+
+
+Here is how the documentation is handled in GNU cpio (which includes
+both Texinfo documentation and man pages):
+
+@example
+TEXINFOS = cpio.texi version.texi
+MANS = cpio.1 mt.1
+@end example
+
+Texinfo source, info pages and man pages are all considered to be
+``source'' for the purposes of making a distribution.
 
 
 @node ANSI
@@ -422,13 +460,19 @@ notices that a @code{Makefile.in} is out of date.
 @node Future
 @chapter Some ideas for the future
 
+Here are some things that might happen in the future:
+
+@itemize @bullet
+@item
 It might be nice to have @code{automake} automatically compute
 dependencies, and record that information in the shipped
-@file{Makefile.in}.  I don't have a good mechanism for doing this yet;
-perhaps
+@file{Makefile.in}.  I don't have a good mechanism for doing this yet,
+but I'm moving towards a solution requiring @code{GNU make} and
+@code{gcc}, using the @samp{-MMD} option.
 
+@item
 Better error checking would be good.
-
+@end itemize
 
 @node Some index
 @chapter Nothing yet
