@@ -184,7 +184,7 @@ main(argc, argv)
 	 */
 	int convert_varargs = 1;
 
-	if ( argc > 1 && argv[1][0] == '-' )
+	if ( argc > 1 && argv[1][0] == '-'  && argv[1][1])
 	  {	if ( !strcmp(argv[1], "--varargs") )
 		  {	convert_varargs = 1;
 			argc--;
@@ -200,7 +200,10 @@ main(argc, argv)
 		printf("Usage: ansi2knr input_file [output_file]\n");
 			exit(1);
 		   }
-	in = fopen(argv[1], "r");
+	if (argv[1][0] == '-' && !argv[1][1])
+	  in = stdin;
+	else
+	  in = fopen(argv[1], "r");
 	if ( in == NULL )
 	  {
 	    fprintf(stderr, "Cannot open input file %s\n", argv[1]);

@@ -821,6 +821,10 @@ sub get_object_extension
 	    {
 		$output_rules .= ("\tcd " . &dirname ($options{'ansi2knr'})
 				  . " && \$(MAKE) ansi2knr\n\n");
+		# This is required for non-GNU makes.
+	        $output_rules .= ($options{'ansi2knr'} . ".o:\n");
+		$output_rules .= ("\tcd " . &dirname ($options{'ansi2knr'})
+				  . " && \$(MAKE) ansi2knr.o\n\n");
 	    }
 
 	    # Make sure ansi2knr can be found: if no path specified,
@@ -992,11 +996,11 @@ sub handle_yacc_lex_cxx
 	    # we can't use $< -- some makes only define $< during a
 	    # suffix rule.
  	    $output_rules .= ($base . "_.c: $base.c \$(ANSI2KNR)\n\t"
-			      . '$(ANSI2KNR) '
+			      . '$(CPP) $(DEFS) $(INCLUDES) $(CPPFLAGS) '
 			      . '`if test -f $(srcdir)/' . $base . '.c'
 			      . '; then echo $(srcdir)/' . $base . '.c'
 			      . '; else echo ' . $base . '.c; fi` '
-			      . $base . "_.c\n");
+			      . '| $(ANSI2KNR) - ' . $base . "_.c\n");
  	    push (@objects, $base . '_.o');
  	    push (@objects, $base . '_.lo') if $seen_libtool;
  	}
