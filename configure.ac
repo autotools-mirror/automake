@@ -18,7 +18,12 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 
-AC_PREREQ(2.57b)
+dnl Autoconf 2.58 defines abs_top_builddir incorrectly, so we
+dnl have to require 2.58a, otherwise all our test cases will fail
+dnl (abs_top_builddir is used in tests/automake.in).  Note that
+dnl this is a requirement for the Automake package itself.
+dnl Automake users can still use Autoconf 2.58.
+AC_PREREQ(2.58a)
 AC_INIT([GNU Automake], [1.7a], [bug-automake@gnu.org])
 
 AC_CONFIG_SRCDIR(automake.in)
@@ -67,9 +72,9 @@ AC_CHECK_PROG([TEX], [tex], [tex])
 # deletion of any files created (such as those added to
 # autom4te.cache).
 mkdir conftest
-echo 'AC''_PREREQ(2.54)' > conftest/conftest.ac
+echo 'AC''_PREREQ(2.58)' > conftest/conftest.ac
 AM_RUN_LOG([cd conftest && eval $am_AUTOCONF -o /dev/null conftest.ac]) || {
-   AC_MSG_ERROR([Autoconf 2.54 or better is required.
+   AC_MSG_ERROR([Autoconf 2.58 or better is required.
   Is it installed?  Is it in your PATH?  (try running `autoconf --version')
   Is it working?  See also config.log for error messages before this one.])
 }
