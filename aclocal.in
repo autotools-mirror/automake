@@ -101,156 +101,6 @@ $ac_require_rx = "AC_REQUIRE\\((?:\\[([^]]+)\\]|([^],)\n]+))\\)";
 $m4_include_rx = "(?:m4_)?s?include\\((?:\\[([^]]+)\\]|([^],)\n]+))\\)";
 
 
-
-local (@dirlist) = &parse_arguments (@ARGV);
-$configure_ac = require_configure_ac;
-&scan_m4_files (@dirlist);
-&scan_configure;
-if (! $exit_code)
-  {
-    my %macro_traced = &trace_used_macros;
-    &write_aclocal ($output_file, keys %macro_traced);
-  }
-&check_acinclude;
-
-exit $exit_code;
-
-################################################################
-
-# Print usage and exit.
-sub usage ($)
-{
-    local ($status) = @_;
-
-    print "Usage: aclocal [OPTIONS] ...\n\n";
-    print "\
-Generate `aclocal.m4' by scanning `configure.ac' or `configure.in'
-
-  --acdir=DIR           directory holding config files
-  --help                print this help, then exit
-  -I DIR                add directory to search list for .m4 files
-  --force               always update output file
-  --output=FILE         put output in FILE (default aclocal.m4)
-  --print-ac-dir        print name of directory holding m4 files
-  --verbose             don't be silent
-  --version             print version number, then exit
-
-Report bugs to <bug-automake\@gnu.org>.\n";
-
-    exit $status;
-}
-
-# Parse command line.
-sub parse_arguments (@)
-{
-    local (@arglist) = @_;
-    local (@dirlist);
-    local ($print_and_exit) = 0;
-
-    while (@arglist)
-    {
-	if ($arglist[0] =~ /^--acdir=(.+)$/)
-	{
-	    $acdir = $1;
-	}
-	elsif ($arglist[0] =~/^--output=(.+)$/)
-	{
-	    $output_file = $1;
-	}
-	elsif ($arglist[0] eq '-I')
-	{
-	    shift (@arglist);
-	    push (@dirlist, $arglist[0]);
-	}
-	elsif ($arglist[0] eq '--print-ac-dir')
-	{
-	    $print_and_exit = 1;
-	}
-	elsif ($arglist[0] eq '--force')
-	{
-	    $force_output = 1;
-	}
-	elsif ($arglist[0] eq '--verbose')
-	{
-	    ++$verbose;
-	}
-	elsif ($arglist[0] eq '--version')
-	{
-	    print "aclocal (GNU $PACKAGE) $VERSION\n\n";
-	    print "Copyright (C) 2003 Free Software Foundation, Inc.\n";
-	    print "This is free software; see the source for copying conditions.  There is NO\n";
-	    print "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n";
-	    print "Written by Tom Tromey <tromey\@redhat.com>\n";
-	    exit 0;
-	}
-	elsif ($arglist[0] eq '--help')
-	{
-	    &usage (0);
-	}
-	else
-	{
-	    print STDERR "aclocal: unrecognized option -- `$arglist[0]'\nTry `aclocal --help' for more information.\n";
-	    exit 1;
-	}
-
-	shift (@arglist);
-    }
-
-    if ($print_and_exit)
-    {
-	print $acdir, "\n";
-	exit 0;
-    }
-
-    $default_dirlist="$acdir/dirlist"
-	if $acdir ne $default_acdir;
-
-    # Search the versioned directory near the end, and then the
-    # unversioned directory last.  Only do this if the user didn't
-    # override acdir.
-    push (@dirlist, "$acdir-$APIVERSION")
-	if $acdir eq $default_acdir;
-
-    # By default $(datadir)/aclocal doesn't exist.  We don't want to
-    # get an error in the case where we are searching the default
-    # directory and it hasn't been created.
-    push (@dirlist, $acdir)
-	unless $acdir eq $default_acdir && ! -d $acdir;
-
-    # Finally, adds any directory listed in the `dirlist' file.
-    if (open (DEFAULT_DIRLIST, $default_dirlist))
-    {
-	while (<DEFAULT_DIRLIST>)
-	{
-	    # Ignore '#' lines.
-	    next if /^#/;
-	    # strip off newlines and end-of-line comments
-	    s/\s*\#.*$//;
-	    chomp ($contents=$_);
-	    if (-d $contents )
-	    {
-		push (@dirlist, $contents);
-	    }
-	}
-	close (DEFAULT_DIRLIST);
-    }
-
-    return @dirlist;
-}
-
-################################################################
-
-sub scan_configure ()
-{
-  # Make sure we include acinclude.m4 if it exists.
-  if (-f 'acinclude.m4')
-    {
-      &add_file ('acinclude.m4');
-    }
-
-  &scan_configure_dep ($configure_ac);
-}
-
 ################################################################
 
 # Check macros in acinclude.m4.  If one is not used, warn.
@@ -355,7 +205,7 @@ sub scan_configure_dep ($)
   # Do not scan a file twice.
   return ()
     if exists $scanned_configure_dep{$file};
-  $scanned_configure_dep = 1;
+  $scanned_configure_dep{$file} = 1;
 
   my $mtime = mtime $file;
   $greatest_mtime = $mtime if $greatest_mtime < $mtime;
@@ -395,10 +245,9 @@ sub scan_configure_dep ($)
 	}
     }
 
-
-  &add_macro ($_) foreach (@rlist);
+  add_macro ($_) foreach (@rlist);
   my $dirname = dirname $file;
-  scan_configure_dep (File::Spec->rel2abs ($_, $dirname)) foreach (@ilist);
+  &scan_configure_dep (File::Spec->rel2abs ($_, $dirname)) foreach (@ilist);
 }
 
 # Add a file to output.
@@ -465,14 +314,12 @@ sub scan_file ($)
   return $contents;
 }
 
-sub trace_used_macros ($)
+sub trace_used_macros ()
 {
-  my ($filename) = @_;
-
   my %files = map { $map{$_} => 1 } keys %macro_seen;
 
   my $traces = ($ENV{AUTOM4TE} || 'autom4te');
-  $traces .= " --language Autoconf-without-aclocal-m4 $filename ";
+  $traces .= " --language Autoconf-without-aclocal-m4 ";
   # All candidate files.
   $traces .= join (' ', grep { exists $files{$_} } @file_order) . " ";
   # All candidate macros.
@@ -493,6 +340,16 @@ sub trace_used_macros ($)
   $tracefh->close;
 
   return %traced;
+}
+
+sub scan_configure ()
+{
+  # Make sure we include acinclude.m4 if it exists.
+  if (-f 'acinclude.m4')
+    {
+      add_file ('acinclude.m4');
+    }
+  scan_configure_dep ($configure_ac);
 }
 
 ################################################################
@@ -575,6 +432,144 @@ $output";
   print $out $output;
   return;
 }
+
+################################################################
+
+# Print usage and exit.
+sub usage ($)
+{
+  local ($status) = @_;
+
+  print "Usage: aclocal [OPTIONS] ...\n\n";
+  print "\
+Generate `aclocal.m4' by scanning `configure.ac' or `configure.in'
+
+  --acdir=DIR           directory holding config files
+  --help                print this help, then exit
+  -I DIR                add directory to search list for .m4 files
+  --force               always update output file
+  --output=FILE         put output in FILE (default aclocal.m4)
+  --print-ac-dir        print name of directory holding m4 files
+  --verbose             don't be silent
+  --version             print version number, then exit
+
+Report bugs to <bug-automake\@gnu.org>.\n";
+
+  exit $status;
+}
+
+# Parse command line.
+sub parse_arguments (@)
+{
+  local (@arglist) = @_;
+  local (@dirlist);
+  local ($print_and_exit) = 0;
+
+  while (@arglist)
+    {
+      if ($arglist[0] =~ /^--acdir=(.+)$/)
+	{
+	  $acdir = $1;
+	}
+      elsif ($arglist[0] =~/^--output=(.+)$/)
+	{
+	  $output_file = $1;
+	}
+      elsif ($arglist[0] eq '-I')
+	{
+	  shift (@arglist);
+	  push (@dirlist, $arglist[0]);
+	}
+      elsif ($arglist[0] eq '--print-ac-dir')
+	{
+	  $print_and_exit = 1;
+	}
+      elsif ($arglist[0] eq '--force')
+	{
+	  $force_output = 1;
+	}
+      elsif ($arglist[0] eq '--verbose')
+	{
+	  ++$verbose;
+	}
+      elsif ($arglist[0] eq '--version')
+	{
+	  print "aclocal (GNU $PACKAGE) $VERSION\n\n";
+	  print "Copyright (C) 2003 Free Software Foundation, Inc.\n";
+	  print "This is free software; see the source for copying conditions.  There is NO\n";
+	  print "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n";
+	  print "Written by Tom Tromey <tromey\@redhat.com>\n";
+	  exit 0;
+	}
+      elsif ($arglist[0] eq '--help')
+	{
+	  &usage (0);
+	}
+      else
+	{
+	  print STDERR "aclocal: unrecognized option -- `$arglist[0]'\nTry `aclocal --help' for more information.\n";
+	  exit 1;
+	}
+
+      shift (@arglist);
+    }
+
+  if ($print_and_exit)
+    {
+      print $acdir, "\n";
+      exit 0;
+    }
+
+  $default_dirlist="$acdir/dirlist"
+    if $acdir ne $default_acdir;
+
+  # Search the versioned directory near the end, and then the
+  # unversioned directory last.  Only do this if the user didn't
+  # override acdir.
+  push (@dirlist, "$acdir-$APIVERSION")
+    if $acdir eq $default_acdir;
+
+  # By default $(datadir)/aclocal doesn't exist.  We don't want to
+  # get an error in the case where we are searching the default
+  # directory and it hasn't been created.
+  push (@dirlist, $acdir)
+    unless $acdir eq $default_acdir && ! -d $acdir;
+
+  # Finally, adds any directory listed in the `dirlist' file.
+  if (open (DEFAULT_DIRLIST, $default_dirlist))
+    {
+      while (<DEFAULT_DIRLIST>)
+	{
+	  # Ignore '#' lines.
+	  next if /^#/;
+	  # strip off newlines and end-of-line comments
+	  s/\s*\#.*$//;
+	  chomp ($contents=$_);
+	  if (-d $contents )
+	    {
+	      push (@dirlist, $contents);
+	    }
+	}
+      close (DEFAULT_DIRLIST);
+    }
+
+  return @dirlist;
+}
+
+################################################################
+
+local (@dirlist) = parse_arguments (@ARGV);
+$configure_ac = require_configure_ac;
+scan_m4_files (@dirlist);
+scan_configure;
+if (! $exit_code)
+  {
+    my %macro_traced = trace_used_macros;
+    write_aclocal ($output_file, keys %macro_traced);
+  }
+check_acinclude;
+
+exit $exit_code;
 
 ### Setup "GNU" style for perl-mode and cperl-mode.
 ## Local Variables:
