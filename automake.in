@@ -5611,31 +5611,38 @@ sub check_ambiguous_conditional ($$)
 
 # &macro_define($VAR, $VAR_IS_AM, $TYPE, $COND_STRING, $VALUE, $WHERE)
 # -----------------------------------------------------------------------
+# The $VAR can go from Automake to user, but not the converse.
 sub macro_define ($$$$$$)
 {
   my ($var, $var_is_am, $type, $cond_string, $value, $where) = @_;
 
-  if (defined $contents{$1}
+  if (defined $contents{$var}
       && ($cond_string
-	  ? ! defined $conditional{$1}
-	  : defined $conditional{$1}))
+	  ? ! defined $conditional{$var}
+	  : defined $conditional{$var}))
     {
-      &am_line_error ($1,
-		      "$1 defined both conditionally and unconditionally");
+      &am_line_error ($var,
+		      "$var defined both conditionally and unconditionally");
     }
 
   if (! defined $contents{$var})
     {
-      # The first assignment to a macro sets the line
-      # number.  Ideally I suppose we would associate line
-      # numbers with random bits of text.
+      # Initialize: we rely on defined.
+      $contents{$var} = '';
+
+      # The first assignment to a macro sets the line number.  Ideally
+      # I suppose we would associate line numbers with random bits of
+      # text.
       $content_lines{$var} = $where;
 
       # If first assignment, set `+=' indicator.
       $var_was_plus_eq{$var} = $type eq '+' && ! $var_is_am{$var};
     }
 
-  $var_is_am{$var} = $var_is_am;
+  if (! defined $var_is_am{$var} || !$var_is_am)
+    {
+      $var_is_am{$var} = $var_is_am;
+    }
 
   # Handled unconditional macros.
   if ($type eq '+')
@@ -5645,7 +5652,7 @@ sub macro_define ($$$$$$)
          # Insert a backslash before a trailing newline.
          $contents{$var} = substr ($contents{$var}, 0, -1) . "\\\n";
        }
-      $contents{$var} .= ' ' . $value;
+      $contents{$var} .= ($contents{$var} && ' ') . $value;
     }
   else
     {
@@ -6585,6 +6592,10 @@ sub read_main_am_file
 	  if $done{$var};
 	$done{$var} = 1;
 
+	# Don't process Automake variables.
+	next
+	  if $var_is_am{$var};
+
 	$output_vars .= $am_vars{$var};
 	if ($conditional{$var})
 	{
@@ -6807,25 +6818,16 @@ sub file_contents ($%)
 	    my ($var, $type, $val) = ($1, $2, $3);
  	    &prog_error ("$file:$.: macro `$var' with trailing backslash")
 	      if /\\$/;;
-	    # Accumulating variables must not be output.
-	    $contents{$var} = ''
-	      unless defined $contents{$var};
-	    $var_is_am{$var} = 1
-	      unless defined $var_is_am{$var};
-	    if ($type eq '+')
-	      {
-		$contents{$var} .= ($contents{$var} && ' ') . $val;
-	      }
-	    else
-	      {
-		$contents{$var} = $val;
-		# If the user has set some variables we were in charge
-		# of (which is detected by the first reading of
-		# `header-vars.am'), we must not output them.
-		$result_vars .= "$separator$comment$_\n"
-		  if $var_is_am{$var};
 
-	      }
+	    # Accumulating variables must not be output.
+	    macro_define ($var, 1, $type, '', $val, $.);
+
+	    # If the user has set some variables we were in charge
+	    # of (which is detected by the first reading of
+	    # `header-vars.am'), we must not output them.
+	    $result_vars .= "$separator$comment$_\n"
+	      if $type ne '+' && $var_is_am{$var};
+
  	    $comment = $separator = '';
  	}
  	else
@@ -7710,5 +7712,4 @@ This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 EOF
   exit 0;
-
 }
