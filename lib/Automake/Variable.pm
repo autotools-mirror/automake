@@ -191,6 +191,10 @@ my %_silent_variable_override =
 # the named of the helper variable used to append to VAR in CONDITIONS.
 my %_appendvar = ();
 
+# Each call to C<traverse_variable_recursively> gets an unique label.
+# This is used to detect recursively defined variables.
+my $_traversal = 0;
+
 
 =head2 Error reporting functions
 
@@ -311,6 +315,7 @@ sub reset ()
   %_appendvar = ();
   @_var_order = ();
   %_gen_varname = ();
+  $_traversal = 0;
 }
 
 =item C<var ($varname)>
@@ -407,6 +412,7 @@ sub _new ($$)
     name => $name,
     defs => {},
     conds => {},
+    scanned => 0,
   };
   bless $self, $class;
   $_variable_dict{$name} = $self;
@@ -1457,13 +1463,9 @@ calls).
 # substitutions currently in force.
 my @_substfroms;
 my @_substtos;
-# This is used to keep track of which variable definitions we are
-# scanning.
-my %_vars_scanned = ();
-
 sub traverse_variable_recursively ($&&;$)
 {
-  %_vars_scanned = ();
+  ++$_traversal;
   @_substfroms = ();
   @_substtos = ();
   my ($var, $fun_item, $fun_collect, $cond_filter) = @_;
@@ -1483,12 +1485,12 @@ sub _traverse_variable_recursively_worker ($$&&$$)
   return ()
     unless $var;
 
-  if (defined $_vars_scanned{$var})
+  if ($var->{'scanned'} == $_traversal)
     {
       err_var $var, "variable `" . $var->name() . "' recursively defined";
       return ();
     }
-  $_vars_scanned{$var} = 1;
+  $var->{'scanned'} = $_traversal;
 
   my @allresults = ();
   my $cond_once = 0;
@@ -1567,7 +1569,7 @@ sub _traverse_variable_recursively_worker ($$&&$$)
 
   # We only care about _recursive_ variable definitions.  The user
   # is free to use the same variable several times in the same definition.
-  delete $_vars_scanned{$var};
+  $var->{'scanned'} = -1;
 
   # Make sure you update the doc of &traverse_variable_recursively
   # if you change the prototype of &fun_collect.
