@@ -2584,17 +2584,34 @@ sub handle_multilib
     $output_rules .= &file_contents ('multilib');
 }
 
-# Worker for handle_dist.
-sub handle_dist_worker
-{
-    my ($makefile) = @_;
 
+# $BOOLEAN
+# &dist_cmp ($A, $B)
+# --------------------
+# Subroutine for &handle_dist: sort files to dist.
+#
+# We put README first because it then becomes easier to make a
+# Usenet-compliant shar file (in these, README must be first).
+#
+# FIXME: do more ordering of files here.
+sub dist_cmp ($$)
+{
+    return
+        if $a eq $b;
+    return -1
+        if $a eq 'README';
+    return 1
+        if $b eq 'README';
+    return $a cmp $b;
 }
 
+
+# handle_dist ($MAKEFILE)
+# -----------------------
 # Handle 'dist' target.
 sub handle_dist
 {
-    local ($makefile) = @_;
+    my ($makefile) = @_;
 
     # Set up maint_charset.
     $local_maint_charset = &variable_value ('MAINT_CHARSET')
@@ -2619,8 +2636,7 @@ sub handle_dist
     }
 
     # Look for common files that should be included in distribution.
-    local ($cfile);
-    foreach $cfile (@common_files)
+    foreach my $cfile (@common_files)
     {
 	if (-f ($relative_dir . "/" . $cfile))
 	{
@@ -2642,8 +2658,7 @@ sub handle_dist
     # we want to distribute it here if we are doing `.'.  Ugly!
     if ($relative_dir eq '.')
     {
-	local ($iter);
-	foreach $iter (keys %configure_dist_common)
+	foreach my $iter (keys %configure_dist_common)
 	{
 	    if (! &is_make_dir (&dirname ($iter)))
 	    {
@@ -2652,24 +2667,14 @@ sub handle_dist
 	}
     }
 
-    # Keys of %dist_common are names of files to distributed.  We put
-    # README first because it then becomes easier to make a
-    # Usenet-compliant shar file (in these, README must be first).
-    # FIXME: do more ordering of files here.
-    local (@coms);
-    if (defined $dist_common{'README'})
-    {
-	push (@coms, 'README');
-	delete $dist_common{'README'};
-    }
-    push (@coms, sort keys %dist_common);
+    # Keys of %dist_common are names of files to distributed.
+    &define_pretty_variable ("DIST_COMMON", '',
+			     sort dist_cmp keys %dist_common);
+    $output_vars .= "\n";
 
     # Now that we've processed %dist_common, disallow further attempts
     # to set it.
     $handle_dist_run = 1;
-
-    &define_pretty_variable ("DIST_COMMON", '', @coms);
-    $output_vars .= "\n";
 
     # Some boilerplate.
     $output_vars .= &file_contents ('dist-vars') . "\n";
