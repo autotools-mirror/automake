@@ -654,8 +654,8 @@ my $get_object_extension_was_run;
 ## --------------------------------- ##
 ## Forward subroutine declarations.  ##
 ## --------------------------------- ##
-sub register_language ($%);
-sub file_contents_internal ($%);
+sub register_language (%);
+sub file_contents_internal ($$%);
 
 
 # &initialize_per_input ()
@@ -1796,7 +1796,10 @@ sub check_libobjs_sources
 	    $output_rules .= "\n";
 	    foreach my $iter (@deplist)
  	    {
-		$output_rules .= '@AMDEP_TRUE@@_am_include@ ' . $iter . "\n";
+		# The strange concatentation is used to avoid
+		# substitutions from our own configure.
+		$output_rules .= ('@AMDEP' . '_TRUE@@_am_include@ '
+				  . $iter . "\n");
 	    }
 
 	    $output_rules .= &file_contents ('depend');
@@ -5378,9 +5381,9 @@ sub saw_sources_p
 
 # register_language (%ATTRIBUTE)
 # ------------------------------
-# Register a single language.  LANGUAGE is the name of the language.
+# Register a single language.
 # Each %ATTRIBUTE is of the form ATTRIBUTE => VALUE.
-sub register_language ($%)
+sub register_language (%)
 {
     my (%option) = @_;
 
@@ -6946,7 +6949,7 @@ sub make_paragraphs ($%)
 # Return contents of a file from $am_dir, automatically skipping
 # macros or rules which are already known. $IS_AM iff the caller is
 # reading an Automake file (as opposed to the user's Makefile.am).
-sub file_contents_internal ($%)
+sub file_contents_internal ($$%)
 {
     my ($is_am, $file, %transform) = @_;
 
