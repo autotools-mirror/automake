@@ -12,7 +12,7 @@ kr-vars.am libscripts.am libprograms.am libraries-vars.am \
 libraries.am library.am mans-vars.am mans.am packagedata.am \
 program.am programs.am remake-hdr.am \
 remake-subd.am remake.am scripts.am subdirs.am tags.am tags-subd.am \
-texi-version.am texinfos-vars.am texinfos.am
+tags-clean.am texi-version.am texinfos-vars.am texinfos.am
 
 CONFIG_HEADER = config.h
 
