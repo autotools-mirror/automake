@@ -448,7 +448,7 @@ sub handle_options
 	    # Got a version number.  Is the syntax too strict?
 	    local ($num_version);
 	    ($num_version = $VERSION) =~ tr/0-9//d;
-	    if ($VERSION < $_)
+	    if ($num_version < $_)
 	    {
 		&am_line_error ('AUTOMAKE_OPTIONS',
 				"require version $_, only have $VERSION");
@@ -583,11 +583,31 @@ sub handle_source_transform
 		# Skip things that look like configure substitutions.
 		next if /^\@.*\@$/;
 
+		# Include .c file for lex or yacc source in distribution.
 		if (/^(.*)\.[yl]$/)
 		{
-		    # Automatically include generated .c file in
-		    # distribution.
+		    # Yacc source.
 		    &push_dist_common ($1 . '.c');
+		    if (! defined $targets{$1 . '.c'})
+		    {
+			# Generate a target.
+			$output_rules .= ($1 . '.c: ' . $_ . "\n"
+					  . "\t"
+					  . 'cd $(srcdir) && $(YACC) $< && mv y.tab.c '
+					  . $1 . '.c' . "\n");
+		    }
+		}
+		elsif (/^(.*)\.l$/)
+		{
+		    # Lex source.
+		    &push_dist_common ($1 . '.c');
+		    if (! defined $targets{$1 . '.c'})
+		    {
+			$output_rules .= ($1 . '.c: ' . $_ . "\n"
+					  . "\t"
+					  . 'cd $(srcdir) && $(LEX) $< && mv lex.yy.c '
+					  . $1 . '.c' . "\n");
+		    }
 		}
 
 		# Transform source files into .o files.
@@ -924,7 +944,8 @@ sub handle_texinfo
 	$output_rules .= ("\n" . $infobase . ".info: "
 			  . join (' ', @texi_deps) . "\n\n");
 
-	push (@infos_list, $infobase . '.info*');
+	push (@infos_list, $infobase . '.info', '.info-[0-9]',
+	      '.info-[0-9][0-9]');
 	push (@info_deps_list, $infobase . '.info');
 	push (@dvis_list, $infobase . '.dvi');
 
@@ -1258,7 +1279,7 @@ sub handle_dist
     if ($relative_dir eq '.')
     {
 	# Rule to check whether a distribution is viable.
-	$output_rules .= '# This target untars the dist file and tries a VPATH configuration.  Then
+	$output_rules .= ('# This target untars the dist file and tries a VPATH configuration.  Then
 # it guarantees that the distribution is self-contained by making another
 # tarfile.
 distcheck: dist
@@ -1268,8 +1289,12 @@ distcheck: dist
 	mkdir $(distdir)/=inst
 	dc_install_base=`cd $(distdir)/=inst && pwd`; \\
 	cd $(distdir)/=build \\
-	  && ../configure --srcdir=.. --prefix=$$dc_install_base \\
+	  && ../configure '
+
+			  . ($seen_gettext ? '--with-included-gettext ' : '')
+			  . '--srcdir=.. --prefix=$$dc_install_base \\
 	  && $(MAKE) \\
+	  && $(MAKE) dvi \\
 	  && $(MAKE) check \\
 	  && $(MAKE) install \\
 	  && $(MAKE) installcheck \\
@@ -1278,7 +1303,7 @@ distcheck: dist
 	@echo "========================"; \\
 	echo "$(distdir).tar.gz is ready for distribution"; \\
 	echo "========================"
-';
+');
 
 	$output_rules .= 'dist: distdir' . "\n\t";
 	$output_rules .= 'chmod -R a+r $(distdir)' . "\n\t";
@@ -1417,7 +1442,10 @@ sub handle_configure
 	    $output_vars .= "ACLOCAL = aclocal.m4\n";
 	    &push_dist_common ('aclocal.m4');
 	}
-	$output_rules .= &file_contents ('remake');
+	$output_rules .= &file_contents_with_transform ('s/\@STRICTNESS\@/'
+							. $strictness_name
+							. '/g',
+							'remake');
 
 	&am_error
 	    ("\`install.sh' is an anachronism; use \`install-sh' instead")
@@ -1533,10 +1561,7 @@ sub handle_gettext
 {
     return if ! $seen_gettext || $relative_dir ne '.';
 
-    # As of 0.10.6, gettext still wants @INTLSUB@ and @POSUB@ in
-    # SUBDIRS.  This is going to change in a future version.  So for
-    # now we simply do no checking.
-    if (0 && &variable_defined ('SUBDIRS'))
+    if (&variable_defined ('SUBDIRS'))
     {
 	&am_line_error
 	    ('SUBDIRS',
@@ -1973,7 +1998,7 @@ sub handle_tests
 	  all=`expr $$all + 1`; \\
 	  if test -f $$tst; then dir=.; \\
 	  else dir="$(srcdir)"; fi; \\
-	  if $$dir/$$tst; then \\
+	  if $(TESTS_ENVIRONMENT) $$dir/$$tst; then \\
 	    echo "PASS: $$tst"; \\
 	  else \\
 	    failed=`expr $$failed + 1`; \\
