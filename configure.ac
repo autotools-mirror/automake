@@ -45,8 +45,7 @@ APIVERSION=`echo "$VERSION" | sed -e 's/^\([[0-9]]*\.[[0-9]]*[[a-z]]*\).*$/\1/'`
 AC_SUBST(APIVERSION)
 
 # A versioned directory, defined here for convenience.
-pkgvdatadir="\${datadir}/automake-${APIVERSION}"
-AC_SUBST(pkgvdatadir)
+AC_SUBST([pkgvdatadir], ["\${datadir}/$PACKAGE-$APIVERSION"])
 
 # $AUTOMAKE and $ACLOCAL are always run after a `cd $top_srcdir',
 # hence `.' is really what we want for perllibdir, libdir, and acdir.
