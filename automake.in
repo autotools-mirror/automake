@@ -334,13 +334,13 @@ $obsolete_rx = '(' . join ('|', keys %obsolete_macros) . ')';
 		    'h', 'H', 'hxx', 'h++', 'hh', 'hpp', 'inc');
 
 # For now, yacc and lex can't be handled on a per-exe basis.
-&register_language ('yacc', 'ansi-p=1',
+&register_language ('yacc', 'ansi-p=1', 'derived-autodep=yes',
 		    'y');
-&register_language ('yaccxx', 'linker=CXXLINK',
+&register_language ('yaccxx', 'linker=CXXLINK', 'derived-autodep=yes',
 		    'y++', 'yy', 'yxx', 'ypp');
-&register_language ('lex', 'ansi-p=1',
+&register_language ('lex', 'ansi-p=1', 'derived-autodep=yes',
 		    'l');
-&register_language ('lexxx', 'linker=CXXLINK',
+&register_language ('lexxx', 'linker=CXXLINK', 'derived-autodep=yes',
 		    'l++', 'll', 'lxx', 'lpp');
 
 &register_language ('asm',
@@ -1387,7 +1387,9 @@ sub handle_single_transform_list
 
 	    # Transform .o or $o file into .P file (for automatic
 	    # dependency code).
-	    if ($lang && $language_map{$lang . '-autodep'} ne 'no')
+	    if ($lang
+		&& ($language_map{$lang . '-autodep'} ne 'no'
+		    || $language_map{$lang . '-derived-autodep'} eq 'yes'))
 	    {
 		local ($depfile) = $object;
 		$depfile =~ s/\.([^.]*)$/.P$1/;
@@ -5311,6 +5313,7 @@ sub register_language
     $language_map{$language . '-ansi-p'} = 0;
     $language_map{$language . '-linker'} = '';
     $language_map{$language . '-autodep'} = 'no';
+    $language_map{$language . '-derived-autodep'} = 'no';
 
     local ($iter);
     foreach $iter (@options)
