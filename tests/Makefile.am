@@ -14,7 +14,7 @@ config.test confincl.test confsub.test confvar.test confvar2.test \
 cxxcpp.test cxxlibobj.test cxxlink.test cxxnoc.test cxxo.test \
 cygwin32.test defun.test defun2.test dejagnu.test depacl.test \
 depacl2.test depend.test depend2.test depend3.test discover.test \
-distdir.test dup.test dup2.test else.test empty.test error.test	\
+distdir.test dup2.test else.test empty.test error.test	\
 exdir.test exdir2.test exsource.test extra.test extra3.test \
 extra4.test flibs.test fnoc.test fo.test fonly.test fpinst2.test \
 fpinstall.test gnits.test implicit.test include.test info.test \
