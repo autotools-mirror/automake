@@ -3082,13 +3082,14 @@ it, you would write:
 
 @example
 noinst_LIBRARIES = libcpio.a
+libcpio_a_SOURCES = @dots{}
 @end example
 
 The sources that go into a library are determined exactly as they are
 for programs, via the @samp{_SOURCES} variables.  Note that the library
 name is canonicalized (@pxref{Canonicalization}), so the @samp{_SOURCES}
-variable corresponding to @file{liblob.a} is @samp{liblob_a_SOURCES},
-not @samp{liblob.a_SOURCES}.
+variable corresponding to @file{libcpio.a} is @samp{libcpio_a_SOURCES},
+not @samp{libcpio.a_SOURCES}.
 
 @vindex maude_LIBADD
 Extra objects can be added to a library using the
@@ -3114,6 +3115,11 @@ can override these two variables my setting them in your
 @file{Makefile.am}, by @code{AC_SUBST}ing them from your
 @file{configure.ac}, or by defining a per-library @code{maude_AR}
 variable (@pxref{Program and Library Variables}).
+
+@cindex Empty libraries
+Be careful when selecting library components conditionally.  Because
+building an empty library is not portable, you should ensure that any
+library contains always at least one object.
 
 @node A Shared Library
 @section Building a Shared Library
@@ -3877,7 +3883,7 @@ target_LDADD = libmain.a libmisc.a
 @end example
 
 @node LIBOBJS
-@section Special handling for LIBOBJS and ALLOCA
+@section Special handling for @code{LIBOBJS} and @code{ALLOCA}
 
 @cindex @code{LIBOBJS}, example
 @cindex @code{ALLOCA}, example
@@ -3959,12 +3965,21 @@ libcompat_a_SOURCES =
 libcompat_a_LIBADD = $(LIBOBJS) $(ALLOCA)
 @end example
 
-Nothing else is required.  The library can have any name, of course,
-and anyway it is not going to be installed: it just holds the
-replacement versions of the missing or broken functions so we can
-later link them in.  In many projects also include extra functions,
-specific to the project, in that library: they are simply added on
-the @code{_SOURCES} line.
+The library can have any name, of course, and anyway it is not going
+to be installed: it just holds the replacement versions of the missing
+or broken functions so we can later link them in.  In many projects
+also include extra functions, specific to the project, in that
+library: they are simply added on the @code{_SOURCES} line.
+
+@cindex Empty libraries and @code{$(LIBOBJS)}
+@cindex @code{$(LIBOBJS)} and empty libraries
+There is a small trap here, though: @code{$(LIBOBJS)} and
+@code{$(ALLOCA)} might be empty, and building an empty library is not
+portable.  You should ensure that there is always something to put in
+@file{libcompat.a}.  Most projects will also add some utility
+functions in that directory, and list them in
+@code{libcompat_a_SOURCES}, so in practice @file{libcompat.a} cannot
+be empty.
 
 Finally here is how this library could be used from the @file{src/}
 directory.
