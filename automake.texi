@@ -3464,51 +3464,81 @@ dist_pkgdata_DATA = clean-kr.am clean.am @dots{}
 @node Sources,  , Data, Other objects
 @section Built sources
 
+Because Automake's automatic dependency tracking works as a side-effect
+of compilation (@pxref{Dependencies}) there is a bootstrap issue: a
+target should not be compiled before its dependencies are made, but
+these dependencies are unknown until the target is first compiled.
+
+Ordinarily this is not a problem, because dependencies are distributed
+sources: they preexist and do not need to be built.  Suppose that
+@file{foo.c} includes @file{foo.h}.  When it first compiles
+@file{foo.o}, @command{make} only knows that @file{foo.o} depends on
+@file{foo.c}.  As a side-effect of this compilation @code{depcomp}
+records the @file{foo.h} dependency so that following invocations of
+@command{make} will honor it.  In these conditions, it's clear there is
+no problem: either @file{foo.o} doesn't exist and has to be built
+(regardless of the dependencies), either accurate dependencies exist and
+they can be used to decide whether @file{foo.o} should be rebuilt.
+
+It's a different story if @file{foo.h} doesn't exist by the first
+@command{make} run.  For instance there might be a rule to build
+@file{foo.h}.  This time @file{file.o}'s build will fail because the
+compiler can't find @file{foo.h}. @command{make} failed to trigger the
+rule to build @file{foo.h} first by lack of dependency information.
+
+@vindex BUILT_SOURCES
 @cindex BUILT_SOURCES, defined
 
-Occasionally a file which would normally be called @samp{source}
-(e.g. a C @samp{.h} file) is actually derived from some other file.
-Such files should be listed in the @code{BUILT_SOURCES} variable.
-@vindex BUILT_SOURCES
+The @code{BUILT_SOURCES} variable is a workaround for this problem.  A
+source file listed in @code{BUILT_SOURCES} is made on @code{make all} or
+@code{make check} before other targets are processed.  However, such a
+source file is not @emph{compiled} unless explicitly requested by
+mentioning it in some other @samp{_SOURCES} variable.
+
+So, to conclude our introductory example, we could use
+@code{BUILT_SOURCES = foo.h} to ensure @file{foo.h} gets built before
+any other target (including @file{foo.o}) during @code{make all} or
+@code{make check}.
 
 @code{BUILT_SOURCES} is actually a bit of a misnomer, as any file which
 must be created early in the build process can be listed in this
-variable.
+variable.  Moreover, all built sources do not necessarily have to be
+listed in @code{BUILT_SOURCES}.  For instance a generated @file{.c} file
+doesn't need to appear in @code{BUILT_SOURCES} (unless it is included by
+another source), because it's a known dependency of the associated
+object.
 
-A source file listed in @code{BUILT_SOURCES} is created on @code{make
-all} or @code{make check} before other targets are made.  However, such
-a source file is not compiled unless explicitly requested by mentioning
-it in some other @samp{_SOURCES} variable.
+It might be important to emphasize that @code{BUILT_SOURCES} is honored
+only by @code{make all} and @code{make check}.  This means you cannot
+build a specific target (e.g., @code{make foo}) in a clean tree if it
+depends on a built source.  However if it will succeed if you have run
+@code{make all} earlier, because accurate dependencies are already
+available.
 
-So, for instance, if you had header files which were created by a script
-run at build time, then you would list these headers in
-@code{BUILT_SOURCES}, to ensure that they would be built before any
-other compilations (perhaps ones using these headers) were started.
+The next section illustrates and discusses the handling of built sources
+on a toy example.
 
-@subsection Example
+@menu
+* Built sources example::       Several ways to handle built sources.
+@end menu
 
-Here is an example.  Suppose that @file{foo.c} includes @file{bindir.h},
-which is built on demand and not distributed.  Here @file{bindir.h}
-defines the preprocessor macro @code{bindir} to the value of the
-@command{make} variable @code{bindir} (inherited from @file{configure})
-as follows.
+@node Built sources example,  , Sources, Sources
+@subsection Built sources example
 
-@example
-bindir.h:
-        echo '#define bindir "$(bindir)"' >$@@
-@end example
+Suppose that @file{foo.c} includes @file{bindir.h}, which is
+installation-dependent and not distributed: it needs to be built.  Here
+@file{bindir.h} defines the preprocessor macro @code{bindir} to the
+value of the @command{make} variable @code{bindir} (inherited from
+@file{configure}).
 
-It would be possible to define this preprocessor macro from
-@file{configure}, either in @file{config.h} (@pxref{Defining
-Directories, , Defining Directories, autoconf, The Autoconf Manual}), or
-by processing a @file{bindir.h.in} file using @code{AC_CONFIG_FILES}
-(@pxref{Configuration Actions, ,Configuration Actions, autoconf, The
-Autoconf Manual}).  It's even safer because you won't have to play the
-dirty tricks discussed below.  However, it's not always possible to
-build sources from @file{configure} (especially when these sources are
-generated by a tool that needs to be built first...).  So let's ignore
-this possibility and discuss the implication of building @file{bindir.h}
-at @command{make} time.
+We suggest several implementations below.  It's not meant to be an
+exhaustive listing of all ways to handle built sources, but it will give
+you a few ideas if you encounter this issue.
+
+@unnumberedsubsec First try
+
+This first implementation will illustrate the bootstrap issue mentioned
+in the previous section (@pxref{Sources}).
 
 Here is a tentative @file{Makefile.am}.
 
@@ -3518,7 +3548,7 @@ bin_PROGRAMS = foo
 foo_SOURCES = foo.c
 nodist_foo_SOURCES = bindir.h
 CLEANFILES = bindir.h
-bindir.h:
+bindir.h: Makefile
         echo '#define bindir "$(bindir)"' >$@@
 @end example
 
@@ -3538,15 +3568,17 @@ foo.c:2: bindir.h: No such file or directory
 make: *** [foo.o] Error 1
 @end example
 
+@unnumberedsubsec Using @code{BUILT_SOURCES}
+
 A solution is to require @file{bindir.h} to be built before anything
-else.  This is what @code{BUILT_SOURCES} is meant for.
+else.  This is what @code{BUILT_SOURCES} is meant for (@pxref{Sources}).
 
 @example
 bin_PROGRAMS = foo
 foo_SOURCES = foo.c
 BUILT_SOURCES = bindir.h
 CLEANFILES = bindir.h
-bindir.h:
+bindir.h: Makefile
         echo '#define bindir "$(bindir)"' >$@@
 @end example
 
@@ -3565,7 +3597,7 @@ gcc  -g -O2   -o foo  foo.o
 make[1]: Leaving directory `/home/adl/tmp'
 @end example
 
-However, as said earlier, @code{$(BUILT_SOURCES)} applies only to the
+However, as said earlier, @code{BUILT_SOURCES} applies only to the
 @code{all} and @code{check} targets.  It still fails if you try to run
 @code{make foo} explicitly:
 
@@ -3584,9 +3616,12 @@ foo.c:2: bindir.h: No such file or directory
 make: *** [foo.o] Error 1
 @end example
 
-Usually people are happy enough with @code{$(BUILT_SOURCES)} because
-they never run such targets before @code{make all}.  However if this
-matters to you, you can record such dependencies explicitly in the
+@unnumberedsubsec Recording dependencies manually
+
+Usually people are happy enough with @code{BUILT_SOURCES} because they
+never run targets such as @code{make foo} before @code{make all}, as in
+the previous example.  However if this matters to you, you can avoid
+@code{BUILT_SOURCES} and record such dependencies explicitly in the
 @file{Makefile.am}.
 
 @example
@@ -3594,7 +3629,7 @@ bin_PROGRAMS = foo
 foo_SOURCES = foo.c
 foo.$(OBJEXT): bindir.h
 CLEANFILES = bindir.h
-bindir.h:
+bindir.h: Makefile
         echo '#define bindir "$(bindir)"' >$@@
 @end example
 
@@ -3613,12 +3648,67 @@ overwrite your rules (it assumes you know better than it).
 output to build @code{foo.$(OBJEXT)}.  It happens to work in this case
 because Automake doesn't have to output any @code{foo.$(OBJEXT):}
 target: it relies on a suffix rule instead (i.e., @code{.c.$(OBJEXT):}).
-Always check the generated @file{Makefile.am} if you do this.
+Always check the generated @file{Makefile.in} if you do this.
 
-It should be clearer now why building @file{bindir.h} from
-@file{configure} is seducing for this example: @file{bindir.h} will
-exist before you build any target, hence will not cause any dependency
-issue.
+@unnumberedsubsec Build @file{bindir.h} from @file{configure}
+
+It's possible to define this preprocessor macro from @file{configure},
+either in @file{config.h} (@pxref{Defining Directories, , Defining
+Directories, autoconf, The Autoconf Manual}), or by processing a
+@file{bindir.h.in} file using @code{AC_CONFIG_FILES}
+(@pxref{Configuration Actions, ,Configuration Actions, autoconf, The
+Autoconf Manual}).
+
+At this point it should be clear that building @file{bindir.h} from
+@file{configure} work well for this example.  @file{bindir.h} will exist
+before you build any target, hence will not cause any dependency issue.
+
+The Makefile can be shrunk as follows.  We do not even have to mention
+@file{bindir.h}.
+
+@example
+bin_PROGRAMS = foo
+foo_SOURCES = foo.c
+@end example
+
+However, it's not always possible to build sources from
+@file{configure}, especially when these sources are generated by a tool
+that needs to be built first...
+
+@unnumberedsubsec Build @file{bindir.c}, not @file{bindir.h}.
+
+Another attractive idea is to define @code{bindir} as a variable or
+function exported from @file{bindir.o}, and build @file{bindir.c}
+instead of @file{bindir.h}.
+
+@example
+noinst_PROGRAMS = foo
+foo_SOURCES = foo.c bindir.h
+nodist_foo_SOURCES = bindir.c
+CLEANFILES = bindir.c
+bindir.c: Makefile
+        echo 'const char bindir[] = "$(bindir)";' >$@
+@end example
+
+@file{bindir.h} contains just the variable's declaration and doesn't
+need to be built, so it won't cause any trouble.  @file{bindir.o} is
+always dependent on @file{bindir.c}, so @file{bindir.c} will get built
+first.
+
+@unnumberedsubsec Which is best?
+
+There is no panacea, of course.  Each solution has its merits and
+drawbacks.
+
+You cannot use @code{BUILT_SOURCES} if the ability to run @code{make
+foo} on a clean tree is important to you.
+
+You won't add explicit dependencies if you are leery of overriding
+an Automake target by mistake.
+
+Building files from @file{./configure} is not always possible, neither
+is converting @file{.h} files into @file{.c} files.
+
 
 @node Other GNU Tools, Documentation, Other objects, Top
 @chapter Other GNU Tools
@@ -4641,12 +4731,12 @@ run-time dependencies are satisfied after installation.
 @vindex AM_INSTALLCHECK_STD_OPTIONS_EXEMPT
 In a few situations, programs (or scripts) have to be exempted from this
 test.  For instance @command{false} (from GNU sh-utils) is never
-successful, even for @code{--help} or @code{--version}.  You can
-list such programs in the variable @code{AM_INSTALLCHECK_STD_OPTIONS_EXEMPT}.
+successful, even for @code{--help} or @code{--version}.  You can list
+such programs in the variable @code{AM_INSTALLCHECK_STD_OPTIONS_EXEMPT}.
 Programs (not scripts) listed in this variable should be suffixed by
 @code{$(EXEEXT)} for the sake of Win32 or OS/2.  For instance suppose we
-build @code{false} as a program, @code{true.sh} as a script, and that
-none of them support @code{--help} and @code{--version}:
+build @code{false} as a program but @code{true.sh} as a script, and that
+neither of them support @code{--help} or @code{--version}:
 
 @example
 AUTOMAKE_OPTIONS = std-options
