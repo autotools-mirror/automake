@@ -1,4 +1,5 @@
 SCRIPTS = automake
+DISTCLEANFILES = automake
 
 amdatadir = $(datadir)/automake
 am_DATA = clean-kr.am clean.am compile-kr.am compile-vars.am compile.am \
