@@ -5197,11 +5197,9 @@ sub lang_yacc_finish
     return if defined $language_scratch{'yacc-done'};
     $language_scratch{'yacc-done'} = 1;
 
-    if (variable_defined ('YACCFLAGS'))
-    {
-	macro_error ('YACCFLAGS',
-		     "`YACCFLAGS' obsolete; use `YFLAGS' instead");
-    }
+    macro_error ('YACCFLAGS',
+		 "`YACCFLAGS' obsolete; use `YFLAGS' instead")
+      if variable_defined ('YACCFLAGS');
 
     if (count_files_for_language ('yacc') > 1)
     {
@@ -5215,10 +5213,8 @@ sub lang_lex_finish
     return if defined $language_scratch{'lex-done'};
     $language_scratch{'lex-done'} = 1;
 
-    if (! $seen_prog_lex)
-    {
-	&am_error ("lex source seen but `AM_PROG_LEX' not in `$configure_ac'");
-    }
+    am_error ("lex source seen but `AM_PROG_LEX' not in `$configure_ac'")
+      unless $seen_prog_lex;
 
     if (count_files_for_language ('lex') > 1)
     {
@@ -5875,25 +5871,22 @@ sub variable_defined ($;$)
     # don't want.
     if (!exists $var_value{$var})
       {
-	if (defined $targets{$var})
-	  {
-	    macro_error ($var, "`$var' is a target; expected a variable")
-	  }
+	macro_error ($var, "`$var' is a target; expected a variable")
+	  if defined $targets{$var};
 	# The variable is not defined
 	return 0;
       }
 
-    if ($cond && !exists $var_value{$var}{$cond})
-      {
-	# The variable is not defined for the given condition.
-	return 0;
-      }
+    # The variable is not defined for the given condition.
+    return 0
+      if $cond && !exists $var_value{$var}{$cond};
 
     # Even a var_value examination is good enough for us.  FIXME:
     # really should maintain examined status on a per-condition basis.
     $content_seen{$var} = 1;
     return 1;
 }
+
 
 # Mark a variable as examined.
 sub examine_variable
@@ -5902,6 +5895,9 @@ sub examine_variable
     variable_defined ($var);
 }
 
+
+# &variable_conditions_recursive ($VAR)
+# -------------------------------------
 # Return the set of conditions for which a variable is defined.
 
 # If the variable is not defined conditionally, and is not defined in
@@ -5918,7 +5914,6 @@ sub examine_variable
 # defined in terms of a variable which is defined for COND_TRUE,
 # then this returns both COND_TRUE and COND_FALSE.  This is
 # because we will need to define the variable under both conditions.
-
 sub variable_conditions_recursive ($)
 {
     my ($var) = @_;
@@ -5953,6 +5948,7 @@ sub variable_conditions_recursive ($)
     my @uniq_list = sort by_condition keys %uniqify;
     return @uniq_list;
 }
+
 
 # @CONDS
 # variable_conditions ($VAR)
@@ -6103,11 +6099,10 @@ sub variable_conditions_reduce
 	$cond = shift(@conds);
 
         # FALSE is absorbent.
-        if ($cond eq 'FALSE')
-	  {
-	    return ('FALSE');
-	  }
-	elsif (!conditional_is_redundant ($cond, @ret, @conds))
+	return 'FALSE'
+	  if $cond eq 'FALSE';
+
+	if (!conditional_is_redundant ($cond, @ret, @conds))
 	  {
 	    push (@ret, $cond);
 	  }
@@ -6250,7 +6245,8 @@ sub value_to_list
 	    }
 
 	    # Find the value.
-	    @temp_list = &variable_value_as_list_recursive_worker ($1, $cond, $var);
+	    @temp_list =
+	      variable_value_as_list_recursive_worker ($1, $cond, $var);
 
 	    # Now rewrite the value if appropriate.
 	    if (defined $from)
@@ -6450,10 +6446,12 @@ sub variable_pretty_output ($@)
 }
 
 
+# &variable_value_as_list_recursive ($VAR, $COND, $PARENT)
+# --------------------------------------------------------
 # This is just a wrapper for variable_value_as_list_recursive_worker that
 # initializes the global hash `vars_scanned'.  This hash is used to
 # avoid infinite recursion.
-sub variable_value_as_list_recursive
+sub variable_value_as_list_recursive ($$@)
 {
     my ($var, $cond, $parent) = @_;
     %vars_scanned = ();
@@ -6461,13 +6459,15 @@ sub variable_value_as_list_recursive
 }
 
 
+# &define_pretty_variable ($VAR, $COND, @VALUE)
+# ---------------------------------------------
 # Like define_variable, but the value is a list, and the variable may
 # be defined conditionally.  The second argument is the conditional
 # under which the value should be defined; this should be the empty
 # string to define the variable unconditionally.  The third argument
 # is a list holding the values to use for the variable.  The value is
 # pretty printed in the output file.
-sub define_pretty_variable
+sub define_pretty_variable ($$@)
 {
     my ($var, $cond, @value) = @_;
 
@@ -6487,21 +6487,19 @@ sub define_pretty_variable
 # define_variable ($VAR, $VALUE)
 # ------------------------------
 # Define a new user variable VAR to VALUE, but only if not already defined.
-sub define_variable
+sub define_variable ($$)
 {
     my ($var, $value) = @_;
-
     define_pretty_variable ($var, 'TRUE', $value);
 }
 
 
 # Like define_variable, but define a variable to be the configure
 # substitution by the same name.
-sub define_configure_variable
+sub define_configure_variable ($)
 {
     my ($var) = @_;
-    my $value = '@' . $var . '@';
-    &define_variable ($var, $value);
+    define_variable ($var, subst $var);
 }
 
 
@@ -7320,8 +7318,17 @@ sub append_exeext ($)
 # -----------------------------------------------------
 # Find all variable prefixes that are used for install directories.  A
 # prefix `zar' qualifies iff:
+#
 # * `zardir' is a variable.
 # * `zar_PRIMARY' is a variable.
+#
+# As a side effect, it looks for misspellings.  It is an error to have
+# a variable ending in a "reserved" suffix whose prefix is unknown, eg
+# "bni_PROGRAMS".  However, unusual prefixes are allowed if a variable
+# of the same name (with "dir" appended) exists.  For instance, if the
+# variable "zardir" is defined, then "zar_PROGRAMS" becomes valid.
+# This is to provide a little extra flexibility in those cases which
+# need it.
 sub am_primary_prefixes ($$@)
 {
     my ($primary, $can_dist, @prefixes) = @_;
@@ -7421,13 +7428,7 @@ sub am_install_var
 	    && ($primary ne 'JAVA' && $primary ne 'PYTHON');
 
 
-    # Look for misspellings.  It is an error to have a variable ending
-    # in a "reserved" suffix whose prefix is unknown, eg
-    # "bni_PROGRAMS".  However, unusual prefixes are allowed if a
-    # variable of the same name (with "dir" appended) exists.  For
-    # instance, if the variable "zardir" is defined, then
-    # "zar_PROGRAMS" becomes valid.  This is to provide a little extra
-    # flexibility in those cases which need it.
+    # Get the prefixes which are valid and actually used.
     @prefix = am_primary_prefixes ($primary, $can_dist, @prefix);
 
     # If a primary includes a configure substitution, then the EXTRA_
@@ -7885,16 +7886,6 @@ sub set_strictness
 
 ################################################################
 
-# Ensure a file exists.
-sub create
-{
-    use IO::File;
-    my ($file) = @_;
-
-    my $touch = new IO::File (">> $file");
-    $touch->close;
-}
-
 # Glob something.  Do this to avoid indentation screwups everywhere we
 # want to glob.  Gross!
 sub my_glob
@@ -8099,6 +8090,7 @@ EOF
 
     exit 0;
 }
+
 
 # &version ()
 # -----------
