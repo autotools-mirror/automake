@@ -1,4 +1,4 @@
-#!@PERL@
+#!@PERL@ -w
 # -*- perl -*-
 # @configure_input@
 
@@ -34,6 +34,8 @@ BEGIN
   unshift @INC, (split '@PATH_SEPARATOR@', $perllibdir);
 }
 
+use strict;
+
 use Automake::Config;
 use Automake::General;
 use Automake::Configure_ac;
@@ -46,13 +48,13 @@ use Cwd;
 
 # Note that this isn't pkgdatadir, but a separate directory.
 # Note also that the versioned directory is handled later.
-$acdir = '@datadir@/aclocal';
-$default_acdir = $acdir;
+my $acdir = '@datadir@/aclocal';
+my $default_acdir = $acdir;
 # contains a list of directories, one per line, to be added
 # to the dirlist in addition to $acdir, as if -I had been
 # added to the command line.  If acdir has been redirected,
 # we will also check the specified acdir (this is done later).
-$default_dirlist = "$default_acdir/dirlist";
+my $default_dirlist = "$default_acdir/dirlist";
 
 # Some globals.
 
@@ -60,40 +62,40 @@ $default_dirlist = "$default_acdir/dirlist";
 my $configure_ac;
 
 # Output file name.
-$output_file = 'aclocal.m4';
+my $output_file = 'aclocal.m4';
 
 # Modification time of the youngest dependency.
-$greatest_mtime = 0;
+my $greatest_mtime = 0;
 
 # Option --force.
-$force_output = 0;
+my $force_output = 0;
 
 # Which macros have been seen.
-%macro_seen = ();
+my %macro_seen = ();
 
 # Which files have been seen.
-%file_seen = ();
+my %file_seen = ();
 
 # Remember the order into which we scanned the files.
 # It's important to output the contents of aclocal.m4 in the opposite order.
 # (Definitions in first files we have scanned should override those from
 # later files.  So they must appear last in the output.)
-@file_order = ();
+my @file_order = ();
 
 # Map macro names to file names.
-%map = ();
+my %map = ();
 
 # Ditto, but records the last definition of each macro as returned by --trace.
-%map_traced_defs = ();
+my %map_traced_defs = ();
 
 # Map file names to file contents.
-%file_contents = ();
+my %file_contents = ();
 
 # Map file names to included files (transitively closed).
-%file_includes = ();
+my %file_includes = ();
 
 # How much to say.
-$verbose = 0;
+my $verbose = 0;
 
 # Matches a macro definition.
 #   AC_DEFUN([macroname], ...)
@@ -102,13 +104,14 @@ $verbose = 0;
 # When macroname is `['-quoted , we accept any character in the name,
 # except `]'.  Otherwise macroname stops on the first `]', `,', `)',
 # or `\n' encountered.
-$ac_defun_rx = "(?:A[CU]_DEFUN|AC_DEFUN_ONCE)\\((?:\\[([^]]+)\\]|([^],)\n]+))";
+my $ac_defun_rx =
+  "(?:A[CU]_DEFUN|AC_DEFUN_ONCE)\\((?:\\[([^]]+)\\]|([^],)\n]+))";
 
 # Matches an AC_REQUIRE line.
-$ac_require_rx = "AC_REQUIRE\\((?:\\[([^]]+)\\]|([^],)\n]+))\\)";
+my $ac_require_rx = "AC_REQUIRE\\((?:\\[([^]]+)\\]|([^],)\n]+))\\)";
 
 # Matches an m4_include line
-$m4_include_rx = "(?:m4_)?s?include\\((?:\\[([^]]+)\\]|([^],)\n]+))\\)";
+my $m4_include_rx = "(?:m4_)?s?include\\((?:\\[([^]]+)\\]|([^],)\n]+))\\)";
 
 
 ################################################################
@@ -130,57 +133,55 @@ sub check_acinclude ()
 # Scan all the installed m4 files and construct a map.
 sub scan_m4_files (@)
 {
-    local (@dirlist) = @_;
+  my @dirlist = @_;
 
-    # First, scan configure.ac.  It may contain macro definitions,
-    # or may include other files that define macros.
-    &scan_file ($configure_ac, 'aclocal');
+  # First, scan configure.ac.  It may contain macro definitions,
+  # or may include other files that define macros.
+  &scan_file ($configure_ac, 'aclocal');
 
-    # Then, scan acinclude.m4 if it exists.
-    if (-f 'acinclude.m4')
+  # Then, scan acinclude.m4 if it exists.
+  if (-f 'acinclude.m4')
     {
-	&scan_file ('acinclude.m4', 'aclocal');
+      &scan_file ('acinclude.m4', 'aclocal');
     }
 
-    # Finally, scan all files in our search path.
-    local ($m4dir);
-    foreach $m4dir (@dirlist)
+  # Finally, scan all files in our search path.
+  foreach my $m4dir (@dirlist)
     {
-	if (! opendir (DIR, $m4dir))
-	  {
-	    print STDERR "aclocal: couldn't open directory `$m4dir': $!\n";
-	    exit 1;
-	  }
-
-	local ($file, $fullfile);
-	# We reverse the directory contents so that foo2.m4 gets
-	# used in preference to foo1.m4.
-	foreach $file (reverse sort grep (! /^\./, readdir (DIR)))
+      if (! opendir (DIR, $m4dir))
 	{
-	    # Only examine .m4 files.
-	    next unless $file =~ /\.m4$/;
+	  print STDERR "aclocal: couldn't open directory `$m4dir': $!\n";
+	  exit 1;
+	}
 
-	    # Skip some files when running out of srcdir.
-	    next if $file eq 'aclocal.m4';
+      # We reverse the directory contents so that foo2.m4 gets
+      # used in preference to foo1.m4.
+      foreach my $file (reverse sort grep (! /^\./, readdir (DIR)))
+	{
+	  # Only examine .m4 files.
+	  next unless $file =~ /\.m4$/;
 
-	    $fullfile = File::Spec->canonpath ("$m4dir/$file");
+	  # Skip some files when running out of srcdir.
+	  next if $file eq 'aclocal.m4';
+
+	  my $fullfile = File::Spec->canonpath ("$m4dir/$file");
 	    &scan_file ($fullfile, 'aclocal');
 	}
-	closedir (DIR);
+      closedir (DIR);
     }
 
-    # Construct a new function that does the searching.  We use a
-    # function (instead of just evaluating $search in the loop) so that
-    # "die" is correctly and easily propagated if run.
-    my $search = "sub search {\nmy \$found = 0;\n";
-    foreach my $key (reverse sort keys %map)
+  # Construct a new function that does the searching.  We use a
+  # function (instead of just evaluating $search in the loop) so that
+  # "die" is correctly and easily propagated if run.
+  my $search = "sub search {\nmy \$found = 0;\n";
+  foreach my $key (reverse sort keys %map)
     {
-	$search .= ('if (/\b\Q' . $key . '\E(?!\w)/) { & add_macro ("' . $key
-		    . '"); $found = 1; }' . "\n");
+      $search .= ('if (/\b\Q' . $key . '\E(?!\w)/) { & add_macro ("' . $key
+		  . '"); $found = 1; }' . "\n");
     }
-    $search .= "return \$found;\n};\n";
-    eval $search;
-    die "internal error: $@\n search is $search" if $@;
+  $search .= "return \$found;\n};\n";
+  eval $search;
+  die "internal error: $@\n search is $search" if $@;
 }
 
 ################################################################
@@ -188,17 +189,17 @@ sub scan_m4_files (@)
 # Add a macro to the output.
 sub add_macro ($)
 {
-    local ($macro) = @_;
+  my ($macro) = @_;
 
-    # Ignore unknown required macros.  Either they are not really
-    # needed (e.g., a conditional AC_REQUIRE), in which case aclocal
-    # should be quiet, or they are needed and Autoconf itself will
-    # complain when we trace for macro usage later.
-    return unless defined $map{$macro};
+  # Ignore unknown required macros.  Either they are not really
+  # needed (e.g., a conditional AC_REQUIRE), in which case aclocal
+  # should be quiet, or they are needed and Autoconf itself will
+  # complain when we trace for macro usage later.
+  return unless defined $map{$macro};
 
-    print STDERR "aclocal: saw macro $macro\n" if $verbose;
-    $macro_seen{$macro} = 1;
-    &add_file ($map{$macro});
+  print STDERR "aclocal: saw macro $macro\n" if $verbose;
+  $macro_seen{$macro} = 1;
+  &add_file ($map{$macro});
 }
 
 # scan_configure_dep ($file)
@@ -263,7 +264,7 @@ sub scan_configure_dep ($)
 # Add a file to output.
 sub add_file ($)
 {
-  local ($file) = @_;
+  my ($file) = @_;
 
   # Only add a file once.
   return if ($file_seen{$file});
@@ -287,7 +288,7 @@ sub scan_file ($$)
   my $base = dirname $file;
 
   # Do not scan the same file twice.
-  return @$file_includes{$file} if exists $file_includes{$file};
+  return @{$file_includes{$file}} if exists $file_includes{$file};
   # Prevent potential infinite recursion (if two files include each other).
   return () if exists $file_contents{$file};
 
@@ -470,7 +471,7 @@ sub write_aclocal ($@)
   %files = strip_redundant_includes %files;
   delete $files{$configure_ac};
 
-  for $file (grep { exists $files{$_} } @file_order)
+  for my $file (grep { exists $files{$_} } @file_order)
     {
       # Check the time stamp of this file, and all files it includes.
       for my $ifile ($file, @{$file_includes{$file}})
@@ -549,7 +550,7 @@ $output";
 # Print usage and exit.
 sub usage ($)
 {
-  local ($status) = @_;
+  my ($status) = @_;
 
   print "Usage: aclocal [OPTIONS] ...\n\n";
   print "\
@@ -572,9 +573,9 @@ Report bugs to <bug-automake\@gnu.org>.\n";
 # Parse command line.
 sub parse_arguments (@)
 {
-  local (@arglist) = @_;
-  local (@dirlist);
-  local ($print_and_exit) = 0;
+  my @arglist = @_;
+  my @dirlist;
+  my $print_and_exit = 0;
 
   while (@arglist)
     {
@@ -656,11 +657,8 @@ sub parse_arguments (@)
 	  next if /^#/;
 	  # strip off newlines and end-of-line comments
 	  s/\s*\#.*$//;
-	  chomp ($contents=$_);
-	  if (-d $contents )
-	    {
-	      push (@dirlist, $contents);
-	    }
+	  chomp;
+	  push (@dirlist, $_) if -d $_;
 	}
       close (DEFAULT_DIRLIST);
     }
@@ -670,7 +668,7 @@ sub parse_arguments (@)
 
 ################################################################
 
-local (@dirlist) = parse_arguments (@ARGV);
+my @dirlist = parse_arguments (@ARGV);
 $configure_ac = require_configure_ac;
 scan_m4_files (@dirlist);
 scan_configure;
