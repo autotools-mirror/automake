@@ -47,17 +47,14 @@ install-info: $(INFO_DEPS)
 	      $(INSTALL_DATA) $(srcdir)/$$ifile $(infodir)/$$ifile; \
 	    else : ; fi; \
 	  done; \
-## We need the 'else' because in some broken versions of sh 'if' will
-## return false if the test fails.  We use ':' because the GNU
-## standards prohibit us from using 'true'.
-## FIXME: no one has install-info, so for now we just comment it out.
-## FIXME: when we do have install-info, this will have to be split
-## into a separate loop.  See libraries.am for reasons.
-##	  $(POST_INSTALL); \
-##	  if $(SHELL) -c 'install-info --version' >/dev/null 2>&1; then \
-##	    install-info --dir-file=$(infodir)/dir $$d/$$file; \
-##	  else :; fi; \
 	done
+	$(POST_INSTALL)
+## Only run this code if install-info actually exists.
+	if $(SHELL) -c 'install-info --version' >/dev/null 2>&1; then \
+	  for file in $(INFO_DEPS); do \
+	    install-info --info-dir=$(infodir) $$file; \
+	  done; \
+	else : ; fi
 
 uninstall-info:
 	cd $(srcdir) && for file in *.info*; do	\

@@ -3071,55 +3071,11 @@ sub read_am_file
 {
     local ($amfile) = @_;
 
-    # Compute relative location of the top object directory.
-    local (@topdir) = ();
-    foreach (split (/\//, $relative_dir))
-    {
-	next if $_ eq '.' || $_ eq '';
-	if ($_ eq '..')
-	{
-	    pop @topdir;
-	}
-	else
-	{
-	    push (@topdir, '..');
-	}
-    }
-    @topdir = ('.') if ! @topdir;
-
-    $top_builddir = join ('/', @topdir);
-    local ($build_rx);
-    ($build_rx = $top_builddir) =~ s/(\W)/\\$1/g;
-    local ($header_vars) =
-	&file_contents_with_transform
-	    ('s/\@top_builddir\@/' . $build_rx . '/g',
-	     'header-vars');
-
-    # Generate some useful variables when AC_CANONICAL_* used.
-    if ($seen_canonical)
-    {
-	local ($curs, %vars);
-	$vars{'host_alias'} = 'host_alias';
-	$vars{'host_triplet'} = 'host';
-	if ($seen_canonical == $AC_CANONICAL_SYSTEM)
-	{
-	    $vars{'build_alias'} = 'build_alias';
-	    $vars{'build_triplet'} = 'build';
-	    $vars{'target_alias'} = 'target_alias';
-	    $vars{'target_triplet'} = 'target';
-	}
-	foreach $curs (keys %vars)
-	{
-	    $header_vars .= "$curs = \@$vars{$curs}\@\n";
-	    $contents{$curs} = "\@$vars{$curs}\@";
-	}
-    }
-
     open (AM_FILE, $amfile) || die "automake: couldn't open \`$amfile': $!\n";
     print "automake: reading $amfile\n" if $verbose;
 
-    $output_vars .= ("# $in_file_name generated automatically by automake "
-		     . $VERSION . " from $am_file_name\n");
+    $output_vars = ("# $in_file_name generated automatically by automake "
+		    . $VERSION . " from $am_file_name\n");
 
     # Generate copyright for generated Makefile.in.
     $output_vars .= $gen_copyright;
@@ -3158,9 +3114,10 @@ sub read_am_file
 	}
     }
 
-    $output_vars .= $comment . "\n" . $header_vars;
+    $output_vars .= $comment . "\n";
     $comment = '';
     $spacing = "\n";
+    local ($am_vars) = '';
 
     local ($is_ok_macro);
     while ($_)
@@ -3195,7 +3152,7 @@ sub read_am_file
 	    }
 	    else
 	    {
-		$output_vars .= $_;
+		$am_vars .= $_;
 		$saw_bk = /\\$/;
 		# Chop newline and backslash if this line is
 		# continued.  FIXME: maybe ensure trailing whitespace
@@ -3234,7 +3191,7 @@ sub read_am_file
 		$contents{$1} = $2;
 	    }
 	    $content_lines{$1} = $.;
-	    $output_vars .= $comment . $spacing . $_;
+	    $am_vars .= $comment . $spacing . $_;
 	    $comment = $spacing = '';
 	    $saw_bk = /\\$/;
 
@@ -3256,6 +3213,51 @@ sub read_am_file
     }
 
     $output_trailer .= $comment;
+
+    # Compute relative location of the top object directory.
+    local (@topdir) = ();
+    foreach (split (/\//, $relative_dir))
+    {
+	next if $_ eq '.' || $_ eq '';
+	if ($_ eq '..')
+	{
+	    pop @topdir;
+	}
+	else
+	{
+	    push (@topdir, '..');
+	}
+    }
+    @topdir = ('.') if ! @topdir;
+
+    $top_builddir = join ('/', @topdir);
+    local ($build_rx);
+    ($build_rx = $top_builddir) =~ s/(\W)/\\$1/g;
+    $output_vars .= &file_contents_with_transform
+                        ('s/\@top_builddir\@/' . $build_rx . '/g',
+			 'header-vars');
+
+    # Generate some useful variables when AC_CANONICAL_* used.
+    if ($seen_canonical)
+    {
+	local ($curs, %vars);
+	$vars{'host_alias'} = 'host_alias';
+	$vars{'host_triplet'} = 'host';
+	if ($seen_canonical == $AC_CANONICAL_SYSTEM)
+	{
+	    $vars{'build_alias'} = 'build_alias';
+	    $vars{'build_triplet'} = 'build';
+	    $vars{'target_alias'} = 'target_alias';
+	    $vars{'target_triplet'} = 'target';
+	}
+	foreach $curs (keys %vars)
+	{
+	    $output_vars .= "$curs = \@$vars{$curs}\@\n";
+	    $contents{$curs} = "\@$vars{$curs}\@";
+	}
+    }
+
+    $output_vars .= $am_vars;
 }
 
 ################################################################
