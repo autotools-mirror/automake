@@ -90,7 +90,7 @@ maintainer-check: automake aclocal
 	else :; fi
 ## We never want to use "undef", only "delete", but for $/.
 	@if grep -n -w undef $(srcdir)/automake.in | \
-	      fgrep -v 'undef $/' | \
+	      fgrep -v 'undef $$/' | \
 	      grep . ; then \
 	  echo "Found undef in automake.in; use delete instead" 1>&2; \
 	  exit 1; \
