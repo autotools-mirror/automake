@@ -18,15 +18,22 @@
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-# Test that := definitions work.
+# Test that := definitions produce warnings, but otherwise work.
 
 . ./defs || exit 1
 
+set -e
+
 cat > Makefile.am << 'END'
-AUTOMAKE_OPTIONS = -Wno-portability
 ICONS := $(wildcard *.xbm)
 data_DATA = $(ICONS)
 END
 
-$ACLOCAL || exit 1
+$ACLOCAL
+$AUTOMAKE 2> stderr && exit 1
+cat stderr
+grep ':=.*not portable' stderr
+
+echo 'AUTOMAKE_OPTIONS = -Wno-portability' >> Makefile.am
 $AUTOMAKE
+grep 'ICONS :=' Makefile.in
