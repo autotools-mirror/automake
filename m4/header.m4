@@ -76,6 +76,11 @@ AC_DEFUN([_AM_CONFIG_HEADERS],
 [AC_FOREACH([_AM_File], [$1], [_AM_CONFIG_HEADER(_AM_File, [$2], [$3])])
 ])# _AM_CONFIG_HEADERS
 
+# This is a false definition of AM_CONFIG_HEADER that will be
+# overridden by the real definition when _AM_CONFIG_HEADER_INSINUATE
+# is called (i.e. during AM_INIT_AUTOMAKE).
+AC_DEFUN([AM_CONFIG_HEADER],
+[m4_fatal([AM_CONFIG_HEADER called before AM_INIT_AUTOMAKE])])
 
 # _AM_CONFIG_HEADER_INSINUATE
 # ---------------------------
