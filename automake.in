@@ -6590,21 +6590,26 @@ sub file_contents
     &prog_error ("file_contents: $command")
         if $command ne '' && substr ($command, -1) ne ';';
     $command .=
-      &transform ('CYGNUS'          => $cygnus_mode,
-		  'MAINTAINER_MODE' => $seen_maint_mode,
+      # We don't use IGNORE_PATTERN because it contains $ which
+      # prevents us from matching the end of line.
+      "s/##([^#\n].*)?\\n//gmo;"
+	. &transform ('CYGNUS'          => $cygnus_mode,
+		      'MAINTAINER_MODE' => $seen_maint_mode,
 
-		  'SHAR'        => $options{'dist-shar'},
-		  'BZIP2'       => $options{'dist-bzip2'},
-		  'ZIP'         => $options{'dist-zip'},
-		  'COMPRESS'    => $options{'dist-tarZ'},
+		      'SHAR'        => $options{'dist-shar'},
+		      'BZIP2'       => $options{'dist-bzip2'},
+		      'ZIP'         => $options{'dist-zip'},
+		      'COMPRESS'    => $options{'dist-tarZ'},
 
-		  'INSTALL-INFO' => !$options{'no-installinfo'},
-		  'INSTALL-MAN'  => !$options{'no-installman'},
-		  'CK-NEWS'      => $options{'check-news'},
+		      'INSTALL-INFO' => !$options{'no-installinfo'},
+		      'INSTALL-MAN'  => !$options{'no-installman'},
+		      'CK-NEWS'      => $options{'check-news'},
 
-		  'SUBDIRS' => &variable_defined ('SUBDIRS'));
+		      'SUBDIRS' => &variable_defined ('SUBDIRS'))
+	  # We don't need more than two consecutive new-lines.
+	  . 's/\n{3,}/\n\n/g';
 
-    # Swallow the file and applied the COMMAND.
+    # Swallow the file and apply the COMMAND.
     my $file = $am_dir . '/' . $basename . '.am';
     my $fc_file = new IO::File ("< $file");
     if (! $fc_file)
@@ -6616,38 +6621,14 @@ sub file_contents
 
     # Swallow into $CONTENTS the whole content of the file, after
     # having performed the $COMMAND, and removed Automake comments.
-    my $contents = '';
-
-    while ($_ = $fc_file->getline)
-    {
-	$_ =~ s/\@MAINTAINER_MODE_TRUE\@//g
-	    unless $seen_maint_mode;
-
-	$had_chars = length ($_) && $_ ne "\n";
-        eval $command;
-	# If the transform caused all the characters to go away, then
-	# ignore the line.  Why do this?  Because in Perl 4, a "next"
-	# inside of an eval doesn't affect a loop outside the eval.
-	# So we can't pass in a "transform" that uses next.  We used
-	# to do this.  "Empty" also means consisting of a single
-	# newline.
-	next if $had_chars && ($_ eq '' || $_ eq "\n");
-
-	# Merely delete comments beginning with two hashes.
-	next if	/$IGNORE_PATTERN/o;
-
-	$contents .= $_;
-    }
+    my $saved_dollar_slash = $/;
+    undef $/;
+    $_ = $fc_file->getline;
+    $/ = $saved_dollar_slash;
+    eval $command;
+    $contents = $_;
 
     $fc_file->close;
-
-    # We don't need more than two consecutive new-lines.
-    $contents =~ s/\n{3,}/\n\n/g;
-
-    # A rule has three parts: a list of targets, a list of dependencies,
-    # and optionally actions.
-    my $RULE_PATTERN =
-      "^($TARGET_PATTERN(?:(?:\\\\\n|\\s)+$TARGET_PATTERN)*) *:([^=].*|)\$";
 
 
     # Process each Make `paragraph'.
@@ -6662,6 +6643,12 @@ sub file_contents
     # perl goes loopy if you try to
     #
     #  $result_rules =~ /^($TARGET_PATTERN *)+: ($TARGET_PATTERN *)+\n\n/sm
+
+    # A rule has three parts: a list of targets, a list of dependencies,
+    # and optionally actions.
+    my $RULE_PATTERN =
+      "^($TARGET_PATTERN(?:(?:\\\\\n|\\s)+$TARGET_PATTERN)*) *:([^=].*|)\$";
+
     my $result_vars = '';
     my $result_rules = '';
     my $comment = '';
@@ -6784,14 +6771,14 @@ sub transform (%)
 
     while (my ($token, $val) = each %pairs)
     {
-        $result .= "s/\Q%$token%\E/\Q$val\E/g;";
+        $result .= "s/\Q%$token%\E/\Q$val\E/gm;";
 	if ($val)
 	{
-	    $result .= "s/\Q?$token?\E//g;s/^.*\Q?!$token?\E.*\$//g;";
+	    $result .= "s/\Q?$token?\E//gm;s/^.*\Q?!$token?\E.*\\n//gm;";
 	}
 	else
 	{
-	    $result .= "s/\Q?!$token?\E//g;s/^.*\Q?$token?\E.*\$//g;";
+	    $result .= "s/\Q?!$token?\E//gm;s/^.*\Q?$token?\E.*\\n//gm;";
 	}
     }
 
@@ -6855,12 +6842,12 @@ sub am_install_var
     if (defined $configure_vars{'LIBTOOL'})
     {
 	# Transform '%LIBTOOL ...%' to '$(LIBTOOL) ...'
-	$ltxform = 's/%LIBTOOL([^\%]*)%/\$(LIBTOOL) $1/;';
+	$ltxform = 's/%LIBTOOL([^\%]*)%/\$(LIBTOOL) $1/g;';
     }
     else
     {
 	# Delete '%LIBTOOL ...%'
-	$ltxform = 's/%LIBTOOL([^%]*)%//;';
+	$ltxform = 's/%LIBTOOL([^%]*)%//g;';
     }
 
     my $cygxform;
