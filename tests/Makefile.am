@@ -4,10 +4,10 @@ AUTOMAKE_OPTIONS = gnits
 
 TESTS = acinclude.test aclocal.test aclocali.test aclocalii.test \
 acoutnoq.test acoutput.test acoutqnl.test acouttbs.test acsilent.test \
-alpha.test ammissing.test ansi.test ansi2.test ansi3.test auxdir.test \
-backsl.test badline.test badprog.test block.test canon.test \
-canon2.test canon3.test canon4.test checkall.test clean.test \
-colneq.test colneq2.test colon.test colon2.test colon3.test \
+all.test alpha.test ammissing.test ansi.test ansi2.test ansi3.test \
+auxdir.test backsl.test badline.test badprog.test block.test \
+canon.test canon2.test canon3.test canon4.test checkall.test \
+clean.test colneq.test colneq2.test colon.test colon2.test colon3.test \
 colon4.test colon5.test colon6.test colon7.test comment.test \
 comment2.test compile_f_c_cxx.test cond.test cond2.test cond3.test \
 cond4.test cond5.test cond6.test cond7.test condman.test condman2.test \
