@@ -59,9 +59,9 @@ my $SUFFIX_RULE_PATTERN = "^\\.([a-zA-Z0-9]+)\\.([a-zA-Z0-9]+)\$";
 my $MACRO_PATTERN = "^ *([A-Za-z0-9_\@]+)[ \t]*([:+]?)=[ \t]*(.*)\$";
 my $BOGUS_MACRO_PATTERN = "^ *([^ \t]*)[ \t]*([:+]?)=[ \t]*(.*)\$";
 my $GNITS_VERSION_PATTERN = "[0-9]+\\.[0-9]+([a-z]|\\.[0-9]+)?";
-my $IF_PATTERN = "^if[ \t]+\([A-Za-z][A-Za-z0-9_]*\)[ \t]*\(#.*\)?\$";
-my $ELSE_PATTERN = "^else[ \t]*\(#.*\)?\$";
-my $ENDIF_PATTERN = "^endif[ \t]*\(#.*\)?\$";
+my $IF_PATTERN = "^if[ \t]+([A-Za-z][A-Za-z0-9_]*)[ \t]*(#.*)?\$";
+my $ELSE_PATTERN = "^else[ \t]*(#.*)?\$";
+my $ENDIF_PATTERN = "^endif(?:[ \t]+([A-Za-z][A-Za-z0-9_]*))?[ \t]*(#.*)?\$";
 my $PATH_PATTERN='(\\w|[/.-])+';
 # This will pass through anything not of the prescribed form.
 my $INCLUDE_PATTERN = "^include[ \t]+((\\\$\\\(top_srcdir\\\)/${PATH_PATTERN})|(\\\$\\\(srcdir\\\)/${PATH_PATTERN})|([^/\\\$]${PATH_PATTERN}))[ \t]*(#.*)?\$";
@@ -6739,6 +6739,7 @@ sub file_contents ($%)
     my $result_rules = '';
     my $comment = '';
     my $separator = '';
+    my @cond_stack = ();
     foreach (split (/(?<!\\)\n(?![\t#])/, $contents))
     {
         # Strip leading new lines.  This can happen for comments:
@@ -6763,7 +6764,46 @@ sub file_contents ($%)
  	{
  	    # Stick comments before the incoming macro or rule.
  	    $comment = "$_\n";
- 	}
+
+	}
+
+        # Handling the conditionals.
+        elsif (/$IF_PATTERN/o)
+	{
+	    my $cond = $1;
+	    &am_line_error ($., "$cond does not appear in AM_CONDITIONAL")
+		if ! $configure_cond{$cond} && $cond !~ /^TRUE|FALSE$/;
+	    push (@cond_stack,
+		  ($cond =~ /^TRUE|FALSE$/) ? "$cond" : "${cond}_TRUE");
+	}
+	elsif (/$ELSE_PATTERN/o)
+	{
+	    if (! @cond_stack)
+	    {
+		&am_line_error ($., "else without if");
+	    }
+	    elsif ($cond_stack[$#cond_stack] =~ /^(.*_)?FALSE$/)
+	    {
+		&am_line_error ($., "else after else");
+	    }
+	    else
+	    {
+		$cond_stack[$#cond_stack] =~ s/TRUE$/FALSE/;
+	    }
+	}
+	elsif (/$ENDIF_PATTERN/o)
+	{
+	    if (! @cond_stack)
+	    {
+		&am_line_error ($., "endif without if");
+	    }
+	    else
+	    {
+		pop @cond_stack;
+	    }
+	}
+
+        # Handling rules.
  	elsif (/$RULE_PATTERN/mso)
  	{
 	  # Separate relationship from optional actions: the first
@@ -6799,7 +6839,8 @@ sub file_contents ($%)
 		  if (!defined $targets{$targets})
 		    {
 		      $result_rules .= "$separator$comment$paragraph\n";
-		      rule_define ($targets, 1, '', $.);
+		      rule_define ($targets, 1,
+				   conditional_string (@cond_stack), $.);
 		    }
 		  $comment = $separator = '';
 		  last;
@@ -6854,10 +6895,12 @@ sub transform (%)
 	if ($val)
 	{
 	    $result .= "s/\Q?$token?\E//gm;s/^.*\Q?!$token?\E.*\\n//gm;";
+	    $result .= "s/\Q%?$token%\E/TRUE/gm;s/^.*\Q%!$token%\E.*\\n/FALSE/gm;";
 	}
 	else
 	{
 	    $result .= "s/\Q?!$token?\E//gm;s/^.*\Q?$token?\E.*\\n//gm;";
+	    $result .= "s/\Q%?$token%\E/FALSE/gm;s/^.*\Q%!$token%\E.*\\n/TRUE/gm;";
 	}
     }
 
