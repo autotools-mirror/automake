@@ -1420,7 +1420,7 @@ sub handle_programs
 	}
 	else
 	{
-	    $cygxform = 's/^NOTCYGWIN.$*//; s/^CYGWIN//;';
+	    $cygxform = 's/^NOTCYGWIN.*$//; s/^CYGWIN//;';
 	}
 
 	$output_rules .=
@@ -4592,14 +4592,15 @@ sub file_contents_with_transform
 	$_ =~ s/\@MAINT\@//g
 	    unless $seen_maint_mode;
 
-	$had_chars = length ($_);
+	$had_chars = length ($_) && $_ ne "\n";
 	eval $command;
 	# If the transform caused all the characters to go away, then
 	# ignore the line.  Why do this?  Because in Perl 4, a "next"
 	# inside of an eval doesn't affect a loop outside the eval.
 	# So we can't pass in a "transform" that uses next.  We used
-	# to do this.
-	next if $had_chars && $_ eq '';
+	# to do this.  "Empty" also means consisting of a single
+	# newline.
+	next if $had_chars && ($_ eq '' || $_ eq "\n");
 
 	if (/$IGNORE_PATTERN/o)
 	{
@@ -4738,11 +4739,11 @@ sub am_install_var
     local ($cygxform);
     if (! $seen_cygwin32)
     {
-	$cygxform = 's/\@EXEEXT\@//g; s/^NOTCYGWIN.*$//; s/^CYGWIN//;';
+	$cygxform = 's/\@EXEEXT\@//g; s/^NOTCYGWIN//; s/^CYGWIN.*$//;';
     }
     else
     {
-	$cygxform .= 's/^CYGWIN.*$//; s/^NOTCYGWIN//;';
+	$cygxform = 's/\@EXEEXT\@/\$(EXEEXT)/g; s/^CYGWIN//; s/^NOTCYGWIN.*$//;';
     }
 
     while (@args)
