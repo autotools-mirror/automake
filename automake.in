@@ -5491,15 +5491,6 @@ sub make_condition
     return $res;
 }
 
-# See if two conditionals are the same.
-sub conditional_same
-{
-    my ($cond1, $cond2) = @_;
-
-    return (&conditional_true_when ($cond1, $cond2)
-	    && &conditional_true_when ($cond2, $cond1));
-}
-
 
 # &conditional_dump
 # -----------------
@@ -5518,6 +5509,25 @@ sub conditional_dump ()
       print STDERR "  }\n";
     }
   print STDERR "}\n";
+}
+
+
+# $STRING
+# &conditional_string(@COND-STACK)
+# --------------------------------
+# Build a string de
+sub conditional_string
+{
+  my (@stack) = @_;
+
+  if (grep (/^FALSE$/, @stack))
+    {
+      return '#';
+    }
+  else
+    {
+      return join (' ', uniq (sort (grep (!/^TRUE$/, @stack))));
+    }
 }
 
 
@@ -5613,7 +5623,7 @@ sub variable_defined ($$)
 	    # have been asked to check.
 	    foreach my $vcond (keys %{$conditional{$var}})
 	    {
-		if (&conditional_same ($cond, $vcond))
+		if ($cond eq $vcond)
 		{
 		    # Even a conditional examination is good enough
 		    # for us.  FIXME: really should maintain examined
@@ -6258,7 +6268,7 @@ sub read_am_file
 		$contents{$last_var_name} .= $_;
 		if (@conditional_stack)
 		{
-		    my $cond_string = join (' ', @conditional_stack);
+		    my $cond_string = conditional_string (@conditional_stack);
 		    ${conditional{$last_var_name}}{$cond_string} .= $_;
 		}
 	    }
@@ -6313,7 +6323,7 @@ sub read_am_file
 	    $targets{$1} = 1;
 	    if (@conditional_stack)
 	    {
-		my $cond_string = join (' ', @conditional_stack);
+		my $cond_string = conditional_string (@conditional_stack);
 		if ($target_conditional{$1})
 		{
 		    &check_ambiguous_conditional ($1, $cond_string);
@@ -6409,7 +6419,7 @@ sub read_am_file
 	    # Handle conditionalized macros.
 	    if (@conditional_stack)
 	    {
-	        my $cond_string = join (' ', @conditional_stack);
+	        my $cond_string = conditional_string (@conditional_stack);
 		my $done = 0;
 		if ($conditional{$last_var_name})
 		{
@@ -6420,7 +6430,7 @@ sub read_am_file
 			# the old value with the new one.
 			foreach my $vcond (keys %{$conditional{$last_var_name}})
 			{
-			    if (&conditional_same ($vcond, $cond_string))
+			    if ($vcond eq $cond_string)
 			    {
 			        $done = 1;
 			        ${$conditional{$last_var_name}}{$vcond}
