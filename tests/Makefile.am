@@ -19,6 +19,7 @@ ammissing.test \
 ansi.test \
 ansi2.test \
 ansi3.test \
+ansi4.test \
 auxdir.test \
 backsl.test \
 backsl2.test \
