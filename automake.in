@@ -627,6 +627,7 @@ sub generate_makefile
     # on this (but currently does).
     $contents{'SOURCES'} = join (' ', @sources);
     $contents{'OBJECTS'} = join (' ', @objects);
+    &define_pretty_variable ('DIST_SOURCES', '', @dist_sources);
 
     &handle_multilib;
     &handle_texinfo;
@@ -1023,7 +1024,8 @@ sub check_libobjs_sources
     local ($one_file, $unxformed) = @_;
 
     local ($prefix, $file, @files);
-    foreach $prefix ('', 'EXTRA_')
+    foreach $prefix ('', 'EXTRA_', 'dist_', 'nodist_',
+		     'dist_EXTRA_', 'nodist_EXTRA_')
     {
 	if (&variable_defined ($prefix . $one_file . '_SOURCES'))
 	{
@@ -1196,16 +1198,29 @@ sub handle_source_transform
 	return;
     }
 
-    local (@files, @result, $prefix, $temp);
-    foreach $prefix ('', 'EXTRA_')
+    local (@files, @result, $prefix, $temp, $xpfx);
+    local (%used_pfx) = ();
+    foreach $prefix ('', 'EXTRA_', 'dist_', 'nodist_',
+		     'dist_EXTRA_', 'nodist_EXTRA_')
     {
+	# We are going to define _OBJECTS variables using the prefix.
+	# Then we glom them all together.  So we can't use the null
+	# prefix here as we need it later.
+	$xpfx = ($prefix eq '') ? 'am_' : $prefix;
+
 	@files = ();
 	local ($var) = $prefix . $one_file . "_SOURCES";
 	if (&variable_defined ($var))
 	{
+	    # Keep track of which prefixes we saw.
+	    $used_pfx{$xpfx} = 1
+		unless $prefix =~ /EXTRA_/;
+
 	    push (@sources, '$(' . $prefix . $one_file . "_SOURCES)");
-	    push (@objects, '$(' . $prefix . $one_file . "_OBJECTS)")
-		unless $prefix eq 'EXTRA_';
+	    push (@objects, '$(' . $xpfx . $one_file . "_OBJECTS)")
+		unless $prefix =~ /EXTRA_/;
+	    push (@dist_sources, '$(' . $prefix . $one_file . "_SOURCES)")
+		unless $prefix =~ /^nodist_/;
 	    local (@conds) = &variable_conditions ($var);
 	    if (! @conds)
 	    {
@@ -1222,26 +1237,34 @@ sub handle_source_transform
 		    $linker = $temp if $linker eq '';
 
 		    # Define _OBJECTS conditionally.
-		    &define_pretty_variable ($one_file . '_OBJECTS', $cond,
-					     @result)
-			unless $prefix eq 'EXTRA_';
+		    &define_pretty_variable ($xpfx . $one_file . '_OBJECTS',
+					     $cond, @result)
+			unless $prefix =~ /EXTRA_/;
 		}
 
 		next;
 	    }
 	}
-	elsif ($prefix eq '')
-	{
-	    &define_variable ($one_file . "_SOURCES", $unxformed . ".c");
-	    push (@sources, $unxformed . '.c');
-	    push (@objects, $unxformed . $obj);
-	    push (@files, $unxformed . '.c');
-	}
 
 	($temp, @result) = &handle_single_transform_list ($obj, @files);
 	$linker = $temp if $linker eq '';
-	&define_pretty_variable ($one_file . "_OBJECTS", '', @result)
-	    unless $prefix eq 'EXTRA_';
+	&define_pretty_variable ($xpfx . $one_file . "_OBJECTS", '', @result)
+	    unless $prefix =~ /EXTRA_/;
+    }
+
+    local (@keys) = sort keys %used_pfx;
+    if (scalar @keys == 0)
+    {
+	&define_variable ($one_file . "_SOURCES", $unxformed . ".c");
+	push (@sources, $unxformed . '.c');
+	push (@dist_sources, $unxformed . '.c');
+	push (@objects, $unxformed . $obj);
+	push (@files, $unxformed . '.c');
+    }
+    else
+    {
+	grep ($_ = '$(' . $_ . $one_file . '_OBJECTS)', @keys);
+	&define_pretty_variable ($one_file . '_OBJECTS', '', @keys);
     }
 
     return $linker;
@@ -6529,6 +6552,8 @@ sub initialize_per_input
     # SOURCES and OBJECTS variables.
     @sources = ();
     @objects = ();
+    # Sources which go in the distribution.
+    @dist_sources = ();
 
     # This hash maps object file names onto their corresopnding source
     # file names.  This is used to ensure that each object is created
