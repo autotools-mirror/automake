@@ -127,12 +127,17 @@ sub scan_m4_files (@)
 {
     local (@dirlist) = @_;
 
-    # First, scan acinclude.m4 if it exists.
+    # First, scan configure.ac.  It may contain macro definitions,
+    # or may include other files that define macros.
+    &scan_file ($configure_ac);
+
+    # Then, scan acinclude.m4 if it exists.
     if (-f 'acinclude.m4')
     {
 	&scan_file ('acinclude.m4');
     }
 
+    # Finally, scan all files in our search path.
     local ($m4dir);
     foreach $m4dir (@dirlist)
     {
@@ -378,6 +383,8 @@ sub trace_used_macros ()
   my %files = map { $map{$_} => 1 } keys %macro_seen;
   $files{'acinclude.m4'} = 1 if -f 'acinclude.m4';
   %files = strip_redundant_includes %files;
+  # configure.ac is implicitly included.
+  delete $files{$configure_ac};
 
   my $traces = ($ENV{AUTOM4TE} || 'autom4te');
   $traces .= " --language Autoconf-without-aclocal-m4 ";
@@ -424,6 +431,7 @@ sub write_aclocal ($@)
   my %files = map { $map{$_} => 1 } @macros;
   $files{'acinclude.m4'} = 1 if -f 'acinclude.m4';
   %files = strip_redundant_includes %files;
+  delete $files{$configure_ac};
 
   for $file (grep { exists $files{$_} } @file_order)
     {
