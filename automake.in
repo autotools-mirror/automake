@@ -32,7 +32,13 @@ $VERSION = "@VERSION@";
 $prefix = "@prefix@";
 $am_dir = "@datadir@/@PACKAGE@";
 
-
+# String constants.
+$IGNORE_PATTERN = "^##([^#].*)?\$";
+$WHITE_PATTERN = "^[ \t]*\$";
+$COMMENT_PATTERN = "^#";
+$RULE_PATTERN = "^([a-zA-Z_.][-.a-zA-Z0-9_.]*) *:";
+$MACRO_PATTERN = "^([A-Za-z][A-Za-z0-9_]*)[ \t]*=[ \t]*(.*)\$";
+
 
 # Constants to define the "strictness" level.
 $NORMAL = 0;
@@ -150,8 +156,7 @@ sub parse_arguments
 	}
 	elsif ($arglist[0] =~ /^-/)
 	{
-	    print STDERR "automake: unrecognized option -- \`$arglist[0]'\n";
-	    exit 1;
+	    die "automake: unrecognized option -- \`$arglist[0]'\n";
 	}
 	else
 	{
@@ -172,15 +177,8 @@ sub parse_arguments
 	    push (@make_list, $_);
 	}
 
-	if ($#make_list >= 0)
-	{
-	    print "automake: using ", join (' ', @make_list), "\n";
-	}
-	else
-	{
-	    print STDERR "automake: no \"Makefile.am\" found or specified\n";
-	    exit 1;
-	}
+	die "automake: no \"Makefile.am\" found or specified\n"
+	    if $#make_list < 0;
     }
 
     return (@make_list);
@@ -190,11 +188,8 @@ sub parse_arguments
 sub require_argument
 {
     local ($arg, @arglist) = @_;
-    if ($#arglist >= 0)
-    {
-	print STDERR "automake: no argument given for option \`$arg'\n";
-	exit 1;
-    }
+    die "automake: no argument given for option \`$arg'\n"
+	if $#arglist >= 0;
 }
 
 ################################################################
@@ -211,13 +206,8 @@ sub generate_makefile
     # FIXME with new 'dist' target, don't need Makefile.in.  Probably
     # should remove it here.
     &push_dist_common ('Makefile.in', 'Makefile.am');
-    push (@sources, '$(SOURCES)') if (defined $contents{'SOURCES'});
-    push (@objects, '$(OBJECTS)') if (defined $contents{'OBJECTS'});
-
-    # Generate header before reading .am file.  The header must come
-    # before anything else, and read_am_file copies code into the
-    # output.
-    &generate_header;
+    push (@sources, '$(SOURCES)') if defined $contents{'SOURCES'};
+    push (@objects, '$(OBJECTS)') if defined $contents{'OBJECTS'};
 
     # This is always the default target.  This gives us freedom to do
     # things in whatever order is convenient.
@@ -272,18 +262,6 @@ sub generate_makefile
 }
 
 ################################################################
-
-# Generate header of Makefile.in.
-sub generate_header
-{
-    $output_vars =
-	($output_vars
-	 . "# Makefile.in generated automatically by automake "
-	 . $VERSION
-	 . " from Makefile.am\n");
-
-    $output_vars .= &file_contents ('header-vars');
-}
 
 # Return object extension.  Just once, put some code into the output.
 sub get_object_extension
@@ -388,7 +366,7 @@ sub handle_programs
 					 'programs', 'PROGRAMS',
 					 'bin', 'sbin', 'libexec', 'noinst');
     # FIXME error if PROGRAMS defined but no blah_PROGRAMS defined.
-    return if ($#proglist < 0);
+    return if $#proglist < 0;
 
     local ($obj) = &get_object_extension;
     local ($one_file, $munge);
@@ -415,7 +393,7 @@ sub handle_libraries
 					'libraries', 'LIBRARIES',
 					'lib', 'pkglib', 'noinst');
     # FIXME error if LIBRARIES defined but no blah_LIBRARIES defined.
-    return if ($#liblist < 0);
+    return if $#liblist < 0;
 
     # Generate _LIBFILES variables.  Too bad we can't do this in
     # am_install_var.
@@ -475,7 +453,7 @@ sub handle_scripts
 sub handle_texinfo
 {
     local ($texis) = &am_variable ('TEXINFOS');
-    return if (!$texis);
+    return if ! $texis;
 
     local (@texis) = split (/\s+/, $texis);
     if ($#texis > 0)
@@ -552,7 +530,7 @@ sub handle_texinfo
 # Handle any man pages.
 sub handle_man_pages
 {
-    return if (! defined $contents{'MANS'});
+    return if ! defined $contents{'MANS'};
 
     # We generate the manpage install code by hand to avoid the use of
     # basename in the generated Makefile.
@@ -560,7 +538,8 @@ sub handle_man_pages
     local (%sections, %inames, %secmap, %fullsecmap);
     foreach (@mans)
     {
-	m/^(.*)\.([0-9])([a-z]*)$/;
+	# FIXME: statement without effect:
+	/^(.*)\.([0-9])([a-z]*)$/;
 	$sections{$2} = 1;
 	$inames{$1} = $_;
 	$secmap{$1} = $2;
@@ -624,12 +603,12 @@ sub handle_tags
     local ($tagging) = 0;
 
     push (@phony, 'tags');
-    if (defined ($contents{'SUBDIRS'}))
+    if (defined $contents{'SUBDIRS'})
     {
 	$output_rules .= &file_contents ('tags');
 	$tagging = 1;
     }
-    elsif ($dir_holds_sources || defined ($contents{'ETAGS_ARGS'}))
+    elsif ($dir_holds_sources || defined $contents{'ETAGS_ARGS'})
     {
 	$output_rules .= &file_contents ('tags-subd');
 	push (@phony, 'id');
@@ -677,7 +656,7 @@ sub handle_dist
     }
     else
     {
-	$output_rules .= &file_contents (defined ($contents{'SUBDIRS'})
+	$output_rules .= &file_contents (defined $contents{'SUBDIRS'}
 					 ? 'dist-subd-top'
 					 : 'dist');
     }
@@ -725,7 +704,7 @@ sub handle_dependencies
 # Handle subdirectories.
 sub handle_subdirs
 {
-    return if (! defined ($contents{'SUBDIRS'}));
+    return if ! defined $contents{'SUBDIRS'};
 
     $output_rules .= &file_contents ('subdirs');
 
@@ -788,8 +767,8 @@ sub handle_configure
 	&require_file ($NORMAL, 'mkinstalldirs');
     }
 
-    if (defined ($contents{'CONFIG_HEADER'})
-	&& $contents{'CONFIG_HEADER'} !~ m,/,)
+    if (defined $contents{'CONFIG_HEADER'}
+	&& $contents{'CONFIG_HEADER'} !~ /\//)
     {
 	# Header defined and in this directory.
 	if (-f 'acconfig.h')
@@ -848,7 +827,7 @@ sub handle_footer
     {
 	$output_trailer .= ".SUFFIXES: " . join (' ', @suffixes) . "\n";
     }
-    $output_trailer .= "\n" . &file_contents ('footer');
+    $output_trailer .= &file_contents ('footer');
 }
 
 # Deal with installdirs target.
@@ -876,6 +855,7 @@ sub handle_merge_targets
     &do_one_merge_target ('all', @all);
     &do_one_merge_target ('info', @info);
     &do_one_merge_target ('dvi', @dvi);
+    push (@check, 'all');
     &do_one_merge_target ('check', @check);
     &do_one_merge_target ('installcheck', @installcheck);
 
@@ -944,7 +924,7 @@ sub handle_merge_targets
 	$output_rules .= ("install-exec: "
 			  . join (' ', @install_exec)
 			  . "\n\n");
-	push (@install, 'install-exec') if (!$recursive_install);
+	push (@install, 'install-exec') if !$recursive_install;
 	push (@phony, 'install-exec');
     }
     if ($#install_data >= 0)
@@ -952,7 +932,7 @@ sub handle_merge_targets
 	$output_rules .= ("install-data: "
 			  . join (' ', @install_data)
 			  . "\n\n");
-	push (@install, 'install-data') if (!$recursive_install);
+	push (@install, 'install-data') if !$recursive_install;
 	push (@phony, 'install-data');
     }
 
@@ -1023,10 +1003,7 @@ sub do_one_clean_target
     # clean<-mostlyclean derivation).  In this case the target is
     # implicitly known to be 'clean'.
     local ($flag) = $target;
-    if (!$flag)
-    {
-	$target = 'clean';
-    }
+    $target = 'clean' if ! $flag;
 
     grep (($_ = $name . 'clean-' . $_) && 0, @deps);
     if ($flag)
@@ -1037,7 +1014,6 @@ sub do_one_clean_target
 	}
     }
     &pretty_print_rule ($name . $target . ": ", '', @deps);
-    $output_rules .= "\n";
 
     # FIXME shouldn't we really print these messages before running
     # the dependencies?
@@ -1139,30 +1115,73 @@ sub read_am_file
 {
     local ($amfile) = @_;
 
-    if (! open (AMFILE, $amfile))
-    {
-	print STDERR "automake: couldn't open $amfile: $!\n";
-	exit 1;
-    }
+    local ($header_vars) = &file_contents ('header-vars');
+
+    open (AM_FILE, $amfile) || die "automake: couldn't open $amfile: $!\n";
+
+    $output_vars .= ("# Makefile.in generated automatically by automake "
+		     . $VERSION . " from Makefile.am\n");
 
     local ($saw_bk) = 0;
     local ($was_rule) = 0;
+    local ($spacing) = '';
+    local ($comment) = '';
     local ($last_var_name) = '';
-    local ($saved_comments) = '';
 
-    while (<AMFILE>)
+    while (<AM_FILE>)
     {
-	chop;
+	if (/$IGNORE_PATTERN/o)
+	{
+	    # Merely delete comments beginning with two hashes.
+	}
+	elsif (/$WHITE_PATTERN/o)
+	{
+	    # Stick a single white line before the incoming macro or rule.
+	    $spacing = "\n";
+	}
+	elsif (/$COMMENT_PATTERN/o)
+	{
+	    # Stick comments before the incoming macro or rule.
+	    $comment .= $spacing . $_;
+	    $spacing = '';
+	}
+	else
+	{
+	    last;
+	}
+    }
 
-	if ($saw_bk)
+    $output_vars .= $comment . "\n" . $header_vars;
+    $comment = '';
+    $spacing = "\n";
+
+    while ($_)
+    {
+	if (/$IGNORE_PATTERN/o)
+	{
+	    # Merely delete comments beginning with two hashes.
+	}
+	elsif (/$WHITE_PATTERN/o)
+	{
+	    # Stick a single white line before the incoming macro or rule.
+	    $spacing = "\n";
+	}
+	elsif (/$COMMENT_PATTERN/o)
+	{
+	    # Stick comments before the incoming macro or rule.
+	    $comment .= $spacing . $_;
+	    $spacing = '';
+	}
+	elsif ($saw_bk)
 	{
 	    if ($was_rule)
 	    {
-		$output_trailer .= $_ . "\n";
+		$output_trailer .= $_;
+		$saw_bk = /\\$/;
 	    }
 	    else
 	    {
-		$output_vars .= $_ . "\n";
+		$output_vars .= $_;
 		if (substr ($_, -1) eq "\\")
 		{
 		    $contents{$last_var_name} .= substr ($_, 0,
@@ -1172,33 +1191,25 @@ sub read_am_file
 		{
 		    $contents{$last_var_name} .= $_;
 		}
+		$saw_bk = /\\$/;
 	    }
 	}
-	elsif (/^\#/)
+	elsif (/$RULE_PATTERN/o)
 	{
-	    # Got a comment.  We save comments until we get a
-	    # non-comment, and then we add the last comments.
-	    $saved_comments .= $_ . "\n";
-	}
-	elsif ($_ eq '@kr@')
-	{
-	    # Special case: this means we want automatic
-	    # de-ANSI-fication.  FIXME think of a better way.
-	    $contents{'@kr@'} = 1;
-	}
-	elsif (m/^ *([a-zA-Z_.][-.a-zA-Z0-9_.]*) *:/)
-	{
+	    # warn "** Saw rule .$1.\n";
 	    # Found a rule.
 	    $was_rule = 1;
 	    # Value here doesn't matter; for targets we only note
 	    # existence.
 	    $contents{$1} = 1;
-	    $output_trailer .= $saved_comments . $_ . "\n";
-	    $saved_comments = '';
+	    $output_trailer .= $comment . $spacing . $_;
+	    $comment = $spacing = '';
+	    $saw_bk = /\\$/;
 	}
-	elsif (m/^ *([A-Za-z][A-Za-z0-9_]*)[ \t]*=[ \t]*(.*)$/)
+	elsif (/$MACRO_PATTERN/o)
 	{
-	    # Found a variable reference.
+	    # warn "** Saw macro .$1.\n";
+	    # Found a macro definition.
 	    $was_rule = 0;
 	    $last_var_name = $1;
 	    if (substr ($2, -1) eq "\\")
@@ -1209,39 +1220,30 @@ sub read_am_file
 	    {
 		$contents{$1} = $2;
 	    }
-	    $output_vars .= $saved_comments . $_ . "\n";
-	    $saved_comments = '';
+	    $output_vars .= $comment . $spacing . $_;
+	    $comment = $spacing = '';
+	    $saw_bk = /\\$/;
 	}
-	elsif (m/^$/)
+	elsif ($_ eq "\@kr\@\n")
 	{
-	    # Special rule: if looking at a blank line, append it to
-	    # whatever we saw last.
-	    if ($was_rule)
-	    {
-		$output_trailer .= $saved_comments . "\n";
-	    }
-	    else
-	    {
-		$output_vars .= $saved_comments . "\n";
-	    }
-	    $saved_comments = '';
+	    # Special case: this means we want automatic
+	    # de-ANSI-fication.  FIXME think of a better way.
+	    $contents{'@kr@'} = 1;
 	}
 	else
 	{
 	    # This isn't an error; it is probably a continued rule.
 	    # In fact, this is what we assume.
-	    $output_trailer .= $_ . "\n";
+	    $was_rule = 1;
+	    $output_trailer .= $comment . $spacing . $_;
+	    $comment = $spacing = '';
+	    $saw_bk = /\\$/;
 	}
 
-	$saw_bk = (substr ($_, -1) eq "\\");
+	$_ = <AM_FILE>;
     }
 
-    # Include trailing comments with variables for now.
-    $output_vars .= $saved_comments;
-
-    # Include some space after user code.
-    $output_vars .= "\n";
-    $output_trailer .= "\n";
+    $output_trailer .= $comment;
 }
 
 ################################################################
@@ -1368,26 +1370,87 @@ sub initialize_per_input
 
 ################################################################
 
-# Return contents of a file from $am_dir.
+# Return contents of a file from $am_dir, automatically skipping
+# macros or rules which are already known.
 sub file_contents
 {
     local ($basename) = @_;
     local ($file) = $am_dir . '/' . $basename . '.am';
 
-    if (! open (FC_FILE, $file))
-    {
-	print STDERR "automake: installation error: cannot open \"$file\"\n";
-	exit 1;
-    }
+    open (FC_FILE, $file)
+	|| die "automake: installation error: cannot open \"$file\"\n";
 
-    # Lines starting with "##" are comments for developer use only.
-    local ($result) = '';
+    local ($was_rule) = 0;
+    local ($result_vars) = '';
+    local ($result_rules) = '';
+    local ($comment) = '';
+    local ($spacing) = "\n";
+    local ($skipping) = 0;
+
     while (<FC_FILE>)
     {
-	$result .= $_ unless ( m/^##/);
+	if (/$IGNORE_PATTERN/o)
+	{
+	    # Merely delete comments beginning with two hashes.
+	}
+	elsif (/$WHITE_PATTERN/o)
+	{
+	    # Stick a single white line before the incoming macro or rule.
+	    $spacing = "\n";
+	}
+	elsif (/$COMMENT_PATTERN/o)
+	{
+	    # Stick comments before the incoming macro or rule.
+	    $comment .= $spacing . $_;
+	    $spacing = '';
+	}
+	elsif ($saw_bk)
+	{
+	    if ($was_rule)
+	    {
+		$result_rules .= $_ if ! $skipping;
+	    }
+	    else
+	    {
+		$result_vars .= $_ if ! $skipping;
+	    }
+	    $saw_bk = /\\$/;
+	}
+	elsif (/$RULE_PATTERN/o)
+	{
+	    # warn "** Found rule .$1.\n";
+	    # Found a rule.
+	    $was_rule = 1;
+	    $skipping = defined $contents{$1};
+	    warn "** Skip $skipping\n" if $skipping;
+	    $result_rules .= $comment . $spacing . $_ if ! $skipping;
+	    $comment = $spacing = '';
+	    $saw_bk = /\\$/;
+	}
+	elsif (/$MACRO_PATTERN/o)
+	{
+	    # warn "** Found macro .$1.\n";
+	    # Found a variable reference.
+	    $was_rule = 0;
+	    $skipping = defined $contents{$1};
+	    warn "** Skip $skipping\n" if $skipping;
+	    $result_vars .= $comment . $spacing . $_ if ! $skipping;
+	    $comment = $spacing = '';
+	    $saw_bk = /\\$/;
+	}
+	else
+	{
+	    # This isn't an error; it is probably a continued rule.
+	    # In fact, this is what we assume.
+	    $was_rule = 1;
+	    $result_rules .= $comment . $spacing . $_ if ! $skipping;
+	    $comment = $spacing = '';
+	    $saw_bk = /\\$/;
+	}
     }
+
     close (FC_FILE);
-    return $result;
+    return $result_vars . $result_rules . $comment;
 }
 
 # Return contents of some Makefile.am variable.  Allow for AM_ style
@@ -1396,7 +1459,7 @@ sub am_variable
 {
     local ($varname) = @_;
 
-    return (defined ($contents{'AM_' . $varname})
+    return (defined $contents{'AM_' . $varname}
 	    ? $contents{'AM_' . $varname}
 	    : $contents{$varname});
 }
@@ -1455,7 +1518,7 @@ sub am_install_var
 		($munge = $clean_templ) =~ s/\@DIR\@/$_/g;
 		$output_rules .= $munge;
 		push (@clean, $_ . $primary);
-		push (@phony, $_ . $primary);
+		&push_phony_cleaners ($_ . $primary);
 	    }
 
 	    push (@used, '$(' . $one_name . ')');
@@ -1586,8 +1649,7 @@ sub set_strictness
     }
     else
     {
-	print STDERR "automake: level \`$name' not recognized\n";
-	exit 1;
+	die "automake: level \`$name' not recognized\n";
     }
 }
 
@@ -1601,11 +1663,7 @@ sub dirname
     local ($sub);
 
     ($sub = $file) =~ s,/+[^/]+,,g;
-    if ($sub eq $file)
-    {
-	$sub = '.';
-    }
-
+    $sub = '.' if $sub eq $file;
     return $sub;
 }
 
@@ -1621,7 +1679,7 @@ sub mkdir
 # Print an error message and set exit status.
 sub am_error
 {
-    print STDERR "automake: ${am_file}.am: ", join (' ', @_), "\n";
+    warn "automake: ${am_file}.am: ", join (' ', @_), "\n";
     $exit_status = 1;
 }
 
