@@ -2,7 +2,7 @@
 
 AUTOMAKE_OPTIONS = gnits
 
-XFAIL_TESTS = colon7.test
+XFAIL_TESTS = 
 TESTS =	\
 acinclude.test \
 aclocal.test \
