@@ -1119,7 +1119,9 @@ sub handle_tags
 	push (@phony, 'tags-recursive');
 	$tagging = 1;
     }
-    elsif ($dir_holds_sources || &variable_defined ('ETAGS_ARGS'))
+    elsif ($dir_holds_sources
+	   || $dir_holds_headers
+	   || &variable_defined ('ETAGS_ARGS'))
     {
 	$output_rules .= &file_contents ('tags-subd');
 	$tagging = 1;
@@ -1579,9 +1581,9 @@ sub handle_configure
 # Handle C headers.
 sub handle_headers
 {
-    &am_install_var ('header', 'HEADERS', 'include',
-		     'oldinclude', 'pkginclude',
-		     'noinst', 'check');
+    $dir_holds_headers = &am_install_var ('header', 'HEADERS', 'include',
+					  'oldinclude', 'pkginclude',
+					  'noinst', 'check');
 }
 
 sub handle_gettext
@@ -2698,6 +2700,9 @@ sub initialize_per_input
     # holds object extension, but this information is encapsulated in
     # the function get_object_extension).
     $dir_holds_sources = '';
+
+    # TRUE if current directory holds any headers.
+    $dir_holds_headers = 0;
 
     # TRUE if install targets should work recursively.
     $recursive_install = 0;

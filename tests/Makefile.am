@@ -10,6 +10,6 @@ target.test extra.test noinst.test instman.test mkinstall.test auxdir.test \
 canon3.test mdate2.test subdir.test backsl.test package.test number.test \
 insh2.test outdir.test fpinstall.test fpinst2.test texinfo.test dejagnu.test \
 yacc.test mkinstall2.test texinfo2.test ansi.test depacl.test depacl2.test \
-error.test colon.test vtexi2.test
+error.test colon.test vtexi2.test tags.test
 
 EXTRA_DIST = defs $(TESTS)
