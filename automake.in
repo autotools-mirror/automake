@@ -585,8 +585,10 @@ my $use_dependencies;
 # This is a list of all targets to run during "make dist".
 my @dist_targets;
 
-# Keys in this hash are the basenames of files which must depend
-# on ansi2knr.
+# Keys in this hash are the basenames of files which must depend on
+# ansi2knr.  Values are either the empty string, or the directory in
+# which the ANSI source file appears; the directory must have a
+# trailing `/'.
 my %de_ansi_files;
 
 # This maps the source extension of a suffix rule to its
@@ -5164,7 +5166,9 @@ sub lang_c_rewrite
 	require_conf_file ("$am_file.am", FOREIGN, 'compile');
     }
 
-    $de_ansi_files{$base} = 1;
+    $de_ansi_files{$base} = (($directory eq '.' || $directory eq '')
+			     ? ''
+			     : "$directory/");
     return $r;
 }
 
@@ -5271,7 +5275,9 @@ sub lang_c_finish
     {
 	if ($file =~ /^(.*)\.[cly]$/ && -f "$relative_dir/$file")
 	{
-	    $de_ansi_files{$1} = 1;
+	    $de_ansi_files{$1} = (($relative_dir eq '.' || $relative_dir eq '')
+				  ? ''
+				  : "$relative_dir/");
 	}
     }
 
@@ -5287,11 +5293,12 @@ sub lang_c_finish
 	    # dir (because these files might be auto-generated.  But
 	    # we can't use $< -- some makes only define $< during a
 	    # suffix rule.
- 	    $output_rules .= ($base . "_.c: $base.c \$(ANSI2KNR)\n\t"
+	    my $ansfile = $de_ansi_files{$base} . $base . '.c';
+ 	    $output_rules .= ($base . "_.c: $ansfile \$(ANSI2KNR)\n\t"
 			      . '$(CPP) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) '
-			      . '`if test -f $(srcdir)/' . $base . '.c'
-			      . '; then echo $(srcdir)/' . $base . '.c'
-			      . '; else echo ' . $base . '.c; fi` '
+			      . '`if test -f $(srcdir)/' . $ansfile
+			      . '; then echo $(srcdir)/' . $ansfile
+			      . '; else echo ' . $ansfile . '; fi` '
 			      . "| sed 's/^# \\([0-9]\\)/#line \\1/' "
 			      . '| $(ANSI2KNR) > ' . $base . "_.c"
 			      # If ansi2knr fails then we shouldn't

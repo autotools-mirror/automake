@@ -24,6 +24,7 @@ ansi2.test \
 ansi3.test \
 ansi4.test \
 ansi5.test \
+ansi6.test \
 ar.test \
 asm.test \
 auxdir.test \
