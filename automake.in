@@ -287,10 +287,6 @@ my $default_strictness = GNU;
 # Name of strictness level, as set on command line.
 my $default_strictness_name = 'gnu';
 
-# This is TRUE if automatic dependency generation code should be
-# included in generated Makefile.in.
-my $cmdline_use_dependencies = 1;
-
 # From the Perl manual.
 my $symlink_exists = (eval 'symlink ("", "");', $@ eq '');
 
@@ -431,9 +427,6 @@ my %required_targets =
 # should distribute depcomp -- has been generated.)
 my $automake_needs_to_reprocess_all_files = 0;
 
-# Options set via AM_INIT_AUTOMAKE.
-my $global_options = '';
-
 # Same as $suffix_rules (declared below), but records only the
 # default rules supplied by the languages Automake supports.
 my $suffix_rules_default;
@@ -573,12 +566,11 @@ my %dep_files;
 my $strictness;
 my $strictness_name;
 
-# Options from AUTOMAKE_OPTIONS.
-my %options;
-
-# Whether or not dependencies are handled.  Can be further changed
-# in handle_options.
-my $use_dependencies;
+# Automake options.
+# Values are the Automake::Location of the definition, except
+# for 'ansi2knr' whose value is a pair [filename, Location].
+my %options;			# From AUTOMAKE_OPTIONS
+my %global_options;		# From AM_INIT_AUTOMAKE or the command line.
 
 # This is a list of all targets to run during "make dist".
 my @dist_targets;
@@ -784,13 +776,7 @@ sub initialize_per_input ()
     $strictness = $default_strictness;
     $strictness_name = $default_strictness_name;
 
-    %options =
-      (
-       # TRUE if --cygnus seen.
-       'cygnus' => 0,
-      );
-
-    $use_dependencies = $cmdline_use_dependencies;
+    %options = ();
 
     @dist_targets = ();
 
@@ -1174,23 +1160,18 @@ sub backname ($)
 ################################################################
 
 # $BOOL
-# process_option_list ($CONFIG, @OPTIONS)
-# ---------------------------------------
+# process_option_list (\%OPTIONS, $WHERE, @OPTIONS)
+# -------------------------------------------------
 # Process a list of options.  Return 1 on error, 0 otherwise.
-# This is a helper for handle_options.  CONFIG is true if we're
-# handling global options.
-sub process_option_list
+# \%OPTIONS is the hash to fill with options data, $WHERE is
+# the location where @OPTIONS occured.
+sub process_option_list (\%$@)
 {
-  my ($config, @list) = @_;
-
-  # FIXME: We should disallow conditional definitions of AUTOMAKE_OPTIONS.
-  my $where = ($config ?
-	       $seen_init_automake :
-	       rvar ('AUTOMAKE_OPTIONS')->rdef (TRUE)->location);
+  my ($options, $where, @list) = @_;
 
   foreach (@list)
     {
-      $options{$_} = $where;
+      $options->{$_} = $where;
       if ($_ eq 'gnits' || $_ eq 'gnu' || $_ eq 'foreign')
 	{
 	  &set_strictness ($_);
@@ -1200,7 +1181,7 @@ sub process_option_list
 	  # An option like "../lib/ansi2knr" is allowed.  With no
 	  # path prefix, we assume the required programs are in this
 	  # directory.  We save the actual option for later.
-	  $options{'ansi2knr'} = [$_, $where];
+	  $options->{'ansi2knr'} = [$_, $where];
 	}
       elsif ($_ eq 'no-installman' || $_ eq 'no-installinfo'
 	     || $_ eq 'dist-shar' || $_ eq 'dist-zip'
@@ -1211,13 +1192,9 @@ sub process_option_list
 	     || $_ eq 'subdir-objects' || $_ eq 'nostdinc'
 	     || $_ eq 'no-exeext' || $_ eq 'no-define'
 	     || $_ eq 'std-options'
-	     || $_ eq 'cygnus')
+	     || $_ eq 'cygnus' || $_ eq 'no-dependencies')
 	{
 	  # Explicitly recognize these.
-	}
-      elsif ($_ eq 'no-dependencies')
-	{
-	  $use_dependencies = 0;
 	}
       elsif (/^\d+\.\d+(?:\.\d+)?[a-z]?(?:-[A-Za-z0-9]+)?$/)
 	{
@@ -1249,17 +1226,15 @@ sub process_option_list
 # Handle AUTOMAKE_OPTIONS variable.  Return 1 on error, 0 otherwise.
 sub handle_options
 {
-  # Process global options first so that more specific options can
-  # override.
-  if (&process_option_list (1, split (' ', $global_options)))
-    {
-      return 1;
-    }
+  %options = %global_options;
 
   my $var = var ('AUTOMAKE_OPTIONS');
   if ($var)
     {
-      if (&process_option_list (0, $var->value_as_list_recursive (TRUE)))
+      # FIXME: We should disallow conditional definitions of AUTOMAKE_OPTIONS.
+      if (process_option_list (%options,
+			       $var->rdef (TRUE)->location,
+			       $var->value_as_list_recursive (TRUE)))
 	{
 	  return 1;
 	}
@@ -1301,7 +1276,7 @@ sub get_object_extension
 # Call finish function for each language that was used.
 sub handle_languages
 {
-    if ($use_dependencies)
+    if (! $options{'no-dependencies'})
     {
 	# Include auto-dep code.  Don't include it if DEP_FILES would
 	# be empty.
@@ -1368,10 +1343,9 @@ sub handle_languages
 	my $pfx = $lang->autodep;
 	my $fpfx = ($pfx eq '') ? 'CC' : $pfx;
 
-	my $AMDEP = (($use_dependencies && $lang->autodep ne 'no')
-		     ? 'AMDEP' : 'FALSE');
-	my $FASTDEP = (($use_dependencies && $lang->autodep ne 'no')
-		       ? ('am__fastdep' . $fpfx) : 'FALSE');
+	my ($AMDEP, $FASTDEP) =
+	  ($options{'no-dependencies'} || $lang->autodep eq 'no')
+	  ? ('FALSE', 'FALSE') : ('AMDEP', "am__fastdep$fpfx");
 
 	my %transform = ('EXT'     => $ext,
 			 'PFX'     => $pfx,
@@ -1383,7 +1357,7 @@ sub handle_languages
 			           => (count_files_for_language ($lang->name) > 1));
 
 	# Generate the appropriate rules for this extension.
-	if (($use_dependencies && $lang->autodep ne 'no')
+	if (((! $options{'no-dependencies'}) && $lang->autodep ne 'no')
 	    || defined $lang->compile)
 	{
 	    # Some C compilers don't support -c -o.  Use it only if really
@@ -1987,7 +1961,7 @@ sub handle_single_transform_list ($$$$@)
                 # .deps directory is created.
 		push (@dep_list,
 		      require_build_directory ($directory . '/$(DEPDIR)'))
-		    if $use_dependencies;
+		  unless $options{'no-dependencies'};
             }
 
             &pretty_print_rule ($object . ':', "\t", @dep_list)
@@ -3707,8 +3681,10 @@ sub handle_configure ($$@)
      'MAKEFILE-IN'         => $infile,
      'MAKEFILE-IN-DEPS'    => "@include_stack",
      'MAKEFILE-AM'         => $amfile,
-     STRICTNESS            => $options{'cygnus'} ? 'cygnus' : $strictness_name,
-     'USE-DEPS'           => $cmdline_use_dependencies ? '' : ' --ignore-deps',
+     STRICTNESS            => $global_options{'cygnus'}
+                                ? 'cygnus' : $strictness_name,
+     'USE-DEPS'            => $global_options{'no-dependencies'}
+                                ? ' --ignore-deps' : '',
      'MAKEFILE-AM-SOURCES' =>  "$input$colon_infile",
      'REGEN-ACLOCAL-M4'    => $regen_aclocal_m4,
      ACLOCAL_M4_DEPS       => "@aclocal_m4_deps");
@@ -4676,7 +4652,9 @@ sub scan_autoconf_traces ($)
 	    }
 	  elsif (defined $args[1])
 	    {
-	      $global_options = $args[1];
+	      exit $exit_code
+		if (process_option_list (%global_options, $where,
+					 split (' ', $args[1])));
 	    }
 	}
       elsif ($macro eq 'AM_MAINTAINER_MODE')
@@ -4780,7 +4758,6 @@ sub check_cygnus
   &set_strictness ('foreign');
   $options{'no-installinfo'} = $options{'cygnus'};
   $options{'no-dependencies'} = $options{'cygnus'};
-  $use_dependencies = 0;
 
   err_ac "`AM_MAINTAINER_MODE' required when --cygnus specified"
     if !$seen_maint_mode;
@@ -6201,8 +6178,7 @@ sub make_paragraphs ($%)
   my $command =
     "s/$IGNORE_PATTERN//gm;"
     . transform (%transform,
-
-		 'CYGNUS'          => $options{'cygnus'},
+		 'CYGNUS'      => defined $options{'cygnus'},
 		 'MAINTAINER-MODE'
 		 => $seen_maint_mode ? subst ('MAINTAINER_MODE_TRUE') : '',
 
@@ -7470,17 +7446,19 @@ EOF
 sub parse_arguments ()
 {
   # Start off as gnu.
-  &set_strictness ('gnu');
+  set_strictness ('gnu');
 
+  my $cli_where = new Automake::Location;
   my %cli_options =
     (
      'libdir:s' 	=> \$libdir,
-     'gnu' 		=> sub { &set_strictness ('gnu'); },
-     'gnits' 		=> sub { &set_strictness ('gnits'); },
-     'cygnus' 	        => \$options{'cygnus'},
-     'foreign' 	        => sub { &set_strictness ('foreign'); },
-     'include-deps' 	=> sub { $cmdline_use_dependencies = 1; },
-     'i|ignore-deps' 	=> sub { $cmdline_use_dependencies = 0; },
+     'gnu' 		=> sub { set_strictness ('gnu'); },
+     'gnits' 		=> sub { set_strictness ('gnits'); },
+     'cygnus' 	        => sub { $global_options{'cygnus'} = $cli_where; },
+     'foreign'          => sub { set_strictness ('foreign'); },
+     'include-deps' 	=> sub { delete $global_options{'no-dependencies'}; },
+     'i|ignore-deps' 	=> sub { $global_options{'no-dependencies'}
+				 = $cli_where; },
      'no-force' 	=> sub { $force_generation = 0; },
      'f|force-missing'  => \$force_missing,
      'o|output-dir:s'	=> \$output_directory,
