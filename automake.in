@@ -849,11 +849,10 @@ sub get_object_extension
 	    }
 	}
 	local ($xform) = &transform ('DEFAULT_INCLUDES' => $default_include);
-	$output_vars .= &file_contents_with_transform ($xform,
-						       'comp-vars');
+	$output_vars .= &file_contents ('comp-vars', $xform);
 
 	$xform = $seen_objext ? 's/^OBJEXT//;' : 's/^OBJEXT.*$//;';
-	$output_rules .= &file_contents_with_transform ($xform, 'compile');
+	$output_rules .= &file_contents ('compile', $xform);
 
 	&push_phony_cleaners ('compile');
 
@@ -1823,13 +1822,11 @@ sub handle_programs
 	    $exeext = '$(EXEEXT)';
 	}
 
-	$output_rules .=
-	    &file_contents_with_transform
-	      (&transform ('EXEEXT'   => $exeext,
-			   'PROGRAM'  => $one_file,
-			   'XPROGRAM' => $xname,
-			   'XLINK'    => $xlink),
-	       'program');
+	$output_rules .= &file_contents ('program',
+					 &transform ('EXEEXT'   => $exeext,
+						     'PROGRAM'  => $one_file,
+						     'XPROGRAM' => $xname,
+						     'XLINK'    => $xlink));
     }
 
     if (&variable_defined ('LDADD') && &handle_lib_objects ('', 'LDADD', 0))
@@ -1936,11 +1933,9 @@ sub handle_libraries
 
 	&handle_source_transform ($xlib, $onelib, $obj);
 
-	$output_rules .=
-	    &file_contents_with_transform
-	        (&transform ('LIBRARY'  => $onelib,
-			     'XLIBRARY' => $xlib),
-		 'library');
+	$output_rules .= &file_contents ('library',
+					 &transform ('LIBRARY'  => $onelib,
+						     'XLIBRARY' => $xlib));
     }
 
     if ($seen_libobjs)
@@ -2097,13 +2092,11 @@ sub handle_ltlibraries
 	    $rpath = ('-rpath $(' . $instdirs{$onelib} . 'dir)');
 	}
 
-	$output_rules .=
-	    &file_contents_with_transform
-	        (&transform ('LTLIBRARY'  => $onelib,
-			     'XLTLIBRARY' => $xlib,
-			     'RPATH'      => $rpath,
-			     'XLINK'      => $xlink),
-		 'ltlibrary');
+	$output_rules .= &file_contents ('ltlibrary',
+					 &transform ('LTLIBRARY'  => $onelib,
+						     'XLTLIBRARY' => $xlib,
+						     'RPATH'      => $rpath,
+						     'XLINK'      => $xlink));
     }
 
     if ($seen_libobjs)
@@ -2296,13 +2289,12 @@ sub handle_texinfo
 		$conf_dir .= '/' unless $conf_dir =~ /\/$/;
 	    }
 	    $output_rules .=
-		&file_contents_with_transform
-		    (&transform ('TEXI'        	=> $info_cursor,
-				 'VTI'         	=> $vti,
-				 'VTEXI'       	=> $vtexi,
-				 'MDDIR'       	=> $conf_dir,
-				 'CONFIGURE_AC' => $configure_ac),
-		     'texi-vers');
+		&file_contents ('texi-vers',
+				&transform ('TEXI'         => $info_cursor,
+					    'VTI'          => $vti,
+					    'VTEXI'        => $vtexi,
+					    'MDDIR'        => $conf_dir,
+					    'CONFIGURE_AC' => $configure_ac));
 
 	    &push_phony_cleaners ($vti);
 	}
@@ -2396,7 +2388,7 @@ sub handle_texinfo
     }
     $xform .= &transform ('TEXINFODIR' => $texinfodir);
 
-    $output_rules .= &file_contents_with_transform ($xform, 'texinfos');
+    $output_rules .= &file_contents ('texinfos', $xform);
     push (@dist_targets, 'dist-info');
 
     # How to clean.  The funny name is due to --cygnus influence; in
@@ -2507,9 +2499,8 @@ sub handle_man_pages
 	&define_variable ('man' . $sect . 'dir', '$(mandir)/man' . $sect);
 	push (@installdirs, '$(DESTDIR)$(mandir)/man' . $sect)
 	    unless defined $options{'no-installman'};
-	$output_rules .= &file_contents_with_transform ('s/\@SECTION\@/'
-							. $sect . '/g;',
-							'mans');
+	$output_rules .= &file_contents ('mans',
+					 &transform ('SECTION', $sect));
 	push (@namelist, 'install-man' . $sect);
     }
 
@@ -2590,7 +2581,7 @@ sub handle_tags
 	    $xform .= 's/^SUBDIRS.*$//;';
 	}
 
-	$output_rules .= &file_contents_with_transform ($xform, 'tags');
+	$output_rules .= &file_contents ('tags', $xform);
 	$output_rules .= &file_contents ('tags-clean');
 	push (@clean, 'tags');
 	&push_phony_cleaners ('tags');
@@ -2922,7 +2913,7 @@ sub handle_dist
 	    $xform .= 's/^GETTEXT.*$//;';
 	}
 
-	$output_rules .= &file_contents_with_transform ($xform, 'dist');
+	$output_rules .= &file_contents ('dist', $xform);
 
 	local ($dist_all) = ('dist-all: distdir' . "\n"
 			     . $dist_header);
@@ -2980,9 +2971,9 @@ sub add_depend2
 
 	foreach $ext (&lang_extensions ($lang))
 	{
-	    $output_rules .= (&file_contents_with_transform
-			          (&transform ('EXT' => $ext) . $xform1,
-				   'depend2')
+	    $output_rules .= (&file_contents ('depend2',
+					      &transform ('EXT' => $ext)
+					      . $xform1)
 			      . "\n");
 	}
     }
@@ -3016,12 +3007,13 @@ sub add_depend2
 	# depend2.am into real targets for the particular objects we
 	# are building.
 	$output_rules .=
-	    &file_contents_with_transform
-	        ($xform
+	    &file_contents
+	        ('depend2',
+		 $xform
 		 . &transform ('$(' . $pfx . 'COMPILE)'
-			         => $rule,
+			       => $rule,
 			       '$(LT' . $pfx . 'COMPILE)'
-			         => '$(LIBTOOL) --mode=compile ' . $rule,
+			       => '$(LIBTOOL) --mode=compile ' . $rule,
 			       # Handle source and obj transforms.
 			       'OBJ'    => $obj . '.o',
 			       'OBJOBJ' => $obj . '.obj',
@@ -3035,8 +3027,7 @@ sub add_depend2
 		 . 's/^\@EXT\@\.lo:/' . $obj . '.lo: ' . $source . '/g;'
 		 # Maybe generate rule for `.obj'.  Might be
 		 # eliminated by $XFORM.
-		 . 's/^\@EXT\@\.obj:/' . $obj . '.obj: ' . $source . '/g;',
-		 'depend2');
+		 . 's/^\@EXT\@\.obj:/' . $obj . '.obj: ' . $source . '/g;');
     }
 }
 
@@ -3131,7 +3122,7 @@ sub handle_subdirs
 		       ? 'install-info-recursive'
 		       : '')
 		      . '/;');
-    $output_rules .= &file_contents_with_transform ($xform, 'subdirs');
+    $output_rules .= &file_contents ('subdirs', $xform);
     &push_phony_cleaners ('recursive');
 
     $recursive_install = 1;
@@ -3321,8 +3312,7 @@ sub handle_configure
     {
         local ($xform) = &transform ('CONFIGURE_AC' => $configure_ac);
 	&handle_aclocal_m4;
-	$output_rules .= &file_contents_with_transform ($xform,
-							'remake');
+	$output_rules .= &file_contents ('remake', $xform);
 	&examine_variable ('CONFIG_STATUS_DEPENDENCIES');
 	&examine_variable ('CONFIGURE_DEPENDENCIES');
 	$top_reldir = '';
@@ -3450,8 +3440,7 @@ sub handle_configure
 
 	    local ($out_dir) = &dirname ($ch_sans_dir);
 	    $xform .= &transform ('SRC_STAMP' => "${out_dir}/${stamp_name}");
-	    $output_rules .= &file_contents_with_transform ($xform,
-							    'remake-hdr');
+	    $output_rules .= &file_contents ('remake-hdr', $xform);
 
 	    &create ("${relative_dir}/${out_dir}/${stamp_name}.in");
 	    &require_file_with_conf_line ($config_header_line, $FOREIGN,
@@ -3464,10 +3453,9 @@ sub handle_configure
 
     if ($distclean_config)
     {
-	$output_rules .= &file_contents_with_transform ('s,\@FILES\@,'
-							. $distclean_config
-							. ',;',
-							'clean-hdr');
+	$output_rules .=
+	    &file_contents ('clean-hdr',
+			    &transform ('FILES' => $distclean_config));
 	push (@clean, 'hdr');
 	&push_phony_cleaners ('hdr');
     }
@@ -3969,7 +3957,7 @@ sub handle_clean
 		   . ',;');
     }
 
-    $output_rules .= &file_contents_with_transform ($xform, 'clean');
+    $output_rules .= &file_contents ('clean', $xform);
 
     push (@clean, 'generic');
     &push_phony_cleaners ('generic');
@@ -4061,7 +4049,7 @@ sub handle_tests_dejagnu
     {
         $xform = 's/^CYGNUS.*$//;';
     }
-    $output_rules .= &file_contents_with_transform ($xform, 'dejagnu');
+    $output_rules .= &file_contents ('dejagnu', $xform);
 
     # In Cygnus mode, these are found in the build tree.
     # Otherwise they are looked for in $PATH.
@@ -6562,9 +6550,9 @@ sub define_standard_variables
     @topdir = ('.') if ! @topdir;
 
     $top_builddir = join ('/', @topdir);
-    $output_vars .= &file_contents_with_transform
-                        (&transform ('top_builddir' => $top_builddir),
-			 'header-vars');
+    $output_vars .=
+        &file_contents ('header-vars',
+			&transform ('top_builddir' => $top_builddir));
 
     # Generate some useful variables when AC_CANONICAL_* used.  FIXME:
     # this should use generic %configure_vars method.
@@ -6982,17 +6970,17 @@ sub initialize_per_input
 
 
 # $CONTENTS
-# &file_contents_with_transform ($COMMAND, $BASENAME)
-# ---------------------------------------------------
+# &file_contents ($BASENAME, [$COMMAND])
+# --------------------------------------
 # Return contents of a file from $am_dir, automatically skipping
 # macros or rules which are already known.  Runs command on each line
 # as it is read; this command can modify $_.
-sub file_contents_with_transform
+sub file_contents
 {
-    local ($command, $basename) = @_;
+    local ($basename, $command) = @_;
     local ($file) = $am_dir . '/' . $basename . '.am';
 
-    &prog_error ("file_contents_with_transform: $command")
+    &prog_error ("file_contents: $command")
         if $command ne '' && substr ($command, -1) ne ';';
 
     open (FC_FILE, $file)
@@ -7096,15 +7084,10 @@ sub file_contents_with_transform
     return $result_vars . $result_rules . $comment;
 }
 
-# Like file_contents_with_transform, but no transform.
-sub file_contents
-{
-    return &file_contents_with_transform ('', @_);
-}
 
 # &transform (%PAIRS)
 # -------------------
-# Create a replacement expression suitable for file_contents_with_transform
+# Create a replacement expression suitable for file_contents
 # to replace each key of %PAIRS by its value.
 sub transform
 {
@@ -7398,9 +7381,9 @@ sub am_install_var
 	    if ($do_clean)
 	    {
 		$output_rules .=
-		    &file_contents_with_transform ('s/\@DIR\@/' . $X . '/go;'
-						   . $cygxform,
-						   $clean_file);
+		  &file_contents ($clean_file,
+				  &transform ('DIR' => $X)
+				  . $cygxform);
 
 		push (@clean, $X . $primary);
 		&push_phony_cleaners ($X . $primary);
@@ -7431,11 +7414,12 @@ sub am_install_var
 	    }
 
 	    $output_rules .=
-		&file_contents_with_transform ('s/\@DIR\@/' . $X . '/g;'
-					       . 's/\@NDIR\@/' . $nodir_name . '/go;'
-					       . $ltxform . $cygxform
-					       . $subdir_xform,
-					       $file);
+	      &file_contents ($file,
+			      &transform ('DIR'  => $X,
+					  'NDIR' => $nodir_name)
+			      . $ltxform
+			      . $cygxform
+			      . $subdir_xform);
 
 	    push (@uninstall, 'uninstall-' . $X . $primary);
 	    push (@phony, 'uninstall-' . $X . $primary);
