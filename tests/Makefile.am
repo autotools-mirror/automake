@@ -40,6 +40,7 @@ auxdir.test \
 auxdir2.test \
 backsl.test \
 backsl2.test \
+backsl3.test \
 badline.test \
 badprog.test \
 block.test \
