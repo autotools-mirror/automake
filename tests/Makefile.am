@@ -311,6 +311,7 @@ subdir2.test \
 subdir3.test \
 subdir4.test \
 subdir5.test \
+subdir6.test \
 subdirbuiltsources.test \
 subdircond.test \
 subobj.test \
