@@ -50,6 +50,13 @@ case "$input" in
     ;;
 esac
 
+# We don't want to use the absolute path if the input in the current
+# directory like when making a tar ball.
+input_base=`echo $input | sed -e 's|.*/||'`
+if test -f $input_base && cmp $input_base $input >/dev/null 2>&1; then
+  input=$input_base
+fi
+
 pairlist=
 while test "$#" -ne 0; do
    if test "$1" = "--"; then
@@ -67,6 +74,15 @@ trap "cd `pwd`; rm -rf $dirname > /dev/null 2>&1" 1 2 3 15
 mkdir $dirname || exit 1
 
 cd $dirname
+case "$input" in
+ /*)
+    # Absolute path; do nothing.
+    ;;
+ *)
+    # Make a symbolic link, hard link or hardcopy.
+    ln -s ../"$input" . > /dev/null 2>&1 || ln ../"$input" . > /dev/null 2>&1 || cp ../"$input" .
+    ;;
+esac
 $prog ${1+"$@"} "$input"
 status=$?
 
