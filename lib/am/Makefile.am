@@ -13,7 +13,7 @@ remake-subd.am remake.am scripts.am subdirs.am tags.am tags-subd.am \
 tags-clean.am \
 texi-clean.am texi-version.am texinfos-vars.am texinfos.am \
 libraries-clean.am scripts-clean.am programs-clean.am data-clean.am \
-INSTALL install-sh mdate-sh mkinstalldirs texinfo.tex
+COPYING INSTALL install-sh mdate-sh mkinstalldirs texinfo.tex
 
 DIST_OTHER = automake.in
 

@@ -122,6 +122,14 @@ sub parse_arguments
 	{
 	    &set_strictness ($1);
 	}
+	elsif ($arglist[0] eq '--gnu')
+	{
+	    &set_strictness ('gnu');
+	}
+	elsif ($arglist[0] eq '--gnits')
+	{
+	    &set_strictness ('gnits');
+	}
 	elsif ($arglist[0] eq '--strictness')
 	{
 	    &require_argument (@arglist);
@@ -643,7 +651,19 @@ sub handle_dist
 	}
     }
 
-    &pretty_print ("DIST_COMMON =", '', keys (%dist_common));
+    # Keys of %dist_common are names of files to distributed.  We put
+    # README first because it then becomes easier to make a
+    # Usenet-compliant shar file (in these, README must be first).
+    # FIXME do more ordering of files here.
+    local (@coms);
+    if (defined $dist_common{'README'})
+    {
+	push (@coms, 'README');
+	undef $dist_common{'README'};
+    }
+    push (@coms, keys %dist_common);
+
+    &pretty_print ("DIST_COMMON =", '', @coms);
     $output_vars .= "\n";
 
     # Some boilerplate.
@@ -1051,7 +1071,7 @@ sub check_gnu_standards
     if ($relative_dir eq '.')
     {
 	# In top level (or only) directory.
-	&require_file ($GNU, 'INSTALL', 'NEWS', 'README');
+	&require_file ($GNU, 'INSTALL', 'NEWS', 'README', 'COPYING');
     }
 }
 
@@ -1285,9 +1305,9 @@ sub initialize_global_constants
     # DISTFILES.
     @common_files =
 	(
-	 "THANKS", "TODO", "README", "NEWS", "COPYING", "COPYING.LIB",
+	 "README", "THANKS", "TODO", "NEWS", "COPYING",
 	 "INSTALL", "ABOUT-NLS", "ChangeLog", "configure", "configure.in",
-	 "config.guess", "config.sub"
+	 "config.guess", "config.sub", "AUTHORS", "BACKLOG", "ABOUT-GNU"
 	 );
 
     # Commonly used files we auto-include, but only sometimes.
@@ -1300,6 +1320,8 @@ sub initialize_global_constants
 
     $USAGE = "\
   --amdir=DIR           directory storing config files
+  --gnits               same as --strictness=gnits
+  --gnu                 same as --strictness=gnu
   --help                print this help, then exit
   --include-deps        include generated dependencies in Makefile.in
   --install-missing     install missing standard files
@@ -1420,7 +1442,7 @@ sub file_contents
 	    # Found a rule.
 	    $was_rule = 1;
 	    $skipping = defined $contents{$1};
-	    warn "** Skip $skipping\n" if $skipping;
+	    # warn "** Skip $skipping\n" if $skipping;
 	    $result_rules .= $comment . $spacing . $_ if ! $skipping;
 	    $comment = $spacing = '';
 	    $saw_bk = /\\$/;
@@ -1431,7 +1453,7 @@ sub file_contents
 	    # Found a variable reference.
 	    $was_rule = 0;
 	    $skipping = defined $contents{$1};
-	    warn "** Skip $skipping\n" if $skipping;
+	    # warn "** Skip $skipping\n" if $skipping;
 	    $result_vars .= $comment . $spacing . $_ if ! $skipping;
 	    $comment = $spacing = '';
 	    $saw_bk = /\\$/;
@@ -1546,7 +1568,7 @@ sub am_install_var
     if (! defined $contents{$primary} && $#used >= 0)
     {
 	# Define it.
-	&pretty_print ($primary . '=', '', @used);
+	&pretty_print ($primary . ' =', '', @used);
 	$output_vars .= "\n";
     }
 
@@ -1689,11 +1711,13 @@ sub usage
     print "\nFiles which are automatically distributed, if found:\n";
     $~ = "USAGE_FORMAT";
     local (@lcomm) = sort ((@common_files, @common_sometimes));
-    local ($one, $two);
-    while ($#lcomm >= 0)
+    local ($one, $two, $three, $four);
+    while (@lcomm > 0)
     {
-	$one = shift (@lcomm);
-	$two = shift (@lcomm);
+	$one = shift @lcomm;
+	$two = @lcomm ? shift @lcomm : '';
+	$three = @lcomm ? shift @lcomm : '';
+	$four = @lcomm ? shift @lcomm : '';
 	write;
     }
 
@@ -1701,6 +1725,6 @@ sub usage
 }
 
 format USAGE_FORMAT =
-  @<<<<<<<<<<<<<<<<    @<<<<<<<<<<<<<<<<
-  $one,                $two
+  @<<<<<<<<<<<<<<<<   @<<<<<<<<<<<<<<<<   @<<<<<<<<<<<<<<<<   @<<<<<<<<<<<<<<<<
+  $one,               $two,               $three,             $four
 .
