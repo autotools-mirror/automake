@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1996, 1997, 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 2003  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -14,25 +14,24 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with autoconf; see the file COPYING.  If not, write to
+# along with Automake; see the file COPYING.  If not, write to
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-# Test for a bug where target names and variable names are treated alike.
-# Bug from François Pinard.
+# Make sure we complain if @ALLOCA@ is used without being set in configure.in
 
 . ./defs || exit 1
 
-echo AC_PROG_CC >> configure.in
+set -e
 
 cat > Makefile.am << 'END'
-bin_PROGRAMS = consud
-## Note next line is target, not variable.
-consud_SOURCES: consud.c
+noinst_LIBRARIES = libtu.a
+libtu_a_SOURCES =
+libtu_a_LIBADD = @ALLOCA@
 END
 
-echo > consud.c
-
-$ACLOCAL || exit 1
-$AUTOMAKE && exit 1
-exit 0
+$ACLOCAL
+$AUTOMAKE 2>stderr && exit 1
+cat stderr
+grep 'Makefile.am:1:.*AC_PROG_RANLIB' stderr
+grep 'Makefile.am:3:.*AC_FUNC_ALLOCA' stderr

@@ -31,14 +31,13 @@ require Exporter;
 use vars '@ISA', '@EXPORT', '@EXPORT_OK';
 @ISA = qw/Exporter/;
 @EXPORT = qw (err_var msg_var msg_cond_var reject_var
-	      var rvar
+	      var rvar vardef rvardef
 	      variables
 	      scan_variable_expansions check_variable_expansions
 	      condition_ambiguous_p
 	      variable_delete
 	      variable_dump variables_dump
-	      variable_defined
-	      examine_variable
+	      set_seen
 	      require_variables require_variables_for_variable
 	      variable_value
 	      output_variables);
@@ -117,10 +116,15 @@ but is better written
 
   return rvar ($name)->rdef ($cond)->value;
 
-The I<r> variants of the C<var> and C<def> methods add an extra test
-to ensure that the lookup succeeded, and will diagnose failure as
-internal errors (which a message which is much more informative than
-Perl's warning about calling a method on a non-object).
+or even
+
+  return rvardef ($name, $cond)->value;
+
+The I<r> variants of the C<var>, C<def>, and C<vardef> methods add an
+extra test to ensure that the lookup succeeded, and will diagnose
+failures as internal errors (which a message which is much more
+informative than Perl's warning about calling a method on a
+non-object).
 
 =cut
 
@@ -155,6 +159,7 @@ my %_am_macro_for_var =
 # Macros shipped with Autoconf.
 my %_ac_macro_for_var =
   (
+   ALLOCA => 'AC_FUNC_ALLOCA',
    CC => 'AC_PROG_CC',
    CFLAGS => 'AC_PROG_CC',
    CXX => 'AC_PROG_CXX',
@@ -301,8 +306,7 @@ sub reset ()
 =item C<var ($varname)>
 
 Return the C<Automake::Variable> object for the variable
-named C<$varname> if defined.   Return the empty list
-otherwise.
+named C<$varname> if defined.   Return 0 otherwise.
 
 =cut
 
@@ -310,7 +314,22 @@ sub var ($)
 {
   my ($name) = @_;
   return $_variable_dict{$name} if exists $_variable_dict{$name};
-  return ();
+  return 0;
+}
+
+=item C<vardef ($varname, $cond)>
+
+Return the C<Automake::VarDef> object for the variable named
+C<$varname> if defined in condition C<$cond>.  Return the empty list
+if the condition or the variable does not exist.
+
+=cut
+
+sub vardef ($$)
+{
+  my ($name, $cond) = @_;
+  my $var = var $name;
+  return $var && $var->def ($cond);
 }
 
 # Create the variable if it does not exist.
@@ -341,6 +360,20 @@ sub rvar ($)
   prog_error ("undefined variable $name\n" . &variables_dump)
     unless $v;
   return $v;
+}
+
+=item C<rvardef ($varname, $cond)>
+
+Return the C<Automake::VarDef> object for the variable named
+C<$varname> if defined in condition C<$cond>.  Abort with an internal
+error if the variable or the variable does not exist.
+
+=cut
+
+sub rvardef ($$)
+{
+  my ($name, $cond) = @_;
+  return rvar ($name)->rdef ($cond);
 }
 
 =back
@@ -385,7 +418,7 @@ sub name ($)
 =item C<$var-E<gt>def ($cond)>
 
 Return the C<Automake::VarDef> definition for this variable in
-condition C<$cond>, if it exists.  Return the empty list otherwise.
+condition C<$cond>, if it exists.  Return 0 otherwise.
 
 =cut
 
@@ -393,7 +426,7 @@ sub def ($$)
 {
   my ($self, $cond) = @_;
   return $self->{'defs'}{$cond} if exists $self->{'defs'}{$cond};
-  return ();
+  return 0;
 }
 
 =item C<$var-E<gt>rdef ($cond)>
@@ -624,7 +657,7 @@ C<("foo", "$(B)", "bar")>.
 
 =cut
 
-sub value_as_list($$;$$)
+sub value_as_list ($$;$$)
 {
   my ($self, $cond, $parent, $parent_cond) = @_;
   my @result;
@@ -659,7 +692,6 @@ sub value_as_list($$;$$)
     }
   return @result;
 }
-
 
 =back
 
@@ -1099,93 +1131,34 @@ sub variables_dump ()
   return $text;
 }
 
-=item C<$bool = variable_defined ($varname, [$cond])>
 
-See if a variable exists.  C<$varname> is the variable name, and
-C<$cond> is the condition which we should check.  If no condition is
-given, we currently return true if the variable is defined under any
-condition.
+=item C<$var = set_seen ($varname)>
 
-=cut
+=item C<$var = $var->set_seen>
 
-sub variable_defined ($;$)
-{
-  my ($var, $cond) = @_;
+Mark all definitions of this variable as examined, if the variable
+exists.  See L<Automake::VarDef::set_seen>.
 
-  my $v = var $var;
-  my $def = ($v && $cond) ? ($v->def ($cond)) : 0;
-
-  if (!$v || ($cond && !$def))
-    {
-      # VAR is not defined.
-
-      # Check there is no target defined with the name of the
-      # variable we check.
-
-      # adl> I'm wondering if this error still makes any sense today. I
-      # adl> guess it was because targets and variables used to share
-      # adl> the same namespace in older versions of Automake?
-      # tom> While what you say is definitely part of it, I think it
-      # tom> might also have been due to someone making a "spelling error"
-      # tom> -- writing "foo:..." instead of "foo = ...".
-      # tom> I'm not sure whether it is really worth diagnosing
-      # tom> this sort of problem.  In the old days I used to add warnings
-      # tom> and errors like this pretty randomly, based on bug reports I
-      # tom> got.  But there's a plausible argument that I was trying
-      # tom> too hard to prevent people from making mistakes.
-
-      ### FIXME: Presently we can't do this.  Wait until targets are handled
-      ### in there own module.
-      # if (exists $Automake::targets{$var}
-      # 	  && (!$cond || exists $Automake::targets{$var}{$cond}))
-      # 	{
-      # 	  for my $tcond ($cond || keys %{$Automake::targets{$var}})
-      # 	    {
-      # 	      prog_error ("\$Automake::targets{$var}{" . $tcond->human
-      # 			  . "} exists but \$target_owner doesn't")
-      # 		unless exists $Automake::target_owner{$var}{$tcond};
-      # 	      # Diagnose the first user target encountered, if any.
-      # 	      # Restricting this test to user targets allows Automake
-      # 	      # to create rules for things like `bin_PROGRAMS = LDADD'.
-      # 	      if ($Automake::target_owner{$var}{$tcond}
-      # 		  == &Automake::TARGET_USER)
-      # 		{
-      # 		  Automake::msg_cond_target ('syntax', $tcond, $var,
-      # 					     "`$var' is a target; "
-      # 					     . "expected a variable");
-      # 		  return 0;
-      # 		}
-      # 	    }
-      # 	}
-      return 0;
-    }
-
-  # VAR is defined.  Record we have examined this variable.
-  if (!$cond)
-    {
-      for my $c ($v->conditions->conds)
-	{
-	  $v->rdef ($c)->set_seen;
-	}
-    }
-  else
-    {
-      $def->set_seen;
-    }
-  return 1;
-}
-
-=item C<examine_variable ($varname)>
-
-Mark a variable as examined.
+Return the C<Variable> object if the variable exists, or 0
+otherwise (i.e., as the C<var> function).
 
 =cut
 
-sub examine_variable ($)
+sub set_seen ($)
 {
-  my ($var) = @_;
-  variable_defined ($var);
+  my ($self) = @_;
+  $self = ref $self ? $self : var $self;
+
+  return 0 unless $self;
+
+  for my $c ($self->conditions->conds)
+    {
+      $self->rdef ($c)->set_seen;
+    }
+
+  return $self;
 }
+
 
 =item C<$count = require_variables ($where, $reason, $cond, @variables)>
 
@@ -1208,16 +1181,15 @@ sub require_variables ($$$@)
     {
       # Nothing to do if the variable exists.
       next VARIABLE
-	if variable_defined ($var, $cond);
-
-      my $v = _cvar $var;
-      my $undef_cond = $v->not_always_defined_in_cond ($cond);
-      next VARIABLE
-	if $undef_cond->false;
+	if vardef ($var, $cond);
 
       my $text = "$reason`$var' is undefined\n";
-      if (! $undef_cond->true)
+      my $v = var $var;
+      if ($v)
 	{
+	  my $undef_cond = $v->not_always_defined_in_cond ($cond);
+	  next VARIABLE
+	    if $undef_cond->false;
 	  $text .= ("in the following conditions:\n  "
 		    . join ("\n  ", map { $_->human } $undef_cond->conds));
 	}

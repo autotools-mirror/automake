@@ -1,6 +1,6 @@
 ## Process this file with automake to create Makefile.in
 
-XFAIL_TESTS = auxdir2.test cond17.test txinfo5.test target.test
+XFAIL_TESTS = auxdir2.test cond17.test txinfo5.test
 
 TESTS =	\
 aclibobj.test \
@@ -19,6 +19,8 @@ acsilent.test \
 acsubst.test \
 acsubst2.test \
 all.test \
+alloca.test \
+alloca2.test \
 alpha.test \
 alpha2.test \
 amassign.test \
@@ -115,7 +117,6 @@ condman.test \
 condman2.test \
 conf2.test \
 confdeps.test \
-confdist.test \
 conff.test \
 confh.test \
 confh4.test \
@@ -427,7 +428,6 @@ symlink3.test \
 syntax.test \
 tags.test \
 tagsub.test \
-target.test \
 target-cflags.test \
 targetclash.test \
 txinfo.test \

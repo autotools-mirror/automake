@@ -1229,7 +1229,7 @@ sub generate_makefile
     # Catch some obsolete variables.
     msg_var ('obsolete', 'INCLUDES',
 	     "`INCLUDES' is the old name for `AM_CPPFLAGS'")
-      if variable_defined ('INCLUDES');
+      if var ('INCLUDES');
 
     # At the toplevel directory, we might need config.guess, config.sub
     # or libtool scripts (ltconfig and ltmain.sh).
@@ -1250,9 +1250,6 @@ sub generate_makefile
 	# the generated makefile.
 	&push_dist_common ($in_file_name, $am_file_name);
     }
-
-    push (@sources, '$(SOURCES)')
-	if variable_defined ('SOURCES');
 
     # Must do this after reading .am file.
     &define_variable ('subdir', $relative_dir, INTERNAL);
@@ -1280,10 +1277,8 @@ sub generate_makefile
     # We have to run this after dealing with all the programs.
     &handle_libtool;
 
-    # Re-init SOURCES.  FIXME: other code shouldn't depend on this
-    # (but currently does).
-    Automake::Variable::define ('SOURCES', VAR_AUTOMAKE, '', TRUE,
-				"@sources", '', INTERNAL, VAR_PRETTY);
+    # Variables used by distdir.am and tags.am.
+    define_pretty_variable ('SOURCES', TRUE, INTERNAL, @sources);
     define_pretty_variable ('DIST_SOURCES', TRUE, INTERNAL, @dist_sources);
 
     &handle_multilib;
@@ -1307,8 +1302,7 @@ sub generate_makefile
     &handle_all ($output);
 
     # FIXME: Gross!
-    if (variable_defined ('lib_LTLIBRARIES') &&
-	variable_defined ('bin_PROGRAMS'))
+    if (var ('lib_LTLIBRARIES') && var ('bin_PROGRAMS'))
     {
 	$output_rules .= "install-binPROGRAMS: install-libLTLIBRARIES\n\n";
     }
@@ -1448,29 +1442,29 @@ sub process_option_list
 # Handle AUTOMAKE_OPTIONS variable.  Return 1 on error, 0 otherwise.
 sub handle_options
 {
-    # Process global options first so that more specific options can
-    # override.
-    if (&process_option_list (1, split (' ', $global_options)))
+  # Process global options first so that more specific options can
+  # override.
+  if (&process_option_list (1, split (' ', $global_options)))
     {
-	return 1;
+      return 1;
     }
 
-    if (variable_defined ('AUTOMAKE_OPTIONS'))
+  if (var ('AUTOMAKE_OPTIONS'))
     {
-	if (&process_option_list (0, &variable_value_as_list_recursive ('AUTOMAKE_OPTIONS', TRUE)))
+      if (&process_option_list (0, &variable_value_as_list_recursive ('AUTOMAKE_OPTIONS', TRUE)))
 	{
-	    return 1;
+	  return 1;
 	}
     }
 
-    if ($strictness == GNITS)
+  if ($strictness == GNITS)
     {
-	$options{'readme-alpha'} = 1;
-	$options{'std-options'} = 1;
-	$options{'check-news'} = 1;
+      $options{'readme-alpha'} = 1;
+      $options{'std-options'} = 1;
+      $options{'check-news'} = 1;
     }
 
-    return 0;
+  return 0;
 }
 
 
@@ -1644,7 +1638,7 @@ sub handle_languages
 	      {
 		my $val = "${derived}_$flag";
 		$obj_compile =~ s/\(AM_$flag\)/\($val\)/
-		  if variable_defined ($val);
+		  if set_seen ($val);
 	      }
 
 	    my $obj_ltcompile = '$(LIBTOOL) --mode=compile ' . $obj_compile;
@@ -1856,23 +1850,23 @@ sub check_libobjs_sources
   foreach my $prefix ('', 'EXTRA_', 'dist_', 'nodist_',
 		      'dist_EXTRA_', 'nodist_EXTRA_')
     {
-        my @files;
-	if (variable_defined ($prefix . $one_file . '_SOURCES'))
+      my @files;
+      my $varname = $prefix . $one_file . '_SOURCES';
+      my $var = var ($varname);
+      if ($var)
 	{
-	    @files = &variable_value_as_list_recursive (
-				($prefix . $one_file . '_SOURCES'),
-				'all');
+	  @files = &variable_value_as_list_recursive ($varname, 'all');
 	}
-	elsif ($prefix eq '')
+      elsif ($prefix eq '')
 	{
-	    @files = ($unxformed . '.c');
+	  @files = ($unxformed . '.c');
 	}
-	else
+      else
 	{
-	    next;
+	  next;
 	}
 
-	foreach my $file (@files)
+      foreach my $file (@files)
 	{
 	  err_var ($prefix . $one_file . '_SOURCES',
 		   "automatically discovered file `$file' should not" .
@@ -1988,7 +1982,7 @@ sub handle_single_transform_list ($$$$@)
 	    my $have_per_exec_flags = 0;
 	    foreach my $flag (@{$lang->flags})
 	      {
-		if (variable_defined ("${derived}_$flag"))
+		if (set_seen ("${derived}_$flag"))
 		  {
 		    $have_per_exec_flags = 1;
 		    last;
@@ -2011,13 +2005,14 @@ sub handle_single_transform_list ($$$$@)
                 # override.
 
                 my $dname = $derived;
-                if (variable_defined ($derived . '_SHORTNAME'))
+		my $var = var ($derived . '_SHORTNAME');
+                if ($var)
                 {
                     # FIXME: should use the same Condition as
                     # the _SOURCES variable.  But this is really
                     # silly overkill -- nobody should have
                     # conditional shortnames.
-                    $dname = &variable_value ($derived . '_SHORTNAME');
+                    $dname = $var->variable_value;
                 }
                 $object = $dname . '-' . $object;
 
@@ -2266,9 +2261,11 @@ sub traverse_variable_recursively_worker ($$&&$$)
 {
   my ($var, $parent, $fun_item, $fun_collect, $cond_filter, $parent_cond) = @_;
 
-  # Don't recurse into undefined variables.
-  # This will also mark existing variables as examined.
-  return () if ! variable_defined ($var);
+  # Don't recurse into undefined variables and mark
+  # existing variable as examined.
+  my $v = set_seen $var;
+  return ()
+    unless $v;
 
   if (defined $vars_scanned{$var})
     {
@@ -2279,7 +2276,6 @@ sub traverse_variable_recursively_worker ($$&&$$)
 
   my @allresults = ();
   my $cond_once = 0;
-  my $v = rvar $var;
   foreach my $cond ($v->conditions->conds)
     {
       if (ref $cond_filter)
@@ -2532,9 +2528,9 @@ sub handle_source_transform
     foreach my $prefix ('', 'EXTRA_', 'dist_', 'nodist_',
 			'dist_EXTRA_', 'nodist_EXTRA_')
     {
-	my $var = $prefix . $one_file . "_SOURCES";
-	next
-	  if !variable_defined ($var);
+	my $varname = $prefix . $one_file . "_SOURCES";
+	my $var = var $varname;
+	next unless $var;
 
 	# We are going to define _OBJECTS variables using the prefix.
 	# Then we glom them all together.  So we can't use the null
@@ -2545,29 +2541,29 @@ sub handle_source_transform
 	$used_pfx{$xpfx} = 1
 	  unless $prefix =~ /EXTRA_/;
 
-	push @sources, "\$($var)";
+	push @sources, "\$($varname)";
 	if ($prefix !~ /^nodist_/)
 	  {
 	    # If the VAR wasn't definined conditionally, we add
 	    # it to DIST_SOURCES as is.  Otherwise we create a
 	    # am__VAR_DIST variable which contains all possible values,
 	    # and add this variable to DIST_SOURCES.
-	    my $distvar = "$var";
-	    if (variable_conditionally_defined ($var))
+	    my $distvar = $varname;
+	    if (variable_conditionally_defined ($varname))
 	      {
-		$distvar = "am__${var}_DIST";
+		$distvar = "am__${varname}_DIST";
 		my @files =
-		  uniq (variable_value_as_list_recursive ($var, 'all'));
+		  uniq (variable_value_as_list_recursive ($varname, 'all'));
 		define_pretty_variable ($distvar, TRUE, $where, @files);
 	      }
 	    push @dist_sources, "\$($distvar)"
 	  }
 
 	$needlinker |=
-	    define_objects_from_sources ($var,
+	    define_objects_from_sources ($varname,
 					 $xpfx . $one_file . '_OBJECTS',
 					 $prefix =~ /EXTRA_/,
-					 $one_file, $obj, $var, $where);
+					 $one_file, $obj, $varname, $where);
     }
     if ($needlinker)
     {
@@ -2616,19 +2612,21 @@ sub handle_source_transform
 # Returns 1 if LIBOBJS seen, 0 otherwise.
 sub handle_lib_objects
 {
-  my ($xname, $var) = @_;
+  my ($xname, $varname) = @_;
 
-  prog_error "handle_lib_objects: `$var' undefined"
-    if ! variable_defined ($var);
-  prog_error ("handle_lib_objects: unexpected variable name `$var'")
-    unless $var =~ /^(.*)(?:LIB|LD)ADD$/;
+  my $var = var ($varname);
+  prog_error "handle_lib_objects: `$varname' undefined"
+    unless $var;
+  prog_error "handle_lib_objects: unexpected variable name `$varname'"
+    unless $varname =~ /^(.*)(?:LIB|LD)ADD$/;
   my $prefix = $1 || 'AM_';
 
   my $seen_libobjs = 0;
   my $flagvar = 0;
 
   transform_variable_recursively
-    ($var, $xname . '_DEPENDENCIES', 'am__DEPENDENCIES', ! $xname, INTERNAL,
+    ($varname, $xname . '_DEPENDENCIES', 'am__DEPENDENCIES',
+     ! $xname, INTERNAL,
      # Transformation function, run on each filename.
      sub {
        my ($subvar, $val, $cond, $full_cond) = @_;
@@ -2692,10 +2690,11 @@ sub handle_LIBOBJS ($$$)
   $lt ||= '';
   my $myobjext = ($1 ? 'l' : '') . 'o';
 
-  if (! keys %libsources && ! variable_defined ($lt . 'LIBOBJS'))
+  if (! keys %libsources)
     {
-      err_var ($var, "\@${lt}LIBOBJS\@ seen but never set in "
-	       . "`$configure_ac'");
+      require_variables_for_variable ($var,
+				      "\@${lt}LIBOBJS\@ used",
+				      $lt . 'LIBOBJS');
     }
 
   foreach my $iter (keys %libsources)
@@ -2717,7 +2716,7 @@ sub handle_LIBOBJS ($$$)
 	  $dep_files{'$(DEPDIR)/' . $rewrite} = 1;
 	  $rewrite = "^" . quotemeta ($iter) . "\$";
 	  # Only require the file if it is not a built source.
-	  if (! variable_defined ('BUILT_SOURCES')
+	  if (! var ('BUILT_SOURCES')
 	      || ! grep (/$rewrite/,
 			 &variable_value_as_list_recursive ('BUILT_SOURCES',
 							    'all')))
@@ -2731,11 +2730,10 @@ sub handle_LIBOBJS ($$$)
 sub handle_ALLOCA ($$$)
 {
   my ($var, $cond, $lt) = @_;
-  my $myobjext = ($1 ? 'l' : '') . 'o';
-
-  err_var ($var, "\@${lt}ALLOCA\@ seen but `AC_FUNC_ALLOCA' not in "
-	   . "`$configure_ac'")
-    if ! defined $libsources{'alloca.c'};
+  my $myobjext = ($lt ? 'l' : '') . 'o';
+  $lt ||= '';
+  require_variables_for_variable ($var, "\@${lt}ALLOCA\@ used",
+				  $lt . 'ALLOCA');
   $dep_files{'$(DEPDIR)/alloca.P' . $myobjext} = 1;
   require_file_with_macro ($cond, $var, FOREIGN, 'alloca.c');
   &saw_extension ('c');
@@ -2783,9 +2781,10 @@ sub handle_compile ()
       {
 	$default_includes = ' -I. -I$(srcdir)';
 
-	if (variable_defined ('CONFIG_HEADER'))
+	my $var = var 'CONFIG_HEADER';
+	if ($var)
 	  {
-	    foreach my $hdr (split (' ', &variable_value ('CONFIG_HEADER')))
+	    foreach my $hdr (split (' ', $var->variable_value))
 	      {
 		$default_includes .= ' -I' . dirname ($hdr);
 	      }
@@ -2855,7 +2854,7 @@ sub handle_compile ()
 # Handle libtool rules.
 sub handle_libtool
 {
-  return unless variable_defined ('LIBTOOL');
+  return unless var ('LIBTOOL');
 
   # Libtool requires some files, but only at top level.
   require_conf_file_with_macro (TRUE, 'LIBTOOL', FOREIGN, @libtool_files)
@@ -2886,7 +2885,7 @@ sub handle_programs
   return if ! @proglist;
 
   my $seen_global_libobjs =
-    variable_defined ('LDADD') && &handle_lib_objects ('', 'LDADD');
+    var ('LDADD') && &handle_lib_objects ('', 'LDADD');
 
   foreach my $pair (@proglist)
     {
@@ -2910,11 +2909,9 @@ sub handle_programs
 
       my $linker = &handle_source_transform ($xname, $one_file, $obj, $where);
 
-      my $xt = '';
-      if (variable_defined ($xname . "_LDADD"))
+      if (var ($xname . "_LDADD"))
 	{
 	  $seen_libobjs = &handle_lib_objects ($xname, $xname . '_LDADD');
-	  $xt = '_LDADD';
 	}
       else
 	{
@@ -2923,29 +2920,21 @@ sub handle_programs
 
 	  # This does a bit too much work.  But we need it to
 	  # generate _DEPENDENCIES when appropriate.
-	  if (variable_defined ('LDADD'))
+	  if (var ('LDADD'))
 	    {
 	      $seen_libobjs = &handle_lib_objects ($xname, 'LDADD');
 	    }
-	  elsif (! variable_defined ($xname . '_DEPENDENCIES'))
-	    {
-	      &define_variable ($xname . '_DEPENDENCIES', '', $where);
-	    }
-	  $xt = '_SOURCES';
 	}
 
       reject_var ($xname . '_LIBADD',
 		  "use `${xname}_LDADD', not `${xname}_LIBADD'");
 
-      if (! variable_defined ($xname . '_LDFLAGS'))
-	{
-	  # Define the prog_LDFLAGS variable.
-	  &define_variable ($xname . '_LDFLAGS', '', $where);
-	}
+      set_seen ($xname . '_DEPENDENCIES');
+      set_seen ($xname . '_LDFLAGS');
 
       # Determine program to use for link.
       my $xlink;
-      if (variable_defined ($xname . '_LINK'))
+      if (var ($xname . '_LINK'))
 	{
 	  $xlink = $xname . '_LINK';
 	}
@@ -2968,11 +2957,11 @@ sub handle_programs
 
       if ($seen_libobjs || $seen_global_libobjs)
 	{
-	  if (variable_defined ($xname . '_LDADD'))
+	  if (var ($xname . '_LDADD'))
 	    {
 	      &check_libobjs_sources ($xname, $xname . '_LDADD');
 	    }
-	  elsif (variable_defined ('LDADD'))
+	  elsif (var ('LDADD'))
 	    {
 	      &check_libobjs_sources ($xname, 'LDADD');
 	    }
@@ -3018,14 +3007,14 @@ sub handle_libraries
 					    '_OBJECTS', '_DEPENDENCIES',
 					    '_AR');
 
-      if (! variable_defined ($xlib . '_AR'))
+      if (! var ($xlib . '_AR'))
 	{
 	  &define_variable ($xlib . '_AR', '$(AR) $(ARFLAGS)', $where);
 	}
 
       # Generate support for conditional object inclusion in
       # libraries.
-      if (variable_defined ($xlib . '_LIBADD'))
+      if (var ($xlib . '_LIBADD'))
 	{
 	  if (&handle_lib_objects ($xlib, $xlib . '_LIBADD'))
 	    {
@@ -3041,7 +3030,7 @@ sub handle_libraries
 		  "use `${xlib}_LIBADD', not `${xlib}_LDADD'");
 
       # Make sure we at look at this.
-      &examine_variable ($xlib . '_DEPENDENCIES');
+      set_seen ($xlib . '_DEPENDENCIES');
 
       &handle_source_transform ($xlib, $onelib, $obj, $where);
 
@@ -3057,7 +3046,7 @@ sub handle_libraries
 
       if ($seen_libobjs)
 	{
-	  if (variable_defined ($xlib . '_LIBADD'))
+	  if (var ($xlib . '_LIBADD'))
 	    {
 	      &check_libobjs_sources ($xlib, $xlib . '_LIBADD');
 	    }
@@ -3139,11 +3128,11 @@ sub handle_ltlibraries
 
       # Check that the library fits the standard naming convention.
       my $libname_rx = "^lib.*\.la";
-      if ((variable_defined ($xlib . '_LDFLAGS')
+      if ((var ($xlib . '_LDFLAGS')
 	   && grep (/-module/,
 		    &variable_value_as_list_recursive ($xlib . '_LDFLAGS',
 						       'all')))
-	  || (variable_defined ('LDFLAGS')
+	  || (var ('LDFLAGS')
 	      && grep (/-module/,
 		       &variable_value_as_list_recursive ('LDFLAGS', 'all'))))
 	{
@@ -3159,15 +3148,13 @@ sub handle_ltlibraries
       $where->push_context ("while processing Libtool library `$onelib'");
       $where->set (INTERNAL->get);
 
-      if (! variable_defined ($xlib . '_LDFLAGS'))
-	{
-	  # Define the lib_LDFLAGS variable.
-	  &define_variable ($xlib . '_LDFLAGS', '', $where);
-	}
+      # Make sure we at look at these.
+      set_seen ($xlib . '_LDFLAGS');
+      set_seen ($xlib . '_DEPENDENCIES');
 
       # Generate support for conditional object inclusion in
       # libraries.
-      if (variable_defined ($xlib . '_LIBADD'))
+      if (var ($xlib . '_LIBADD'))
 	{
 	  if (&handle_lib_objects ($xlib, $xlib . '_LIBADD'))
 	    {
@@ -3182,14 +3169,12 @@ sub handle_ltlibraries
       reject_var ("${xlib}_LDADD",
 		  "use `${xlib}_LIBADD', not `${xlib}_LDADD'");
 
-      # Make sure we at look at this.
-      &examine_variable ($xlib . '_DEPENDENCIES');
 
       my $linker = &handle_source_transform ($xlib, $onelib, $obj, $where);
 
       # Determine program to use for link.
       my $xlink;
-      if (variable_defined ($xlib . '_LINK'))
+      if (var ($xlib . '_LINK'))
 	{
 	  $xlink = $xlib . '_LINK';
 	}
@@ -3232,7 +3217,7 @@ sub handle_ltlibraries
 				       DIRSTAMP   => $dirstamp);
       if ($seen_libobjs)
 	{
-	  if (variable_defined ($xlib . '_LIBADD'))
+	  if (var ($xlib . '_LIBADD'))
 	    {
 	      &check_libobjs_sources ($xlib, $xlib . '_LIBADD');
 	    }
@@ -3244,7 +3229,7 @@ sub handle_ltlibraries
 sub check_typos ()
 {
   # It is ok if the user sets this particular variable.
-  &examine_variable ('AM_LDFLAGS');
+  set_seen 'AM_LDFLAGS';
 
   foreach my $varname (variables)
     {
@@ -3455,7 +3440,7 @@ sub handle_texinfo_helper
     reject_var 'TEXINFOS', "`TEXINFOS' is an anachronism; use `info_TEXINFOS'";
     reject_var 'html_TEXINFOS', "HTML generation not yet supported";
 
-    return (0, '') if ! variable_defined ('info_TEXINFOS');
+    return (0, '') unless var ('info_TEXINFOS');
 
     my @texis = &variable_value_as_list_recursive ('info_TEXINFOS', 'all');
 
@@ -3499,7 +3484,7 @@ sub handle_texinfo_helper
 	push (@texi_deps, "$outdir$vtexi") if $vtexi;
 
 	my $canonical = &canonicalize ($infobase);
-	if (variable_defined ($canonical . "_TEXINFOS"))
+	if (var ($canonical . "_TEXINFOS"))
 	{
 	    push (@texi_deps, '$(' . $canonical . '_TEXINFOS)');
 	    &push_dist_common ('$(' . $canonical . '_TEXINFOS)');
@@ -3576,7 +3561,7 @@ sub handle_texinfo_helper
 	&define_variable ('TEXINFO_TEX', "$texinfodir/texinfo.tex", INTERNAL);
 	$need_texi_file = 2; # so that we require_conf_file later
     }
-    elsif (variable_defined ('TEXINFO_TEX'))
+    elsif (var ('TEXINFO_TEX'))
     {
 	# The user defined TEXINFO_TEX so assume he knows what he is
 	# doing.
@@ -3648,65 +3633,69 @@ sub handle_texinfo
 # Handle any man pages.
 sub handle_man_pages
 {
-    reject_var 'MANS', "`MANS' is an anachronism; use `man_MANS'";
+  reject_var 'MANS', "`MANS' is an anachronism; use `man_MANS'";
 
-    # Find all the sections in use.  We do this by first looking for
-    # "standard" sections, and then looking for any additional
-    # sections used in man_MANS.
-    my (%sections, %vlist);
-    # We handle nodist_ for uniformity.  man pages aren't distributed
-    # by default so it isn't actually very important.
-    foreach my $pfx ('', 'dist_', 'nodist_')
+  # Find all the sections in use.  We do this by first looking for
+  # "standard" sections, and then looking for any additional
+  # sections used in man_MANS.
+  my (%sections, %vlist);
+  # We handle nodist_ for uniformity.  man pages aren't distributed
+  # by default so it isn't actually very important.
+  foreach my $pfx ('', 'dist_', 'nodist_')
     {
-	# Add more sections as needed.
-	foreach my $section ('0'..'9', 'n', 'l')
+      # Add more sections as needed.
+      foreach my $section ('0'..'9', 'n', 'l')
 	{
-	    if (variable_defined ($pfx . 'man' . $section . '_MANS'))
+	  my $varname = $pfx . 'man' . $section . '_MANS';
+	  if (var ($varname))
 	    {
-		$sections{$section} = 1;
-		$vlist{'$(' . $pfx . 'man' . $section . '_MANS)'} = 1;
+	      $sections{$section} = 1;
+	      $varname = '$(' . $varname . ')';
+	      $vlist{$varname} = 1;
 
-		&push_dist_common ('$(' . $pfx . 'man' . $section . '_MANS)')
-		    if $pfx eq 'dist_';
+	      &push_dist_common ($varname)
+		if $pfx eq 'dist_';
 	    }
 	}
 
-	if (variable_defined ($pfx . 'man_MANS'))
+      my $varname = $pfx . 'man_MANS';
+      if (var ($varname))
 	{
-	    $vlist{'$(' . $pfx . 'man_MANS)'} = 1;
-	    foreach (&variable_value_as_list_recursive ($pfx . 'man_MANS', 'all'))
+	  foreach (&variable_value_as_list_recursive ($varname, 'all'))
 	    {
-		# A page like `foo.1c' goes into man1dir.
-		if (/\.([0-9a-z])([a-z]*)$/)
+	      # A page like `foo.1c' goes into man1dir.
+	      if (/\.([0-9a-z])([a-z]*)$/)
 		{
-		    $sections{$1} = 1;
+		  $sections{$1} = 1;
 		}
 	    }
 
-	    &push_dist_common ('$(' . $pfx . 'man_MANS)')
-		if $pfx eq 'dist_';
+	  $varname = '$(' . $varname . ')';
+	  $vlist{$varname} = 1;
+	  &push_dist_common ($varname)
+	    if $pfx eq 'dist_';
 	}
     }
 
-    return unless %sections;
+  return unless %sections;
 
-    # Now for each section, generate an install and unintall rule.
-    # Sort sections so output is deterministic.
-    foreach my $section (sort keys %sections)
+  # Now for each section, generate an install and unintall rule.
+  # Sort sections so output is deterministic.
+  foreach my $section (sort keys %sections)
     {
-	$output_rules .= &file_contents ('mans',
-					 new Automake::Location,
-					 SECTION => $section);
+      $output_rules .= &file_contents ('mans',
+				       new Automake::Location,
+				       SECTION => $section);
     }
 
-    my @mans = sort keys %vlist;
-    $output_vars .= file_contents ('mans-vars',
-				   new Automake::Location,
-				   MANS => "@mans");
+  my @mans = sort keys %vlist;
+  $output_vars .= file_contents ('mans-vars',
+				 new Automake::Location,
+				 MANS => "@mans");
 
-    if (! defined $options{'no-installman'})
+  if (! defined $options{'no-installman'})
     {
-	push (@all, '$(MANS)');
+      push (@all, '$(MANS)');
     }
 }
 
@@ -3723,7 +3712,7 @@ sub handle_tags
 {
     my @tag_deps = ();
     my @ctag_deps = ();
-    if (variable_defined ('SUBDIRS'))
+    if (var ('SUBDIRS'))
     {
 	$output_rules .= ("tags-recursive:\n"
 			  . "\tlist=\'\$(SUBDIRS)\'; for subdir in \$\$list; do \\\n"
@@ -3747,7 +3736,7 @@ sub handle_tags
     }
 
     if (&saw_sources_p (1)
-	|| variable_defined ('ETAGS_ARGS')
+	|| var ('ETAGS_ARGS')
 	|| @tag_deps)
     {
 	my @config;
@@ -3767,7 +3756,8 @@ sub handle_tags
 					 CONFIG    => "@config",
 					 TAGSDIRS  => "@tag_deps",
 					 CTAGSDIRS => "@ctag_deps");
-	&examine_variable ('TAGS_DEPENDENCIES');
+
+	set_seen 'TAGS_DEPENDENCIES';
     }
     elsif (reject_var ('TAGS_DEPENDENCIES',
 		       "doesn't make sense to define `TAGS_DEPENDENCIES'"
@@ -3821,168 +3811,168 @@ sub for_dist_common
 # Handle 'dist' target.
 sub handle_dist
 {
-    my ($makefile) = @_;
+  my ($makefile) = @_;
 
-    # `make dist' isn't used in a Cygnus-style tree.
-    # Omit the rules so that people don't try to use them.
-    return if $cygnus_mode;
+  # `make dist' isn't used in a Cygnus-style tree.
+  # Omit the rules so that people don't try to use them.
+  return if $cygnus_mode;
 
-    # At least one of the archive formats must be enabled.
-    if ($relative_dir eq '.')
-      {
-	my $archive_defined = $options{'no-dist-gzip'} ? 0 : 1;
-	$archive_defined ||=
-	  grep { $options{"dist-$_"} } ('shar', 'zip', 'tarZ', 'bzip2');
-	error ($options{'no-dist-gzip'},
-	       "no-dist-gzip specified but no dist-* specified, "
-	       . "at least one archive format must be enabled")
-	  unless $archive_defined;
-      }
-
-    # Look for common files that should be included in distribution.
-    # If the aux dir is set, and it does not have a Makefile.am, then
-    # we check for these files there as well.
-    my $check_aux = 0;
-    my $auxdir = '';
-    if ($relative_dir eq '.'
-	&& $config_aux_dir_set_in_configure_in)
+  # At least one of the archive formats must be enabled.
+  if ($relative_dir eq '.')
     {
-	($auxdir = $config_aux_dir) =~ s,^\$\(top_srcdir\)/,,;
-	if (! &is_make_dir ($auxdir))
-	{
-	    $check_aux = 1;
-	}
-    }
-    foreach my $cfile (@common_files)
-    {
-	if (-f ($relative_dir . "/" . $cfile)
-	    # The file might be absent, but if it can be built it's ok.
-	    || exists $targets{$cfile})
-	{
-	    &push_dist_common ($cfile);
-	}
-
-	# Don't use `elsif' here because a file might meaningfully
-	# appear in both directories.
-	if ($check_aux && -f ($auxdir . '/' . $cfile))
-	{
-	    &push_dist_common ($auxdir . '/' . $cfile);
-	}
+      my $archive_defined = $options{'no-dist-gzip'} ? 0 : 1;
+      $archive_defined ||=
+	grep { $options{"dist-$_"} } ('shar', 'zip', 'tarZ', 'bzip2');
+      error ($options{'no-dist-gzip'},
+	     "no-dist-gzip specified but no dist-* specified, "
+	     . "at least one archive format must be enabled")
+	unless $archive_defined;
     }
 
-    # We might copy elements from $configure_dist_common to
-    # %dist_common if we think we need to.  If the file appears in our
-    # directory, we would have discovered it already, so we don't
-    # check that.  But if the file is in a subdir without a Makefile,
-    # we want to distribute it here if we are doing `.'.  Ugly!
-    if ($relative_dir eq '.')
+  # Look for common files that should be included in distribution.
+  # If the aux dir is set, and it does not have a Makefile.am, then
+  # we check for these files there as well.
+  my $check_aux = 0;
+  my $auxdir = '';
+  if ($relative_dir eq '.'
+      && $config_aux_dir_set_in_configure_in)
     {
-       foreach my $file (split (' ' , $configure_dist_common))
-       {
-	   push_dist_common ($file)
-	     unless is_make_dir (dirname ($file));
-       }
-    }
-
-    # Files to distributed.  Don't use &variable_value_as_list_recursive
-    # as it recursively expands `$(dist_pkgdata_DATA)' etc.
-    my @dist_common = split (' ', rvar ('DIST_COMMON')->variable_value);
-    @dist_common = uniq (sort for_dist_common (@dist_common));
-    variable_delete 'DIST_COMMON';
-    define_pretty_variable ('DIST_COMMON', TRUE, INTERNAL, @dist_common);
-
-    # Now that we've processed DIST_COMMON, disallow further attempts
-    # to set it.
-    $handle_dist_run = 1;
-
-    # Scan EXTRA_DIST to see if we need to distribute anything from a
-    # subdir.  If so, add it to the list.  I didn't want to do this
-    # originally, but there were so many requests that I finally
-    # relented.
-    if (variable_defined ('EXTRA_DIST'))
-    {
-	# FIXME: This should be fixed to work with conditions.  That
-	# will require only making the entries in %dist_dirs under the
-	# appropriate condition.  This is meaningful if the nature of
-	# the distribution should depend upon the configure options
-	# used.
-	foreach (&variable_value_as_list_recursive ('EXTRA_DIST', 'all'))
+      ($auxdir = $config_aux_dir) =~ s,^\$\(top_srcdir\)/,,;
+      if (! &is_make_dir ($auxdir))
 	{
-	    next if /^\@.*\@$/;
-	    next unless s,/+[^/]+$,,;
-	    $dist_dirs{$_} = 1
-		unless $_ eq '.';
+	  $check_aux = 1;
+	}
+    }
+  foreach my $cfile (@common_files)
+    {
+      if (-f ($relative_dir . "/" . $cfile)
+	  # The file might be absent, but if it can be built it's ok.
+	  || exists $targets{$cfile})
+	{
+	  &push_dist_common ($cfile);
+	}
+
+      # Don't use `elsif' here because a file might meaningfully
+      # appear in both directories.
+      if ($check_aux && -f ($auxdir . '/' . $cfile))
+	{
+	  &push_dist_common ($auxdir . '/' . $cfile);
 	}
     }
 
-    # We have to check DIST_COMMON for extra directories in case the
-    # user put a source used in AC_OUTPUT into a subdir.
-    my $topsrcdir = backname ($relative_dir);
-    foreach (&variable_value_as_list_recursive ('DIST_COMMON', 'all'))
+  # We might copy elements from $configure_dist_common to
+  # %dist_common if we think we need to.  If the file appears in our
+  # directory, we would have discovered it already, so we don't
+  # check that.  But if the file is in a subdir without a Makefile,
+  # we want to distribute it here if we are doing `.'.  Ugly!
+  if ($relative_dir eq '.')
     {
-	next if /^\@.*\@$/;
-	s/\$\(top_srcdir\)/$topsrcdir/;
-	s/\$\(srcdir\)/./;
-	# Strip any leading `./'.
-	s,^(:?\./+)*,,;
-	next unless s,/+[^/]+$,,;
-	$dist_dirs{$_} = 1
+      foreach my $file (split (' ' , $configure_dist_common))
+	{
+	  push_dist_common ($file)
+	    unless is_make_dir (dirname ($file));
+	}
+    }
+
+  # Files to distributed.  Don't use &variable_value_as_list_recursive
+  # as it recursively expands `$(dist_pkgdata_DATA)' etc.
+  my @dist_common = split (' ', rvar ('DIST_COMMON')->variable_value);
+  @dist_common = uniq (sort for_dist_common (@dist_common));
+  variable_delete 'DIST_COMMON';
+  define_pretty_variable ('DIST_COMMON', TRUE, INTERNAL, @dist_common);
+
+  # Now that we've processed DIST_COMMON, disallow further attempts
+  # to set it.
+  $handle_dist_run = 1;
+
+  # Scan EXTRA_DIST to see if we need to distribute anything from a
+  # subdir.  If so, add it to the list.  I didn't want to do this
+  # originally, but there were so many requests that I finally
+  # relented.
+  if (var ('EXTRA_DIST'))
+    {
+      # FIXME: This should be fixed to work with conditions.  That
+      # will require only making the entries in %dist_dirs under the
+      # appropriate condition.  This is meaningful if the nature of
+      # the distribution should depend upon the configure options
+      # used.
+      foreach (&variable_value_as_list_recursive ('EXTRA_DIST', 'all'))
+	{
+	  next if /^\@.*\@$/;
+	  next unless s,/+[^/]+$,,;
+	  $dist_dirs{$_} = 1
 	    unless $_ eq '.';
+	}
     }
 
-    # Rule to check whether a distribution is viable.
-    my %transform = ('DISTCHECK-HOOK' => &target_defined ('distcheck-hook'),
-		     'GETTEXT' => $seen_gettext && !$seen_gettext_external);
-
-    # Prepend $(distdir) to each directory given.
-    my %rewritten = map { '$(distdir)/' . "$_" => 1 } keys %dist_dirs;
-    $transform{'DISTDIRS'} = join (' ', sort keys %rewritten);
-
-    # If we have SUBDIRS, create all dist subdirectories and do
-    # recursive build.
-    if (variable_defined ('SUBDIRS'))
+  # We have to check DIST_COMMON for extra directories in case the
+  # user put a source used in AC_OUTPUT into a subdir.
+  my $topsrcdir = backname ($relative_dir);
+  foreach (&variable_value_as_list_recursive ('DIST_COMMON', 'all'))
     {
-	# If SUBDIRS is conditionally defined, then set DIST_SUBDIRS
-	# to all possible directories, and use it.  If DIST_SUBDIRS is
-	# defined, just use it.
-	my $dist_subdir_name;
-	# Note that we check DIST_SUBDIRS first on purpose.  At least
-	# one project uses so many conditional subdirectories that
-	# calling variable_conditionally_defined on SUBDIRS will cause
-	# automake to grow to 150Mb.  Sigh.
-	if (variable_defined ('DIST_SUBDIRS')
-	    || variable_conditionally_defined ('SUBDIRS'))
-	{
-	    $dist_subdir_name = 'DIST_SUBDIRS';
-	    if (! variable_defined ('DIST_SUBDIRS'))
-	    {
-		define_pretty_variable
-		  ('DIST_SUBDIRS', TRUE, INTERNAL,
-		   uniq (&variable_value_as_list_recursive ('SUBDIRS', 'all')));
-	    }
-	}
-	else
-	{
-	    $dist_subdir_name = 'SUBDIRS';
-	    # We always define this because that is what `distclean'
-	    # wants.
-	    define_pretty_variable ('DIST_SUBDIRS', TRUE, INTERNAL,
-				    '$(SUBDIRS)');
-	}
-
-	$transform{'DIST_SUBDIR_NAME'} = $dist_subdir_name;
+      next if /^\@.*\@$/;
+      s/\$\(top_srcdir\)/$topsrcdir/;
+      s/\$\(srcdir\)/./;
+      # Strip any leading `./'.
+      s,^(:?\./+)*,,;
+      next unless s,/+[^/]+$,,;
+      $dist_dirs{$_} = 1
+	unless $_ eq '.';
     }
 
-    # If the target `dist-hook' exists, make sure it is run.  This
-    # allows users to do random weird things to the distribution
-    # before it is packaged up.
-    push (@dist_targets, 'dist-hook')
-      if &target_defined ('dist-hook');
-    $transform{'DIST-TARGETS'} = join(' ', @dist_targets);
+  # Rule to check whether a distribution is viable.
+  my %transform = ('DISTCHECK-HOOK' => &target_defined ('distcheck-hook'),
+		   'GETTEXT' => $seen_gettext && !$seen_gettext_external);
 
-    $output_rules .= &file_contents ('distdir',
-				     new Automake::Location,
-				     %transform);
+  # Prepend $(distdir) to each directory given.
+  my %rewritten = map { '$(distdir)/' . "$_" => 1 } keys %dist_dirs;
+  $transform{'DISTDIRS'} = join (' ', sort keys %rewritten);
+
+  # If we have SUBDIRS, create all dist subdirectories and do
+  # recursive build.
+  if (var ('SUBDIRS'))
+    {
+      # If SUBDIRS is conditionally defined, then set DIST_SUBDIRS
+      # to all possible directories, and use it.  If DIST_SUBDIRS is
+      # defined, just use it.
+      my $dist_subdir_name;
+      # Note that we check DIST_SUBDIRS first on purpose.  At least
+      # one project uses so many conditional subdirectories that
+      # calling variable_conditionally_defined on SUBDIRS will cause
+      # automake to grow to 150Mb.  Sigh.
+      if (var ('DIST_SUBDIRS'))
+	{
+	  $dist_subdir_name = 'DIST_SUBDIRS';
+	}
+      elsif (variable_conditionally_defined ('SUBDIRS'))
+	{
+	  $dist_subdir_name = 'DIST_SUBDIRS';
+	  define_pretty_variable
+	    ('DIST_SUBDIRS', TRUE, INTERNAL,
+	     uniq (&variable_value_as_list_recursive ('SUBDIRS', 'all')));
+	}
+      else
+	{
+	  $dist_subdir_name = 'SUBDIRS';
+	  # We always define this because that is what `distclean'
+	  # wants.
+	  define_pretty_variable ('DIST_SUBDIRS', TRUE, INTERNAL,
+				  '$(SUBDIRS)');
+	}
+
+      $transform{'DIST_SUBDIR_NAME'} = $dist_subdir_name;
+    }
+
+  # If the target `dist-hook' exists, make sure it is run.  This
+  # allows users to do random weird things to the distribution
+  # before it is packaged up.
+  push (@dist_targets, 'dist-hook')
+    if &target_defined ('dist-hook');
+  $transform{'DIST-TARGETS'} = join(' ', @dist_targets);
+
+  $output_rules .= &file_contents ('distdir',
+				   new Automake::Location,
+				   %transform);
 }
 
 
@@ -3990,12 +3980,12 @@ sub handle_dist
 sub handle_subdirs
 {
     return
-      unless variable_defined ('SUBDIRS');
+      unless var ('SUBDIRS');
 
     my @subdirs = &variable_value_as_list_recursive ('SUBDIRS', 'all');
     my @dsubdirs = ();
     @dsubdirs = &variable_value_as_list_recursive ('DIST_SUBDIRS', 'all')
-      if variable_defined ('DIST_SUBDIRS');
+      if var ('DIST_SUBDIRS');
 
     # If an `obj/' directory exists, BSD make will enter it before
     # reading `Makefile'.  Hence the `Makefile' in the current directory
@@ -4050,8 +4040,8 @@ sub scan_aclocal_m4
 {
     my $regen_aclocal = 0;
 
-    &examine_variable ('CONFIG_STATUS_DEPENDENCIES');
-    &examine_variable ('CONFIGURE_DEPENDENCIES');
+    set_seen 'CONFIG_STATUS_DEPENDENCIES';
+    set_seen 'CONFIGURE_DEPENDENCIES';
 
     if (-f 'aclocal.m4')
     {
@@ -4066,7 +4056,7 @@ sub scan_aclocal_m4
 
     my @ac_deps = ();
 
-    if (variable_defined ('ACLOCAL_M4_SOURCES'))
+    if (set_seen ('ACLOCAL_M4_SOURCES'))
     {
 	push (@ac_deps, '$(ACLOCAL_M4_SOURCES)');
 	msg_var ('obsolete', 'ACLOCAL_M4_SOURCES',
@@ -4377,7 +4367,7 @@ sub handle_gettext
 {
   return if ! $seen_gettext || $relative_dir ne '.';
 
-  if (! variable_defined ('SUBDIRS'))
+  if (! var ('SUBDIRS'))
     {
       err_ac "AM_GNU_GETTEXT used but SUBDIRS not defined";
       return;
@@ -4440,7 +4430,7 @@ sub handle_footer
     # before .SUFFIXES.  So we make sure that .SUFFIXES appears before
     # anything else, by sticking it right after the default: target.
     $output_header .= ".SUFFIXES:\n";
-    if (@suffixes || variable_defined ('SUFFIXES'))
+    if (@suffixes || var ('SUFFIXES'))
     {
 	# Make sure suffixes has unique elements.  Sort them to ensure
 	# the output remains consistent.  However, $(SUFFIXES) is
@@ -4449,7 +4439,7 @@ sub handle_footer
 	# suffixes, and this lets the user have some control.  Push
 	# actual suffixes, and not $(SUFFIXES).  Some versions of make
 	# do not like variable substitutions on the .SUFFIXES line.
-	my @user_suffixes = (variable_defined ('SUFFIXES')
+	my @user_suffixes = (var ('SUFFIXES')
 			     ? &variable_value_as_list_recursive ('SUFFIXES',
 								  'all')
 			     : ());
@@ -4472,7 +4462,7 @@ sub handle_install ()
   $output_rules .= &file_contents
     ('install',
      new Automake::Location,
-     maybe_BUILT_SOURCES => (variable_defined ('BUILT_SOURCES')
+     maybe_BUILT_SOURCES => (set_seen ('BUILT_SOURCES')
 			     ? (" \$(BUILT_SOURCES)\n"
 				. "\t\$(MAKE) \$(AM_MAKEFLAGS)")
 			     : ''),
@@ -4516,7 +4506,7 @@ sub handle_all ($)
 
     my @local_headers = ();
     push @local_headers, '$(BUILT_SOURCES)'
-      if variable_defined ('BUILT_SOURCES');
+      if var ('BUILT_SOURCES');
     foreach my $spec (@config_headers)
       {
         my ($out, @ins) = split_config_file_spec ($spec);
@@ -4535,13 +4525,12 @@ sub handle_all ($)
 	$output_all .= ("all: @local_headers"
 			. "\n\t"
 			. '$(MAKE) $(AM_MAKEFLAGS) '
-			. (variable_defined ('SUBDIRS')
-			   ? 'all-recursive' : 'all-am')
+			. (var ('SUBDIRS') ? 'all-recursive' : 'all-am')
 			. "\n\n");
       }
     else
       {
-	$output_all .= "all: " . (variable_defined ('SUBDIRS')
+	$output_all .= "all: " . (var ('SUBDIRS')
 				  ? 'all-recursive' : 'all-am') . "\n\n";
       }
 }
@@ -4580,11 +4569,10 @@ sub do_check_merge_target
     &depend ('.PHONY', 'check', 'check-am');
     # Handle recursion.  We have to honor BUILT_SOURCES like for `all:'.
     $output_rules .= ("check: "
-		      . (variable_defined ('BUILT_SOURCES')
+		      . (var ('BUILT_SOURCES')
 			 ? "\$(BUILT_SOURCES)\n\t\$(MAKE) \$(AM_MAKEFLAGS) "
 			 : '')
-		      . (variable_defined ('SUBDIRS')
-			 ? 'check-recursive' : 'check-am')
+		      . (var ('SUBDIRS') ? 'check-recursive' : 'check-am')
 		      . "\n");
 }
 
@@ -4593,17 +4581,17 @@ sub handle_clean
 {
   # Clean the files listed in user variables if they exist.
   $clean_files{'$(MOSTLYCLEANFILES)'} = MOSTLY_CLEAN
-    if variable_defined ('MOSTLYCLEANFILES');
+    if var ('MOSTLYCLEANFILES');
   $clean_files{'$(CLEANFILES)'} = CLEAN
-    if variable_defined ('CLEANFILES');
+    if var ('CLEANFILES');
   $clean_files{'$(DISTCLEANFILES)'} = DIST_CLEAN
-    if variable_defined ('DISTCLEANFILES');
+    if var ('DISTCLEANFILES');
   $clean_files{'$(MAINTAINERCLEANFILES)'} = MAINTAINER_CLEAN
-    if variable_defined ('MAINTAINERCLEANFILES');
+    if var ('MAINTAINERCLEANFILES');
 
   # Built sources are automatically removed by maintainer-clean.
   $clean_files{'$(BUILT_SOURCES)'} = MAINTAINER_CLEAN
-    if variable_defined ('BUILT_SOURCES');
+    if var ('BUILT_SOURCES');
 
   # Compute a list of "rm"s to run for each target.
   my %rms = (MOSTLY_CLEAN, [],
@@ -4771,7 +4759,7 @@ sub handle_tests
 	}
     }
 
-  if (variable_defined ('TESTS'))
+  if (var ('TESTS'))
     {
       push (@check_tests, 'check-TESTS');
       $output_rules .= &file_contents ('check', new Automake::Location);
@@ -5394,7 +5382,7 @@ sub lang_c_finish
 			      . " || rm -f \$\@\n");
  	    push (@objects, $base . '_.$(OBJEXT)');
  	    push (@objects, $base . '_.lo')
-	      if variable_defined ('LIBTOOL');
+	      if var ('LIBTOOL');
  	}
 
  	# Make all _.o (and _.lo) files depend on ansi2knr.
@@ -5410,10 +5398,10 @@ sub lang_yacc_target_hook
     my ($self, $aggregate, $output, $input) = @_;
 
     my $flag = $aggregate . "_YFLAGS";
-    if ((variable_defined ($flag)
-	 && &variable_value ($flag) =~ /$DASH_D_PATTERN/o)
-	|| (variable_defined ('YFLAGS')
-	    && &variable_value ('YFLAGS') =~ /$DASH_D_PATTERN/o))
+    my $flagvar = var $flag;
+    my $YFLAGSvar = var 'YFLAGS';
+    if (($flagvar && $flagvar->variable_value =~ /$DASH_D_PATTERN/o)
+	|| ($YFLAGSvar && $YFLAGSvar->variable_value =~ /$DASH_D_PATTERN/o))
     {
 	(my $output_base = $output) =~ s/$KNOWN_EXTENSIONS_PATTERN$//;
 	my $header = $output_base . '.h';
@@ -5866,7 +5854,7 @@ sub define_pretty_variable ($$$@)
 {
     my ($var, $cond, $where, @value) = @_;
 
-    if (! variable_defined ($var, $cond))
+    if (! vardef ($var, $cond))
     {
         Automake::Variable::define ($var, VAR_AUTOMAKE, '', $cond, "@value",
 				    '', $where, VAR_PRETTY);
@@ -5890,25 +5878,23 @@ sub define_variable ($$$)
 sub define_configure_variable ($)
 {
   my ($var) = @_;
-  if (! variable_defined ($var, TRUE))
+
+  my $pretty = VAR_ASIS;
+  my $owner = VAR_CONFIGURE;
+
+  # Do not output the ANSI2KNR configure variable -- we AC_SUBST
+  # it in protos.m4, but later redefine it elsewhere.  This is
+  # pretty hacky.  We also don't output AMDEPBACKSLASH: it might
+  # be subst'd by `\', which certainly would not be appreciated by
+  # Make.
+  if ($var eq 'ANSI2KNR' || $var eq 'AMDEPBACKSLASH')
     {
-      my $pretty = VAR_ASIS;
-      my $owner = VAR_CONFIGURE;
-
-      # Do not output the ANSI2KNR configure variable -- we AC_SUBST
-      # it in protos.m4, but later redefine it elsewhere.  This is
-      # pretty hacky.  We also don't output AMDEPBACKSLASH: it might
-      # be subst'd by `\', which certainly would not be appreciated by
-      # Make.
-      if ($var eq 'ANSI2KNR' || $var eq 'AMDEPBACKSLASH')
-	{
-	  $pretty = VAR_SILENT;
-	  $owner = VAR_AUTOMAKE;
-	}
-
-      Automake::Variable::define ($var, $owner, '', TRUE, subst $var,
-				  '', $configure_vars{$var}, $pretty);
+      $pretty = VAR_SILENT;
+      $owner = VAR_AUTOMAKE;
     }
+
+  Automake::Variable::define ($var, $owner, '', TRUE, subst $var,
+			      '', $configure_vars{$var}, $pretty);
 }
 
 
@@ -5923,7 +5909,7 @@ sub define_compiler_variable ($)
     my ($var, $value) = ($lang->compiler, $lang->compile);
     &define_variable ($var, $value, INTERNAL);
     &define_variable ("LT$var", "\$(LIBTOOL) --mode=compile $value", INTERNAL)
-      if variable_defined ('LIBTOOL');
+      if var ('LIBTOOL');
 }
 
 
@@ -5939,8 +5925,7 @@ sub define_linker_variable ($)
     &define_variable ($lang->lder, $lang->ld, INTERNAL);
     # CCLINK = $(CCLD) blah blah...
     &define_variable ($lang->linker,
-		      ((variable_defined ('LIBTOOL')
-			? '$(LIBTOOL) --mode=link ' : '')
+		      ((var ('LIBTOOL') ? '$(LIBTOOL) --mode=link ' : '')
 		       . $lang->link),
 		      INTERNAL);
 }
@@ -6667,7 +6652,7 @@ sub make_paragraphs ($%)
 		     'INSTALL-MAN'  => !$options{'no-installman'},
 		     'CK-NEWS'      => $options{'check-news'} || 0,
 
-		     'SUBDIRS'      => variable_defined ('SUBDIRS'),
+		     'SUBDIRS'      => !! var ('SUBDIRS'),
 		     'TOPDIR'       => backname ($relative_dir),
 		     'TOPDIR_P'     => $relative_dir eq '.',
 		     'CONFIGURE-AC' => $configure_ac,
@@ -6676,7 +6661,7 @@ sub make_paragraphs ($%)
 		     'HOST'     => $seen_canonical,
 		     'TARGET'   => $seen_canonical == AC_CANONICAL_SYSTEM,
 
-		     'LIBTOOL'      => variable_defined ('LIBTOOL'))
+		     'LIBTOOL'      => !! var ('LIBTOOL'))
 	  # We don't need more than two consecutive new-lines.
 	  . 's/\n{3,}/\n\n/g';
 
@@ -7063,7 +7048,7 @@ sub am_primary_prefixes ($$@)
     }
 
   # Return only those which are actually defined.
-  return sort grep { variable_defined ($_ . '_' . $primary) } keys %valid;
+  return sort grep { var ($_ . '_' . $primary) } keys %valid;
 }
 
 
@@ -7255,7 +7240,7 @@ sub am_install_var
   err_var ($require_extra,
 	   "`$require_extra' contains configure substitution,\n"
 	   . "but `EXTRA_$primary' not defined")
-    if ($require_extra && ! variable_defined ('EXTRA_' . $primary));
+    if ($require_extra && ! var ('EXTRA_' . $primary));
 
   # Push here because PRIMARY might be configure time determined.
   push (@all, '$(' . $primary . ')')
@@ -7544,8 +7529,7 @@ sub require_build_directory ($)
 
       # Set a variable for the dirstamp basename.
       define_pretty_variable ('am__dirstamp', TRUE, INTERNAL,
-			      '$(am__leading_dot)dirstamp')
-	unless variable_defined ('am__dirstamp');
+			      '$(am__leading_dot)dirstamp');
 
       # Directory must be removed by `make distclean'.
       $clean_files{$dirstamp} = DIST_CLEAN;

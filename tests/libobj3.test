@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1996, 1997, 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 1996, 1997, 2001, 2002, 2003  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -18,9 +18,11 @@
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-# Test to make sure LIBOBJS actually set in configure.in if seen.
+# Make sure we complain if @LIBOBJS@ is used without being set in configure.in
 
 . ./defs || exit 1
+
+set -e
 
 cat >> configure.in << 'END'
 AC_PROG_RANLIB
@@ -32,6 +34,7 @@ libtu_a_SOURCES =
 libtu_a_LIBADD = @LIBOBJS@
 END
 
-$ACLOCAL || exit 1
-$AUTOMAKE && exit 1
-exit 0
+$ACLOCAL
+$AUTOMAKE 2>stderr && exit 1
+cat stderr
+grep 'Makefile.am:3:.*LIBOBJS' stderr
