@@ -30,7 +30,7 @@
 input="$1"
 shift
 case "$input" in
- /* | [A-Za-z]:*)
+ [\\/]* | ?:[\\/]*)
     # Absolute path; do nothing.
     ;;
  *)
@@ -40,10 +40,10 @@ case "$input" in
 esac
 
 # The directory holding the input.
-input_dir="`echo $input | sed -e 's,/[^/]*$,,'`"
+input_dir=`echo "$input" | sed -e 's,\([\\/]\)[^\\/]*$,\1,'`
 # Quote $INPUT_DIR so we can use it in a regexp.
-# FIXME: really we should care about more than `.'.
-input_rx="`echo $input_dir | sed -e 's,\.,\\\.,g'`"
+# FIXME: really we should care about more than `.' and `\'.
+input_rx=`echo "$input_dir" | sed -e 's,\\\\,\\\\\\\\,g' -e 's,\\.,\\\\.,g'`
 
 echo "got $input_rx"
 
@@ -62,8 +62,8 @@ prog="$1"
 shift
 # Make any relative path in $prog absolute.
 case "$prog" in
- /* | [A-Za-z]:*) ;;
- */*) prog="`pwd`/$prog" ;;
+ [\\/]* | ?:[\\/]*) ;;
+ *[\\/]*) prog="`pwd`/$prog" ;;
 esac
 
 # FIXME: add hostname here for parallel makes that run commands on
@@ -105,7 +105,7 @@ if test $status -eq 0; then
          # If $2 is an absolute path name, then just use that,
          # otherwise prepend `../'.
          case "$2" in
-	   /* | [A-Za-z]:*) target="$2";;
+	   [\\/]* | ?:[\\/]*) target="$2";;
 	   *) target="../$2";;
 	 esac
 
