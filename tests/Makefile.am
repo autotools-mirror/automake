@@ -423,8 +423,8 @@ yaccvpath.test
 
 EXTRA_DIST = ChangeLog-old $(TESTS)
 
-# Every test case implicitely depends on defs.
-BUILT_SOURCES = defs
+# Each test case depends on defs.
+$(TESTS): defs
 
 distclean-local:
 	-rm -rf testSubDir
