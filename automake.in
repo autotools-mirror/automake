@@ -5692,25 +5692,21 @@ sub variable_defined ($$)
 {
     my ($var, $cond) = @_;
 
-    if (exists $conditional{$var} && !$var_is_am{$var})
-    {
-	if ($cond && $conditional{$var})
-	{
-	  if (exists $conditional{$var}{$cond})
-	    {
-	      # Even a conditional examination is good enough for us.
-	      # FIXME: really should maintain examined status on a
-	      # per-condition basis.
-	      $content_seen{$var} = 1;
-	      return 1;
-	    }
+    $cond ||= 'TRUE';
 
-	    # The variable is not defined for the given condition.
-	    return 0;
+    if (!$var_is_am{$var})
+    {
+      if (!exists $conditional{$var}{$cond})
+	{
+	  # The variable is not defined for the given condition.
+	  return 0;
 	}
 
-	$content_seen{$var} = 1;
-	return 1;
+      # Even a conditional examination is good enough for us.  FIXME:
+      # really should maintain examined status on a per-condition
+      # basis.
+      $content_seen{$var} = 1;
+      return 1;
     }
 
     &am_line_error ($var, "`$var' is a target; expected a variable")
@@ -5804,7 +5800,7 @@ sub variable_conditions_sub
 
 	push (@parent_conds, $vcond);
 	my @subvar_conds = ();
-	foreach (split (' ', ${$conditional{$var}}{$vcond}))
+	foreach (split (' ', $conditional{$var}{$vcond}))
 	{
 	    # If a comment seen, just leave.
 	    last if /^#/;
@@ -6073,7 +6069,7 @@ sub variable_value_as_list_worker
 	$vars_scanned{$var} = 1;
 	foreach my $vcond (keys %{$conditional{$var}})
 	{
-	    my $val = ${$conditional{$var}}{$vcond};
+	    my $val = $conditional{$var}{$vcond};
 	    push (@result, &value_to_list ($var, $val, $cond));
 	}
     }
@@ -6084,7 +6080,7 @@ sub variable_value_as_list_worker
 	my $onceflag;
 	foreach my $vcond (keys %{$conditional{$var}})
 	{
-	    my $val = ${$conditional{$var}}{$vcond};
+	    my $val = $conditional{$var}{$vcond};
 	    if (&conditional_true_when ($vcond, $cond))
 	    {
 		# Warn if we have an ambiguity.  It's hard to know how
@@ -6115,25 +6111,6 @@ sub variable_value_as_list
 }
 
 
-# define_variable ($VAR, $VALUE)
-# ------------------------------
-# Define a new user variable VAR to VALUE, but only if not already defined.
-sub define_variable
-{
-    my ($var, $value) = @_;
-    if (! defined $conditional{$var}{'TRUE'})
-    {
-	$output_vars .= $var . ' = ' . $value . "\n";
-	macro_define ($var, 0, '', '', $value, undef);
-	$content_seen{$var} = 1;
-    }
-    elsif ($var_was_plus_eq{$var})
-    {
-	&am_line_error ($var,
-			"internally generated variable `$var' was set with `+='");
-    }
-}
-
 # Like define_variable, but the value is a list, and the variable may
 # be defined conditionally.  The second argument is the conditional
 # under which the value should be defined; this should be the empty
@@ -6144,8 +6121,7 @@ sub define_pretty_variable
 {
     my ($var, $cond, @value) = @_;
 
-    if (! defined $conditional{$var}{'TRUE'}
-	|| ($cond && ! &variable_defined ($var, $cond)))
+    if (! &variable_defined ($var, $cond))
     {
         macro_define ($var, 0, '', $cond, join (' ', @value), undef);
         my $make_condition = &make_condition ($cond);
@@ -6153,7 +6129,24 @@ sub define_pretty_variable
 		       $make_condition, @value);
 	$content_seen{$var} = 1;
     }
+    elsif ($var_was_plus_eq{$var})
+    {
+	&am_line_error ($var,
+			"internally generated variable `$var' was set with `+='");
+    }
 }
+
+
+# define_variable ($VAR, $VALUE)
+# ------------------------------
+# Define a new user variable VAR to VALUE, but only if not already defined.
+sub define_variable
+{
+    my ($var, $value) = @_;
+
+    define_pretty_variable ($var, 'TRUE', $value);
+}
+
 
 # Like define_variable, but define a variable to be the configure
 # substitution by the same name.
@@ -6236,7 +6229,7 @@ sub rule_define ($$$$)
 	{
 	  &check_ambiguous_conditional ($target, $cond);
 	}
-      ${$target_conditional{$target}}{$cond} = $where;
+      $target_conditional{$target}{$cond} = $where;
     }
 
 
@@ -6531,8 +6524,11 @@ sub read_main_am_file
     my ($amfile) = @_;
 
     # This supports the strange variable tricks we are about to play.
-    &prog_error ("variable defined before read_main_am_file")
-        if scalar keys %conditional > 0;
+    if (scalar keys %conditional > 0)
+      {
+	variables_dump ();
+	&prog_error ("variable defined before read_main_am_file");
+      }
 
     # We want to predefine as many variables as possible.  This lets
     # the user set them with `+=' in Makefile.am.  However, we don't
