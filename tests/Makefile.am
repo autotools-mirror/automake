@@ -21,6 +21,7 @@ acsubst.test \
 acsubst2.test \
 all.test \
 alpha.test \
+alpha2.test \
 amassign.test \
 ammissing.test \
 ansi.test \
