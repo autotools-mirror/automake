@@ -1510,17 +1510,26 @@ sub transform_variable_recursively ($$$$$&;%)
 	   # we are trying to override a user variable.  Delete
 	   # the old variable first.
 	   variable_delete ($varname) if $varname eq $var->name;
-	   # Define for all conditions.  Make sure we define
-	   # an empty variable in condition TRUE otherwise.
+	   # Define an empty variable in condition TRUE if there is no
+	   # result.
 	   @allresults = ([TRUE, '']) unless @allresults;
+	   # Define the rewritten variable in all conditions not
+	   # already covered by user definitions.
 	   foreach my $pair (@allresults)
 	     {
 	       my ($cond, @result) = @$pair;
-	       define ($varname, VAR_AUTOMAKE, '', $cond, "@result",
-		       '', $where, VAR_PRETTY)
-		 unless vardef ($varname, $cond);
-	       rvardef ($varname, $cond)->set_seen;
+	       my $var = var $varname;
+	       my @conds = ($var
+			    ? $var->not_always_defined_in_cond ($cond)->conds
+			    : $cond);
+
+	       foreach (@conds)
+		 {
+		   define ($varname, VAR_AUTOMAKE, '', $_, "@result",
+			   '', $where, VAR_PRETTY);
+		 }
 	     }
+	   set_seen $varname;
 	 }
        return "\$($varname)";
      },
