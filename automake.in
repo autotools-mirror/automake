@@ -5636,13 +5636,27 @@ sub macro_define ($$$$$$)
       $var_line{$var} = $where
 	unless defined $var_line{$var};
 
-      # There must be no previous value unless the user is redefining
-      # an Automake variable or an AC_SUBST variable.
-      check_ambiguous_conditional ($var, $cond)
-	unless ($var_is_am{$var} && !$var_is_am
-		|| exists $configure_vars{$var});
+      # If Automake tries to override a value specified by the user,
+      # just don't let it do.
+      if (defined $var_value{$var}{$cond} && !$var_is_am{$var} && $var_is_am)
+	{
+	  if ($verbose)
+	    {
+	      print STDERR "$me: refusing to override the user definition of:\n";
+	      variable_dump ($var);
+	      print STDERR "$me: with `$cond' => `$value'\n";
+	    }
+	}
+      else
+	{
+	  # There must be no previous value unless the user is redefining
+	  # an Automake variable or an AC_SUBST variable.
+	  check_ambiguous_conditional ($var, $cond)
+	    unless ($var_is_am{$var} && !$var_is_am
+		    || exists $configure_vars{$var});
 
-      $var_value{$var}{$cond} = $value;
+	  $var_value{$var}{$cond} = $value;
+	}
     }
 
   # An Automake variable can be given to the user, but not the converse.
