@@ -45,6 +45,7 @@ ansi8.test \
 ansi9.test \
 ansi10.test \
 ar.test \
+ar2.test \
 asm.test \
 autohdr.test \
 autohdr2.test \
