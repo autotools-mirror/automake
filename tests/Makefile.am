@@ -1,6 +1,6 @@
 ## Process this file with automake to create Makefile.in
 
-XFAIL_TESTS = subdir5.test subobj8.test
+XFAIL_TESTS = subdir5.test subobj8.test ccnoco.test
 
 TESTS =	\
 acinclude.test \
@@ -35,6 +35,7 @@ canon2.test \
 canon3.test \
 canon4.test \
 canon5.test \
+ccnoco.test \
 check.test \
 checkall.test \
 clean.test \
