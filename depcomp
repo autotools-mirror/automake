@@ -25,16 +25,14 @@ if test -z "$depmode" || test -z "$source" || test -z "$object"; then
   exit 1
 fi
 
-if test -z "$depfile"; then
-  depfile=`echo "$object" | sed 's,\([^/]*\)$,.deps/\1,;s/\.\([^.]*\)$/.P\1/'`
-  depdir=`echo "$depfile" | sed 's,/*[^/]*$,,'`
-  test -d "$depdir" || { echo "mkdir \"$depdir\"" && mkdir "$depdir"; } ||
-  test -d "$depdir" || exit 1
-fi
+depfile=${depfile-`echo "$object" | sed 's,\([^/]*\)$,.deps/\1,;s/\.\([^.]*\)$/.P\1/'`}
+# depdir=`echo "$depfile" | sed 's,/*[^/]*$,,'`
+# test -d "$depdir" || { echo "mkdir \"$depdir\"" && mkdir "$depdir"; } ||
+# test -d "$depdir" || exit 1
 
 tmpdepfile=${tmpdepfile-`echo "$depfile" | sed 's/\.\([^.]*\)$/.T\1/'`}
 
-rm -f "$depfile" "$tmpdepfile"
+rm -f "$tmpdepfile"
 
 case "$depmode" in
 gcc)
@@ -44,6 +42,7 @@ gcc)
     rm -f "$tmpdepfile"
     exit $stat
   fi
+  rm -f "$depfile" 
   echo "$object : \\" > "$depfile"
   sed 's/^[^:]*: / /' < "$tmpdepfile" >> "$depfile"
   tr ' ' '
@@ -59,6 +58,7 @@ sgi)
     rm -f "$tmpdepfile"
     exit $stat
   fi
+  rm -f "$depfile" 
   echo "$object : \\" > "$depfile"
   sed 's/^[^:]*: / /' < "$tmpdepfile" >> "$depfile"
   tr ' ' '
@@ -71,6 +71,7 @@ dashmstdout)
   "$@" -M > "$tmpdepfile" &
   proc=$!
   "$@"
+  rm -f "$depfile" 
   echo "$object : \\" > "$depfile"
   wait "$proc"
   sed 's/^[^:]*: / /' < "$tmpdepfile" >> "$depfile"
