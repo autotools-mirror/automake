@@ -16,10 +16,10 @@ if test "$am_cv_prog_cc_stdc" != no; then
 else
   AC_MSG_RESULT(no)
   U=_ ANSI2KNR=./ansi2knr
-  # Ensure some checks needed by ansi2knr itself.
-  AC_HEADER_STDC
-  AC_CHECK_HEADERS(string.h)
 fi
+# Ensure some checks needed by ansi2knr itself.
+AC_HEADER_STDC
+AC_CHECK_HEADERS(string.h)
 AC_SUBST(U)dnl
 AC_SUBST(ANSI2KNR)dnl
 ])
