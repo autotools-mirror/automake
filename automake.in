@@ -301,6 +301,11 @@ $obsolete_rx = '(' . join ('|', keys %obsolete_macros) . ')';
 # This maps languages names onto properties.
 %language_map = ();
 
+# This holds all the files that would go in `dist_common' which we
+# discovered while scanning configure.in.  We might distribute these
+# in the top-level Makefile.in.
+%configure_dist_common = ();
+
 
 
 # Initialize global constants and our list of languages that are
@@ -2778,6 +2783,23 @@ sub handle_dist
     &push_dist_common ('configure.in', 'configure')
 	if $relative_dir eq '.';
 
+    # We might copy elements from %configure_dist_common to
+    # %dist_common if we think we need to.  If the file appears in our
+    # directory, we would have discovered it already, so we don't
+    # check that.  But if the file is in a subdir without a Makefile,
+    # we want to distribute it here if we are doing `.'.  Ugly!
+    if ($relative_dir eq '.')
+    {
+	local ($iter);
+	foreach $iter (keys %configure_dist_common)
+	{
+	    if (! &is_make_dir (&dirname ($iter)))
+	    {
+		&push_dist_common ($iter);
+	    }
+	}
+    }
+
     # Keys of %dist_common are names of files to distributed.  We put
     # README first because it then becomes easier to make a
     # Usenet-compliant shar file (in these, README must be first).
@@ -2789,6 +2811,10 @@ sub handle_dist
 	delete $dist_common{'README'};
     }
     push (@coms, sort keys %dist_common);
+
+    # Now that we've processed %dist_common, disallow further attempts
+    # to set it.
+    $handle_dist_run = 1;
 
     &define_pretty_variable ("DIST_COMMON", '', @coms);
     $output_vars .= "\n";
@@ -3259,22 +3285,6 @@ sub handle_configure
 	    if -f 'acconfig.h';
     }
 
-    # Make it easy to see if there is a Makefile.am in a given
-    # directory.
-    local (%make_dirs, $iter);
-    foreach $iter (@configure_input_files)
-    {
-	$make_dirs{&dirname ($iter)} = 1;
-    }
-    # We also want to notice Makefile.in's.
-    foreach $iter (@other_input_files)
-    {
-	if ($iter =~ /Makefile\.in$/)
-	{
-	    $make_dirs{&dirname ($iter)} = 1;
-	}
-    }
-
     # If we have a configure header, require it.
     local ($one_hdr);
     local (@local_fullnames) = @config_fullnames;
@@ -3293,7 +3303,7 @@ sub handle_configure
 	# directory and the header's directory doesn't have a
 	# Makefile, then we also want to build the header.
 	if ($relative_dir eq $header_dir
-	    || ($relative_dir eq '.' && ! defined $make_dirs{$header_dir}))
+	    || ($relative_dir eq '.' && ! &is_make_dir ($header_dir)))
 	{
 	    local ($ch_sans_dir, $cn_sans_dir, $stamp_dir);
 	    if ($relative_dir eq $header_dir)
@@ -4692,6 +4702,9 @@ sub scan_configure
 
     &require_config_file ($FOREIGN, 'py-compile')
 	if $seen_pythondir;
+
+    # Preserve dist_common for later.
+    %configure_dist_common = %dist_common;
 }
 
 ################################################################
@@ -6862,6 +6875,10 @@ sub initialize_per_input
     # We keep track of which objects need special (per-executable)
     # handling on a per-language basis.
     %lang_specific_files = ();
+
+    # This is set when `handle_dist' has finished.  Once this happens,
+    # we should no longer push on dist_common.
+    $handle_dist_run = 0;
 }
 
 
@@ -7344,8 +7361,57 @@ sub am_install_var
 
 ################################################################
 
+# Each key in this hash is the name of a directory holding a
+# Makefile.in.  These variables are local to `is_make_dir'.
+%make_dirs = ();
+$make_dirs_set = 0;
+
+sub is_make_dir
+{
+    local ($dir) = @_;
+    if (! $make_dirs_set)
+    {
+	foreach $iter (@configure_input_files)
+	{
+	    $make_dirs{&dirname ($iter)} = 1;
+	}
+	# We also want to notice Makefile.in's.
+	foreach $iter (@other_input_files)
+	{
+	    if ($iter =~ /Makefile\.in$/)
+	    {
+		$make_dirs{&dirname ($iter)} = 1;
+	    }
+	}
+	$make_dirs_set = 1;
+    }
+    return defined $make_dirs{$dir};
+}
+
+################################################################
+
 # This variable is local to the "require file" set of functions.
 @require_file_paths = ();
+
+# See if we want to push this file onto dist_common.  This function
+# encodes the rules for deciding when to do so.
+sub maybe_push_required_file
+{
+    local ($dir, $file, $fullfile) = @_;
+
+    # FIXME: Once again, special-case `.'.
+    if ($dir eq $relative_dir || $dir eq '.')
+    {
+	&push_dist_common ($file);
+    }
+    elsif ($relative_dir eq '.' && ! &is_make_dir ($dir))
+    {
+	# If we are doing the topmost directory, and the file is in a
+	# subdir which does not have a Makefile, then we distribute it
+	# here.
+	&push_dist_common ($fullfile);
+    }
+}
 
 # Verify that the file must exist in the current directory.  Usage:
 # require_file (isconfigure, line_number, strictness, file) strictness
@@ -7385,9 +7451,7 @@ sub require_file_internal
 	    if (-f $fullfile)
 	    {
 		$found_it = 1;
-		# FIXME: Once again, special-case `.'.
-		&push_dist_common ($file)
-		    if $dir eq $relative_dir || $dir eq '.';
+		&maybe_push_required_file ($dir, $file, $fullfile);
 		$save_dir = $dir;
 		last;
 	    }
@@ -7444,6 +7508,8 @@ sub require_file_internal
 			    $trailer = "\n    error while copying\n";
 			}
 		    }
+
+		    &maybe_push_required_file ($dir, $file, $fullfile);
 		}
 
 		local ($save) = $exit_status;
@@ -7545,7 +7611,16 @@ sub push_dist_common
 
     foreach $file (@files)
     {
-	$dist_common{$file} = 1;
+	if (! defined $dist_common{$file})
+	{
+	    if ($handle_dist_run)
+	    {
+		print STDERR
+		    "automake: programming error: push_dist_common run after handle_dist\n";
+		exit 1;
+	    }
+	    $dist_common{$file} = 1;
+	}
     }
 }
 
