@@ -3016,19 +3016,25 @@ sub handle_dependencies
 	# be empty.
 	if (&saw_sources_p (0) && keys %dep_files)
 	{
-	    &require_config_file ($FOREIGN, 'depcomp');
+	    local ($config_aux_dir_specified) = ($config_aux_dir ne '.'
+						 && $config_aux_dir ne '');
+
+	    # Set $require_file_found{'depcomp'} if the depcomp file exists,
+	    # before calling require_config_file on `depcomp'.  This makes
+	    # require_file_internal skip its buggy existence test that would
+	    # make automake fail (with `required file `lib/depcomp' not found')
+	    # when AC_CONFIG_AUX_DIR is not set.  See tests/subdir4.test.
+	    local ($depcomp_dir) = ($config_aux_dir_specified ? $config_aux_dir
+				    : '.');
+	    $require_file_found{'depcomp'} = 1 if -f "$depcomp_dir/depcomp";
 
 	    # Set location of depcomp.
-	    if ($config_aux_dir ne '.' && $config_aux_dir ne '')
-	    {
-		&define_variable ('depcomp', ('$(SHELL) ' . $config_aux_dir
-					      . '/depcomp'));
-	    }
-	    else
-	    {
-		&define_variable ('depcomp',
-				  '$(SHELL) $(top_srcdir)/depcomp');
-	    }
+	    local ($prefix) = ($config_aux_dir_specified ? $config_aux_dir
+			       : '$(top_srcdir)');
+
+	    &define_variable ('depcomp', "\$(SHELL) $prefix/depcomp");
+
+	    &require_config_file ($FOREIGN, 'depcomp');
 
 	    local ($iter);
 	    local (@deplist) = sort keys %dep_files;
