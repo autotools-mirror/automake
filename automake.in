@@ -8786,10 +8786,10 @@ sub require_file_internal ($$@)
 		my $message = "required file `$errfile' not found";
 		if ($add_missing)
 		{
-		    $suppress = 1;
-
 		    if (-f ("$libdir/$file"))
 		    {
+		        $suppress = 1;
+
 			# Install the missing file.  Symlink if we
 			# can, copy if we must.  Note: delete the file
 			# first, in case it is a dangling symlink.
@@ -8839,6 +8839,12 @@ sub require_file_internal ($$@)
 		# actually found the file, then do nothing.
 		next
 		    if $found_it && $force_missing;
+
+		# If we couldn' install the file, but it is a target in
+		# the Makefile, don't print anything.  This allows files
+		# like README, AUTHORS, or THANKS to be generated.
+		next
+		  if !$suppress && target_defined ($file);
 
 		msg ($suppress ? 'note' : 'error', $where, "$message$trailer");
 	    }
