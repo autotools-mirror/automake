@@ -390,8 +390,8 @@ my $seen_gettext = 0;
 # Line number at which AM_GNU_GETTEXT seen.
 my $ac_gettext_line = 0;
 
-# TRUE if AC_DECL_YYTEXT was seen.
-my $seen_decl_yytext = 0;
+# TRUE if AC_PROG_LEX or AM_PROG_LEX were seen.
+my $seen_prog_lex = 0;
 
 # TRUE if we've seen AC_CANONICAL_(HOST|SYSTEM).  The presence of
 # AC_CHECK_TOOL also sets this.
@@ -4451,6 +4451,7 @@ sub scan_autoconf_traces ($)
 		'AC_CONFIG_FILES',
 		'AC_LIBSOURCE',
 		'AC_PROG_LIBTOOL', 'AM_PROG_LIBTOOL',
+		'AC_PROG_LEX',
 		'AC_SUBST',
 		'AM_CONDITIONAL',
 		'AM_CONFIG_HEADER',
@@ -4508,14 +4509,18 @@ sub scan_autoconf_traces ($)
 	  # _AC_LIBOBJ_DECL and use it the in various macros.
 	  $libsources{$args[1]} = $here;
 	}
-      elsif ($macro eq 'AC_SUBST')
-	{
-	  $configure_vars{$args[1]} = $here;
-	}
       elsif ($macro =~ /A(C|M)_PROG_LIBTOOL/)
 	{
 	  $seen_libtool = $here;
 	  $libtool_line = $line;
+	}
+      elsif ($macro =~ /AC_PROG_LEX/)
+	{
+	  $seen_prog_lex = $here;
+	}
+      elsif ($macro eq 'AC_SUBST')
+	{
+	  $configure_vars{$args[1]} = $here;
 	}
       elsif ($macro eq 'AM_CONDITIONAL')
 	{
@@ -4795,15 +4800,14 @@ sub scan_one_autoconf_file
 	if (/AM_PROG_LEX/)
 	{
 	    $configure_vars{'LEX'} = $filename . ':' . $.;
-	    $seen_decl_yytext = 1;
-	}
-	if (/AC_DECL_YYTEXT/ && $filename =~ /configure\.(ac|in)$/)
-	{
-	    &am_conf_line_warning ($filename, $., "`AC_DECL_YYTEXT' is covered by `AM_PROG_LEX'");
+	    $seen_prog_lex = 1;
 	}
 	if (/AC_PROG_LEX/ && $filename =~ /configure\.(ac|in)$/)
 	{
- 	    &am_conf_line_warning ($filename, $., "automake requires `AM_PROG_LEX', not `AC_PROG_LEX'");
+	    $configure_vars{'LEX'} = $filename . ':' . $.;
+	    $seen_prog_lex = 1;
+ 	    &am_conf_line_warning ($filename, $.,
+		   "automake requires `AM_PROG_LEX', not `AC_PROG_LEX'");
 	}
 
 	if (/AC_PROG_(F77|YACC|RANLIB|CC|CXXCPP|CXX|LEX|AWK|CPP|LN_S)/)
@@ -4841,7 +4845,6 @@ sub scan_one_autoconf_file
 	    $configure_vars{$1} = $filename . ':' . $.;
 	}
 
-        $seen_decl_yytext = 1 if /AC_DECL_YYTEXT/;
 	if (/AM_MAINTAINER_MODE/)
 	{
 	    $seen_maint_mode = 1;
@@ -5279,9 +5282,9 @@ sub lang_lex_finish
     return if defined $language_scratch{'lex-done'};
     $language_scratch{'lex-done'} = 1;
 
-    if (! $seen_decl_yytext)
+    if (! $seen_prog_lex)
     {
-	&am_error ("lex source seen but `AC_DECL_YYTEXT' not in `$configure_ac'");
+	&am_error ("lex source seen but `AM_PROG_LEX' not in `$configure_ac'");
     }
 
     if (count_files_for_language ('lex') > 1)

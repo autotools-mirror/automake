@@ -1,4 +1,4 @@
-## Replacement for AC_PROG_LEX and AC_DECL_YYTEXT
+## Replacement for AC_PROG_LEX.                       -*-  Autoconf -*-
 ## by Alexandre Oliva <oliva@dcc.unicamp.br>
 
 # Copyright 1998, 1999, 2000, 2001 Free Software Foundation, Inc.
@@ -18,10 +18,14 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 
+# serial 2
+
+AC_PREREQ(2.50)
+
 # AM_PROG_LEX
-# Look for flex, lex or missing, then run AC_PROG_LEX and AC_DECL_YYTEXT
+# -----------
+# Look for flex, lex or missing, then run AC_PROG_LEX.
 AC_DEFUN([AM_PROG_LEX],
-[AC_REQUIRE([AM_MISSING_HAS_RUN])
+[AC_REQUIRE([AM_MISSING_HAS_RUN])dnl
 AC_CHECK_PROGS(LEX, flex lex, [${am_missing_run}flex])
-AC_PROG_LEX
-AC_DECL_YYTEXT])
+AC_PROG_LEX])
