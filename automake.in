@@ -1248,7 +1248,7 @@ sub msg_var ($$$;%)
 {
   my ($channel, $var, $msg, %opts) = @_;
   # Don't know which condition is concerned.  Pick any.
-  my $cond = (keys %{$var_value{$var}})[0];
+  my $cond = (variable_conditions ($var))[0];
   msg_cond_var $channel, $cond, $var, $msg, %opts;
 }
 
@@ -1268,7 +1268,7 @@ sub msg_target ($$$;%)
 {
   my ($channel, $target, $msg, %opts) = @_;
   # Don't know which condition is concerned.  Pick any.
-  my $cond = (keys %{$targets{$target}})[0];
+  my $cond = (target_conditions ($target))[0];
   msg_cond_target ($channel, $cond, $target, $msg, %opts);
 }
 
@@ -2655,7 +2655,7 @@ sub define_objects_from_sources ($$$$$$$$)
 
     my $needlinker = "";
     my @allresults = ();
-    foreach my $cond (variable_conditions ($var))
+    foreach my $cond (variable_sorted_conditions ($var))
     {
 	my @result;
 	foreach my $val (&variable_value_as_list ($var, $cond, $parent))
@@ -3020,7 +3020,7 @@ sub handle_lib_objects_cond
     {
       my $depvar = $xname . '_DEPENDENCIES';
       if ((conditional_ambiguous_p ($depvar, $cond,
-				    keys %{$var_value{$depvar}}))[0] ne '')
+				    variable_conditions ($depvar)))[0] ne '')
 	{
 	  # Note that we've examined this.
 	  &examine_variable ($depvar);
@@ -6069,7 +6069,7 @@ sub check_ambiguous_conditional ($$$)
 {
   my ($var, $cond, $where) = @_;
   my ($message, $ambig_cond) =
-    conditional_ambiguous_p ($var, $cond, keys %{$var_value{$var}});
+    conditional_ambiguous_p ($var, $cond, variable_conditions ($var));
   if ($message)
     {
       msg 'syntax', $where, "$message ...", partial => 1;
@@ -6194,7 +6194,7 @@ sub variable_not_always_defined_in_cond ($$)
   #     COND1_TRUE.  This yields an empty list and we are done.
 
   my @res = ();
-  my @cond_defs = keys %{$var_value{$var}}; # (1)
+  my @cond_defs = variable_conditions ($var); # (1)
   foreach my $icond (invert_conditions (@cond_defs)) # (2)
     {
       prog_error "invert_conditions returned an input condition"
@@ -6284,7 +6284,7 @@ sub macro_define ($$$$$$)
        $var_value{$var}{$cond} .= $value;
     }
   # 2. append (+=) to a variable defined for *another* condition
-  elsif ($type eq '+' && keys %{$var_value{$var}})
+  elsif ($type eq '+' && variable_conditions ($var))
     {
       # * Generally, $cond is not TRUE.  For instance:
       #     FOO = foo
@@ -6335,7 +6335,7 @@ sub macro_define ($$$$$$)
 	}
 
       # Add VALUE to all definitions of VAR.
-      foreach my $vcond (keys %{$var_value{$var}})
+      foreach my $vcond (variable_conditions ($var))
         {
 	  # We have a bit of error detection to do here.
 	  # This:
@@ -6463,7 +6463,7 @@ sub macro_dump ($)
   else
     {
       $text .= "  $var $var_type{$var}=\n  {\n";
-      foreach my $vcond (sort by_condition keys %{$var_value{$var}})
+      foreach my $vcond (variable_sorted_conditions ($var))
 	{
 	  prog_error ("`$var' is a key in \$var_value, "
 		      . "but not in \$var_owner\n")
@@ -6550,7 +6550,7 @@ sub variable_defined ($;$)
 	if (exists $targets{$var}
 	    && (! defined $cond || exists $targets{$var}{$cond}))
 	  {
-	    for my $tcond ($cond || keys %{$targets{$var}})
+	    for my $tcond ($cond || target_conditions ($var))
 	      {
 		prog_error ("\$targets{$var}{$tcond} exists but "
 			    . "\$target_owner doesn't")
@@ -6658,10 +6658,30 @@ sub variable_conditions_recursive ($)
 sub variable_conditions ($)
 {
     my ($var) = @_;
-    my @conds = keys %{$var_value{$var}};
-    return sort by_condition @conds;
+    return keys %{$var_value{$var}};
 }
 
+
+# @CONDS
+# variable_sorted_conditions ($VAR)
+# ---------------------------------
+# Same as &variable_conditions, but return a sorted list.
+sub variable_sorted_conditions ($)
+{
+    my ($var) = @_;
+    return sort by_condition variable_conditions $var;
+}
+
+
+# @CONDS
+# target_conditions ($TARGET)
+# ---------------------------
+# Get the list of conditions that a target is defined with.
+sub target_conditions ($)
+{
+    my ($target) = @_;
+    return keys %{$targets{$target}};
+}
 
 # $BOOLEAN
 # &variable_conditionally_defined ($VAR)
@@ -6746,7 +6766,7 @@ sub variable_conditions_recursive_sub
 
     my @this_conds = ();
     # Examine every condition under which $VAR is defined.
-    foreach my $vcond (keys %{$var_value{$var}})
+    foreach my $vcond (variable_conditions ($var))
     {
       push (@this_conds, $vcond);
 
@@ -6902,7 +6922,7 @@ sub variable_conditions_permutations
 sub check_variable_defined_unconditionally ($$)
 {
   my ($var, $parent) = @_;
-  foreach my $cond (keys %{$var_value{$var}})
+  foreach my $cond (variable_conditions ($var))
     {
       next
 	if $cond->true || $cond->false;
@@ -7038,7 +7058,7 @@ sub variable_value_as_list
 
     # Get value for given condition
     my $onceflag;
-    foreach my $vcond (keys %{$var_value{$var}})
+    foreach my $vcond (variable_conditions ($var))
     {
 	my $val = $var_value{$var}{$vcond};
 
@@ -7097,7 +7117,7 @@ sub variable_value_as_list_recursive_worker ($$$$)
     elsif ($cond eq 'all')
     {
 	$vars_scanned{$var} = 1;
-	foreach my $vcond (keys %{$var_value{$var}})
+	foreach my $vcond (variable_conditions ($var))
 	{
 	    push (@result, &value_to_list ($var,
 					   $var_value{$var}{$vcond},
@@ -7110,7 +7130,7 @@ sub variable_value_as_list_recursive_worker ($$$$)
     {
 	$vars_scanned{$var} = 1;
 	my $onceflag;
-	foreach my $vcond (keys %{$var_value{$var}})
+	foreach my $vcond (variable_conditions ($var))
 	{
 	    my $val = $var_value{$var}{$vcond};
 	    my $where = $var_location{$var}{$vcond};
@@ -7143,10 +7163,10 @@ sub variable_output ($@)
 {
   my ($var, @conds) = @_;
 
-  @conds = keys %{$var_value{$var}}
+  @conds = variable_sorted_conditions $var
     unless @conds;
 
-  foreach my $cond (sort by_condition @conds)
+  foreach my $cond (@conds)
     {
       prog_error ("unknown condition `$cond' for `$var'")
 	unless exists $var_value{$var}{$cond};
@@ -7174,10 +7194,10 @@ sub variable_pretty_output ($@)
 {
   my ($var, @conds) = @_;
 
-  @conds = keys %{$var_value{$var}}
+  @conds = variable_sorted_conditions $var
     unless @conds;
 
-  foreach my $cond (sort by_condition @conds)
+  foreach my $cond (@conds)
     {
       prog_error ("unknown condition `$cond' for `$var'")
 	unless exists $var_value{$var}{$cond};
@@ -7530,7 +7550,7 @@ sub rule_define ($$$$$)
 
   # Check ambiguous conditional definitions.
   my ($message, $ambig_cond) =
-    conditional_ambiguous_p ($target, $cond, keys %{$targets{$target}});
+    conditional_ambiguous_p ($target, $cond, target_conditions ($target));
   if ($message)			# We have an ambiguty.
     {
       if ($owner == TARGET_USER)
@@ -7562,7 +7582,7 @@ sub rule_define ($$$$$)
 	  # was already defined in condition COND1 and we want to define
 	  # it in condition TRUE, then define it only in condition !COND1.
 	  # (See cond14.test and cond15.test for some test cases.)
-	  my @defined_conds = keys %{$targets{$target}};
+	  my @defined_conds = target_conditions ($target);
 	  @conds = ();
 	  for my $undefined_cond (invert_conditions(@defined_conds))
 	    {
@@ -8366,7 +8386,7 @@ sub append_exeext ($)
   # FIXME: Currently it's a bit hard to chose a condition becose the
   # set of input condition is different from the set of ouput
   # conditions.  See also PR/352.   So we just pick the first one.
-  my $cond = (keys %{$var_value{$macro}})[0];
+  my $cond = (variable_conditions ($macro))[0];
   my $where = $var_location{$macro}{$cond};
 
   macro_delete ($macro);
@@ -8545,7 +8565,7 @@ sub am_install_var
       # Use the location of the currently processed variable.
       # We are not processing a particular condition, so pick the first
       # available.
-      my $tmpcond = (keys %{$var_value{$one_name}})[0];
+      my $tmpcond = (variable_conditions ($one_name))[0];
       my $where = $var_location{$one_name}{$tmpcond}->clone;
 
       # Append actual contents of where_PRIMARY variable to
@@ -9095,7 +9115,7 @@ sub require_variables ($$$@)
 sub require_variables_for_macro ($$@)
 {
   my ($macro, $reason, @args) = @_;
-  for my $cond (keys %{$var_value{$macro}})
+  for my $cond (variable_conditions ($macro))
     {
       return require_variables ($var_location{$macro}{$cond}, $reason,
 				$cond, @args);
