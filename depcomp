@@ -51,8 +51,14 @@ case "$depmode" in
 gcc3)
 ## gcc 3 implements dependency tracking that does exactly what
 ## we want.  Yay!
-   exec "$@" -MT "$object" -MF "$depfile" -MD -MP
-   ;;
+  if "$@" -MT "$object" -MF "$tmpdepfile" -MD -MP; then :
+  else
+    stat=$?
+    rm -f "$tmpdepfile"
+    exit $stat
+  fi
+  mv "$tmpdepfile" "$depfile"
+  ;;
 
 gcc)
 ## There are various ways to get dependency output from gcc.  Here's
