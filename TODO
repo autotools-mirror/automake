@@ -1,14 +1,39 @@
+* in depend2.am, in specialization case, what if @SOURCE@ is found
+  in srcdir?  We can't depend on $<!  We must search explicitly.
+  this is a very serious problem!
+  one solution would be to make built-source handling smarter and
+  a bit more strict.  For instance require that built sources
+  have an associated target.  In this case we must also handle suffix
+  rules and the like.
+
 * Document why putting @FOO@ in _SOURCES doesn't work.
   This must be done for 1.5
+
+* ylwrap should support flex's -P option
+  also it should be integrated into missing, probably
+
+* think about how per-object flags should work.  in particular:
+  * how should they be specified?
+    using the object name is confusing when .lo/.obj in use
+    however, the object name provides a nice interaction with
+    per-exe flags
+  * how should they interact with per-executable flags?
+
+* cross-compilation support:
+  programs built and used by the build process need to be
+  built for CC_FOR_BUILD
+  introduce a new variable for this
+  [ we can do this in an automatic way I think.
+    unfortunately it isn't that useful until autoconf has support
+    for this sort of thing as well ]
 
 * if automake -a, and dangling links exist, automake should
   remove and reinstall
 
 * add a way to require C++ support even when no apparent C++ code
   exists.  Likewise for other langs.
-
-* in depend2.am, in specialization case, what if @SOURCE@ is found
-  in srcdir?  We can't depend on $<!  We must search explicitly.
+  eg, `extension-cxx' option
+  (is this really needed?)
 
 * Add a way to say that foo/bar.h should be installed as
   $(includedir)/foo/bar.h without introducing a new dir var
@@ -24,11 +49,6 @@
 	    rm -f $@-1 $@-2
 
 * support prog_LIBS as override for LIBS
-
-* serious bug.  this doesn't work:
-	.c.o: ; ...
-	foo.o: sub/foo.c
-  why did I think it did work?
 
 * Sometimes we can warn about a missing `compile' script twice.
 
@@ -71,18 +91,23 @@
 * CFLAGS only defined if C source seen
   but really it should be a configure variable, shouldn't it?
   There are other examples of this
+  [ moving to autoconf --trace ought to fix this ]
 
 * in gnu/gnits mode, give error if Makefile.am overrides a user
   variable like CFLAGS.
+  [ this is low priority because the package author can always
+    circumvent our check by redefining in configure.in
+    plus it is probably better to encourage good behavior than to
+    punish bad ]
 
 * If we see `foo.o' in LIBOBJS, and we've seen AC_OBJEXT, then complain.
-
-* using "include" inside a conditional doesn't currently
-  work properly.
+  [ how will we know that?  it is better to handle this automatically
+    via an autoconf hook ]
 
 * examine possibility of using any character in a macro name
   and rewriting names automatically.  this means we must rewrite
   all references as well.
+  [ this is a 2.0-style feature ]
 
 * AM_CONFIG_HEADER might generate the wrong stamp file names
   when given multiple headers.  Write a test.
@@ -133,19 +158,9 @@
 * There are probably more bugs in variable_conditions_sub along
   the lines of the one that caused cond4.test to fail.
 
-* give user more control over -I flags
-  in particular document a way to override the defaults
-
 * reintroduce AM_FUNC_FNMATCH which sets LIBOBJS
   Then have automake know about fnmatch.h.
     [ probably should wait for autoconf to get right functionality ]
-
-* Add a conditional for dependency tracking
-  (what to name it is the biggest problem here)
-  (because we want it to flag dist/no-dist -- not just deps)
-    [ this might not really be correctly doable.
-      instead we need a compile-time conditional for this
-      yuck ]
 
 * Allow per-object cflags:
 	bin_PROGRAMS = foo
@@ -179,11 +194,6 @@ DONE: but needs to be documented
   look at gcc's Makefile.in to see what to do
   or look at maint program
 
-* Karl wants to be able to set LIBS and LDFLAGS at build time, like CFLAGS
-  maybe we need something more general?
-
-* add $(srcdir)/ before some dependencies?
-
 * define LINK if a program is mentioned, even if no C sources appear
 
 * BUILT_SOURCES should not be distributed, even when they appear in
@@ -197,12 +207,11 @@ DONE: but needs to be documented
 	$(FOO).$(BAR)  ?
   or some other arbitrary thing?
   right now we try to cope, but not very well
-
-* if `interlock' exists, that should be an error (?)
-  should also warn about using new ylwrap and not old one
-  only do this when looking for ylwrap
+    [ this is only of theoretical interest for now ]
 
 ** make sure every variable that is used is also defined
+    [ we don't really look at variable uses in detail.
+      2.0 thing ]
 
 * make sure `missing' defines are generated
 * if no AM_INIT_AUTOMAKE, then don't handle `missing' stuff.
@@ -218,20 +227,12 @@ DONE: but needs to be documented
 * NORMAL_INSTALL / NORMAL_UNINSTALL -vs- recursive rules
   [ requires changes to the standard ]
 
-* cross-compilation support:
-  programs built and used by the build process need to be
-  built for CC_FOR_BUILD
-  introduce a new variable for this
-
 * if foo.y is a source, foo.h isn't auto-distributed?
 
 * copyrights on m4 files, aclocal output
 
 * is there a way to add a directory and then have "make" do all the
   updating?  think.
-
-* put standards.texi into distribution
-
 
 * should not put texiname_TEXINFOS into distribution
   should rename this macro anyway, to foo_texi_DEPENDENCIES

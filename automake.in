@@ -716,7 +716,7 @@ sub handle_options
 		   || $_ eq 'dist-tarZ' || $_ eq 'dist-bzip2'
 		   || $_ eq 'dejagnu' || $_ eq 'no-texinfo.tex'
 		   || $_ eq 'readme-alpha' || $_ eq 'check-news'
-		   || $_ eq 'subdir-objects')
+		   || $_ eq 'subdir-objects' || $_ eq 'nostdinc')
 	    {
 		# Explicitly recognize these.
 	    }
@@ -783,18 +783,23 @@ sub get_object_extension
     {
 	# Boilerplate.
 	local ($xform) = '';
-	if (&variable_defined ('CONFIG_HEADER'))
+	if (! defined $options{'nostdinc'})
 	{
-	    local ($one_hdr);
-	    foreach $one_hdr (split (' ', &variable_value ('CONFIG_HEADER')))
+	    $xform = "-I. -I\$(srcdir)";
+
+	    if (&variable_defined ('CONFIG_HEADER'))
 	    {
-		local ($var);
-		($var = &dirname ($one_hdr)) =~ s/(\W)/\\$1/g;
-		$xform .= ' ' if $xform;
-		$xform .= '-I' . $var;
+		local ($one_hdr);
+		foreach $one_hdr (split (' ',
+					 &variable_value ('CONFIG_HEADER')))
+		{
+		    local ($var);
+		    ($var = &dirname ($one_hdr)) =~ s/(\W)/\\$1/g;
+		    $xform .= ' -I' . $var;
+		}
 	    }
 	}
-	$xform = 's/\@CONFIG_INCLUDE_SPEC\@/' . $xform . '/go;';
+	$xform = 's/\@DEFAULT_INCLUDES\@/' . $xform . '/go;';
 	$output_vars .= &file_contents_with_transform ($xform,
 						       'comp-vars');
 
@@ -3598,7 +3603,6 @@ sub handle_footer
     $output_header .= ".SUFFIXES:\n";
     if (@suffixes)
     {
-
 	# Make sure suffixes has unique elements.  Sort them to ensure
 	# the output remains consistent.
 	local (%suffixes);
@@ -6044,6 +6048,11 @@ sub read_am_file
     local ($last_var_name) = '';
     local ($blank) = 0;
 
+    # We save the conditional stack on entry, and then check to make
+    # sure it is the same on exit.  This lets us conditonally include
+    # other files.
+    local (@saved_cond_stack) = @conditional_stack;
+
     while (<AM_FILE>)
     {
 	if (/$IGNORE_PATTERN/o)
@@ -6371,8 +6380,18 @@ sub read_am_file
 
     $output_trailer .= $comment;
 
-    &am_error ("unterminated conditionals: " . join (' ', @conditional_stack))
-	if (@conditional_stack);
+    if (join (' ', @saved_cond_stack) ne join (' ', @conditional_stack))
+    {
+	if (@conditional_stack)
+	{
+	    &am_error ("unterminated conditionals: " . join (' ', @conditional_stack));
+	}
+	else
+	{
+	    # FIXME: better error message here.
+	    &am_error ("conditionals not nested in include file");
+	}
+    }
 }
 
 # A helper for read_main_am_file which initializes configure variables
