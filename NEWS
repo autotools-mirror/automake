@@ -1,129 +1,146 @@
 New in 1.7a:
-* The NEWS file is more verbose.
 
-* Autoconf 2.55 or greater is required.
+* Meta-News
 
-* Defining programs conditionally using Automake conditionals
-  no longer leads to a combinatorial explosion.  The following
-  construct used to be troublesome when used with dozens
-  of conditions.
+  - The NEWS file is more verbose.
 
-    bin_PROGRAMS = a
-    if COND1
-      bin_PROGRAMS += a1
-    endif
-    if COND2
-      bin_PROGRAMS += a2
-    endif
-    if COND3
-      bin_PROGRAMS += a3
-    endif
-    ...
+* Requirements
 
-  Likewise for _SOURCES, _LDADD, and _LIBADD variables.
+  - Autoconf 2.55 or greater is required.
 
-* Automake now supports bin_PROGRAMS (or any *_PROGRAMS variable)
-  being defined in several conditions.  As in
+* New features
 
-    if COND1
-      bin_PROGRAMS = a1
-    endif
-    if COND2
-      bin_PROGRAMS = a2
-    endif
+  - AR's `cru' flags are now set in a global ARFLAGS variable instead
+    of being hard-coded in each $(AR) invocation, so they can be
+    substituted from configure.ac.  This has been requested by people
+    dealing with non-POSIX ar implementations.
 
-  Likewise for _SOURCES, _LDADD, and _LIBADD variables.
+  - New warning option: -Woverride.  This will warn about any user
+    target or variable definitions which override Automake
+    definitions.
 
-* install-sh now understands --version and --help.
+  - Texinfo rules back up and restore info files when makeinfo fails.
 
-* Cleanup the definitions of $(distdir) and $(top_distdir).
-  $(top_distdir) now points to the root of the distribution directory
-  created during `make dist', as it did in Automake 1.4, not to the
-  root of the build tree as it did in intervening versions.
-  Furthermore these two variables are now only defined in the top
-  level Makefile, and passed to sub-directories when running `make dist'.
+  - Texinfo rules now support the `html' target.
+    Running this requires Texinfo 4.0 or greater.
 
-* elisp sources are compiled all at once, instead of one by one.
-  This allows interdependencies and speeds up compilation.
+    `html' is a new recursive target, so if your package mixes
+    hand-crafted `Makefile.in's with Automake-generated
+    `Makefile.in's, you should adjust the former to support (or
+    ignore) this target so that `make html' recurses successfully.  If
+    you had a custom `html' rule in your `Makefile.am', it's better to
+    rename it as `html-local', otherwise your rule will override
+    Automake's new rule (you can check that by running `automake
+    -Woverride') and that will stop the recursion to subdirectories.
 
-* lisp_DATA is now allowed.  If you are using the empty ELCFILES idiom
-  to disable byte-compilation of lisp_LISP files, it is recommended that
-  you switch to using lisp_DATA.  ELCFILES is no longer documented.
+    Last but not least, this `html' rule is declared PHONY, even when
+    overridden.  Fortunately, it appears that few packages use a
+    non-PHONY `html' rule.
 
-* AM_PROG_CC_STDC is now empty.  The content of this macro was
-  merged in AC_PROG_CC.  If your code uses $am_cv_prog_cc_stdc,
-  you should adjust it to use $ac_cv_prog_cc_stdc instead.
-  (This renaming should be safe, even if you have to support several,
-  versions of Automake, because AC_PROG_CC defines this variable since
-  Autoconf 2.54.)
+  - Any file which is m4_included from configure.ac will appear as a
+    configure and Makefile.in dependency, and will be automatically
+    distributed.
 
-* AR's `cru' flags are now set in a global ARFLAGS variable instead
-  of being hard-coded in each $(AR) invocation, so they can be
-  substituted from configure.ac.  This has been requested by people
-  dealing with non-POSIX ar implementations.
+  - The rules for rebuilding Makefiles and Makefile.ins will now
+    rebuild all Makefiles and all Makefile.ins at once when one of
+    configure's dependencies has changed.  This is considerably faster
+    than previous implementations, where config.status and automake
+    were run separately in each directory (this still happens when you
+    change a Makefile.am locally, without touching configure.ac or
+    friends).  Doing this also solves a longstanding issue: these
+    rebuild rules failed to work when adding new directories to the
+    tree, forcing you to run automake manually.
 
-* New warning option: -Woverride.  This will warn about any user
-  target or variable definitions which override Automake definitions.
+  - For similar reasons, the rules to rebuild configure,
+    config.status, and aclocal.m4 are now defined in all directories.
+    Note that if you were using the CONFIG_STATUS_DEPENDENCIES and
+    CONFIGURE_DEPENDENCIES (undocumented) variables, you should better
+    define them in all directories.  This is easily done using an
+    AC_SUBST.
 
-* Texinfo rules back up and restore info files when makeinfo fails.
+  - aclocal will now use `m4_include' instead of copying local m4
+    files into aclocal.m4.  (Local m4 files are those you ship with
+    your project, other files will be copied as usual.)
 
-* Texinfo rules now support the `html' target.
-  Running this requires Texinfo 4.0 or greater.
+    Because m4_included files are automatically distributed, it means
+    for most projects there is no point in EXTRA_DISTing the list of
+    m4 files which are used.  (You can probably get rid of
+    m4/Makefile.am if you had one.)
 
-  `html' is a new recursive target, so if your package mixes
-  hand-crafted `Makefile.in's with Automake-generated `Makefile.in's,
-  you should adjust the former to support (or ignore) this target so
-  that `make html' recurses successfully.  If you had a custom `html'
-  rule in your `Makefile.am', it's better to rename it as `html-local',
-  otherwise your rule will override Automake's new rule (you can check
-  that by running `automake -Woverride') and that will stop the recursion
-  to subdirectories.
+  - aclocal will avoid touching aclocal.m4 when possible, so that
+    Autom4te's cache isn't needlessly invalidated.  This behavior can
+    be switched off with the new `--force' option.
 
-  Last but not least, this `html' rule is declared PHONY, even when
-  overridden.  Fortunately, it appears that few packages use a
-  non-PHONY `html' rule.
+  - New option no-dist-gzip.
 
-* Any file which is m4_included from configure.ac will appear as
-  a configure and Makefile.in dependency, and will be automatically
-  distributed.
+  - install-sh now understands --version and --help.
 
-* The rules for rebuilding Makefiles and Makefile.ins will now rebuild
-  all Makefiles and all Makefile.ins at once when one of configure's
-  dependencies has changed.  This is considerably faster than
-  previous implementations, where config.status and automake were run
-  separately in each directory (this still happens when you change
-  a Makefile.am locally, without touching configure.ac or friends).
-  Doing this also solves a longstanding issue: these rebuild rules
-  failed to work when adding new directories to the tree, forcing
-  you to run automake manually.
+* Obsolete features
 
-* For similar reasons, the rules to rebuild configure, config.status, and
-  aclocal.m4 are now defined in all directories.  Note that if you
-  were using the CONFIG_STATUS_DEPENDENCIES and CONFIGURE_DEPENDENCIES
-  (undocumented) variables, you should better define them in all directories.
-  This is easily done using an AC_SUBST.
+  - lisp_DATA is now allowed.  If you are using the empty ELCFILES
+    idiom to disable byte-compilation of lisp_LISP files, it is
+    recommended that you switch to using lisp_DATA.  ELCFILES is no
+    longer documented.
 
-* aclocal will now use `m4_include' instead of copying local m4 files
-  into aclocal.m4.  (Local m4 files are those you ship with your
-  project, other files will be copied as usual.)
+  - AM_PROG_CC_STDC is now empty.  The content of this macro was
+    merged in AC_PROG_CC.  If your code uses $am_cv_prog_cc_stdc, you
+    should adjust it to use $ac_cv_prog_cc_stdc instead.  (This
+    renaming should be safe, even if you have to support several,
+    versions of Automake, because AC_PROG_CC defines this variable
+    since Autoconf 2.54.)
 
-  Because m4_included files are automatically distributed, it means
-  for most projects there is no point in EXTRA_DISTing the list
-  of m4 files which used.  (You can probably get rid of m4/Makefile.am
-  if you had one.)
+  - Some users where using the undocumented ACLOCAL_M4_SOURCES
+    variable to override the aclocal.m4 dependencies computed
+    (inaccurately) by older versions of Automake.  Because Automake
+    now tracks configure's m4 dependencies accurately (see m4_include
+    above), the use of ACLOCAL_M4_SOURCES should be considered
+    obsolete and will be flagged as such when running `automake
+    -Wobsolete'.
 
-  Some users where using the undocumented ACLOCAL_M4_SOURCES variable
-  to override the aclocal.m4 dependencies computed (inaccurately) by
-  older versions of Automake; this variable should be considered obsolete
-  and will be flagged as such when running `automake -Wobsolete'.
+* Bug fixes
 
-* aclocal will avoid touching aclocal.m4 when possible, so that
-  Autom4te's cache isn't needlessly invalidated.  This behavior can
-  be switched off with the new `--force' option.
+  - Defining programs conditionally using Automake conditionals no
+    longer leads to a combinatorial explosion.  The following
+    construct used to be troublesome when used with dozens of
+    conditions.
 
-* New option no-dist-gzip.
+      bin_PROGRAMS = a
+      if COND1
+        bin_PROGRAMS += a1
+      endif
+      if COND2
+        bin_PROGRAMS += a2
+      endif
+      if COND3
+        bin_PROGRAMS += a3
+      endif
+      ...
 
-* Targets dist-gzip, dist-bzip2, dist-tarZ, dist-zip are always defined.
+    Likewise for _SOURCES, _LDADD, and _LIBADD variables.
+
+  - Automake now supports bin_PROGRAMS (or any *_PROGRAMS variable)
+    being defined in several conditions.  As in
+
+      if COND1
+        bin_PROGRAMS = a1
+      endif
+      if COND2
+        bin_PROGRAMS = a2
+      endif
+
+    Likewise for _SOURCES, _LDADD, and _LIBADD variables.
+
+  - Cleanup the definitions of $(distdir) and $(top_distdir).
+    $(top_distdir) now points to the root of the distribution
+    directory created during `make dist', as it did in Automake 1.4,
+    not to the root of the build tree as it did in intervening
+    versions.  Furthermore these two variables are now only defined in
+    the top level Makefile, and passed to sub-directories when running
+    `make dist'.
+
+* Miscellaneous
+
+  - Targets dist-gzip, dist-bzip2, dist-tarZ, dist-zip are always defined.
 
 
 New in 1.7:
