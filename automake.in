@@ -7433,7 +7433,7 @@ sub parse_arguments ()
   my $cli_where = new Automake::Location;
   my %cli_options =
     (
-     'libdir:s' 	=> \$libdir,
+     'libdir=s' 	=> \$libdir,
      'gnu' 		=> sub { set_strictness ('gnu'); },
      'gnits' 		=> sub { set_strictness ('gnits'); },
      'cygnus' 	        => sub { set_global_option ('cygnus', $cli_where); },
@@ -7443,11 +7443,11 @@ sub parse_arguments ()
 						    $cli_where); },
      'no-force' 	=> sub { $force_generation = 0; },
      'f|force-missing'  => \$force_missing,
-     'o|output-dir:s'	=> \$output_directory,
+     'o|output-dir=s'	=> \$output_directory,
      'a|add-missing' 	=> \$add_missing,
      'c|copy' 	        => \$copy_missing,
      'v|verbose' 	=> sub { setup_channel 'verb', silent => 0; },
-     'W|warnings:s'     => \&parse_warnings,
+     'W|warnings=s'     => \&parse_warnings,
      # These long options (--Werror and --Wno-error) for backward
      # compatibility.  Use -Werror and -Wno-error today.
      'Werror'           => sub { parse_warnings 'W', 'error'; },
@@ -7489,14 +7489,40 @@ sub parse_arguments ()
       $output_directory = '.';
     }
 
+  return unless @ARGV;
+
+  if ($ARGV[0] =~ /^-./)
+    {
+      my %argopts;
+      for my $k (keys %cli_options)
+	{
+	  if ($k =~ /(.*)=s$/)
+	    {
+	      map { $argopts{(length ($_) == 1)
+			     ? "-$_" : "--$_" } = 1; } (split (/\|/, $1));
+	    }
+	}
+      if ($ARGV[0] eq '--')
+	{
+	  shift @ARGV;
+	}
+      elsif (exists $argopts{$ARGV[0]})
+	{
+	  fatal ("option `$ARGV[0]' requires an argument\n"
+		 . "Try `$0 --help' for more information.");
+	}
+      else
+	{
+	  fatal ("unrecognized option `$ARGV[0]'.\n"
+		 . "Try `$0 --help' for more information.");
+	}
+    }
+
   my $errspec = 0;
   foreach my $arg (@ARGV)
     {
-      if ($arg =~ /^-./)
-	{
-	  fatal ("unrecognized option `$arg'\n"
-		 . "Try `$0 --help' for more information.");
-	}
+      fatal ("empty argument\nTry `$0 --help' for more information.")
+	if ($arg eq '');
 
       # Handle $local:$input syntax.
       my ($local, @rest) = split (/:/, $arg);

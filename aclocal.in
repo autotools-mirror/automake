@@ -636,7 +636,7 @@ sub parse_arguments ()
      'output=s'		=> \$output_file,
      'print-ac-dir'     => \$print_and_exit,
      'verbose'		=> sub { setup_channel 'verb', silent => 0; },
-     'W|warnings:s'     => \&parse_warnings,
+     'W|warnings=s'     => \&parse_warnings,
      );
   use Getopt::Long;
   Getopt::Long::config ("bundling", "pass_through");
@@ -666,8 +666,25 @@ sub parse_arguments ()
 
   if (@ARGV)
     {
-      fatal ("unrecognized option `$ARGV[0]'\n"
-	     . "Try `$0 --help' for more information.");
+      my %argopts;
+      for my $k (keys %cli_options)
+	{
+	  if ($k =~ /(.*)=s$/)
+	    {
+	      map { $argopts{(length ($_) == 1)
+			     ? "-$_" : "--$_" } = 1; } (split (/\|/, $1));
+	    }
+	}
+      if (exists $argopts{$ARGV[0]})
+	{
+	  fatal ("option `$ARGV[0]' requires an argument\n"
+		 . "Try `$0 --help' for more information.");
+	}
+      else
+	{
+	  fatal ("unrecognized option `$ARGV[0]'\n"
+		 . "Try `$0 --help' for more information.");
+	}
     }
 
   if ($print_and_exit)

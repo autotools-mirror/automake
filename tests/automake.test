@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002, 2004  Free Software Foundation, Inc.
+# Copyright (C) 2004  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -18,34 +18,22 @@
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-# Check to make sure we recognize a Makefile.in, even if post-processed
-# and renamed.
-
+# Test Automake's command-line options.
 . ./defs || exit 1
 
-cat >configure.in <<'END'
-AC_INIT([mumble], [0.1])
-AM_INIT_AUTOMAKE
-AC_PROG_CC
-AC_CONFIG_FILES([myMakefile])
-AC_OUTPUT
-END
+set -e
 
-cat > myMakefile.am << 'END'
-bin_PROGRAMS = fred
-fred_SOURCES = fred.c
-END
-
-$ACLOCAL || exit 1
-$AUTOCONF || exit 1
-$AUTOMAKE -- myMakefile || exit 1
-
-mv myMakefile.in myMakefile.old
-echo '# Post-processed by post-processor 3.14.' > myMakefile.in
-cat myMakefile.old >> myMakefile.in
-
-./configure || exit 1
-
-test -f .deps/fred.Po || test -f _deps/fred.Po || exit 1
-
-:
+$AUTOMAKE --help
+$AUTOMAKE --version
+AUTOMAKE_fails --voo
+grep 'unrecognized option.*--voo' stderr
+AUTOMAKE_fails -- --voo
+grep 'input file.*--voo' stderr
+AUTOMAKE_fails ''
+grep 'empty argument' stderr
+AUTOMAKE_fails -W
+grep 'option.*-W.*requires an argument' stderr
+AUTOMAKE_fails --warnings
+grep 'option.*--warning.*requires an argument' stderr
+AUTOMAKE_fails --warnings --help
+grep 'unknown warning.*--help' stderr
