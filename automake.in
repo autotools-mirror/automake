@@ -1242,25 +1242,24 @@ sub get_object_extension
     if (! $included_generic_compile)
     {
 	# Boilerplate.
-	my $default_include = '';
+	my $default_includes = '';
 	if (! defined $options{'nostdinc'})
 	{
-	    $default_include = ' -I. -I$(srcdir)';
+	    $default_includes = ' -I. -I$(srcdir)';
 
 	    if (&variable_defined ('CONFIG_HEADER'))
 	    {
 		foreach my $hdr (split (' ', &variable_value ('CONFIG_HEADER')))
 		{
-		    $default_include .= ' -I' . dirname ($hdr);
+		    $default_includes .= ' -I' . dirname ($hdr);
 		}
 	    }
 	}
-	$output_vars .=
-	  &file_contents ('comp-vars',
-			  &transform ('DEFAULT_INCLUDES' => $default_include));
+	$output_vars .= &file_contents ('comp-vars',
+					('DEFAULT_INCLUDES'
+					   => $default_includes));
 
-	$output_rules .=
-	  &file_contents ('compile');
+	$output_rules .= &file_contents ('compile');
 
 	# If using X, include some extra variable definitions.  NOTE
 	# we don't want to force these into CFLAGS or anything,
@@ -2218,9 +2217,9 @@ sub handle_programs
 	}
 
 	$output_rules .= &file_contents ('program',
-					 &transform ('PROGRAM'  => $one_file,
-						     'XPROGRAM' => $xname,
-						     'XLINK'    => $xlink));
+					 ('PROGRAM'  => $one_file,
+					  'XPROGRAM' => $xname,
+					  'XLINK'    => $xlink));
     }
 
     if (&variable_defined ('LDADD') && &handle_lib_objects ('', 'LDADD', 0))
@@ -2323,8 +2322,8 @@ sub handle_libraries
 	&handle_source_transform ($xlib, $onelib, $obj);
 
 	$output_rules .= &file_contents ('library',
-					 &transform ('LIBRARY'  => $onelib,
-						     'XLIBRARY' => $xlib));
+					 ('LIBRARY'  => $onelib,
+					  'XLIBRARY' => $xlib));
     }
 
     if ($seen_libobjs)
@@ -2476,10 +2475,10 @@ sub handle_ltlibraries
 	}
 
 	$output_rules .= &file_contents ('ltlibrary',
-					 &transform ('LTLIBRARY'  => $onelib,
-						     'XLTLIBRARY' => $xlib,
-						     'RPATH'      => $rpath,
-						     'XLINK'      => $xlink));
+					 ('LTLIBRARY'  => $onelib,
+					  'XLTLIBRARY' => $xlib,
+					  'RPATH'      => $rpath,
+					  'XLINK'      => $xlink));
     }
 
     if ($seen_libobjs)
@@ -2691,12 +2690,11 @@ sub handle_texinfo
 		$conf_dir = $config_aux_dir;
 		$conf_dir .= '/' unless $conf_dir =~ /\/$/;
 	    }
-	    $output_rules .=
-		&file_contents ('texi-vers',
-				&transform ('TEXI'         => $info_cursor,
-					    'VTI'          => $vti,
-					    'VTEXI'        => $vtexi,
-					    'MDDIR'        => $conf_dir));
+	    $output_rules .= &file_contents ('texi-vers',
+					     ('TEXI'  => $info_cursor,
+					      'VTI'   => $vti,
+					      'VTEXI' => $vtexi,
+					      'MDDIR' => $conf_dir));
 	}
 
 	# If user specified file_TEXINFOS, then use that as explicit
@@ -2764,15 +2762,14 @@ sub handle_texinfo
 
     foreach my $txsfx (sort keys %texi_suffixes)
     {
-	$output_rules .=
-	  &file_contents ('texibuild',
-			  &transform ('TEXINFODIR' => $texinfodir,
-				      'SUFFIX'     => $txsfx));
+	$output_rules .= &file_contents ('texibuild',
+					 ('TEXINFODIR' => $texinfodir,
+					  'SUFFIX'     => $txsfx));
     }
 
     my $texiclean = &pretty_print_internal ("", "\t  ", @texi_cleans);
     $output_rules .=  &file_contents ('texinfos',
-				      &transform ('TEXICLEAN' => $texiclean));
+				      ('TEXICLEAN' => $texiclean));
 
     push (@dist_targets, 'dist-info');
     push (@suffixes, '.texi', '.texinfo', '.txi', '.info', '.dvi', '.ps');
@@ -2850,7 +2847,7 @@ sub handle_man_pages
     {
 	&define_variable ('man' . $sect . 'dir', '$(mandir)/man' . $sect);
 	$output_rules .= &file_contents ('mans',
-					 &transform ('SECTION', $sect));
+					 ('SECTION', $sect));
     }
 
     # We don't really need this, but we use it in case we ever want to
@@ -2904,10 +2901,9 @@ sub handle_tags
 		$config .= basename ($one_hdr);
 	    }
 	}
-	$output_rules .=
-	  &file_contents ('tags',
-			  &transform ('CONFIG' => $config,
-				      'DIRS'   => join (' ', @tag_deps)));
+	$output_rules .= &file_contents ('tags',
+					 ('CONFIG' => $config,
+					  'DIRS'   => join (' ', @tag_deps)));
 	&examine_variable ('TAGS_DEPENDENCIES');
     }
     elsif (&variable_defined ('TAGS_DEPENDENCIES'))
@@ -3109,7 +3105,7 @@ sub handle_dist
     $transform{'DISTDIR'} = !&variable_defined('distdir');
     $transform{'TOP_DISTDIR'} = backname ($relative_dir);
 
-    $output_rules .= &file_contents ('distdir', &transform (%transform));
+    $output_rules .= &file_contents ('distdir', %transform);
 }
 
 
@@ -3152,8 +3148,8 @@ sub add_depend2
 	foreach my $ext (&lang_extensions ($lang))
 	{
 	    $output_rules .= (&file_contents ('depend2',
-					      &transform (%transform,
-							  'EXT' => $ext))
+					      (%transform,
+					       'EXT' => $ext))
 			      . "\n");
 	}
     }
@@ -3179,17 +3175,16 @@ sub add_depend2
 	# Generate a transform which will turn suffix targets in
 	# depend2.am into real targets for the particular objects we
 	# are building.
-	$output_rules .=
-	    &file_contents ('depend2',
-			    &transform (%transform,
-					'GENERIC'   => 0,
-					'BASE'      => $obj,
-					'SOURCE'    => $source,
-					'OBJ'       => "$obj.o",
-					'OBJOBJ'    => "$obj.obj",
-					'LTOBJ'     => "$obj.lo",
-					'COMPILE'   => $obj_compile,
-					'LTCOMPILE' => $obj_ltcompile))
+	$output_rules .= &file_contents ('depend2',
+					 (%transform,
+					  'GENERIC'   => 0,
+					  'BASE'      => $obj,
+					  'SOURCE'    => $source,
+					  'OBJ'       => "$obj.o",
+					  'OBJOBJ'    => "$obj.obj",
+					  'LTOBJ'     => "$obj.lo",
+					  'COMPILE'   => $obj_compile,
+					  'LTCOMPILE' => $obj_ltcompile))
     }
 }
 
@@ -3416,26 +3411,25 @@ sub handle_configure
     my @rewritten = &rewrite_inputs_into_dependencies (1, @secondary_inputs);
 
     $output_rules .=
-      &file_contents
-	('configure',
-	 &transform ('MAKEFILE'
+      &file_contents ('configure',
+		      ('MAKEFILE'
 		       => $local_base,
-		     'MAKEFILE-DEPS'
+		       'MAKEFILE-DEPS'
 		       => join (' ', @rewritten),
-		     'CONFIG-MAKEFILE'
+		       'CONFIG-MAKEFILE'
 		       => ((($relative_dir eq '.') ? '$@' : '$(subdir)/$@')
 			   . $colon_infile),
-		     'MAKEFILE-IN'
+		       'MAKEFILE-IN'
 		       => $infile,
-		     'MAKEFILE-IN-DEPS'
+		       'MAKEFILE-IN-DEPS'
 		       => join (' ', @include_stack),
-		     'MAKEFILE-AM'
+		       'MAKEFILE-AM'
 		       => $amfile,
-		     'STRICTNESS'
+		       'STRICTNESS'
 		       => $cygnus_mode ? 'cygnus' : $strictness_name,
-		     'USE-DEPS'
+		       'USE-DEPS'
 		       => $cmdline_use_dependencies ? '' : ' --ignore-deps',
-		     'MAKEFILE-AM-SOURCES'
+		       'MAKEFILE-AM-SOURCES'
 		       =>  "$input$colon_infile"));
 
     if ($relative_dir eq '.')
@@ -3536,7 +3530,6 @@ sub handle_configure
 
             $output_rules .=
 	      &file_contents ('remake-hdr',
-			      &transform
 			      ('FILES'              => join (' ', @files),
 			       'CONFIG_HEADER'      => $cn_sans_dir,
 			       'CONFIG_HEADER_IN'   => $ch_sans_dir,
@@ -3555,9 +3548,8 @@ sub handle_configure
 
     if ($distclean_config)
     {
-	$output_rules .=
-	    &file_contents ('clean-hdr',
-			    &transform ('FILES' => $distclean_config));
+	$output_rules .= &file_contents ('clean-hdr',
+					 ('FILES' => $distclean_config));
     }
 
     # Set location of mkinstalldirs.
@@ -3812,9 +3804,9 @@ sub handle_footer
 # Deal with installdirs target.
 sub handle_installdirs
 {
-    $output_rules .= &file_contents
-      ('install',
-       transform ('_am_installdirs' => $am_var_defs{'_am_installdirs'}));
+    $output_rules .= &file_contents ('install',
+				     ('_am_installdirs'
+				      => $am_var_defs{'_am_installdirs'}));
 }
 
 # There are several targets which need to be merged.  This is because
@@ -3960,17 +3952,16 @@ sub handle_clean
     push (@maintainer_clean_files, '$(MAINTAINERCLEANFILES)')
 	if &variable_defined ('MAINTAINERCLEANFILES');
 
-    $output_rules .=
-      &file_contents ('clean',
-		      &transform (%transform,
-				  'MCFILES'
-				  # Join with no space to avoid
-				  # spurious `test -z' success at
-				  # runtime.
-				     => join ('', @maintainer_clean_files),
-				  'MFILES'
-				  # A space is required in the join here.
-				     => join (' ', @maintainer_clean_files)));
+    $output_rules .= &file_contents ('clean',
+				     (%transform,
+				      'MCFILES'
+				      # Join with no space to avoid
+				      # spurious `test -z' success at
+				      # runtime.
+				      => join ('', @maintainer_clean_files),
+				      'MFILES'
+				      # A space is required in the join here.
+				      => join (' ', @maintainer_clean_files)));
 
     # We special-case config.status here.  If we do it as part of the
     # normal clean processing for this directory, then it might be
@@ -4101,7 +4092,6 @@ sub handle_tests_dejagnu
     # one.
     $output_rules .=
       &file_contents ('dejagnu',
-		      &transform
 		      ('SITE-EXP' => ! &target_defined ('site.exp'),
 		       'BUILD'    => $seen_canonical == $AC_CANONICAL_SYSTEM,
 		       'HOST'     => $seen_canonical,
@@ -6515,7 +6505,6 @@ sub define_standard_variables
 {
     $output_vars .=
         &file_contents ('header-vars',
-			&transform
 			('BUILD'    => $seen_canonical == $AC_CANONICAL_SYSTEM,
 			 'HOST'     => $seen_canonical,
 			 'TARGET'   => $seen_canonical == $AC_CANONICAL_SYSTEM,
@@ -6625,23 +6614,23 @@ sub flatten
 
 
 # $CONTENTS
-# &file_contents ($BASENAME, [$COMMAND])
-# --------------------------------------
+# &file_contents ($BASENAME, [%TRANSFORM])
+# ----------------------------------------
 # Return contents of a file from $am_dir, automatically skipping
-# macros or rules which are already known.  Runs command on each line
-# as it is read; this command can modify $_.
-sub file_contents
+# macros or rules which are already known.
+sub file_contents ($%)
 {
-    my ($basename, $command) = @_;
+    my ($basename, %transform) = @_;
 
-    # Sanity check over COMMAND, and complete it with global options.
-    &prog_error ("file_contents: $command")
-        if $command ne '' && substr ($command, -1) ne ';';
-    $command .=
+    # Complete %transform with global options and make it a Perl
+    # $command.
+    my $command =
       # We don't use IGNORE_PATTERN because it contains $ which
       # prevents us from matching the end of line.
       "s/##([^#\n].*)?\\n//gmo;"
-	. &transform ('CYGNUS'          => $cygnus_mode,
+	. &transform (%transform,
+
+		      'CYGNUS'          => $cygnus_mode,
 		      'MAINTAINER-MODE'
 		      => $seen_maint_mode ? '@MAINTAINER_MODE_TRUE@' : '',
 
@@ -7097,14 +7086,13 @@ sub am_install_var
 			  ? $exec_dir_p {$X}
 			  : ($X =~ /exec/));
 
-	    $output_rules .=
-	      &file_contents ($file,
-			      &transform ('DIR'  => $X,
-					  'NDIR' => $nodir_name,
-					  'BASE' => $strip_subdir,
+	    $output_rules .= &file_contents ($file,
+					     ('DIR'  => $X,
+					      'NDIR' => $nodir_name,
+					      'BASE' => $strip_subdir,
 
-					  'EXEC'    => $exec_p,
-					  'INSTALL' => $install_p));
+					      'EXEC'    => $exec_p,
+					      'INSTALL' => $install_p));
 	}
     }
 
