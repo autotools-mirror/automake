@@ -1101,10 +1101,9 @@ sub handle_configure
 	if defined $contents{'CONFIG_HEADER'};
 
     # Generate CONFIG_HEADER define, and define interally.
-    $output_vars .= "CONFIG_HEADER = ${top_builddir}${config_name}\n"
+    $output_vars .= "CONFIG_HEADER = ${top_builddir}/${config_name}\n"
 	if $config_name;
-    $contents{'CONFIG_HEADER'} = "${top_builddir}${config_name}"
-	if $config_name;
+    $contents{'CONFIG_HEADER'} = "${top_builddir}/${config_name}";
 }
 
 # Handle C headers.
@@ -1431,7 +1430,7 @@ sub scan_configure
 	if ($in_ac_output)
 	{
 	    s/\]//;
-	    $in_ac_output = 0 if s/\)//;
+	    $in_ac_output = 0 if s/[\),]//;
 
 	    # Look at potential Makefile.am's.
 	    foreach (split)
@@ -1455,15 +1454,17 @@ sub scan_configure
 	{
 	    if (! defined $contents{'SUBDIRS'})
 	    {
-		&am_error
+		&am_conf_error
 		    ("ud_GNU_GETTEXT in configure.in but SUBDIRS not defined");
 	    }
 	    else
 	    {
-		&am_error ("ud_GNU_GETTEXT in configure.in but \`po' not in SUBDIRS")
-		    if $contents{'SUBDIRS'} !~ /\bpo\b/;
-		&am_error ("ud_GNU_GETTEXT in configure.in but \`intl' not in SUBDIRS")
-		    if $contents{'SUBDIRS'} !~ /\bintl\b/;
+		&am_conf_error
+		    ("ud_GNU_GETTEXT in configure.in but \`po' not in SUBDIRS")
+			if $contents{'SUBDIRS'} !~ /\bpo\b/;
+		&am_conf_error
+		    ("ud_GNU_GETTEXT in configure.in but \`intl' not in SUBDIRS")
+			if $contents{'SUBDIRS'} !~ /\bintl\b/;
 	    }
 
 	    &require_file ($NORMAL, 'ABOUT-NLS');
@@ -1503,9 +1504,9 @@ sub scan_configure
     &require_file ($NORMAL, 'config.guess', 'config.sub')
 	if $seen_canonical;
 
-    &am_error ("fp_PROG_INSTALL must be used in configure.in")
+    &am_conf_error ("fp_PROG_INSTALL must be used in configure.in")
 	unless $seen_prog_install;
-    &am_error ("AC_ARG_PROGRAM must be used in configure.in")
+    &am_conf_error ("AC_ARG_PROGRAM must be used in configure.in")
 	unless $seen_arg_prog;
 
     close (CONFIGURE);
@@ -2217,6 +2218,14 @@ sub mkdir
 sub am_error
 {
     warn "automake: ${am_file}.am: ", join (' ', @_), "\n";
+    $exit_status = 1;
+}
+
+# The same, but while scanning configure.in.
+sub am_conf_error
+{
+    # FIXME can run in subdirs.
+    warn "automake: configure.in: ", join (' ', @_), "\n";
     $exit_status = 1;
 }
 
