@@ -137,7 +137,7 @@ my $TARGET_PATTERN='[$a-zA-Z_.@][-.a-zA-Z0-9_(){}/$+@]*';
 my $RULE_PATTERN =
   "^($TARGET_PATTERN(?:(?:\\\\\n|\\s)+$TARGET_PATTERN)*) *:([^=].*|)\$";
 
-my $SUFFIX_RULE_PATTERN = '^(\.[a-zA-Z0-9+]+)(\.[a-zA-Z0-9+]+)$';
+my $SUFFIX_RULE_PATTERN = '^(\.[a-zA-Z0-9_(){}$+@]+)(\.[a-zA-Z0-9_(){}$+@]+)$';
 # Only recognize leading spaces, not leading tabs.  If we recognize
 # leading tabs here then we need to make the reader smarter, because
 # otherwise it will think rules like `foo=bar; \' are errors.
@@ -6609,26 +6609,32 @@ sub rule_define ($$$$)
       $target_conditional{$target}{$cond} = $where;
   }
 
-
   # Check the rule for being a suffix rule. If so, store in a hash.
   # Either it's a rule for two known extensions...
-  if ($target =~ /^($KNOWN_EXTENSIONS_PATTERN)($KNOWN_EXTENSIONS_PATTERN)$/)
-  {
-      $suffix_rules{$1} = $2;
-      verbose "Sources ending in $1 become $2";
-      push @suffixes, $1, $2;
-  }
+  if ($target =~ /^($KNOWN_EXTENSIONS_PATTERN)($KNOWN_EXTENSIONS_PATTERN)$/
   # ...or it's a rule with unknown extensions (.i.e, the rule looks like
   # `.foo.bar:' but `.foo' or `.bar' are not declared in SUFFIXES
   # and are not known language extensions).
   # Automake will complete SUFFIXES from @suffixes automatically
   # (see handle_footer).
-  elsif ($target =~ /$SUFFIX_RULE_PATTERN/o)
+      || ($target =~ /$SUFFIX_RULE_PATTERN/o && accept_extensions($1)))
   {
-      $suffix_rules{$1} = $2;
+      my $internal_ext = $2;
+
+      # When tranforming sources to objects, Automake uses the
+      # %suffix_rules to move from each source extension to
+      # `.$(OBJEXT)', not to `.o' or `.obj'.  However some people
+      # define suffix rules for `.o' or `.obj', so internally we will
+      # consider these extensions equivalent to `.$(OBJEXT)'.  We
+      # CANNOT rewrite the target (i.e., automagically replace `.o'
+      # and `.obj' by `.$(OBJEXT)' in the output), or warn the user
+      # that (s)he'd better use `.$(OBJEXT)', because Automake itself
+      # output suffix rules for `.o' or `.obj'...
+      $internal_ext = '.$(OBJEXT)' if ($2 eq '.o' || $2 eq '.obj');
+
+      $suffix_rules{$1} = $internal_ext;
       verbose "Sources ending in $1 become $2";
       push @suffixes, $1, $2;
-      accept_extensions($1);
   }
 
   return 1;
