@@ -512,15 +512,6 @@ my %object_map;
 # created `.dirstamp' code.
 my %directory_map;
 
-# These variables track inclusion of various compile-related .am
-# files.  $included_generic_compile is TRUE if the basic code has
-# been included.  $included_knr_compile is TRUE if the ansi2knr
-# code has been included.  $included_libtool_compile is TRUE if
-# libtool support has been included.
-my $included_generic_compile;
-my $included_knr_compile;
-my $included_libtool_compile;
-
 # All .P files.
 my %dep_files;
 
@@ -587,6 +578,9 @@ my $need_link;
 # FIXME: Might be useless actually.
 my @var_list;
 
+# Was get_object_extension run?
+# FIXME: This is a hack. a better switch should be found.
+my $get_object_extension_was_run;
 
 # &initialize_per_input ()
 # ------------------------
@@ -683,10 +677,6 @@ sub initialize_per_input ()
 
     %directory_map = ();
 
-    $included_generic_compile = 0;
-    $included_knr_compile = 0;
-    $included_libtool_compile = 0;
-
     %dep_files = ();
 
     $strictness = $default_strictness;
@@ -722,6 +712,8 @@ sub initialize_per_input ()
     $need_link = 0;
 
     @var_list = ();
+
+    $get_object_extension_was_run = 0;
 }
 
 
@@ -1044,6 +1036,7 @@ sub generate_makefile
 
     # This must be run after all the sources are scanned.
     &finish_languages;
+    &handle_compile;
 
     # Re-init SOURCES and OBJECTS.  FIXME: other code shouldn't depend
     # on this (but currently does).
@@ -1234,105 +1227,11 @@ sub get_object_extension
     my $extension = '.$(OBJEXT)';
     $extension = '.lo' if ($out =~ /\.la$/);
 
-    if (! $included_generic_compile)
-    {
-	# Boilerplate.
-	my $default_includes = '';
-	if (! defined $options{'nostdinc'})
-	{
-	    $default_includes = ' -I. -I$(srcdir)';
-
-	    if (&variable_defined ('CONFIG_HEADER'))
-	    {
-		foreach my $hdr (split (' ', &variable_value ('CONFIG_HEADER')))
-		{
-		    $default_includes .= ' -I' . dirname ($hdr);
-		}
-	    }
-	}
-
-	my ($coms, $vars, $rules) =
-	  &file_contents_internal ('compile',
-				   ('DEFAULT_INCLUDES' => $default_includes));
-	$output_vars .= $vars;
-	$output_rules .= "$coms$rules";
-
-	# If using X, include some extra variable definitions.  NOTE
-	# we don't want to force these into CFLAGS or anything,
-	# because not all programs will necessarily use X.
-	if ($seen_path_xtra)
-	{
-	    foreach my $var ('X_CFLAGS',
-			     'X_LIBS', 'X_EXTRA_LIBS', 'X_PRE_LIBS')
-	    {
-		&define_configure_variable ($var);
-	    }
-	}
-
-	push (@suffixes, '.c', '.o', '.obj');
-
-	$included_generic_compile = 1;
-    }
-
-    if ($seen_libtool && ! $included_libtool_compile)
-    {
-	# Output the libtool compilation rules.
-	$output_rules .= &file_contents ('libtool');
-
-	push (@suffixes, '.lo');
-
-	$included_libtool_compile = 1;
-    }
-
     # Check for automatic de-ANSI-fication.
-    if (defined $options{'ansi2knr'})
-    {
-	$extension = '$U' . $extension;
-	if (! $included_knr_compile)
-	{
-	    if (! $am_c_prototypes)
-	    {
-		&am_line_error ('AUTOMAKE_OPTIONS',
-				"option `ansi2knr' in use but `AM_C_PROTOTYPES' not in `$configure_ac'");
-		&keyed_aclocal_warning ('AM_C_PROTOTYPES');
-		# Only give this error once.
-		$am_c_prototypes = 1;
-	    }
+    $extension = '$U' . $extension
+      if defined $options{'ansi2knr'};
 
-	    # Only require ansi2knr files if they should appear in
-	    # this directory.
-	    if ($options{'ansi2knr'} eq 'ansi2knr')
-	    {
-		&require_file_with_line ('AUTOMAKE_OPTIONS', $FOREIGN,
-					 'ansi2knr.c', 'ansi2knr.1');
-	    }
-
-	    # Make sure ansi2knr can be found: if no path specified,
-	    # specify "./".
-	    if ($options{'ansi2knr'} eq 'ansi2knr')
-	    {
-		# Substitution from AM_C_PROTOTYPES.  This makes it be
-		# built only when necessary.
-		&define_configure_variable ('ANSI2KNR');
-		# ansi2knr needs to be built before subdirs, so unshift it.
-		unshift (@all, '$(ANSI2KNR)');
-	    }
-	    else
-	    {
-		# Found in another directory.
-		&define_variable ("ANSI2KNR", $options{'ansi2knr'});
-	    }
-
-	    my $ansi2knr_dir = '';
-	    $ansi2knr_dir = dirname ($options{'ansi2knr'})
-	      if $options{'ansi2knr'} ne 'ansi2knr';
-
-	    $output_rules .= &file_contents ('ansi2knr',
-					     ('ANSI2KNR-DIR' => $ansi2knr_dir));
-
-	    $included_knr_compile = 1;
-	}
-    }
+    $get_object_extension_was_run = 1;
 
     return $extension;
 }
@@ -2054,6 +1953,105 @@ sub check_canonical_spelling
 
     return $xname;
 }
+
+
+# handle_compile ()
+# -----------------
+# Set up the compile suite.
+sub handle_compile ()
+{
+    return
+      unless $get_object_extension_was_run;
+
+    # Boilerplate.
+    my $default_includes = '';
+    if (! defined $options{'nostdinc'})
+      {
+	$default_includes = ' -I. -I$(srcdir)';
+
+	if (&variable_defined ('CONFIG_HEADER'))
+	  {
+	    foreach my $hdr (split (' ', &variable_value ('CONFIG_HEADER')))
+	      {
+		$default_includes .= ' -I' . dirname ($hdr);
+	      }
+	  }
+      }
+
+    my ($coms, $vars, $rules) =
+      &file_contents_internal ('compile',
+			       ('DEFAULT_INCLUDES' => $default_includes));
+    $output_vars .= $vars;
+    $output_rules .= "$coms$rules";
+
+    # If using X, include some extra variable definitions.  NOTE
+    # we don't want to force these into CFLAGS or anything,
+    # because not all programs will necessarily use X.
+    if ($seen_path_xtra)
+      {
+	foreach my $var ('X_CFLAGS',
+			 'X_LIBS', 'X_EXTRA_LIBS', 'X_PRE_LIBS')
+	  {
+	    &define_configure_variable ($var);
+	  }
+      }
+
+    push (@suffixes, '.c', '.o', '.obj');
+
+    if ($seen_libtool)
+      {
+	# Output the libtool compilation rules.
+	$output_rules .= &file_contents ('libtool');
+
+	push (@suffixes, '.lo');
+      }
+
+    # Check for automatic de-ANSI-fication.
+    if (defined $options{'ansi2knr'})
+      {
+	if (! $am_c_prototypes)
+	  {
+	    &am_line_error ('AUTOMAKE_OPTIONS',
+			    "option `ansi2knr' in use but `AM_C_PROTOTYPES' not in `$configure_ac'");
+	    &keyed_aclocal_warning ('AM_C_PROTOTYPES');
+	    # Only give this error once.
+	    $am_c_prototypes = 1;
+	  }
+
+	# Only require ansi2knr files if they should appear in
+	# this directory.
+	if ($options{'ansi2knr'} eq 'ansi2knr')
+	  {
+	    &require_file_with_line ('AUTOMAKE_OPTIONS', $FOREIGN,
+				     'ansi2knr.c', 'ansi2knr.1');
+	  }
+
+	# Make sure ansi2knr can be found: if no path specified,
+	# specify "./".
+	if ($options{'ansi2knr'} eq 'ansi2knr')
+	  {
+	    # Substitution from AM_C_PROTOTYPES.  This makes it be
+	    # built only when necessary.
+	    &define_configure_variable ('ANSI2KNR');
+	    # ansi2knr needs to be built before subdirs, so unshift it.
+	    unshift (@all, '$(ANSI2KNR)');
+	  }
+	else
+	  {
+	    # Found in another directory.
+	    &define_variable ("ANSI2KNR", $options{'ansi2knr'});
+	  }
+
+	my $ansi2knr_dir = '';
+	$ansi2knr_dir = dirname ($options{'ansi2knr'})
+	  if $options{'ansi2knr'} ne 'ansi2knr';
+
+	$output_rules .= &file_contents ('ansi2knr',
+					 ('ANSI2KNR-DIR' => $ansi2knr_dir));
+
+    }
+}
+
 
 
 # handle_programs ()
