@@ -2472,7 +2472,7 @@ sub handle_configure
     # by config.status, and generate rules for them.
     local (@actual_other_files) = ();
     local ($file, $local);
-    local (@inputs, $single);
+    local (@inputs, @rewritten_inputs, $single);
     foreach $file (@other_input_files)
     {
 	if ($file =~ /^(.*):(.*)$/)
@@ -2498,16 +2498,16 @@ sub handle_configure
 	# Skip any Makefile.
 	next if $local eq 'Makefile';
 
-	@inputs = &rewrite_inputs_into_dependencies (@inputs);
+	@rewritten_inputs = &rewrite_inputs_into_dependencies (@inputs);
 
 	$output_rules .= ($local . ': '
 			  . '$(top_builddir)/config.status '
-			  . join (' ', @inputs) . "\n"
+			  . join (' ', @rewritten_inputs) . "\n"
 			  . "\t"
 			  . 'cd $(top_builddir) && CONFIG_FILES='
 			  . ($relative_dir eq '.' ? '' : '$(subdir)/')
    			  . '$@' . (length (@inputs) > 1
-				    ? (':' . join (':', @inputs))
+				    ? (':' . join (':', @rewritten_inputs))
 				    : '')
 			  . ' CONFIG_HEADERS= ./config.status'
 			  . "\n");
