@@ -197,7 +197,7 @@ Building a Shared Library
 * Libtool Convenience Libraries::  Building Convenience Libtool Libraries
 * Libtool Modules::             Building Libtool Modules
 * Libtool Flags::               Using _LIBADD and _LDFLAGS
-* LTLIBOBJ::                    Using $(LTLIBOBJ)
+* LTLIBOBJS::                   Using $(LTLIBOBJS) and $(LTALLOCA)
 * Libtool Issues::              Common Issues Related to Libtool's Use
 
 Fortran 77 Support
@@ -2987,7 +2987,7 @@ platform-independent way.
 * Libtool Convenience Libraries::  Building Convenience Libtool Libraries
 * Libtool Modules::             Building Libtool Modules
 * Libtool Flags::               Using _LIBADD and _LDFLAGS
-* LTLIBOBJ::                    Using $(LTLIBOBJ)
+* LTLIBOBJS::                   Using $(LTLIBOBJS) and $(LTALLOCA)
 * Libtool Issues::              Common Issues Related to Libtool's Use
 @end menu
 
@@ -3293,16 +3293,22 @@ additional libtool flags, such as @samp{-version-info},
 @samp{-static}, and a lot more.  See @xref{Link mode, , Using libltdl,
 libtool, The Libtool Manual}.
 
-@node LTLIBOBJ, Libtool Issues, Libtool Flags, A Shared Library
-@subsection @code{LTLIBOBJS}
+@node LTLIBOBJS, Libtool Issues, Libtool Flags, A Shared Library
+@subsection @code{LTLIBOBJS} and @code{LTALLOCA}
 @cindex @code{LTLIBOBJS}, special handling
+@cindex @code{LIBOBJS}, and Libtool
+@cindex @code{LTALLOCA}, special handling
+@cindex @code{ALLOCA}, and Libtool
 @vindex LTLIBOBJS
 @vindex LIBOBJS
+@vindex LTALLOCA
+@vindex ALLOCA
 @cvindex AC_LIBOBJ
 
-Where an ordinary library might include @code{$(LIBOBJS)}, a libtool
-library must use @code{$(LTLIBOBJS)}.  This is required because the
-object files that libtool operates on do not necessarily end in
+Where an ordinary library might include @code{$(LIBOBJS)} or
+@code{$(ALLOCA)} (@pxref{LIBOBJS}), a libtool library must use
+@code{$(LTLIBOBJS)} or @code{$(LTALLOCA)}.  This is required because
+the object files that libtool operates on do not necessarily end in
 @file{.o}.
 
 Nowadays, the computation of @code{LTLIBOBJS} from @code{LIBOBJS} is
@@ -3677,18 +3683,126 @@ target_LDADD = libmain.a libmisc.a
 @node LIBOBJS
 @section Special handling for LIBOBJS and ALLOCA
 
+@cindex @code{LIBOBJS}, example
+@cindex @code{ALLOCA}, example
 @cindex @code{LIBOBJS}, special handling
 @cindex @code{ALLOCA}, special handling
+@vindex LTLIBOBJS
+@vindex LIBOBJS
+@vindex LTALLOCA
+@vindex ALLOCA
 
-Automake explicitly recognizes the use of @code{$(LIBOBJS)} and
-@code{$(ALLOCA)}, and uses this information, plus the list of
-@code{LIBOBJS} files derived from @file{configure.ac} to automatically
-include the appropriate source files in the distribution (@pxref{Dist}).
-These source files are also automatically handled in the
-dependency-tracking scheme; see @xref{Dependencies}.
+The @code{$(LIBOBJS)} and @code{$(ALLOCA)} variables list objects
+files that should be compiled into the project to provide an
+implementation for functions that are missing or broken on the host
+system.  They are substituted by @file{configure}.
 
-@code{$(LIBOBJS)} and @code{$(ALLOCA)} are specially recognized in any
-@samp{_LDADD} or @samp{_LIBADD} variable.
+@cvindex AC_LIBOBJ
+
+These variables are defined by Autoconf macros such as
+@code{AC_LIBOBJ}, @code{AC_REPLACE_FUNCS} (@pxref{Generic Functions, ,
+Generic Function Checks, autoconf, The Autoconf Manual}), or
+@code{AC_FUNC_ALLOCA} (@pxref{Particular Functions, , Particular
+Function Checks, autoconf, The Autoconf Manual}).  Many other Autoconf
+macros call @code{AC_LIBOBJ} or @code{AC_REPLACE_FUNCS} to
+populate @code{$(LIBOBJS)}.
+
+@cvindex AC_LIBSOURCE
+
+Using these variables is very similar to doing conditional compilation
+using @code{AC_SUBST} variables, as described in @ref{Conditional
+Sources}.  That is, when building a program @code{$(LIBOBJS)} and
+@code{$(ALLOCA)} should be added to the associated @samp{*_LDADD}
+variable, or to the @samp{*_LIBADD} variable when building a library.
+However there is no need to list the corresponding sources in
+@code{EXTRA_*_SOURCES} nor to define @code{*_DEPENDENCIES}.  Automake
+automatically adds @code{$(LIBOBJS)} and @code{$(ALLOCA)} to the
+dependencies, and it will discover the list of corresponding source
+files automatically (by tracing the invocations of the
+@code{AC_LIBSOURCE} Autoconf macros).
+
+These variables are usually used to build a portability library that
+is linked with all the programs of the project.  We now review a
+sample setup.  First, @file{configure.ac} contains some checks that
+affect either @code{LIBOBJS} or @code{ALLOCA}.
+
+@example
+# configure.ac
+@dots{}
+AC_CONFIG_LIBOBJ_DIR([lib])
+@dots{}
+AC_FUNC_MALLOC             dnl May add malloc.$(OBJEXT) to LIBOBJS
+AC_FUNC_MEMCMP             dnl May add memcmp.$(OBJEXT) to LIBOBJS
+AC_REPLACE_FUNCS([strdup]) dnl May add strdup.$(OBJEXT) to LIBOBJS
+AC_FUNC_ALLOCA             dnl May add alloca.$(OBJEXT) to ALLOCA
+@dots{}
+AC_CONFIG_FILES([
+  lib/Makefile
+  src/Makefile
+])
+AC_OUTPUT
+@end example
+
+@cvindex AC_CONFIG_LIBOBJ_DIR
+
+The @code{AC_CONFIG_LIBOBJ_DIR} tells Autoconf the source files of
+these object files are to be found in the @file{lib/} directory.
+Automake does not yet use this information; anyway it knows the source
+files are expected to be in the directory where the @code{$(LIBOBJS)}
+and @code{$(ALLOCA)} variables are used.
+
+The @file{lib/} directory should therefore contain @file{malloc.c},
+@file{memcmp.c}, @file{strdup.c}, @file{alloca.c}.  Here is its
+@file{Makefile.am}:
+
+@example
+# lib/Makefile.am
+
+noinst_LIBRARIES = libcompat.a
+libcompat_a_SOURCES =
+libcompat_a_LIBADD = $(LIBOBJS) $(ALLOCA)
+@end example
+
+Nothing else is required.  The library can have any name, of course,
+and anyway it is not going to be installed: it just holds the
+replacement versions of the missing or broken functions so we can
+later link them in.  In many projects also include extra functions,
+specific to the project, in that library: they are simply added on
+the @code{_SOURCES} line.
+
+Finally here is how this library could be used from the @file{src/}
+directory.
+
+@example
+# src/Makefile.am
+
+# Link all programs in this directory with libcompat.a
+LDADD = ../lib/libcompat.a
+
+bin_PROGRAMS = tool1 tool2 @dots{}
+tool1_SOURCES = @dots{}
+tool2_SOURCES = @dots{}
+@end example
+
+Please note it would be wrong to use the @code{$(LIBOBJS)} or
+@code{$(ALLOCA)} in @file{src/Makefile.am}, because these variables
+contains unprefixed object names, and for instance
+@file{malloc.$(OBJEXT)} is not buildable in the @file{src/} directory.
+(Actually if you try using @code{$(LIBOBJS)} in @file{src/}, Automake
+will require a copy of @file{malloc.c}, @file{memcmp.c},
+@file{strdup.c}, @file{alloca.c} here too.)
+
+Because @code{$(LIBOBJS)} and @code{$(ALLOCA)} contain object
+filenames whose name end with @code{.$(OBJEXT)}, they are not suitable
+for Libtool libraries (where the expected object extension is
+@file{.lo}): @code{LTLIBOBJS} and @code{LTALLOCA} should be used
+instead.
+
+@code{LTLIBOBJS} is defined automatically by Autoconf and should not
+be defined by hand (as in the past), however at the time of writing
+@code{LTALLOCA} still needs to be defined from @code{ALLOCA} manually.
+See @ref{AC_LIBOBJ vs LIBOBJS, , @code{AC_LIBOBJ} vs. @code{LIBOBJS},
+autoconf, The Autoconf Manual}.
 
 
 @node Program variables
@@ -9161,3 +9275,5 @@ The number of test cases in the test suite.
 @c  LocalWords:  grep backported screenshots libgcj KB unnumberedsubsubsec pre
 @c  LocalWords:  precomputing hacky makedepend inline clearmake LD PRELOAD Rel
 @c  LocalWords:  syscalls perlhist acl pm multitable headitem fdl appendixsec
+@c  LocalWords:  LTALLOCA MALLOC malloc memcmp strdup alloca libcompat
+@c  LocalWords:  unprefixed buildable
