@@ -281,6 +281,7 @@ remake.test \
 remake2.test \
 remake3.test \
 req.test \
+required.test \
 rulepat.test \
 scripts.test \
 seenc.test \
