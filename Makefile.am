@@ -18,21 +18,22 @@ ltlib-clean.am ltlib.am ltlibrary.am mans-vars.am mans.am multilib.am \
 program.am progs-clean.am progs.am remake-hdr.am remake.am scripts.am \
 subdirs.am tags-clean.am tags.am texi-vers.am texinfos.am
 
-pkgdata_DATA = COPYING INSTALL texinfo.tex ansi2knr.c ansi2knr.1 $(amfiles)
+dist_pkgdata_DATA = COPYING INSTALL texinfo.tex ansi2knr.c ansi2knr.1 \
+$(amfiles)
 
 ## These must all be executable when installed.  However, if we use
 ## _SCRIPTS, then the program transform will be applied, which is not
 ## what we want.  So we make them executable by hand.
 scriptdir = $(pkgdatadir)
-script_DATA = config.guess config.sub install-sh mdate-sh missing \
+dist_script_DATA = config.guess config.sub install-sh mdate-sh missing \
 mkinstalldirs elisp-comp ylwrap acinstall
 
 install-data-hook:
-	@for prog in $(script_DATA); do \
-	  chmod +x $(scriptdir)/$$prog; \
+	@$(POST_INSTALL)
+	@for prog in $(dist_script_DATA); do \
+	  echo " chmod +x $(DESTDIR)$(scriptdir)/$$prog"; \
+	  chmod +x $(DESTDIR)$(scriptdir)/$$prog; \
 	done
-
-EXTRA_DIST = acinstall $(pkgdata_DATA) $(script_DATA)
 
 # The following requires a fixed version of the Emacs 19.30 etags.
 ETAGS_ARGS = automake.in aclocal.in --lang=none \
@@ -42,7 +43,7 @@ TAGS_DEPENDENCIES = automake.in aclocal.in automake.texi
 ## `test -x' is not portable.  So we use Perl instead.  If Perl
 ## doesn't exist, then this test is meaningless anyway.
 installcheck-local:
-	for file in $(script_DATA); do \
+	for file in $(dist_script_DATA); do \
 	  $(PERL) -e "exit ! -x '$(pkgdatadir)/$$file';" || exit 1; \
 	done
 

@@ -1538,7 +1538,7 @@ sub handle_libraries
 					'lib', 'pkglib', 'noinst', 'check');
     return if ! @liblist;
 
-    local (%valid) = &am_primary_prefixes ('LIBRARIES', 'lib', 'pkglib',
+    local (%valid) = &am_primary_prefixes ('LIBRARIES', 0, 'lib', 'pkglib',
 					   'noinst', 'check');
     if (! defined $configure_vars{'RANLIB'})
     {
@@ -1635,7 +1635,7 @@ sub handle_ltlibraries
     return if ! @liblist;
 
     local (%instdirs);
-    local (%valid) = &am_primary_prefixes ('LTLIBRARIES', 'lib', 'pkglib',
+    local (%valid) = &am_primary_prefixes ('LTLIBRARIES', 0, 'lib', 'pkglib',
 					   'noinst');
 
     local ($key);
@@ -1803,7 +1803,7 @@ sub handle_scripts
     # NOTE we no longer automatically clean SCRIPTS, because it is
     # useful to sometimes distribute scripts verbatim.  This happens
     # eg in Automake itself.
-    &am_install_var ('scripts', 'SCRIPTS',
+    &am_install_var ('-candist', 'scripts', 'SCRIPTS',
 		     'bin', 'sbin', 'libexec', 'pkgdata',
 		     'noinst', 'check');
 
@@ -1811,7 +1811,7 @@ sub handle_scripts
     # Set $scripts_installed if appropriate.  Make sure we only find
     # scripts which are actually installed -- this is why we can't
     # simply use the return value of am_install_var.
-    local (%valid) = &am_primary_prefixes ('SCRIPTS', 'bin', 'sbin',
+    local (%valid) = &am_primary_prefixes ('SCRIPTS', 1, 'bin', 'sbin',
 					   'libexec', 'pkgdata',
 					   'noinst', 'check');
     local ($key);
@@ -2185,9 +2185,9 @@ sub handle_man_pages
 # Handle DATA variables.
 sub handle_data
 {
-    &am_install_var ('-noextra', 'data', 'DATA', 'data', 'sysconf',
-		     'sharedstate', 'localstate', 'pkgdata',
-		     'noinst', 'check');
+    &am_install_var ('-noextra', '-defaultdist', 'data', 'DATA',
+		     'data', 'sysconf', 'sharedstate', 'localstate',
+		     'pkgdata', 'noinst', 'check');
 }
 
 # Handle TAGS.
@@ -3251,7 +3251,7 @@ sub handle_configure
 sub handle_headers
 {
     local (@r);
-    @r = &am_install_var ('header', 'HEADERS', 'include',
+    @r = &am_install_var ('header', '-defaultdist', 'HEADERS', 'include',
 			  'oldinclude', 'pkginclude',
 			  'noinst', 'check');
     foreach (@r)
@@ -3827,7 +3827,8 @@ sub handle_tests
 # Handle Emacs Lisp.
 sub handle_emacs_lisp
 {
-    local (@elfiles) = &am_install_var ('lisp', 'LISP', 'lisp', 'noinst');
+    local (@elfiles) = &am_install_var ('-candist', 'lisp', 'LISP',
+					'lisp', 'noinst');
 
     if (@elfiles)
     {
@@ -3870,7 +3871,8 @@ sub handle_emacs_lisp
 # Handle Java.
 sub handle_java
 {
-    local (@sourcelist) = &am_install_var ('-clean', 'java', 'JAVA',
+    local (@sourcelist) = &am_install_var ('-candist', '-clean',
+					   'java', 'JAVA',
 					   'java', 'noinst', 'check');
     return if ! @sourcelist;
 
@@ -3880,7 +3882,8 @@ sub handle_java
 		      'CLASSPATH=$(JAVAROOT):$(srcdir)/$(JAVAROOT):$$CLASSPATH');
     &define_variable ('JAVAROOT', '$(top_builddir)');
 
-    local (%valid) = &am_primary_prefixes ('JAVA', 'java', 'noinst', 'check');
+    local (%valid) = &am_primary_prefixes ('JAVA', 1,
+					   'java', 'noinst', 'check');
 
     local ($dir, $curs);
     foreach $curs (keys %valid)
@@ -6597,28 +6600,30 @@ sub file_contents
 # * `zar_PRIMARY' is a variable.
 sub am_primary_prefixes
 {
-    local ($primary, @prefixes) = @_;
+    local ($primary, $can_dist, @prefixes) = @_;
 
     local (%valid, $varname);
     grep ($valid{$_} = 0, @prefixes);
     $valid{'EXTRA'} = 0;
     foreach $varname (keys %contents)
     {
-	if ($varname =~ /^(.*)_$primary$/)
+	if ($varname =~ /^(dist_|nodist_)?(.*)_$primary$/)
 	{
-	    if (! defined $valid{$1}
-		&& ! &variable_defined ($1 . 'dir')
-		# Note that a configure variable is always legitimate.
-		# It is natural to name such variables after the
-		# primary, so we explicitly allow it.
-		&& ! defined $configure_vars{$varname})
+	    if (($1 ne '' && ! $can_dist)
+		|| (! defined $valid{$2}
+		    && ! &variable_defined ($2 . 'dir')
+		    # Note that a configure variable is always
+		    # legitimate.  It is natural to name such
+		    # variables after the primary, so we explicitly
+		    # allow it.
+		    && ! defined $configure_vars{$varname}))
 	    {
 		&am_line_error ($varname, "invalid variable \`$varname'");
 	    }
 	    else
 	    {
 		# Ensure all extended prefixes are actually used.
-		$valid{$1} = 1;
+		$valid{$1 . $2} = 1;
 	    }
 	}
     }
@@ -6643,6 +6648,8 @@ sub am_install_var
 
     local ($do_clean) = 0;
     local ($do_require) = 1;
+    local ($can_dist) = 0;
+    local ($default_dist) = 0;
 
     local ($ltxform);
     if (defined $configure_vars{'LIBTOOL'})
@@ -6676,12 +6683,22 @@ sub am_install_var
 	{
 	    $do_require = 0;
 	}
+	elsif ($args[0] eq '-candist')
+	{
+	    $can_dist = 1;
+	}
+	elsif ($args[0] eq '-defaultdist')
+	{
+	    $default_dist = 1;
+	    $can_dist = 1;
+	}
 	elsif ($args[0] !~ /^-/)
 	{
 	    last;
 	}
 	shift (@args);
     }
+
     local ($file, $primary, @prefixes) = @args;
 
     local (@used) = ();
@@ -6702,7 +6719,7 @@ sub am_install_var
     # instance, if the variable "zardir" is defined, then
     # "zar_PROGRAMS" becomes valid.  This is to provide a little extra
     # flexibility in those cases which need it.
-    local (%valid) = &am_primary_prefixes ($primary, @prefixes);
+    local (%valid) = &am_primary_prefixes ($primary, $can_dist, @prefixes);
 
     # If a primary includes a configure substitution, then the EXTRA_
     # form is required.  Otherwise we can't properly do our job.
@@ -6712,11 +6729,27 @@ sub am_install_var
     local ($clean_file) = $file . '-clean';
     local ($one_name);
     local ($X);
+    local ($nodir_name);
     foreach $X (sort keys %valid)
     {
 	$one_name = $X . '_' . $primary;
 	if (&variable_defined ($one_name))
 	{
+	    # If files should be distributed, do so.
+	    if ($can_dist)
+	    {
+		if (($default_dist && $one_name !~ /^nodist_/)
+		    || (! $default_dist && $one_name =~ /^dist_/))
+		{
+		    &push_dist_common ('$(' . $one_name . ')');
+		}
+		($nodir_name = $X) =~ s/^(dist|nodist)_//;
+	    }
+	    else
+	    {
+		$nodir_name = $X;
+	    }
+
 	    # Append actual contents of where_PRIMARY variable to
 	    # result.
 	    local ($rcurs);
@@ -6857,6 +6890,7 @@ sub am_install_var
 
 	    $output_rules .=
 		&file_contents_with_transform ('s/\@DIR\@/' . $X . '/g;'
+					       . 's/\@NDIR\@/' . $nodir_name . '/go;'
 					       . $ltxform . $cygxform,
 					       $file);
 
