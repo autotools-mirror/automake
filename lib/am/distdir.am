@@ -273,15 +273,25 @@ distcheck: dist
 	           find $$dc_install_base -type f -print ; \
 	           exit 1; } >&2 ) \
 	  && $(MAKE) $(AM_MAKEFLAGS) dist-gzip \
-	  && $(MAKE) $(AM_MAKEFLAGS) distclean \
 ## Make sure to remove the dist file we created in the test build
 ## directory.
 	  && rm -f $(distdir).tar.gz \
-	  && (test `find . -type f -print | wc -l` -eq 0 \
-	      || { echo "ERROR: files left after distclean:" ; \
-	           find . -type f -print ; \
-	           exit 1; } >&2 )
+	  && $(MAKE) $(AM_MAKEFLAGS) distcleancheck
 	$(am__remove_distdir)
 	@echo "$(distdir).tar.gz is ready for distribution" | \
 	  sed 'h;s/./=/g;p;x;p;x'
+
+## Define distcleancheck_listfiles and distcleancheck separately
+## from distcheck, so that they can be overriden by the user.
+.PHONY: distcleancheck
+distcleancheck_listfiles = "find . -type f -print"
+distcleancheck: distclean
+	if test '$(srcdir)' = . ; then \
+	  echo "ERROR: distcleancheck can only run from a VPATH build" ; \
+	  exit 1 ; \
+	fi
+	test `$(distcleancheck_listfiles) | wc -l` -eq 0 \
+	  || { echo "ERROR: files left after distclean:" ; \
+	       $(distcleancheck_listfiles) ; \
+	       exit 1; } >&2
 endif %?TOPDIR_P%

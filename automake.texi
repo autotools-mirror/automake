@@ -3582,7 +3582,6 @@ We recommend that you follow this same set of heuristics in your
 @section Basics of distribution
 
 @cindex make dist
-@cindex make distcheck
 
 The @code{dist} target in the generated @file{Makefile.in} can be used
 to generate a gzip'd @code{tar} file and other flavors of archive for
@@ -3676,6 +3675,10 @@ dist-hook:
 
 @section Checking the distribution
 
+@cindex make distcheck
+@cindex make distcleancheck
+@vindex distcleancheck_listfiles
+
 Automake also generates a @code{distcheck} target which can be of help
 to ensure that a given distribution will actually work.
 @code{distcheck} makes a distribution, and then tries to do a
@@ -3689,6 +3692,42 @@ configured and built.  Your @code{distcheck-hook} can do almost
 anything, though as always caution is advised.  Generally this hook is
 used to check for potential distribution errors not caught by the
 standard mechanism.
+
+Speaking about potential distribution errors, @code{distcheck} will also
+ensure that the @code{distclean} target actually removes all built
+files.  This is done by running @code{make distcleancheck} at the end of
+the @code{VPATH} build.  By default, @code{distcleancheck} will run
+@code{distclean} and then make sure the build tree has been emptied by
+running @code{$(distcleancheck_listfiles)}.  Usually this check will
+find generated files that you forgot to add to the @code{DISTCLEANFILES}
+variable (@pxref{Clean}).
+
+The @code{distcleancheck} behaviour should be ok for most packages,
+otherwise you have the possibility to override the definitition of
+either the @code{distcleancheck} target, or the
+@code{$(distcleancheck_listfiles)} variable.  For instance to disable
+@code{distcleancheck} completely, add the following rule to your
+top-level @file{Makefile.am}:
+
+@example
+distcleancheck:
+        @@:
+@end example
+
+If you want @code{distcleancheck} to ignore built files which have not
+been cleaned because they are also part of the distribution, add the
+following definition instead:
+
+@example
+distcleancheck_listfiles = \
+  find -type f -exec sh -c 'test -f $(scrdir)/@{@} || echo @{@}'
+@end example
+
+The above definition is not the default because it's usually an error if
+your Makefiles cause some distributed files to be rebuilt when the user
+build the package.  (Think about the user missing the tool required to
+build the file; or if the required tool is built by your package,
+consider the cross-compilation case where it can't be run.)
 
 @section The types of distributions
 
