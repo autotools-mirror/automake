@@ -55,20 +55,18 @@ Alex Hornby
 > If you install to locations other that bin_ and lib_ then a larger fix
 > is necessary, but this should fix the 90% case.
 
-* Document why putting @FOO@ in _SOURCES doesn't work.
-  This must be done for 1.5
-
 * think about how per-object flags should work.  in particular:
   * how should they be specified?
     using the object name is confusing when .lo/.obj in use
     however, the object name provides a nice interaction with
     per-exe flags
   * how should they interact with per-executable flags?
+  [ this is probably a feature in search of a problem ]
 
 * cross-compilation support:
   programs built and used by the build process need to be
   built for CC_FOR_BUILD
-  introduce a new variable for this
+  introduce a new prefxi for this, e.g. `build_PROGRAMS'
   [ we can do this in an automatic way I think.
     unfortunately it isn't that useful until autoconf has support
     for this sort of thing as well ]
@@ -82,6 +80,11 @@ Alex Hornby
 	    grep -E -l '\b_\(' lib/*.c src/*.c | sort > $@-2
 	    diff -u $@-1 $@-2
 	    rm -f $@-1 $@-2
+
+* one performance enhancement would be to have autoconf write
+  a single file containing all the macro assignments.
+  then read this file via `include'
+  unfortunately this can't be done because of conditionals
 
 * support prog_LIBS as override for LIBS
 
@@ -101,11 +104,6 @@ Alex Hornby
 ** We're using `$<' in explicit rules when using per-exe flags
 ** per-exe flags don't work for CPPFLAGS/YFLAGS/LFLAGS.  Fix.
 ** LIBOBJS shouldn't be used when there are per-exe flags (?)
-
-* Need a way to pass flags to makeinfo
-  esp --no-split
-
-* test `make clean' with subdir-objects
 
 * Test nodist_SOURCES with lex, yacc, etc.
 
@@ -278,18 +276,9 @@ Alex Hornby
   Then have automake know about fnmatch.h.
     [ probably should wait for autoconf to get right functionality ]
 
-* Every program foo has FOOFLAGS right now.
-  It should also have AM_FOOFLAGS, which can be set in Makefile.am.
-DONE: but needs to be documented
-
 * "make diff" capability
   look at gcc's Makefile.in to see what to do
   or look at maint program
-
-* BUILT_SOURCES should not be distributed, even when they appear in
-  another _SOURCES line. [? or maybe just leave this up to the
-  to-be-defined generic distribution method ]
-  must completely revisit the entire BUILT_SOURCES idea
 
 * in --cygnus, clean-info not generated at top level
 
@@ -336,9 +325,6 @@ non-C source in a libtool library specification.
 * should separate actual options from strictness levels
   strictness should only cover requirements
   You should be able to pick and choose options
-
-should clean up texinfos.am; one rule is repeated 3 times, but
-shouldn't be
 
 * rewrite in guile (RMS request)
 at the same time, consider adding a GUI
@@ -483,18 +469,6 @@ Need way to say there are no suffixes in a Makefile (Franc,ois'
 
 Check to make sure various scripts are executable (IE when looking for
 them in a directory)
-
-Use recode in dist target when MAINT_CHARSET specified.  Read caveats
-in automake.in before doing this.  Note the same problem used to apply
-to the no-dependencies option; maybe it still should?  Note also that
-each Makefile.am must be rewritten at "make dist" time if
-MAINT_CHARSET and DIST_CHARSET are not identical.  NOTE: gettext must
-arrange for all .po files not to be recoded.  In the long term this
-might be a problem (consider when some systems use Unicode but the
-rest do not)
-  MAINT_CHARSET *must* be local to each Makefile.am, to enable
-	merged distributions.
-  DIST_CHARSET must be passed down to subdir makes during a "make dist"
 
 Handle dist-zoo.  Generally add more DOS support.  Maybe run "doschk"
 (why isn't this merged with "pathchk"?) when doing a dist.  Do
