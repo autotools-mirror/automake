@@ -1633,7 +1633,6 @@ sub handle_libraries
 	# Check that the library fits the standard naming convention.
 	if ($onelib !~ /^lib.*\.a$/)
 	{
-	    # FIXME this should only be a warning for foreign packages
 	    # FIXME should put line number here.  That means mapping
 	    # from library name back to variable name.
 	    &am_error ("\`$onelib' is not a standard library name");
@@ -2324,13 +2323,22 @@ sub handle_dist_worker
     {
 	$output_rules .=
 	    (
-	     # We need an absolute path for --output-dir.  Thus the
-	     # weirdness.
+	     # There are several directories we need to know about
+	     # when rebuilding the Makefile.ins.  They are:
+	     #   here - The absolute path to our topmost build directory.
+	     #   top_distdir - The absolute path to the top of our dist
+	     #                 hierarchy.
+	     #   distdir - The path to our sub-part of the dist hierarchy.
+	     # If this directory is the topmost directory, we set
+	     # top_distdir from distdir; that lets us pass in distdir
+	     # from an enclosing package.
 	     "\t" . 'here=`cd $(top_builddir) && pwd`; ' . "\\\n"
-	     . "\t" . 'top_distdir=`cd $(top_distdir) && pwd`; ' . "\\\n"
- 	     . "\t" . 'distdir=`cd $(distdir) && pwd`; ' . "\\\n"
+	     . "\t" . 'top_distdir=`cd $('
+	     . (($relative_dir eq '.') ? 'distdir' : 'top_distdir')
+	     . ') && pwd`; ' . "\\\n"
+	     . "\t" . 'distdir=`cd $(distdir) && pwd`; ' . "\\\n"
 	     . "\tcd \$(top_srcdir) \\\n"
-	     . "\t  && \$(AUTOMAKE) --include-deps --build-dir=\$\$here --srcdir-name=\$(top_srcdir) --output-dir=\$\$distdir "
+	     . "\t  && \$(AUTOMAKE) --include-deps --build-dir=\$\$here --srcdir-name=\$(top_srcdir) --output-dir=\$\$top_distdir "
 	     # Set strictness of output.
 	     . ($cygnus_mode ? '--cygnus' : ('--' . $strictness_name))
 	     . ($cmdline_use_dependencies ? '' : ' --include-deps')
@@ -2416,16 +2424,20 @@ sub handle_dist_worker
 	# we explicitly set distdir for the subdir make; that lets us
 	# mix-n-match many automake-using packages into one large
 	# package, and have "dist" at the top level do the right
-	# thing.
-	$output_rules .= '	for subdir in $(' . $dist_subdir_name . '); do		\\
-	  test -d $(distdir)/$$subdir		\\
-	  || mkdir $(distdir)/$$subdir		\\
-	  || exit 1;				\\
-	  chmod 777 $(distdir)/$$subdir;	\\
-	  (cd $$subdir && $(MAKE) top_distdir=../$(top_distdir) distdir=../$(distdir)/$$subdir distdir) \\
-	    || exit 1; \\
-	done
-';
+	# thing.  If we're in the topmost directory, then we use
+	# `distdir' instead of `top_distdir'; this lets us work
+	# correctly with an enclosing package.
+	$output_rules .= 
+	    ("\t" . 'for subdir in $(' . $dist_subdir_name . '); do ' . "\\\n"
+	     . "\t" . '  test -d $(distdir)/$$subdir ' . "\\\n"
+	     . "\t" . '  || mkdir $(distdir)/$$subdir ' . "\\\n"
+	     . "\t" . '  || exit 1; ' . "\\\n"
+	     . "\t" . '  chmod 777 $(distdir)/$$subdir; ' . "\\\n"
+	     . "\t" . '  (cd $$subdir && $(MAKE) top_distdir=../$('
+	     . (($relative_dir eq '.') ? 'distdir' : 'top_distdir')
+	     . ') distdir=../$(distdir)/$$subdir distdir) ' . "\\\n"
+	     . "\t" . '    || exit 1; ' . "\\\n"
+	     . "\tdone\n");
     }
 
     # If the target `dist-hook' exists, make sure it is run.  This

@@ -1,4 +1,4 @@
-dnl aclocal.m4 generated automatically by aclocal 1.2b
+dnl aclocal.m4 generated automatically by aclocal 1.2c
 
 dnl Copyright (C) 1994, 1995, 1996, 1997 Free Software Foundation, Inc.
 dnl This Makefile.in is free software; the Free Software Foundation
@@ -68,7 +68,7 @@ echo timestamp > conftestfile
 # directory).
 if (
    set X `ls -Lt $srcdir/configure conftestfile 2> /dev/null`
-   if test "[$]@" = "X"; then
+   if test "[$]*" = "X"; then
       # -L didn't work.
       set X `ls -t $srcdir/configure conftestfile`
    fi
