@@ -16,7 +16,14 @@
 ## along with this program; if not, write to the Free Software
 ## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 ## 02111-1307, USA.
+
+.PHONY: tags
 tags: TAGS
+
+
+## ---- ##
+## ID.  ##
+## ---- ##
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 ## Make sure the list of sources is unique.
@@ -28,6 +35,11 @@ ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	  $(AWK) '    { files[$$0] = 1; } \
 	       END { for (i in files) print i; }'`; \
 	mkid -fID $$unique $(LISP)
+
+
+## ------ ##
+## TAGS.  ##
+## ------ ##
 
 TAGS: %DIRS% $(HEADERS) $(SOURCES) %CONFIG% $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
@@ -51,10 +63,22 @@ TAGS: %DIRS% $(HEADERS) $(SOURCES) %CONFIG% $(TAGS_DEPENDENCIES) \
 	test -z "$(ETAGS_ARGS)%CONFIG%$$unique$(LISP)$$tags" \
 	  || etags $(ETAGS_ARGS) $$tags %CONFIG% $$unique $(LISP)
 
-## Support `Global' tags.
+
+## --------------- ##
+## `Global' tags.  ##
+## --------------- ##
+
 GTAGS:
 	here=`CDPATH=: && cd $(top_builddir) && pwd` \
 	  && cd $(top_srcdir) \
 	  && gtags -i $$here
 
-.PHONY: tags
+
+## ---------- ##
+## Cleaning.  ##
+## ---------- ##
+
+.PHONY distclean-am: distclean-tags
+
+distclean-tags:
+	-rm -f TAGS ID

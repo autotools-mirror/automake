@@ -16,30 +16,48 @@
 ## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 ## 02111-1307, USA.
 
-_am_installdirs += $(DESTDIR)$(%DIR%dir)
-?EXEC?.PHONY install-exec-am: install-%DIR%PYTHON
-?!EXEC?.PHONY install-data-am: install-%DIR%PYTHON
-install-%DIR%PYTHON: $(%DIR%_PYTHON)
-	@$(NORMAL_INSTALL)
-	$(mkinstalldirs) $(DESTDIR)$(%DIR%dir)
-	@list='$(%DIR%_PYTHON)'; for p in $$list; do\
-	  if test -f $(srcdir)/$$p; then \
+
+## ------------ ##
+## Installing.  ##
+## ------------ ##
+
+?INSTALL?_am_installdirs += $(DESTDIR)$(%DIR%dir)
+?INSTALL??EXEC?.PHONY install-exec-am: install-%DIR%PYTHON
+?INSTALL??!EXEC?.PHONY install-data-am: install-%DIR%PYTHON
+?INSTALL?install-%DIR%PYTHON: $(%DIR%_PYTHON)
+?INSTALL?	@$(NORMAL_INSTALL)
+?INSTALL?	$(mkinstalldirs) $(DESTDIR)$(%DIR%dir)
+?INSTALL?	@list='$(%DIR%_PYTHON)'; for p in $$list; do\
+?INSTALL?	  if test -f $(srcdir)/$$p; then \
 ## Don't perform translation, since script name is important.
-	    echo " $(INSTALL_PROGRAM) $(srcdir)/$$p $(DESTDIR)$(%DIR%dir)/$$p"; \
-	    $(INSTALL_DATA) $(srcdir)/$$p $(DESTDIR)$(%DIR%dir)/$$p; \
-	  else :; fi; \
-	done
+?INSTALL?	    echo " $(INSTALL_PROGRAM) $(srcdir)/$$p $(DESTDIR)$(%DIR%dir)/$$p"; \
+?INSTALL?	    $(INSTALL_DATA) $(srcdir)/$$p $(DESTDIR)$(%DIR%dir)/$$p; \
+?INSTALL?	  else :; fi; \
+?INSTALL?	done
 ## Byte-compile must be done at install time, since file times are
 ## encoded in the actual files.
-	@PYTHON=$(PYTHON) $(py_compile) --basedir $(DESTDIR)$(%DIR%dir) $(%DIR%_PYTHON)
+?INSTALL?	@PYTHON=$(PYTHON) $(py_compile) --basedir $(DESTDIR)$(%DIR%dir) $(%DIR%_PYTHON)
 
-.PHONY uninstall-am: uninstall-%DIR%PYTHON
-uninstall-%DIR%PYTHON:
-	@$(NORMAL_UNINSTALL)
-	list='$(%DIR%_PYTHON)'; for p in $$list; do \
-	  rm -f $(DESTDIR)$(%DIR%dir)/$$p; \
+
+## -------------- ##
+## Uninstalling.  ##
+## -------------- ##
+
+?INSTALL?.PHONY uninstall-am: uninstall-%DIR%PYTHON
+?INSTALL?uninstall-%DIR%PYTHON:
+?INSTALL?	@$(NORMAL_UNINSTALL)
+?INSTALL?	list='$(%DIR%_PYTHON)'; for p in $$list; do \
+?INSTALL?	  rm -f $(DESTDIR)$(%DIR%dir)/$$p; \
 ## This is to remove the .pyc and .pyo byte compiled versions (a bit
 ## of a hack).
-	  rm -f $(DESTDIR)$(%DIR%dir)/$${p}c; \
-	  rm -f $(DESTDIR)$(%DIR%dir)/$${p}o; \
-	done
+?INSTALL?	  rm -f $(DESTDIR)$(%DIR%dir)/$${p}c; \
+?INSTALL?	  rm -f $(DESTDIR)$(%DIR%dir)/$${p}o; \
+?INSTALL?	done
+
+## ---------- ##
+## Cleaning.  ##
+## ---------- ##
+
+.PHONY clean-am: clean-python
+clean-python:
+	-test -z "$(PYCFILES)$(PYOFILES)" || rm -f $(PYCFILES) $(PYOFILES)

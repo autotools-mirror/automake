@@ -1,4 +1,4 @@
-#!@PERL@ -w
+#!@PERL@
 # -*- perl -*-
 # @configure_input@
 
@@ -2133,8 +2133,7 @@ sub check_canonical_spelling
 # Handle C programs.
 sub handle_programs
 {
-    my @proglist = &am_install_var ('-clean',
-				    'progs', 'PROGRAMS',
+    my @proglist = &am_install_var ('progs', 'PROGRAMS',
 				    'bin', 'sbin', 'libexec', 'pkglib',
 				    'noinst', 'check');
     return if ! @proglist;
@@ -2253,8 +2252,7 @@ sub handle_programs
 # Handle libraries.
 sub handle_libraries
 {
-    my @liblist = &am_install_var ('-clean',
-				   'libs', 'LIBRARIES',
+    my @liblist = &am_install_var ('libs', 'LIBRARIES',
 				   'lib', 'pkglib', 'noinst', 'check');
     return if ! @liblist;
 
@@ -2351,8 +2349,7 @@ sub handle_libraries
 # Handle shared libraries.
 sub handle_ltlibraries
 {
-    my @liblist = &am_install_var ('-clean',
-				   'ltlib', 'LTLIBRARIES',
+    my @liblist = &am_install_var ('ltlib', 'LTLIBRARIES',
 				   'noinst', 'lib', 'pkglib', 'check');
     return if ! @liblist;
 
@@ -2911,7 +2908,6 @@ sub handle_tags
 	  &file_contents ('tags',
 			  &transform ('CONFIG' => $config,
 				      'DIRS'   => join (' ', @tag_deps)));
-	$output_rules .= &file_contents ('tags-clean');
 	&examine_variable ('TAGS_DEPENDENCIES');
     }
     elsif (&variable_defined ('TAGS_DEPENDENCIES'))
@@ -4146,7 +4142,7 @@ sub handle_tests
 sub handle_emacs_lisp
 {
     my @elfiles = &am_install_var ('-candist', 'lisp', 'LISP',
-					'lisp', 'noinst');
+				   'lisp', 'noinst');
 
     if (@elfiles)
     {
@@ -4163,8 +4159,6 @@ sub handle_emacs_lisp
 	# Generate .elc files.
 	grep ($_ .= 'c', @elfiles);
 	&define_pretty_variable ('ELCFILES', '', @elfiles);
-
-	$output_rules .= &file_contents ('lisp-clean');
 
 	push (@all, '$(ELCFILES)');
 
@@ -4195,8 +4189,6 @@ sub handle_python
     &define_configure_variable ('pythondir');
     &define_configure_variable ('PYTHON');
 
-    $output_rules .= &file_contents ('python-clean');
-
     &am_error ("\`python_PYTHON' defined but \`AM_CHECK_PYTHON' not in \`$configure_ac'")
 	if ! $seen_pythondir && &variable_defined ('python_PYTHON');
 
@@ -4213,7 +4205,7 @@ sub handle_python
 # Handle Java.
 sub handle_java
 {
-    my @sourcelist = &am_install_var ('-candist', '-clean',
+    my @sourcelist = &am_install_var ('-candist',
 				      'java', 'JAVA',
 				      'java', 'noinst', 'check');
     return if ! @sourcelist;
@@ -6682,7 +6674,8 @@ sub file_contents
 	die "$me: installation error: cannot open \`$file'\n";
     }
     # Looks stupid?
-    # print "$me: reading $file\n" if $verbose;
+    print "$me: reading $file\n"
+      if $verbose;
 
     # Swallow into $CONTENTS the whole content of the file, after
     # having performed the $COMMAND, and removed Automake comments.
@@ -6903,17 +6896,12 @@ sub am_install_var
 {
     my (@args) = @_;
 
-    my $do_clean = 0;
     my $do_require = 1;
     my $can_dist = 0;
     my $default_dist = 0;
     while (@args)
     {
-	if ($args[0] eq '-clean')
-	{
-	    $do_clean = 1;
-	}
-	elsif ($args[0] eq '-noextra')
+	if ($args[0] eq '-noextra')
 	{
 	    $do_require = 0;
 	}
@@ -7097,13 +7085,6 @@ sub am_install_var
 		next;
 	    }
 
-	    if ($do_clean)
-	    {
-		$output_rules .=
-		  &file_contents ($file . '-clean',
-				  &transform ('DIR' => $X))
-	    }
-
 	    if ($X eq 'check')
 	    {
 		push (@check, '$(' . $one_name . ')');
@@ -7112,12 +7093,11 @@ sub am_install_var
 	    {
 		push (@used, '$(' . $one_name . ')');
 	    }
-	    if ($X eq 'noinst' || $X eq 'check')
-	    {
-		# Objects which don't get installed by default.
-		next;
-	    }
 
+	    # Is this to be installed?
+	    my $install_p = $X ne 'noinst' && $X ne 'check';
+
+	    # If so, with install-exec? (or install-data?).
 	    my $exec_p = (defined $exec_dir_p {$X}
 			  ? $exec_dir_p {$X}
 			  : ($X =~ /exec/));
@@ -7127,7 +7107,9 @@ sub am_install_var
 			      &transform ('DIR'  => $X,
 					  'NDIR' => $nodir_name,
 					  'BASE' => $strip_subdir,
-					  'EXEC' => $exec_p));
+
+					  'EXEC'    => $exec_p,
+					  'INSTALL' => $install_p));
 	}
     }
 

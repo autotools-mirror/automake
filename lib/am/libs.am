@@ -16,38 +16,56 @@
 ## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 ## 02111-1307, USA.
 
-_am_installdirs += $(DESTDIR)$(%NDIR%dir)
-?EXEC?.PHONY install-exec-am: install-%DIR%LIBRARIES
-?!EXEC?.PHONY install-data-am: install-%DIR%LIBRARIES
-install-%DIR%LIBRARIES: $(%DIR%_LIBRARIES)
-	@$(NORMAL_INSTALL)
-	$(mkinstalldirs) $(DESTDIR)$(%NDIR%dir)
+## ------------ ##
+## Installing.  ##
+## ------------ ##
+
+?INSTALL?_am_installdirs += $(DESTDIR)$(%NDIR%dir)
+?INSTALL??EXEC?.PHONY install-exec-am: install-%DIR%LIBRARIES
+?INSTALL??!EXEC?.PHONY install-data-am: install-%DIR%LIBRARIES
+?INSTALL?install-%DIR%LIBRARIES: $(%DIR%_LIBRARIES)
+?INSTALL?	@$(NORMAL_INSTALL)
+?INSTALL?	$(mkinstalldirs) $(DESTDIR)$(%NDIR%dir)
 ## Funny invocation because Makefile variable can be empty, leading to
 ## a syntax error in sh.
-	@list='$(%DIR%_LIBRARIES)'; for p in $$list; do \
-	  if test -f $$p; then \
-	    echo " $(INSTALL_DATA) $$p $(DESTDIR)$(%NDIR%dir)/$$p"; \
-	    $(INSTALL_DATA) $$p $(DESTDIR)$(%NDIR%dir)/$$p; \
-	  else :; fi; \
-	done
+?INSTALL?	@list='$(%DIR%_LIBRARIES)'; for p in $$list; do \
+?INSTALL?	  if test -f $$p; then \
+?INSTALL?	    echo " $(INSTALL_DATA) $$p $(DESTDIR)$(%NDIR%dir)/$$p"; \
+?INSTALL?	    $(INSTALL_DATA) $$p $(DESTDIR)$(%NDIR%dir)/$$p; \
+?INSTALL?	  else :; fi; \
+?INSTALL?	done
 ## We do two loops here so that $(POST_INSTALL) can be empty.  If we
 ## merge the two loops, we get a syntax error from sh.  Anyway, having
 ## $(POST_INSTALL) in the middle of the loop essentially renders it
 ## useless; sh never actually executes this command.  Read the GNU
 ## Standards for a little enlightenment on this.
-	@$(POST_INSTALL)
-	@list='$(%DIR%_LIBRARIES)'; for p in $$list; do \
-	  if test -f $$p; then \
+?INSTALL?	@$(POST_INSTALL)
+?INSTALL?	@list='$(%DIR%_LIBRARIES)'; for p in $$list; do \
+?INSTALL?	  if test -f $$p; then \
 ## Must ranlib after installing because mod time changes.
-	    echo " $(RANLIB) $(DESTDIR)$(%NDIR%dir)/$$p"; \
-	    $(RANLIB) $(DESTDIR)$(%NDIR%dir)/$$p; \
-	  else :; fi; \
-	done
+?INSTALL?	    echo " $(RANLIB) $(DESTDIR)$(%NDIR%dir)/$$p"; \
+?INSTALL?	    $(RANLIB) $(DESTDIR)$(%NDIR%dir)/$$p; \
+?INSTALL?	  else :; fi; \
+?INSTALL?	done
 
-.PHONY uninstall-am: uninstall-%DIR%LIBRARIES
-uninstall-%DIR%LIBRARIES:
-	@$(NORMAL_UNINSTALL)
-	@list='$(%DIR%_LIBRARIES)'; for p in $$list; do \
-	  echo " rm -f $(DESTDIR)$(%NDIR%dir)/$$p"; \
-	  rm -f $(DESTDIR)$(%NDIR%dir)/$$p; \
-	done
+
+## -------------- ##
+## Uninstalling.  ##
+## -------------- ##
+
+?INSTALL?.PHONY uninstall-am: uninstall-%DIR%LIBRARIES
+?INSTALL?uninstall-%DIR%LIBRARIES:
+?INSTALL?	@$(NORMAL_UNINSTALL)
+?INSTALL?	@list='$(%DIR%_LIBRARIES)'; for p in $$list; do \
+?INSTALL?	  echo " rm -f $(DESTDIR)$(%NDIR%dir)/$$p"; \
+?INSTALL?	  rm -f $(DESTDIR)$(%NDIR%dir)/$$p; \
+?INSTALL?	done
+
+
+## ---------- ##
+## Cleaning.  ##
+## ---------- ##
+
+.PHONY clean-am: clean-%DIR%LIBRARIES
+clean-%DIR%LIBRARIES:
+	-test -z "$(%DIR%_LIBRARIES)" || rm -f $(%DIR%_LIBRARIES)
