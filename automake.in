@@ -598,9 +598,14 @@ sub handle_source_transform
 	    local (@result) = ();
 	    foreach (@files)
 	    {
-		# Skip header files, including C++-ish ones.
+		# Skip header files, including C++-ish ones.  The list
+		# of C++ header extensions comes from Emacs 19.32
+		# etags.
 		next if /\.[hH]$/;
 		next if /\.hxx$/;
+		next if /\.h\+\+$/;
+		next if /\.hh$/;
+		next if /\.hpp$/;
 		# Skip things that look like macro references.
 		next if /^\$\(.*\)$/;
 		next if /^\$\{.*\}$/;
@@ -620,6 +625,12 @@ sub handle_source_transform
 					  . 'cd $(srcdir) && $(YACC) $(YFLAGS) $< && mv y.tab.c '
 					  . $1 . '.c' . "\n");
 		    }
+
+		    if (! &variable_defined ('YACC'))
+		    {
+			$output_vars .= "YACC = \@YACC\@\n";
+			$targets{'YACC'} = 1;
+		    }
 		}
 		elsif (/^(.*)\.l$/)
 		{
@@ -632,12 +643,29 @@ sub handle_source_transform
 					  . 'cd $(srcdir) && $(LEX) $(LFLAGS) $< && mv lex.yy.c '
 					  . $1 . '.c' . "\n");
 		    }
+
+		    if (! &variable_defined ('LEX'))
+		    {
+			$output_vars .= "LEX = \@YACC\@\n";
+			$targets{'LEX'} = 1;
+		    }
 		}
 
-		# Transform source files into .o files.
+		# Transform source files into .o files.  List of C++
+		# extensions comes from Emacs 19.32 etags.
+		s/\.c\+\+$/$obj/g;
 		s/\.cc$/$obj/g;
+		s/\.cpp$/$obj/g;
 		s/\.cxx$/$obj/g;
-		s/\.[cCmylfs]$/$obj/g;
+
+		# FORTRAN support.
+		s/\.f90$/$obj/g;
+		s/\.for$/$obj/g;
+
+		# .C is C++.  .y is yacc.  .l is lex.  .f and .F is
+		# fortran.  .s is assembly.  .M is Objective-C++.  .m
+		# is Objective-C.
+		s/\.[cCylfFsmM]$/$obj/g;
 		push (@result, $_)
 		    unless $prefix eq 'EXTRA_';
 
