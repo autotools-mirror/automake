@@ -687,11 +687,12 @@ my @var_list;
 # FIXME: This is a hack. a better switch should be found.
 my $get_object_extension_was_run;
 
-# This keeps track of all variables defined by subobjname.
-# The value stored is the variable names.
-# The key has the form "(COND1)VAL1(COND2)VAL2..." where VAL1 and VAL2
+# This keeps track of all variables defined by gen_varname.
+# $gen_varname{$base} is a hash for all variable defined with
+# prefix `$base'.  Values stored this this hash are the variable names.
+# Keys have the form "(COND1)VAL1(COND2)VAL2..." where VAL1 and VAL2
 # are the values of the variable for condition COND1 and COND2.
-my %subobjvar = ();
+my %gen_varname = ();
 
 # This hash records helper variables used to implement conditional '+='.
 # Keys have the form "VAR:CONDITIONS".  The value associated to a key is
@@ -850,7 +851,7 @@ sub initialize_per_input ()
     # We always include `.'.  This isn't strictly correct.
     %libtool_clean_directories = ('.' => 1);
 
-    %subobjvar = ();
+    %gen_varname = ();
 
     %appendvar = ();
 }
@@ -2664,73 +2665,14 @@ sub traverse_variable_recursively_worker ($$&&)
   return &$fun_collect ($var, \@allresults, @cond_stack);
 }
 
-# $LINKER
-# define_objects_from_sources ($VAR, $OBJVAR, $NODEFINE, $ONE_FILE,
-#                              $OBJ, $PARENT, $TOPPARENT, $WHERE)
-# ---------------------------------------------------------------------
-# Define an _OBJECTS variable for a _SOURCES variable (or subvariable)
-#
-# Arguments are:
-#   $VAR is the name of the _SOURCES variable
-#   $OBJVAR is the name of the _OBJECTS variable if known (otherwise
-#     it will be generated and returned).
-#   $NODEFINE is a boolean: if true, $OBJVAR will not be defined (but
-#     work done to determine the linker will be).
-#   $ONE_FILE is the canonical (transformed) name of object to build
-#   $OBJ is the object extension (i.e. either `.o' or `.lo').
-#   $PARENT is the variable in which $VAR is used, or $VAR if not applicable.
-#   $TOPPARENT is the _SOURCES variable being processed.
-#   $WHERE context into which this definition is done
-#
-# Result is a pair ($LINKER, $OBJVAR):
-#    $LINKER is a boolean, true if a linker is needed to deal with the objects
-sub define_objects_from_sources ($$$$$$$$)
-{
-  my ($var, $objvar, $nodefine, $one_file, $obj,
-      $parent, $topparent, $where) = @_;
-
-  my $needlinker = "";
-
-  my $res =
-    traverse_variable_recursively
-    ($var,
-     # The transfom code to run on each filename.
-     sub {
-       my ($subvar, $val, @cond_stack) = @_;
-       my @trans = &handle_single_transform_list ($subvar, $topparent,
-						  $one_file, $obj, $val);
-       $needlinker = "true" if @trans;
-       return @trans;
-     },
-     # The code that define the variable holding the result
-     # of the recursive transformation of a subvariable.
-     sub {
-       my ($subvar, $allresults, @cond_stack) = @_;
-       # Find a name for the variable, unless this is the top-variable
-       # for which we want to use $objvar.
-       my $varname = ($var ne $subvar) ? subobjname (@$allresults) : $objvar;
-       # Define _OBJECTS conditionally
-       unless ($nodefine)
-	 {
-	   foreach my $pair (@$allresults)
-	     {
-	       my ($cond, @result) = @$pair;
-	       define_pretty_variable ($varname, $cond, $where, @result);
-	     }
-	 }
-       return "\$($varname)";
-     });
-  return $needlinker;
-}
-
-
 # $VARNAME
-# subobjname (@DEFINITIONS)
-# -------------------------
-# Return a name for an object variable that with definitions @DEFINITIONS.
+# gen_varname ($BASE, @DEFINITIONS)
+# ---------------------------------
+# Return a variable name starting with $BASE, that will be
+# used to store definitions @DEFINITIONS.
 # @DEFINITIONS is a list of pair [$COND, @OBJECTS].
 #
-# If we already have an object variable containing @DEFINITIONS, reuse it.
+# If we already have a $BASE-variable containing @DEFINITIONS, reuse it.
 # This way, we avoid combinatorial explosion of the generated
 # variables.  Especially, in a Makefile such as:
 #
@@ -2758,21 +2700,110 @@ sub define_objects_from_sources ($$$$$$$$)
 #
 # This setup can be the case of a testsuite containing lots (>100) of
 # small C programs, all testing the same set of source files.
-sub subobjname (@)
+sub gen_varname ($@)
 {
-    my $key = '';
-    foreach my $pair (@_)
+  my $base = shift;
+  my $key = '';
+  foreach my $pair (@_)
     {
-	my ($cond, @values) = @$pair;
-	$key .= "($cond)@values";
+      my ($cond, @values) = @$pair;
+      $key .= "($cond)@values";
     }
 
-    return $subobjvar{$key} if exists $subobjvar{$key};
+  return $gen_varname{$base}{$key} if exists $gen_varname{$base}{$key};
 
-    my $num = 1 + keys (%subobjvar);
-    my $name = "am__objects_${num}";
-    $subobjvar{$key} = $name;
-    return $name;
+  my $num = 1 + keys (%{$gen_varname{$base}});
+  my $name = "${base}_${num}";
+  $gen_varname{$base}{$key} = $name;
+  return $name;
+}
+
+# $RESVAR
+# transform_variable_recursively ($VAR, $RESVAR, $BASE,
+#                                 $NODEFINE, $WHERE, &FUN_ITEM)
+# -------------------------------------------------------------
+# Traverse $VAR recursively, and create a $RESVAR variable in which
+# each filename in $VAR have been transformed using &FUN_ITEM.
+# Helper variables (corresponding to sub-variables of $VAR) are
+# created as needed, using $BASE as prefix.
+#
+# Arguments are:
+#   $VAR       source variable to traverse
+#   $RESVAR    resulting variable to define
+#   $BASE      prefix to use when naming subvariables of $RESVAR
+#   $NODEFINE  if true, traverse $VAR but do not define any variable
+#              (this assumes &FUN_ITEM has some useful side-effect)
+#   $WHERE     context into which variable definitions are done
+#   &FUN_ITEM  a transformation function -- see the documentation
+#              of &FUN_ITEM in traverse_variable_recursively.
+#
+# This returns the string "\$($RESVAR)".
+sub transform_variable_recursively ($$$$$&)
+{
+  my ($var, $resvar, $base, $nodefine, $where, $fun_item) = @_;
+
+  my $res = &traverse_variable_recursively
+    ($var,
+     $fun_item,
+     # The code that define the variable holding the result
+     # of the recursive transformation of a subvariable.
+     sub {
+       my ($subvar, $allresults, @cond_stack) = @_;
+       # Find a name for the variable, unless this is the top-variable
+       # for which we want to use $resvar.
+       my $varname =
+	 ($var ne $subvar) ? gen_varname ($base, @$allresults) : $resvar;
+       # Define the variable if required.
+       unless ($nodefine)
+	 {
+	   foreach my $pair (@$allresults)
+	     {
+	       my ($cond, @result) = @$pair;
+	       define_pretty_variable ($varname, $cond, $where, @result);
+	     }
+	 }
+       return "\$($varname)";
+     });
+  return $res;
+}
+
+# $LINKER
+# define_objects_from_sources ($VAR, $OBJVAR, $NODEFINE, $ONE_FILE,
+#                              $OBJ, $PARENT, $TOPPARENT, $WHERE)
+# ---------------------------------------------------------------------
+# Define an _OBJECTS variable for a _SOURCES variable (or subvariable)
+#
+# Arguments are:
+#   $VAR is the name of the _SOURCES variable
+#   $OBJVAR is the name of the _OBJECTS variable if known (otherwise
+#     it will be generated and returned).
+#   $NODEFINE is a boolean: if true, $OBJVAR will not be defined (but
+#     work done to determine the linker will be).
+#   $ONE_FILE is the canonical (transformed) name of object to build
+#   $OBJ is the object extension (i.e. either `.o' or `.lo').
+#   $TOPPARENT is the _SOURCES variable being processed.
+#   $WHERE context into which this definition is done
+#
+# Result is a pair ($LINKER, $OBJVAR):
+#    $LINKER is a boolean, true if a linker is needed to deal with the objects
+sub define_objects_from_sources ($$$$$$$)
+{
+  my ($var, $objvar, $nodefine, $one_file, $obj, $topparent, $where) = @_;
+
+  my $needlinker = "";
+
+  transform_variable_recursively
+    ($var, $objvar, 'am__objects', $nodefine, $where,
+     # The transfom code to run on each filename.
+     sub {
+       my ($subvar, $val, @cond_stack) = @_;
+       my @trans = &handle_single_transform_list ($subvar, $topparent,
+						  $one_file, $obj, $val);
+       $needlinker = "true" if @trans;
+       return @trans;
+     });
+
+  return $needlinker;
 }
 
 
@@ -2836,7 +2867,7 @@ sub handle_source_transform
 	    define_objects_from_sources ($var,
 					 $xpfx . $one_file . '_OBJECTS',
 					 $prefix =~ /EXTRA_/,
-					 $one_file, $obj, $var, $var, $where);
+					 $one_file, $obj, $var, $where);
     }
     if ($needlinker)
     {
