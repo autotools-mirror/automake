@@ -16,7 +16,7 @@ mans-vars.am program.am progs.am remake-hdr.am remake-subd.am \
 remake.am scripts.am subdirs.am tags.am tags-subd.am tags-clean.am \
 texi-vers.am texinfos.am libs-clean.am \
 progs-clean.am data-clean.am COPYING INSTALL texinfo.tex ansi2knr.c \
-ansi2knr.1 aclocal.m4 lisp.am lisp-clean.am
+ansi2knr.1 lisp.am lisp-clean.am
 
 ## These must all be executable when installed.
 pkgdata_SCRIPTS = config.guess config.sub install-sh interlock mdate-sh \

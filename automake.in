@@ -406,13 +406,14 @@ sub generate_makefile
     $relative_dir = &dirname ($makefile);
 
     # At the toplevel directory, we might need config.guess, config.sub
-    # or libtool.
+    # or libtool scripts (ltconfig and ltmain.sh).
     if ($relative_dir eq '.')
     {
  	# libtool requires some files.
  	&require_conf_file_with_conf_line ($libtool_line, $FOREIGN,
  					   'config.sub', 'config.guess',
- 					   'libtool') if $seen_libtool;
+ 					   'ltconfig', 'ltmain.sh')
+	    if $seen_libtool;
 
         # AC_CANONICAL_HOST and AC_CANONICAL_SYSTEM need config.guess and
         # config.sub.
@@ -854,26 +855,26 @@ sub handle_single_transform_list
 	    }
 
 	    # Transform source files into .o files.  List of C++
-	    # extensions comes from Emacs 19.32 etags.
+	    # extensions comes from Emacs 19.34 etags.
 	    if (s/\.(c\+\+|cc|cpp|cxx|C)$/o/)
 	    {
 		$cxx_extensions{'.' . $1} = 1;
 		$linker = 'CXXLINK';
 	    }
-	    else
+	    elsif (s/\.([Ff]\\|f90\\|for)$/o/)
 	    {
 		# FORTRAN support.  FIXME: not finished.
-		s/\.f90$/.o/g;
-		s/\.for$/.o/g;
-
+	    }
+	    else
+	    {
 		# C, yacc, and lex need special $obj extension, for
 		# de-ansification.  Hopefully someday this will go
 		# away.
 		s/\.[cly]$/$obj/g;
 
-		# .f and .F are fortran.  .s is assembly.  .M is
-		# Objective-C++.  .m is Objective-C.
-		s/\.[fFsmM]$/$obj/g;
+		# .s is assembly.  .M is Objective-C++.  .m is
+		# Objective-C.
+		s/\.[smM]$/$obj/g;
 
 		# FIXME: of course, this should only happen for C
 		# source.  The multi-language support must really be
@@ -1321,18 +1322,8 @@ sub handle_libraries
 	&define_pretty_variable ('LIBFILES ', @libfiles_list);
     }
 
-    if ($seen_libtool)
-    {
-	&define_variable ('AR', '$(LIBTOOL) archive');
-	&define_variable ('RANLIB', '$(LIBTOOL) ranlib');
-	&define_variable ('LCOMPILE', ('$(LIBTOOL) compile $(DEFS) $(INCLUDES)'
-				       . ' $(CPPFLAGS) $(CFLAGS)'));
-    }
-    else
-    {
-	&define_variable ('AR', 'ar');
-	&define_configure_variable ('RANLIB');
-    }
+    &define_variable ('AR', 'ar');
+    &define_configure_variable ('RANLIB');
 }
 
 # See if any _SOURCES variable were misspelled.
@@ -2788,6 +2779,7 @@ sub do_one_clean_target
     elsif ($name . $target eq 'distclean')
     {
 	$output_rules .= "\trm -f config.status\n";
+	$output_rules .= "\trm -f libtool\n" if $seen_libtool;
     }
     $output_rules .= "\n";
 }
@@ -3743,7 +3735,7 @@ sub initialize_global_constants
     @common_sometimes =
 	(
 	 "aclocal.m4", "acconfig.h", "config.h.top",
-	 "config.h.bot", "stamp-h.in", 'stamp-vti', 'libtool'
+	 "config.h.bot", "stamp-h.in", 'stamp-vti', 'ltconfig', 'ltmain.sh'
 	 );
 
     $USAGE = "\
