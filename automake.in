@@ -832,23 +832,40 @@ sub handle_libraries
 
     local ($obj) = &get_object_extension;
     local ($munge);
+    local ($xlib);
     foreach $onelib (@liblist)
     {
-	if (&variable_defined ($onelib . '_LIBADD'))
+	# Canonicalize names.
+	($xlib = $onelib) =~ tr/A-Za-z0-9_/_/c;
+	if ($xlib ne $one_file)
 	{
-	    &handle_lib_objects ($onelib . '_LIBADD');
+	    local ($xt);
+	    foreach $xt ('_LIBADD', '_SOURCES', '_OBJECTS', '_DEPENDENCIES')
+	    {
+		&am_line_error ($one_file . $xt,
+				"invalid variable \`" . $onelib . $xt
+				. "'; should be \`" . $xlib . $xt . "'")
+		    if &variable_defined ($onelib . $xt);
+	    }
+	}
+
+	if (&variable_defined ($xlib . '_LIBADD'))
+	{
+	    &handle_lib_objects ($xlib . '_LIBADD');
 	}
 	else
 	{
 	    # Generate support for conditional object inclusion in
 	    # libraries.
-	    $output_vars .= $onelib . "_LIBADD =\n";
+	    $output_vars .= $xlib . "_LIBADD =\n";
 	}
 
-	&handle_source_transform ($onelib, $onelib, $obj);
+	&handle_source_transform ($xlib, $onelib, $obj);
 
 	$output_rules .=
-	    &file_contents_with_transform ('s/\@LIBRARY\@/' . $onelib . '/go',
+	    &file_contents_with_transform ('s/\@LIBRARY\@/' . $onelib . '/go;'
+					   . 's/\@XLIBRARY\@/'
+					   . $xlib . '/go;',
 					   'library');
     }
 
