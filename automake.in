@@ -87,6 +87,7 @@ $relative_dir = '';
 @install_data = ();
 @install_exec = ();
 @uninstall = ();
+@installdirs = ();
 
 @info = ();
 @dvi = ();
@@ -224,6 +225,7 @@ sub generate_makefile
     @install_data = ();
     @install_exec = ();
     @uninstall = ();
+    @installdirs = ();
     $dir_holds_sources = 0;
     $recursive_install = 0;
     @info = ();
@@ -274,6 +276,7 @@ sub generate_makefile
     &handle_dependencies;
     &handle_footer;
     &handle_merge_targets;
+    &handle_installdirs;
     &handle_clean;
 
     if (! open (GM_FILE, "> " . $makefile . ".in"))
@@ -402,6 +405,7 @@ sub handle_programs
 	push (@install_exec, "install-programs");
 	push (@uninstall, 'uninstall-programs');
 	push (@clean, 'programs');
+	push (@installdirs, '$(bindir)');
     }
     if ($libprograms)
     {
@@ -409,6 +413,7 @@ sub handle_programs
 	push (@install_exec, 'install-libprograms');
 	push (@uninstall, 'uninstall-libprograms');
 	push (@clean, 'libprograms');
+	push (@installdirs, '$(libexecdir)');
     }
 
     # Handle linking.
@@ -469,6 +474,7 @@ sub handle_scripts
 	push (@install_exec, 'install-scripts');
 	push (@uninstall, 'uninstall-scripts');
 	push (@clean, 'scripts');
+	push (@installdirs, '$(bindir)');
     }
 
     if ($libscripts)
@@ -477,6 +483,7 @@ sub handle_scripts
 	push (@install_exec, 'install-libscripts');
 	push (@uninstall, 'uninstall-libscripts');
 	push (@clean, 'libscripts');
+	push (@installdirs, '$(libexecdir');
     }
 }
 
@@ -537,6 +544,7 @@ sub handle_texinfo
     push (@clean, 'info');
     push (@info, '$(INFO_DEPS)');
     push (@dvi, '$(DVIS)');
+    push (@installdirs, '$(infodir)');
     # Make sure documentation is made and installed first.
     unshift (@install_data, 'install-info');
     unshift (@all, 'info');
@@ -569,6 +577,7 @@ sub handle_data
 	$output_rules .= &file_contents ('data');
 	push (@install_data, 'install-ddata');
 	push (@uninstall, 'uninstall-ddata');
+	push (@installdirs, '$(datadir)');
     }
 
     if (defined $contents{'PACKAGEDATA'})
@@ -576,6 +585,7 @@ sub handle_data
 	$output_rules .= &file_contents ('packagedata');
 	push (@install_data, 'install-pdata');
 	push (@uninstall, 'uninstall-pdata');
+	push (@installdirs, '$(datadir)/$(PACKAGE)');
     }
 }
 
@@ -756,6 +766,18 @@ sub handle_footer
 	$output_trailer .= ".SUFFIXES: " . join (' ', @suffixes) . "\n";
     }
     $output_trailer .= "\n" . &file_contents ('footer');
+}
+
+# Deal with installdirs target.
+sub handle_installdirs
+{
+    return if ($#installdirs < 0);
+
+    # GNU Makefile standards recommend this.  FIXME prettyprint rule
+    # here.
+    $output_rules .= ("installdirs:\n\t\$(top_srcdir)/mkinstalldirs "
+		      . join (' ', @installdirs)
+		      . "\n\n");
 }
 
 # There are several targets which need to be merged.  This is because
