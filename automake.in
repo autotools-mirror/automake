@@ -423,7 +423,7 @@ sub generate_makefile
 
     if (! -d ($output_directory . '/' . $relative_dir))
     {
-	&mkdir ($output_directory . '/' . $relative_dir);
+	mkdir ($output_directory . '/' . $relative_dir, 0755);
     }
 
     local ($out_file) = $output_directory . '/' . $makefile . ".in";
@@ -616,8 +616,7 @@ sub handle_yacc_lex_cxx
 	push (@suffixes, '.l');
 	$output_vars .= ("LEX = \@LEX\@\n"
 			 . "LEX_OUTPUT_ROOT = \@LEX_OUTPUT_ROOT\@\n");
-	$output_rules .= (".l.c:\n\t"
-			  . "\n");
+	$output_rules .= ".l.c:\n\t";
 	if ($lex_count > 1)
 	{
 	    $output_rules .= '$(INTERLOCK) =lexlockdir $(YLWRAP) $(LEX_OUTPUT_ROOT).c $@ $(LEX) $(LFLAGS) $<';
@@ -652,9 +651,12 @@ sub handle_yacc_lex_cxx
     #
     # Now handle C++.
     #
-    local ($cxx_count) = scalar (keys %cxx_extensions);
+    local (@cxx_list) = keys %cxx_extensions;
+    local ($cxx_count) = scalar @cxx_list;
     if ($cxx_count)
     {
+	push (@suffixes, @cxx_list);
+
 	$output_vars .= ("CXX = \@CXX\@\n"
 			 . "CXXFLAGS = \@CXXFLAGS\@\n"
 			 . 'CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)'
@@ -663,7 +665,7 @@ sub handle_yacc_lex_cxx
 			 . "\n");
 
 	local ($ext);
-	foreach $ext (keys %cxx_extensions)
+	foreach $ext (@cxx_list)
 	{
 	    $output_rules .= ("$ext.o:\n"
 			      . "\t\$(CXXCOMPILE) -c \$<\n");
@@ -3590,13 +3592,6 @@ sub dirname
     ($sub = $file) =~ s,/+[^/]+$,,g;
     $sub = '.' if $sub eq $file;
     return $sub;
-}
-
-# Make a directory.
-sub mkdir
-{
-    local ($dirname) = @_;
-    system ("mkdir", $dirname);
 }
 
 ################################################################
