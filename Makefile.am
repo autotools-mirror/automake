@@ -202,6 +202,15 @@ maintainer-check: automake aclocal
 	  echo 'Do not use "sleep 1" in the above tests.  Use "sleep 2" instead.' 1>&2; \
 	  exit 1; \
 	fi
+## fgrep and egrep are not required by POSIX.
+	@if grep -E '\b[ef]grep\b' $(srcdir)/tests/*.test ; then \
+	  echo 'Do not use egrep or fgrep in test cases.  Use $FGREP or $EGREP.' 1>&2; \
+	  exit 1; \
+	fi
+	@if grep -E '\b[ef]grep\b' $(srcdir)/lib/am/*.am $(srcdir)/m4/*.m4; then \
+	  echo 'Do not use egrep or fgrep in the above files, they are not portable.' 1>&2; \
+	  exit 1; \
+	fi
 
 
 # Tag before making distribution.  Also, don't make a distribution if

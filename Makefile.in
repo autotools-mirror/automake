@@ -213,7 +213,7 @@ DVIPS = dvips
 uninstall-info-am:
 	$(PRE_UNINSTALL)
 	@if (install-info --version && \
-	     install-info --version | fgrep -i -v debian) >/dev/null 2>&1; then \
+	     install-info --version | grep -i -v debian) >/dev/null 2>&1; then \
 	  list='$(INFO_DEPS)'; \
 	  for file in $$list; do \
 	    echo " install-info --info-dir=$(DESTDIR)$(infodir) --remove $(DESTDIR)$(infodir)/$$file"; \
@@ -401,7 +401,7 @@ distdir: $(DISTFILES)
 	  fi; \
 	done
 	$(MAKE) $(AM_MAKEFLAGS) \
-	  top_distdir="${top_distdir}" distdir="$(distdir)" \
+	  top_distdir="$(top_distdir)" distdir="$(distdir)" \
 	  dist-info
 	-find $(distdir) -type d ! -perm -777 -exec chmod a+rwx {} \; -o \
 	  ! -type d ! -perm -444 -links 1 -exec chmod a+r {} \; -o \
@@ -432,8 +432,9 @@ distcheck: dist
 	mkdir $(distdir)/=inst
 	chmod a-w $(distdir)
 	dc_install_base=`$(am__cd) $(distdir)/=inst && pwd` \
+	  && dc_destdir="$${TMPDIR-/tmp}/am-dc-$$$$/" \
 	  && cd $(distdir)/=build \
-	  && ../configure --srcdir=.. --prefix=$$dc_install_base \
+	  && ../configure --srcdir=.. --prefix="$$dc_install_base" \
 	    $(DISTCHECK_CONFIGURE_FLAGS) \
 	  && $(MAKE) $(AM_MAKEFLAGS) \
 	  && $(MAKE) $(AM_MAKEFLAGS) dvi \
@@ -441,10 +442,19 @@ distcheck: dist
 	  && $(MAKE) $(AM_MAKEFLAGS) install \
 	  && $(MAKE) $(AM_MAKEFLAGS) installcheck \
 	  && $(MAKE) $(AM_MAKEFLAGS) uninstall \
-	  && (test `find $$dc_install_base -type f -print | wc -l` -le 1 \
+	  && (test `find "$$dc_install_base" -type f -print | wc -l` -le 1 \
 	      || { echo "ERROR: files left after uninstall:" ; \
 	           find $$dc_install_base -type f -print ; \
 	           exit 1; } >&2 ) \
+	  && chmod -R a-w "$$dc_install_base" \
+	  && ({   $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$dc_destdir" install \
+	       && $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$dc_destdir" uninstall \
+	       && (test `find "$$dc_destdir" -type f -print | wc -l` -le 1 \
+	           || { echo "ERROR: files left after uninstall (check DESTDIR support):" ; \
+	                find "$$dc_destdir" -type f -print ; \
+	                exit 1; } >&2 ) \
+	      } || { rm -rf "$$dc_destdir"; exit 1; }) \
+	  && rm -rf "$$dc_destdir" \
 	  && $(MAKE) $(AM_MAKEFLAGS) dist-gzip \
 	  && rm -f $(distdir).tar.gz \
 	  && $(MAKE) $(AM_MAKEFLAGS) distcleancheck
@@ -531,7 +541,7 @@ install-info-am: $(INFO_DEPS)
 	done
 	@$(POST_INSTALL)
 	@if (install-info --version && \
-	     install-info --version | fgrep -i -v debian) >/dev/null 2>&1; then \
+	     install-info --version | grep -i -v debian) >/dev/null 2>&1; then \
 	  list='$(INFO_DEPS)'; \
 	  for file in $$list; do \
 	    echo " install-info --info-dir=$(DESTDIR)$(infodir) $(DESTDIR)$(infodir)/$$file";\
@@ -605,28 +615,28 @@ maintainer-check: automake aclocal
 	fi
 	perllibdir=$(srcdir)/lib $(PERL) -c -w automake
 	perllibdir=$(srcdir)/lib $(PERL) -c -w aclocal
-	@if fgrep '\$${' $(srcdir)/lib/am/[a-z]*.am | \
-	       fgrep -v '$$$$'; then \
+	@if grep -F '$${' $(srcdir)/lib/am/[a-z]*.am | \
+	       grep -F -v '$$$$'; then \
 	  echo "Found too many uses of '\$${' in the lines above." 1>&2; \
 	  exit 1;				\
 	else :; fi
-	@if egrep '\<rm ([^-]|\-[^f ]*\>)' \
+	@if grep -E '\<rm ([^-]|\-[^f ]*\>)' \
 	          $(srcdir)/lib/am/[a-z]*.am $(srcdir)/tests/*.test | \
-	      fgrep -v '##'; then \
+	      grep -v '##'; then \
 	  echo "Suspicious 'rm' invocation." 1>&2; \
 	  exit 1;				\
 	else :; fi
-	@if fgrep -n 'mkinstalldirs' $(srcdir)/lib/am/[a-z]*.am | \
-	      fgrep -v '$$(mkinstalldirs)'; then \
+	@if grep -n 'mkinstalldirs' $(srcdir)/lib/am/[a-z]*.am | \
+	      grep -F -v '$$(mkinstalldirs)'; then \
 	  echo "Found incorrect use of mkinstalldirs in the lines above" 1>&2; \
 	  exit 1; \
 	else :; fi
 	@if grep -n -w 'undef ' $(srcdir)/automake.in | \
-	      fgrep -v 'undef $$/'; then \
+	      grep -F -v 'undef $$/'; then \
 	  echo "Found undef in automake.in; use delete instead" 1>&2; \
 	  exit 1; \
 	fi
-	@if fgrep -n 'split (/ /' $(srcdir)/automake.in; then \
+	@if grep -n 'split (/ /' $(srcdir)/automake.in; then \
 	  echo "Found bad split in the lines above." 1>&2; \
 	  exit 1; \
 	fi
@@ -662,27 +672,27 @@ maintainer-check: automake aclocal
 	  echo "Don't put AMDEP_TRUE substitution in automake.in" 1>&2; \
 	  exit 1; \
 	fi
-	@if grep -v '^#' $(srcdir)/tests/*.test | egrep ':[	]*make'; then \
+	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*make'; then \
 	  echo 'Do not run "make" in the above tests.  Use "$$MAKE" instead.' 1>&2; \
 	  exit 1; \
 	fi
-	@if grep -v '^#' $(srcdir)/tests/*.test | egrep ':[	]*autoconf'; then \
+	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*autoconf'; then \
 	  echo 'Do not run "autoconf" in the above tests.  Use "$$AUTOCONF" instead.' 1>&2; \
 	  exit 1; \
 	fi
-	@if grep -v '^#' $(srcdir)/tests/*.test | egrep ':[	]*automake'; then \
+	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*automake'; then \
 	  echo 'Do not run "automake" in the above tests.  Use "$$AUTOMAKE" instead.' 1>&2;  \
 	  exit 1; \
 	fi
-	@if grep -v '^#' $(srcdir)/tests/*.test | egrep ':[	]*aclocal'; then \
+	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*aclocal'; then \
 	  echo 'Do not run "aclocal" in the above tests.  Use "$$ACLOCAL" instead.' 1>&2;  \
 	  exit 1; \
 	fi
-	@if grep -v '^#' $(srcdir)/tests/*.test | egrep ':[	]*perl'; then \
+	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*perl'; then \
 	  echo 'Do not run "perl" in the above tests.  Use "$$PERL" instead.' 1>&2; \
 	  exit 1; \
 	fi
-	@if egrep '\$$MAKE .*(SHELL=.*=|=.*SHELL=)' $(srcdir)/tests/*.test; then \
+	@if grep -E '\$$MAKE .*(SHELL=.*=|=.*SHELL=)' $(srcdir)/tests/*.test; then \
 	  echo 'Rewrite "$$MAKE foo=bar SHELL=/bin/sh" as "foo=bar $$MAKE -e SHELL=/bin/sh"' 1>&2; \
 	  echo ' in the above lines, it is more portable.' 1>&2; \
 	  exit 1; \
@@ -697,13 +707,21 @@ maintainer-check: automake aclocal
 	  echo 'Use "$$MAKE -e SHELL=/bin/sh" in the above lines.' 1>&2; \
 	  exit 1; \
 	fi
-	@if egrep 'SHELL=.*\$$MAKE' $(srcdir)/tests/*.test; then \
+	@if grep 'SHELL=.*\$$MAKE' $(srcdir)/tests/*.test; then \
 	  echo '$$MAKE ignores the SHELL envvar, use "$$MAKE SHELL=/bin/sh" in' 1>&2; \
 	  echo 'the above lines.' 1>&2; \
 	  exit 1; \
 	fi
-	@if egrep '\bsleep +1\b' $(srcdir)/tests/*.test; then \
+	@if grep -E '\bsleep +1\b' $(srcdir)/tests/*.test; then \
 	  echo 'Do not use "sleep 1" in the above tests.  Use "sleep 2" instead.' 1>&2; \
+	  exit 1; \
+	fi
+	@if grep -E '\b[ef]grep\b' $(srcdir)/tests/*.test ; then \
+	  echo 'Do not use egrep or fgrep in test cases.  Use $FGREP or $EGREP.' 1>&2; \
+	  exit 1; \
+	fi
+	@if grep -E '\b[ef]grep\b' $(srcdir)/lib/am/*.am $(srcdir)/m4/*.m4; then \
+	  echo 'Do not use egrep or fgrep in the above files, they are not portable.' 1>&2; \
 	  exit 1; \
 	fi
 
