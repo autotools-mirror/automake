@@ -189,6 +189,9 @@ sub append ($$$)
       $val .= ' ';
     }
   $self->{'value'} = $val . $value;
+  # Turn ASIS appended variables into PRETTY variables.  This is to
+  # cope with `make' implementation that cannot read very long lines.
+  $self->{'pretty'} = VAR_PRETTY if $self->{'pretty'} == VAR_ASIS;
 }
 
 =item C<$def-E<gt>value>

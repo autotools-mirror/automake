@@ -306,6 +306,7 @@ lisp5.test \
 lisp6.test \
 listval.test \
 location.test \
+longline.test \
 ltcond.test \
 ltcond2.test \
 ltconv.test \
