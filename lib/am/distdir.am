@@ -29,6 +29,11 @@ else !%?TOPDIR_P%
 ?DISTDIR?distdir = $(top_distdir)/$(PACKAGE)-$(VERSION)
 endif !%?TOPDIR_P%
 
+am__remove_distdir = \
+  { test ! -d $(distdir) \
+    || { find $(distdir) -type d ! -perm -200 -exec chmod u+w {} ';' \
+         && rm -fr $(distdir); }; }
+
 distdir: $(DISTFILES)
 ##
 ## For Gnits users, this is pretty handy.  Look at 15 lines
@@ -47,7 +52,7 @@ endif %?TOPDIR_P%
 ## Only for the top dir.
 ##
 if %?TOPDIR_P%
-	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
+	$(am__remove_distdir)
 	mkdir $(distdir)
 endif %?TOPDIR_P%
 ##
@@ -168,13 +173,13 @@ GZIP_ENV = --best
 .PHONY: dist-gzip
 dist-gzip: distdir
 	$(AMTAR) chof - $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
-	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
+	$(am__remove_distdir)
 
 if  %?BZIP2%
 .PHONY: dist-bzip2
 dist-bzip2: distdir
 	$(AMTAR) chof - $(distdir) | bzip2 -9 -c >$(distdir).tar.bz2
-	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
+	$(am__remove_distdir)
 endif  %?BZIP2%
 
 
@@ -182,7 +187,7 @@ if  %?COMPRESS%
 .PHONY: dist-tarZ
 dist-tarZ: distdir
 	$(AMTAR) chof - $(distdir) | compress -c >$(distdir).tar.Z
-	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
+	$(am__remove_distdir)
 endif  %?COMPRESS%
 
 
@@ -190,7 +195,7 @@ if  %?SHAR%
 .PHONY: dist-shar
 dist-shar: distdir
 	shar $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).shar.gz
-	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
+	$(am__remove_distdir)
 endif  %?SHAR%
 
 
@@ -199,7 +204,7 @@ if  %?ZIP%
 dist-zip: distdir
 	-rm -f $(distdir).zip
 	zip -rq $(distdir).zip $(distdir)
-	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
+	$(am__remove_distdir)
 endif  %?ZIP%
 
 endif %?TOPDIR_P%
@@ -223,7 +228,7 @@ dist dist-all: distdir
 ?SHAR?	shar $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).shar.gz
 ?ZIP?	-rm -f $(distdir).zip
 ?ZIP?	zip -rq $(distdir).zip $(distdir)
-	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
+	$(am__remove_distdir)
 
 endif %?TOPDIR_P%
 
@@ -239,8 +244,7 @@ if %?TOPDIR_P%
 # tarfile.
 .PHONY: distcheck
 distcheck: dist
-## Make sure we can remove distdir before trying to remove it.
-	-chmod -R a+w $(distdir) > /dev/null 2>&1; rm -rf $(distdir)
+	$(am__remove_distdir)
 	GZIP=$(GZIP_ENV) gunzip -c $(distdir).tar.gz | $(AMTAR) xf -
 ## Make the new source tree read-only.  Distributions ought to work in
 ## this case.  However, make the top-level directory writable so we
@@ -275,7 +279,7 @@ distcheck: dist
 	      || { echo "ERROR: files left after distclean:" ; \
 	           find . -type f -print ; \
 	           exit 1; } >&2 )
-	-chmod -R a+w $(distdir) > /dev/null 2>&1; rm -rf $(distdir)
+	$(am__remove_distdir)
 	@echo "$(distdir).tar.gz is ready for distribution" | \
 	  sed 'h;s/./=/g;p;x;p;x'
 endif %?TOPDIR_P%
