@@ -112,6 +112,7 @@ fpinstall.test \
 gcj.test \
 gcj2.test \
 gnits.test \
+header.test \
 implicit.test \
 include.test \
 info.test \

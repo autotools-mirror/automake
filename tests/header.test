@@ -1,0 +1,30 @@
+#! /bin/sh
+
+# Test for PR 68.
+
+. $srcdir/defs || exit 1
+
+cat >> configure.in << 'END'
+AM_INIT_AUTOMAKE(nonesuch, nonesuch)
+PACKAGE=nonesuch
+VERSION=nonesuch
+AC_SUBST(MY_HEADERS)
+AC_ARG_PROGRAM
+AC_PROG_INSTALL
+AC_PROG_MAKE_SET
+AC_PROG_CC
+AC_OUTPUT(Makefile)
+END
+
+cat > Makefile.am << 'END'
+bin_PROGRAMS = zoo
+zoo_SOURCES = joe.c
+END
+
+: > joe.c
+: > qq.h
+
+$AUTOMAKE || exit 1
+
+grep '[^@]MY_HEADERS' Makefile.in && exit 1
+exit 0
