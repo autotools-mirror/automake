@@ -20,7 +20,7 @@ int main() {
 }
 EOF
 ${CC-cc} -o am_c_test $CFLAGS $CPPFLAGS $LDFLAGS am_c_test.c $LIBS 1>&5
-am_cv_exeext=`echo am_c_test.* | grep -v am_c_test.c | sed -e s/am_c_test//`
+am_cv_exeext=`echo am_c_test.* | grep -v 'am_c_test.[co]' | sed -e s/am_c_test//`
 rm -f am_c_test*])
 test x"${am_cv_exeext}" = x && am_cv_exeext=no
 fi
