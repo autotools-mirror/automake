@@ -294,7 +294,7 @@ my %obsolete_macros =
      'fp_FUNC_FNMATCH'		=> "use `AC_FUNC_FNMATCH'",
      'AM_SANITY_CHECK_CC'	=> "automatically done by `AC_PROG_CC'",
      'AM_PROG_INSTALL'		=> "use `AC_PROG_INSTALL'",
-     'AM_EXEEXT'		=> "use `AC_EXEEXT'",
+     'AM_EXEEXT'		=> "automatically done by `AC_PROG_(CC|CXX|F77)'",
      'AM_CYGWIN32'		=> "use `AC_CYGWIN'",
      'AM_MINGW32'		=> "use `AC_MINGW32'",
      'AM_FUNC_MKTIME'		=> "use `AC_FUNC_MKTIME'",
@@ -421,9 +421,6 @@ my $seen_lispdir = 0;
 
 # TRUE if we've seen AM_PATH_PYTHON.
 my $seen_pythondir = 0;
-
-# TRUE if we've seen AC_OBJEXT.
-my $seen_objext = 0;
 
 # TRUE if we've seen AC_ENABLE_MULTILIB.
 my $seen_multilib = 0;
@@ -2037,7 +2034,7 @@ sub handle_single_transform_list ($$$$@)
 #                              $OBJ, $PARENT, $TOPPARENT)
 # ---------------------------------------------------------------------
 # Define an _OBJECTS variable for a _SOURCES variable (or subvariable)
-# 
+#
 # Arguments are:
 #   $VAR is the name of the _SOURCES variable
 #   $OBJVAR is the name of the _OBJECTS
@@ -2087,7 +2084,7 @@ sub define_objects_from_sources ($$$$$$$)
 		my ($from, $to);
 		my @temp_list;
 		if ($subvar =~ /$SUBST_REF_PATTERN/o)
-		{   
+		{
 		    $subvar = $1;
 		    $to = $3;
 		    ($from = $2) =~ s/(\W)/\\$1/g;
@@ -2116,7 +2113,7 @@ sub define_objects_from_sources ($$$$$$$)
 		    $substnum -= 1;
 		}
 
-		my (@transformed) = 
+		my (@transformed) =
 		      &handle_single_transform_list ($var, $topparent, $one_file, $obj, $val);
 		push (@result, @transformed);
 		$needlinker = "true" if @transformed;
@@ -4700,12 +4697,6 @@ sub scan_one_autoconf_file
 	# Check for ansi2knr.
 	$am_c_prototypes = 1 if /AM_C_PROTOTYPES/;
 
-	if (/AC_OBJEXT/)
-	{
-	    $seen_objext = 1;
-	    $configure_vars{'OBJEXT'} = $filename . ':' . $.;
-	}
-
 	# Check for `-c -o' code.
 	$seen_cc_c_o = 1 if /AM_PROG_CC_C_O/;
 
@@ -6068,7 +6059,7 @@ sub variable_conditions_recursive_sub
 		{
 		    $varname = $1;
 		}
- 
+
 
 		# Here we compute all the conditions under which the
 		# subvariable is defined.  Then we go through and add
@@ -6168,7 +6159,7 @@ sub variable_conditions_reduce
 # Invert a list of conditionals.  Returns a set of conditionals which
 # are never true for any of the input conditionals, and when taken
 # together with the input conditionals cover all possible cases.
-# 
+#
 # For example: invert_conditions("A_TRUE B_TRUE", "A_FALSE B_FALSE") will
 # return ("A_FALSE B_TRUE", "A_TRUE B_FALSE")
 sub invert_conditions
