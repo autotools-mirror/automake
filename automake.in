@@ -115,6 +115,7 @@ use Automake::General;
 use Automake::XFile;
 use IO::File;
 use File::Basename;
+use Carp;
 
 ## ----------- ##
 ## Constants.  ##
@@ -1173,7 +1174,7 @@ sub generate_makefile
     {
 	if (&variable_defined ($var) && !$var_is_am{$var})
 	{
-	    &am_line_error ($var, "`$var' should not be defined");
+	    am_macro_error ($var, "`$var' should not be defined");
 	}
     }
 
@@ -1375,8 +1376,8 @@ sub version_check ($$$$)
 	    && $ralpha gt $talpha)
 	|| ($rfork ne '' && $rfork ne $tfork))
     {
-	&am_line_error ('AUTOMAKE_OPTIONS',
-			"require version $_, but have $VERSION");
+	am_macro_error ('AUTOMAKE_OPTIONS',
+			 "require version $_, but have $VERSION");
 	return 1;
     }
 
@@ -1431,7 +1432,7 @@ sub handle_options
 	    }
 	    else
 	    {
-		&am_line_error ('AUTOMAKE_OPTIONS',
+		am_macro_error ('AUTOMAKE_OPTIONS',
 				"option `" . $_ . "\' not recognized");
 	    }
 	}
@@ -1712,7 +1713,7 @@ sub check_libobjs_sources
 	{
 	    if (defined $libsources{$file})
 	    {
-		&am_line_error ($prefix . $one_file . '_SOURCES',
+		am_macro_error ($prefix . $one_file . '_SOURCES',
 				"automatically discovered file `$file' should not be explicitly mentioned");
 	    }
 	}
@@ -1748,7 +1749,7 @@ sub handle_single_transform_list ($$$$@)
         # Configure substitutions in _SOURCES variables are errors.
         if (/^\@.*\@$/)
         {
-            &am_line_error ($var, "`$var' includes configure substitution `$_', and is referred to from `$topparent': configure substitutions not allowed in _SOURCES variables");
+            am_macro_error ($var, "`$var' includes configure substitution `$_', and is referred to from `$topparent': configure substitutions not allowed in _SOURCES variables");
             next;
         }
 
@@ -2035,7 +2036,7 @@ sub define_objects_from_sources ($$$$$$$)
 
     if (defined $vars_scanned{$var})
     {
-	&am_line_error ($var, "variable `$var' recursively defined");
+	am_macro_error ($var, "variable `$var' recursively defined");
 	return "";
     }
     $vars_scanned{$var} = 1;
@@ -2162,7 +2163,7 @@ sub handle_source_transform
 
     if (&variable_defined ($one_file . "_OBJECTS"))
     {
-	&am_line_error ($one_file . '_OBJECTS',
+	am_macro_error ($one_file . '_OBJECTS',
 			$one_file . '_OBJECTS', 'should not be defined');
 	# No point in continuing.
 	return;
@@ -2285,13 +2286,13 @@ sub handle_lib_objects_cond
 	    {
 		# Skip -dlopen and -dlpreopen; these are explicitly allowed.
 		next if $lsearch =~ /^-dl(pre)?open$/;
-		&am_line_error ($var, "linker flags such as `$lsearch' belong in `${1}LDFLAGS");
+		am_macro_error ($var, "linker flags such as `$lsearch' belong in `${1}LDFLAGS");
 	    }
 	    else
 	    {
 		# Only get this error once.
 		$flagvar = 1;
-		&am_line_error ($var, "linker flags such as `$lsearch' belong in `${1}LDFLAGS");
+		am_macro_error ($var, "linker flags such as `$lsearch' belong in `${1}LDFLAGS");
 	    }
 	}
 
@@ -2316,7 +2317,7 @@ sub handle_lib_objects_cond
 	    if (! keys %libsources
 		&& ! &variable_defined ($lt . 'LIBOBJS'))
 	    {
-		&am_line_error ($var, "\@$lt" . "LIBOBJS\@ seen but never set in `$configure_ac'");
+		am_macro_error ($var, "\@$lt" . "LIBOBJS\@ seen but never set in `$configure_ac'");
 	    }
 
 	    foreach my $iter (keys %libsources)
@@ -2355,7 +2356,7 @@ sub handle_lib_objects_cond
 	    my $myobjext = ($1 ? 'l' : '') . 'o';
 
 	    push (@dep_list, $lsearch);
-	    &am_line_error ($var,
+	    am_macro_error ($var,
 			    "\@$lt" . "ALLOCA\@ seen but `AC_FUNC_ALLOCA' not in `$configure_ac'")
 		if ! defined $libsources{'alloca.c'};
 	    $dep_files{'$(DEPDIR)/alloca.P' . $myobjext} = 1;
@@ -2392,7 +2393,7 @@ sub check_canonical_spelling
     {
 	foreach my $xt (@suffixes)
 	{
-	    &am_line_error ("$name$xt",
+	    am_macro_error ("$name$xt",
 			    "invalid variable `$name$xt'; "
 			    . "should be `$xname$xt'")
 		if &variable_defined ("$name$xt");
@@ -2456,7 +2457,7 @@ sub handle_compile ()
       {
 	if (! $am_c_prototypes)
 	  {
-	    &am_line_error ('AUTOMAKE_OPTIONS',
+	    am_macro_error ('AUTOMAKE_OPTIONS',
 			    "option `ansi2knr' in use but `AM_C_PROTOTYPES' not in `$configure_ac'");
 	    &keyed_aclocal_warning ('AM_C_PROTOTYPES');
 	    # Only give this error once.
@@ -2555,7 +2556,7 @@ sub handle_programs
 
 	if (&variable_defined ($xname . '_LIBADD'))
 	{
-	    &am_line_error ($xname . '_LIBADD',
+	    am_macro_error ($xname . '_LIBADD',
 			    "use `" . $xname . "_LDADD', not `"
 			    . $xname . "_LIBADD'");
 	}
@@ -2635,7 +2636,7 @@ sub handle_libraries
 	{
 	    if (&variable_defined ($key . '_LIBRARIES'))
 	    {
-		&am_line_error ($key . '_LIBRARIES', "library used but `RANLIB' not defined in `$configure_ac'");
+		am_macro_error ($key . '_LIBRARIES', "library used but `RANLIB' not defined in `$configure_ac'");
 		# Only get this error once.  If this is ever printed,
 		# we have a bug.
 		$configure_vars{'RANLIB'} = 'BUG';
@@ -2683,7 +2684,7 @@ sub handle_libraries
 
 	if (&variable_defined ($xlib . '_LDADD'))
 	{
-	    &am_line_error ($xlib . '_LDADD',
+	    am_macro_error ($xlib . '_LDADD',
 			    "use `" . $xlib . "_LIBADD', not `"
 			    . $xlib . "_LDADD'");
 	}
@@ -2736,7 +2737,7 @@ sub handle_ltlibraries
 	{
 	    if (!$seen_libtool)
 	    {
-		&am_line_error ($key . '_LTLIBRARIES', "library used but `LIBTOOL' not defined in `$configure_ac'");
+		am_macro_error ($key . '_LTLIBRARIES', "library used but `LIBTOOL' not defined in `$configure_ac'");
 		# Only get this error once.  If this is ever printed,
 		# we have a bug.
 		$configure_vars{'LIBTOOL'} = 'BUG';
@@ -2810,7 +2811,7 @@ sub handle_ltlibraries
 
 	if (&variable_defined ($xlib . '_LDADD'))
 	{
-	    &am_line_error ($xlib . '_LDADD',
+	    am_macro_error ($xlib . '_LDADD',
 			    "use `" . $xlib . "_LIBADD', not `"
 			    . $xlib . "_LDADD'");
 	}
@@ -2884,7 +2885,7 @@ sub check_typos
 	{
 	    if ($varname =~ /$primary$/ && ! $content_seen{$varname})
 	    {
-		&am_line_error ($varname,
+		am_macro_error ($varname,
 				"invalid unused variable name: `$varname'");
 	    }
 	}
@@ -3027,7 +3028,7 @@ sub scan_texinfo_file
 # Handle all Texinfo source; helper for handle_texinfo
 sub handle_texinfo_helper
 {
-    &am_line_error ('TEXINFOS',
+    am_macro_error ('TEXINFOS',
 		    "`TEXINFOS' is an anachronism; use `info_TEXINFOS'")
 	if &variable_defined ('TEXINFOS');
     return (0, '') if (! &variable_defined ('info_TEXINFOS')
@@ -3035,7 +3036,7 @@ sub handle_texinfo_helper
 
     if (&variable_defined ('html_TEXINFOS'))
     {
-	&am_line_error ('html_TEXINFOS',
+	am_macro_error ('html_TEXINFOS',
 			"HTML generation not yet supported");
 	return (0, '');
     }
@@ -3222,7 +3223,7 @@ sub handle_texinfo
 # Handle any man pages.
 sub handle_man_pages
 {
-    &am_line_error ('MANS', "`MANS' is an anachronism; use `man_MANS'")
+    am_macro_error ('MANS', "`MANS' is an anachronism; use `man_MANS'")
 	if &variable_defined ('MANS');
 
     # Find all the sections in use.  We do this by first looking for
@@ -3327,7 +3328,7 @@ sub handle_tags
     }
     elsif (&variable_defined ('TAGS_DEPENDENCIES'))
     {
-	&am_line_error ('TAGS_DEPENDENCIES',
+	am_macro_error ('TAGS_DEPENDENCIES',
 			"doesn't make sense to define `TAGS_DEPENDENCIES' without sources or `ETAGS_ARGS'");
     }
     else
@@ -3540,12 +3541,12 @@ sub handle_subdirs
 
 	if (! -d $am_relative_dir . '/' . $dir)
 	{
-	    &am_line_error ('SUBDIRS',
+	    am_macro_error ('SUBDIRS',
 			    "required directory $am_relative_dir/$dir does not exist");
 	    next;
 	}
 
-	&am_line_error ('SUBDIRS', "directory should not contain `/'")
+	am_macro_error ('SUBDIRS', "directory should not contain `/'")
 	    if $dir =~ /\//;
     }
 
@@ -3827,7 +3828,7 @@ sub handle_configure
     &define_variable ('mkinstalldirs',
 		      ('$(SHELL) ' . $config_aux_dir . '/mkinstalldirs'));
 
-    &am_line_error ('CONFIG_HEADER',
+    am_macro_error ('CONFIG_HEADER',
 		    "`CONFIG_HEADER' is an anachronism; now determined from `$configure_ac'")
 	if &variable_defined ('CONFIG_HEADER');
 
@@ -3971,10 +3972,10 @@ sub handle_gettext
     }
 
     my @subdirs = &variable_value_as_list_recursive ('SUBDIRS', 'all');
-    &am_line_error ('SUBDIRS',
+    am_macro_error ('SUBDIRS',
 		    "AM_GNU_GETTEXT used but `po' not in SUBDIRS")
 	if ! grep ('po', @subdirs);
-    &am_line_error ('SUBDIRS',
+    am_macro_error ('SUBDIRS',
 		    "AM_GNU_GETTEXT used but `intl' not in SUBDIRS")
 	if ! grep ('intl', @subdirs);
 
@@ -4285,7 +4286,7 @@ sub handle_tests
     {
 	foreach my $c ('DEJATOOL', 'RUNTEST', 'RUNTESTFLAGS')
 	{
-	    &am_line_error ($c,
+	    am_macro_error ($c,
 			    "`$c' defined but `dejagnu' not in `AUTOMAKE_OPTIONS'")
 	      if &variable_defined ($c);
 	}
@@ -4357,7 +4358,7 @@ sub handle_java
 
 	if (defined $dir)
 	{
-	    &am_line_error ($curs . '_JAVA',
+	    am_macro_error ($curs . '_JAVA',
 			    "multiple _JAVA primaries in use");
 	}
 	$dir = $curs;
@@ -4994,14 +4995,14 @@ sub check_gnu_standards
     if ($strictness >= $GNU
 	&& defined $options{'no-installman'})
     {
-	&am_line_error ('AUTOMAKE_OPTIONS',
+	am_macro_error ('AUTOMAKE_OPTIONS',
 			"option `no-installman' disallowed by GNU standards");
     }
 
     if ($strictness >= $GNU
 	&& defined $options{'no-installinfo'})
     {
-	&am_line_error ('AUTOMAKE_OPTIONS',
+	am_macro_error ('AUTOMAKE_OPTIONS',
 			"option `no-installinfo' disallowed by GNU standards");
     }
 }
@@ -5269,7 +5270,7 @@ sub lang_yacc_finish
 
     if (&variable_defined ('YACCFLAGS'))
     {
-	&am_line_error ('YACCFLAGS',
+	am_macro_error ('YACCFLAGS',
 			"`YACCFLAGS' obsolete; use `YFLAGS' instead");
     }
 
@@ -5757,7 +5758,7 @@ sub check_ambiguous_conditional ($$)
        }
        if ($message)
        {
-	   &am_line_error ($var, $message);
+	   am_macro_error ($var, $message);
 	   macro_dump ($var);
        }
    }
@@ -5783,7 +5784,7 @@ sub macro_define ($$$$$$)
     {
       if (defined $var_type{$var} && $var_type{$var} ne $type)
 	{
-	  am_line_error ($var,
+	  am_macro_error ($var,
 			 ("$var was set with `$var_type{$var}=' "
 			  . "and is now set with `$type='"));
 	}
@@ -5792,7 +5793,7 @@ sub macro_define ($$$$$$)
     {
       if (!defined $var_type{$var} && $type eq '+')
 	{
-	  am_line_error ($var, "$var must be set with `=' before using `+='");
+	  am_macro_error ($var, "$var must be set with `=' before using `+='");
 	}
     }
   $var_type{$var} = $type;
@@ -5947,7 +5948,7 @@ sub variable_defined ($$)
       {
 	if (defined $targets{$var})
 	  {
-	    &am_line_error ($var, "`$var' is a target; expected a variable")
+	    am_macro_error ($var, "`$var' is a target; expected a variable")
 	  }
 	# The variable is not defined
 	return 0;
@@ -6066,7 +6067,7 @@ sub variable_conditions_recursive_sub
 
     if (defined $vars_scanned{$var})
     {
-	&am_line_error ($parent, "variable `$var' recursively defined");
+	am_macro_error ($parent, "variable `$var' recursively defined");
 	return ();
     }
     $vars_scanned{$var} = 1;
@@ -6253,12 +6254,12 @@ sub check_variable_defined_unconditionally ($$)
 
 	if ($parent)
 	{
-	    &am_line_error ($parent,
+	    am_macro_error ($parent,
 			    "warning: automake does not support conditional definition of $var in $parent");
 	}
 	else
 	{
-	    &am_line_error ($parent,
+	    am_macro_error ($parent,
 			    "warning: automake does not support $var being defined conditionally");
 	}
     }
@@ -6363,11 +6364,11 @@ sub variable_value_as_list
     {
         if (defined $targets{$var})
 	  {
-	    &am_line_error ($var, "`$var' is a target; expected a variable");
+	    am_macro_error ($var, "`$var' is a target; expected a variable");
 	  }
 	else
 	  {
-	    &am_line_error ($parent, "variable `$var' not defined");
+	    am_macro_error ($parent, "variable `$var' not defined");
 	  }
     }
 
@@ -6419,18 +6420,18 @@ sub variable_value_as_list_recursive_worker
     {
         if (defined $targets{$var})
 	  {
-	    &am_line_error ($var, "`$var' is a target; expected a variable");
+	    am_macro_error ($var, "`$var' is a target; expected a variable");
 	  }
 	else
 	  {
-	    &am_line_error ($parent, "variable `$var' not defined");
+	    am_macro_error ($parent, "variable `$var' not defined");
 	  }
     }
     elsif (defined $vars_scanned{$var})
     {
 	# `vars_scanned' is a global we use to keep track of which
 	# variables we've already examined.
-	&am_line_error ($parent, "variable `$var' recursively defined");
+	am_macro_error ($parent, "variable `$var' recursively defined");
     }
     elsif ($cond eq 'all')
     {
@@ -6632,7 +6633,7 @@ sub rule_define ($$$$)
       # The no-exeext option enables this feature.
       if (! defined $options{'no-exeext'})
       {
-	  &am_line_error ($noexe,
+	  am_macro_error ($noexe,
 			  "deprecated feature: `$noexe' overrides `$noexe\$(EXEEXT)'\nchange your target to read `$noexe\$(EXEEXT)'");
       }
       # Don't define.
@@ -7439,7 +7440,7 @@ sub am_install_var
     # allow `JAVA', as it is customarily used to mean the Java
     # interpreter.  This is but one of several Java hacks.  Similarly,
     # `PYTHON' is customarily used to mean the Python interpreter.
-    &am_line_error ($primary, "`$primary' is an anachronism")
+    am_macro_error ($primary, "`$primary' is an anachronism")
 	if &variable_defined ($primary)
 	    && ($primary ne 'JAVA' && $primary ne 'PYTHON');
 
@@ -7500,7 +7501,7 @@ sub am_install_var
 		    if (! $warned_about_extra)
 		      {
 			$warned_about_extra = 1;
-			&am_line_error ($one_name,
+			am_macro_error ($one_name,
 					"`$one_name' contains configure substitution, but shouldn't");
 		      }
 		  }
@@ -7613,7 +7614,7 @@ sub am_install_var
 
     if ($require_extra && ! &variable_defined ('EXTRA_' . $primary))
     {
-	&am_line_error ($require_extra,
+	am_macro_error ($require_extra,
 			"`$require_extra' contains configure substitution, but `EXTRA_$primary' not defined");
     }
 
@@ -8073,6 +8074,17 @@ sub am_file_error
     am_print_error ("$file: ", @args);
 }
 
+
+# &am_macro_error ($MACRO, @ARGS)
+# -------------------------------
+# Report an error, @ARGS,  about $MACRO.
+sub am_macro_error ($@)
+{
+    my ($macro, @args) = @_;
+    am_file_error ($var_location{$macro}, @args);
+}
+
+
 # &am_line_error ($SYMBOL or $LINE, @ARGS)
 # ----------------------------------------
 # Report an error about $SYMBOL.  The error message is composed of the
@@ -8089,16 +8101,15 @@ sub am_line_error ($@)
 	    # SYMBOL is a line number, then it must be a Makefile.am.
 	    $where = "${am_file}.am:$symbol";
 	}
-	elsif (defined $var_location{$symbol})
-	{
-	    # SYMBOL is a macro defined in an Makefile.am or a *.am file.
-	    $where = $var_location{$symbol};
-	}
 	elsif (defined $configure_vars{$symbol})
 	{
 	    # SYMBOL is a variable defined in configure.ac, so add the
 	    # appropriate line number.
 	    $where = $configure_vars{$symbol};
+	}
+	elsif (defined $var_location{$symbol})
+	{
+	    croak "use am_macro_error for macros: $symbol\n";
 	}
 	else
 	{
