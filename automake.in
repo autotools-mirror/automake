@@ -421,11 +421,9 @@ my %required_targets =
    'install-man' => 1,
   );
 
-# This is set to 1 when Automake needs to be run again.
-# (For instance, this happens when an auxiliary file such as
-# depcomp is added after the toplevel Makefile.in -- which
-# should distribute depcomp -- has been generated.)
-my $automake_needs_to_reprocess_all_files = 0;
+# Set to 1 if this run will create the Makefile.in that distribute
+# the files in config_aux_dir.
+my $automake_will_process_aux_dir = 0;
 
 # The name of the Makefile currently being processed.
 my $am_file = 'BUG';
@@ -4834,6 +4832,38 @@ sub scan_autoconf_files ()
     }
 
   locate_aux_dir ();
+
+  # Reorder @input_files so that the Makefile that distributes aux
+  # files is processed last.  This is important because each directory
+  # can require auxiliary scripts and we should wait until they have
+  # been installed before distributing them.
+
+  # The Makefile.in that distribute the aux files is the one in
+  # $config_aux_dir or the top-level Makefile.
+  my $auxdirdist = is_make_dir ($config_aux_dir) ? $config_aux_dir : '.';
+  my @new_input_files = ();
+  while (@input_files)
+    {
+      my $in = pop @input_files;
+      my @ins = split (/:/, $output_files{$in});
+      if (dirname ($ins[0]) eq $auxdirdist)
+	{
+	  push @new_input_files, $in;
+	  $automake_will_process_aux_dir = 1;
+	}
+      else
+	{
+	  unshift @new_input_files, $in;
+	}
+    }
+  @input_files = @new_input_files;
+
+  # If neither the auxdir/Makefile nor the ./Makefile are generated
+  # by Automake, we won't distribute the aux files anyway.  Assume
+  # the user know what (s)he does, and pretend we will distribute
+  # them to disable the error in require_file_internal.
+  $automake_will_process_aux_dir = 1 if ! is_make_dir ($auxdirdist);
+
   # Look for some files we need.  Always check for these.  This
   # check must be done for every run, even those where we are only
   # looking at a subdir Makefile.  We must set relative_dir for
@@ -4845,6 +4875,7 @@ sub scan_autoconf_files ()
 
   # Preserve dist_common for later.
   $configure_dist_common = variable_value ('DIST_COMMON') || '';
+
 }
 
 ################################################################
@@ -6801,19 +6832,16 @@ sub require_file_internal ($$$@)
 		  if (! maybe_push_required_file (dirname ($fullfile),
 						  $file, $fullfile))
 		    {
-		      if (! $found_it)
+		      if (! $found_it && ! $automake_will_process_aux_dir)
 			{
 			  # We have added the file but could not push it
-			  # into DIST_COMMON (probably because this is
+			  # into DIST_COMMON, probably because this is
 			  # an auxiliary file and we are not processing
-			  # the top level Makefile). This is unfortunate,
-			  # since it means we are using a file which is not
-			  # distributed!
-
-			  # Get Automake to be run again: on the second
-			  # run the file will be found, and pushed into
-			  # the toplevel DIST_COMMON automatically.
-			  $automake_needs_to_reprocess_all_files = 1;
+			  # the top level Makefile.  Furthermore Automake
+			  # hasn't been asked to create the Makefile.in
+			  # that distribute the aux dir files.
+			  error ($where, 'Please make a full run of automake'
+				 . " so $fullfile gets distributed.");
 			}
 		    }
 		}
@@ -7343,40 +7371,25 @@ scan_autoconf_files;
 fatal "no `Makefile.am' found or specified\n"
   if ! @input_files;
 
-my $automake_has_run = 0;
+# Now do all the work on each file.
+foreach my $file (@input_files)
+  {
+    ($am_file = $file) =~ s/\.in$//;
+    if (! -f ($am_file . '.am'))
+      {
+	error "`$am_file.am' does not exist";
+      }
+    else
+      {
+	# Any warning setting now local to this Makefile.am.
+	dup_channel_setup;
 
-do
-{
-  if ($automake_has_run)
-    {
-      verb 'processing Makefiles another time to fix them up.';
-      prog_error 'running more than two times should never be needed.'
-	if $automake_has_run >= 2;
-    }
-  $automake_needs_to_reprocess_all_files = 0;
+	generate_makefile ($am_file . '.am', $file);
 
-  # Now do all the work on each file.
-  foreach my $file (@input_files)
-    {
-      ($am_file = $file) =~ s/\.in$//;
-      if (! -f ($am_file . '.am'))
-	{
-	  error "`$am_file.am' does not exist";
-	}
-      else
-	{
-	  # Any warning setting now local to this Makefile.am.
-	  dup_channel_setup;
-
-	  generate_makefile ($am_file . '.am', $file);
-
-	  # Back out any warning setting.
-	  drop_channel_setup;
-	}
-    }
-  ++$automake_has_run;
-}
-while ($automake_needs_to_reprocess_all_files);
+	# Back out any warning setting.
+	drop_channel_setup;
+      }
+  }
 
 exit $exit_code;
 

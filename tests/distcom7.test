@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002, 2003, 2004  Free Software Foundation, Inc.
+# Copyright (C) 2004  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -18,39 +18,28 @@
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-# Regression test for a bug reported by Andrew Suffield.
-# (Automake goes wild and try to rerun itself more than two time
-# to fix the Makefiles.)
+# Test to make sure that Automake complains when an auxfile (here depcomp)
+# is installed, but the Makefile tht distributes it is not processed.
 
-required='libtoolize'
 . ./defs || exit 1
 
-set -e
-
-cat >>configure.in <<'END'
-AC_CONFIG_AUX_DIR([autoconf])
+cat > configure.in << 'END'
+AC_INIT(subdir/foo.c)
+AM_INIT_AUTOMAKE(nonesuch, nonesuch)
 AC_PROG_CC
-AM_PROG_LIBTOOL
-AC_CONFIG_FILES([autoconf/Makefile main/Makefile])
-AC_OUTPUT
+AC_OUTPUT(Makefile subdir/Makefile)
 END
 
-mkdir autoconf
-mkdir main
-
-: > autoconf/Makefile.am
-echo 'SUBDIRS = autoconf main' >Makefile.am
-
-cat >main/Makefile.am <<'END'
-lib_LTLIBRARIES = lib0.la
-lib0_la_SOURCES = 0.c
+cat > Makefile.am << 'END'
+SUBDIRS = subdir
 END
 
-libtoolize --force --copy
+rm -f depcomp
+mkdir subdir
+
+echo bin_PROGRAMS = foo > subdir/Makefile.am
+: > subdir/foo.c
+
 $ACLOCAL
-$AUTOCONF
-
-test -f autoconf/ltmain.sh # Sanity check.
-rm -f autoconf/ltmain.sh
-AUTOMAKE_fails --add-missing --copy
-grep 'autoconf/ltmain.sh' stderr
+AUTOMAKE_fails --add-missing subdir/Makefile
+grep 'full run' stderr
