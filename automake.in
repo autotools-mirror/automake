@@ -8212,36 +8212,33 @@ sub am_install_var
       my $where = $var_location{$one_name}{$tmpcond}->clone;
 
       # Append actual contents of where_PRIMARY variable to
-      # result.
+      # @result, skipping @substitutions@.
       foreach my $locvals (&variable_loc_and_value_as_list_recursive
 			   ($one_name, 'all'))
 	{
-	  my ($loc, @values) = @$locvals;
-	  my @nosubst = (); # @values without substitutions.
-	  for my $rcurs (@values)
+	  my ($loc, $value) = @$locvals;
+	  # Skip configure substitutions.
+	  if ($value =~ /^\@.*\@$/)
 	    {
-	      # Skip configure substitutions.  Possibly bogus.
-	      if ($rcurs =~ /^\@.*\@$/)
+	      if ($nodir_name eq 'EXTRA')
 		{
-		  if ($nodir_name eq 'EXTRA')
-		    {
-		      error ($where,
-			     "`$one_name' contains configure substitution, "
-			     . "but shouldn't");
-		    }
-		  # Check here to make sure variables defined in
-		  # configure.ac do not imply that EXTRA_PRIMARY
-		  # must be defined.
-		  elsif (! defined $configure_vars{$one_name})
-		    {
-		      $require_extra = $one_name
-			if $do_require;
-		    }
-		  next;
+		  error ($where,
+			 "`$one_name' contains configure substitution, "
+			 . "but shouldn't");
 		}
-	      push @nosubst, $rcurs;
+	      # Check here to make sure variables defined in
+	      # configure.ac do not imply that EXTRA_PRIMARY
+	      # must be defined.
+	      elsif (! defined $configure_vars{$one_name})
+		{
+		  $require_extra = $one_name
+		    if $do_require;
+		}
 	    }
-	  push (@result, [$loc, @nosubst]) if @nosubst;
+	  else
+	    {
+	      push (@result, $locvals);
+	    }
 	}
       # A blatant hack: we rewrite each _PROGRAMS primary to include
       # EXEEXT.
@@ -8318,11 +8315,8 @@ sub am_install_var
   my %result = ();
   for my $pair (@result)
     {
-      my ($loc, @values) = @$pair;
-      for my $val (@values)
-	{
-	  $result{$val} = $loc;
-	}
+      my ($loc, $val) = @$pair;
+      $result{$val} = $loc;
     }
   my @l = sort keys %result;
   return map { [$result{$_}->clone, $_] } @l;
