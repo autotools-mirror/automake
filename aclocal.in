@@ -102,7 +102,7 @@ $verbose = 0;
 # When macroname is `['-quoted , we accept any character in the name,
 # except `]'.  Otherwise macroname stops on the first `]', `,', `)',
 # or `\n' encountered.
-$ac_defun_rx = "A[CU]_DEFUN\\((?:\\[([^]]+)\\]|([^],)\n]+))";
+$ac_defun_rx = "(?:A[CU]_DEFUN|AC_DEFUN_ONCE)\\((?:\\[([^]]+)\\]|([^],)\n]+))";
 
 # Matches an AC_REQUIRE line.
 $ac_require_rx = "AC_REQUIRE\\((?:\\[([^]]+)\\]|([^],)\n]+))\\)";
@@ -409,6 +409,7 @@ sub trace_used_macros ()
   $traces .= join (' ', grep { exists $files{$_} } @file_order) . " ";
   # All candidate macros.
   $traces .= join (' ', map { "--trace='$_:\$f:\$n:\$1'" } ('AC_DEFUN',
+							    'AC_DEFUN_ONCE',
 							    'AU_DEFUN',
 							    keys %macro_seen));
 
@@ -426,7 +427,9 @@ sub trace_used_macros ()
       $traced{$macro} = 1 if $macro_seen{$macro};
 
       $map_traced_defs{$arg1} = $file
-	if $macro eq 'AC_DEFUN' || $macro eq 'AU_DEFUN';
+	if ($macro eq 'AC_DEFUN'
+	    || $macro eq 'AC_DEFUN_ONCE'
+	    || $macro eq 'AU_DEFUN');
     }
 
   $tracefh->close;
