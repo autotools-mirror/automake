@@ -42,21 +42,19 @@ do
   cat ${am_makefile}.am >&4
 
   target_distname=default
-  CONFIG_HEADER= SUBDIRS= PROGRAMS= LIBRARIES= TEXINFOS= MANS=
+  DEFS= INCLUDES= CPPFLAGS= CFLAGS=
+  SOURCES= CONFIG_HEADER= SUBDIRS= PROGRAMS= LIBRARIES= TEXINFOS= MANS=
 
   eval `sed -n '
 s/^ *\([a-zA-Z_][a-zA-Z0-9_]*\):.*/target_\1=explicit/
 s/^ *\([A-Z][A-Z0-9_]*\)=[		]*\(.*\)/\1=\2/p' ${am_makefile}.am`
 
-  case "$SUBDIRS" in
-  "") cat $am_dir/clean.am >&4 ;;
-  *) cat $am_dir/subdirs.am >&4 ;;
-  esac
-
   if test -n "$PROGRAMS" || test -n "$LIBRARIES"; then
     cat $am_dir/compile.am >&4
     for am_file in $PROGRAMS $LIBRARIES; do
-      sed -n "/^[	]*${am_file}_SOURCES[		]*=/{
+      am_uc_file=`echo $am_file | tr '[a-z]' '[A-Z]'`
+      if grep "${am_uc_file}_SOURCES" ${am_makefile}.am >/dev/null; then
+        sed -n "/^[	]*${am_uc_file}_SOURCES[		]*=/{
 s/SOURCES/OBJECTS/
 s/\\.cc/.o/g
 s/\\.\${kr}c/.o/g
@@ -64,8 +62,16 @@ s/\\.\$(kr)c/.o/g
 s/\\.[cCmylfs]/.o/g
 p
 }" ${am_makefile}.am >&4
+
+        SOURCES="$SOURCES `sed -n '
+s/^[	]*${am_uc_file}_SOURCES[	]*=\(.*\)/\1/p' ${am_makefile}.am`"
+      else
+        echo "${am_uc_file}_SOURCES = ${am_file}.c
+${am_uc_file}_OBJECTS = ${am_file}.o" >&4
+        SOURCES="$SOURCES ${am_file}.c"
+      fi
       if test -n "$CONFIG_HEADER"; then
-        echo "\$(${am_file}_OBJECTS): $CONFIG_HEADER" >&4
+        echo "\$(${am_uc_file}_OBJECTS): $CONFIG_HEADER" >&4
       fi
     done
   fi
@@ -94,6 +100,11 @@ p
     cat $am_dir/mans.am >&4
   fi
 
+  case "$SUBDIRS" in
+  "") cat $am_dir/clean.am >&4 ;;
+  *) cat $am_dir/subdirs.am >&4 ;;
+  esac
+
   case "$am_makefile" in
   */*) cat $am_dir/remake-subd.am >&4 ;;
   *) test -f aclocal.m4 && echo "ACLOCAL = aclocal.m4" >&4
@@ -110,6 +121,8 @@ p
     cat $am_dir/remake-hdr.am >&4 ;;
   esac
 
+  echo "SOURCES = $SOURCES" >&4
+
   case "$am_makefile" in
   */*) cat $am_dir/dist-subd.am >&4 ;;
   *) test "$target_distname" != explicit && cat $am_dir/distname.am >&4
@@ -117,6 +130,12 @@ p
   esac
 
   cat $am_dir/footer.am >&4
+
+  if test -n "$SOURCES"; then
+    echo "# Dependencies generated automatically by mkdep:" >&4
+    mkdep -a -f ${am_makefile}.in $DEFS $INCLUDES $CPPFLAGS $CFLAGS $SOURCES
+  fi
+
 done
 
 exit $am_status
