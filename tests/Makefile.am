@@ -12,6 +12,7 @@ insh2.test outdir.test fpinstall.test fpinst2.test texinfo.test dejagnu.test \
 yacc.test mkinstall2.test texinfo2.test ansi.test depacl.test depacl2.test \
 error.test colon.test vtexi2.test tags.test comment.test libfiles.test \
 man.test info.test obsolete.test lex.test scripts.test subdir2.test \
-exsource.test canon4.test dup.test defun.test cxxlink.test cxxnoc.test
+exsource.test canon4.test dup.test defun.test cxxlink.test cxxnoc.test \
+order.test
 
 EXTRA_DIST = defs $(TESTS)
