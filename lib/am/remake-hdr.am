@@ -1,5 +1,5 @@
 ## automake - create Makefile.in from Makefile.am
-## Copyright (C) 1994, 1995, 1996, 1997, 1998 Free Software Foundation, Inc.
+## Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999 Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -16,16 +16,28 @@
 ## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 ## 02111-1307, USA.
 @CONFIG_HEADER@: @STAMP@
-## Rules without a rule work funny.  So supply a dummy rule.
-	@:
+## Recover from removal of CONFIG_HEADER
+	@if test ! -f $@; then \
+		rm -f @STAMP@; \
+		$(MAKE) @STAMP@; \
+	else :; fi
 ## Explicitly look in srcdir for benefit of non-GNU makes.
 @STAMP@: $(srcdir)/@CONFIG_HEADER_IN@ $(top_builddir)/config.status
 	cd $(top_builddir) \
 	  && CONFIG_FILES= CONFIG_HEADERS=@CONFIG_HEADER_FULL@ \
 	     $(SHELL) ./config.status
-	@echo timestamp > @STAMP@
+## Try to get a real timestamp; this is useful for CVS
+	@(date || ls -l @CONFIG_HEADER@ || echo timestamp) \
+		> @STAMP@ 2> /dev/null
 ## Explicitly look in srcdir for benefit of non-GNU makes.
 $(srcdir)/@CONFIG_HEADER_IN@: @MAINTAINER_MODE_TRUE@$(srcdir)/@STAMP@.in
+## Recover from removal of CONFIG_HEADER_IN
+	@if test ! -f $@; then \
+		rm -f $(srcdir)/@STAMP@.in; \
+		$(MAKE) $(srcdir)/@STAMP@.in; \
+	else :; fi
 $(srcdir)/@STAMP@.in: $(top_srcdir)/configure.in $(ACLOCAL_M4) @FILES@
 	cd $(top_srcdir) && $(AUTOHEADER)
-	@echo timestamp > $(srcdir)/@STAMP@.in
+## Try to get a real timestamp; this is useful for CVS
+	@(date || ls -l $(srcdir)/@CONFIG_HEADER_IN@ || echo timestamp) \
+		> $(srcdir)/@STAMP@.in 2> /dev/null
