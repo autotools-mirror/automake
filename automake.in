@@ -2038,30 +2038,25 @@ sub handle_source_transform
 }
 
 
-# handle_lib_objects ()
-# ---------------------
+# handle_lib_objects ($XNAME, $VAR)
+# ---------------------------------
 # Special-case @ALLOCA@ and @LIBOBJS@ in _LDADD or _LIBADD variables.
 # Also, generate _DEPENDENCIES variable if appropriate.
 # Arguments are:
 #   transformed name of object being built, or empty string if no object
 #   name of _LDADD/_LIBADD-type variable to examine
-#   boolean (lex_seen) which is true if a lex source file was seen in this
-#     object.  valid only for LDADDs, not LIBADDs.
 # Returns 1 if LIBOBJS seen, 0 otherwise.
 sub handle_lib_objects
 {
-    my ($xname, $var, $lex_seen) = @_;
+    my ($xname, $var) = @_;
 
     &prog_error ("handle_lib_objects: $var undefined")
 	if ! &variable_defined ($var);
 
-    &prog_error ("handle_lib_objects: lex_seen and $var =~ /LIBADD/")
-	if $lex_seen && $var =~ /LIBADD/;
-
     my $ret = 0;
     foreach my $cond (&variable_conditions ($var))
       {
-	if (&handle_lib_objects_cond ($xname, $var, $lex_seen, $cond))
+	if (&handle_lib_objects_cond ($xname, $var, $cond))
 	  {
 	    $ret = 1;
 	  }
@@ -2072,7 +2067,7 @@ sub handle_lib_objects
 # Subroutine of handle_lib_objects: handle a particular condition.
 sub handle_lib_objects_cond
 {
-    my ($xname, $var, $lex_seen, $cond) = @_;
+    my ($xname, $var, $cond) = @_;
 
     # We recognize certain things that are commonly put in LIBADD or
     # LDADD.
@@ -2298,21 +2293,15 @@ sub handle_programs
 					       '_SOURCES', '_OBJECTS',
 					       '_DEPENDENCIES');
 
-	# FIXME: Using a trick to figure out if any lex sources appear
-	# in our program; should use some cleaner method.
-	my $lex_num = scalar (keys %lex_sources);
 	my $linker = &handle_source_transform ($xname, $one_file, $obj);
-	my $lex_file_seen = (scalar (keys %lex_sources) > $lex_num);
 
 	my $xt = '';
 	if (&variable_defined ($xname . "_LDADD"))
 	{
-	    if (&handle_lib_objects ($xname, $xname . '_LDADD',
-				     $lex_file_seen))
+	    if (&handle_lib_objects ($xname, $xname . '_LDADD'))
 	    {
 		$seen_libobjs = 1;
 	    }
-	    $lex_file_seen = 0;
 	    $xt = '_LDADD';
 	}
 	else
@@ -2324,11 +2313,10 @@ sub handle_programs
 	    # generate _DEPENDENCIES when appropriate.
 	    if (&variable_defined ('LDADD'))
 	    {
-		if (&handle_lib_objects ($xname, 'LDADD', $lex_file_seen))
+		if (&handle_lib_objects ($xname, 'LDADD'))
 		{
 		    $seen_libobjs = 1;
 		}
-		$lex_file_seen = 0;
 	    }
 	    elsif (! &variable_defined ($xname . '_DEPENDENCIES'))
 	    {
@@ -2367,7 +2355,7 @@ sub handle_programs
 					  'XLINK'    => $xlink));
     }
 
-    if (&variable_defined ('LDADD') && &handle_lib_objects ('', 'LDADD', 0))
+    if (&variable_defined ('LDADD') && &handle_lib_objects ('', 'LDADD'))
     {
 	$seen_libobjs = 1;
     }
@@ -2442,7 +2430,7 @@ sub handle_libraries
 
 	if (&variable_defined ($xlib . '_LIBADD'))
 	{
-	    if (&handle_lib_objects ($xlib, $xlib . '_LIBADD', 0))
+	    if (&handle_lib_objects ($xlib, $xlib . '_LIBADD'))
 	    {
 		$seen_libobjs = 1;
 	    }
@@ -2564,7 +2552,7 @@ sub handle_ltlibraries
 
 	if (&variable_defined ($xlib . '_LIBADD'))
 	{
-	    if (&handle_lib_objects ($xlib, $xlib . '_LIBADD', 0))
+	    if (&handle_lib_objects ($xlib, $xlib . '_LIBADD'))
 	    {
 		$seen_libobjs = 1;
 	    }
