@@ -106,6 +106,18 @@ $scripts_installed = 0;
 # Whether AC_PATH_XTRA has been seen in configure.in
 $seen_path_xtra = 0;
 
+# Charsets used by maintainer and in distribution.  MAINT_CHARSET is
+# handled in a funny way: if seen in the top-level Makefile.am, it is
+# used for every directory which does not specify a different value.
+# The rationale here is that some directories (eg gettext) might be
+# distributions of other packages, and thus require their own charset
+# info.  However, the DIST_CHARSET must be the same for the entire
+# package; it can only be set at top-level.
+# FIXME this yields bugs when rebuilding.  What to do?  Always
+# read (and sometimes discard) top-level Makefile.am?
+$maint_charset = '';
+$dist_charset = 'utf8';		# recode doesn't support this yet.
+
 
 
 &initialize_global_constants;
@@ -958,6 +970,26 @@ sub handle_dist_worker
 # Handle 'dist' target.
 sub handle_dist
 {
+    # Set up maint_charset.
+    $local_maint_charset = $contents{'MAINT_CHARSET'}
+	if defined $contents{'MAINT_CHARSET'};
+    $maint_charset = $local_maint_charset
+	if $relative_dir eq '.';
+
+    if (defined $contents{'DIST_CHARSET'})
+    {
+	&am_error ("DIST_CHARSET defined but no MAINT_CHARSET defined")
+	    if ! $local_maint_charset;
+	if ($subdir eq '.')
+	{
+	    $dist_charset = $contents{'DIST_CHARSET'}
+	}
+	else
+	{
+	    &am_error ("DIST_CHARSET can only be defined at top level");
+	}
+    }
+
     # Look for common files that should be included in distribution.
     local ($cfile);
     foreach $cfile (@common_files)
@@ -1986,6 +2018,9 @@ sub initialize_per_input
     # Whether or not dependencies are handled.  Can be further changed
     # in handle_options.
     $use_dependencies = $cmdline_use_dependencies;
+
+    # Per Makefile.am.
+    $local_maint_charset = $maint_charset;
 }
 
 
