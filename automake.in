@@ -545,10 +545,39 @@ sub handle_scripts
 		     'bin', 'sbin', 'libexec', 'noinst');
 }
 
+# Search a file for a "version.texi" Texinfo include.  Return the name
+# of the include file if found, or the empty string if not.  A
+# "version.texi" file is actually any file whose name matches
+# "vers*.texi".
+sub grep_for_vers_texi
+{
+    local ($filename) = @_;
+
+    if (! open (TEXI, $filename))
+    {
+	&am_error ("couldn't open \`$filename': $!");
+	return '';
+    }
+
+    while (<TEXI>)
+    {
+	if (/^\@include\s+(vers[^.]*\.texi)\s*$/)
+	{
+	    # Found it.
+	    close (TEXI);
+	    return $1;
+	}
+    }
+
+    close (TEXI);
+    return '';
+}
+
 # Handle all Texinfo source.
+# Anyplace marked FIXME in this code is for multi-texi changes.
 sub handle_texinfo
 {
-    &am_error ("\`TEXINFOS' is an anachronism")
+    &am_error ("\`TEXINFOS' is an anachronism; use \`info_TEXINFOS'")
 	if defined $contents{'TEXINFOS'};
     return if ! defined $contents{'info_TEXINFOS'};
 
@@ -559,40 +588,76 @@ sub handle_texinfo
 	return;
     }
 
-    local ($infobase);
-    ($infobase = $texis[0]) =~ s/\.texi$//;
+    local (@infos_list, @info_deps_list, @dvis_list, @texi_deps);
+    local ($infobase, $info_cursor);
+    local (%versions);
+    local ($done) = 0;
+    local ($vti);
+    local ($tc_cursor, @texi_cleans);
 
-    # If 'version.texi' is referenced by input file, then include
-    # automatic versioning capability.
-    system ("grep version.texi " . $relative_dir . "/" . $texis[0]
-	    . " > /dev/null 2>&1");
-    if (! ($? >> 8))
+    foreach $info_cursor (@texis)
     {
-	# Got a hit.
-	push (@texis, 'version.texi');
-	&push_dist_common ('version.texi', 'stamp-vti');
-	push (@clean, 'vti');
+	($infobase = $info_cursor) =~ s/\.texi$//;
 
-	$output_rules .=
-	    &file_contents_with_transform ('s/\@TEXI\@/' . $texis[0] . '/go',
-					   'texi-version');
-	&push_phony_cleaners ('vti');
+	# If 'version.texi' is referenced by input file, then include
+	# automatic versioning capability.
+	local ($vtexi)
+	    = &grep_for_vers_texi ($relative_dir . "/" . $info_cursor);
+	if ($vtexi)
+	{
+	    &am_error ("\`$vtexi', included in \`$info_cursor', also included in \`$versions{$vtexi}'")
+		if (defined $versions{$vtexi});
+	    $versions{$vtexi} = $info_cursor;
 
-	&require_file ($NORMAL, 'mdate-sh');
-    }
+	    # Got a hit.
+	    push (@texis, $vtexi);
+	    # We number the stamp-vti files.  This is doable since the
+	    # actual names don't matter much.  We only number starting
+	    # with the second one, so that the common case looks nice.
+	    $vti = 'vti' . ($done ? $done : '');
+	    &push_dist_common ($vtexi, 'stamp-' . $vti);
+	    push (@clean, $vti);
 
-    # If user specified file_TEXINFOS, then use that as explicit
-    # dependency list.
-    if (defined $contents{$infobase . "_TEXINFOS"})
-    {
-	push (@texis, "\$" . $infobase . '_TEXINFOS');
-	&push_dist_common ("\$" . $infobase . '_TEXINFOS');
-    }
+	    $output_rules .=
+		&file_contents_with_transform
+		    ('s/\@TEXI\@/' . $info_cursor . '/g; '
+		     . 's/\@VTI\@/' . $vti . '/g; '
+		     . 's/\@VTEXI\@/' . $vtexi . '/g',
+		     'texi-version');
 
-    if (@texis)
-    {
-	$output_rules .= ($infobase . ".info: "
-			  . join (' ', @texis) . "\n\n");
+	    &push_phony_cleaners ($vti);
+
+	    # Only require once.
+	    &require_file ($NORMAL, 'mdate-sh') if ! $done;
+	    ++$done;
+	}
+
+	# If user specified file_TEXINFOS, then use that as explicit
+	# dependency list.
+	@texi_deps = ();
+	push (@texi_deps, $info_cursor);
+	if (defined $contents{$infobase . "_TEXINFOS"})
+	{
+	    push (@texi_deps, "\$" . $infobase . '_TEXINFOS');
+	    &push_dist_common ("\$" . $infobase . '_TEXINFOS');
+	}
+
+	$output_rules .= ("\n" . $infobase . ".info: "
+			  . join (' ', @texi_deps) . "\n\n");
+
+	push (@infos_list, $infobase . '.info*');
+	push (@info_deps_list, $infobase . '.info');
+	push (@dvis_list, $infobase . '.dvi');
+
+	# Generate list of things to clean for this target.  We do
+	# this explicitly because otherwise too many things could be
+	# removed.  In particular the ".log" extension might
+	# reasonably be used in other contexts by the user.
+	foreach $tc_cursor ('aux', 'cp', 'cps', 'dvi', 'fn', 'fns',
+			    'ky', 'log', 'pg', 'toc', 'tp', 'vr', 'op')
+	{
+	    push (@texi_cleans, $infobase . '.' . $tc_cursor);
+	}
     }
 
     # Some boilerplate.
@@ -601,9 +666,11 @@ sub handle_texinfo
     push (@phony, 'install-info', 'uninstall-info');
 
     # How to clean.
-    $output_rules .=
-	&file_contents_with_transform ('s/\@TEXI\@/' . $infobase . '/go',
-				       'texi-clean');
+    $output_rules .= "\nmostlyclean-info:\n";
+    &pretty_print_rule ("\t", "\t  ", @texi_cleans);
+    $output_rules .= ("\nclean-info:\n\ndistclean-info:\n\n"
+		      . "maintainer-clean-info:\n\t"
+		      . 'rm -f $(INFOS)' . "\n");
     &push_phony_cleaners ('info');
 
     push (@suffixes, '.texi', '.info', '.dvi');
@@ -616,9 +683,9 @@ sub handle_texinfo
     unshift (@install_data, 'install-info');
     unshift (@all, 'info');
 
-    $output_vars .= ("INFOS = " . $infobase . ".info*\n"
-		     . "INFO_DEPS = " . $infobase . ".info\n"
-		     . "DVIS = " . $infobase . ".dvi\n"
+    $output_vars .= ("INFOS = " . join (' ', @infos_list) . "\n"
+		     . "INFO_DEPS = " . join (' ', @info_deps_list)  . "\n"
+		     . "DVIS = " . join (' ', @dvis_list) . "\n"
 		     # This next isn't strictly needed now -- the
 		     # places that look here could easily be changed
 		     # to look in info_TEXINFOS.  But this is probably
@@ -633,7 +700,7 @@ sub handle_texinfo
 # Handle any man pages.
 sub handle_man_pages
 {
-    &am_error ("\`MANS' is an anachronism")
+    &am_error ("\`MANS' is an anachronism; use \`man_MANS'")
 	if defined $contents{'MANS'};
     return if ! defined $contents{'man_MANS'};
 
@@ -984,6 +1051,10 @@ sub handle_configure
 	# Look for some files we need.
 	&require_file ($NORMAL, 'install-sh', 'mkinstalldirs');
 
+	&am_error
+	    ("\`install.sh' is an anachronism; use \`install-sh' instead")
+		if -f $relative_dir . '/install.sh';
+
 	# If we have a configure header, require it.
 	if ($config_header)
 	{
@@ -1020,12 +1091,13 @@ sub handle_configure
 	$top_reldir = '';
     }
 
-    &am_error ("\`CONFIG_HEADER' is an anachronism")
+    &am_error ("\`CONFIG_HEADER' is an anachronism; now determined from \`configure.in'")
 	if defined $contents{'CONFIG_HEADER'};
 
-    # Generate CONFIG_HEADER define.
+    # Generate CONFIG_HEADER define, and define interally.
     $output_vars .= "CONFIG_HEADER = ${top_reldir}${config_name}\n"
 	if $config_name;
+    $contents{'CONFIG_HEADER'} = "${top_reldir}${config_name}";
 }
 
 # Handle C headers.
@@ -1780,7 +1852,7 @@ sub file_contents_with_transform
     local ($file) = $am_dir . '/' . $basename . '.am';
 
     open (FC_FILE, $file)
-	|| die "automake: installation error: cannot open \"$file\"\n";
+	|| die "automake: installation error: cannot open \`$file'\n";
 
     local ($was_rule) = 0;
     local ($result_vars) = '';
