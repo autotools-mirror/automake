@@ -37,7 +37,7 @@ ETAGS_ARGS = --lang=none \
  --regex='/^@node[ \t]+\([^,]+\)/\1/' $(srcdir)/automake.texi
 TAGS_DEPENDENCIES = automake.texi
 
-EXTRA_DIST = ChangeLog.1996 ChangeLog.1998 ChangeLog.2000 ChangeLog.2001 \
+EXTRA_DIST = ChangeLog.96 ChangeLog.98 ChangeLog.00 ChangeLog.01 \
   $(AUTOMAKESOURCES)
 
 ## Make versioned links.  We only run the transform on the root name;

@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002  Free Software Foundation, Inc.
+# Copyright (C) 2000, 2002  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -18,28 +18,24 @@
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-# Make sure aclocal works with macro that have parentheses in their
-# name.  Report from Tamara L. Dahlgren and Tom Epperly.
-
+# Make sure that ACLOCAL_AMFLAGS doesn't cause circular dependencies.
 . ./defs || exit 1
 
-set -e
+echo AM_QUUX >> configure.in
 
-mkdir m4
-cat >m4/f90.m4 <<EOF
-AC_DEFUN([AM_LANG_PREPROC(Fortran 90)], [...something...])
-EOF
+cat > quux.m4 << 'END'
+AC_DEFUN([AM_QUUX], [
+])
+END
 
-cat >acinclude.m4 <<EOF
-AC_DEFUN([AM_FUBAR],
-[AC_REQUIRE([AM_LANG_PREPROC(Fortran 90)])])
-EOF
+cat > Makefile.am << 'END'
+ACLOCAL_AMFLAGS = -I .
+END
 
-cat >>configure.in <<EOF
-AM_FUBAR
-EOF
+# We have to run aclocal first to make sure that aclocal.m4 exists.
+# Otherwise automake won't guess that we want to auto-generate it.
+$ACLOCAL -I . || exit 1
 
-$ACLOCAL -I m4 2>stderr
-cat stderr
-grep AM_LANG_PREPROC stderr && exit 1
-$FGREP 'AC_DEFUN([AM_LANG_PREPROC(Fortran 90)' aclocal.m4
+$AUTOMAKE || exit 1
+
+grep "\$(ACLOCAL_M4): *configure.in *quux.m4" Makefile.in || exit 1
