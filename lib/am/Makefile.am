@@ -47,6 +47,8 @@ installcheck-local:
 	  $(PERL) -e "exit ! -x '$(pkgdatadir)/$$file';" || exit 1; \
 	done
 
+EXTRA_DIST = ChangeLog.1996 ChangeLog.1998
+
 ################################################################
 ##
 ## Everything past here is useful to the maintainer, but probably not
