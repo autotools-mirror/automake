@@ -1,6 +1,6 @@
 # aclocal.m4 generated automatically by aclocal 1.5c -*- Autoconf -*-
 
-# Copyright 1996, 1997, 1998, 1999, 2000, 2001
+# Copyright 1996, 1997, 1998, 1999, 2000, 2001, 2002
 # Free Software Foundation, Inc.
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -130,7 +130,7 @@ AC_PROVIDE_IFELSE([AC_PROG_][CXX],
 # ----------------------------
 # Automake X.Y traces this macro to ensure aclocal.m4 has been
 # generated from the m4 files accompanying Automake X.Y.
-AC_DEFUN([AM_AUTOMAKE_VERSION],[am__api_version=""])
+AC_DEFUN([AM_AUTOMAKE_VERSION],[am__api_version="1.5c"])
 
 # AM_SET_CURRENT_AUTOMAKE_VERSION
 # -------------------------------
@@ -446,7 +446,7 @@ AC_SUBST([INSTALL_STRIP_PROGRAM])])
 # _AM_DEPENDENCIES(NAME)
 # ----------------------
 # See how the compiler implements dependency checking.
-# NAME is "CC", "CXX" or "OBJC".
+# NAME is "CC", "CXX", "GCJ", or "OBJC".
 # We try a few techniques and use that to set a single cache variable.
 #
 # We don't AC_REQUIRE the corresponding AC_PROG_CC since the latter was
