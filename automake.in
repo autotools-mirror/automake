@@ -1168,7 +1168,7 @@ sub handle_lib_objects
 	elsif ($lsearch eq '@LEXLIB@')
 	{
 	    # FIXME: variable_value_as_list requires us to force
-	    # @LEXLIB@ here, where we're really prefer $(LEXLIB).
+	    # @LEXLIB@ here, where we'd really prefer $(LEXLIB).
 	    # Nasty -- this will have to wait until many cleanups are
 	    # made, I think.
 	    $lex_ok = 1;
@@ -2199,11 +2199,8 @@ sub handle_dependencies
 	    }
 	}
     }
-    else
+    elsif ($build_directory ne '')
     {
-	# FIXME: consider requiring --build-dir here.  What about case
-	# where this is done via an option?
-
 	# Include any auto-generated deps that are present.  Note that
 	# $build_directory ends in a "/".
 	if (-d ($build_directory . $relative_dir . "/.deps")
@@ -2353,6 +2350,10 @@ sub handle_configure
 
     # Handle $local:$input syntax again.
     local ($amfile, $infile, $colon_infile);
+
+    $input = &basename ($input);
+    $local = &basename ($local);
+
     $amfile = $input . '.am';
     # We know we can always add '.in' because it really should be an
     # error if the .in was missing originally.
@@ -2380,7 +2381,6 @@ sub handle_configure
 		      . "\n"
 		      . "\tcd \$(top_builddir) \\\n"
 		      . "\t  && CONFIG_FILES="
-		      # FIXME: is this right?
 		      . (($relative_dir eq '.') ? '$@' : '$(subdir)/$@')
 		      . $colon_infile
 		      . ' CONFIG_HEADERS= $(SHELL) ./config.status'
@@ -2500,15 +2500,16 @@ sub handle_configure
 
 	@inputs = &rewrite_inputs_into_dependencies (@inputs);
 
-	# FIXME: when using autoconf ":" syntax, should we set CONFIG_FILES
-	# to $local:$input?
 	$output_rules .= ($local . ': '
 			  . '$(top_builddir)/config.status '
 			  . join (' ', @inputs) . "\n"
 			  . "\t"
 			  . 'cd $(top_builddir) && CONFIG_FILES='
 			  . ($relative_dir eq '.' ? '' : '$(subdir)/')
-			  . '$@ CONFIG_HEADERS= ./config.status'
+   			  . '$@' . (length (@inputs) > 1
+				    ? (':' . join (':', @inputs))
+				    : '')
+			  . ' CONFIG_HEADERS= ./config.status'
 			  . "\n");
 	push (@actual_other_files, $local);
 
@@ -3074,10 +3075,7 @@ sub handle_tests
     {
 	push (@check_tests, 'check-TESTS');
 	push (@phony, 'check-TESTS');
-	# FIXME: use $(SHELL) here?  That is what Ulrich suggests.
-	# Maybe a new macro, $(TEST_SHELL), a la $(CONFIG_SHELL)?  For
-	# now we just execute the file directly; this allows test
-	# files which are compiled -- a possibly useful feature.
+
 	$output_rules .= 'check-TESTS: $(TESTS)
 	@failed=0; all=0; \\
 	srcdir=$(srcdir); export srcdir; \\
