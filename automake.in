@@ -4444,8 +4444,17 @@ sub scan_autoconf_traces ($)
 {
   my ($filename) = @_;
 
-  my @traced = ('AC_CONFIG_FILES', 'AC_LIBSOURCE', 'AC_SUBST',
-		'AM_CONDITIONAL', 'AM_INIT_AUTOMAKE');
+  my @traced = (
+		'AC_CONFIG_AUX_DIR',
+		'AC_CONFIG_FILES',
+		'AC_LIBSOURCE',
+		'AC_SUBST',
+		'AM_CONDITIONAL',
+		'AM_C_PROTOTYPES',
+		'AM_GNU_GETTEXT',
+		'AM_INIT_AUTOMAKE',
+		'AM_PROG_CC_C_O',
+	       );
 
   my $traces = "$ENV{amtraces} ";
 
@@ -4465,7 +4474,12 @@ sub scan_autoconf_traces ($)
       my $here = "$file:$line";
 
       # Alphabetical ordering please.
-      if ($macro eq 'AC_CONFIG_FILES')
+      if ($macro eq 'AC_CONFIG_AUX_DIR')
+	{
+	  @config_aux_path = $args[1];
+	  $config_aux_dir_set_in_configure_in = 1;
+	}
+      elsif ($macro eq 'AC_CONFIG_FILES')
 	{
 	  # Look at potential Makefile.am's.
 	  &scan_autoconf_config_files ($args[1]);
@@ -4486,11 +4500,24 @@ sub scan_autoconf_traces ($)
 	{
 	  $configure_cond{$args[1]} = $here;
 	}
+      elsif ($macro eq 'AM_C_PROTOTYPES')
+	{
+	  $am_c_prototypes = $here;
+	}
+      elsif ($macro eq 'AM_GNU_GETTEXT')
+	{
+	  $seen_gettext = $here;
+	  $ac_gettext_line = $line;
+	}
       elsif ($macro eq 'AM_INIT_AUTOMAKE')
 	{
 	  $package_version = $args[2];
-	  $package_version_line = $.;
+	  $package_version_line = $line;
 	  $seen_init_automake = 1;
+	}
+      elsif ($macro eq 'AM_PROG_CC_C_O')
+	{
+	  $seen_cc_c_o = $here;
 	}
     }
 }
