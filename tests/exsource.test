@@ -1,0 +1,27 @@
+#! /bin/sh
+
+# Test to make sure EXTRA_..._SOURCES actually works.
+# Bug report from Henrik Frystyk Nielsen.
+
+. $srcdir/defs || exit 1
+
+cat > Makefile.am << 'END'
+bin_PROGRAMS = www
+www_SOURCES = www.c @extra_stuff@
+EXTRA_www_SOURCES = xtra.c
+magic:
+	@echo $(DEP_FILES)
+END
+
+: > www.c
+: > xtra.c
+
+$AUTOMAKE || exit 1
+
+# Make sure the Makefile.in can find the .-files it needs.
+mkdir .deps
+echo > .deps/.P
+echo > .deps/xtra.P
+echo > .deps/www.P
+
+make -s -f Makefile.in srcdir=`pwd` magic | grep xtra
