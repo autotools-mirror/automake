@@ -5153,7 +5153,8 @@ sub lang_c_rewrite
     if (defined $options{'subdir-objects'})
     {
 	$r = $LANG_SUBDIR;
-	$base = $directory . '/' . $base;
+	$base = $directory . '/' . $base
+	    unless $directory eq '.' || $directory eq '';
 
 	if (! $seen_cc_c_o)
 	{
@@ -5164,11 +5165,18 @@ sub lang_c_rewrite
 	}
 
 	require_conf_file ("$am_file.am", FOREIGN, 'compile');
+
+	# In this case we already have the directory information, so
+	# don't add it again.
+	$de_ansi_files{$base} = '';
+    }
+    else
+    {
+	$de_ansi_files{$base} = (($directory eq '.' || $directory eq '')
+				 ? ''
+				 : "$directory/");
     }
 
-    $de_ansi_files{$base} = (($directory eq '.' || $directory eq '')
-			     ? ''
-			     : "$directory/");
     return $r;
 }
 
