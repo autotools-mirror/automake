@@ -15,18 +15,10 @@
 ## along with this program; if not, write to the Free Software
 ## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 ## 02111-1307, USA.
-$(srcdir)/.deps/%.P: $(srcdir)/%@EXT@
-	@echo "mkdeps $< > $@"
-## Use funny regexp because otherwise too much can be matched when
-## srcdir begins with ".".  Can't use \< since sed doesn't recognize
-## "." as a word start.  Regexp-quote srcdir because "." is a matching
-## operator which commonly appears in filenames.  Need "//*" in
-## regexps because otherwise the regexp will fail when srcdir=. and
-## the path to the file is relative (eg ../lib/error.c matches "./*").
-	@top=`echo $(srcdir) | sed 's,^$(top_srcdir),,;s,[^/],,g;s,/,../,g'` ; \
-	re=`echo "s,^$(srcdir)//*,,g;s, $(srcdir)//*, ,g;s,$(top_srcdir)//*,$$top,g" | sed 's,\.,\\\\.,g'`; \
-	  $(@MKDEP@) $< | sed "$$re" > $@-tmp
-	@if test -n "$o"; then			\
+.deps/%.P: $(srcdir)/%@EXT@
+	$(@MKDEP@) $< > $@-tmp
+## FIXME shouldn't do this for languages other than C.
+	if test -n "$o"; then			\
 	  sed 's/\.o:/$$o:/' $@-tmp > $@;	\
 	  rm $@-tmp;				\
 	else					\

@@ -99,6 +99,16 @@ $output_directory = '.';
 # Relative location of top build directory.
 $top_builddir = '';
 
+# Absolute location of top build directory.
+$build_directory = '';
+
+# Name of srcdir as given in build directory's Makefile.  For
+# dependencies only.
+$srcdir_name = '';
+
+# Regular expression derived from srcdir_name.
+$srcdir_rx = '';
+
 # List of Makefile.am's to process.
 @input_files = ();
 
@@ -260,6 +270,30 @@ sub parse_arguments
 	    &require_argument (@arglist);
 	    shift (@arglist);
 	    $am_dir = $arglist[0];
+	}
+	elsif ($arglist[0] =~ /^--build-dir=(.+)$/)
+	{
+	    # Must end in /.
+	    $build_directory = $1 . '/';
+	}
+	elsif ($arglist[0] eq '--build-dir')
+	{
+	    &require_argument (@arglist);
+	    shift (@arglist);
+	    # Must end in /.
+	    $build_directory = $arglist[0] . '/';
+	}
+	elsif ($arglist[0] =~ /^--srcdir-name=(.+)$/)
+	{
+	    $srcdir_name = $1;
+	    ($srcdir_rx = $srcdir_name) =~ s/(\W)/\\$1/g;
+	}
+	elsif ($arglist[0] eq '--srcdir-name')
+	{
+	    &require_argument (@arglist);
+	    shift (@arglist);
+	    $srcdir_name = $arglist[0];
+	    ($srcdir_rx = $srcdir_name) =~ s/(\W)/\\$1/g;
 	}
 	elsif ($arglist[0] =~ /^--strictness=(.+)$/)
 	{
@@ -812,7 +846,7 @@ sub handle_source_transform
 		# Transform .o or $o file into .P file (for automatic
 		# dependency code).
 		s/$objpat$/.P/g;
-		$dep_files{'$(srcdir)/.deps/' . $_} = 1;
+		$dep_files{'.deps/' . $_} = 1;
 	    }
 
 	    &pretty_print ($one_file . "_OBJECTS =", "", @result)
@@ -867,7 +901,7 @@ sub handle_lib_objects
 		if ($iter ne 'alloca.c')
 		{
 		    ($rewrite = $iter) =~ s/\.c$/.P/;
-		    $dep_files{'$(srcdir)/.deps/' . $rewrite} = 1;
+		    $dep_files{'.deps/' . $rewrite} = 1;
 		    &require_file_with_line ($var, $FOREIGN, $iter);
 		}
 	    }
@@ -877,7 +911,7 @@ sub handle_lib_objects
 	    &am_line_error ($var,
 			    "\@ALLOCA\@ seen but \`AC_FUNC_ALLOCA' not in \`configure.in'")
 		if ! defined $libsources{'alloca.c'};
-	    $dep_files{'$(srcdir)/.deps/alloca.P'} = 1;
+	    $dep_files{'.deps/alloca.P'} = 1;
 	    &require_file_with_line ($var, $FOREIGN, 'alloca.c');
 	}
     }
@@ -1430,9 +1464,9 @@ sub handle_dist_worker
 		(
 		 # We need an absolute path for --output-dir.  Thus the
 		 # weirdness.
-		 '	distdir=`cd $(distdir) && pwd` \\
+		 '	here=`pwd`; distdir=`cd $(distdir) && pwd` \\
 	  && cd $(srcdir) \\
-	  && automake --include-deps --output-dir=$$distdir --strictness='
+	  && automake --include-deps --build-dir=$$here --srcdir-name=$(srcdir) --output-dir=$$distdir --strictness='
 		 # Set strictness of output.
 		 . $strictness_name . "\n"
 		 );
@@ -1627,6 +1661,70 @@ distcheck: dist
     &handle_dist_worker;
 }
 
+# Scan a single dependency file and rewrite the dependencies as
+# appropriate.  Essentially this means:
+# * Clean out absolute dependencies which are not desirable.
+# * Rewrite other dependencies to be relative to $(top_srcdir).
+sub scan_dependency_file
+{
+    local ($depfile) = @_;
+
+    if (! open (DEP_FILE, $depfile))
+    {
+	&am_error ("couldn't open \`$depfile': $!");
+	return;
+    }
+    print "automake: reading $depfile\n" if $verbose;
+
+    local ($first_line) = 1;
+    local ($target, @dependencies);
+    local ($one_dep, $xform);
+
+    while (<DEP_FILE>)
+    {
+	next if (/$WHITE_PATTERN/o);
+	chop;
+	s/\\$//;
+
+	if ($first_line)
+	{
+	    if (! /([^:]+):(.+)$/)
+	    {
+		&am_error ("\`$depfile' has incorrect format");
+		close (DEP_FILE);
+		return;
+	    }
+
+	    $target = $1;
+	    $_ = $2;
+
+	    $first_line = 0;
+	}
+
+	foreach $one_dep (split (' ', $_))
+	{
+	    if ($one_dep =~ /^$srcdir_rx\//o)
+	    {
+		($xform = $one_dep) =~ s/^$srcdir_rx/\$(top_srcdir)/o;
+		push (@dependencies, $xform);
+	    }
+	    elsif ($one_dep =~ /^\//)
+	    {
+		# Absolute path; ignore.
+	    }
+	    else
+	    {
+		# Anything else is assumed to be correct.
+		push (@dependencies, $one_dep);
+	    }
+	}
+    }
+
+    &pretty_print_rule ($target, "\t", @dependencies);
+
+    close (DEP_FILE);
+}
+
 # Handle auto-dependency code.
 sub handle_dependencies
 {
@@ -1661,25 +1759,20 @@ sub handle_dependencies
     }
     else
     {
-	# Include any auto-generated deps that are present.
-	if (-d ($relative_dir . "/.deps") && -f ($relative_dir . "/.deps/.P"))
+	# FIXME consider requiring --build-dir here.  What about case
+	# where this is done via an option?
+
+	# Include any auto-generated deps that are present.  Note that
+	# $build_directory ends in a "/".
+	if (-d ($build_directory . $relative_dir . "/.deps")
+	    && -f ($build_directory . $relative_dir . "/.deps/.P"))
 	{
 	    local ($depfile);
-	    local ($gpat) = $relative_dir . "/.deps/*.P";
+	    local ($gpat) = $build_directory . $relative_dir . "/.deps/*.P";
 
 	    foreach $depfile (<${gpat}>)
 	    {
-		if (! open (DEP_FILE, $depfile))
-		{
-		    &am_error ("couldn't open \`$depfile': $!");
-		    next;
-		}
-		print "automake: reading $depfile\n" if $verbose;
-
-		# Slurp entire file.
-		$output_rules .= join ('', <DEP_FILE>);
-
-		close (DEP_FILE);
+		&scan_dependency_file ($depfile);
 	    }
 
 	    $output_rules .= "\n";
@@ -2882,8 +2975,9 @@ sub read_am_file
 	elsif (/$COMMENT_PATTERN/o)
 	{
 	    # Stick comments before the incoming macro or rule.  Make
-	    # sure a blank line preceeds comments.
+	    # sure a blank line preceeds first block of comments.
 	    $spacing = "\n" unless $blank;
+	    $blank = 1;
 	    $comment .= $spacing . $_;
 	    $spacing = '';
 	}
@@ -3056,6 +3150,7 @@ sub initialize_global_constants
 
     $USAGE = "\
   --amdir=DIR           directory storing config files
+  --build-dir=DIR       directory where build being done (for dependencies)
   --foreign             same as --strictness=foreign
   --gnits               same as --strictness=gnits
   --gnu                 same as --strictness=gnu
@@ -3067,6 +3162,7 @@ sub initialize_global_constants
                         put generated Makefile.in's into DIR
   -s LEVEL, --strictness=LEVEL
                         set strictness level.  LEVEL is foreign, gnu, gnits
+  --srcdir-name=DIR     name used for srcdir (for dependencies)
   -v, --verbose         verbosely list files processed
   --version             print version number, then exit\n";
 
