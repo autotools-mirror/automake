@@ -532,6 +532,7 @@ vtexi.test \
 vtexi2.test \
 warnopts.test \
 werror.test \
+werror2.test \
 whoami.test \
 xsource.test \
 yacc.test \

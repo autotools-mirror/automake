@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2003, 2004  Free Software Foundation, Inc.
+# Copyright (C) 2004  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -18,34 +18,35 @@
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-# Make sure we diagnose and fix white spaces following backslash.
-# Report from Peter Muir.
+# Make sure that Makefile.in is not overwritten on error.  Otherwise
+# although the rebuilding rules would fail on error, they would
+# succeed if make is run a second time immediately afterwards.
+# Report from Harlan Stenn.
 
+required=GNUmake
 . ./defs || exit 1
 
 set -e
 
-echo AC_OUTPUT >>configure.in
+echo AC_OUTPUT>>configure.in
 
-# Note: trailing whitespace used during the test should not appear as
-# trailing whitespace in this file, or it will get stripped by any
-# reasonable editor.
-
-echo 'bin_SCRIPTS = foo \ ' >Makefile.am
-cat >>Makefile.am <<'END'
-bar
-ok:
-	:
-END
-echo 'data_DATA = baz \  ' >>Makefile.am
-echo '	fum' >>Makefile.am
+: > Makefile.am
 
 $ACLOCAL
 $AUTOCONF
-AUTOMAKE_fails
-grep ':1:.*whitespace' stderr
-grep ':5:.*whitespace' stderr
-$AUTOMAKE -Wno-error
+$AUTOMAKE
+
 ./configure
-# Older versions of Automake used to produce invalid Makefiles such input.
-$MAKE ok
+$MAKE
+
+cat >Makefile.am <<END
+AUTOMAKE_OPTIONS = -Werror
+INCLUDES = -Ifoo
+foo_SOURCES = unused
+END
+
+$MAKE && exit 1
+
+$MAKE && exit 1
+
+:
