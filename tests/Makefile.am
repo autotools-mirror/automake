@@ -424,7 +424,7 @@ yaccvpath.test
 EXTRA_DIST = ChangeLog-old $(TESTS)
 
 # Each test case depends on defs.
-$(TESTS): defs
+check_SCRIPTS = defs
 
 distclean-local:
 	-rm -rf testSubDir
