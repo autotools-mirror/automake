@@ -5064,13 +5064,20 @@ sub lang_yacc_target_hook
 	# Add a dependency for the generated header file, and arrange
 	# for that file to be included in the distribution.
 	# FIXME: this fails for `nodist_*_SOURCES'.
-	$output_rules .= ("${header}: $output\n"
-			  # Recover from removal of $header
-			  . "\t\@if test ! -f \$@; then \\\n"
-			  . "\t  rm -f $output; \\\n"
-			  . "\t  \$(MAKE) $output; \\\n"
-			  . "\telse :; fi\n");
+	foreach my $cond (Automake::Rule::define (${header}, 'internal',
+						  RULE_AUTOMAKE, TRUE,
+						  INTERNAL))
+	  {
+	    my $condstr = $cond->subst_string;
+	    $output_rules .= ("$condstr${header}: $output\n"
+			      # Recover from removal of $header
+			      . "$condstr\t\@if test ! -f \$@; then \\\n"
+			      . "$condstr\t  rm -f $output; \\\n"
+			      . "$condstr\t  \$(MAKE) $output; \\\n"
+			      . "$condstr\telse :; fi\n");
+	  }
 	&push_dist_common ($header);
+
 	# If the files are built in the build directory, then we want
 	# to remove them with `make clean'.  If they are in srcdir
 	# they shouldn't be touched.  However, we can't determine this

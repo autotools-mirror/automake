@@ -121,6 +121,8 @@ cond31.test \
 cond32.test \
 cond33.test \
 cond34.test \
+cond35.test \
+cond36.test \
 condd.test \
 condinc.test \
 condinc2.test \
