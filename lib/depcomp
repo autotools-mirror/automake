@@ -24,6 +24,7 @@ if test -z "$depmode" || test -z "$source" || test -z "$object"; then
   echo "depcomp: Variables source, object and depmode must be set" 1>&2
   exit 1
 fi
+# `libtool' can also be set to `yes' or `no'.
 
 depfile=${depfile-`echo "$object" | sed 's,\([^/]*\)$,.deps/\1,;s/\.\([^.]*\)$/.P\1/'`}
 tmpdepfile=${tmpdepfile-`echo "$depfile" | sed 's/\.\([^.]*\)$/.T\1/'`}
@@ -108,7 +109,12 @@ dashmd)
   ;;
 
 sgi)
-  if "$@" -MDupdate "$tmpdepfile"; then :
+  if test "$libtool" = yes; then
+    "$@" "-Wc,-MDupdate,$tmpdepfile"
+  else
+    "$@" -MDupdate "$tmpdepfile"
+  stat=$?
+  if test $stat -eq 0; then :
   else
     stat=$?
     rm -f "$tmpdepfile"
