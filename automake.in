@@ -5929,6 +5929,20 @@ sub pretty_print_rule
 ## ------------------------------ ##
 
 
+# $STRING
+# make_conditional_string ($NEGATE, $COND)
+# ----------------------------------------
+sub make_conditional_string ($$)
+{
+  my ($negate, $cond) = @_;
+  $cond = "${cond}_TRUE"
+    unless $cond =~ /^TRUE|FALSE$/;
+  $cond = Automake::Conditional::condition_negate ($cond)
+    if $negate;
+  return $cond;
+}
+
+
 # $COND
 # cond_stack_if ($NEGATE, $COND, $WHERE)
 # --------------------------------------
@@ -5939,12 +5953,7 @@ sub cond_stack_if ($$$)
   err $where, "$cond does not appear in AM_CONDITIONAL"
     if ! $configure_cond{$cond} && $cond !~ /^TRUE|FALSE$/;
 
-  $cond = "${cond}_TRUE"
-    unless $cond =~ /^TRUE|FALSE$/;
-  $cond = Automake::Conditional::condition_negate ($cond)
-    if $negate;
-
-  push (@cond_stack, $cond);
+  push (@cond_stack, make_conditional_string ($negate, $cond));
 
   return new Automake::Conditional (@cond_stack);
 }
@@ -5964,15 +5973,12 @@ sub cond_stack_else ($$$)
     }
 
   $cond_stack[$#cond_stack] =
-  Automake::Conditional::condition_negate ($cond_stack[$#cond_stack]);
+    Automake::Conditional::condition_negate ($cond_stack[$#cond_stack]);
 
   # If $COND is given, check against it.
   if (defined $cond)
     {
-      $cond = "${cond}_TRUE"
-	unless $cond =~ /^TRUE|FALSE$/;
-      $cond = Automake::Conditional::condition_negate ($cond)
-	if $negate;
+      $cond = make_conditional_string ($negate, $cond);
 
       err ($where, "else reminder ($negate$cond) incompatible with "
 	   . "current conditional: $cond_stack[$#cond_stack]")
@@ -5997,14 +6003,10 @@ sub cond_stack_endif ($$$)
       return;
     }
 
-
   # If $COND is given, check against it.
   if (defined $cond)
     {
-      $cond = "${cond}_TRUE"
-	unless $cond =~ /^TRUE|FALSE$/;
-      $cond = Automake::Conditional::condition_negate ($cond)
-	if $negate;
+      $cond = make_conditional_string ($negate, $cond);
 
       err ($where, "endif reminder ($negate$cond) incompatible with "
 	   . "current conditional: $cond_stack[$#cond_stack]")
