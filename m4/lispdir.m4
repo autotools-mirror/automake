@@ -39,7 +39,7 @@ AC_DEFUN([AM_PATH_LISPDIR],
 	am_cv_lispdir=`sed -n \
        -e 's,/$,,' \
        -e '/.*\/lib\/x*emacs\/site-lisp$/{s,.*/lib/\(x*emacs/site-lisp\)$,${libdir}/\1,;p;q;}' \
-       -e '/.*\/share\/x*emacs\/site-lisp$/{s,.*/share/\(x*emacs/site-lisp\),${datadir}/\1,;p;q;}' \
+       -e '/.*\/share\/x*emacs\/site-lisp$/{s,.*/share/\(x*emacs/site-lisp\),${datarootdir}/\1,;p;q;}' \
        conftest.out`
        rm conftest.out
      fi
