@@ -185,6 +185,7 @@ rulepat.test \
 scripts.test \
 seenc.test \
 sinclude.test \
+sourcesub.test \
 specflags.test \
 specflags2.test	\
 specflags3.test	\
