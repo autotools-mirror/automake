@@ -5004,11 +5004,28 @@ sub handle_factored_dependencies
 	unless (@{$dependencies{$_}}
 		|| $actions{$_}
 		|| $required_targets{$_});
-      &pretty_print_rule ("$_:", "\t",
-			  uniq (sort @{$dependencies{$_}}));
-      $output_rules .= $actions{$_}
-      if defined $actions{$_};
-      $output_rules .= "\n";
+
+      # Define gathered targets in undefined conditions.
+      # FIXME: Right now we must handle .PHONY as an exception,
+      # because people write things like
+      #    .PHONY: myphonytarget
+      # to append dependencies.  This would not work if Automake
+      # refrained from defining its own .PHONY target as it does
+      # with other overridden targets.
+      my @undefined_conds = (TRUE,);
+      if ($_ ne '.PHONY')
+	{
+	  @undefined_conds =
+	    rule_define ($_, 'internal', TARGET_AUTOMAKE, TRUE, INTERNAL);
+	}
+      my @uniq_deps = uniq (sort @{$dependencies{$_}});
+      foreach my $cond (@undefined_conds)
+	{
+	  my $condstr = $cond->subst_string;
+	  &pretty_print_rule ("$condstr$_:", "$condstr\t", @uniq_deps);
+	  $output_rules .= $actions{$_} if defined $actions{$_};
+	  $output_rules .= "\n";
+	}
     }
 }
 
@@ -7196,11 +7213,27 @@ sub rule_define ($$$$$)
 	{
 	  if ($oldowner == TARGET_USER)
 	    {
+	      # -am targets listed in %dependencies support a -local
+	      # variant.  If the user tries to override TARGET or
+	      # TARGET-am for which there exists a -local variant,
+	      # just tell the user to use it.
+	      my $hint = 0;
+	      my $noam = $target;
+	      $noam =~ s/-am$//;
+	      if (exists $dependencies{"$noam-am"})
+		{
+		  $hint = "consider using $target-local instead of $target";
+		}
+
 	      msg_cond_target ('override', $cond, $target,
 			       "user target `$target' defined here"
 			       . "$condmsg...", partial => 1);
 	      msg ('override', $where,
-		   "... overrides Automake target `$target' defined here");
+		   "... overrides Automake target `$target' defined here",
+		   partial => $hint);
+	      msg_cond_target ('override', $cond, $target, $hint)
+		if $hint;
+
 	      # Don't overwrite the user definition of TARGET.
 	      return ();
 	    }
