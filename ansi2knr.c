@@ -1,3 +1,8 @@
+/* Copyright (C) 1989, 1997 Aladdin Enterprises.  All rights reserved. */
+
+/*$Id: ansi2knr.c,v 1.9 1998/04/03 21:56:52 tromey Exp $*/
+/* Convert ANSI C function definitions to K&R ("traditional C") syntax */
+
 /*
 ansi2knr is distributed in the hope that it will be useful, but WITHOUT ANY
 WARRANTY.  No author or distributor accepts responsibility to anyone for the
