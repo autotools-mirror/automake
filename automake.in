@@ -2527,7 +2527,6 @@ sub handle_man_pages
 
     # Now for each section, generate an install and unintall rule.
     # Sort sections so output is deterministic.
-    local (@namelist);
     foreach my $sect (sort keys %sections)
     {
 	&define_variable ('man' . $sect . 'dir', '$(mandir)/man' . $sect);
@@ -2535,23 +2534,12 @@ sub handle_man_pages
 	    unless defined $options{'no-installman'};
 	$output_rules .= &file_contents ('mans',
 					 &transform ('SECTION', $sect));
-	push (@namelist, 'install-man' . $sect);
     }
+    &depend ('.PHONY', 'install-man', 'uninstall-man');
 
     # We don't really need this, but we use it in case we ever want to
     # support noinst_MANS.
     &define_variable ("MANS", join (' ', sort keys %vlist));
-
-    # Generate list of install dirs.
-    $output_rules .= ("install-man: \$(MANS)\n"
-		      . "\t\@\$(NORMAL_INSTALL)\n");
-    &pretty_print_rule ("\t\$(MAKE) \$(AM_MAKEFLAGS)", "\t ", @namelist);
-    &depend ('.PHONY', 'install-man');
-
-    $output_rules .= "uninstall-man:\n\t\@\$(NORMAL_UNINSTALL)\n";
-    grep ($_ = 'un' . $_, @namelist);
-    &pretty_print_rule ("\t\$(MAKE) \$(AM_MAKEFLAGS)", "\t ", @namelist);
-    &depend ('.PHONY', 'uninstall-man');
 
     $output_vars .= &file_contents ('mans-vars');
 
@@ -6589,6 +6577,11 @@ sub initialize_per_input
     # in Makefile: keeping related stuff altogether.
     %dependencies =
       (
+       # Installing/uninstalling.
+       'install-man'	      => [],
+       'uninstall-man'	      => [],
+
+       # Cleaning.
        'clean-am'             => [],
        'mostlyclean-am'       => [],
        'maintainer-clean-am'  => [],
@@ -6598,9 +6591,10 @@ sub initialize_per_input
        'maintainer-clean'     => [],
        'distclean'            => [],
 
-       # Building all the flavors of distributions.
+       # Tarballing.
        'dist-all'             => [],
 
+       # Phoning.
        '.PHONY'               => []
       );
     # Holds the factored actions.  Tied to %DEPENDENCIES, i.e., filled
