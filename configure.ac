@@ -27,10 +27,10 @@ AC_CONFIG_AUX_DIR(lib)
 
 AC_CANONICAL_BUILD
 
-# Save the AUTOCONF setting before AM_INIT_AUTOMAKE overrides it;
-# this way we can run Autoconf tests from configure without being
-# bothered by `missing'.
-am_AUTOCONF=${AUTOCONF-autoconf}
+# Save the AUTOCONF setting before AM_INIT_AUTOMAKE overrides it; this
+# way we can run Autoconf tests from configure (or from the test
+# suite) without being bothered by `missing'.
+AC_SUBST([am_AUTOCONF], ["${AUTOCONF-autoconf}"])
 
 AM_INIT_AUTOMAKE([1.8a dist-bzip2 filename-length-max=99])
 
