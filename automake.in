@@ -248,21 +248,11 @@ sub generate_makefile
     &read_am_file ($makefile . '.am');
 
     # Program stuff.
-    local ($programs) = (defined ($contents{'AM_PROGRAMS'})
-			 ? $contents{'AM_PROGRAMS'}
-			 : $contents{'PROGRAMS'});
-    local ($libprograms) = (defined ($contents{'AM_LIBPROGRAMS'})
-			    ? $contents{'AM_LIBPROGRAMS'}
-			    : $contents{'LIBPROGRAMS'});
-    local ($libraries) = (defined ($contents{'AM_LIBRARIES'})
-			  ? $contents{'AM_LIBRARIES'}
-			  : $contents{'LIBRARIES'});
-    local ($scripts) = (defined ($contents{'AM_SCRIPTS'})
-			? $contents{'AM_SCRIPTS'}
-			: $contents{'SCRIPTS'});
-    local ($libscripts) = (defined ($contents{'AM_LIBSCRIPTS'})
-			   ? $contents{'AM_LIBSCRIPTS'}
-			   : $contents{'LIBSCRIPTS'});
+    local ($programs) = &am_variable ('PROGRAMS');
+    local ($libprograms) = &am_variable ('AM_LIBPROGRAMS');
+    local ($libraries) = &am_variable ('AM_LIBRARIES');
+    local ($scripts) = &am_variable ('AM_SCRIPTS');
+    local ($libscripts) = &am_variable ('AM_LIBSCRIPTS');
 
     &handle_programs ($programs, $libprograms, $libraries);
     &handle_scripts ($scripts, $libscripts);
@@ -503,9 +493,10 @@ sub handle_scripts
 # Handle all Texinfo source.
 sub handle_texinfo
 {
-    return if (! defined $contents{TEXINFOS});
+    local ($texis) = &am_variable ('TEXINFOS');
+    return if (!$texis);
 
-    local (@texis) = split (' ', $contents{TEXINFOS});
+    local (@texis) = split (' ', $texis);
     if ($#texis > 0)
     {
 	print STDERR "automake: sorry, only one file allowed in \`TEXINFOS'\n";
@@ -1185,6 +1176,17 @@ sub file_contents
     close (FC_FILE);
 
     return $results;
+}
+
+# Return contents of some Makefile.am variable.  Allow for AM_ style
+# overrides.
+sub am_variable
+{
+    local ($varname) = @_;
+
+    return (defined ($contents{'AM_' . $varname})
+	    ? $contents{'AM_' . $varname}
+	    : $contents{$varname});
 }
 
 ################################################################
