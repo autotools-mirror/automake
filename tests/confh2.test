@@ -1,0 +1,26 @@
+#! /bin/sh
+
+# Test to make sure stamp files created correctly.
+# Report from Erez Zadok.
+
+. $srcdir/defs || exit 1
+
+cat > configure.in << 'END'
+PACKAGE=nonesuch
+VERSION=nonesuch
+AC_ARG_PROGRAM
+AC_PROG_INSTALL
+AM_CONFIG_HEADER(config.h:include/config.h.in)
+AC_OUTPUT(Makefile)
+END
+
+: > Makefile.am
+: > acconfig.h
+
+mkdir include
+: > include/config.h.in
+
+$AUTOMAKE || exit 1
+
+grep '^config.h:' Makefile.in || exit 1
+fgrep 'echo timestamp > stamp-h' Makefile.in || exit 1
