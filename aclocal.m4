@@ -1,4 +1,4 @@
-dnl aclocal.m4 generated automatically by aclocal 1.1f
+dnl aclocal.m4 generated automatically by aclocal 1.1g
 
 # Do all the work for Automake.  This macro actually does too much --
 # some checks are only needed if your package does certain things.
@@ -17,6 +17,7 @@ AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE")
 VERSION=[$2]
 AC_SUBST(VERSION)
 AC_DEFINE_UNQUOTED(VERSION, "$VERSION")
+AM_SANITY_CHECK
 AC_ARG_PROGRAM
 AC_PROG_MAKE_SET])
 
@@ -28,4 +29,24 @@ AC_DEFUN(AM_PROG_INSTALL,
 test -z "$INSTALL_SCRIPT" && INSTALL_SCRIPT='${INSTALL_PROGRAM}'
 AC_SUBST(INSTALL_SCRIPT)dnl
 ])
+
+#
+# Check to make sure that the build environment is sane.
+#
+
+AC_DEFUN(AM_SANITY_CHECK,
+[AC_MSG_CHECKING([whether build environment is sane])
+echo timestamp > conftestfile
+# Do this in a subshell so we don't clobber the current shell's
+# arguments.  FIXME: maybe try `-L' hack like GETLOADAVG test?
+if (set X `ls -t $srcdir/configure conftestfile`; test "[$]2" = conftestfile)
+then
+   # Ok.
+   :
+else
+   AC_MSG_ERROR([newly created file is older than distributed files!
+Check your system clock])
+fi
+rm -f conftest*
+AC_MSG_RESULT(yes)])
 
