@@ -3015,6 +3015,20 @@ Be careful when selecting library components conditionally.  Because
 building an empty library is not portable, you should ensure that any
 library contains always at least one object.
 
+To use a static library when building a program, add it to
+@code{LDADD} for this program.  In the following example, the program
+@file{cpio} is statically linked with the library @file{libcpio.a}.
+
+@example
+noinst_LIBRARIES = libcpio.a
+libcpio_a_SOURCES = @dots{}
+
+bin_PROGRAMS = cpio
+cpio_SOURCES = cpio.c @dots{}
+cpio_LDADD = libcpio.a
+@end example
+
+
 @node A Shared Library
 @section Building a Shared Library
 
@@ -3110,6 +3124,38 @@ libgettext_la_SOURCES = gettext.c gettext.h @dots{}
 Automake predefines the variable @samp{pkglibdir}, so you can use
 @code{pkglib_LTLIBRARIES} to install libraries in
 @code{$(libdir)/@@PACKAGE@@/}.
+
+If @file{gettext.h} is a public header file that needs to be installed
+in order for people to use the library, it should be declared using a
+@code{_HEADERS} variable, not in @code{libgettext_la_SOURCES}.
+Headers listed in the latter should be internal headers that are not
+part of the public interface.
+
+@example
+lib_LTLIBRARIES = libgettext.la
+libgettext_la_SOURCES = gettext.c @dots{}
+include_HEADERS = gettext.h @dots{}
+@end example
+
+A package can build and install such a library along with other
+programs that use it.  This dependency should be specified using
+@code{LDADD}.  The following example builds a program named
+@file{hello} that is linked with @code{libgettext.la}.
+
+@example
+lib_LTLIBRARIES = libgettext.la
+libgettext_la_SOURCES = gettext.c @dots{}
+
+bin_PROGRAMS = hello
+hello_SOURCES = hello.c @dots{}
+hello_LDADD = libgettext.la
+@end example
+
+@noindent
+Whether @file{hello} is statically or dynamically linked with
+@code{libgettext.la} is not yet known: this will depend on the
+configuration of libtool and the capabilities of the host.
+
 
 @node Conditional Libtool Libraries
 @subsection Building Libtool Libraries Conditionally
@@ -3546,8 +3592,12 @@ Extra objects can be added to a @emph{library} using the @samp{_LIBADD}
 variable.  For instance this should be used for objects determined by
 @code{configure} (@pxref{A Library}).
 
+In the case of libtool libraries, @code{maude_LIBADD} can also refer
+to other libtool libraries.
+
 @item maude_LDADD
-Extra objects can be added to a @emph{program} by listing them in the
+Extra objects (@file{*.$(OBJDIR)}) and libraries (@file{*.a},
+@file{*.la}) can be added to a @emph{program} by listing them in the
 @samp{_LDADD} variable.  For instance this should be used for objects
 determined by @code{configure} (@pxref{Linking}).
 
