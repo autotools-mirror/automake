@@ -2,7 +2,10 @@ distdir = $(PACKAGE)-$(VERSION)
 dist: $(DISTFILES)
 	rm -rf $(distdir)
 	mkdir $(distdir)
-	(cd $(srcdir) && automake --include-deps --output-dir=$(distdir))
+## We need an absolute path for --output-dir.  Get that here.
+	distdir=`cd $(distdir) && pwd` \
+	  && cd $(srcdir) \
+	  && automake --include-deps --output-dir=$$distdir
 	@for file in $(DISTFILES); do		\
 ## Test for file existence because sometimes a file gets included in
 ## DISTFILES twice.  For example this happens when a single source
@@ -10,13 +13,9 @@ dist: $(DISTFILES)
 ## situations in which "ln" can fail.  For instance a file to
 ## distribute could actually be a cross-filesystem symlink -- this can
 ## easily happen if "gettextize" was run on the distribution.
-	  test -f $(distdir)/$$file || {	\
-	    echo linking $$file;		\
-	    ln $(srcdir)/$$file $(distdir)/$$file; \
-	  } || {				\
-	    echo copying $$file instead;	\
-	    cp -p $(srcdir)/$$file $(distdir)/$$file; \
-	  };					\
+	  test -f $(distdir)/$$file \
+	    || ln $(srcdir)/$$file $(distdir)/$$file \
+	    || cp -p $(srcdir)/$$file $(distdir)/$$file; \
 	done
 	for subdir in $(SUBDIRS); do		\
 ## Test for directory existence here because previous automake

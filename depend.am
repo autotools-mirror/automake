@@ -2,27 +2,27 @@
 # GNU make and gcc.  It is only included in the generated Makefile.in
 # if `automake' is not passed the `--include-deps' flag.
 
-MKDEP = gcc -MM
+MKDEP = gcc -MM $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
 
 ## Use $(kr) in case we are doing auto-deANSIfication.
-DEP_FILES = $(patsubst %.$(kr)o,.deps/%.P,$(OBJECTS))
+DEP_FILES = $(patsubst %.$(kr)o, $(srcdir)/.deps/%.P,$(OBJECTS))
 
 ## We use ".P" as the name of our placeholder because it can't be
 ## duplicated by any C source file.  (Well, there could be ".c", but
 ## no one does that in practice)
--include .deps/.P
-.deps/.P:
-	test -d .deps || mkdir .deps
+-include $(srcdir)/.deps/.P
+$(srcdir)/.deps/.P:
+	cd $(srcdir) && test -d .deps || mkdir .deps
 ## Use ":" here and not "echo timestamp".  Otherwise GNU Make barfs:
 ## .deps/.P:1: *** missing separator.  Stop.
 	: > $@
 
 -include $(DEP_FILES)
-$(DEP_FILES): .deps/.P
+$(DEP_FILES): $(srcdir)/.deps/.P
 
-.deps/%.P: %.c
+$(srcdir)/.deps/%.P: $(srcdir)/%.c
 	@echo "mkdeps $< > $@"
-	@$(MKDEP) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $< > $@-tmp
+	@$(MKDEP) $< > $@-tmp
 	@mv $@-tmp $@
 
 # End of maintainer-only section
