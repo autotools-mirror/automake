@@ -124,6 +124,7 @@ instdata.test \
 instexec.test \
 insthook.test \
 instman.test \
+instman2.test \
 interp.test \
 interp2.test \
 java.test \
