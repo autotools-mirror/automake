@@ -391,6 +391,7 @@ python6.test \
 python7.test \
 python8.test \
 python9.test \
+python10.test \
 recurs.test \
 recurs2.test \
 remake.test \
