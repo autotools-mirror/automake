@@ -56,6 +56,7 @@ AC_CACHE_CHECK([dependency style of $depcc],
     # This happens at least with the AIX C compiler.
     echo '#include "conftest.h"' > conftest.c
     echo 'int i;' > conftest.h
+    echo "${am__include} ${am__quote}conftest.Po${am__quote}" > confmf
 
     case $depmode in
     nosideeffect)
@@ -76,7 +77,8 @@ AC_CACHE_CHECK([dependency style of $depcc],
        source=conftest.c object=conftest.o \
        depfile=conftest.Po tmpdepfile=conftest.TPo \
        $SHELL ./depcomp $depcc -c conftest.c -o conftest.o >/dev/null 2>&1 &&
-       grep conftest.h conftest.Po > /dev/null 2>&1; then
+       grep conftest.h conftest.Po > /dev/null 2>&1 &&
+       ${MAKE-make} -s -f confmf > /dev/null 2>&1; then
       am_cv_$1_dependencies_compiler_type=$depmode
       break
     fi
