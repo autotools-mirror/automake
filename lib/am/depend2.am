@@ -29,9 +29,23 @@
 ## - if deps are on, %AMDEP% is mapped onto AMDEP,  and therefore
 ##   the `if AMDEP' chunk is prefix with @AMDEP_TRUE@ just like for any
 ##   other configure-time conditional.
+##
+## We do likewise for %FASTDEP%; this expands to an ordinary
+## configure-time conditional.  %FASTDEP% is used to speed up the
+## common case of building a package with gcc 3.x.  In this case we
+## can skip the use of depcomp and easily inline the dependency
+## tracking.
 
 ?GENERIC?%EXT%.o:
 ?!GENERIC?%OBJ%: %SOURCE%
+if %FASTDEP%
+## In fast-dep mode, we can always use -o.
+	if %COMPILE% -MT %OBJ% -MD -MP -MF "%DEPBASE%.Tpo" \
+	  %-c% -o %OBJ% `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%; \
+	then mv "%DEPBASE%.Tpo" "%DEPBASE%.Po"; \
+	else rm -f "%DEPBASE%.Tpo"; exit 1; \
+	fi
+else !%FASTDEP%
 if %AMDEP%
 	source='%SOURCE%' object='%OBJ%' libtool=no @AMDEPBACKSLASH@
 	depfile='%DEPBASE%.Po' tmpdepfile='%DEPBASE%.TPo' @AMDEPBACKSLASH@
@@ -39,9 +53,18 @@ if %AMDEP%
 endif %AMDEP%
 ?-o?	%COMPILE% %-c% %-o% %OBJ% `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%
 ?!-o?	%COMPILE% %-c% `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%
+endif !%FASTDEP%
 
 ?GENERIC?%EXT%.obj:
 ?!GENERIC?%OBJOBJ%: %SOURCE%
+if %FASTDEP%
+## In fast-dep mode, we can always use -o.
+	if %COMPILE% -MT %OBJOBJ% -MD -MP -MF "%DEPBASE%.Tpo" \
+	  %-c% -o %OBJOBJ% `cygpath -w %SOURCE%`; \
+	then mv "%DEPBASE%.Tpo" "%DEPBASE%.Po"; \
+	else rm -f "%DEPBASE%.Tpo"; exit 1; \
+	fi
+else !%FASTDEP%
 if %AMDEP%
 	source='%SOURCE%' object='%OBJOBJ%' libtool=no @AMDEPBACKSLASH@
 	depfile='%DEPBASE%.Po' tmpdepfile='%DEPBASE%.TPo' @AMDEPBACKSLASH@
@@ -49,15 +72,25 @@ if %AMDEP%
 endif %AMDEP%
 ?-o?	%COMPILE% %-c% %-o% %OBJOBJ% `cygpath -w %SOURCE%`
 ?!-o?	%COMPILE% %-c% `cygpath -w %SOURCE%`
+endif !%FASTDEP%
 
 if %?LIBTOOL%
 ?GENERIC?%EXT%.lo:
 ?!GENERIC?%LTOBJ%: %SOURCE%
-if  %AMDEP%
+if %FASTDEP%
+## In fast-dep mode, we can always use -o.
+	if %LTCOMPILE% -MT %LTOBJ% -MD -MP -MF "%DEPBASE%.Tpo" \
+	  %-c% -o %LTOBJ% `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE% \
+	then mv "%DEPBASE%.Tpo" "%DEPBASE%.Po"; \
+	else rm -f "%DEPBASE%.Tpo"; exit 1; \
+	fi
+else !%FASTDEP%
+if %AMDEP%
 	source='%SOURCE%' object='%LTOBJ%' libtool=yes @AMDEPBACKSLASH@
 	depfile='%DEPBASE%.Plo' tmpdepfile='%DEPBASE%.TPlo' @AMDEPBACKSLASH@
 	$(%FPFX%DEPMODE) $(depcomp) @AMDEPBACKSLASH@
-endif  %AMDEP%
+endif %AMDEP%
 ## We can always use `-o' with Libtool.
 	%LTCOMPILE% %-c% -o %LTOBJ% `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%
+endif !%FASTDEP%
 endif %?LIBTOOL%
