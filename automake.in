@@ -215,7 +215,7 @@ my @common_files =
 my @common_sometimes =
   (
    'aclocal.m4', 'acconfig.h', 'config.h.top',
-   'config.h.bot', 'stamp-h.in', 'stamp-vti'
+   'config.h.bot', 'stamp-vti'
   );
 
 # Copyright on generated Makefile.ins.
@@ -3676,33 +3676,34 @@ sub handle_configure
     my @distclean_config;
     foreach my $spec (@config_headers)
       {
-	my ($out, @ins) = split_config_file_spec ($spec);
 	$hdr_index += 1;
-	my $header_dir = dirname ($out);
+	# $CONFIG_H_PATH: config.h from top level.
+	my ($config_h_path, @ins) = split_config_file_spec ($spec);
+	my $config_h_dir = dirname ($config_h_path);
 
 	# If the header is in the current directory we want to build
 	# the header here.  Otherwise, if we're at the topmost
 	# directory and the header's directory doesn't have a
 	# Makefile, then we also want to build the header.
-	if ($relative_dir eq $header_dir
-	    || ($relative_dir eq '.' && ! &is_make_dir ($header_dir)))
+	if ($relative_dir eq $config_h_dir
+	    || ($relative_dir eq '.' && ! &is_make_dir ($config_h_dir)))
 	{
 	    my ($cn_sans_dir, $stamp_dir);
-	    if ($relative_dir eq $header_dir)
+	    if ($relative_dir eq $config_h_dir)
 	    {
-		$cn_sans_dir = basename ($out);
+		$cn_sans_dir = basename ($config_h_path);
 		$stamp_dir = '';
 	    }
 	    else
 	    {
-		$cn_sans_dir = $out;
-		if ($header_dir eq '.')
+		$cn_sans_dir = $config_h_path;
+		if ($config_h_dir eq '.')
 		{
 		    $stamp_dir = '';
 		}
 		else
 		{
-		    $stamp_dir = $header_dir . '/';
+		    $stamp_dir = $config_h_dir . '/';
 		}
 	    }
 
@@ -3723,11 +3724,11 @@ sub handle_configure
 
 	    # Header defined and in this directory.
 	    my @files;
-	    if (-f $out . '.top')
+	    if (-f $config_h_path . '.top')
 	    {
 		push (@files, "$cn_sans_dir.top");
 	    }
-	    if (-f $out . '.bot')
+	    if (-f $config_h_path . '.bot')
 	    {
 		push (@files, "$cn_sans_dir.bot");
 	    }
@@ -3740,21 +3741,14 @@ sub handle_configure
 	        push (@files, '$(top_srcdir)/acconfig.h');
 	    }
 
-	    my $stamp_name = "stamp-h$hdr_index";
-            my $out_dir = dirname ($in0_sans_dir);
-
+	    my $stamp = "${stamp_dir}stamp-h${hdr_index}";
             $output_rules .=
 	      file_contents ('remake-hdr',
-			     ('FILES'              => "@files",
-			      'CONFIG_HEADER'      => $cn_sans_dir,
-			      'CONFIG_HEADER_IN'   => $in0_sans_dir,
-			      'CONFIG_HEADER_FULL' => $out,
-			      'STAMP'              => "$stamp_dir$stamp_name",
-			      'SRC_STAMP'          => "$out_dir/$stamp_name"));
-
-	    create ("$relative_dir/$out_dir/$stamp_name.in");
-	    require_file ($config_header_location, $FOREIGN,
-			  "$out_dir/$stamp_name.in");
+			     ('FILES'         => "@files",
+			      'CONFIG_H'      => $cn_sans_dir,
+			      'CONFIG_HIN'    => $in0_sans_dir,
+			      'CONFIG_H_PATH' => $config_h_path,
+			      'STAMP'         => "$stamp"));
 
 	    push @distclean_config, $cn_sans_dir;
 	}
