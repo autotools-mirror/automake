@@ -4708,6 +4708,7 @@ sub variable_conditions
     local (%uniqify);
     local ($cond);
 
+    %vars_scanned = ();
     foreach $cond (&variable_conditions_sub ($var, '', ()))
     {
 	$uniqify{$cond} = 1;
@@ -4722,6 +4723,13 @@ sub variable_conditions_sub
 {
     local ($var, $parent, @parent_conds) = @_;
     local (@new_conds) = ();
+
+    if (defined $vars_scanned{$var})
+    {
+	&am_line_error ($parent, "variable \`$var' recursively defined");
+	return ();
+    }
+    $vars_scanned{$var} = 1;
 
     if (! $conditional{$var})
     {
@@ -4963,7 +4971,9 @@ sub variable_value
 # conditions should be returned; if COND is a particular condition
 # (all conditions are surrounded by @...@) then only the value for
 # that condition should be returned; otherwise, warn if VAR is
-# conditionally defined.
+# conditionally defined.  SCANNED is a global hash listing whose keys
+# are all the variables already scanned; it is an error to rescan a
+# variable.
 sub value_to_list
 {
     local ($var, $val, $cond) = @_;
@@ -4993,7 +5003,7 @@ sub value_to_list
 	    }
 
 	    # Find the value.
-	    @temp_list = &variable_value_as_list ($1, $cond, $var);
+	    @temp_list = &variable_value_as_list_worker ($1, $cond, $var);
 
 	    # Now rewrite the value if appropriate.
 	    if ($from)
@@ -5020,7 +5030,7 @@ sub value_to_list
 # that condition should be returned; otherwise, warn if VAR is
 # conditionally defined.  If PARENT is specified, it is the name of
 # the including variable; this is only used for error reports.
-sub variable_value_as_list
+sub variable_value_as_list_worker
 {
     local ($var, $cond, $parent) = @_;
     local (@result);
@@ -5033,8 +5043,15 @@ sub variable_value_as_list
     {
 	&am_line_error ($parent, "variable \`$var' not defined");
     }
+    elsif (defined $vars_scanned{$var})
+    {
+	# `vars_scanned' is a global we use to keep track of which
+	# variables we've already examined.
+	&am_line_error ($parent, "variable \`$var' recursively defined");
+    }
     elsif ($cond eq 'all' && $conditional{$var})
     {
+	$vars_scanned{$var} = 1;
 	local (@condvals) = split (' ', $conditional{$var});
 	while (@condvals)
 	{
@@ -5045,6 +5062,7 @@ sub variable_value_as_list
     }
     elsif ($cond && $conditional{$var})
     {
+	$vars_scanned{$var} = 1;
 	local (@condvals) = split (' ', $conditional{$var});
 	local ($onceflag);
 	while (@condvals)
@@ -5064,12 +5082,23 @@ sub variable_value_as_list
     }
     else
     {
+	$vars_scanned{$var} = 1;
 	&variable_conditionally_defined ($var, $parent);
 	$content_seen{$var} = 1;
 	push (@result, &value_to_list ($var, $contents{$var}, $cond));
     }
 
     return @result;
+}
+
+# This is just a wrapper for variable_value_as_list_worker that
+# initializes the global hash `vars_scanned'.  This hash is used to
+# avoid infinite recursion.
+sub variable_value_as_list
+{
+    local ($var, $cond, $parent) = @_;
+    %vars_scanned = ();
+    return &variable_value_as_list_worker ($var, $cond, $parent);
 }
 
 # Define a new variable, but only if not already defined.
