@@ -316,7 +316,8 @@ my @configure_input_files = ();
 # List of files in AC_CONFIG_FILES/AC_OUTPUT without Makefile.am's,
 # and their outputs.
 my @other_input_files = ();
-# Where the last AC_CONFIG_FILES/AC_OUTPUT appears.
+# Where each AC_CONFIG_FILES/AC_OUTPUT/AC_CONFIG_LINK appears.
+# The keys are the files created by these macros.
 my %ac_config_files_location = ();
 
 # List of directories to search for configure-required files.  This
@@ -3766,59 +3767,60 @@ sub handle_configure ($$$@)
       push (@actual_other_files, $local);
     }
 
-  foreach my $struct (@config_links)
+  # For links we should clean destinations and distribute sources.
+  foreach my $spec (@config_links)
     {
-      my ($spec, $where) = @$struct;
       my ($link, $file) = split /:/, $spec;
+      my $where = $ac_config_files_location{$link};
 
-      # We skip links that aren't in this directory.  However, if
-      # the link's directory does not have a Makefile, and we are
-      # currently doing `.', then we add the link to CONFIG_CLEAN_FILES
-      # in `.'s Makefile.in.
-      my $local = basename ($link);
-      my $fd = dirname ($link);
-      if ($fd ne $relative_dir)
+      # Skip destinations that contain shell variables.
+      if ($link !~ /\$/)
 	{
-	  if ($relative_dir eq '.' && ! &is_make_dir ($fd))
+	  # We skip links that aren't in this directory.  However, if
+	  # the link's directory does not have a Makefile, and we are
+	  # currently doing `.', then we add the link to CONFIG_CLEAN_FILES
+	  # in `.'s Makefile.in.
+	  my $local = basename ($link);
+	  my $fd = dirname ($link);
+	  if ($fd ne $relative_dir)
 	    {
-	      $local = $link;
+	      if ($relative_dir eq '.' && ! &is_make_dir ($fd))
+		{
+		  $local = $link;
+		}
+	      else
+		{
+		  $local = undef;
+		}
 	    }
-	  else
-	    {
-	      $local = undef;
-	    }
+	  push @actual_other_files, $local if $local;
 	}
 
-      push @actual_other_files, $local if $local;
-
-      $local = basename ($file);
-      $fd = dirname ($file);
-
-      # Make sure the dist directory for each input file is created.
-      # We only have to do this at the topmost level though.
-      if ($relative_dir eq '.')
+      # Do not process sources that contain shell variables.
+      if ($file !~ /\$/)
 	{
-	  $dist_dirs{$fd} = 1;
-	}
+	  my $fd = dirname ($file);
 
-      # We skip files that aren't in this directory.  However, if
-      # the files's directory does not have a Makefile, and we are
-      # currently doing `.', then we require the file from `.'.
-      if ($fd ne $relative_dir)
-	{
-	  if ($relative_dir eq '.' && ! &is_make_dir ($fd))
+	  # Make sure the dist directory for each input file is created.
+	  # We only have to do this at the topmost level though.
+	  if ($relative_dir eq '.')
 	    {
-	      $local = $file;
+	      $dist_dirs{$fd} = 1;
 	    }
-	  else
+
+	  # We distribute files that are in this directory.
+	  # At the top-level (`.') we also distribute files whose
+	  # directory does not have a Makefile.
+	  if (($fd eq $relative_dir)
+	      || ($relative_dir eq '.' && ! &is_make_dir ($fd)))
 	    {
-	      next;
+	      # The following will distribute $file as a side-effect when
+	      # it is appropriate (i.e., when $file is not already an output).
+	      # We do not need the result, just the side-effect.
+	      rewrite_inputs_into_dependencies ($link, $file);
 	    }
 	}
-
-      # Require all input files.
-      require_file ($where, FOREIGN, $local);
-  }
+    }
 
   # These files get removed by "make distclean".
   define_pretty_variable ('CONFIG_CLEAN_FILES', TRUE, INTERNAL,
@@ -4498,7 +4500,12 @@ sub scan_autoconf_traces ($)
 	}
       elsif ($macro eq 'AC_CONFIG_LINKS')
 	{
-	  push @config_links, map { [$_, $where] } split (' ', $args[1]);
+	  foreach my $spec (split (' ', $args[1]))
+	    {
+	      my ($dest, $src) = split (':', $spec);
+	      $ac_config_files_location{$dest} = $where;
+	      push @config_links, $spec;
+	    }
 	}
       elsif ($macro eq 'AC_INIT')
         {
