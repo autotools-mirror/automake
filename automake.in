@@ -1137,7 +1137,7 @@ do
     {
       if (! -f ($am_file . '.am'))
 	{
-	  &err ("`$am_file.am' does not exist");
+	  &error ("`$am_file.am' does not exist");
 	}
       else
 	{
@@ -1163,11 +1163,11 @@ sub prog_error ($;%)
   msg 'automake', '', $msg, %opts;
 }
 
-# err ($WHERE, $MESSAGE, [%OPTIONS])
-# err ($MESSAGE)
-# ----------------------------------
+# error ($WHERE, $MESSAGE, [%OPTIONS])
+# error ($MESSAGE)
+# ------------------------------------
 # Uncategorized errors.
-sub err ($;$%)
+sub error ($;$%)
 {
   my ($where, $msg, %opts) = @_;
   msg ('error', $where, $msg, %opts);
@@ -1899,8 +1899,8 @@ sub process_option_list
 	  # Got a version number.
 	  if (version_check $&)
 	    {
-	      err ($where, "require Automake $_, but have $VERSION",
-		   uniq_scope => US_GLOBAL);
+	      error ($where, "require Automake $_, but have $VERSION",
+		     uniq_scope => US_GLOBAL);
 		return 1;
 	    }
 	}
@@ -1914,8 +1914,8 @@ sub process_option_list
 	}
       else
 	{
-	  err ($where, "option `$_' not recognized",
-	       uniq_scope => US_GLOBAL);
+	  error ($where, "option `$_' not recognized",
+		 uniq_scope => US_GLOBAL);
 	  return 1;
 	}
     }
@@ -3639,7 +3639,8 @@ sub scan_texinfo_file
         $outfile = $1;
         if ($outfile =~ /\.(.+)$/ && $1 ne 'info')
           {
-	    err "$filename:$.", "output `$outfile' has unrecognized extension";
+	    error ("$filename:$.",
+		   "output `$outfile' has unrecognized extension");
             return;
           }
       }
@@ -5280,12 +5281,12 @@ sub scan_autoconf_traces ($)
 	}
       elsif ($macro eq 'AM_AUTOMAKE_VERSION')
         {
-	  err ($here,
-	       "version mismatch.  This is Automake $VERSION,\n" .
-	       "but the definition used by this AM_INIT_AUTOMAKE\n" .
-	       "comes from Automake $args[1].  You should recreate\n" .
-	       "aclocal.m4 with aclocal and run automake again.\n")
-	    if ($VERSION ne $args[1]);
+	  error ($here,
+		 "version mismatch.  This is Automake $VERSION,\n" .
+		 "but the definition used by this AM_INIT_AUTOMAKE\n" .
+		 "comes from Automake $args[1].  You should recreate\n" .
+		 "aclocal.m4 with aclocal and run automake again.\n")
+	    if $VERSION ne $args[1];
 
 	  $seen_automake_version = 1;
         }
@@ -5358,18 +5359,18 @@ sub scan_autoconf_files
       {
 	if (-f 'aclocal.m4')
 	  {
-	    err ($seen_init_automake || $me,
-		 "your implementation of AM_INIT_AUTOMAKE comes from " .
-		 "an\nold Automake version.  You should recreate " .
-		 "aclocal.m4\nwith aclocal and run automake again.\n");
+	    error ($seen_init_automake || $me,
+		   "your implementation of AM_INIT_AUTOMAKE comes from " .
+		   "an\nold Automake version.  You should recreate " .
+		   "aclocal.m4\nwith aclocal and run automake again.\n");
 	  }
 	else
 	  {
-	    err ($seen_init_automake || $me,
-		 "no proper implementation of AM_INIT_AUTOMAKE was " .
-		 "found,\nprobably because aclocal.m4 is missing...\n" .
-		 "You should run aclocal to create this file, then\n" .
-		 "run automake again.\n");
+	    error ($seen_init_automake || $me,
+		   "no proper implementation of AM_INIT_AUTOMAKE was " .
+		   "found,\nprobably because aclocal.m4 is missing...\n" .
+		   "You should run aclocal to create this file, then\n" .
+		   "run automake again.\n");
 	  }
       }
 
@@ -6106,7 +6107,7 @@ sub cond_stack_if ($$$)
 {
   my ($negate, $cond, $where) = @_;
 
-  err $where, "$cond does not appear in AM_CONDITIONAL"
+  error $where, "$cond does not appear in AM_CONDITIONAL"
     if ! $configure_cond{$cond} && $cond !~ /^TRUE|FALSE$/;
 
   $cond = "${cond}_TRUE"
@@ -6129,7 +6130,7 @@ sub cond_stack_else ($$$)
 
   if (! @cond_stack)
     {
-      err $where, "else without if";
+      error $where, "else without if";
       return;
     }
 
@@ -6143,8 +6144,8 @@ sub cond_stack_else ($$$)
       $cond = condition_negate ($cond)
 	if $negate;
 
-      err ($where, "else reminder ($negate$cond) incompatible with "
-	   . "current conditional: $cond_stack[$#cond_stack]")
+      error ($where, "else reminder ($negate$cond) incompatible with "
+	     . "current conditional: $cond_stack[$#cond_stack]")
 	if $cond_stack[$#cond_stack] ne $cond;
     }
 
@@ -6162,7 +6163,7 @@ sub cond_stack_endif ($$$)
 
   if (! @cond_stack)
     {
-      err $where, "endif without if: $negate$cond";
+      error $where, "endif without if: $negate$cond";
       return;
     }
 
@@ -6175,8 +6176,8 @@ sub cond_stack_endif ($$$)
       $cond = condition_negate ($cond)
 	if $negate;
 
-      err ($where, "endif reminder ($negate$cond) incompatible with "
-	   . "current conditional: $cond_stack[$#cond_stack]")
+      error ($where, "endif reminder ($negate$cond) incompatible with "
+	     . "current conditional: $cond_stack[$#cond_stack]")
 	if $cond_stack[$#cond_stack] ne $cond;
     }
 
@@ -6347,7 +6348,7 @@ sub macro_define ($$$$$$)
   # We will adjust the owener of this variable unless told otherwise.
   my $adjust_owner = 1;
 
-  err $where, "bad characters in variable name `$var'"
+  error $where, "bad characters in variable name `$var'"
     if $var !~ /$MACRO_PATTERN/o;
 
   # NEWS-OS 4.2R complains if a Makefile variable begins with `_'.
@@ -6375,15 +6376,15 @@ sub macro_define ($$$$$$)
 	  && exists $var_type{$var}{$cond}
 	  && $var_type{$var}{$cond} ne $type)
 	{
-	  err ($where, "$var was set with `$var_type{$var}=' "
-	       . "and is now set with `$type='");
+	  error ($where, "$var was set with `$var_type{$var}=' "
+		 . "and is now set with `$type='");
 	}
     }
   else
     {
       if (!exists $var_type{$var} && $type eq '+')
 	{
-	  err $where, "$var must be set with `=' before using `+='";
+	  error $where, "$var must be set with `=' before using `+='";
 	}
     }
   $var_type{$var}{$cond} = $type;
@@ -6470,13 +6471,13 @@ sub macro_define ($$$$$$)
 	  my @undef_cond = variable_not_always_defined_in_cond $var, $cond;
 	  if (@undef_cond != 0)
 	    {
-	      err ($where,
-		   "Cannot apply `+=' because `$var' is not defined "
-		   . "in\nthe following conditions:\n  "
-		   . join ("\n  ", @undef_cond)
-		   . "\nEither define `$var' in these conditions,"
-		   . " or use\n`+=' in the same conditions as"
-		   . " the definitions.");
+	      error ($where,
+		     "Cannot apply `+=' because `$var' is not defined "
+		     . "in\nthe following conditions:\n  "
+		     . join ("\n  ", @undef_cond)
+		     . "\nEither define `$var' in these conditions,"
+		     . " or use\n`+=' in the same conditions as"
+		     . " the definitions.");
 	    }
 	  else
 	    {
@@ -7808,7 +7809,7 @@ sub read_am_file ($)
 	}
 	elsif (/$WHITE_PATTERN/o)
 	{
-	    err "$amfile:$.", "blank line following trailing backslash"
+	    error "$amfile:$.", "blank line following trailing backslash"
 	      if $saw_bk;
 	    # Stick a single white line before the incoming macro or rule.
 	    $spacing = "\n";
@@ -7870,7 +7871,7 @@ sub read_am_file ($)
 	{
 	    # Stick a single white line before the incoming macro or rule.
 	    $spacing = "\n";
-	    err $here, "blank line following trailing backslash"
+	    error $here, "blank line following trailing backslash"
 	      if $saw_bk;
 	}
 	elsif (/$COMMENT_PATTERN/o)
@@ -7878,7 +7879,7 @@ sub read_am_file ($)
 	    # Stick comments before the incoming macro or rule.
 	    $comment .= $spacing . $_;
 	    $spacing = '';
-	    err $here, "comment following trailing backslash"
+	    error $here, "comment following trailing backslash"
 	      if $saw_bk && $comment eq '';
 	    $prev_state = IN_COMMENT;
 	}
@@ -8020,7 +8021,7 @@ sub read_am_file ($)
 	    $output_trailer .= &make_condition  (@cond_stack);
 	    $output_trailer .= $_;
 	    $comment = $spacing = '';
-	    err $here, "`#' comment at start of rule is unportable"
+	    error $here, "`#' comment at start of rule is unportable"
 	      if $_ =~ /^\t\s*\#/;
 	}
 
@@ -8247,9 +8248,9 @@ sub file_contents_internal ($$%)
     foreach (make_paragraphs ($file, %transform))
     {
         # Sanity checks.
-	err $file, "blank line following trailing backslash:\n$_"
+	error $file, "blank line following trailing backslash:\n$_"
 	  if /\\$/;
-	err $file, "comment following trailing backslash:\n$_"
+	error $file, "comment following trailing backslash:\n$_"
 	  if /\\#/;
 
  	if (/^$/)
@@ -8368,7 +8369,7 @@ sub file_contents_internal ($$%)
  	elsif (/$ASSIGNMENT_PATTERN/mso)
  	{
 	    my ($var, $type, $val) = ($1, $2, $3);
- 	    err $file, "variable `$var' with trailing backslash"
+ 	    error $file, "variable `$var' with trailing backslash"
 	      if /\\$/;
 
 	    $is_rule = 0;
@@ -9185,7 +9186,7 @@ sub require_variables ($$$@)
 	    . "`autoconf' again.";
 	}
 
-      err $where, $text, uniq_scope => US_GLOBAL;
+      error $where, $text, uniq_scope => US_GLOBAL;
     }
   return $res;
 }
