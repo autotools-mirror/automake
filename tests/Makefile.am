@@ -320,6 +320,7 @@ specflags3.test	\
 specflags6.test	\
 specflags7.test	\
 specflags8.test	\
+specflags9.test	\
 spell.test \
 spell2.test \
 spell3.test \

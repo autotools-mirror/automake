@@ -1,0 +1,32 @@
+#! /bin/sh
+
+# Another check for per-target flag substitutions.
+
+. $srcdir/defs || exit 1
+
+set -e
+
+cat >> configure.in << 'END'
+AC_PROG_CC
+AC_OUTPUT
+END
+
+cat > Makefile.am << 'END'
+bin_PROGRAMS = zzfoo zzbar
+zzfoo_SOURCES = sub/foo.c
+zzbar_SOURCES = bar.c
+zzbar_CPPFLAGS = -Dfoo
+END
+
+$ACLOCAL
+$AUTOMAKE --add-missing
+
+$FGREP '$(AM_CFLAGS)' Makefile.in
+
+$FGREP '$(zzfoo_CFLAGS)' Makefile.in && exit 1
+$FGREP '$(zzfoo_CPPFLAGS)' Makefile.in && exit 1
+
+$FGREP '$(zzbar_CFLAGS)' Makefile.in && exit 1
+$FGREP '$(zzbar_CPPFLAGS)' Makefile.in
+
+:
