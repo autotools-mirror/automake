@@ -1326,14 +1326,18 @@ distcheck: dist
 ');
 
 	$output_rules .= 'dist: distdir' . "\n\t";
-	$output_rules .= 'chmod -R a+r $(distdir)' . "\n\t";
+	# Ignore return result from chmod, because it might give an
+	# error if we chmod a symlink.
+	$output_rules .= '-chmod -R a+r $(distdir)' . "\n\t";
 	$output_rules .= '$(TAR) chozf $(distdir).tar.gz $(distdir)';
 	$output_rules .= "\n\t" . 'rm -rf $(distdir)' . "\n";
 
 	if (defined $options{'dist-shar'})
 	{
 	    $output_rules .= 'dist-shar: distdir' . "\n\t";
-	    $output_rules .= 'chmod -R a+r $(distdir)' . "\n\t";
+	    # Ignore return result from chmod, because it might give
+	    # an error if we chmod a symlink.
+	    $output_rules .= '-chmod -R a+r $(distdir)' . "\n\t";
 	    $output_rules .= 'shar $(distdir) | gzip > $(distdir).shar.gz';
 	    $output_rules .= "\n\t" . 'rm -rf $(distdir)' . "\n";
 	}
@@ -1643,7 +1647,10 @@ sub handle_footer
 
     if (defined $contents{'SUFFIXES'})
     {
-	push (@suffixes, '$(SUFFIXES)');
+	# Push actual suffixes, and not $(SUFFIXES).  Some versions of
+	# make do not like variable substitutions on the .SUFFIXES
+	# line.
+	push (@suffixes, split (' ', $contents{'SUFFIXES'}));
     }
 
     $output_trailer .= ".SUFFIXES:\n";
