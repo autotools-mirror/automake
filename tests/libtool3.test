@@ -88,5 +88,15 @@ $FGREP 'a.o:' Makefile.in && exit 1
 $FGREP 'a.lo:' Makefile.in
 
 ./configure
+
+# opportunistically check that --tag=CC is used when supported
+if test -n "`./libtool --help | grep tag=TAG`"; then
+  grep 'LTCOMPILE.*mode=compile --tag=CC' Makefile.in
+  grep 'LINK.*mode=link --tag=CC' Makefile.in
+  # We also expect --tag=CC to appear twice in the explicit rule a.lo.
+  # (The first time if am__fastdepCC is true, the second if it is not.)
+  test 2 = `grep 'am__fastdepCC.*mode=compile --tag=CC' Makefile.in | wc -l`
+fi
+
 $MAKE
 $MAKE distcheck
