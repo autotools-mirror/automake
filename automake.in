@@ -2581,8 +2581,7 @@ sub handle_tags
 	|| @tag_deps)
     {
 	local ($config) = '';
-	local ($one_hdr);
-	foreach $one_hdr (@config_headers)
+	foreach my $one_hdr (@config_headers)
 	{
 	    if ($relative_dir eq dirname ($one_hdr))
 	    {
@@ -2823,7 +2822,7 @@ sub handle_dist
 # `depend2' with appropriate transformations.
 sub add_depend2
 {
-    local ($lang) = @_;
+    my ($lang) = @_;
 
     # Get information on $LANG.
     my $pfx = $language_map{"$lang-autodep"};
@@ -2831,11 +2830,10 @@ sub add_depend2
     my $flag = $language_map{"$lang-flags"};
 
     # First include code for ordinary objects.
-    my ($xform, $ext);
-    $xform = &transform ('PFX'  => $pfx,
-			 'FPFX' => $fpfx);
-    $xform .= &transform_cond ('OBJEXT'  => $seen_objext,
-			       'LIBTOOL' => $seen_libtool);
+    my $xform = (&transform ('PFX'  => $pfx,
+			     'FPFX' => $fpfx)
+		 . &transform_cond ('OBJEXT'  => $seen_objext,
+				    'LIBTOOL' => $seen_libtool));
 
     # This function can be called even when we don't want dependency
     # tracking.  This happens when we need an explicit rule for some
@@ -2853,7 +2851,7 @@ sub add_depend2
 				    'COMPILE'   => $compile,
 				    'LTCOMPILE' => $ltcompile));
 
-	foreach $ext (&lang_extensions ($lang))
+	foreach my $ext (&lang_extensions ($lang))
 	{
 	    $output_rules .= (&file_contents ('depend2',
 					      &transform ('EXT' => $ext)
@@ -2875,7 +2873,7 @@ sub add_depend2
 	$xform .= 's/\@AMDEP\@.*$//;';
     }
 
-    local (%seen_files) = ();
+    my %seen_files = ();
     while ($i < $max)
     {
 	$derived = $list[$i];
@@ -2949,8 +2947,7 @@ sub handle_dependencies
 
 	    &require_config_file ($FOREIGN, 'depcomp');
 
-	    local ($iter);
-	    local (@deplist) = sort keys %dep_files;
+	    my @deplist = sort keys %dep_files;
 
 	    # We define this as a conditional variable because BSD
 	    # make can't handle backslashes for continuing comments on
@@ -2962,7 +2959,7 @@ sub handle_dependencies
 	    # variable expansion; generating many separate includes
 	    # seems safest.
 	    $output_rules .= "\n";
-	    foreach $iter (@deplist)
+	    foreach my $iter (@deplist)
  	    {
 		$output_rules .= "\@AMDEP\@\@_am_include\@ " . $iter . "\n";
 	    }
@@ -2975,8 +2972,7 @@ sub handle_dependencies
 	&define_variable ('depcomp', '');
     }
 
-    local ($key, $lang, $ext, $xform);
-    foreach $key (sort keys %language_map)
+    foreach my $key (sort keys %language_map)
     {
 	next unless $key =~ /^(.*)-autodep$/;
 	next if $language_map{$key} eq 'no';
@@ -2990,8 +2986,7 @@ sub handle_subdirs
     return if ! &variable_defined ('SUBDIRS');
 
     # Make sure each directory mentioned in SUBDIRS actually exists.
-    local ($dir);
-    foreach $dir (&variable_value_as_list ('SUBDIRS', 'all'))
+    foreach my $dir (&variable_value_as_list ('SUBDIRS', 'all'))
     {
 	# Skip directories substituted by configure.
 	next if $dir =~ /^\@.*\@$/;
@@ -3007,12 +3002,12 @@ sub handle_subdirs
 	    if $dir =~ /\//;
     }
 
-    local ($xform) = ('s/\@INSTALLINFO\@/' .
-		      (defined $options{'no-installinfo'}
-		       ? 'install-info-recursive'
-		       : '')
-		      . '/;');
-    $output_rules .= &file_contents ('subdirs', $xform);
+    $output_rules .=
+      &file_contents ('subdirs',
+		      &transform
+		      ('INSTALLINFO' => (defined $options{'no-installinfo'}
+					 ? 'install-info-recursive'
+					 : '')));
 
     $recursive_install = 1;
 }
@@ -3199,9 +3194,10 @@ sub handle_configure
     }
     else
     {
-        local ($xform) = &transform ('CONFIGURE_AC' => $configure_ac);
 	&handle_aclocal_m4;
-	$output_rules .= &file_contents ('remake', $xform);
+	$output_rules .=
+	  &file_contents ('remake',
+			  &transform ('CONFIGURE_AC' => $configure_ac));
 	&examine_variable ('CONFIG_STATUS_DEPENDENCIES');
 	&examine_variable ('CONFIGURE_DEPENDENCIES');
 	$top_reldir = '';
@@ -3211,12 +3207,11 @@ sub handle_configure
     }
 
     # If we have a configure header, require it.
-    local ($one_hdr);
     local (@local_fullnames) = @config_fullnames;
     local (@local_names) = @config_names;
     local ($hdr_index) = 0;
     local ($distclean_config) = '';
-    foreach $one_hdr (@config_headers)
+    foreach my $one_hdr (@config_headers)
     {
 	local ($one_fullname) = shift (@local_fullnames);
 	local ($one_name) = shift (@local_names);
@@ -3338,9 +3333,8 @@ sub handle_configure
 		    "\`CONFIG_HEADER' is an anachronism; now determined from \`$configure_ac'")
 	if &variable_defined ('CONFIG_HEADER');
 
-    local ($one_name);
     local ($config_header) = '';
-    foreach $one_name (@config_names)
+    foreach my $one_name (@config_names)
     {
 	# Generate CONFIG_HEADER define.
 	local ($one_hdr);
@@ -3366,8 +3360,8 @@ sub handle_configure
     local (@actual_other_files) = ();
     local ($file, $local);
     local (@inputs, @rewritten_inputs, $single);
-    local ($need_rewritten, $lfile);
-    foreach $lfile (@other_input_files)
+    local ($need_rewritten);
+    foreach my $lfile (@other_input_files)
     {
 	if ($lfile =~ /^([^:]*):(.*)$/)
 	{
@@ -3828,10 +3822,9 @@ sub do_check_merge_target
 sub handle_clean
 {
     my $xform = '';
-    my $name;
 
     # Don't include `MAINTAINER'; it is handled specially below.
-    foreach $name ('MOSTLY', '', 'DIST')
+    foreach my $name ('MOSTLY', '', 'DIST')
     {
       $xform .= &transform_cond ("${name}CLEAN"
 				 => &variable_defined ("${name}CLEANFILES"));
@@ -3976,7 +3969,7 @@ sub handle_tests
 # Handle Emacs Lisp.
 sub handle_emacs_lisp
 {
-    local (@elfiles) = &am_install_var ('-candist', 'lisp', 'LISP',
+    my @elfiles = &am_install_var ('-candist', 'lisp', 'LISP',
 					'lisp', 'noinst');
 
     if (@elfiles)
@@ -4055,11 +4048,11 @@ sub handle_java
 		      'CLASSPATH=$(JAVAROOT):$(srcdir)/$(JAVAROOT):$$CLASSPATH');
     &define_variable ('JAVAROOT', '$(top_builddir)');
 
-    local (%valid) = &am_primary_prefixes ('JAVA', 1,
-					   'java', 'noinst', 'check');
+    my %valid = &am_primary_prefixes ('JAVA', 1,
+				      'java', 'noinst', 'check');
 
-    local ($dir, $curs);
-    foreach $curs (keys %valid)
+    my $dir;
+    foreach my $curs (keys %valid)
     {
 	if (! &variable_defined ($curs . '_JAVA') || $curs eq 'EXTRA')
 	{
@@ -4743,7 +4736,7 @@ sub lang_header_rewrite
 # Rewrite a single yacc file.
 sub lang_yacc_rewrite
 {
-    local ($directory, $base, $ext) = @_;
+    my ($directory, $base, $ext) = @_;
 
     local ($r) = &lang_c_rewrite ($directory, $base, $ext);
     local ($pfx) = '';
@@ -4762,7 +4755,7 @@ sub lang_yacc_rewrite
 # Rewrite a single yacc++ file.
 sub lang_yaccxx_rewrite
 {
-    local ($directory, $base, $ext) = @_;
+    my ($directory, $base, $ext) = @_;
 
     local ($r) = $LANG_PROCESS;
     local ($pfx) = '';
@@ -4782,7 +4775,7 @@ sub lang_yaccxx_rewrite
 # Rewrite a single lex file.
 sub lang_lex_rewrite
 {
-    local ($directory, $base, $ext) = @_;
+    my ($directory, $base, $ext) = @_;
 
     local ($r) = &lang_c_rewrite ($directory, $base, $ext);
     local ($pfx) = '';
@@ -4801,7 +4794,7 @@ sub lang_lex_rewrite
 # Rewrite a single lex++ file.
 sub lang_lexxx_rewrite
 {
-    local ($directory, $base, $ext) = @_;
+    my ($directory, $base, $ext) = @_;
 
     local ($r) = $LANG_PROCESS;
     local ($pfx) = '';
@@ -5410,7 +5403,7 @@ sub conditionals_true_when (@@)
 # or target is being defined conditionally.  If we already know about
 # a definition that is true under the same conditions, then we have an
 # ambiguity.
-sub check_ambiguous_conditional
+sub check_ambiguous_conditional ($$)
 {
     my ($var, $cond) = @_;
     foreach my $vcond (keys %{$conditional{$var}})
@@ -5428,9 +5421,9 @@ sub check_ambiguous_conditional
 # and the optional second argument is the condition which we should
 # check.  If no condition is given, we currently return true if the
 # variable is defined under any condition.
-sub variable_defined
+sub variable_defined ($$)
 {
-    local ($var, $cond) = @_;
+    my ($var, $cond) = @_;
     if (defined $targets{$var})
     {
 	&am_line_error ($var, "\`$var' is target; expected variable");
@@ -5470,7 +5463,7 @@ sub variable_defined
 # Mark a variable as examined.
 sub examine_variable
 {
-    local ($var) = @_;
+    my ($var) = @_;
     &variable_defined ($var);
 }
 
@@ -5493,13 +5486,12 @@ sub examine_variable
 
 sub variable_conditions
 {
-    local ($var) = @_;
+    my ($var) = @_;
     local (%uniqify);
     local (@uniq_list);
-    local ($cond);
 
     %vars_scanned = ();
-    foreach $cond (&variable_conditions_sub ($var, '', ()))
+    foreach my $cond (&variable_conditions_sub ($var, '', ()))
     {
 	$uniqify{$cond} = 1;
     }
@@ -5610,13 +5602,11 @@ sub variable_conditions_sub
     # already handled everything in @this_conds along with their
     # subvariables.  We now need to add any permutations that are not
     # in @this_conds.
-    local ($this_cond);
-    foreach $this_cond (@this_conds)
+    foreach my $this_cond (@this_conds)
     {
 	local (@perms) =
 	    &variable_conditions_permutations (split('@', $this_cond));
-	local ($perm);
-	foreach $perm (@perms)
+	foreach my $perm (@perms)
 	{
 	    local ($scan);
 	    local ($ok) = 1;
@@ -5661,8 +5651,7 @@ sub variable_conditions_reduce
 {
     local (@conds) = @_;
     local (@ret) = ();
-    local ($cond);
-    foreach $cond (sort variable_conditions_cmp @conds)
+    foreach my $cond (sort variable_conditions_cmp @conds)
     {
 	next
 	  if ! conditionals_true_when (($cond), (@ret));
@@ -5875,7 +5864,7 @@ sub variable_value_as_list_worker
 # avoid infinite recursion.
 sub variable_value_as_list
 {
-    local ($var, $cond, $parent) = @_;
+    my ($var, $cond, $parent) = @_;
     %vars_scanned = ();
     return &variable_value_as_list_worker ($var, $cond, $parent);
 }
@@ -5886,7 +5875,7 @@ sub variable_value_as_list
 # Define a new variable VAR to VALUE, but only if not already defined.
 sub define_variable
 {
-    local ($var, $value) = @_;
+    my ($var, $value) = @_;
 
     if (! defined $contents{$var})
     {
@@ -5926,8 +5915,8 @@ sub define_pretty_variable
 # substitution by the same name.
 sub define_configure_variable
 {
-    local ($var) = @_;
-    local ($value) = '@' . $var . '@';
+    my ($var) = @_;
+    my $value = '@' . $var . '@';
     &define_variable ($var, $value);
 }
 
@@ -6734,7 +6723,6 @@ sub file_contents
 				 'ZIP'      => $options{'dist-zip'},
 				 'COMPRESS' => $options{'dist-tarZ'},
 				 'CK-NEWS'  => $options{'check-news'});
-
 
     # Swallow the file and applied the COMMAND.
     my $file = $am_dir . '/' . $basename . '.am';
