@@ -1576,11 +1576,11 @@ sub handle_texinfo
     local ($xform);
     if ($cygnus_mode)
     {
-	$xform = 'next if /^NOTCYGNUS/; s/^CYGNUS//;';
+	$xform = 's/^NOTCYGNUS.*$//; s/^CYGNUS//;';
     }
     else
     {
-	$xform = 'next if /^CYGNUS/; s/^NOTCYGNUS//;';
+	$xform = 's/^CYGNUS.*$//; s/^NOTCYGNUS//;';
     }
     $output_rules .= &file_contents_with_transform ($xform, 'texinfos');
     push (@phony, 'install-info-am', 'uninstall-info');
@@ -2156,7 +2156,7 @@ sub handle_dependencies
 		$output_rules .=
 		    &file_contents_with_transform ('s/\@EXT\@/' . $ext .'/g;'
 						   . 's/\@MKDEP\@/CXXMKDEP/g'
-						   . 'next if /^ONLYC/;',
+						   . 's/^ONLYC.*$//;',
 						   'depend2');
 		$need_cxx = 1;
 	    }
@@ -2907,7 +2907,7 @@ sub handle_tests
 	}
 	else
 	{
-	    $xform = 'next if /^CYGNUS/;';
+	    $xform = 's/^CYGNUS.*$//';
 	}
 	$output_rules .= &file_contents_with_transform ($xform, 'dejagnu');
 
@@ -3136,6 +3136,8 @@ sub scan_configure
 	    s/\\$//;
 	    foreach (split)
 	    {
+		# Need to skip empty elements for Perl 4.
+		next if $_ eq '';
 		$libsources{$_ . '.c'} = 1;
 	    }
 	}
@@ -4018,13 +4020,21 @@ sub file_contents_with_transform
     local ($comment) = '';
     local ($spacing) = "\n";
     local ($skipping) = 0;
+    local ($had_chars);
 
     while (<FC_FILE>)
     {
 	$_ =~ s/\@MAINT\@//g
 	    unless $seen_maint_mode;
 
+	$had_chars = length ($_);
 	eval $command;
+	# If the transform caused all the characters to go away, then
+	# ignore the line.  Why do this?  Because in Perl 4, a "next"
+	# inside of an eval doesn't affect a loop outside the eval.
+	# So we can't pass in a "transform" that uses next.  We used
+	# to do this.
+	next if $had_chars && $_ eq '';
 
 	if (/$IGNORE_PATTERN/o)
 	{
