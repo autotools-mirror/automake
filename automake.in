@@ -2674,6 +2674,7 @@ sub require_config_file
     local ($mystrict, @files) = @_;
     local ($file, $dir);
     local ($found_it);
+    local ($errfile);
 
     foreach $file (@files)
     {
@@ -2681,6 +2682,12 @@ sub require_config_file
 	foreach $dir (@config_aux_path)
 	{
 	    $fullfile = $dir . "/" . $file;
+
+	    # Use different name for "error filename".  Otherwise on
+	    # an error the bad file will be reported as eg
+	    # `../../install-sh' when using the default
+	    # config_aux_path.
+	    $errfile = $fullfile unless $errfile;
 
 	    if (-f $fullfile)
 	    {
@@ -2701,23 +2708,23 @@ sub require_config_file
 		    # if we must.
 		    if ($symlink_exists)
 		    {
-			symlink ($am_dir . '/' . $file, $fullfile);
+			symlink ($am_dir . '/' . $file, $errfile);
 		    }
 		    else
 		    {
-			system ('cp', $am_dir . '/' . $file, $fullfile);
+			system ('cp', $am_dir . '/' . $file, $errfile);
 		    }
 
 		    # FIXME this is a hack.  Should have am_warn.
 		    local ($save) = $exit_status;
 		    &am_error
-			("required file \"$fullfile\" not found; installing");
+			("required file \"$errfile\" not found; installing");
 		    $exit_status = $save;
 		}
 		else
 		{
 		    # Only an error if strictness constraint violated.
-		    &am_error ("required file \"$fullfile\" not found");
+		    &am_error ("required file \"$errfile\" not found");
 		}
 	    }
 	}

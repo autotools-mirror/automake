@@ -401,8 +401,15 @@ cvs-dist: maintainer-check
 	  echo "NEWS not updated; not releasing" 1>&2; \
 	  exit 1;				\
 	fi
-	cvs tag `echo "Release-$(VERSION)" | sed 's/\./-/g'`
+	cvs -q tag `echo "Release-$(VERSION)" | sed 's/\./-/g'`
 	$(MAKE) dist
+
+cvs-diff:
+	thisver=`echo "Release-$(VERSION)" | sed 's/\./-/g'`; \
+	prevno=`echo "$(VERSION)" - 0.01 | bc | sed 's/^\./0./'`; \
+	prevver=Release-`echo $$prevno | sed 's/\./-/g'`; \
+	cvs -f rdiff -c -r $$prevver -r $$thisver $(PACKAGE) \
+	    > $(PACKAGE)-$$prevno-$(VERSION).diff
 .SUFFIXES:
 .SUFFIXES: .texi .info .dvi
 
