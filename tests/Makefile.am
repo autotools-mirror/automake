@@ -15,6 +15,8 @@ acoutput2.test \
 acoutqnl.test \
 acouttbs.test \
 acsilent.test \
+acsubst.test \
+acsubst2.test \
 all.test \
 alpha.test \
 amassign.test \
