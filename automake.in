@@ -400,7 +400,7 @@ my $seen_canonical = 0;
 
 # TRUE if we've seen AC_PROG_LIBTOOL.
 my $seen_libtool = 0;
-my $libtool_line = 0;
+my $libtool_location;
 
 # TRUE if we've seen AM_MAINTAINER_MODE.
 my $seen_maint_mode = 0;
@@ -414,8 +414,8 @@ my $package_version_location;
 # Where AM_PATH_LISPDIR appears.
 my $am_lispdir_location;
 
-# TRUE if we've seen AM_PATH_PYTHON.
-my $seen_pythondir = 0;
+# Where AM_PATH_PYTHON appears.
+my $pythondir_location;
 
 # TRUE if we've seen AC_ENABLE_MULTILIB.
 my $seen_multilib = 0;
@@ -2494,8 +2494,7 @@ sub handle_libtool
     return unless $seen_libtool;
 
     # libtool requires some files, but only at top level.
-    &require_conf_file_with_conf_line ($libtool_line, $FOREIGN,
-				       @libtoolize_files)
+    require_conf_file ($libtool_location, $FOREIGN, @libtoolize_files)
 	if $relative_dir eq '.';
 
     # Output the libtool compilation rules.
@@ -4328,10 +4327,9 @@ sub handle_python
 
     # Found some python.
     &am_error ("`python_PYTHON' defined but `AM_PATH_PYTHON' not in `$configure_ac'")
-	if ! $seen_pythondir && &variable_defined ('python_PYTHON');
+	if ! $pythondir_location && &variable_defined ('python_PYTHON');
 
-    &require_conf_file_with_conf_line ('AM_PATH_PYTHON',
-				       $FOREIGN, 'py-compile');
+    require_conf_file ($pythondir_location, $FOREIGN, 'py-compile');
     &define_variable ('py_compile', $config_aux_dir . '/py-compile');
 }
 
@@ -4511,7 +4509,7 @@ sub scan_autoconf_traces ($)
       elsif ($macro =~ /A(C|M)_PROG_LIBTOOL/)
 	{
 	  $seen_libtool = $here;
-	  $libtool_line = $line;
+	  $libtool_location = $line;
 	}
       elsif ($macro =~ /AC_PROG_LEX/)
 	{
@@ -4571,7 +4569,7 @@ sub scan_autoconf_traces ($)
 	}
       elsif ($macro eq 'AM_PATH_PYTHON')
 	{
-	  $seen_pythondir = $here;
+	  $pythondir_location = $here;
 	}
       elsif ($macro eq 'AM_PROG_CC_C_O')
 	{
@@ -4860,7 +4858,7 @@ sub scan_one_autoconf_file
 
         if (/AM_PATH_PYTHON/)
 	  {
-	    $seen_pythondir = $here;
+	    $pythondir_location = $here;
 	    $configure_vars{'pythondir'} = $here;
 	    $configure_vars{'PYTHON'} = $here;
 	  }
@@ -4878,7 +4876,7 @@ sub scan_one_autoconf_file
 	    # 	&am_file_warning ($here, "`AM_PROG_LIBTOOL' is obsolete, use `AC_PROG_LIBTOOL' instead");
 	    # }
 	    $seen_libtool = $here;
-	    $libtool_line = $.;
+	    $libtool_location = $here;
 	    $configure_vars{'LIBTOOL'} = $here;
 	    $configure_vars{'RANLIB'} = $here;
 	    $configure_vars{'CC'} = $here;
@@ -4959,7 +4957,7 @@ sub scan_autoconf_files
         if -f $config_aux_path[0] . '/install.sh';
 
     &require_config_file ($FOREIGN, 'py-compile')
-	if $seen_pythondir;
+	if $pythondir_location;
 
     # Preserve dist_common for later.
     $configure_dist_common = variable_value ('DIST_COMMON', 'TRUE') || '';
@@ -8128,10 +8126,8 @@ sub am_line_error ($@)
 	else
 	{
 	    # Couldn't find the line number.
-	    $where = "${am_file}.am";
+	    am_file_error ("${am_file}.am", @args);
 	}
-
-	am_file_error ($where, @args);
     }
     else
     {
