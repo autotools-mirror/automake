@@ -10,15 +10,15 @@ doit:
 END
 # If we don't find an include directive, just comment out the code.
 AC_MSG_CHECKING([for style of include used by $am_make])
-AMINCLUDE='#'
+_am_include='#'
 for am_inc in include .include; do
    echo "$am_inc confinc" > confmf
    if test "`$am_make -f confmf 2> /dev/null`" = "done"; then
-      AMINCLUDE=$am_inc
+      _am_include=$am_inc
       break
    fi
 done
-AC_SUBST(AMINCLUDE)
-AC_MSG_RESULT($AMINCLUDE)
+AC_SUBST(_am_include)
+AC_MSG_RESULT($_am_include)
 rm -f confinc confmf
 ])
