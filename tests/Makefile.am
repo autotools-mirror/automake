@@ -409,6 +409,7 @@ spell.test \
 spell2.test \
 spell3.test \
 spelling.test \
+spy.test \
 stamph2.test \
 stdlib.test \
 stdlib2.test \

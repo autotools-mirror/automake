@@ -1,0 +1,84 @@
+#! /bin/sh
+# Copyright (C) 2003  Free Software Foundation, Inc.
+#
+# This file is part of GNU Automake.
+#
+# GNU Automake is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# GNU Automake is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with autoconf; see the file COPYING.  If not, write to
+# the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA 02111-1307, USA.
+
+# Check whether double colon rules work.  The Unix V7 make manual
+# mentions double-colon rules, but POSIX does not.  They seem to be
+# supported by all Make implementation as we can tell. This test case
+# is a spy: we want to detect if there exist implementations where
+# these do not work.  We might use these rules to simplify the rebuild
+# rules (instead of the $? hack).
+
+. ./defs || exit 1
+
+set -e
+
+cat >Makefile <<\EOF
+a :: b
+	echo rule1 >> $@
+a :: c
+	echo rule2 >> $@
+a :: b c
+	echo rule3 >> $@
+EOF
+
+touch b c
+$MAKE
+test "`cat a`" = rule1
+: > a
+$sleep
+touch b
+$MAKE
+test "`cat a`" = rule1
+: > a
+$sleep
+touch c
+$MAKE
+test "`cat a`" = rule2
+: > a
+$sleep
+touch b c
+$MAKE
+test "`cat a`" = rule1
+
+
+: > a
+$sleep
+cat >Makefile <<\EOF
+a :: b c
+	echo rule1 >> $@
+a :: c
+	echo rule2 >> $@
+a :: b
+	echo rule3 >> $@
+EOF
+
+touch b
+$MAKE
+test "`cat a`" = rule1
+: > a
+$sleep
+touch c
+$MAKE
+test "`cat a`" = rule1
+: > a
+$sleep
+touch b c
+$MAKE
+test "`cat a`" = rule1
