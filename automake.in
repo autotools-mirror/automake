@@ -85,10 +85,6 @@ $default_strictness_name = 'gnu';
 # code should be included in generated Makefile.in.
 $cmdline_use_dependencies = 1;
 
-# This is the name of a dependency makefile bit (usually for inclusion in a
-# SMakefile or similar); empty if not set.
-$generate_deps = '';
-
 # TRUE if in verbose mode.
 $verbose = 0;
 
@@ -128,13 +124,6 @@ $output_directory = '.';
 
 # Relative location of top build directory.
 $top_builddir = '';
-
-# Absolute location of top build directory.
-$build_directory = '';
-
-# Name of srcdir as given in build directory's Makefile.  For
-# dependencies only.
-$srcdir_name = '';
 
 # List of Makefile.am's to process, and their corresponding outputs.
 @input_files = ();
@@ -338,27 +327,6 @@ $obsolete_rx = '(' . join ('|', keys %obsolete_macros) . ')';
 die "automake: no \`Makefile.am' found or specified\n"
     if ! @input_files;
 
-# If --generate-deps was given, we don't do anything else
-#
-if ($generate_deps)
-{
-    die "automake: Must specify --include-deps (or -i) when generating\n"
-	if $use_dependencies;
-    die "automake: Must provide --build-dir when generating\n"
-	if ! $build_directory;
-    die "automake: Must provide --srcdir-name when generating\n"
-	if ! $srcdir_name;
-
-    open (GDEP, ">$output_directory/.dep_segment")
-	|| die "automake: Could not open `$output_directory/.dep_segment': $!\n";
-
-    &handle_dependencies;
-    print GDEP $output_rules;
-
-    close(GDEP);
-    exit $exit_status;
-}
-
 # Now do all the work on each file.
 foreach $am_file (@input_files)
 {
@@ -414,28 +382,6 @@ sub parse_arguments
 	    shift (@arglist);
 	    $am_dir = $arglist[0];
 	}
-	elsif ($arglist[0] =~ /^--build-dir=(.+)$/)
-	{
-	    # Must end in /.
-	    $build_directory = $1 . '/';
-	}
-	elsif ($arglist[0] eq '--build-dir')
-	{
-	    &require_argument (@arglist);
-	    shift (@arglist);
-	    # Must end in /.
-	    $build_directory = $arglist[0] . '/';
-	}
-	elsif ($arglist[0] =~ /^--srcdir-name=(.+)$/)
-	{
-	    $srcdir_name = $1;
-	}
-	elsif ($arglist[0] eq '--srcdir-name')
-	{
-	    &require_argument (@arglist);
-	    shift (@arglist);
-	    $srcdir_name = $arglist[0];
-	}
 	elsif ($arglist[0] eq '--gnu')
 	{
 	    &set_strictness ('gnu');
@@ -452,13 +398,9 @@ sub parse_arguments
 	{
 	    &set_strictness ('foreign');
 	}
-	elsif ($arglist[0] eq '--include-deps' || $arglist[0] eq '-i')
+	elsif ($arglist[0] eq '--ignore-deps' || $arglist[0] eq '-i')
 	{
 	    $cmdline_use_dependencies = 0;
-	}
-	elsif ($arglist[0] eq '--generate-deps')
-	{
-	    $generate_deps = 1;
 	}
 	elsif ($arglist[0] eq '--no-force')
 	{
@@ -2295,42 +2237,6 @@ sub handle_dist_worker
 			  . "\t-chmod 777 \$(distdir)\n");
     }
 
-    # Only run automake in `dist' target if --include-deps and
-    # `no-dependencies' not specified.  That way the recipient of a
-    # distribution can run "make dist" and not need Automake.  You
-    # might be wondering why we run automake once for each directory
-    # we distribute, instead of running it once at the top level.  The
-    # answer is that we want to run automake after the dependencies
-    # have been generated.  This occurs when "make" is run in the
-    # subdir.  So automake must be run after make has updated the
-    # Makefile, which means that it must run once per directory.
-    if ($use_dependencies)
-    {
-	$output_rules .=
-	    (
-	     # There are several directories we need to know about
-	     # when rebuilding the Makefile.ins.  They are:
-	     #   here - The absolute path to our topmost build directory.
-	     #   top_distdir - The absolute path to the top of our dist
-	     #                 hierarchy.
-	     #   distdir - The path to our sub-part of the dist hierarchy.
-	     # If this directory is the topmost directory, we set
-	     # top_distdir from distdir; that lets us pass in distdir
-	     # from an enclosing package.
-	     "\t" . 'here=`cd $(top_builddir) && pwd`; ' . "\\\n"
-	     . "\t" . 'top_distdir=`cd $('
-	     . (($relative_dir eq '.') ? 'distdir' : 'top_distdir')
-	     . ') && pwd`; ' . "\\\n"
-	     . "\t" . 'distdir=`cd $(distdir) && pwd`; ' . "\\\n"
-	     . "\tcd \$(top_srcdir) \\\n"
-	     . "\t  && \$(AUTOMAKE) --include-deps --build-dir=\$\$here --srcdir-name=\$(top_srcdir) --output-dir=\$\$top_distdir "
-	     # Set strictness of output.
-	     . ($cygnus_mode ? '--cygnus' : ('--' . $strictness_name))
-	     . ($cmdline_use_dependencies ? '' : ' --include-deps')
-	     . " " . $makefile . "\n"
-	     );
-    }
-
     # Scan EXTRA_DIST to see if we need to distribute anything from a
     # subdir.  If so, add it to the list.  I didn't want to do this
     # originally, but there were so many requests that I finally
@@ -2598,112 +2504,6 @@ distcheck: dist
     &handle_dist_worker ($makefile);
 }
 
-# Scan a single dependency file and rewrite the dependencies as
-# appropriate.  Essentially this means:
-# * Clean out absolute dependencies which are not desirable.
-# * Rewrite other dependencies to be relative to $(top_srcdir).
-sub scan_dependency_file
-{
-    local ($depfile) = @_;
-
-    if (! open (DEP_FILE, $depfile))
-    {
-	&am_error ("couldn't open \`$depfile': $!");
-	return;
-    }
-    print "automake: reading $depfile\n" if $verbose;
-
-    # Sometimes it is necessary to omit some dependencies.
-    local (%omit) = %omit_dependencies;
-    if (&variable_defined ('OMIT_DEPENDENCIES'))
-    {
-	# FIXME: Doesn't work with conditionals.  I'm not sure if this
-	# matters.
-	grep ($omit{$_} = 1,
-	      &variable_value_as_list ('OMIT_DEPENDENCIES', ''));
-    }
-
-    local ($first_line) = 1;
-    local ($last_line) = 0;
-    local ($target, @dependencies);
-    local ($one_dep, $xform);
-    local ($just_file);
-
-    local ($srcdir_rx, $fixup_rx);
-    ($fixup_rx = $srcdir_name . '/' . $relative_dir . '/')
-	=~ s/(\W)/\\$1/g;
-    ($srcdir_rx = $srcdir_name . '/') =~ s/(\W)/\\$1/g;
-
-    local ($rewrite_builddir) = (($top_builddir eq '.')
-				 ? ''
-				 : $top_builddir . '/');
-
-    while (<DEP_FILE>)
-    {
-	last if $last_line;
-	next if (/$WHITE_PATTERN/o);
-	chop;
-	if (! s/\\$//)
-	{
-	    # No trailing "\" means this should be the last line of
-	    # the first target.  We can have multiple targets due to
-	    # the "deleted header file" fix.  For the generated
-	    # Makefile we simply skip these fake targets.
-	    $last_line = 1;
-	}
-
-	if ($first_line)
-	{
-	    if (! /^([^:]+:)(.+)$/)
-	    {
-	      bad_format:
-		&am_error ("\`$depfile' has incorrect format");
-		close (DEP_FILE);
-		return;
-	    }
-
-	    $_ = $2;
-	    # Make sure to strip the .P file from the target.
-	    ($target = $1) =~ s, *\.deps/[^.]+\.P,,;
-
-	    $first_line = 0;
-	}
-
-	foreach $one_dep (split (' ', $_))
-	{
-	    ($just_file = $one_dep) =~ s,^.*/,,;
-	    next if defined $omit{$just_file};
-
-	    if ($one_dep =~ /^$fixup_rx/)
-	    {
-		# The dependency points to the current directory in
-		# some way.
-		($xform = $one_dep) =~ s/^$fixup_rx//;
-		push (@dependencies, $xform);
-	    }
-	    elsif ($one_dep =~ /^$srcdir_rx/)
-	    {
-		# The dependency is in some other directory in the package.
-		($xform = $one_dep) =~ s/^$srcdir_rx/$rewrite_builddir/;
-		push (@dependencies, $xform);
-	    }
-	    elsif ($one_dep =~ /^\// || $one_dep =~ /^[A-Za-z]:\\/)
-	    {
-		# Absolute path; ignore.
-	    }
-	    else
-	    {
-		# Anything else is assumed to be correct.
-		push (@dependencies, $one_dep);
-	    }
-	}
-    }
-
-    &pretty_print_rule ($target, "\t", @dependencies);
-
-    close (DEP_FILE);
-}
-
 # Handle auto-dependency code.
 sub handle_dependencies
 {
@@ -2741,23 +2541,6 @@ sub handle_dependencies
 						   . 's/\@PFX\@/CXX/g;',
 						   'depend2');
 	    }
-	}
-    }
-    elsif ($build_directory ne '')
-    {
-	# Include any auto-generated deps that are present.  Note that
-	# $build_directory ends in a "/".
-	if (-d ($build_directory . $relative_dir . "/.deps"))
-	{
-	    local ($depfile);
-
-	    foreach $depfile (&my_glob ($build_directory
-					. $relative_dir . "/.deps/*.P"))
-	    {
-		&scan_dependency_file ($depfile);
-	    }
-
-	    $output_rules .= "\n";
 	}
     }
 }
@@ -2958,7 +2741,7 @@ sub handle_configure
                       . "\n"
 		      . "\tcd \$(top_srcdir) && \$(AUTOMAKE) "
 		      . ($cygnus_mode ? '--cygnus' : ('--' . $strictness_name))
-		      . ($cmdline_use_dependencies ? '' : ' --include-deps')
+		      . ($cmdline_use_dependencies ? '' : ' --ignore-deps')
 		      . ' ' . $input . $colon_infile . "\n\n");
 
     # This rule remakes the Makefile.
@@ -6284,18 +6067,16 @@ sub initialize_global_constants
     $USAGE = "\
   -a, --add-missing     add missing standard files to package
   --amdir=DIR           directory storing config files
-  --build-dir=DIR       directory where build being done (for dependencies)
   -c, --copy            with -a, copy missing files (default is symlink)
   --cygnus              assume program is part of Cygnus-style tree
   --foreign             set strictness to foreign
   --gnits               set strictness to gnits
   --gnu                 set strictness to gnu
   --help                print this help, then exit
-  -i, --include-deps    include generated dependencies in Makefile.in
+  -i, --ignore-deps     disable dependency tracking code
   --no-force            only update Makefile.in's that are out of date
   -o DIR, --output-dir=DIR
                         put generated Makefile.in's into DIR
-  --srcdir-name=DIR     name used for srcdir (for dependencies)
   -v, --verbose         verbosely list files processed
   --version             print version number, then exit\n";
 
