@@ -6068,8 +6068,8 @@ sub check_ambiguous_conditional ($$$)
     conditional_ambiguous_p ($var, $cond, keys %{$var_value{$var}});
   if ($message)
     {
-      err $where, "$message ...";
-      err_var ($var, "... `$var' previously defined here.");
+      msg 'syntax', $where, "$message ...";
+      msg_var ('syntax', $var, "... `$var' previously defined here.");
       verb (macro_dump ($var));
     }
 }
@@ -6205,6 +6205,9 @@ sub macro_define ($$$$$$)
 {
   my ($var, $owner, $type, $cond, $value, $where) = @_;
 
+  # We will adjust the owener of this variable unless told otherwise.
+  my $adjust_owner = 1;
+
   err $where, "bad characters in variable name `$var'"
     if $var !~ /$MACRO_PATTERN/o;
 
@@ -6254,7 +6257,7 @@ sub macro_define ($$$$$$)
   # Differentiate assignment types.
 
   # 1. append (+=) to a variable defined for current condition
-  if ($type eq '+' && defined $var_value{$var}{$cond})
+  if ($type eq '+' && exists $var_value{$var}{$cond})
     {
       if (chomp $var_value{$var}{$cond})
 	{
@@ -6346,13 +6349,16 @@ sub macro_define ($$$$$$)
 	      &macro_define ($var, $owner, '+', $vcond, $value, $where);
 	    }
 	}
+      # Don't adjust the owner.  The above &macro_define did it in the
+      # right conditions.
+      $adjust_owner = 0;
     }
   # 3. first assignment (=, :=, or +=)
   else
     {
       # If Automake tries to override a value specified by the user,
       # just don't let it do.
-      if (defined $var_value{$var}{$cond}
+      if (exists $var_value{$var}{$cond}
 	  && $var_owner{$var} != VAR_AUTOMAKE
 	  && $owner == VAR_AUTOMAKE)
 	{
@@ -6366,7 +6372,7 @@ sub macro_define ($$$$$$)
 	  # an Automake variable or an AC_SUBST variable for an existing
 	  # condition.
 	  check_ambiguous_conditional ($var, $cond, $where)
-	    unless (exists $var_value{$var}{$cond}
+	    unless (exists $var_owner{$var}{$cond}
 		    && (($var_owner{$var}{$cond} == VAR_AUTOMAKE
 			 && $owner != VAR_AUTOMAKE)
 			|| $var_owner{$var}{$cond} == VAR_CONFIGURE));
@@ -6381,8 +6387,9 @@ sub macro_define ($$$$$$)
 
   # The owner of a variable can only increase, because an Automake
   # variable can be given to the user, but not the converse.
-  if (! exists $var_owner{$var}{$cond}
-      || $owner > $var_owner{$var}{$cond})
+  if ($adjust_owner &&
+      (! exists $var_owner{$var}{$cond}
+       || $owner > $var_owner{$var}{$cond}))
     {
       $var_owner{$var}{$cond} = $owner;
     }
@@ -7144,9 +7151,11 @@ sub variable_output ($@)
   @conds = keys %{$var_value{$var}}
     unless @conds;
 
-
   foreach my $cond (sort by_condition @conds)
     {
+      prog_error ("unknown condition `$cond' for `$var'")
+	unless exists $var_value{$var}{$cond};
+
       if (exists $var_comment{$var} && exists $var_comment{$var}{$cond})
 	{
 	  $output_vars .= $var_comment{$var}{$cond};
@@ -7174,6 +7183,9 @@ sub variable_pretty_output ($@)
 
   foreach my $cond (sort by_condition @conds)
     {
+      prog_error ("unknown condition `$cond' for `$var'")
+	unless exists $var_value{$var}{$cond};
+
       if (exists $var_comment{$var} && exists $var_comment{$var}{$cond})
 	{
 	  $output_vars .= $var_comment{$var}{$cond};
@@ -7421,8 +7433,8 @@ sub rule_define ($$$$$)
 	{
 	  if ($oldowner eq TARGET_USER)
 	    {
-	      err ($where, "redefinition of `$target'$condmsg...");
-	      err_cond_target ($cond, $target,
+	      msg ('syntax', $where, "redefinition of `$target'$condmsg...");
+	      msg_cond_target ('syntax', $cond, $target,
 			       "... `$target' previously defined here.");
 	      return ();
 	    }
@@ -7455,8 +7467,8 @@ sub rule_define ($$$$$)
 	      my $oldsource = $target_source{$target}{$cond};
 	      return () if $source eq $oldsource;
 
-	      err ($where, "redefinition of `$target'$condmsg...");
-	      err_cond_target ($cond, $target,
+	      msg ('syntax', $where, "redefinition of `$target'$condmsg...");
+	      msg_cond_target ('syntax', $cond, $target,
 			       "... `$target' previously defined here.");
 	      return ();
 	    }
@@ -7481,8 +7493,8 @@ sub rule_define ($$$$$)
       if ($owner == TARGET_USER)
 	{
 	  # For user rules, just diagnose the ambiguity.
-	  err $where, "$message ...";
-	  err_cond_target ($ambig_cond, $target,
+	  msg 'syntax', $where, "$message ...";
+	  msg_cond_target ('syntax', $ambig_cond, $target,
 			   "... `$target' previously defined here.");
 	  return ();
 	}
@@ -7517,8 +7529,8 @@ sub rule_define ($$$$$)
 	  # Warn, because our workaround is meaningless in this case.
 	  if (scalar @conds == 0)
 	    {
-	      err $where, "$message ...";
-	      err_cond_target ($ambig_cond, $target,
+	      msg 'syntax', $where, "$message ...";
+	      msg_cond_target ('syntax', $ambig_cond, $target,
 			       "... `$target' previously defined here.");
 	      return ();
 	    }
