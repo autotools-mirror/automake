@@ -1075,7 +1075,6 @@ sub handle_dist_worker
     # symlink -- this can easily happen if "gettextize" was run on the
     # distribution.  Note that DISTFILES can contain a wildcard (for
     # info files, sigh), so we must use the echo trick.
-
     $output_rules .= '	@for file in `cd $(srcdir) && echo $(DISTFILES)`; do \\
 	  test -f $(distdir)/$$file \\
 	  || ln $(srcdir)/$$file $(distdir)/$$file 2> /dev/null \\
@@ -1097,6 +1096,14 @@ sub handle_dist_worker
 	  (cd $$subdir && $(MAKE) dist) || exit 1; \\
 	done
 ';
+    }
+
+    # If the target `dist-local' exists, run it now.  This allows
+    # users to do random weird things to the distribution before it is
+    # packaged up.
+    if (defined $contents{'dist-local'})
+    {
+	$output_rules .= "\t\$(MAKE) dist-local\n";
     }
 
     # Finalize.
