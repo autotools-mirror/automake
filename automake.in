@@ -41,8 +41,8 @@ $WHITE_PATTERN = "^[ \t]*\$";
 $COMMENT_PATTERN = "^#";
 $RULE_PATTERN = "^([\$a-zA-Z_.][-.a-zA-Z0-9_(){}/\$]*) *:([^=].*|)\$";
 $SUFFIX_RULE_PATTERN = "^\\.([a-zA-Z]+)\\.([a-zA-Z]+)\$";
-$MACRO_PATTERN = "^([A-Za-z][A-Za-z0-9_]*)[ \t]*:?=[ \t]*(.*)\$";
-$BOGUS_MACRO_PATTERN = "^([^ \t]*)[ \t]*:?=[ \t]*(.*)\$";
+$MACRO_PATTERN = "^([A-Za-z][A-Za-z0-9_]*)[ \t]*([:+]?)=[ \t]*(.*)\$";
+$BOGUS_MACRO_PATTERN = "^([^ \t]*)[ \t]*([:+]?)=[ \t]*(.*)\$";
 $GNITS_VERSION_PATTERN = "[0-9]+\\.[0-9]+([a-z]|\\.[0-9]+)?";
 $IF_PATTERN = "^if[ \t]+\([A-Za-z][A-Za-z0-9_]*\)[ \t]*\(#.*\)?\$";
 $ELSE_PATTERN = "^else[ \t]*\(#.*\)?\$";
@@ -5659,7 +5659,12 @@ sub read_am_file
     $output_vars .= $comment . "\n";
     $comment = '';
     $spacing = "\n";
-    local ($am_vars) = '';
+
+    # The keys here are variables we want to dump at the end of this
+    # function.  The values are corresponding comments.
+    local (%am_vars) = ();
+    local (@var_list) = ();
+    local (%def_type) = ();
 
     local ($is_ok_macro);
     while ($_)
@@ -5700,7 +5705,6 @@ sub read_am_file
 	    }
 	    else
 	    {
-		$am_vars .= join ('', @conditional_stack) . $_;
 		$saw_bk = /\\$/;
 		# Chop newline and backslash if this line is
 		# continued.  ensure trailing whitespace exists.
@@ -5813,34 +5817,90 @@ sub read_am_file
 		&am_line_error ($1,
 				"$1 defined both conditionally and unconditionally");
 	    }
-	    if ($2 ne '' && substr ($2, -1) eq "\\")
+	    local ($value);
+	    if ($3 ne '' && substr ($3, -1) eq "\\")
 	    {
-		$contents{$last_var_name} = substr ($2, 0, length ($2) - 1);
+		$value = substr ($3, 0, length ($3) - 1);
 	    }
 	    else
 	    {
-		$contents{$last_var_name} = $2;
+		$value = $3;
+	    }
+	    local ($type) = $2;
+	    if ($type eq '+')
+	    {
+		$contents{$last_var_name} .= ' ' . $value;
+	    }
+	    else
+	    {
+		$contents{$last_var_name} = $value;
+		# The first assignment to a macro sets the line
+		# number.  Ideally I suppose we would associate line
+		# numbers with random bits of text.
+		$content_lines{$last_var_name} = $.;
 	    }
 	    local ($cond_string) = join ('', @conditional_stack);
 	    if (@conditional_stack)
 	    {
+		local ($found) = 0;
+		local ($val) = $contents{$last_var_name};
+		$val = &quote_cond_val ($val);
 		if ($conditional{$last_var_name})
 		{
-		    &check_ambiguous_conditional ($last_var_name,
-						  $cond_string);
-		    $conditional{$last_var_name} .= ' ';
+		    if ($type eq '+')
+		    {
+			# If we're adding to the conditional, and it
+			# exists, then we might want to simply replace
+			# the old value with the new one.
+			local (@new_vals, @cond_vals);
+			@cond_vals = split (' ', $conditional{$last_var_name});
+			while (@cond_vals)
+			{
+			    local ($vcond) = shift (@cond_vals);
+			    push (@new_vals, $vcond);
+			    if (&conditional_stack ($vcond, $cond_string))
+			    {
+				$found = 1;
+				shift (@cond_vals);
+				push (@new_vals, $val);
+			    }
+			    else
+			    {
+				push (@new_vals, shift (@cond_vals));
+			    }
+			}
+			if ($found)
+			{
+			    $conditional{$last_var_name}
+			        = join (' ', @new_vals);
+			}
+		    }
+
+		    if (! $found)
+		    {
+			&check_ambiguous_conditional ($last_var_name,
+						      $cond_string);
+			$conditional{$last_var_name} .= ' ';
+		    }
 		}
 		else
 		{
 		    $conditional{$last_var_name} = '';
 		}
-		local ($val) = $contents{$last_var_name};
-		$conditional{$last_var_name} .= ($cond_string
-						 . ' '
-						 . &quote_cond_val ($val));
+		if (! $found)
+		{
+		    $conditional{$last_var_name} .= ($cond_string
+						     . ' '
+						     . $val);
+		}
 	    }
-	    $content_lines{$last_var_name} = $.;
-	    $am_vars .= $comment . $spacing . $cond_string . $_;
+
+	    # FIXME: this doesn't always work correctly; it will group
+	    # all comments for a given variable, no matter where
+	    # defined.
+	    $am_vars{$last_var_name} = $comment . $spacing;
+	    $def_type{$last_var_name} = ($type eq ':') ? ':' : '';
+	    push (@var_list, $last_var_name);
 	    $comment = $spacing = '';
 	    $saw_bk = /\\$/;
 
@@ -5933,7 +5993,33 @@ sub read_am_file
 	&define_configure_variable ($curs);
     }
 
-    $output_vars .= $am_vars;
+    # Now dump the variables that were defined.  We do it in the same
+    # order in which they were defined (skipping duplicates).
+    local (%done);
+    foreach $curs (@var_list)
+    {
+	next if $done{$curs};
+	$done{$curs} = 1;
+
+	$output_vars .= $am_vars{$curs};
+	if ($conditional{$curs})
+	{
+	    local (@cond_vals) = split (' ', $conditional{$curs});
+	    while (@cond_vals)
+	    {
+		local ($vcond) = shift (@cond_vals);
+		local ($val) = &unquote_cond_val (shift (@cond_vals));
+		$output_vars .= ($vcond . $curs
+				 . ' ' . $def_type{$curs} . '= '
+				 . $val . "\n");
+	    }
+	}
+	else
+	{
+	    $output_vars .= ($curs . ' ' . $def_type{$curs} . '= '
+			     . $contents{$curs} . "\n");
+	}
+    }
 }
 
 ################################################################
