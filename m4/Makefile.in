@@ -45,7 +45,7 @@ MAINT_CHARSET = latin1
 m4datadir = $(datadir)/aclocal
 m4data_DATA = ccsanity.m4 ccstdc.m4 dmalloc.m4 fnmatch.m4 init.m4 install.m4 \
 lispdir.m4 maintainer.m4 protos.m4 ptrdiff.m4 regex.m4 strtod.m4 termios.m4 \
-winsz.m4 mktime.m4 error.m4 obstack.m4
+winsz.m4 mktime.m4 error.m4 obstack.m4 sanity.m4
 
 EXTRA_DIST = $(m4data_DATA)
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
@@ -59,14 +59,16 @@ PACKAGE = @PACKAGE@
 VERSION = @VERSION@
 
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) \
-	$(TEXINFOS) $(MANS) $(EXTRA_DIST)
+	$(TEXINFOS) $(INFOS) $(MANS) $(EXTRA_DIST)
+DEP_DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) \
+	$(TEXINFOS) $(INFO_DEPS) $(MANS) $(EXTRA_DIST)
 
 TAR = tar
 default: all
 
 
 $(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in
-	cd $(top_srcdir) && automake --strictness=gnits $(subdir)/Makefile
+	cd $(top_srcdir) && automake $(subdir)/Makefile
 
 Makefile: $(top_builddir)/config.status $(srcdir)/Makefile.in $(BUILT_SOURCES)
 	cd $(top_builddir) \
@@ -94,12 +96,11 @@ TAGS:
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
 subdir = m4
-distdir: $(DISTFILES)
-	@for file in $(DISTFILES); do \
-	  d=$(srcdir); \
+distdir: $(DEP_DISTFILES)
+	@for file in `cd $(srcdir) && echo $(DISTFILES)`; do \
 	  test -f $(distdir)/$$file \
-	  || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
-	  || cp -p $$d/$$file $(distdir)/$$file; \
+	  || ln $(srcdir)/$$file $(distdir)/$$file 2> /dev/null \
+	  || cp -p $(srcdir)/$$file $(distdir)/$$file; \
 	done
 info:
 dvi:
