@@ -48,6 +48,9 @@ $GNITS_VERSION_PATTERN = "[0-9]+\\.[0-9]+([a-z]|\\.[0-9]+)?";
 $AC_CONFIG_AUX_DIR_PATTERN = "AC_CONFIG_AUX_DIR\\(([^)]+)\\)";
 $AM_INIT_AUTOMAKE_PATTERN = "AM_INIT_AUTOMAKE\\([^,]*,([^)]+)\\)";
 $AM_PACKAGE_VERSION_PATTERN = "^\\s*\\[?([^]\\s]+)\\]?\\s*\$";
+# Note that there is no AC_PATH_TOOL.  But we don't really care.
+$AC_CHECK_PATTERN = "AC_(CHECK|PATH)_(PROG|PROGS|TOOL)\\(\\[?([^]),]+)";
+$AC_SUBST_PATTERN = "AC_SUBST\\(\\[?([^])]+)";
 
 # Constants to define the "strictness" level.
 $FOREIGN = 0;
@@ -150,26 +153,12 @@ $scripts_installed = 0;
 # Whether AC_PATH_XTRA has been seen in configure.in.
 $seen_path_xtra = 0;
 
-# Whether YACC variable has been seen in configure.in.
-$seen_prog_yacc = 0;
-
-# Two variables to control lex use.  One is for AC_DECL_YYTEXT and the
-# other is for AC_PROG_LEX.
+# TRUE if AC_DECL_YYTEXT was seen.
 $seen_decl_yytext = 0;
-$seen_prog_lex = 0;
-
-# TRUE if we've seen AC_PROG_CC.
-$seen_prog_cc = 0;
-
-# TRUE if we've seen AC_PROG_CXX.
-$seen_prog_cxx = 0;
 
 # TRUE if we've seen AC_CANONICAL_(HOST|SYSTEM).  The presence of
 # AC_CHECK_TOOL also sets this.
 $seen_canonical = 0;
-
-# TRUE if we've seen AC_PROG_RANLIB.
-$seen_ranlib = 0;
 
 # TRUE if we've seen AC_ARG_PROGRAM.
 $seen_arg_prog = 0;
@@ -194,6 +183,9 @@ $package_version_line = 0;
 # TRUE if we've seen AM_PATH_LISPDIR.
 $seen_lispdir = 0;
 
+# Hash table of discovered configure substitutions.  Keys are names,
+# values are meaningless.
+%configure_vars = ();
 
 # Charsets used by maintainer and in distribution.  MAINT_CHARSET is
 # handled in a funny way: if seen in the top-level Makefile.am, it is
@@ -605,7 +597,7 @@ sub get_object_extension
 	    local ($var);
 	    foreach $var ('X_CFLAGS', 'X_LIBS', 'X_EXTRA_LIBS', 'X_PRE_LIBS')
 	    {
-		&define_variable ($var, "\@$var\@");
+		&define_configure_variable ($var);
 	    }
 	}
 
@@ -670,7 +662,7 @@ sub handle_yacc_lex_cxx
     if ($yacc_count)
     {
 	push (@suffixes, '.y');
-	&define_variable ('YACC', "\@YACC\@");
+	&define_configure_variable ('YACC');
 	$output_rules .= ".y.c:\n\t";
 	if ($yacc_count > 1)
 	{
@@ -683,19 +675,18 @@ sub handle_yacc_lex_cxx
 	}
 	$output_rules .= "\n";
 
-	if (! $seen_prog_yacc)
+	if (! defined $configure_vars{'YACC'})
 	{
-	    # FIXME: should include a reference line.  FIXME: maybe
-	    # directly reference AC_PROG_YACC somehow?
+	    # FIXME: should include a reference line.
 	    &am_error ("yacc source seen but \`YACC' not defined in \`configure.in'\n");
 	}
     }
     if ($lex_count)
     {
 	push (@suffixes, '.l');
-	&define_variable ("LEX", "\@LEX\@");
-	&define_variable ("LEX_OUTPUT_ROOT", "\@LEX_OUTPUT_ROOT\@");
-	&define_variable ("LEXLIB", "\@LEXLIB\@");
+	&define_configure_variable ('LEX');
+	&define_configure_variable ('LEX_OUTPUT_ROOT');
+	&define_configure_variable ('LEXLIB');
 	$output_rules .= ".l.c:\n\t";
 	if ($lex_count > 1)
 	{
@@ -707,9 +698,9 @@ sub handle_yacc_lex_cxx
 	}
 	$output_rules .= "\n";
 
-	if (! $seen_prog_lex)
+	if (! defined $configure_vars{'LEX'})
 	{
-	    &am_error ("lex source seen but \`AC_PROG_LEX' not in \`configure.in'\n");
+	    &am_error ("lex source seen but \`LEX' not defined in \`configure.in'\n");
 	}
 	if (! $seen_decl_yytext)
 	{
@@ -737,8 +728,8 @@ sub handle_yacc_lex_cxx
     {
 	push (@suffixes, @cxx_list);
 
-	&define_variable ("CXX", "\@CXX\@");
-	&define_variable ("CXXFLAGS", "\@CXXFLAGS\@");
+	&define_configure_variable ("CXX");
+	&define_configure_variable ("CXXFLAGS");
 	&define_variable ('CXXCOMPILE', '$(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)');
 	&define_variable ('CXXLINK', '$(CXX) $(LDFLAGS) -o $@');
 
@@ -749,9 +740,9 @@ sub handle_yacc_lex_cxx
 			      . "\t\$(CXXCOMPILE) -c \$<\n");
 	}
 
-	if (! $seen_prog_cxx)
+	if (! defined $configure_vars{'CXX'})
 	{
-	    &am_error ("C++ source seen but \`AC_PROG_CXX' not in \`configure.in'\n");
+	    &am_error ("C++ source seen but \`CXX' not defined in \`configure.in'\n");
 	}
     }
 
@@ -760,8 +751,8 @@ sub handle_yacc_lex_cxx
     #
     if ($seen_c_source)
     {
-	&define_variable ('CC', "\@CC\@");
-	&define_variable ('CFLAGS', "\@CFLAGS\@");
+	&define_configure_variable ('CC');
+	&define_configure_variable ('CFLAGS');
 	&define_variable ('COMPILE',
 			  '$(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)');
 	&define_variable ('LINK', '$(CC) $(LDFLAGS) -o $@');
@@ -1107,16 +1098,16 @@ sub handle_libraries
 
     local (%valid) = &am_primary_prefixes ('LIBRARIES', 'lib', 'pkglib',
 					   'noinst', 'check');
-    if (! $seen_ranlib)
+    if (! defined $configure_vars{'RANLIB'})
     {
 	local ($key);
 	foreach $key (keys %valid)
 	{
 	    if (&variable_defined ($key . '_LIBRARIES'))
 	    {
-		&am_line_error ($key . '_LIBRARIES', "library requires either \`AC_PROG_RANLIB' or `AM_PROG_LIBTOOL' in configure.in");
+		&am_line_error ($key . '_LIBRARIES', "library used but \`RANLIB' not defined in \`configure.in'");
 		# Only get this error once.
-		$seen_ranlib = 1;
+		$configure_vars{'RANLIB'} = 1;
 		last;
 	    }
 	}
@@ -1140,7 +1131,7 @@ sub handle_libraries
 		# like lib@MYLIB@.a in LIBFILES, which can turn into
 		# "lib.a" -- major lossage.  Something better must be
 		# done here.
-		if (/^@.*@$/)
+		if (/^\@.*\@$/)
 		{
 		    push (@outlist, $onelib);
 		}
@@ -1214,7 +1205,7 @@ sub handle_libraries
     else
     {
 	&define_variable ('AR', 'ar');
-	&define_variable ('RANLIB', '@RANLIB@');
+	&define_configure_variable ('RANLIB');
     }
 }
 
@@ -2721,8 +2712,8 @@ sub handle_emacs_lisp
     if (@elfiles)
     {
 	# Found some lisp.
-	&define_variable ("lispdir", "\@lispdir\@");
-	&define_variable ("EMACS", "\@EMACS\@");
+	&define_configure_variable ('lispdir');
+	&define_configure_variable ('EMACS');
 	$output_rules .= (".el.elc:\n"
 			  . "\t\@echo 'WARNING: Warnings can be ignored. :-)'\n"
 			  . "\t\EMACS=$(EMACS) $(SHELL) \$(srcdir)/elisp-comp \$<\n");
@@ -2929,12 +2920,6 @@ sub scan_configure
 
 	$seen_path_xtra = 1 if /AC_PATH_XTRA/;
 
-	# Sometimes it is desirable to explicitly set YACC.  For
-	# instance some people don't want to use bison.
-	$seen_prog_yacc = 1 if (/AC_PROG_YACC/
-				|| /AC_SUBST\(YACC\)/
-				|| /AC_(PATH|CHECK)_PROGS?\(YACC/);
-
         # This macro handles several different things.
         if (/$AM_INIT_AUTOMAKE_PATTERN/o)
 	{
@@ -2964,10 +2949,20 @@ sub scan_configure
 	# Some things required by Automake.
 	$seen_make_set = 1 if /AC_PROG_MAKE_SET/;
 	$seen_arg_prog = 1 if /AC_ARG_PROGRAM/;
-	$seen_ranlib = 1 if /AC_PROG_RANLIB/;
-        $seen_prog_cc = 1 if /AC_PROG_CC/;
-        $seen_prog_cxx = 1 if /AC_PROG_CXX/;
-        $seen_prog_lex = 1 if /AC_PROG_LEX/;
+
+	if (/AC_PROG_(YACC|RANLIB|CC|CXX|LEX)/)
+	{
+	    $configure_vars{$1} = 1;
+	}
+	if (/$AC_CHECK_PATTERN/o)
+	{
+	    $configure_vars{$3} = 1;
+	}
+	if (/$AC_SUBST_PATTERN/o)
+	{
+	    $configure_vars{$1} = 1;
+	}
+
         $seen_decl_yytext = 1 if /AC_DECL_YYTEXT/;
         $seen_maint_mode = 1 if /AM_MAINTAINER_MODE/;
         $seen_package = 1 if /PACKAGE=/;
@@ -2994,8 +2989,8 @@ sub scan_configure
         if (/AM_PROG_LIBTOOL/)
 	{
 	    $seen_libtool = 1;
-	    $seen_ranlib = 2;
 	    $libtool_line = $.;
+	    $configure_vars{'RANLIB'} = 1;
 	}
     }
 
@@ -3224,6 +3219,15 @@ sub define_pretty_variable
     }
 }
 
+# Like define_variable, but define a variable to be the configure
+# substitution by the same name.
+sub define_configure_variable
+{
+    local ($var) = @_;
+    local ($value) = '@' . $var . '@';
+    &define_variable ($var, $value);
+}
+
 # Read Makefile.am and set up %contents.  Simultaneously copy lines
 # from Makefile.am into $output_trailer or $output_vars as
 # appropriate.  NOTE we put rules in the trailer section.  We want
@@ -3398,7 +3402,8 @@ sub read_am_file
                         ('s/\@top_builddir\@/' . $build_rx . '/g',
 			 'header-vars');
 
-    # Generate some useful variables when AC_CANONICAL_* used.
+    # Generate some useful variables when AC_CANONICAL_* used.  FIXME:
+    # this should use generic %configure_vars method.
     if ($seen_canonical)
     {
 	local ($curs, %vars);
@@ -3416,6 +3421,12 @@ sub read_am_file
 	    $output_vars .= "$curs = \@$vars{$curs}\@\n";
 	    $contents{$curs} = "\@$vars{$curs}\@";
 	}
+    }
+
+    local ($curs);
+    foreach $curs (keys %configure_vars)
+    {
+	&define_configure_variable ($curs);
     }
 
     $output_vars .= $am_vars;
