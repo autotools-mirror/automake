@@ -1,4 +1,4 @@
-# -*- ksh -*-
+# -*- shell-script -*-
 # Defines for Automake testing environment.
 # Tom Tromey <tromey@cygnus.com>
 
@@ -9,6 +9,21 @@ test -f $srcdir/defs || {
 }
 
 me=`echo "$0" | sed -e 's,.*[\\/],,;s/\.test$//'`
+
+# See how redirections should work.  User can set VERBOSE to see all
+# output.
+test -z "$VERBOSE" && {
+   exec > /dev/null 2>&1
+}
+
+if test -n "$required"
+then
+  for tool in $required
+  do
+    echo "$me: running $tool --version"
+    ( $tool --version ) || exit 77
+  done
+fi
 
 # Always use an absolute srcdir.  Otherwise symlinks made in subdirs
 # of the test dir just won't work.
@@ -34,19 +49,16 @@ cd ./testSubDir
 
 # Build appropriate environment in test directory.  Eg create
 # configure.in, touch all necessary files, etc.
+# Don't use AC_OUTPUT, but AC_CONFIG_FILES so that appending
+# still produces a valid configure.ac.  But then, tests running
+# config.status really need to append AC_OUTPUT.
 cat > configure.in << END
 AC_INIT
 AM_INIT_AUTOMAKE($me, 1.0)
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
-AC_OUTPUT(Makefile)
+AC_CONFIG_FILES(Makefile)
 END
-
-# See how redirections should work.  User can set VERBOSE to see all
-# output.
-test -z "$VERBOSE" && {
-   exec > /dev/null 2>&1
-}
 
 # User can set PERL to change the perl interpreter used.
 test -z "$PERL" && PERL=perl
@@ -91,5 +103,17 @@ if test -z "$AUTOMAKE"; then
 fi
 
 # See how aclocal should be run.
-test -z "$ACLOCAL" \
-   && ACLOCAL="$PERL ../../aclocal --acdir=$srcdir/../m4"
+if test -z "$ACLOCAL"; then
+   perllibdir=$srcdir/../lib
+   export perllibdir
+   ACLOCAL="$PERL ../../aclocal --acdir=$srcdir/../m4"
+fi
+
+# We might need extra macros, e.g., from Libtool or Gettext.
+# Find them on the system.
+aclocaldir=`(aclocal --print-ac-dir) 2>/dev/null`
+case $required in
+  *libtool*)
+    ACLOCAL="$ACLOCAL -I $aclocaldir"
+    ;;
+esac
