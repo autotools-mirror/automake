@@ -64,25 +64,39 @@ endif %?TOPDIR_P%
 ## Yet another hack to support SUN make.
 ##
 ## Let's assume `foo' appears in DISTFILES and is not a built file.
-## When building with VPATH=$(srcdir), SUN make will rewrite `foo' as
-## `$(srcdir)/foo'.  An attempt to install the file with
+## When building with VPATH=$(srcdir), SUN make and OSF1/Tru64 will
+## rewrite `foo' as `$(srcdir)/foo'.  An attempt to install the file
+## with
 ##    cp $file $(distdir)/$file
 ## will thus install $(srcdir)/foo as $(distdir)/$(srcdir)/foo
 ## instead of $(distdir)/foo.
 ##
 ## So let's strip this leading $(srcdir)/ when it exists.  (As far we
-## know, only SUN make adds it.)  Searching whether the file is to be
-## found in the source or build directory will be done latter.
+## know, only SUN make and OSF1/Tru64 make add it.)  Searching whether
+## the file is to be found in the source or build directory will be
+## done latter.
 ##
-## In case we are _not_ using SUN make, how can we be sure we are
-## not stripping a legitimate filename that starts with the same
-## pattern as $(srcdir)?
+## In case we are _not_ using SUN or OSF1/Tru64 make, how can we be sure
+## we are not stripping a legitimate filename that starts with the
+## same pattern as $(srcdir)?
 ## Well, it can't happen without the Makefile author distributing
 ## something out of the distribution (which is bad).   As an example,
 ## consider `EXTRA_DIST = ../bar'.  This is an issue if $srcdir is `..',
 ## however getting this value for srcdir is impossible: `EXTRA_DIST = ../bar'
 ## implies we are in a subdirectory (so `../bar' is within the package),
 ## hence `$srcdir' is something like `../../subdir'.
+##
+## There is more to say about files which are above the current directory,
+## like `../bar' in the previous example.  The OSF1/Tru64 make
+## implementation can simplify filenames resulting from a VPATH lookup.
+## For instance if `VPATH = ../../subdir' and `../bar' is found in that
+## VPATH directory, then occurrences of `../bar' will be replaced by
+## `../../bar' (instead of `../../subdir/../bar').  This obviously defeats
+## any attempt to strip a leading $srcdir.  Presently we have no workaround
+## for this.  We avoid this issue by writing `EXTRA_DIST = $(srcdir)/../bar'
+## instead of `EXTRA_DIST = ../bar'.  This prefixing is needed only for files
+## above the current directory.  Fortunately, apart from auxdir files which
+## can be located in .. or ../.., this situation hardly occurs in practice.
 ##
 	  case $$file in \
 	    $(srcdir)/*) file=`echo "$$file" | sed "s|^$$srcdirstrip/||"`;; \
