@@ -202,8 +202,11 @@ $package_version_line = 0;
 # TRUE if we've seen AM_PATH_LISPDIR.
 $seen_lispdir = 0;
 
-# TRUE if we've seen AM_EXEEXT.
+# TRUE if we've seen AM_EXEEXT or AC_EXEEXT.
 $seen_exeext = 0;
+
+# TRUE if we've seen AC_OBJEXT.
+$seen_objext = 0;
 
 # Hash table of discovered configure substitutions.  Keys are names,
 # values are meaningless.
@@ -721,6 +724,7 @@ sub get_object_extension
 
     # Maybe require libtool library object files.
     local ($extension) = '.o';
+    $extension = '.$(OBJEXT)' if $seen_objext;
     $extension = '.lo' if ($out =~ /\.la$/);
 
     if (! $included_generic_compile)
@@ -741,10 +745,12 @@ sub get_object_extension
 	$xform = 's/\@CONFIG_INCLUDE_SPEC\@/' . $xform . '/go;';
 	$output_vars .= &file_contents_with_transform ($xform,
 						       'comp-vars');
-	$output_rules .=
-	    &file_contents_with_transform
-		($use_dependencies ? 's/^NOTDEPEND.*$//;' : 's/^NOTDEPEND//;',
-		 'compile');
+
+	$xform = (($use_dependencies
+		   ? 's/^NOTDEPEND.*$//;'
+		   : 's/^NOTDEPEND//;')
+		  . ($seen_objext ? 's/^OBJEXT//;' : 's/^OBJEXT.*$//;'));
+	$output_rules .= &file_contents_with_transform ($xform, 'compile');
 
 	&push_phony_cleaners ('compile');
 
@@ -761,6 +767,7 @@ sub get_object_extension
 	}
 
 	push (@suffixes, '.c', '.o', '.S', '.s');
+	push (@suffixes, '.obj') if $seen_objext;
 	push (@clean, 'compile');
 
 	$included_generic_compile = 1;
@@ -811,12 +818,15 @@ sub get_object_extension
 	    # Generate rules to build ansi2knr.  If it is in some
 	    # other directory, then generate dependencies but have the
 	    # rule just run elsewhere.
+	    $objext = $seen_objext ? ".$(OBJEXT)" : ".o";
 	    $output_rules .= ($options{'ansi2knr'} . ': '
-			      . $options{'ansi2knr'} . ".o\n");
+			      . $options{'ansi2knr'} . $objext . "\n");
 	    if ($options{'ansi2knr'} eq 'ansi2knr')
 	    {
-		$output_rules .= ("\t\$(LINK) ansi2knr.o \$(LIBS)\n"
-				  . "ansi2knr.o: \$(CONFIG_HEADER)\n\n");
+		$output_rules .= ("\t\$(LINK) ansi2knr" . $objext
+				  . " \$(LIBS)\n"
+				  . "ansi2knr" . $objext
+				  . ": \$(CONFIG_HEADER)\n\n");
 	    }
 	    else
 	    {
@@ -824,10 +834,10 @@ sub get_object_extension
 				  . " && \$(MAKE) \$(AM_MAKEFLAGS) "
 				  . "ansi2knr\n\n");
 		# This is required for non-GNU makes.
-	        $output_rules .= ($options{'ansi2knr'} . ".o:\n");
+	        $output_rules .= ($options{'ansi2knr'} . $objext . ":\n");
 		$output_rules .= ("\tcd " . &dirname ($options{'ansi2knr'})
-				  . " && \$(MAKE) \$(AM_MAKEFLAGS) "
-				  . "ansi2knr.o\n\n");
+				  . " && \$(MAKE) \$(AM_MAKEFLAGS)"
+				  . " ansi2knr" . $objext . "\n\n");
 	    }
 
 	    # Make sure ansi2knr can be found: if no path specified,
@@ -991,6 +1001,10 @@ sub handle_yacc_lex_cxx
 	{
 	    $output_rules .= ("$ext.o:\n"
 			      . "\t\$(CXXCOMPILE) -c \$<\n");
+	    # FIXME: Using cygpath should be somehow conditional.
+	    $output_rules .= ("$ext.obj:\n"
+			      . "\t\$(CXXCOMPILE) -c `cygpath -w \$<`\n")
+		if ($seen_objext);
 	    $output_rules .= ("$ext.lo:\n"
 			      . "\t\$(LTCXXCOMPILE) -c \$<\n")
 		if ($seen_libtool);
@@ -1037,7 +1051,8 @@ sub handle_yacc_lex_cxx
 			      . '; else echo ' . $base . '.c; fi` '
 			      . "| sed 's/^# \\([0-9]\\)/#line \\1/' "
 			      . '| $(ANSI2KNR) > ' . $base . "_.c\n");
- 	    push (@objects, $base . '_.o');
+ 	    push (@objects, $base . '_'
+		  . ($seen_objext ? '.$(OBJEXT)' : '.o'));
  	    push (@objects, $base . '_.lo') if $seen_libtool;
  	}
 
@@ -4116,7 +4131,7 @@ sub scan_one_configure_file
 	{
 	    foreach $libobj_iter (split (' ', $1))
 	    {
-		if ($libobj_iter =~ /^(.*)\.o$/)
+		if ($libobj_iter =~ /^(.*)\.o(bj)?$/)
 		{
 		    $libsources{$1 . '.c'} = 1;
 		}
@@ -4216,10 +4231,16 @@ sub scan_one_configure_file
 	$am_c_prototypes = 1 if /AM_C_PROTOTYPES/;
 
 	# Check for exe extension stuff.
-	if (/AM_EXEEXT/)
+	if (/AM_EXEEXT/ || /AC_EXEEXT/)
 	{
 	    $seen_exeext = 1;
 	    $configure_vars{'EXEEXT'} = 1;
+	}
+
+	if (/AC_OBJEXT/)
+	{
+	    $seen_objext = 1;
+	    $configure_vars{'OBJEXT'} = 1;
 	}
 
 	# Check for NLS support.
@@ -4455,7 +4476,7 @@ sub check_cygnus
 
     if (! $seen_exeext)
     {
-	&am_conf_error ("\`AM_EXEEXT' required when --cygnus specified");
+	&am_conf_error ("\`AM_EXEEXT' or \`AC_EXEEXT' required when --cygnus specified");
     }
 }
 
