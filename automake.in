@@ -1379,9 +1379,6 @@ sub handle_configure
     &am_line_error ('SUBDIRS', "AC_PROG_MAKE_SET must be used in configure.in")
 	if &variable_defined ('SUBDIRS') && ! $seen_make_set;
 
-    # Look for some files we need.  Always check for these.
-    &require_config_file ($FOREIGN, 'install-sh', 'mkinstalldirs');
-
     local ($top_reldir);
     if ($relative_dir ne '.')
     {
@@ -2080,6 +2077,13 @@ sub scan_configure
     @input_files = @make_list if (! @input_files);
 
     close (CONFIGURE);
+
+    # Look for some files we need.  Always check for these.  This
+    # check must be done for every run, even those where we are only
+    # looking at a subdir Makefile.  We must set relative_dir so that
+    # the file-finding machinery works.
+    local ($relative_dir) = '.';
+    &require_config_file ($FOREIGN, 'install-sh', 'mkinstalldirs');
 }
 
 ################################################################
@@ -2394,14 +2398,14 @@ sub initialize_global_constants
 	 "README", "THANKS", "TODO", "NEWS", "COPYING", "COPYING.LIB",
 	 "INSTALL", "ABOUT-NLS", "ChangeLog", "configure", "configure.in",
 	 "config.guess", "config.sub", "AUTHORS", "BACKLOG", "ABOUT-GNU",
-	 "libversion.in"
+	 "libversion.in", "mdate-sh"
 	 );
 
     # Commonly used files we auto-include, but only sometimes.
     @common_sometimes =
 	(
 	 "version.texi", "aclocal.m4", "acconfig.h", "config.h.top",
-	 "config.h.bot", "stamp-h.in", "mdate-sh", "ansi2knr.c",
+	 "config.h.bot", "stamp-h.in", "ansi2knr.c",
 	 "ansi2knr.1", 'stamp-vti', "mkinstalldirs", "install-sh"
 	 );
 
