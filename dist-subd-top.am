@@ -4,6 +4,12 @@ dist: $(DIST_FILES)
 	mkdir $(distdir)
 	(cd $(srcdir); automake --include-deps --output-dir=$(distdir))
 	@for file in $(DIST_FILES); do		\
+## Test for file existence because sometimes a file gets included in
+## DIST_FILES twice.  For example this happens when a single source
+## file is used in building more than one program.  Also, there are
+## situations in which "ln" can fail.  For instance a file to
+## distribute could actually be a cross-filesystem symlink -- this can
+## easily happen if "gettextize" was run on the distribution.
 	  test -f $(distdir)/$$file || {	\
 	    echo linking $$file;		\
 	    ln $(srcdir)/$$file $(distdir)/$$file; \
@@ -13,12 +19,15 @@ dist: $(DIST_FILES)
 	  };					\
 	done
 	for subdir in $(SUBDIRS); do		\
+## Test for directory existence here because previous automake
+## invocation might have created some directories.
 	  test -d $(distdir)/$$subdir		\
 	  || mkdir $(distdir)/$$subdir		\
 	  || exit 1;				\
 	  chmod 777 $(distdir)/$$subdir;	\
 	  (cd $$subdir; $(MAKE) $@) || exit 1;	\
 	done
+## Set "sublist" here because shells fail on "for dir in ; do".
 	@sublist="$(DIST_SUBDIRS)";		\
 	for dir in $$sublist; do		\
 	  echo copying directory $$dir;		\

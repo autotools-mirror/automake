@@ -20,7 +20,8 @@ eval "exec /usr/local/bin/perl -S $0 $*"
 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+# 02111-1307, USA.
 
 # Originally written by David Mackenzie <djm@gnu.ai.mit.edu>.
 # Perl reimplementation by Tom Tromey <tromey@drip.colorado.edu>.
@@ -74,6 +75,7 @@ $output_directory = '.';
 @dvi = ();
 @all = ();
 @check = ();
+@installcheck = ();
 @clean = ();
 
 # TRUE if current directory holds any C source files.
@@ -233,6 +235,7 @@ sub generate_makefile
     @dvi = ();
     @all = ();
     @check = ();
+    @installcheck = ();
     @clean = ();
 
     # Generate header before reading .am file.  The header must come
@@ -665,6 +668,13 @@ sub handle_tags
 	$output_rules .= &file_contents ('tags-clean');
 	push (@clean, 'tags');
     }
+    else
+    {
+	# Every Makefile must define some sort of TAGS rule.
+	# Otherwise, it would be possible for a top-level "make TAGS"
+	# to fail because some subdirectory failed.
+	$output_rules .= "tags: TAGS\nTAGS:\n\n";
+    }
 }
 
 # Handle 'dist' target.
@@ -745,6 +755,7 @@ sub handle_subdirs
 
     push (@all, "all-recursive");
     push (@check, "check-recursive");
+    push (@installcheck, "installcheck-recursive");
     push (@info, "info-recursive");
     push (@dvi, "dvi-recursive");
 
@@ -855,6 +866,7 @@ sub handle_merge_targets
     &do_one_merge_target ('info', @info);
     &do_one_merge_target ('dvi', @dvi);
     &do_one_merge_target ('check', @check);
+    &do_one_merge_target ('installcheck', @installcheck);
 
     # Handle the various install targets specially.  We do this so
     # that (eg) "make install-exec" will run "install-exec-recursive"
@@ -1179,12 +1191,15 @@ sub file_contents
 	exit 1;
     }
 
-    # Yes, we really want to slurp it.
-    local ($results) = join ('', <FC_FILE>);
-
+    # Lines starting with "##" are comments for developer use only.
+    # Maybe this is a bad idea?
+    local ($result) = '';
+    while (<FC_FILE>)
+    {
+	$result .= $_ unless ( m/^##/);
+    }
     close (FC_FILE);
-
-    return $results;
+    return $result;
 }
 
 # Return contents of some Makefile.am variable.  Allow for AM_ style
