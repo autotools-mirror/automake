@@ -51,7 +51,7 @@ AC_DEFUN([AM_PATH_PYTHON],
   dnl $prefix/lib/site-python in 1.4 to $prefix/lib/python1.5/site-packages
   dnl in 1.5.
   m4_define([_AM_PYTHON_INTERPRETER_LIST],
-	    [python python2 python2.2 python2.1 python2.0 python1.6 python1.5])
+	    [python python2 python2.3 python2.2 python2.1 python2.0 python1.6 python1.5])
 
   m4_if([$1],[],[
     dnl No version check is needed.
@@ -113,7 +113,6 @@ AC_DEFUN([AM_PATH_PYTHON],
   dnl   site-packages directory, not the python standard library
   dnl   directory like in previous automake betas.  This behaviour
   dnl   is more consistent with lispdir.m4 for example.
-
   dnl Query distutils for this directory.  distutils does not exist in
   dnl Python 1.5, so we fall back to the hardcoded directory if it
   dnl doesn't work.
