@@ -51,6 +51,7 @@ $AM_INIT_AUTOMAKE_PATTERN = "AM_INIT_AUTOMAKE\\([^,]*,([^,)]+)[,)]";
 $AM_PACKAGE_VERSION_PATTERN = "^\\s*\\[?([^]\\s]+)\\]?\\s*\$";
 # Note that there is no AC_PATH_TOOL.  But we don't really care.
 $AC_CHECK_PATTERN = "AC_(CHECK|PATH)_(PROG|PROGS|TOOL)\\(\\[?(\\w+)";
+$AM_MISSING_PATTERN = "AM_MISSING_PROG\\(\\[?(\\w+)";
 # Just check for alphanumeric in AC_SUBST.  If you do AC_SUBST(5),
 # then too bad.
 $AC_SUBST_PATTERN = "AC_SUBST\\(\\[?(\\w+)";
@@ -1907,7 +1908,7 @@ sub handle_texinfo
     # Find these programs wherever they may lie.  Yes, this has
     # intimate knowledge of the structure of the texinfo distribution.
     &define_program_variable ('MAKEINFO', 'build', 'texinfo/makeinfo',
-			      '@MAKEINFO@');
+			      'makeinfo', '@MAKEINFO@');
     &define_program_variable ('TEXI2DVI', 'src', 'texinfo/util',
 			      'texi2dvi');
 
@@ -3806,6 +3807,10 @@ sub scan_one_configure_file
 	{
 	    $configure_vars{$3} = 1;
 	}
+	if (/$AM_MISSING_PATTERN/o)
+	{
+	    $configure_vars{$1} = 1;
+	}
 
 	# Explicitly avoid ANSI2KNR -- we AC_SUBST that in protos.m4,
 	# but later define it elsewhere.  This is pretty hacky.  We
@@ -4168,9 +4173,16 @@ sub define_configure_variable
 #            be found.  (runtest is in srcdir!)
 # * SUBDIR   Subdir of top-level dir
 # * PROGRAM  Name of program
+# * OVERRIDE If specified, the name of the program to use when not in
+#            Cygnus mode.  Defaults to PROGRAM.
 sub define_program_variable
 {
-    local ($var, $whatdir, $subdir, $program) = @_;
+    local ($var, $whatdir, $subdir, $program, $override) = @_;
+
+    if (! $override)
+    {
+	$override = $program;
+    }
 
     if ($cygnus_mode)
     {
@@ -4182,7 +4194,7 @@ sub define_program_variable
     }
     else
     {
-	&define_variable ($var, $program);
+	&define_variable ($var, $override);
     }
 }
 
