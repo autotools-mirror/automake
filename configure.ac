@@ -54,8 +54,8 @@ AC_SUBST(pkgvdatadir)
 
 # $AUTOMAKE and $ACLOCAL are always run after a `cd $top_srcdir',
 # hence `.' is really what we want for perllibdir, libdir, and acdir.
-ACLOCAL="perllibdir=`pwd`/lib:./lib `pwd`/aclocal --acdir=m4"
-AUTOMAKE="perllibdir=`pwd`/lib:./lib `pwd`/automake --libdir=lib"
+ACLOCAL="perllibdir=`pwd`\"/lib$PATH_SEPARATOR./lib\" `pwd`/aclocal --acdir=m4"
+AUTOMAKE="perllibdir=`pwd`\"/lib$PATH_SEPARATOR./lib\" `pwd`/automake --libdir=lib"
 
 AC_PATH_PROG(PERL, perl)
 if test -z "$PERL"; then

@@ -61,6 +61,7 @@ uninstall-hook:
 do_subst = sed \
   -e 's,[@]APIVERSION[@],$(APIVERSION),g' \
   -e 's,[@]PACKAGE[@],$(PACKAGE),g' \
+  -e 's,[@]PATH_SEPARATOR[@],$(PATH_SEPARATOR),g' \
   -e 's,[@]PERL[@],$(PERL),g' \
   -e 's,[@]SHELL[@],$(SHELL),g' \
   -e 's,[@]VERSION[@],$(VERSION),g' \
@@ -100,16 +101,16 @@ INSTALL: lib/INSTALL
 # guaranteed to work on my machine.
 maintainer-check: automake aclocal
 ## This check avoids accidental configure substitutions in the source.
-## There are exactly 5 lines that should be modified.  This works out
-## to 20 lines of diffs.
-	@if test `diff $(srcdir)/automake.in automake | wc -l` -ne 20; then \
+## There are exactly 6 lines that should be modified.  This works out
+## to 22 lines of diffs.
+	@if test `diff $(srcdir)/automake.in automake | wc -l` -ne 22; then \
 	  echo "found too many diffs between automake.in and automake"; 1>&2; \
 	  diff -c $(srcdir)/automake.in automake; \
 	  exit 1; \
 	fi
 ## Syntax check with default Perl (on my machine, Perl 5).
-	perllibdir=./lib:$(srcdir)/lib $(PERL) -c -w automake
-	perllibdir=./lib:$(srcdir)/lib $(PERL) -c -w aclocal
+	perllibdir="./lib$(PATH_SEPARATOR)$(srcdir)/lib" $(PERL) -c -w automake
+	perllibdir="./lib$(PATH_SEPARATOR)$(srcdir)/lib" $(PERL) -c -w aclocal
 ## expect no instances of '${...}'.  However, $${...} is ok, since that
 ## is a shell construct, not a Makefile construct.
 	@if grep -F '$${' $(srcdir)/lib/am/[a-z]*.am | \
