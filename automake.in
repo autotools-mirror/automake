@@ -7068,20 +7068,14 @@ sub am_install_var
 		$X =~ s/^nobase_//;
 	    }
 
-	    my $nodir_name;
+	    my $nodir_name = $X;
 	    # If files should be distributed, do so.
+	    my $dist_p = 0;
 	    if ($can_dist)
 	    {
-		if (($default_dist && $one_name !~ /^nodist_/)
-		    || (! $default_dist && $one_name =~ /^dist_/))
-		{
-		    &push_dist_common ('$(' . $one_name . ')');
-		}
-		($nodir_name = $X) =~ s/^(dist|nodist)_//;
-	    }
-	    else
-	    {
-		$nodir_name = $X;
+	        $dist_p = (($default_dist && $one_name !~ /^nodist_/)
+			   || (! $default_dist && $one_name =~ /^dist_/));
+		$nodir_name =~ s/^(dist|nodist)_//;
 	    }
 
 	    # Append actual contents of where_PRIMARY variable to
@@ -7177,14 +7171,14 @@ sub am_install_var
 	    my $exec_p = (defined $exec_dir_p {$X}
 			  ? $exec_dir_p {$X}
 			  : ($X =~ /exec/));
-
 	    $output_rules .= &file_contents ($file,
 					     ('DIR'  => $X,
 					      'NDIR' => $nodir_name,
 					      'BASE' => $strip_subdir,
 
 					      'EXEC'    => $exec_p,
-					      'INSTALL' => $install_p));
+					      'INSTALL' => $install_p,
+					      'DIST'    => $dist_p));
 	}
     }
 
