@@ -74,6 +74,8 @@ $force_output = 0;
 
 # Remember the order into which we scanned the files.
 # It's important to output the contents of aclocal.m4 in the opposite order.
+# (Definitions in first files we have scanned should override those from
+# later files.  So they must appear last in the output.)
 @file_order = ();
 
 # Map macro names to file names.
@@ -81,6 +83,9 @@ $force_output = 0;
 
 # Map file names to file contents.
 %file_contents = ();
+
+# Map file names to included files (transitively closed).
+%file_includes = ();
 
 # How much to say.
 $verbose = 0;
@@ -125,7 +130,7 @@ sub scan_m4_files (@)
     # First, scan acinclude.m4 if it exists.
     if (-f 'acinclude.m4')
     {
-	$file_contents{'acinclude.m4'} = &scan_file ('acinclude.m4');
+	&scan_file ('acinclude.m4');
     }
 
     local ($m4dir);
@@ -149,7 +154,7 @@ sub scan_m4_files (@)
 	    next if $file eq 'aclocal.m4';
 
 	    $fullfile = $m4dir . '/' . $file;
-	    $file_contents{$fullfile} = &scan_file ($fullfile);
+	    &scan_file ($fullfile);
 	}
 	closedir (DIR);
     }
@@ -219,12 +224,12 @@ sub scan_configure_dep ($)
       s/\bdnl\b.*$//;
       s/\#.*$//;
 
-      while (/$m4_include_rx/g)
+      while (/$m4_include_rx/go)
 	{
 	  push (@ilist, $1 || $2);
 	}
 
-      while (/$ac_require_rx/g)
+      while (/$ac_require_rx/go)
 	{
 	  push (@rlist, $1 || $2);
 	}
@@ -261,15 +266,23 @@ sub add_file ($)
 # Point to the documentation for underquoted AC_DEFUN only once.
 my $underquoted_manual_once = 0;
 
-# Scan a single M4 file.  Return contents.
+# Scan a single M4 file, and all files it includes.
+# Return the list of included files.
 sub scan_file ($)
 {
-  local ($file) = @_;
+  my ($file) = @_;
+  my $base = dirname $file;
+
+  # Do not scan the same file twice.
+  return @$file_includes{$file} if exists $file_includes{$file};
+  # Prevent potential infinite recursion (if two files include each other).
+  return () if exists $file_contents{$file};
 
   unshift @file_order, $file;
 
   my $fh = new Automake::XFile $file;
   my $contents = '';
+  my @inc_files = ();
   while ($_ = $fh->getline)
     {
       # Ignore `##' lines.
@@ -277,7 +290,7 @@ sub scan_file ($)
 
       $contents .= $_;
 
-      if (/$ac_defun_rx/)
+      while (/$ac_defun_rx/go)
 	{
 	  if (! defined $1)
 	    {
@@ -288,11 +301,12 @@ sub scan_file ($)
 		unless $underquoted_manual_once;
 	      $underquoted_manual_once = 1;
 	    }
-	  if (! defined $map{$1 || $2})
+	  my $macro = $1 || $2;
+	  if (! defined $map{$macro})
 	    {
-	      print STDERR "aclocal: found macro $1 in $file: $.\n"
+	      print STDERR "aclocal: found macro $macro in $file: $.\n"
 		if $verbose;
-	      $map{$1 || $2} = $file;
+	      $map{$macro} = $file;
 	    }
 	  else
 	    {
@@ -301,18 +315,69 @@ sub scan_file ($)
 	      # extremely unpopular.  It causes actual problems which
 	      # are hard to work around, especially when you must
 	      # mix-and-match tool versions.
-	      print STDERR "aclocal: ignoring macro $1 in $file: $.\n"
+	      print STDERR "aclocal: ignoring macro $macro in $file: $.\n"
 		if $verbose;
 	    }
 	}
-    }
 
-  return $contents;
+      while (/$m4_include_rx/go)
+	{
+	  my $ifile = $1 || $2;
+	  # m4_include is relative to the directory of the file which
+	  # perform the include, but we want paths relative to the
+	  # directory where aclocal is run.  Do not use
+	  # File::Spec->rel2abs, because we want to store relative
+	  # paths (they might be used later of aclocal outputs an
+	  # m4_include for this file, or if the user itself includes
+	  # this file).
+	  $ifile = "$base/$ifile"
+	    unless $base eq '.' || File::Spec->file_name_is_absolute ($ifile);
+	  push (@inc_files, $ifile);
+	}
+    }
+  $file_contents{$file} = $contents;
+
+  # For some reason I don't understand, it does not work
+  # to do `map { scan_file ($_) } @inc_files' below.
+  # With Perl 5.8.2 it undefines @inc_files.
+  my @copy = @inc_files;
+  my @all_inc_files = (@inc_files, map { scan_file ($_) } @copy);
+  $file_includes{$file} = \@all_inc_files;
+  return @all_inc_files;
+}
+
+# strip_redundant_includes (%FILES)
+# ---------------------------------
+# Each key in %FILES is a file that must be present in the output.
+# However some of these files might already include other files in %FILES,
+# so there is no point in including them another time.
+# This removes items of %FILES which are already included by another file.
+sub strip_redundant_includes (%)
+{
+  my %files = @_;
+  # Files at the end of @file_order should override those at the beginning,
+  # so it is important to preserve these trailing files.  We can remove
+  # a file A if it is going to be output before a file B that includes
+  # file A, not the converse.
+  foreach my $file (reverse @file_order)
+    {
+      next unless exists $files{$file};
+      foreach my $ifile (@{$file_includes{$file}})
+	{
+	  next unless exists $files{$ifile};
+	  delete $files{$ifile};
+	  print STDERR "$ifile is already included by $file\n"
+	    if $verbose;
+	}
+    }
+  return %files;
 }
 
 sub trace_used_macros ()
 {
   my %files = map { $map{$_} => 1 } keys %macro_seen;
+  $files{'acinclude.m4'} = 1 if -f 'acinclude.m4';
+  %files = strip_redundant_includes %files;
 
   my $traces = ($ENV{AUTOM4TE} || 'autom4te');
   $traces .= " --language Autoconf-without-aclocal-m4 ";
@@ -358,11 +423,16 @@ sub write_aclocal ($@)
 
   my %files = map { $map{$_} => 1 } @macros;
   $files{'acinclude.m4'} = 1 if -f 'acinclude.m4';
+  %files = strip_redundant_includes %files;
 
   for $file (grep { exists $files{$_} } @file_order)
     {
-      my $mtime = mtime $file;
-      $greatest_mtime = $mtime if $greatest_mtime < $mtime;
+      # Check the time stamp of this file, and all files it includes.
+      for my $ifile ($file, @{$file_includes{$file}})
+	{
+	  my $mtime = mtime $ifile;
+	  $greatest_mtime = $mtime if $greatest_mtime < $mtime;
+	}
 
       # If the file to add looks like outside the project, copy it
       # to the output.  The regex catches filenames starting with
