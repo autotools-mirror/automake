@@ -14,6 +14,6 @@ error.test colon.test vtexi2.test tags.test comment.test libfiles.test \
 man.test info.test obsolete.test lex.test scripts.test subdir2.test \
 exsource.test canon4.test dup.test defun.test cxxlink.test cxxnoc.test \
 order.test libobj2.test interp.test alllib.test block.test libobj3.test \
-gnits.test
+gnits.test interp2.test
 
 EXTRA_DIST = defs $(TESTS)

@@ -567,10 +567,11 @@ sub get_object_extension
 	# because not all programs will necessarily use X.
 	if ($seen_path_xtra)
 	{
-	    $output_vars .= ("X_CFLAGS = \@X_CFLAGS\@\n"
-			     . "X_LIBS = \@X_LIBS\@\n"
-			     . "X_EXTRA_LIBS = \@X_EXTRA_LIBS\@\n"
-			     . "X_PRE_LIBS = \@X_PRE_LIBS\@\n");
+	    local ($var);
+	    foreach $var ('X_CFLAGS', 'X_LIBS', 'X_EXTRA_LIBS', 'X_PRE_LIBS')
+	    {
+		&define_variable ($var, "\@$var\@");
+	    }
 	}
 
 	# Check for automatic de-ANSI-fication.
@@ -603,14 +604,14 @@ sub get_object_extension
 		&push_phony_cleaners ('krextra');
 	    }
 
-	    $output_vars .= "o = .\@U\@o\n";
+	    &define_variable ('o', ".\@U\@o");
 
 	    # Make sure ansi2knr can be found: if no path specified,
 	    # specify "./".
 	    local ($apath) = $options{'ansi2knr'};
 	    $apath = './' . $apath
 		unless $apath =~ /\//;
-	    $output_vars .= "ANSI2KNR = " . $apath . "\n";
+	    &define_variable ("ANSI2KNR", $apath);
 
 	    $output_rules .= &file_contents ('compile-kr');
 	    $output_rules .= &file_contents ('clean-kr');
@@ -634,7 +635,7 @@ sub handle_yacc_lex_cxx
     if ($yacc_count)
     {
 	push (@suffixes, '.y');
-	$output_vars .= "YACC = \@YACC\@\n";
+	&define_variable ('YACC', "\@YACC\@");
 	$output_rules .= ".y.c:\n\t";
 	if ($yacc_count > 1)
 	{
@@ -656,8 +657,8 @@ sub handle_yacc_lex_cxx
     if ($lex_count)
     {
 	push (@suffixes, '.l');
-	$output_vars .= ("LEX = \@LEX\@\n"
-			 . "LEX_OUTPUT_ROOT = \@LEX_OUTPUT_ROOT\@\n");
+	&define_variable ("LEX", "\@LEX\@");
+	&define_variable ("LEX_OUTPUT_ROOT", "\@LEX_OUTPUT_ROOT\@");
 	$output_rules .= ".l.c:\n\t";
 	if ($lex_count > 1)
 	{
@@ -686,8 +687,8 @@ sub handle_yacc_lex_cxx
 	# required to allow parallel builds to work correctly.  FIXME:
 	# for now, no line number.
 	&require_config_file ($FOREIGN, 'interlock', 'ylwrap');
-	$output_vars .= ('INTERLOCK = ' . $config_aux_dir . "/interlock\n"
-			 . 'YLWRAP = ' . $config_aux_dir . "/ylwrap\n");
+	&define_variable ('INTERLOCK', $config_aux_dir . "/interlock");
+	&define_variable ('YLWRAP', $config_aux_dir . "/ylwrap");
     }
 
     #
@@ -699,12 +700,10 @@ sub handle_yacc_lex_cxx
     {
 	push (@suffixes, @cxx_list);
 
-	$output_vars .= ("CXX = \@CXX\@\n"
-			 . "CXXFLAGS = \@CXXFLAGS\@\n"
-			 . 'CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)'
-			 . "\n"
-			 . 'CXXLINK = $(CXX) $(LDFLAGS) -o $@'
-			 . "\n");
+	&define_variable ("CXX", "\@CXX\@");
+	&define_variable ("CXXFLAGS", "\@CXXFLAGS\@");
+	&define_variable ('CXXCOMPILE', '$(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)');
+	&define_variable ('CXXLINK', '$(CXX) $(LDFLAGS) -o $@');
 
 	local ($ext);
 	foreach $ext (@cxx_list)
@@ -724,12 +723,11 @@ sub handle_yacc_lex_cxx
     #
     if ($seen_c_source)
     {
-	$output_vars .= ("CC = \@CC\@\n"
-			 . "CFLAGS = \@CFLAGS\@\n"
-			 . 'COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)'
-			 . "\n"
-			 . 'LINK = $(CC) $(LDFLAGS) -o $@'
-			 . "\n");
+	&define_variable ('CC', "\@CC\@");
+	&define_variable ('CFLAGS', "\@CFLAGS\@");
+	&define_variable ('COMPILE',
+			  '$(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)');
+	&define_variable ('LINK', '$(CC) $(LDFLAGS) -o $@');
     }
 }
 
@@ -773,14 +771,14 @@ sub handle_source_transform
 	}
 	elsif ($prefix eq '')
 	{
-	    $output_vars .= $one_file . "_SOURCES = " . $unxformed . ".c\n";
+	    &define_variable ($one_file . "_SOURCES", $unxformed . ".c");
 	    push (@sources, $unxformed . '.c');
 	    push (@objects, $unxformed . $obj);
 	    push (@files, $unxformed . ".c ");
 	}
 	else
 	{
-	    $output_vars .= "EXTRA_" . $one_file . "_SOURCES =\n";
+	    &define_variable ("EXTRA_" . $one_file . "_SOURCES", '');
 	}
 
 	if (length (@files))
@@ -851,7 +849,7 @@ sub handle_source_transform
 		$dep_files{'.deps/' . $_} = 1;
 	    }
 
-	    &pretty_print ($one_file . "_OBJECTS =", "", @result)
+	    &define_pretty_variable ($one_file . "_OBJECTS", @result)
 		unless $prefix eq 'EXTRA_';
 	}
     }
@@ -929,7 +927,7 @@ sub handle_lib_objects
 
     if ($xname ne '' && ! &variable_defined ($xname . '_DEPENDENCIES'))
     {
-	&pretty_print ($xname . '_DEPENDENCIES = ', '', @dep_list);
+	&define_pretty_variable ($xname . '_DEPENDENCIES', @dep_list);
     }
 }
 
@@ -976,7 +974,7 @@ sub handle_programs
 	else
 	{
 	    # User didn't define prog_LDADD override.  So do it.
-	    $output_vars .= $xname . '_LDADD = $(LDADD)' . "\n";
+	    &define_variable ($xname . '_LDADD', '$(LDADD)');
 
 	    # This does a bit too much work.  But we need it to
 	    # generate _DEPENDENCIES when appropriate.
@@ -1046,7 +1044,7 @@ sub handle_libraries
 	    {
 		push (@outlist, 'lib' . $onelib . '.a');
 	    }
-	    &pretty_print ($onedir . '_LIBFILES =', "", @outlist);
+	    &define_pretty_variable ($onedir . '_LIBFILES', @outlist);
 	}
 
 	push (@libfiles_list, '$(' . $onedir . '_LIBFILES)')
@@ -1081,7 +1079,7 @@ sub handle_libraries
 	{
 	    # Generate support for conditional object inclusion in
 	    # libraries.
-	    $output_vars .= $xlib . "_LIBADD =\n";
+	    &define_variable ($xlib . "_LIBADD", '');
 	}
 
 	&handle_source_transform ($xlib, $onelib, $obj);
@@ -1098,20 +1096,20 @@ sub handle_libraries
 
     if (! &variable_defined ('LIBFILES'))
     {
-	&pretty_print ('LIBFILES = ', "", @libfiles_list);
+	&define_pretty_variable ('LIBFILES ', @libfiles_list);
     }
 
     if ($seen_libtool)
     {
-	$output_vars .= ('AR = $(LIBTOOL) archive' . "\n"
-			 . 'RANLIB = $(LIBTOOL) ranlib' . "\n"
-			 . 'LCOMPILE = $(LIBTOOL) compile $(DEFS) $(INCLUDES)'
-			 . ' $(CPPFLAGS) $(CFLAGS)' . "\n");
+	&define_variable ('AR', '$(LIBTOOL) archive');
+	&define_variable ('RANLIB', '$(LIBTOOL) ranlib');
+	&define_variable ('LCOMPILE', ('$(LIBTOOL) compile $(DEFS) $(INCLUDES)'
+				       . ' $(CPPFLAGS) $(CFLAGS)'));
     }
     else
     {
-	$output_vars .= ('AR = ar' . "\n"
-			 . 'RANLIB = @RANLIB@' . "\n");
+	&define_variable ('AR', 'ar');
+	&define_variable ('RANLIB', '@RANLIB@');
     }
 }
 
@@ -1308,15 +1306,13 @@ sub handle_texinfo
     push (@info, '$(INFO_DEPS)');
     push (@dvi, '$(DVIS)');
 
-    $output_vars .= ("INFOS = " . join (' ', @infos_list) . "\n"
-		     . "INFO_DEPS = " . join (' ', @info_deps_list)  . "\n"
-		     . "DVIS = " . join (' ', @dvis_list) . "\n"
-		     # This next isn't strictly needed now -- the
-		     # places that look here could easily be changed
-		     # to look in info_TEXINFOS.  But this is probably
-		     # better, in case noinst_TEXINFOS is ever
-		     # supported.
-		     . "TEXINFOS = " . $contents{'info_TEXINFOS'} . "\n\n");
+    &define_variable ("INFOS", join (' ', @infos_list));
+    &define_variable ("INFO_DEPS", join (' ', @info_deps_list));
+    &define_variable ("DVIS", join (' ', @dvis_list));
+    # This next isn't strictly needed now -- the places that look here
+    # could easily be changed to look in info_TEXINFOS.  But this is
+    # probably better, in case noinst_TEXINFOS is ever supported.
+    &define_variable ("TEXINFOS", $contents{'info_TEXINFOS'});
 
     # Do some error checking.
     &require_file_with_line ('info_TEXINFOS', $FOREIGN, 'texinfo.tex');
@@ -1348,7 +1344,7 @@ sub handle_man_pages
 
     # We don't really need this, but we use it in case we ever want to
     # support noinst_MANS.
-    $output_vars .= "MANS = " . $contents{'man_MANS'} . "\n";
+    &define_variable ("MANS", $contents{'man_MANS'});
 
     # Generate list of install dirs.
     $output_rules .= "install-man: \$(MANS)\n";
@@ -1580,7 +1576,7 @@ sub handle_dist
     }
     push (@coms, sort keys %dist_common);
 
-    &pretty_print ("DIST_COMMON =", "", @coms);
+    &define_pretty_variable ("DIST_COMMON", @coms);
     $output_vars .= "\n";
 
     # Some boilerplate.
@@ -1788,7 +1784,7 @@ sub handle_dependencies
 	# Include GNU-make-specific auto-dep code.
 	if ($dir_holds_sources)
 	{
-	    &pretty_print ('DEP_FILES =', "", sort keys %dep_files);
+	    &define_pretty_variable ('DEP_FILES', sort keys %dep_files);
 	    $output_rules .= &file_contents ('depend');
 	    push (@clean, 'depend');
 	    &push_phony_cleaners ('depend');
@@ -1808,7 +1804,7 @@ sub handle_dependencies
 	    }
 	    if ($need_cxx)
 	    {
-		$output_vars .= 'CXXMKDEP = $(CXX) -MM $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)' . "\n";
+		&define_variable ('CXXMKDEP', '$(CXX) -MM $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)');
 	    }
 	}
     }
@@ -1891,7 +1887,7 @@ sub handle_aclocal_m4
     local ($regen_aclocal) = 0;
     if (-f 'aclocal.m4')
     {
-	$output_vars .= "ACLOCAL = aclocal.m4\n";
+	&define_variable ("ACLOCAL", "aclocal.m4");
 	&push_dist_common ('aclocal.m4');
 
 	if (open (ACLOCAL, '< aclocal.m4'))
@@ -1972,17 +1968,17 @@ sub handle_configure
 	    # Header defined and in this directory.
 	    if (-f 'acconfig.h')
 	    {
-		$output_vars .= "ACCONFIG = acconfig.h\n";
+		&define_variable ("ACCONFIG", "acconfig.h");
 		&push_dist_common ('acconfig.h');
 	    }
 	    if (-f $config_name . '.top')
 	    {
-		$output_vars .= "CONFIG_TOP = ${config_name}.top\n";
+		&define_variable ("CONFIG_TOP", "${config_name}.top");
 		&push_dist_common ($config_name . '.top');
 	    }
 	    if (-f $config_name . '.bot')
 	    {
-		$output_vars .= "CONFIG_BOT = ${config_name}.bot\n";
+		&define_variable ("CONFIG_BOT", "${config_name}.bot");
 		&push_dist_common ($config_name . '.bot');
 	    }
 
@@ -1990,7 +1986,7 @@ sub handle_configure
 					  'stamp-h.in');
 
 	    $output_rules .= &file_contents ('remake-hdr');
-	    $output_vars .= "CONFIG_HEADER_IN = ${config_header}\n";
+	    &define_variable ("CONFIG_HEADER_IN", "${config_header}");
 	}
 
 	$top_reldir = '';
@@ -1999,22 +1995,19 @@ sub handle_configure
     # Set location of mkinstalldirs.
     if ($config_aux_dir ne '.' && $config_aux_dir ne '')
     {
-	$output_vars .= 'mkinstalldirs = ' . $config_aux_dir;
+	&define_variable ('mkinstalldirs', $config_aux_dir . '/mkinstalldirs');
     }
     else
     {
-	$output_vars .= 'mkinstalldirs = $(top_srcdir)';
+	&define_variable ('mkinstalldirs', '$(top_srcdir)/mkinstalldirs');
     }
-    $output_vars .= '/mkinstalldirs' . "\n";
 
     &am_line_error ('CONFIG_HEADER',
 		    "\`CONFIG_HEADER' is an anachronism; now determined from \`configure.in'")
 	if &variable_defined ('CONFIG_HEADER');
 
-    # Generate CONFIG_HEADER define, and define interally.
-    $output_vars .= "CONFIG_HEADER = ${top_builddir}/${config_name}\n"
-	if $config_name;
-    $contents{'CONFIG_HEADER'} = "${top_builddir}/${config_name}"
+    # Generate CONFIG_HEADER define.
+    &define_variable ("CONFIG_HEADER", "${top_builddir}/${config_name}")
 	if $config_name;
 
     # Now look for other files in this directory which must be remade
@@ -2057,7 +2050,7 @@ sub handle_configure
     }
 
     # These files get removed by "make clean".
-    &pretty_print ('CONFIG_CLEAN_FILES = ', '', @actual_other_files);
+    &define_pretty_variable ('CONFIG_CLEAN_FILES', @actual_other_files);
 }
 
 # Handle C headers.
@@ -2119,13 +2112,11 @@ sub handle_footer
 {
     if ($contents{'SOURCES'})
     {
-	&pretty_print ('SOURCES =', "",
-		       split (' ', $contents{'SOURCES'}));
+	&define_pretty_variable ('SOURCES', split (' ', $contents{'SOURCES'}));
     }
     if ($contents{'OBJECTS'})
     {
-	&pretty_print ('OBJECTS =', "",
-		       split (' ', $contents{'OBJECTS'}));
+	&define_pretty_variable ('OBJECTS', split (' ', $contents{'OBJECTS'}));
     }
     if ($contents{'SOURCES'} || $contents{'OBJECTS'})
     {
@@ -2566,7 +2557,7 @@ sub handle_emacs_lisp
     if (@elfiles)
     {
 	# Found some lisp.
-	$output_vars .= "lispdir = \@lispdir\@\n";
+	&define_variable ("lispdir", "\@lispdir\@");
 	$output_rules .= (".el.elc:\n"
 			  . "\t\@echo 'WARNING: Warnings can be ignored. :-)'\n"
 			  . "\t\$(SHELL) \$(srcdir)/elisp-comp \$<\n");
@@ -2574,7 +2565,7 @@ sub handle_emacs_lisp
 
 	# Generate .elc files.
 	grep ($_ .= 'c', @elfiles);
-	&pretty_print ('ELCFILES =', '', @elfiles);
+	&define_pretty_variable ('ELCFILES', @elfiles);
 
 	push (@clean, 'lisp');
 	&push_phony_cleaners ('lisp');
@@ -2967,7 +2958,7 @@ sub variable_value_as_list
     }
     elsif (! defined $contents{$var})
     {
-	&am_error ($parent, "variable \`$var' not defined");
+	&am_line_error ($parent, "variable \`$var' not defined");
     }
     else
     {
@@ -2986,6 +2977,30 @@ sub variable_value_as_list
     }
 
     return @result;
+}
+
+# Define a new variable, but only if not already defined.
+sub define_variable
+{
+    local ($var, $value) = @_;
+
+    if (! defined $contents{$var})
+    {
+	$output_vars .= $var . ' = ' . $value . "\n";
+	$contents{$var} = $value;
+    }
+}
+
+# Like define_variable, but second arg is a list, and is
+# pretty-printed.
+sub define_pretty_variable
+{
+    local ($var, @value) = @_;
+    if (! defined $contents{$var})
+    {
+	$contents{$var} = join (' ', @value);
+	&pretty_print ($var . ' = ', '', @value);
+    }
 }
 
 # Read Makefile.am and set up %contents.  Simultaneously copy lines
@@ -3612,7 +3627,7 @@ sub am_install_var
     if (@used)
     {
 	# Define it.
-	&pretty_print ($primary . ' =', '', @used);
+	&define_pretty_variable ($primary, @used);
 	$output_vars .= "\n";
     }
 
