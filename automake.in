@@ -28,8 +28,10 @@ am_dir=@prefix@/share/automake
 usage="Usage: automake [--help] [--version] [Makefile]..."
 
 # These are commonly found files that we look for and automatically
-# include in DIST_FILES.
-common='TODO THANKS README NEWS COPYING COPYING.LIB INSTALL NLS ChangeLog configure configure.in config.guess config.sub mkinstalldirs install-sh texinfo.tex'
+# include in DIST_FILES.  NOTE if you add something here, make sure
+# you add it in the right place -- that is, so that the "--help" still
+# lines up nicely.
+common='THANKS TODO README NEWS COPYING COPYING.LIB INSTALL NLS ChangeLog configure configure.in config.guess config.sub mkinstalldirs install-sh texinfo.tex'
 
 # NLS nuisances.
 # Only set `LANG' and `LC_ALL' to "C" if already set.
@@ -42,7 +44,15 @@ mfiles=
 while test $# -gt 0; do
    case "$1" in
     --help | --h* )
-       echo "${usage}" 1>&2
+       echo $usage
+       echo
+       echo "Files which are automatically distributed, if found:"
+       set $common
+       while test $# -gt 0; do
+	  echo "  $1		$2"
+	  shift
+	  shift
+       done
        exit 0
        ;;
 
@@ -157,8 +167,25 @@ for am_makefile in $mfiles; do
 
   eval `sed -n -f $am_rmnl ${am_makefile}.am | sed -n -f $am_ass`
 
+  #
+  # If a variable is set at configure time, we still need to know the
+  # values it can assume (statically).  This is done using the AM_
+  # forms in the Makefile.am.  Handle it now.
+  #
   test -n "$AM_PROGRAMS" && {
      PROGRAMS=$AM_PROGRAMS
+  }
+  test -n "$AM_LIBPROGRAMS" && {
+     LIBPROGRAMS=$AM_LIBPROGRAMS
+  }
+  test -n "$AM_SCRIPTS" && {
+     SCRIPTS=$AM_SCRIPTS
+  }
+  test -n "$AM_LIBSCRIPTS" && {
+     LIBSCRIPTS=$AM_LIBSCRIPTS
+  }
+  test -n "$AM_LIBRARIES" && {
+     LIBRARIES=$AM_LIBRARIES
   }
 
   if grep @kr@ ${am_makefile}.am >/dev/null; then
