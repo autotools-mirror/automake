@@ -292,6 +292,7 @@ space.test \
 specflags.test \
 specflags2.test	\
 specflags3.test	\
+specflags6.test	\
 specflags7.test	\
 specflags8.test	\
 spell.test \
