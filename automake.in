@@ -211,7 +211,8 @@ $seen_exeext = 0;
 $seen_objext = 0;
 
 # Hash table of discovered configure substitutions.  Keys are names,
-# values are meaningless.
+# values are `FILE:LINE' strings which are used by error message
+# generation.
 %configure_vars = ();
 
 # This is used to keep track of which variable definitions we are
@@ -1525,8 +1526,9 @@ sub handle_libraries
 	    if (&variable_defined ($key . '_LIBRARIES'))
 	    {
 		&am_line_error ($key . '_LIBRARIES', "library used but \`RANLIB' not defined in \`configure.in'");
-		# Only get this error once.
-		$configure_vars{'RANLIB'} = 1;
+		# Only get this error once.  If this is ever printed,
+		# we have a bug.
+		$configure_vars{'RANLIB'} = 'BUG';
 		last;
 	    }
 	}
@@ -1621,8 +1623,9 @@ sub handle_ltlibraries
 	    if (!$seen_libtool)
 	    {
 		&am_line_error ($key . '_LTLIBRARIES', "library used but \`LIBTOOL' not defined in \`configure.in'");
-		# Only get this error once.
-		$configure_vars{'LIBTOOL'} = 1;
+		# Only get this error once.  If this is ever printed,
+		# we have a bug.
+		$configure_vars{'LIBTOOL'} = 'BUG';
 		$seen_libtool = 1;
 	    }
 
@@ -4005,13 +4008,13 @@ sub scan_one_configure_file
 	if (/AC_EXEEXT/)
 	{
 	    $seen_exeext = 1;
-	    $configure_vars{'EXEEXT'} = 1;
+	    $configure_vars{'EXEEXT'} = $filename . ':' . $.;
 	}
 
 	if (/AC_OBJEXT/)
 	{
 	    $seen_objext = 1;
-	    $configure_vars{'OBJEXT'} = 1;
+	    $configure_vars{'OBJEXT'} = $filename . ':' . $.;
 	}
 
 	# Check for NLS support.
@@ -4037,8 +4040,7 @@ sub scan_one_configure_file
 	    && $2 ne '[$1]')
 	{
 	    &am_conf_line_error
- 		($filename, $.,
-		 "\`AC_CONFIG_HEADER' is obsolete; use \`AM_CONFIG_HEADER'")
+ 		($filename, $., "\`automake requires \`AM_CONFIG_HEADER', not \`AC_CONFIG_HEADER'")
  		    if $1 eq 'C';
 
 	    $config_header_line = $.;
@@ -4100,27 +4102,25 @@ sub scan_one_configure_file
 
 	if (/AM_PROG_LEX/)
 	{
-	    $configure_vars{'LEX'} = 1;
+	    $configure_vars{'LEX'} = $filename . ':' . $.;
 	    $seen_decl_yytext = 1;
 	}
 	if (/AC_DECL_YYTEXT/ && $filename =~ /configure\.in$/)
 	{
-	    &am_conf_line_warning ($filename, $.,
-				   "\`AC_DECL_YYTEXT' is obsolete; use \`AM_PROG_LEX'");
+	    &am_conf_line_warning ($filename, $., "\`AC_DECL_YYTEXT' is covered by \`AM_PROG_LEX'");
 	}
 	if (/AC_PROG_LEX/ && $filename =~ /configure\.in$/)
 	{
- 	    &am_conf_line_warning ($filename, $.,
-				   "\`AC_PROG_LEX' is obsolete; use \`AM_PROG_LEX'");
+ 	    &am_conf_line_warning ($filename, $., "automake requires \`AM_PROG_LEX', not \`AC_PROG_LEX'");
 	}
 
 	if (/AC_PROG_(YACC|RANLIB|CC|CXXCPP|CXX|LEX|AWK|CPP|LN_S)/)
 	{
-	    $configure_vars{$1} = 1;
+	    $configure_vars{$1} = $filename . ':' . $.;
 	}
 	if (/$AC_CHECK_PATTERN/o)
 	{
-	    $configure_vars{$3} = 1;
+	    $configure_vars{$3} = $filename . ':' . $.;
 	}
 	if (/$AM_MISSING_PATTERN/o
 	    && $1 ne 'ACLOCAL'
@@ -4128,7 +4128,7 @@ sub scan_one_configure_file
 	    && $1 ne 'AUTOMAKE'
 	    && $1 ne 'AUTOHEADER')
 	{
-	    $configure_vars{$1} = 1;
+	    $configure_vars{$1} = $filename . ':' . $.;
 	}
 
 	# Explicitly avoid ANSI2KNR -- we AC_SUBST that in protos.m4,
@@ -4141,7 +4141,7 @@ sub scan_one_configure_file
 	    && $1 ne 'INSTALL_SCRIPT'
 	    && $1 ne 'INSTALL_DATA')
 	{
-	    $configure_vars{$1} = 1;
+	    $configure_vars{$1} = $filename . ':' . $.;
 	}
 
         $seen_decl_yytext = 1 if /AC_DECL_YYTEXT/;
@@ -4171,9 +4171,9 @@ sub scan_one_configure_file
 	{
 	    $seen_libtool = 1;
 	    $libtool_line = $.;
-	    $configure_vars{'LIBTOOL'} = 1;
-	    $configure_vars{'RANLIB'} = 1;
-	    $configure_vars{'CC'} = 1;
+	    $configure_vars{'LIBTOOL'} = $filename . ':' . $.;
+	    $configure_vars{'RANLIB'} = $filename . ':' . $.;
+	    $configure_vars{'CC'} = $filename . ':' . $.;
 	    # AM_PROG_LIBTOOL runs AC_CANONICAL_HOST.  Make sure we
 	    # never downgrade (if we've seen AC_CANONICAL_SYSTEM).
 	    $seen_canonical = $AC_CANONICAL_HOST if ! $seen_canonical;
@@ -6691,21 +6691,30 @@ sub am_line_error
 
     if ($symbol && "$symbol" ne '-1')
     {
-	# If SYMBOL not already a line number, look it up in Makefile.am.
+	local ($file) = "${am_file}.am";
+
 	if ($symbol =~ /^\d+$/)
 	{
-	    $symbol .= ': ';
+	    # SYMBOL is a line number, so just add the colon.
+	    $file .= ':' . $symbol;
 	}
 	elsif (defined $content_lines{$symbol})
 	{
-	    $symbol = $content_lines{$symbol} . ': ';
+	    # SYMBOL is a variable defined in Makefile.am, so add the
+	    # line number we saved from there.
+	    $file .= ':' . $content_lines{$symbol};
+	}
+	elsif (defined $configure_vars{$symbol})
+	{
+	    # SYMBOL is a variable defined in configure.in, so add the
+	    # appropriate line number.
+	    $file = $configure_vars{$symbol};
 	}
 	else
 	{
-	    # A single space, to provide nice separation.
-	    $symbol = ' ';
+	    # Couldn't find the line number.
 	}
-	warn "${am_file}.am:", $symbol, join (' ', @args), "\n";
+	warn $file, ": ", join (' ', @args), "\n";
 	$exit_status = 1;
     }
     else
