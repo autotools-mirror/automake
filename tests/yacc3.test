@@ -1,0 +1,32 @@
+#! /bin/sh
+
+# Ensure that generated .h file is distributed iff we have -d in
+# (AM_)?YFLAGS.
+
+. $srcdir/defs || exit 1
+
+cat >> configure.in << 'END'
+AC_PROG_CC
+AC_PROG_YACC
+END
+
+cat > Makefile.am <<'END'
+bin_PROGRAMS = zardoz
+zardoz_SOURCES = zardoz.y
+magic:
+	@echo $(DIST_COMMON)
+END
+
+$AUTOMAKE || exit 1
+
+# It should not be disted here
+$MAKE -f Makefile.in SHELL=/bin/sh magic |
+grep 'zardoz.h' Makefile.in > /dev/null && exit 1
+
+echo 'YFLAGS = -d' >> Makefile.am
+
+$AUTOMAKE || exit 1
+
+# But it should here
+$MAKE -f Makefile.in SHELL=/bin/sh magic |
+grep 'zardoz.h' Makefile.in > /dev/null

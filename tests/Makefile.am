@@ -43,7 +43,7 @@ subst.test symlink.test syntax.test tags.test tagsub.test target.test \
 texinfo.test texinfo2.test texinfo3.test texinfo4.test texinfo5.test \
 texinfo6.test texinfo7.test texinfo8.test unused.test version.test \
 version2.test version3.test vpath.test vtexi.test vtexi2.test \
-whoami.test xsource.test yacc.test yaccpp.test
+whoami.test xsource.test yacc.test yacc2.test yacc3.test yaccpp.test
 
 EXTRA_DIST = defs $(TESTS)
 
