@@ -111,17 +111,21 @@ my $am_dir = "@datadir@/@PACKAGE@/am";
 my $pkgdata_dir = "@datadir@/@PACKAGE@";
 
 # String constants.
-my $IGNORE_PATTERN = '^##([^#].*)?$';
+my $IGNORE_PATTERN = '^##([^#\n].*)?\n';
 my $WHITE_PATTERN = '^\s*$';
 my $COMMENT_PATTERN = '^#';
 my $TARGET_PATTERN='[$a-zA-Z_.][-.a-zA-Z0-9_(){}/$]*';
-my $RULE_PATTERN = "^($TARGET_PATTERN) *:([^=].*|)\$";
+# A rule has three parts: a list of targets, a list of dependencies,
+# and optionally actions.
+my $RULE_PATTERN =
+  "^($TARGET_PATTERN(?:(?:\\\\\n|\\s)+$TARGET_PATTERN)*) *:([^=].*|)\$";
+
 my $SUFFIX_RULE_PATTERN = '^\.([a-zA-Z0-9]+)\.([a-zA-Z0-9]+)$';
 # Only recognize leading spaces, not leading tabs.  If we recognize
 # leading tabs here then we need to make the reader smarter, because
 # otherwise it will think rules like `foo=bar; \' are errors.
-my $MACRO_PATTERN = '^ *([A-Za-z0-9_@]+)\s*([:+]?)=\s*(.*)$';
-my $BOGUS_MACRO_PATTERN = '^ *([^ \t]*)\s*([:+]?)=\s*(.*)$';
+my $MACRO_PATTERN = '^[A-Za-z0-9_@]+$';
+my $ASSIGNMENT_PATTERN = '^ *([^ \t]*)\s*([:+]?)=\s*(.*)$';
 # This pattern recognizes a Gnits version id and sets $1 if the
 # release is an alpha release.  We also allow a suffix which can be
 # used to extend the version number with a "fork" identifier.
@@ -2265,10 +2269,10 @@ sub check_canonical_spelling
     {
 	foreach my $xt (@suffixes)
 	{
-	    &am_line_error ($name . $xt,
-			    "invalid variable `" . $name . $xt
-			    . "'; should be `" . $xname . $xt . "'")
-		if &variable_defined ($name . $xt);
+	    &am_line_error ("$name$xt",
+			    "invalid variable `$name$xt'; "
+			    . "should be `$xname$xt'")
+		if &variable_defined ("$name$xt");
 	}
     }
 
@@ -5634,7 +5638,7 @@ sub cond_stack_endif ($$$)
 
   if (! @cond_stack)
     {
-      &am_file_error ($where, "endif without if");
+      &am_file_error ($where, "endif without if: $negate$cond");
       return;
     }
 
@@ -5709,6 +5713,9 @@ sub macro_define ($$$$$$)
 {
   my ($var, $var_is_am, $type, $cond, $value, $where) = @_;
 
+  am_file_error ($where, "bad macro name `$var'")
+    if $var !~ /$MACRO_PATTERN/o;
+
   $cond ||= 'TRUE';
 
   # An Automake variable must be consistently defined with the same
@@ -5731,6 +5738,11 @@ sub macro_define ($$$$$$)
 	}
     }
   $var_type{$var} = $type;
+
+  # When adding, since we rewrite, don't try to preserve the
+  # Automake continuation backslashes.
+  $value =~ s/\\$//mg
+    if $type eq '+' && $var_is_am;
 
   # Differentiate the first assignment (including with `+=').
   if ($type eq '+' && defined $var_value{$var}{$cond})
@@ -6304,7 +6316,7 @@ sub variable_output ($@)
       my $val = $var_value{$var}{$cond};
       my $equals = $var_type{$var} eq ':' ? ':=' : '=';
       my $output_var = "$var $equals $val";
-      $output_var =~ s/^/&make_condition ($cond)/meg;
+      $output_var =~ s/^/make_condition ($cond)/meg;
       $output_vars .= $output_var . "\n";
     }
 }
@@ -6455,7 +6467,7 @@ sub rule_define ($$$$)
 
   # Check the rule for being a suffix rule. If so, store in a hash.
 
-  if ((my ($source_suffix, $object_suffix)) = ($1 =~ $SUFFIX_RULE_PATTERN))
+  if ((my ($source_suffix, $object_suffix)) = ($target =~ $SUFFIX_RULE_PATTERN))
   {
     $suffix_rules{$source_suffix} = $object_suffix;
     print "Sources ending in .$source_suffix become .$object_suffix\n"
@@ -6534,7 +6546,6 @@ sub read_am_file
 
     my $saw_bk = 0;
     my $was_rule = 0;
-    my $is_ok_macro;
     my $last_var_name = '';
     my $last_var_type = '';
     my $last_var_value = '';
@@ -6622,13 +6633,9 @@ sub read_am_file
             $output_trailer .= $_;
 	    $comment = $spacing = '';
 	}
-	elsif (($is_ok_macro = /$MACRO_PATTERN/o)
-	       || /$BOGUS_MACRO_PATTERN/o)
+	elsif (/$ASSIGNMENT_PATTERN/o)
 	{
-	    # Error if bogus.
-	    &am_line_error ($., "bad macro name `$last_var_name'")
-		if ! $is_ok_macro;
-
+	    print STDERR;
 	    # Found a macro definition.
 	    $was_rule = 0;
 	    $last_var_name = $1;
@@ -6654,6 +6661,7 @@ sub read_am_file
 		$var_comment{$last_var_name} .= "$comment";
 		$comment = $spacing = '';
 
+		print STDERR "$last_var_name => $last_var_value\n";
 		macro_define ($last_var_name, 0,
 			      $last_var_type, $cond,
 			      $last_var_value, $.)
@@ -6717,7 +6725,7 @@ sub read_am_file
 sub define_standard_variables
 {
     my $saved_output_vars = $output_vars;
-    my ($comments, $variables, $rules) =
+    my ($comments, undef, $rules) =
       &file_contents_internal (1, "$am_dir/header-vars.am",
 		     ('BUILD'    => $seen_canonical == $AC_CANONICAL_SYSTEM,
 		      'HOST'     => $seen_canonical,
@@ -6813,30 +6821,28 @@ sub make_paragraphs ($%)
     # Complete %transform with global options and make it a Perl
     # $command.
     my $command =
-      # We don't use IGNORE_PATTERN because it contains $ which
-      # prevents us from matching the end of line.
-      "s/##([^#\n].*)?\\n//gmo;"
-	. &transform (%transform,
+      "s/$IGNORE_PATTERN//gm;"
+	. transform (%transform,
 
-		      'CYGNUS'          => $cygnus_mode,
-		      'MAINTAINER-MODE'
-		      => $seen_maint_mode ? '@MAINTAINER_MODE_TRUE@' : '',
+		     'CYGNUS'          => $cygnus_mode,
+		     'MAINTAINER-MODE'
+		     => $seen_maint_mode ? '@MAINTAINER_MODE_TRUE@' : '',
 
-		      'SHAR'        => $options{'dist-shar'} || 0,
-		      'BZIP2'       => $options{'dist-bzip2'} || 0,
-		      'ZIP'         => $options{'dist-zip'} || 0,
-		      'COMPRESS'    => $options{'dist-tarZ'} || 0,
+		     'SHAR'        => $options{'dist-shar'} || 0,
+		     'BZIP2'       => $options{'dist-bzip2'} || 0,
+		     'ZIP'         => $options{'dist-zip'} || 0,
+		     'COMPRESS'    => $options{'dist-tarZ'} || 0,
 
-		      'INSTALL-INFO' => !$options{'no-installinfo'},
-		      'INSTALL-MAN'  => !$options{'no-installman'},
-		      'CK-NEWS'      => $options{'check-news'} || 0,
+		     'INSTALL-INFO' => !$options{'no-installinfo'},
+		     'INSTALL-MAN'  => !$options{'no-installman'},
+		     'CK-NEWS'      => $options{'check-news'} || 0,
 
-		      'SUBDIRS'      => &variable_defined ('SUBDIRS'),
-		      'TOPDIR'       => backname ($relative_dir),
-		      'TOPDIR_P'     => $relative_dir eq '.',
-		      'CONFIGURE-AC' => $configure_ac,
+		     'SUBDIRS'      => &variable_defined ('SUBDIRS'),
+		     'TOPDIR'       => backname ($relative_dir),
+		     'TOPDIR_P'     => $relative_dir eq '.',
+		     'CONFIGURE-AC' => $configure_ac,
 
-		      'LIBTOOL'      => defined $configure_vars{'LIBTOOL'})
+		     'LIBTOOL'      => defined $configure_vars{'LIBTOOL'})
 	  # We don't need more than two consecutive new-lines.
 	  . 's/\n{3,}/\n\n/g';
 
@@ -6856,12 +6862,6 @@ sub make_paragraphs ($%)
     eval $command;
     $fc_file->close;
     my $content = $_;
-
-    # A rule has three parts: a list of targets, a list of dependencies,
-    # and optionally actions.
-    my $RULE_PATTERN =
-      "^($TARGET_PATTERN(?:(?:\\\\\n|\\s)+$TARGET_PATTERN)*) *:([^=].*|)\$";
-
 
     # Split at unescaped new lines.
     my @lines = split (/(?<!\\)\n/, $content);
@@ -6909,11 +6909,6 @@ sub make_paragraphs ($%)
 sub file_contents_internal ($%)
 {
     my ($is_am, $file, %transform) = @_;
-
-    # A rule has three parts: a list of targets, a list of dependencies,
-    # and optionally actions.
-    my $RULE_PATTERN =
-      "^($TARGET_PATTERN(?:(?:\\\\\n|\\s)+$TARGET_PATTERN)*) *:([^=].*|)\$";
 
     my $result_vars = '';
     my $result_rules = '';
@@ -7021,7 +7016,7 @@ sub file_contents_internal ($%)
 		}
 	    }
  	}
- 	elsif (/$MACRO_PATTERN/mso)
+ 	elsif (/$ASSIGNMENT_PATTERN/mso)
  	{
 	    my ($var, $type, $val) = ($1, $2, $3);
  	    &prog_error ("$file:$.: macro `$var' with trailing backslash")
