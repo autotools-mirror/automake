@@ -146,6 +146,7 @@ Auto-generating aclocal.m4
 Autoconf macros supplied with Automake
 
 * Public macros::               Macros that you can use.
+* Obsolete macros::             Macros that you should stop using.
 * Private macros::              Macros that you should not use.
 
 Directories
@@ -584,14 +585,12 @@ possible installation directories.  A given prefix (e.g., @samp{zar})
 is valid if a variable of the same name with @samp{dir} appended is
 defined (e.g., @samp{zardir}).
 
-@cindex HTML installation, example
-
-For instance, installation of HTML files is part of Automake, you could
-use this to install raw HTML documentation:
+For instance, the following snippet will install @file{file.xml} into
+@samp{$(datadir)/xml}.
 
 @example
-htmldir = $(prefix)/html
-html_DATA = automake.html
+xmldir = $(datadir)/xml
+xml_DATA = file.xml
 @end example
 
 @cindex @samp{noinst_} primary prefix, definition
@@ -693,6 +692,11 @@ Automake sometimes requires helper programs so that the generated
 @file{Makefile} can do its work properly.  There are a fairly large
 number of them, and we list them here.
 
+Although all of these files are distributed and installed with
+Automake, a couple of them are maintained separately.  The Automake
+copies are updated before each release, but we mention the original
+source in case you need more recent versions.
+
 @table @code
 @item ansi2knr.c
 @itemx ansi2knr.1
@@ -711,9 +715,14 @@ host, or target architecture.  These programs are updated regularly to
 support new architectures and fix probes broken by changes in new
 kernel versions.  Each new release of Automake comes with up-to-date
 copies of these programs.  If your copy of Automake is getting old,
-You are encouraged to fetch the latest versions of these files from
+you are encouraged to fetch the latest versions of these files from
 @url{http://savannah.gnu.org/cvs/?group=config} before making a
 release.
+
+@item config-ml.in
+This file is not a program, it is a @file{configure} fragment used for
+multilib support (@pxref{Multilibs}).  This file is maintained in the
+GCC tree at @url{http://gcc.gnu.org/cvs.html}.
 
 @item depcomp
 This program understands how to run a compiler so that it will
@@ -750,9 +759,17 @@ longer installed automatically, and it should be safe to remove it.
 @item py-compile
 This is used to byte-compile Python scripts.
 
+@item symlink-tree
+This program duplicates a tree of directories, using symbolic links
+instead of copying files.  Such operation is performed when building
+multilibs (@pxref{Multilibs}).  This file is maintained in the GCC
+tree at @url{http://gcc.gnu.org/cvs.html}.
+
 @item texinfo.tex
-Not a program, this file is required for @samp{make dvi}, @samp{make ps}
-and @samp{make pdf} to work when Texinfo sources are in the package.
+Not a program, this file is required for @samp{make dvi}, @samp{make
+ps} and @samp{make pdf} to work when Texinfo sources are in the
+package.  The latest version can be downloaded from
+@url{http://www.gnu.org/software/texinfo/}.
 
 @item ylwrap
 This program wraps @command{lex} and @command{yacc} and ensures that,
@@ -1744,6 +1761,7 @@ Automake ships with several Autoconf macros that you can use from your
 
 @menu
 * Public macros::               Macros that you can use.
+* Obsolete macros::             Macros that you should stop using.
 * Private macros::              Macros that you should not use.
 @end menu
 
@@ -1753,21 +1771,6 @@ Automake ships with several Autoconf macros that you can use from your
 @subsection Public macros
 
 @table @code
-@item AM_CONFIG_HEADER
-@acindex AM_CONFIG_HEADER
-Automake will generate rules to automatically regenerate the config
-header.  This obsolete macro is a synonym of @code{AC_CONFIG_HEADERS}
-today (@pxref{Optional}).
-
-@item AM_ENABLE_MULTILIB
-@acindex AM_ENABLE_MULTILIB
-This is used when a ``multilib'' library is being built.  The first
-optional argument is the name of the @file{Makefile} being generated; it
-defaults to @samp{Makefile}.  The second option argument is used to find
-the top source directory; it defaults to the empty string (generally
-this should not be used unless you are familiar with the internals).
-@xref{Multilibs}.
-
 @item AM_C_PROTOTYPES
 @acindex AM_C_PROTOTYPES
 @vindex ANSI2KNR
@@ -1778,12 +1781,14 @@ so, define @samp{PROTOTYPES} and set the output variables @code{U} and
 @samp{_} and @code{ANSI2KNR} to @samp{./ansi2knr}.  Automake uses these
 values to implement automatic de-ANSI-fication.
 
-@item AM_HEADER_TIOCGWINSZ_NEEDS_SYS_IOCTL
-@acindex AM_HEADER_TIOCGWINSZ_NEEDS_SYS_IOCTL
-If the use of @code{TIOCGWINSZ} requires @file{<sys/ioctl.h>}, then
-define @code{GWINSZ_IN_SYS_IOCTL}.  Otherwise @code{TIOCGWINSZ} can be
-found in @file{<termios.h>}.  This macro is obsolete, you should
-use Autoconf's @code{AC_HEADER_TIOCGWINSZ} instead.
+@item AM_ENABLE_MULTILIB
+@acindex AM_ENABLE_MULTILIB
+This is used when a ``multilib'' library is being built.  The first
+optional argument is the name of the @file{Makefile} being generated; it
+defaults to @samp{Makefile}.  The second option argument is used to find
+the top source directory; it defaults to the empty string (generally
+this should not be used unless you are familiar with the internals).
+@xref{Multilibs}.
 
 @item AM_INIT_AUTOMAKE([OPTIONS])
 @itemx AM_INIT_AUTOMAKE(PACKAGE, VERSION, [NO-DEFINE])
@@ -1895,15 +1900,6 @@ This macro finds the @command{gcj} program or causes an error.  It sets
 @code{GCJ} and @code{GCJFLAGS}.  @command{gcj} is the Java front-end to the
 GNU Compiler Collection.
 
-@item AM_SYS_POSIX_TERMIOS
-@acindex AM_SYS_POSIX_TERMIOS
-@cindex POSIX termios headers
-@cindex termios POSIX headers
-Check to see if POSIX termios headers and functions are available on the
-system.  If so, set the shell variable @code{am_cv_sys_posix_termios} to
-@samp{yes}.  If not, set the variable to @samp{no}.  This macro is obsolete,
-you should use Autoconf's @code{AC_SYS_POSIX_TERMIOS} instead.
-
 @item AM_WITH_DMALLOC
 @acindex AM_WITH_DMALLOC
 @cindex @command{dmalloc}, support for
@@ -1927,6 +1923,45 @@ the @code{rx} regular expression library is used, and @file{rx.o} is put
 into @code{LIBOBJS}.
 
 @end table
+
+
+@node Obsolete macros
+@subsection Obsolete macros
+@cindex obsolete macros
+@cindex autoupdate
+
+Although using some of the following macros was required in past
+releases, you should not used any of them in new code.  Running
+@command{autoupdate} should adjust your @file{configure.ac}
+automatically (@pxref{autoupdate Invocation, , Using
+@command{autoupdate} to Modernize @file{configure.ac}, autoconf, The
+Autoconf Manual}).
+
+@table @code
+@item AM_CONFIG_HEADER
+@acindex AM_CONFIG_HEADER
+Automake will generate rules to automatically regenerate the config
+header.  This obsolete macro is a synonym of @code{AC_CONFIG_HEADERS}
+today (@pxref{Optional}).
+
+@item AM_HEADER_TIOCGWINSZ_NEEDS_SYS_IOCTL
+@acindex AM_HEADER_TIOCGWINSZ_NEEDS_SYS_IOCTL
+If the use of @code{TIOCGWINSZ} requires @file{<sys/ioctl.h>}, then
+define @code{GWINSZ_IN_SYS_IOCTL}.  Otherwise @code{TIOCGWINSZ} can be
+found in @file{<termios.h>}.  This macro is obsolete, you should
+use Autoconf's @code{AC_HEADER_TIOCGWINSZ} instead.
+
+@item AM_SYS_POSIX_TERMIOS
+@acindex AM_SYS_POSIX_TERMIOS
+@cindex POSIX termios headers
+@cindex termios POSIX headers
+Check to see if POSIX termios headers and functions are available on the
+system.  If so, set the shell variable @code{am_cv_sys_posix_termios} to
+@samp{yes}.  If not, set the variable to @samp{no}.  This macro is obsolete,
+you should use Autoconf's @code{AC_SYS_POSIX_TERMIOS} instead.
+
+@end table
+
 
 @node Private macros
 @subsection Private macros
