@@ -106,8 +106,9 @@ maintainer-check: automake aclocal
 	  echo "Don't use \`local' with parens: use several \`local' above." >&2; \
 	  exit 1; \
 	fi
-## Up to now we manage to limit to 1 use of local.
-	@locals=`grep -c '^[ \t]*local [^*]' $(srcdir)/automake.in`; \
+## Up to now we manage to limit to 1 use of local, but for `local $_;'.
+	@locals=`grep -v '^[ \t]*local \$$_;' $(srcdir)/automake.in | \
+	        grep -c '^[ \t]*local [^*]'`; \
 	case $$locals in \
 	  [0] ) \
 	    echo "Wow, congrats!  There are no \`local' now!." >&2; \

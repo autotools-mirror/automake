@@ -2598,23 +2598,17 @@ sub handle_libraries
 				   'lib', 'pkglib', 'noinst', 'check');
     return if ! @liblist;
 
-    my @valid = am_primary_prefixes ('LIBRARIES', 0, 'lib', 'pkglib',
+    my @prefix = am_primary_prefixes ('LIBRARIES', 0, 'lib', 'pkglib',
 				     'noinst', 'check');
-    if (! defined $configure_vars{'RANLIB'})
-    {
-	foreach my $macro (map { $_ . '_LIBRARIES' } @valid)
-	{
-	    if (variable_defined ($macro))
-	    {
-		macro_error ($macro,
-			     "library used but `RANLIB' not defined in `$configure_ac'");
-		# Only get this error once.  If this is ever printed,
-		# we have a bug.
-		$configure_vars{'RANLIB'} = 'BUG';
-		last;
-	    }
-	}
-    }
+    if (! defined $configure_vars{'RANLIB'}
+	&& @prefix)
+      {
+	macro_error ($prefix[0] . '_LIBRARIES',
+		     "library used but `RANLIB' not defined in `$configure_ac'");
+	# Only get this error once.  If this is ever printed, we have
+	# a bug.
+	$configure_vars{'RANLIB'} = 'BUG';
+      }
 
     my $seen_libobjs = 0;
     foreach my $onelib (@liblist)
@@ -2699,14 +2693,11 @@ sub handle_ltlibraries
     return if ! @liblist;
 
     my %instdirs;
-    my @valid = am_primary_prefixes ('LTLIBRARIES', 0, 'lib', 'pkglib',
+    my @prefix = am_primary_prefixes ('LTLIBRARIES', 0, 'lib', 'pkglib',
 				     'noinst', 'check');
 
-    foreach my $key (@valid)
+    foreach my $key (@prefix)
       {
-	next
-	  unless variable_defined ($key . '_LTLIBRARIES');
-
 	if (!$seen_libtool)
 	  {
 	    macro_error ($key . '_LTLIBRARIES',
@@ -4287,24 +4278,21 @@ sub handle_java
 				      'java', 'noinst', 'check');
     return if ! @sourcelist;
 
-    my @valid = am_primary_prefixes ('JAVA', 1,
+    my @prefix = am_primary_prefixes ('JAVA', 1,
 				     'java', 'noinst', 'check');
 
     my $dir;
-    foreach my $curs (@valid)
-    {
-	if (! variable_defined ($curs . '_JAVA') || $curs eq 'EXTRA')
-	{
-	    next;
-	}
+    foreach my $curs (@prefix)
+      {
+	next
+	  if $curs eq 'EXTRA';
 
-	if (defined $dir)
-	{
-	    macro_error ($curs . '_JAVA',
-			 "multiple _JAVA primaries in use");
-	}
+	macro_error ($curs . '_JAVA',
+		     "multiple _JAVA primaries in use")
+	  if defined $dir;
 	$dir = $curs;
-    }
+      }
+
 
     push (@all, 'class' . $dir . '.stamp');
 }
@@ -7292,6 +7280,7 @@ sub am_primary_prefixes ($$@)
 {
     my ($primary, $can_dist, @prefixes) = @_;
 
+    local $_;
     my %valid = map { $_ => 0 } @prefixes;
     $valid{'EXTRA'} = 0;
     foreach my $varname (keys %var_value)
@@ -7329,8 +7318,10 @@ sub am_primary_prefixes ($$@)
 	}
     }
 
-    return sort keys %valid;
+    # Return only those which are actually defined.
+    return sort grep { variable_defined ($_ . '_' . $primary) } keys %valid;
 }
+
 
 # Handle `where_HOW' variable magic.  Does all lookups, generates
 # install code, and possibly generates code to define the primary
@@ -7391,7 +7382,7 @@ sub am_install_var
     # instance, if the variable "zardir" is defined, then
     # "zar_PROGRAMS" becomes valid.  This is to provide a little extra
     # flexibility in those cases which need it.
-    my @valid = am_primary_prefixes ($primary, $can_dist, @prefixes);
+    my @prefix = am_primary_prefixes ($primary, $can_dist, @prefixes);
 
     # If a primary includes a configure substitution, then the EXTRA_
     # form is required.  Otherwise we can't properly do our job.
@@ -7404,12 +7395,10 @@ sub am_install_var
     # True if the iteration is the first one.  Used for instance to
     # output parts of the associated file only once.
     my $first = 1;
-    foreach my $X (@valid)
+    foreach my $X (@prefix)
     {
 	my $nodir_name = $X;
 	my $one_name = $X . '_' . $primary;
-	next
-	  unless (variable_defined ($one_name));
 
 	my $strip_subdir = 1;
 	# If subdir prefix should be preserved, do so.
