@@ -4626,7 +4626,6 @@ sub scan_autoconf_traces ($)
 		AC_CONFIG_LINKS => 1,
 		AC_INIT => 0,
 		AC_LIBSOURCE => 1,
-		AC_LIBTOOL_TAGS => 0,
 		AC_SUBST => 1,
 		AM_AUTOMAKE_VERSION => 1,
 		AM_CONDITIONAL => 2,
@@ -4635,10 +4634,11 @@ sub scan_autoconf_traces ($)
 		AM_INIT_AUTOMAKE => 0,
 		AM_MAINTAINER_MODE => 0,
 		AM_PROG_CC_C_O => 0,
+		LT_SUPPORTED_TAG => 1,
+		_LT_AC_TAGCONFIG => 0,
 		m4_include => 1,
 		m4_sinclude => 1,
 		sinclude => 1,
-		_LT_AC_TAGCONFIG => 0,
 	      );
 
   my $traces = ($ENV{AUTOCONF} || 'autoconf') . " ";
@@ -4731,14 +4731,6 @@ sub scan_autoconf_traces ($)
 	{
 	  $libsources{$args[1]} = $here;
 	}
-      elsif ($macro eq 'AC_LIBTOOL_TAGS')
-	{
-          # Reset %libtool_tags, in case AC_LIBTOOL_TAGS is
-          # expansed after _LT_AC_TAGCONFIG.  We want to ignore
-	  # _LT_AC_TAGCONFIG if AC_LIBTOOL_TAGS is called.
-          %libtool_tags = (CC => 1);
-          $libtool_tags{$_} = 1 foreach split (' ', $args[1]);
-	}
       elsif ($macro eq 'AC_SUBST')
 	{
 	  # Just check for alphanumeric in AC_SUBST.  If you do
@@ -4815,13 +4807,16 @@ sub scan_autoconf_traces ($)
 		if $mtime > $configure_deps_greatest_timestamp;
 	    }
 	}
+      elsif ($macro eq 'LT_SUPPORTED_TAG')
+	{
+          $libtool_tags{$args[1]} = 1;
+	}
       elsif ($macro eq '_LT_AC_TAGCONFIG')
 	{
 	  # _LT_AC_TAGCONFIG is an old macro present in Libtool 1.5.
-	  # We use it to detect whether tags are supported.  Our prefered
-	  # interface is AC_LIBTOOL_TAGS, but it was introduced in
-	  # Libtool 1.6.  Ignore _LT_AC_TAGCONFIG if AC_LIBTOOL_TAGS has
-	  # been called.
+	  # We use it to detect whether tags are supported.  Our
+	  # prefered interface is LT_SUPPORTED_TAG, but it was
+	  # introduced in Libtool 1.6.
 	  if (0 == keys %libtool_tags)
 	    {
 	      # Hardcode the tags supported by Libtool 1.5.
