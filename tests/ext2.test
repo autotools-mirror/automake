@@ -1,0 +1,53 @@
+#!/bin/sh
+# Regression test for a bug reported by Ladislav Strojil.
+# Using different extensions for the same language should not
+# output the build rules several times.
+
+. $srcdir/defs
+
+set -e
+
+cat >>configure.in <<EOF
+AC_PROG_CXX
+EOF
+
+cat >Makefile.am <<EOF
+bin_PROGRAMS = p q r
+p_SOURCES = a.cc b.cpp c.cxx
+q_SOURCES = sub/d.cc sub/e.cpp sub/f.cxx
+r_SOURCES = g.cc h.cpp i.cxx
+r_CXXFLAGS = -DFOO
+EOF
+
+$ACLOCAL
+$AUTOMAKE
+
+grep '\.o:' Makefile.in > rules
+cat rules
+
+# Here is a example of bogus output.  The rules are output several
+# times.
+#|  .cc.o:
+#|  d.o: sub/d.cc
+#|  e.o: sub/e.cpp
+#|  f.o: sub/f.cxx
+#|  r-g.o: g.cc
+#|  r-h.o: h.cpp
+#|  r-i.o: i.cxx
+#|  .cpp.o:
+#|  d.o: sub/d.cc
+#|  e.o: sub/e.cpp
+#|  f.o: sub/f.cxx
+#|  r-g.o: g.cc
+#|  r-h.o: h.cpp
+#|  r-i.o: i.cxx
+#|  .cxx.o:
+#|  #d.o: sub/d.cc
+#|  #e.o: sub/e.cpp
+#|  #f.o: sub/f.cxx
+#|  #r-g.o: g.cc
+#|  #r-h.o: h.cpp
+#|  #r-i.o: i.cxx
+
+# Bail out if we find a duplicate.
+$PERL -ne 'if (exists $a{$_}) { exit 1 } else { $a{$_} = 1 }' < rules
