@@ -36,6 +36,15 @@ rm -f "$tmpdepfile"
 
 case "$depmode" in
 gcc)
+## There are various ways to get dependency output from gcc.  Here's
+## why we pick this rather obscure method:
+## - Don't want to use -MD because we'd like the dependencies to end
+##   up in a subdir.  Having to rename by hand is ugly.
+##   (We might end up doing this anyway to support other compilers.)
+## - The DEPENDENCIES_OUTPUT environment variable makes gcc act like
+##   -MM, not -M (despite what the docs say).
+## - Using -M directly means running the compiler twice (even worse
+##   than renaming).
   if "$@" -Wp,-MD,"$tmpdepfile"; then :
   else
     stat=$?
@@ -45,8 +54,17 @@ gcc)
   rm -f "$depfile" 
   echo "$object : \\" > "$depfile"
   sed 's/^[^:]*: / /' < "$tmpdepfile" >> "$depfile"
+## This next piece of magic avoids the `deleted header file' problem.
+## The problem is that when a header file which appears in a .P file
+## is deleted, the dependency causes make to die (because there is
+## typically no way to rebuild the header).  We avoid this by adding
+## dummy dependencies for each header file.  Too bad gcc doesn't do
+## this for us directly.
   tr ' ' '
-' < "$tmpdepfile" | \
+' < "$tmpdepfile" |
+## Some versions of gcc put a space before the `:'.  On the theory
+## that the space means something, we add a space to the output as
+## well.
     sed -e 's/^\\$//' -e '/^$/d' -e '/:$/d' -e 's/$/ :/' >> "$depfile"
   rm -f "$tmpdepfile"
   ;;
