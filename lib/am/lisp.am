@@ -27,6 +27,7 @@ endif %?INSTALL%
 
 elc-stamp: $(am__ELFILES)
 	@echo 'WARNING: Warnings can be ignored. :-)'
+	@rm -f elc-temp && touch elc-temp
 	if test "$(EMACS)" != no; then \
 ## Make sure "$@" isn't empty initially.
 	  set x; \
@@ -40,14 +41,18 @@ elc-stamp: $(am__ELFILES)
 	  shift; \
 	  EMACS="$(EMACS)" $(SHELL) $(elisp_comp) "$$@" || exit 1; \
 	else : ; fi
-	touch $@
+	@mv -f elc-temp $@
 
-.el.elc:
+## Do not use $(ELCFILES) as target, because it may have been emptied
+## by the user (to disable byte-compilation), and POSIX does not allow
+## an empty target.
+$(am__ELCFILES): elc-stamp
 ## Recover from the removal of $@
 	@if test ! -f $@; then \
 	  rm -f elc-stamp; \
 	  $(MAKE) $(AM_MAKEFLAGS) elc-stamp; \
 	else : ; fi
+
 
 ## ------------ ##
 ## Installing.  ##

@@ -4328,24 +4328,14 @@ sub handle_emacs_lisp
 
   return if ! @elfiles;
 
-  # Generate .elc files.
-  my @elcfiles = map { $_->[1] . 'c' } @elfiles;
-
-  define_pretty_variable ('ELCFILES', TRUE, INTERNAL, @elcfiles);
   define_pretty_variable ('am__ELFILES', TRUE, INTERNAL,
 			  map { $_->[1] } @elfiles);
+  define_pretty_variable ('am__ELCFILES', TRUE, INTERNAL,
+			  '$(am__ELFILES:.el=.elc)');
+  # This one can be overridden by users.
+  define_pretty_variable ('ELCFILES', TRUE, INTERNAL, '$(am__ELCFILES)');
 
-  # Do not depend on the build rules if ELCFILES is empty.
-  # This is necessary because overriding ELCFILES= is a documented
-  # idiom to disable byte-compilation.
-  if (variable_value ('ELCFILES'))
-    {
-      # It's important that all depends on elc-stamp so that
-      # all .elc files get recompiled whenever a .el changes.
-      # It's important that all depends on $(ELCFILES) so that
-      # we can recover if any of them is deleted.
-      push (@all, 'elc-stamp', '$(ELCFILES)');
-    }
+  push @all, '$(ELCFILES)';
 
   require_variables ($elfiles[0][0], "Emacs Lisp sources seen", TRUE,
 		     'EMACS', 'lispdir');
