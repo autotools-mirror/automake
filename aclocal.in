@@ -92,6 +92,12 @@ my %map_traced_defs = ();
 # Map file names to file contents.
 my %file_contents = ();
 
+# Map file names to file types.
+my %file_type = ();
+use constant FT_USER => 1;
+use constant FT_AUTOMAKE => 2;
+use constant FT_SYSTEM => 3;
+
 # Map file names to included files (transitively closed).
 my %file_includes = ();
 
@@ -128,22 +134,14 @@ sub check_acinclude ()
 
 ################################################################
 
-# Scan all the installed m4 files and construct a map.
-sub scan_m4_files (@)
+# scan_m4_dirs($TYPE, @DIRS)
+# --------------------------
+# Scan all M4 files installed in @DIRS for new macro definitions.
+# Register each file as of type $TYPE (one of the FT_* constants).
+sub scan_m4_dirs ($@)
 {
-  my @dirlist = @_;
+  my ($type, @dirlist) = @_;
 
-  # First, scan configure.ac.  It may contain macro definitions,
-  # or may include other files that define macros.
-  &scan_file ($configure_ac, 'aclocal');
-
-  # Then, scan acinclude.m4 if it exists.
-  if (-f 'acinclude.m4')
-    {
-      &scan_file ('acinclude.m4', 'aclocal');
-    }
-
-  # Finally, scan all files in our search path.
   foreach my $m4dir (@dirlist)
     {
       if (! opendir (DIR, $m4dir))
@@ -162,10 +160,29 @@ sub scan_m4_files (@)
 	  next if $file eq 'aclocal.m4';
 
 	  my $fullfile = File::Spec->canonpath ("$m4dir/$file");
-	    &scan_file ($fullfile, 'aclocal');
+	    &scan_file ($type, $fullfile, 'aclocal');
 	}
       closedir (DIR);
     }
+}
+
+# Scan all the installed m4 files and construct a map.
+sub scan_m4_files ()
+{
+  # First, scan configure.ac.  It may contain macro definitions,
+  # or may include other files that define macros.
+  &scan_file (FT_USER, $configure_ac, 'aclocal');
+
+  # Then, scan acinclude.m4 if it exists.
+  if (-f 'acinclude.m4')
+    {
+      &scan_file (FT_USER, 'acinclude.m4', 'aclocal');
+    }
+
+  # Finally, scan all files in our search paths.
+  scan_m4_dirs (FT_USER, @user_includes);
+  scan_m4_dirs (FT_AUTOMAKE, @automake_includes);
+  scan_m4_dirs (FT_SYSTEM, @system_includes);
 
   # Construct a new function that does the searching.  We use a
   # function (instead of just evaluating $search in the loop) so that
@@ -273,15 +290,17 @@ sub add_file ($)
 # Point to the documentation for underquoted AC_DEFUN only once.
 my $underquoted_manual_once = 0;
 
-# scan_file ($FILE, $WHERE)
+# scan_file ($TYPE, $FILE, $WHERE)
 # -------------------------
 # Scan a single M4 file ($FILE), and all files it includes.
 # Return the list of included files.
+# $TYPE is one of FT_USER, FT_AUTOMAKE, or FT_SYSTEM, depending
+# on where the file comes from.
 # $WHERE is the location to use in the diagnostic if the file
 # does not exist.
-sub scan_file ($$)
+sub scan_file ($$$)
 {
-  my ($file, $where) = @_;
+  my ($type, $file, $where) = @_;
   my $base = dirname $file;
 
   # Do not scan the same file twice.
@@ -290,6 +309,8 @@ sub scan_file ($$)
   return () if exists $file_contents{$file};
 
   unshift @file_order, $file;
+
+  $file_type{$file} = $type;
 
   fatal "$where: file `$file' does not exist" if ! -e $file;
 
@@ -356,7 +377,8 @@ sub scan_file ($$)
   # With Perl 5.8.2 it undefines @inc_files.
   my @copy = @inc_files;
   my @all_inc_files = (@inc_files,
-		       map { scan_file ($_, "$file:$inc_lines{$_}") } @copy);
+		       map { scan_file ($type, $_,
+					"$file:$inc_lines{$_}") } @copy);
   $file_includes{$file} = \@all_inc_files;
   return @all_inc_files;
 }
@@ -464,13 +486,16 @@ sub write_aclocal ($@)
 	if (exists $map_traced_defs{$m}
 	    && $map{$m} eq $map_traced_defs{$m});
     }
+  # Always include acinclude.m4, even if it does not appear to be used.
   $files{'acinclude.m4'} = 1 if -f 'acinclude.m4';
+  # Do not explicitly include a file that is already indirectly included.
   %files = strip_redundant_includes %files;
+  # Never include configure.ac :)
   delete $files{$configure_ac};
 
   for my $file (grep { exists $files{$_} } @file_order)
     {
-      # Check the time stamp of this file, and all files it includes.
+      # Check the time stamp of this file, and of all files it includes.
       for my $ifile ($file, @{$file_includes{$file}})
 	{
 	  my $mtime = mtime $ifile;
@@ -480,7 +505,8 @@ sub write_aclocal ($@)
       # If the file to add looks like outside the project, copy it
       # to the output.  The regex catches filenames starting with
       # things like `/', `\', or `c:\'.
-      if ($file =~ m,^(?:\w:)?[\\/],)
+      if ($file_type{$file} != FT_USER
+	  || $file =~ m,^(?:\w:)?[\\/],)
 	{
 	  $output .= $file_contents{$file} . "\n";
 	}
@@ -681,7 +707,7 @@ sub parse_arguments ()
 parse_WARNINGS;		    # Parse the WARNINGS environment variable.
 parse_arguments;
 $configure_ac = require_configure_ac;
-scan_m4_files (@user_includes, @automake_includes, @system_includes);
+scan_m4_files;
 scan_configure;
 if (! $exit_code)
   {
