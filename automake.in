@@ -288,6 +288,9 @@ my $force_missing = 0;
 ## Variables filled during files scanning.  ##
 ## ---------------------------------------- ##
 
+# Name of the configure.ac file.
+my $configure_ac = require_configure_ac;
+
 # Files found by scanning configure.ac for LIBOBJS.
 my %libsources = ();
 
@@ -3268,39 +3271,39 @@ sub handle_subdirs ()
 # &scan_aclocal_m4
 # ----------------
 # If aclocal.m4 creation is automated, return the list of its dependencies.
-sub scan_aclocal_m4
+sub scan_aclocal_m4 ()
 {
-    my $regen_aclocal = 0;
+  my $regen_aclocal = 0;
 
-    set_seen 'CONFIG_STATUS_DEPENDENCIES';
-    set_seen 'CONFIGURE_DEPENDENCIES';
+  set_seen 'CONFIG_STATUS_DEPENDENCIES';
+  set_seen 'CONFIGURE_DEPENDENCIES';
 
-    if (-f 'aclocal.m4')
+  if (-f 'aclocal.m4')
     {
-	&push_dist_common ('aclocal.m4')
-	  if $relative_dir eq '.';
-	&define_variable ("ACLOCAL_M4", '$(top_srcdir)/aclocal.m4', INTERNAL);
+      &push_dist_common ('aclocal.m4')
+	if $relative_dir eq '.';
+      &define_variable ("ACLOCAL_M4", '$(top_srcdir)/aclocal.m4', INTERNAL);
 
-	my $aclocal = new Automake::XFile "< aclocal.m4";
-	my $line = $aclocal->getline;
-	$regen_aclocal = $line =~ 'generated automatically by aclocal';
+      my $aclocal = new Automake::XFile "< aclocal.m4";
+      my $line = $aclocal->getline;
+      $regen_aclocal = $line =~ 'generated automatically by aclocal';
     }
 
-    my @ac_deps = ();
+  my @ac_deps = ();
 
-    if (set_seen ('ACLOCAL_M4_SOURCES'))
+  if (set_seen ('ACLOCAL_M4_SOURCES'))
     {
-	push (@ac_deps, '$(ACLOCAL_M4_SOURCES)');
-	msg_var ('obsolete', 'ACLOCAL_M4_SOURCES',
-		 "`ACLOCAL_M4_SOURCES' is obsolete.\n"
-		 . "It should be safe to simply remove it.");
+      push (@ac_deps, '$(ACLOCAL_M4_SOURCES)');
+      msg_var ('obsolete', 'ACLOCAL_M4_SOURCES',
+	       "`ACLOCAL_M4_SOURCES' is obsolete.\n"
+	       . "It should be safe to simply remove it.");
     }
 
-    # Note that it might be possible that aclocal.m4 doesn't exist but
-    # should be auto-generated.  This case probably isn't very
-    # important.
+  # Note that it might be possible that aclocal.m4 doesn't exist but
+  # should be auto-generated.  This case probably isn't very
+  # important.
 
-    return ($regen_aclocal, @ac_deps);
+  return ($regen_aclocal, @ac_deps);
 }
 
 
@@ -3363,7 +3366,7 @@ sub handle_configure ($$@)
 
   my @rewritten = rewrite_inputs_into_dependencies (1, @secondary_inputs);
 
-  my ($regen_aclocal_m4, @aclocal_m4_deps) = scan_aclocal_m4 ();
+  my ($regen_aclocal_m4, @aclocal_m4_deps) = scan_aclocal_m4;
 
 
   define_pretty_variable ('am__configure_deps', TRUE, INTERNAL,
@@ -4169,39 +4172,39 @@ my %make_list;
 # -------------------------------------------
 # Study $CONFIG-FILES which is the first argument to AC_CONFIG_FILES
 # (or AC_OUTPUT).
-sub scan_autoconf_config_files
+sub scan_autoconf_config_files ($)
 {
-    my ($config_files) = @_;
-    # Look at potential Makefile.am's.
-    foreach (split ' ', $config_files)
+  my ($config_files) = @_;
+  # Look at potential Makefile.am's.
+  foreach (split ' ', $config_files)
     {
-        # Must skip empty string for Perl 4.
-        next if $_ eq "\\" || $_ eq '';
+      # Must skip empty string for Perl 4.
+      next if $_ eq "\\" || $_ eq '';
 
-        # Handle $local:$input syntax.  Note that we ignore
-        # every input file past the first, though we keep
-        # those around for later.
-        my ($local, $input, @rest) = split (/:/);
-        if (! $input)
+      # Handle $local:$input syntax.  Note that we ignore
+      # every input file past the first, though we keep
+      # those around for later.
+      my ($local, $input, @rest) = split (/:/);
+      if (! $input)
         {
-            $input = $local;
+	  $input = $local;
         }
-        else
+      else
         {
-            # FIXME: should be error if .in is missing.
-            $input =~ s/\.in$//;
+	  # FIXME: should be error if .in is missing.
+	  $input =~ s/\.in$//;
         }
 
-        if (-f $input . '.am')
+      if (-f $input . '.am')
         {
-            # We have a file that automake should generate.
-            $make_list{$input} = join (':', ($local, @rest));
+	  # We have a file that automake should generate.
+	  $make_list{$input} = join (':', ($local, @rest));
         }
-        else
+      else
         {
-            # We have a file that automake should cause to be
-            # rebuilt, but shouldn't generate itself.
-            push (@other_input_files, $_);
+	  # We have a file that automake should cause to be
+	  # rebuilt, but shouldn't generate itself.
+	  push (@other_input_files, $_);
         }
     }
 }
@@ -4383,68 +4386,68 @@ sub scan_autoconf_traces ($)
 # Check whether we use `configure.ac' or `configure.in'.
 # Scan it (and possibly `aclocal.m4') for interesting things.
 # We must scan aclocal.m4 because there might be AC_SUBSTs and such there.
-sub scan_autoconf_files
+sub scan_autoconf_files ()
 {
-    # Reinitialize libsources here.  This isn't really necessary,
-    # since we currently assume there is only one configure.ac.  But
-    # that won't always be the case.
-    %libsources = ();
+  # Reinitialize libsources here.  This isn't really necessary,
+  # since we currently assume there is only one configure.ac.  But
+  # that won't always be the case.
+  %libsources = ();
 
-    scan_autoconf_traces (require_configure_ac);
+  scan_autoconf_traces ($configure_ac);
 
-    # Set input and output files if not specified by user.
-    if (! @input_files)
+  # Set input and output files if not specified by user.
+  if (! @input_files)
     {
-	@input_files = sort keys %make_list;
-	%output_files = %make_list;
+      @input_files = sort keys %make_list;
+      %output_files = %make_list;
     }
 
-    @configure_input_files = sort keys %make_list;
+  @configure_input_files = sort keys %make_list;
 
-    if (! $seen_init_automake)
-      {
-	err_ac ("no proper invocation of AM_INIT_AUTOMAKE was found.\nYou "
-		. "should verify that $configure_ac invokes AM_INIT_AUTOMAKE,"
-		. "\nthat aclocal.m4 is present in the top-level directory,\n"
-		. "and that aclocal.m4 was recently regenerated "
-		. "(using aclocal).");
-      }
-    else
-      {
-	if (! $seen_automake_version)
-	  {
-	    if (-f 'aclocal.m4')
-	      {
-		error ($seen_init_automake,
-		       "your implementation of AM_INIT_AUTOMAKE comes from " .
-		       "an\nold Automake version.  You should recreate " .
-		       "aclocal.m4\nwith aclocal and run automake again.\n");
-	      }
-	    else
-	      {
-		error ($seen_init_automake,
-		       "no proper implementation of AM_INIT_AUTOMAKE was " .
-		       "found,\nprobably because aclocal.m4 is missing...\n" .
-		       "You should run aclocal to create this file, then\n" .
-		       "run automake again.\n");
-	      }
-	  }
-      }
+  if (! $seen_init_automake)
+    {
+      err_ac ("no proper invocation of AM_INIT_AUTOMAKE was found.\nYou "
+	      . "should verify that $configure_ac invokes AM_INIT_AUTOMAKE,"
+	      . "\nthat aclocal.m4 is present in the top-level directory,\n"
+	      . "and that aclocal.m4 was recently regenerated "
+	      . "(using aclocal).");
+    }
+  else
+    {
+      if (! $seen_automake_version)
+	{
+	  if (-f 'aclocal.m4')
+	    {
+	      error ($seen_init_automake,
+		     "your implementation of AM_INIT_AUTOMAKE comes from " .
+		     "an\nold Automake version.  You should recreate " .
+		     "aclocal.m4\nwith aclocal and run automake again.\n");
+	    }
+	  else
+	    {
+	      error ($seen_init_automake,
+		     "no proper implementation of AM_INIT_AUTOMAKE was " .
+		     "found,\nprobably because aclocal.m4 is missing...\n" .
+		     "You should run aclocal to create this file, then\n" .
+		     "run automake again.\n");
+	    }
+	}
+    }
 
-    # Look for some files we need.  Always check for these.  This
-    # check must be done for every run, even those where we are only
-    # looking at a subdir Makefile.  We must set relative_dir so that
-    # the file-finding machinery works.
-    # FIXME: Is this broken because it needs dynamic scopes.
-    # My tests seems to show it's not the case.
-    $relative_dir = '.';
-    require_conf_file ($configure_ac, FOREIGN,
-		       'install-sh', 'mkinstalldirs', 'missing');
-    err_am "`install.sh' is an anachronism; use `install-sh' instead"
-      if -f $config_aux_path[0] . '/install.sh';
+  # Look for some files we need.  Always check for these.  This
+  # check must be done for every run, even those where we are only
+  # looking at a subdir Makefile.  We must set relative_dir so that
+  # the file-finding machinery works.
+  # FIXME: Is this broken because it needs dynamic scopes.
+  # My tests seems to show it's not the case.
+  $relative_dir = '.';
+  require_conf_file ($configure_ac, FOREIGN,
+		     'install-sh', 'mkinstalldirs', 'missing');
+  err_am "`install.sh' is an anachronism; use `install-sh' instead"
+    if -f $config_aux_path[0] . '/install.sh';
 
-    # Preserve dist_common for later.
-    $configure_dist_common = variable_value ('DIST_COMMON') || '';
+  # Preserve dist_common for later.
+  $configure_dist_common = variable_value ('DIST_COMMON') || '';
 }
 
 ################################################################
@@ -6462,9 +6465,11 @@ sub push_dist_common
 
 ################################################################
 
+# generate_makefile ($OUTPUT, $MAKEFILE)
+# --------------------------------------
 # Generate a Makefile.in given the name of the corresponding Makefile and
 # the name of the file output by config.status.
-sub generate_makefile
+sub generate_makefile ($$)
 {
   my ($output, $makefile) = @_;
 

@@ -52,6 +52,9 @@ $default_dirlist = "$default_acdir/dirlist";
 
 # Some globals.
 
+# configure.ac or configure.in.
+my $configure_ac = require_configure_ac;
+
 # Exit status.
 $exit_status = 0;
 
@@ -235,42 +238,40 @@ sub parse_arguments (@)
 
 sub scan_configure ()
 {
-    require_configure_ac;
-
-    if (! open (CONFIGURE, $configure_ac))
-      {
-	print STDERR "aclocal: couldn't open `$configure_ac': $!\n";
-	exit 1;
-      }
-
-    my $mtime = mtime $configure_ac;
-    $greatest_mtime = $mtime if $greatest_mtime < $mtime;
-
-    # Make sure we include acinclude.m4 if it exists.
-    if (-f 'acinclude.m4')
+  if (! open (CONFIGURE, $configure_ac))
     {
-	&add_file ('acinclude.m4');
+      print STDERR "aclocal: couldn't open `$configure_ac': $!\n";
+      exit 1;
     }
 
-    while (<CONFIGURE>)
-    {
-	# Remove comments from current line.
-	s/\bdnl\b.*$//;
-	s/\#.*$//;
+  my $mtime = mtime $configure_ac;
+  $greatest_mtime = $mtime if $greatest_mtime < $mtime;
 
-	# Search for things we know about.  The "search" sub is
-	# constructed dynamically by scan_m4_files.  The last
-	# parenthethical match makes sure we don't match things that
-	# look like macro assignments or AC_SUBSTs.
-	if (! &search && /(^|\s+)(AM_[A-Z0-9_]+)($|[^\]\)=A-Z0-9_])/)
+  # Make sure we include acinclude.m4 if it exists.
+  if (-f 'acinclude.m4')
+    {
+      &add_file ('acinclude.m4');
+    }
+
+  while (<CONFIGURE>)
+    {
+      # Remove comments from current line.
+      s/\bdnl\b.*$//;
+      s/\#.*$//;
+
+      # Search for things we know about.  The "search" sub is
+      # constructed dynamically by scan_m4_files.  The last
+      # parenthethical match makes sure we don't match things that
+      # look like macro assignments or AC_SUBSTs.
+      if (! &search && /(^|\s+)(AM_[A-Z0-9_]+)($|[^\]\)=A-Z0-9_])/)
 	{
-	    # Macro not found, but AM_ prefix found.
-	    warn "aclocal: $configure_ac: $.: macro `$2' not found in library\n";
-	    $exit_status = 1;
+	  # Macro not found, but AM_ prefix found.
+	  warn "aclocal: $configure_ac: $.: macro `$2' not found in library\n";
+	  $exit_status = 1;
 	}
     }
 
-    close (CONFIGURE);
+  close (CONFIGURE);
 }
 
 ################################################################
@@ -369,56 +370,56 @@ sub add_macro ($)
 # Add a file to output.
 sub add_file ($)
 {
-    local ($file) = @_;
+  local ($file) = @_;
 
-    # Only add a file once.
-    return if ($file_seen{$file});
-    $file_seen{$file} = 1;
+  # Only add a file once.
+  return if ($file_seen{$file});
+  $file_seen{$file} = 1;
 
-    my $mtime = mtime $file;
-    $greatest_mtime = $mtime if $greatest_mtime < $mtime;
+  my $mtime = mtime $file;
+  $greatest_mtime = $mtime if $greatest_mtime < $mtime;
 
-    # If the file to add looks like path outside the project,
-    # copy it to the output.
-    # The regex catches filenames starting with things like
-    #   / \ c:\ ../ ./../ etc.
-    if ($file =~ m,^(?:(?:\w:)?[\\/]|(?:\.[\\/]+)*\.\.[\\/]),)
-      {
-	$output .= $file_contents{$file} . "\n";
-      }
-    else
-      {
-	# Otherwise, simply include the file.
-	$output .= "m4_include([$file])\n";
-      }
-    my (@rlist);
-    foreach (split ("\n", $file_contents{$file}))
+  # If the file to add looks like path outside the project,
+  # copy it to the output.
+  # The regex catches filenames starting with things like
+  #   / \ c:\ ../ ./../ etc.
+  if ($file =~ m,^(?:(?:\w:)?[\\/]|(?:\.[\\/]+)*\.\.[\\/]),)
     {
-	# Remove comments from current line.
-	s/\bdnl\b.*$//;
-	s/\#.*$//;
+      $output .= $file_contents{$file} . "\n";
+    }
+  else
+    {
+      # Otherwise, simply include the file.
+      $output .= "m4_include([$file])\n";
+    }
+  my (@rlist);
+  foreach (split ("\n", $file_contents{$file}))
+    {
+      # Remove comments from current line.
+      s/\bdnl\b.*$//;
+      s/\#.*$//;
 
-	if (/$ac_require_rx/g)
+      if (/$ac_require_rx/g)
 	{
-	    push (@rlist, $1 || $2);
+	  push (@rlist, $1 || $2);
 	}
 
-	# The search function is constructed dynamically by
-	# scan_m4_files.  The last parenthethical match makes sure we
-	# don't match things that look like macro assignments or
-	# AC_SUBSTs.
-	if (! &search && /(^|\s+)(AM_[A-Z0-9_]+)($|[^\]\)=A-Z0-9_])/)
+      # The search function is constructed dynamically by
+      # scan_m4_files.  The last parenthethical match makes sure we
+      # don't match things that look like macro assignments or
+      # AC_SUBSTs.
+      if (! &search && /(^|\s+)(AM_[A-Z0-9_]+)($|[^\]\)=A-Z0-9_])/)
 	{
-	    # Macro not found, but AM_ prefix found.
-	    warn "aclocal: $configure_ac: $.: macro `$2' not found in library\n";
-	    $exit_status = 1;
+	  # Macro not found, but AM_ prefix found.
+	  warn "aclocal: $configure_ac: $.: macro `$2' not found in library\n";
+	  $exit_status = 1;
 	}
     }
 
-    local ($macro);
-    foreach $macro (@rlist)
+  local ($macro);
+  foreach $macro (@rlist)
     {
-	&add_macro ($macro);
+      &add_macro ($macro);
     }
 }
 
