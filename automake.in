@@ -2942,105 +2942,61 @@ sub handle_lib_objects
 # Subroutine of handle_lib_objects: handle a particular condition.
 sub handle_lib_objects_cond
 {
-    my ($xname, $var, $cond) = @_;
+  my ($xname, $var, $cond) = @_;
 
-    # We recognize certain things that are commonly put in LIBADD or
-    # LDADD.
-    my @dep_list = ();
+  # We recognize certain things that are commonly put in LIBADD or
+  # LDADD.
+  my @dep_list = ();
 
-    my $seen_libobjs = 0;
-    my $flagvar = 0;
+  my $seen_libobjs = 0;
+  my $flagvar = 0;
 
-    foreach my $lsearch (&variable_value_as_list_recursive ($var, $cond))
+  foreach my $lsearch (&variable_value_as_list_recursive ($var, $cond))
     {
-	# Skip -lfoo and -Ldir; these are explicitly allowed.
-	next if $lsearch =~ /^-[lL]/;
-	if (! $flagvar && $lsearch =~ /^-/)
+      if (! $flagvar && $lsearch =~ /^-/)
 	{
-	    if ($var =~ /^(.*)LDADD$/)
-	    {
-		# Skip -dlopen and -dlpreopen; these are explicitly allowed.
-		next if $lsearch =~ /^-dl(pre)?open$/;
-		my $prefix = $1 || 'AM_';
-		err_var ($var, "linker flags such as `$lsearch' belong in "
-			 . "`${prefix}LDFLAGS");
-	    }
-	    else
-	    {
-		$var =~ /^(.*)LIBADD$/;
-		# Only get this error once.
-		$flagvar = 1;
-		err_var ($var, "linker flags such as `$lsearch' belong in "
-			 . "`${1}LDFLAGS");
-	    }
+	  # Skip -lfoo and -Ldir; these are explicitly allowed.
+	  next if $lsearch =~ /^-[lL]/;
+	  # Skip -dlopen and -dlpreopen; these are explicitly allowed
+	  # for Libtool libraries or programs.  (Actually we are a bit
+	  # laxest here since this code also applies to non-libtool
+	  # libraries or programs, for which -dlopen and -dlopreopen
+	  # are pure non-sence.  Diagnosting this doesn't seems very
+	  # important: the developer will quickly get complaints from
+	  # the linker.)
+	  next if $lsearch =~ /^-dl(?:pre)?open$/;
+
+	  prog_error ("unexpected variable name `$var'")
+	    unless $var =~ /^(.*)(?:LIB|LD)ADD$/;
+
+	  my $prefix = $1 || 'AM_';
+	  # Only get this error once.
+	  $flagvar = 1;
+	  err_var ($var, "linker flags such as `$lsearch' belong in "
+		   . "`${prefix}LDFLAGS");
 	}
 
-	# Assume we have a file of some sort, and push it onto the
-	# dependency list.  Autoconf substitutions are not pushed;
-	# rarely is a new dependency substituted into e.g. foo_LDADD
-	# -- but "bad things (e.g. -lX11) are routinely substituted.
-	# Note that LIBOBJS and ALLOCA are exceptions to this rule,
-	# and handled specially below.
-	push (@dep_list, $lsearch)
-	    unless $lsearch =~ /^\@.*\@$/;
+      # Assume we have a file of some sort, and push it onto the
+      # dependency list.  Autoconf substitutions are not pushed;
+      # rarely is a new dependency substituted into e.g. foo_LDADD
+      # -- but bad things (e.g. -lX11) are routinely substituted.
+      # Note that LIBOBJS and ALLOCA are exceptions to this rule,
+      # and handled specially below.
+      push (@dep_list, $lsearch)
+	unless $lsearch =~ /^\@.*\@$/;
 
-	# Automatically handle LIBOBJS and ALLOCA substitutions.
-	# Basically this means adding entries to dep_files.
-	if ($lsearch =~ /^\@(LT)?LIBOBJS\@$/)
+      # Automatically handle LIBOBJS and ALLOCA substitutions.
+      # Basically this means adding entries to dep_files.
+      if ($lsearch =~ /^\@(LT)?LIBOBJS\@$/)
 	{
-	    my $lt = $1 ? $1 : '';
-	    my $myobjext = ($1 ? 'l' : '') . 'o';
-
-	    push (@dep_list, $lsearch);
-	    $seen_libobjs = 1;
-	    if (! keys %libsources
-		&& ! variable_defined ($lt . 'LIBOBJS'))
-	    {
-	        err_var ($var, "\@${lt}LIBOBJS\@ seen but never set in "
-			 . "`$configure_ac'");
-	    }
-
-	    foreach my $iter (keys %libsources)
-	    {
-		if ($iter =~ /\.[cly]$/)
-		{
-		    &saw_extension ($&);
-		    &saw_extension ('.c');
-		}
-
-		if ($iter =~ /\.h$/)
-		{
-		    require_file_with_macro ($cond, $var, FOREIGN, $iter);
-		}
-		elsif ($iter ne 'alloca.c')
-		{
-		    my $rewrite = $iter;
-		    $rewrite =~ s/\.c$/.P$myobjext/;
-		    $dep_files{'$(DEPDIR)/' . $rewrite} = 1;
-		    $rewrite = "^" . quotemeta ($iter) . "\$";
-		    # Only require the file if it is not a built source.
-		    if (! variable_defined ('BUILT_SOURCES')
-			|| ! grep (/$rewrite/,
-				   &variable_value_as_list_recursive (
-				   	'BUILT_SOURCES', 'all')))
-		    {
-			require_file_with_macro ($cond, $var, FOREIGN, $iter);
-		    }
-		}
-	    }
+	  handle_LIBOBJS ($var, $cond, $1);
+	  $seen_libobjs = 1;
+	  push (@dep_list, $lsearch);
 	}
-	elsif ($lsearch =~ /^\@(LT)?ALLOCA\@$/)
+      elsif ($lsearch =~ /^\@(LT)?ALLOCA\@$/)
 	{
-	    my $lt = $1 ? $1 : '';
-	    my $myobjext = ($1 ? 'l' : '') . 'o';
-
-	    push (@dep_list, $lsearch);
-	    err_var ($var, "\@${lt}ALLOCA\@ seen but `AC_FUNC_ALLOCA' not in "
-		     . "`$configure_ac'")
-	      if ! defined $libsources{'alloca.c'};
-	    $dep_files{'$(DEPDIR)/alloca.P' . $myobjext} = 1;
-	    require_file_with_macro ($cond, $var, FOREIGN, 'alloca.c');
-	    &saw_extension ('c');
+	  handle_ALLOCA ($var, $cond, $1);
+	  push (@dep_list, $lsearch);
 	}
     }
 
@@ -3060,6 +3016,61 @@ sub handle_lib_objects_cond
     }
 
   return $seen_libobjs;
+}
+
+sub handle_LIBOBJS ($$$)
+{
+  my ($var, $cond, $lt) = @_;
+  $lt ||= '';
+  my $myobjext = ($1 ? 'l' : '') . 'o';
+
+  if (! keys %libsources && ! variable_defined ($lt . 'LIBOBJS'))
+    {
+      err_var ($var, "\@${lt}LIBOBJS\@ seen but never set in "
+	       . "`$configure_ac'");
+    }
+
+  foreach my $iter (keys %libsources)
+    {
+      if ($iter =~ /\.[cly]$/)
+	{
+	  &saw_extension ($&);
+	  &saw_extension ('.c');
+	}
+
+      if ($iter =~ /\.h$/)
+	{
+	  require_file_with_macro ($cond, $var, FOREIGN, $iter);
+	}
+      elsif ($iter ne 'alloca.c')
+	{
+	  my $rewrite = $iter;
+	  $rewrite =~ s/\.c$/.P$myobjext/;
+	  $dep_files{'$(DEPDIR)/' . $rewrite} = 1;
+	  $rewrite = "^" . quotemeta ($iter) . "\$";
+	  # Only require the file if it is not a built source.
+	  if (! variable_defined ('BUILT_SOURCES')
+	      || ! grep (/$rewrite/,
+			 &variable_value_as_list_recursive ('BUILT_SOURCES',
+							    'all')))
+	    {
+	      require_file_with_macro ($cond, $var, FOREIGN, $iter);
+	    }
+	}
+    }
+}
+
+sub handle_ALLOCA ($$$)
+{
+  my ($var, $cond, $lt) = @_;
+  my $myobjext = ($1 ? 'l' : '') . 'o';
+
+  err_var ($var, "\@${lt}ALLOCA\@ seen but `AC_FUNC_ALLOCA' not in "
+	   . "`$configure_ac'")
+    if ! defined $libsources{'alloca.c'};
+  $dep_files{'$(DEPDIR)/alloca.P' . $myobjext} = 1;
+  require_file_with_macro ($cond, $var, FOREIGN, 'alloca.c');
+  &saw_extension ('c');
 }
 
 # Canonicalize the input parameter
@@ -3341,6 +3352,8 @@ sub handle_libraries
 	  &define_variable ($xlib . '_AR', '$(AR) cru', $where);
 	}
 
+      # Generate support for conditional object inclusion in
+      # libraries.
       if (variable_defined ($xlib . '_LIBADD'))
 	{
 	  if (&handle_lib_objects ($xlib, $xlib . '_LIBADD'))
@@ -3350,8 +3363,6 @@ sub handle_libraries
 	}
       else
 	{
-	  # Generate support for conditional object inclusion in
-	  # libraries.
 	  &define_variable ($xlib . "_LIBADD", '', $where);
 	}
 
@@ -3483,6 +3494,8 @@ sub handle_ltlibraries
 	  &define_variable ($xlib . '_LDFLAGS', '', $where);
 	}
 
+      # Generate support for conditional object inclusion in
+      # libraries.
       if (variable_defined ($xlib . '_LIBADD'))
 	{
 	  if (&handle_lib_objects ($xlib, $xlib . '_LIBADD'))
@@ -3492,8 +3505,6 @@ sub handle_ltlibraries
 	}
       else
 	{
-	  # Generate support for conditional object inclusion in
-	  # libraries.
 	  &define_variable ($xlib . "_LIBADD", '', $where);
 	}
 
