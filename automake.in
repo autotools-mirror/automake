@@ -435,7 +435,6 @@ sub generate_makefile
     &handle_gettext;
     &handle_libraries;
     &handle_programs;
-    &check_typos;
     &handle_scripts;
 
     # This must be run after all the sources are scanned.
@@ -461,6 +460,8 @@ sub generate_makefile
     &handle_installdirs;
     &handle_clean;
     &handle_phony;
+
+    &check_typos;
 
     if (! -d ($output_directory . '/' . $relative_dir))
     {
@@ -1458,12 +1459,18 @@ sub handle_tags
 	$output_rules .= &file_contents ('tags-subd');
 	$tagging = 1;
     }
+    elsif (&variable_defined ('TAGS_DEPENDENCIES'))
+    {
+	&am_line_error ('TAGS_DEPENDENCIES',
+			"doesn't make sense to define \`TAGS_DEPENDENCIES' without sources or \`ETAGS_ARGS'");
+    }
 
     if ($tagging)
     {
 	$output_rules .= &file_contents ('tags-clean');
 	push (@clean, 'tags');
 	&push_phony_cleaners ('tags');
+	&examine_variable ('TAGS_DEPENDENCIES');
     }
     else
     {
@@ -1673,38 +1680,22 @@ distcheck: dist
 	echo "========================"
 ');
 
-	$output_rules .= 'dist: distdir' . "\n\t";
-	# Ignore return result from chmod, because it might give an
-	# error if we chmod a symlink.
-	$output_rules .= '-chmod -R a+r $(distdir)' . "\n\t";
-	$output_rules .= '$(TAR) chozf $(distdir).tar.gz $(distdir)';
-	$output_rules .= "\n\t" . 'rm -rf $(distdir)' . "\n";
-
-	if (defined $options{'dist-shar'})
+	local ($dist_all) = ('dist-all: distdir' . "\n"
+			     . $dist_header
+			     . $dist_tar);
+	local ($curs);
+	foreach $curs ('dist', 'dist-shar', 'dist-zip', 'dist-tarZ')
 	{
-	    $output_rules .= 'dist-shar: distdir' . "\n\t";
-	    # Ignore return result from chmod, because it might give
-	    # an error if we chmod a symlink.
-	    $output_rules .= '-chmod -R a+r $(distdir)' . "\n\t";
-	    $output_rules .= 'shar $(distdir) | gzip > $(distdir).shar.gz';
-	    $output_rules .= "\n\t" . 'rm -rf $(distdir)' . "\n";
+	    if (defined $options{$curs} || $curs eq 'dist')
+	    {
+		$output_rules .= ($curs . ': distdir' . "\n"
+				  . $dist_header
+				  . $dist{$curs}
+				  . $dist_trailer);
+		$dist_all .= $dist{$curs};
+	    }
 	}
-
-	if (defined $options{'dist-zip'})
-	{
-	    $output_rules .= 'dist-zip: distdir' . "\n\t";
-	    $output_rules .= '-chmod -R a+r $(distdir)' . "\n\t";
-	    $output_rules .= 'zip -rq $(distdir).zip $(distdir)';
-	    $output_rules .= "\n\t" . 'rm -rf $(distdir)' . "\n";
-	}
-
-	if (defined $options{'dist-tarZ'})
-	{
-	    $output_rules .= 'dist-tarZ: distdir' . "\n\t";
-	    $output_rules .= '-chmod -R a+r $(distdir)' . "\n\t";
-	    $output_rules .= '$(TAR) chf - $(distdir) | compress -c > $(distdir).tar.Z';
-	    $output_rules .= "\n\t" . 'rm -rf $(distdir)' . "\n";
-	}
+	$output_rules .= $dist_all . $dist_trailer;
     }
 
     # Generate distdir target.
@@ -1984,6 +1975,7 @@ sub handle_configure
 							. $strictness_name
 							. '/g',
 							'remake');
+	&examine_variable ('CONFIGURE_DEPENDENCIES');
 	$top_reldir = '';
     }
 
@@ -2995,6 +2987,13 @@ sub variable_defined
     return 0;
 }
 
+# Mark a variable as examined.
+sub examine_variable
+{
+    local ($var) = @_;
+    &variable_defined ($var);
+}
+
 # Return contents of variable as list, split as whitespace.  This will
 # recursively follow $(...) and ${...} inclusions.  It preserves @...@
 # substitutions.  If PARENT is specified, it is the name of the
@@ -3334,6 +3333,19 @@ sub initialize_global_constants
 # This Makefile.in is free software; the Free Software Foundation
 # gives unlimited permission to copy, distribute and modify it.
 ";
+
+    # Ignore return result from chmod, because it might give an error
+    # if we chmod a symlink.
+    $dist_header = "\t" . '-chmod -R a+r $(distdir)' . "\n";
+    $dist{'tarZ'} = ("\t"
+		     . '$(TAR) chf - $(distdir) | compress -c > $(distdir).tar.Z'
+		     . "\n");
+    $dist{'shar'} = ("\t"
+		     . 'shar $(distdir) | gzip > $(distdir).shar.gz'
+		     . "\n");
+    $dist{'zip'} = "\t" . 'zip -rq $(distdir).zip $(distdir)' . "\n";
+    $dist{'dist'} = "\t" .  '$(TAR) chozf $(distdir).tar.gz $(distdir)' . "\n";
+    $dist_trailer = "\t" . 'rm -rf $(distdir)' . "\n";
 }
 
 # (Re)-Initialize per-Makefile.am variables.
