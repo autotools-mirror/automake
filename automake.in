@@ -1524,9 +1524,9 @@ sub handle_source_transform
 {
     # one_file is canonical name.  unxformed is given name.  obj is
     # object extension.
-    local ($one_file, $unxformed, $obj) = @_;
+    my ($one_file, $unxformed, $obj) = @_;
 
-    local ($linker) = '';
+    my ($linker) = '';
 
     if (&variable_defined ($one_file . "_OBJECTS"))
     {
@@ -1536,7 +1536,7 @@ sub handle_source_transform
 	return;
     }
 
-    my (@files, @result, $temp, $xpfx);
+    my (@files, @result, $temp);
     my %used_pfx = ();
     foreach my $prefix ('', 'EXTRA_', 'dist_', 'nodist_',
 			'dist_EXTRA_', 'nodist_EXTRA_')
@@ -1544,10 +1544,10 @@ sub handle_source_transform
 	# We are going to define _OBJECTS variables using the prefix.
 	# Then we glom them all together.  So we can't use the null
 	# prefix here as we need it later.
-	$xpfx = ($prefix eq '') ? 'am_' : $prefix;
+	my $xpfx = ($prefix eq '') ? 'am_' : $prefix;
 
 	@files = ();
-	local ($var) = $prefix . $one_file . "_SOURCES";
+	my $var = $prefix . $one_file . "_SOURCES";
 	if (&variable_defined ($var))
 	{
 	    # Keep track of which prefixes we saw.
@@ -1559,7 +1559,7 @@ sub handle_source_transform
 		unless $prefix =~ /EXTRA_/;
 	    push (@dist_sources, '$(' . $prefix . $one_file . "_SOURCES)")
 		unless $prefix =~ /^nodist_/;
-	    local (@conds) = &variable_conditions ($var);
+	    my @conds = &variable_conditions ($var);
 	    if (! @conds)
 	    {
 		@files = &variable_value_as_list ($var, '');
@@ -1594,7 +1594,7 @@ sub handle_source_transform
 	    unless $prefix =~ /EXTRA_/;
     }
 
-    local (@keys) = sort keys %used_pfx;
+    my @keys = sort keys %used_pfx;
     if (scalar @keys == 0)
     {
 	&define_variable ($one_file . "_SOURCES", $unxformed . ".c");
@@ -1637,8 +1637,8 @@ sub handle_source_transform
 # Returns 1 if LIBOBJS seen, 0 otherwise.
 sub handle_lib_objects
 {
-    local ($xname, $var, $lex_seen) = @_;
-    local ($ret);
+    my ($xname, $var, $lex_seen) = @_;
+    my $ret;
 
     &prog_error ("handle_lib_objects: $var undefined")
 	if ! &variable_defined ($var);
@@ -1646,7 +1646,7 @@ sub handle_lib_objects
     &prog_error ("handle_lib_objects: lex_seen and $var =~ /LIBADD/")
 	if $lex_seen && $var =~ /LIBADD/;
 
-    local (@conds) = &variable_conditions ($var);
+    my @conds = &variable_conditions ($var);
     if (! @conds)
     {
 	$ret = &handle_lib_objects_cond ($xname, $var, $lex_seen, '');
@@ -1669,14 +1669,14 @@ sub handle_lib_objects
 # Subroutine of handle_lib_objects: handle a particular condition.
 sub handle_lib_objects_cond
 {
-    local ($xname, $var, $lex_seen, $cond) = @_;
+    my ($xname, $var, $lex_seen, $cond) = @_;
 
     # We recognize certain things that are commonly put in LIBADD or
     # LDADD.
-    local (@dep_list) = ();
+    my @dep_list = ();
 
-    local ($seen_libobjs) = 0;
-    local ($flagvar) = 0;
+    my $seen_libobjs = 0;
+    my $flagvar = 0;
 
     foreach my $lsearch (&variable_value_as_list ($var, $cond))
     {
@@ -1711,7 +1711,7 @@ sub handle_lib_objects_cond
 	# means adding entries to dep_files.
 	if ($lsearch =~ /^\@(LT)?LIBOBJS\@$/)
 	{
-	    local ($myobjext) = ($1 ? 'l' : '') . 'o';
+	    my $myobjext = ($1 ? 'l' : '') . 'o';
 
 	    push (@dep_list, $lsearch);
 	    $seen_libobjs = 1;
@@ -1753,7 +1753,7 @@ sub handle_lib_objects_cond
 	}
 	elsif ($lsearch =~ /^\@(LT)?ALLOCA\@$/)
 	{
-	    local ($myobjext) = ($1 ? 'l' : '') . 'o';
+	    my $myobjext = ($1 ? 'l' : '') . 'o';
 
 	    push (@dep_list, $lsearch);
 	    &am_line_error ($var,
@@ -1776,7 +1776,7 @@ sub handle_lib_objects_cond
 # Canonicalize the input parameter
 sub canonicalize
 {
-    local($string) = @_;
+    my ($string) = @_;
     $string =~ tr/A-Za-z0-9_\@/_/c;
     return $string;
 }
@@ -1786,10 +1786,9 @@ sub canonicalize
 # list of suffixes to check for.
 sub check_canonical_spelling
 {
-    local ($name, @suffixes) = @_;
-    local ($xname, $xt);
+    my ($name, @suffixes) = @_;
 
-    $xname = &canonicalize ($name);
+    my $xname = &canonicalize ($name);
     if ($xname ne $name)
     {
 	foreach my $xt (@suffixes)
@@ -1810,10 +1809,10 @@ sub check_canonical_spelling
 # Handle C programs.
 sub handle_programs
 {
-    local (@proglist) = &am_install_var ('-clean',
-					 'progs', 'PROGRAMS',
-					 'bin', 'sbin', 'libexec', 'pkglib',
-					 'noinst', 'check');
+    my @proglist = &am_install_var ('-clean',
+				    'progs', 'PROGRAMS',
+				    'bin', 'sbin', 'libexec', 'pkglib',
+				    'noinst', 'check');
     return if ! @proglist;
 
     # If a program is installed, this is required.  We only want this
@@ -1822,25 +1821,23 @@ sub handle_programs
 	unless $seen_arg_prog;
     $seen_arg_prog = 1;
 
-    local ($xname, $munge);
-
-    local ($seen_libobjs) = 0;
+    my $seen_libobjs = 0;
     foreach my $one_file (@proglist)
     {
-	local ($obj) = &get_object_extension ($one_file);
+	my $obj = &get_object_extension ($one_file);
 
 	# Canonicalize names and check for misspellings.
-	$xname = &check_canonical_spelling ($one_file, '_LDADD', '_LDFLAGS',
-					    '_SOURCES', '_OBJECTS',
-					    '_DEPENDENCIES');
+	my $xname = &check_canonical_spelling ($one_file, '_LDADD', '_LDFLAGS',
+					       '_SOURCES', '_OBJECTS',
+					       '_DEPENDENCIES');
 
 	# FIXME: Using a trick to figure out if any lex sources appear
 	# in our program; should use some cleaner method.
-	local ($lex_num) = scalar (keys %lex_sources);
-	local ($linker) = &handle_source_transform ($xname, $one_file, $obj);
-	local ($lex_file_seen) = (scalar (keys %lex_sources) > $lex_num);
+	my $lex_num = scalar (keys %lex_sources);
+	my $linker = &handle_source_transform ($xname, $one_file, $obj);
+	my $lex_file_seen = (scalar (keys %lex_sources) > $lex_num);
 
-	local ($xt) = '';
+	my $xt = '';
 	if (&variable_defined ($xname . "_LDADD"))
 	{
 	    if (&handle_lib_objects ($xname, $xname . '_LDADD',
@@ -1887,7 +1884,7 @@ sub handle_programs
 	}
 
 	# Determine program to use for link.
-	local ($xlink);
+	my $xlink;
 	if (&variable_defined ($xname . '_LINK'))
 	{
 	    $xlink = $xname . '_LINK';
@@ -1897,7 +1894,7 @@ sub handle_programs
 	    $xlink = $linker ? $linker : 'LINK';
 	}
 
-	local ($exeext) = '';
+	my $exeext = '';
 	if ($seen_exeext && $one_file !~ /\./)
 	{
 	    $exeext = '$(EXEEXT)';
@@ -1919,7 +1916,7 @@ sub handle_programs
     {
 	foreach my $one_file (@proglist)
 	{
-	    $xname = &canonicalize ($one_file);
+	    my $xname = &canonicalize ($one_file);
 
 	    if (&variable_defined ($xname . '_LDADD'))
 	    {
@@ -1939,13 +1936,13 @@ sub handle_programs
 # Handle libraries.
 sub handle_libraries
 {
-    local (@liblist) = &am_install_var ('-clean',
-					'libs', 'LIBRARIES',
-					'lib', 'pkglib', 'noinst', 'check');
+    my @liblist = &am_install_var ('-clean',
+				   'libs', 'LIBRARIES',
+				   'lib', 'pkglib', 'noinst', 'check');
     return if ! @liblist;
 
-    local (%valid) = &am_primary_prefixes ('LIBRARIES', 0, 'lib', 'pkglib',
-					   'noinst', 'check');
+    my %valid = &am_primary_prefixes ('LIBRARIES', 0, 'lib', 'pkglib',
+				      'noinst', 'check');
     if (! defined $configure_vars{'RANLIB'})
     {
 	foreach my $key (keys %valid)
@@ -1961,9 +1958,7 @@ sub handle_libraries
 	}
     }
 
-    local ($munge);
-    local ($xlib);
-    local ($seen_libobjs) = 0;
+    my $seen_libobjs = 0;
     foreach my $onelib (@liblist)
     {
 	# Check that the library fits the standard naming convention.
@@ -1974,11 +1969,12 @@ sub handle_libraries
 	    &am_error ("\`$onelib' is not a standard library name");
 	}
 
-	local ($obj) = &get_object_extension ($onelib);
+	my $obj = &get_object_extension ($onelib);
 
 	# Canonicalize names and check for misspellings.
-	$xlib = &check_canonical_spelling ($onelib, '_LIBADD', '_SOURCES',
-					   '_OBJECTS', '_DEPENDENCIES', '_AR');
+	my $xlib = &check_canonical_spelling ($onelib, '_LIBADD', '_SOURCES',
+					      '_OBJECTS', '_DEPENDENCIES',
+					      '_AR');
 
 	if (! &variable_defined ($xlib . '_AR'))
 	{
@@ -2020,7 +2016,7 @@ sub handle_libraries
     {
 	foreach my $onelib (@liblist)
 	{
-	    $xlib = &canonicalize ($onelib);
+	    my $xlib = &canonicalize ($onelib);
 	    if (&variable_defined ($xlib . '_LIBADD'))
 	    {
 		&check_libobjs_sources ($xlib, $xlib . '_LIBADD');
@@ -2038,14 +2034,14 @@ sub handle_libraries
 # Handle shared libraries.
 sub handle_ltlibraries
 {
-    local (@liblist) = &am_install_var ('-clean',
-					'ltlib', 'LTLIBRARIES',
-					'noinst', 'lib', 'pkglib', 'check');
+    my @liblist = &am_install_var ('-clean',
+				   'ltlib', 'LTLIBRARIES',
+				   'noinst', 'lib', 'pkglib', 'check');
     return if ! @liblist;
 
-    local (%instdirs);
-    local (%valid) = &am_primary_prefixes ('LTLIBRARIES', 0, 'lib', 'pkglib',
-					   'noinst', 'check');
+    my %instdirs;
+    my %valid = &am_primary_prefixes ('LTLIBRARIES', 0, 'lib', 'pkglib',
+				      'noinst', 'check');
 
     foreach my $key (keys %valid)
     {
@@ -2075,17 +2071,15 @@ sub handle_ltlibraries
 	}
     }
 
-    local ($munge);
-    local ($xlib);
-    local ($seen_libobjs) = 0;
+    my $seen_libobjs = 0;
     foreach my $onelib (@liblist)
     {
-	local ($obj) = &get_object_extension ($onelib);
+	my $obj = &get_object_extension ($onelib);
 
 	# Canonicalize names and check for misspellings.
-	$xlib = &check_canonical_spelling ($onelib, '_LIBADD', '_LDFLAGS',
-					   '_SOURCES', '_OBJECTS',
-					   '_DEPENDENCIES');
+	my $xlib = &check_canonical_spelling ($onelib, '_LIBADD', '_LDFLAGS',
+					      '_SOURCES', '_OBJECTS',
+					      '_DEPENDENCIES');
 
 	if (! &variable_defined ($xlib . '_LDFLAGS'))
 	{
@@ -2137,10 +2131,10 @@ sub handle_ltlibraries
 	# Make sure we at look at this.
 	&examine_variable ($xlib . '_DEPENDENCIES');
 
-	local ($linker) = &handle_source_transform ($xlib, $onelib, $obj);
+	my $linker = &handle_source_transform ($xlib, $onelib, $obj);
 
 	# Determine program to use for link.
-	local ($xlink);
+	my $xlink;
 	if (&variable_defined ($xlib . '_LINK'))
 	{
 	    $xlink = $xlib . '_LINK';
@@ -2150,7 +2144,7 @@ sub handle_ltlibraries
 	    $xlink = $linker ? $linker : 'LINK';
 	}
 
-	local ($rpath);
+	my $rpath;
 	if ($instdirs{$onelib} eq 'EXTRA'
 	    || $instdirs{$onelib} eq 'noinst'
 	    || $instdirs{$onelib} eq 'check')
@@ -2178,7 +2172,7 @@ sub handle_ltlibraries
     {
 	foreach my $onelib (@liblist)
 	{
-	    $xlib = &canonicalize ($onelib);
+	    my $xlib = &canonicalize ($onelib);
 	    if (&variable_defined ($xlib . '_LIBADD'))
 	    {
 		&check_libobjs_sources ($xlib, $xlib . '_LIBADD');
@@ -2215,13 +2209,13 @@ sub handle_scripts
 		     'bin', 'sbin', 'libexec', 'pkgdata',
 		     'noinst', 'check');
 
-    local ($scripts_installed) = 0;
+    my $scripts_installed = 0;
     # Set $scripts_installed if appropriate.  Make sure we only find
     # scripts which are actually installed -- this is why we can't
     # simply use the return value of am_install_var.
-    local (%valid) = &am_primary_prefixes ('SCRIPTS', 1, 'bin', 'sbin',
-					   'libexec', 'pkgdata',
-					   'noinst', 'check');
+    my %valid = &am_primary_prefixes ('SCRIPTS', 1, 'bin', 'sbin',
+				      'libexec', 'pkgdata',
+				      'noinst', 'check');
     foreach my $key (keys %valid)
     {
 	if ($key ne 'noinst'
@@ -2249,7 +2243,7 @@ sub handle_scripts
 # "vers*.texi".
 sub scan_texinfo_file
 {
-    local ($filename) = @_;
+    my ($filename) = @_;
 
     if (! open (TEXI, $filename))
     {
@@ -2258,7 +2252,7 @@ sub scan_texinfo_file
     }
     print "automake: reading $filename\n" if $verbose;
 
-    local ($vfile, $outfile);
+    my ($outfile, $vfile);
     while (<TEXI>)
     {
 	if (/^\@setfilename +(\S+)/)
@@ -2423,8 +2417,8 @@ sub handle_texinfo
 			      'texi2dvi');
 
     # Handle location of texinfo.tex.
-    local ($need_texi_file) = 0;
-    local ($texinfodir);
+    my $need_texi_file = 0;
+    my $texinfodir;
     if ($cygnus_mode)
     {
         $texinfodir = '$(top_srcdir)/../texinfo';
