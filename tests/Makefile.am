@@ -210,6 +210,7 @@ recurs.test \
 recurs2.test \
 remake.test \
 remake2.test \
+remake3.test \
 req.test \
 rulepat.test \
 scripts.test \

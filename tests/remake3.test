@@ -1,0 +1,24 @@
+#! /bin/sh
+
+# Make sure remaking rules work when there is no subdir Makefile.
+
+. $srcdir/defs || exit 1
+
+cat > configure.in << 'END'
+AM_INIT_AUTOMAKE(nonesuch, nonesuch)
+PACKAGE=nonesuch
+VERSION=nonesuch
+AC_ARG_PROGRAM
+AC_PROG_MAKE_SET
+AC_PROG_INSTALL
+AC_OUTPUT(Makefile sub/foo)
+END
+
+: > Makefile.am
+
+mkdir sub
+: > sub/foo.in
+
+$AUTOMAKE || exit 1
+
+grep '^sub/foo' Makefile.in
