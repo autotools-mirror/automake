@@ -194,6 +194,7 @@ pr2.test \
 pr9.test \
 pr19.test \
 pr72.test \
+pr87.test \
 prefix.test \
 primary.test \
 primary2.test \

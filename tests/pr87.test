@@ -1,0 +1,47 @@
+#! /bin/sh
+
+# Test for PR automake/87.
+
+. $srcdir/defs || exit 1
+
+subdirs="foo bar"
+
+for i in $subdirs; do
+    mkdir $i
+    cat >$i/$i.c <<EOF
+int main() { return 0; }
+EOF
+    cat >$i/Makefile.am <<EOF
+bin_PROGRAMS = $i
+${i}_SOURCES = $i.c
+EOF
+done
+
+echo "SUBDIRS = $subdirs" > Makefile.am
+cat >configure.in <<EOF
+AC_INIT(`echo $subdirs | sed 's|\([a-z][a-z]*\).*|\1/\1.c|'`)
+AM_INIT_AUTOMAKE(test_am, 1.0)
+AC_PROG_CC
+AC_OUTPUT(Makefile `echo $subdirs | sed 's|\([a-z][a-z]*\)|\1/Makefile|g'`)
+EOF
+
+# Fail gracefully if no autoconf.
+(autoconf --version) > /dev/null 2>&1 || exit 0
+
+# Likewise for gcc.
+(gcc -v) > /dev/null 2>&1 || exit 0
+
+touch README NEWS AUTHORS ChangeLog
+
+mkdir build
+
+rm missing install-sh mkinstalldirs
+
+# We use gcc and not gcc -traditional as the latter fails on some
+# Linux boxes (Red Hat 5.1 in particular).
+$ACLOCAL \
+   && autoconf \
+   && $AUTOMAKE -a \
+   && cd build \
+   && CC='gcc' ../configure \
+   && $MAKE distcheck
