@@ -38,6 +38,14 @@ fubar2_SOURCES = fubar.c
 sub_fubar3_SOURCES = fubar.c
 sub_fine_SOURCES = fine.c
 bin_SCRIPTS = sub/scriptok.sh sub/scriptnok.sh
+
+grep-stderr:
+	grep 'pfubar$(EXEEXT) does not support' stderr
+	grep 'pfubar3$(EXEEXT) does not support' stderr
+	grep 'pscriptnok.sh does not support' stderr
+## Only three failures please.
+	test `grep 'does not support --help' stderr | wc -l` = 3
+	test `grep 'does not support --version' stderr | wc -l` = 3
 END
 
 echo 'int main () { return 0; }' > fubar.c
@@ -93,9 +101,4 @@ test -f ../inst-dir/bin/pfine
 test ! -f ../inst-dir/bin/fine
 $MAKE -k installcheck 2>stderr || : # Never trust the exit status of make -k.
 cat stderr
-grep 'pfubar does not support' stderr
-grep 'pfubar3 does not support' stderr
-grep 'pscriptnok.sh does not support' stderr
-# Only three failures please.
-test `grep 'does not support --help' stderr | wc -l` = 3
-test `grep 'does not support --version' stderr | wc -l` = 3
+$MAKE grep-stderr
