@@ -42,6 +42,7 @@ struct (# Short name of the language (c, f77...).
 
         'ansi'    => '$',
 	'autodep' => '$',
+
 	# Name of the compiling variable (COMPILE).
         'compiler'  => '$',
         # Content of the compiling variable.
@@ -51,10 +52,17 @@ struct (# Short name of the language (c, f77...).
 	'derived_autodep' => '$',
         'extensions'      => '@',
         'flags' => '$',
+
         # Name of the linking variable (LINK).
         'linker' => '$',
         # Content of the linking variable.
         'link' => '$',
+
+        # Name of the linker variable (LD).
+        'lder' => '$',
+        # Content of the linker variable ($(CC)).
+        'ld' => '$',
+
         # Flag to specify the output file (-o).
         'output_flag' => '$',
 	# `pure' is `1' or `'.  A `pure' language is one where, if
@@ -767,8 +775,12 @@ register_language ('name' => 'c',
 		   'ansi' => 1,
 		   'autodep' => '',
 		   'flags' => 'CFLAGS',
-		   'compile' => '$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)',
 		   'compiler' => 'COMPILE',
+		   'compile' => '$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)',
+		   'lder' => 'CCLD',
+		   'ld' => '$(CC)',
+		   'linker' => 'LINK',
+		   'link' => '$(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@',
 		   'compile_flag' => '-c',
 		   'extensions' => ['c'],
 		   '_finish' => \&lang_c_finish);
@@ -783,6 +795,8 @@ register_language ('name' => 'cxx',
 		   'compiler' => 'CXXCOMPILE',
 		   'compile_flag' => '-c',
 		   'output_flag' => '-o',
+		   'lder' => 'CXXLD',
+		   'ld' => '$(CXX)',
 		   'pure' => 1,
 		   'extensions' => ['c++', 'cc', 'cpp', 'cxx', 'C'],
 		   '_finish' => \&lang_cxx_finish);
@@ -797,6 +811,8 @@ register_language ('name' => 'objc',
 		   'compiler' => 'OBJCCOMPILE',
 		   'compile_flag' => '-c',
 		   'output_flag' => '-o',
+		   'lder' => 'OBJCLD',
+		   'ld' => '$(OBJC)',
 		   'pure' => 1,
 		   'extensions' => ['m'],
 		   '_finish' => \&lang_objc_finish);
@@ -854,6 +870,8 @@ register_language ('name' => 'f77',
 		   'compiler' => 'F77COMPILE',
 		   'compile_flag' => '-c',
 		   'output_flag' => '-o',
+		   'lder' => 'F77LD',
+		   'ld' => '$(F77)',
 		   'pure' => 1,
 		   'extensions' => ['f', 'for', 'f90'],
 		   '_finish' => \&lang_f77_finish);
@@ -894,6 +912,8 @@ register_language ('name' => 'java',
 		   'compiler' => 'GCJCOMPILE',
 		   'compile_flag' => '-c',
 		   'output_flag' => '-o',
+		   'lder' => 'GCJLD',
+		   'ld' => '$(GCJ)',
 		   'pure' => 1,
 		   'extensions' => ['java', 'class', 'zip', 'jar'],
 		   '_finish' => \&lang_java_finish);
@@ -1411,7 +1431,6 @@ sub handle_languages
 	&define_variable ('depcomp', '');
     }
 
-    my ($ltcompile, $ltlink) = &libtool_compiler;
     my %done;
 
     # Is the c linker needed?
@@ -1539,9 +1558,7 @@ sub handle_languages
 	    &define_configure_variable ($languages{'c'}->flags);
 	    &define_compiler_variable ($languages{'c'});
 	  }
-	&define_variable ('CCLD', '$(CC)');
-	&define_variable ('LINK',
-			  $ltlink . '$(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
+	define_linker_variable ($languages{'c'});
       }
 }
 
@@ -5074,10 +5091,7 @@ sub lang_c_finish
 
 sub lang_cxx_finish
 {
-    my ($ltcompile, $ltlink) = &libtool_compiler;
-
-    &define_variable ('CXXLD', '$(CXX)');
-    &define_variable ('CXXLINK', $ltlink . $languages{'cxx'}->link);
+    define_linker_variable ($languages{'cxx'});
 
     if (! defined $configure_vars{'CXX'})
     {
@@ -5213,10 +5227,7 @@ sub lang_f77_finish
     # FIXME: this function can be called more than once.  We should
     # arrange for it to only do anything the first time through.
 
-    my ($ltcompile, $ltlink) = &libtool_compiler;
-
-    &define_variable ('F77LD', '$(F77)');
-    &define_variable ('F77LINK', $ltlink . $languages{'f77'}->link);
+    define_linker_variable ($languages{'f77'});
 
     if (! defined $configure_vars{'F77'})
     {
@@ -5260,10 +5271,7 @@ sub lang_ratfor_finish
 
 sub lang_objc_finish
 {
-    my ($ltcompile, $ltlink) = &libtool_compiler;
-
-    &define_variable ('OBJCLD', '$(OBJC)');
-    &define_variable ('OBJCLINK', $ltlink . $languages{'objc'}->link);
+    define_linker_variable ($languages{'objc'});
 
     if (! defined $configure_vars{'OBJC'})
     {
@@ -5273,10 +5281,7 @@ sub lang_objc_finish
 
 sub lang_java_finish
 {
-    my ($ltcompile, $ltlink) = &libtool_compiler;
-
-    &define_variable ('GCJLD', '$(GCJ)');
-    &define_variable ('GCJLINK', $ltlink . $languages{'java'}->link);
+    define_linker_variable ($languages{'java'});
 
     if (! defined $configure_vars{'GCJ'})
     {
@@ -5284,19 +5289,6 @@ sub lang_java_finish
     }
 }
 
-
-# A helper which decides whether libtool is needed.  Returns prefix
-# for compiler and linker.
-sub libtool_compiler
-{
-    my ($ltcompile, $ltlink) = ('', '');
-    if ($seen_libtool)
-    {
-	$ltcompile = '$(LIBTOOL) --mode=compile ';
-	$ltlink = '$(LIBTOOL) --mode=link ';
-    }
-    return ($ltcompile, $ltlink);
-}
 
 # Given a hash table of linker names, pick the name that has the most
 # precedence.  This is lame, but something has to have global
@@ -6415,6 +6407,23 @@ sub define_compiler_variable ($)
     &define_variable ($var, $value);
     &define_variable ("LT$var", "$(LIBTOOL) --mode=compile $value")
       if $seen_libtool;
+}
+
+
+# define_linker_variable ($LANG)
+# ------------------------------
+# Define linker variables.
+sub define_linker_variable ($)
+{
+    my ($lang) = @_;
+
+    my ($var, $value) = ($lang->lder, $lang->ld);
+    # CCLD = $(CC).
+    &define_variable ($lang->lder, $lang->ld);
+    # CCLINK = $(CCLD) blah blah...
+    &define_variable ($lang->linker,
+		      (($seen_libtool ? '$(LIBTOOL) --mode=link ' : '')
+		       . $lang->link));
 }
 
 ################################################################
