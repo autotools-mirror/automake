@@ -1,4 +1,4 @@
-# Copyright (C) 2003, 2004  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2004, 2005  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,9 +47,9 @@ use vars qw (@ISA @EXPORT);
 	      &xsystem &xqx &dir_has_case_matching_file &reset_dir_cache);
 
 
-=item C<find_file ($filename, @include)>
+=item C<find_file ($file_name, @include)>
 
-Return the first path for a C<$filename> in the C<include>s.
+Return the first path for a C<$file_name> in the C<include>s.
 
 We match exactly the behavior of GNU M4: first look in the current
 directory (which includes the case of absolute file names), and, if
@@ -60,36 +60,36 @@ if absent, otherwise exit with error.
 
 =cut
 
-# $FILENAME
-# find_file ($FILENAME, @INCLUDE)
+# $FILE_NAME
+# find_file ($FILE_NAME, @INCLUDE)
 # -------------------------------
 sub find_file ($@)
 {
   use File::Spec;
 
-  my ($filename, @include) = @_;
+  my ($file_name, @include) = @_;
   my $optional = 0;
 
   $optional = 1
-    if $filename =~ s/\?$//;
+    if $file_name =~ s/\?$//;
 
-  return File::Spec->canonpath ($filename)
-    if -e $filename;
+  return File::Spec->canonpath ($file_name)
+    if -e $file_name;
 
-  if (File::Spec->file_name_is_absolute ($filename))
+  if (File::Spec->file_name_is_absolute ($file_name))
     {
-      fatal "$filename: no such file or directory"
+      fatal "$file_name: no such file or directory"
 	unless $optional;
       return undef;
     }
 
   foreach my $path (@include)
     {
-      return File::Spec->canonpath (File::Spec->catfile ($path, $filename))
-	if -e File::Spec->catfile ($path, $filename)
+      return File::Spec->canonpath (File::Spec->catfile ($path, $file_name))
+	if -e File::Spec->catfile ($path, $file_name)
     }
 
-  fatal "$filename: no such file or directory"
+  fatal "$file_name: no such file or directory"
     unless $optional;
 
   return undef;
@@ -119,19 +119,22 @@ sub mtime ($)
 }
 
 
-=item C<update_file ($from, $to)>
+=item C<update_file ($from, $to, [$force])>
 
 Rename C<$from> as C<$to>, preserving C<$to> timestamp if it has not
-changed.  Recognize C<$to> = C<-> standing for C<STDIN>.  C<$from> is
-always removed/renamed.
+changed, unless C<$force> is true (defaults to false).  Recognize
+C<$to> = C<-> standing for C<STDIN>.  C<$from> is always
+removed/renamed.
 
 =cut
 
-# &update_file ($FROM, $TO)
-# -------------------------
-sub update_file ($$)
+# &update_file ($FROM, $TO; $FORCE)
+# ---------------------------------
+sub update_file ($$;$)
 {
-  my ($from, $to) = @_;
+  my ($from, $to, $force) = @_;
+  $force = 0
+    unless defined $force;
   my $SIMPLE_BACKUP_SUFFIX = $ENV{'SIMPLE_BACKUP_SUFFIX'} || '~';
   use File::Compare;
   use File::Copy;
@@ -149,7 +152,7 @@ sub update_file ($$)
       return;
     }
 
-  if (-f "$to" && compare ("$from", "$to") == 0)
+  if (!$force && -f "$to" && compare ("$from", "$to") == 0)
     {
       # File didn't change, so don't update its mod time.
       msg 'note', "`$to' is unchanged";
@@ -290,14 +293,14 @@ sub xsystem ($)
 }
 
 
-=item C<contents ($filename)>
+=item C<contents ($file_name)>
 
-Return the contents of c<$filename>.
+Return the contents of C<$file_name>.
 
 =cut
 
-# contents ($FILENAME)
-# --------------------
+# contents ($FILE_NAME)
+# ---------------------
 sub contents ($)
 {
   my ($file) = @_;
@@ -310,9 +313,9 @@ sub contents ($)
 }
 
 
-=item C<dir_has_case_matching_file ($DIRNAME, $FILENAME)>
+=item C<dir_has_case_matching_file ($DIRNAME, $FILE_NAME)>
 
-Return true iff $DIR contains a filename that matches $FILENAME case
+Return true iff $DIR contains a file name that matches $FILE_NAME case
 insensitively.
 
 We need to be cautious on case-insensitive case-preserving file
@@ -321,7 +324,7 @@ systems (e.g. Mac OS X's HFS+).  On such systems C<-f 'Foo'> and C<-f
 F<CHANGELOG> file, but has no F<ChangeLog> file, automake would still
 try to distribute F<ChangeLog> (because it thinks it exists) in
 addition to F<CHANGELOG>, although it is impossible for these two
-files to be in the same directory (the two filenames designate the
+files to be in the same directory (the two file names designate the
 same file).
 
 =cut
@@ -333,8 +336,8 @@ sub dir_has_case_matching_file ($$)
   # X (with Perl v5.8.1-RC3 at least), so do not try to shortcut this
   # function using that.
 
-  my ($dirname, $filename) = @_;
-  return 0 unless -f "$dirname/$filename";
+  my ($dirname, $file_name) = @_;
+  return 0 unless -f "$dirname/$file_name";
 
   # The file appears to exist, however it might be a mirage if the
   # system is case insensitive.  Let's browse the directory and check
@@ -348,7 +351,7 @@ sub dir_has_case_matching_file ($$)
       $_directory_cache{$dirname} = { map { $_ => 1 } readdir (DIR) };
       closedir (DIR);
     }
-  return exists $_directory_cache{$dirname}{$filename};
+  return exists $_directory_cache{$dirname}{$file_name};
 }
 
 =item C<reset_dir_cache ($dirname)>
