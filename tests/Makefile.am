@@ -390,6 +390,7 @@ remake.test \
 remake2.test \
 remake3.test \
 remake4.test \
+remake5.test \
 req.test \
 reqd.test \
 reqd2.test \
