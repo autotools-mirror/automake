@@ -248,7 +248,7 @@ cpp)
     *" --mode=compile "*)
       for arg
       do # cycle over the arguments
-        case "$arg" in
+        case $arg in
 	"--mode=compile")
 	  # insert --quiet before "--mode=compile"
 	  set fnord "$@" --quiet
@@ -262,7 +262,8 @@ cpp)
       ;;
     esac
     "$@" -E |
-    sed -n '/^# [0-9][0-9]* "\([^"]*\)"/ s::'"$object"'\: \1:p' > "$tmpdepfile"
+    sed -n '/^# [0-9][0-9]* "\([^"]*\)".*/ s:: \1 \\:p' |
+    sed '$ s: \\$::' > "$tmpdepfile"
   ) &
   proc=$!
   "$@"
@@ -270,8 +271,9 @@ cpp)
   wait "$proc"
   if test "$stat" != 0; then exit $stat; fi
   rm -f "$depfile"
-  cat < "$tmpdepfile" > "$depfile"
-  sed < "$tmpdepfile" -e 's/^[^:]*: //' -e 's/$/ :/' >> "$depfile"
+  echo "$object : \\" > "$depfile"
+  cat < "$tmpdepfile" >> "$depfile"
+  sed < "$tmpdepfile" '/^$/d;s/^ //;s/ \\$//;s/$/ :/' >> "$depfile"
   rm -f "$tmpdepfile"
   ;;
 
