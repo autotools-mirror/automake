@@ -14,7 +14,12 @@ _am_quote=
 _am_result=none
 # First try GNU make style include.
 echo "include confinc" > confmf
-if test "`$am_make -s -f confmf 2> /dev/null`" = "done"; then
+# We grep out `Entering directory' and `Leaving directory'
+# messages which can occur if `w' ends up in MAKEFLAGS.
+# In particular we don't look at `^make:' because GNU make might
+# be invoked under some other name (usually "gmake"), in which
+# case it prints its new name instead of `make'.
+if test "`$am_make -s -f confmf 2> /dev/null | fgrep -v 'ing directory'`" = "done"; then
    _am_include=include
    _am_quote=
    _am_result=GNU
