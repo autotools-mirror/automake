@@ -546,6 +546,9 @@ my $need_link;
 # FIXME: This is a hack. a better switch should be found.
 my $get_object_extension_was_run;
 
+# Record each file processed by make_paragraphs.
+my %transformed_files;
+
 ################################################################
 
 # var_SUFFIXES_trigger ($TYPE, $VALUE)
@@ -642,6 +645,8 @@ sub initialize_per_input ()
 
     # We always include `.'.  This isn't strictly correct.
     %libtool_clean_directories = ('.' => 1);
+
+    %transformed_files = ();
 }
 
 
@@ -3692,7 +3697,6 @@ sub handle_configure ($$$@)
 			   CONFIG_HIN       => $ins[0],
 			   CONFIG_H_DEPS    => "@ins",
 			   CONFIG_H_PATH    => $config_h_path,
-			   FIRST_CONFIG_HIN => ($hdr_index == 1),
 			   STAMP            => "$stamp");
 
 	  push @distclean_config, $cn_sans_dir, $stamp;
@@ -5847,9 +5851,12 @@ sub make_paragraphs ($%)
 
 		 'LIBTOOL'      => !! var ('LIBTOOL'),
 		 'NONLIBTOOL'   => 1,
+		 'FIRST'        => ! $transformed_files{$file},
 		 %transform)
     # We don't need more than two consecutive new-lines.
     . 's/\n{3,}/\n\n/g';
+
+  $transformed_files{$file} = 1;
 
   # Swallow the file and apply the COMMAND.
   my $fc_file = new Automake::XFile "< $file";
@@ -6306,9 +6313,6 @@ sub am_install_var
   my @used = ();
   my @result = ();
 
-  # True if the iteration is the first one.  Used for instance to
-  # output parts of the associated file only once.
-  my $first = 1;
   foreach my $X (@prefix)
     {
       my $nodir_name = $X;
@@ -6400,20 +6404,16 @@ sub am_install_var
       # Singular form of $PRIMARY.
       (my $one_primary = $primary) =~ s/S$//;
       $output_rules .= &file_contents ($file, $where,
-					 FIRST => $first,
+				       PRIMARY     => $primary,
+				       ONE_PRIMARY => $one_primary,
+				       DIR         => $X,
+				       NDIR        => $nodir_name,
+				       BASE        => $strip_subdir,
 
-					 PRIMARY     => $primary,
-					 ONE_PRIMARY => $one_primary,
-					 DIR         => $X,
-					 NDIR        => $nodir_name,
-					 BASE        => $strip_subdir,
-
-					 EXEC      => $exec_p,
-					 INSTALL   => $install_p,
-					 DIST      => $dist_p,
-					 'CK-OPTS' => $check_options_p);
-
-      $first = 0;
+				       EXEC      => $exec_p,
+				       INSTALL   => $install_p,
+				       DIST      => $dist_p,
+				       'CK-OPTS' => $check_options_p);
     }
 
   # The JAVA variable is used as the name of the Java interpreter.
