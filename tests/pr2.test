@@ -1,0 +1,24 @@
+#! /bin/sh
+
+# Test for bug reported in PR 2.
+
+. $srcdir/defs || exit 1
+
+cat > configure.in << 'END'
+PACKAGE=nonesuch
+VERSION=nonesuch
+AC_ARG_PROGRAM
+AC_PROG_INSTALL
+AC_OUTPUT(README.foo:templ/README.foo.in Makefile)
+END
+
+: > Makefile.am
+
+mkdir templ
+: > templ/README.foo.in
+
+$AUTOMAKE || exit 1
+
+# Look for mkinstalldirs invocation for the templ directory.
+# We use the `[^/]' to avoid matching `templ/README.foo.in'.
+grep 'mkinstalldirs.*templ[^/]' Makefile.in
