@@ -2333,6 +2333,31 @@ sub am_install_var
     &am_line_error ($primary, "\`$primary' is an anachronism")
 	if defined $contents{$primary};
 
+
+    # Look for misspellings.  It is an error to have a variable ending
+    # in a "reserved" suffix whose prefix is unknown, eg
+    # "bni_PROGRAMS".  However, unusual prefixes are allowed if a
+    # variable of the same name (with "dir" appended) exists.  For
+    # instance, if the variable "zardir" is defined, then
+    # "zar_PROGRAMS" becomes valid.  This is to provide a little extra
+    # flexibility in those cases which need it.  Perhaps it should be
+    # disallowed in the Gnits case?  The problem is, sometimes it is
+    # useful to put things in a subdir of eg pkgdatadir, perhaps even
+    # for Gnitsoids.
+    local (%valid, $varname);
+    grep ($valid{$_} = 0, @prefixes);
+    $valid{'EXTRA'} = 0;
+    foreach $varname (keys %contents)
+    {
+	if ($varname =~ /^(.*)_$primary$/)
+	{
+	    if (! defined $valid{$1} && ! defined $contents{$1 . 'dir'})
+	    {
+		&am_line_error ($varname, "invalid variable \"$varname\"");
+	    }
+	}
+    }
+
     local ($clean_file) = $file . '-clean';
     local ($one_name);
     local ($X);
@@ -2393,20 +2418,6 @@ sub am_install_var
     # Push here because PRIMARY might be configure time determined.
     push (@all, '$(' . $primary . ')')
 	if $do_all && @used;
-
-    # Look for misspellings.  It is an error to have a variable ending
-    # in a "reserved" suffix whose prefix is unknown, eg
-    # "bni_PROGRAMS".
-    local (%valid, $varname);
-    grep ($valid{$_} = 0, @prefixes);
-    $valid{'EXTRA'} = 0;
-    foreach $varname (keys %contents)
-    {
-	if ($varname =~ /^(.*)_$primary$/ && ! defined $valid{$1})
-	{
-	    &am_line_error ($varname, "invalid variable \"$varname\"");
-	}
-    }
 
     push (@result, split (/\s+/, $contents{'EXTRA_' . $primary}))
 	if defined $contents{'EXTRA_' . $primary};
