@@ -1,4 +1,4 @@
-dnl aclocal.m4 generated automatically by aclocal 1.1d
+dnl aclocal.m4 generated automatically by aclocal 1.1f
 
 # Do all the work for Automake.  This macro actually does too much --
 # some checks are only needed if your package does certain things.
@@ -20,11 +20,6 @@ AC_DEFINE_UNQUOTED(VERSION, "$VERSION")
 AC_ARG_PROGRAM
 AC_PROG_MAKE_SET])
 
-## --------------------------------------------------------- ##
-## Use AC_PROG_INSTALL, supplementing it with INSTALL_SCRIPT ##
-## substitution.                                             ##
-## From Franc,ois Pinard                                     ##
-## --------------------------------------------------------- ##
 
 # serial 1
 
