@@ -123,7 +123,14 @@ sgi)
   fi
   rm -f "$depfile" 
   echo "$object : \\" > "$depfile"
-  sed 's/^[^:]*: / /' < "$tmpdepfile" >> "$depfile"
+
+  # Clip off the initial element (the dependent). Don't try to be
+  # clever and remove the tr invocations, as IRIX sed won't handle
+  # lines with more than 8192 characters.
+  tr ' ' '
+' < "$tmpdepfile" | sed 's/^[^\.]*\.o://' | tr '
+' ' ' >> $depfile
+
   tr ' ' '
 ' < "$tmpdepfile" | \
 ## Some versions of the HPUX 10.20 sed can't process this invocation
