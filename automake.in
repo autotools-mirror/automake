@@ -1886,6 +1886,8 @@ sub handle_texinfo
     &define_program_variable ('TEXI2DVI', 'src', 'texinfo/util',
 			      'texi2dvi');
 
+    # Set transform for including texinfos.am.  First, handle --cygnus
+    # stuff.
     local ($xform);
     if ($cygnus_mode)
     {
@@ -1895,6 +1897,21 @@ sub handle_texinfo
     {
 	$xform = 's/^CYGNUS.*$//; s/^NOTCYGNUS//;';
     }
+
+    # Handle location of texinfo.tex.
+    if ($cygnus_mode)
+    {
+	&define_variable ('TEXINFO_TEX',
+			  '$(top_srcdir)/../texinfo/texinfo.tex');
+    }
+    elsif (! &variable_defined ('TEXINFO_TEX'))
+    {
+	&define_variable ('TEXINFO_TEX', '$(srcdir)/texinfo.tex');
+    }
+    local ($xxform) = &dirname ($contents{'TEXINFO_TEX'});
+    $xxform =~ s/(\W)/\\$1/g;
+    $xform .= ' s/\@TEXINFODIR\@/' . $xxform . '/g;';
+
     $output_rules .= &file_contents_with_transform ($xform, 'texinfos');
     push (@phony, 'install-info-am', 'uninstall-info');
     push (@dist_targets, 'dist-info');
@@ -1933,11 +1950,11 @@ sub handle_texinfo
     &define_variable ("TEXINFOS", $contents{'info_TEXINFOS'});
 
     # Do some error checking.  Note that this file is not required
-    # when in Cygnus mode -- a bletcherous hack.
-    &require_file_with_line ('info_TEXINFOS',
-			     $cygnus_mode ? $GNU : $FOREIGN,
-			     'texinfo.tex')
-	unless defined $options{'no-texinfo.tex'};
+    # when in Cygnus mode; instead we defined TEXINFO_TEX explicitly
+    # up above.
+    &require_file_with_line ('info_TEXINFOS', $FOREIGN, 'texinfo.tex')
+	unless (defined $options{'no-texinfo.tex'}
+		|| &variable_defined ('TEXINFO_TEX'));
 }
 
 # Handle any man pages.
