@@ -36,11 +36,12 @@ $(DEP_FILES): $(srcdir)/.deps/.P
 
 $(srcdir)/.deps/%.P: $(srcdir)/%.c
 	@echo "mkdeps $< > $@"
-## Need \< in regexp because otherwise when srcdir=. too much can be
-## matched.  Also we regexp-quote srcdir because "." is a matching
-## operator, and commonly appears in filenames.
-	@re=`echo 's,\<$(srcdir),,g' | sed 's/\./\\./g'`; \
-	  $(MKDEP) $< | sed $$re > $@-tmp
+## Use funny regexp because otherwise too much can be matched when
+## srcdir begins with ".".  Can't use \< since sed doesn't recognize
+## "." as a word start.  Regexp-quote srcdir because "." is a matching
+## operator which commonly appears in filenames.
+	@re=`echo 's,^$(srcdir)/*,,g;s, $(srcdir)/*, ,g' | sed 's,\.,\\\\.,g'`; \
+	  $(MKDEP) $< | sed "$$re" > $@-tmp
 	@if test -n "$o"; then			\
 	  sed 's/\.o:/$$o:/' $@-tmp > $@;	\
 	  rm $@-tmp;				\

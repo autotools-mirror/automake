@@ -97,6 +97,12 @@ $seen_make_set = 0;
 # Whether ud_GNU_GETTEXT has been seen in configure.in.
 $seen_gettext = 0;
 
+# 1 if AC_PROG_INSTALL seen, 2 if fp_PROG_INSTALL seen.
+$seen_prog_install = 0;
+
+# 1 if any scripts installed, 0 otherwise.
+$scripts_installed = 0;
+
 
 
 &initialize_global_constants;
@@ -122,6 +128,10 @@ foreach $am_file (@input_files)
 	&generate_makefile ($am_file);
     }
 }
+
+&am_conf_error ($scripts_installed ? 'fp_PROG_INSTALL' : 'AC_PROG_INSTALL'
+		. " must be used in configure.in")
+    unless $seen_prog_install > $scripts_installed;
 
 exit $exit_status;
 
@@ -369,7 +379,7 @@ sub handle_source_transform
 {
     local ($one_file, $obj) = @_;
     local ($objpat) = $obj;
-    $objpat =~ s/([.\$])/\\\1/g;
+    $objpat =~ s/(\W)/\\\1/g;
 
     # Look for file_SOURCES and file_OBJECTS.
     if (defined $contents{$one_file . "_SOURCES"})
@@ -381,8 +391,11 @@ sub handle_source_transform
 	    local (@result) = ();
 	    foreach (@files)
 	    {
-		# Just skip header files.
+		# Skip header files.
 		next if /\.h$/;
+		# Skip things that look like macro references.
+		next if /^\$\(.*\)$/;
+		next if /^\$\{.*\}$/;
 
 		if (/^(.*)\.[yl]$/)
 		{
@@ -399,7 +412,7 @@ sub handle_source_transform
 		# Transform .o or $o file into .P file (for automatic
 		# dependency code).
 		s/$objpat$/.P/g;
-		$dep_files{'.deps/' . $_} = 1;
+		$dep_files{'$(srcdir)/.deps/' . $_} = 1;
 	    }
 
 	    &pretty_print ($one_file . "_OBJECTS =", '', @result);
@@ -419,6 +432,7 @@ sub handle_source_transform
 			 . $obj . "\n");
 	push (@sources, $one_file . '.c');
 	push (@objects, $one_file . $obj);
+	$dep_files{'$(srcdir)/.deps/' . $one_file . '.P'} = 1;
     }
 
     if (defined $contents{'CONFIG_HEADER'})
@@ -507,7 +521,7 @@ sub handle_libraries
 			if ($iter ne 'alloca.c')
 			{
 			    ($rewrite = $iter) =~ s/\.c$/.P/;
-			    $dep_files{'.deps/' . $rewrite} = 1;
+			    $dep_files{'$(srcdir)/.deps/' . $rewrite} = 1;
 			    &require_file ($NORMAL, $iter);
 			}
 		    }
@@ -516,7 +530,7 @@ sub handle_libraries
 		{
 		    &am_error ("\@ALLOCA\@ seen but \`AC_FUNC_ALLOCA' not in \`configure.in'")
 			if ! defined $libsources{'alloca.c'};
-		    $dep_files{'.deps/alloca.P'} = 1;
+		    $dep_files{'$(srcdir)/.deps/alloca.P'} = 1;
 		    &require_file ($NORMAL, 'alloca.c');
 		}
 	    }
@@ -548,9 +562,11 @@ sub handle_libraries
 # Handle scripts.
 sub handle_scripts
 {
-    &am_install_var ('-clean',
-		     'scripts', 'SCRIPTS',
-		     'bin', 'sbin', 'libexec', 'noinst');
+    # FIXME can't determine if these scripts are really being
+    # installed or not.
+    $scripts_installed = &am_install_var ('-clean',
+					  'scripts', 'SCRIPTS',
+					  'bin', 'sbin', 'libexec', 'noinst');
 }
 
 # Search a file for a "version.texi" Texinfo include.  Return the name
@@ -1018,12 +1034,12 @@ sub handle_subdirs
 
     &am_conf_error
 	("ud_GNU_GETTEXT in configure.in but \`po' not in SUBDIRS")
-	    if $contents{'SUBDIRS'} !~ /\bpo\b/;
+	    if $seen_gettext && $contents{'SUBDIRS'} !~ /\bpo\b/;
     &am_conf_error
 	("ud_GNU_GETTEXT in configure.in but \`intl' not in SUBDIRS")
-	    if $contents{'SUBDIRS'} !~ /\bintl\b/;
+	    if $seen_gettext && $contents{'SUBDIRS'} !~ /\bintl\b/;
 
-    &require_file ($NORMAL, 'ABOUT-NLS');
+    &require_file ($NORMAL, 'ABOUT-NLS') if $seen_gettext;
 
     return if ! defined $contents{'SUBDIRS'};
 
@@ -1401,7 +1417,6 @@ sub scan_configure
     %libsources = ();
 
     local ($in_ac_output, @make_list) = 0;
-    local ($seen_prog_install) = 0;
     local ($seen_arg_prog) = 0;
     local ($seen_canonical) = 0;
     while (<CONFIGURE>)
@@ -1498,7 +1513,8 @@ sub scan_configure
 	# we only really require AC_ARG_PROGRAM if any program is
 	# installed.
 	$seen_make_set = 1 if /AC_PROG_MAKE_SET/;
-	$seen_prog_install = 1 if /fp_PROG_INSTALL/;
+	$seen_prog_install = 1 if ! $seen_prog_install && /AC_PROG_INSTALL/;
+	$seen_prog_install = 2 if ! $seen_prog_install && /fp_PROG_INSTALL/;
 	$seen_arg_prog = 1 if /AC_ARG_PROGRAM/;
     }
 
@@ -1510,8 +1526,6 @@ sub scan_configure
     &require_file ($NORMAL, 'config.guess', 'config.sub')
 	if $seen_canonical;
 
-    &am_conf_error ("fp_PROG_INSTALL must be used in configure.in")
-	unless $seen_prog_install;
     &am_conf_error ("AC_ARG_PROGRAM must be used in configure.in")
 	unless $seen_arg_prog;
 
