@@ -5392,29 +5392,49 @@ sub conditional_true_when ($$)
 
 
 # $BOOLEAN
-# &conditionals_true_when (@CONDS, @WHENS)
+# &conditionals_true_when (\@CONDS, $WHEN)
 # ----------------------------------------
-# Same as above, but true if all the @CONDS are true when *ALL*
-# the @WHENS are sufficient.
+# Same as above, but true only if all the @CONDS are true when $WHEN is true.
 #
-# If there are no @CONDS, then return true, of course. *BUT*, even if there
-# are @CONDS but @WHENS is empty, return true.  This is counter intuitive,
-# and against all the rules of logic, but is needed by the current code.
-# FIXME: Do something saner when the logic of conditionals is understood.
-sub conditionals_true_when (@@)
+# If there are no @CONDS, then return true.
+sub conditionals_true_when (\@$)
 {
-    my (@conds, @whens) = @_;
+    my ($condsref, $when) = @_;
 
-    foreach my $cond (@conds)
+    foreach my $cond (@$condsref)
     {
-      foreach my $when (@whens)
-      {
-	return 0
-	  unless conditional_true_when ($cond, $when);
-      }
+	return 0 unless conditional_true_when ($cond, $when);
     }
 
     return 1;
+}
+
+# $BOOLEAN
+# &conditional_is_redundant ($COND, @WHENS)
+# ----------------------------------------
+# Determine whether $COND is redundant with respect to @WHENS.
+#
+# Returns true if $COND is true for any of the conditions in @WHENS.
+#
+# If there are no @WHENS, then behave as if @WHENS contained a single empty
+# condition.
+sub conditional_is_redundant ($@)
+{
+    my ($cond, @whens) = @_;
+
+    if (@whens == 0)
+    {
+	return 1 if conditional_true_when ($cond, "");
+    }
+    else
+    {
+	foreach my $when (@whens)
+	{
+	    return 1 if conditional_true_when ($cond, $when);
+	}
+    }
+
+    return 0;
 }
 
 
@@ -5922,7 +5942,7 @@ sub variable_conditions_sub
 	# If this condition cannot be true when the parent conditions
 	# are true, then skip it.
 	next
-	  if ! conditionals_true_when ((@parent_conds), ($vcond));
+	  if ! conditionals_true_when (@parent_conds, $vcond);
 
 	push (@this_conds, $vcond);
 
@@ -5995,7 +6015,7 @@ sub variable_conditions_sub
 	    next if ! $ok;
 
 	    next
-	      if ! conditionals_true_when ((@parent_conds), ($perm));
+	      if ! conditionals_true_when (@parent_conds, $perm);
 
 	    # This permutation was not already handled, and is valid
 	    # for the parents.
@@ -6010,23 +6030,28 @@ sub variable_conditions_sub
 # Filter a list of conditionals so that only the exclusive ones are
 # retained.  For example, if both `COND1_TRUE COND2_TRUE' and
 # `COND1_TRUE' are in the list, discard the latter.
+# If the list is empty, return TRUE
 sub variable_conditions_reduce
 {
     my (@conds) = @_;
     my @ret = ();
-    foreach my $cond (@conds)
+    my $cond;
+    while(@conds > 0)
     {
+	$cond = shift(@conds);
+
         # FALSE is absorbent.
         if ($cond eq 'FALSE')
 	  {
 	    return ('FALSE');
 	  }
-	elsif (conditionals_true_when (($cond), (@ret)))
+	elsif (!conditional_is_redundant ($cond, @ret, @conds))
 	  {
 	    push (@ret, $cond);
 	  }
     }
 
+    return "TRUE" if @ret == 0;
     return @ret;
 }
 

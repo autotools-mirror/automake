@@ -61,6 +61,8 @@ cond7.test \
 cond8.test \
 cond9.test \
 cond10.test \
+cond11.test \
+cond12.test \
 condincl.test \
 condincl2.test \
 condlib.test \
