@@ -172,6 +172,7 @@ libobj9.test \
 libobj10.test \
 library.test \
 libtool.test \
+libtool2.test \
 link_c_cxx.test	\
 link_f_c.test \
 link_f_c_cxx.test \
