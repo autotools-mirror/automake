@@ -78,12 +78,9 @@ aclocal: aclocal.in Makefile
 	$(do_subst) < $(srcdir)/aclocal.in > aclocal
 	chmod +x aclocal
 
-## The master location for mdate-sh, is lib/mdate-sh.
+## The master location for INSTALL is lib/INSTALL.
 ## This is where `make fetch' will install new versions.
-## Make sure we also update the copy used by Automake.
-mdate-sh: lib/mdate-sh
-	cp lib/mdate-sh $@
-## Likewise for INSTALL
+## Make sure we also update this copy.
 INSTALL: lib/INSTALL
 	cp lib/INSTALL $@
 
