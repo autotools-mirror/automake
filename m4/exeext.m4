@@ -8,9 +8,10 @@ dnl environment. But if we're not, then it compiles a test program
 dnl to see if there is a suffix for executables.
 AC_DEFUN(AM_EXEEXT,
 [AC_REQUIRE([AM_CYGWIN32])
+AC_REQUIRE([AM_MINGW32])
 AC_MSG_CHECKING([for executable suffix])
 AC_CACHE_VAL(am_cv_exeext,
-[if test "$CYGWIN32" = yes; then
+[if test "$CYGWIN32" = yes || test "$MINGW32" = yes; then
 am_cv_exeext=.exe
 else
 cat > am_c_test.c << 'EOF'
