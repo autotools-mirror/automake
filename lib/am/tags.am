@@ -17,16 +17,21 @@
 ## 02111-1307, USA.
 tags: TAGS
 
-TAGS:
-	tags=;					\
-	here=`pwd`;				\
-	for subdir in $(SUBDIRS); do		\
+tags-recursive:
+	list="$(SUBDIRS)"; for subdir in $$list; do \
 ## Never fail here if a subdir fails.
-	  (cd $$subdir && $(MAKE) TAGS);	\
-	  test -f $$subdir/TAGS && {		\
+	  (cd $$subdir && $(MAKE) tags); \
+	done
+
+TAGS: tags-recursive $(HEADERS) $(SOURCES) $(CONFIG_HEADER) \
+		$(TAGS_DEPENDENCIES)
+	tags=; \
+	here=`pwd`; \
+	for subdir in $(SUBDIRS); do \
+	  test -f $$subdir/TAGS && { \
 	    tags="$$tags -i $$here/$$subdir/TAGS"; \
-	  }					\
-	done;					\
+	  } \
+	done; \
 ## Make sure we have something to run etags on.
 	test -z "$(ETAGS_ARGS)$(CONFIG_HEADER)$(SOURCES)$(HEADERS)$$tags" \
 	  || etags $(ETAGS_ARGS) $$tags $(CONFIG_HEADER) $(SOURCES) $(HEADERS)

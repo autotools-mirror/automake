@@ -33,6 +33,7 @@ CLEANFILES = automake
 # The following requires a fixed version of the Emacs 19.30 etags.
 ETAGS_ARGS = automake.in --lang=none \
  --regex='/^@node[ \t]+\([^,]+\)/\1/' automake.texi
+TAGS_DEPENDENCIES = automake.in automake.texi
 
 ## `test -x' is not portable.  So we use Perl instead.  If Perl
 ## doesn't exist, then this test is meaningless anyway.

@@ -70,6 +70,7 @@ CLEANFILES = automake
 # The following requires a fixed version of the Emacs 19.30 etags.
 ETAGS_ARGS = automake.in --lang=none \
  --regex='/^@node[ \t]+\([^,]+\)/\1/' automake.texi
+TAGS_DEPENDENCIES = automake.in automake.texi
 ACLOCAL = aclocal.m4
 mkinstalldirs = $(top_srcdir)/mkinstalldirs
 SCRIPTS = $(bin_SCRIPTS) $(pkgdata_SCRIPTS)
@@ -111,7 +112,7 @@ Makefile: Makefile.in config.status
 	CONFIG_FILES=$@ CONFIG_HEADERS= ./config.status
 config.status: configure
 	./config.status --recheck
-$(srcdir)/configure: configure.in $(ACLOCAL)
+$(srcdir)/configure: configure.in $(ACLOCAL) $(CONFIGURE_DEPENDENCIES)
 	cd $(srcdir) && autoconf
 automake: $(top_builddir)/config.status automake.in
 	cd $(top_builddir) && CONFIG_FILES=$@ CONFIG_HEADERS= ./config.status
@@ -244,15 +245,20 @@ maintainer-clean-recursive:
 
 tags: TAGS
 
-TAGS:
-	tags=;					\
-	here=`pwd`;				\
-	for subdir in $(SUBDIRS); do		\
-	  (cd $$subdir && $(MAKE) TAGS);	\
-	  test -f $$subdir/TAGS && {		\
+tags-recursive:
+	list="$(SUBDIRS)"; for subdir in $$list; do \
+	  (cd $$subdir && $(MAKE) tags); \
+	done
+
+TAGS: tags-recursive $(HEADERS) $(SOURCES) $(CONFIG_HEADER) \
+		$(TAGS_DEPENDENCIES)
+	tags=; \
+	here=`pwd`; \
+	for subdir in $(SUBDIRS); do \
+	  test -f $$subdir/TAGS && { \
 	    tags="$$tags -i $$here/$$subdir/TAGS"; \
-	  }					\
-	done;					\
+	  } \
+	done; \
 	test -z "$(ETAGS_ARGS)$(CONFIG_HEADER)$(SOURCES)$(HEADERS)$$tags" \
 	  || etags $(ETAGS_ARGS) $$tags $(CONFIG_HEADER) $(SOURCES) $(HEADERS)
 
@@ -389,8 +395,8 @@ install-data-recursive uninstall-data-recursive install-exec-recursive \
 uninstall-exec-recursive installdirs-recursive uninstalldirs-recursive \
 all-recursive check-recursive installcheck-recursive info-recursive \
 dvi-recursive mostlyclean-recursive distclean-recursive clean-recursive \
-maintainer-clean-recursive tags mostlyclean-tags distclean-tags \
-clean-tags maintainer-clean-tags distdir info dvi check \
+maintainer-clean-recursive tags tags-recursive mostlyclean-tags \
+distclean-tags clean-tags maintainer-clean-tags distdir info dvi check \
 installcheck-local installcheck all-am install-exec-am install-data-am \
 uninstall-am install-exec install-data install uninstall all \
 installdirs mostlyclean-generic distclean-generic clean-generic \
