@@ -26,6 +26,6 @@ AC_DEFUN([AM_PROG_AS],
 AC_REQUIRE([AC_PROG_CC])
 test "${CCAS+set}" = set || CCAS=$CC
 test "${CCASFLAGS+set}" = set || CCASFLAGS=$CFLAGS
-AC_ARG_VAR([CCAS],      [Assembler compiler command (defaults to CC)])
-AC_ARG_VAR([CCASFLAGS], [Assembler compiler flags (defaults to CFLAGS)])
+AC_ARG_VAR([CCAS],      [assembler compiler command (defaults to CC)])
+AC_ARG_VAR([CCASFLAGS], [assembler compiler flags (defaults to CFLAGS)])
 ])
