@@ -22,7 +22,7 @@ ansi2knr.1 aclocal.m4 lisp.am lisp-clean.am
 
 ## These must all be executable when installed.
 pkgdata_SCRIPTS = config.guess config.sub install-sh interlock mdate-sh \
-mkinstalldirs elisp-comp ylwrap
+mkinstalldirs elisp-comp ylwrap acinstall
 
 # The following requires a fixed version of the Emacs 19.30 etags.
 ETAGS_ARGS = automake.in aclocal.in --lang=none \
@@ -70,7 +70,7 @@ maintainer-check: automake aclocal
 
 # Tag before making distribution.  Also, don't make a distribution if
 # checks fail.  Also, make sure the NEWS file is up-to-date.
-cvs-dist: maintainer-check
+cvs-dist: maintainer-check distcheck
 	@if sed 1q $(srcdir)/NEWS | grep -e "$(VERSION)" > /dev/null; then :; else \
 	  echo "NEWS not updated; not releasing" 1>&2; \
 	  exit 1;				\

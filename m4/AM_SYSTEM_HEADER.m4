@@ -1,1 +1,3 @@
+# serial 1
+
 AC_DEFUN([AM_SYSTEM_HEADER])

@@ -2,6 +2,8 @@
 ## Check for a working fnmatch ##
 ## --------------------------- ##
 
+# serial 1
+
 # @defmac AC_FUNC_FNMATCH
 # @maindex FUNC_FNMATCH
 # @ovindex LIBOBJS

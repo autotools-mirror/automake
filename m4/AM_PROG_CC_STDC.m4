@@ -3,6 +3,8 @@
 ## From Franc,ois Pinard                     ##
 ## ----------------------------------------- ##
 
+# serial 1
+
 # @defmac AC_PROG_CC_STDC
 # @maindex PROG_CC_STDC
 # @ovindex CC
@@ -14,7 +16,7 @@
 #
 # If you use this macro, you should check after calling it whether the C
 # compiler has been set to accept ANSI C; if not, the shell variable
-# @code{ac_cv_prog_cc_stdc} is set to @samp{no}.  If you wrote your source
+# @code{am_cv_prog_cc_stdc} is set to @samp{no}.  If you wrote your source
 # code in ANSI C, you can make an un-ANSIfied copy of it by using the
 # program @code{ansi2knr}, which comes with Ghostscript.
 # @end defmac
@@ -22,8 +24,8 @@
 AC_DEFUN(AM_PROG_CC_STDC,
 [AC_REQUIRE([AC_PROG_CC])
 AC_MSG_CHECKING(for ${CC-cc} option to accept ANSI C)
-AC_CACHE_VAL(ac_cv_prog_cc_stdc,
-[ac_cv_prog_cc_stdc=no
+AC_CACHE_VAL(am_cv_prog_cc_stdc,
+[am_cv_prog_cc_stdc=no
 ac_save_CC="$CC"
 # Don't try gcc -ansi; that turns off useful extensions and
 # breaks some systems' header files.
@@ -44,13 +46,13 @@ choke me
 int test (int i, double x);
 struct s1 {int (*f) (int a);};
 struct s2 {int (*f) (double a);};],
-[ac_cv_prog_cc_stdc="$ac_arg"; break])
+[am_cv_prog_cc_stdc="$ac_arg"; break])
 done
 CC="$ac_save_CC"
 ])
-AC_MSG_RESULT($ac_cv_prog_cc_stdc)
-case "x$ac_cv_prog_cc_stdc" in
+AC_MSG_RESULT($am_cv_prog_cc_stdc)
+case "x$am_cv_prog_cc_stdc" in
   x|xno) ;;
-  *) CC="$CC $ac_cv_prog_cc_stdc" ;;
+  *) CC="$CC $am_cv_prog_cc_stdc" ;;
 esac
 ])

@@ -2,6 +2,9 @@
 ## Emacs LISP file handling
 ## From Ulrich Drepper
 ## ------------------------
+
+# serial 1
+
 AC_DEFUN(AM_PATH_LISPDIR,
  [AC_PATH_PROG(EMACS, emacs xemacs, no)
   if test $EMACS != "no"; then

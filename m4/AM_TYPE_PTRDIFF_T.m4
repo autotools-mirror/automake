@@ -1,10 +1,12 @@
 # From Ulrich Drepper.
 
+# serial 1
+
 AC_DEFUN(AM_TYPE_PTRDIFF_T,
-  [AC_CACHE_CHECK([for ptrdiff_t], ac_cv_type_ptrdiff_t,
+  [AC_CACHE_CHECK([for ptrdiff_t], am_cv_type_ptrdiff_t,
      [AC_TRY_COMPILE([#include <stddef.h>], [ptrdiff_t p],
-		     ac_cv_type_ptrdiff_t=yes, ac_cv_type_ptrdiff_t=no)])
-   if test $ac_cv_type_ptrdiff_t = yes; then
+		     am_cv_type_ptrdiff_t=yes, am_cv_type_ptrdiff_t=no)])
+   if test $am_cv_type_ptrdiff_t = yes; then
      AC_DEFINE(HAVE_PTRDIFF_T)
    fi
 ])

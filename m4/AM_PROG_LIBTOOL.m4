@@ -3,6 +3,8 @@
 ## From Gord Matzigkeit                                      ##
 ## --------------------------------------------------------- ##
 
+# serial 1
+
 AC_DEFUN(AM_PROG_LIBTOOL,
 [AC_REQUIRE([AC_CANONICAL_HOST])
 AC_REQUIRE([AC_PROG_CC])
@@ -85,6 +87,6 @@ esac
 # Holy mackerel, what a command line!
 CC="$CC" LD="$LD" RANLIB="$RANLIB" OBJTYPES="$OBJTYPES" \
 $srcdir/libtool --host="$host" --libdir="$am_prog_libtool_libdir" --no-validate-host \
---with-gcc="$ac_cv_prog_gcc" $am_prog_libtool_flags \
+--with-gcc="$am_cv_prog_gcc" $am_prog_libtool_flags \
 configure || AC_MSG_ERROR([libtool configure failed])
 ])

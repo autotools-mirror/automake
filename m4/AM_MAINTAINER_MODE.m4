@@ -1,5 +1,8 @@
 # Add --enable-maintainer-mode option to configure.
 # From Jim Meyering
+
+# serial 1
+
 AC_DEFUN(AM_MAINTAINER_MODE,
 [AC_MSG_CHECKING([whether to enable maintainer-specific portions of Makefiles])
   dnl maintainer-mode is disabled by default

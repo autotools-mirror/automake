@@ -3,6 +3,8 @@
 ## From Franc,ois Pinard               ##
 ## ----------------------------------- ##
 
+# serial 1
+
 AC_DEFUN(AM_WITH_DMALLOC,
 [AC_MSG_CHECKING(if malloc debugging is wanted)
 AC_ARG_WITH(dmalloc,

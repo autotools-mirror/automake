@@ -1,6 +1,9 @@
 dnl From Jim Meyering.
+
+# serial 1
+
 AC_DEFUN(AM_FUNC_STRTOD,
-[AC_CACHE_CHECK(for working strtod, ac_cv_func_strtod,
+[AC_CACHE_CHECK(for working strtod, am_cv_func_strtod,
 [AC_TRY_RUN([
 double strtod ();
 int
@@ -27,12 +30,12 @@ main()
   }
   exit (0);
 }
-], ac_cv_func_strtod=yes, ac_cv_func_strtod=no, ac_cv_func_strtod=no)])
-test $ac_cv_func_strtod = no && LIBOBJS="$LIBOBJS strtod.o"
+], am_cv_func_strtod=yes, am_cv_func_strtod=no, am_cv_func_strtod=no)])
+test $am_cv_func_strtod = no && LIBOBJS="$LIBOBJS strtod.o"
 AC_SUBST(LIBOBJS)dnl
-if test $ac_cv_func_strtod = no; then
+if test $am_cv_func_strtod = no; then
   AC_CHECK_FUNCS(pow)
-  if test $ac_cv_func_pow = no; then
+  if test $am_cv_func_pow = no; then
     AC_CHECK_LIB(m, pow)
   fi
 fi

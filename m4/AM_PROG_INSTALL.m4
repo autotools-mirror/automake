@@ -4,6 +4,8 @@
 ## From Franc,ois Pinard                                     ##
 ## --------------------------------------------------------- ##
 
+# serial 1
+
 AC_DEFUN(AM_PROG_INSTALL,
 [AC_REQUIRE([AC_PROG_INSTALL])
 test -z "$INSTALL_SCRIPT" && INSTALL_SCRIPT='${INSTALL} -m 755'
