@@ -3462,9 +3462,9 @@ sub handle_configure
 	    # Normal usage.
 	    $file = $lfile;
 	    $local = &basename ($file);
-	    @inputs = ($local . '.in');
+	    @inputs = ($file . '.in');
 	    @rewritten_inputs =
-		&rewrite_inputs_into_dependencies (1, $file . '.in');
+		&rewrite_inputs_into_dependencies (1, @inputs);
 	    $need_rewritten = 0;
 	}
 
@@ -3481,11 +3481,24 @@ sub handle_configure
 	    }
 	}
 
-	# Skip files not in this directory.
-	next unless &dirname ($file) eq $relative_dir;
-
-	# Skip any file that is an automake input.
+	# We skip any automake input files, as they are handled
+	# elsewhere.  We also skip files that aren't in this
+	# directory.  However, if the file's directory does not have a
+	# Makefile, and we are currently doing `.', then we create a
+	# rule to rebuild the file in the subdir.
 	next if -f $file . '.am';
+	local ($fd) = &dirname ($file);
+	if ($fd ne $relative_dir)
+	{
+	    if ($relative_dir eq '.' && ! &is_make_dir ($fd))
+	    {
+		$local = $file;
+	    }
+	    else
+	    {
+		next;
+	    }
+	}
 
 	# Some users have been tempted to put `stamp-h' in the
 	# AC_OUTPUT line.  This won't do the right thing, so we
