@@ -23,6 +23,7 @@ ansi2knr.1 aclocal.m4 lisp.am lisp-clean.am
 ## These must all be executable when installed.
 pkgdata_SCRIPTS = config.guess config.sub install-sh interlock mdate-sh \
 mkinstalldirs elisp-comp ylwrap acinstall
+EXTRA_DIST = acinstall
 
 # The following requires a fixed version of the Emacs 19.30 etags.
 ETAGS_ARGS = automake.in aclocal.in --lang=none \
@@ -34,7 +35,7 @@ TAGS_DEPENDENCIES = automake.in aclocal.in automake.texi
 # Check to make sure some installed files are executable.
 installcheck-local:
 	for file in $(pkgdata_SCRIPTS); do \
-	  $(PERL) -e "exit ! -x $(pkgdatadir)/$$file;" || exit 1; \
+	  $(PERL) -e "exit ! -x '$(pkgdatadir)/$$file';" || exit 1; \
 	done
 
 # Some simple checks, and then ordinary check.  These are only really
