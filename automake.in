@@ -2276,8 +2276,9 @@ sub handle_dist_worker
 	    (
 	     # We need an absolute path for --output-dir.  Thus the
 	     # weirdness.
-	     "\t" . 'here=`cd $(top_builddir) && pwd`; top_distdir=`cd $$top_distdir && pwd` ' . "\\\n"
-	     . "\t  && cd \$(top_srcdir) \\\n"
+	     "\t" . 'here=`cd $(top_builddir) && pwd`; ' . "\\\n"
+	     . "\t" . 'top_distdir=`cd $(top_distdir) && pwd`; ' . "\\\n"
+	     . "\tcd \$(top_srcdir) \\\n"
 	     . "\t  && \$(AUTOMAKE) --include-deps --build-dir=\$\$here --srcdir-name=\$(top_srcdir) --output-dir=\$\$top_distdir "
 	     # Set strictness of output.
 	     . ($cygnus_mode ? '--cygnus' : ('--' . $strictness_name))
@@ -2369,7 +2370,7 @@ sub handle_dist_worker
 	  || mkdir $(distdir)/$$subdir		\\
 	  || exit 1;				\\
 	  chmod 777 $(distdir)/$$subdir;	\\
-	  (cd $$subdir && $(MAKE) top_distdir=$(top_distdir) distdir=../$(distdir)/$$subdir distdir) \\
+	  (cd $$subdir && $(MAKE) top_distdir=../$(top_distdir) distdir=../$(distdir)/$$subdir distdir) \\
 	    || exit 1; \\
 	done
 ';
@@ -2385,7 +2386,7 @@ sub handle_dist_worker
     {
 	# We must explicitly set distdir and top_distdir for these
 	# sub-makes.
-	$output_rules .= "\t\$(MAKE) top_distdir=\"\$(distdir)\" distdir=\"\$(distdir)\" $targ\n";
+	$output_rules .= "\t\$(MAKE) top_distdir=\"\$(top_distdir)\" distdir=\"\$(distdir)\" $targ\n";
     }
 
     push (@phony, 'distdir');
@@ -2463,9 +2464,13 @@ sub handle_dist
 			      . "\n");
 	}
     }
-    if ($relative_dir ne '.')
+    if ($relative_dir eq '.')
     {
-	$output_rules .= "\nsubdir = " . $relative_dir . "\n";
+	$output_rules .= "top_distdir = \$(distdir)\n\n";
+    }
+    else
+    {
+	$output_rules .= "\nsubdir = " . $relative_dir . "\n\n";
     }
 
     # Generate 'dist' target, and maybe dist-shar / dist-zip / dist-tarZ.
