@@ -7266,6 +7266,11 @@ sub file_contents_internal ($$%)
     my $comment = '';
     my $spacing = '';
 
+    # The following flags are used to track rules spanning across
+    # multiple paragraphs.
+    my $is_rule = 0;		# 1 if we are processing a rule.
+    my $discard_rule = 0;	# 1 if the current rule should not be output.
+
     # We save the conditional stack on entry, and then check to make
     # sure it is the same on exit.  This lets us conditonally include
     # other files.
@@ -7282,11 +7287,13 @@ sub file_contents_internal ($$%)
 
  	if (/^$/)
  	{
+	    $is_rule = 0;
  	    # Stick empty line before the incoming macro or rule.
  	    $spacing = "\n";
  	}
  	elsif (/$COMMENT_PATTERN/mso)
  	{
+	    $is_rule = 0;
  	    # Stick comments before the incoming macro or rule.
  	    $comment = "$_\n";
 	}
@@ -7323,6 +7330,8 @@ sub file_contents_internal ($$%)
         # Handling rules.
  	elsif (/$RULE_PATTERN/mso)
  	{
+	  $is_rule = 1;
+	  $discard_rule = 0;
 	  # Separate relationship from optional actions: the first
 	  # `new-line tab" not preceded by backslash (continuation
 	  # line).
@@ -7343,7 +7352,16 @@ sub file_contents_internal ($$%)
 	  foreach (split (' ' , $targets))
 	    {
 	      # FIXME: We are not robust to people defining several targets
-	      # at once, only some of them being in %dependencies.
+	      # at once, only some of them being in %dependencies.  The
+	      # actions from the targets in %dependencies are usually generated
+	      # from the content of %actions, but if some targets in $targets
+	      # are not in %dependencies the ELSE branch will output
+	      # a rule for all $targets (i.e. the targets which are both
+	      # in %dependencies and $targets will have two rules).
+
+	      # FIXME: The logic here is not able to output a
+	      # multi-paragraph rule several time (e.g. for each conditional
+	      # it is defined for) because it only knows the first paragraph.
 
 	      # Output only if not in FALSE.
 	      if (defined $dependencies{$_}
@@ -7381,14 +7399,29 @@ sub file_contents_internal ($$%)
 
 		  if ($cond ne 'FALSE')
 		    {
-		      my $undefined_cond;
-		      for $undefined_cond (@undefined_conds)
+		      for my $undefined_cond (@undefined_conds)
 		      {
 			  my $condparagraph = $paragraph;
 			  $condparagraph =~ s/^/make_condition (@cond_stack, $undefined_cond)/gme;
-			  $result_rules .= "$spacing$comment$condparagraph\n"
-			      if rule_define ($targets, $is_am,
-					      "$cond $undefined_cond", $file);
+			  if (rule_define ($targets, $is_am,
+					  "$cond $undefined_cond", $file))
+			  {
+			      $result_rules .=
+				  "$spacing$comment$condparagraph\n"
+			  }
+			  else
+			  {
+			      # Remember to discard next paragraphs
+			      # if they belong to this rule.
+			      $discard_rule = 1;
+			  }
+		      }
+		      if ($#undefined_conds == -1)
+		      {
+			  # This target has already been defined, the rule
+			  # has not been defined. Remember to discard next
+			  # paragraphs if they belong to this rule.
+			  $discard_rule = 1;
 		      }
 		    }
 		  $comment = $spacing = '';
@@ -7402,6 +7435,8 @@ sub file_contents_internal ($$%)
 	    my ($var, $type, $val) = ($1, $2, $3);
  	    file_error ($file, "macro `$var' with trailing backslash")
 	      if /\\$/;
+
+	    $is_rule = 0;
 
 	    # Accumulating variables must not be output.
 	    append_comments $var, $spacing, $comment;
@@ -7422,7 +7457,7 @@ sub file_contents_internal ($$%)
 	    # This isn't an error; it is probably some tokens which
 	    # configure is supposed to replace, such as `@SET-MAKE@',
 	    # or some part of a rule cut by an if/endif.
-  	    if ($cond ne 'FALSE')
+  	    if ($cond ne 'FALSE' && ! ($is_rule && $discard_rule))
 	      {
 		s/^/make_condition (@cond_stack)/gme;
 		$result_rules .= "$spacing$comment$_\n";
