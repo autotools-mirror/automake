@@ -3267,7 +3267,7 @@ sub handle_configure
 		}
 	    }
 
-	    my ($stamp_name) = 'stamp-h';
+	    my $stamp_name = 'stamp-h';
 	    $stamp_name .= "${hdr_index}" if scalar (@config_headers) > 1;
 
             my $xform = '';
@@ -3804,8 +3804,8 @@ sub do_check_merge_target
 # Handle all 'clean' targets.
 sub handle_clean
 {
-    my ($xform) = '';
-    my ($name);
+    my $xform = '';
+    my $name;
 
     # Don't include `MAINTAINER'; it is handled specially below.
     foreach $name ('MOSTLY', '', 'DIST')
@@ -5309,6 +5309,25 @@ sub conditional_same
 }
 
 
+# &conditional_dump
+# -----------------
+sub conditional_dump ()
+{
+  print STDERR "%conditional =\n";
+  print STDERR "{\n";
+  foreach my $var (keys %conditional)
+    {
+      print STDERR "  $var = \n";
+      print STDERR "  {\n";
+      foreach my $vcond (keys %{${conditional{$var}}})
+      {
+	print STDERR "    $vcond => $conditional{$var}{$vcond}\n";
+      }
+      print STDERR "  }\n";
+    }
+  print STDERR "}\n";
+}
+
 # $BOOLEAN
 # &conditional_true_when ($COND, $WHEN)
 # -------------------------------------
@@ -5370,12 +5389,9 @@ sub conditionals_true_when (@@)
 # ambiguity.
 sub check_ambiguous_conditional
 {
-    local ($var_name, $cond) = @_;
-    local (@cond_vals) = split (' ', $conditional{$var_name});
-    while (@cond_vals)
+    my ($var_name, $cond) = @_;
+    foreach my $vcond (keys %{$conditional{$var_name}})
     {
-	local ($vcond) = shift (@cond_vals);
-	shift (@cond_vals);
 	if (&conditional_true_when ($vcond, $cond)
 	    || &conditional_true_when ($cond, $vcond))
 	{
@@ -5406,10 +5422,9 @@ sub variable_defined
 	    # look through the conditions under which the variable is
 	    # defined, and see if any of them match the conditional we
 	    # have been asked to check.
-	    local (@cond_vars) = split (' ', $conditional{$var});
-	    while (@cond_vars)
+	    foreach my $vcond (keys %{$conditional{$var}})
 	    {
-		if (&conditional_same ($cond, shift (@cond_vars)))
+		if (&conditional_same ($cond, $vcond))
 		{
 		    # Even a conditional examination is good enough
 		    # for us.  FIXME: really should maintain examined
@@ -5417,7 +5432,6 @@ sub variable_defined
 		    $content_seen{$var} = 1;
 		    return 1;
 		}
-		shift (@cond_vars);
 	    }
 
 	    # The variable is not defined for the given condition.
@@ -5544,20 +5558,18 @@ sub variable_conditions_sub
 	return &variable_conditions_permutations (sort keys %allconds);
     }
 
-    local (@this_conds) = ();
-    local (@condvals) = split (' ', $conditional{$var});
-    while (@condvals)
+    my @this_conds = ();
+    foreach my $vcond (keys %{$conditional{$var}})
     {
-	local ($cond) = shift (@condvals);
-	local ($val) = &unquote_cond_val (shift (@condvals));
+	my $val = ${$conditional{$var}}{$vcond};
 
 	next
-	  if ! conditionals_true_when ((@parent_conds), ($cond));
+	  if ! conditionals_true_when ((@parent_conds), ($vcond));
 
-	push (@this_conds, $cond);
+	push (@this_conds, $vcond);
 
-	push (@parent_conds, $cond);
-	local (@subvar_conds) = ();
+	push (@parent_conds, $vcond);
+	my @subvar_conds = ();
 	foreach (split (' ', $val))
 	{
 	    # If a comment seen, just leave.
@@ -5577,7 +5589,7 @@ sub variable_conditions_sub
 	# permutations of the subvariables.
 	if (! @subvar_conds)
 	{
-	    push (@new_conds, $cond);
+	    push (@new_conds, $vcond);
 	}
 	else
 	{
@@ -5786,8 +5798,8 @@ sub value_to_list
 # the including variable; this is only used for error reports.
 sub variable_value_as_list_worker
 {
-    local ($var, $cond, $parent) = @_;
-    local (@result);
+    my ($var, $cond, $parent) = @_;
+    my @result = ();
 
     if (defined $targets{$var})
     {
@@ -5806,23 +5818,19 @@ sub variable_value_as_list_worker
     elsif ($cond eq 'all' && $conditional{$var})
     {
 	$vars_scanned{$var} = 1;
-	local (@condvals) = split (' ', $conditional{$var});
-	while (@condvals)
+	foreach my $vcond (keys %{$conditional{$var}})
 	{
-	    shift (@condvals);
-	    local ($val) = &unquote_cond_val (shift (@condvals));
+	    my $val = ${$conditional{$var}}{$vcond};
 	    push (@result, &value_to_list ($var, $val, $cond));
 	}
     }
     elsif ($cond && $conditional{$var})
     {
 	$vars_scanned{$var} = 1;
-	local (@condvals) = split (' ', $conditional{$var});
-	local ($onceflag);
-	while (@condvals)
+	my $onceflag;
+	foreach my $vcond (keys %{$conditional{$var}})
 	{
-	    local ($vcond) = shift (@condvals);
-	    local ($val) = &unquote_cond_val (shift (@condvals));
+	    my $val = ${$conditional{$var}}{$vcond};
 	    if (&conditional_true_when ($vcond, $cond))
 	    {
 		# Warn if we have an ambiguity.  It's hard to know how
@@ -5894,24 +5902,14 @@ sub define_variable
 # pretty printed in the output file.
 sub define_pretty_variable
 {
-    local ($var, $cond, @value) = @_;
+    my ($var, $cond, @value) = @_;
     if (! defined $contents{$var}
 	|| ($cond && ! &variable_defined ($var, $cond)))
     {
 	$contents{$var} = join (' ', @value);
 	if ($cond)
 	{
-	    if ($conditional{$var})
-	    {
-		$conditional{$var} .= ' ';
-	    }
-	    else
-	    {
-		$conditional{$var} = '';
-	    }
-	    $conditional{$var} .= ($cond
-				   . ' '
-				   . &quote_cond_val ($contents{$var}));
+	    ${$conditional{$var}}{$cond} = $contents{$var};
 	}
 	&pretty_print ($cond . $var . ' = ', $cond, @value);
 	$content_seen{$var} = 1;
@@ -6074,7 +6072,7 @@ sub read_am_file
 		$contents{$last_var_name} .= $_;
 		if (@conditional_stack)
 		{
-		    $conditional{$last_var_name} .= &quote_cond_val ($_);
+		    ${conditional{$last_var_name}}{$conditional_stack[$#conditional_stack]} .= $_;
 		}
 	    }
 	}
@@ -6127,19 +6125,14 @@ sub read_am_file
 	    # existence.
 	    $contents{$1} = 1;
 	    $targets{$1} = 1;
-	    local ($cond_string) = join ('', @conditional_stack);
+	    my $cond_string = join ('', @conditional_stack);
 	    if (@conditional_stack)
 	    {
 		if ($conditional{$1})
 		{
 		    &check_ambiguous_conditional ($1, $cond_string);
-		    $conditional{$1} .= ' ';
 		}
-		else
-		{
-		    $conditional{$1} = '';
-		}
-		$conditional{$1} .= $cond_string . ' 1';
+		${$conditional{$1}}{$cond_string} = '1';
 	    }
 	    $content_lines{$1} = $.;
 	    $output_trailer .= $comment . $spacing . $cond_string . $_;
@@ -6222,11 +6215,12 @@ sub read_am_file
 	    {
 		$contents{$last_var_name} = $value;
 	    }
-	    local ($cond_string) = join ('', @conditional_stack);
+
+	    # Handle conditionalized macros.
 	    if (@conditional_stack)
 	    {
-		local ($found) = 0;
-		local ($val);
+	        my $cond_string = join ('', @conditional_stack);
+		my $done = 0;
 		if ($conditional{$last_var_name})
 		{
 		    if ($type eq '+')
@@ -6234,50 +6228,23 @@ sub read_am_file
 			# If we're adding to the conditional, and it
 			# exists, then we might want to simply replace
 			# the old value with the new one.
-			local (@new_vals, @cond_vals);
-			@cond_vals = split (' ', $conditional{$last_var_name});
-			while (@cond_vals)
+			foreach my $vcond (keys %{$conditional{$last_var_name}})
 			{
-			    local ($vcond) = shift (@cond_vals);
-			    push (@new_vals, $vcond);
 			    if (&conditional_same ($vcond, $cond_string))
 			    {
-				$found = 1;
-				$val = (&unquote_cond_val (shift (@cond_vals))
-					. ' ' . $value);
-				push (@new_vals, &quote_cond_val ($val));
-			    }
-			    else
-			    {
-				push (@new_vals, shift (@cond_vals));
+			        $done = 1;
+			        ${$conditional{$last_var_name}}{$vcond}
+			           .=  ' ' . $value;
 			    }
 			}
-			if ($found)
-			{
-			    $conditional{$last_var_name}
-			        = join (' ', @new_vals);
-			}
 		    }
-
-		    if (! $found)
-		    {
-			&check_ambiguous_conditional ($last_var_name,
-						      $cond_string);
-			$conditional{$last_var_name} .= ' ';
-			$val = $value;
-		    }
-		}
-		else
-		{
-		    $conditional{$last_var_name} = '';
-		    $val = $contents{$last_var_name};
-		}
-		if (! $found)
-		{
-		    $conditional{$last_var_name} .= ($cond_string
-						     . ' '
-						     . &quote_cond_val ($val));
-		}
+	        }
+	        if (! $done)
+		  {
+		    &check_ambiguous_conditional ($last_var_name,
+						  $cond_string);
+		    ${$conditional{$last_var_name}}{$cond_string} = $value;
+	          }
 	    }
 
 	    # FIXME: this doesn't always work correctly; it will group
@@ -6405,11 +6372,9 @@ sub read_main_am_file
 	$output_vars .= $am_vars{$curs};
 	if ($conditional{$curs})
 	{
-	    local (@cond_vals) = split (' ', $conditional{$curs});
-	    while (@cond_vals)
+	    foreach my $vcond (keys %{$conditional{$curs}})
 	    {
-		local ($vcond) = shift (@cond_vals);
-		local ($val) = &unquote_cond_val (shift (@cond_vals));
+	        my $val = ${$conditional{$curs}}{$vcond};
 		$output_vars .= ($vcond . $curs . ' '
 				 . $def_type{$curs} . "= ");
 		local ($line);
@@ -6918,7 +6883,7 @@ sub file_contents
 sub transform (%)
 {
     my (%pairs) = @_;
-    my ($result) = '';
+    my $result = '';
 
     foreach my $token (sort keys %pairs)
     {
@@ -6937,7 +6902,7 @@ sub transform (%)
 sub transform_cond (%)
 {
     my (%pairs) = @_;
-    my ($result) = '';
+    my $result = '';
 
     foreach my $token (sort keys %pairs)
     {
@@ -7628,7 +7593,7 @@ sub set_strictness
 sub dirname ($)
 {
     my ($file) = @_;
-    my ($sub);
+    my $sub;
 
     ($sub = $file) =~ s,/+[^/]+$,,g;
     $sub = '.' if $sub eq $file;
@@ -7659,7 +7624,7 @@ sub basename ($)
 sub backname ($)
 {
     my ($file) = @_;
-    my (@res);
+    my @res;
     foreach (split (/\//, $file))
     {
 	next if $_ eq '.' || $_ eq '';
