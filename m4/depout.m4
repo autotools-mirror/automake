@@ -10,7 +10,7 @@ dnl need in order to bootstrap the dependency handling code.
 AC_DEFUN(AM_OUTPUT_DEPENDENCY_COMMANDS,[
 AC_OUTPUT_COMMANDS([
 find . -name Makefile -print | while read mf; do
-  # Extract the definition of DEP_FILES from the Makefile withou
+  # Extract the definition of DEP_FILES from the Makefile without
   # running `make'.
   deps="`sed -n -e '
     /^DEP_FILES = .*\\\\$/ {
@@ -25,7 +25,7 @@ find . -name Makefile -print | while read mf; do
     /^DEP_FILES = / s/^DEP_FILES = //p' $mf`"
   # If we found a definition, proceed to create all the files.
   if test -n "$deps"; then
-    dirpart="`echo $mf | sed -e 's|/.*$||'`"
+    dirpart="`echo $mf | sed -e 's|/[^/]*$||'`"
     test -d "$dirpart/.deps" || mkdir "$dirpart/.deps"
     for file in $deps; do
       test -f "$dirpart/$file" || : > "$dirpart/$file"
