@@ -19,41 +19,12 @@
 
 AC_PREREQ([2.52])
 
-# serial 5
+# serial 6
 
 # When config.status generates a header, we must update the stamp-h file.
 # This file resides in the same directory as the config header
 # that is generated.  We must strip everything past the first ":",
 # and everything past the last "/".
-
-# The stamp files are numbered to have different names.
-# We could number them on a directory basis, but that's additional
-# complications, let's have a unique counter.
-m4_define([_AM_Config_Header_Index], [0])
-
-
-# _AM_CONFIG_HEADER(HEADER[:SOURCES], COMMANDS, INIT-COMMANDS)
-# ------------------------------------------------------------
-AC_DEFUN([_AM_CONFIG_HEADER],
-[m4_pushdef([_AM_Dest], patsubst([$1], [:.*]))
-m4_define([_AM_Config_Header_Index], m4_incr(_AM_Config_Header_Index))
-# Add the stamp file to the list of files AC keeps track of,
-# along with our hook
-AC_CONFIG_HEADERS([$1],
-                  [# update the timestamp
-echo timestamp >"AS_ESCAPE(_AM_DIRNAME(]_AM_Dest[))/stamp-h]_AM_Config_Header_Index["
-$2],
-                  [$3])
-m4_popdef([_AM_Dest])
-])# # _AM_CONFIG_HEADER
-
-
-# AM_CONFIG_HEADER(HEADER[:SOURCES]..., COMMANDS, INIT-COMMANDS)
-# --------------------------------------------------------------
-AC_DEFUN([AM_CONFIG_HEADER],
-[AC_FOREACH([_AM_File], [$1], [_AM_CONFIG_HEADER(_AM_File, [$2], [$3])])
-]) # AM_CONFIG_HEADER
-
 
 # _AM_DIRNAME(PATH)
 # -----------------
@@ -66,4 +37,41 @@ AC_DEFUN([_AM_DIRNAME],
 			  patsubst([$1], [^\(/\).*], [\1])),
 		    patsubst([$1], [^\(//\)\([^/].*\|$\)], [\1])),
 	      patsubst([$1], [^\(.*[^/]\)//*[^/][^/]*/*$], [\1]))[]dnl
-]) # _AM_DIRNAME
+])# _AM_DIRNAME
+
+
+# The stamp files are numbered to have different names.
+# We could number them on a directory basis, but that's additional
+# complications, let's have a unique counter.
+m4_define([_AM_STAMP_Count], [0])
+
+
+# _AM_STAMP(HEADER)
+# -----------------
+# The name of the stamp file for HEADER.
+AC_DEFUN([_AM_STAMP],
+[m4_define([_AM_STAMP_Count], m4_incr(_AM_STAMP_Count))dnl
+AS_ESCAPE(_AM_DIRNAME(patsubst([$1],
+                               [:.*])))/stamp-h[]_AM_STAMP_Count])
+
+
+# _AM_CONFIG_HEADER(HEADER[:SOURCES], COMMANDS, INIT-COMMANDS)
+# ------------------------------------------------------------
+# We used to try to get a real timestamp in stamp-h.  But the fear is that
+# that will cause unnecessary cvs conflicts.
+AC_DEFUN([_AM_CONFIG_HEADER],
+[# Add the stamp file to the list of files AC keeps track of,
+# along with our hook.
+AC_CONFIG_HEADERS([$1],
+                  [# update the timestamp
+echo 'timestamp for $1' >"_AM_STAMP([$1])"
+$2],
+                  [$3])
+])# _AM_CONFIG_HEADER
+
+
+# AM_CONFIG_HEADER(HEADER[:SOURCES]..., COMMANDS, INIT-COMMANDS)
+# --------------------------------------------------------------
+AC_DEFUN([AM_CONFIG_HEADER],
+[AC_FOREACH([_AM_File], [$1], [_AM_CONFIG_HEADER(_AM_File, [$2], [$3])])
+])# AM_CONFIG_HEADER
