@@ -143,6 +143,7 @@ extra.test \
 extra3.test \
 extra4.test \
 extra5.test \
+extra6.test \
 flibs.test \
 fnoc.test \
 fo.test	\
