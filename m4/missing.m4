@@ -12,8 +12,12 @@ dnl AM_MISSING_INSTALL_SH()
 AC_DEFUN(AM_MISSING_INSTALL_SH, [
 AC_REQUIRE([AM_MISSING_HAS_RUN])
 if test -z "$install_sh"; then
-   install_sh="${am_missing_run}install-sh"
-   test -f "$install_sh" || install_sh="${am_missing_run}install.sh"
+   install_sh="$ac_aux_dir/install-sh"
+   test -f "$install_sh" || install_sh="$ac_aux_dir/install.sh"
+   test -f "$install_sh" || install_sh="${am_missing_run}${ac_auxdir}/install-sh"
+   dnl FIXME: an evil hack: we remove the SHELL invocation from
+   dnl install_sh because automake adds it back in.  Sigh.
+   install_sh="`echo $install_sh | sed -e 's/\${SHELL}//'`"
 fi
 AC_SUBST(install_sh)])
 
