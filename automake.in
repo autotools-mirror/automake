@@ -6740,6 +6740,7 @@ sub file_contents ($%)
     my $comment = '';
     my $separator = '';
     my @cond_stack = ();
+    my $cond_string = '';
     foreach (split (/(?<!\\)\n(?![\t#])/, $contents))
     {
         # Strip leading new lines.  This can happen for comments:
@@ -6775,6 +6776,7 @@ sub file_contents ($%)
 		if ! $configure_cond{$cond} && $cond !~ /^TRUE|FALSE$/;
 	    push (@cond_stack,
 		  ($cond =~ /^TRUE|FALSE$/) ? "$cond" : "${cond}_TRUE");
+	    $cond_string = conditional_string (@cond_stack);
 	}
 	elsif (/$ELSE_PATTERN/o)
 	{
@@ -6789,6 +6791,7 @@ sub file_contents ($%)
 	    else
 	    {
 		$cond_stack[$#cond_stack] =~ s/TRUE$/FALSE/;
+		$cond_string = conditional_string (@cond_stack);
 	    }
 	}
 	elsif (/$ENDIF_PATTERN/o)
@@ -6800,6 +6803,7 @@ sub file_contents ($%)
 	    else
 	    {
 		pop @cond_stack;
+		$cond_string = conditional_string (@cond_stack);
 	    }
 	}
 
@@ -6827,7 +6831,10 @@ sub file_contents ($%)
 	    {
 	      # FIXME: We are not robust to people defining several targets
 	      # at once, only some of them being in %dependencies.
-	      if (defined $dependencies{$_})
+
+	      # Output only if not in FALSE.
+	      if (defined $dependencies{$_}
+		  && $cond_string ne "#")
 		{
 		  &depend ($_, @deps);
 		  $actions{$_} .= $actions;
@@ -6836,11 +6843,11 @@ sub file_contents ($%)
 		{
 		  # Free lance dependency.  Output the rule for all the
 		  # targets instead of one by one.
-		  if (!defined $targets{$targets})
+		  if (!defined $targets{$targets}
+		      && $cond_string ne "#")
 		    {
 		      $result_rules .= "$separator$comment$paragraph\n";
-		      rule_define ($targets, 1,
-				   conditional_string (@cond_stack), $.);
+		      rule_define ($targets, 1, $cond_string, $.);
 		    }
 		  $comment = $separator = '';
 		  last;
@@ -6854,7 +6861,7 @@ sub file_contents ($%)
 	      if /\\$/;;
 
 	    # Accumulating variables must not be output.
-	    macro_define ($var, 1, $type, '', $val, $.);
+	    macro_define ($var, 1, $type, $cond_string, $val, $.);
 
 	    # If the user has set some variables we were in charge
 	    # of (which is detected by the first reading of
