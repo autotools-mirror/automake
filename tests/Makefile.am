@@ -137,6 +137,7 @@ dejagnu2.test \
 depacl2.test \
 depcomp.test \
 depcomp2.test \
+depcomp3.test \
 depdist.test \
 depend.test \
 depend2.test \
