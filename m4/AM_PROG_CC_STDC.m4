@@ -20,10 +20,11 @@
 # @end defmac
 
 AC_DEFUN(AM_PROG_CC_STDC,
-[AC_MSG_CHECKING(for ${CC-cc} option to accept ANSI C)
+[AC_REQUIRE([AC_PROG_CC])
+AC_MSG_CHECKING(for ${CC-cc} option to accept ANSI C)
 AC_CACHE_VAL(ac_cv_prog_cc_stdc,
 [ac_cv_prog_cc_stdc=no
-ac_save_CFLAGS="$CFLAGS"
+ac_save_CC="$CC"
 # Don't try gcc -ansi; that turns off useful extensions and
 # breaks some systems' header files.
 # AIX			-qlanglvl=ansi
@@ -32,7 +33,7 @@ ac_save_CFLAGS="$CFLAGS"
 # SVR4			-Xc
 for ac_arg in "" -qlanglvl=ansi -std1 "-Aa -D_HPUX_SOURCE" -Xc
 do
-  CFLAGS="$ac_save_CFLAGS $ac_arg"
+  CC="$ac_save_CC $ac_arg"
   AC_TRY_COMPILE(
 [#if !defined(__STDC__) || __STDC__ != 1
 choke me
@@ -45,7 +46,7 @@ struct s1 {int (*f) (int a);};
 struct s2 {int (*f) (double a);};],
 [ac_cv_prog_cc_stdc="$ac_arg"; break])
 done
-CFLAGS="$ac_save_CFLAGS"
+CC="$ac_save_CC"
 ])
 AC_MSG_RESULT($ac_cv_prog_cc_stdc)
 case "x$ac_cv_prog_cc_stdc" in
