@@ -1,27 +1,37 @@
 #! /bin/sh
 
-# Test to make sure texinfo.tex correctly installed by -a when we're
-# using AC_CONFIG_AUX_DIR.  Bug report by by Per Cederqvist.
+# Test to make sure texinfo.tex is correctly installed and disted by
+# -a when we're using AC_CONFIG_AUX_DIR.  Bug report by by Per
+# Cederqvist.
 
 . $srcdir/defs || exit 1
 
-echo 'AC_CONFIG_AUX_DIR(aux)' >> configure.in
+cat > configure.in << 'END'
+PACKAGE=nonesuch
+VERSION=nonesuch
+AC_ARG_PROGRAM
+AC_PROG_INSTALL
+AC_OUTPUT(Makefile aux/Makefile)
+AC_CONFIG_AUX_DIR(aux)
+END
 
 cat > Makefile.am << 'END'
 info_TEXINFOS = textutils.texi
-magic:
-	@echo $(DISTFILES)
 END
 
 echo '@setfilename textutils.info' > textutils.texi
 
 test -d aux || mkdir aux
 
+cat > aux/Makefile.am << 'END'
+magic:
+	@echo $(DISTFILES)
+END
+
 $AUTOMAKE -a || exit 1
 
 test -f aux/texinfo.tex &&
-$MAKE -s -f Makefile.in SHELL=/bin/sh magic | grep 'aux/texinfo\.tex'
+$MAKE -s -f aux/Makefile.in SHELL=/bin/sh magic | grep 'texinfo\.tex'
 stat=$?
 
-rm -rf aux
 exit $stat
