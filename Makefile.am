@@ -20,9 +20,16 @@ subdirs.am tags-clean.am tags.am texi-vers.am texinfos.am
 
 pkgdata_DATA = COPYING INSTALL texinfo.tex ansi2knr.c ansi2knr.1 $(amfiles)
 
-## These must all be executable when installed.
-pkgdata_SCRIPTS = config.guess config.sub install-sh mdate-sh missing \
+## These must all be executable when installed.  However, if we use
+## _SCRIPTS, then the program transform will be applied, which is not
+## what we want.  So we make them executable by hand.
+pkgdata_DATA = config.guess config.sub install-sh mdate-sh missing \
 mkinstalldirs elisp-comp ylwrap acinstall
+
+install-data-hook:
+	@for prog in $(pkgdata_DATA); do \
+	  chmod +x $(pkgdatadir)/$$prog; \
+	done
 
 EXTRA_DIST = acinstall $(pkgdata_DATA)
 
