@@ -143,8 +143,10 @@ install-binSCRIPTS: $(bin_SCRIPTS)
 
 uninstall-binSCRIPTS:
 	@$(NORMAL_UNINSTALL)
-	list='$(bin_SCRIPTS)'; for p in $$list; do \
-	  rm -f $(DESTDIR)$(bindir)/`echo $$p|sed '$(transform)'`; \
+	@list='$(bin_SCRIPTS)'; for p in $$list; do \
+	  file="`echo $$p|sed '$(transform)'`"; \
+	  echo " rm -f $(DESTDIR)$(bindir)/$$file"; \
+	  rm -f $(DESTDIR)$(bindir)/$$file; \
 	done
 
 $(srcdir)/version.texi: stamp-vti
@@ -245,17 +247,19 @@ install-info-am: $(INFO_DEPS)
 uninstall-info:
 	$(PRE_UNINSTALL)
 	@if $(SHELL) -c 'install-info --version | sed 1q | fgrep -s -v -i debian' >/dev/null 2>&1; then \
-	  ii=yes; \
-	else ii=; fi; \
-	list='$(INFO_DEPS)'; \
-	for file in $$list; do \
-	  test -z "$ii" \
-	    || install-info --info-dir=$(DESTDIR)$(infodir) --remove $$file; \
-	done
+	  list='$(INFO_DEPS)'; \
+	  for file in $$list; do \
+	    echo " install-info --info-dir=$(DESTDIR)$(infodir) --remove $$file"; \
+	    install-info --info-dir=$(DESTDIR)$(infodir) --remove $$file; \
+	  done; \
+	else :; fi
 	@$(NORMAL_UNINSTALL)
-	list='$(INFO_DEPS)'; \
+	@list='$(INFO_DEPS)'; \
 	for file in $$list; do \
-	  (cd $(DESTDIR)$(infodir) && rm -f $$file $$file-[0-9] $$file-[0-9][0-9]); \
+	  (if cd $(DESTDIR)$(infodir); then \
+	     echo " rm -f $$file $$file-[0-9] $$file-[0-9][0-9])"; \
+	     rm -f $$file $$file-[0-9] $$file-[0-9][0-9]; \
+	   else :; fi); \
 	done
 
 dist-info: $(INFO_DEPS)
@@ -292,38 +296,36 @@ install-pkgdataDATA: $(pkgdata_DATA)
 	@$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)
 	@list='$(pkgdata_DATA)'; for p in $$list; do \
-	  if test -f $(srcdir)/$$p; then \
-	    echo " $(INSTALL_DATA) $(srcdir)/$$p $(DESTDIR)$(pkgdatadir)/$$p"; \
-	    $(INSTALL_DATA) $(srcdir)/$$p $(DESTDIR)$(pkgdatadir)/$$p; \
-	  else if test -f $$p; then \
-	    echo " $(INSTALL_DATA) $$p $(DESTDIR)$(pkgdatadir)/$$p"; \
-	    $(INSTALL_DATA) $$p $(DESTDIR)$(pkgdatadir)/$$p; \
-	  fi; fi; \
+	  if test -f "$$p"; then d= ; else d="$(srcdir)/"; fi; \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " $(INSTALL_DATA) $$d$$p $(DESTDIR)$(pkgdatadir)/$$f"; \
+	  $(INSTALL_DATA) $$d$$p $(DESTDIR)$(pkgdatadir)/$$f; \
 	done
 
 uninstall-pkgdataDATA:
 	@$(NORMAL_UNINSTALL)
-	list='$(pkgdata_DATA)'; for p in $$list; do \
-	  rm -f $(DESTDIR)$(pkgdatadir)/$$p; \
+	@list='$(pkgdata_DATA)'; for p in $$list; do \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(pkgdatadir)/$$f"; \
+	  rm -f $(DESTDIR)$(pkgdatadir)/$$f; \
 	done
 
 install-scriptDATA: $(script_DATA)
 	@$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(DESTDIR)$(scriptdir)
 	@list='$(script_DATA)'; for p in $$list; do \
-	  if test -f $(srcdir)/$$p; then \
-	    echo " $(INSTALL_DATA) $(srcdir)/$$p $(DESTDIR)$(scriptdir)/$$p"; \
-	    $(INSTALL_DATA) $(srcdir)/$$p $(DESTDIR)$(scriptdir)/$$p; \
-	  else if test -f $$p; then \
-	    echo " $(INSTALL_DATA) $$p $(DESTDIR)$(scriptdir)/$$p"; \
-	    $(INSTALL_DATA) $$p $(DESTDIR)$(scriptdir)/$$p; \
-	  fi; fi; \
+	  if test -f "$$p"; then d= ; else d="$(srcdir)/"; fi; \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " $(INSTALL_DATA) $$d$$p $(DESTDIR)$(scriptdir)/$$f"; \
+	  $(INSTALL_DATA) $$d$$p $(DESTDIR)$(scriptdir)/$$f; \
 	done
 
 uninstall-scriptDATA:
 	@$(NORMAL_UNINSTALL)
-	list='$(script_DATA)'; for p in $$list; do \
-	  rm -f $(DESTDIR)$(scriptdir)/$$p; \
+	@list='$(script_DATA)'; for p in $$list; do \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(scriptdir)/$$f"; \
+	  rm -f $(DESTDIR)$(scriptdir)/$$f; \
 	done
 
 # This directory's subdirectories are mostly independent; you can cd
@@ -563,9 +565,9 @@ distclean-tags clean-tags maintainer-clean-tags distdir info-am info \
 dvi-am dvi check check-am installcheck-local installcheck-am \
 installcheck install-exec-am install-exec install-data-am install-data \
 install-am install uninstall-am uninstall all-redirect all-am all \
-installdirs-am installdirs mostlyclean-generic distclean-generic \
-clean-generic maintainer-clean-generic clean mostlyclean distclean \
-maintainer-clean
+install-strip installdirs-am installdirs mostlyclean-generic \
+distclean-generic clean-generic maintainer-clean-generic clean \
+mostlyclean distclean maintainer-clean
 
 
 install-data-hook:

@@ -1,5 +1,5 @@
 ## automake - create Makefile.in from Makefile.am
-## Copyright (C) 1994, 1995, 1996, 1997, 1998 Free Software Foundation, Inc.
+## Copyright (C) 1994-98, 1999 Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -177,17 +177,19 @@ uninstall-info:
 ## Run two loops here so that we can handle PRE_UNINSTALL and
 ## NORMAL_UNINSTALL correctly.
 	@if $(SHELL) -c 'install-info --version | sed 1q | fgrep -s -v -i debian' >/dev/null 2>&1; then \
-	  ii=yes; \
-	else ii=; fi; \
-	list='$(INFO_DEPS)'; \
-	for file in $$list; do \
-	  test -z "$ii" \
-	    || install-info --info-dir=$(DESTDIR)$(infodir) --remove $$file; \
-	done
+	  list='$(INFO_DEPS)'; \
+	  for file in $$list; do \
+	    echo " install-info --info-dir=$(DESTDIR)$(infodir) --remove $$file"; \
+	    install-info --info-dir=$(DESTDIR)$(infodir) --remove $$file; \
+	  done; \
+	else :; fi
 	@$(NORMAL_UNINSTALL)
-	list='$(INFO_DEPS)'; \
+	@list='$(INFO_DEPS)'; \
 	for file in $$list; do \
-	  (cd $(DESTDIR)$(infodir) && rm -f $$file $$file-[0-9] $$file-[0-9][0-9]); \
+	  (if cd $(DESTDIR)$(infodir); then \
+	     echo " rm -f $$file $$file-[0-9] $$file-[0-9][0-9])"; \
+	     rm -f $$file $$file-[0-9] $$file-[0-9][0-9]; \
+	   else :; fi); \
 	done
 
 dist-info: $(INFO_DEPS)
