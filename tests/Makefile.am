@@ -13,11 +13,11 @@ comment2.test compile_f_c_cxx.test cond.test cond2.test cond3.test \
 cond4.test cond5.test cond6.test cond7.test condman.test condman2.test \
 conf2.test confdist.test confh.test confh2.test confh3.test \
 config.test confincl.test confsub.test confvar.test confvar2.test \
-cxxcpp.test cxxlibobj.test cxxlink.test cxxnoc.test cxxo.test \
-cygwin32.test defun.test defun2.test dejagnu.test depacl.test \
-depacl2.test depend.test depend2.test depend3.test discover.test \
-distdir.test dup.test dup2.test else.test empty.test error.test	\
-exdir.test exdir2.test exsource.test extra.test extra3.test \
+copy.test cxxcpp.test cxxlibobj.test cxxlink.test cxxnoc.test \
+cxxo.test cygwin32.test defun.test defun2.test dejagnu.test \
+depacl.test depacl2.test depend.test depend2.test depend3.test \
+discover.test distdir.test dup.test dup2.test else.test empty.test \
+error.test exdir.test exdir2.test exsource.test extra.test extra3.test \
 extra4.test flibs.test fnoc.test fo.test fonly.test fpinst2.test \
 fpinstall.test gnits.test implicit.test include.test info.test \
 insh.test insh2.test install.test installsh.test instdata.test \
