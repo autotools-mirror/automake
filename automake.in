@@ -6109,23 +6109,52 @@ sub variable_value_as_list_worker
 }
 
 
-# &variable_output ($VAR)
-# -----------------------
-sub variable_output ($)
+# &variable_output ($VAR, [@CONDS])
+# ---------------------------------
+# Output all the values of $VAR is @COND is not specified, else only
+# that corresponding to @COND.
+sub variable_output ($@)
 {
-  my ($var) = @_;
+  my ($var, @conds) = @_;
+
+  @conds = sort by_condition keys %{$conditional{$var}}
+    unless @conds;
 
   $output_vars .= $am_vars{$var}
     if defined $am_vars{$var};
 
-  foreach my $cond (sort by_condition keys %{$conditional{$var}})
+  foreach my $cond (@conds)
     {
       my $val = $conditional{$var}{$cond};
-      my $output_var = ($var . ' '
-			. $def_type{$var} . "= "
-			. $val);
+      my $output_var = "$var $def_type{$var}= $val";
       $output_var =~ s/^/&make_condition ($cond)/meg;
       $output_vars .= $output_var . "\n";
+    }
+}
+
+
+# &variable_pretty_output ($VAR, [@CONDS])
+# ----------------------------------------
+# Likewise, but pretty, i.e., we *split* the values at spaces.   Use only
+# with variables holding filenames.
+sub variable_pretty_output ($@)
+{
+  my ($var, @conds) = @_;
+
+  @conds = sort by_condition keys %{$conditional{$var}}
+    unless @conds;
+
+  $output_vars .= $am_vars{$var}
+    if defined $am_vars{$var};
+
+  foreach my $cond (@conds)
+    {
+      my $val = $conditional{$var}{$cond};
+      my $make_condition = make_condition ($cond);
+      $output_vars .= pretty_print_internal ("$make_condition$var"
+					     . " $def_type{$var}=",
+					     "$make_condition\t",
+					     split (' ' , $val));
     }
 }
 
@@ -6151,12 +6180,14 @@ sub define_pretty_variable
 {
     my ($var, $cond, @value) = @_;
 
+    # Beware that an empty $cond has a different semantics for
+    # macro_define and variable_pretty_output.
+    $cond ||= 'TRUE';
+
     if (! &variable_defined ($var, $cond))
     {
         macro_define ($var, 0, '', $cond, join (' ', @value), undef);
-        my $make_condition = &make_condition ($cond);
-	&pretty_print ($make_condition . $var . ' =',
-		       $make_condition, @value);
+	variable_pretty_output ($var, $cond || 'TRUE');
 	$content_seen{$var} = 1;
     }
     elsif ($var_was_plus_eq{$var})
@@ -6387,7 +6418,10 @@ sub read_am_file
 
 	      if (!/\\$/)
 		{
-		  $am_vars{$last_var_name} = $comment . $spacing;
+		  $am_vars{$last_var_name} .= "$spacing"
+		    if (!defined $am_vars{$last_var_name}
+			|| substr ($am_vars{$last_var_name}, -1) ne "\n");
+		  $am_vars{$last_var_name} .= "$comment";
 		  $comment = $spacing = '';
 		  macro_define ($last_var_name, 0,
 				   $last_var_type, $cond,
@@ -6473,7 +6507,11 @@ sub read_am_file
 		# FIXME: this doesn't always work correctly; it will
 		# group all comments for a given variable, no matter
 		# where defined.
-		$am_vars{$last_var_name} = $comment . $spacing;
+		# Accumulating variables must not be output.
+		$am_vars{$last_var_name} .= "$spacing"
+		  if (!defined $am_vars{$last_var_name}
+		      || substr ($am_vars{$last_var_name}, -1) ne "\n");
+		$am_vars{$last_var_name} .= "$comment";
 		$comment = $spacing = '';
 
 		macro_define ($last_var_name, 0,
@@ -6739,7 +6777,7 @@ sub file_contents_internal ($%)
     my $result_vars = '';
     my $result_rules = '';
     my $comment = '';
-    my $separator = '';
+    my $spacing = '';
     my @cond_stack = ();
     my $cond = '';
 
@@ -6756,7 +6794,7 @@ sub file_contents_internal ($%)
  	if (/^$/)
  	{
  	    # Stick empty line before the incoming macro or rule.
- 	    $separator = "\n";
+ 	    $spacing = "\n";
  	}
  	elsif (/$COMMENT_PATTERN/mso)
  	{
@@ -6843,10 +6881,10 @@ sub file_contents_internal ($%)
 		  if (!defined $targets{$targets}
 		      && $cond ne 'FALSE')
 		    {
-		      $result_rules .= "$separator$comment$paragraph\n";
+		      $result_rules .= "$spacing$comment$paragraph\n";
 		      rule_define ($targets, 1, $cond, $.);
 		    }
-		  $comment = $separator = '';
+		  $comment = $spacing = '';
 		  last;
 		}
 	    }
@@ -6858,17 +6896,20 @@ sub file_contents_internal ($%)
 	      if /\\$/;;
 
 	    # Accumulating variables must not be output.
-	    $am_vars{$var} .= "$separator$comment";
+	    $am_vars{$var} .= "$spacing"
+	      if (!defined $am_vars{$var}
+		  || substr ($am_vars{$var}, -1) ne "\n");
+	    $am_vars{$var} .= "$comment";
 	    macro_define ($var, 1, $type, $cond, $val, $.);
 	    push (@var_list, $var);
 
 	    # If the user has set some variables we were in charge
 	    # of (which is detected by the first reading of
 	    # `header-vars.am'), we must not output them.
-	    $result_vars .= "$separator$comment$_\n"
+	    $result_vars .= "$spacing$comment$_\n"
 	      if $type ne '+' && $var_is_am{$var} && $cond ne 'FALSE';
 
- 	    $comment = $separator = '';
+ 	    $comment = $spacing = '';
  	}
  	else
  	{
@@ -6877,9 +6918,9 @@ sub file_contents_internal ($%)
 	    # or some part of a rule cut by an if/endif.
   	    if ($cond ne 'FALSE')
 	      {
-		$result_rules .= "$separator$comment$_\n";
+		$result_rules .= "$spacing$comment$_\n";
 	      }
- 	    $comment = $separator = '';
+ 	    $comment = $spacing = '';
  	}
     }
 
