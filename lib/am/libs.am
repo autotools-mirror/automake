@@ -1,5 +1,5 @@
 ## automake - create Makefile.in from Makefile.am
-## Copyright (C) 1994, 1995, 1996, 1998, 1999, 2001, 2002, 2003
+## Copyright (C) 1994, 1995, 1996, 1998, 1999, 2001, 2002, 2003, 2004
 ## Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
@@ -17,6 +17,9 @@
 ## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 ## 02111-1307, USA.
 
+if %?INSTALL%
+include inst-vars.am
+endif %?INSTALL%
 
 ## ----------- ##
 ## Variables.  ##
@@ -49,8 +52,8 @@ install-%DIR%LIBRARIES: $(%DIR%_LIBRARIES)
 ## Compute basename of source file.  Unless this is a nobase_ target, we
 ## want to install 'python/foo.py' as '$(DESTDIR)$(%NDIR%dir)/foo.yo',
 ## not '$(DESTDIR)$(%NDIR%dir)/python/foo.yo'.
-?BASE?	    f="`echo $$p | sed -e 's|^.*/||'`"; \
-?!BASE?	    f="$$p"; \
+?BASE?	    f=$(am__strip_dir) \
+?!BASE?	    f=$$p; \
 	    echo " $(%DIR%LIBRARIES_INSTALL) $$p $(DESTDIR)$(%NDIR%dir)/$$f"; \
 	    $(%DIR%LIBRARIES_INSTALL) $$p $(DESTDIR)$(%NDIR%dir)/$$f; \
 	  else :; fi; \
@@ -63,7 +66,7 @@ install-%DIR%LIBRARIES: $(%DIR%_LIBRARIES)
 	@$(POST_INSTALL)
 	@list='$(%DIR%_LIBRARIES)'; for p in $$list; do \
 	  if test -f $$p; then \
-?BASE?	    p="`echo $$p | sed -e 's|^.*/||'`"; \
+?BASE?	    p=$(am__strip_dir) \
 ## Must ranlib after installing because mod time changes.
 	    echo " $(RANLIB) $(DESTDIR)$(%NDIR%dir)/$$p"; \
 	    $(RANLIB) $(DESTDIR)$(%NDIR%dir)/$$p; \
@@ -81,7 +84,7 @@ if %?INSTALL%
 uninstall-%DIR%LIBRARIES:
 	@$(NORMAL_UNINSTALL)
 	@list='$(%DIR%_LIBRARIES)'; for p in $$list; do \
-?BASE?	  p="`echo $$p | sed -e 's|^.*/||'`"; \
+?BASE?	  p=$(am__strip_dir) \
 	  echo " rm -f $(DESTDIR)$(%NDIR%dir)/$$p"; \
 	  rm -f $(DESTDIR)$(%NDIR%dir)/$$p; \
 	done

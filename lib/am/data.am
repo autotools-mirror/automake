@@ -1,5 +1,5 @@
 ## automake - create Makefile.in from Makefile.am
-## Copyright (C) 1994, 1995, 1996, 1998, 1999, 2001, 2003
+## Copyright (C) 1994, 1995, 1996, 1998, 1999, 2001, 2003, 2004
 ## Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
@@ -17,6 +17,10 @@
 ## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 ## 02111-1307, USA.
 
+if %?INSTALL%
+include inst-vars.am
+endif %?INSTALL%
+
 ## ------------ ##
 ## Installing.  ##
 ## ------------ ##
@@ -30,16 +34,18 @@ am__installdirs += $(DESTDIR)$(%NDIR%dir)
 install-%DIR%%PRIMARY%: $(%DIR%_%PRIMARY%)
 	@$(NORMAL_INSTALL)
 	$(mkdir_p) $(DESTDIR)$(%NDIR%dir)
+?!BASE?	@$(am__vpath_adj_setup) \
 ## Funny invocation because Makefile variable can be empty, leading to
 ## a syntax error in sh.
-	@list='$(%DIR%_%PRIMARY%)'; for p in $$list; do \
+?!BASE?	list='$(%DIR%_%PRIMARY%)'; for p in $$list; do \
+?BASE?	@list='$(%DIR%_%PRIMARY%)'; for p in $$list; do \
 ## A file can be in the source directory or the build directory.
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 ## If the _%PRIMARY% variable has an entry like foo/bar, install it as
 ## $(destdir)/bar, not $(destdir)/foo/bar.  The user can make a
 ## new dir variable or use a nobase_ target for the latter case.
-?BASE?	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-?!BASE?	  f="$$p"; \
+?BASE?	  f=$(am__strip_dir) \
+?!BASE?	  $(am__vpath_adj) \
 	  echo " $(%DIR%%PRIMARY%_INSTALL) $$d$$p $(DESTDIR)$(%NDIR%dir)/$$f"; \
 	  $(%DIR%%PRIMARY%_INSTALL) $$d$$p $(DESTDIR)$(%NDIR%dir)/$$f; \
 	done
@@ -54,9 +60,11 @@ if %?INSTALL%
 .PHONY uninstall-am: uninstall-%DIR%%PRIMARY%
 uninstall-%DIR%%PRIMARY%:
 	@$(NORMAL_UNINSTALL)
-	@list='$(%DIR%_%PRIMARY%)'; for p in $$list; do \
-?BASE?	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-?!BASE?	  f="$$p"; \
+?!BASE?	@$(am__vpath_adj_setup) \
+?!BASE?	list='$(%DIR%_%PRIMARY%)'; for p in $$list; do \
+?BASE?	@list='$(%DIR%_%PRIMARY%)'; for p in $$list; do \
+?BASE?	  f=$(am__strip_dir) \
+?!BASE?	  $(am__vpath_adj) \
 	  echo " rm -f $(DESTDIR)$(%NDIR%dir)/$$f"; \
 	  rm -f $(DESTDIR)$(%NDIR%dir)/$$f; \
 	done
