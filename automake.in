@@ -1708,6 +1708,9 @@ sub check_canonical_spelling
     return $xname;
 }
 
+
+# handle_programs ()
+# ------------------
 # Handle C programs.
 sub handle_programs
 {
@@ -1798,23 +1801,19 @@ sub handle_programs
 	    $xlink = $linker ? $linker : 'LINK';
 	}
 
-	local ($xexe);
+	local ($exeext) = '';
 	if ($seen_exeext && $one_file !~ /\./)
 	{
-	    $xexe = 's/\@EXEEXT\@/\$(EXEEXT)/g;';
-	}
-	else
-	{
-	    $xexe = 's/\@EXEEXT\@//g;';
+	    $exeext = '$(EXEEXT)';
 	}
 
 	$output_rules .=
 	    &file_contents_with_transform
-		('s/\@PROGRAM\@/' . $one_file . '/go;'
-		 . 's/\@XPROGRAM\@/' . $xname . '/go;'
-		 . 's/\@XLINK\@/' . $xlink . '/go;'
-		 . $xexe,
-		 'program');
+	      (&transform ('EXEEXT'   => $exeext,
+			   'PROGRAM'  => $one_file,
+			   'XPROGRAM' => $xname,
+			   'XLINK'    => $xlink),
+	       'program');
     }
 
     if (&variable_defined ('LDADD') && &handle_lib_objects ('', 'LDADD', 0))
