@@ -134,6 +134,7 @@ defun.test \
 defun2.test \
 dejagnu.test \
 dejagnu2.test \
+dejagnu3.test \
 depacl.test \
 depacl2.test \
 depcomp.test \
