@@ -103,8 +103,8 @@ maintainer-check: automake aclocal
 	  exit 1; \
 	fi
 ## Syntax check with default Perl (on my machine, Perl 5).
-	perllibdir=$(srcdir)/lib $(PERL) -c -w automake
-	perllibdir=$(srcdir)/lib $(PERL) -c -w aclocal
+	perllibdir=./lib:$(srcdir)/lib $(PERL) -c -w automake
+	perllibdir=./lib:$(srcdir)/lib $(PERL) -c -w aclocal
 ## expect no instances of '${...}'.  However, $${...} is ok, since that
 ## is a shell construct, not a Makefile construct.
 	@if grep -F '$${' $(srcdir)/lib/am/[a-z]*.am | \

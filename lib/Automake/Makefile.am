@@ -51,5 +51,7 @@ do_subst = sed -e 's,[@]datadir[@],$(datadir),g' -e 's,[@]PERL[@],$(PERL),g' \
 	    -e 's,[@]APIVERSION[@],$(APIVERSION),g' \
 	    -e 's,[@]SHELL[@],$(SHELL),g'
 
-Config.pm: Config.in
+Config.pm: Config.in Makefile
 	$(do_subst) <$(srcdir)/Config.in >$@
+
+EXTRA_DIST = Config.in
