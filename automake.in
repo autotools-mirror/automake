@@ -200,7 +200,7 @@ sub generate_makefile
     $relative_dir = &dirname ($makefile);
     # FIXME with new 'dist' target, don't need Makefile.in.  Probably
     # should remove it here.
-    @dist_common = ('Makefile.in', 'Makefile.am');
+    push_dist_common ('Makefile.in', 'Makefile.am');
 
     # Generate header before reading .am file.  The header must come
     # before anything else, and read_am_file copies code into the
@@ -213,15 +213,17 @@ sub generate_makefile
 
     &read_am_file ($makefile . '.am');
 
+    # Check first, because we might modify some state.
+    &check_gnu_standards;
+    &check_gnits_standards;
+
     # Program stuff.
     local ($programs) = &am_variable ('PROGRAMS');
     local ($libprograms) = &am_variable ('LIBPROGRAMS');
     local ($libraries) = &am_variable ('LIBRARIES');
-    local ($scripts) = &am_variable ('SCRIPTS');
-    local ($libscripts) = &am_variable ('LIBSCRIPTS');
 
     &handle_programs ($programs, $libprograms, $libraries);
-    &handle_scripts ($scripts, $libscripts);
+    &handle_scripts;
     &handle_libraries ($libraries);
 
     &handle_texinfo;
@@ -493,7 +495,7 @@ sub handle_texinfo
     {
 	# Got a hit.
 	push (@texis, 'version.texi');
-	push (@dist_common, 'version.texi', 'stamp-vti');
+	push_dist_common ('version.texi', 'stamp-vti');
 	push (@clean, 'vti');
 
 	local ($tfile);
@@ -508,7 +510,7 @@ sub handle_texinfo
     if (defined $contents{$infobase . "_TEXINFOS"})
     {
 	push (@texis, "\$" . $infobase . '_TEXINFOS');
-	push (@dist_common, "\$" . $infobase . '_TEXINFOS');
+	push_dist_common ("\$" . $infobase . '_TEXINFOS');
     }
 
     if ($#texis >= 0)
@@ -650,11 +652,12 @@ sub handle_dist
     {
 	if (-f ($relative_dir . "/" . $cfile))
 	{
-	    push (@dist_common, $cfile);
+	    push_dist_common ($cfile);
 	}
     }
 
-    $output_vars .= "DIST_COMMON = " . join (' ', @dist_common) . "\n\n";
+    $output_vars .= ("DIST_COMMON = " . join (' ', keys (%dist_common))
+		     . "\n\n");
 
     # Some boilerplate.
     $output_vars .= &file_contents ('dist-vars');
@@ -736,10 +739,14 @@ sub handle_configure
     }
     else
     {
+	&require_file ($NORMAL, 'configure.in');
+	# FIXME require 'configure'?  What if autoconf hasn't been run
+	# yet?
+
 	if (-f 'aclocal.m4')
 	{
 	    $output_vars .= "ACLOCAL = aclocal.m4\n";
-	    push (@dist_common, 'aclocal.m4');
+	    push_dist_common ('aclocal.m4');
 	}
 	$output_rules .= &file_contents ('remake');
 
@@ -755,20 +762,20 @@ sub handle_configure
 	if (-f 'acconfig.h')
 	{
 	    $output_vars .= "ACCONFIG = acconfig.h\n";
-	    push (@dist_common, 'acconfig.h');
+	    push_dist_common ('acconfig.h');
 	}
 	if (-f 'config.h.top')
 	{
 	    $output_vars .= "CONFIG_TOP = config.h.top\n";
-	    push (@dist_common, 'config.h.top');
+	    push_dist_common ('config.h.top');
 	}
 	if (-f 'config.h.bot')
 	{
 	    $output_vars .= "CONFIG_BOT = config.h.bot\n";
-	    push (@dist_common, 'config.h.bot');
+	    push_dist_common ('config.h.bot');
 	}
 
-	push (@dist_common, 'stamp-h.in', $contents{'CONFIG_HEADER'} . '.in');
+	push_dist_common ('stamp-h.in', $contents{'CONFIG_HEADER'} . '.in');
 
 	$output_rules .= &file_contents ('remake-hdr');
     }
@@ -999,6 +1006,25 @@ sub do_one_clean_target
 
 ################################################################
 
+# Do any extra checking for GNU standards.
+sub check_gnu_standards
+{
+    require_file ($GNU, 'ChangeLog');
+
+    if ($relative_dir eq '.')
+    {
+	# In top level (or only) directory.
+	require_file ($GNU, 'INSTALL', 'NEWS', 'README');
+    }
+}
+
+# Do any extra checking for GNITS standards.
+sub check_gnits_standards
+{
+}
+
+################################################################
+
 # Read Makefile.am and set up %contents.  Simultaneously copy lines
 # from Makefile.am into $output_trailer or $output_vars as
 # appropriate.  NOTE we put rules in the trailer section.  We want
@@ -1194,7 +1220,7 @@ sub initialize_per_input
 
     # This holds a list of files that are included in the
     # distribution.
-    @dist_common = ();
+    %dist_common = ();
 
     # List of dependencies for the obvious targets.
     @install_data = ();
@@ -1320,12 +1346,24 @@ sub require_file
 
     if (-f $fullfile)
     {
-	push (@dist_common, $file);
+	push_dist_common ($file);
     }
     elsif ($strictness >= $mystrict)
     {
 	# Only an error if strictness constraint violated.
 	&am_error ("required file \"$fullfile\" not found");
+    }
+}
+
+# Push a list of files onto dist_common.
+sub push_dist_common
+{
+    local (@files) = @_;
+    local ($file);
+
+    foreach $file (@files)
+    {
+	$dist_common{$file} = 1;
     }
 }
 
