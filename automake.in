@@ -42,7 +42,8 @@ $am_dir = "@datadir@/@PACKAGE@";
 @common_sometimes =
     (
      "version.texi", "aclocal.m4", "acconfig.h", "config.h.top",
-     "config.h.bot", "stamp-h.in", "mdate-sh"
+     "config.h.bot", "stamp-h.in", "mdate-sh", "ansi2knr.c",
+     "ansi2knr.1"
      );
 
 $USAGE = "  --amdir=DIR           directory storing config files
@@ -319,9 +320,14 @@ sub handle_programs
     push (@suffixes, '.c', '.o');
     if (defined $contents{'@kr@'})
     {
-	$obj = '${kr}.o';
+	$obj = '.${kr}o';
+	push (@suffixes, '._c', '._o');
+
+	&require_file ('ansi2knr.c');
+	&require_file ('ansi2knr.1');
+
+	$output_vars .= &file_contents ('kr-vars');
 	$output_rules .= &file_contents ('compile-kr');
-	push (@suffixes, '.krc', '.krh', '.kro');
     }
 
     local (@sources, @objects);
@@ -864,6 +870,12 @@ sub read_am_file
 		    $contents{$last_var_name} .= $_;
 		}
 	    }
+	}
+	elsif ($_ eq '@kr@')
+	{
+	    # Special case: this means we want automatic
+	    # de-ANSI-fication.  FIXME think of a better way.
+	    $contents{'@kr@'} = 1;
 	}
 	elsif (m/^ *([a-zA-Z_.][a-zA-Z0-9_.]*) *:/)
 	{
