@@ -35,7 +35,18 @@ if %AMDEP%
 	depfile='$(DEPDIR)/%BASE%.Po' tmpdepfile='$(DEPDIR)/%BASE%.TPo' @AMDEPBACKSLASH@
 	$(%FPFX%DEPMODE) $(depcomp) @AMDEPBACKSLASH@
 endif %AMDEP%
-	%COMPILE% -c -o %OBJ% `test -f %SOURCE% || echo '$(srcdir)/'`%SOURCE%
+?-o?	%COMPILE% %-c% %-o% %OBJ% `test -f %SOURCE% || echo '$(srcdir)/'`%SOURCE%
+?!-o?	%COMPILE% %-c% `test -f %SOURCE% || echo '$(srcdir)/'`%SOURCE%
+
+?GENERIC?.%EXT%.obj:
+?!GENERIC?%OBJOBJ%: %SOURCE%
+if %AMDEP%
+	source='%SOURCE%' object='%OBJOBJ%' libtool=no @AMDEPBACKSLASH@
+	depfile='$(DEPDIR)/%BASE%.Po' tmpdepfile='$(DEPDIR)/%BASE%.TPo' @AMDEPBACKSLASH@
+	$(%FPFX%DEPMODE) $(depcomp) @AMDEPBACKSLASH@
+endif %AMDEP%
+?-o?	%COMPILE% %-c% %-o% %OBJOBJ% `cygpath -w %SOURCE%`
+?!-o?	%COMPILE% %-c% `cygpath -w %SOURCE%`
 
 if %?LIBTOOL%
 ?GENERIC?.%EXT%.lo:
@@ -45,14 +56,6 @@ if  %AMDEP%
 	depfile='$(DEPDIR)/%BASE%.Plo' tmpdepfile='$(DEPDIR)/%BASE%.TPlo' @AMDEPBACKSLASH@
 	$(%FPFX%DEPMODE) $(depcomp) @AMDEPBACKSLASH@
 endif  %AMDEP%
-	%LTCOMPILE% -c -o %LTOBJ% `test -f %SOURCE% || echo '$(srcdir)/'`%SOURCE%
+## We can always use `-o' with Libtool.
+	%LTCOMPILE% %-c% -o %LTOBJ% `test -f %SOURCE% || echo '$(srcdir)/'`%SOURCE%
 endif %?LIBTOOL%
-
-?GENERIC?.%EXT%.obj:
-?!GENERIC?%OBJOBJ%: %SOURCE%
-if %AMDEP%
-	source='%SOURCE%' object='%OBJOBJ%' libtool=no @AMDEPBACKSLASH@
-	depfile='$(DEPDIR)/%BASE%.Po' tmpdepfile='$(DEPDIR)/%BASE%.TPo' @AMDEPBACKSLASH@
-	$(%FPFX%DEPMODE) $(depcomp) @AMDEPBACKSLASH@
-endif %AMDEP%
-	%COMPILE% -c -o %OBJOBJ% `cygpath -w %SOURCE%`

@@ -40,13 +40,16 @@ use Automake::Struct;
 struct ('ansi'    => '$',
 	'autodep' => '$',
         'compile'  => '$',
+        # Flag to require compilation without linking (-c).
+        'compile_flag' => '$',
         'compiler'  => '$',
 	'derived_autodep' => '$',
         'extensions'      => '@',
         'flags' => '$',
         'linker' => '$',
         'name'       => '$',
-        'output_arg' => '$',
+        # Flag to specify the output file (-o).
+        'output_flag' => '$',
 	# `pure' is `1' or `'.  A `pure' language is one where, if
 	# all the files in a directory are of that language, then we
 	# do not require the C compiler or any code to call it.
@@ -757,7 +760,7 @@ register_language ('name' => 'c',
 		   'flags' => 'CFLAGS',
 		   'compile' => '$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)',
 		   'compiler' => 'COMPILE',
-		   'output_arg' => '-c',
+		   'compile_flag' => '-c',
 		   'extensions' => ['c'],
 		   '_finish' => \&lang_c_finish);
 register_language ('name' => 'cxx',
@@ -766,7 +769,8 @@ register_language ('name' => 'cxx',
 		   'flags' => 'CXXFLAGS',
 		    'compile' => '$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)',
 		   'compiler' => 'CXXCOMPILE',
-		   'output_arg' => '-c -o $@',
+		   'compile_flag' => '-c',
+		   'output_flag' => '-o',
 		   'pure' => 1,
 		   'extensions' => ['c++', 'cc', 'cpp', 'cxx', 'C'],
 		   '_finish' => \&lang_cxx_finish);
@@ -776,7 +780,8 @@ register_language ('name' => 'objc',
 		   'flags' => 'OBJCFLAGS',
 		   'compile' => '$(OBJC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_OBJCFLAGS) $(OBJCFLAGS)',
 		   'compiler' => 'OBJCCOMPILE',
-		   'output_arg' => '-c -o $@',
+		   'compile_flag' => '-c',
+		   'output_flag' => '-o',
 		   'pure' => 1,
 		   'extensions' => ['m'],
 		   '_finish' => \&lang_objc_finish);
@@ -811,7 +816,7 @@ register_language ('name' => 'asm',
 		   'compile' => '$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)',
 		   # FIXME: a different compiler?
 		   'compiler' => 'COMPILE',
-		   'output_arg' => '-c',
+		   'compile_flag' => '-c',
 		   'extensions' => ['s', 'S'],
 		   # We need the C code for assembly.
 		   '_finish' => \&lang_c_finish);
@@ -821,7 +826,8 @@ register_language ('name' => 'f77',
 		   'flags' => 'FFLAGS',
 		   'compile' => '$(F77) $(AM_FFLAGS) $(FFLAGS)',
 		   'compiler' => 'F77COMPILE',
-		   'output_arg' => '-c -o $@',
+		   'compile_flag' => '-c',
+		   'output_flag' => '-o',
 		   'pure' => 1,
 		   'extensions' => ['f', 'for', 'f90'],
 		   '_finish' => \&lang_f77_finish);
@@ -830,7 +836,8 @@ register_language ('name' => 'ppf77',
 		   'flags' => 'FFLAGS',
 		   'compile' => '$(F77) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_FFLAGS) $(FFLAGS)',
 		   'compiler' => 'PPF77COMPILE',
-		   'output_arg' => '-c -o $@',
+		   'compile_flag' => '-c',
+		   'output_flag' => '-o',
 		   'pure' => 1,
 		   'extensions' => ['F'],
 		    '_finish' => \&lang_ppf77_finish);
@@ -840,7 +847,8 @@ register_language ('name' => 'ratfor',
 		   # FIXME also FFLAGS.
 		   'compile' => '$(F77) $(AM_FFLAGS) $(FFLAGS) $(AM_RFLAGS) $(RFLAGS)',
 		   'compiler' => 'RCOMPILE',
-		   'output_arg' => '-c -o $@',
+		   'compile_flag' => '-c',
+		   'output_flag' => '-o',
 		   'pure' => 1,
 		   'extensions' => ['r'],
 		   '_finish' => \&lang_ratfor_finish);
@@ -851,7 +859,8 @@ register_language ('name' => 'java',
 		   'flags' => 'GCJFLAGS',
 		   'compile' => '$(GCJ) $(AM_GCJFLAGS) $(GCJFLAGS)',
 		   'compiler' => 'GCJCOMPILE',
-		   'output_arg' => '-c -o $@',
+		   'compile_flag' => '-c',
+		   'output_flag' => '-o',
 		   'pure' => 1,
 		   'extensions' => ['java', 'class', 'zip', 'jar'],
 		   '_finish' => \&lang_java_finish);
@@ -1378,44 +1387,39 @@ sub handle_languages
       {
 	my $lang = $languages{$extension_map{$ext}};
 
-	 # Get information on $LANG.
+	# Get information on $LANG.
 	my $pfx = $lang->autodep;
 	my $fpfx = ($pfx eq '') ? 'CC' : $pfx;
 
-	my %transform = ('PFX'  => $pfx,
-			 'FPFX' => $fpfx,
+	# Some C compilers don't support -c -o.  Use it only if really
+	# needed.
+	my $output_flag = $lang->output_flag || '';
+	$output_flag = '-o'
+	  if (! $output_flag
+	      && $lang->flags eq 'CFLAGS'
+	      && defined $options{'subdir-objects'});
+
+	my %transform = ('EXT'     => $ext,
+			 'PFX'     => $pfx,
+			 'FPFX'    => $fpfx,
 			 'LIBTOOL' => $seen_libtool,
-			 'AMDEP'   => $use_dependencies ? 'AMDEP' : 'FALSE');
+			 'AMDEP'   => $use_dependencies ? 'AMDEP' : 'FALSE',
+			 '-c'      => $lang->compile_flag || '',
+			 '-o'      => $output_flag);
 
 	# First include code for ordinary objects.
 	{
-	  my $outarg = $lang->output_arg;
-	  my $ltoutarg = '';
-	  if ($lang->flags eq 'CFLAGS')
-	    {
-	      # C compilers don't always support -c -o.
-	      if (defined $options{'subdir-objects'})
-		{
-		  $outarg .= ' -o $@';
-		}
-	      # We can always use -c -o with libtool.
-	      $ltoutarg = ' -o $@';
-	    }
-
 	  my %transform = (%transform,
 			   'GENERIC'   => 1,
-			   'EXT'       => $ext,
 
 			   'BASE'      => '$*',
 			   'SOURCE'    => '$<',
 			   'OBJ'       => '$@',
-			   'LTOBJ'     => '$@',
 			   'OBJOBJ'    => '$@',
+			   'LTOBJ'     => '$@',
 
 			   'COMPILE'   => '$(' . $lang->compiler . ')',
-			   'LTCOMPILE' => '$(LT' . $lang->compiler . ')',
-			   'OUTARG'   => $outarg,
-			   'LTOUTARG' => $ltoutarg);
+			   'LTCOMPILE' => '$(LT' . $lang->compiler . ')');
 
 
 	  # Generate the appropriate rules for this extension.  If
@@ -1458,11 +1462,13 @@ sub handle_languages
 		$output_rules .= &file_contents ('depend2',
 						 (%transform,
 						  'GENERIC'   => 0,
+
 						  'BASE'      => $obj,
 						  'SOURCE'    => $source,
 						  'OBJ'       => "$obj.o",
 						  'OBJOBJ'    => "$obj.obj",
 						  'LTOBJ'     => "$obj.lo",
+
 						  'COMPILE'   => $obj_compile,
 						  'LTCOMPILE' => $obj_ltcompile))
 	      }
@@ -1798,7 +1804,9 @@ sub handle_single_transform_list ($$$@)
                 my $val = "(${derived}_${flag}";
                 ($rule = $lang->compile) =~ s/\(AM_$flag/$val/;
 
-                $rule .= ' ' . $lang->output_arg;
+                $rule .= ' ' . $lang->compile_flag;
+		$rule .= ' ' . $lang->output_flag . '$@'
+		  if $lang->output_flag;
                 # For C we have to add the -o, because the
                 # standard rule doesn't include it.
                 if ($lang->flags eq 'CFLAGS')
