@@ -293,6 +293,7 @@ ltcond2.test \
 ltconv.test \
 ltdeps.test \
 ltlibobjs.test \
+ltlibsrc.test \
 maintclean.test \
 make.test \
 makej.test \
