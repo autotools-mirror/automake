@@ -128,16 +128,15 @@ documents version @value{VERSION}.
 Automake is a tool for automatically generating
 @file{Makefile.in}s from files called @file{Makefile.am}.  The
 @file{Makefile.am} is basically a series of @code{make} macro
-definitions (with the occasional rule thrown in).  The generated
+definitions (with rules being thrown in occasionally).  The generated
 @file{Makefile.in}s are compliant with the GNU Makefile standards.
 
 The GNU Makefile Standards Document
-(@pxref{Makefile Conventions, , , standards.info, The
-GNU Coding Standards})
-is long, complicated,
-and subject to change.  The goal of Automake is to remove the
-burden of Makefile maintenance from back the individual GNU maintainer
-(and put it on the back of the Automake maintainer).
+(@pxref{Makefile Conventions, , , standards.info, The GNU Coding Standards})
+is long, complicated, and subject to change.  The goal of Automake is to
+remove the burden of Makefile maintenance from the back of the
+individual GNU maintainer (and put it on the back of the Automake
+maintainer).
 
 The typical Automake input files is simply a series of macro
 definitions.  Each such file is processed to create a
@@ -161,10 +160,10 @@ Mail suggestions and bug reports for Automake to tromey@@cygnus.com.
 @chapter Creating a @file{Makefile.in}
 
 To create all the @file{Makefile.in}s for a package, run the
-@code{automake} program with no arguments.  @code{automake} will
-automatically find each appropriate @file{Makefile.am} (by scanning
-@file{configure.in}; @pxref{configure}) and generate the corresponding
-@file{Makefile.in}.
+@code{automake} program in the top level directory, with no arguments.
+@code{automake} will automatically find each appropriate
+@file{Makefile.am} (by scanning @file{configure.in}; @pxref{configure})
+and generate the corresponding @file{Makefile.in}.
 
 You can optionally give @code{automake} an argument; @samp{.am} is
 appended to the argument and the result is used as the name of the input
@@ -189,7 +188,7 @@ Print a summary of the command line options and exit.
 
 @item --include-deps
 Include all automatically generated dependency information
-(@pxref{Dependencies}) see dependencies) in the generated
+(@pxref{Dependencies}) in the generated
 @file{Makefile.in}.  This is generally done when making a distribution;
 see @ref{Dist}.
 
@@ -197,8 +196,8 @@ see @ref{Dist}.
 Automake requires certain common files to exist in certain situations;
 for instance @file{config.guess} is required if @file{configure.in} runs
 @samp{AC_CANONICAL_HOST}.  Automake is distributed with several of these
-files; this option will cause the missing ones to be installed when
-possible.
+files; this option will cause the missing ones to be automatically added
+to the package, whenever possible.
 
 @item --output-dir=@var{dir}
 Put the generated @file{Makefile.in} in the directory @var{dir}.
@@ -234,10 +233,10 @@ The @file{Makefile.am} for such a package by definition lacks a
 
 A deep package is one in which all the source lies in subdirectories;
 the top level directory contains mainly configuration information.  GNU
-cpio is a good example of such a package (as is GNU @code{tar}, although
-it does not presently use @code{automake}).  The top level
-@file{Makefile.am} for a deep package will contain a @samp{SUBDIRS}
-macro, but no other macros to define objects which are built.
+cpio is a good example of such a package, as is GNU @code{tar}.  The top
+level @file{Makefile.am} for a deep package will contain a
+@samp{SUBDIRS} macro, but no other macros to define objects which are
+built.
 
 A shallow package is one in which the primary source resides in the
 top-level directory, while various parts (typically libraries) reside in
@@ -257,11 +256,13 @@ conformance.
 The valid strictness levels are:
 
 @table @samp
-@item normal
+@item foriegn
 Automake will check for only those things which are absolutely
 required for proper operations.  For instance, whereas GNU standards
 dictate the existence of a @file{NEWS} file, it will not be required in
-this mode.
+this mode.  The name comes from the fact that Automake is intended to be
+used for GNU programs; these relaxed rules are not the standard mode of
+operation.
 
 @item gnu
 Automake will check -- as much as possible -- for compliance to the GNU
@@ -282,11 +283,11 @@ it easy to decide how programs (and other derived objects) are built,
 and how they are installed.  This scheme also supports @code{configure}
 time determination of what should be built.
 
-@vindex PROGRAMS
 At @code{make} time, certain variables are used to determine which
 objects are to be built.  These variables are called ``primary''
 variables.  For instance, the primary variable @samp{PROGRAMS} holds a
 list of programs which are to be compiled and linked.
+@vindex PROGRAMS
 
 A different set of variables is used to decide where the built objects
 should be installed.  These variables are named after the primary
@@ -463,7 +464,7 @@ the generated @file{Makefile} will run both locally and in all specified
 subdirectories.  Note that the directories listed in @samp{SUBDIRS} are
 not required to contain @file{Makefile.am}s; only @file{Makefile}s
 (after configuration).  This allows inclusion of libraries from packages
-which do not use Automake (such as gettext).
+which do not use Automake (such as @code{gettext}).
 
 In a deep package, the top-level @file{Makefile.am} is often very short.
 For instance, here is the @file{Makefile.am} from the textutils
@@ -521,9 +522,9 @@ hello_SOURCES = hello.c
 This causes @file{hello.c} to be compiled into @file{hello.o}, and then
 linked to produce @file{hello}.
 
-If @samp{prog_SOURCES} is not specified, then it defaults to the single
-file @samp{prog.c}.  IE In the example above, the definition of
-@samp{hello_SOURCES} is actually redundant.
+If @samp{prog_SOURCES} is needed, but not specified, then it defaults to
+the single file @samp{prog.c}.  Id est In the example above, the
+definition of @samp{hello_SOURCES} is actually redundant.
 @vindex _SOURCES
 @vindex SOURCES
 
@@ -555,10 +556,11 @@ actually can be used to add any options to the linker command line.
 
 Sometimes, multiple programs are built in one directory but do not share
 the same link-time requirements.  In this case, you can use the
-@samp{prog_LDADD} variable (where @var{PROG} is the name of the program
-as it appears in some ``_PROGRAMS'' variable) to override the global
-@samp{LDADD}.  (If this variable exists for a given program, then that
-program is not linked using @samp{LDADD}.)
+@samp{@var{prog}_LDADD} variable (where @var{PROG} is the name of the
+program as it appears in some ``_PROGRAMS'' variable, and usually
+written in lowercase) to override the global @samp{LDADD}.  (If this
+variable exists for a given program, then that program is not linked
+using @samp{LDADD}.)
 @vindex _LDADD
 
 For instance, in GNU cpio, @code{pax}, @code{cpio}, and @code{mt} are
@@ -575,10 +577,10 @@ EXTRA_PROGRAMS = mt rmt
 LDADD = ../lib/libcpio.a @@INTLLIBS@@
 rmt_LDADD =
 
-cpio_SOURCES = ...
-pax_SOURCES = ...
-mt_SOURCES = ...
-rmt_SOURCES = ...
+cpio_SOURCES = @dots{}
+pax_SOURCES = @dots{}
+mt_SOURCES = @dots{}
+rmt_SOURCES = @dots{}
 @end example
 
 
@@ -638,7 +640,8 @@ This causes each source file to be treated as ANSI C.  If an ANSI C
 compiler is available, it is used.
 
 This support requires the source files @file{ansi2knr.c} and
-@file{ansi2knr.1} to be in the same directory as the ANSI C source.
+@file{ansi2knr.1} to be in the same directory as the ANSI C source;
+these files are distributed with Automake.
 Also, the package @file{configure.in} must call the macro
 @samp{fp_C_PROTOTYPES}.
 @cvindex fp_C_PROTOTYPES
@@ -653,9 +656,9 @@ project.  @code{automake} supplies a way to automatically track
 dependency changes, and distribute the dependencies in the generated
 @file{Makefile.in}.
 
-Currently this support requires the use of GNU make and gcc.  It might
-become possible in the future to supply a different dependency
-generating program, if there is enough demand.
+Currently this support requires the use of GNU @code{make} and
+@code{gcc}.  It might become possible in the future to supply a
+different dependency generating program, if there is enough demand.
 
 This mode is enabled by default if any C program or library is defined
 in the current directory.
@@ -900,8 +903,8 @@ CLEANFILES = automake
 @chapter What Goes in a Distribution
 
 The @samp{dist} target in the generated @file{Makefile.in} can be used
-to generate a gzip'd tar file for distribution.  The tar file is named
-based on the @var{PACKAGE} and @var{VERSION} variables.
+to generate a gzip'd @code{tar} file for distribution.  The tar file is
+named based on the @var{PACKAGE} and @var{VERSION} variables.
 @cvindex PACKAGE
 @cvindex VERSION
 @trindex dist
@@ -945,31 +948,31 @@ Various features of Automake can be controlled by options in the
 @samp{AUTOMAKE_OPTIONS}.  Currently understood options are:
 @vindex AUTOMAKE_OPTIONS
 
-@table @samp
-@item gnits
-@item gnu
-@item normal
+@table @asis
+@item @samp{gnits}
+@itemx @samp{gnu}
+@itemx @samp{foreign}
 The same as the corresponding @samp{--strictness} option.
 
-@item no-installman
+@item @samp{no-installman}
 The generated @file{Makefile.in} will not cause man pages to be
 installed by default.  However, an @samp{install-man} target will still
 be available for optional installation.
 
-@item ansi2knr
+@item @samp{ansi2knr}
 Turn on automatic de-ANSI-fication.
 
-@item dist-shar
+@item @samp{dist-shar}
 Generate a @samp{dist-shar} target as well as the ordinary @samp{dist}
 target.
 
-@item no-dependencies
+@item @samp{no-dependencies}
 This is similar to using @samp{--include-deps} on the command line, but
 is useful for those situations where you don't have the necessary bits
 to make automatic dependency tracking work @xref{Dependencies}.  In this
 case the effect is to effectively disable automatic dependency tracking.
 
-@item version
+@item @var{version}
 A version number (eg @samp{0.30}) can be specified.  If Automake is not
 newer than the version specified, creation of the @file{Makefile.in}
 will be suppressed.
@@ -1017,7 +1020,7 @@ ETAGS_ARGS = automake.in --lang=none \
  --regex='/^@@node[ \t]+\([^,]+\)/\1/' automake.texi
 @end example
 
-Automake will also generate a @samp{id} target which will run
+Automake will also generate an @samp{id} target which will run
 @code{mkid} on the source.  This is only supported on a
 directory-by-directory basis.
 @trindex id
@@ -1049,9 +1052,12 @@ problems can be worked around by simply adding some @code{make} targets
 and rules to @file{Makefile.in}.  @code{automake} will ignore these
 additions.
 
-There are some caveats to doing this.  You can't overload a target
-already used by @code{automake}.  However, various useful targets have a
-``-local'' version you can specify in your @file{Makefile.in}.
+There are some caveats to doing this.  Although you can overload a
+target already used by @code{automake}, it is often inadvisable,
+particularly in the topmost directory of a non-flat package.  However,
+various useful targets have a ``-local'' version you can specify in your
+@file{Makefile.in}.  Automake will supplement the standard target with
+these user-supplied targets.
 
 The targets that support a local version are @samp{all}, @samp{info},
 @samp{dvi}, @samp{check}, @samp{install-data}, @samp{install-exec}, and
@@ -1104,7 +1110,8 @@ actually used will appear in the generated @file{Makefile.in}.
 @item
 There will be support for automatically recoding a distribution.  The
 intent is to allow a maintainer to use whatever character set is most
-convenient locally, but for all distributions to be Unicode.
+convenient locally, but for all distributions to be Unicode or
+@w{ISO 10646} with the UTF-8 encoding.
 @end itemize
 
 

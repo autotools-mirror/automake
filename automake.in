@@ -42,7 +42,7 @@ $MACRO_PATTERN = "^([A-Za-z][A-Za-z0-9_]*)[ \t]*=[ \t]*(.*)\$";
 
 
 # Constants to define the "strictness" level.
-$NORMAL = 0;
+$FOREIGN = 0;
 $GNU = 1;
 $GNITS = 2;
 
@@ -183,8 +183,8 @@ sub parse_arguments
 {
     local (@arglist) = @_;
 
-    # Start off as normal.
-    &set_strictness ('normal');
+    # Start off as gnu.
+    &set_strictness ('gnu');
 
     while (@arglist)
     {
@@ -218,6 +218,10 @@ sub parse_arguments
 	elsif ($arglist[0] eq '--gnits')
 	{
 	    &set_strictness ('gnits');
+	}
+	elsif ($arglist[0] eq '--foreign')
+	{
+	    &set_strictness ('foreign');
 	}
 	elsif ($arglist[0] eq '--strictness')
 	{
@@ -294,7 +298,7 @@ sub generate_makefile
 
     # AC_CANONICAL_HOST and AC_CANONICAL_SYSTEM need config.guess and
     # config.sub.
-    &require_config_file ($NORMAL, 'config.guess', 'config.sub')
+    &require_config_file ($FOREIGN, 'config.guess', 'config.sub')
 	if $relative_dir eq '.' && $seen_canonical;
 
     # FIXME with new 'dist' target, don't need Makefile.in.  Probably
@@ -368,7 +372,7 @@ sub handle_options
     foreach (split (/\s+/, $contents{'AUTOMAKE_OPTIONS'}))
     {
 	$options{$_} = 1;
-	if ($_ eq 'gnits' || $_ eq 'gnu' || $_ eq 'normal')
+	if ($_ eq 'gnits' || $_ eq 'gnu' || $_ eq 'foreign')
 	{
 	    &set_strictness ($_);
 	}
@@ -448,7 +452,7 @@ sub get_object_extension
 	    $dir_holds_sources = '$o';
 	    push (@suffixes, '._c', '._o');
 
-	    &require_file ($NORMAL, 'ansi2knr.c', 'ansi2knr.1');
+	    &require_file ($FOREIGN, 'ansi2knr.c', 'ansi2knr.1');
 
 	    $output_vars .= &file_contents ('kr-vars');
 	    $output_rules .= &file_contents ('compile-kr');
@@ -620,7 +624,7 @@ sub handle_libraries
 			{
 			    ($rewrite = $iter) =~ s/\.c$/.P/;
 			    $dep_files{'$(srcdir)/.deps/' . $rewrite} = 1;
-			    &require_file ($NORMAL, $iter);
+			    &require_file ($FOREIGN, $iter);
 			}
 		    }
 		}
@@ -630,7 +634,7 @@ sub handle_libraries
 				    "\@ALLOCA\@ seen but \`AC_FUNC_ALLOCA' not in \`configure.in'")
 			if ! defined $libsources{'alloca.c'};
 		    $dep_files{'$(srcdir)/.deps/alloca.P'} = 1;
-		    &require_file ($NORMAL, 'alloca.c');
+		    &require_file ($FOREIGN, 'alloca.c');
 		}
 	    }
 	}
@@ -754,7 +758,7 @@ sub handle_texinfo
 	    &push_phony_cleaners ($vti);
 
 	    # Only require once.
-	    &require_file ($NORMAL, 'mdate-sh') if ! $done;
+	    &require_file ($FOREIGN, 'mdate-sh') if ! $done;
 	    ++$done;
 	}
 
@@ -823,7 +827,7 @@ sub handle_texinfo
 		     . "TEXINFOS = " . $contents{'info_TEXINFOS'} . "\n\n");
 
     # Do some error checking.
-    &require_file ($NORMAL, 'texinfo.tex');
+    &require_file ($FOREIGN, 'texinfo.tex');
 }
 
 # Handle any man pages.
@@ -1172,7 +1176,7 @@ sub handle_subdirs
 		if $contents{'SUBDIRS'} !~ /\bintl\b/;
     }
 
-    &require_file ($NORMAL, 'ABOUT-NLS') if $seen_gettext;
+    &require_file ($FOREIGN, 'ABOUT-NLS') if $seen_gettext;
 
     return if ! defined $contents{'SUBDIRS'};
 
@@ -1234,7 +1238,7 @@ sub handle_configure
 	$output_rules .= &file_contents ('remake');
 
 	# Look for some files we need.
-	&require_file ($NORMAL, 'install-sh', 'mkinstalldirs');
+	&require_file ($FOREIGN, 'install-sh', 'mkinstalldirs');
 
 	&am_error
 	    ("\`install.sh' is an anachronism; use \`install-sh' instead")
@@ -1249,7 +1253,7 @@ sub handle_configure
 			    "argument to AC_CONFIG_HEADER contains \`/'\n")
 		if ($config_header =~ /\//);
 
-	    &require_file ($NORMAL, $config_header);
+	    &require_file ($FOREIGN, $config_header);
 
 	    # Header defined and in this directory.
 	    if (-f 'acconfig.h')
@@ -1319,7 +1323,7 @@ sub handle_configure
 			  . ($relative_dir eq '.' ? '' : '$(subdir)/')
 			  . '$@ CONFIG_HEADERS= ./config.status'
 			  . "\n");
-	&require_file ($NORMAL, $local . '.in');
+	&require_file ($FOREIGN, $local . '.in');
     }
 }
 
@@ -2098,13 +2102,14 @@ sub initialize_global_constants
 
     $USAGE = "\
   --amdir=DIR           directory storing config files
+  --foreign             same as --strictness=foreign
   --gnits               same as --strictness=gnits
   --gnu                 same as --strictness=gnu
   --help                print this help, then exit
   --include-deps        include generated dependencies in Makefile.in
   --install-missing     install missing standard files
   --output-dir=DIR      put generated Makefile.in's into DIR
-  --strictness=LEVEL    set strictness level.  LEVEL is normal, gnu, gnits
+  --strictness=LEVEL    set strictness level.  LEVEL is foreign, gnu, gnits
   --verbose             verbosely list files processed
   --version             print version number, then exit\n";
 
@@ -2571,9 +2576,9 @@ sub set_strictness
     {
 	$strictness = $GNITS;
     }
-    elsif ($strictness_name eq 'normal')
+    elsif ($strictness_name eq 'foreign')
     {
-	$strictness = $NORMAL;
+	$strictness = $FOREIGN;
     }
     else
     {
