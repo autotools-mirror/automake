@@ -1,4 +1,10 @@
-# serial 2
+# serial 3
+
+# There are a few dirty hacks below to avoid letting `AC_PROG_CC' be
+# written in clear, in which case automake, when reading aclocal.m4,
+# will think it sees a *use*, and therefore will trigger all it's
+# C support machinery.  Also note that it means that autoscan, seeing
+# CC etc. in the Makefile, will ask for an AC_PROG_CC use...
 
 # AM_DEPENDENCIES(NAME)
 # ---------------------
@@ -6,19 +12,19 @@
 # NAME is "CC", "CXX" or "OBJC".
 # We try a few techniques and use that to set a single cache variable.
 AC_DEFUN([AM_DEPENDENCIES],
-[AC_REQUIRE([AM_SET_DEPDIR])
-AC_REQUIRE([AM_OUTPUT_DEPENDENCY_COMMANDS])
+[AC_REQUIRE([AM_SET_DEPDIR])dnl
+AC_REQUIRE([AM_OUTPUT_DEPENDENCY_COMMANDS])dnl
 ifelse([$1], CC,
-       [AC_REQUIRE([AC_PROG_CC])
-AC_REQUIRE([AC_PROG_CPP])
+       [AC_REQUIRE([AC_PROG_][CC])dnl
+AC_REQUIRE([AC_PROG_][CPP])
 depcc="$CC"
 depcpp="$CPP"],
-       [$1], CXX, [AC_REQUIRE([AC_PROG_CXX])
-AC_REQUIRE([AC_PROG_CXXCPP])
+       [$1], CXX, [AC_REQUIRE([AC_PROG_][CXX])dnl
+AC_REQUIRE([AC_PROG_][CXXCPP])
 depcc="$CXX"
 depcpp="$CXXCPP"],
        [$1], OBJC, [am_cv_OBJC_dependencies_compiler_type=gcc],
-       [AC_REQUIRE([AC_PROG_$1])
+       [AC_REQUIRE([AC_PROG_][$1])dnl
 depcc="$$1"
 depcpp=""])
 
@@ -64,11 +70,13 @@ $1DEPMODE="depmode=$am_cv_$1_dependencies_compiler_type"
 AC_SUBST([$1DEPMODE])
 ])
 
+
+# AM_SET_DEPDIR
+# -------------
 # Choose a directory name for dependency files.
 # This macro is AC_REQUIREd in AM_DEPENDENCIES
-
-AC_DEFUN([AM_SET_DEPDIR],[
-if test -d .deps || mkdir .deps 2> /dev/null || test -d .deps; then
+AC_DEFUN([AM_SET_DEPDIR],
+[if test -d .deps || mkdir .deps 2> /dev/null || test -d .deps; then
   DEPDIR=.deps
   # We redirect because .deps might already exist and be populated.
   # In this situation we don't want to see an error.
@@ -79,8 +87,11 @@ fi
 AC_SUBST(DEPDIR)
 ])
 
-AC_DEFUN([AM_DEP_TRACK],[
-AC_ARG_ENABLE(dependency-tracking,
+
+# AM_DEP_TRACK
+# ------------
+AC_DEFUN([AM_DEP_TRACK],
+[AC_ARG_ENABLE(dependency-tracking,
 [  --disable-dependency-tracking Speeds up one-time builds
   --enable-dependency-tracking  Do not reject slow dependency extractors])
 if test "x$enable_dependency_tracking" = xno; then

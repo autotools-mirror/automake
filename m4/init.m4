@@ -2,7 +2,14 @@
 # some checks are only needed if your package does certain things.
 # But this isn't really a big deal.
 
-# serial 4
+# serial 5
+
+# There are a few dirty hacks below to avoid letting `AC_PROG_CC' be
+# written in clear, in which case automake, when reading aclocal.m4,
+# will think it sees a *use*, and therefore will trigger all it's
+# C support machinery.  Also note that it means that autoscan, seeing
+# CC etc. in the Makefile, will ask for an AC_PROG_CC use...
+
 
 # We require 2.13 because we rely on SHELL being computed by configure.
 AC_PREREQ([2.13])
@@ -56,12 +63,12 @@ AC_REQUIRE([AC_PROG_AWK])dnl
 AC_REQUIRE([AC_PROG_MAKE_SET])dnl
 AC_REQUIRE([AM_DEP_TRACK])dnl
 AC_REQUIRE([AM_SET_DEPDIR])dnl
-AC_PROVIDE_IFELSE([AC_PROG_CC],
+AC_PROVIDE_IFELSE([AC_PROG_][CC],
                   [AM_DEPENDENCIES(CC)],
-                  [define([AC_PROG_CC],
-                          defn([AC_PROG_CC])[AM_DEPENDENCIES(CC)])])dnl
-AC_PROVIDE_IFELSE([AC_PROG_CXX],
+                  [define([AC_PROG_][CC],
+                          defn([AC_PROG_][CC])[AM_DEPENDENCIES(CC)])])dnl
+AC_PROVIDE_IFELSE([AC_PROG_][CXX],
                   [AM_DEPENDENCIES(CXX)],
-                  [define([AC_PROG_CXX],
-                          defn([AC_PROG_CXX])[AM_DEPENDENCIES(CXX)])])dnl
+                  [define([AC_PROG_][CXX],
+                          defn([AC_PROG_][CXX])[AM_DEPENDENCIES(CXX)])])dnl
 ])
