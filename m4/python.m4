@@ -1,50 +1,37 @@
-## ------------------------
+## ------------------------                                 -*- Autoconf -*-
 ## Python file handling
 ## From Andrew Dalke
 ## Updated by James Henstridge
 ## ------------------------
-
-# Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004
+# Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005
 # Free Software Foundation, Inc.
-
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2, or (at your option)
-# any later version.
-
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
-# 02111-1307, USA.
+#
+# This file is free software; the Free Software Foundation
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
 
 # AM_PATH_PYTHON([MINIMUM-VERSION], [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND])
-
+# ---------------------------------------------------------------------------
 # Adds support for distributing Python modules and packages.  To
 # install modules, copy them to $(pythondir), using the python_PYTHON
 # automake variable.  To install a package with the same name as the
 # automake package, install to $(pkgpythondir), or use the
 # pkgpython_PYTHON automake variable.
-
+#
 # The variables $(pyexecdir) and $(pkgpyexecdir) are provided as
 # locations to install python extension modules (shared libraries).
 # Another macro is required to find the appropriate flags to compile
 # extension modules.
-
+#
 # If your package is configured with a different prefix to python,
 # users will have to add the install directory to the PYTHONPATH
 # environment variable, or create a .pth file (see the python
 # documentation for details).
-
+#
 # If the MINIMUM-VERSION argument is passed, AM_PATH_PYTHON will
 # cause an error if the version of python installed on the system
 # doesn't meet the requirement.  MINIMUM-VERSION should consist of
 # numbers and dots only.
-
 AC_DEFUN([AM_PATH_PYTHON],
  [
   dnl Find a Python interpreter.  Python versions prior to 1.5 are not
