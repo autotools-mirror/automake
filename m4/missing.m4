@@ -17,8 +17,8 @@ AC_SUBST($1)])
 # Define MISSING if not defined so far and test if it supports --run.
 # If it does, set am_missing_run to use it, otherwise, to nothing.
 AC_DEFUN([AM_MISSING_HAS_RUN],
-[test x"${MISSING+set}" = xset ||
-  MISSING="\${SHELL} `CDPATH=:; cd $ac_aux_dir && pwd`/missing"
+[AC_REQUIRE([AM_AUX_DIR_EXPAND])dnl
+test x"${MISSING+set}" = xset || MISSING="\${SHELL} $am_aux_dir/missing"
 # Use eval to expand $SHELL
 if eval "$MISSING --run true"; then
   am_missing_run="$MISSING --run "
