@@ -3617,6 +3617,11 @@ sub am_install_var
     # for Gnitsoids.
     local (%valid) = &am_primary_prefixes ($primary, @prefixes);
 
+    # If a primary includes a configure substitution, then the EXTRA_
+    # form is required.  Otherwise we can't properly do our job.
+    local ($require_extra);
+    local ($warned_about_extra) = 0;
+
     local ($clean_file) = $file . '-clean';
     local ($one_name);
     local ($X);
@@ -3631,7 +3636,23 @@ sub am_install_var
 	    foreach $rcurs (&variable_value_as_list ($one_name))
 	    {
 		# Skip configure substitutions.  Possibly bogus.
-		next if $rcurs =~ /^\@.*\@$/;
+		if ($rcurs =~ /^\@.*\@$/)
+		{
+		    if ($X eq 'EXTRA')
+		    {
+			if (! $warned_about_extra)
+			{
+			    $warned_about_extra = 1;
+			    &am_line_error ($one_name,
+					    "\`$one_name' contains configure substitution, but shouldn't");
+			}
+		    }
+		    else
+		    {
+			$require_extra = $one_name;
+		    }
+		    next;
+		}
 		push (@result, $rcurs);
 	    }
 
@@ -3688,6 +3709,12 @@ sub am_install_var
 	# Define it.
 	&define_pretty_variable ($primary, @used);
 	$output_vars .= "\n";
+    }
+
+    if ($require_extra && ! &variable_defined ('EXTRA_' . $primary))
+    {
+	&am_line_error ($require_extra,
+			"\`$require_extra' contains configure substitution, but \`EXTRA_$primary' not defined");
     }
 
     # Push here because PRIMARY might be configure time determined.
