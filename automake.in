@@ -740,6 +740,8 @@ sub get_object_extension
 	$output_vars .= &file_contents_with_transform ($xform,
 						       'comp-vars');
 
+	# Note that order of transforms is important here.  We collude
+	# with compile.am to get the right result.
 	$xform = (($use_dependencies
 		   ? 's/^NOTDEPEND.*$//;'
 		   : 's/^NOTDEPEND//;')
@@ -2514,6 +2516,7 @@ sub generate_dependency_code
 {
     local ($lang, $fullname, $subst) = @_;
 
+    local ($xform) = $seen_objext ? 's/^OBJEXT//;' : 's/^OBJEXT.*$//;';
     local ($error) = 0;
     local ($ext);
     foreach $ext (&lang_extensions ($lang))
@@ -2527,7 +2530,8 @@ sub generate_dependency_code
 	$output_rules .=
 	    &file_contents_with_transform ('s/\@EXT\@/' . $ext . '/g;'
 					   . 's/\@FPFX\@/' . $fullname . '/g;'
-					   . 's/\@PFX\@/' . $subst . '/g;',
+					   . 's/\@PFX\@/' . $subst . '/g;'
+					   . $xform,
 					   'depend2');
     }
 }
