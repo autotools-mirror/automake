@@ -3448,7 +3448,7 @@ sub scan_texinfo_file
     # These are always created, no matter whether indexes are used or not.
     # (Actually tmp is only created if an @macro is used and a certain e-TeX
     # feature is not available.)
-    my @clean_suffixes = qw(aux dvi log pdf ps toc tmp
+    my @clean_suffixes = qw(aux log toc tmp
 			    cp fn ky vr tp pg); # grep new.*index texinfo.tex
 
     # There are predefined indexes which don't follow the regular rules.
@@ -3533,6 +3533,7 @@ sub scan_texinfo_file
     return ($outfile, $vfile, (sort keys %clean_files));
 }
 
+# ($DIRSTAMP, @CLEAN_FILES)
 # output_texinfo_build_rules ($SOURCE, $DEST, @DEPENDENCIES)
 # ----------------------------------------------------------
 # SOURCE - the source Texinfo file
@@ -3576,21 +3577,6 @@ sub output_texinfo_build_rules ($$@)
   # make sure this directory will exist.
   my $dirstamp = require_build_directory_maybe ($dest);
 
-  # It is wrong to make $SOURCE dependent on $DIRSTAMP, because
-  # $SOURCE is distributed and $DIRSTAMP is not.  A generated file
-  # should never be dependent upon a non-distributed built file.
-  #
-  # So don't do that:
-  #
-  #   push @deps, $dirstamp;
-  #
-  # Instead we append all dirstamps to the $(am__texinfo_dirstamps)
-  # variable and have this variable in the dependencies of
-  # info, dvi, etc.  (FIXME: this is not done yet -- support for
-  # Texinfo files in subdirectories is not complete.)
-  macro_define ('am__texinfo_dirstamps', VAR_AUTOMAKE, '+', 'TRUE',
-		$dirstamp, 'internal');
-
   $output_rules .= &file_contents ('texibuild',
                                    GENERIC       => $generic,
                                    SOURCE_SUFFIX => $ssfx,
@@ -3598,7 +3584,9 @@ sub output_texinfo_build_rules ($$@)
                                    DEST_PREFIX   => $dpfx,
                                    DEST_SUFFIX   => $dsfx,
                                    MAKEINFOFLAGS => $makeinfoflags,
-                                   DEPS          => "@deps");
+                                   DEPS          => "@deps",
+				   DIRSTAMP      => $dirstamp);
+  return ($dirstamp, "$dpfx.dvi", "$dpfx.pdf", "$dpfx.ps");
 }
 
 
@@ -3648,6 +3636,28 @@ sub handle_texinfo_helper
 	$outdir = "" if $outdir eq './';
 	$out_file =  $outdir . $out_file;
 
+	# If user specified file_TEXINFOS, then use that as explicit
+	# dependency list.
+	@texi_deps = ();
+	push (@texi_deps, "$outdir$vtexi") if $vtexi;
+
+	my $canonical = &canonicalize ($infobase);
+	if (variable_defined ($canonical . "_TEXINFOS"))
+	{
+	    push (@texi_deps, '$(' . $canonical . '_TEXINFOS)');
+	    &push_dist_common ('$(' . $canonical . '_TEXINFOS)');
+	}
+
+	my ($dirstamp, @cfiles) =
+	  output_texinfo_build_rules ($info_cursor, $out_file, @texi_deps);
+	push (@texi_cleans, @cfiles);
+
+	push (@info_deps_list, $out_file);
+	push (@dvis_list, $infobase . '.dvi');
+	push (@pdfs_list, $infobase . '.pdf');
+	push (@pss_list, $infobase . '.ps');
+
+	# If a vers*.texi file is needed, emit the rule.
 	if ($vtexi)
 	{
 	    err_am ("`$vtexi', included in `$info_cursor', "
@@ -3683,33 +3693,14 @@ sub handle_texinfo_helper
 	    {
 		$conf_dir = '$(srcdir)/';
 	    }
-		    $output_rules .= &file_contents ('texi-vers',
+	    $output_rules .= &file_contents ('texi-vers',
 					     TEXI     => $info_cursor,
 					     VTI      => $vti,
 					     STAMPVTI => "${outdir}stamp-$vti",
 					     VTEXI    => "$outdir$vtexi",
-					     MDDIR    => $conf_dir);
+					     MDDIR    => $conf_dir,
+					     DIRSTAMP => $dirstamp);
 	}
-
-	# If user specified file_TEXINFOS, then use that as explicit
-	# dependency list.
-	@texi_deps = ();
-	push (@texi_deps, "$outdir$vtexi") if $vtexi;
-
-	my $canonical = &canonicalize ($infobase);
-	if (variable_defined ($canonical . "_TEXINFOS"))
-	{
-	    push (@texi_deps, '$(' . $canonical . '_TEXINFOS)');
-	    &push_dist_common ('$(' . $canonical . '_TEXINFOS)');
-	}
-
-	output_texinfo_build_rules ($info_cursor, $out_file,
-				    @texi_deps);
-
-	push (@info_deps_list, $out_file);
-	push (@dvis_list, $infobase . '.dvi');
-	push (@pdfs_list, $infobase . '.pdf');
-	push (@pss_list, $infobase . '.ps');
     }
 
     # Handle location of texinfo.tex.

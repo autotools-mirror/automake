@@ -25,11 +25,16 @@
 ## using --no-split), you'll be left with some dead info files lying
 ## around -- dead files which will end up in the distribution.
 	@rm -f $@ $@-[0-9] $@-[0-9][0-9]
+## It is wrong to have `info' files dependent on %DIRSTAMP%, because
+## `info' files are distributed and %DIRSTAMP% isn't: a distributed file
+## should never be dependent upon a non-distributed built file.
+## Therefore we ensure that %DIRSTAMP% exists in the rule.
+?DIRSTAMP?	@test -f %DIRSTAMP% || $(MAKE) %DIRSTAMP%
 	$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) %MAKEINFOFLAGS% \
 	`test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE% -o $@
 
 ?GENERIC?%SOURCE_SUFFIX%.dvi:
-?!GENERIC?%DEST_PREFIX%.dvi: %SOURCE% %DEPS%
+?!GENERIC?%DEST_PREFIX%.dvi: %SOURCE% %DEPS% %DIRSTAMP%
 	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
 ## Must set MAKEINFO like this so that version.texi will be found even
 ## if it is in srcdir (-I $(srcdir) is set in %MAKEINFOFLAGS%).
@@ -37,7 +42,7 @@
 	$(TEXI2DVI) `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE% -o $@
 
 ?GENERIC?%SOURCE_SUFFIX%.pdf:
-?!GENERIC?%DEST_PREFIX%.pdf: %SOURCE% %DEPS%
+?!GENERIC?%DEST_PREFIX%.pdf: %SOURCE% %DEPS% %DIRSTAMP%
 	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
 ## Must set MAKEINFO like this so that version.texi will be found even
 ## if it is in srcdir (-I $(srcdir) is set in %MAKEINFOFLAGS%).
@@ -45,6 +50,8 @@
 	$(TEXI2PDF) `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE% -o $@
 
 ## If we are using the generic rules, we need separate dependencies.
+## (Don't wonder about %DIRSTAMP% here, this is used only by non-generic
+## rules.)
 if %?GENERIC%
 %DEST_PREFIX%%DEST_SUFFIX%: %DEPS%
 %DEST_PREFIX%.dvi: %DEPS%

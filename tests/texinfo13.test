@@ -1,0 +1,44 @@
+#! /bin/sh
+
+# Check for subdir Texinfo.
+# PR/343
+
+required='GNUmake makeinfo'
+. $srcdir/defs || exit 1
+
+set -e
+
+echo AC_OUTPUT >> configure.in
+
+cat > Makefile.am << 'END'
+info_TEXINFOS = subdir/main.texi
+subdir_main_TEXINFOS = subdir/inc.texi
+END
+
+mkdir subdir
+
+cat > subdir/main.texi << 'END'
+\input texinfo
+@setfilename main.info
+@settitle main
+@node Top
+Hello walls.
+@include version.texi
+@include inc.texi
+@bye
+END
+
+cat > subdir/inc.texi << 'END'
+I'm included.
+END
+
+
+$ACLOCAL
+$AUTOMAKE --add-missing
+$AUTOCONF
+
+mkdir build
+cd build
+../configure
+$MAKE distcheck
+test -f subdir/main.info
