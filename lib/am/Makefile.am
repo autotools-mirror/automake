@@ -16,7 +16,6 @@ tags-clean.am texi-version.am texinfos-vars.am texinfos.am
 
 # CONFIG_HEADER = config.h
 
-# gettext-sh (in DIST_OTHER for NLS)
 DIST_OTHER = automake.in
 DIST_SUBDIRS = RCS samples
 
