@@ -256,6 +256,7 @@ subobj3.test \
 subobj4.test \
 subobj5.test \
 subobj6.test \
+subobj7.test \
 subst.test \
 suffix.test \
 suffix2.test \
