@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1998, 1999, 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 2003  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -18,20 +18,51 @@
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-# Test to make sure install-exec-hook works.
-# Report from Tim Goodwin.
+# Make sure the install-exec-hook example we give in the manual works.
 
 . ./defs || exit 1
 
-cat > Makefile.am << 'END'
+set -e
+
+cat >>configure.in <<'EOF'
+AC_PROG_LN_S
+AC_OUTPUT
+EOF
+
+cat >Makefile.am <<'END'
+dist_bin_SCRIPTS = foo
+
 install-exec-hook:
-	@echo nothing
+	cd $(DESTDIR)$(bindir) && \
+	mv -f foo foo-$(VERSION) && \
+	$(LN_S) foo-$(VERSION) foo
+
+installcheck-local:
+	test -f $(bindir)/foo
+	test -f $(bindir)/foo-$(VERSION)
+	: > $(top_srcdir)/../ok
 END
 
-$ACLOCAL || exit 1
-$AUTOMAKE || exit 1
+echo 1 > foo
 
-test "`grep install-exec-hook Makefile.in | wc -l`" -gt 1 || exit 1
-# install-exec-hook must appear in the install-exec-am rule.
-sed -n '/^install-exec-am:/,/^[^	]/p' Makefile.in | \
-  grep install-exec-hook
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
+
+./configure
+$MAKE distcheck
+# Sanity check to make sure installcheck-local was run.
+test -f ok
+
+# Make sure that installing a second version doesn't erase the first
+# one.  (This is error prone since `foo' symlinks to `foo-1.0' and the
+# second version will overwrite `foo'.   Hopefully `install' and `install-sh'
+# are smart enough to erase the `foo' symlink before installing the new
+# version.)
+./configure --bindir=`pwd`/bin
+$MAKE install
+echo 2 > foo
+VERSION=2.0 make -e install
+grep 1 bin/foo-1.0
+grep 2 bin/foo-2.0
+grep 2 bin/foo
