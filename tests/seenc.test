@@ -5,7 +5,9 @@
 . $srcdir/defs || exit 1
 
 cat >> configure.in << 'END'
-LIBOBJS="$LIBOBJS fsusage.o mountlist.o"
+dnl AC_PROG_CC and AC_PROG_CXX missing on purpose
+AC_LIBOBJ([fsusage])
+AC_LIBOBJ([mountlist])
 END
 
 cat > Makefile.am << 'END'
@@ -18,5 +20,9 @@ END
 : > mountlist.c
 
 $ACLOCAL || exit 1
-$AUTOMAKE > out 2>&1 && exit 1
-exit 0
+# Use -Wno-error, because there are many error messages
+# output for this test, and we just want to make sure some of
+# them are about CC and CXX being undefined.
+$AUTOMAKE --Wno-error 2> err && exit 1
+fgrep CC err || exit 1
+fgrep CXX err || exit 1
