@@ -30,7 +30,8 @@ install.test libobj7.test objc.test cond3.test cxxcpp.test \
 aclocal.test alpha.test whoami.test unused.test condman.test \
 texinfo5.test aclocali.test texinfo6.test condman2.test colon4.test \
 java.test sinclude.test javaprim.test javasubst.test aclocalii.test \
-lex2.test libobj8.test version3.test instdata.test exdir2.test
+lex2.test libobj8.test version3.test instdata.test exdir2.test \
+colon5.test
 
 EXTRA_DIST = defs $(TESTS)
 
