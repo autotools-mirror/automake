@@ -18,7 +18,7 @@ ETAGS_ARGS = --lang=none \
  --regex='/^@node[ \t]+\([^,]+\)/\1/' $(srcdir)/automake.texi
 TAGS_DEPENDENCIES = automake.texi
 
-EXTRA_DIST = ChangeLog.1996 ChangeLog.1998
+EXTRA_DIST = ChangeLog.1996 ChangeLog.1998 ChangeLog.2000
 
 ################################################################
 ##
