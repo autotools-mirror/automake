@@ -27,9 +27,21 @@ export ACLOCAL
 export AUTOCONF
 export AUTOMAKE
 
-./configure
-touch configure.in
-$MAKE
+# Do the test twice -- once with make and once with make -w.
+# This tests for a bug reported by Rainer Orth.
 
-fgrep '_am_include = #' Makefile && exit 1
+save="$MAKE"
+for flag in '' -w; do
+   MAKE="$save $flag" ./configure
+
+   fgrep '_am_include = #' Makefile && exit 1
+
+   touch configure.in
+   $MAKE $flag
+
+   fgrep '_am_include = #' Makefile && exit 1
+
+   rm -f config.cache
+done
+
 exit 0
