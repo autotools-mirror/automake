@@ -5,10 +5,11 @@
 . $srcdir/defs || exit 1
 
 cat > configure.in << 'END'
-AM_INIT_AUTOMAKE(nonesuch, nonesuch)
+AC_INIT(Makefile.am)
+AM_INIT_AUTOMAKE(foo,0.0)
 AC_PROG_CC
-AM_CONDITIONAL(ONE, true)
-AM_CONDITIONAL(TWO, false)
+AM_CONDITIONAL(ONE, test "x$CONDITION1" = "xtrue")
+AM_CONDITIONAL(TWO, test "x$CONDITION2" = "xtrue")
 AC_OUTPUT(Makefile)
 END
 
@@ -24,9 +25,36 @@ OPT2 = two.c
 endif
 
 targ_SOURCES = main.c $(OPT1) $(OPT2)
+
+echo-objects:
+	@echo $(targ_OBJECTS)
 END
+
+$needs_autoconf
 
 $ACLOCAL || exit 1
 $AUTOMAKE || exit 1
+test "`grep TWO_FALSE Makefile.in | wc -l`" -eq 2 || exit 1
 
-test "`grep TWO_FALSE Makefile.in | wc -l`" -eq 2
+$AUTOCONF || exit 1
+(gcc -v) > /dev/null 2>&1 || exit 77
+$needs_gnu_make
+
+CC='gcc' CONDITION1=true CONDITION2=true ./configure || exit 1
+msgtt=`$MAKE --no-print-directory echo-objects`
+CC='gcc' CONDITION1=true CONDITION2=false ./configure || exit 1
+msgtf=`$MAKE --no-print-directory echo-objects`
+CC='gcc' CONDITION1=false CONDITION2=true ./configure || exit 1
+msgft=`$MAKE --no-print-directory echo-objects`
+CC='gcc' CONDITION1=false CONDITION2=false ./configure || exit 1
+msgff=`$MAKE --no-print-directory echo-objects`
+
+echo $msgtt
+echo $msgtf
+echo $msgft
+echo $msgff
+
+test "$msgtt" = "main.o one.o two.o" || exit 1
+test "$msgtf" = "main.o one.o" || exit 1
+test "$msgft" = "main.o two.o" || exit 1
+test "$msgff" = "main.o" || exit 1
