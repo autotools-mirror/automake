@@ -13,7 +13,8 @@ dnl If it does, set am_missing_run to use it, otherwise, to nothing.
 AC_DEFUN([AM_MISSING_HAS_RUN], [
 test x"${MISSING+set}" = xset || \
   MISSING="\${SHELL} $ac_aux_dir/missing"
-if ${SHELL-/bin/sh} -c "$MISSING --run :"; then
+dnl Use eval to expand $SHELL
+if eval "$MISSING --run :"; then
   am_missing_run="$MISSING --run "
 else
   am_missing_run=
