@@ -2296,9 +2296,6 @@ sub handle_libraries
 	    }
 	}
     }
-
-    &define_variable ('AR', 'ar');
-    &define_configure_variable ('RANLIB');
 }
 
 
@@ -6425,8 +6422,9 @@ sub read_am_file
 		  $var_comment{$last_var_name} .= "$comment";
 		  $comment = $spacing = '';
 		  macro_define ($last_var_name, 0,
-				   $last_var_type, $cond,
-				   $last_var_value, $.);
+				$last_var_type, $cond,
+				$last_var_value, $.)
+		    if $cond ne 'FALSE';
 		  push (@var_list, $last_var_name);
 		}
 	    }
@@ -6516,8 +6514,9 @@ sub read_am_file
 		$comment = $spacing = '';
 
 		macro_define ($last_var_name, 0,
-				 $last_var_type, $cond,
-				 $last_var_value, $.);
+			      $last_var_type, $cond,
+			      $last_var_value, $.)
+		  if $cond ne 'FALSE';
 		push (@var_list, $last_var_name);
 	      }
 	}
@@ -6923,7 +6922,8 @@ sub file_contents_internal ($%)
 	    $var_comment{$var} .= "$comment";
 	    # Strip the continuation backslashes.
 	    $val =~ s/\\$//mg;
-	    macro_define ($var, 1, $type, $cond, $val, $.);
+	    macro_define ($var, 1, $type, $cond, $val, $.)
+	      if $cond ne 'FALSE';
 	    push (@var_list, $var);
 
 	    # If the user has set some variables we were in charge
@@ -7132,6 +7132,9 @@ sub am_install_var
     my @used = ();
     my @result = ();
 
+    # True if the iteration is the first one.  Used for instance to
+    # output parts of the associated file only once.
+    my $first = 0;
     foreach my $X (sort keys %valid)
     {
 	my $one_name = $X . '_' . $primary;
@@ -7252,7 +7255,9 @@ sub am_install_var
 	    # Singular form of $PRIMARY.
 	    (my $one_primary = $primary) =~ s/S$//;
 	    $output_rules .= &file_contents ($file,
-					     ('PRIMARY'     => $primary,
+					     ('FIRST' => $first,
+
+					      'PRIMARY'     => $primary,
 					      'ONE_PRIMARY' => $one_primary,
 					      'DIR'         => $X,
 					      'NDIR'        => $nodir_name,
@@ -7261,6 +7266,8 @@ sub am_install_var
 					      'EXEC'    => $exec_p,
 					      'INSTALL' => $install_p,
 					      'DIST'    => $dist_p));
+
+	    $first = '';
 	}
     }
 
