@@ -341,8 +341,9 @@ $obsolete_rx = '(' . join ('|', keys %obsolete_macros) . ')';
 		    'F');
 &register_language ('ratfor', 'linker=F77LINK',
 		    'r');
+# FIXME: what about zip and jar?
 &register_language ('java', 'linker=GCJLINK', 'autodep=GCJ',
-		    'java');
+		    'java', 'class');
 
 
 # Parse command line.
@@ -5188,7 +5189,8 @@ sub lang_objc_finish
 
 sub lang_java_finish
 {
-    push (@suffixes, '.java');
+    local (@java_list) = &lang_extensions ('java');
+    push (@suffixes, @java_list);
 
     local ($ltcompile, $ltlink) = &libtool_compiler;
 
@@ -5199,16 +5201,20 @@ sub lang_java_finish
     &define_variable ('GCJLD', '$(GCJ)');
     &define_variable ('GCJLINK', $ltlink . '$(GCJLD) $(AM_GCJFLAGS) $(GCJFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
 
-    # All known Java compilers support -c and -o together.
-    $output_rules .= (".java.o:\n"
-                      . "\t\$(GCJCOMPILE) -c -o \$\@ \$<\n");
-    # FIXME: Using cygpath should be somehow conditional.
-    $output_rules .= (".java.obj:\n"
-                      . "\t\$(GCJCOMPILE) -c -o \$\@ `cygpath -w \$<`\n")
-        if ($seen_objext);
-    $output_rules .= (".java.lo:\n"
-                      . "\t\$(LTGCJCOMPILE) -c -o \$\@ \$<\n")
-        if ($seen_libtool);
+    local ($ext);
+    foreach $ext (@java_list)
+    {
+	# All known Java compilers support -c and -o together.
+	$output_rules .= (".${ext}.o:\n"
+			  . "\t\$(GCJCOMPILE) -c -o \$\@ \$<\n");
+	# FIXME: Using cygpath should be somehow conditional.
+	$output_rules .= (".${ext}.obj:\n"
+			  . "\t\$(GCJCOMPILE) -c -o \$\@ `cygpath -w \$<`\n")
+	    if $seen_objext;
+	$output_rules .= (".${ext}.lo:\n"
+			  . "\t\$(LTGCJCOMPILE) -c -o \$\@ \$<\n")
+	    if $seen_libtool;
+    }
 
     if (! defined $configure_vars{'GCJ'})
     {
