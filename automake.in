@@ -1075,23 +1075,19 @@ sub handle_lib_objects
 
     foreach $lsearch (&variable_value_as_list ($var))
     {
-	# Skip -lfoo and -Ldir.
+	# Skip -lfoo and -Ldir; these are explicitly allowed.
 	next if $lsearch =~ /^-[lL]/;
 	if (! $flagvar && $lsearch =~ /^-/)
 	{
 	    if ($var =~ /^(.*)LDADD$/)
 	    {
-		$flagvar = $1 . 'LDFLAGS';
-	    }
-	    if ($flagvar)
-	    {
-		&am_line_error ($var, "linker flags such as \`$lsearch' belong in $flagvar");
+		&am_line_error ($var, "linker flags such as \`$lsearch' belong in \`${1}LDFLAGS");
 	    }
 	    else
 	    {
 		# Only get this error once.
 		$flagvar = 1;
-		&am_line_error ($var, "you cannot use linker flags such as \`$lsearch' in $var");
+		&am_line_error ($var, "you cannot use linker flags such as \`$lsearch' in \`$var'");
 	    }
 	}
 
@@ -1322,8 +1318,9 @@ sub handle_libraries
 	if ($onelib !~ /^lib.*\.a$/)
 	{
 	    # FIXME this should only be a warning for foreign packages
-	    &am_line_error ($onelib . $xt,
-			    "\`$onelib' is not a standard library name");
+	    # FIXME should put line number here.  That means mapping
+	    # from library name back to variable name.
+	    &am_error ("\`$onelib' is not a standard library name");
 	}
 
 	local ($obj) = &get_object_extension ($onelib);
@@ -2393,7 +2390,7 @@ sub handle_configure
 	if ($local =~ /^(.*):(.*)$/)
 	{
 	    # This is the ":" syntax of AC_OUTPUT.
-	    @inputs = split (':', $2)
+	    @inputs = split (':', $2);
 	    $local = $1;
 	}
 	else
