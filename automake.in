@@ -1466,9 +1466,76 @@ sub handle_languages
     {
         if ($lang->autodep ne 'no')
 	  {
-	    add_depend2 ($lang);
+	    # Get information on $LANG.
+	    my $pfx = $lang->autodep;
+	    my $fpfx = ($pfx eq '') ? 'CC' : $pfx;
+	    my $flag = $lang->flags || '';
+
+	    # First include code for ordinary objects.
+	    my %transform = ('PFX'  => $pfx,
+			     'FPFX' => $fpfx,
+			     'LIBTOOL' => $seen_libtool,
+			     'AMDEP'   => $use_dependencies ? 'AMDEP' : 'FALSE');
+
+	    # This function can be called even when we don't want dependency
+	    # tracking.  This happens when we need an explicit rule for some
+	    # target.  In this case we don't want to include the generic code.
+	    if ($use_dependencies)
+	      {
+		my $compile = '$(' . $pfx . 'COMPILE)';
+		my $ltcompile = '$(LT' . $pfx . 'COMPILE)';
+		my %transform = (%transform,
+				 'GENERIC'   => 1,
+				 'BASE'      => '$*',
+				 'SOURCE'    => '$<',
+				 'OBJ'       => '$@',
+				 'LTOBJ'     => '$@',
+				 'OBJOBJ'    => '$@',
+				 'COMPILE'   => $compile,
+				 'LTCOMPILE' => $ltcompile);
+
+		foreach my $ext (grep ($extension_seen{$_}, @{$lang->extensions}))
+		  {
+		    $output_rules .= (&file_contents ('depend2',
+						      (%transform,
+						       'EXT' => $ext))
+				      . "\n");
+		  }
+	      }
+
+	    # Now include code for each specially handled object with this
+	    # language.
+	    my %seen_files = ();
+	    foreach my $file (@{$lang_specific_files{$lang->name}})
+	      {
+		my ($derived, $source, $obj) = split (' ', $file);
+
+		# We might see a given object twice, for instance if it is
+		# used under different conditions.
+		next if defined $seen_files{$obj};
+		$seen_files{$obj} = 1;
+
+		my $val = "${derived}_${flag}";
+
+		(my $obj_compile = $lang->compile) =~ s/\(AM_$flag/\($val/;
+		my $obj_ltcompile = '$(LIBTOOL) --mode=compile ' . $obj_compile;
+
+		# Generate a transform which will turn suffix targets in
+		# depend2.am into real targets for the particular objects we
+		# are building.
+		$output_rules .= &file_contents ('depend2',
+						 (%transform,
+						  'GENERIC'   => 0,
+						  'BASE'      => $obj,
+						  'SOURCE'    => $source,
+						  'OBJ'       => "$obj.o",
+						  'OBJOBJ'    => "$obj.obj",
+						  'LTOBJ'     => "$obj.lo",
+						  'COMPILE'   => $obj_compile,
+						  'LTCOMPILE' => $obj_ltcompile))
+	      }
 	  }
-    }
+      }
 }
 
 # Output a rule to build from a YACC source.  The output from YACC is
@@ -1724,7 +1791,7 @@ sub handle_single_transform_list ($$$@)
             # generate an explicit rule.  Actually, in any case
             # where the object is not in `.' we need a special
             # rule.  The per-object rules in this case are
-            # generated later, by add_depend2.
+            # generated later, by handle_languages.
             if (($use_dependencies
                  && $rule ne ''
                  && $lang->autodep ne 'no')
@@ -3207,84 +3274,6 @@ sub handle_dist
     $output_rules .= &file_contents ('distdir', %transform);
 }
 
-
-# add_depend2 ($LANG)
-# -------------------
-# A subroutine of handle_dependencies.  This function includes
-# `depend2' with appropriate transformations.
-sub add_depend2
-{
-    my ($lang) = @_;
-
-    # Get information on $LANG.
-    my $pfx = $lang->autodep;
-    my $fpfx = ($pfx eq '') ? 'CC' : $pfx;
-    my $flag = $lang->flags || '';
-
-    # First include code for ordinary objects.
-    my %transform = ('PFX'  => $pfx,
-		     'FPFX' => $fpfx,
-		     'LIBTOOL' => $seen_libtool,
-		     'AMDEP'   => $use_dependencies ? 'AMDEP' : 'FALSE');
-
-    # This function can be called even when we don't want dependency
-    # tracking.  This happens when we need an explicit rule for some
-    # target.  In this case we don't want to include the generic code.
-    if ($use_dependencies)
-    {
-        my $compile = '$(' . $pfx . 'COMPILE)';
-	my $ltcompile = '$(LT' . $pfx . 'COMPILE)';
-	my %transform = (%transform,
-			 'GENERIC'   => 1,
-			 'BASE'      => '$*',
-			 'SOURCE'    => '$<',
-			 'OBJ'       => '$@',
-			 'LTOBJ'     => '$@',
-			 'OBJOBJ'    => '$@',
-			 'COMPILE'   => $compile,
-			 'LTCOMPILE' => $ltcompile);
-
-	foreach my $ext (grep ($extension_seen{$_}, @{$lang->extensions}))
-	{
-	    $output_rules .= (&file_contents ('depend2',
-					      (%transform,
-					       'EXT' => $ext))
-			      . "\n");
-	}
-    }
-
-    # Now include code for each specially handled object with this
-    # language.
-    my %seen_files = ();
-    foreach my $file (@{$lang_specific_files{$lang->name}})
-    {
-        my ($derived, $source, $obj) = split (' ', $file);
-
-	# We might see a given object twice, for instance if it is
-	# used under different conditions.
-	next if defined $seen_files{$obj};
-	$seen_files{$obj} = 1;
-
-	my $val = "${derived}_${flag}";
-
-	(my $obj_compile = $lang->compile) =~ s/\(AM_$flag/\($val/;
-	my $obj_ltcompile = '$(LIBTOOL) --mode=compile ' . $obj_compile;
-
-	# Generate a transform which will turn suffix targets in
-	# depend2.am into real targets for the particular objects we
-	# are building.
-	$output_rules .= &file_contents ('depend2',
-					 (%transform,
-					  'GENERIC'   => 0,
-					  'BASE'      => $obj,
-					  'SOURCE'    => $source,
-					  'OBJ'       => "$obj.o",
-					  'OBJOBJ'    => "$obj.obj",
-					  'LTOBJ'     => "$obj.lo",
-					  'COMPILE'   => $obj_compile,
-					  'LTCOMPILE' => $obj_ltcompile))
-    }
-}
 
 # Handle auto-dependency code.
 sub handle_dependencies
