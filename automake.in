@@ -781,6 +781,8 @@ sub handle_source_transform
     local ($one_file, $unxformed, $obj) = @_;
     local ($objpat) = $obj;
     $objpat =~ s/(\W)/\\$1/g;
+    # Handle explicit `.o' as well as whatever we're passed.
+    $objpat = '(' . $objpat . "|\\.o)";
 
     local ($linker) = '';
 
@@ -861,11 +863,11 @@ sub handle_source_transform
 
 		# Transform source files into .o files.  List of C++
 		# extensions comes from Emacs 19.32 etags.
-		if (s/\.c\+\+$/$obj/g
-		    || s/\.cc$/$obj/g
-		    || s/\.cpp$/$obj/g
-		    || s/\.cxx$/$obj/g
-		    || s/\.C$/$obj/g)
+		if (s/\.c\+\+$/.o/g
+		    || s/\.cc$/.o/g
+		    || s/\.cpp$/.o/g
+		    || s/\.cxx$/.o/g
+		    || s/\.C$/.o/g)
 		{
 		    $cxx_extensions{$&} = 1;
 		    $linker = 'CXXLINK';
@@ -873,13 +875,17 @@ sub handle_source_transform
 		else
 		{
 		    # FORTRAN support.  FIXME: not finished.
-		    s/\.f90$/$obj/g;
-		    s/\.for$/$obj/g;
+		    s/\.f90$/.o/g;
+		    s/\.for$/.o/g;
 
-		    # .y is yacc.  .l is lex.  .f and .F is fortran.
-		    # .s is assembly.  .M is Objective-C++.  .m is
-		    # Objective-C.
-		    s/\.[cylfFsmM]$/$obj/g;
+		    # C, yacc, and lex need special $obj extension,
+		    # for de-ansification.  Hopefully someday this
+		    # will go away.
+		    s/\.[cly]$/$obj/g;
+
+		    # .f and .F is fortran.  .s is assembly.  .M is
+		    # Objective-C++.  .m is Objective-C.
+		    s/\.[fFsmM]$/$obj/g;
 
 		    # FIXME: of course, this should only happen for C
 		    # source.  The multi-language support must really
@@ -932,7 +938,9 @@ sub handle_lib_objects
     # LDADD.
     local ($lsearch);
     local (@dep_list) = ();
-    local ($lex_ok) = 0;
+
+    # If no lex source seen, just assume this is ok.
+    local ($lex_ok) = $lex_seen ? 0 : 1;
 
     foreach $lsearch (&variable_value_as_list ($var))
     {
@@ -1612,7 +1620,7 @@ sub handle_dist_worker
 	# Prepend $(distdir) to each directory given.  Doing it via a
 	# hash lets us ensure that each directory is used only once.
 	local (%dhash);
-	grep ($dhash{'$(distdir)/' . _} = 1, @dist_dirs);
+	grep ($dhash{'$(distdir)/' . $_} = 1, @dist_dirs);
 	$output_rules .= "\t";
 	&pretty_print_rule ('$(mkinstalldirs)', "\t   ", sort keys %dhash);
     }
