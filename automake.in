@@ -3202,6 +3202,11 @@ sub handle_programs
       my $seen_libobjs = 0;
       my $obj = &get_object_extension ($one_file);
 
+      # Strip any $(EXEEXT) suffix the user might have added, or this
+      # will confuse &handle_source_transform and &check_canonical_spelling.
+      # We'll add $(EXEEXT) back later anyway.
+      $one_file =~ s/\$\(EXEEXT\)$//;
+
       # Canonicalize names and check for misspellings.
       my $xname = &check_canonical_spelling ($one_file, '_LDADD', '_LDFLAGS',
 					     '_SOURCES', '_OBJECTS',
@@ -3210,10 +3215,6 @@ sub handle_programs
       $where->push_context ("while processing program `$one_file'");
       $where->set (INTERNAL->get);
 
-      # Strip any $(EXEEXT) suffix the user might have added, or this
-      # will confuse &handle_source_transform.  We'll add $(EXEEXT) back
-      # later anyway.
-      $one_file =~ s/\$\(EXEEXT\)$//;
       my $linker = &handle_source_transform ($xname, $one_file, $obj, $where);
 
       my $xt = '';
