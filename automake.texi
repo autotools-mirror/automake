@@ -5325,8 +5325,35 @@ For instance, here is how to create a hard link to an installed program:
 
 @example
 install-exec-hook:
-        ln $(DESTDIR)$(bindir)/program $(DESTDIR)$(bindir)/proglink
+        ln $(DESTDIR)$(bindir)/program$(EXEEXT) \
+           $(DESTDIR)$(bindir)/proglink$(EXEEXT)
 @end example
+
+Although cheaper and more portable than symbolic links, hard links
+will not work everywhere (for instance OS/2 does not have
+@command{ln}).  Ideally you should fall back to @code{cp -p} when
+@code{ln} does not work.  An easy way, if symbolic links are
+acceptable to you, is to add @code{AC_PROG_LN_S} to
+@file{configure.in} (@pxref{Particular Programs, , Particular Program
+Checks, autoconf, The Autoconf Manual}) and use @code{$(LN_S)} in
+@file{Makefile.am}.
+
+@cindex versioned binaries, installing
+@cindex installing versioned binaries
+@cindex LN_S example
+For instance, here is how you could install a versioned copy of a
+program using @code{$(LN_S)}:
+
+@example
+install-exec-hook:
+        cd $(DESTDIR)$(bindir) && \
+          mv -f prog$(EXEEXT) prog-$(VERSION)$(EXEEXT) && \
+          $(LN_S) prog-$(VERSION)$(EXEEXT) prog$(EXEEXT)
+@end example
+
+Note that we rename the program so that a new version will erase the
+symbolic link, not the real binary.  Also we @code{cd} into the
+destination directory in order to create relative links.
 
 @c FIXME should include discussion of variables you can use in these
 @c rules
