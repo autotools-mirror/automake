@@ -774,7 +774,11 @@ sub get_object_extension
     if ($seen_libtool && ! $included_libtool_compile)
     {
 	# Output the libtool compilation rules.
-	$output_rules .= &file_contents ('libtool');
+	$output_rules .=
+	    &file_contents_with_transform
+		($use_dependencies ? 's/^NOTDEPEND.*$//;' : 's/^NOTDEPEND//;',
+		 'libtool');
+
 	&push_phony_cleaners ('libtool');
 
 	push (@suffixes, '.lo');
@@ -2770,21 +2774,17 @@ sub handle_dependencies
 	    $output_rules .= &file_contents ('depend');
 	    push (@clean, 'depend');
 	    &push_phony_cleaners ('depend');
-	    # FIXME: should use @EXT@ and @PFX@.  I don't know why it
-	    # didn't work.
 	    $output_rules .=
-		&file_contents_with_transform ('s/EXT/.c/g;'
-					       . 's/PFX//g;',
+		&file_contents_with_transform ('s/\@EXT\@/.c/g;'
+					       . 's/\@PFX\@//g;',
 					       'depend2');
 	    local ($ext);
 	    local ($need_cxx) = 0;
 	    foreach $ext (sort keys %cxx_extensions)
 	    {
-		# FIXME: should use @EXT@ and @PFX@.  I don't know why
-		# it didn't work.
 		$output_rules .=
-		    &file_contents_with_transform ('s/EXT/' . $ext .'/g;'
-						   . 's/PFX/CXX/g;',
+		    &file_contents_with_transform ('s/\@EXT\@/' . $ext .'/g;'
+						   . 's/\@PFX\@/CXX/g;',
 						   'depend2');
 		$need_cxx = 1;
 	    }
@@ -2798,8 +2798,7 @@ sub handle_dependencies
     {
 	# Include any auto-generated deps that are present.  Note that
 	# $build_directory ends in a "/".
-	if (-d ($build_directory . $relative_dir . "/.deps")
-	    && -f ($build_directory . $relative_dir . "/.deps/.P"))
+	if (-d ($build_directory . $relative_dir . "/.deps"))
 	{
 	    local ($depfile);
 
