@@ -307,8 +307,14 @@ check-local: automake
 automake: automake.in
 	CONFIG_FILES=$@ CONFIG_HEADERS= ./config.status
 
-# Tag before making distribution.
+# Tag before making distribution.  Also, don't make a distribution if
+# checks fail.  Also, make sure the NEWS file is up-to-date.
 cvs-dist:
+	$(MAKE) check
+	if sed 1q NEWS | grep -e "$(VERSION)"; then :; else \
+	  echo "NEWS not updated; not releasing" 1>&2; \
+	  exit 1;				\
+	fi
 	cvs tag `echo "Release-$(VERSION)" | sed 's/\./-/g'`
 	$(MAKE) dist
 
