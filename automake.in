@@ -2684,30 +2684,22 @@ sub check_typos ()
   # It is ok if the user sets this particular variable.
   set_seen 'AM_LDFLAGS';
 
-  foreach my $var (variables)
+  foreach my $primary ('SOURCES', 'LIBADD', 'LDADD', 'LDFLAGS', 'DEPENDENCIES')
     {
-      my $varname = $var->name;
-      # A configure variable is always legitimate.
-      next if exists $configure_vars{$varname};
-
-      my $check = 0;
-      foreach my $primary ('_SOURCES', '_LIBADD', '_LDADD', '_LDFLAGS',
-			   '_DEPENDENCIES')
+      foreach my $var (variables $primary)
 	{
-	  if ($varname =~ /^(.*)$primary$/)
+	  my $varname = $var->name;
+	  # A configure variable is always legitimate.
+	  next if exists $configure_vars{$varname};
+
+	  for my $cond ($var->conditions->conds)
 	    {
-	      $check = $1;
-	      last;
+	      $varname =~ /^(?:nobase_)?(?:dist_|nodist_)?(.*)_[[:alnum:]]+$/;
+	      msg_var ('syntax', $var, "variable `$varname' is defined but no"
+		       . " program or\nlibrary has `$1' as canonic name"
+		       . " (possible typo)")
+		unless $var->rdef ($cond)->seen;
 	    }
-	}
-      next unless $check;
-
-      for my $cond ($var->conditions->conds)
-	{
-	  msg_var ('syntax', $var, "variable `$varname' is defined but no"
-		   . " program or\nlibrary has `$check' as canonic name"
-		   . " (possible typo)")
-	    unless $var->rdef ($cond)->seen;
 	}
     }
 }
@@ -6497,7 +6489,7 @@ sub am_primary_prefixes ($$@)
   local $_;
   my %valid = map { $_ => 0 } @prefixes;
   $valid{'EXTRA'} = 0;
-  foreach my $var (variables)
+  foreach my $var (variables $primary)
     {
       # Automake is allowed to define variables that look like primaries
       # but which aren't.  E.g. INSTALL_sh_DATA.
@@ -6511,7 +6503,7 @@ sub am_primary_prefixes ($$@)
 
       my $varname = $var->name;
 
-      if ($varname =~ /^(nobase_)?(dist_|nodist_)?(.*)_$primary$/)
+      if ($varname =~ /^(nobase_)?(dist_|nodist_)?(.*)_[[:alnum:]]+$/)
 	{
 	  my ($base, $dist, $X) = ($1 || '', $2 || '', $3 || '');
 	  if ($dist ne '' && ! $can_dist)
@@ -6538,6 +6530,10 @@ sub am_primary_prefixes ($$@)
 	      # Ensure all extended prefixes are actually used.
 	      $valid{"$base$dist$X"} = 1;
 	    }
+	}
+      else
+	{
+	  prog_error "unexpected variable name: $varname";
 	}
     }
 

@@ -295,17 +295,33 @@ sub hook ($$)
   $_hooks{$var} = $fun;
 }
 
-=item C<variables>
+=item C<variables ([$suffix])>
 
 Returns the list of all L<Automake::Variable> instances.  (I.e., all
-variables defined so far.)
+variables defined so far.)  If C<$suffix> is supplied, return only
+the L<Automake::Variable> instances that ends with C<_$suffix>.
 
 =cut
 
-use vars '%_variable_dict';
-sub variables ()
+use vars '%_variable_dict', '%_primary_dict';
+sub variables (;$)
 {
-  return values %_variable_dict;
+  my ($suffix) = @_;
+  if ($suffix)
+    {
+      if (exists $_primary_dict{$suffix})
+	{
+	  return values %{$_primary_dict{$suffix}};
+	}
+      else
+	{
+	  return ();
+	}
+    }
+  else
+    {
+      return values %_variable_dict;
+    }
 }
 
 =item C<Automake::Variable::reset>
@@ -318,6 +334,7 @@ other internal data.
 sub reset ()
 {
   %_variable_dict = ();
+  %_primary_dict = ();
   %_appendvar = ();
   @_var_order = ();
   %_gen_varname = ();
@@ -420,6 +437,10 @@ sub _new ($$)
   my $self = Automake::Item::new ($class, $name);
   $self->{'scanned'} = 0;
   $_variable_dict{$name} = $self;
+  if ($name =~ /_([[:alnum:]]+)$/)
+    {
+      $_primary_dict{$1}{$name} = $self;
+    }
   return $self;
 }
 
@@ -1011,6 +1032,10 @@ sub variable_delete ($@)
 	{
 	  delete $_variable_dict{$var}{'defs'}{$cond};
 	}
+    }
+  if ($var =~ /_([[:alnum:]]+)$/)
+    {
+      delete $_primary_dict{$1}{$var};
     }
 }
 
