@@ -741,22 +741,17 @@ sub handle_yacc_lex_cxx
 
     local ($yacc_count) = scalar (keys %yacc_sources);
     local ($lex_count) = scalar (keys %lex_sources);
+
     if ($yacc_count)
     {
-	push (@suffixes, '.y');
-	$output_rules .= ".y.c:\n\t";
-	if ($yacc_count > 1)
+	local (%seen_suffix) = ();
+	foreach (keys %yacc_sources)
 	{
-	    $output_rules .= '$(SHELL) $(INTERLOCK) =yacclockdir $(YLWRAP) "$(YACC)" y.tab.c $*.c y.tab.h $*.h -- $(YFLAGS) $<';
+	    /(\..*)$/;
+	    output_yacc_build_rule ($1, $yacc_count > 1)
+		if (! defined $seen_suffix{$1});
+	    $seen_suffix{$1} = 1;
 	}
-	else
-	{
-	    $output_rules .= ('$(YACC) $(YFLAGS) $< && mv y.tab.c $@' . "\n"
-			      . "\tif test -f y.tab.h; then \\\n"
-			      . "\tif cmp -s y.tab.h \$*.h; then rm -f y.tab.h; else mv y.tab.h \$*.h; fi; \\\n"
-			      . "\telse :; fi");
-	}
-	$output_rules .= "\n";
 
 	if (! defined $configure_vars{'YACC'})
 	{
@@ -765,19 +760,14 @@ sub handle_yacc_lex_cxx
     }
     if ($lex_count)
     {
-	push (@suffixes, '.l');
-	&define_configure_variable ('LEX_OUTPUT_ROOT');
-	&define_configure_variable ('LEXLIB');
-	$output_rules .= ".l.c:\n\t";
-	if ($lex_count > 1)
+	local (%seen_suffix) = ();
+	foreach (keys %lex_sources)
 	{
-	    $output_rules .= '$(SHELL) $(INTERLOCK) =lexlockdir $(YLWRAP) "$(LEX)" $(LEX_OUTPUT_ROOT).c $@ -- $(LFLAGS) $<';
+	    /(\..*)$/;
+	    output_lex_build_rule ($1, $lex_count > 1)
+		if (! defined $seen_suffix{$1});
+	    $seen_suffix{$1} = 1;
 	}
-	else
-	{
-	    $output_rules .= '$(LEX) $(LFLAGS) $< && mv $(LEX_OUTPUT_ROOT).c $@';
-	}
-	$output_rules .= "\n";
 
 	if (! defined $configure_vars{'LEX'})
 	{
@@ -868,6 +858,60 @@ sub handle_yacc_lex_cxx
     }
 }
 
+
+# Output a rule to build from a YACC source.  The output from YACC is
+# compiled with C or C++, depending on the extension of the YACC file.
+sub output_yacc_build_rule
+{
+    local ($yacc_suffix, $use_interlock) = @_;
+    local ($c_suffix);
+
+    ($c_suffix = $yacc_suffix) =~ tr/y/c/;
+    push (@suffixes, $yacc_suffix);
+    $output_rules .= "$yacc_suffix$c_suffix:\n\t";
+
+    if ($use_interlock)
+    {
+	$output_rules .= '$(SHELL) $(INTERLOCK) =yacclockdir $(YLWRAP)'
+	    . ' "$(YACC)" y.tab.c $*' . $c_suffix 
+	    . ' y.tab.h $*.h -- $(YFLAGS) $<';
+    }
+    else
+    {
+	$output_rules .= ('$(YACC) $(YFLAGS) $< && mv y.tab.c $@' . "\n"
+			  . "\tif test -f y.tab.h; then \\\n"
+			  . "\tif cmp -s y.tab.h \$*.h; then rm -f y.tab.h; else mv y.tab.h \$*.h; fi; \\\n"
+			  . "\telse :; fi");
+    }
+    $output_rules .= "\n";
+}
+
+sub output_lex_build_rule
+{
+    local ($lex_suffix, $use_interlock) = @_;
+    local ($c_suffix);
+
+    ($c_suffix = $lex_suffix) =~ tr/l/c/;
+    push (@suffixes, $lex_suffix);
+    &define_configure_variable ('LEX_OUTPUT_ROOT');
+    &define_configure_variable ('LEXLIB');
+    $output_rules .= "$lex_suffix$c_suffix:\n\t";
+    
+    if ($use_interlock)
+    { 
+        # is the $@ correct here?  If so, why not use it in the
+        # interlock build rule for yacc above?
+	$output_rules .= '$(SHELL) $(INTERLOCK) =lexlockdir $(YLWRAP)'
+	    . ' "$(LEX)" $(LEX_OUTPUT_ROOT).c $@ -- $(LFLAGS) $<';
+    }
+    else
+    {
+	$output_rules .= '$(LEX) $(LFLAGS) $< && mv $(LEX_OUTPUT_ROOT).c $@';
+    }
+    $output_rules .= "\n";
+}
+
+
 # Check to make sure a source defined in LIBOBJS is not explicitly
 # mentioned.  This is a separate function (as opposed to being inlined
 # in handle_source_transform) because it isn't always appropriate to
@@ -931,17 +975,26 @@ sub handle_single_transform_list
 	    # Skip things that look like configure substitutions.
 	    next if /^\@.*\@$/;
 
-	    # Include .c file for lex or yacc source in distribution.
-	    if (/^(.*)\.y$/)
+	    # Include appropriate file for lex or yacc source in
+	    # distribution.  If the extension is the regular '.y' or
+	    # '.l', we assume C compilation, and the generated file
+	    # has exension .c.  Otherwise, we compile with C++, and
+	    # make the following association: (yy -> cc, y++ -> c++, 
+	    # yxx -> cxx), similarly for .ll, etc.
+	    if (/^(.*)\.(y|yy|y\+\+|yxx)$/)
 	    {
 		# Yacc source.
-		&push_dist_common ($1 . '.c');
+		local ($ext) = $2;
+		$ext =~ tr/y/c/;
+		&push_dist_common ("$1.$ext");
 		$yacc_sources{$_} = 1;
 	    }
-	    elsif (/^(.*)\.l$/)
+	    elsif (/^(.*)\.(l|ll|l\+\+|lxx)$/)
 	    {
 		# Lex source.
-		&push_dist_common ($1 . '.c');
+		local ($ext) = $2;
+		$ext =~ tr/l/c/;
+		&push_dist_common ("$1.$ext");
 		$lex_sources{$_} = 1;
 	    }
 
@@ -950,6 +1003,14 @@ sub handle_single_transform_list
 	    if (s/\.(c\+\+|cc|cpp|cxx|C)$/.o/)
 	    {
 		$cxx_extensions{'.' . $1} = 1;
+		$linker = 'CXXLINK';
+	    }
+	    elsif (s/\.(yy|y\+\+|yxx|ll|l\+\+|lxx)$/\.o/)
+	    {
+		# Compiling lex or yacc with C++
+		local ($ext) = $1;
+		$ext =~ tr/ly/cc/;
+		$cxx_extensions{".$ext"} = 1;
 		$linker = 'CXXLINK';
 	    }
 	    elsif (s/\.([Ff]\\|f90\\|for)$/.o/)
