@@ -12,7 +12,8 @@ AC_OUTPUT_COMMANDS([
 find . -name Makefile -print | while read mf; do
   # Extract the definition of DEP_FILES from the Makefile without
   # running `make'.
-  deps="`sed -n -e '
+  DEPDIR=`sed -n -e '/^DEPDIR = / s///p' $mf`
+  deps="`sed -n -e 's/\$(DEPDIR)/'"$DEPDIR/g" -e '
     /^DEP_FILES = .*\\\\$/ {
       s/^DEP_FILES = //
       :loop
@@ -26,9 +27,13 @@ find . -name Makefile -print | while read mf; do
   # If we found a definition, proceed to create all the files.
   if test -n "$deps"; then
     dirpart="`echo $mf | sed -e 's|/[^/]*$||'`"
-    test -d "$dirpart/.deps" || mkdir "$dirpart/.deps"
-    for file in $deps; do
-      test -f "$dirpart/$file" || : > "$dirpart/$file"
+    test -d "$dirpart/$DEPDIR" || mkdir "$dirpart/$DEPDIR"
+    for file in `echo "$deps" | sed 's/\$U//g'` \
+		`echo "$deps" | sed 's/\$U/_/g'`; do
+      if test ! -f "$dirpart/$file"; then
+	echo "creating $dirpart/$file"
+	echo '# dummy' > "$dirpart/$file"
+      fi
     done
   fi
 done])])

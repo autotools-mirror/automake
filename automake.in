@@ -81,10 +81,6 @@ $default_strictness = $GNU;
 # Name of strictness level, as set on command line.
 $default_strictness_name = 'gnu';
 
-# This is TRUE if GNU make specific automatic dependency generation
-# code should be included in generated Makefile.in.
-$cmdline_use_dependencies = 1;
-
 # TRUE if in verbose mode.
 $verbose = 0;
 
@@ -232,9 +228,6 @@ $in_file_name = '';
 # TRUE if --cygnus seen.
 $cygnus_mode = 0;
 
-# Keys of this hash are names of dependency files to ignore.
-%omit_dependencies = ();
-
 # Hash table of AM_CONDITIONAL variables seen in configure.
 %configure_cond = ();
 
@@ -285,10 +278,6 @@ $obsolete_rx = '(' . join ('|', keys %obsolete_macros) . ')';
 
 # This maps languages names onto properties.
 %language_map = ();
-
-# This hash keeps track of whether various configure macros for
-# dependency tracking have been seen.
-%dependency_macros = ();
 
 
 
@@ -404,7 +393,7 @@ sub parse_arguments
 	}
 	elsif ($arglist[0] eq '--ignore-deps' || $arglist[0] eq '-i')
 	{
-	    $cmdline_use_dependencies = 0;
+	    # Just ignore.
 	}
 	elsif ($arglist[0] eq '--no-force')
 	{
@@ -742,10 +731,7 @@ sub get_object_extension
 
 	# Note that order of transforms is important here.  We collude
 	# with compile.am to get the right result.
-	$xform = (($use_dependencies
-		   ? 's/^NOTDEPEND.*$//;'
-		   : 's/^NOTDEPEND//;')
-		  . ($seen_objext ? 's/^OBJEXT//;' : 's/^OBJEXT.*$//;'));
+	$xform = ($seen_objext ? 's/^OBJEXT//;' : 's/^OBJEXT.*$//;');
 	$output_rules .= &file_contents_with_transform ($xform, 'compile');
 
 	&push_phony_cleaners ('compile');
@@ -772,10 +758,7 @@ sub get_object_extension
     if ($seen_libtool && ! $included_libtool_compile)
     {
 	# Output the libtool compilation rules.
-	$output_rules .=
-	    &file_contents_with_transform
-		($use_dependencies ? 's/^NOTDEPEND.*$//;' : 's/^NOTDEPEND//;',
-		 'libtool');
+	$output_rules .= &file_contents ('libtool');
 
 	&push_phony_cleaners ('libtool');
 
@@ -1081,7 +1064,9 @@ sub handle_single_transform_list
 
 	    # Transform .o or $o file into .P file (for automatic
 	    # dependency code).
-	    $dep_files{'.deps/' . $base . '.P'} = 1;
+	    local ($depfile) = $object;
+	    $depfile =~ s/\.([^.]*)$/.P\1/;
+	    $dep_files{'$(DEPDIR)/' . $depfile} = 1;
 	}
     }
 
@@ -1272,6 +1257,9 @@ sub handle_lib_objects_cond
 	# means adding entries to dep_files.
 	if ($lsearch =~ /^\@(LT)?LIBOBJS\@$/)
 	{
+	    local ($myobjext) = $objext;
+	    $objext = '.lo' if $1;
+
 	    push (@dep_list, $lsearch);
 	    $seen_libobjs = 1;
 	    if (! keys %libsources)
@@ -1294,19 +1282,22 @@ sub handle_lib_objects_cond
 		}
 		elsif ($iter ne 'alloca.c')
 		{
-		    ($rewrite = $iter) =~ s/\.c$/.P/;
-		    $dep_files{'.deps/' . $rewrite} = 1;
+		    ($rewrite = $iter) =~ s/\.c$/.P$obj/;
+		    $dep_files{'$(DEPDIR)/' . $rewrite} = 1;
 		    &require_file_with_line ($var, $FOREIGN, $iter);
 		}
 	    }
 	}
 	elsif ($lsearch =~ /^\@(LT)?ALLOCA\@$/)
 	{
+	    local ($myobjext) = $objext;
+	    $objext = '.lo' if $1;
+
 	    push (@dep_list, $lsearch);
 	    &am_line_error ($var,
 			    "\@$1" . "ALLOCA\@ seen but \`AC_FUNC_ALLOCA' not in \`configure.in'")
 		if ! defined $libsources{'alloca.c'};
-	    $dep_files{'.deps/alloca.P'} = 1;
+	    $dep_files{'$(DEPDIR)/alloca.P' . $myobjext} = 1;
 	    &require_file_with_line ($var, $FOREIGN, 'alloca.c');
 	    &saw_extension ('c');
 	}
@@ -2521,12 +2512,6 @@ sub generate_dependency_code
     local ($ext);
     foreach $ext (&lang_extensions ($lang))
     {
-	if (! defined $dependency_macros{$fullname} && ! $error)
-	{
-	    &am_error ("dependency tracking enabled but \`AM_${fullname}_DEPENDENCIES' not seen in configure.in");
-	    $error = 1;
-	}
-
 	$output_rules .=
 	    &file_contents_with_transform ('s/\@EXT\@/' . $ext . '/g;'
 					   . 's/\@FPFX\@/' . $fullname . '/g;'
@@ -2539,15 +2524,21 @@ sub generate_dependency_code
 # Handle auto-dependency code.
 sub handle_dependencies
 {
-    # Make sure this variable is always marked as used.
-    &examine_variable ('OMIT_DEPENDENCIES');
-
-    if ($use_dependencies)
-    {
-	# Include GNU-make-specific auto-dep code.  Don't include it
-	# if DEP_FILES would be empty.
+	# Include auto-dep code.  Don't include it if DEP_FILES would be empty.
 	if (&saw_sources_p (0) && keys %dep_files)
 	{
+	    # Set location of depcomp.
+	    if ($config_aux_dir ne '.' && $config_aux_dir ne '')
+	    {
+		&define_variable ('depcomp', ('$(SHELL) ' . $config_aux_dir
+					    . '/depcomp'));
+	    }
+	    else
+	    {
+		&define_variable ('depcomp',
+			  '$(SHELL) $(top_srcdir)/depcomp');
+	    }
+			      
 	    &define_pretty_variable ('DEP_FILES', '', sort keys %dep_files);
 	    $output_rules .= &file_contents ('depend');
 	    push (@clean, 'depend');
@@ -2560,7 +2551,6 @@ sub handle_dependencies
 	    &generate_dependency_code ('objc', 'OBJC', 'OBJC');
 	    &generate_dependency_code ('cxx', 'CXX', 'CXX');
 	}
-    }
 }
 
 # Handle subdirectories.
@@ -2759,7 +2749,6 @@ sub handle_configure
                       . "\n"
 		      . "\tcd \$(top_srcdir) && \$(AUTOMAKE) "
 		      . ($cygnus_mode ? '--cygnus' : ('--' . $strictness_name))
-		      . ($cmdline_use_dependencies ? '' : ' --ignore-deps')
 		      . ' ' . $input . $colon_infile . "\n\n");
 
     # This rule remakes the Makefile.
@@ -4115,15 +4104,6 @@ sub scan_one_configure_file
 	{
 	    $configure_vars{'FLIBS'} = $filename . ':' . $.;
 	}
-
-	# Look for dependency-tracking macros.
-	if (/AM_(CC|CXX|OBJC)_DEPENDENCIES/)
-	{
-	    $dependency_macros{$1} = 1;
-	    $configure_vars{'DEP_' . $1 . 'PRECOMP'} = $filename . ':' . $.;
-	    $configure_vars{'DEP_' . $1 . 'POSTCOMP'} = $filename . ':' . $.;
-	    $configure_vars{'DEP_' . $1 . 'FLAG'} = $filename . ':' . $.;
-	}
     }
 
     close (CONFIGURE);
@@ -4163,7 +4143,7 @@ sub scan_configure
     # looking at a subdir Makefile.  We must set relative_dir so that
     # the file-finding machinery works.
     local ($relative_dir) = '.';
-    &require_config_file ($FOREIGN, 'install-sh', 'mkinstalldirs', 'missing');
+    &require_config_file ($FOREIGN, 'install-sh', 'mkinstalldirs', 'missing', 'depcomp');
     &am_error ("\`install.sh' is an anachronism; use \`install-sh' instead")
         if -f $config_aux_path[0] . '/install.sh';
 }
@@ -6084,7 +6064,7 @@ sub initialize_global_constants
 	 "libversion.in", "mdate-sh", "mkinstalldirs", "install-sh",
 	 'texinfo.tex', "ansi2knr.c", "ansi2knr.1", 'elisp-comp',
 	 'ylwrap', 'acinclude.m4', @libtoolize_files,
-	 'missing'
+	 'missing', 'depcomp'
 	 );
 
     # Commonly used files we auto-include, but only sometimes.
@@ -6103,7 +6083,6 @@ sub initialize_global_constants
   --gnits               set strictness to gnits
   --gnu                 set strictness to gnu
   --help                print this help, then exit
-  -i, --ignore-deps     disable dependency tracking code
   --no-force            only update Makefile.in's that are out of date
   -o DIR, --output-dir=DIR
                         put generated Makefile.in's into DIR

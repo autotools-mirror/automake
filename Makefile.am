@@ -26,7 +26,7 @@ $(amfiles)
 ## what we want.  So we make them executable by hand.
 scriptdir = $(pkgdatadir)
 dist_script_DATA = config.guess config.sub install-sh mdate-sh missing \
-mkinstalldirs elisp-comp ylwrap acinstall
+mkinstalldirs elisp-comp ylwrap acinstall depcomp
 
 install-data-hook:
 	@$(POST_INSTALL)
