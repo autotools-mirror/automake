@@ -96,7 +96,7 @@ maintainer-check: automake aclocal
 	  perl4.036 -c -w aclocal; \
 	else :; fi
 ## We never want to use "undef", only "delete".
-	@if grep undef $(srcdir)/automake.in > /dev/null 2>&1; then \
+	@if grep -w undef $(srcdir)/automake.in > /dev/null 2>&1; then \
 	  echo "Found undef in automake.in; use delete instead" 1>&2; \
 	  exit 1; \
 	fi

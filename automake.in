@@ -27,6 +27,7 @@ eval 'exec @PERL@ -S $0 ${1+"$@"}'
 # Originally written by David Mackenzie <djm@gnu.ai.mit.edu>.
 # Perl reimplementation by Tom Tromey <tromey@cygnus.com>.
 
+require 5;
 
 # Parameters set by configure.  Not to be changed.  NOTE: assign
 # VERSION as string so that eg version 0.30 will print correctly.
@@ -2569,21 +2570,19 @@ sub handle_tags
 	|| &variable_defined ('ETAGS_ARGS')
 	|| @tag_deps)
     {
-	local ($xform) = '';
+	local ($config) = '';
 	local ($one_hdr);
 	foreach $one_hdr (@config_headers)
 	{
 	    if ($relative_dir eq &dirname ($one_hdr))
 	    {
 		# The config header is in this directory.  So require it.
-		local ($var);
-		($var = &basename ($one_hdr)) =~ s/(\W)/\\$1/g;
-		$xform .= ' ' if $xform;
-		$xform .= $var;
+		$config .= ' ' if $config;
+		$config .= &basename ($one_hdr);
 	    }
 	}
-	$xform = ('s/\@CONFIG\@/' . $xform . '/;'
-		  . 's/\@DIRS\@/' . join (' ', @tag_deps) . '/;');
+	local $xform = &transform ('CONFIG' => $xform,
+				   'DIRS'   => join (' ', @tag_deps));
 
 	if (&variable_defined ('SUBDIRS'))
 	{
@@ -6523,7 +6522,7 @@ sub read_am_file
     {
 	if (@conditional_stack)
 	{
-	    &am_error ("unterminated conditionals: " . join (' ', @conditional_stack));
+	    &am_error ("unterminated conditionals: @conditional_stack");
 	}
 	else
 	{
@@ -7831,7 +7830,7 @@ sub my_glob
 # Print an error message and set exit status.
 sub am_error
 {
-    warn "automake: ${am_file}.am: ", join (' ', @_), "\n";
+    warn "automake: ${am_file}.am: @_\n";
     $exit_status = 1;
 }
 
@@ -7864,7 +7863,7 @@ sub am_line_error
 	{
 	    # Couldn't find the line number.
 	}
-	warn $file, ": ", join (' ', @args), "\n";
+	warn $file, ": @args\n";
 	$exit_status = 1;
     }
     else
@@ -7877,7 +7876,7 @@ sub am_line_error
 sub am_conf_error
 {
     # FIXME: can run in subdirs.
-    warn "automake: $configure_ac: ", join (' ', @_), "\n";
+    warn "automake: $configure_ac: @_\n";
     $exit_status = 1;
 }
 
@@ -7888,7 +7887,7 @@ sub am_conf_line_error
 
     if ($line)
     {
-	warn "$file: $line: ", join (' ', @args), "\n";
+	warn "$file: $line: @args\n";
 	$exit_status = 1;
     }
     else
