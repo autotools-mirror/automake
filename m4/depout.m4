@@ -9,6 +9,7 @@ dnl is enabled.  FIXME.  This creates each `.P' file that we will
 dnl need in order to bootstrap the dependency handling code.
 AC_DEFUN(AM_OUTPUT_DEPENDENCY_COMMANDS,[
 AC_OUTPUT_COMMANDS([
+test x"$AMDEP" != x"" ||
 for mf in $CONFIG_FILES; do
   case "$mf" in
   Makefile) dirpart=.;;
@@ -42,4 +43,4 @@ for mf in $CONFIG_FILES; do
     echo '# dummy' > "$dirpart/$file"
   done
 done
-])])
+], [AMDEP="$AMDEP"])])
