@@ -286,7 +286,7 @@ is the value being appended to  C<$varname>.
 =cut
 
 use vars '%_hooks';
-sub hook ($\&)
+sub hook ($$)
 {
   my ($var, $fun) = @_;
   $_hooks{$var} = $fun;
