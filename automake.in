@@ -5463,11 +5463,22 @@ sub make_condition
 {
     my $res = conditional_string (@_);
 
-    return $res
-      if $res eq '' or $res eq '#' ;
-
-    $res = '@' . $res . '@';
-    $res =~ s/ /@@/g;
+    # There are no conditions.
+    if ($res eq '')
+      {
+	# Nothing to do.
+      }
+    # It's impossible.
+    elsif ($res eq 'FALSE')
+      {
+	$res = '#';
+      }
+    # Build it.
+    else
+      {
+	$res = '@' . $res . '@';
+	$res =~ s/ /@@/g;
+      }
 
     return $res;
 }
@@ -5529,7 +5540,7 @@ sub conditional_string
 
   if (grep (/^FALSE$/, @stack))
     {
-      return '#';
+      return 'FALSE';
     }
   else
     {
@@ -6007,7 +6018,9 @@ sub check_variable_defined_unconditionally ($$)
 	else
 	{
 	    &am_line_error ($parent,
-			    "warning: automake does not support $var being defined conditionally")
+			    "warning: automake does not support $var being defined conditionally");
+	    variable_dump ($var);
+
 	}
     }
 }
@@ -6879,7 +6892,7 @@ sub file_contents_internal ($%)
 
 	      # Output only if not in FALSE.
 	      if (defined $dependencies{$_}
-		  && $cond ne "#")
+		  && $cond ne 'FALSE')
 		{
 		  &depend ($_, @deps);
 		  $actions{$_} .= $actions;
@@ -6889,7 +6902,7 @@ sub file_contents_internal ($%)
 		  # Free lance dependency.  Output the rule for all the
 		  # targets instead of one by one.
 		  if (!defined $targets{$targets}
-		      && $cond ne "#")
+		      && $cond ne 'FALSE')
 		    {
 		      $result_rules .= "$separator$comment$paragraph\n";
 		      rule_define ($targets, 1, $cond, $.);
@@ -6914,7 +6927,7 @@ sub file_contents_internal ($%)
 	    # of (which is detected by the first reading of
 	    # `header-vars.am'), we must not output them.
 	    $result_vars .= "$separator$comment$_\n"
-	      if $type ne '+' && $var_is_am{$var} && $cond ne '#';
+	      if $type ne '+' && $var_is_am{$var} && $cond ne 'FALSE';
 
  	    $comment = $separator = '';
  	}
@@ -6923,7 +6936,7 @@ sub file_contents_internal ($%)
 	    # This isn't an error; it is probably some tokens which
 	    # configure is supposed to replace, such as `@SET-MAKE@',
 	    # or some part of a rule cut by an if/endif.
-  	    if ($cond ne "#")
+  	    if ($cond ne 'FALSE')
 	      {
 		$result_rules .= "$separator$comment$_\n";
 	      }
