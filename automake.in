@@ -109,6 +109,9 @@ $add_missing = 0;
 # TRUE if we should copy missing files; otherwise symlink if possible.
 $copy_missing = 0;
 
+# TRUE if we should always update files that we know about.
+$force_missing = 0;
+
 # Files found by scanning configure.in for LIBOBJS.
 %libsources = ();
 
@@ -467,6 +470,10 @@ sub parse_arguments
 	elsif ($arglist[0] eq '--no-force')
 	{
 	    $force_generation = 0;
+	}
+	elsif ($arglist[0] eq '--force-missing')
+	{
+	    $force_missing = 1;
 	}
 	elsif ($arglist[0] =~ /^--output-dir=(.*)$/)
 	{
@@ -6654,6 +6661,7 @@ sub initialize_global_constants
   --amdir=DIR           directory storing config files
   -c, --copy            with -a, copy missing files (default is symlink)
   --cygnus              assume program is part of Cygnus-style tree
+  --force-missing       force update of standard files
   --foreign             set strictness to foreign
   --gnits               set strictness to gnits
   --gnu                 set strictness to gnu
@@ -7476,7 +7484,7 @@ sub require_file_internal
 	    }
 	}
 
-	if ($found_it)
+	if ($found_it && ! $force_missing)
 	{
 	    # Prune the path list.
 	    @require_file_paths = $save_dir;
@@ -7485,7 +7493,7 @@ sub require_file_internal
 	{
 	    if ($strictness >= $mystrict)
 	    {
-		if ($dangling_sym)
+		if ($dangling_sym || $force_missing)
 		{
 		    unlink ($fullfile);
 		}
