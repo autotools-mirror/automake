@@ -285,6 +285,7 @@ xsource.test \
 yacc.test \
 yacc2.test \
 yacc3.test \
+yacc4.test \
 yaccpp.test \
 yaccvpath.test
 
