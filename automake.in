@@ -29,6 +29,8 @@ eval 'exec @PERL@ -S $0 ${1+"$@"}'
 
 require 5.005;
 
+use IO::File;
+
 # Parameters set by configure.  Not to be changed.  NOTE: assign
 # VERSION as string so that eg version 0.30 will print correctly.
 my $VERSION = "@VERSION@";
@@ -796,7 +798,8 @@ sub generate_makefile
 	}
     }
 
-    if (! open (GM_FILE, "> " . $out_file))
+    my $gm_file = new IO::File "> $out_file";
+    if (! $gm_file)
     {
 	warn "automake: ${am_file}.in: cannot write: $!\n";
 	$exit_status = 1;
@@ -807,16 +810,16 @@ sub generate_makefile
     # In case we're running under MSWindows, don't write with CRLF
     # (as it causes problems for the dependency-file extraction in
     # AM_OUTPUT_DEPENDENCY_COMMANDS).
-    binmode GM_FILE;
+    binmode $gm_file;
 
-    print GM_FILE $output_vars;
+    print $gm_file $output_vars;
     # We make sure that `all:' is the first target.
-    print GM_FILE $output_all;
-    print GM_FILE $output_header;
-    print GM_FILE $output_rules;
-    print GM_FILE $output_trailer;
+    print $gm_file $output_all;
+    print $gm_file $output_header;
+    print $gm_file $output_rules;
+    print $gm_file $output_trailer;
 
-    if (! close (GM_FILE))
+    if (! $gm_file->close)
       {
 	warn "automake: $am_file.in: cannot close: $!\n";
 	$exit_status = 1;
@@ -2245,7 +2248,8 @@ sub scan_texinfo_file
 {
     my ($filename) = @_;
 
-    if (! open (TEXI, $filename))
+    my $texi = new IO::File ("< $filename");
+    if (! $texi)
     {
 	&am_error ("couldn't open \`$filename': $!");
 	return '';
@@ -2253,7 +2257,7 @@ sub scan_texinfo_file
     print "automake: reading $filename\n" if $verbose;
 
     my ($outfile, $vfile);
-    while (<TEXI>)
+    while ($_ = $texi->getline)
     {
 	if (/^\@setfilename +(\S+)/)
 	{
@@ -2269,7 +2273,7 @@ sub scan_texinfo_file
 	}
     }
 
-    close (TEXI);
+    $texi->close;
     return ($outfile, $vfile);
 }
 
@@ -3014,10 +3018,11 @@ sub handle_aclocal_m4
 	&define_variable ("ACLOCAL_M4", '$(top_srcdir)/aclocal.m4');
 	&push_dist_common ('aclocal.m4');
 
-	if (open (ACLOCAL, '< aclocal.m4'))
+	my $aclocal = new IO::File ("< aclocal.m4");
+	if ($aclocal)
 	{
-	    my $line = <ACLOCAL>;
-	    close (ACLOCAL);
+	    my $line = $aclocal->getline;
+	    $aclocal->close;
 
 	    if ($line =~ 'generated automatically by aclocal')
 	    {
@@ -4140,7 +4145,6 @@ sub scan_autoconf_config_files
 sub scan_autoconf_traces
 {
     my ($filename) = @_;
-    local *TRACES;
 
     my $traces = "$ENV{amtraces} ";
 
@@ -4148,11 +4152,14 @@ sub scan_autoconf_traces
     $traces .= ' -t AC_LIBSOURCE';
     $traces .= ' -t AC_SUBST';
 
-    open (TRACES, "$traces |")
-	|| die "automake: couldn't open \`$traces': $!\n";
+    my $tracefh = new IO::File ("$traces |");
+    if (! $tracefh)
+    {
+	die "automake: couldn't open \`$traces': $!\n";
+    }
     print "automake: reading $traces\n" if $verbose;
 
-    while (<TRACES>)
+    while ($_ = $tracefh->getline)
     {
         chomp;
         my ($file, $line, $macro, @args) = split /:/;
@@ -4187,8 +4194,8 @@ sub scan_autoconf_traces
 	}
     }
 
-    close (TRACES)
-      || die "automake: close: $traces: $!\n";
+    $tracefh->close
+	|| die "automake: close: $traces: $!\n";
 }
 
 
@@ -4199,15 +4206,16 @@ sub scan_autoconf_traces
 sub scan_one_autoconf_file
 {
     my ($filename) = @_;
-    local *CONFIGURE;
 
-    open (CONFIGURE, $filename)
-	|| die "automake: couldn't open \`$filename': $!\n";
+    my $configfh = new IO::File ("< $filename");
+    if (! $configfh)
+    {
+	die "automake: couldn't open \`$filename': $!\n";
+    }
     print "automake: reading $filename\n" if $verbose;
 
-
     my ($in_ac_output, $in_ac_replace) = (0, 0);
-    while (<CONFIGURE>)
+    while ($_ = $configfh->getline)
     {
 	# Remove comments from current line.
 	s/\bdnl\b.*$//;
@@ -4524,7 +4532,7 @@ sub scan_one_autoconf_file
 	}
     }
 
-    close (CONFIGURE);
+    $configfh->close;
 }
 
 
@@ -5994,16 +6002,19 @@ sub define_program_variable
 sub read_am_file
 {
     my ($amfile) = @_;
-    local *AM_FILE;
 
-    open (AM_FILE, $amfile) || die "automake: couldn't open \`$amfile': $!\n";
+    my $am_file = new IO::File ("< $amfile");
+    if (! $am_file)
+    {
+	die "automake: couldn't open \`$amfile': $!\n";
+    }
     print "automake: reading $amfile\n" if $verbose;
 
     my $spacing = '';
     my $comment = '';
     my $blank = 0;
 
-    while (<AM_FILE>)
+    while ($_ = $am_file->getline)
     {
 	if (/$IGNORE_PATTERN/o)
 	{
@@ -6308,7 +6319,7 @@ sub read_am_file
 	    $saw_bk = /\\$/;
 	}
 
-	$_ = <AM_FILE>;
+        $_ = $am_file->getline;
     }
 
     $output_trailer .= $comment;
@@ -6734,8 +6745,11 @@ sub file_contents
 
     # Swallow the file and applied the COMMAND.
     my $file = $am_dir . '/' . $basename . '.am';
-    open (FC_FILE, $file)
-	|| die "automake: installation error: cannot open \`$file'\n";
+    my $fc_file = new IO::File ("< $file");
+    if (! $fc_file)
+    {
+	die "automake: installation error: cannot open \`$file'\n";
+    }
     # Looks stupid?
     # print "automake: reading $file\n" if $verbose;
 
@@ -6743,7 +6757,7 @@ sub file_contents
     # having performed the $COMMAND, and removed Automake comments.
     my $contents = '';
 
-    while (<FC_FILE>)
+    while ($_ = $fc_file->getline)
     {
 	$_ =~ s/\@MAINTAINER_MODE_TRUE\@//g
 	    unless $seen_maint_mode;
@@ -6764,7 +6778,7 @@ sub file_contents
 	$contents .= $_;
     }
 
-    close (FC_FILE);
+    $fc_file->close;
 
     # We don't need more than two consecutive new-lines.
     $contents =~ s/\n{3,}/\n\n/g;
@@ -7573,8 +7587,8 @@ sub create
 {
     my ($file) = @_;
 
-    open (TOUCH, ">> $file");
-    close (TOUCH);
+    my $touch = new IO::File (">> $file");
+    $touch->close;
 }
 
 # Glob something.  Do this to avoid indentation screwups everywhere we
