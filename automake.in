@@ -859,11 +859,13 @@ register_language ('name' => 'header',
 register_language ('name' => 'yacc',
 		   'Name' => 'Yacc',
 		   'ansi' => 1,
+		   'config_vars' => ['YACC'],
 		   'derived_autodep' => 'yes',
 		   'extensions' => ['y'],
 		   '_finish' => \&lang_yacc_finish);
 register_language ('name' => 'yaccxx',
 		   'Name' => 'Yacc (C++)',
+		   'config_vars' => ['YACC'],
 		   'linker' => 'CXXLINK',
 		   'derived_autodep' => 'yes',
 		   'extensions' => ['y++', 'yy', 'yxx', 'ypp'],
@@ -873,11 +875,13 @@ register_language ('name' => 'yaccxx',
 register_language ('name' => 'lex',
 		   'Name' => 'Lex',
 		   'ansi' => 1,
+		   'config_vars' => ['LEX'],
 		   'derived_autodep' => 'yes',
 		   'extensions' => ['l'],
 		   '_finish' => \&lang_lex_finish);
 register_language ('name' => 'lexxx',
 		   'Name' => 'Lex (C++)',
+		   'config_vars' => ['LEX'],
 		   'linker' => 'CXXLINK',
 		   'derived_autodep' => 'yes',
 		   'extensions' => ['l++', 'll', 'lxx', 'lpp'],
@@ -886,6 +890,8 @@ register_language ('name' => 'lexxx',
 # Assembler.
 register_language ('name' => 'asm',
 		   'Name' => 'Assembler',
+		   'config_vars' => ['AS', 'ASFLAGS'],
+
 		   'flags' => 'ASFLAGS',
 		   # Users can set AM_ASFLAGS to includes DEFS, INCLUDES,
 		   # or anything else required.  They can also set AS.
@@ -893,7 +899,9 @@ register_language ('name' => 'asm',
 		   'compiler' => 'ASCOMPILE',
 		   'compile_flag' => '-c',
 		   'extensions' => ['s', 'S'],
-		   '_finish' => \&lang_asm_finish);
+
+		   # With assembly we still use the C linker.
+		   '_finish' => \&lang_c_finish);
 
 # Fortran 77
 register_language ('name' => 'f77',
@@ -1597,12 +1605,10 @@ sub handle_languages
 
 	foreach my $var (@{$lang->config_vars})
 	  {
-	    if (!exists $configure_vars{$var})
-	      {
-		am_error ($lang->Name
-			  . " source seen but `$var' not defined in"
-			  . " `$configure_ac'");
-	      }
+	    am_error ($lang->Name
+		      . " source seen but `$var' not defined in"
+		      . " `$configure_ac'")
+	      if !exists $configure_vars{$var};
 	  }
 
 	# The compiler's flag must be a configure variable.
@@ -4971,29 +4977,8 @@ sub lang_c_finish
  	# Use a sneaky little hack to make it print nicely.
  	&pretty_print_rule ('', '', @objects, ':', '$(ANSI2KNR)');
     }
-
-    if (! defined $configure_vars{'CC'})
-    {
-	# FIXME: line number.
-	&am_error ("C source seen but `CC' not defined in `$configure_ac'");
-    }
 }
 
-sub lang_asm_finish
-{
-    if (! defined $configure_vars{'AS'})
-    {
-	&am_error ("assembly source seen but `AS' not defined");
-    }
-
-    if (! defined $configure_vars{'ASFLAGS'})
-    {
-	&am_error ("assembly source seen but `ASFLAGS' not defined in `$configure_ac'");
-    }
-
-    # Also use the C code, since with assembly we still use the C linker.
-    &lang_c_finish;
-}
 
 # This is a helper for both lex and yacc.
 sub yacc_lex_finish_helper
@@ -5059,10 +5044,6 @@ sub lang_yacc_finish
     }
     $output_rules .= "\n";
 
-    if (! defined $configure_vars{'YACC'})
-    {
-	&am_error ("yacc source seen but `YACC' not defined in `$configure_ac'");
-    }
     if (&variable_defined ('YACCFLAGS'))
     {
 	&am_line_error ('YACCFLAGS',
@@ -5102,10 +5083,6 @@ sub lang_lex_finish
 	push (@maintainer_clean_files, "${1}.${cname}");
     }
 
-    if (! defined $configure_vars{'LEX'})
-    {
-	&am_error ("lex source seen but `LEX' not defined in `$configure_ac'");
-    }
     if (! $seen_decl_yytext)
     {
 	&am_error ("lex source seen but `AC_DECL_YYTEXT' not in `$configure_ac'");
