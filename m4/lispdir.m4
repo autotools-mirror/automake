@@ -4,7 +4,7 @@
 ## Almost entirely rewritten by Alexandre Oliva
 ## ------------------------
 
-# Copyright 1996, 1997, 1998, 1999, 2000, 2001, 2002
+# Copyright 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003
 #   Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
@@ -27,7 +27,7 @@
 # AM_PATH_LISPDIR
 # ---------------
 AC_DEFUN([AM_PATH_LISPDIR],
-[AC_ARG_WITH(lispdir,
+[AC_ARG_WITH([lispdir],
  [  --with-lispdir          Override the default lisp directory ],
  [ lispdir="$withval"
    AC_MSG_CHECKING([where .elc files should go])
@@ -36,7 +36,9 @@ AC_DEFUN([AM_PATH_LISPDIR],
  # If set to t, that means we are running in a shell under Emacs.
  # If you have an Emacs named "t", then use the full path.
  test x"$EMACS" = xt && EMACS=
- AC_CHECK_PROGS(EMACS, emacs xemacs, no)
+ AC_CHECK_PROGS([EMACS], [emacs xemacs], [no])
+ AC_ARG_VAR([EMACS], [the Emacs editor command])
+ AC_ARG_VAR([EMACSLOADPATH], [the Emacs library search path])
  if test $EMACS != "no"; then
    if test x${lispdir+set} != xset; then
      AC_CACHE_CHECK([where .elc files should go], [am_cv_lispdir],
@@ -60,7 +62,7 @@ AC_DEFUN([AM_PATH_LISPDIR],
    fi
  fi
 ])
-AC_SUBST(lispdir)
+AC_SUBST([lispdir])
 ])# AM_PATH_LISPDIR
 
 AU_DEFUN([ud_PATH_LISPDIR], [AM_PATH_LISPDIR])
