@@ -2227,14 +2227,13 @@ sub handle_texinfo
 	    # actual names don't matter much.  We only number starting
 	    # with the second one, so that the common case looks nice.
 	    $vti = ($done ? $done : 'vti');
+	    ++$done;
+
 	    &push_dist_common ($vtexi, 'stamp-' . $vti);
 	    push (@clean, $vti);
 
-	    # Only require once.
 	    &require_conf_file_with_line ('info_TEXINFOS', $FOREIGN,
-					  'mdate-sh')
-		if ! $done;
-	    ++$done;
+					  'mdate-sh');
 
 	    local ($conf_pat, $conf_dir);
 	    if ($config_aux_dir eq '.' || $config_aux_dir eq '')
@@ -7405,6 +7404,11 @@ sub is_make_dir
 # This variable is local to the "require file" set of functions.
 @require_file_paths = ();
 
+# If a file name appears as a key in this hash, then it has already
+# been checked for.  This variable is local to the "require file"
+# functions.
+%require_file_found = ();
+
 # See if we want to push this file onto dist_common.  This function
 # encodes the rules for deciding when to do so.
 sub maybe_push_required_file
@@ -7440,6 +7444,10 @@ sub require_file_internal
 
     foreach $file (@files)
     {
+	# If we've already looked for it, we're done.
+	next if defined $require_file_found{$file};
+	$require_file_found{$file} = 1;
+
 	$found_it = 0;
 	foreach $dir (@require_file_paths)
 	{
