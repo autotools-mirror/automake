@@ -244,7 +244,7 @@ mostlyclean-aminfo:
 
 maintainer-clean-aminfo:
 	cd $(srcdir) && \
-	for i in $(INFO_DEPS); do \
+	list='$(INFO_DEPS)'; for i in $$list; do \
 	  rm -f $$i; \
 	  if test "`echo $$i-[0-9]*`" != "$$i-[0-9]*"; then \
 	    rm -f $$i-[0-9]*; \
@@ -363,7 +363,7 @@ distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
 	$(mkinstalldirs) $(distdir)/. $(distdir)/m4
-	@for file in $(DISTFILES); do \
+	@list='$(DISTFILES)'; for file in $$list; do \
 	  if test -f $$file || test -d $$file; then d=.; else d=$(srcdir); fi; \
 	  dir=`echo "$$file" | sed -e 's,/[^/]*$$,,'`; \
 	  if test "$$dir" != "$$file" && test "$$dir" != "."; then \
@@ -612,6 +612,10 @@ maintainer-check: automake aclocal
 	      fgrep -v '##'; then \
 	  echo "Suspicious 'rm' invocation." 1>&2; \
 	  exit 1;				\
+	else :; fi
+	@if egrep 'for .* in \$$\(' $(srcdir)/lib/am/[a-z]*.am; then \
+	  echo 'Use "list=$$(mumble); for var in $$$$list".' 1>&2 ; \
+	  exit 1; \
 	else :; fi
 	@if fgrep -n 'mkinstalldirs' $(srcdir)/lib/am/[a-z]*.am | \
 	      fgrep -v '$$(mkinstalldirs)'; then \

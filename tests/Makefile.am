@@ -131,6 +131,7 @@ distcommon2.test \
 distcommon3.test \
 distdir.test \
 distname.test \
+dollar.test \
 double.test \
 dup2.test \
 dup3.test \
