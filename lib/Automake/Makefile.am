@@ -1,6 +1,6 @@
 ## Process this file with automake to create Makefile.in
 
-## Copyright (C) 2001, 2002, 2003  Free Software Foundation, Inc.
+## Copyright (C) 2001, 2002, 2003, 2004  Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -60,12 +60,12 @@ do_subst = in=`echo $@ | sed 's/\.[^.]*$$//'`; sed \
 
 ## This file depend on Makefile so it is rebuilt if $(VERSION),
 ## $(datadir) or other do_subst'ituted variables change.
-## Use chmod -w to prevent people from editing the wrong file by accident.
+## Use chmod a-w to prevent people from editing the wrong file by accident.
 Config.pm: Config.in Makefile
 	rm -f Config.tmp Config.pm
 	$(do_subst) $(srcdir)/Config.in >Config.tmp
 	chmod +x Config.tmp
-	chmod -w Config.tmp
+	chmod a-w Config.tmp
 	mv -f Config.tmp Config.pm
 
 EXTRA_DIST = Config.in
