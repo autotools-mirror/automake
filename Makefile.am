@@ -88,7 +88,7 @@ aclocal: aclocal.in Makefile
 ## This is where `make fetch' will install new versions.
 ## Make sure we also update this copy.
 INSTALL: lib/INSTALL
-	cp lib/INSTALL $@
+	cp $(srcdir)/lib/INSTALL $@
 
 ################################################################
 ##
