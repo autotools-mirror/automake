@@ -2921,99 +2921,72 @@ sub handle_source_transform
 # Returns 1 if LIBOBJS seen, 0 otherwise.
 sub handle_lib_objects
 {
-    my ($xname, $var) = @_;
+  my ($xname, $var) = @_;
 
-    prog_error "handle_lib_objects: $var undefined"
-      if ! variable_defined ($var);
-
-    my $ret = 0;
-    # FIXME: Should define am__LDADD_n variables using
-    # traverse_variable_recursively to limit combinatorial explosion.
-    foreach my $cond (variable_conditions_recursive ($var)->conds)
-      {
-	if (&handle_lib_objects_cond ($xname, $var, $cond))
-	  {
-	    $ret = 1;
-	  }
-      }
-    return $ret;
-}
-
-# Subroutine of handle_lib_objects: handle a particular condition.
-sub handle_lib_objects_cond
-{
-  my ($xname, $var, $cond) = @_;
-
-  # We recognize certain things that are commonly put in LIBADD or
-  # LDADD.
-  my @dep_list = ();
+  prog_error "handle_lib_objects: `$var' undefined"
+    if ! variable_defined ($var);
+  prog_error ("handle_lib_objects: unexpected variable name `$var'")
+    unless $var =~ /^(.*)(?:LIB|LD)ADD$/;
+  my $prefix = $1 || 'AM_';
 
   my $seen_libobjs = 0;
   my $flagvar = 0;
 
-  foreach my $lsearch (&variable_value_as_list_recursive ($var, $cond))
-    {
-      if (! $flagvar && $lsearch =~ /^-/)
-	{
-	  # Skip -lfoo and -Ldir; these are explicitly allowed.
-	  next if $lsearch =~ /^-[lL]/;
-	  # Skip -dlopen and -dlpreopen; these are explicitly allowed
-	  # for Libtool libraries or programs.  (Actually we are a bit
-	  # laxest here since this code also applies to non-libtool
-	  # libraries or programs, for which -dlopen and -dlopreopen
-	  # are pure non-sence.  Diagnosting this doesn't seems very
-	  # important: the developer will quickly get complaints from
-	  # the linker.)
-	  next if $lsearch =~ /^-dl(?:pre)?open$/;
+  transform_variable_recursively
+    ($var, $xname . '_DEPENDENCIES', 'am__DEPENDENCIES', ! $xname, INTERNAL,
+     # Transformation function, run on each filename.
+     sub {
+       my ($subvar, $val, @cond_stack) = @_;
 
-	  prog_error ("unexpected variable name `$var'")
-	    unless $var =~ /^(.*)(?:LIB|LD)ADD$/;
-
-	  my $prefix = $1 || 'AM_';
-	  # Only get this error once.
-	  $flagvar = 1;
-	  err_var ($var, "linker flags such as `$lsearch' belong in "
-		   . "`${prefix}LDFLAGS");
-	}
-
-      # Assume we have a file of some sort, and push it onto the
-      # dependency list.  Autoconf substitutions are not pushed;
-      # rarely is a new dependency substituted into e.g. foo_LDADD
-      # -- but bad things (e.g. -lX11) are routinely substituted.
-      # Note that LIBOBJS and ALLOCA are exceptions to this rule,
-      # and handled specially below.
-      push (@dep_list, $lsearch)
-	unless $lsearch =~ /^\@.*\@$/;
-
-      # Automatically handle LIBOBJS and ALLOCA substitutions.
-      # Basically this means adding entries to dep_files.
-      if ($lsearch =~ /^\@(LT)?LIBOBJS\@$/)
-	{
-	  handle_LIBOBJS ($var, $cond, $1);
-	  $seen_libobjs = 1;
-	  push (@dep_list, $lsearch);
-	}
-      elsif ($lsearch =~ /^\@(LT)?ALLOCA\@$/)
-	{
-	  handle_ALLOCA ($var, $cond, $1);
-	  push (@dep_list, $lsearch);
-	}
-    }
-
-  if ($xname ne '')
-    {
-      my $depvar = $xname . '_DEPENDENCIES';
-      if ((condition_ambiguous_p ($depvar, $cond,
-				    variable_conditions ($depvar)))[0] ne '')
-	{
-	  # Note that we've examined this.
-	  &examine_variable ($depvar);
-	}
-      else
-	{
-	  define_pretty_variable ($depvar, $cond, INTERNAL, @dep_list);
-	}
-    }
+       if ($val =~ /^-/)
+	 {
+	   # Skip -lfoo and -Ldir silently; these are explicitly allowed.
+	   if ($val !~ /^-[lL]/ &&
+	       # Skip -dlopen and -dlpreopen; these are explicitly allowed
+	       # for Libtool libraries or programs.  (Actually we are a bit
+	       # laxest here since this code also applies to non-libtool
+	       # libraries or programs, for which -dlopen and -dlopreopen
+	       # are pure non-sence.  Diagnosting this doesn't seems very
+	       # important: the developer will quickly get complaints from
+	       # the linker.)
+	       $val !~ /^-dl(?:pre)?open$/ &&
+	       # Only get this error once.
+	       ! $flagvar)
+	     {
+	       $flagvar = 1;
+	       # FIXME: should display a stack of nested variables
+	       # as context when $var != $subvar.
+	       err_var ($var, "linker flags such as `$val' belong in "
+			. "`${prefix}LDFLAGS");
+	     }
+	   return ();
+	 }
+       elsif ($val !~ /^\@.*\@$/)
+	 {
+	   # Assume we have a file of some sort, and output it into the
+	   # dependency variable.  Autoconf substitutions are not output;
+	   # rarely is a new dependency substituted into e.g. foo_LDADD
+	   # -- but bad things (e.g. -lX11) are routinely substituted.
+	   # Note that LIBOBJS and ALLOCA are exceptions to this rule,
+	   # and handled specially below.
+	   return $val;
+	 }
+       elsif ($val =~ /^\@(LT)?LIBOBJS\@$/)
+	 {
+	   handle_LIBOBJS ($subvar, TRUE->merge (@cond_stack), $1);
+	   $seen_libobjs = 1;
+	   return $val;
+	 }
+       elsif ($val =~ /^\@(LT)?ALLOCA\@$/)
+	 {
+	   handle_ALLOCA ($subvar, TRUE->merge (@cond_stack), $1);
+	   return $val;
+	 }
+       else
+	 {
+	   return ();
+	 }
+     });
 
   return $seen_libobjs;
 }

@@ -22,9 +22,10 @@
 # (This is related to PR/352.)
 #
 # On this test, Automake 1.7.x would compute all 2**22 = 4194304 possible
-# combinations of conditionals, eating all memory, swap, or cpu time it can
-# found.  Although this test wont print `FAIL' if it fails, it will take
-# long enough so it can't go unnoticed.
+# combinations of conditionals (it would do this three times, to define
+# a01_DEPENDENCIES, a02_DEPENDENCIES, and to rewrite bin_PROGRAM), eating
+# all memory, swap, or cpu time it can found.  Although this test won't 
+# print `FAIL' if it fails, it will take long enough so it can't go unnoticed.
 
 . ./defs
 
@@ -32,12 +33,17 @@ set -e
 
 echo AC_PROG_CC >>configure.in
 
-echo 'bin_PROGRAMS = a' > Makefile.am
+cat >Makefile.am <<EOF
+bin_PROGRAMS = a
+a02_LDADD =
+EOF
 
 for i in 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22; do
 cat >>Makefile.am <<EOF
 if C$i
 bin_PROGRAMS += a$i
+a01_LDADD = foo${i}.o
+a02_LDADD += bar${i}.o
 endif C$i
 EOF
 echo "AM_CONDITIONAL([C$i], [:])" >>configure.in
