@@ -2,7 +2,7 @@
 
 AUTOMAKE_OPTIONS = gnits
 
-XFAIL_TESTS = sourcesub.test
+XFAIL_TESTS = sourcesub.test ltlibobjs.test
 TESTS =	\
 acinclude.test \
 aclocal.test \
@@ -140,6 +140,7 @@ link_f_c_cxx.test \
 link_f_cxx.test	\
 link_f_only.test \
 lisp.test \
+ltlibobjs.test \
 mclean.test \
 mdate.test \
 mdate2.test \
