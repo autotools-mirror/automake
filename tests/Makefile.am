@@ -275,6 +275,7 @@ libobj10.test \
 libobj11.test \
 libobj12.test \
 libobj13.test \
+libobj14.test \
 library.test \
 library2.test \
 library3.test \
