@@ -392,13 +392,6 @@ my $seen_gettext = 0;
 # Line number at which AM_GNU_GETTEXT seen.
 my $ac_gettext_line = 0;
 
-# Whether ALL_LINGUAS has been seen.
-my $seen_linguas = '';
-# The actual text.
-my $all_linguas = '';
-# Line number at which it appears.
-my $all_linguas_line = 0;
-
 # TRUE if AC_DECL_YYTEXT was seen.
 my $seen_decl_yytext = 0;
 
@@ -3868,34 +3861,6 @@ sub handle_gettext
 	if ! grep ('intl', @subdirs);
 
     &require_file_with_conf_line ($ac_gettext_line, $GNU, 'ABOUT-NLS');
-
-    # Ensure that each language in ALL_LINGUAS has a .po file, and
-    # each po file is mentioned in ALL_LINGUAS.
-    if ($seen_linguas)
-    {
-	my %linguas = map { $_ => 1 } split (' ', $all_linguas);
-
-	foreach (<po/*.po>)
-	{
-	    s/^po\///;
-	    s/\.po$//;
-
-	    &am_line_error ($all_linguas_line,
-			    ("po/$_.po exists but `$_' not in `ALL_LINGUAS'"))
-		if ! $linguas{$_};
-	}
-
-	foreach (keys %linguas)
-	{
-	    &am_line_error ($all_linguas_line,
-			    "$_ in `ALL_LINGUAS' but po/$_.po does not exist")
-		if ! -f "po/$_.po";
-	}
-    }
-    else
-    {
-	&am_error ("AM_GNU_GETTEXT in `$configure_ac' but `ALL_LINGUAS' not defined");
-    }
 }
 
 # Handle footer elements.
@@ -4596,14 +4561,6 @@ sub scan_one_autoconf_file
 	{
 	    $seen_gettext = 1;
 	    $ac_gettext_line = $.;
-	}
-
-        # Look for ALL_LINGUAS.
-        if (/ALL_LINGUAS="(.*)"$/ || /ALL_LINGUAS=(.*)$/)
-	{
-	    $seen_linguas = 1;
-	    $all_linguas = $1;
-	    $all_linguas_line = $.;
 	}
 
 	# Handle configuration headers.  A config header of `[$1]'
