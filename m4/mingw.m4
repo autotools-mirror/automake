@@ -5,7 +5,7 @@
 dnl AM_MINGW32()
 AC_DEFUN(AM_MINGW32,
 [AC_CACHE_CHECK(for Mingw32 environment, am_cv_mingw32,
-[AC_TRY_COMPILE(,[int main () { return __MINGW32__; }],
+[AC_TRY_COMPILE(,[return __MINGW32__;],
 am_cv_mingw32=yes, am_cv_mingw32=no)
 rm -f conftest*])
 MINGW32=
