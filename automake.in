@@ -317,9 +317,6 @@ my $default_strictness_name = 'gnu';
 # included in generated Makefile.in.
 my $cmdline_use_dependencies = 1;
 
-# TRUE if in verbose mode.
-my $verbose = 0;
-
 # This holds our (eventual) exit status.  We don't actually exit until
 # we have processed all input files.
 my $exit_status = 0;
@@ -2365,8 +2362,7 @@ sub check_canonical_spelling
 	foreach my $xt (@suffixes)
 	{
 	    macro_error ("$name$xt",
-			 "invalid variable `$name$xt'; "
-			 . "should be `$xname$xt'")
+			 "invalid variable `$name$xt'; should be `$xname$xt'")
 		if variable_defined ("$name$xt");
 	}
     }
@@ -5785,11 +5781,11 @@ sub macro_define ($$$$$$)
 }
 
 
-# &variable_delete ($VAR, [@CONDS])
-# ---------------------------------
+# &macro_delete ($VAR, [@CONDS])
+# ------------------------------
 # Forget about $VAR under the conditions @CONDS, or completely if
 # @CONDS is empty.
-sub variable_delete ($@)
+sub macro_delete ($@)
 {
   my ($var, @conds) = @_;
 
@@ -5885,6 +5881,24 @@ sub variable_defined ($;$)
     # really should maintain examined status on a per-condition basis.
     $content_seen{$var} = 1;
     return 1;
+}
+
+
+# $BOOLEAN
+# variable_assert ($VAR, $WHERE)
+# ------------------------------
+# Make sure a variable exists.  $VAR is the variable name, and $WHERE
+# is the name of a macro which refers to $VAR.
+sub variable_assert ($$)
+{
+  my ($var, $where) = @_;
+
+  return 1
+    if variable_defined $var;
+
+  macro_error ($where, "variable `$var' not defined");
+
+  return 0;
 }
 
 
@@ -6213,7 +6227,7 @@ sub variable_value
 # be returned; otherwise, warn if VAR is conditionally defined.
 # SCANNED is a global hash listing whose keys are all the variables
 # already scanned; it is an error to rescan a variable.
-sub value_to_list
+sub value_to_list ($$$)
 {
     my ($var, $val, $cond) = @_;
     my @result;
@@ -6265,6 +6279,7 @@ sub value_to_list
     return @result;
 }
 
+
 # @VALUES
 # variable_value_as_list ($VAR, $COND, $PARENT)
 # ---------------------------------------------
@@ -6285,17 +6300,8 @@ sub variable_value_as_list
     my @result;
 
     # Check defined
-    if (! defined $var_value{$var})
-    {
-        if (defined $targets{$var})
-	  {
-	    macro_error ($var, "`$var' is a target; expected a variable");
-	  }
-	else
-	  {
-	    macro_error ($parent, "variable `$var' not defined");
-	  }
-    }
+    return
+      unless variable_assert $var, $parent;
 
     # Get value for given condition
     $cond ||= 'TRUE';
@@ -6328,6 +6334,10 @@ sub variable_value_as_list
     return @result;
 }
 
+
+# @VALUE
+# &variable_value_as_list_recursive_worker ($VAR, $COND, $PARENT)
+# ---------------------------------------------------------------
 # Return contents of variable as list, split as whitespace.  This will
 # recursively follow $(...) and ${...} inclusions.  It preserves @...@
 # substitutions.  If COND is 'all', then all values under all
@@ -6336,23 +6346,15 @@ sub variable_value_as_list
 # that condition should be returned; otherwise, warn if VAR is
 # conditionally defined.  If PARENT is specified, it is the name of
 # the including variable; this is only used for error reports.
-sub variable_value_as_list_recursive_worker
+sub variable_value_as_list_recursive_worker ($$$)
 {
     my ($var, $cond, $parent) = @_;
     my @result = ();
 
-    if (! defined $var_value{$var})
-    {
-        if (defined $targets{$var})
-	  {
-	    macro_error ($var, "`$var' is a target; expected a variable");
-	  }
-	else
-	  {
-	    macro_error ($parent, "variable `$var' not defined");
-	  }
-    }
-    elsif (defined $vars_scanned{$var})
+    return
+      unless variable_assert $var, $parent;
+
+    if (defined $vars_scanned{$var})
     {
 	# `vars_scanned' is a global we use to keep track of which
 	# variables we've already examined.
