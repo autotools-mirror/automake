@@ -7354,10 +7354,6 @@ sub require_file_internal
 	my $errfile;
 	my $save_dir;
 
-	# If we've already looked for it, we're done.
-	next if defined $require_file_found{$file};
-	$require_file_found{$file} = 1;
-
 	my $found_it = 0;
 	my $dangling_sym = 0;
 	foreach my $dir (@require_file_paths)
@@ -7371,7 +7367,7 @@ sub require_file_internal
 	    # config_aux_path.
 	    $errfile = $errdir . '/' . $file;
 
-	    if (-l $fullfile && ! -f readlink ($fullfile))
+	    if (-l $fullfile && ! -f $fullfile)
 	    {
 		$dangling_sym = 1;
 		last;
@@ -7385,13 +7381,26 @@ sub require_file_internal
 	    }
 	}
 
-	if ($found_it && ! $force_missing)
+	# `--force-missing' only has an effect if `--add-missing' is
+	# specified.
+	if ($found_it && (! $add_missing || ! $force_missing))
 	{
 	    # Prune the path list.
 	    @require_file_paths = $save_dir;
 	}
 	else
 	{
+	    # If we've already looked for it, we're done.  You might
+	    # wonder why we don't do this before searching for the
+	    # file.  If we do that, then something like
+	    # AC_OUTPUT(subdir/foo foo) will fail to put foo.in into
+	    # DIST_COMMON.
+	    if (! $found_it)
+	    {
+		next if defined $require_file_found{$file};
+		$require_file_found{$file} = 1;
+	    }
+
 	    if ($strictness >= $mystrict)
 	    {
 		if ($dangling_sym && $add_missing)
@@ -7451,6 +7460,11 @@ sub require_file_internal
 		    # Prune the path list.
 		    @require_file_paths = &dirname ($errfile);
 		}
+
+		# If --force-missing was specified, and we have
+		# actually found the file, then do nothing.
+		next
+		    if $found_it && $force_missing;
 
 		if ($suppress)
 		{
