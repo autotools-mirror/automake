@@ -173,13 +173,9 @@ sub scan_configure
     open (CONFIGURE, "configure.in")
 	|| die "aclocal: couldn't open \`configure.in': $!\n";
 
-    # Add acinclude.m4 first.  That way it can override installed
-    # macros.
+    # Make sure we include acinclude.m4 if it exists.
     if (-f 'acinclude.m4')
     {
-	# Do it this way so that any AC_REQUIRE in acinclude.m4 will
-	# take effect.
-	&scan_file ('acinclude.m4');
 	&add_file ('acinclude.m4');
     }
 
@@ -229,6 +225,12 @@ sub scan_m4_files
 {
     local ($m4dir) = @_;
 
+    # First, scan acinclude.m4 if it exists.
+    if (-f 'acinclude.m4')
+    {
+	$file_contents{'acinclude.m4'} = &scan_file ('acinclude.m4');
+    }
+
     opendir (DIR, $m4dir)
 	|| die "aclocal: couldn't open directory \`$m4dir': $!\n";
     local ($file, $fullfile, $expr);
@@ -251,10 +253,6 @@ sub scan_m4_files
     local ($search, $expr, $key);
     foreach $key (keys %map)
     {
-	# acinclude.m4 doesn't matter for the search, since it is
-	# unconditionally included.
-	next if $map{$key} eq 'acinclude.m4';
-
 	# EXPR is a regexp matching the name of the macro.
 	($expr = $key) =~ s/(\W)/\\$1/g;
 	$search .= "&add_macro ('" . $key . "') if /" . $expr . "/;\n";
@@ -280,6 +278,7 @@ sub add_macro
 	return;
     }
 
+    print STDERR "saw macro $macro\n" if $verbosity;
     $macro_seen{$macro} = 1;
     &add_file ($map{$macro});
 }
@@ -295,9 +294,15 @@ sub add_file
 
     $output .= $file_contents{$file} . "\n";
     local (@rlist);
-    while ($file_contents{$file} =~ /$ac_require_rx/g)
+    foreach (split ("\n", $file_contents{$file}))
     {
-	push (@rlist, $1);
+	if (/$ac_require_rx/g)
+	{
+	    push (@rlist, $1);
+	}
+
+	# This function constructed dynamically.
+	&search;
     }
 
     local ($macro);

@@ -16,6 +16,7 @@ exsource.test canon4.test dup.test defun.test cxxlink.test cxxnoc.test \
 order.test libobj2.test interp.test alllib.test block.test libobj3.test \
 gnits.test interp2.test colneq.test implicit.test spell.test spell2.test \
 confsub.test primary.test primary2.test depend2.test spell3.test \
-comment2.test vpath.test symlink.test discover.test
+comment2.test vpath.test symlink.test discover.test acinclude.test req.test \
+acsilent.test
 
 EXTRA_DIST = defs $(TESTS)
