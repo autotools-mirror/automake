@@ -50,6 +50,9 @@ $GNITS = 2;
 
 # Variables global to entire run.
 
+# TRUE if we should always generate Makefile.in.
+$force_generation = 1;
+
 # Strictness level as set on command line.
 $default_strictness = $GNU;
 
@@ -272,6 +275,10 @@ sub parse_arguments
 	{
 	    $cmdline_use_dependencies = 0;
 	}
+	elsif ($arglist[0] eq '--no-force')
+	{
+	    $force_generation = 0;
+	}
 	elsif ($arglist[0] =~ /^--output-dir=(.*)$/)
 	{
 	    # Set output directory.
@@ -333,8 +340,6 @@ sub generate_makefile
     ($am_file_name = $makefile) =~ s/^.*\///;
     $in_file_name = $am_file_name . '.in';
     $am_file_name .= '.am';
-
-    print "automake: creating ", $makefile, ".in\n" if $verbose;
 
     &initialize_per_input;
     $relative_dir = &dirname ($makefile);
@@ -405,12 +410,27 @@ sub generate_makefile
     {
 	&mkdir ($output_directory . '/' . $relative_dir);
     }
-    if (! open (GM_FILE, "> " . $output_directory . '/' . $makefile . ".in"))
+
+    local ($out_file) = $output_directory . '/' . $makefile . ".in";
+    if (! $force_generation && -e $out_file)
+    {
+	local ($am_time) = (stat ($makefile . '.am'))[9];
+	local ($in_time) = (stat ($out_file))[9];
+	# FIXME how to do unsigned comparison?
+	if ($am_time < $in_time)
+	{
+	    # No need to update.
+	    return;
+	}
+    }
+
+    if (! open (GM_FILE, "> " . $out_file))
     {
 	warn "automake: ${am_file}.in: cannot open: $!\n";
 	$exit_status = 1;
 	return;
     }
+    print "automake: creating ", $makefile, ".in\n" if $verbose;
 
     print GM_FILE $output_vars;
     print GM_FILE $output_rules;
@@ -2597,6 +2617,7 @@ sub initialize_global_constants
   --help                print this help, then exit
   -i, --include-deps    include generated dependencies in Makefile.in
   -a, --add-missing     add missing standard files to package
+  --no-force            only update Makefile.in's that are out of date
   -o DIR, --output-dir=DIR
                         put generated Makefile.in's into DIR
   -s LEVEL, --strictness=LEVEL
