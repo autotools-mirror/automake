@@ -7842,14 +7842,24 @@ sub read_am_file ($)
 	      {
                 push (@include_stack, "\$\(top_srcdir\)/$path");
 		# Distribute any included file.
-		my $distname = backname ($relative_dir) . '/' . $path;
-		push_dist_common ($distname);
+
+		# Always use the $(top_srcdir) prefix in DIST_COMMON,
+		# otherwise OSF make will implicitely copy the included
+		# file in the build tree during `make distdir' to satisfy
+		# the dependency.
+		# (subdircond2.test and subdircond3.test will fail.)
+		push_dist_common ("\$\(top_srcdir\)/$path");
 	      }
             else
 	      {
                 $path =~ s/\$\(srcdir\)\///;
                 push (@include_stack, "\$\(srcdir\)/$path");
-		push_dist_common ($path);
+		# Always use the $(srcdir) prefix in DIST_COMMON,
+		# otherwise OSF make will implicitely copy the included
+		# file in the build tree during `make distdir' to satisfy
+		# the dependency.
+		# (subdircond2.test and subdircond3.test will fail.)
+		push_dist_common ("\$\(srcdir\)/$path");
 		$path = $relative_dir . "/" . $path;
 	      }
             &read_am_file ($path);
