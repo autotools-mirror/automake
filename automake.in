@@ -2956,12 +2956,13 @@ sub add_depend2
 {
     local ($lang) = @_;
 
-    # First include code for ordinary objects.
-    local ($key) = $lang . '-autodep';
-    local ($xform, $ext);
+    # Get information on $LANG.
+    my $pfx = $language_map{"$lang-autodep"};
+    my $fpfx = ($pfx eq '') ? 'CC' : $pfx;
+    my $flag = $language_map{"$lang-flags"};
 
-    local ($pfx) = $language_map{$key};
-    local ($fpfx) = ($pfx eq '') ? 'CC' : $pfx;
+    # First include code for ordinary objects.
+    local ($xform, $ext);
     $xform = &transform ('PFX'  => $pfx,
 			 'FPFX' => $fpfx);
     $xform .= $seen_objext  ? 's/^OBJEXT//;'  : 's/^OBJEXT.*$//;';
@@ -2972,12 +2973,16 @@ sub add_depend2
     # target.  In this case we don't want to include the generic code.
     if ($use_dependencies)
     {
-	local ($xform1) = ($xform
-			   . &transform ('BASE'   => '$*',
-					 'SOURCE' => '$<',
-					 'OBJ'    => '$@',
-					 'LTOBJ'  => '$@',
-					 'OBJOBJ' => '$@'));
+        my $compile = '$(' . $pfx . 'COMPILE)';
+	my $ltcompile = '$(LT' . $pfx . 'COMPILE)';
+	my $xform1 = ($xform
+		      . &transform ('BASE'      => '$*',
+				    'SOURCE'    => '$<',
+				    'OBJ'       => '$@',
+				    'LTOBJ'     => '$@',
+				    'OBJOBJ'    => '$@',
+				    'COMPILE'   => $compile,
+				    'LTCOMPILE' => $ltcompile));
 
 	foreach $ext (&lang_extensions ($lang))
 	{
@@ -3008,10 +3013,11 @@ sub add_depend2
 	$obj = $list[$i + 2];
 	$i += 3;
 
-	local ($flag) = $language_map{$lang . '-flags'};
-	local ($val) = "(${derived}_${flag}";
-	($rule = $language_map{$lang . '-compile'}) =~
-	    s/\(AM_$flag/$val/;
+	my $val = "${derived}_${flag}";
+
+	my $obj_compile = $language_map{"$lang-compile"};
+	$obj_compile =~ s/\(AM_$flag/\($val/;
+	my $obj_ltcompile = '$(LIBTOOL) --mode=compile ' . $obj_compile;
 
 	# Generate a transform which will turn suffix targets in
 	# depend2.am into real targets for the particular objects we
@@ -3020,16 +3026,14 @@ sub add_depend2
 	    &file_contents
 	        ('depend2',
 		 $xform
-		 . &transform ('$(' . $pfx . 'COMPILE)'
-			       => $rule,
-			       '$(LT' . $pfx . 'COMPILE)'
-			       => '$(LIBTOOL) --mode=compile ' . $rule,
+		 . &transform ('COMPILE'   => $obj_compile,
+			       'LTCOMPILE' => $obj_ltcompile,
 			       # Handle source and obj transforms.
-			       'OBJ'    => $obj . '.o',
-			       'OBJOBJ' => $obj . '.obj',
-			       'LTOBJ'  => $obj . '.lo',
-			       'BASE'   => $obj,
-			       'SOURCE' => $source)
+			       'OBJ'       => $obj . '.o',
+			       'OBJOBJ'    => $obj . '.obj',
+			       'LTOBJ'     => $obj . '.lo',
+			       'BASE'      => $obj,
+			       'SOURCE'    => $source)
 		 # Generate rule for `.o'.
 		 . 's/^\@EXT\@\.o:/' . $obj . '.o: ' . $source . '/g;'
 		 # Maybe generate rule for `.lo'.  Might be eliminated
