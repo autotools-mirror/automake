@@ -33,4 +33,4 @@ whoami.test unused.test
 EXTRA_DIST = defs $(TESTS)
 
 distclean-local:
-	rm -rf testSubdir
+	-rm -rf testSubdir
