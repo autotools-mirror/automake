@@ -200,7 +200,7 @@ sub generate_makefile
     $relative_dir = &dirname ($makefile);
     # FIXME with new 'dist' target, don't need Makefile.in.  Probably
     # should remove it here.
-    push_dist_common ('Makefile.in', 'Makefile.am');
+    &push_dist_common ('Makefile.in', 'Makefile.am');
     push (@sources, '$(SOURCES)') if (defined $contents{'SOURCES'});
     push (@objects, '$(OBJECTS)') if (defined $contents{'OBJECTS'});
 
@@ -321,13 +321,13 @@ sub handle_source_transform
 	    # Ugh: Perl syntax vs Emacs.
 	    local ($krc1, $krc2) = ('\.\$\{kr\}c', '\.\$\(kr\)c');
 	    local (@result) = ();
-	    foreach $one_source (@files)
+	    foreach (@files)
 	    {
 		if (/^(.*)\.[yl]$/)
 		{
 		    # Automatically include generated .c file in
 		    # distribution.
-		    push_dist_common ($1 . '.c');
+		    &push_dist_common ($1 . '.c');
 		}
 
 		# Transform source files into .o files.
@@ -483,7 +483,7 @@ sub handle_texinfo
     {
 	# Got a hit.
 	push (@texis, 'version.texi');
-	push_dist_common ('version.texi', 'stamp-vti');
+	&push_dist_common ('version.texi', 'stamp-vti');
 	push (@clean, 'vti');
 
 	local ($tfile);
@@ -498,7 +498,7 @@ sub handle_texinfo
     if (defined $contents{$infobase . "_TEXINFOS"})
     {
 	push (@texis, "\$" . $infobase . '_TEXINFOS');
-	push_dist_common ("\$" . $infobase . '_TEXINFOS');
+	&push_dist_common ("\$" . $infobase . '_TEXINFOS');
     }
 
     if ($#texis >= 0)
@@ -640,7 +640,7 @@ sub handle_dist
     {
 	if (-f ($relative_dir . "/" . $cfile))
 	{
-	    push_dist_common ($cfile);
+	    &push_dist_common ($cfile);
 	}
     }
 
@@ -745,7 +745,7 @@ sub handle_configure
 	if (-f 'aclocal.m4')
 	{
 	    $output_vars .= "ACLOCAL = aclocal.m4\n";
-	    push_dist_common ('aclocal.m4');
+	    &push_dist_common ('aclocal.m4');
 	}
 	$output_rules .= &file_contents ('remake');
 
@@ -761,20 +761,20 @@ sub handle_configure
 	if (-f 'acconfig.h')
 	{
 	    $output_vars .= "ACCONFIG = acconfig.h\n";
-	    push_dist_common ('acconfig.h');
+	    &push_dist_common ('acconfig.h');
 	}
 	if (-f 'config.h.top')
 	{
 	    $output_vars .= "CONFIG_TOP = config.h.top\n";
-	    push_dist_common ('config.h.top');
+	    &push_dist_common ('config.h.top');
 	}
 	if (-f 'config.h.bot')
 	{
 	    $output_vars .= "CONFIG_BOT = config.h.bot\n";
-	    push_dist_common ('config.h.bot');
+	    &push_dist_common ('config.h.bot');
 	}
 
-	push_dist_common ('stamp-h.in', $contents{'CONFIG_HEADER'} . '.in');
+	&push_dist_common ('stamp-h.in', $contents{'CONFIG_HEADER'} . '.in');
 
 	$output_rules .= &file_contents ('remake-hdr');
     }
@@ -1001,7 +1001,7 @@ sub do_one_clean_target
 	     . "tools to rebuild.\"\n");
     }
     elsif ($name . $target eq 'distclean'
-	   || $name . $tar eq 'maintainer-clean')
+	   || $name . $target eq 'maintainer-clean')
     {
 	$output_rules .= "\trm -f config.status\n";
     }
@@ -1013,12 +1013,12 @@ sub do_one_clean_target
 # Do any extra checking for GNU standards.
 sub check_gnu_standards
 {
-    require_file ($GNU, 'ChangeLog');
+    &require_file ($GNU, 'ChangeLog');
 
     if ($relative_dir eq '.')
     {
 	# In top level (or only) directory.
-	require_file ($GNU, 'INSTALL', 'NEWS', 'README');
+	&require_file ($GNU, 'INSTALL', 'NEWS', 'README');
     }
 }
 
@@ -1137,20 +1137,20 @@ sub initialize_global_constants
     # corresponding directory should be installed during
     # 'install-exec' phase.
     %exec_dir_p =
-	('bin' => 1,
-	 'sbin' => 1,
-	 'libexec' => 1,
-	 'data' => 0,
-	 'sysconf' => 1,
-	 'localstate' => 1,
-	 'lib' => 1,
-	 'info' => 0,
-	 'man' => 0,
-	 'include' => 0,
-	 'oldinclude' => 0,
-	 'pkgdata' => 0,
-	 'pkglib' => 1,
-	 'pkginclude' => 0
+	('bin', 1,
+	 'sbin', 1,
+	 'libexec', 1,
+	 'data', 0,
+	 'sysconf', 1,
+	 'localstate', 1,
+	 'lib', 1,
+	 'info', 0,
+	 'man', 0,
+	 'include', 0,
+	 'oldinclude', 0,
+	 'pkgdata', 0,
+	 'pkglib', 1,
+	 'pkginclude', 0
 	 );
 
     # Helper text for dealing with man pages.
@@ -1409,7 +1409,7 @@ sub require_file
 
     if (-f $fullfile)
     {
-	push_dist_common ($file);
+	&push_dist_common ($file);
     }
     elsif ($strictness >= $mystrict)
     {

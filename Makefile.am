@@ -23,13 +23,19 @@ DIST_SUBDIRS = samples/cpio/*Makefile.am
 ETAGS_ARGS = automake.in --lang=none \
  --regex='/^@node[ \t]+\([^,]+\)/\1/' automake.texi
 
-# The simplest form of checking.
+# Some simple checks:
+# * syntax check with perl4 and perl5.
+# * make sure the scripts don't use 'true'
+# These are only really guaranteed to work on my machine.
 check-local: automake
 	@PERL@ -c -w automake
 	if grep '^[^#].*true' *.am; then :; else \
 	  echo "can't use 'true' in GNU Makefile" 1>&2; \
 	  exit 1;				\
 	fi
+	if test -f /usr/local/bin/perl4.036; then \
+	  /usr/local/bin/perl4.036 -c -w automake; \
+	else :; fi
 
 automake: automake.in
 	CONFIG_FILES=$@ CONFIG_HEADERS= ./config.status
