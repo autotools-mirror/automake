@@ -35,7 +35,10 @@
 ## this for us directly.
 	@-cp .deps/$(*F).p .deps/$(*F).P; \
 	tr '\\ ' '\n\n' < .deps/$(*F).p \
-	  | sed -e '/^$$/ d' -e '/:$$/ d' -e 's/$$/:/' \
+## Some versions of gcc put a space before the `:'.  On the theory
+## that the space means something, we add a space to the output as
+## well.
+	  | sed -e '/^$$/ d' -e '/:$$/ d' -e 's/$$/ :/' \
 	    >> .deps/$(*F).P; \
 	rm .deps/$(*F).p
 
@@ -43,10 +46,14 @@
 	@echo '$(LT@PFX@COMPILE) -c $<'; \
 ## See above to understand implementation weirdness.
 	$(LT@PFX@COMPILE) -Wp,-MD,.deps/$(*F).p -c $<
-	@-sed -e 's/^\([^:]*\)\.o:/\1.lo \1.o:/' \
+## Account for versions of gcc that put a space before the `:'.
+	@-sed -e 's/^\([^:]*\)\.o[ 	]:/\1.lo \1.o :/' \
 	  < .deps/$(*F).p > .deps/$(*F).P; \
 ## See above to understand deleted header file trick.
 	tr '\\ ' '\n\n' < .deps/$(*F).p \
-	  | sed -e '/^$$/ d' -e '/:$$/ d' -e 's/$$/:/' \
+## Some versions of gcc put a space before the `:'.  On the theory
+## that the space means something, we add a space to the output as
+## well.
+	  | sed -e '/^$$/ d' -e '/:$$/ d' -e 's/$$/ :/' \
 	    >> .deps/$(*F).P; \
 	rm -f .deps/$(*F).p
