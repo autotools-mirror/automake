@@ -461,7 +461,7 @@ sub handle_options
 {
     return if ! &variable_defined ('AUTOMAKE_OPTIONS');
 
-    foreach (split (' ', $contents{'AUTOMAKE_OPTIONS'}))
+    foreach (&variable_value_as_list ('AUTOMAKE_OPTIONS'))
     {
 	last if /^#/;
 
@@ -722,34 +722,34 @@ sub handle_source_transform
 	return;
     }
 
-    local ($source_list);
+    local (@files);
     local ($prefix);
     foreach $prefix ('', 'EXTRA_')
     {
-	$source_list = '';
+	@files = ();
 	if (&variable_defined ($prefix . $one_file . "_SOURCES"))
 	{
 	    push (@sources, '$(' . $prefix . $one_file . "_SOURCES)");
 	    push (@objects, '$(' . $prefix . $one_file . "_OBJECTS)")
 		unless $prefix eq 'EXTRA_';
-	    $source_list = $contents{$prefix . $one_file . "_SOURCES"};
+	    @files = &variable_value_as_list ($prefix
+					      . $one_file . "_SOURCES");
 	}
 	elsif ($prefix eq '')
 	{
 	    $output_vars .= $one_file . "_SOURCES = " . $unxformed . ".c\n";
 	    push (@sources, $unxformed . '.c');
 	    push (@objects, $unxformed . $obj);
-	    $source_list = $unxformed . ".c ";
+	    push (@files, $unxformed . ".c ");
 	}
 	else
 	{
 	    $output_vars .= "EXTRA_" . $one_file . "_SOURCES =\n";
 	}
 
-	if ($source_list)
+	if (length (@files))
 	{
 	    # Turn sources into objects.
-	    local (@files) = split (' ', $source_list);
 	    local (@result) = ();
 	    foreach (@files)
 	    {
@@ -761,9 +761,6 @@ sub handle_source_transform
 		next if /\.h\+\+$/;
 		next if /\.hh$/;
 		next if /\.hpp$/;
-		# Skip things that look like macro references.
-		next if /^\$\(.*\)$/;
-		next if /^\$\{.*\}$/;
 		# Skip things that look like configure substitutions.
 		next if /^\@.*\@$/;
 
@@ -849,7 +846,7 @@ sub handle_lib_objects
     local ($lsearch);
     local (@dep_list) = ();
 
-    foreach $lsearch (split (' ', $contents{$var}))
+    foreach $lsearch (&variable_value_as_list ($var))
     {
 	# Skip -lfoo and -Ldir.
 	next if /^-[lL]/;
@@ -999,7 +996,7 @@ sub handle_libraries
 	if (&variable_defined ($onedir . '_LIBRARIES'))
 	{
 	    @outlist = ();
-	    foreach $onelib (split (' ', $contents{$onedir . '_LIBRARIES'}))
+	    foreach $onelib (&variable_value_as_list ($onedir . '_LIBRARIES'))
 	    {
 		push (@outlist, 'lib' . $onelib . '.a');
 	    }
@@ -1145,7 +1142,7 @@ sub handle_texinfo
     return if (! &variable_defined ('info_TEXINFOS')
 	       && ! &variable_defined ('html_TEXINFOS'));
 
-    local (@texis) = split (' ', $contents{'info_TEXINFOS'});
+    local (@texis) = &variable_value_as_list ('info_TEXINFOS');
 
     local (@infos_list, @info_deps_list, @dvis_list, @texi_deps);
     local ($infobase, $info_cursor);
@@ -1283,7 +1280,7 @@ sub handle_man_pages
 
     # We generate the manpage install code by hand to avoid the use of
     # basename in the generated Makefile.
-    local (@mans) = split (' ', $contents{'man_MANS'});
+    local (@mans) = &variable_value_as_list ('man_MANS');
     local (%sections, %inames, %mbases, %secmap, %fullsecmap);
     local ($i) = 1;
     foreach (@mans)
@@ -1703,7 +1700,7 @@ sub handle_subdirs
 
     # Make sure each directory mentioned in SUBDIRS actually exists.
     local ($dir);
-    foreach $dir (split (' ', $contents{'SUBDIRS'}))
+    foreach $dir (&variable_value_as_list ('SUBDIRS'))
     {
 	# Skip directories substituted by configure.
 	next if $dir =~ /^\@.*\@$/;
@@ -2742,6 +2739,42 @@ sub variable_defined
     return (defined $contents{$var} && ! defined $targets{$var});
 }
 
+# Return contents of variable as list, split as whitespace.  This will
+# recursively follow $(...) and ${...} inclusions.  It preserves @...@
+# substitutions.  If PARENT is specified, it is the name of the
+# including variable; this is only used for error reports.
+sub variable_value_as_list
+{
+    local ($var, $parent) = @_;
+    local (@result);
+
+    if (defined $targets{$var})
+    {
+	&am_line_error ($var, "\`$var' is target; expected variable");
+    }
+    elsif (! defined $contents{$var})
+    {
+	&am_error ($parent, "variable \`$var' not defined");
+    }
+    else
+    {
+	foreach (split (' ', $contents{$var}))
+	{
+	    # Handle variable substitutions.
+	    if (/^\$\{(.*)\}$/ || /^\$\((.*)\)$/)
+	    {
+		push (@result, &variable_value_as_list ($1, $var));
+	    }
+	    else
+	    {
+		push (@result, $_);
+	    }
+	}
+    }
+
+    return @result;
+}
+
 # Read Makefile.am and set up %contents.  Simultaneously copy lines
 # from Makefile.am into $output_trailer or $output_vars as
 # appropriate.  NOTE we put rules in the trailer section.  We want
@@ -3305,7 +3338,7 @@ sub am_install_var
 	    # Append actual contents of where_PRIMARY variable to
 	    # result.
 	    local ($rcurs);
-	    foreach $rcurs (split (' ', $contents{$one_name}))
+	    foreach $rcurs (&variable_value_as_list ($one_name))
 	    {
 		# Skip configure substitutions.  Possibly bogus.
 		next if $rcurs =~ /^\@.*\@$/;
