@@ -1066,7 +1066,7 @@ sub handle_single_transform_list
     local (@result) = ();
     local ($nonansi_obj) = $obj;
     $nonansi_obj =~ s/_//g;
-    if (length (@files))
+    if (@files > 0)
     {
 	# Turn sources into objects.
 	foreach (@files)
@@ -3912,7 +3912,12 @@ sub scan_one_configure_file
 	}
 	if ($in_ac_output)
 	{
-	    $in_ac_output = 0 if s/[\]\),].*$//;
+	    local ($closing) = 0;
+	    if (s/[\]\),].*$//)
+	    {
+		$in_ac_output = 0;
+		$closing = 1;
+	    }
 
 	    # Look at potential Makefile.am's.
 	    foreach (split)
@@ -3945,6 +3950,14 @@ sub scan_one_configure_file
 		    # rebuilt, but shouldn't generate itself.
 		    push (@other_input_files, $_);
 		}
+	    }
+
+	    if ($closing)
+	    {
+		&am_conf_line_error ($filename, $ac_output_line,
+				     "No files mentioned in \`AC_OUTPUT'")
+		    if @make_input_list == 0 && @other_input_files == 0;
+		exit 1;
 	    }
 	}
 
