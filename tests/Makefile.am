@@ -361,6 +361,7 @@ texinfo7.test \
 texinfo8.test \
 texinfo9.test \
 texinfo10.test \
+transform.test \
 unused.test \
 vars.test \
 vartar.test \

@@ -1,0 +1,42 @@
+#! /bin/sh
+
+# Make sure that --program-transform works.
+
+. $srcdir/defs || exit 1
+
+set -e
+
+cat >>configure.in <<'END'
+AC_PROG_CC
+AC_OUTPUT
+END
+
+cat >Makefile.am <<'EOF'
+bin_PROGRAMS = h
+bin_SCRIPTS = h.sh
+man_MANS = h.1
+EOF
+
+cat >h.c <<'EOF'
+int
+main ()
+{
+  return 0;
+}
+EOF
+
+: > h.sh
+: > h.1
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
+
+./configure --program-prefix=gnu- --prefix `pwd`/inst
+$MAKE
+$MAKE install
+test -f inst/bin/gnu-h
+test -f inst/bin/gnu-h.sh
+test -f inst/man/man1/gnu-h.1
+$MAKE uninstall
+test `find inst/foo -type f -print | wc -l` = 0
