@@ -4486,6 +4486,14 @@ foo.c:2: bindir.h: No such file or directory
 make: *** [foo.o] Error 1
 @end example
 
+In this example @file{bindir.h} is not distributed, not installed, and
+it is not even being built on-time.  One may wonder what the
+@code{nodist_foo_SOURCES = bindir.h} line has any use at all.  This
+line simply states that @file{bindir.h} is a source of @code{foo}, so
+for instance it should be inspected while generating tags
+(@pxref{Tags}).  In other words, it does not help our present problem,
+and the build would fail identically without it.
+
 @unnumberedsubsec Using @code{BUILT_SOURCES}
 
 A solution is to require @file{bindir.h} to be built before anything
@@ -4494,6 +4502,7 @@ else.  This is what @code{BUILT_SOURCES} is meant for (@pxref{Sources}).
 @example
 bin_PROGRAMS = foo
 foo_SOURCES = foo.c
+nodist_foo_SOURCES = bindir.h
 BUILT_SOURCES = bindir.h
 CLEANFILES = bindir.h
 bindir.h: Makefile
@@ -4545,6 +4554,7 @@ the @file{Makefile.am}.
 @example
 bin_PROGRAMS = foo
 foo_SOURCES = foo.c
+nodist_foo_SOURCES = bindir.h
 foo.$(OBJEXT): bindir.h
 CLEANFILES = bindir.h
 bindir.h: Makefile
@@ -6051,9 +6061,14 @@ There are a few rules and variables that didn't fit anywhere else.
 Automake will generate rules to generate @file{TAGS} files for use with
 GNU Emacs under some circumstances.
 
+@trindex tags
 If any C, C++ or Fortran 77 source code or headers are present, then
 @code{tags} and @code{TAGS} rules will be generated for the directory.
-@trindex tags
+All files listed using the @code{_SOURCES}, @code{_HEADERS}, and
+@code{_LISP} primaries will be used to generate tags.  Note that
+generated source files that are not distributed must be declared in
+variables like @code{nodist_noinst_HEADERS} or
+@code{nodist_@var{prog}_SOURCES} or they will be ignored.
 
 At the topmost directory of a multi-directory package, a @code{tags}
 rule will be output which, when run, will generate a @file{TAGS} file
