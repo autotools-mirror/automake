@@ -23,15 +23,22 @@ depcc="$[$1]"
 depcpp=""])
 AC_MSG_CHECKING([dependency style of $depcc])
 AC_CACHE_VAL(am_cv_[$1]_dependencies_compiler_type,[
-am_depcomp=${am_depcomp-"$ac_aux_dir/depcomp"}
-if test -f "$am_depcomp"; then
+if test -z "$AMDEP"; then
   echo '#include "conftest.h"' > conftest.c
   echo 'int i;' > conftest.h
 
   am_cv_[$1]_dependencies_compiler_type=none
   for depmode in `sed -n 's/^#*\([a-zA-Z0-9]*\))$/\1/p' < "$am_depcomp"`; do
     case "$depmode" in
-    nosideeffect) continue ;;
+    nosideeffect)
+      # after this tag, mechanisms are not by side-effect, so they'll
+      # only be used when explicitly requested
+      if test "x$enable_dependency_tracking" = xyes; then
+	continue
+      else
+	break
+      fi
+      ;;
     none) break ;;
     esac
     if depmode="$depmode" \
@@ -64,4 +71,21 @@ else
   DEPDIR=_deps
 fi
 AC_SUBST(DEPDIR)
+])
+
+AC_DEFUN(AM_DEP_TRACK,[
+AC_ARG_ENABLE(dependency-tracking,
+[  --disable-dependency-tracking Speeds up one-time builds
+  --enable-dependency-tracking  Do not reject slow dependency extractors])
+if test "x$enable_dependency_tracking" = xno; then
+  AMDEP="#"
+else
+  am_depcomp="$ac_aux_dir/depcomp"
+  if test ! -f "$am_depcomp"; then
+    AMDEP="#"
+  else
+    AMDEP=
+  fi
+fi
+AC_SUBST(AMDEP)
 ])

@@ -15,7 +15,7 @@ for mf in $CONFIG_FILES; do
   */Makefile) dirpart=`echo "$mf" | sed -e 's|/[^/]*$||'`;;
   *) continue;;
   esac
-  grep '^DEP_FILES = ..*' < "$mf" > /dev/null || continue
+  grep '^DEP_FILES *= *[^ #]' < "$mf" > /dev/null || continue
   # Extract the definition of DEP_FILES from the Makefile without
   # running `make'.
   DEPDIR=`sed -n -e '/^DEPDIR = / s///p' < "$mf"`
