@@ -228,15 +228,15 @@ maintainer-check: automake aclocal
 	  exit 1; \
 	fi
 ## Never use `sleep 1' to create files with different timestamps.
-## Use `sleep 2' instead.  Some filesystems (e.g., Windows') have only
+## Use `$sleep' instead.  Some filesystems (e.g., Windows') have only
 ## a 2sec resolution.
-	@if grep -E '\bsleep +1\b' $(srcdir)/tests/*.test; then \
-	  echo 'Do not use "sleep 1" in the above tests.  Use "sleep 2" instead.' 1>&2; \
+	@if grep -E '\bsleep +[12345]\b' $(srcdir)/tests/*.test; then \
+	  echo 'Do not use "sleep x" in the above tests.  Use "$$sleep" instead.' 1>&2; \
 	  exit 1; \
 	fi
 ## fgrep and egrep are not required by POSIX.
 	@if grep -E '\b[ef]grep\b' $(srcdir)/tests/*.test ; then \
-	  echo 'Do not use egrep or fgrep in test cases.  Use $FGREP or $EGREP.' 1>&2; \
+	  echo 'Do not use egrep or fgrep in test cases.  Use $$FGREP or $$EGREP.' 1>&2; \
 	  exit 1; \
 	fi
 	@if grep -E '\b[ef]grep\b' $(srcdir)/lib/am/*.am $(srcdir)/m4/*.m4; then \
