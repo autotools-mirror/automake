@@ -2330,7 +2330,7 @@ sub handle_lib_objects_cond
 
 		if ($iter =~ /\.h$/)
 		{
-		    &require_file_with_line ($var, $FOREIGN, $iter);
+		    require_file_with_macro ($var, $FOREIGN, $iter);
 		}
 		elsif ($iter ne 'alloca.c')
 		{
@@ -2345,7 +2345,7 @@ sub handle_lib_objects_cond
 				   &variable_value_as_list_recursive (
 				   	'BUILT_SOURCES', 'all')))
 		    {
-			&require_file_with_line ($var, $FOREIGN, $iter);
+			require_file_with_macro ($var, $FOREIGN, $iter);
 		    }
 		}
 	    }
@@ -2360,7 +2360,7 @@ sub handle_lib_objects_cond
 			    "\@$lt" . "ALLOCA\@ seen but `AC_FUNC_ALLOCA' not in `$configure_ac'")
 		if ! defined $libsources{'alloca.c'};
 	    $dep_files{'$(DEPDIR)/alloca.P' . $myobjext} = 1;
-	    &require_file_with_line ($var, $FOREIGN, 'alloca.c');
+	    require_file_with_macro ($var, $FOREIGN, 'alloca.c');
 	    &saw_extension ('c');
 	}
     }
@@ -2469,7 +2469,7 @@ sub handle_compile ()
 	  {
 	    # Only require ansi2knr files if they should appear in
 	    # this directory.
-	    &require_file_with_line ('AUTOMAKE_OPTIONS', $FOREIGN,
+	    require_file_with_macro ('AUTOMAKE_OPTIONS', $FOREIGN,
 				     'ansi2knr.c', 'ansi2knr.1');
 
 	    # ansi2knr needs to be built before subdirs, so unshift it.
@@ -3090,7 +3090,7 @@ sub handle_texinfo_helper
 	    }
 	    else
 	    {
-		&require_file_with_line ('info_TEXINFOS', $FOREIGN,
+		require_file_with_macro ('info_TEXINFOS', $FOREIGN,
 					 'mdate-sh');
 	    }
 
@@ -3202,7 +3202,7 @@ sub handle_texinfo_helper
 	}
 	else
 	{
-	    &require_file_with_line ('info_TEXINFOS', $FOREIGN, 'texinfo.tex');
+	    require_file_with_macro ('info_TEXINFOS', $FOREIGN, 'texinfo.tex');
 	}
     }
 
@@ -3773,8 +3773,7 @@ sub handle_configure
 	        $ch_sans_dir = backname ($relative_dir) . '/' . $one_hdr;
 	    }
 
-	    &require_file_with_conf_line ($config_header_line,
-					  $FOREIGN, $ch_sans_dir);
+	    require_file ($config_header_line, $FOREIGN, $ch_sans_dir);
 
 	    # Header defined and in this directory.
 	    my @files;
@@ -3810,8 +3809,8 @@ sub handle_configure
 			       'SRC_STAMP'        => "$out_dir/$stamp_name"));
 
 	    &create ("${relative_dir}/${out_dir}/${stamp_name}.in");
-	    &require_file_with_conf_line ($config_header_line, $FOREIGN,
-					  "${out_dir}/${stamp_name}.in");
+	    require_file ($config_header_line, $FOREIGN,
+			  "${out_dir}/${stamp_name}.in");
 
 	    $distclean_config .= ' ' if $distclean_config;
 	    $distclean_config .= $cn_sans_dir;
@@ -3939,8 +3938,8 @@ sub handle_configure
 	push (@actual_other_files, $local);
 
 	# Require all input files.
-	&require_file_with_conf_line ($ac_output_line, $FOREIGN,
-				      &rewrite_inputs_into_dependencies (0, @inputs));
+	require_file ($ac_output_line, $FOREIGN,
+		      &rewrite_inputs_into_dependencies (0, @inputs));
     }
 
     # These files get removed by "make clean".
@@ -3979,7 +3978,7 @@ sub handle_gettext
 		    "AM_GNU_GETTEXT used but `intl' not in SUBDIRS")
 	if ! grep ('intl', @subdirs);
 
-    &require_file_with_conf_line ($ac_gettext_line, $GNU, 'ABOUT-NLS');
+    require_file ($ac_gettext_line, $GNU, 'ABOUT-NLS');
 }
 
 # Handle footer elements.
@@ -7689,8 +7688,8 @@ sub maybe_push_required_file
 }
 
 
-# &require_file_internal ($IS_CONFIGURE, $LINE, $MYSTRICT, @FILES)
-# ----------------------------------------------------------------
+# &require_file_internal ($WHERE, $MYSTRICT, @FILES)
+# --------------------------------------------------
 # Verify that the file must exist in the current directory.
 # $MYSTRICT is the strictness level at which this file becomes required.
 #
@@ -7699,7 +7698,7 @@ sub maybe_push_required_file
 # which the first file was found) before return.
 sub require_file_internal
 {
-    my ($is_configure, $line, $mystrict, @files) = @_;
+    my ($where, $mystrict, @files) = @_;
 
     foreach my $file (@files)
     {
