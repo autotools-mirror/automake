@@ -278,6 +278,9 @@ lisp4.test \
 lisp5.test \
 listval.test \
 location.test \
+ltcond.test \
+ltcond2.test \
+ltconv.test \
 ltdeps.test \
 ltlibobjs.test \
 maintclean.test \
