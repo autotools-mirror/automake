@@ -39,7 +39,7 @@ $TAR = "@TAR@";
 $IGNORE_PATTERN = "^##([^#].*)?\$";
 $WHITE_PATTERN = "^[ \t]*\$";
 $COMMENT_PATTERN = "^#";
-$RULE_PATTERN = "^([\$a-zA-Z_.][-.a-zA-Z0-9_(){}/]*) *:([^=].*|)\$";
+$RULE_PATTERN = "^([\$a-zA-Z_.][-.a-zA-Z0-9_(){}/\$]*) *:([^=].*|)\$";
 $MACRO_PATTERN = "^([A-Za-z][A-Za-z0-9_]*)[ \t]*:?=[ \t]*(.*)\$";
 $BOGUS_MACRO_PATTERN = "^([^ \t]*)[ \t]*:?=[ \t]*(.*)\$";
 $GNITS_VERSION_PATTERN = "[0-9]+\\.[0-9]+([a-z]|\\.[0-9]+)?";
@@ -197,8 +197,8 @@ $package_version_line = 0;
 # TRUE if we've seen AM_PATH_LISPDIR.
 $seen_lispdir = 0;
 
-# TRUE if we've seen AM_CYGWIN32.
-$seen_cygwin32 = 0;
+# TRUE if we've seen AM_EXEEXT.
+$seen_exeext = 0;
 
 # Hash table of discovered configure substitutions.  Keys are names,
 # values are meaningless.
@@ -1529,14 +1529,14 @@ sub handle_programs
 	    $xlink = $linker ? $linker : 'LINK';
 	}
 
-	local ($cygxform);
-	if (! $seen_cygwin32)
+	local ($xexe);
+	if ($seen_exeext && $one_file !~ /\./)
 	{
-	    $cygxform = 's/^CYGWIN.*$//; s/^NOTCYGWIN//;';
+	    $xexe = 's/\@EXEEXT\@/\$(EXEEXT)/g;';
 	}
 	else
 	{
-	    $cygxform = 's/^NOTCYGWIN.*$//; s/^CYGWIN//;';
+	    $xexe = 's/\@EXEEXT\@//g;';
 	}
 
 	$output_rules .=
@@ -1544,7 +1544,7 @@ sub handle_programs
 		('s/\@PROGRAM\@/' . $one_file . '/go;'
 		 . 's/\@XPROGRAM\@/' . $xname . '/go;'
 		 . 's/\@XLINK\@/' . $xlink . '/go;'
-		 . $cygxform,
+		 . $xexe,
 		 'program');
     }
 
@@ -3052,6 +3052,7 @@ sub handle_configure
     local (@actual_other_files) = ();
     local ($file, $local);
     local (@inputs, @rewritten_inputs, $single);
+    local ($need_rewritten);
     foreach $file (@other_input_files)
     {
 	if ($file =~ /^(.*):(.*)$/)
@@ -3061,6 +3062,7 @@ sub handle_configure
 	    $local = &basename ($file);
 	    @inputs = split (':', $2);
 	    @rewritten_inputs = &rewrite_inputs_into_dependencies (@inputs);
+	    $need_rewritten = 1;
 	}
 	else
 	{
@@ -3069,6 +3071,7 @@ sub handle_configure
 	    @inputs = ($local . '.in');
 	    @rewritten_inputs =
 		&rewrite_inputs_into_dependencies ($file . '.in');
+	    $need_rewritten = 0;
 	}
 
 	# Skip files not in this directory.
@@ -3094,7 +3097,7 @@ sub handle_configure
 			  . "\t"
 			  . 'cd $(top_builddir) && CONFIG_FILES='
 			  . ($relative_dir eq '.' ? '' : '$(subdir)/')
-   			  . '$@' . (length (@rewritten_inputs) > 0
+   			  . '$@' . ($need_rewritten
 				    ? (':' . join (':', @rewritten_inputs))
 				    : '')
 			  . ' CONFIG_HEADERS= ./config.status'
@@ -3939,10 +3942,10 @@ sub scan_one_configure_file
 	# Check for ansi2knr.
 	$am_c_prototypes = 1 if /AM_C_PROTOTYPES/;
 
-	# Check for Cygwin32.
-	if (/AM_CYGWIN32/)
+	# Check for exe extension stuff.
+	if (/AM_EXEEXT/)
 	{
-	    $seen_cygwin32 = 1;
+	    $seen_exeext = 1;
 	    $configure_vars{'EXEEXT'} = 1;
 	}
 
@@ -4160,9 +4163,9 @@ sub check_cygnus
 	&am_conf_error ("\`AM_MAINTAINER_MODE' required when --cygnus specified");
     }
 
-    if (! $seen_cygwin32)
+    if (! $seen_exeext)
     {
-	&am_conf_error ("\`AM_CYGWIN32' required when --cygnus specified");
+	&am_conf_error ("\`AM_EXEEXT' required when --cygnus specified");
     }
 }
 
@@ -5579,13 +5582,13 @@ sub am_install_var
     }
 
     local ($cygxform);
-    if (! $seen_cygwin32)
+    if (! $seen_exeext)
     {
-	$cygxform = 's/\@EXEEXT\@//g; s/^NOTCYGWIN//; s/^CYGWIN.*$//;';
+	$cygxform = 's/\@EXEEXT\@//g;';
     }
     else
     {
-	$cygxform = 's/\@EXEEXT\@/\$(EXEEXT)/g; s/^CYGWIN//; s/^NOTCYGWIN.*$//;';
+	$cygxform = 's/\@EXEEXT\@/\$(EXEEXT)/g;';
     }
 
     while (@args)
@@ -5660,14 +5663,82 @@ sub am_install_var
 		    {
 			$require_extra = $one_name;
 		    }
+
 		    next;
 		}
+
 		push (@result, $rcurs);
 	    }
 
 	    # "EXTRA" shouldn't be used when generating clean targets,
-	    # @all, or install targets.
+	    # all, or install targets.
 	    next if $X eq 'EXTRA';
+
+	    # A blatant hack: we rewrite each _PROGRAMS primary to
+	    # include EXEEXT when in Cygwin32 mode.
+	    if ($seen_exeext && $primary eq 'PROGRAMS')
+	    {
+		local (@conds) = &variable_conditions ($one_name);
+		local (@one_binlist);
+
+		# FIXME: this definitely loses aesthetically; it
+		# redefines $ONE_NAME.  Instead we should arrange for
+		# variable definitions to be output later, instead of
+		# at scan time.
+
+		if (! @conds)
+		{
+		    @one_binlist = ();
+		    foreach $rcurs (&variable_value_as_list ($one_name, ''))
+		    {
+			if ($rcurs =~ /\./ || $rcurs =~ /^\@.*\@$/)
+			{
+			    push (@one_binlist, $rcurs);
+			}
+			else
+			{
+			    push (@one_binlist, $rcurs . '$(EXEEXT)');
+			}
+		    }
+
+		    delete $contents{$one_name};
+		    &define_pretty_variable ($one_name, '', @one_binlist);
+		}
+		else
+		{
+		    local ($cond);
+		    local ($condvals) = '';
+		    foreach $cond (@conds)
+		    {
+			@one_binlist = ();
+			local (@condval) = &variable_value_as_list ($one_name,
+								    $cond);
+			foreach $rcurs (@condval)
+			{
+			    if ($rcurs =~ /\./ || $rcurs =~ /^\@.*\@$/)
+			    {
+				push (@one_binlist, $rcurs);
+			    }
+			    else
+			    {
+				push (@one_binlist, $rcurs . '$(EXEEXT)');
+			    }
+			}
+
+			push (@condvals, $cond);
+			push (@condvals, join (' ', @one_binlist));
+		    }
+
+		    delete $contents{$one_name};
+
+		    while (@condvals)
+		    {
+			$cond = shift (@condvals);
+			local (@val) = split (' ', shift (@condvals));
+			&define_pretty_variable ($one_name, $cond, @val);
+		    }
+		}
+	    }
 
 	    if ($do_clean)
 	    {
