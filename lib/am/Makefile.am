@@ -54,11 +54,6 @@ maintainer-check: automake aclocal
 ## Syntax check with default Perl (on my machine, Perl 5).
 	$(PERL) -c -w automake
 	$(PERL) -c -w aclocal
-## Ensure `true' is never used; I've accidentally used it before.
-	@if grep '^[^#].*true' $(srcdir)/[a-z]*.am; then \
-	  echo "can't use 'true' in GNU Makefile" 1>&2; \
-	  exit 1;				\
-	else :; fi
 ## expect no instances of '${...}'.  However, $${...} is ok, since that
 ## is a shell construct, not a Makefile construct.
 	@if test `fgrep '$${' $(srcdir)/[a-z]*.am | fgrep -v '$$$$' | wc -l` -ne 0; then \
