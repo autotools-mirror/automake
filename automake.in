@@ -450,6 +450,62 @@ sub uniq (@)
 
 ################################################################
 
+# $DIRNAME
+# &dirname ($FILE)
+# ----------------
+# Return directory name of file.
+sub dirname ($)
+{
+    my ($file) = @_;
+    my $sub;
+
+    ($sub = $file) =~ s,/+[^/]+$,,g;
+    $sub = '.' if $sub eq $file;
+    return $sub;
+}
+
+
+# $BASENAME
+# &basename ($FILE)
+# -----------------
+# Return file name of a file.
+sub basename ($)
+{
+    my ($file) = @_;
+    my $sub;
+
+    ($sub = $file) =~s,^.*/+,,g;
+    return $sub;
+}
+
+
+# $BACKPATH
+# &backname ($REL-DIR)
+# --------------------
+# If I `cd $REL-DIR', then to come back, I should `cd $BACKPATH'.
+# For instance `src/foo' => `../..'.
+# Works with non strictly increasing paths, i.e., `src/../lib' => `..'.
+sub backname ($)
+{
+    my ($file) = @_;
+    my @res;
+    foreach (split (/\//, $file))
+    {
+	next if $_ eq '.' || $_ eq '';
+	if ($_ eq '..')
+	{
+	    pop @res;
+	}
+	else
+	{
+	    push (@res, '..');
+	}
+    }
+    return join ('/', @res) || '.';
+}
+
+################################################################
+
 # Parse command line.
 sub parse_arguments
 {
@@ -610,8 +666,8 @@ sub generate_makefile
     ($output, @secondary_inputs) = split (/:/, $output);
 
     &initialize_per_input;
-    $relative_dir = &dirname ($output);
-    $am_relative_dir = &dirname ($makefile);
+    $relative_dir = dirname ($output);
+    $am_relative_dir = dirname ($makefile);
 
     # At the toplevel directory, we might need config.guess, config.sub
     # or libtool scripts (ltconfig and ltmain.sh).
@@ -856,11 +912,9 @@ sub get_object_extension
 
 	    if (&variable_defined ('CONFIG_HEADER'))
 	    {
-		local ($one_hdr);
-		foreach $one_hdr (split (' ',
-					 &variable_value ('CONFIG_HEADER')))
+		foreach my $hdr (split (' ', &variable_value ('CONFIG_HEADER')))
 		{
-		    $default_include .= ' -I' . &dirname ($one_hdr);
+		    $default_include .= ' -I' . dirname ($hdr);
 		}
 	    }
 	}
@@ -938,12 +992,12 @@ sub get_object_extension
 	    }
 	    else
 	    {
-		$output_rules .= ("\tcd " . &dirname ($options{'ansi2knr'})
+		$output_rules .= ("\tcd " . dirname ($options{'ansi2knr'})
 				  . " && \$(MAKE) \$(AM_MAKEFLAGS) "
 				  . "ansi2knr\n\n");
 		# This is required for non-GNU makes.
 	        $output_rules .= ($options{'ansi2knr'} . $objext . ":\n");
-		$output_rules .= ("\tcd " . &dirname ($options{'ansi2knr'})
+		$output_rules .= ("\tcd " . dirname ($options{'ansi2knr'})
 				  . " && \$(MAKE) \$(AM_MAKEFLAGS)"
 				  . " ansi2knr" . $objext . "\n\n");
 	    }
@@ -2374,7 +2428,7 @@ sub handle_texinfo
 	# The user defined TEXINFO_TEX so assume he knows what he is
 	# doing.
         $texinfodir = ('$(srcdir)/'
-		       . &dirname (&variable_value ('TEXINFO_TEX')));
+		       . dirname (&variable_value ('TEXINFO_TEX')));
     }
     else
     {
@@ -2544,11 +2598,11 @@ sub handle_tags
 	local ($one_hdr);
 	foreach $one_hdr (@config_headers)
 	{
-	    if ($relative_dir eq &dirname ($one_hdr))
+	    if ($relative_dir eq dirname ($one_hdr))
 	    {
 		# The config header is in this directory.  So require it.
 		$config .= ' ' if $config;
-		$config .= &basename ($one_hdr);
+		$config .= basename ($one_hdr);
 	    }
 	}
 	my $xform = &transform ('CONFIG' => $xform,
@@ -2657,7 +2711,7 @@ sub handle_dist
     {
 	foreach my $iter (keys %configure_dist_common)
 	{
-	    if (! &is_make_dir (&dirname ($iter)))
+	    if (! &is_make_dir (dirname ($iter)))
 	    {
 		&push_dist_common ($iter);
 	    }
@@ -2672,30 +2726,6 @@ sub handle_dist
     # Now that we've processed %dist_common, disallow further attempts
     # to set it.
     $handle_dist_run = 1;
-
-    # Some boilerplate.
-    $output_vars .= &file_contents ('dist-vars') . "\n";
-
-    # Put these things in rules section so it is easier for whoever
-    # reads Makefile.in.
-    if (! &variable_defined ('distdir'))
-    {
-	if ($relative_dir eq '.')
-	{
-	    $output_rules .= "\n" . 'distdir = $(PACKAGE)-$(VERSION)' . "\n";
-	}
-	else
-	{
-	    $output_rules .= ("\n"
-			      . 'distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)'
-			      . "\n");
-	}
-    }
-    if ($relative_dir eq '.')
-    {
-	$output_rules .= "top_distdir = \$(distdir)\n";
-    }
-    $output_rules .= "\n";
 
     # Scan EXTRA_DIST to see if we need to distribute anything from a
     # subdir.  If so, add it to the list.  I didn't want to do this
@@ -2772,9 +2802,7 @@ sub handle_dist
 	    &define_pretty_variable ('DIST_SUBDIRS', '', '$(SUBDIRS)');
 	}
 
-	my $top_distdir = ($relative_dir eq '.') ? 'distdir' : 'top_distdir';
-	$xform .= &transform ('DIST_SUBDIR_NAME' => $dist_subdir_name,
-			      'TOP_DISTDIR'      => $top_distdir);
+	$xform .= &transform ('DIST_SUBDIR_NAME' => $dist_subdir_name);
     }
 
     # If the target `dist-hook' exists, make sure it is run.  This
@@ -2783,14 +2811,19 @@ sub handle_dist
     push (@dist_targets, 'dist-hook')
       if &target_defined ('dist-hook');
 
+    my $top_distdir = backname ($relative_dir);
+
     $output_rules .=
       &file_contents ('distdir',
 		      $xform
-		      . &transform ('DIST-TARGETS' => join " ", @dist_targets)
+		      . &transform ('DIST-TARGETS' => join (" ", @dist_targets),
+				    'TOP_DISTDIR'  => $top_distdir)
 		      . &transform_cond ('DIST-TARGETS' =>
 					    scalar @dist_targets,
 					 'SUBDIRS'  =>
-					    &variable_defined ('SUBDIRS')));
+					    &variable_defined ('SUBDIRS'),
+					 'DISTDIR' =>
+					    ! &variable_defined ('distdir')));
 }
 
 
@@ -3096,9 +3129,9 @@ sub rewrite_inputs_into_dependencies
 
     foreach $single (@inputs)
     {
-	if (&dirname ($single) eq $relative_dir)
+	if (dirname ($single) eq $relative_dir)
 	{
-	    push (@newinputs, &basename ($single));
+	    push (@newinputs, basename ($single));
 	}
 	elsif ($add_srcdir)
 	{
@@ -3117,14 +3150,14 @@ sub handle_configure
 
     local ($top_reldir);
 
-    local ($input_base) = &basename ($input);
-    local ($local_base) = &basename ($local);
+    my $input_base = basename ($input);
+    my $local_base = basename ($local);
 
-    local ($amfile) = $input_base . '.am';
+    my $amfile = $input_base . '.am';
     # We know we can always add '.in' because it really should be an
     # error if the .in was missing originally.
-    local ($infile) = '$(srcdir)/' . $input_base . '.in';
-    local ($colon_infile);
+    my $infile = '$(srcdir)/' . $input_base . '.in';
+    my $colon_infile;
     if ($local ne $input || @secondary_inputs)
     {
 	$colon_infile = ':' . $input . '.in';
@@ -3198,7 +3231,7 @@ sub handle_configure
 	local ($one_fullname) = shift (@local_fullnames);
 	local ($one_name) = shift (@local_names);
 	$hdr_index += 1;
-	local ($header_dir) = &dirname ($one_name);
+	my $header_dir = dirname ($one_name);
 
 	# If the header is in the current directory we want to build
 	# the header here.  Otherwise, if we're at the topmost
@@ -3210,7 +3243,7 @@ sub handle_configure
 	    local ($ch_sans_dir, $cn_sans_dir, $stamp_dir);
 	    if ($relative_dir eq $header_dir)
 	    {
-		$cn_sans_dir = &basename ($one_name);
+		$cn_sans_dir = basename ($one_name);
 		$stamp_dir = '';
 	    }
 	    else
@@ -3229,9 +3262,9 @@ sub handle_configure
 	    # Compute relative path from directory holding output
 	    # header to directory holding input header.  FIXME:
 	    # doesn't handle case where we have multiple inputs.
-	    if (&dirname ($one_hdr) eq $relative_dir)
+	    if (dirname ($one_hdr) eq $relative_dir)
 	    {
-		$ch_sans_dir = &basename ($one_hdr);
+		$ch_sans_dir = basename ($one_hdr);
 	    }
 	    else
 	    {
@@ -3271,7 +3304,7 @@ sub handle_configure
 	    $stamp_name .= "${hdr_index}" if scalar (@config_headers) > 1;
 
             my $xform = '';
-            my $out_dir = &dirname ($ch_sans_dir);
+            my $out_dir = dirname ($ch_sans_dir);
 
 	    $xform = &transform ('CONFIGURE_AC'       => $configure_ac,
 				 'FILES'              => join (' ', @files),
@@ -3321,13 +3354,13 @@ sub handle_configure
     {
 	# Generate CONFIG_HEADER define.
 	local ($one_hdr);
-	if ($relative_dir eq &dirname ($one_name))
+	if ($relative_dir eq dirname ($one_name))
 	{
-	    $one_hdr = &basename ($one_name);
+	    $one_hdr = basename ($one_name);
 	}
 	else
 	{
-	    $one_hdr = "${top_builddir}/${one_name}";
+	    $one_hdr = "\$(top_builddir)/${one_name}";
 	}
 
 	$config_header .= ' ' if $config_header;
@@ -3350,7 +3383,7 @@ sub handle_configure
 	{
 	    # This is the ":" syntax of AC_OUTPUT.
 	    $file = $1;
-	    $local = &basename ($file);
+	    $local = basename ($file);
 	    @inputs = split (':', $2);
 	    @rewritten_inputs = &rewrite_inputs_into_dependencies (1, @inputs);
 	    $need_rewritten = 1;
@@ -3359,7 +3392,7 @@ sub handle_configure
 	{
 	    # Normal usage.
 	    $file = $lfile;
-	    $local = &basename ($file);
+	    $local = basename ($file);
 	    @inputs = ($file . '.in');
 	    @rewritten_inputs =
 		&rewrite_inputs_into_dependencies (1, @inputs);
@@ -3375,7 +3408,7 @@ sub handle_configure
 	{
 	    foreach (@inputs)
 	    {
-		$dist_dirs{&dirname ($_)} = 1;
+		$dist_dirs{dirname ($_)} = 1;
 	    }
 	}
 
@@ -3385,7 +3418,7 @@ sub handle_configure
 	# Makefile, and we are currently doing `.', then we create a
 	# rule to rebuild the file in the subdir.
 	next if -f $file . '.am';
-	local ($fd) = &dirname ($file);
+	local ($fd) = dirname ($file);
 	if ($fd ne $relative_dir)
 	{
 	    if ($relative_dir eq '.' && ! &is_make_dir ($fd))
@@ -3599,13 +3632,13 @@ sub handle_merge_targets
     # Put this at the beginning for the sake of non-GNU makes.  This
     # is still wrong if these makes can run parallel jobs.  But it is
     # right enough.
-    unshift (@all, &basename ($makefile));
+    unshift (@all, basename ($makefile));
 
     local ($one_name);
     foreach $one_name (@config_names)
     {
-	push (@all, &basename ($one_name))
-	    if &dirname ($one_name) eq $relative_dir;
+	push (@all, basename ($one_name))
+	    if dirname ($one_name) eq $relative_dir;
     }
 
     &do_one_merge_target ('info', @info);
@@ -3649,10 +3682,10 @@ sub handle_merge_targets
 	    if &variable_defined ('BUILT_SOURCES');
 	foreach $one_name (@config_names)
 	{
-	    if (&dirname ($one_name) eq $relative_dir)
+	    if (dirname ($one_name) eq $relative_dir)
 	    {
 		$local_headers .= ' ' if $local_headers;
-		$local_headers .= &basename ($one_name);
+		$local_headers .= basename ($one_name);
 	    }
 	}
 	if ($local_headers)
@@ -5173,7 +5206,7 @@ sub saw_extension
 # headers can be included.
 sub saw_sources_p
 {
-    local ($headers) = @_;
+    my ($headers) = @_;
 
     if ($headers)
     {
@@ -5245,10 +5278,10 @@ sub derive_suffix
 # beginning of every subsequent line.
 sub pretty_print_internal
 {
-    local ($head, $fill, @values) = @_;
+    my ($head, $fill, @values) = @_;
 
-    local ($column) = length ($head);
-    local ($result) = $head;
+    my $column = length ($head);
+    my $result = $head;
 
     # Fill length is number of characters.  However, each Tab
     # character counts for eight.  So we count the number of Tabs and
@@ -7270,14 +7303,14 @@ sub is_make_dir
     {
 	foreach $iter (@configure_input_files)
 	{
-	    $make_dirs{&dirname ($iter)} = 1;
+	    $make_dirs{dirname ($iter)} = 1;
 	}
 	# We also want to notice Makefile.in's.
 	foreach $iter (@other_input_files)
 	{
 	    if ($iter =~ /Makefile\.in$/)
 	    {
-		$make_dirs{&dirname ($iter)} = 1;
+		$make_dirs{dirname ($iter)} = 1;
 	    }
 	}
 	$make_dirs_set = 1;
@@ -7429,7 +7462,7 @@ sub require_file_internal
 			}
 		    }
 
-		    &maybe_push_required_file (&dirname ($errfile),
+		    &maybe_push_required_file (dirname ($errfile),
 					       $file, $errfile);
 		}
 
@@ -7566,61 +7599,6 @@ sub set_strictness
 
 
 ################################################################
-
-# $DIRNAME
-# &dirname ($FILE)
-# ----------------
-# Return directory name of file.
-sub dirname ($)
-{
-    my ($file) = @_;
-    my $sub;
-
-    ($sub = $file) =~ s,/+[^/]+$,,g;
-    $sub = '.' if $sub eq $file;
-    return $sub;
-}
-
-
-# $BASENAME
-# &basename ($FILE)
-# -----------------
-# Return file name of a file.
-sub basename ($)
-{
-    my ($file) = @_;
-    my $sub;
-
-    ($sub = $file) =~s,^.*/+,,g;
-    return $sub;
-}
-
-
-# $BACKPATH
-# &backname ($REL-DIR)
-# --------------------
-# If I `cd $REL-DIR', then to come back, I should `cd $BACKPATH'.
-# For instance `src/foo' => `../..'.
-# Works with non strictly increasing paths, i.e., `src/../lib' => `..'.
-sub backname ($)
-{
-    my ($file) = @_;
-    my @res;
-    foreach (split (/\//, $file))
-    {
-	next if $_ eq '.' || $_ eq '';
-	if ($_ eq '..')
-	{
-	    pop @res;
-	}
-	else
-	{
-	    push (@res, '..');
-	}
-    }
-    return join ('/', @res) || '.';
-}
-
 
 # Ensure a file exists.
 sub create

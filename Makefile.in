@@ -86,7 +86,7 @@ info_TEXINFOS = automake.texi
 
 amfiles = check.am clean-hdr.am clean-kr.am clean.am comp-vars.am \
 compile.am data-clean.am data.am dejagnu.am depend.am depend2.am \
-distdir.am dist-vars.am footer.am header-vars.am header.am \
+distdir.am footer.am header-vars.am header.am \
 java-clean.am java.am kr-extra.am library.am libs-clean.am libs.am \
 libtool.am lisp-clean.am lisp.am ltlib-clean.am ltlib.am ltlibrary.am \
 mans-vars.am mans.am multilib.am program.am progs-clean.am progs.am \
@@ -135,9 +135,6 @@ THANKS TODO aclocal.in aclocal.m4 ansi2knr.1 ansi2knr.c automake.in \
 compile config.guess config.sub configure configure.in depcomp \
 elisp-comp install-sh mdate-sh missing mkinstalldirs py-compile \
 stamp-vti texinfo.tex version.texi ylwrap
-
-
-DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 
 DIST_SUBDIRS =  $(SUBDIRS)
 all: all-recursive
@@ -451,9 +448,10 @@ GTAGS:
 distclean-tags:
 	-rm -f TAGS ID
 
-distdir = $(PACKAGE)-$(VERSION)
-top_distdir = $(distdir)
+DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 
+top_distdir = .
+distdir = $(top_distdir)/$(PACKAGE)-$(VERSION)
 
 GZIP_ENV = --best
 
@@ -482,12 +480,15 @@ distdir: $(DISTFILES)
 	    || mkdir $(distdir)/$$subdir \
 	    || exit 1; \
 	    (cd $$subdir && \
-	      $(MAKE) $(AM_MAKEFLAGS) top_distdir=../$(distdir) distdir=../$(distdir)/$$subdir distdir) \
+	      $(MAKE) $(AM_MAKEFLAGS) \
+	        top_distdir="$(top_distdir)" \
+	        distdir=../$(distdir)/$$subdir \
+	        distdir) \
 	      || exit 1; \
 	  fi; \
 	done
 	$(MAKE) $(AM_MAKEFLAGS) \
-	  top_distdir="$(top_distdir)" distdir="$(distdir)" \
+	  top_distdir="${top_distdir}" distdir="$(distdir)" \
 	  dist-info
 	-find $(distdir) -type d ! -perm -777 -exec chmod a+rwx {} \; -o \
 	  ! -type d ! -perm -444 -links 1 -exec chmod a+r {} \; -o \

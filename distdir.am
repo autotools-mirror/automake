@@ -18,6 +18,15 @@
 
 .PHONY: distdir
 
+PACKAGE = @PACKAGE@
+VERSION = @VERSION@
+
+## DIST_COMMON comes first so that README can be the very first file.
+DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
+
+top_distdir = @TOP_DISTDIR@
+?DISTDIR?distdir = $(top_distdir)/$(PACKAGE)-$(VERSION)
+
 distdir: $(DISTFILES)
 ##
 ## For Gnits users, this is pretty handy.  Look at 15 lines
@@ -76,7 +85,10 @@ distdir: $(DISTFILES)
 ?SUBDIRS?	    || mkdir $(distdir)/$$subdir \
 ?SUBDIRS?	    || exit 1; \
 ?SUBDIRS?	    (cd $$subdir && \
-?SUBDIRS?	      $(MAKE) $(AM_MAKEFLAGS) top_distdir=../$(@TOP_DISTDIR@) distdir=../$(distdir)/$$subdir distdir) \
+?SUBDIRS?	      $(MAKE) $(AM_MAKEFLAGS) \
+?SUBDIRS?	        top_distdir="$(top_distdir)" \
+?SUBDIRS?	        distdir=../$(distdir)/$$subdir \
+?SUBDIRS?	        distdir) \
 ?SUBDIRS?	      || exit 1; \
 ?SUBDIRS?	  fi; \
 ?SUBDIRS?	done
@@ -86,7 +98,7 @@ distdir: $(DISTFILES)
 ## We must explicitly set distdir and top_distdir for these sub-makes.
 ##
 ?DIST-TARGETS?	$(MAKE) $(AM_MAKEFLAGS) \
-?DIST-TARGETS?	  top_distdir="$(top_distdir)" distdir="$(distdir)" \
+?DIST-TARGETS?	  top_distdir="${top_distdir}" distdir="$(distdir)" \
 ?DIST-TARGETS?	  @DIST-TARGETS@
 ##
 ## This complex find command will try to avoid changing the modes of
