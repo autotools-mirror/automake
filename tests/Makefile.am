@@ -2,7 +2,8 @@
 
 AUTOMAKE_OPTIONS = gnits
 
-XFAIL_TESTS = subobj2.test yaccvpath.test texinfo10.test subdir5.test
+XFAIL_TESTS = subobj2.test yaccvpath.test texinfo10.test subdir5.test \
+werror.test
 
 TESTS =	\
 acinclude.test \
@@ -278,6 +279,7 @@ version3.test \
 vpath.test \
 vtexi.test \
 vtexi2.test \
+werror.test \
 whoami.test \
 xsource.test \
 yacc.test \
