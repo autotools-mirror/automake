@@ -2,7 +2,7 @@
 
 AUTOMAKE_OPTIONS = gnits
 
-XFAIL_TESTS = confh.test cond8.test
+XFAIL_TESTS = confh.test
 TESTS = acinclude.test aclocal.test aclocali.test aclocalii.test \
 acoutnoq.test acoutput.test acoutqnl.test acouttbs.test acsilent.test \
 all.test alpha.test ammissing.test ansi.test ansi2.test ansi3.test \
