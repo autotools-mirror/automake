@@ -495,6 +495,7 @@ txinfo25.test \
 txinfo26.test \
 txinfo27.test \
 txinfo28.test \
+txinfo29.test \
 transform.test \
 unused.test \
 vars.test \

@@ -1,4 +1,4 @@
-# Copyright (C) 2003  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2004  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -799,9 +799,6 @@ sub define ($$$$$$$$)
 			       || $pretty == VAR_SILENT
 			       || $pretty == VAR_SORTED);
 
-  # We will adjust the owner of this variable unless told otherwise.
-  my $adjust_owner = 1;
-
   error $where, "bad characters in variable name `$var'"
     if $var !~ /$_VARIABLE_PATTERN/o;
 
@@ -830,12 +827,40 @@ sub define ($$$$$$$$)
   my $def = $self->def ($cond);
   my $new_var = $def ? 0 : 1;
 
-  # An Automake variable must be consistently defined with the same
-  # sign by Automake.
-  error ($where, "$var was set with `". $def->type .
-	 "=' and is now set with `$type='")
-    if $owner == VAR_AUTOMAKE && ! $new_var && $def->type ne $type;
+  # Additional checks for Automake definitions.
+  if ($owner == VAR_AUTOMAKE && ! $new_var)
+    {
+      # An Automake variable must be consistently defined with the same
+      # sign by Automake.
+      if ($def->type ne $type && $def->owner == VAR_AUTOMAKE)
+	{
+	  error ($def->location,
+		 "Automake variable `$var' was set with `"
+		 . $def->type . "=' here...", partial => 1);
+	  error ($where, "... and is now set with `$type=' here.");
+	  prog_error ("Automake variable assignments should be consistently\n"
+		      . "defined with the same sign.");
+	}
 
+      # If Automake tries to override a value specified by the user,
+      # just don't let it do.
+      if ($def->owner != VAR_AUTOMAKE)
+	{
+	  if (! exists $_silent_variable_override{$var})
+	    {
+	      my $condmsg = ($cond == TRUE
+			     ? '' : (" in condition `" . $cond->human . "'"));
+	      msg_cond_var ('override', $cond, $var,
+			    "user variable `$var' defined here$condmsg...",
+			    partial => 1);
+	      msg ('override', $where,
+		   "... overrides Automake variable `$var' defined here");
+	    }
+	  verb ("refusing to override the user definition of:\n"
+		. $self->dump ."with `" . $cond->human . "' => `$value'");
+	  return;
+	}
+    }
 
   # Differentiate assignment types.
 
@@ -843,6 +868,11 @@ sub define ($$$$$$$$)
   if ($type eq '+' && ! $new_var)
     {
       $def->append ($value, $comment);
+
+      # Only increase owners.  A VAR_CONFIGURE variable augmented in a
+      # Makefile.am becomes a VAR_MAKEFILE variable.
+      $def->set_owner ($owner, $where->clone)
+	if $owner > $def->owner;
     }
   # 2. append (+=) to a variable defined for *another* condition
   elsif ($type eq '+' && ! $self->conditions->false)
@@ -926,64 +956,30 @@ sub define ($$$$$$$$)
 		       $where, $pretty);
 	    }
 	}
-      # Don't adjust the owner.  The above &define did it in the
-      # right conditions.
-      $adjust_owner = 0;
     }
   # 3. first assignment (=, :=, or +=)
   else
     {
-      # If Automake tries to override a value specified by the user,
-      # just don't let it do.
-      if (! $new_var && $def->owner != VAR_AUTOMAKE
-	  && $owner == VAR_AUTOMAKE)
-	{
-	  if (! exists $_silent_variable_override{$var})
-	    {
-	      my $condmsg = ($cond == TRUE
-			     ? '' : (" in condition `" . $cond->human . "'"));
-	      msg_cond_var ('override', $cond, $var,
-			    "user variable `$var' defined here$condmsg...",
-			    partial => 1);
-	      msg ('override', $where,
-		   "... overrides Automake variable `$var' defined here");
-	    }
-	  verb ("refusing to override the user definition of:\n"
-		. $self->dump
-		."with `" . $cond->human . "' => `$value'");
-	}
-      else
-	{
-	  # There must be no previous value unless the user is redefining
-	  # an Automake variable or an AC_SUBST variable for an existing
-	  # condition.
-	  _check_ambiguous_condition ($self, $cond, $where)
-	    unless (!$new_var
-		    && (($def->owner == VAR_AUTOMAKE && $owner != VAR_AUTOMAKE)
-			|| $def->owner == VAR_CONFIGURE));
+      # There must be no previous value unless the user is redefining
+      # an Automake variable or an AC_SUBST variable for an existing
+      # condition.
+      _check_ambiguous_condition ($self, $cond, $where)
+	unless (!$new_var
+		&& (($def->owner == VAR_AUTOMAKE && $owner != VAR_AUTOMAKE)
+		    || $def->owner == VAR_CONFIGURE));
 
-	  # Never decrease an owner.
-	  $owner = $def->owner
-	    if ! $new_var && $owner < $def->owner;
+      # Never decrease an owner.
+      $owner = $def->owner
+	if ! $new_var && $owner < $def->owner;
 
-	  # Assignments to a macro set its location.  We don't adjust
-	  # locations for `+='.  Ideally I suppose we would associate
-	  # line numbers with random bits of text.
-	  $def = new Automake::VarDef ($var, $value, $comment, $where->clone,
-				       $type, $owner, $pretty);
-	  $self->set ($cond, $def);
-	  push @_var_order, $var;
-
-	  # No need to adjust the owner later as we have overridden
-	  # the definition.
-	  $adjust_owner = 0;
-	}
+      # Assignments to a macro set its location.  We don't adjust
+      # locations for `+='.  Ideally I suppose we would associate
+      # line numbers with random bits of text.
+      $def = new Automake::VarDef ($var, $value, $comment, $where->clone,
+				   $type, $owner, $pretty);
+      $self->set ($cond, $def);
+      push @_var_order, $var;
     }
-
-  # The owner of a variable can only increase, because an Automake
-  # variable can be given to the user, but not the converse.
-  $def->set_owner ($owner, $where->clone)
-    if $adjust_owner && $owner > $def->owner;
 
   # Call any defined hook.  This helps to update some internal state
   # *while* parsing the file.  For instance the handling of SUFFIXES
