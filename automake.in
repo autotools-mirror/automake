@@ -1194,12 +1194,12 @@ sub generate_makefile
 	}
     }
 
+    &handle_libtool;
+
     # At the toplevel directory, we might need config.guess, config.sub
     # or libtool scripts (ltconfig and ltmain.sh).
     if ($relative_dir eq '.')
     {
-	&handle_libtool;
-
         # AC_CANONICAL_HOST and AC_CANONICAL_SYSTEM need config.guess and
         # config.sub.
         &require_config_file ($FOREIGN, 'config.guess', 'config.sub')
@@ -2389,14 +2389,16 @@ sub handle_compile ()
 
 # handle_libtool ()
 # -----------------
-# Handle libtool rules.  Only called when RELATIVE_DIR is `.'.
+# Handle libtool rules.
 sub handle_libtool
 {
     return unless $seen_libtool;
 
-    # libtool requires some files.
+    # libtool requires some files, but only at top level.
     &require_conf_file_with_conf_line ($libtool_line, $FOREIGN,
-				       @libtoolize_files);
+				       @libtoolize_files)
+	if $relative_dir eq '.';
+
     # Output the libtool compilation rules.
     $output_rules .= &file_contents ('libtool');
 }
