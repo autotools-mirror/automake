@@ -1,0 +1,34 @@
+#! /bin/sh
+
+# Test to make sure `make' check works.
+# From Ralf Corsepius.
+
+. $srcdir/defs || exit 1
+
+cat > configure.in << 'END'
+AC_INIT(Makefile.am)
+AM_INIT_AUTOMAKE(foo,0,no)
+AM_MAKE_INCLUDE
+AC_OUTPUT(Makefile)
+END
+
+: > Makefile.am
+
+$needs_autoconf
+
+set -e
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
+
+export ACLOCAL
+export AUTOCONF
+export AUTOMAKE
+
+./configure
+touch configure.in
+$MAKE
+
+fgrep '_am_include = #' Makefile && exit 1
+exit 0

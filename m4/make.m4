@@ -13,7 +13,7 @@ AC_MSG_CHECKING([for style of include used by $am_make])
 _am_include='#'
 for am_inc in include .include; do
    echo "$am_inc confinc" > confmf
-   if test "`$am_make -f confmf 2> /dev/null`" = "done"; then
+   if test "`$am_make -s -f confmf 2> /dev/null`" = "done"; then
       _am_include=$am_inc
       break
    fi

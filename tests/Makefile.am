@@ -167,6 +167,7 @@ link_f_cxx.test	\
 link_f_only.test \
 lisp.test \
 ltlibobjs.test \
+make.test \
 makevars.test \
 man.test \
 mclean.test \
