@@ -2001,34 +2001,13 @@ sub handle_single_transform_list ($$$@)
 		# Make sure object is removed by `make mostlyclean'.
 		$compile_clean_files{$object} = $MOSTLY_CLEAN;
 
-                push (@dep_list, $directory . '/.dirstamp');
+                push (@dep_list, &require_build_directory ($directory));
 
                 # If we're generating dependencies, we also want
                 # to make sure that the appropriate subdir of the
                 # .deps directory is created.
-                if ($use_dependencies)
-                {
-                    push (@dep_list, '.deps/' . $directory . '/.dirstamp');
-                }
-
-                if (! defined $directory_map{$directory})
-                {
-                    $directory_map{$directory} = 1;
-
-		    # Directory must be removed by `make distclean'.
-		    $compile_clean_files{$directory . "/.dirstamp"} =
-			$DIST_CLEAN;
-                    $output_rules .= ($directory . "/.dirstamp:\n"
-                                      . "\t\@\$(mkinstalldirs) $directory\n"
-                                      . "\t\@: > $directory/.dirstamp\n");
-                    if ($use_dependencies)
-                    {
-                        $output_rules .= ('.deps/' . $directory
-                                          . "/.dirstamp:\n"
-                                          . "\t\@\$(mkinstalldirs) .deps/$directory\n"
-                                          . "\t\@: > .deps/$directory/.dirstamp\n");
-                    }
-                }
+		push (@dep_list, &require_build_directory (".deps/$directory"))
+		    if ($use_dependencies);
             }
 
             &pretty_print_rule ($object . ':', "\t", @dep_list)
@@ -2479,10 +2458,15 @@ sub handle_programs
 	    $xlink = $linker ? $linker : 'LINK';
 	}
 
+	# If the resulting program lies into a subdirectory,
+	# make sure this directory will exist.
+	my $dirstamp = &require_build_directory_maybe ($one_file);
+
 	$output_rules .= &file_contents ('program',
 					 ('PROGRAM'  => $one_file,
 					  'XPROGRAM' => $xname,
-					  'XLINK'    => $xlink));
+					  'XLINK'    => $xlink,
+					  'DIRSTAMP' => $dirstamp));
     }
 
     if (&variable_defined ('LDADD') && &handle_lib_objects ('', 'LDADD'))
@@ -2539,7 +2523,7 @@ sub handle_libraries
     foreach my $onelib (@liblist)
     {
 	# Check that the library fits the standard naming convention.
-	if ($onelib !~ m%^(?:.*/)?lib[^/]*\.a$%)
+	if (basename ($onelib) !~ /^lib.*\.a/)
 	{
 	    # FIXME should put line number here.  That means mapping
 	    # from library name back to variable name.
@@ -2584,9 +2568,14 @@ sub handle_libraries
 
 	&handle_source_transform ($xlib, $onelib, $obj);
 
+	# If the resulting library lies into a subdirectory,
+	# make sure this directory will exist.
+	my $dirstamp = &require_build_directory_maybe ($onelib);
+
 	$output_rules .= &file_contents ('library',
 					 ('LIBRARY'  => $onelib,
-					  'XLIBRARY' => $xlib));
+					  'XLIBRARY' => $xlib,
+					  'DIRSTAMP' => $dirstamp));
     }
 
     if ($seen_libobjs)
@@ -2672,7 +2661,7 @@ sub handle_ltlibraries
 		# Relax name checking for libtool modules.
 	    	$libname_rx = "\.la";
 	}
-	if ($onelib !~ /$libname_rx$/)
+	if (basename ($onelib) !~ /$libname_rx$/)
 	{
 	    # FIXME this should only be a warning for foreign packages
 	    # FIXME should put line number here.  That means mapping
@@ -2734,11 +2723,16 @@ sub handle_ltlibraries
 	    $rpath = ('-rpath $(' . $instdirs{$onelib} . 'dir)');
 	}
 
+	# If the resulting library lies into a subdirectory,
+	# make sure this directory will exist.
+	my $dirstamp = &require_build_directory_maybe ($onelib);
+
 	$output_rules .= &file_contents ('ltlibrary',
 					 ('LTLIBRARY'  => $onelib,
 					  'XLTLIBRARY' => $xlib,
 					  'RPATH'      => $rpath,
-					  'XLINK'      => $xlink));
+					  'XLINK'      => $xlink,
+					  'DIRSTAMP'   => $dirstamp));
     }
 
     if ($seen_libobjs)
@@ -7642,6 +7636,54 @@ sub require_conf_file_with_conf_line
     @config_aux_path = @require_file_paths;
     # avoid unsightly '/.'s.
     $config_aux_dir = '$(top_srcdir)' . ($dir eq '.' ? "" : "/$dir");
+}
+
+################################################################
+
+# &require_build_directory ($DIRECTORY)
+# ------------------------------------
+# Emit rules to create $DIRECTORY if needed, and return
+# the file that any target requiring this directory should be made
+# dependent upon.
+sub require_build_directory ($)
+{
+    my $directory = shift;
+    my $dirstamp = "$directory/.dirstamp";
+
+    # Don't emit the rule twice.
+    if (! defined $directory_map{$directory})
+    {
+	$directory_map{$directory} = 1;
+
+	# Directory must be removed by `make distclean'.
+	$compile_clean_files{$dirstamp} = $DIST_CLEAN;
+
+	$output_rules .= ("$dirstamp:\n"
+			  . "\t\@\$(mkinstalldirs) $directory\n"
+			  . "\t\@: > $dirstamp\n");
+    }
+
+    return $dirstamp;
+}
+
+# &require_build_directory_maybe ($FILE)
+# --------------------------------------
+# If $FILE lies in a subdirectory, emit a rule to create this
+# directory and return the file that $FILE should be made
+# dependent upon.  Otherwise, just return the empty string.
+sub require_build_directory_maybe ($)
+{
+    my $file = shift;
+    my $directory = dirname ($file);
+
+    if ($directory ne '.')
+    {
+	return &require_build_directory ($directory);
+    }
+    else
+    {
+	return '';
+    }
 }
 
 ################################################################
