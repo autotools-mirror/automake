@@ -184,6 +184,19 @@ sub parse_arguments
     $default_dirlist="$acdir/dirlist"
 	if $acdir ne $default_acdir;
 
+    # Search the versioned directory near the end, and then the
+    # unversioned directory last.  Only do this if the user didn't
+    # override acdir.
+    push (@dirlist, "$acdir-$APIVERSION")
+	if $acdir eq $default_acdir;
+
+    # By default $(datadir)/aclocal doesn't exist.  We don't want to
+    # get an error in the case where we are searching the default
+    # directory and it hasn't been created.
+    push (@dirlist, $acdir)
+	unless $acdir eq $default_acdir && ! -d $acdir;
+
+    # Finally, adds any directory listed in the `dirlist' file.
     if (open (DEFAULT_DIRLIST, $default_dirlist))
     {
 	while (<DEFAULT_DIRLIST>)
@@ -196,22 +209,11 @@ sub parse_arguments
 	    if (-d $contents )
 	    {
 		push (@dirlist, $contents);
-	    }   
+	    }
 	}
 	close (DEFAULT_DIRLIST);
     }
 
-    # Search the versioned directory near the end, and then the
-    # unversioned directory last.  Only do this if the user didn't
-    # override acdir.
-    push (@dirlist, "$acdir-$APIVERSION")
-	if $acdir eq $default_acdir;
-
-    # By default $(datadir)/aclocal doesn't exist.  We don't want to
-    # get an error in the case where we are searching the default
-    # directory and it hasn't been created.
-    push (@dirlist, $acdir)
-	unless $acdir eq $default_acdir && ! -d $acdir;
 
     return @dirlist;
 }

@@ -5,6 +5,8 @@
 
 . $srcdir/defs || exit 1
 
+set -e
+
 cat > configure.in <<EOF
 AC_INIT
 AM_INIT_GUILE_MODULE
@@ -12,7 +14,7 @@ EOF
 
 mkdir dirlist-test
 
-cat >>dirlist-test/dirlist-check.m4 << 'END'
+cat >dirlist-test/dirlist-check.m4 <<'END'
 AC_DEFUN([AM_INIT_GUILE_MODULE],[
 . $srcdir/../GUILE-VERSION
 AM_INIT_AUTOMAKE($PACKAGE, $VERSION)
@@ -21,6 +23,16 @@ module=[$1]
 AC_SUBST(module)])
 END
 
-$ACLOCAL || exit 1
+cat >dirlist-test/init.m4 <<EOF
+AC_DEFUN([AM_INIT_AUTOMAKE], [I should not be included])
+EOF
 
+$ACLOCAL
 grep 'DEFUN.*AM_INIT_GUILE_MODULE' aclocal.m4
+
+# This bug can occur only when we do a VPATH build of Automake
+# (beause of the `-I' passed to aclocal in tests/defs) but it's
+# ok because this is what `make distcheck' does.
+grep 'I should not be included' aclocal.m4 && exit 1
+
+:
