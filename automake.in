@@ -78,8 +78,10 @@ $output_directory = '.';
 @installcheck = ();
 @clean = ();
 
-# TRUE if current directory holds any C source files.
-$dir_holds_sources = 0;
+# TRUE if current directory holds any C source files.  (Actually holds
+# object extension, but this information is encapsulated in the
+# function get_object_extension).
+$dir_holds_sources = '';
 
 # TRUE if install targets should work recursively.
 $recursive_install = 0;
@@ -96,8 +98,7 @@ foreach $am_file (@input_files)
 {
     if (! -f ($am_file . '.am'))
     {
-	print STDERR "automake: $am_file" . ".am: no such file\n";
-	$exit_status = 1;
+	&am_error ('no such file');
     }
     else
     {
@@ -229,7 +230,7 @@ sub generate_makefile
     @install_exec = ();
     @uninstall = ();
     @installdirs = ();
-    $dir_holds_sources = 0;
+    $dir_holds_sources = '';
     $recursive_install = 0;
     @info = ();
     @dvi = ();
@@ -263,6 +264,7 @@ sub generate_makefile
     &handle_texinfo;
     &handle_man_pages;
     &handle_data;
+    &handle_headers;
     &handle_subdirs;
     &handle_configure;
     &handle_tags;
@@ -279,8 +281,7 @@ sub generate_makefile
     }
     if (! open (GM_FILE, "> " . $output_directory . '/' . $makefile . ".in"))
     {
-	print STDERR "automake: cannot open ", $makefile, ".in: ", $!, "\n";
-	$exit_status = 1;
+	&am_error ("cannot open:", $!);
 	return;
     }
 
@@ -305,7 +306,90 @@ sub generate_header
     $output_vars = $output_vars . &file_contents ('header-vars');
 }
 
-# Handle C programs and libraries.
+# Return object extension.  Just once, put some code into the output.
+sub get_object_extension
+{
+    if (! $dir_holds_sources)
+    {
+
+	# Boilerplate.
+	$output_vars .= &file_contents ('compile-vars');
+	$output_rules .= &file_contents ('compile');
+
+	# Check for automatic de-ANSI-fication.
+	$dir_holds_sources = '.o';
+	push (@suffixes, '.c', '.o');
+	push (@clean, 'compile');
+
+	if (defined $contents{'@kr@'})
+	{
+	    $dir_holds_sources = '.${kr}o';
+	    push (@suffixes, '._c', '._o');
+
+	    &require_file ('ansi2knr.c');
+	    &require_file ('ansi2knr.1');
+
+	    $output_vars .= &file_contents ('kr-vars');
+	    $output_rules .= &file_contents ('compile-kr');
+	    $output_rules .= &file_contents ('clean-kr');
+
+	    push (@clean, 'kr');
+	}
+    }
+    return $dir_holds_sources;
+}
+
+# Handle SOURCE->OBJECT transform for one program or library.
+sub handle_source_transform
+{
+    local ($one_file, $obj) = @_;
+
+    # Look for file_SOURCES and file_OBJECTS.
+    local (@result) = ();
+    if (defined $contents{$one_file . "_SOURCES"})
+    {
+	if (! defined $contents{$one_file . "_OBJECTS"})
+	{
+	    # Turn sources into objects.
+	    $_ = $contents{$one_file . "_SOURCES"};
+
+	    # Ugh: Perl syntax vs Emacs.
+	    local ($krc1, $krc2) = ('\.\$\{kr\}c', '\.\$\(kr\)c');
+
+	    s/\.cc/$obj/g;
+	    s/$krc1/$obj/g;
+	    s/$krc2/$obj/g;
+	    s/\.[cCmylfs]/$obj/g;
+
+	    $output_vars .= $one_file . "_OBJECTS = " . $_ . "\n";
+	}
+	else
+	{
+	    &am_error ($one_file . '_OBJECTS', 'should not be defined');
+	}
+
+	@result = ('${' . $one_file . "_SOURCES}",
+		   '${' . $one_file . "_OBJECTS}");
+    }
+    else
+    {
+	$output_vars .= ($one_file . "_SOURCES = " . $one_file . ".c\n"
+			 . $one_file . "_OBJECTS = ". $one_file
+			 . $obj . "\n");
+	@result = ($one_file . '.c',
+		   $one_file . $obj);
+    }
+
+    if (defined $contents{'CONFIG_HEADER'})
+    {
+	$output_rules .= ('$(' . $one_file . "_OBJECTS): "
+			  . $contents{'CONFIG_HEADER'} . "\n");
+    }
+
+    return @result;
+}
+
+# Handle C programs.
 sub handle_programs
 {
     local ($programs, $libprograms, $libraries) = @_;
@@ -315,78 +399,22 @@ sub handle_programs
 	# None exist.
 	return;
     }
-    $dir_holds_sources = 1;
 
-    # Boilerplate.
-    $output_vars .= &file_contents ('compile-vars');
-    $output_rules .= &file_contents ('compile');
-
-    # Check for automatic de-ANSI-fication.
-    local ($obj) = '.o';
-    push (@suffixes, '.c', '.o');
-    push (@clean, 'compile');
-
-    if (defined $contents{'@kr@'})
-    {
-	$obj = '.${kr}o';
-	push (@suffixes, '._c', '._o');
-
-	&require_file ('ansi2knr.c');
-	&require_file ('ansi2knr.1');
-
-	$output_vars .= &file_contents ('kr-vars');
-	$output_rules .= &file_contents ('compile-kr');
-	$output_rules .= &file_contents ('clean-kr');
-
-	push (@clean, 'kr');
-    }
+    local ($obj) = &get_object_extension;
 
     local (@sources, @objects);
     push (@sources, '${SOURCES}') if (defined $contents{'SOURCES'});
     push (@objects, '${OBJECTS}') if (defined $contents{'OBJECTS'});
 
     local ($one_file);
+    local ($sadd, $oadd);
     foreach $one_file (split (' ', ($programs . ' '
 				    . $libprograms . ' '
 				    . $libraries)))
     {
-	# Look for file_SOURCES and file_OBJECTS.  FIXME file_OBJECTS
-	# should probably not be used(?)
-	if (defined $contents{$one_file . "_SOURCES"})
-	{
-	    if (! defined $contents{$one_file . "_OBJECTS"})
-	    {
-		# Turn sources into objects.
-		$_ = $contents{$one_file . "_SOURCES"};
-
-		# Ugh: Perl syntax vs Emacs.
-		local ($krc1, $krc2) = ('\.\$\{kr\}c', '\.\$\(kr\)c');
-
-		s/\.cc/$obj/g;
-		s/$krc1/$obj/g;
-		s/$krc2/$obj/g;
-		s/\.[cCmylfs]/$obj/g;
-
-		$output_vars .= $one_file . "_OBJECTS = " . $_ . "\n";
-	    }
-
-	    push (@sources, '${' . $one_file . "_SOURCES}");
-	    push (@objects, '${' . $one_file . "_OBJECTS}");
-	}
-	else
-	{
-	    $output_vars .= ($one_file . "_SOURCES = " . $one_file . ".c\n"
-			     . $one_file . "_OBJECTS = ". $one_file
-			     . $obj . "\n");
-	    push (@sources, $one_file . '.c');
-	    push (@objects, $one_file . $obj);
-	}
-
-	if (defined $contents{'CONFIG_HEADER'})
-	{
-	    $output_rules .= ('$(' . $one_file . "_OBJECTS): "
-			      . $contents{'CONFIG_HEADER'} . "\n");
-	}
+	($sadd, $oadd) = &handle_source_transform ($one_file, $obj);
+	push (@sources, $sadd);
+	push (@objects, $oadd);
     }
 
     $output_vars .= "\n";
@@ -451,7 +479,7 @@ sub handle_libraries
     {
 	if (! defined $contents{$onelib . '_LIBADD'})
 	{
-	    # Generate support for conditional objection inclusion in
+	    # Generate support for conditional object inclusion in
 	    # libraries.
 	    $output_vars .= $onelib . "_LIBADD =\n";
 	}
@@ -474,27 +502,8 @@ sub handle_libraries
 # Handle scripts.
 sub handle_scripts
 {
-    local ($scripts, $libscripts) = @_;
-
-    if ($scripts)
-    {
-	$output_rules .= &file_contents ('scripts');
-	push (@install_exec, 'install-scripts');
-	push (@uninstall, 'uninstall-scripts');
-	push (@clean, 'scripts');
-	push (@installdirs, '$(bindir)');
-	push (@all, '$(SCRIPTS)');
-    }
-
-    if ($libscripts)
-    {
-	$output_rules .= &file_contents ('libscripts');
-	push (@install_exec, 'install-libscripts');
-	push (@uninstall, 'uninstall-libscripts');
-	push (@clean, 'libscripts');
-	push (@installdirs, '$(libexecdir');
-	push (@all, '$(LIBSCRIPTS)');
-    }
+    &am_install_var ('scripts', 'SCRIPTS', 'bin', 'sbin', 'libexec',
+		     'noinst');
 }
 
 # Handle all Texinfo source.
@@ -506,8 +515,7 @@ sub handle_texinfo
     local (@texis) = split (' ', $texis);
     if ($#texis > 0)
     {
-	print STDERR "automake: sorry, only one file allowed in \`TEXINFOS'\n";
-	$exit_status = 1;
+	&am_error ('sorry, only one file allowed in `TEXINFOS\'');
 	return;
     }
 
@@ -627,24 +635,12 @@ sub handle_man_pages
     push (@all, '$(MANS)');
 }
 
-# Handle DATA and PACKAGEDATA.
+# Handle DATA variables.
 sub handle_data
 {
-    if (defined $contents{'DATA'})
-    {
-	$output_rules .= &file_contents ('data');
-	push (@install_data, 'install-ddata');
-	push (@uninstall, 'uninstall-ddata');
-	push (@installdirs, '$(datadir)');
-    }
-
-    if (defined $contents{'PACKAGEDATA'})
-    {
-	$output_rules .= &file_contents ('packagedata');
-	push (@install_data, 'install-pdata');
-	push (@uninstall, 'uninstall-pdata');
-	push (@installdirs, '$(datadir)/$(PACKAGE)');
-    }
+    &am_install_var ('data', 'DATA', 'data', 'sysconf',
+		     'sharedstate', 'localstate', 'pkgdata',
+		     'noinst');
 }
 
 # Handle TAGS.
@@ -731,7 +727,7 @@ sub handle_dependencies
 	    {
 		if (! open (DEP_FILE, $depfile))
 		{
-		    print STDERR "automake: couldn't open $depfile: $!\n";
+		    &am_error ("couldn't open $depfile", $!);
 		    next;
 		}
 
@@ -808,6 +804,14 @@ sub handle_configure
 
 	$output_rules .= &file_contents ('remake-hdr');
     }
+}
+
+# Handle C headers.
+sub handle_headers
+{
+    &am_install_var ('data', 'HEADERS', 'include',
+		     'oldinclude', 'pkginclude',
+		     'noinst');
 }
 
 # Handle footer elements.
@@ -888,7 +892,7 @@ sub handle_merge_targets
 
     if (defined $contents{'install-local'})
     {
-	print STDERR "automake: use \`install-data' or \`install-exec', not \`install'\n";
+	&am_error ("use \`install-data' or \`install-exec', not \`install'");
     }
 
     # Step two: if we are doing recursive makes, write out the
@@ -1132,6 +1136,26 @@ sub read_am_file
 # Initialize global variables.
 sub init_globals
 {
+    # Associative array of standard directory names.  Entry is TRUE if
+    # corresponding directory should be installed during
+    # 'install-exec' phase.
+    %exec_dir_p =
+	('bin' => 1,
+	 'sbin' => 1,
+	 'libexec' => 1,
+	 'data' => 0,
+	 'sysconf' => 1,
+	 'localstate' => 1,
+	 'lib' => 1,
+	 'info' => 0,
+	 'man' => 0,
+	 'include' => 0,
+	 'oldinclude' => 0,
+	 'pkgdata' => 0,
+	 'pkglib' => 1,
+	 'pkginclude' => 0
+	 );
+
     # Helper text for dealing with man pages.
     $install_man_format =
     '	sect=@SECTION@;				\\
@@ -1213,6 +1237,58 @@ sub am_variable
 	    : $contents{$varname});
 }
 
+# Handle `where_HOW' variable magic.  Does all lookups, generates
+# install code,and possibly generates code to define the primary
+# variable.  The first argument is the name of the .am file to munge,
+# the second argument is the primary variable (eg HEADERS), and all
+# subsequent arguments are possible installation locations.  FIXME
+# should scan all defined variables and do some error checking to
+# avoid typos (eg 'bnidir_PROGRAMS' should give error).  Returns TRUE
+# if any items were found, FALSE otherwise.
+sub am_install_var
+{
+    local ($file, $primary, @prefixes) = @_;
+    local (@used) = ();
+
+    local ($contents) = &file_contents ($file);
+    local ($munge);
+    foreach (@prefixes)
+    {
+	if (defined $contents{$_ . '_' . $primary})
+	{
+	    push (@used, '${' . $_ . '_' . $primary . '}');
+	    if ($_ eq 'noinst')
+	    {
+		# Objects in noinst_FOO never get installed.
+		next;
+	    }
+
+	    ($munge = $contents) =~ s/\@DIR\@/$_/g;
+	    $output_rules .= $munge;
+
+	    push (@uninstall, 'uninstall-' . $_ . $primary);
+	    push (@installdirs, '${' . $_ . 'dir}');
+	    if ($exec_dir_p{$_})
+	    {
+		push (@install_exec, 'install-' . $_ . $primary);
+	    }
+	    else
+	    {
+		push (@install_data, 'install-' . $_ . $primary);
+	    }
+	}
+    }
+
+    if (! defined $contents{$primary} && $#used >= 0)
+    {
+	# Define it.
+	$output_vars .= $primary . " = " . join (' ', @used) . "\n\n";
+    }
+
+    return ($#used >= 0);
+}
+
+
 ################################################################
 
 # Verify that the file must exist in the current directory.
@@ -1223,8 +1299,7 @@ sub require_file
 
     if (! -f $fullfile)
     {
-	print STDERR "automake: required file \"$fullfile\" not found\n";
-	$exit_status = 1;
+	&am_error ("required file \"$fullfile\" not found");
     }
     else
     {
@@ -1258,6 +1333,13 @@ sub mkdir
 }
 
 ################################################################
+
+# Print an error message and set exit status.
+sub am_error
+{
+    print STDERR "automake: ${am_file}.am: ", join (' ', @_), "\n";
+    $exit_status = 1;
+}
 
 # Print usage information.
 sub usage
