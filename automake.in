@@ -7432,7 +7432,7 @@ sub require_file_internal
 {
     local ($is_configure, $line, $mystrict, @files) = @_;
     local ($file, $fullfile);
-    local ($found_it, $errfile, $errdir);
+    local ($found_it, $dangling_sym, $errfile, $errdir);
     local ($save_dir);
 
     foreach $file (@files)
@@ -7442,6 +7442,7 @@ sub require_file_internal
 	$require_file_found{$file} = 1;
 
 	$found_it = 0;
+	$dangling_sym = 0;
 	foreach $dir (@require_file_paths)
 	{
 	    if ($dir eq '.')
@@ -7461,7 +7462,12 @@ sub require_file_internal
 	    # config_aux_path.
 	    $errfile = $errdir . '/' . $file;
 
-	    if (-f $fullfile)
+	    if (-l $fullfile && ! -f _)
+	    {
+		$dangling_sym = 1;
+		last;
+	    }
+	    elsif (-f $fullfile)
 	    {
 		$found_it = 1;
 		&maybe_push_required_file ($dir, $file, $fullfile);
@@ -7479,6 +7485,11 @@ sub require_file_internal
 	{
 	    if ($strictness >= $mystrict)
 	    {
+		if ($dangling_sym)
+		{
+		    unlink ($fullfile);
+		}
+
 		local ($trailer) = '';
 		local ($suppress) = 0;
 
@@ -7512,13 +7523,13 @@ sub require_file_internal
 			    if (! symlink ($am_dir . '/' . $file, $errfile))
 			    {
 				$suppress = 0;
-				$trailer = "; error while making link: $!\n";
+				$trailer = "; error while making link: $!";
 			    }
 			}
 			elsif (system ('cp', $am_dir . '/' . $file, $errfile))
 			{
 			    $suppress = 0;
-			    $trailer = "\n    error while copying\n";
+			    $trailer = "\n    error while copying";
 			}
 		    }
 
