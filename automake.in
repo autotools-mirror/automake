@@ -671,6 +671,7 @@ Automake::Variable::hook ('SUFFIXES', &var_SUFFIXES_trigger);
 ## --------------------------------- ##
 sub register_language (%);
 sub file_contents_internal ($$$%);
+sub define_files_variable ($\@$$);
 
 
 # &initialize_per_input ()
@@ -3016,7 +3017,7 @@ sub scan_texinfo_file ($)
   # included files.  We can't scan included files because we don't
   # know the include path.  Therefore we always erase these files, no
   # matter whether they are used or not.
-  # 
+  #
   # (tmp is only created if an @macro is used and a certain e-TeX
   # feature is not available.)
   my %clean_suffixes =
@@ -3108,7 +3109,7 @@ sub output_texinfo_build_rules ($$@)
   # suffix rules and are appropritate when $source and $dest lie in
   # the current directory; the "specifix" rules is needed in the other
   # case.
-  # 
+  #
   # The former are output only once (this is not really apparent here,
   # but just remember that some logic deeper in Automake will not
   # output the same rule twice); while the later need to be output for
@@ -3130,11 +3131,11 @@ sub output_texinfo_build_rules ($$@)
   # We cannot use a suffix rule to build info files with an empty
   # extension.  Otherwise we would output a single suffix inference
   # rule, with separate dependencies, as in
-  # 
+  #
   #    .texi:
-  #             $(MAKEINFO) ...  
+  #             $(MAKEINFO) ...
   #    foo.info: foo.texi
-  # 
+  #
   # which confuse Solaris make.  (See the Autoconf manual for
   # details.)  Therefore we use a specific rule in this case.  This
   # applies to info files only (dvi and pdf files always have an
@@ -3163,43 +3164,36 @@ sub output_texinfo_build_rules ($$@)
 }
 
 
-# ($DO-SOMETHING, $TEXICLEANS)
-# handle_texinfo_helper ()
-# ------------------------
-# Handle all Texinfo source; helper for handle_texinfo
-sub handle_texinfo_helper ()
+# $TEXICLEANS
+# handle_texinfo_helper ($info_texinfos)
+# --------------------------------------
+# Handle all Texinfo source; helper for handle_texinfo.
+sub handle_texinfo_helper ($)
 {
-  reject_var 'TEXINFOS', "`TEXINFOS' is an anachronism; use `info_TEXINFOS'";
-  reject_var 'html_TEXINFOS', "HTML generation not yet supported";
-
-  my $info_texinfos = var ('info_TEXINFOS');
-  return (0, '') unless $info_texinfos;
-
-  my @texis = $info_texinfos->value_as_list_recursive ('all');
-
-  my (@info_deps_list, @texi_deps);
-  my (@dvis_list, @pdfs_list, @pss_list, @htmls_list);
+  my ($info_texinfos) = @_;
+  my (@infobase, @info_deps_list, @texi_deps);
   my %versions;
   my $done = 0;
   my @texi_cleans;
-  my $canonical;
 
-  foreach my $info_cursor (@texis)
+  foreach my $texi ($info_texinfos->value_as_list_recursive ('all'))
     {
-      my $infobase = $info_cursor;
+      my $infobase = $texi;
       $infobase =~ s/\.(txi|texinfo|texi)$//;
 
-      if ($infobase eq $info_cursor)
+      if ($infobase eq $texi)
 	{
 	  # FIXME: report line number.
-	  err_am "texinfo file `$info_cursor' has unrecognized extension";
+	  err_am "texinfo file `$texi' has unrecognized extension";
 	  next;
 	}
+
+      push @infobase, $infobase;
 
       # If 'version.texi' is referenced by input file, then include
       # automatic versioning capability.
       my ($out_file, $vtexi, @clean_files) =
-	scan_texinfo_file ("$relative_dir/$info_cursor")
+	scan_texinfo_file ("$relative_dir/$texi")
 	or next;
       push (@texi_cleans, @clean_files);
 
@@ -3207,7 +3201,7 @@ sub handle_texinfo_helper ()
       # resulting info in this subdirectory.  If it is in the current
       # directory, try hard to not prefix "./" because it breaks the
       # generic rules.
-      my $outdir = dirname ($info_cursor) . '/';
+      my $outdir = dirname ($texi) . '/';
       $outdir = "" if $outdir eq './';
       $out_file =  $outdir . $out_file;
 
@@ -3224,22 +3218,18 @@ sub handle_texinfo_helper ()
 	}
 
       my ($dirstamp, @cfiles) =
-	output_texinfo_build_rules ($info_cursor, $out_file, @texi_deps);
+	output_texinfo_build_rules ($texi, $out_file, @texi_deps);
       push (@texi_cleans, @cfiles);
 
       push (@info_deps_list, $out_file);
-      push (@dvis_list, $infobase . '.dvi');
-      push (@pdfs_list, $infobase . '.pdf');
-      push (@pss_list, $infobase . '.ps');
-      push (@htmls_list, $infobase . '.html');
 
       # If a vers*.texi file is needed, emit the rule.
       if ($vtexi)
 	{
-	  err_am ("`$vtexi', included in `$info_cursor', "
+	  err_am ("`$vtexi', included in `$texi', "
 		  . "also included in `$versions{$vtexi}'")
 	    if defined $versions{$vtexi};
-	  $versions{$vtexi} = $info_cursor;
+	  $versions{$vtexi} = $texi;
 
 	  # We number the stamp-vti files.  This is doable since the
 	  # actual names don't matter much.  We only number starting
@@ -3271,7 +3261,7 @@ sub handle_texinfo_helper ()
 	    }
 	  $output_rules .= file_contents ('texi-vers',
 					  new Automake::Location,
-					  TEXI     => $info_cursor,
+					  TEXI     => $texi,
 					  VTI      => $vti,
 					  STAMPVTI => "${outdir}stamp-$vti",
 					  VTEXI    => "$outdir$vtexi",
@@ -3308,9 +3298,6 @@ sub handle_texinfo_helper ()
     }
   define_variable ('am__TEXINFO_TEX_DIR', $texinfodir, INTERNAL);
 
-  # The return value.
-  my $texiclean = makefile_wrap ("", "\t  ", @texi_cleans);
-
   push (@dist_targets, 'dist-info');
 
   if (! defined $options{'no-installinfo'})
@@ -3322,10 +3309,11 @@ sub handle_texinfo_helper ()
     }
 
   define_variable ("INFO_DEPS", "@info_deps_list", INTERNAL);
-  define_variable ("DVIS", "@dvis_list", INTERNAL);
-  define_variable ("PDFS", "@pdfs_list", INTERNAL);
-  define_variable ("PSS", "@pss_list", INTERNAL);
-  define_variable ("HTMLS", "@htmls_list", INTERNAL);
+  define_files_variable ("DVIS", @infobase, 'dvi', INTERNAL);
+  define_files_variable ("PDFS", @infobase, 'pdf', INTERNAL);
+  define_files_variable ("PSS", @infobase, 'ps', INTERNAL);
+  define_files_variable ("HTMLS", @infobase, 'html', INTERNAL);
+
   # This next isn't strictly needed now -- the places that look here
   # could easily be changed to look in info_TEXINFOS.  But this is
   # probably better, in case noinst_TEXINFOS is ever supported.
@@ -3348,7 +3336,7 @@ sub handle_texinfo_helper ()
 	}
     }
 
-  return (1, $texiclean);
+  return makefile_wrap ("", "\t  ", @texi_cleans);
 }
 
 
@@ -3357,11 +3345,20 @@ sub handle_texinfo_helper ()
 # Handle all Texinfo source.
 sub handle_texinfo ()
 {
-  my ($do_something, $texiclean) = handle_texinfo_helper ();
+  reject_var 'TEXINFOS', "`TEXINFOS' is an anachronism; use `info_TEXINFOS'";
+  # FIXME: I think this is an obsolete future feature name.
+  reject_var 'html_TEXINFOS', "HTML generation not yet supported";
+
+  my $info_texinfos = var ('info_TEXINFOS');
+  my $texiclean = "";
+  if ($info_texinfos)
+    {
+      $texiclean = handle_texinfo_helper ($info_texinfos);
+    }
   $output_rules .=  file_contents ('texinfos',
 				   new Automake::Location,
-				   TEXICLEAN => $texiclean,
-				   'LOCAL-TEXIS' => $do_something);
+				   TEXICLEAN     => $texiclean,
+				   'LOCAL-TEXIS' => !!$info_texinfos);
 }
 
 
@@ -5548,6 +5545,19 @@ sub define_variable ($$$)
 {
     my ($var, $value, $where) = @_;
     define_pretty_variable ($var, TRUE, $where, $value);
+}
+
+
+# define_files_variable ($VAR, \@BASENAME, $EXTENSION, $WHERE)
+# -----------------------------------------------------------
+# Define the $VAR which content is the list of file names composed of
+# a @BASENAME and the $EXTENSION.
+sub define_files_variable ($\@$$)
+{
+  my ($var, $basename, $extension, $where) = @_;
+  define_variable ($var,
+		   join (' ', map { "$_.$extension" } @$basename),
+		   $where);
 }
 
 
