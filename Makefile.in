@@ -93,6 +93,8 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) \
 TAR = tar
 default: all
 
+.SUFFIXES:
+.SUFFIXES: .texi .texinfo .info .dvi
 $(srcdir)/aclocal.m4: configure.in
 	cd $(srcdir) && aclocal
 
@@ -269,23 +271,24 @@ maintainer-clean-recursive:
 	  (cd $$subdir && $(MAKE) $$target)	\
 	   || case "$(MFLAGS)" in *k*) fail=yes;; *) exit 1;; esac; \
 	done && test -z "$$fail"
-
-tags: TAGS
-
 tags-recursive:
 	list="$(SUBDIRS)"; for subdir in $$list; do \
 	  (cd $$subdir && $(MAKE) tags); \
 	done
 
-TAGS: tags-recursive $(HEADERS) $(SOURCES) $(CONFIG_HEADER) \
-		$(TAGS_DEPENDENCIES)
+tags: TAGS
+
+ID: $(HEADERS) $(SOURCES)
+	here=`pwd` && cd $(srcdir) && mkid -f$$here/ID $(SOURCES) $(HEADERS)
+
+TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES)
 	tags=; \
 	here=`pwd`; \
-	for subdir in $(SUBDIRS); do \
+	list="$(SUBDIRS)"; for subdir in $$list; do \
 	  test -f $$subdir/TAGS && tags="$$tags -i $$here/$$subdir/TAGS"; \
 	done; \
-	test -z "$(ETAGS_ARGS)$(CONFIG_HEADER)$(SOURCES)$(HEADERS)$$tags" \
-	  || etags $(ETAGS_ARGS) $$tags $(CONFIG_HEADER) $(SOURCES) $(HEADERS)
+	test -z "$(ETAGS_ARGS)$(SOURCES)$(HEADERS)$$tags" \
+	  || cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $(SOURCES) $(HEADERS) -o $$here/TAGS
 
 mostlyclean-tags:
 
@@ -492,8 +495,6 @@ path-check: distdir
 	  status=$$?; \
 	  rm -rf $(distdir); \
 	  exit $$status
-.SUFFIXES:
-.SUFFIXES: .texi .texinfo .info .dvi
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
