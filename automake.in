@@ -3910,18 +3910,21 @@ sub handle_clean
 		   . 's,\@MFILES\@,' . join (' ', @maintainer_clean_files)
 		   . ',;');
     }
+    if ($recursive_install)
+    {
+	$xform .= 's/^NSUBDIRS.*$//;';
+    }
+    else
+    {
+	$xform .= 's/^NSUBDIRS//;';
+    }
 
     $output_rules .= &file_contents ('clean', $xform);
-    &depend ('clean-am', 'mostlyclean-am');
-    &depend ('distclean-am', 'clean-am');
-    &depend ('maintainer-clean-am', 'distclean-am');
 
     foreach ('clean', 'distclean', 'mostlyclean', 'maintainer-clean')
       {
-	&depend ($_, $_ . '-local')
-	  if &target_defined ($_ . '-local');
-	&depend ($_,
-		 $_ . ($recursive_install ? '-recursive' : '-am'));
+	&depend ("$_-am", "$_-local")
+	  if &target_defined ("$_-local");
       }
 
     # We special-case config.status here.  If we do it as part of the
