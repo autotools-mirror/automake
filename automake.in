@@ -3782,7 +3782,7 @@ sub handle_configure
 			      ('FILES'              => join (' ', @files),
 			       'CONFIG_HEADER'      => $cn_sans_dir,
 			       'CONFIG_HEADER_IN'   => $ch_sans_dir,
-			       'CONFIG_HEADER_FULL' => $one_fullname,
+			       'CONFIG_HEADER_FULL' => $one_name,
 			       'STAMP'            => "$stamp_dir$stamp_name",
 			       'SRC_STAMP'        => "$out_dir/$stamp_name"));
 
@@ -3836,30 +3836,26 @@ sub handle_configure
     my @actual_other_files = ();
     foreach my $lfile (@other_input_files)
     {
-        my ($file, $local);
-	my (@inputs, @rewritten_inputs);
-	my ($need_rewritten);
+        my $file;
+	my @inputs;
 	if ($lfile =~ /^([^:]*):(.*)$/)
 	{
 	    # This is the ":" syntax of AC_OUTPUT.
 	    $file = $1;
 	    @inputs = split (':', $2);
-	    $need_rewritten = 1;
 	}
 	else
 	{
 	    # Normal usage.
 	    $file = $lfile;
 	    @inputs = $file . '.in';
-	    $need_rewritten = 0;
 	}
 
 	# Automake files should not be stored in here, but in %MAKE_LIST.
         prog_error ("$lfile in \@other_input_files")
 	  if -f $file . '.am';
 
-	$local = basename ($file);
-	@rewritten_inputs = rewrite_inputs_into_dependencies (1, @inputs);
+	my $local = basename ($file);
 
 	# Make sure the dist directory for each input file is created.
 	# We only have to do this at the topmost level though.  This
@@ -3902,16 +3898,15 @@ sub handle_configure
 	    next;
 	}
 
+	my @rewritten_inputs = rewrite_inputs_into_dependencies (1, @inputs);
 	$output_rules .= ($local . ': '
 			  . '$(top_builddir)/config.status '
-			  . join (' ', @rewritten_inputs) . "\n"
+			  . "@rewritten_inputs\n"
 			  . "\t"
-			  . 'cd $(top_builddir) && CONFIG_FILES='
+			  . 'cd $(top_builddir) && '
+			  . '$(SHELL) ./config.status '
 			  . ($relative_dir eq '.' ? '' : '$(subdir)/')
-   			  . '$@' . ($need_rewritten
-				    ? (':' . join (':', @inputs))
-				    : '')
-			  . ' CONFIG_HEADERS= CONFIG_LINKS= $(SHELL) ./config.status'
+   			  . '$@'
 			  . "\n");
 	push (@actual_other_files, $local);
 

@@ -1,16 +1,14 @@
 #! /bin/sh
 
 # Test to make sure config.h can be in subdir.
+# Also, make sure config.h is properly rebuilt.
 
 . $srcdir/defs || exit 1
 
 cat > configure.in << 'END'
 AC_INIT
 AM_INIT_AUTOMAKE(nonesuch, nonesuch)
-AM_CONFIG_HEADER(subdir/config.h)
-PACKAGE=nonesuch
-VERSION=nonesuch
-AC_PROG_CC
+AM_CONFIG_HEADER(subdir/config.h:subdir/config.hin)
 AC_OUTPUT(Makefile subdir/Makefile)
 END
 
@@ -20,14 +18,27 @@ END
 
 mkdir subdir
 cat > subdir/Makefile.am << 'END'
-bin_PROGRAMS = fred
 END
 
-: > subdir/config.h.in
+echo 'Before.' > subdir/config.hin
 
 $ACLOCAL || exit 1
 $AUTOMAKE || exit 1
 
 # Make sure subdir Makefile.in doesn't itself look in the subdir.
-(grep 'subdir/config.h' subdir/Makefile.in | grep -v CONFIG_HEADERS) && exit 1
+# One line is allowed though:
+#
+# cd $(top_builddir) && $(SHELL) ./config.status subdir/config.h
+(fgrep 'subdir/config.h' subdir/Makefile.in |
+   fgrep -v 'cd $(top_builddir)') && exit 1
+
+autoconf || exit 1
+./configure || exit 1
+fgrep 'Before.' subdir/config.h
+
+sleep 1
+echo 'After.' > subdir/config.hin
+make || exit 1
+fgrep 'After.' subdir/config.h || exit 1
+
 exit 0
