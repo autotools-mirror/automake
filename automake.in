@@ -6802,6 +6802,8 @@ sub make_paragraphs ($%)
 		     'HOST'     => $seen_canonical,
 		     'TARGET'   => $seen_canonical == $AC_CANONICAL_SYSTEM,
 
+		     'EXEEXT'   => ($seen_exeext ? '$(EXEEXT)' : ''),
+
 		     'LIBTOOL'      => defined $configure_vars{'LIBTOOL'})
 	  # We don't need more than two consecutive new-lines.
 	  . 's/\n{3,}/\n\n/g';
@@ -7257,9 +7259,12 @@ sub am_install_var
 	    push (@result, $rcurs);
 	  }
 
-	# A blatant hack: we rewrite each _PROGRAMS primary to
-	# include EXEEXT when in Cygwin32 mode.
-	if ($primary eq 'PROGRAMS')
+	# A blatant hack: we rewrite each _PROGRAMS primary to include
+	# EXEEXT when in Cygwin32 mode.  You might think we could
+	# simply always use $(EXEEXT), since we define it as empty
+	# when it isn't available.  However, it isn't that simple.
+	# See nolink.test.
+	if ($seen_exeext && $primary eq 'PROGRAMS')
 	  {
 	    my @conds = &variable_conditions ($one_name);
 
