@@ -116,6 +116,7 @@ if (
       # -L didn't work.
       set X `ls -t $srcdir/configure conftest.file`
    fi
+   rm -f conftest.file
    if test "$[*]" != "X $srcdir/configure conftest.file" \
       && test "$[*]" != "X conftest.file $srcdir/configure"; then
 
@@ -136,7 +137,6 @@ else
    AC_MSG_ERROR([newly created file is older than distributed files!
 Check your system clock])
 fi
-rm -f conftest*
 AC_MSG_RESULT(yes)])
 
 
