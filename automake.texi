@@ -2718,10 +2718,12 @@ your build.
 
 @cindex depcomp
 
-Experience with earlier versions of Automake taught us that it is not
-reliable to generate dependencies only on the maintainer's system, as
-configurations vary too much.  So instead Automake implements dependency
-tracking at build time.
+Experience with earlier versions of Automake @footnote{See
+@uref{http://sources.redhat.com/automake/dependencies.html} for more
+information on the history and experiences with automatic dependency
+tracking in Automake} taught us that it is not reliable to generate
+dependencies only on the maintainer's system, as configurations vary too
+much.  So instead Automake implements dependency tracking at build time.
 
 Automatic dependency tracking can be suppressed by putting
 @code{no-dependencies} in the variable @code{AUTOMAKE_OPTIONS}.  Or, you
@@ -2848,7 +2850,9 @@ Such data can be installed in the directories @code{datadir},
 @code{sysconfdir}, @code{sharedstatedir}, @code{localstatedir}, or
 @code{pkgdatadir}.
 
-By default, data files are @emph{not} included in a distribution.
+By default, data files are @emph{not} included in a distribution.  Of
+course, you can use the @samp{dist_} prefix to change this on a
+per-variable basis.
 
 Here is how Automake installs its auxiliary data files:
 
@@ -3299,6 +3303,30 @@ program once it has been built.  All files named by the various
 primaries are automatically installed in the appropriate places when the
 user runs @code{make install}.
 
+A file named in a primary is installed by copying the built file into
+the appropriate directory.  The base name of the file is used when
+installing.
+
+@example
+bin_PROGRAMS = hello subdir/goodbye
+@end example
+
+In this example, both @samp{hello} and @samp{goodbye} will be installed
+in @code{$(bindir)}.
+
+Sometimes it is useful to avoid the basename step at install time.  For
+instance, you might have a number of header files in subdirectories of
+the source tree which are laid out precisely how you want to install
+them.  In this situation you can use the @samp{nobase_} prefix to
+suppress the base name step.  For example:
+
+@example
+include_HEADERS = stdio.h sys/types.h
+@end example
+
+Will include @file{stdio.h} in @code{$(includedir)} and @file{types.h}
+in @code{$(includedir)/sys}.
+
 Automake generates separate @code{install-data} and @code{install-exec}
 targets, in case the installer is installing on multiple machines which
 share directory structure---these targets allow the machine-independent
@@ -3373,6 +3401,30 @@ be defined to specify additional files to clean.  These variables are
 @vindex CLEANFILES
 @vindex DISTCLEANFILES
 @vindex MAINTAINERCLEANFILES
+
+As the GNU Standards aren't always explicit as to which files should be
+removed by which target, we've adopted a heuristic which we believe were
+first formulated by Fran@,{c}ois Pinard:
+
+@itemize @bullet 
+@item
+If @code{make} built it, and it is commonly something that one would
+want to rebuild (for instance, a @file{.o} file), then
+@code{mostlyclean} should delete it.
+
+@item
+Otherwise, if @code{make} built it, then @code{clean} should delete it.
+
+@item
+If @code{configure} built it, then @code{distclean} should delete it
+
+@item
+If the maintainer built it, then @code{maintainer-clean} should
+delete it.
+@end itemize
+
+We recommend that you follow this same set of heuristics in your
+@file{Makefile.am}.
 
 
 @node Dist, Tests, Clean, Top
