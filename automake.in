@@ -1234,7 +1234,7 @@ sub generate_makefile
     # (but currently does).
     macro_define ('SOURCES', 1, '', 'TRUE',
 		     join (' ', @sources), 'internal');
-    &define_pretty_variable ('DIST_SOURCES', '', @dist_sources);
+    define_pretty_variable ('DIST_SOURCES', '', @dist_sources);
 
     &handle_multilib;
     &handle_texinfo;
@@ -1493,7 +1493,7 @@ sub handle_languages
 	    # We define this as a conditional variable because BSD
 	    # make can't handle backslashes for continuing comments on
 	    # the following line.
-	    &define_pretty_variable ('DEP_FILES', 'AMDEP_TRUE', @deplist);
+	    define_pretty_variable ('DEP_FILES', 'AMDEP_TRUE', @deplist);
 
 	    # Generate each `include' individually.  Irix 6 make will
 	    # not properly include several files resulting from a
@@ -2046,7 +2046,7 @@ sub define_objects_from_sources ($$$$$$$)
     $vars_scanned{$var} = 1;
 
     my $needlinker = "";
-    foreach my $cond (&variable_conditions ($var))
+    foreach my $cond (variable_conditions ($var))
     {
 	my @result;
 	foreach my $val (&variable_value_as_list ($var, $cond, $parent))
@@ -2072,7 +2072,7 @@ sub define_objects_from_sources ($$$$$$$)
 		push @substfroms, $from;
 		push @substtos, $to;
 
-		my $subobjvar = &subobjname($subvar);
+		my $subobjvar = subobjname ($subvar);
 		push (@result, '$('. $subobjvar . ')');
 
 		my $temp = define_objects_from_sources ($subvar, $subobjvar,
@@ -2101,7 +2101,7 @@ sub define_objects_from_sources ($$$$$$$)
 	}
 
 	# Define _OBJECTS conditionally.
-	&define_pretty_variable ($objvar, $cond, (@result))
+	define_pretty_variable ($objvar, $cond, (@result))
 		unless $nodefine;
     }
 
@@ -2109,9 +2109,10 @@ sub define_objects_from_sources ($$$$$$$)
     return $needlinker;
 }
 
+
 # $OBJNAME
 # subobjname ($VARNAME)
-# ---------------------------------------------------------------------
+# ---------------------
 # Return a name for an object variable.
 #
 # Arguments are:
@@ -2123,7 +2124,7 @@ sub define_objects_from_sources ($$$$$$$)
 #
 # The name returned is unique for the combination of $varname and
 # substitutions to be performed.
-sub subobjname($)
+sub subobjname ($)
 {
     my ($varname) = @_;
     my $key = $varname;
@@ -2223,12 +2224,12 @@ sub handle_source_transform
 					 $one_file, $obj,
 					 "$unxformed.c");
 	$linker ||= &resolve_linker (%linkers_used);
-	&define_pretty_variable ($one_file . "_OBJECTS", '', @result)
+	define_pretty_variable ($one_file . "_OBJECTS", '', @result)
     }
     else
     {
 	grep ($_ = '$(' . $_ . $one_file . '_OBJECTS)', @keys);
-	&define_pretty_variable ($one_file . '_OBJECTS', '', @keys);
+	define_pretty_variable ($one_file . '_OBJECTS', '', @keys);
     }
 
     # If we want to use `LINK' we must make sure it is defined.
@@ -2257,7 +2258,7 @@ sub handle_lib_objects
 	if ! &variable_defined ($var);
 
     my $ret = 0;
-    foreach my $cond (&variable_conditions_recursive ($var))
+    foreach my $cond (variable_conditions_recursive ($var))
       {
 	if (&handle_lib_objects_cond ($xname, $var, $cond))
 	  {
@@ -2370,7 +2371,7 @@ sub handle_lib_objects_cond
 
     if ($xname ne '' && ! &variable_defined ($xname . '_DEPENDENCIES', $cond))
     {
-	&define_pretty_variable ($xname . '_DEPENDENCIES', $cond, @dep_list);
+	define_pretty_variable ($xname . '_DEPENDENCIES', $cond, @dep_list);
     }
 
     return $seen_libobjs;
@@ -3499,7 +3500,7 @@ sub handle_dist
 	    $dist_subdir_name = 'DIST_SUBDIRS';
 	    if (! &variable_defined ('DIST_SUBDIRS'))
 	    {
-		&define_pretty_variable
+		define_pretty_variable
 		  ('DIST_SUBDIRS', '',
 		   uniq (&variable_value_as_list_recursive ('SUBDIRS', 'all')));
 	    }
@@ -3509,7 +3510,7 @@ sub handle_dist
 	    $dist_subdir_name = 'SUBDIRS';
 	    # We always define this because that is what `distclean'
 	    # wants.
-	    &define_pretty_variable ('DIST_SUBDIRS', '', '$(SUBDIRS)');
+	    define_pretty_variable ('DIST_SUBDIRS', '', '$(SUBDIRS)');
 	}
 
 	$transform{'DIST_SUBDIR_NAME'} = $dist_subdir_name;
@@ -3947,7 +3948,7 @@ sub handle_configure
     }
 
     # These files get removed by "make clean".
-    &define_pretty_variable ('CONFIG_CLEAN_FILES', '', @actual_other_files);
+    define_pretty_variable ('CONFIG_CLEAN_FILES', '', @actual_other_files);
 }
 
 # Handle C headers.
@@ -4312,7 +4313,7 @@ sub handle_emacs_lisp
 
     # Generate .elc files.
     my @elcfiles = map { $_ . 'c' } @elfiles;
-    &define_pretty_variable ('ELCFILES', '', @elcfiles);
+    define_pretty_variable ('ELCFILES', '', @elcfiles);
 
     push (@all, '$(ELCFILES)');
 
@@ -5926,12 +5927,10 @@ sub examine_variable
 sub variable_conditions_recursive ($)
 {
     my ($var) = @_;
-    my %uniqify;
-    my @uniq_list;
 
     %vars_scanned = ();
 
-    my @new_conds = &variable_conditions_recursive_sub ($var, '');
+    my @new_conds = variable_conditions_recursive_sub ($var, '');
     # Now we want to return all permutations of the subvariable
     # conditions.
     my %allconds = ();
@@ -5943,25 +5942,26 @@ sub variable_conditions_recursive ($)
 	    $allconds{$_} = 1;
 	}
     }
-    @new_conds = &variable_conditions_permutations (sort keys %allconds);
+    @new_conds = variable_conditions_permutations (sort keys %allconds);
 
+    my %uniqify;
     foreach my $cond (@new_conds)
     {
-	my $reduce = &variable_conditions_reduce (split (' ', $cond));
+	my $reduce = variable_conditions_reduce (split (' ', $cond));
         next
 	    if $reduce eq 'FALSE';
 	$uniqify{$cond} = 1;
     }
 
-    @uniq_list = sort by_condition keys %uniqify;
     # Note we cannot just do `return sort keys %uniqify', because this
     # function is sometimes used in a scalar context.
+    my @uniq_list = sort by_condition keys %uniqify;
     return @uniq_list;
 }
 
 # @CONDS
 # variable_conditions ($VAR)
-# ---------------------------------------
+# --------------------------
 # Get the list of conditions that a variable is defined with, without
 # recursing through the conditions of any subvariables.
 # Argument is $VAR: the variable to get the conditions of.
@@ -6033,7 +6033,7 @@ sub variable_conditions_recursive_sub
 		# Here we compute all the conditions under which the
 		# subvariable is defined.  Then we go through and add
 		# $VCOND to each.
-		my @svc = &variable_conditions_recursive_sub ($varname, $var);
+		my @svc = variable_conditions_recursive_sub ($varname, $var);
 		foreach my $item (@svc)
 		{
 		    my $val = conditional_string ($vcond, split (' ', $item));
@@ -6053,7 +6053,7 @@ sub variable_conditions_recursive_sub
 	}
 	else
 	{
-	    push (@new_conds, &variable_conditions_reduce (@subvar_conds));
+	    push (@new_conds, variable_conditions_reduce (@subvar_conds));
 	}
     }
 
@@ -6069,7 +6069,7 @@ sub variable_conditions_recursive_sub
     foreach my $this_cond (@this_conds)
     {
 	my @perms =
-	    &variable_conditions_permutations (split(' ', $this_cond));
+	    variable_conditions_permutations (split (' ', $this_cond));
 	foreach my $perm (@perms)
 	{
 	    my $ok = 1;
@@ -6154,12 +6154,12 @@ sub variable_conditions_permutations
     return ()
 	if ! @comps;
     my $comp = shift (@comps);
-    return &variable_conditions_permutations (@comps)
+    return variable_conditions_permutations (@comps)
 	if $comp eq '';
     my $neg = condition_negate ($comp);
 
     my @ret;
-    foreach my $sub (&variable_conditions_permutations (@comps))
+    foreach my $sub (variable_conditions_permutations (@comps))
     {
 	push (@ret, "$comp $sub");
 	push (@ret, "$neg $sub");
@@ -7456,7 +7456,7 @@ sub am_install_var
 	# EXEEXT.
 	if ($primary eq 'PROGRAMS')
 	{
-	    my @conds = &variable_conditions_recursive ($one_name);
+	    my @conds = variable_conditions_recursive ($one_name);
 
 	    my @condvals;
 	    foreach my $cond (@conds)
@@ -7487,7 +7487,7 @@ sub am_install_var
 	    {
 		my $cond = shift (@condvals);
 		my @val = split (' ', shift (@condvals));
-		&define_pretty_variable ($one_name, $cond, @val);
+		define_pretty_variable ($one_name, $cond, @val);
 	    }
 	}
 
@@ -7540,7 +7540,7 @@ sub am_install_var
     if (@used && $primary ne 'JAVA' && $primary ne 'PYTHON')
     {
 	# Define it.
-	&define_pretty_variable ($primary, '', @used);
+	define_pretty_variable ($primary, '', @used);
 	$output_vars .= "\n";
     }
 
