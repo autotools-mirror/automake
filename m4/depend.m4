@@ -1,34 +1,35 @@
-# See how the compiler implements dependency checking.
-# Usage:
+# serial 2
+
 # AM_DEPENDENCIES(NAME)
+# ---------------------
+# See how the compiler implements dependency checking.
 # NAME is "CC", "CXX" or "OBJC".
-
 # We try a few techniques and use that to set a single cache variable.
-
-AC_DEFUN([AM_DEPENDENCIES],[
-AC_REQUIRE([AM_SET_DEPDIR])
+AC_DEFUN([AM_DEPENDENCIES],
+[AC_REQUIRE([AM_SET_DEPDIR])
 AC_REQUIRE([AM_OUTPUT_DEPENDENCY_COMMANDS])
-ifelse([$1],CC,[
-AC_REQUIRE([AC_PROG_CC])
+ifelse([$1], CC,
+       [AC_REQUIRE([AC_PROG_CC])
 AC_REQUIRE([AC_PROG_CPP])
 depcc="$CC"
-depcpp="$CPP"],[$1],CXX,[
-AC_REQUIRE([AC_PROG_CXX])
+depcpp="$CPP"],
+       [$1], CXX, [AC_REQUIRE([AC_PROG_CXX])
 AC_REQUIRE([AC_PROG_CXXCPP])
 depcc="$CXX"
-depcpp="$CXXCPP"],[$1],OBJC,[
-am_cv_OBJC_dependencies_compiler_type=gcc],[
-AC_REQUIRE([AC_PROG_][$1])
-depcc="$[$1]"
+depcpp="$CXXCPP"],
+       [$1], OBJC, [am_cv_OBJC_dependencies_compiler_type=gcc],
+       [AC_REQUIRE([AC_PROG_$1])
+depcc="$$1"
 depcpp=""])
-AC_MSG_CHECKING([dependency style of $depcc])
-AC_CACHE_VAL(am_cv_[$1]_dependencies_compiler_type,[
-if test -z "$AMDEP"; then
+
+AC_CACHE_CHECK([dependency style of $depcc],
+               [am_cv_$1_dependencies_compiler_type],
+[if test -z "$AMDEP"; then
   echo '#include "conftest.h"' > conftest.c
   echo 'int i;' > conftest.h
 
-  am_cv_[$1]_dependencies_compiler_type=none
-  for depmode in `sed -n 's/^#*\([a-zA-Z0-9]*\))$/\1/p' < "$am_depcomp"`; do
+  am_cv_$1_dependencies_compiler_type=none
+  for depmode in `sed -n ['s/^#*\([a-zA-Z0-9]*\))$/\1/p'] < "$am_depcomp"`; do
     case "$depmode" in
     nosideeffect)
       # after this tag, mechanisms are not by side-effect, so they'll
@@ -49,19 +50,18 @@ if test -z "$AMDEP"; then
        depfile=conftest.Po tmpdepfile=conftest.TPo \
        $SHELL $am_depcomp $depcc -c conftest.c -o conftest.o >/dev/null 2>&1 &&
        grep conftest.h conftest.Po > /dev/null 2>&1; then
-      am_cv_[$1]_dependencies_compiler_type="$depmode"
+      am_cv_$1_dependencies_compiler_type="$depmode"
       break
     fi
   done
 
   rm -f conftest.*
 else
-  am_cv_[$1]_dependencies_compiler_type=none
+  am_cv_$1_dependencies_compiler_type=none
 fi
 ])
-AC_MSG_RESULT($am_cv_[$1]_dependencies_compiler_type)
-[$1]DEPMODE="depmode=$am_cv_[$1]_dependencies_compiler_type"
-AC_SUBST([$1]DEPMODE)
+$1DEPMODE="depmode=$am_cv_$1_dependencies_compiler_type"
+AC_SUBST([$1DEPMODE])
 ])
 
 # Choose a directory name for dependency files.

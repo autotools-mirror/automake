@@ -2,8 +2,9 @@
 # some checks are only needed if your package does certain things.
 # But this isn't really a big deal.
 
-# serial 3
+# serial 4
 
+# We require 2.13 because we rely on SHELL being computed by configure.
 AC_PREREQ([2.13])
 
 # AC_PROVIDE_IFELSE(MACRO-NAME, IF-PROVIDED, IF-NOT-PROVIDED)
@@ -23,8 +24,7 @@ ifdef([AC_PROVIDE_IFELSE],
 # AM_INIT_AUTOMAKE(PACKAGE,VERSION, [NO-DEFINE])
 # ----------------------------------------------
 AC_DEFUN([AM_INIT_AUTOMAKE],
-[dnl We require 2.13 because we rely on SHELL being computed by configure.
-AC_REQUIRE([AC_PROG_INSTALL])dnl
+[AC_REQUIRE([AC_PROG_INSTALL])dnl
 # test to see if srcdir already configured
 if test "`CDPATH=:; cd $srcdir && pwd`" != "`pwd`" &&
    test -f $srcdir/config.status; then
