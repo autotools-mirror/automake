@@ -416,6 +416,7 @@ version3.test \
 version4.test \
 version5.test \
 version6.test \
+version7.test \
 vpath.test \
 vtexi.test \
 vtexi2.test \

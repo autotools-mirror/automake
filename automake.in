@@ -413,6 +413,9 @@ my %vars_scanned = ();
 # TRUE if --cygnus seen.
 my $cygnus_mode = 0;
 
+# Files included by @configure.
+my @configure_deps = ();
+
 # Hash table of AM_CONDITIONAL variables seen in configure.
 my %configure_cond = ();
 
@@ -4425,6 +4428,9 @@ sub handle_configure
 
     my ($regen_aclocal_m4, @aclocal_m4_deps) = scan_aclocal_m4 ();
 
+    push_dist_common (@configure_deps)
+      if $relative_dir eq '.';
+
     $output_rules .=
       &file_contents ('configure',
 		      new Automake::Location,
@@ -4441,7 +4447,8 @@ sub handle_configure
 		        => $cmdline_use_dependencies ? '' : ' --ignore-deps',
 		      'MAKEFILE-AM-SOURCES' =>  "$input$colon_infile",
 		      'REGEN-ACLOCAL-M4'    => $regen_aclocal_m4,
-		      ACLOCAL_M4_DEPS       => "@aclocal_m4_deps");
+		      ACLOCAL_M4_DEPS       => "@aclocal_m4_deps",
+		      CONFIGURE_DEPS        => "@configure_deps");
 
     if ($relative_dir eq '.')
     {
@@ -5171,7 +5178,9 @@ sub scan_autoconf_traces ($)
 		  AM_GNU_GETTEXT
 		  AM_INIT_AUTOMAKE
 		  AM_MAINTAINER_MODE
-		  AM_PROG_CC_C_O);
+		  AM_PROG_CC_C_O
+		  m4_include
+		  m4_sinclude);
 
   my $traces = ($ENV{AUTOCONF} || 'autoconf') . " ";
 
@@ -5280,6 +5289,16 @@ sub scan_autoconf_traces ($)
       elsif ($macro eq 'AM_PROG_CC_C_O')
 	{
 	  $seen_cc_c_o = $where;
+	}
+      elsif ($macro eq 'm4_include' || $macro eq 'm4_sinclude')
+	{
+	  # Some modified versions of Autoconf don't use
+	  # forzen files.  Consequently it's possible that we see all
+	  # m4_include's performed during Autoconf's startup.
+	  # Obviously we don't want to distribute Autoconf's files
+	  # so we skip absolute filenames here.
+	  push @configure_deps, $args[1]
+	    unless $here =~ m,^(?:\w:)?[\\/],;
 	}
    }
 }
