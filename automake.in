@@ -1482,17 +1482,12 @@ sub handle_languages
 	# People linking Java code to Fortran code deserve pain.
 	$needs_c ||= ! $lang->pure;
 
-	if ($lang->compile)
-	  {
-	    &define_compiler_variable ($lang->compiler,
-				       $ltcompile, $lang->compile);
-	  }
+	define_compiler_variable ($lang)
+	  if ($lang->compile);
 
 	# The compiler's flag must be a configure variable.
-	if (defined $lang->flags)
-	  {
-	    &define_configure_variable ($lang->flags);
-	  }
+	define_configure_variable ($lang->flags)
+	  if (defined $lang->flags);
 
 	# Call the finisher.
 	$lang->finish;
@@ -1509,9 +1504,7 @@ sub handle_languages
 	if (! defined $done{$languages{'c'}})
 	  {
 	    &define_configure_variable ($languages{'c'}->flags);
-	    &define_compiler_variable ($languages{'c'}->compiler,
-				       $ltcompile,
-				       $languages{'c'}->compile);
+	    &define_compiler_variable ($languages{'c'});
 	  }
 	&define_variable ('CCLD', '$(CC)');
 	&define_variable ('LINK',
@@ -5280,7 +5273,6 @@ sub libtool_compiler
     my ($ltcompile, $ltlink) = ('', '');
     if ($seen_libtool)
     {
-	&define_configure_variable ("LIBTOOL");
 	$ltcompile = '$(LIBTOOL) --mode=compile ';
 	$ltlink = '$(LIBTOOL) --mode=link ';
     }
@@ -6391,15 +6383,19 @@ sub define_configure_variable
     &define_variable ($var, $value);
 }
 
+
+# define_compiler_variable ($LANG)
+# --------------------------------
 # Define a compiler variable.  We also handle defining the `LT'
 # version of the command when using libtool.
-sub define_compiler_variable
+sub define_compiler_variable ($)
 {
-    my ($var, $ltcompile, $value) = @_;
-    my $name = $var;
-    &define_variable ($name, $value);
-    &define_variable ('LT' . $name, $ltcompile . $value)
-	if $seen_libtool;
+    my ($lang) = @_;
+
+    my ($var, $value) = ($lang->compiler, $lang->compile);
+    &define_variable ($var, $value);
+    &define_variable ("LT$var", "$(LIBTOOL) --mode=compile $value")
+      if $seen_libtool;
 }
 
 ################################################################
