@@ -77,6 +77,7 @@ Standards-compliant Makefiles from template files.
 * Introduction::                AutoMake's purpose
 * Details::                     Creating an AutoMake template file
 * Invoking automake::           Creating a Makefile.in
+* Future::                      Some ideas for the future.
 * Some index::                  Index of variables
 @end menu
 
@@ -138,6 +139,27 @@ to be @samp{am}.
 on.  We recommend that you make @file{configure.in} the only place you
 define the version number for your package; this makes releases simpler.
 
+Here is an example of what to put in @file{configure.in}:
+
+@example
+PACKAGE=cpio
+VERSION=2.3.911
+AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE")
+AC_DEFINE_UNQUOTED(VERSION, "$VERSION")
+AC_SUBST(PACKAGE)
+AC_SUBST(VERSION)
+@end example
+
+If your @file{configure.in} uses @samp{AC_CONFIG_HEADER}, then in each
+directory you should define the @samp{CONFIG_HEADER} variable to hold
+the name of the header.
+
+For instance, in cpio's @file{src/Makefile.am}, we see:
+
+@example
+CONFIG_HEADER = ../config.h
+@end example
+
 
 @node Single
 @section Single directory packages
@@ -164,7 +186,7 @@ PROGRAMS = hello
 
 In this simple case, the resulting @file{Makefile.in} will contain code
 to generate a program named @code{hello}.  The variable
-@samp{@var{PROG}_SOURCE} is used to specify which source files get built
+@samp{@var{prog}_SOURCE} is used to specify which source files get built
 into an executable:
 
 @example
@@ -195,6 +217,26 @@ AM_PROGRAMS = cpio pax mt rmt
 @end example
 
 
+If you need to link against libraries that are not found by
+@code{configure}, you can use @samp{LDADD} to do so.  This variable
+actually can be used to add any options to the linker command line.
+
+Sometimes, multiple programs are built in one directory but do not share
+the same link-time requirements.  In this case, you can use the
+@samp{@var{prog}_LDADD} variable to override the global @samp{LDADD}.
+(If this variable exists for a given program, then that program is not
+linked using @samp{LDADD}).
+
+For instance, in GNU cpio, @code{pax}, @code{cpio}, and @code{mt} are
+linked against the library @file{libcpio.a}.  However, @code{rmt} is
+built in the same directory, and has no such link requirement.  Thus:
+
+@example
+LDADD = ../lib/libcpio.a @INTLLIBS@
+rmt_LDADD =
+@end example
+
+
 @node Source
 @section Specifying Source Code
 
@@ -202,7 +244,7 @@ Any header files in your distribution must be listed in the
 @samp{HEADERS} variable:
 
 @example
-HEADERS = hello.o getopt.h rx.h
+HEADERS = hello.h getopt.h rx.h
 @end example
 
 Although there appears to be support in @code{automake} to allow a
@@ -223,12 +265,48 @@ La.
 @node Libraries
 @section Building Libraries
 
-La.
+The @samp{LIBRARIES} variable holds the names of libraries to be built
+in the current directory.  If the libraries to be built vary at
+configure time, you may define @samp{AM_LIBRARIES} to supply
+@code{automake} with the full static list of possible libraries.
+
+For a given library @samp{zot}, the sources are taken to be in
+@samp{@var{zot}_SOURCES}, just as for programs.  Note that libraries and
+programs share one namespace in @code{automake}: you cannot build a
+library in the a directory that has the same base name as a program in
+the same directory.
+
+Here is how the @file{libcpio.a} library is built in the GNU cpio
+distribution's @file{lib} subdirectory:
+
+@example
+LIBRARIES = cpio
+cpio_SOURCES = dirname.c dstring.c error.c filemode.c \
+getopt.c getopt1.c idcache.c makepath.c octal.c \
+stpcpy.c stripslash.c userspec.c xmalloc.c xstrdup.c
+@end example
+
 
 @node Libstuff
 @section Programs which are not User-Visible
 
-La.
+@code{automake} allows for the automatic building and installation of
+programs which are not actually used by the user, but are instead used
+by other user-visible programs.  Such programs are installed in a
+separate directory from user-visible programs.
+
+For programs of this sort which are build from C source, define the
+names in @samp{LIBPROGRAMS}.  For scripts, use @samp{LIBSCRIPTS}.  In
+other respects, these variables are similar to @samp{PROGRAMS} and
+@samp{SCRIPTS}.  Both of these variables have ``AM_'' forms.
+
+Here is how to generate a program named @code{goodbye}, a helper for
+@code{hello}:
+
+@example
+LIBPROGRAMS = goodbye
+goodbye_SOURCES = goodbye.c
+@end example
 
 @node Docs
 @section Texinfo and Man Pages
@@ -245,18 +323,83 @@ For.
 @node Install
 @section What Gets Installed
 
+Today.
+
 @node Distribution
 @section Building a Release
 
-Today.
+The @samp{dist} target in the generated @file{Makefile.in} can be used
+to generate a gzip'd tar file for distribution.  The tar file is named
+based on the @var{PACKAGE} and @var{VERSION} variables.
+
+For the most part, the files to distribute are automatically found by
+@code{automake}: all source files are automatically included in a
+distribution, as are all @file{Makefile.am}s and @file{Makefile.in}s.
+@code{automake} also has a built-in list of commonly used files which,
+if present in the current directory, are automatically included.  This
+list is printed by @code{automake --help}.
+
+Still, sometimes there are files which must be distributed, but which
+are not covered in the automatic rules.  These files should be listed in
+the @samp{DIST_OTHER} variable.
+
+For instance, in the @code{automake} distribution, there are many data
+files which are distributed.  Also, @file{automake.in} (the source to
+@code{automake}) is not found automatically.  So in the
+@file{Makefile.am}, we have:
+
+@example
+DIST_OTHER = automake.in stamp-vti $(am_DATA)
+@end example
+
+FIXME: plan to remove the data files and make rules for this.
+FIXME: describe DIST_SUBDIRS or not?  It is a hack which might go away.
 
 @node Tags
 @section Interfacing to @code{etags}
 
+@code{automake} will generate rules to generate @file{TAGS} files for
+use with GNU Emacs under some circumstances.
+
+If any C source code or headers are present, then a @file{TAGS} file
+will be generated for the directory.
+
+At the topmost directory of a multi-directory package, a @file{TAGS}
+file will be generated that will include by reference all @file{TAGS}
+files from subdirectories.
+
+Also, if the variable @samp{ETAGS_ARGS} is defined, a @file{TAGS} file
+will be generated.  This variable is intended for use in directories
+which contain taggable source that @code{etags} does not understand.
+(For instance, it could be set to a regexp to recognize node names in
+Texinfo documentation)
+
+
 @node Extending
 @section When AutoMake Isn't Enough
 
-Sometimes AutoMake isn't enough.  Then you just lose.
+Sometimes @code{automake} isn't enough.  Then you just lose.
+
+Actually, @code{automake}s implicit copying semantics means that many
+problems can be worked around by simply adding some @code{make} targets
+and rules to @file{Makefile.in}.  @code{automake} will ignore these
+additions.
+
+There are some caveats to doing this.  If you introduce a target whose
+name is also used by @code{automake}, you should make sure it is a
+double-colon target (FIXME xref make docs).
+
+For instance, in @code{automake}, many data files are installed.
+However, the code for this installation is not generated automatically,
+but is instead done explicitly in @file{Makefile.am}:
+
+@example
+install:: $(am_DATA)
+	$(srcdir)/mkinstalldirs $(amdatadir)
+	for i in $(am_DATA); do			\
+	  $(INSTALL_DATA) $(srcdir)/$$i $(amdatadir)/$$i; \
+	done
+@end example
 
 
 @node Invoking automake
@@ -276,7 +419,23 @@ This second mode is most often used by @code{make} itself, when it
 notices that a @code{Makefile.in} is out of date.
 
 
+@node Future
+@chapter Some ideas for the future
+
+It might be nice to have @code{automake} automatically compute
+dependencies, and record that information in the shipped
+@file{Makefile.in}.  I don't have a good mechanism for doing this yet;
+perhaps
+
+Better error checking would be good.
+
+
 @node Some index
 @chapter Nothing yet
 
 @bye
+
+NOTES:
+
+* Need section on operation of automake: it read Makefile.am and COPIES
+the contents...
