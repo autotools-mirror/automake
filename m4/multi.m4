@@ -9,7 +9,7 @@ AC_ARG_ENABLE(multilib,
   yes) multilib=yes ;;
   no)  multilib=no ;;
   *)   AC_MSG_ERROR(bad value ${enableval} for multilib option) ;;
- esac], [multilib=yes]
+ esac], [multilib=yes])
 
 # We may get other options which we are undocumented:
 # --with-target-subdir, --with-multisrctop, --with-multisubdir
@@ -25,10 +25,10 @@ else
 fi
 AC_SUBST(multi_basedir)
 
-AC_OUTPUT_COMMANDS([
+AC_OUTPUT_COMMANDS(
 if test -n "$CONFIG_FILES"; then
-   ac_file=ifelse([$1],,Makefile,[$1]) . ..ifelse([$2],,,/[$2])/config-ml.in
-fi], [
+   ac_file=[]ifelse([$1],,Makefile,[$1]) . ${multi_basedir}/config-ml.in
+fi, [
 srcdir="$srcdir"
 host="$host"
 target="$target"
