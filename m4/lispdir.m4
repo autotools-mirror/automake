@@ -14,7 +14,7 @@ AC_DEFUN(AM_PATH_LISPDIR,
     AC_MSG_CHECKING([where .elc files should go])
     dnl Set default value
     lispdir="\$(datadir)/emacs/site-lisp"
-    emacs_flavor=`echo "$EMACS" | sed -e ',^.*/,,'`
+    emacs_flavor=`echo "$EMACS" | sed -e 's,^.*/,,'`
     if test "x$prefix" = "xNONE"; then
       if test -d $ac_default_prefix/share/$emacs_flavor/site-lisp; then
 	lispdir="\$(prefix)/share/$emacs_flavor/site-lisp"
