@@ -22,15 +22,18 @@
 
 MKDEP = gcc -M $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
 
+## We must create the .deps directory if it doesn't exist.  We do it
+## in this strange way a buglet in make -- it won't try to create
+## .deps/.P if the .deps directory doesn't exist.
+DEPS_MAGIC := $(shell mkdir .deps > /dev/null 2>&1 || :)
 ## We use ".P" as the name of our placeholder because it can't be
 ## duplicated by any C source file.  (Well, there could be ".c", but
 ## no one does that in practice)
 -include .deps/.P
-## This depends on $(PRE_BUILT_SOURCES) because that lets us generate
+## This depends on $(BUILT_SOURCES) because that lets us generate
 ## dependencies for files that don't exist at the start of a fresh
 ## build.
-.deps/.P: $(PRE_BUILT_SOURCES)
-	test -d .deps || mkdir .deps
+.deps/.P: $(BUILT_SOURCES)
 ## Use ":" here and not "echo timestamp".  Otherwise GNU Make barfs:
 ## .deps/.P:1: *** missing separator.  Stop.
 ## Actually, use a plain "echo" and not ":".  Why?  From the Autoconf
@@ -41,7 +44,6 @@ MKDEP = gcc -M $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
 	echo > $@
 
 -include $(DEP_FILES)
-$(DEP_FILES): .deps/.P
 
 mostlyclean-depend:
 
