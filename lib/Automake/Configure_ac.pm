@@ -25,7 +25,7 @@ use Automake::ChannelDefs;
 use vars qw (@ISA @EXPORT);
 
 @ISA = qw (Exporter);
-@EXPORT = qw ($configure_ac &search_configure_ac &find_configure_ac);
+@EXPORT = qw ($configure_ac &find_configure_ac &require_configure_ac);
 
 =head1 NAME
 
@@ -37,10 +37,10 @@ Automake::Configure_ac - Locate configure.ac or configure.in.
 
   # Try to locate configure.in or configure.ac in the current
   # directory.  It may be absent.  Complain if both files exist.
-  my $filename = search_configure_ac;
+  my $filename = find_configure_ac;
 
   # Likewise, but bomb out if the file does not exist.
-  my $filename = find_configure_ac;
+  my $filename = require_configure_ac;
 
 In both cases, the name of the file found is also put in the
 C<$configure_ac> global variable.
@@ -49,7 +49,7 @@ C<$configure_ac> global variable.
 
 use vars '$configure_ac';
 
-sub search_configure_ac ()
+sub find_configure_ac ()
 {
   if (-f 'configure.ac')
     {
@@ -68,10 +68,10 @@ sub search_configure_ac ()
   return $configure_ac;
 }
 
-sub find_configure_ac ()
+sub require_configure_ac ()
 {
   fatal "`configure.ac' or `configure.in' is required"
-    unless search_configure_ac;
+    unless find_configure_ac;
   return $configure_ac;
 }
 
