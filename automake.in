@@ -832,14 +832,26 @@ sub handle_yacc_lex_cxx
 
     if ($yacc_count)
     {
+	local ($file, $base, $hname, $cname);
 	local (%seen_suffix) = ();
-	foreach (keys %yacc_sources)
+	foreach $file (keys %yacc_sources)
 	{
-	    /(\..*)$/;
+	    $file =~ /(\..*)$/;
 	    &output_yacc_build_rule ($1, $yacc_count > 1)
 		if (! defined $seen_suffix{$1});
 	    $seen_suffix{$1} = 1;
+
+	    # Now generate rule to make the header file.  This should
+	    # only be generated if `yacc -d' specified.  But right now
+	    # there is no way to determine that.  FIXME: the
+	    # AM_FOOFLAGS idea would suffice here.
+	    $file =~ /^(.*)\.(y|yy|y\+\+|yxx)$/;
+	    $base = $1;
+	    ($hname = $2) =~ tr/y/h/;
+	    ($cname = $2) =~ tr/y/c/;
+	    $output_rules .= "${base}.${hname}: ${base}.${cname}\n";
 	}
+	$output_rules .= "\n";
 
 	if (! defined $configure_vars{'YACC'})
 	{
@@ -992,32 +1004,28 @@ sub output_yacc_build_rule
 {
     local ($yacc_suffix, $use_ylwrap, $c_suffix) = @_;
 
-    local ($c_suffix, $suffix);
-    ($c_suffix = $yacc_suffix) =~ tr/y/c/;
-    push (@suffixes, $yacc_suffix, $c_suffix, '.h');
+    local ($suffix);
+    ($suffix = $yacc_suffix) =~ tr/y/c/;
+    push (@suffixes, $yacc_suffix, $suffix);
 
-    # Generate rule for c/c++ and header file.  Probably should only
-    # do header if `yacc -d' is run.  But how can we determine that?
-    foreach $suffix ($c_suffix, '.h')
+    # Generate rule for c/c++.
+    $output_rules .= "$yacc_suffix$suffix:\n\t";
+
+    if ($use_ylwrap)
     {
-	$output_rules .= "$yacc_suffix$suffix:\n\t";
-
-	if ($use_ylwrap)
-	{
-	    $output_rules .= ('$(SHELL) $(YLWRAP)'
-			      . ' "$(YACC)" $< y.tab.c $*' . $c_suffix
-			      . ' y.tab.h $*.h -- $(YFLAGS)');
-	}
-	else
-	{
-	    $output_rules .= ('$(YACC) $(YFLAGS) $< && mv y.tab.c $*'
-			      . $c_suffix . "\n"
-			      . "\tif test -f y.tab.h; then \\\n"
-			      . "\tif cmp -s y.tab.h \$*.h; then rm -f y.tab.h; else mv y.tab.h \$*.h; fi; \\\n"
-			  . "\telse :; fi");
-	}
-	$output_rules .= "\n";
+	$output_rules .= ('$(SHELL) $(YLWRAP)'
+			  . ' "$(YACC)" $< y.tab.c $*' . $suffix
+			  . ' y.tab.h $*.h -- $(YFLAGS)');
     }
+    else
+    {
+	$output_rules .= ('$(YACC) $(YFLAGS) $< && mv y.tab.c $*'
+			  . $suffix . "\n"
+			  . "\tif test -f y.tab.h; then \\\n"
+			  . "\tif cmp -s y.tab.h \$*.h; then rm -f y.tab.h; else mv y.tab.h \$*.h; fi; \\\n"
+			  . "\telse :; fi");
+    }
+    $output_rules .= "\n";
 }
 
 sub output_lex_build_rule
