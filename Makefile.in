@@ -240,7 +240,7 @@ install-info-am: $(INFO_DEPS)
 	  done; \
 	done
 	@$(POST_INSTALL)
-	@if $(SHELL) -c 'install-info --version' >/dev/null 2>&1; then \
+	@if $(SHELL) -c 'install-info --version | sed 1q | fgrep -s -v -i debian' >/dev/null 2>&1; then \
 	  for file in $(INFO_DEPS); do \
 	    echo " install-info --info-dir=$(infodir) $(infodir)/$$file";\
 	    install-info --info-dir=$(infodir) $(infodir)/$$file; :;\
@@ -249,7 +249,7 @@ install-info-am: $(INFO_DEPS)
 
 uninstall-info:
 	$(PRE_UNINSTALL)
-	if $(SHELL) -c 'install-info --version' >/dev/null 2>&1; then \
+	@if $(SHELL) -c 'install-info --version | sed 1q | fgrep -s -v -i debian' >/dev/null 2>&1; then \
 	  ii=yes; \
 	else ii=; fi; \
 	for file in $(INFO_DEPS); do \
@@ -314,21 +314,23 @@ uninstall-pkgdataDATA:
 all-recursive install-data-recursive install-exec-recursive \
 installdirs-recursive install-recursive uninstall-recursive  \
 check-recursive installcheck-recursive info-recursive dvi-recursive:
-	@for subdir in $(SUBDIRS); do \
+	@set fnord $(MAKEFLAGS); amf=$$2; \
+	for subdir in $(SUBDIRS); do \
 	  target=`echo $@ | sed s/-recursive//`; \
 	  echo "Making $$target in $$subdir"; \
 	  (cd $$subdir && $(MAKE) $$target) \
-	   || case "$(MFLAGS)" in *k*) fail=yes;; *) exit 1;; esac; \
+	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
 	done && test -z "$$fail"
 
 mostlyclean-recursive clean-recursive distclean-recursive \
 maintainer-clean-recursive:
-	@rev=''; for subdir in $(SUBDIRS); do rev="$$rev $$subdir"; done; \
+	@set fnord $(MAKEFLAGS); amf=$$2; \
+	rev=''; for subdir in $(SUBDIRS); do rev="$$rev $$subdir"; done; \
 	for subdir in $$rev; do \
 	  target=`echo $@ | sed s/-recursive//`; \
 	  echo "Making $$target in $$subdir"; \
 	  (cd $$subdir && $(MAKE) $$target) \
-	   || case "$(MFLAGS)" in *k*) fail=yes;; *) exit 1;; esac; \
+	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
 	done && test -z "$$fail"
 tags-recursive:
 	list='$(SUBDIRS)'; for subdir in $$list; do \
