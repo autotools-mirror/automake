@@ -193,11 +193,11 @@ use constant GNITS   => 2;
 use constant AC_CANONICAL_HOST   => 1;
 use constant AC_CANONICAL_SYSTEM => 2;
 
-# Values indicating when something should be cleaned.  Right now we
-# only need to handle `mostly'- and `dist'-clean; add more as
-# required.
-use constant MOSTLY_CLEAN => 0;
-use constant DIST_CLEAN   => 1;
+# Values indicating when something should be cleaned.
+use constant MOSTLY_CLEAN     => 0;
+use constant CLEAN            => 1;
+use constant DIST_CLEAN       => 2;
+use constant MAINTAINER_CLEAN => 3;
 
 # Libtool files.
 my @libtool_files = qw(ltmain.sh config.guess config.sub);
@@ -550,8 +550,9 @@ my %dependencies;
 # only when keys exists in %DEPENDENCIES.
 my %actions;
 
-# A list of files deleted by `maintainer-clean'.
-my @maintainer_clean_files;
+# Keys in this hash table are files to delete.  The associated
+# value tells when this should happen (MOSTLY_CLEAN, DIST_CLEAN, etc.)
+my %clean_files;
 
 # Keys in this hash table are object files or other files in
 # subdirectories which need to be removed.  This only holds files
@@ -777,7 +778,7 @@ sub initialize_per_input ()
       );
     %actions = ();
 
-    @maintainer_clean_files = ();
+    %clean_files = ();
 
     @sources = ();
     @dist_sources = ();
@@ -4714,30 +4715,46 @@ sub do_check_merge_target
 # Handle all 'clean' targets.
 sub handle_clean
 {
-    my %transform;
+  # Clean the files listed in user variables if they exist.
+  $clean_files{'$(MOSTLYCLEANFILES)'} = MOSTLY_CLEAN
+    if variable_defined ('MOSTLYCLEANFILES');
+  $clean_files{'$(CLEANFILES)'} = CLEAN
+    if variable_defined ('CLEANFILES');
+  $clean_files{'$(DISTCLEANFILES)'} = DIST_CLEAN
+    if variable_defined ('DISTCLEANFILES');
+  $clean_files{'$(MAINTAINERCLEANFILES)'} = MAINTAINER_CLEAN
+    if variable_defined ('MAINTAINERCLEANFILES');
 
-    # Don't include `MAINTAINER'; it is handled specially below.
-    foreach my $name ('MOSTLY', '', 'DIST')
+  # Built sources are automatically removed by maintainer-clean.
+  $clean_files{'$(BUILT_SOURCES)'} = MAINTAINER_CLEAN
+    if variable_defined ('BUILT_SOURCES');
+
+  # Compute a list of "rm"s to run for each target.
+  my %rms = (MOSTLY_CLEAN, [],
+	     CLEAN, [],
+	     DIST_CLEAN, [],
+	     MAINTAINER_CLEAN, []);
+
+  foreach my $file (keys %clean_files)
     {
-      $transform{"${name}CLEAN"} = variable_defined ("${name}CLEANFILES");
+      my $when = $clean_files{$file};
+      prog_error 'invalid entry in %clean_files'
+	unless exists $rms{$when};
+
+      my $rm = "rm -f $file";
+      # If file is a variable, make sure when don't call `rm -f' without args.
+      $rm ="test -z \"$file\" || $rm"
+	if ($file =~ /^\s*\$(\(.*\)|\{.*\})\s*$/);
+
+      push @{$rms{$when}}, "\t-$rm\n";
     }
 
-    # Built sources are automatically removed by maintainer-clean.
-    push (@maintainer_clean_files, '$(BUILT_SOURCES)')
-	if variable_defined ('BUILT_SOURCES');
-    push (@maintainer_clean_files, '$(MAINTAINERCLEANFILES)')
-	if variable_defined ('MAINTAINERCLEANFILES');
-
-    $output_rules .= &file_contents ('clean',
-				     (%transform,
-				      'MCFILES'
-				      # Join with no space to avoid
-				      # spurious `test -z' success at
-				      # runtime.
-				      => join ('', @maintainer_clean_files),
-				      'MFILES'
-				      # A space is required in the join here.
-				      => "@maintainer_clean_files"));
+  $output_rules .= &file_contents
+    ('clean',
+     MOSTLYCLEAN_RMS      => join ('', @{$rms{&MOSTLY_CLEAN}}),
+     CLEAN_RMS            => join ('', @{$rms{&CLEAN}}),
+     DISTCLEAN_RMS        => join ('', @{$rms{&DIST_CLEAN}}),
+     MAINTAINER_CLEAN_RMS => join ('', @{$rms{&MAINTAINER_CLEAN}}));
 }
 
 
@@ -5497,11 +5514,11 @@ sub lang_yacc_target_hook
 	# statically, and the GNU rules say that yacc/lex output files
 	# should be removed by maintainer-clean.  So that's what we
 	# do.
-	push (@maintainer_clean_files, $header);
+	$clean_files{$header} = MAINTAINER_CLEAN;
     }
     # Erase $OUTPUT on `make maintainer-clean' (by GNU standards).
     # See the comment above for $HEADER.
-    push (@maintainer_clean_files, $output);
+    $clean_files{$output} = MAINTAINER_CLEAN;
 }
 
 # This is a lex helper which is called whenever we have decided to
@@ -5514,7 +5531,7 @@ sub lang_lex_target_hook
     # shouldn't be touched.  However, we can't determine this
     # statically, and the GNU rules say that yacc/lex output files
     # should be removed by maintainer-clean.  So that's what we do.
-    push (@maintainer_clean_files, $output);
+    $clean_files{$output} = MAINTAINER_CLEAN;
 }
 
 # This is a helper for both lex and yacc.
@@ -8613,7 +8630,7 @@ sub require_build_directory ($)
 	$directory_map{$directory} = 1;
 
 	# Directory must be removed by `make distclean'.
-	$compile_clean_files{$dirstamp} = DIST_CLEAN;
+	$clean_files{$dirstamp} = DIST_CLEAN;
 
 	$output_rules .= ("$dirstamp:\n"
 			  . "\t\@\$(mkinstalldirs) $directory\n"
