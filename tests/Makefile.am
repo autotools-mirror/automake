@@ -298,6 +298,7 @@ yacc.test \
 yacc2.test \
 yacc3.test \
 yacc4.test \
+yacc5.test \
 yacc6.test \
 yaccpp.test \
 yaccvpath.test
