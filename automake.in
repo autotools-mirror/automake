@@ -27,8 +27,6 @@ fi
 am_status=0
 AM_DIR=`echo $0|sed s%automake%%`
 
-am_grep_assign='^[	 ]*[A-Za-z_][A-Za-z0-9_]*[	 ]*='
-
 # Remove \newline.
 am_rmnl=/tmp/am.sed1
 cat > $am_rmnl <<\EOF
@@ -53,7 +51,11 @@ am_ass=/tmp/am.sed2
 cat > $am_ass <<\EOF
 s/(/{/g
 s/)/}/g
-s/^ *\([a-zA-Z_][a-zA-Z0-9_]*\):.*/target_\1=explicit/p
+/^ *\([a-zA-Z_.][a-zA-Z0-9_.]*\):.*/{
+s//target_\1=explicit/
+s/\./_/g
+p
+}
 s/^ *\([A-Z][A-Z0-9_]*\)[	 ]*=[	 ]*\(.*\)/\1='\2'/p
 EOF
 
@@ -176,8 +178,9 @@ ${am_file}_OBJECTS = ${am_file}.o" >&4
 #    mkdep -a -f ${am_makefile}.in $DEFS $INCLUDES $CPPFLAGS $CFLAGS $SOURCES
 #  fi
 
-  cat ${am_makefile}.vars ${am_makefile}.am ${am_makefile}.rules \
-    > ${am_makefile}.in
+  sed '/^ *\([a-zA-Z_.][a-zA-Z0-9_.]*\):.*/,$d' ${am_makefile}.am >> ${am_makefile}.vars
+  sed -n '/^ *\([a-zA-Z_.][a-zA-Z0-9_.]*\):.*/,$p' ${am_makefile}.am >> ${am_makefile}.rules
+  cat ${am_makefile}.vars ${am_makefile}.rules > ${am_makefile}.in
   rm -f ${am_makefile}.vars ${am_makefile}.rules
 
 done
