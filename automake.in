@@ -1175,7 +1175,7 @@ sub generate_makefile
     {
 	if (&variable_defined ($var) && !$var_is_am{$var})
 	{
-	    am_macro_error ($var, "`$var' should not be defined");
+	    macro_error ($var, "`$var' should not be defined");
 	}
     }
 
@@ -1377,8 +1377,8 @@ sub version_check ($$$$)
 	    && $ralpha gt $talpha)
 	|| ($rfork ne '' && $rfork ne $tfork))
     {
-	am_macro_error ('AUTOMAKE_OPTIONS',
-			 "require version $_, but have $VERSION");
+	macro_error ('AUTOMAKE_OPTIONS',
+		     "require version $_, but have $VERSION");
 	return 1;
     }
 
@@ -1433,8 +1433,8 @@ sub handle_options
 	    }
 	    else
 	    {
-		am_macro_error ('AUTOMAKE_OPTIONS',
-				"option `" . $_ . "\' not recognized");
+		macro_error ('AUTOMAKE_OPTIONS',
+			     "option `" . $_ . "\' not recognized");
 	    }
 	}
     }
@@ -1483,7 +1483,7 @@ sub handle_languages
 	    # Set location of depcomp.
 	    &define_variable ('depcomp', "\$(SHELL) $config_aux_dir/depcomp");
 
-	    &require_conf_file ($FOREIGN, 'depcomp');
+	    &require_config_file ($FOREIGN, 'depcomp');
 
 	    my @deplist = sort keys %dep_files;
 
@@ -1596,7 +1596,7 @@ sub handle_languages
 	    my $flags = $lang->flags || '';
 	    my $val = "${derived}_${flags}";
 
-	    &prog_error ("found $lang->name in handle_languages, but compiler not defined")
+	    prog_error ("found $lang->name in handle_languages, but compiler not defined")
 		unless defined $lang->compile;
 
 	    (my $obj_compile = $lang->compile) =~ s/\(AM_$flags/\($val/;
@@ -1714,8 +1714,8 @@ sub check_libobjs_sources
 	{
 	    if (defined $libsources{$file})
 	    {
-		am_macro_error ($prefix . $one_file . '_SOURCES',
-				"automatically discovered file `$file' should not be explicitly mentioned");
+		macro_error ($prefix . $one_file . '_SOURCES',
+			     "automatically discovered file `$file' should not be explicitly mentioned");
 	    }
 	}
     }
@@ -1750,7 +1750,8 @@ sub handle_single_transform_list ($$$$@)
         # Configure substitutions in _SOURCES variables are errors.
         if (/^\@.*\@$/)
         {
-            am_macro_error ($var, "`$var' includes configure substitution `$_', and is referred to from `$topparent': configure substitutions not allowed in _SOURCES variables");
+            macro_error ($var,
+			 "`$var' includes configure substitution `$_', and is referred to from `$topparent': configure substitutions not allowed in _SOURCES variables");
             next;
         }
 
@@ -1847,7 +1848,7 @@ sub handle_single_transform_list ($$$$@)
                 }
                 $object = $dname . '-' . $object;
 
-                &require_conf_file ($FOREIGN, 'compile')
+                &require_config_file ($FOREIGN, 'compile')
                     if $lang->name eq 'c';
 
                 &prog_error ("$lang->name flags defined without compiler")
@@ -1924,7 +1925,7 @@ sub handle_single_transform_list ($$$$@)
         {
             if ($object_map{$object} ne $full)
             {
-                &am_error ("object `$object' created by `$full' and `$object_map{$object}'");
+                am_error ("object `$object' created by `$full' and `$object_map{$object}'");
             }
         }
 
@@ -1973,7 +1974,7 @@ sub handle_single_transform_list ($$$$@)
                 # the .deps entry.
                 if ($object =~ /(\/|^)\.\.\//)
                 {
-                    &am_error ("`$full' contains `..' component but should not");
+                    am_error ("`$full' contains `..' component but should not");
                 }
 
 		# Make sure object is removed by `make mostlyclean'.
@@ -2037,7 +2038,7 @@ sub define_objects_from_sources ($$$$$$$)
 
     if (defined $vars_scanned{$var})
     {
-	am_macro_error ($var, "variable `$var' recursively defined");
+	macro_error ($var, "variable `$var' recursively defined");
 	return "";
     }
     $vars_scanned{$var} = 1;
@@ -2164,8 +2165,8 @@ sub handle_source_transform
 
     if (&variable_defined ($one_file . "_OBJECTS"))
     {
-	am_macro_error ($one_file . '_OBJECTS',
-			$one_file . '_OBJECTS', 'should not be defined');
+	macro_error ($one_file . '_OBJECTS',
+		     $one_file . '_OBJECTS', 'should not be defined');
 	# No point in continuing.
 	return;
     }
@@ -2287,13 +2288,15 @@ sub handle_lib_objects_cond
 	    {
 		# Skip -dlopen and -dlpreopen; these are explicitly allowed.
 		next if $lsearch =~ /^-dl(pre)?open$/;
-		am_macro_error ($var, "linker flags such as `$lsearch' belong in `${1}LDFLAGS");
+		macro_error ($var,
+			     "linker flags such as `$lsearch' belong in `${1}LDFLAGS");
 	    }
 	    else
 	    {
 		# Only get this error once.
 		$flagvar = 1;
-		am_macro_error ($var, "linker flags such as `$lsearch' belong in `${1}LDFLAGS");
+		macro_error ($var,
+			     "linker flags such as `$lsearch' belong in `${1}LDFLAGS");
 	    }
 	}
 
@@ -2318,7 +2321,8 @@ sub handle_lib_objects_cond
 	    if (! keys %libsources
 		&& ! &variable_defined ($lt . 'LIBOBJS'))
 	    {
-		am_macro_error ($var, "\@$lt" . "LIBOBJS\@ seen but never set in `$configure_ac'");
+		macro_error ($var,
+			     "\@$lt" . "LIBOBJS\@ seen but never set in `$configure_ac'");
 	    }
 
 	    foreach my $iter (keys %libsources)
@@ -2357,8 +2361,8 @@ sub handle_lib_objects_cond
 	    my $myobjext = ($1 ? 'l' : '') . 'o';
 
 	    push (@dep_list, $lsearch);
-	    am_macro_error ($var,
-			    "\@$lt" . "ALLOCA\@ seen but `AC_FUNC_ALLOCA' not in `$configure_ac'")
+	    macro_error ($var,
+			 "\@$lt" . "ALLOCA\@ seen but `AC_FUNC_ALLOCA' not in `$configure_ac'")
 		if ! defined $libsources{'alloca.c'};
 	    $dep_files{'$(DEPDIR)/alloca.P' . $myobjext} = 1;
 	    require_file_with_macro ($var, $FOREIGN, 'alloca.c');
@@ -2394,9 +2398,9 @@ sub check_canonical_spelling
     {
 	foreach my $xt (@suffixes)
 	{
-	    am_macro_error ("$name$xt",
-			    "invalid variable `$name$xt'; "
-			    . "should be `$xname$xt'")
+	    macro_error ("$name$xt",
+			 "invalid variable `$name$xt'; "
+			 . "should be `$xname$xt'")
 		if &variable_defined ("$name$xt");
 	}
     }
@@ -2458,8 +2462,8 @@ sub handle_compile ()
       {
 	if (! $am_c_prototypes)
 	  {
-	    am_macro_error ('AUTOMAKE_OPTIONS',
-			    "option `ansi2knr' in use but `AM_C_PROTOTYPES' not in `$configure_ac'");
+	    macro_error ('AUTOMAKE_OPTIONS',
+			 "option `ansi2knr' in use but `AM_C_PROTOTYPES' not in `$configure_ac'");
 	    &keyed_aclocal_warning ('AM_C_PROTOTYPES');
 	    # Only give this error once.
 	    $am_c_prototypes = 1;
@@ -2556,9 +2560,9 @@ sub handle_programs
 
 	if (&variable_defined ($xname . '_LIBADD'))
 	{
-	    am_macro_error ($xname . '_LIBADD',
-			    "use `" . $xname . "_LDADD', not `"
-			    . $xname . "_LIBADD'");
+	    macro_error ($xname . '_LIBADD',
+			 "use `" . $xname . "_LDADD', not `"
+			 . $xname . "_LIBADD'");
 	}
 
 	if (! &variable_defined ($xname . '_LDFLAGS'))
@@ -2636,7 +2640,8 @@ sub handle_libraries
 	{
 	    if (&variable_defined ($key . '_LIBRARIES'))
 	    {
-		am_macro_error ($key . '_LIBRARIES', "library used but `RANLIB' not defined in `$configure_ac'");
+		macro_error ($key . '_LIBRARIES',
+			     "library used but `RANLIB' not defined in `$configure_ac'");
 		# Only get this error once.  If this is ever printed,
 		# we have a bug.
 		$configure_vars{'RANLIB'} = 'BUG';
@@ -2684,9 +2689,9 @@ sub handle_libraries
 
 	if (&variable_defined ($xlib . '_LDADD'))
 	{
-	    am_macro_error ($xlib . '_LDADD',
-			    "use `" . $xlib . "_LIBADD', not `"
-			    . $xlib . "_LDADD'");
+	    macro_error ($xlib . '_LDADD',
+			 "use `" . $xlib . "_LIBADD', not `"
+			 . $xlib . "_LDADD'");
 	}
 
 	# Make sure we at look at this.
@@ -2737,7 +2742,8 @@ sub handle_ltlibraries
 	{
 	    if (!$seen_libtool)
 	    {
-		am_macro_error ($key . '_LTLIBRARIES', "library used but `LIBTOOL' not defined in `$configure_ac'");
+		macro_error ($key . '_LTLIBRARIES',
+			     "library used but `LIBTOOL' not defined in `$configure_ac'");
 		# Only get this error once.  If this is ever printed,
 		# we have a bug.
 		$configure_vars{'LIBTOOL'} = 'BUG';
@@ -2811,9 +2817,9 @@ sub handle_ltlibraries
 
 	if (&variable_defined ($xlib . '_LDADD'))
 	{
-	    am_macro_error ($xlib . '_LDADD',
-			    "use `" . $xlib . "_LIBADD', not `"
-			    . $xlib . "_LDADD'");
+	    macro_error ($xlib . '_LDADD',
+			 "use `" . $xlib . "_LIBADD', not `"
+			 . $xlib . "_LDADD'");
 	}
 
 	# Make sure we at look at this.
@@ -2885,8 +2891,8 @@ sub check_typos
 	{
 	    if ($varname =~ /$primary$/ && ! $content_seen{$varname})
 	    {
-		am_macro_error ($varname,
-				"invalid unused variable name: `$varname'");
+		macro_error ($varname,
+			     "invalid unused variable name: `$varname'");
 	    }
 	}
     }
@@ -2966,8 +2972,8 @@ sub scan_texinfo_file
         $outfile = $1;
         if ($outfile =~ /\.(.+)$/ && $1 ne 'info')
           {
-            am_file_error ("$filename:$.",
-			   "output `$outfile' has unrecognized extension");
+            file_error ("$filename:$.",
+			"output `$outfile' has unrecognized extension");
             return;
           }
       }
@@ -3028,16 +3034,16 @@ sub scan_texinfo_file
 # Handle all Texinfo source; helper for handle_texinfo
 sub handle_texinfo_helper
 {
-    am_macro_error ('TEXINFOS',
-		    "`TEXINFOS' is an anachronism; use `info_TEXINFOS'")
+    macro_error ('TEXINFOS',
+		 "`TEXINFOS' is an anachronism; use `info_TEXINFOS'")
 	if &variable_defined ('TEXINFOS');
     return (0, '') if (! &variable_defined ('info_TEXINFOS')
 		       && ! &variable_defined ('html_TEXINFOS'));
 
     if (&variable_defined ('html_TEXINFOS'))
     {
-	am_macro_error ('html_TEXINFOS',
-			"HTML generation not yet supported");
+	macro_error ('html_TEXINFOS',
+		     "HTML generation not yet supported");
 	return (0, '');
     }
 
@@ -3223,7 +3229,7 @@ sub handle_texinfo
 # Handle any man pages.
 sub handle_man_pages
 {
-    am_macro_error ('MANS', "`MANS' is an anachronism; use `man_MANS'")
+    macro_error ('MANS', "`MANS' is an anachronism; use `man_MANS'")
 	if &variable_defined ('MANS');
 
     # Find all the sections in use.  We do this by first looking for
@@ -3328,8 +3334,8 @@ sub handle_tags
     }
     elsif (&variable_defined ('TAGS_DEPENDENCIES'))
     {
-	am_macro_error ('TAGS_DEPENDENCIES',
-			"doesn't make sense to define `TAGS_DEPENDENCIES' without sources or `ETAGS_ARGS'");
+	macro_error ('TAGS_DEPENDENCIES',
+		     "doesn't make sense to define `TAGS_DEPENDENCIES' without sources or `ETAGS_ARGS'");
     }
     else
     {
@@ -3541,12 +3547,12 @@ sub handle_subdirs
 
 	if (! -d $am_relative_dir . '/' . $dir)
 	{
-	    am_macro_error ('SUBDIRS',
-			    "required directory $am_relative_dir/$dir does not exist");
+	    macro_error ('SUBDIRS',
+			 "required directory $am_relative_dir/$dir does not exist");
 	    next;
 	}
 
-	am_macro_error ('SUBDIRS', "directory should not contain `/'")
+	macro_error ('SUBDIRS', "directory should not contain `/'")
 	    if $dir =~ /\//;
     }
 
@@ -3827,8 +3833,8 @@ sub handle_configure
     &define_variable ('mkinstalldirs',
 		      ('$(SHELL) ' . $config_aux_dir . '/mkinstalldirs'));
 
-    am_macro_error ('CONFIG_HEADER',
-		    "`CONFIG_HEADER' is an anachronism; now determined from `$configure_ac'")
+    macro_error ('CONFIG_HEADER',
+		 "`CONFIG_HEADER' is an anachronism; now determined from `$configure_ac'")
 	if &variable_defined ('CONFIG_HEADER');
 
     my $config_header = '';
@@ -3919,8 +3925,8 @@ sub handle_configure
 	if ($local eq 'stamp-h')
 	{
 	    # FIXME: allow real filename.
-	    am_file_error ($ac_config_files_location,
-			   'stamp-h should not appear in AC_OUTPUT');
+	    file_error ($ac_config_files_location,
+			'stamp-h should not appear in AC_OUTPUT');
 	    next;
 	}
 
@@ -3965,17 +3971,16 @@ sub handle_gettext
 
     if (! &variable_defined ('SUBDIRS'))
     {
-	&am_conf_error
-	    ("AM_GNU_GETTEXT used but SUBDIRS not defined");
+	conf_error ("AM_GNU_GETTEXT used but SUBDIRS not defined");
 	return;
     }
 
     my @subdirs = &variable_value_as_list_recursive ('SUBDIRS', 'all');
-    am_macro_error ('SUBDIRS',
-		    "AM_GNU_GETTEXT used but `po' not in SUBDIRS")
+    macro_error ('SUBDIRS',
+		 "AM_GNU_GETTEXT used but `po' not in SUBDIRS")
 	if ! grep ('po', @subdirs);
-    am_macro_error ('SUBDIRS',
-		    "AM_GNU_GETTEXT used but `intl' not in SUBDIRS")
+    macro_error ('SUBDIRS',
+		 "AM_GNU_GETTEXT used but `intl' not in SUBDIRS")
 	if ! grep ('intl', @subdirs);
 
     require_file ($ac_gettext_location, $GNU, 'ABOUT-NLS');
@@ -3990,8 +3995,8 @@ sub handle_footer
       if variable_value ('SOURCES');
 
 
-    am_target_error ('.SUFFIXES',
-		    "use variable `SUFFIXES', not target `.SUFFIXES'")
+    target_error ('.SUFFIXES',
+		  "use variable `SUFFIXES', not target `.SUFFIXES'")
       if target_defined ('.SUFFIXES');
 
     # Note: AIX 4.1 /bin/make will fail if any suffix rule appears
@@ -4202,23 +4207,23 @@ sub handle_factored_dependencies
 	{
 	    my $x = $utarg;
 	    $x =~ s/(data|exec)-//;
-	    am_target_error ($utarg, "use `$x', not `$utarg'");
+	    target_error ($utarg, "use `$x', not `$utarg'");
 	}
     }
 
     if (&target_defined ('install-local'))
     {
-	am_target_error ('install-local',
-			"use `install-data-local' or `install-exec-local', "
-			. "not `install-local'");
+	target_error ('install-local',
+		      "use `install-data-local' or `install-exec-local', "
+		      . "not `install-local'");
     }
 
     if (!defined $options{'no-installinfo'}
 	&& &target_defined ('install-info-local'))
     {
-	am_target_error ('install-info-local',
-			"`install-info-local' target defined but "
-			. "`no-installinfo' option not in use");
+	target_error ('install-info-local',
+		      "`install-info-local' target defined but "
+		      . "`no-installinfo' option not in use");
     }
 
     # Install the -local hooks.
@@ -4285,8 +4290,8 @@ sub handle_tests
     {
 	foreach my $c ('DEJATOOL', 'RUNTEST', 'RUNTESTFLAGS')
 	{
-	    am_macro_error ($c,
-			    "`$c' defined but `dejagnu' not in `AUTOMAKE_OPTIONS'")
+	    macro_error ($c,
+			 "`$c' defined but `dejagnu' not in `AUTOMAKE_OPTIONS'")
 	      if &variable_defined ($c);
 	}
     }
@@ -4355,8 +4360,8 @@ sub handle_java
 
 	if (defined $dir)
 	{
-	    am_macro_error ($curs . '_JAVA',
-			    "multiple _JAVA primaries in use");
+	    macro_error ($curs . '_JAVA',
+			 "multiple _JAVA primaries in use");
 	}
 	$dir = $curs;
     }
@@ -4375,8 +4380,8 @@ sub handle_minor_options
 	    if ($package_version !~ /^$GNITS_VERSION_PATTERN$/)
 	    {
 		# FIXME: allow real filename.
-		&am_file_error ($package_version_location,
-				"version `$package_version' doesn't follow Gnits standards");
+		file_error ($package_version_location,
+			    "version `$package_version' doesn't follow Gnits standards");
 	    }
 	    elsif (defined $1 && -f 'README-alpha')
 	    {
@@ -4697,7 +4702,7 @@ sub scan_one_autoconf_file
 	    {
 		$hint = '; ' . $obsolete_macros{$1};
 	    }
-	    &am_file_error ($here, "`$1' is obsolete$hint");
+	    file_error ($here, "`$1' is obsolete$hint");
 	}
 
 	# Process the AC_OUTPUT and AC_CONFIG_FILES macros.
@@ -4722,8 +4727,8 @@ sub scan_one_autoconf_file
 		&& scalar keys %make_list == 0
 		&& @other_input_files == 0)
 	    {
-		am_file_error ($ac_config_files_location,
-			       "no files mentioned in `$in_ac_output'");
+		file_error ($ac_config_files_location,
+			    "no files mentioned in `$in_ac_output'");
 		exit 1;
 	    }
 	}
@@ -4753,7 +4758,7 @@ sub scan_one_autoconf_file
 	if (/A([CM])_CONFIG_HEADERS?\s*\((.*)\)/
 	    && $2 ne '[$1]')
 	{
-	    &am_file_error ($here,
+	    file_error ($here,
 	       "`automake requires `AM_CONFIG_HEADER', not `AC_CONFIG_HEADER'")
 	      if $1 eq 'C';
 
@@ -4810,7 +4815,7 @@ sub scan_one_autoconf_file
 	{
 	    $configure_vars{'LEX'} = $here;
 	    $seen_prog_lex = $here;
- 	    &am_file_warning ($here,
+ 	    file_warning ($here,
 		   "automake requires `AM_PROG_LEX', not `AC_PROG_LEX'");
 	}
 
@@ -4874,7 +4879,7 @@ sub scan_one_autoconf_file
 
 	    # if (/AM_PROG_LIBTOOL/)
 	    # {
-	    # 	&am_file_warning ($here, "`AM_PROG_LIBTOOL' is obsolete, use `AC_PROG_LIBTOOL' instead");
+	    # 	file_warning ($here, "`AM_PROG_LIBTOOL' is obsolete, use `AC_PROG_LIBTOOL' instead");
 	    # }
 	    $seen_libtool = $here;
 	    $libtool_location = $here;
@@ -4943,7 +4948,7 @@ sub scan_autoconf_files
 
     @configure_input_files = sort keys %make_list;
 
-    &am_conf_error ("`AM_INIT_AUTOMAKE' must be used")
+    conf_error ("`AM_INIT_AUTOMAKE' must be used")
 	if ! $seen_init_automake;
 
     # Look for some files we need.  Always check for these.  This
@@ -4976,7 +4981,7 @@ sub check_cygnus
     $options{'no-dependencies'} = 1;
     $use_dependencies = 0;
 
-    am_conf_error ("`AM_MAINTAINER_MODE' required when --cygnus specified")
+    conf_error ("`AM_MAINTAINER_MODE' required when --cygnus specified")
       if !$seen_maint_mode;
 }
 
@@ -4994,15 +4999,15 @@ sub check_gnu_standards
     if ($strictness >= $GNU
 	&& defined $options{'no-installman'})
     {
-	am_macro_error ('AUTOMAKE_OPTIONS',
-			"option `no-installman' disallowed by GNU standards");
+	macro_error ('AUTOMAKE_OPTIONS',
+		     "option `no-installman' disallowed by GNU standards");
     }
 
     if ($strictness >= $GNU
 	&& defined $options{'no-installinfo'})
     {
-	am_macro_error ('AUTOMAKE_OPTIONS',
-			"option `no-installinfo' disallowed by GNU standards");
+	macro_error ('AUTOMAKE_OPTIONS',
+		     "option `no-installinfo' disallowed by GNU standards");
     }
 }
 
@@ -5046,7 +5051,7 @@ sub lang_c_rewrite
     if (defined $options{'ansi2knr'} && $base =~ /_$/)
     {
 	# FIXME: include line number in error.
-	&am_error ("C source file `$base.c' would be deleted by ansi2knr rules");
+	am_error ("C source file `$base.c' would be deleted by ansi2knr rules");
     }
 
     my $r = $LANG_PROCESS;
@@ -5060,10 +5065,10 @@ sub lang_c_rewrite
 	    # Only give error once.
 	    $seen_cc_c_o = 1;
 	    # FIXME: line number.
-	    &am_error ("C objects in subdir but `AM_PROG_CC_C_O' not in `$configure_ac'");
+	    am_error ("C objects in subdir but `AM_PROG_CC_C_O' not in `$configure_ac'");
 	}
 
-	&require_conf_file ($FOREIGN, 'compile');
+	require_config_file ($FOREIGN, 'compile');
     }
 
     $de_ansi_files{$base} = 1;
@@ -5269,8 +5274,8 @@ sub lang_yacc_finish
 
     if (&variable_defined ('YACCFLAGS'))
     {
-	am_macro_error ('YACCFLAGS',
-			"`YACCFLAGS' obsolete; use `YFLAGS' instead");
+	macro_error ('YACCFLAGS',
+		     "`YACCFLAGS' obsolete; use `YFLAGS' instead");
     }
 
     if (count_files_for_language ('yacc') > 1)
@@ -5639,7 +5644,7 @@ sub cond_stack_if ($$$)
 {
   my ($negate, $cond, $where) = @_;
 
-  am_file_error ($where, "$cond does not appear in AM_CONDITIONAL")
+  file_error ($where, "$cond does not appear in AM_CONDITIONAL")
     if ! $configure_cond{$cond} && $cond !~ /^TRUE|FALSE$/;
 
   $cond = "${cond}_TRUE"
@@ -5662,7 +5667,7 @@ sub cond_stack_else ($$$)
 
   if (! @cond_stack)
     {
-      am_file_error ($where, "else without if");
+      file_error ($where, "else without if");
       return;
     }
 
@@ -5676,9 +5681,9 @@ sub cond_stack_else ($$$)
       $cond = condition_negate ($cond)
 	if $negate;
 
-      am_file_error ($where,
-		     "else reminder ($negate$cond) incompatible with "
-		     . "current conditional: $cond_stack[$#cond_stack]")
+      file_error ($where,
+		  "else reminder ($negate$cond) incompatible with "
+		  . "current conditional: $cond_stack[$#cond_stack]")
 	if $cond_stack[$#cond_stack] ne $cond;
     }
 
@@ -5696,7 +5701,7 @@ sub cond_stack_endif ($$$)
 
   if (! @cond_stack)
     {
-      am_file_error ($where, "endif without if: $negate$cond");
+      file_error ($where, "endif without if: $negate$cond");
       return;
     }
 
@@ -5709,9 +5714,9 @@ sub cond_stack_endif ($$$)
       $cond = condition_negate ($cond)
 	if $negate;
 
-      am_file_error ($where,
-		     "endif reminder ($negate$cond) incompatible with "
-		     . "current conditional: $cond_stack[$#cond_stack]")
+      file_error ($where,
+		  "endif reminder ($negate$cond) incompatible with "
+		  . "current conditional: $cond_stack[$#cond_stack]")
 	if $cond_stack[$#cond_stack] ne $cond;
     }
 
@@ -5757,7 +5762,7 @@ sub check_ambiguous_conditional ($$)
        }
        if ($message)
        {
-	   am_macro_error ($var, $message);
+	   macro_error ($var, $message);
 	   macro_dump ($var);
        }
    }
@@ -5771,7 +5776,7 @@ sub macro_define ($$$$$$)
 {
   my ($var, $var_is_am, $type, $cond, $value, $where) = @_;
 
-  am_file_error ($where, "bad macro name `$var'")
+  file_error ($where, "bad macro name `$var'")
     if $var !~ /$MACRO_PATTERN/o;
 
   $cond ||= 'TRUE';
@@ -5783,16 +5788,16 @@ sub macro_define ($$$$$$)
     {
       if (defined $var_type{$var} && $var_type{$var} ne $type)
 	{
-	  am_macro_error ($var,
-			 ("$var was set with `$var_type{$var}=' "
-			  . "and is now set with `$type='"));
+	  macro_error ($var,
+		       ("$var was set with `$var_type{$var}=' "
+			. "and is now set with `$type='"));
 	}
     }
   else
     {
       if (!defined $var_type{$var} && $type eq '+')
 	{
-	  am_macro_error ($var, "$var must be set with `=' before using `+='");
+	  macro_error ($var, "$var must be set with `=' before using `+='");
 	}
     }
   $var_type{$var} = $type;
@@ -5947,7 +5952,7 @@ sub variable_defined ($$)
       {
 	if (defined $targets{$var})
 	  {
-	    am_macro_error ($var, "`$var' is a target; expected a variable")
+	    macro_error ($var, "`$var' is a target; expected a variable")
 	  }
 	# The variable is not defined
 	return 0;
@@ -6066,7 +6071,7 @@ sub variable_conditions_recursive_sub
 
     if (defined $vars_scanned{$var})
     {
-	am_macro_error ($parent, "variable `$var' recursively defined");
+	macro_error ($parent, "variable `$var' recursively defined");
 	return ();
     }
     $vars_scanned{$var} = 1;
@@ -6253,13 +6258,13 @@ sub check_variable_defined_unconditionally ($$)
 
 	if ($parent)
 	{
-	    am_macro_error ($parent,
-			    "warning: automake does not support conditional definition of $var in $parent");
+	    macro_error ($parent,
+			 "warning: automake does not support conditional definition of $var in $parent");
 	}
 	else
 	{
-	    am_macro_error ($parent,
-			    "warning: automake does not support $var being defined conditionally");
+	    macro_error ($parent,
+			 "warning: automake does not support $var being defined conditionally");
 	}
     }
 }
@@ -6363,11 +6368,11 @@ sub variable_value_as_list
     {
         if (defined $targets{$var})
 	  {
-	    am_macro_error ($var, "`$var' is a target; expected a variable");
+	    macro_error ($var, "`$var' is a target; expected a variable");
 	  }
 	else
 	  {
-	    am_macro_error ($parent, "variable `$var' not defined");
+	    macro_error ($parent, "variable `$var' not defined");
 	  }
     }
 
@@ -6419,18 +6424,18 @@ sub variable_value_as_list_recursive_worker
     {
         if (defined $targets{$var})
 	  {
-	    am_macro_error ($var, "`$var' is a target; expected a variable");
+	    macro_error ($var, "`$var' is a target; expected a variable");
 	  }
 	else
 	  {
-	    am_macro_error ($parent, "variable `$var' not defined");
+	    macro_error ($parent, "variable `$var' not defined");
 	  }
     }
     elsif (defined $vars_scanned{$var})
     {
 	# `vars_scanned' is a global we use to keep track of which
 	# variables we've already examined.
-	am_macro_error ($parent, "variable `$var' recursively defined");
+	macro_error ($parent, "variable `$var' recursively defined");
     }
     elsif ($cond eq 'all')
     {
@@ -6632,8 +6637,8 @@ sub rule_define ($$$$)
       # The no-exeext option enables this feature.
       if (! defined $options{'no-exeext'})
       {
-	  am_macro_error ($noexe,
-			  "deprecated feature: `$noexe' overrides `$noexe\$(EXEEXT)'\nchange your target to read `$noexe\$(EXEEXT)'");
+	  macro_error ($noexe,
+		       "deprecated feature: `$noexe' overrides `$noexe\$(EXEEXT)'\nchange your target to read `$noexe\$(EXEEXT)'");
       }
       # Don't define.
       return 0;
@@ -6644,8 +6649,8 @@ sub rule_define ($$$$)
 	  ? ! defined $target_conditional{$target}
 	  : defined $target_conditional{$target}))
   {
-      am_target_error ($target,
-		      "$target defined both conditionally and unconditionally");
+      target_error ($target,
+		    "$target defined both conditionally and unconditionally");
   }
 
   # Value here doesn't matter; for targets we only note existence.
@@ -6767,7 +6772,7 @@ sub read_am_file ($)
 	{
 	    # Stick a single white line before the incoming macro or rule.
 	    $spacing = "\n";
-	    am_file_error ($here, "blank line following trailing backslash")
+	    file_error ($here, "blank line following trailing backslash")
 		if $saw_bk;
 	}
 	elsif (/$COMMENT_PATTERN/o)
@@ -6775,7 +6780,7 @@ sub read_am_file ($)
 	    # Stick comments before the incoming macro or rule.
 	    $comment .= $spacing . $_;
 	    $spacing = '';
-	    am_file_error ($here, "comment following trailing backslash")
+	    file_error ($here, "comment following trailing backslash")
 		if $saw_bk;
 	}
 	elsif ($saw_bk)
@@ -6891,7 +6896,7 @@ sub read_am_file ($)
 	    $output_trailer .= &make_condition  (@cond_stack);
 	    $output_trailer .= $_;
 	    $comment = $spacing = '';
-	    am_file_error ($here, "`#' comment at start of rule is unportable")
+	    file_error ($here, "`#' comment at start of rule is unportable")
 		if $_ =~ /^\t\s*\#/;
 	}
 
@@ -7120,9 +7125,9 @@ sub file_contents_internal ($$%)
     foreach (make_paragraphs ($file, %transform))
     {
         # Sanity checks.
-	am_file_error ($file, "blank line following trailing backslash:\n$_")
+	file_error ($file, "blank line following trailing backslash:\n$_")
 	  if /\\$/;
-	am_file_error ($file, "comment following trailing backslash:\n$_")
+	file_error ($file, "comment following trailing backslash:\n$_")
 	  if /\\#/;
 
  	if (/^$/)
@@ -7245,7 +7250,7 @@ sub file_contents_internal ($$%)
  	elsif (/$ASSIGNMENT_PATTERN/mso)
  	{
 	    my ($var, $type, $val) = ($1, $2, $3);
- 	    am_file_error ($file, "macro `$var' with trailing backslash")
+ 	    file_error ($file, "macro `$var' with trailing backslash")
 	      if /\\$/;
 
 	    # Accumulating variables must not be output.
@@ -7368,8 +7373,8 @@ sub am_primary_prefixes
 		# primary, so we explicitly allow it.
 		if (! defined $configure_vars{$varname})
 		{
-		    &am_line_error ($varname,
-				    "invalid variable `$varname': `dist' is forbidden");
+		    line_error ($varname,
+				"invalid variable `$varname': `dist' is forbidden");
 		}
 	    }
 	    elsif (! defined $valid{$X} && ! &variable_defined ("${X}dir"))
@@ -7379,8 +7384,8 @@ sub am_primary_prefixes
 		# primary, so we explicitly allow it.
 		if (! defined $configure_vars{$varname})
 		{
-		    &am_line_error ($varname,
-				    "invalid variable `$varname'");
+		    line_error ($varname,
+				"invalid variable `$varname'");
 		}
 	    }
 	    else
@@ -7441,7 +7446,7 @@ sub am_install_var
     # allow `JAVA', as it is customarily used to mean the Java
     # interpreter.  This is but one of several Java hacks.  Similarly,
     # `PYTHON' is customarily used to mean the Python interpreter.
-    am_macro_error ($primary, "`$primary' is an anachronism")
+    macro_error ($primary, "`$primary' is an anachronism")
 	if &variable_defined ($primary)
 	    && ($primary ne 'JAVA' && $primary ne 'PYTHON');
 
@@ -7502,8 +7507,8 @@ sub am_install_var
 		    if (! $warned_about_extra)
 		      {
 			$warned_about_extra = 1;
-			am_macro_error ($one_name,
-					"`$one_name' contains configure substitution, but shouldn't");
+			macro_error ($one_name,
+				     "`$one_name' contains configure substitution, but shouldn't");
 		      }
 		  }
 		# Check here to make sure variables defined in
@@ -7615,8 +7620,8 @@ sub am_install_var
 
     if ($require_extra && ! &variable_defined ('EXTRA_' . $primary))
     {
-	am_macro_error ($require_extra,
-			"`$require_extra' contains configure substitution, but `EXTRA_$primary' not defined");
+	macro_error ($require_extra,
+		     "`$require_extra' contains configure substitution, but `EXTRA_$primary' not defined");
     }
 
     # Push here because PRIMARY might be configure time determined.
@@ -7697,7 +7702,7 @@ sub maybe_push_required_file
 # Must set require_file_paths before calling this function.
 # require_file_paths is set to hold a single directory (the one in
 # which the first file was found) before return.
-sub require_file_internal
+sub require_file_internal ($$@)
 {
     my ($where, $mystrict, @files) = @_;
 
@@ -7822,94 +7827,66 @@ sub require_file_internal
 
 		if ($suppress)
 		{
-		    if ($is_configure)
-		    {
-			# FIXME: allow actual file to be specified.
-			am_file_warning ("$configure_ac:$line",
-					 "$message$trailer");
-		    }
-		    else
-		    {
-			&am_line_warning ($line, "$message$trailer");
-		    }
+		  file_warning ($where, "$message$trailer");
 		}
 		else
 		{
-		    if ($is_configure)
-		    {
-			# FIXME: allow actual file to be specified.
-			am_file_error ("$configure_ac:$line",
-				       "$message$trailer");
-		    }
-		    else
-		    {
-			am_line_error ($line, "$message$trailer");
-		    }
+		  file_error ($where, "$message$trailer");
 		}
 	    }
 	}
     }
 }
 
-# Like require_file_with_line, but error messages refer to
-# configure.ac, not the current Makefile.am.
-sub require_file_with_conf_line
+# &require_file ($WHERE, $MYSTRICT, @FILES)
+# -----------------------------------------
+sub require_file ($$@)
 {
+    my ($where, $mystrict, @files) = @_;
     @require_file_paths = $relative_dir;
-    &require_file_internal (1, @_);
+    require_file_internal ($where, $mystrict, @files);
 }
 
-sub require_file_with_line
+# &require_file_with_macro ($MACRO, $MYSTRICT, @FILES)
+# ----------------------------------------------------
+sub require_file_with_macro ($$@)
 {
-    @require_file_paths = $relative_dir;
-    &require_file_internal (0, @_);
+    my ($macro, $mystrict, @files) = @_;
+    require_file ($var_location{$macro}, $mystrict, @files);
 }
 
-sub require_file
-{
-    @require_file_paths = $relative_dir;
-    &require_file_internal (0, '', @_);
-}
 
-# Require an auxiliary file.
+# &require_conf_file ($WHERE, $MYSTRICT, @FILES)
+# ----------------------------------------------
 # Looks in configuration path, as specified by AC_CONFIG_AUX_DIR.
-sub require_aux_file_with_line
+sub require_conf_file ($$@)
 {
-    my $from = shift;  # 1 for configure.ac, 0 for Makefile.am
-    my $line = shift;
+    my ($where, $mystrict, @files) = @_;
     @require_file_paths = @config_aux_path;
-    &require_file_internal ($from, $line, @_);
+    require_file_internal ($where, $mystrict, @files);
     my $dir = $require_file_paths[0];
-    # &require_file_internal pruned the file path to the
-    # exact directory where the file is lying.  Update
-    # @config_aux_path to speed up future uses.
     @config_aux_path = @require_file_paths;
      # Avoid unsightly '/.'s.
     $config_aux_dir = '$(top_srcdir)' . ($dir eq '.' ? "" : "/$dir");
 }
 
-# Assumes that the line number is in Makefile.am.
-sub require_conf_file_with_line
+
+# &require_config_file ($MYSTRICT, @FILES)
+# ----------------------------------------
+# Require a file that is also required by Autoconf.  Looks in
+# configuration path, as specified by AC_CONFIG_AUX_DIR.
+sub require_config_file ($@)
 {
-    &require_aux_file_with_line (0, @_);
+    my ($mystrict, @files) = @_;
+    require_conf_file ($configure_ac, $mystrict, @files);
 }
 
-# File required from a Makefile.am.  No line number available.
-sub require_conf_file
+# &require_conf_file_with_macro ($MACRO, $MYSTRICT, @FILES)
+# ---------------------------------------------------------
+sub require_conf_file_with_macro ($$@)
 {
-    &require_conf_file_with_line ('', @_);
-}
-
-# Assumes that the line number is in configure.ac.
-sub require_conf_file_with_conf_line
-{
-    &require_aux_file_with_line (1, @_);
-}
-
-# Require a file that is also required by Autoconf.  No line number available.
-sub require_config_file
-{
-    &require_conf_file_with_conf_line ('', @_);
+    my ($macro, $mystrict, @files) = @_;
+    require_conf_file ($var_location{$macro}, $mystrict, @files);
 }
 
 ################################################################
@@ -8045,12 +8022,12 @@ sub unquote_m4_arg
 
 ################################################################
 
-# am_print_error ($LEADER, @ARGS)
+# print_error ($LEADER, @ARGS)
 # -------------------------------
 # Do the work of printing the error message.  Join @ARGS with spaces,
 # then split at newlines and add $LEADER to each line.  Uses `warn' to
 # print message.  Set exit status.
-sub am_print_error
+sub print_error
 {
     my ($leader, @args) = @_;
     my $text = join (' ', @args);
@@ -8060,47 +8037,48 @@ sub am_print_error
     $exit_status = 1;
 }
 
+
 # Print an error message and set exit status.
-sub am_error
+sub am_error (@)
 {
-    am_print_error ("$me: ${am_file}.am: ", @_);
+    print_error ("$me: ${am_file}.am: ", @_);
 }
 
-# am_file_error ($FILE, @ARGS)
-# ----------------------------
-sub am_file_error ($@)
+
+# &file_error ($FILE, @ARGS)
+# --------------------------
+sub file_error ($@)
 {
     my ($file, @args) = @_;
-
-    am_print_error ("$file: ", @args);
+    print_error ("$file: ", @args);
 }
 
 
-# &am_macro_error ($MACRO, @ARGS)
-# -------------------------------
+# &macro_error ($MACRO, @ARGS)
+# ----------------------------
 # Report an error, @ARGS, about $MACRO.
-sub am_macro_error ($@)
+sub macro_error ($@)
 {
     my ($macro, @args) = @_;
-    am_file_error ($var_location{$macro}, @args);
+    file_error ($var_location{$macro}, @args);
 }
 
 
-# &am_target_error ($TARGET, @ARGS)
-# ---------------------------------
+# &target_error ($TARGET, @ARGS)
+# ------------------------------
 # Report an error, @ARGS, about the rule $TARGET.
-sub am_target_error ($@)
+sub target_error ($@)
 {
     my ($target, @args) = @_;
-    am_file_error ($targets{$target}, @args);
+    file_error ($targets{$target}, @args);
 }
 
 
-# &am_line_error ($SYMBOL or $LINE, @ARGS)
-# ----------------------------------------
+# &line_error ($SYMBOL or $LINE, @ARGS)
+# -------------------------------------
 # Report an error about $SYMBOL.  The error message is composed of the
 # @ARGS, and try to find the location of the error of $SYMBOL.
-sub am_line_error ($@)
+sub line_error ($@)
 {
     my ($symbol, @args) = @_;
 
@@ -8109,26 +8087,26 @@ sub am_line_error ($@)
 	if ($symbol =~ /^\d+$/)
 	{
 	    # SYMBOL is a line number, then it must be a Makefile.am.
-	    am_file_error ("${am_file}.am:$symbol", @args);
+	    file_error ("${am_file}.am:$symbol", @args);
 	}
 	elsif (defined $configure_vars{$symbol})
 	{
 	    # SYMBOL is a variable defined in configure.ac, so add the
 	    # appropriate line number.
-	    am_file_error ($configure_vars{$symbol}, @args);
+	    file_error ($configure_vars{$symbol}, @args);
 	}
 	elsif (defined $var_location{$symbol})
 	{
-	    croak "use am_macro_error for macros: $symbol\n";
+	    croak "use macro_error for macro: $symbol\n";
 	}
 	elsif (defined $targets{$symbol})
 	{
-	    croak "use am_target_error for targets: $symbol\n";
+	    croak "use target_error for macros: $symbol\n";
 	}
 	else
 	{
 	    # Couldn't find the line number.
-	    am_file_error ("${am_file}.am", @args);
+	    file_error ("${am_file}.am", @args);
 	}
     }
     else
@@ -8138,31 +8116,24 @@ sub am_line_error ($@)
 }
 
 # Like am_error, but while scanning configure.ac.
-sub am_conf_error
+sub conf_error
 {
     # FIXME: can run in subdirs.
-    am_print_error ("$me: $configure_ac: ", @_);
+    print_error ("$me: $configure_ac: ", @_);
 }
 
+# &file_warning ($FILE, @ARGS)
+# ----------------------------
 # Warning message with line number referring to configure.ac.
 # Does not affect exit_status
-sub am_file_warning (@)
+sub file_warning ($@)
 {
-    my $saved_exit_status = $exit_status;
-    my $sig = $SIG{'__WARN__'};
-    $SIG{'__WARN__'} = 'DEFAULT';
-    am_file_error (@_);
-    $exit_status = $saved_exit_status;
-    $SIG{'__WARN__'} = $sig;
-}
+    my ($file, @args) = @_;
 
-# Like am_line_error, but doesn't affect exit status.
-sub am_line_warning (@)
-{
     my $saved_exit_status = $exit_status;
     my $sig = $SIG{'__WARN__'};
     $SIG{'__WARN__'} = 'DEFAULT';
-    am_line_error (@_);
+    file_error ($file, @args);
     $exit_status = $saved_exit_status;
     $SIG{'__WARN__'} = $sig;
 }
