@@ -1,4 +1,4 @@
-# Copyright (C) 2003  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2004  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -178,6 +178,16 @@ sub append ($$$)
   $self->{'comment'} .= $comment;
 
   my $val = $self->{'value'};
+
+  # Strip comments from augmented variables.  This is so that
+  #   VAR = foo # com
+  #   VAR += bar
+  # does not become
+  #   VAR = foo # com bar
+  # Furthermore keeping `#' would not be portable if the variable is
+  # output on multiple lines.
+  $val =~ s/ ?#.*//;
+
   if (chomp $val)
     {
       # Insert a backslash before a trailing newline.
