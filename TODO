@@ -1,3 +1,20 @@
+* Document why putting @FOO@ in _SOURCES doesn't work.
+  Make it an error when the user tries to do this
+  This must be done for 1.5
+
+* serious bug.  this doesn't work:
+	.c.o: ; ...
+	foo.o: sub/foo.c
+  why did I think it did work?
+
+* Sometimes we can warn about a missing `compile' script twice.
+
+* A target named `INSTALL' will screw things up.
+  It shouldn't.
+
+* Scan configure.in using the same trick that autoheader uses.
+  This will be much more reliable.
+
 * Test subdir-objects option with yacc, lex, ansi2knr
   Our locking scheme won't prevent a parallel make from losing
   if there are two `bar.o' files and the timing is just right
@@ -7,9 +24,22 @@
   try to find a losing compiler and see if it really works.
   (actually: hack config.cache and do it)
 
+* We're using `$<' in explicit rules when using per-exe flags
+  per-exe flags don't work for CPPFLAGS/YFLAGS/LFLAGS.  Fix.
+  LIBOBJS shouldn't be used when there are per-exe flags (?)
+
+* Need a way to pass flags to makeinfo
+  esp --no-split
+
+* test `make clean' with subdir-objects
+
 * Test nodist_SOURCES with lex, yacc, etc.
 
 * Support subdir-objects with fortran
+
+* Allow creation of Java .zip/.jar files in natural way
+  If you are building a compiled Java library, then the .zip/.jar
+  ought to be made automatically.
 
 * Run automake before libtool.  It will report an error but
   still won't put the file into the disty.  This is wrong.
@@ -48,16 +78,13 @@
 
 * `distcheck' and `dist' should depend on `all'
 
-* Document why putting @FOO@ in _SOURCES doesn't work.
-  Make it an error when the user tries to do this
-
 * Add code to generate foo-config script like gnome, gtk
 
 * `DEFS += foo' won't work.
   That's because DEFS is defined in header-vars.am, which is read
   after the user's Makefile.am.
   This will be a problem for any macro defined internally
-    [ fixing this will probabl fix the nasty `exeext redefines
+    [ fixing this will probably fix the nasty `exeext redefines
       foo_PROGRAMS' hack that is in there right now ]
   In some cases this is unfixable.  In these cases we should give
   an error.  This can be done by keeping track of whether a macro
@@ -100,6 +127,8 @@
 * Allow per-object cflags:
 	bin_PROGRAMS = foo
 	foo_CFLAGS = -DFOO
+* per-object compiler flags do not apply to libobjs
+  -> give error in this case
 * At the same time, allow sources in subdirs:
 	foo_SOURCES = x/y.c
   This requires `mkdir x' at build time

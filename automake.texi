@@ -502,7 +502,6 @@ when making macro references.  For example, if your program is named
 @code{sniff-glue}, the derived variable name would be
 @code{sniff_glue_SOURCES}, not @code{sniff-glue_SOURCES}.
 
-
 @node Examples, Invoking Automake, Generalities, Top
 @chapter Some example packages
 
@@ -1059,6 +1058,7 @@ Autoconf Manual}.
 @itemx AC_FUNC_MEMCMP
 @itemx AC_STRUCT_ST_BLOCKS
 @itemx AC_FUNC_FNMATCH
+@itemx AC_FUNC_MKTIME
 @itemx AM_FUNC_STRTOD
 @itemx AC_REPLACE_FUNCS
 @itemx AC_REPLACE_GNU_GETOPT
@@ -1080,6 +1080,7 @@ Functions, , Particular Function Checks, autoconf, The Autoconf Manual}.
 @cvindex AC_REPLACE_GNU_GETOPT
 @cvindex AM_FUNC_STRTOD
 @cvindex AM_WITH_REGEX
+@cvindex AC_FUNC_MKTIME
 
 @item LIBOBJS
 Automake will detect statements which put @file{.o} files into
@@ -1282,11 +1283,6 @@ If the function @code{error_at_line} is not found, then add
 @file{error.o} to @code{LIBOBJS}.
 @cvindex AM_FUNC_ERROR_AT_LINE
 
-@item AM_FUNC_MKTIME
-Check for a working @code{mktime} function.  If not found, add
-@file{mktime.o} to @samp{LIBOBJS}.
-@cvindex AM_FUNC_MKTIME
-
 @item AM_FUNC_OBSTACK
 Check for the GNU obstacks code; if not found, add @file{obstack.o} to
 @samp{LIBOBJS}.
@@ -1450,15 +1446,19 @@ case of GNU @code{Inetutils}, you want to only build a subset of the
 entire package.  In your @file{Makefile.am} include:
 
 @example
-SUBDIRS = @@SUBDIRS@@
+SUBDIRS = @@MY_SUBDIRS@@
 @end example
 
 Then in your @file{configure.in} you can specify:
 
 @example
-SUBDIRS = "src doc lib po"
-AC_SUBST(SUBDIRS)
+MY_SUBDIRS = "src doc lib po"
+AC_SUBST(MY_SUBDIRS)
 @end example
+
+(Note that we don't use the variable name @code{SUBDIRS} in our
+@file{configure.in}; that would cause Automake to believe that every
+@file{Makefile.in} should recurse into the listed subdirectories.)
 
 The upshot of this is that Automake is tricked into building the package
 to take the subdirs, but doesn't actually bind that list until
@@ -1694,6 +1694,10 @@ determined by @code{configure}.  Again from @code{cpio}:
 @example
 libcpio_a_LIBADD = @@LIBOBJS@@ @@ALLOCA@@
 @end example
+
+In addition, sources for extra objects that will not exist until
+configure-time must be added to the @code{BUILT_SOURCES} variable
+(@pxref{Sources}).
 
 
 @node LIBOBJS, A Shared Library, A Library, Programs
@@ -2928,9 +2932,10 @@ dist-hook:
         cp -p $(srcdir)/random/a1 $(srcdir)/random/a2 $(distdir)/random
 @end example
 
-Automake also generates a @code{distcheck} target which can be help to
-ensure that a given distribution will actually work.  @code{distcheck}
-makes a distribution, and then tries to do a @code{VPATH} build.
+Automake also generates a @code{distcheck} target which can be of help
+to ensure that a given distribution will actually work.
+@code{distcheck} makes a distribution, and then tries to do a
+@code{VPATH} build.
 @trindex distcheck
 @c FIXME: document distcheck-hook here
 

@@ -32,6 +32,10 @@ AM_MISSING_PROG(AUTOMAKE, automake, $missing_dir)
 AM_MISSING_PROG(AUTOHEADER, autoheader, $missing_dir)
 AM_MISSING_PROG(MAKEINFO, makeinfo, $missing_dir)
 AM_MISSING_PROG(AMTAR, tar, $missing_dir)
+dnl Set install_sh for make dist
+install_sh="$missing_dir/install-sh"
+test -f "$install_sh" || install_sh="$missing_dir/install.sh"
+AC_SUBST(install_sh)
 AC_REQUIRE([AC_PROG_MAKE_SET])
 AC_REQUIRE([AM_DEP_TRACK])
 AC_REQUIRE([AM_SET_DEPDIR])
