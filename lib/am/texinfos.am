@@ -17,9 +17,12 @@
 ## 02111-1307, USA.
 .texi.info:
 ## We want to force the .info file to be built in srcdir.  This is
-## probably the simplest way.
-	cd $(srcdir) \
-	  && $(MAKEINFO) `echo $< | sed 's,.*/,,'`
+## probably the simplest way.  However, at Cygnus .info files are
+## always put into the build directory.  So at runtime we select which
+## rule to use.
+NOTCYGNUS	cd $(srcdir) \
+NOTCYGNUS	  && $(MAKEINFO) `echo $< | sed 's,.*/,,'`
+CYGNUS	$(MAKEINFO) $<
 
 .texi.dvi:
 	TEXINPUTS=$(srcdir):$$TEXINPUTS \
@@ -29,9 +32,12 @@
 
 .texinfo.info:
 ## We want to force the .info file to be built in srcdir.  This is
-## probably the simplest way.
-	cd $(srcdir) \
-	  && $(MAKEINFO) `echo $< | sed 's,.*/,,'`
+## probably the simplest way.  However, at Cygnus .info files are
+## always put into the build directory.  So at runtime we select which
+## rule to use.
+NOTCYGNUS	cd $(srcdir) \
+NOTCYGNUS	  && $(MAKEINFO) `echo $< | sed 's,.*/,,'`
+CYGNUS	$(MAKEINFO) $<
 
 .texinfo.dvi:
 	TEXINPUTS=$(srcdir):$$TEXINPUTS $(TEXI2DVI) $<
@@ -73,4 +79,17 @@ uninstall-info:
 	for file in $(INFO_DEPS); do \
 	  (cd $(infodir) && rm -f $$file $$file-[0-9] $$file-[0-9][0-9]); \
 	  test -z $ii || install-info --info-dir=$(infodir) --remove $$file; \
+	done
+
+dist-info:
+	for base in $(INFO_DEPS); do \
+## In Cygnus mode, allow info file to be in source or build dir.  In
+## other modes, allow only source dir.
+NOTCYGNUS	  d=$(srcdir); \
+CYGNUS	  if test -f $$base; then d=.; else d=$(srcdir); fi; \
+	  for file in `cd $$d && eval echo $$base*`; do \
+	    test -f $(distdir)/$$file \
+	    || ln $$d/$$file $(distdir)/$$file 2> /dev/null \\
+	    || cp -p $$d/$$file $(distdir)/$$file; \\
+	  done; \
 	done
