@@ -2904,14 +2904,20 @@ sub handle_aclocal_m4
 	# dependencies.
 	if (&variable_defined ('ACLOCAL_AMFLAGS'))
 	{
-	    local ($amdir);
+	    local ($examine_next, $amdir) = 0;
 	    foreach $amdir (&variable_value_as_list ('ACLOCAL_AMFLAGS', ''))
 	    {
-		if ($amdir =~ s/^-I//
-		    && $amdir !~ /^\//
-		    && -d $amdir)
+		if ($examine_next)
 		{
-		    push (@ac_deps, &my_glob ($am_dir . '/*.m4'));
+		    $examine_next = 0;
+		    if ($amdir !~ /^\// && -d $amdir)
+		    {
+			push (@ac_deps, &my_glob ($amdir . '/*.m4'));
+		    }
+		}
+		elsif ($amdir eq '-I')
+		{
+		    $examine_next = 1;
 		}
 	    }
 	}
