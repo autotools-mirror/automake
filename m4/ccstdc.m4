@@ -11,8 +11,7 @@
 # If the C compiler in not in ANSI C mode by default, try to add an option
 # to output variable @code{CC} to make it so.  This macro tries various
 # options that select ANSI C on some system or another.  It considers the
-# compiler to be in ANSI C mode if it defines @code{__STDC__} to 1 and
-# handles function prototypes correctly.
+# compiler to be in ANSI C mode if it handles function prototypes correctly.
 #
 # If you use this macro, you should check after calling it whether the C
 # compiler has been set to accept ANSI C; if not, the shell variable
@@ -39,18 +38,37 @@ for ac_arg in "" -qlanglvl=ansi -std1 "-Aa -D_HPUX_SOURCE" "-Xc -D__EXTENSIONS__
 do
   CC="$ac_save_CC $ac_arg"
   AC_TRY_COMPILE(
-[#if !defined(__STDC__) || __STDC__ != 1
-choke me
-#endif
-/* DYNIX/ptx V4.1.3 can't compile sys/stat.h with -Xc -D__EXTENSIONS__. */
-#ifdef _SEQUENT_
-# include <sys/types.h>
-# include <sys/stat.h>
-#endif
-], [
+[#include <stdarg.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+/* Most of the following tests are stolen from RCS 5.7's src/conf.sh.  */
+struct buf { int x; };
+FILE * (*rcsopen) (struct buf *, struct stat *, int);
+static char *e (p, i)
+     char **p;
+     int i;
+{
+  return p[i];
+}
+static char *f (char * (*g) (char **, int), char **p, ...)
+{
+  char *s;
+  va_list v;
+  va_start (v,p);
+  s = g (p, va_arg (v,int));
+  va_end (v);
+  return s;
+}
 int test (int i, double x);
 struct s1 {int (*f) (int a);};
-struct s2 {int (*f) (double a);};],
+struct s2 {int (*f) (double a);};
+int pairnames (int, char **, FILE *(*)(struct buf *, struct stat *, int), int, int);
+int argc;
+char **argv;
+], [
+return f (e, argv, 0) != argv[0]  ||  f (e, argv, 1) != argv[1];
+],
 [am_cv_prog_cc_stdc="$ac_arg"; break])
 done
 CC="$ac_save_CC"
