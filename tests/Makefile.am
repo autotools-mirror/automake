@@ -5,7 +5,7 @@ AUTOMAKE_OPTIONS = gnits
 TESTS = mdate.test vtexi.test acoutput.test instexec.test checkall.test \
 acoutnoq.test acouttbs.test libobj.test proginst.test acoutqnl.test \
 confincl.test spelling.test prefix.test badprog.test depend.test exdir.test \
-canon.test installsh.test
+canon.test installsh.test empty.test
 
 ## Maybe automake should distribute TESTS?  You tell me.
 EXTRA_DIST = defs $(TESTS)
