@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 2001, 2002, 2003  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -24,18 +24,23 @@
 required=gcc
 . ./defs || exit 1
 
-cat > configure.in << 'END'
-AC_INIT(f)
-AM_INIT_AUTOMAKE(nonesuch, nonesuch)
+cat >> configure.in << 'END'
 AM_PROG_CC_C_O
 AC_PROG_CC
-AC_OUTPUT(Makefile)
+AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
 AUTOMAKE_OPTIONS = subdir-objects
 bin_PROGRAMS = wish
 wish_SOURCES = generic/a.c
+
+test-all: all
+	test -f generic/$(am__dirstamp)
+test-mostlyclean: mostlyclean
+	test ! -f generic/a.o
+test-distclean: distclean
+	test ! -f generic/$(am__dirstamp)
 END
 
 # The ac-init file.
@@ -61,13 +66,9 @@ mkdir build
 cd build
 
 ../configure
-$MAKE
-
-$MAKE mostlyclean
-test -f generic/a.o && exit 1
-
-$MAKE distclean
-test -f generic/.dirstamp && exit 1
+$MAKE test-all
+$MAKE test-mostlyclean
+$MAKE test-distclean
 
 cd ..
 
