@@ -1629,6 +1629,11 @@ sub handle_languages
 
 			     'DERIVED-EXT' => $der_ext,
 
+			     # In this situation we know that the
+			     # object is in this directory, so
+			     # $(DEPDIR) is the correct location for
+			     # dependencies.
+			     'DEPBASE'   => '$(DEPDIR)/$*',
 			     'BASE'      => '$*',
 			     'SOURCE'    => '$<',
 			     'OBJ'       => '$@',
@@ -1647,6 +1652,14 @@ sub handle_languages
 	{
 	    my ($derived, $source, $obj, $myext) = split (' ', $file);
 
+	    # For any specially-generated object, we must respect the
+	    # ansi2knr setting so that we don't inadvertently try to
+	    # use the default rule.
+	    if ($lang->ansi && defined $options{'ansi2knr'})
+	    {
+		$myext = '$U' . $myext;
+	    }
+
 	    # We might see a given object twice, for instance if it is
 	    # used under different conditions.
 	    next if defined $seen_files{$obj};
@@ -1664,6 +1677,13 @@ sub handle_languages
 	    # We _need_ `-o' for per object rules.
 	    my $output_flag = $lang->output_flag || '-o';
 
+	    my $depbase = dirname ($obj);
+	    $depbase = ''
+		if $depbase eq '.';
+	    $depbase .= '/'
+		unless $depbase eq '';
+	    $depbase .= '$(DEPDIR)/' . basename ($obj);
+
 	    # Generate a transform which will turn suffix targets in
 	    # depend2.am into real targets for the particular objects we
 	    # are building.
@@ -1672,6 +1692,7 @@ sub handle_languages
 			     (%transform,
 			      'GENERIC'   => 0,
 
+			      'DEPBASE'   => $depbase,
 			      'BASE'      => $obj,
 			      'SOURCE'    => $source,
 			      # Use $myext and not `.o' here, in case
@@ -2042,12 +2063,9 @@ sub handle_single_transform_list ($$$$@)
                 # FIXME: check that $DIRECTORY is somewhere in the
                 # project
 
-                # We don't allow `..' in object file names for
-                # *any* source, not just Java.  For Java it just
-                # doesn't make sense, but in general it is
-                # a problem because we can't pick a good name for
-                # the .deps entry.
-                if ($object =~ /(\/|^)\.\.\//)
+		# For Java, the way we're handling it right now, a
+		# `..' component doesn't make sense.
+                if ($lang->name eq 'java' && $object =~ /(\/|^)\.\.\//)
                 {
                     am_error ("`$full' contains `..' component but should not");
                 }
@@ -2060,8 +2078,9 @@ sub handle_single_transform_list ($$$$@)
                 # If we're generating dependencies, we also want
                 # to make sure that the appropriate subdir of the
                 # .deps directory is created.
-		push (@dep_list, require_build_directory ('$(DEPDIR)/' . $directory))
-		    if ($use_dependencies);
+		push (@dep_list,
+		      require_build_directory ($directory . '/$(DEPDIR)'))
+		    if $use_dependencies;
             }
 
             &pretty_print_rule ($object . ':', "\t", @dep_list)
@@ -2075,7 +2094,8 @@ sub handle_single_transform_list ($$$$@)
             my $depfile = $object;
             $depfile =~ s/\.([^.]*)$/.P$1/;
             $depfile =~ s/\$\(OBJEXT\)$/o/;
-            $dep_files{'$(DEPDIR)/' . $depfile} = 1;
+            $dep_files{dirname ($depfile) . '/$(DEPDIR)/'
+			   . basename ($depfile)} = 1;
         }
     }
 

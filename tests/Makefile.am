@@ -252,6 +252,7 @@ pr2.test \
 pr204.test \
 pr211.test \
 pr220.test \
+pr224.test \
 pr229.test \
 pr243.test \
 pr266.test \
