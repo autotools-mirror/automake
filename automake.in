@@ -2000,26 +2000,32 @@ sub handle_texinfo
 
     # Handle location of texinfo.tex.
     local ($need_texi_file) = 0;
+    local ($texinfo_tex);
     if ($cygnus_mode)
     {
-	&define_variable ('TEXINFO_TEX',
-			  '$(top_srcdir)/../texinfo/texinfo.tex');
+	$texinfo_tex = '$(top_srcdir)/../texinfo/texinfo.tex';
+	&define_variable ('TEXINFO_TEX', $texinfo_tex);
+
     }
     elsif ($config_aux_dir ne '.' && $config_aux_dir ne '')
     {
-	&define_variable ('TEXINFO_TEX', $config_aux_dir . '/texinfo.tex');
+	$texinfo_tex = $config_aux_dir . '/texinfo.tex';
+	&define_variable ('TEXINFO_TEX', $texinfo_tex);
     }
     elsif (&variable_defined ('TEXINFO_TEX'))
     {
 	# The user defined TEXINFO_TEX so assume he knows what he is
 	# doing.
+	$texinfo_tex = ('$(srcdir)/'
+			. &dirname (&variable_value ('TEXINFO_TEX')));
     }
     else
     {
+	$texinfo_tex = '.';
 	$need_texi_file = 1;
     }
-    local ($xxform) = &dirname (&variable_value ('TEXINFO_TEX'));
-    $xxform =~ s/(\W)/\\$1/g;
+    local ($xxform);
+    ($xxform = $texinfo_tex) =~ s/(\W)/\\$1/g;
     $xform .= ' s/\@TEXINFODIR\@/' . $xxform . '/g;';
 
     $output_rules .= &file_contents_with_transform ($xform, 'texinfos');
