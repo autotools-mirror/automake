@@ -94,8 +94,15 @@ cat > $am_rmnl <<\EOF
 }
 EOF
 
-# Turn Makefile target and variable assignments
-# into shell variable assignments.
+# Turn Makefile target and variable assignments into shell variable
+# assignments:
+# * For targets, define the variable `target_NAME' to "explicit".
+# * For variables whose names are uppercase, perform the actual assignment.
+#   We only do this for all-upper variables to avoid conflict with variables
+#   used in automake.
+# * For other variables, define `var_NAME' to "explicit".  Such variables
+#   can only be used as flags; any use of their values must be done
+#   later, in the generated Makefile.
 am_ass=/tmp/am.sed2
 cat > $am_ass <<\EOF
 s/(/{/g
@@ -106,6 +113,7 @@ s/\./_/g
 p
 }
 s/^ *\([A-Z][A-Z0-9_]*\)[	 ]*=[	 ]*\(.*\)/\1='\2'/p
+s/^ *\([A-Za-z][A-Za-z0-9_]*\)[ 	]*=[ 	]*\(.*\)/var_\1=explicit/p
 EOF
 
 for am_makefile in $mfiles
@@ -186,8 +194,7 @@ ${am_file}_OBJECTS = ${am_file}.${kr}o" >&4
        for am_prog in $AM_PROGRAMS $LIBPROGRAMS; do
 	  # If `prog_LDADD' is explicitly defined, use it.  Otherwise,
 	  # use LDADD.
-	  eval "am_ldadd=\"\${${am_prog}_LDADD+set}\""
-	  test "$am_ldadd" = set || {
+	  eval "test \"\$var_${am_prog}_LDADD\" = explicit" || {
 	     # Not set, so set it.
 	     echo "${am_prog}_LDADD = \${LDADD}" >&5
 	  }
