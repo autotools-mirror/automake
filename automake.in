@@ -1043,6 +1043,17 @@ sub uniq (@)
    return @res;
 }
 
+# subst ($TEXT)
+# -------------
+# Return a configure-style substitution using the indicated text.
+# We do this to avoid having the substitutions directly in automake.in;
+# when we do that they are sometimes removed and this causes confusion
+# and bugs.
+sub subst ($)
+{
+    my ($text) = @_;
+    return '@' . $text . '@';
+}
 
 ################################################################
 
@@ -1479,10 +1490,13 @@ sub handle_languages
 	    $output_rules .= "\n";
 	    foreach my $iter (@deplist)
  	    {
-		# The strange concatentation is used to avoid
-		# substitutions from our own configure.
-		$output_rules .= ('@AMDEP' . '_TRUE@@_am_include@ @_am_quote@'
-				  . $iter . '@_am_quote@' . "\n");
+		$output_rules .= (subst ('AMDEP_TRUE')
+				  . subst ('_am_include')
+				  . ' '
+				  . subst ('_am_quote')
+				  . $iter
+				  . subst ('_am_quote')
+				  . "\n");
 	    }
 
 	    $output_rules .= &file_contents ('depend');
@@ -1704,10 +1718,13 @@ sub output_lex_build_rule
 	    $output_rules .= "\n";
 	    foreach my $iter (@deplist)
  	    {
-		# The strange concatentation is used to avoid
-		# substitutions from our own configure.
-		$output_rules .= ('@AMDEP' . '_TRUE@@_am_include@ '
-				  . $iter . "\n");
+		$output_rules .= (subst ('AMDEP_TRUE')
+				  . subst ('_am_include')
+				  . ' '
+				  . subst ('_am_quote')
+				  . $iter
+				  . subst ('_am_quote')
+				  . "\n");
 	    }
 
 	    $output_rules .= &file_contents ('depend');
@@ -1796,10 +1813,13 @@ sub check_libobjs_sources
 	    $output_rules .= "\n";
 	    foreach my $iter (@deplist)
  	    {
-		# The strange concatentation is used to avoid
-		# substitutions from our own configure.
-		$output_rules .= ('@AMDEP' . '_TRUE@@_am_include@ '
-				  . $iter . "\n");
+		$output_rules .= (subst ('AMDEP_TRUE')
+				  . subst ('_am_include')
+				  . ' '
+				  . subst ('_am_quote')
+				  . $iter
+				  . subst ('_am_quote')
+				  . "\n");
 	    }
 
 	    $output_rules .= &file_contents ('depend');
@@ -6869,7 +6889,7 @@ sub make_paragraphs ($%)
 
 		     'CYGNUS'          => $cygnus_mode,
 		     'MAINTAINER-MODE'
-		     => $seen_maint_mode ? '@MAINTAINER_MODE_TRUE@' : '',
+		     => $seen_maint_mode ? subst ('MAINTAINER_MODE_TRUE') : '',
 
 		     'SHAR'        => $options{'dist-shar'} || 0,
 		     'BZIP2'       => $options{'dist-bzip2'} || 0,
