@@ -5490,6 +5490,8 @@ sub variable_dump ($)
 		    ? "+=" : "=");
       print STDERR "  $var ($var_is_am, where = $where) $pluseq\n";
       print STDERR "  {\n";
+      print STDERR "$am_vars{$var}"
+	if defined $am_vars{$var};
       foreach my $vcond (sort by_condition keys %{$conditional{$var}})
 	{
 	  print STDERR "    $vcond => $conditional{$var}{$vcond}\n";
@@ -6149,6 +6151,28 @@ sub variable_value_as_list_worker
     return @result;
 }
 
+
+# &variable_output ($VAR)
+# -----------------------
+sub variable_output ($)
+{
+  my ($var) = @_;
+
+  $output_vars .= $am_vars{$var}
+    if defined $am_vars{$var};
+
+  foreach my $cond (sort by_condition keys %{$conditional{$var}})
+    {
+      my $val = $conditional{$var}{$cond};
+      my $output_var = ($var . ' '
+			. $def_type{$var} . "= "
+			. $val);
+      $output_var =~ s/^/&make_condition ($cond)/meg;
+      $output_vars .= $output_var . "\n";
+    }
+}
+
+
 # This is just a wrapper for variable_value_as_list_worker that
 # initializes the global hash `vars_scanned'.  This hash is used to
 # avoid infinite recursion.
@@ -6406,6 +6430,8 @@ sub read_am_file
 
 	      if (!/\\$/)
 		{
+		  $am_vars{$last_var_name} = $comment . $spacing;
+		  $comment = $spacing = '';
 		  macro_define ($last_var_name, 0,
 				   $last_var_type, $cond,
 				   $last_var_value, $.);
@@ -6485,14 +6511,14 @@ sub read_am_file
 		$last_var_value = $3 . "\n";
 	    }
 
-	    # FIXME: this doesn't always work correctly; it will group
-	    # all comments for a given variable, no matter where
-	    # defined.
-	    $am_vars{$last_var_name} = $comment . $spacing;
-	    $comment = $spacing = '';
-
 	    if (!/\\$/)
 	      {
+		# FIXME: this doesn't always work correctly; it will
+		# group all comments for a given variable, no matter
+		# where defined.
+		$am_vars{$last_var_name} = $comment . $spacing;
+		$comment = $spacing = '';
+
 		macro_define ($last_var_name, 0,
 				 $last_var_type, $cond,
 				 $last_var_value, $.);
@@ -6554,17 +6580,24 @@ sub read_am_file
 # twice.
 sub define_standard_variables
 {
-    $output_vars .=
-        &file_contents ('header-vars',
-			('BUILD'    => $seen_canonical == $AC_CANONICAL_SYSTEM,
-			 'HOST'     => $seen_canonical,
-			 'TARGET'   => $seen_canonical == $AC_CANONICAL_SYSTEM,
-			 'top_builddir' => backname ($relative_dir)));
+    my $saved_output_vars = $output_vars;
+    my ($comments, $variables, $rules) =
+      &file_contents_internal ('header-vars',
+		     ('BUILD'    => $seen_canonical == $AC_CANONICAL_SYSTEM,
+		      'HOST'     => $seen_canonical,
+		      'TARGET'   => $seen_canonical == $AC_CANONICAL_SYSTEM,
+		      'top_builddir' => backname ($relative_dir)));
 
-    foreach my $curs (sort keys %configure_vars)
+    # This will output the definitions in $output_vars, which we don't
+    # want...
+    foreach my $var (sort keys %configure_vars)
     {
-	&define_configure_variable ($curs);
+        &define_configure_variable ($var);
+        push (@var_list, $var);
     }
+
+    # ... hence, we restore $output_vars.
+    $output_vars = $saved_output_vars . $comments . $rules;
 }
 
 # Read main am file.
@@ -6579,79 +6612,38 @@ sub read_main_am_file
 	&prog_error ("variable defined before read_main_am_file");
       }
 
-    # We want to predefine as many variables as possible.  This lets
-    # the user set them with `+=' in Makefile.am.  However, we don't
-    # want these initial definitions to end up in the output quite
-    # yet.  So we adopt a hack: read the `.am' file twice, throwing
-    # away the output the first time.  We also squirrel away a list of
-    # all the variables defined by the .am file so that we know which
-    # ones to remove from the content list.
-
-    # First pass.
-    &define_standard_variables;
-    # Deep copy. With `%saved_conditional = %conditional' modifying
-    # one modifes the other.
-    my %saved_conditional;
-    foreach my $var (keys %conditional)
-      {
-	foreach my $cond (keys %{$conditional{$var}})
-	  {
-	    $saved_conditional{$var}{$cond} = $conditional{$var}{$cond};
-	  }
-      }
-
-    # Read user file, but discard text of variable assignments we just
-    # made.
-    $output_vars = '';
-    &read_am_file ($amfile);
-
-    # Now dump the variables that were defined.  We do it in the same
-    # order in which they were defined (skipping duplicates).
-    my %done;
-    foreach my $var (@var_list)
-    {
-	next
-	  if $done{$var};
-	$done{$var} = 1;
-
-	# Don't process Automake variables.
-	next
-	  if $var_is_am{$var};
-
-	$output_vars .= $am_vars{$var};
-
-	foreach my $vcond (sort by_condition keys %{$conditional{$var}})
-	  {
-	    my $val = $conditional{$var}{$vcond};
-	    my $output_var = ($var . ' '
-			      . $def_type{$var} . "= "
-			      . $val);
-	    $output_var =~ s/^/&make_condition ($vcond)/meg;
-	    $output_vars .= $output_var . "\n";
-	  }
-    }
-
     # Generate copyright header for generated Makefile.in.
-    my $ov = $output_vars;
+    # We do discard the output of predefined variables, handled below.
     $output_vars = ("# $in_file_name generated automatically by automake "
 		   . $VERSION . " from $am_file_name.\n");
     $output_vars .= $gen_copyright;
 
-    # Now go through and delete all the variables that the user did
-    # not change.
-    foreach my $var (keys %saved_conditional)
+    # We want to predefine as many variables as possible.  This lets
+    # the user set them with `+=' in Makefile.am.  However, we don't
+    # want these initial definitions to end up in the output quite
+    # yet.  So we just load them, but output them later.
+    &define_standard_variables;
+
+    # Read user file, which might override some of our values.
+    &read_am_file ($amfile);
+
+    # Ouput all the Automake variables.  If the user changed one, then
+    # it is now marked as owned by the user.
+    foreach my $var (uniq @var_list)
     {
-	if (variable_value ($var) eq $saved_conditional{$var}{'TRUE'})
-	{
-	    variable_delete ($var);
-	}
+	# Don't process user variables.
+        variable_output ($var)
+	  unless !$var_is_am{$var};
     }
 
-    # Re-read the standard variables, and this time keep their
-    # contributions to the output.  Then add the user's output to the
-    # end.
-    &define_standard_variables;
-    $output_vars .= $ov;
+    # Now dump the user variables that were defined.  We do it in the same
+    # order in which they were defined (skipping duplicates).
+    foreach my $var (uniq @var_list)
+    {
+	# Don't process Automake variables.
+        variable_output ($var)
+	  unless $var_is_am{$var};
+    }
 }
 
 ################################################################
@@ -6673,12 +6665,12 @@ sub flatten
 }
 
 
-# $CONTENTS
-# &file_contents ($BASENAME, [%TRANSFORM])
-# ----------------------------------------
+# ($COMMENT, $VARIABLES, $RULES)
+# &file_contents_internal ($BASENAME, [%TRANSFORM])
+# -------------------------------------------------
 # Return contents of a file from $am_dir, automatically skipping
 # macros or rules which are already known.
-sub file_contents ($%)
+sub file_contents_internal ($%)
 {
     my ($basename, %transform) = @_;
 
@@ -6780,7 +6772,6 @@ sub file_contents ($%)
  	{
  	    # Stick comments before the incoming macro or rule.
  	    $comment = "$_\n";
-
 	}
 
         # Handling the conditionals.
@@ -6876,6 +6867,7 @@ sub file_contents ($%)
 	      if /\\$/;;
 
 	    # Accumulating variables must not be output.
+	    $am_vars{$var} .= "$separator$comment";
 	    macro_define ($var, 1, $type, $cond, $val, $.);
 	    push (@var_list, $var);
 
@@ -6896,7 +6888,21 @@ sub file_contents ($%)
  	}
     }
 
-    return $result_vars . $result_rules . $comment;
+    return ($comment, $result_vars, $result_rules);
+}
+
+
+# $CONTENTS
+# &file_contents ($BASENAME, [%TRANSFORM])
+# ----------------------------------------
+# Return contents of a file from $am_dir, automatically skipping
+# macros or rules which are already known.
+sub file_contents ($%)
+{
+    my ($basename, %transform) = @_;
+    my ($comments, $variables, $rules) = file_contents_internal ($basename,
+								 %transform);
+    return "$comments$variables$rules";
 }
 
 
