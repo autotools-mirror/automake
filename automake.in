@@ -7382,7 +7382,7 @@ sub register_suffix_rule ($$$)
 # rule_define ($TARGET, $SOURCE, $OWNER, $COND, $WHERE)
 # -----------------------------------------------------
 # Define a new rule.  $TARGET is the rule name.  $SOURCE
-# si the filename the rule comes from.  $OWNER is the
+# is the filename the rule comes from.  $OWNER is the
 # owener of the rule (TARGET_AUTOMAKE or TARGET_USER).
 # $COND is the condition string under which the rule is defined.
 # $WHERE is where the rule is defined (file name and/or line number).
@@ -7413,6 +7413,11 @@ sub rule_define ($$$$$)
 
   $target = $noexe;
 
+  # A GNU make-style pattern rule has a single "%" in the target name.
+  msg ('portability', $where,
+       "`%'-style pattern rules are a GNU make extension")
+    if $target =~ /^[^%]*%[^%]*$/;
+
   # Diagnose target redefinitions.
   if (exists $target_source{$target}{$cond})
     {
@@ -7433,9 +7438,27 @@ sub rule_define ($$$$$)
 	{
 	  if ($oldowner eq TARGET_USER)
 	    {
-	      msg ('syntax', $where, "redefinition of `$target'$condmsg...");
-	      msg_cond_target ('syntax', $cond, $target,
-			       "... `$target' previously defined here.");
+	      # Ignore `%'-style pattern rules.  We'd need the
+	      # dependencies to detect duplicates, and they are
+	      # already diagnosed as unportable by -Wportability.
+	      if ($target !~ /^[^%]*%[^%]*$/)
+		{
+		  ## FIXME: Presently we can't diagnose duplcate user rules
+		  ## because we doesn't distinguish rules with commands
+		  ## from rules that only add dependencies.  E.g.,
+		  ##   .PHONY: foo
+		  ##   .PHONY: bar
+		  ## is legitimate. (This is phony.test.)
+
+		  # msg ('syntax', $where,
+		  #      "redefinition of `$target'$condmsg...");
+		  # msg_cond_target ('syntax', $cond, $target,
+		  # 		   "... `$target' previously defined here.");
+		}
+	      # Return so we don't redefine the rule in our tables,
+	      # don't check for ambiguous conditional, etc.  The rule
+	      # will be output anyway beauce &read_am_file ignore the
+	      # return code.
 	      return ();
 	    }
 	  else
@@ -7476,11 +7499,6 @@ sub rule_define ($$$$$)
       # Never reached.
       prog_error ("Unreachable place reached.");
     }
-
-  # A GNU make-style pattern rule has a single "%" in the target name.
-  msg ('portability', $where,
-       "`%'-style pattern rules are a GNU make extension")
-    if $target =~ /^[^%]*%[^%]*$/;
 
   # Conditions for which the rule should be defined.
   my @conds = $cond;
@@ -7751,9 +7769,9 @@ sub read_am_file ($)
 	    # Found a rule.
 	    $prev_state = IN_RULE_DEF;
 
-	    # For TARGET_USER rules, rule_define won't reject a rule
-	    # without diagnosic an error.  So we go on and ignore the
-	    # return value.
+	    # For now we have to output all definitions of user rules
+	    # and can't diagnose duplicates (see the comment in
+	    # rule_define). So we go on and ignore the return value.
 	    rule_define ($1, $amfile, TARGET_USER, $cond || 'TRUE', $here);
 
 	    check_variable_expansions ($_, $here);

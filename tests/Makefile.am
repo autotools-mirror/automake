@@ -274,6 +274,8 @@ output5.test \
 package.test \
 parse.test \
 percent.test \
+percent2.test \
+phony.test \
 pluseq.test \
 pluseq2.test \
 pluseq3.test \
