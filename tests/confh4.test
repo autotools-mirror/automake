@@ -1,0 +1,31 @@
+#! /bin/sh
+
+# Test for PR 34.
+
+. $srcdir/defs || exit 1
+
+cat > configure.in << 'END'
+PACKAGE=nonesuch
+VERSION=nonesuch
+AC_ARG_PROGRAM
+AC_PROG_INSTALL
+AM_CONFIG_HEADER(include/config.h)
+AC_PROG_CC
+AC_OUTPUT(Makefile include/Makefile)
+END
+
+cat > Makefile.am << 'END'
+bin_PROGRAMS = foo
+foo_SOURCES = foo.c
+END
+
+: > foo.c
+: > acconfig.h
+
+mkdir include
+: > include/Makefile.am
+: > include/config.h.in
+
+$AUTOMAKE || exit 1
+
+grep -e -I Makefile.in
