@@ -66,7 +66,7 @@ maintainer-check: automake aclocal
 ## This check avoids accidental configure substitutions in the source.
 ## There are exactly 7 lines that should be modified.  This works out
 ## to 22 lines of diffs.
-	@if test `diff $(srcdir)/automake.in automake | wc -l` -ne 22; then \
+	@if test `diff $(srcdir)/automake.in automake | wc -l` -ne 30; then \
 	  echo "found too many diffs between automake.in and automake"; 1>&2; \
 	  diff -c $(srcdir)/automake.in automake; \
 	  exit 1; \
@@ -96,7 +96,7 @@ maintainer-check: automake aclocal
 	  exit 1; \
 	else :; fi
 ## We never want to use "undef", only "delete", but for $/.
-	@if grep -n -w undef $(srcdir)/automake.in | \
+	@if grep -n -w 'undef ' $(srcdir)/automake.in | \
 	      fgrep -v 'undef $$/'; then \
 	  echo "Found undef in automake.in; use delete instead" 1>&2; \
 	  exit 1; \
@@ -137,6 +137,11 @@ maintainer-check: automake aclocal
 	    exit 1; \
 	  ;; \
 	esac
+## Don't let AMDEP_TRUE substitution appear in automake.in.
+	@if grep '@AMDEP''_TRUE@' $(srcdir)/automake.in; then \
+	  echo "Don't put AMDEP_TRUE substitution in automake.in" 1>&2; \
+	  exit 1; \
+	fi
 
 # Tag before making distribution.  Also, don't make a distribution if
 # checks fail.  Also, make sure the NEWS file is up-to-date.
