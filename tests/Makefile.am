@@ -1,7 +1,6 @@
 ## Process this file with automake to create Makefile.in
 
-XFAIL_TESTS = subdir5.test auxdir2.test cond17.test \
-	      specflags7.test specflags8.test
+XFAIL_TESTS = subdir5.test auxdir2.test cond17.test
 
 TESTS =	\
 acinclude.test \
