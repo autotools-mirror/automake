@@ -2098,6 +2098,15 @@ sub handle_tags
 	$xform = ('s/\@CONFIG\@/' . $xform . '/;'
 		  . 's/\@DIRS\@/' . join (' ', @tag_deps) . '/;');
 
+	if (&variable_defined ('SUBDIRS'))
+	{
+	    $xform .= 's/^SUBDIRS//;';
+	}
+	else
+	{
+	    $xform .= 's/^SUBDIRS.*$//;';
+	}
+
 	$output_rules .= &file_contents_with_transform ($xform, 'tags');
 	$output_rules .= &file_contents ('tags-clean');
 	push (@clean, 'tags');
@@ -2573,8 +2582,7 @@ sub handle_subdirs
 	    next;
 	}
 
-	&am_relative_dir ('SUBDIRS',
-			  "directory should not contain \`/'")
+	&am_line_error ('SUBDIRS', "directory should not contain \`/'")
 	    if $dir =~ /\//;
     }
 
