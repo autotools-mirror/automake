@@ -342,9 +342,6 @@ my $all_linguas_line = 0;
 # 1 if AC_PROG_INSTALL seen.
 my $seen_prog_install = 0;
 
-# Whether AC_PATH_XTRA has been seen in configure.ac.
-my $seen_path_xtra = 0;
-
 # TRUE if AC_DECL_YYTEXT was seen.
 my $seen_decl_yytext = 0;
 
@@ -2032,18 +2029,6 @@ sub handle_compile ()
 			       ('DEFAULT_INCLUDES' => $default_includes));
     $output_vars .= $vars;
     $output_rules .= "$coms$rules";
-
-    # If using X, include some extra variable definitions.  NOTE
-    # we don't want to force these into CFLAGS or anything,
-    # because not all programs will necessarily use X.
-    if ($seen_path_xtra)
-      {
-	foreach my $var ('X_CFLAGS',
-			 'X_LIBS', 'X_EXTRA_LIBS', 'X_PRE_LIBS')
-	  {
-	    &define_configure_variable ($var);
-	  }
-      }
 
     if ($seen_libtool)
       {
@@ -4508,7 +4493,17 @@ sub scan_one_autoconf_file
 		&& (/AC_CANONICAL_HOST/ || /AC_CHECK_TOOL/);
         $seen_canonical = $AC_CANONICAL_SYSTEM if /AC_CANONICAL_SYSTEM/;
 
-	$seen_path_xtra = 1 if /AC_PATH_XTRA/;
+        # If using X, include some extra variable definitions.  NOTE
+        # we don't want to force these into CFLAGS or anything,
+        # because not all programs will necessarily use X.
+	if (/AC_PATH_XTRA/)
+	  {
+	    foreach my $var ('X_CFLAGS', 'X_LIBS', 'X_EXTRA_LIBS',
+			     'X_PRE_LIBS')
+	      {
+		$configure_vars{$var} = $filename . ':' . $.
+	      }
+	  }
 
         # This macro handles several different things.
         if (/$AM_INIT_AUTOMAKE_PATTERN/o)
