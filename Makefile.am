@@ -181,7 +181,7 @@ maintainer-check: automake aclocal
 	  exit 1; \
 	fi
 ## Tests should never call autoupdate directly.
-	@if grep -v '^#' $(srcdir)/tests/*.test | egrep ':[	]*autoupdate'; then \
+	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*autoupdate'; then \
 	  echo 'Do not run "autoupdate" in the above tests.  Use "$$AUTOUPDATE" instead.' 1>&2; \
 	  exit 1; \
 	fi
