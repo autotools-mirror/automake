@@ -99,8 +99,8 @@ $ac_require_rx = "AC_REQUIRE\\(\\[?([^])]*)\\]?\\)";
 
 
 
-&parse_arguments (@ARGV);
-&scan_m4_files ($acdir);
+local (@dirlist) = &parse_arguments (@ARGV);
+&scan_m4_files ($acdir, @dirlist);
 &scan_configure;
 if (! $exit_status)
 {
@@ -121,6 +121,7 @@ sub usage
     print "\
   --acdir=DIR           directory holding config files
   --help                print this help, then exit
+  -I DIR                add directory to search list for .m4 files
   --output=FILE         put output in FILE (default aclocal.m4)
   --verbose             don't be silent
   --version             print version number, then exit
@@ -134,6 +135,7 @@ Report bugs to <bug-gnu-utils\@prep.ai.mit.edu>\n";
 sub parse_arguments
 {
     local (@arglist) = @_;
+    local (@dirlist);
 
     while (@arglist)
     {
@@ -144,6 +146,11 @@ sub parse_arguments
 	elsif ($arglist[0] =~/^--output=(.+)$/)
 	{
 	    $output_file = $1;
+	}
+	elsif ($arglist[0] eq '-I')
+	{
+	    shift (@arglist);
+	    push (@dirlist, $arglist[0]);
 	}
 	elsif ($arglist[0] eq '--verbose')
 	{
@@ -170,6 +177,8 @@ sub parse_arguments
 
 	shift (@arglist);
     }
+
+    return @dirlist;
 }
 
 ################################################################
@@ -229,7 +238,7 @@ sub check_acinclude
 # Scan all the installed m4 files and construct a map.
 sub scan_m4_files
 {
-    local ($m4dir) = @_;
+    local (@dirlist) = @_;
 
     # First, scan acinclude.m4 if it exists.
     if (-f 'acinclude.m4')
@@ -237,21 +246,25 @@ sub scan_m4_files
 	$file_contents{'acinclude.m4'} = &scan_file ('acinclude.m4');
     }
 
-    opendir (DIR, $m4dir)
-	|| die "aclocal: couldn't open directory \`$m4dir': $!\n";
-    local ($file, $fullfile, $expr);
-    foreach $file (sort grep (! /^\./, readdir (DIR)))
+    local ($m4dir);
+    foreach $m4dir (@dirlist)
     {
-	# Only examine .m4 files.
-	next unless $file =~ /\.m4$/;
+	opendir (DIR, $m4dir)
+	    || die "aclocal: couldn't open directory \`$m4dir': $!\n";
+	local ($file, $fullfile, $expr);
+	foreach $file (sort grep (! /^\./, readdir (DIR)))
+	{
+	    # Only examine .m4 files.
+	    next unless $file =~ /\.m4$/;
 
-	# Skip some files when running out of srcdir.
-	next if $file eq 'aclocal.m4';
+	    # Skip some files when running out of srcdir.
+	    next if $file eq 'aclocal.m4';
 
-	$fullfile = $m4dir . '/' . $file;
-	$file_contents{$fullfile} = &scan_file ($fullfile);
+	    $fullfile = $m4dir . '/' . $file;
+	    $file_contents{$fullfile} = &scan_file ($fullfile);
+	}
+	closedir (DIR);
     }
-    closedir (DIR);
 
     # Construct a new function that does the searching.  We use a
     # function (instead of just evalling $search in the loop) so that

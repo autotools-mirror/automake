@@ -8,5 +8,5 @@ dnl This file resides in the same directory as the config header
 dnl that is generated.  We must strip everything past the first ":",
 dnl and everything past the last "/".
 AC_OUTPUT_COMMANDS(changequote(<<,>>)dnl
-test -z "<<$>>CONFIG_HEADER" || echo timestamp > patsubst(<<$1>>, <<^\([^:]*/\)?.*>>, <<\1>>)stamp-h<<>>dnl
+test -z "<<$>>CONFIG_HEADERS" || echo timestamp > patsubst(<<$1>>, <<^\([^:]*/\)?.*>>, <<\1>>)stamp-h<<>>dnl
 changequote([,]))])
