@@ -28,6 +28,8 @@ depcpp="$CXXCPP"],
 depcc="$$1"
 depcpp=""])
 
+AC_REQUIRE([AM_MAKE_INCLUDE])
+
 AC_CACHE_CHECK([dependency style of $depcc],
                [am_cv_$1_dependencies_compiler_type],
 [if test -z "$AMDEP"; then
@@ -37,10 +39,13 @@ AC_CACHE_CHECK([dependency style of $depcc],
   # making a dummy file named `D' -- because `-MD' means `put the output
   # in D'.
   mkdir confdir
+  # Copy depcomp to subdir because otherwise we won't find it if we're
+  # using a relative directory.
+  cp "$am_depcomp" confdir
   cd confdir
 
   am_cv_$1_dependencies_compiler_type=none
-  for depmode in `sed -n ['s/^#*\([a-zA-Z0-9]*\))$/\1/p'] < "$am_depcomp"`; do
+  for depmode in `sed -n ['s/^#*\([a-zA-Z0-9]*\))$/\1/p'] < "./depcomp"`; do
     # We need to recreate these files for each test, as the compiler may
     # overwrite some of them when testing with obscure command lines.
     # This happens at least with the AIX C compiler.
@@ -65,7 +70,7 @@ AC_CACHE_CHECK([dependency style of $depcc],
     if depmode="$depmode" \
        source=conftest.c object=conftest.o \
        depfile=conftest.Po tmpdepfile=conftest.TPo \
-       $SHELL $am_depcomp $depcc -c conftest.c -o conftest.o >/dev/null 2>&1 &&
+       $SHELL ./depcomp $depcc -c conftest.c -o conftest.o >/dev/null 2>&1 &&
        grep conftest.h conftest.Po > /dev/null 2>&1; then
       am_cv_$1_dependencies_compiler_type="$depmode"
       break
