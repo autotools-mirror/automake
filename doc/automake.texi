@@ -3210,6 +3210,43 @@ libsub2_la_LIBADD = \
   @dots{}
 @end example
 
+When using such setup, beware that @command{automake} will assume
+@file{libtop.la} is to be linked with the C linker.  This is because
+@code{libtop_la_SOURCES} is empty, so @command{automake} picks C as
+default language.  If @code{libtop_la_SOURCES} was not empty,
+@command{automake} would select the linker as explained in @ref{How
+the Linker is Chosen}.
+
+If one of the sublibraries contains non-C source, it is important that
+the appropriate linker be chosen.  One way to achieve this is to
+pretend that there is such a non-C file among the sources of the
+library, thus forcing @command{automake} to select the appropriate
+linker.  Here is the top-level @file{Makefile} of our example updated
+to force C++ linking.
+
+@example
+SUBDIRS = sub1 sub2 @dots{}
+lib_LTLIBRARIES = libtop.la
+libtop_la_SOURCES =
+# Dummy C++ source to cause C++ linking.
+nodist_EXTRA_libtop_la_SOURCES = dummy.cxx
+libtop_la_LIBADD = \
+  sub1/libsub1.la \
+  sub2/libsub2.la \
+  @dots{}
+@end example
+
+@code{EXTRA_*_SOURCES} variables are used to keep track of source
+files that might be compiled (this is mostly useful when doing
+conditional compilation using @code{AC_SUBST}, see @ref{Conditional
+Libtool Sources}), and the @code{nodist_} prefix means the listed
+sources are not to be distributed (@pxref{Program and Library
+Variables}).  In effect the file @file{dummy.cxx} does not need to
+exist in the source tree.  Of course if you have some real source file
+to list in @code{libtop_la_SOURCES} there is no point in cheating with
+@code{nodist_EXTRA_libtop_la_SOURCES}.
+
+
 @node Libtool Modules
 @subsection Libtool Modules
 @cindex modules, libtool
