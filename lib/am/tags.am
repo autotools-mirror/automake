@@ -44,7 +44,7 @@ ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 ETAGS = etags
 ETAGSFLAGS =
 
-TAGS: %DIRS% $(HEADERS) $(SOURCES) %CONFIG% $(TAGS_DEPENDENCIES) \
+TAGS: %TAGSDIRS% $(HEADERS) $(SOURCES) %CONFIG% $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
@@ -70,6 +70,37 @@ TAGS: %DIRS% $(HEADERS) $(SOURCES) %CONFIG% $(TAGS_DEPENDENCIES) \
 	     $$tags $$unique
 
 
+## ------------- ##
+## vi-style tags ##
+## ------------- ##
+
+CTAGS = ctags
+CTAGSFLAGS =
+
+.PHONY: CTAGS ctags
+ctags: CTAGS
+
+## We have a dummy name here because `tags' has already been in use
+## for a long time to mean Emacs-style tags.  Oops.  This means the
+## dependencies here are useless.
+CTAGS: %CTAGSDIRS% $(HEADERS) $(SOURCES) %CONFIG% $(TAGS_DEPENDENCIES) \
+		$(TAGS_FILES) $(LISP)
+	tags=; \
+	here=`pwd`; \
+## Make sure the list of sources is unique.
+	list='$(SOURCES) $(HEADERS) %CONFIG% $(LISP) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+## Handle VPATH correctly.
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+## Make sure we have something to run ctags on.
+	test -z "$(CTAGS_ARGS)$$tags$$unique" \
+	  || $(CTAGS) $(CTAGSFLAGS) $(AM_CTAGSFLAGS) $(CTAGS_ARGS) \
+	     $$tags $$unique
+
+
 ## --------------- ##
 ## `Global' tags.  ##
 ## --------------- ##
@@ -88,4 +119,4 @@ GTAGS:
 .PHONY distclean-am: distclean-tags
 
 distclean-tags:
-	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH
+	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags

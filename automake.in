@@ -3720,6 +3720,7 @@ sub handle_data
 sub handle_tags
 {
     my @tag_deps = ();
+    my @ctag_deps = ();
     if (variable_defined ('SUBDIRS'))
     {
 	$output_rules .= ("tags-recursive:\n"
@@ -3731,6 +3732,16 @@ sub handle_tags
 			  . "\tdone\n");
 	push (@tag_deps, 'tags-recursive');
 	&depend ('.PHONY', 'tags-recursive');
+
+	$output_rules .= ("ctags-recursive:\n"
+			  . "\tlist=\'\$(SUBDIRS)\'; for subdir in \$\$list; do \\\n"
+			  # Never fail here if a subdir fails; it
+			  # isn't important.
+			  . "\t  test \"\$\$subdir\" = . || (cd \$\$subdir"
+			  . " && \$(MAKE) \$(AM_MAKEFLAGS) ctags); \\\n"
+			  . "\tdone\n");
+	push (@ctag_deps, 'ctags-recursive');
+	&depend ('.PHONY', 'ctags-recursive');
     }
 
     if (&saw_sources_p (1)
@@ -3751,7 +3762,8 @@ sub handle_tags
 	}
 	$output_rules .= &file_contents ('tags',
 					 ('CONFIG' => "@config",
-					  'DIRS'   => "@tag_deps"));
+					  'TAGSDIRS'   => "@tag_deps",
+					  'CTAGSDIRS'  => "@ctag_deps"));
 	&examine_variable ('TAGS_DEPENDENCIES');
     }
     elsif (reject_var ('TAGS_DEPENDENCIES',
@@ -3765,6 +3777,8 @@ sub handle_tags
 	# Otherwise, it would be possible for a top-level "make TAGS"
 	# to fail because some subdirectory failed.
 	$output_rules .= "tags: TAGS\nTAGS:\n\n";
+	# Ditto ctags.
+	$output_rules .= "ctags: CTAGS\nCTAGS:\n\n";
     }
 }
 
