@@ -28,7 +28,7 @@ eval 'exec @PERL@ -S $0 ${1+"$@"}'
 # Perl reimplementation by Tom Tromey <tromey@cygnus.com>.
 
 require 5.005;
-
+use strict;
 use File::Basename;
 use IO::File;
 
@@ -407,11 +407,394 @@ my %required_targets =
   );
 
 
+
+################################################################
+
+## ------------------------------------------ ##
+## Variables reset by &initialize_per_input.  ##
+## ------------------------------------------ ##
+
+my $output_rules;
+my $output_vars;
+my $output_trailer;
+my $output_all;
+my $output_header;
+
+# Suffixes found during a run.
+my @suffixes;
+
+# This holds the contents of a Makefile.am, as parsed by
+# read_am_file.
+my %contents;
+
+# This maps a variable name onto a flag.  The flag is true iff the
+# variable was first defined with `+='.
+my %var_was_plus_eq;
+
+# This holds definitions of all variables defined in .am files.
+# This is used during startup to determine which variables can be
+# assigned with `
+my %am_var_defs;
+
+# For a variable or target $ITEM which is defined conditionally,
+# this holds a hash of the conditional values.  The keys of
+# %CONDITIONAL{$ITEM} are the conditions (the variables which
+# configure will substitute), and the values, the associated
+# values (meaningless for targets).
+#
+# By definition, for an unconditional variable, this is empty.
+my %conditional;
+
+# This holds the line numbers at which various elements of
+# %contents are defined.
+my %content_lines;
+
+# This holds a 1 if a particular variable was examined.
+my %content_seen;
+
+# This holds the names which are targets.  These also appear in
+# %contents.
+my %targets;
+
+# Same as %CONDITIONAL, but for targets.
+my %target_conditional;
+
+# This is the conditional stack.
+my @conditional_stack;
+
+# This holds the set of included files.
+my @include_stack;
+
+# This holds the "relative directory" of the current Makefile.in.
+# Eg for src/Makefile.in, this is "src".
+my $relative_dir;
+
+# This holds a list of files that are included in the
+# distribution.
+my %dist_common;
+
+# This holds a list of directories which we must create at `dist'
+# time.  This is used in some strange scenarios involving weird
+# AC_OUTPUT commands.
+my %dist_dirs;
+
+# List of dependencies for the obvious targets.
+my @info;
+my @dvi;
+my @all;
+my @check;
+my @check_tests;
+
+# Holds the dependencies of targets which dependencies are factored.
+# Typically, `.PHONY' will appear in plenty of *.am files, but must
+# be output once.  Arguably all pure dependencies could be subject
+# to this factorization, but it is not unpleasant to have paragraphs
+# in Makefile: keeping related stuff altogether.
+my %dependencies;
+
+# Holds the factored actions.  Tied to %DEPENDENCIES, i.e., filled
+# only when keys exists in %DEPENDENCIES.
+my %actions;
+
+# A list of files deleted by `maintainer-clean'.
+my @maintainer_clean_files;
+
+# These are pretty obvious, too.  They are used to define the
+# SOURCES and OBJECTS variables.
+my @sources;
+my @objects;
+# Sources which go in the distribution.
+my @dist_sources;
+
+# This hash maps object file names onto their corresponding source
+# file names.  This is used to ensure that each object is created
+# by a single source file.
+my %object_map;
+
+# This keeps track of the directories for which we've already
+# created `.dirstamp' code.
+my %directory_map;
+
+# These variables track inclusion of various compile-related .am
+# files.  $included_generic_compile is TRUE if the basic code has
+# been included.  $included_knr_compile is TRUE if the ansi2knr
+# code has been included.  $included_libtool_compile is TRUE if
+# libtool support has been included.
+my $included_generic_compile;
+my $included_knr_compile;
+my $included_libtool_compile;
+
+# All .P files.
+my %dep_files;
+
+# Strictness levels.
+my $strictness;
+my $strictness_name;
+
+# Options from AUTOMAKE_OPTIONS.
+my %options;
+
+# Whether or not dependencies are handled.  Can be further changed
+# in handle_options.
+my $use_dependencies;
+
+# Per Makefile.am.
+my $local_maint_charset;
+
+# All yacc and lex source filenames for this directory.  Use
+# filenames instead of raw count so that multiple instances are
+# counted correctly (eg one yacc file can appear in multiple
+# programs without harm).
+my %yacc_sources;
+my %lex_sources;
+
+# This is a list of all targets to run during "make dist".
+my @dist_targets;
+
+# Keys in this hash are the basenames of files which must depend
+# on ansi2knr.
+my %de_ansi_files;
+
+# This maps the source extension of a suffix rule to its
+# corresponding output extension.
+my %suffix_rules;
+
+# This is a regular expression which matches all the known source
+# suffix.  A source suffix is one that appears in the first
+# position of a suffix rule.
+my $source_suffix_pattern;
+
+# This is the name of the redirect `all' target to use.
+my $all_target;
+
+# This keeps track of which extensions we've seen (that we care
+# about).
+my %extension_seen;
+
+# This is random scratch space for the language finish functions.
+# Don't randomly overwrite it; examine other uses of keys first.
+my %language_scratch;
+
+# We keep track of which objects need special (per-executable)
+# handling on a per-language basis.
+my %lang_specific_files;
+
+# This is set when `handle_dist' has finished.  Once this happens,
+# we should no longer push on dist_common.
+my $handle_dist_run;
+
+# True if we need `LINK' defined.  This is a hack.
+my $need_link;
+
+
+# &initialize_per_input ()
+# ------------------------
+# (Re)-Initialize per-Makefile.am variables.
+sub initialize_per_input ()
+{
+    # These two variables are used when generating each Makefile.in.
+    # They hold the Makefile.in until it is ready to be printed.
+    $output_rules = '';
+    $output_vars = '';
+    $output_trailer = '';
+    $output_all = '';
+    $output_header = '';
+
+    # Suffixes found during a run.
+    @suffixes = ();
+
+    # This holds the contents of a Makefile.am, as parsed by
+    # read_am_file.
+    %contents = ();
+
+    # This maps a variable name onto a flag.  The flag is true iff the
+    # variable was first defined with `+='.
+    %var_was_plus_eq = ();
+
+    # This holds definitions of all variables defined in .am files.
+    # This is used during startup to determine which variables can be
+    # assigned with `+='.
+    %am_var_defs = ();
+
+    # For a variable or target $ITEM which is defined conditionally,
+    # this holds a hash of the conditional values.  The keys of
+    # %CONDITIONAL{$ITEM} are the conditions (the variables which
+    # configure will substitute), and the values, the associated
+    # values (meaningless for targets).
+    #
+    # By definition, for an unconditional variable, this is empty.
+    %conditional = ();
+
+    # This holds the line numbers at which various elements of
+    # %contents are defined.
+    %content_lines = ();
+
+    # This holds a 1 if a particular variable was examined.
+    %content_seen = ();
+
+    # This holds the names which are targets.  These also appear in
+    # %contents.
+    %targets = ();
+
+    # Same as %CONDITIONAL, but for targets.
+    %target_conditional = ();
+
+    # This is the conditional stack.
+    @conditional_stack = ();
+
+    # This holds the set of included files.
+    @include_stack = ();
+
+    # This holds the "relative directory" of the current Makefile.in.
+    # Eg for src/Makefile.in, this is "src".
+    $relative_dir = '';
+
+    # This holds a list of files that are included in the
+    # distribution.
+    %dist_common = ();
+
+    # This holds a list of directories which we must create at `dist'
+    # time.  This is used in some strange scenarios involving weird
+    # AC_OUTPUT commands.
+    %dist_dirs = ();
+
+    # List of dependencies for the obvious targets.
+    @info = ();
+    @dvi = ();
+    @all = ();
+    @check = ();
+    @check_tests = ();
+
+    # Holds the dependencies of targets which dependencies are factored.
+    # Typically, `.PHONY' will appear in plenty of *.am files, but must
+    # be output once.  Arguably all pure dependencies could be subject
+    # to this factorization, but it is not unpleasant to have paragraphs
+    # in Makefile: keeping related stuff altogether.
+    %dependencies =
+      (
+       # Installing/uninstalling.
+       'install-data-am'      => [],
+       'install-exec-am'      => [],
+       'install-man'	      => [],
+       'uninstall-man'	      => [],
+       'uninstall-am'         => [],
+       'installcheck-am'      => [],
+
+       # Cleaning.
+       'clean-am'             => [],
+       'mostlyclean-am'       => [],
+       'maintainer-clean-am'  => [],
+       'distclean-am'         => [],
+       'clean'                => [],
+       'mostlyclean'          => [],
+       'maintainer-clean'     => [],
+       'distclean'            => [],
+
+       # Tarballing.
+       'dist-all'             => [],
+
+       # Phoning.
+       '.PHONY'               => []
+      );
+    # Holds the factored actions.  Tied to %DEPENDENCIES, i.e., filled
+    # only when keys exists in %DEPENDENCIES.
+    %actions = ();
+
+    # A list of files deleted by `maintainer-clean'.
+    @maintainer_clean_files = ();
+
+    # These are pretty obvious, too.  They are used to define the
+    # SOURCES and OBJECTS variables.
+    @sources = ();
+    @objects = ();
+    # Sources which go in the distribution.
+    @dist_sources = ();
+
+    # This hash maps object file names onto their corresponding source
+    # file names.  This is used to ensure that each object is created
+    # by a single source file.
+    %object_map = ();
+
+    # This keeps track of the directories for which we've already
+    # created `.dirstamp' code.
+    %directory_map = ();
+
+    # These variables track inclusion of various compile-related .am
+    # files.  $included_generic_compile is TRUE if the basic code has
+    # been included.  $included_knr_compile is TRUE if the ansi2knr
+    # code has been included.  $included_libtool_compile is TRUE if
+    # libtool support has been included.
+    $included_generic_compile = 0;
+    $included_knr_compile = 0;
+    $included_libtool_compile = 0;
+
+    # All .P files.
+    %dep_files = ();
+
+    # Strictness levels.
+    $strictness = $default_strictness;
+    $strictness_name = $default_strictness_name;
+
+    # Options from AUTOMAKE_OPTIONS.
+    %options = ();
+
+    # Whether or not dependencies are handled.  Can be further changed
+    # in handle_options.
+    $use_dependencies = $cmdline_use_dependencies;
+
+    # Per Makefile.am.
+    $local_maint_charset = $maint_charset;
+
+    # All yacc and lex source filenames for this directory.  Use
+    # filenames instead of raw count so that multiple instances are
+    # counted correctly (eg one yacc file can appear in multiple
+    # programs without harm).
+    %yacc_sources = ();
+    %lex_sources = ();
+
+    # This is a list of all targets to run during "make dist".
+    @dist_targets = ();
+
+    # Keys in this hash are the basenames of files which must depend
+    # on ansi2knr.
+    %de_ansi_files = ();
+
+    # This maps the source extension of a suffix rule to its
+    # corresponding output extension.
+    %suffix_rules = ();
+
+    # This is a regular expression which matches all the known source
+    # suffix.  A source suffix is one that appears in the first
+    # position of a suffix rule.
+    $source_suffix_pattern = '';
+
+    # This is the name of the redirect `all' target to use.
+    $all_target = '';
+
+    # This keeps track of which extensions we've seen (that we care
+    # about).
+    %extension_seen = ();
+
+    # This is random scratch space for the language finish functions.
+    # Don't randomly overwrite it; examine other uses of keys first.
+    %language_scratch = ();
+
+    # We keep track of which objects need special (per-executable)
+    # handling on a per-language basis.
+    %lang_specific_files = ();
+
+    # This is set when `handle_dist' has finished.  Once this happens,
+    # we should no longer push on dist_common.
+    $handle_dist_run = 0;
+
+    # True if we need `LINK' defined.  This is a hack.
+    $need_link = 0;
+}
+
+
 ################################################################
 
 # Initialize our list of languages that are internally supported.
-&initialize_global_constants;
-
 &register_language ('c', 'ansi-p=1', 'autodep=', 'flags=CFLAGS',
 		    'compile=$(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)',
 		    'compiler-name=COMPILE',
@@ -6349,211 +6732,6 @@ sub read_main_am_file
     &define_standard_variables;
     $output_vars .= $ov;
 }
-
-################################################################
-
-# (Re)-Initialize per-Makefile.am variables.
-sub initialize_per_input
-{
-    # These two variables are used when generating each Makefile.in.
-    # They hold the Makefile.in until it is ready to be printed.
-    $output_rules = '';
-    $output_vars = '';
-    $output_trailer = '';
-    $output_all = '';
-    $output_header = '';
-
-    # Suffixes found during a run.
-    @suffixes = ();
-
-    # This holds the contents of a Makefile.am, as parsed by
-    # read_am_file.
-    %contents = ();
-
-    # This maps a variable name onto a flag.  The flag is true iff the
-    # variable was first defined with `+='.
-    %var_was_plus_eq = ();
-
-    # This holds definitions of all variables defined in .am files.
-    # This is used during startup to determine which variables can be
-    # assigned with `+='.
-    %am_var_defs = ();
-
-    # For a variable or target $ITEM which is defined conditionally,
-    # this holds a hash of the conditional values.  The keys of
-    # %CONDITIONAL{$ITEM} are the conditions (the variables which
-    # configure will substitute), and the values, the associated
-    # values (meaningless for targets).
-    #
-    # By definition, for an unconditional variable, this is empty.
-    %conditional = ();
-
-    # This holds the line numbers at which various elements of
-    # %contents are defined.
-    %content_lines = ();
-
-    # This holds a 1 if a particular variable was examined.
-    %content_seen = ();
-
-    # This holds the names which are targets.  These also appear in
-    # %contents.
-    %targets = ();
-
-    # Same as %CONDITIONAL, but for targets.
-    %target_conditional = ();
-
-    # This is the conditional stack.
-    @conditional_stack = ();
-
-    # This holds the set of included files.
-    @include_stack = ();
-
-    # This holds the "relative directory" of the current Makefile.in.
-    # Eg for src/Makefile.in, this is "src".
-    $relative_dir = '';
-
-    # This holds a list of files that are included in the
-    # distribution.
-    %dist_common = ();
-
-    # This holds a list of directories which we must create at `dist'
-    # time.  This is used in some strange scenarios involving weird
-    # AC_OUTPUT commands.
-    %dist_dirs = ();
-
-    # List of dependencies for the obvious targets.
-    @info = ();
-    @dvi = ();
-    @all = ();
-    @check = ();
-    @check_tests = ();
-
-    # Holds the dependencies of targets which dependencies are factored.
-    # Typically, `.PHONY' will appear in plenty of *.am files, but must
-    # be output once.  Arguably all pure dependencies could be subject
-    # to this factorization, but it is not unpleasant to have paragraphs
-    # in Makefile: keeping related stuff altogether.
-    %dependencies =
-      (
-       # Installing/uninstalling.
-       'install-data-am'      => [],
-       'install-exec-am'      => [],
-       'install-man'	      => [],
-       'uninstall-man'	      => [],
-       'uninstall-am'         => [],
-       'installcheck-am'      => [],
-
-       # Cleaning.
-       'clean-am'             => [],
-       'mostlyclean-am'       => [],
-       'maintainer-clean-am'  => [],
-       'distclean-am'         => [],
-       'clean'                => [],
-       'mostlyclean'          => [],
-       'maintainer-clean'     => [],
-       'distclean'            => [],
-
-       # Tarballing.
-       'dist-all'             => [],
-
-       # Phoning.
-       '.PHONY'               => []
-      );
-    # Holds the factored actions.  Tied to %DEPENDENCIES, i.e., filled
-    # only when keys exists in %DEPENDENCIES.
-    %actions = ();
-
-    # A list of files deleted by `maintainer-clean'.
-    @maintainer_clean_files = ();
-
-    # These are pretty obvious, too.  They are used to define the
-    # SOURCES and OBJECTS variables.
-    @sources = ();
-    @objects = ();
-    # Sources which go in the distribution.
-    @dist_sources = ();
-
-    # This hash maps object file names onto their corresponding source
-    # file names.  This is used to ensure that each object is created
-    # by a single source file.
-    %object_map = ();
-
-    # This keeps track of the directories for which we've already
-    # created `.dirstamp' code.
-    %directory_map = ();
-
-    # These variables track inclusion of various compile-related .am
-    # files.  $included_generic_compile is TRUE if the basic code has
-    # been included.  $included_knr_compile is TRUE if the ansi2knr
-    # code has been included.  $included_libtool_compile is TRUE if
-    # libtool support has been included.
-    $included_generic_compile = 0;
-    $included_knr_compile = 0;
-    $included_libtool_compile = 0;
-
-    # All .P files.
-    %dep_files = ();
-
-    # Strictness levels.
-    $strictness = $default_strictness;
-    $strictness_name = $default_strictness_name;
-
-    # Options from AUTOMAKE_OPTIONS.
-    %options = ();
-
-    # Whether or not dependencies are handled.  Can be further changed
-    # in handle_options.
-    $use_dependencies = $cmdline_use_dependencies;
-
-    # Per Makefile.am.
-    $local_maint_charset = $maint_charset;
-
-    # All yacc and lex source filenames for this directory.  Use
-    # filenames instead of raw count so that multiple instances are
-    # counted correctly (eg one yacc file can appear in multiple
-    # programs without harm).
-    %yacc_sources = ();
-    %lex_sources = ();
-
-    # This is a list of all targets to run during "make dist".
-    @dist_targets = ();
-
-    # Keys in this hash are the basenames of files which must depend
-    # on ansi2knr.
-    %de_ansi_files = ();
-
-    # This maps the source extension of a suffix rule to its
-    # corresponding output extension.
-    %suffix_rules = ();
-
-    # This is a regular expression which matches all the known source
-    # suffix.  A source suffix is one that appears in the first
-    # position of a suffix rule.
-    $source_suffix_pattern = '';
-
-    # This is the name of the redirect `all' target to use.
-    $all_target = '';
-
-    # This keeps track of which extensions we've seen (that we care
-    # about).
-    %extension_seen = ();
-
-    # This is random scratch space for the language finish functions.
-    # Don't randomly overwrite it; examine other uses of keys first.
-    %language_scratch = ();
-
-    # We keep track of which objects need special (per-executable)
-    # handling on a per-language basis.
-    %lang_specific_files = ();
-
-    # This is set when `handle_dist' has finished.  Once this happens,
-    # we should no longer push on dist_common.
-    $handle_dist_run = 0;
-
-    # True if we need `LINK' defined.  This is a hack.
-    $need_link = 0;
-}
-
 
 ################################################################
 
