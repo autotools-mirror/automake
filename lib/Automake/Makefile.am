@@ -26,6 +26,7 @@ dist_perllib_DATA = \
   Condition.pm \
   Configure_ac.pm \
   DisjConditions.pm \
+  FileUtils.pm \
   General.pm \
   Location.pm \
   Struct.pm \

@@ -36,6 +36,7 @@ BEGIN
 use Automake::General;
 use Automake::Configure_ac;
 use Automake::XFile;
+use Automake::FileUtils;
 use File::stat;
 
 # Some constants.
@@ -183,7 +184,8 @@ sub parse_arguments (@)
 	}
 	else
 	{
-	    die "aclocal: unrecognized option -- `$arglist[0]'\nTry `aclocal --help' for more information.\n";
+	    print STDERR "aclocal: unrecognized option -- `$arglist[0]'\nTry `aclocal --help' for more information.\n";
+	    exit 1;
 	}
 
 	shift (@arglist);
@@ -238,8 +240,11 @@ sub scan_configure ()
 {
     require_configure_ac;
 
-    open (CONFIGURE, $configure_ac)
-	|| die "aclocal: couldn't open `$configure_ac': $!\n";
+    if (! open (CONFIGURE, $configure_ac))
+      {
+	print STDERR "aclocal: couldn't open `$configure_ac': $!\n";
+	exit 1;
+      }
 
     my $mtime = mtime $configure_ac;
     $greatest_mtime = $mtime if $greatest_mtime < $mtime;
@@ -305,8 +310,12 @@ sub scan_m4_files (@)
     local ($m4dir);
     foreach $m4dir (@dirlist)
     {
-	opendir (DIR, $m4dir)
-	    || die "aclocal: couldn't open directory `$m4dir': $!\n";
+	if (! opendir (DIR, $m4dir))
+	  {
+	    print STDERR "aclocal: couldn't open directory `$m4dir': $!\n";
+	    exit 1;
+	  }
+
 	local ($file, $fullfile);
 	foreach $file (sort grep (! /^\./, readdir (DIR)))
 	{
