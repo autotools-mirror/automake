@@ -14,8 +14,9 @@ AC_ARG_ENABLE(multilib,
  esac],
               [multilib=yes])
 
-# We may get other options which we are undocumented:
+# We may get other options which we leave undocumented:
 # --with-target-subdir, --with-multisrctop, --with-multisubdir
+# See config-ml.in if you want the gory details.
 
 if test "$srcdir" = "."; then
   if test "$with_target_subdir" != "."; then
