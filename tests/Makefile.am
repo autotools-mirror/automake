@@ -15,6 +15,7 @@ aclocal9.test \
 acloca10.test \
 acloca11.test \
 acloca12.test \
+acloca13.test \
 acoutnoq.test \
 acoutpt.test \
 acoutpt2.test \

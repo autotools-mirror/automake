@@ -39,6 +39,7 @@ use Automake::Configure_ac;
 use Automake::Channels;
 use Automake::XFile;
 use Automake::FileUtils;
+use File::Basename;
 use File::stat;
 
 # Note that this isn't pkgdatadir, but a separate directory.
@@ -95,6 +96,9 @@ $ac_defun_rx = "A[CU]_DEFUN\\((?:\\[([^]]+)\\]|([^],)\n]+))";
 
 # Matches an AC_REQUIRE line.
 $ac_require_rx = "AC_REQUIRE\\((?:\\[([^]]+)\\]|([^],)\n]+))\\)";
+
+# Matches an m4_include line
+$m4_include_rx = "(?:m4_)?s?include\\((?:\\[([^]]+)\\]|([^],)\n]+))\\)";
 
 
 
@@ -238,40 +242,13 @@ sub parse_arguments (@)
 
 sub scan_configure ()
 {
-  if (! open (CONFIGURE, $configure_ac))
-    {
-      print STDERR "aclocal: couldn't open `$configure_ac': $!\n";
-      exit 1;
-    }
-
-  my $mtime = mtime $configure_ac;
-  $greatest_mtime = $mtime if $greatest_mtime < $mtime;
-
   # Make sure we include acinclude.m4 if it exists.
   if (-f 'acinclude.m4')
     {
       &add_file ('acinclude.m4');
     }
 
-  while (<CONFIGURE>)
-    {
-      # Remove comments from current line.
-      s/\bdnl\b.*$//;
-      s/\#.*$//;
-
-      # Search for things we know about.  The "search" sub is
-      # constructed dynamically by scan_m4_files.  The last
-      # parenthetical match makes sure we don't match things that
-      # look like macro assignments or AC_SUBSTs.
-      if (! &search && /(^|\s+)(AM_[A-Z0-9_]+)($|[^\]\)=A-Z0-9_])/)
-	{
-	  # Macro not found, but AM_ prefix found.
-	  warn "aclocal: $configure_ac: $.: macro `$2' not found in library\n";
-	  $exit_code = 1;
-	}
-    }
-
-  close (CONFIGURE);
+  &scan_configure_dep ($configure_ac);
 }
 
 ################################################################
@@ -369,26 +346,39 @@ sub add_macro ($)
     &add_file ($map{$macro});
 }
 
-# Add a file to output.
-sub add_file ($)
+# scan_contents ($file)
+# --------------------------------
+my %scanned_configure_dep = ();
+sub scan_configure_dep ($)
 {
-  local ($file) = @_;
-
-  # Only add a file once.
-  return if ($file_seen{$file});
-  $file_seen{$file} = 1;
+  my ($file) = @_;
+  # Do not scan a file twice.
+  return ()
+    if exists $scanned_configure_dep{$file};
+  $scanned_configure_dep = 1;
 
   my $mtime = mtime $file;
   $greatest_mtime = $mtime if $greatest_mtime < $mtime;
 
-  my (@rlist);
-  foreach (split ("\n", $file_contents{$file}))
+  my $contents = exists $file_contents{$file} ?
+    $file_contents{$file} : contents $file;
+
+  my $line = 0;
+  my @rlist = ();
+  my @ilist = ();
+  foreach (split ("\n", $contents))
     {
+      ++$line;
       # Remove comments from current line.
       s/\bdnl\b.*$//;
       s/\#.*$//;
 
-      if (/$ac_require_rx/g)
+      while (/$m4_include_rx/g)
+	{
+	  push (@ilist, $1 || $2);
+	}
+
+      while (/$ac_require_rx/g)
 	{
 	  push (@rlist, $1 || $2);
 	}
@@ -400,16 +390,27 @@ sub add_file ($)
       if (! &search && /(^|\s+)(AM_[A-Z0-9_]+)($|[^\]\)=A-Z0-9_])/)
 	{
 	  # Macro not found, but AM_ prefix found.
-	  warn "aclocal: $configure_ac: $.: macro `$2' not found in library\n";
+	  warn "aclocal: $file: $line: macro `$2' not found in library\n";
 	  $exit_code = 1;
 	}
     }
 
-  local ($macro);
-  foreach $macro (@rlist)
-    {
-      &add_macro ($macro);
-    }
+
+  &add_macro ($_) foreach (@rlist);
+  my $dirname = dirname $file;
+  scan_configure_dep (File::Spec->rel2abs ($_, $dirname)) foreach (@ilist);
+}
+
+# Add a file to output.
+sub add_file ($)
+{
+  local ($file) = @_;
+
+  # Only add a file once.
+  return if ($file_seen{$file});
+  $file_seen{$file} = 1;
+
+  scan_configure_dep $file;
 }
 
 # Point to the documentation for underquoted AC_DEFUN only once.
