@@ -109,8 +109,11 @@ $seen_prog_install = 0;
 # 1 if any scripts installed, 0 otherwise.
 $scripts_installed = 0;
 
-# Whether AC_PATH_XTRA has been seen in configure.in
+# Whether AC_PATH_XTRA has been seen in configure.in.
 $seen_path_xtra = 0;
+
+# Whether YACC variable has been seen in configure.in.
+$seen_prog_yacc = 0;
 
 # Charsets used by maintainer and in distribution.  MAINT_CHARSET is
 # handled in a funny way: if seen in the top-level Makefile.am, it is
@@ -449,8 +452,9 @@ sub handle_source_transform
 	    local (@result) = ();
 	    foreach (@files)
 	    {
-		# Skip header files.
-		next if /\.h$/;
+		# Skip header files, including C++-ish ones.
+		next if /\.[hH]$/;
+		next if /\.hxx$/;
 		# Skip things that look like macro references.
 		next if /^\$\(.*\)$/;
 		next if /^\$\{.*\}$/;
@@ -464,6 +468,7 @@ sub handle_source_transform
 
 		# Transform source files into .o files.
 		s/\.cc$/$obj/g;
+		s/\.cxx$/$obj/g;
 		s/\.[cCmylfs]$/$obj/g;
 		push (@result, $_);
 
@@ -1655,6 +1660,12 @@ sub scan_configure
 
 	$seen_canonical = 1 if /AC_CANONICAL_(HOST|SYSTEM)/;
 	$seen_path_xtra = 1 if /AC_PATH_XTRA/;
+
+	# Sometimes it is desirable to explicitly set YACC.  For
+	# instance some people don't want to use bison.
+	$seen_prog_yacc = 1 if (/AC_PROG_YACC/
+				|| /AC_SUBST\(YACC\)/
+				|| /AC_(PATH|CHECK)_PROGS?\(YACC/);
 
 	# Some things required by Automake.  FIXME We only really
 	# require AC_ARG_PROGRAM if any program is installed.
