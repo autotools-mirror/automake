@@ -568,7 +568,8 @@ sub handle_options
 	}
 	elsif ($_ eq 'no-installman' || $_ eq 'no-installinfo'
 	       || $_ eq 'dist-shar' || $_ eq 'dist-zip'
-	       || $_ eq 'dist-tarZ' || $_ eq 'dejagnu')
+	       || $_ eq 'dist-tarZ' || $_ eq 'dejagnu'
+	       || $_ eq 'no-texinfo.tex')
 	{
 	    # Explicitly recognize these.
 	}
@@ -1658,7 +1659,8 @@ sub handle_texinfo
     # when in Cygnus mode -- a bletcherous hack.
     &require_file_with_line ('info_TEXINFOS',
 			     $cygnus_mode ? $GNU : $FOREIGN,
-			     'texinfo.tex');
+			     'texinfo.tex')
+	unless defined $options{'no-texinfo.tex'};
 }
 
 # Handle any man pages.
@@ -3381,7 +3383,7 @@ sub scan_one_configure_file
 	    $seen_package = 1;
 	    $seen_version = 1;
 	    $seen_arg_prog = 1;
-	    $seen_prog_install = 1;
+	    $seen_prog_install = 2;
 	    @config_aux_path = ('..');
 	}
 
@@ -4442,8 +4444,10 @@ sub am_install_var
 			    $seen_libtool = 1;
 			}
 
-			# Check that libtool libraries go only into libdir.
-			if ($rcurs =~ /^lib.*\.la$/ && $X ne 'lib')
+			# Check that libtool libraries go only into
+			# libdir.  Ignore `EXTRA' libtool libraries.
+			if ($rcurs =~ /^lib.*\.la$/ && $X ne 'lib'
+			    && $X ne 'EXTRA')
 			{
 			    &am_line_error ($one_name,
 					    "libtool library \`$rcurs' must only be installed in libdir");
