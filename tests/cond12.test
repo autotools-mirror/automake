@@ -32,14 +32,18 @@ cat << 'END' >> automake_tmp
 my $failed = 0;
 sub check_reduce($$) {
  my ($inref, $outref) = @_;
- my @result = sort &Automake::variable_conditions_reduce(@$inref);
- my $correct = 1;
- $correct = 0 if (join(",", @result) ne join(",", @$outref));
+ my @inconds = map { new Automake::Conditional $_ } @$inref;
+ my @outconds = map { (new Automake::Conditional $_)->string } @$outref;
+ my @res =
+    map { $_->string } (&Automake::variable_conditions_reduce (@inconds));
+ my $result = join (",", sort @res);
+ my $exresult = join (",", @outconds);
 
- if (! $correct) {
+ if ($result ne $exresult)
+ {
    print '"'.join(",", @$inref) . '" => "' .
-	 join(",", @result) . '" expected "' .
-	 join(",", @$outref) . '"' . "\n";
+	 $result . '" expected "' .
+	 $exresult . '"' . "\n";
    $failed = 1;
  }
 }

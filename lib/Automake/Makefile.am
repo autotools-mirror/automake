@@ -1,4 +1,10 @@
 ## Process this file with automake to create Makefile.in
 
 perllibdir = $(pkgvdatadir)/Automake
-dist_perllib_DATA = Channels.pm General.pm Location.pm Struct.pm XFile.pm
+dist_perllib_DATA = \
+  Channels.pm \
+  Conditional.pm \
+  General.pm \
+  Location.pm \
+  Struct.pm \
+  XFile.pm

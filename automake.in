@@ -116,7 +116,9 @@ use Automake::General;
 use Automake::XFile;
 use Automake::Channels;
 use Automake::Location;
+use Automake::Conditional;
 use File::Basename;
+use Tie::RefHash;
 use Carp;
 
 ## ----------- ##
@@ -292,6 +294,10 @@ use constant COMPILE_ORDINARY => 2;
 # We can't always associate a location to a variable or a rule,
 # when its defined by Automake.  We use INTERNAL in this case.
 use constant INTERNAL => new Automake::Location;
+
+# The TRUE and FALSE conditionals.
+use constant TRUE => new Automake::Conditional;
+use constant FALSE => new Automake::Conditional "FALSE";
 
 
 ## ---------------------------------- ##
@@ -503,11 +509,11 @@ my @suffixes;
 # - $var_type{$VAR}{$COND} is how it has been defined (`', `+', or `:'),
 # - $var_owner{$VAR}{$COND} tells who owns the variable (VAR_AUTOMAKE,
 #     VAR_CONFIGURE, or VAR_MAKEFILE).
-my %var_value;
-my %var_location;
-my %var_comment;
-my %var_type;
-my %var_owner;
+my %var_value;	  tie %var_value, 'Tie::RefHash::Nestable';
+my %var_location; tie %var_location, 'Tie::RefHash::Nestable';
+my %var_comment;  tie %var_comment, 'Tie::RefHash::Nestable';
+my %var_type;     tie %var_type, 'Tie::RefHash::Nestable';
+my %var_owner;    tie %var_owner, 'Tie::RefHash::Nestable';
 # Possible values for var_owner.  Defined so that the owner of
 # a variable can only be increased (e.g Automake should not
 # override a configure or Makefile variable).
@@ -522,20 +528,20 @@ my %content_seen;
 # %contents.  $targets{TARGET}{COND} is the location of the definition
 # of TARGET for condition COND.  TARGETs should not include
 # a trailing $(EXEEXT), we record this in %target_name.
-my %targets;
+my %targets;       tie %targets, 'Tie::RefHash::Nestable';
 
 # $target_source{TARGET}{COND} is the filename where TARGET
 # were defined for condition COND.  Note this must be a
 # filename, *without* any line number.
-my %target_source;
+my %target_source; tie %target_source, 'Tie::RefHash::Nestable';
 
 # $target_name{TARGET}{COND} is the real name of TARGET (in condition COND).
 # The real name is often TARGET or TARGET$(EXEEXT), and TARGET never
 # contain $(EXEEXT)
-my %target_name;
+my %target_name;   tie %target_name, 'Tie::RefHash::Nestable';
 
 # $target_owner{TARGET}{COND} the owner of TARGET in condition COND.
-my %target_owner;
+my %target_owner;  tie %target_owner, 'Tie::RefHash::Nestable';
 use constant TARGET_AUTOMAKE => 0; # Target defined by Automake.
 use constant TARGET_USER => 1;	# Target defined in the user's Makefile.am.
 
@@ -1615,9 +1621,9 @@ sub generate_makefile
 	if (exists $var_owner{$var})
 	  {
 	    prog_error "\$var_owner{$var}{TRUE} doesn't exist"
-	      unless exists $var_owner{$var}{'TRUE'};
+	      unless exists $var_owner{$var}{&TRUE};
 	    reject_var $var, "`$var' should not be defined"
-	      if $var_owner{$var}{'TRUE'} != VAR_AUTOMAKE;
+	      if $var_owner{$var}{&TRUE} != VAR_AUTOMAKE;
 	  }
       }
 
@@ -1678,8 +1684,8 @@ sub generate_makefile
 
     # Re-init SOURCES.  FIXME: other code shouldn't depend on this
     # (but currently does).
-    macro_define ('SOURCES', VAR_AUTOMAKE, '', 'TRUE', "@sources", INTERNAL);
-    define_pretty_variable ('DIST_SOURCES', '', INTERNAL, @dist_sources);
+    macro_define ('SOURCES', VAR_AUTOMAKE, '', TRUE, "@sources", INTERNAL);
+    define_pretty_variable ('DIST_SOURCES', TRUE, INTERNAL, @dist_sources);
 
     &handle_multilib;
     &handle_texinfo;
@@ -1859,7 +1865,7 @@ sub process_option_list
   # FIXME: We should disallow conditional deffinitions of AUTOMAKE_OPTIONS.
   my $where = ($config ?
 	       $seen_init_automake :
-	       $var_location{'AUTOMAKE_OPTIONS'}{'TRUE'});
+	       $var_location{'AUTOMAKE_OPTIONS'}{&TRUE});
 
   foreach (@list)
     {
@@ -1933,7 +1939,7 @@ sub handle_options
 
     if (variable_defined ('AUTOMAKE_OPTIONS'))
     {
-	if (&process_option_list (0, &variable_value_as_list_recursive ('AUTOMAKE_OPTIONS', '')))
+	if (&process_option_list (0, &variable_value_as_list_recursive ('AUTOMAKE_OPTIONS', TRUE)))
 	{
 	    return 1;
 	}
@@ -1993,8 +1999,9 @@ sub handle_languages
 	    # We define this as a conditional variable because BSD
 	    # make can't handle backslashes for continuing comments on
 	    # the following line.
-	    define_pretty_variable ('DEP_FILES', 'AMDEP_TRUE', INTERNAL,
-				    @deplist);
+	    define_pretty_variable ('DEP_FILES',
+				    new Automake::Conditional ('AMDEP_TRUE'),
+				    INTERNAL, @deplist);
 
 	    # Generate each `include' individually.  Irix 6 make will
 	    # not properly include several files resulting from a
@@ -2192,7 +2199,7 @@ sub handle_languages
 	  if ($lang->link);
 
 	require_variables ("$am_file.am", $lang->Name . " source seen",
-			   'TRUE', @{$lang->config_vars});
+			   TRUE, @{$lang->config_vars});
 
 	# Call the finisher.
 	$lang->finish;
@@ -2631,7 +2638,7 @@ sub define_objects_from_sources ($$$$$$$$)
     if (defined $vars_scanned{$var})
     {
 	err_var $var, "variable `$var' recursively defined";
-	return "";
+	return ("", $objvar || "ERROR");
     }
     $vars_scanned{$var} = 1;
 
@@ -2810,12 +2817,12 @@ sub handle_source_transform
 	    # and add this variable to DIST_SOURCES.
 	    my $distvar = "$var";
 	    my @conds = variable_conditions_recursive ($var);
-	    if (@conds && $conds[0] ne 'TRUE')
+	    if (@conds && $conds[0] != TRUE)
 	      {
 		$distvar = "am__${var}_DIST";
 		my @files =
 		  uniq (variable_value_as_list_recursive ($var, 'all'));
-		define_pretty_variable ($distvar, '', $where, @files);
+		define_pretty_variable ($distvar, TRUE, $where, @files);
 	      }
 	    push @dist_sources, "\$($distvar)"
 	  }
@@ -2849,12 +2856,12 @@ sub handle_source_transform
 					 $one_file, $obj,
 					 "$unxformed.c");
 	$linker ||= &resolve_linker (%linkers_used);
-	define_pretty_variable ($one_file . '_OBJECTS', '', $where, @result)
+	define_pretty_variable ($one_file . '_OBJECTS', TRUE, $where, @result);
     }
     else
     {
 	grep ($_ = '$(' . $_ . $one_file . '_OBJECTS)', @keys);
-	define_pretty_variable ($one_file . '_OBJECTS', '', $where, @keys);
+	define_pretty_variable ($one_file . '_OBJECTS', TRUE, $where, @keys);
     }
 
     # If we want to use `LINK' we must make sure it is defined.
@@ -3105,7 +3112,7 @@ sub handle_compile ()
 	  {
 	    # Only require ansi2knr files if they should appear in
 	    # this directory.
-	    require_file_with_macro ('TRUE', 'AUTOMAKE_OPTIONS', FOREIGN,
+	    require_file_with_macro (TRUE, 'AUTOMAKE_OPTIONS', FOREIGN,
 				     'ansi2knr.c', 'ansi2knr.1');
 
 	    # ansi2knr needs to be built before subdirs, so unshift it.
@@ -3131,7 +3138,7 @@ sub handle_libtool
   return unless variable_defined ('LIBTOOL');
 
   # Libtool requires some files, but only at top level.
-  require_conf_file_with_macro ('TRUE', 'LIBTOOL', FOREIGN, @libtool_files)
+  require_conf_file_with_macro (TRUE, 'LIBTOOL', FOREIGN, @libtool_files)
     if $relative_dir eq '.';
 
   my @libtool_rms;
@@ -3786,12 +3793,12 @@ sub handle_texinfo_helper
 	    # This is ugly, but it is our historical practice.
 	    if ($config_aux_dir_set_in_configure_in)
 	    {
-		require_conf_file_with_macro ('TRUE', 'info_TEXINFOS', FOREIGN,
+		require_conf_file_with_macro (TRUE, 'info_TEXINFOS', FOREIGN,
 					      'mdate-sh');
 	    }
 	    else
 	    {
-		require_file_with_macro ('TRUE', 'info_TEXINFOS',
+		require_file_with_macro (TRUE, 'info_TEXINFOS',
 					 FOREIGN, 'mdate-sh');
 	    }
 
@@ -3873,12 +3880,12 @@ sub handle_texinfo_helper
     {
 	if ($need_texi_file > 1)
 	{
-	    require_conf_file_with_macro ('TRUE', 'info_TEXINFOS', FOREIGN,
+	    require_conf_file_with_macro (TRUE, 'info_TEXINFOS', FOREIGN,
 					  'texinfo.tex');
 	}
 	else
 	{
-	    require_file_with_macro ('TRUE', 'info_TEXINFOS', FOREIGN,
+	    require_file_with_macro (TRUE, 'info_TEXINFOS', FOREIGN,
 				     'texinfo.tex');
 	}
     }
@@ -4130,7 +4137,7 @@ sub handle_dist
     # Files to distributed.  Don't use &variable_value_as_list_recursive
     # as it recursively expands `$(dist_pkgdata_DATA)' etc.
     check_variable_defined_unconditionally ('DIST_COMMON');
-    my @dist_common = split (' ', variable_value ('DIST_COMMON', 'TRUE'));
+    my @dist_common = split (' ', variable_value ('DIST_COMMON', TRUE));
     @dist_common = uniq (sort for_dist_common (@dist_common));
     pretty_print ('DIST_COMMON = ', "\t", @dist_common);
 
@@ -4149,7 +4156,7 @@ sub handle_dist
 	# appropriate condition.  This is meaningful if the nature of
 	# the distribution should depend upon the configure options
 	# used.
-	foreach (&variable_value_as_list_recursive ('EXTRA_DIST', ''))
+	foreach (&variable_value_as_list_recursive ('EXTRA_DIST', 'all'))
 	{
 	    next if /^\@.*\@$/;
 	    next unless s,/+[^/]+$,,;
@@ -4198,7 +4205,7 @@ sub handle_dist
 	    if (! variable_defined ('DIST_SUBDIRS'))
 	    {
 		define_pretty_variable
-		  ('DIST_SUBDIRS', '', INTERNAL,
+		  ('DIST_SUBDIRS', TRUE, INTERNAL,
 		   uniq (&variable_value_as_list_recursive ('SUBDIRS', 'all')));
 	    }
 	}
@@ -4207,7 +4214,7 @@ sub handle_dist
 	    $dist_subdir_name = 'SUBDIRS';
 	    # We always define this because that is what `distclean'
 	    # wants.
-	    define_pretty_variable ('DIST_SUBDIRS', '', INTERNAL,
+	    define_pretty_variable ('DIST_SUBDIRS', TRUE, INTERNAL,
 				    '$(SUBDIRS)');
 	}
 
@@ -4283,7 +4290,7 @@ sub handle_subdirs
     }
 
     $output_rules .= &file_contents ('subdirs', new Automake::Location);
-    variable_pretty_output ('RECURSIVE_TARGETS', 'TRUE');
+    variable_pretty_output ('RECURSIVE_TARGETS', TRUE);
 }
 
 
@@ -4328,7 +4335,7 @@ sub scan_aclocal_m4
 	# Scan all -I directories for m4 files.  These are our
 	# dependencies.
 	my $examine_next = 0;
-	foreach my $amdir (&variable_value_as_list_recursive ('ACLOCAL_AMFLAGS', ''))
+	foreach my $amdir (&variable_value_as_list_recursive ('ACLOCAL_AMFLAGS', TRUE))
 	{
 	    if ($examine_next)
 	    {
@@ -4631,7 +4638,7 @@ sub handle_configure
     }
 
     # These files get removed by "make clean".
-    define_pretty_variable ('CONFIG_CLEAN_FILES', '', INTERNAL,
+    define_pretty_variable ('CONFIG_CLEAN_FILES', TRUE, INTERNAL,
 			    @actual_other_files);
 }
 
@@ -4695,7 +4702,8 @@ sub handle_footer
 	# actual suffixes, and not $(SUFFIXES).  Some versions of make
 	# do not like variable substitutions on the .SUFFIXES line.
 	my @user_suffixes = (variable_defined ('SUFFIXES')
-			     ? &variable_value_as_list_recursive ('SUFFIXES', '')
+			     ? &variable_value_as_list_recursive ('SUFFIXES',
+								  'all')
 			     : ());
 
 	my %suffixes = map { $_ => 1 } @suffixes;
@@ -5008,11 +5016,11 @@ sub handle_emacs_lisp
 
   # Generate .elc files.
   my @elcfiles = map { $_->[1] . 'c' } @elfiles;
-  define_pretty_variable ('ELCFILES', '', INTERNAL, @elcfiles);
+  define_pretty_variable ('ELCFILES', TRUE, INTERNAL, @elcfiles);
 
   push (@all, '$(ELCFILES)');
 
-  require_variables ($elfiles[0][0], "Emacs Lisp sources seen", 'TRUE',
+  require_variables ($elfiles[0][0], "Emacs Lisp sources seen", TRUE,
 		     'EMACS', 'lispdir');
   require_conf_file ($elfiles[0][0], FOREIGN, 'elisp-comp');
   &define_variable ('elisp_comp', $config_aux_dir . '/elisp-comp', INTERNAL);
@@ -5025,7 +5033,7 @@ sub handle_python
 				 'noinst');
   return if ! @pyfiles;
 
-  require_variables ($pyfiles[0][0], "Python sources seen", 'TRUE', 'PYTHON');
+  require_variables ($pyfiles[0][0], "Python sources seen", TRUE, 'PYTHON');
   require_conf_file ($pyfiles[0][0], FOREIGN, 'py-compile');
   &define_variable ('py_compile', $config_aux_dir . '/py-compile', INTERNAL);
 }
@@ -5074,7 +5082,7 @@ sub handle_minor_options
 	    {
 	      # This means we have an alpha release.  See
 	      # GNITS_VERSION_PATTERN for details.
-	      require_file_with_macro ('TRUE', 'AUTOMAKE_OPTIONS',
+	      require_file_with_macro (TRUE, 'AUTOMAKE_OPTIONS',
 				       FOREIGN, 'README-alpha');
 	    }
 	}
@@ -5339,7 +5347,7 @@ sub scan_autoconf_files
       if -f $config_aux_path[0] . '/install.sh';
 
     # Preserve dist_common for later.
-    $configure_dist_common = variable_value ('DIST_COMMON', 'TRUE') || '';
+    $configure_dist_common = variable_value ('DIST_COMMON', TRUE) || '';
 }
 
 ################################################################
@@ -5891,99 +5899,6 @@ sub pretty_print_rule
 ################################################################
 
 
-# $STRING
-# &conditional_string(@COND-STACK)
-# --------------------------------
-# Build a string which denotes the conditional in @COND-STACK.  Some
-# simplifications are done: `TRUE' entries are elided, and any `FALSE'
-# entry results in a return of `FALSE'.
-sub conditional_string
-{
-  my (@stack) = @_;
-
-  if (grep (/^FALSE$/, @stack))
-    {
-      return 'FALSE';
-    }
-  else
-    {
-      return join (' ', uniq sort grep (!/^TRUE$/, @stack));
-    }
-}
-
-
-# $BOOLEAN
-# &conditional_true_when ($COND, $WHEN)
-# -------------------------------------
-# See if a conditional is true.  Both arguments are conditional
-# strings.  This returns true if the first conditional is true when
-# the second conditional is true.
-# For instance with $COND = `BAR FOO', and $WHEN = `BAR BAZ FOO',
-# obviously return 1, and 0 when, for instance, $WHEN = `FOO'.
-sub conditional_true_when ($$)
-{
-    my ($cond, $when) = @_;
-
-    # Make a hash holding all the values from $WHEN.
-    my %cond_vals = map { $_ => 1 } split (' ', $when);
-
-    # Nothing is true when FALSE (not even FALSE itself, but it
-    # shouldn't hurt if you decide to change that).
-    return 0 if exists $cond_vals{'FALSE'};
-
-    # Check each component of $cond, which looks `COND1 COND2'.
-    foreach my $comp (split (' ', $cond))
-    {
-	# TRUE is always true.
-	next if $comp eq 'TRUE';
-	return 0 if ! defined $cond_vals{$comp};
-    }
-
-    return 1;
-}
-
-
-# $BOOLEAN
-# &conditional_is_redundant ($COND, @WHENS)
-# ----------------------------------------
-# Determine whether $COND is redundant with respect to @WHENS.
-#
-# Returns true if $COND is true for any of the conditions in @WHENS.
-#
-# If there are no @WHENS, then behave as if @WHENS contained a single empty
-# condition.
-sub conditional_is_redundant ($@)
-{
-    my ($cond, @whens) = @_;
-
-    @whens = ("") if @whens == 0;
-
-    foreach my $when (@whens)
-    {
-	return 1 if conditional_true_when ($cond, $when);
-    }
-    return 0;
-}
-
-
-# $BOOLEAN
-# &conditional_implies_any ($COND, @CONDS)
-# ----------------------------------------
-# Returns true iff $COND implies any of the conditions in @CONDS.
-sub conditional_implies_any ($@)
-{
-    my ($cond, @conds) = @_;
-
-    @conds = ("") if @conds == 0;
-
-    foreach my $c (@conds)
-    {
-	return 1 if conditional_true_when ($c, $cond);
-    }
-    return 0;
-}
-
-
 # $NEGATION
 # condition_negate ($COND)
 # ------------------------
@@ -6004,9 +5919,9 @@ sub condition_negate ($)
 sub by_condition
 {
     # Be careful we might be comparing `' or `#'.
-    $a =~ /^(.*)_(TRUE|FALSE)$/;
+    $a->string =~ /^(.*)_(TRUE|FALSE)$/;
     my ($aname, $abool) = ($1 || '', $2 || '');
-    $b =~ /^(.*)_(TRUE|FALSE)$/;
+    $b->string =~ /^(.*)_(TRUE|FALSE)$/;
     my ($bname, $bbool) = ($1 || '', $2 || '');
     return ($aname cmp $bname
 	    # Don't bother with IFs, given that TRUE is after FALSE
@@ -6017,44 +5932,12 @@ sub by_condition
 }
 
 
-# &make_condition (@CONDITIONS)
-# -----------------------------
-# Transform a list of conditions (themselves can be an internal list
-# of conditions, e.g., @CONDITIONS = ('cond1 cond2', 'cond3')) into a
-# Make conditional (a pattern for AC_SUBST).
-# Correctly returns the empty string when there are no conditions.
-sub make_condition
-{
-    my $res = conditional_string (@_);
-
-    # There are no conditions.
-    if ($res eq '')
-      {
-	# Nothing to do.
-      }
-    # It's impossible.
-    elsif ($res eq 'FALSE')
-      {
-	$res = '#';
-      }
-    # Build it.
-    else
-      {
-	$res = '@' . $res . '@';
-	$res =~ s/ /@@/g;
-      }
-
-    return $res;
-}
-
-
-
 ## ------------------------------ ##
 ## Handling the condition stack.  ##
 ## ------------------------------ ##
 
 
-# $COND_STRING
+# $COND
 # cond_stack_if ($NEGATE, $COND, $WHERE)
 # --------------------------------------
 sub cond_stack_if ($$$)
@@ -6071,11 +5954,11 @@ sub cond_stack_if ($$$)
 
   push (@cond_stack, $cond);
 
-  return conditional_string (@cond_stack);
+  return new Automake::Conditional (@cond_stack);
 }
 
 
-# $COND_STRING
+# $COND
 # cond_stack_else ($NEGATE, $COND, $WHERE)
 # ----------------------------------------
 sub cond_stack_else ($$$)
@@ -6103,11 +5986,11 @@ sub cond_stack_else ($$$)
 	if $cond_stack[$#cond_stack] ne $cond;
     }
 
-  return conditional_string (@cond_stack);
+  return new Automake::Conditional (@cond_stack);
 }
 
 
-# $COND_STRING
+# $COND
 # cond_stack_endif ($NEGATE, $COND, $WHERE)
 # -----------------------------------------
 sub cond_stack_endif ($$$)
@@ -6137,7 +6020,7 @@ sub cond_stack_endif ($$$)
 
   pop @cond_stack;
 
-  return conditional_string (@cond_stack);
+  return new Automake::Conditional (@cond_stack);
 }
 
 
@@ -6198,12 +6081,12 @@ sub conditional_ambiguous_p ($$@)
 	{
 	  return ("$var multiply defined in condition $cond", $vcond);
 	}
-      elsif (&conditional_true_when ($vcond, $cond))
+      elsif ($vcond->true_when ($cond))
 	{
 	  return ("$var was already defined in condition $vcond, "
 		  . "which implies condition $cond", $vcond);
 	}
-      elsif (&conditional_true_when ($cond, $vcond))
+      elsif ($cond->true_when ($vcond))
 	{
 	  return ("$var was already defined in condition $vcond, "
 		   . "which is implied by condition $cond", $vcond);
@@ -6237,7 +6120,8 @@ sub conditional_ambiguous_p ($$@)
 #   endif
 #   C = mumble
 #
-# we should have:
+# we should have (we display result as conditional strings in this
+# illustration, but we really return Conditional objects):
 #   variable_not_always_defined_in_cond ('A', 'COND1_TRUE COND2_TRUE')
 #     => ()
 #   variable_not_always_defined_in_cond ('A', 'COND1_TRUE')
@@ -6255,13 +6139,12 @@ sub conditional_ambiguous_p ($$@)
 #     => ()
 #   variable_not_always_defined_in_cond ('Z', 'TRUE')
 #     => ("TRUE")
-#
 sub variable_not_always_defined_in_cond ($$)
 {
   my ($var, $cond) = @_;
 
   # It's easy to answer if the variable is not defined.
-  return ("TRUE",) unless exists $var_value{$var};
+  return (TRUE,) unless exists $var_value{$var};
 
   # How does it work?  Let's take the second example:
   #
@@ -6287,7 +6170,7 @@ sub variable_not_always_defined_in_cond ($$)
 	if exists $var_value{$var}{$icond};
 
       push @res, $icond
-	if (conditional_true_when ($cond, $icond)); # (3)
+	if ($cond->true_when ($icond)); # (3)
     }
   return @res;
 }
@@ -6298,6 +6181,9 @@ sub variable_not_always_defined_in_cond ($$)
 sub macro_define ($$$$$$)
 {
   my ($var, $owner, $type, $cond, $value, $where) = @_;
+
+  prog_error "$cond is not a reference"
+    unless ref $where;
 
   prog_error "$where is not a reference"
     unless ref $where;
@@ -6321,8 +6207,6 @@ sub macro_define ($$$$$$)
     if $type eq ':';
 
   check_variable_expansions ($value, $where);
-
-  $cond ||= 'TRUE';
 
   # An Automake variable must be consistently defined with the same
   # sign by Automake.  A user variable must be set by either `=' or
@@ -6395,10 +6279,10 @@ sub macro_define ($$$$$$)
       #     @COND_FALSE@FOO = foo2 bar
 
       # Do we need an helper variable?
-      if ($cond ne 'TRUE')
+      if ($cond != TRUE)
         {
 	    # Does the helper variable already exists?
-	    my $key = "$var:$cond";
+	    my $key = "$var:" . $cond->string;
 	    if (exists $appendvar{$key})
 	      {
 		# Yes, let's simply append to it.
@@ -6436,7 +6320,7 @@ sub macro_define ($$$$$$)
 	      err ($where,
 		   "Cannot apply `+=' because `$var' is not defined "
 		   . "in\nthe following conditions:\n  "
-		   . join ("\n  ", @undef_cond)
+		   . join ("\n  ", map { $_->string } @undef_cond)
 		   . "\nEither define `$var' in these conditions,"
 		   . " or use\n`+=' in the same conditions as"
 		   . " the definitions.");
@@ -6461,7 +6345,7 @@ sub macro_define ($$$$$$)
 	{
 	  verb ("refusing to override the user definition of:\n"
 		. macro_dump ($var)
-		."with `$cond' => `$value'");
+		."with `$cond->string' => `$value'");
 	}
       else
 	{
@@ -6674,7 +6558,7 @@ sub variable_assert ($$)
   return 1
     if variable_defined $var;
 
-  require_variables ($where, "variable `$var' is used", 'TRUE', $var);
+  require_variables ($where, "variable `$var' is used", TRUE, $var);
 
   return 0;
 }
@@ -6707,38 +6591,29 @@ sub examine_variable
 # because we will need to define the variable under both conditions.
 sub variable_conditions_recursive ($)
 {
-    my ($var) = @_;
+  my ($var) = @_;
 
-    %vars_scanned = ();
+  %vars_scanned = ();
 
-    my @new_conds = variable_conditions_recursive_sub ($var, '');
+  my @new_conds = variable_conditions_recursive_sub ($var, TRUE);
 
-    # Now we want to return all permutations of the subvariable
-    # conditions.
-    my %allconds = ();
+  # Now we want to return all permutations of the subvariable
+  # conditions.
+  my %allconds = ();
     foreach my $item (@new_conds)
-    {
-	foreach (split (' ', $item))
-	{
+      {
+	foreach ($item->conds)
+	  {
 	    s/^(.*)_(TRUE|FALSE)$/$1_TRUE/;
 	    $allconds{$_} = 1;
-	}
-    }
-    @new_conds = variable_conditions_permutations (sort keys %allconds);
+	  }
+      }
+  @new_conds = variable_conditions_permutations (sort keys %allconds);
 
-    my %uniqify;
-    foreach my $cond (@new_conds)
-    {
-	my $reduce = variable_conditions_reduce (split (' ', $cond));
-        next
-	    if $reduce eq 'FALSE';
-	$uniqify{$cond} = 1;
-    }
-
-    # Note we cannot just do `return sort keys %uniqify', because this
-    # function is sometimes used in a scalar context.
-    my @uniq_list = sort by_condition keys %uniqify;
-    return @uniq_list;
+  # Note we cannot just do `return sort @new_conds', because this
+  # function is sometimes used in a scalar context.
+  my @uniq_list = sort by_condition @new_conds;
+  return @uniq_list;
 }
 
 
@@ -6860,9 +6735,7 @@ sub variable_conditions_recursive_sub
 	  my @svc = variable_conditions_recursive_sub ($varname, $var);
 	  foreach my $item (@svc)
 	    {
-	      my $val = conditional_string ($vcond, split (' ', $item));
-	      $val ||= 'TRUE';
-	      push (@subvar_conds, $val);
+	      push (@subvar_conds, $vcond->merge ($item));
 	    }
 	}
 
@@ -6892,14 +6765,13 @@ sub variable_conditions_recursive_sub
     foreach my $this_cond (@this_conds)
     {
 	my @perms =
-	    variable_conditions_permutations (split (' ', $this_cond));
+	    variable_conditions_permutations ($this_cond->conds);
 	foreach my $perm (@perms)
 	{
 	    my $ok = 1;
 	    foreach my $scan (@this_conds)
 	    {
-		if (&conditional_true_when ($perm, $scan)
-		    || &conditional_true_when ($scan, $perm))
+		if ($perm->true_when ($scan) || $scan->true_when ($perm))
 		{
 		    $ok = 0;
 		    last;
@@ -6923,25 +6795,25 @@ sub variable_conditions_recursive_sub
 # If the list is empty, return TRUE
 sub variable_conditions_reduce
 {
-    my (@conds) = @_;
-    my @ret = ();
-    my $cond;
-    while(@conds > 0)
+  my (@conds) = @_;
+  my @ret = ();
+  my $cond;
+  while (@conds > 0)
     {
-	$cond = shift(@conds);
+      $cond = shift @conds;
 
-        # FALSE is absorbent.
-	return 'FALSE'
-	  if $cond eq 'FALSE';
+      # FALSE is absorbent.
+      return FALSE
+	if $cond == FALSE;
 
-	if (!conditional_is_redundant ($cond, @ret, @conds))
-	  {
-	    push (@ret, $cond);
-	  }
+      if (! $cond->redundant_wrt (@ret, @conds))
+	{
+	  push (@ret, $cond);
+	}
     }
 
-    return "TRUE" if @ret == 0;
-    return @ret;
+  return TRUE if @ret == 0;
+  return @ret;
 }
 
 # @CONDS
@@ -6964,8 +6836,7 @@ sub invert_conditions
     my @notconds = ();
 
     # Generate all permutation for all inputs.
-    my @perm =
-	map { variable_conditions_permutations (split(' ', $_)); } @conds;
+    my @perm = map { variable_conditions_permutations ($_->conds); } @conds;
     # Remove redundant conditions.
     @perm = variable_conditions_reduce @perm;
 
@@ -6973,7 +6844,7 @@ sub invert_conditions
     foreach my $perm (@perm)
     {
 	push @notconds, $perm
-	    if ! conditional_implies_any ($perm, @conds);
+	    if ! $perm->implies_any (@conds);
     }
     return @notconds;
 }
@@ -6996,26 +6867,26 @@ sub invert_conditions
 #     => ("TRUE")
 sub variable_conditions_permutations
 {
-    my (@comps) = @_;
-    return ()
-	if ! @comps;
-    my $comp = shift (@comps);
-    return variable_conditions_permutations (@comps)
-	if $comp eq '';
-    my $neg = condition_negate ($comp);
+  my (@comps) = @_;
+  return ()
+    if ! @comps;
+  my $comp = shift (@comps);
+  return variable_conditions_permutations (@comps)
+    if $comp eq '';
+  my $neg = condition_negate ($comp);
 
-    my @ret;
-    foreach my $sub (variable_conditions_permutations (@comps))
+  my @ret;
+  foreach my $sub (variable_conditions_permutations (@comps))
     {
-	push (@ret, "$comp $sub") if $comp ne 'FALSE';
-	push (@ret, "$neg $sub") if $neg ne 'FALSE';
+      push (@ret, $sub->merge_conds ($comp)) if $comp ne 'FALSE';
+      push (@ret, $sub->merge_conds ($neg)) if $neg ne 'FALSE';
     }
-    if (! @ret)
+  if (! @ret)
     {
-	push (@ret, $comp) if $comp ne 'FALSE';
-	push (@ret, $neg) if $neg ne 'FALSE';
+      push (@ret, new Automake::Conditional $comp) if $comp ne 'FALSE';
+      push (@ret, new Automake::Conditional $neg) if $neg ne 'FALSE';
     }
-    return @ret;
+  return @ret;
 }
 
 
@@ -7030,7 +6901,7 @@ sub check_variable_defined_unconditionally ($$)
   foreach my $cond (keys %{$var_value{$var}})
     {
       next
-	if $cond =~ /^TRUE|FALSE$/;
+	if $cond->true || $cond->false;
 
       if ($parent)
 	{
@@ -7054,7 +6925,7 @@ sub variable_value
 {
     my ($var) = @_;
     &check_variable_defined_unconditionally ($var);
-    return $var_value{$var}{'TRUE'};
+    return $var_value{$var}{&TRUE};
 }
 
 
@@ -7162,13 +7033,12 @@ sub variable_value_as_list
       unless variable_assert $var, $parent;
 
     # Get value for given condition
-    $cond ||= 'TRUE';
     my $onceflag;
     foreach my $vcond (keys %{$var_value{$var}})
     {
 	my $val = $var_value{$var}{$vcond};
 
-	if (&conditional_true_when ($vcond, $cond))
+	if ($vcond->true_when ($cond))
 	{
 	    # Unless variable is not defined conditionally, there should only
 	    # be one value of $vcond true when $cond.
@@ -7234,14 +7104,13 @@ sub variable_value_as_list_recursive_worker ($$$$)
     }
     else
     {
-        $cond ||= 'TRUE';
 	$vars_scanned{$var} = 1;
 	my $onceflag;
 	foreach my $vcond (keys %{$var_value{$var}})
 	{
 	    my $val = $var_value{$var}{$vcond};
 	    my $where = $var_location{$var}{$vcond};
-	    if (&conditional_true_when ($vcond, $cond))
+	    if ($vcond->true_when ($cond))
 	    {
 		# Warn if we have an ambiguity.  It's hard to know how
 		# to handle this case correctly.
@@ -7286,7 +7155,8 @@ sub variable_output ($@)
       my $val = $var_value{$var}{$cond};
       my $equals = $var_type{$var}{$cond} eq ':' ? ':=' : '=';
       my $output_var = "$var $equals $val";
-      $output_var =~ s/^/make_condition ($cond)/meg;
+      my $str = $cond->subst_string;
+      $output_var =~ s/^/$str/meg;
       $output_vars .= $output_var . "\n";
     }
 }
@@ -7315,7 +7185,7 @@ sub variable_pretty_output ($@)
 
       my $val = $var_value{$var}{$cond};
       my $equals = $var_type{$var}{$cond} eq ':' ? ':=' : '=';
-      my $make_condition = make_condition ($cond);
+      my $make_condition = $cond->subst_string;
       $output_vars .= pretty_print_internal ("$make_condition$var $equals",
 					     "$make_condition\t",
 					     split (' ' , $val));
@@ -7363,14 +7233,10 @@ sub define_pretty_variable ($$$@)
 {
     my ($var, $cond, $where, @value) = @_;
 
-    # Beware that an empty $cond has a different semantics for
-    # macro_define and variable_pretty_output.
-    $cond ||= 'TRUE';
-
     if (! variable_defined ($var, $cond))
     {
         macro_define ($var, VAR_AUTOMAKE, '', $cond, "@value", $where);
-	variable_pretty_output ($var, $cond || 'TRUE');
+	variable_pretty_output ($var, $cond);
 	$content_seen{$var} = 1;
     }
 }
@@ -7382,7 +7248,7 @@ sub define_pretty_variable ($$$@)
 sub define_variable ($$$)
 {
     my ($var, $value, $where) = @_;
-    define_pretty_variable ($var, 'TRUE', $where, $value);
+    define_pretty_variable ($var, TRUE, $where, $value);
 }
 
 
@@ -7391,7 +7257,7 @@ sub define_variable ($$$)
 sub define_configure_variable ($)
 {
   my ($var) = @_;
-  if (! variable_defined ($var, 'TRUE')
+  if (! variable_defined ($var, TRUE)
       # Explicitly avoid ANSI2KNR -- we AC_SUBST that in
       # protos.m4, but later define it elsewhere.  This is
       # pretty hacky.  We also explicitly avoid AMDEPBACKSLASH:
@@ -7399,9 +7265,9 @@ sub define_configure_variable ($)
       # appreciated by Make.
       && ! grep { $_ eq $var } (qw(ANSI2KNR AMDEPBACKSLASH)))
     {
-      macro_define ($var, VAR_CONFIGURE, '', 'TRUE',
+      macro_define ($var, VAR_CONFIGURE, '', TRUE,
 		    subst $var, $configure_vars{$var});
-      variable_pretty_output ($var, 'TRUE');
+      variable_pretty_output ($var, TRUE);
     }
 }
 
@@ -7532,9 +7398,11 @@ sub rule_define ($$$$$)
 
   prog_error "$where is not a reference"
     unless ref $where;
+  prog_error "$cond is not a reference"
+    unless ref $cond;
 
   # Don't even think about defining a rule in condition FALSE.
-  return () if $cond eq 'FALSE';
+  return () if $cond == FALSE;
 
   # For now `foo:' will override `foo$(EXEEXT):'.  This is temporary,
   # though, so we emit a warning.
@@ -7584,7 +7452,7 @@ sub rule_define ($$$$$)
       my $oldowner  = $target_owner{$target}{$cond};
 
       # Don't mention true conditions in diagnostics.
-      my $condmsg = $cond ne 'TRUE' ? " in condition `$cond'" : '';
+      my $condmsg = $cond == TRUE ? " in condition `$cond'" : '';
 
       if ($owner == TARGET_USER)
 	{
@@ -7694,7 +7562,7 @@ sub rule_define ($$$$$)
 	  @conds = ();
 	  for my $undefined_cond (invert_conditions(@defined_conds))
 	    {
-	      push @conds, make_condition ($cond, $undefined_cond);
+	      push @conds, $cond->merge ($undefined_cond);
 	    }
 	  # No conditions left to define the rule.
 	  # Warn, because our workaround is meaningless in this case.
@@ -7730,9 +7598,6 @@ sub rule_define ($$$$$)
       register_suffix_rule ($where, $1, $2);
     }
 
-  # Return "" instead of TRUE so it can be used with make_paragraphs
-  # directly.
-  return "" if 1 == @conds && $conds[0] eq 'TRUE';
   return @conds;
 }
 
@@ -7826,7 +7691,7 @@ sub read_am_file ($$)
     # sure it is the same on exit.  This lets us conditonally include
     # other files.
     my @saved_cond_stack = @cond_stack;
-    my $cond = conditional_string (@cond_stack);
+    my $cond = new Automake::Conditional (@cond_stack);
 
     my $last_var_name = '';
     my $last_var_type = '';
@@ -7871,8 +7736,9 @@ sub read_am_file ($$)
 	{
 	    if ($prev_state == IN_RULE_DEF)
 	    {
-	        $output_trailer .= &make_condition (@cond_stack);
-		$output_trailer .= $_;
+	      my $cond = new Automake::Conditional @cond_stack;
+	      $output_trailer .= $cond->subst_string;
+	      $output_trailer .= $_;
 	    }
 	    elsif ($prev_state == IN_COMMENT)
 	    {
@@ -7894,13 +7760,12 @@ sub read_am_file ($$)
 
 	      if (!/\\$/)
 		{
-		  append_comments ($cond || 'TRUE',
-				   $last_var_name, $spacing, $comment);
+		  append_comments ($cond, $last_var_name, $spacing, $comment);
 		  $comment = $spacing = '';
 		  macro_define ($last_var_name, VAR_MAKEFILE,
 				$last_var_type, $cond,
 				$last_var_value, $where)
-		    if $cond ne 'FALSE';
+		    if $cond != FALSE;
 		  push (@var_list, $last_var_name);
 		}
 	    }
@@ -7927,12 +7792,13 @@ sub read_am_file ($$)
 	    # For now we have to output all definitions of user rules
 	    # and can't diagnose duplicates (see the comment in
 	    # rule_define). So we go on and ignore the return value.
-	    rule_define ($1, $amfile, TARGET_USER, $cond || 'TRUE', $where);
+	    rule_define ($1, $amfile, TARGET_USER, $cond, $where);
 
 	    check_variable_expansions ($_, $where);
 
 	    $output_trailer .= $comment . $spacing;
-            $output_trailer .= &make_condition (@cond_stack);
+	    my $cond = new Automake::Conditional @cond_stack;
+	    $output_trailer .= $cond->subst_string;
             $output_trailer .= $_;
 	    $comment = $spacing = '';
 	}
@@ -7954,14 +7820,13 @@ sub read_am_file ($$)
 	    if (!/\\$/)
 	      {
 		# Accumulating variables must not be output.
-		append_comments ($cond || 'TRUE',
-				 $last_var_name, $spacing, $comment);
+		append_comments ($cond, $last_var_name, $spacing, $comment);
 		$comment = $spacing = '';
 
 		macro_define ($last_var_name, VAR_MAKEFILE,
 			      $last_var_type, $cond,
 			      $last_var_value, $where)
-		  if $cond ne 'FALSE';
+		  if $cond != FALSE;
 		push (@var_list, $last_var_name);
 	      }
 	}
@@ -8004,7 +7869,8 @@ sub read_am_file ($$)
 	    $prev_state = IN_RULE_DEF;
 	    check_variable_expansions ($_, $where);
 	    $output_trailer .= $comment . $spacing;
-	    $output_trailer .= &make_condition  (@cond_stack);
+	    my $cond = new Automake::Conditional @cond_stack;
+	    $output_trailer .= $cond->subst_string;
 	    $output_trailer .= $_;
 	    $comment = $spacing = '';
 	    err $where, "`#' comment at start of rule is unportable"
@@ -8232,7 +8098,7 @@ sub file_contents_internal ($$$%)
     # sure it is the same on exit.  This lets us conditonally include
     # other files.
     my @saved_cond_stack = @cond_stack;
-    my $cond = conditional_string (@cond_stack);
+    my $cond = new Automake::Conditional (@cond_stack);
 
     foreach (make_paragraphs ($file, %transform))
     {
@@ -8261,7 +8127,7 @@ sub file_contents_internal ($$$%)
 	# Handle inclusion of other files.
         elsif (/$INCLUDE_PATTERN/o)
         {
-	    if ($cond ne 'FALSE')
+	    if ($cond != FALSE)
 	      {
 		my $file = ($is_am ? "$libdir/am/" : '') . $1;
 		$where->push_context ("`$file' included from here");
@@ -8330,7 +8196,7 @@ sub file_contents_internal ($$$%)
 	      # `foo:' after `foo bar:'.
 
 	      # Output only if not in FALSE.
-	      if (defined $dependencies{$_} && $cond ne 'FALSE')
+	      if (defined $dependencies{$_} && $cond != FALSE)
 		{
 		  &depend ($_, @deps);
 		  $actions{$_} .= $actions;
@@ -8342,11 +8208,11 @@ sub file_contents_internal ($$$%)
 		  my @undefined_conds =
 		    rule_define ($targets, $file,
 				 $is_am ? TARGET_AUTOMAKE : TARGET_USER,
-				 $cond || 'TRUE', $where);
+				 $cond, $where);
 		  for my $undefined_cond (@undefined_conds)
 		    {
 		      my $condparagraph = $paragraph;
-		      $condparagraph =~ s/^/$undefined_cond/gm;
+		      $condparagraph =~ s/^/$undefined_cond->subst_string/gme;
 		      $result_rules .= "$spacing$comment$condparagraph\n";
 		    }
 		  if (scalar @undefined_conds == 0)
@@ -8371,19 +8237,19 @@ sub file_contents_internal ($$$%)
 	    $is_rule = 0;
 
 	    # Accumulating variables must not be output.
-	    append_comments ($cond || 'TRUE', $var, $spacing, $comment);
+	    append_comments ($cond, $var, $spacing, $comment);
 	    macro_define ($var, $is_am ? VAR_AUTOMAKE : VAR_MAKEFILE,
 			  $type, $cond, $val, $where)
-	      if $cond ne 'FALSE';
+	      if $cond != FALSE;
 	    push (@var_list, $var);
 
 	    # If the user has set some variables we were in charge
 	    # of (which is detected by the first reading of
 	    # `header-vars.am'), we must not output them.
 	    $result_vars .= "$spacing$comment$_\n"
-	      if ($cond ne 'FALSE' && $type ne '+'
-		  && exists $var_owner{$var}{$cond || 'TRUE'}
-		  && $var_owner{$var}{$cond || 'TRUE'} == VAR_AUTOMAKE);
+	      if ($cond != FALSE && $type ne '+'
+		  && exists $var_owner{$var}{$cond}
+		  && $var_owner{$var}{$cond} == VAR_AUTOMAKE);
 
  	    $comment = $spacing = '';
  	}
@@ -8392,9 +8258,9 @@ sub file_contents_internal ($$$%)
 	    # This isn't an error; it is probably some tokens which
 	    # configure is supposed to replace, such as `@SET-MAKE@',
 	    # or some part of a rule cut by an if/endif.
-  	    if ($cond ne 'FALSE' && ! ($is_rule && $discard_rule))
+  	    if (! $cond->false && ! ($is_rule && $discard_rule))
 	      {
-		s/^/make_condition (@cond_stack)/gme;
+		s/^/$cond->subst_string/gme;
 		$result_rules .= "$spacing$comment$_\n";
 	      }
  	    $comment = $spacing = '';
@@ -8543,8 +8409,8 @@ sub am_primary_prefixes ($$@)
       # conditionally defined (or else adjust the condition below).
       next
 	if (exists $var_owner{$varname}
-	    && exists $var_owner{$varname}{'TRUE'}
-	    && $var_owner{$varname}{'TRUE'} != VAR_MAKEFILE);
+	    && exists $var_owner{$varname}{&TRUE}
+	    && $var_owner{$varname}{&TRUE} != VAR_MAKEFILE);
 
       if ($varname =~ /^(nobase_)?(dist_|nodist_)?(.*)_$primary$/)
 	{
@@ -8765,7 +8631,7 @@ sub am_install_var
   if (@used && $primary ne 'JAVA' && $primary ne 'PYTHON')
     {
       # Define it.
-      define_pretty_variable ($primary, '', INTERNAL, @used);
+      define_pretty_variable ($primary, TRUE, INTERNAL, @used);
       $output_vars .= "\n";
     }
 
@@ -9093,7 +8959,7 @@ sub push_dist_common
 {
   prog_error "push_dist_common run after handle_dist"
     if $handle_dist_run;
-  macro_define ('DIST_COMMON', VAR_AUTOMAKE, '+', '', "@_", INTERNAL);
+  macro_define ('DIST_COMMON', VAR_AUTOMAKE, '+', TRUE, "@_", INTERNAL);
 }
 
 
@@ -9192,10 +9058,10 @@ sub require_variables ($$$@)
 	unless @undef_cond;
 
       my $text = "$reason`$var' is undefined\n";
-      if (@undef_cond && $undef_cond[0] ne 'TRUE')
+      if (@undef_cond && $undef_cond[0] != TRUE)
 	{
 	  $text .= ("in the following conditions:\n  "
-		    . join ("\n  ", @undef_cond));
+		    . join ("\n  ", map { $_->string } @undef_cond));
 	}
 
       ++$res;

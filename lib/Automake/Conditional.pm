@@ -1,0 +1,420 @@
+# Copyright (C) 1997, 2001, 2002  Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+# 02111-1307, USA.
+
+package Automake::Conditional;
+use strict;
+use Carp;
+
+=head1 NAME
+
+Automake::Conditional - record a conjunction of conditions
+
+=head1 SYNOPSIS
+
+  use Automake::Conditional;
+
+  # Create a conditional to represent "COND1 and not COND2".
+  my $cond = new Automake::Conditional "COND1_TRUE", "COND2_FALSE";
+  # Create a conditional to represent "not COND3".
+  my $other = new Automake::Conditional "COND3_FALSE";
+
+  # Create a conditional to represent
+  #   "COND1 and not COND2 and not COND3".
+  my $both = $cond->merge ($other);
+
+  # Likewise, but using a list of atomica conditional strings
+  my $both2 = $cond->merge_conds ("COND3_FALSE");
+
+  # Return the list of conditions ("COND1_TRUE", "COND2_FALSE"):
+  my @conds = $cond->conds;
+
+  # Is $cond always true?  (Not in this example)
+  if ($cond->true) { ... }
+
+  # Is $cond always false? (Not in this example)
+  if ($cond->false) { ... }
+
+  # Return the list of conditions as a string:
+  #  "COND1_TRUE COND2_FALSE"
+  my $str = $cond->string;
+
+  # Return the list of conditions as a AC_SUBST-style string:
+  #  "@COND1_TRUE@@COND2_FALSE@"
+  my $subst = $cond->subst_string;
+
+  # Is $cond true when $both is true?  (Yes in this example)
+  if ($cond->true_when ($both)) { ... }
+
+  # Is $cond redundant w.r.t. {$other, $both}?
+  # (Yes in this example)
+  if ($cond->redundant_wrt ($other, $both)) { ... }
+
+  # Does $cond imply any of {$other, $both}?
+  # (Not in this example)
+  if ($cond->implies_any ($other, $both)) { ... }
+
+=head1 DESCRIPTION
+
+A C<Conditional> is a conjunction of atomic conditions.  In Automake they
+are used to represent the conditions into which Makefile variables and
+Makefile rules are defined.
+
+If the variable C<VAR> is defined as
+
+  if COND1
+    if COND2
+      VAR = value
+    endif
+  endif
+
+then it will be associated a C<Conditional> created with
+the following statement.
+
+  new Automake::Conditional "COND1_TRUE", "COND2_TRUE";
+
+Remember that a C<Conditional> is a I<conjunction> of conditions, so
+the above C<Conditional> means C<VAR> is defined when C<COND1> is true
+B<and> C<COND2> are true. There is no way to express disjunctions
+(i.e., I<or>s) with this class.
+
+Another point worth to mention is that each C<Conditional> object is
+unique with respect to its conditions.  Two C<Conditional> objects
+created for the same set of conditions will have the same adress.
+This makes it easy to compare C<Conditional>s, just compare the
+references.
+
+  my $c1 = new Automake::Conditional "COND1_TRUE", "COND2_TRUE";
+  my $c2 = new Automake::Conditional "COND1_TRUE", "COND2_TRUE";
+  $c1 == $c2;  # True!
+
+=head2 Methods
+
+=over 4
+
+=item C<$cond = new Automake::Conditional [@conds]>
+
+Return a C<Conditional> objects for the conjunctions of conditions
+listed in C<@conds> as strings.
+
+An item in C<@conds> should be either C<"FALSE">, C<"TRUE">, or have
+the form C<"NAME_FALSE"> or C<"NAME_TRUE"> where C<NAME> can be
+anything (in practice C<NAME> should be the name of a conditional
+declared in F<configure.ac> with C<AM_CONDITIONAL>, but it's not
+C<Automake::Conditional>'s responsability to ensure this).
+
+An empty C<@conds> means C<"TRUE">.
+
+As explained previously, the reference (object) returned is unique
+with respect to C<@conds>.  For this purpose, duplicate elements are
+ignored, and C<@conds> is rewriten as C<("FALSE")> if it contains
+C<"FALSE"> or two contradictory conditions (such as C<"NAME_FALSE">
+and C<"NAME_TRUE">.)
+
+Therefore the following two statements create the same object (they
+both create the C<"FALSE"> conditional).
+
+  my $c3 = new Automake::Conditional "COND1_TRUE", "COND1_FALSE";
+  my $c4 = new Automake::Conditional "COND2_TRUE", "FALSE";
+  $c3 == $c4;   # True!
+  $c3 == FALSE; # True!
+
+=cut
+
+# Keys in this hash are conditionnal strings. Values are the
+# associated object conditions.  This is used by `new' to reuse
+# Conditional objects with identical conditions.
+use vars '%_conditional_singletons';
+%_conditional_singletons = ();
+
+sub new ($;@)
+{
+  my ($class, @conds) = @_;
+  my $self = {
+    hash => {},
+  };
+  bless $self, $class;
+
+  # Accept strings like "FOO BAR" as shorthand for ("FOO", "BAR").
+  @conds = map { split (' ', $_) } @conds;
+
+  for my $cond (@conds)
+    {
+      next if $cond eq 'TRUE';
+
+      # Catch some common programming errors:
+      # - A conditional passed to new
+      confess "`$cond' is a reference, expected a string" if ref $cond;
+      # - A conditional passed as a string to new
+      confess "`$cond' doesn't look like a condition" if $cond =~ /::/;
+
+      # Detect cases when @conds can be simplified to FALSE.
+      if (($cond eq 'FALSE' && $#conds > 0)
+	  || ($cond =~ /^(.*)_TRUE$/ && exists $self->{'hash'}{"${1}_FALSE"})
+	  || ($cond =~ /^(.*)_FALSE$/ && exists $self->{'hash'}{"${1}_TRUE"}))
+	{
+	  return new Automake::Conditional 'FALSE';
+	}
+
+      $self->{'hash'}{$cond} = 1;
+    }
+
+  my $key = $self->string;
+  if (exists $_conditional_singletons{$key})
+    {
+      return $_conditional_singletons{$key};
+    }
+  $_conditional_singletons{$key} = $self;
+  return $self;
+}
+
+=item C<$newcond = $cond-E<gt>merge ($othercond)>
+
+Return a new condition which is the conjunction of
+C<$cond> and C<$othercond>.
+
+=cut
+
+sub merge ($$)
+{
+  my ($self, $other) = @_;
+  new Automake::Conditional $self->conds, $other->conds;
+}
+
+=item C<$newcond = $cond-E<gt>merge_conds (@conds)>
+
+Return a new condition which is the conjunction of C<$cond> and
+C<@conds>, where C<@conds> is a list of atomic condition strings, as
+passed to C<new>.
+
+=cut
+
+sub merge_conds ($@)
+{
+  my ($self, @conds) = @_;
+  new Automake::Conditional $self->conds, @conds;
+}
+
+=item C<@list = $cond-E<gt>conds>
+
+Return the set of conditions defining C<$cond>, as strings.  Note that
+this might not be exactly the list passed to C<new> (or a
+concatenation of such lists if C<merge> was used), because of the
+cleanup mentioned in C<new>'s description.
+
+For instance C<$c3-E<gt>conds> will simply return C<("FALSE")>.
+
+=cut
+
+sub conds ($ )
+{
+  my ($self) = @_;
+  my @conds = keys %{$self->{'hash'}};
+  return ("TRUE") unless @conds;
+  return sort @conds;
+}
+
+# Undocumented, shouldn't be needed out of this class.
+sub has ($$)
+{
+  my ($self, $cond) = @_;
+  if (exists $self->{'hash'}{$cond})
+    {
+      return $self->{'hash'}{$cond};
+    }
+  return 0;
+}
+
+=item C<$cond-E<gt>false>
+
+Return 1 iff this condition is always false.
+
+=cut
+
+sub false ($ )
+{
+  my ($self) = @_;
+  return $self->has ('FALSE');
+}
+
+=item C<$cond-E<gt>true>
+
+Return 1 iff this condition is always true.
+
+=cut
+
+sub true ($ )
+{
+  my ($self) = @_;
+  return 0 == keys %{$self->{'hash'}};
+}
+
+=item C<$cond-E<gt>string>
+
+Build a string which denotes the conditional.
+
+For instance using the C<$cond> definition from L<SYNOPSYS>,
+C<$cond-E<gt>string> will return C<"COND1_TRUE COND2_FALSE">.
+
+=cut
+
+sub string ($ )
+{
+  my ($self) = @_;
+
+  return $self->{'string'} if defined $self->{'string'};
+
+  my $res = '';
+  if ($self->false)
+    {
+      $res = 'FALSE';
+    }
+  else
+    {
+      $res = join (' ', sort $self->conds);
+    }
+  $self->{'string'} = $res;
+  return $res;
+}
+
+=item C<$cond-E<gt>subst_string>
+
+Build a C<AC_SUBST>-style string for output in F<Makefile.in>.
+
+For instance using the C<$cond> definition from L<SYNOPSYS>,
+C<$cond-E<gt>subst_string> will return C<"@COND1_TRUE@@COND2_FALSE@">.
+
+=cut
+
+sub subst_string ($ )
+{
+  my ($self) = @_;
+
+  return $self->{'subst_string'} if defined $self->{'subst_string'};
+
+  my $res = '';
+  if ($self->false)
+    {
+      $res = '#';
+    }
+  elsif (! $self->true)
+    {
+      $res = '@' . join ('@@', sort $self->conds) . '@';
+    }
+  $self->{'subst_string'} = $res;
+  return $res;
+}
+
+=item C<$cond-E<gt>true_when ($when)>
+
+Return 1 iff C<$cond> is true when C<$when> is true.
+Return 0 otherwise.
+
+Using the definitions from L<SYNOPSYS>, C<$cond> is true
+when C<$both> is true, but the converse is wrong.
+
+=cut
+
+sub true_when ($$)
+{
+  my ($self, $when) = @_;
+
+  # Nothing is true when FALSE (not even FALSE itself, but it
+  # shouldn't hurt if you decide to change that).
+  return 0 if $self->false || $when->false;
+
+  # If we are true, we stay true when $when is true :)
+  return 1 if $self->true;
+
+  # $SELF is true under $WHEN if each conditional component of $SELF
+  # exists in $WHEN.
+  foreach my $cond ($self->conds)
+    {
+      return 0 unless $when->has ($cond);
+    }
+  return 1;
+}
+
+=item C<$cond-E<gt>redundant_wrt (@conds)>
+
+Return 1 iff C<$cond> is true for any condition in C<@conds>.
+If @conds is empty, return 1 iff C<$cond> is C<FALSE>.
+Return 0 otherwise.
+
+=cut
+
+sub redundant_wrt ($@)
+{
+  my ($self, @conds) = @_;
+
+  foreach my $cond (@conds)
+    {
+      return 1 if $self->true_when ($cond);
+    }
+  return $self->false;
+}
+
+=item C<$cond-E<gt>implies_any (@conds)>
+
+Return 1 iff C<$cond> implies any of the conditions in C<@conds>.
+Return 0 otherwise.
+
+=cut
+
+# $BOOLEAN
+# &conditional_implies_any ($COND, @CONDS)
+# ----------------------------------------
+# Returns true iff $COND implies any of the conditions in @CONDS.
+sub implies_any ($@)
+{
+  my ($self, @conds) = @_;
+
+  foreach my $cond (@conds)
+    {
+      return 1 if $cond->true_when ($self);
+    }
+  return 0;
+}
+
+=head1 HISTORY
+
+C<AM_CONDITIONAL>s and supporting code were added to Automake 1.1o by
+Ian Lance Taylor <ian@cygnus.org> in 1997.  Since then it has been
+improved by Tom Tromey <tromey@redhat.com>, Richard Boulton
+<richard@tartarus.org>, Raja R Harinath <harinath@cs.umn.edu>, and
+Akim Demaile <akim@epita.fr>.  Alexandre Duret-Lutz <adl@gnu.org>
+extracted the code out of Automake to create this package in 2002.
+
+=cut
+
+1;
+
+### Setup "GNU" style for perl-mode and cperl-mode.
+## Local Variables:
+## perl-indent-level: 2
+## perl-continued-statement-offset: 2
+## perl-continued-brace-offset: 0
+## perl-brace-offset: 0
+## perl-brace-imaginary-offset: 0
+## perl-label-offset: -2
+## cperl-indent-level: 2
+## cperl-brace-offset: 0
+## cperl-continued-brace-offset: 0
+## cperl-label-offset: -2
+## cperl-extra-newline-before-brace: t
+## cperl-merge-trailing-else: nil
+## cperl-continued-statement-offset: 2
+## End:
