@@ -4444,13 +4444,15 @@ sub scan_autoconf_traces ($)
 {
   my ($filename) = @_;
 
+  my @traced = ('AC_CONFIG_FILES', 'AC_LIBSOURCE', 'AC_SUBST',
+		'AM_CONDITIONAL', 'AM_INIT_AUTOMAKE');
+
   my $traces = "$ENV{amtraces} ";
 
-  $traces .= ' --trace=AC_CONFIG_FILES';
-  $traces .= ' --trace=AC_LIBSOURCE';
-  $traces .= ' --trace=AC_SUBST';
-  $traces .= ' --trace=AM_CONDITIONAL';
-  $traces .= ' --trace=AM_INIT_AUTOMAKE';
+  # Use a separator unlikely to be used, not `:', the default, which
+  # has a precise meaning for AC_CONFIG_FILES and so on.
+  $traces .= join (' ',
+		   map { "--trace=$_" . ':\$f::\$l::\$n::\${::}%' } @traced);
 
   my $tracefh = new Automake::XFile ("$traces |");
   verbose "reading $traces";
@@ -4458,7 +4460,7 @@ sub scan_autoconf_traces ($)
   while ($_ = $tracefh->getline)
     {
       chomp;
-      my ($file, $line, @args) = split /:/;
+      my ($file, $line, @args) = split /::/;
       my $macro = $args[0];
       my $here = "$file:$line";
 
