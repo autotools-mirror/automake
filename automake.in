@@ -948,7 +948,8 @@ sub handle_options
     {
       # FIXME: We should disallow conditional definitions of AUTOMAKE_OPTIONS.
       if (process_option_list ($var->rdef (TRUE)->location,
-			       $var->value_as_list_recursive (TRUE)))
+			       $var->value_as_list_recursive (cond_filter =>
+							      TRUE)))
 	{
 	  return 1;
 	}
@@ -1350,7 +1351,7 @@ sub check_libobjs_sources
       my $var = var ($varname);
       if ($var)
 	{
-	  @files = $var->value_as_list_recursive ('all');
+	  @files = $var->value_as_list_recursive;
 	}
       elsif ($prefix eq '')
 	{
@@ -1786,8 +1787,7 @@ sub handle_source_transform
 	    if ($var->has_conditional_contents)
 	      {
 		$distvar = "am__${varname}_DIST";
-		my @files =
-		  uniq ($var->value_as_list_recursive ('all'));
+		my @files = uniq ($var->value_as_list_recursive);
 		define_pretty_variable ($distvar, TRUE, $where, @files);
 	      }
 	    push @dist_sources, "\$($distvar)"
@@ -1947,8 +1947,7 @@ sub handle_LIBOBJS ($$$)
 	  $rewrite = "^" . quotemeta ($iter) . "\$";
 	  # Only require the file if it is not a built source.
 	  my $bs = var ('BUILT_SOURCES');
-	  if (! $bs
-	      || ! grep (/$rewrite/, $bs->value_as_list_recursive ('all')))
+	  if (! $bs || ! grep (/$rewrite/, $bs->value_as_list_recursive))
 	    {
 	      require_file_with_macro ($cond, $var, FOREIGN, $iter);
 	    }
@@ -2311,7 +2310,7 @@ sub handle_ltlibraries
       # Get the installation directory of each library.
       (my $dir = $key) =~ s/^nobase_//;
       my $var = rvar ($key . '_LTLIBRARIES');
-      for my $pair ($var->loc_and_value_as_list_recursive ('all'))
+      for my $pair ($var->value_as_list_recursive (location => 1))
 	{
 	  my ($where, $lib) = @$pair;
 	  # We reject libraries which are installed in several places,
@@ -2362,9 +2361,8 @@ sub handle_ltlibraries
       my $libname_rx = "^lib.*\.la";
       my $ldvar = var ("${xlib}_LDFLAGS") || var ('AM_LDFLAGS');
       my $ldvar2 = var ('LDFLAGS');
-      if (($ldvar && grep (/-module/, $ldvar->value_as_list_recursive ('all')))
-	  || ($ldvar2
-	      && grep (/-module/, $ldvar2->value_as_list_recursive ('all'))))
+      if (($ldvar && grep (/-module/, $ldvar->value_as_list_recursive))
+	  || ($ldvar2 && grep (/-module/, $ldvar2->value_as_list_recursive)))
 	{
 	  # Relax name checking for libtool modules.
 	  $libname_rx = "\.la";
@@ -2702,12 +2700,13 @@ sub handle_texinfo_helper ($)
   my $d = var 'DISTCLEANFILES';
   my $c = var 'CLEANFILES';
   my @f = ();
-  push @f, $d->value_as_list_recursive (TRUE) if $d;
-  push @f, $c->value_as_list_recursive (TRUE) if $c;
+  push @f, $d->value_as_list_recursive (inner_expand => 1) if $d;
+  push @f, $c->value_as_list_recursive (inner_expand => 1) if $c;
   @f = map { s|[^A-Za-z_0-9*\[\]\-]|\\$&|g; s|\*|[^/]*|g; $_; } @f;
   my $user_cleaned_files = '^(?:' . join ('|', @f) . ')$';
 
-  foreach my $texi ($info_texinfos->value_as_list_recursive ('all'))
+  foreach my $texi ($info_texinfos->value_as_list_recursive (inner_expand
+							     => 1))
     {
       my $infobase = $texi;
       $infobase =~ s/\.(txi|texinfo|texi)$//;
@@ -3028,7 +3027,7 @@ sub handle_man_pages
       my $var = var ($varname);
       if ($var)
 	{
-	  foreach ($var->value_as_list_recursive ('all'))
+	  foreach ($var->value_as_list_recursive)
 	    {
 	      # A page like `foo.1c' goes into man1dir.
 	      if (/\.([0-9a-z])([a-z]*)$/)
@@ -3259,7 +3258,7 @@ sub handle_dist ()
       # appropriate condition.  This is meaningful if the nature of
       # the distribution should depend upon the configure options
       # used.
-      foreach ($extra_dist->value_as_list_recursive ('all'))
+      foreach ($extra_dist->value_as_list_recursive)
 	{
 	  next if /^\@.*\@$/;
 	  next unless s,/+[^/]+$,,;
@@ -3271,7 +3270,7 @@ sub handle_dist ()
   # We have to check DIST_COMMON for extra directories in case the
   # user put a source used in AC_OUTPUT into a subdir.
   my $topsrcdir = backname ($relative_dir);
-  foreach (rvar ('DIST_COMMON')->value_as_list_recursive ('all'))
+  foreach (rvar ('DIST_COMMON')->value_as_list_recursive)
     {
       next if /^\@.*\@$/;
       s/\$\(top_srcdir\)/$topsrcdir/;
@@ -3316,7 +3315,7 @@ sub handle_dist ()
 	  $dist_subdir_name = 'DIST_SUBDIRS';
 	  define_pretty_variable
 	    ('DIST_SUBDIRS', TRUE, INTERNAL,
-	     uniq ($subdirs->value_as_list_recursive ('all')));
+	     uniq ($subdirs->value_as_list_recursive));
 	}
       else
 	{
@@ -3352,10 +3351,10 @@ sub handle_subdirs ()
   return
     unless $subdirs;
 
-  my @subdirs = $subdirs->value_as_list_recursive ('all');
+  my @subdirs = $subdirs->value_as_list_recursive;
   my @dsubdirs = ();
   my $dsubdirs = var ('DIST_SUBDIRS');
-  @dsubdirs = $dsubdirs->value_as_list_recursive ('all')
+  @dsubdirs = $dsubdirs->value_as_list_recursive
     if $dsubdirs;
 
   # If an `obj/' directory exists, BSD make will enter it before
@@ -3854,7 +3853,7 @@ sub handle_gettext
 
   if (-d 'po')
     {
-      my @subdirs = $subdirs->value_as_list_recursive ('all');
+      my @subdirs = $subdirs->value_as_list_recursive;
 
       msg_var ('syntax', $subdirs,
 	       "AM_GNU_GETTEXT used but `po' not in SUBDIRS")
@@ -3904,8 +3903,7 @@ sub handle_footer
 	# actual suffixes, and not $(SUFFIXES).  Some versions of make
 	# do not like variable substitutions on the .SUFFIXES line.
 	my @user_suffixes = ($suffixes
-			     ? $suffixes->value_as_list_recursive ('all')
-			     : ());
+			     ? $suffixes->value_as_list_recursive : ());
 
 	my %suffixes = map { $_ => 1 } @suffixes;
 	delete @suffixes{@user_suffixes};
@@ -6263,7 +6261,7 @@ sub am_install_var
 
       # Append actual contents of where_PRIMARY variable to
       # @result, skipping @substitutions@.
-      foreach my $locvals ($one_var->loc_and_value_as_list_recursive ('all'))
+      foreach my $locvals ($one_var->value_as_list_recursive (location => 1))
 	{
 	  my ($loc, $value) = @$locvals;
 	  # Skip configure substitutions.

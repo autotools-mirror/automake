@@ -586,49 +586,35 @@ sub value_as_list ($$;$$)
   return @result;
 }
 
-=item C<@values = $var-E<gt>value_as_list_recursive ($cond)>
+=item C<@values = $var-E<gt>value_as_list_recursive ([%options])>
 
-Return the list of values of C<$var> and any subvariable in condition
-C<$cond>.
+Return the contents of C<$var> as a list, split on whitespace.  This
+will recursively follow C<$(...)> and C<${...}> inclusions.  It
+preserves C<@...@> substitutions.
+
+C<%options> is a list of option for C<Variable::traverse_recursively>
+(see this method).  The most useful is C<cond_filter>:
+
+  $var->value_as_list_recursive (cond_filter => $cond)
+
+will return the contents of C<$var> and any subvariable in all
+conditions implied by C<$cond>.
+
+C<%options> can also carry options specific to C<value_as_list_recursive>.
+Presently, the only such option is C<location =E<gt> 1> which instructs
+C<value_as_list_recursive> to return a list of C<[$location, @values]> pairs.
 
 =cut
 
-sub value_as_list_recursive ($$)
+sub value_as_list_recursive ($;%)
 {
-  return &_value_as_list_recursive_worker (@_, 0);
-}
-
-=item C<@values = $var-E<gt>loc_and_value_as_list_recursive ($cond)>
-
-Return the values of C<$var> and any subvariable in condition
-C<$cond> as a list of C<[$location, @values]> pairs.
-
-=cut
-
-sub loc_and_value_as_list_recursive ($$)
-{
-  return &_value_as_list_recursive_worker (@_, 1);
-}
-
-# @VALUE
-# &_value_as_list_recursive_worker ($VAR, $COND, $LOC_WANTED)
-# -----------------------------------------------------------
-# Return contents of VAR as a list, split on whitespace.  This will
-# recursively follow $(...) and ${...} inclusions.  It preserves @...@
-# substitutions.  If COND is 'all', then all values under all
-# conditions should be returned; if COND is a particular condition
-# then only the value for that condition should be returned;
-# otherwise, warn if VAR is conditionally defined.  If $LOC_WANTED is set,
-# return a list of [$location, $value] instead of a list of values.
-sub _value_as_list_recursive_worker ($$$)
-{
-  my ($var, $cond_filter, $loc_wanted) = @_;
+  my ($var, %options) = @_;
 
   return $var->traverse_recursively
     (# Construct [$location, $value] pairs if requested.
      sub {
        my ($var, $val, $cond, $full_cond) = @_;
-       return [$var->rdef ($cond)->location, $val] if $loc_wanted;
+       return [$var->rdef ($cond)->location, $val] if $options{'location'};
        return $val;
      },
      # Collect results.
@@ -636,7 +622,7 @@ sub _value_as_list_recursive_worker ($$$)
        my ($var, $parent_cond, @allresults) = @_;
        return map { my ($cond, @vals) = @$_; return @vals } @allresults;
      },
-     $cond_filter);
+     %options);
 }
 
 
@@ -1207,12 +1193,14 @@ sub output_variables ()
   return $res;
 }
 
-=item C<$var-E<gt>traverse_recursively (&fun_item, &fun_collect, [$cond_filter])>
+=item C<$var-E<gt>traverse_recursively (&fun_item, &fun_collect, [cond_filter =E<gt> $cond_filter], [inner_expand =E<gt> 1])>
 
 Split the value of the Automake::Variable C<$var> on space, and
-traverse its components recursively.  If C<$cond_filter> is an
-C<Automake::Condition>, process any conditions which are true when
-C<$cond_filter> is true.  Otherwise, process all conditions.
+traverse its components recursively.
+
+If C<$cond_filter> is an C<Automake::Condition>, process any
+conditions which are true when C<$cond_filter> is true.  Otherwise,
+process all conditions.
 
 We distinguish two kinds of items in the content of C<$var>.
 Terms that look like C<$(foo)> or C<${foo}> are subvariables
@@ -1229,6 +1217,10 @@ following arguments:
    $full_cond)  -- the full Condition, taking into account
                    conditions inherited from parent variables
                    during recursion
+
+If C<inner_expand> is set, variable references occuring in filename
+(as in C<$(BASE).ext>) are expansed before the filename is passed to
+C<&fun_item>.
 
 C<&fun_item> may return a list of items, they will be passed to
 C<&fun_store> later on.  Define C<&fun_item> as C<undef> when it serve
@@ -1258,21 +1250,24 @@ recursive calls).
 # substitutions currently in force.
 my @_substfroms;
 my @_substtos;
-sub traverse_recursively ($&&;$)
+sub traverse_recursively ($&&;%)
 {
   ++$_traversal;
   @_substfroms = ();
   @_substtos = ();
-  my ($var, $fun_item, $fun_collect, $cond_filter) = @_;
+  my ($var, $fun_item, $fun_collect, %options) = @_;
+  my $cond_filter = $options{'cond_filter'};
+  my $inner_expand = $options{'inner_expand'};
   return $var->_do_recursive_traversal ($var,
 					$fun_item, $fun_collect,
-					$cond_filter, TRUE)
+					$cond_filter, TRUE, $inner_expand)
 }
 
 # The guts of Automake::Variable::traverse_recursively.
-sub _do_recursive_traversal ($$&&$$)
+sub _do_recursive_traversal ($$&&$$$)
 {
-  my ($var, $parent, $fun_item, $fun_collect, $cond_filter, $parent_cond) = @_;
+  my ($var, $parent, $fun_item, $fun_collect, $cond_filter, $parent_cond,
+      $inner_expand) = @_;
 
   $var->set_seen;
 
@@ -1300,8 +1295,11 @@ sub _do_recursive_traversal ($$&&$$)
 	}
       my @result = ();
       my $full_cond = $cond->merge ($parent_cond);
-      foreach my $val ($var->value_as_list ($cond, $parent, $parent_cond))
+
+      my @to_process = $var->value_as_list ($cond, $parent, $parent_cond);
+      while (@to_process)
 	{
+	  my $val = shift @to_process;
 	  # If $val is a variable (i.e. ${foo} or $(bar), not a filename),
 	  # handle the sub variable recursively.
 	  # (Backslashes before `}' and `)' within brackets are here to
@@ -1335,13 +1333,54 @@ sub _do_recursive_traversal ($$&&$$)
 							  $fun_item,
 							  $fun_collect,
 							  $cond_filter,
-							  $full_cond);
+							  $full_cond,
+							  $inner_expand);
 	      push (@result, @res);
 
 	      pop @_substfroms;
 	      pop @_substtos;
+
+	      next;
 	    }
-	  elsif ($fun_item) # $var is a filename we must process
+	  # Try to expand variable references inside filenames such as
+	  # `$(NAME).txt'.  We do not handle `:.foo=.bar'
+	  # substitutions, but it would make little sense to use this
+	  # here anyway.
+	  elsif ($inner_expand
+		 && ($val =~ /\$\{([^\}]*)\}/ || $val =~ /\$\(([^\)]*)\)/))
+	    {
+	      my $subvarname = $1;
+	      my $subvar = var $subvarname;
+	      if ($subvar)
+		{
+		  # Replace the reference by its value, and reschedule
+		  # for expansion.
+		  foreach my $c ($subvar->conditions->conds)
+		    {
+		      if (ref $cond_filter)
+			{
+			  # Ignore conditions that don't match $cond_filter.
+			  next if ! $c->true_when ($cond_filter);
+			  # If we found out several definitions of $var
+			  # match $cond_filter then we are in trouble.
+			  # Tell the user we don't support this.
+			  $subvar->check_defined_unconditionally ($var,
+								  $full_cond)
+			    if $cond_once;
+			  $cond_once = 1;
+			}
+		      my $subval = $subvar->rdef ($c)->value;
+		      $val =~ s/\$\{$subvarname\}/$subval/g;
+		      $val =~ s/\$\($subvarname\)/$subval/g;
+		      unshift @to_process, split (' ', $val);
+		    }
+		  next;
+		}
+	      # We do not know any variable with this name.  Fall through
+	      # to filename processing.
+	    }
+
+	  if ($fun_item) # $var is a filename we must process
 	    {
 	      my $substnum=$#_substfroms;
 	      while ($substnum >= 0)
@@ -1423,9 +1462,9 @@ sub _gen_varname ($@)
   return $name;
 }
 
-=item C<$resvar = transform_variable_recursively ($var, $resvar, $base, $nodefine, $where, &fun_item)>
+=item C<$resvar = transform_variable_recursively ($var, $resvar, $base, $nodefine, $where, &fun_item, [%options])>
 
-=item C<$resvar = $var-E<gt>transform_variable_recursively ($resvar, $base, $nodefine, $where, &fun_item)>
+=item C<$resvar = $var-E<gt>transform_variable_recursively ($resvar, $base, $nodefine, $where, &fun_item, [%options])>
 
 Traverse C<$var> recursively, and create a C<$resvar> variable in
 which each filename in C<$var> have been transformed using
@@ -1447,11 +1486,14 @@ Arguments are:
 
 This returns the string C<"\$($RESVAR)">.
 
+C<%options> is a list of options to pass to
+C<Variable::traverse_recursively> (see this method).
+
 =cut
 
-sub transform_variable_recursively ($$$$$&)
+sub transform_variable_recursively ($$$$$&;%)
 {
-  my ($var, $resvar, $base, $nodefine, $where, $fun_item) = @_;
+  my ($var, $resvar, $base, $nodefine, $where, $fun_item, %options) = @_;
 
   $var = ref $var ? $var : rvar $var;
 
@@ -1485,7 +1527,8 @@ sub transform_variable_recursively ($$$$$&)
 	     }
 	 }
        return "\$($varname)";
-     });
+     },
+     %options);
   return $res;
 }
 
