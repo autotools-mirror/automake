@@ -15,7 +15,7 @@ conf2.test confdist.test confh.test confh2.test confh3.test \
 config.test confincl.test confsub.test confvar.test confvar2.test \
 copy.test cxxcpp.test cxxlibobj.test cxxlink.test cxxnoc.test \
 cxxo.test cygwin32.test defun.test defun2.test dejagnu.test \
-depacl.test depacl2.test depend.test depend2.test depend3.test \
+depacl.test depacl2.test depend.test depend3.test \
 discover.test distdir.test dup.test dup2.test else.test empty.test \
 error.test exdir.test exdir2.test exsource.test ext.test extra.test \
 extra3.test extra4.test flibs.test fnoc.test fo.test fonly.test	\
