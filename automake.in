@@ -24,7 +24,7 @@ eval 'exec @PERL@ -S $0 ${1+"$@"}'
 # 02111-1307, USA.
 
 # Originally written by David Mackenzie <djm@gnu.ai.mit.edu>.
-# Perl reimplementation by Tom Tromey <tromey@drip.colorado.edu>.
+# Perl reimplementation by Tom Tromey <tromey@cygnus.com>.
 
 
 # Parameters set by configure.  Not to be changed.  NOTE: assign
@@ -678,7 +678,6 @@ sub handle_yacc_lex_cxx
     if ($yacc_count)
     {
 	push (@suffixes, '.y');
-	&define_configure_variable ('YACC');
 	$output_rules .= ".y.c:\n\t";
 	if ($yacc_count > 1)
 	{
@@ -693,14 +692,12 @@ sub handle_yacc_lex_cxx
 
 	if (! defined $configure_vars{'YACC'})
 	{
-	    # FIXME: should include a reference line.
-	    &am_error ("yacc source seen but \`YACC' not defined in \`configure.in'\n");
+	    &am_error ("yacc source seen but \`YACC' not defined in \`configure.in'");
 	}
     }
     if ($lex_count)
     {
 	push (@suffixes, '.l');
-	&define_configure_variable ('LEX');
 	&define_configure_variable ('LEX_OUTPUT_ROOT');
 	&define_configure_variable ('LEXLIB');
 	$output_rules .= ".l.c:\n\t";
@@ -716,11 +713,11 @@ sub handle_yacc_lex_cxx
 
 	if (! defined $configure_vars{'LEX'})
 	{
-	    &am_error ("lex source seen but \`LEX' not defined in \`configure.in'\n");
+	    &am_error ("lex source seen but \`LEX' not defined in \`configure.in'");
 	}
 	if (! $seen_decl_yytext)
 	{
-	    &am_error ("lex source seen but \`AC_DECL_YYTEXT' not in \`configure.in'\n");
+	    &am_error ("lex source seen but \`AC_DECL_YYTEXT' not in \`configure.in'");
 	}
     }
 
@@ -744,7 +741,6 @@ sub handle_yacc_lex_cxx
     {
 	push (@suffixes, @cxx_list);
 
-	&define_configure_variable ("CXX");
 	&define_configure_variable ("CXXFLAGS");
 	&define_variable ('CXXCOMPILE', '$(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)');
 	&define_variable ('CXXLINK', '$(CXX) $(LDFLAGS) -o $@');
@@ -758,7 +754,7 @@ sub handle_yacc_lex_cxx
 
 	if (! defined $configure_vars{'CXX'})
 	{
-	    &am_error ("C++ source seen but \`CXX' not defined in \`configure.in'\n");
+	    &am_error ("C++ source seen but \`CXX' not defined in \`configure.in'");
 	}
     }
 
@@ -767,11 +763,15 @@ sub handle_yacc_lex_cxx
     #
     if ($seen_c_source)
     {
-	&define_configure_variable ('CC');
 	&define_configure_variable ('CFLAGS');
 	&define_variable ('COMPILE',
 			  '$(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)');
 	&define_variable ('LINK', '$(CC) $(LDFLAGS) -o $@');
+
+	if (! defined $configure_vars{'CC'})
+	{
+	    &am_error
+		("C source seen but \`CC' not defined in \`configure.in'");
     }
 }
 
@@ -854,13 +854,9 @@ sub handle_single_transform_list
 
 	    # Transform source files into .o files.  List of C++
 	    # extensions comes from Emacs 19.32 etags.
-	    if (s/\.c\+\+$/.o/g
-		|| s/\.cc$/.o/g
-		|| s/\.cpp$/.o/g
-		|| s/\.cxx$/.o/g
-		|| s/\.C$/.o/g)
+	    if (s/\.(c\+\+|cc|cpp|cxx|C)$/o/)
 	    {
-		$cxx_extensions{$&} = 1;
+		$cxx_extensions{'.' . $1} = 1;
 		$linker = 'CXXLINK';
 	    }
 	    else
@@ -2210,7 +2206,7 @@ sub handle_aclocal_m4
     # important.
     if ($regen_aclocal)
     {
-	$output_rules .= ("aclocal.m4: "
+	$output_rules .= ("\$(srcdir)/aclocal.m4: "
 			  . ($seen_maint_mode ? "\@MAINT\@" : "")
 			  . "configure.in"
 			  . ($acinclude ? ' acinclude.m4' : '')
@@ -4251,8 +4247,10 @@ sub require_file_internal
 		{
 		    $trailer = "; installing";
 		    $suppress = 1;
-		    # Install the missing file.  Symlink if we can, copy
-		    # if we must.
+		    # Install the missing file.  Symlink if we can,
+		    # copy if we must.  Note: delete the file first,
+		    # in case it is a dangling symlink.
+		    unlink ($errfile);
 		    if ($symlink_exists)
 		    {
 			if (! symlink ($am_dir . '/' . $file, $errfile))
