@@ -47,29 +47,30 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 transform = @program_transform_name@
 
-
-SCRIPTS = automake
-
+bin_SCRIPTS = automake
 TEXINFOS = automake.texi
 
 pkgdata_DATA = clean-kr.am clean.am compile-kr.am compile-vars.am \
 compile.am data.am depend.am dist-subd-top.am \
 dist-subd.am dist-vars.am dist.am footer.am header-vars.am \
-kr-vars.am libscripts.am libprograms.am libraries-vars.am \
+kr-vars.am libprograms.am libraries-vars.am \
 libraries.am library.am mans-vars.am \
 program.am programs.am remake-hdr.am \
 remake-subd.am remake.am scripts.am subdirs.am tags.am tags-subd.am \
-tags-clean.am texi-version.am texinfos-vars.am texinfos.am
-
+tags-clean.am \
+texi-clean.am texi-version.am texinfos-vars.am texinfos.am
 
 DIST_OTHER = automake.in
-DIST_SUBDIRS = RCS samples
 
+ETAGS_ARGS = automake.in
+
+SCRIPTS = ${bin_SCRIPTS}
 
 MAKEINFO = makeinfo
 TEXI2DVI = texi2dvi
 
-TEXFILES = *.aux *.cp *.cps *.dvi *.fn *.fns *.ky *.log *.pg *.toc *.tp *.vr
+TEXFILES = *.aux *.cp *.cps *.dvi *.fn *.fns *.ky *.log *.pg \
+*.toc *.tp *.vr *.op
 
 INFOS = automake.info*
 INFO_DEPS = automake.info
@@ -83,26 +84,26 @@ DIST_COMMON = Makefile.in Makefile.am version.texi stamp-vti mdate-sh texinfo.te
 PACKAGE = @PACKAGE@
 VERSION = @VERSION@
 
-DIST_FILES = $(SOURCES) $(HEADERS) $(TEXINFOS) $(INFOS) $(MANS) \
-	$(DIST_OTHER) $(DIST_COMMON) $(DATA) $(PACKAGEDATA)
+DISTFILES = $(SOURCES) $(HEADERS) $(TEXINFOS) $(INFOS) $(MANS) \
+	$(DIST_OTHER) $(DIST_COMMON) $(DATA)
 
 default: all
 
-install-scripts: $(SCRIPTS)
+install-binSCRIPTS: $(bin_SCRIPTS)
 	$(top_srcdir)/mkinstalldirs $(bindir)
-	for p in $(SCRIPTS); do			\
+	for p in $(bin_SCRIPTS); do		\
 	  $(INSTALL_SCRIPT) $$p $(bindir)/`echo $$p|sed '$(transform)'`; \
 	done
 
-uninstall-scripts:
-	for p in $(SCRIPTS); do			\
+uninstall-binSCRIPTS:
+	for p in $(bin_SCRIPTS); do		\
 	  rm -f $(bindir)/`echo $$p|sed '$(transform)'`; \
 	done
 
 mostlyclean-scripts:
 
 clean-scripts:
-	rm -f $(SCRIPTS)
+	rm -f $(bin_SCRIPTS)
 
 distclean-scripts:
 
@@ -146,25 +147,24 @@ install-info: $(INFO_DEPS)
 	  if test -f $$file; then		\
 	    d=.;				\
 	  else					\
-	    d=${srcdir};			\
+	    d=$(srcdir);			\
 	  fi;					\
 	  for ifile in $${file}*; do		\
 	    $(INSTALL_DATA) $$d/$$ifile $(infodir)/$$ifile; \
 	  done;					\
-	  if $(SHELL) -c 'install-info --version' >/dev/null 2>&1; then \
-	    install-info --infodir=$(infodir) $$d/$$file; \
-	  else					\
-	    true;				\
-	  fi;					\
+	  $(SHELL) -c 'install-info --version' >/dev/null 2>&1 \
+	    && install-info --infodir=$(infodir) $$d/$$file; \
 	done
 
 uninstall-info:
-	cd $(srcdir); for file in *.info*; do
+	cd $(srcdir) && for file in *.info*; do
 	  rm -f $(infodir)/$$file; \
 	done
 
 mostlyclean-info:
-	rm -f $(TEXFILES)
+	rm -f automake.aux automake.cp automake.cps automake.dvi
+	rm -f automake.fn automake.fns automake.ky automake.log
+	rm -f automake.pg automake.toc automake.tp automake.vr automake.op
 
 clean-info:
 
@@ -185,7 +185,7 @@ uninstall-pkgdataDATA:
 	done
 
 $(srcdir)/Makefile.in: Makefile.am
-	cd $(srcdir); automake Makefile
+	cd $(srcdir) && automake Makefile
 
 # For an explanation of the following Makefile rules, see node
 # `Automatic Remaking' in GNU Autoconf documentation.
@@ -193,18 +193,34 @@ Makefile: Makefile.in config.status
 	CONFIG_FILES=$@ CONFIG_HEADERS= ./config.status
 config.status: configure
 	./config.status --recheck
-${srcdir}/configure: configure.in ${ACLOCAL}
-	cd $(srcdir); autoconf
+$(srcdir)/configure: configure.in $(ACLOCAL)
+	cd $(srcdir) && autoconf
+
+id: ID
+
+ID:
+	here=`pwd`; cd $(srcdir) && mkid -f $$here/ID $(SOURCES) $(HEADERS)
 
 tags: TAGS
+
 TAGS:
+	here=`pwd`; cd $(srcdir) && etags $(ETAGS_ARGS) $(SOURCES) $(HEADERS) -o $$here/TAGS
+
+mostlyclean-tags:
+
+clean-tags:
+
+distclean-tags:
+	rm -f TAGS ID
+
+maintainer-clean-tags:
 
 distdir = $(PACKAGE)-$(VERSION)
-dist: $(DIST_FILES)
+dist: $(DISTFILES)
 	rm -rf $(distdir)
 	mkdir $(distdir)
-	(cd $(srcdir); automake --include-deps --output-dir=$(distdir))
-	@for file in $(DIST_FILES); do		\
+	(cd $(srcdir) && automake --include-deps --output-dir=$(distdir))
+	@for file in $(DISTFILES); do		\
 	  test -f $(distdir)/$$file || {	\
 	    echo linking $$file;		\
 	    ln $(srcdir)/$$file $(distdir)/$$file; \
@@ -216,13 +232,13 @@ dist: $(DIST_FILES)
 	@sublist="$(DIST_SUBDIRS)";		\
 	for dir in $$sublist; do		\
 	  echo copying directory $$dir;		\
-	  tar -chof - $$dir | (cd $(distdir); tar -xBpf -); \
+	  tar -chof - $$dir | (cd $(distdir) && tar -xBpf -); \
 	done
 	chmod -R a+r $(distdir)
 	tar -chozf $(distdir).tar.gz $(distdir)
 	rm -rf $(distdir)
 
-all: info $(SCRIPTS)
+all: info
 
 info: $(INFO_DEPS)
 
@@ -232,51 +248,37 @@ check:
 
 installcheck: 
 
-install-exec: install-scripts
+install-exec: install-binSCRIPTS
 
 install-data: install-info install-pkgdataDATA
 
 install: install-exec install-data
 
-uninstall: uninstall-scripts uninstall-info uninstall-pkgdataDATA
+uninstall: uninstall-binSCRIPTS uninstall-info uninstall-pkgdataDATA
 
 installdirs:
-	$(top_srcdir)/mkinstalldirs $(bindir) $(infodir) ${pkgdatadir}
-
-
+	$(top_srcdir)/mkinstalldirs ${bindir} $(infodir) ${pkgdatadir}
 
 mostlyclean-generic:
-	if test -n "$(MOSTLYCLEANFILES)"; then	\
-	  rm -f $(MOSTLYCLEANFILES);		\
-	else					\
-	  true;					\
-	fi
+	test -z "$(MOSTLYCLEANFILES)" || rm -f $(MOSTLYCLEANFILES)
 
 clean-generic:
-	if test -n "$(CLEANFILES)"; then	\
-	  rm -f $(CLEANFILES);			\
-	else					\
-	  true;					\
-	fi
+	test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	rm -f Makefile $(DISTCLEANFILES)
-	rm -f config.cache config.log config.status ${CONFIG_HEADER} stamp-h
+	rm -f config.cache config.log config.status $(CONFIG_HEADER) stamp-h
 
 maintainer-clean-generic:
-	if test -n "$(MAINTAINERCLEANFILES)"; then \
-	  rm -f $(MAINTAINERCLEANFILES);	\
-	else					\
-	  true;					\
-	fi
+	test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 
-mostlyclean: mostlyclean-scripts mostlyclean-vti mostlyclean-info mostlyclean-generic
+mostlyclean: mostlyclean-vti mostlyclean-info mostlyclean-tags mostlyclean-generic
 
-clean: mostlyclean clean-scripts clean-vti clean-info clean-generic
+clean: mostlyclean clean-vti clean-info clean-tags clean-generic
 
-distclean: clean distclean-scripts distclean-vti distclean-info distclean-generic
+distclean: clean distclean-vti distclean-info distclean-tags distclean-generic
 
-maintainer-clean: distclean maintainer-clean-scripts maintainer-clean-vti maintainer-clean-info maintainer-clean-generic
+maintainer-clean: distclean maintainer-clean-vti maintainer-clean-info maintainer-clean-tags maintainer-clean-generic
 	@echo "This command is intended for maintainers to use;"
 	@echo "it deletes files that may require special tools to rebuild."
 
@@ -284,6 +286,8 @@ maintainer-clean: distclean maintainer-clean-scripts maintainer-clean-vti mainta
 # CONFIG_HEADER = config.h
 automake: automake.in
 	CONFIG_FILES=$@ CONFIG_HEADERS= ./config.status
+
+# The following requires a fixed version of the Emacs 19.30 etags.
 
 .SUFFIXES:
 .SUFFIXES: .texi .info .dvi

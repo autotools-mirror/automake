@@ -1,4 +1,4 @@
-SCRIPTS = automake
+bin_SCRIPTS = automake
 TEXINFOS = automake.texi
 # SUBDIRS = intl po
 # CONFIG_HEADER = config.h
@@ -10,9 +10,13 @@ kr-vars.am libprograms.am libraries-vars.am \
 libraries.am library.am mans-vars.am \
 program.am programs.am remake-hdr.am \
 remake-subd.am remake.am scripts.am subdirs.am tags.am tags-subd.am \
-tags-clean.am texi-version.am texinfos-vars.am texinfos.am
+tags-clean.am \
+texi-clean.am texi-version.am texinfos-vars.am texinfos.am
 
 DIST_OTHER = automake.in
 
 automake: automake.in
 	CONFIG_FILES=$@ CONFIG_HEADERS= ./config.status
+
+# The following requires a fixed version of the Emacs 19.30 etags.
+ETAGS_ARGS = automake.in

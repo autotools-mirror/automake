@@ -2,7 +2,7 @@
 # -*- perl -*-
 # @configure_input@
 
-eval "exec /usr/local/bin/perl -S $0 $*"
+eval 'exec /usr/local/bin/perl -S $0 ${1+"$@"}'
     if $running_under_some_shell;
 
 # automake - create Makefile.in from Makefile.am
@@ -34,6 +34,18 @@ $am_dir = "@datadir@/@PACKAGE@";
 
 
 
+# Constants to define the "strictness" level.
+$LENIENT = 0;
+$GNU = 1;
+$GNITS = 2;
+
+
+
+# Variables global to entire run.
+
+# Strictness level.
+$strictness = $LENIENT;
+
 # This is TRUE if GNU make specific automatic dependency generation
 # code should be included in generated Makefile.in.
 $use_dependencies = 1;
@@ -42,53 +54,9 @@ $use_dependencies = 1;
 # we have processed all input files.
 $exit_status = 0;
 
-# These two variables are used when generating each Makefile.in.  They
-# hold the Makefile.in until it is ready to be printed.
-$output_rules = '';
-$output_vars = '';
-$output_trailer = '';
-
-# Suffixes found during a run.
-@suffixes = ();
-
-# This holds the contents of a Makefile.am, as parsed by read_am_file.
-%contents = ();
-
-# This holds the "relative directory" of the current Makefile.in.  Eg
-# for src/Makefile.in, this is "src".
-$relative_dir = '';
-
-# Directory where output files go.  Actually, output files are
-# relative to this directory.
-$output_directory = '.';
-
-# This holds a list of files that are included in the distribution.
-@dist_common = ();
-
-# List of dependencies for the obvious targets.
-@install_data = ();
-@install_exec = ();
-@uninstall = ();
-@installdirs = ();
-
-@info = ();
-@dvi = ();
-@all = ();
-@check = ();
-@installcheck = ();
-@clean = ();
-
-# TRUE if current directory holds any C source files.  (Actually holds
-# object extension, but this information is encapsulated in the
-# function get_object_extension).
-$dir_holds_sources = '';
-
-# TRUE if install targets should work recursively.
-$recursive_install = 0;
-
 
 
-&init_globals;
+&initialize_global_constants;
 
 # Parse command line.
 @input_files = &parse_arguments (@ARGV);
@@ -134,14 +102,19 @@ sub parse_arguments
 	}
 	elsif ($arglist[0] eq '--amdir')
 	{
-	    if ($#arglist == 0)
-	    {
-		print STDERR
-		    "automake: no argument given for option \`$arglist[0]'\n";
-		exit 1;
-	    }
+	    &require_argument (@arglist);
 	    shift (@arglist);
 	    $am_dir = $arglist[0];
+	}
+	elsif ($arglist[0] =~ /^--strictness=(.+)$/)
+	{
+	    &set_strictness ($1);
+	}
+	elsif ($arglist[0] eq '--strictness')
+	{
+	    &require_argument (@arglist);
+	    shift (@arglist);
+	    &set_strictness ($arglist[0]);
 	}
 	elsif ($arglist[0] eq '--include-deps')
 	{
@@ -154,12 +127,7 @@ sub parse_arguments
 	}
 	elsif ($arglist[0] eq '--output-dir')
 	{
-	    if ($#arglist == 0)
-	    {
-		print STDERR
-		    "automake: no argument given for option \`$arglist[0]'\n";
-		exit 1;
-	    }
+	    &require_argument (@arglist);
 	    shift (@arglist);
 	    $output_directory = $arglist[0];
 	}
@@ -208,6 +176,17 @@ sub parse_arguments
     return (@make_list);
 }
 
+# Ensure argument exists, or die.
+sub require_argument
+{
+    local ($arg, @arglist) = @_;
+    if ($#arglist >= 0)
+    {
+	print STDERR "automake: no argument given for option \`$arg'\n";
+	exit 1;
+    }
+}
+
 ################################################################
 
 # Generate a Makefile.in given the name of the corresponding Makefile.
@@ -217,27 +196,11 @@ sub generate_makefile
     
     print "creating ", $makefile, ".in\n";
 
+    &initialize_per_input;
     $relative_dir = &dirname ($makefile);
-    $output_rules = '';
-    $output_vars = '';
-    $output_trailer = '';
-    @suffixes = ();
-    %contents = ();
     # FIXME with new 'dist' target, don't need Makefile.in.  Probably
     # should remove it here.
     @dist_common = ('Makefile.in', 'Makefile.am');
-    @install_data = ();
-    @install_exec = ();
-    @uninstall = ();
-    @installdirs = ();
-    $dir_holds_sources = '';
-    $recursive_install = 0;
-    @info = ();
-    @dvi = ();
-    @all = ();
-    @check = ();
-    @installcheck = ();
-    @clean = ();
 
     # Generate header before reading .am file.  The header must come
     # before anything else, and read_am_file copies code into the
@@ -326,8 +289,8 @@ sub get_object_extension
 	    $dir_holds_sources = '.${kr}o';
 	    push (@suffixes, '._c', '._o');
 
-	    &require_file ('ansi2knr.c');
-	    &require_file ('ansi2knr.1');
+	    &require_file ($NORMAL, 'ansi2knr.c');
+	    &require_file ($NORMAL, 'ansi2knr.1');
 
 	    $output_vars .= &file_contents ('kr-vars');
 	    $output_rules .= &file_contents ('compile-kr');
@@ -537,7 +500,7 @@ sub handle_texinfo
 	($tfile = &file_contents ('texi-version')) =~ s/\@TEXI\@/$texis[0]/g;
 	$output_rules = $output_rules . $tfile;
 
-	&require_file ('mdate-sh');
+	&require_file ($NORMAL, 'mdate-sh');
     }
 
     # If user specified file_TEXINFOS, then use that as explicit
@@ -558,6 +521,11 @@ sub handle_texinfo
     $output_vars = $output_vars . &file_contents ('texinfos-vars');
     $output_rules = $output_rules . &file_contents ('texinfos');
 
+    # How to clean.
+    local ($crules) = &file_contents ('texi-clean');
+    $crules =~ s/\@TEXI\@/$infobase/g;
+    $output_rules .= $crules;
+
     push (@suffixes, '.texi', '.info', '.dvi');
     push (@uninstall, 'uninstall-info');
     push (@clean, 'info');
@@ -573,7 +541,7 @@ sub handle_texinfo
 		     . "DVIS = " . $infobase . ".dvi\n\n");
 
     # Do some error checking.
-    &require_file ('texinfo.tex');
+    &require_file ($NORMAL, 'texinfo.tex');
 }
 
 # Handle any man pages.
@@ -776,8 +744,8 @@ sub handle_configure
 	$output_rules .= &file_contents ('remake');
 
 	# Look for some files we need.
-	&require_file ('install-sh');
-	&require_file ('mkinstalldirs');
+	&require_file ($NORMAL, 'install-sh');
+	&require_file ($NORMAL, 'mkinstalldirs');
     }
 
     if (defined ($contents{'CONFIG_HEADER'})
@@ -1133,8 +1101,7 @@ sub read_am_file
 
 ################################################################
 
-# Initialize global variables.
-sub init_globals
+sub initialize_global_constants
 {
     # Associative array of standard directory names.  Entry is TRUE if
     # corresponding directory should be installed during
@@ -1176,7 +1143,7 @@ sub init_globals
 ';
 
     # Commonly found files we look for and automatically include in
-    # DIST_FILES.
+    # DISTFILES.
     @common_files =
 	(
 	 "THANKS", "TODO", "README", "NEWS", "COPYING", "COPYING.LIB",
@@ -1197,9 +1164,60 @@ sub init_globals
   --help                print this help, then exit
   --include-deps        include generated dependencies in Makefile.in
   --output-dir=DIR      put generated Makefile.in's into DIR
+  --strictness=LEVEL    set strictness level.  LEVEL is normal, gnu, gnits
   --version             print version number, then exit\n";
-
 }
+
+# (Re)-Initialize per-Makefile.am variables.
+sub initialize_per_input
+{
+    # These two variables are used when generating each Makefile.in.
+    # They hold the Makefile.in until it is ready to be printed.
+    $output_rules = '';
+    $output_vars = '';
+    $output_trailer = '';
+
+    # Suffixes found during a run.
+    @suffixes = ();
+
+    # This holds the contents of a Makefile.am, as parsed by
+    # read_am_file.
+    %contents = ();
+
+    # This holds the "relative directory" of the current Makefile.in.
+    # Eg for src/Makefile.in, this is "src".
+    $relative_dir = '';
+
+    # Directory where output files go.  Actually, output files are
+    # relative to this directory.
+    $output_directory = '.';
+
+    # This holds a list of files that are included in the
+    # distribution.
+    @dist_common = ();
+
+    # List of dependencies for the obvious targets.
+    @install_data = ();
+    @install_exec = ();
+    @uninstall = ();
+    @installdirs = ();
+
+    @info = ();
+    @dvi = ();
+    @all = ();
+    @check = ();
+    @installcheck = ();
+    @clean = ();
+
+    # TRUE if current directory holds any C source files.  (Actually
+    # holds object extension, but this information is encapsulated in
+    # the function get_object_extension).
+    $dir_holds_sources = '';
+
+    # TRUE if install targets should work recursively.
+    $recursive_install = 0;
+}
+
 
 ################################################################
 
@@ -1243,8 +1261,8 @@ sub am_variable
 # the second argument is the primary variable (eg HEADERS), and all
 # subsequent arguments are possible installation locations.  FIXME
 # should scan all defined variables and do some error checking to
-# avoid typos (eg 'bnidir_PROGRAMS' should give error).  Returns TRUE
-# if any items were found, FALSE otherwise.
+# avoid typos (eg 'bni_PROGRAMS' should give error).  Returns TRUE if
+# any items were found, FALSE otherwise.
 sub am_install_var
 {
     local ($file, $primary, @prefixes) = @_;
@@ -1292,18 +1310,46 @@ sub am_install_var
 ################################################################
 
 # Verify that the file must exist in the current directory.
+# Usage: require_file (strictness, file)
+# strictness is the strictness level at which this file becomes
+# required.
 sub require_file
 {
-    local ($file) = @_;
+    local ($mystrict, $file) = @_;
     local ($fullfile) = $relative_dir . "/" . $file;
 
-    if (! -f $fullfile)
+    if (-f $fullfile)
     {
+	push (@dist_common, $file);
+    }
+    elsif ($strictness >= $mystrict)
+    {
+	# Only an error if strictness constraint violated.
 	&am_error ("required file \"$fullfile\" not found");
+    }
+}
+
+# Set strictness.
+sub set_strictness
+{
+    local ($name) = @_;
+
+    if ($name eq 'gnu')
+    {
+	$strictness = $GNU;
+    }
+    elsif ($name eq 'gnits')
+    {
+	$strictness = $GNITS;
+    }
+    elsif ($name eq 'normal')
+    {
+	$strictness = $NORMAL;
     }
     else
     {
-	push (@dist_common, $file);
+	print STDERR "automake: level \`$name' not recognized\n";
+	exit 1;
     }
 }
 
