@@ -65,7 +65,6 @@ maintainer-check: automake aclocal
 	  perl4.036 -c -w automake; \
 	  perl4.036 -c -w aclocal; \
 	else :; fi
-	$(MAKE) check
 
 # Tag before making distribution.  Also, don't make a distribution if
 # checks fail.  Also, make sure the NEWS file is up-to-date.
@@ -83,3 +82,13 @@ cvs-diff:
 	prevver=Release-`echo $$prevno | sed 's/\./-/g'`; \
 	cvs -f rdiff -c -r $$prevver -r $$thisver $(PACKAGE) \
 	    > $(PACKAGE)-$$prevno-$(VERSION).diff
+
+## Check our path lengths.
+path-check: distdir
+	(cd $(distdir) && \
+## FIXME there's got to be a better way!  pathchk should take the list
+## of files on stdin, at least.
+	  find . -print | xargs pathchk -p); \
+	  status=$$?; \
+	  rm -rf $(distdir); \
+	  exit $$status
