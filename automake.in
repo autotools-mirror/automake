@@ -1283,6 +1283,9 @@ sub am_variable
 # avoid typos (eg 'bni_PROGRAMS' should give error).  Returns list of
 # all values of all _HOW targets.
 #
+# FIXME this should be rewritten to be cleaner.  It should be broken
+# up into multiple functions.
+#
 # Usage is: am_install_var (OPTION..., file, HOW, where...)
 sub am_install_var
 {
@@ -1311,6 +1314,7 @@ sub am_install_var
     local (@result) = ();
 
     local ($template) = &file_contents ($file);
+    local ($clean_templ) = &file_contents ($file . '-clean');
     local ($munge);
     local ($one_name);
     foreach (@prefixes)
@@ -1321,7 +1325,13 @@ sub am_install_var
 	    # Append actual contents to result.
 	    push (@result, split (/\s+/, $contents{$one_name}));
 
-	    push (@clean, $_ . $primary) if $do_clean;
+	    if ($do_clean)
+	    {
+		($munge = $clean_templ) =~ s/\@DIR\@/$_/g;
+		$output_rules .= $munge;
+		push (@clean, $_ . $primary);
+	    }
+
 	    push (@used, '$(' . $one_name . ')');
 	    if ($_ eq 'noinst')
 	    {
