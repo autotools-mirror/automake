@@ -1,4 +1,4 @@
-dnl aclocal.m4 generated automatically by aclocal 1.3c
+dnl aclocal.m4 generated automatically by aclocal 1.3d
 
 dnl Copyright (C) 1994, 1995, 1996, 1997, 1998 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
@@ -30,8 +30,8 @@ if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status; then
   AC_MSG_ERROR([source directory already configured; run "make distclean" there first])
 fi
 ifelse([$3],,
-AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE")
-AC_DEFINE_UNQUOTED(VERSION, "$VERSION"))
+AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE", [Name of package])
+AC_DEFINE_UNQUOTED(VERSION, "$VERSION", [Version number of package]))
 AC_REQUIRE([AM_SANITY_CHECK])
 AC_REQUIRE([AC_ARG_PROGRAM])
 dnl FIXME This is truly gross.
