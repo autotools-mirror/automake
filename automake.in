@@ -33,7 +33,6 @@ $VERSION = "@VERSION@";
 $PACKAGE = "@PACKAGE@";
 $prefix = "@prefix@";
 $am_dir = "@datadir@/@PACKAGE@";
-$TAR = "@TAR@";
 
 # String constants.
 $IGNORE_PATTERN = "^##([^#].*)?\$";
@@ -711,8 +710,8 @@ sub handle_options
 	    }
 	    elsif ($_ eq 'no-installman' || $_ eq 'no-installinfo'
 		   || $_ eq 'dist-shar' || $_ eq 'dist-zip'
-		   || $_ eq 'dist-tarZ' || $_ eq 'dejagnu'
-		   || $_ eq 'no-texinfo.tex'
+		   || $_ eq 'dist-tarZ' || $_ eq 'dist-bzip2'
+		   || $_ eq 'dejagnu' || $_ eq 'no-texinfo.tex'
 		   || $_ eq 'readme-alpha' || $_ eq 'check-news')
 	    {
 		# Explicitly recognize these.
@@ -2514,7 +2513,6 @@ sub handle_dist
 
     # Some boilerplate.
     $output_vars .= &file_contents ('dist-vars') . "\n";
-    &define_variable ('TAR', $TAR);
     &define_variable ('GZIP_ENV', '--best');
 
     # Put these things in rules section so it is easier for whoever
@@ -2541,7 +2539,7 @@ sub handle_dist
 	$output_rules .= "\nsubdir = " . $relative_dir . "\n\n";
     }
 
-    # Generate 'dist' target, and maybe dist-shar / dist-zip / dist-tarZ.
+    # Generate 'dist' target, and maybe other dist targets.
     if ($relative_dir eq '.')
     {
 	# Rule to check whether a distribution is viable.
@@ -2550,7 +2548,7 @@ sub handle_dist
 # tarfile.
 distcheck: dist
 	-rm -rf $(distdir)
-	GZIP=$(GZIP_ENV) $(TAR) zxf $(distdir).tar.gz
+	GZIP=$(GZIP_ENV) gunzip -c $(distdir).tar.gz | $(TAR) xf -
 	mkdir $(distdir)/=build
 	mkdir $(distdir)/=inst
 	dc_install_base=`cd $(distdir)/=inst && pwd`; \\'
@@ -2581,7 +2579,8 @@ distcheck: dist
 	local ($dist_all) = ('dist-all: distdir' . "\n"
 			     . $dist_header);
 	local ($curs);
-	foreach $curs ('dist', 'dist-shar', 'dist-zip', 'dist-tarZ')
+	foreach $curs ('dist', 'dist-shar', 'dist-zip', 'dist-tarZ',
+		       'dist-bzip2')
 	{
 	    if (defined $options{$curs} || $curs eq 'dist')
 	    {
@@ -6312,14 +6311,19 @@ sub initialize_global_constants
     # Ignore return result from chmod, because it might give an error
     # if we chmod a symlink.
     $dist_header = "\t" . '-chmod -R a+r $(distdir)' . "\n";
+    $dist{'dist-bzip2'} = ("\t"
+			   . '$(TAR) ch$(AMTARFLAGS)f - $(distdir) | bzip --best -c > $(distdir).bz2'
+			   . "\n");
     $dist{'dist-tarZ'} = ("\t"
-		     . '$(TAR) chf - $(distdir) | compress -c > $(distdir).tar.Z'
+		     . '$(TAR) ch$(AMTARFLAGS)f - $(distdir) | compress -c > $(distdir).tar.Z'
 		     . "\n");
     $dist{'dist-shar'} = ("\t"
 		     . 'shar $(distdir) | gzip > $(distdir).shar.gz'
 		     . "\n");
     $dist{'dist-zip'} = "\t" . 'zip -rq $(distdir).zip $(distdir)' . "\n";
-    $dist{'dist'} = "\t" .  'GZIP=$(GZIP_ENV) $(TAR) chozf $(distdir).tar.gz $(distdir)' . "\n";
+    $dist{'dist'} = ("\t"
+		     .  'tar ch$(AMTARFLAGS)f - $(distdir) | GZIP=$(GZIP_ENV) gzip -c > $(distdir).tar.gz'
+		     . "\n");
     $dist_trailer = "\t" . '-rm -rf $(distdir)' . "\n";
 }
 
