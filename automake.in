@@ -344,6 +344,8 @@ sub get_object_extension
 sub handle_source_transform
 {
     local ($one_file, $obj) = @_;
+    local ($objpat) = $obj;
+    $objpat =~ s/([.\$])/\\\1/g;
 
     # Look for file_SOURCES and file_OBJECTS.
     if (defined $contents{$one_file . "_SOURCES"})
@@ -371,9 +373,9 @@ sub handle_source_transform
 		s/\.[cCmylfs]$/$obj/g;
 		push (@result, $_);
 
-		# Transform .o file into .P file (for automatic
+		# Transform .o or $o file into .P file (for automatic
 		# dependency code).
-		s/$obj/.P/g;
+		s/$objpat$/.P/g;
 		$dep_files{$_} = 1;
 	    }
 
@@ -725,8 +727,10 @@ sub handle_dist_worker
     # Also, there are situations in which "ln" can fail.  For instance
     # a file to distribute could actually be a cross-filesystem
     # symlink -- this can easily happen if "gettextize" was run on the
-    # distribution.
-    $output_rules .= '	@for file in $(DISTFILES); do		\\
+    # distribution.  Note that DISTFILES can contain a wildcard (for
+    # info files, sigh), so we must use the echo trick.
+
+    $output_rules .= '	@for file in `cd $(srcdir) && $(DISTFILES); do \\
 	  test -f $(distdir)/$$file \\
 	  || ln $(srcdir)/$$file $(distdir)/$$file 2> /dev/null \\
 	  || cp -p $(srcdir)/$$file $(distdir)/$$file; \\
@@ -818,7 +822,7 @@ sub handle_dist
     else
     {
 	$output_rules .= ("\nsubdir = " . $relative_dir . "\n"
-			  . 'distdir = $(PACKAGE)-$(VERSION)/$(subdir)'
+			  . 'distdir = ../$(PACKAGE)-$(VERSION)/$(subdir)'
 			  . "\n");
     }
 
