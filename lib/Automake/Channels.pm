@@ -68,6 +68,7 @@ our @EXPORT = qw ($exit_code $warnings_are_errors
 		  &register_channel &msg &exists_channel &channel_type
 		  &setup_channel &setup_channel_type
                   &dup_channel_setup &drop_channel_setup
+		  &buffer_messages &flush_messages
 		  US_GLOBAL US_LOCAL
 		  UP_NONE UP_TEXT UP_LOC_TEXT);
 
@@ -429,6 +430,10 @@ both print
 
 =cut
 
+# See buffer_messages() and flush_messages() below.
+our %buffering = ();		# The map of channel types to buffer.
+our @backlog = ();		# The buffer of messages.
+
 sub msg ($$;$%)
 {
   my ($channel, $location, $message, %options) = @_;
@@ -443,6 +448,12 @@ sub msg ($$;$%)
 
   my %opts = %{$channels{$channel}};
   _merge_options (%opts, %options);
+
+  if (exists $buffering{$opts{'type'}})
+    {
+      push @backlog, [@_];
+      return;
+    }
 
   # Print the message if needed.
   if (_print_message ($location, $message, %opts))
@@ -523,6 +534,46 @@ sub drop_channel_setup ()
 {
   my $saved = pop @_saved_channels;
   %channels = %$saved;
+}
+
+=item C<buffer_messages (@types)>, C<flush_messages ()>
+
+By default, when C<msg> is called, messages are processed immediately.
+
+Sometimes it is necessary to delay the output of messages.
+For instance you might want to make diagnostics before
+channels have been completly configured.
+
+After C<buffer_messages(@types)> has been called, messages sent with
+C<msg> to a channel whose type is listed in C<@types> will be stored in a
+list for later processing.
+
+This backlog of messages is processed when C<flush_messages> is
+called, with the current channel options (not the options in effect,
+at the time of C<msg>).  So for instance if some channel was silenced
+in the meantime, messages to this channels will not be print.
+
+C<flush_messages> cancels the effect of C<buffer_messages>.  Following
+calls to C<msg> are processed immediately as usual.
+
+=cut
+
+sub buffer_messages (@)
+{
+  foreach my $type (@_)
+    {
+      $buffering{$type} = 1;
+    }
+}
+
+sub flush_messages ()
+{
+  %buffering = ();
+  foreach my $args (@backlog)
+    {
+      &msg (@$args);
+    }
+  @backlog = ();
 }
 
 =back

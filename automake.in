@@ -1529,6 +1529,10 @@ sub generate_makefile
 
     # Any warning setting now local to this Makefile.am.
     &dup_channel_setup;
+    # AUTOMAKE_OPTIONS can contains -W flags to disable or enable
+    # warnings for this file.  So hold any warning issued before
+    # we have processed AUTOMAKE_OPTIONS.
+    &buffer_messages ('warning');
 
     # Name of input file ("Makefile.am") and output file
     # ("Makefile.in").  These have no directory components.
@@ -1549,9 +1553,13 @@ sub generate_makefile
     &read_main_am_file ($makefile . '.am');
     if (&handle_options)
     {
-	# Fatal error.  Just return, so we can continue with next file.
-	return;
+      # Process buffered warnings.
+      &flush_messages;
+      # Fatal error.  Just return, so we can continue with next file.
+      return;
     }
+    # Process buffered warnings.
+    &flush_messages;
 
     # There are a few install-related variables that you should not define.
     foreach my $var ('PRE_INSTALL', 'POST_INSTALL', 'NORMAL_INSTALL')
