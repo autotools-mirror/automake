@@ -1169,21 +1169,26 @@ sub handle_single_transform_list
 			&am_error ("\`$full' contains \`..' component but should not");
 		    }
 
-		    push (@dep_list, $directory . '/.dirstamp');
-		    $output_rules .= ($directory . "/.dirstamp:\n"
-				      . "\t\@\$(mkinstalldirs) $directory\n"
-				      . "\t\@: > $directory/.dirstamp\n");
-
-		    # If we're generating dependencies, we also want
-		    # to make sure that the appropriate subdir of the
-		    # .deps directory is created.
-		    if ($use_dependencies)
+		    if (! defined $directory_map{$directory})
 		    {
-			push (@dep_list, '.deps/' . $directory . '/.dirstamp');
-			$output_rules .= ('.deps/' . $directory
-					  . "/.dirstamp:\n"
-					  . "\t\@\$(mkinstalldirs) .deps/$directory\n"
-					  . "\t\@: > .deps/$directory/.dirstamp\n");
+			$directory_map{$directory} = 1;
+
+			push (@dep_list, $directory . '/.dirstamp');
+			$output_rules .= ($directory . "/.dirstamp:\n"
+					  . "\t\@\$(mkinstalldirs) $directory\n"
+					  . "\t\@: > $directory/.dirstamp\n");
+
+			# If we're generating dependencies, we also
+			# want to make sure that the appropriate
+			# subdir of the .deps directory is created.
+			if ($use_dependencies)
+			{
+			    push (@dep_list, '.deps/' . $directory . '/.dirstamp');
+			    $output_rules .= ('.deps/' . $directory
+					      . "/.dirstamp:\n"
+					      . "\t\@\$(mkinstalldirs) .deps/$directory\n"
+					      . "\t\@: > .deps/$directory/.dirstamp\n");
+			}
 		    }
 		}
 
@@ -6618,6 +6623,10 @@ sub initialize_per_input
     # file names.  This is used to ensure that each object is created
     # by a single source file.
     %object_map = ();
+
+    # This keeps track of the directories for which we've already
+    # created `.dirstamp' code.
+    %directory_map = ();
 
     # These variables track inclusion of various compile-related .am
     # files.  $included_generic_compile is TRUE if the basic code has
