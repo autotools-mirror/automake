@@ -271,6 +271,7 @@ texinfo8.test \
 texinfo9.test \
 texinfo10.test \
 unused.test \
+vars.test \
 vartar.test \
 version.test \
 version2.test \
