@@ -47,17 +47,17 @@ use File::Basename;
 use File::stat;
 use Cwd;
 
-# Note that this isn't pkgdatadir, but a separate directory.
-# Note also that the versioned directory is handled later.
-my $acdir = '@datadir@/aclocal';
-my $default_acdir = $acdir;
-# contains a list of directories, one per line, to be added
-# to the dirlist in addition to $acdir, as if -I had been
-# added to the command line.  If acdir has been redirected,
-# we will also check the specified acdir (this is done later).
-my $default_dirlist = "$default_acdir/dirlist";
-
 # Some globals.
+
+# Include paths for searching macros.  We search macros in this order:
+# user-supplied directories first, then the directory containing the
+# automake macros, and finally the system-wide directories for
+# third-party macro.  @user_includes can be augmented with -I.
+# @system_includes can be augmented with the `dirlist' file.  Also
+# --acdir will reset both @automake_includes and @system_includes.
+my @user_includes = ();
+my @automake_includes = ("@datadir@/aclocal-$APIVERSION");
+my @system_includes = ('@datadir@/aclocal');
 
 # configure.ac or configure.in.
 my $configure_ac;
@@ -593,14 +593,18 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.";
 # Parse command line.
 sub parse_arguments ()
 {
-  my @dirlist;
   my $print_and_exit = 0;
 
   my %cli_options =
     (
-     'acdir=s'		=> \$acdir,
+     'acdir=s'		=> sub # Setting --acdir overrides both the
+                             { # automake (versioned) directory and the
+			       # public (unversioned) system directory.
+			       @automake_includes = ();
+			       @system_includes = ($_[1])
+			     },
      'force'		=> \$force_output,
-     'I=s'		=> \@dirlist,
+     'I=s'		=> \@user_includes,
      'output=s'		=> \$output_file,
      'print_ac_dir'     => \$print_and_exit,
      'verbose'		=> sub { setup_channel 'verb', silent => 0; },
@@ -640,49 +644,44 @@ sub parse_arguments ()
 
   if ($print_and_exit)
     {
-      print $acdir, "\n";
+      print "@system_includes\n";
       exit 0;
     }
 
-  $default_dirlist="$acdir/dirlist"
-    if $acdir ne $default_acdir;
-
-  # Search the versioned directory near the end, and then the
-  # unversioned directory last.  Only do this if the user didn't
-  # override acdir.
-  push (@dirlist, "$acdir-$APIVERSION")
-    if $acdir eq $default_acdir;
-
-  # By default $(datadir)/aclocal doesn't exist.  We don't want to
-  # get an error in the case where we are searching the default
-  # directory and it hasn't been created.
-  push (@dirlist, $acdir)
-    unless $acdir eq $default_acdir && ! -d $acdir;
-
-  # Finally, adds any directory listed in the `dirlist' file.
-  if (open (DEFAULT_DIRLIST, $default_dirlist))
+  if (! -d $system_includes[0])
     {
-      while (<DEFAULT_DIRLIST>)
-	{
-	  # Ignore '#' lines.
-	  next if /^#/;
-	  # strip off newlines and end-of-line comments
-	  s/\s*\#.*$//;
-	  chomp;
-	  push (@dirlist, $_) if -d $_;
-	}
-      close (DEFAULT_DIRLIST);
+      # By default $(datadir)/aclocal doesn't exist.  We don't want to
+      # get an error in the case where we are searching the default
+      # directory and it hasn't been created.  (We know
+      # @system_includes has its default value if @automake_includes
+      # is not empty, because --acdir is the only way to change this.)
+      @system_includes = () unless @automake_includes;
     }
-
-  return @dirlist;
+  else
+    {
+      # Finally, adds any directory listed in the `dirlist' file.
+      if (open (DIRLIST, "$system_includes[0]/dirlist"))
+	{
+	  while (<DIRLIST>)
+	    {
+	      # Ignore '#' lines.
+	      next if /^#/;
+	      # strip off newlines and end-of-line comments
+	      s/\s*\#.*$//;
+	      chomp;
+	      push (@system_includes, $_) if -d $_;
+	    }
+	  close (DIRLIST);
+	}
+    }
 }
 
 ################################################################
 
 parse_WARNINGS;		    # Parse the WARNINGS environment variable.
-my @dirlist = parse_arguments;
+parse_arguments;
 $configure_ac = require_configure_ac;
-scan_m4_files (@dirlist);
+scan_m4_files (@user_includes, @automake_includes, @system_includes);
 scan_configure;
 if (! $exit_code)
   {
