@@ -258,6 +258,10 @@ maintainer-check: automake aclocal
 	  echo 'Suspicious unquoted DESTDIR uses.' 1>&2 ; \
 	  exit 1; \
 	fi
+	@if grep '	' $(srcdir)/doc/automake.texi; then \
+	  echo 'Do not use tabs in the manual.' 1>&2; \
+	  exit 1;
+	fi
 
 
 cvs-dist: maintainer-check
