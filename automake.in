@@ -61,10 +61,6 @@ struct (# Short name of the language (c, f77...).
         'compile_flag' => "\$",
         'extensions'      => '@',
         'flags' => "\$",
-	# Should the flag be defined as a configure variable.
-	# Defaults to true.  FIXME: this should go away once
-	# we move to autoconf tracing.
-	'define_flag' => "\$",
 
 	# The file to use when generating rules for this language.
 	# The default is 'depend2'.
@@ -127,7 +123,9 @@ my $PACKAGE = "@PACKAGE@";
 my $prefix = "@prefix@";
 my $libdir = "@datadir@/@PACKAGE@-@APIVERSION@";
 
-# String constants.
+# Some regular expressions.  One reason to put them here is that it
+# makes indentation work better in Emacs.
+
 my $IGNORE_PATTERN = '^\s*##([^#\n].*)?\n';
 my $WHITE_PATTERN = '^\s*$';
 my $COMMENT_PATTERN = '^#';
@@ -157,23 +155,9 @@ my $INCLUDE_PATTERN = ('^include\s+'
 		       . '|(\$\(srcdir\)/' . $PATH_PATTERN . ')'
 		       . '|([^/\$]' . $PATH_PATTERN. '))\s*(#.*)?$');
 
-# Some regular expressions.  One reason to put them here is that it
-# makes indentation work better in Emacs.
-my $AC_CONFIG_AUX_DIR_PATTERN = 'AC_CONFIG_AUX_DIR\(([^)]+)\)';
-my $AM_INIT_AUTOMAKE_PATTERN = 'AM_INIT_AUTOMAKE\([^,]*,([^,)]+)[,)]';
-my $AC_INIT_PATTERN = 'AC_INIT\([^,]*,([^,)]+)[,)]';
-my $AM_PACKAGE_VERSION_PATTERN = '^\s*\[?([^]\s]+)\]?\s*$';
-
 # This handles substitution references like ${foo:.a=.b}.
 my $SUBST_REF_PATTERN = "^([^:]*):([^=]*)=(.*)\$";
 
-# Note that there is no AC_PATH_TOOL.  But we don't really care.
-my $AC_CHECK_PATTERN = 'AC_(CHECK|PATH)_(PROG|PROGS|TOOL)\(\[?(\w+)';
-my $AM_MISSING_PATTERN = 'AM_MISSING_PROG\(\[?(\w+)';
-# Just check for alphanumeric in AC_SUBST.  If you do AC_SUBST(5),
-# then too bad.
-my $AC_SUBST_PATTERN = 'AC_SUBST\(\[?(\w+)';
-my $AM_CONDITIONAL_PATTERN = 'AM_CONDITIONAL\(\[?(\w+)';
 # Match `-d' as a command-line argument in a string.
 my $DASH_D_PATTERN = "(^|\\s)-d(\\s|\$)";
 # Directories installed during 'install-exec' phase.
@@ -250,45 +234,6 @@ my $LANG_SUBDIR = 2;
 # by two different paths.
 my $COMPILE_LIBTOOL = 1;
 my $COMPILE_ORDINARY = 2;
-
-# Map from obsolete macros to hints for new macros.
-# If you change this, change the corresponding list in aclocal.in.
-# FIXME: should just put this into a single file.
-my %obsolete_macros =
-    (
-     'AC_FEATURE_CTYPE'		=> "use `AC_HEADER_STDC'",
-     'AC_FEATURE_ERRNO'		=> "add `strerror' to `AC_REPLACE_FUNCS(...)'",
-     'AC_FEATURE_EXIT'		=> '',
-     'AC_SYSTEM_HEADER'		=> '',
-
-     # Note that we do not handle this one, because it is still run
-     # from AM_CONFIG_HEADER.  So we deal with it specially in
-     # &scan_autoconf_files.
-     # 'AC_CONFIG_HEADER'	=> "use `AM_CONFIG_HEADER'",
-
-     'fp_C_PROTOTYPES'		=> "use `AM_C_PROTOTYPES'",
-     'fp_PROG_CC_STDC'		=> "use `AM_PROG_CC_STDC'",
-     'fp_PROG_INSTALL'		=> "use `AC_PROG_INSTALL'",
-     'fp_WITH_DMALLOC'		=> "use `AM_WITH_DMALLOC'",
-     'fp_WITH_REGEX'		=> "use `AM_WITH_REGEX'",
-     'gm_PROG_LIBTOOL'		=> "use `AM_PROG_LIBTOOL'",
-     'jm_MAINTAINER_MODE'	=> "use `AM_MAINTAINER_MODE'",
-     'md_TYPE_PTRDIFF_T'	=> "add `ptrdiff_t' to `AC_CHECK_TYPES(...)'",
-     'ud_PATH_LISPDIR'		=> "use `AM_PATH_LISPDIR'",
-     'ud_GNU_GETTEXT'		=> "use `AM_GNU_GETTEXT'",
-
-     # Now part of autoconf proper, under a different name.
-     'fp_FUNC_FNMATCH'		=> "use `AC_FUNC_FNMATCH'",
-     'AM_SANITY_CHECK_CC'	=> "automatically done by `AC_PROG_CC'",
-     'AM_PROG_INSTALL'		=> "use `AC_PROG_INSTALL'",
-     'AM_EXEEXT'		=> "automatically done by `AC_PROG_(CC|CXX|F77)'",
-     'AM_CYGWIN32'		=> "use `AC_CYGWIN'",
-     'AM_MINGW32'		=> "use `AC_MINGW32'",
-     'AM_FUNC_MKTIME'		=> "use `AC_FUNC_MKTIME'",
-     );
-
-# Regexp to match the above macros.
-my $obsolete_rx = '\b(' . join ('|', keys %obsolete_macros) . ')\b';
 
 
 
@@ -864,7 +809,6 @@ register_language ('name' => 'yacc',
 		   'Name' => 'Yacc',
 		   'config_vars' => ['YACC'],
 		   'flags' => 'YFLAGS',
-		   'define_flag' => 0,
 		   'compile' => '$(YACC) $(YFLAGS) $(AM_YFLAGS)',
 		   'compiler' => 'YACCCOMPILE',
 		   'extensions' => ['.y'],
@@ -876,7 +820,6 @@ register_language ('name' => 'yaccxx',
 		   'config_vars' => ['YACC'],
 		   'rule_file' => 'yacc',
 		   'flags' => 'YFLAGS',
-		   'define_flag' => 0,
 		   'compiler' => 'YACCCOMPILE',
 		   'compile' => '$(YACC) $(YFLAGS) $(AM_YFLAGS)',
 		   'extensions' => ['.y++', '.yy', '.yxx', '.ypp'],
@@ -889,7 +832,6 @@ register_language ('name' => 'lex',
 		   'config_vars' => ['LEX'],
 		   'rule_file' => 'lex',
 		   'flags' => 'LFLAGS',
-		   'define_flag' => 0,
 		   'compile' => '$(LEX) $(LFLAGS) $(AM_LFLAGS)',
 		   'compiler' => 'LEXCOMPILE',
 		   'extensions' => ['.l'],
@@ -899,7 +841,6 @@ register_language ('name' => 'lexxx',
 		   'config_vars' => ['LEX'],
 		   'rule_file' => 'lex',
 		   'flags' => 'LFLAGS',
-		   'define_flag' => 0,
 		   'compile' => '$(LEX) $(LFLAGS) $(AM_LFLAGS)',
 		   'compiler' => 'LEXCOMPILE',
 		   'extensions' => ['.l++', '.ll', '.lxx', '.lpp'],
@@ -1811,10 +1752,6 @@ sub handle_languages
 		      . " `$configure_ac'")
 	      if !exists $configure_vars{$var};
 	  }
-
-	# The compiler's flag must be a configure variable.
-	define_configure_variable ($lang->flags)
-	    if defined $lang->flags && $lang->define_flag;
 
 	# Call the finisher.
 	$lang->finish;
@@ -4611,7 +4548,6 @@ sub scan_autoconf_config_files
 
 # &scan_autoconf_traces ($FILENAME)
 # ---------------------------------
-# FIXME: For the time being, we don't care about the FILENAME.
 sub scan_autoconf_traces ($)
 {
   my ($filename) = @_;
@@ -4636,14 +4572,14 @@ sub scan_autoconf_traces ($)
 		  AM_PATH_PYTHON
 		  AM_PROG_CC_C_O);
 
-  my $traces = "$ENV{amtraces} ";
+  my $traces = ($ENV{AUTOCONF} || 'autoconf') . " ";
 
   # Use a separator unlikely to be used, not `:', the default, which
   # has a precise meaning for AC_CONFIG_FILES and so on.
   $traces .= join (' ',
 		   map { "--trace=$_" . ':\$f:\$l::\$n::\${::}%' } @traced);
 
-  my $tracefh = new Automake::XFile ("$traces |");
+  my $tracefh = new Automake::XFile ("$traces $filename |");
   verbose "reading $traces";
 
   while ($_ = $tracefh->getline)
@@ -4772,353 +4708,6 @@ sub scan_autoconf_traces ($)
 }
 
 
-# &scan_one_autoconf_file ($FILENAME)
-# -----------------------------------
-# Scan one file for interesting things.  Subroutine of
-# &scan_autoconf_files.
-sub scan_one_autoconf_file
-{
-    my ($filename) = @_;
-
-    # Some macros already provide the right traces to enable generic
-    # code and specific arguments, instead of dedicated code.  But
-    # currently we don't handle traces.  Rewrite these dedicated
-    # macros handling into the generic macro invocation, and let our
-    # generic case handle them.
-
-    my %generalize =
-      (
-       'AC_FUNC_ALLOCA'           => 'AC_LIBSOURCES([alloca.c])',
-       'AC_FUNC_GETLOADAVG'       => 'AC_LIBSOURCES([getloadavg.c])',
-       'AC_FUNC_MEMCMP'           => 'AC_LIBSOURCES([memcmp.c])',
-       'AC_STRUCT_ST_BLOCKS'      => 'AC_LIBSOURCES([fileblocks.c])',
-       'A[CM]_REPLACE_GNU_GETOPT' => 'AC_LIBSOURCES([getopt.c, getopt1.c])',
-       'A[CM]_FUNC_STRTOD'        => 'AC_LIBSOURCES([strtod.c])',
-       'AM_WITH_REGEX'      => 'AC_LIBSOURCES([rx.c, rx.h, regex.c, regex.h])',
-       'AC_FUNC_MKTIME'           => 'AC_LIBSOURCES([mktime.c])',
-       'A[CM]_FUNC_ERROR_AT_LINE' => 'AC_LIBSOURCES([error.c, error.h])',
-       'A[CM]_FUNC_OBSTACK'       => 'AC_LIBSOURCES([obstack.c, obstack.h])',
-      );
-
-    my $configfh = new Automake::XFile ("< $filename");
-    verbose "reading $filename";
-
-    my ($in_ac_output, $in_ac_replace) = (0, 0);
-    while ($_ = $configfh->getline)
-    {
-	# Remove comments from current line.
-	s/\bdnl\b.*$//;
-	s/\#.*$//;
-
-	# Skip macro definitions.  Otherwise we might be confused into
-	# thinking that a macro that was only defined was actually
-	# used.
-	next if /AC_DEFUN/;
-
-	# Follow includes.  This is a weirdness commonly in use at
-	# Cygnus and hopefully nowhere else.
-	if (/sinclude\((.*)\)/ && -f $1)
-	{
-	    # $_ being local, if we don't preserve it, when coming
-	    # back we will have $_ undefined, which is bad for the
-	    # the rest of this routine.
-	    my $underscore = $_;
-	    &scan_one_autoconf_file ($1);
-	    $_ = $underscore;
-	}
-
-	for my $generalize (keys %generalize)
-	  {
-	    s/\b$generalize\b/$generalize{$generalize}/g;
-	  }
-
-
-	my $here = "$filename:$.";
-
-	# Populate libobjs array.
-	if (/LIBOBJS="(.*)\s+\$LIBOBJS"/
-	       || /LIBOBJS="\$LIBOBJS\s+(.*)"/)
-	{
-	    foreach my $libobj_iter (split (' ', $1))
-	    {
-		if ($libobj_iter =~ /^(.*)\.o(bj)?$/
-		    || $libobj_iter =~ /^(.*)\.\$ac_objext$/
-		    || $libobj_iter =~ /^(.*)\.\$\{ac_objext\}$/)
-		{
-		    $libsources{$1 . '.c'} = $here;
-		}
-	    }
-	}
-	elsif (/AC_LIBOBJ\(([^)]+)\)/)
-	{
-	    $libsources{unquote_m4_arg ($1) . ".c"} = $here;
-	}
-        elsif (/AC_LIBSOURCE\(([^)]+)\)/)
-	{
-	    $libsources{&unquote_m4_arg ($1)} = $here;
-	}
-        elsif (/AC_LIBSOURCES\(([^)]+)\)/)
-	{
-	    foreach my $lc_iter (split (/[, ]+/, &unquote_m4_arg ($1)))
-	    {
-		$libsources{$lc_iter} = $here;
-	    }
-	}
-
-	if (! $in_ac_replace && s/AC_REPLACE_FUNCS\s*\(\[?//)
-	{
-	    $in_ac_replace = 1;
-	}
-	if ($in_ac_replace)
-	{
-	    $in_ac_replace = 0 if s/[\]\)].*$//;
-	    # Remove trailing backslash.
-	    s/\\$//;
-	    foreach (split)
-	    {
-		# Need to skip empty elements for Perl 4.
-		next if $_ eq '';
-		$libsources{$_ . '.c'} = $here;
-	    }
-	}
-
-	if (/$obsolete_rx/o)
-	{
-	    my $hint = '';
-	    if ($obsolete_macros{$1} ne '')
-	    {
-		$hint = '; ' . $obsolete_macros{$1};
-	    }
-	    file_error ($here, "`$1' is obsolete$hint");
-	}
-
-	# Process the AC_OUTPUT and AC_CONFIG_FILES macros.
-	if (! $in_ac_output && s/(AC_(OUTPUT|CONFIG_FILES))\s*\(\[?//)
-	{
-	    $in_ac_output = $1;
-	    $ac_config_files_location = $here;
-	}
-	if ($in_ac_output)
-	{
-	    my $closing = 0;
-	    if (s/[\]\),].*$//)
-	    {
-		$in_ac_output = 0;
-		$closing = 1;
-	    }
-
-	    # Look at potential Makefile.am's.
-	    &scan_autoconf_config_files ($_);
-
-	    if ($closing
-		&& scalar keys %make_list == 0
-		&& @other_input_files == 0)
-	    {
-		file_error ($ac_config_files_location,
-			    "no files mentioned in `$in_ac_output'");
-		exit 1;
-	    }
-	}
-
-	if (/$AC_CONFIG_AUX_DIR_PATTERN/o)
-	{
-	    @config_aux_path = &unquote_m4_arg ($1);
-	    $config_aux_dir_set_in_configure_in = $here;
-	}
-
-	# Check for ansi2knr.
-	$am_c_prototypes = $here if /AM_C_PROTOTYPES/;
-
-	# Check for `-c -o' code.
-	$seen_cc_c_o = $here if /AM_PROG_CC_C_O/;
-
-	# Check for NLS support.
-	if (/AM_GNU_GETTEXT/)
-	{
-	    $seen_gettext = $here;
-	    $ac_gettext_location = $here;
-	}
-
-	# Handle configuration headers.  A config header of `[$1]'
-	# means we are actually scanning AM_CONFIG_HEADER from
-	# aclocal.m4.  Same thing with a leading underscore.
-	if (/(?<!_)A([CM])_CONFIG_HEADERS?\s*\((.*)\)/
-	    && $2 ne '[$1]')
-	{
-	    file_error ($here,
-	       "`automake requires `AM_CONFIG_HEADER', not `AC_CONFIG_HEADER'")
-	      if $1 eq 'C';
-
-	    $config_header_location = $here;
-	    push @config_headers, split (' ', unquote_m4_arg ($2));
-	}
-
-        # Handle AC_CANONICAL_*.  Always allow upgrading to
-        # AC_CANONICAL_SYSTEM, but never downgrading.
-	if (/AC_CANONICAL_HOST/ || /AC_CYGWIN/ || /AC_EMXOS2/ || /AC_MINGW32/)
-	  {
-	    if (! $seen_canonical)
-	      {
-		$seen_canonical = AC_CANONICAL_HOST;
-		$canonical_location = $here;
-	      }
-	  }
-	if (/AC_CANONICAL_SYSTEM/)
-	  {
-	    $seen_canonical = AC_CANONICAL_SYSTEM;
-	    $canonical_location = $here;
-	  }
-
-        # If using X, include some extra variable definitions.  NOTE
-        # we don't want to force these into CFLAGS or anything,
-        # because not all programs will necessarily use X.
-	if (/AC_PATH_XTRA/)
-	  {
-	    foreach my $var (qw(X_CFLAGS X_LIBS X_EXTRA_LIBS X_PRE_LIBS))
-	      {
-		$configure_vars{$var} = $here;
-	      }
-	  }
-
-	# AM_INIT_AUTOMAKE with any number of argument
-	if (/AM_INIT_AUTOMAKE/)
-	{
-	    $seen_init_automake = $here;
-        }
-
-	# AC_INIT or AM_INIT_AUTOMAKE with two arguments
-        if (/$AC_INIT_PATTERN/o || /$AM_INIT_AUTOMAKE_PATTERN/o)
-	{
-            if ($1 =~ /$AM_PACKAGE_VERSION_PATTERN/o)
-            {
-		$package_version = $1;
-		$package_version_location = $here;
-	    }
-	}
-
-	# AM_INIT_AUTOMAKE with one argument.
-	if (/AM_INIT_AUTOMAKE\(([^),]+)\)/)
-	{
-            $global_options = &unquote_m4_arg ($1);
-	}
-
-	if (/AM_AUTOMAKE_VERSION\(([^)]+)\)/)
-	{
-	    my $vers = &unquote_m4_arg ($1);
-	    file_error ($here,
-			"version mismatch.  This is Automake $VERSION, " .
-			"but $filename\nwas generated for Automake $vers.  " .
-			"You should recreate\n$filename with aclocal and " .
-			"run automake again.\n")
-		    if ($VERSION ne $vers);
-
-	    $seen_automake_version = 1;
-	}
-
-	if (/AM_PROG_LEX/)
-	{
-	    $configure_vars{'LEX'} = $here;
-	    $configure_vars{'LEX_OUTPUT_ROOT'} = $here;
-	    $configure_vars{'LEXLIB'} = $here;
-	    $seen_prog_lex = $here;
-	}
-	if (/AC_PROG_LEX/ && $filename =~ /configure\.(ac|in)$/)
-	{
-	    $configure_vars{'LEX'} = $here;
-	    $configure_vars{'LEX_OUTPUT_ROOT'} = $here;
-	    $configure_vars{'LEXLIB'} = $here;
-	    $seen_prog_lex = $here;
- 	    file_warning ($here,
-		   "automake requires `AM_PROG_LEX', not `AC_PROG_LEX'");
-	}
-
-	if (/AC_PROG_(F77|YACC|RANLIB|CC|CXXCPP|CXX|LEX|AWK|CPP|LN_S)/)
-	{
-	    $configure_vars{$1} = $here;
-	}
-	if (/$AC_CHECK_PATTERN/o)
-	{
-	    $configure_vars{$3} = $here;
-	}
-	if (/$AM_MISSING_PATTERN/o
-	    && $1 ne 'ACLOCAL'
-	    && $1 ne 'AUTOCONF'
-	    && $1 ne 'AUTOMAKE'
-	    && $1 ne 'AUTOHEADER'
-	    # AM_INIT_AUTOMAKE is AM_MISSING_PROG'ing MAKEINFO.  But
-	    # we handle it elsewhere.
-	    && $1 ne 'MAKEINFO')
-	{
-	    $configure_vars{$1} = $here;
-	}
-
-	# Explicitly avoid ANSI2KNR -- we AC_SUBST that in protos.m4,
-	# but later define it elsewhere.  This is pretty hacky.  We
-	# also explicitly avoid INSTALL_SCRIPT and some other
-	# variables because they are defined in header-vars.am.
-	# AMDEPBACKSLASH might be subst'd by `\', which certainly would
-	# not be appreciated by Make.
-	if (/$AC_SUBST_PATTERN/o
-	    && $1 ne 'ANSI2KNR'
-	    && $1 ne 'INSTALL_SCRIPT'
-	    && $1 ne 'INSTALL_DATA'
-	    && $1 ne 'AMDEPBACKSLASH')
-	{
-	    $configure_vars{$1} = $here;
-	}
-
-	if (/AM_MAINTAINER_MODE/)
-	{
-	    $seen_maint_mode = $here;
-	    $configure_cond{'MAINTAINER_MODE'} = $here;
-	}
-
-        $am_lispdir_location = $here if /AM_PATH_LISPDIR/;
-
-        if (/AM_PATH_PYTHON/)
-	  {
-	    $pythondir_location = $here;
-	    $configure_vars{'pythondir'} = $here;
-	    $configure_vars{'PYTHON'} = $here;
-	  }
-
-        if (/A(C|M)_PROG_LIBTOOL/)
-	{
-	    # We're not ready for this yet.  People still use a
-	    # libtool with no AC_PROG_LIBTOOL.  Once that is the
-	    # dominant version we can reenable this code -- but next
-	    # time by mentioning the macro in %obsolete_macros, both
-	    # here and in aclocal.in.
-
-	    # if (/AM_PROG_LIBTOOL/)
-	    # {
-	    # 	file_warning ($here, "`AM_PROG_LIBTOOL' is obsolete, use `AC_PROG_LIBTOOL' instead");
-	    # }
-	    $seen_libtool = $here;
-	    $configure_vars{'LIBTOOL'} = $here;
-	    $configure_vars{'RANLIB'} = $here;
-	    $configure_vars{'CC'} = $here;
-	    # AC_PROG_LIBTOOL runs AC_CANONICAL_HOST.  Make sure we
-	    # never downgrade (if we've seen AC_CANONICAL_SYSTEM).
-	    $seen_canonical = AC_CANONICAL_HOST if ! $seen_canonical;
-	}
-
-	$seen_multilib = $here if (/AM_ENABLE_MULTILIB/);
-
-	if (/$AM_CONDITIONAL_PATTERN/o)
-	{
-	    $configure_cond{$1} = $here;
-	}
-
-	# Check for Fortran 77 intrinsic and run-time libraries.
-	if (/AC_F77_LIBRARY_LDFLAGS/)
-	{
-	    $configure_vars{'FLIBS'} = $here;
-	}
-    }
-}
-
-
 # &scan_autoconf_files ()
 # -----------------------
 # Check whether we use `configure.ac' or `configure.in'.
@@ -5135,19 +4724,7 @@ sub scan_autoconf_files
     die "$me: `configure.ac' or `configure.in' is required\n"
         if !$configure_ac;
 
-    if (defined $ENV{'amtraces'})
-    {
-        print STDERR "$me: Autoconf traces is an experimental feature\n";
-        print STDERR "$me: use at your own risks\n";
-
-        scan_autoconf_traces ($configure_ac);
-    }
-    else
-      {
-	scan_one_autoconf_file ($configure_ac);
-	scan_one_autoconf_file ('aclocal.m4')
-	  if -f 'aclocal.m4';
-      }
+    scan_autoconf_traces ($configure_ac);
 
     # Set input and output files if not specified by user.
     if (! @input_files)
@@ -5644,8 +5221,6 @@ sub register_language (%)
       unless defined $option{'autodep'};
     $option{'linker'} = ''
       unless defined $option{'linker'};
-    $option{'define_flag'} = 1
-      unless defined $option{'define_flag'};
 
     my $lang = new Language (%option);
 
@@ -7224,8 +6799,7 @@ sub read_am_file ($)
 # define_standard_variables ()
 # ----------------------------
 # A helper for read_main_am_file which initializes configure variables
-# and variables from header-vars.am.  This is a subr so we can call it
-# twice.
+# and variables from header-vars.am.
 sub define_standard_variables
 {
     my $saved_output_vars = $output_vars;
@@ -8334,36 +7908,6 @@ sub my_glob
 {
     my ($pat) = @_;
     return <${pat}>;
-}
-
-# Remove one level of brackets and strip leading spaces,
-# as does m4 to function arguments.
-sub unquote_m4_arg
-{
-    $_ = shift;
-    s/^\s*//;
-
-    my @letters = split //;
-    my @result = ();
-    my $depth = 0;
-
-    foreach (@letters)
-    {
-	if ($_ eq '[')
-	{
-	    ++$depth;
-	    next if $depth == 1;
-	}
-	elsif ($_ eq ']')
-	{
-	    --$depth;
-	    next if $depth == 0;
-	    # don't count orphan right brackets
-	    $depth = 0 if $depth < 0;
-	}
-	push @result, $_;
-    }
-    return join '', @result;
 }
 
 ################################################################
