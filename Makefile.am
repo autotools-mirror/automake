@@ -91,6 +91,13 @@ maintainer-check: automake aclocal
 	  echo "Suspicious 'rm' invocation." 1>&2; \
 	  exit 1;				\
 	else :; fi
+## Never use something like `for file in $(FILES)', this doesn't work
+## if FILES is empty or if it contains shell meta characters (e.g. $ is
+## commonly used in Java filenames).
+	@if egrep 'for .* in \$$\(' $(srcdir)/lib/am/[a-z]*.am; then \
+	  echo 'Use "list=$$(mumble); for var in $$$$list".' 1>&2 ; \
+	  exit 1; \
+	else :; fi
 ## Make sure all invocations of mkinstalldirs are correct.
 	@if grep -n 'mkinstalldirs' $(srcdir)/lib/am/[a-z]*.am | \
 	      grep -F -v '$$(mkinstalldirs)'; then \
