@@ -75,6 +75,7 @@ check2.test \
 check3.test \
 checkall.test \
 clean.test \
+clean2.test \
 colneq.test \
 colneq2.test \
 colon.test \
