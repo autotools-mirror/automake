@@ -5,8 +5,8 @@ SCRIPTS = automake
 TEXINFOS = automake.texi
 
 PACKAGEDATA = clean-kr.am clean.am compile-kr.am compile-vars.am \
-compile.am data.am depend.am dist-subd-top.am dist-subd-vars.am \
-dist-subd.am dist-vars.am dist.am footer.am header-vars.am header.am \
+compile.am data.am depend.am dist-subd-top.am \
+dist-subd.am dist-vars.am dist.am footer.am header-vars.am \
 kr-vars.am libscripts.am libprograms.am libraries-vars.am \
 libraries.am library.am mans-vars.am mans.am packagedata.am \
 program.am programs.am remake-hdr.am \
