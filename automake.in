@@ -3634,6 +3634,7 @@ sub variable_value_as_list
     }
     else
     {
+	local (@temp_list);
 	$content_seen{$var} = 1;
 	foreach (split (' ', $contents{$var}))
 	{
@@ -3643,7 +3644,25 @@ sub variable_value_as_list
 	    # Handle variable substitutions.
 	    if (/^\$\{(.*)\}$/ || /^\$\((.*)\)$/)
 	    {
-		push (@result, &variable_value_as_list ($1, $var));
+		local ($varname) = $1;
+		local ($from, $to);
+		if ($varname =~ /^([^:]*):([^=]*)=(.*)$/)
+		{
+		    $varname = $1;
+		    $to = $3;
+		    ($from = $2) =~ s/(\W)/\\$1/g;
+		}
+
+		# Find the value.
+		@temp_list = &variable_value_as_list ($1, $var);
+
+		# Now rewrite the value if appropriate.
+		if ($from)
+		{
+		    grep (s/$from$/$to/, @temp_list);
+		}
+
+		push (@result, @temp_list);
 	    }
 	    else
 	    {
