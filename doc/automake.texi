@@ -140,6 +140,7 @@ Scanning @file{configure.ac}
 * Macros::                      Autoconf macros supplied with Automake
 * Extending aclocal::           Writing your own aclocal macros
 * Local Macros::                Organizing local macros
+* Serials::                     #serial lines in Autoconf macros
 * Future of aclocal::           aclocal's scheduled death
 
 Auto-generating aclocal.m4
@@ -1269,6 +1270,7 @@ easier.  These macros can automatically be put into your
 * Macros::                      Autoconf macros supplied with Automake
 * Extending aclocal::           Writing your own aclocal macros
 * Local Macros::                Organizing local macros
+* Serials::                     #serial lines in Autoconf macros
 * Future of aclocal::           aclocal's scheduled death
 @end menu
 
@@ -1663,16 +1665,23 @@ Install system-wide third-party macros into the first directory
 specified with @code{-I @var{dir}} instead of copying them in the
 output file.
 
-When this option is used, @command{aclocal} will also honor
-@code{#serial @var{NUMBER}} lines that appear in macros: an M4 file is
-ignored if there exists another M4 file with the same basename and a
-greater serial number in the search path.
+@cindex serial number and @code{--install}
+When this option is used, and only when this option is used,
+@command{aclocal} will also honor @code{#serial @var{NUMBER}} lines
+that appear in macros: an M4 file is ignored if there exists another
+M4 file with the same basename and a greater serial number in the
+search path (@pxref{Serials}).
 
 @item --force
 @opindex --force
 Always overwrite the output file.  The default is to overwrite the output
 file only when really needed, i.e., when its contents changes or if one
 of its dependencies is younger.
+
+This option forces the update of @file{aclocal.m4} (or the file
+specified with @file{--output} below) and only this file, it has
+absolutely no influence on files that may need to be installed by
+@code{--install}.
 
 @item --output=@var{file}
 @opindex --output
@@ -2203,7 +2212,7 @@ From the command line, this is done with @code{aclocal -I m4}.  The
 top-level @file{Makefile.am} should also be updated to define
 
 @example
- ACLOCAL_AMFLAGS = -I m4
+ACLOCAL_AMFLAGS = -I m4
 @end example
 
 @code{ACLOCAL_AMFLAGS} contains options to pass to @command{aclocal}
@@ -2253,7 +2262,7 @@ system-wide third-party macros in your local macro directory, solving
 the above problem.  Simply use:
 
 @smallexample
- ACLOCAL_AMFLAGS = -I m4 --install
+ACLOCAL_AMFLAGS = -I m4 --install
 @end smallexample
 
 @noindent
@@ -2265,10 +2274,10 @@ macros each time @command{aclocal} is run again.
 One reason why you should keep @code{--install} in the flags even
 after the first run is that when you later edit @file{configure.ac}
 and depend on a new macro, this macro will be installed in your
-@file{m4/} automatically.  Another one is that serial numbers can be
-used to update the macros in your source tree automatically when new
-system-wide versions are installed.  A serial number should be a
-single line of the form
+@file{m4/} automatically.  Another one is that serial numbers
+(@pxref{Serials}) can be used to update the macros in your source tree
+automatically when new system-wide versions are installed.  A serial
+number should be a single line of the form
 
 @smallexample
 #serial @var{NNN}
@@ -2282,16 +2291,165 @@ not use the @code{--install} option of @command{aclocal}: this allows
 other people to use it.
 
 
+@node Serials
+@section Serial Numbers
+@cindex serial numbers in macros
+@cindex macro serial numbers
+@cindex @code{#serial} syntax
+@cindex @command{aclocal} and serial numbers
+
+Because third-party macros defined in @file{*.m4} files are naturally
+shared between multiple projects, some people like to version them.
+This makes it easier to tell which of two M4 files is newer.  Since at
+least 1996, the tradition is to use a @code{#serial} line for this.
+
+A serial number should be a single line of the form
+
+@smallexample
+# serial @var{version}
+@end smallexample
+
+@noindent
+where @var{version} is a version number containing only digits and
+dots.  Usually people use a single integer, and they increment it each
+time they change the macro (hence the name of ``serial'').  Such a
+line should appear in the M4 file before any macro definition.
+
+The @code{#} must be the first character on the line,
+and it is OK to have extra words after the version, as in
+
+@smallexample
+#serial @var{version} @var{garbage}
+@end smallexample
+
+Normally these serial numbers are completely ignored by
+@command{aclocal} and @command{autoconf}, like any genuine comment.
+However when using @command{aclocal}'s @code{--install} feature, these
+serial numbers will modify the way @command{aclocal} selects the
+macros to install in the package: if two files with the same basename
+exists in your search path, and if at least one of them use a
+@code{#serial} line, @command{aclocal} will ignore the file that has
+the older @code{#serial} line (or the file that has none).
+
+Note that a serial number applies to a whole M4 file, not to any macro
+it contains.  A file can contains multiple macros, but only one
+serial.
+
+Here is a use case that illustrate the use of @code{--install} and its
+interaction with serial numbers.  Let's assume we maintain a package
+called MyPackage, whose @file{configure.ac} uses a third-party macro
+@code{AX_THIRD_PARTY} defined in
+@file{/usr/share/aclocal/thirdparty.m4} as follows:
+
+@smallexample
+# serial 1
+AC_DEFUN([AX_THIRD_PARTY], [...])
+@end smallexample
+
+MyPackage uses an @file{m4/} directory to store local macros as
+explained in @ref{Local Macros}, and has
+
+@smallexample
+ACLOCAL_AMFLAGS = -I m4 --install
+@end smallexample
+
+@noindent
+in its top-level @file{Makefile.am}.
+
+Initially the @file{m4/} directory is empty.  The first time we run
+@command{autoreconf}, it will fetch the options to pass to
+@command{aclocal} in @file{Makefile.am}, and run @code{aclocal -I m4
+--install}.  @command{aclocal} will notice that
+
+@itemize @bullet
+@item
+@file{configure.ac} uses @code{AX_THIRD_PARTY}
+@item
+No local macros define @code{AX_THIRD_PARTY}
+@item
+@file{/usr/share/aclocal/thirdparty.m4} defines @code{AX_THIRD_PARTY}
+with serial 1.
+@end itemize
+
+@noindent
+Because @file{/usr/share/aclocal/thirdparty.m4} is a system-wide macro
+and @command{aclocal} was given the @code{--install} option, it will
+copy this file in @file{m4/thirdparty.m4}, and output an
+@file{aclocal.m4} that contains @code{m4_include([m4/thirdparty.m4])}.
+
+The next time @code{aclocal -I m4 --install} is run (either via
+@command{autoreconf}, by hand, or from the @file{Makefile} rebuild
+rules) something different happens.  @command{aclocal} notices that
+
+@itemize @bullet
+@item
+@file{configure.ac} uses @code{AX_THIRD_PARTY}
+@item
+@file{m4/thirdparty.m4} defines @code{AX_THIRD_PARTY}
+with serial 1.
+@item
+@file{/usr/share/aclocal/thirdparty.m4} defines @code{AX_THIRD_PARTY}
+with serial 1.
+@end itemize
+
+@noindent
+Because both files have the same serial number, @command{aclocal} uses
+the first it found in its search path order (@pxref{Macro search
+path}).  @command{aclocal} therefore ignores
+@file{/usr/share/aclocal/thirdparty.m4} and outputs an
+@file{aclocal.m4} that contains @code{m4_include([m4/thirdparty.m4])}.
+
+Local directories specified with @code{-I} are always searched before
+system-wide directories, so a local file will always be preferred to
+the system-wide file in case of equal serial numbers.
+
+Now suppose the system-wide third-party macro is changed.  This can
+happen if the package installing this macro is updated.  Let's suppose
+the new macro has serial number 2.  The next time @code{aclocal -I m4
+--install} is run the situation is the following:
+
+@itemize @bullet
+@item
+@file{configure.ac} uses @code{AX_THIRD_PARTY}
+@item
+@file{m4/thirdparty.m4} defines @code{AX_THIRD_PARTY}
+with serial 1.
+@item
+@file{/usr/share/aclocal/thirdparty.m4} defines @code{AX_THIRD_PARTY}
+with serial 2.
+@end itemize
+
+@noindent
+As soon as @command{aclocal} sees a greater serial number, it forgets
+anything it knows about smaller serial numbers for the same file.  So
+after it has found @file{/usr/share/aclocal/thirdparty.m4} with serial
+2, @command{aclocal} will proceed as if it had never seen
+@file{m4/thirdparty.m4}.  This brings us back to a situation similar
+to that at the beginning of our example, where no local file defined
+the macro.  @command{aclocal} will install the new version of the
+macro in @file{m4/thirdparty.m4}, in this case overriding the old
+version.  MyPackage just had its macro updated as a side effect of
+running @command{aclocal}.
+
+
+The @code{--force} option of @command{aclocal} has absolutely no
+effect on the files installed by @code{--install}.  For instance you
+have modified your local macros, do not expect @code{--install
+--force} to replace the local macros by their system-wide versions.
+If you want to do so, simply erase the local macros you want to
+revert, and run @code{aclocal -I m4 --install}.
+
+
 @node Future of aclocal
 @section The Future of @command{aclocal}
 @cindex @command{aclocal}'s scheduled death
 
 @command{aclocal} is expected to disappear.  This feature really
-should not be offered by Automake.  Automake should focus on generating
-@file{Makefile}s; dealing with M4 macros really is Autoconf's job.
-That some people install Automake just to use @command{aclocal}, but
-do not use @command{automake} otherwise is an indication of how that
-feature is misplaced.
+should not be offered by Automake.  Automake should focus on
+generating @file{Makefile}s; dealing with M4 macros really is
+Autoconf's job.  That some people install Automake just to use
+@command{aclocal}, but do not use @command{automake} otherwise is an
+indication of how that feature is misplaced.
 
 The new implementation will probably be done slightly differently.
 For instance it could enforce the @file{m4/}-style layout discussed in
