@@ -382,7 +382,7 @@ sub handle_programs
 
     local ($obj) = &get_object_extension;
     local ($one_file, $munge);
-    local ($fcont) = &file_contents ('program');
+
     foreach $one_file (@proglist)
     {
 	&handle_source_transform ($one_file, $obj);
@@ -393,8 +393,9 @@ sub handle_programs
 	    $output_vars .= $one_file . '_LDADD = $(LDADD)' . "\n";
 	}
 
-	($munge = $fcont) =~ s/\@PROGRAM\@/$one_file/g;
-	$output_rules .= $munge;
+	$output_rules .=
+	    &file_contents_with_transform ('s/\@PROGRAM\@/' . $one_file
+					   . '/go', 'program');
     }
 }
 
@@ -426,7 +427,6 @@ sub handle_libraries
     push (@all, '$(LIBFILES)');
 
     local ($obj) = &get_object_extension;
-    local ($template) = &file_contents ('library');
     local ($munge);
     foreach $onelib (@liblist)
     {
@@ -439,8 +439,9 @@ sub handle_libraries
 
 	&handle_source_transform ($onelib, $obj);
 
-	($munge = $template) =~ s/\@LIBRARY\@/$onelib/g;
-	$output_rules .= $munge;
+	$output_rules .=
+	    &file_contents_with_transform ('s/\@LIBRARY\@/' . $onelib . '/go',
+					   'library');
     }
 
     # Turn "foo" into "libfoo.a" and include macro definition.
@@ -488,9 +489,9 @@ sub handle_texinfo
 	&push_dist_common ('version.texi', 'stamp-vti');
 	push (@clean, 'vti');
 
-	local ($tfile);
-	($tfile = &file_contents ('texi-version')) =~ s/\@TEXI\@/$texis[0]/g;
-	$output_rules = $output_rules . $tfile;
+	$output_rules .=
+	    &file_contents_with_transform ('s/\@TEXI\@/' . $texis[0] . '/go',
+					   'texi-version');
 	&push_phony_cleaners ('vti');
 
 	&require_file ($NORMAL, 'mdate-sh');
@@ -516,9 +517,9 @@ sub handle_texinfo
     push (@phony, 'install-info', 'uninstall-info');
 
     # How to clean.
-    local ($crules) = &file_contents ('texi-clean');
-    $crules =~ s/\@TEXI\@/$infobase/g;
-    $output_rules .= $crules;
+    $output_rules .=
+	&file_contents_with_transform ('s/\@TEXI\@/' . $infobase . '/go',
+				       'texi-clean');
     &push_phony_cleaners ('info');
 
     push (@suffixes, '.texi', '.info', '.dvi');
@@ -953,7 +954,12 @@ sub handle_merge_targets
     &do_one_merge_target ('all', @all);
     &do_one_merge_target ('info', @info);
     &do_one_merge_target ('dvi', @dvi);
-    push (@check, 'all');
+
+    if (! defined $contents{'SUBDIRS'} || $relative_dir ne '.')
+    {
+	# 'check' must depend on 'all', but not at top level.
+	push (@check, 'all');
+    }
     &do_one_merge_target ('check', @check);
     &do_one_merge_target ('installcheck', @installcheck);
 
@@ -1034,6 +1040,10 @@ sub handle_merge_targets
 	push (@phony, 'install-data');
     }
 
+    # If no dependencies for 'install', add 'all'.  Why?  That way
+    # "make install" at top level of distclean'd distribution won't
+    # fail because stuff in 'lib' fails to build.
+    push (@install, 'all') if ! @install;
     $output_rules .= ('install: '
 		      . join (' ', @install)
 		      # Use "@:" as empty command so nothing prints.
@@ -1490,10 +1500,11 @@ sub initialize_per_input
 ################################################################
 
 # Return contents of a file from $am_dir, automatically skipping
-# macros or rules which are already known.
-sub file_contents
+# macros or rules which are already known.  Runs command on each line
+# as it is read; this command can modify $_.
+sub file_contents_with_transform
 {
-    local ($basename) = @_;
+    local ($command, $basename) = @_;
     local ($file) = $am_dir . '/' . $basename . '.am';
 
     open (FC_FILE, $file)
@@ -1508,6 +1519,8 @@ sub file_contents
 
     while (<FC_FILE>)
     {
+	eval $command;
+
 	if (/$IGNORE_PATTERN/o)
 	{
 	    # Merely delete comments beginning with two hashes.
@@ -1572,6 +1585,12 @@ sub file_contents
     return $result_vars . $result_rules . $comment;
 }
 
+# Like file_contents_with_transform, but no transform.
+sub file_contents
+{
+    return &file_contents_with_transform ('', @_);
+}
+
 # Return contents of some Makefile.am variable.  Allow for AM_ style
 # overrides.
 sub am_variable
@@ -1620,13 +1639,12 @@ sub am_install_var
     local (@used) = ();
     local (@result) = ();
 
-    local ($template) = &file_contents ($file);
-    local ($clean_templ) = &file_contents ($file . '-clean');
-    local ($munge);
+    local ($clean_file) = $file . '-clean';
     local ($one_name);
-    foreach (@prefixes)
+    local ($X);
+    foreach $X (@prefixes)
     {
-	$one_name = $_ . '_' . $primary;
+	$one_name = $X . '_' . $primary;
 	if (defined $contents{$one_name})
 	{
 	    # Append actual contents to result.
@@ -1634,32 +1652,35 @@ sub am_install_var
 
 	    if ($do_clean)
 	    {
-		($munge = $clean_templ) =~ s/\@DIR\@/$_/g;
-		$output_rules .= $munge;
-		push (@clean, $_ . $primary);
-		&push_phony_cleaners ($_ . $primary);
+		$output_rules .=
+		    &file_contents_with_transform ('s/\@DIR\@/' . $X . '/go',
+						   $clean_file);
+
+		push (@clean, $X . $primary);
+		&push_phony_cleaners ($X . $primary);
 	    }
 
 	    push (@used, '$(' . $one_name . ')');
-	    if ($_ eq 'noinst')
+	    if ($X eq 'noinst')
 	    {
 		# Objects in noinst_FOO never get installed.
 		next;
 	    }
 
-	    ($munge = $template) =~ s/\@DIR\@/$_/g;
-	    $output_rules .= $munge;
+	    $output_rules .=
+		&file_contents_with_transform ('s/\@DIR\@/' . $X . '/go',
+					       $file);
 
-	    push (@uninstall, 'uninstall-' . $_ . $primary);
-	    push (@phony, 'uninstall-' . $_ . $primary);
-	    push (@installdirs, '$(' . $_ . 'dir)');
-	    if ($exec_dir_p{$_})
+	    push (@uninstall, 'uninstall-' . $X . $primary);
+	    push (@phony, 'uninstall-' . $X . $primary);
+	    push (@installdirs, '$(' . $X . 'dir)');
+	    if ($exec_dir_p{$X})
 	    {
-		push (@install_exec, 'install-' . $_ . $primary);
+		push (@install_exec, 'install-' . $X . $primary);
 	    }
 	    else
 	    {
-		push (@install_data, 'install-' . $_ . $primary);
+		push (@install_data, 'install-' . $X . $primary);
 	    }
 	}
     }
@@ -1681,7 +1702,7 @@ sub am_install_var
     grep ($valid{$_} = 0, @prefixes);
     foreach $varname (keys %contents)
     {
-	if ($varname =~ /^(.*)_$primary$/ && ! defined $valid{$1})
+	if ($varname =~ /^(.*)_$primary$/o && ! defined $valid{$1})
 	{
 	    &am_error ("invalid variable \"$varname\"");
 	}
