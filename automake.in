@@ -472,6 +472,10 @@ my $automake_needs_to_reprocess_all_files = 0;
 # Options set via AM_INIT_AUTOMAKE.
 my $global_options = '';
 
+# If a file name appears as a key in this hash, then it has already
+# been checked for.  This variable is local to the "require file"
+# functions.
+my %require_file_found = ();
 
 
 ################################################################
@@ -656,11 +660,6 @@ my @substfroms;
 # force.
 my @substtos;
 
-# If a file name appears as a key in this hash, then it has already
-# been checked for.  This variable is local to the "require file"
-# functions.
-my %require_file_found = ();
-
 # This keeps track of all variables defined by subobjname.
 # The value stored is the variable names.
 # The key has the form "(COND1)VAL1(COND2)VAL2..." where VAL1 and VAL2
@@ -801,8 +800,6 @@ sub initialize_per_input ()
 
     # We always include `.'.  This isn't strictly correct.
     %libtool_clean_directories = ('.' => 1);
-
-    %require_file_found = ();
 
     %subobjvar = ();
 }
@@ -8162,8 +8159,8 @@ sub require_file_internal ($$@)
 	    # DIST_COMMON.
 	    if (! $found_it)
 	    {
-		next if defined $require_file_found{$file};
-		$require_file_found{$file} = 1;
+		next if defined $require_file_found{$fullfile};
+		$require_file_found{$fullfile} = 1;
 	    }
 
 	    if ($strictness >= $mystrict)
