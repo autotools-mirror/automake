@@ -24,6 +24,8 @@
 if %?INSTALL%
 ## if doesn't work properly for Automake variables yet.
 _am_installdirs += $(DESTDIR)$(%NDIR%dir)
+?BASE?%DIR%SCRIPT_INSTALL = $(INSTALL_SCRIPT)
+?!BASE?%DIR%SCRIPT_INSTALL = $(install_sh_SCRIPT)
 ?EXEC?.PHONY install-exec-am: install-%DIR%SCRIPTS
 ?!EXEC?.PHONY install-data-am: install-%DIR%SCRIPTS
 install-%DIR%SCRIPTS: $(%DIR%_SCRIPTS)
@@ -32,13 +34,17 @@ install-%DIR%SCRIPTS: $(%DIR%_SCRIPTS)
 ## Funny invocation because Makefile variable can be empty, leading to
 ## a syntax error in sh.
 	@list='$(%DIR%_SCRIPTS)'; for p in $$list; do \
-	  f="`echo $$p|sed '$(transform)'`"; \
-	  if test -f $$p; then \
-	    echo " $(INSTALL_SCRIPT) $$p $(DESTDIR)$(%NDIR%dir)/$$f"; \
-	    $(INSTALL_SCRIPT) $$p $(DESTDIR)$(%NDIR%dir)/$$f; \
-	  elif test -f $(srcdir)/$$p; then \
-	    echo " $(INSTALL_SCRIPT) $(srcdir)/$$p $(DESTDIR)$(%NDIR%dir)/$$f"; \
-	    $(INSTALL_SCRIPT) $(srcdir)/$$p $(DESTDIR)$(%NDIR%dir)/$$f; \
+## A file can be in the source directory or the build directory.
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+## If the _SCRIPTS variable has an entry like foo/bar, install it as
+## $(destdir)/bar, not $(destdir)/foo/bar.  The user can make a
+## new dir variable or use a nobase_ target for the latter case.
+?BASE?	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+?!BASE?	  f="$$p"; \
+	  if test -f $$d$$p; then \
+	    f="`echo $$f|sed '$(transform)'`"; \
+	    echo " $(%DIR%SCRIPT_INSTALL) $$d$$p $(DESTDIR)$(%NDIR%dir)/$$f"; \
+	    $(%DIR%SCRIPT_INSTALL) $$d$$p $(DESTDIR)$(%NDIR%dir)/$$f; \
 	  else :; fi; \
 	done
 endif %?INSTALL%
@@ -53,7 +59,9 @@ if %?INSTALL%
 uninstall-%DIR%SCRIPTS:
 	@$(NORMAL_UNINSTALL)
 	@list='$(%DIR%_SCRIPTS)'; for p in $$list; do \
-	  f="`echo $$p|sed '$(transform)'`"; \
+?BASE?	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+?!BASE?	  f="$$p"; \
+	  f="`echo $$f|sed '$(transform)'`"; \
 	  echo " rm -f $(DESTDIR)$(%NDIR%dir)/$$f"; \
 	  rm -f $(DESTDIR)$(%NDIR%dir)/$$f; \
 	done
