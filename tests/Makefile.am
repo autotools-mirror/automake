@@ -67,6 +67,8 @@ cond10.test \
 cond11.test \
 cond12.test \
 cond13.test \
+cond14.test \
+cond15.test \
 cond16.test \
 cond17.test \
 condincl.test \

@@ -5991,6 +5991,31 @@ sub variable_conditions_reduce
     return @ret;
 }
 
+# @CONDS
+# invert_conditions (@CONDS)
+# --------------------------
+# Invert a list of conditionals.  Returns a set of conditionals which
+# are never true for any of the input conditionals, and when taken
+# together with the input conditionals cover all possible cases.
+# 
+# For example: invert_conditions("A_TRUE B_TRUE", "A_FALSE B_FALSE") will
+# return ("A_FALSE B_TRUE", "A_TRUE B_FALSE")
+sub invert_conditions
+{
+    my (@conds) = @_;
+
+    my @notconds = ();
+    foreach my $cond (@conds)
+    {
+	foreach my $perm (variable_conditions_permutations (split(' ', $cond)))
+	{
+	    push @notconds, $perm
+		    if ! conditional_is_redundant ($perm, @conds);
+	}
+    }
+    return variable_conditions_reduce (@notconds);
+}
+
 # Return a list of permutations of a conditional string.
 sub variable_conditions_permutations
 {
@@ -6919,14 +6944,42 @@ sub file_contents_internal ($$%)
 		}
 	      else
 		{
-		  # Free lance dependency.  Output the rule for all the
+		  # Free-lance dependency.  Output the rule for all the
 		  # targets instead of one by one.
-		  if (!defined $targets{$targets}
-		      && $cond ne 'FALSE')
+
+		  # Work out all the conditions for which the target hasn't
+		  # been defined
+		  my @undefined_conds;
+		  if (defined $target_conditional{$targets})
 		    {
-		      $paragraph =~ s/^/make_condition (@cond_stack)/gme;
-		      $result_rules .= "$spacing$comment$paragraph\n"
-			  if rule_define ($targets, $is_am, $cond, $file);
+		      my @defined_conds = keys %{$target_conditional{$targets}};
+		      @undefined_conds = invert_conditions(@defined_conds);
+		    }
+		  else
+		    {
+		      if (defined $targets{$targets})
+		        {
+			  # No conditions for which target hasn't been defined
+			  @undefined_conds = ();
+		        }
+		      else
+			{
+			  # Target hasn't been defined for any conditions
+			  @undefined_conds = ("");
+			}
+		    }
+
+		  if ($cond ne 'FALSE')
+		    {
+		      my $undefined_cond;
+		      for $undefined_cond (@undefined_conds)
+		      {
+			  my $condparagraph = $paragraph;
+			  $condparagraph =~ s/^/make_condition (@cond_stack, $undefined_cond)/gme;
+			  $result_rules .= "$spacing$comment$condparagraph\n"
+			      if rule_define ($targets, $is_am,
+					      "$cond $undefined_cond", $file);
+		      }
 		    }
 		  $comment = $spacing = '';
 		  last;
