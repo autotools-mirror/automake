@@ -328,9 +328,16 @@ sub reset()
      'install-man'	    => [],
      'uninstall-man'	    => [],
 
+     'install-dvi'          => [],
+     'install-dvi-am'       => [],
+     'install-html'         => [],
+     'install-html-am'      => [],
      'install-info'         => [],
      'install-info-am'      => [],
-     'uninstall-info'       => [],
+     'install-pdf'          => [],
+     'install-pdf-am'       => [],
+     'install-ps'           => [],
+     'install-ps-am'        => [],
 
      'installcheck-am'      => [],
 

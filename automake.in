@@ -236,11 +236,11 @@ my @common_sometimes =
 # Standard directories from the GNU Coding Standards, and additional
 # pkg* directories from Automake.  Stored in a hash for fast member check.
 my %standard_prefix =
-    map { $_ => 1 } (qw(bin data exec include info lib libexec lisp
-			localstate man man1 man2 man3 man4 man5 man6
-			man7 man8 man9 oldinclude pkgdatadir
-			pkgincludedir pkglibdir sbin sharedstate
-			sysconf));
+    map { $_ => 1 } (qw(bin data dataroot dvi exec html include info
+                        lib libexec lisp localstate man man1 man2 man3
+			man4 man5 man6 man7 man8 man9 oldinclude pdf
+			pkgdatadir pkgincludedir pkglibdir ps sbin
+			sharedstate sysconf));
 
 # Copyright on generated Makefile.ins.
 my $gen_copyright = "\
@@ -3322,7 +3322,8 @@ sub handle_man_pages
 sub handle_data
 {
     &am_install_var ('-noextra', '-candist', 'data', 'DATA',
-		     'data', 'sysconf', 'sharedstate', 'localstate',
+		     'data', 'dataroot', 'dvi', 'html', 'pdf', 'ps',
+		     'sysconf', 'sharedstate', 'localstate',
 		     'pkgdata', 'lisp', 'noinst', 'check');
 }
 
@@ -4410,21 +4411,21 @@ sub handle_factored_dependencies
 {
   # Reject bad hooks.
   foreach my $utarg ('uninstall-data-local', 'uninstall-data-hook',
-		     'uninstall-exec-local', 'uninstall-exec-hook')
+		     'uninstall-exec-local', 'uninstall-exec-hook',
+		     'uninstall-dvi-local',
+		     'uninstall-html-local',
+		     'uninstall-info-local',
+		     'uninstall-pdf-local',
+		     'uninstall-ps-local')
     {
       my $x = $utarg;
-      $x =~ s/(data|exec)-//;
+      $x =~ s/-.*-/-/;
       reject_rule ($utarg, "use `$x', not `$utarg'");
     }
 
   reject_rule ('install-local',
 	       "use `install-data-local' or `install-exec-local', "
 	       . "not `install-local'");
-
-  reject_rule ('install-info-local',
-	       "`install-info-local' target defined but "
-	       . "`no-installinfo' option not in use")
-    unless option 'no-installinfo';
 
   # Install the -local hooks.
   foreach (keys %dependencies)

@@ -5437,12 +5437,32 @@ here.  Any Texinfo source file must end in the @file{.texi},
 @file{.txi}, or @file{.texinfo} extension.  We recommend @file{.texi}
 for new manuals.
 
-Automake generates rules to build @file{.info}, @file{.dvi}, @file{.ps},
-@file{.pdf} and @file{.html} files from your Texinfo sources.
-The @file{.info} files are built by @code{make all} and installed
-by @code{make install} (unless you use @code{no-installinfo}, see below).
-The other files can be built on request by @code{make dvi}, @code{make ps},
-@code{make pdf} and @code{make html}.
+Automake generates rules to build @file{.info}, @file{.dvi},
+@file{.ps}, @file{.pdf} and @file{.html} files from your Texinfo
+sources.  Following the GNU Coding Standards, only the @file{.info}
+files are built by @code{make all} and installed by @code{make
+install} (unless you use @code{no-installinfo}, see below).
+Furthermore, @file{.info} files are automatically distributed so that
+Texinfo is not a prerequisite for installing your package.
+
+@trindex dvi
+@trindex html
+@trindex pdf
+@trindex ps
+@trindex install-dvi
+@trindex install-html
+@trindex install-pdf
+@trindex install-ps
+Other documentation formats can be built on request by @code{make
+dvi}, @code{make ps}, @code{make pdf} and @code{make html}, and they
+can be installed with @code{make install-dvi}, @code{make install-ps},
+@code{make install-pdf} and @code{make install-html} explicitly.
+@code{make uninstall} will remove everything: the Texinfo
+documentation installed by default as well as all the above optional
+formats.
+
+All these targets can be extended using @code{-local} rules
+(@pxref{Extending}).
 
 @cindex Texinfo flag, @code{VERSION}
 @cindex Texinfo flag, @code{UPDATED}
@@ -5524,8 +5544,11 @@ requirement for @file{texinfo.tex}.  Use of the variable
 @trindex install-info
 
 Automake generates an @code{install-info} rule; some people apparently
-use this.  By default, info pages are installed by @samp{make install}.
-This can be prevented via the @code{no-installinfo} option.
+use this.  By default, info pages are installed by @samp{make
+install}, so running @code{make install-info} is pointless.  This can
+be prevented via the @code{no-installinfo} option.  In this case,
+@file{.info} files are not installed by default, and user must
+request this explicitly using @code{make install-info}
 
 The following variables are used by the Texinfo build rules.
 
@@ -7068,9 +7091,20 @@ standard target with these user-supplied targets.
 @trindex  check
 @trindex  check-local
 @trindex  install
+@trindex  install-data
 @trindex  install-data-local
+@trindex  install-dvi
+@trindex  install-dvi-local
 @trindex  install-exec
 @trindex  install-exec-local
+@trindex  install-html
+@trindex  install-html-local
+@trindex  install-info
+@trindex  install-info-local
+@trindex  install-pdf
+@trindex  install-pdf-local
+@trindex  install-ps
+@trindex  install-ps-local
 @trindex  uninstall
 @trindex  uninstall-local
 @trindex  mostlyclean
@@ -7086,13 +7120,15 @@ standard target with these user-supplied targets.
 
 The targets that support a local version are @code{all}, @code{info},
 @code{dvi}, @code{ps}, @code{pdf}, @code{html}, @code{check},
-@code{install-data}, @code{install-exec}, @code{uninstall},
-@code{installdirs}, @code{installcheck} and the various @code{clean} targets
+@code{install-data}, @code{install-dvi}, @code{install-exec},
+@code{install-html}, @code{install-info}, @code{install-pdf},
+@code{install-ps}, @code{uninstall}, @code{installdirs},
+@code{installcheck} and the various @code{clean} targets
 (@code{mostlyclean}, @code{clean}, @code{distclean}, and
 @code{maintainer-clean}).  Note that there are no
-@code{uninstall-exec-local} or @code{uninstall-data-local} targets; just
-use @code{uninstall-local}.  It doesn't make sense to uninstall just
-data or just executables.
+@code{uninstall-exec-local} or @code{uninstall-data-local} targets;
+just use @code{uninstall-local}.  It doesn't make sense to uninstall
+just data or just executables.
 
 For instance, here is one way to install a file in @file{/etc}:
 
@@ -7204,8 +7240,12 @@ are ready to use.
 @itemx uninstall
 Install or uninstall files (@pxref{Install}).
 
-@item install-info
-Install only the Texinfo documentation (@pxref{Texinfo}).
+@item install-dvi
+@itemx install-html
+@itemx install-info
+@itemx install-ps
+@itemx install-pdf
+Install only some specific documentation format (@pxref{Texinfo}).
 
 @item installdirs
 Create install directories, but do not install any files.
