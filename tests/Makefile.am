@@ -129,6 +129,7 @@ conff.test \
 conff2.test \
 confh.test \
 confh4.test \
+confh5.test \
 config.test \
 confincl.test \
 conflnk.test \

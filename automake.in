@@ -296,8 +296,6 @@ my %libsources = ();
 
 # Names used in AC_CONFIG_HEADER call.
 my @config_headers = ();
-# Where AC_CONFIG_HEADER appears.
-my $config_header_location;
 
 # Names used in AC_CONFIG_LINKS call.
 my @config_links = ();
@@ -316,7 +314,7 @@ my @configure_input_files = ();
 # List of files in AC_CONFIG_FILES/AC_OUTPUT without Makefile.am's,
 # and their outputs.
 my @other_input_files = ();
-# Where each AC_CONFIG_FILES/AC_OUTPUT/AC_CONFIG_LINK appears.
+# Where each AC_CONFIG_FILES/AC_OUTPUT/AC_CONFIG_LINK/AC_CONFIG_HEADER appears.
 # The keys are the files created by these macros.
 my %ac_config_files_location = ();
 
@@ -3500,11 +3498,16 @@ sub rewrite_inputs_into_dependencies ($@)
     {
       if (exists $ac_config_files_location{$i})
 	{
-	  if (dirname ($i) eq $relative_dir)
+	  my $di = dirname $i;
+	  if ($di eq $relative_dir)
 	    {
 	      $i = basename $i;
 	    }
-	  else
+	  # In the top-level Makefile we do not use $(top_builddir), because
+	  # we are already there, and since the targets are built without
+	  # a $(top_builddir), it helps BSD Make to match them with 
+          # dependencies.
+	  elsif ($relative_dir ne '.')
 	    {
 	      $i = '$(top_builddir)/' . $i;
 	    }
@@ -3609,14 +3612,8 @@ sub handle_configure ($$$@)
 		}
 	    }
 
-	  # Distribute all inputs.
-	  for my $in (@ins)
-	    {
-	      error $config_header_location, "required file `$in' not found"
-		unless -f $in;
-	      push_dist_common (prepend_srcdir ($in));
-	    }
-	  @ins = prepend_srcdir (@ins);
+	  # This will also distribute all inputs.
+	  @ins = rewrite_inputs_into_dependencies ($config_h_path, @ins);
 
 	  # Header defined and in this directory.
 	  my @files;
@@ -4495,8 +4492,12 @@ sub scan_autoconf_traces ($)
 	}
       elsif ($macro eq 'AC_CONFIG_HEADERS')
 	{
-	  $config_header_location = $where;
-	  push @config_headers, split (' ', $args[1]);
+	  foreach my $spec (split (' ', $args[1]))
+	    {
+	      my ($dest, @src) = split (':', $spec);
+	      $ac_config_files_location{$dest} = $where;
+	      push @config_headers, $spec;
+	    }
 	}
       elsif ($macro eq 'AC_CONFIG_LINKS')
 	{
