@@ -166,7 +166,12 @@ To create all the @file{Makefile.in}s for a package, run the
 @code{automake} program in the top level directory, with no arguments.
 @code{automake} will automatically find each appropriate
 @file{Makefile.am} (by scanning @file{configure.in}; @pxref{configure})
-and generate the corresponding @file{Makefile.in}.
+and generate the corresponding @file{Makefile.in}.  Note that
+@code{automake} has a rather simplistic view of what constitutes a
+package; it assumes that a package has only one @file{configure.in}, at
+the top.  If your package has multiple @file{configure.in}s, then you
+must run @code{automake} in each directory holding a
+@file{configure.in}.
 
 You can optionally give @code{automake} an argument; @samp{.am} is
 appended to the argument and the result is used as the name of the input
@@ -416,8 +421,8 @@ For each primary, there is one additional variable named by prepending
 @samp{EXTRA_} to the primary name.  This variable is used to list
 objects which may or may not be built, depending on what
 @code{configure} decides.  This variable is required because Automake
-must know the entire list of objects to be built in order to generate a
-@file{Makefile.in} that will work in all cases.
+must statically know the entire list of objects to be built in order to
+generate a @file{Makefile.in} that will work in all cases.
 
 For instance, @code{cpio} decides at configure time which programs are
 built.  Some of the programs are installed in @code{bindir}, and some
@@ -429,7 +434,8 @@ bin_PROGRAMS = cpio pax
 sbin_PROGRAMS = @@PROGRAMS@@
 @end example
 
-Defining a primary variable is an error.
+Defining a primary variable without a prefix (eg @code{PROGRAMS}) is an
+error.
 
 Note that the common @samp{dir} suffix is left off when constructing the
 variable names; thus one writes @samp{bin_PROGRAMS} and not
@@ -847,8 +853,8 @@ to build C programs and libraries.
 
 In a directory containing source that gets built into a program (as
 opposed to a library), the @samp{PROGRAMS} primary is used.  Programs
-can be installed in @code{bindir}, @code{sbindir}, @code{libexecdir},
-@code{pkglibdir}, or not at all.
+can be installed in @samp{bindir}, @samp{sbindir}, @samp{libexecdir},
+@samp{pkglibdir}, or not at all (@samp{noinst}).
 
 For instance:
 
@@ -889,7 +895,7 @@ Sometimes it is useful to determine the programs that are to be built at
 configure time.  For instance, GNU @code{cpio} only builds @code{mt} and
 @code{rmt} under special circumstances.
 
-In this case, you must notify @code{Automake} of all the programs that
+In this case, you must notify @code{automake} of all the programs that
 can possibly be built, but at the same time cause the generated
 @file{Makefile.in} to use the programs specified by @code{configure}.
 This is done by having @code{configure} substitute values into each
@@ -942,9 +948,12 @@ using the @samp{prog_DEPENDENCIES} variable.  Each program depends on
 the contents of such a variable, but no further interpretation is done.
 
 If @samp{prog_DEPENDENCIES} is not supplied, it is computed by Automake.
-The automatically-assigned value is the contents of @samp{prog_LDADD}.
-Be warned that @file{configure} substitutions are preserved; this can
-lead to bad dependencies if you are not careful.
+The automatically-assigned value is the contents of @samp{prog_LDADD},
+with most configure substitutions, @samp{-l}, and @samp{-L} options
+removed.  The configure substitutions that are left in are only
+@samp{@@LIBOBJS@@} and @samp{@@ALLOCA@@}; these are left because it is
+known that they will not cause an invalid value for
+@samp{prog_DEPENDENCIES} to be generated.
 
 
 @node A Library
@@ -1257,6 +1266,11 @@ If you unpack a distribution made by @code{make dist}, and you want to
 turn on the dependency-tracking code again, simply re-run
 @code{automake}.
 
+The actual dependency files are put under the build directory, in a
+subdirectory named @file{.deps}.  These depencencies are machine
+specific.  It is safe to delete them if you like; they will be
+automatically recreated during the next build.
+
 
 @node Other objects
 @chapter Other Derived Objects
@@ -1540,6 +1554,21 @@ It is possible to extend this mechanism by defining an
 targets exist, they will be run at @samp{make install} time.
 @trindex install-exec-local
 @trindex install-data-local
+
+Variables using the standard directory prefixes @samp{data},
+@samp{info}, @samp{man}, @samp{include}, @samp{oldinclude},
+@samp{pkgdata}, or @samp{pkginclude} (eg @samp{data_DATA}) are installed
+by @samp{install-data}.
+
+Variables using the standard directory prefixes @samp{bin}, @samp{sbin},
+@samp{libexec}, @samp{sysconf}, @samp{localstate}, @samp{lib}, or
+@samp{pkglib} (eg @samp{bin_PROGRAMS}) are installed by
+@samp{install-exec}.
+
+Any variable using a user-defined directory prefix with @samp{exec} in
+the name (eg @samp{myexecbin_PROGRAMS} is installed by
+@samp{install-exec}.  All other user-defined prefixes are installed by
+@samp{install-data}.
 
 
 @node Clean
@@ -1877,16 +1906,16 @@ implied.
 The macro @samp{AM_MAINTAINER_MODE} is required.
 @end itemize
 
+GNU maintainers are advised to use @samp{gnu} strictness in preference
+to the special Cygnus mode.
+
 
 @node Extending
 @chapter When Automake Isn't Enough
 
-Sometimes @code{automake} isn't enough.  Then you just lose.
-
-Actually, @code{automake}s implicit copying semantics means that many
-problems can be worked around by simply adding some @code{make} targets
-and rules to @file{Makefile.in}.  @code{automake} will ignore these
-additions.
+@code{automake}s implicit copying semantics means that many problems can
+be worked around by simply adding some @code{make} targets and rules to
+@file{Makefile.in}.  @code{automake} will ignore these additions.
 
 There are some caveats to doing this.  Although you can overload a
 target already used by @code{automake}, it is often inadvisable,
@@ -1911,7 +1940,7 @@ data or just executables.
 @trindex install-exec
 @trindex uninstall
 
-For instance, here is how to install a file in @file{/etc}:
+For instance, here is one way to install a file in @file{/etc}:
 
 @example
 install-data-local:
