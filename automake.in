@@ -1499,9 +1499,9 @@ sub output_yacc_build_rule
 
     # Generate rule for c/c++.
     $output_rules .= &file_contents ('yacc',
-				     ('YACC_SUFFIX' => $yacc_suffix,
-				      'C_SUFFIX'    => $c_suffix,
-				      'YLWRAP'      => $use_ylwrap));
+				     ('YLWRAP'      => $use_ylwrap,
+				      'YACC_SUFFIX' => $yacc_suffix,
+				      'C_SUFFIX'    => $c_suffix));
 }
 
 sub output_lex_build_rule
@@ -1510,23 +1510,10 @@ sub output_lex_build_rule
 
     (my $c_suffix = $lex_suffix) =~ tr/l/c/;
 
-    push (@suffixes, $lex_suffix);
-    &define_configure_variable ('LEX_OUTPUT_ROOT');
-    &define_configure_variable ('LEXLIB');
-    $output_rules .= "$lex_suffix$c_suffix:\n\t";
-
-    if ($use_ylwrap)
-    {
-        # Is the $@ correct here?  If so, why not use it in the ylwrap
-        # build rule for yacc above?
-	$output_rules .= '$(SHELL) $(YLWRAP)'
-	    . ' "$(LEX)" $< $(LEX_OUTPUT_ROOT).c $@ -- $(AM_LFLAGS) $(LFLAGS)';
-    }
-    else
-    {
-	$output_rules .= '$(LEX) $(AM_LFLAGS) $(LFLAGS) $< && mv $(LEX_OUTPUT_ROOT).c $@';
-    }
-    $output_rules .= "\n";
+    $output_rules .= &file_contents ('lex',
+				     ('YLWRAP'     => $use_ylwrap,
+				      'LEX_SUFFIX' => $lex_suffix,
+				      'C_SUFFIX'   => $c_suffix));
 }
 
 
