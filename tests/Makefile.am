@@ -230,6 +230,7 @@ subdir4.test \
 subobj.test \
 subobj2.test \
 subobj3.test \
+subobj4.test \
 subst.test \
 suffix.test \
 suffix2.test \
