@@ -557,13 +557,76 @@ sub handle_texinfo
     &require_file ('texinfo.tex');
 }
 
+# Helper text for dealing with man pages.
+$install_man_format =
+    '	sect=@SECTION@;				\
+	inst=`echo "@MAN@" | sed '$(transform)'`.@FULLSECT@; \
+	echo installing @MAN@ as $(mandir)/man$$sect/$$inst; \
+	$(INSTALL_DATA) $(srcdir)/@MAN@ $(mandir)/man$$sect/$$inst; \
+	if test -d $(mandir)/cat$$sect; then	\
+	  echo formatting @MAN@ as $(mandir)/cat$$sect/$$inst;  \
+	  $(NROFF) -man $(srcdir)/@MAN@ > $(mandir)/cat$$sect/$$inst; \
+	else					\
+	  true;					\
+	fi
+';
+
+$uninstall_man_format =
+    '	inst=`echo "@MAN@" | sed '$(transform)'`.@FULLSECT@; \
+	rm -f $(mandir)/man@SECTION@/$$inst $(mandir)/cat@SECTION@/$$inst
+';
+
 # Handle any man pages.
 sub handle_man_pages
 {
     return if (! defined $contents{'MANS'});
 
+    # We generate the manpage install code by hand to avoid the use of
+    # basename in the generated Makefile.
+    local (@mans) = split (' ', $contents{'MANS'});
+    local (%sections, %inames, %secmap, %fullsecmap);
+    foreach (@mans)
+    {
+	m/^(.*)\.([0-9])([a-z]*)$/;
+	$sections{$2} = 1;
+	$inames{$1} = $_;
+	$secmap{$1} = $2;
+	$fullsecmap{$1} = $2 . $3;
+    }
+
+    # Generate list of install dirs.
+    $output_rules .= "install-man:\n";
+    foreach (keys %sections)
+    {
+	push (@installdirs, '$(mandir)/man' . $_);
+	$output_rules .= ("\t" . '$(top_srcdir)/mkinstalldirs $(mandir)/man'
+			  . $_ . "\n");
+    }
+
+    # Generate install target.
+    local ($key);
+    foreach key (keys %inames)
+    {
+	$_ = $install_man_format;
+	s/@SECTION@/$secmap{$key}/g;
+	s/@MAN@/$inames{$key}/g;
+	s/@FULLSECT@/$fullsecmap{$key}/g;
+	$output_rules .= $_;
+    }
+    $output_rules .= "\n";
+
+    $output_rules .= "uninstall-man:\n";
+    foreach $key (keys %inames)
+    {
+	$_ = $uninstall_man_format;
+	s/@SECTION@/$secmap{$key}/g;
+	s/@MAN@/$inames{$key}/g;
+	s/@FULLSECT@/$fullsecmap{$key}/g;
+	$output_rules .= $_;
+    }
+    $output_rules .= "\n";
+
     $output_vars .= &file_contents ('mans-vars');
-    $output_rules .= &file_contents ('mans');
 
     push (@install_data, 'install-man');
     push (@uninstall, 'uninstall-man');
