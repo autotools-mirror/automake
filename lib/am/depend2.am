@@ -41,7 +41,9 @@
 if %FASTDEP%
 ## In fast-dep mode, we can always use -o.
 	if %COMPILE% -MT %OBJ% -MD -MP -MF "%DEPBASE%.Tpo" \
-	  %-c% -o %OBJ% `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%; \
+## For non-suffix rules, we must emulate a VPATH search on %SOURCE%.
+?!GENERIC?	  %-c% -o %OBJ% `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%; \
+?GENERIC?	  %-c% -o %OBJ% %SOURCE%; \
 	then mv "%DEPBASE%.Tpo" "%DEPBASE%.Po"; \
 	else rm -f "%DEPBASE%.Tpo"; exit 1; \
 	fi
@@ -51,8 +53,14 @@ if %AMDEP%
 	depfile='%DEPBASE%.Po' tmpdepfile='%DEPBASE%.TPo' @AMDEPBACKSLASH@
 	$(%FPFX%DEPMODE) $(depcomp) @AMDEPBACKSLASH@
 endif %AMDEP%
+if %?GENERIC%
+?-o?	%COMPILE% %-c% %-o% %OBJ% %SOURCE%
+?!-o?	%COMPILE% %-c% %SOURCE%
+else !%?GENERIC%
+## For non-suffix rules, we must emulate a VPATH search on %SOURCE%.
 ?-o?	%COMPILE% %-c% %-o% %OBJ% `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%
 ?!-o?	%COMPILE% %-c% `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%
+endif !%?GENERIC%
 endif !%FASTDEP%
 
 ?GENERIC?%EXT%.obj:
@@ -60,9 +68,9 @@ endif !%FASTDEP%
 if %FASTDEP%
 ## In fast-dep mode, we can always use -o.
 	if %COMPILE% -MT %OBJOBJ% -MD -MP -MF "%DEPBASE%.Tpo" \
-## Ugly invocation here; using a variable fails due to a parsing
-## problem in automake.
-	  %-c% -o %OBJOBJ% `if test -f '%SOURCE%'; then $(CYGPATH_W) '%SOURCE%'; else $(CYGPATH_W) '$(srcdir)/%SOURCE%'; fi`; \
+## For non-suffix rules, we must emulate a VPATH search on %SOURCE%.
+?!GENERIC?	  %-c% -o %OBJOBJ% `if test -f '%SOURCE%'; then $(CYGPATH_W) '%SOURCE%'; else $(CYGPATH_W) '$(srcdir)/%SOURCE%'; fi`; \
+?GENERIC?	  %-c% -o %OBJOBJ% `$(CYGPATH_W) '%SOURCE%'`; \
 	then mv "%DEPBASE%.Tpo" "%DEPBASE%.Po"; \
 	else rm -f "%DEPBASE%.Tpo"; exit 1; \
 	fi
@@ -72,8 +80,14 @@ if %AMDEP%
 	depfile='%DEPBASE%.Po' tmpdepfile='%DEPBASE%.TPo' @AMDEPBACKSLASH@
 	$(%FPFX%DEPMODE) $(depcomp) @AMDEPBACKSLASH@
 endif %AMDEP%
+if %?GENERIC%
+?-o?	%COMPILE% %-c% %-o% %OBJOBJ% `$(CYGPATH_W) '%SOURCE%'`
+?!-o?	%COMPILE% %-c% `$(CYGPATH_W) '%SOURCE%'`
+else !%?GENERIC%
+## For non-suffix rules, we must emulate a VPATH search on %SOURCE%.
 ?-o?	%COMPILE% %-c% %-o% %OBJOBJ% `if test -f '%SOURCE%'; then $(CYGPATH_W) '%SOURCE%'; else $(CYGPATH_W) '$(srcdir)/%SOURCE%'; fi`
 ?!-o?	%COMPILE% %-c% `if test -f '%SOURCE%'; then $(CYGPATH_W) '%SOURCE%'; else $(CYGPATH_W) '$(srcdir)/%SOURCE%'; fi`
+endif !%?GENERIC%
 endif !%FASTDEP%
 
 if %?LIBTOOL%
