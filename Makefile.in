@@ -52,7 +52,7 @@ compile.am data.am dejagnu.am depend.am depend2.am dist-vars.am footer.am \
 header.am header-vars.am kr-extra.am libs.am library.am \
 mans-vars.am program.am progs.am remake-hdr.am remake-subd.am \
 remake.am scripts.am subdirs.am tags.am tags-subd.am tags-clean.am \
-texi-vers.am texi-vars.am texinfos.am libs-clean.am \
+texi-vers.am texinfos.am libs-clean.am \
 progs-clean.am data-clean.am COPYING INSTALL texinfo.tex ansi2knr.c \
 ansi2knr.1 aclocal.m4 lisp.am lisp-clean.am
 
@@ -65,11 +65,10 @@ EXTRA_DIST = acinstall $(pkgdata_DATA)
 ETAGS_ARGS = automake.in aclocal.in --lang=none \
  --regex='/^@node[ \t]+\([^,]+\)/\1/' automake.texi
 TAGS_DEPENDENCIES = automake.in aclocal.in automake.texi
-ACLOCAL = aclocal.m4
+ACLOCAL = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES =  automake aclocal
 SCRIPTS =  $(bin_SCRIPTS) $(pkgdata_SCRIPTS)
-
 
 MAKEINFO = makeinfo
 TEXI2DVI = texi2dvi
@@ -101,14 +100,14 @@ aclocal.m4: configure.in
 	cd $(srcdir) && aclocal
 
 $(srcdir)/Makefile.in: Makefile.am configure.in
-	cd $(srcdir) && automake --strictness=gnits Makefile
+	cd $(srcdir) && automake --strictness=@STRICTNESS@ Makefile
 
 # For an explanation of the following Makefile rules, see node
 # `Automatic Remaking' in GNU Autoconf documentation.
 Makefile: $(srcdir)/Makefile.in config.status $(BUILT_SOURCES)
-	CONFIG_FILES=$@ CONFIG_HEADERS= ./config.status
+	CONFIG_FILES=$@ CONFIG_HEADERS= $(SHELL) ./config.status
 config.status: configure
-	./config.status --recheck
+	$(SHELL) ./config.status --recheck
 $(srcdir)/configure: configure.in $(ACLOCAL) $(CONFIGURE_DEPENDENCIES)
 	cd $(srcdir) && autoconf
 automake: $(top_builddir)/config.status automake.in
@@ -180,7 +179,8 @@ automake.dvi: automake.texi version.texi
 	  && $(MAKEINFO) `echo $< | sed 's,.*/,,'`
 
 .texi.dvi:
-	TEXINPUTS=$(srcdir):$$TEXINPUTS $(TEXI2DVI) $<
+	TEXINPUTS=$(srcdir):$$TEXINPUTS \
+	  MAKEINFO='$(MAKEINFO) -I $(srcdir)' $(TEXI2DVI) $<
 
 .texinfo.info:
 	cd $(srcdir) \
@@ -189,7 +189,7 @@ automake.dvi: automake.texi version.texi
 .texinfo.dvi:
 	TEXINPUTS=$(srcdir):$$TEXINPUTS $(TEXI2DVI) $<
 
-install-info: $(INFO_DEPS)
+install-info-am: $(INFO_DEPS)
 	$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(infodir)
 	for file in $(INFO_DEPS); do \
@@ -253,7 +253,7 @@ uninstall-pkgdataDATA:
 @SET_MAKE@
 
 all-recursive install-data-recursive install-exec-recursive \
-installdirs-recursive install-recursive uninstall-recursive \
+installdirs-recursive install-recursive uninstall-recursive  \
 check-recursive installcheck-recursive info-recursive dvi-recursive \
 mostlyclean-recursive clean-recursive distclean-recursive \
 maintainer-clean-recursive:
@@ -352,7 +352,7 @@ all-am: $(INFO_DEPS) $(SCRIPTS) $(DATA) Makefile
 
 install-exec-am: install-binSCRIPTS
 
-install-data-am: install-info install-pkgdataSCRIPTS install-pkgdataDATA
+install-data-am: install-info-am install-pkgdataSCRIPTS install-pkgdataDATA
 
 uninstall-am: uninstall-binSCRIPTS uninstall-pkgdataSCRIPTS uninstall-info uninstall-pkgdataDATA
 
@@ -415,7 +415,7 @@ maintainer-clean:  maintainer-clean-am maintainer-clean-recursive
 
 .PHONY: default uninstall-binSCRIPTS install-binSCRIPTS \
 uninstall-pkgdataSCRIPTS install-pkgdataSCRIPTS mostlyclean-vti \
-distclean-vti clean-vti maintainer-clean-vti install-info \
+distclean-vti clean-vti maintainer-clean-vti install-info-am \
 uninstall-info mostlyclean-info distclean-info clean-info \
 maintainer-clean-info uninstall-pkgdataDATA install-pkgdataDATA \
 install-data-recursive uninstall-data-recursive install-exec-recursive \

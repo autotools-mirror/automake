@@ -22,7 +22,10 @@
 	  && $(MAKEINFO) `echo $< | sed 's,.*/,,'`
 
 .texi.dvi:
-	TEXINPUTS=$(srcdir):$$TEXINPUTS $(TEXI2DVI) $<
+	TEXINPUTS=$(srcdir):$$TEXINPUTS \
+## Must set MAKEINFO like this so that version.texi will be found even
+## if it is in srcdir.
+	  MAKEINFO='$(MAKEINFO) -I $(srcdir)' $(TEXI2DVI) $<
 
 .texinfo.info:
 ## We want to force the .info file to be built in srcdir.  This is
@@ -36,7 +39,9 @@
 ## Look in both . and srcdir because the info pages might have been
 ## rebuilt in the build directory.  Can't cd to srcdir; that might
 ## break a possible install-sh reference.
-install-info: $(INFO_DEPS)
+## Funny name due to --cygnus influence; we want to reserve
+## `install-info' for the user.
+install-info-am: $(INFO_DEPS)
 	$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(infodir)
 	for file in $(INFO_DEPS); do \

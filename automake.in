@@ -204,6 +204,9 @@ $dist_charset = 'utf8';		# recode doesn't support this yet.
 $am_file_name = '';
 $in_file_name = '';
 
+# TRUE if --cygnus seen.
+$cygnus_mode = 0;
+
 
 
 &initialize_global_constants;
@@ -311,6 +314,10 @@ sub parse_arguments
 	elsif ($arglist[0] eq '--gnits')
 	{
 	    &set_strictness ('gnits');
+	}
+	elsif ($arglist[0] eq '--cygnus')
+	{
+	    $cygnus_mode = 1;
 	}
 	elsif ($arglist[0] eq '--foreign')
 	{
@@ -431,6 +438,7 @@ sub generate_makefile
     }
 
     # Check first, because we might modify some state.
+    &check_cygnus;
     &check_gnu_standards;
     &check_gnits_standards;
 
@@ -1465,10 +1473,14 @@ sub handle_texinfo
 	}
     }
 
-    # Some boilerplate.
-    $output_vars .= &file_contents ('texi-vars');
+    # Find these programs wherever they may lie.  Yes, this has
+    # intimate knowledge of the structure of the texinfo distribution.
+    &define_program_variable ('MAKEINFO', 'build', 'texinfo/makeinfo',
+			      'makeinfo');
+    &define_program_variable ('TEXI2DVI', 'src', 'texinfo/util',
+			      'texi2dvi');
     $output_rules .= &file_contents ('texinfos');
-    push (@phony, 'install-info', 'uninstall-info');
+    push (@phony, 'install-info-am', 'uninstall-info');
 
     # How to clean.
     $output_rules .= "\nmostlyclean-info:\n";
@@ -1484,7 +1496,7 @@ sub handle_texinfo
     {
 	push (@uninstall, 'uninstall-info');
 	push (@installdirs, '$(infodir)');
-	unshift (@install_data, 'install-info');
+	unshift (@install_data, 'install-info-am');
 
 	# Make sure documentation is made and installed first.  Use
 	# $(INFO_DEPS), not 'info', because otherwise recursive makes
@@ -1503,8 +1515,11 @@ sub handle_texinfo
     # probably better, in case noinst_TEXINFOS is ever supported.
     &define_variable ("TEXINFOS", $contents{'info_TEXINFOS'});
 
-    # Do some error checking.
-    &require_file_with_line ('info_TEXINFOS', $FOREIGN, 'texinfo.tex');
+    # Do some error checking.  Note that this file is not required
+    # when in Cygnus mode -- a bletcherous hack.
+    &require_file_with_line ('info_TEXINFOS',
+			     $cygnus_mode ? $GNU : $FOREIGN,
+			     'texinfo.tex');
 }
 
 # Handle any man pages.
@@ -1672,7 +1687,9 @@ sub handle_dist_worker
 	  && cd $(srcdir) \\
 	  && automake --include-deps --build-dir=$$here --srcdir-name=$(srcdir) --output-dir=$$distdir --strictness='
 		 # Set strictness of output.
-		 . $strictness_name . "\n"
+		 . $strictness_name
+		 . ($cygnus_mode ? ' --cygnus' : '')
+		 . "\n"
 		 );
 	}
     }
@@ -2056,7 +2073,12 @@ sub handle_subdirs
 	    if ! -d $relative_dir . '/' . $dir;
     }
 
-    $output_rules .= &file_contents ('subdirs');
+    local ($xform) = ('s/\@INSTALLINFO\@/' .
+		      (defined $options{'no-installinfo'}
+		       ? 'install-info-recursive'
+		       : '')
+		      . '/;');
+    $output_rules .= &file_contents_with_transform ($xform, 'subdirs');
 
     # Push a bunch of phony targets.
     local ($phonies);
@@ -2085,7 +2107,7 @@ sub handle_aclocal_m4
     local ($regen_aclocal) = 0;
     if (-f 'aclocal.m4')
     {
-	&define_variable ("ACLOCAL", "aclocal.m4");
+	&define_variable ("ACLOCAL", '$(top_srcdir)/aclocal.m4');
 	&push_dist_common ('aclocal.m4');
 
 	if (open (ACLOCAL, '< aclocal.m4'))
@@ -2131,19 +2153,19 @@ sub handle_configure
 	if &variable_defined ('SUBDIRS') && ! $seen_make_set;
 
     local ($top_reldir);
+    local ($xform) = ('s/\@ARGS\@/--strictness=' . $strictness_name
+		      . ($cygnus_mode ? ' --cygnus' : '')
+		      . '/;');
     if ($relative_dir ne '.')
     {
 	# In subdirectory.
-	$output_rules .= &file_contents ('remake-subd');
+	$output_rules .= &file_contents_with_transform ($xform, 'remake-subd');
 	$top_reldir = '../';
     }
     else
     {
 	&handle_aclocal_m4;
-	$output_rules .= &file_contents_with_transform ('s/\@STRICTNESS\@/'
-							. $strictness_name
-							. '/g',
-							'remake');
+	$output_rules .= &file_contents_with_transform ($xform, 'remake');
 	&examine_variable ('CONFIGURE_DEPENDENCIES');
 	$top_reldir = '';
     }
@@ -2158,27 +2180,30 @@ sub handle_configure
 				      $FOREIGN, $ch_sans_dir);
 
 	# Header defined and in this directory.
+	local (@files);
 	if (-f $relative_dir . '/acconfig.h')
 	{
-	    &define_variable ("ACCONFIG", "acconfig.h");
-	    &push_dist_common ('acconfig.h');
+	    push (@files, 'acconfig.h');
 	}
 	if (-f $config_name . '.top')
 	{
-	    &define_variable ("CONFIG_TOP", "${cn_sans_dir}.top");
-	    &push_dist_common ($cn_sans_dir . '.top');
+	    push (@files, "${cn_sans_dir}.top");
 	}
 	if (-f $config_name . '.bot')
 	{
-	    &define_variable ("CONFIG_BOT", "${cn_sans_dir}.bot");
-	    &push_dist_common ($cn_sans_dir . '.bot');
+	    push (@files, "${cn_sans_dir}.bot");
 	}
+
+	&push_dist_common (@files);
+	$output_rules .= &file_contents_with_transform ('s/\@FILES\@/'
+							. join (' ', @files)
+							. '/;',
+							'remake-hdr');
 
 	&touch ($relative_dir . '/stamp-h.in');
 	&require_file_with_conf_line ($config_header_line, $FOREIGN,
 				      'stamp-h.in');
 
-	$output_rules .= &file_contents ('remake-hdr');
 	push (@clean, 'hdr');
 	&push_phony_cleaners ('hdr');
 	&define_variable ("CONFIG_HEADER_IN", "${ch_sans_dir}");
@@ -2397,6 +2422,22 @@ sub handle_merge_targets
     &do_one_merge_target ('dvi', @dvi);
     &do_one_merge_target ('check', @check);
     &do_one_merge_target ('installcheck', @installcheck);
+
+    if (defined $options{'no-installinfo'})
+    {
+	# FIXME: this is kind of a hack; should find another way to
+	# know that this is required.
+	local (@dirs);
+	if (grep ($_ eq 'install-info-am', @phony))
+	{
+	    push (@dirs, 'install-info-am');
+	}
+	if (&variable_defined ('SUBDIRS'))
+	{
+	    push (@dirs, 'install-info-recursive');
+	}
+	&do_one_merge_target ('install-info', @dirs);
+    }
 
     # Handle the various install targets specially.  We do this so
     # that (eg) "make install-exec" will run "install-exec-recursive"
@@ -2693,7 +2734,19 @@ sub handle_tests
     {
 	push (@check, 'check-DEJAGNU');
 	push (@phony, 'check-DEJAGNU');
-	$output_rules .= &file_contents ('dejagnu') . "\n";
+
+	local ($xform);
+	if (! $cygnus_mode)
+	{
+	    $xform = 'next if /^CYGNUS/;';
+	}
+	$output_rules .= &file_contents_with_transform ($xform, 'dejagnu');
+
+	# In Cygnus mode, these are found in the build tree.
+	# Otherwise they are looked for in $PATH.
+	&define_program_variable ('EXPECT', 'build', 'expect', 'expect');
+	&define_program_variable ('RUNTEST', 'src', 'dejagnu', 'runtest');
+
 	# Note that in the rule we don't directly generate site.exp to
 	# avoid the possibility of a corrupted site.exp if make is
 	# interrupted.  Jim Meyering has some useful text on this
@@ -3092,6 +3145,22 @@ sub scan_configure
 
 ################################################################
 
+# Set up for Cygnus mode.
+sub check_cygnus
+{
+    return unless $cygnus_mode;
+
+    &set_strictness ('foreign');
+    $options{'no-installinfo'} = 1;
+    $options{'no-dependencies'} = 1;
+    $use_dependencies = 0;
+
+    if (! $seen_maint_mode)
+    {
+	&am_conf_error ("\`AM_MAINTAINER_MODE' required when --cygnus specified");
+    }
+}
+
 # Do any extra checking for GNU standards.
 sub check_gnu_standards
 {
@@ -3303,6 +3372,35 @@ sub define_configure_variable
     local ($value) = '@' . $var . '@';
     &define_variable ($var, $value);
 }
+
+# Define a variable that represents a program to run.  If in Cygnus
+# mode, the program is searched for in the build (or source) tree.
+# Otherwise no searching is done at all.  Arguments are:
+# * VAR      Name of variable to define
+# * WHATDIR  Either `src' or `build', depending on where program should
+#            be found.  (runtest is in srcdir!)
+# * SUBDIR   Subdir of top-level dir
+# * PROGRAM  Name of program
+sub define_program_variable
+{
+    local ($var, $whatdir, $subdir, $program) = @_;
+
+    if ($cygnus_mode)
+    {
+	local ($full) = ('$(top_' . $whatdir . 'dir)/../'
+			 . $subdir . '/' . $program);
+	&define_variable ($var, ('`if test -f ' . $full
+				 . '; then echo ' . $full . '; else echo '
+				 . $program . '; fi`'));
+    }
+    else
+    {
+	&define_variable ($var, $program);
+    }
+}
+
+
+################################################################
 
 # Read Makefile.am and set up %contents.  Simultaneously copy lines
 # from Makefile.am into $output_trailer or $output_vars as
@@ -3573,6 +3671,7 @@ sub initialize_global_constants
   -a, --add-missing     add missing standard files to package
   --amdir=DIR           directory storing config files
   --build-dir=DIR       directory where build being done (for dependencies)
+  --cygnus              assume program is part of Cygnus-style tree
   --foreign             same as --strictness=foreign
   --gnits               same as --strictness=gnits
   --gnu                 same as --strictness=gnu
