@@ -32,6 +32,5 @@ AC_DEFUN(AM_PATH_LISPDIR,
       fi
     fi
     AC_MSG_RESULT($lispdir)
-    ELCFILES="\$(ELCFILES)"
   fi
   AC_SUBST(lispdir)])
