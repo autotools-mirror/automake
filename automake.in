@@ -1900,8 +1900,7 @@ sub handle_source_transform
 		unless $prefix =~ /EXTRA_/;
 	    push (@dist_sources, '$(' . $prefix . $one_file . "_SOURCES)")
 		unless $prefix =~ /^nodist_/;
-	    variable_dump ($var);
-	    foreach my $cond (keys %{$conditional{$var}})
+	    foreach my $cond (variable_conditions ($var))
 	      {
 		@files = &variable_value_as_list ($var, $cond);
 		($temp, @result) =
@@ -1926,9 +1925,10 @@ sub handle_source_transform
 	push (@objects, $unxformed . $obj);
 	push (@files, $unxformed . '.c');
 
-	($temp, @result) = &handle_single_transform_list ($one_file . '_SOURCES',
-							  $one_file, $obj,
-							  @files);
+	($temp, @result) =
+	  &handle_single_transform_list ($one_file . '_SOURCES',
+					 $one_file, $obj,
+					 @files);
 	$linker = $temp if $linker eq '';
 	&define_pretty_variable ($one_file . "_OBJECTS", '', @result)
     }
@@ -5838,8 +5838,22 @@ sub variable_conditions_sub
     # definitions.
     delete $vars_scanned{$var};
 
-    return @new_conds
-	if ! $parent;
+    # If there are no parents, then this call is the top level call.
+    if (! $parent)
+      {
+	# Now we want to return all permutations of the subvariable
+	# conditions.
+	my %allconds = ();
+	foreach my $item (@new_conds)
+	{
+	    foreach (split (' ', $item))
+	    {
+		s/^(.*)_(TRUE|FALSE)$/$1_TRUE/;
+		$allconds{$_} = 1;
+	    }
+	}
+	return &variable_conditions_permutations (sort keys %allconds);
+      }
 
     # If we are being called on behalf of another variable, we need to
     # return all possible permutations of the conditions.  We have
@@ -6563,7 +6577,6 @@ sub read_main_am_file
 	  if $done{$var};
 	$done{$var} = 1;
 
-	variable_dump ($var);
 	# Don't process Automake variables.
 	next
 	  if $var_is_am{$var};
