@@ -345,6 +345,8 @@ subdir6.test \
 subdir7.test \
 subdirbuiltsources.test \
 subdircond.test \
+subdircond2.test \
+subdircond3.test \
 subobj.test \
 subobj2.test \
 subobj3.test \

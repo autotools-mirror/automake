@@ -1756,6 +1756,8 @@ be @file{$(datadir)/aclocal}).
 @node Top level, Alternative, configure, Top
 @chapter The top-level @file{Makefile.am}
 
+@section Recursing subdirectories
+
 @cindex SUBDIRS, explained
 
 In packages with subdirectories, the top level @file{Makefile.am} must
@@ -1769,10 +1771,7 @@ the generated @file{Makefile} will run both locally and in all specified
 subdirectories.  Note that the directories listed in @code{SUBDIRS} are
 not required to contain @file{Makefile.am}s; only @file{Makefile}s
 (after configuration).  This allows inclusion of libraries from packages
-which do not use Automake (such as @code{gettext}).  The directories
-mentioned in @code{SUBDIRS} must be direct children of the current
-directory.  For instance, you cannot put @samp{src/subdir} into
-@code{SUBDIRS}.
+which do not use Automake (such as @code{gettext}).
 
 In packages that use subdirectories, the top-level @file{Makefile.am} is
 often very short.  For instance, here is the @file{Makefile.am} from the
@@ -1783,48 +1782,19 @@ EXTRA_DIST = BUGS ChangeLog.O README-alpha
 SUBDIRS = doc intl po src tests
 @end example
 
-@cindex SUBDIRS, overriding
-@cindex Overriding SUBDIRS
-
-It is possible to override the @code{SUBDIRS} variable if, like in the
-case of GNU @code{Inetutils}, you want to only build a subset of the
-entire package.  In your @file{Makefile.am} include:
-
-@example
-SUBDIRS = @@MY_SUBDIRS@@
-@end example
-
-Then in your @file{configure.in} you can specify:
-
-@example
-MY_SUBDIRS="src doc lib po"
-AC_SUBST(MY_SUBDIRS)
-@end example
-
-(Note that we don't use the variable name @code{SUBDIRS} in our
-@file{configure.in}; that would cause Automake to believe that every
-@file{Makefile.in} should recurse into the listed subdirectories.)
-
-The upshot of this is that Automake is tricked into building the package
-to take the subdirs, but doesn't actually bind that list until
-@code{configure} is run.
-
-Although the @code{SUBDIRS} variable can contain configure substitutions
-(e.g. @samp{@@DIRS@@}); Automake itself does not actually examine the
-contents of this variable.
-
-If @code{SUBDIRS} is defined, then your @file{configure.in} must include
-@code{AC_PROG_MAKE_SET}.  When Automake invokes @code{make} in a
-subdirectory, it uses the value of the @code{MAKE} variable.  It passes
-the value of the variable @code{AM_MAKEFLAGS} to the @code{make}
-invocation; this can be set in @file{Makefile.am} if there are flags you
-must always pass to @code{make}.
+When Automake invokes @code{make} in a subdirectory, it uses the value
+of the @code{MAKE} variable.  It passes the value of the variable
+@code{AM_MAKEFLAGS} to the @code{make} invocation; this can be set in
+@file{Makefile.am} if there are flags you must always pass to
+@code{make}.
 @vindex MAKE
 @vindex MAKEFLAGS
 
-The use of @code{SUBDIRS} is not restricted to just the top-level
-@file{Makefile.am}.  Automake can be used to construct packages of
-arbitrary depth.
+The directories mentioned in @code{SUBDIRS} must be direct children of
+the current directory.  For instance, you cannot put @samp{src/subdir}
+into @code{SUBDIRS}.  Instead you should put @code{SUBDIRS = subdir}
+into @file{src/Makefile.am}.  Automake can be used to construct packages
+of arbitrary depth this way.
 
 By default, Automake generates @file{Makefiles} which work depth-first
 (@samp{postfix}).  However, it is possible to change this ordering.  You
@@ -1833,13 +1803,131 @@ putting @samp{.}  first will cause a @samp{prefix} ordering of
 directories.  All @samp{clean} targets are run in reverse order of build
 targets.
 
-Sometimes, such as when running @code{make dist}, you want all possible
-subdirectories to be examined.  In this case Automake will use
-@code{DIST_SUBDIRS}, instead of @code{SUBDIRS}, to determine where to
-recurse.  This variable will also be used when the user runs
-@code{distclean} or @code{maintainer-clean}.  It should be set to the
-full list of subdirectories in the project.  If this variable is not set,
-Automake will attempt to set it for you.
+@section Conditional subdirectories
+@cindex Subdirectories, building conditionally
+@cindex Conditional subdirectories
+@cindex @code{SUBDIRS}, conditional
+@cindex Conditional @code{SUBDIRS}
+
+It is possible to define the @code{SUBDIRS} variable conditionally if,
+like in the case of GNU @code{Inetutils}, you want to only build a
+subset of the entire package.
+
+To illustrate how this works, let's assume we have two directories
+@file{src/} and @file{opt/}.  @file{src/} should always be built, but we
+want to decide in @code{./configure} whether @file{opt/} will be built
+or not.  (For this example we will assume that @file{opt/} should be
+built when the variable @code{$want_opt} was set to @code{yes}.)
+
+Running @code{make} should thus recurse into @file{src/} always, and
+then maybe in @file{opt/}.
+
+However @code{make dist} should always recurse into both @file{src/} and
+@file{opt/}.  Because @file{opt/} should be distributed even if it is
+not needed in the current configuration. This means @file{opt/Makefile}
+should be created unconditionally.  @footnote{Don't try seeking a
+solution where @file{opt/Makefile} is created conditionally, this is a
+lot trickier than the solutions presented here.}
+
+There are two ways to setup a project like this.  You can use Automake
+conditionals (@pxref{Conditionals}) or use Autoconf @code{AC_SUBST}
+variables (@pxref{Setting Output Variables, , Setting Output Variables,
+autoconf, The Autoconf Manual}).  Using Automake conditionals is the
+preferred solution.
+
+@subsection Conditional subdirectories with @code{AM_CONDITIONAL}
+@cindex @code{SUBDIRS} and @code{AM_CONDITIONAL}
+@cindex @code{AM_CONDITIONAL} and @code{SUBDIRS}
+
+@c The test case for the setup described here is
+@c     test/subdircond2.test
+@c Try to keep it in sync.
+
+@file{configure} should output the @file{Makefile} for each directory
+and define a condition into which @file{opt/} should be built.
+
+@example
+@dots{}
+AM_CONDITIONAL([COND_OPT], [test "$want_opt" = yes])
+AC_CONFIG_FILES([Makefile src/Makefile opt/Makefile])
+@dots{}
+@end example
+
+Then @code{SUBDIRS} can be defined in the top-level @file{Makefile.am}
+as follows.
+
+@example
+if COND_OPT
+  MAYBE_OPT = opt
+endif
+SUBDIRS = src $(MAYBE_OPT)
+@end example
+
+As you can see, running @code{make} will rightly recurse into
+@file{src/} and maybe @file{opt/}.
+
+@vindex DIST_SUBDIRS
+As you can't see, running @code{make dist} will recurse into both
+@file{src/} and @file{opt/} directories because @code{make dist}, unlike
+@code{make all}, doesn't use the @code{SUBDIRS} variable.  It uses the
+@code{DIST_SUBDIRS} variable.
+
+In this case Automake will define @code{DIST_SUBDIRS = src opt}
+automatically because it knows that @code{MAYBE_OPT} can contain
+@code{opt} in some condition.
+
+@subsection Conditional subdirectories with @code{AC_SUBST}
+@cindex @code{SUBDIRS} and @code{AC_SUBST}
+@cindex @code{AC_SUBST} and @code{SUBDIRS}
+
+@c The test case for the setup described here is
+@c     test/subdircond3.test
+@c Try to keep it in sync.
+
+Another idea is to define @code{MAYBE_OPT} from @file{./configure} using
+@code{AC_SUBST}:
+
+@example
+@dots{}
+if test "$want_opt" = yes; then
+  MAYBE_OPT=opt
+else
+  MAYBE_OPT=
+fi
+AC_SUBST([MAYBE_OPT])
+AC_CONFIG_FILES([Makefile src/Makefile opt/Makefile])
+@dots{}
+@end example
+
+In this case the top-level @file{Makefile.am} should look as follows.
+
+@example
+SUBDIRS = src $(MAYBE_OPT)
+DIST_SUBDIRS = src opt
+@end example
+
+The drawback is that since Automake cannot guess what the possible
+values of @code{MAYBE_OPT} are, it is necessary to define
+@code{DIST_SUBDIRS}.
+
+@subsection How @code{DIST_SUBDIRS} is used
+@cindex @code{DIST_SUBDIRS}, explained
+
+As shown in the above examples, @code{DIST_SUBDIRS} is used by targets
+that need to recurse in all directories, even those which have been
+conditionally left out of the build.
+
+Precisely, @code{DIST_SUBDIRS} is used by @code{make dist}, @code{make
+distclean}, and @code{make maintainer-clean}.  All other recursive
+targets use @code{SUBDIRS}.
+
+Automake will define @code{DIST_SUBDIRS} automatically from the
+possibles values of @code{SUBDIRS} in all conditions.
+
+If @code{SUBDIRS} contains @code{AC_SUBST} variables,
+@code{DIST_SUBDIRS} will not be defined correctly because Automake
+doesn't know the possible values of these variables.  In this case
+@code{DIST_SUBDIRS} needs to be defined manually.
 
 
 @node Alternative, Rebuilding, Top level, Top
