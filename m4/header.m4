@@ -17,31 +17,43 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 
-# serial 4
+AC_PREREQ([2.52])
+
+# serial 5
 
 # When config.status generates a header, we must update the stamp-h file.
 # This file resides in the same directory as the config header
 # that is generated.  We must strip everything past the first ":",
 # and everything past the last "/".
 
-AC_PREREQ([2.52])
+# The stamp files are numbered to have different names.
+# We could number them on a directory basis, but that's additional
+# complications, let's have a unique counter.
+m4_define([_AM_Config_Header_Index], [0])
 
-AC_DEFUN([AM_CONFIG_HEADER],
-[dnl init our file count if it isn't already
-m4_ifndef([_AM_Config_Header_Index], m4_define([_AM_Config_Header_Index], [0]))
-dnl prepare to store our destination file list for use in config.status
-AC_FOREACH([_AM_File], [$1],
-           [m4_pushdef([_AM_Dest], patsubst(_AM_File, [:.*]))
-            m4_define([_AM_Config_Header_Index],
-                      m4_incr(_AM_Config_Header_Index))
-            dnl and add it to the list of files AC keeps track of, along
-	    dnl with our hook
-            AC_CONFIG_HEADERS(_AM_File,
-                              [# update the timestamp
+
+# _AM_CONFIG_HEADER(HEADER[:SOURCES], COMMANDS, INIT-COMMANDS)
+# ------------------------------------------------------------
+AC_DEFUN([_AM_CONFIG_HEADER],
+[m4_pushdef([_AM_Dest], patsubst([$1], [:.*]))
+m4_define([_AM_Config_Header_Index], m4_incr(_AM_Config_Header_Index))
+# Add the stamp file to the list of files AC keeps track of,
+# along with our hook
+AC_CONFIG_HEADERS([$1],
+                  [# update the timestamp
 echo timestamp >"AS_ESCAPE(_AM_DIRNAME(]_AM_Dest[))/stamp-h]_AM_Config_Header_Index["
-][$2]m4_ifval([$3], [, [$3]]))
-            m4_popdef([_AM_Dest])])
+$2],
+                  [$3])
+m4_popdef([_AM_Dest])
+])# # _AM_CONFIG_HEADER
+
+
+# AM_CONFIG_HEADER(HEADER[:SOURCES]..., COMMANDS, INIT-COMMANDS)
+# --------------------------------------------------------------
+AC_DEFUN([AM_CONFIG_HEADER],
+[AC_FOREACH([_AM_File], [$1], [_AM_CONFIG_HEADER(_AM_File, [$2], [$3])])
 ]) # AM_CONFIG_HEADER
+
 
 # _AM_DIRNAME(PATH)
 # -----------------
