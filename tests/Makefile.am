@@ -4,7 +4,10 @@ AUTOMAKE_OPTIONS = gnits
 
 ## FIXME Ulrich has suggested implementing this in Automake.
 ## Perhaps he is right.
-TESTS = mdate.test vtexi.test acoutput.test instexec.test checkall.test
+TESTS = mdate.test vtexi.test acoutput.test instexec.test checkall.test \
+acoutnoq.test
+
+DIST_OTHER = $(TESTS)
 
 check-local:
 	@failed=0; all=0; \
