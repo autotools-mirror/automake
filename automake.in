@@ -421,14 +421,33 @@ exit $exit_status;
 
 ################################################################
 
-
 # prog_error (@PRINT-ME)
 # ----------------------
 # Signal a programming error, display PRINT-ME, and exit 1.
-sub prog_error
+sub prog_error (@)
 {
     print STDERR "automake: programming error: @_\n";
     exit 1;
+}
+
+
+# @RES
+# uniq (@LIST)
+# ------------
+# Return LIST with no duplicates.
+sub uniq (@)
+{
+   my @res = ();
+   my %seen = ();
+   foreach my $item (@_)
+     {
+       if (! defined $seen{$item})
+	 {
+	   $seen{$item} = 1;
+	   push (@res, $item);
+	 }
+     }
+   return @res;
 }
 
 
@@ -2629,18 +2648,9 @@ sub handle_dist_worker
 	    $dist_subdir_name = 'DIST_SUBDIRS';
 	    if (! &variable_defined ('DIST_SUBDIRS'))
 	    {
-		local (@full_list) = &variable_value_as_list ('SUBDIRS',
-							      'all');
-		local (@ds_list, %uniq, $iter);
-		foreach $iter (@full_list)
-		{
-		    if (! defined $uniq{$iter})
-		    {
-			$uniq{$iter} = 1;
-			push (@ds_list, $iter);
-		    }
-		}
-		&define_pretty_variable ('DIST_SUBDIRS', '', @ds_list);
+		&define_pretty_variable
+		  ('DIST_SUBDIRS', '',
+		   uniq (&variable_value_as_list ('SUBDIRS', 'all')));
 	    }
 	}
 	else
@@ -2754,7 +2764,6 @@ sub handle_dist
 
     # Some boilerplate.
     $output_vars .= &file_contents ('dist-vars') . "\n";
-    &define_variable ('GZIP_ENV', '--best');
 
     # Put these things in rules section so it is easier for whoever
     # reads Makefile.in.
@@ -7382,9 +7391,7 @@ sub am_install_var
     # Make the result unique.  This lets the user use conditionals in
     # a natural way, but still lets us program lazily -- we don't have
     # to worry about handling a particular object more than once.
-    local (%uniquify) = ();
-    grep ($uniquify{$_} = 1, @result);
-    return sort keys %uniquify;
+    return uniq (sort @result);
 }
 
 
