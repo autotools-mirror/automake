@@ -18,25 +18,19 @@
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-# Test to make sure that adding a new directory works, even from
-# subdirectories.  (subdir5.test makes sure it works when make
-# is run from the top-level directory.)
-# PR automake/46
+# Test to make sure that aclocal.m4's dependencies are honored
+# in sub-directories.
 
 # This test assumes that the `make' utility is able to start
 # over and reload Makefiles which have been remade (a non-POSIX feature).
-required='GNUmake gcc'
+required='GNUmake'
 . ./defs || exit 1
 
 set -e
 
-echo 'AC_CONFIG_FILES([sub/Makefile])' >confiles.m4
-
 cat >> configure.in << 'END'
-AM_PROG_CC_C_O
-AC_PROG_CC
-m4_include([confiles.m4])
 MORE_DEFS
+AC_CONFIG_FILES([sub/Makefile])
 AC_OUTPUT
 END
 
@@ -46,20 +40,7 @@ ACLOCAL_AMFLAGS = -I m4
 END
 
 mkdir sub
-
-cat > sub/Makefile.am << 'END'
-bin_PROGRAMS = wish
-wish_SOURCES = a.c
-END
-
-cat > sub/a.c << 'END'
-#include <stdio.h>
-int main ()
-{
-   printf ("hi liver!\n");
-   return 0;
-}
-END
+: > sub/Makefile.am
 
 mkdir m4
 echo 'AC_DEFUN([MORE_DEFS], [])' > m4/moredefs.m4
@@ -70,38 +51,11 @@ $AUTOMAKE --copy --add-missing
 ./configure
 $MAKE
 
-# Now add a new directory.
-
-mkdir sub/maude
-cat > sub/maude/Makefile.am << 'END'
-include_HEADERS = foo.h
-END
-
-: > sub/maude/foo.h
-
-echo 'SUBDIRS = maude' >> sub/Makefile.am
-
-mkdir maude
-: > maude/Makefile.am
-
-# Update confile.m4 *after* updating sub/Makefile.am.
-# (subdir5.test do it in the other way: it updates configure.in
-# before Makefile.am)
-echo 'AC_CONFIG_FILES([maude/Makefile sub/maude/Makefile])' >> confiles.m4
-
-# We want a simple rebuild from sub/ to create sub/maude/Makefile
-# and maude/Makefile automatically.
+# Update an aclocal.m4 dependency, then make sure all Makefiles
+# are updated, even from a sub-directory.
+echo 'AC_DEFUN([MORE_DEFS], [AC_SUBST([GREPME])])' > m4/moredefs.m4
 cd sub
 $MAKE
 cd ..
-test -f maude/Makefile
-test -f sub/maude/Makefile
-
-# Make sure the dependencies of aclocal.m4 or honored at least from
-# the top-level directory.
-echo 'AC_DEFUN([MORE_DEFS], [AC_SUBST([GREPME])])' > m4/moredefs.m4
-$MAKE
 grep GREPME Makefile
-grep GREPME maude/Makefile
 grep GREPME sub/Makefile
-grep GREPME sub/maude/Makefile

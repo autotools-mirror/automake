@@ -66,37 +66,31 @@
 ## --------------------------- ##
 
 if %?TOPDIR_P%
-## Explicitly look in srcdir for benefit of non-GNU makes.
-## Use `$(top_builddir)' for the benefit of Tru64 v5.1 make and also
-## NetBSD v1.5 make.  These `make's don't know that
-## `$(top_builddir)/config.status' and `config.status' are the same
-## file when top_builddir==`.'.
-$(top_builddir)/config.status: $(srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
-	$(SHELL) ./config.status --recheck
-
 ## Always require configure.ac and configure at top level, even if they
 ## don't exist.  This is especially important for configure, since it
 ## won't be created until autoconf is run -- which might be after
 ## automake is run.
 DIST_COMMON += configure %CONFIGURE-AC%
-
-## Explicitly look in srcdir for benefit of non-GNU makes.
-$(srcdir)/configure: %MAINTAINER-MODE% $(srcdir)/%CONFIGURE-AC% $(ACLOCAL_M4) $(CONFIGURE_DEPENDENCIES) %CONFIGURE_DEPS%
-	cd $(srcdir) && $(AUTOCONF)
 endif %?TOPDIR_P%
 
+$(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
+	cd $(top_builddir) && $(SHELL) ./config.status --recheck
+
+$(top_srcdir)/configure: %MAINTAINER-MODE% $(top_srcdir)/%CONFIGURE-AC% $(ACLOCAL_M4) $(CONFIGURE_DEPENDENCIES) %CONFIGURE_DEPS%
+	cd $(top_srcdir) && $(AUTOCONF)
 
 
 ## ------------ ##
 ## aclocal.m4.  ##
 ## ------------ ##
 
-if %?TOPDIR_P%
-if  %?REGEN-ACLOCAL-M4%
-$(ACLOCAL_M4): %MAINTAINER-MODE% %CONFIGURE-AC% %ACLOCAL_M4_DEPS%
-	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
-endif  %?REGEN-ACLOCAL-M4%
-endif %?TOPDIR_P%
+## aclocal.m4 must be built by the top-level Makefile, because this is
+## where the user is expected to define $(ACLOCAL_AMFLAGS).
+if %?REGEN-ACLOCAL-M4%
+$(ACLOCAL_M4): %MAINTAINER-MODE% $(top_srcdir)/%CONFIGURE-AC% %ACLOCAL_M4_DEPS%
+?TOPDIR_P?	$(ACLOCAL) $(ACLOCAL_AMFLAGS)
+?!TOPDIR_P?	cd $(top_srcdir) && $(MAKE) $(AM_MAKEFLAGS) '$$(ACLOCAL_M4)'
+endif %?REGEN-ACLOCAL-M4%
 
 
 ## --------- ##

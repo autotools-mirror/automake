@@ -4294,22 +4294,13 @@ sub scan_aclocal_m4
 {
     my $regen_aclocal = 0;
 
-    if (-f 'aclocal.m4')
-    {
-	# When using aclocal.m4, define this variable even in subdirectories,
-	# because every Makefile.in depends on $(ACLOCAL_M4).
-	&define_variable ("ACLOCAL_M4", '$(top_srcdir)/aclocal.m4', INTERNAL);
-    }
-
-    return (0, ())
-      unless $relative_dir eq '.';
-
     &examine_variable ('CONFIG_STATUS_DEPENDENCIES');
     &examine_variable ('CONFIGURE_DEPENDENCIES');
 
     if (-f 'aclocal.m4')
     {
 	&push_dist_common ('aclocal.m4');
+	&define_variable ("ACLOCAL_M4", '$(top_srcdir)/aclocal.m4', INTERNAL);
 
 	my $aclocal = new Automake::XFile "< aclocal.m4";
 	my $line = $aclocal->getline;
@@ -4343,7 +4334,7 @@ sub scan_aclocal_m4
 		    foreach my $ac_dep (&my_glob ($amdir . '/*.m4'))
 		    {
 			$ac_dep =~ s/^\.\/+//;
-			push (@ac_deps, $ac_dep)
+			push (@ac_deps, '$(top_srcdir)/' . $ac_dep)
 			  unless $ac_dep eq "aclocal.m4"
 			    || $ac_dep eq "acinclude.m4";
 		    }
