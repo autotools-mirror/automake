@@ -13,7 +13,6 @@
 
 @SET_MAKE@
 
-
 SHELL = @SHELL@
 
 srcdir = @srcdir@
@@ -34,11 +33,9 @@ infodir = @infodir@
 mandir = @mandir@
 includedir = @includedir@
 oldincludedir = /usr/include
-
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
-
 top_builddir = .
 
 ACLOCAL = @ACLOCAL@
@@ -52,7 +49,6 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_HEADER = $(INSTALL_DATA)
 transform = @program_transform_name@
-
 NORMAL_INSTALL = :
 PRE_INSTALL = :
 POST_INSTALL = :
@@ -120,11 +116,9 @@ all: all-recursive
 
 .SUFFIXES:
 .SUFFIXES: .dvi .info .ps .texi
-
 $(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.in $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --gnits  Makefile
-
 Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && \
 	  CONFIG_HEADERS= CONFIG_LINKS= \
@@ -132,12 +126,14 @@ Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
 
 config.status: $(srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck
-
 $(srcdir)/configure:  $(srcdir)/configure.in $(ACLOCAL_M4) $(CONFIGURE_DEPENDENCIES)
 	cd $(srcdir) && $(AUTOCONF)
 
 $(ACLOCAL_M4):  configure.in 
 	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
+
+maintainer-clean-conf:
+	-rm -f configure aclocal.m4
 automake: $(top_builddir)/config.status automake.in
 	cd $(top_builddir) && CONFIG_FILES=$@ CONFIG_HEADERS= CONFIG_LINKS= $(SHELL) ./config.status
 aclocal: $(top_builddir)/config.status aclocal.in
@@ -166,7 +162,6 @@ uninstall-binSCRIPTS:
 
 $(srcdir)/version.texi:  $(srcdir)/stamp-vti
 	@:
-
 $(srcdir)/stamp-vti: automake.texi $(top_srcdir)/configure.in
 	@(set `$(SHELL) $(top_srcdir)/lib/mdate-sh $(srcdir)/automake.texi`; \
 	echo "@set UPDATED $$1 $$2 $$3"; \
@@ -204,7 +199,6 @@ automake.dvi: automake.texi $(srcdir)/version.texi
 
 MAKEINFO = @MAKEINFO@
 TEXI2DVI = texi2dvi
-
 DVIPS = dvips
 .dvi.ps:
 	$(DVIPS) $< -o $@
@@ -347,7 +341,8 @@ distclean-tags:
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 
 top_distdir = .
-distdir = $(top_distdir)/$(PACKAGE)-$(VERSION)
+# Avoid unsightly `./'.
+distdir = $(PACKAGE)-$(VERSION)
 
 GZIP_ENV = --best
 
@@ -361,7 +356,7 @@ distdir: $(DISTFILES)
 	mkdir $(distdir)
 	$(mkinstalldirs) $(distdir)/.
 	@for file in $(DISTFILES); do \
-	  d=$(srcdir); \
+	  if test -f $$file; then d=.; else d=$(srcdir); fi; \
 	  dir=`echo "$$file" | sed -e 's,/[^/]*$$,,'`; \
 	  if test "$$dir" != "$$file" && test "$$dir" != "."; then \
 	    $(mkinstalldirs) "$(distdir)/$$dir"; \
@@ -436,7 +431,6 @@ distcheck: dist
 check-am: all-am
 check: check-recursive
 all-am: Makefile $(INFO_DEPS) $(SCRIPTS)
-
 installdirs: installdirs-recursive
 installdirs-am:
 	$(mkinstalldirs) $(DESTDIR)$(bindir) $(DESTDIR)$(infodir)
@@ -450,18 +444,15 @@ install-am: all-am
 	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
 
 installcheck: installcheck-recursive
-
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
 	  INSTALL_PROGRAM_ENV='$(INSTALL_STRIP_PROGRAM_ENV)' install
-
 mostlyclean-generic:
 
 clean-generic:
 
 distclean-generic:
-	-rm -f Makefile $(CONFIG_CLEAN_FILES)
-	-rm -f config.cache config.log stamp-h stamp-h[0-9]*
+	-rm -f Makefile $(CONFIG_CLEAN_FILES) stamp-h stamp-h[0-9]*
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -476,7 +467,7 @@ dist-all: distdir
 	$(AMTAR) chof - $(distdir) | bzip2 -9 -c >$(distdir).tar.bz2
 	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
 distclean: distclean-recursive
-	-rm -f config.status
+	-rm -f config.status config.cache config.log
 distclean-am: clean-am distclean-generic distclean-tags
 
 dvi: dvi-recursive
@@ -519,9 +510,10 @@ install-man:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-recursive
-	-rm -f config.status
+
 maintainer-clean-am: distclean-am maintainer-clean-aminfo \
-	maintainer-clean-generic maintainer-clean-vti
+	maintainer-clean-conf maintainer-clean-generic \
+	maintainer-clean-vti
 
 mostlyclean: mostlyclean-recursive
 
@@ -559,8 +551,8 @@ maintainer-check: automake aclocal
 	  diff -c $(srcdir)/automake.in automake; \
 	  exit 1; \
 	fi
-	$(PERL) -c -w automake
-	$(PERL) -c -w aclocal
+	perllibdir=$(srcdir)/lib $(PERL) -c -w automake
+	perllibdir=$(srcdir)/lib $(PERL) -c -w aclocal
 	@if fgrep '\$${' $(srcdir)/lib/am/[a-z]*.am | \
 	       fgrep -v '$$$$'; then \
 	  echo "Found too many uses of '\$${' in the lines above." 1>&2; \
@@ -657,7 +649,6 @@ fetch:
 	    echo "install Fetchdir/$$file into srcdir and commit"; \
 	  fi; \
 	done; exit $$stat
-
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -38,8 +38,8 @@ maintainer-check: automake aclocal
 	  exit 1; \
 	fi
 ## Syntax check with default Perl (on my machine, Perl 5).
-	$(PERL) -c -w automake
-	$(PERL) -c -w aclocal
+	perllibdir=$(srcdir)/lib $(PERL) -c -w automake
+	perllibdir=$(srcdir)/lib $(PERL) -c -w aclocal
 ## expect no instances of '${...}'.  However, $${...} is ok, since that
 ## is a shell construct, not a Makefile construct.
 ## The backslash in `$${' is needed for some versions of bash.
