@@ -56,9 +56,14 @@ maintainer-check: automake
 	@if test `fgrep '$${' $(srcdir)/[a-z]*.am | fgrep -v '$$$$' | wc -l` -ne 0; then \
 	  echo "found too many uses of '\$${'" 1>&2; \
 	  exit 1;				\
-	fi
+	else :; fi
+## Make sure all invocations of mkinstalldirs are correct.
+	@if test `fgrep 'mkinstalldirs' $(srcdir)/[a-z]*.am | fgrep -v '$$(mkinstalldirs)' | wc -l` -ne 0; then \
+	  echo "found incorrect use of mkinstalldirs" 1>&2; \
+	  exit 1; \
+	else :; fi
 ## Another syntax check, this time with Perl 4, if it exists.
-	if $(SHELL) -c 'perl4.036 -v' >/dev/null 2>&1; then \
+	@if $(SHELL) -c 'perl4.036 -v' >/dev/null 2>&1; then \
 	  perl4.036 -c -w automake; \
 	else :; fi
 	$(MAKE) check

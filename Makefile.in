@@ -74,7 +74,7 @@ SCRIPTS = $(bin_SCRIPTS) $(pkgdata_SCRIPTS)
 
 MAKEINFO = makeinfo
 TEXI2DVI = texi2dvi
-INFOS = automake.info*
+INFOS = automake.info .info-[0-9] .info-[0-9][0-9]
 INFO_DEPS = automake.info
 DVIS = automake.dvi
 TEXINFOS = automake.texi
@@ -100,7 +100,7 @@ default: all
 
 
 $(srcdir)/Makefile.in: Makefile.am configure.in
-	cd $(srcdir) && automake Makefile
+	cd $(srcdir) && automake --strictness=gnits Makefile
 
 # For an explanation of the following Makefile rules, see node
 # `Automatic Remaking' in GNU Autoconf documentation.
@@ -180,10 +180,11 @@ automake.info: automake.texi version.texi
 
 install-info: $(INFO_DEPS)
 	$(mkinstalldirs) $(infodir)
-	for file in $(INFO_DEPS); do		\
-	  for ifile in `cd $(srcdir) && echo $$file*`; do \
-	    $(INSTALL_DATA) $(srcdir)/$$ifile $(infodir)/$$ifile; \
-	  done;					\
+	for file in $(INFO_DEPS); do \
+	  for ifile in `cd $(srcdir) && echo $$file $$file-[0-9] $$file-[0-9][0-9]`; do \
+	    test -f $(srcdir)/$$ifile \
+	      && $(INSTALL_DATA) $(srcdir)/$$ifile $(infodir)/$$ifile; \
+	  done; \
 	done
 
 uninstall-info:
@@ -280,6 +281,7 @@ distcheck: dist
 	cd $(distdir)/=build \
 	  && ../configure --srcdir=.. --prefix=$$dc_install_base \
 	  && $(MAKE) \
+	  && $(MAKE) dvi \
 	  && $(MAKE) check \
 	  && $(MAKE) install \
 	  && $(MAKE) installcheck \
@@ -422,8 +424,12 @@ maintainer-check: automake
 	@if test `fgrep '$${' $(srcdir)/[a-z]*.am | fgrep -v '$$$$' | wc -l` -ne 0; then \
 	  echo "found too many uses of '\$${'" 1>&2; \
 	  exit 1;				\
-	fi
-	if $(SHELL) -c 'perl4.036 -v' >/dev/null 2>&1; then \
+	else :; fi
+	@if test `fgrep 'mkinstalldirs' $(srcdir)/[a-z]*.am | fgrep -v '$$(mkinstalldirs)' | wc -l` -ne 0; then \
+	  echo "found incorrect use of mkinstalldirs" 1>&2; \
+	  exit 1; \
+	else :; fi
+	@if $(SHELL) -c 'perl4.036 -v' >/dev/null 2>&1; then \
 	  perl4.036 -c -w automake; \
 	else :; fi
 	$(MAKE) check
