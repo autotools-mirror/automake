@@ -47,6 +47,9 @@ struct ('ansi'    => '$',
         'linker' => '$',
         'name'       => '$',
         'output_arg' => '$',
+	# `pure' is `1' or `'.  A `pure' language is one where, if
+	# all the files in a directory are of that language, then we
+	# do not require the C compiler or any code to call it.
 	'pure'   => '$',
         '_finish' => '$');
 
@@ -755,7 +758,7 @@ sub initialize_per_input ()
 
 # Initialize our list of languages that are internally supported.
 register_language ('name' => 'c',
-		   'ansi' => '1',
+		   'ansi' => 1,
 		   'autodep' => '',
 		   'flags' => 'CFLAGS',
 		   'compile' => '$(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)',
@@ -770,7 +773,7 @@ register_language ('name' => 'cxx',
 		    'compile' => '$(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)',
 		   'compiler' => 'CXXCOMPILE',
 		   'output_arg' => '-c -o $@',
-		   'pure' => 'yes',
+		   'pure' => 1,
 		   'extensions' => ['c++', 'cc', 'cpp', 'cxx', 'C'],
 		   '_finish' => \&lang_cxx_finish);
 register_language ('name' => 'objc',
@@ -780,7 +783,7 @@ register_language ('name' => 'objc',
 		   'compile' => '$(OBJC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_OBJCFLAGS) $(OBJCFLAGS)',
 		   'compiler' => 'OBJCCOMPILE',
 		   'output_arg' => '-c -o $@',
-		   'pure' => 'yes',
+		   'pure' => 1,
 		   'extensions' => ['m'],
 		   '_finish' => \&lang_objc_finish);
 register_language ('name' => 'header',
@@ -789,7 +792,7 @@ register_language ('name' => 'header',
 		   '_finish' => sub { });
 # For now, yacc and lex can't be handled on a per-exe basis.
 register_language ('name' => 'yacc',
-		   'ansi' => '1',
+		   'ansi' => 1,
 		   'derived_autodep' => 'yes',
 		   'extensions' => ['y'],
 		   '_finish' => \&lang_yacc_finish);
@@ -799,7 +802,7 @@ register_language ('name' => 'yaccxx',
 		   'extensions' => ['y++', 'yy', 'yxx', 'ypp'],
 		    '_finish' => \&lang_yacc_finish);
 register_language ('name' => 'lex',
-		   'ansi' => '1',
+		   'ansi' => 1,
 		   'derived_autodep' => 'yes',
 		   'extensions' => ['l'],
 		   '_finish' => \&lang_lex_finish);
@@ -825,7 +828,7 @@ register_language ('name' => 'f77',
 		   'compile' => '$(F77) $(AM_FFLAGS) $(FFLAGS)',
 		   'compiler' => 'F77COMPILE',
 		   'output_arg' => '-c -o $@',
-		   'pure' => 'yes',
+		   'pure' => 1,
 		   'extensions' => ['f', 'for', 'f90'],
 		   '_finish' => \&lang_f77_finish);
 register_language ('name' => 'ppf77',
@@ -834,7 +837,7 @@ register_language ('name' => 'ppf77',
 		   'compile' => '$(F77) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_FFLAGS) $(FFLAGS)',
 		   'compiler' => 'PPF77COMPILE',
 		   'output_arg' => '-c -o $@',
-		   'pure' => 'yes',
+		   'pure' => 1,
 		   'extensions' => ['F'],
 		    '_finish' => \&lang_ppf77_finish);
 register_language ('name' => 'ratfor',
@@ -844,7 +847,7 @@ register_language ('name' => 'ratfor',
 		   'compile' => '$(F77) $(AM_FFLAGS) $(FFLAGS) $(AM_RFLAGS) $(RFLAGS)',
 		   'compiler' => 'RCOMPILE',
 		   'output_arg' => '-c -o $@',
-		   'pure' => 'yes',
+		   'pure' => 1,
 		   'extensions' => ['r'],
 		   '_finish' => \&lang_ratfor_finish);
 # FIXME: for now we can't do dependency tracking for Java.
@@ -855,7 +858,7 @@ register_language ('name' => 'java',
 		   'compile' => '$(GCJ) $(DEFS) $(INCLUDES) $(AM_GCJFLAGS) $(GCJFLAGS)',
 		   'compiler' => 'GCJCOMPILE',
 		   'output_arg' => '-c -o $@',
-		   'pure' => 'yes',
+		   'pure' => 1,
 		   'extensions' => ['java', 'class', 'zip', 'jar'],
 		   '_finish' => \&lang_java_finish);
 
@@ -1315,7 +1318,9 @@ sub finish_languages
     my ($ltcompile, $ltlink) = &libtool_compiler;
 
     my %done;
-    my $non_c = 1;
+
+    # Is the c linker needed?
+    my $needs_c = 0;
     foreach my $ext (sort keys %extension_seen)
     {
 	my $lang = $languages{$extension_map{$ext}};
@@ -1367,8 +1372,7 @@ sub finish_languages
 	# something unusual then we do generate the C code.  There are
 	# probably corner cases here that do not work properly.
 	# People linking Java code to Fortran code deserve pain.
-	$non_c = 0
-	    if $lang->pure eq 'no';
+	$needs_c ||= ! $lang->pure;
 
 	if ($comp ne '')
 	{
@@ -1387,9 +1391,12 @@ sub finish_languages
     # If the project is entirely C++ or entirely Fortran 77 (i.e., 1
     # suffix rule was learned), don't bother with the C stuff.  But if
     # anything else creeps in, then use it.
-    if ($need_link || ! $non_c || scalar keys %suffix_rules > 1)
+    $needs_c = 1
+      if $need_link || scalar keys %suffix_rules > 1;
+
+    if ($needs_c)
     {
-	if (! defined $done{'c'})
+	if (! defined $done{$languages{'c'}})
 	{
 	    &define_configure_variable ($languages{'c'}->flags);
 	    &define_compiler_variable ($languages{'c'}->compiler,
@@ -5286,12 +5293,6 @@ sub register_language ($%)
       unless defined $option{'derived_autodep'};
     $option{'linker'} = ''
       unless defined $option{'linker'};
-
-    # `pure' is `yes' or `no'.  A `pure' language is one where, if all
-    # the files in a directory are of that language, then we do not
-    # require the C compiler or any code to call it.
-    $option{'pure'} = 'no'
-      unless defined $option{'pure'};
 
     my $lang = new Language (%option);
 
