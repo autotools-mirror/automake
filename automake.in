@@ -5469,7 +5469,7 @@ sub variable_defined ($$)
 	return 1;
     }
 
-    &am_line_error ($var, "\`$var' is target; expected variable")
+    &am_line_error ($var, "\`$var' is a target; expected a variable")
       if defined $targets{$var};
 
     return 0;
@@ -5813,7 +5813,7 @@ sub variable_value_as_list_worker
     {
         if (defined $targets{$var})
 	  {
-	    &am_line_error ($var, "\`$var' is target; expected variable");
+	    &am_line_error ($var, "\`$var' is a target; expected a variable");
 	  }
 	else
 	  {
@@ -6126,27 +6126,25 @@ sub read_am_file
 	{
 	    # Found a rule.
 	    $was_rule = 1;
-	    if (defined $contents{$1}
+	    if (defined $targets{$1}
 		&& (@conditional_stack
-		    ? ! defined $conditional{$1}
-		    : defined $conditional{$1}))
+		    ? ! defined $target_conditional{$1}
+		    : defined $target_conditional{$1}))
 	    {
 		&am_line_error ($1,
 				"$1 defined both conditionally and unconditionally");
 	    }
 	    # Value here doesn't matter; for targets we only note
 	    # existence.
-# FIXME: I don't understand the next line at all, it seems dead wrong --akim
-	    $contents{$1} = 1;
 	    $targets{$1} = 1;
 	    my $cond_string = join ('', @conditional_stack);
 	    if (@conditional_stack)
 	    {
-		if ($conditional{$1})
+		if ($target_conditional{$1})
 		{
 		    &check_ambiguous_conditional ($1, $cond_string);
 		}
-		${$conditional{$1}}{$cond_string} = '1';
+		${$target_conditional{$1}}{$cond_string} = '1';
 	    }
 	    $content_lines{$1} = $.;
 	    $output_trailer .= $comment . $spacing . $cond_string . $_;
@@ -6497,10 +6495,6 @@ sub initialize_per_input
     # read_am_file.
     %contents = ();
 
-    # This holds the names which are targets.  These also appear in
-    # %contents.
-    %targets = ();
-
     # This maps a variable name onto a flag.  The flag is true iff the
     # variable was first defined with `+='.
     %var_was_plus_eq = ();
@@ -6525,6 +6519,13 @@ sub initialize_per_input
 
     # This holds a 1 if a particular variable was examined.
     %content_seen = ();
+
+    # This holds the names which are targets.  These also appear in
+    # %contents.
+    %targets = ();
+
+    # Same as %CONDITIONAL, but for targets.
+    %target_conditional = ();
 
     # This is the conditional stack.
     @conditional_stack = ();
@@ -6840,7 +6841,7 @@ sub file_contents
 		{
 		  # Free lance dependency.  Output the rule for all the
 		  # targets instead of one by one.
-		  if (!defined $contents{$targets})
+		  if (!defined $targets{$targets})
 		    {
 		      # Some hair to avoid spurious trailing blank
 		      # when there are no dependencies.

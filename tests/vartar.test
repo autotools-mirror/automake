@@ -1,0 +1,24 @@
+#! /bin/sh
+
+# Targets and macros are two different name spaces.
+
+. $srcdir/defs || exit 1
+
+cat > Makefile.am << 'END'
+INSTALL = INSTALL
+INSTALL:
+	$(INSTALL) INSTALL
+END
+
+$AUTOMAKE || exit 1
+
+grep '^INSTALL = INSTALL$' Makefile.in || exit 1
+
+cat > target.expected <<'EOF'
+INSTALL:
+	$(INSTALL) INSTALL
+EOF
+sed -n '/^INSTALL:/,/^	/p' Makefile.in > target.value
+diff target.expected target.value || exit 1
+
+exit 0

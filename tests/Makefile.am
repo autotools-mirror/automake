@@ -74,6 +74,7 @@ confsub.test \
 confvar.test \
 confvar2.test \
 copy.test \
+ctarget1.test \
 cxxansi.test \
 cxxcpp.test \
 cxxlibobj.test \
@@ -262,6 +263,7 @@ texinfo7.test \
 texinfo8.test \
 texinfo9.test \
 unused.test \
+vartar.test \
 version.test \
 version2.test \
 version3.test \
