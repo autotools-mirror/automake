@@ -1,4 +1,4 @@
-#serial 4
+#serial 5
 
 dnl From Jim Meyering.
 dnl FIXME: this should migrate into libit.
