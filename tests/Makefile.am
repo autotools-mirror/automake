@@ -3,7 +3,6 @@
 XFAIL_TESTS = auxdir2.test cond17.test txinfo5.test
 
 TESTS =	\
-acinclude.test \
 aclibobj.test \
 aclocal.test \
 aclocal3.test \
