@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002  Free Software Foundation, Inc.
+# Copyright (C) 2002, 2003  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -18,7 +18,7 @@
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-# Make sure `check:' honors $(BUILT_SOURCES).
+# Make sure `check:' and `install:' honor $(BUILT_SOURCES).
 # PR/359.
 
 . ./defs || exit 1
@@ -48,6 +48,9 @@ cat > dir/Makefile.am << 'END'
 BUILT_SOURCES = command2.inc
 check_SCRIPTS = echo.sh
 echo.sh:
+## The next line ensures that command1.inc has been built before
+## recurring into the subdir.
+	test -f ../command1.inc
 	(echo '#! /bin/sh'; cat command2.inc) > $@
 	chmod +x $@
 command2.inc:
@@ -58,7 +61,7 @@ END
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
-./configure
+./configure --prefix `pwd`/inst
 $MAKE check >stdout
 cat stdout
 grep 'PASS: subrun.sh' stdout
@@ -67,3 +70,12 @@ grep 'PASS: subrun.sh' stdout
 # in check.test and check2.test).
 $FGREP 'check: $(BUILT_SOURCES)' Makefile.in
 $FGREP 'check: $(BUILT_SOURCES)' dir/Makefile.in
+
+$MAKE clean
+# Sanity checks
+test ! -f command1.inc
+test ! -f dir/command2.inc
+# Now make sure these two files are rebuilt during make install.
+$MAKE install
+test -f command1.inc
+test -f dir/command2.inc

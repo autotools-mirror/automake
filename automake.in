@@ -1571,7 +1571,7 @@ sub generate_makefile
 	$output_rules .= "install-binPROGRAMS: install-libLTLIBRARIES\n\n";
     }
 
-    &handle_installdirs;
+    &handle_install;
     &handle_clean;
     &handle_factored_dependencies;
 
@@ -4811,15 +4811,20 @@ sub handle_footer
     $output_trailer .= file_contents ('footer', new Automake::Location);
 }
 
-# Deal with installdirs target.
-sub handle_installdirs ()
+
+# Generate `make install' rules.
+sub handle_install ()
 {
   $output_rules .= &file_contents
     ('install',
      new Automake::Location,
-     am__installdirs => variable_value ('am__installdirs') || '',
+     maybe_BUILT_SOURCES => (variable_defined ('BUILT_SOURCES')
+			     ? (" \$(BUILT_SOURCES)\n"
+				. "\t\$(MAKE) \$(AM_MAKEFLAGS)")
+			     : ''),
      'installdirs-local' => (target_defined ('installdirs-local')
-			     ? ' installdirs-local' : ''));
+			     ? ' installdirs-local' : ''),
+     am__installdirs => variable_value ('am__installdirs') || '');
 }
 
 
