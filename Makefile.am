@@ -109,6 +109,26 @@ maintainer-check: automake aclocal
 	  echo "Using @_ in a scalar context in the lines above." 1>&2; \
 	  exit 1; \
 	fi
+## Forbid using parens with `local' to ease counting.
+	@if grep '^[ \t]*local *(' $(srcdir)/automake.in; then \
+	  echo "Don't use \`local' with parens: use several \`local' above." >&2; \
+	  exit 1; \
+	fi
+## Up to now we manage to limit to 6 uses of local.
+	@locals=`grep -c '^[ \t]*local [^*]' $(srcdir)/automake.in`; \
+	case $$locals in \
+	  [0-5] ) \
+	    echo "Wow, congrats!  There are $$locals \`local' now!." >&2; \
+	    echo "Please update Makefile.am (maintainer-check)." >&2; \
+	    exit 1; \
+	  ;; \
+	  6 ) ;; \
+	  * ) \
+	    echo "Too many \`local'!  Are you sure you need $$locals of them?" >&2; \
+	    echo "Up to now 6 was enough." >&2; \
+	    exit 1; \
+	  ;; \
+	esac
 
 # Tag before making distribution.  Also, don't make a distribution if
 # checks fail.  Also, make sure the NEWS file is up-to-date.

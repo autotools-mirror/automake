@@ -4160,7 +4160,7 @@ sub scan_autoconf_config_files
 sub scan_autoconf_traces
 {
     my ($filename) = @_;
-    local (*TRACES);
+    local *TRACES;
 
     my $traces = "$ENV{amtraces} ";
 
@@ -4219,7 +4219,7 @@ sub scan_autoconf_traces
 sub scan_one_autoconf_file
 {
     my ($filename) = @_;
-    local (*CONFIGURE);
+    local *CONFIGURE;
 
     open (CONFIGURE, $filename)
 	|| die "automake: couldn't open \`$filename': $!\n";
@@ -4561,7 +4561,8 @@ sub scan_autoconf_files
     %libsources = ();
 
     # Watchout: these guys need dynamic scope!
-    local (%make_list, @make_input_list);
+    local %make_list;
+    local @make_input_list;
 
     warn "automake: both \`configure.ac' and \`configure.in' present:"
          . " ignoring \`configure.in'\n"
@@ -4606,7 +4607,8 @@ sub scan_autoconf_files
     # check must be done for every run, even those where we are only
     # looking at a subdir Makefile.  We must set relative_dir so that
     # the file-finding machinery works.
-    local ($relative_dir) = '.';
+    # Needs dynamic scopes.
+    local $relative_dir = '.';
     &require_config_file ($FOREIGN, 'install-sh', 'mkinstalldirs', 'missing');
     &am_error ("\`install.sh' is an anachronism; use \`install-sh' instead")
         if -f $config_aux_path[0] . '/install.sh';
@@ -4700,7 +4702,7 @@ sub lang_sub_obj
 # Rewrite a single C source file.
 sub lang_c_rewrite
 {
-    local ($directory, $base, $ext) = @_;
+    my ($directory, $base, $ext) = @_;
 
     if (defined $options{'ansi2knr'} && $base =~ /_$/)
     {
@@ -4708,7 +4710,7 @@ sub lang_c_rewrite
 	&am_error ("C source file \`$base.c' would be deleted by ansi2knr rules");
     }
 
-    local ($r) = $LANG_PROCESS;
+    my $r = $LANG_PROCESS;
     if (defined $options{'subdir-objects'})
     {
 	$r = $LANG_SUBDIR;
@@ -4748,8 +4750,8 @@ sub lang_yacc_rewrite
 {
     my ($directory, $base, $ext) = @_;
 
-    local ($r) = &lang_c_rewrite ($directory, $base, $ext);
-    local ($pfx) = '';
+    my $r = &lang_c_rewrite ($directory, $base, $ext);
+    my $pfx = '';
     if ($r == $LANG_SUBDIR)
     {
 	$pfx = $directory . '/';
@@ -4767,8 +4769,8 @@ sub lang_yaccxx_rewrite
 {
     my ($directory, $base, $ext) = @_;
 
-    local ($r) = $LANG_PROCESS;
-    local ($pfx) = '';
+    my $r = $LANG_PROCESS;
+    my $pfx = '';
     if (defined $options{'subdir-objects'})
     {
 	$pfx = $directory . '/';
@@ -4787,8 +4789,8 @@ sub lang_lex_rewrite
 {
     my ($directory, $base, $ext) = @_;
 
-    local ($r) = &lang_c_rewrite ($directory, $base, $ext);
-    local ($pfx) = '';
+    my $r = &lang_c_rewrite ($directory, $base, $ext);
+    my $pfx = '';
     if ($r == $LANG_SUBDIR)
     {
 	$pfx = $directory . '/';
@@ -4806,8 +4808,8 @@ sub lang_lexxx_rewrite
 {
     my ($directory, $base, $ext) = @_;
 
-    local ($r) = $LANG_PROCESS;
-    local ($pfx) = '';
+    my $r = $LANG_PROCESS;
+    my $pfx = '';
     if (defined $options{'subdir-objects'})
     {
 	$pfx = $directory . '/';
@@ -4913,7 +4915,7 @@ sub lang_c_finish
 
 sub lang_cxx_finish
 {
-    local ($ltcompile, $ltlink) = &libtool_compiler;
+    my ($ltcompile, $ltlink) = &libtool_compiler;
 
     &define_variable ('CXXLD', '$(CXX)');
     &define_variable ('CXXLINK', $ltlink . '$(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
@@ -4955,10 +4957,9 @@ sub lang_yacc_finish
     return if defined $language_scratch{'yacc-done'};
     $language_scratch{'yacc-done'} = 1;
 
-    local ($base, $hname, $cname);
-    local (%seen_suffix) = ();
-    local (@yacc_files) = sort keys %yacc_sources;
-    local ($yacc_count) = scalar (@yacc_files);
+    my %seen_suffix = ();
+    my @yacc_files = sort keys %yacc_sources;
+    my $yacc_count = scalar (@yacc_files);
     foreach my $file (@yacc_files)
     {
 	$file =~ /(\..*)$/;
@@ -4967,9 +4968,10 @@ sub lang_yacc_finish
 	$seen_suffix{$1} = 1;
 
 	$file =~ /^(.*)\.(y|yy|y\+\+|yxx|ypp)$/;
-	$base = $1;
-	$hname = 'h';		# Always use `.h' for header file.
-	($cname = $2) =~ tr/y/c/;
+	my $base = $1;
+	my $hname = 'h';		# Always use `.h' for header file.
+	my $cname = $2;
+	$cname =~ tr/y/c/;
 
 	if ((&variable_defined ('AM_YFLAGS')
 	     && &variable_value ('AM_YFLAGS') =~ /(^|\s)-d(\s|$)/)
@@ -5019,8 +5021,7 @@ sub lang_lex_finish
     return if defined $language_scratch{'lex-done'};
     $language_scratch{'lex-done'} = 1;
 
-    local (%seen_suffix) = ();
-    my $cname;
+    my %seen_suffix = ();
     my $lex_count = scalar (keys %lex_sources);
     foreach my $file (sort keys %lex_sources)
     {
@@ -5036,6 +5037,7 @@ sub lang_lex_finish
 	# should be removed by maintainer-clean.  So that's what we
 	# do.
 	$file =~ /^(.*)\.(l|ll|l\+\+|lxx|lpp)$/;
+	my $cname;
 	($cname = $2) =~ tr/l/c/;
 	push (@maintainer_clean_files, "${1}.${cname}");
     }
@@ -5071,10 +5073,11 @@ sub lang_f77_finish
     # FIXME: this function can be called more than once.  We should
     # arrange for it to only do anything the first time through.
 
-    local ($ltcompile, $ltlink) = &libtool_compiler;
+    my ($ltcompile, $ltlink) = &libtool_compiler;
 
     &define_variable ('F77LD', '$(F77)');
-    &define_variable ('F77LINK', $ltlink . '$(F77LD) $(AM_FFLAGS) $(FFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
+    &define_variable ('F77LINK',
+		      $ltlink . '$(F77LD) $(AM_FFLAGS) $(FFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
 
     if (! defined $configure_vars{'F77'})
     {
@@ -5118,7 +5121,7 @@ sub lang_ratfor_finish
 
 sub lang_objc_finish
 {
-    local ($ltcompile, $ltlink) = &libtool_compiler;
+    my ($ltcompile, $ltlink) = &libtool_compiler;
 
     &define_variable ('OBJCLD', '$(OBJC)');
     &define_variable ('OBJCLINK', $ltlink . '$(OBJCLD) $(AM_OBJCFLAGS) $(OBJCFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
@@ -5131,7 +5134,7 @@ sub lang_objc_finish
 
 sub lang_java_finish
 {
-    local ($ltcompile, $ltlink) = &libtool_compiler;
+    my ($ltcompile, $ltlink) = &libtool_compiler;
 
     &define_variable ('GCJLD', '$(GCJ)');
     &define_variable ('GCJLINK', $ltlink . '$(GCJLD) $(AM_GCJFLAGS) $(GCJFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
@@ -5158,7 +5161,7 @@ sub lang_extensions
 # for compiler and linker.
 sub libtool_compiler
 {
-    local ($ltcompile, $ltlink) = ('', '');
+    my ($ltcompile, $ltlink) = ('', '');
     if ($seen_libtool)
     {
 	&define_configure_variable ("LIBTOOL");
@@ -5174,7 +5177,7 @@ sub libtool_compiler
 # required.
 sub resolve_linker
 {
-    local (%linkers) = @_;
+    my (%linkers) = @_;
 
     return 'GCJLINK'
 	if defined $linkers{'GCJLINK'};
@@ -5190,7 +5193,7 @@ sub resolve_linker
 # Called to indicate that an extension was used.
 sub saw_extension
 {
-    local ($ext) = @_;
+    my ($ext) = @_;
     $extension_seen{$ext} = 1;
 }
 
@@ -5206,7 +5209,7 @@ sub saw_sources_p
     }
     else
     {
-	local (@exts) = &lang_extensions ('header');
+	my @exts = &lang_extensions ('header');
 	$headers = @exts;
     }
 
@@ -5247,7 +5250,7 @@ sub register_language
 # `o' or to some other suffix we recognize internally, eg `cc'.
 sub derive_suffix
 {
-    local ($source_ext) = @_;
+    my ($source_ext) = @_;
 
     # FIXME: hard-coding `o' is a mistake.  Doing something
     # intelligent is harder.
@@ -5277,10 +5280,10 @@ sub pretty_print_internal
     # Fill length is number of characters.  However, each Tab
     # character counts for eight.  So we count the number of Tabs and
     # multiply by 7.
-    local ($fill_length) = length ($fill);
+    my $fill_length = length ($fill);
     $fill_length += 7 * ($fill =~ tr/\t/\t/d);
 
-    local ($bol) = ($head eq '');
+    my $bol = $head eq '';
     foreach (@values)
     {
 	# "71" because we also print a space.
@@ -5319,7 +5322,7 @@ sub pretty_print_rule
 # See if a target exists.
 sub target_defined
 {
-    local ($target) = @_;
+    my ($target) = @_;
     return defined $targets{$target};
 }
 
@@ -5495,8 +5498,8 @@ sub examine_variable
 sub variable_conditions
 {
     my ($var) = @_;
-    local (%uniqify);
-    local (@uniq_list);
+    my %uniqify;
+    my @uniq_list;
 
     %vars_scanned = ();
     foreach my $cond (&variable_conditions_sub ($var, '', ()))
@@ -5612,7 +5615,7 @@ sub variable_conditions_sub
     # in @this_conds.
     foreach my $this_cond (@this_conds)
     {
-	local (@perms) =
+	my @perms =
 	    &variable_conditions_permutations (split('@', $this_cond));
 	foreach my $perm (@perms)
 	{
@@ -5643,9 +5646,9 @@ sub variable_conditions_sub
 # Subroutine for variable_conditions_sort
 sub variable_conditions_cmp
 {
-    local ($as) = $a;
+    my $as = $a;
     $as =~ s/[^@]//g;
-    local ($bs) = $b;
+    my $bs = $b;
     $bs =~ s/[^@]//g;
     return (length ($as) <=> length ($bs)
 	    || $a cmp $b);
@@ -5656,8 +5659,8 @@ sub variable_conditions_cmp
 # @COND1_TRUE@ are in the list, discard the latter.
 sub variable_conditions_reduce
 {
-    local (@conds) = @_;
-    local (@ret) = ();
+    my (@conds) = @_;
+    my @ret = ();
     foreach my $cond (sort variable_conditions_cmp @conds)
     {
 	next
@@ -5671,13 +5674,13 @@ sub variable_conditions_reduce
 # Return a list of permutations of a conditional string.
 sub variable_conditions_permutations
 {
-    local (@comps) = @_;
+    my (@comps) = @_;
     return ()
 	if ! @comps;
-    local ($comp) = shift (@comps);
+    my $comp = shift (@comps);
     return &variable_conditions_permutations (@comps)
 	if $comp eq '';
-    local ($neg) = $comp;
+    my $neg = $comp;
     $neg =~ s/TRUE$/TRUEO/;
     $neg =~ s/FALSE$/TRUE/;
     $neg =~ s/TRUEO$/FALSE/;
@@ -5719,7 +5722,7 @@ sub variable_conditionally_defined
 # if the variable is conditionally defined.
 sub variable_value
 {
-    local ($var) = @_;
+    my ($var) = @_;
     &variable_conditionally_defined ($var);
     return $contents{$var};
 }
@@ -5930,8 +5933,8 @@ sub define_configure_variable
 # version of the command when using libtool.
 sub define_compiler_variable
 {
-    local ($var, $ltcompile, $value) = @_;
-    local ($name) = $var;
+    my ($var, $ltcompile, $value) = @_;
+    my $name = $var;
     &define_variable ($name, $value);
     &define_variable ('LT' . $name, $ltcompile . $value)
 	if $seen_libtool;
@@ -5949,7 +5952,7 @@ sub define_compiler_variable
 #            Cygnus mode.  Defaults to PROGRAM.
 sub define_program_variable
 {
-    local ($var, $whatdir, $subdir, $program, $override) = @_;
+    my ($var, $whatdir, $subdir, $program, $override) = @_;
 
     if (! $override)
     {
@@ -5958,8 +5961,8 @@ sub define_program_variable
 
     if ($cygnus_mode)
     {
-	local ($full) = ('$(top_' . $whatdir . 'dir)/../'
-			 . $subdir . '/' . $program);
+	my $full = ('$(top_' . $whatdir . 'dir)/../'
+		    . $subdir . '/' . $program);
 	&define_variable ($var, ('`if test -f ' . $full
 				 . '; then echo ' . $full . '; else echo '
 				 . $program . '; fi`'));
@@ -5979,23 +5982,15 @@ sub define_program_variable
 # user rules to come after our generated stuff.
 sub read_am_file
 {
-    local ($amfile) = @_;
-    local (*AM_FILE);
+    my ($amfile) = @_;
+    local *AM_FILE;
 
     open (AM_FILE, $amfile) || die "automake: couldn't open \`$amfile': $!\n";
     print "automake: reading $amfile\n" if $verbose;
 
-    local ($saw_bk) = 0;
-    local ($was_rule) = 0;
-    local ($spacing) = '';
-    local ($comment) = '';
-    local ($last_var_name) = '';
-    local ($blank) = 0;
-
-    # We save the conditional stack on entry, and then check to make
-    # sure it is the same on exit.  This lets us conditonally include
-    # other files.
-    local (@saved_cond_stack) = @conditional_stack;
+    my $spacing = '';
+    my $comment = '';
+    my $blank = 0;
 
     while (<AM_FILE>)
     {
@@ -6028,7 +6023,15 @@ sub read_am_file
     $comment = '';
     $spacing = "\n";
 
-    local ($is_ok_macro);
+    # We save the conditional stack on entry, and then check to make
+    # sure it is the same on exit.  This lets us conditonally include
+    # other files.
+    my @saved_cond_stack = @conditional_stack;
+
+    my $saw_bk = 0;
+    my $was_rule = 0;
+    my $is_ok_macro;
+    my $last_var_name = '';
     while ($_)
     {
 	$_ .= "\n"
@@ -6145,13 +6148,15 @@ sub read_am_file
 	    # Check the rule for being a suffix rule. If so, store in
 	    # a hash.
 
-	    local ($source_suffix);
-	    local ($object_suffix);
+	    my $source_suffix;
+	    my $object_suffix;
 
-	    if (($source_suffix, $object_suffix) = ($1 =~ $SUFFIX_RULE_PATTERN))
+	    if (($source_suffix, $object_suffix)
+		= ($1 =~ $SUFFIX_RULE_PATTERN))
 	    {
 	      $suffix_rules{$source_suffix} = $object_suffix;
-	      print "Sources ending in .$source_suffix become .$object_suffix\n" if $verbose;
+	      print "Sources ending in .$source_suffix become .$object_suffix\n"
+		if $verbose;
 	      $source_suffix_pattern = "(" . join ('|', keys %suffix_rules) . ")";
 	    }
 
@@ -6172,7 +6177,7 @@ sub read_am_file
 		&am_line_error ($1,
 				"$1 defined both conditionally and unconditionally");
 	    }
-	    local ($value);
+	    my $value;
 	    if ($3 ne '' && substr ($3, -1) eq "\\")
 	    {
 		# We preserve the `\' because otherwise the long lines
@@ -6184,7 +6189,7 @@ sub read_am_file
 	    {
 		$value = $3;
 	    }
-	    local ($type) = $2;
+	    my $type = $2;
 
 	    if (! defined $contents{$last_var_name})
 	    {
@@ -6265,7 +6270,7 @@ sub read_am_file
 	}
         elsif (/$INCLUDE_PATTERN/o)
         {
-            local ($path) = $1;
+            my $path = $1;
 
             if ($path =~ s/^\$\(top_srcdir\)\///)
             {
@@ -6335,13 +6340,14 @@ sub define_standard_variables
 # Read main am file.
 sub read_main_am_file
 {
-    local ($amfile) = @_;
+    my ($amfile) = @_;
 
     # The keys here are variables we want to dump at the end of this
     # function.  The values are corresponding comments.
-    local (%am_vars) = ();
-    local (@var_list) = ();
-    local (%def_type) = ();
+    # Need dynamic scopes.
+    local %am_vars = ();
+    local @var_list = ();
+    local %def_type = ();
 
     # This supports the strange variable tricks we are about to play.
     &prog_error ("variable defined before read_main_am_file")
@@ -6357,7 +6363,7 @@ sub read_main_am_file
 
     # First pass.
     &define_standard_variables;
-    local (%saved_contents) = %contents;
+    my %saved_contents = %contents;
 
     # Read user file, but discard text of variable assignments we just
     # made.
@@ -6723,7 +6729,7 @@ sub file_contents
 
     # Swallow into $CONTENTS the whole content of the file, after
     # having performed the $COMMAND, and removed Automake comments.
-    local ($contents) = '';
+    my $contents = '';
 
     while (<FC_FILE>)
     {
@@ -7035,7 +7041,7 @@ sub am_install_var
     # instance, if the variable "zardir" is defined, then
     # "zar_PROGRAMS" becomes valid.  This is to provide a little extra
     # flexibility in those cases which need it.
-    local (%valid) = &am_primary_prefixes ($primary, $can_dist, @prefixes);
+    my %valid = &am_primary_prefixes ($primary, $can_dist, @prefixes);
 
     # If a primary includes a configure substitution, then the EXTRA_
     # form is required.  Otherwise we can't properly do our job.
@@ -7140,7 +7146,7 @@ sub am_install_var
 		}
 		else
 		{
-		    local ($condvals) = '';
+		    my $condvals = '';
 		    foreach my $cond (@conds)
 		    {
 			my @one_binlist = ();
@@ -7167,7 +7173,7 @@ sub am_install_var
 		    while (@condvals)
 		    {
 			$cond = shift (@condvals);
-			local (@val) = split (' ', shift (@condvals));
+			my @val = split (' ', shift (@condvals));
 			&define_pretty_variable ($one_name, $cond, @val);
 		    }
 		}
@@ -7252,7 +7258,7 @@ $make_dirs_set = 0;
 
 sub is_make_dir
 {
-    local ($dir) = @_;
+    my ($dir) = @_;
     if (! $make_dirs_set)
     {
 	foreach my $iter (@configure_input_files)
@@ -7286,7 +7292,7 @@ sub is_make_dir
 # encodes the rules for deciding when to do so.
 sub maybe_push_required_file
 {
-    local ($dir, $file, $fullfile) = @_;
+    my ($dir, $file, $fullfile) = @_;
 
     # FIXME: Once again, special-case `.'.
     if ($dir eq $relative_dir || $dir eq '.')
@@ -7370,18 +7376,18 @@ sub require_file_internal
 		    unlink ($fullfile);
 		}
 
-		local ($trailer) = '';
-		local ($suppress) = 0;
+		my $trailer = '';
+		my $suppress = 0;
 
 		# Only install missing files according to our desired
 		# strictness level.
-		local ($message) = "required file \`$errfile' not found";
+		my $message = "required file \`$errfile' not found";
 		if ($add_missing)
 		{
 		    $suppress = 1;
 
 		    # Maybe run libtoolize.
-		    local @syslist = ('libtoolize', '--automake');
+		    my @syslist = ('libtoolize', '--automake');
 		    push @syslist, '--copy'
 			if $copy_missing;
 		    if ($seen_libtool
@@ -7420,7 +7426,7 @@ sub require_file_internal
 					       $file, $errfile);
 		}
 
-		local ($save) = $exit_status;
+		my $save = $exit_status;
 		if ($is_configure)
 		{
 		    # FIXME: allow actual file to be specified.
@@ -7463,7 +7469,7 @@ sub require_config_file
 {
     @require_file_paths = @config_aux_path;
     &require_file_internal (1, '', @_);
-    local ($dir) = $require_file_paths[0];
+    my $dir = $require_file_paths[0];
     @config_aux_path = @require_file_paths;
     if ($dir eq '.')
     {
@@ -7480,7 +7486,7 @@ sub require_conf_file_with_line
 {
     @require_file_paths = @config_aux_path;
     &require_file_internal (0, @_);
-    local ($dir) = $require_file_paths[0];
+    my $dir = $require_file_paths[0];
     @config_aux_path = @require_file_paths;
     if ($dir eq '.')
     {
@@ -7497,7 +7503,7 @@ sub require_conf_file_with_conf_line
 {
     @require_file_paths = @config_aux_path;
     &require_file_internal (1, @_);
-    local ($dir) = $require_file_paths[0];
+    my $dir = $require_file_paths[0];
     @config_aux_path = @require_file_paths;
     if ($dir eq '.')
     {
@@ -7554,7 +7560,7 @@ sub set_strictness
 # Ensure a file exists.
 sub create
 {
-    local ($file) = @_;
+    my ($file) = @_;
 
     open (TOUCH, ">> $file");
     close (TOUCH);
@@ -7564,7 +7570,7 @@ sub create
 # want to glob.  Gross!
 sub my_glob
 {
-    local ($pat) = @_;
+    my ($pat) = @_;
     return <${pat}>;
 }
 
@@ -7620,11 +7626,11 @@ sub am_file_error
 
 sub am_line_error
 {
-    local ($symbol, @args) = @_;
+    my ($symbol, @args) = @_;
 
     if ($symbol && "$symbol" ne '-1')
     {
-	local ($file) = "${am_file}.am";
+	my $file = "${am_file}.am";
 
 	if ($symbol =~ /^\d+$/)
 	{
@@ -7667,7 +7673,7 @@ sub am_conf_error
 # Error message with line number referring to configure.ac.
 sub am_conf_line_error
 {
-    local ($file, $line, @args) = @_;
+    my ($file, $line, @args) = @_;
 
     if ($line)
     {
@@ -7684,7 +7690,7 @@ sub am_conf_line_error
 # Does not affect exit_status
 sub am_conf_line_warning
 {
-    local ($saved_exit_status) = $exit_status;
+    my $saved_exit_status = $exit_status;
     &am_conf_line_error (@_);
     $exit_status = $saved_exit_status;
 }
@@ -7692,7 +7698,7 @@ sub am_conf_line_warning
 # Tell user where our aclocal.m4 is, but only once.
 sub keyed_aclocal_warning
 {
-    local ($key) = @_;
+    my ($key) = @_;
     warn "automake: macro \`$key' can be generated by \`aclocal'\n";
 }
 
@@ -7728,8 +7734,6 @@ Library files:
       --force-missing   force update of standard files
 EOF
 
-    print "\nFiles which are automatically distributed, if found:\n";
-    $~ = "USAGE_FORMAT";
     my ($last, @lcomm);
     $last = '';
     foreach my $iter (sort ((@common_files, @common_sometimes)))
@@ -7738,10 +7742,16 @@ EOF
 	$last = $iter;
     }
 
-    local ($one, $two, $three, $four, $i, $max);
+    my ($one, $two, $three, $four, $max);
+    print "\nFiles which are automatically distributed, if found:\n";
+    format USAGE_FORMAT =
+  @<<<<<<<<<<<<<<<<   @<<<<<<<<<<<<<<<<   @<<<<<<<<<<<<<<<<   @<<<<<<<<<<<<<<<<
+  $one,               $two,               $three,             $four
+.
+    $~ = "USAGE_FORMAT";
     $max = int (($#lcomm + 1) / 4);
 
-    for ($i = 0; $i < $max; ++$i)
+    for (my $i = 0; $i < $max; ++$i)
     {
 	$one = $lcomm[$i];
 	$two = $lcomm[$max + $i];
@@ -7750,7 +7760,7 @@ EOF
 	write;
     }
 
-    local ($mod) = ($#lcomm + 1) % 4;
+    my $mod = ($#lcomm + 1) % 4;
     if ($mod != 0)
     {
 	$one = $lcomm[$max];
@@ -7764,8 +7774,3 @@ EOF
 
     exit 0;
 }
-
-format USAGE_FORMAT =
-  @<<<<<<<<<<<<<<<<   @<<<<<<<<<<<<<<<<   @<<<<<<<<<<<<<<<<   @<<<<<<<<<<<<<<<<
-  $one,               $two,               $three,             $four
-.

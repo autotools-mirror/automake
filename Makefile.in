@@ -206,11 +206,26 @@ maintainer-clean-vti:
 automake.info: automake.texi $(srcdir)/version.texi
 automake.dvi: automake.texi $(srcdir)/version.texi
 
+.texi.info:
+	@cd $(srcdir) && rm -f $@ $@-[0-9] $@-[0-9][0-9]
+	cd $(srcdir) \
+	  && $(MAKEINFO) `echo $< | sed 's,.*/,,'`
+
+.texi.dvi:
+	TEXINPUTS=$(srcdir):$$TEXINPUTS \
+	  MAKEINFO='$(MAKEINFO) -I $(srcdir)' $(TEXI2DVI) $<
+
+.texi:
+	@cd $(srcdir) && rm -f $@ $@-[0-9] $@-[0-9][0-9]
+	cd $(srcdir) \
+	  && $(MAKEINFO) `echo $< | sed 's,.*/,,'`
 
 DVIPS = dvips
 .dvi.ps:
 	$(DVIPS) $< -o $@
 
+?EXEC?insexec-data-am: install-info-am
+?!EXEC?install-data-am: install-info-am
 install-info-am: $(INFO_DEPS)
 	@$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(DESTDIR)$(infodir)
@@ -554,8 +569,7 @@ clean-am: clean-generic mostlyclean-am
 
 install-exec-am: install-binSCRIPTS
 
-install-data-am: install-dist_pkgdataDATA install-dist_scriptDATA \
-	install-info-am
+install-data-am: install-dist_pkgdataDATA install-dist_scriptDATA
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) install-data-hook
 
@@ -626,6 +640,24 @@ maintainer-check: automake aclocal
 	  echo "Using @_ in a scalar context in the lines above." 1>&2; \
 	  exit 1; \
 	fi
+	@if grep '^[ \t]*local *(' $(srcdir)/automake.in; then \
+	  echo "Don't use \`local' with parens: use several \`local' above." >&2; \
+	  exit 1; \
+	fi
+	@locals=`grep -c '^[ \t]*local [^*]' $(srcdir)/automake.in`; \
+	case $$locals in \
+	  [0-5] ) \
+	    echo "Wow, congrats!  There are $$locals \`local' now!." >&2; \
+	    echo "Please update Makefile.am (maintainer-check)." >&2; \
+	    exit 1; \
+	  ;; \
+	  6 ) ;; \
+	  * ) \
+	    echo "Too many \`local'!  Are you sure you need $$locals of them?" >&2; \
+	    echo "Up to now 6 was enough." >&2; \
+	    exit 1; \
+	  ;; \
+	esac
 
 # Tag before making distribution.  Also, don't make a distribution if
 # checks fail.  Also, make sure the NEWS file is up-to-date.
