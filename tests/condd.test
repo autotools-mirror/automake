@@ -22,9 +22,14 @@
 
 . ./defs || exit 1
 
+set -e
+
 cat >> configure.in << 'END'
 AC_PROG_CC
-AM_CONDITIONAL(COND1, true)
+AM_CONDITIONAL(COND1, false)
+AC_CONFIG_FILES([foo/Makefile])
+AC_CONFIG_FILES([bar/Makefile])
+AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
@@ -41,9 +46,25 @@ hello_SOURCES += hello-cond1.c
 else
 hello_SOURCES += hello-generic.c
 endif
+
+test: distdir
+	test -f $(distdir)/foo/Makefile.am
+	test -f $(distdir)/bar/Makefile.am
+	test -f $(distdir)/hello-common.c
+	test -f $(distdir)/hello-cond1.c
+	test -f $(distdir)/hello-generic.c
 END
 
 mkdir foo bar
 
-$ACLOCAL || exit 1
+: > foo/Makefile.am
+: > bar/Makefile.am
+: > hello-common.c
+: > hello-cond1.c
+: > hello-generic.c
+
+$ACLOCAL
+$AUTOCONF
 $AUTOMAKE
+./configure
+$MAKE test
