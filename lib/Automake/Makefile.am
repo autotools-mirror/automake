@@ -29,6 +29,7 @@ dist_perllib_DATA = \
   FileUtils.pm \
   General.pm \
   Location.pm \
+  Options.pm \
   Struct.pm \
   Variable.pm \
   VarDef.pm \

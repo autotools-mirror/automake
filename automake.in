@@ -131,6 +131,7 @@ use Automake::FileUtils;
 use Automake::Location;
 use Automake::Condition qw/TRUE FALSE/;
 use Automake::DisjConditions;
+use Automake::Options;
 use Automake::Version;
 use Automake::Variable;
 use Automake::VarDef;
@@ -192,11 +193,6 @@ my $DASH_D_PATTERN = "(^|\\s)-d(\\s|\$)";
 # Directories installed during 'install-exec' phase.
 my $EXEC_DIR_PATTERN =
   '^(?:bin|sbin|libexec|sysconf|localstate|lib|pkglib|.*exec.*)' . "\$";
-
-# Constants to define the "strictness" level.
-use constant FOREIGN => 0;
-use constant GNU     => 1;
-use constant GNITS   => 2;
 
 # Values for AC_CANONICAL_*
 use constant AC_CANONICAL_HOST   => 1;
@@ -275,12 +271,6 @@ use constant INTERNAL => new Automake::Location;
 
 # TRUE if we should always generate Makefile.in.
 my $force_generation = 1;
-
-# Strictness level as set on command line.
-my $default_strictness = GNU;
-
-# Name of strictness level, as set on command line.
-my $default_strictness_name = 'gnu';
 
 # From the Perl manual.
 my $symlink_exists = (eval 'symlink ("", "");', $@ eq '');
@@ -557,16 +547,6 @@ my %directory_map;
 # All .P files.
 my %dep_files;
 
-# Strictness levels.
-my $strictness;
-my $strictness_name;
-
-# Automake options.
-# Values are the Automake::Location of the definition, except
-# for 'ansi2knr' whose value is a pair [filename, Location].
-my %options;			# From AUTOMAKE_OPTIONS
-my %global_options;		# From AM_INIT_AUTOMAKE or the command line.
-
 # This is a list of all targets to run during "make dist".
 my @dist_targets;
 
@@ -693,7 +673,8 @@ sub initialize_per_input ()
 
     @suffixes = ();
 
-    Automake::Variable::reset ();
+    Automake::Options::reset;
+    Automake::Variable::reset;
 
     %targets = ();
     %target_source = ();
@@ -767,11 +748,6 @@ sub initialize_per_input ()
     %directory_map = ();
 
     %dep_files = ();
-
-    $strictness = $default_strictness;
-    $strictness_name = $default_strictness_name;
-
-    %options = ();
 
     @dist_targets = ();
 
@@ -1154,81 +1130,15 @@ sub backname ($)
 
 ################################################################
 
-# $BOOL
-# process_option_list (\%OPTIONS, $WHERE, @OPTIONS)
-# -------------------------------------------------
-# Process a list of options.  Return 1 on error, 0 otherwise.
-# \%OPTIONS is the hash to fill with options data, $WHERE is
-# the location where @OPTIONS occured.
-sub process_option_list (\%$@)
-{
-  my ($options, $where, @list) = @_;
-
-  foreach (@list)
-    {
-      $options->{$_} = $where;
-      if ($_ eq 'gnits' || $_ eq 'gnu' || $_ eq 'foreign')
-	{
-	  &set_strictness ($_);
-	}
-      elsif (/^(.*\/)?ansi2knr$/)
-	{
-	  # An option like "../lib/ansi2knr" is allowed.  With no
-	  # path prefix, we assume the required programs are in this
-	  # directory.  We save the actual option for later.
-	  $options->{'ansi2knr'} = [$_, $where];
-	}
-      elsif ($_ eq 'no-installman' || $_ eq 'no-installinfo'
-	     || $_ eq 'dist-shar' || $_ eq 'dist-zip'
-	     || $_ eq 'dist-tarZ' || $_ eq 'dist-bzip2'
-	     || $_ eq 'no-dist-gzip'
-	     || $_ eq 'dejagnu' || $_ eq 'no-texinfo.tex'
-	     || $_ eq 'readme-alpha' || $_ eq 'check-news'
-	     || $_ eq 'subdir-objects' || $_ eq 'nostdinc'
-	     || $_ eq 'no-exeext' || $_ eq 'no-define'
-	     || $_ eq 'std-options'
-	     || $_ eq 'cygnus' || $_ eq 'no-dependencies')
-	{
-	  # Explicitly recognize these.
-	}
-      elsif (/^\d+\.\d+(?:\.\d+)?[a-z]?(?:-[A-Za-z0-9]+)?$/)
-	{
-	  # Got a version number.
-	  if (Automake::Version::check ($VERSION, $&))
-	    {
-	      error ($where, "require Automake $_, but have $VERSION",
-		     uniq_scope => US_GLOBAL);
-		return 1;
-	    }
-	}
-      elsif (/^(?:--warnings=|-W)(.*)$/)
-	{
-	  foreach my $cat (split (',', $1))
-	    {
-	      msg 'unsupported', $where, "unknown warning category `$cat'"
-		if switch_warning $cat;
-	    }
-	}
-      else
-	{
-	  error ($where, "option `$_' not recognized",
-		 uniq_scope => US_GLOBAL);
-	  return 1;
-	}
-    }
-}
 
 # Handle AUTOMAKE_OPTIONS variable.  Return 1 on error, 0 otherwise.
 sub handle_options
 {
-  %options = %global_options;
-
   my $var = var ('AUTOMAKE_OPTIONS');
   if ($var)
     {
       # FIXME: We should disallow conditional definitions of AUTOMAKE_OPTIONS.
-      if (process_option_list (%options,
-			       $var->rdef (TRUE)->location,
+      if (process_option_list ($var->rdef (TRUE)->location,
 			       $var->value_as_list_recursive (TRUE)))
 	{
 	  return 1;
@@ -1237,9 +1147,9 @@ sub handle_options
 
   if ($strictness == GNITS)
     {
-      $options{'readme-alpha'} = 1;
-      $options{'std-options'} = 1;
-      $options{'check-news'} = 1;
+      set_option ('readme-alpha', INTERNAL);
+      set_option ('std-options', INTERNAL);
+      set_option ('check-news', INTERNAL);
     }
 
   return 0;
@@ -1260,7 +1170,7 @@ sub get_object_extension
 
     # Check for automatic de-ANSI-fication.
     $extension = '$U' . $extension
-      if $options{'ansi2knr'};
+      if option 'ansi2knr';
 
     $get_object_extension_was_run = 1;
 
@@ -1271,7 +1181,7 @@ sub get_object_extension
 # Call finish function for each language that was used.
 sub handle_languages
 {
-    if (! $options{'no-dependencies'})
+    if (! option 'no-dependencies')
     {
 	# Include auto-dep code.  Don't include it if DEP_FILES would
 	# be empty.
@@ -1339,7 +1249,7 @@ sub handle_languages
 	my $fpfx = ($pfx eq '') ? 'CC' : $pfx;
 
 	my ($AMDEP, $FASTDEP) =
-	  ($options{'no-dependencies'} || $lang->autodep eq 'no')
+	  (option 'no-dependencies' || $lang->autodep eq 'no')
 	  ? ('FALSE', 'FALSE') : ('AMDEP', "am__fastdep$fpfx");
 
 	my %transform = ('EXT'     => $ext,
@@ -1352,7 +1262,7 @@ sub handle_languages
 			           => (count_files_for_language ($lang->name) > 1));
 
 	# Generate the appropriate rules for this extension.
-	if (((! $options{'no-dependencies'}) && $lang->autodep ne 'no')
+	if (((! option 'no-dependencies') && $lang->autodep ne 'no')
 	    || defined $lang->compile)
 	{
 	    # Some C compilers don't support -c -o.  Use it only if really
@@ -1361,7 +1271,7 @@ sub handle_languages
 	    $output_flag = '-o'
 	      if (! $output_flag
 		  && $lang->name eq 'c'
-		  && $options{'subdir-objects'});
+		  && option 'subdir-objects');
 
 	    # Compute a possible derived extension.
 	    # This is not used by depend2.am.
@@ -1823,7 +1733,7 @@ sub handle_single_transform_list ($$$$@)
                 my $obj_sans_ext = substr ($object, 0,
 					   - length ($this_obj_ext));
 		my $full_ansi = $full;
-		if ($lang->ansi && $options{'ansi2knr'})
+		if ($lang->ansi && option 'ansi2knr')
 		  {
 		    $full_ansi =~ s/$KNOWN_EXTENSIONS_PATTERN$/\$U$&/;
 		    $obj_sans_ext .= '$U';
@@ -1956,7 +1866,7 @@ sub handle_single_transform_list ($$$$@)
                 # .deps directory is created.
 		push (@dep_list,
 		      require_build_directory ($directory . '/$(DEPDIR)'))
-		  unless $options{'no-dependencies'};
+		  unless option 'no-dependencies';
             }
 
             &pretty_print_rule ($object . ':', "\t", @dep_list)
@@ -2287,7 +2197,7 @@ sub handle_compile ()
 
     # Boilerplate.
     my $default_includes = '';
-    if (! $options{'nostdinc'})
+    if (! option 'nostdinc')
       {
 	$default_includes = ' -I. -I$(srcdir)';
 
@@ -2328,9 +2238,9 @@ sub handle_compile ()
     $output_rules .= "$coms$rules";
 
     # Check for automatic de-ANSI-fication.
-    if ($options{'ansi2knr'})
+    if (option 'ansi2knr')
       {
-	my ($ansi2knr_filename, $ansi2knr_where) = @{$options{'ansi2knr'}};
+	my ($ansi2knr_filename, $ansi2knr_where) = @{option 'ansi2knr'};
 	my $ansi2knr_dir = '';
 
 	require_variables ($ansi2knr_where, "option `ansi2knr' is used",
@@ -3065,7 +2975,7 @@ sub handle_texinfo_helper ($)
       $texinfodir = ('$(srcdir)/'
 		     . dirname (variable_value ('TEXINFO_TEX')));
     }
-  elsif ($options{'cygnus'})
+  elsif (option 'cygnus')
     {
       $texinfodir = '$(top_srcdir)/../texinfo';
       define_variable ('TEXINFO_TEX', "$texinfodir/texinfo.tex", INTERNAL);
@@ -3085,7 +2995,7 @@ sub handle_texinfo_helper ($)
 
   push (@dist_targets, 'dist-info');
 
-  if (! $options{'no-installinfo'})
+  if (! option 'no-installinfo')
     {
       # Make sure documentation is made and installed first.  Use
       # $(INFO_DEPS), not 'info', because otherwise recursive makes
@@ -3107,7 +3017,7 @@ sub handle_texinfo_helper ($)
   # Do some error checking.  Note that this file is not required
   # when in Cygnus mode; instead we defined TEXINFO_TEX explicitly
   # up above.
-  if ($need_texi_file && ! $options{'no-texinfo.tex'})
+  if ($need_texi_file && ! option 'no-texinfo.tex')
     {
       if ($need_texi_file > 1)
 	{
@@ -3212,7 +3122,7 @@ sub handle_man_pages
 				 MANS => "@mans");
 
   push (@all, '$(MANS)')
-    unless $options{'no-installman'};
+    unless option 'no-installman';
 }
 
 # Handle DATA variables.
@@ -3332,15 +3242,15 @@ sub handle_dist
 
   # `make dist' isn't used in a Cygnus-style tree.
   # Omit the rules so that people don't try to use them.
-  return if $options{'cygnus'};
+  return if option 'cygnus';
 
   # At least one of the archive formats must be enabled.
   if ($relative_dir eq '.')
     {
-      my $archive_defined = $options{'no-dist-gzip'} ? 0 : 1;
+      my $archive_defined = option 'no-dist-gzip' ? 0 : 1;
       $archive_defined ||=
-	grep { $options{"dist-$_"} } ('shar', 'zip', 'tarZ', 'bzip2');
-      error ($options{'no-dist-gzip'},
+	grep { option "dist-$_" } ('shar', 'zip', 'tarZ', 'bzip2');
+      error (option 'no-dist-gzip',
 	     "no-dist-gzip specified but no dist-* specified, "
 	     . "at least one archive format must be enabled")
 	unless $archive_defined;
@@ -3672,9 +3582,9 @@ sub handle_configure ($$@)
      'MAKEFILE-IN'         => $infile,
      'MAKEFILE-IN-DEPS'    => "@include_stack",
      'MAKEFILE-AM'         => $amfile,
-     STRICTNESS            => $global_options{'cygnus'}
+     STRICTNESS            => global_option 'cygnus'
                                 ? 'cygnus' : $strictness_name,
-     'USE-DEPS'            => $global_options{'no-dependencies'}
+     'USE-DEPS'            => global_option 'no-dependencies'
                                 ? ' --ignore-deps' : '',
      'MAKEFILE-AM-SOURCES' =>  "$input$colon_infile",
      'REGEN-ACLOCAL-M4'    => $regen_aclocal_m4,
@@ -4134,7 +4044,7 @@ sub do_check_merge_target ()
     }
 
   # In --cygnus mode, check doesn't depend on all.
-  if ($options{'cygnus'})
+  if (option 'cygnus')
     {
       # Just run the local check rules.
       pretty_print_rule ('check-am:', "\t\t", @check);
@@ -4246,7 +4156,7 @@ sub handle_factored_dependencies
   reject_target ('install-info-local',
 		 "`install-info-local' target defined but "
 		 . "`no-installinfo' option not in use")
-    unless $options{'no-installinfo'};
+    unless option 'no-installinfo';
 
   # Install the -local hooks.
   foreach (keys %dependencies)
@@ -4321,7 +4231,7 @@ sub handle_tests_dejagnu
 # Handle TESTS variable and other checks.
 sub handle_tests
 {
-  if ($options{'dejagnu'})
+  if (option 'dejagnu')
     {
       &handle_tests_dejagnu;
     }
@@ -4416,7 +4326,7 @@ sub handle_java
 # Handle some of the minor options.
 sub handle_minor_options
 {
-  if ($options{'readme-alpha'})
+  if (option 'readme-alpha')
     {
       if ($relative_dir eq '.')
 	{
@@ -4644,8 +4554,8 @@ sub scan_autoconf_traces ($)
 	  elsif (defined $args[1])
 	    {
 	      exit $exit_code
-		if (process_option_list (%global_options, $where,
-					 split (' ', $args[1])));
+		if (process_global_option_list ($where,
+						split (' ', $args[1])));
 	    }
 	}
       elsif ($macro eq 'AM_MAINTAINER_MODE')
@@ -4744,11 +4654,12 @@ sub scan_autoconf_files
 # Set up for Cygnus mode.
 sub check_cygnus
 {
-  return unless $options{'cygnus'};
+  my $cygnus = option 'cygnus';
+  return unless $cygnus;
 
-  &set_strictness ('foreign');
-  $options{'no-installinfo'} = $options{'cygnus'};
-  $options{'no-dependencies'} = $options{'cygnus'};
+  set_strictness ('foreign');
+  set_option ('no-installinfo', $cygnus);
+  set_option ('no-dependencies', $cygnus);
 
   err_ac "`AM_MAINTAINER_MODE' required when --cygnus specified"
     if !$seen_maint_mode;
@@ -4773,9 +4684,9 @@ sub check_gnu_standards
 
   for my $opt ('no-installman', 'no-installinfo')
     {
-      msg ('error-gnu', $options{$opt},
+      msg ('error-gnu', option $opt,
 	   "option `$opt' disallowed by GNU standards")
-	if $options{$opt};
+	if option $opt;
     }
 }
 
@@ -4808,7 +4719,7 @@ sub check_gnits_standards
 # when a subdir object should be used.
 sub lang_sub_obj
 {
-    return $options{'subdir-objects'} ? LANG_SUBDIR : LANG_PROCESS;
+    return option 'subdir-objects' ? LANG_SUBDIR : LANG_PROCESS;
 }
 
 # Rewrite a single C source file.
@@ -4816,14 +4727,14 @@ sub lang_c_rewrite
 {
   my ($directory, $base, $ext) = @_;
 
-  if ($options{'ansi2knr'} && $base =~ /_$/)
+  if (option 'ansi2knr' && $base =~ /_$/)
     {
       # FIXME: include line number in error.
       err_am "C source file `$base.c' would be deleted by ansi2knr rules";
     }
 
   my $r = LANG_PROCESS;
-  if ($options{'subdir-objects'})
+  if (option 'subdir-objects')
     {
       $r = LANG_SUBDIR;
       $base = $directory . '/' . $base
@@ -4957,7 +4868,7 @@ sub lang_c_finish
 	}
     }
 
-    if ($options{'ansi2knr'} && keys %de_ansi_files)
+    if (option 'ansi2knr' && keys %de_ansi_files)
     {
  	# Make all _.c files depend on their corresponding .c files.
  	my @objects;
@@ -5570,7 +5481,7 @@ sub rule_define ($$$$$)
       && $target_name{$noexe}{$cond} ne $target)
     {
       # The no-exeext option enables this feature.
-      if (! $options{'no-exeext'})
+      if (! option 'no-exeext')
 	{
 	  msg ('obsolete', $targets{$noexe}{$cond},
 	       "deprecated feature: target `$noexe' overrides "
@@ -6169,19 +6080,19 @@ sub make_paragraphs ($%)
   my $command =
     "s/$IGNORE_PATTERN//gm;"
     . transform (%transform,
-		 'CYGNUS'      => defined $options{'cygnus'},
+		 'CYGNUS'      => !! option 'cygnus',
 		 'MAINTAINER-MODE'
 		 => $seen_maint_mode ? subst ('MAINTAINER_MODE_TRUE') : '',
 
-		 'BZIP2'       => $options{'dist-bzip2'} || 0,
-		 'COMPRESS'    => $options{'dist-tarZ'} || 0,
-		 'GZIP'        => $options{'no-dist-gzip'} ? 0 : 1,
-		 'SHAR'        => $options{'dist-shar'} || 0,
-		 'ZIP'         => $options{'dist-zip'} || 0,
+		 'BZIP2'       => !! option 'dist-bzip2',
+		 'COMPRESS'    => !! option 'dist-tarZ',
+		 'GZIP'        =>  ! option 'no-dist-gzip',
+		 'SHAR'        => !! option 'dist-shar',
+		 'ZIP'         => !! option 'dist-zip',
 
-		 'INSTALL-INFO' => !$options{'no-installinfo'},
-		 'INSTALL-MAN'  => !$options{'no-installman'},
-		 'CK-NEWS'      => $options{'check-news'} || 0,
+		 'INSTALL-INFO' =>  ! option 'no-installinfo',
+		 'INSTALL-MAN'  =>  ! option 'no-installman',
+		 'CK-NEWS'      => !! option 'check-news',
 
 		 'SUBDIRS'      => !! var ('SUBDIRS'),
 		 'TOPDIR'       => backname ($relative_dir),
@@ -6736,8 +6647,7 @@ sub am_install_var
       # If so, with install-exec? (or install-data?).
       my $exec_p = ($nodir_name =~ /$EXEC_DIR_PATTERN/o);
 
-      my $check_options_p = $install_p
-	&& defined $options{'std-options'};
+      my $check_options_p = $install_p && !! option 'std-options';
 
       # Use the location of the currently processed variable as context.
       $where->push_context ("while processing `$one_name'");
@@ -7296,30 +7206,6 @@ sub generate_makefile
 ################################################################
 
 
-# Set strictness.
-sub set_strictness
-{
-  $strictness_name = $_[0];
-
-  Automake::ChannelDefs::set_strictness ($strictness_name);
-
-  if ($strictness_name eq 'gnu')
-    {
-      $strictness = GNU;
-    }
-  elsif ($strictness_name eq 'gnits')
-    {
-      $strictness = GNITS;
-    }
-  elsif ($strictness_name eq 'foreign')
-    {
-      $strictness = FOREIGN;
-    }
-  else
-    {
-      prog_error "level `$strictness_name' not recognized\n";
-    }
-}
 
 
 ################################################################
@@ -7441,11 +7327,11 @@ sub parse_arguments ()
      'libdir:s' 	=> \$libdir,
      'gnu' 		=> sub { set_strictness ('gnu'); },
      'gnits' 		=> sub { set_strictness ('gnits'); },
-     'cygnus' 	        => sub { $global_options{'cygnus'} = $cli_where; },
+     'cygnus' 	        => sub { set_global_option ('cygnus', $cli_where); },
      'foreign'          => sub { set_strictness ('foreign'); },
-     'include-deps' 	=> sub { delete $global_options{'no-dependencies'}; },
-     'i|ignore-deps' 	=> sub { $global_options{'no-dependencies'}
-				 = $cli_where; },
+     'include-deps' 	=> sub { unset_global_option ('no-dependencies'); },
+     'i|ignore-deps' 	=> sub { set_global_option ('no-dependencies',
+						    $cli_where); },
      'no-force' 	=> sub { $force_generation = 0; },
      'f|force-missing'  => \$force_missing,
      'o|output-dir:s'	=> \$output_directory,
@@ -7522,10 +7408,6 @@ sub parse_arguments ()
       push (@input_files, $input);
       $output_files{$input} = join (':', ($local, @rest));
     }
-
-  # Take global strictness from whatever we currently have set.
-  $default_strictness = $strictness;
-  $default_strictness_name = $strictness_name;
 }
 
 ################################################################
