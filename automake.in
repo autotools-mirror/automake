@@ -6667,14 +6667,14 @@ sub flatten
 }
 
 
-# ($COMMENT, $VARIABLES, $RULES)
-# &file_contents_internal ($BASENAME, [%TRANSFORM])
-# -------------------------------------------------
-# Return contents of a file from $am_dir, automatically skipping
-# macros or rules which are already known.
-sub file_contents_internal ($%)
+# @PARAGRAPHS
+# &make_paragraphs ($MAKEFILE, [%TRANSFORM])
+# ------------------------------------------
+# Load a $MAKEFILE, apply the %TRANSFORM, and return it as a list of
+# paragraphs.
+sub make_paragraphs ($%)
 {
-    my ($basename, %transform) = @_;
+    my ($file, %transform) = @_;
 
     # Complete %transform with global options and make it a Perl
     # $command.
@@ -6705,7 +6705,6 @@ sub file_contents_internal ($%)
 	  . 's/\n{3,}/\n\n/g';
 
     # Swallow the file and apply the COMMAND.
-    my $file = $am_dir . '/' . $basename . '.am';
     my $fc_file = new IO::File ("< $file");
     if (! $fc_file)
     {
@@ -6714,30 +6713,72 @@ sub file_contents_internal ($%)
     # Looks stupid?
     print "$me: reading $file\n"
       if $verbose;
-
-    # Swallow into $CONTENTS the whole content of the file, after
-    # having performed the $COMMAND, and removed Automake comments.
     my $saved_dollar_slash = $/;
     undef $/;
     $_ = $fc_file->getline;
     $/ = $saved_dollar_slash;
     eval $command;
     $fc_file->close;
-    my $contents = $_;
+    my $content = $_;
+
+    # A rule has three parts: a list of targets, a list of dependencies,
+    # and optionally actions.
+    my $RULE_PATTERN =
+      "^($TARGET_PATTERN(?:(?:\\\\\n|\\s)+$TARGET_PATTERN)*) *:([^=].*|)\$";
 
 
-    # Process each Make `paragraph'.
-    #
-    # A Make `paragraph' is delimited by a new line which is not
-    # escaped, and not followed by a tab or a comment.
-    #
-    # Frankly, unless you like fighting with Perl (you're a freak!),
-    # if I were you I would not try some other implementation, it's
-    # very easy falling either into extremely low RE matching
-    # (backtracking...), or worse yet: infloop...  For instance, (my)
-    # perl goes loopy if you try to
-    #
-    #  $result_rules =~ /^($TARGET_PATTERN *)+: ($TARGET_PATTERN *)+\n\n/sm
+    # Split at unescaped new lines.
+    my @lines = split (/(?<!\\)\n/, $content);
+    my @res;
+
+    while (defined ($_ = shift @lines))
+      {
+	# If we are a rule, eat as long as we start with a tab.
+	if (/$RULE_PATTERN/smo)
+	  {
+	    $paragraph = "$_";
+	    while (defined ($_ = shift @lines) && $_ =~ /^\t/)
+	      {
+		$paragraph .= "\n$_";
+	      }
+	    unshift (@lines, $_);
+	  }
+
+	# If we are a comments, eat as much comments as you can.
+	elsif (/$COMMENT_PATTERN/smo)
+	  {
+	    $paragraph = "$_";
+	    while (defined ($_ = shift @lines)
+		   && $_ =~ /$COMMENT_PATTERN/smo)
+	      {
+		$paragraph .= "\n$_";
+	      }
+	    unshift (@lines, $_);
+	  }
+	# Otherwise, consider it as a lone content.
+	else
+	  {
+	    $paragraph .= "$_";
+	  }
+
+	push @res, $paragraph;
+	$paragraph = '';
+      }
+
+    return @res;
+}
+
+
+
+# ($COMMENT, $VARIABLES, $RULES)
+# &file_contents_internal ($BASENAME, [%TRANSFORM])
+# -------------------------------------------------
+# Return contents of a file from $am_dir, automatically skipping
+# macros or rules which are already known.
+sub file_contents_internal ($%)
+{
+    my ($basename, %transform) = @_;
+    my $file = $am_dir . '/' . $basename . '.am';
 
     # A rule has three parts: a list of targets, a list of dependencies,
     # and optionally actions.
@@ -6750,13 +6791,9 @@ sub file_contents_internal ($%)
     my $separator = '';
     my @cond_stack = ();
     my $cond = '';
-    foreach (split (/(?<!\\)\n(?![\t#])/, $contents))
-    {
-        # Strip leading new lines.  This can happen for comments:
-        # the pattern above allows `\n\n# comment' to yield
-        # `\n# comment'.
-        s/^\n+//;
 
+    foreach (make_paragraphs ($file, %transform))
+    {
         # Sanity checks.
 	&am_file_error ("$basename.am",
 			"blank line following trailing backslash:\n$_")
@@ -6790,11 +6827,11 @@ sub file_contents_internal ($%)
 	{
 	    if (! @cond_stack)
 	    {
-		&am_line_error ($., "else without if");
+		&am_error ("else without if");
 	    }
 	    elsif ($cond_stack[$#cond_stack] =~ /^(.*_)?FALSE$/)
 	    {
-		&am_line_error ($., "else after else");
+		&am_error ("else after else");
 	    }
 	    else
 	    {
@@ -6806,7 +6843,7 @@ sub file_contents_internal ($%)
 	{
 	    if (! @cond_stack)
 	    {
-		&am_line_error ($., "endif without if");
+		&am_error ("endif without if");
 	    }
 	    else
 	    {
@@ -6877,15 +6914,19 @@ sub file_contents_internal ($%)
 	    # of (which is detected by the first reading of
 	    # `header-vars.am'), we must not output them.
 	    $result_vars .= "$separator$comment$_\n"
-	      if $type ne '+' && $var_is_am{$var};
+	      if $type ne '+' && $var_is_am{$var} && $cond ne '#';
 
  	    $comment = $separator = '';
  	}
  	else
  	{
 	    # This isn't an error; it is probably some tokens which
-	    # configure is supposed to replace, such as `@SET-MAKE@'.
- 	    $result_rules .= "$separator$comment$_\n";
+	    # configure is supposed to replace, such as `@SET-MAKE@',
+	    # or some part of a rule cut by an if/endif.
+  	    if ($cond ne "#")
+	      {
+		$result_rules .= "$separator$comment$_\n";
+	      }
  	    $comment = $separator = '';
  	}
     }
