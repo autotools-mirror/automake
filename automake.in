@@ -369,6 +369,8 @@ my $config_aux_dir_set_in_configure_in = 0;
 
 # Whether AM_GNU_GETTEXT has been seen in configure.ac.
 my $seen_gettext = 0;
+# Whether AM_GNU_GETTEXT([external]) is used.
+my $seen_gettext_external = 0;
 # Where AM_GNU_GETTEXT appears.
 my $ac_gettext_location;
 
@@ -4153,10 +4155,14 @@ sub handle_gettext
     my @subdirs = &variable_value_as_list_recursive ('SUBDIRS', 'all');
     macro_error ('SUBDIRS',
 		 "AM_GNU_GETTEXT used but `po' not in SUBDIRS")
-	if ! grep ('po', @subdirs);
+	if ! grep ($_ eq 'po', @subdirs);
+
+    # intl/ is not required when AM_GNU_GETTEXT is called with
+    # the `external' option.
     macro_error ('SUBDIRS',
 		 "AM_GNU_GETTEXT used but `intl' not in SUBDIRS")
-	if ! grep ('intl', @subdirs);
+	if (! $seen_gettext_external
+	    && ! grep ($_ eq 'intl', @subdirs));
 
     require_file ($ac_gettext_location, GNU, 'ABOUT-NLS');
 }
@@ -4757,6 +4763,7 @@ sub scan_autoconf_traces ($)
 	{
 	  $seen_gettext = $here;
 	  $ac_gettext_location = $here;
+	  $seen_gettext_external = grep ($_ eq 'external', @args);
 	}
       elsif ($macro eq 'AM_INIT_AUTOMAKE')
 	{
@@ -4952,10 +4959,12 @@ sub scan_one_autoconf_file
 	$seen_cc_c_o = $here if /AM_PROG_CC_C_O/;
 
 	# Check for NLS support.
-	if (/AM_GNU_GETTEXT/)
+	if (/\bAM_GNU_GETTEXT\b/)
 	{
 	    $seen_gettext = $here;
 	    $ac_gettext_location = $here;
+	    $seen_gettext_external = 1
+	        if /\bAM_GNU_GETTEXT\([^\)]*\bexternal\b/;
 	}
 
 	# Handle configuration headers.  A config header of `[$1]'

@@ -166,6 +166,8 @@ gcj.test \
 gcj2.test \
 gcj3.test \
 gcj4.test \
+gettext.test \
+gettext2.test \
 gnits.test \
 header.test \
 implicit.test \
