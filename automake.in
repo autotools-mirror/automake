@@ -2033,6 +2033,7 @@ sub handle_texinfo
     {
 	$texinfo_tex = $config_aux_dir . '/texinfo.tex';
 	&define_variable ('TEXINFO_TEX', $texinfo_tex);
+	$need_texi_file = 2; # so that we require_conf_file later
     }
     elsif (&variable_defined ('TEXINFO_TEX'))
     {
@@ -2043,7 +2044,7 @@ sub handle_texinfo
     }
     else
     {
-	$texinfo_tex = '.';
+	$texinfo_tex = '$(srcdir)/texinfo.tex';
 	$need_texi_file = 1;
     }
     local ($xxform);
@@ -2103,8 +2104,13 @@ sub handle_texinfo
     # Do some error checking.  Note that this file is not required
     # when in Cygnus mode; instead we defined TEXINFO_TEX explicitly
     # up above.
-    &require_file_with_line ('info_TEXINFOS', $FOREIGN, 'texinfo.tex')
-	if $need_texi_file && ! defined $options{'no-texinfo.tex'};
+    if ($need_texi_file && ! defined $options{'no-texinfo.tex'}) {
+      if ($need_texi_file > 1) {
+	&require_conf_file_with_line ('info_TEXINFOS', $FOREIGN, 'texinfo.tex');
+      } else {
+	&require_file_with_line ('info_TEXINFOS', $FOREIGN, 'texinfo.tex');
+      }
+    }
 }
 
 # Handle any man pages.
@@ -7132,7 +7138,7 @@ sub require_conf_file_with_line
     }
 }
 
-# Assumes that the line number is in Makefile.am.
+# Assumes that the line number is in configure.in.
 sub require_conf_file_with_conf_line
 {
     @require_file_paths = @config_aux_path;
