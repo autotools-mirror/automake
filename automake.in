@@ -654,7 +654,6 @@ sub get_object_extension
 		# Substitution from AM_C_PROTOTYPES.  This makes it be
 		# built only when necessary.
 		&define_configure_variable ('ANSI2KNR');
-		push (@all, '$(ANSI2KNR)');
 	    }
 
 	    $output_rules .= &file_contents ('compile-kr');
@@ -757,6 +756,17 @@ sub handle_yacc_lex_cxx
 	{
 	    &am_error ("C++ source seen but \`CXX' not defined in \`configure.in'");
 	}
+    }
+
+    #
+    # Handle some ansi2knr cleanup.
+    #
+    if (defined $options{'ansi2knr'} && keys %de_ansi_objects)
+    {
+	# Make all ._o files depend on ansi2knr.  Use a sneaky little
+	# hack to make it print nicely.
+	&pretty_print_rule ('', '', (keys %de_ansi_objects,
+				     ':', '$(ANSI2KNR)'));
     }
 
     #
@@ -865,21 +875,28 @@ sub handle_single_transform_list
 	    {
 		# FORTRAN support.  FIXME: not finished.
 	    }
-	    else
+	    elsif (s/\.[clysmM]$/._o/)
 	    {
-		# C, yacc, and lex need special $obj extension, for
-		# de-ansification.  Hopefully someday this will go
-		# away.
-		s/\.[cly]$/$obj/g;
+		# .c is C.  .l is lex.  .y is yacc.  .s is assembly.
+		# .M is Objective-C++.  .m is Objective-C.
 
-		# .s is assembly.  .M is Objective-C++.  .m is
-		# Objective-C.
-		s/\.[smM]$/$obj/g;
+		# Note: first we rewrite (eg) foo.c to foo._o and push
+		# the file onto the list of objects that require
+		# ansi2knr.  Then we rewrite ._o to $obj; $obj can be
+		# simply `.o' if deansification is not really
+		# required.
+		$de_ansi_objects{$_} = 1;
+		s/\._o$/$obj/;
 
 		# FIXME: of course, this should only happen for C
 		# source.  The multi-language support must really be
 		# cleaned up more globally.
 		$seen_c_source = 1;
+	    }
+	    else
+	    {
+		# FIXME include line number in error.
+		&am_error ("file \`$_' has unrecognized extension");
 	    }
 
 	    push (@result, $_);
@@ -3279,7 +3296,7 @@ sub pretty_print_internal
     local ($fill_length) = length ($fill);
     $fill_length += 7 * ($fill =~ tr/\t/\t/d);
 
-    local ($bol) = 0;
+    local ($bol) = ($head eq '');
     foreach (@values)
     {
 	# "71" because we also print a space.
@@ -3846,6 +3863,10 @@ sub initialize_per_input
 
     # This is a list of all targets to run during "make dist".
     @dist_targets = ();
+
+    # Keys in this hash are the names of ._o files which must depend
+    # on ansi2knr.  Ugh.
+    %de_ansi_objects = ();
 }
 
 
