@@ -3708,6 +3708,8 @@ sub handle_merge_targets
 }
 
 
+# &do_one_merge_target ($NAME, @VALUES)
+# -------------------------------------
 # Helper for handle_merge_targets.  Note that handle_merge_targets
 # relies on the fact that this doesn't add an extra \n at the end.
 sub do_one_merge_target
@@ -3761,6 +3763,7 @@ sub do_one_merge_target
     }
     &depend ('.PHONY', $name . '-am', $name);
 }
+
 
 # Handle check merge target specially.
 sub do_check_merge_target
@@ -5299,27 +5302,27 @@ sub target_defined
 # See if two conditionals are the same.
 sub conditional_same
 {
-    local ($cond1, $cond2) = @_;
+    my ($cond1, $cond2) = @_;
 
     return (&conditional_true_when ($cond1, $cond2)
 	    && &conditional_true_when ($cond2, $cond1));
 }
 
+
+# $BOOLEAN
+# &conditional_true_when ($COND, $WHEN)
+# -------------------------------------
 # See if a conditional is true.  Both arguments are conditional
 # strings.  This returns true if the first conditional is true when
 # the second conditional is true.
-sub conditional_true_when
+# For instance with $COND = @FOO@@BAR@, and $WHEN = @FOO@@BAR@@BAZ@,
+# obviously return 1, and 0 when, for instance, $WHEN = @FOO@.
+sub conditional_true_when ($$)
 {
-    local ($cond, $when) = @_;
-
-    # Check the easy case first.
-    if ($cond eq $when)
-    {
-	return 1;
-    }
+    my ($cond, $when) = @_;
 
     # Check each component of $cond, which looks @COND1@@COND2@.
-    foreach $comp (split ('@', $cond))
+    foreach my $comp (split ('@', $cond))
     {
 	# The way we split will give null strings between each
 	# condition.
@@ -5329,6 +5332,33 @@ sub conditional_true_when
 	{
 	    return 0;
 	}
+    }
+
+    return 1;
+}
+
+
+# $BOOLEAN
+# &conditionals_true_when (@CONDS, @WHENS)
+# ----------------------------------------
+# Same as above, but true if all the @CONDS are true when *ALL*
+# the @WHENS are sufficient.
+#
+# If there are no @CONDS, then return true, of course. *BUT*, even if there
+# are @CONDS but @WHENS is empty, return true.  This is counter intuitive,
+# and against all the rules of logic, but is needed by the current code.
+# FIXME: Do something saner when the logic of conditionals is understood.
+sub conditionals_true_when (@@)
+{
+    my (@conds, @whens) = @_;
+
+    foreach my $cond (@conds)
+    {
+      foreach my $when (@whens)
+      {
+	return 0
+	  unless conditional_true_when ($cond, $when);
+      }
     }
 
     return 1;
@@ -5463,12 +5493,14 @@ sub variable_conditions
     return @uniq_list;
 }
 
+# &variable_conditions_sub ($VAR, $PARENT, @PARENT_CONDS)
+# -------------------------------------------------------
 # A subroutine of variable_conditions.  We only return conditions
 # which are true for all the conditions in @PARENT_CONDS.
 sub variable_conditions_sub
 {
-    local ($var, $parent, @parent_conds) = @_;
-    local (@new_conds) = ();
+    my ($var, $parent, @parent_conds) = @_;
+    my @new_conds = ();
 
     if (defined $vars_scanned{$var})
     {
@@ -5494,8 +5526,8 @@ sub variable_conditions_sub
 
 	# Now we want to return all permutations of the subvariable
 	# conditions.
-	local (%allconds, $item);
-	foreach $item (@new_conds)
+	my %allconds = ();
+	foreach my $item (@new_conds)
 	{
 	    foreach (split ('@', $item))
 	    {
@@ -5519,21 +5551,8 @@ sub variable_conditions_sub
 	local ($cond) = shift (@condvals);
 	local ($val) = &unquote_cond_val (shift (@condvals));
 
-	if (@parent_conds)
-	{
-	    local ($ok) = 1;
-	    local ($parent_cond);
-	    foreach $parent_cond (@parent_conds)
-	    {
-		if (! &conditional_true_when ($parent_cond, $cond))
-		{
-		    $ok = 0;
-		    last;
-		}
-	    }
-
-	    next if ! $ok;
-	}
+	next
+	  if ! conditionals_true_when ((@parent_conds), ($cond));
 
 	push (@this_conds, $cond);
 
@@ -5599,21 +5618,8 @@ sub variable_conditions_sub
 	    }
 	    next if ! $ok;
 
-	    if (@parent_conds)
-	    {
-		local ($ok) = 1;
-		local ($parent_cond);
-		foreach $parent_cond (@parent_conds)
-		{
-		    if (! &conditional_true_when ($parent_cond, $perm))
-		    {
-			$ok = 0;
-			last;
-		    }
-		}
-
-		next if ! $ok;
-	    }
+	    next
+	      if ! conditionals_true_when ((@parent_conds), ($perm));
 
 	    # This permutation was not already handled, and is valid
 	    # for the parents.
@@ -5645,17 +5651,8 @@ sub variable_conditions_reduce
     local ($cond);
     foreach $cond (sort variable_conditions_cmp @conds)
     {
-	local ($ok) = 1;
-	local ($scan);
-	foreach $scan (@ret)
-	{
-	    if (&conditional_true_when ($cond, $scan))
-	    {
-		$ok = 0;
-		last;
-	    }
-	}
-	next if ! $ok;
+	next
+	  if ! conditionals_true_when (($cond), (@ret));
 	push (@ret, $cond);
     }
 
@@ -5694,7 +5691,7 @@ sub variable_conditions_permutations
 # are using the value of a variable.
 sub variable_conditionally_defined
 {
-    local ($var, $parent) = @_;
+    my ($var, $parent) = @_;
     if ($conditional{$var})
     {
 	if ($parent)
