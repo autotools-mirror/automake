@@ -39,7 +39,12 @@ AC_DEFUN([AM_PATH_LISPDIR],
  if test $EMACS != "no"; then
    if test x${lispdir+set} != xset; then
      AC_CACHE_CHECK([where .elc files should go], [am_cv_lispdir],
-       [AC_RUN_LOG([$EMACS -batch -q -eval '(while load-path (princ (concat (car load-path) "\n")) (setq load-path (cdr load-path)))' >conftest.out])
+       [# If $EMACS isn't GNU Emacs or XEmacs, this can blow up pretty badly
+  # Some emacsen will start up in interactive mode, requiring C-x C-c to exit,
+  #  which is non-obvious for non-emacs users.
+  # Redirecting /dev/null should help a bit; pity we can't detect "broken"
+  #  emacsen earlier and avoid running this altogether.
+  AC_RUN_LOG([$EMACS -batch -q -eval '(while load-path (princ (concat (car load-path) "\n")) (setq load-path (cdr load-path)))' </dev/null >conftest.out])
         am_cv_lispdir=`sed -n \
        -e 's,/$,,' \
        -e '/.*\/lib\/\(x\?emacs\/site-lisp\)$/{s,,${libdir}/\1,;p;q;}' \
