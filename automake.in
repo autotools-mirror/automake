@@ -1,4 +1,5 @@
-#! /bin/sh
+#!@PERL@
+# -*- perl -*-
 # @configure_input@
 
 # automake - create Makefile.in from Makefile.am
@@ -18,596 +19,950 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-# Sample usage: automake Makefile lib/Makefile src/Makefile man/Makefile
-# Written by David Mackenzie <djm@gnu.ai.mit.edu>.
+# Originally written by David Mackenzie <djm@gnu.ai.mit.edu>.
+# Perl reimplementation by Tom Tromey <tromey@drip.colorado.edu>.
 
-# Caveat: must use all lowercase variables in this file.  User
-# Makefile.am can cause any uppercase variable to be set.
 
-version=@VERSION@
+# Parameters set by configure.  Not to be changed.
+$PACKAGE = "@PACKAGE@";
+$VERSION = "@VERSION@";
+$prefix = "@prefix@";
+$am_dir = "@datadir@/@PACKAGE@";
 
-# We need prefix because datadir might depend on it.
-prefix=@prefix@
-am_dir=@datadir@/@PACKAGE@
+# Commonly found files we look for and automatically include in
+# DIST_FILES.
+@common_files =
+    (
+     "THANKS", "TODO", "README", "NEWS", "COPYING", "COPYING.LIB",
+     "INSTALL", "ABOUT-NLS", "ChangeLog", "configure", "configure.in",
+     "config.guess", "config.sub", "mkinstalldirs", "install-sh",
+     "texinfo.tex"
+     );
 
-# These are commonly found files that we look for and automatically
-# include in DIST_FILES.  NOTE if you add something here, make sure
-# you add it in the right place -- that is, so that the "--help" still
-# lines up nicely.
-common='THANKS TODO README NEWS COPYING COPYING.LIB INSTALL ABOUT-NLS ChangeLog configure configure.in config.guess config.sub mkinstalldirs install-sh texinfo.tex'
-
-# $echo will eventually be used to handle NLS matters.
-echo=echo
-
-mfiles=
-am_usedeps=yes
-am_incdeps=no
-while test $# -gt 0; do
-   case "$1" in
-    --help | --h* )
-       $echo "Usage: automake [OPTION]... [Makefile]..."
-       $echo "\
-  --amdir=DIR           directory storing config files
+$USAGE = "  --amdir=DIR           directory storing config files
   --help                print this help, then exit
   --version             print version number, then exit
-  --include-deps        include generated dependencies in Makefile"
-       echo
-       $echo "Files which are automatically distributed, if found:"
-       set $common
-       while test $# -gt 0; do
-	  echo "  $1		$2"
-	  shift
-	  # Ignore errors here, in case we have an odd number.
-	  shift 2>/dev/null
-       done
-       exit 0
-       ;;
+  --include-deps        include generated dependencies in Makefile\n";
 
-    --version | --v* )
-       $echo "Automake version $version"
-       exit 0
-       ;;
+
 
-    --amdir=* | --a*=* )
-       am_dir="`echo \"${1}\" | sed -e 's/^[^=]*=//'`"
-       ;;
+# This is TRUE if GNU make specific automatic dependency generation
+# code should be included in generated Makefile.in.
+$use_dependencies = 1;
 
-    --amdir | --a* )
-       if test $# -eq 1; then
-	  $echo "automake: no argument given for option \`$1'" 1>&2
-	  exit 1
-       fi
-       shift
-       am_dir="${1}"
-       ;;
+# This holds our (eventual) exit status.  We don't actually exit until
+# we have processed all input files.
+$exit_status = 0;
 
-    --include-deps | --i*)
-       am_incdeps=yes
-       am_usedeps=no
-       ;;
+# These two variables are used when generating each Makefile.in.  They
+# hold the Makefile.in until it is ready to be printed.
+$output_rules = '';
+$output_vars = '';
+$output_trailer = '';
 
-    -- ) # Stop option processing.
-       shift
-       while test $# -gt 0; do
-	  mfiles="$mfiles $1"
-	  shift
-       done
-       break
-       ;;
+# Suffixes found during a run.
+@suffixes = ();
 
-    -*)
-       # FIXME consider "-" meaning stdin as input?
-       $echo "automake: unrecognized option -- \`$1'" 1>&2
-       exit 1
-       ;;
+# This holds the contents of a Makefile.am, as parsed by read_am_file.
+%contents = ();
 
-    * )
-       mfiles="$mfiles $1"
-       ;;
-   esac
-   shift
-done
+# This holds the "relative directory" of the current Makefile.in.  Eg
+# for src/Makefile.in, this is "src".
+$relative_dir = '';
 
-test -n "$mfiles" || {
-   # Look around.
-   mfiles=`echo */Makefile.am`
-   if test "$mfiles" = '*/Makefile.am'; then
-      mfiles=
-   else
-      mfiles=`echo "$mfiles" | sed 's/\.am//g'`
-   fi
+# This holds a list of files that are included in the distribution.
+@dist_common = ();
 
-   if test -f Makefile.am; then
-      mfiles="Makefile $mfiles"
-   fi
+# List of dependencies for the obvious targets.
+@install_data = ();
+@install_exec = ();
+@uninstall = ();
 
-   if test -n "$mfiles"; then
-      $echo "automake: using $mfiles" 1>&2
-   else
-      $echo "automake: no \"Makefile.am\" found or specified" 1>&2
-      exit 1
-   fi
+@info = ();
+@dvi = ();
+@all = ('${ALL}');
+@check = ();
+
+# TRUE if current directory holds any C source files.
+$dir_holds_sources = 0;
+
+# TRUE if install targets should work recursively.
+$recursive_install = 0;
+
+
+
+# Parse command line.
+@input_files = &parse_arguments (@ARGV);
+
+# Now do all the work on each file.
+foreach $am_file (@input_files)
+{
+    if (! -f ($am_file . '.am'))
+    {
+	print STDERR "automake: $am_file" . ".am: no such file\n";
+	$exit_status = 1;
+    }
+    else
+    {
+	&generate_makefile ($am_file);
+    }
+}
+
+exit $exit_status;
+
+
+################################################################
+
+# Parse command line.
+sub parse_arguments
+{
+    local (@arglist) = @_;
+    local (@make_list);
+
+    while ($#arglist >= 0)
+    {
+	if ($arglist[0] eq "--version")
+	{
+	    print "Automake version $VERSION\n";
+	    exit 0;
+	}
+	elsif ($arglist[0] eq "--help")
+	{
+	    &usage;
+	}
+	elsif ($arglist[0] =~ /^--amdir=(.+)$/)
+	{
+	    $am_dir = $1;
+	}
+	elsif ($arglist[0] eq '--amdir')
+	{
+	    if ($#arglist == 1)
+	    {
+		print STDERR
+		    "automake: no argument given for option \`$arglist[0]'\n";
+		exit 1;
+	    }
+	    shift (@arglist);
+	    $am_dir = $arglist[0];
+	}
+	elsif ($arglist[0] eq '--include-deps')
+	{
+	    $use_dependencies = 0;
+	}
+	elsif ($arglist[0] eq '--')
+	{
+	    # Stop option processing.
+	    shift (@arglist);
+	    push (@make_list, @arglist);
+	    last;
+	}
+	elsif ($arglist[0] =~ /^-/)
+	{
+	    print STDERR "automake: unrecognized option -- \`$arglist[0]'\n";
+	    exit 1;
+	}
+	else
+	{
+	    push (@make_list, $arglist[0]);
+	}
+
+	shift (@arglist);
+    }
+
+    if ($#make_list < 0)
+    {
+	# Look around for some files.
+	push (@make_list, 'Makefile') if -f 'Makefile.am';
+
+	foreach (<*/Makefile.am>)
+	{
+	    s/\.am$//;
+	    push (@make_list, $_);
+	}
+
+	if ($#make_list >= 0)
+	{
+	    print "automake: using ", join (' ', @make_list), "\n";
+	}
+	else
+	{
+	    print STDERR "automake: no \"Makefile.am\" found or specified\n";
+	    exit 1;
+	}
+    }
+
+    return (@make_list);
+}
+
+################################################################
+
+# Generate a Makefile.in given the name of the corresponding Makefile.
+sub generate_makefile
+{
+    local ($makefile) = @_;
+    
+    print "creating ", $makefile, ".in\n";
+
+    $relative_dir = &dirname ($makefile);
+    $output_rules = '';
+    $output_vars = '';
+    $output_trailer = '';
+    @suffixes = ();
+    %contents = ();
+    @dist_common = ();
+    @install_data = ();
+    @install_exec = ();
+    @uninstall = ();
+    $dir_holds_sources = 0;
+    $recursive_install = 0;
+    @info = ();
+    @dvi = ();
+    @all = ('${ALL}');
+    @check = ();
+
+    # Generate header before reading .am file.  The header must come
+    # before anything else, and read_am_file copies code into the
+    # output.
+    &generate_header;
+
+    # This is always the default target.  This gives us freedom to do
+    # things in whatever order is convenient.
+    $output_rules .= "default: all\n\n";
+
+    &read_am_file ($makefile . '.am');
+
+    # Program stuff.
+    local ($programs) = (defined ($contents{'AM_PROGRAMS'})
+			 ? $contents{'AM_PROGRAMS'}
+			 : $contents{'PROGRAMS'});
+    local ($libprograms) = (defined ($contents{'AM_LIBPROGRAMS'})
+			    ? $contents{'AM_LIBPROGRAMS'}
+			    : $contents{'LIBPROGRAMS'});
+    local ($libraries) = (defined ($contents{'AM_LIBRARIES'})
+			  ? $contents{'AM_LIBRARIES'}
+			  : $contents{'LIBRARIES'});
+    local ($scripts) = (defined ($contents{'AM_SCRIPTS'})
+			? $contents{'AM_SCRIPTS'}
+			: $contents{'SCRIPTS'});
+    local ($libscripts) = (defined ($contents{'AM_LIBSCRIPTS'})
+			   ? $contents{'AM_LIBSCRIPTS'}
+			   : $contents{'LIBSCRIPTS'});
+
+    &handle_programs ($programs, $libprograms, $libraries);
+    &handle_scripts ($scripts, $libscripts);
+    &handle_libraries ($libraries);
+
+    &handle_texinfo;
+    &handle_man_pages;
+    &handle_data;
+    &handle_subdirs;
+    &handle_configure;
+    &handle_tags;
+    &handle_dist;
+    &handle_dependencies;
+    &handle_footer;
+    &handle_merge_targets;
+
+    if (! open (GM_FILE, "> " . $makefile . ".in"))
+    {
+	print STDERR "automake: cannot open ", $makefile, ".in: ", $!, "\n";
+	$exit_status = 1;
+	return;
+    }
+
+    print GM_FILE $output_vars;
+    print GM_FILE $output_rules;
+    print GM_FILE $output_trailer;
+
+    close (GM_FILE);
+}
+
+################################################################
+
+# Generate header of Makefile.in.
+sub generate_header
+{
+    $output_vars =
+	($output_vars
+	 . "# Makefile.in generated automatically by automake "
+	 . $VERSION
+	 . " from Makefile.am\n");
+
+    $output_vars = $output_vars . &file_contents ('header-vars');
+    $output_rules = $output_rules . &file_contents ('header');
+}
+
+# Handle C programs and libraries.
+sub handle_programs
+{
+    local ($programs, $libprograms, $libraries) = @_;
+
+    if (!$programs && !$libprograms && !$libraries)
+    {
+	# None exist.
+	return;
+    }
+    $dir_holds_sources = 1;
+
+    # Boilerplate.
+    $output_vars .= &file_contents ('compile-vars');
+    $output_rules .= &file_contents ('compile');
+
+    # Check for automatic de-ANSI-fication.
+    local ($obj) = '.o';
+    push (@suffixes, '.c', '.o');
+    if (defined $contents{'@kr@'})
+    {
+	$obj = '${kr}.o';
+	$output_rules .= &file_contents ('compile-kr');
+	push (@suffixes, '.krc', '.krh', '.kro');
+    }
+
+    local (@sources, @objects);
+    push (@sources, '${SOURCES}') if (defined $contents{'SOURCES'});
+    push (@objects, '${OBJECTS}') if (defined $contents{'OBJECTS'});
+
+    local ($one_file);
+    foreach $one_file (split (' ', ($programs . ' '
+				    . $libprograms . ' '
+				    . $libraries)))
+    {
+	# Look for file_SOURCES and file_OBJECTS.  FIXME file_OBJECTS
+	# should probably not be used(?)
+	if (defined $contents{$one_file . "_SOURCES"})
+	{
+	    if (! defined $contents{$one_file . "_OBJECTS"})
+	    {
+		# Turn sources into objects.
+		$_ = $contents{$one_file . "_SOURCES"};
+
+		# Ugh: Perl syntax vs Emacs.
+		local ($krc1, $krc2) = ('\.\$\{kr\}c', '\.\$\(kr\)c');
+
+		s/\.cc/$obj/g;
+		s/$krc1/$obj/g;
+		s/$krc2/$obj/g;
+		s/\.[cCmylfs]/$obj/g;
+
+		$output_vars .= $one_file . "_OBJECTS = " . $_ . "\n";
+	    }
+
+	    push (@sources, '${' . $one_file . "_SOURCES}");
+	    push (@objects, '${' . $one_file . "_OBJECTS}");
+	}
+	else
+	{
+	    $output_vars .= ($one_file . "_SOURCES = " . $one_file . ".c\n"
+			     . $one_file . "_OBJECTS = ". $one_file
+			     . $obj . "\n");
+	    push (@sources, $one_file . '.c');
+	    push (@objects, $one_file . $obj);
+	}
+
+	if (defined $contents{'CONFIG_HEADER'})
+	{
+	    $output_rules .= ('$(' . $one_file . "_OBJECTS): "
+			      . $contents{'CONFIG_HEADER'} . "\n");
+	}
+    }
+
+    $output_vars .= "\n";
+
+    # Re-init SOURCES and OBJECTS.  FIXME other code shouldn't depend
+    # on this.
+    $contents{'SOURCES'} = join (' ', @sources);
+    $contents{'OBJECTS'} = join (' ', @objects);
+
+    # Some boilerplate, and install rules.
+    if ($programs)
+    {
+	$output_rules .= &file_contents ('programs');
+	push (@install_exec, "install-programs");
+	push (@uninstall, 'uninstall-programs');
+    }
+    if ($libprograms)
+    {
+	$output_rules .= &file_contents ('libprograms');
+	push (@install_exec, 'install-libprograms');
+	push (@uninstall, 'uninstall-libprograms');
+    }
+
+    # Handle linking.
+    if ($programs || $libprograms)
+    {
+	local ($fcont) = &file_contents ('program');
+	local ($munge);
+	foreach $one_file (split (' ', $programs . ' ' . $libprograms))
+	{
+	    if (! defined $contents{$one_file . "_LDADD"})
+	    {
+		# User didn't define prog_LDADD override.  So do it.
+		$output_vars .= $one_file . '_LDADD = ${LDADD}' . "\n";
+	    }
+
+	    ($munge = $fcont) =~ s/@PROGRAM@/$one_file/g;
+	    $output_rules .= $munge;
+	}
+    }
+}
+
+# Handle libraries.
+sub handle_libraries
+{
+    local ($libraries) = @_;
+
+    return if (!$libraries);
+
+    local (@liblist) = split (' ', $libraries);
+
+    $output_rules .= &file_contents ('libraries');
+    local ($onefile) = &file_contents ('library');
+    local ($onelib, $munge);
+    foreach $onelib (@liblist)
+    {
+	($munge = $onefile) =~ s/@LIBRARY@/$onelib/g;
+	$output_rules .= $munge;
+    }
+
+    # Turn "foo" into "libfoo.a" and include macro definition.
+    grep (($_ = 'lib' . $_ . '.a') && 0, @liblist);
+    $output_vars .= ("LIBFILES = " . join (' ', @liblist) . "\n\n"
+		     . &file_contents ('libraries-vars'));
+
+    push (@install_exec, 'install-libraries');
+    push (@uninstall, 'uninstall-libraries');
+}
+
+# Handle scripts.
+sub handle_scripts
+{
+    local ($scripts, $libscripts) = @_;
+
+    if ($scripts)
+    {
+	$output_rules .= &file_contents ('scripts');
+	push (@install_exec, 'install-scripts');
+	push (@uninstall, 'uninstall-scripts');
+    }
+
+    if ($libscripts)
+    {
+	$output_rules .= &file_contents ('libscripts');
+	push (@install_exec, 'install-libscripts');
+	push (@uninstall, 'uninstall-libscripts');
+    }
+}
+
+# Handle all Texinfo source.
+sub handle_texinfo
+{
+    return if (! defined $contents{TEXINFOS});
+
+    local (@texis) = split (' ', $contents{TEXINFOS});
+    if ($#texis > 0)
+    {
+	print STDERR "automake: sorry, only one file allowed in \`TEXINFOS'\n";
+	$exit_status = 1;
+	return;
+    }
+
+    local ($infobase);
+    ($infobase = $texis[0]) =~ s/\.texi$//;
+
+    # If 'version.texi' is referenced by input file, then include
+    # automatic versioning capability.
+    system ("grep version.texi " . $relative_dir . "/" . $texis[0]
+	    . " > /dev/null 2>&1");
+    if (!$?)
+    {
+	# Got a hit.
+	push (@texis, 'version.texi');
+	push (@dist_common, 'version.texi');
+	local ($tfile);
+	($tfile = &file_contents ('texi-version')) =~ s/@TEXI@/$texis[0]/g;
+	$output_rules = $output_rules . $tfile;
+    }
+
+    # If user specified file_TEXINFOS, then use that as explicit
+    # dependency list.
+    if (defined $contents{$infobase . "_TEXINFOS"})
+    {
+	push (@texis, "\$" . $infobase . '_TEXINFOS');
+	push (@dist_common, "\$" . $infobase . '_TEXINFOS');
+    }
+
+    if ($#texis >= 0)
+    {
+	$output_rules = ($output_rules . $infobase . ".info: "
+			 . join (' ', @texis) . "\n\n");
+    }
+
+    # Some boilerplate.
+    $output_vars = $output_vars . &file_contents ('texinfos-vars');
+    $output_rules = $output_rules . &file_contents ('texinfos');
+
+    push (@suffixes, '.texi', '.info', '.dvi');
+    push (@install_data, 'install-info');
+    push (@uninstall, 'uninstall-info');
+
+    push (@info, '$(INFO_DEPS)');
+    push (@dvi, '$(DVIS)');
+
+    $output_vars .= ("INFOS = " . $infobase . "info*\n"
+		     . "INFO_DEPS = " . $infobase . ".info\n"
+		     . "DVIS = " . $infobase . ".dvi\n\n");
+
+    # Do some error checking.
+    if (! -f ($relative_dir . "/texinfo.tex"))
+    {
+	print STDERR ("automake: \`TEXINFOS' defined in ", $relative_dir,
+		      ", but texinfo.tex does not exist there\n");
+    }
+}
+
+# Handle any man pages.
+sub handle_man_pages
+{
+    return if (! defined $contents{'MANS'});
+
+    $output_vars .= &file_contents ('mans-vars');
+    $output_rules .= &file_contents ('mans');
+
+    push (@install_data, 'install-man');
+    push (@uninstall, 'uninstall-man');
+}
+
+# Handle DATA and PACKAGEDATA.
+sub handle_data
+{
+    if (defined $contents{'DATA'})
+    {
+	$output_rules .= &file_contents ('data');
+	push (@install_data, 'install-ddata');
+	push (@uninstall, 'uninstall-ddata');
+    }
+
+    if (defined $contents{'PACKAGEDATA'})
+    {
+	$output_rules .= &file_contents ('packagedata');
+	push (@install_data, 'install-pdata');
+	push (@uninstall, 'uninstall-pdata');
+    }
+}
+
+# Handle TAGS.
+sub handle_tags
+{
+    if (defined ($contents{'SUBDIRS'}))
+    {
+	$output_rules .= &file_contents ('tags');
+    }
+    elsif ($dir_holds_sources || defined ($contents{'ETAGS_ARGS'}))
+    {
+	$output_rules .= &file_contents ('tags-subd');
+    }
+}
+
+# Handle 'dist' target.
+sub handle_dist
+{
+    # Look for common files that should be included in distribution.
+    local ($cfile);
+    foreach $cfile (@common_files)
+    {
+	if (-f ($relative_dir . "/" . $cfile))
+	{
+	    push (@dist_common, $cfile);
+	}
+    }
+
+    $output_vars .= "DIST_COMMON = " . join (' ', @dist_common) . "\n\n";
+
+    # Some boilerplate.
+    if ($relative_dir ne '.')
+    {
+	# In a subdirectory.
+	$output_vars .= (&file_contents ('dist-subd-vars')
+			 . "subdir = " . $relative_dir . "\n\n");
+	$output_rules .= &file_contents ('dist-subd');
+    }
+    else
+    {
+	$output_vars .= &file_contents ('dist-vars');
+	$output_rules .= &file_contents (defined ($contents{'SUBDIRS'})
+					 ? 'dist-subd-top'
+					 : 'dist');
+    }
+}
+
+# Handle auto-dependency code.
+sub handle_dependencies
+{
+    if ($use_dependencies)
+    {
+	# Include GNU-make-specific auto-dep code.
+	if ($dir_holds_sources)
+	{
+	    $output_rules .= &file_contents ('depend');
+	}
+    }
+    else
+    {
+	# Include any auto-generated deps that are present.
+	if (-d ($relative_dir . "/.deps") && -f ($relative_dir . ".deps/.P"))
+	{
+	    local ($depfile);
+	    local ($gpat) = $relative_dir . "/.deps/*.P";
+
+	    foreach $depfile (<${gpat}>)
+	    {
+		if (! open (DEP_FILE, $depfile))
+		{
+		    print STDERR "automake: couldn't open $depfile: $!\n";
+		    next;
+		}
+
+		$output_rules .= <DEP_FILE>;
+
+		close (DEP_FILE);
+	    }
+	}	
+    }
+}
+
+# Handle subdirectories.
+sub handle_subdirs
+{
+    return if (! defined ($contents{'SUBDIRS'}));
+
+    $output_rules .= &file_contents ('subdirs');
+
+    push (@all, "all-recursive");
+    push (@check, "check-recursive");
+    push (@info, "info-recursive");
+    push (@dvi, "dvi-recursive");
+
+    $recursive_install = 1;
+}
+
+# Handle remaking and configure stuff.
+sub handle_configure
+{
+    if ($relative_dir ne '.')
+    {
+	# In subdirectory.
+	$output_rules .= &file_contents ('remake-subd');
+    }
+    else
+    {
+	if (-f 'aclocal.m4')
+	{
+	    # FIXME use dist_common here.
+	    $output_vars .= "ACLOCAL = aclocal.m4\n";
+	}
+	$output_rules .= &file_contents ('remake');
+    }
+
+    if (defined ($configure{'CONFIG_HEADER'})
+	&& $contents{'CONFIG_HEADER'} !~ m,/,)
+    {
+	# Header defined and in this directory.
+	# FIXME use dist_common here where appropriate.
+	if (-f 'acconfig.h')
+	{
+	    $output_vars .= "ACCONFIG = acconfig.h\n";
+	}
+	if (-f 'config.h.top')
+	{
+	    $output_vars .= "CONFIG_TOP = config.h.top\n";
+	}
+	if (-f 'config.h.bot')
+	{
+	    $output_vars .= "CONFIG_BOT = config.h.bot\n";
+	}
+
+	push (@dist_common, 'stamp-h.in', $contents{'CONFIG_HEADER'} . '.in');
+
+	$output_rules .= &file_contents ('remake-hdr');
+    }
+}
+
+# Handle footer elements.
+sub handle_footer
+{
+    $output_vars .= ("SOURCES = " . $contents{'SOURCES'} . "\n"
+		     . "OBJECTS = " . $contents{'OBJECTS'} . "\n\n");
+
+    $output_trailer .= ".SUFFIXES:\n";
+    if ($#suffixes >= 0)
+    {
+	$output_trailer .= ".SUFFIXES: " . join (' ', @suffixes) . "\n";
+    }
+    $output_trailer .= "\n" . &file_contents ('footer');
+}
+
+# There are several targets which need to be merged.  This is because
+# their complete definition is compiled from many parts.  Note that we
+# avoid double colon rules, otherwise we'd use them instead.
+sub handle_merge_targets
+{
+    &do_one_merge_target ('all', @all);
+    &do_one_merge_target ('info', @info);
+    &do_one_merge_target ('dvi', @dvi);
+    &do_one_merge_target ('check', @check);
+
+    # Handle the various install targets specially.  We do this so
+    # that (eg) "make install-exec" will run "install-exec-recursive"
+    # if required, but "make install" won't run it twice.  Step one is
+    # to see if the user specified local versions of any of the
+    # targets we handle.
+    if (defined $contents{'install-exec-local'})
+    {
+	push (@install_exec, 'install-exec-local');
+    }
+    if (defined $contents{'install-data-local'})
+    {
+	push (@install_data, 'install-data-local');
+    }
+    if (defined $contents{'uninstall-local'})
+    {
+	push (@uninstall, 'uninstall-local');
+    }
+
+    if (defined $contents{'install-local'})
+    {
+	print STDERR "automake: use \`install-data' or \`install-exec', not install\n";
+    }
+
+    # Step two: if we are doing recursive makes, write out the
+    # appropriate rules.
+    local (@install);
+    if ($recursive_install)
+    {
+	push (@install, 'install-recursive');
+	push (@uninstall, 'uninstall-recursive');
+
+	if ($#install_exec >= 0)
+	{
+	    $output_rules .= ('install-exec-am: '
+			      . join (' ', @install_exec)
+			      . "\n\n");
+	    @install_exec = ('install-exec-recursive', 'install-exec-am');
+	    push (@install, 'install-exec-am');
+	}
+	if ($#install_data >= 0)
+	{
+	    $output_rules .= ('install-data-am: '
+			      . join (' ', @install_data)
+			      . "\n\n");
+	    @install_data = ('install-data-recursive', 'install-data-am');
+	    push (@install, 'install-data-am');
+	}
+	if ($#uninstall >= 0)
+	{
+	    $output_rules .= ('uninstall-am: '
+			      . join (' ', @uninstall)
+			      . "\n\n");
+	    @uninstall = ('uninstall-recursive', 'uninstall-am');
+	}
+    }
+
+    # Step three: print definitions users can use.
+    if ($#install_exec >= 0)
+    {
+	$output_rules .= ("install-exec: "
+			  . join (' ', @install_exec)
+			  . "\n\n");
+	push (@install, 'install-exec') if (!$recursive_install);
+    }
+    if ($#install_data >= 0)
+    {
+	$output_rules .= ("install-data: "
+			  . join (' ', @install_data)
+			  . "\n\n");
+	push (@install, 'install-data') if (!$recursive_install);
+    }
+
+    $output_rules .= ('install: '
+		      . join (' ', @install)
+		      . "\n\n"
+		      . 'uninstall: '
+		      . join (' ', @uninstall)
+		      . "\n\n");
+}
+
+# Helper for handle_merge_targets.
+sub do_one_merge_target
+{
+    local ($name, @values) = @_;
+
+    if (defined $contents{$name . '-local'})
+    {
+	# User defined local form of target.  So include it.
+	push (@values, $name . '-local');
+    }
+
+    $output_rules .= $name . ": " . join (' ', @values) . "\n\n";
+}
+
+################################################################
+
+# Read Makefile.am and set up %contents.  Simultaneously copy lines
+# from Makefile.am into $output_rules or $output_vars as appropriate.
+# NOTE we put rules in the trailer section.  We want user rules
+# to come after our generated stuff.
+sub read_am_file
+{
+    local ($amfile) = @_;
+
+    if (! open (AMFILE, $amfile))
+    {
+	print STDERR "automake: couldn't open $amfile: $!\n";
+	exit 1;
+    }
+
+    local ($saw_bk) = 0;
+    local ($was_rule) = 0;
+    local ($last_var_name) = '';
+
+    while (<AMFILE>)
+    {
+	chop;
+
+	if ($saw_bk)
+	{
+	    if ($was_rule)
+	    {
+		$output_trailer .= $_ . "\n";
+	    }
+	    else
+	    {
+		$output_vars .= $_ . "\n";
+		if (substr ($_, -1) eq "\\")
+		{
+		    $contents{$last_var_name} .= substr ($_, 0,
+							 length ($_) - 1);
+		}
+		else
+		{
+		    $contents{$last_var_name} .= $_;
+		}
+	    }
+	}
+	elsif (m/^ *([a-zA-Z_.][a-zA-Z0-9_.]*) *:/)
+	{
+	    # Found a rule.
+	    $was_rule = 1;
+	    # Value here doesn't matter; for targets we only note
+	    # existence.
+	    $contents{$1} = 1;
+	    $output_trailer .= $_ . "\n";
+	}
+	elsif (m/^ *([A-Za-z][A-Za-z0-9_]*)[ 	]*=[ 	]*(.*)$/)
+	{
+	    # Found a variable reference.
+	    $was_rule = 0;
+	    $last_var_name = $1;
+	    if (substr ($2, -1) eq "\\")
+	    {
+		$contents{$1} = substr ($2, 0, length ($2) - 1);
+	    }
+	    else
+	    {
+		$contents{$1} = $2;
+	    }
+	    $output_vars .= $_ . "\n";
+	}
+	elsif (m/^$/)
+	{
+	    # Special rule: if looking at a blank line, append it to
+	    # whatever we saw last.
+	    if ($was_rule)
+	    {
+		$output_trailer .= "\n";
+	    }
+	    else
+	    {
+		$output_vars .= "\n";
+	    }
+	}
+	else
+	{
+	    # This isn't an error; it is probably a continued rule.
+	    # In fact, this is what we assume.
+	    $output_trailer .= $_ . "\n";
+	}
+
+	$saw_bk = (substr ($_, -1) eq "\\");
+    }
+
+    # Include some space after user code.
+    $output_vars .= "\n";
+    $output_trailer .= "\n";
 }
 
 
-am_status=0
+################################################################
 
-# Some handy sed scripts.
-am_rmnl=$am_dir/nl-remove.sed
-am_ass=$am_dir/hack-make.sed
+# Return contents of a file from $am_dir.
+sub file_contents
+{
+    local ($basename) = @_;
+    local ($file) = $am_dir . '/' . $basename . '.am';
 
-for am_makefile in $mfiles; do
-  if test ! -f ${am_makefile}.am; then
-     $echo "automake: ${am_makefile}.am: No such honkin' file" 1>&2
-     am_status=1
-     continue
-  fi
+    if (! open (FC_FILE, $file))
+    {
+	print STDERR "automake: installation error: cannot open \"$file\"\n";
+	exit 1;
+    }
 
-(
-  am_localstatus=0
+    # Yes, we really want to slurp it.
+    local ($results) = join ('', <FC_FILE>);
 
-  $echo "creating ${am_makefile}.in"
+    close (FC_FILE);
 
-  # Find our directory relative to top.
-  am_reldir=`echo "$am_makefile" | sed 's,//*[^/][^/]*$,,g'`
-  if test "$am_reldir" = "$am_makefile"; then
-     # Bogus.
-     am_reldir=.
-  fi
-
-  exec 4> ${am_makefile}.vars
-  exec 5> ${am_makefile}.rules
-
-  echo "# Makefile.in generated automatically by automake $version from Makefile.am." >&4
-  cat $am_dir/header-vars.am >&4
-  cat $am_dir/header.am >&5
-
-  DEFS= INCLUDES= CPPFLAGS= CFLAGS=
-  SOURCES= CONFIG_HEADER= SUBDIRS= PROGRAMS= LIBPROGRAMS= SCRIPTS= LIBSCRIPTS=
-  LIBRARIES= TEXINFOS= MANS= AM_PROGRAMS=
-  am_suffixes=
-  am_recursive_install=no
-  am_dist_common=
-  # The following are targets that formerly were implemented as
-  # double-colon rules.  Nowadays we have to construct such lists
-  # explicitly.
-  installexec= uninstall= id= tags= info= dvi= check=
-  installdata= all='${ALL}' install=
-
-  eval `sed -n -f $am_rmnl ${am_makefile}.am | sed -n -f $am_ass`
-
-  #
-  # If a variable is set at configure time, we still need to know the
-  # values it can assume (statically).  This is done using the AM_
-  # forms in the Makefile.am.  Handle it now.
-  #
-  test -n "$AM_PROGRAMS" && {
-     PROGRAMS=$AM_PROGRAMS
-  }
-  test -n "$AM_LIBPROGRAMS" && {
-     LIBPROGRAMS=$AM_LIBPROGRAMS
-  }
-  test -n "$AM_SCRIPTS" && {
-     SCRIPTS=$AM_SCRIPTS
-  }
-  test -n "$AM_LIBSCRIPTS" && {
-     LIBSCRIPTS=$AM_LIBSCRIPTS
-  }
-  test -n "$AM_LIBRARIES" && {
-     LIBRARIES=$AM_LIBRARIES
-  }
-
-  if grep @kr@ ${am_makefile}.am >/dev/null; then
-    kr='${kr}'
-  else
-    kr=
-  fi
-
-  if test -n "$PROGRAMS$LIBPROGRAMS$LIBRARIES"; then
-    cat $am_dir/compile-vars.am >&4
-    cat $am_dir/compile.am >&5
-
-    am_suffixes=".c .o $am_suffixes"
-
-    # Check for automatic de-ANSIfication.
-    if grep @kr@ ${am_makefile}.am >/dev/null; then
-       cat $am_dir/compile-kr.am >&5
-       am_suffixes=".krc .krh .kro $am_suffixes"
-    fi
-
-    for am_file in $PROGRAMS $LIBPROGRAMS $LIBRARIES; do
-       if eval "test \"\$var_${am_file}_SOURCES\" = explicit"; then
-	  if eval "test \"\$var_${am_file}_OBJECTS\" = explicit"; then
-	     :
-	  else
-	     sed -n -f $am_rmnl ${am_makefile}.am |
-	     sed -n "/^[	 ]*${am_file}_SOURCES[	 ]*=/{
-s/SOURCES/OBJECTS/
-s/@[^@]*@//g
-s/\$([^)]*)//g
-s/\${[^}]*}//g
-s/\\.cc/.${kr}o/g
-s/\\.\${kr}c/.${kr}o/g
-s/\\.\$(kr)c/.${kr}o/g
-s/\\.[cCmylfs]/.${kr}o/g
-p
-}" >&4
-	  fi
-	  SOURCES="$SOURCES \${${am_file}_SOURCES}"
-	  OBJECTS="$OBJECTS \${${am_file}_OBJECTS}"
-       else
-	  echo "${am_file}_SOURCES = ${am_file}.c" >&4
-	  echo "${am_file}_OBJECTS = ${am_file}.${kr}o" >&4
-          SOURCES="$SOURCES ${am_file}.c"
-	  OBJECTS="$OBJECTS ${am_file}.${kr}o"
-       fi
-       if test -n "$CONFIG_HEADER"; then
-	  echo "\$(${am_file}_OBJECTS): $CONFIG_HEADER" >&5
-       fi
-    done
-  fi
-
-
-  #
-  # Boilerplate for scripts or programs.
-  #
-  if test -n "$PROGRAMS"; then
-     cat $am_dir/programs.am >&5
-     installexec="install-programs $installexec"
-     uninstall="uninstall-programs $uninstall"
-  fi
-  if test -n "$SCRIPTS"; then
-     cat $am_dir/scripts.am >&5
-     installexec="install-scripts $installexec"
-     uninstall="uninstall-scripts $uninstall"
-  fi
-  if test -n "$LIBPROGRAMS"; then
-     cat $am_dir/libprograms.am >&5
-     installexec="install-libprograms $installexec"
-     uninstall="uninstall-libprograms $uninstall"
-  fi
-  if test -n "$LIBSCRIPTS"; then
-     cat $am_dir/libscripts.am >&5
-     installexec="install-libscripts $installexec"
-     uninstall="uninstall-libscripts $uninstall"
-  fi
-
-  if test -n "$PROGRAMS$LIBPROGRAMS$SCRIPTS$LIBSCRIPTS"; then
-    if test -n "$PROGRAMS$LIBPROGRAMS"; then
-       for am_prog in $PROGRAMS $LIBPROGRAMS; do
-	  # If `prog_LDADD' is explicitly defined, use it.  Otherwise,
-	  # use LDADD.
-	  eval "test \"\$var_${am_prog}_LDADD\" = explicit" || {
-	     # Not set, so set it.
-	     echo "${am_prog}_LDADD = \${LDADD}" >&5
-	  }
-
-	  # Insert rule for this target, unless it is explicitly given
-	  # in Makefile.am.
-	  eval "test \"\$target_$am_prog\" != explicit" &&
-	  sed "s/@PROGRAM@/$am_prog/g" $am_dir/program.am >&5
-       done
-    fi
-  fi
-
-  if test -n "$LIBRARIES"; then
-    echo "LIBFILES = " `echo "$LIBRARIES"|sed 's/\([a-zA-Z0-9_][a-zA-Z0-9_]*\)/lib\1.a/g'` >&4
-    cat $am_dir/libraries-vars.am >&4
-    cat $am_dir/libraries.am >&5
-
-    installexec="install-libraries $installexec"
-    uninstall="uninstall-libraries $uninstall"
-
-    for am_lib in $LIBRARIES; do
-      sed "s/@LIBRARY@/$am_lib/g" $am_dir/library.am >&5
-    done
-  fi
-
-  if test -n "$TEXINFOS"; then
-     # Give an error if more than one texinfo is defined -- we
-     # can't handle that.  But how to count?  Sigh.  We do the naive,
-     # broken thing.
-     set $TEXINFOS
-     if test $# -gt 1; then
-	$echo "automake: $am_makefile specified more than one file in \`TEXINFOS'"
-	am_localstatus=1
-     else
-	am_infobase=`echo "$TEXINFOS" | sed 's/\.texi//'`
-
-	am_deps="$TEXINFOS"
-	# Only do version.texi if requested.  FIXME error if .texi
-	# file does not exist?
-	if grep version.texi $am_reldir/$TEXINFOS > /dev/null 2>&1; then
-	   am_deps="version.texi $am_deps"
-	   am_dist_common="version.texi $am_dist_common"
-	   sed "s/@TEXI@/$TEXINFOS/g" $am_dir/texi-version.am >&5
-	fi
-	if eval "test \"\$var_${am_infobase}_TEXINFOS\" = explicit"; then
-	   # User supplied eg automake_TEXINFOS.  So use those as
-	   # dependencies.
-	   am_deps="\$(${am_infobase}_TEXINFOS) $am_deps"
-	   am_dist_common"\$(${am_infobase}_TEXINFOS) $am_dist_common"
-	fi
-
-	if test -n "$am_deps"; then
-	   echo "${am_infobase}.info: $am_deps" >&5
-	   echo >&5
-	fi
-
-	cat $am_dir/texinfos-vars.am >&4
-	cat $am_dir/texinfos.am >&5
-	am_suffixes=".texi .info .dvi $am_suffixes"
-	installdata="install-info $installdata"
-	uninstall="uninstall-info $uninstall"
-	info="\$(INFO_DEPS) $info"
-	dvi="\$(DVIS) $dvi"
-
-	echo "$TEXINFOS" | sed 's/^/INFOS = /; s/\.texi/.info*/g' >&4
-	echo "$TEXINFOS" | sed 's/^/INFO_DEPS = /; s/\.texi/.info/g' >&4
-	echo "$TEXINFOS" | sed 's/^/DVIS = /; s/\.texi/.dvi/g' >&4
-     fi
-  fi
-
-  if test -n "$MANS"; then
-    cat $am_dir/mans-vars.am >&4
-    cat $am_dir/mans.am >&5
-
-    installdata="install-man $installdata"
-    uninstall="uninstall-man $uninstall"
-  fi
-
-
-  #
-  # Handle DATA and PACKAGEDATA.
-  #
-  if test -n "$DATA"; then
-     cat $am_dir/data.am >&5
-     installdata="install-ddata $installdata"
-     uninstall="uninstall-ddata $uninstall"
-  fi
-  if test -n "$PACKAGEDATA"; then
-     cat $am_dir/packagedata.am >&5
-     installdata="install-pdata $installdata"
-     uninstall="uninstall-pdata $uninstall"
-  fi
-
-  case "$SUBDIRS" in
-   "")
-      if grep @kr@ ${am_makefile}.am >/dev/null; then
-	 cat $am_dir/clean-kr.am >&5
-      else
-	 cat $am_dir/clean.am >&5
-      fi
-      ;;
-   *)
-      cat $am_dir/subdirs.am >&5
-
-      all="all-recursive $all"
-      check="check-recursive $check"
-      info="info-recursive $info"
-      dvi="dvi-recursive $dvi"
-      am_recursive_install=yes
-      ;;
-  esac
-
-  case "$am_makefile" in
-   */*)
-      cat $am_dir/remake-subd.am >&5
-      ;;
-   *)
-      test -f aclocal.m4 && echo "ACLOCAL = aclocal.m4" >&4
-      cat $am_dir/remake.am >&5
-      ;;
-  esac
-
-  case "$CONFIG_HEADER" in
-  "") ;;
-  */*) ;; # It's in some other directory, so don't remake it in this one.
-  *)
-    test -f acconfig.h && echo "ACCONFIG = acconfig.h" >&4
-    test -f config.h.top && echo "CONFIG_TOP = config.h.top" >&4
-    test -f config.h.bot && echo "CONFIG_BOT = config.h.bot" >&4
-    am_dist_common="stamp-h.in ${CONFIG_HEADER}.in $am_dist_common"
-    cat $am_dir/remake-hdr.am >&5 ;;
-  esac
-
-  #
-  # Handle TAGS.
-  #
-  case "$am_makefile" in
-   */*)
-      if test -n "${SOURCES}${HEADERS}${ETAGS_ARGS}"; then
-	 cat $am_dir/tags-subd.am >&5
-      fi
-      ;;
-   *)
-      if test -n "${SUBDIRS}"; then
-	 cat $am_dir/tags.am >&5
-      else
-	 if test -n "${SOURCES}${HEADERS}${ETAGS_ARGS}"; then
-	    cat $am_dir/tags-subd.am >&5
-	 fi
-      fi
-      ;;
-  esac
-
-  #
-  # Handle "dist" targets.
-  #
-
-  # Look for certain common files and make sure they are included.
-  for cfile in $common; do
-     if test -f $am_reldir/$cfile; then
-	am_dist_common="$am_dist_common $cfile"
-     fi
-  done
-  echo "DIST_COMMON = $am_dist_common" >&4
-
-  # Include "dist" boilerplate.
-  case "$am_makefile" in
-  */*) 
-     cat $am_dir/dist-subd-vars.am >&4
-     echo "subdir = $am_reldir" >&5
-     cat $am_dir/dist-subd.am >&5
-     ;;
-  *)
-     cat $am_dir/dist-vars.am >&4
-     if test -n "$SUBDIRS"; then
-	cat $am_dir/dist-subd-top.am >&5
-     else
-	cat $am_dir/dist.am >&5
-     fi
-     ;;
-  esac
-
-
-  #
-  # Handle auto-generating dependencies.
-  #
-  if test "$am_usedeps" = yes && test -n "$SOURCES"; then
-     # Include code to auto-generate dependencies.
-     cat $am_dir/depend.am >&5
-  fi
-  if test "$am_incdeps" = yes; then
-     # Include any already generated dependencies.
-     if test -d $am_reldir/.deps && test -f $am_reldir/.deps/empty.P; then
-	cat $am_reldir/.deps/*.P >&5
-     fi
-  fi
-
-  #
-  # Some final checks.
-  #
-  test -z "$TEXINFOS" || test -f $am_reldir/texinfo.tex || {
-     $echo "automake: ${am_makefile}.am defines TEXINFOS, but" 1>&2
-     $echo "automake: ${am_reldir}/texinfo.tex does not exist" 1>&2
-  }
-
-  case "$am_makefile" in
-   */*)
-      # In a subdirectory.
-      ;;
-
-   *)
-      # In top-level, or only, directory.
-      test -f $am_reldir/install-sh || {
-	 $echo "automake: $am_reldir/install-sh does not exist" 1>&2
-      }
-      test -f $am_reldir/mkinstalldirs || {
-	 $echo "automake: $am_reldir/mkinstalldirs does not exist" 1>&2
-      }
-      ;;
-  esac
-
-  # Copy from Makefile.am to output.
-  sed '/^[^#=]*:/,$d' ${am_makefile}.am >&4
-  sed -n '/^[^#=]*:/,$p' ${am_makefile}.am >&5
-  echo >&5
-
-  echo "SOURCES = $SOURCES" >&4
-  echo "OBJECTS = $OBJECTS" >&4
-  echo >&4
-
-  #
-  # Put .SUFFIXES way down at the bottom.
-  #
-  echo ".SUFFIXES:" >&5
-  if test -n "$am_suffixes"; then
-     echo ".SUFFIXES: $am_suffixes" >&5
-  fi
-  echo >&5
-
-  # Ditto .NOEXPORT.
-  cat $am_dir/footer.am >&5
-
-  # Output variable definitions.
-  exec 6> ${am_makefile}.in
-
-  cat ${am_makefile}.vars >&6
-
-  #
-  # Merge any targets that need to be merged.
-  #
-  for am_target in all info dvi check; do
-     # If user specified the local form of the target, then include it.
-     if eval "test \"\$target_${am_target}_local\" = explicit"; then
-	eval "${am_target}=\"${am_target}-local \$${am_target}\""
-     fi
-
-     # Always print these targets; GNU makefile standards require it.
-     eval "am_val=\"\$${am_target}\""
-     echo "${am_target}: ${am_val}" >&6
-     echo >&6
-  done
-
-  # Handle the various install targets specially.  We do this so that
-  # (eg) "make install-exec" will run "install-exec-recursive" if
-  # required, but "make install" won't run it twice.  Step one is to
-  # see if the user specified local versions of any of the targets we
-  # handle.
-  if test -n "$target_install_exec_local"; then
-     installexec="install-exec-local $installexec"
-  fi
-  if test -n "$target_uninstall_local"; then
-     uninstall="uninstall-local $uninstall"
-  fi
-  if test -n "$target_install_data_local"; then
-     installdata="install-data-local $installdata"
-  fi
-  # FIXME do install-local here?  Maybe make it an error and tell the
-  # user to use install-data or install-exec?
-
-  # Step two: if we are doing recursive makes, write out the
-  # appropriate rules.
-  if test $am_recursive_install = yes; then
-     install="install-recursive $install"
-     if test -n "$installexec"; then
-	echo "install-exec-am: $installexec" >&6
-	echo >&6
-	installexec="install-exec-recursive install-exec-am"
-	install="install-exec-am $install"
-     fi
-     if test -n "$installdata"; then
-	echo "install-data-am: $installdata" >&6
-	echo >&6
-	installdata="install-data-recursive install-data-am"
-	install="install-data-am $install"
-     fi
-     if test -n "$uninstall"; then
-	echo "uninstall-am: $uninstall" >&6
-	echo >&6
-	uninstall="uninstall-recursive uninstall-am"
-     fi
-  fi
-
-  # Step three: print definitions users can use.
-  if test -n "$installexec"; then
-     echo "install-exec: $installexec" >&6
-     echo >&6
-     if test $am_recursive_install = no; then
-	install="install-exec $install"
-     fi
-  fi
-  if test -n "$installdata"; then
-     echo "install-data: $installdata" >&6
-     echo >&6
-     if test $am_recursive_install = no; then
-	install="install-data $install"
-     fi
-  fi
-
-  echo "install: $install" >&6
-  echo >&6
-  echo "uninstall: $uninstall" >&6
-  echo >&6
-
-  cat ${am_makefile}.rules >&6
-  rm -f ${am_makefile}.vars ${am_makefile}.rules
-
-  exit $am_localstatus
-) || {
-   am_status=1
+    return $results;
 }
-done
 
-exit $am_status
+################################################################
+
+# Return directory name of file.
+sub dirname
+{
+    local ($file) = @_;
+    local ($sub);
+
+    ($sub = $file) =~ s,/+[^/]+,,g;
+    if ($sub eq $file)
+    {
+	$sub = '.';
+    }
+
+    return $sub;
+}
+
+################################################################
+
+# Print usage information.
+sub usage
+{
+    print "Usage: automake [OPTION] ... [Makefile]...\n";
+    print $USAGE;
+    print "\nFiles which are automatically distributed, if found:\n";
+    $~ = "USAGE_FORMAT";
+    local (@lcomm) = sort (@common_files);
+    local ($one, $two);
+    while ($#lcomm >= 0)
+    {
+	$one = shift (@lcomm);
+	$two = shift (@lcomm);
+	write;
+    }
+
+    exit 0;
+}
+
+format USAGE_FORMAT =
+  @<<<<<<<<<<<<<<<<    @<<<<<<<<<<<<<<<<
+  $one,                $two
+.
