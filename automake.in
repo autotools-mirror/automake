@@ -517,11 +517,19 @@ use constant VAR_MAKEFILE => 2; # Variable defined in Makefile.am.
 my %content_seen;
 
 # This holds the names which are targets.  These also appear in
-# %contents.
+# %contents.  $targets{TARGET}{COND} is the location of the definition
+# of TARGET for condition COND.
 my %targets;
 
-# Same as %VAR_VALUE, but for targets.
-my %target_conditional;
+# $target_source{TARGET}{COND} is the filename where TARGET
+# were defined for condition COND.  Note this must be a
+# filename, *without* any line number.
+my %target_source;
+
+# $target_owner{TARGET}{COND} the owner of TARGET in condition COND.
+my %target_owner;
+use constant TARGET_AUTOMAKE => 0; # Target defined by Automake.
+use constant TARGET_USER => 1;	# Target defined in the user's Makefile.am.
 
 # This is the conditional stack.
 my @cond_stack;
@@ -721,8 +729,8 @@ sub initialize_per_input ()
     %content_seen = ();
 
     %targets = ();
-
-    %target_conditional = ();
+    %target_source = ();
+    %target_owner = ();
 
     @cond_stack = ();
 
@@ -1186,6 +1194,14 @@ sub err_target ($$;%)
   msg_target ('error', @_);
 }
 
+# err_cond_target ($COND, $TARGETNAME, $MESSAGE, [%OPTIONS])
+# ----------------------------------------------------------
+# Uncategorized errors about conditional targets.
+sub err_cond_target ($$$;%)
+{
+  msg_cond_target ('error', @_);
+}
+
 # err_am ($MESSAGE, [%OPTIONS])
 # -----------------------------
 # Uncategorized errors about the current Makefile.am.
@@ -1211,13 +1227,24 @@ sub msg_var ($$$;%)
   msg $channel, $var_location{$macro}, $msg, %opts;
 }
 
+# msg_cond_target ($CHANNEL, $COND, $TARGETNAME, $MESSAGE, [%OPTIONS])
+# --------------------------------------------------------------------
+# Messages about conditional targets.
+sub msg_cond_target ($$$$;%)
+{
+  my ($channel, $cond, $target, $msg, %opts) = @_;
+  msg $channel, $targets{$target}{$cond}, $msg, %opts;
+}
+
 # msg_target ($CHANNEL, $TARGETNAME, $MESSAGE, [%OPTIONS])
 # --------------------------------------------------------
 # Messages about targets.
 sub msg_target ($$$;%)
 {
   my ($channel, $target, $msg, %opts) = @_;
-  msg $channel, $targets{$target}, $msg, %opts;
+  # Don't know which condition is concerned.  Pick any.
+  my $cond = (keys %{$targets{$target}})[0];
+  msg_cond_target ($channel, $cond, $target, $msg, %opts);
 }
 
 # msg_am ($CHANNEL, $MESSAGE, [%OPTIONS])
@@ -2913,21 +2940,22 @@ sub handle_lib_objects_cond
 	}
     }
 
-    if ($xname ne '')
+  if ($xname ne '')
     {
-	if (conditional_ambiguous_p ($xname . '_DEPENDENCIES', $cond) ne '')
+      my $depvar = $xname . '_DEPENDENCIES';
+      if ((conditional_ambiguous_p ($depvar, $cond,
+				    keys %{$var_value{$depvar}}))[0] ne '')
 	{
-	    # Note that we've examined this.
-	    &examine_variable ($xname . '_DEPENDENCIES');
+	  # Note that we've examined this.
+	  &examine_variable ($depvar);
 	}
-	else
+      else
 	{
-	    define_pretty_variable ($xname . '_DEPENDENCIES', $cond,
-				    @dep_list);
+	  define_pretty_variable ($depvar, $cond, @dep_list);
 	}
     }
 
-    return $seen_libobjs;
+  return $seen_libobjs;
 }
 
 # Canonicalize the input parameter
@@ -6034,51 +6062,54 @@ sub cond_stack_endif ($$$)
 sub check_ambiguous_conditional ($$)
 {
   my ($var, $cond) = @_;
-  my $message = conditional_ambiguous_p ($var, $cond);
+  my ($message, $ambig_cond) =
+    conditional_ambiguous_p ($var, $cond, keys %{$var_value{$var}});
   err_var $var, "$message\n" . macro_dump ($var)
     if $message;
 }
 
-# $STRING
-# conditional_ambiguous_p ($VAR, $COND)
-# -------------------------------------
-# Check for an ambiguous conditional.  Return an error message if we
-# have one, the empty string otherwise.
-sub conditional_ambiguous_p ($$)
+# $STRING, $AMBIG_COND
+# conditional_ambiguous_p ($WHAT, $COND, @CONDS)
+# ----------------------------------------------
+# Check for an ambiguous conditional.  Return an error message and
+# the other condition involved if we have one, two empty strings otherwise.
+#   WHAT:  the thing being defined
+#   COND:  the condition under which is is being defined
+#   CONDS: the conditons under which is had already been defined
+sub conditional_ambiguous_p ($$@)
 {
-    my ($var, $cond) = @_;
-    foreach my $vcond (keys %{$var_value{$var}})
+  my ($var, $cond, @conds) = @_;
+  foreach my $vcond (@conds)
     {
-       # Note that these rules doesn't consider the following
-       # example as ambiguous.
-       #
-       #   if COND1
-       #     FOO = foo
-       #   endif
-       #   if COND2
-       #     FOO = bar
-       #   endif
-       #
-       # It's up to the user to not define COND1 and COND2
-       # simultaneously.
-       my $message;
-       if ($vcond eq $cond)
-       {
-	   return "$var multiply defined in condition $cond";
-       }
-       elsif (&conditional_true_when ($vcond, $cond))
-       {
-	 return ("$var was already defined in condition $vcond, "
-		 . "which implies condition $cond");
-       }
-       elsif (&conditional_true_when ($cond, $vcond))
-       {
-	   return ("$var was already defined in condition $vcond, "
-		   . "which is implied by condition $cond");
-       }
-   }
-
-    return '';
+      # Note that these rules doesn't consider the following
+      # example as ambiguous.
+      #
+      #   if COND1
+      #     FOO = foo
+      #   endif
+      #   if COND2
+      #     FOO = bar
+      #   endif
+      #
+      # It's up to the user to not define COND1 and COND2
+      # simultaneously.
+      my $message;
+      if ($vcond eq $cond)
+	{
+	  return ("$var multiply defined in condition $cond", $vcond);
+	}
+      elsif (&conditional_true_when ($vcond, $cond))
+	{
+	  return ("$var was already defined in condition $vcond, "
+		  . "which implies condition $cond", $vcond);
+	}
+      elsif (&conditional_true_when ($cond, $vcond))
+	{
+	  return ("$var was already defined in condition $vcond, "
+		   . "which is implied by condition $cond", $vcond);
+	}
+    }
+  return ('', '');
 }
 
 # @MISSING_CONDS
@@ -6458,20 +6489,46 @@ sub variable_defined ($;$)
 {
     my ($var, $cond) = @_;
 
-    # Unfortunately we can't just check for $var_value{VAR}{COND}
-    # as this would make perl create $condition{VAR}, which we
-    # don't want.
-    if (!exists $var_value{$var})
+    if (! exists $var_value{$var}
+	&& (! defined $cond || ! exists $var_value{$var}{$cond}))
       {
-	err_target $var, "`$var' is a target; expected a variable"
-	  if defined $targets{$var};
-	# The variable is not defined
+	# VAR is not defined.
+
+	# Check there is no target defined with the name of the
+	# variable we check.
+
+	# adl> I'm wondering if this error still makes any sense today. I
+	# adl> guess it was because targets and variables used to share
+	# adl> the same namespace in older versions of Automake?
+	# tom> While what you say is definitely part of it, I think it
+	# tom> might also have been due to someone making a "spelling error"
+	# tom> -- writing "foo:..." instead of "foo = ...".
+	# tom> I'm not sure whether it is really worth diagnosing
+	# tom> this sort of problem.  In the old days I used to add warnings
+	# tom> and errors like this pretty randomly, based on bug reports I
+	# tom> got.  But there's a plausible argument that I was trying
+	# tom> too hard to prevent people from making mistakes.
+	if (exists $targets{$var}
+	    && (! defined $cond || exists $targets{$var}{$cond}))
+	  {
+	    for my $tcond ($cond || keys %{$targets{$var}})
+	      {
+		prog_error ("\$targets{$var}{$tcond} exists but "
+			    . "\$target_owner doesn't")
+		  unless exists $target_owner{$var}{$tcond};
+		# Diagnose the first user target encountered, if any.
+		# Restricting this test to user targets allows Automake
+		# to create rules for things like `bin_PROGRAMS = LDADD'.
+		if ($target_owner{$var}{$tcond} == TARGET_USER)
+		  {
+		    err_cond_target ($tcond, $var, "`$var' is a target; "
+				     . "expected a variable");
+		    return 0;
+		  }
+	      }
+	  }
 	return 0;
       }
-
-    # The variable is not defined for the given condition.
-    return 0
-      if $cond && !exists $var_value{$var}{$cond};
 
     # Even a var_value examination is good enough for us.  FIXME:
     # really should maintain examined status on a per-condition basis.
@@ -7287,22 +7344,27 @@ sub register_suffix_rule ($$$)
     }
 }
 
-# $BOOL
-# rule_define ($TARGET, $IS_AM, $COND, $WHERE)
-# --------------------------------------------
-# Define a new rule.  $TARGET is the rule name.  $IS_AM is a boolean
-# which is true if the new rule is defined by the user.  $COND is the
-# condition under which the rule is defined.  $WHERE is where the rule
-# is defined (file name or line number).  Returns true if it is ok to
-# define the rule, false otherwise.
-sub rule_define ($$$$)
+# @CONDS
+# rule_define ($TARGET, $SOURCE, $OWNER, $COND, $WHERE)
+# -----------------------------------------------------
+# Define a new rule.  $TARGET is the rule name.  $SOURCE
+# si the filename the rule comes from.  $OWNER is the
+# owener of the rule (TARGET_AUTOMAKE or TARGET_USER).
+# $COND is the condition string under which the rule is defined.
+# $WHERE is where the rule is defined (file name and/or line number).
+# Returns a (possibly empty) list of conditions where the rule
+# should be defined.
+sub rule_define ($$$$$)
 {
-  my ($target, $rule_is_am, $cond, $where) = @_;
+  my ($target, $source, $owner, $cond, $where) = @_;
+
+  # Don't even think about defining a rule in condition FALSE.
+  return () if $cond eq 'FALSE';
 
   # For now `foo:' will override `foo$(EXEEXT):'.  This is temporary,
   # though, so we emit a warning.
   (my $noexe = $target) =~ s,\$\(EXEEXT\)$,,;
-  if ($noexe ne $target && defined $targets{$noexe})
+  if ($noexe ne $target && exists $targets{$noexe}{$cond})
     {
       # The no-exeext option enables this feature.
       if (! defined $options{'no-exeext'})
@@ -7312,29 +7374,141 @@ sub rule_define ($$$$)
 	       . "change your target to read `$noexe\$(EXEEXT)'");
 	}
       # Don't define.
-      return 0;
+      return ();
     }
 
-  reject_target ($target,
-		 "$target defined both conditionally and unconditionally")
-    if ($cond
-	? ! exists $target_conditional{$target}
-	: exists $target_conditional{$target});
+  $target = $noexe;
+
+  # Diagnose target redefinitions.
+  if (exists $target_source{$target}{$cond})
+    {
+      # Sanity checks.
+      prog_error ("\$target_source{$target}{$cond} exists, but \$target_owner"
+		  . " doesn't.")
+	unless exists $target_owner{$target}{$cond};
+      prog_error ("\$target_source{$target}{$cond} exists, but \$targets"
+		  . " doesn't.")
+	unless exists $targets{$target}{$cond};
+
+      my $oldowner  = $target_owner{$target}{$cond};
+
+      # Don't mention true conditions in diagnostics.
+      my $condmsg = $cond ne 'TRUE' ? " in condition `$cond'" : '';
+
+      if ($owner == TARGET_USER)
+	{
+	  if ($oldowner eq TARGET_USER)
+	    {
+	      err ($where, "redefinition of `$target'$condmsg...");
+	      err_cond_target ($cond, $target,
+			       "... `$target' previously defined here.");
+	      return ();
+	    }
+	  else
+	    {
+	      # Since we parse the user Makefile.am before reading
+	      # the Automake fragments, this condition should never happen.
+	      prog_error ("user target `$target' seen after Automake's "
+			  . "definition\nfrom `$targets{$target}$condmsg'");
+	    }
+	}
+      else # $owner == TARGET_AUTOMAKE
+	{
+	  if ($oldowner == TARGET_USER)
+	    {
+	      # Don't overwrite the user definition of TARGET.
+	      return ();
+	    }
+	  else # $oldowner == TARGET_AUTOMAKE
+	    {
+	      # Automake should ignore redefinitions of its own
+	      # rules if they came from the same file.  This makes
+	      # it easier to process a Makefile fragment several times.
+	      # Hower it's an error if the target is defined in many
+	      # files.  E.g., the user might be using bin_PROGRAMS = ctags
+	      # which clashes with our `ctags' rule.
+	      # (It would be more accurate if we had a way to compare
+	      # the *content* of both rules.  Then $targets_source would
+	      # be useless.)
+	      my $oldsource = $target_source{$target}{$cond};
+	      return () if $source eq $oldsource;
+
+	      err ($where, "redefinition of `$target'$condmsg...");
+	      err_cond_target ($cond, $target,
+			       "... `$target' previously defined here.");
+	      return ();
+	    }
+	}
+      # Never reached.
+      prog_error ("Unreachable place reached.");
+    }
 
   # A GNU make-style pattern rule has a single "%" in the target name.
   msg ('portability', $where,
        "`%'-style pattern rules are a GNU make extension")
     if $target =~ /^[^%]*%[^%]*$/;
 
-  # Value here doesn't matter; for targets we only note existence.
-  $targets{$target} = $where;
-  if ($cond)
+  # Conditions for which the rule should be defined.
+  my @conds = $cond;
+
+  # Check ambiguous conditional definitions.
+  my ($message, $ambig_cond) =
+    conditional_ambiguous_p ($target, $cond, keys %{$targets{$target}});
+  if ($message)			# We have an ambiguty.
     {
-      if ($target_conditional{$target})
+      if ($owner == TARGET_USER)
 	{
-	  &check_ambiguous_conditional ($target, $cond);
+	  # For user rules, just diagnose the ambiguity.
+	  err $where, "$message ...";
+	  err_cond_target ($ambig_cond, $target,
+			   "... `$target' previously defined here.");
+	  return ();
 	}
-      $target_conditional{$target}{$cond} = $where;
+      else
+	{
+	  # FIXME: for Automake rules, we can't diagnose ambiguities yet.
+	  # The point is that Automake doesn't propagate conditionals
+	  # everywhere.  For instance &handle_PROGRAMS doesn't care if
+	  # bin_PROGRAMS was defined conditionally or not.
+	  # On the following input
+	  #   if COND1
+	  #   foo:
+	  #           ...
+	  #   else
+	  #   bin_PROGRAMS = foo
+	  #   endif
+	  # &handle_PROGRAMS will attempt to define a `foo:' rule
+	  # in condition TRUE (which conflicts with COND1).  Fixing
+	  # this in &handle_PROGRAMS and siblings seems hard: you'd
+	  # have to explain &file_contents what to do with a
+	  # conditional.  So for now we do our best *here*.  If `foo:'
+	  # was already defined in condition COND1 and we want to define
+	  # it in condition TRUE, then define it only in condition !COND1.
+	  # (See cond14.test and cond15.test for some test cases.)
+	  my @defined_conds = keys %{$targets{$target}};
+	  @conds = ();
+	  for my $undefined_cond (invert_conditions(@defined_conds))
+	    {
+	      push @conds, make_condition ($cond, $undefined_cond);
+	    }
+	  # No conditions left to define the rule.
+	  # Warn, because our workaround is meaningless in this case.
+	  if (scalar @conds == 0)
+	    {
+	      err $where, "$message ...";
+	      err_cond_target ($ambig_cond, $target,
+			       "... `$target' previously defined here.");
+	      return ();
+	    }
+	}
+    }
+
+  # Finally define this rule.
+  for my $c (@conds)
+    {
+      $targets{$target}{$c} = $where;
+      $target_source{$target}{$c} = $source;
+      $target_owner{$target}{$c} = $owner;
     }
 
   # Check the rule for being a suffix rule. If so, store in a hash.
@@ -7350,7 +7524,10 @@ sub rule_define ($$$$)
       register_suffix_rule ($where, $1, $2);
     }
 
-  return 1;
+  # Return "" instead of TRUE so it can be used with make_paragraphs
+  # directly.
+  return "" if 1 == @conds && $conds[0] eq 'TRUE';
+  return @conds;
 }
 
 
@@ -7358,7 +7535,7 @@ sub rule_define ($$$$)
 sub target_defined
 {
     my ($target) = @_;
-    return defined $targets{$target};
+    return exists $targets{$target};
 }
 
 
@@ -7538,7 +7715,11 @@ sub read_am_file ($)
 	    # Found a rule.
 	    $prev_state = IN_RULE_DEF;
 
-	    rule_define ($1, 0, $cond, $here);
+	    # For TARGET_USER rules, rule_define won't reject a rule
+	    # without diagnosic an error.  So we go on and ignore the
+	    # return value.
+	    rule_define ($1, $amfile, TARGET_USER, $cond || 'TRUE', $here);
+
 	    check_variable_expansions ($_, $here);
 
 	    $output_trailer .= $comment . $spacing;
@@ -7896,7 +8077,7 @@ sub file_contents_internal ($$%)
 
 	  foreach (split (' ' , $targets))
 	    {
-	      # FIXME: We are not robust to people defining several targets
+	      # FIXME: 1. We are not robust to people defining several targets
 	      # at once, only some of them being in %dependencies.  The
 	      # actions from the targets in %dependencies are usually generated
 	      # from the content of %actions, but if some targets in $targets
@@ -7904,13 +8085,16 @@ sub file_contents_internal ($$%)
 	      # a rule for all $targets (i.e. the targets which are both
 	      # in %dependencies and $targets will have two rules).
 
-	      # FIXME: The logic here is not able to output a
+	      # FIXME: 2. The logic here is not able to output a
 	      # multi-paragraph rule several time (e.g. for each conditional
 	      # it is defined for) because it only knows the first paragraph.
 
+	      # FIXME: 3. We are not robust to people defining a subset
+	      # of a previously defined "multiple-target" rule.  E.g.
+	      # `foo:' after `foo bar:'.
+
 	      # Output only if not in FALSE.
-	      if (defined $dependencies{$_}
-		  && $cond ne 'FALSE')
+	      if (defined $dependencies{$_} && $cond ne 'FALSE')
 		{
 		  &depend ($_, @deps);
 		  $actions{$_} .= $actions;
@@ -7919,55 +8103,22 @@ sub file_contents_internal ($$%)
 		{
 		  # Free-lance dependency.  Output the rule for all the
 		  # targets instead of one by one.
-
-		  # Work out all the conditions for which the target hasn't
-		  # been defined
-		  my @undefined_conds;
-		  if (defined $target_conditional{$targets})
+		  my @undefined_conds =
+		    rule_define ($targets, $file,
+				 $is_am ? TARGET_AUTOMAKE : TARGET_USER,
+				 $cond || 'TRUE', $file);
+		  for my $undefined_cond (@undefined_conds)
 		    {
-		      my @defined_conds = keys %{$target_conditional{$targets}};
-		      @undefined_conds = invert_conditions(@defined_conds);
+		      my $condparagraph = $paragraph;
+		      $condparagraph =~ s/^/$undefined_cond/gm;
+		      $result_rules .= "$spacing$comment$condparagraph\n";
 		    }
-		  else
+		  if (scalar @undefined_conds == 0)
 		    {
-		      if (defined $targets{$targets})
-		        {
-			  # No conditions for which target hasn't been defined
-			  @undefined_conds = ();
-		        }
-		      else
-			{
-			  # Target hasn't been defined for any conditions
-			  @undefined_conds = ("");
-			}
-		    }
-
-		  if ($cond ne 'FALSE')
-		    {
-		      for my $undefined_cond (@undefined_conds)
-		      {
-			  my $condparagraph = $paragraph;
-			  $condparagraph =~ s/^/make_condition (@cond_stack, $undefined_cond)/gme;
-			  if (rule_define ($targets, $is_am,
-					  "$cond $undefined_cond", $file))
-			  {
-			      $result_rules .=
-				  "$spacing$comment$condparagraph\n"
-			  }
-			  else
-			  {
-			      # Remember to discard next paragraphs
-			      # if they belong to this rule.
-			      $discard_rule = 1;
-			  }
-		      }
-		      if ($#undefined_conds == -1)
-		      {
-			  # This target has already been defined, the rule
-			  # has not been defined. Remember to discard next
-			  # paragraphs if they belong to this rule.
-			  $discard_rule = 1;
-		      }
+		      # Remember to discard next paragraphs
+		      # if they belong to this rule.
+		      # (but see also FIXME: #2 above.)
+		      $discard_rule = 1;
 		    }
 		  $comment = $spacing = '';
 		  last;
