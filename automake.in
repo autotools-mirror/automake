@@ -2600,15 +2600,15 @@ sub handle_libraries
 				   'lib', 'pkglib', 'noinst', 'check');
     return if ! @liblist;
 
-    my %valid = &am_primary_prefixes ('LIBRARIES', 0, 'lib', 'pkglib',
-				      'noinst', 'check');
+    my @valid = am_primary_prefixes ('LIBRARIES', 0, 'lib', 'pkglib',
+				     'noinst', 'check');
     if (! defined $configure_vars{'RANLIB'})
     {
-	foreach my $key (keys %valid)
+	foreach my $macro (map { $_ . '_LIBRARIES' } @valid)
 	{
-	    if (&variable_defined ($key . '_LIBRARIES'))
+	    if (variable_defined ($macro))
 	    {
-		macro_error ($key . '_LIBRARIES',
+		macro_error ($macro,
 			     "library used but `RANLIB' not defined in `$configure_ac'");
 		# Only get this error once.  If this is ever printed,
 		# we have a bug.
@@ -2701,37 +2701,37 @@ sub handle_ltlibraries
     return if ! @liblist;
 
     my %instdirs;
-    my %valid = &am_primary_prefixes ('LTLIBRARIES', 0, 'lib', 'pkglib',
-				      'noinst', 'check');
+    my @valid = am_primary_prefixes ('LTLIBRARIES', 0, 'lib', 'pkglib',
+				     'noinst', 'check');
 
-    foreach my $key (keys %valid)
-    {
-	if (&variable_defined ($key . '_LTLIBRARIES'))
-	{
-	    if (!$seen_libtool)
-	    {
-		macro_error ($key . '_LTLIBRARIES',
-			     "library used but `LIBTOOL' not defined in `$configure_ac'");
-		# Only get this error once.  If this is ever printed,
-		# we have a bug.
-		$configure_vars{'LIBTOOL'} = 'BUG';
-		$seen_libtool = $var_location{$key . '_LTLIBRARIES'};
-	    }
+    foreach my $key (@valid)
+      {
+	next
+	  unless variable_defined ($key . '_LTLIBRARIES');
 
-	    # Get the installation directory of each library.
-	    for (&variable_value_as_list_recursive ($key . '_LTLIBRARIES', 'all'))
-	    {
-		if ($instdirs{$_})
-		{
-		    &am_error ("`$_' is already going to be installed in `$instdirs{$_}'");
-		}
-		else
-		{
-		    $instdirs{$_} = $key;
-		}
-	    }
-	}
-    }
+	if (!$seen_libtool)
+	  {
+	    macro_error ($key . '_LTLIBRARIES',
+			 "library used but `LIBTOOL' not defined in `$configure_ac'");
+	    # Only get this error once.  If this is ever printed,
+	    # we have a bug.
+	    $configure_vars{'LIBTOOL'} = 'BUG';
+	    $seen_libtool = $var_location{$key . '_LTLIBRARIES'};
+	  }
+
+	# Get the installation directory of each library.
+	for (&variable_value_as_list_recursive ($key . '_LTLIBRARIES', 'all'))
+	  {
+	    if ($instdirs{$_})
+	      {
+		&am_error ("`$_' is already going to be installed in `$instdirs{$_}'");
+	      }
+	    else
+	      {
+		$instdirs{$_} = $key;
+	      }
+	  }
+      }
 
     my $seen_libobjs = 0;
     foreach my $onelib (@liblist)
@@ -4290,11 +4290,11 @@ sub handle_java
 				      'java', 'noinst', 'check');
     return if ! @sourcelist;
 
-    my %valid = &am_primary_prefixes ('JAVA', 1,
-				      'java', 'noinst', 'check');
+    my @valid = am_primary_prefixes ('JAVA', 1,
+				     'java', 'noinst', 'check');
 
     my $dir;
-    foreach my $curs (keys %valid)
+    foreach my $curs (@valid)
     {
 	if (! &variable_defined ($curs . '_JAVA') || $curs eq 'EXTRA')
 	{
@@ -7284,11 +7284,14 @@ sub transform (%)
 }
 
 
+# @PREFIX
+# &am_primary_prefixes ($PRIMARY, $CAN_DIST, @PREFIXES)
+# -----------------------------------------------------
 # Find all variable prefixes that are used for install directories.  A
 # prefix `zar' qualifies iff:
 # * `zardir' is a variable.
 # * `zar_PRIMARY' is a variable.
-sub am_primary_prefixes
+sub am_primary_prefixes ($$@)
 {
     my ($primary, $can_dist, @prefixes) = @_;
 
@@ -7318,8 +7321,8 @@ sub am_primary_prefixes
 		# Note that a configure variable is always legitimate.
 		# It is natural to name such variables after the
 		# primary, so we explicitly allow it.
-	      macro_error ($varname, "invalid variable `$varname'")
-		if ! exists $configure_vars{$varname};
+	        macro_error ($varname, "invalid variable `$varname'")
+		  if ! exists $configure_vars{$varname};
 	    }
 	    else
 	    {
@@ -7329,7 +7332,7 @@ sub am_primary_prefixes
 	}
     }
 
-    return %valid;
+    return sort keys %valid;
 }
 
 # Handle `where_HOW' variable magic.  Does all lookups, generates
@@ -7391,7 +7394,7 @@ sub am_install_var
     # instance, if the variable "zardir" is defined, then
     # "zar_PROGRAMS" becomes valid.  This is to provide a little extra
     # flexibility in those cases which need it.
-    my %valid = &am_primary_prefixes ($primary, $can_dist, @prefixes);
+    my @valid = am_primary_prefixes ($primary, $can_dist, @prefixes);
 
     # If a primary includes a configure substitution, then the EXTRA_
     # form is required.  Otherwise we can't properly do our job.
@@ -7404,7 +7407,7 @@ sub am_install_var
     # True if the iteration is the first one.  Used for instance to
     # output parts of the associated file only once.
     my $first = 1;
-    foreach my $X (sort keys %valid)
+    foreach my $X (@valid)
     {
 	my $nodir_name = $X;
 	my $one_name = $X . '_' . $primary;
