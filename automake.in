@@ -1243,16 +1243,28 @@ sub handle_source_transform
 	    }
 	    else
 	    {
-		local ($cond);
+		local ($cond, $cond_var_name);
+		local ($count) = 0;
+		local (@namelist) = ();
 		foreach $cond (@conds)
 		{
 		    @files = &variable_value_as_list ($var, $cond);
 		    ($temp, @result) = &handle_single_transform_list (@files);
 		    $linker = $temp if $linker eq '';
-		    &define_pretty_variable ($one_file . "_OBJECTS", $cond,
-					     @result)
+
+		    # We have to have a new name for each such
+		    # variable.  Then we define the _OBJECTS variable
+		    # as the union of all such variables.  Hopefully
+		    # this is the Right Thing.
+		    $cond_var_name = 'cond' . $count . $one_file . '_OBJECTS';
+		    &define_pretty_variable ($cond_var_name, $cond, @result)
 			unless $prefix eq 'EXTRA_';
+		    push (@namelist, '$(' . $cond_var_name . ')');
+		    ++$count;
 		}
+
+		&define_pretty_variable ($one_file . '_OBJECTS', '',
+					 @namelist);
 
 		next;
 	    }
