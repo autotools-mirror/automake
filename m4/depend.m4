@@ -31,6 +31,13 @@ depcpp=""])
 AC_CACHE_CHECK([dependency style of $depcc],
                [am_cv_$1_dependencies_compiler_type],
 [if test -z "$AMDEP"; then
+  # We make a subdir and do the tests there.  Otherwise we can end up
+  # making bogus files that we don't know about and never remove.  For
+  # instance it was reported that on HP-UX the gcc test will end up
+  # making a dummy file named `D' -- because `-MD' means `put the output
+  # in D'.
+  mkdir confdir
+  cd confdir
   echo '#include "conftest.h"' > conftest.c
   echo 'int i;' > conftest.h
 
@@ -61,7 +68,8 @@ AC_CACHE_CHECK([dependency style of $depcc],
     fi
   done
 
-  rm -f conftest.*
+  cd ..
+  rm -rf confdir
 else
   am_cv_$1_dependencies_compiler_type=none
 fi
