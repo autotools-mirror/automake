@@ -116,11 +116,13 @@ $build_directory = '';
 # dependencies only.
 $srcdir_name = '';
 
-# List of Makefile.am's to process.
+# List of Makefile.am's to process, and their corresponding outputs.
 @input_files = ();
+%output_files = ();
 
-# List of files in AC_OUTPUT without Makefile.am.
+# List of files in AC_OUTPUT without Makefile.am, and their outputs.
 @other_input_files = ();
+%other_output_files = ();
 # Line number at which AC_OUTPUT seen.
 $ac_output_line = 0;
 
@@ -229,14 +231,13 @@ die "automake: no \`Makefile.am' found or specified\n"
 # Now do all the work on each file.
 foreach $am_file (@input_files)
 {
-    # FIXME: should support the AC_OUTPUT ":" syntax here.
     if (! -f ($am_file . '.am'))
     {
 	&am_error ("\`" . $am_file . ".am' does not exist");
     }
     else
     {
-	&generate_makefile ($am_file);
+ 	&generate_makefile ($output_files{$am_file}, $am_file);
     }
 }
 
@@ -365,7 +366,12 @@ sub parse_arguments
 	}
 	else
 	{
-	    push (@input_files, $arglist[0]);
+	    # Handle $local:$input syntax.
+	    local ($local, $input) = split (/:/, $arglist[0]);
+	    $input = $local if (!$input);
+	    $input =~ s/\.in$//;
+	    push (@input_files, $input);
+	    $output_files{$input} = $local;
 	}
 
 	shift (@arglist);
@@ -386,17 +392,19 @@ sub require_argument
 
 ################################################################
 
-# Generate a Makefile.in given the name of the corresponding Makefile.
+# Generate a Makefile.in given the name of the corresponding Makefile and
+# the name of the file output by config.status.
 sub generate_makefile
 {
-    local ($makefile) = @_;
+    local ($output, $makefile) = @_;
 
     ($am_file_name = $makefile) =~ s/^.*\///;
     $in_file_name = $am_file_name . '.in';
     $am_file_name .= '.am';
 
     &initialize_per_input;
-    $relative_dir = &dirname ($makefile);
+    $relative_dir = &dirname ($output);
+    $am_relative_dir = &dirname ($makefile);
 
     # At the toplevel directory, we might need config.guess, config.sub
     # or libtool scripts (ltconfig and ltmain.sh).
@@ -415,7 +423,12 @@ sub generate_makefile
 
     # We still need Makefile.in here, because sometimes the `dist'
     # target doesn't re-run automake.
-    &push_dist_common ($in_file_name, $am_file_name);
+    if ($am_relative_dir eq $relative_dir)
+    {
+	# Only distribute the files if they are in the same subdir as
+	# the generated makefile.
+	&push_dist_common ($in_file_name, $am_file_name);
+    }
     push (@sources, '$(SOURCES)')
 	if &variable_defined ('SOURCES');
     push (@objects, '$(OBJECTS)')
@@ -442,7 +455,7 @@ sub generate_makefile
     &check_gnu_standards;
     &check_gnits_standards;
 
-    &handle_configure;
+    &handle_configure ($output, $makefile);
     &handle_gettext;
     &handle_libraries;
     &handle_programs;
@@ -476,9 +489,9 @@ sub generate_makefile
 
     &check_typos;
 
-    if (! -d ($output_directory . '/' . $relative_dir))
+    if (! -d ($output_directory . '/' . $am_relative_dir))
     {
-	mkdir ($output_directory . '/' . $relative_dir, 0755);
+	mkdir ($output_directory . '/' . $am_relative_dir, 0755);
     }
 
     local ($out_file) = $output_directory . '/' . $makefile . ".in";
@@ -919,7 +932,7 @@ sub handle_single_transform_list
 	    {
 		# FORTRAN support.  FIXME: not finished.
 	    }
-	    elsif (s/\.s$/.o/)
+	    elsif (s/\.[sS]$/.o/)
 	    {
 		# .s is assembly.  Just rewrite it.  FIXME: not finished.
 	    }
@@ -2201,8 +2214,8 @@ sub handle_subdirs
 	# Skip directories substituted by configure.
 	next if $dir =~ /^\@.*\@$/;
 	&am_line_error ('SUBDIRS',
-			"required directory $relative_dir/$dir does not exist")
-	    if ! -d $relative_dir . '/' . $dir;
+			"required directory $am_relative_dir/$dir does not exist")
+	    if ! -d $am_relative_dir . '/' . $dir;
     }
 
     local ($xform) = ('s/\@INSTALLINFO\@/' .
@@ -2278,8 +2291,11 @@ sub handle_aclocal_m4
 }
 
 # Handle remaking and configure stuff.
+# We need the name of the input file, to do proper remaking rules.
 sub handle_configure
 {
+    local ($local, $input) = @_;
+
     # If SUBDIRS defined, require AC_PROG_MAKE_SET.
     &am_line_error ('SUBDIRS', "AC_PROG_MAKE_SET must be used in configure.in")
 	if &variable_defined ('SUBDIRS') && ! $seen_make_set;
@@ -2289,6 +2305,31 @@ sub handle_configure
 		      . ($cygnus_mode ? ' --cygnus'
 			 : ('--' . $strictness_name))
 		      . '/;');
+
+    # Handle $local:$input syntax again.
+    local ($amfile, $infile, $colon_infile);
+    if ($local eq $input)
+    {
+	$amfile = 'Makefile.am';
+	$infile = '$(srcdir)/Makefile.in';
+	$colon_infile = '';
+    }
+    else
+    {
+	$amfile = '$(top_srcdir)/' . $input . '.am';
+	$infile = '$(top_srcdir)/' . $input . '.in';
+	$colon_infile = ':' . $input . '.in';
+    }
+
+    # Quote the amfile, infile, and colon_infile for the regular expression.
+    $amfile =~ s/([\$\(\)\/])/\\$1/g;
+    $infile =~ s/([\$\(\)\/])/\\$1/g;
+    $colon_infile =~ s/([\$\(\)\/])/\\$1/g;
+
+    $xform .= 's/\@AMFILE\@/' . $amfile . '/;';
+    $xform .= 's/\@INFILE\@/' . $infile . '/;';
+    $xform .= 's/\@COLON_INFILE\@/' . $colon_infile . '/;';
+
     if ($relative_dir ne '.')
     {
 	# In subdirectory.
@@ -3056,7 +3097,8 @@ sub scan_configure
     # that won't always be the case.
     %libsources = ();
 
-    local ($in_ac_output, $in_ac_replace, @make_list) = (0, 0);
+    local ($in_ac_output, $in_ac_replace) = (0, 0);
+    local (@make_list, @make_input_list);
     local ($libobj_iter);
     while (<CONFIGURE>)
     {
@@ -3161,13 +3203,21 @@ sub scan_configure
 	    foreach (split)
 	    {
 		next if $_ eq "\\";
-		if (-f $_ . '.am')
+
+		# Handle $local:$input syntax.
+		local ($local, $input) = split (/:/);
+		$input = $local if (!$input);
+		$input =~ s/\.in$//;
+
+		if (-f $input . '.am')
 		{
-		    push (@make_list, $_);
+		    push (@make_input_list, $input);
+		    $make_list{$input} = $local;
 		}
 		else
 		{
-		    push (@other_input_files, $_);
+		    push (@other_input_files, $file);
+		    $other_output_files{$input} = $local;
 		}
 	    }
 	}
@@ -3303,8 +3353,12 @@ sub scan_configure
 	}
     }
 
-    # Set input files if not specified by user.
-    @input_files = @make_list if (! @input_files);
+    # Set input and output files if not specified by user.
+    if (! @input_files)
+    {
+	@input_files = @make_input_list;
+	%output_files = %make_list;
+    }
 
     close (CONFIGURE);
 
