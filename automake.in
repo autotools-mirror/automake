@@ -41,8 +41,11 @@ $WHITE_PATTERN = "^[ \t]*\$";
 $COMMENT_PATTERN = "^#";
 $RULE_PATTERN = "^([\$a-zA-Z_.][-.a-zA-Z0-9_(){}/\$]*) *:([^=].*|)\$";
 $SUFFIX_RULE_PATTERN = "^\\.([a-zA-Z0-9]+)\\.([a-zA-Z0-9]+)\$";
-$MACRO_PATTERN = "^([A-Za-z0-9_]+)[ \t]*([:+]?)=[ \t]*(.*)\$";
-$BOGUS_MACRO_PATTERN = "^([^ \t]*)[ \t]*([:+]?)=[ \t]*(.*)\$";
+# Only recognize leading spaces, not leading tabs.  If we recognize
+# leading tabs here then we need to make the reader smarter, because
+# otherwise it will think rules like `foo=bar; \' are errors.
+$MACRO_PATTERN = "^ *([A-Za-z0-9_]+)[ \t]*([:+]?)=[ \t]*(.*)\$";
+$BOGUS_MACRO_PATTERN = "^ *([^ \t]*)[ \t]*([:+]?)=[ \t]*(.*)\$";
 $GNITS_VERSION_PATTERN = "[0-9]+\\.[0-9]+([a-z]|\\.[0-9]+)?";
 $IF_PATTERN = "^if[ \t]+\([A-Za-z][A-Za-z0-9_]*\)[ \t]*\(#.*\)?\$";
 $ELSE_PATTERN = "^else[ \t]*\(#.*\)?\$";
@@ -7009,7 +7012,7 @@ sub file_contents_with_transform
 	    $result_vars .= $comment . $spacing . $_ if ! $skipping;
 	    $comment = $spacing = '';
 	    $saw_bk = /\\$/;
-	    print STDERR "automake: programming error: .am macro \`$1' with trailing backslash\n"
+	    print STDERR "automake: programming error: .am macro \`$1' with trailing backslash at $file:$.\n"
 		if $saw_bk;
 	    $am_var_defs{$1} = $3;
 	}
