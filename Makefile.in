@@ -76,7 +76,7 @@ libtool.am ltlib.am ltlibrary.am mans-vars.am program.am progs.am \
 remake-hdr.am remake.am scripts.am subdirs.am tags.am tags-clean.am \
 texi-vers.am texinfos.am libs-clean.am ltlib-clean.am progs-clean.am \
 data-clean.am COPYING INSTALL texinfo.tex ansi2knr.c ansi2knr.1	\
-lisp.am lisp-clean.am
+lisp.am lisp-clean.am mans.am
 
 pkgdata_SCRIPTS = config.guess config.sub install-sh mdate-sh missing \
 mkinstalldirs elisp-comp ylwrap acinstall
@@ -112,7 +112,7 @@ GZIP = --best
 default: all
 
 .SUFFIXES:
-.SUFFIXES: .dvi .info .ps .texi .texinfo
+.SUFFIXES: .dvi .info .ps .texi .texinfo .txi
 $(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
 	cd $(top_srcdir) && $(AUTOMAKE) --gnits Makefile
 
@@ -226,6 +226,20 @@ DVIPS = dvips
 .texinfo.dvi:
 	TEXINPUTS=$(srcdir):$$TEXINPUTS \
 	  MAKEINFO='$(MAKEINFO) -I $(srcdir)' $(TEXI2DVI) $<
+
+.txi.info:
+	@cd $(srcdir) && rm -f $@ $@-[0-9] $@-[0-9][0-9]
+	cd $(srcdir) \
+	  && $(MAKEINFO) `echo $< | sed 's,.*/,,'`
+
+.txi.dvi:
+	TEXINPUTS=$(srcdir):$$TEXINPUTS \
+	  MAKEINFO='$(MAKEINFO) -I $(srcdir)' $(TEXI2DVI) $<
+
+.txi:
+	@cd $(srcdir) && rm -f $@ $@-[0-9] $@-[0-9][0-9]
+	cd $(srcdir) \
+	  && $(MAKEINFO) `echo $< | sed 's,.*/,,'`
 .dvi.ps:
 	$(DVIPS) $< -o $@
 
@@ -362,7 +376,7 @@ TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
 	done; \
 	list='$(SOURCES) $(HEADERS)'; \
 	unique=`for i in $$list; do echo $$i; done | \
-	  awk '    { files[$$0] = 1; } \
+	  $(AWK) '    { files[$$0] = 1; } \
 	       END { for (i in files) print i; }'`; \
 	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
 	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $$unique $(LISP) -o $$here/TAGS)

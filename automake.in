@@ -2195,64 +2195,62 @@ sub handle_man_pages
 	if &variable_defined ('MANS');
     return if ! &variable_defined ('man_MANS');
 
-    # We generate the manpage install code by hand to avoid the use of
-    # basename in the generated Makefile.
-    local (@mans) = &variable_value_as_list ('man_MANS', 'all');
-    local (%sections, %inames, %mbases, %secmap, %fullsecmap);
-    local ($i) = 1;
-    foreach (@mans)
+    # Find all the sections in use.  We do this by first looking for
+    # "standard" sections, and then looking for any additional
+    # sections used in man_MANS.
+    local ($sect, %sections, %vlist);
+    # Add more sections as needed.
+    foreach $sect ('0'..'9', 'n', 'l')
     {
-	# FIXME: statement without effect:
-	/^(.*)\.([0-9])([a-z]*)$/;
-	$sections{$2} = 1;
-	$inames{$i} = $_;
-	$mbases{$i} = $1;
-	$secmap{$i} = $2;
-	$fullsecmap{$i} = $2 . $3;
-	$i++;
+	if (&variable_defined ('man' . $sect . '_MANS'))
+	{
+	    $sections{$sect} = 1;
+	    $vlist{'$(man' . $sect . '_MANS)'} = 1;
+	}
+    }
+
+    if (&variable_defined ('man_MANS'))
+    {
+	$vlist{'$(man_MANS)'} = 1;
+	foreach (&variable_value_as_list ('man_MANS', 'all'))
+	{
+	    # A page like `foo.1c' goes into man1dir.
+	    if (/\.([0-9a-z])([a-z]*)$/)
+	    {
+		$sections{$1} = 1;
+	    }
+	}
+    }
+
+
+    # Now for each section, generate an install and unintall rule.
+    # Sort sections so output is deterministic.
+    local (@namelist);
+    foreach $sect (sort keys %sections)
+    {
+	&define_variable ('man' . $sect . 'dir', '$(mandir)/man' . $sect);
+	push (@installdirs, '$(mandir)/man' . $sect)
+	    unless defined $options{'no-installman'};
+	$output_rules .= &file_contents_with_transform ('s/\@SECTION\@/'
+							. $sect . '/g;',
+							'mans');
+	push (@phony, 'install-man' . $sect, 'uninstall-man' . $sect);
+	push (@namelist, 'install-man' . $sect);
     }
 
     # We don't really need this, but we use it in case we ever want to
     # support noinst_MANS.
-    &define_variable ("MANS", &variable_value ('man_MANS'));
+    &define_variable ("MANS", join (' ', sort keys %vlist));
 
     # Generate list of install dirs.
-    $output_rules .= "install-man: \$(MANS)\n";
-    $output_rules .= "\t\$(NORMAL_INSTALL)\n";
-    # Sort keys so that output is deterministic.
-    foreach (sort keys %sections)
-    {
-	push (@installdirs, '$(mandir)/man' . $_)
-	    unless defined $options{'no-installman'};
-	$output_rules .= ("\t" . '$(mkinstalldirs) $(mandir)/man'
-			  . $_ . "\n");
-    }
+    $output_rules .= ("install-man: \$(MANS)\n"
+		      . "\t\@\$(NORMAL_INSTALL)\n");
+    &pretty_print_rule ("\t\$(MAKE)", "\t ", @namelist);
     push (@phony, 'install-man');
 
-    # Generate install target.
-    local ($key);
-    foreach $key (sort keys %inames)
-    {
-	$_ = $install_man_format;
-	s/\@SECTION\@/$secmap{$key}/g;
-	s/\@MAN\@/$inames{$key}/g;
-	s/\@FULLSECT\@/$fullsecmap{$key}/g;
-	s/\@MANBASE\@/$mbases{$key}/g;
-	$output_rules .= $_;
-    }
-    $output_rules .= "\n";
-
-    $output_rules .= "uninstall-man:\n\t\$(NORMAL_UNINSTALL)\n";
-    foreach $key (sort keys %inames)
-    {
-	$_ = $uninstall_man_format;
-	s/\@SECTION\@/$secmap{$key}/g;
-	s/\@MAN\@/$inames{$key}/g;
-	s/\@FULLSECT\@/$fullsecmap{$key}/g;
-	s/\@MANBASE\@/$mbases{$key}/g;
-	$output_rules .= $_;
-    }
-    $output_rules .= "\n";
+    $output_rules .= "uninstall-man:\n\t\@\$(NORMAL_UNINSTALL)\n";
+    grep ($_ = 'un' . $_, @namelist);
+    &pretty_print_rule ("\t\$(MAKE)", "\t ", @namelist);
     push (@phony, 'uninstall-man');
 
     $output_vars .= &file_contents ('mans-vars');
@@ -5345,21 +5343,6 @@ sub initialize_global_constants
 	 'pkglib', 1,
 	 'pkginclude', 0
 	 );
-
-    # Helper text for dealing with man pages.
-    $install_man_format =
-    '	@sect=@SECTION@;				\\
-	inst=`echo "@MANBASE@" | sed \'$(transform)\'`.@FULLSECT@; \\
-	if test -f $(srcdir)/@MAN@; then file=$(srcdir)/@MAN@; \\
-	else file=@MAN@; fi; \\
-	echo " $(INSTALL_DATA) $$file $(mandir)/man$$sect/$$inst"; \\
-	$(INSTALL_DATA) $$file $(mandir)/man$$sect/$$inst
-';
-
-    $uninstall_man_format =
-    '	-inst=`echo "@MANBASE@" | sed \'$(transform)\'`.@FULLSECT@; \\
-	rm -f $(mandir)/man@SECTION@/$$inst
-';
 
     # Commonly found files we look for and automatically include in
     # DISTFILES.
