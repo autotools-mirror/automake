@@ -135,18 +135,16 @@ Scanning @file{configure.ac}
 * Requirements::                Configuration requirements
 * Optional::                    Other things Automake recognizes
 * Invoking aclocal::            Auto-generating aclocal.m4
-* aclocal options::             aclocal command line arguments
-* Macro search path::           Modifying aclocal's search path
 * Macros::                      Autoconf macros supplied with Automake
-* Extending aclocal::           Writing your own aclocal macros
-* Local Macros::                Organizing local macros
-* Serials::                     #serial lines in Autoconf macros
-* Future of aclocal::           aclocal's scheduled death
 
 Auto-generating aclocal.m4
 
 * aclocal options::             Options supported by aclocal
 * Macro search path::           How aclocal finds .m4 files
+* Extending aclocal::           Writing your own aclocal macros
+* Local Macros::                Organizing local macros
+* Serials::                     Serial lines in Autoconf macros
+* Future of aclocal::           aclocal's scheduled death
 
 Autoconf macros supplied with Automake
 
@@ -1265,13 +1263,7 @@ easier.  These macros can automatically be put into your
 * Requirements::                Configuration requirements
 * Optional::                    Other things Automake recognizes
 * Invoking aclocal::            Auto-generating aclocal.m4
-* aclocal options::             aclocal command line arguments
-* Macro search path::           Modifying aclocal's search path
 * Macros::                      Autoconf macros supplied with Automake
-* Extending aclocal::           Writing your own aclocal macros
-* Local Macros::                Organizing local macros
-* Serials::                     #serial lines in Autoconf macros
-* Future of aclocal::           aclocal's scheduled death
 @end menu
 
 
@@ -1634,10 +1626,14 @@ just as @code{autoconf}.  Its location can be overridden using the
 @menu
 * aclocal options::             Options supported by aclocal
 * Macro search path::           How aclocal finds .m4 files
+* Extending aclocal::           Writing your own aclocal macros
+* Local Macros::                Organizing local macros
+* Serials::                     Serial lines in Autoconf macros
+* Future of aclocal::           aclocal's scheduled death
 @end menu
 
 @node aclocal options
-@section aclocal options
+@subsection aclocal options
 
 @cindex @command{aclocal}, Options
 @cindex Options, @command{aclocal}
@@ -1730,7 +1726,7 @@ way as it is for @command{automake} (@pxref{Invoking Automake}).
 @end table
 
 @node Macro search path
-@section Macro search path
+@subsection Macro search path
 
 @cindex Macro search path
 @cindex @command{aclocal} search path
@@ -1764,7 +1760,7 @@ As an example, suppose that automake-1.6.2 was configured with
 As explained in (@pxref{aclocal options}), there are several options that
 can be used to change or extend this search path.
 
-@subsection Modifying the macro search path: @code{--acdir}
+@subsubsection Modifying the macro search path: @code{--acdir}
 
 The most erroneous option to modify the search path is
 @code{--acdir=@var{dir}}, which changes default directory and
@@ -1778,7 +1774,7 @@ drops the @var{APIVERSION} directory.  For example, if one specifies
 This option, @code{--acdir}, is intended for use by the internal
 automake test suite only; it is not ordinarily needed by end-users.
 
-@subsection Modifying the macro search path: @code{-I @var{dir}}
+@subsubsection Modifying the macro search path: @code{-I @var{dir}}
 
 Any extra directories specified using @code{-I} options
 (@pxref{aclocal options}) are @emph{prepended} to this search list.  Thus,
@@ -1791,7 +1787,7 @@ Any extra directories specified using @code{-I} options
 @item @var{acdir}
 @end enumerate
 
-@subsection Modifying the macro search path: @file{dirlist}
+@subsubsection Modifying the macro search path: @file{dirlist}
 @cindex @file{dirlist}
 
 There is a third mechanism for customizing the search path.  If a
@@ -1869,6 +1865,393 @@ directories.
 Similarly, @file{dirlist} can be handy if you have installed a local
 copy Automake on your account and want @command{aclocal} to look for
 macros installed at other places on the system.
+
+
+@node Extending aclocal
+@subsection Writing your own aclocal macros
+
+@cindex @command{aclocal}, extending
+@cindex Extending @command{aclocal}
+
+The @command{aclocal} program doesn't have any built-in knowledge of any
+macros, so it is easy to extend it with your own macros.
+
+This can be used by libraries which want to supply their own Autoconf
+macros for use by other programs.  For instance the @command{gettext}
+library supplies a macro @code{AM_GNU_GETTEXT} which should be used by
+any package using @command{gettext}.  When the library is installed, it
+installs this macro so that @command{aclocal} will find it.
+
+A macro file's name should end in @file{.m4}.  Such files should be
+installed in @file{$(datadir)/aclocal}.  This is as simple as writing:
+
+@example
+aclocaldir = $(datadir)/aclocal
+aclocal_DATA = mymacro.m4 myothermacro.m4
+@end example
+
+A file of macros should be a series of properly quoted
+@code{AC_DEFUN}'s (@pxref{Macro Definitions, , , autoconf, The
+Autoconf Manual}).  The @command{aclocal} programs also understands
+@code{AC_REQUIRE} (@pxref{Prerequisite Macros, , , autoconf, The
+Autoconf Manual}), so it is safe to put each macro in a separate file.
+Each file should have no side effects but macro definitions.
+Especially, any call to @code{AC_PREREQ} should be done inside the
+defined macro, not at the beginning of the file.
+
+@cindex underquoted @code{AC_DEFUN}
+@acindex AC_DEFUN
+@acindex AC_PREREQ
+
+Starting with Automake 1.8, @command{aclocal} will warn about all
+underquoted calls to @code{AC_DEFUN}.  We realize this will annoy a
+lot of people, because @command{aclocal} was not so strict in the past
+and many third party macros are underquoted; and we have to apologize
+for this temporary inconvenience.  The reason we have to be stricter
+is that a future implementation of @command{aclocal} (@pxref{Future of
+aclocal}) will have to temporary include all these third party
+@file{.m4} files, maybe several times, even those which are not
+actually needed.  Doing so should alleviate many problem of the
+current implementation, however it requires a stricter style from the
+macro authors.  Hopefully it is easy to revise the existing macros.
+For instance
+@example
+# bad style
+AC_PREREQ(2.57)
+AC_DEFUN(AX_FOOBAR,
+[AC_REQUIRE([AX_SOMETHING])dnl
+AX_FOO
+AX_BAR
+])
+@end example
+@noindent
+should be rewritten as
+@example
+AC_DEFUN([AX_FOOBAR],
+[AC_PREREQ(2.57)dnl
+AC_REQUIRE([AX_SOMETHING])dnl
+AX_FOO
+AX_BAR
+])
+@end example
+
+Wrapping the @code{AC_PREREQ} call inside the macro ensures that
+Autoconf 2.57 will not be required if @code{AX_FOOBAR} is not actually
+used.  Most importantly, quoting the first argument of @code{AC_DEFUN}
+allows the macro to be redefined or included twice (otherwise this
+first argument would be expansed during the second definition).
+
+If you have been directed here by the @command{aclocal} diagnostic but
+are not the maintainer of the implicated macro, you will want to
+contact the maintainer of that macro.  Please make sure you have the
+last version of the macro and that the problem already hasn't been
+reported before doing so: people tend to work faster when they aren't
+flooded by mails.
+
+Another situation where @command{aclocal} is commonly used is to
+manage macros which are used locally by the package, @ref{Local
+Macros}.
+
+@node Local Macros
+@subsection Handling Local Macros
+
+Feature tests offered by Autoconf do not cover all needs.  People
+often have to supplement existing tests with their own macros, or
+with third-party macros.
+
+There are two ways to organize custom macros in a package.
+
+The first possibility (the historical practice) is to list all your
+macros in @file{acinclude.m4}.  This file will be included in
+@file{aclocal.m4} when you run @command{aclocal}, and its macro(s) will
+henceforth be visible to @command{autoconf}.  However if it contains
+numerous macros, it will rapidly become difficult to maintain, and it
+will be almost impossible to share macros between packages.
+
+@vindex ACLOCAL_AMFLAGS
+The second possibility, which we do recommend, is to write each macro
+in its own file and gather all these files in a directory.  This
+directory is usually called @file{m4/}.  To build @file{aclocal.m4},
+one should therefore instruct @command{aclocal} to scan @file{m4/}.
+From the command line, this is done with @code{aclocal -I m4}.  The
+top-level @file{Makefile.am} should also be updated to define
+
+@example
+ACLOCAL_AMFLAGS = -I m4
+@end example
+
+@code{ACLOCAL_AMFLAGS} contains options to pass to @command{aclocal}
+when @file{aclocal.m4} is to be rebuilt by @code{make}.  This line is
+also used by @command{autoreconf} (@pxref{autoreconf Invocation, ,
+Using @command{autoreconf} to Update @file{configure} Scripts,
+autoconf, The Autoconf Manual}) to run @command{aclocal} with suitable
+options, or by @command{autopoint} (@pxref{autopoint Invocation, ,
+Invoking the @command{autopoint} Program, gettext, GNU gettext tools})
+and @command{gettextize} (@pxref{gettextize Invocation, , Invoking the
+@command{gettextize} Program, gettext, GNU gettext tools}) to locate
+the place where Gettext's macros should be installed.  So even if you
+do not really care about the rebuild rules, you should define
+@code{ACLOCAL_AMFLAGS}.
+
+When @code{aclocal -I m4} is run, it will build a @code{aclocal.m4}
+that @code{m4_include}s any file from @file{m4/} that defines a
+required macro.  Macros not found locally will still be searched in
+system-wide directories, as explained in @ref{Macro search path}.
+
+Custom macros should be distributed for the same reason that
+@file{configure.ac} is: so that other people have all the sources of
+your package if they want to work on it.  Actually, this distribution
+happens automatically because all @code{m4_include}d files are
+distributed.
+
+However there is no consensus on the distribution of third-party
+macros that your package may use.  Many libraries install their own
+macro in the system-wide @command{aclocal} directory (@pxref{Extending
+aclocal}).  For instance Guile ships with a file called
+@file{guile.m4} that contains the macro @code{GUILE_FLAGS} which can
+be used to define setup compiler and linker flags appropriate for
+using Guile.  Using @code{GUILE_FLAGS} in @file{configure.ac} will
+cause @command{aclocal} to copy @file{guile.m4} into
+@file{aclocal.m4}, but as @file{guile.m4} is not part of the project,
+it will not be distributed.  Technically, that means a user which
+needs to rebuild @file{aclocal.m4} will have to install Guile first.
+This is probably OK, if Guile already is a requirement to build the
+package.  However, if Guile is only an optional feature, or if your
+package might run on architectures where Guile cannot be installed,
+this requirement will hinder development.  An easy solution is to copy
+such third-party macros in your local @file{m4/} directory so they get
+distributed.
+
+Since Automake 1.10, @command{aclocal} offers an option to copy these
+system-wide third-party macros in your local macro directory, solving
+the above problem.  Simply use:
+
+@smallexample
+ACLOCAL_AMFLAGS = -I m4 --install
+@end smallexample
+
+@noindent
+With this setup, system-wide macros will be copied to @file{m4/}
+the first time you run @command{autoreconf}.  Then the locally
+installed macros will have precedence over the system-wide installed
+macros each time @command{aclocal} is run again.
+
+One reason why you should keep @code{--install} in the flags even
+after the first run is that when you later edit @file{configure.ac}
+and depend on a new macro, this macro will be installed in your
+@file{m4/} automatically.  Another one is that serial numbers
+(@pxref{Serials}) can be used to update the macros in your source tree
+automatically when new system-wide versions are installed.  A serial
+number should be a single line of the form
+
+@smallexample
+#serial @var{NNN}
+@end smallexample
+
+@noindent
+where @var{NNN} contains only digits and dots.  It should appear in
+the M4 file before any macro definition.  It is a good practice to
+maintain a serial number for each macro you distribute, even if you do
+not use the @code{--install} option of @command{aclocal}: this allows
+other people to use it.
+
+
+@node Serials
+@subsection Serial Numbers
+@cindex serial numbers in macros
+@cindex macro serial numbers
+@cindex @code{#serial} syntax
+@cindex @command{aclocal} and serial numbers
+
+Because third-party macros defined in @file{*.m4} files are naturally
+shared between multiple projects, some people like to version them.
+This makes it easier to tell which of two M4 files is newer.  Since at
+least 1996, the tradition is to use a @code{#serial} line for this.
+
+A serial number should be a single line of the form
+
+@smallexample
+# serial @var{version}
+@end smallexample
+
+@noindent
+where @var{version} is a version number containing only digits and
+dots.  Usually people use a single integer, and they increment it each
+time they change the macro (hence the name of ``serial'').  Such a
+line should appear in the M4 file before any macro definition.
+
+The @code{#} must be the first character on the line,
+and it is OK to have extra words after the version, as in
+
+@smallexample
+#serial @var{version} @var{garbage}
+@end smallexample
+
+Normally these serial numbers are completely ignored by
+@command{aclocal} and @command{autoconf}, like any genuine comment.
+However when using @command{aclocal}'s @code{--install} feature, these
+serial numbers will modify the way @command{aclocal} selects the
+macros to install in the package: if two files with the same basename
+exists in your search path, and if at least one of them use a
+@code{#serial} line, @command{aclocal} will ignore the file that has
+the older @code{#serial} line (or the file that has none).
+
+Note that a serial number applies to a whole M4 file, not to any macro
+it contains.  A file can contains multiple macros, but only one
+serial.
+
+Here is a use case that illustrate the use of @code{--install} and its
+interaction with serial numbers.  Let's assume we maintain a package
+called MyPackage, whose @file{configure.ac} uses a third-party macro
+@code{AX_THIRD_PARTY} defined in
+@file{/usr/share/aclocal/thirdparty.m4} as follows:
+
+@smallexample
+# serial 1
+AC_DEFUN([AX_THIRD_PARTY], [...])
+@end smallexample
+
+MyPackage uses an @file{m4/} directory to store local macros as
+explained in @ref{Local Macros}, and has
+
+@smallexample
+ACLOCAL_AMFLAGS = -I m4 --install
+@end smallexample
+
+@noindent
+in its top-level @file{Makefile.am}.
+
+Initially the @file{m4/} directory is empty.  The first time we run
+@command{autoreconf}, it will fetch the options to pass to
+@command{aclocal} in @file{Makefile.am}, and run @code{aclocal -I m4
+--install}.  @command{aclocal} will notice that
+
+@itemize @bullet
+@item
+@file{configure.ac} uses @code{AX_THIRD_PARTY}
+@item
+No local macros define @code{AX_THIRD_PARTY}
+@item
+@file{/usr/share/aclocal/thirdparty.m4} defines @code{AX_THIRD_PARTY}
+with serial 1.
+@end itemize
+
+@noindent
+Because @file{/usr/share/aclocal/thirdparty.m4} is a system-wide macro
+and @command{aclocal} was given the @code{--install} option, it will
+copy this file in @file{m4/thirdparty.m4}, and output an
+@file{aclocal.m4} that contains @code{m4_include([m4/thirdparty.m4])}.
+
+The next time @code{aclocal -I m4 --install} is run (either via
+@command{autoreconf}, by hand, or from the @file{Makefile} rebuild
+rules) something different happens.  @command{aclocal} notices that
+
+@itemize @bullet
+@item
+@file{configure.ac} uses @code{AX_THIRD_PARTY}
+@item
+@file{m4/thirdparty.m4} defines @code{AX_THIRD_PARTY}
+with serial 1.
+@item
+@file{/usr/share/aclocal/thirdparty.m4} defines @code{AX_THIRD_PARTY}
+with serial 1.
+@end itemize
+
+@noindent
+Because both files have the same serial number, @command{aclocal} uses
+the first it found in its search path order (@pxref{Macro search
+path}).  @command{aclocal} therefore ignores
+@file{/usr/share/aclocal/thirdparty.m4} and outputs an
+@file{aclocal.m4} that contains @code{m4_include([m4/thirdparty.m4])}.
+
+Local directories specified with @code{-I} are always searched before
+system-wide directories, so a local file will always be preferred to
+the system-wide file in case of equal serial numbers.
+
+Now suppose the system-wide third-party macro is changed.  This can
+happen if the package installing this macro is updated.  Let's suppose
+the new macro has serial number 2.  The next time @code{aclocal -I m4
+--install} is run the situation is the following:
+
+@itemize @bullet
+@item
+@file{configure.ac} uses @code{AX_THIRD_PARTY}
+@item
+@file{m4/thirdparty.m4} defines @code{AX_THIRD_PARTY}
+with serial 1.
+@item
+@file{/usr/share/aclocal/thirdparty.m4} defines @code{AX_THIRD_PARTY}
+with serial 2.
+@end itemize
+
+@noindent
+As soon as @command{aclocal} sees a greater serial number, it forgets
+anything it knows about smaller serial numbers for the same file.  So
+after it has found @file{/usr/share/aclocal/thirdparty.m4} with serial
+2, @command{aclocal} will proceed as if it had never seen
+@file{m4/thirdparty.m4}.  This brings us back to a situation similar
+to that at the beginning of our example, where no local file defined
+the macro.  @command{aclocal} will install the new version of the
+macro in @file{m4/thirdparty.m4}, in this case overriding the old
+version.  MyPackage just had its macro updated as a side effect of
+running @command{aclocal}.
+
+
+The @code{--force} option of @command{aclocal} has absolutely no
+effect on the files installed by @code{--install}.  For instance you
+have modified your local macros, do not expect @code{--install
+--force} to replace the local macros by their system-wide versions.
+If you want to do so, simply erase the local macros you want to
+revert, and run @code{aclocal -I m4 --install}.
+
+
+@node Future of aclocal
+@subsection The Future of @command{aclocal}
+@cindex @command{aclocal}'s scheduled death
+
+@command{aclocal} is expected to disappear.  This feature really
+should not be offered by Automake.  Automake should focus on
+generating @file{Makefile}s; dealing with M4 macros really is
+Autoconf's job.  That some people install Automake just to use
+@command{aclocal}, but do not use @command{automake} otherwise is an
+indication of how that feature is misplaced.
+
+The new implementation will probably be done slightly differently.
+For instance it could enforce the @file{m4/}-style layout discussed in
+@ref{Local Macros}.
+
+We have no idea when and how this will happen.  This has been
+discussed several times in the past, but someone still has to commit
+itself to that non-trivial task.
+
+From the user point of view, @command{aclocal}'s removal might turn
+out to be painful.  There is a simple precaution that you may take to
+make that switch more seamless: never call @command{aclocal} yourself.
+Keep this guy under the exclusive control of @command{autoreconf} and
+Automake's rebuild rules.  Hopefully you won't need to worry about
+things breaking, when @command{aclocal} disappears, because everything
+will have been taken care of.  If otherwise you used to call
+@command{aclocal} directly yourself or from some script, you will
+quickly notice the change.
+
+Many packages come with a script called @file{bootstrap.sh} or
+@file{autogen.sh}, that will just call @command{aclocal},
+@command{libtoolize}, @command{gettextize} or @command{autopoint},
+@command{autoconf}, @command{autoheader}, and @command{automake} in
+the right order.  Actually this is precisely what @command{autoreconf}
+can do for you.  If your package has such a @file{bootstrap.sh} or
+@file{autogen.sh} script, consider using @command{autoreconf}.  That
+should simplify its logic a lot (less things to maintain, yum!), it's
+even likely you will not need the script anymore, and more to the point
+you will not call @command{aclocal} directly anymore.
+
+For the time being, third-party packages should continue to install
+public macros into @code{/usr/share/aclocal/}.  If @command{aclocal}
+is replaced by another tool it might make sense to rename the
+directory, but supporting @code{/usr/share/aclocal/} for backward
+compatibility should be really easy provided all macros are properly
+written (@pxref{Extending aclocal}).
+
 
 
 @node Macros
@@ -2100,393 +2483,6 @@ where the clock is set incorrectly.  This macro is automatically run
 from @code{AM_INIT_AUTOMAKE}.
 
 @end ftable
-
-
-@node Extending aclocal
-@section Writing your own aclocal macros
-
-@cindex @command{aclocal}, extending
-@cindex Extending @command{aclocal}
-
-The @command{aclocal} program doesn't have any built-in knowledge of any
-macros, so it is easy to extend it with your own macros.
-
-This can be used by libraries which want to supply their own Autoconf
-macros for use by other programs.  For instance the @command{gettext}
-library supplies a macro @code{AM_GNU_GETTEXT} which should be used by
-any package using @command{gettext}.  When the library is installed, it
-installs this macro so that @command{aclocal} will find it.
-
-A macro file's name should end in @file{.m4}.  Such files should be
-installed in @file{$(datadir)/aclocal}.  This is as simple as writing:
-
-@example
-aclocaldir = $(datadir)/aclocal
-aclocal_DATA = mymacro.m4 myothermacro.m4
-@end example
-
-A file of macros should be a series of properly quoted
-@code{AC_DEFUN}'s (@pxref{Macro Definitions, , , autoconf, The
-Autoconf Manual}).  The @command{aclocal} programs also understands
-@code{AC_REQUIRE} (@pxref{Prerequisite Macros, , , autoconf, The
-Autoconf Manual}), so it is safe to put each macro in a separate file.
-Each file should have no side effects but macro definitions.
-Especially, any call to @code{AC_PREREQ} should be done inside the
-defined macro, not at the beginning of the file.
-
-@cindex underquoted @code{AC_DEFUN}
-@acindex AC_DEFUN
-@acindex AC_PREREQ
-
-Starting with Automake 1.8, @command{aclocal} will warn about all
-underquoted calls to @code{AC_DEFUN}.  We realize this will annoy a
-lot of people, because @command{aclocal} was not so strict in the past
-and many third party macros are underquoted; and we have to apologize
-for this temporary inconvenience.  The reason we have to be stricter
-is that a future implementation of @command{aclocal} (@pxref{Future of
-aclocal}) will have to temporary include all these third party
-@file{.m4} files, maybe several times, even those which are not
-actually needed.  Doing so should alleviate many problem of the
-current implementation, however it requires a stricter style from the
-macro authors.  Hopefully it is easy to revise the existing macros.
-For instance
-@example
-# bad style
-AC_PREREQ(2.57)
-AC_DEFUN(AX_FOOBAR,
-[AC_REQUIRE([AX_SOMETHING])dnl
-AX_FOO
-AX_BAR
-])
-@end example
-@noindent
-should be rewritten as
-@example
-AC_DEFUN([AX_FOOBAR],
-[AC_PREREQ(2.57)dnl
-AC_REQUIRE([AX_SOMETHING])dnl
-AX_FOO
-AX_BAR
-])
-@end example
-
-Wrapping the @code{AC_PREREQ} call inside the macro ensures that
-Autoconf 2.57 will not be required if @code{AX_FOOBAR} is not actually
-used.  Most importantly, quoting the first argument of @code{AC_DEFUN}
-allows the macro to be redefined or included twice (otherwise this
-first argument would be expansed during the second definition).
-
-If you have been directed here by the @command{aclocal} diagnostic but
-are not the maintainer of the implicated macro, you will want to
-contact the maintainer of that macro.  Please make sure you have the
-last version of the macro and that the problem already hasn't been
-reported before doing so: people tend to work faster when they aren't
-flooded by mails.
-
-Another situation where @command{aclocal} is commonly used is to
-manage macros which are used locally by the package, @ref{Local
-Macros}.
-
-@node Local Macros
-@section Handling Local Macros
-
-Feature tests offered by Autoconf do not cover all needs.  People
-often have to supplement existing tests with their own macros, or
-with third-party macros.
-
-There are two ways to organize custom macros in a package.
-
-The first possibility (the historical practice) is to list all your
-macros in @file{acinclude.m4}.  This file will be included in
-@file{aclocal.m4} when you run @command{aclocal}, and its macro(s) will
-henceforth be visible to @command{autoconf}.  However if it contains
-numerous macros, it will rapidly become difficult to maintain, and it
-will be almost impossible to share macros between packages.
-
-@vindex ACLOCAL_AMFLAGS
-The second possibility, which we do recommend, is to write each macro
-in its own file and gather all these files in a directory.  This
-directory is usually called @file{m4/}.  To build @file{aclocal.m4},
-one should therefore instruct @command{aclocal} to scan @file{m4/}.
-From the command line, this is done with @code{aclocal -I m4}.  The
-top-level @file{Makefile.am} should also be updated to define
-
-@example
-ACLOCAL_AMFLAGS = -I m4
-@end example
-
-@code{ACLOCAL_AMFLAGS} contains options to pass to @command{aclocal}
-when @file{aclocal.m4} is to be rebuilt by @code{make}.  This line is
-also used by @command{autoreconf} (@pxref{autoreconf Invocation, ,
-Using @command{autoreconf} to Update @file{configure} Scripts,
-autoconf, The Autoconf Manual}) to run @command{aclocal} with suitable
-options, or by @command{autopoint} (@pxref{autopoint Invocation, ,
-Invoking the @command{autopoint} Program, gettext, GNU gettext tools})
-and @command{gettextize} (@pxref{gettextize Invocation, , Invoking the
-@command{gettextize} Program, gettext, GNU gettext tools}) to locate
-the place where Gettext's macros should be installed.  So even if you
-do not really care about the rebuild rules, you should define
-@code{ACLOCAL_AMFLAGS}.
-
-When @code{aclocal -I m4} is run, it will build a @code{aclocal.m4}
-that @code{m4_include}s any file from @file{m4/} that defines a
-required macro.  Macros not found locally will still be searched in
-system-wide directories, as explained in @ref{Macro search path}.
-
-Custom macros should be distributed for the same reason that
-@file{configure.ac} is: so that other people have all the sources of
-your package if they want to work on it.  Actually, this distribution
-happens automatically because all @code{m4_include}d files are
-distributed.
-
-However there is no consensus on the distribution of third-party
-macros that your package may use.  Many libraries install their own
-macro in the system-wide @command{aclocal} directory (@pxref{Extending
-aclocal}).  For instance Guile ships with a file called
-@file{guile.m4} that contains the macro @code{GUILE_FLAGS} which can
-be used to define setup compiler and linker flags appropriate for
-using Guile.  Using @code{GUILE_FLAGS} in @file{configure.ac} will
-cause @command{aclocal} to copy @file{guile.m4} into
-@file{aclocal.m4}, but as @file{guile.m4} is not part of the project,
-it will not be distributed.  Technically, that means a user which
-needs to rebuild @file{aclocal.m4} will have to install Guile first.
-This is probably OK, if Guile already is a requirement to build the
-package.  However, if Guile is only an optional feature, or if your
-package might run on architectures where Guile cannot be installed,
-this requirement will hinder development.  An easy solution is to copy
-such third-party macros in your local @file{m4/} directory so they get
-distributed.
-
-Since Automake 1.10, @command{aclocal} offers an option to copy these
-system-wide third-party macros in your local macro directory, solving
-the above problem.  Simply use:
-
-@smallexample
-ACLOCAL_AMFLAGS = -I m4 --install
-@end smallexample
-
-@noindent
-With this setup, system-wide macros will be copied to @file{m4/}
-the first time you run @command{autoreconf}.  Then the locally
-installed macros will have precedence over the system-wide installed
-macros each time @command{aclocal} is run again.
-
-One reason why you should keep @code{--install} in the flags even
-after the first run is that when you later edit @file{configure.ac}
-and depend on a new macro, this macro will be installed in your
-@file{m4/} automatically.  Another one is that serial numbers
-(@pxref{Serials}) can be used to update the macros in your source tree
-automatically when new system-wide versions are installed.  A serial
-number should be a single line of the form
-
-@smallexample
-#serial @var{NNN}
-@end smallexample
-
-@noindent
-where @var{NNN} contains only digits and dots.  It should appear in
-the M4 file before any macro definition.  It is a good practice to
-maintain a serial number for each macro you distribute, even if you do
-not use the @code{--install} option of @command{aclocal}: this allows
-other people to use it.
-
-
-@node Serials
-@section Serial Numbers
-@cindex serial numbers in macros
-@cindex macro serial numbers
-@cindex @code{#serial} syntax
-@cindex @command{aclocal} and serial numbers
-
-Because third-party macros defined in @file{*.m4} files are naturally
-shared between multiple projects, some people like to version them.
-This makes it easier to tell which of two M4 files is newer.  Since at
-least 1996, the tradition is to use a @code{#serial} line for this.
-
-A serial number should be a single line of the form
-
-@smallexample
-# serial @var{version}
-@end smallexample
-
-@noindent
-where @var{version} is a version number containing only digits and
-dots.  Usually people use a single integer, and they increment it each
-time they change the macro (hence the name of ``serial'').  Such a
-line should appear in the M4 file before any macro definition.
-
-The @code{#} must be the first character on the line,
-and it is OK to have extra words after the version, as in
-
-@smallexample
-#serial @var{version} @var{garbage}
-@end smallexample
-
-Normally these serial numbers are completely ignored by
-@command{aclocal} and @command{autoconf}, like any genuine comment.
-However when using @command{aclocal}'s @code{--install} feature, these
-serial numbers will modify the way @command{aclocal} selects the
-macros to install in the package: if two files with the same basename
-exists in your search path, and if at least one of them use a
-@code{#serial} line, @command{aclocal} will ignore the file that has
-the older @code{#serial} line (or the file that has none).
-
-Note that a serial number applies to a whole M4 file, not to any macro
-it contains.  A file can contains multiple macros, but only one
-serial.
-
-Here is a use case that illustrate the use of @code{--install} and its
-interaction with serial numbers.  Let's assume we maintain a package
-called MyPackage, whose @file{configure.ac} uses a third-party macro
-@code{AX_THIRD_PARTY} defined in
-@file{/usr/share/aclocal/thirdparty.m4} as follows:
-
-@smallexample
-# serial 1
-AC_DEFUN([AX_THIRD_PARTY], [...])
-@end smallexample
-
-MyPackage uses an @file{m4/} directory to store local macros as
-explained in @ref{Local Macros}, and has
-
-@smallexample
-ACLOCAL_AMFLAGS = -I m4 --install
-@end smallexample
-
-@noindent
-in its top-level @file{Makefile.am}.
-
-Initially the @file{m4/} directory is empty.  The first time we run
-@command{autoreconf}, it will fetch the options to pass to
-@command{aclocal} in @file{Makefile.am}, and run @code{aclocal -I m4
---install}.  @command{aclocal} will notice that
-
-@itemize @bullet
-@item
-@file{configure.ac} uses @code{AX_THIRD_PARTY}
-@item
-No local macros define @code{AX_THIRD_PARTY}
-@item
-@file{/usr/share/aclocal/thirdparty.m4} defines @code{AX_THIRD_PARTY}
-with serial 1.
-@end itemize
-
-@noindent
-Because @file{/usr/share/aclocal/thirdparty.m4} is a system-wide macro
-and @command{aclocal} was given the @code{--install} option, it will
-copy this file in @file{m4/thirdparty.m4}, and output an
-@file{aclocal.m4} that contains @code{m4_include([m4/thirdparty.m4])}.
-
-The next time @code{aclocal -I m4 --install} is run (either via
-@command{autoreconf}, by hand, or from the @file{Makefile} rebuild
-rules) something different happens.  @command{aclocal} notices that
-
-@itemize @bullet
-@item
-@file{configure.ac} uses @code{AX_THIRD_PARTY}
-@item
-@file{m4/thirdparty.m4} defines @code{AX_THIRD_PARTY}
-with serial 1.
-@item
-@file{/usr/share/aclocal/thirdparty.m4} defines @code{AX_THIRD_PARTY}
-with serial 1.
-@end itemize
-
-@noindent
-Because both files have the same serial number, @command{aclocal} uses
-the first it found in its search path order (@pxref{Macro search
-path}).  @command{aclocal} therefore ignores
-@file{/usr/share/aclocal/thirdparty.m4} and outputs an
-@file{aclocal.m4} that contains @code{m4_include([m4/thirdparty.m4])}.
-
-Local directories specified with @code{-I} are always searched before
-system-wide directories, so a local file will always be preferred to
-the system-wide file in case of equal serial numbers.
-
-Now suppose the system-wide third-party macro is changed.  This can
-happen if the package installing this macro is updated.  Let's suppose
-the new macro has serial number 2.  The next time @code{aclocal -I m4
---install} is run the situation is the following:
-
-@itemize @bullet
-@item
-@file{configure.ac} uses @code{AX_THIRD_PARTY}
-@item
-@file{m4/thirdparty.m4} defines @code{AX_THIRD_PARTY}
-with serial 1.
-@item
-@file{/usr/share/aclocal/thirdparty.m4} defines @code{AX_THIRD_PARTY}
-with serial 2.
-@end itemize
-
-@noindent
-As soon as @command{aclocal} sees a greater serial number, it forgets
-anything it knows about smaller serial numbers for the same file.  So
-after it has found @file{/usr/share/aclocal/thirdparty.m4} with serial
-2, @command{aclocal} will proceed as if it had never seen
-@file{m4/thirdparty.m4}.  This brings us back to a situation similar
-to that at the beginning of our example, where no local file defined
-the macro.  @command{aclocal} will install the new version of the
-macro in @file{m4/thirdparty.m4}, in this case overriding the old
-version.  MyPackage just had its macro updated as a side effect of
-running @command{aclocal}.
-
-
-The @code{--force} option of @command{aclocal} has absolutely no
-effect on the files installed by @code{--install}.  For instance you
-have modified your local macros, do not expect @code{--install
---force} to replace the local macros by their system-wide versions.
-If you want to do so, simply erase the local macros you want to
-revert, and run @code{aclocal -I m4 --install}.
-
-
-@node Future of aclocal
-@section The Future of @command{aclocal}
-@cindex @command{aclocal}'s scheduled death
-
-@command{aclocal} is expected to disappear.  This feature really
-should not be offered by Automake.  Automake should focus on
-generating @file{Makefile}s; dealing with M4 macros really is
-Autoconf's job.  That some people install Automake just to use
-@command{aclocal}, but do not use @command{automake} otherwise is an
-indication of how that feature is misplaced.
-
-The new implementation will probably be done slightly differently.
-For instance it could enforce the @file{m4/}-style layout discussed in
-@ref{Local Macros}.
-
-We have no idea when and how this will happen.  This has been
-discussed several times in the past, but someone still has to commit
-itself to that non-trivial task.
-
-From the user point of view, @command{aclocal}'s removal might turn
-out to be painful.  There is a simple precaution that you may take to
-make that switch more seamless: never call @command{aclocal} yourself.
-Keep this guy under the exclusive control of @command{autoreconf} and
-Automake's rebuild rules.  Hopefully you won't need to worry about
-things breaking, when @command{aclocal} disappears, because everything
-will have been taken care of.  If otherwise you used to call
-@command{aclocal} directly yourself or from some script, you will
-quickly notice the change.
-
-Many packages come with a script called @file{bootstrap.sh} or
-@file{autogen.sh}, that will just call @command{aclocal},
-@command{libtoolize}, @command{gettextize} or @command{autopoint},
-@command{autoconf}, @command{autoheader}, and @command{automake} in
-the right order.  Actually this is precisely what @command{autoreconf}
-can do for you.  If your package has such a @file{bootstrap.sh} or
-@file{autogen.sh} script, consider using @command{autoreconf}.  That
-should simplify its logic a lot (less things to maintain, yum!), it's
-even likely you will not need the script anymore, and more to the point
-you will not call @command{aclocal} directly anymore.
-
-For the time being, third-party packages should continue to install
-public macros into @code{/usr/share/aclocal/}.  If @command{aclocal}
-is replaced by another tool it might make sense to rename the
-directory, but supporting @code{/usr/share/aclocal/} for backward
-compatibility should be really easy provided all macros are properly
-written (@pxref{Extending aclocal}).
-
 
 
 @node Directories
