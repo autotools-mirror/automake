@@ -544,7 +544,7 @@ sub generate_makefile
     &handle_headers;
     &handle_subdirs;
     &handle_tags;
-    &handle_dist;
+    &handle_dist ($makefile);
     &handle_dependencies;
     &handle_tests;
     &handle_footer;
@@ -575,7 +575,7 @@ sub generate_makefile
 
     if (! open (GM_FILE, "> " . $out_file))
     {
-	warn "automake: ${am_file}.in: cannot open: $!\n";
+	warn "automake: ${am_file}.in: cannot write: $!\n";
 	$exit_status = 1;
 	return;
     }
@@ -2182,6 +2182,8 @@ sub handle_tags
 # Worker for handle_dist.
 sub handle_dist_worker
 {
+    local ($makefile) = @_;
+
     $output_rules .= 'distdir: $(DISTFILES)' . "\n";
 
     # Initialization; only at top level.
@@ -2199,30 +2201,34 @@ sub handle_dist_worker
 	}
 
 
-	$output_rules .=
-	    # Create dist directory.
-	    '	rm -rf $(distdir)
-	mkdir $(distdir)
-	-chmod 755 $(distdir)
-';
+	# Create dist directory.
+	$output_rules .= ("\trm -rf \$(distdir)\n"
+			  . "\tmkdir \$(distdir)\n"
+			  . "\t-chmod 777 \$(distdir)\n");
+    }
 
-	# Only run automake in `dist' target if --include-deps and
-	# `no-dependencies' not specified.  That way the recipient of
-	# a distribution can run "make dist" and not need Automake.
-	if ($use_dependencies)
-	{
-	    $output_rules .=
-		(
-		 # We need an absolute path for --output-dir.  Thus the
-		 # weirdness.
-		 '	here=`pwd`; distdir=`cd $(distdir) && pwd` \\
-	  && cd $(srcdir) \\
-	  && $(AUTOMAKE) --include-deps --build-dir=$$here --srcdir-name=$(srcdir) --output-dir=$$distdir '
-		 # Set strictness of output.
-		 . ($cygnus_mode ? '--cygnus' : ('--' . $strictness_name))
-		 . "\n"
-		 );
-	}
+    # Only run automake in `dist' target if --include-deps and
+    # `no-dependencies' not specified.  That way the recipient of a
+    # distribution can run "make dist" and not need Automake.  You
+    # might be wondering why we run automake once for each directory
+    # we distribute, instead of running it once at the top level.  The
+    # answer is that we want to run automake after the dependencies
+    # have been generated.  This occurs when "make" is run in the
+    # subdir.  So automake must be run after make has updated the
+    # Makefile, which means that it must run once per directory.
+    if ($use_dependencies)
+    {
+	$output_rules .=
+	    (
+	     # We need an absolute path for --output-dir.  Thus the
+	     # weirdness.
+	     "\t" . 'here=`cd $(top_builddir) && pwd`; top_distdir=`cd $$top_distdir && pwd` ' . "\\\n"
+	     . "\t  && cd \$(top_srcdir) \\\n"
+	     . "\t  && \$(AUTOMAKE) --include-deps --build-dir=\$\$here --srcdir-name=\$(top_srcdir) --output-dir=\$\$top_distdir "
+	     # Set strictness of output.
+	     . ($cygnus_mode ? '--cygnus' : ('--' . $strictness_name))
+	     . " " . $makefile . "\n"
+	     );
     }
 
     # Scan EXTRA_DIST to see if we need to distribute anything from a
@@ -2286,8 +2292,8 @@ sub handle_dist_worker
 	  test -d $(distdir)/$$subdir		\\
 	  || mkdir $(distdir)/$$subdir		\\
 	  || exit 1;				\\
-	  chmod 755 $(distdir)/$$subdir;	\\
-	  (cd $$subdir && $(MAKE) distdir=../$(distdir)/$$subdir distdir) \\
+	  chmod 777 $(distdir)/$$subdir;	\\
+	  (cd $$subdir && $(MAKE) top_distdir=$(top_distdir) distdir=../$(distdir)/$$subdir distdir) \\
 	    || exit 1; \\
 	done
 ';
@@ -2301,8 +2307,9 @@ sub handle_dist_worker
     local ($targ);
     foreach $targ (@dist_targets)
     {
-	# We must explicitly set distdir for these sub-makes.
-	$output_rules .= "\t\$(MAKE) distdir=\"\$(distdir)\" $targ\n";
+	# We must explicitly set distdir and top_distdir for these
+	# sub-makes.
+	$output_rules .= "\t\$(MAKE) top_distdir=\"\$(distdir)\" distdir=\"\$(distdir)\" $targ\n";
     }
 
     push (@phony, 'distdir');
@@ -2311,6 +2318,8 @@ sub handle_dist_worker
 # Handle 'dist' target.
 sub handle_dist
 {
+    local ($makefile) = @_;
+
     # Set up maint_charset.
     $local_maint_charset = $contents{'MAINT_CHARSET'}
 	if &variable_defined ('MAINT_CHARSET');
@@ -2435,7 +2444,7 @@ distcheck: dist
     }
 
     # Generate distdir target.
-    &handle_dist_worker;
+    &handle_dist_worker ($makefile);
 }
 
 # Scan a single dependency file and rewrite the dependencies as
@@ -2873,11 +2882,11 @@ sub handle_configure
 
 	    local ($xform) = '';
 
-	    $xform = 's/\@FILES\@/' . join (' ', @files) . '/;';
-	    $xform .= 's/\@CONFIG_HEADER\@/' . "${cn_sans_dir}" . '/;';
-	    $xform .= 's/\@CONFIG_HEADER_IN\@/' . "${ch_sans_dir}" . '/;';
-	    $xform .= 's/\@CONFIG_HEADER_FULL\@/' . "${one_fullname}" . '/;';
-	    $xform .= 's/\@STAMP\@/' . "${stamp_name}" . '/;';
+	    $xform = 's,\@FILES\@,' . join (' ', @files) . ',;';
+	    $xform .= 's,\@CONFIG_HEADER\@,' . "${cn_sans_dir}" . ',;';
+	    $xform .= 's,\@CONFIG_HEADER_IN\@,' . "${ch_sans_dir}" . ',;';
+	    $xform .= 's,\@CONFIG_HEADER_FULL\@,' . "${one_fullname}" . ',;';
+	    $xform .= 's,\@STAMP\@,' . "${stamp_name}" . ',;';
 
 	    $output_rules .= &file_contents_with_transform ($xform,
 							    'remake-hdr');
@@ -2893,9 +2902,9 @@ sub handle_configure
 
     if ($distclean_config)
     {
-	$output_rules .= &file_contents_with_transform ('s/\@FILES\@/'
+	$output_rules .= &file_contents_with_transform ('s,\@FILES\@,'
 							. $distclean_config
-							. '/;',
+							. ',;',
 							'clean-hdr');
 	push (@clean, 'hdr');
 	&push_phony_cleaners ('hdr');
