@@ -59,7 +59,11 @@ struct (# Short name of the language (c, f77...).
         'compile'  => "\$",
         # Flag to require compilation without linking (-c).
         'compile_flag' => "\$",
-        'extensions'      => '@',
+        'extensions' => '@',
+	# A subroutine to compute a list of possible extensions of
+	# the product given the input extensions.
+	# (defaults to a subroutine which returns ('.$(OBJEXT)', '.lo'))
+	'output_extensions' => "\$",
         'flags' => "\$",
 
 	# The file to use when generating rules for this language.
@@ -449,6 +453,9 @@ my $automake_needs_to_reprocess_all_files = 0;
 # Options set via AM_INIT_AUTOMAKE.
 my $global_options = '';
 
+# Same as $suffix_rules (declared below), but records only the
+# default rules supplied by the languages Automake supports.
+my $suffix_rules_default;
 
 
 ################################################################
@@ -584,12 +591,26 @@ my @dist_targets;
 # trailing `/'.
 my %de_ansi_files;
 
-# This maps the source extension of a suffix rule to its
-# corresponding output extension.
-# FIXME: because this hash maps one input extension to one output
-# extension, Automake cannot handle two suffix rules with the same
-# input extension.
-my %suffix_rules;
+# This maps the source extension for all suffix rule seen to
+# a \hash whose keys are the possible output extensions.
+#
+# Note that this is transitively closed by construction:
+# if we have
+#       exists $suffix_rules{$ext1}{$ext2}
+#    && exists $suffix_rules{$ext2}{$ext3}
+# then we also have
+#       exists $suffix_rules{$ext1}{$ext3}
+#
+# So it's easy to check whether '.foo' can be transformed to '.$(OBJEXT)'
+# by checking whether $suffix_rules{'.foo'}{'.$(OBJEXT)'} exist.  This
+# will work even if transforming '.foo' to '.$(OBJEXT)' involves a chain
+# of several suffix rules.
+#
+# The value of `$suffix_rules{$ext1}{$ext2}' is the a pair
+# `[ $next_sfx, $dist ]' where `$next_sfx' is target suffix
+# for the next rule to use to reach '$ext2', and `$dist' the
+# distance to `$ext2'.
+my $suffix_rules;
 
 # This is the name of the redirect `all' target to use.
 my $all_target;
@@ -772,7 +793,17 @@ sub initialize_per_input ()
 
     %de_ansi_files = ();
 
-    %suffix_rules = ();
+
+    # The first time we initialize the variables,
+    # we save the value of $suffix_rules.
+    if (defined $suffix_rules_default)
+      {
+	$suffix_rules = $suffix_rules_default;
+      }
+    else
+      {
+	$suffix_rules_default = $suffix_rules;
+      }
 
     $all_target = '';
 
@@ -865,6 +896,8 @@ register_language ('name' => 'header',
 		   'Name' => 'Header',
 		   'extensions' => ['.h', '.H', '.hxx', '.h++', '.hh',
 				    '.hpp', '.inc'],
+		   # No output.
+		   'output_extensions' => sub { return () },
 		   # Nothing to do.
 		   '_finish' => sub { });
 
@@ -876,6 +909,8 @@ register_language ('name' => 'yacc',
 		   'compile' => '$(YACC) $(YFLAGS) $(AM_YFLAGS)',
 		   'compiler' => 'YACCCOMPILE',
 		   'extensions' => ['.y'],
+		   'output_extensions' => sub { (my $ext = $_[0]) =~ tr/y/c/;
+						return ($ext,) },
 		   'rule_file' => 'yacc',
 		   '_finish' => \&lang_yacc_finish,
 		   '_target_hook' => \&lang_yacc_target_hook);
@@ -887,6 +922,8 @@ register_language ('name' => 'yaccxx',
 		   'compiler' => 'YACCCOMPILE',
 		   'compile' => '$(YACC) $(YFLAGS) $(AM_YFLAGS)',
 		   'extensions' => ['.y++', '.yy', '.yxx', '.ypp'],
+		   'output_extensions' => sub { (my $ext = $_[0]) =~ tr/y/c/;
+						return ($ext,) },
 		   '_finish' => \&lang_yacc_finish,
 		   '_target_hook' => \&lang_yacc_target_hook);
 
@@ -899,6 +936,8 @@ register_language ('name' => 'lex',
 		   'compile' => '$(LEX) $(LFLAGS) $(AM_LFLAGS)',
 		   'compiler' => 'LEXCOMPILE',
 		   'extensions' => ['.l'],
+		   'output_extensions' => sub { (my $ext = $_[0]) =~ tr/l/c/;
+						return ($ext,) },
 		   '_finish' => \&lang_lex_finish,
 		   '_target_hook' => \&lang_lex_target_hook);
 register_language ('name' => 'lexxx',
@@ -909,6 +948,8 @@ register_language ('name' => 'lexxx',
 		   'compile' => '$(LEX) $(LFLAGS) $(AM_LFLAGS)',
 		   'compiler' => 'LEXCOMPILE',
 		   'extensions' => ['.l++', '.ll', '.lxx', '.lpp'],
+		   'output_extensions' => sub { (my $ext = $_[0]) =~ tr/l/c/;
+						return ($ext,) },
 		   '_finish' => \&lang_lex_finish,
 		   '_target_hook' => \&lang_lex_target_hook);
 
@@ -1695,12 +1736,9 @@ sub handle_languages
 		  && $lang->flags eq 'CFLAGS'
 		  && defined $options{'subdir-objects'});
 
-	    # FIXME: this is a temporary hack to compute a possible
-	    # derived extension.  This is not used by depend2.am.
-	    (my $der_ext = $ext) =~ tr/yl/cc/;
-
-	    # Another yacc/lex hack.
-	    my $destfile = '$*' . $der_ext;
+	    # Compute a possible derived extension.
+	    # This is not used by depend2.am.
+	    my $der_ext = (&{$lang->output_extensions} ($ext))[0];
 
 	    $output_rules .=
 	      file_contents ($rule_file,
@@ -1821,7 +1859,8 @@ sub handle_languages
     # suffix rule was learned), don't bother with the C stuff.  But if
     # anything else creeps in, then use it.
     $needs_c = 1
-      if $need_link || scalar keys %suffix_rules > 1;
+      if $need_link || ((scalar keys %$suffix_rules)
+			- (scalar keys %$suffix_rules_default)) > 1;
 
     if ($needs_c)
       {
@@ -5281,24 +5320,35 @@ sub saw_sources_p
 # Each %ATTRIBUTE is of the form ATTRIBUTE => VALUE.
 sub register_language (%)
 {
-    my (%option) = @_;
+  my (%option) = @_;
 
-    # Set the defaults.
-    $option{'ansi'} = 0
-      unless defined $option{'ansi'};
-    $option{'autodep'} = 'no'
-      unless defined $option{'autodep'};
-    $option{'linker'} = ''
-      unless defined $option{'linker'};
+  # Set the defaults.
+  $option{'ansi'} = 0
+    unless defined $option{'ansi'};
+  $option{'autodep'} = 'no'
+    unless defined $option{'autodep'};
+  $option{'linker'} = ''
+    unless defined $option{'linker'};
+  $option{'output_extensions'} = sub { return ( '.$(OBJEXT)', '.lo' ) }
+    unless defined $option{'output_extensions'};
 
-    my $lang = new Language (%option);
+  my $lang = new Language (%option);
 
-    # Fill indexes.
-    grep ($extension_map{$_} = $lang->name, @{$lang->extensions});
-    $languages{$lang->name} = $lang;
+  # Fill indexes.
+  grep ($extension_map{$_} = $lang->name, @{$lang->extensions});
+  $languages{$lang->name} = $lang;
 
-    # Update the pattern of known extensions.
-    accept_extensions (@{$lang->extensions});
+  # Update the pattern of known extensions.
+  accept_extensions (@{$lang->extensions});
+
+  # Upate the $suffix_rule map.
+  foreach my $suffix (@{$lang->extensions})
+    {
+      foreach my $dest (&{$lang->output_extensions} ($suffix))
+	{
+	  &register_suffix_rule ('internal', $suffix, $dest);
+	}
+    }
 }
 
 # derive_suffix ($EXT, $OBJ)
@@ -5307,16 +5357,17 @@ sub register_language (%)
 # to $OBJ or to some other suffix we recognize internally, eg `cc'.
 sub derive_suffix ($$)
 {
-    my ($source_ext, $obj) = @_;
+  my ($source_ext, $obj) = @_;
 
-    while (! $extension_map{$source_ext}
-	   && $source_ext ne $obj
-	   && defined $suffix_rules{$source_ext})
+  while (! $extension_map{$source_ext}
+	 && $source_ext ne $obj
+	 && exists $suffix_rules->{$source_ext}
+	 && exists $suffix_rules->{$source_ext}{$obj})
     {
-	$source_ext = $suffix_rules{$source_ext};
+      $source_ext = $suffix_rules->{$source_ext}{$obj}[0];
     }
 
-    return $source_ext;
+  return $source_ext;
 }
 
 
@@ -6752,6 +6803,77 @@ sub define_linker_variable ($)
 ## Handling rules.  ##
 ## ---------------- ##
 
+sub register_suffix_rule ($$$)
+{
+  my ($where, $src, $dest) = @_;
+
+  verbose "Sources ending in $src become $dest";
+  push @suffixes, $src, $dest;
+
+  # When tranforming sources to objects, Automake uses the
+  # %suffix_rules to move from each source extension to
+  # `.$(OBJEXT)', not to `.o' or `.obj'.  However some people
+  # define suffix rules for `.o' or `.obj', so internally we will
+  # consider these extensions equivalent to `.$(OBJEXT)'.  We
+  # CANNOT rewrite the target (i.e., automagically replace `.o'
+  # and `.obj' by `.$(OBJEXT)' in the output), or warn the user
+  # that (s)he'd better use `.$(OBJEXT)', because Automake itself
+  # output suffix rules for `.o' or `.obj'...
+  $dest = '.$(OBJEXT)' if ($dest eq '.o' || $dest eq '.obj');
+
+  # Reading the comments near the declaration of $suffix_rules might
+  # help to understand the update of $suffix_rules that follows...
+
+  # Register $dest as a possible destination from $src.
+  # We might have the create the \hash.
+  if (exists $suffix_rules->{$src})
+    {
+      $suffix_rules->{$src}{$dest} = [ $dest, 1 ];
+    }
+  else
+    {
+      $suffix_rules->{$src} = { $dest => [ $dest, 1 ] };
+    }
+
+  # If we know how to transform $dest in something else, then
+  # we know how to transform $src in that "something else".
+  if (exists $suffix_rules->{$dest})
+    {
+      for my $dest2 (keys %{$suffix_rules->{$dest}})
+	{
+	  my $dist = $suffix_rules->{$dest}{$dest2}[1] + 1;
+	  # Overwrite an existing $src->$dest2 path only if
+	  # the path via $dest which is shorter.
+	  if (! exists $suffix_rules->{$src}{$dest2}
+	      || $suffix_rules->{$src}{$dest2}[1] > $dist)
+	    {
+	      $suffix_rules->{$src}{$dest2} = [ $dest, $dist ];
+	    }
+	}
+    }
+
+  # Similarly, any extension that can be derived into $src
+  # can be derived into the same extenstions as $src can.
+  my @dest2 = keys %{$suffix_rules->{$src}};
+  for my $src2 (keys %$suffix_rules)
+    {
+      if (exists $suffix_rules->{$src2}{$src})
+	{
+	  for my $dest2 (@dest2)
+	    {
+	      my $dist = $suffix_rules->{$src}{$dest2} + 1;
+	      # Overwrite an existing $src2->$dest2 path only if
+	      # the path via $src is shorter.
+	      if (! exists $suffix_rules->{$src2}{$dest2}
+		  || $suffix_rules->{$src2}{$dest2}[1] > $dist)
+		{
+		  $suffix_rules->{$src2}{$dest2} = [ $src, $dist ];
+		}
+	    }
+	}
+    }
+}
+
 # $BOOL
 # rule_define ($TARGET, $IS_AM, $COND, $WHERE)
 # --------------------------------------------
@@ -6809,22 +6931,7 @@ sub rule_define ($$$$)
   # (see handle_footer).
       || ($target =~ /$SUFFIX_RULE_PATTERN/o && accept_extensions($1)))
   {
-      my $internal_ext = $2;
-
-      # When tranforming sources to objects, Automake uses the
-      # %suffix_rules to move from each source extension to
-      # `.$(OBJEXT)', not to `.o' or `.obj'.  However some people
-      # define suffix rules for `.o' or `.obj', so internally we will
-      # consider these extensions equivalent to `.$(OBJEXT)'.  We
-      # CANNOT rewrite the target (i.e., automagically replace `.o'
-      # and `.obj' by `.$(OBJEXT)' in the output), or warn the user
-      # that (s)he'd better use `.$(OBJEXT)', because Automake itself
-      # output suffix rules for `.o' or `.obj'...
-      $internal_ext = '.$(OBJEXT)' if ($2 eq '.o' || $2 eq '.obj');
-
-      $suffix_rules{$1} = $internal_ext;
-      verbose "Sources ending in $1 become $2";
-      push @suffixes, $1, $2;
+    register_suffix_rule ($where, $1, $2);
   }
 
   return 1;

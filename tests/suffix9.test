@@ -1,0 +1,47 @@
+#! /bin/sh
+
+# Make sure that Automake choose the shorter route between suffixes
+# (related to PR/37)
+
+. $srcdir/defs || exit 1
+
+set -e
+
+echo AC_PROG_CC >>configure.in
+
+#  x_ -> y -> c -> o
+#   \________/
+#
+# Automake should follow the bottom route: x_ -> c -> o because
+# it is shorter.
+#
+# It should not take the "-> y ->" route.  We use `y' here so that
+# then Automake will complains that YACC is not defined and the test will
+# fail when this happens.
+
+cat >Makefile.am << 'END'
+bin_PROGRAMS = foo
+foo_SOURCES = foo.x_
+
+.x_.y:
+	cp $< $@
+.x_.c:
+	cp $< $@
+END
+
+$ACLOCAL
+$AUTOMAKE -a
+
+# Idem with the rules the another order.
+
+cat >Makefile.am << 'END'
+bin_PROGRAMS = foo
+foo_SOURCES = foo.x_
+
+.x_.c:
+	cp $< $@
+.x_.y:
+	cp $< $@
+END
+
+$AUTOMAKE -a

@@ -1,0 +1,56 @@
+#! /bin/sh
+
+# Test to make sure Automake supports multiple derivations for the same suffix.
+# PR/37
+
+required='gcc libtoolize'
+. $srcdir/defs || exit 1
+
+set -e
+
+cat >>configure.in <<'END'
+AM_PROG_LIBTOOL
+AC_OUTPUT
+END
+
+cat >Makefile.am << 'END'
+bin_PROGRAMS = foo
+lib_LTLIBRARIES = libfoo.la
+
+foo_SOURCES = foo.x_
+libfoo_la_SOURCES = bar.x_
+
+.x_.y_:
+	cp $< $@
+
+.y_.o:
+	cp $< $@
+
+.y_.z_:
+	cp $< $@
+
+.z_.lo:
+	cp $< $@
+
+print:
+	@echo BEGIN: $(foo_OBJECTS) :END
+	@echo BEGIN: $(libfoo_la_OBJECTS) :END
+
+test: $(foo_OBJECTS) $(libfoo_la_OBJECTS)
+	test -f foo.$(OBJEXT)
+	test -f bar.lo
+END
+
+echo 'int main() { return 0; }' > foo.x_
+cp foo.x_ bar.x_
+
+libtoolize
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE -a
+./configure
+env OBJEXT=foo $MAKE -e SHELL=/bin/sh print >stdout
+cat stdout
+grep 'BEGIN: foo.foo :END' stdout
+grep 'BEGIN: bar.lo :END' stdout
+$MAKE test

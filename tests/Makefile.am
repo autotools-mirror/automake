@@ -354,6 +354,9 @@ suffix4.test \
 suffix5.test \
 suffix6.test \
 suffix7.test \
+suffix8.test \
+suffix9.test \
+suffix10.test \
 symlink.test \
 symlink2.test \
 symlink3.test \

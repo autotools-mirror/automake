@@ -1,0 +1,37 @@
+#! /bin/sh
+
+# Make sure that derivations work with .lo too.
+# (related to PR/37)
+
+required='libtoolize bison'
+. $srcdir/defs || exit 1
+
+set -e
+
+cat >>configure.in <<EOF
+AC_PROG_CC
+AC_PROG_YACC
+AC_PROG_LIBTOOL
+AC_OUTPUT
+EOF
+
+
+cat >Makefile.am << 'END'
+lib_LTLIBRARIES = libfoo.la
+libfoo_la_SOURCES = foo.x_
+
+.x_.y:
+	cp $< $@
+
+print:
+	echo BEGIN: $(libfoo_la_OBJECTS) :END
+END
+
+libtoolize --force
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE --add-missing
+./configure
+$MAKE print >stdout
+cat stdout
+grep 'BEGIN: foo.lo :END' stdout
