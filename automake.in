@@ -191,10 +191,10 @@ my $AC_CANONICAL_SYSTEM = 2;
 my $MOSTLY_CLEAN = 0;
 my $DIST_CLEAN = 1;
 
-# Files installed by libtoolize.
-my @libtoolize_files = ('ltmain.sh', 'config.guess', 'config.sub');
+# Libtool files.
+my @libtool_files = ('ltmain.sh', 'config.guess', 'config.sub');
 # ltconfig appears here for compatibility with old versions of libtool.
-my @libtoolize_sometimes = ('ltconfig', 'ltcf-c.sh', 'ltcf-cxx.sh',
+my @libtool_sometimes = ('ltconfig', 'ltcf-c.sh', 'ltcf-cxx.sh',
 			    'ltcf-gcj.sh');
 
 # Commonly found files we look for and automatically include in
@@ -207,9 +207,7 @@ my @common_files =
    'AUTHORS', 'BACKLOG', 'ABOUT-GNU', 'libversion.in',
    'mdate-sh', 'mkinstalldirs', 'install-sh', 'texinfo.tex',
    'ansi2knr.c', 'ansi2knr.1', 'elisp-comp',
-   # ltconfig appears here for compatibility with old versions
-   # of libtool.
-   'ylwrap', 'acinclude.m4', @libtoolize_files, @libtoolize_sometimes,
+   'ylwrap', 'acinclude.m4', @libtool_files, @libtool_sometimes,
    'missing', 'depcomp', 'compile', 'py-compile'
   );
 
@@ -392,12 +390,11 @@ my $seen_prog_lex = 0;
 my $seen_canonical = 0;
 my $canonical_location;
 
-# TRUE if we've seen AC_PROG_LIBTOOL.
-my $seen_libtool = 0;
-my $libtool_location;
+# Where AC_PROG_LIBTOOL appears.
+my $seen_libtool;
 
-# TRUE if we've seen AM_MAINTAINER_MODE.
-my $seen_maint_mode = 0;
+# Where AM_MAINTAINER_MODE appears.
+my $seen_maint_mode;
 
 # Actual version we've seen.
 my $package_version = '';
@@ -1509,7 +1506,7 @@ sub handle_languages
 	my %transform = ('EXT'     => $ext,
 			 'PFX'     => $pfx,
 			 'FPFX'    => $fpfx,
-			 'LIBTOOL' => $seen_libtool,
+			 'LIBTOOL' => defined $seen_libtool,
 			 'AMDEP'   => $AMDEP,
 			 '-c'      => $lang->compile_flag || '',
 			 'MORE-THAN-ONE'
@@ -2469,8 +2466,8 @@ sub handle_libtool
 {
     return unless $seen_libtool;
 
-    # libtool requires some files, but only at top level.
-    require_conf_file ($libtool_location, $FOREIGN, @libtoolize_files)
+    # Libtool requires some files, but only at top level.
+    require_conf_file ($seen_libtool, $FOREIGN, @libtool_files)
 	if $relative_dir eq '.';
 
     # Output the libtool compilation rules.
@@ -2718,7 +2715,7 @@ sub handle_ltlibraries
 		# Only get this error once.  If this is ever printed,
 		# we have a bug.
 		$configure_vars{'LIBTOOL'} = 'BUG';
-		$seen_libtool = 1;
+		$seen_libtool = $var_location{$key . '_LTLIBRARIES'};
 	    }
 
 	    # Get the installation directory of each library.
@@ -4478,7 +4475,6 @@ sub scan_autoconf_traces ($)
       elsif ($macro =~ /^A(C|M)_PROG_LIBTOOL$/)
 	{
 	  $seen_libtool = $here;
-	  $libtool_location = $here;
 	}
       elsif ($macro eq 'AC_PROG_LEX')
 	{
@@ -4828,7 +4824,6 @@ sub scan_one_autoconf_file
 	    # 	file_warning ($here, "`AM_PROG_LIBTOOL' is obsolete, use `AC_PROG_LIBTOOL' instead");
 	    # }
 	    $seen_libtool = $here;
-	    $libtool_location = $here;
 	    $configure_vars{'LIBTOOL'} = $here;
 	    $configure_vars{'RANLIB'} = $here;
 	    $configure_vars{'CC'} = $here;
@@ -7718,19 +7713,7 @@ sub require_file_internal ($$@)
 		{
 		    $suppress = 1;
 
-		    # Maybe run libtoolize.
-		    my @syslist = ('libtoolize', '--automake');
-		    push @syslist, '--copy'
-			if $copy_missing;
-		    if ($seen_libtool
-			&& grep ($_ eq $file, @libtoolize_files)
-			&& system (@syslist))
-		    {
-			$message = "installing `$errfile'";
-			$suppress = 0;
-			$trailer = "; cannot run `libtoolize': $!";
-		    }
-		    elsif (-f ("$libdir/$file"))
+		    if (-f ("$libdir/$file"))
 		    {
 			# Install the missing file.  Symlink if we
 			# can, copy if we must.  Note: delete the file
