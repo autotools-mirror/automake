@@ -1391,13 +1391,6 @@ sub handle_languages
 	my $pfx = $lang->autodep;
 	my $fpfx = ($pfx eq '') ? 'CC' : $pfx;
 
-	# Some C compilers don't support -c -o.  Use it only if really
-	# needed.
-	my $output_flag = $lang->output_flag || '';
-	$output_flag = '-o'
-	  if (! $output_flag
-	      && $lang->flags eq 'CFLAGS'
-	      && defined $options{'subdir-objects'});
 	my $AMDEP = (($use_dependencies && $lang->autodep ne 'no')
 		     ? 'AMDEP' : 'FALSE');
 
@@ -1406,13 +1399,20 @@ sub handle_languages
 			 'FPFX'    => $fpfx,
 			 'LIBTOOL' => $seen_libtool,
 			 'AMDEP'   => $AMDEP,
-			 '-c'      => $lang->compile_flag || '',
-			 '-o'      => $output_flag);
+			 '-c'      => $lang->compile_flag || '');
 
 	# Generate the appropriate rules for this extension.
 	if ($use_dependencies && $lang->autodep ne 'no'
 	    || defined $lang->compile)
 	  {
+	    # Some C compilers don't support -c -o.  Use it only if really
+	    # needed.
+	    my $output_flag = $lang->output_flag || '';
+	    $output_flag = '-o'
+	      if (! $output_flag
+		  && $lang->flags eq 'CFLAGS'
+		  && defined $options{'subdir-objects'});
+
 	    $output_rules .=
 	      file_contents ('depend2',
 			     %transform,
@@ -1425,48 +1425,49 @@ sub handle_languages
 			     'LTOBJ'     => '$@',
 
 			     'COMPILE'   => '$(' . $lang->compiler . ')',
-			     'LTCOMPILE' => '$(LT' . $lang->compiler . ')');
+			     'LTCOMPILE' => '$(LT' . $lang->compiler . ')',
+			     '-o'        => $output_flag);
 	  }
 
-	# Then handle files with specific flags.
-        if ($lang->autodep ne 'no')
+	# Now include code for each specially handled object with this
+	# language.
+	my %seen_files = ();
+	foreach my $file (@{$lang_specific_files{$lang->name}})
 	  {
-	    # Now include code for each specially handled object with this
-	    # language.
-	    my %seen_files = ();
-	    foreach my $file (@{$lang_specific_files{$lang->name}})
-	      {
-		my ($derived, $source, $obj) = split (' ', $file);
+	    my ($derived, $source, $obj) = split (' ', $file);
 
-		# We might see a given object twice, for instance if it is
-		# used under different conditions.
-		next if defined $seen_files{$obj};
-		$seen_files{$obj} = 1;
+	    # We might see a given object twice, for instance if it is
+	    # used under different conditions.
+	    next if defined $seen_files{$obj};
+	    $seen_files{$obj} = 1;
 
-		my $flags = $lang->flags || '';
-		my $val = "${derived}_${flags}";
+	    my $flags = $lang->flags || '';
+	    my $val = "${derived}_${flags}";
 
-		(my $obj_compile = $lang->compile) =~ s/\(AM_$flags/\($val/;
-		my $obj_ltcompile = '$(LIBTOOL) --mode=compile ' . $obj_compile;
+	    (my $obj_compile = $lang->compile) =~ s/\(AM_$flags/\($val/;
+	    my $obj_ltcompile = '$(LIBTOOL) --mode=compile ' . $obj_compile;
 
-		# Generate a transform which will turn suffix targets in
-		# depend2.am into real targets for the particular objects we
-		# are building.
-		$output_rules .=
-		  file_contents ('depend2',
-				 (%transform,
-				  'GENERIC'   => 0,
+	    # We _need_ `-o' for per object rules.
+	    my $output_flag = $lang->output_flag || '-o';
 
-				  'BASE'      => $obj,
-				  'SOURCE'    => $source,
-				  'OBJ'       => "$obj.o",
-				  'OBJOBJ'    => "$obj.obj",
-				  'LTOBJ'     => "$obj.lo",
+	    # Generate a transform which will turn suffix targets in
+	    # depend2.am into real targets for the particular objects we
+	    # are building.
+	    $output_rules .=
+	      file_contents ('depend2',
+			     (%transform,
+			      'GENERIC'   => 0,
 
-				  'COMPILE'   => $obj_compile,
-				  'LTCOMPILE' => $obj_ltcompile))
-		}
-	  }
+			      'BASE'      => $obj,
+			      'SOURCE'    => $source,
+			      'OBJ'       => "$obj.o",
+			      'OBJOBJ'    => "$obj.obj",
+			      'LTOBJ'     => "$obj.lo",
+
+			      'COMPILE'   => $obj_compile,
+			      'LTCOMPILE' => $obj_ltcompile,
+			      '-o'        => $output_flag));
+	    }
 
 	# The rest of the loop is done once per language.
 	next if defined $done{$lang};
@@ -1727,9 +1728,7 @@ sub handle_single_transform_list ($$$@)
         my $base = $2;
         my $extension = $3;
 
-        # We must generate a rule for the object if it requires
-        # its own flags.
-        my $rule = '';
+        # We must generate a rule for the object if it requires its own flags.
         my $renamed = 0;
         my ($linker, $object);
 
@@ -1793,21 +1792,6 @@ sub handle_single_transform_list ($$$@)
                 &prog_error ("$lang->name flags defined without compiler")
   		    if ! defined $lang->compile;
 
-                # Compute the rule to compile this object.
-                my $flag = $lang->flags;
-                my $val = "(${derived}_${flag}";
-                ($rule = $lang->compile) =~ s/\(AM_$flag/$val/;
-
-                $rule .= ' ' . $lang->compile_flag;
-		$rule .= ' ' . $lang->output_flag . '$@'
-		  if $lang->output_flag;
-                # For C we have to add the -o, because the
-                # standard rule doesn't include it.
-                if ($lang->flags eq 'CFLAGS')
-                {
-                    $rule .= ' -o $@';
-                }
-
                 $renamed = 1;
             }
 
@@ -1824,12 +1808,8 @@ sub handle_single_transform_list ($$$@)
             # where the object is not in `.' we need a special
             # rule.  The per-object rules in this case are
             # generated later, by handle_languages.
-            if (($use_dependencies
-                 && $rule ne ''
-                 && $lang->autodep ne 'no')
-                || $directory ne '')
+            if ($renamed || $directory ne '')
             {
-                $rule = '';
                 my $obj_sans_ext = substr ($object, 0,
 					   - length ($this_obj_ext));
                 push (@{$lang_specific_files{$lang->name}},
@@ -1918,23 +1898,7 @@ sub handle_single_transform_list ($$$@)
             }
 
             &pretty_print_rule ($object . ':', "\t", @dep_list)
-                if scalar @dep_list > 0 || $rule ne '';
-
-            # Print the rule if we have one.
-            if ($rule ne '')
-            {
-                # Turn `$@' into name of our object file.
-                my $xform = $object;
-                $xform =~ s,/,\\/,g;
-                $rule =~ s/\$\@/$xform/;
-
-                # We cannot use $< here since this is an explicit
-                # rule and not all makes handle that.
-                $rule .= " `test -f $full || echo '\$(srcdir)/'`$full";
-
-                # FIXME: handle .lo and .obj as well.
-                $output_rules .= "\t" . $rule . "\n";
-            }
+                if scalar @dep_list > 0;
         }
 
         # Transform .o or $o file into .P file (for automatic
