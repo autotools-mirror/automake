@@ -822,6 +822,7 @@ sub handle_texinfo
     local ($done) = 0;
     local ($vti);
     local ($tc_cursor, @texi_cleans);
+    local ($canonical);
 
     foreach $info_cursor (@texis)
     {
@@ -866,10 +867,13 @@ sub handle_texinfo
 	@texi_deps = ();
 	push (@texi_deps, $info_cursor);
 	push (@texi_deps, $vtexi) if $vtexi;
-	if (defined $contents{$infobase . "_TEXINFOS"})
+
+	# Canonicalize name first.
+	($canonical = $infobase) =~ tr/A-Za-z0-9_/_/c;
+	if (defined $contents{$canonical . "_TEXINFOS"})
 	{
-	    push (@texi_deps, "\$" . $infobase . '_TEXINFOS');
-	    &push_dist_common ("\$" . $infobase . '_TEXINFOS');
+	    push (@texi_deps, '$(' . $canonical . '_TEXINFOS)');
+	    &push_dist_common ('$(' . $canonical . '_TEXINFOS)');
 	}
 
 	$output_rules .= ("\n" . $infobase . ".info: "
@@ -2625,7 +2629,7 @@ sub require_file_internal
 {
     local ($is_configure, $line, $mystrict, @files) = @_;
     local ($file, $fullfile);
-    local ($found_it, $errfile);
+    local ($found_it, $errfile, $errdir);
     local ($save_dir);
 
     foreach $file (@files)
@@ -2636,17 +2640,19 @@ sub require_file_internal
 	    if ($dir eq '.')
 	    {
 		$fullfile = $relative_dir . "/" . $file;
+		$errdir = $relative_dir unless $errdir;
 	    }
 	    else
 	    {
 		$fullfile = $dir . "/" . $file;
+		$errdir = $dir unless $errdir;
 	    }
 
 	    # Use different name for "error filename".  Otherwise on
 	    # an error the bad file will be reported as eg
 	    # `../../install-sh' when using the default
 	    # config_aux_path.
-	    $errfile = $fullfile unless $errfile;
+	    $errfile = $errdir . '/' . $file;
 
 	    if (-f $fullfile)
 	    {
