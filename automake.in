@@ -106,9 +106,6 @@ $build_directory = '';
 # dependencies only.
 $srcdir_name = '';
 
-# Regular expression derived from srcdir_name.
-$srcdir_rx = '';
-
 # List of Makefile.am's to process.
 @input_files = ();
 
@@ -286,14 +283,12 @@ sub parse_arguments
 	elsif ($arglist[0] =~ /^--srcdir-name=(.+)$/)
 	{
 	    $srcdir_name = $1;
-	    ($srcdir_rx = $srcdir_name) =~ s/(\W)/\\$1/g;
 	}
 	elsif ($arglist[0] eq '--srcdir-name')
 	{
 	    &require_argument (@arglist);
 	    shift (@arglist);
 	    $srcdir_name = $arglist[0];
-	    ($srcdir_rx = $srcdir_name) =~ s/(\W)/\\$1/g;
 	}
 	elsif ($arglist[0] =~ /^--strictness=(.+)$/)
 	{
@@ -1677,19 +1672,42 @@ sub scan_dependency_file
     print "automake: reading $depfile\n" if $verbose;
 
     local ($first_line) = 1;
+    local ($last_line) = 0;
     local ($target, @dependencies);
     local ($one_dep, $xform);
 
+    local ($srcdir_rx, $fixup_rx, $fixup2_rx);
+    ($srcdir_rx = $srcdir_name) =~ s/(\W)/\\$1/g;
+
+    # If the top srcdir is absolute, then the current directory is
+    # just relative_dir.
+    ($fixup_rx = $srcdir_name . '/' . $relative_dir . '/') =~ s/(\W)/\\$1/g;
+
+    # But if the top srcdir is relative, then we need some dots first.
+    ($fixup2_rx = ($srcdir_name . '/' . $top_builddir . '/'
+		   . $relative_dir . '/')) =~ s/(\W)/\\$1/g;
+
     while (<DEP_FILE>)
     {
+	if ($last_line)
+	{
+	    # If LAST_LINE set then we've already seen what we thought
+	    # was the last line.
+	    goto bad_format;
+	}
 	next if (/$WHITE_PATTERN/o);
 	chop;
-	s/\\$//;
+	if (! s/\\$//)
+	{
+	    # No trailing "\" means this should be the last line.
+	    $last_line = 1;
+	}
 
 	if ($first_line)
 	{
-	    if (! /([^:]+):(.+)$/)
+	    if (! /^([^:]+:)(.+)$/)
 	    {
+	      bad_format:
 		&am_error ("\`$depfile' has incorrect format");
 		close (DEP_FILE);
 		return;
@@ -1703,9 +1721,24 @@ sub scan_dependency_file
 
 	foreach $one_dep (split (' ', $_))
 	{
-	    if ($one_dep =~ /^$srcdir_rx\//o)
+	    if ($one_dep =~ /^$fixup_rx/)
 	    {
-		($xform = $one_dep) =~ s/^$srcdir_rx/\$(top_srcdir)/o;
+		# The dependency points to the current directory in
+		# some way.
+		($xform = $one_dep) =~ s/^$fixup_rx//;
+		push (@dependencies, $xform);
+	    }
+	    elsif ($one_dep =~ /^$fixup2_rx/)
+	    {
+		# The dependency points to the current directory in
+		# some way.
+		($xform = $one_dep) =~ s/^$fixup2_rx//;
+		push (@dependencies, $xform);
+	    }
+	    elsif ($one_dep =~ /^$srcdir_rx\//)
+	    {
+		# The dependency is in some other directory in the package.
+		($xform = $one_dep) =~ s/^$srcdir_rx/$top_builddir/;
 		push (@dependencies, $xform);
 	    }
 	    elsif ($one_dep =~ /^\//)
@@ -1720,7 +1753,7 @@ sub scan_dependency_file
 	}
     }
 
-    &pretty_print_rule ($target . ':', "\t", @dependencies);
+    &pretty_print_rule ($target, "\t", @dependencies);
 
     close (DEP_FILE);
 }
@@ -3852,6 +3885,8 @@ sub usage
 	$four = @lcomm ? shift @lcomm : '';
 	write;
     }
+
+    print "\nReport bugs to <bug-gnu-utils\@prep.ai.mit.edu>\n";
 
     exit 0;
 }

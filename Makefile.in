@@ -118,6 +118,7 @@ aclocal: $(top_builddir)/config.status aclocal.in
 	cd $(top_builddir) && CONFIG_FILES=$@ CONFIG_HEADERS= ./config.status
 
 install-binSCRIPTS: $(bin_SCRIPTS)
+	$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(bindir)
 	list="$(bin_SCRIPTS)"; for p in $$list; do \
 	  if test -f $$p; then \
@@ -134,6 +135,7 @@ uninstall-binSCRIPTS:
 	done
 
 install-pkgdataSCRIPTS: $(pkgdata_SCRIPTS)
+	$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(pkgdatadir)
 	list="$(pkgdata_SCRIPTS)"; for p in $$list; do \
 	  if test -f $$p; then \
@@ -192,6 +194,7 @@ automake.dvi: automake.texi version.texi
 	TEXINPUTS=$(srcdir):$$TEXINPUTS $(TEXI2DVI) $<
 
 install-info: $(INFO_DEPS)
+	$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(infodir)
 	for file in $(INFO_DEPS); do \
 	  for ifile in `cd $(srcdir) && echo $$file $$file-[0-9] $$file-[0-9][0-9]`; do \
@@ -219,6 +222,7 @@ maintainer-clean-info:
 	rm -f $(INFOS)
 
 install-pkgdataDATA: $(pkgdata_DATA)
+	$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(pkgdatadir)
 	list="$(pkgdata_DATA)"; for p in $$list; do \
 	  if test -f $(srcdir)/$$p; then \
@@ -315,9 +319,9 @@ distdir: $(DEP_DISTFILES)
 	rm -rf $(distdir)
 	mkdir $(distdir)
 	-chmod 755 $(distdir)
-	distdir=`cd $(distdir) && pwd` \
+	here=`pwd`; distdir=`cd $(distdir) && pwd` \
 	  && cd $(srcdir) \
-	  && automake --include-deps --output-dir=$$distdir --strictness=gnits
+	  && automake --include-deps --build-dir=$$here --srcdir-name=$(srcdir) --output-dir=$$distdir --strictness=gnits
 	@for file in `cd $(srcdir) && echo $(DISTFILES)`; do \
 	  test -f $(distdir)/$$file \
 	  || ln $(srcdir)/$$file $(distdir)/$$file 2> /dev/null \
@@ -348,8 +352,10 @@ install-data-am: install-info install-pkgdataSCRIPTS install-pkgdataDATA
 uninstall-am: uninstall-binSCRIPTS uninstall-pkgdataSCRIPTS uninstall-info uninstall-pkgdataDATA
 
 install-exec: install-exec-recursive install-exec-am
+	$(NORMAL_INSTALL)
 
 install-data: install-data-recursive install-data-am
+	$(NORMAL_INSTALL)
 
 install: install-recursive install-exec-am install-data-am
 	@:
