@@ -164,6 +164,10 @@ my $INCLUDE_PATTERN = ('^include\s+'
 my $AC_CONFIG_AUX_DIR_PATTERN = 'AC_CONFIG_AUX_DIR\(([^)]+)\)';
 my $AM_INIT_AUTOMAKE_PATTERN = 'AM_INIT_AUTOMAKE\([^,]*,([^,)]+)[,)]';
 my $AM_PACKAGE_VERSION_PATTERN = '^\s*\[?([^]\s]+)\]?\s*$';
+
+# This handles substitution references like ${foo:.a=.b}.
+my $SUBST_REF_PATTERN = "^([^:]*):([^=]*)=(.*)\$";
+
 # Note that there is no AC_PATH_TOOL.  But we don't really care.
 my $AC_CHECK_PATTERN = 'AC_(CHECK|PATH)_(PROG|PROGS|TOOL)\(\[?(\w+)';
 my $AM_MISSING_PATTERN = 'AM_MISSING_PROG\(\[?(\w+)';
@@ -5909,11 +5913,17 @@ sub variable_conditions_sub
 	    # Handle variable substitutions.
 	    if (/^\$\{(.*)\}$/ || /^\$\((.*)\)$/)
 	    {
+	        my $varname = $1;
+		if ($varname =~ /$SUBST_REF_PATTERN/o)
+		{
+		    $varname = $1;
+		}
+ 
 
 		# Here we compute all the conditions under which the
 		# subvariable is defined.  Then we go through and add
 		# $VCOND to each.
-		my @svc = &variable_conditions_sub ($1, $var);
+		my @svc = &variable_conditions_sub ($varname, $var);
 		foreach my $item (@svc)
 		{
 		    my $val = conditional_string ($vcond, split (' ', $item));
@@ -6102,7 +6112,7 @@ sub value_to_list
 
 	    my ($from, $to);
 	    my @temp_list;
-	    if ($varname =~ /^([^:]*):([^=]*)=(.*)$/)
+	    if ($varname =~ /$SUBST_REF_PATTERN/o)
 	    {
 		$varname = $1;
 		$to = $3;
