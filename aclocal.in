@@ -133,12 +133,12 @@ sub scan_m4_files (@)
 
     # First, scan configure.ac.  It may contain macro definitions,
     # or may include other files that define macros.
-    &scan_file ($configure_ac);
+    &scan_file ($configure_ac, 'aclocal');
 
     # Then, scan acinclude.m4 if it exists.
     if (-f 'acinclude.m4')
     {
-	&scan_file ('acinclude.m4');
+	&scan_file ('acinclude.m4', 'aclocal');
     }
 
     # Finally, scan all files in our search path.
@@ -163,7 +163,7 @@ sub scan_m4_files (@)
 	    next if $file eq 'aclocal.m4';
 
 	    $fullfile = File::Spec->canonpath ("$m4dir/$file");
-	    &scan_file ($fullfile);
+	    &scan_file ($fullfile, 'aclocal');
 	}
 	closedir (DIR);
     }
@@ -293,11 +293,15 @@ sub add_file ($)
 # Point to the documentation for underquoted AC_DEFUN only once.
 my $underquoted_manual_once = 0;
 
-# Scan a single M4 file, and all files it includes.
+# scan_file ($FILE, $WHERE)
+# -------------------------
+# Scan a single M4 file ($FILE), and all files it includes.
 # Return the list of included files.
-sub scan_file ($)
+# $WHERE is the location to use in the diagnostic if the file
+# does not exist.
+sub scan_file ($$)
 {
-  my ($file) = @_;
+  my ($file, $where) = @_;
   my $base = dirname $file;
 
   # Do not scan the same file twice.
@@ -307,9 +311,16 @@ sub scan_file ($)
 
   unshift @file_order, $file;
 
+  if (! -e $file)
+    {
+      print STDERR "$where: file `$file' does not exist\n";
+      exit 1;
+    }
+
   my $fh = new Automake::XFile $file;
   my $contents = '';
   my @inc_files = ();
+  my %inc_lines = ();
   while ($_ = $fh->getline)
     {
       # Ignore `##' lines.
@@ -360,15 +371,17 @@ sub scan_file ($)
 	  $ifile = "$base/$ifile"
 	    unless $base eq '.' || File::Spec->file_name_is_absolute ($ifile);
 	  push (@inc_files, $ifile);
+	  $inc_lines{$ifile} = $.;
 	}
     }
   $file_contents{$file} = $contents;
 
   # For some reason I don't understand, it does not work
-  # to do `map { scan_file ($_) } @inc_files' below.
+  # to do `map { scan_file ($_, ...) } @inc_files' below.
   # With Perl 5.8.2 it undefines @inc_files.
   my @copy = @inc_files;
-  my @all_inc_files = (@inc_files, map { scan_file ($_) } @copy);
+  my @all_inc_files = (@inc_files,
+		       map { scan_file ($_, "$file:$inc_lines{$_}") } @copy);
   $file_includes{$file} = \@all_inc_files;
   return @all_inc_files;
 }
