@@ -223,29 +223,8 @@ automake.dvi: automake.texi $(srcdir)/version.texi
 DVIPS = dvips
 .dvi.ps:
 	$(DVIPS) $< -o $@
-install-info-am: $(INFO_DEPS)
-	@$(NORMAL_INSTALL)
-	$(mkinstalldirs) $(DESTDIR)$(infodir)
-	@list='$(INFO_DEPS)'; \
-	for file in $$list; do \
-	  d=$(srcdir); \
-	  for ifile in `CDPATH=: && cd $$d && echo $$file $$file-[0-9] $$file-[0-9][0-9]`; do \
-	    if test -f $$d/$$ifile; then \
-	      echo " $(INSTALL_DATA) $$d/$$ifile $(DESTDIR)$(infodir)/$$ifile"; \
-	      $(INSTALL_DATA) $$d/$$ifile $(DESTDIR)$(infodir)/$$ifile; \
-	    else : ; fi; \
-	  done; \
-	done
-	@$(POST_INSTALL)
-	@if $(SHELL) -c 'install-info --version | sed 1q | fgrep -s -v -i debian' >/dev/null 2>&1; then \
-	  list='$(INFO_DEPS)'; \
-	  for file in $$list; do \
-	    echo " install-info --info-dir=$(DESTDIR)$(infodir) $(DESTDIR)$(infodir)/$$file";\
-	    install-info --info-dir=$(DESTDIR)$(infodir) $(DESTDIR)$(infodir)/$$file || :;\
-	  done; \
-	else : ; fi
 
-uninstall-info:
+uninstall-info-am:
 	$(PRE_UNINSTALL)
 	@if $(SHELL) -c 'install-info --version | sed 1q | fgrep -s -v -i debian' >/dev/null 2>&1; then \
 	  list='$(INFO_DEPS)'; \
@@ -329,7 +308,8 @@ uninstall-dist_scriptDATA:
 #     (which will cause the Makefiles to be regenerated when you run `make');
 # (2) otherwise, pass the desired values on the `make' command line.
 all-recursive install-data-recursive install-exec-recursive \
-installdirs-recursive install-recursive uninstall-recursive  \
+installdirs-recursive install-recursive uninstall-recursive \
+install-info-recursive uninstall-info-recursive \
 check-recursive installcheck-recursive info-recursive dvi-recursive:
 	@set fnord $(MAKEFLAGS); amf=$$2; \
 	dot_seen=no; \
@@ -555,6 +535,29 @@ install-data-am: install-dist_pkgdataDATA install-dist_scriptDATA \
 
 install-exec-am: install-binSCRIPTS
 
+install-info: install-info-recursive
+
+install-info-am: $(INFO_DEPS)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(infodir)
+	@list='$(INFO_DEPS)'; \
+	for file in $$list; do \
+	  d=$(srcdir); \
+	  for ifile in `CDPATH=: && cd $$d && echo $$file $$file-[0-9] $$file-[0-9][0-9]`; do \
+	    if test -f $$d/$$ifile; then \
+	      echo " $(INSTALL_DATA) $$d/$$ifile $(DESTDIR)$(infodir)/$$ifile"; \
+	      $(INSTALL_DATA) $$d/$$ifile $(DESTDIR)$(infodir)/$$ifile; \
+	    else : ; fi; \
+	  done; \
+	done
+	@$(POST_INSTALL)
+	@if $(SHELL) -c 'install-info --version | sed 1q | fgrep -s -v -i debian' >/dev/null 2>&1; then \
+	  list='$(INFO_DEPS)'; \
+	  for file in $$list; do \
+	    echo " install-info --info-dir=$(DESTDIR)$(infodir) $(DESTDIR)$(infodir)/$$file";\
+	    install-info --info-dir=$(DESTDIR)$(infodir) $(DESTDIR)$(infodir)/$$file || :;\
+	  done; \
+	else : ; fi
 install-man:
 
 installcheck-am: installcheck-local
@@ -570,7 +573,9 @@ mostlyclean: mostlyclean-recursive
 mostlyclean-am: mostlyclean-aminfo mostlyclean-generic mostlyclean-vti
 
 uninstall-am: uninstall-binSCRIPTS uninstall-dist_pkgdataDATA \
-	uninstall-dist_scriptDATA uninstall-info
+	uninstall-dist_scriptDATA uninstall-info-am
+
+uninstall-info: uninstall-info-recursive
 
 .PHONY: all all-am all-recursive check check-am check-recursive clean \
 	clean-generic clean-recursive dist dist-all dist-info distcheck \
@@ -579,16 +584,17 @@ uninstall-am: uninstall-binSCRIPTS uninstall-dist_pkgdataDATA \
 	install install-am install-binSCRIPTS install-data \
 	install-data-am install-data-recursive install-dist_pkgdataDATA \
 	install-dist_scriptDATA install-exec install-exec-am \
-	install-exec-recursive install-info-am install-man \
-	install-recursive install-strip installcheck installcheck-am \
-	installcheck-local installcheck-recursive installdirs \
-	installdirs-am installdirs-recursive maintainer-clean \
-	maintainer-clean-aminfo maintainer-clean-generic \
-	maintainer-clean-recursive maintainer-clean-vti mostlyclean \
-	mostlyclean-aminfo mostlyclean-generic mostlyclean-recursive \
-	mostlyclean-vti tags tags-recursive uninstall uninstall-am \
-	uninstall-binSCRIPTS uninstall-dist_pkgdataDATA \
-	uninstall-dist_scriptDATA uninstall-info uninstall-recursive
+	install-exec-recursive install-info install-info-recursive \
+	install-man install-recursive install-strip installcheck \
+	installcheck-am installcheck-local installcheck-recursive \
+	installdirs installdirs-am installdirs-recursive \
+	maintainer-clean maintainer-clean-aminfo \
+	maintainer-clean-generic maintainer-clean-recursive \
+	maintainer-clean-vti mostlyclean mostlyclean-aminfo \
+	mostlyclean-generic mostlyclean-recursive mostlyclean-vti tags \
+	tags-recursive uninstall uninstall-am uninstall-binSCRIPTS \
+	uninstall-dist_pkgdataDATA uninstall-dist_scriptDATA \
+	uninstall-info-recursive uninstall-recursive
 
 
 install-data-hook:

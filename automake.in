@@ -396,6 +396,7 @@ my %required_targets =
    'all'          => 1,
    'dvi'	  => 1,
    'info'	  => 1,
+   'install-info' => 1,
    'install'      => 1,
    'install-data' => 1,
    'install-exec' => 1,
@@ -707,9 +708,15 @@ sub initialize_per_input ()
        # Installing/uninstalling.
        'install-data-am'      => [],
        'install-exec-am'      => [],
+       'uninstall-am'         => [],
+
        'install-man'	      => [],
        'uninstall-man'	      => [],
-       'uninstall-am'         => [],
+
+       'install-info'         => [],
+       'install-info-am'      => [],
+       'uninstall-info'       => [],
+
        'installcheck-am'      => [],
 
        # Cleaning.
@@ -3368,12 +3375,7 @@ sub handle_subdirs
 	    if $dir =~ /\//;
     }
 
-    $output_rules .=
-      &file_contents ('subdirs',
-		      &transform
-		      ('INSTALLINFO' => (defined $options{'no-installinfo'}
-					 ? 'install-info-recursive'
-					 : '')));
+    $output_rules .= &file_contents ('subdirs');
 }
 
 # Handle aclocal.m4.
@@ -3941,16 +3943,6 @@ sub handle_merge_targets
 
     &do_check_merge_target;
 
-    if (defined $options{'no-installinfo'})
-    {
-	&do_one_merge_target ('install-info', '');
-    }
-    elsif (&target_defined ('install-info-local'))
-    {
-	&am_line_error ('install-info-local',
-			"\`install-info-local' target defined but \`no-installinfo' option not in use");
-    }
-
     if (@all || &variable_defined ('BUILT_SOURCES'))
     {
 	my $local_headers = '';
@@ -4172,7 +4164,16 @@ sub handle_factored_dependencies
     if (&target_defined ('install-local'))
     {
 	&am_line_error ('install-local',
-			"use \`install-data-local' or \`install-exec-local', not \`install-local'");
+			"use \`install-data-local' or \`install-exec-local', "
+			. "not \`install-local'");
+    }
+
+    if (!defined $options{'no-installinfo'}
+	&& &target_defined ('install-info-local'))
+    {
+	&am_line_error ('install-info-local',
+			"\`install-info-local' target defined but "
+			. "\`no-installinfo' option not in use");
     }
 
     # Install the -local hooks.
