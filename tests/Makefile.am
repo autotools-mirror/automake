@@ -279,6 +279,7 @@ spelling.test \
 stamph.test \
 stamph2.test \
 stdlib.test \
+strip.test \
 subdir.test \
 subdir2.test \
 subdir3.test \
