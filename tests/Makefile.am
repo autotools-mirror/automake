@@ -288,7 +288,6 @@ link_fc.test \
 link_fccxx.test \
 link_fcxx.test	\
 link_f_only.test \
-lisp.test \
 lisp2.test \
 lisp3.test \
 lisp4.test \
