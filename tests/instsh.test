@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1996, 1999, 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 1996, 1999, 2001, 2002, 2003  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -24,6 +24,8 @@
 
 . ./defs || exit 1
 
+set -e
+
 : > Makefile.am
 rm -f install-sh
 
@@ -33,26 +35,11 @@ mkdir frob
 mv Makefile.am configure.in mkinstalldirs frob/
 cd frob
 
-# If srcdir is relative, we need to modify it.
-case "$srcdir" in
- [\\/]* | ?:[\\/]*)
-    ;;
-
- *)
-    srcdir="../$srcdir"
-    ;;
-esac
-
-AUTOMAKE="$PERL ../../../automake --libdir=$testsrcdir/../lib --foreign --Werror"
-ACLOCAL="$PERL ../../../aclocal -I ../../../m4 --acdir=$testsrcdir/../m4"
-
-# Now we proceed with the test
-$ACLOCAL || exit 1
-$AUTOMAKE --add-missing > output 2>&1 \
-   || exit 1
+$ACLOCAL
+$AUTOMAKE --add-missing > output 2>&1
 
 # Only one `/' should appear in the output.
-grep '/.*/' output \
-   && exit 1
+cat output
+grep '/.*/' output && exit 1
 
 test -f install-sh
