@@ -229,8 +229,6 @@ space.test \
 specflags.test \
 specflags2.test	\
 specflags3.test	\
-specflags4.test \
-specflags5.test \
 spell.test \
 spell2.test \
 spell3.test \
