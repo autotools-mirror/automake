@@ -1983,48 +1983,43 @@ sub handle_configure
 							. $strictness_name
 							. '/g',
 							'remake');
+	$top_reldir = '';
+    }
 
-	&am_error
-	    ("\`install.sh' is an anachronism; use \`install-sh' instead")
-		if -f $relative_dir . '/install.sh';
+    # If we have a configure header, require it.
+    if ($config_header && $relative_dir eq &dirname ($config_header))
+    {
+	local ($ch_sans_dir) = &basename ($config_header);
+	local ($cn_sans_dir) = &basename ($config_name);
 
-	# If we have a configure header, require it.
-	if ($config_header)
+	&require_file_with_conf_line ($config_header_line,
+				      $FOREIGN, $ch_sans_dir);
+
+	# Header defined and in this directory.
+	if (-f $relative_dir . '/acconfig.h')
 	{
-	    # FIXME: this restriction should be lifted.
-	    # FIXME: first see if it is even needed as-is.
-	    &am_conf_line_error ($config_header_line,
-				 "argument to AC_CONFIG_HEADER contains \`/'\n")
-		if ($config_header =~ /\//);
-
-	    &require_file_with_conf_line ($config_header_line,
-					  $FOREIGN, $config_header);
-
-	    # Header defined and in this directory.
-	    if (-f 'acconfig.h')
-	    {
-		&define_variable ("ACCONFIG", "acconfig.h");
-		&push_dist_common ('acconfig.h');
-	    }
-	    if (-f $config_name . '.top')
-	    {
-		&define_variable ("CONFIG_TOP", "${config_name}.top");
-		&push_dist_common ($config_name . '.top');
-	    }
-	    if (-f $config_name . '.bot')
-	    {
-		&define_variable ("CONFIG_BOT", "${config_name}.bot");
-		&push_dist_common ($config_name . '.bot');
-	    }
-
-	    &require_file_with_conf_line ($config_header_line, $FOREIGN,
-					  'stamp-h.in');
-
-	    $output_rules .= &file_contents ('remake-hdr');
-	    &define_variable ("CONFIG_HEADER_IN", "${config_header}");
+	    &define_variable ("ACCONFIG", "acconfig.h");
+	    &push_dist_common ('acconfig.h');
+	}
+	if (-f $config_name . '.top')
+	{
+	    &define_variable ("CONFIG_TOP", "${cn_sans_dir}.top");
+	    &push_dist_common ($cn_sans_dir . '.top');
+	}
+	if (-f $config_name . '.bot')
+	{
+	    &define_variable ("CONFIG_BOT", "${cn_sans_dir}.bot");
+	    &push_dist_common ($cn_sans_dir . '.bot');
 	}
 
-	$top_reldir = '';
+	&touch ($relative_dir . '/stamp-h.in');
+	&require_file_with_conf_line ($config_header_line, $FOREIGN,
+				      'stamp-h.in');
+
+	$output_rules .= &file_contents ('remake-hdr');
+	push (@clean, 'hdr');
+	&push_phony_cleaners ('hdr');
+	&define_variable ("CONFIG_HEADER_IN", "${ch_sans_dir}");
     }
 
     # Set location of mkinstalldirs.
@@ -2041,9 +2036,19 @@ sub handle_configure
 		    "\`CONFIG_HEADER' is an anachronism; now determined from \`configure.in'")
 	if &variable_defined ('CONFIG_HEADER');
 
-    # Generate CONFIG_HEADER define.
-    &define_variable ("CONFIG_HEADER", "${top_builddir}/${config_name}")
-	if $config_name;
+    if ($config_name)
+    {
+	# Generate CONFIG_HEADER define.
+	if ($relative_dir eq &dirname ($config_name))
+	{
+	    &define_variable ("CONFIG_HEADER", &basename ($config_name));
+	}
+	else
+	{
+	    &define_variable ("CONFIG_HEADER",
+			      "${top_builddir}/${config_name}");
+	}
+    }
 
     # Now look for other files in this directory which must be remade
     # by config.status, and generate rules for them.
@@ -2853,6 +2858,8 @@ sub scan_configure
     # the file-finding machinery works.
     local ($relative_dir) = '.';
     &require_config_file ($FOREIGN, 'install-sh', 'mkinstalldirs');
+    &am_error ("\`install.sh' is an anachronism; use \`install-sh' instead")
+        if -f $config_aux_path[0] . '/install.sh';
 }
 
 ################################################################
@@ -3932,6 +3939,25 @@ sub dirname
     ($sub = $file) =~ s,/+[^/]+$,,g;
     $sub = '.' if $sub eq $file;
     return $sub;
+}
+
+# Return file name of a file.
+sub basename
+{
+    local ($file) = @_;
+    local ($sub);
+
+    ($sub = $file) =~s,^.*/+,,g;
+    return $sub;
+}
+
+# Touch a file.
+sub touch
+{
+    local ($file) = @_;
+
+    open (TOUCH, ">> $file");
+    close (TOUCH);
 }
 
 ################################################################
