@@ -80,13 +80,27 @@ INFO_DEPS += %DEST_INFO_PREFIX%%DEST_SUFFIX%
 
 ?GENERIC?%SOURCE_SUFFIX%.html:
 ?!GENERIC?%DEST_PREFIX%.html: %SOURCE% %DEPS% %DIRSTAMP%
-	$(MAKEINFOHTML) $(AM_MAKEINFOHTMLFLAGS) $(MAKEINFOFLAGS) %MAKEINFOFLAGS% \
-?GENERIC?	 -o $@ %SOURCE%
-?!GENERIC?	 -o $@ `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%
+## When --split (the default) is used, makeinfo will output a
+## directory.  However it will not update the time stamp of a
+## previously existing directory, and when the names of the nodes
+## in the manual change, it may leave unused pages.  Our fix
+## is to build under a temporary name, and replace the target on
+## success.
+	rm -rf ${@:.html=.htp}
+	if $(MAKEINFOHTML) $(AM_MAKEINFOHTMLFLAGS) $(MAKEINFOFLAGS) %MAKEINFOFLAGS% \
+?GENERIC?	 -o ${@:.html=.htp} %SOURCE%; \
+?!GENERIC?	 -o ${@:.html=.htp} `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%; \
+	then \
+	  rm -rf $@; \
 ## Work around a bug in Texinfo 4.1 (-o foo.html outputs files in foo/
 ## instead of foo.html/).
-	if test ! -d $@ && test -d $(@:.html=); then \
-	  mv $(@:.html=) $@; else :; fi
+	  if test ! -d ${@:.html=.htp} && test -d $(@:.html=); then \
+	    mv $(@:.html=) $@; else mv $(@:.html=.htp) $@; fi; \
+	else \
+	  if test ! -d ${@:.html=.htp} && test -d $(@:.html=); then \
+	    rm -rf $(@:.html=); else rm -Rf $(@:.html=.htp) $@; fi; \
+	  exit 1; \
+	fi
 
 ## If we are using the generic rules, we need separate dependencies.
 ## (Don't wonder about %DIRSTAMP% here, this is used only by non-generic
