@@ -2243,7 +2243,7 @@ sub handle_compile ()
       }
 
     my ($coms, $vars, $rules) =
-      &file_contents_internal ('compile',
+      &file_contents_internal (1, "$am_dir/compile.am",
 			       ('DEFAULT_INCLUDES' => $default_includes));
     $output_vars .= $vars;
     $output_rules .= "$coms$rules";
@@ -6722,7 +6722,7 @@ sub define_standard_variables
 {
     my $saved_output_vars = $output_vars;
     my ($comments, $variables, $rules) =
-      &file_contents_internal ('header-vars',
+      &file_contents_internal (1, "$am_dir/header-vars.am",
 		     ('BUILD'    => $seen_canonical == $AC_CANONICAL_SYSTEM,
 		      'HOST'     => $seen_canonical,
 		      'TARGET'   => $seen_canonical == $AC_CANONICAL_SYSTEM,
@@ -6905,14 +6905,14 @@ sub make_paragraphs ($%)
 
 
 # ($COMMENT, $VARIABLES, $RULES)
-# &file_contents_internal ($BASENAME, [%TRANSFORM])
-# -------------------------------------------------
+# &file_contents_internal ($IS_AM, $FILE, [%TRANSFORM])
+# -----------------------------------------------------
 # Return contents of a file from $am_dir, automatically skipping
-# macros or rules which are already known.
+# macros or rules which are already known. $IS_AM iff the caller is
+# reading an Automake file (as opposed to the user's Makefile.am).
 sub file_contents_internal ($%)
 {
-    my ($basename, %transform) = @_;
-    my $file = $am_dir . '/' . $basename . '.am';
+    my ($is_am, $file, %transform) = @_;
 
     # A rule has three parts: a list of targets, a list of dependencies,
     # and optionally actions.
@@ -6933,11 +6933,9 @@ sub file_contents_internal ($%)
     foreach (make_paragraphs ($file, %transform))
     {
         # Sanity checks.
-	&am_file_error ("$basename.am",
-			"blank line following trailing backslash:\n$_")
+	&am_file_error ($file, "blank line following trailing backslash:\n$_")
 	  if /\\$/;
-	&am_file_error ("$basename.am",
-			"comment following trailing backslash:\n$_")
+	&am_file_error ($file, "comment following trailing backslash:\n$_")
 	  if /\\#/;
 
  	if (/^$/)
@@ -6956,11 +6954,10 @@ sub file_contents_internal ($%)
         {
 	    if ($cond ne 'FALSE')
 	      {
-		(my $file = $1) =~ s/\.am$//g;
-
+		my $file = ($is_am ? "$am_dir/" : '') . $1;
 		# N-ary `.=' fails.
 		my ($com, $vars, $rules)
-		  = file_contents_internal ($file, %transform);
+		  = file_contents_internal ($is_am, $file, %transform);
 		$comment .= $com;
 		$result_vars .= $vars;
 		$result_rules .= $rules;
@@ -6970,15 +6967,15 @@ sub file_contents_internal ($%)
         # Handling the conditionals.
         elsif (/$IF_PATTERN/o)
 	  {
-	    $cond = cond_stack_if ($1, $2, $basename);
+	    $cond = cond_stack_if ($1, $2, $file);
 	  }
 	elsif (/$ELSE_PATTERN/o)
 	  {
-	    $cond = cond_stack_else ($1, $2, $basename);
+	    $cond = cond_stack_else ($1, $2, $file);
 	  }
 	elsif (/$ENDIF_PATTERN/o)
 	  {
-	    $cond = cond_stack_endif ($1, $2, $basename);
+	    $cond = cond_stack_endif ($1, $2, $file);
 	  }
 
         # Handling rules.
@@ -7021,7 +7018,7 @@ sub file_contents_internal ($%)
 		      && $cond ne 'FALSE')
 		    {
 		      $result_rules .= "$spacing$comment$paragraph\n";
-		      rule_define ($targets, 1, $cond, $.);
+		      rule_define ($targets, $is_am, $cond, $.);
 		    }
 		  $comment = $spacing = '';
 		  last;
@@ -7041,7 +7038,7 @@ sub file_contents_internal ($%)
 	    $var_comment{$var} .= "$comment";
 	    # Strip the continuation backslashes.
 	    $val =~ s/\\$//mg;
-	    macro_define ($var, 1, $type, $cond, $val, $.)
+	    macro_define ($var, $is_am, $type, $cond, $val, $.)
 	      if $cond ne 'FALSE';
 	    push (@var_list, $var);
 
@@ -7091,8 +7088,8 @@ sub file_contents_internal ($%)
 sub file_contents ($%)
 {
     my ($basename, %transform) = @_;
-    my ($comments, $variables, $rules) = file_contents_internal ($basename,
-								 %transform);
+    my ($comments, $variables, $rules) =
+      file_contents_internal (1, "$am_dir/$basename.am", %transform);
     return "$comments$variables$rules";
 }
 
