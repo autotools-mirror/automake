@@ -1293,8 +1293,7 @@ sub handle_built_sources
 #   transformed name of object being built, or empty string if no object
 #   name of _LDADD/_LIBADD-type variable to examine
 #   boolean (lex_seen) which is true if a lex source file was seen in this
-#     object.  valid only for LDADDs, not LIBADDs.  If set, LEXLIB
-#     must be in LDADD.
+#     object.  valid only for LDADDs, not LIBADDs.
 # Returns 1 if LIBOBJS seen, 0 otherwise.
 sub handle_lib_objects
 {
@@ -1337,9 +1336,6 @@ sub handle_lib_objects_cond
     # LDADD.
     local ($lsearch);
     local (@dep_list) = ();
-
-    # If no lex source seen, just assume this is ok.
-    local ($lex_ok) = $lex_seen ? 0 : 1;
 
     local ($seen_libobjs) = 0;
     local ($flagvar) = 0;
@@ -1412,19 +1408,6 @@ sub handle_lib_objects_cond
 	    &require_file_with_line ($var, $FOREIGN, 'alloca.c');
 	    $seen_c_source = $var;
 	}
-	elsif ($lsearch eq '@LEXLIB@')
-	{
-	    # FIXME: variable_value_as_list requires us to force
-	    # @LEXLIB@ here, where we'd really prefer $(LEXLIB).
-	    # Nasty -- this will have to wait until many cleanups are
-	    # made, I think.
-	    $lex_ok = 1;
-	}
-    }
-
-    if (! $lex_ok)
-    {
-	&am_line_error ($var, 'lex source file used without @LEXLIB@');
     }
 
     if ($xname ne '' && ! &variable_defined ($xname . '_DEPENDENCIES', $cond))
@@ -1536,12 +1519,6 @@ sub handle_programs
 	{
 	    # Define the prog_LDFLAGS variable.
 	    &define_variable ($xname . '_LDFLAGS', '');
-	}
-
-	if ($lex_file_seen)
-	{
-	    &am_line_error ($xname . $xt,
-			    'lex source file used without @LEXLIB@');
 	}
 
 	# Determine program to use for link.
