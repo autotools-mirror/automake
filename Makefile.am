@@ -94,7 +94,7 @@ maintainer-check: automake aclocal
 ## Never use something like `for file in $(FILES)', this doesn't work
 ## if FILES is empty or if it contains shell meta characters (e.g. $ is
 ## commonly used in Java filenames).
-	@if egrep 'for .* in \$$\(' $(srcdir)/lib/am/[a-z]*.am; then \
+	@if grep 'for .* in \$$(' $(srcdir)/lib/am/[a-z]*.am; then \
 	  echo 'Use "list=$$(mumble); for var in $$$$list".' 1>&2 ; \
 	  exit 1; \
 	else :; fi
