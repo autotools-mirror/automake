@@ -329,6 +329,7 @@ sub generate_makefile
     &handle_tags;
     &handle_dist;
     &handle_dependencies;
+    &handle_tests;
     &handle_footer;
     &handle_merge_targets;
     &handle_installdirs;
@@ -498,7 +499,7 @@ sub handle_source_transform
 		$dep_files{'$(srcdir)/.deps/' . $_} = 1;
 	    }
 
-	    &pretty_print ($one_file . "_OBJECTS =", "    ", @result);
+	    &pretty_print ($one_file . "_OBJECTS =", "", @result);
 	}
 	else
 	{
@@ -586,7 +587,7 @@ sub handle_libraries
 	    {
 		push (@outlist, 'lib' . $onelib . '.a');
 	    }
-	    &pretty_print ($onedir . '_LIBFILES =', "    ", @outlist);
+	    &pretty_print ($onedir . '_LIBFILES =', "", @outlist);
 	}
     }
     push (@all, '$(LIBFILES)');
@@ -647,7 +648,7 @@ sub handle_libraries
 
     if (! defined $contents{'LIBFILES'})
     {
-	&pretty_print ('LIBFILES = ', "    ", @liblist);
+	&pretty_print ('LIBFILES = ', "", @liblist);
     }
     $output_vars .= &file_contents ('libraries-vars');
 }
@@ -1079,7 +1080,7 @@ sub handle_dist
     }
     push (@coms, sort keys %dist_common);
 
-    &pretty_print ("DIST_COMMON =", "    ", @coms);
+    &pretty_print ("DIST_COMMON =", "", @coms);
     $output_vars .= "\n";
 
     # Some boilerplate.
@@ -1111,7 +1112,7 @@ sub handle_dependencies
 	# Include GNU-make-specific auto-dep code.
 	if ($dir_holds_sources)
 	{
-	    &pretty_print ('DEP_FILES =', "    ", sort keys %dep_files);
+	    &pretty_print ('DEP_FILES =', "", sort keys %dep_files);
 	    $output_rules .= &file_contents ('depend');
 	}
     }
@@ -1158,15 +1159,12 @@ sub handle_subdirs
     {
 	&am_line_error
 	    ('SUBDIRS',
-	     "ud_GNU_GETTEXT in configure.in but \`\@POSUB\@' not in SUBDIRS")
-		if $contents{'SUBDIRS'} !~ /\b\@POSUB\@\b/;
+	     "ud_GNU_GETTEXT in configure.in but \`po' not in SUBDIRS")
+		if $contents{'SUBDIRS'} !~ /\bpo\b/;
 	&am_line_error
 	    ('SUBDIRS',
-	     "ud_GNU_GETTEXT in configure.in but \`\@INTLSUB\@' not in SUBDIRS")
-		if $contents{'SUBDIRS'} !~ /\b\@INTLSUB\@\b/;
-
-	# FIXME consider warning if 'po' or 'intl' appear; they should
-	# always be substituted via configure.
+	     "ud_GNU_GETTEXT in configure.in but \`intl' not in SUBDIRS")
+		if $contents{'SUBDIRS'} !~ /\bintl\b/;
     }
 
     &require_file ($NORMAL, 'ABOUT-NLS') if $seen_gettext;
@@ -1177,6 +1175,8 @@ sub handle_subdirs
     local ($dir);
     foreach $dir (split (/\s+/, $contents{'SUBDIRS'}))
     {
+	# Skip directories substituted by configure.
+	next if $dir =~ /^\@.*\@$/;
 	&am_line_error ('SUBDIRS',
 			"required directory $relative_dir/$dir does not exist")
 	    if ! -d $relative_dir . '/' . $dir;
@@ -1331,12 +1331,12 @@ sub handle_footer
 {
     if ($contents{'SOURCES'})
     {
-	&pretty_print ('SOURCES =', "    ",
+	&pretty_print ('SOURCES =', "",
 		       split (/\s+/, $contents{'SOURCES'}));
     }
     if ($contents{'OBJECTS'})
     {
-	&pretty_print ('OBJECTS =', "    ",
+	&pretty_print ('OBJECTS =', "",
 		       split (/\s+/, $contents{'OBJECTS'}));
     }
     if ($contents{'SOURCES'} || $contents{'OBJECTS'})
@@ -1602,8 +1602,43 @@ sub do_one_clean_target
 # Handle .PHONY target.
 sub handle_phony
 {
-    &pretty_print_rule ('.PHONY:', "    ", @phony);
+    &pretty_print_rule ('.PHONY:', "", @phony);
     $output_rules .= "\n";
+}
+
+# Handle TESTS variable.
+sub handle_tests
+{
+    return if ! defined $contents{'TESTS'};
+
+    &push_dist_common (split (/\s+/, $contents{'TESTS'}));
+    push (@check, 'check-TESTS');
+    # FIXME use $(SHELL) here?  That is what Ulrich suggests.  Maybe a
+    # new macro, $(TEST_SHELL), a la $(CONFIG_SHELL)?  For now we just
+    # execute the file directly; this allows test files which are
+    # compiled -- a possibly useful feature.
+    $output_rules .= 'check-TESTS:
+	@failed=0; all=0; \\
+	srcdir=$(srcdir); export srcdir; \\
+	for tst in $(TESTS); do \\
+	  all=`expr $$all + 1`; \\
+	  if test -f $$tst; then dir=.; \\
+	  else dir="$(srcdir)"; fi; \\
+	  if $$dir/$$tst; then \\
+	    echo "PASS: $$tst"; \\
+	  else \\
+	    failed=`expr $$failed + 1`; \\
+	    echo "FAIL: $$tst"; \\
+	  fi; \\
+	done; \\
+	if test "$$failed" -eq 0; then \\
+	  echo "========================"; \\
+	  echo "All $$all tests passed"; \\
+	  echo "========================"; \\
+	else \\
+	  echo "$$failed of $$all tests failed"; \\
+	fi
+';
 }
 
 ################################################################
@@ -1678,8 +1713,7 @@ sub scan_configure
 	}
 	if ($in_ac_output)
 	{
-	    s/\].*$//;
-	    $in_ac_output = 0 if s/[\),].*$//;
+	    $in_ac_output = 0 if s/[\]\),].*$//;
 
 	    # Look at potential Makefile.am's.
 	    foreach (split)

@@ -2,6 +2,7 @@
 
 AUTOMAKE_OPTIONS = gnits
 MAINT_CHARSET = latin1
+PERL = @PERL@
 
 SUBDIRS = tests
 
@@ -29,20 +30,19 @@ pkgdata_SCRIPTS = config.guess config.sub install-sh mdate-sh mkinstalldirs
 
 CLEANFILES = automake
 
-# Gross.
-DIST_SUBDIRS = samples/cpio/*Makefile.am
-
 # The following requires a fixed version of the Emacs 19.30 etags.
 ETAGS_ARGS = automake.in --lang=none \
  --regex='/^@node[ \t]+\([^,]+\)/\1/' automake.texi
 
+## `test -x' is not portable.  So we use Perl instead.  If Perl
+## doesn't exist, then this test is meaningless anyway.
 # Check to make sure some installed files are executable.
 installcheck-local:
-	test -x $(pkgdatadir)/config.guess
-	test -x $(pkgdatadir)/config.sub
-	test -x $(pkgdatadir)/install-sh
-	test -x $(pkgdatadir)/mdate-sh
-	test -x $(pkgdatadir)/mkinstalldirs
+	$(PERL) -e "exit ! -x '$(pkgdatadir)/config.guess';"
+	$(PERL) -e "exit ! -x '$(pkgdatadir)/config.sub';"
+	$(PERL) -e "exit ! -x '$(pkgdatadir)/install-sh';"
+	$(PERL) -e "exit ! -x '$(pkgdatadir)/mdate-sh';"
+	$(PERL) -e "exit ! -x '$(pkgdatadir)/mkinstalldirs';"
 
 # Some simple checks:
 # * syntax check with perl4 and perl5.
@@ -50,7 +50,7 @@ installcheck-local:
 # * expect no instances of '${...}'
 # These are only really guaranteed to work on my machine.
 maintainer-check: automake check
-	@PERL@ -c -w automake
+	$(PERL) -c -w automake
 	@if grep '^[^#].*true' $(srcdir)/[a-z]*.am; then \
 	  echo "can't use 'true' in GNU Makefile" 1>&2; \
 	  exit 1;				\
