@@ -110,7 +110,6 @@ sub target_hook ($$$$)
 
 package Automake;
 
-require 5.005;
 use strict 'vars', 'subs';
 use Automake::General;
 use Automake::XFile;
@@ -4502,6 +4501,26 @@ sub scan_one_autoconf_file
 {
     my ($filename) = @_;
 
+    # Some macros already provide the right traces to enable generic
+    # code and specific arguments, instead of dedicated code.  But
+    # currently we don't handle traces.  Rewrite these dedicated
+    # macros handling into the generic macro invocation, and let our
+    # generic case handle them.
+
+    my %generalize =
+      (
+       'AC_FUNC_ALLOCA'           => 'AC_LIBSOURCES([alloca.c])',
+       'AC_FUNC_GETLOADAVG'       => 'AC_LIBSOURCES([getloadavg.c])',
+       'AC_FUNC_MEMCMP'           => 'AC_LIBSOURCES([memcmp.c])',
+       'AC_STRUCT_ST_BLOCKS'      => 'AC_LIBSOURCES([fileblocks.c])',
+       'A[CM]_REPLACE_GNU_GETOPT' => 'AC_LIBSOURCES([getopt.c, getopt1.c])',
+       'A[CM]_FUNC_STRTOD'        => 'AC_LIBSOURCES([strtod.c])',
+       'AM_WITH_REGEX'      => 'AC_LIBSOURCES([rx.c, rx.h, regex.c, regex.h])',
+       'AC_FUNC_MKTIME'           => 'AC_LIBSOURCES([mktime.c])',
+       'A[CM]_FUNC_ERROR_AT_LINE' => 'AC_LIBSOURCES([error.c, error.h])',
+       'A[CM]_FUNC_OBSTACK'       => 'AC_LIBSOURCES([obstack.c, obstack.h])',
+      );
+
     my $configfh = new Automake::XFile ("< $filename");
     print "$me: reading $filename\n" if $verbose;
 
@@ -4529,54 +4548,13 @@ sub scan_one_autoconf_file
 	    $_ = $underscore;
 	}
 
+	for my $generalize (keys %generalize)
+	  {
+	    s/$generalize/$generalize{$generalize}/g;
+	  }
+
 	# Populate libobjs array.
-	if (/AC_FUNC_ALLOCA/)
-	{
-	    $libsources{'alloca.c'} = 1;
-	}
-	elsif (/AC_FUNC_GETLOADAVG/)
-	{
-	    $libsources{'getloadavg.c'} = 1;
-	}
-	elsif (/AC_FUNC_MEMCMP/)
-	{
-	    $libsources{'memcmp.c'} = 1;
-	}
-	elsif (/AC_STRUCT_ST_BLOCKS/)
-	{
-	    $libsources{'fileblocks.c'} = 1;
-	}
-	elsif (/A[CM]_REPLACE_GNU_GETOPT/)
-	{
-	    $libsources{'getopt.c'} = 1;
-	    $libsources{'getopt1.c'} = 1;
-	}
-	elsif (/A[CM]_FUNC_STRTOD/)
-	{
-	    $libsources{'strtod.c'} = 1;
-	}
-	elsif (/AM_WITH_REGEX/)
-	{
-	    $libsources{'rx.c'} = 1;
-	    $libsources{'rx.h'} = 1;
-	    $libsources{'regex.c'} = 1;
-	    $libsources{'regex.h'} = 1;
-	}
-	elsif (/AC_FUNC_MKTIME/)
-	{
-	    $libsources{'mktime.c'} = 1;
-	}
-	elsif (/A[CM]_FUNC_ERROR_AT_LINE/)
-	{
-	    $libsources{'error.c'} = 1;
-	    $libsources{'error.h'} = 1;
-	}
-	elsif (/A[CM]_FUNC_OBSTACK/)
-	{
-	    $libsources{'obstack.c'} = 1;
-	    $libsources{'obstack.h'} = 1;
-	}
-	elsif (/LIBOBJS="(.*)\s+\$LIBOBJS"/
+	if (/LIBOBJS="(.*)\s+\$LIBOBJS"/
 	       || /LIBOBJS="\$LIBOBJS\s+(.*)"/)
 	{
 	    foreach my $libobj_iter (split (' ', $1))
