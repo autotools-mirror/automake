@@ -3288,8 +3288,6 @@ sub scan_aclocal_m4 ()
 
   if (-f 'aclocal.m4')
     {
-      &push_dist_common ('aclocal.m4')
-	if $relative_dir eq '.';
       &define_variable ("ACLOCAL_M4", '$(top_srcdir)/aclocal.m4', INTERNAL);
 
       my $aclocal = new Automake::XFile "< aclocal.m4";
@@ -3375,8 +3373,13 @@ sub handle_configure ($$$@)
   $colon_infile = '' if $colon_infile eq ":$makefile.in";
   my @rewritten = rewrite_inputs_into_dependencies ($makefile_in, @inputs);
   my ($regen_aclocal_m4, @aclocal_m4_deps) = scan_aclocal_m4;
+  define_pretty_variable ('am__aclocal_m4_deps', TRUE, INTERNAL,
+			  @configure_deps, @aclocal_m4_deps,
+			  '$(top_srcdir)/' . $configure_ac);
+  my @configuredeps = ('$(am__aclocal_m4_deps)', '$(CONFIGURE_DEPENDENCIES)');
+  push @configuredeps, '$(ACLOCAL_M4)' if -f 'aclocal.m4';
   define_pretty_variable ('am__configure_deps', TRUE, INTERNAL,
-			  @configure_deps);
+			  @configuredeps);
 
   $output_rules .= file_contents
     ('configure',
@@ -3392,8 +3395,7 @@ sub handle_configure ($$$@)
      'USE-DEPS'            => global_option 'no-dependencies'
                                 ? ' --ignore-deps' : '',
      'MAKEFILE-AM-SOURCES' => "$makefile$colon_infile",
-     'REGEN-ACLOCAL-M4'    => $regen_aclocal_m4,
-     ACLOCAL_M4_DEPS       => "@aclocal_m4_deps");
+     'REGEN-ACLOCAL-M4'    => $regen_aclocal_m4);
 
   if ($relative_dir eq '.')
     {
@@ -5590,7 +5592,6 @@ sub make_paragraphs ($%)
 		 'SUBDIRS'      => !! var ('SUBDIRS'),
 		 'TOPDIR'       => backname ($relative_dir),
 		 'TOPDIR_P'     => $relative_dir eq '.',
-		 'CONFIGURE-AC' => $configure_ac,
 
 		 'BUILD'    => $seen_canonical == AC_CANONICAL_SYSTEM,
 		 'HOST'     => $seen_canonical,
