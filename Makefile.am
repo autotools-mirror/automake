@@ -107,9 +107,8 @@ maintainer-check: automake aclocal
 	  exit 1;				\
 	else :; fi
 ## Make sure `rm' is called with `-f'.
-	@if grep -E '\<rm ([^-]|\-[^f ]*\>)' \
-	          $(srcdir)/lib/am/[a-z]*.am $(srcdir)/tests/*.test | \
-	      grep -v '##'; then \
+	@if grep -v '^#' $(srcdir)/lib/am/[a-z]*.am $(srcdir)/tests/*.test | \
+	    grep -E '\<rm ([^-]|\-[^f ]*\>)'; then \
 	  echo "Suspicious 'rm' invocation." 1>&2; \
 	  exit 1;				\
 	else :; fi
