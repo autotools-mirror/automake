@@ -492,12 +492,19 @@ my @suffixes;
 # - $var_location{$VAR} is where it was defined,
 # - $var_comment{$VAR} are the comments associated to it.
 # - $var_type{$VAR} is how it has been defined (`', `+', or `:'),
-# - $var_is_am{$VAR} is true if the variable is owned by Automake.
+# - $var_owner{$VAR} tells who owns the variable (VAR_AUTOMAKE,
+#     VAR_CONFIGURE, or VAR_MAKEFILE).
 my %var_value;
 my %var_location;
 my %var_comment;
 my %var_type;
-my %var_is_am;
+my %var_owner;
+# Possible values for var_owner.  Defined so that the owner of
+# a variable can only be increased (e.g Automake should not
+# override a configure or Makefile variable).
+use constant VAR_AUTOMAKE => 0; # Variable defined by Automake.
+use constant VAR_CONFIGURE => 1;# Variable defined in configure.ac.
+use constant VAR_MAKEFILE => 2; # Variable defined in Makefile.am.
 
 # This holds a 1 if a particular variable was examined.
 my %content_seen;
@@ -706,7 +713,7 @@ sub initialize_per_input ()
     %var_location = ();
     %var_comment = ();
     %var_type = ();
-    %var_is_am = ();
+    %var_owner = ();
 
     %content_seen = ();
 
@@ -861,8 +868,10 @@ register_channel 'unsupported', type => 'warning';
 register_channel 'unused', type => 'warning';
 # Warnings about obsolete features (silent by default).
 register_channel 'obsolete', type => 'warning', silent => 1;
-# Warnings about non-portable construct.
+# Warnings about non-portable constructs.
 register_channel 'portability', type => 'warning', silent => 1;
+# Warnings related to GNU Coding Standards.
+register_channel 'gnu', type => 'warning';
 
 # For &verb.
 register_channel 'verb', type => 'debug', silent => 1;
@@ -1545,7 +1554,7 @@ sub generate_makefile
     foreach my $var ('PRE_INSTALL', 'POST_INSTALL', 'NORMAL_INSTALL')
       {
 	reject_var $var, "`$var' should not be defined"
-	  if ! $var_is_am{$var};
+	  if $var_owner{$var} != VAR_AUTOMAKE;
       }
 
     # Catch some obsolete variables.
@@ -1605,7 +1614,7 @@ sub generate_makefile
 
     # Re-init SOURCES.  FIXME: other code shouldn't depend on this
     # (but currently does).
-    macro_define ('SOURCES', 1, '', 'TRUE', "@sources", 'internal');
+    macro_define ('SOURCES', VAR_AUTOMAKE, '', 'TRUE', "@sources", 'internal');
     define_pretty_variable ('DIST_SOURCES', '', @dist_sources);
 
     &handle_multilib;
@@ -2104,6 +2113,23 @@ sub handle_languages
 
 	# Call the finisher.
 	$lang->finish;
+
+	# Flags listed in `->flags' are user variables (per GNU Standards),
+	# they should not be overriden in the Makefile...
+	my @dont_override = @{$lang->flags};
+	# ... and so is LDFLAGS.
+	push @dont_override, 'LDFLAGS' if $lang->link;
+
+	foreach my $flag (@dont_override)
+	  {
+	    if (exists $var_owner{$flag} &&
+		$var_owner{$flag} == VAR_MAKEFILE)
+	      {
+		msg ('gnu', $var_location{$flag},
+		     "`$flag' is a user variable, you should not "
+		     . "override it;\nuse `AM_$flag' instead.");
+	      }
+	  }
     }
 
     # If the project is entirely C++ or entirely Fortran 77 (i.e., 1
@@ -6013,12 +6039,12 @@ sub variable_not_always_defined_in_cond ($$)
   return @res;
 }
 
-# &macro_define($VAR, $VAR_IS_AM, $TYPE, $COND, $VALUE, $WHERE)
+# &macro_define($VAR, $OWNER, $TYPE, $COND, $VALUE, $WHERE)
 # -------------------------------------------------------------
 # The $VAR can go from Automake to user, but not the converse.
 sub macro_define ($$$$$$)
 {
-  my ($var, $var_is_am, $type, $cond, $value, $where) = @_;
+  my ($var, $owner, $type, $cond, $value, $where) = @_;
 
   err $where, "bad characters in variable name `$var'"
     if $var !~ /$MACRO_PATTERN/o;
@@ -6033,7 +6059,7 @@ sub macro_define ($$$$$$)
   # An Automake variable must be consistently defined with the same
   # sign by Automake.  A user variable must be set by either `=' or
   # `:=', and later promoted to `+='.
-  if ($var_is_am)
+  if ($owner == VAR_AUTOMAKE)
     {
       err ($where, "$var was set with `$var_type{$var}=' "
 	   . "and is now set with `$type='")
@@ -6049,7 +6075,7 @@ sub macro_define ($$$$$$)
   # When adding, since we rewrite, don't try to preserve the
   # Automake continuation backslashes.
   $value =~ s/\\$//mg
-    if $type eq '+' && $var_is_am;
+    if $type eq '+' && $owner == VAR_AUTOMAKE;
 
   # Differentiate assignment types.
 
@@ -6103,7 +6129,7 @@ sub macro_define ($$$$$$)
 	      {
 		# Yes, let's simply append to it.
 		$var = $appendvar{$key};
-		$var_is_am = 1;
+		$owner = VAR_AUTOMAKE;
 	      }
 	    else
 	      {
@@ -6111,7 +6137,8 @@ sub macro_define ($$$$$$)
 		my $num = 1 + keys (%appendvar);
 		my $hvar = "am__append_$num";
 		$appendvar{$key} = $hvar;
-		&macro_define ($hvar, 1, '+', $cond, $value, $where);
+		&macro_define ($hvar, VAR_AUTOMAKE, '+',
+			       $cond, $value, $where);
 		push @var_list, $hvar;
 		# Now HVAR is to be added to VAR.
 		$value = "\$($hvar)";
@@ -6142,7 +6169,7 @@ sub macro_define ($$$$$$)
 	    }
 	  else
 	    {
-	      &macro_define ($var, $var_is_am, '+', $vcond, $value, $where);
+	      &macro_define ($var, $owner, '+', $vcond, $value, $where);
 	    }
 	}
     }
@@ -6159,7 +6186,9 @@ sub macro_define ($$$$$$)
 
       # If Automake tries to override a value specified by the user,
       # just don't let it do.
-      if (defined $var_value{$var}{$cond} && !$var_is_am{$var} && $var_is_am)
+      if (defined $var_value{$var}{$cond}
+	  && $var_owner{$var} != VAR_AUTOMAKE
+	  && $owner == VAR_AUTOMAKE)
 	{
 	  verb ("refusing to override the user definition of:\n"
 		. macro_dump ($var)
@@ -6171,18 +6200,20 @@ sub macro_define ($$$$$$)
 	  # an Automake variable or an AC_SUBST variable for an existing
 	  # condition.
 	  check_ambiguous_conditional ($var, $cond)
-	    unless (($var_is_am{$var} && !$var_is_am
-		     || exists $configure_vars{$var})
-		    && exists $var_value{$var}{$cond});
+	    unless (exists $var_value{$var}{$cond}
+		    && (($var_owner{$var} == VAR_AUTOMAKE
+			 && $owner != VAR_AUTOMAKE)
+			|| $var_owner{$var} == VAR_CONFIGURE));
 
 	  $var_value{$var}{$cond} = $value;
 	}
     }
 
-  # An Automake variable can be given to the user, but not the converse.
-  if (! defined $var_is_am{$var} || !$var_is_am)
+  # The owner of a variable can only increase, because an Automake
+  # variable can be given to the user, but not the converse.
+  if (! defined $var_owner{$var} || $owner > $var_owner{$var})
     {
-      $var_is_am{$var} = $var_is_am;
+      $var_owner{$var} = $owner;
     }
 
   # Call var_VAR_trigger if it's defined.
@@ -6206,7 +6237,7 @@ sub macro_delete ($@)
     {
       delete $var_value{$var};
       delete $var_location{$var};
-      delete $var_is_am{$var};
+      delete $var_owner{$var};
       delete $var_comment{$var};
       delete $var_type{$var};
     }
@@ -6233,12 +6264,32 @@ sub macro_dump ($)
     }
   else
     {
-      my $var_is_am = $var_is_am{$var} ? "Automake" : "User";
+      prog_error ("`$var' is a key in \$var_value, but not in \$var_owner\n")
+	unless exists $var_owner{$var};
+      my $var_owner;
+      if ($var_owner{$var} == VAR_AUTOMAKE)
+	{
+	  $var_owner = 'Automake';
+	}
+      elsif ($var_owner{$var} == VAR_CONFIGURE)
+	{
+	  $var_owner = 'Configure';
+	}
+      elsif ($var_owner{$var} == VAR_MAKEFILE)
+	{
+	  $var_owner = 'Makefile';
+	}
+      else
+	{
+	  prog_error ("unexpected value for `\$var_owner{$var}': "
+		      . $var_owner{$var})
+	    unless defined $var_owner;
+	}
       my $where = (defined $var_location{$var}
 		   ? $var_location{$var} : "undefined");
       $text .= "$var_comment{$var}"
 	if defined $var_comment{$var};
-      $text .= "  $var ($var_is_am, where = $where) $var_type{$var}=\n  {\n";
+      $text .= "  $var ($var_owner, where = $where) $var_type{$var}=\n  {\n";
       foreach my $vcond (sort by_condition keys %{$var_value{$var}})
 	{
 	  $text .= "    $vcond => $var_value{$var}{$vcond}\n";
@@ -6919,7 +6970,7 @@ sub define_pretty_variable ($$@)
 
     if (! variable_defined ($var, $cond))
     {
-        macro_define ($var, 1, '', $cond, "@value", undef);
+        macro_define ($var, VAR_AUTOMAKE, '', $cond, "@value", undef);
 	variable_pretty_output ($var, $cond || 'TRUE');
 	$content_seen{$var} = 1;
     }
@@ -6949,9 +7000,8 @@ sub define_configure_variable ($)
       # appreciated by Make.
       && ! grep { $_ eq $var } (qw(ANSI2KNR AMDEPBACKSLASH)))
     {
-      # A macro defined via configure is a `user' macro -- we should not
-      # override it.
-      macro_define ($var, 0, '', 'TRUE', subst $var, $configure_vars{$var});
+      macro_define ($var, VAR_CONFIGURE, '', 'TRUE',
+		    subst $var, $configure_vars{$var});
       variable_pretty_output ($var, 'TRUE');
     }
 }
@@ -7277,7 +7327,7 @@ sub read_am_file ($)
 		{
 		  append_comments $last_var_name, $spacing, $comment;
 		  $comment = $spacing = '';
-		  macro_define ($last_var_name, 0,
+		  macro_define ($last_var_name, VAR_MAKEFILE,
 				$last_var_type, $cond,
 				$last_var_value, $here)
 		    if $cond ne 'FALSE';
@@ -7335,7 +7385,7 @@ sub read_am_file ($)
 		append_comments $last_var_name, $spacing, $comment;
 		$comment = $spacing = '';
 
-		macro_define ($last_var_name, 0,
+		macro_define ($last_var_name, VAR_MAKEFILE,
 			      $last_var_type, $cond,
 			      $last_var_value, $here)
 		  if $cond ne 'FALSE';
@@ -7431,21 +7481,19 @@ sub read_main_am_file
     &read_am_file ($amfile);
 
     # Output all the Automake variables.  If the user changed one,
-    # then it is now marked as owned by the user.
+    # then it is now marked as VAR_CONFIGURE or VAR_MAKEFILE.
     foreach my $var (uniq @var_list)
     {
-	# Don't process user variables.
-        variable_output ($var)
-	  unless !$var_is_am{$var};
+      variable_output ($var)
+	if exists $var_owner{$var} && $var_owner{$var} == VAR_AUTOMAKE;
     }
 
     # Now dump the user variables that were defined.  We do it in the same
     # order in which they were defined (skipping duplicates).
     foreach my $var (uniq @var_list)
     {
-	# Don't process Automake variables.
-        variable_output ($var)
-	  unless $var_is_am{$var};
+      variable_output ($var)
+	if exists $var_owner{$var} && $var_owner{$var} != VAR_AUTOMAKE;
     }
 }
 
@@ -7747,7 +7795,8 @@ sub file_contents_internal ($$%)
 
 	    # Accumulating variables must not be output.
 	    append_comments $var, $spacing, $comment;
-	    macro_define ($var, $is_am, $type, $cond, $val, $file)
+	    macro_define ($var, $is_am ? VAR_AUTOMAKE : VAR_MAKEFILE,
+			  $type, $cond, $val, $file)
 	      if $cond ne 'FALSE';
 	    push (@var_list, $var);
 
@@ -7755,7 +7804,8 @@ sub file_contents_internal ($$%)
 	    # of (which is detected by the first reading of
 	    # `header-vars.am'), we must not output them.
 	    $result_vars .= "$spacing$comment$_\n"
-	      if $type ne '+' && $var_is_am{$var} && $cond ne 'FALSE';
+	      if ($type ne '+' && exists $var_owner{$var}
+		  && $var_owner{$var} == VAR_AUTOMAKE && $cond ne 'FALSE');
 
  	    $comment = $spacing = '';
  	}
@@ -7901,15 +7951,12 @@ sub am_primary_prefixes ($$@)
     {
       # Automake is allowed to define variables that look like primaries
       # but which aren't.  E.g. INSTALL_sh_DATA.
-      next
-	if $var_is_am{$varname};
       # Autoconf can also define variables like INSTALL_DATA, so
-      # ignore all configure variables.
-      # FIXME: Actually we'd better ignore configure variables which
-      # are not overridden in Makefile.am; but it's not clear how to
-      # do this presently.
+      # ignore all configure variables (at least those which are not
+      # redefined in Makefile.am).
       next
-	if exists $configure_vars{$varname};
+	if (exists $var_owner{$varname}
+	    && $var_owner{$varname} != VAR_MAKEFILE);
 
       if ($varname =~ /^(nobase_)?(dist_|nodist_)?(.*)_$primary$/)
 	{
@@ -8428,7 +8475,7 @@ sub push_dist_common
 {
   prog_error "push_dist_common run after handle_dist"
     if $handle_dist_run;
-  macro_define ('DIST_COMMON', 1, '+', '', "@_", '');
+  macro_define ('DIST_COMMON', VAR_AUTOMAKE, '+', '', "@_", '');
 }
 
 
@@ -8443,6 +8490,7 @@ sub set_strictness
       setup_channel 'error-gnu/warn', silent => 0, type => 'error';
       setup_channel 'error-gnits', silent => 1;
       setup_channel 'portability', silent => 0;
+      setup_channel 'gnu', silent => 0;
     }
   elsif ($strictness_name eq 'gnits')
     {
@@ -8451,6 +8499,7 @@ sub set_strictness
       setup_channel 'error-gnu/warn', silent => 0, type => 'error';
       setup_channel 'error-gnits', silent => 0;
       setup_channel 'portability', silent => 0;
+      setup_channel 'gnu', silent => 0;
     }
   elsif ($strictness_name eq 'foreign')
     {
@@ -8459,6 +8508,7 @@ sub set_strictness
       setup_channel 'error-gnu/warn', silent => 0, type => 'warning';
       setup_channel 'error-gnits', silent => 1;
       setup_channel 'portability', silent => 1;
+      setup_channel 'gnu', silent => 1;
     }
   else
     {
@@ -8494,8 +8544,10 @@ sub require_variables ($$@)
 
   foreach my $var (@vars)
     {
-      # Nothing to do if the variable exists.
-      next if (exists $var_value{$var});
+      # Nothing to do if the variable exists.  The $configure_vars test
+      # needed for strange variables like AMDEPBACKSLASH or ANSI2KNR
+      # that are AC_SUBST'ed but never macro_define'd.
+      next if (exists $var_value{$var} || exists $configure_vars{$var});
 
       ++$res;
 
@@ -8559,10 +8611,11 @@ Library files:
   -f, --force-missing    force update of standard files
 
 Warning categories include:
+  `gnu'           GNU coding standards (default in gnu and gnits modes)
   `obsolete'      obsolete features or constructions
   `unsupported'   unsupported or incomplete features (default)
   `unused'        unused variables (default)
-  `portability'   portability issues (default in gnu and gnits mode)
+  `portability'   portability issues (default in gnu and gnits modes)
   `all'           all the warnings
   `no-CATEGORY'   turn off warnings in CATEGORY
   `none'          turn off all the warnings

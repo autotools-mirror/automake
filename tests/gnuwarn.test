@@ -1,0 +1,38 @@
+#! /bin/sh
+
+# Check that Automake warns about user variables being overriden.
+
+. $srcdir/defs || exit 1
+
+set -e
+
+cat >> configure.in << 'END'
+AC_PROG_CC
+AC_OUTPUT
+END
+
+# Needed by --gnu.
+: > NEWS
+: > README
+: > AUTHORS
+: > ChangeLog
+
+cat > Makefile.am << 'END'
+CFLAGS = -I..
+LDFLAGS = -lfoo
+CXXFLAGS = -Wall
+bin_PROGRAMS = bar
+END
+
+$ACLOCAL
+# Don't warn in foreign mode
+$AUTOMAKE -Wnone --add-missing --foreign
+# Warn in gnu mode
+$AUTOMAKE -Wnone  --add-missing --gnu 2>stderr && exit 1
+cat stderr
+grep CFLAGS stderr
+grep LDFLAGS stderr
+# No reason to warn about CXXFLAGS since it's not used.
+grep CXXFLAGS stderr && exit 1
+# Don't warn if -Wno-gnu.
+$AUTOMAKE -Wnone --gnu -Wno-gnu
