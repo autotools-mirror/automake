@@ -19,7 +19,7 @@
 .PHONY: check-TESTS
 
 check-TESTS: $(TESTS)
-	@failed=0; all=0; xfail=0; xpass=0; \
+	@failed=0; all=0; xfail=0; xpass=0; skip=0; \
 	srcdir=$(srcdir); export srcdir; \
 	list='$(TESTS)'; \
 	if test -n "$$list"; then \
@@ -30,6 +30,7 @@ check-TESTS: $(TESTS)
 	    elif test -f $$tst; then dir=; \
 	    else dir="$(srcdir)/"; fi; \
 	    if $(TESTS_ENVIRONMENT) $${dir}$$tst; then \
+## Success
 	      all=`expr $$all + 1`; \
 	      case " $(XFAIL_TESTS) " in \
 	      *" $$tst "*) \
@@ -42,6 +43,7 @@ check-TESTS: $(TESTS)
 	      ;; \
 	      esac; \
 	    elif test $$? -ne 77; then \
+## Failure
 	      all=`expr $$all + 1`; \
 	      case " $(XFAIL_TESTS) " in \
 	      *" $$tst "*) \
@@ -53,8 +55,13 @@ check-TESTS: $(TESTS)
 	        echo "FAIL: $$tst"; \
 	      ;; \
 	      esac; \
+	    else \
+## Skipped
+	      skip=`expr $$skip + 1`; \
+	      echo "SKIP: $$tst"; \
 	    fi; \
 	  done; \
+## Prepare the banner
 	  if test "$$failed" -eq 0; then \
 	    if test "$$xfail" -eq 0; then \
 	      banner="All $$all tests passed"; \
@@ -68,9 +75,25 @@ check-TESTS: $(TESTS)
 	      banner="$$failed of $$all tests did not behave as expected ($$xpass unexpected passes)"; \
 	    fi; \
 	  fi; \
-	  dashes=`echo "$$banner" | sed s/./=/g`; \
+## DASHES should contain the largest line of the banner.
+	  dashes="$$banner"; \
+	  skipped=""; \
+	  if test "$$skip" -ne 0; then \
+	    skipped="($$skip tests were not run)"; \
+	    test `echo "$$skipped" | wc -c` -gt `echo "$$banner" | wc -c` && \
+	      dashes="$$skipped"; \
+	  fi; \
+	  report=""; \
+	  if test "$$failed" -ne 0 && test -n "$(PACKAGE_BUGREPORT)"; then \
+	    report="Please report to $(PACKAGE_BUGREPORT)"; \
+	    test `echo "$$report" | wc -c` -gt `echo "$$banner" | wc -c` && \
+	      dashes="$$report"; \
+	  fi; \
+	  dashes=`echo "$$dashes" | sed s/./=/g`; \
 	  echo "$$dashes"; \
 	  echo "$$banner"; \
+	  test -n "$$skipped" && echo "$$skipped"; \
+	  test -n "$$report" && echo "$$report"; \
 	  echo "$$dashes"; \
 	  test "$$failed" -eq 0; \
 	else :; fi
