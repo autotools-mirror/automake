@@ -82,6 +82,8 @@ $fp_c_prototypes = 0;
 # weird "NAME:FILE" syntax is used.
 $config_name = '';
 $config_header = '';
+# Line number at which AC_CONFIG_HEADER appears in configure.in.
+$config_header_line = 0;
 
 # Relative location of top build directory.
 $top_builddir = '';
@@ -351,14 +353,16 @@ sub handle_options
 	    # Got a version number.  Is the syntax too strict?
 	    if ($VERSION < $_)
 	    {
-		&am_error ("require version $_, only have $VERSION");
+		&am_line_error ('AUTOMAKE_OPTIONS',
+				"require version $_, only have $VERSION");
 		# FIXME -- what else to do?
 		exit 1;
 	    }
 	}
 	else
 	{
-	    &am_error ('option ', $_, 'not recognized');
+	    &am_line_error ('AUTOMAKE_OPTIONS',
+			    'option ', $_, 'not recognized');
 	}
     }
 }
@@ -399,7 +403,10 @@ sub get_object_extension
 
 	if (defined $options{'ansi2knr'} || defined $contents{'@kr@'})
 	{
-	    &am_error ("option \`ansi2knr' in use but \`fp_C_PROTOTYPES' not in configure.in")
+	    &am_line_error ((defined $options{'ansi2knr'}
+			     ? 'AUTOMAKE_OPTIONS'
+			     : '@kr@'),
+			    "option \`ansi2knr' in use but \`fp_C_PROTOTYPES' not in configure.in")
 		if ! $fp_c_prototypes;
 
 	    $dir_holds_sources = '$o';
@@ -463,7 +470,8 @@ sub handle_source_transform
 	}
 	else
 	{
-	    &am_error ($one_file . '_OBJECTS', 'should not be defined');
+	    &am_line_error ($one_file . '_OBJECTS',
+			    $one_file . '_OBJECTS', 'should not be defined');
 	}
 
 	push (@sources, '$(' . $one_file . "_SOURCES)");
@@ -573,7 +581,8 @@ sub handle_libraries
 		}
 		elsif ($lsearch eq '@ALLOCA@')
 		{
-		    &am_error ("\@ALLOCA\@ seen but \`AC_FUNC_ALLOCA' not in \`configure.in'")
+		    &am_line_error ($onelib . '_LIBADD',
+				    "\@ALLOCA\@ seen but \`AC_FUNC_ALLOCA' not in \`configure.in'")
 			if ! defined $libsources{'alloca.c'};
 		    $dep_files{'$(srcdir)/.deps/alloca.P'} = 1;
 		    &require_file ($NORMAL, 'alloca.c');
@@ -647,7 +656,8 @@ sub handle_texinfo
 {
     # FIXME can this really be right?  Might want to have configure
     # determine list of texinfos.  Fix this when someone complains.
-    &am_error ("\`TEXINFOS' is an anachronism; use \`info_TEXINFOS'")
+    &am_line_error ('TEXINFOS',
+		    "\`TEXINFOS' is an anachronism; use \`info_TEXINFOS'")
 	if defined $contents{'TEXINFOS'};
     return if (! defined $contents{'info_TEXINFOS'}
 	       && ! defined $contents{'html_TEXINFOS'});
@@ -769,7 +779,7 @@ sub handle_texinfo
 # Handle any man pages.
 sub handle_man_pages
 {
-    &am_error ("\`MANS' is an anachronism; use \`man_MANS'")
+    &am_line_error ('MANS', "\`MANS' is an anachronism; use \`man_MANS'")
 	if defined $contents{'MANS'};
     return if ! defined $contents{'man_MANS'};
 
@@ -989,7 +999,8 @@ sub handle_dist
 
     if (defined $contents{'DIST_CHARSET'})
     {
-	&am_error ("DIST_CHARSET defined but no MAINT_CHARSET defined")
+	&am_line_error ('DIST_CHARSET',
+			"DIST_CHARSET defined but no MAINT_CHARSET defined")
 	    if ! $local_maint_charset;
 	if ($relative_dir eq '.')
 	{
@@ -997,7 +1008,8 @@ sub handle_dist
 	}
 	else
 	{
-	    &am_error ("DIST_CHARSET can only be defined at top level");
+	    &am_line_error ('DIST_CHARSET',
+			    "DIST_CHARSET can only be defined at top level");
 	}
     }
 
@@ -1099,11 +1111,13 @@ sub handle_subdirs
 
     if ($seen_gettext)
     {
-	&am_error
-	    ("ud_GNU_GETTEXT in configure.in but \`\@POSUB\@' not in SUBDIRS")
+	&am_line_error
+	    ('SUBDIRS',
+	     "ud_GNU_GETTEXT in configure.in but \`\@POSUB\@' not in SUBDIRS")
 		if $contents{'SUBDIRS'} !~ /\b\@POSUB\@\b/;
-	&am_error
-	    ("ud_GNU_GETTEXT in configure.in but \`\@INTLSUB\@' not in SUBDIRS")
+	&am_line_error
+	    ('SUBDIRS',
+	     "ud_GNU_GETTEXT in configure.in but \`\@INTLSUB\@' not in SUBDIRS")
 		if $contents{'SUBDIRS'} !~ /\b\@INTLSUB\@\b/;
 
 	# FIXME consider warning if 'po' or 'intl' appear; they should
@@ -1118,7 +1132,8 @@ sub handle_subdirs
     local ($dir);
     foreach $dir (split (/\s+/, $contents{'SUBDIRS'}))
     {
-	&am_error ("required directory $relative_dir/$dir does not exist")
+	&am_line_error ('SUBDIRS',
+			"required directory $relative_dir/$dir does not exist")
 	    if ! -d $relative_dir . '/' . $dir;
     }
 
@@ -1150,7 +1165,7 @@ sub handle_subdirs
 sub handle_configure
 {
     # If SUBDIRS defined, require AC_PROG_MAKE_SET.
-    &am_error ("AC_PROG_MAKE_SET must be used in configure.in")
+    &am_line_error ('SUBDIRS', "AC_PROG_MAKE_SET must be used in configure.in")
 	if defined $contents{'SUBDIRS'} && ! $seen_make_set;
 
     local ($top_reldir);
@@ -1181,7 +1196,9 @@ sub handle_configure
 	{
 	    # FIXME this restriction should be lifted.
 	    # FIXME first see if it is even needed as-is.
-	    &am_error ("argument to AC_CONFIG_HEADER contains \`/'\n")
+	    # FIXME should jump to line in configure.in.
+	    &am_line_error ($config_header_line,
+			    "argument to AC_CONFIG_HEADER contains \`/'\n")
 		if ($config_header =~ /\//);
 
 	    &require_file ($NORMAL, $config_header);
@@ -1212,7 +1229,8 @@ sub handle_configure
 	$top_reldir = '';
     }
 
-    &am_error ("\`CONFIG_HEADER' is an anachronism; now determined from \`configure.in'")
+    &am_line_error ('CONFIG_HEADER',
+		    "\`CONFIG_HEADER' is an anachronism; now determined from \`configure.in'")
 	if defined $contents{'CONFIG_HEADER'};
 
     # Generate CONFIG_HEADER define, and define interally.
@@ -1350,7 +1368,8 @@ sub handle_merge_targets
 
     if (defined $contents{'install-local'})
     {
-	&am_error ("use \`install-data' or \`install-exec', not \`install'");
+	&am_line_error ('install-local',
+			"use \`install-data' or \`install-exec', not \`install'");
     }
 
     # Step two: if we are doing recursive makes, write out the
@@ -1611,6 +1630,7 @@ sub scan_configure
 	# Handle configuration headers.
 	if (/AC_CONFIG_HEADER\s*\((.*)\)/)
 	{
+	    $config_header_line = $.;
 	    $config_name = $1;
 	    if ($config_name =~ /^([^:]+):(.+)$/)
 	    {
@@ -1626,10 +1646,8 @@ sub scan_configure
 	$seen_canonical = 1 if /AC_CANONICAL_(HOST|SYSTEM)/;
 	$seen_path_xtra = 1 if /AC_PATH_XTRA/;
 
-	# Some things required by Automake.  FIXME we only really
-	# require fp_PROG_INSTALL if some scripts are installed.  And
-	# we only really require AC_ARG_PROGRAM if any program is
-	# installed.
+	# Some things required by Automake.  FIXME We only really
+	# require AC_ARG_PROGRAM if any program is installed.
 	$seen_make_set = 1 if /AC_PROG_MAKE_SET/;
 	$seen_prog_install = 1 if ! $seen_prog_install && /AC_PROG_INSTALL/;
 	$seen_prog_install = 2 if ! $seen_prog_install && /fp_PROG_INSTALL/;
@@ -1641,6 +1659,7 @@ sub scan_configure
 
     # AC_CANONICAL_HOST and AC_CANONICAL_SYSTEM need config.guess and
     # config.sub.
+    # FIXME if this fails should error reference line in configure.in?
     &require_file ($NORMAL, 'config.guess', 'config.sub')
 	if $seen_canonical;
 
@@ -1852,6 +1871,7 @@ sub read_am_file
 	    # Value here doesn't matter; for targets we only note
 	    # existence.
 	    $contents{$1} = 1;
+	    $content_lines{$1} = $.;
 	    $output_trailer .= $comment . $spacing . $_;
 	    $comment = $spacing = '';
 	    $saw_bk = /\\$/;
@@ -1870,6 +1890,7 @@ sub read_am_file
 	    {
 		$contents{$1} = $2;
 	    }
+	    $content_lines{$1} = $.;
 	    $output_vars .= $comment . $spacing . $_;
 	    $comment = $spacing = '';
 	    $saw_bk = /\\$/;
@@ -1880,7 +1901,8 @@ sub read_am_file
 	    # de-ANSI-fication.  This is deprecated.  Remove in the
 	    # future.
 	    $contents{'@kr@'} = 1;
-	    &am_error ('`@kr@\' is deprecated; put `ansi2knr\' in AUTOMAKE_OPTIONS instead');
+	    $content_lines{'@kr@'} = $.;
+	    &am_line_error ('@kr@', '`@kr@\' is deprecated; put `ansi2knr\' in AUTOMAKE_OPTIONS instead');
 	}
 	else
 	{
@@ -1986,6 +2008,10 @@ sub initialize_per_input
     # This holds the contents of a Makefile.am, as parsed by
     # read_am_file.
     %contents = ();
+
+    # This holds the line numbers at which various elements of
+    # %contents are defined.
+    %content_lines = ();
 
     # This holds the "relative directory" of the current Makefile.in.
     # Eg for src/Makefile.in, this is "src".
@@ -2242,7 +2268,7 @@ sub am_install_var
     {
 	if ($varname =~ /^(.*)_$primary$/ && ! defined $valid{$1})
 	{
-	    &am_error ("invalid variable \"$varname\"");
+	    &am_line_error ($varname, "invalid variable \"$varname\"");
 	}
     }
 
@@ -2369,6 +2395,17 @@ sub mkdir
 sub am_error
 {
     warn "automake: ${am_file}.am: ", join (' ', @_), "\n";
+    $exit_status = 1;
+}
+
+sub am_line_error
+{
+    local ($symbol, @args) = @_;
+
+    # If SYMBOL not already a line number, look it up in Makefile.am.
+    $symbol = $content_lines{$symbol} unless $symbol =~ /^\d+$/;
+    warn "${am_file}.am:", $symbol, ": ", join (' ', @args),
+         "\n";
     $exit_status = 1;
 }
 
