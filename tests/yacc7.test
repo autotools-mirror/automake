@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001, 2002, 2003  Free Software Foundation, Inc.
+# Copyright (C) 2001, 2002, 2003, 2004  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -44,7 +44,13 @@ check-dist: distdir
 	test -f $(distdir)/foo.h
 END
 
+# The %union will cause Bison to output `#line's in y.tab.h too.
 cat > foo.y << 'END'
+%union
+{
+  int i;
+  char c;
+}
 %%
 WORD: "up";
 %%
@@ -69,6 +75,9 @@ $MAKE check-dist
 rm -f foo.h
 $MAKE foo.h
 test -f foo.h
+
+# Make sure `#line ... y.tab.h' gets replaced.
+$FGREP 'y.tab.h' foo.h && exit 1
 
 # Make distclean must not erase foo.c nor foo.h (by GNU standards) ...
 $MAKE foo.c
