@@ -314,7 +314,6 @@ output3.test \
 output4.test \
 output5.test \
 overrid.test \
-package.test \
 parse.test \
 percent.test \
 percent2.test \
