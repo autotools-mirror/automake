@@ -75,22 +75,19 @@ maintainer-check: automake aclocal
 ## is a shell construct, not a Makefile construct.
 ## The backslash in `$${' is needed for some versions of bash.
 	@if fgrep '\$${' $(srcdir)/[a-z]*.am | \
-	       fgrep -v '$$$$' | \
-	       grep . ; then \
+	       fgrep -v '$$$$'; then \
 	  echo "Found too many uses of '\$${' in the lines above." 1>&2; \
 	  exit 1;				\
 	else :; fi
 ## Make sure all invocations of mkinstalldirs are correct.
 	@if fgrep -n 'mkinstalldirs' $(srcdir)/[a-z]*.am | \
-	      fgrep -v '$$(mkinstalldirs)' | \
-	      grep . ; then \
+	      fgrep -v '$$(mkinstalldirs)'; then \
 	  echo "Found incorrect use of mkinstalldirs in the lines above" 1>&2; \
 	  exit 1; \
 	else :; fi
 ## We never want to use "undef", only "delete", but for $/.
 	@if grep -n -w undef $(srcdir)/automake.in | \
-	      fgrep -v 'undef $$/' | \
-	      grep . ; then \
+	      fgrep -v 'undef $$/'; then \
 	  echo "Found undef in automake.in; use delete instead" 1>&2; \
 	  exit 1; \
 	fi
