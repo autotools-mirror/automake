@@ -7288,25 +7288,34 @@ sub usage
 	$last = $iter;
     }
 
-    local ($one, $two, $three, $four, $i, $max);
-    $max = int (($#lcomm + 1) / 4);
+    local ($cols, $rows, $rest);
+    $cols = 4;
+    $rows = int(@lcomm / $cols);
+    $rest = @lcomm % $cols;
 
-    for ($i = 0; $i < $max; ++$i)
+    if ($rest)
     {
-	$one = $lcomm[$i];
-	$two = $lcomm[$max + $i + 1];
-	$three = $lcomm[2 * $max + $i + 1];
-	$four = $lcomm[3 * $max + $i + 1];
-	write;
+        $rows++;
+    }
+    else
+    {
+        $rest = $cols
     }
 
-    local ($mod) = ($#lcomm + 1) % 4;
-    if ($mod != 0)
+    local ($x, $y, $idx, @four);
+    for ($y = 0; $y < $rows; $y++)
     {
-	$one = $lcomm[$max];
-	$two = ($mod > 1) ? $lcomm[2 * $max] : '';
-	$three = ($mod > 2) ? $lcomm[3 * $max] : '';
-	$four = ($mod > 3) ? $lcomm[4 * $max] : '';
+        @four = ("", "", "", "");
+	for ($x = 0; $x < $cols; $x++)
+        {
+	    last if $y + 1 == $rows && $x == $rest;
+
+	    $idx = (($x > $rest)
+		    ? ($rows * $rest + ($rows - 1) * ($x - $rest))
+		    : ($rows * $x));
+	    $idx += $y;
+	    $four[$x] = $lcomm[$idx];
+	}
 	write;
     }
 
@@ -7317,5 +7326,5 @@ sub usage
 
 format USAGE_FORMAT =
   @<<<<<<<<<<<<<<<<   @<<<<<<<<<<<<<<<<   @<<<<<<<<<<<<<<<<   @<<<<<<<<<<<<<<<<
-  $one,               $two,               $three,             $four
+  $four[0],           $four[1],           $four[2],           $four[3]
 .
