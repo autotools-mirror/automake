@@ -88,7 +88,7 @@ my $pkgdata_dir = "@datadir@/@PACKAGE@";
 
 # String constants.
 my $IGNORE_PATTERN = '^##([^#].*)?$';
-my $WHITE_PATTERN = '^[ \t]*$';
+my $WHITE_PATTERN = '^\s*$';
 my $COMMENT_PATTERN = '^#';
 my $TARGET_PATTERN='[$a-zA-Z_.][-.a-zA-Z0-9_(){}/$]*';
 my $RULE_PATTERN = "^($TARGET_PATTERN) *:([^=].*|)\$";
@@ -96,21 +96,21 @@ my $SUFFIX_RULE_PATTERN = '^\.([a-zA-Z0-9]+)\.([a-zA-Z0-9]+)$';
 # Only recognize leading spaces, not leading tabs.  If we recognize
 # leading tabs here then we need to make the reader smarter, because
 # otherwise it will think rules like `foo=bar; \' are errors.
-my $MACRO_PATTERN = '^ *([A-Za-z0-9_@]+)[ \t]*([:+]?)=[ \t]*(.*)$';
-my $BOGUS_MACRO_PATTERN = '^ *([^ \t]*)[ \t]*([:+]?)=[ \t]*(.*)$';
+my $MACRO_PATTERN = '^ *([A-Za-z0-9_@]+)\s*([:+]?)=\s*(.*)$';
+my $BOGUS_MACRO_PATTERN = '^ *([^ \t]*)\s*([:+]?)=\s*(.*)$';
 # This pattern recognizes a Gnits version id and sets $1 if the
 # release is an alpha release.  We also allow a suffix which can be
 # used to extend the version number with a "fork" identifier.
-my $GNITS_VERSION_PATTERN = '[0-9]+\.[0-9]+([a-z]|\.[0-9]+)?(-[A-Za-z0-9]+)?';
-my $IF_PATTERN = '^if[ \t]+([A-Za-z][A-Za-z0-9_]*)[ \t]*(#.*)?$';
-my $ELSE_PATTERN =   '^else(?:[ \t]+([A-Za-z][A-Za-z0-9_]*))?[ \t]*(#.*)?$';
-my $ENDIF_PATTERN = '^endif(?:[ \t]+([A-Za-z][A-Za-z0-9_]*))?[ \t]*(#.*)?$';
+my $GNITS_VERSION_PATTERN = '\d+\.\d+([a-z]|\.\d+)?(-[A-Za-z0-9]+)?';
+my $IF_PATTERN =          '^if\s+(!?)\s*([A-Za-z][A-Za-z0-9_]*)\s*(?:#.*)?$';
+my $ELSE_PATTERN =   '^else(?:\s+(!?)\s*([A-Za-z][A-Za-z0-9_]*))?\s*(?:#.*)?$';
+my $ENDIF_PATTERN = '^endif(?:\s+(!?)\s*([A-Za-z][A-Za-z0-9_]*))?\s*(?:#.*)?$';
 my $PATH_PATTERN='(\w|[/.-])+';
 # This will pass through anything not of the prescribed form.
-my $INCLUDE_PATTERN = ('^include[ \t]+'
+my $INCLUDE_PATTERN = ('^include\s+'
 		       . '((\$\(top_srcdir\)/' . $PATH_PATTERN . ')'
 		       . '|(\$\(srcdir\)/' . $PATH_PATTERN . ')'
-		       . '|([^/\$]' . $PATH_PATTERN. '))[ \t]*(#.*)?$');
+		       . '|([^/\$]' . $PATH_PATTERN. '))\s*(#.*)?$');
 
 # Some regular expressions.  One reason to put them here is that it
 # makes indentation work better in Emacs.
@@ -1251,14 +1251,14 @@ sub handle_options
 	    {
 		$use_dependencies = 0;
 	    }
-	    elsif (/([0-9]+)\.([0-9]+)([a-z]?)(-[A-Za-z0-9]+)?/)
+	    elsif (/(\d+)\.(\d+)([a-z]?)(-[A-Za-z0-9]+)?/)
 	    {
 		# Got a version number.
 
 		my ($rmajor, $rminor, $ralpha, $rfork) = ($1, $2, $3, $4);
 
 		&prog_error ("version is incorrect: $VERSION")
-		  if $VERSION !~ /([0-9]+)\.([0-9]+)([a-z]?)(-[A-Za-z0-9]+)?/;
+		  if $VERSION !~ /(\d+)\.(\d+)([a-z]?)(-[A-Za-z0-9]+)?/;
 
 		my ($tmajor, $tminor, $talpha, $tfork) = ($1, $2, $3, $4);
 
@@ -5640,6 +5640,103 @@ sub check_ambiguous_conditional ($$)
 
 
 
+## ------------------------------ ##
+## Handling the condition stack.  ##
+## ------------------------------ ##
+
+
+# $COND_STRING
+# cond_stack_if ($NEGATE, $COND, $WHERE)
+# --------------------------------------
+sub cond_stack_if ($$$)
+{
+  my ($negate, $cond, $where) = @_;
+
+  &am_file_error ($where, "$cond does not appear in AM_CONDITIONAL")
+    if ! $configure_cond{$cond} && $cond !~ /^TRUE|FALSE$/;
+
+  $cond = "${cond}_TRUE"
+    unless $cond =~ /^TRUE|FALSE$/;
+  $cond = condition_negate ($cond)
+    if $negate;
+
+  push (@cond_stack, $cond);
+
+  return conditional_string (@cond_stack);
+}
+
+
+# $COND_STRING
+# cond_stack_else ($NEGATE, $COND, $WHERE)
+# ----------------------------------------
+sub cond_stack_else ($$$)
+{
+  my ($negate, $cond, $where) = @_;
+
+  if (! @cond_stack)
+    {
+      &am_file_error ($where, "else without if");
+      return;
+    }
+
+  $cond_stack[$#cond_stack] = condition_negate ($cond_stack[$#cond_stack]);
+
+  # If $COND is given, check against it.
+  if (defined $cond)
+    {
+      $cond = "${cond}_TRUE"
+	unless $cond =~ /^TRUE|FALSE$/;
+      $cond = condition_negate ($cond)
+	if $negate;
+
+      &am_file_error ($where,
+		      "else reminder ($negate$cond) incompatible with "
+		      . "current conditional: $cond_stack[$#cond_stack]")
+	if $cond_stack[$#cond_stack] ne $cond;
+    }
+
+  return conditional_string (@cond_stack);
+}
+
+
+# $COND_STRING
+# cond_stack_endif ($NEGATE, $COND, $WHERE)
+# -----------------------------------------
+sub cond_stack_endif ($$$)
+{
+  my ($negate, $cond, $where) = @_;
+  my $old_cond;
+
+  if (! @cond_stack)
+    {
+      &am_file_error ($where, "endif without if");
+      return;
+    }
+
+
+  # If $COND is given, check against it.
+  if (defined $cond)
+    {
+      $cond = "${cond}_TRUE"
+	unless $cond =~ /^TRUE|FALSE$/;
+      $cond = condition_negate ($cond)
+	if $negate;
+
+      &am_file_error ($where,
+		      "endif reminder ($negate$cond) incompatible with "
+		      . "current conditional: $cond_stack[$#cond_stack]")
+	if $cond_stack[$#cond_stack] ne $cond;
+    }
+
+  pop @cond_stack;
+
+  return conditional_string (@cond_stack);
+}
+
+
+
+
+
 ## ------------------------ ##
 ## Handling the variables.  ##
 ## ------------------------ ##
@@ -6516,45 +6613,20 @@ sub read_am_file
 		}
 	    }
 	}
+
 	elsif (/$IF_PATTERN/o)
-	{
-	    my $new_cond = $1;
-	    &am_line_error ($., "$new_cond does not appear in AM_CONDITIONAL")
-		if ! $configure_cond{$new_cond} && $new_cond !~ /^TRUE|FALSE$/;
-	    push (@cond_stack,
-		  (($new_cond =~ /^TRUE|FALSE$/)
-		   ? "$new_cond" : "${new_cond}_TRUE"));
-	    $cond = conditional_string (@cond_stack);
-	}
+	  {
+	    $cond = cond_stack_if ($1, $2, "$amfile:$.");
+	  }
 	elsif (/$ELSE_PATTERN/o)
-	{
-	    if (! @cond_stack)
-	    {
-		&am_line_error ($., "else without if");
-	    }
-	    elsif ($cond_stack[$#cond_stack] =~ /_FALSE$/)
-	    {
-		&am_line_error ($., "else after else");
-	    }
-	    else
-	    {
-		$cond_stack[$#cond_stack]
-		  = condition_negate ($cond_stack[$#cond_stack]);
-		$cond = conditional_string (@cond_stack);
-	    }
-	}
+	  {
+	    $cond = cond_stack_else ($1, $2, "$amfile:$.");
+	  }
 	elsif (/$ENDIF_PATTERN/o)
-	{
-	    if (! @cond_stack)
-	    {
-		&am_line_error ($., "endif without if");
-	    }
-	    else
-	    {
-		pop @cond_stack;
-		$cond = conditional_string (@cond_stack);
-	    }
-	}
+	  {
+	    $cond = cond_stack_endif ($1, $2, "$amfile:$.");
+	  }
+
 	elsif (/$RULE_PATTERN/o)
 	{
 	    # Found a rule.
@@ -6911,43 +6983,17 @@ sub file_contents_internal ($%)
 
         # Handling the conditionals.
         elsif (/$IF_PATTERN/o)
-	{
-	    my $new_cond = $1;
-	    &am_line_error ($., "$new_cond does not appear in AM_CONDITIONAL")
-		if ! $configure_cond{$new_cond} && $new_cond !~ /^TRUE|FALSE$/;
-	    push (@cond_stack,
-		  ($new_cond =~ /^TRUE|FALSE$/) ? "$new_cond" : "${new_cond}_TRUE");
-	    $cond = conditional_string (@cond_stack);
-	}
+	  {
+	    $cond = cond_stack_if ($1, $2, $basename);
+	  }
 	elsif (/$ELSE_PATTERN/o)
-	{
-	    if (! @cond_stack)
-	    {
-		&am_error ("else without if");
-	    }
-	    elsif ($cond_stack[$#cond_stack] =~ /_FALSE$/)
-	    {
-		&am_error ("else after else");
-	    }
-	    else
-	    {
-	      $cond_stack[$#cond_stack] =
-		condition_negate ($cond_stack[$#cond_stack]);
-	      $cond = conditional_string (@cond_stack);
-	    }
-	}
+	  {
+	    $cond = cond_stack_else ($1, $2, $basename);
+	  }
 	elsif (/$ENDIF_PATTERN/o)
-	{
-	    if (! @cond_stack)
-	    {
-		&am_error ("endif without if");
-	    }
-	    else
-	    {
-		pop @cond_stack;
-		$cond = conditional_string (@cond_stack);
-	    }
-	}
+	  {
+	    $cond = cond_stack_endif ($1, $2, $basename);
+	  }
 
         # Handling rules.
  	elsif (/$RULE_PATTERN/mso)
@@ -7083,12 +7129,12 @@ sub transform (%)
 	if ($val)
 	{
 	    $result .= "s/\Q?$token?\E//gm;s/^.*\Q?!$token?\E.*\\n//gm;";
-	    $result .= "s/\Q%?$token%\E/TRUE/gm;s/\Q%!$token%\E/FALSE/gm;";
+	    $result .= "s/\Q%?$token%\E/TRUE/gm;";
 	}
 	else
 	{
 	    $result .= "s/\Q?!$token?\E//gm;s/^.*\Q?$token?\E.*\\n//gm;";
-	    $result .= "s/\Q%?$token%\E/FALSE/gm;s/\Q%!$token%\E/TRUE/gm;";
+	    $result .= "s/\Q%?$token%\E/FALSE/gm;";
 	}
     }
 
