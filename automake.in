@@ -5368,24 +5368,6 @@ sub conditional_true_when ($$)
 
 
 # $BOOLEAN
-# &conditionals_true_when (\@CONDS, $WHEN)
-# ----------------------------------------
-# Same as above, but true only if all the @CONDS are true when $WHEN is true.
-#
-# If there are no @CONDS, then return true.
-sub conditionals_true_when (\@$)
-{
-    my ($condsref, $when) = @_;
-
-    foreach my $cond (@$condsref)
-    {
-	return 0 unless conditional_true_when ($cond, $when);
-    }
-
-    return 1;
-}
-
-# $BOOLEAN
 # &conditional_is_redundant ($COND, @WHENS)
 # ----------------------------------------
 # Determine whether $COND is redundant with respect to @WHENS.
@@ -5849,7 +5831,7 @@ sub variable_conditions ($)
 
     %vars_scanned = ();
 
-    my @new_conds = &variable_conditions_sub ($var, '', ());
+    my @new_conds = &variable_conditions_sub ($var, '');
     # Now we want to return all permutations of the subvariable
     # conditions.
     my %allconds = ();
@@ -5894,14 +5876,13 @@ sub variable_conditionally_defined ($)
 
 
 
-# &variable_conditions_sub ($VAR, $PARENT, @PARENT_CONDS)
+# &variable_conditions_sub ($VAR, $PARENT)
 # -------------------------------------------------------
 # A subroutine of variable_conditions.  This returns all the
-# conditions of $VAR which are satisfiable when all of @PARENT_CONDS
-# are true.
+# conditions of $VAR, including those of any sub-variables.
 sub variable_conditions_sub
 {
-    my ($var, $parent, @parent_conds) = @_;
+    my ($var, $parent) = @_;
     my @new_conds = ();
 
     if (defined $vars_scanned{$var})
@@ -5915,16 +5896,10 @@ sub variable_conditions_sub
     # Examine every condition under which $VAR is defined.
     foreach my $vcond (keys %{$var_value{$var}})
     {
-	# If this condition cannot be true when the parent conditions
-	# are true, then skip it.
-	next
-	  if ! conditionals_true_when (@parent_conds, $vcond);
-
 	push (@this_conds, $vcond);
 
 	# If $VAR references some other variable, then compute the
 	# conditions for that subvariable.
-	push (@parent_conds, $vcond);
 	my @subvar_conds = ();
 	foreach (split (' ', $var_value{$var}{$vcond}))
 	{
@@ -5938,7 +5913,7 @@ sub variable_conditions_sub
 		# Here we compute all the conditions under which the
 		# subvariable is defined.  Then we go through and add
 		# $VCOND to each.
-		my @svc = &variable_conditions_sub ($1, $var, @parent_conds);
+		my @svc = &variable_conditions_sub ($1, $var);
 		foreach my $item (@svc)
 		{
 		    my $val = conditional_string ($vcond, split (' ', $item));
@@ -5947,7 +5922,6 @@ sub variable_conditions_sub
 		}
 	    }
 	}
-	pop (@parent_conds);
 
 	# If there are no conditional subvariables, then we want to
 	# return this condition.  Otherwise, we want to return the
@@ -5989,9 +5963,6 @@ sub variable_conditions_sub
 		}
 	    }
 	    next if ! $ok;
-
-	    next
-	      if ! conditionals_true_when (@parent_conds, $perm);
 
 	    # This permutation was not already handled, and is valid
 	    # for the parents.
