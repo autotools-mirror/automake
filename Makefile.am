@@ -183,8 +183,7 @@ fetch:
 ## If a get fails then that is a problem.
 	(cd Fetchdir && \
 	$(WGET) ftp://ftp.gnu.org/gnu/config/config.guess; \
-	$(WGET) ftp://ftp.gnu.org/gnu/config/config.sub; \
-	$(WGET) ftp://ftp.cs.wisc.edu/ghost/ansi2knr.c)
+	$(WGET) ftp://ftp.gnu.org/gnu/config/config.sub)
 ## Don't exit after test because we want to give as many errors as
 ## possible.
 	@stat=0; for file in $(FETCHFILES); do \
