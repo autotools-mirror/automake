@@ -568,7 +568,13 @@ sub get_object_extension
 	    }
 
 	    $output_vars .= "o = .\@U\@o\n";
-	    $output_vars .= "ANSI2KNR = " . $options{'ansi2knr'} . "\n";
+
+	    # Make sure ansi2knr can be found: if no path specified,
+	    # specify "./".
+	    local ($apath) = $options{'ansi2knr'};
+	    $apath = './' . $apath
+		unless $apath =~ /\//;
+	    $output_vars .= "ANSI2KNR = " . $apath . "\n";
 
 	    $output_rules .= &file_contents ('compile-kr');
 	    $output_rules .= &file_contents ('clean-kr');
@@ -1765,7 +1771,7 @@ sub handle_aclocal_m4
 
     if ($regen_aclocal)
     {
-	$output_rules .= ("aclocal.m4: configure.in"
+	$output_rules .= ("aclocal.m4: \@MAINT\@configure.in"
 			  . ($acinclude ? ' acinclude.m4' : '')
 			  . "\n\t"
 			  . 'cd $(srcdir) && aclocal'
@@ -2638,6 +2644,21 @@ sub check_gnu_standards
 	&require_file ($GNU, 'INSTALL', 'NEWS', 'README', 'COPYING',
 		       'AUTHORS', 'ChangeLog');
     }
+
+    if ($strictness >= $GNU)
+    {
+	if (defined $options{'no-installman'})
+	{
+	    &am_line_error ('AUTOMAKE_OPTIONS',
+			    "option \`no-installman' disallowed by GNU standards");
+	}
+
+	if (defined $options{'no-installinfo'})
+	{
+	    &am_line_error ('AUTOMAKE_OPTIONS',
+			    "option \`no-installinfo' disallowed by GNU standards");
+	}
+    }
 }
 
 # Do any extra checking for GNITS standards.
@@ -2819,7 +2840,7 @@ sub read_am_file
 	$_ .= "\n"
 	    unless substr ($_, -1, 1) eq "\n";
 
-	$_ =~ s/\@MAINT\@//g
+	$_ =~ s/\@(UN)?MAINT\@//g
 	    unless $seen_maint_mode;
 
 	if (/$IGNORE_PATTERN/o)
@@ -3113,7 +3134,7 @@ sub file_contents_with_transform
 
     while (<FC_FILE>)
     {
-	$_ =~ s/\@MAINT\@//g
+	$_ =~ s/\@UNMAINT\@//g
 	    unless $seen_maint_mode;
 
 	eval $command;

@@ -105,6 +105,7 @@ documents version @value{VERSION}.
 * Top level::                   The top-level Makefile.am
 * Programs::                    Building programs and libraries
 * Other objects::               Other derived objects
+* Emacs Lisp::                  Emacs Lisp support
 * Documentation::               Building documentation
 * Install::                     What gets installed
 * Clean::                       What gets cleaned
@@ -436,7 +437,8 @@ header.  If you do use this macro, you must create the file
 @file{stamp-h.in}.  It can be empty.  Also, the @code{AC_OUTPUT} command
 in @file{configure.in} must create @file{stamp-h}, eg:
 @example
-AC_OUTPUT(Makefile, [test -z "$CONFIG_HEADERS" || echo timestamp > stamp-h])
+AC_OUTPUT(Makefile,
+[test -z "$CONFIG_HEADERS" || echo timestamp > stamp-h])
 @end example
 @cvindex AC_CONFIG_HEADER
 
@@ -583,6 +585,9 @@ to build C programs and libraries.
 @menu
 * A Program::                   Building a program
 * A Library::                   Building a library
+* Program variables::           Variables used when building a program
+* Yacc and Lex::                Yacc and Lex support
+* C++::                         C++ and other languages
 * ANSI::                        Automatic de-ANSI-fication
 * Dependencies::                Automatic dependency tracking
 @end menu
@@ -726,6 +731,40 @@ plus the list of @code{LIBOBJS} files derived from @file{configure.in}
 to automatically include the appropriate source files in the
 distribution (@pxref{Dist}).  These source files are also automatically
 handled in the dependency-tracking scheme, see @xref{Dependencies}.
+
+
+@node Program variables
+@section Variables used when building a program
+
+@table @code
+@item CC
+@item CFLAGS
+@item CPPFLAGS
+@item CXX
+@item CXXFLAGS
+@item DEFS
+@item LDFLAGS
+@item LIBS
+
+@item INCLUDES
+@item COMPILE
+@item LINK
+@end table
+
+
+@node Yacc and Lex
+@section Yacc and Lex support
+
+Y
+
+@node C++
+@section C++ and other languages
+
+Automake includes full support for C++, and rudimentary support for
+other languages.  Support for other languages will be improved based on
+demand.
+
+
 
 
 @node ANSI
@@ -883,6 +922,23 @@ Files listed in @code{BUILT_SOURCES} are built before any automatic
 dependency tracking is done.  Built sources are included in a
 distribution.
 
+
+@node Emacs Lisp
+@chapter Emacs Lisp
+
+Automake provides some support for Emacs Lisp.  The @samp{LISP} primary
+is used to hold a list of @samp{.el} files.  Possible prefixes for this
+primary are @samp{lisp_} and @samp{noinst_}.  Note that if
+@code{lisp_LISP} is defined, then @file{configure.in} must run
+@code{AM_PATH_LISPDIR} (fixme xref).
+@vindex LISP
+@vindex lisp_LISP
+@vindex noinst_LISP
+
+By default Automake will byte-compile all Emacs Lisp source files using
+the Emacs found by @code{AM_PATH_LISPDIR}.  If you wish to avoid
+byte-compiling, simply define the variable @samp{ELCFILES} to be empty.
+@vindex ELCFILES
 
 @node Documentation
 @chapter Building documentation
@@ -1118,28 +1174,49 @@ The same as the corresponding @samp{--strictness} option.
 @item @code{no-installman}
 The generated @file{Makefile.in} will not cause man pages to be
 installed by default.  However, an @code{install-man} target will still
-be available for optional installation.
+be available for optional installation.  This option is disallowed at
+@samp{GNU} strictness and above.
 @trindex install-man
 
 @item @code{no-installinfo}
 The generated @file{Makefile.in} will not cause info pages to be built
 or installed by default.  However, @code{info} and @code{install-info}
-targets will still be available.
+targets will still be available.  This option is disallowed at
+@samp{GNU} strictness and above.
 @trindex info
 @trindex install-info
 
 @item @code{ansi2knr}
-Turn on automatic de-ANSI-fication.
+@item @code{path/ansi2knr}
+Turn on automatic de-ANSI-fication.  If preceeded by a path, the
+generated @file{Makefile.in} will look in the specified directory to
+find the @file{ansi2knr} program.  Generally the path should be a
+relative path to another directory in the same distribution (though
+Automake currently does not check this).  It is up to you to make sure
+that the specified directory is built before the current directory; if
+@file{ansi2knr} does not exist then the build will fail.
+
+@item @code{dejagnu}
+Cause @code{dejagnu}-specific rules to be generated.  @xref{Tests}.
 
 @item @code{dist-shar}
 Generate a @code{dist-shar} target as well as the ordinary @code{dist}
-target.
+target.  This new target will create a shar archive of the
+distribution.
 @trindex dist-shar
 
 @item @code{dist-zip}
 Generate a @code{dist-zip} target as well as the ordinary @code{dist}
-target.
+target.  This new target will create a zip archive of the distribution.
 @trindex dist-zip
+
+@item @code{dist-tarZ}
+Generate a @code{dist-tarZ} target as well as the ordinary @code{dist}
+target.  This new target will create a compressed tar archive of the
+distribution; a traditional @code{tar} and @code{compress} will be
+assumed.  Warning: if you are actually using @code{GNU tar}, then the
+generated archive might contain nonportable constructs.
+@trindex dist-tarZ
 
 @item @code{no-dependencies}
 This is similar to using @samp{--include-deps} on the command line, but
@@ -1186,6 +1263,7 @@ subdirectories.
 Also, if the variable @code{ETAGS_ARGS} is defined, a @code{tags} target
 will be generated.  This variable is intended for use in directories
 which contain taggable source that @code{etags} does not understand.
+@vindex ETAGS_ARGS
 
 Here is how Automake generates tags for its source, and for nodes in its
 Texinfo file:
@@ -1194,6 +1272,11 @@ Texinfo file:
 ETAGS_ARGS = automake.in --lang=none \
  --regex='/^@@node[ \t]+\([^,]+\)/\1/' automake.texi
 @end example
+
+If you add filenames to @var{ETAGS_ARGS}, you will probably also
+want to set @var{TAGS_DEPENDENCIES}.  The contents of this variable
+are added directly to the dependencies for the @code{tags} target.
+@vindex TAGS_DEPENDENCIES
 
 Automake will also generate an @code{ID} target which will run
 @code{mkid} on the source.  This is only supported on a
@@ -1236,7 +1319,9 @@ these user-supplied targets.
 
 The targets that support a local version are @code{all}, @code{info},
 @code{dvi}, @code{check}, @code{install-data}, @code{install-exec}, and
-@code{uninstall}.
+@code{uninstall}.  Note that there are no @code{uninstall-exec-local} or
+@code{uninstall-data-local} targets; just use @code{uninstall-local}.
+It doesn't make sense to uninstall just data or just executables.
 @trindex all
 @trindex info
 @trindex dvi
