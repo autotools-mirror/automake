@@ -6771,6 +6771,7 @@ sub file_contents ($%)
 	  # line).
 	  # I'm quite shoked!  It seems that (\\\n|[^\n]) is not the
 	  # same as `([^\n]|\\\n)!!!  Don't swap it, it breaks.
+	  my $paragraph = $_;
 	  /^((?:\\\n|[^\n])*)(?:\n(\t.*))?$/som;
 	  my ($relationship, $actions) = ($1, $2 || '');
 
@@ -6784,6 +6785,8 @@ sub file_contents ($%)
 
 	  foreach (split (' ' , $targets))
 	    {
+	      # FIXME: We are not robust to people defining several targets
+	      # at once, only some of them being in %dependencies.
 	      if (defined $dependencies{$_})
 		{
 		  &depend ($_, @deps);
@@ -6795,18 +6798,8 @@ sub file_contents ($%)
 		  # targets instead of one by one.
 		  if (!defined $targets{$targets})
 		    {
-		      # Some hair to avoid spurious trailing blank
-		      # when there are no dependencies.
-		      $result_rules .= "$separator$comment";
-		      $result_rules .= "$targets:";
-		      $result_rules .= " $dependencies"
-			if $dependencies;
-		      $result_rules .= "\n";
-		      # Only add actions if we found some.  Otherwise
-		      # we can end up with a spurious newline.  See
-		      # pr87.test.
-		      $result_rules .= "$actions\n"
-			  if $actions;
+		      $result_rules .= "$separator$comment$paragraph\n";
+		      rule_define ($targets, 1, '', $.);
 		    }
 		  $comment = $separator = '';
 		  last;
