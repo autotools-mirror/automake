@@ -3649,13 +3649,6 @@ sub handle_footer
 	$output_vars .= "\n";
     }
 
-    if (&variable_defined ('SUFFIXES'))
-    {
-	# Push actual suffixes, and not $(SUFFIXES).  Some versions of
-	# make do not like variable substitutions on the .SUFFIXES
-	# line.
-	push (@suffixes, &variable_value_as_list ('SUFFIXES', ''));
-    }
     if (&target_defined ('.SUFFIXES'))
     {
 	&am_line_error ('.SUFFIXES',
@@ -3668,14 +3661,24 @@ sub handle_footer
     $output_header .= ".SUFFIXES:\n";
     if (@suffixes)
     {
+
 	# Make sure suffixes has unique elements.  Sort them to ensure
-	# the output remains consistent.
+	# the output remains consistent.  However, $(SUFFIXES) is
+	# always at the start of the list, unsorted.  This is done
+	# because make will choose rules depending on the ordering of
+	# suffixes, and this lets the user have some control.  Push
+	# actual suffixes, and not $(SUFFIXES).  Some versions of make
+	# do not like variable substitutions on the .SUFFIXES line.
 	local (%suffixes);
+	local (@user_suffixes) = (&variable_defined ('SUFFIXES')
+				  ? &variable_value_as_list ('SUFFIXES', '')
+				  : ());
 
 	grep ($suffixes{$_} = 1, @suffixes);
+	delete @suffixes{@user_suffixes};
 
 	$output_header .= (".SUFFIXES: "
-			   . join (' ', sort keys %suffixes)
+			   . join (' ', @user_suffixes, sort keys %suffixes)
 			   . "\n");
     }
     $output_trailer .= &file_contents ('footer');
