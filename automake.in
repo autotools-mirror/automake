@@ -2427,12 +2427,12 @@ sub handle_man_pages
 {
     &am_line_error ('MANS', "\`MANS' is an anachronism; use \`man_MANS'")
 	if &variable_defined ('MANS');
-    return if ! &variable_defined ('man_MANS');
 
     # Find all the sections in use.  We do this by first looking for
     # "standard" sections, and then looking for any additional
     # sections used in man_MANS.
     local ($sect, %sections, %vlist);
+    local ($found) = 0;
     # Add more sections as needed.
     foreach $sect ('0'..'9', 'n', 'l')
     {
@@ -2440,6 +2440,7 @@ sub handle_man_pages
 	{
 	    $sections{$sect} = 1;
 	    $vlist{'$(man' . $sect . '_MANS)'} = 1;
+	    $found = 1;
 	}
     }
 
@@ -2452,10 +2453,12 @@ sub handle_man_pages
 	    if (/\.([0-9a-z])([a-z]*)$/)
 	    {
 		$sections{$1} = 1;
+		$found = 1;
 	    }
 	}
     }
 
+    return unless $found;
 
     # Now for each section, generate an install and unintall rule.
     # Sort sections so output is deterministic.
