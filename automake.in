@@ -561,6 +561,7 @@ sub generate_makefile
     &handle_clean;
     &handle_phony;
 
+    &handle_minor_options;
     &check_typos;
 
     if (! -d ($output_directory . '/' . $am_relative_dir))
@@ -609,6 +610,12 @@ sub generate_makefile
 # Handle AUTOMAKE_OPTIONS variable.  Return 1 on error, 0 otherwise.
 sub handle_options
 {
+    if ($strictness == $GNITS)
+    {
+	$options{'readme-alpha'} = 1;
+	$options{'check-news'} = 1;
+    }
+
     return 0 if ! &variable_defined ('AUTOMAKE_OPTIONS');
 
     foreach (&variable_value_as_list ('AUTOMAKE_OPTIONS', ''))
@@ -628,7 +635,8 @@ sub handle_options
 	elsif ($_ eq 'no-installman' || $_ eq 'no-installinfo'
 	       || $_ eq 'dist-shar' || $_ eq 'dist-zip'
 	       || $_ eq 'dist-tarZ' || $_ eq 'dejagnu'
-	       || $_ eq 'no-texinfo.tex')
+	       || $_ eq 'no-texinfo.tex'
+	       || $_ eq 'readme-alpha' || $_ eq 'check-news')
 	{
 	    # Explicitly recognize these.
 	}
@@ -2285,7 +2293,7 @@ sub handle_dist_worker
     # Initialization; only at top level.
     if ($relative_dir eq '.')
     {
-	if ($strictness >= $GNITS)
+	if (defined $options{'check-news'})
 	{
 	    # For Gnits users, this is pretty handy.  Look at 15 lines
 	    # in case some explanatory text is desirable.
@@ -3803,6 +3811,30 @@ sub handle_emacs_lisp
     }
 }
 
+# Handle some of the minor options.
+sub handle_minor_options
+{
+    if (defined $options{'readme-alpha'})
+    {
+	if ($relative_dir eq '.')
+	{
+	    if ($package_version !~ /^$GNITS_VERSION_PATTERN$/)
+	    {
+		# FIXME: allow real filename.
+		&am_conf_line_error ('configure.in',
+				     $package_version_line,
+				     "version \`$package_version' doesn't follow Gnits standards");
+	    }
+	    elsif (defined $1 && -f 'README-alpha')
+	    {
+		# This means we have an alpha release.  See
+		# GNITS_VERSION_PATTERN for details.
+		&require_file ($FOREIGN, 'README-alpha');
+	    }
+	}
+    }
+}
+
 ################################################################
 
 # Scan one file for interesting things.  Subroutine of scan_configure.
@@ -4238,23 +4270,6 @@ sub check_gnits_standards
 	if (-f $relative_dir . '/COPYING.LIB')
 	{
 	    &am_error ("\`${relative_dir}/COPYING.LIB' disallowed by Gnits standards");
-	}
-
-	if ($relative_dir eq '.')
-	{
-	    if ($package_version !~ /^$GNITS_VERSION_PATTERN$/)
-	    {
-		# FIXME: allow real filename.
-		&am_conf_line_error ('configure.in',
-				     $package_version_line,
-				     "version \`$package_version' doesn't follow Gnits standards");
-	    }
-	    elsif (defined $1 && -f 'README-alpha')
-	    {
-		# This means we have an alpha release.  See
-		# GNITS_VERSION_PATTERN for details.
-		&require_file ($GNITS, 'README-alpha');
-	    }
 	}
     }
 
