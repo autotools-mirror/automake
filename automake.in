@@ -362,6 +362,8 @@ my $config_aux_dir_set_in_configure_in = 0;
 
 # Whether AM_GNU_GETTEXT has been seen in configure.ac.
 my $seen_gettext = 0;
+# Whether AM_GNU_GETTEXT([external]) is used.
+my $seen_gettext_external = 0;
 # Where AM_GNU_GETTEXT appears.
 my $ac_gettext_location;
 
@@ -4451,9 +4453,12 @@ sub handle_gettext
 
   my @subdirs = &variable_value_as_list_recursive ('SUBDIRS', 'all');
   err_var 'SUBDIRS', "AM_GNU_GETTEXT used but `po' not in SUBDIRS"
-    if ! grep ('po', @subdirs);
+    if ! grep ($_ eq 'po', @subdirs);
+  # intl/ is not required when AM_GNU_GETTEXT is called with
+  # the `external' option.
   err_var 'SUBDIRS', "AM_GNU_GETTEXT used but `intl' not in SUBDIRS"
-    if ! grep ('intl', @subdirs);
+    if (! $seen_gettext_external
+	&& ! grep ($_ eq 'intl', @subdirs));
 
   require_file ($ac_gettext_location, GNU, 'ABOUT-NLS');
 }
@@ -5019,6 +5024,7 @@ sub scan_autoconf_traces ($)
 	{
 	  $seen_gettext = $here;
 	  $ac_gettext_location = $here;
+	  $seen_gettext_external = grep ($_ eq 'external', @args);
 	}
       elsif ($macro eq 'AM_INIT_AUTOMAKE')
 	{

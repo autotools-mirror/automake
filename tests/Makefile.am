@@ -174,6 +174,8 @@ gcj3.test \
 gcj4.test \
 gcj5.test \
 getopt.test \
+gettext.test \
+gettext2.test \
 gnuwarn.test \
 gnits.test \
 gnits2.test \
