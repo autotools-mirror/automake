@@ -6089,6 +6089,7 @@ sub check_ambiguous_conditional ($$$)
 sub conditional_ambiguous_p ($$@)
 {
   my ($var, $cond, @conds) = @_;
+
   foreach my $vcond (@conds)
     {
       # Note that these rules doesn't consider the following
@@ -6106,17 +6107,18 @@ sub conditional_ambiguous_p ($$@)
       my $message;
       if ($vcond eq $cond)
 	{
-	  return ("$var multiply defined in condition $cond", $vcond);
+	  return ("$var multiply defined in condition ". $cond->string,
+		  $vcond);
 	}
       elsif ($vcond->true_when ($cond))
 	{
 	  return ("$var was already defined in condition $vcond, "
-		  . "which implies condition $cond", $vcond);
+		  . "which implies condition ". $cond->string, $vcond);
 	}
       elsif ($cond->true_when ($vcond))
 	{
 	  return ("$var was already defined in condition $vcond, "
-		   . "which is implied by condition $cond", $vcond);
+		   . "which is implied by condition " . $cond->string, $vcond);
 	}
     }
   return ('', '');
@@ -7479,7 +7481,7 @@ sub rule_define ($$$$$)
       my $oldowner  = $target_owner{$target}{$cond};
 
       # Don't mention true conditions in diagnostics.
-      my $condmsg = $cond == TRUE ? " in condition `$cond'" : '';
+      my $condmsg = $cond == TRUE ? " in condition `" . $cond->string . "'" : '';
 
       if ($owner == TARGET_USER)
 	{
@@ -7723,6 +7725,7 @@ sub read_am_file ($$)
     my $last_var_name = '';
     my $last_var_type = '';
     my $last_var_value = '';
+    my $last_where;
     # FIXME: shouldn't use $_ in this loop; it is too big.
     while ($_)
     {
@@ -7791,7 +7794,7 @@ sub read_am_file ($$)
 		  $comment = $spacing = '';
 		  macro_define ($last_var_name, VAR_MAKEFILE,
 				$last_var_type, $cond,
-				$last_var_value, $where)
+				$last_var_value, $last_where)
 		    if $cond != FALSE;
 		  push (@var_list, $last_var_name);
 		}
@@ -7836,6 +7839,7 @@ sub read_am_file ($$)
 	    $last_var_name = $1;
 	    $last_var_type = $2;
 	    $last_var_value = $3;
+	    $last_where = $where->clone;
 	    if ($3 ne '' && substr ($3, -1) eq "\\")
 	    {
 		# We preserve the `\' because otherwise the long lines
@@ -7852,7 +7856,7 @@ sub read_am_file ($$)
 
 		macro_define ($last_var_name, VAR_MAKEFILE,
 			      $last_var_type, $cond,
-			      $last_var_value, $where)
+			      $last_var_value, $last_where)
 		  if $cond != FALSE;
 		push (@var_list, $last_var_name);
 	      }
