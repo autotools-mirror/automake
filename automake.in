@@ -1161,7 +1161,7 @@ sub handle_dist_worker
 	{
 	    # For Gnits users, this is pretty handy.  Look at 15 lines
 	    # in case some explanatory text is desirable.
-	    $output_rules .= '	@if sed 15q $(srcdir)/NEWS | grep -e "$(VERSION)" > /dev/null; then :; else \\
+	    $output_rules .= '	@if sed 15q $(srcdir)/NEWS | fgrep -e "$(VERSION)" > /dev/null; then :; else \\
 	  echo "NEWS not updated; not releasing" 1>&2; \\
 	  exit 1;				\\
 	fi
@@ -1173,7 +1173,7 @@ sub handle_dist_worker
 	    # Create dist directory.
 	    '	rm -rf $(distdir)
 	mkdir $(distdir)
-	chmod 777 $(distdir)
+	-chmod 755 $(distdir)
 ';
 
 	# Only run automake in `dist' target if --include-deps not
@@ -1223,7 +1223,7 @@ sub handle_dist_worker
 	  test -d $(distdir)/$$subdir		\\
 	  || mkdir $(distdir)/$$subdir		\\
 	  || exit 1;				\\
-	  chmod 777 $(distdir)/$$subdir;	\\
+	  -chmod 755 $(distdir)/$$subdir;	\\
 	  (cd $$subdir && $(MAKE) distdir=../$(distdir)/$$subdir distdir) \\
 	    || exit 1; \\
 	done
@@ -2093,6 +2093,9 @@ sub handle_emacs_lisp
 	grep ($_ .= 'c', @elfiles);
 	&pretty_print ('ELCFILES =', '', @elfiles);
 
+	push (@clean, 'lisp');
+	&push_phony_cleaners ('lisp');
+
 	local ($varname);
 	if (&variable_defined ('lisp_LISP'))
 	{
@@ -2104,8 +2107,8 @@ sub handle_emacs_lisp
 	{
 	    $varname = 'noinst_LISP';
 	}
-	&require_file_with_line ($varname, $FOREIGN, 'elisp-comp');
 
+	&require_file_with_line ($varname, $FOREIGN, 'elisp-comp');
     }
 }
 
@@ -2611,9 +2614,8 @@ sub initialize_global_constants
 
     # Helper text for dealing with man pages.
     $install_man_format =
-    '	@sect=@SECTION@;				\\
+    '	sect=@SECTION@;				\\
 	inst=`echo "@MANBASE@" | sed \'$(transform)\'`.@FULLSECT@; \\
-	echo installing @MAN@ as $(mandir)/man$$sect/$$inst; \\
 	if test -f $(srcdir)/@MAN@; then file=$(srcdir)/@MAN@; \\
 	else file=@MAN@; fi; \\
 	$(INSTALL_DATA) $$file $(mandir)/man$$sect/$$inst
