@@ -226,6 +226,7 @@ suffix2.test \
 suffix3.test \
 symlink.test \
 symlink2.test \
+symlink3.test \
 syntax.test \
 tags.test \
 tagsub.test \
