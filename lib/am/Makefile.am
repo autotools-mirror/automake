@@ -9,7 +9,7 @@ bin_SCRIPTS = automake aclocal
 info_TEXINFOS = automake.texi
 
 pkgdata_DATA = clean-kr.am clean.am clean-hdr.am compile-kr.am \
-comp-vars.am compile.am data.am dejagnu.am depend.am depend2.am	\
+comp-vars.am compile.am data.am dejagnu.am depend.am depend2.am \
 dist-vars.am footer.am header.am header-vars.am kr-extra.am libs.am \
 library.am libtool.am ltlib.am ltlibrary.am mans-vars.am program.am \
 progs.am remake-hdr.am remake.am scripts.am subdirs.am tags.am \
