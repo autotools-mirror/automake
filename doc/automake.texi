@@ -3961,16 +3961,34 @@ should include the appropriate rules.
 Automake does not assume that scripts are derived objects; such objects
 must be deleted by hand (@pxref{Clean}).
 
-The @code{automake} program itself is a Perl script that is generated at
-configure time from @file{automake.in}.  Here is how this is handled:
+The @code{automake} program itself is a Perl script that is generated
+from @file{automake.in}.  Here is how this is handled:
 
 @example
 bin_SCRIPTS = automake
+CLEANFILES = $(bin_SCRIPTS)
+
+do_subst = sed -e 's,[@@]datadir[@@],$(datadir),g' \
+            -e 's,[@@]PERL[@@],$(PERL),g' \
+            -e 's,[@@]PACKAGE[@@],$(PACKAGE),g' \
+            -e 's,[@@]VERSION[@@],$(VERSION),g' \
+            @dots{}
+
+automake: automake.in Makefile
+        $(do_subst) < $(srcdir)/automake.in > automake
+        chmod +x automake
 @end example
 
-Since @code{automake} appears in the @code{AC_OUTPUT} macro, a target
-for it is automatically generated, and it is also automatically cleaned
-(despite the fact it's a script).
+Because---as we have just seen---scripts can be built, they are not
+distributed by default.  Scripts that should be distributed can be
+specified using a @code{dist_} prefix as in other primaries.  For
+instance the following @file{Makefile.am} declares that
+@file{my_script} should be distributed and installed in
+@code{$(sbindir)}.
+
+@example
+dist_sbin_SCRIPTS = my_script
+@end example
 
 @cindex SCRIPTS, installation directories
 @cindex Installing scripts
