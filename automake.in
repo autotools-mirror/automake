@@ -386,6 +386,7 @@ my %required_targets =
   (
    'all'          => 1,
    'dvi'	  => 1,
+   'pdf'	  => 1,
    'info'	  => 1,
    'install-info' => 1,
    'install'      => 1,
@@ -397,6 +398,7 @@ my %required_targets =
    # Well, actually they are sort of required: the -recursive
    # targets will run them anyway...
    'dvi-am'          => 1,
+   'pdf-am'          => 1,
    'info-am'         => 1,
    'install-data-am' => 1,
    'install-exec-am' => 1,
@@ -669,6 +671,8 @@ sub initialize_per_input ()
        # Texinfoing.
        'dvi'      => [],
        'dvi-am'   => [],
+       'pdf'      => [],
+       'pdf-am'   => [],
        'info'     => [],
        'info-am'  => [],
 
@@ -3092,7 +3096,7 @@ sub scan_texinfo_file
     my ($filename) = @_;
 
     # These are always created, no matter whether indexes are used or not.
-    my @clean_suffixes = qw(aux dvi log ps toc
+    my @clean_suffixes = qw(aux dvi log pdf ps toc
 			    cp fn ky vr tp pg); # grep new.*index texinfo.tex
 
     # There are predefined indexes which don't follow the regular rules.
@@ -3200,7 +3204,7 @@ sub handle_texinfo_helper
 
     my @texis = &variable_value_as_list_recursive ('info_TEXINFOS', 'all');
 
-    my (@info_deps_list, @dvis_list, @texi_deps);
+    my (@info_deps_list, @dvis_list, @pdfs_list, @texi_deps);
     my %versions;
     my $done = 0;
     my @texi_cleans;
@@ -3287,10 +3291,13 @@ sub handle_texinfo_helper
 			  . "@texi_deps"
 			  . "\n" . $infobase . ".dvi: "
 			  . "@texi_deps"
+			  . "\n" . $infobase . ".pdf: "
+			  . "@texi_deps"
 			  . "\n");
 
 	push (@info_deps_list, $out_file);
 	push (@dvis_list, $infobase . '.dvi');
+	push (@pdfs_list, $infobase . '.pdf');
     }
 
     # Handle location of texinfo.tex.
@@ -3342,6 +3349,7 @@ sub handle_texinfo_helper
 
     &define_variable ("INFO_DEPS", "@info_deps_list");
     &define_variable ("DVIS", "@dvis_list");
+    &define_variable ("PDFS", "@pdfs_list");
     # This next isn't strictly needed now -- the places that look here
     # could easily be changed to look in info_TEXINFOS.  But this is
     # probably better, in case noinst_TEXINFOS is ever supported.
