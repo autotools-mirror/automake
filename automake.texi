@@ -198,6 +198,7 @@ understand how Automake works.
 * Strictness::                  Standards conformance checking
 * Uniform::                     The Uniform Naming Scheme
 * Canonicalization::            How derived variables are named
+* User Variables::		Variables reserved for the user
 @end menu
 
 
@@ -456,8 +457,13 @@ Possible primary names are @samp{PROGRAMS}, @samp{LIBRARIES},
 @vindex MANS
 @vindex TEXINFOS
 
+Some primaries also allow additional prefixes which control other
+aspects of @code{automake}'s behavior.  The currently defined prefixes
+are @samp{dist_}, @samp{nodist_}, and @samp{nobase_}.  These prefixes
+are explained later.
 
-@node Canonicalization,  , Uniform, Generalities
+
+@node Canonicalization, User Variables, Uniform, Generalities
 @section How derived variables are named
 
 @cindex canonicalizing Automake macros
@@ -470,6 +476,36 @@ for letters, numbers, and the underscore are turned into underscores
 when making macro references.  For example, if your program is named
 @code{sniff-glue}, the derived variable name would be
 @code{sniff_glue_SOURCES}, not @code{sniff-glue_SOURCES}.
+
+
+@node User Variables, , Canonicalization, Generalities
+@section Variables reserved for the user
+
+@cindex variables, reserved for the user
+@cindex user variables
+
+Some @code{Makefile} variables are reserved by the GNU Coding Standards
+for the use of the ``user'' -- the person building the package.  For
+instance, @code{CFLAGS} is one such variable.
+
+Sometimes package developers are tempted to set user variables such as
+@code{CFLAGS} because it appears to make their job easier -- they don't
+have to introduce a second variable into every target.
+
+However, the package itself should never set a user variable,
+particularly not to include switches which are required for proper
+compilation of the package.  Since these variables are documented as
+being for the package builder, that person rightfully expects to be able
+to override any of these variables at build time.
+
+To get around this problem, automake introduces an automake-specific
+shadow variable for each user flag variable.  (Shadow variables are not
+introduced for variables like @code{CC}, where they would make no
+sense.)  The shadow variable is named by prepending @samp{AM_} to the
+user variable's name.  For instance, the shadow variable for
+@code{YFLAGS} is @code{AM_YFLAGS}.
+
+
 
 @node Examples, Invoking Automake, Generalities, Top
 @chapter Some example packages
@@ -1325,9 +1361,9 @@ installed in @file{$(datadir)/aclocal}.
 
 @cindex SUBDIRS, explained
 
-In non-flat packages, the top level @file{Makefile.am} must tell
-Automake which subdirectories are to be built.  This is done via the
-@code{SUBDIRS} variable.
+In packages with subdirectories, the top level @file{Makefile.am} must
+tell Automake which subdirectories are to be built.  This is done via
+the @code{SUBDIRS} variable.
 @vindex SUBDIRS
 
 The @code{SUBDIRS} macro holds a list of subdirectories in which
@@ -3502,10 +3538,10 @@ worked around by simply adding some @code{make} targets and rules to
 
 There are some caveats to doing this.  Although you can overload a
 target already used by Automake, it is often inadvisable, particularly
-in the topmost directory of a non-flat package.  However, various useful
-targets have a @samp{-local} version you can specify in your
-@file{Makefile.in}.  Automake will supplement the standard target with
-these user-supplied targets.
+in the topmost directory of a package with subdirectories.  However,
+various useful targets have a @samp{-local} version you can specify in
+your @file{Makefile.in}.  Automake will supplement the standard target
+with these user-supplied targets.
 
 @trindex  all-local
 @trindex  info-local
