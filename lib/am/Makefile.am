@@ -14,7 +14,7 @@ info_TEXINFOS = automake.texi
 pkgdata_DATA = clean-kr.am clean.am compile-kr.am compile-vars.am \
 compile.am data.am depend.am \
 dist-vars.am footer.am header.am header-vars.am \
-kr-vars.am libraries-vars.am \
+kr-vars.am \
 libraries.am library.am mans-vars.am \
 program.am programs.am remake-hdr.am \
 remake-subd.am remake.am scripts.am subdirs.am tags.am tags-subd.am \

@@ -141,6 +141,10 @@ $seen_ranlib = 0;
 # TRUE if we've seen AC_ARG_PROGRAM.
 $seen_arg_prog = 0;
 
+# TRUE if we've seen gm_PROG_LIBTOOL or AC_PROG_LIBTOOL.
+$seen_libtool = 0;
+$libtool_line = 0;
+
 # Charsets used by maintainer and in distribution.  MAINT_CHARSET is
 # handled in a funny way: if seen in the top-level Makefile.am, it is
 # used for every directory which does not specify a different value.
@@ -669,13 +673,20 @@ sub handle_libraries
 					'lib', 'pkglib', 'noinst', 'check');
     return if ! @liblist;
 
-    if (! $seen_ranlib)
+    if ($seen_libtool)
+    {
+	# libtool requires some files.
+	&require_conf_file_with_conf_line ($libtool_line, $FOREIGN,
+					   'config.sub', 'config.guess',
+					   'libtool');
+    }
+    elsif (! $seen_ranlib)
     {
 	# FIXME need am_line_error here.  But we don't know which
 	# variable exists.  Must add a loop...  No.  Must have
 	# am_install_var return a hash.  Otherwise the user could add
 	# install directories that we'd never find.
-	&am_error ("building a library but \`AC_PROG_RANLIB' not in configure.in");
+	&am_error ("library requires either \`AC_PROG_RANLIB' or `gm_PROG_LIBTOOL' in configure.in");
 	# Only get this error once.
 	$seen_ranlib = 1;
     }
@@ -727,7 +738,19 @@ sub handle_libraries
     {
 	&pretty_print ('LIBFILES = ', "", @liblist);
     }
-    $output_vars .= &file_contents ('libraries-vars');
+
+    if ($seen_libtool)
+    {
+	$output_vars .= ('AR = $(LIBTOOL) archive' . "\n"
+			 . 'RANLIB = $(LIBTOOL) ranlib' . "\n"
+			 . 'LCOMPILE = $(LIBTOOL) compile $(DEFS) $(INCLUDES)'
+			 . ' $(CPPFLAGS) $(CFLAGS)' . "\n");
+    }
+    else
+    {
+	$output_vars .= ('AR = ar' . "\n"
+			 . 'RANLIB = @RANLIB@' . "\n");
+    }
 }
 
 # Handle scripts.
@@ -1923,6 +1946,12 @@ sub scan_configure
 	$seen_prog_install = 2 if ! $seen_prog_install && /fp_PROG_INSTALL/;
 	$seen_arg_prog = 1 if /AC_ARG_PROGRAM/;
 	$seen_ranlib = 1 if /AC_PROG_RANLIB/;
+
+        if (/AC_PROG_LIBTOOL/ || /gm_PROG_LIBTOOL/)
+	{
+	    $seen_libtool = 1;
+	    $libtool_line = $.;
+	}
     }
 
     # Set input files if not specified by user.
@@ -2718,8 +2747,25 @@ sub require_config_file
     }
 }
 
-# Assumes that the line number is in configure.in.
+# Assumes that the line number is in Makefile.am.
 sub require_conf_file_with_line
+{
+    @require_file_paths = @config_aux_path;
+    &require_file_internal (0, @_);
+    local ($dir) = $require_file_paths[0];
+    @config_aux_path = @require_file_paths;
+    if ($dir eq '.')
+    {
+	$config_aux_dir = '.';
+    }
+    else
+    {
+	$config_aux_dir = '$(top_srcdir)/' . $dir;
+    }
+}
+
+# Assumes that the line number is in Makefile.am.
+sub require_conf_file_with_conf_line
 {
     @require_file_paths = @config_aux_path;
     &require_file_internal (1, @_);
