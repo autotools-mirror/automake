@@ -1252,13 +1252,14 @@ sub finish_languages
     foreach my $ext (sort keys %extension_seen)
     {
 	my $lang = $extension_map{$ext};
+	my $lang_obj = $languages{$lang};
 
 	# Generate the appropriate rules for this extension.  If
 	# dependency tracking was requested, and this extension
 	# supports it, then we don't generate the rule here.
 	my $comp = '';
 
-	if ($use_dependencies && $language_map{"$lang-autodep"} ne 'no')
+	if ($use_dependencies && $lang_obj->autodep ne 'no')
 	{
 	    # Don't generate the rule, but still generate the variables.
 	    if (exists $language_map{"$lang-compile"})
@@ -1452,7 +1453,6 @@ sub handle_single_transform_list ($$$@)
 
         $extension = &derive_suffix ($extension);
         my $lang = $extension_map{$extension};
-	# Extract the language object.
 	my $lang_obj = $languages{$lang};
         if ($lang)
         {
@@ -1548,7 +1548,7 @@ sub handle_single_transform_list ($$$@)
             # generated later, by add_depend2.
             if (($use_dependencies
                  && $rule ne ''
-                 && $language_map{"$lang-autodep"} ne 'no')
+                 && $lang_obj->autodep ne 'no')
                 || $directory ne '')
             {
                 $rule = '';
@@ -1662,8 +1662,8 @@ sub handle_single_transform_list ($$$@)
         # Transform .o or $o file into .P file (for automatic
         # dependency code).
         if ($lang
-            && ($language_map{"$lang-autodep"} ne 'no'
-                || $language_map{"$lang-derived-autodep"} eq 'yes'))
+            && ($lang_obj->autodep ne 'no'
+                || $lang_obj->derived_autodep eq 'yes'))
         {
             my $depfile = $object;
             $depfile =~ s/\.([^.]*)$/.P$1/;
@@ -3062,9 +3062,9 @@ sub handle_dist
 sub add_depend2
 {
     my ($lang) = @_;
-
+    my $lang_obj = $languages{$lang};
     # Get information on $LANG.
-    my $pfx = $language_map{"$lang-autodep"};
+    my $pfx = $lang_obj->autodep;
     my $fpfx = ($pfx eq '') ? 'CC' : $pfx;
     my $flag = $language_map{"$lang-flags"} || '';
 
@@ -3189,11 +3189,12 @@ sub handle_dependencies
 	&define_variable ('depcomp', '');
     }
 
-    foreach my $key (sort keys %language_map)
+    while (my ($lang, $lang_obj) = each %languages)
     {
-	next unless $key =~ /^(.*)-autodep$/;
-	next if $language_map{$key} eq 'no';
-	&add_depend2 ($1);
+        if ($lang_obj->autodep ne 'no')
+	  {
+	    add_depend2 ($lang);
+	  }
     }
 }
 
