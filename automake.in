@@ -2174,14 +2174,15 @@ sub handle_lib_objects_cond
 	# means adding entries to dep_files.
 	if ($lsearch =~ /^\@(LT)?LIBOBJS\@$/)
 	{
+	    my $lt = $1 ? $1 : '';
 	    my $myobjext = ($1 ? 'l' : '') . 'o';
 
 	    push (@dep_list, $lsearch);
 	    $seen_libobjs = 1;
 	    if (! keys %libsources
-		&& ! &variable_defined ($1 . 'LIBOBJS'))
+		&& ! &variable_defined ($lt . 'LIBOBJS'))
 	    {
-		&am_line_error ($var, "\@$1" . "LIBOBJS\@ seen but never set in `$configure_ac'");
+		&am_line_error ($var, "\@$lt" . "LIBOBJS\@ seen but never set in `$configure_ac'");
 	    }
 
 	    foreach my $iter (keys %libsources)
@@ -2216,11 +2217,12 @@ sub handle_lib_objects_cond
 	}
 	elsif ($lsearch =~ /^\@(LT)?ALLOCA\@$/)
 	{
+	    my $lt = $1 ? $1 : '';
 	    my $myobjext = ($1 ? 'l' : '') . 'o';
 
 	    push (@dep_list, $lsearch);
 	    &am_line_error ($var,
-			    "\@$1" . "ALLOCA\@ seen but `AC_FUNC_ALLOCA' not in `$configure_ac'")
+			    "\@$lt" . "ALLOCA\@ seen but `AC_FUNC_ALLOCA' not in `$configure_ac'")
 		if ! defined $libsources{'alloca.c'};
 	    $dep_files{'$(DEPDIR)/alloca.P' . $myobjext} = 1;
 	    &require_file_with_line ($var, $FOREIGN, 'alloca.c');
@@ -4481,6 +4483,17 @@ sub scan_one_autoconf_file
 	elsif (/AC_LIBOBJ\(([^)]+)\)/)
 	{
 	    $libsources{"$1.c"} = 1;
+	}
+        elsif (/AC_LIBSOURCE\(([^)]+)\)/)
+	{
+	    $libsources{&unquote_m4_arg ($1)} = 1;
+	}
+        elsif (/AC_LIBSOURCES\(([^)]+)\)/)
+	{
+	    foreach my $lc_iter (split (/[, ]+/, &unquote_m4_arg ($1)))
+	    {
+		$libsources{$lc_iter} = 1;
+	    }
 	}
 
 	if (! $in_ac_replace && s/AC_REPLACE_FUNCS\s*\(\[?//)

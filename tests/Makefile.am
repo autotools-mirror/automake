@@ -4,6 +4,7 @@ XFAIL_TESTS = subdir5.test auxdir2.test
 
 TESTS =	\
 acinclude.test \
+aclibobj.test \
 aclocal.test \
 aclocali.test \
 aclocali1.test \
