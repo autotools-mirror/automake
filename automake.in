@@ -501,7 +501,7 @@ my %targets;
 my %target_conditional;
 
 # This is the conditional stack.
-my @conditional_stack;
+my @cond_stack;
 
 # This holds the set of included files.
 my @include_stack;
@@ -649,7 +649,7 @@ sub initialize_per_input ()
 
     %target_conditional = ();
 
-    @conditional_stack = ();
+    @cond_stack = ();
 
     @include_stack = ();
 
@@ -6402,8 +6402,8 @@ sub read_am_file
     # We save the conditional stack on entry, and then check to make
     # sure it is the same on exit.  This lets us conditonally include
     # other files.
-    my @saved_cond_stack = @conditional_stack;
-    my $cond = conditional_string (@conditional_stack);
+    my @saved_cond_stack = @cond_stack;
+    my $cond = conditional_string (@cond_stack);
 
     my $saw_bk = 0;
     my $was_rule = 0;
@@ -6444,7 +6444,7 @@ sub read_am_file
 	{
 	    if ($was_rule)
 	    {
-	        $output_trailer .= &make_condition (@conditional_stack);
+	        $output_trailer .= &make_condition (@cond_stack);
 		$output_trailer .= $_;
 	    }
 	    else
@@ -6472,38 +6472,38 @@ sub read_am_file
 	    my $new_cond = $1;
 	    &am_line_error ($., "$new_cond does not appear in AM_CONDITIONAL")
 		if ! $configure_cond{$new_cond} && $new_cond !~ /^TRUE|FALSE$/;
-	    push (@conditional_stack,
+	    push (@cond_stack,
 		  (($new_cond =~ /^TRUE|FALSE$/)
 		   ? "$new_cond" : "${new_cond}_TRUE"));
-	    $cond = conditional_string (@conditional_stack);
+	    $cond = conditional_string (@cond_stack);
 	}
 	elsif (/$ELSE_PATTERN/o)
 	{
-	    if (! @conditional_stack)
+	    if (! @cond_stack)
 	    {
 		&am_line_error ($., "else without if");
 	    }
-	    elsif ($conditional_stack[$#conditional_stack] =~ /_FALSE$/)
+	    elsif ($cond_stack[$#cond_stack] =~ /_FALSE$/)
 	    {
 		&am_line_error ($., "else after else");
 	    }
 	    else
 	    {
-		$conditional_stack[$#conditional_stack]
-		  = condition_negate ($conditional_stack[$#conditional_stack]);
-		$cond = conditional_string (@conditional_stack);
+		$cond_stack[$#cond_stack]
+		  = condition_negate ($cond_stack[$#cond_stack]);
+		$cond = conditional_string (@cond_stack);
 	    }
 	}
 	elsif (/$ENDIF_PATTERN/o)
 	{
-	    if (! @conditional_stack)
+	    if (! @cond_stack)
 	    {
 		&am_line_error ($., "endif without if");
 	    }
 	    else
 	    {
-		pop @conditional_stack;
-		$cond = conditional_string (@conditional_stack);
+		pop @cond_stack;
+		$cond = conditional_string (@cond_stack);
 	    }
 	}
 	elsif (/$RULE_PATTERN/o)
@@ -6515,7 +6515,7 @@ sub read_am_file
 
 	    $var_line{$1} = $.;
 	    $output_trailer .= $comment . $spacing;
-            $output_trailer .= &make_condition (@conditional_stack);
+            $output_trailer .= &make_condition (@cond_stack);
             $output_trailer .= $_;
 	    $comment = $spacing = '';
 	}
@@ -6579,7 +6579,7 @@ sub read_am_file
 	    # In fact, this is what we assume.
 	    $was_rule = 1;
 	    $output_trailer .= $comment . $spacing;
-	    $output_trailer .= &make_condition  (@conditional_stack);
+	    $output_trailer .= &make_condition  (@cond_stack);
 	    $output_trailer .= $_;
 	    $comment = $spacing = '';
 	}
@@ -6590,11 +6590,11 @@ sub read_am_file
 
     $output_trailer .= $comment;
 
-    if (join (' ', @saved_cond_stack) ne join (' ', @conditional_stack))
+    if (join (' ', @saved_cond_stack) ne join (' ', @cond_stack))
     {
-	if (@conditional_stack)
+	if (@cond_stack)
 	{
-	    &am_error ("unterminated conditionals: @conditional_stack");
+	    &am_error ("unterminated conditionals: @cond_stack");
 	}
 	else
 	{
@@ -6815,8 +6815,12 @@ sub file_contents_internal ($%)
     my $result_rules = '';
     my $comment = '';
     my $spacing = '';
-    my @cond_stack = ();
-    my $cond = '';
+
+    # We save the conditional stack on entry, and then check to make
+    # sure it is the same on exit.  This lets us conditonally include
+    # other files.
+    my @saved_cond_stack = @cond_stack;
+    my $cond = conditional_string (@cond_stack);
 
     foreach (make_paragraphs ($file, %transform))
     {
@@ -6838,6 +6842,22 @@ sub file_contents_internal ($%)
  	    # Stick comments before the incoming macro or rule.
  	    $comment = "$_\n";
 	}
+
+	# Handle inclusion of other files.
+        elsif (/$INCLUDE_PATTERN/o)
+        {
+	    if ($cond ne 'FALSE')
+	      {
+		(my $file = $1) =~ s/\.am$//g;
+
+		# N-ary `.=' fails.
+		my ($com, $vars, $rules)
+		  = file_contents_internal ($file, %transform);
+		$comment .= $com;
+		$result_vars .= $vars;
+		$result_rules .= $rules;
+	      }
+        }
 
         # Handling the conditionals.
         elsif (/$IF_PATTERN/o)
@@ -6961,6 +6981,19 @@ sub file_contents_internal ($%)
 	      }
  	    $comment = $spacing = '';
  	}
+    }
+
+    if (join (' ', @saved_cond_stack) ne join (' ', @cond_stack))
+    {
+	if (@cond_stack)
+	{
+	    &am_error ("unterminated conditionals: @cond_stack");
+	}
+	else
+	{
+	    # FIXME: better error message here.
+	    &am_error ("conditionals not nested in include file");
+	}
     }
 
     return ($comment, $result_vars, $result_rules);
