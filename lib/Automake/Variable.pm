@@ -34,7 +34,6 @@ use vars '@ISA', '@EXPORT', '@EXPORT_OK';
 	      var rvar vardef rvardef
 	      variables
 	      scan_variable_expansions check_variable_expansions
-	      condition_ambiguous_p
 	      variable_delete
 	      variables_dump
 	      set_seen
@@ -503,8 +502,7 @@ sub _check_ambiguous_condition ($$$)
 {
   my ($self, $cond, $where) = @_;
   my $var = $self->name;
-  my ($message, $ambig_cond) =
-    condition_ambiguous_p ($var, $cond, $self->conditions);
+  my ($message, $ambig_cond) = $self->conditions->ambiguous_p ($var, $cond);
 
   # We allow silent variables to be overridden silently.
   my $def = $self->def ($cond);
@@ -892,56 +890,6 @@ sub check_variable_expansions ($$)
 }
 
 
-=item C<($string, $ambig_cond) = condition_ambiguous_p ($what, $cond, $condset)>
-
-Check for an ambiguous condition.  Return an error message and
-the other condition involved if we have one, two empty strings otherwise.
-
-C<$what> is the name of the thing being defined, to use in the error
-message.  C<$cond> is the C<Condition> under which it is being
-defined.  C<$condset> is the C<DisjConditions> under which it had
-already been defined.
-
-=cut
-
-sub condition_ambiguous_p ($$$)
-{
-  my ($var, $cond, $condset) = @_;
-
-  foreach my $vcond ($condset->conds)
-    {
-      # Note that these rules doesn't consider the following
-      # example as ambiguous.
-      #
-      #   if COND1
-      #     FOO = foo
-      #   endif
-      #   if COND2
-      #     FOO = bar
-      #   endif
-      #
-      # It's up to the user to not define COND1 and COND2
-      # simultaneously.
-      my $message;
-      if ($vcond eq $cond)
-	{
-	  return ("$var multiply defined in condition " . $cond->human,
-		  $vcond);
-	}
-      elsif ($vcond->true_when ($cond))
-	{
-	  return ("$var was already defined in condition " . $vcond->human
-		  . ", which implies condition ". $cond->human, $vcond);
-	}
-      elsif ($cond->true_when ($vcond))
-	{
-	  return ("$var was already defined in condition "
-		  . $vcond->human . ", which is implied by condition "
-		  . $cond->human, $vcond);
-	}
-    }
-  return ('', '');
-}
 
 =item C<Automake::Variable::define($varname, $owner, $type, $cond, $value, $comment, $where, $pretty)>
 

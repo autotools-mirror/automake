@@ -66,11 +66,15 @@ Automake::DisjConditions - record a disjunction of Conditions
   my $inv = $set->invert;
 
   # Multiply two DisjConditions.
-  my $prod = $set1->multiply ($set2)
+  my $prod = $set1->multiply ($set2);
 
   # Return the subconditions of a DisjConditions with respect to
   # a Condition.  See the description for a real example.
-  my $subconds = $set->sub_conditions ($cond)
+  my $subconds = $set->sub_conditions ($cond);
+
+  # Check whether a new definition in condition $cond would be
+  # ambiguous w.r.t. existing definitions in $set.
+  ($msg, $ambig_cond) = $set->ambiguous_p ($what, $cond);
 
 =head1 DESCRIPTION
 
@@ -435,6 +439,58 @@ sub sub_conditions ($$)
       push @res, $c->strip ($subcond) unless $c->false;
     }
   return new Automake::DisjConditions @res;
+}
+
+=item C<($string, $ambig_cond) = $condset-E<gt>ambiguous_p ($what, $cond)>
+
+Check for an ambiguous condition.  Return an error message and the
+other condition involved if we have an ambiguity.  Return two empty
+strings otherwise.
+
+C<$what> is the name of the thing being defined, to use in the error
+message.  C<$cond> is the C<Condition> under which it is being
+defined.  C<$condset> is the C<DisjConditions> under which it had
+already been defined.
+
+=cut
+
+sub ambiguous_p ($$$)
+{
+  my ($condset, $var, $cond) = @_;
+
+  foreach my $vcond ($condset->conds)
+    {
+      # Note that these rules doesn't consider the following
+      # example as ambiguous.
+      #
+      #   if COND1
+      #     FOO = foo
+      #   endif
+      #   if COND2
+      #     FOO = bar
+      #   endif
+      #
+      # It's up to the user to not define COND1 and COND2
+      # simultaneously.
+      my $message;
+      if ($vcond eq $cond)
+	{
+	  return ("$var multiply defined in condition " . $cond->human,
+		  $vcond);
+	}
+      elsif ($vcond->true_when ($cond))
+	{
+	  return ("$var was already defined in condition " . $vcond->human
+		  . ", which implies condition ". $cond->human, $vcond);
+	}
+      elsif ($cond->true_when ($vcond))
+	{
+	  return ("$var was already defined in condition "
+		  . $vcond->human . ", which is implied by condition "
+		  . $cond->human, $vcond);
+	}
+    }
+  return ('', '');
 }
 
 =head1 SEE ALSO
