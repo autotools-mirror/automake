@@ -11,49 +11,20 @@
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ## GNU General Public License for more details.
 
+## Note that this must all be on one line to avoid a problem with
+## automake's `.am' file reader.  This is a convenience macro a user
+## can use to run a compilation.  You should set the shell variables
+## `file' and `compile' first.
+DEP_@FPFX@COMPILE = $(DEP_@FPFX@PRECOMP); echo " $$compile -c $$file"; $$compile $(DEP_@FPFX@FLAG) -c $$file; status=$$?; if test "$$status" -ne 0; then exit $$status; else $(DEP_@FPFX@POSTCOMP); fi
+
 ## You should have received a copy of the GNU General Public License
 ## along with this program; if not, write to the Free Software
 ## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 ## 02111-1307, USA.
 @EXT@.o:
-	@echo '$(@PFX@COMPILE) -c $<'; \
-## There are various ways to get dependency output from gcc.  Here's
-## why we pick this rather obscure method:
-## - Don't want to use -MD because we'd like the dependencies to end
-##   up in a subdir.  Having to rename by hand is ugly.
-##   (We might end up doing this anyway to support other compilers.)
-## - The DEPENDENCIES_OUTPUT environment variable makes gcc act like
-##   -MM, not -M (despite what the docs say).
-## - Using -M directly means running the compiler twice (even worse
-##   than renaming).
-	$(@PFX@COMPILE) -Wp,-MD,.deps/$(*F).pp -c $<
-## This next piece of magic avoids the `deleted header file' problem.
-## The problem is that when a header file which appears in a .P file
-## is deleted, the dependency causes make to die (because there is
-## typically no way to rebuild the header).  We avoid this by adding
-## dummy dependencies for each header file.  Too bad gcc doesn't do
-## this for us directly.
-	@-cp .deps/$(*F).pp .deps/$(*F).P; \
-	tr ' ' '\012' < .deps/$(*F).pp \
-## Some versions of gcc put a space before the `:'.  On the theory
-## that the space means something, we add a space to the output as
-## well.
-	  | sed -e 's/^\\$$//' -e '/^$$/ d' -e '/:$$/ d' -e 's/$$/ :/' \
-	    >> .deps/$(*F).P; \
-	rm .deps/$(*F).pp
+	@file='$<'; compile='$(@PFX@COMPILE)'; \
+	$(DEP_@FPFX@COMPILE)
 
 @EXT@.lo:
-	@echo '$(LT@PFX@COMPILE) -c $<'; \
-## See above to understand implementation weirdness.
-	$(LT@PFX@COMPILE) -Wp,-MD,.deps/$(*F).pp -c $<
-## Account for versions of gcc that put a space before the `:'.
-	@-sed -e 's/^\([^:]*\)\.o[ 	]*:/\1.lo \1.o :/' \
-	  < .deps/$(*F).pp > .deps/$(*F).P; \
-## See above to understand deleted header file trick.
-	tr ' ' '\012' < .deps/$(*F).pp \
-## Some versions of gcc put a space before the `:'.  On the theory
-## that the space means something, we add a space to the output as
-## well.
-	  | sed -e 's/^\\$$//' -e '/^$$/ d' -e '/:$$/ d' -e 's/$$/ :/' \
-	    >> .deps/$(*F).P; \
-	rm -f .deps/$(*F).pp
+	@file='$<'; compile='$(LT@PFX@COMPILE)'; suffix='\1.o \1.lo'; \
+	$(DEP_@FPFX@COMPILE)

@@ -286,6 +286,10 @@ $obsolete_rx = '(' . join ('|', keys %obsolete_macros) . ')';
 # This maps languages names onto properties.
 %language_map = ();
 
+# This hash keeps track of whether various configure macros for
+# dependency tracking have been seen.
+%dependency_macros = ();
+
 
 
 # Initialize global constants and our list of languages that are
@@ -2504,6 +2508,30 @@ distcheck: dist
     &handle_dist_worker ($makefile);
 }
 
+# Generate dependency-tracking code for a single language.
+# Subroutine of handle_dependencies.
+sub generate_dependency_code
+{
+    local ($lang, $fullname, $subst) = @_;
+
+    local ($error) = 0;
+    local ($ext);
+    foreach $ext (&lang_extensions ($lang))
+    {
+	if (! defined $dependency_macros{$fullname} && ! $error)
+	{
+	    &am_error ("dependency tracking enabled but \`AM_${fullname}_DEPENDENCIES' not seen in configure.in");
+	    $error = 1;
+	}
+
+	$output_rules .=
+	    &file_contents_with_transform ('s/\@EXT\@/' . $ext . '/g;'
+					   . 's/\@FPFX\@/' . $fullname . '/g;'
+					   . 's/\@PFX\@/' . $subst . '/g;',
+					   'depend2');
+    }
+}
+
 # Handle auto-dependency code.
 sub handle_dependencies
 {
@@ -2520,27 +2548,13 @@ sub handle_dependencies
 	    $output_rules .= &file_contents ('depend');
 	    push (@clean, 'depend');
 	    &push_phony_cleaners ('depend');
+
 	    # FIXME: this should use another property of the language
-	    # instead of being hard-coded.
-	    $output_rules .=
-		&file_contents_with_transform ('s/\@EXT\@/.c/g;'
-					       . 's/\@PFX\@//g;',
-					       'depend2');
-	    local ($ext);
-	    foreach $ext (&lang_extensions ('objc'))
-	    {
-		$output_rules .=
-		    &file_contents_with_transform ('s/\@EXT\@/' . $ext . '/g;'
-						   . 's/\@PFX\@/OBJC/g;',
-						   'depend2');
-	    }
-	    foreach $ext (&lang_extensions ('cxx'))
-	    {
-		$output_rules .=
-		    &file_contents_with_transform ('s/\@EXT\@/' . $ext .'/g;'
-						   . 's/\@PFX\@/CXX/g;',
-						   'depend2');
-	    }
+	    # instead having which languages can do dependency
+	    # tracking hard-coded.
+	    &generate_dependency_code ('c', 'CC', '');
+	    &generate_dependency_code ('objc', 'OBJC', 'OBJC');
+	    &generate_dependency_code ('cxx', 'CXX', 'CXX');
 	}
     }
 }
@@ -4034,11 +4048,14 @@ sub scan_one_configure_file
 	# but later define it elsewhere.  This is pretty hacky.  We
 	# also explicitly avoid INSTALL_SCRIPT and some other
 	# variables because they are defined in header-vars.am.
+	# Also avoid `DEP_' as it is erroneously extracted from
+	# depend.m4.
 	# FIXME.
 	if (/$AC_SUBST_PATTERN/o
 	    && $1 ne 'ANSI2KNR'
 	    && $1 ne 'INSTALL_SCRIPT'
-	    && $1 ne 'INSTALL_DATA')
+	    && $1 ne 'INSTALL_DATA'
+	    && $1 ne 'DEP_')
 	{
 	    $configure_vars{$1} = $filename . ':' . $.;
 	}
@@ -4093,6 +4110,15 @@ sub scan_one_configure_file
 	if (/AC_F77_LIBRARY_LDFLAGS/)
 	{
 	    $configure_vars{'FLIBS'} = $filename . ':' . $.;
+	}
+
+	# Look for dependency-tracking macros.
+	if (/AM_(CC|CXX|OBJC)_DEPENDENCIES/)
+	{
+	    $dependency_macros{$1} = 1;
+	    $configure_vars{'DEP_' . $1 . 'PRECOMP'} = $filename . ':' . $.;
+	    $configure_vars{'DEP_' . $1 . 'POSTCOMP'} = $filename . ':' . $.;
+	    $configure_vars{'DEP_' . $1 . 'FLAG'} = $filename . ':' . $.;
 	}
     }
 
