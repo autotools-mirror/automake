@@ -576,12 +576,13 @@ Automake will also diagnose obvious misspellings in directory names.
 @cindex Extending list of installation directories
 @cindex Installation directories, extending list
 
-Sometimes the standard directories---even as augmented by Automake---
-are not enough.  In particular it is sometimes useful, for clarity, to
-install objects in a subdirectory of some predefined directory.  To this
-end, Automake allows you to extend the list of possible installation
-directories.  A given prefix (e.g. @samp{zar}) is valid if a variable of
-the same name with @samp{dir} appended is defined (e.g. @code{zardir}).
+Sometimes the standard directories---even as augmented by
+Automake---are not enough.  In particular it is sometimes useful, for
+clarity, to install objects in a subdirectory of some predefined
+directory.  To this end, Automake allows you to extend the list of
+possible installation directories.  A given prefix (e.g. @samp{zar})
+is valid if a variable of the same name with @samp{dir} appended is
+defined (e.g. @code{zardir}).
 
 @cindex HTML installation, example
 
@@ -659,7 +660,7 @@ variable names less obfuscating.
 @cindex user variables
 
 Some @code{Makefile} variables are reserved by the GNU Coding Standards
-for the use of the ``user'' -- the person building the package.  For
+for the use of the ``user''---the person building the package.  For
 instance, @code{CFLAGS} is one such variable.
 
 Sometimes package developers are tempted to set user variables such as
@@ -671,11 +672,13 @@ package builder, that person rightfully expects to be able to override
 any of these variables at build time.
 
 To get around this problem, automake introduces an automake-specific
-shadow variable for each user flag variable.  (Shadow variables are not
-introduced for variables like @code{CC}, where they would make no
+shadow variable for each user flag variable.  (Shadow variables are
+not introduced for variables like @code{CC}, where they would make no
 sense.)  The shadow variable is named by prepending @samp{AM_} to the
 user variable's name.  For instance, the shadow variable for
-@code{YFLAGS} is @code{AM_YFLAGS}.
+@code{YFLAGS} is @code{AM_YFLAGS}.  The package maintainer---that is,
+the author(s) of the @file{Makefile.am} and @file{configure.ac}
+files---may adjust these shadow variables however necessary.
 
 @xref{Flag Variables Ordering}, for more discussion about these
 variables and how they interact with per-target variables.
@@ -1780,7 +1783,7 @@ Runs many macros required for proper operation of the generated Makefiles.
 @vindex AUTOMAKE_OPTIONS
 This macro has two forms, the first of which is preferred.
 In this form, @code{AM_INIT_AUTOMAKE} is called with a
-single argument --- a space-separated list of Automake options which should
+single argument: a space-separated list of Automake options which should
 be applied to every @file{Makefile.am} in the tree.  The effect is as if
 each option were listed in @code{AUTOMAKE_OPTIONS} (@pxref{Options}).
 
@@ -1816,8 +1819,7 @@ not the tarball name (e.g. @samp{automake}) that you used to pass to
 @code{AM_INIT_AUTOMAKE}.  Autoconf tries to derive a tarball name from
 the package name, which should work for most but not all package names.
 (If it doesn't work for yours, you can use the
-four-argument form of @code{AC_INIT} --- supported in Autoconf versions
-greater than 2.52g --- to provide the tarball name explicitly).
+four-argument form of @code{AC_INIT} to provide the tarball name explicitly).
 
 @cindex @code{PACKAGE}, prevent definition
 @cindex @code{VERSION}, prevent definition
@@ -3411,7 +3413,7 @@ libfoo_la_SOURCES = foo.c @dots{}
 Technically, it means that we should build @file{foo.$(OBJEXT)} for
 @file{prog}, and @file{foo.lo} for @file{libfoo.la}.  The problem is
 that in the course of creating @file{foo.lo}, libtool may erase (or
-replace) @file{foo.$(OBJEXT)} -- and this cannot be avoided.
+replace) @file{foo.$(OBJEXT)}, and this cannot be avoided.
 
 Therefore, when Automake detects this situation it will complain
 with a message such as
@@ -4435,7 +4437,7 @@ By default, programs including Java source files are linked with
 
 As always, the contents of @samp{AM_GCJFLAGS} are passed to every
 compilation invoking @code{gcj} (in its role as an ahead-of-time
-compiler -- when invoking it to create @file{.class} files,
+compiler, when invoking it to create @file{.class} files,
 @samp{AM_JAVACFLAGS} is used instead).  If it is necessary to pass
 options to @code{gcj} from @file{Makefile.am}, this variable, and not
 the user variable @samp{GCJFLAGS}, should be used.
@@ -5198,7 +5200,7 @@ dist_java_JAVA = a.java b.java @dots{}
 Currently Automake enforces the restriction that only one @samp{_JAVA}
 primary can be used in a given @file{Makefile.am}.  The reason for this
 restriction is that, in general, it isn't possible to know which
-@file{.class} files were generated from which @file{.java} files -- so
+@file{.class} files were generated from which @file{.java} files, so
 it would be impossible to know which files to install where.  For
 instance, a @file{.java} file can define multiple classes; the resulting
 @file{.class} file names cannot be predicted without parsing the
@@ -6732,7 +6734,7 @@ which are reserved by Automake.
 The shell @var{condition} (suitable for use in a shell @code{if}
 statement) is evaluated when @code{configure} is run.  Note that you
 must arrange for @emph{every} @code{AM_CONDITIONAL} to be invoked every
-time @code{configure} is run -- if @code{AM_CONDITIONAL} is run
+time @code{configure} is run.  If @code{AM_CONDITIONAL} is run
 conditionally (e.g., in a shell @code{if} statement), then the result
 will confuse automake.
 @end defmac
@@ -8045,10 +8047,14 @@ AM_CPPFLAGS = -DDATADIR=\"$(datadir)\"
 @noindent
 is all what is needed here if no per-target flags are used.
 
-You should not add options to these variables from inside
+You should not add options to these user variables within
 @file{configure} either, for the same reason.  Occasionally you need
 to modify these variables to perform a test, but you should reset
-their value afterwards.
+their values afterwards.  In contrast, it is OK to modify the
+@samp{AM_} variables within @file{configure} if you @code{AC_SUBST}
+them, but it is rather rare that you need to do this, unless you
+really want to change the default definitions of the @samp{AM_}
+variables in all @file{Makefile}s.
 
 What we recommend is that you define extra flags in separate
 variables.  For instance you may write an Autoconf macro that computes
