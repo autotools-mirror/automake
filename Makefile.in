@@ -59,8 +59,6 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-
-@SET_MAKE@
 AMDEP = @AMDEP@
 AMTAR = @AMTAR@
 AWK = @AWK@
@@ -135,12 +133,12 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	install-exec-recursive installdirs-recursive install-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
 DIST_COMMON = README $(dist_pkgdata_DATA) $(dist_script_DATA) AUTHORS \
-COPYING ChangeLog INSTALL Makefile.am Makefile.in NEWS README-alpha \
-THANKS TODO aclocal.in aclocal.m4 ansi2knr.1 ansi2knr.c automake.in \
-compile config.guess config.sub configure configure.in depcomp \
-elisp-comp install-sh mdate-sh missing mkinstalldirs py-compile \
-stamp-vti texinfo.tex version.texi ylwrap
-
+	COPYING ChangeLog INSTALL Makefile.am Makefile.in NEWS \
+	README-alpha THANKS TODO aclocal.in aclocal.m4 ansi2knr.1 \
+	ansi2knr.c automake.in compile config.guess config.sub \
+	configure configure.in depcomp elisp-comp install-sh mdate-sh \
+	missing mkinstalldirs py-compile stamp-vti texinfo.tex \
+	version.texi ylwrap
 DIST_SUBDIRS = $(SUBDIRS)
 all: all-recursive
 
@@ -155,13 +153,15 @@ Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && \
 	  CONFIG_HEADERS= CONFIG_LINKS= \
 	  CONFIG_FILES=$@ $(SHELL) ./config.status
-$(ACLOCAL_M4): configure.in 
-	cd $(srcdir) && $(ACLOCAL)
 
 config.status: $(srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck
+
 $(srcdir)/configure:  $(srcdir)/configure.in $(ACLOCAL_M4) $(CONFIGURE_DEPENDENCIES)
 	cd $(srcdir) && $(AUTOCONF)
+
+$(ACLOCAL_M4):  configure.in 
+	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
 automake: $(top_builddir)/config.status automake.in
 	cd $(top_builddir) && CONFIG_FILES=$@ CONFIG_HEADERS= CONFIG_LINKS= $(SHELL) ./config.status
 aclocal: $(top_builddir)/config.status aclocal.in
@@ -378,9 +378,9 @@ TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 	tags=; \
 	here=`pwd`; \
 	list='$(SUBDIRS)'; for subdir in $$list; do \
-   if test "$$subdir" = .; then :; else \
+	  if test "$$subdir" = .; then :; else \
 	    test -f $$subdir/TAGS && tags="$$tags -i $$here/$$subdir/TAGS"; \
-   fi; \
+	  fi; \
 	done; \
 	list='$(SOURCES) $(HEADERS) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
@@ -450,6 +450,7 @@ distdir: $(DISTFILES)
 dist: distdir
 	$(AMTAR) chof - $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
 	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
+
 # This target untars the dist file and tries a VPATH configuration.  Then
 # it guarantees that the distribution is self-contained by making another
 # tarfile.
