@@ -66,7 +66,8 @@ maintainer-check: automake aclocal
 	$(PERL) -c -w aclocal
 ## expect no instances of '${...}'.  However, $${...} is ok, since that
 ## is a shell construct, not a Makefile construct.
-	@if test `fgrep '$${' $(srcdir)/[a-z]*.am | fgrep -v '$$$$' | wc -l` -ne 0; then \
+## The backslash in `$${' is needed for some versions of bash.
+	@if test `fgrep '\$${' $(srcdir)/[a-z]*.am | fgrep -v '$$$$' | wc -l` -ne 0; then \
 	  echo "found too many uses of '\$${'" 1>&2; \
 	  exit 1;				\
 	else :; fi

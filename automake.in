@@ -339,14 +339,14 @@ die "automake: no \`Makefile.am' found or specified\n"
 if ($generate_deps)
 {
     die "automake: Must specify --include-deps (or -i) when generating\n"
-      if ($use_dependencies);
+	if $use_dependencies;
     die "automake: Must provide --build-dir when generating\n"
-      if (!$build_directory);
+	if ! $build_directory;
     die "automake: Must provide --srcdir-name when generating\n"
-      if (!$srcdir_name);
+	if ! $srcdir_name;
 
     open (GDEP, ">$output_directory/.dep_segment")
-      || die "automake: Could not open `$output_directory/.dep_segment': $!\n";
+	|| die "automake: Could not open `$output_directory/.dep_segment': $!\n";
 
     &handle_dependencies;
     print GDEP $output_rules;
@@ -3598,19 +3598,29 @@ sub do_one_clean_target
 	    ("\t\@echo \"This command is intended for maintainers to use;\"\n"
 	     . "\t\@echo \"it deletes files that may require special "
 	     . "tools to rebuild.\"\n");
-
-	$output_rules .= "\t-rm -f config.status\n"
-	    if $relative_dir eq '.';
     }
     elsif ($name . $target eq 'distclean')
     {
-	$output_rules .= "\t-rm -f config.status\n";
 	$output_rules .= "\t-rm -f libtool\n" if $seen_libtool;
     }
     $output_rules .= "\n";
+
+    # Now generate the actual clean target.
     $output_rules .= ($name . $target . ": " . $name . $target
 		      . ($recursive_install ? '-recursive' : '-am')
-		      . "\n\n");
+		      . "\n");
+
+    # We special-case config.status here.  If we do it as part of the
+    # normal clean processing for this directory, then it might be
+    # removed before some subdir is cleaned.  However, that subdir's
+    # Makefile depends on config.status.
+    if (($name . $target eq 'maintainer-clean'
+	 || $name . $target eq 'distclean')
+	&& $relative_dir eq '.')
+    {
+	$output_rules .= "\t-rm -f config.status\n";
+    }
+    $output_rules .= "\n";
 }
 
 # Handle .PHONY target.
