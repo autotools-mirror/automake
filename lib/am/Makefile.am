@@ -18,13 +18,12 @@ ltlib-clean.am ltlib.am ltlibrary.am mans-vars.am mans.am multilib.am \
 program.am progs-clean.am progs.am remake-hdr.am remake.am scripts.am \
 subdirs.am tags-clean.am tags.am texi-vers.am texinfos.am
 
-pkgdata_DATA = COPYING INSTALL texinfo.tex ansi2knr.c ansi2knr.1 $(amfiles)
-
+pkgdata_DATA = COPYING INSTALL texinfo.tex ansi2knr.c ansi2knr.1 $(amfiles) \
 ## These must all be executable when installed.  However, if we use
 ## _SCRIPTS, then the program transform will be applied, which is not
 ## what we want.  So we make them executable by hand.
-pkgdata_DATA = config.guess config.sub install-sh mdate-sh missing \
-mkinstalldirs elisp-comp ylwrap acinstall
+config.guess config.sub install-sh mdate-sh missing mkinstalldirs \
+elisp-comp ylwrap acinstall
 
 install-data-hook:
 	@for prog in $(pkgdata_DATA); do \
