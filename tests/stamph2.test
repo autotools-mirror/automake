@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 2001, 2002, 2003  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -20,6 +20,8 @@
 
 # Make sure stamp-h* files are created where we expect
 . ./defs || exit 1
+
+set -e
 
 cat >> configure.in << END
 AM_CONFIG_HEADER(1.h
@@ -42,17 +44,32 @@ mkdir sdir2
 : > sdir1/config1.hin
 : > sdir2/config2.hin
 
-$ACLOCAL || exit 1
-$AUTOCONF || exit 1
-$AUTOMAKE || exit 1
-./configure || exit 1
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
+./configure
 
-test -f stamp-h1 || exit 1
-test -f stamp-h2 || exit 1
-test -f stamp-h3 || exit 1
-test -f sdir1/stamp-h4 || exit 1
-test -f sdir1/stamp-h5 || exit 1
-test -f sdir1/stamp-h6 || exit 1
-test -f sdir1/stamp-h7 || exit 1
+test -f stamp-h1
+test -f stamp-h2
+test -f stamp-h3
+test -f sdir1/stamp-h4
+test -f sdir1/stamp-h5
+test -f sdir1/stamp-h6
+test -f sdir1/stamp-h7
+
+# Make sure `./config.status foo' creates the right stamp file.
+# Report from Sander Niemeijer.
+
+rm -f stamp-h*
+rm -f sdir1/stamp-h*
+
+./config.status sdir1/7.h 2.h sdir1/4.h
+test ! -f stamp-h1
+test -f stamp-h2
+test ! -f stamp-h3
+test -f sdir1/stamp-h4
+test ! -f sdir1/stamp-h5
+test ! -f sdir1/stamp-h6
+test -f sdir1/stamp-h7
 
 exit 0
