@@ -7257,137 +7257,137 @@ sub am_install_var
     foreach my $X (sort keys %valid)
     {
 	my $one_name = $X . '_' . $primary;
-	if (&variable_defined ($one_name))
-	{
-	    my $strip_subdir = 1;
-	    # If subdir prefix should be preserved, do so.
-	    if ($X =~ /^nobase_/)
-	    {
-		$strip_subdir = 0;
-		$X =~ s/^nobase_//;
-	    }
+	next
+	  unless (&variable_defined ($one_name));
 
-	    my $nodir_name = $X;
-	    # If files should be distributed, do so.
-	    my $dist_p = 0;
-	    if ($can_dist)
-	    {
-	        $dist_p = (($default_dist && $one_name !~ /^nodist_/)
-			   || (! $default_dist && $one_name =~ /^dist_/));
-		$nodir_name =~ s/^(dist|nodist)_//;
-	    }
+	my $strip_subdir = 1;
+	# If subdir prefix should be preserved, do so.
+	if ($X =~ /^nobase_/)
+	  {
+	    $strip_subdir = 0;
+	    $X =~ s/^nobase_//;
+	  }
 
-	    # Append actual contents of where_PRIMARY variable to
-	    # result.
-	    foreach my $rcurs (&variable_value_as_list ($one_name, 'all'))
-	    {
-		# Skip configure substitutions.  Possibly bogus.
-		if ($rcurs =~ /^\@.*\@$/)
-		{
-		    if ($X eq 'EXTRA')
-		    {
-			if (! $warned_about_extra)
-			{
-			    $warned_about_extra = 1;
-			    &am_line_error ($one_name,
-					    "`$one_name' contains configure substitution, but shouldn't");
-			}
-		    }
-		    # Check here to make sure variables defined in
-		    # configure.ac do not imply that EXTRA_PRIMARY
-		    # must be defined.
-		    elsif (! defined $configure_vars{$one_name})
-		    {
-			$require_extra = $one_name
-			    if $do_require;
-		    }
+	my $nodir_name = $X;
+	# If files should be distributed, do so.
+	my $dist_p = 0;
+	if ($can_dist)
+	  {
+	    $dist_p = (($default_dist && $one_name !~ /^nodist_/)
+		       || (! $default_dist && $one_name =~ /^dist_/));
+	    $nodir_name =~ s/^(dist|nodist)_//;
+	  }
 
-		    next;
-		}
-
-		push (@result, $rcurs);
-	    }
-
-	    # A blatant hack: we rewrite each _PROGRAMS primary to
-	    # include EXEEXT when in Cygwin32 mode.
-	    if ($primary eq 'PROGRAMS')
-	    {
-		my @conds = &variable_conditions ($one_name);
-
-		my @condvals;
-		foreach my $cond (@conds)
+	# Append actual contents of where_PRIMARY variable to
+	# result.
+	foreach my $rcurs (&variable_value_as_list ($one_name, 'all'))
+	  {
+	    # Skip configure substitutions.  Possibly bogus.
+	    if ($rcurs =~ /^\@.*\@$/)
+	      {
+		if ($X eq 'EXTRA')
 		  {
-		    my @one_binlist = ();
-		    my @condval = &variable_value_as_list ($one_name,
-							   $cond);
-		    foreach my $rcurs (@condval)
+		    if (! $warned_about_extra)
 		      {
-			if ($rcurs =~ /\./ || $rcurs =~ /^\@.*\@$/)
-			  {
-			    push (@one_binlist, $rcurs);
-			  }
-			else
-			  {
-			    push (@one_binlist, $rcurs . '$(EXEEXT)');
-			  }
+			$warned_about_extra = 1;
+			&am_line_error ($one_name,
+					"`$one_name' contains configure substitution, but shouldn't");
 		      }
-
-		    push (@condvals, $cond);
-		    push (@condvals, join (' ', @one_binlist));
 		  }
-
-		variable_delete ($one_name);
-		while (@condvals)
+		# Check here to make sure variables defined in
+		# configure.ac do not imply that EXTRA_PRIMARY
+		# must be defined.
+		elsif (! defined $configure_vars{$one_name})
 		  {
-		    my $cond = shift (@condvals);
-		    my @val = split (' ', shift (@condvals));
-		    &define_pretty_variable ($one_name, $cond, @val);
+		    $require_extra = $one_name
+		      if $do_require;
 		  }
-	    }
 
-	    # "EXTRA" shouldn't be used when generating clean targets,
-	    # all, or install targets.
-	    if ($X eq 'EXTRA')
-	    {
-		# We used to warn if EXTRA_FOO was defined uselessly,
-		# but this was annoying.
 		next;
-	    }
+	      }
 
-	    if ($X eq 'check')
-	    {
-		push (@check, '$(' . $one_name . ')');
-	    }
-	    else
-	    {
-		push (@used, '$(' . $one_name . ')');
-	    }
+	    push (@result, $rcurs);
+	  }
 
-	    # Is this to be installed?
-	    my $install_p = $X ne 'noinst' && $X ne 'check';
+	# A blatant hack: we rewrite each _PROGRAMS primary to
+	# include EXEEXT when in Cygwin32 mode.
+	if ($primary eq 'PROGRAMS')
+	  {
+	    my @conds = &variable_conditions ($one_name);
 
-	    # If so, with install-exec? (or install-data?).
-	    my $exec_p = (defined $exec_dir_p {$X}
-			  ? $exec_dir_p {$X}
-			  : ($X =~ /exec/));
+	    my @condvals;
+	    foreach my $cond (@conds)
+	      {
+		my @one_binlist = ();
+		my @condval = &variable_value_as_list ($one_name,
+						       $cond);
+		foreach my $rcurs (@condval)
+		  {
+		    if ($rcurs =~ /\./ || $rcurs =~ /^\@.*\@$/)
+		      {
+			push (@one_binlist, $rcurs);
+		      }
+		    else
+		      {
+			push (@one_binlist, $rcurs . '$(EXEEXT)');
+		      }
+		  }
 
-	    # Singular form of $PRIMARY.
-	    (my $one_primary = $primary) =~ s/S$//;
-	    $output_rules .= &file_contents ($file,
-					     ('FIRST' => $first,
+		push (@condvals, $cond);
+		push (@condvals, join (' ', @one_binlist));
+	      }
 
-					      'PRIMARY'     => $primary,
-					      'ONE_PRIMARY' => $one_primary,
-					      'DIR'         => $X,
-					      'NDIR'        => $nodir_name,
-					      'BASE'        => $strip_subdir,
+	    variable_delete ($one_name);
+	    while (@condvals)
+	      {
+		my $cond = shift (@condvals);
+		my @val = split (' ', shift (@condvals));
+		&define_pretty_variable ($one_name, $cond, @val);
+	      }
+	  }
 
-					      'EXEC'    => $exec_p,
-					      'INSTALL' => $install_p,
-					      'DIST'    => $dist_p));
+	# "EXTRA" shouldn't be used when generating clean targets,
+	# all, or install targets.
+	if ($X eq 'EXTRA')
+	  {
+	    # We used to warn if EXTRA_FOO was defined uselessly,
+	    # but this was annoying.
+	    next;
+	  }
 
-	    $first = '';
-	}
+	if ($X eq 'check')
+	  {
+	    push (@check, '$(' . $one_name . ')');
+	  }
+	else
+	  {
+	    push (@used, '$(' . $one_name . ')');
+	  }
+
+	# Is this to be installed?
+	my $install_p = $X ne 'noinst' && $X ne 'check';
+
+	# If so, with install-exec? (or install-data?).
+	my $exec_p = (defined $exec_dir_p {$X}
+		      ? $exec_dir_p {$X}
+		      : ($X =~ /exec/));
+
+	# Singular form of $PRIMARY.
+	(my $one_primary = $primary) =~ s/S$//;
+	$output_rules .= &file_contents ($file,
+					 ('FIRST' => $first,
+
+					  'PRIMARY'     => $primary,
+					  'ONE_PRIMARY' => $one_primary,
+					  'DIR'         => $X,
+					  'NDIR'        => $nodir_name,
+					  'BASE'        => $strip_subdir,
+
+					  'EXEC'    => $exec_p,
+					  'INSTALL' => $install_p,
+					  'DIST'    => $dist_p));
+
+	$first = '';
     }
 
     # The JAVA variable is used as the name of the Java interpreter.
