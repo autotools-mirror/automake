@@ -35,7 +35,7 @@
 
 % This automatically updates the version number based on RCS.
 \def\deftexinfoversion$#1: #2 ${\def\texinfoversion{#2}}
-\deftexinfoversion$Revision: 1.3 $
+\deftexinfoversion$Revision: 1.4 $
 \message{Loading texinfo package [Version \texinfoversion]:}
 
 % If in a .fmt file, print the version number
@@ -626,6 +626,7 @@ where each line of input produces a line of output.}
 % incorrectly.
 %
 \def\ignoremorecommands{%
+  \let\defcodeindex = \relax
   \let\defcv = \relax
   \let\deffn = \relax
   \let\deffnx = \relax
@@ -666,7 +667,6 @@ where each line of input produces a line of output.}
   \let\set = \relax
   \let\clear = \relax
   \let\item = \relax
-  \let\message = \relax
 }
 
 % Ignore @ignore ... @end ignore.
@@ -797,15 +797,17 @@ where each line of input produces a line of output.}
 % Since we want to separate VAR from REST-OF-LINE (which might be
 % empty), we can't just use \parsearg; we have to insert a space of our
 % own to delimit the rest of the line, and then take it out again if we
-% didn't need it.
+% didn't need it.  Make sure the catcode of space is correct to avoid
+% losing inside @example, for instance.
 %
-\def\set{\parsearg\setxxx}
+\def\set{\begingroup\catcode` =10 \parsearg\setxxx}
 \def\setxxx#1{\setyyy#1 \endsetyyy}
 \def\setyyy#1 #2\endsetyyy{%
   \def\temp{#2}%
   \ifx\temp\empty \global\expandafter\let\csname SET#1\endcsname = \empty
   \else \setzzz{#1}#2\endsetzzz % Remove the trailing space \setxxx inserted.
   \fi
+  \endgroup
 }
 % Can't use \xdef to pre-expand #2 and save some time, since \temp or
 % \next or other control sequences that we've defined might get us into
@@ -941,6 +943,21 @@ where each line of input produces a line of output.}
 \def\inforef #1{\inforefzzz #1,,,,**}
 \def\inforefzzz #1,#2,#3,#4**{\putwordSee{} \putwordInfo{} \putwordfile{} \file{\ignorespaces #3{}},
   node \samp{\ignorespaces#1{}}}
+
+\def\macro#1{\begingroup\ignoresections\catcode`\#=6\def\macrotemp{#1}\parsearg\macroxxx}
+\def\macroxxx#1#2 \end macro{%
+\expandafter\gdef\macrotemp#1{#2}%
+\endgroup}
+
+%\def\linemacro#1{\begingroup\ignoresections\catcode`\#=6\def\macrotemp{#1}\parsearg\linemacroxxx}
+%\def\linemacroxxx#1#2 \end linemacro{%
+%\let\parsearg=\relax
+%\edef\macrotempx{\csname M\butfirst\expandafter\string\macrotemp\endcsname}%
+%\expandafter\xdef\macrotemp{\parsearg\macrotempx}%
+%\expandafter\gdef\macrotempx#1{#2}%
+%\endgroup}
+
+%\def\butfirst#1{}
 
 \message{fonts,}
 
@@ -1173,6 +1190,7 @@ where each line of input produces a line of output.}
 \def\ctrl #1{{\tt \rawbackslash \hat}#1}
 
 \let\file=\samp
+\let\url=\samp % perhaps include a hypertex \special eventually
 
 % @code is a modification of @t,
 % which makes spaces the same size as normal in the surrounding text.
@@ -1504,7 +1522,7 @@ July\or August\or September\or October\or November\or December\fi
 
 \newif\ifitemxneedsnegativevskip
 
-\def\itemxpar{\par\ifitemxneedsnegativevskip\vskip-\parskip\nobreak\fi}
+\def\itemxpar{\par\ifitemxneedsnegativevskip\nobreak\vskip-\parskip\nobreak\fi}
 
 \def\internalBitem{\smallbreak \parsearg\itemzzz}
 \def\internalBitemx{\itemxpar \parsearg\itemzzz}
@@ -1775,7 +1793,7 @@ July\or August\or September\or October\or November\or December\fi
 \flushcr}
 
 % @multitable macros
-% Amy Hendrickson, 8/18/94
+% Amy Hendrickson, 8/18/94, 3/6/96
 %
 % @multitable ... @end multitable will make as many columns as desired.
 % Contents of each column will wrap at width given in preamble.  Width
@@ -1798,7 +1816,16 @@ July\or August\or September\or October\or November\or December\fi
 %   @multitable {Column 1 template} {Column 2 template} {Column 3 template}
 %   @item ...
 %   using the widest term desired in each column.
-
+%
+% For those who want to use more than one line's worth of words in
+% the preamble, break the line within one argument and it
+% will parse correctly, i.e.,
+%
+%     @multitable {Column 1 template} {Column 2 template} {Column 3 
+%      template}
+% Not:
+%     @multitable {Column 1 template} {Column 2 template} 
+%      {Column 3 template}
 
 % Each new table line starts with @item, each subsequent new column 
 % starts with @tab. Empty columns may be produced by supplying @tab's
@@ -1826,10 +1853,12 @@ July\or August\or September\or October\or November\or December\fi
 %   @end multitable
 
 % Default dimensions may be reset by user.
-% @multitableparskip will set vertical space between paragraphs in table.
-% @multitableparindent will set paragraph indent in table.
-% @multitablecolmargin will set horizontal space to be left between columns.
-% @multitablelineskip will set vertical space to be left between lines.
+% @multitableparskip is vertical space between paragraphs in table.
+% @multitableparindent is paragraph indent in table.
+% @multitablecolmargin is horizontal space to be left between columns.
+% @multitablelinespace is space to leave between table items, baseline
+%                                                            to baseline.
+%   0pt means it depends on current normal line spacing.
 
 %%%%
 % Dimensions 
@@ -1841,7 +1870,7 @@ July\or August\or September\or October\or November\or December\fi
 \multitableparskip=0pt
 \multitableparindent=6pt
 \multitablecolspace=12pt
-\multitablelinespace=12pt
+\multitablelinespace=0pt
 
 %%%%
 % Macros used to set up halign preamble:
@@ -1886,17 +1915,20 @@ July\or August\or September\or October\or November\or December\fi
 %%%%
 % @multitable ... @end multitable definitions:
 
-\def\multitable#1\item{\bgroup
+\def\multitable{\parsearg\dotable}
+
+\def\dotable#1{\bgroup
 \let\item\cr
 \tolerance=9500
 \hbadness=9500
+\setmultitablespacing
 \parskip=\multitableparskip
 \parindent=\multitableparindent
 \overfullrule=0pt
 \global\colcount=0\relax%
 \def\Emultitable{\global\setpercentfalse\global\everycr{}\cr\egroup\egroup}%
  % To parse everything between @multitable and @item :
-\def\one{#1}\expandafter\setuptable\one\endsetuptable
+\setuptable#1 \endsetuptable
  % Need to reset this to 0 after \setuptable.
 \global\colcount=0\relax% 
  %
@@ -1905,7 +1937,7 @@ July\or August\or September\or October\or November\or December\fi
  % \vtop will set a single line and will also let text wrap and 
  % continue for many paragraphs if desired.
 \halign\bgroup&\global\advance\colcount by 1\relax%
-\vtop{\hsize=\expandafter\csname col\the\colcount\endcsname
+\multistrut\vtop{\hsize=\expandafter\csname col\the\colcount\endcsname
  % In order to keep entries from bumping into each other
  % we will add a \leftskip of \multitablecolspace to all columns after
  % the first one.
@@ -1932,10 +1964,35 @@ July\or August\or September\or October\or November\or December\fi
  % each line. Every column  entry will cause \colcount to advance by one. 
  % The table preamble
  % looks at the current \colcount to find the correct column width.
-\global\everycr{\noalign{\nointerlineskip\vskip\multitablelinespace
+\global\everycr{\noalign{%
 \filbreak%% keeps underfull box messages off when table breaks over pages.
-\global\colcount=0\relax}}}
+\global\colcount=0\relax}}
+}
 
+\def\setmultitablespacing{% test to see if user has set \multitablelinespace.
+% If so, do nothing. If not, give it an appropriate dimension based on
+% current baselineskip.
+\setbox0=\vbox{Xy}
+\ifdim\multitablelinespace=0pt
+%% strut to put in table in case some entry doesn't have descenders,
+%% to keep lines equally spaced
+\gdef\multistrut{\vrule height\ht0 depth\dp0 width0pt\relax}
+%% Test to see if parskip is larger than space between lines of
+%% table. If not, do nothing. 
+%%        If so, set to same dimension as multitablelinespace.
+\else
+\gdef\multistrut{\vrule height\multitablelinespace depth\dp0
+width0pt\relax} \fi
+\ifdim\multitableparskip>\multitablelinespace
+\global\multitableparskip=\multitablelinespace
+\global\advance\multitableparskip-7pt %% to keep parskip somewhat smaller
+                                      %% than skip between lines in the table.
+\fi%
+\ifdim\multitableparskip=0pt
+\global\multitableparskip=\multitablelinespace
+\global\advance\multitableparskip-7pt %% to keep parskip somewhat smaller
+                                      %% than skip between lines in the table.
+\fi}
 \message{indexing,}
 % Index generation facilities
 
@@ -2617,6 +2674,10 @@ July\or August\or September\or October\or November\or December\fi
 \global\let\subsubsection = \appendixsubsubsec
 }}
 
+% @centerchap is like @unnumbered, but the heading is centered.
+\outer\def\centerchap{\parsearg\centerchapyyy}
+\def\centerchapyyy #1{{\let\unnumbchapmacro=\centerchapmacro \unnumberedyyy{#1}}}
+
 \outer\def\top{\parsearg\unnumberedyyy}
 \outer\def\unnumbered{\parsearg\unnumberedyyy}
 \def\unnumberedyyy #1{\unnmhead0{#1}} % normally unnmhead0 calls unnumberedzzz
@@ -2867,7 +2928,8 @@ July\or August\or September\or October\or November\or December\fi
 
 \def\CHAPFplain{
 \global\let\chapmacro=\chfplain
-\global\let\unnumbchapmacro=\unnchfplain}
+\global\let\unnumbchapmacro=\unnchfplain
+\global\let\centerchapmacro=\centerchfplain}
 
 \def\chfplain #1#2{%
   \pchapsepmacro
@@ -2886,6 +2948,14 @@ July\or August\or September\or October\or November\or December\fi
                   \parindent=0pt\raggedright
                   \rm #1\hfill}}\bigskip \par\penalty 10000 %
 }
+
+\def\centerchfplain #1{%
+\pchapsepmacro %
+{\chapfonts \vbox{\hyphenpenalty=10000\tolerance=5000
+                  \parindent=0pt
+                  {\rm #1}\hfill}}\bigskip \par\penalty 10000 %
+}
+
 \CHAPFplain % The default
 
 \def\unnchfopen #1{%
@@ -2899,9 +2969,16 @@ July\or August\or September\or October\or November\or December\fi
 \par\penalty 5000 %
 }
 
+\def\centerchfopen #1{%
+\chapoddpage {\chapfonts \vbox{\hyphenpenalty=10000\tolerance=5000
+                       \parindent=0pt
+                       \hfill {\rm #1}\hfill}}\bigskip \par\penalty 10000 %
+}
+
 \def\CHAPFopen{
 \global\let\chapmacro=\chfopen
-\global\let\unnumbchapmacro=\unnchfopen}
+\global\let\unnumbchapmacro=\unnchfopen
+\global\let\centerchapmacro=\centerchfopen}
 
 % Parameter controlling skip before section headings.
 
@@ -3183,6 +3260,8 @@ July\or August\or September\or October\or November\or December\fi
 \let\.=\ptexdot
 \let\*=\ptexstar
 \let\dots=\ptexdots
+\def\endldots{\mathinner{\ldots\ldots\ldots\ldots}}
+\def\enddots{\relax\ifmmode\endldots\else$\mathsurround=0pt \endldots\,$\fi}
 \def\@{@}%
 \let\bullet=\ptexbullet
 \let\b=\ptexb \let\c=\ptexc \let\i=\ptexi \let\t=\ptext \let\l=\ptexl
