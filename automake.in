@@ -68,6 +68,14 @@ $FOREIGN = 0;
 $GNU = 1;
 $GNITS = 2;
 
+# These constants are returned by lang_*_rewrite functions.
+# LANG_SUBDIR means that the resulting object file should be in a
+# subdir if the source file is.  In this case the file name cannot
+# have `..' components.
+$LANG_IGNORE = 0;
+$LANG_PROCESS = 1;
+$LANG_SUBDIR = 2;
+
 
 
 # Variables global to entire run.
@@ -303,30 +311,32 @@ $obsolete_rx = '(' . join ('|', keys %obsolete_macros) . ')';
 # internally supported.
 &initialize_global_constants;
 
-&register_language ('c', '', 1,
+&register_language ('c', 'ansi-p=1', 'autodep=',
 		    'c');
-&register_language ('cxx', 'CXXLINK', 0,
+&register_language ('cxx', 'linker=CXXLINK', 'autodep=CXX',
 		    'c++', 'cc', 'cpp', 'cxx', 'C');
-&register_language ('objc', 'OBJCLINK', 0,
+&register_language ('objc', 'linker=OBJCLINK', 'autodep=OBJC',
                     'm');
-&register_language ('header', '', 0,
+&register_language ('header',
 		    'h', 'H', 'hxx', 'h++', 'hh', 'hpp', 'inc');
-&register_language ('yacc', '', 1,
+&register_language ('yacc', 'ansi-p=1',
 		    'y');
-&register_language ('yaccxx', 'CXXLINK', 0,
+&register_language ('yaccxx', 'linker=CXXLINK',
 		    'y++', 'yy', 'yxx', 'ypp');
-&register_language ('lex', '', 1,
+&register_language ('lex', 'ansi-p=1',
 		    'l');
-&register_language ('lexxx', 'CXXLINK', 0,
+&register_language ('lexxx', 'linker=CXXLINK',
 		    'l++', 'll', 'lxx', 'lpp');
-&register_language ('asm', '', 0,
+&register_language ('asm',
 		    's', 'S');
-&register_language ('f77', 'F77LINK', 0,
+&register_language ('f77', 'linker=F77LINK',
 		    'f', 'for', 'f90');
-&register_language ('ppf77', 'F77LINK', 0,
+&register_language ('ppf77', 'linker=F77LINK',
 		    'F');
-&register_language ('ratfor', 'F77LINK', 0,
+&register_language ('ratfor', 'linker=F77LINK',
 		    'r');
+&register_language ('java', 'linker=GCJLINK', 'autodep=GCJ',
+		    'java');
 
 
 # Parse command line.
@@ -1083,7 +1093,7 @@ sub handle_single_transform_list
 		# Note: computed subr call.
 		local ($r) = & $subr ($base, $extension);
 		# Skip this entry if we were asked not to process it.
-		next if ! $r;
+		next if $r == $LANG_IGNORE;
 
 		# Now extract linker and other info.
 		$linker = $language_map{$lang . '-linker'};
@@ -1095,6 +1105,13 @@ sub handle_single_transform_list
 		else
 		{
 		    $object = $base . $nonansi_obj;
+		}
+
+		# If rewrite said it was ok, put the object into a
+		# subdir.
+		if ($r == $LANG_SUBDIR && $directory ne '')
+		{
+		    $object = $directory . '/' . $object;
 		}
 	    }
  	    elsif ($extension =~ /^$source_suffix_pattern$/) 
@@ -1123,16 +1140,32 @@ sub handle_single_transform_list
 	    }
 	    else
 	    {
+		local (@dep_list) = ();
 		$object_map{$object} = $full;
+
+		# If file is in subdirectory, we need explicit
+		# dependency.
 		if ($directory ne '')
 		{
-		    # If file is in subdirectory, we need explicit dependency.
-		    &pretty_print_rule ($object . ':', "\t", $full);
+		    push (@dep_list, $full);
 		}
+
+		# If resulting object is in subdir, we need to make
+		# sure the subdir exists at build time.
+		if ($object =~ /\//)
+		{
+		    push (@dep_list, $directory . '/.dirstamp');
+		    $output_rules .= ($directory . "/.dirstamp:\n"
+				      . "\t\@\$(mkinstalldirs) $directory\n"
+				      . "\t\@: > $directory/.dirstamp\n");
+		}
+
+		&pretty_print_rule ($object . ':', "\t", @dep_list);
 	    }
 
 	    # Transform .o or $o file into .P file (for automatic
 	    # dependency code).
+	    # FIXME: LANG_SUBDIR.
 	    $dep_files{'.deps/' . $base . '.P'} = 1;
 	}
     }
@@ -2731,26 +2764,23 @@ sub handle_dependencies
 	    $output_rules .= &file_contents ('depend');
 	    push (@clean, 'depend');
 	    &push_phony_cleaners ('depend');
-	    # FIXME: this should use another property of the language
-	    # instead of being hard-coded.
-	    $output_rules .=
-		&file_contents_with_transform ('s/\@EXT\@/.c/g;'
-					       . 's/\@PFX\@//g;',
-					       'depend2');
-	    local ($ext);
-	    foreach $ext (&lang_extensions ('objc'))
+
+	    local ($key, $lang, $ext, $xform);
+	    foreach $key (sort keys %language_map)
 	    {
-		$output_rules .=
-		    &file_contents_with_transform ('s/\@EXT\@/' . $ext . '/g;'
-						   . 's/\@PFX\@/OBJC/g;',
-						   'depend2');
-	    }
-	    foreach $ext (&lang_extensions ('cxx'))
-	    {
-		$output_rules .=
-		    &file_contents_with_transform ('s/\@EXT\@/' . $ext .'/g;'
-						   . 's/\@PFX\@/CXX/g;',
-						   'depend2');
+		next unless $key =~ /^(.*)-autodep$/;
+		next if $language_map{$key} == 'no';
+		$lang = $1;
+
+		$xform = 's/\@PFX\@/' . $language_map{$key} . '/g;';
+		foreach $ext (&lang_extensions ($lang))
+		{
+		    $output_rules .=
+			&file_contents_with_transform ('s/\@EXT\@/'
+						       . $ext . '/g;'
+						       . $xform,
+						       'depend2');
+		}
 	    }
 	}
     }
@@ -4484,20 +4514,20 @@ sub lang_c_rewrite
     }
 
     $de_ansi_files{$base} = 1;
-    return 1;
+    return $LANG_PROCESS;
 }
 
 # Rewrite a single C++ source file.
 sub lang_cxx_rewrite
 {
-    return 1;
+    return $LANG_PROCESS;
 }
 
 # Rewrite a single header file.
 sub lang_header_rewrite
 {
     # Header files are simply ignored.
-    return 0;
+    return $LANG_IGNORE;
 }
 
 # Rewrite a single yacc file.
@@ -4510,7 +4540,7 @@ sub lang_yacc_rewrite
     $ext =~ tr/y/c/;
     &saw_extension ('c');
     &push_dist_common ($base . '.' . $ext);
-    return 1;
+    return $LANG_PROCESS;
 }
 
 # Rewrite a single yacc++ file.
@@ -4522,7 +4552,7 @@ sub lang_yaccxx_rewrite
     $ext =~ tr/y/c/;
     &saw_extension ($ext);
     &push_dist_common ($base . '.' . $ext);
-    return 1;
+    return $LANG_PROCESS;
 }
 
 # Rewrite a single lex file.
@@ -4535,7 +4565,7 @@ sub lang_lex_rewrite
     $ext =~ tr/l/c/;
     &saw_extension ('c');
     &push_dist_common ($base . '.' . $ext);
-    return 1;
+    return $LANG_PROCESS;
 }
 
 # Rewrite a single lex++ file.
@@ -4547,37 +4577,43 @@ sub lang_lexxx_rewrite
     $ext =~ tr/l/c/;
     &saw_extension ($ext);
     &push_dist_common ($base . '.' . $ext);
-    return 1;
+    return $LANG_PROCESS;
 }
 
 # Rewrite a single assembly file.
 sub lang_asm_rewrite
 {
-    return 1;
+    return $LANG_PROCESS;
 }
 
 # Rewrite a single Fortran 77 file.
 sub lang_f77_rewrite
 {
-    return 1;
+    return $LANG_PROCESS;
 }
 
 # Rewrite a single preprocessed Fortran 77 file.
 sub lang_ppf77_rewrite
 {
-    return 1;
+    return $LANG_PROCESS;
 }
 
 # Rewrite a single ratfor file.
 sub lang_ratfor_rewrite
 {
-    return 1;
+    return $LANG_PROCESS;
 }
 
 # Rewrite a single Objective C file.
 sub lang_objc_rewrite
 {
-    return 1;
+    return $LANG_PROCESS;
+}
+
+# Rewrite a single Java file.
+sub lang_java_rewrite
+{
+    return $LANG_SUBDIR;
 }
 
 # The lang_X_finish functions are called after all source file
@@ -4943,10 +4979,10 @@ sub lang_objc_finish
     &define_configure_variable ("OBJCFLAGS");
     &define_compiler_variable ('OBJCCOMPILE', $ltcompile,
 			       '$(OBJC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_OBJCFLAGS) $(OBJCFLAGS)');
-    
+
     &define_variable ('OBJCLD', '$(OBJC)');
     &define_variable ('OBJCLINK', $ltlink . '$(OBJCLD) $(AM_OBJCFLAGS) $(OBJCFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
-    
+
     $output_rules .= (".m.o:\n"
                       . "\t\$(OBJCCOMPILE) -c \$<\n");
     # FIXME: Using cygpath should be somehow conditional.
@@ -4956,10 +4992,39 @@ sub lang_objc_finish
     $output_rules .= (".m.lo:\n"
                       . "\t\$(LTOBJCCOMPILE) -c \$<\n")
         if ($seen_libtool);
-    
+
     if (! defined $configure_vars{'OBJC'})
     {
 	&am_error ("Objective C source seen but \`OBJC' not defined in \`configure.in'");
+    }
+}
+
+sub lang_java_finish
+{
+    push (@suffixes, '.java');
+
+    local ($ltcompile, $ltlink) = &libtool_compiler;
+
+    &define_configure_variable ("GCJFLAGS");
+    &define_compiler_variable ('GCJCOMPILE', $ltcompile,
+			       '$(GCJ) $(DEFS) $(INCLUDES) $(AM_GCJFLAGS) $(GCJFLAGS)');
+
+    &define_variable ('GCJLD', '$(GCJ)');
+    &define_variable ('GCJLINK', $ltlink . '$(GCJLD) $(AM_GCJFLAGS) $(GCJFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
+
+    $output_rules .= (".java.o:\n"
+                      . "\t\$(GCJCOMPILE) -c \$<\n");
+    # FIXME: Using cygpath should be somehow conditional.
+    $output_rules .= (".java.obj:\n"
+                      . "\t\$(GCJCOMPILE) -c `cygpath -w \$<`\n")
+        if ($seen_objext);
+    $output_rules .= (".gcj.lo:\n"
+                      . "\t\$(LTGCJCOMPILE) -c \$<\n")
+        if ($seen_libtool);
+
+    if (! defined $configure_vars{'GCJ'})
+    {
+	&am_error ("Java source seen but \`GCJ' not defined in \`configure.in'");
     }
 }
 
@@ -4997,6 +5062,8 @@ sub resolve_linker
 {
     local (%linkers) = @_;
 
+    return 'GCJLINK'
+	if defined $linkers{'GCJLINK'};
     return 'CXXLINK'
 	if defined $linkers{'CXXLINK'};
     return 'F77LINK'
@@ -5032,28 +5099,36 @@ sub saw_sources_p
     return scalar keys %extension_seen > $headers;
 }
 
-# Register a single language.  If LINKER is the empty string, it means
-# to use the C linker.  DEANSI_P should only be 1 for languages where
-# de-ansi-fication makes sense (i.e., C).  EXTENSIONS is a list of
-# file extensions to match (no `.' included).
+# Register a single language.  LANGUAGE is the name of the language.
+# Each OPTION is either of the form NAME=VALUE, or is a file extension
+# (sans `.').
 sub register_language
 {
-    local ($language, $linker, $deansi_p, @extensions) = @_;
+    local ($language, @options) = @_;
+
+    # Set the defaults.
+    $language_map{$language . '-ansi-p'} = 0;
+    $language_map{$language . '-linker'} = '';
+    $language_map{$language . '-autodep'} = 'no';
 
     local ($iter);
-    foreach $iter (@extensions)
+    foreach $iter (@options)
     {
-	if (defined $extension_map{$iter})
+	if ($iter =~ /^(.*)=(.*)$/)
+	{
+	    $language_map{$language . '-' . $1} = $2;
+	}
+	elsif (defined $extension_map{$iter})
 	{
 	    print STDERR
 		"automake: programming error: duplicate extension $iter\n";
 	    exit 1;
 	}
-	$extension_map{$iter} = $language;
+	else
+	{
+	    $extension_map{$iter} = $language;
+	}
     }
-
-    $language_map{$language . '-ansi-p'} = $deansi_p;
-    $language_map{$language . '-linker'} = $linker;
 }
 
 
