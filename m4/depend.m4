@@ -12,72 +12,41 @@ ifelse([$1],CC,[
 AC_REQUIRE([AC_PROG_CC])
 AC_REQUIRE([AC_PROG_CPP])
 depcc="$CC"
-depcpp="$CPP"
-depgcc="$GCC"],[$1],CXX,[
+depcpp="$CPP"],[$1],CXX,[
 AC_REQUIRE([AC_PROG_CXX])
 AC_REQUIRE([AC_PROG_CXXCPP])
 depcc="$CXX"
-depcpp="$CXXCPP"
-depgcc="$GXX"],[$1],OBJC,[
+depcpp="$CXXCPP"],[$1],OBJC,[
 am_cv_OBJC_dependencies_compiler_type=gcc],[
 AC_REQUIRE([AC_PROG_][$1])
 depcc="$[$1]"
-depcpp=""
-depgcc="no"])
+depcpp=""])
 AC_MSG_CHECKING([dependency style of $depcc])
 AC_CACHE_VAL(am_cv_[$1]_dependencies_compiler_type,[
-am_cv_[$1]_dependencies_compiler_type=none
-if test "$depgcc" = yes; then
-   am_cv_[$1]_dependencies_compiler_type=gcc
+am_depcomp=${am_depcomp-"$ac_aux_dir/depcomp"}
+if test -f "$am_depcomp"; then
+  echo '#include "conftest.h"' > conftest.c
+  echo 'int i;' > conftest.h
+
+  am_cv_[$1]_dependencies_compiler_type=none
+  for depmode in `sed -n 's/^#*\([a-zA-Z0-9]*\))$/\1/p' < "$am_depcomp"`; do
+    case "$depmode" in
+    nosideeffect) continue ;;
+    none) break ;;
+    esac
+    if depmode="$depmode" \
+       source=conftest.c object=conftest.o \
+       depfile=conftest.Po tmpdepfile=conftest.TPo \
+       $SHELL $am_depcomp $depcc -c conftest.c 2>/dev/null &&
+       grep conftest.h conftest.Po > /dev/null 2>&1; then
+      am_cv_[$1]_dependencies_compiler_type="$depmode"
+      break
+    fi
+  done
+
+  rm -f conftest.*
 else
-   echo '#include "conftest.h"' > conftest.c
-   echo 'int i;' > conftest.h
-
-   dnl SGI compiler has its own method for side-effect dependency
-   dnl tracking.
-   if test "$am_cv_[$1]_dependencies_compiler_type" = none; then
-      rm -f conftest.P
-      if $depcc -c -MDupdate conftest.P conftest.c 2>/dev/null &&
-	 test -f conftest.P; then
-	 am_cv_[$1]_dependencies_compiler_type=sgi
-      fi
-   fi
-
-   if test "$am_cv_[$1]_dependencies_compiler_type" = none; then
-      # -o /dev/null avoids selecting -M for a compiler that would
-      # output dependencies to the object file.
-      # The grep tries to ignore compilers that actually output
-      # something other than dependency information when given the -M
-      # argument (in particular, linker map information).
-      rm -f conftest.P
-      if $depcc -M conftest.c -o /dev/null >conftest.P 2>/dev/null &&
-	 grep "conftest.h" conftest.P > /dev/null; then
-	 am_cv_[$1]_dependencies_compiler_type=dashmstdout
-      fi
-   fi
-
-   if test "$am_cv_[$1]_dependencies_compiler_type" = none; then
-      rm -f conftest.P
-      touch conftest.P
-      if ${MAKEDEPEND-makedepend} -o.o -fconftest.P conftest.c 2>/dev/null &&
-	grep "conftest.h" conftest.P > /dev/null; then
-	 am_cv_[$1]_dependencies_compiler_type=makedepend
-      fi
-   fi
-
-   if test "$am_cv_[$1]_dependencies_compiler_type" = none; then
-      # -o /dev/null avoids selecting -E for a compiler that would
-      # output dependencies to the object file
-      if test -n "`$depcc -E conftest.c -o /dev/null 2>/dev/null`"; then
-	 am_cv_[$1]_dependencies_compiler_type=cpp
-      fi
-   fi
-
-   dnl As a last resort, see if we can run CPP and extract line
-   dnl information from the output.
-   dnl FIXME
-
-   rm -f conftest.*
+  am_cv_[$1]_dependencies_compiler_type=none
 fi
 ])
 AC_MSG_RESULT($am_cv_[$1]_dependencies_compiler_type)
