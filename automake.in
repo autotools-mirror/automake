@@ -27,6 +27,17 @@ eval 'exec @PERL@ -S $0 ${1+"$@"}'
 # Originally written by David Mackenzie <djm@gnu.ai.mit.edu>.
 # Perl reimplementation by Tom Tromey <tromey@cygnus.com>.
 
+package Language;
+use Class::Struct;
+struct ('ansi'    => '$',
+	'autodep' => '$',
+	'derived_autodep' => '$',
+        'linker' => '$',
+	'pure'   => '$');
+
+
+package Automake;
+
 require 5.005;
 use strict 'vars', 'subs';
 use File::Basename;
@@ -390,6 +401,8 @@ my $configure_dist_common = '';
 
 # This maps languages names onto properties.
 my %language_map = ();
+# This maps languages names onto objects.
+my %languages = ();
 
 # List of targets we must always output.
 # FIXME: Complete, and remove falsely required targets.
@@ -1439,6 +1452,8 @@ sub handle_single_transform_list ($$$@)
 
         $extension = &derive_suffix ($extension);
         my $lang = $extension_map{$extension};
+	# Extract the language object.
+	my $lang_obj = $languages{$lang};
         if ($lang)
         {
             &saw_extension ($extension);
@@ -1453,7 +1468,10 @@ sub handle_single_transform_list ($$$@)
             $linker = $language_map{"$lang-linker"};
 
             my $this_obj_ext;
-            if ($language_map{"$lang-ansi-p"})
+	    prog_error ("$lang-ansi-p = " . $language_map{"$lang-ansi-p"}
+			. " != ". $lang_obj->ansi)
+	      if $language_map{"$lang-ansi-p"} != $lang_obj->ansi;
+            if ($lang_obj->ansi)
             {
                 $object = $base . $obj;
                 $this_obj_ext = $obj;
@@ -5228,6 +5246,15 @@ sub register_language
 	    $extension_map{$iter} = $lang;
 	}
     }
+
+    my $obj = new Language;
+    $obj->ansi ($language_map{"$lang-ansi-p"});
+    $obj->autodep ($language_map{"$lang-autodep"});
+    $obj->derived_autodep ($language_map{"$lang-derived-autodep"});
+    $obj->linker ($language_map{"$lang-linker"});
+    $obj->pure ($language_map{"$lang-pure"});
+
+    $languages{$lang} = $obj;
 }
 
 # This function is used to find a path from a user-specified suffix to
