@@ -159,6 +159,7 @@ mdate3.test \
 mkinst2.test \
 mkinstall.test \
 nodep.test \
+nodepcomp.test \
 nodist.test \
 noinst.test \
 nostdinc.test \
