@@ -1,3 +1,5 @@
+## Process this file with automake to create Makefile.in
+
 AUTOMAKE_OPTIONS = gnits
 
 bin_SCRIPTS = automake

@@ -100,6 +100,9 @@ sub parse_arguments
     local (@arglist) = @_;
     local (@make_list);
 
+    # Start off as normal.
+    &set_strictness ('normal');
+
     while (@arglist)
     {
 	if ($arglist[0] eq "--version")
@@ -1204,12 +1207,15 @@ sub handle_phony
 ################################################################
 
 # Scan configure.in for interesting things.
+# FIXME ensure VERSION, PACKAGE are set.
 sub scan_configure
 {
     open (CONFIGURE, 'configure.in')
 	|| die "automake: couldn't open configure.in: $!\n";
 
     local ($seen_make_set) = 0;
+    local ($seen_prog_install) = 0;
+    local ($seen_arg_prog) = 0;
     while (<CONFIGURE>)
     {
 	# Populate libobjs array.
@@ -1245,12 +1251,37 @@ sub scan_configure
 	    $libsources{$1 . '.c'} = 1;
 	}
 
+	# Check for NLS support.
+	if (/ud_GNU_GETTEXT/)
+	{
+	    &am_error
+		("ud_GNU_GETTEXT in configure.in but SUBDIRS not defined")
+		    if ! defined $contents{'SUBDIRS'};
+	    &am_error ("ud_GNU_GETTEXT if configure.in but po not in SUBDIRS")
+		if $contents{'SUBDIRS'} !~ /\<po\>/;
+	    &am_error
+		("ud_GNU_GETTEXT if configure.in but intl not in SUBDIRS")
+		    if $contents{'SUBDIRS'} !~ /\<intl\>/;
+
+	    &require_file ($NORMAL, 'ABOUT-NLS');
+	}
+
+	# Some things required by Automake.  FIXME we only really
+	# require fp_PROG_INSTALL if some scripts are installed.  And
+	# we only really require AC_ARG_PROGRAM if any program is
+	# installed.
 	$seen_make_set = 1 if /AC_PROG_MAKE_SET/;
+	$seen_prog_install = 1 if /fp_PROG_INSTALL/;
+	$seen_arg_prog = 1 if /AC_ARG_PROGRAM/;
     }
 
     # If SUBDIRS defined, require AC_PROG_MAKE_SET.
     &am_error ("AC_PROG_MAKE_SET must be used in configure.in")
 	if defined $contents{'SUBDIRS'} && ! $seen_make_set;
+    &am_error ("fp_PROG_INSTALL must be used in configure.in")
+	unless $seen_prog_install;
+    &am_error ("AC_ARG_PROGRAM must be used in configure.in")
+	unless $seen_arg_prog;
 
     close (CONFIGURE);
 }
