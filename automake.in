@@ -1527,6 +1527,9 @@ sub generate_makefile
     # Reset all the Makefile.am related variables.
     &initialize_per_input;
 
+    # Any warning setting now local to this Makefile.am.
+    &dup_channel_setup;
+
     # Name of input file ("Makefile.am") and output file
     # ("Makefile.in").  These have no directory components.
     $am_file_name = basename ($makefile) . '.am';
@@ -1689,6 +1692,9 @@ sub generate_makefile
     print $gm_file $output_header;
     print $gm_file $output_rules;
     print $gm_file $output_trailer;
+
+    # Back out any warning setting.
+    &drop_channel_setup;
 }
 
 ################################################################
@@ -1834,6 +1840,14 @@ sub process_option_list
 	      err ($where, "require version $_, but have $VERSION",
 		   uniq_scope => US_GLOBAL);
 		return 1;
+	    }
+	}
+      elsif (/^(?:--warnings=|-W)(.*)$/)
+	{
+	  foreach my $cat (split (',', $1))
+	    {
+	      msg 'unsupported', $where, "unknown warning category `$cat'"
+		if switch_warning $cat;
 	    }
 	}
       else

@@ -67,6 +67,7 @@ our @EXPORT = qw ($exit_code $warnings_are_errors
 		  &reset_local_duplicates &reset_global_duplicates
 		  &register_channel &msg &exists_channel &channel_type
 		  &setup_channel &setup_channel_type
+                  &dup_channel_setup &drop_channel_setup
 		  US_GLOBAL US_LOCAL
 		  UP_NONE UP_TEXT UP_LOC_TEXT);
 
@@ -489,6 +490,39 @@ sub setup_channel_type ($%)
       setup_channel $channel, %opts
 	if $channels{$channel}{'type'} eq $type;
     }
+}
+
+=item C<dup_channel_setup ()>, C<drop_channel_setup ()>
+
+Sometimes it is necessary to make temporary modifications to channels.
+For instance one may want to disable a warning while processing a
+particular file, and then restore the initial setup.  These two
+functions make it easy: C<dup_channel_setup ()> saves a copy of the
+current configuration for later restoration by
+C<drop_channel_setup ()>.
+
+You can think of this as a stack of configurations whose first entry
+is the active one.  C<dup_channel_setup ()> duplicates the first
+entry, while C<drop_channel_setup ()> just deletes it.
+
+=cut
+
+our @_saved_channels = ();
+
+sub dup_channel_setup ()
+{
+  my %channels_copy;
+  foreach my $k1 (keys %channels)
+    {
+      $channels_copy{$k1} = {%{$channels{$k1}}};
+    }
+  push @_saved_channels, \%channels_copy;
+}
+
+sub drop_channel_setup ()
+{
+  my $saved = pop @_saved_channels;
+  %channels = %$saved;
 }
 
 =back

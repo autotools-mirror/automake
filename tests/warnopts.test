@@ -1,0 +1,54 @@
+#! /bin/sh
+
+# Make sure that we can enable or disable warnings on a per-file basis.
+
+. $srcdir/defs || exit 1
+
+set -e
+
+
+cat >>configure.in <<END
+AC_CONFIG_FILES([sub/Makefile])
+AC_OUTPUT
+END
+
+mkdir sub
+
+# These two Makefile contain the same errors, but have different
+# warnings disabled.
+
+cat >Makefile.am <<END
+AUTOMAKE_OPTIONS = -Wno-obsolete
+INCLUDES = -Ifoo
+foo_SOURCES = unused
+SUBDIRS = sub
+END
+
+cat >sub/Makefile.am <<END
+AUTOMAKE_OPTIONS = -Wno-unused
+INCLUDES = -Ifoo
+foo_SOURCES = unused
+END
+
+$ACLOCAL
+$AUTOMAKE 2>stderr && exit 1
+cat stderr
+# The expected diagnostic is
+#   Makefile.am:3: unused variable: `foo_SOURCES'
+#   sub/Makefile.am:2: `INCLUDES' is the old name for `AM_CPPFLAGS'
+grep '^Makefile.am:.*foo_SOURCES' stderr
+grep '^sub/Makefile.am:.*INCLUDES' stderr
+grep '^sub/Makefile.am:.*foo_SOURCES' stderr && exit 1
+grep '^Makefile.am:.*INCLUDES' stderr && exit 1
+# Only two lines of warnings.
+test `wc -l < stderr` = 2
+
+# If we add a global -Wnone, all warnings should disappear.
+cat >configure.in <<END
+AC_INIT([warnopts], [1.0])
+AM_INIT_AUTOMAKE([-Wnone])
+AC_CONFIG_FILES([Makefile sub/Makefile])
+AC_OUTPUT
+END
+$ACLOCAL
+$AUTOMAKE
