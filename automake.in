@@ -44,7 +44,7 @@ $GNITS = 2;
 # Variables global to entire run.
 
 # Strictness level.
-$strictness = $LENIENT;
+$strictness = $NORMAL;
 
 # This is TRUE if GNU make specific automatic dependency generation
 # code should be included in generated Makefile.in.
@@ -193,7 +193,7 @@ sub require_argument
 sub generate_makefile
 {
     local ($makefile) = @_;
-    
+
     print "creating ", $makefile, ".in\n";
 
     &initialize_per_input;
@@ -201,6 +201,8 @@ sub generate_makefile
     # FIXME with new 'dist' target, don't need Makefile.in.  Probably
     # should remove it here.
     push_dist_common ('Makefile.in', 'Makefile.am');
+    push (@sources, '$(SOURCES)') if (defined $contents{'SOURCES'});
+    push (@objects, '$(OBJECTS)') if (defined $contents{'OBJECTS'});
 
     # Generate header before reading .am file.  The header must come
     # before anything else, and read_am_file copies code into the
@@ -217,14 +219,14 @@ sub generate_makefile
     &check_gnu_standards;
     &check_gnits_standards;
 
-    # Program stuff.
-    local ($programs) = &am_variable ('PROGRAMS');
-    local ($libprograms) = &am_variable ('LIBPROGRAMS');
-    local ($libraries) = &am_variable ('LIBRARIES');
-
-    &handle_programs ($programs, $libprograms, $libraries);
+    &handle_libraries;
+    &handle_programs;
     &handle_scripts;
-    &handle_libraries ($libraries);
+
+    # Re-init SOURCES and OBJECTS.  FIXME other code shouldn't depend
+    # on this (but currently does).
+    $contents{'SOURCES'} = join (' ', @sources);
+    $contents{'OBJECTS'} = join (' ', @objects);
 
     &handle_texinfo;
     &handle_man_pages;
@@ -310,7 +312,6 @@ sub handle_source_transform
     local ($one_file, $obj) = @_;
 
     # Look for file_SOURCES and file_OBJECTS.
-    local (@result) = ();
     if (defined $contents{$one_file . "_SOURCES"})
     {
 	if (! defined $contents{$one_file . "_OBJECTS"})
@@ -333,16 +334,16 @@ sub handle_source_transform
 	    &am_error ($one_file . '_OBJECTS', 'should not be defined');
 	}
 
-	@result = ('$(' . $one_file . "_SOURCES)",
-		   '$(' . $one_file . "_OBJECTS)");
+	push (@sources, '$(' . $one_file . "_SOURCES)");
+	push (@objects, '$(' . $one_file . "_OBJECTS)");
     }
     else
     {
 	$output_vars .= ($one_file . "_SOURCES = " . $one_file . ".c\n"
 			 . $one_file . "_OBJECTS = ". $one_file
 			 . $obj . "\n");
-	@result = ($one_file . '.c',
-		   $one_file . $obj);
+	push (@sources, $one_file . '.c');
+	push (@objects, $one_file . $obj);
     }
 
     if (defined $contents{'CONFIG_HEADER'})
@@ -357,89 +358,61 @@ sub handle_source_transform
 # Handle C programs.
 sub handle_programs
 {
-    local ($programs, $libprograms, $libraries) = @_;
-
-    if (!$programs && !$libprograms && !$libraries)
-    {
-	# None exist.
-	return;
-    }
+    local (@proglist) = &am_install_var ('-clean',
+					 'programs', 'PROGRAMS',
+					 'bin', 'sbin', 'libexec', 'noinst');
+    # FIXME error if PROGRAMS defined but no blah_PROGRAMS defined.
+    return if ($#proglist < 0);
 
     local ($obj) = &get_object_extension;
-
-    local (@sources, @objects);
-    push (@sources, '$(SOURCES)') if (defined $contents{'SOURCES'});
-    push (@objects, '$(OBJECTS)') if (defined $contents{'OBJECTS'});
-
-    local ($one_file);
-    local ($sadd, $oadd);
-    foreach $one_file (split (' ', ($programs . ' '
-				    . $libprograms . ' '
-				    . $libraries)))
+    local ($one_file, $munge);
+    local ($fcont) = &file_contents ('program');
+    foreach $one_file (@proglist)
     {
-	($sadd, $oadd) = &handle_source_transform ($one_file, $obj);
-	push (@sources, $sadd);
-	push (@objects, $oadd);
-    }
+	&handle_source_transform ($one_file, $obj);
 
-    $output_vars .= "\n";
-
-    # Re-init SOURCES and OBJECTS.  FIXME other code shouldn't depend
-    # on this.
-    $contents{'SOURCES'} = join (' ', @sources);
-    $contents{'OBJECTS'} = join (' ', @objects);
-
-    # Some boilerplate, and install rules.
-    if ($programs)
-    {
-	$output_rules .= &file_contents ('programs');
-	push (@install_exec, "install-programs");
-	push (@uninstall, 'uninstall-programs');
-	push (@clean, 'programs');
-	push (@installdirs, '$(bindir)');
-	push (@all, '$(PROGRAMS)');
-    }
-    if ($libprograms)
-    {
-	$output_rules .= &file_contents ('libprograms');
-	push (@install_exec, 'install-libprograms');
-	push (@uninstall, 'uninstall-libprograms');
-	push (@clean, 'libprograms');
-	push (@installdirs, '$(libexecdir)');
-	push (@all, '$(LIBPROGRAMS)');
-    }
-
-    # Handle linking.
-    if ($programs || $libprograms)
-    {
-	local ($fcont) = &file_contents ('program');
-	local ($munge);
-	foreach $one_file (split (' ', $programs . ' ' . $libprograms))
+	if (! defined $contents{$one_file . "_LDADD"})
 	{
-	    if (! defined $contents{$one_file . "_LDADD"})
-	    {
-		# User didn't define prog_LDADD override.  So do it.
-		$output_vars .= $one_file . '_LDADD = $(LDADD)' . "\n";
-	    }
-
-	    ($munge = $fcont) =~ s/\@PROGRAM\@/$one_file/g;
-	    $output_rules .= $munge;
+	    # User didn't define prog_LDADD override.  So do it.
+	    $output_vars .= $one_file . '_LDADD = $(LDADD)' . "\n";
 	}
+
+	($munge = $fcont) =~ s/\@PROGRAM\@/$one_file/g;
+	$output_rules .= $munge;
     }
 }
 
 # Handle libraries.
 sub handle_libraries
 {
-    local ($libraries) = @_;
+    local (@liblist) = &am_install_var ('-no-all', '-clean',
+					'libraries', 'LIBRARIES',
+					'lib', 'pkglib', 'noinst');
+    # FIXME error if LIBRARIES defined but no blah_LIBRARIES defined.
+    return if ($#liblist < 0);
 
-    return if (!$libraries);
+    # Generate _LIBFILES variables.  Too bad we can't do this in
+    # am_install_var.
+    local ($onedir, $onelib);
+    local (@outlist);
+    foreach $onedir ('lib', 'pkglib', 'noinst')
+    {
+	if (defined $contents{$onedir . '_LIBRARIES'})
+	{
+	    @outlist = ();
+	    foreach $onelib (split (/\s+/, $contents{$onedir . '_LIBRARIES'}))
+	    {
+		push (@outlist, 'lib' . $onelib . '.a');
+	    }
+	    $output_vars .= ($onedir . '_LIBFILES = '
+			     . join (' ', @outlist) . "\n");
+	}
+    }
+    push (@all, '$(LIBFILES)');
 
-    local (@liblist) = split (' ', $libraries);
-
-    $output_rules .= &file_contents ('libraries');
-    local ($onefile) = &file_contents ('library');
-    local ($onelib, $munge);
+    local ($obj) = &get_object_extension;
+    local ($template) = &file_contents ('library');
+    local ($munge);
     foreach $onelib (@liblist)
     {
 	if (! defined $contents{$onelib . '_LIBADD'})
@@ -449,26 +422,28 @@ sub handle_libraries
 	    $output_vars .= $onelib . "_LIBADD =\n";
 	}
 
-	($munge = $onefile) =~ s/\@LIBRARY\@/$onelib/g;
+	&handle_source_transform ($onelib, $obj);
+
+	($munge = $template) =~ s/\@LIBRARY\@/$onelib/g;
 	$output_rules .= $munge;
     }
 
     # Turn "foo" into "libfoo.a" and include macro definition.
     grep (($_ = 'lib' . $_ . '.a') && 0, @liblist);
-    $output_vars .= ("LIBFILES = " . join (' ', @liblist) . "\n\n"
-		     . &file_contents ('libraries-vars'));
 
-    push (@install_exec, 'install-libraries');
-    push (@uninstall, 'uninstall-libraries');
-    push (@clean, 'libraries');
-    push (@all, '$(LIBFILES)');
+    if (! defined $contents{'LIBFILES'})
+    {
+	$output_vars .= 'LIBFILES = ' . join (' ', @liblist) . "\n";
+    }
+    $output_vars .= &file_contents ('libraries-vars');
 }
 
 # Handle scripts.
 sub handle_scripts
 {
-    &am_install_var ('scripts', 'SCRIPTS', 'bin', 'sbin', 'libexec',
-		     'noinst');
+    &am_install_var ('-clean',
+		     'scripts', 'SCRIPTS',
+		     'bin', 'sbin', 'libexec', 'noinst');
 }
 
 # Handle all Texinfo source.
@@ -477,7 +452,7 @@ sub handle_texinfo
     local ($texis) = &am_variable ('TEXINFOS');
     return if (!$texis);
 
-    local (@texis) = split (' ', $texis);
+    local (@texis) = split (/\s+/, $texis);
     if ($#texis > 0)
     {
 	&am_error ('sorry, only one file allowed in `TEXINFOS\'');
@@ -553,7 +528,7 @@ sub handle_man_pages
 
     # We generate the manpage install code by hand to avoid the use of
     # basename in the generated Makefile.
-    local (@mans) = split (' ', $contents{'MANS'});
+    local (@mans) = split (/\s+/, $contents{'MANS'});
     local (%sections, %inames, %secmap, %fullsecmap);
     foreach (@mans)
     {
@@ -1073,7 +1048,7 @@ sub read_am_file
 	    # de-ANSI-fication.  FIXME think of a better way.
 	    $contents{'@kr@'} = 1;
 	}
-	elsif (m/^ *([a-zA-Z_.][a-zA-Z0-9_.]*) *:/)
+	elsif (m/^ *([a-zA-Z_.][-.a-zA-Z0-9_.]*) *:/)
 	{
 	    # Found a rule.
 	    $was_rule = 1;
@@ -1082,7 +1057,7 @@ sub read_am_file
 	    $contents{$1} = 1;
 	    $output_trailer .= $_ . "\n";
 	}
-	elsif (m/^ *([A-Za-z][A-Za-z0-9_]*)[ 	]*=[ 	]*(.*)$/)
+	elsif (m/^ *([A-Za-z][A-Za-z0-9_]*)[ \t]*=[ \t]*(.*)$/)
 	{
 	    # Found a variable reference.
 	    $was_rule = 0;
@@ -1235,6 +1210,11 @@ sub initialize_per_input
     @installcheck = ();
     @clean = ();
 
+    # These are pretty obvious, too.  They are used to define the
+    # SOURCES and OBJECTS variables.
+    @sources = ();
+    @objects = ();
+
     # TRUE if current directory holds any C source files.  (Actually
     # holds object extension, but this information is encapsulated in
     # the function get_object_extension).
@@ -1287,28 +1267,56 @@ sub am_variable
 # the second argument is the primary variable (eg HEADERS), and all
 # subsequent arguments are possible installation locations.  FIXME
 # should scan all defined variables and do some error checking to
-# avoid typos (eg 'bni_PROGRAMS' should give error).  Returns TRUE if
-# any items were found, FALSE otherwise.
+# avoid typos (eg 'bni_PROGRAMS' should give error).  Returns list of
+# all values of all _HOW targets.
+#
+# Usage is: am_install_var (OPTION..., file, HOW, where...)
 sub am_install_var
 {
-    local ($file, $primary, @prefixes) = @_;
-    local (@used) = ();
+    local (@args) = @_;
 
-    local ($contents) = &file_contents ($file);
+    local ($do_all, $do_clean) = (1, 0);
+    while ($#args >= 0)
+    {
+	if ($args[0] eq '-clean')
+	{
+	    $do_clean = 1;
+	}
+	elsif ($args[0] eq '-no-all')
+	{
+	    $do_all = 0;
+	}
+	elsif ($args[0] !~ /^-/)
+	{
+	    last;
+	}
+	shift (@args);
+    }
+    local ($file, $primary, @prefixes) = @args;
+
+    local (@used) = ();
+    local (@result) = ();
+
+    local ($template) = &file_contents ($file);
     local ($munge);
+    local ($one_name);
     foreach (@prefixes)
     {
-	if (defined $contents{$_ . '_' . $primary})
+	$one_name = $_ . '_' . $primary;
+	if (defined $contents{$one_name})
 	{
-	    push (@all, '$(' . $_ . '_' . $primary . ')');
-	    push (@used, '$(' . $_ . '_' . $primary . ')');
+	    # Append actual contents to result.
+	    push (@result, split (/\s+/, $contents{$one_name}));
+
+	    push (@clean, $_ . $primary) if $do_clean;
+	    push (@used, '$(' . $one_name . ')');
 	    if ($_ eq 'noinst')
 	    {
 		# Objects in noinst_FOO never get installed.
 		next;
 	    }
 
-	    ($munge = $contents) =~ s/\@DIR\@/$_/g;
+	    ($munge = $template) =~ s/\@DIR\@/$_/g;
 	    $output_rules .= $munge;
 
 	    push (@uninstall, 'uninstall-' . $_ . $primary);
@@ -1330,7 +1338,10 @@ sub am_install_var
 	$output_vars .= $primary . " = " . join (' ', @used) . "\n\n";
     }
 
-    return ($#used >= 0);
+    # Push here because PRIMARY might be configure time determined.
+    push (@all, '$(' . $primary . ')') if ($do_all && $#used >= 0);
+
+    return (@result);
 }
 
 

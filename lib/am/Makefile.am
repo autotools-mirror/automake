@@ -15,8 +15,13 @@ texi-clean.am texi-version.am texinfos-vars.am texinfos.am
 
 DIST_OTHER = automake.in
 
+# The following requires a fixed version of the Emacs 19.30 etags.
+ETAGS_ARGS = automake.in
+
+# The simplest form of checking.
+check-local: automake
+	@PERL@ -c -w automake
+
 automake: automake.in
 	CONFIG_FILES=$@ CONFIG_HEADERS= ./config.status
 
-# The following requires a fixed version of the Emacs 19.30 etags.
-ETAGS_ARGS = automake.in

@@ -64,6 +64,7 @@ DIST_OTHER = automake.in
 
 ETAGS_ARGS = automake.in
 
+
 SCRIPTS = $(bin_SCRIPTS)
 
 MAKEINFO = makeinfo
@@ -100,14 +101,14 @@ uninstall-binSCRIPTS:
 	  rm -f $(bindir)/`echo $$p|sed '$(transform)'`; \
 	done
 
-mostlyclean-scripts:
+mostlyclean-binSCRIPTS:
 
-clean-scripts:
+clean-binSCRIPTS:
 	rm -f $(bin_SCRIPTS)
 
-distclean-scripts:
+distclean-binSCRIPTS:
 
-maintainer-clean-scripts:
+maintainer-clean-binSCRIPTS:
 
 version.texi: stamp-vti
 
@@ -238,13 +239,13 @@ dist: $(DISTFILES)
 	tar -chozf $(distdir).tar.gz $(distdir)
 	rm -rf $(distdir)
 
-all: info $(bin_SCRIPTS) $(pkgdata_DATA)
+all: info $(PROGRAMS) $(SCRIPTS) $(DATA) $(HEADERS)
 
 info: $(INFO_DEPS)
 
 dvi: $(DVIS)
 
-check: 
+check: check-local
 
 installcheck: 
 
@@ -272,22 +273,26 @@ distclean-generic:
 maintainer-clean-generic:
 	test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 
-mostlyclean: mostlyclean-vti mostlyclean-info mostlyclean-tags mostlyclean-generic
+mostlyclean: mostlyclean-binSCRIPTS mostlyclean-vti mostlyclean-info mostlyclean-tags mostlyclean-generic
 
-clean: mostlyclean clean-vti clean-info clean-tags clean-generic
+clean: mostlyclean clean-binSCRIPTS clean-vti clean-info clean-tags clean-generic
 
-distclean: clean distclean-vti distclean-info distclean-tags distclean-generic
+distclean: clean distclean-binSCRIPTS distclean-vti distclean-info distclean-tags distclean-generic
 
-maintainer-clean: distclean maintainer-clean-vti maintainer-clean-info maintainer-clean-tags maintainer-clean-generic
+maintainer-clean: distclean maintainer-clean-binSCRIPTS maintainer-clean-vti maintainer-clean-info maintainer-clean-tags maintainer-clean-generic
 	@echo "This command is intended for maintainers to use;"
 	@echo "it deletes files that may require special tools to rebuild."
 
 # SUBDIRS = intl po
 # CONFIG_HEADER = config.h
+# The following requires a fixed version of the Emacs 19.30 etags.
+# The simplest form of checking.
+check-local: automake
+	@PERL@ -c -w automake
+
 automake: automake.in
 	CONFIG_FILES=$@ CONFIG_HEADERS= ./config.status
 
-# The following requires a fixed version of the Emacs 19.30 etags.
 
 .SUFFIXES:
 .SUFFIXES: .texi .info .dvi
