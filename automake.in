@@ -1576,7 +1576,8 @@ sub handle_single_transform ($$$$$%)
             # further.
             my $subr = \&{'lang_' . $lang->name . '_rewrite'};
             my ($r, $source_extension)
-		= &$subr ($directory, $base, $extension, $have_per_exec_flags);
+		= &$subr ($directory, $base, $extension,
+			  $nonansi_obj, $have_per_exec_flags);
             # Skip this entry if we were asked not to process it.
             next if $r == LANG_IGNORE;
 
@@ -5079,7 +5080,7 @@ sub lang_sub_obj
 # Rewrite a single C source file.
 sub lang_c_rewrite
 {
-  my ($directory, $base, $ext, $have_per_exec_flags) = @_;
+  my ($directory, $base, $ext, $nonansi_obj, $have_per_exec_flags) = @_;
 
   if (option 'ansi2knr' && $base =~ /_$/)
     {
@@ -5091,13 +5092,17 @@ sub lang_c_rewrite
   if (option 'subdir-objects')
     {
       $r = LANG_SUBDIR;
-      $base = $directory . '/' . $base
-	unless $directory eq '.' || $directory eq '';
+      if ($directory && $directory ne '.')
+	{
+	  $base = $directory . '/' . $base;
 
-      err_am ("C objects in subdir but `AM_PROG_CC_C_O' "
-	      . "not in `$configure_ac'",
-	      uniq_scope => US_GLOBAL)
-	unless $seen_cc_c_o;
+	  # libtool is always able to put the object at the proper place,
+	  # so we do not have to require AM_PROG_CC_C_O when building .lo files.
+	  err_am ("C objects in subdir but `AM_PROG_CC_C_O' "
+		  . "not in `$configure_ac'",
+		  uniq_scope => US_GLOBAL)
+	    unless $seen_cc_c_o || $nonansi_obj eq '.lo';
+	}
 
       # In this case we already have the directory information, so
       # don't add it again.
@@ -5110,7 +5115,10 @@ sub lang_c_rewrite
 			       : "$directory/");
     }
 
-  if (! $seen_cc_c_o && $have_per_exec_flags && ! option 'subdir-objects')
+  if (! $seen_cc_c_o
+      && $have_per_exec_flags
+      && ! option 'subdir-objects'
+      && $nonansi_obj ne '.lo')
     {
       err_am ("C objects with per-target flags but `AM_PROG_CC_C_O' "
 	      . "not in `$configure_ac'",
