@@ -135,7 +135,7 @@ sub test_reduce_and ()
 	       [["FOO", "FOO BAR", "BAZ", "FOO BAZ", "FOO BAZ BAR"],
 		["FOO BAZ BAR"]],
 
-	       # Duplicated condionals should be removed
+	       # Duplicated conditionals should be removed.
 	       [["FOO", "BAR", "BAR"], ["BAR,FOO"]],
 
 	       # Equivalent conditions in different forms should be
@@ -211,7 +211,7 @@ sub test_reduce_or ()
 	       [["FOO", "FOO BAR", "BAZ", "FOO BAZ", "FOO BAZ BAR"],
 		["BAZ,FOO"]],
 
-	       # Duplicated condionals should be removed
+	       # Duplicated conditionals should be removed.
 	       [["FOO", "BAR", "BAR"], ["BAR,FOO"]],
 
 	       # Equivalent conditions in different forms should be

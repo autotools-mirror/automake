@@ -719,11 +719,11 @@ sub scan_variable_expansions ($)
   # Strip comments.
   $text =~ s/#.*$//;
 
-  # Record each use of ${stuff} or $(stuff) that do not follow a $.
+  # Record each use of ${stuff} or $(stuff) that does not follow a $.
   while ($text =~ /(?<!\$)\$(?:\{([^\}]*)\}|\(([^\)]*)\))/g)
     {
       my $var = $1 || $2;
-      # The occurent may look like $(string1[:subst1=[subst2]]) but
+      # The occurence may look like $(string1[:subst1=[subst2]]) but
       # we want only `string1'.
       $var =~ s/:[^:=]*=[^=]*$//;
       push @result, $var;

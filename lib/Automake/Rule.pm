@@ -369,7 +369,7 @@ sub register_suffix_rule ($$$)
   verb "Sources ending in $src become $dest";
   push @_suffixes, $src, $dest;
 
-  # When tranforming sources to objects, Automake uses the
+  # When transforming sources to objects, Automake uses the
   # %suffix_rules to move from each source extension to
   # `.$(OBJEXT)', not to `.o' or `.obj'.  However some people
   # define suffix rules for `.o' or `.obj', so internally we will
@@ -412,7 +412,7 @@ sub register_suffix_rule ($$$)
     }
 
   # Similarly, any extension that can be derived into $src
-  # can be derived into the same extenstions as $src can.
+  # can be derived into the same extensions as $src can.
   my @dest2 = keys %{$suffix_rules->{$src}};
   for my $src2 (keys %$suffix_rules)
     {
@@ -624,7 +624,7 @@ sub define ($$$$$)
 	      # already diagnosed as unportable by -Wportability.
 	      if ($target !~ /^[^%]*%[^%]*$/)
 		{
-		  ## FIXME: Presently we can't diagnose duplcate user rules
+		  ## FIXME: Presently we can't diagnose duplicate user rules
 		  ## because we doesn't distinguish rules with commands
 		  ## from rules that only add dependencies.  E.g.,
 		  ##   .PHONY: foo
@@ -709,7 +709,7 @@ sub define ($$$$$)
   # Check ambiguous conditional definitions.
   my $rule = _crule $target;
   my ($message, $ambig_cond) = $rule->conditions->ambiguous_p ($target, $cond);
-  if ($message)			# We have an ambiguty.
+  if ($message)			# We have an ambiguity.
     {
       if ($owner == RULE_USER)
 	{
@@ -788,8 +788,8 @@ sub define ($$$$$)
 	}
     }
 
-  # POSIX allow multiple targets befor the colon, but disallow
-  # definitions of multiple Inference rules.  It's also
+  # POSIX allows multiple targets before the colon, but disallows
+  # definitions of multiple inference rules.  It's also
   # disallowed to mix plain targets with inference rules.
   msg ('portability', $where,
        "Inference rules can have only one target before the colon (POSIX).")
@@ -802,14 +802,14 @@ sub define ($$$$$)
 
 Adds C<@deps> to the dependencies of target C<$target>.  This should
 be used only with factored targets (those appearing in
-C<%dependendees>).
+C<%dependees>).
 
 =cut
 
 sub depend ($@)
 {
-  my ($category, @dependendees) = @_;
-  push (@{$dependencies{$category}}, @dependendees);
+  my ($category, @dependees) = @_;
+  push (@{$dependencies{$category}}, @dependees);
 }
 
 =back
