@@ -3,7 +3,7 @@
 % Load plain if necessary, i.e., if running under initex.
 \expandafter\ifx\csname fmtname\endcsname\relax\input plain\fi
 %
-\def\texinfoversion{2003-12-01.17}
+\def\texinfoversion{2003-12-04.17}
 %
 % Copyright (C) 1985, 1986, 1988, 1990, 1991, 1992, 1993, 1994, 1995,
 % 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003 Free Software Foundation, Inc.
@@ -159,6 +159,19 @@
 
 % The following is used inside several \edef's.
 \def\makecsname#1{\expandafter\noexpand\csname#1\endcsname}
+
+% Make an outer definition into an inner one (due to Chris Thompson).
+% The arguments should be the control sequence to be defined, and the
+% new of the \outer control sequence, as characters; the control
+% sequence #1 is defined to be just the same as \csname#2\endcsname, but
+% not \outer.
+% 
+% For example, \innerdef\innernewcount{newcount} defines \innernewcount
+% to be a non-outer version of \newcount.
+%
+\def\innerdef#1#2{\edef#1{\expandafter\noexpand\csname #2\endcsname}}%
+%
+\innerdef\innernewcount{newcount}%
 
 % Hyphenation fixes.
 \hyphenation{ap-pen-dix}
@@ -3729,14 +3742,24 @@ width0pt\relax} \fi
   \suppressfirstparagraphindent
 }
 
-% @chapter, @appendix, @unnumbered.
-%
+% @chapter, @appendix, @unnumbered.  Increment top-level counter, reset
+% all lower-level sectioning counters to zero.
+% 
+% Also set \chaplevelprefix, which we prepend to @float sequence numbers
+% (e.g., figures), q.v.  By default (before any chapter), that is empty.
+\let\chaplevelprefix = \empty
+% 
 \outer\defparsearg\chapter{\numhead0{#1}} % normally numhead0 calls chapterzzz
 \def\chapterzzz#1{%
   % section resetting is \global in case the chapter is in a group, such
   % as an @include file.
   \global\secno=0 \global\subsecno=0 \global\subsubsecno=0
     \global\advance\chapno by 1
+  %
+  % Used for \float.
+  \gdef\chaplevelprefix{\the\chapno.}%
+  \resetallfloatnos
+  %
   \message{\putwordChapter\space \the\chapno}%
   %
   % Write the actual heading.
@@ -3752,9 +3775,14 @@ width0pt\relax} \fi
 \def\appendixzzz#1{%
   \global\secno=0 \global\subsecno=0 \global\subsubsecno=0
     \global\advance\appendixno by 1
+  \gdef\chaplevelprefix{\appendixletter.}%
+  \resetallfloatnos
+  %
   \def\appendixnum{\putwordAppendix\space \appendixletter}%
   \message{\appendixnum}%
+  %
   \chapmacro{#1}{Yappendix}{\appendixletter}%
+  %
   \global\let\section = \appendixsec
   \global\let\subsection = \appendixsubsec
   \global\let\subsubsection = \appendixsubsubsec
@@ -3768,6 +3796,10 @@ width0pt\relax} \fi
   \global\secno=0 \global\subsecno=0 \global\subsubsecno=0
     \global\advance\unnumberedno by 1
   %
+  % Since an unnumbered as no number, no prefix for figures.
+  \global\let\chaplevelprefix = \empty
+  \resetallfloatnos
+  %
   % This used to be simply \message{#1}, but TeX fully expands the
   % argument to \message.  Therefore, if #1 contained @-commands, TeX
   % expanded them.  For example, in `@unnumbered The @cite{Book}', TeX
@@ -3779,7 +3811,8 @@ width0pt\relax} \fi
   % \the<toks register> to achieve this: TeX expands \the<toks> only once,
   % simply yielding the contents of <toks register>.  (We also do this for
   % the toc entries.)
-  \toks0 = {#1}\message{(\the\toks0)}%
+  \toks0 = {#1}%
+  \message{(\the\toks0)}%
   %
   \chapmacro{#1}{Ynothing}{\the\unnumberedno}%
   %
@@ -4646,7 +4679,7 @@ width0pt\relax} \fi
 % @format: same as @display except don't narrow margins.
 %
 \def\format{\begingroup
-  \let\nonarrowing = t
+  \let\nonarrowing = t%
   \nonfillstart
   \let\Eformat = \nonfillfinish
   \gobble
@@ -4667,7 +4700,7 @@ width0pt\relax} \fi
 % @flushright.
 %
 \def\flushright{\begingroup
-  \let\nonarrowing = t
+  \let\nonarrowing = t%
   \nonfillstart
   \let\Eflushright = \nonfillfinish
   \advance\leftskip by 0pt plus 1fill
@@ -6156,13 +6189,22 @@ width0pt\relax} \fi
 % But it seemed the best name for the future.
 % 
 \def\float{\parsearg\parsefloat}
-\def\parsefloat#1{\dofloat #1,\finish}
+\def\parsefloat#1{\dofloat #1,,\finish}
 
-% #1 is the text label for this float, typically "Figure", "Table",
-% "Example", etc.  #2 is optional and ignored; it will be for specifying
-% the positions allowed to float to (here, top, bottom).
+% #1 is the optional text label for this float, typically "Figure",
+% "Table", "Example", etc.  Can't contain commas.  If omitted, this
+% float will not be numbered and cannot be referred to.
 % 
-\def\dofloat#1,#2\finish{\vtop\bgroup
+% #2 is optional and ignored; it will be for specifying the positions
+% allowed to float to (here, top, bottom).
+% 
+% We keep a separate counter for each FLOATTYPE, which we reset at each
+% chapter-level command.
+\let\resetallfloatnos=\empty
+%
+\def\dofloat#1,#2,#3\finish{\vtop\bgroup
+  \def\floattype{#1}%
+  \def\floatloc{#2}% we do nothing with this yet.
   % xx should we indent the whole thing? center it?
   % 
   % allow @[short]caption now.
@@ -6172,12 +6214,58 @@ width0pt\relax} \fi
   \let\thisshortcaption=\empty
   \def\shortcaption##1{\def\thisshortcaption{##1}}%
   %
-  \def\Efloat{%
-    \ifx\thiscaption\empty \else
-      \vskip.5\parskip
-      \thiscaption
-      \vskip\parskip
+  \ifx\floattype\empty \else
+    % For now, assume the FLOATTYPE is entirely letters, so we just use it
+    % in a control sequence name literally.  We want each FLOATTYPE to be
+    % numbered separately (Figure 1, Table 1, Figure 2, ...).
+    \expandafter\let\expandafter\floatno\csname\floattype floatno\endcsname
+    \ifx\floatno\relax
+      % Haven't seen this figure type before, so need to define
+      % the counter for it, and then redefine \floatno.
+      \expandafter\innernewcount\csname\floattype floatno\endcsname
+      \expandafter\let\expandafter\floatno\csname\floattype floatno\endcsname
+      %
+      % Remember to reset this floatno at the next chap.
+      \toks0 = \expandafter{\resetallfloatnos}%
+      \xdef\resetallfloatnos{\the\toks0 \makecsname{\floattype floatno}=0 }%
     \fi
+    \global\advance\floatno by 1
+  \fi
+  %
+  \def\Efloat{%
+    % we have four possibilities:
+    % @float foo & @caption{cap}: foo 1.1: cap
+    % @float foo & no caption:    foo 1.1
+    % @float & @caption(cap):     cap
+    % @float & no caption:
+    %
+    \let\printedsomething = \empty
+    %
+    \ifx\floattype\empty \else
+      \vskip.5\parskip  % space above caption
+      %
+      % Print the float number preceded by the chapter-level number
+      % (empty in the case of unnumbered).  Although there are other
+      % styles of float numbering, we hardwire this one.
+      \floattype\space\chaplevelprefix\the\floatno
+      \let\printedsomething = t%
+    \fi
+    %
+    \ifx\thiscaption\empty \else
+      \ifx\printedsomething\empty
+        \vskip.5\parskip  % space above caption
+      \else
+        :\space  % had a number, so print a colon.
+      \fi
+      %
+      % Print caption text.
+      \thiscaption
+      \let\printedsomething = t%
+    \fi
+    %
+    % Space below caption, if we printed anything.
+    \ifx\printedsomething\empty \else \vskip\parskip \fi
+    %
     \egroup  % end of \vtop
   }%
 }
