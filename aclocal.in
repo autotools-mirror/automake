@@ -2,6 +2,9 @@
 # -*- perl -*-
 # @configure_input@
 
+eval 'exec @PERL@ -S $0 ${1+"$@"}'
+    if 0;
+
 # aclocal - create aclocal.m4 by scanning configure.ac
 # Copyright 1996, 1997, 1998, 1999, 2000, 2001 Free Software Foundation, Inc.
 
@@ -22,10 +25,15 @@
 
 # Written by Tom Tromey <tromey@cygnus.com>.
 
-eval 'exec @PERL@ -S $0 ${1+"$@"}'
-    if 0;
+BEGIN
+{
+  my $prefix = "@prefix@";
+  my $perllibdir = $ENV{'perllibdir'} || "@datadir@/@PACKAGE@";
+  unshift @INC, "$perllibdir";
+}
 
-# aclocal - scan configure.ac and generate aclocal.m4.
+use Automake::General;
+use Automake::XFile;
 
 # Some constants.
 $VERSION = "@VERSION@";
@@ -40,7 +48,7 @@ $acdir = "@datadir@/aclocal";
 $exit_status = 0;
 
 # Name of the top autoconf input: `configure.ac' or `configure.in'.
-$configure_ac = '';
+$configure_ac = find_configure_ac;
 
 # Text to output.
 $output = '';
@@ -216,13 +224,6 @@ sub parse_arguments
 
 sub scan_configure
 {
-    warn "aclocal: both `configure.ac' and `configure.in' present:"
-         . " ignoring `configure.in'\n"
-        if -f 'configure.ac' && -f 'configure.in';
-    $configure_ac = 'configure.in'
-        if -f 'configure.in';
-    $configure_ac = 'configure.ac'
-        if -f 'configure.ac';
     die "aclocal: `configure.ac' or `configure.in' is required\n"
         if !$configure_ac;
 
@@ -407,10 +408,9 @@ sub scan_file
 {
     local ($file) = @_;
 
-    open (FILE, $file)
-	|| die "aclocal: couldn't open `$file': $!\n";
-    local ($contents) = '';
-    while (<FILE>)
+    my $fh = new Automake::XFile $file;
+    my $contents = '';
+    while ($_ = $fh->getline)
     {
 	# Ignore `##' lines.
 	next if /^##/;
@@ -433,7 +433,6 @@ sub scan_file
 	    print STDERR "aclocal: found macro $1 in $file: $.\n" if $verbose;
 	}
     }
-    close (FILE);
 
     return $contents;
 }
@@ -447,17 +446,10 @@ sub write_aclocal
 
     print STDERR "aclocal: writing $output_file\n" if $verbose;
 
-    open (ACLOCAL, "> " . $output_file)
-	|| die "aclocal: couldn't open `$output_file' for writing: $!\n";
+    my $out = new Automake::XFile "> $output_file";
+    print $out
+"# $output_file generated automatically by aclocal $VERSION -*- Autoconf -*-
 
-    # In case we're running under MSWindows, don't write with CRLF.
-    # (This circumvents a bug in at least Cygwin bash where the shell
-    # parsing fails on lines ending with the continuation character '\'
-    # and CRLF.)
-    binmode ACLOCAL;
-
-    print ACLOCAL "# $output_file generated automatically by aclocal $VERSION\n";
-    print ACLOCAL "\
 # Copyright 1996, 1997, 1998, 1999, 2000, 2001
 # Free Software Foundation, Inc.
 # This file is free software; the Free Software Foundation
@@ -469,7 +461,5 @@ sub write_aclocal
 # even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 # PARTICULAR PURPOSE.
 
-";
-    print ACLOCAL $output;
-    close (ACLOCAL);
+$output";
 }
