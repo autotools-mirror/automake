@@ -20,7 +20,9 @@ remake-subd.am remake.am scripts.am subdirs.am tags.am tags-subd.am \
 tags-clean.am \
 texi-version.am texinfos-vars.am texinfos.am \
 libraries-clean.am programs-clean.am data-clean.am \
-COPYING INSTALL texinfo.tex
+COPYING INSTALL texinfo.tex \
+ansi2knr.c ansi2knr.1 \
+aclocal.m4
 
 ## These must all be executable when installed.
 pkgdata_SCRIPTS = config.guess config.sub install-sh mdate-sh mkinstalldirs

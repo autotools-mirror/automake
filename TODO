@@ -1,14 +1,12 @@
-Top priorities:
+Priorities for release:
 * DOCUMENT
+
+
+Other priorities:
 * Must rewrite am_install_var.  Should break into multiple functions.
   This will allow the callers to be a little smarter.
 * Rewrite clean targets.
 * Expand test suite.
-
-BUGS: 
-* if config.h changes, recursive builds will not run even though they should.
-  all should depend on config.h and Makefile
-* shouldn't check depend on all?
 
 Check all require_file errors to see if any should reference a line in
 Makefile.am or configure.in.
@@ -77,15 +75,16 @@ Lex, yacc support:
 	y.tab.c:perly.y
   for yacc and lex source
 * if AC_PROG_LEX used, ensure LEXLIB is in foo_LDADD
+* require AC_DECL_YYTEXT for lex
+
+require AC_PROG_CXX if any C++ source files found?
+Better support for C++ all around
 
 Write autoconf macro to do all work necessary for automake.  Eg define
 PACKAGE, VERSION, etc.
 
 'maintainer-clean' should "rm -rf .deps".  Ditto distclean
 Should look for clean-local targets in Makefile.am.
-
-Think about writing a small tool to guess what the local Makefile.am
-should look like.
 
 It might be cool to generate .texi dependencies by grepping for
 @include.  (If done, it should be done the same way C dependencies are
@@ -97,6 +96,8 @@ package by GNU standards or by automake?
 Some things for --strictness=gnits:
 * "cd $(foo); something" is an error in a rule.  Should be:
   "cd $(foo) && something"
+* Look for 'ln -s' and warn about using $(LN) and AC_PROG_LN_S
+* Look for $(LN) and require AC_PROG_LN_S
 
 automake.in: should ".cc" really -> "$o"?  This doesn't really seem
 right, but maybe it is so names can be rewritten uniformly?  Must
@@ -169,21 +170,9 @@ DIST_SUBDIRS   directories which are copied verbatim into the
                only example code (which don't have their own
                makefile).  This variable might be a bad idea.
 
-lib_LIBADD	code conditionally included in a library
-		This probably needs to be redone anyway.
-
-SUFFIXES	additional suffixes
-
-Document customary ordering of Makefile.am.  From Franc,ois.
+Document customary ordering of Makefile.am.  From François.
 
 Must document BUILT_SOURCES variable.  See depend.am.
-
-How to deal with @LIBOBJS@.
-configure scanning
-putting .h files into blah_SOURCES is ok now
-version.texi handling
-gettext support
-all options
 
 Should include extended version of diagram from Autoconf (suggested by
 Greg Woods)
@@ -217,6 +206,27 @@ building utility?  Must check.  maybe it would be possible to deal
 with all the different package utilities somehow.
 
 ================================================================
+
+A tool to guess what the local Makefile.am should look like:
+
+* Probably integrate with autoscan
+* Use various simple rules to determine what to do:
+  * get name of top directory, sans version info
+  * search for .c files with 'main' in them
+    * if in main.c, use directory name for program
+    * if in more than one, generate multiple programs
+    * if not found, generate a library named after directory
+  * order subdir searches correctly: lib first, src last
+  * assume 'testsuite' dir means we are using dejagnu
+* maybe be smart about reading existing Makefile.am, so tool
+  can be run for incremental changes?  You could imagine:
+
+	Makefile.am:
+		autoproject --incremental
+
+================================================================
+
+Stuff NOT to do, and why:
 
 consider auto-including any file that matches "*.in".
   [ no: po/Makefile.in shouldn't be included ]

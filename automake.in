@@ -51,10 +51,10 @@ $GNITS = 2;
 # Variables global to entire run.
 
 # Strictness level as set on command line.
-$default_strictness = $NORMAL;
+$default_strictness = $GNU;
 
 # Name of strictness level, as set on command line.
-$default_strictness_name = 'normal';
+$default_strictness_name = 'gnu';
 
 # This is TRUE if GNU make specific automatic dependency generation
 # code should be included in generated Makefile.in.
@@ -115,8 +115,12 @@ $seen_path_xtra = 0;
 # Whether YACC variable has been seen in configure.in.
 $seen_prog_yacc = 0;
 
-# TRUE if we've seen AC_CANONICAL_(HOST|SYSTEM).
+# TRUE if we've seen AC_CANONICAL_(HOST|SYSTEM).  The presence of
+# AC_CHECK_TOOL also sets this.
 $seen_canonical = 0;
+
+# TRUE if we've seen AC_PROG_RANLIB.
+$seen_ranlib = 0;
 
 # Charsets used by maintainer and in distribution.  MAINT_CHARSET is
 # handled in a funny way: if seen in the top-level Makefile.am, it is
@@ -157,9 +161,13 @@ foreach $am_file (@input_files)
     }
 }
 
-&am_conf_error (($scripts_installed ? 'fp_PROG_INSTALL' : 'AC_PROG_INSTALL')
-		. " must be used in configure.in")
-    unless $seen_prog_install > $scripts_installed;
+if ($seen_prog_install <= $scripts_installed)
+{
+    &am_conf_error (($scripts_installed ? 'fp_PROG_INSTALL' : 'AC_PROG_INSTALL')
+		    . " must be used in configure.in");
+    &keyed_aclocal_warning ('fp_PROG_INSTALL')
+	if $scripts_installed;
+}
 
 exit $exit_status;
 
@@ -420,13 +428,16 @@ sub get_object_extension
 	push (@suffixes, '.c', '.o');
 	push (@clean, 'compile');
 
-	if (defined $options{'ansi2knr'} || defined $contents{'@kr@'})
+	if (defined $options{'ansi2knr'})
 	{
-	    &am_line_error ((defined $options{'ansi2knr'}
-			     ? 'AUTOMAKE_OPTIONS'
-			     : '@kr@'),
-			    "option \`ansi2knr' in use but \`fp_C_PROTOTYPES' not in configure.in")
-		if ! $fp_c_prototypes;
+	    if (! $fp_c_prototypes)
+	    {
+		&am_line_error ('AUTOMAKE_OPTIONS',
+				"option \`ansi2knr' in use but \`fp_C_PROTOTYPES' not in configure.in");
+		&keyed_aclocal_warning ('fp_C_PROTOTYPES');
+		# Only give this error once.
+		$fp_c_prototypes = 1;
+	    }
 
 	    $dir_holds_sources = '$o';
 	    push (@suffixes, '._c', '._o');
@@ -524,7 +535,6 @@ sub handle_programs
 					 'programs', 'PROGRAMS',
 					 'bin', 'sbin', 'libexec', 'pkglib',
 					 'noinst');
-    # FIXME error if PROGRAMS defined but no blah_PROGRAMS defined.
     return if ! @proglist;
 
     local ($obj) = &get_object_extension;
@@ -552,8 +562,16 @@ sub handle_libraries
     local (@liblist) = &am_install_var ('-no-all', '-clean',
 					'libraries', 'LIBRARIES',
 					'lib', 'pkglib', 'noinst');
-    # FIXME error if LIBRARIES defined but no blah_LIBRARIES defined.
     return if ! @liblist;
+
+    if (! $seen_ranlib)
+    {
+	# FIXME need am_line_error here.  But we don't know which
+	# variable exists.  Must add a loop...
+	&am_error ("building a library but \`AC_PROG_RANLIB' not in configure.in");
+	# Only get this error once.
+	$seen_ranlib = 1;
+    }
 
     # Generate _LIBFILES variables.  Too bad we can't do this in
     # am_install_var.
@@ -1222,7 +1240,6 @@ sub handle_configure
 	{
 	    # FIXME this restriction should be lifted.
 	    # FIXME first see if it is even needed as-is.
-	    # FIXME should jump to line in configure.in.
 	    &am_line_error ($config_header_line,
 			    "argument to AC_CONFIG_HEADER contains \`/'\n")
 		if ($config_header =~ /\//);
@@ -1705,6 +1722,7 @@ sub scan_configure
 	}
 
 	$seen_canonical = 1 if /AC_CANONICAL_(HOST|SYSTEM)/;
+	$seen_canonical = 1 if /AC_CHECK_TOOL/;
 	$seen_path_xtra = 1 if /AC_PATH_XTRA/;
 
 	# Sometimes it is desirable to explicitly set YACC.  For
@@ -1719,6 +1737,7 @@ sub scan_configure
 	$seen_prog_install = 1 if ! $seen_prog_install && /AC_PROG_INSTALL/;
 	$seen_prog_install = 2 if ! $seen_prog_install && /fp_PROG_INSTALL/;
 	$seen_arg_prog = 1 if /AC_ARG_PROGRAM/;
+	$seen_ranlib = 1 if /AC_PROG_RANLIB/;
     }
 
     # Set input files if not specified by user.
@@ -1956,15 +1975,6 @@ sub read_am_file
 	    $output_vars .= $comment . $spacing . $_;
 	    $comment = $spacing = '';
 	    $saw_bk = /\\$/;
-	}
-	elsif ($_ eq "\@kr\@\n")
-	{
-	    # Special case: this means we want automatic
-	    # de-ANSI-fication.  This is deprecated.  Remove in the
-	    # future.
-	    $contents{'@kr@'} = 1;
-	    $content_lines{'@kr@'} = $.;
-	    &am_line_error ('@kr@', '`@kr@\' is deprecated; put `ansi2knr\' in AUTOMAKE_OPTIONS instead');
 	}
 	else
 	{
@@ -2498,6 +2508,13 @@ sub am_conf_error
     # FIXME can run in subdirs.
     warn "automake: configure.in: ", join (' ', @_), "\n";
     $exit_status = 1;
+}
+
+# Tell user where our aclocal.m4 is, but only once.
+sub keyed_aclocal_warning
+{
+    local ($key) = @_;
+    warn "automake: macro \`$key' can be found in ${am_dir}/aclocal.m4\n";
 }
 
 # Print usage information.
