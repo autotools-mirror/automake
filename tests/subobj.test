@@ -1,0 +1,26 @@
+#! /bin/sh
+
+# Test of subdir objects with C.
+
+. $srcdir/defs || exit 1
+
+cat >> configure.in << 'END'
+AM_PROG_CC_C_O
+AC_PROG_CC
+END
+
+cat > Makefile.am << 'END'
+AUTOMAKE_OPTIONS = subdir-objects
+bin_PROGRAMS = wish
+wish_SOURCES = generic/a.c generic/b.c
+END
+
+: > compile
+
+$AUTOMAKE || exit 1
+
+fgrep 'generic/a.o' Makefile.in || exit 1
+grep '[^/]a\.o' Makefile.in && exit 1
+
+# Opportunistically test for a different bug.
+grep '^generic/b.o:.*dirstamp' Makefile.in
