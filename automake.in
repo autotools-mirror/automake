@@ -851,8 +851,9 @@ sub get_object_extension
 	local ($xform) = &transform ('DEFAULT_INCLUDES' => $default_include);
 	$output_vars .= &file_contents ('comp-vars', $xform);
 
-	$xform = $seen_objext ? 's/^OBJEXT//;' : 's/^OBJEXT.*$//;';
-	$output_rules .= &file_contents ('compile', $xform);
+	$output_rules .=
+	  &file_contents ('compile',
+			  &transform_cond ('OBJEXT' => $seen_objext));
 
 	# If using X, include some extra variable definitions.  NOTE
 	# we don't want to force these into CFLAGS or anything,
@@ -2335,15 +2336,7 @@ sub handle_texinfo
 
     # Set transform for including texinfos.am.  First, handle --cygnus
     # stuff.
-    local ($xform);
-    if ($cygnus_mode)
-    {
-	$xform = 's/^NOTCYGNUS.*$//; s/^CYGNUS//;';
-    }
-    else
-    {
-	$xform = 's/^CYGNUS.*$//; s/^NOTCYGNUS//;';
-    }
+    my $xform = &transform_cond ('CYGNUS' => $cygnus_mode);
 
     # Handle location of texinfo.tex.
     local ($need_texi_file) = 0;
@@ -2541,17 +2534,9 @@ sub handle_tags
 		$config .= &basename ($one_hdr);
 	    }
 	}
-	local $xform = &transform ('CONFIG' => $xform,
-				   'DIRS'   => join (' ', @tag_deps));
-
-	if (&variable_defined ('SUBDIRS'))
-	{
-	    $xform .= 's/^SUBDIRS//;';
-	}
-	else
-	{
-	    $xform .= 's/^SUBDIRS.*$//;';
-	}
+	my $xform = &transform ('CONFIG' => $xform,
+				'DIRS'   => join (' ', @tag_deps));
+	$xform .= &transform_cond ('SUBDIRS' => &variable_defined ('SUBDIRS'));
 
 	$output_rules .= &file_contents ('tags', $xform);
 	$output_rules .= &file_contents ('tags-clean');
@@ -2586,23 +2571,8 @@ sub handle_dist_worker
     my $xform = '';
 
     # Initialization; only at top level.
-    if ($relative_dir eq '.')
-    {
-        $xform .= 's/\@TOPDIR\@//g;';
-    }
-    else
-    {
-        $xform .= 's/\@TOPDIR\@.*//g;';
-    }
-
-    if (defined $options{'check-news'})
-    {
-        $xform .= 's/\@CK-NEWS\@//g;';
-    }
-    else
-    {
-        $xform .= 's/\@CK-NEWS\@.*//g;';
-    }
+    my $xform = &transform_cond ('TOPDIR'  => ($relative_dir eq '.'),
+				 'CK-NEWS' => defined $options{'check-news'});
 
     # Scan EXTRA_DIST to see if we need to distribute anything from a
     # subdir.  If so, add it to the list.  I didn't want to do this
@@ -2646,17 +2616,6 @@ sub handle_dist_worker
         $xform .= 's/.*\@DISTDIRS\@.*//g;';
     }
 
-    if ($cygnus_mode)
-    {
-	$xform .= 's/\@CYGNUS\@\t*/\t/g;';
-        $xform .= 's/.*\@NCYGNUS\@.*//g;';
-    }
-    else
-    {
-	$xform .= 's/\@NCYGNUS\@\t*/\t/g;';
-        $xform .= 's/.*\@CYGNUS\@.*//g;';
-    }
-
     # If we have SUBDIRS, create all dist subdirectories and do
     # recursive build.
     if (&variable_defined ('SUBDIRS'))
@@ -2693,19 +2652,17 @@ sub handle_dist_worker
 	    &define_pretty_variable ('DIST_SUBDIRS', '', '$(SUBDIRS)');
 	}
 
-	$xform .= ('s/\@SUBDIRS\@//g;'
-		   . &transform ('DIST_SUBDIR_NAME'
-				 => $dist_subdir_name,
-				 'TOP_DISTDIR'
-				 => (($relative_dir eq '.')
-				     ? 'distdir' : 'top_distdir')));
-    }
-    else
-    {
-	$xform .= 's/\@SUBDIRS\@.*//g;';
+	my $top_distdir = ($relative_dir eq '.') ? 'distdir' : 'top_distdir';
+	$xform .= &transform ('DIST_SUBDIR_NAME' => $dist_subdir_name,
+			      'TOP_DISTDIR'      => $top_distdir);
     }
 
-    $output_rules .= &file_contents ('distdir', $xform);
+    $output_rules .=
+      &file_contents ('distdir',
+		      $xform
+		      . &transform_cond ('CYGNUS' => $cygnus_mode,
+					 'SUBDIRS'
+					 => &variable_defined ('SUBDIRS')));
 
     # If the target `dist-hook' exists, make sure it is run.  This
     # allows users to do random weird things to the distribution
@@ -2832,24 +2789,9 @@ sub handle_dist
     if ($relative_dir eq '.')
     {
 	# Rule to check whether a distribution is viable.
-	local ($xform) = '';
-
-	if (&target_defined ('distcheck-hook'))
-	{
-	    $xform .= 's/^DISTHOOK//;';
-	}
-	else
-	{
-	    $xform .= 's/^DISTHOOK.*$//;';
-	}
-	if ($seen_gettext)
-	{
-	    $xform .= 's/^GETTEXT//;';
-	}
-	else
-	{
-	    $xform .= 's/^GETTEXT.*$//;';
-	}
+	my ($xform) =
+	  &transform_cond ('DISTHOOK' => &target_defined ('distcheck-hook'),
+			   'GETTEXT'  => $seen_gettext);
 
 	# Arg, this file should have been named `distcheck'.
 	$output_rules .= &file_contents ('dist', $xform);
@@ -2891,11 +2833,11 @@ sub add_depend2
     my $flag = $language_map{"$lang-flags"};
 
     # First include code for ordinary objects.
-    local ($xform, $ext);
+    my ($xform, $ext);
     $xform = &transform ('PFX'  => $pfx,
 			 'FPFX' => $fpfx);
-    $xform .= $seen_objext  ? 's/^OBJEXT//;'  : 's/^OBJEXT.*$//;';
-    $xform .= $seen_libtool ? 's/^LIBTOOL//;' : 's/^LIBTOOL.*$//;';
+    $xform .= &transform_cond ('OBJEXT'  => $seen_objext,
+			       'LIBTOOL' => $seen_libtool);
 
     # This function can be called even when we don't want dependency
     # tracking.  This happens when we need an explicit rule for some
@@ -3869,14 +3811,8 @@ sub handle_clean
     # Don't include `MAINTAINER'; it is handled specially below.
     foreach $name ('MOSTLY', '', 'DIST')
     {
-	if (! &variable_defined ($name . 'CLEANFILES'))
-	{
-	    $xform .= 's/^' . $name . 'CLEAN.*$//;';
-	}
-	else
-	{
-	    $xform .= 's/^' . $name . 'CLEAN//;';
-	}
+      $xform .= &transform_cond ("${name}CLEAN"
+				 => &variable_defined ("${name}CLEANFILES"));
     }
 
     # Built sources are automatically removed by maintainer-clean.
@@ -3899,16 +3835,11 @@ sub handle_clean
 		   . 's,\@MFILES\@,' . join (' ', @maintainer_clean_files)
 		   . ',;');
     }
-    if ($recursive_install)
-    {
-	$xform .= 's/^NSUBDIRS.*$//;';
-    }
-    else
-    {
-	$xform .= 's/^NSUBDIRS//;';
-    }
 
-    $output_rules .= &file_contents ('clean', $xform);
+    $output_rules .=
+      &file_contents ('clean',
+		      $xform
+		      . &transform_cond ('SUBDIRS' => $recursive_install));
 
     foreach ('clean', 'distclean', 'mostlyclean', 'maintainer-clean')
       {
@@ -3976,16 +3907,9 @@ sub handle_tests_dejagnu
 {
     push (@check_tests, 'check-DEJAGNU');
 
-    local ($xform);
-    if ($cygnus_mode)
-    {
-        $xform = 's/^CYGNUS//;';
-    }
-    else
-    {
-        $xform = 's/^CYGNUS.*$//;';
-    }
-    $output_rules .= &file_contents ('dejagnu', $xform);
+    $output_rules .=
+      &file_contents ('dejagnu',
+		      &transform_cond ('CYGNUS' => $cygnus_mode));
 
     # In Cygnus mode, these are found in the build tree.
     # Otherwise they are looked for in $PATH.
@@ -7097,23 +7021,49 @@ sub file_contents
 }
 
 
+# $REGEXP
 # &transform (%PAIRS)
 # -------------------
 # Create a replacement expression suitable for file_contents
 # to replace each key of %PAIRS by its value.
-sub transform
+sub transform (%)
 {
-    local (%pairs) = @_;
-    local ($result) = '';
+    my (%pairs) = @_;
+    my ($result) = '';
 
-    local ($quoted);
-    foreach $pattern (sort keys %pairs)
+    foreach my $token (sort keys %pairs)
     {
-	($quoted = $pairs{$pattern}) =~ s/(\W)/\\$1/g;
-        $result .= 's,\@' . $pattern . '\@,' . $quoted . ',g;';
+        $result .= "s/\Q\@$token\@\E/\Q$pairs{$token}\E/g;";
     }
     return $result;
 }
+
+
+# $REGEXP
+# &transform_cond (%PAIRS)
+# ------------------------
+# For each pair ($TOKEN => $COND), if $COND is positive then create a regexp
+# that removes `?$TOKEN?', otherwise that removes the whole line containing
+# `?$TOKEN?'.  Do the converse for the token `?!$TOKEN?'.
+sub transform_cond (%)
+{
+    my (%pairs) = @_;
+    my ($result) = '';
+
+    foreach my $token (sort keys %pairs)
+    {
+        if ($pairs{$token})
+	{
+	    $result .= "s/\Q?$token?\E//g;s/^.*\Q?!$token?\E.*\$//g;";
+	}
+	else
+	{
+	    $result .= "s/\Q?!$token?\E//g;s/^.*\Q?$token?\E.*\$//g;";
+	}
+    }
+    return $result;
+}
+
 
 # Find all variable prefixes that are used for install directories.  A
 # prefix `zar' qualifies iff:
@@ -7421,23 +7371,13 @@ sub am_install_var
 		next;
 	    }
 
-	    local ($subdir_xform);
-	    if ($strip_subdir)
-	    {
-		$subdir_xform = 's/^NOBASE.*$//; s/^BASE//;';
-	    }
-	    else
-	    {
-		$subdir_xform = 's/^BASE.*$//; s/^NOBASE//;';
-	    }
-
 	    $output_rules .=
 	      &file_contents ($file,
 			      &transform ('DIR'  => $X,
 					  'NDIR' => $nodir_name)
+			      . &transform_cond ('BASE' => $strip_subdir)
 			      . $ltxform
-			      . $cygxform
-			      . $subdir_xform);
+			      . $cygxform);
 
 	    push (@uninstall, 'uninstall-' . $X . $primary);
 	    &depend ('.PHONY', 'uninstall-' . $X . $primary);
