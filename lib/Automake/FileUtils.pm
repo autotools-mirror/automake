@@ -1,4 +1,4 @@
-# Copyright (C) 2003  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2004  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ use vars qw (@ISA @EXPORT);
 @EXPORT = qw (&contents
 	      &find_file &mtime
 	      &update_file &up_to_date_p
-	      &xsystem &xqx);
+	      &xsystem &xqx &dir_has_case_matching_file &reset_dir_cache);
 
 
 =item C<find_file ($filename, @include)>
@@ -309,6 +309,58 @@ sub contents ($)
   return $contents;
 }
 
+
+=item C<dir_has_case_matching_file ($DIRNAME, $FILENAME)>
+
+Return true iff $DIR contains a filename that matches $FILENAME case
+insensitively.
+
+We need to be cautious on case-insensitive case-preserving file
+systems (e.g. Mac OS X's HFS+).  On such systems C<-f 'Foo'> and C<-f
+'foO'> answer the same thing.  Hence if a package distributes its own
+F<CHANGELOG> file, but has no F<ChangeLog> file, automake would still
+try to distribute F<ChangeLog> (because it thinks it exists) in
+addition to F<CHANGELOG>, although it is impossible for these two
+files to be in the same directory (the two filenames designate the
+same file).
+
+=cut
+
+use vars '%_directory_cache';
+sub dir_has_case_matching_file ($$)
+{
+  # Note that print File::Spec->case_tolerant returns 0 even on MacOS
+  # X (with Perl v5.8.1-RC3 at least), so do not try to shortcut this
+  # function using that.
+
+  my ($dirname, $filename) = @_;
+  return 0 unless -f "$dirname/$filename";
+
+  # The file appears to exist, however it might be a mirage if the
+  # system is case insensitive.  Let's browse the directory and check
+  # whether the file is really in.  We maintain a cache of directories
+  # so Automake doesn't spend all its time reading the same directory
+  # again and again.
+  if (!exists $_directory_cache{$dirname})
+    {
+      error "failed to open directory `$dirname'"
+	unless opendir (DIR, $dirname);
+      $_directory_cache{$dirname} = { map { $_ => 1 } readdir (DIR) };
+      closedir (DIR);
+    }
+  return exists $_directory_cache{$dirname}{$filename};
+}
+
+=item C<reset_dir_cache ($dirname)>
+
+Clear C<dir_has_case_matching_file>'s cache for C<$dirname>.
+
+=cut
+
+sub reset_dir_cache ($)
+{
+  delete $_directory_cache{$_[0]};
+}
 
 1; # for require
 
