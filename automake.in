@@ -52,7 +52,7 @@ $AM_PACKAGE_VERSION_PATTERN = "^\\s*\\[?([^]\\s]+)\\]?\\s*\$";
 $AC_CHECK_PATTERN = "AC_(CHECK|PATH)_(PROG|PROGS|TOOL)\\(\\[?([^]),]+)";
 # Just check for alphanumeric in AC_SUBST.  If you do AC_SUBST(5),
 # then too bad.
-$AC_SUBST_PATTERN = "AC_SUBST\\(\\[?(\w+)";
+$AC_SUBST_PATTERN = "AC_SUBST\\(\\[?(\\w+)";
 
 # Constants to define the "strictness" level.
 $FOREIGN = 0;
@@ -1162,7 +1162,7 @@ sub handle_lib_objects
 	}
 	elsif ($lsearch eq '@ALLOCA@')
 	{
-	    push (@dep_files, $lsearch);
+	    push (@dep_list, $lsearch);
 	    &am_line_error ($var,
 			    "\@ALLOCA\@ seen but \`AC_FUNC_ALLOCA' not in \`configure.in'")
 		if ! defined $libsources{'alloca.c'};
@@ -2316,6 +2316,8 @@ sub handle_aclocal_m4
 			  . ($acinclude ? ' acinclude.m4' : '')
 			  . "\n\t"
 			  . 'cd $(srcdir) && aclocal'
+			  . (&variable_defined ('ACLOCAL_AMFLAGS')
+			     ? ' $(ACLOCAL_AMFLAGS)' : '')
 			  . "\n");
     }
 }
@@ -2943,7 +2945,9 @@ sub handle_clean
     local (@deps);
     if ($recursive_install)
     {
-	@deps = ('am', 'recursive');
+	# Do -recursive before -am.  If you aren't doing a parallel
+	# make, this can be nicer.
+	@deps = ('recursive', 'am');
 	&do_one_clean_target ('', 'mostly', '', @deps);
 	&do_one_clean_target ('', '', '', @deps);
 	&do_one_clean_target ('', 'dist', '', @deps);
@@ -4018,14 +4022,14 @@ sub initialize_global_constants
 	 "config.guess", "config.sub", "AUTHORS", "BACKLOG", "ABOUT-GNU",
 	 "libversion.in", "mdate-sh", "mkinstalldirs", "install-sh",
 	 'texinfo.tex', "ansi2knr.c", "ansi2knr.1", 'elisp-comp',
-	 'interlock', 'ylwrap', 'acinclude.m4'
+	 'interlock', 'ylwrap', 'acinclude.m4', @libtoolize_files
 	 );
 
     # Commonly used files we auto-include, but only sometimes.
     @common_sometimes =
 	(
 	 "aclocal.m4", "acconfig.h", "config.h.top",
-	 "config.h.bot", "stamp-h.in", 'stamp-vti', @libtoolize_files
+	 "config.h.bot", "stamp-h.in", 'stamp-vti'
 	 );
 
     $USAGE = "\
