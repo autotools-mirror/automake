@@ -452,7 +452,8 @@ sub get_object_extension
 	    $dir_holds_sources = '$o';
 	    push (@suffixes, '._c', '._o');
 
-	    &require_file ($FOREIGN, 'ansi2knr.c', 'ansi2knr.1');
+	    &require_file_with_line ('AUTOMAKE_OPTIONS', $FOREIGN,
+				     'ansi2knr.c', 'ansi2knr.1');
 
 	    $output_vars .= &file_contents ('kr-vars');
 	    $output_rules .= &file_contents ('compile-kr');
@@ -633,7 +634,8 @@ sub handle_libraries
 			{
 			    ($rewrite = $iter) =~ s/\.c$/.P/;
 			    $dep_files{'$(srcdir)/.deps/' . $rewrite} = 1;
-			    &require_file ($FOREIGN, $iter);
+			    &require_file_with_line ($onelib . '_LIBADD',
+						     $FOREIGN, $iter);
 			}
 		    }
 		}
@@ -643,7 +645,8 @@ sub handle_libraries
 				    "\@ALLOCA\@ seen but \`AC_FUNC_ALLOCA' not in \`configure.in'")
 			if ! defined $libsources{'alloca.c'};
 		    $dep_files{'$(srcdir)/.deps/alloca.P'} = 1;
-		    &require_file ($FOREIGN, 'alloca.c');
+		    &require_file_with_line ($onelib . '_LIBADD', $FOREIGN,
+					     'alloca.c');
 		}
 	    }
 	}
@@ -764,7 +767,8 @@ sub handle_texinfo
 
 	    &push_phony_cleaners ($vti);
 
-	    # Only require once.
+	    # Only require once.  FIXME should be able to use
+	    # require_file_with_line here.
 	    &require_file ($FOREIGN, 'mdate-sh') if ! $done;
 	    ++$done;
 	}
@@ -834,7 +838,8 @@ sub handle_texinfo
 		     # supported.
 		     . "TEXINFOS = " . $contents{'info_TEXINFOS'} . "\n\n");
 
-    # Do some error checking.
+    # Do some error checking.  FIXME should be able to use
+    # require_file_with_line here.
     &require_file ($FOREIGN, 'texinfo.tex');
 }
 
@@ -1192,6 +1197,7 @@ sub handle_subdirs
 		if $contents{'SUBDIRS'} !~ /\bintl\b/;
     }
 
+    # FIXME should be able to use require_file_with_line here.
     &require_file ($FOREIGN, 'ABOUT-NLS') if $seen_gettext;
 
     return if ! defined $contents{'SUBDIRS'};
@@ -1266,10 +1272,12 @@ sub handle_configure
 	{
 	    # FIXME this restriction should be lifted.
 	    # FIXME first see if it is even needed as-is.
+	    # FIXME shouldn't this message reference configure.in?
 	    &am_line_error ($config_header_line,
 			    "argument to AC_CONFIG_HEADER contains \`/'\n")
 		if ($config_header =~ /\//);
 
+	    # FIXME should be able to use require_file_with_line here.
 	    &require_file ($FOREIGN, $config_header);
 
 	    # Header defined and in this directory.
@@ -1340,6 +1348,7 @@ sub handle_configure
 			  . ($relative_dir eq '.' ? '' : '$(subdir)/')
 			  . '$@ CONFIG_HEADERS= ./config.status'
 			  . "\n");
+	# FIXME should be able to use require_file_with_line here.
 	&require_file ($FOREIGN, $local . '.in');
     }
 }
@@ -2470,9 +2479,9 @@ sub am_install_var
 # Usage: require_file (strictness, file)
 # strictness is the strictness level at which this file becomes
 # required.
-sub require_file
+sub require_file_with_line
 {
-    local ($mystrict, @files) = @_;
+    local ($line, $mystrict, @files) = @_;
     local ($file, $fullfile);
 
     foreach $file (@files)
@@ -2502,17 +2511,23 @@ sub require_file
 
 		# FIXME this is a hack.  Should have am_warn.
 		local ($save) = $exit_status;
-		&am_error
-		    ("required file \"$fullfile\" not found; installing");
+		&am_line_error
+		    ($line,
+		     "required file \"$fullfile\" not found; installing");
 		$exit_status = $save;
 	    }
 	    else
 	    {
 		# Only an error if strictness constraint violated.
-		&am_error ("required file \"$fullfile\" not found");
+		&am_error ($line, "required file \"$fullfile\" not found");
 	    }
 	}
     }
+}
+
+sub require_file
+{
+    &require_file_with_line ('', @_);
 }
 
 # Require a file that is also required by Autoconf.  Looks in
@@ -2654,8 +2669,10 @@ sub am_line_error
     local ($symbol, @args) = @_;
 
     # If SYMBOL not already a line number, look it up in Makefile.am.
-    $symbol = $content_lines{$symbol} unless $symbol =~ /^\d+$/;
-    warn "${am_file}.am:", $symbol, ": ", join (' ', @args),
+    # Use \d* and not \d+ so that empty symbol will pass through.
+    $symbol = $content_lines{$symbol} unless $symbol =~ /^\d*$/;
+    $symbol .= ': ' if $symbol;
+    warn "${am_file}.am:", $symbol, join (' ', @args),
          "\n";
     $exit_status = 1;
 }
