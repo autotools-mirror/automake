@@ -3013,7 +3013,7 @@ sub handle_configure
 	local ($one_fullname) = shift (@local_fullnames);
 	local ($one_name) = shift (@local_names);
 	$hdr_index += 1;
-	local ($header_dir) = &dirname ($one_hdr);
+	local ($header_dir) = &dirname ($one_name);
 
 	# If the header is in the current directory we want to build
 	# the header here.  Otherwise, if we're at the topmost
@@ -3025,13 +3025,11 @@ sub handle_configure
 	    local ($ch_sans_dir, $cn_sans_dir, $stamp_dir);
 	    if ($relative_dir eq $header_dir)
 	    {
-		$ch_sans_dir = &basename ($one_hdr);
 		$cn_sans_dir = &basename ($one_name);
 		$stamp_dir = '';
 	    }
 	    else
 	    {
-		$ch_sans_dir = $one_hdr;
 		$cn_sans_dir = $one_name;
 		if ($header_dir eq '.')
 		{
@@ -3040,6 +3038,41 @@ sub handle_configure
 		else
 		{
 		    $stamp_dir = $header_dir . '/';
+		}
+	    }
+
+	    # Compute relative path from directory holding output
+	    # header to directory holding input header.  FIXME:
+	    # doesn't handle case where we have multiple inputs.
+	    if (&dirname ($one_hdr) eq $relative_dir)
+	    {
+		$ch_sans_dir = &basename ($one_hdr);
+	    }
+	    else
+	    {
+		local (@rel_out_path, $rel_path);
+		# FIXME this chunk of code should be its own sub.
+		# It is used elsewhere.
+		foreach (split (/\//, $relative_dir))
+		{
+		    next if $_ eq '' || $_ eq '.';
+		    if ($_ eq '..')
+		    {
+			# FIXME: actually this is an error.
+			pop @rel_out_path;
+		    }
+		    else
+		    {
+			push (@rel_out_path, '..');
+		    }
+		}
+		if (@rel_out_path)
+		{
+		    $ch_sans_dir = join ('/', @rel_out_path) . '/' . $one_hdr;
+		}
+		else
+		{
+		    $ch_sans_dir = $one_hdr;
 		}
 	    }
 
@@ -3077,9 +3110,10 @@ sub handle_configure
 	    $output_rules .= &file_contents_with_transform ($xform,
 							    'remake-hdr');
 
-	    &create ("${relative_dir}/${stamp_dir}${stamp_name}.in");
+	    local ($out_dir) = &dirname ($ch_sans_dir);
+	    &create ("${relative_dir}/${out_dir}/${stamp_name}.in");
 	    &require_file_with_conf_line ($config_header_line, $FOREIGN,
-					  "${stamp_dir}${stamp_name}.in");
+					  "${out_dir}/${stamp_name}.in");
 
 	    $distclean_config .= ' ' if $distclean_config;
 	    $distclean_config .= $cn_sans_dir;
