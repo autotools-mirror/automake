@@ -2308,6 +2308,7 @@ sub handle_single_transform_list ($$$$@)
         my $directory = $1 || '';
         my $base = $2;
         my $extension = $3;
+	my $full_ansi = $full;	# We'll add `$U' if needed.
 
         # We must generate a rule for the object if it requires its own flags.
         my $renamed = 0;
@@ -2427,7 +2428,12 @@ sub handle_single_transform_list ($$$$@)
             {
                 my $obj_sans_ext = substr ($object, 0,
 					   - length ($this_obj_ext));
-		my $val = ("$full $obj_sans_ext "
+		if ($lang->ansi && defined $options{'ansi2knr'})
+		  {
+		    $full_ansi =~ s/$KNOWN_EXTENSIONS_PATTERN$/\$U$&/;
+		  }
+
+		my $val = ("$full_ansi $obj_sans_ext "
 			   # Only use $this_obj_ext in the derived
 			   # source case because in the other case we
 			   # *don't* want $(OBJEXT) to appear here.
@@ -2524,7 +2530,7 @@ sub handle_single_transform_list ($$$$@)
             # dependency.
             if ($directory ne '' || $renamed)
             {
-                push (@dep_list, $full);
+                push (@dep_list, $full_ansi);
             }
 
             # If resulting object is in subdir, we need to make

@@ -30,6 +30,7 @@ ansi5.test \
 ansi6.test \
 ansi7.test \
 ansi8.test \
+ansi9.test \
 ar.test \
 asm.test \
 autoheader.test \
