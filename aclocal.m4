@@ -1,4 +1,4 @@
-# aclocal.m4 generated automatically by aclocal 1.4c
+# aclocal.m4 generated automatically by aclocal 1.4e
 
 # Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000
 # Free Software Foundation, Inc.
@@ -62,13 +62,8 @@ AC_DEFINE_UNQUOTED(VERSION, "$VERSION", [Version number of package])])
 
 # Autoconf 2.50 wants to disallow AM_ names.  We explicitly allow
 # the ones we care about.
-ifdef([m4_pattern_allow], [m4_pattern_allow([AM_CFLAGS])])
-ifdef([m4_pattern_allow], [m4_pattern_allow([AM_CPPFLAGS])])
-ifdef([m4_pattern_allow], [m4_pattern_allow([AM_CXXFLAGS])])
-ifdef([m4_pattern_allow], [m4_pattern_allow([AM_OBJCFLAGS])])
-ifdef([m4_pattern_allow], [m4_pattern_allow([AM_FFLAGS])])
-ifdef([m4_pattern_allow], [m4_pattern_allow([AM_RFLAGS])])
-ifdef([m4_pattern_allow], [m4_pattern_allow([AM_GCJFLAGS])])
+ifdef([m4_pattern_allow],
+      [m4_pattern_allow([^AM_(C|CPP|CXX|OBJC|F|R|GCJ)FLAGS])])dnl
 
 # Some tools Automake needs.
 AC_REQUIRE([AM_SANITY_CHECK])dnl
@@ -225,13 +220,17 @@ am_aux_dir=`CDPATH=:; cd $ac_aux_dir && pwd`
 AC_DEFUN([AM_PROG_INSTALL_STRIP],
 [AC_REQUIRE([AM_MISSING_INSTALL_SH])
 dnl Don't test for $cross_compiling = yes, it might be `maybe'...
-if test "$cross_compiling" != no; then
-  # since we are cross-compiling, we need to check for a suitable `strip'
-  AM_PROG_STRIP
-  if test -z "$STRIP"; then
-    AC_MSG_WARN([strip missing, install-strip will not strip binaries])
-  fi
-fi
+# We'd like to do this but we can't because it will unconditionally
+# require config.guess.  One way would be if autoconf had the capability
+# to let us compile in this code only when config.guess was already
+# a possibility.
+#if test "$cross_compiling" != no; then
+#  # since we are cross-compiling, we need to check for a suitable `strip'
+#  AM_PROG_STRIP
+#  if test -z "$STRIP"; then
+#    AC_MSG_WARN([strip missing, install-strip will not strip binaries])
+#  fi
+#fi
 
 # If $STRIP is defined (either by the user, or by AM_PROG_STRIP),
 # instruct install-strip to use install-sh and the given $STRIP program.
@@ -247,20 +246,21 @@ if test -z "$STRIP"; then
   INSTALL_STRIP_PROGRAM_ENV=''
 else
   _am_dirpart="`echo $install_sh | sed -e 's,//*[[^/]]*$,,'`"
-  INSTALL_STRIP_PROGRAM="\${SHELL} \`cd $_am_dirpart && pwd\`/install-sh -c -s"
-  INSTALL_STRIP_PROGRAM_ENV="STRIPPROG='$STRIP'"
+  INSTALL_STRIP_PROGRAM="\${SHELL} \`CDPATH=: && cd $_am_dirpart && pwd\`/install-sh -c -s"
+  INSTALL_STRIP_PROGRAM_ENV="STRIPPROG='\$(STRIP)'"
 fi
+AC_SUBST([STRIP])
 AC_SUBST([INSTALL_STRIP_PROGRAM])
 AC_SUBST([INSTALL_STRIP_PROGRAM_ENV])])
 
-AC_DEFUN([AM_PROG_STRIP],
-[# Check for `strip', unless the installer
+#AC_DEFUN([AM_PROG_STRIP],
+#[# Check for `strip', unless the installer
 # has set the STRIP environment variable.
 # Note: don't explicitly check for -z "$STRIP" here because
 # that will cause problems if AC_CANONICAL_* is AC_REQUIREd after
 # this macro, and anyway it doesn't have an effect anyway.
-AC_CHECK_TOOL([STRIP],[strip])
-])
+#AC_CHECK_TOOL([STRIP],[strip])
+#])
 
 # serial 3
 

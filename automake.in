@@ -5482,9 +5482,10 @@ sub target_defined
 # Correctly returns the empty string when there are no conditions.
 sub make_condition
 {
-    my $res = join ('@@', @_);
-    return ''
-      unless $res;
+    my $res = conditional_string (@_);
+
+    return $res
+      if $res eq '' or $res eq '#' ;
 
     $res = '@' . $res . '@';
     $res =~ s/ /@@/g;
@@ -5527,7 +5528,7 @@ sub conditional_string
     }
   else
     {
-      return join (' ', uniq (sort (grep (!/^TRUE$/, @stack))));
+      return join (' ', uniq sort grep (!/^TRUE$/, @stack));
     }
 }
 
@@ -5668,8 +5669,8 @@ sub examine_variable
 # If the variable is defined in terms of any variables which are
 # defined conditionally, then this returns a full set of permutations
 # of the subvariable conditions.  For example, if the variable is
-# defined in terms of a variable which is defined for @COND_TRUE@,
-# then this returns both @COND_TRUE@ and @COND_FALSE@.  This is
+# defined in terms of a variable which is defined for COND_TRUE,
+# then this returns both COND_TRUE and COND_FALSE.  This is
 # because we will need to define the variable under both conditions.
 
 sub variable_conditions
@@ -5824,10 +5825,11 @@ sub variable_conditions_sub
 # Issue them in alphabetical order, foo_TRUE before foo_FALSE.
 sub by_condition
 {
+    # Be careful we might be comparing `' or `#'.
     $a =~ /^(.*)_(TRUE|FALSE)$/;
-    my ($aname, $abool) = ($1, $2);
+    my ($aname, $abool) = ($1 || '', $2 || '');
     $b =~ /^(.*)_(TRUE|FALSE)$/;
-    my ($bname, $bbool) = ($1, $2);
+    my ($bname, $bbool) = ($1 || '', $2 || '');
     return ($aname cmp $bname
 	    # Don't bother with IFs, given that TRUE is after FALSE
 	    # just cmp in the reverse order.
@@ -6276,9 +6278,11 @@ sub read_am_file
 	}
 	elsif (/$IF_PATTERN/o)
 	{
-	    &am_line_error ($., "$1 does not appear in AM_CONDITIONAL")
-		if (! $configure_cond{$1});
-	    push (@conditional_stack, "$1_TRUE");
+	    my $cond = $1;
+	    &am_line_error ($., "$cond does not appear in AM_CONDITIONAL")
+		if ! $configure_cond{$cond} && $cond !~ /^TRUE|FALSE$/;
+	    push (@conditional_stack,
+		  ($cond =~ /^TRUE|FALSE$/) ? "$cond" : "${cond}_TRUE");
 	}
 	elsif (/$ELSE_PATTERN/o)
 	{
@@ -6286,14 +6290,14 @@ sub read_am_file
 	    {
 		&am_line_error ($., "else without if");
 	    }
-	    elsif ($conditional_stack[$#conditional_stack] =~ /_FALSE$/)
+	    elsif ($conditional_stack[$#conditional_stack] =~ /^(.*_)?FALSE$/)
 	    {
 		&am_line_error ($., "else after else");
 	    }
 	    else
 	    {
 		$conditional_stack[$#conditional_stack]
-		    =~ s/_TRUE$/_FALSE/;
+		    =~ s/TRUE$/FALSE/;
 	    }
 	}
 	elsif (/$ENDIF_PATTERN/o)
