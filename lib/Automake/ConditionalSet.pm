@@ -311,7 +311,7 @@ sub permutations ($ )
 
 =item C<$prod = $set1->multiply ($set2)>
 
-Multiply to conditional sets.
+Multiply two conditional sets.
 
   my $set1 = new Automake::ConditionalSet
     (new Automake::Conditional ("A_TRUE"),
@@ -327,6 +327,8 @@ C<$set1-E<gt>multiply ($set2)> will return
      new Automake::Conditional ("B_TRUE", "C_FALSE"),;
      new Automake::Conditional ("A_TRUE", "D_FALSE"),
      new Automake::Conditional ("B_TRUE", "D_FALSE"));
+
+The argument can also be a C<Conditional>.
 
 =cut
 
@@ -349,6 +351,7 @@ sub _multiply ($@)
 sub multiply ($$)
 {
   my ($self, $set) = @_;
+  return $self->_multiply ($set) if $set->isa('Automake::Conditional');
   return $self->_multiply ($set->conds);
 }
 
@@ -642,6 +645,61 @@ sub simplify ($)
   my $res = $self->_simplify ;
   $self->{'simplify'} = $res;
   return $res;
+}
+
+=item C<$self-E<gt>sub_conditions ($cond)>
+
+Return the subconditions of C<$self> that contains C<$cond>, with
+C<$cond> stripped.
+
+For instance, consider:
+
+  my $a = new Automake::ConditionalSet
+    (new Automake::Conditional ("A_TRUE", "B_TRUE"),
+     new Automake::Conditional ("A_TRUE", "C_FALSE"),
+     new Automake::Conditional ("A_TRUE", "B_FALSE", "C_TRUE"),
+     new Automake::Conditional ("A_FALSE"));
+  my $b = new Automake::ConditionalSet
+    (new Automake::Conditional ("A_TRUE", "B_FALSE"));
+
+Calling C<$a-E<gt>sub_conditions ($b)> will return the following
+C<ConditionalSet>.
+
+  new Automake::ConditionalSet
+    (new Automake::Conditional ("C_FALSE"), # From A_TRUE C_FALSE
+     new Automake::Conditional ("C_TRUE")); # From A_TRUE B_FALSE C_TRUE"
+
+=cut
+
+sub sub_conditions ($$)
+{
+  my ($self, $subcond) = @_;
+  my @res;
+
+  # Make $subcond blindingly apparent in the ConditionalSet.
+  # For instance `$a->_multiply($b)' (from the POD example) is:
+  #   new Automake::ConditionalSet
+  # 	(new Automake::Conditional ("FALSE"),
+  # 	 new Automake::Conditional ("A_TRUE", "B_FALSE", "C_FALSE"),
+  # 	 new Automake::Conditional ("A_TRUE", "B_FALSE", "C_TRUE"),
+  # 	 new Automake::Conditional ("FALSE"));
+  my $prod = $self->_multiply ($subcond);
+
+  # Now, strip $subcond from the non-false Conditionals.
+  foreach my $c ($prod->conds)
+    {
+      if (! $c->false)
+	{
+	  my @rescond;
+	  foreach my $cc ($c->conds)
+	    {
+	      push @rescond, $cc
+		unless $subcond->has ($cc);
+	    }
+	  push @res, new Automake::Conditional @rescond;
+	}
+    }
+  return new Automake::ConditionalSet @res;
 }
 
 =head1 SEE ALSO

@@ -6119,18 +6119,15 @@ sub conditional_ambiguous_p ($$$)
 #   C = mumble
 #
 # we should have (we display result as conditional strings in this
-# illustration, but we really return Conditional objects):
+# illustration, but we really return ConditionalSet objects):
 #   variable_not_always_defined_in_cond ('A', 'COND1_TRUE COND2_TRUE')
 #     => ()
 #   variable_not_always_defined_in_cond ('A', 'COND1_TRUE')
 #     => ()
 #   variable_not_always_defined_in_cond ('A', 'TRUE')
-#     => ("COND1_FALSE COND2_FALSE COND3_FALSE",
-#         "COND1_FALSE COND2_TRUE COND3_FALSE",
-#         "COND1_TRUE COND2_FALSE COND3_FALSE",
-#         "COND1_TRUE COND2_TRUE COND3_FALSE")
+#     => ("COND1_FALSE COND3_FALSE")
 #   variable_not_always_defined_in_cond ('B', 'COND1_TRUE')
-#     => ("COND3_FALSE")
+#     => ("COND1_TRUE COND3_FALSE")
 #   variable_not_always_defined_in_cond ('C', 'COND1_TRUE')
 #     => ()
 #   variable_not_always_defined_in_cond ('D', 'TRUE')
@@ -6142,35 +6139,15 @@ sub variable_not_always_defined_in_cond ($$)
   my ($var, $cond) = @_;
 
   # It's easy to answer if the variable is not defined.
-  return (TRUE,) unless exists $var_value{$var};
+  return TRUE unless exists $var_value{$var};
 
-  # How does it work?  Let's take the second example:
-  #
-  #   variable_not_always_defined_in_cond ('A', 'COND1_TRUE')
-  #
-  # (1) First, we get the list of conditions where A is defined:
-  #
-  #   ("COND1_TRUE COND2_TRUE", "COND1_TRUE COND2_FALSE", "COND3_TRUE")
-  #
-  # (2) Then we generate the set of inverted conditions:
-  #
-  #   ("COND1_FALSE COND2_TRUE COND3_FALSE",
-  #    "COND1_FALSE COND2_FALSE COND3_FALSE")
-  #
-  # (3) Finally we remove these conditions which are not implied by
-  #     COND1_TRUE.  This yields an empty list and we are done.
-
-  my @res = ();
-  my $cond_defs = variable_conditions ($var); # (1)
-  foreach my $icond ($cond_defs->invert->conds) # (2)
-    {
-      prog_error "->invert returned an input condition"
-	if exists $var_value{$var}{$icond};
-
-      push @res, $icond
-	if ($cond->true_when ($icond)); # (3)
-    }
-  return (new Automake::ConditionalSet @res)->simplify;
+  # Otherwise compute the subconditions where $var isn't defined.
+  return
+    variable_conditions ($var)
+      ->sub_conditions ($cond)
+	->invert
+	  ->simplify
+	    ->multiply ($cond);
 }
 
 # &macro_define($VAR, $OWNER, $TYPE, $COND, $VALUE, $WHERE)

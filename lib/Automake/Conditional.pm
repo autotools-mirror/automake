@@ -77,8 +77,8 @@ Automake::Conditional - record a conjunction of conditions
   # $other and $cond are implied by $both.)
   @conds = Automake::Conditional::reduce ($other, $both, $cond);
 
-  # Invert a Conditional.  This returns a ConditionalSet.
-  $set = $both->not;
+  # Invert a Conditional.  This returns a list of Conditionals.
+  @conds = $both->not;
 
 =head1 DESCRIPTION
 

@@ -318,7 +318,73 @@ sub test_simplify ()
   return 0;
 }
 
-exit (test_basics || test_permutations || test_invert || test_simplify);
+sub test_sub_conditions ()
+{
+  my @tests = ([[["FOO_TRUE", "BAR_FALSE", "BAZ_FALSE"],
+		 ["FOO_TRUE", "BAR_FALSE", "BAZ_TRUE"],
+		 ["FOO_FALSE"]],
+		["FOO_TRUE"],
+		[["BAR_FALSE", "BAZ_FALSE"],
+		 ["BAR_FALSE", "BAZ_TRUE"]]],
+
+	       [[["FOO_TRUE", "BAR_FALSE", "BAZ_FALSE"],
+		 ["FOO_TRUE", "BAR_FALSE", "BAZ_TRUE"],
+		 ["FOO_FALSE"]],
+		["FOO_TRUE", "BAR_FALSE"],
+		[["BAZ_FALSE"],
+		 ["BAZ_TRUE"]]],
+
+	       [[["FOO_TRUE", "BAR_FALSE", "BAZ_FALSE"],
+		 ["FOO_TRUE", "BAR_FALSE", "BAZ_TRUE"],
+		 ["FOO_FALSE"]],
+		["FOO_TRUE", "BAR_TRUE"],
+		[["FALSE"]]],
+
+	       [[["FOO_TRUE", "BAR_FALSE", "BAZ_FALSE"],
+		 ["FOO_TRUE", "BAZ_TRUE"],
+		 ["FOO_FALSE"]],
+		["FOO_TRUE", "BAR_TRUE"],
+		[["BAZ_TRUE"]]],
+
+	       [[["FOO_TRUE", "BAR_FALSE"],
+		 ["FOO_TRUE", "BAR_TRUE"]],
+		["FOO_TRUE", "BAR_TRUE"],
+		[["TRUE"]]],
+
+	       [[["TRUE"]],
+		["TRUE"],
+		[["TRUE"]]],
+
+	       [[["FALSE"]],
+		["TRUE"],
+		[["FALSE"]]],
+
+	       [[["FALSE"]],
+		["FALSE"],
+		[["FALSE"]]]);
+
+  for my $t (@tests)
+    {
+      my $t1 = build_set @{$t->[0]};
+      my $t2 = new Automake::Conditional @{$t->[1]};
+      my $t3 = build_set @{$t->[2]};
+
+      # Make sure simplify() yields the expected result.
+      my $s = $t1->sub_conditions ($t2);
+      if ($s != $t3)
+	{
+	  print " (SC) " . $t1->string . "\n\t"
+	    . $s->string . ' != ' . $t3->string . "\n";
+	  return 1;
+	}
+    }
+}
+
+exit (test_basics
+      || test_permutations
+      || test_invert
+      || test_simplify
+      || test_sub_conditions);
 
 ### Setup "GNU" style for perl-mode and cperl-mode.
 ## Local Variables:
