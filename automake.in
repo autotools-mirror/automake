@@ -1154,14 +1154,18 @@ sub check_libobjs_sources
     }
 }
 
+
+# ($LINKER, @OBJECTS)
+# handle_single_transform_list ($VAR, $DERIVED, $OBJ, @FILES)
+# -----------------------------------------------------------
 # Does much of the actual work for handle_source_transform.
 # Arguments are:
-#   name of resulting executable or library ("derived")
-#   object extension (e.g., `$U.lo')
-#   list of source files to transform
+#   $DERIVED is the name of resulting executable or library
+#   $OBJ is the object extension (e.g., `$U.lo')
+#   @FILES is the list of source files to transform
 # Result is a list
-#   first element is name of linker to use (empty string for default linker)
-#   remaining elements are names of objects
+#   $LINKER is name of linker to use (empty string for default linker)
+#   @OBJECTS are names of objects
 sub handle_single_transform_list
 {
     local ($var, $derived, $obj, @files) = @_;
@@ -1169,260 +1173,260 @@ sub handle_single_transform_list
     local ($nonansi_obj) = $obj;
     $nonansi_obj =~ s/\$U//g;
     local (%linkers_used) = ();
-    if (@files > 0)
+
+    # Turn sources into objects.
+    foreach (@files)
     {
-	# Turn sources into objects.
-	foreach (@files)
-	{
-	    # Configure substitutions in _SOURCES variables are errors.
-	    if (/^\@.*\@$/)
-	    {
-		&am_line_error ($var, "$var includes configure substitution \`$_'");
-		next;
-	    }
+        # Configure substitutions in _SOURCES variables are errors.
+        if (/^\@.*\@$/)
+        {
+            &am_line_error ($var, "$var includes configure substitution \`$_'");
+            next;
+        }
 
-	    # If the source file is in a subdirectory then the `.o' is
-	    # put into the current directory.
+        # If the source file is in a subdirectory then the `.o' is
+        # put into the current directory.
 
-	    # Split file name into base and extension.
-	    local ($full, $directory, $base, $extension, $linker, $object);
-	    next if ! /^((.*)\/)?([^\/]*)\.(.*)$/;
-	    $full = $_;
-	    $directory = $2;
-	    $base = $3;
-	    $extension = $4;
+        # Split file name into base and extension.
+        local ($full, $directory, $base, $extension, $linker, $object);
+        next if ! /^((.*)\/)?([^\/]*)\.(.*)$/;
+        $full = $_;
+        $directory = $2;
+        $base = $3;
+        $extension = $4;
 
-	    local ($xbase) = $base;
+        local ($xbase) = $base;
 
-	    # We must generate a rule for the object if it requires
-	    # its own flags.
-	    local ($rule) = '';
-	    local ($renamed) = 0;
+        # We must generate a rule for the object if it requires
+        # its own flags.
+        local ($rule) = '';
+        local ($renamed) = 0;
 
-	    $extension = &derive_suffix ($extension);
-	    local ($lang) = $extension_map{$extension};
-	    if ($lang)
-	    {
-		&saw_extension ($extension);
-		# Found the language, so see what it says.
-		local ($subr) = 'lang_' . $lang . '_rewrite';
-		# Note: computed subr call.
-		local ($r) = & $subr ($directory, $base, $extension);
-		# Skip this entry if we were asked not to process it.
-		next if $r == $LANG_IGNORE;
+        $extension = &derive_suffix ($extension);
+        local ($lang) = $extension_map{$extension};
+        if ($lang)
+        {
+            &saw_extension ($extension);
+            # Found the language, so see what it says.
+            local ($subr) = 'lang_' . $lang . '_rewrite';
+            # Note: computed subr call.
+            local ($r) = & $subr ($directory, $base, $extension);
+            # Skip this entry if we were asked not to process it.
+            next if $r == $LANG_IGNORE;
 
-		# Now extract linker and other info.
-		$linker = $language_map{$lang . '-linker'};
+            # Now extract linker and other info.
+            $linker = $language_map{$lang . '-linker'};
 
-		local ($this_obj_ext);
-		if ($language_map{$lang . '-ansi-p'})
-		{
-		    $object = $base . $obj;
-		    $this_obj_ext = $obj;
-		}
-		else
-		{
-		    $object = $base . $nonansi_obj;
-		    $this_obj_ext = $nonansi_obj;
-		}
+            local ($this_obj_ext);
+            if ($language_map{$lang . '-ansi-p'})
+            {
+                $object = $base . $obj;
+                $this_obj_ext = $obj;
+            }
+            else
+            {
+                $object = $base . $nonansi_obj;
+                $this_obj_ext = $nonansi_obj;
+            }
 
-		if ($language_map{$lang . '-flags'} ne ''
-		    && &variable_defined ($derived . '_'
-					  . $language_map{$lang . '-flags'}))
-		{
-		    # We have a per-executable flag in effect for this
-		    # object.  In this case we rewrite the object's
-		    # name to ensure it is unique.  We also require
-		    # the `compile' program to deal with compilers
-		    # where `-c -o' does not work.
+            if ($language_map{$lang . '-flags'} ne ''
+                && &variable_defined ($derived . '_'
+                                      . $language_map{$lang . '-flags'}))
+            {
+                # We have a per-executable flag in effect for this
+                # object.  In this case we rewrite the object's
+                # name to ensure it is unique.  We also require
+                # the `compile' program to deal with compilers
+                # where `-c -o' does not work.
 
-		    # We choose the name `DERIVED-OBJECT' to ensure
-		    # (1) uniqueness, and (2) continuity between
-		    # invocations.  However, this will result in a
-		    # name that is too long for losing systems, in
-		    # some situations.  So we provide _SHORTNAME to
-		    # override.
+                # We choose the name `DERIVED-OBJECT' to ensure
+                # (1) uniqueness, and (2) continuity between
+                # invocations.  However, this will result in a
+                # name that is too long for losing systems, in
+                # some situations.  So we provide _SHORTNAME to
+                # override.
 
-		    local ($dname) = $derived;
-		    if (&variable_defined ($derived . '_SHORTNAME'))
-		    {
-			# FIXME: should use the same conditional as
-			# the _SOURCES variable.  But this is really
-			# silly overkill -- nobody should have
-			# conditional shortnames.
-			$dname = &variable_value ($derived . '_SHORTNAME');
-		    }
-		    $object = $dname . '-' . $object;
+                local ($dname) = $derived;
+                if (&variable_defined ($derived . '_SHORTNAME'))
+                {
+                    # FIXME: should use the same conditional as
+                    # the _SOURCES variable.  But this is really
+                    # silly overkill -- nobody should have
+                    # conditional shortnames.
+                    $dname = &variable_value ($derived . '_SHORTNAME');
+                }
+                $object = $dname . '-' . $object;
 
-		    &require_file ($FOREIGN, 'compile')
-			if $lang eq 'c';
+                &require_file ($FOREIGN, 'compile')
+                    if $lang eq 'c';
 
-		    if (! defined $language_map{$lang . '-compile'})
-		    {
-			print STDERR "automake: programming error: $lang flags defined without compiler\n";
-			exit 1;
-		    }
-		    # Compute the rule to compile this object.
-		    local ($flag) = $language_map{$lang . '-flags'};
-		    local ($val) = "(${derived}_${flag}";
-		    ($rule = $language_map{$lang . '-compile'}) =~
-			s/\(AM_$flag/$val/;
+                if (! defined $language_map{$lang . '-compile'})
+                {
+                    print STDERR "automake: programming error: $lang flags defined without compiler\n";
+                    exit 1;
+                }
+                # Compute the rule to compile this object.
+                local ($flag) = $language_map{$lang . '-flags'};
+                local ($val) = "(${derived}_${flag}";
+                ($rule = $language_map{$lang . '-compile'}) =~
+                    s/\(AM_$flag/$val/;
 
-		    $rule .= ' ' . $language_map{$lang . '-output-arg'};
-		    # For C we have to add the -o, because the
-		    # standard rule doesn't include it.
-		    if ($language_map{$lang . '-flags'} eq 'CFLAGS')
-		    {
-			$rule .= ' -o $@';
-		    }
+                $rule .= ' ' . $language_map{$lang . '-output-arg'};
+                # For C we have to add the -o, because the
+                # standard rule doesn't include it.
+                if ($language_map{$lang . '-flags'} eq 'CFLAGS')
+                {
+                    $rule .= ' -o $@';
+                }
 
-		    $renamed = 1;
-		}
+                $renamed = 1;
+            }
 
-		# If rewrite said it was ok, put the object into a
-		# subdir.
-		if ($r == $LANG_SUBDIR && $directory ne '')
-		{
-		    $object = $directory . '/' . $object;
-		    $xbase = $directory . '/' . $base;
-		}
+            # If rewrite said it was ok, put the object into a
+            # subdir.
+            if ($r == $LANG_SUBDIR && $directory ne '')
+            {
+                $object = $directory . '/' . $object;
+                $xbase = $directory . '/' . $base;
+            }
 
-		# If doing dependency tracking, then we can't print
-		# the rule.  If we have a subdir object, we need to
-		# generate an explicit rule.  Actually, in any case
-		# where the object is not in `.' we need a special
-		# rule.  The per-object rules in this case are
-		# generated later, by add_depend2.
-		if (($use_dependencies
-		     && $rule ne ''
-		     && $language_map{$lang . '-autodep'} ne 'no')
-		    || $directory ne '')
-		{
-		    $rule = '';
-		    local ($obj_sans_ext) = substr ($object, 0,
-						    - length ($this_obj_ext));
-		    $lang_specific_files{$lang} .= (' ' . $derived
-						    . ' ' . $full
-						    . ' ' . $obj_sans_ext);
-		}
-	    }
- 	    elsif ($extension eq 'o')
- 	    {
-		# This is probably the result of a direct suffix rule.
-		# In this case we just accept the rewrite.  FIXME:
-		# this fails if we want libtool objects.
-		$object = $base . '.' . $extension;
-		$linker = '';
- 	    }
-	    else
-	    {
-		# No error message here.  Used to have one, but it was
-		# very unpopular.
-		next;
-	    }
+            # If doing dependency tracking, then we can't print
+            # the rule.  If we have a subdir object, we need to
+            # generate an explicit rule.  Actually, in any case
+            # where the object is not in `.' we need a special
+            # rule.  The per-object rules in this case are
+            # generated later, by add_depend2.
+            if (($use_dependencies
+                 && $rule ne ''
+                 && $language_map{$lang . '-autodep'} ne 'no')
+                || $directory ne '')
+            {
+                $rule = '';
+                local ($obj_sans_ext) = substr ($object, 0,
+                                                - length ($this_obj_ext));
+                $lang_specific_files{$lang} .= (' ' . $derived
+                                                . ' ' . $full
+                                                . ' ' . $obj_sans_ext);
+            }
+        }
+        elsif ($extension eq 'o')
+        {
+            # This is probably the result of a direct suffix rule.
+            # In this case we just accept the rewrite.  FIXME:
+            # this fails if we want libtool objects.
+            $object = $base . '.' . $extension;
+            $linker = '';
+        }
+        else
+        {
+            # No error message here.  Used to have one, but it was
+            # very unpopular.
+            next;
+        }
 
-	    $linkers_used{$linker} = 1;
+        $linkers_used{$linker} = 1;
 
-	    push (@result, $object);
+        push (@result, $object);
 
-	    if (defined $object_map{$object})
-	    {
-		if ($object_map{$object} ne $full)
-		{
-		    &am_error ("object \`$object' created by \`$full' and \`$object_map{$object}'");
-		}
-	    }
-	    else
-	    {
-		local (@dep_list) = ();
-		$object_map{$object} = $full;
+        if (defined $object_map{$object})
+        {
+            if ($object_map{$object} ne $full)
+            {
+                &am_error ("object \`$object' created by \`$full' and \`$object_map{$object}'");
+            }
+        }
+        else
+        {
+            local (@dep_list) = ();
+            $object_map{$object} = $full;
 
-		# If file is in subdirectory, we need explicit
-		# dependency.
-		if ($directory ne '' || $renamed)
-		{
-		    push (@dep_list, $full);
-		}
+            # If file is in subdirectory, we need explicit
+            # dependency.
+            if ($directory ne '' || $renamed)
+            {
+                push (@dep_list, $full);
+            }
 
-		# If resulting object is in subdir, we need to make
-		# sure the subdir exists at build time.
-		if ($object =~ /\//)
-		{
-		    # FIXME: check that $DIRECTORY is somewhere in the
-		    # project
+            # If resulting object is in subdir, we need to make
+            # sure the subdir exists at build time.
+            if ($object =~ /\//)
+            {
+                # FIXME: check that $DIRECTORY is somewhere in the
+                # project
 
-		    # We don't allow `..' in object file names for
-		    # *any* source, not just Java.  For Java it just
-		    # doesn't make sense, but in general it is
-		    # a problem because we can't pick a good name for
-		    # the .deps entry.
-		    if ($object =~ /(\/|^)\.\.\//)
-		    {
-			&am_error ("\`$full' contains \`..' component but should not");
-		    }
+                # We don't allow `..' in object file names for
+                # *any* source, not just Java.  For Java it just
+                # doesn't make sense, but in general it is
+                # a problem because we can't pick a good name for
+                # the .deps entry.
+                if ($object =~ /(\/|^)\.\.\//)
+                {
+                    &am_error ("\`$full' contains \`..' component but should not");
+                }
 
-		    push (@dep_list, $directory . '/.dirstamp');
+                push (@dep_list, $directory . '/.dirstamp');
 
-		    # If we're generating dependencies, we also want
-		    # to make sure that the appropriate subdir of the
-		    # .deps directory is created.
-		    if ($use_dependencies)
-		    {
-			push (@dep_list, '.deps/' . $directory . '/.dirstamp');
-		    }
+                # If we're generating dependencies, we also want
+                # to make sure that the appropriate subdir of the
+                # .deps directory is created.
+                if ($use_dependencies)
+                {
+                    push (@dep_list, '.deps/' . $directory . '/.dirstamp');
+                }
 
-		    if (! defined $directory_map{$directory})
-		    {
-			$directory_map{$directory} = 1;
-			$output_rules .= ($directory . "/.dirstamp:\n"
-					  . "\t\@\$(mkinstalldirs) $directory\n"
-					  . "\t\@: > $directory/.dirstamp\n");
-			if ($use_dependencies)
-			{
-			    $output_rules .= ('.deps/' . $directory
-					      . "/.dirstamp:\n"
-					      . "\t\@\$(mkinstalldirs) .deps/$directory\n"
-					      . "\t\@: > .deps/$directory/.dirstamp\n");
-			}
-		    }
-		}
+                if (! defined $directory_map{$directory})
+                {
+                    $directory_map{$directory} = 1;
+                    $output_rules .= ($directory . "/.dirstamp:\n"
+                                      . "\t\@\$(mkinstalldirs) $directory\n"
+                                      . "\t\@: > $directory/.dirstamp\n");
+                    if ($use_dependencies)
+                    {
+                        $output_rules .= ('.deps/' . $directory
+                                          . "/.dirstamp:\n"
+                                          . "\t\@\$(mkinstalldirs) .deps/$directory\n"
+                                          . "\t\@: > .deps/$directory/.dirstamp\n");
+                    }
+                }
+            }
 
-		&pretty_print_rule ($object . ':', "\t", @dep_list)
-		    if scalar @dep_list > 0 || $rule ne '';
+            &pretty_print_rule ($object . ':', "\t", @dep_list)
+                if scalar @dep_list > 0 || $rule ne '';
 
-		# Print the rule if we have one.
-		if ($rule ne '')
-		{
-		    # Turn `$@' into name of our object file.
-		    local ($xform);
-		    ($xform = $object) =~ s,/,\\/,g;
-		    $rule =~ s/\$\@/$xform/;
+            # Print the rule if we have one.
+            if ($rule ne '')
+            {
+                # Turn `$@' into name of our object file.
+                local ($xform);
+                ($xform = $object) =~ s,/,\\/,g;
+                $rule =~ s/\$\@/$xform/;
 
-		    # We cannot use $< here since this is an explicit
-		    # rule and not all makes handle that.
-		    $rule .= " \`test -f $full || echo '\$(srcdir)/'\`$full";
+                # We cannot use $< here since this is an explicit
+                # rule and not all makes handle that.
+                $rule .= " \`test -f $full || echo '\$(srcdir)/'\`$full";
 
-		    # FIXME: handle .lo and .obj as well.
-		    $output_rules .= "\t" . $rule . "\n";
-		}
-	    }
+                # FIXME: handle .lo and .obj as well.
+                $output_rules .= "\t" . $rule . "\n";
+            }
+        }
 
-	    # Transform .o or $o file into .P file (for automatic
-	    # dependency code).
-	    if ($lang
-		&& ($language_map{$lang . '-autodep'} ne 'no'
-		    || $language_map{$lang . '-derived-autodep'} eq 'yes'))
-	    {
-		local ($depfile) = $object;
-		$depfile =~ s/\.([^.]*)$/.P$1/;
-		$depfile =~ s/\$\(OBJEXT\)$/o/ if $seen_objext;
-		$dep_files{'$(DEPDIR)/' . $depfile} = 1;
-	    }
-	}
+        # Transform .o or $o file into .P file (for automatic
+        # dependency code).
+        if ($lang
+            && ($language_map{$lang . '-autodep'} ne 'no'
+                || $language_map{$lang . '-derived-autodep'} eq 'yes'))
+        {
+            local ($depfile) = $object;
+            $depfile =~ s/\.([^.]*)$/.P$1/;
+            $depfile =~ s/\$\(OBJEXT\)$/o/ if $seen_objext;
+            $dep_files{'$(DEPDIR)/' . $depfile} = 1;
+        }
     }
 
     return (&resolve_linker (%linkers_used), @result);
 }
+
+
 
 # Handle SOURCE->OBJECT transform for one program or library.
 # Arguments are:
