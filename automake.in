@@ -2291,24 +2291,23 @@ sub handle_texinfo
 	return;
     }
 
-    local (@texis) = &variable_value_as_list ('info_TEXINFOS', 'all');
+    my @texis = &variable_value_as_list ('info_TEXINFOS', 'all');
 
-    local (@info_deps_list, @dvis_list, @texi_deps);
-    local ($infobase, $info_cursor);
-    local (%versions);
-    local ($done) = 0;
-    local ($vti);
-    local ($tc_cursor, @texi_cleans);
-    local ($canonical);
+    my (@info_deps_list, @dvis_list, @texi_deps);
+    my %versions;
+    my $done = 0;
+    my @texi_cleans;
+    my $canonical;
 
-    foreach $info_cursor (@texis)
+    foreach my $info_cursor (@texis)
     {
-	($infobase = $info_cursor) =~ s/\.(txi|texinfo|texi)$//;
+        my $infobase = $info_cursor;
+        $infobase =~ s/\.(txi|texinfo|texi)$//;
 
 	# If 'version.texi' is referenced by input file, then include
 	# automatic versioning capability.
-	local ($out_file, $vtexi) = &scan_texinfo_file ($relative_dir
-							. "/" . $info_cursor);
+	my ($out_file, $vtexi) = &scan_texinfo_file ($relative_dir
+						     . "/" . $info_cursor);
 
 	if ($out_file eq '')
 	{
@@ -2332,7 +2331,7 @@ sub handle_texinfo
 	    # We number the stamp-vti files.  This is doable since the
 	    # actual names don't matter much.  We only number starting
 	    # with the second one, so that the common case looks nice.
-	    $vti = ($done ? $done : 'vti');
+	    my $vti = ($done ? $done : 'vti');
 	    ++$done;
 
 	    &push_dist_common ($vtexi, 'stamp-' . $vti);
@@ -2340,7 +2339,7 @@ sub handle_texinfo
 	    &require_conf_file_with_line ('info_TEXINFOS', $FOREIGN,
 					  'mdate-sh');
 
-	    local ($conf_dir);
+	    my $conf_dir;
 	    if ($config_aux_dir eq '.' || $config_aux_dir eq '')
 	    {
 		$conf_dir = '$(srcdir)/';
@@ -2367,7 +2366,7 @@ sub handle_texinfo
 	# work if the target has it and the dependency doesn't.
 	push (@texi_deps, '$(srcdir)/' . $vtexi) if $vtexi;
 
-	$canonical = &canonicalize ($infobase);
+	my $canonical = &canonicalize ($infobase);
 	if (&variable_defined ($canonical . "_TEXINFOS"))
 	{
 	    push (@texi_deps, '$(' . $canonical . '_TEXINFOS)');
@@ -2388,9 +2387,10 @@ sub handle_texinfo
 	# removed.  In particular the ".log" extension might
 	# reasonably be used in other contexts by the user.
 	# FIXME: this is really out of control.
-	foreach $tc_cursor ('aux', 'cp', 'cps', 'dvi', 'fn', 'fns', 'pgs',
-			    'ky', 'kys', 'ps', 'log', 'pg', 'toc', 'tp', 'tps',
-			    'vr', 'vrs', 'op', 'tr', 'cv', 'cn', 'cm', 'ov')
+	foreach my $tc_cursor ('aux', 'cp', 'cps', 'dvi', 'fn', 'fns', 'pgs',
+			       'ky', 'kys', 'ps', 'log', 'pg', 'toc', 'tp',
+			       'tps', 'vr', 'vrs', 'op', 'tr', 'cv', 'cn',
+			       'cm', 'ov')
 	{
 	    push (@texi_cleans, $infobase . '.' . $tc_cursor);
 	}
@@ -2496,10 +2496,10 @@ sub handle_man_pages
     # Find all the sections in use.  We do this by first looking for
     # "standard" sections, and then looking for any additional
     # sections used in man_MANS.
-    local ($sect, %sections, %vlist);
+    local (%sections, %vlist);
     local ($found) = 0;
     # Add more sections as needed.
-    foreach $sect ('0'..'9', 'n', 'l')
+    foreach my $sect ('0'..'9', 'n', 'l')
     {
 	if (&variable_defined ('man' . $sect . '_MANS'))
 	{
@@ -2528,7 +2528,7 @@ sub handle_man_pages
     # Now for each section, generate an install and unintall rule.
     # Sort sections so output is deterministic.
     local (@namelist);
-    foreach $sect (sort keys %sections)
+    foreach my $sect (sort keys %sections)
     {
 	&define_variable ('man' . $sect . 'dir', '$(mandir)/man' . $sect);
 	push (@installdirs, '$(DESTDIR)$(mandir)/man' . $sect)
@@ -5741,19 +5741,24 @@ sub variable_value
     return $contents{$var};
 }
 
+
+# @VALUES
+# &value_to_list ($VAR, $VAL, $COND)
+# ----------------------------------
 # Convert a variable value to a list, split as whitespace.  This will
 # recursively follow $(...) and ${...} inclusions.  It preserves @...@
-# substitutions.  If COND is 'all', then all values under all
-# conditions should be returned; if COND is a particular condition
-# (all conditions are surrounded by @...@) then only the value for
-# that condition should be returned; otherwise, warn if VAR is
-# conditionally defined.  SCANNED is a global hash listing whose keys
-# are all the variables already scanned; it is an error to rescan a
-# variable.
+# substitutions.
+#
+# If COND is 'all', then all values under all conditions should be
+# returned; if COND is a particular condition (all conditions are
+# surrounded by @...@) then only the value for that condition should
+# be returned; otherwise, warn if VAR is conditionally defined.
+# SCANNED is a global hash listing whose keys are all the variables
+# already scanned; it is an error to rescan a variable.
 sub value_to_list
 {
-    local ($var, $val, $cond) = @_;
-    local (@result);
+    my ($var, $val, $cond) = @_;
+    my @result;
 
     # Strip backslashes
     $val =~ s/\\(\n|$)/ /g;
@@ -5766,14 +5771,14 @@ sub value_to_list
 	# Handle variable substitutions.
 	if (/^\$\{([^}]*)\}$/ || /^\$\(([^)]*)\)$/)
 	{
-	    local ($varname) = $1;
+	    my $varname = $1;
 
 	    # If the user uses a losing variable name, just ignore it.
 	    # This isn't ideal, but people have requested it.
 	    next if ($varname =~ /\@.*\@/);
 
-	    local ($from, $to);
-	    local (@temp_list);
+	    my ($from, $to);
+	    my @temp_list;
 	    if ($varname =~ /^([^:]*):([^=]*)=(.*)$/)
 	    {
 		$varname = $1;
@@ -6734,7 +6739,7 @@ sub file_contents
 				 'BZIP2'    => $options{'dist-bzip2'},
 				 'ZIP'      => $options{'dist-zip'},
 				 'COMPRESS' => $options{'dist-tarZ'},
-				 'CK-NEWS' => defined $options{'check-news'});
+				 'CK-NEWS'  => $options{'check-news'});
 
 
     # Swallow the file and applied the COMMAND.
