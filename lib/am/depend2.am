@@ -17,22 +17,21 @@
 ## 02111-1307, USA.
 %.o: %@EXT@
 	@echo '$(@PFX@COMPILE) -c $<'; \
-	DEPENDENCIES_OUTPUT='.deps/$(*F).P'; \
-	export DEPENDENCIES_OUTPUT; \
-## Note that using DEPENDENCIES_OUTPUT causes gcc to append to the
-## named file.  So we truncate it explicitly.
-	: > .deps/$(*F).P; \
-	$(@PFX@COMPILE) -c $<
+## There are various ways to get dependency output from gcc.  Here's
+## why we pick this rather obscure method:
+## - Don't want to use -MD because we'd like the dependencies to end
+##   up in a subdir.  Having to rename by hand is ugly.
+##   (We might end up doing this anyway to support other compilers.)
+## - The DEPENDENCIES_OUTPUT environment variable makes gcc act like
+##   -MM, not -M (despite what the docs say).
+## - Using -M directly means running the compiler twice (even worse
+##   than renaming).
+	$(@PFX@COMPILE) -Wp,-MD,.deps/$(*F).P -c $<
 
 %.lo: %@EXT@
 	@echo '$(LT@PFX@COMPILE) -c $<'; \
-	DEPENDENCIES_OUTPUT='.deps/$(*F).p'; \
-	export DEPENDENCIES_OUTPUT; \
-## Note that using DEPENDENCIES_OUTPUT causes gcc to append to the
-## named file.  So we truncate it explicitly.
-	: > .deps/$(*F).p; \
-	$(LT@PFX@COMPILE) -c $<
-	@-sed -e 's/^\([^:]*\)\.o:/\1.lo \1.o:/' < .deps/$(*F).p | \
-	$(AWK) '/:/ { ignore = ++ignoring[$$1]; } ignore == 1 { print }' \
-	> .deps/$(*F).P
+## See above to understand implementation weirdness.
+	$(LT@PFX@COMPILE) -Wp,-MD,.deps/$(*F).p -c $<
+	@-sed -e 's/^\([^:]*\)\.o:/\1.lo \1.o:/' \
+	  < .deps/$(*F).p > .deps/$(*F).P
 	@-rm -f .deps/$(*F).p
