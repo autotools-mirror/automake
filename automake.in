@@ -7363,6 +7363,7 @@ sub parse_arguments ()
       $output_directory = '.';
     }
 
+  my $errspec = 0;
   foreach my $arg (@ARGV)
     {
       if ($arg =~ /^-./)
@@ -7382,9 +7383,12 @@ sub parse_arguments ()
 	}
       else
 	{
-	  error "no Automake input file found in `$arg'";
+	  error "no Automake input file found for `$arg'";
+	  $errspec = 1;
 	}
     }
+  fatal "no input file found among supplied arguments"
+    if $errspec && ! @input_files;
 }
 
 ################################################################
@@ -7400,8 +7404,13 @@ $configure_ac = require_configure_ac;
 # Do configure.ac scan only once.
 scan_autoconf_files;
 
-fatal "no `Makefile.am' found or specified\n"
-  if ! @input_files;
+if (! @input_files)
+  {
+    my $msg = '';
+    $msg = "\nDid you forget AC_CONFIG_FILES([Makefile]) in $configure_ac?"
+      if -f 'Makefile.am';
+    fatal ("no `Makefile.am' found for any configure output$msg");
+  }
 
 # Now do all the work on each file.
 foreach my $file (@input_files)
