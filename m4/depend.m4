@@ -24,10 +24,10 @@ depcpp="$CPP"],
 AC_REQUIRE([AC_PROG_][CXXCPP])
 depcc="$CXX"
 depcpp="$CXXCPP"],
-       [$1], OBJC, [am_compiler_list='gcc gcc3'
+       [$1], OBJC, [am_compiler_list='gcc3 gcc'
 depcc="$OBJC"
 depcpp=""],
-       [$1], GCJ,  [am_compiler_list='gcc gcc3'
+       [$1], GCJ,  [am_compiler_list='gcc3 gcc'
 depcc="$GCJ"
 depcpp=""],
        [AC_REQUIRE([AC_PROG_][$1])dnl
