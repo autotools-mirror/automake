@@ -2965,8 +2965,8 @@ sub scan_texinfo_file
         $outfile = $1;
         if ($outfile =~ /\.(.+)$/ && $1 ne 'info')
           {
-            &am_file_error ($filename, "$.: ",
-                            "output `$outfile' has unrecognized extension");
+            am_file_error ("$filename:$.",
+			   "output `$outfile' has unrecognized extension");
             return;
           }
       }
@@ -5638,7 +5638,7 @@ sub cond_stack_if ($$$)
 {
   my ($negate, $cond, $where) = @_;
 
-  &am_file_error ($where, "$cond does not appear in AM_CONDITIONAL")
+  am_file_error ($where, "$cond does not appear in AM_CONDITIONAL")
     if ! $configure_cond{$cond} && $cond !~ /^TRUE|FALSE$/;
 
   $cond = "${cond}_TRUE"
@@ -5661,7 +5661,7 @@ sub cond_stack_else ($$$)
 
   if (! @cond_stack)
     {
-      &am_file_error ($where, "else without if");
+      am_file_error ($where, "else without if");
       return;
     }
 
@@ -5675,9 +5675,9 @@ sub cond_stack_else ($$$)
       $cond = condition_negate ($cond)
 	if $negate;
 
-      &am_file_error ($where,
-		      "else reminder ($negate$cond) incompatible with "
-		      . "current conditional: $cond_stack[$#cond_stack]")
+      am_file_error ($where,
+		     "else reminder ($negate$cond) incompatible with "
+		     . "current conditional: $cond_stack[$#cond_stack]")
 	if $cond_stack[$#cond_stack] ne $cond;
     }
 
@@ -5695,7 +5695,7 @@ sub cond_stack_endif ($$$)
 
   if (! @cond_stack)
     {
-      &am_file_error ($where, "endif without if: $negate$cond");
+      am_file_error ($where, "endif without if: $negate$cond");
       return;
     }
 
@@ -5708,9 +5708,9 @@ sub cond_stack_endif ($$$)
       $cond = condition_negate ($cond)
 	if $negate;
 
-      &am_file_error ($where,
-		      "endif reminder ($negate$cond) incompatible with "
-		      . "current conditional: $cond_stack[$#cond_stack]")
+      am_file_error ($where,
+		     "endif reminder ($negate$cond) incompatible with "
+		     . "current conditional: $cond_stack[$#cond_stack]")
 	if $cond_stack[$#cond_stack] ne $cond;
     }
 
@@ -6743,10 +6743,11 @@ sub read_am_file ($)
     my $last_var_name = '';
     my $last_var_type = '';
     my $last_var_value = '';
-    my $here = "$amfile:$.";
     # FIXME: shouldn't use $_ in this loop; it is too big.
     while ($_)
     {
+        my $here = "$amfile:$.";
+
 	$_ .= "\n"
 	    unless substr ($_, -1, 1) eq "\n";
 
@@ -7118,9 +7119,9 @@ sub file_contents_internal ($$%)
     foreach (make_paragraphs ($file, %transform))
     {
         # Sanity checks.
-	&am_file_error ($file, "blank line following trailing backslash:\n$_")
+	am_file_error ($file, "blank line following trailing backslash:\n$_")
 	  if /\\$/;
-	&am_file_error ($file, "comment following trailing backslash:\n$_")
+	am_file_error ($file, "comment following trailing backslash:\n$_")
 	  if /\\#/;
 
  	if (/^$/)
@@ -7243,7 +7244,7 @@ sub file_contents_internal ($$%)
  	elsif (/$ASSIGNMENT_PATTERN/mso)
  	{
 	    my ($var, $type, $val) = ($1, $2, $3);
- 	    &am_file_error ($file, "macro `$var' with trailing backslash")
+ 	    am_file_error ($file, "macro `$var' with trailing backslash")
 	      if /\\$/;
 
 	    # Accumulating variables must not be output.
@@ -8066,7 +8067,7 @@ sub am_error
 
 # am_file_error ($FILE, @ARGS)
 # ----------------------------
-sub am_file_error
+sub am_file_error ($@)
 {
     my ($file, @args) = @_;
 
