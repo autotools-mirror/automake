@@ -180,23 +180,30 @@ WGET = wget
 
 ## Files that we fetch and which we compare against.
 ## FIXME should be a lot more here
-FETCHFILES = config.guess config.sub texinfo.tex
+FETCHFILES = config.guess config.sub texinfo.tex Automake/XFile.pm
 
 ## Fetch the latest versions of files we care about.
 fetch:
 	rm -rf Fetchdir > /dev/null 2>&1
-	mkdir Fetchdir
+	mkdir Fetchdir; mkdir Fetchdir/Automake
 ## If a get fails then that is a problem.
 	(cd Fetchdir && \
 	$(WGET) ftp://ftp.gnu.org/gnu/config/config.guess; \
 	$(WGET) ftp://ftp.gnu.org/gnu/config/config.sub; \
-	$(WGET) ftp://ftp.gnu.org/gnu/texinfo/texinfo.tex)
+	$(WGET) ftp://ftp.gnu.org/gnu/texinfo/texinfo.tex; \
+	$(WGET) http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~/autoconf/autoconf/lib/Autom4te/XFile.pm?content-type=text/plain -O Automake/XFile.pm)
+	perl -pi -e 's/Autom4te::/Automake::/g' Fetchdir/Automake/XFile.pm
 ## Don't exit after test because we want to give as many errors as
 ## possible.
 	@stat=0; for file in $(FETCHFILES); do \
-	  if diff $(srcdir)/lib/$$file Fetchdir/$$file > /dev/null 2>&1; then :; \
+	  if diff -u $(srcdir)/lib/$$file Fetchdir/$$file \
+	          >>Fetchdir/update.patch 2>/dev/null; then :; \
 	  else \
 	    stat=1; \
-	    echo "install Fetchdir/$$file into srcdir and commit"; \
+	    echo "Updating $(srcdir)/lib/$$file..."; \
+	    cp Fetchdir/$$file $(srcdir)/lib/$$file; \
 	  fi; \
-	done; exit $$stat
+	done; \
+	test $$stat = 1 && \
+	  echo "See Fetchdir/update.patch for a log of the changes."; \
+	exit $$stat
