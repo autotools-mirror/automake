@@ -82,12 +82,30 @@ $fp_c_prototypes = 0;
 $config_name = '';
 $config_header = '';
 
+# Relative location of top build directory.
+$top_builddir = '';
+
+# List of Makefile.am's to process.
+@input_files = ();
+
+# List of files in AC_OUTPUT without Makefile.am.
+@other_input_files = ();
+
+# Whether AC_PROG_MAKE_SET has been seen in configure.in.
+$seen_make_set = 0;
+
 
 
 &initialize_global_constants;
 
 # Parse command line.
-@input_files = &parse_arguments (@ARGV);
+&parse_arguments (@ARGV);
+
+# Do configure.in scan only once.
+&scan_configure;
+
+die "automake: no \`Makefile.am' found or specified\n"
+    if ! @input_files;
 
 # Now do all the work on each file.
 foreach $am_file (@input_files)
@@ -111,7 +129,6 @@ exit $exit_status;
 sub parse_arguments
 {
     local (@arglist) = @_;
-    local (@make_list);
 
     # Start off as normal.
     &set_strictness ('normal');
@@ -178,7 +195,7 @@ sub parse_arguments
 	{
 	    # Stop option processing.
 	    shift (@arglist);
-	    push (@make_list, @arglist);
+	    push (@input_files, @arglist);
 	    last;
 	}
 	elsif ($arglist[0] =~ /^-/)
@@ -187,7 +204,7 @@ sub parse_arguments
 	}
 	else
 	{
-	    push (@make_list, $arglist[0]);
+	    push (@input_files, $arglist[0]);
 	}
 
 	shift (@arglist);
@@ -196,23 +213,6 @@ sub parse_arguments
     # Take global strictness from whatever we currently have set.
     $default_strictness = $strictness;
     $default_strictness_name = $strictness_name;
-
-    if (! @make_list)
-    {
-	# Look around for some files.
-	push (@make_list, 'Makefile') if -f 'Makefile.am';
-
-	foreach (<*/Makefile.am>)
-	{
-	    s/\.am$//;
-	    push (@make_list, $_);
-	}
-
-	die "automake: no \"Makefile.am\" found or specified\n"
-	    if ! @make_list;
-    }
-
-    return (@make_list);
 }
 
 # Ensure argument exists, or die.
@@ -864,9 +864,9 @@ sub handle_dist_worker
 	done
 ';
 
-    # If top level, create all dist subdirectories and do recursive
-    # build.
-    if ($relative_dir eq '.')
+    # If we have SUBDIRS, create all dist subdirectories and do
+    # recursive build.
+    if (defined $contents{'SUBDIRS'})
     {
 	# Test for directory existence here because previous automake
 	# invocation might have created some directories.
@@ -949,7 +949,7 @@ sub handle_dist
     else
     {
 	$output_rules .= ("\nsubdir = " . $relative_dir . "\n"
-			  . 'distdir = ../$(PACKAGE)-$(VERSION)/$(subdir)'
+			  . 'distdir = $(topdir)/$(PACKAGE)-$(VERSION)/$(subdir)'
 			  . "\n");
     }
 
@@ -1029,6 +1029,10 @@ sub handle_subdirs
 # Handle remaking and configure stuff.
 sub handle_configure
 {
+    # If SUBDIRS defined, require AC_PROG_MAKE_SET.
+    &am_error ("AC_PROG_MAKE_SET must be used in configure.in")
+	if defined $contents{'SUBDIRS'} && ! $seen_make_set;
+
     local ($top_reldir);
     if ($relative_dir ne '.')
     {
@@ -1038,9 +1042,6 @@ sub handle_configure
     }
     else
     {
-	&require_file ($NORMAL, 'configure.in');
-	&scan_configure;
-
 	if (-f 'aclocal.m4')
 	{
 	    $output_vars .= "ACLOCAL = aclocal.m4\n";
@@ -1095,9 +1096,9 @@ sub handle_configure
 	if defined $contents{'CONFIG_HEADER'};
 
     # Generate CONFIG_HEADER define, and define interally.
-    $output_vars .= "CONFIG_HEADER = ${top_reldir}${config_name}\n"
+    $output_vars .= "CONFIG_HEADER = ${top_builddir}${config_name}\n"
 	if $config_name;
-    $contents{'CONFIG_HEADER'} = "${top_reldir}${config_name}";
+    $contents{'CONFIG_HEADER'} = "${top_builddir}${config_name}";
 }
 
 # Handle C headers.
@@ -1166,7 +1167,7 @@ sub handle_merge_targets
     if (! defined $contents{'SUBDIRS'} || $relative_dir ne '.')
     {
 	# 'check' must depend on 'all', but not at top level.
-	push (@check, 'all');
+	unshift (@check, 'all');
     }
     &do_one_merge_target ('check', @check);
     &do_one_merge_target ('installcheck', @installcheck);
@@ -1373,7 +1374,7 @@ sub scan_configure
     # that won't always be the case.
     %libsources = ();
 
-    local ($seen_make_set) = 0;
+    local ($in_ac_output, @make_list) = 0;
     local ($seen_prog_install) = 0;
     local ($seen_arg_prog) = 0;
     local ($seen_canonical) = 0;
@@ -1381,7 +1382,7 @@ sub scan_configure
     {
 	# Remove comments from current line.
 	s/\bdnl\b.*$//;
-	s/\b\#.*$//;
+	s/\#.*$//;
 
 	# Populate libobjs array.
 	if (/AC_FUNC_ALLOCA/)
@@ -1407,13 +1408,37 @@ sub scan_configure
 		$libsources{$_ . '.c'} = 1;
 	    }
 	}
-	elsif (/LIBOBJS="(.*)\.o \$LIBOBJS"/)
+	elsif (/LIBOBJS="(.*)\.o\s+\$LIBOBJS"/)
 	{
 	    $libsources{$1 . '.c'} = 1;
 	}
-	elsif (/LIBOBJS="\$LIBOBJS (.*)\.o"/)
+	elsif (/LIBOBJS="\$LIBOBJS\s+(.*)\.o"/)
 	{
 	    $libsources{$1 . '.c'} = 1;
+	}
+
+	# Process the AC_OUTPUT macro.
+	if (! $in_ac_output && s/AC_OUTPUT\s*\(\[?//)
+	{
+	    $in_ac_output = 1;
+	}
+	if ($in_ac_output)
+	{
+	    s/\]//;
+	    $in_ac_output = 0 if s/\)//;
+
+	    # Look at potential Makefile.am's.
+	    foreach (split)
+	    {
+		if (-f $_ . '.am')
+		{
+		    push (@make_list, $_);
+		}
+		else
+		{
+		    push (@other_input_files, $_);
+		}
+	    }
 	}
 
 	# Check for ansi2knr.
@@ -1464,14 +1489,14 @@ sub scan_configure
 	$seen_arg_prog = 1 if /AC_ARG_PROGRAM/;
     }
 
+    # Set input files if not specified by user.
+    @input_files = @make_list if (! @input_files);
+
     # AC_CANONICAL_HOST and AC_CANONICAL_SYSTEM need config.guess and
     # config.sub.
     &require_file ($NORMAL, 'config.guess', 'config.sub')
 	if $seen_canonical;
 
-    # If SUBDIRS defined, require AC_PROG_MAKE_SET.
-    &am_error ("AC_PROG_MAKE_SET must be used in configure.in")
-	if defined $contents{'SUBDIRS'} && ! $seen_make_set;
     &am_error ("fp_PROG_INSTALL must be used in configure.in")
 	unless $seen_prog_install;
     &am_error ("AC_ARG_PROGRAM must be used in configure.in")
@@ -1567,7 +1592,27 @@ sub read_am_file
 {
     local ($amfile) = @_;
 
-    local ($header_vars) = &file_contents ('header-vars');
+    # Compute relative location of the top object directory.
+    local (@topdir) = ();
+    foreach (split (/\//, $relative_dir))
+    {
+	next if $_ eq '.' || $_ eq '';
+	if ($_ eq '..')
+	{
+	    pop @topdir;
+	}
+	else
+	{
+	    push (@topdir, '..');
+	}
+    }
+    @topdir = ('.') if ! @topdir;
+
+    $top_builddir = join ('/', @topdir);
+    local ($header_vars) =
+	&file_contents_with_transform
+	    ('s/\@top_builddir\@/' . $top_builddir . '/g',
+	     'header-vars');
 
     open (AM_FILE, $amfile) || die "automake: couldn't open $amfile: $!\n";
 
@@ -2146,7 +2191,7 @@ sub dirname
     local ($file) = @_;
     local ($sub);
 
-    ($sub = $file) =~ s,/+[^/]+,,g;
+    ($sub = $file) =~ s,/+[^/]+$,,g;
     $sub = '.' if $sub eq $file;
     return $sub;
 }
