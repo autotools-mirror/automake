@@ -2087,15 +2087,22 @@ sub scan_dependency_file
     {
 	($fixup_rx = $srcdir_name . '/' . $relative_dir . '/')
 	    =~ s/(\W)/\\$1/g;
-	($srcdir_rx = $srcdir_name) =~ s/(\W)/\\$1/g;
+	($srcdir_rx = $srcdir_name . '/') =~ s/(\W)/\\$1/g;
     }
     else
     {
 	($fixup_rx = ($srcdir_name . '/' . $top_builddir . '/'
 		      . $relative_dir . '/')) =~ s/(\W)/\\$1/g;
-	($srcdir_rx = ($srcdir_name . '/' . $top_builddir))
-	    =~ s/(\W)/\\$1/g;
+	$srcdir_rx = $srcdir_name . '/';
+	# Don't append a spurious "." to the regex.
+	$srcdir_rx .= $top_builddir
+	    unless $top_builddir eq '.';
+	$srcdir_rx =~ s/(\W)/\\$1/g;
     }
+
+    local ($rewrite_builddir) = (($top_builddir eq '.')
+				 ? ''
+				 : $top_builddir . '/');
 
     while (<DEP_FILE>)
     {
@@ -2138,10 +2145,10 @@ sub scan_dependency_file
 		($xform = $one_dep) =~ s/^$fixup_rx//;
 		push (@dependencies, $xform);
 	    }
-	    elsif ($one_dep =~ /^$srcdir_rx\//)
+	    elsif ($one_dep =~ /^$srcdir_rx/)
 	    {
 		# The dependency is in some other directory in the package.
-		($xform = $one_dep) =~ s/^$srcdir_rx/$top_builddir/;
+		($xform = $one_dep) =~ s/^$srcdir_rx/$rewrite_builddir/;
 		push (@dependencies, $xform);
 	    }
 	    elsif ($one_dep =~ /^\//)
@@ -3240,7 +3247,7 @@ sub scan_one_configure_file
 
 	if (/(fp_WITH_DMALLOC|fp_WITH_REGEX|fp_FUNC_FNMATCH|fp_PROG_INSTALL|fp_C_PROTOTYPES|jm_MAINTAINER_MODE|ud_GNU_GETTEXT)/)
 	{
-	    &am_conf_line_error ($., "\`$1' is obsolete; use corresponding \`AM_' macro");
+	    &am_conf_line_error ($filename, $., "\`$1' is obsolete; use corresponding \`AM_' macro");
 	}
 
 	# Process the AC_OUTPUT macro.
@@ -3311,11 +3318,15 @@ sub scan_one_configure_file
 	    $all_linguas_line = $.;
 	}
 
-	# Handle configuration headers.
-	if (/A([CM])_CONFIG_HEADER\s*\((.*)\)/)
+	# Handle configuration headers.  A config header of `[$1]'
+	# means we are actually scanning AM_CONFIG_HEADER from
+	# aclocal.m4.
+	if (/A([CM])_CONFIG_HEADER\s*\((.*)\)/
+	    && $2 ne '[$1]')
 	{
 	    &am_conf_line_error
-		($., "use \`AM_CONFIG_HEADER', not \`AC_CONFIG_HEADER'")
+		($filename, $.,
+		 "use \`AM_CONFIG_HEADER', not \`AC_CONFIG_HEADER'")
 		    if $1 eq 'C';
 
 	    $config_header_line = $.;
@@ -3387,7 +3398,8 @@ sub scan_one_configure_file
         $seen_maint_mode = 1 if /AM_MAINTAINER_MODE/;
         $seen_package = 1 if /PACKAGE=/;
 
-        if (/\bVERSION=(\S+)/)
+	# Skip VERSION of [$2]; that is from AM_INIT_AUTOMAKE.
+        if (/\bVERSION=(\S+)/ && $1 ne '[$2]')
 	{
 	    $seen_version = 1;
 	    $package_version = $1;
@@ -3518,7 +3530,9 @@ sub check_gnits_standards
 	{
 	    if ($package_version !~ /^$GNITS_VERSION_PATTERN$/)
 	    {
-		&am_conf_line_error ($package_version_line,
+		# FIXME: allow real filename.
+		&am_conf_line_error ('configure.in',
+				     $package_version_line,
 				     "version \`$package_version' doesn't follow Gnits standards");
 	    }
 	    elsif (defined $1 && -f 'README-alpha')
@@ -4623,8 +4637,9 @@ sub require_file_internal
 		local ($save) = $exit_status;
 		if ($is_configure)
 		{
+		    # FIXME: allow actual file to be specified.
 		    &am_conf_line_error
-			($line,
+			('configure.in', $line,
 			 "required file \"$errfile\" not found$trailer");
 		}
 		else
@@ -4829,11 +4844,11 @@ sub am_conf_error
 # Error message with line number referring to configure.in.
 sub am_conf_line_error
 {
-    local ($line, @args) = @_;
+    local ($file, $line, @args) = @_;
 
     if ($line)
     {
-	warn "configure.in: $line: ", join (' ', @args), "\n";
+	warn "$file: $line: ", join (' ', @args), "\n";
 	$exit_status = 1;
     }
     else
