@@ -30,6 +30,7 @@ eval 'exec @PERL@ -S $0 ${1+"$@"}'
 # Parameters set by configure.  Not to be changed.  NOTE: assign
 # VERSION as string so that eg version 0.30 will print correctly.
 $VERSION = "@VERSION@";
+$PACKAGE = "@PACKAGE@";
 $prefix = "@prefix@";
 $am_dir = "@datadir@/@PACKAGE@";
 
@@ -79,8 +80,8 @@ $add_missing = 0;
 # Files found by scanning configure.in for LIBOBJS.
 %libsources = ();
 
-# True if fp_C_PROTOTYPES appears in configure.in.
-$fp_c_prototypes = 0;
+# True if AM_C_PROTOTYPES appears in configure.in.
+$am_c_prototypes = 0;
 
 # Names used in AC_CONFIG_HEADER call.  $config_name is the actual
 # (first) argument.  $config_header is the '.in' file.  Ordinarily the
@@ -126,7 +127,7 @@ $all_linguas = '';
 # Line number at which it appears.
 $all_linguas_line = 0;
 
-# 1 if AC_PROG_INSTALL seen, 2 if fp_PROG_INSTALL seen.
+# 1 if AC_PROG_INSTALL seen, 2 if AM_PROG_INSTALL seen.
 $seen_prog_install = 0;
 
 # 1 if any scripts installed, 0 otherwise.
@@ -152,7 +153,7 @@ $seen_arg_prog = 0;
 $seen_libtool = 0;
 $libtool_line = 0;
 
-# TRUE if we've seen jm_MAINTAINER_MODE.
+# TRUE if we've seen AM_MAINTAINER_MODE.
 $seen_maint_mode = 0;
 
 # TRUE if we've seen PACKAGE and VERSION.
@@ -209,9 +210,9 @@ foreach $am_file (@input_files)
 
 if ($seen_prog_install <= $scripts_installed)
 {
-    &am_conf_error (($scripts_installed ? 'fp_PROG_INSTALL' : 'AC_PROG_INSTALL')
+    &am_conf_error (($scripts_installed ? 'AM_PROG_INSTALL' : 'AC_PROG_INSTALL')
 		    . " must be used in configure.in");
-    &keyed_aclocal_warning ('fp_PROG_INSTALL')
+    &keyed_aclocal_warning ('AM_PROG_INSTALL')
 	if $scripts_installed;
 }
 
@@ -232,7 +233,7 @@ sub parse_arguments
     {
 	if ($arglist[0] eq "--version")
 	{
-	    print "Automake version $VERSION\n";
+	    print "automake - $PACKAGE $VERSION\n";
 	    exit 0;
 	}
 	elsif ($arglist[0] eq "--help")
@@ -523,13 +524,13 @@ sub get_object_extension
 
 	if (defined $options{'ansi2knr'})
 	{
-	    if (! $fp_c_prototypes)
+	    if (! $am_c_prototypes)
 	    {
 		&am_line_error ('AUTOMAKE_OPTIONS',
-				"option \`ansi2knr' in use but \`fp_C_PROTOTYPES' not in configure.in");
-		&keyed_aclocal_warning ('fp_C_PROTOTYPES');
+				"option \`ansi2knr' in use but \`AM_C_PROTOTYPES' not in configure.in");
+		&keyed_aclocal_warning ('AM_C_PROTOTYPES');
 		# Only give this error once.
-		$fp_c_prototypes = 1;
+		$am_c_prototypes = 1;
 	    }
 
 	    $dir_holds_sources = '$o';
@@ -1472,6 +1473,50 @@ sub handle_subdirs
     $recursive_install = 1;
 }
 
+# Handle aclocal.m4.
+sub handle_aclocal_m4
+{
+    local ($regen_aclocal) = 0;
+    if (-f 'aclocal.m4')
+    {
+	$output_vars .= "ACLOCAL = aclocal.m4\n";
+	&push_dist_common ('aclocal.m4');
+
+	if (open (ACLOCAL, '< aclocal.m4'))
+	{
+	    local ($line);
+	    $line = <ACLOCAL>;
+	    close (ACLOCAL);
+
+	    if ($line =~ 'generated automatically by aclocal')
+	    {
+		$regen_aclocal = 1;
+	    }
+	}
+    }
+
+    local ($acinclude) = 0;
+    if (-f 'acinclude.m4')
+    {
+	$regen_aclocal = 1;
+	$acinclude = 1;
+    }
+    else
+    {
+	# FIXME how to tell if aclocal.m4 should be automatically
+	# regenerated?
+    }
+
+    if ($regen_aclocal)
+    {
+	$output_rules .= ("aclocal.m4: configure.in"
+			  . ($acinclude ? ' acinclude.m4' : '')
+			  . "\n\t"
+			  . 'cd $(srcdir) && aclocal'
+			  . "\n");
+    }
+}
+
 # Handle remaking and configure stuff.
 sub handle_configure
 {
@@ -1488,11 +1533,7 @@ sub handle_configure
     }
     else
     {
-	if (-f 'aclocal.m4')
-	{
-	    $output_vars .= "ACLOCAL = aclocal.m4\n";
-	    &push_dist_common ('aclocal.m4');
-	}
+	&handle_aclocal_m4;
 	$output_rules .= &file_contents_with_transform ('s/\@STRICTNESS\@/'
 							. $strictness_name
 							. '/g',
@@ -2181,6 +2222,11 @@ sub scan_configure
 	    }
 	}
 
+	if (/(fp_PROG_INSTALL|fp_C_PROTOTYPES|jm_MAINTAINER_MODE)/)
+	{
+	    &am_conf_line_error ($., "\`$1' is obsolete; use corresponding \`AM_' macro");
+	}
+
 	# Process the AC_OUTPUT macro.
 	if (! $in_ac_output && s/AC_OUTPUT\s*\(\[?//)
 	{
@@ -2212,7 +2258,7 @@ sub scan_configure
 	}
 
 	# Check for ansi2knr.
-	$fp_c_prototypes = 1 if /fp_C_PROTOTYPES/;
+	$am_c_prototypes = 1 if /AM_C_PROTOTYPES/;
 
 	# Check for NLS support.
 	if (/ud_GNU_GETTEXT/)
@@ -2260,19 +2306,28 @@ sub scan_configure
 				|| /AC_SUBST\(YACC\)/
 				|| /AC_(PATH|CHECK)_PROGS?\(YACC/);
 
+        # This macro handles several different things.
+        if (/AM_INIT_AUTOMAKE/)
+	{
+	    $seen_make_set = 1;
+	    $seen_package = 1;
+	    $seen_version = 1;
+	    $seen_arg_prog = 1;
+	}
+
 	# Some things required by Automake.
 	$seen_make_set = 1 if /AC_PROG_MAKE_SET/;
 	$seen_arg_prog = 1 if /AC_ARG_PROGRAM/;
 	$seen_ranlib = 1 if /AC_PROG_RANLIB/;
-        $seen_maint_mode = 1 if /jm_MAINTAINER_MODE/;
+        $seen_maint_mode = 1 if /AM_MAINTAINER_MODE/;
         $seen_package = 1 if /PACKAGE=/;
         $seen_version = 1 if /VERSION=/;
 
         # Weird conditionals here because it is always allowed to
-        # upgrade to fp_PROG_INSTALL but never to downgrade to
+        # upgrade to AM_PROG_INSTALL but never to downgrade to
         # AC_PROG_INSTALL.
 	$seen_prog_install = 1 if ! $seen_prog_install && /AC_PROG_INSTALL/;
-	$seen_prog_install = 2 if /fp_PROG_INSTALL/;
+	$seen_prog_install = 2 if /AM_PROG_INSTALL/;
 
         $seen_lispdir = 1 if /ud_PATH_LISPDIR/;
 
@@ -3318,7 +3373,7 @@ sub am_conf_line_error
 sub keyed_aclocal_warning
 {
     local ($key) = @_;
-    warn "automake: macro \`$key' can be found in ${am_dir}/aclocal.m4\n";
+    warn "automake: macro \`$key' can be generated by \`aclocal'\n";
 }
 
 # Print usage information.

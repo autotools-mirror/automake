@@ -6,7 +6,7 @@ PERL = @PERL@
 
 SUBDIRS = tests m4
 
-bin_SCRIPTS = automake
+bin_SCRIPTS = automake aclocal
 info_TEXINFOS = automake.texi
 # SUBDIRS = intl po
 # CONFIG_HEADER = config.h
@@ -24,12 +24,12 @@ ansi2knr.1 aclocal.m4 lisp.am lisp-clean.am
 pkgdata_SCRIPTS = config.guess config.sub install-sh mdate-sh \
 mkinstalldirs elisp-comp
 
-CLEANFILES = automake
+CLEANFILES = automake aclocal
 
 # The following requires a fixed version of the Emacs 19.30 etags.
-ETAGS_ARGS = automake.in --lang=none \
+ETAGS_ARGS = automake.in aclocal.in --lang=none \
  --regex='/^@node[ \t]+\([^,]+\)/\1/' automake.texi
-TAGS_DEPENDENCIES = automake.in automake.texi
+TAGS_DEPENDENCIES = automake.in aclocal.in automake.texi
 
 ## `test -x' is not portable.  So we use Perl instead.  If Perl
 ## doesn't exist, then this test is meaningless anyway.
@@ -43,9 +43,10 @@ installcheck-local:
 
 # Some simple checks, and then ordinary check.  These are only really
 # guaranteed to work on my machine.
-maintainer-check: automake
+maintainer-check: automake aclocal
 ## Syntax check with default Perl (on my machine, Perl 5).
 	$(PERL) -c -w automake
+	$(PERL) -c -w aclocal
 ## Ensure `true' is never used; I've accidentally used it before.
 	@if grep '^[^#].*true' $(srcdir)/[a-z]*.am; then \
 	  echo "can't use 'true' in GNU Makefile" 1>&2; \
@@ -65,6 +66,7 @@ maintainer-check: automake
 ## Another syntax check, this time with Perl 4, if it exists.
 	@if $(SHELL) -c 'perl4.036 -v' >/dev/null 2>&1; then \
 	  perl4.036 -c -w automake; \
+	  perl4.036 -c -w aclocal; \
 	else :; fi
 	$(MAKE) check
 
