@@ -66,7 +66,7 @@ maintainer-check: automake check
 # Tag before making distribution.  Also, don't make a distribution if
 # checks fail.  Also, make sure the NEWS file is up-to-date.
 cvs-dist: maintainer-check
-	@if sed 1q NEWS | grep -e "$(VERSION)" > /dev/null; then :; else \
+	@if sed 1q $(srcdir)/NEWS | grep -e "$(VERSION)" > /dev/null; then :; else \
 	  echo "NEWS not updated; not releasing" 1>&2; \
 	  exit 1;				\
 	fi
