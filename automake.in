@@ -2869,18 +2869,24 @@ sub add_depend2
 	      . ($seen_objext ? 's/^OBJEXT//;' : 's/^OBJEXT.*$//;')
 	      . ($seen_libtool ? 's/^LIBTOOL//;' : 's/^LIBTOOL.*$//;'));
 
-    local ($xform1) = ($xform
-		       . 's/\@BASE\@/\$\*/g;'
-		       . 's/\@SOURCE\@/\$\</g;'
-		       . 's/\@(LT|OBJ)?OBJ\@/\$\@/g;');
-
-    foreach $ext (&lang_extensions ($lang))
+    # This function can be called even when we don't want dependency
+    # tracking.  This happens when we need an explicit rule for some
+    # target.  In this case we don't want to include the generic code.
+    if ($use_dependencies)
     {
-	$output_rules .= (&file_contents_with_transform ('s/\@EXT\@/'
-							 . $ext . '/g;'
-							 . $xform1,
-							 'depend2')
-			  . "\n");
+	local ($xform1) = ($xform
+			   . 's/\@BASE\@/\$\*/g;'
+			   . 's/\@SOURCE\@/\$\</g;'
+			   . 's/\@(LT|OBJ)?OBJ\@/\$\@/g;');
+
+	foreach $ext (&lang_extensions ($lang))
+	{
+	    $output_rules .= (&file_contents_with_transform ('s/\@EXT\@/'
+							     . $ext . '/g;'
+							     . $xform1,
+							     'depend2')
+			      . "\n");
+	}
     }
 
     # Now include code for each specially handled object with this
@@ -2889,6 +2895,13 @@ sub add_depend2
     local ($max) = scalar @list;
     local ($i) = 0;
     local ($derived, $source, $obj);
+
+    # If dependency tracking is disabled, we just elide the code.
+    if (! $use_dependencies)
+    {
+	$xform .= 's/\@AMDEP\@.*$//;';
+    }
+
     while ($i < $max)
     {
 	$derived = $list[$i];
