@@ -42,8 +42,8 @@ TEXINFOS = automake.texi
 # CONFIG_HEADER = config.h
 
 pkgdata_DATA = clean-kr.am clean.am compile-kr.am compile-vars.am \
-compile.am data.am depend.am dist-subd-top.am \
-dist-subd.am dist-vars.am dist.am footer.am header-vars.am \
+compile.am data.am depend.am \
+dist-vars.am footer.am header-vars.am \
 kr-vars.am libraries-vars.am \
 libraries.am library.am mans-vars.am \
 program.am programs.am remake-hdr.am \
@@ -206,21 +206,28 @@ distclean-tags:
 	rm -f TAGS ID
 
 maintainer-clean-tags:
-
 distdir = $(PACKAGE)-$(VERSION)
 dist: $(DISTFILES)
 	rm -rf $(distdir)
 	mkdir $(distdir)
-	(cd $(srcdir) && automake --include-deps --output-dir=$(distdir))
+	distdir=`cd $(distdir) && pwd` \
+	  && cd $(srcdir) \
+	  && automake --include-deps --output-dir=$$distdir --strictness=normal
 	@for file in $(DISTFILES); do		\
 	  test -f $(distdir)/$$file \
 	  || ln $(srcdir)/$$file $(distdir)/$$file \
 	  || cp -p $(srcdir)/$$file $(distdir)/$$file; \
 	done
-	@sublist="$(DIST_SUBDIRS)";		\
-	for dir in $$sublist; do		\
+	for subdir in $(SUBDIRS); do		\
+	  test -d $(distdir)/$$subdir		\
+	  || mkdir $(distdir)/$$subdir		\
+	  || exit 1;				\
+	  chmod 777 $(distdir)/$$subdir;	\
+	  (cd $$subdir && $(MAKE) $@) || exit 1; \
+	done
+	@for dir in $(DIST_SUBDIRS); do		\
 	  echo copying directory $$dir;		\
-	  tar -chof - $$dir | (cd $(distdir) && tar -xBpf -); \
+	  tar -chf - $$dir | (cd $(distdir) && tar -xBpf -); \
 	done
 	chmod -R a+r $(distdir)
 	tar -chozf $(distdir).tar.gz $(distdir)

@@ -52,6 +52,9 @@ $GNITS = 2;
 # Strictness level.
 $strictness = $NORMAL;
 
+# Name of strictness level.
+$strictness_name = 'normal';
+
 # This is TRUE if GNU make specific automatic dependency generation
 # code should be included in generated Makefile.in.
 $use_dependencies = 1;
@@ -258,7 +261,8 @@ sub generate_makefile
     }
     if (! open (GM_FILE, "> " . $output_directory . '/' . $makefile . ".in"))
     {
-	&am_error ("cannot open:", $!);
+	warn "automake: ${am_file}.in: cannot open: $!\n";
+	$exit_status = 1;
 	return;
     }
 
@@ -668,18 +672,92 @@ sub handle_dist
 
     # Some boilerplate.
     $output_vars .= &file_contents ('dist-vars');
-    if ($relative_dir ne '.')
+
+    # Initialization; only at top level.
+    if ($relative_dir eq '.')
     {
-	# In a subdirectory.
-	$output_vars .= "subdir = " . $relative_dir . "\n\n";
-	$output_rules .= &file_contents ('dist-subd');
+	$output_rules .=
+	    (
+	     # Some boilerplate.
+	     '
+distdir = $(PACKAGE)-$(VERSION)
+dist: $(DISTFILES)
+'
+	     # Create dist directory.
+	     . '	rm -rf $(distdir)
+	mkdir $(distdir)
+'
+	     # We need an absolute path for --output-dir.  Thus the
+	     # weirdness.
+	     . '	distdir=`cd $(distdir) && pwd` \\
+	  && cd $(srcdir) \\
+	  && automake --include-deps --output-dir=$$distdir --strictness='
+	     # Set strictness of output.
+	     . $strictness_name . "\n"
+	     );
     }
     else
     {
-	$output_rules .= &file_contents (defined $contents{'SUBDIRS'}
-					 ? 'dist-subd-top'
-					 : 'dist');
+	$output_rules .=
+	    (
+	     # Some boilerplate.
+	     "\nsubdir = " . $relative_dir . "\n"
+	     . 'distdir = $(PACKAGE)-$(VERSION)/$(subdir)
+dist: $(DISTFILES)
+'
+	     );
     }
+
+    # In loop, test for file existence because sometimes a file gets
+    # included in DISTFILES twice.  For example this happens when a
+    # single source file is used in building more than one program.
+    # Also, there are situations in which "ln" can fail.  For instance
+    # a file to distribute could actually be a cross-filesystem
+    # symlink -- this can easily happen if "gettextize" was run on the
+    # distribution.
+    $output_rules .= '	@for file in $(DISTFILES); do		\\
+	  test -f $(distdir)/$$file \\
+	  || ln $(srcdir)/$$file $(distdir)/$$file \\
+	  || cp -p $(srcdir)/$$file $(distdir)/$$file; \\
+	done
+';
+
+    # If top level, create all dist subdirectories and do recursive
+    # build.
+    if ($relative_dir eq '.')
+    {
+	# Test for directory existence here because previous automake
+	# invocation might have created some directories.
+	$output_rules .= '	for subdir in $(SUBDIRS); do		\\
+	  test -d $(distdir)/$$subdir		\\
+	  || mkdir $(distdir)/$$subdir		\\
+	  || exit 1;				\\
+	  chmod 777 $(distdir)/$$subdir;	\\
+	  (cd $$subdir && $(MAKE) $@) || exit 1; \\
+	done
+';
+    }
+
+    # Make verbatim copies of some subdirectories if required.  This
+    # is a hack which might go away.
+    if (defined $contents{'DIST_SUBDIRS'})
+    {
+	$output_rules .= '	@for dir in $(DIST_SUBDIRS); do		\\
+	  echo copying directory $$dir;		\\
+	  tar -chf - $$dir | (cd $(distdir) && tar -xBpf -); \\
+	done
+';
+    }
+
+    # Finalize.
+    if ($relative_dir eq '.')
+    {
+	$output_rules .= '	chmod -R a+r $(distdir)
+	tar -chozf $(distdir).tar.gz $(distdir)
+	rm -rf $(distdir)
+';
+    }
+
     push (@phony, 'dist');
 }
 
@@ -1674,23 +1752,22 @@ sub push_phony_cleaners
 # Set strictness.
 sub set_strictness
 {
-    local ($name) = @_;
-
-    if ($name eq 'gnu')
+    $strictness_name = @_;
+    if ($strictness_name eq 'gnu')
     {
 	$strictness = $GNU;
     }
-    elsif ($name eq 'gnits')
+    elsif ($strictness_name eq 'gnits')
     {
 	$strictness = $GNITS;
     }
-    elsif ($name eq 'normal')
+    elsif ($strictness_name eq 'normal')
     {
 	$strictness = $NORMAL;
     }
     else
     {
-	die "automake: level \`$name' not recognized\n";
+	die "automake: level \`$strictness_name' not recognized\n";
     }
 }
 
