@@ -52,17 +52,17 @@ fi
 
 # For projects using AC_CONFIG_AUX_DIR([foo]), Autoconf sets
 # $ac_aux_dir to ${srcdir}/foo.  In other projects, it is set to `.'.
-# Of course, Automake must honor this variable whenever it call a tool
-# from the auxiliary directory.  The problem is that $srcdir (hence
-# $ac_aux_dir) can be either an absolute path or a path relative to
-# $top_srcdir or absolute, this depends on how configure is run.  This
-# is pretty anoying since it makes $ac_aux_dir quite unusable in
-# subdirectories: on the top source directory, any form will work
-# fine, but in subdirectories relative pat needs to be adapted.
-# - calling $top_srcidr/$ac_aux_dir/missing would success if $srcdir is
-#   relative, but fail if $srcdir is absolute
-# - conversly, calling $ax_aux_dir/missing would fail if $srcdir is
-#   absolute, and success on relative paths.
+# Of course, Automake must honor this variable whenever it calls a tool
+# from the auxiliary directory.  The problem is that $srcdir (and therefore
+# $ac_aux_dir as well) can be either an absolute path or a path relative to
+# $top_srcdir, depending on how configure is run.  This is pretty annoying,
+# since it makes $ac_aux_dir quite unusable in subdirectories: in the top
+# source directory, any form will work fine, but in subdirectories a relative
+# path needs to be adjusted first.
+# - calling $top_srcdir/$ac_aux_dir/missing would succeed if $ac_aux_dir was
+#   relative, but fail if it was absolute.
+# - conversly, calling $ac_aux_dir/missing would fail if $ac_aux_dir was
+#   relative, and succeed on absolute paths.
 #
 # Consequently, we define and use $am_aux_dir, the "always absolute"
 # version of $ac_aux_dir.
