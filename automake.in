@@ -312,6 +312,11 @@ sub handle_options
 	{
 	    # Explicitly recognize these.
 	}
+	elsif ($_ eq 'no-dependencies')
+	{
+	    # FIXME for now this is global.
+	    $use_dependencies = 0;
+	}
 	else
 	{
 	    &am_error ('option ', $_, 'not recognized');
@@ -391,7 +396,7 @@ sub handle_source_transform
 		# Transform .o or $o file into .P file (for automatic
 		# dependency code).
 		s/$objpat$/.P/g;
-		$dep_files{$_} = 1;
+		$dep_files{'.deps/' . $_} = 1;
 	    }
 
 	    &pretty_print ($one_file . "_OBJECTS =", '', @result);
@@ -499,7 +504,7 @@ sub handle_libraries
 			if ($iter ne 'alloca.c')
 			{
 			    ($rewrite = $iter) =~ s/\.c$/.P/;
-			    $dep_files{$rewrite} = 1;
+			    $dep_files{'.deps/' . $rewrite} = 1;
 			    &require_file ($NORMAL, $iter);
 			}
 		    }
@@ -508,7 +513,7 @@ sub handle_libraries
 		{
 		    &am_error ("\@ALLOCA\@ seen but \`AC_FUNC_ALLOCA' not in \`configure.in'")
 			if ! defined $libsources{'alloca.c'};
-		    $dep_files{'alloca.P'} = 1;
+		    $dep_files{'.deps/alloca.P'} = 1;
 		    &require_file ($NORMAL, 'alloca.c');
 		}
 	    }
@@ -949,7 +954,7 @@ sub handle_dist
     else
     {
 	$output_rules .= ("\nsubdir = " . $relative_dir . "\n"
-			  . 'distdir = $(topdir)/$(PACKAGE)-$(VERSION)/$(subdir)'
+			  . 'distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)'
 			  . "\n");
     }
 
@@ -1098,7 +1103,8 @@ sub handle_configure
     # Generate CONFIG_HEADER define, and define interally.
     $output_vars .= "CONFIG_HEADER = ${top_builddir}${config_name}\n"
 	if $config_name;
-    $contents{'CONFIG_HEADER'} = "${top_builddir}${config_name}";
+    $contents{'CONFIG_HEADER'} = "${top_builddir}${config_name}"
+	if $config_name;
 }
 
 # Handle C headers.
@@ -1609,9 +1615,11 @@ sub read_am_file
     @topdir = ('.') if ! @topdir;
 
     $top_builddir = join ('/', @topdir);
+    local ($build_rx);
+    ($build_rx = $top_builddir) =~ s/(\W)/\\$1/g;
     local ($header_vars) =
 	&file_contents_with_transform
-	    ('s/\@top_builddir\@/' . $top_builddir . '/g',
+	    ('s/\@top_builddir\@/' . $build_rx . '/g',
 	     'header-vars');
 
     open (AM_FILE, $amfile) || die "automake: couldn't open $amfile: $!\n";
@@ -1727,7 +1735,7 @@ sub read_am_file
 	    # de-ANSI-fication.  This is deprecated.  Remove in the
 	    # future.
 	    $contents{'@kr@'} = 1;
-	    &am_error ('@kr@ is deprecated; put "ansi2knr" in AUTOMAKE_OPTIONS instead');
+	    &am_error ('`@kr@\' is deprecated; put `ansi2knr\' in AUTOMAKE_OPTIONS instead');
 	}
 	else
 	{
