@@ -2770,7 +2770,9 @@ sub handle_aclocal_m4
     if ($regen_aclocal)
     {
 	local (@ac_deps) = (
-			    ($seen_maint_mode ? "\@MAINT\@" : "") ,
+			    ($seen_maint_mode
+			     ? "\@MAINTAINER_MODE_TRUE\@"
+			     : "") ,
 			    "configure.in",
 			    ($acinclude ? ' acinclude.m4' : '')
 			    );
@@ -2867,14 +2869,16 @@ sub handle_configure
 
     local (@rewritten) = &rewrite_inputs_into_dependencies (1,
 							    @secondary_inputs);
-    # This rule remakes the Makefile.in.  Note use of @MAINT@ forces
-    # us to abandon pretty-printing.  Sigh.
+
+    # This rule remakes the Makefile.in.  Note use of
+    # @MAINTAINER_MODE_TRUE@ forces us to abandon pretty-printing.
+    # Sigh.
     $output_rules .= ($infile
 		      # NOTE perl 5.003 (with -w) gives a
 		      # uninitialized value error on the next line.
 		      # Don't know why.
 		      . ': '
-		      . ($seen_maint_mode ? '@MAINT@ ' : '')
+		      . ($seen_maint_mode ? '@MAINTAINER_MODE_TRUE@ ' : '')
 		      . $amfile . ' '
 		      . '$(top_srcdir)/configure.in $(ACLOCAL_M4)'
                       . ' ' . join (' ', @include_stack)
@@ -2932,7 +2936,7 @@ sub handle_configure
     {
 	if ($iter =~ /Makefile\.in$/)
 	{
-	    $make_dirs{&dirname ($iterm)} = 1;
+	    $make_dirs{&dirname ($iter)} = 1;
 	}
     }
 
@@ -4141,7 +4145,11 @@ sub scan_one_configure_file
 	}
 
         $seen_decl_yytext = 1 if /AC_DECL_YYTEXT/;
-        $seen_maint_mode = 1 if /AM_MAINTAINER_MODE/;
+	if (/AM_MAINTAINER_MODE/)
+	{
+	    $seen_maint_mode = 1;
+	    $configure_cond{'MAINTAINER_MODE'} = 1;
+	}
         $seen_package = 1 if /PACKAGE=/;
 
 	# Skip VERSION of [$2]; that is from AM_INIT_AUTOMAKE.
@@ -5487,6 +5495,8 @@ sub read_am_file
 	$_ .= "\n"
 	    unless substr ($_, -1, 1) eq "\n";
 
+	# Don't look at MAINTAINER_MODE_TRUE here.  That shouldn't be
+	# used by users.  @MAINT@ is an anachronism now.
 	$_ =~ s/\@MAINT\@//g
 	    unless $seen_maint_mode;
 
@@ -6011,7 +6021,7 @@ sub file_contents_with_transform
 
     while (<FC_FILE>)
     {
-	$_ =~ s/\@MAINT\@//g
+	$_ =~ s/\@MAINTAINER_MODE_TRUE\@//g
 	    unless $seen_maint_mode;
 
 	$had_chars = length ($_) && $_ ne "\n";
