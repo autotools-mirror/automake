@@ -306,7 +306,7 @@ $obsolete_rx = '(' . join ('|', keys %obsolete_macros) . ')';
 &register_language ('cxx', 'CXXLINK', 0,
 		    'c++', 'cc', 'cpp', 'cxx', 'C');
 &register_language ('header', '', 0,
-		    'h', 'H', 'hxx', 'h++', 'hh', 'hpp');
+		    'h', 'H', 'hxx', 'h++', 'hh', 'hpp', 'inc');
 &register_language ('yacc', '', 1,
 		    'y');
 &register_language ('yaccxx', 'CXXLINK', 0,
@@ -317,9 +317,12 @@ $obsolete_rx = '(' . join ('|', keys %obsolete_macros) . ')';
 		    'l++', 'll', 'lxx');
 &register_language ('asm', '', 0,
 		    's', 'S');
-# FIXME: fortran not finished.
-&register_language ('fortran', '', 0,
-		    'F', 'f', 'f90', 'for');
+&register_language ('f77', 'FLINK', 0,
+		    'f', 'for', 'f90');
+&register_language ('ppf77', 'FLINK', 0,
+		    'F');
+&register_language ('ratfor', 'FLINK', 0,
+		    'r');
 
 
 # Parse command line.
@@ -913,22 +916,23 @@ sub get_object_extension
 sub finish_languages
 {
     local ($ext, $name, $lang, %done);
-    local ($all_cxx) = 1;
+    local ($non_c) = 1;
     foreach $ext (sort keys %extension_seen)
     {
 	$lang = $extension_map{$ext};
 	next if defined $done{$lang};
 	$done{$lang} = 1;
-	$all_cxx = 0 if $lang ne 'cxx';
+	$non_c = 0 if $lang !~ /(cxx|f77|ratfor)$/;
 
 	# Compute the function name of the finisher and then call it.
 	$name = 'lang_' . $lang . '_finish';
 	do $name ();
     }
 
-    # If the project is entirely C++, don't bother with the C stuff.
-    # But if anything else creeps in, then use it.
-    if (! $all_cxx || scalar keys %suffix_rules > 0)
+    # If the project is entirely C++ or entirely Fortran 77, don't
+    # bother with the C stuff.  But if anything else creeps in, then use
+    # it.
+    if (! $non_c || scalar keys %suffix_rules > 0)
     {
 	local ($ltcompile, $ltlink) = &libtool_compiler;
 
@@ -4135,7 +4139,7 @@ sub scan_one_configure_file
  	    &am_conf_line_warning ($filename, $., "automake requires \`AM_PROG_LEX', not \`AC_PROG_LEX'");
 	}
 
-	if (/AC_PROG_(YACC|RANLIB|CC|CXXCPP|CXX|LEX|AWK|CPP|LN_S)/)
+	if (/AC_PROG_(FC|YACC|RANLIB|CC|CXXCPP|CXX|LEX|AWK|CPP|LN_S)/)
 	{
 	    $configure_vars{$1} = $filename . ':' . $.;
 	}
@@ -4414,11 +4418,10 @@ sub lang_asm_rewrite
     return 1;
 }
 
-# Rewrite a single Fortran file.
-sub lang_fortran_rewrite
+# Rewrite a single Fortran 77 file.
+sub lang_f77_rewrite
 {
-    # FIXME: not done yet.
-    return 0;
+    return 1;
 }
 
 # The lang_X_finish functions are called after all source file
@@ -4661,9 +4664,144 @@ sub lang_asm_finish
     &lang_c_finish;
 }
 
-sub lang_fortran_finish
+# A helper which computes a sorted list of all Fortran 77 extensions
+# which were seen.
+sub f77_extensions
 {
-    # FIXME: Nothing to do.
+    local ($key, @r);
+    foreach $key (sort keys %extension_seen)
+    {
+	push (@r, '.' . $key) if $extension_map{$key} eq 'f77';
+    }
+    return @r;
+}
+
+sub lang_f77_finish
+{
+    local (@f77_list) = &f77_extensions;
+    local ($f77_count) = scalar @f77_list;
+    if ($f77_count)
+    {
+	push (@suffixes, @f77_list);
+
+	local ($ltcompile, $ltlink) = &libtool_compiler;
+
+	&define_configure_variable ('FFLAGS');
+	&define_variable ('FCOMPILE', '$(FC) $(AM_FFLAGS) $(FFLAGS)');
+	&define_variable ('LTFCOMPILE',
+			  $ltcompile . '$(FC) $(AM_FFLAGS) $(FFLAGS)')
+	    if ($seen_libtool);
+
+	&define_variable ('FLINK', $ltlink . '$(FC) $(AM_FFLAGS) $(FFLAGS) $(LDFLAGS) -o $@');
+
+	local ($ext);
+	foreach $ext (@f77_list)
+	{
+	    $output_rules .= ("$ext.o:\n"
+			      . "\t\$(FCOMPILE) -c \$<\n");
+	    # FIXME: Using cygpath should be somehow conditional.
+	    $output_rules .= ("$ext.obj:\n"
+			      . "\t\$(FCOMPILE) -c `cygpath -w \$<`\n")
+		if ($seen_objext);
+	    $output_rules .= ("$ext.lo:\n"
+			      . "\t\$(LTFCOMPILE) -c \$<\n")
+		if ($seen_libtool);
+	}
+
+	if (! defined $configure_vars{'FC'})
+	{
+	    &am_error ("Fortran source seen but \`FC' not defined in \`configure.in'");
+	}
+    }
+}
+
+# Preprocessed Fortran 77
+#
+# The current support for preprocessing Fortran 77 just involves passing
+# `$(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS)' as additional flags
+# to the Fortran 77 compiler, since this is how GNU Make does it; see
+# the `GNU Make Manual, Edition 0.51 for `make' Version 3.76 Beta'
+# (specifically, from info file `(make)Catalogue of Rules').
+#
+# A better approach would be to write an Autoconf test
+# (i.e. AC_PROG_FPP) for a Fortran 77 preprocessor, because not all
+# Fortran 77 compilers know how to do preprocessing.  The Autoconf macro
+# AC_PROG_FPP should test the Fortran 77 compiler first for
+# preprocessing capabilities, and then fall back on cpp (if cpp were
+# available).
+sub lang_ppf77_finish
+{
+    local ($ext) = 'F';
+    last unless $extension_seen{$ext};
+    push (@suffixes, '.' . $ext);
+
+    local ($ltcompile, $ltlink) = &libtool_compiler;
+
+    &define_configure_variable ('FFLAGS');
+    &define_variable ('FCOMPILE', '$(FC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_FFLAGS) $(FFLAGS)');
+    &define_variable ('LTFCOMPILE',
+		      $ltcompile . '$(FC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_FFLAGS) $(FFLAGS)')
+	if ($seen_libtool);
+
+    &define_variable ('FLINK', $ltlink . '$(FC) $(AM_FFLAGS) $(FFLAGS) $(LDFLAGS) -o $@');
+
+    $output_rules .= ("$ext.o:\n"
+		      . "\t\$(FCOMPILE) -c \$<\n");
+    # FIXME: Using cygpath should be somehow conditional.
+    $output_rules .= ("$ext.obj:\n"
+		      . "\t\$(FCOMPILE) -c `cygpath -w \$<`\n")
+	if ($seen_objext);
+    $output_rules .= ("$ext.lo:\n"
+		      . "\t\$(LTFCOMPILE) -c \$<\n")
+	if ($seen_libtool);
+
+    # We also handle the case of preprocessing `.F' files into `.f'
+    # files.
+    $output_rules .= ("$ext.f:\n"
+		      . "\t\$(FCOMPILE) -F \$<\n");
+
+    if (! defined $configure_vars{'FC'})
+    {
+	&am_error ("Fortran source seen but \`FC' not defined in \`configure.in'");
+    }
+}
+
+sub lang_ratfor_finish
+{
+    local ($ext) = 'r';
+    last unless $extension_seen{$ext};
+    push (@suffixes, '.' . $ext);
+
+    local ($ltcompile, $ltlink) = &libtool_compiler;
+
+    &define_configure_variable ('FFLAGS');
+    &define_configure_variable ('RFLAGS');
+    &define_variable ('RCOMPILE', '$(FC) $(AM_FFLAGS) $(FFLAGS) $(AM_RFLAGS) $(RFLAGS)');
+    &define_variable ('LTRCOMPILE',
+		      $ltcompile . '$(FC) $(AM_FFLAGS) $(FFLAGS) $(AM_RFLAGS) $(RFLAGS)')
+	if ($seen_libtool);
+
+    &define_variable ('FLINK', $ltlink . '$(FC) $(AM_FFLAGS) $(FFLAGS) $(AM_RFLAGS) $(RFLAGS) $(LDFLAGS) -o $@');
+
+    $output_rules .= ("$ext.o:\n"
+		      . "\t\$(RCOMPILE) -c \$<\n");
+    # FIXME: Using cygpath should be somehow conditional.
+    $output_rules .= ("$ext.obj:\n"
+		      . "\t\$(RCOMPILE) -c `cygpath -w \$<`\n")
+	if ($seen_objext);
+    $output_rules .= ("$ext.lo:\n"
+		      . "\t\$(LTRCOMPILE) -c \$<\n")
+	if ($seen_libtool);
+
+    # We also handle the case of preprocessing `.r' files into `.f'
+    # files.
+    $output_rules .= ("$ext.f:\n"
+		      . "\t\$(RCOMPILE) -F \$<\n");
+
+    if (! defined $configure_vars{'FC'})
+    {
+	&am_error ("Fortran source seen but \`FC' not defined in \`configure.in'");
+    }
 }
 
 # A helper which decides whether libtool is needed.  Returns prefix
@@ -4690,6 +4828,8 @@ sub resolve_linker
 
     return 'CXXLINK'
 	if defined $linkers{'CXXLINK'};
+    return 'FLINK'
+	if defined $linkers{'FLINK'};
     return 'LINK';
 }
 
@@ -6269,11 +6409,6 @@ sub am_install_var
 			if (! $warned_about_extra)
 			{
 			    $warned_about_extra = 1;
-			    if (! $do_require)
-			    {
-				&am_line_error ($one_name, "\`$one_name' should not be defined");
-			    }
-			    else
 			    {
 				&am_line_error ($one_name,
 						"\`$one_name' contains configure substitution, but shouldn't");
@@ -6297,7 +6432,16 @@ sub am_install_var
 
 	    # "EXTRA" shouldn't be used when generating clean targets,
 	    # all, or install targets.
-	    next if $X eq 'EXTRA';
+	    if ($X eq 'EXTRA')
+	    {
+		if (! $warned_about_extra && ! $do_require)
+		{
+		    $warned_about_extra = 1;
+		    &am_line_error ($one_name,
+				    "\`$one_name' should not be defined");
+		}
+		next;
+	    }
 
 	    # A blatant hack: we rewrite each _PROGRAMS primary to
 	    # include EXEEXT when in Cygwin32 mode.

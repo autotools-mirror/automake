@@ -5,10 +5,15 @@ MAINT_CHARSET = latin1
 
 ## We need `.' in SUBDIRS because we want `check' to build `.' before
 ## tests.
-SUBDIRS = . m4 tests
+
+# Matthew D. Langston  <langston@SLAC.Stanford.EDU>
+# Temporarily remove `.' from SUBDIRS because it is causing make to
+# infinitely recurse, and I don't know why.
+## SUBDIRS = . m4 tests
+SUBDIRS = m4 tests
 
 bin_SCRIPTS = automake aclocal
-info_TEXINFOS = automake.texi
+info_TEXINFOS = automake.texi am-f77.texi
 
 amfiles = clean-hdr.am clean-kr.am clean.am comp-vars.am compile.am \
 data-clean.am data.am dejagnu.am depend.am depend2.am dist-vars.am \
@@ -24,7 +29,7 @@ pkgdata_DATA = COPYING INSTALL texinfo.tex ansi2knr.c ansi2knr.1 $(amfiles)
 pkgdata_SCRIPTS = config.guess config.sub install-sh mdate-sh missing \
 mkinstalldirs elisp-comp ylwrap acinstall
 
-EXTRA_DIST = acinstall $(pkgdata_DATA)
+EXTRA_DIST = acinstall $(pkgdata_DATA) automake.spec.in
 
 # The following requires a fixed version of the Emacs 19.30 etags.
 ETAGS_ARGS = automake.in aclocal.in --lang=none \
