@@ -24,6 +24,9 @@ $output = '';
 # Output file name.
 $output_file = 'aclocal.m4';
 
+# Which macros have been seen.
+%macro_seen = ();
+
 # Which files have been seen.
 %file_seen = ();
 
@@ -44,12 +47,13 @@ $verbosity = 0;
      'fp_WITH_REGEX',
      'gm_PROG_LIBTOOL',
      'jm_MAINTAINER_MODE',
-     'md_PATH_PROG',
-     'md_TYPE_PTRDIFF_T',
-     'ud_GNU_GETTEXT',
-     'ud_LC_MESSAGES',
-     'ud_PATH_LISPDIR',
-     'ud_WITH_NLS'
+# These aren't quite obsolete.
+#      'md_PATH_PROG',
+#      'md_TYPE_PTRDIFF_T',
+#      'ud_GNU_GETTEXT',
+#      'ud_LC_MESSAGES',
+#      'ud_PATH_LISPDIR',
+#      'ud_WITH_NLS'
      );
 
 $obsolete_rx = '(' . join ('|', @obsolete_macros) . ')';
@@ -211,10 +215,23 @@ sub add_file
     while (<FILE>)
     {
 	$output .= $_;
+
+	# See if we're defining a macro that was already seen.  This
+	# is mostly a special case for `acinclude.m4'.
+	if (/AC_DEFUN\(\[?([^])]*)\]?/)
+        {
+	    if ($1 ne $file && $file_seen{$1})
+	    {
+		warn "$fullfile: $.: duplicated macro \`$1'\n";
+		$exit_status = 1;
+	    }
+	    $macro_seen{$1} = 1;
+	}
+
 	# See if some other macro is required.
 	if (/AC_REQUIRE\(\[?([^])]*)\]?\)/)
 	{
-	    push (@rlist, $1);
+	    push (@rlist, $1) unless defined $macro_seen{$1};
 	}
     }
     $output .= "\n";

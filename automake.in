@@ -456,10 +456,16 @@ sub handle_options
 	{
 	    &set_strictness ($_);
 	}
-	elsif ($_ eq 'no-installman' || $_ eq 'ansi2knr'
+	elsif (/ansi2knr/)
+	{
+	    # An option like "../lib/ansi2knr" is allowed.  With no
+	    # path prefix, we assume the required programs are in this
+	    # directory.  We save the actual option for later.
+	    $options{'ansi2knr'} = $_;
+	}
+	elsif ($_ eq 'no-installman' || $_ eq 'no-installinfo'
 	       || $_ eq 'dist-shar' || $_ eq 'dist-zip'
-	       || $_ eq 'dist-tarZ' || $_ eq 'dejagnu'
-	       || $_ eq 'no-installinfo')
+	       || $_ eq 'dist-tarZ' || $_ eq 'dejagnu')
 	{
 	    # Explicitly recognize these.
 	}
@@ -536,10 +542,20 @@ sub get_object_extension
 	    $dir_holds_sources = '$o';
 	    push (@suffixes, '._c', '._o');
 
-	    &require_file_with_line ('AUTOMAKE_OPTIONS', $FOREIGN,
-				     'ansi2knr.c', 'ansi2knr.1');
+	    # Only require ansi2knr files if they should appear in
+	    # this directory.
+	    if ($options{'ansi2knr'} eq 'ansi2knr')
+	    {
+		&require_file_with_line ('AUTOMAKE_OPTIONS', $FOREIGN,
+					 'ansi2knr.c', 'ansi2knr.1');
+		$output_rules .= &file_contents ('kr-extra');
+		push (@clean, 'krextra');
+		&push_phony_cleaners ('krextra');
+	    }
 
-	    $output_vars .= &file_contents ('kr-vars');
+	    $output_vars .= "o = .\@U\@o\n";
+	    $output_vars .= "ANSI2KNR = " . $options{'ansi2knr'} . "\n";
+
 	    $output_rules .= &file_contents ('compile-kr');
 	    $output_rules .= &file_contents ('clean-kr');
 
@@ -2285,6 +2301,10 @@ sub scan_configure
 	{
 	    $libsources{'getopt.c'} = 1;
 	    $libsources{'getopt1.c'} = 1;
+	}
+	elsif (/AM_FUNC_STRTOD/)
+	{
+	    $libsources{'strtod.c'} = 1;
 	}
 	elsif (/LIBOBJS="(.*)\s+\$LIBOBJS"/
 	       || /LIBOBJS="\$LIBOBJS\s+(.*)"/)
