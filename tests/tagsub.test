@@ -1,5 +1,6 @@
 #! /bin/sh
-# Copyright (C) 1997, 1998, 2000, 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 1997, 1998, 2000, 2001, 2002, 2003
+#   Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -19,29 +20,34 @@
 # Boston, MA 02111-1307, USA.
 
 # Test to make sure tags and subdirs work correctly.  Bug report by
-# François Pinard.
+# François Pinard, and later by Akim Demaille.
 
+required=etags
 . ./defs || exit 1
 
-cat > Makefile.am << 'END'
-SUBDIRS = sub
+set -e
+
+cat >> configure.in << 'END'
+AC_CONFIG_FILES([sub/Makefile])
+AC_OUTPUT
 END
 
+echo 'SUBDIRS = sub' > Makefile.am
 mkdir sub
-
-cat > sub/Makefile.am << 'END'
-noinst_HEADERS = iguana.h
-END
-
+echo 'noinst_HEADERS = iguana.h' > sub/Makefile.am
 : > sub/iguana.h
 
-cat > configure.in << 'END'
-AC_INIT
-AM_INIT_AUTOMAKE(nonesuch, nonesuch)
-AC_OUTPUT(Makefile sub/Makefile)
-END
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
 
-$ACLOCAL || exit 1
-$AUTOMAKE || exit 1
+./configure
+$MAKE tags
+test -f sub/TAGS
+test -f TAGS
+$FGREP sub/TAGS TAGS
+$FGREP iguana.h sub/TAGS
 
-grep '^TAGS:.*tags-recursive' Makefile.in
+$MAKE distclean
+test ! -f sub/TAGS
+test ! -f TAGS
