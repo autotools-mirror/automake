@@ -880,13 +880,27 @@ sub handle_scripts
     # NOTE we no longer automatically clean SCRIPTS, because it is
     # useful to sometimes distribute scripts verbatim.  This happens
     # eg in Automake itself.
-    local ($msi);
-    $msi = &am_install_var ('scripts', 'SCRIPTS',
-			    'bin', 'sbin', 'libexec', 'pkgdata',
-			    'noinst', 'check');
+    &am_install_var ('scripts', 'SCRIPTS',
+		     'bin', 'sbin', 'libexec', 'pkgdata',
+		     'noinst', 'check');
 
-    # We really only want a boolean value.
-    $scripts_installed = 1 if $msi;
+    # Set $scripts_installed if appropriate.  Make sure we only find
+    # scripts which are actually installed -- this is why we can't
+    # simply use the return value of am_install_var.
+    local (%valid) = &am_primary_prefixes ('scripts', 'bin', 'sbin',
+					   'libexec', 'pkgdata',
+					   'noinst', 'check');
+    local ($key);
+    foreach $key (keys %valid)
+    {
+	if ($key ne 'noinst'
+	    && $key ne 'check'
+	    && &variable_defined ($key . '_SCRIPTS'))
+	{
+	    $scripts_installed = 1;
+	    last;
+	}
+    }
 
     if ($scripts_installed)
     {
