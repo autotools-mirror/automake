@@ -854,8 +854,6 @@ sub get_object_extension
 	$xform = $seen_objext ? 's/^OBJEXT//;' : 's/^OBJEXT.*$//;';
 	$output_rules .= &file_contents ('compile', $xform);
 
-	&push_phony_cleaners ('compile');
-
 	# If using X, include some extra variable definitions.  NOTE
 	# we don't want to force these into CFLAGS or anything,
 	# because not all programs will necessarily use X.
@@ -870,7 +868,6 @@ sub get_object_extension
 
 	push (@suffixes, '.c', '.o');
 	push (@suffixes, '.obj') if $seen_objext;
-	&depend ('clean', 'compile');
 
 	$included_generic_compile = 1;
     }
@@ -880,10 +877,7 @@ sub get_object_extension
 	# Output the libtool compilation rules.
 	$output_rules .= &file_contents ('libtool');
 
-	&push_phony_cleaners ('libtool');
-
 	push (@suffixes, '.lo');
-	&depend ('clean', 'libtool');
 
 	$included_libtool_compile = 1;
     }
@@ -910,8 +904,6 @@ sub get_object_extension
 		&require_file_with_line ('AUTOMAKE_OPTIONS', $FOREIGN,
 					 'ansi2knr.c', 'ansi2knr.1');
 		$output_rules .= &file_contents ('kr-extra');
-		&depend ('clean', 'krextra');
-		&push_phony_cleaners ('krextra');
 	    }
 
 	    # Generate rules to build ansi2knr.  If it is in some
@@ -956,9 +948,6 @@ sub get_object_extension
 	    }
 
 	    $output_rules .= &file_contents ('clean-kr');
-
-	    &depend ('clean', 'kr');
-	    &push_phony_cleaners ('kr');
 
 	    $included_knr_compile = 1;
 	}
@@ -2273,7 +2262,6 @@ sub handle_texinfo
 	    ++$done;
 
 	    &push_dist_common ($vtexi, 'stamp-' . $vti);
-	    &depend ('clean', $vti);
 
 	    &require_conf_file_with_line ('info_TEXINFOS', $FOREIGN,
 					  'mdate-sh');
@@ -2295,8 +2283,6 @@ sub handle_texinfo
 					    'VTEXI'        => $vtexi,
 					    'MDDIR'        => $conf_dir,
 					    'CONFIGURE_AC' => $configure_ac));
-
-	    &push_phony_cleaners ($vti);
 	}
 
 	# If user specified file_TEXINFOS, then use that as explicit
@@ -2394,7 +2380,6 @@ sub handle_texinfo
     $output_rules .= &file_contents ('texinfos', $xform);
     push (@dist_targets, 'dist-info');
 
-    &push_phony_cleaners ('aminfo');
     if ($cygnus_mode)
     {
 	$output_rules .= "clean-info: mostlyclean-aminfo\n";
@@ -2413,7 +2398,6 @@ sub handle_texinfo
 	# get run twice during "make all".
 	unshift (@all, '$(INFO_DEPS)');
     }
-    &depend ('clean', 'aminfo');
     push (@info, '$(INFO_DEPS)');
     push (@dvi, '$(DVIS)');
 
@@ -2571,8 +2555,6 @@ sub handle_tags
 
 	$output_rules .= &file_contents ('tags', $xform);
 	$output_rules .= &file_contents ('tags-clean');
-	&depend ('clean', 'tags');
-	&push_phony_cleaners ('tags');
 	&examine_variable ('TAGS_DEPENDENCIES');
     }
     elsif (&variable_defined ('TAGS_DEPENDENCIES'))
@@ -2595,7 +2577,6 @@ sub handle_multilib
     return unless $seen_multilib;
 
     $output_rules .= &file_contents ('multilib');
-    &push_phony_cleaners ('multi');
 }
 
 # Worker for handle_dist.
@@ -3041,8 +3022,6 @@ sub handle_dependencies
 	    }
 
 	    $output_rules .= &file_contents ('depend');
-	    &depend ('clean', 'depend');
-	    &push_phony_cleaners ('depend');
 	}
     }
     else
@@ -3088,7 +3067,6 @@ sub handle_subdirs
 		       : '')
 		      . '/;');
     $output_rules .= &file_contents ('subdirs', $xform);
-    &push_phony_cleaners ('recursive');
 
     $recursive_install = 1;
 }
@@ -3421,8 +3399,6 @@ sub handle_configure
 	$output_rules .=
 	    &file_contents ('clean-hdr',
 			    &transform ('FILES' => $distclean_config));
-	&depend ('clean', 'hdr');
-	&push_phony_cleaners ('hdr');
     }
 
     # Set location of mkinstalldirs.
@@ -3898,8 +3874,8 @@ sub do_check_merge_target
 # Handle all 'clean' targets.
 sub handle_clean
 {
-    local ($xform) = '';
-    local ($name);
+    my ($xform) = '';
+    my ($name);
 
     # Don't include `MAINTAINER'; it is handled specially below.
     foreach $name ('MOSTLY', '', 'DIST')
@@ -3936,68 +3912,33 @@ sub handle_clean
     }
 
     $output_rules .= &file_contents ('clean', $xform);
+    &depend ('clean-am', 'mostlyclean-am');
+    &depend ('distclean-am', 'clean-am');
+    &depend ('maintainer-clean-am', 'distclean-am');
 
-    &depend ('clean', 'generic');
-    &push_phony_cleaners ('generic');
-
-    &do_one_clean_target ('mostly', '');
-    &do_one_clean_target ('', 'mostly');
-    &do_one_clean_target ('dist', '');
-    &do_one_clean_target ('maintainer-', 'dist');
-
-    &depend ('.PHONY',
-	     'clean', 'mostlyclean', 'distclean', 'maintainer-clean');
-}
-
-
-# &do_one_clean_target ($NAME, $LAST_NAME)
-# ----------------------------------------
-# Helper for handle_clean.
-sub do_one_clean_target
-{
-    my ($name, $last_name) = @_;
-    my (@deps) = @{$dependencies{'clean'}};
-
-    # Change each dependency `BLARG' into `clean-BLARG'.
-    grep (($_ = $name . 'clean-' . $_) && 0, @deps);
-
-    # Push the previous clean target.  There is no previous clean
-    # target if we're doing mostlyclean.
-    push (@deps, $last_name . 'clean-am')
-	unless $name eq 'mostly';
-
-    # If a -local version of the rule is given, add it to the list.
-    if (&target_defined ($name . 'clean-local'))
-    {
-	push (@deps, $name . 'clean-local');
-    }
-
-    # Print the target and the dependencies.
-    &pretty_print_rule ($name . 'clean-am: ', "\t\t", @deps);
-
-    $output_rules .= "\n";
-
-    # Now generate the actual clean target.
-    $output_rules .= ($name . 'clean' . ": " . $name . 'clean'
-		      . ($recursive_install ? '-recursive' : '-am')
-		      . "\n");
+    foreach ('clean', 'distclean', 'mostlyclean', 'maintainer-clean')
+      {
+	&depend ($_, $_ . '-local')
+	  if &target_defined ($_ . '-local');
+	&depend ($_,
+		 $_ . ($recursive_install ? '-recursive' : '-am'));
+      }
 
     # We special-case config.status here.  If we do it as part of the
     # normal clean processing for this directory, then it might be
     # removed before some subdir is cleaned.  However, that subdir's
     # Makefile depends on config.status.
-    if (($name eq 'maintainer-'
-	 || $name eq 'dist')
-	&& $relative_dir eq '.')
+    if ($relative_dir eq '.')
     {
-	$output_rules .= "\t-rm -f config.status\n";
+	$actions{'distclean'} .= "\t-rm -f config.status\n";
+	$actions{'maintainer-clean'} .= "\t-rm -f config.status\n";
     }
-    $output_rules .= "\n";
 }
 
 
 # &depend ($CATEGORY, @DEPENDENDEES)
 # ----------------------------------
+# The target $CATEGORY depends on @DEPENDENDEES.
 sub depend
 {
     my ($category, @dependendees) = @_;
@@ -4007,22 +3948,31 @@ sub depend
 }
 
 
+# &target_cmp ($A, $B)
+# --------------------
+# Subroutine for &handle_factored_dependencies to let `.PHONY' be last.
+sub target_cmp
+{
+    return
+        if $a eq $b;
+    return -1
+        if $b eq '.PHONY';
+    return 1
+        if $a eq '.PHONY';
+    return $a cmp $b;
+}
+
 
 # &handle_factored_dependencies ()
 # --------------------------------
 # Handle .PHONY target.
 sub handle_factored_dependencies
 {
-    my $category;
-    foreach $category (sort keys %dependencies)
+    foreach (sort target_cmp keys %dependencies)
     {
-        # FIXME: For the time being, there are targets which we
-        # handle specifically.  When all the clean targets stick to
-        # this scheme, it should be possible to avoid these special cases.
-        next
-	  if $category =~ /^(clean)$/;
-        &pretty_print_rule ("$category:", "",
-			    sort @{$dependencies{$category}});
+        &pretty_print_rule ("$_:", "\t",
+			    sort @{$dependencies{$_}});
+	$output_rules .= $actions{$_};
         $output_rules .= "\n";
     }
 }
@@ -4150,8 +4100,6 @@ sub handle_emacs_lisp
 	&define_pretty_variable ('ELCFILES', '', @elfiles);
 
 	$output_rules .= &file_contents ('lisp-clean');
-	&depend ('clean', 'lisp');
-	&push_phony_cleaners ('lisp');
 
 	push (@all, '$(ELCFILES)');
 
@@ -4183,7 +4131,6 @@ sub handle_python
     &define_configure_variable ('PYTHON');
 
     $output_rules .= &file_contents ('python-clean');
-    &depend ('clean', 'python');
 
     &am_error ("\`python_PYTHON' defined but \`AM_CHECK_PYTHON' not in \`$configure_ac'")
 	if ! $seen_pythondir && &variable_defined ('python_PYTHON');
@@ -6873,16 +6820,26 @@ sub initialize_per_input
     @check_tests = ();
     @installcheck = ();
 
-    # Holds the dependencies of target which dependencies are factored.
+    # Holds the dependencies of targets which dependencies are factored.
     # Typically, `.PHONY' will appear in plenty of *.am files, but must
     # be output once.  Arguably all pure dependencies could be subject
     # to this factorization, but it is not unpleasant to have paragraphs
     # in Makefile: keeping related stuff altogether.
     %dependencies =
       (
-       'clean'  => [],
-       '.PHONY' => []
+       'clean-am'             => [],
+       'mostlyclean-am'       => [],
+       'maintainer-clean-am'  => [],
+       'distclean-am'         => [],
+       'clean'                => [],
+       'mostlyclean'          => [],
+       'maintainer-clean'     => [],
+       'distclean'            => [],
+       '.PHONY'               => []
       );
+    # Holds the factored actions.  Tied to %DEPENDENCIES, i.e., filled
+    # only when keys exists in %DEPENDENCIES.
+    %actions = ();
 
     # A list of files deleted by `maintainer-clean'.
     @maintainer_clean_files = ();
@@ -6981,6 +6938,22 @@ sub initialize_per_input
 
 ################################################################
 
+# $FLATTENED
+# &flatten ($STRING)
+# ------------------
+# Flatten the $STRING and return the result.
+sub flatten
+{
+  $_ = shift;
+
+  s/\\\n//somg;
+  s/\s+/ /g;
+  s/^ //;
+  s/ $//;
+
+  return $_;
+}
+
 
 # $CONTENTS
 # &file_contents ($BASENAME, [$COMMAND])
@@ -7031,6 +7004,12 @@ sub file_contents
     # We don't need more than two consecutive new-lines.
     $contents =~ s/\n{3,}/\n\n/g;
 
+    # A rule has three parts: a list of targets, a list of dependencies,
+    # and optionally actions.
+    my $RULE_PATTERN =
+      "^($TARGET_PATTERN(?:(?:\\\\\n|\\s)+$TARGET_PATTERN)*) *:([^=].*|)\$";
+
+
     # Process each Make `paragraph'.
     #
     # A Make `paragraph' is delimited by a new line which is not
@@ -7065,24 +7044,47 @@ sub file_contents
  	    # Stick comments before the incoming macro or rule.
  	    $comment = $_;
  	}
- 	elsif (/$RULE_PATTERN/mso && !/\t/ && /^([^:]+): ([^:]+)$/som)
+ 	elsif (/$RULE_PATTERN/mso)
  	{
-	    # Pure dependencies: take some Dude, it's good stuff!
-	    my ($dependers, $dependees) = ($1, $2);
-	    $dependers =~ s/\\\n//somg;
-	    $dependees =~ s/\\\n//somg;
-	    foreach (split (/\s/ , $dependers))
+	  # Separate relationship from optional actions: the first
+	  # `new-line tab" not preceded by backslash (continuation
+	  # line).
+	  # I'm quite shoked!  It seems that (\\\n|[^\n]) is not the
+	  # same as `([^\n]|\\\n)!!!  Don't swap it, it breaks.
+	  my ($relationship, $actions) =
+	    /^((?:\\\n|[^\n])*)(?:\n(\t.*))?$/som;
+
+	  # Separate targets from dependencies: the first colon.
+	  $relationship =~ /^([^:]+\S+) *: *(.*)$/som;
+	  my ($targets, $dependencies) = ($1, $2);
+	  # Remove the escaped new lines.
+	  # I don't know why, but I have to use a tmp $flat_deps.
+	  my $flat_deps = &flatten ($dependencies);
+	  my @deps = split (' ', $flat_deps);
+
+	  foreach (split (' ' , $targets))
 	    {
-	        if (defined $dependencies{$_})
+	      if (defined $dependencies{$_})
 		{
-		    &depend ($_, split (/\s/, $dependees));
+		  &depend ($_, @deps);
+		  $actions{$_} .= $actions;
 		}
-		else
+	      else
 		{
-		    # Free lance dependency.
-		    $result_rules .= "$comment$separator$1: $2\n"
-		      unless defined $contents{$1};
-		    $comment = $separator = '';
+		  # Free lance dependency.  Output the rule for all the
+		  # targets instead of one by one.
+		  unless (defined $contents{$targets})
+		    {
+		      # Some hair to avoid spurious trailing blank
+		      # when there are no dependencies.
+		      $result_rules .= "$comment$separator";
+		      $result_rules .= "$targets:";
+		      $result_rules .= " $dependencies"
+			if $dependencies;
+		      $result_rules .= "\n$actions\n";
+		    }
+		  $comment = $separator = '';
+		  last;
 		}
 	    }
  	}
@@ -7414,8 +7416,14 @@ sub am_install_var
 				  &transform ('DIR' => $X)
 				  . $cygxform);
 
-		&depend ('clean', $X . $primary);
-		&push_phony_cleaners ($X . $primary);
+		&depend ('mostlyclean-am', 'mostlyclean-' . $X . $primary);
+		&depend ('.PHONY', 'mostlyclean-' . $X . $primary);
+		&depend ('clean-am', 'clean-' . $X . $primary);
+		&depend ('.PHONY', 'clean-' . $X . $primary);
+		&depend ('distclean-am', 'distclean-' . $X . $primary);
+		&depend ('.PHONY', 'distclean-' . $X . $primary);
+		&depend ('maintainer-clean-am', 'maintainer-clean-' . $X . $primary);
+		&depend ('.PHONY', 'maintainer-clean-' . $X . $primary);
 	    }
 
 	    if ($X eq 'check')
@@ -7779,16 +7787,6 @@ sub push_dist_common
     }
 }
 
-# Push a list of clean targets onto phony.
-sub push_phony_cleaners
-{
-    local ($base) = @_;
-    local ($target);
-    foreach $target ('mostly', 'dist', '', 'maintainer-')
-    {
-	&depend ('.PHONY', $target . 'clean-' . $base);
-    }
-}
 
 # Set strictness.
 sub set_strictness

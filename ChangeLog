@@ -1,5 +1,56 @@
 2001-02-06  Akim Demaille  <akim@epita.fr>
 
+	Monstro unsplitable patch.
+
+	The aim is to remove hard coded knowledge about clean targets from
+	automake.in, leaving them in the *.am files.
+	In addition to the mechanic needed to factor some dependencies, it
+	appears some rules (most notably distclean and maintainer-clean)
+	need factored actions.  So first, be ready to catch factored
+	rules.
+
+	* automake.in (&file_contents): For the time being, use an extended
+	$RULE_PATTERN which is able to match any kind of rules, with or
+	without dependency, with or without actions.
+	Handle all the rules uniformly, storing in %actions the factored
+	actions.
+	(&flatten, &target_cmp): New.
+	(&handle_factored_dependencies): Output the %actions.
+	No longer special case `clean'.
+	Output the rules in alphabetical order, but keeping `.PHONY' last.
+
+	Now we must not use &push_phony_cleaners, which is doing all sort
+	of magic to push a bit of everything in all the clean targets.
+	The biggest problem being that, making a Cartesian product, it
+	requires many useless targets.  The `*.am' file know better.
+	But first, register the new factored rules.
+
+	* automake.in (&initialize_per_input): Include clean, mostlyclean,
+	maintainer-clean, distclean and their `*-am' counterpart in
+	%dependencies.
+	Initialize %actions.
+	(get_object_extension, handle_texinfo, handle_tags, handle_multilib)
+	handle_dependencies, handle_subdirs, handle_configure, handle_clean)
+	(handle_emacs_lisp, handle_python): Don't play with
+	&push_phony_cleaners nor &depend and `clean'.
+	* texinfos.am, texi-vers.am, tags-clean.am:
+	* subdirs.am,python-clean.am, multilib.am, lisp-clean.am:
+	* libtool.am, kr-extra.am, depend.am, compile.am, clean.am:
+	* clean-kr.am, clean-hdr.am: Do it.
+	Whenever a target is empty, just remove it, it will no longer be
+	called.
+
+	There is still some magic about clean to hard code.  But really,
+	that's the end of &do_one_clean_target.
+
+	* automake.in (&do_one_clean_target): Kaboom out.
+	(&handle_clean): Rewrite the magic code.
+	(&am_install_var): No longer use &push_phony_cleaners, nor depend
+	on `clean'.
+	(&push_phony_cleaners): Kaboom too.
+
+2001-02-06  Akim Demaille  <akim@epita.fr>
+
 	* automake.in (do_one_clean_target): Don't hard code knowledge
 	about libtool, and maintainer-clean.
 	* clean.am, libtool.am: Handle these.
