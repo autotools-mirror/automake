@@ -5440,88 +5440,6 @@ sub pretty_print_rule
 
 ################################################################
 
-# See if a target exists.
-sub target_defined
-{
-    my ($target) = @_;
-    return defined $targets{$target};
-}
-
-
-# &make_condition (@CONDITIONS)
-# -----------------------------
-# Transform a list of conditions (themselves can be an internal list
-# of conditions, e.g., @CONDITIONS = ('cond1 cond2', 'cond3')) into a
-# Make conditional (a pattern for AC_SUBST).
-# Correctly returns the empty string when there are no conditions.
-sub make_condition
-{
-    my $res = conditional_string (@_);
-
-    # There are no conditions.
-    if ($res eq '')
-      {
-	# Nothing to do.
-      }
-    # It's impossible.
-    elsif ($res eq 'FALSE')
-      {
-	$res = '#';
-      }
-    # Build it.
-    else
-      {
-	$res = '@' . $res . '@';
-	$res =~ s/ /@@/g;
-      }
-
-    return $res;
-}
-
-
-# &variable_dump ($VAR)
-# ---------------------
-sub variable_dump ($)
-{
-  my ($var)= @_;
-
-  if (!exists $var_value{$var})
-    {
-      print STDERR "  $var does not exist\n";
-    }
-  else
-    {
-      my $var_is_am = $var_is_am{$var} ? "Automake" : "User";
-      my $where = (defined $var_line{$var}
-		   ? $var_line{$var} : "undefined");
-      print STDERR "  $var ($var_is_am, where = $where) $var_type{$var}=\n";
-      print STDERR "  {\n";
-      print STDERR "$var_comment{$var}"
-	if defined $var_comment{$var};
-      foreach my $vcond (sort by_condition keys %{$var_value{$var}})
-	{
-	  print STDERR "    $vcond => $var_value{$var}{$vcond}\n";
-	}
-      print STDERR "  }\n";
-    }
-}
-
-
-# &variables_dump ()
-# ------------------
-sub variables_dump ()
-{
-  my ($var)= @_;
-
-  print STDERR "%var_value =\n";
-  print STDERR "{\n";
-  foreach my $var (sort (keys %var_value))
-    {
-      variable_dump ($var);
-    }
-  print STDERR "}\n";
-}
-
 
 # $STRING
 # &conditional_string(@COND-STACK)
@@ -5596,6 +5514,9 @@ sub conditionals_true_when (@@)
 }
 
 
+# $NEGATION
+# condition_negate ($COND)
+# ------------------------
 sub condition_negate ($)
 {
     my ($cond) = @_;
@@ -5608,34 +5529,52 @@ sub condition_negate ($)
 }
 
 
-# Check for an ambiguous conditional.  This is called when a variable
-# or target is being defined conditionally.  If we already know about
-# a definition that is true under the same conditions, then we have an
-# ambiguity.
-sub check_ambiguous_conditional ($$)
+# Compare condition names.
+# Issue them in alphabetical order, foo_TRUE before foo_FALSE.
+sub by_condition
 {
-    my ($var, $cond) = @_;
-    foreach my $vcond (keys %{$var_value{$var}})
-    {
-       my $message;
-       if ($vcond eq $cond)
-       {
-	   $message = "$var multiply defined in condition $cond";
-       }
-       elsif (&conditional_true_when ($vcond, $cond))
-       {
-	 $message = "$var was already defined in condition $vcond, which implies condition $cond";
-       }
-       elsif (&conditional_true_when ($cond, $vcond))
-       {
-	   $message = "$var was already defined in condition $vcond, which is implied by condition $cond";
-       }
-       if ($message)
-       {
-	   &am_line_error ($var, $message);
-	   variable_dump ($var);
-       }
-   }
+    # Be careful we might be comparing `' or `#'.
+    $a =~ /^(.*)_(TRUE|FALSE)$/;
+    my ($aname, $abool) = ($1 || '', $2 || '');
+    $b =~ /^(.*)_(TRUE|FALSE)$/;
+    my ($bname, $bbool) = ($1 || '', $2 || '');
+    return ($aname cmp $bname
+	    # Don't bother with IFs, given that TRUE is after FALSE
+	    # just cmp in the reverse order.
+	    || $bbool cmp $abool
+	    # Just in case...
+	    || $a cmp $b);
+}
+
+
+# &make_condition (@CONDITIONS)
+# -----------------------------
+# Transform a list of conditions (themselves can be an internal list
+# of conditions, e.g., @CONDITIONS = ('cond1 cond2', 'cond3')) into a
+# Make conditional (a pattern for AC_SUBST).
+# Correctly returns the empty string when there are no conditions.
+sub make_condition
+{
+    my $res = conditional_string (@_);
+
+    # There are no conditions.
+    if ($res eq '')
+      {
+	# Nothing to do.
+      }
+    # It's impossible.
+    elsif ($res eq 'FALSE')
+      {
+	$res = '#';
+      }
+    # Build it.
+    else
+      {
+	$res = '@' . $res . '@';
+	$res =~ s/ /@@/g;
+      }
+
+    return $res;
 }
 
 
@@ -5742,8 +5681,43 @@ sub cond_stack_endif ($$$)
 ## ------------------------ ##
 
 
+# check_ambiguous_conditional ($VAR, $COND)
+# -----------------------------------------
+# Check for an ambiguous conditional.  This is called when a variable
+# is being defined conditionally.  If we already know about a
+# definition that is true under the same conditions, then we have an
+# ambiguity.
+sub check_ambiguous_conditional ($$)
+{
+    my ($var, $cond) = @_;
+    foreach my $vcond (keys %{$var_value{$var}})
+    {
+       my $message;
+       if ($vcond eq $cond)
+       {
+	   $message = "$var multiply defined in condition $cond";
+       }
+       elsif (&conditional_true_when ($vcond, $cond))
+       {
+	 $message = ("$var was already defined in condition $vcond, "
+		     . "which implies condition $cond");
+       }
+       elsif (&conditional_true_when ($cond, $vcond))
+       {
+	   $message = ("$var was already defined in condition $vcond, "
+		       . "which is implied by condition $cond");
+       }
+       if ($message)
+       {
+	   &am_line_error ($var, $message);
+	   macro_dump ($var);
+       }
+   }
+}
+
+
 # &macro_define($VAR, $VAR_IS_AM, $TYPE, $COND, $VALUE, $WHERE)
-# ----------------------------------------------------------------
+# -------------------------------------------------------------
 # The $VAR can go from Automake to user, but not the converse.
 sub macro_define ($$$$$$)
 {
@@ -5852,6 +5826,50 @@ sub variable_delete ($@)
 	  delete $var_value{$var}{$cond};
 	}
     }
+}
+
+
+# &macro_dump ($VAR)
+# ------------------
+sub macro_dump ($)
+{
+  my ($var) = @_;
+
+  if (!exists $var_value{$var})
+    {
+      print STDERR "  $var does not exist\n";
+    }
+  else
+    {
+      my $var_is_am = $var_is_am{$var} ? "Automake" : "User";
+      my $where = (defined $var_line{$var}
+		   ? $var_line{$var} : "undefined");
+      print STDERR "$var_comment{$var}"
+	if defined $var_comment{$var};
+      print STDERR "  $var ($var_is_am, where = $where) $var_type{$var}=\n";
+      print STDERR "  {\n";
+      foreach my $vcond (sort by_condition keys %{$var_value{$var}})
+	{
+	  print STDERR "    $vcond => $var_value{$var}{$vcond}\n";
+	}
+      print STDERR "  }\n";
+    }
+}
+
+
+# &macros_dump ()
+# ---------------
+sub macros_dump ()
+{
+  my ($var) = @_;
+
+  print STDERR "%var_value =\n";
+  print STDERR "{\n";
+  foreach my $var (sort (keys %var_value))
+    {
+      macro_dump ($var);
+    }
+  print STDERR "}\n";
 }
 
 
@@ -6062,24 +6080,6 @@ sub variable_conditions_sub
 }
 
 
-# Compare condition names.
-# Issue them in alphabetical order, foo_TRUE before foo_FALSE.
-sub by_condition
-{
-    # Be careful we might be comparing `' or `#'.
-    $a =~ /^(.*)_(TRUE|FALSE)$/;
-    my ($aname, $abool) = ($1 || '', $2 || '');
-    $b =~ /^(.*)_(TRUE|FALSE)$/;
-    my ($bname, $bbool) = ($1 || '', $2 || '');
-    return ($aname cmp $bname
-	    # Don't bother with IFs, given that TRUE is after FALSE
-	    # just cmp in the reverse order.
-	    || $bbool cmp $abool
-	    # Just in case...
-	    || $a cmp $b);
-}
-
-
 # Filter a list of conditionals so that only the exclusive ones are
 # retained.  For example, if both `COND1_TRUE COND2_TRUE' and
 # `COND1_TRUE' are in the list, discard the latter.
@@ -6151,7 +6151,7 @@ sub check_variable_defined_unconditionally ($$)
 	{
 	    &am_line_error ($parent,
 			    "warning: automake does not support $var being defined conditionally");
-	    variable_dump ($var);
+	    macro_dump ($var);
 
 	}
     }
@@ -6492,6 +6492,15 @@ sub rule_define ($$$$)
   }
 }
 
+
+# See if a target exists.
+sub target_defined
+{
+    my ($target) = @_;
+    return defined $targets{$target};
+}
+
+
 ################################################################
 
 # Read Makefile.am and set up %contents.  Simultaneously copy lines
@@ -6762,7 +6771,7 @@ sub read_main_am_file
     # This supports the strange variable tricks we are about to play.
     if (scalar keys %var_value > 0)
       {
-	variables_dump ();
+	macros_dump ();
 	&prog_error ("variable defined before read_main_am_file");
       }
 
