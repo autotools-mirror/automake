@@ -2813,9 +2813,7 @@ sub handle_dist
 		      $xform
 		      . &transform ('DIST-TARGETS' => join (" ", @dist_targets),
 				    'TOP_DISTDIR'  => $top_distdir)
-		      . &transform_cond ('DIST-TARGETS' =>
-					    scalar @dist_targets,
-					 'DISTDIR' =>
+		      . &transform_cond ('DISTDIR' =>
 					    ! &variable_defined ('distdir')));
 }
 
@@ -3910,7 +3908,7 @@ sub handle_factored_dependencies
 		  || $actions{$_}
 		  || $required_targets{$_});
         &pretty_print_rule ("$_:", "\t",
-			    sort @{$dependencies{$_}});
+			    uniq (sort @{$dependencies{$_}}));
 	$output_rules .= $actions{$_};
         $output_rules .= "\n";
     }
@@ -6898,16 +6896,19 @@ sub file_contents
 # &transform (%PAIRS)
 # -------------------
 # Create a replacement expression suitable for file_contents
-# to replace each key of %PAIRS by its value.
+# to replace each key of %PAIRS by its value.  Also uses &transform_cond
+# on %PAIRS.
 sub transform (%)
 {
     my (%pairs) = @_;
     my $result = '';
 
-    foreach my $token (sort keys %pairs)
+    while (my ($token, $val) = each %pairs)
     {
-        $result .= "s/\Q\@$token\@\E/\Q$pairs{$token}\E/g;";
+        $result .= "s/\Q\@$token\@\E/\Q$val\E/g;";
     }
+
+    $result .= &transform_cond (%pairs);
     return $result;
 }
 
@@ -6923,9 +6924,9 @@ sub transform_cond (%)
     my (%pairs) = @_;
     my $result = '';
 
-    foreach my $token (sort keys %pairs)
+    while (my ($token, $val) = each %pairs)
     {
-        if ($pairs{$token})
+        if ($val)
 	{
 	    $result .= "s/\Q?$token?\E//g;s/^.*\Q?!$token?\E.*\$//g;";
 	}
@@ -7236,8 +7237,6 @@ sub am_install_var
 						 'EXEC' => $X =~ /exec/)
 			      . $ltxform
 			      . $cygxform);
-
-	    push (@installdirs, '$(DESTDIR)$(' . $X . 'dir)');
 	}
     }
 
