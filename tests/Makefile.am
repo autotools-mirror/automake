@@ -26,12 +26,12 @@ ldadd.test lex.test lex2.test libobj.test libobj2.test libobj3.test \
 libobj4.test libobj5.test libobj6.test libobj7.test libobj8.test \
 library.test link_c_cxx.test link_f_c.test link_f_c_cxx.test \
 link_f_cxx.test link_f_only.test lisp.test mdate.test mdate2.test \
-mkinst2.test mkinstall.test noinst.test number.test objc.test \
-obsolete.test order.test outdir.test output.test output2.test \
-output3.test output4.test output5.test package.test parse.test \
-pluseq.test pluseq2.test pluseq3.test pluseq4.test pluseq5.test	\
-prefix.test primary.test primary2.test proginst.test ranlib.test \
-recurs.test recurs2.test remake.test remake2.test req.test \
+mdate3.test mkinst2.test mkinstall.test noinst.test number.test	\
+objc.test obsolete.test order.test outdir.test output.test \
+output2.test output3.test output4.test output5.test package.test \
+parse.test pluseq.test pluseq2.test pluseq3.test pluseq4.test \
+pluseq5.test prefix.test primary.test primary2.test proginst.test \
+ranlib.test recurs.test recurs2.test remake.test remake2.test req.test \
 rulepat.test scripts.test seenc.test sinclude.test spell.test \
 spell2.test spell3.test spelling.test stamph.test stdlib.test \
 subdir.test subdir2.test subst.test symlink.test syntax.test tags.test \
