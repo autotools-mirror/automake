@@ -7517,15 +7517,20 @@ sub read_am_file ($)
             my $path = $1;
 
             if ($path =~ s/^\$\(top_srcdir\)\///)
-            {
+	      {
                 push (@include_stack, "\$\(top_srcdir\)/$path");
-            }
+		# Distribute any included file.
+		my $distname = backname ($relative_dir) . '/' . $path;
+		push_dist_common ($distname);
+	      }
             else
-            {
+	      {
                 $path =~ s/\$\(srcdir\)\///;
                 push (@include_stack, "\$\(srcdir\)/$path");
-                $path = $relative_dir . "/" . $path;
-            }
+		push_dist_common (($relative_dir eq '.')
+				  ? $path : ($relative_dir . '/' . $path));
+		$path = $relative_dir . "/" . $path;
+	      }
             &read_am_file ($path);
         }
 	else

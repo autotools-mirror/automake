@@ -1,0 +1,33 @@
+#! /bin/sh
+
+# Make sure header in parent directory is included.
+
+. $srcdir/defs || exit 1
+
+cat >> configure.in << 'END'
+AC_CONFIG_FILES([sub/Makefile])
+END
+
+cat > Makefile.am << 'END'
+SUBDIRS = sub
+END
+
+: > foo
+
+mkdir sub
+cat > sub/Makefile.am << 'END'
+include $(top_srcdir)/foo
+END
+
+$ACLOCAL || exit 1
+$AUTOMAKE || exit 1
+
+# Also make sure include file is distributed.
+(sed -n -e '/^DIST_COMMON =.*\\$/ {
+   :loop
+   p
+   n
+   /\\$/ b loop
+   p
+   n
+   }' -e '/^DIST_COMMON =/ p' sub/Makefile.in | fgrep ../foo)
