@@ -5428,19 +5428,19 @@ sub check_ambiguous_conditional ($$)
     }
 }
 
-# See if a variable exists.  The first argument is the variable name,
-# and the optional second argument is the condition which we should
-# check.  If no condition is given, we currently return true if the
-# variable is defined under any condition.
+
+# $BOOLEAN
+# &variable_defined ($VAR, [$COND])
+# ---------------------------------
+# See if a variable exists.  $VAR is the variable name, and $COND is
+# the condition which we should check.  If no condition is given, we
+# currently return true if the variable is defined under any
+# condition.
 sub variable_defined ($$)
 {
     my ($var, $cond) = @_;
-    if (defined $targets{$var})
-    {
-	&am_line_error ($var, "\`$var' is target; expected variable");
-	return 0;
-    }
-    elsif (defined $contents{$var})
+
+    if (defined $contents{$var})
     {
 	if ($cond && $conditional{$var})
 	{
@@ -5468,6 +5468,10 @@ sub variable_defined ($$)
 	$content_seen{$var} = 1;
 	return 1;
     }
+
+    &am_line_error ($var, "\`$var' is target; expected variable")
+      if defined $targets{$var};
+
     return 0;
 }
 
@@ -5805,13 +5809,16 @@ sub variable_value_as_list_worker
     my ($var, $cond, $parent) = @_;
     my @result = ();
 
-    if (defined $targets{$var})
+    if (! defined $contents{$var} && ! defined $am_var_defs{$var})
     {
-	&am_line_error ($var, "\`$var' is target; expected variable");
-    }
-    elsif (! defined $contents{$var} && ! defined $am_var_defs{$var})
-    {
-	&am_line_error ($parent, "variable \`$var' not defined");
+        if (defined $targets{$var})
+	  {
+	    &am_line_error ($var, "\`$var' is target; expected variable");
+	  }
+	else
+	  {
+	    &am_line_error ($parent, "variable \`$var' not defined");
+	  }
     }
     elsif (defined $vars_scanned{$var})
     {
@@ -5894,7 +5901,8 @@ sub define_variable
     }
     elsif ($var_was_plus_eq{$var})
     {
-	&am_line_error ($var, "internally generated variable \`$var' was set with \`+='");
+	&am_line_error ($var,
+			"internally generated variable \`$var' was set with \`+='");
     }
 }
 
@@ -6857,7 +6865,7 @@ sub file_contents
  	    $result_vars .= "$separator$comment$_\n"
 	      unless defined $contents{$1};
  	    $comment = $separator = '';
- 	    &prog_error (".am macro \`$1' with trailing backslash at $file:$.")
+ 	    &prog_error ("$file:$.: macro \`$1' with trailing backslash")
 	      if /\\$/;;
  	    $am_var_defs{$1} = $3;
  	}
@@ -7092,10 +7100,8 @@ sub am_install_var
 			if (! $warned_about_extra)
 			{
 			    $warned_about_extra = 1;
-			    {
-				&am_line_error ($one_name,
-						"\`$one_name' contains configure substitution, but shouldn't");
-			    }
+			    &am_line_error ($one_name,
+					    "\`$one_name' contains configure substitution, but shouldn't");
 			}
 		    }
 		    # Check here to make sure variables defined in
