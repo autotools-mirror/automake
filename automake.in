@@ -430,7 +430,8 @@ sub handle_options
 	    &set_strictness ($_);
 	}
 	elsif ($_ eq 'no-installman' || $_ eq 'ansi2knr'
-	       || $_ eq 'dist-shar' || $_ eq 'dist-zip')
+	       || $_ eq 'dist-shar' || $_ eq 'dist-zip'
+	       || $_ eq 'dejagnu')
 	{
 	    # Explicitly recognize these.
 	}
@@ -1890,18 +1891,32 @@ sub handle_phony
     $output_rules .= "\n";
 }
 
-# Handle TESTS variable.
+# Handle TESTS variable and other checks.
 sub handle_tests
 {
-    return if ! &variable_defined ('TESTS');
+    if (&variable_defined ('DEJATOOL') && ! defined $options{'dejagnu'})
+    {
+	# Error.
+	&am_line_error ('DEJATOOL',
+			"\`DEJATOOL' defined but \`dejagnu' not in \`AUTOMAKE_OPTIONS'");
+	return;
+    }
 
-    push (@check, 'check-TESTS');
-    push (@phony, 'check-TESTS');
-    # FIXME use $(SHELL) here?  That is what Ulrich suggests.  Maybe a
-    # new macro, $(TEST_SHELL), a la $(CONFIG_SHELL)?  For now we just
-    # execute the file directly; this allows test files which are
-    # compiled -- a possibly useful feature.
-    $output_rules .= 'check-TESTS: $(TESTS)
+    if (defined $options{'dejagnu'})
+    {
+	push (@check, 'check-DEJAGNU');
+	push (@phony, 'check-DEJAGNU');
+	$output_rules .= &file_contents ('dejagnu');
+    }
+    elsif (&variable_defined ('TESTS'))
+    {
+	push (@check, 'check-TESTS');
+	push (@phony, 'check-TESTS');
+	# FIXME use $(SHELL) here?  That is what Ulrich suggests.
+	# Maybe a new macro, $(TEST_SHELL), a la $(CONFIG_SHELL)?  For
+	# now we just execute the file directly; this allows test
+	# files which are compiled -- a possibly useful feature.
+	$output_rules .= 'check-TESTS: $(TESTS)
 	@failed=0; all=0; \\
 	srcdir=$(srcdir); export srcdir; \\
 	for tst in $(TESTS); do \\
@@ -1923,6 +1938,7 @@ sub handle_tests
 	  echo "$$failed of $$all tests failed"; \\
 	fi
 ';
+    }
 }
 
 ################################################################
