@@ -58,12 +58,6 @@ EXTRA_DIST = ChangeLog.1996 ChangeLog.1998
 ## to anybody else
 ##
 
-# Run the test suite using Perl 4.
-perl4-check: automake aclocal
-	@if $(SHELL) -c 'perl4.036 -v' > /dev/null 2>&1; then \
-	  $(MAKE) PERL=perl4.036 check; \
-	else :; fi
-
 # Some simple checks, and then ordinary check.  These are only really
 # guaranteed to work on my machine.
 maintainer-check: automake aclocal
@@ -81,40 +75,44 @@ maintainer-check: automake aclocal
 ## expect no instances of '${...}'.  However, $${...} is ok, since that
 ## is a shell construct, not a Makefile construct.
 ## The backslash in `$${' is needed for some versions of bash.
-	@if test `fgrep '\$${' $(srcdir)/[a-z]*.am | fgrep -v '$$$$' | wc -l` -ne 0; then \
-	  echo "found too many uses of '\$${'" 1>&2; \
+	@if fgrep '\$${' $(srcdir)/[a-z]*.am | \
+	       fgrep -v '$$$$' | \
+	       grep . ; then \
+	  echo "Found too many uses of '\$${' in the lines above." 1>&2; \
 	  exit 1;				\
 	else :; fi
 ## Make sure all invocations of mkinstalldirs are correct.
-	@if test `fgrep 'mkinstalldirs' $(srcdir)/[a-z]*.am | fgrep -v '$$(mkinstalldirs)' | wc -l` -ne 0; then \
-	  echo "found incorrect use of mkinstalldirs" 1>&2; \
+	@if fgrep -n 'mkinstalldirs' $(srcdir)/[a-z]*.am | \
+	      fgrep -v '$$(mkinstalldirs)' | \
+	      grep . ; then \
+	  echo "Found incorrect use of mkinstalldirs in the lines above" 1>&2; \
 	  exit 1; \
 	else :; fi
-## Another syntax check, this time with Perl 4, if it exists.
-	@if $(SHELL) -c 'perl4.036 -v' >/dev/null 2>&1; then \
-	  perl4.036 -c -w automake; \
-	  perl4.036 -c -w aclocal; \
-	else :; fi
 ## We never want to use "undef", only "delete".
-	@if grep -w undef $(srcdir)/automake.in > /dev/null 2>&1; then \
+	@if grep -n -w undef $(srcdir)/automake.in; then \
 	  echo "Found undef in automake.in; use delete instead" 1>&2; \
 	  exit 1; \
 	fi
 ## We never want split (/ /,...), only split (' ', ...).
-	@if fgrep 'split (/ /' $(srcdir)/automake.in > /dev/null 2>&1; then \
-	  echo "Found bad split in automake.in" 1>&2; \
+	@if fgrep -n 'split (/ /' $(srcdir)/automake.in; then \
+	  echo "Found bad split in the lines above." 1>&2; \
 	  exit 1; \
 	fi
 ## Look for cd within backquotes without CDPATH=:
-	@if grep '` *cd ' $(srcdir)/automake.in $(srcdir)/*.am \
+	@if grep -n '` *cd ' $(srcdir)/automake.in $(srcdir)/*.am \
 	      $(srcdir)/m4/*.m4; then \
 	  echo "Consider setting CDPATH in the lines above" 1>&2; \
+	  exit 1; \
+	fi
+## Using @_ in a scalar context is most probably a programming error.
+	@if grep -Hn '[^) ] *= *@_' $(srcdir)/automake.in; then \
+	  echo "Using @_ in a scalar context in the lines above." 1>&2; \
 	  exit 1; \
 	fi
 
 # Tag before making distribution.  Also, don't make a distribution if
 # checks fail.  Also, make sure the NEWS file is up-to-date.
-cvs-dist: maintainer-check perl4-check distcheck
+cvs-dist: maintainer-check distcheck
 	@if sed 1q $(srcdir)/NEWS | grep -e "$(VERSION)" > /dev/null; then :; else \
 	  echo "NEWS not updated; not releasing" 1>&2; \
 	  exit 1;				\
