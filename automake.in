@@ -4284,6 +4284,106 @@ sub handle_minor_options
 
 ################################################################
 
+# &scan_autoconf_config_files ($CONFIG-FILES)
+# -------------------------------------------
+# Study $CONFIG-FILES which is the first argument to AC_CONFIG_FILES
+# (or AC_OUTPUT).
+sub scan_autoconf_config_files
+{
+    # Look at potential Makefile.am's.
+    foreach (split)
+    {
+        # Must skip empty string for Perl 4.
+        next if $_ eq "\\" || $_ eq '';
+
+        # Handle $local:$input syntax.  Note that we ignore
+        # every input file past the first, though we keep
+        # those around for later.
+        local ($local, $input, @rest) = split (/:/);
+        if (! $input)
+        {
+            $input = $local;
+        }
+        else
+        {
+            # FIXME: should be error if .in is missing.
+            $input =~ s/\.in$//;
+        }
+
+        if (-f $input . '.am')
+        {
+            # We have a file that automake should generate.
+            push (@make_input_list, $input);
+            $make_list{$input} = join (':', ($local, @rest));
+        }
+        else
+        {
+            # We have a file that automake should cause to be
+            # rebuilt, but shouldn't generate itself.
+            push (@other_input_files, $_);
+        }
+    }
+}
+
+
+# &scan_autoconf_traces ($FILENAME)
+# ---------------------------------
+# FIXME: For the time being, we don't care about the FILENAME.
+sub scan_autoconf_traces
+{
+    local ($filename) = @_;
+    local (*TRACES);
+
+    local ($traces) = "$ENV{amtraces} ";
+
+    $traces .= ' -t AC_CONFIG_FILES';
+    $traces .= ' -t _AC_LIBOBJ_DECL';
+    $traces .= ' -t AC_SUBST';
+
+    open (TRACES, "$traces |")
+	|| die "automake: couldn't open \`$traces': $!\n";
+    print "automake: reading $traces\n" if $verbose;
+
+    while (<TRACES>)
+    {
+        chomp;
+        local ($file, $line, $macro, @args) = split /:/;
+	local ($here) = "$file:$line";
+
+	# Alphabetical ordering please.
+        if ($macro eq 'AC_CONFIG_FILES')
+	{
+	    # Look at potential Makefile.am's.
+	    &scan_autoconf_config_files (@args[0]);
+	}
+        elsif ($macro eq '_AC_LIBOBJ_DECL')
+	{
+	    local ($source) = "@args[0].c";
+	    # We should actually also `close' the sources: getopt.c
+	    # wants getopt.h etc.  But actually it should be done in the
+	    # macro itself, i.e., we have to first fix Autoconf to extend
+	    # _AC_LIBOBJ_DECL and use it the in various macros.
+	    if (!defined $libsources{$source})
+	        {
+		    print STDERR "traces: discovered $source\n";
+		    $libsources{$source} = $here;
+	        }
+	}
+        elsif ($macro eq 'AC_SUBST')
+	{
+	    if (!defined $configure_vars{@args[0]})
+	        {
+		    print STDERR "traces: discovered AC_SUBST(@args[0])\n";
+		    $configure_vars{@args[0]} = $here;
+	        }
+	}
+    }
+
+    close (TRACES)
+      || die "automake: close: $traces: $!\n";
+}
+
+
 # &scan_one_autoconf_file ($FILENAME)
 # -----------------------------------
 # Scan one file for interesting things.  Subroutine of
@@ -4425,38 +4525,7 @@ sub scan_one_autoconf_file
 	    }
 
 	    # Look at potential Makefile.am's.
-	    foreach (split)
-	    {
-		# Must skip empty string for Perl 4.
-		next if $_ eq "\\" || $_ eq '';
-
-		# Handle $local:$input syntax.  Note that we ignore
-		# every input file past the first, though we keep
-		# those around for later.
-		local ($local, $input, @rest) = split (/:/);
-		if (! $input)
-		{
-		    $input = $local;
-		}
-		else
-		{
-		    # FIXME: should be error if .in is missing.
-		    $input =~ s/\.in$//;
-		}
-
-		if (-f $input . '.am')
-		{
-		    # We have a file that automake should generate.
-		    push (@make_input_list, $input);
-		    $make_list{$input} = join (':', ($local, @rest));
-		}
-		else
-		{
-		    # We have a file that automake should cause to be
-		    # rebuilt, but shouldn't generate itself.
-		    push (@other_input_files, $_);
-		}
-	    }
+	    &scan_autoconf_config_files ($_);
 
 	    if ($closing && @make_input_list == 0 && @other_input_files == 0)
 	    {
@@ -4646,6 +4715,7 @@ sub scan_one_autoconf_file
     close (CONFIGURE);
 }
 
+
 # &scan_autoconf_files ()
 # -----------------------
 # Check whether we use `configure.ac' or `configure.in'.
@@ -4675,6 +4745,14 @@ sub scan_autoconf_files
     &scan_one_autoconf_file ($configure_ac);
     &scan_one_autoconf_file ('aclocal.m4')
 	if -f 'aclocal.m4';
+
+    if (defined $ENV{'amtraces'})
+    {
+        warn 'automake: Autoconf traces is an experimental feature';
+        warn 'automake: use at your own risks';
+
+        &scan_autoconf_traces ($configure_ac);
+    }
 
     # Set input and output files if not specified by user.
     if (! @input_files)
