@@ -29,11 +29,13 @@ fi
 AC_SUBST(multi_basedir)
 
 AC_OUTPUT_COMMANDS([
-if test -n "$CONFIG_FILES"; then
-  # FIXME: Something is really fishy here, the dot looks like Perl
-  # code.  What was meant?  Clearly, this code has never been exercised.
-  ac_file=ifelse([$1],,Makefile,[$1]) . ${multi_basedir}/config-ml.in
-fi],
+# Only add multilib support code if we just rebuilt the top-level
+# Makefile.
+case " $CONFIG_FILES " in
+ *" ifelse([$1],,Makefile,[$1]) "*)
+   ac_file=ifelse([$1],,Makefile,[$1]) . ${multi_basedir}/config-ml.in
+   ;;
+esac],
                    [
 srcdir="$srcdir"
 host="$host"
