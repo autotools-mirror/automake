@@ -343,6 +343,7 @@ $obsolete_rx = '(' . join ('|', keys %obsolete_macros) . ')';
 		    'r');
 &register_language ('java', 'linker=GCJLINK', 'autodep=GCJ',
 		    'java');
+&register_language ('asm', 's', 'S');
 
 
 # Parse command line.
@@ -835,7 +836,7 @@ sub get_object_extension
 	    }
 	}
 
-	push (@suffixes, '.c', '.o', '.S', '.s');
+	push (@suffixes, '.c', '.o');
 	push (@suffixes, '.obj') if $seen_objext;
 	push (@clean, 'compile');
 
@@ -4963,8 +4964,22 @@ sub lang_lexxx_finish
 
 sub lang_asm_finish
 {
-    # Pretend we're C.
+    # We need the C code for assembly.
     &lang_c_finish;
+
+    # We also need our own rules.
+    local (@asm_list) = &lang_extensions ('am');
+    local ($ext);
+    foreach $ext (@asm_list)
+    {
+	$output_rules .= ("$ext.o:\n"
+			  . "\t\$(COMPILE) -c \$<\n");
+	# FIXME: Using cygpath should be somehow conditional.
+	$output_rules .= ("$ext.obj:\n"
+			  . "\t\$(COMPILE) -c `cygpath -w \$<`\n")
+	    if $seen_objext;
+	# FIXME: what about `.lo' and asm?
+    }
 }
 
 sub lang_f77_finish
