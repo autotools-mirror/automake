@@ -4445,7 +4445,7 @@ sub scan_one_autoconf_file
 
 	    $config_header_line = $.;
 	    local ($one_hdr);
-	    foreach $one_hdr (split (' ', $2))
+	    foreach $one_hdr (split (' ', &unquote_m4_arg ($2)))
 	    {
 		push (@config_fullnames, $one_hdr);
 		if ($one_hdr =~ /^([^:]+):(.+)$/)
@@ -7814,6 +7814,36 @@ sub my_glob
 {
     local ($pat) = @_;
     return <${pat}>;
+}
+
+# Remove one level of brackets and strip leading spaces,
+# as does m4 to function arguments.
+sub unquote_m4_arg
+{
+    $_ = shift;
+    s/^\s*//;
+
+    my @letters = split //;
+    my @result = ();
+    my $depth = 0;
+
+    foreach (@letters)
+    {
+	if ($_ eq '[')
+	{
+	    ++$depth;
+	    next if $depth == 1;
+	}
+	elsif ($_ eq ']')
+	{
+	    --$depth;
+	    next if $depth == 0;
+	    # don't count orphan right brackets
+	    $depth = 0 if $depth < 0;
+	}
+	push @result, $_;
+    }
+    return join '', @result;
 }
 
 ################################################################
