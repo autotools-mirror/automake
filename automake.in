@@ -5494,21 +5494,43 @@ sub make_condition
 }
 
 
-# &conditional_dump
-# -----------------
-sub conditional_dump ()
+# &variable_dump ($VAR)
+# ---------------------
+sub variable_dump ($)
 {
-  print STDERR "%conditional =\n";
-  print STDERR "{\n";
+  my ($var)= @_;
+
+  my $var_is_am = $var_is_am{$var} ? "Automake" : "User";
+  my $where = (defined $content_lines{$var}
+	       ? $content_lines{$var} : "undefined");
+  my $pluseq = ((defined $var_was_plus_eq{$var} && $var_was_plus_eq{$var})
+		? "+=" : "=");
+
+  print STDERR "  $var ($var_is_am, where = $where) $pluseq\n";
+  print STDERR "  {\n";
+  print STDERR "    (TRUE) => $contents{$var}\n";
   foreach my $var (sort keys %conditional)
     {
-      print STDERR "  $var = \n";
-      print STDERR "  {\n";
       foreach my $vcond (sort by_condition keys %{$conditional{$var}})
-      {
-	print STDERR "    $vcond => $conditional{$var}{$vcond}\n";
-      }
-      print STDERR "  }\n";
+	{
+	  print STDERR "    $vcond => $conditional{$var}{$vcond}\n";
+	}
+    }
+  print STDERR "  }\n";
+}
+
+
+# &variables_dump ()
+# ------------------
+sub variables_dump ()
+{
+  my ($var)= @_;
+
+  print STDERR "%contents =\n";
+  print STDERR "{\n";
+  foreach my $var (sort (keys %contents, keys %conditional))
+    {
+      variable_dump ($var);
     }
   print STDERR "}\n";
 }
