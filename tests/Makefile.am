@@ -213,9 +213,11 @@ libobj8.test \
 libobj10.test \
 libobj11.test \
 library.test \
+library2.test \
 libtool.test \
 libtool2.test \
 libtool3.test \
+libtool4.test \
 link_c_cxx.test	\
 link_dist.test \
 link_f_c.test \

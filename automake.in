@@ -227,6 +227,8 @@ my %standard_prefix =
 
 # Declare the macros that define known variables, so we can
 # hint the user if she try to use one of these variables.
+
+# Macros accessible via aclocal.
 my %am_macro_for_var =
   (
    ANSI2KNR => 'AM_C_PROTOTYPES',
@@ -235,6 +237,7 @@ my %am_macro_for_var =
    EMACS => 'AM_PATH_LISPDIR',
    GCJ => 'AM_PROG_GCJ',
    LEX => 'AM_PROG_LEX',
+   LIBTOOL => 'AC_PROG_LIBTOOL',
    lispdir => 'AM_PATH_LISPDIR',
    pkgpyexecdir => 'AM_PATH_PYTHON',
    pkgpythondir => 'AM_PATH_PYTHON',
@@ -244,6 +247,7 @@ my %am_macro_for_var =
    U => 'AM_C_PROTOTYPES',
    );
 
+# Macros shipped with Autoconf.
 my %ac_macro_for_var =
   (
    CC => 'AC_PROG_CC',
@@ -252,6 +256,7 @@ my %ac_macro_for_var =
    CXXFLAGS => 'AC_PROG_CXX',
    F77 => 'AC_PROG_F77',
    F77FLAGS => 'AC_PROG_F77',
+   RANLIB => 'AC_PROG_RANLIB',
    YACC => 'AC_PROG_YACC',
    );
 
@@ -364,9 +369,6 @@ my $ac_gettext_location;
 # TRUE if we've seen AC_CANONICAL_(HOST|SYSTEM).
 my $seen_canonical = 0;
 my $canonical_location;
-
-# Where AC_PROG_LIBTOOL appears.
-my $seen_libtool;
 
 # Where AM_MAINTAINER_MODE appears.
 my $seen_maint_mode;
@@ -1719,7 +1721,6 @@ sub handle_languages
 	my %transform = ('EXT'     => $ext,
 			 'PFX'     => $pfx,
 			 'FPFX'    => $fpfx,
-			 'LIBTOOL' => defined $seen_libtool,
 			 'AMDEP'   => $AMDEP,
 			 '-c'      => $lang->compile_flag || '',
 			 'MORE-THAN-ONE'
@@ -2741,23 +2742,23 @@ sub handle_compile ()
 # Handle libtool rules.
 sub handle_libtool
 {
-    return unless $seen_libtool;
+  return unless variable_defined ('LIBTOOL');
 
-    # Libtool requires some files, but only at top level.
-    require_conf_file ($seen_libtool, FOREIGN, @libtool_files)
-	if $relative_dir eq '.';
+  # Libtool requires some files, but only at top level.
+  require_conf_file_with_macro ('LIBTOOL', FOREIGN, @libtool_files)
+    if $relative_dir eq '.';
 
-    my @libtool_rms;
-    foreach my $item (sort keys %libtool_clean_directories)
+  my @libtool_rms;
+  foreach my $item (sort keys %libtool_clean_directories)
     {
-	my $dir = ($item eq '.') ? '' : "$item/";
-	# .libs is for Unix, _libs for DOS.
-	push (@libtool_rms, "\t-rm -rf ${dir}.libs ${dir}_libs");
+      my $dir = ($item eq '.') ? '' : "$item/";
+      # .libs is for Unix, _libs for DOS.
+      push (@libtool_rms, "\t-rm -rf ${dir}.libs ${dir}_libs");
     }
 
-    # Output the libtool compilation rules.
-    $output_rules .= &file_contents ('libtool',
-				     ('LTRMS' => join ("\n", @libtool_rms)));
+  # Output the libtool compilation rules.
+  $output_rules .= &file_contents ('libtool',
+				   ('LTRMS' => join ("\n", @libtool_rms)));
 }
 
 # handle_programs ()
@@ -2888,15 +2889,10 @@ sub handle_libraries
 
     my @prefix = am_primary_prefixes ('LIBRARIES', 0, 'lib', 'pkglib',
 				      'noinst', 'check');
-    if (! defined $configure_vars{'RANLIB'}
-	&& @prefix)
-      {
-	macro_error ($prefix[0] . '_LIBRARIES',
-		     "library used but `RANLIB' not defined in `$configure_ac'");
-	# Only get this error once.  If this is ever printed, we have
-	# a bug.
-	$configure_vars{'RANLIB'} = 'BUG';
-      }
+
+    require_variables_for_macro ($prefix[0] . '_LIBRARIES',
+				 'library used', 'RANLIB')
+      if (@prefix);
 
     my $seen_libobjs = 0;
     foreach my $onelib (@liblist)
@@ -2984,18 +2980,12 @@ sub handle_ltlibraries
     my @prefix = am_primary_prefixes ('LTLIBRARIES', 0, 'lib', 'pkglib',
 				      'noinst', 'check');
 
+    require_variables_for_macro ($prefix[0] . '_KTLIBRARIES',
+				 'Libtool library used', 'LIBTOOL')
+      if (@prefix);
+
     foreach my $key (@prefix)
       {
-	if (!$seen_libtool)
-	  {
-	    macro_error ($key . '_LTLIBRARIES',
-			 "library used but `LIBTOOL' not defined in `$configure_ac'");
-	    # Only get this error once.  If this is ever printed,
-	    # we have a bug.
-	    $configure_vars{'LIBTOOL'} = 'BUG';
-	    $seen_libtool = $var_location{$key . '_LTLIBRARIES'};
-	  }
-
 	# Get the installation directory of each library.
 	(my $dir = $key) =~ s/^nobase_//;
 	for (variable_value_as_list_recursive ($key . '_LTLIBRARIES', 'all'))
@@ -4672,7 +4662,6 @@ sub scan_autoconf_traces ($)
 		  AC_CONFIG_HEADERS
 		  AC_INIT
 		  AC_LIBSOURCE
-		  AC_PROG_LIBTOOL AM_PROG_LIBTOOL
 		  AC_SUBST
 		  AM_AUTOMAKE_VERSION
 		  AM_CONDITIONAL
@@ -4738,10 +4727,6 @@ sub scan_autoconf_traces ($)
       elsif ($macro eq 'AC_LIBSOURCE')
 	{
 	  $libsources{$args[1]} = $here;
-	}
-      elsif ($macro =~ /^A(C|M)_PROG_LIBTOOL$/)
-	{
-	  $seen_libtool = $here;
 	}
       elsif ($macro eq 'AC_SUBST')
 	{
@@ -5116,7 +5101,7 @@ sub lang_c_finish
 			      . " || rm -f ${base}_.c\n");
  	    push (@objects, $base . '_.$(OBJEXT)');
  	    push (@objects, $base . '_.lo')
-	      if $seen_libtool;
+	      if variable_defined ('LIBTOOL');
  	}
 
  	# Make all _.o (and _.lo) files depend on ansi2knr.
@@ -6778,7 +6763,7 @@ sub define_compiler_variable ($)
     my ($var, $value) = ($lang->compiler, $lang->compile);
     &define_variable ($var, $value);
     &define_variable ("LT$var", "\$(LIBTOOL) --mode=compile $value")
-      if $seen_libtool;
+      if variable_defined ('LIBTOOL');
 }
 
 
@@ -6794,7 +6779,8 @@ sub define_linker_variable ($)
     &define_variable ($lang->lder, $lang->ld);
     # CCLINK = $(CCLD) blah blah...
     &define_variable ($lang->linker,
-		      (($seen_libtool ? '$(LIBTOOL) --mode=link ' : '')
+		      ((variable_defined ('LIBTOOL')
+			? '$(LIBTOOL) --mode=link ' : '')
 		       . $lang->link));
 }
 
@@ -7329,7 +7315,7 @@ sub make_paragraphs ($%)
 		     'HOST'     => $seen_canonical,
 		     'TARGET'   => $seen_canonical == AC_CANONICAL_SYSTEM,
 
-		     'LIBTOOL'      => defined $configure_vars{'LIBTOOL'})
+		     'LIBTOOL'      => variable_defined ('LIBTOOL'))
 	  # We don't need more than two consecutive new-lines.
 	  . 's/\n{3,}/\n\n/g';
 
