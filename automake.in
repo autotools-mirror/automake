@@ -1068,22 +1068,16 @@ sub handle_single_transform_list
 	    # Skip things that look like configure substitutions.
 	    next if /^\@.*\@$/;
 
-	    # We don't support source files in a subdirectory.  The
-	    # reason is that we'd want to put the .o into a similar
-	    # subdirectory, but this means finding a good way to make
-	    # the directory.  Later.
-	    if (/\//)
-	    {
-		&am_error
-		    ("not supported: source file `$_' is in subdirectory");
-		next;
-	    }
+	    # If the source file is in a subdirectory then the `.o' is
+	    # put into the current directory.
 
 	    # Split file name into base and extension.
-	    local ($base, $extension, $linker, $object);
-	    next if ! /^(.*)\.(.*)$/;
-	    $base = $1;
-	    $extension = $2;
+	    local ($full, $directory, $base, $extension, $linker, $object);
+	    next if ! /^((.*)\/)?([^\/]*)\.(.*)$/;
+	    $full = $_;
+	    $directory = $2;
+	    $base = $3;
+	    $extension = $4;
 
 	    local ($lang) = $extension_map{$extension};
 	    if ($lang)
@@ -1124,6 +1118,23 @@ sub handle_single_transform_list
 	    $linkers_used{$linker} = 1;
 
 	    push (@result, $object);
+
+	    if (defined $object_map{$object})
+	    {
+		if ($object_map{$object} ne $full)
+		{
+		    &am_error ("object \`$object' created by \`$full' and \`$object_map{$object}'");
+		}
+	    }
+	    else
+	    {
+		$object_map{$object} = $full;
+		if ($directory ne '')
+		{
+		    # If file is in subdirectory, we need explicit dependency.
+		    &pretty_print_rule ($object . ':', "\t", $full);
+		}
+	    }
 
 	    # Transform .o or $o file into .P file (for automatic
 	    # dependency code).
@@ -6327,6 +6338,11 @@ sub initialize_per_input
     # SOURCES and OBJECTS variables.
     @sources = ();
     @objects = ();
+
+    # This hash maps object file names onto their corresopnding source
+    # file names.  This is used to ensure that each object is created
+    # by a single source file.
+    %object_map = ();
 
     # These variables track inclusion of various compile-related .am
     # files.  $included_generic_compile is TRUE if the basic code has
