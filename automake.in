@@ -1141,6 +1141,29 @@ sub handle_configure
 	if $config_name;
     $contents{'CONFIG_HEADER'} = "${top_builddir}/${config_name}"
 	if $config_name;
+
+    # Now look for other files in this directory which must be remade
+    # by config.status, and generate rules for them.
+    local ($file, $local);
+    foreach $file (@other_input_files)
+    {
+	# Skip files not in this directory, any Makefile, and the
+	# config header.  These last two must be handled specially.
+	next unless &dirname ($file) eq $relative_dir;
+	next if $file eq $top_builddir . '/' . $config_name;
+	($local = $file) =~ s/^.*\///;
+	next if $local eq 'Makefile';
+
+	# FIXME support ":" syntax of AC_OUTPUT here.
+	$output_rules .= ($local . ': '
+			  . '$(top_builddir)/config.status ' . $local . ".in\n"
+			  . "\t"
+			  . 'cd $(top_srcdir) && CONFIG_FILES='
+			  . ($relative_dir eq '.' ? '' : '$(subdir)/')
+			  . '$@ CONFIG_HEADERS= ./config.status'
+			  . "\n");
+	&require_file ($NORMAL, $local . '.in');
+    }
 }
 
 # Handle C headers.

@@ -20,8 +20,6 @@ libraries-clean.am scripts-clean.am programs-clean.am data-clean.am \
 COPYING INSTALL install-sh mdate-sh mkinstalldirs texinfo.tex \
 config.guess config.sub
 
-DIST_OTHER = automake.in
-
 # Gross.
 DIST_SUBDIRS = samples/cpio/*Makefile.am
 
@@ -47,9 +45,6 @@ maintainer-check: automake
 	if $(SHELL) -c 'perl4.036 -v' >/dev/null 2>&1; then \
 	  perl4.036 -c -w automake; \
 	else :; fi
-
-automake: automake.in
-	CONFIG_FILES=$@ CONFIG_HEADERS= ./config.status
 
 # Tag before making distribution.  Also, don't make a distribution if
 # checks fail.  Also, make sure the NEWS file is up-to-date.
