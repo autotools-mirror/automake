@@ -51,6 +51,14 @@ perl4-check: automake aclocal
 # Some simple checks, and then ordinary check.  These are only really
 # guaranteed to work on my machine.
 maintainer-check: automake aclocal
+## This check avoids accidental configure substitutions in the source.
+## There are exactly 8 lines that should be modified.  This works out
+## to 24 lines of diffs.
+	@if test `diff automake.in automake | wc -l` -ne 24; then \
+	  echo "found too many diffs between automake.in and automake"; 1>&2; \
+	  diff -c automake.in automake; \
+	  exit 1; \
+	fi
 ## Syntax check with default Perl (on my machine, Perl 5).
 	$(PERL) -c -w automake
 	$(PERL) -c -w aclocal
