@@ -2,8 +2,8 @@
 
 ## Makefile for Automake.
 
-## Copyright (C) 1995, 1996, 1997, 1998, 1999, 2001, 2002 Free
-## Software Foundation, Inc.
+## Copyright (C) 1995, 1996, 1997, 1998, 1999, 2001, 2002, 2003
+## Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -213,24 +213,17 @@ maintainer-check: automake aclocal
 ## recursive targets are used.  Better use an envvar.  SHELL is an exception,
 ## POSIX says it can't come from the environment.
 	@if grep -E '\$$MAKE .*(SHELL=.*=|=.*SHELL=)' $(srcdir)/tests/*.test; then \
-	  echo 'Rewrite "$$MAKE foo=bar SHELL=/bin/sh" as "foo=bar $$MAKE -e SHELL=/bin/sh"' 1>&2; \
+	  echo 'Rewrite "$$MAKE foo=bar SHELL=$$SHELL" as "foo=bar $$MAKE -e SHELL=$$SHELL"' 1>&2; \
 	  echo ' in the above lines, it is more portable.' 1>&2; \
 	  exit 1; \
 	fi
 	@if grep -v SHELL $(srcdir)/tests/*.test | grep '\$$MAKE .*=' ; then \
-	  echo 'Rewrite "$$MAKE foo=bar" as "foo=bar $$MAKE -e SHELL=/bin/sh" in the above lines,' 1>&2; \
+	  echo 'Rewrite "$$MAKE foo=bar" as "foo=bar $$MAKE -e" in the above lines,' 1>&2; \
 	  echo 'it is more portable.' 1>&2; \
 	  exit 1; \
 	fi
-## On NetBSD (1.5) and OSF, the $SHELL variable is still inherited from
-## the environment.
-	@if grep '$$MAKE.* -e' $(srcdir)/tests/*.test | grep -v '-e.*SHELL' ; then \
-	  echo 'Always overwrite SHELL when using "$$MAKE -e".' 1>&2; \
-	  echo 'Use "$$MAKE -e SHELL=/bin/sh" in the above lines.' 1>&2; \
-	  exit 1; \
-	fi
 	@if grep 'SHELL=.*\$$MAKE' $(srcdir)/tests/*.test; then \
-	  echo '$$MAKE ignores the SHELL envvar, use "$$MAKE SHELL=/bin/sh" in' 1>&2; \
+	  echo '$$MAKE ignores the SHELL envvar, use "$$MAKE SHELL=$$SHELL" in' 1>&2; \
 	  echo 'the above lines.' 1>&2; \
 	  exit 1; \
 	fi
