@@ -2042,7 +2042,9 @@ sub handle_dist
     $output_vars .= "\n";
 
     # Some boilerplate.
-    $output_vars .= &file_contents ('dist-vars') . "\nTAR = " . $TAR . "\n";
+    $output_vars .= &file_contents ('dist-vars') . "\n";
+    &define_variable ('TAR', $TAR);
+    &define_variable ('GZIP', '--best');
 
     # Put these things in rules section so it is easier for whoever
     # reads Makefile.in.
@@ -2073,7 +2075,7 @@ sub handle_dist
 # tarfile.
 distcheck: dist
 	rm -rf $(distdir)
-	$(TAR) zxf $(distdir).tar.gz
+	GZIP=$(GZIP) $(TAR) zxf $(distdir).tar.gz
 	mkdir $(distdir)/=build
 	mkdir $(distdir)/=inst
 	dc_install_base=`cd $(distdir)/=inst && pwd`; \\'
@@ -4150,7 +4152,7 @@ sub initialize_global_constants
 		     . 'shar $(distdir) | gzip > $(distdir).shar.gz'
 		     . "\n");
     $dist{'zip'} = "\t" . 'zip -rq $(distdir).zip $(distdir)' . "\n";
-    $dist{'dist'} = "\t" .  '$(TAR) chozf $(distdir).tar.gz $(distdir)' . "\n";
+    $dist{'dist'} = "\t" .  'GZIP=$(GZIP) $(TAR) chozf $(distdir).tar.gz $(distdir)' . "\n";
     $dist_trailer = "\t" . 'rm -rf $(distdir)' . "\n";
 }
 
