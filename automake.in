@@ -2369,7 +2369,8 @@ sub handle_configure
     # This rule remakes the Makefile.in.  Note use of @MAINT@ forces
     # us to abandon pretty-printing.  Sigh.
     $output_rules .= ($infile . ': ' . ($seen_maint_mode ? '@MAINT@ ' : '')
-		      . $amfile . ' ' . '$(top_srcdir)/configure.in '
+		      . $amfile . ' '
+		      . '$(top_srcdir)/configure.in $(ACLOCAL) '
 		      . join (' ', @rewritten) . "\n"
 		      . "\tcd \$(top_srcdir) && automake "
 		      . ($cygnus_mode ? '--cygnus' : ('--' . $strictness_name))
@@ -3144,21 +3145,15 @@ sub handle_emacs_lisp
 
 ################################################################
 
-# Scan configure.in for interesting things.
-sub scan_configure
+# Scan one file for interesting things.  Subroutine of scan_configure.
+sub scan_one_configure_file
 {
-    open (CONFIGURE, 'configure.in')
-	|| die "automake: couldn't open \`configure.in': $!\n";
-    print "automake: reading configure.in\n" if $verbose;
+    local ($filename) = @_;
 
-    # Reinitialize libsources here.  This isn't really necessary,
-    # since we currently assume there is only one configure.in.  But
-    # that won't always be the case.
-    %libsources = ();
+    open (CONFIGURE, $filename)
+	|| die "automake: couldn't open \`$filename': $!\n";
+    print "automake: reading $filename\n" if $verbose;
 
-    local ($in_ac_output, $in_ac_replace) = (0, 0);
-    local (%make_list, @make_input_list);
-    local ($libobj_iter);
     while (<CONFIGURE>)
     {
 	# Remove comments from current line.
@@ -3423,14 +3418,32 @@ sub scan_configure
 	}
     }
 
+    close (CONFIGURE);
+}
+
+# Scan configure.in and aclocal.m4 for interesting things.  We must
+# scan aclocal.m4 because there might be AC_SUBSTs and such there.
+sub scan_configure
+{
+    # Reinitialize libsources here.  This isn't really necessary,
+    # since we currently assume there is only one configure.in.  But
+    # that won't always be the case.
+    %libsources = ();
+
+    local ($in_ac_output, $in_ac_replace) = (0, 0);
+    local (%make_list, @make_input_list);
+    local ($libobj_iter);
+
+    &scan_one_configure_file ('configure.in');
+    &scan_one_configure_file ('aclocal.m4')
+	if -f 'aclocal.m4';
+
     # Set input and output files if not specified by user.
     if (! @input_files)
     {
 	@input_files = @make_input_list;
 	%output_files = %make_list;
     }
-
-    close (CONFIGURE);
 
     &am_conf_error ("\`PACKAGE' not defined in configure.in")
         if ! $seen_package;
