@@ -1536,6 +1536,9 @@ sub handle_source_transform
     return $linker;
 }
 
+
+# handle_lib_objects ()
+# ---------------------
 # Special-case @ALLOCA@ and @LIBOBJS@ in _LDADD or _LIBADD variables.
 # Also, generate _DEPENDENCIES variable if appropriate.
 # Arguments are:
@@ -1841,6 +1844,8 @@ sub handle_programs
 }
 
 
+# handle_libraries ()
+# -------------------
 # Handle libraries.
 sub handle_libraries
 {
@@ -1919,10 +1924,10 @@ sub handle_libraries
 	&handle_source_transform ($xlib, $onelib, $obj);
 
 	$output_rules .=
-	    &file_contents_with_transform ('s/\@LIBRARY\@/' . $onelib . '/go;'
-					   . 's/\@XLIBRARY\@/'
-					   . $xlib . '/go;',
-					   'library');
+	    &file_contents_with_transform
+	        (&transform ('LIBRARY'  => $onelib,
+			     'XLIBRARY' => $xlib),
+		 'library');
     }
 
     if ($seen_libobjs)
@@ -1942,6 +1947,9 @@ sub handle_libraries
     &define_configure_variable ('RANLIB');
 }
 
+
+# handle_ltlibraries ()
+# ---------------------
 # Handle shared libraries.
 sub handle_ltlibraries
 {
@@ -2069,22 +2077,20 @@ sub handle_ltlibraries
 	    # The user probably knows, but generally speaking automake
 	    # doesn't -- and in fact configure could decide
 	    # dynamically between two different locations.
-	    $rpath = 's/\@RPATH\@//go;';
+	    $rpath = '';
 	}
 	else
 	{
-	    $rpath = ('s/\@RPATH\@/-rpath \$(' . $instdirs{$onelib}
-		      . 'dir)/go;');
+	    $rpath = ('-rpath $(' . $instdirs{$onelib} . 'dir)');
 	}
 
 	$output_rules .=
-	    &file_contents_with_transform ('s/\@LTLIBRARY\@/'
-					   . $onelib . '/go;'
-					   . 's/\@XLTLIBRARY\@/'
-					   . $xlib . '/go;'
-					   . $rpath
-					   . 's/\@XLINK\@/' . $xlink . '/go;',
-					   'ltlibrary');
+	    &file_contents_with_transform
+	        (&transform ('LTLIBRARY'  => $onelib,
+			     'XLTLIBRARY' => $xlib,
+			     'RPATH'      => $rpath,
+			     'XLINK'      => $xlink),
+		 'ltlibrary');
     }
 
     if ($seen_libobjs)
