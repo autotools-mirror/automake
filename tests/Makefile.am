@@ -21,3 +21,6 @@ acsilent.test distdir.test lex2.test libobj4.test libobj5.test version.test \
 ranlib.test confvar.test confvar2.test stdlib.test
 
 EXTRA_DIST = defs $(TESTS)
+
+distclean-local:
+	rm -rf testSubdir
