@@ -2,7 +2,7 @@
 
 AUTOMAKE_OPTIONS = gnits
 
-XFAIL_TESTS = 
+XFAIL_TESTS =
 TESTS =	\
 acinclude.test \
 aclocal.test \
@@ -129,6 +129,7 @@ install.test \
 install2.test \
 installsh.test \
 instdata.test \
+instdata2.test \
 instexec.test \
 insthook.test \
 instman.test \

@@ -120,6 +120,22 @@ $copy_missing = 0;
 # TRUE if we should always update files that we know about.
 $force_missing = 0;
 
+# List of targets we must always output.
+# FIXME: Complete, and remove falsely required targets.
+my %required_targets =
+  (
+   'all'          => 1,
+   'install'      => 1,
+   'install-data' => 1,
+   'install-exec' => 1,
+
+   # FIXME: Not required, temporary hack until install-data and install-exec
+   # are factored.
+   'install-data-am' => 1,
+   'install-exec-am' => 1,
+
+   'install-man' => 1,
+  );
 
 # Variables filled during files scanning.
 
@@ -2457,10 +2473,7 @@ sub handle_texinfo
 
     if (! defined $options{'no-installinfo'})
     {
-	push (@uninstall, 'uninstall-info');
 	push (@installdirs, '$(DESTDIR)$(infodir)');
-	unshift (@install_data, 'install-info-am');
-
 	# Make sure documentation is made and installed first.  Use
 	# $(INFO_DEPS), not 'info', because otherwise recursive makes
 	# get run twice during "make all".
@@ -2541,7 +2554,6 @@ sub handle_man_pages
 	$output_rules .= &file_contents ('mans',
 					 &transform ('SECTION', $sect));
     }
-    &depend ('.PHONY', 'install-man', 'uninstall-man');
 
     # We don't really need this, but we use it in case we ever want to
     # support noinst_MANS.
@@ -2551,8 +2563,6 @@ sub handle_man_pages
 
     if (! defined $options{'no-installman'})
     {
-	push (@install_data, 'install-man');
-	push (@uninstall, 'uninstall-man');
 	push (@all, '$(MANS)');
     }
 }
@@ -3697,14 +3707,11 @@ sub handle_merge_targets
 	$output_rules .= "install-binPROGRAMS: install-libLTLIBRARIES\n\n";
     }
     # Print definitions users can use.
-    &do_one_merge_target ('install-exec', @install_exec);
-    $output_rules .= "\n";
-
-    &do_one_merge_target ('install-data', @install_data);
-    $output_rules .= "\n";
+    &do_one_merge_target ('install-exec');
+    &do_one_merge_target ('install-data');
 
     &do_one_merge_target ('install', 'all-am');
-    &do_one_merge_target ('uninstall', @uninstall);
+    &do_one_merge_target ('uninstall');
 
     &do_one_merge_target ('all', @all);
 
@@ -3731,16 +3738,29 @@ sub handle_merge_targets
 # relies on the fact that this doesn't add an extra \n at the end.
 sub do_one_merge_target
 {
-    local ($name, @values) = @_;
+    my ($name, @values) = @_;
 
-    if (&target_defined ($name . '-local'))
+    # Install hooks.
+    if (&target_defined ("$name-local"))
     {
 	# User defined local form of target.  So include it.
-	push (@values, $name . '-local');
-	&depend ('.PHONY', $name . '-local');
+        if (defined $dependencies{"$name-am"})
+	  {
+	    depend ("$name-am", "$name-local");
+	  }
+	else
+	  {
+	    push (@values, "$name-local");
+	  }
+	&depend ('.PHONY', "$name-local");
     }
 
-    &pretty_print_rule ($name . "-am:", "\t\t", @values);
+    # FIXME: Gross, should disapear once all these targets properly
+    # registered in %dependencies.
+    if (!defined $dependencies {"$name-am"})
+      {
+	&pretty_print_rule ("$name-am:", "\t\t", @values);
+      }
     if ($name eq 'install')
     {
 	# Special-case `install-am' to run install-exec-am and
@@ -3750,15 +3770,17 @@ sub do_one_merge_target
     }
     elsif ($name eq 'install-exec' && &target_defined ('install-exec-hook'))
     {
-	$output_rules .= ("\t\@\$(NORMAL_INSTALL)\n"
-			  . "\t" . '$(MAKE) $(AM_MAKEFLAGS) install-exec-hook'
-			  . "\n");
+        $actions{'install-exec-am'} .=
+	  ("\t\@\$(NORMAL_INSTALL)\n"
+	   . "\t" . '$(MAKE) $(AM_MAKEFLAGS) install-exec-hook'
+	   . "\n");
     }
     elsif ($name eq 'install-data' && &target_defined ('install-data-hook'))
     {
-	$output_rules .= ("\t\@\$(NORMAL_INSTALL)\n"
-			  . "\t" . '$(MAKE) $(AM_MAKEFLAGS) install-data-hook'
-			  . "\n");
+        $actions{'install-data-am'} .=
+	  ("\t\@\$(NORMAL_INSTALL)\n"
+	   . "\t" . '$(MAKE) $(AM_MAKEFLAGS) install-data-hook'
+	   . "\n");
     }
 
     # To understand this special case, see handle_merge_targets.
@@ -3910,7 +3932,9 @@ sub handle_factored_dependencies
     {
         # If there is nothing about this guy, skip it.
         next
-	  unless @{$dependencies{$_}} || $actions{$_};
+	  unless (@{$dependencies{$_}}
+		  || $actions{$_}
+		  || $required_targets{$_});
         &pretty_print_rule ("$_:", "\t",
 			    sort @{$dependencies{$_}});
 	$output_rules .= $actions{$_};
@@ -6415,26 +6439,6 @@ sub initialize_global_constants
     $AC_CANONICAL_HOST = 1;
     $AC_CANONICAL_SYSTEM = 2;
 
-    # Associative array of standard directory names.  Entry is TRUE if
-    # corresponding directory should be installed during
-    # 'install-exec' phase.
-    %exec_dir_p =
-	('bin', 1,
-	 'sbin', 1,
-	 'libexec', 1,
-	 'data', 0,
-	 'sysconf', 1,
-	 'localstate', 1,
-	 'lib', 1,
-	 'info', 0,
-	 'man', 0,
-	 'include', 0,
-	 'oldinclude', 0,
-	 'pkgdata', 0,
-	 'pkglib', 1,
-	 'pkginclude', 0
-	 );
-
     # Commonly found files we look for and automatically include in
     # DISTFILES.
     @common_files =
@@ -6540,9 +6544,6 @@ sub initialize_per_input
     %dist_dirs = ();
 
     # List of dependencies for the obvious targets.
-    @install_data = ();
-    @install_exec = ();
-    @uninstall = ();
     @installdirs = ();
 
     @info = ();
@@ -6560,8 +6561,11 @@ sub initialize_per_input
     %dependencies =
       (
        # Installing/uninstalling.
+       'install-data-am'      => [],
+       'install-exec-am'      => [],
        'install-man'	      => [],
        'uninstall-man'	      => [],
+       'uninstall-am'         => [],
 
        # Cleaning.
        'clean-am'             => [],
@@ -6710,12 +6714,17 @@ sub file_contents
     # Sanity check over COMMAND, and complete it with global options.
     &prog_error ("file_contents: $command")
         if $command ne '' && substr ($command, -1) ne ';';
-    $command .= &transform_cond ('CYGNUS'   => $cygnus_mode,
-				 'SHAR'     => $options{'dist-shar'},
-				 'BZIP2'    => $options{'dist-bzip2'},
-				 'ZIP'      => $options{'dist-zip'},
-				 'COMPRESS' => $options{'dist-tarZ'},
-				 'CK-NEWS'  => $options{'check-news'});
+    $command .=
+      &transform_cond ('CYGNUS'   => $cygnus_mode,
+
+		       'SHAR'        => $options{'dist-shar'},
+		       'BZIP2'       => $options{'dist-bzip2'},
+		       'ZIP'         => $options{'dist-zip'},
+		       'COMPRESS'    => $options{'dist-tarZ'},
+
+		       'INSTALL-INFO' => !$options{'no-installinfo'},
+		       'INSTALL-MAN'  => !$options{'no-installman'},
+		       'CK-NEWS'      => $options{'check-news'});
 
     # Swallow the file and applied the COMMAND.
     my $file = $am_dir . '/' . $basename . '.am';
@@ -7211,23 +7220,12 @@ sub am_install_var
 	      &file_contents ($file,
 			      &transform ('DIR'  => $X,
 					  'NDIR' => $nodir_name)
-			      . &transform_cond ('BASE' => $strip_subdir)
+			      . &transform_cond ('BASE' => $strip_subdir,
+						 'EXEC' => $X =~ /exec/)
 			      . $ltxform
 			      . $cygxform);
 
-	    push (@uninstall, 'uninstall-' . $X . $primary);
-	    &depend ('.PHONY', 'uninstall-' . $X . $primary);
 	    push (@installdirs, '$(DESTDIR)$(' . $X . 'dir)');
-	    if (defined $exec_dir_p{$X} ? $exec_dir_p{$X} : ($X =~ /exec/))
-	    {
-		push (@install_exec, 'install-' . $X . $primary);
-		&depend ('.PHONY', 'install-' . $X . $primary);
-	    }
-	    else
-	    {
-		push (@install_data, 'install-' . $X . $primary);
-		&depend ('.PHONY', 'install-' . $X . $primary);
-	    }
 	}
     }
 
