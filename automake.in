@@ -759,6 +759,42 @@ sub handle_yacc_lex_cxx
     }
 }
 
+# Check to make sure a source defined in LIBOBJS is not explicitly
+# mentioned.  This is a separate function (as opposed to being inlined
+# in handle_source_transform) because it isn't always appropriate to
+# do this check.
+sub check_libobjs_sources
+{
+    local ($one_file, $unxformed) = @_;
+
+    local ($prefix, $file, @files);
+    foreach $prefix ('', 'EXTRA_')
+    {
+	if (&variable_defined ($prefix . $one_file . '_SOURCES'))
+	{
+	    @files = &variable_value_as_list ($prefix
+					      . $one_file . '_SOURCES');
+	}
+	elsif ($prefix eq '')
+	{
+	    @files = ($unxformed . '.c');
+	}
+	else
+	{
+	    next;
+	}
+
+	foreach $file (@files)
+	{
+	    if (defined $libsources{$file})
+	    {
+		&am_line_error ($prefix . $one_file . '_SOURCES',
+				"automatically discovered file \`$file' should not be explicitly mentioned");
+	    }
+	}
+    }
+}
+
 # Handle SOURCE->OBJECT transform for one program or library.
 # Arguments are:
 #   canonical (transformed) name of object to build
@@ -817,17 +853,6 @@ sub handle_source_transform
 	    local (@result) = ();
 	    foreach (@files)
 	    {
-		# If an automatically-discovered source file is
-		# mentioned, that is an error.
-		if (defined $libsources{$_})
-		{
-		    # FIXME: saving $_ is stupid.
-		    local ($save) = $_;
-		    &am_line_error ($prefix . $one_file . '_SOURCES',
-				    "automatically discovered file \`$_' should not be explicitly mentioned");
-		    $_ = $save;
-		}
-
 		# Skip header files, including C++-ish ones.  The list
 		# of C++ header extensions comes from Emacs 19.32
 		# etags.
@@ -916,6 +941,7 @@ sub handle_source_transform
 #   boolean (lex_seen) which is true if a lex source file was seen in this
 #     object.  valid only for LDADDs, not LIBADDs.  If set, LEXLIB
 #     must be in LDADD.
+# Returns 1 if LIBOBJS seen, 0 otherwise.
 sub handle_lib_objects
 {
     local ($xname, $var, $lex_seen) = @_;
@@ -934,6 +960,8 @@ sub handle_lib_objects
     # If no lex source seen, just assume this is ok.
     local ($lex_ok) = $lex_seen ? 0 : 1;
 
+    local ($seen_libobjs) = 0;
+
     foreach $lsearch (&variable_value_as_list ($var))
     {
 	# Skip -lfoo and -Ldir.
@@ -950,6 +978,7 @@ sub handle_lib_objects
 	# means adding entries to dep_files.
 	if ($lsearch eq '@LIBOBJS@')
 	{
+	    $seen_libobjs = 1;
 	    if (! keys %libsources)
 	    {
 		&am_line_error ($var, "\@LIBOBJS\@ seen but never set in \`configure.in'");
@@ -998,6 +1027,8 @@ sub handle_lib_objects
     {
 	&define_pretty_variable ($xname . '_DEPENDENCIES', @dep_list);
     }
+
+    return $seen_libobjs;
 }
 
 # Handle C programs.
@@ -1018,6 +1049,7 @@ sub handle_programs
     local ($obj) = &get_object_extension;
     local ($one_file, $xname, $munge);
 
+    local ($seen_libobjs) = 0;
     foreach $one_file (@proglist)
     {
 	# Canonicalize names.
@@ -1042,7 +1074,11 @@ sub handle_programs
 
 	if (&variable_defined ($xname . "_LDADD"))
 	{
-	    &handle_lib_objects ($xname, $xname . '_LDADD', $lex_file_seen);
+	    if (&handle_lib_objects ($xname, $xname . '_LDADD',
+				     $lex_file_seen))
+	    {
+		$seen_libobjs = 1;
+	    }
 	    $lex_file_seen = 0;
 	}
 	else
@@ -1054,7 +1090,10 @@ sub handle_programs
 	    # generate _DEPENDENCIES when appropriate.
 	    if (&variable_defined ('LDADD'))
 	    {
-		&handle_lib_objects ($xname, 'LDADD', $lex_file_seen);
+		if (&handle_lib_objects ($xname, 'LDADD', $lex_file_seen))
+		{
+		    $seen_libobjs = 1;
+		}
 		$lex_file_seen = 0;
 	    }
 	}
@@ -1084,8 +1123,28 @@ sub handle_programs
 		 'program');
     }
 
-    &handle_lib_objects ('', 'LDADD', 0)
-	if &variable_defined ('LDADD');
+    if (&variable_defined ('LDADD') && &handle_lib_objects ('', 'LDADD', 0))
+    {
+	$seen_libobjs = 1;
+    }
+
+    if ($seen_libobjs)
+    {
+	foreach $one_file (@proglist)
+	{
+	    # Canonicalize names.
+	    ($xname = $one_file) =~ tr/A-Za-z0-9_/_/c;
+
+	    if (&variable_defined ($xname . '_LDADD'))
+	    {
+		&check_libobjs_sources ($xname, $xname . '_LDADD');
+	    }
+	    elsif (&variable_defined ('LDADD'))
+	    {
+		&check_libobjs_sources ($xname, 'LDADD');
+	    }
+	}
+    }
 }
 
 # Handle libraries.
@@ -1151,6 +1210,7 @@ sub handle_libraries
     local ($obj) = &get_object_extension;
     local ($munge);
     local ($xlib);
+    local ($seen_libobjs) = 0;
     foreach $onelib (@liblist)
     {
 	# Canonicalize names.
@@ -1169,7 +1229,10 @@ sub handle_libraries
 
 	if (&variable_defined ($xlib . '_LIBADD'))
 	{
-	    &handle_lib_objects ($xlib, $xlib . '_LIBADD', 0);
+	    if (&handle_lib_objects ($xlib, $xlib . '_LIBADD', 0))
+	    {
+		$seen_libobjs = 1;
+	    }
 	}
 	else
 	{
@@ -1185,6 +1248,19 @@ sub handle_libraries
 					   . 's/\@XLIBRARY\@/'
 					   . $xlib . '/go;',
 					   'library');
+    }
+
+    if ($seen_libobjs)
+    {
+	foreach $onelib (@liblist)
+	{
+	    # Canonicalize names.
+	    ($xlib = $onelib) =~ tr/A-Za-z0-9_/_/c;
+	    if (&variable_defined ($xlib . '_LIBADD'))
+	    {
+		&check_libobjs_sources ($xlib, $xlib . '_LIBADD');
+	    }
+	}
     }
 
     # Turn "foo" into "libfoo.a" and include macro definition.
