@@ -1114,6 +1114,8 @@ easier.  These macros can automatically be put into your
 * Macro search path::           Modifying aclocal's search path
 * Macros::                      Autoconf macros supplied with Automake
 * Extending aclocal::           Writing your own aclocal macros
+* Local Macros::                Organizing local macros
+* Future of aclocal::           aclocal's scheduled death
 @end menu
 
 
@@ -1301,6 +1303,18 @@ generated @file{Makefile.in}s. This macro defines the
 @file{Makefile.am}.
 @cvindex AM_MAINTAINER_MODE
 
+@item m4_include
+@cvindex m4_include
+Files included by @file{configure.in} using this macro will be
+detected by Automake and automatically distributed.  They will also
+appear as dependencies in @file{Makefile} rules.
+
+@code{m4_include} is seldom used by @file{configure.in} authors, but
+can appear in @file{aclocal.m4} when @command{aclocal} detects that
+some required macros come from files local to your package (as
+opposed to macros installed in a system-wide directory, see
+@ref{Invoking aclocal}).
+
 @end table
 
 
@@ -1310,33 +1324,45 @@ generated @file{Makefile.in}s. This macro defines the
 @cindex Invoking aclocal
 @cindex aclocal, Invoking
 
-Automake includes a number of Autoconf macros which can be used in your
-package; some of them are actually required by Automake in certain
-situations.  These macros must be defined in your @file{aclocal.m4};
-otherwise they will not be seen by @code{autoconf}.
+Automake includes a number of Autoconf macros which can be used in
+your package (@pxref{Macros}); some of them are actually required by
+Automake in certain situations.  These macros must be defined in your
+@file{aclocal.m4}; otherwise they will not be seen by
+@command{autoconf}.
 
-The @code{aclocal} program will automatically generate @file{aclocal.m4}
-files based on the contents of @file{configure.in}.  This provides a
-convenient way to get Automake-provided macros, without having to
-search around.  Also, the @code{aclocal} mechanism allows other packages
-to supply their own macros.
+The @command{aclocal} program will automatically generate
+@file{aclocal.m4} files based on the contents of @file{configure.in}.
+This provides a convenient way to get Automake-provided macros,
+without having to search around.  The @command{aclocal} mechanism
+allows other packages to supply their own macros (@pxref{Extending
+aclocal}).  You can also use it to maintain your own set of custom
+macros (@pxref{Local Macros}).
 
-At startup, @code{aclocal} scans all the @file{.m4} files it can find,
-looking for macro definitions (@pxref{Macro search path}).  Then it
-scans @file{configure.in}.  Any
-mention of one of the macros found in the first step causes that macro,
-and any macros it in turn requires, to be put into @file{aclocal.m4}.
+At startup, @command{aclocal} scans all the @file{.m4} files it can
+find, looking for macro definitions (@pxref{Macro search path}).  Then
+it scans @file{configure.in}.  Any mention of one of the macros found
+in the first step causes that macro, and any macros it in turn
+requires, to be put into @file{aclocal.m4}.
+
+@emph{Putting} the file that contains the macro definition into
+@file{aclocal.m4} is usually done by copying the entire text of this
+file, including unused macro definitions as well as both @samp{#} and
+@samp{dnl} comments.  If you want to make a comment which will be
+completely ignored by @command{aclocal}, use @samp{##} as the comment
+leader.
+
+When @command{aclocal} detects that the file containing the macro
+definition is in a subdirectory of your package, it will use
+@code{m4_include} instead of copying it; this makes the package
+smaller and eases dependency tracking.  This only works if the
+subdirectory containing the macro was specified as a relative search
+path with @command{aclocal}'s @code{-I} argument.  (@pxref{Local
+Macros} for an example.)  Any macro which is found in a system-wide
+directory, or via an absolute search path will be copied.
 
 The contents of @file{acinclude.m4}, if it exists, are also
-automatically included in @file{aclocal.m4}.  This is useful for
-incorporating local macros into @file{configure}.
-
-@code{aclocal} tries to be smart about looking for new @code{AC_DEFUN}s
-in the files it scans.  It also
-tries to copy the full text of the scanned file into @file{aclocal.m4},
-including both @samp{#} and @samp{dnl} comments.  If you want to make a
-comment which will be completely ignored by @code{aclocal}, use
-@samp{##} as the comment leader.
+automatically included in @file{aclocal.m4}.  We recommend against
+using @file{acinclude.m4} in new packages (@pxref{Local Macros}).
 
 @menu
 * aclocal options::             Options supported by aclocal
@@ -1528,6 +1554,7 @@ Similarly, @file{dirlist} can be handy if you have installed a local
 copy Automake on your account and want @command{aclocal} to look for
 macros installed at other places on the system.
 
+
 @node Macros, Extending aclocal, Macro search path, configure
 @section Autoconf macros supplied with Automake
 
@@ -1638,7 +1665,7 @@ is hardly obvious for a non-emacs user).  In most cases, however, you
 should be able to use @samp{C-c} to kill the test.  In order to avoid
 problems, you can set @code{EMACS} to ``no'' in the environment, or
 use the @samp{--with-lispdir} option to @command{configure} to
-explictly set the correct path (if you're sure you have an @code{emacs}
+explicitly set the correct path (if you're sure you have an @code{emacs}
 that supports Emacs Lisp.
 @cvindex AM_PATH_LISPDIR
 
@@ -1711,7 +1738,7 @@ skip this section!
 @itemx AM_SET_DEPDIR
 @itemx AM_DEP_TRACK
 @itemx AM_OUTPUT_DEPENDENCY_COMMANDS
-These macros are used to implement automake's automatic dependency
+These macros are used to implement Automake's automatic dependency
 tracking scheme.  They are called automatically by automake when
 required, and there should be no need to invoke them manually.
 
@@ -1734,21 +1761,20 @@ from @code{AM_INIT_AUTOMAKE}.
 @end table
 
 
-
-@node Extending aclocal,  , Macros, configure
+@node Extending aclocal, Local Macros, Macros, configure
 @section Writing your own aclocal macros
 
 @cindex aclocal, extending
 @cindex Extending aclocal
 
-The @code{aclocal} program doesn't have any built-in knowledge of any
+The @command{aclocal} program doesn't have any built-in knowledge of any
 macros, so it is easy to extend it with your own macros.
 
-This is mostly used for libraries which want to supply their own
-Autoconf macros for use by other programs.  For instance the
-@code{gettext} library supplies a macro @code{AM_GNU_GETTEXT} which
-should be used by any package using @code{gettext}.  When the library is
-installed, it installs this macro so that @code{aclocal} will find it.
+This can be used by libraries which want to supply their own Autoconf
+macros for use by other programs.  For instance the @command{gettext}
+library supplies a macro @code{AM_GNU_GETTEXT} which should be used by
+any package using @command{gettext}.  When the library is installed, it
+installs this macro so that @command{aclocal} will find it.
 
 A file of macros should be a series of @code{AC_DEFUN}'s.  The
 @code{aclocal} programs also understands @code{AC_REQUIRE}, so it is
@@ -1757,8 +1783,126 @@ safe to put each macro in a separate file.  @xref{Prerequisite Macros, ,
 autoconf, The Autoconf Manual}.
 
 A macro file's name should end in @file{.m4}.  Such files should be
-installed in @code{`aclocal --print-ac-dir`} (which usually happens to
-be @file{$(datadir)/aclocal}).
+installed in @file{$(datadir)/aclocal}.  This is as simple as writing:
+
+@example
+aclocaldir = $(datadir)/aclocal
+aclocal_DATA = mymacro.m4 myothermacro.m4
+@end example
+
+Another situation where @command{aclocal} is commonly used is to
+manage macros which are used locally by the package, @ref{Local
+Macros}.
+
+@node Local Macros, Future of aclocal, Extending aclocal, configure
+@section Handling Local Macros
+
+Feature tests offered by Autoconf do not cover all needs.  People
+often have to supplement existing tests with their own macros, or
+with third-party macros.
+
+There are two ways to organize custom macros in a package.
+
+The first possibility (the historical practice) is to list all your
+macros in @file{acinclude.m4}.  This file will be included in
+@file{aclocal.m4} when you run @command{aclocal}, and its macro(s) will
+henceforth be visible to @command{autoconf}.  However if it contains
+numerous macros, it will rapidly become difficult to maintain, and it
+will be almost impossible to share macros between package.
+
+The second possibility, which we do recommend, is to write each macro
+in its own file and gather all these files in a directory.  This
+directory is usually called @file{m4/}.  To build @file{aclocal.m4},
+one should therefore instruct @command{aclocal} to scan @file{m4/}.
+From the command line, this is done with @code{aclocal -I m4}.  The
+top-level @file{Makefile.am} should also be updated to define
+
+@example
+ ACLOCAL_AMFLAGS = -I m4
+@end example
+
+@code{ACLOCAL_AMFLAGS} contains options to pass to @command{aclocal}
+when @file{aclocal.m4} is to be rebuilt by @code{make}.  This line is
+also used by @command{autoreconf} (@pxref{autoreconf Invocation, ,
+Using @command{autoreconf} to Update @file{configure} Scripts,
+autoconf, The Autoconf Manual}) to run @command{aclocal} with suitable
+options, or by @command{autopoint} (@pxref{autopoint Invocation, ,
+Invoking the @command{autopoint} Program, gettext, GNU gettext tools})
+and @command{gettextize} (@pxref{gettextize Invocation, , Invoking the
+@command{gettextize} Program, gettext, GNU gettext tools}) to locate
+the place where Gettext's macros should be installed.  So even if you
+do not really care about the rebuild rules, you should define
+@code{ACLOCAL_AMFLAGS}.
+
+When @code{aclocal -I m4} is run, it will build a @code{aclocal.m4}
+that @code{m4_include}s any file from @file{m4/} that defines a
+required macro.  Macros not found locally will still be searched in
+system-wide directories, as explained in @ref{Macro search path}.
+
+Custom macros should be distributed for the same reason that
+@file{configure.in} is: so that other people have all the sources of
+your package if they want to work on it.  Actually, this distribution
+happens automatically because all @code{m4_include}d files are
+distributed.
+
+However there is no consensus on the distribution of third-party
+macros that your package may use.  Many libraries install their own
+macro in the system-wide @command{aclocal} directory (@pxref{Extending
+aclocal}).  For instance Guile ships with a file called
+@file{guile.m4} that contains the macro @code{GUILE_FLAGS} which can
+be used to define setup compiler and linker flags appropriate for
+using Guile.  Using @code{GUILE_FLAGS} in @file{configure.in} will
+cause @command{aclocal} to copy @file{guile.m4} into
+@file{aclocal.m4}, but as @file{guile.m4} is not part of the project,
+it will not be distributed.  Technically, that means a user which
+needs to rebuild @file{aclocal.m4} will have to install Guile first.
+This is probably OK, if Guile already is a requirement to build the
+package.  However, if Guile is only an optional feature, or if your
+package might run on architectures where Guile cannot be installed,
+this requirement will hinder development.  An easy solution is to copy
+such third-party macros in your local @file{m4/} directory so they get
+distributed.
+
+@node Future of aclocal,  , Local Macros, configure
+@section The Future of @command{aclocal}
+@cindex aclocal's scheduled death
+
+@command{aclocal} is expected to disappear.  This feature really
+should not be offered by Automake.  Automake should focus on generating
+@file{Makefile}s; dealing with M4 macros really is Autoconf's job.
+That some people install Automake just to use @command{aclocal}, but
+do not use @command{automake} otherwise is an indication of how that
+feature is misplaced.
+
+The new implementation will probably be done slightly differently.
+For instance it could enforce the @file{m4/}-style layout discussed in
+@ref{Local Macros}, and take care of copying (or even updating)
+third-party macro into this directory.
+
+We have no idea when and how this will happen.  This has been
+discussed several times in the past, but someone still has to commit
+itself to that non-trivial task.
+
+From the user point of view, @command{aclocal}'s removal might turn
+out to be painful.  There is a simple precaution that you may take to
+make that switch more seamless: never call @command{aclocal} yourself.
+Keep this guy under the exclusive control of @command{autoreconf} and
+Automake's rebuild rules.  Hopefully you won't need to worry about
+things breaking, when @command{aclocal} disappears, because everything
+will have been taken care of.  If otherwise you used to call
+@command{aclocal} directly yourself or from some script, you will
+quickly notice the change.
+
+Many packages come with a script called @file{bootstrap.sh} or
+@file{autogen.sh}, that will just call @command{aclocal},
+@command{libtoolize}, @command{gettextize} or @command{autopoint},
+@command{autoconf}, @command{autoheader}, and @command{automake} in
+the right order.  Actually this is precisely what @command{autoreconf}
+can do for you.  If your package has such a @file{bootstrap.sh} or
+@file{autogen.sh} script, consider using @command{autoreconf}.  That
+should simplify its logic a lot (less things to maintain, yum!), it's
+even likely you will not need the script anymore, and more to the point
+you will not call @command{aclocal} directly anymore.
 
 
 @node Top level, Alternative, configure, Top
@@ -3266,7 +3410,7 @@ Automake also handles finding the @code{ansi2knr} support files in some
 other directory in the current package.  This is done by prepending the
 relative path to the appropriate directory to the @code{ansi2knr}
 option.  For instance, suppose the package has ANSI C code in the
-@file{src} and @file{lib} subdirs.  The files @file{ansi2knr.c} and
+@file{src} and @file{lib} subdirectories.  The files @file{ansi2knr.c} and
 @file{ansi2knr.1} appear in @file{lib}.  Then this could appear in
 @file{src/Makefile.am}:
 
@@ -3327,7 +3471,7 @@ much.  So instead Automake implements dependency tracking at build time.
 Automatic dependency tracking can be suppressed by putting
 @code{no-dependencies} in the variable @code{AUTOMAKE_OPTIONS}, or
 passing @code{no-dependencies} as an argument to @code{AM_INIT_AUTOMAKE}
-(this should be the prefered way).  Or, you can invoke @code{automake}
+(this should be the preferred way).  Or, you can invoke @code{automake}
 with the @code{-i} option.  Dependency tracking is enabled by default.
 
 @vindex AUTOMAKE_OPTIONS
@@ -3985,7 +4129,7 @@ This is a convenience variable which is defined as
 All these directory variables have values that start with either
 @code{$@{prefix@}} or @code{$@{exec_prefix@}} unexpanded.  This works
 fine in @file{Makefiles}, but it makes these variables hard to use in
-@file{configure}.  This is mandated by the GNU conding standard, so
+@file{configure}.  This is mandated by the GNU coding standards, so
 that the user can run @code{make prefix=/foo install}.  The Autoconf
 manual has a section with more details on this topic
 (@pxref{Installation Directory Variables, , Installation Directory
@@ -4406,6 +4550,7 @@ Autoconf macros such as @code{AC_CONFIG_FILES} and siblings) are
 automatically distributed.  Files included in @file{Makefile.am}s (using
 @code{include}) or in @file{configure.in} (using @code{m4_include}) are
 also distributed.
+@cvindex m4_include, distribution
 
 Still, sometimes there are files which must be distributed, but which
 are not covered in the automatic rules.  These files should be listed in
@@ -4479,7 +4624,7 @@ dist-hook:
 
 @vindex distdir
 @vindex top_distdir
-Two variables that come handy when writting @code{dist-hook} targets are
+Two variables that come handy when writing @code{dist-hook} targets are
 @code{$(distdir)} and @code{$(top_distdir)}.
 
 @code{$(distdir)} points to the directory where the @code{dist} target
@@ -4511,7 +4656,7 @@ involved.
 Automake also generates a @code{distcheck} target which can be of help
 to ensure that a given distribution will actually work.
 @code{distcheck} makes a distribution, then tries to do a @code{VPATH}
-build, run the testsuite, and finally make another tarfile to ensure the
+build, run the test suite, and finally make another tarfile to ensure the
 distribution is self-contained.
 @trindex distcheck
 
@@ -4539,8 +4684,8 @@ find generated files that you forgot to add to the @code{DISTCLEANFILES}
 variable (@pxref{Clean}).
 @trindex distcleancheck
 
-The @code{distcleancheck} behaviour should be ok for most packages,
-otherwise you have the possibility to override the definitition of
+The @code{distcleancheck} behavior should be OK for most packages,
+otherwise you have the possibility to override the definition of
 either the @code{distcleancheck} target, or the
 @code{$(distcleancheck_listfiles)} variable.  For instance to disable
 @code{distcleancheck} completely, add the following rule to your
@@ -4680,7 +4825,7 @@ The contents of the variable @code{RUNTESTFLAGS} are passed to the
 @cindex @file{site.exp}
 Automake will generate rules to create a local @file{site.exp} file,
 defining various variables detected by @code{./configure}.  This file
-is automatically read by DejaGnu.  It is ok for the user of a package
+is automatically read by DejaGnu.  It is OK for the user of a package
 to edit this file in order to tune the test suite.  However this is
 not the place where the test suite author should define new variables:
 this should be done elsewhere in the real test suite code.
@@ -5783,7 +5928,7 @@ Even if you don't care about portability, and are tempted to use
 should know there are many places where Automake need to know exactly
 which files should be processed.  As Automake doesn't know how to
 expand @code{$(wildcard ...)}, you cannot use it in these places.
-@code{$(wildcard ...)} is a blackbox comparable to @code{AC_SUBST}ed
+@code{$(wildcard ...)} is a black box comparable to @code{AC_SUBST}ed
 variables as far Automake is concerned.
 
 You can get warnings about @code{$(wildcard ...}) constructs using the
@@ -5953,3 +6098,60 @@ way to @emph{hide} errors, not to fix them.  You can always do better.
 @page
 @contents
 @bye
+
+@c  LocalWords:  texinfo setfilename settitle setchapternewpage texi direntry
+@c  LocalWords:  dircategory in's aclocal ifinfo titlepage Tromey vskip pt sp
+@c  LocalWords:  filll defcodeindex ov cv op tr syncodeindex fn cp vr ifnottex
+@c  LocalWords:  dir Automake's ac Dist Gnits gnits cygnus dfn Autoconf's pxref
+@c  LocalWords:  cindex Autoconf autoconf perl samp cvs dist trindex SUBST foo
+@c  LocalWords:  xs emph FIXME ref vindex pkglibdir pkgincludedir pkgdatadir mt
+@c  LocalWords:  pkg libdir cvindex cpio bindir sbindir rmt pax sbin zar zardir
+@c  LocalWords:  HTML htmldir html noinst TEXINFOS nodist nobase strudel CFLAGS
+@c  LocalWords:  libmumble CC YFLAGS ansi knr itemx de fication config url comp
+@c  LocalWords:  depcomp elisp sh mdate mkinstalldirs mkdir py tex dvi ps pdf
+@c  LocalWords:  ylwrap zardoz INIT gettext acinclude mv FUNCS LIBOBJS LDADD fr
+@c  LocalWords:  uref featureful dnl src LINGUAS es ko nl pl sl sv PROG ISC doc
+@c  LocalWords:  POSIX STDC fcntl FUNC ALLOCA blksize struct stat intl po chmod
+@c  LocalWords:  ChangeLog SUBDIRS gettextize gpl testdata getopt INTLLIBS cpp
+@c  LocalWords:  localedir datadir DLOCALEDIR DEXIT CPPFLAGS autoreconf opindex
+@c  LocalWords:  AUX var symlink deps Wno Wnone package's aclocal's distclean
+@c  LocalWords:  ltmain xref LIBSOURCE LIBSOURCES LIBOBJ MEMCMP vs RANLIB CXX
+@c  LocalWords:  LDFLAGS LIBTOOL libtool XTRA LIBS gettext's acdir APIVERSION
+@c  LocalWords:  dirlist noindent usr MULTILIB multilib Multilibs TIOCGWINSZ sc
+@c  LocalWords:  GWINSZ termios SRCDIR tarball bzip LISPDIR lispdir XEmacs CCAS
+@c  LocalWords:  emacsen MicroEmacs CCASFLAGS UX GCJ gcj GCJFLAGS posix DMALLOC
+@c  LocalWords:  dmalloc ldmalloc REGEX regex rx DEPDIR DEP DEFUN aclocaldir fi
+@c  LocalWords:  mymacro myothermacro AMFLAGS autopoint autogen libtoolize yum
+@c  LocalWords:  autoheader README MAKEFLAGS subdir Inetutils sync COND endif
+@c  LocalWords:  Miller's installable includedir inc pkgdata EXEEXT libexec bsd
+@c  LocalWords:  pkglib libexecdir prog libcpio cpio's dlopen dlpreopen linux
+@c  LocalWords:  subsubsection OBJEXT esac lib LTLIBRARIES liblob LIBADD AR ar
+@c  LocalWords:  ARFLAGS cru ing maude libgettext lo LTLIBOBJS rpath SGI PRE yy
+@c  LocalWords:  libmaude CCLD CXXFLAGS FFLAGS LFLAGS OBJCFLAGS RFLAGS DEFS cc
+@c  LocalWords:  SHORTNAME vtable srcdir nostdinc basename yxx cxx ll lxx gdb
+@c  LocalWords:  lexers yymaxdepth maxdepth yyparse yylex yyerror yylval lval
+@c  LocalWords:  yychar yydebug yypact yyr yydef def yychk chk yypgo pgo yyact
+@c  LocalWords:  yyexca exca yyerrflag errflag yynerrs nerrs yyps yypv pv yys
+@c  LocalWords:  yystate yytmp tmp yyv yyval val yylloc lloc yyreds yytoks toks
+@c  LocalWords:  yylhs yylen yydefred yydgoto yysindex yyrindex yygindex yyname
+@c  LocalWords:  yytable yycheck yyrule byacc CXXCOMPILE CXXLINK FLINK cfortran
+@c  LocalWords:  Catalogue preprocessable FLIBS libfoo baz JAVACFLAGS java exe
+@c  LocalWords:  SunOS fying basenames exeext uninstalled oldinclude kr
+@c  LocalWords:  pkginclude oldincludedir sysconf sharedstate localstate gcc rm
+@c  LocalWords:  sysconfdir sharedstatedir localstatedir preexist CLEANFILES gz
+@c  LocalWords:  unnumberedsubsec depfile tmpdepfile depmode const interoperate
+@c  LocalWords:  JAVAC javac JAVAROOT builddir CLASSPATH ENV pyc pyo pkgpython
+@c  LocalWords:  pyexecdir pkgpyexecdir Python's pythondir pkgpythondir txi ois
+@c  LocalWords:  installinfo vers MAKEINFO makeinfo MAKEINFOFLAGS noinstall rf
+@c  LocalWords:  mandir thesame alsothesame installman myexecbin DESTDIR Pinard
+@c  LocalWords:  uninstall installdirs uninstalls MOSTLYCLEANFILES mostlyclean
+@c  LocalWords:  DISTCLEANFILES MAINTAINERCLEANFILES gzip'd GZIP gzip shar exp
+@c  LocalWords:  distdir distcheck distcleancheck listfiles distuninstallcheck
+@c  LocalWords:  VPATH tarfile stdout XFAIL DejaGNU dejagnu DEJATOOL runtest ln
+@c  LocalWords:  RUNTESTDEFAULTFLAGS toolchain RUNTESTFLAGS DejaGnu asis readme
+@c  LocalWords:  installcheck gzipped tarZ std utils etags mkid multilibbing cd
+@c  LocalWords:  ARGS taggable ETAGSFLAGS lang ctags CTAGSFLAGS GTAGS gtags idl
+@c  LocalWords:  foocc doit idlC multilibs ABIs cmindex defmac ARG enableval
+@c  LocalWords:  MSG xtrue DBG pathchk CYGWIN afile proglink versioned CVS's
+@c  LocalWords:  wildcards Autoconfiscated subsubheading autotools Meyering
+@c  LocalWords:  ois's wildcard Wportability cartouche vrindex printindex
