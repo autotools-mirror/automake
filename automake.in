@@ -76,6 +76,9 @@ struct (# Short name of the language (c, f77...).
 	# (defaults to [])
         'flags' => "@",
 
+	# Any tag to pass to libtool while compiling.
+	'libtool_tag' => "\$",
+
 	# The file to use when generating rules for this language.
 	# The default is 'depend2'.
 	'rule_file' => "\$",
@@ -331,6 +334,9 @@ my $seen_gettext = 0;
 my $seen_gettext_external = 0;
 # Where AM_GNU_GETTEXT appears.
 my $ac_gettext_location;
+
+# Lists of tags supported by Libtool.
+my %libtool_tags = ();
 
 # TRUE if we've seen AC_CANONICAL_(HOST|SYSTEM).
 my $seen_canonical = 0;
@@ -668,6 +674,7 @@ register_language ('name' => 'c',
 		   'linker' => 'LINK',
 		   'link' => '$(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@',
 		   'compile_flag' => '-c',
+		   'libtool_tag' => 'CC',
 		   'extensions' => ['.c'],
 		   '_finish' => \&lang_c_finish);
 
@@ -683,6 +690,7 @@ register_language ('name' => 'cxx',
 		   'compiler' => 'CXXCOMPILE',
 		   'compile_flag' => '-c',
 		   'output_flag' => '-o',
+		   'libtool_tag' => 'CXX',
 		   'lder' => 'CXXLD',
 		   'ld' => '$(CXX)',
 		   'pure' => 1,
@@ -793,6 +801,7 @@ register_language ('name' => 'f77',
 		   'compiler' => 'F77COMPILE',
 		   'compile_flag' => '-c',
 		   'output_flag' => '-o',
+		   'libtool_tag' => 'F77',
 		   'lder' => 'F77LD',
 		   'ld' => '$(F77)',
 		   'pure' => 1,
@@ -825,6 +834,7 @@ register_language ('name' => 'ppf77',
 		   'compile' => '$(F77) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_FFLAGS) $(FFLAGS)',
 		   'compile_flag' => '-c',
 		   'output_flag' => '-o',
+		   'libtool_tag' => 'F77',
 		   'pure' => 1,
 		   'extensions' => ['.F']);
 
@@ -842,6 +852,7 @@ register_language ('name' => 'ratfor',
 		   'compiler' => 'RCOMPILE',
 		   'compile_flag' => '-c',
 		   'output_flag' => '-o',
+		   'libtool_tag' => 'F77',
 		   'pure' => 1,
 		   'extensions' => ['.r']);
 
@@ -857,6 +868,7 @@ register_language ('name' => 'java',
 		   'compiler' => 'GCJCOMPILE',
 		   'compile_flag' => '-c',
 		   'output_flag' => '-o',
+		   'libtool_tag' => 'GCJ',
 		   'lder' => 'GCJLD',
 		   'ld' => '$(GCJ)',
 		   'pure' => 1,
@@ -1153,7 +1165,14 @@ sub handle_languages
 		  if set_seen ($val);
 	      }
 
-	    my $obj_ltcompile = '$(LIBTOOL) --mode=compile ' . $obj_compile;
+	    my $libtool_tag = '';
+	    if ($lang->libtool_tag && exists $libtool_tags{$lang->libtool_tag})
+	      {
+		$libtool_tag = '--tag=' . $lang->libtool_tag . ' '
+	      }
+
+	    my $obj_ltcompile =
+	      '$(LIBTOOL) --mode=compile ' . $libtool_tag . $obj_compile;
 
 	    # We _need_ `-o' for per object rules.
 	    my $output_flag = $lang->output_flag || '-o';
@@ -4469,6 +4488,9 @@ sub scan_autoconf_traces ($)
   my ($filename) = @_;
 
   # Macros to trace, with their minimal number of arguments.
+  #
+  # IMPORTANT: If you add a macro here, you should also add this macro
+  # =========  to Automake-preselection in autoconf/lib/autom4te.cfg.
   my %traced = (
 		AC_CANONICAL_HOST => 0,
 		AC_CANONICAL_SYSTEM => 0,
@@ -4478,6 +4500,7 @@ sub scan_autoconf_traces ($)
 		AC_CONFIG_LINKS => 1,
 		AC_INIT => 0,
 		AC_LIBSOURCE => 1,
+		AC_LIBTOOL_TAGS => 1,
 		AC_SUBST => 1,
 		AM_AUTOMAKE_VERSION => 1,
 		AM_CONDITIONAL => 2,
@@ -4489,6 +4512,7 @@ sub scan_autoconf_traces ($)
 		m4_include => 1,
 		m4_sinclude => 1,
 		sinclude => 1,
+		_LT_AC_TAGCONFIG => 0,
 	      );
 
   my $traces = ($ENV{AUTOCONF} || 'autoconf') . " ";
@@ -4573,6 +4597,14 @@ sub scan_autoconf_traces ($)
 	{
 	  $libsources{$args[1]} = $here;
 	}
+      elsif ($macro eq 'AC_LIBTOOL_TAGS')
+	{
+          # Reset %libtool_tags, in case AC_LIBTOOL_TAGS is
+          # expansed after _LT_AC_TAGCONFIG.  We want to ignore
+	  # _LT_AC_TAGCONFIG if AC_LIBTOOL_TAGS is called.
+          %libtool_tags = (CC => 1);
+          $libtool_tags{$_} = 1 foreach split (' ', $args[1]);
+	}
       elsif ($macro eq 'AC_SUBST')
 	{
 	  # Just check for alphanumeric in AC_SUBST.  If you do
@@ -4647,6 +4679,19 @@ sub scan_autoconf_traces ($)
 	      my $mtime = mtime $args[1];
 	      $configure_deps_greatest_timestamp = $mtime
 		if $mtime > $configure_deps_greatest_timestamp;
+	    }
+	}
+      elsif ($macro eq '_LT_AC_TAGCONFIG')
+	{
+	  # _LT_AC_TAGCONFIG is an old macro present in Libtool 1.5.
+	  # We use it to detect whether tags are supported.  Our prefered
+	  # interface is AC_LIBTOOL_TAGS, but it was introduced in
+	  # Libtool 1.6.  Ignore _LT_AC_TAGCONFIG if AC_LIBTOOL_TAGS has
+	  # been called.
+	  if (0 == keys %libtool_tags)
+	    {
+	      # Hardcode the tags supported by Libtool 1.5.
+	      %libtool_tags = (CC => 1, CXX => 1, GCJ => 1, F77 => 1);
 	    }
 	}
     }
@@ -5437,8 +5482,13 @@ sub define_compiler_variable ($)
     my ($lang) = @_;
 
     my ($var, $value) = ($lang->compiler, $lang->compile);
+    my $libtool_tag = '';
+    $libtool_tag = '--tag=' . $lang->libtool_tag . ' '
+      if $lang->libtool_tag && exists $libtool_tags{$lang->libtool_tag};
     &define_variable ($var, $value, INTERNAL);
-    &define_variable ("LT$var", "\$(LIBTOOL) --mode=compile $value", INTERNAL)
+    &define_variable ("LT$var",
+		      "\$(LIBTOOL) --mode=compile $libtool_tag$value",
+		      INTERNAL)
       if var ('LIBTOOL');
 }
 
@@ -5451,11 +5501,15 @@ sub define_linker_variable ($)
     my ($lang) = @_;
 
     my ($var, $value) = ($lang->lder, $lang->ld);
+    my $libtool_tag = '';
+    $libtool_tag = '--tag=' . $lang->libtool_tag . ' '
+      if $lang->libtool_tag && exists $libtool_tags{$lang->libtool_tag};
     # CCLD = $(CC).
     &define_variable ($lang->lder, $lang->ld, INTERNAL);
     # CCLINK = $(CCLD) blah blah...
     &define_variable ($lang->linker,
-		      ((var ('LIBTOOL') ? '$(LIBTOOL) --mode=link ' : '')
+		      ((var ('LIBTOOL') ?
+			'$(LIBTOOL) --mode=link ' . $libtool_tag  : '')
 		       . $lang->link),
 		      INTERNAL);
 }
