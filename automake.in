@@ -1431,11 +1431,15 @@ sub switch_warning ($)
     }
   elsif ($cat eq 'none')
     {
-      setup_channel_type 'warning', silent => 1 - $has_no;
+      setup_channel_type 'warning', silent => ! $has_no;
     }
   elsif ($cat eq 'error')
     {
-      $warnings_are_errors = 1 - $has_no;
+      $warnings_are_errors = ! $has_no;
+      # Set exit code if Perl warns about something
+      # (like uninitialized variables).
+      $SIG{"__WARN__"} =
+	$has_no ? 'DEFAULT' : sub { print STDERR @_; $exit_code = 1; };
     }
   elsif (channel_type ($cat) eq 'warning')
     {
