@@ -90,28 +90,29 @@ rm -rf automake-$APIVERSION
 mkdir automake-$APIVERSION
 cp -rf lib/* automake-$APIVERSION
 
+dosubst ()
+{
+  sed -e "s%@PERL@%$PERL%g" \
+      -e "s%@VERSION@%$VERSION%g" \
+      -e "s%@APIVERSION@%$APIVERSION%g" \
+      -e "s%@PACKAGE@%$PACKAGE%g" \
+      -e "s%@datadir@%$datadir%g" \
+      -e "s%@SHELL@%$BOOTSTRAP_SHELL%g" $1 > $2
+}
+
+
+# Create temporary replacement for lib/Automake/Config.pm
+dosubst automake-$APIVERSION/Automake/Config.in \
+        automake-$APIVERSION/Automake/Config.pm
+
 # Create temporary replacement for aclocal
-sed -e "s%@PERL@%$PERL%g" \
-    -e "s%@VERSION@%$VERSION%g" \
-    -e "s%@APIVERSION@%$APIVERSION%g" \
-    -e "s%@PACKAGE@%$PACKAGE%g" \
-    -e "s%@datadir@%$datadir%g" \
-    -e "s%@SHELL@%$BOOTSTRAP_SHELL%g" \
-    aclocal.in >aclocal.tmp
+dosubst aclocal.in aclocal.tmp
 
 # Overwrite amversion.m4
-sed -e "s%@VERSION@%$VERSION%g" \
-    -e "s%@APIVERSION@%$APIVERSION%g" \
-    m4/amversion.in >m4/amversion.m4
+dosubst m4/amversion.in m4/amversion.m4
 
 # Create temporary replacement for automake
-sed -e "s%@PERL@%$PERL%g" \
-    -e "s%@VERSION@%$VERSION%g" \
-    -e "s%@APIVERSION@%$APIVERSION%g" \
-    -e "s%@PACKAGE@%$PACKAGE%g" \
-    -e "s%@datadir@%$datadir%g" \
-    -e "s%@SHELL@%$BOOTSTRAP_SHELL%g" \
-    automake.in >automake.tmp
+dosubst automake.in automake.tmp
 
 # Run the autotools.
 $PERL ./aclocal.tmp -I m4
@@ -121,3 +122,4 @@ $PERL ./automake.tmp
 # Remove temporary files and directories
 rm -rf aclocal-$APIVERSION automake-$APIVERSION
 rm -f aclocal.tmp automake.tmp
+rm -f lib/Automake/Config.pm

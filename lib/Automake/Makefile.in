@@ -55,9 +55,10 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	install-recursive installcheck-recursive installdirs-recursive \
 	pdf-recursive ps-recursive uninstall-info-recursive \
 	uninstall-recursive
-am__installdirs = $(DESTDIR)$(perllibdir)
+am__installdirs = $(DESTDIR)$(perllibdir) $(DESTDIR)$(perllibdir)
 dist_perllibDATA_INSTALL = $(INSTALL_DATA)
-DATA = $(dist_perllib_DATA)
+nodist_perllibDATA_INSTALL = $(INSTALL_DATA)
+DATA = $(dist_perllib_DATA) $(nodist_perllib_DATA)
 ETAGS = etags
 ETAGSFLAGS = 
 CTAGS = ctags
@@ -145,6 +146,17 @@ dist_perllib_DATA = \
   XFile.pm \
   Wrap.pm
 
+nodist_perllib_DATA = \
+  Config.pm
+
+CLEANFILES = $(nodist_perllib_DATA)
+do_subst = sed -e 's,[@]datadir[@],$(datadir),g' -e 's,[@]PERL[@],$(PERL),g' \
+	    -e 's,[@]configure_input[@],@configure_input@,g' \
+	    -e 's,[@]PACKAGE[@],$(PACKAGE),g' \
+	    -e 's,[@]VERSION[@],$(VERSION),g' \
+	    -e 's,[@]APIVERSION[@],$(APIVERSION),g' \
+	    -e 's,[@]SHELL[@],$(SHELL),g'
+
 all: all-recursive
 
 .SUFFIXES:
@@ -190,6 +202,23 @@ install-dist_perllibDATA: $(dist_perllib_DATA)
 uninstall-dist_perllibDATA:
 	@$(NORMAL_UNINSTALL)
 	@list='$(dist_perllib_DATA)'; for p in $$list; do \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(perllibdir)/$$f"; \
+	  rm -f $(DESTDIR)$(perllibdir)/$$f; \
+	done
+install-nodist_perllibDATA: $(nodist_perllib_DATA)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(perllibdir)
+	@list='$(nodist_perllib_DATA)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " $(nodist_perllibDATA_INSTALL) $$d$$p $(DESTDIR)$(perllibdir)/$$f"; \
+	  $(nodist_perllibDATA_INSTALL) $$d$$p $(DESTDIR)$(perllibdir)/$$f; \
+	done
+
+uninstall-nodist_perllibDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(nodist_perllib_DATA)'; for p in $$list; do \
 	  f="`echo $$p | sed -e 's|^.*/||'`"; \
 	  echo " rm -f $(DESTDIR)$(perllibdir)/$$f"; \
 	  rm -f $(DESTDIR)$(perllibdir)/$$f; \
@@ -358,7 +387,7 @@ check: check-recursive
 all-am: Makefile $(DATA)
 installdirs: installdirs-recursive
 installdirs-am:
-	$(mkinstalldirs) $(DESTDIR)$(perllibdir)
+	$(mkinstalldirs) $(DESTDIR)$(perllibdir) $(DESTDIR)$(perllibdir)
 install: install-recursive
 install-exec: install-exec-recursive
 install-data: install-data-recursive
@@ -376,6 +405,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-rm -f $(CONFIG_CLEAN_FILES)
@@ -401,7 +431,7 @@ info: info-recursive
 
 info-am:
 
-install-data-am: install-dist_perllibDATA
+install-data-am: install-dist_perllibDATA install-nodist_perllibDATA
 
 install-exec-am:
 
@@ -427,7 +457,8 @@ ps: ps-recursive
 
 ps-am:
 
-uninstall-am: uninstall-dist_perllibDATA uninstall-info-am
+uninstall-am: uninstall-dist_perllibDATA uninstall-info-am \
+	uninstall-nodist_perllibDATA
 
 uninstall-info: uninstall-info-recursive
 
@@ -437,14 +468,18 @@ uninstall-info: uninstall-info-recursive
 	distdir dvi dvi-am html html-am info info-am install \
 	install-am install-data install-data-am \
 	install-dist_perllibDATA install-exec install-exec-am \
-	install-info install-info-am install-man install-strip \
-	installcheck installcheck-am installdirs installdirs-am \
-	maintainer-clean maintainer-clean-generic \
-	maintainer-clean-recursive mostlyclean mostlyclean-generic \
-	mostlyclean-recursive pdf pdf-am ps ps-am tags tags-recursive \
-	uninstall uninstall-am uninstall-dist_perllibDATA \
-	uninstall-info-am
+	install-info install-info-am install-man \
+	install-nodist_perllibDATA install-strip installcheck \
+	installcheck-am installdirs installdirs-am maintainer-clean \
+	maintainer-clean-generic maintainer-clean-recursive \
+	mostlyclean mostlyclean-generic mostlyclean-recursive pdf \
+	pdf-am ps ps-am tags tags-recursive uninstall uninstall-am \
+	uninstall-dist_perllibDATA uninstall-info-am \
+	uninstall-nodist_perllibDATA
 
+
+Config.pm: Config.in
+	$(do_subst) <$(srcdir)/Config.in >$@
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

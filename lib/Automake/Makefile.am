@@ -35,3 +35,21 @@ dist_perllib_DATA = \
   Version.pm \
   XFile.pm \
   Wrap.pm
+
+nodist_perllib_DATA = \
+  Config.pm
+
+CLEANFILES = $(nodist_perllib_DATA)
+
+## We can't use configure to do the substitution here; we must do it
+## by hand.  We use a funny notation here to avoid configure
+## substitutions in our text.
+do_subst = sed -e 's,[@]datadir[@],$(datadir),g' -e 's,[@]PERL[@],$(PERL),g' \
+	    -e 's,[@]configure_input[@],@configure_input@,g' \
+	    -e 's,[@]PACKAGE[@],$(PACKAGE),g' \
+	    -e 's,[@]VERSION[@],$(VERSION),g' \
+	    -e 's,[@]APIVERSION[@],$(APIVERSION),g' \
+	    -e 's,[@]SHELL[@],$(SHELL),g'
+
+Config.pm: Config.in
+	$(do_subst) <$(srcdir)/Config.in >$@
