@@ -27,7 +27,10 @@
 # AM_PATH_LISPDIR
 # ---------------
 AC_DEFUN([AM_PATH_LISPDIR],
-[AC_CHECK_PROGS([EMACS], [emacs xemacs], [no])
+[ # If set to t, that means we are running in a shell under Emacs.
+ # If you have an Emacs named "t", then use the full path.
+ test x"$EMACS" = xt && EMACS=
+ AC_CHECK_PROGS([EMACS], [emacs xemacs], [no])
  AC_ARG_VAR([EMACS], [the Emacs editor command])
  AC_ARG_VAR([EMACSLOADPATH], [the Emacs library search path])
  AC_ARG_WITH([lispdir],
@@ -36,9 +39,6 @@ AC_DEFUN([AM_PATH_LISPDIR],
    AC_MSG_CHECKING([where .elc files should go])
    AC_MSG_RESULT([$lispdir])],
  [
- # If set to t, that means we are running in a shell under Emacs.
- # If you have an Emacs named "t", then use the full path.
- test x"$EMACS" = xt && EMACS=
  AC_CACHE_CHECK([where .elc files should go], [am_cv_lispdir], [
    if test $EMACS != "no"; then
      if test x${lispdir+set} != xset; then
