@@ -1,6 +1,6 @@
 # Makefile.in generated automatically by automake 1.4a from Makefile.am
 
-# Copyright (C) 1994, 1995-8, 1999 Free Software Foundation, Inc.
+# Copyright (C) 1994, 1995-9, 2000 Free Software Foundation, Inc.
 # This Makefile.in is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
@@ -31,8 +31,6 @@ mandir = @mandir@
 includedir = @includedir@
 oldincludedir = /usr/include
 
-DESTDIR =
-
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
@@ -59,9 +57,14 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 
 @SET_MAKE@
+AMDEP = @AMDEP@
 AMTAR = @AMTAR@
-AMTARFLAGS = @AMTARFLAGS@
 AWK = @AWK@
+CC = @CC@
+CPP = @CPP@
+CXX = @CXX@
+CXXCPP = @CXXCPP@
+DEPDIR = @DEPDIR@
 MAKEINFO = @MAKEINFO@
 PACKAGE = @PACKAGE@
 PERL = @PERL@
@@ -286,6 +289,7 @@ stdlib.test \
 subdir.test \
 subdir2.test \
 subdir3.test \
+subdir4.test \
 subobj.test \
 subobj2.test \
 subobj3.test \
@@ -340,13 +344,67 @@ all: all-redirect
 $(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
 	cd $(top_srcdir) && $(AUTOMAKE) --gnits tests/Makefile
 
-Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status $(BUILT_SOURCES)
+Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
 tags: TAGS
 TAGS:
 
+check-TESTS: $(TESTS)
+	@failed=0; all=0; xfail=0; xpass=0; \
+	srcdir=$(srcdir); export srcdir; \
+	list='$(TESTS)'; \
+	if test -n "$$list"; then \
+	  for tst in $$list; do \
+	    if test -f ./$$tst; then dir=./; \
+	    elif test -f $$tst; then dir=; \
+	    else dir="$(srcdir)/"; fi; \
+	    if $(TESTS_ENVIRONMENT) $${dir}$$tst; then \
+	      all=`expr $$all + 1`; \
+	      case " $(XFAIL_TESTS) " in \
+	      *" $$tst "*) \
+	        xpass=`expr $$xpass + 1`; \
+	        failed=`expr $$failed + 1`; \
+	        echo "XPASS: $$tst"; \
+	      ;; \
+	      *) \
+	        echo "PASS: $$tst"; \
+	      ;; \
+	      esac; \
+	    elif test $$? -ne 77; then \
+	      all=`expr $$all + 1`; \
+	      case " $(XFAIL_TESTS) " in \
+	      *" $$tst "*) \
+	        xfail=`expr $$xfail + 1`; \
+	        echo "XFAIL: $$tst"; \
+	      ;; \
+	      *) \
+	        failed=`expr $$failed + 1`; \
+	        echo "FAIL: $$tst"; \
+	      ;; \
+	      esac; \
+	    fi; \
+	  done; \
+	  if test "$$failed" -eq 0; then \
+	    if test "$$xfail" -eq 0; then \
+	      banner="All $$all tests passed"; \
+	    else \
+	      banner="All $$all tests behaved as expected ($$xfail expected failures)"; \
+	    fi; \
+	  else \
+	    if test "$$xpass" -eq 0; then \
+	      banner="$$failed of $$all tests failed"; \
+	    else \
+	      banner="$$failed of $$all tests did not behave as expected ($$xpass unexpected passes)"; \
+	    fi; \
+	  fi; \
+	  dashes=`echo "$$banner" | sed s/./=/g`; \
+	  echo "$$dashes"; \
+	  echo "$$banner"; \
+	  echo "$$dashes"; \
+	  test "$$failed" -eq 0; \
+	fi
 
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
@@ -362,57 +420,6 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-check-TESTS: $(TESTS)
-	@failed=0; all=0; xfail=0; xpass=0; \
-	srcdir=$(srcdir); export srcdir; \
-	for tst in $(TESTS); do \
-	  if test -f ./$$tst; then dir=./; \
-	  elif test -f $$tst; then dir=; \
-	  else dir="$(srcdir)/"; fi; \
-	  if $(TESTS_ENVIRONMENT) $${dir}$$tst; then \
-	    all=`expr $$all + 1`; \
-	    case " $(XFAIL_TESTS) " in \
-	    *" $$tst "*) \
-	      xpass=`expr $$xpass + 1`; \
-	      failed=`expr $$failed + 1`; \
-	      echo "XPASS: $$tst"; \
-	    ;; \
-	    *) \
-	      echo "PASS: $$tst"; \
-	    ;; \
-	    esac; \
-	  elif test $$? -ne 77; then \
-	    all=`expr $$all + 1`; \
-	    case " $(XFAIL_TESTS) " in \
-	    *" $$tst "*) \
-	      xfail=`expr $$xfail + 1`; \
-	      echo "XFAIL: $$tst"; \
-	    ;; \
-	    *) \
-	      failed=`expr $$failed + 1`; \
-	      echo "FAIL: $$tst"; \
-	    ;; \
-	    esac; \
-	  fi; \
-	done; \
-	if test "$$failed" -eq 0; then \
-	  if test "$$xfail" -eq 0; then \
-	    banner="All $$all tests passed"; \
-	  else \
-	    banner="All $$all tests behaved as expected ($$xfail expected failures)"; \
-	  fi; \
-	else \
-	  if test "$$xpass" -eq 0; then \
-	    banner="$$failed of $$all tests failed"; \
-	  else \
-	    banner="$$failed of $$all tests did not behave as expected ($$xpass unexpected passes)"; \
-	  fi; \
-	fi; \
-	dashes=`echo "$$banner" | sed s/./=/g`; \
-	echo "$$dashes"; \
-	echo "$$banner"; \
-	echo "$$dashes"; \
-	test "$$failed" -eq 0
 info-am:
 info: info-am
 dvi-am:
@@ -468,7 +475,7 @@ maintainer-clean-am:  maintainer-clean-generic distclean-am
 
 maintainer-clean: maintainer-clean-am
 
-.PHONY: tags distdir check-TESTS info-am info dvi-am dvi check check-am \
+.PHONY: tags check-TESTS distdir info-am info dvi-am dvi check check-am \
 installcheck-am installcheck install-exec-am install-exec \
 install-data-am install-data install-am install uninstall-am uninstall \
 all-redirect all-am all install-strip installdirs mostlyclean-generic \
