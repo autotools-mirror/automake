@@ -71,6 +71,7 @@ confsub.test \
 confvar.test \
 confvar2.test \
 copy.test \
+cxxansi.test \
 cxxcpp.test \
 cxxlibobj.test \
 cxxlink.test \
