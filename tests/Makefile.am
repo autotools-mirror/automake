@@ -1,7 +1,5 @@
 ## Process this file with automake to create Makefile.in
 
-AUTOMAKE_OPTIONS = gnits
-
 TESTS = acinclude.test aclocal.test aclocali.test aclocalii.test \
 acoutnoq.test acoutput.test acoutqnl.test acouttbs.test acsilent.test \
 all.test alpha.test ammissing.test ansi.test ansi2.test ansi3.test \
@@ -38,8 +36,8 @@ spell3.test spelling.test stamph.test stdlib.test subdir.test \
 subdir2.test subst.test symlink.test syntax.test tags.test tagsub.test \
 target.test texinfo.test texinfo2.test texinfo3.test texinfo4.test \
 texinfo5.test texinfo6.test texinfo7.test unused.test version.test \
-version2.test version3.test vpath.test vtexi.test vtexi2.test \
-whoami.test xsource.test yacc.test yaccpp.test
+version2.test version3.test version4.test vpath.test vtexi.test \
+vtexi2.test whoami.test xsource.test yacc.test yaccpp.test
 
 EXTRA_DIST = defs $(TESTS)
 
