@@ -1307,6 +1307,7 @@ sub handle_programs
 	local ($linker) = &handle_source_transform ($xname, $one_file, $obj);
 	local ($lex_file_seen) = (scalar (keys %lex_sources) > $lex_num);
 
+	local ($xt) = '';
 	if (&variable_defined ($xname . "_LDADD"))
 	{
 	    if (&handle_lib_objects ($xname, $xname . '_LDADD',
@@ -1315,6 +1316,7 @@ sub handle_programs
 		$seen_libobjs = 1;
 	    }
 	    $lex_file_seen = 0;
+	    $xt = '_LDADD';
 	}
 	else
 	{
@@ -1331,6 +1333,7 @@ sub handle_programs
 		}
 		$lex_file_seen = 0;
 	    }
+	    $xt = '_SOURCES'
 	}
 
 	if (! &variable_defined ($xname . '_LDFLAGS'))
@@ -1341,7 +1344,7 @@ sub handle_programs
 
 	if ($lex_file_seen)
 	{
-	    &am_line_error ($one_file . $xt,
+	    &am_line_error ($xname . $xt,
 			    'lex source file used without @LEXLIB@');
 	}
 
@@ -2487,16 +2490,14 @@ sub handle_configure
 
     local ($top_reldir);
 
-    # Handle $local:$input syntax again.
-    local ($infile, $colon_infile);
-
     local ($input_base) = &basename ($input);
     local ($local_base) = &basename ($local);
 
     local ($amfile) = $input_base . '.am';
     # We know we can always add '.in' because it really should be an
     # error if the .in was missing originally.
-    $infile = '$(srcdir)/' . $input_base . '.in';
+    local ($infile) = '$(srcdir)/' . $input_base . '.in';
+    local ($colon_infile);
     if ($local ne $input)
     {
 	$colon_infile = ':' . $input . '.in';
@@ -2507,7 +2508,12 @@ sub handle_configure
     local (@rewritten) = &rewrite_inputs_into_dependencies (@secondary_inputs);
     # This rule remakes the Makefile.in.  Note use of @MAINT@ forces
     # us to abandon pretty-printing.  Sigh.
-    $output_rules .= ($infile . ': ' . ($seen_maint_mode ? '@MAINT@ ' : '')
+    $output_rules .= ($infile
+		      # NOTE perl 5.003 (with -w) gives a
+		      # uninitialized value error on the next line.
+		      # Don't know why.
+		      . ': '
+		      . ($seen_maint_mode ? '@MAINT@ ' : '')
 		      . $amfile . ' '
 		      . '$(top_srcdir)/configure.in $(ACLOCAL) '
 		      . join (' ', @rewritten) . "\n"
@@ -2516,7 +2522,11 @@ sub handle_configure
 		      . ' ' . $input . $colon_infile . "\n\n");
 
     # This rule remakes the Makefile.
-    $output_rules .= ($local_base . ': ' . $infile . ' '
+    $output_rules .= ($local_base
+		      # NOTE: bogus uninit value error on next line;
+		      # see comment above.
+		      . ': '
+		      . $infile . ' '
 		      . '$(top_builddir)/config.status $(BUILT_SOURCES)'
 		      . "\n"
 		      . "\tcd \$(top_builddir) \\\n"
@@ -4972,8 +4982,19 @@ sub am_line_error
     if ($symbol)
     {
 	# If SYMBOL not already a line number, look it up in Makefile.am.
-	$symbol = $content_lines{$symbol} unless $symbol =~ /^\d+$/;
-	$symbol .= ': ' if $symbol;
+	if ($symbol =~ /^\d+$/)
+	{
+	    $symbol .= ': ';
+	}
+	elsif (defined $content_lines{$symbol})
+	{
+	    $symbol = $content_lines{$symbol} . ': ';
+	}
+	else
+	{
+	    # A single space, to provide nice separation.
+	    $symbol = ' ';
+	}
 	warn "${am_file}.am:", $symbol, join (' ', @args), "\n";
 	$exit_status = 1;
     }
