@@ -18,6 +18,7 @@ acloca12.test \
 acloca13.test \
 acloca14.test \
 acloca15.test \
+acloca16.test \
 acoutnoq.test \
 acoutpt.test \
 acoutpt2.test \

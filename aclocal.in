@@ -82,6 +82,9 @@ $force_output = 0;
 # Map macro names to file names.
 %map = ();
 
+# Ditto, but records the last definition of each macro as returned by --trace.
+%map_traced_defs = ();
+
 # Map file names to file contents.
 %file_contents = ();
 
@@ -159,7 +162,7 @@ sub scan_m4_files (@)
 	    # Skip some files when running out of srcdir.
 	    next if $file eq 'aclocal.m4';
 
-	    $fullfile = $m4dir . '/' . $file;
+	    $fullfile = File::Spec->canonpath ("$m4dir/$file");
 	    &scan_file ($fullfile);
 	}
 	closedir (DIR);
@@ -414,7 +417,9 @@ sub trace_used_macros ()
   # All candidate files.
   $traces .= join (' ', grep { exists $files{$_} } @file_order) . " ";
   # All candidate macros.
-  $traces .= join (' ', map { "--trace='$_:\$n'" } (keys %macro_seen));
+  $traces .= join (' ', map { "--trace='$_:\$f:\$n:\$1'" } ('AC_DEFUN',
+							    'AU_DEFUN',
+							    keys %macro_seen));
 
   print STDERR "aclocal: running $traces $configure_ac\n" if $verbose;
 
@@ -425,7 +430,12 @@ sub trace_used_macros ()
   while ($_ = $tracefh->getline)
     {
       chomp;
-      $traced{$_} = 1 if $macro_seen{$_};
+      my ($file, $macro, $arg1) = split (/:/);
+
+      $traced{$macro} = 1 if $macro_seen{$macro};
+
+      $map_traced_defs{$arg1} = $file
+	if $macro eq 'AC_DEFUN' || $macro eq 'AU_DEFUN';
     }
 
   $tracefh->close;
@@ -451,7 +461,17 @@ sub write_aclocal ($@)
   my ($output_file, @macros) = @_;
   my $output = '';
 
-  my %files = map { $map{$_} => 1 } @macros;
+  my %files = ();
+  # Get the list of files containing definitions for the macros used.
+  # (Filter out unused macro definitions with $map_traced_defs.  This
+  # can happen when an Autoconf macro is conditionally defined:
+  # aclocal sees the potential definition, but this definition is
+  # actually never processed and the Autoconf implementation is used
+  # instead.)
+  for my $m (@macros)
+    {
+      $files{$map{$m}} = 1 if $map{$m} eq $map_traced_defs{$m};
+    }
   $files{'acinclude.m4'} = 1 if -f 'acinclude.m4';
   %files = strip_redundant_includes %files;
   delete $files{$configure_ac};
