@@ -6983,11 +6983,11 @@ sub am_primary_prefixes
     $valid{'EXTRA'} = 0;
     foreach $varname (keys %contents)
     {
-	if ($varname =~ /^(dist_|nodist_)?(.*)_$primary$/)
+	if ($varname =~ /^(nobase_)?(dist_|nodist_)?(.*)_$primary$/)
 	{
-	    if (($1 ne '' && ! $can_dist)
-		|| (! defined $valid{$2}
-		    && ! &variable_defined ($2 . 'dir')
+	    if (($2 ne '' && ! $can_dist)
+		|| (! defined $valid{$3}
+		    && ! &variable_defined ($3 . 'dir')
 		    # Note that a configure variable is always
 		    # legitimate.  It is natural to name such
 		    # variables after the primary, so we explicitly
@@ -6999,7 +6999,7 @@ sub am_primary_prefixes
 	    else
 	    {
 		# Ensure all extended prefixes are actually used.
-		$valid{$1 . $2} = 1;
+		$valid{$1 . $2 . $3} = 1;
 	    }
 	}
     }
@@ -7108,11 +7108,19 @@ sub am_install_var
     local ($one_name);
     local ($X);
     local ($nodir_name);
+    local ($strip_subdir) = 1;
     foreach $X (sort keys %valid)
     {
 	$one_name = $X . '_' . $primary;
 	if (&variable_defined ($one_name))
 	{
+	    # If subdir prefix should be preserved, do so.
+	    if ($X =~ /^nobase_/)
+	    {
+		$strip_subdir = 0;
+		$X =~ s/^nobase_//;
+	    }
+
 	    # If files should be distributed, do so.
 	    if ($can_dist)
 	    {
@@ -7262,10 +7270,21 @@ sub am_install_var
 		next;
 	    }
 
+	    local ($subdir_xform);
+	    if ($strip_subdir)
+	    {
+		$subdir_xform = 's/^NOBASE.*$//; s/^BASE//;';
+	    }
+	    else
+	    {
+		$subdir_xform = 's/^BASE.*$//; s/^NOBASE//;';
+	    }
+
 	    $output_rules .=
 		&file_contents_with_transform ('s/\@DIR\@/' . $X . '/g;'
 					       . 's/\@NDIR\@/' . $nodir_name . '/go;'
-					       . $ltxform . $cygxform,
+					       . $ltxform . $cygxform
+					       . $subdir_xform,
 					       $file);
 
 	    push (@uninstall, 'uninstall-' . $X . $primary);
