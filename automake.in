@@ -1,6 +1,15 @@
 #!/bin/sh
+# automake - create Makefile.in from Makefile.am
+# Usage: automake Makefile lib/Makefile src/Makefile man/Makefile
+# Written by David Mackenzie <djm@gnu.ai.mit.edu>.
+
+if test $# -eq 0; then
+  echo "Usage: automake Makefile..." >&2
+  exit 1
+fi
 
 status=0
+amdir=`echo $0|sed s%automake%%`
 
 for makefile
 do
@@ -12,4 +21,83 @@ do
 
   exec 4> ${makefile}.in
 
+  cat $amdir/header.am >&4
+
+  cat ${makefile}.am >&4
+
+  CONFIG_HEADER= SUBDIRS= PROGRAMS= LIBRARIES= TEXINFOS= MANS=
+
+  eval `sed -n '
+s/^[	]*\([A-Z][A-Z0-9_]*\)=[		]*\(.*\)/\1=\2/p' ${makefile}.am`
+
+  case "$SUBDIRS" in
+  "") cat $amdir/clean.am >&4 ;;
+  *) cat $amdir/subdirs.am >&4 ;;
+  esac
+
+  if test -n "$PROGRAMS" || test -n "$LIBRARIES"; then
+    cat $amdir/compile.am >&4
+    for file in $PROGRAMS $LIBRARIES; do
+      sed -n "/^[	]*${file}_SOURCES[		]*=/{
+s/SOURCES/OBJECTS/
+s/\\.cc/.o/g
+s/\\.\${kr}c/.o/g
+s/\\.\$(kr)c/.o/g
+s/\\.[cCmylfs]/.o/g
+p
+}" ${makefile}.am >&4
+      if test -n "$CONFIG_HEADER"; then
+        echo "\$(${file}_OBJECTS): $CONFIG_HEADER" >&4
+      fi
+    done
+  fi
+
+  if test -n "$PROGRAMS"; then
+    cat $amdir/programs.am >&4
+    for prog in $PROGRAMS; do
+      sed "s/@PROGRAM@/$prog/g" $amdir/program.am >&4
+    done
+  fi
+
+  if test -n "$LIBRARIES"; then
+    cat $amdir/libraries.am >&4
+    for lib in $LIBRARIES; do
+      sed "s/@LIBRARY@/$lib/g" $amdir/library.am >&4
+    done
+  fi
+
+  if test -n "$TEXINFOS"; then
+    cat $amdir/texinfos.am >&4
+    echo "$TEXINFOS" | sed 's/^/INFOS = /; s/\.texi/.info/g' >&4
+    echo "$TEXINFOS" | sed 's/^/DVIS = /; s/\.texi/.dvi/g' >&4
+  fi
+
+  if test -n "$MANS"; then
+    cat $amdir/mans.am >&4
+  fi
+
+  case "$makefile" in
+  */*) cat $amdir/remake-subdir.am >&4 ;;
+  *) test -f aclocal.m4 && echo "ACLOCAL = aclocal.m4" >&4
+  cat $amdir/remake.am >&4 ;;
+  esac
+
+  case "$CONFIG_HEADER" in
+  "") ;;
+  */*) ;; # It's in some other directory, so don't remake it in this one.
+  *)
+    test -f acconfig.h && echo "ACCONFIG = acconfig.h" >&4
+    test -f config.h.top && echo "CONFIG_TOP = config.h.top" >&4
+    test -f config.h.bot && echo "CONFIG_BOT = config.h.bot" >&4
+    cat $amdir/remake-hdr.am >&4 ;;
+  esac
+
+  case "$makefile" in
+  */*) cat $amdir/dist-subdir.am >&4 ;;
+  *)   cat $amdir/dist.am >&4 ;;
+  esac
+
+  cat $amdir/footer.am >&4
 done
+
+exit $status

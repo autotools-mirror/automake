@@ -1,11 +1,17 @@
+DISTFILES = $(DISTSOURCES) $(DISTMISC)
+
+distname:
+	(cd $(srcdir); pwd) | sed 's%.*/%%; s%$$%$(VERSION)%' > .distname
+
 dist: $(DISTFILES)
-	(cd $(srcdir); pwd) | sed 's|.*/||' > .fname
-	rm -rf `cat .fname`; mkdir `cat .fname`; chmod 777 `cat .fname`
+	rm -rf `cat distname`; mkdir `cat distname`
 	@echo "Copying distribution files"
 	@for file in $(DISTFILES); do \
-	  cp -p $(srcdir)/$$file `cat .fname`; \
+	  cp -p $(srcdir)/$$file `cat distname`; \
 	done
-	for subdir in $(SUBDIRS); do (cd $$subdir; $(MAKE) $@); done
-	chmod -R a+r `cat .fname`
-	tar chozf `cat .fname`.tar.gz `cat .fname`
-	rm -rf `cat .fname` .fname
+	if test -n "$(SUBDIRS)"; then \
+	for subdir in $(SUBDIRS); do (cd $$subdir; $(MAKE) $@); done;
+	fi
+	chmod -R a+r `cat distname`
+	tar -chozf `cat distname`.tar.gz `cat distname`
+	rm -rf `cat distname` distname
