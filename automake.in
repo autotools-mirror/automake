@@ -1591,7 +1591,6 @@ sub handle_ltlibraries
 	    }
 
 	    # Get the installation directory of each library.
-	    next if ($key eq 'EXTRA');
 	    for (&variable_value_as_list ($key . '_LTLIBRARIES'))
 	    {
 		if ($instdirs{$_})
@@ -1668,14 +1667,24 @@ sub handle_ltlibraries
 	    $xlink = $linker ? $linker : 'LINK';
 	}
 
+	local ($rpath);
+	if ($instdirs{$onelib} eq 'EXTRA')
+	{
+	    # It's an EXTRA_ library, so we can't specify -rpath.
+	    # Yuck.
+	    $rpath = 's/\@RPATH\@//go;';
+	}
+	else
+	{
+	    $rpath = 's/\@RPATH\@/-rpath ' . $instdirs{$onelib} . '/go;';
+	}
 
 	$output_rules .=
 	    &file_contents_with_transform ('s/\@LTLIBRARY\@/'
 					   . $onelib . '/go;'
 					   . 's/\@XLTLIBRARY\@/'
 					   . $xlib . '/go;'
-					   . 's/\@DIR\@/'
-					   . $instdirs{$onelib} . '/go;'
+					   . $rpath
 					   . 's/\@XLINK\@/' . $xlink . '/go;',
 					   'ltlibrary');
     }
