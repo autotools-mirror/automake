@@ -18,8 +18,8 @@ progs-clean.am data-clean.am COPYING INSTALL texinfo.tex ansi2knr.c \
 ansi2knr.1 lisp.am lisp-clean.am
 
 ## These must all be executable when installed.
-pkgdata_SCRIPTS = config.guess config.sub install-sh interlock \
-mdate-sh missing mkinstalldirs elisp-comp ylwrap acinstall
+pkgdata_SCRIPTS = config.guess config.sub install-sh mdate-sh missing \
+mkinstalldirs elisp-comp ylwrap acinstall
 
 EXTRA_DIST = acinstall $(pkgdata_DATA)
 

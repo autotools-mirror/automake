@@ -845,18 +845,16 @@ sub handle_yacc_lex_cxx
     if ($yacc_count > 1 || $lex_count > 1)
     {
 	# If there is more than one distinct yacc (resp lex) source
-	# file in a given directory, then the `interlock' program is
+	# file in a given directory, then the `ylwrap' program is
 	# required to allow parallel builds to work correctly.  FIXME:
 	# for now, no line number.
-	&require_config_file ($FOREIGN, 'interlock', 'ylwrap');
+	&require_config_file ($FOREIGN, 'ylwrap');
 	if ($config_aux_dir ne '.' && $config_aux_dir ne '')
 	{
-		&define_variable ('INTERLOCK', $config_aux_dir . "/interlock");
 		&define_variable ('YLWRAP', $config_aux_dir . "/ylwrap");
 	}
 	else
 	{
-		&define_variable ('INTERLOCK', '$(srcdir)/interlock');
 		&define_variable ('YLWRAP', '$(srcdir)/ylwrap');
 	}
     }
@@ -953,7 +951,7 @@ sub handle_yacc_lex_cxx
 # compiled with C or C++, depending on the extension of the YACC file.
 sub output_yacc_build_rule
 {
-    local ($yacc_suffix, $use_interlock, $c_suffix) = @_;
+    local ($yacc_suffix, $use_ylwrap, $c_suffix) = @_;
 
     local ($c_suffix, $suffix);
     ($c_suffix = $yacc_suffix) =~ tr/y/c/;
@@ -965,11 +963,11 @@ sub output_yacc_build_rule
     {
 	$output_rules .= "$yacc_suffix$suffix:\n\t";
 
-	if ($use_interlock)
+	if ($use_ylwrap)
 	{
-	    $output_rules .= ('$(SHELL) $(INTERLOCK) =yacclockdir $(YLWRAP)'
-			      . ' "$(YACC)" y.tab.c $*' . $suffix
-			      . ' y.tab.h $*.h -- $(YFLAGS) $<');
+	    $output_rules .= ('$(SHELL) $(YLWRAP)'
+			      . ' "$(YACC)" $< y.tab.c $*' . $suffix
+			      . ' y.tab.h $*.h -- $(YFLAGS)');
 	}
 	else
 	{
@@ -984,7 +982,7 @@ sub output_yacc_build_rule
 
 sub output_lex_build_rule
 {
-    local ($lex_suffix, $use_interlock) = @_;
+    local ($lex_suffix, $use_ylwrap) = @_;
     local ($c_suffix);
 
     ($c_suffix = $lex_suffix) =~ tr/l/c/;
@@ -993,12 +991,12 @@ sub output_lex_build_rule
     &define_configure_variable ('LEXLIB');
     $output_rules .= "$lex_suffix$c_suffix:\n\t";
 
-    if ($use_interlock)
+    if ($use_ylwrap)
     {
-        # is the $@ correct here?  If so, why not use it in the
-        # interlock build rule for yacc above?
-	$output_rules .= '$(SHELL) $(INTERLOCK) =lexlockdir $(YLWRAP)'
-	    . ' "$(LEX)" $(LEX_OUTPUT_ROOT).c $@ -- $(LFLAGS) $<';
+        # Is the $@ correct here?  If so, why not use it in the ylwrap
+        # build rule for yacc above?
+	$output_rules .= '$(SHELL) $(YLWRAP)'
+	    . ' "$(LEX)" $< $(LEX_OUTPUT_ROOT).c $@ -- $(LFLAGS)';
     }
     else
     {
@@ -4574,7 +4572,7 @@ sub initialize_global_constants
 	 "config.guess", "config.sub", "AUTHORS", "BACKLOG", "ABOUT-GNU",
 	 "libversion.in", "mdate-sh", "mkinstalldirs", "install-sh",
 	 'texinfo.tex', "ansi2knr.c", "ansi2knr.1", 'elisp-comp',
-	 'interlock', 'ylwrap', 'acinclude.m4', @libtoolize_files,
+	 'ylwrap', 'acinclude.m4', @libtoolize_files,
 	 'missing'
 	 );
 
