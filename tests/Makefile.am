@@ -257,6 +257,7 @@ link_f_only.test \
 lisp.test \
 lisp2.test \
 lisp3.test \
+lisp4.test \
 listval.test \
 location.test \
 ltdeps.test \
