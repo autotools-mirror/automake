@@ -4601,6 +4601,13 @@ sub check_gnits_standards
 # are computed, so don't bother searching for their precise names
 # in the source.
 
+# This is just a convenience function that can be used to determine
+# when a subdir object should be used.
+sub lang_sub_obj
+{
+    return defined $options{'subdir-objects'} ? $LANG_SUBDIR : $LANG_PROCESS;
+}
+
 # Rewrite a single C source file.
 sub lang_c_rewrite
 {
@@ -4637,7 +4644,7 @@ sub lang_c_rewrite
 # Rewrite a single C++ source file.
 sub lang_cxx_rewrite
 {
-    return $LANG_PROCESS;
+    return &lang_sub_obj;
 }
 
 # Rewrite a single header file.
@@ -4728,7 +4735,7 @@ sub lang_lexxx_rewrite
 # Rewrite a single assembly file.
 sub lang_asm_rewrite
 {
-    return $LANG_PROCESS;
+    return &lang_sub_obj;
 }
 
 # Rewrite a single Fortran 77 file.
@@ -4752,7 +4759,7 @@ sub lang_ratfor_rewrite
 # Rewrite a single Objective C file.
 sub lang_objc_rewrite
 {
-    return $LANG_PROCESS;
+    return &lang_sub_obj;
 }
 
 # Rewrite a single Java file.
@@ -4835,14 +4842,15 @@ sub lang_cxx_finish
 	local ($ext);
 	foreach $ext (@cxx_list)
 	{
+	    # Every known C++ compiler supports both -c and -o.
 	    $output_rules .= ("$ext.o:\n"
-			      . "\t\$(CXXCOMPILE) -c \$<\n");
+			      . "\t\$(CXXCOMPILE) -c -o \$\@ \$<\n");
 	    # FIXME: Using cygpath should be somehow conditional.
 	    $output_rules .= ("$ext.obj:\n"
-			      . "\t\$(CXXCOMPILE) -c `cygpath -w \$<`\n")
+			      . "\t\$(CXXCOMPILE) -c -o \$\@ `cygpath -w \$<`\n")
 		if ($seen_objext);
 	    $output_rules .= ("$ext.lo:\n"
-			      . "\t\$(LTCXXCOMPILE) -c \$<\n")
+			      . "\t\$(LTCXXCOMPILE) -c -o \$\@ \$<\n")
 		if ($seen_libtool);
 	}
 
@@ -4995,18 +5003,24 @@ sub lang_asm_finish
     &lang_c_finish;
 
     # We also need our own rules.
+    local ($minuso) = '';
+    if (defined $options{'subdir-objects'})
+    {
+	$minuso = '-o $@ ';
+    }
     local (@asm_list) = &lang_extensions ('am');
     local ($ext);
     foreach $ext (@asm_list)
     {
 	$output_rules .= ("$ext.o:\n"
-			  . "\t\$(COMPILE) -c \$<\n");
+			  . "\t\$(COMPILE) -c " . $minuso . "\$<\n");
 	# FIXME: Using cygpath should be somehow conditional.
 	$output_rules .= ("$ext.obj:\n"
-			  . "\t\$(COMPILE) -c `cygpath -w \$<`\n")
+			  . "\t\$(COMPILE) -c " . $minuso
+			  . "`cygpath -w \$<`\n")
 	    if $seen_objext;
 	$output_rules .= ("$ext.lo:\n"
-			  . "\t\$(LTCOMPILE) -c \$<\n")
+			  . "\t\$(LTCOMPILE) -c -o \$\@ \$<\n")
 	    if $seen_libtool;
     }
 
@@ -5154,14 +5168,15 @@ sub lang_objc_finish
     &define_variable ('OBJCLD', '$(OBJC)');
     &define_variable ('OBJCLINK', $ltlink . '$(OBJCLD) $(AM_OBJCFLAGS) $(OBJCFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
 
+    # All known ObjC compilers support -c and -o together.
     $output_rules .= (".m.o:\n"
-                      . "\t\$(OBJCCOMPILE) -c \$<\n");
+                      . "\t\$(OBJCCOMPILE) -c -o \$\@ \$<\n");
     # FIXME: Using cygpath should be somehow conditional.
     $output_rules .= (".m.obj:\n"
-                      . "\t\$(OBJCCOMPILE) -c `cygpath -w \$<`\n")
+                      . "\t\$(OBJCCOMPILE) -c -o \$\@ `cygpath -w \$<`\n")
         if ($seen_objext);
     $output_rules .= (".m.lo:\n"
-                      . "\t\$(LTOBJCCOMPILE) -c \$<\n")
+                      . "\t\$(LTOBJCCOMPILE) -c -o \$\@ \$<\n")
         if ($seen_libtool);
 
     if (! defined $configure_vars{'OBJC'})
@@ -5183,14 +5198,15 @@ sub lang_java_finish
     &define_variable ('GCJLD', '$(GCJ)');
     &define_variable ('GCJLINK', $ltlink . '$(GCJLD) $(AM_GCJFLAGS) $(GCJFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
 
+    # All known Java compilers support -c and -o together.
     $output_rules .= (".java.o:\n"
-                      . "\t\$(GCJCOMPILE) -c \$<\n");
+                      . "\t\$(GCJCOMPILE) -c -o \$\@ \$<\n");
     # FIXME: Using cygpath should be somehow conditional.
     $output_rules .= (".java.obj:\n"
-                      . "\t\$(GCJCOMPILE) -c `cygpath -w \$<`\n")
+                      . "\t\$(GCJCOMPILE) -c -o \$\@ `cygpath -w \$<`\n")
         if ($seen_objext);
     $output_rules .= (".java.lo:\n"
-                      . "\t\$(LTGCJCOMPILE) -c \$<\n")
+                      . "\t\$(LTGCJCOMPILE) -c -o \$\@ \$<\n")
         if ($seen_libtool);
 
     if (! defined $configure_vars{'GCJ'})
