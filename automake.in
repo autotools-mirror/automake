@@ -3991,7 +3991,7 @@ sub handle_footer
       if variable_value ('SOURCES');
 
 
-    &am_line_error ('.SUFFIXES',
+    am_target_error ('.SUFFIXES',
 		    "use variable `SUFFIXES', not target `.SUFFIXES'")
       if target_defined ('.SUFFIXES');
 
@@ -4203,13 +4203,13 @@ sub handle_factored_dependencies
 	{
 	    my $x = $utarg;
 	    $x =~ s/(data|exec)-//;
-	    &am_line_error ($utarg, "use `$x', not `$utarg'");
+	    am_target_error ($utarg, "use `$x', not `$utarg'");
 	}
     }
 
     if (&target_defined ('install-local'))
     {
-	&am_line_error ('install-local',
+	am_target_error ('install-local',
 			"use `install-data-local' or `install-exec-local', "
 			. "not `install-local'");
     }
@@ -4217,7 +4217,7 @@ sub handle_factored_dependencies
     if (!defined $options{'no-installinfo'}
 	&& &target_defined ('install-info-local'))
     {
-	&am_line_error ('install-info-local',
+	am_target_error ('install-info-local',
 			"`install-info-local' target defined but "
 			. "`no-installinfo' option not in use");
     }
@@ -6645,7 +6645,7 @@ sub rule_define ($$$$)
 	  ? ! defined $target_conditional{$target}
 	  : defined $target_conditional{$target}))
   {
-      &am_line_error ($target,
+      am_target_error ($target,
 		      "$target defined both conditionally and unconditionally");
   }
 
@@ -8077,11 +8077,21 @@ sub am_file_error
 
 # &am_macro_error ($MACRO, @ARGS)
 # -------------------------------
-# Report an error, @ARGS,  about $MACRO.
+# Report an error, @ARGS, about $MACRO.
 sub am_macro_error ($@)
 {
     my ($macro, @args) = @_;
     am_file_error ($var_location{$macro}, @args);
+}
+
+
+# &am_target_error ($TARGET, @ARGS)
+# ---------------------------------
+# Report an error, @ARGS, about the rule $TARGET.
+sub am_target_error ($@)
+{
+    my ($target, @args) = @_;
+    am_file_error ($targets{$target}, @args);
 }
 
 
@@ -8095,21 +8105,24 @@ sub am_line_error ($@)
 
     if ($symbol && "$symbol" ne '-1')
     {
-        my $where;
 	if ($symbol =~ /^\d+$/)
 	{
 	    # SYMBOL is a line number, then it must be a Makefile.am.
-	    $where = "${am_file}.am:$symbol";
+	    am_file_error ("${am_file}.am:$symbol", @args);
 	}
 	elsif (defined $configure_vars{$symbol})
 	{
 	    # SYMBOL is a variable defined in configure.ac, so add the
 	    # appropriate line number.
-	    $where = $configure_vars{$symbol};
+	    am_file_error ($configure_vars{$symbol}, @args);
 	}
 	elsif (defined $var_location{$symbol})
 	{
 	    croak "use am_macro_error for macros: $symbol\n";
+	}
+	elsif (defined $targets{$symbol})
+	{
+	    croak "use am_target_error for targets: $symbol\n";
 	}
 	else
 	{
