@@ -2465,7 +2465,6 @@ sub handle_texinfo
 
     if (! defined $options{'no-installinfo'})
     {
-	push (@installdirs, '$(DESTDIR)$(infodir)');
 	# Make sure documentation is made and installed first.  Use
 	# $(INFO_DEPS), not 'info', because otherwise recursive makes
 	# get run twice during "make all".
@@ -2538,8 +2537,6 @@ sub handle_man_pages
     foreach my $sect (sort keys %sections)
     {
 	&define_variable ('man' . $sect . 'dir', '$(mandir)/man' . $sect);
-	push (@installdirs, '$(DESTDIR)$(mandir)/man' . $sect)
-	    unless defined $options{'no-installman'};
 	$output_rules .= &file_contents ('mans',
 					 &transform ('SECTION', $sect));
     }
@@ -3561,26 +3558,9 @@ sub handle_footer
 # Deal with installdirs target.
 sub handle_installdirs
 {
-    # GNU Makefile standards recommend this.
-    if (&variable_defined ('SUBDIRS'))
-    {
-	# We create a separate `-am' target so that the -recursive
-	# rule will work correctly.
-	$output_rules .= ("installdirs: installdirs-recursive\n"
-			  . "installdirs-am:\n");
-	&depend ('.PHONY', 'installdirs-am');
-    }
-    else
-    {
-	$output_rules .= "installdirs:\n";
-    }
-    &depend ('.PHONY', 'installdirs');
-    if (@installdirs)
-    {
-	&pretty_print_rule ("\t" . '$(mkinstalldirs) ', "\t\t",
-			    @installdirs);
-    }
-    $output_rules .= "\n";
+    $output_rules .= &file_contents
+      ('install',
+       transform ('_am_installdirs' => $am_var_defs{'_am_installdirs'}));
 }
 
 # There are several targets which need to be merged.  This is because
@@ -6564,8 +6544,6 @@ sub initialize_per_input
     %dist_dirs = ();
 
     # List of dependencies for the obvious targets.
-    @installdirs = ();
-
     @info = ();
     @dvi = ();
     @all = ();
@@ -6882,12 +6860,21 @@ sub file_contents
  	}
  	elsif (/$MACRO_PATTERN/mso)
  	{
- 	    $result_vars .= "$separator$comment$_\n"
-	      unless defined $contents{$1};
- 	    $comment = $separator = '';
- 	    &prog_error ("$file:$.: macro \`$1' with trailing backslash")
+	    my ($var, $type, $val) = ($1, $2, $3);
+ 	    &prog_error ("$file:$.: macro \`$var' with trailing backslash")
 	      if /\\$/;;
- 	    $am_var_defs{$1} = $3;
+	    # Accumulating variables must not be output.
+	    if ($type eq '+')
+	      {
+		$am_var_defs{$var} .= ($am_var_defs{$var} && ' ') . $val;
+	      }
+	    else
+	      {
+		$am_var_defs{$var} = $val;
+		$result_vars .= "$separator$comment$_\n"
+		  unless defined $contents{$var};
+	      }
+ 	    $comment = $separator = '';
  	}
  	else
  	{
