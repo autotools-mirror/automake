@@ -39,18 +39,18 @@ AC_DEFUN([_AM_OUTPUT_DEPENDENCY_COMMANDS],
   fi
   # Extract the definition of DEPDIR, am__include, and am__quote
   # from the Makefile without running `make'.
-  DEPDIR=`sed -n -e '/^DEPDIR = / s///p' < "$mf"`
+  DEPDIR=`sed -n 's/^DEPDIR = //p' < "$mf"`
   test -z "$DEPDIR" && continue
-  am__include=`sed -n -e '/^am__include = / s///p' < "$mf"`
+  am__include=`sed -n 's/^am__include = //p' < "$mf"`
   test -z "am__include" && continue
-  am__quote=`sed -n -e '/^am__quote = / s///p' < "$mf"`
+  am__quote=`sed -n 's/^am__quote = //p' < "$mf"`
   # When using ansi2knr, U may be empty or an underscore; expand it
-  U=`sed -n -e '/^U = / s///p' < "$mf"`
+  U=`sed -n 's/^U = //p' < "$mf"`
   # Find all dependency output files, they are included files with
   # $(DEPDIR) in their names.  We invoke sed twice because it is the
   # simplest approach to changing $(DEPDIR) to its actual value in the
   # expansion.
-  for file in `sed -n -e "
+  for file in `sed -n "
     s/^$am__include $am__quote\(.*(DEPDIR).*\)$am__quote"'$/\1/p' <"$mf" | \
        sed -e 's/\$(DEPDIR)/'"$DEPDIR"'/g' -e 's/\$U/'"$U"'/g'`; do
     # Make sure the directory exists.
