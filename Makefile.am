@@ -29,10 +29,10 @@ ETAGS_ARGS = automake.in --lang=none \
 # These are only really guaranteed to work on my machine.
 check-local: automake
 	@PERL@ -c -w automake
-	if grep '^[^#].*true' *.am; then :; else \
+	if grep '^[^#].*true' [a-z]*.am; then	\
 	  echo "can't use 'true' in GNU Makefile" 1>&2; \
 	  exit 1;				\
-	fi
+	else :; fi
 	if test -f /usr/local/bin/perl4.036; then \
 	  /usr/local/bin/perl4.036 -c -w automake; \
 	else :; fi
