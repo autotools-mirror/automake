@@ -5,12 +5,7 @@ MAINT_CHARSET = latin1
 
 ## We need `.' in SUBDIRS because we want `check' to build `.' before
 ## tests.
-
-# Matthew D. Langston  <langston@SLAC.Stanford.EDU>
-# Temporarily remove `.' from SUBDIRS because it is causing make to
-# infinitely recurse, and I don't know why.
-## SUBDIRS = . m4 tests
-SUBDIRS = m4 tests
+SUBDIRS = . m4 tests
 
 bin_SCRIPTS = automake aclocal
 info_TEXINFOS = automake.texi
