@@ -263,16 +263,18 @@ distcheck: dist
 	  && $(MAKE) $(AM_MAKEFLAGS) uninstall \
 ## We use -le 1 because the `dir' file might still exist after uninstall.
 	  && (test `find $$dc_install_base -type f -print | wc -l` -le 1 \
-	     || (echo "Error: files left after uninstall" 1>&2; \
-	         exit 1) ) \
-	  && $(MAKE) $(AM_MAKEFLAGS) dist \
+	      || { echo "ERROR: files left after uninstall:" ; \
+	           find $$dc_install_base -type f -print ; \
+	           exit 1; } >&2 ) \
+	  && $(MAKE) $(AM_MAKEFLAGS) dist-gzip \
 	  && $(MAKE) $(AM_MAKEFLAGS) distclean \
 ## Make sure to remove the dist file we created in the test build
 ## directory.
 	  && rm -f $(distdir).tar.gz \
 	  && (test `find . -type f -print | wc -l` -eq 0 \
-	     || (echo "Error: files left after distclean" 1>&2; \
-	         exit 1) )
+	      || { echo "ERROR: files left after distclean:" ; \
+	           find . -type f -print ; \
+	           exit 1; } >&2 )
 	-chmod -R a+w $(distdir) > /dev/null 2>&1; rm -rf $(distdir)
 	@echo "$(distdir).tar.gz is ready for distribution" | \
 	  sed 'h;s/./=/g;p;x;p;x'
