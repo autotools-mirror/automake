@@ -29,7 +29,8 @@ xsource.test libobj6.test depend3.test output5.test ammissing.test \
 install.test libobj7.test objc.test cond3.test cxxcpp.test \
 aclocal.test alpha.test whoami.test unused.test condman.test \
 texinfo5.test aclocali.test texinfo6.test condman2.test colon4.test \
-java.test sinclude.test javaprim.test javasubst.test aclocalii.test
+java.test sinclude.test javaprim.test javasubst.test aclocalii.test \
+lex2.test
 
 EXTRA_DIST = defs $(TESTS)
 
