@@ -480,6 +480,7 @@ txinfo22.test \
 txinfo23.test \
 txinfo24.test \
 txinfo25.test \
+txinfo26.test \
 transform.test \
 unused.test \
 vars.test \
