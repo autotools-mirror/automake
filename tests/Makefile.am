@@ -9,6 +9,7 @@ aclocal3.test \
 aclocal4.test \
 aclocal5.test \
 aclocal6.test \
+aclocal7.test \
 acoutnoq.test \
 acoutpt.test \
 acoutpt2.test \

@@ -1,4 +1,4 @@
-# Copyright 2001 Free Software Foundation, Inc.
+# Copyright (C) 2001, 2003  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ use vars qw (@ISA @EXPORT);
 
 @ISA = qw (Exporter);
 @EXPORT = qw (&debug &find_configure_ac &find_file &getopt &mktmpdir &mtime
-              &uniq &update_file &verbose &xsystem
+              &uniq &update_file &verbose &xsystem &contents
 	      $debug $help $me $tmp $verbose $version);
 
 # Variable we share with the main package.  Be sure to have a single
@@ -331,4 +331,36 @@ sub xsystem ($)
 }
 
 
+# contents ($FILENAME)
+# --------------------
+# Swallow the contents of file $FILENAME.
+sub contents ($)
+{
+  my ($file) = @_;
+  print STDERR "$me: reading $file\n" if $verbose;
+  local $/;			# Turn on slurp-mode.
+  my $f = new Automake::XFile "< $file";
+  my $contents = $f->getline;
+  $f->close;
+  return $contents;
+}
+
+
 1; # for require
+
+### Setup "GNU" style for perl-mode and cperl-mode.
+## Local Variables:
+## perl-indent-level: 2
+## perl-continued-statement-offset: 2
+## perl-continued-brace-offset: 0
+## perl-brace-offset: 0
+## perl-brace-imaginary-offset: 0
+## perl-label-offset: -2
+## cperl-indent-level: 2
+## cperl-brace-offset: 0
+## cperl-continued-brace-offset: 0
+## cperl-label-offset: -2
+## cperl-extra-newline-before-brace: t
+## cperl-merge-trailing-else: nil
+## cperl-continued-statement-offset: 2
+## End:
