@@ -100,7 +100,7 @@ sub parse_arguments
     local (@arglist) = @_;
     local (@make_list);
 
-    while ($#arglist >= 0)
+    while (@arglist)
     {
 	if ($arglist[0] eq "--version")
 	{
@@ -177,7 +177,7 @@ sub parse_arguments
 	shift (@arglist);
     }
 
-    if ($#make_list < 0)
+    if (! @make_list)
     {
 	# Look around for some files.
 	push (@make_list, 'Makefile') if -f 'Makefile.am';
@@ -189,7 +189,7 @@ sub parse_arguments
 	}
 
 	die "automake: no \"Makefile.am\" found or specified\n"
-	    if $#make_list < 0;
+	    if ! @make_list;
     }
 
     return (@make_list);
@@ -200,7 +200,7 @@ sub require_argument
 {
     local ($arg, @arglist) = @_;
     die "automake: no argument given for option \`$arg'\n"
-	if $#arglist >= 0;
+	if ! @arglist;
 }
 
 ################################################################
@@ -378,7 +378,7 @@ sub handle_programs
 					 'programs', 'PROGRAMS',
 					 'bin', 'sbin', 'libexec', 'noinst');
     # FIXME error if PROGRAMS defined but no blah_PROGRAMS defined.
-    return if $#proglist < 0;
+    return if ! @proglist;
 
     local ($obj) = &get_object_extension;
     local ($one_file, $munge);
@@ -405,7 +405,7 @@ sub handle_libraries
 					'libraries', 'LIBRARIES',
 					'lib', 'pkglib', 'noinst');
     # FIXME error if LIBRARIES defined but no blah_LIBRARIES defined.
-    return if $#liblist < 0;
+    return if ! @liblist;
 
     # Generate _LIBFILES variables.  Too bad we can't do this in
     # am_install_var.
@@ -468,7 +468,7 @@ sub handle_texinfo
     return if ! $texis;
 
     local (@texis) = split (/\s+/, $texis);
-    if ($#texis > 0)
+    if (@texis > 1)
     {
 	&am_error ('sorry, only one file allowed in `TEXINFOS\'');
 	return;
@@ -504,7 +504,7 @@ sub handle_texinfo
 	&push_dist_common ("\$" . $infobase . '_TEXINFOS');
     }
 
-    if ($#texis >= 0)
+    if (@texis)
     {
 	$output_rules .= ($infobase . ".info: "
 			  . join (' ', @texis) . "\n\n");
@@ -921,7 +921,7 @@ sub handle_footer
     }
 
     $output_trailer .= ".SUFFIXES:\n";
-    if ($#suffixes >= 0)
+    if (@suffixes)
     {
 	$output_trailer .= ".SUFFIXES: " . join (' ', @suffixes) . "\n";
     }
@@ -937,7 +937,7 @@ sub handle_installdirs
 			 ? " installdirs-recursive\n"
 			 : "\n"));
     push (@phony, 'installdirs');
-    if ($#installdirs >= 0)
+    if (@installdirs)
     {
 	&pretty_print_rule ("\t\$(top_srcdir)/mkinstalldirs ", "\t\t",
 			    @installdirs);
@@ -988,7 +988,7 @@ sub handle_merge_targets
 	push (@install, 'install-recursive');
 	push (@uninstall, 'uninstall-recursive');
 
-	if ($#install_exec >= 0)
+	if (@install_exec)
 	{
 	    $output_rules .= ('install-exec-am: '
 			      . join (' ', @install_exec)
@@ -997,7 +997,7 @@ sub handle_merge_targets
 	    push (@install, 'install-exec-am');
 	    push (@phony, 'install-exec-am');
 	}
-	if ($#install_data >= 0)
+	if (@install_data)
 	{
 	    $output_rules .= ('install-data-am: '
 			      . join (' ', @install_data)
@@ -1006,7 +1006,7 @@ sub handle_merge_targets
 	    push (@install, 'install-data-am');
 	    push (@phony, 'install-data-am');
 	}
-	if ($#uninstall >= 0)
+	if (@uninstall)
 	{
 	    $output_rules .= ('uninstall-am: '
 			      . join (' ', @uninstall)
@@ -1017,7 +1017,7 @@ sub handle_merge_targets
     }
 
     # Step three: print definitions users can use.
-    if ($#install_exec >= 0)
+    if (@install_exec)
     {
 	$output_rules .= ("install-exec: "
 			  . join (' ', @install_exec)
@@ -1025,7 +1025,7 @@ sub handle_merge_targets
 	push (@install, 'install-exec') if !$recursive_install;
 	push (@phony, 'install-exec');
     }
-    if ($#install_data >= 0)
+    if (@install_data)
     {
 	$output_rules .= ("install-data: "
 			  . join (' ', @install_data)
@@ -1058,7 +1058,7 @@ sub do_one_merge_target
     }
 
     $output_rules .= $name . ":";
-    if ($#values >= 0)
+    if (@values)
     {
 	$output_rules .= ' ' . join (' ', @values);
     }
@@ -1599,7 +1599,7 @@ sub am_install_var
     local (@args) = @_;
 
     local ($do_all, $do_clean) = (1, 0);
-    while ($#args >= 0)
+    while (@args)
     {
 	if ($args[0] eq '-clean')
 	{
@@ -1664,7 +1664,7 @@ sub am_install_var
 	}
     }
 
-    if (! defined $contents{$primary} && $#used >= 0)
+    if (! defined $contents{$primary} && @used)
     {
 	# Define it.
 	&pretty_print ($primary . ' =', '', @used);
@@ -1672,7 +1672,7 @@ sub am_install_var
     }
 
     # Push here because PRIMARY might be configure time determined.
-    push (@all, '$(' . $primary . ')') if ($do_all && $#used >= 0);
+    push (@all, '$(' . $primary . ')') if ($do_all && @used);
 
     # Look for misspellings.  It is an error to have a variable ending
     # in a "reserved" suffix whose prefix is unknown, eg
