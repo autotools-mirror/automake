@@ -409,7 +409,7 @@ sub parse_arguments
 	}
 	elsif ($arglist[0] eq '--generate-deps')
 	{
-	    $generate_deps = $1;
+	    $generate_deps = 1;
 	}
 	elsif ($arglist[0] eq '--no-force')
 	{
@@ -886,6 +886,11 @@ sub handle_yacc_lex_cxx
 	    ($hname = $2) =~ tr/y/h/;
 	    ($cname = $2) =~ tr/y/c/;
 	    $output_rules .= "${base}.${hname}: ${base}.${cname}\n";
+
+	    # If the files are built in the build directory, then we
+	    # want to remove them with `make clean'.  If they are in
+	    # srcdir they shouldn't be touched.
+	    push (@clean, $base . $hname, $base . $cname);
 	}
 	$output_rules .= "\n";
 
@@ -902,12 +907,20 @@ sub handle_yacc_lex_cxx
     if ($lex_count)
     {
 	local (%seen_suffix) = ();
-	foreach (keys %lex_sources)
+	local ($file, $cname);
+	foreach $file (keys %lex_sources)
 	{
-	    /(\..*)$/;
+	    $file =~ /(\..*)$/;
 	    &output_lex_build_rule ($1, $lex_count > 1)
 		if (! defined $seen_suffix{$1});
 	    $seen_suffix{$1} = 1;
+
+	    # If the files are built in the build directory, then we
+	    # want to remove them with `make clean'.  If they are in
+	    # srcdir they shouldn't be touched.
+	    $file =~ /^(.*)\.(l|ll|l\+\+|lxx)$/;
+	    ($cname = $2) =~ tr/y/c/;
+	    push (@clean, $1 . $cname);
 	}
 
 	if (! defined $configure_vars{'LEX'})
