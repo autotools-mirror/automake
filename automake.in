@@ -89,13 +89,9 @@ $default_strictness = $GNU;
 # Name of strictness level, as set on command line.
 $default_strictness_name = 'gnu';
 
-# This is TRUE if GNU make specific automatic dependency generation
-# code should be included in generated Makefile.in.
+# This is TRUE if automatic dependency generation code should be
+# included in generated Makefile.in.
 $cmdline_use_dependencies = 1;
-
-# This is the name of a dependency makefile bit (usually for inclusion in a
-# SMakefile or similar); empty if not set.
-$generate_deps = '';
 
 # TRUE if in verbose mode.
 $verbose = 0;
@@ -136,13 +132,6 @@ $output_directory = '.';
 
 # Relative location of top build directory.
 $top_builddir = '';
-
-# Absolute location of top build directory.
-$build_directory = '';
-
-# Name of srcdir as given in build directory's Makefile.  For
-# dependencies only.
-$srcdir_name = '';
 
 # List of Makefile.am's to process, and their corresponding outputs.
 @input_files = ();
@@ -256,9 +245,6 @@ $in_file_name = '';
 
 # TRUE if --cygnus seen.
 $cygnus_mode = 0;
-
-# Keys of this hash are names of dependency files to ignore.
-%omit_dependencies = ();
 
 # Hash table of AM_CONDITIONAL variables seen in configure.
 %configure_cond = ();
@@ -388,27 +374,6 @@ $obsolete_rx = '(' . join ('|', keys %obsolete_macros) . ')';
 die "automake: no \`Makefile.am' found or specified\n"
     if ! @input_files;
 
-# If --generate-deps was given, we don't do anything else
-#
-if ($generate_deps)
-{
-    die "automake: Must specify --include-deps (or -i) when generating\n"
-	if $use_dependencies;
-    die "automake: Must provide --build-dir when generating\n"
-	if ! $build_directory;
-    die "automake: Must provide --srcdir-name when generating\n"
-	if ! $srcdir_name;
-
-    open (GDEP, ">$output_directory/.dep_segment")
-	|| die "automake: Could not open `$output_directory/.dep_segment': $!\n";
-
-    &handle_dependencies;
-    print GDEP $output_rules;
-
-    close(GDEP);
-    exit $exit_status;
-}
-
 # Now do all the work on each file.
 foreach $am_file (@input_files)
 {
@@ -464,28 +429,6 @@ sub parse_arguments
 	    shift (@arglist);
 	    $am_dir = $arglist[0];
 	}
-	elsif ($arglist[0] =~ /^--build-dir=(.+)$/)
-	{
-	    # Must end in /.
-	    $build_directory = $1 . '/';
-	}
-	elsif ($arglist[0] eq '--build-dir')
-	{
-	    &require_argument (@arglist);
-	    shift (@arglist);
-	    # Must end in /.
-	    $build_directory = $arglist[0] . '/';
-	}
-	elsif ($arglist[0] =~ /^--srcdir-name=(.+)$/)
-	{
-	    $srcdir_name = $1;
-	}
-	elsif ($arglist[0] eq '--srcdir-name')
-	{
-	    &require_argument (@arglist);
-	    shift (@arglist);
-	    $srcdir_name = $arglist[0];
-	}
 	elsif ($arglist[0] eq '--gnu')
 	{
 	    &set_strictness ('gnu');
@@ -502,13 +445,13 @@ sub parse_arguments
 	{
 	    &set_strictness ('foreign');
 	}
-	elsif ($arglist[0] eq '--include-deps' || $arglist[0] eq '-i')
+	elsif ($arglist[0] eq '--include-deps')
+	{
+	    $cmdline_use_dependencies = 1;
+	}
+	elsif ($arglist[0] eq '--ignore-deps' || $arglist[0] eq '-i')
 	{
 	    $cmdline_use_dependencies = 0;
-	}
-	elsif ($arglist[0] eq '--generate-deps')
-	{
-	    $generate_deps = 1;
 	}
 	elsif ($arglist[0] eq '--no-force')
 	{
@@ -878,10 +821,7 @@ sub get_object_extension
     if ($seen_libtool && ! $included_libtool_compile)
     {
 	# Output the libtool compilation rules.
-	$output_rules .=
-	    &file_contents_with_transform
-		($use_dependencies ? 's/^NOTDEPEND.*$//;' : 's/^NOTDEPEND//;',
-		 'libtool');
+	$output_rules .= &file_contents ('libtool');
 
 	&push_phony_cleaners ('libtool');
 
@@ -981,9 +921,20 @@ sub finish_languages
     {
 	$lang = $extension_map{$ext};
 
-	# Generate the appropriate rules for this extension.
+	# Generate the appropriate rules for this extension.  If
+	# dependency tracking was requested, and this extension
+	# supports it, then we don't generate the rule here.
 	local ($comp) = '';
-	if (defined $language_map{$lang . '-compile'})
+	
+	if ($use_dependencies && $language_map{$lang . '-autodep'} ne 'no')
+	{
+	    # Don't generate the rule, but still generate the variables.
+	    if (defined $language_map{$lang . '-compile'})
+	    {
+		$comp = $language_map{$lang . '-compile'};
+	    }
+	}
+	elsif (defined $language_map{$lang . '-compile'})
 	{
 	    $comp = $language_map{$lang . '-compile'};
 
@@ -1399,7 +1350,10 @@ sub handle_single_transform_list
 
 	    # Transform .o or $o file into .P file (for automatic
 	    # dependency code).
-	    $dep_files{'.deps/' . $xbase . '.P'} = 1;
+	    local ($depfile) = $object;
+	    $depfile =~ s/\.([^.]*)$/.P$1/;
+	    $depfile =~ s/\$\(OBJEXT\)$/o/ if $seen_objext;
+	    $dep_files{'$(DEPDIR)/' . $depfile} = 1;
 	}
     }
 
@@ -1616,6 +1570,8 @@ sub handle_lib_objects_cond
 	# means adding entries to dep_files.
 	if ($lsearch =~ /^\@(LT)?LIBOBJS\@$/)
 	{
+	    local ($myobjext) = ($1 ? 'l' : '') . 'o';
+
 	    push (@dep_list, $lsearch);
 	    $seen_libobjs = 1;
 	    if (! keys %libsources)
@@ -1638,8 +1594,8 @@ sub handle_lib_objects_cond
 		}
 		elsif ($iter ne 'alloca.c')
 		{
-		    ($rewrite = $iter) =~ s/\.c$/.P/;
-		    $dep_files{'.deps/' . $rewrite} = 1;
+		    ($rewrite = $iter) =~ s/\.c$/.P$myobjext/;
+		    $dep_files{'$(DEPDIR)/' . $rewrite} = 1;
 		    ($rewrite = $iter) =~ s/(\W)/\\$1/g;
 		    $rewrite = "^" . $rewrite . "\$";
 		    # Only require the file if it is not a built source.
@@ -1655,11 +1611,13 @@ sub handle_lib_objects_cond
 	}
 	elsif ($lsearch =~ /^\@(LT)?ALLOCA\@$/)
 	{
+	    local ($myobjext) = ($1 ? 'l' : '') . 'o';
+
 	    push (@dep_list, $lsearch);
 	    &am_line_error ($var,
 			    "\@$1" . "ALLOCA\@ seen but \`AC_FUNC_ALLOCA' not in \`configure.in'")
 		if ! defined $libsources{'alloca.c'};
-	    $dep_files{'.deps/alloca.P'} = 1;
+	    $dep_files{'$(DEPDIR)/alloca.P' . $myobjext} = 1;
 	    &require_file_with_line ($var, $FOREIGN, 'alloca.c');
 	    &saw_extension ('c');
 	}
@@ -2613,42 +2571,6 @@ sub handle_dist_worker
 			  . "\tmkdir \$(distdir)\n");
     }
 
-    # Only run automake in `dist' target if --include-deps and
-    # `no-dependencies' not specified.  That way the recipient of a
-    # distribution can run "make dist" and not need Automake.  You
-    # might be wondering why we run automake once for each directory
-    # we distribute, instead of running it once at the top level.  The
-    # answer is that we want to run automake after the dependencies
-    # have been generated.  This occurs when "make" is run in the
-    # subdir.  So automake must be run after make has updated the
-    # Makefile, which means that it must run once per directory.
-    if ($use_dependencies)
-    {
-	$output_rules .=
-	    (
-	     # There are several directories we need to know about
-	     # when rebuilding the Makefile.ins.  They are:
-	     #   here - The absolute path to our topmost build directory.
-	     #   top_distdir - The absolute path to the top of our dist
-	     #                 hierarchy.
-	     #   distdir - The path to our sub-part of the dist hierarchy.
-	     # If this directory is the topmost directory, we set
-	     # top_distdir from distdir; that lets us pass in distdir
-	     # from an enclosing package.
-	     "\t" . 'here=`cd $(top_builddir) && pwd`; ' . "\\\n"
-	     . "\t" . 'top_distdir=`cd $('
-	     . (($relative_dir eq '.') ? 'distdir' : 'top_distdir')
-	     . ') && pwd`; ' . "\\\n"
-	     . "\t" . 'distdir=`cd $(distdir) && pwd`; ' . "\\\n"
-	     . "\tcd \$(top_srcdir) \\\n"
-	     . "\t  && \$(AUTOMAKE) --include-deps --build-dir=\$\$here --srcdir-name=\$(top_srcdir) --output-dir=\$\$top_distdir "
-	     # Set strictness of output.
-	     . ($cygnus_mode ? '--cygnus' : ('--' . $strictness_name))
-	     . ($cmdline_use_dependencies ? '' : ' --include-deps')
-	     . " " . $makefile . "\n"
-	     );
-    }
-
     # Scan EXTRA_DIST to see if we need to distribute anything from a
     # subdir.  If so, add it to the list.  I didn't want to do this
     # originally, but there were so many requests that I finally
@@ -2913,112 +2835,6 @@ sub handle_dist
     &handle_dist_worker ($makefile);
 }
 
-# Scan a single dependency file and rewrite the dependencies as
-# appropriate.  Essentially this means:
-# * Clean out absolute dependencies which are not desirable.
-# * Rewrite other dependencies to be relative to $(top_srcdir).
-sub scan_dependency_file
-{
-    local ($depfile) = @_;
-
-    if (! open (DEP_FILE, $depfile))
-    {
-	&am_error ("couldn't open \`$depfile': $!");
-	return;
-    }
-    print "automake: reading $depfile\n" if $verbose;
-
-    # Sometimes it is necessary to omit some dependencies.
-    local (%omit) = %omit_dependencies;
-    if (&variable_defined ('OMIT_DEPENDENCIES'))
-    {
-	# FIXME: Doesn't work with conditionals.  I'm not sure if this
-	# matters.
-	grep ($omit{$_} = 1,
-	      &variable_value_as_list ('OMIT_DEPENDENCIES', ''));
-    }
-
-    local ($first_line) = 1;
-    local ($last_line) = 0;
-    local ($target, @dependencies);
-    local ($one_dep, $xform);
-    local ($just_file);
-
-    local ($srcdir_rx, $fixup_rx);
-    ($fixup_rx = $srcdir_name . '/' . $relative_dir . '/')
-	=~ s/(\W)/\\$1/g;
-    ($srcdir_rx = $srcdir_name . '/') =~ s/(\W)/\\$1/g;
-
-    local ($rewrite_builddir) = (($top_builddir eq '.')
-				 ? ''
-				 : $top_builddir . '/');
-
-    while (<DEP_FILE>)
-    {
-	last if $last_line;
-	next if (/$WHITE_PATTERN/o);
-	chop;
-	if (! s/\\$//)
-	{
-	    # No trailing "\" means this should be the last line of
-	    # the first target.  We can have multiple targets due to
-	    # the "deleted header file" fix.  For the generated
-	    # Makefile we simply skip these fake targets.
-	    $last_line = 1;
-	}
-
-	if ($first_line)
-	{
-	    if (! /^([^:]+:)(.+)$/)
-	    {
-	      bad_format:
-		&am_error ("\`$depfile' has incorrect format");
-		close (DEP_FILE);
-		return;
-	    }
-
-	    $_ = $2;
-	    # Make sure to strip the .P file from the target.
-	    ($target = $1) =~ s, *\.deps/[^.]+\.P,,;
-
-	    $first_line = 0;
-	}
-
-	foreach $one_dep (split (' ', $_))
-	{
-	    ($just_file = $one_dep) =~ s,^.*/,,;
-	    next if defined $omit{$just_file};
-
-	    if ($one_dep =~ /^$fixup_rx/)
-	    {
-		# The dependency points to the current directory in
-		# some way.
-		($xform = $one_dep) =~ s/^$fixup_rx//;
-		push (@dependencies, $xform);
-	    }
-	    elsif ($one_dep =~ /^$srcdir_rx/)
-	    {
-		# The dependency is in some other directory in the package.
-		($xform = $one_dep) =~ s/^$srcdir_rx/$rewrite_builddir/;
-		push (@dependencies, $xform);
-	    }
-	    elsif ($one_dep =~ /^\// || $one_dep =~ /^[A-Za-z]:\\/)
-	    {
-		# Absolute path; ignore.
-	    }
-	    else
-	    {
-		# Anything else is assumed to be correct.
-		push (@dependencies, $one_dep);
-	    }
-	}
-    }
-
-    &pretty_print_rule ($target, "\t", @dependencies);
-
-    close (DEP_FILE);
-}
-
 # A subroutine of handle_dependencies.  This function includes
 # `depend2' with appropriate transformations.
 sub add_depend2
@@ -3028,16 +2844,26 @@ sub add_depend2
     # First include code for ordinary objects.
     local ($key) = $lang . '-autodep';
     local ($xform, $ext);
-    $xform = ('s/\@COMPILE\@/\$(' . $language_map{$key} . 'COMPILE)/g;'
-	      . 's/\@LTCOMPILE\@/\$(LT' . $language_map{$key} . 'COMPILE)/g;'
-	      . 's/\@OBJ\@/%.o/g;'
-	      . 's/\@LTOBJ\@/%.lo/g;');
+
+    local ($pfx) = $language_map{$key};
+    local ($fpfx) = ($pfx eq '') ? 'CC' : $pfx;
+    $xform = ('s/\@PFX\@/' . $pfx . '/g;'
+	      . 's/\@FPFX\@/' . $fpfx . '/g;'
+	      . ($seen_objext ? 's/^OBJEXT//;' : 's/^OBJEXT.*$//;')
+	      . ($seen_libtool ? 's/^LIBTOOL//;' : 's/^LIBTOOL.*$//;'));
+
+    local ($xform1) = ($xform
+		       . 's/\@BASE\@/\$\*/g;'
+		       . 's/\@SOURCE\@/\$\</g;'
+		       . 's/\@(LT|OBJ)?OBJ\@/\$\@/g;');
+
     foreach $ext (&lang_extensions ($lang))
     {
-	$output_rules .= &file_contents_with_transform ('s/\@SOURCE\@/%'
-							. $ext . '/g;'
-							. $xform,
-							'depend2');
+	$output_rules .= (&file_contents_with_transform ('s/\@EXT\@/'
+							 . $ext . '/g;'
+							 . $xform1,
+							 'depend2')
+			  . "\n");
     }
 
     # Now include code for each specially handled object with this
@@ -3060,60 +2886,90 @@ sub add_depend2
 
 	$rule =~ s,([/\$]),\\$1,g;
 
-	$xform = ('s/\@COMPILE\@/' . $rule . '/g;'
-		  . 's/\@LTCOMPILE\@/\$(LIBTOOL) --mode=compile ' . $rule
-		  . '/g;'
-		  . 's/\@OBJ\@/' . $obj . '.o/g;'
-		  . 's/\@LTOBJ\@/' . $obj . '.lo/g;'
-		  . 's/\@SOURCE\@/' . $source . '/g;');
-	$output_rules .= &file_contents_with_transform ($xform, 'depend2');
+	# Generate a transform which will turn suffix targets in
+	# depend2.am into real targets for the particular objects we
+	# are building.
+	$output_rules .=
+	    &file_contents_with_transform ($xform
+					   # Generate rule for `.o'.
+					   . 's/^\@EXT\@\.o:/'
+					   . $obj . '.o: ' . $source
+					   . '/g;'
+					   # Maybe generate rule for `.lo'.
+					   # Might be eliminated by
+					   # $XFORM.
+					   . 's/^\@EXT\@\.lo:/'
+					   . $obj . '.lo: ' . $source
+					   . '/g;'
+					   # Maybe generate rule for `.obj'.
+					   # Might be eliminated by
+					   # $XFORM.
+					   . 's/^\@EXT\@\.obj:/'
+					   . $obj . '.obj: ' . $source
+					   . '/g;'
+					   # Handle source and obj
+					   # transforms.
+					   . 's/\@OBJ\@/' . $obj . '.o/g;'
+					   . 's/\@OBJOBJ\@/' . $obj . '.obj/g;'
+					   . 's/\@LTOBJ\@/' . $obj . '.lo/g;'
+					   . 's/\@BASE\@/' . $obj . '/g;'
+					   . 's/\@SOURCE\@/' . $source . '/g;',
+					   'depend2');
     }
 }
 
 # Handle auto-dependency code.
 sub handle_dependencies
 {
-    # Make sure this variable is always marked as used.
-    &examine_variable ('OMIT_DEPENDENCIES');
-
     if ($use_dependencies)
     {
-	# Include GNU-make-specific auto-dep code.  Don't include it
-	# if DEP_FILES would be empty.
+	# Include auto-dep code.  Don't include it if DEP_FILES would
+	# be empty.
 	if (&saw_sources_p (0) && keys %dep_files)
 	{
-	    &define_pretty_variable ('DEP_FILES', '', sort keys %dep_files);
+	    # Set location of depcomp.
+	    if ($config_aux_dir ne '.' && $config_aux_dir ne '')
+	    {
+		&define_variable ('depcomp', ('$(SHELL) ' . $config_aux_dir
+					      . '/depcomp'));
+	    }
+	    else
+	    {
+		&define_variable ('depcomp',
+				  '$(SHELL) $(top_srcdir)/depcomp');
+	    }
+
+	    local ($iter);
+	    local (@deplist) = sort keys %dep_files;
+
+	    &define_pretty_variable ('DEP_FILES', '', ("\@AMDEP\@", @deplist));
+
+	    # Generate each `include' individually.  Irix 6 make will
+	    # not properly include several files resulting from a
+	    # variable expansion; generating many separate includes
+	    # seems safest.
+	    $output_rules .= "\n";
+	    foreach $iter (@deplist)
+ 	    {
+		$output_rules .= "\@AMDEP\@" . 'include ' . $iter . "\n";
+	    }
+
 	    $output_rules .= &file_contents ('depend');
 	    push (@clean, 'depend');
 	    &push_phony_cleaners ('depend');
-
-	    local ($key, $lang, $ext, $xform);
-	    foreach $key (sort keys %language_map)
-	    {
-		if ($key =~ /^(.*)-autodep$/
-		    && $language_map{$key} ne 'no')
-		{
-		    &add_depend2 ($1);
-		}
-	    }
 	}
     }
-    elsif ($build_directory ne '')
+    else
     {
-	# Include any auto-generated deps that are present.  Note that
-	# $build_directory ends in a "/".
-	if (-d ($build_directory . $relative_dir . "/.deps"))
-	{
-	    local ($depfile);
+	&define_variable ('depcomp', '');
+    }
 
-	    foreach $depfile (&my_glob ($build_directory
-					. $relative_dir . "/.deps/*.P"))
-	    {
-		&scan_dependency_file ($depfile);
-	    }
-
-	    $output_rules .= "\n";
-	}
+    local ($key, $lang, $ext, $xform);
+    foreach $key (sort keys %language_map)
+    {
+	next unless $key =~ /^(.*)-autodep$/;
+	next if $language_map{$key} eq 'no';
+	&add_depend2 ($1);
     }
 }
 
@@ -3313,7 +3169,7 @@ sub handle_configure
                       . "\n"
 		      . "\tcd \$(top_srcdir) && \$(AUTOMAKE) "
 		      . ($cygnus_mode ? '--cygnus' : ('--' . $strictness_name))
-		      . ($cmdline_use_dependencies ? '' : ' --include-deps')
+		      . ($cmdline_use_dependencies ? '' : ' --ignore-deps')
 		      . ' ' . $input . $colon_infile . "\n\n");
 
     # This rule remakes the Makefile.
@@ -4752,6 +4608,10 @@ sub scan_configure
     # the file-finding machinery works.
     local ($relative_dir) = '.';
     &require_config_file ($FOREIGN, 'install-sh', 'mkinstalldirs', 'missing');
+    if ($cmdline_use_dependencies)
+    {
+	&require_config_file ($FOREIGN, 'depcomp');
+    }
     &am_error ("\`install.sh' is an anachronism; use \`install-sh' instead")
         if -f $config_aux_path[0] . '/install.sh';
 }
@@ -6655,7 +6515,7 @@ sub initialize_global_constants
 	 "libversion.in", "mdate-sh", "mkinstalldirs", "install-sh",
 	 'texinfo.tex', "ansi2knr.c", "ansi2knr.1", 'elisp-comp',
 	 'ylwrap', 'acinclude.m4', @libtoolize_files,
-	 'missing', 'compile'
+	 'missing', 'depcomp', 'compile'
 	 );
 
     # Commonly used files we auto-include, but only sometimes.
@@ -6668,18 +6528,17 @@ sub initialize_global_constants
     $USAGE = "\
   -a, --add-missing     add missing standard files to package
   --amdir=DIR           directory storing config files
-  --build-dir=DIR       directory where build being done (for dependencies)
   -c, --copy            with -a, copy missing files (default is symlink)
   --cygnus              assume program is part of Cygnus-style tree
   --foreign             set strictness to foreign
   --gnits               set strictness to gnits
   --gnu                 set strictness to gnu
   --help                print this help, then exit
-  -i, --include-deps    include generated dependencies in Makefile.in
+  -i, --ignore-deps     disable dependency tracking code
+  --include-deps        enable dependency tracking code
   --no-force            only update Makefile.in's that are out of date
   -o DIR, --output-dir=DIR
                         put generated Makefile.in's into DIR
-  --srcdir-name=DIR     name used for srcdir (for dependencies)
   -v, --verbose         verbosely list files processed
   --version             print version number, then exit\n";
 
@@ -6710,10 +6569,10 @@ sub initialize_global_constants
 	|| chmod -R a+r $(distdir)
 ';
     $dist{'dist-bzip2'} = ("\t"
-			   . '$(AMTAR) ch$(AMTARFLAGS)f - $(distdir) | bzip --best -c > $(distdir).bz2'
+			   . '$(AMTAR) chof - $(distdir) | bzip --best -c > $(distdir).bz2'
 			   . "\n");
     $dist{'dist-tarZ'} = ("\t"
-		     . '$(AMTAR) ch$(AMTARFLAGS)f - $(distdir) | compress -c > $(distdir).tar.Z'
+		     . '$(AMTAR) chof - $(distdir) | compress -c > $(distdir).tar.Z'
 		     . "\n");
     $dist{'dist-shar'} = ("\t"
 		     . 'shar $(distdir) | GZIP=$(GZIP_ENV) gzip -c > $(distdir).shar.gz'
@@ -6721,7 +6580,7 @@ sub initialize_global_constants
     $dist{'dist-zip'} = ("\t" . '-rm -f $(distdir).zip' . "\n" .
 			 "\t" . 'zip -rq $(distdir).zip $(distdir)' . "\n");
     $dist{'dist'} = ("\t"
-		     .  '$(AMTAR) ch$(AMTARFLAGS)f - $(distdir) | GZIP=$(GZIP_ENV) gzip -c > $(distdir).tar.gz'
+		     .  '$(AMTAR) chof - $(distdir) | GZIP=$(GZIP_ENV) gzip -c > $(distdir).tar.gz'
 		     . "\n");
     $dist_trailer = "\t" . '-chmod -R a+w $(distdir) > /dev/null 2>&1; rm -rf $(distdir)' . "\n";
 }

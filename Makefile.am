@@ -26,7 +26,7 @@ $(amfiles)
 ## what we want.  So we make them executable by hand.
 scriptdir = $(pkgdatadir)
 dist_script_DATA = config.guess config.sub install-sh mdate-sh missing \
-mkinstalldirs elisp-comp ylwrap acinstall compile
+mkinstalldirs elisp-comp ylwrap acinstall depcomp compile
 
 install-data-hook:
 	@$(POST_INSTALL)
@@ -102,6 +102,12 @@ maintainer-check: automake aclocal
 ## We never want split (/ /,...), only split (' ', ...).
 	@if fgrep 'split (/ /' $(srcdir)/automake.in > /dev/null 2>&1; then \
 	  echo "Found bad split in automake.in" 1>&2; \
+	  exit 1; \
+	fi
+## Look for cd within backquotes without CDPATH=:
+	@if grep '` *cd ' $(srcdir)/automake.in $(srcdir)/*.am \
+	      $(srcdir)/m4/*.m4; then \
+	  echo "Consider setting CDPATH in the lines above" 1>&2; \
 	  exit 1; \
 	fi
 

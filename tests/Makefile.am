@@ -80,7 +80,6 @@ dejagnu.test \
 depacl.test \
 depacl2.test \
 depend.test \
-depend2.test \
 depend3.test \
 discover.test \
 distdir.test \

@@ -90,7 +90,7 @@ $(amfiles)
 
 scriptdir = $(pkgdatadir)
 dist_script_DATA = config.guess config.sub install-sh mdate-sh missing \
-mkinstalldirs elisp-comp ylwrap acinstall compile
+mkinstalldirs elisp-comp ylwrap acinstall depcomp compile
 
 
 TAGS_FILES = automake.in aclocal.in $(amfiles)
@@ -249,7 +249,7 @@ install-info-am: $(INFO_DEPS)
 	@list='$(INFO_DEPS)'; \
 	for file in $$list; do \
 	  d=$(srcdir); \
-	  for ifile in `cd $$d && echo $$file $$file-[0-9] $$file-[0-9][0-9]`; do \
+	  for ifile in `CDPATH=: && cd $$d && echo $$file $$file-[0-9] $$file-[0-9][0-9]`; do \
 	    if test -f $$d/$$ifile; then \
 	      echo " $(INSTALL_DATA) $$d/$$ifile $(DESTDIR)$(infodir)/$$ifile"; \
 	      $(INSTALL_DATA) $$d/$$ifile $(DESTDIR)$(infodir)/$$ifile; \
@@ -287,7 +287,7 @@ dist-info: $(INFO_DEPS)
 	list='$(INFO_DEPS)'; \
 	for base in $$list; do \
 	  d=$(srcdir); \
-	  for file in `cd $$d && eval echo $$base*`; do \
+	  for file in `CDPATH=: && cd $$d && eval echo $$base*`; do \
 	    test -f $(distdir)/$$file \
 	    || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
 	    || cp -p $$d/$$file $(distdir)/$$file; \
@@ -456,7 +456,7 @@ distcheck: dist
 	mkdir $(distdir)/=build
 	mkdir $(distdir)/=inst
 	chmod a-w $(distdir)
-	dc_install_base=`cd $(distdir)/=inst && pwd` \
+	dc_install_base=`CDPATH=: && cd $(distdir)/=inst && pwd` \
 	  && cd $(distdir)/=build \
 	  && ../configure --srcdir=.. --prefix=$$dc_install_base \
 	  && $(MAKE) $(AM_MAKEFLAGS) \
@@ -659,6 +659,11 @@ maintainer-check: automake aclocal
 	fi
 	@if fgrep 'split (/ /' $(srcdir)/automake.in > /dev/null 2>&1; then \
 	  echo "Found bad split in automake.in" 1>&2; \
+	  exit 1; \
+	fi
+	@if grep '` *cd ' $(srcdir)/automake.in $(srcdir)/*.am \
+	      $(srcdir)/m4/*.m4; then \
+	  echo "Consider setting CDPATH in the lines above" 1>&2; \
 	  exit 1; \
 	fi
 
