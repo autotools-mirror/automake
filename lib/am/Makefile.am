@@ -99,7 +99,7 @@ maintainer-check: automake aclocal
 	  exit 1; \
 	fi
 ## Look for cd within backquotes without CDPATH=:
-	@if grep -n '` *cd ' $(srcdir)/automake.in $(srcdir)/*.am \
+	@if grep -n '^[^#]*` *cd ' $(srcdir)/automake.in $(srcdir)/*.am \
 	      $(srcdir)/m4/*.m4; then \
 	  echo "Consider setting CDPATH in the lines above" 1>&2; \
 	  exit 1; \
