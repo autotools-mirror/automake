@@ -50,7 +50,9 @@ $AM_INIT_AUTOMAKE_PATTERN = "AM_INIT_AUTOMAKE\\([^,]*,([^)]+)\\)";
 $AM_PACKAGE_VERSION_PATTERN = "^\\s*\\[?([^]\\s]+)\\]?\\s*\$";
 # Note that there is no AC_PATH_TOOL.  But we don't really care.
 $AC_CHECK_PATTERN = "AC_(CHECK|PATH)_(PROG|PROGS|TOOL)\\(\\[?([^]),]+)";
-$AC_SUBST_PATTERN = "AC_SUBST\\(\\[?([^])]+)";
+# Just check for alphanumeric in AC_SUBST.  If you do AC_SUBST(5),
+# then too bad.
+$AC_SUBST_PATTERN = "AC_SUBST\\(\\[?(\w+)";
 
 # Constants to define the "strictness" level.
 $FOREIGN = 0;
@@ -1624,7 +1626,7 @@ sub handle_texinfo
     &pretty_print_rule ("\trm -f", "\t  ", @texi_cleans);
     $output_rules .= ("\nclean-info:\n\ndistclean-info:\n\n"
 		      . "maintainer-clean-info:\n\t"
-		      . 'for i in $(INFO_DEPS); do rm `eval echo $$i*`; done'
+		      . 'for i in $(INFO_DEPS); do rm -f `eval echo $$i*`; done'
 		      . "\n");
     &push_phony_cleaners ('info');
 
@@ -4179,7 +4181,7 @@ sub file_contents_with_transform
     local ($command, $basename) = @_;
     local ($file) = $am_dir . '/' . $basename . '.am';
 
-    if ($command ne '' && substr ($command, -1) != '~')
+    if ($command ne '' && substr ($command, -1) ne ';')
     {
 	die "automake: programming error in file_contents_with_transform\n";
     }
