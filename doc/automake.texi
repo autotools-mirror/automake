@@ -4337,12 +4337,11 @@ your build.
 
 @cindex depcomp
 
-Experience with earlier versions of Automake @footnote{See
-@uref{http://sources.redhat.com/automake/dependencies.html} for more
-information on the history and experiences with automatic dependency
-tracking in Automake} taught us that it is not reliable to generate
-dependencies only on the maintainer's system, as configurations vary too
-much.  So instead Automake implements dependency tracking at build time.
+Experience with earlier versions of Automake (@pxref{Dependency
+Tracking Evolution}) taught us that it is not reliable to generate
+dependencies only on the maintainer's system, as configurations vary
+too much.  So instead Automake implements dependency tracking at build
+time.
 
 Automatic dependency tracking can be suppressed by putting
 @code{no-dependencies} in the variable @code{AUTOMAKE_OPTIONS}, or
@@ -7886,7 +7885,9 @@ for dependency tracking work in Automake.
 @unnumberedsubsubsec Description
 
 Our first attempt at automatic dependency tracking was based on the
-method recommended by GNU @command{make}.
+method recommended by GNU @command{make}.  (@pxref{Automatic
+Prerequisites, , Generating Prerequisites Automatically, make, The GNU
+make Manual})
 
 This version worked by precomputing dependencies ahead of time.  For
 each source file, it had a special @file{.P} file which held the
@@ -8011,11 +8012,11 @@ form of include directive.  Also, we wrote a wrapper script which let
 us abstract away differences between dependency tracking methods for
 compilers.  For instance, some compilers cannot generate dependencies
 as a side effect of compilation.  In this case we simply have the
-script run the compiler twice.  Currently our wrapper script knows
-about twelve different compilers (including a "compiler" which simply
-invokes @command{makedepend} and then the real compiler, which is
-assumed to be a standard Unix-like C compiler with no way to do
-dependency tracking).
+script run the compiler twice.  Currently our wrapper script
+(@command{depcomp}) knows about twelve different compilers (including
+a "compiler" which simply invokes @command{makedepend} and then the
+real compiler, which is assumed to be a standard Unix-like C compiler
+with no way to do dependency tracking).
 
 @unnumberedsubsubsec Bugs
 
@@ -8061,16 +8062,33 @@ have not yet been built.
 
 This was also a problem in the previous dependency tracking implementation.
 
-The current fix is to use @code{BUILT_SOURCES} to list built
-headers.  This causes them to be built before any other other build
-rules are run.  This is unsatisfactory as a general solution, however
-in practice it seems sufficient for most actual programs.
+The current fix is to use @code{BUILT_SOURCES} to list built headers
+(@pxref{Sources}).  This causes them to be built before any other
+other build rules are run.  This is unsatisfactory as a general
+solution, however in practice it seems sufficient for most actual
+programs.
 @end itemize
 
-This code has not yet been in an official release of Automake.  So,
-while it has seen some testing, it has not been stressed the way that
-the other implementations were.  The most serious problems probably
-remain unknown.
+This code is used since Automake 1.5.
+
+In GCC 3.0, we managed to convince the maintainers to add special
+command-line options to help Automake more efficiently do its job.  We
+hoped this would let us avoid the use of a wrapper script when
+Automake's automatic dependency tracking was used with @command{gcc}.
+
+Unfortunately, this code doesn't quite do what we want.  In
+particular, it removes the dependency file if the compilation fails;
+we'd prefer that it instead only touch the file in any way if the
+compilation succeeds.
+
+Nevertheless, since Automake 1.7, when a recent @command{gcc} is
+detected at @command{configure} time, we inline the
+dependency-generation code and do not use the @command{depcomp}
+wrapper script.  This makes compilations faster for those using this
+compiler (probably our primary user base).  The counterpart is that
+because we have to encode two compilation rules in @file{Makefile}
+(with or without @command{depcomp}), the produced @file{Makefile}s are
+larger.
 
 @subsection Techniques for Computing Dependencies
 
@@ -8116,23 +8134,6 @@ instead of each successful file open, in order to avoid the duplicated
 new header bug.
 
 @subsection Future Directions for Automake's Dependency Tracking
-
-In GCC 3.0, we managed to convince the maintainers to add special
-command-line options to help Automake more efficiently do its job.  We
-hoped this would let us avoid the use of a wrapper script when
-Automake's automatic dependency tracking was used with @command{gcc}.
-
-Unfortunately, this code doesn't quite do what we want.  In
-particular, it removes the dependency file if the compilation fails;
-we'd prefer that it instead only touch the file in any way if the
-compilation succeeds.
-
-Nevertheless, in a future (probably minor) release of Automake we hope
-to @command{make} it so that if @command{gcc} is detected at
-@command{configure} time, then we will inline the
-dependency-generation code and not require the use of a wrapper
-script.  This will make compilations that much faster for those using
-this compiler (probably our primary user base).
 
 Currently, only languages and compilers understood by Automake can
 have dependency tracking enabled.  We would like to see if it is
