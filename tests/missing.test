@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1999, 2001, 2002, 2003  Free Software Foundation, Inc.
+# Copyright (C) 2003  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -14,21 +14,40 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with autoconf; see the file COPYING.  If not, write to
+# along with Automake; see the file COPYING.  If not, write to
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-# Make sure aclocal searches includes in the right order.
+# Test missing with version mismatches.
 
 . ./defs || exit 1
 
-mkdir zoo
-cat > zoo/zoo.m4 << 'END'
-AC_DEFUN([AM_INIT_AUTOMAKE], zardoz)
-END
+required=GNUmake
+set -e
 
-# Strip all options from ACLOCAL, especially -I's.
-ACLOCAL="`echo $ACLOCAL | sed -e 's/ -.*$//'` --acdir=$testsrcdir/../m4"
-$ACLOCAL -I zoo || exit 1
+cat >>configure.in <<'EOF'
+AC_OUTPUT
+EOF
+
+: > Makefile.am
+
+$ACLOCAL
 $AUTOCONF
-grep zardoz configure
+$AUTOMAKE --add-missing
+./configure
+$MAKE
+$sleep
+# Hopefully the install version of Autoconf cannot compete with this one...
+echo 'AC_PREREQ(9999)' >> aclocal.m4
+$MAKE distdir
+
+# Run again, but without missing, to ensure that timestamps were updated.
+export AUTOMAKE ACLOCAL
+./configure
+$MAKE
+
+# Make sure $MAKE fail when timestamps aren't updated and missing is not used.
+$sleep
+touch aclocal.m4
+$MAKE && exit 1
+:

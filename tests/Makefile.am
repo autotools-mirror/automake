@@ -180,7 +180,6 @@ distname.test \
 dollar.test \
 double.test \
 dup2.test \
-dup3.test \
 else.test \
 empty.test \
 empty2.test \
@@ -300,6 +299,8 @@ mdate.test \
 mdate2.test \
 mdate3.test \
 mdate4.test \
+missing.test \
+missing2.test \
 mkinst2.test \
 mkinstall.test \
 multlib.test \
@@ -497,8 +498,8 @@ yaccvpath.test
 
 EXTRA_DIST = ChangeLog-old $(TESTS)
 
-# Each test case depends on defs.
-check_SCRIPTS = defs
+# Each test case depends on defs, aclocal, and automake.
+check_SCRIPTS = defs aclocal-$(APIVERSION) automake-$(APIVERSION)
 
 distclean-local:
 	-rm -rf testSubDir

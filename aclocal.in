@@ -36,6 +36,7 @@ BEGIN
 use Automake::Config;
 use Automake::General;
 use Automake::Configure_ac;
+use Automake::Channels;
 use Automake::XFile;
 use Automake::FileUtils;
 use File::stat;
@@ -54,9 +55,6 @@ $default_dirlist = "$default_acdir/dirlist";
 
 # configure.ac or configure.in.
 my $configure_ac = require_configure_ac;
-
-# Exit status.
-$exit_status = 0;
 
 # Output file name.
 $output_file = 'aclocal.m4';
@@ -103,14 +101,14 @@ $ac_require_rx = "AC_REQUIRE\\((?:\\[([^]]+)\\]|([^],)\n]+))\\)";
 local (@dirlist) = &parse_arguments (@ARGV);
 &scan_m4_files (@dirlist);
 &scan_configure;
-if (! $exit_status)
+if (! $exit_code)
   {
     my %macro_traced = &trace_used_macros;
     &write_aclocal ($output_file, keys %macro_traced);
   }
 &check_acinclude;
 
-exit $exit_status;
+exit $exit_code;
 
 ################################################################
 
@@ -268,7 +266,7 @@ sub scan_configure ()
 	{
 	  # Macro not found, but AM_ prefix found.
 	  warn "aclocal: $configure_ac: $.: macro `$2' not found in library\n";
-	  $exit_status = 1;
+	  $exit_code = 1;
 	}
     }
 
@@ -361,7 +359,7 @@ sub add_macro ($)
     if (! defined $map{$macro})
     {
 	warn "aclocal: macro `$macro' required but not defined\n";
-	$exit_status = 1;
+	$exit_code = 1;
 	return;
     }
 
@@ -415,7 +413,7 @@ sub add_file ($)
 	{
 	  # Macro not found, but AM_ prefix found.
 	  warn "aclocal: $configure_ac: $.: macro `$2' not found in library\n";
-	  $exit_status = 1;
+	  $exit_code = 1;
 	}
     }
 
@@ -502,6 +500,9 @@ sub trace_used_macros ($)
       chomp;
       $traced{$_} = 1 if $macro_seen{$_};
     }
+
+  $tracefh->close;
+
   return %traced;
 }
 

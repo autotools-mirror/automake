@@ -69,6 +69,18 @@ test -z "$MAKE" && MAKE=make
 test -z "$AUTOCONF" && AUTOCONF="@AUTOCONF@"
 test -z "$AUTOHEADER" && AUTOHEADER="@AUTOHEADER@"
 test -z "$AUTOUPDATE" && AUTOUPDATE=autoupdate
+test -z "$MISSING" && MISSING=`pwd`/../lib/missing
+test -z "$ACLOCAL" && ACLOCAL="aclocal-@APIVERSION@"
+# See how Automake should be run.  We put --foreign as the default
+# strictness to avoid having to create lots and lots of files.  A test
+# can override this by specifying a different strictness.  Use -Wall
+# -Werror by default.  Tests for which this is inappropriate
+# (e.g. when testing that a warning is enabled by a specific switch)
+# should use -Wnone or/and -Wno-error
+test -z "$AUTOMAKE" && AUTOMAKE="automake-@APIVERSION@ --foreign -Werror -Wall"
+
+PATH=`pwd`:$PATH
+echo $PATH
 
 if test -n "$required"
 then
@@ -231,28 +243,6 @@ unset DESTDIR
 
 echo "=== Running test $0"
 
-# See how Automake should be run.  We put --foreign as the default
-# strictness to avoid having to create lots and lots of files.  A test
-# can override this by specifying a different strictness.
-if test -z "$AUTOMAKE"; then
-   perllibdir=`pwd`/../../lib:$srcdir/../lib
-   export perllibdir
-   # Use -Wall -Werror by default.  Tests for which this is inappropriate
-   # (e.g. when testing that a warning is enabled by a specific switch)
-   # should use -Wnone or/and -Wno-error
-   AUTOMAKE="$PERL `pwd`/../../automake --libdir=$srcdir/../lib --foreign -Werror -Wall"
-fi
-
-# See how aclocal should be run.
-if test -z "$ACLOCAL"; then
-   perllibdir=`pwd`/../../lib:$srcdir/../lib
-   export perllibdir
-   # Most of the files are in $srcdir/../m4.  However amversion.m4 is
-   # generated in ../m4, so we include that directory in the search
-   # path too.
-   ACLOCAL="$PERL `pwd`/../../aclocal -I `pwd`/../../m4 --acdir=$srcdir/../m4"
-fi
-
 # We might need extra macros, e.g., from Libtool or Gettext.
 # Find them on the system.
 # Use `-I $srcdir/../m4' in addition to `--acdir=$srcdir/../m4', because the
@@ -289,10 +279,6 @@ case $required in
     ACLOCAL="$ACLOCAL -I $srcdir/../m4 $extra_includes -I $aclocaldir"
     ;;
 esac
-
-# Export AUTOMAKE and ACLOCAL so that rebuild rules in Makefiles
-# generated for the tests do not use the installed tools.
-export AUTOMAKE ACLOCAL
 
 # POSIX no longer requires 'egrep' and 'fgrep',
 # but some hosts lack 'grep -E' and 'grep -F'.

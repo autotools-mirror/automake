@@ -89,6 +89,8 @@ use vars qw($VERSION @EXPORT @EXPORT_OK $AUTOLOAD @ISA);
 use Carp;
 use IO::File;
 use File::Basename;
+use Automake::ChannelDefs;
+use Automake::FileUtils;
 
 require Exporter;
 require DynaLoader;
@@ -143,7 +145,7 @@ sub open
 
   if (!$fh->SUPER::open (@_))
     {
-      croak "$me: cannot open $file: $!\n";
+      fatal "cannot open $file: $!";
     }
 
   # In case we're running under MSWindows, don't write with CRLF.
@@ -163,7 +165,9 @@ sub close
   if (!$fh->SUPER::close (@_))
     {
       my $file = $fh->name;
-      croak "$me: cannot close $file: $!\n";
+      Automake::FileUtils::handle_exec_errors $file
+	unless $!;
+      fatal "cannot close $file: $!";
     }
 }
 
@@ -215,7 +219,7 @@ sub lock
   if (!flock ($fh, $mode))
     {
       my $file = $fh->name;
-      croak "$me: cannot lock $file with mode $mode: $!\n";
+      fatal "cannot lock $file with mode $mode: $!";
     }
 }
 
@@ -230,7 +234,7 @@ sub seek
   if (!seek ($fh, $_[0], $_[1]))
     {
       my $file = $fh->name;
-      croak "$me: cannot rewind $file with @_: $!\n";
+      fatal "$me: cannot rewind $file with @_: $!";
     }
 }
 
@@ -244,7 +248,7 @@ sub truncate
   if (!truncate ($fh, $len))
     {
       my $file = $fh->name;
-      croak "$me: cannot truncate $file at $len: $!\n";
+      fatal "cannot truncate $file at $len: $!";
     }
 }
 
