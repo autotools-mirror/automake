@@ -3833,7 +3833,7 @@ sub handle_dist
 	my $archive_defined = $options{'no-dist-gzip'} ? 0 : 1;
 	$archive_defined ||=
 	  grep { $options{"dist-$_"} } ('shar', 'zip', 'tarZ', 'bzip2');
-	error ($options{'no-dist-gzip'}, 
+	error ($options{'no-dist-gzip'},
 	       "no-dist-gzip specified but no dist-* specified, "
 	       . "at least one archive format must be enabled")
 	  unless $archive_defined;
@@ -3888,6 +3888,7 @@ sub handle_dist
     # as it recursively expands `$(dist_pkgdata_DATA)' etc.
     my @dist_common = split (' ', rvar ('DIST_COMMON')->variable_value);
     @dist_common = uniq (sort for_dist_common (@dist_common));
+    variable_delete 'DIST_COMMON';
     define_pretty_variable ('DIST_COMMON', TRUE, INTERNAL, @dist_common);
 
     # Now that we've processed DIST_COMMON, disallow further attempts
@@ -4097,22 +4098,21 @@ sub scan_aclocal_m4
 # If 0 then files that require this addition will simply be ignored.
 sub rewrite_inputs_into_dependencies ($@)
 {
-    my ($add_srcdir, @inputs) = @_;
-    my @newinputs;
+  my ($add_srcdir, @inputs) = @_;
+  my @newinputs;
 
-    foreach my $single (@inputs)
+  foreach my $single (@inputs)
     {
-	if (dirname ($single) eq $relative_dir)
+      if (dirname ($single) eq $relative_dir)
 	{
-	    push (@newinputs, basename ($single));
+	  push (@newinputs, basename ($single));
 	}
-	elsif ($add_srcdir)
+      else
 	{
-	    push (@newinputs, '$(top_srcdir)/' . $single);
+	  push (@newinputs, ($add_srcdir ? '$(top_srcdir)/' : '') . $single);
 	}
     }
-
-    return @newinputs;
+  return @newinputs;
 }
 
 # Handle remaking and configure stuff.

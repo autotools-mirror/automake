@@ -34,11 +34,9 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-DIST_COMMON = Makefile.in Makefile.am COPYING INSTALL NEWS README \
-	AUTHORS ChangeLog THANKS aclocal.m4 configure configure.in \
-	$(am__configure_deps) version.texi stamp-vti AUTHORS COPYING \
-	ChangeLog INSTALL NEWS README THANKS TODO configure \
-	configure.in
+DIST_COMMON = README $(am__configure_deps) AUTHORS COPYING ChangeLog \
+	INSTALL Makefile.am Makefile.in NEWS THANKS TODO aclocal.m4 \
+	configure configure.in stamp-vti version.texi
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__configure_deps = $(top_srcdir)/m4/init.m4 \
@@ -86,6 +84,7 @@ am__remove_distdir = \
   { test ! -d $(distdir) \
     || { find $(distdir) -type d ! -perm -200 -exec chmod u+w {} ';' \
          && rm -fr $(distdir); }; }
+DIST_ARCHIVES = $(distdir).tar.gz $(distdir).tar.bz2
 GZIP_ENV = --best
 distuninstallcheck_listfiles = find . -type f -print
 distcleancheck_listfiles = find . -type f -print
@@ -198,7 +197,7 @@ $(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.in $(ACLOCAL_M4) $(
 	      exit 1;; \
 	  esac; \
 	done; \
-        echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  Makefile'; \
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --gnu  Makefile
 Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
@@ -516,9 +515,21 @@ distdir: $(DISTFILES)
 dist-gzip: distdir
 	$(AMTAR) chof - $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
 	$(am__remove_distdir)
-
 dist-bzip2: distdir
 	$(AMTAR) chof - $(distdir) | bzip2 -9 -c >$(distdir).tar.bz2
+	$(am__remove_distdir)
+
+dist-tarZ: distdir
+	$(AMTAR) chof - $(distdir) | compress -c >$(distdir).tar.Z
+	$(am__remove_distdir)
+
+dist-shar: distdir
+	shar $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).shar.gz
+	$(am__remove_distdir)
+
+dist-zip: distdir
+	-rm -f $(distdir).zip
+	zip -rq $(distdir).zip $(distdir)
 	$(am__remove_distdir)
 
 dist dist-all: distdir
@@ -530,8 +541,18 @@ dist dist-all: distdir
 # it guarantees that the distribution is self-contained by making another
 # tarfile.
 distcheck: dist
-	$(am__remove_distdir)
-	GZIP=$(GZIP_ENV) gunzip -c $(distdir).tar.gz | $(AMTAR) xf -
+	case '$(DIST_ARCHIVES)' in \
+	*.tar.gz*) \
+	  GZIP=$(GZIP_ENV) gunzip -c $(distdir).tar.gz | $(AMTAR) xf - ;;\
+	*.tar.bz2*) \
+	  bunzip2 -c $(distdir).tar.bz2 | $(AMTAR) xf - ;;\
+	*.tar.Z*) \
+	  uncompress -c $(distdir).tar.Z | $(AMTAR) xf - ;;\
+	*.shar.gz*) \
+	  GZIP=$(GZIP_ENV) gunzip -c $(distdir).tar.gz | unshar ;;\
+	*.zip*) \
+	  unzip $(distdir).zip ;;\
+	esac
 	chmod -R a-w $(distdir); chmod a+w $(distdir)
 	mkdir $(distdir)/_build
 	mkdir $(distdir)/_inst
@@ -558,12 +579,12 @@ distcheck: dist
 	            distuninstallcheck_dir="$$dc_destdir" distuninstallcheck; \
 	      } || { rm -rf "$$dc_destdir"; exit 1; }) \
 	  && rm -rf "$$dc_destdir" \
-	  && $(MAKE) $(AM_MAKEFLAGS) dist-gzip \
-	  && rm -f $(distdir).tar.gz \
+	  && $(MAKE) $(AM_MAKEFLAGS) dist \
+	  && rm -rf $(DIST_ARCHIVES) \
 	  && $(MAKE) $(AM_MAKEFLAGS) distcleancheck
-	$(am__remove_distdir)
-	@echo "$(distdir).tar.gz is ready for distribution" | \
-	  sed 'h;s/./=/g;p;x;p;x'
+	@(echo "$(distdir) archives ready for distribution: "; \
+	  for i in $(DIST_ARCHIVES); do echo $$i; done) | \
+	  sed -e '1{h;s/./=/g;p;x}' -e '$${p;x}'
 distuninstallcheck:
 	@cd $(distuninstallcheck_dir) \
 	&& test `$(distuninstallcheck_listfiles) | wc -l` -le 1 \
@@ -699,9 +720,10 @@ uninstall-info: uninstall-info-recursive
 .PHONY: $(RECURSIVE_TARGETS) CTAGS GTAGS all all-am am--refresh check \
 	check-am clean clean-generic clean-recursive ctags \
 	ctags-recursive dist dist-all dist-bzip2 dist-gzip dist-info \
-	distcheck distclean distclean-generic distclean-recursive \
-	distclean-tags distcleancheck distdir distuninstallcheck dvi \
-	dvi-am dvi-recursive html html-am html-recursive info info-am \
+	dist-shar dist-tarZ dist-zip distcheck distclean \
+	distclean-generic distclean-recursive distclean-tags \
+	distcleancheck distdir distuninstallcheck dvi dvi-am \
+	dvi-recursive html html-am html-recursive info info-am \
 	info-recursive install install-am install-binSCRIPTS \
 	install-data install-data-am install-data-recursive \
 	install-exec install-exec-am install-exec-recursive \

@@ -163,6 +163,8 @@ discover.test \
 distcom.test \
 distcom2.test \
 distcom3.test \
+distcom4.test \
+distcom5.test \
 distdir.test \
 distname.test \
 dollar.test \
