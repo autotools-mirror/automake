@@ -3329,9 +3329,10 @@ sub handle_tags
 # Handle multilib support.
 sub handle_multilib
 {
-    if ($seen_multilib && $relative_dir eq '.')
+  if ($seen_multilib && $relative_dir eq '.')
     {
-	$output_rules .= &file_contents ('multilib', new Automake::Location);
+      $output_rules .= &file_contents ('multilib', new Automake::Location);
+      push (@all, 'all-multi');
     }
 }
 
@@ -6402,7 +6403,14 @@ sub file_contents_internal ($$$%)
 	      if (defined $dependencies{$_} && $cond != FALSE)
 		{
 		  &depend ($_, @deps);
-		  $actions{$_} .= $actions;
+		  if ($actions{$_})
+		    {
+		      $actions{$_} .= "\n$actions";
+		    }
+		  else
+		    {
+		      $actions{$_} = $actions;
+		    }
 		}
 	      else
 		{

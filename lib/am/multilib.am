@@ -30,18 +30,6 @@ install-multi:
 
 .PHONY: all-multi install-multi
 
-if %?SUBDIRS%
-all-recursive: all-multi
-install-recursive: install-multi
-else !%?SUBDIRS%
-all-am: all-multi
-install-am: install-multi
-endif !%?SUBDIRS%
-
-mostlyclean-am: mostlyclean-multi
-clean-am: clean-multi
-distclean-am: distclean-multi
-maintainer-clean-am: maintainer-clean-multi
 
 mostlyclean-multi:
 	$(MULTICLEAN) $(AM_MAKEFLAGS) DO=mostlyclean multi-clean
@@ -54,15 +42,17 @@ maintainer-clean-multi:
 
 .PHONY: mostlyclean-multi clean-multi distclean-multi maintainer-clean-multi
 
+install-exec-am: install-multi
+## No uninstall rule?
 
-if %?SUBDIRS%
-mostlyclean-recursive: mostlyclean-multi
-clean-recursive: clean-multi
-distclean-recursive: distclean-multi
-maintainer-clean-recursive: maintainer-clean-multi
-else !%?SUBDIRS%
-mostlyclean-am: mostlyclean-multi
-clean-am: clean-multi
-distclean-am: distclean-multi
-maintainer-clean-am: maintainer-clean-multi
-endif !%?SUBDIRS%
+
+## These cleaning rules are recursive.  They should not be
+## registered as dependencies of *-am rules.  For instance
+## otherwise running `make clean' would cause both
+## clean-multi and mostlyclean-multi to be run, while only
+## clean-multi is really expected (since clean-multi recursively
+## call clean, it already do the job of mostlyclean).
+mostlyclean: mostlyclean-multi
+clean: clean-multi
+distclean: distclean-multi
+maintainer-clean: maintainer-clean-multi
