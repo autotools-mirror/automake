@@ -320,6 +320,7 @@ lisp3.test \
 lisp4.test \
 lisp5.test \
 lisp6.test \
+lisp7.test \
 listval.test \
 location.test \
 longline.test \
