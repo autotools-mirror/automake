@@ -115,6 +115,7 @@ conf2.test \
 confdeps.test \
 confdist.test \
 conff.test \
+conff2.test \
 confh.test \
 confh4.test \
 config.test \
