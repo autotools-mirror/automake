@@ -1,4 +1,4 @@
-#!@PERL@
+#!@PERL@ -w
 # -*- perl -*-
 # @configure_input@
 
@@ -92,7 +92,7 @@ my $AC_CANONICAL_SYSTEM = 2;
 my @libtoolize_files = ('ltmain.sh', 'config.guess', 'config.sub');
 # ltconfig appears here for compatibility with old versions of libtool.
 my @libtoolize_sometimes = ('ltconfig', 'ltcf-c.sh', 'ltcf-cxx.sh',
-			 'ltcf-gcj.sh');
+			    'ltcf-gcj.sh');
 
 # Commonly found files we look for and automatically include in
 # DISTFILES.
@@ -939,7 +939,9 @@ sub parse_arguments ()
        'o|output-dir:s'	=> \$output_directory,
        'a|add-missing' 	=> \$add_missing,
        'c|copy' 	=> \$copy_missing,
-       'v|verbose' 	=> \$verbose
+       'v|verbose' 	=> \$verbose,
+       'Werror'         => sub { $SIG{"__WARN__"} = sub { die $_[0] } },
+       'Wno-error'      => sub { $SIG{"__WARN__"} = 'DEFAULT' }
       )
 	or exit 1;
 
@@ -1395,20 +1397,20 @@ sub finish_languages
 	# supports it, then we don't generate the rule here.
 	my $comp = '';
 
-	if ($use_dependencies && $language_map{$lang . '-autodep'} ne 'no')
+	if ($use_dependencies && $language_map{"$lang-autodep"} ne 'no')
 	{
 	    # Don't generate the rule, but still generate the variables.
-	    if (defined $language_map{$lang . '-compile'})
+	    if (exists $language_map{"$lang-compile"})
 	    {
-		$comp = $language_map{$lang . '-compile'};
+		$comp = $language_map{"$lang-compile"};
 	    }
 	}
-	elsif (defined $language_map{$lang . '-compile'})
+	elsif (exists $language_map{"$lang-compile"})
 	{
-	    $comp = $language_map{$lang . '-compile'};
+	    $comp = $language_map{"$lang-compile"};
 
-	    my $outarg = $language_map{$lang . '-output-arg'};
-	    if ($language_map{$lang . '-flags'} eq 'CFLAGS')
+	    my $outarg = $language_map{"$lang-output-arg"};
+	    if ($language_map{"$lang-flags"} eq 'CFLAGS')
 	    {
 		# C compilers don't always support -c -o.
 		if (defined $options{'subdir-objects'})
@@ -1418,7 +1420,7 @@ sub finish_languages
 	    }
 
 	    my $full = ("\t\$("
-			. $language_map{$lang . '-compiler-name'}
+			. $language_map{"$lang-compiler-name"}
 			. ") "
 			. $outarg);
 	    $output_rules .= (".$ext.o:\n"
@@ -1430,11 +1432,11 @@ sub finish_languages
 			      . " `cygpath -w \$<`\n");
 	    $output_rules .= (".$ext.lo:\n"
 			      . "\t\$(LT"
-			      . $language_map{$lang . '-compiler-name'}
+			      . $language_map{"$lang-compiler-name"}
 			      . ") "
-			      . $language_map{$lang . '-output-arg'}
+			      . $language_map{"$lang-output-arg"}
 			      # We can always use -c -o with libtool.
-			      . ($language_map{$lang . '-flags'} eq 'CFLAGS'
+			      . ($language_map{"$lang-flags"} eq 'CFLAGS'
 				 ? ' -o $@' : '')
 			      . " \$<\n")
 		if $seen_libtool;
@@ -1453,17 +1455,17 @@ sub finish_languages
 	# probably corner cases here that do not work properly.
 	# People linking Java code to Fortran code deserve pain.
 	$non_c = 0
-	    if $language_map{$lang . '-pure'} eq 'no';
+	    if $language_map{"$lang-pure"} eq 'no';
 
 	if ($comp ne '')
 	{
-	    &define_compiler_variable ($language_map{$lang . '-compiler-name'},
+	    &define_compiler_variable ($language_map{"$lang-compiler-name"},
 				       $ltcompile, $comp);
 	}
 	# The compiler's flag must be a configure variable.
-	if (defined $language_map{$lang . '-flags'})
+	if (exists $language_map{"$lang-flags"})
 	{
-	    &define_configure_variable ($language_map{$lang . '-flags'});
+	    &define_configure_variable ($language_map{"$lang-flags"});
 	}
 
 	# Compute the function name of the finisher and then call it.
@@ -1595,7 +1597,7 @@ sub check_libobjs_sources
 # Result is a list
 #   $LINKER is name of linker to use (empty string for default linker)
 #   @OBJECTS are names of objects
-sub handle_single_transform_list
+sub handle_single_transform_list ($$$@)
 {
     my ($var, $derived, $obj, @files) = @_;
     my @result = ();
@@ -1617,12 +1619,11 @@ sub handle_single_transform_list
         # put into the current directory.
 
         # Split file name into base and extension.
-        my ($linker, $object);
-        next if ! /^((.*)\/)?([^\/]*)\.(.*)$/;
+        next if ! /^(?:(.*)\/)?([^\/]*)\.(.*)$/;
         my $full = $_;
-        my $directory = $2;
-        my $base = $3;
-        my $extension = $4;
+        my $directory = $1 || '';
+        my $base = $2;
+        my $extension = $3;
 
         my $xbase = $base;
 
@@ -1630,6 +1631,7 @@ sub handle_single_transform_list
         # its own flags.
         my $rule = '';
         my $renamed = 0;
+        my ($linker, $object);
 
         $extension = &derive_suffix ($extension);
         my $lang = $extension_map{$extension};
@@ -1644,10 +1646,10 @@ sub handle_single_transform_list
             next if $r == $LANG_IGNORE;
 
             # Now extract linker and other info.
-            $linker = $language_map{$lang . '-linker'};
+            $linker = $language_map{"$lang-linker"};
 
             my $this_obj_ext;
-            if ($language_map{$lang . '-ansi-p'})
+            if ($language_map{"$lang-ansi-p"})
             {
                 $object = $base . $obj;
                 $this_obj_ext = $obj;
@@ -1658,9 +1660,9 @@ sub handle_single_transform_list
                 $this_obj_ext = $nonansi_obj;
             }
 
-            if ($language_map{$lang . '-flags'} ne ''
+            if (exists $language_map{"$lang-flags"}
                 && &variable_defined ($derived . '_'
-                                      . $language_map{$lang . '-flags'}))
+                                      . $language_map{"$lang-flags"}))
             {
                 # We have a per-executable flag in effect for this
                 # object.  In this case we rewrite the object's
@@ -1690,18 +1692,18 @@ sub handle_single_transform_list
                     if $lang eq 'c';
 
                 &prog_error ("$lang flags defined without compiler")
-  		    if ! defined $language_map{$lang . '-compile'};
+  		    if ! defined $language_map{"$lang-compile"};
 
                 # Compute the rule to compile this object.
-                my $flag = $language_map{$lang . '-flags'};
+                my $flag = $language_map{"$lang-flags"};
                 my $val = "(${derived}_${flag}";
-                ($rule = $language_map{$lang . '-compile'}) =~
+                ($rule = $language_map{"$lang-compile"}) =~
                     s/\(AM_$flag/$val/;
 
-                $rule .= ' ' . $language_map{$lang . '-output-arg'};
+                $rule .= ' ' . $language_map{"$lang-output-arg"};
                 # For C we have to add the -o, because the
                 # standard rule doesn't include it.
-                if ($language_map{$lang . '-flags'} eq 'CFLAGS')
+                if ($language_map{"$lang-flags"} eq 'CFLAGS')
                 {
                     $rule .= ' -o $@';
                 }
@@ -1725,7 +1727,7 @@ sub handle_single_transform_list
             # generated later, by add_depend2.
             if (($use_dependencies
                  && $rule ne ''
-                 && $language_map{$lang . '-autodep'} ne 'no')
+                 && $language_map{"$lang-autodep"} ne 'no')
                 || $directory ne '')
             {
                 $rule = '';
@@ -1839,8 +1841,8 @@ sub handle_single_transform_list
         # Transform .o or $o file into .P file (for automatic
         # dependency code).
         if ($lang
-            && ($language_map{$lang . '-autodep'} ne 'no'
-                || $language_map{$lang . '-derived-autodep'} eq 'yes'))
+            && ($language_map{"$lang-autodep"} ne 'no'
+                || $language_map{"$lang-derived-autodep"} eq 'yes'))
         {
             my $depfile = $object;
             $depfile =~ s/\.([^.]*)$/.P$1/;
@@ -3138,7 +3140,7 @@ sub add_depend2
     # Get information on $LANG.
     my $pfx = $language_map{"$lang-autodep"};
     my $fpfx = ($pfx eq '') ? 'CC' : $pfx;
-    my $flag = $language_map{"$lang-flags"};
+    my $flag = $language_map{"$lang-flags"} || '';
 
     # First include code for ordinary objects.
     my %transform = ('PFX'  => $pfx,
@@ -3418,7 +3420,7 @@ sub handle_configure
     # We know we can always add '.in' because it really should be an
     # error if the .in was missing originally.
     my $infile = '$(srcdir)/' . $input_base . '.in';
-    my $colon_infile;
+    my $colon_infile = '';
     if ($local ne $input || @secondary_inputs)
     {
 	$colon_infile = ':' . $input . '.in';
@@ -3822,9 +3824,10 @@ sub handle_footer
 # Deal with installdirs target.
 sub handle_installdirs ()
 {
-    $output_rules .= &file_contents ('install',
-				     ('_am_installdirs'
-				      => $am_var_defs{'_am_installdirs'}));
+    $output_rules .=
+      &file_contents ('install',
+		      ('_am_installdirs'
+		       => $am_var_defs{'_am_installdirs'} || ''));
 }
 
 
@@ -4064,7 +4067,8 @@ sub handle_factored_dependencies
 		  || $required_targets{$_});
         &pretty_print_rule ("$_:", "\t",
 			    uniq (sort @{$dependencies{$_}}));
-	$output_rules .= $actions{$_};
+	$output_rules .= $actions{$_}
+	  if defined $actions{$_};
         $output_rules .= "\n";
     }
 }
@@ -4384,7 +4388,12 @@ sub scan_one_autoconf_file
 	# Cygnus and hopefully nowhere else.
 	if (/sinclude\((.*)\)/ && -f $1)
 	{
+	    # $_ being local, if we don't preserve it, when coming
+	    # back we will have $_ = undef, which is bad for the
+	    # the rest of this routine.
+	    my $underscore = $_;
 	    &scan_one_autoconf_file ($1);
+	    $_ = $underscore;
 	}
 
 	# Populate libobjs array.
@@ -5273,7 +5282,8 @@ sub lang_java_finish
     my ($ltcompile, $ltlink) = &libtool_compiler;
 
     &define_variable ('GCJLD', '$(GCJ)');
-    &define_variable ('GCJLINK', $ltlink . '$(GCJLD) $(AM_GCJFLAGS) $(GCJFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
+    &define_variable ('GCJLINK',
+		      $ltlink . '$(GCJLD) $(AM_GCJFLAGS) $(GCJFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
 
     if (! defined $configure_vars{'GCJ'})
     {
@@ -5357,24 +5367,24 @@ sub saw_sources_p
 # (sans `.').
 sub register_language
 {
-    my ($language, @options) = @_;
+    my ($lang, @options) = @_;
 
     # Set the defaults.
-    $language_map{$language . '-ansi-p'} = 0;
-    $language_map{$language . '-linker'} = '';
-    $language_map{$language . '-autodep'} = 'no';
-    $language_map{$language . '-derived-autodep'} = 'no';
+    $language_map{"$lang-ansi-p"} = 0;
+    $language_map{"$lang-autodep"} = 'no';
+    $language_map{"$lang-derived-autodep"} = 'no';
+    $language_map{"$lang-linker"} = '';
 
     # `-pure' is `yes' or `no'.  A `pure' language is one where, if
     # all the files in a directory are of that language, then we do
     # not require the C compiler or any code to call it.
-    $language_map{$language . '-pure'} = 'no';
+    $language_map{"$lang-pure"} = 'no';
 
     foreach my $iter (@options)
     {
 	if ($iter =~ /^(.*)=(.*)$/)
 	{
-	    $language_map{$language . '-' . $1} = $2;
+	    $language_map{"$lang-$1"} = $2;
 	}
 	elsif (defined $extension_map{$iter})
 	{
@@ -5382,7 +5392,7 @@ sub register_language
 	}
 	else
 	{
-	    $extension_map{$iter} = $language;
+	    $extension_map{$iter} = $lang;
 	}
     }
 }
@@ -6718,8 +6728,8 @@ sub file_contents ($%)
 	  # line).
 	  # I'm quite shoked!  It seems that (\\\n|[^\n]) is not the
 	  # same as `([^\n]|\\\n)!!!  Don't swap it, it breaks.
-	  my ($relationship, $actions) =
-	    /^((?:\\\n|[^\n])*)(?:\n(\t.*))?$/som;
+	  /^((?:\\\n|[^\n])*)(?:\n(\t.*))?$/som;
+	  my ($relationship, $actions) = ($1, $2 || '');
 
 	  # Separate targets from dependencies: the first colon.
 	  $relationship =~ /^([^:]+\S+) *: *(.*)$/som;
@@ -6766,6 +6776,8 @@ sub file_contents ($%)
  	    &prog_error ("$file:$.: macro `$var' with trailing backslash")
 	      if /\\$/;;
 	    # Accumulating variables must not be output.
+	    $am_var_defs{$var} = ''
+	      unless defined $am_var_defs{$var};
 	    if ($type eq '+')
 	      {
 		$am_var_defs{$var} .= ($am_var_defs{$var} && ' ') . $val;
@@ -6835,8 +6847,9 @@ sub am_primary_prefixes
     {
 	if ($varname =~ /^(nobase_)?(dist_|nodist_)?(.*)_$primary$/)
 	{
-	    if (($2 ne '' && ! $can_dist)
-		|| (! defined $valid{$3} && ! &variable_defined ($3 . 'dir')))
+	    my ($base, $dist, $X) = ($1 || '', $2 || '', $3 || '');
+	    if (($dist ne '' && ! $can_dist)
+		|| (! defined $valid{$X} && ! &variable_defined ("${X}dir")))
 	    {
 		# Note that a configure variable is always legitimate.
 		# It is natural to name such variables after the
@@ -6849,7 +6862,7 @@ sub am_primary_prefixes
 	    else
 	    {
 		# Ensure all extended prefixes are actually used.
-		$valid{$1 . $2 . $3} = 1;
+		$valid{"$base$dist$X"} = 1;
 	    }
 	}
     }
