@@ -1,4 +1,4 @@
-SUBDIRS = intl po
+# SUBDIRS = intl po
 
 SCRIPTS = automake
 DISTCLEANFILES = automake
