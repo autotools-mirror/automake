@@ -11,7 +11,7 @@ texinfos.am
 DIST_OTHER = ChangeLog README TODO $(am_DATA) \
 automake.in configure.in configure
 
-install: $(am_DATA)
+install:: $(am_DATA)
 	for i in $(am_DATA); do			\
 	  $(INSTALL_DATA) $(srcdir)/$$i $(amdatadir)/$$i; \
 	done
