@@ -52,6 +52,15 @@ AC_DEFINE_UNQUOTED(VERSION, "$VERSION", [Version number of package])])
 ifdef([m4_pattern_allow],
       [m4_pattern_allow([^AM_[A-Z]+FLAGS])])dnl
 
+# Autoconf 2.50 always computes EXEEXT.  However we need to be
+# compatible with 2.13, for now.  So we always define EXEEXT, but we
+# don't compute it.
+AC_SUBST(EXEEXT)
+# Similar for OBJEXT -- only we only use OBJEXT if the user actually
+# requests that it be used.  This is a bit dumb.
+: ${OBJEXT=o}
+AC_SUBST(OBJEXT)
+
 # Some tools Automake needs.
 AC_REQUIRE([AM_SANITY_CHECK])dnl
 AC_REQUIRE([AC_ARG_PROGRAM])dnl

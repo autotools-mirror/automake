@@ -425,9 +425,6 @@ my $seen_lispdir = 0;
 # TRUE if we've seen AM_PATH_PYTHON.
 my $seen_pythondir = 0;
 
-# TRUE if we've seen AC_EXEEXT.
-my $seen_exeext = 0;
-
 # TRUE if we've seen AC_OBJEXT.
 my $seen_objext = 0;
 
@@ -1218,14 +1215,6 @@ sub generate_makefile
     push (@sources, '$(SOURCES)')
 	if &variable_defined ('SOURCES');
 
-    # If OBJEXT/EXEEXT were not set in configure.in, do it, it
-    # simplifies our task, and anyway starting with Autoconf 2.50, it
-    # will always be defined, and this code will be dead.
-    $output_vars .= "EXEEXT =\n"
-      unless $seen_exeext;
-    $output_vars .= "OBJEXT = o\n"
-      unless $seen_objext;
-
     # Must do this after reading .am file.  See read_main_am_file to
     # understand weird tricks we play there with variables.
     &define_variable ('subdir', $relative_dir);
@@ -1437,7 +1426,8 @@ sub handle_options
 		   || $_ eq 'dist-tarZ' || $_ eq 'dist-bzip2'
 		   || $_ eq 'dejagnu' || $_ eq 'no-texinfo.tex'
 		   || $_ eq 'readme-alpha' || $_ eq 'check-news'
-		   || $_ eq 'subdir-objects' || $_ eq 'nostdinc')
+		   || $_ eq 'subdir-objects' || $_ eq 'nostdinc'
+		   || $_ eq 'no-exeext')
 	    {
 		# Explicitly recognize these.
 	    }
@@ -2463,7 +2453,7 @@ sub handle_programs
 	my $dirstamp = &require_build_directory_maybe ($one_file);
 
 	# Don't add $(EXEEXT) if user already did.
-	my $extension = (($seen_exeext && $one_file !~ /\$\(EXEEXT\)$/)
+	my $extension = ($one_file !~ /\$\(EXEEXT\)$/
 			 ? "\$(EXEEXT)"
 			 : '');
 
@@ -4321,7 +4311,7 @@ sub handle_minor_options
 ################################################################
 
 my %make_list;
-my @make_input_list;
+
 # &scan_autoconf_config_files ($CONFIG-FILES)
 # -------------------------------------------
 # Study $CONFIG-FILES which is the first argument to AC_CONFIG_FILES
@@ -4352,7 +4342,6 @@ sub scan_autoconf_config_files
         if (-f $input . '.am')
         {
             # We have a file that automake should generate.
-            push (@make_input_list, $input);
             $make_list{$input} = join (':', ($local, @rest));
         }
         else
@@ -4574,7 +4563,9 @@ sub scan_one_autoconf_file
 	    # Look at potential Makefile.am's.
 	    &scan_autoconf_config_files ($_);
 
-	    if ($closing && @make_input_list == 0 && @other_input_files == 0)
+	    if ($closing
+		&& scalar keys %make_list == 0
+		&& @other_input_files == 0)
 	    {
 		&am_conf_line_error ($filename, $ac_output_line,
 				     "No files mentioned in `AC_OUTPUT'");
@@ -4590,13 +4581,6 @@ sub scan_one_autoconf_file
 
 	# Check for ansi2knr.
 	$am_c_prototypes = 1 if /AM_C_PROTOTYPES/;
-
-	# Check for exe extension stuff.
-	if (/AC_EXEEXT/)
-	{
-	    $seen_exeext = 1;
-	    $configure_vars{'EXEEXT'} = $filename . ':' . $.;
-	}
 
 	if (/AC_OBJEXT/)
 	{
@@ -4816,11 +4800,11 @@ sub scan_autoconf_files
     # Set input and output files if not specified by user.
     if (! @input_files)
     {
-	@input_files = @make_input_list;
+	@input_files = sort keys %make_list;
 	%output_files = %make_list;
     }
 
-    @configure_input_files = @make_input_list;
+    @configure_input_files = sort keys %make_list;
 
     &am_conf_error ("`AM_INIT_AUTOMAKE' must be used")
 	if ! $seen_init_automake;
@@ -6416,41 +6400,66 @@ sub define_linker_variable ($)
 ## Handling rules.  ##
 ## ---------------- ##
 
+# $BOOL
+# rule_define ($TARGET, $IS_AM, $COND, $WHERE)
+# --------------------------------------------
+# Define a new rule.  $TARGET is the rule name.  $IS_AM is a boolean
+# which is true if the new rule is defined by the user.  $COND is the
+# condition under which the rule is defined.  $WHERE is where the rule
+# is defined (file name or line number).  Returns true if it is ok to
+# define the rule, false otherwise.
 sub rule_define ($$$$)
 {
   my ($target, $rule_is_am, $cond, $where) = @_;
+
+  # For now `foo:' will override `foo$(EXEEXT):'.  This is temporary,
+  # though, so we emit a warning.
+  (my $noexe = $target) =~ s,\$\(EXEEXT\)$,,;
+  if ($noexe ne $target && defined $targets{$noexe})
+  {
+      # The no-exeext option enables this feature.
+      if (! defined $options{'no-exeext'})
+      {
+	  &am_line_error ($noexe,
+			  "deprecated feature: `$noexe' overrides `$noexe\$(EXEEXT)'\nchange your target to read `$noexe\$(EXEEXT)'");
+      }
+      # Don't define.
+      return 0;
+  }
 
   if (defined $targets{$target}
       && ($cond
 	  ? ! defined $target_conditional{$target}
 	  : defined $target_conditional{$target}))
-    {
+  {
       &am_line_error ($target,
 		      "$target defined both conditionally and unconditionally");
-    }
+  }
 
   # Value here doesn't matter; for targets we only note existence.
   $targets{$target} = $where;
   if ($cond)
-    {
+  {
       if ($target_conditional{$target})
-	{
+      {
 	  &check_ambiguous_conditional ($target, $cond);
-	}
+      }
       $target_conditional{$target}{$cond} = $where;
-    }
+  }
 
 
   # Check the rule for being a suffix rule. If so, store in a hash.
 
   if ((my ($source_suffix, $object_suffix)) = ($target =~ $SUFFIX_RULE_PATTERN))
   {
-    $suffix_rules{$source_suffix} = $object_suffix;
-    print "Sources ending in .$source_suffix become .$object_suffix\n"
-      if $verbose;
-    # Set SUFFIXES from suffix_rules.
-    push @suffixes, ".$source_suffix", ".$object_suffix";
+      $suffix_rules{$source_suffix} = $object_suffix;
+      print "Sources ending in .$source_suffix become .$object_suffix\n"
+	  if $verbose;
+      # Set SUFFIXES from suffix_rules.
+      push @suffixes, ".$source_suffix", ".$object_suffix";
   }
+
+  return 1;
 }
 
 
@@ -6988,8 +6997,8 @@ sub file_contents_internal ($$%)
 		      && $cond ne 'FALSE')
 		    {
 		      $paragraph =~ s/^/make_condition (@cond_stack)/gme;
-		      $result_rules .= "$spacing$comment$paragraph\n";
-		      rule_define ($targets, $is_am, $cond, $file);
+		      $result_rules .= "$spacing$comment$paragraph\n"
+			  if rule_define ($targets, $is_am, $cond, $file);
 		    }
 		  $comment = $spacing = '';
 		  last;
@@ -7277,11 +7286,8 @@ sub am_install_var
 	  }
 
 	# A blatant hack: we rewrite each _PROGRAMS primary to include
-	# EXEEXT when in Cygwin32 mode.  You might think we could
-	# simply always use $(EXEEXT), since we define it as empty
-	# when it isn't available.  However, it isn't that simple.
-	# See nolink.test.
-	if ($seen_exeext && $primary eq 'PROGRAMS')
+	# EXEEXT.
+	if ($primary eq 'PROGRAMS')
 	{
 	    my @conds = &variable_conditions ($one_name);
 
@@ -7796,10 +7802,24 @@ sub unquote_m4_arg
 
 ################################################################
 
+# am_print_error ($LEADER, @ARGS)
+# -------------------------------
+# Do the work of printing the error message.  Join @ARGS with spaces,
+# then split at newlines and add $LEADER to each line.  Uses `warn' to
+# print message.
+sub am_print_error
+{
+    my ($leader, @args) = @_;
+    my $text = join (' ', @args);
+    @args = split ("\n", $text);
+    $text = $leader . join ("\n" . $leader, @args) . "\n";
+    warn $text;
+}
+
 # Print an error message and set exit status.
 sub am_error
 {
-    warn "$me: ${am_file}.am: @_\n";
+    am_print_error ("$me: ${am_file}.am: ", @_);
     $exit_status = 1;
 }
 
@@ -7809,7 +7829,7 @@ sub am_file_error
 {
     my ($file, @args) = @_;
 
-    warn "$file: @args\n";
+    am_print_error ("$file: ", @args);
     $exit_status = 1;
 }
 
@@ -7842,7 +7862,8 @@ sub am_line_error
 	{
 	    # Couldn't find the line number.
 	}
-	warn $file, ": @args\n";
+
+	am_print_error ("$file: ", @args);
 	$exit_status = 1;
     }
     else
@@ -7855,7 +7876,7 @@ sub am_line_error
 sub am_conf_error
 {
     # FIXME: can run in subdirs.
-    warn "$me: $configure_ac: @_\n";
+    am_print_error ("$me: $configure_ac: ", @_);
     $exit_status = 1;
 }
 
@@ -7866,7 +7887,7 @@ sub am_conf_line_error
 
     if ($line)
     {
-	warn "$file: $line: @args\n";
+	am_print_error ("$file: $line: ", @args);
 	$exit_status = 1;
     }
     else

@@ -122,6 +122,7 @@ error.test \
 exdir.test \
 exdir2.test \
 exeext.test \
+exeext2.test \
 exsource.test \
 ext.test \
 extra.test \
