@@ -381,7 +381,6 @@ spell.test \
 spell2.test \
 spell3.test \
 spelling.test \
-stamph.test \
 stamph2.test \
 stdlib.test \
 strip.test \
