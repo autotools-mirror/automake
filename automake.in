@@ -2750,7 +2750,7 @@ sub scan_configure
     # that won't always be the case.
     %libsources = ();
 
-    local ($in_ac_output, @make_list) = 0;
+    local ($in_ac_output, $in_ac_replace, @make_list) = (0, 0);
     local ($libobj_iter);
     while (<CONFIGURE>)
     {
@@ -2778,13 +2778,6 @@ sub scan_configure
 	elsif (/AM_FUNC_FNMATCH/)
 	{
 	    $libsources{'fnmatch.c'} = 1;
-	}
-	elsif (/AC_REPLACE_FUNCS\s*\((.*)\)/)
-	{
-	    foreach (split (' ', $1))
-	    {
-		$libsources{$_ . '.c'} = 1;
-	    }
 	}
 	elsif (/A[CM]_REPLACE_GNU_GETOPT/)
 	{
@@ -2825,6 +2818,21 @@ sub scan_configure
 		{
 		    $libsources{$1 . '.c'} = 1;
 		}
+	    }
+	}
+
+	if (! $in_ac_replace && s/AC_REPLACE_FUNCS\s*\(\[?//)
+	{
+	    $in_ac_replace = 1;
+	}
+	if ($in_ac_replace)
+	{
+	    $in_ac_replace = 0 if s/[\]\)].*$//;
+	    # Remove trailing backslash.
+	    s/\\$//;
+	    foreach (split)
+	    {
+		$libsources{$_ . '.c'} = 1;
 	    }
 	}
 
