@@ -38,17 +38,20 @@ Automake::VarDef - a class for variable definitions
 
   # Create a VarDef for a definition such as
   # | # any comment
-  # | foo = bar
+  # | foo = bar # more comment
   # in Makefile.am
   my $loc = new Automake::Location 'Makefile.am:2';
-  my $def = new Automake::VarDef ('foo', 'bar', '# any comment',
+  my $def = new Automake::VarDef ('foo', 'bar # more comment',
+                                  '# any comment',
                                   $loc, '', VAR_MAKEFILE, VAR_ASIS);
 
   # Appending to a definition.
   $def->append ('value to append', 'comment to append');
 
   # Accessors.
-  my $value    = $def->value;
+  my $value    = $def->value;  # with trailing `#' comments and
+                               # continuation ("\\\n") omitted.
+  my $value    = $def->raw_value; # the real value, as passed to new().
   my $comment  = $def->comment;
   my $location = $def->location;
   my $type     = $def->type;
@@ -202,6 +205,18 @@ documentation of C<new>'s arguments for a description of these.
 sub value ($)
 {
   my ($self) = @_;
+  my $val = $self->raw_value;
+  # Strip anything past `#'.  `#' characters cannot be escaped
+  # in Makefiles, so we don't have to be smart.
+  $val =~ s/#.*$//s;
+  # Strip backslashes.
+  $val =~ s/\\$/ /mg;
+  return $val;
+}
+
+sub raw_value ($)
+{
+  my ($self) = @_;
   return $self->{'value'};
 }
 
@@ -289,7 +304,7 @@ sub dump ($)
 
   my $where = $self->location->dump;
   my $comment = $self->comment;
-  my $value = $self->value;
+  my $value = $self->raw_value;
   my $type = $self->type;
 
   return "{

@@ -500,7 +500,7 @@ sub output ($@)
 
       $res .= $def->comment;
 
-      my $val = $def->value;
+      my $val = $def->raw_value;
       my $equals = $def->type eq ':' ? ':=' : '=';
       my $str = $cond->subst_string;
 
@@ -569,8 +569,6 @@ sub value_as_list ($$;$$)
   my $onceflag;
   foreach my $vcond ($self->conditions->conds)
     {
-      my $val = $self->rdef ($vcond)->value;
-
       if ($vcond->true_when ($cond))
 	{
 	  # If there is more than one definitions of $var matching
@@ -581,16 +579,8 @@ sub value_as_list ($$;$$)
 	    if $onceflag;
 	  $onceflag = 1;
 
-	  # Strip backslashes
-	  $val =~ s/\\(\n|$)/ /g;
-
-	  foreach (split (' ', $val))
-	    {
-	      # If a comment seen, just leave.
-	      last if /^#/;
-
-	      push (@result, $_);
-	    }
+	  my $val = $self->rdef ($vcond)->value;
+	  push @result, split (' ', $val);
 	}
     }
   return @result;
@@ -1259,7 +1249,7 @@ arguments:
 Typically you should do C<$cond->merge ($parent_cond)> to recompute
 the C<$full_cond> associated to C<@result>.  C<&fun_collect> may
 return a list of items, that will be used as the result of
-C<Automake::Variable::traverse_recursively> (the top-level, or it's
+C<Automake::Variable::traverse_recursively> (the top-level, or its
 recursive calls).
 
 =cut
@@ -1314,8 +1304,8 @@ sub _do_recursive_traversal ($$&&$$)
 	{
 	  # If $val is a variable (i.e. ${foo} or $(bar), not a filename),
 	  # handle the sub variable recursively.
-	  # (Backslashes between bracklets, before `}' and `)' are required
-	  # only of Emacs's indentation.)
+	  # (Backslashes before `}' and `)' within brackets are here to
+	  # please Emacs's indentation.)
 	  if ($val =~ /^\$\{([^\}]*)\}$/ || $val =~ /^\$\(([^\)]*)\)$/)
 	    {
 	      my $subvarname = $1;

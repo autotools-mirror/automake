@@ -20,6 +20,8 @@
 
 # Make sure the user can override TEXINFO_TEX.
 # Report from Tom Tromey.
+# Also make sure Automake ignores in-line comments when using variables,
+# but preserve them in the output.
 
 required='makeinfo tex'
 . ./defs || exit 1
@@ -31,11 +33,14 @@ AC_CONFIG_AUX_DIR(aux)
 AC_OUTPUT
 END
 
+# Use a slash in the comment, because automake takes the dirname
+# of TEXINFO_TEX to compute $(am__TEXINFO_TEX_DIR)...
 cat > Makefile.am << 'END'
-TEXINFO_TEX = tex/texinfo.tex
+TEXINFO_TEX = $(srcdir)/tex/texinfo.tex    # some comment w/ a slash
 info_TEXINFOS = main.texi
 sure_it_exists:
 	test -f $(TEXINFO_TEX)
+	test -d "$(am__TEXINFO_TEX_DIR)"
 END
 
 cat > main.texi << 'END'
@@ -62,3 +67,4 @@ test -f tex/texinfo.tex
 ./configure
 $MAKE sure_it_exists
 $MAKE distcheck
+grep 'TEXINFO_TEX = .* # some comment w/ a slash' Makefile
