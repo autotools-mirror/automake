@@ -113,7 +113,6 @@ package Automake;
 use strict 'vars', 'subs';
 use Automake::General;
 use Automake::XFile;
-use IO::File;
 use File::Basename;
 use Carp;
 
@@ -1291,19 +1290,8 @@ sub generate_makefile
 	}
     }
 
-    my $gm_file = new IO::File "> $out_file";
-    if (! $gm_file)
-    {
-	warn "$me: ${am_file}.in: cannot write: $!\n";
-	$exit_status = 1;
-	return;
-    }
-    print "$me: creating ", $makefile, ".in\n" if $verbose;
-
-    # In case we're running under MSWindows, don't write with CRLF
-    # (as it causes problems for the dependency-file extraction in
-    # AM_OUTPUT_DEPENDENCY_COMMANDS).
-    binmode $gm_file;
+    my $gm_file = new Automake::XFile "> $out_file";
+    verbose "creating ", $makefile, ".in";
 
     print $gm_file $output_vars;
     # We make sure that `all:' is the first target.
@@ -1311,13 +1299,6 @@ sub generate_makefile
     print $gm_file $output_header;
     print $gm_file $output_rules;
     print $gm_file $output_trailer;
-
-    if (! $gm_file->close)
-      {
-	warn "$me: $am_file.in: cannot close: $!\n";
-	$exit_status = 1;
-	return;
-      }
 }
 
 ################################################################
@@ -2956,13 +2937,8 @@ sub scan_texinfo_file
     # is not created.
     my @syncodeindexes = ();
 
-    my $texi = new IO::File ("< $filename");
-    if (! $texi)
-      {
-	&am_error ("couldn't open `$filename': $!");
-	return '';
-    }
-    print "$me: reading $filename\n" if $verbose;
+    my $texi = new Automake::XFile "< $filename";
+    verbose "reading $filename";
 
     my ($outfile, $vfile);
     while ($_ = $texi->getline)
@@ -3011,7 +2987,6 @@ sub scan_texinfo_file
       }
 
     }
-    $texi->close;
 
     if ($outfile eq '')
       {
@@ -3580,17 +3555,9 @@ sub scan_aclocal_m4
 	&define_variable ("ACLOCAL_M4", '$(top_srcdir)/aclocal.m4');
 	&push_dist_common ('aclocal.m4');
 
-	my $aclocal = new IO::File ("< aclocal.m4");
-	if ($aclocal)
-	{
-	    my $line = $aclocal->getline;
-	    $aclocal->close;
-
-	    if ($line =~ 'generated automatically by aclocal')
-	    {
-		$regen_aclocal = 1;
-	    }
-	}
+	my $aclocal = new Automake::XFile "< aclocal.m4";
+	my $line = $aclocal->getline;
+	$regen_aclocal = $line =~ 'generated automatically by aclocal';
     }
 
     my @ac_deps = ();
@@ -4614,7 +4581,7 @@ sub scan_one_autoconf_file
       );
 
     my $configfh = new Automake::XFile ("< $filename");
-    print "$me: reading $filename\n" if $verbose;
+    verbose "reading $filename";
 
     my ($in_ac_output, $in_ac_replace) = (0, 0);
     while ($_ = $configfh->getline)
@@ -4904,8 +4871,6 @@ sub scan_one_autoconf_file
 	    $configure_vars{'FLIBS'} = $here;
 	}
     }
-
-    $configfh->close;
 }
 
 
@@ -6670,8 +6635,7 @@ sub rule_define ($$$$)
   if ((my ($source_suffix, $object_suffix)) = ($target =~ $SUFFIX_RULE_PATTERN))
   {
       $suffix_rules{$source_suffix} = $object_suffix;
-      print "Sources ending in .$source_suffix become .$object_suffix\n"
-	  if $verbose;
+      verbose "Sources ending in .$source_suffix become .$object_suffix";
       # Set SUFFIXES from suffix_rules.
       push @suffixes, ".$source_suffix", ".$object_suffix";
   }
@@ -7052,10 +7016,9 @@ sub make_paragraphs ($%)
 	  . 's/\n{3,}/\n\n/g';
 
     # Swallow the file and apply the COMMAND.
-    my $fc_file = new Automake::XFile ("< $file");
+    my $fc_file = new Automake::XFile "< $file";
     # Looks stupid?
-    print "$me: reading $file\n"
-      if $verbose;
+    verbose "reading $file";
     my $saved_dollar_slash = $/;
     undef $/;
     $_ = $fc_file->getline;
@@ -7976,6 +7939,7 @@ sub set_strictness
 # Ensure a file exists.
 sub create
 {
+    use IO::File;
     my ($file) = @_;
 
     my $touch = new IO::File (">> $file");
