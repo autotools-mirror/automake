@@ -6245,6 +6245,53 @@ sub define_program_variable
 
 ################################################################
 
+## ---------------- ##
+## Handling rules.  ##
+## ---------------- ##
+
+sub rule_define ($$$$)
+{
+  my ($target, $rule_is_am, $cond_string, $where) = @_;
+
+  if (defined $targets{$target}
+      && ($cond_string
+	  ? ! defined $target_conditional{$target}
+	  : defined $target_conditional{$target}))
+    {
+      &am_line_error ($target,
+		      "$target defined both conditionally and unconditionally");
+    }
+
+  # Value here doesn't matter; for targets we only note existence.
+  $targets{$target} = $where;
+  if ($cond_string)
+    {
+      if ($target_conditional{$target})
+	{
+	  &check_ambiguous_conditional ($target, $cond_string);
+	}
+      ${$target_conditional{$target}}{$cond_string} = $where;
+    }
+
+
+  # Check the rule for being a suffix rule. If so, store in a hash.
+  my $source_suffix;
+  my $object_suffix;
+
+  if (($source_suffix, $object_suffix) = ($1 =~ $SUFFIX_RULE_PATTERN))
+  {
+    $suffix_rules{$source_suffix} = $object_suffix;
+    print "Sources ending in .$source_suffix become .$object_suffix\n"
+      if $verbose;
+    $source_suffix_pattern = "(" . join ('|', keys %suffix_rules) . ")";
+  }
+
+  # FIXME: make sure both suffixes are in SUFFIXES? Or set SUFFIXES from
+  # suffix_rules?
+}
+
+################################################################
+
 # Read Makefile.am and set up %contents.  Simultaneously copy lines
 # from Makefile.am into $output_trailer or $output_vars as
 # appropriate.  NOTE we put rules in the trailer section.  We want
@@ -6393,50 +6440,15 @@ sub read_am_file
 	{
 	    # Found a rule.
 	    $was_rule = 1;
-	    if (defined $targets{$1}
-		&& (@conditional_stack
-		    ? ! defined $target_conditional{$1}
-		    : defined $target_conditional{$1}))
-	    {
-		&am_line_error ($1,
-				"$1 defined both conditionally and unconditionally");
-	    }
-	    # Value here doesn't matter; for targets we only note
-	    # existence.
-	    $targets{$1} = 1;
-	    if (@conditional_stack)
-	    {
-		my $cond_string = conditional_string (@conditional_stack);
-		if ($target_conditional{$1})
-		{
-		    &check_ambiguous_conditional ($1, $cond_string);
-		}
-		${$target_conditional{$1}}{$cond_string} = '1';
-	    }
+
+	    rule_define ($1, 0, conditional_string (@conditional_stack), $.);
+
 	    $content_lines{$1} = $.;
 	    $output_trailer .= $comment . $spacing;
             $output_trailer .= &make_condition (@conditional_stack);
             $output_trailer .= $_;
 	    $comment = $spacing = '';
 	    $saw_bk = /\\$/;
-
-	    # Check the rule for being a suffix rule. If so, store in
-	    # a hash.
-
-	    my $source_suffix;
-	    my $object_suffix;
-
-	    if (($source_suffix, $object_suffix)
-		= ($1 =~ $SUFFIX_RULE_PATTERN))
-	    {
-	      $suffix_rules{$source_suffix} = $object_suffix;
-	      print "Sources ending in .$source_suffix become .$object_suffix\n"
-		if $verbose;
-	      $source_suffix_pattern = "(" . join ('|', keys %suffix_rules) . ")";
-	    }
-
-	    # FIXME: make sure both suffixes are in SUFFIXES? Or set
-	    # SUFFIXES from suffix_rules?
 	}
 	elsif (($is_ok_macro = /$MACRO_PATTERN/o)
 	       || /$BOGUS_MACRO_PATTERN/o)
