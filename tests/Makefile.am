@@ -7,6 +7,7 @@ TESTS =	\
 acinclude.test \
 aclocal.test \
 aclocali.test \
+aclocali1.test \
 aclocalii.test \
 acoutnoq.test \
 acoutput.test \
