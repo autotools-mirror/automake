@@ -8072,37 +8072,41 @@ sub am_file_error
     am_print_error ("$file: ", @args);
 }
 
-sub am_line_error
+# &am_line_error ($SYMBOL or $LINE, @ARGS)
+# ----------------------------------------
+# Report an error about $SYMBOL.  The error message is composed of the
+# @ARGS, and try to find the location of the error of $SYMBOL.
+sub am_line_error ($@)
 {
     my ($symbol, @args) = @_;
 
     if ($symbol && "$symbol" ne '-1')
     {
-	my $file = "${am_file}.am";
-
+        my $where;
 	if ($symbol =~ /^\d+$/)
 	{
-	    # SYMBOL is a line number, so just add the colon.
-	    $file .= ':' . $symbol;
+	    # SYMBOL is a line number, then it must be a Makefile.am.
+	    $where = "${am_file}.am:$symbol";
 	}
 	elsif (defined $var_line{$symbol})
 	{
 	    # SYMBOL is a variable defined in Makefile.am, so add the
 	    # line number we saved from there.
-	    $file .= ':' . $var_line{$symbol};
+	    $where = "${am_file}.am:$var_line{$symbol}";
 	}
 	elsif (defined $configure_vars{$symbol})
 	{
 	    # SYMBOL is a variable defined in configure.ac, so add the
 	    # appropriate line number.
-	    $file = $configure_vars{$symbol};
+	    $where = $configure_vars{$symbol};
 	}
 	else
 	{
 	    # Couldn't find the line number.
+	    $where = "${am_file}.am";
 	}
 
-	am_print_error ("$file: ", @args);
+	am_file_error ($where, @args);
     }
     else
     {
