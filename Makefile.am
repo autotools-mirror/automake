@@ -286,8 +286,6 @@ WGET = wget
 ## Files that we fetch and which we compare against.
 ## FIXME should be a lot more here
 FETCHFILES = \
-Automake/Struct.pm \
-Automake/XFile.pm \
 INSTALL \
 config-ml.in \
 config.guess \
@@ -298,14 +296,12 @@ texinfo.tex
 ## Fetch the latest versions of files we care about.
 fetch:
 	rm -rf Fetchdir > /dev/null 2>&1
-	mkdir Fetchdir; mkdir Fetchdir/Automake
+	mkdir Fetchdir
 ## If a get fails then that is a problem.
 	(cd Fetchdir && \
 	$(WGET) ftp://ftp.gnu.org/gnu/config/config.guess; \
 	$(WGET) ftp://ftp.gnu.org/gnu/config/config.sub; \
 	$(WGET) ftp://ftp.gnu.org/gnu/texinfo/texinfo.tex; \
-	$(WGET) http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~/autoconf/autoconf/lib/Autom4te/Struct.pm?content-type=text/plain -O Automake/Struct.pm; \
-	$(WGET) http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~/autoconf/autoconf/lib/Autom4te/XFile.pm?content-type=text/plain -O Automake/XFile.pm; \
 	$(WGET) http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~/autoconf/autoconf/INSTALL?content-type=text/plain -O INSTALL; \
 	$(WGET) http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~/gcc/gcc/config-ml.in; \
 	$(WGET) http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~/gcc/gcc/symlink-tree)

@@ -18,8 +18,8 @@
 # Written by Akim Demaille <akim@freefriends.org>.
 
 ###############################################################
-# The main copy of this file is in Autoconf's CVS repository. #
-# Updates should be sent to autoconf-patches@gnu.org.         #
+# The main copy of this file is in Automake's CVS repository. #
+# Updates should be sent to automake-patches@gnu.org.         #
 ###############################################################
 
 package Automake::XFile;
@@ -33,7 +33,7 @@ Automake::XFile - supply object methods for filehandles with error handling
     use Automake::XFile;
 
     $fh = new Automake::XFile;
-    $fh->open("< file"))
+    $fh->open ("< file");
     # No need to check $FH: we died if open failed.
     print <$fh>;
     $fh->close;
@@ -50,12 +50,12 @@ Automake::XFile - supply object methods for filehandles with error handling
     print <$fh>;
     undef $fh;   # automatically closes the file and checks for errors.
 
-    $fh = new Automake::XFile "file", O_WRONLY|O_APPEND;
+    $fh = new Automake::XFile "file", O_WRONLY | O_APPEND;
     # No need to check $FH: we died if new failed.
     print $fh "corge\n";
 
     $pos = $fh->getpos;
-    $fh->setpos($pos);
+    $fh->setpos ($pos);
 
     undef $fh;   # automatically closes the file and checks for errors.
 
@@ -119,7 +119,7 @@ my $me = basename ($0);
 sub new
 {
   my $type = shift;
-  my $class = ref($type) || $type || "Automake::XFile";
+  my $class = ref $type || $type || "Automake::XFile";
   my $fh = $class->SUPER::new ();
   if (@_)
     {
@@ -134,7 +134,7 @@ sub new
 
 sub open
 {
-  my ($fh) = shift;
+  my $fh = shift;
   my ($file) = @_;
 
   # WARNING: Gross hack: $FH is a typeglob: use its hash slot to store
@@ -161,7 +161,7 @@ sub open
 
 sub close
 {
-  my ($fh) = shift;
+  my $fh = shift;
   if (!$fh->SUPER::close (@_))
     {
       my $file = $fh->name;
@@ -204,7 +204,7 @@ sub getlines
 
 sub name
 {
-  my ($fh) = shift;
+  my $fh = shift;
   return ${*$fh}{'autom4te_xfile_file'};
 }
 
@@ -229,7 +229,7 @@ sub lock
 
 sub seek
 {
-  my ($fh) = shift;
+  my $fh = shift;
   # Cannot use @_ here.
   if (!seek ($fh, $_[0], $_[1]))
     {
