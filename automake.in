@@ -1400,7 +1400,7 @@ sub process_option_list
 	  # An option like "../lib/ansi2knr" is allowed.  With no
 	  # path prefix, we assume the required programs are in this
 	  # directory.  We save the actual option for later.
-	  $options{'ansi2knr'} = $_;
+	  $options{'ansi2knr'} = [$_, $where];
 	}
       elsif ($_ eq 'no-installman' || $_ eq 'no-installinfo'
 	     || $_ eq 'dist-shar' || $_ eq 'dist-zip'
@@ -2820,25 +2820,27 @@ sub handle_compile ()
     # Check for automatic de-ANSI-fication.
     if (defined $options{'ansi2knr'})
       {
-	require_variables_for_variable ('AUTOMAKE_OPTIONS',
-					"option `ansi2knr' is used",
-					"ANSI2KNR", "U");
+	my ($ansi2knr_filename, $ansi2knr_where) = @{$options{'ansi2knr'}};
+	my $ansi2knr_dir = '';
+
+	require_variables ($ansi2knr_where, "option `ansi2knr' is used",
+			   TRUE, "ANSI2KNR", "U");
 
 	# topdir is where ansi2knr should be.
-	if ($options{'ansi2knr'} eq 'ansi2knr')
+	if ($ansi2knr_filename eq 'ansi2knr')
 	  {
 	    # Only require ansi2knr files if they should appear in
 	    # this directory.
-	    require_file_with_macro (TRUE, 'AUTOMAKE_OPTIONS', FOREIGN,
-				     'ansi2knr.c', 'ansi2knr.1');
+	    require_file ($ansi2knr_where, FOREIGN,
+			  'ansi2knr.c', 'ansi2knr.1');
 
 	    # ansi2knr needs to be built before subdirs, so unshift it.
 	    unshift (@all, '$(ANSI2KNR)');
 	  }
-
-	my $ansi2knr_dir = '';
-	$ansi2knr_dir = dirname ($options{'ansi2knr'})
-	  if $options{'ansi2knr'} ne 'ansi2knr';
+	else
+	  {
+	    $ansi2knr_dir = dirname ($ansi2knr_filename);
+	  }
 
 	$output_rules .= &file_contents ('ansi2knr',
 					 new Automake::Location,
