@@ -154,8 +154,8 @@ for am_makefile in $mfiles; do
 
   eval `sed -n -f $am_rmnl ${am_makefile}.am | sed -n -f $am_ass`
 
-  test -n "$AM_PROGRAMS" || {
-     AM_PROGRAMS=$PROGRAMS
+  test -n "$AM_PROGRAMS" && {
+     PROGRAMS=$AM_PROGRAMS
   }
 
   if grep @kr@ ${am_makefile}.am >/dev/null; then
@@ -164,11 +164,11 @@ for am_makefile in $mfiles; do
     kr=
   fi
 
-  if test -n "$AM_PROGRAMS$LIBPROGRAMS$LIBRARIES"; then
+  if test -n "$PROGRAMS$LIBPROGRAMS$LIBRARIES"; then
     cat $AM_DIR/compile-vars.am >&4
     cat $AM_DIR/compile.am >&5
     grep @kr@ ${am_makefile}.am >/dev/null && cat $AM_DIR/compile-kr.am >&5
-    for am_file in $AM_PROGRAMS $LIBPROGRAMS $LIBRARIES; do
+    for am_file in $PROGRAMS $LIBPROGRAMS $LIBRARIES; do
       if grep "^[	 ]*${am_file}_SOURCES[	 ]*=" ${am_makefile}.am >/dev/null; then
         if grep "^[	 ]*${am_file}_OBJECTS[	 ]*=" ${am_makefile}.am >/dev/null; then
           :
@@ -198,15 +198,15 @@ ${am_file}_OBJECTS = ${am_file}.${kr}o" >&4
     done
   fi
 
-  if test -n "$AM_PROGRAMS$LIBPROGRAMS$SCRIPTS$LIBSCRIPTS"; then
-    if test -n "$AM_PROGRAMS$SCRIPTS"; then
+  if test -n "$PROGRAMS$LIBPROGRAMS$SCRIPTS$LIBSCRIPTS"; then
+    if test -n "$PROGRAMS$SCRIPTS"; then
       cat $AM_DIR/programs.am >&5
     fi
     if test -n "$LIBPROGRAMS$LIBSCRIPTS"; then
       cat $AM_DIR/libprograms.am >&5
     fi
-    if test -n "$AM_PROGRAMS$LIBPROGRAMS"; then
-       for am_prog in $AM_PROGRAMS $LIBPROGRAMS; do
+    if test -n "$PROGRAMS$LIBPROGRAMS"; then
+       for am_prog in $PROGRAMS $LIBPROGRAMS; do
 	  # If `prog_LDADD' is explicitly defined, use it.  Otherwise,
 	  # use LDADD.
 	  eval "test \"\$var_${am_prog}_LDADD\" = explicit" || {
@@ -274,6 +274,27 @@ ${am_file}_OBJECTS = ${am_file}.${kr}o" >&4
   esac
 
   echo "SOURCES = $SOURCES" >&4
+
+
+  #
+  # Handle TAGS.
+  #
+  case "$am_makefile" in
+   */*)
+      if test -n "${SOURCES}${HEADERS}${ETAGS_ARGS}"; then
+	 cat tags-subd.am >&5
+      fi
+      ;;
+   *)
+      if test -n "${SUBDIRS}"; then
+	 cat tags.am >&5
+      else
+	 if test -n "${SOURCES}${HEADERS}${ETAGS_ARGS}"; then
+	    cat tags-subd.am >&5
+	 fi
+      fi
+      ;;
+  esac
 
   #
   # Handle "dist" targets.
