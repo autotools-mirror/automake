@@ -6380,6 +6380,8 @@ sub read_am_file
     my $was_rule = 0;
     my $is_ok_macro;
     my $last_var_name = '';
+    my $last_var_type = '';
+    my $last_var_value = '';
     while ($_)
     {
 	$_ .= "\n"
@@ -6415,18 +6417,19 @@ sub read_am_file
 	    {
 	        $output_trailer .= &make_condition (@conditional_stack);
 		$output_trailer .= $_;
-		$saw_bk = /\\$/;
 	    }
 	    else
 	    {
-		$saw_bk = /\\$/;
-		$contents{$last_var_name} .= ' '
-		    unless $contents{$last_var_name} =~ /\s$/;
-		$contents{$last_var_name} .= $_;
-		if (@conditional_stack)
+	      $last_var_value .= ' '
+		unless $last_var_value =~ /\s$/;
+	      $last_var_value .= $_;
+
+	      if (!/\\$/)
 		{
-		    my $cond_string = conditional_string (@conditional_stack);
-		    ${conditional{$last_var_name}}{$cond_string} .= $_;
+		  macro_define ($last_var_name, 0,
+				   $last_var_type, $cond_string,
+				   $last_var_value, $.);
+		  push (@var_list, $last_var_name);
 		}
 	    }
 	}
@@ -6480,7 +6483,6 @@ sub read_am_file
             $output_trailer .= &make_condition (@conditional_stack);
             $output_trailer .= $_;
 	    $comment = $spacing = '';
-	    $saw_bk = /\\$/;
 	}
 	elsif (($is_ok_macro = /$MACRO_PATTERN/o)
 	       || /$BOGUS_MACRO_PATTERN/o)
@@ -6492,27 +6494,29 @@ sub read_am_file
 	    # Found a macro definition.
 	    $was_rule = 0;
 	    $last_var_name = $1;
-	    my $type = $2;
-	    my $value = $3;
+	    $last_var_type = $2;
+	    $last_var_value = $3;
 	    if ($3 ne '' && substr ($3, -1) eq "\\")
 	    {
 		# We preserve the `\' because otherwise the long lines
 		# that are generated will be truncated by broken
 		# `sed's.
-		$value = $3 . "\n";
+		$last_var_value = $3 . "\n";
 	    }
-
-	    macro_define ($last_var_name, 0, $type, $cond_string,
-			     $value, $.);
-	    push (@var_list, $last_var_name);
 
 	    # FIXME: this doesn't always work correctly; it will group
 	    # all comments for a given variable, no matter where
 	    # defined.
 	    $am_vars{$last_var_name} = $comment . $spacing;
-
 	    $comment = $spacing = '';
-	    $saw_bk = /\\$/;
+
+	    if (!/\\$/)
+	      {
+		macro_define ($last_var_name, 0,
+				 $last_var_type, $cond_string,
+				 $last_var_value, $.);
+		push (@var_list, $last_var_name);
+	      }
 	}
         elsif (/$INCLUDE_PATTERN/o)
         {
@@ -6539,9 +6543,9 @@ sub read_am_file
 	    $output_trailer .= &make_condition  (@conditional_stack);
 	    $output_trailer .= $_;
 	    $comment = $spacing = '';
-	    $saw_bk = /\\$/;
 	}
 
+	$saw_bk = /\\$/;
         $_ = $am_file->getline;
     }
 
