@@ -980,7 +980,7 @@ sub generate_makefile
     # There are a few install-related variables that you should not define.
     foreach my $var ('PRE_INSTALL', 'POST_INSTALL', 'NORMAL_INSTALL')
     {
-	if (&variable_defined ($var))
+	if (&variable_defined ($var) && !$var_is_am{$var})
 	{
 	    &am_line_error ($var, "`$var' should not be defined");
 	}
@@ -5411,9 +5411,7 @@ sub variable_dump ($)
       my $var_is_am = $var_is_am{$var} ? "Automake" : "User";
       my $where = (defined $var_line{$var}
 		   ? $var_line{$var} : "undefined");
-      my $pluseq = ((defined $var_type{$var} && $var_type{$var})
-		    ? "+=" : "=");
-      print STDERR "  $var ($var_is_am, where = $where) $pluseq\n";
+      print STDERR "  $var ($var_is_am, where = $where) $var_type{$var}=\n";
       print STDERR "  {\n";
       print STDERR "$var_comment{$var}"
 	if defined $var_comment{$var};
@@ -5571,20 +5569,26 @@ sub macro_define ($$$$$$)
 
   $cond ||= 'TRUE';
 
-  # A variable which was `+=' must not be `='.
-  if (defined $var_type{$var})
+  # An Automake variable must be consistently defined with the same
+  # sign by Automake.  A user variable must be set by either `=' or
+  # `:=', and later promoted to `+='.
+  if ($var_is_am)
     {
-      if ($var_type{$var} && $type ne '+')
+      if (defined $var_type{$var} && $var_type{$var} ne $type)
 	{
 	  am_line_error ($var,
-			 ("$var was set with `+=' "
+			 ("$var was set with `$var_type{$var}=' "
 			  . "and is now set with `$type='"));
 	}
     }
   else
     {
-      $var_type{$var} = $type;
+      if (!defined $var_type{$var} && $type eq '+')
+	{
+	  am_line_error ($var, "$var must be set with `=' before using `+='");
+	}
     }
+  $var_type{$var} = $type;
 
   # Differentiate the first assignment (including with `+=').
   if ($type eq '+' && defined $var_value{$var}{$cond})
@@ -5647,10 +5651,10 @@ sub variable_delete ($)
 # $BOOLEAN
 # &variable_defined ($VAR, [$COND])
 # ---------------------------------
-# See if a variable exists, and is a user variable.  $VAR is the
-# variable name, and $COND is the condition which we should check.  If
-# no condition is given, we currently return true if the variable is
-# defined under any condition.
+# See if a variable exists.  $VAR is the variable name, and $COND is
+# the condition which we should check.  If no condition is given, we
+# currently return true if the variable is defined under any
+# condition.
 sub variable_defined ($$)
 {
     my ($var, $cond) = @_;
@@ -5668,8 +5672,7 @@ sub variable_defined ($$)
 	return 0;
       }
 
-    if ($var_is_am{$var}
-	|| ($cond && !exists $var_value{$var}{$cond}))
+    if ($cond && !exists $var_value{$var}{$cond})
       {
 	# The variable is not defined for the given condition.
 	return 0;
@@ -6106,7 +6109,8 @@ sub variable_output ($@)
   foreach my $cond (@conds)
     {
       my $val = $var_value{$var}{$cond};
-      my $output_var = "$var $var_type{$var}= $val";
+      my $equals = $var_type{$var} eq ':' ? ':=' : '=';
+      my $output_var = "$var $equals $val";
       $output_var =~ s/^/&make_condition ($cond)/meg;
       $output_vars .= $output_var . "\n";
     }
@@ -6130,9 +6134,9 @@ sub variable_pretty_output ($@)
   foreach my $cond (@conds)
     {
       my $val = $var_value{$var}{$cond};
+      my $equals = $var_type{$var} eq ':' ? ':=' : '=';
       my $make_condition = make_condition ($cond);
-      $output_vars .= pretty_print_internal ("$make_condition$var"
-					     . " $var_type{$var}=",
+      $output_vars .= pretty_print_internal ("$make_condition$var $equals",
 					     "$make_condition\t",
 					     split (' ' , $val));
     }
@@ -6166,14 +6170,9 @@ sub define_pretty_variable
 
     if (! &variable_defined ($var, $cond))
     {
-        macro_define ($var, 0, '', $cond, join (' ', @value), undef);
+        macro_define ($var, 1, '', $cond, join (' ', @value), undef);
 	variable_pretty_output ($var, $cond || 'TRUE');
 	$content_seen{$var} = 1;
-    }
-    elsif ($var_type{$var})
-    {
-	&am_line_error ($var,
-			"internally generated variable `$var' was set with `+='");
     }
 }
 
