@@ -7825,6 +7825,25 @@ sub target_defined
 
 ################################################################
 
+# &check_trailing_slash ($WHERE, $LINE)
+# --------------------------------------
+# Return 1 iff $LINE ends with a slash.
+# Might modify $LINE.
+sub check_trailing_slash ($\$)
+{
+  my ($where, $line) = @_;
+
+  # Ignore `##' lines.
+  return 0 if $$line =~ /$IGNORE_PATTERN/o;
+
+  # Catch and fix a common error.
+  msg "syntax", $where, "whitespace following trailing backslash"
+    if $$line =~ s/\\\s+\n$/\\\n/;
+
+  return $$line =~ /\\$/;
+}
+
+
 # &append_comments ($VARIABLE, $SPACING, $COMMENT)
 # ------------------------------------------------
 # Apped $COMMENT to the other comments for $VARIABLE, using
@@ -7896,7 +7915,7 @@ sub read_am_file ($)
 	{
 	    last;
 	}
-	$saw_bk = /\\$/ && ! /$IGNORE_PATTERN/o;
+	$saw_bk = check_trailing_slash ("$amfile:$.", $_);
     }
 
     # We save the conditional stack on entry, and then check to make
@@ -7922,7 +7941,7 @@ sub read_am_file ($)
 	$_ =~ s/\@MAINT\@//g
 	    unless $seen_maint_mode;
 
-	my $new_saw_bk = /\\$/ && ! /$IGNORE_PATTERN/o;
+	my $new_saw_bk = check_trailing_slash ($here, $_);
 
 	if (/$IGNORE_PATTERN/o)
 	{
