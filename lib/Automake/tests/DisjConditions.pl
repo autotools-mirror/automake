@@ -314,10 +314,58 @@ sub test_sub_conditions ()
     }
 }
 
+sub test_ambig ()
+{
+  my @tests = ([[["TRUE"]],
+		["TRUE"],
+		"multiply defined"],
+	       [[["C1_TRUE"]],
+		["C1_TRUE"],
+		"multiply defined"],
+	       [[["TRUE"]],
+                ["C1_FALSE"],
+		"which includes"],
+	       [[["C1_TRUE"]],
+		["C1_TRUE", "C2_TRUE"],
+		"which includes"],
+	       [[["C1_TRUE", "C2_TRUE"]],
+		["C2_TRUE"],
+		"which is included in"],
+	       [[["C1_TRUE"]],
+		["C2_TRUE"],
+		''],
+	       [[["C1_TRUE"],
+		 ["C2_FALSE"]],
+		["C1_FALSE", "C2_TRUE"],
+		'']);
+
+  for my $t (@tests)
+    {
+      my $t1 = build_set @{$t->[0]};
+      my $t2 = new Automake::Condition @{$t->[1]};
+      my $t3 = $t->[2];
+      my ($ans, $cond) = $t1->ambiguous_p ("FOO", $t2);
+      if ($t3 && $ans !~ /FOO.*$t3/)
+	{
+	  print " (A1) " . $t1->string . " vs. " . $t2->string . "\n\t"
+	    . "Error message '$ans' does not match '$t3'\n";
+	  return 1;
+	}
+      if (!$t3 && $ans ne '')
+	{
+	  print " (A2) " . $t1->string . " vs. " . $t2->string . "\n\t"
+	    . "Unexpected error message: $ans\n";
+	  return 1;
+	}
+    }
+  return 0;
+}
+
 exit (test_basics
       || test_invert
       || test_simplify
-      || test_sub_conditions);
+      || test_sub_conditions
+      || test_ambig);
 
 ### Setup "GNU" style for perl-mode and cperl-mode.
 ## Local Variables:

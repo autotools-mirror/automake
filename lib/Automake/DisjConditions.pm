@@ -444,8 +444,8 @@ sub sub_conditions ($$)
 =item C<($string, $ambig_cond) = $condset-E<gt>ambiguous_p ($what, $cond)>
 
 Check for an ambiguous condition.  Return an error message and the
-other condition involved if we have an ambiguity.  Return two empty
-strings otherwise.
+other condition involved if we have an ambiguity.  Return an empty
+string and FALSE otherwise.
 
 C<$what> is the name of the thing being defined, to use in the error
 message.  C<$cond> is the C<Condition> under which it is being
@@ -456,41 +456,35 @@ already been defined.
 
 sub ambiguous_p ($$$)
 {
-  my ($condset, $var, $cond) = @_;
+  my ($self, $var, $cond) = @_;
 
-  foreach my $vcond ($condset->conds)
+  # Note that these rules doesn't consider the following
+  # example as ambiguous.
+  #
+  #   if COND1
+  #     FOO = foo
+  #   endif
+  #   if COND2
+  #     FOO = bar
+  #   endif
+  #
+  # It's up to the user to not define COND1 and COND2
+  # simultaneously.
+
+  return ("$var multiply defined in condition " . $cond->human, $cond)
+    if exists $self->{'hash'}{$cond};
+
+  foreach my $vcond ($self->conds)
     {
-      # Note that these rules doesn't consider the following
-      # example as ambiguous.
-      #
-      #   if COND1
-      #     FOO = foo
-      #   endif
-      #   if COND2
-      #     FOO = bar
-      #   endif
-      #
-      # It's up to the user to not define COND1 and COND2
-      # simultaneously.
-      my $message;
-      if ($vcond eq $cond)
-	{
-	  return ("$var multiply defined in condition " . $cond->human,
-		  $vcond);
-	}
-      elsif ($vcond->true_when ($cond))
-	{
-	  return ("$var was already defined in condition " . $vcond->human
-		  . ", which implies condition ". $cond->human, $vcond);
-	}
-      elsif ($cond->true_when ($vcond))
-	{
-	  return ("$var was already defined in condition "
-		  . $vcond->human . ", which is implied by condition "
-		  . $cond->human, $vcond);
-	}
+      return ("$var was already defined in condition " . $vcond->human
+	      . ", which includes condition ". $cond->human, $vcond)
+	if $vcond->true_when ($cond);
+
+      return ("$var was already defined in condition " . $vcond->human
+	      . ", which is included in condition " . $cond->human, $vcond)
+	if $cond->true_when ($vcond);
     }
-  return ('', '');
+  return ('', FALSE);
 }
 
 =head1 SEE ALSO
