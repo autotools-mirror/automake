@@ -1140,9 +1140,10 @@ distclean}, while other files are removed by @code{make clean}.
 @cindex Macros Automake recognizes
 @cindex Recognized macros by Automake
 
-Automake will also recognize the use of certain macros and tailor the
-generated @file{Makefile.in} appropriately.  Currently recognized macros
-and their effects are:
+Every time Automake is run it calls Autoconf to trace
+@file{configure.in}.  This way it can recognize the use of certain
+macros and tailor the generated @file{Makefile.in} appropriately.
+Currently recognized macros and their effects are:
 
 @table @code
 @item AC_CONFIG_HEADERS
@@ -1162,13 +1163,6 @@ Autoconf Manual}.
 @cvindex AC_CONFIG_AUX_DIR
 FIXME: give complete list of things looked for in this directory
 
-@item AC_PATH_XTRA
-Automake will insert definitions for the variables defined by
-@code{AC_PATH_XTRA} into each @file{Makefile.in} that builds a C program
-or library.  @xref{System Services, , System Services, autoconf, The
-Autoconf Manual}.
-@cvindex AC_PATH_XTRA
-
 @item AC_CANONICAL_HOST
 Automake will ensure that @file{config.guess} and @file{config.sub}
 exist.  Also, the @file{Makefile} variables @samp{host_alias} and
@@ -1187,56 +1181,25 @@ Autoconf Manual}.
 @vindex build_alias
 @vindex target_alias
 
-@item  AC_FUNC_ALLOCA
-@itemx AC_FUNC_ERROR_AT_LINE
-@itemx AC_FUNC_FNMATCH
-@itemx AC_FUNC_GETLOADAVG
-@itemx AC_FUNC_MEMCMP
-@itemx AC_FUNC_MKTIME
-@itemx AC_FUNC_OBSTACK
-@itemx AC_FUNC_STRTOD
-@itemx AC_REPLACE_FUNCS
-@itemx AC_REPLACE_GNU_GETOPT
-@itemx AC_STRUCT_ST_BLOCKS
-@itemx AM_WITH_REGEX
-Automake will ensure that the appropriate dependencies are generated for
-the objects corresponding to these macros.  Also, Automake will verify
-that the appropriate source files are part of the distribution.  Note
-that Automake does not come with any of the C sources required to use
-these macros, so @code{automake -a} will not install the sources.
-@xref{A Library}, for more information.  Also, see @ref{Particular
-Functions, , Particular Function Checks, autoconf, The Autoconf Manual}.
-@cvindex AC_FUNC_ALLOCA
-@cvindex AC_FUNC_ERROR_AT_LINE
-@cvindex AC_FUNC_FNMATCH
-@cvindex AC_FUNC_GETLOADAVG
-@cvindex AC_FUNC_MEMCMP
-@cvindex AC_FUNC_MKTIME
-@cvindex AC_FUNC_OBSTACK
-@cvindex AC_FUNC_STRTOD
-@cvindex AC_REPLACE_FUNCS
-@cvindex AC_REPLACE_GNU_GETOPT
-@cvindex AC_STRUCT_ST_BLOCKS
-@cvindex AM_WITH_REGEX
-
-@item AC_LIBOBJ
-@itemx LIBOBJS
-@itemx AC_LIBSOURCE
+@item AC_LIBSOURCE
 @itemx AC_LIBSOURCES
-Automake will detect statements which put @file{.o} files into
-@code{LIBOBJS}, or pass @file{.o} files to @code{AC_LIBOBJ}, and will
-treat these additional files as if they were discovered via
-@code{AC_REPLACE_FUNCS}.  Similarly, Automake will also distribute file
-listed in @code{AC_LIBSOURCE} and @code{AC_LIBSOURCES}.
+@itemx AC_LIBOBJ
+Automake will automatically distribute any file listed in
+@code{AC_LIBSOURCE} or @code{AC_LIBSOURCES}.
 
-Note that assignments to @code{LIBOBJS} is a construct which is being
-phased out; they will be ignored in a future release of Automake.  You
-should call the @code{AC_LIBOBJ} macro instead.  @xref{Generic
-Functions, , Generic Function Checks, autoconf, The Autoconf Manual}.
-
+Note that the @code{AC_LIBOBJ} macro calls @code{AC_LIBSOURCE}.  So if
+an Autoconf macro is documented to call @code{AC_LIBOBJ([file])}, then
+@file{file.c} will be distributed automatically by Automake.  This
+encompasses many macros like @code{AC_FUNC_ALLOCA},
+@code{AC_FUNC_MEMCMP}, @code{AC_REPLACE_FUNCS}, and others.
 @cvindex AC_LIBOBJ
 @cvindex AC_LIBSOURCE
 @cvindex AC_LIBSOURCES
+
+By the way, direct assignments to @code{LIBOBJS} are no longer
+supported.  You should always use @code{AC_LIBOBJ} for this purpose.
+@xref{AC_LIBOBJ vs LIBOBJS, , @code{AC_LIBOBJ} vs. @code{LIBOBJS},
+autoconf, The Autoconf Manual}.
 @cvindex LIBOBJS
 
 @item AC_PROG_RANLIB
@@ -1281,6 +1244,19 @@ If a Lex source file is seen, then this macro must be used.
 Autoconf Manual}.
 @cvindex AC_PROG_LEX
 
+@item AC_SUBST
+@cvindex AC_SUBST
+The first argument is automatically defined as a variable in each
+generated @file{Makefile.in}.  @xref{Setting Output Variables, , Setting
+Output Variables, autoconf, The Autoconf Manual}.
+
+If the Autoconf manual says that a macro calls @code{AC_SUBST} for
+@var{var}, or defined the output variable @var{var} then @var{var} will
+be defined in each generated @file{Makefile.in}.
+E.g. @code{AC_PATH_XTRA} defines @code{X_CFLAGS} and @code{X_LIBS}, so
+you can use the variable in any @file{Makefile.am} if
+@code{AC_PATH_XTRA} is called.
+
 @item AM_C_PROTOTYPES
 This is required when using automatic de-ANSI-fication; see @ref{ANSI}.
 @cvindex AM_C_PROTOTYPES
@@ -1301,24 +1277,6 @@ generated @file{Makefile.in}s. This macro defines the
 @samp{MAINTAINER_MODE} conditional, which you can use in your own
 @file{Makefile.am}.
 @cvindex AM_MAINTAINER_MODE
-
-@item AC_SUBST
-@itemx AC_CHECK_TOOL
-@itemx AC_CHECK_PROG
-@itemx AC_CHECK_PROGS
-@itemx AC_PATH_PROG
-@itemx AC_PATH_PROGS
-For each of these macros, the first argument is automatically defined as
-a variable in each generated @file{Makefile.in}.  @xref{Setting Output
-Variables, , Setting Output Variables, autoconf, The Autoconf Manual},
-and @ref{Generic Programs, , Generic Program Checks, autoconf, The
-Autoconf Manual}.
-@cvindex AC_SUBST
-@cvindex AC_CHECK_TOOL
-@cvindex AC_CHECK_PROG
-@cvindex AC_CHECK_PROGS
-@cvindex AC_PATH_PROG
-@cvindex AC_PATH_PROGS
 
 @end table
 
