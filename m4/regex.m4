@@ -14,7 +14,7 @@
 # If found, the package will use the system's rx which, on Linux at least,
 # will result in a smaller executable file.
 
-AC_DEFUN(AM_WITH_REGEX,
+AC_DEFUN([AM_WITH_REGEX],
 [AC_MSG_CHECKING(which of GNU rx or gawk's regex is wanted)
 AC_ARG_WITH(regex,
 [  --without-regex         use GNU rx in lieu of gawk's regex for matching],

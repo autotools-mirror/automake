@@ -1,7 +1,7 @@
 dnl Add --enable-multilib to configure.
 dnl Usage: AM_ENABLE_MULTILIB([makefile, [rel-to-top-srcdir]])
 
-AC_DEFUN(AM_ENABLE_MULTILIB, [
+AC_DEFUN([AM_ENABLE_MULTILIB], [
 dnl Default to --enable-multilib
 AC_ARG_ENABLE(multilib,
 [  --enable-multilib         build many library versions (default)],

@@ -3,7 +3,7 @@
 dnl From Jim Meyering.
 dnl FIXME: this should migrate into libit.
 
-AC_DEFUN(AM_FUNC_MKTIME,
+AC_DEFUN([AM_FUNC_MKTIME],
 [AC_REQUIRE([AC_HEADER_TIME])dnl
  AC_CHECK_HEADERS(sys/time.h unistd.h)
  AC_CHECK_FUNCS(alarm)
