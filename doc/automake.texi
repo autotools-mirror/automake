@@ -7254,11 +7254,11 @@ Note that the renaming of objects is also affected by the
 @cindex rules with multiple outputs
 
 This section describes a @command{make} idiom that can be used when a
-tool produces multiple outputs.  It is not specific to Automake and
-can be used in ordinary @file{Makefile}s.
+tool produces multiple output files.  It is not specific to Automake
+and can be used in ordinary @file{Makefile}s.
 
 Suppose we have a program called @command{foo} that will read one file
-called @file{data.foo} and produce two files called @file{data.c} and
+called @file{data.foo} and produce two files named @file{data.c} and
 @file{data.h}.  We want to write a @file{Makefile} rule that captures
 this one-to-two dependency.
 
@@ -7284,14 +7284,49 @@ data.h: data.foo
 @end example
 
 @noindent
-which means that @command{foo} can be run twice.  It will not
-@emph{necessarily} run twice, because many @command{make}
-implementations will check for the second file after the first one has
-been built and will therefore detect that it already exists.  However
-it can run twice, and we should avoid that.  An easy way to trigger
-the problem is to run a parallel make; if @file{data.c} and
-@file{data.h} are built in parallel, two @code{foo data.foo}
-commands will run concurrently.
+which means that @command{foo} can be run twice.  Usually it will not
+be run twice, because @command{make} implementations are smart enough
+to check for the existence of the second file after the first one has
+been built; they will therefore detect that it already exists.
+However there are a few situations where it can run twice anyway:
+
+@itemize
+@item
+The most worrying case is when running a parallel @command{make}.  If
+@file{data.c} and @file{data.h} are built in parallel, two @code{foo
+data.foo} commands will run concurrently.  This is harmful.
+@item
+Another case is when the dependency (here @code{data.foo}) is
+(or depends upon) a phony target.
+@end itemize
+
+A solution that works with parallel @command{make} but not with
+phony dependencies is the following:
+
+@example
+data.c data.h: data.foo
+        foo data.foo
+data.h: data.c
+@end example
+
+@noindent
+The above rules are equivalent to
+
+@example
+data.c: data.foo
+        foo data.foo
+data.h: data.foo data.c
+        foo data.foo
+@end example
+@noindent
+therefore a parallel @command{make} will have to serialize the builds
+of @file{data.c} and @file{data.h}, and will detect that the second is
+no longer needed once the first is over.
+
+Using this pattern is probably enough for most cases.  However it does
+not scale easily to more output files (in this scheme all output files
+must be totally ordered by the dependency relation), so we will
+explore a more complicated solution.
 
 Another idea is to write the following:
 
@@ -7304,7 +7339,7 @@ data.h: data.c
 
 @noindent
 The idea is that @code{foo data.foo} is run only when @file{data.c}
-need to be updated, but we further state that @file{data.h} depends
+needs to be updated, but we further state that @file{data.h} depends
 upon @file{data.c}.  That way, if @file{data.h} is required and
 @file{data.foo} is out of date, the dependency on @file{data.c} will
 trigger the build.
@@ -7313,9 +7348,10 @@ This is almost perfect, but suppose we have built @file{data.h} and
 @file{data.c}, and then we erase @file{data.h}.  Then, running
 @code{make data.h} will not rebuild @file{data.h}.  The above rules
 just state that @file{data.c} must be up-to-date with respect to
-@file{data.foo}, and this is the case.
+@file{data.foo}, and this is already the case.
 
-What we need is a rule that forces a rebuild when data.h is missing.
+What we need is a rule that forces a rebuild when @file{data.h} is
+missing.  Here it is:
 
 @example
 data.c: data.foo
@@ -7327,9 +7363,11 @@ data.h: data.c
         fi
 @end example
 
-The above scales easily to more outputs and more inputs.  For instance
-if @command{foo} should read @file{data.bar} and will also produce
-@file{data.w} and @file{data.x}, we would write:
+The above scales easily to more outputs and more inputs.  One of the
+output is picked up to serve as a witness of the run of the command,
+it depends upon all inputs, and all other outputs depend upon it.  For
+instance if @command{foo} should additionally read @file{data.bar} and
+also produce @file{data.w} and @file{data.x}, we would write:
 
 @example
 data.c: data.foo data.bar
@@ -7341,12 +7379,34 @@ data.h data.w data.x: data.c
         fi
 @end example
 
-One of the output files (here @file{data.c}) is used as a witness of
-the run of @command{foo}.  The other files depend upon that witness.
-Ideally the witness should have the oldest timestamp among the output
-files, so that the second rule (@code{data.h data.w data.x: data.c})
-is not triggered needlessly.  For this reason, it is often better to
-use a different file (not one of the output files) as witness.
+There is still a minor problem with this setup.  @command{foo} outputs
+four files, but we do not know in which order these files are created.
+Suppose that @file{data.h} is created before @file{data.c}.  Then we
+have a weird situation.  The next time @command{make} is run,
+@file{data.h} will appear older than @file{data.c}, the second rule
+will be triggered, a shell will be started to execute the
+@code{if...fi} command, but actually it will just execute the
+@code{then} branch, that is: nothing.  In other words, because the
+witness we selected is not the first file created by @command{foo},
+@command{make} will start a shell to do nothing each time it is run.
+
+A simple riposte is to fix the timestamps when this happens.
+
+@example
+data.c: data.foo data.bar
+        foo data.foo data.bar
+data.h data.w data.x: data.c
+        @@if test -f $@@; then \
+          touch $@@; \
+        else \
+          rm -f data.c; \
+          $(MAKE) $(AM_MAKEFLAGS) data.c; \
+        fi
+@end example
+
+Another solution, not incompatible with the previous one, is to use a
+different and dedicated file as witness, rather than using any of
+@command{foo}'s outputs.
 
 @example
 data.stamp: data.foo data.bar
@@ -7355,17 +7415,51 @@ data.stamp: data.foo data.bar
         foo data.foo data.bar
         @@mv -f data.tmp $@@
 data.c data.h data.w data.x: data.stamp
-        @@if test -f $@@; then :; else \
+        @@if test -f $@@; then \
+          touch $@@; \
+        else \
           rm -f data.stamp; \
           $(MAKE) $(AM_MAKEFLAGS) data.stamp; \
         fi
 @end example
 
-@file{data.tmp} is created before @command{foo} is run, so that is has
-a timestamp older than output files output by @command{foo}.  It is
-then renamed to @file{data.stamp} after @command{foo} has run, because
-we do not want to update @file{data.stamp} if @command{foo} fails.
+@file{data.tmp} is created before @command{foo} is run, so it has a
+timestamp older than output files output by @command{foo}.  It is then
+renamed to @file{data.stamp} after @command{foo} has run, because we
+do not want to update @file{data.stamp} if @command{foo} fails.
 
+Using a dedicated witness like this is very handy when the list of
+output files is not known beforehand.  As an illustration, consider
+the following rules to compile many @file{*.el} files into
+@file{*.elc} files in a single command.  It does not matter how
+@code{ELFILES} is defined (as long as it is not empty: empty targets
+are not accepted by POSIX).
+
+@example
+ELFILES = one.el two.el three.el @dots{}
+ELCFILES = $(ELFILES:=c)
+
+elc-stamp: $(ELFILES)
+        @@rm -f elc-temp
+        @@touch elc-temp
+        $(elisp_comp) $(ELFILES)
+        @@mv -f elc-temp $@@
+
+$(ELCFILES): elc-stamp
+        @@if test -f $@@; then \
+          touch $@@; \
+        else \
+          rm -f elc-stamp; \
+          $(MAKE) $(AM_MAKEFLAGS) elc-stamp; \
+        fi
+@end example
+
+For completeness it should be noted that GNU @command{make} is able to
+express rules with multiple output files using pattern rules
+(@pxref{Pattern Examples, , Pattern Rule Examples, make, The GNU Make
+Manual}).  We do not discuss pattern rules here because they are not
+portable, but they can be convenient in packages that assume GNU
+@command{make}.
 
 @c ========================================================== Appendices
 
