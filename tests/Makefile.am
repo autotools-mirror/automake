@@ -132,7 +132,6 @@ depend3.test \
 depend4.test \
 destdir.test \
 dirforbid.test \
-dirname.test \
 discover.test \
 distcommon.test \
 distcommon2.test \
