@@ -1,14 +1,6 @@
 New in 1.8a:
 
-* Better support for Fortran 90/95 with the new "fc" and "ppfc" languages.
-  Works the same as the old Fortran 77 implementation; just replace F77
-  with FC everywhere (exception: FFLAGS becomes FCFLAGS).  Requires a
-  version of autoconf which provides AC_PROG_FC (>=2.59).
-
-* Libtool tags are used with libtool versions that support them.
-  (I.e., with Libtool 1.5 or greater.)
-
-* Makefile.in bloat reduction.
+* Makefile.in bloat reduction:
 
   - Inference rules are used to compile sources in subdirectories when
     the `subdir-objects' option is used and no per-target flags are
@@ -22,17 +14,20 @@ New in 1.8a:
     the two .o and .obj rules for usual objects, or the .lo rule for
     libtool objects.
 
-* Support for conditional _LISP.
+* Change to Libtool support:
 
-* Automake is now able to handle setups where a libtool library is
-  conditionally installed in different directories, as in
+  - Libtool tags are used with libtool versions that support them.
+    (I.e., with Libtool 1.5 or greater.)
 
-    if COND
-      lib_LTLIBRARIES = liba.la
-    else
-      pkglib_LTLIBRARIES = liba.la
-    endif
-    liba_la_SOURCES = ...
+  - Automake is now able to handle setups where a libtool library is
+    conditionally installed in different directories, as in
+
+      if COND
+        lib_LTLIBRARIES = liba.la
+      else
+        pkglib_LTLIBRARIES = liba.la
+      endif
+      liba_la_SOURCES = ...
 
 * Changes to aclocal:
 
@@ -55,30 +50,269 @@ New in 1.8a:
     project did not work, because gettext conditionally requires other
     macros.
 
-* Diagnose AC_CONFIG_AUX_DIR calls following AM_INIT_AUTOMAKE. (PR/49)
+* Portability improvement:
 
-* Tar format can be chosen with the new options tar-v7, tar-ustar, and
-  tar-pax.  The new option filename-length-max=99 helps diagnosing
-  filenames that are too long for tar-v7.  (PR/414)
+  - Tar format can be chosen with the new options tar-v7, tar-ustar, and
+    tar-pax.  The new option filename-length-max=99 helps diagnosing
+    filenames that are too long for tar-v7.  (PR/414)
 
-* Variables aumented with `+=' are now automatically flattened (i.e.,
-  trailing backslashes removed) and then wrapped around 80 colummns
-  (adding trailing backslashes).  In previous versions, a long series
-  of
-     VAR += value1
-     VAR += value2
-     VAR += value3
-     ...
-  would result in a single-line definition of VAR that could possibly
-  exceed the maximum line length of some make implementations.
+  - Variables aumented with `+=' are now automatically flattened (i.e.,
+    trailing backslashes removed) and then wrapped around 80 colummns
+    (adding trailing backslashes).  In previous versions, a long series
+    of
+      VAR += value1
+      VAR += value2
+      VAR += value3
+      ...
+    would result in a single-line definition of VAR that could possibly
+    exceed the maximum line length of some make implementations.
 
-  Non-augmented variables are still output as they are defined in
-  the Makefile.am.
+    Non-augmented variables are still output as they are defined in
+    the Makefile.am.
 
-* Automake stops writing Makefile.ins as soons as it encounters an error.
-  (Warnings will not prevent output, but remember they can be turned into
-  errors with -Werror.)
+* Miscellaneous:
 
+  - Support Fortran 90/95 with the new "fc" and "ppfc" languages.
+    Works the same as the old Fortran 77 implementation; just replace
+    F77 with FC everywhere (exception: FFLAGS becomes FCFLAGS).
+    Requires a version of autoconf which provides AC_PROG_FC (>=2.59).
+
+  - Support for conditional _LISP.
+
+  - Diagnose AC_CONFIG_AUX_DIR calls following AM_INIT_AUTOMAKE. (PR/49)
+
+  - Automake stops writing Makefile.ins as soons as it encounters an
+    error.  (Warnings will not prevent output, but remember they can
+    be turned into errors with -Werror.)
+
+  - The restriction that SUBDIRS must contain direct children is gone.
+    Do not abuse.
+
+Bugs fixed in 1.8.5:
+
+* Long standing bugs:
+
+  - Define DIST_SUBDIRS even when the `no-dist' or `cygnus' options are used
+    so that `make distclean' and `make maintainer-clean' can work.
+
+  - Define AR and ARFLAGS even when only EXTRA_LIBRARIES are defined.
+
+  - Fix many rules to please FreeBSD make, which runs commands with `sh -e'.
+
+  - Polish diagnostic when no input file is found.
+
+Bugs fixed in 1.8.4:
+
+* Long standing bugs:
+
+  - Fix AM_PATH_PYTHON to correctly display $PYTHON when it has been
+    overridden by the user.
+
+  - Honor PATH_SEPARATOR in various places of the Automake package, for
+    the sake of OS/2.
+
+  - Adjust dependency tracking mode detection to ICC 8.0's new output.
+    (PR/416)
+
+  - Fix install-sh so it can install the `mv' binary... using `mv'.
+
+  - Fix tru64 dependency tracking for libtool objects.
+
+  - Work around Exuberant Ctags when creating a TAGS files in a directory
+    without files to scan but with subdirectories to include.
+
+* Bugs introduced by 1.8:
+
+  - Fix an "internal error" when @LIBOBJS@ is used in a variable that is
+    not defined in the same conditions as the _LDADD that uses it.
+
+  - Do not warn when JAVAROOT is overridden, this is legitimate.
+
+Bugs fixed in 1.8.3:
+
+* Long standing bugs:
+
+  - Quote filenames in installation rules, in case $DESTDIR, $prefix,
+    or any of the other *dir variables contain a space.
+
+    Please note that Automake does not and cannot support spaces in
+    filenames that are involved during the build.  This change affects
+    only installation paths, so that `make install' does not bomb out
+    in packages configured with
+      ./configure --prefix '/c/Program Files'
+
+  - Fix the depfiles output so it works with GNU sed (<4.1) even when
+    POSIXLY_CORRECT is set.
+
+  - Do not AC_SUBST(LIBOBJS) in AM_WITH_REGEX.  This macro was unusable
+    since Autoconf 2.54, which defines LIBOBJS itself.
+
+  - Fix a potential (but unlikely) race condition in parallel elisp
+    builds.  (Introduced in 1.7.3.)
+
+  - Do not assume that users override _DEPENDENCIES in all conditions
+    where Automake will try to define them.
+
+  - Do not use `mkdir -p' in mkinstalldirs, unless this is GNU mkdir.
+    Solaris 8's `mkdir -p' is not thread-safe and can break parallel
+    builds.
+
+    This fix also affects the $(mkdir_p) variable defined since
+    Automake 1.8.  It will be set to `mkdir -p' only if mkdir is GNU
+    mkdir, and to `mkinstalldirs' or `install-sh -d' otherwise.
+
+  - Secure temporary directory creation in `make distcheck'. (PR/413)
+
+  - Do not generate two build rules for `parser.h' when the
+    parser appears in two different conditionals.
+
+  - Work around a Solaris 8 /bin/sh bug in the test for dependency
+    checking.  Usually ./configure will not pick this shell; so this
+    fix only helps cases where the shell is forced to /bin/sh.
+
+* Bugs introduced by 1.8:
+
+  - In some situations (hand-written `m4_include's), aclocal would
+    call the `File::Spec->rel2abs' method, which was only introduced
+    in Perl 5.6.  This new version reestablish support Perl 5.005.
+
+    It is likely that the next major Automake releases will require at
+    least Perl 5.6.  Consider upgrading your development environment
+    if you are still using the five-year-old Perl 5.005.
+
+  - Automake would sometimes fail to define rules for targets listed
+    in variables defined in multiple conditions.  For instance on
+      if C1
+	bin_PROGRAMS = a
+      else
+	bin_PROGRAMS = b
+      endif
+    it would define only the `a.$(OBJEXT): a.c' rule and omit the
+    `b.$(OBJEXT): b.c' rule.
+
+* New sections in manual:
+
+  - Third-Party Makefiles: how to interface third party Makefiles.
+  - Upgrading: upgrading packages to newer Automake versions.
+  - Multiple Outputs: handling tools that produce many outputs.
+
+Bug fixed in 1.8.2:
+
+* A (well known) portability bug slipped in the changes made to
+  install-sh in Automake 1.8.1.  The broken install-sh would refuse to
+  install anything on Tru64.
+
+* Fix install rules for conditionally built python files.  (This never
+  really worked.)
+
+Bug fixed in 1.8.1:
+
+* Bugs introduced by 1.8:
+
+  - Fix Config.pm import error with old Perl versions (at least
+    5.005_03).  One symptom is that aclocal could not find its macro
+    directory.
+
+  - Automake 1.8 used `mkdir -m 0755 -p --' to ensure that directories
+    created by `make install' are always world readable, even if the
+    installer happens to have an overly restrictive umask (e.g. 077).
+    This was a mistake and has been reverted.  There are at least two
+    reasons why we must not use `-m 0755':
+      - it causes special bits like SGID to be ignored,
+      - it may be too restrictive (some setups expect 775 directories).
+
+  - Fix aclocal to honor definitions located in files which have been
+    m4_included manually.  aclocal 1.8 had been updated to check
+    m4_included files for new requirements, but forgot that these
+    m4_included files can also provide new definitions.
+
+    Note that if you have such a setup, we recommend you get rid of
+    it.  In the past, there was a reason to m4_include files manually:
+    aclocal used to duplicate entire M4 files into aclocal.m4, even
+    files that were distributed.  Some packages were therefore
+    m4_including the distributed file directly, and playing some
+    tricks to ensure aclocal would not copy that file to aclocal.m4,
+    in order to limit the amount of duplication.  Since aclocal 1.8.x
+    will precisely output m4_includes for local M4 files, we recommend
+    that you clean up your setup, removing all manual m4_includes and
+    letting aclocal output them.
+
+  - Output detailed menus in the Info version if the Automake manual,
+    so that Emacs can locate the indexes.
+
+  - configure.ac and configure were listed twice in DIST_COMMON (an
+    internal variable where Automake lists configury files to
+    distribute).  This was harmless, but unaesthetic.
+
+  - Use `chmod a-w' instead of `chmod -w' as the latter honors umask.
+    This was an issue only in the Automake package itself, not in
+    its output.
+
+  - Automake assumed that all AC_CONFIG_LINKS arguments had the form
+    DEST:SRC.  This was wrong, as some packages do
+    AC_CONFIG_LINKS($computedlinks).  This version no longer abort in
+    that situation.
+
+  - Contrary to mkinstalldirs, $(mkdir_p) was expecting exactly one
+    argument.  This caused two kinds of failures:
+      - Rules installing data in a conditionally defined directory
+        failed when that directory was undefined.  In this case no
+        argument was supplied.
+      - `make installdirs' failed, because several directories were
+        passed to $(mkdir_p).  This was an issue only on platform
+        were $(mkdir_p) is implemented with `install-sh -d'.
+    $(mkdir_p) as been changed to accept 0 or more arguments, as
+    mkinstalldirs did.
+
+* Long-standing bugs:
+
+  - Fix an unexpected diagnostic occurring when users attempt
+    to override some internal variables that Automake appends to.
+
+  - aclocal now scans configure.ac for macro definitions (PR/319).
+
+  - Fix a portability issue with OSF1/Tru64 Make.  If a directory
+    distributes files which are outside itself (this usually occurs
+    when using AC_CONFIG_AUX_DIR([../dir]) to use auxiliary files
+    from a parent package), then `make distcheck' fails due to an
+    optimization performed by OSF1/Tru64 Make in its VPATH handling.
+    (tests/subpkg2.test failure)
+
+  - Fix another portability issue with Sun and OSF1/Tru64 Make.
+    In a VPATH-build configuration, `make install' would install
+    nobase_ files to wrong locations.
+
+  - Fix a Perl `uninitialized value' diagnostic occurring when
+    automake complains that a Texinfo file does not have a
+    @setfilename statement.
+
+  - Erase config.status.lineno during `make distclean'.  This file
+    can be created by config.status.  Automake already knew about
+    configure.lineno, but forgot config.status.lineno.
+
+  - Distribute all files, even those which are built and installed
+    conditionally.  This change affects files listed in conditionally
+    defined *_HEADERS and *_PYTHON variable (unless they are nodist_*)
+    as well as those listed in conditionally defined dist_*_DATA,
+    dist_*_JAVA, dist_*_LISP, and dist_*_SCRIPTS variables.
+
+  - Fix AM_PATH_LISPDIR to avoid \? in sed regular expressions; it
+    doesn't conform to POSIX.
+
+  - Normalize help strings for configure variables and options added
+    by Automake macros.
+
+* Anticipation:
+
+  - Check for python2.4 in AM_PATH_PYTHON.
+
+* Spurious failures in test suite:
+
+  - tests/libtool5.test, tests/ltcond.test, tests/ltcond2.test,
+    tests/ltconv.test: fix failures with CVS Libtool.
+  - tests/aclocal6.test: fix failure if autom4te.cache is disabled.
+  - tests/txinfo24.test, tests/txinfo25.test, tests/txinfo28.test:
+    fix failures with old Texinfo versions.
 
 New in 1.8:
 
