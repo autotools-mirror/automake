@@ -34,7 +34,7 @@ AC_DEFUN([AM_PATH_LISPDIR],
  AC_ARG_VAR([EMACS], [the Emacs editor command])
  AC_ARG_VAR([EMACSLOADPATH], [the Emacs library search path])
  AC_ARG_WITH([lispdir],
- [  --with-lispdir          Override the default lisp directory ],
+ [  --with-lispdir          override the default lisp directory],
  [ lispdir="$withval"
    AC_MSG_CHECKING([where .elc files should go])
    AC_MSG_RESULT([$lispdir])],
