@@ -1,0 +1,101 @@
+#! /bin/sh
+
+# depcomp - compile a program generating dependencies as side-effects
+# Copyright (C) 1999 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+# 02111-1307, USA.
+
+# Originally written by Alexandre Oliva <oliva@dcc.unicamp.br>.
+
+if test -z "$depmode" || test -z "$source" || test -z "$object"; then
+  echo "depcomp: Variables source, object and depmode must be set" 1>&2
+  exit 1
+fi
+
+if test -z "$depfile"; then
+  depfile=`echo "$object" | sed 's,\([^/]*\)$,.deps/\1,;s/\.\([^.]*\)$/.P\1/'`
+  depdir=`echo "$depfile" | sed 's,/*[^/]*$,,'`
+  test -d "$depdir" || { echo "mkdir \"$depdir\"" && mkdir "$depdir"; } ||
+  test -d "$depdir" || exit 1
+fi
+
+tmpdepfile=${tmpdepfile-`echo "$depfile" | sed 's/\.\([^.]*\)$/.T\1/'`}
+
+rm -f "$depfile" "$tmpdepfile"
+
+case "$depmode" in
+gcc)
+  if "$@" -Wp,-MD,"$tmpdepfile"; then :
+  else
+    stat=$?
+    rm -f "$tmpdepfile"
+    exit $stat
+  fi
+  echo "$object : \\" > "$depfile"
+  sed 's/^[^:]*: / /' < "$tmpdepfile" >> "$depfile"
+  tr ' ' '
+' < "$tmpdepfile" | \
+    sed -e 's/^\\$//' -e '/^$/d' -e '/:$/d' -e 's/$/ :/' >> "$depfile"
+  rm -f "$tmpdepfile"
+  ;;
+
+sgi)
+  if "$@" -MDupdate "$tmpdepfile"; then :
+  else
+    stat=$?
+    rm -f "$tmpdepfile"
+    exit $stat
+  fi
+  echo "$object : \\" > "$depfile"
+  sed 's/^[^:]*: / /' < "$tmpdepfile" >> "$depfile"
+  tr ' ' '
+' < "$tmpdepfile" | \
+    sed -e 's/^\\$//' -e '/^$/d' -e '/:$/d' -e 's/$/ :/' >> "$depfile"
+  rm -f "$tmpdepfile"
+  ;;
+
+dashmstdout)
+  "$@" -M > "$tmpdepfile" &
+  proc=$!
+  "$@"
+  echo "$object : \\" > "$depfile"
+  wait "$proc"
+  sed 's/^[^:]*: / /' < "$tmpdepfile" >> "$depfile"
+  tr ' ' '
+' < "$tmpdepfile" | \
+    sed -e 's/^\\$//' -e '/^$/d' -e '/:$/d' -e 's/$/ :/' >> "$depfile"
+  rm -f "$tmpdepfile"
+  ;;
+
+cpp)
+  # We want a pre compilation step which runs CPP (but with all
+  # the right options!  This is hard).  Then we want to run sed
+  # on the output, extract `#line' or `# NNN' lines, and turn
+  # that into correct dependencies.  We might as well do this
+  # all in one step, so we have no post-compilation step here.
+  ;;
+
+none)
+  exec "$@"
+  ;;
+
+*)
+  echo "Unknown depmode $depmode" 1>&2
+  exit 1
+  ;;
+esac
+
+exit 0
