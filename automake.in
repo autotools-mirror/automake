@@ -129,6 +129,8 @@ use Automake::Location;
 use Automake::Condition qw/TRUE FALSE/;
 use Automake::DisjConditions;
 use Automake::Version;
+use Automake::Variable;
+use Automake::VarDef;
 use Automake::Wrap 'makefile_wrap';
 use File::Basename;
 use Tie::RefHash;
@@ -170,7 +172,6 @@ my $SUFFIX_RULE_PATTERN =
 # Only recognize leading spaces, not leading tabs.  If we recognize
 # leading tabs here then we need to make the reader smarter, because
 # otherwise it will think rules like `foo=bar; \' are errors.
-my $MACRO_PATTERN = '^[.A-Za-z0-9_@]+' . "\$";
 my $ASSIGNMENT_PATTERN = '^ *([^ \t=:+]*)\s*([:+]?)=\s*(.*)' . "\$";
 # This pattern recognizes a Gnits version id and sets $1 if the
 # release is an alpha release.  We also allow a suffix which can be
@@ -241,48 +242,6 @@ my %standard_prefix =
 			man7 man8 man9 oldinclude pkgdatadir
 			pkgincludedir pkglibdir sbin sharedstate
 			sysconf));
-
-# Declare the macros that define known variables, so we can
-# hint the user if she try to use one of these variables.
-
-# Macros accessible via aclocal.
-my %am_macro_for_var =
-  (
-   ANSI2KNR => 'AM_C_PROTOTYPES',
-   CCAS => 'AM_PROG_AS',
-   CCASFLAGS => 'AM_PROG_AS',
-   EMACS => 'AM_PATH_LISPDIR',
-   GCJ => 'AM_PROG_GCJ',
-   LEX => 'AM_PROG_LEX',
-   LIBTOOL => 'AC_PROG_LIBTOOL',
-   lispdir => 'AM_PATH_LISPDIR',
-   pkgpyexecdir => 'AM_PATH_PYTHON',
-   pkgpythondir => 'AM_PATH_PYTHON',
-   pyexecdir => 'AM_PATH_PYTHON',
-   PYTHON => 'AM_PATH_PYTHON',
-   pythondir => 'AM_PATH_PYTHON',
-   U => 'AM_C_PROTOTYPES',
-   );
-
-# Macros shipped with Autoconf.
-my %ac_macro_for_var =
-  (
-   CC => 'AC_PROG_CC',
-   CFLAGS => 'AC_PROG_CC',
-   CXX => 'AC_PROG_CXX',
-   CXXFLAGS => 'AC_PROG_CXX',
-   F77 => 'AC_PROG_F77',
-   F77FLAGS => 'AC_PROG_F77',
-   RANLIB => 'AC_PROG_RANLIB',
-   YACC => 'AC_PROG_YACC',
-   );
-
-# Variables that can be overriden without complaint from -Woverride
-my %silent_variable_override =
-  (AR => 1,
-   ARFLAGS => 1,
-   DEJATOOL => 1,
-   JAVAC => 1);
 
 # Copyright on generated Makefile.ins.
 my $gen_copyright = "\
@@ -517,39 +476,6 @@ my $output_header;
 # Suffixes found during a run.
 my @suffixes;
 
-# Handling the variables.
-#
-# For a $VAR:
-# - $var_value{$VAR}{$COND} is its value associated to $COND,
-# - $var_location{$VAR}{$COND} is where it was defined,
-# - $var_comment{$VAR}{$COND} are the comments associated to it.
-# - $var_type{$VAR}{$COND} is how it has been defined (`', `+', or `:'),
-# - $var_owner{$VAR}{$COND} tells who owns the variable (VAR_AUTOMAKE,
-#     VAR_CONFIGURE, or VAR_MAKEFILE).
-# - $var_pretty{$VAR}{$COND} records how one variable should be output
-#     (VAR_PRETTY or VAR_ASIS).
-my %var_value;	  tie %var_value, 'Tie::RefHash::Nestable';
-my %var_location; tie %var_location, 'Tie::RefHash::Nestable';
-my %var_comment;  tie %var_comment, 'Tie::RefHash::Nestable';
-my %var_type;     tie %var_type, 'Tie::RefHash::Nestable';
-my %var_owner;    tie %var_owner, 'Tie::RefHash::Nestable';
-my %var_pretty;   tie %var_pretty, 'Tie::RefHash::Nestable';
-# Possible values for var_owner.  Defined so that the owner of
-# a variable can only be increased (e.g Automake should not
-# override a configure or Makefile variable).
-use constant VAR_AUTOMAKE => 0; # Variable defined by Automake.
-use constant VAR_CONFIGURE => 1;# Variable defined in configure.ac.
-use constant VAR_MAKEFILE => 2; # Variable defined in Makefile.am.
-# Possible values for var_output.
-use constant VAR_ASIS => 0;
-use constant VAR_PRETTY => 1;
-# The order in which variables should be output.  (May contain
-# duplicates -- only the first occurence matters.)
-my @var_order;
-
-# This holds a 1 if a particular variable was examined.
-my %content_seen;
-
 # This holds the names which are targets.  These also appear in
 # %contents.  $targets{TARGET}{COND} is the location of the definition
 # of TARGET for condition COND.  TARGETs should not include
@@ -715,11 +641,6 @@ my $get_object_extension_was_run;
 # are the values of the variable for condition COND1 and COND2.
 my %gen_varname = ();
 
-# This hash records helper variables used to implement conditional '+='.
-# Keys have the form "VAR:CONDITIONS".  The value associated to a key is
-# the named of the helper variable used to append to VAR in CONDITIONS.
-my %appendvar = ();
-
 ################################################################
 
 # Pattern that matches all know input extensions (i.e. extensions used
@@ -753,6 +674,7 @@ sub var_SUFFIXES_trigger ($$)
     my ($type, $value) = @_;
     accept_extensions (split (' ', $value));
 }
+Automake::Variable::hook ('SUFFIXES', &var_SUFFIXES_trigger);
 
 ################################################################
 
@@ -784,14 +706,7 @@ sub initialize_per_input ()
 
     @suffixes = ();
 
-    %var_value = ();
-    %var_location = ();
-    %var_comment = ();
-    %var_type = ();
-    %var_owner = ();
-    %var_pretty = ();
-
-    %content_seen = ();
+    Automake::Variable::reset ();
 
     %targets = ();
     %target_source = ();
@@ -901,8 +816,6 @@ sub initialize_per_input ()
 
     $need_link = 0;
 
-    @var_order = ();
-
     $get_object_extension_was_run = 0;
 
     %compile_clean_files = ();
@@ -911,8 +824,6 @@ sub initialize_per_input ()
     %libtool_clean_directories = ('.' => 1);
 
     %gen_varname = ();
-
-    %appendvar = ();
 }
 
 
@@ -1132,14 +1043,6 @@ register_language ('name' => 'java',
 
 # Error reporting functions.
 
-# err_var ($VARNAME, $MESSAGE, [%OPTIONS])
-# ----------------------------------------
-# Uncategorized errors about variables.
-sub err_var ($$;%)
-{
-  msg_var ('error', @_);
-}
-
 # err_target ($TARGETNAME, $MESSAGE, [%OPTIONS])
 # ----------------------------------------------
 # Uncategorized errors about targets.
@@ -1170,26 +1073,6 @@ sub err_am ($;%)
 sub err_ac ($;%)
 {
   msg_ac ('error', @_);
-}
-
-# msg_cond_var ($CHANNEL, $COND, $VARNAME, $MESSAGE, [%OPTIONS])
-# --------------------------------------------------------------
-# Messages about conditional variable.
-sub msg_cond_var ($$$$;%)
-{
-  my ($channel, $cond, $var, $msg, %opts) = @_;
-  msg $channel, $var_location{$var}{$cond}, $msg, %opts;
-}
-
-# msg_var ($CHANNEL, $VARNAME, $MESSAGE, [%OPTIONS])
-# --------------------------------------------------
-# Messages about variables.
-sub msg_var ($$$;%)
-{
-  my ($channel, $var, $msg, %opts) = @_;
-  # Don't know which condition is concerned.  Pick any.
-  my $cond = variable_conditions ($var)->one_cond;
-  msg_cond_var $channel, $cond, $var, $msg, %opts;
 }
 
 # msg_cond_target ($CHANNEL, $COND, $TARGETNAME, $MESSAGE, [%OPTIONS])
@@ -1228,20 +1111,6 @@ sub msg_ac ($$;%)
 {
   my ($channel, $msg, %opts) = @_;
   msg $channel, $configure_ac, $msg, %opts;
-}
-
-# $BOOL
-# reject_var ($VAR, $ERROR_MSG)
-# -----------------------------
-sub reject_var ($$)
-{
-  my ($var, $msg) = @_;
-  if (variable_defined ($var))
-    {
-      err_var $var, $msg;
-      return 1;
-    }
-  return 0;
 }
 
 # $BOOL
@@ -1348,12 +1217,14 @@ sub generate_makefile
     # There are a few install-related variables that you should not define.
     foreach my $var ('PRE_INSTALL', 'POST_INSTALL', 'NORMAL_INSTALL')
       {
-	if (exists $var_owner{$var})
+	my $v = var $var;
+	if ($v)
 	  {
-	    prog_error "\$var_owner{$var}{TRUE} doesn't exist"
-	      unless exists $var_owner{$var}{&TRUE};
+	    my $def = $v->def (TRUE);
+	    prog_error "$var not defined in condition TRUE"
+	      unless $def;
 	    reject_var $var, "`$var' should not be defined"
-	      if $var_owner{$var}{&TRUE} != VAR_AUTOMAKE;
+	      if $def->owner != VAR_AUTOMAKE;
 	  }
       }
 
@@ -1385,8 +1256,7 @@ sub generate_makefile
     push (@sources, '$(SOURCES)')
 	if variable_defined ('SOURCES');
 
-    # Must do this after reading .am file.  See read_main_am_file to
-    # understand weird tricks we play there with variables.
+    # Must do this after reading .am file.
     &define_variable ('subdir', $relative_dir, INTERNAL);
 
     # Check first, because we might modify some state.
@@ -1414,8 +1284,8 @@ sub generate_makefile
 
     # Re-init SOURCES.  FIXME: other code shouldn't depend on this
     # (but currently does).
-    macro_define ('SOURCES', VAR_AUTOMAKE, '', TRUE, "@sources", '',
-		  INTERNAL, VAR_PRETTY);
+    Automake::Variable::define ('SOURCES', VAR_AUTOMAKE, '', TRUE,
+				"@sources", '', INTERNAL, VAR_PRETTY);
     define_pretty_variable ('DIST_SOURCES', TRUE, INTERNAL, @dist_sources);
 
     &handle_multilib;
@@ -1451,7 +1321,7 @@ sub generate_makefile
 
     # Comes last, because all the above procedures may have
     # defined or overridden variables.
-    &handle_variables;
+    $output_vars .= output_variables;
 
     check_typos ();
 
@@ -1514,7 +1384,7 @@ sub process_option_list
   # FIXME: We should disallow conditional deffinitions of AUTOMAKE_OPTIONS.
   my $where = ($config ?
 	       $seen_init_automake :
-	       $var_location{'AUTOMAKE_OPTIONS'}{&TRUE});
+	       rvar ('AUTOMAKE_OPTIONS')->rdef (TRUE)->location);
 
   foreach (@list)
     {
@@ -1944,11 +1814,12 @@ sub handle_languages
 
 	foreach my $flag (@dont_override)
 	  {
-	    if (exists $var_owner{$flag})
+	    my $var = var $flag;
+	    if ($var)
 	      {
-		for my $cond (keys %{$var_owner{$flag}})
+		for my $cond ($var->conditions->conds)
 		  {
-		    if ($var_owner{$flag}{$cond} == VAR_MAKEFILE)
+		    if ($var->rdef ($cond)->owner == VAR_MAKEFILE)
 		      {
 			msg_cond_var ('gnu', $cond, $flag,
 				      "`$flag' is a user variable, "
@@ -2409,7 +2280,8 @@ sub traverse_variable_recursively_worker ($$&&$$)
 
   my @allresults = ();
   my $cond_once = 0;
-  foreach my $cond (variable_conditions ($var)->conds)
+  my $v = var $var;
+  foreach my $cond ($v->conditions->conds)
     {
       if (ref $cond_filter)
 	{
@@ -2583,7 +2455,7 @@ sub transform_variable_recursively ($$$$$&)
 	   # If the new variable is the source variable, we assume
 	   # we are trying to override a user variable.  Delete
 	   # the old variable first.
-	   macro_delete ($varname) if $varname eq $var;
+	   variable_delete ($varname) if $varname eq $var;
 	   # Define for all conditions.
 	   foreach my $pair (@allresults)
 	     {
@@ -2950,9 +2822,9 @@ sub handle_compile ()
     # Check for automatic de-ANSI-fication.
     if (defined $options{'ansi2knr'})
       {
-	require_variables_for_macro ('AUTOMAKE_OPTIONS',
-				     "option `ansi2knr' is used",
-				     "ANSI2KNR", "U");
+	require_variables_for_variable ('AUTOMAKE_OPTIONS',
+					"option `ansi2knr' is used",
+					"ANSI2KNR", "U");
 
 	# topdir is where ansi2knr should be.
 	if ($options{'ansi2knr'} eq 'ansi2knr')
@@ -3120,8 +2992,8 @@ sub handle_libraries
   my @prefix = am_primary_prefixes ('LIBRARIES', 0, 'lib', 'pkglib',
 				    'noinst', 'check');
 
-  require_variables_for_macro ($prefix[0] . '_LIBRARIES',
-			       'library used', 'RANLIB')
+  require_variables_for_variable ($prefix[0] . '_LIBRARIES',
+				  'library used', 'RANLIB')
     if (@prefix);
 
   foreach my $pair (@liblist)
@@ -3206,8 +3078,8 @@ sub handle_ltlibraries
   my @prefix = am_primary_prefixes ('LTLIBRARIES', 0, 'lib', 'pkglib',
 				    'noinst', 'check');
 
-  require_variables_for_macro ($prefix[0] . '_LTLIBRARIES',
-			       'Libtool library used', 'LIBTOOL')
+  require_variables_for_variable ($prefix[0] . '_LTLIBRARIES',
+				  'Libtool library used', 'LIBTOOL')
     if (@prefix);
 
   my %liblocations = ();	# Location (in Makefile.am) of each library.
@@ -3373,15 +3245,29 @@ sub check_typos ()
   # It is ok if the user sets this particular variable.
   &examine_variable ('AM_LDFLAGS');
 
-  foreach my $varname (keys %var_value)
+  foreach my $varname (variables)
     {
+      # A configure variable is always legitimate.
+      next if exists $configure_vars{$varname};
+
+      my $check = 0;
       foreach my $primary ('_SOURCES', '_LIBADD', '_LDADD', '_LDFLAGS',
 			   '_DEPENDENCIES')
 	{
-	  msg_var 'syntax', $varname, "unused variable: `$varname'"
-	    # Note that a configure variable is always legitimate.
-	    if ($varname =~ /$primary$/ && ! $content_seen{$varname}
-		&& ! exists $configure_vars{$varname});
+	  if ($varname =~ /$primary$/)
+	    {
+	      $check = 1;
+	      last;
+	    }
+	}
+      next unless $check;
+
+      my $var = rvar $varname;
+
+      for my $cond ($var->conditions->conds)
+	{
+	  msg_var 'syntax', $var, "unused variable: `$varname'"
+	    unless $var->rdef ($cond)->seen;
 	}
     }
 }
@@ -3985,12 +3871,9 @@ sub handle_dist
        }
     }
 
-
-
     # Files to distributed.  Don't use &variable_value_as_list_recursive
     # as it recursively expands `$(dist_pkgdata_DATA)' etc.
-    check_variable_defined_unconditionally ('DIST_COMMON');
-    my @dist_common = split (' ', variable_value ('DIST_COMMON', TRUE));
+    my @dist_common = split (' ', rvar ('DIST_COMMON')->variable_value);
     @dist_common = uniq (sort for_dist_common (@dist_common));
     define_pretty_variable ('DIST_COMMON', TRUE, INTERNAL, @dist_common);
 
@@ -4141,7 +4024,7 @@ sub handle_subdirs
     }
 
     $output_rules .= &file_contents ('subdirs', new Automake::Location);
-    $var_pretty{'RECURSIVE_TARGETS'}{&TRUE} = VAR_PRETTY; # Gross!
+    rvar ('RECURSIVE_TARGETS')->rdef (TRUE)->{'pretty'} = VAR_PRETTY; # Gross!
 }
 
 
@@ -5256,7 +5139,7 @@ sub scan_autoconf_files
       if -f $config_aux_path[0] . '/install.sh';
 
     # Preserve dist_common for later.
-    $configure_dist_common = variable_value ('DIST_COMMON', TRUE) || '';
+    $configure_dist_common = variable_value ('DIST_COMMON') || '';
 }
 
 ################################################################
@@ -5870,584 +5753,6 @@ sub cond_stack_endif ($$$)
 ## ------------------------ ##
 
 
-# check_ambiguous_condition ($VAR, $COND, $WHERE)
-# -------------------------------------------------
-# Check for an ambiguous conditional.  This is called when a variable
-# is being defined conditionally.  If we already know about a
-# definition that is true under the same conditions, then we have an
-# ambiguity.
-sub check_ambiguous_condition ($$$)
-{
-  my ($var, $cond, $where) = @_;
-  my ($message, $ambig_cond) =
-    condition_ambiguous_p ($var, $cond, variable_conditions ($var));
-  if ($message)
-    {
-      msg 'syntax', $where, "$message ...", partial => 1;
-      msg_var ('syntax', $var, "... `$var' previously defined here");
-      verb (macro_dump ($var));
-    }
-}
-
-# $STRING, $AMBIG_COND
-# condition_ambiguous_p ($WHAT, $COND, $CONDSET)
-# ----------------------------------------------
-# Check for an ambiguous condition.  Return an error message and
-# the other condition involved if we have one, two empty strings otherwise.
-#   WHAT:    the thing being defined
-#   COND:    the Condition under which it is being defined
-#   CONDSET: the DisjConditions under which it had already been defined
-sub condition_ambiguous_p ($$$)
-{
-  my ($var, $cond, $condset) = @_;
-
-  foreach my $vcond ($condset->conds)
-    {
-      # Note that these rules doesn't consider the following
-      # example as ambiguous.
-      #
-      #   if COND1
-      #     FOO = foo
-      #   endif
-      #   if COND2
-      #     FOO = bar
-      #   endif
-      #
-      # It's up to the user to not define COND1 and COND2
-      # simultaneously.
-      my $message;
-      if ($vcond eq $cond)
-	{
-	  return ("$var multiply defined in condition " . $cond->human,
-		  $vcond);
-	}
-      elsif ($vcond->true_when ($cond))
-	{
-	  return ("$var was already defined in condition " . $vcond->human
-		  . ", which implies condition ". $cond->human, $vcond);
-	}
-      elsif ($cond->true_when ($vcond))
-	{
-	  return ("$var was already defined in condition "
-		  . $vcond->human . ", which is implied by condition "
-		  . $cond->human, $vcond);
-	}
-    }
-  return ('', '');
-}
-
-# @MISSING_CONDS
-# variable_not_always_defined_in_cond ($VAR, $COND)
-# ---------------------------------------------
-# Check whether $VAR is always defined for condition $COND.
-# Return a list of conditions where the definition is missing.
-#
-# For instance, given
-#
-#   if COND1
-#     if COND2
-#       A = foo
-#       D = d1
-#     else
-#       A = bar
-#       D = d2
-#     endif
-#   else
-#     D = d3
-#   endif
-#   if COND3
-#     A = baz
-#     B = mumble
-#   endif
-#   C = mumble
-#
-# we should have (we display result as conditional strings in this
-# illustration, but we really return DisjConditions objects):
-#   variable_not_always_defined_in_cond ('A', 'COND1_TRUE COND2_TRUE')
-#     => ()
-#   variable_not_always_defined_in_cond ('A', 'COND1_TRUE')
-#     => ()
-#   variable_not_always_defined_in_cond ('A', 'TRUE')
-#     => ("COND1_FALSE COND3_FALSE")
-#   variable_not_always_defined_in_cond ('B', 'COND1_TRUE')
-#     => ("COND1_TRUE COND3_FALSE")
-#   variable_not_always_defined_in_cond ('C', 'COND1_TRUE')
-#     => ()
-#   variable_not_always_defined_in_cond ('D', 'TRUE')
-#     => ()
-#   variable_not_always_defined_in_cond ('Z', 'TRUE')
-#     => ("TRUE")
-sub variable_not_always_defined_in_cond ($$)
-{
-  my ($var, $cond) = @_;
-
-  # It's easy to answer if the variable is not defined.
-  return TRUE unless exists $var_value{$var};
-
-  # Otherwise compute the subconditions where $var isn't defined.
-  return
-    variable_conditions ($var)
-      ->sub_conditions ($cond)
-	->invert
-	  ->simplify
-	    ->multiply ($cond);
-}
-
-# &macro_define($VAR, $OWNER, $TYPE, $COND, $VALUE, $COMMENT, $WHERE, $PRETTY)
-# ----------------------------------------------------------------------------
-#  $VAR      the name of the variable
-#  $OWNER    owner of the variable (one of VAR_MAKEFILE,
-#              VAR_CONFIGURE, or VAR_AUTOMAKE)
-#  $TYPE     the type of the assignment (`' for `FOO = bar',
-#              `:' for `FOO := bar', and `+' for `FOO += bar')
-#  $COND     the DisjConditions in which $VAR is being defined
-#  $VALUE    the value assigned to $VAR in condition $COND
-#  $COMMENT  any comment (`# bla.') associated with the assignment.
-#  $WHERE    the Location of the assignment
-#  $PRETTY   whether $VALUE should be pretty printed (one of
-#              VAR_ASIS or VAR_PRETTY)
-#
-# Notes:
-#  - Variables can be overriden, provided the new owner is not weaker
-#    (VAR_AUTOMAKE < VAR_CONFIGURE < VAR_MAKEFILE)
-#  - $PRETTY applies only to real assignment.  I.e., it doesn't
-#    apply to a `+=' assignment (except when part of it is being
-#    done as a conditional `=' assignment).
-#  - Comments from `+=' assignments stack with comments from the last `='
-#    assignment.
-sub macro_define ($$$$$$$$)
-{
-  my ($var, $owner, $type, $cond, $value, $comment, $where, $pretty) = @_;
-
-  prog_error "$cond is not a reference"
-    unless ref $where;
-
-  prog_error "$where is not a reference"
-    unless ref $where;
-
-  prog_error "pretty argument missing"
-    unless defined $pretty && ($pretty == VAR_PRETTY || $pretty == VAR_ASIS);
-
-  # We will adjust the owner of this variable unless told otherwise.
-  my $adjust_owner = 1;
-
-  error $where, "bad characters in variable name `$var'"
-    if $var !~ /$MACRO_PATTERN/o;
-
-  # NEWS-OS 4.2R complains if a Makefile variable begins with `_'.
-  msg ('portability', $where,
-       "$var: variable names starting with `_' are not portable")
-    if $var =~ /^_/;
-
-  # `:='-style assignments are not acknowledged by POSIX.  Moreover it
-  # has multiple meanings.  In GNU make or BSD make it means "assign
-  # with immediate expansion", while in OSF make it is used for
-  # conditional assignments.
-  msg ('portability', $where, "`:='-style assignments are not portable")
-    if $type eq ':';
-
-  check_variable_expansions ($value, $where);
-
-  # An Automake variable must be consistently defined with the same
-  # sign by Automake.  A user variable must be set by either `=' or
-  # `:=', and later promoted to `+='.
-  if ($owner == VAR_AUTOMAKE)
-    {
-      if (exists $var_type{$var}
-	  && exists $var_type{$var}{$cond}
-	  && $var_type{$var}{$cond} ne $type)
-	{
-	  error ($where, "$var was set with `$var_type{$var}=' "
-		 . "and is now set with `$type='");
-	}
-    }
-  else
-    {
-      if (!exists $var_type{$var} && $type eq '+')
-	{
-	  error $where, "$var must be set with `=' before using `+='";
-	}
-    }
-  $var_type{$var}{$cond} = $type;
-
-  # If there's a comment, make sure it is \n-terminated.
-  if ($comment)
-    {
-      chomp $comment;
-      $comment .= "\n";
-    }
-  else
-    {
-      $comment = '';
-    }
-
-  # Differentiate assignment types.
-
-  # 1. append (+=) to a variable defined for current condition
-  if ($type eq '+' && exists $var_value{$var}{$cond})
-    {
-      $var_comment{$var}{$cond} .= $comment;
-
-      if (chomp $var_value{$var}{$cond})
-	{
-	  # Insert a backslash before a trailing newline.
-	  $var_value{$var}{$cond} .= "\\\n";
-	}
-      elsif ($var_value{$var}{$cond})
-	{
-	  # Insert a separator.
-	  $var_value{$var}{$cond} .= ' ';
-	}
-       $var_value{$var}{$cond} .= $value;
-    }
-  # 2. append (+=) to a variable defined for *another* condition
-  elsif ($type eq '+' && ! variable_conditions ($var)->false)
-    {
-      # * Generally, $cond is not TRUE.  For instance:
-      #     FOO = foo
-      #     if COND
-      #       FOO += bar
-      #     endif
-      #   In this case, we declare an helper variable conditionally,
-      #   and append it to FOO:
-      #     FOO = foo $(am__append_1)
-      #     @COND_TRUE@am__append_1 = bar
-      #   Of course if FOO is defined under several conditions, we add
-      #   $(am__append_1) to each definitions.
-      #
-      # * If $cond is TRUE, we don't need the helper variable.  E.g., in
-      #     if COND1
-      #       FOO = foo1
-      #     else
-      #       FOO = foo2
-      #     endif
-      #     FOO += bar
-      #   we can add bar directly to all definition of FOO, and output
-      #     @COND_TRUE@FOO = foo1 bar
-      #     @COND_FALSE@FOO = foo2 bar
-
-      # Do we need an helper variable?
-      if ($cond != TRUE)
-        {
-	    # Does the helper variable already exists?
-	    my $key = "$var:" . $cond->string;
-	    if (exists $appendvar{$key})
-	      {
-		# Yes, let's simply append to it.
-		$var = $appendvar{$key};
-		$owner = VAR_AUTOMAKE;
-	      }
-	    else
-	      {
-		# No, create it.
-		my $num = 1 + keys (%appendvar);
-		my $hvar = "am__append_$num";
-		$appendvar{$key} = $hvar;
-		&macro_define ($hvar, VAR_AUTOMAKE, '+',
-			       $cond, $value, $comment, $where, $pretty);
-		# Now HVAR is to be added to VAR.
-		$comment = '';
-		$value = "\$($hvar)";
-	      }
-	}
-
-      # Add VALUE to all definitions of VAR.
-      foreach my $vcond (variable_conditions ($var)->conds)
-        {
-	  # We have a bit of error detection to do here.
-	  # This:
-	  #   if COND1
-	  #     X = Y
-	  #   endif
-	  #   X += Z
-	  # should be rejected because X is not defined for all conditions
-	  # where `+=' applies.
-	  my $undef_cond = variable_not_always_defined_in_cond $var, $cond;
-	  if (! $undef_cond->false)
-	    {
-	      error ($where,
-		     "Cannot apply `+=' because `$var' is not defined "
-		     . "in\nthe following conditions:\n  "
-		     . join ("\n  ", map { $_->human } $undef_cond->conds)
-		     . "\nEither define `$var' in these conditions,"
-		     . " or use\n`+=' in the same conditions as"
-		     . " the definitions.");
-	    }
-	  else
-	    {
-	      &macro_define ($var, $owner, '+', $vcond, $value, $comment,
-			     $where, $pretty);
-	    }
-	}
-      # Don't adjust the owner.  The above &macro_define did it in the
-      # right conditions.
-      $adjust_owner = 0;
-    }
-  # 3. first assignment (=, :=, or +=)
-  else
-    {
-      # If Automake tries to override a value specified by the user,
-      # just don't let it do.
-      if (exists $var_value{$var}{$cond}
-	  && $var_owner{$var}{$cond} != VAR_AUTOMAKE
-	  && $owner == VAR_AUTOMAKE)
-	{
-	  if (! exists $silent_variable_override{$var})
-	    {
-	      my $condmsg = ($cond == TRUE
-			     ? '' : (" in condition `" . $cond->human . "'"));
-	      msg_cond_var ('override', $cond, $var,
-			    "user variable `$var' defined here$condmsg...",
-			    partial => 1);
-	      msg ('override', $where,
-		   "... overrides Automake variable `$var' defined here");
-	    }
-	  verb ("refusing to override the user definition of:\n"
-		. macro_dump ($var)
-		."with `" . $cond->human . "' => `$value'");
-	}
-      else
-	{
-	  # There must be no previous value unless the user is redefining
-	  # an Automake variable or an AC_SUBST variable for an existing
-	  # condition.
-	  check_ambiguous_condition ($var, $cond, $where)
-	    unless (exists $var_owner{$var}{$cond}
-		    && (($var_owner{$var}{$cond} == VAR_AUTOMAKE
-			 && $owner != VAR_AUTOMAKE)
-			|| $var_owner{$var}{$cond} == VAR_CONFIGURE));
-
-	  $var_value{$var}{$cond} = $value;
-	  # Assignments to a macro set its location.  We don't adjust
-	  # locations for `+='.  Ideally I suppose we would associate
-	  # line numbers with random bits of text.
-	  $var_location{$var}{$cond} = $where->clone;
-	  $var_comment{$var}{$cond} = $comment;
-	  $var_pretty{$var}{$cond} = $pretty;
-	  push (@var_order, $var);
-	}
-    }
-
-  # The owner of a variable can only increase, because an Automake
-  # variable can be given to the user, but not the converse.
-  if ($adjust_owner &&
-      (! exists $var_owner{$var}{$cond}
-       || $owner > $var_owner{$var}{$cond}))
-    {
-      $var_owner{$var}{$cond} = $owner;
-      # Always adjust the location when the owner changes (even for
-      # `+=' statements).  The risk otherwise is to warn about
-      # a VAR_MAKEFILE variable and locate it in configure.ac...
-      $var_location{$var}{$cond} = $where->clone;
-    }
-
-  # Call var_VAR_trigger if it's defined.
-  # This hook helps to update some internal state *while*
-  # parsing the file.  For instance the handling of SUFFIXES
-  # requires this (see var_SUFFIXES_trigger).
-  my $var_trigger = \&{"var_${var}_trigger"};
-  &$var_trigger($type, $value) if defined &$var_trigger;
-}
-
-
-# &macro_delete ($VAR, [@CONDS])
-# ------------------------------
-# Forget about $VAR under the conditions @CONDS, or completely if
-# @CONDS is empty.
-sub macro_delete ($@)
-{
-  my ($var, @conds) = @_;
-
-  if (!@conds)
-    {
-      delete $var_value{$var};
-      delete $var_location{$var};
-      delete $var_owner{$var};
-      delete $var_comment{$var};
-      delete $var_type{$var};
-    }
-  else
-    {
-      foreach my $cond (@conds)
-	{
-	  delete $var_value{$var}{$cond};
-	  delete $var_location{$var}{$cond};
-	  delete $var_owner{$var}{$cond};
-	  delete $var_comment{$var}{$cond};
-	  delete $var_type{$var}{$cond};
-	}
-    }
-}
-
-
-# &macro_dump ($VAR)
-# ------------------
-sub macro_dump ($)
-{
-  my ($var) = @_;
-  my $text = '';
-
-  if (!exists $var_value{$var})
-    {
-      $text = "  $var does not exist\n";
-    }
-  else
-    {
-      $text .= "  $var $var_type{$var}=\n  {\n";
-      foreach my $vcond (variable_conditions ($var)->conds)
-	{
-	  prog_error ("`$var' is a key in \$var_value, "
-		      . "but not in \$var_owner\n")
-	    unless exists $var_owner{$var}{$vcond};
-
-	  my $var_owner;
-	  if ($var_owner{$var}{$vcond} == VAR_AUTOMAKE)
-	    {
-	      $var_owner = 'Automake';
-	    }
-	  elsif ($var_owner{$var}{$vcond} == VAR_CONFIGURE)
-	    {
-	      $var_owner = 'Configure';
-	    }
-	  elsif ($var_owner{$var}{$vcond} == VAR_MAKEFILE)
-	    {
-	      $var_owner = 'Makefile';
-	    }
-	  else
-	    {
-	      prog_error ("unexpected value for `\$var_owner{$var}{$vcond}': "
-			  . $var_owner{$var}{$vcond})
-		unless defined $var_owner;
-	    }
-
-	  my $where = (defined $var_location{$var}{$vcond}
-		       ? $var_location{$var}{$vcond} : "undefined");
-	  $text .= "$var_comment{$var}{$vcond}"
-	    if exists $var_comment{$var}{$vcond};
-	  $text .= "    $vcond => $var_value{$var}{$vcond}\n";
-	}
-      $text .= "  }\n";
-    }
-  return $text;
-}
-
-
-# &macros_dump ()
-# ---------------
-sub macros_dump ()
-{
-  my ($var) = @_;
-
-  my $text = "%var_value =\n{\n";
-  foreach my $var (sort (keys %var_value))
-    {
-      $text .= macro_dump ($var);
-    }
-  $text .= "}\n";
-  return $text;
-}
-
-
-# $BOOLEAN
-# variable_defined ($VAR, [$COND])
-# ---------------------------------
-# See if a variable exists.  $VAR is the variable name, and $COND is
-# the condition which we should check.  If no condition is given, we
-# currently return true if the variable is defined under any
-# condition.
-sub variable_defined ($;$)
-{
-    my ($var, $cond) = @_;
-
-    if (! exists $var_value{$var}
-	|| (defined $cond && ! exists $var_value{$var}{$cond}))
-      {
-	# VAR is not defined.
-
-	# Check there is no target defined with the name of the
-	# variable we check.
-
-	# adl> I'm wondering if this error still makes any sense today. I
-	# adl> guess it was because targets and variables used to share
-	# adl> the same namespace in older versions of Automake?
-	# tom> While what you say is definitely part of it, I think it
-	# tom> might also have been due to someone making a "spelling error"
-	# tom> -- writing "foo:..." instead of "foo = ...".
-	# tom> I'm not sure whether it is really worth diagnosing
-	# tom> this sort of problem.  In the old days I used to add warnings
-	# tom> and errors like this pretty randomly, based on bug reports I
-	# tom> got.  But there's a plausible argument that I was trying
-	# tom> too hard to prevent people from making mistakes.
-	if (exists $targets{$var}
-	    && (! defined $cond || exists $targets{$var}{$cond}))
-	  {
-	    for my $tcond ($cond || target_conditions ($var)->conds)
-	      {
-		prog_error ("\$targets{$var}{$tcond} exists but "
-			    . "\$target_owner doesn't")
-		  unless exists $target_owner{$var}{$tcond};
-		# Diagnose the first user target encountered, if any.
-		# Restricting this test to user targets allows Automake
-		# to create rules for things like `bin_PROGRAMS = LDADD'.
-		if ($target_owner{$var}{$tcond} == TARGET_USER)
-		  {
-		    msg_cond_target ('syntax', $tcond, $var,
-				     "`$var' is a target; "
-				     . "expected a variable");
-		    return 0;
-		  }
-	      }
-	  }
-	return 0;
-      }
-
-    # Even a var_value examination is good enough for us.  FIXME:
-    # really should maintain examined status on a per-condition basis.
-    $content_seen{$var} = 1;
-    return 1;
-}
-
-
-# $BOOLEAN
-# variable_assert ($VAR, $WHERE)
-# ------------------------------
-# Make sure a variable exists.  $VAR is the variable name, and $WHERE
-# is the name of a macro which refers to $VAR.
-sub variable_assert ($$)
-{
-  my ($var, $where) = @_;
-
-  return 1
-    if variable_defined $var;
-
-  require_variables ($where, "variable `$var' is used", TRUE, $var);
-
-  return 0;
-}
-
-# Mark a variable as examined.
-sub examine_variable
-{
-  my ($var) = @_;
-  variable_defined ($var);
-}
-
-
-# @CONDS
-# variable_conditions ($VAR)
-# --------------------------
-# Get the list of conditions that a variable is defined with, without
-# recursing through the conditions of any subvariables.
-# Argument is $VAR: the variable to get the conditions of.
-# Returns the list of conditions.
-sub variable_conditions ($)
-{
-    my ($var) = @_;
-    my @conds = keys %{$var_value{$var}};
-    return new Automake::DisjConditions @conds;
-}
-
-
 # @CONDS
 # target_conditions ($TARGET)
 # ---------------------------
@@ -6491,149 +5796,6 @@ sub variable_conditionally_defined ($)
     return 0;
 }
 
-# @LIST
-# &scan_variable_expansions ($TEXT)
-# ---------------------------------
-# Return the list of variable names expanded in $TEXT.
-# Note that unlike some other functions, $TEXT is not split
-# on spaces before we check for subvariables.
-sub scan_variable_expansions ($)
-{
-  my ($text) = @_;
-  my @result = ();
-
-  # Strip comments.
-  $text =~ s/#.*$//;
-
-  # Record each use of ${stuff} or $(stuff) that do not follow a $.
-  while ($text =~ /(?<!\$)\$(?:\{([^\}]*)\}|\(([^\)]*)\))/g)
-    {
-      my $var = $1 || $2;
-      # The occurent may look like $(string1[:subst1=[subst2]]) but
-      # we want only `string1'.
-      $var =~ s/:[^:=]*=[^=]*$//;
-      push @result, $var;
-    }
-
-  return @result;
-}
-
-# &check_variable_expansions ($TEXT, $WHERE)
-# ------------------------------------------
-# Check variable expansions in $TEXT and warn about any name that
-# does not conform to POSIX.  $WHERE is the location of $TEXT for
-# the error message.
-sub check_variable_expansions ($$)
-{
-  my ($text, $where) = @_;
-  # Catch expansion of variables whose name does not conform to POSIX.
-  foreach my $var (scan_variable_expansions ($text))
-    {
-      if ($var !~ /$MACRO_PATTERN/)
-	{
-	  # If the variable name contains a space, it's likely
-	  # to be a GNU make extension (such as $(addsuffix ...)).
-	  # Mention this in the diagnostic.
-	  my $gnuext = "";
-	  $gnuext = "\n(probably a GNU make extension)" if $var =~ / /;
-	  msg ('portability', $where,
-	       "$var: non-POSIX variable name$gnuext");
-	}
-    }
-}
-
-
-# $BOOL
-# &check_variable_defined_unconditionally($VAR, $PARENT)
-# ------------------------------------------------------
-# Warn if a variable is conditionally defined.  This is called if we
-# are using the value of a variable.
-sub check_variable_defined_unconditionally ($$)
-{
-  my ($var, $parent) = @_;
-  foreach my $cond (variable_conditions ($var)->conds)
-    {
-      next
-	if $cond->true || $cond->false;
-
-      if ($parent)
-	{
-	  msg_var ('unsupported', $parent,
-		   "automake does not support conditional definition of "
-		   . "$var in $parent");
-	}
-      else
-	{
-	  msg_var ('unsupported', $var,
-		   "automake does not support $var being defined "
-		   . "conditionally");
-	}
-    }
-}
-
-
-# Get the TRUE value of a variable, warn if the variable is
-# conditionally defined.
-sub variable_value
-{
-    my ($var) = @_;
-    &check_variable_defined_unconditionally ($var);
-    return $var_value{$var}{&TRUE};
-}
-
-
-# @VALUES
-# variable_value_as_list ($VAR, $COND, $PARENT)
-# ---------------------------------------------
-# Get the value of a variable given a specified condition. without
-# recursing through any subvariables.
-# Arguments are:
-#   $VAR    is the variable
-#   $COND   is the condition.  If this is not given, the value for the
-#           "TRUE" condition will be returned.
-#   $PARENT is the variable in which the variable is used: this is used
-#           only for error messages.
-# For example, if A is defined as "foo $(B) bar", and B is defined as
-# "baz", this will return ("foo", "$(B)", "bar")
-sub variable_value_as_list
-{
-    my ($var, $cond, $parent) = @_;
-    my @result;
-
-    # Check defined
-    return
-      unless variable_assert $var, $parent;
-
-    # Get value for given condition
-    my $onceflag;
-    foreach my $vcond (variable_conditions ($var)->conds)
-    {
-	my $val = $var_value{$var}{$vcond};
-
-	if ($vcond->true_when ($cond))
-	{
-	    # Unless variable is not defined conditionally, there should only
-	    # be one value of $vcond true when $cond.
-	    &check_variable_defined_unconditionally ($var, $parent)
-		    if $onceflag;
-	    $onceflag = 1;
-
-	    # Strip backslashes
-	    $val =~ s/\\(\n|$)/ /g;
-
-	    foreach (split (' ', $val))
-	    {
-		# If a comment seen, just leave.
-		last if /^#/;
-
-		push (@result, $_);
-	    }
-	}
-    }
-
-    return @result;
-}
-
 
 # @VALUE
 # &variable_value_as_list_recursive_worker ($VAR, $COND, $LOC_WANTED)
@@ -6654,7 +5816,7 @@ sub variable_value_as_list_recursive_worker ($$$)
        # Construct [$location, $value] pairs if requested.
        sub {
 	 my ($var, $val, $cond, $full_cond) = @_;
-	 return [$var_location{$var}{$cond}, $val] if $loc_wanted;
+	 return [rvar ($var)->rdef ($cond)->location, $val] if $loc_wanted;
 	 return $val;
        },
        # Collect results.
@@ -6684,49 +5846,6 @@ sub variable_loc_and_value_as_list_recursive ($$)
 }
 
 
-# &variable_output ($VAR, [@CONDS])
-# ---------------------------------
-# Output all the values of $VAR if @COND is not specified, else only
-# that corresponding to @COND.
-sub variable_output ($@)
-{
-  my ($var, @conds) = @_;
-
-  @conds = variable_conditions ($var)->conds
-    unless @conds;
-
-  foreach my $cond (@conds)
-    {
-      prog_error ("unknown condition `$cond' for `$var'")
-	unless exists $var_value{$var}{$cond};
-
-      if (exists $var_comment{$var} && exists $var_comment{$var}{$cond})
-	{
-	  $output_vars .= $var_comment{$var}{$cond};
-	}
-
-      my $val = $var_value{$var}{$cond};
-      my $equals = $var_type{$var}{$cond} eq ':' ? ':=' : '=';
-      my $output_var = "$var $equals $val";
-      my $str = $cond->subst_string;
-
-      if ($var_pretty{$var}{$cond} == VAR_PRETTY)
-	{
-	  # Suppress escaped new lines.  &makefile_wrap will
-	  # add them back, maybe at other places.
-	  $val =~ s/\\$//mg;
-	  $output_vars .= makefile_wrap ("$str$var $equals",
-					 "$str\t", split (' ' , $val));
-	}
-      else			# VAR_ASIS
-	{
-	  $output_var =~ s/^/$str/meg;
-	  $output_vars .= $output_var . "\n";
-	}
-    }
-}
-
-
 # &define_pretty_variable ($VAR, $COND, $WHERE, @VALUE)
 # -----------------------------------------------------
 # Like define_variable, but the value is a list, and the variable may
@@ -6741,9 +5860,9 @@ sub define_pretty_variable ($$$@)
 
     if (! variable_defined ($var, $cond))
     {
-        macro_define ($var, VAR_AUTOMAKE, '', $cond, "@value", '', $where,
-		      VAR_PRETTY);
-	$content_seen{$var} = 1;
+        Automake::Variable::define ($var, VAR_AUTOMAKE, '', $cond, "@value",
+				    '', $where, VAR_PRETTY);
+	rvar ($var)->rdef ($cond)->set_seen;
     }
 }
 
@@ -6763,16 +5882,24 @@ sub define_variable ($$$)
 sub define_configure_variable ($)
 {
   my ($var) = @_;
-  if (! variable_defined ($var, TRUE)
-      # Explicitly avoid ANSI2KNR -- we AC_SUBST that in
-      # protos.m4, but later define it elsewhere.  This is
-      # pretty hacky.  We also explicitly avoid AMDEPBACKSLASH:
-      # it might be subst'd by `\', which certainly would not be
-      # appreciated by Make.
-      && ! grep { $_ eq $var } (qw(ANSI2KNR AMDEPBACKSLASH)))
+  if (! variable_defined ($var, TRUE))
     {
-      macro_define ($var, VAR_CONFIGURE, '', TRUE,
-		    subst $var, '', $configure_vars{$var}, VAR_ASIS);
+      my $pretty = VAR_ASIS;
+      my $owner = VAR_CONFIGURE;
+
+      # Do not output the ANSI2KNR configure variable -- we AC_SUBST
+      # it in protos.m4, but later redefine it elsewhere.  This is
+      # pretty hacky.  We also don't output AMDEPBACKSLASH: it might
+      # be subst'd by `\', which certainly would not be appreciated by
+      # Make.
+      if ($var eq 'ANSI2KNR' || $var eq 'AMDEPBACKSLASH')
+	{
+	  $pretty = VAR_SILENT;
+	  $owner = VAR_AUTOMAKE;
+	}
+
+      Automake::Variable::define ($var, $owner, '', TRUE, subst $var,
+				  '', $configure_vars{$var}, $pretty);
     }
 }
 
@@ -7178,7 +6305,7 @@ sub check_trailing_slash ($\$)
 # &read_am_file ($AMFILE, $WHERE)
 # -------------------------------
 # Read Makefile.am and set up %contents.  Simultaneously copy lines
-# from Makefile.am into $output_trailer or $output_vars as
+# from Makefile.am into $output_trailer, or define variables as
 # appropriate.  NOTE we put rules in the trailer section.  We want
 # user rules to come after our generated stuff.
 sub read_am_file ($$)
@@ -7310,10 +6437,10 @@ sub read_am_file ($$)
 
 	      if (!/\\$/)
 		{
-		  macro_define ($last_var_name, VAR_MAKEFILE,
-				$last_var_type, $cond,
-				$last_var_value, $comment,
-				$last_where, VAR_ASIS)
+		  Automake::Variable::define ($last_var_name, VAR_MAKEFILE,
+					      $last_var_type, $cond,
+					      $last_var_value, $comment,
+					      $last_where, VAR_ASIS)
 		    if $cond != FALSE;
 		  $comment = $spacing = '';
 		}
@@ -7369,9 +6496,10 @@ sub read_am_file ($$)
 
 	    if (!/\\$/)
 	      {
-		macro_define ($last_var_name, VAR_MAKEFILE,
-			      $last_var_type, $cond,
-			      $last_var_value, $comment, $last_where, VAR_ASIS)
+		Automake::Variable::define ($last_var_name, VAR_MAKEFILE,
+					    $last_var_type, $cond,
+					    $last_var_value, $comment,
+					    $last_where, VAR_ASIS)
 		  if $cond != FALSE;
 		$comment = $spacing = '';
 	      }
@@ -7444,20 +6572,17 @@ sub read_am_file ($$)
 # and variables from header-vars.am.
 sub define_standard_variables
 {
-    my $saved_output_vars = $output_vars;
-    my ($comments, undef, $rules) =
-      file_contents_internal (1, "$libdir/am/header-vars.am",
-			      new Automake::Location);
+  my $saved_output_vars = $output_vars;
+  my ($comments, undef, $rules) =
+    file_contents_internal (1, "$libdir/am/header-vars.am",
+			    new Automake::Location);
 
-    # This will output the definitions in $output_vars, which we don't
-    # want...
-    foreach my $var (sort keys %configure_vars)
+  foreach my $var (sort keys %configure_vars)
     {
-        &define_configure_variable ($var);
+      &define_configure_variable ($var);
     }
 
-    # ... hence, we restore $output_vars.
-    $output_vars = $saved_output_vars . $comments . $rules;
+  $output_vars .= $comments . $rules;
 }
 
 # Read main am file.
@@ -7467,7 +6592,7 @@ sub read_main_am_file
 
     # This supports the strange variable tricks we are about to play.
     prog_error (macros_dump () . "variable defined before read_main_am_file")
-      if (scalar keys %var_value > 0);
+      if (scalar (variables) > 0);
 
     # Generate copyright header for generated Makefile.in.
     # We do discard the output of predefined variables, handled below.
@@ -7477,9 +6602,7 @@ sub read_main_am_file
     $output_vars .= $gen_copyright;
 
     # We want to predefine as many variables as possible.  This lets
-    # the user set them with `+=' in Makefile.am.  However, we don't
-    # want these initial definitions to end up in the output quite
-    # yet.  So we just load them, but output them later.
+    # the user set them with `+=' in Makefile.am.
     &define_standard_variables;
 
     # Read user file, which might override some of our values.
@@ -7487,38 +6610,6 @@ sub read_main_am_file
 }
 
 
-# handle_variables ()
-# -------------------
-# Ouput definitions for all variables.
-sub handle_variables ()
-{
-  my @vars = uniq @var_order;
-
-  # Output all the Automake variables.  If the user changed one,
-  # then it is now marked as VAR_CONFIGURE or VAR_MAKEFILE.
-  foreach my $var (@vars)
-    {
-      # Some variables, like AMDEPBACKSLASH are in @var_order
-      # but don't have an owner.  This is good, because we don't want
-      # to output them.
-      foreach my $cond (keys %{$var_owner{$var}})
-	{
-	  variable_output ($var, $cond)
-	    if $var_owner{$var}{$cond} == VAR_AUTOMAKE;
-	}
-    }
-
-  # Now dump the user variables that were defined.  We do it in the same
-  # order in which they were defined (skipping duplicates).
-  foreach my $var (@vars)
-    {
-      foreach my $cond (keys %{$var_owner{$var}})
-	{
-	  variable_output ($var, $cond)
-	    if $var_owner{$var}{$cond} != VAR_AUTOMAKE;
-	}
-    }
-}
 
 ################################################################
 
@@ -7791,17 +6882,11 @@ sub file_contents_internal ($$$%)
 
 	    $is_rule = 0;
 
-	    macro_define ($var, $is_am ? VAR_AUTOMAKE : VAR_MAKEFILE,
-			  $type, $cond, $val, $comment, $where, VAR_ASIS)
+	    Automake::Variable::define ($var,
+					$is_am ? VAR_AUTOMAKE : VAR_MAKEFILE,
+					$type, $cond, $val, $comment, $where,
+					VAR_ASIS)
 	      if $cond != FALSE;
-
-	    # If the user has set some variables we were in charge
-	    # of (which is detected by the first reading of
-	    # `header-vars.am'), we must not output them.
-	    $result_vars .= "$spacing$comment$_\n"
-	      if ($cond != FALSE && $type ne '+'
-		  && exists $var_owner{$var}{$cond}
-		  && $var_owner{$var}{$cond} == VAR_AUTOMAKE);
 
  	    $comment = $spacing = '';
  	}
@@ -7920,8 +7005,9 @@ sub am_primary_prefixes ($$@)
   local $_;
   my %valid = map { $_ => 0 } @prefixes;
   $valid{'EXTRA'} = 0;
-  foreach my $varname (keys %var_value)
+  foreach my $varname (variables)
     {
+      my $var = var $varname;
       # Automake is allowed to define variables that look like primaries
       # but which aren't.  E.g. INSTALL_sh_DATA.
       # Autoconf can also define variables like INSTALL_DATA, so
@@ -7929,33 +7015,35 @@ sub am_primary_prefixes ($$@)
       # redefined in Makefile.am).
       # FIXME: We should make sure that these variables are not
       # conditionally defined (or else adjust the condition below).
-      next
-	if (exists $var_owner{$varname}
-	    && exists $var_owner{$varname}{&TRUE}
-	    && $var_owner{$varname}{&TRUE} != VAR_MAKEFILE);
+      if ($var)
+	{
+	  my $def = $var->def (TRUE);
+	  next if $def && $def->owner != VAR_MAKEFILE;
+	}
 
       if ($varname =~ /^(nobase_)?(dist_|nodist_)?(.*)_$primary$/)
 	{
 	  my ($base, $dist, $X) = ($1 || '', $2 || '', $3 || '');
 	  if ($dist ne '' && ! $can_dist)
             {
-	      err_var ($varname,
+	      err_var ($var,
 		       "invalid variable `$varname': `dist' is forbidden");
 	    }
 	  # Standard directories must be explicitely allowed.
 	  elsif (! defined $valid{$X} && exists $standard_prefix{$X})
 	    {
-	      err_var ($varname,
+	      err_var ($var,
 		       "`${X}dir' is not a legitimate directory " .
 		       "for `$primary'");
 	    }
 	  # A not explicitely valid directory is allowed if Xdir is defined.
 	  elsif (! defined $valid{$X} &&
-		 require_variables_for_macro ($varname, "`$varname' is used",
-					      "${X}dir"))
+		 require_variables_for_variable ($varname,
+						 "`$varname' is used",
+						 "${X}dir"))
 	    {
 	      # Nothing to do.  Any error message has been output
-	      # by require_variables_for_macro.
+	      # by require_variables_for_variable.
 	    }
 	  else
 	    {
@@ -8041,6 +7129,7 @@ sub am_install_var
     {
       my $nodir_name = $X;
       my $one_name = $X . '_' . $primary;
+      my $one_var = var $one_name;
 
       my $strip_subdir = 1;
       # If subdir prefix should be preserved, do so.
@@ -8063,8 +7152,8 @@ sub am_install_var
       # Use the location of the currently processed variable.
       # We are not processing a particular condition, so pick the first
       # available.
-      my $tmpcond = variable_conditions ($one_name)->one_cond;
-      my $where = $var_location{$one_name}{$tmpcond}->clone;
+      my $tmpcond = $one_var->conditions->one_cond;
+      my $where = $one_var->rdef ($tmpcond)->location->clone;
 
       # Append actual contents of where_PRIMARY variable to
       # @result, skipping @substitutions@.
@@ -8399,7 +7488,7 @@ sub require_file ($$@)
 sub require_file_with_macro ($$$@)
 {
     my ($cond, $macro, $mystrict, @files) = @_;
-    require_file ($var_location{$macro}{$cond}, $mystrict, @files);
+    require_file (rvar ($macro)->rdef ($cond)->location, $mystrict, @files);
 }
 
 
@@ -8423,7 +7512,8 @@ sub require_conf_file ($$@)
 sub require_conf_file_with_macro ($$$@)
 {
     my ($cond, $macro, $mystrict, @files) = @_;
-    require_conf_file ($var_location{$macro}{$cond}, $mystrict, @files);
+    require_conf_file (rvar ($macro)->rdef ($cond)->location,
+		       $mystrict, @files);
 }
 
 ################################################################
@@ -8486,8 +7576,8 @@ sub push_dist_common
 {
   prog_error "push_dist_common run after handle_dist"
     if $handle_dist_run;
-  macro_define ('DIST_COMMON', VAR_AUTOMAKE, '+', TRUE, "@_", '',
-		INTERNAL, VAR_PRETTY);
+  Automake::Variable::define ('DIST_COMMON', VAR_AUTOMAKE, '+', TRUE, "@_",
+			      '', INTERNAL, VAR_PRETTY);
 }
 
 
@@ -8518,74 +7608,6 @@ sub set_strictness
 
 
 ################################################################
-
-# INTEGER
-# require_variables ($WHERE, $REASON, $COND, @VARIABLES)
-# ------------------------------------------------------
-# Make sure that each supplied variable is defined in $COND.
-# Otherwise, issue a warning.  If we know which macro can
-# define this variable, hint the user.
-# Return the number of undefined variables.
-sub require_variables ($$$@)
-{
-  my ($where, $reason, $cond, @vars) = @_;
-  my $res = 0;
-  $reason .= ' but ' unless $reason eq '';
-
- VARIABLE:
-  foreach my $var (@vars)
-    {
-      # Nothing to do if the variable exists.  The $configure_vars test
-      # needed for strange variables like AMDEPBACKSLASH or ANSI2KNR
-      # that are AC_SUBST'ed but never macro_define'd.
-      next VARIABLE
-	if ((exists $var_value{$var} && exists $var_value{$var}{$cond})
-	    || exists $configure_vars{$var});
-
-      my $undef_cond = variable_not_always_defined_in_cond $var, $cond;
-      next VARIABLE
-	if $undef_cond->false;
-
-      my $text = "$reason`$var' is undefined\n";
-      if (! $undef_cond->true)
-	{
-	  $text .= ("in the following conditions:\n  "
-		    . join ("\n  ", map { $_->human } $undef_cond->conds));
-	}
-
-      ++$res;
-
-      if (exists $am_macro_for_var{$var})
-	{
-	  $text .= "\nThe usual way to define `$var' is to add "
-	    . "`$am_macro_for_var{$var}'\nto `$configure_ac' and run "
-	    . "`aclocal' and `autoconf' again.";
-	}
-      elsif (exists $ac_macro_for_var{$var})
-	{
-	  $text .= "\nThe usual way to define `$var' is to add "
-	    . "`$ac_macro_for_var{$var}'\nto `$configure_ac' and run "
-	    . "`autoconf' again.";
-	}
-
-      error $where, $text, uniq_scope => US_GLOBAL;
-    }
-  return $res;
-}
-
-# INTEGER
-# require_variables_for_macro ($MACRO, $REASON, @VARIABLES)
-# ---------------------------------------------------------
-# Same as require_variables, but take a macro name as first argument.
-sub require_variables_for_macro ($$@)
-{
-  my ($macro, $reason, @args) = @_;
-  for my $cond (variable_conditions ($macro)->conds)
-    {
-      return require_variables ($var_location{$macro}{$cond}, $reason,
-				$cond, @args);
-    }
-}
 
 # Print usage information.
 sub usage ()
