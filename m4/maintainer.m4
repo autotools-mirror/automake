@@ -14,12 +14,9 @@ AC_DEFUN(AM_MAINTAINER_MODE,
   AC_MSG_RESULT($USE_MAINTAINER_MODE)
   if test $USE_MAINTAINER_MODE = yes; then
     MAINT=
-    UNMAINT='#M#'
   else
     MAINT='#M#'
-    UNMAINT=
   fi
   AC_SUBST(MAINT)dnl
-  AC_SUBST(UNMAINT)dnl
 ]
 )

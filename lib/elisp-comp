@@ -26,17 +26,24 @@
 # they require or load-library one another.
 
 if test $# = 0; then
-  echo 1>&2 "No files given to $0"
+   echo 1>&2 "No files given to $0"
+   exit 1
 else
-  tempdir=elc.$$
-  mkdir $tempdir
-  cp $* $tempdir
-  cd $tempdir
+   if test -z "$EMACS" || test "$EMACS" = "t"; then
+      # Value of "t" means we are running in a shell under Emacs.
+      # Just assume Emacs is called "emacs".
+      EMACS=emacs
+   fi
 
-  echo "(setq load-path (cons nil load-path))" > script
-  emacs -batch -l script -f batch-byte-compile *.el
-  mv *.elc ..
+   tempdir=elc.$$
+   mkdir $tempdir
+   cp $* $tempdir
+   cd $tempdir
 
-  cd ..
-  rm -fr $tempdir
+   echo "(setq load-path (cons nil load-path))" > script
+   $EMACS -q -batch -l script -f batch-byte-compile *.el
+   mv *.elc ..
+
+   cd ..
+   rm -fr $tempdir
 fi
