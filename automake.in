@@ -4015,7 +4015,12 @@ sub am_primary_prefixes
     {
 	if ($varname =~ /^(.*)_$primary$/)
 	{
-	    if (! defined $valid{$1} && ! &variable_defined ($1 . 'dir'))
+	    if (! defined $valid{$1}
+		&& ! &variable_defined ($1 . 'dir')
+		# Note that a configure variable is always legitimate.
+		# It is natural to name such variables after the
+		# primary, so we explicitly allow it.
+		&& ! defined $configure_vars{$varname})
 	    {
 		&am_line_error ($varname, "invalid variable \"$varname\"");
 	    }
@@ -4111,7 +4116,10 @@ sub am_install_var
 					    "\`$one_name' contains configure substitution, but shouldn't");
 			}
 		    }
-		    else
+		    # Check here to make sure variables defined in
+		    # configure.in do not imply that EXTRA_PRIMARY
+		    # must be defined.
+		    elsif (! defined $configure_vars{$one_name})
 		    {
 			$require_extra = $one_name;
 		    }

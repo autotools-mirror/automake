@@ -18,6 +18,6 @@ gnits.test interp2.test colneq.test implicit.test spell.test spell2.test \
 confsub.test primary.test primary2.test depend2.test spell3.test \
 comment2.test vpath.test symlink.test discover.test acinclude.test req.test \
 acsilent.test distdir.test lex2.test libobj4.test libobj5.test version.test \
-ranlib.test confvar.test
+ranlib.test confvar.test confvar2.test
 
 EXTRA_DIST = defs $(TESTS)
