@@ -1941,14 +1941,19 @@ sub handle_texinfo
     push (@phony, 'install-info-am', 'uninstall-info');
     push (@dist_targets, 'dist-info');
 
-    # How to clean.
-    $output_rules .= "\nmostlyclean-info:\n";
+    # How to clean.  The funny name is due to --cygnus influence; in
+    # Cygnus mode, `clean-info' is a target that users can use.
+    $output_rules .= "\nmostlyclean-aminfo:\n";
     &pretty_print_rule ("\trm -f", "\t  ", @texi_cleans);
-    $output_rules .= ("\nclean-info:\n\ndistclean-info:\n\n"
-		      . "maintainer-clean-info:\n\t"
+    $output_rules .= ("\nclean-aminfo:\n\ndistclean-aminfo:\n\n"
+		      . "maintainer-clean-aminfo:\n\t"
 		      . 'for i in $(INFO_DEPS); do rm -f `eval echo $$i*`; done'
 		      . "\n");
-    &push_phony_cleaners ('info');
+    &push_phony_cleaners ('aminfo');
+    if ($cygnus_mode)
+    {
+	$output_rules .= "clean-info: mostlyclean-info\n";
+    }
 
     push (@suffixes, '.texi', '.texinfo', '.info', '.dvi', '.ps');
 
