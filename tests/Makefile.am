@@ -123,6 +123,7 @@ fpinst2.test \
 fpinstall.test \
 gcj.test \
 gcj2.test \
+gcj3.test \
 gnits.test \
 header.test \
 implicit.test \

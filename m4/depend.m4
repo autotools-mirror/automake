@@ -14,6 +14,7 @@
 AC_DEFUN([AM_DEPENDENCIES],
 [AC_REQUIRE([AM_SET_DEPDIR])dnl
 AC_REQUIRE([AM_OUTPUT_DEPENDENCY_COMMANDS])dnl
+am_compiler_list=
 ifelse([$1], CC,
        [AC_REQUIRE([AC_PROG_][CC])dnl
 AC_REQUIRE([AC_PROG_][CPP])
@@ -23,7 +24,12 @@ depcpp="$CPP"],
 AC_REQUIRE([AC_PROG_][CXXCPP])
 depcc="$CXX"
 depcpp="$CXXCPP"],
-       [$1], OBJC, [am_cv_OBJC_dependencies_compiler_type=gcc],
+       [$1], OBJC, [am_compiler_list='gcc gcc3'
+depcc="$OBJC"
+depcpp=""],
+       [$1], GCJ,  [am_compiler_list='gcc gcc3'
+depcc="$GCJ"
+depcpp=""],
        [AC_REQUIRE([AC_PROG_][$1])dnl
 depcc="$$1"
 depcpp=""])
@@ -45,7 +51,10 @@ AC_CACHE_CHECK([dependency style of $depcc],
   cd confdir
 
   am_cv_$1_dependencies_compiler_type=none
-  for depmode in `sed -n ['s/^#*\([a-zA-Z0-9]*\))$/\1/p'] < "./depcomp"`; do
+  if test "$am_compiler_list" = ""; then
+     am_compiler_list="`sed -n ['s/^#*\([a-zA-Z0-9]*\))$/\1/p'] < ./depcomp`"
+  fi
+  for depmode in $am_compiler_list; do
     # We need to recreate these files for each test, as the compiler may
     # overwrite some of them when testing with obscure command lines.
     # This happens at least with the AIX C compiler.
