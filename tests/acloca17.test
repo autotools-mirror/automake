@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1996, 2002  Free Software Foundation, Inc.
+# Copyright (C) 2004  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -18,20 +18,26 @@
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-# Test to make sure error handling in add_file works.
+# Make sure aclocal report unused required macros.
 
 . ./defs || exit 1
 
-cat > configure.in << 'END'
-AM_ONE_MACRO
+set -e
+
+cat >> configure.in << 'END'
+SOME_DEFS
 END
 
-# Set up a strange environment, where AM_ONE_MACRO exists but its
-# dependency does not.
-cat > AM_ONE_MACRO.m4 << 'END'
-AC_DEFUN([AM_ONE_MACRO],
-[AC_REQUIRE([AM_NONEXISTENT_MACRO])])
-END
+mkdir m4
+cat >m4/somedefs.m4 <<EOF
+AC_DEFUN([SOME_DEFS], [
+  AC_REQUIRE([UNDEFINED_MACRO])
+])
+EOF
 
-$ACLOCAL && exit 1
-exit 0
+# FIXME: We want autom4te's 'undefined required macro' warning to be fatal,
+# but have no means to say so to aclocal.  We use WARNINGS=error instead.
+
+WARNINGS=error $ACLOCAL -I m4 2>stderr && exit 1
+cat stderr
+grep 'configure.in:4:.*UNDEFINED_MACRO' stderr

@@ -189,17 +189,11 @@ sub add_macro ($)
 {
     local ($macro) = @_;
 
-    # We want to ignore AC_ macros.  However, if an AC_ macro is
-    # defined in (eg) acinclude.m4, then we want to make sure we mark
-    # it as seen.
-    return if $macro =~ /^AC_/ && ! defined $map{$macro};
-
-    if (! defined $map{$macro})
-    {
-	warn "aclocal: macro `$macro' required but not defined\n";
-	$exit_code = 1;
-	return;
-    }
+    # Ignore unknown required macros.  Either they are not really
+    # needed (e.g., a conditional AC_REQUIRE), in which case aclocal
+    # should be quiet, or they are needed and Autoconf itself will
+    # complain when we trace for macro usage later.
+    return unless defined $map{$macro};
 
     print STDERR "aclocal: saw macro $macro\n" if $verbose;
     $macro_seen{$macro} = 1;
@@ -272,8 +266,10 @@ sub scan_configure_dep ($)
       if (! &search && /(^|\s+)(AM_[A-Z0-9_]+)($|[^\]\)=A-Z0-9_])/)
 	{
 	  # Macro not found, but AM_ prefix found.
-	  warn "aclocal: $file: $line: macro `$2' not found in library\n";
-	  $exit_code = 1;
+	  # Make this just a warning, because we do not know whether
+	  # the macro is actually used (it could be called conditionally).
+	  warn ("aclocal:$file:$line: warning: "
+		. "macro `$2' not found in library\n");
 	}
     }
 

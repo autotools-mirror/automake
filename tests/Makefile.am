@@ -19,6 +19,7 @@ acloca13.test \
 acloca14.test \
 acloca15.test \
 acloca16.test \
+acloca17.test \
 acoutnoq.test \
 acoutpt.test \
 acoutpt2.test \
@@ -200,7 +201,6 @@ empty.test \
 empty2.test \
 empty3.test \
 empty4.test \
-error.test \
 exdir.test \
 exdir2.test \
 exeext.test \
