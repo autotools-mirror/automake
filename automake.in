@@ -361,8 +361,8 @@ my $am_c_prototypes = 0;
 my @config_fullnames = ();
 my @config_names = ();
 my @config_headers = ();
-# Line number at which AC_CONFIG_HEADER appears in configure.ac.
-my $config_header_line = 0;
+# Where AC_CONFIG_HEADER appears.
+my $config_header_location;
 
 # Directory where output files go.  Actually, output files are
 # relative to this directory.
@@ -377,8 +377,8 @@ my @configure_input_files = ();
 
 # List of files in AC_OUTPUT without Makefile.am, and their outputs.
 my @other_input_files = ();
-# Line number at which AC_OUTPUT seen.
-my $ac_output_line = 0;
+# Where AC_OUTPUT appears.
+my $ac_output_location;
 
 # List of directories to search for configure-required files.  This
 # can be set by AC_CONFIG_AUX_DIR.
@@ -388,8 +388,8 @@ my $config_aux_dir_set_in_configure_in = 0;
 
 # Whether AM_GNU_GETTEXT has been seen in configure.ac.
 my $seen_gettext = 0;
-# Line number at which AM_GNU_GETTEXT seen.
-my $ac_gettext_line = 0;
+# Where AM_GNU_GETTEXT appears.
+my $ac_gettext_location;
 
 # TRUE if AC_PROG_LEX or AM_PROG_LEX were seen.
 my $seen_prog_lex = 0;
@@ -408,8 +408,8 @@ my $seen_maint_mode = 0;
 # Actual version we've seen.
 my $package_version = '';
 
-# Line number where we saw version definition.
-my $package_version_line = 0;
+# Where version is defined.
+my $package_version_location;
 
 # TRUE if we've seen AM_PATH_LISPDIR.
 my $seen_lispdir = 0;
@@ -3773,7 +3773,7 @@ sub handle_configure
 	        $ch_sans_dir = backname ($relative_dir) . '/' . $one_hdr;
 	    }
 
-	    require_file ($config_header_line, $FOREIGN, $ch_sans_dir);
+	    require_file ($config_header_location, $FOREIGN, $ch_sans_dir);
 
 	    # Header defined and in this directory.
 	    my @files;
@@ -3809,7 +3809,7 @@ sub handle_configure
 			       'SRC_STAMP'        => "$out_dir/$stamp_name"));
 
 	    &create ("${relative_dir}/${out_dir}/${stamp_name}.in");
-	    require_file ($config_header_line, $FOREIGN,
+	    require_file ($config_header_location, $FOREIGN,
 			  "${out_dir}/${stamp_name}.in");
 
 	    $distclean_config .= ' ' if $distclean_config;
@@ -3919,8 +3919,8 @@ sub handle_configure
 	if ($local eq 'stamp-h')
 	{
 	    # FIXME: allow real filename.
-	    &am_file_error ("$configure_ac:$ac_output_line",
-			    'stamp-h should not appear in AC_OUTPUT');
+	    am_file_error ($ac_output_location,
+			   'stamp-h should not appear in AC_OUTPUT');
 	    next;
 	}
 
@@ -3938,7 +3938,7 @@ sub handle_configure
 	push (@actual_other_files, $local);
 
 	# Require all input files.
-	require_file ($ac_output_line, $FOREIGN,
+	require_file ($ac_output_location, $FOREIGN,
 		      &rewrite_inputs_into_dependencies (0, @inputs));
     }
 
@@ -3978,7 +3978,7 @@ sub handle_gettext
 		    "AM_GNU_GETTEXT used but `intl' not in SUBDIRS")
 	if ! grep ('intl', @subdirs);
 
-    require_file ($ac_gettext_line, $GNU, 'ABOUT-NLS');
+    require_file ($ac_gettext_location, $GNU, 'ABOUT-NLS');
 }
 
 # Handle footer elements.
@@ -4377,14 +4377,15 @@ sub handle_minor_options
 	    if ($package_version !~ /^$GNITS_VERSION_PATTERN$/)
 	    {
 		# FIXME: allow real filename.
-		&am_file_error ("$configure_ac:$package_version_line",
+		&am_file_error ($package_version_location,
 				"version `$package_version' doesn't follow Gnits standards");
 	    }
 	    elsif (defined $1 && -f 'README-alpha')
 	    {
 		# This means we have an alpha release.  See
 		# GNITS_VERSION_PATTERN for details.
-		&require_file ($FOREIGN, 'README-alpha');
+		require_file_with_macro ('AUTOMAKE_OPTIONS',
+					 $FOREIGN, 'README-alpha');
 	    }
 	}
     }
@@ -4530,7 +4531,7 @@ sub scan_autoconf_traces ($)
 	}
       elsif ($macro eq 'AM_CONFIG_HEADER')
 	{
-	  $config_header_line = $.;
+	  $config_header_location = $here;
 	  foreach my $one_hdr (split (' ', $args[1]))
 	    {
 	      push (@config_fullnames, $one_hdr);
@@ -4553,12 +4554,12 @@ sub scan_autoconf_traces ($)
       elsif ($macro eq 'AM_GNU_GETTEXT')
 	{
 	  $seen_gettext = $here;
-	  $ac_gettext_line = $line;
+	  $ac_gettext_location = $here;
 	}
       elsif ($macro eq 'AM_INIT_AUTOMAKE')
 	{
 	  $package_version = $args[2];
-	  $package_version_line = $line;
+	  $package_version_location = $here;
 	  $seen_init_automake = 1;
 	}
       elsif ($macro eq 'AM_MAINTAINER_MODE')
@@ -4705,7 +4706,7 @@ sub scan_one_autoconf_file
 	if (! $in_ac_output && s/AC_(OUTPUT|CONFIG_FILES)\s*\(\[?//)
 	{
 	    $in_ac_output = 1;
-	    $ac_output_line = $.;
+	    $ac_output_location = $here;
 	}
 	if ($in_ac_output)
 	{
@@ -4723,8 +4724,8 @@ sub scan_one_autoconf_file
 		&& scalar keys %make_list == 0
 		&& @other_input_files == 0)
 	    {
-		&am_file_error ("$filename:$ac_output_line",
-				"No files mentioned in `AC_OUTPUT'");
+		am_file_error ($ac_output_location,
+			       "No files mentioned in `AC_OUTPUT'");
 		exit 1;
 	    }
 	}
@@ -4745,7 +4746,7 @@ sub scan_one_autoconf_file
 	if (/AM_GNU_GETTEXT/)
 	{
 	    $seen_gettext = $here;
-	    $ac_gettext_line = $.;
+	    $ac_gettext_location = $here;
 	}
 
 	# Handle configuration headers.  A config header of `[$1]'
@@ -4758,7 +4759,7 @@ sub scan_one_autoconf_file
 	       "`automake requires `AM_CONFIG_HEADER', not `AC_CONFIG_HEADER'")
 	      if $1 eq 'C';
 
-	    $config_header_line = $.;
+	    $config_header_location = $here;
 	    foreach my $one_hdr (split (' ', &unquote_m4_arg ($2)))
 	    {
 		push (@config_fullnames, $one_hdr);
@@ -4798,7 +4799,7 @@ sub scan_one_autoconf_file
         if (/$AM_INIT_AUTOMAKE_PATTERN/o)
 	{
 	    ($package_version = $1) =~ s/$AM_PACKAGE_VERSION_PATTERN/$1/o;
-	    $package_version_line = $.;
+	    $package_version_location = $here;
 	    $seen_init_automake = $here;
 	}
 
@@ -4987,8 +4988,9 @@ sub check_gnu_standards
     if ($relative_dir eq '.')
     {
 	# In top level (or only) directory.
-	&require_file ($GNU, 'INSTALL', 'NEWS', 'README', 'COPYING',
-		       'AUTHORS', 'ChangeLog');
+	require_file ('',
+		      $GNU, 'INSTALL', 'NEWS', 'README', 'COPYING',
+		      'AUTHORS', 'ChangeLog');
     }
 
     if ($strictness >= $GNU
@@ -5012,7 +5014,7 @@ sub check_gnits_standards
     if ($relative_dir eq '.')
     {
 	# In top level (or only) directory.
-	&require_file ($GNITS, 'THANKS');
+	require_file ('', $GNITS, 'THANKS');
     }
 }
 
