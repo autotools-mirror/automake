@@ -1,7 +1,5 @@
 ## Process this file with automake to create Makefile.in
 
-XFAIL_TESTS = subdir5.test auxdir2.test cond17.test
-
 TESTS =	\
 acinclude.test \
 aclibobj.test \
@@ -26,7 +24,6 @@ ansi4.test \
 ansi5.test \
 asm.test \
 auxdir.test \
-auxdir2.test \
 backsl.test \
 backsl2.test \
 badline.test \
@@ -70,7 +67,6 @@ cond13.test \
 cond14.test \
 cond15.test \
 cond16.test \
-cond17.test \
 cond18.test \
 cond19.test \
 cond20.test \
@@ -272,7 +268,6 @@ subdir.test \
 subdir2.test \
 subdir3.test \
 subdir4.test \
-subdir5.test \
 subdirbuiltsources.test \
 subdircond.test \
 subobj.test \
