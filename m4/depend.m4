@@ -35,10 +35,11 @@ depcc="$$1"
 depcpp=""])
 
 AC_REQUIRE([AM_MAKE_INCLUDE])
+AC_REQUIRE([AM_DEP_TRACK])
 
 AC_CACHE_CHECK([dependency style of $depcc],
                [am_cv_$1_dependencies_compiler_type],
-[if test -z "$AMDEP"; then
+[if test -z "$AMDEP_TRUE"; then
   # We make a subdir and do the tests there.  Otherwise we can end up
   # making bogus files that we don't know about and never remove.  For
   # instance it was reported that on HP-UX the gcc test will end up
