@@ -88,6 +88,7 @@ else.test \
 empty.test \
 empty2.test \
 empty3.test \
+empty4.test \
 error.test \
 exdir.test \
 exdir2.test \
