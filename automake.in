@@ -564,6 +564,12 @@ my $get_object_extension_was_run;
 # Record each file processed by make_paragraphs.
 my %transformed_files;
 
+# Cache each file processed by make_paragraphs.
+# (This is different from %transformed_files because
+# %transformed_files is reset for each file while %am_file_cache
+# it global to the run.)
+my %am_file_cache;
+
 ################################################################
 
 # var_SUFFIXES_trigger ($TYPE, $VALUE)
@@ -6171,20 +6177,26 @@ sub make_paragraphs ($%)
 		%transform);
 
   $transformed_files{$file} = 1;
+  $_ = $am_file_cache{$file};
 
-  # Swallow the file and apply the COMMAND.
-  my $fc_file = new Automake::XFile "< $file";
-  # Looks stupid?
-  verb "reading $file";
-  my $saved_dollar_slash = $/;
-  undef $/;
-  $_ = $fc_file->getline;
-  $/ = $saved_dollar_slash;
-  $fc_file->close;
+  if (! defined $_)
+    {
+      verb "reading $file";
+      # Swallow the whole file.
+      my $fc_file = new Automake::XFile "< $file";
+      my $saved_dollar_slash = $/;
+      undef $/;
+      $_ = $fc_file->getline;
+      $/ = $saved_dollar_slash;
+      $fc_file->close;
 
-  # Remove ##-comments.
-  # Besides we don't need more than two consecutive new-lines.
-  s/(?:$IGNORE_PATTERN|(?<=\n\n)\n+)//gom;
+      # Remove ##-comments.
+      # Besides we don't need more than two consecutive new-lines.
+      s/(?:$IGNORE_PATTERN|(?<=\n\n)\n+)//gom;
+
+      $am_file_cache{$file} = $_;
+    }
+
   # Substitute Automake template tokens.
   s/(?:%\??[\w\-]+%|\?!?[\w\-]+\?)/transform($&, \%transform)/ge;
   # transform() may have added some ##%-comments to strip.
