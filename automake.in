@@ -94,6 +94,9 @@ $top_builddir = '';
 # Whether AC_PROG_MAKE_SET has been seen in configure.in.
 $seen_make_set = 0;
 
+# Whether ud_GNU_GETTEXT has been seen in configure.in.
+$seen_gettext = 0;
+
 
 
 &initialize_global_constants;
@@ -728,7 +731,7 @@ sub handle_man_pages
     $output_vars .= "MANS = " . $contents{'man_MANS'} . "\n";
 
     # Generate list of install dirs.
-    $output_rules .= "install-man: $(MANS)\n";
+    $output_rules .= "install-man: \$(MANS)\n";
     foreach (keys %sections)
     {
 	push (@installdirs, '$(mandir)/man' . $_);
@@ -1005,6 +1008,23 @@ sub handle_dependencies
 # Handle subdirectories.
 sub handle_subdirs
 {
+    if (! defined $contents{'SUBDIRS'})
+    {
+	&am_conf_error
+	    ("ud_GNU_GETTEXT in configure.in but SUBDIRS not defined")
+		if $seen_gettext && $relative_dir eq '.';
+	return;
+    }
+
+    &am_conf_error
+	("ud_GNU_GETTEXT in configure.in but \`po' not in SUBDIRS")
+	    if $contents{'SUBDIRS'} !~ /\bpo\b/;
+    &am_conf_error
+	("ud_GNU_GETTEXT in configure.in but \`intl' not in SUBDIRS")
+	    if $contents{'SUBDIRS'} !~ /\bintl\b/;
+
+    &require_file ($NORMAL, 'ABOUT-NLS');
+
     return if ! defined $contents{'SUBDIRS'};
 
     $output_rules .= &file_contents ('subdirs');
@@ -1103,7 +1123,8 @@ sub handle_configure
     # Generate CONFIG_HEADER define, and define interally.
     $output_vars .= "CONFIG_HEADER = ${top_builddir}/${config_name}\n"
 	if $config_name;
-    $contents{'CONFIG_HEADER'} = "${top_builddir}/${config_name}";
+    $contents{'CONFIG_HEADER'} = "${top_builddir}/${config_name}"
+	if $config_name;
 }
 
 # Handle C headers.
@@ -1452,22 +1473,7 @@ sub scan_configure
 	# Check for NLS support.
 	if (/ud_GNU_GETTEXT/)
 	{
-	    if (! defined $contents{'SUBDIRS'})
-	    {
-		&am_conf_error
-		    ("ud_GNU_GETTEXT in configure.in but SUBDIRS not defined");
-	    }
-	    else
-	    {
-		&am_conf_error
-		    ("ud_GNU_GETTEXT in configure.in but \`po' not in SUBDIRS")
-			if $contents{'SUBDIRS'} !~ /\bpo\b/;
-		&am_conf_error
-		    ("ud_GNU_GETTEXT in configure.in but \`intl' not in SUBDIRS")
-			if $contents{'SUBDIRS'} !~ /\bintl\b/;
-	    }
-
-	    &require_file ($NORMAL, 'ABOUT-NLS');
+	    $seen_gettext = 1;
 	}
 
 	# Handle configuration headers.

@@ -32,7 +32,7 @@ ETAGS_ARGS = automake.in --lang=none \
 # Some simple checks:
 # * syntax check with perl4 and perl5.
 # * make sure the scripts don't use 'true'
-# * expect exactly two instance of '${...}'
+# * expect no instances of '${...}'
 # These are only really guaranteed to work on my machine.
 maintainer-check: automake
 	@PERL@ -c -w automake
@@ -40,7 +40,7 @@ maintainer-check: automake
 	  echo "can't use 'true' in GNU Makefile" 1>&2; \
 	  exit 1;				\
 	else :; fi
-	@if test `fgrep '$${' $(srcdir)/[a-z]*.am | wc -l` -ne 2; then \
+	@if test `fgrep '$${' $(srcdir)/[a-z]*.am | wc -l` -ne 0; then \
 	  echo "found too many uses of '\$${'" 1>&2; \
 	  exit 1;				\
 	fi
