@@ -73,6 +73,7 @@ cxxlink.test \
 cxxnoc.test \
 cxxo.test \
 cygwin32.test \
+dash.test \
 defun.test \
 defun2.test \
 dejagnu.test \
