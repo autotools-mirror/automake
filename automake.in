@@ -1375,65 +1375,90 @@ sub generate_makefile
 
 ################################################################
 
-# A helper which handles the logic of requiring a version number in
-# AUTOMAKE_OPTIONS.  Return 1 on error, 0 on success.
-sub version_check ($$$$)
+# A version is a string that looks like
+#   MAJOR.MINOR[.MICRO][ALPHA][-FORK]
+# where
+#   MAJOR, MINOR, and MICRO are digits, ALPHA is a character, and
+# FORK any alphanumeric word.
+# Usually, ALPHA is used to label alpha releases or intermediate snapshots,
+# FORK is used for CVS branches or patched releases, and MICRO is used
+# for bug fixes releases on the MAJOR.MINOR branch.
+#
+# For the purpose of ordering, 1.4 is the same as 1.4.0, but 1.4g is
+# the same as 1.4.99g.  The FORK identifier is ignored in the
+# ordering, except when it looks like -pMINOR[ALPHA]: some versions
+# were labelled like 1.4-p3a, this is the same as an alpha release
+# labelled 1.4.3a.  Yes it's horrible, but Automake did not support
+# two-dot versions in the past.
+
+# version_split (VERSION)
+# -----------------------
+# Split a version string into the corresponding (MAJOR, MINOR, MICRO,
+# ALPHA, FORK) tuple.  For instance "1.4g" would be split into
+# (1, 4, 99, 'g', '').
+# Return () on error.
+sub version_split ($)
 {
-    my ($rmajor, $rminor, $ralpha, $rfork) = ($1, $2, $3, $4);
+    my ($ver) = @_;
+
+    # Special case for versions like 1.4-p2a.
+    if ($ver =~ /^(\d+)\.(\d+)(?:-p(\d+)([a-z]+)?)$/)
+    {
+	return ($1, $2, $3, $4 || '', '');
+    }
+    # Common case.
+    elsif ($ver =~ /^(\d+)\.(\d+)(?:\.(\d+))?([a-z])?(?:-([A-Za-z0-9]+))?$/)
+    {
+	return ($1, $2, $3 || (defined $4 ? 99 : 0), $4 || '', $5 || '');
+    }
+    return ();
+}
+
+# version_compare (\@LVERSION, \@RVERSION)
+# ----------------------------------------
+# Return 1 if LVERSION > RVERSION,
+#       -1 if LVERSION < RVERSION,
+#        0 if LVERSION = RVERSION.
+sub version_compare (\@\@)
+{
+    my @l = @{$_[0]};
+    my @r = @{$_[1]};
+
+    for my $i (0, 1, 2)
+    {
+	return 1  if ($l[$i] > $r[$i]);
+	return -1 if ($l[$i] < $r[$i]);
+    }
+    for my $i (3, 4)
+    {
+	return 1  if ($l[$i] gt $r[$i]);
+	return -1 if ($l[$i] lt $r[$i]);
+    }
+    return 0;
+}
+
+# Handles the logic of requiring a version number in AUTOMAKE_OPTIONS.
+# Return 0 if the required version is satisfied, 1 otherwise.
+sub version_check ($)
+{
+    my ($required) = @_;
+    my @version = version_split $VERSION;
+    my @required = version_split $required;
 
     prog_error ("version is incorrect: $VERSION")
-	if $VERSION !~ /(\d+)\.(\d+)([a-z]?)-?([A-Za-z0-9]+)?/;
+	if $#version == -1;
 
-    my ($tmajor, $tminor, $talpha, $tfork) = ($1, $2, $3, $4);
+    # This should not happen, because process_option_list and split_version
+    # use similar regexes.
+    prog_error ("required version is incorrect: $required")
+	if $#required == -1;
 
-    $rfork ||= '';
-    $tfork ||= '';
-
-    my $rminorminor = 0;
-    my $tminorminor = 0;
-
-    # Some versions were labelled like `1.4-p3a'.  This is the same as
-    # an alpha release labelled `1.4.3a'.  However, a version like
-    # `1.4g' is the same as `1.4.99g'.  Yes, this sucks.  Moral:
-    # always listen to the users.
-    if ($rfork =~ /p([0-9]+)([a-z]?)/)
-    {
-	$rminorminor = $1;
-	# `1.4a-p3b' never existed.  But we'll accept it anyway.
-	$ralpha = $ralpha || $2 || '';
-	$rfork = '';
-    }
-    if ($tfork =~ /p([0-9]+)([a-z]?)/)
-    {
-	$tminorminor = $1;
-	# `1.4a-p3b' never existed.  But we'll accept it anyway.
-	$talpha = $talpha || $2 || '';
-	$tfork = '';
-    }
-
-    $rminorminor = 99 if $ralpha ne '' && $rminorminor == 0;
-    $tminorminor = 99 if $talpha ne '' && $tminorminor == 0;
-
-    # 2.0 is better than 1.0.
-    # 1.2 is better than 1.1.
-    # 1.2a is better than 1.2.
     # If we require 3.4n-foo then we require something
     # >= 3.4n, with the `foo' fork identifier.
-    # The $r* variables are what the user specified.
-    # The $t* variables denote automake itself.
-    if ($rmajor > $tmajor
-	|| ($rmajor == $tmajor && $rminor > $tminor)
-	|| ($rminor == $tminor && $rminor == $tminor
-	    && $rminorminor > $tminorminor)
-	|| ($rminor == $tminor && $rminor == $tminor
-	    && $rminorminor == $tminorminor
-	    && $ralpha gt $talpha)
-	|| ($rfork ne '' && $rfork ne $tfork))
-    {
-	return 1;
-    }
+    return 1
+	if ($required[4] ne '' && $required[4] ne $version[4]);
 
-    return 0;
+    return 0 >= version_compare @version, @required;
 }
 
 # $BOOL
@@ -1477,10 +1502,10 @@ sub process_option_list
 	{
 	    $use_dependencies = 0;
 	}
-	elsif (/(\d+)\.(\d+)([a-z]?)(-[A-Za-z0-9]+)?/)
+	elsif (/^\d+\.\d+(?:\.\d+)?[a-z]?(?:-[A-Za-z0-9]+)?$/)
 	{
 	    # Got a version number.
-	    if (version_check ($1, $2, $3, $4))
+	    if (version_check $&)
 	    {
 		if ($config)
 		{
