@@ -86,22 +86,26 @@ do
     cat $AM_DIR/compile.am >&5
     for am_file in $PROGRAMS $LIBRARIES; do
       if grep "^[	 ]*${am_file}_SOURCES[	 ]*=" ${am_makefile}.am >/dev/null; then
-        sed -n -f $am_rmnl ${am_makefile}.am |
-        sed -n "/^[	 ]*${am_file}_SOURCES[	 ]*=/{
+        if grep "^[	 ]*${am_file}_OBJECTS[	 ]*=" ${am_makefile}.am >/dev/null; then
+          :
+        else
+          sed -n -f $am_rmnl ${am_makefile}.am |
+          sed -n "/^[	 ]*${am_file}_SOURCES[	 ]*=/{
 s/SOURCES/OBJECTS/
 s/@[^@]*@//g
 s/\$([^)]*)//g
 s/\${[^}]*}//g
-s/\\.cc/.o/g
-s/\\.\${kr}c/.o/g
-s/\\.\$(kr)c/.o/g
-s/\\.[cCmylfs]/.o/g
+s/\\.cc/.\${kr}o/g
+s/\\.\${kr}c/.\${kr}o/g
+s/\\.\$(kr)c/.\${kr}o/g
+s/\\.[cCmylfs]/.\${kr}o/g
 p
 }" >&4
+        fi
         SOURCES="$SOURCES \${${am_file}_SOURCES}"
       else
         echo "${am_file}_SOURCES = ${am_file}.c
-${am_file}_OBJECTS = ${am_file}.o" >&4
+${am_file}_OBJECTS = ${am_file}.\${kr}o" >&4
         SOURCES="$SOURCES ${am_file}.c"
       fi
       if test -n "$CONFIG_HEADER"; then
