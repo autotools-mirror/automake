@@ -1,6 +1,7 @@
 consider rules to re-make Makefile.in from Makefile.am
 
 must look at mkid to see how it works (for subdir usage)
+  [ right now, it doesn't.  i don't see a simple fix right now ]
 
 must fix install-info rule in texinfos.am
 
@@ -14,15 +15,6 @@ clean.am: clean: if all the macros are empty, the rule expands to:
 	rm -rf
 which should be fixed
 
-Must handle case where multiple programs are built in one directory
-and share many object files (eg pax, cpio).  (Right now conflicts
-occur in "make dist")
-* I've done this using the _SOURCES hack.  This might even be the right
-  way to go.
-* It might be nice to do this on a per-program basis.  Think of a way.
-  Maybe $(prog_LDADD)?
-[the _SOURCES hack is insufficient for cpio.  Think of something better.]
-
 ================================================================
 
 For CONFIG_HEADER,
@@ -30,9 +22,8 @@ For CONFIG_HEADER,
   automatically add its input file to the distribution.
 
 Deal with optional object files and programs (@foo@) better.
-	[Presently this is handled using ALLPROGRAMS, decidedly hacky]
+	[ for optional programs, this is handled.  the following still hold ]
 Ditto for programs that are scripts.
-Right now it's just kludgy workarounds.
 
 Don't hardcode the name of the configuration header.  Get it from
 configure.in (AC_CONFIG_HEADER).  
@@ -80,9 +71,10 @@ LIBRARIES      libraries to build.  sources for library `foo' are
                in foo_SOURCES.  Only put .c file name in that variable.
 TEXINFOS       texinfo files to build.  must end in ".texi"
 MANS           man pages to install
-ALLPROGRAMS    like PROGRAMS, but used at build time.  define this if
-               the programs you want to build are determined by configure.
 HEADERS        All .h files in program
+AM_PROGRAMS    like PROGRAMS.  If it exists, it is used by automake to
+               determine which programs to generate Makefile parts for.
+               Use this if PROGRAMS is computed at configure time
 
 If your Makefile.am includes "@kr@", then ansi->kr conversion is
 assumed.
