@@ -39,7 +39,7 @@ proginst.test ranlib.test recurs.test recurs2.test remake.test \
 remake2.test req.test rulepat.test scripts.test seenc.test \
 sinclude.test spell.test spell2.test spell3.test spelling.test \
 stamph.test stdlib.test subdir.test subdir2.test subdir3.test \
-subst.test suffix.test symlink.test syntax.test tags.test
+subst.test suffix.test symlink.test syntax.test tags.test \
 tagsub.test target.test texinfo.test texinfo2.test texinfo3.test \
 texinfo4.test texinfo5.test texinfo6.test texinfo7.test \
 texinfo8.test unused.test version.test version2.test version3.test \
