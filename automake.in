@@ -305,6 +305,8 @@ $obsolete_rx = '(' . join ('|', keys %obsolete_macros) . ')';
 		    'c');
 &register_language ('cxx', 'CXXLINK', 0,
 		    'c++', 'cc', 'cpp', 'cxx', 'C');
+&register_language ('objc', 'OBJCLINK', 0,
+                    'm');
 &register_language ('header', '', 0,
 		    'h', 'H', 'hxx', 'h++', 'hh', 'hpp', 'inc');
 &register_language ('yacc', '', 1,
@@ -922,7 +924,7 @@ sub finish_languages
 	$lang = $extension_map{$ext};
 	next if defined $done{$lang};
 	$done{$lang} = 1;
-	$non_c = 0 if $lang !~ /(cxx|f77|ratfor)$/;
+	$non_c = 0 if $lang !~ /(objc|cxx|f77|ratfor)$/;
 
 	# Compute the function name of the finisher and then call it.
 	$name = 'lang_' . $lang . '_finish';
@@ -2712,6 +2714,13 @@ sub handle_dependencies
 					       . 's/\@PFX\@//g;',
 					       'depend2');
 	    local ($ext);
+	    foreach $ext (&objc_extensions)
+	    {
+		$output_rules .=
+		    &file_contents_with_transform ('s/\@EXT\@/' . $ext . '/g;'
+						   . 's/\@PFX\@/OBJC/g;',
+						   'depend2');
+	    }
 	    foreach $ext (&cxx_extensions)
 	    {
 		$output_rules .=
@@ -4448,6 +4457,12 @@ sub lang_f77_rewrite
     return 1;
 }
 
+# Rewrite a single Objective C file.
+sub lang_objc_rewrite
+{
+    return 1;
+}
+
 # The lang_X_finish functions are called after all source file
 # processing is done.  Each should handle defining rules for the
 # language, etc.  A finish function is only called if a source file of
@@ -4832,6 +4847,49 @@ sub lang_ratfor_finish
     }
 }
 
+sub lang_objc_finish
+{
+    push (@suffixes, '.m');
+
+    local ($ltcompile, $ltlink) = &libtool_compiler;
+
+    &define_configure_variable ("OBJCFLAGS");
+    &define_variable ('OBJCCOMPILE', '$(OBJC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_OBJCFLAGS) $(OBJCFLAGS)');
+    &define_variable ('LTOBJCCOMPILE',
+                      $ltcompile . '$(OBJC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_OBJCFLAGS) $(OBJCFLAGS)')
+        if ($seen_libtool);
+    
+    &define_variable ('OBJCLD', '$(OBJC)');
+    &define_variable ('OBJCLINK', $ltlink . '$(OBJCLD) $(AM_OBJCFLAGS) $(OBJCFLAGS) $(LDFLAGS) -o $@');
+    
+    $output_rules .= (".m.o:\n"
+                      . "\t\$(OBJCCOMPILE) -c \$<\n");
+    # FIXME: Using cygpath should be somehow conditional.
+    $output_rules .= (".m.obj:\n"
+                      . "\t\$(OBJCCOMPILE) -c `cygpath -w \$<`\n")
+        if ($seen_objext);
+    $output_rules .= (".m.lo:\n"
+                      . "\t\$(LTOBJCCOMPILE) -c \$<\n")
+        if ($seen_libtool);
+    
+    if (! defined $configure_vars{'OBJC'})
+	{
+	    &am_error ("Objective C source seen but \`OBJC' not defined in \`configure.in'");
+	}
+}
+
+# A helper which computes a sorted list of all ObjC extensions which
+# were seen.
+sub objc_extensions
+{
+    local ($key, @r);
+    foreach $key (sort keys %extension_seen)
+    {
+	push (@r, '.' . $key) if $extension_map{$key} eq 'objc';
+    }
+    return @r;
+}
+
 # A helper which decides whether libtool is needed.  Returns prefix
 # for compiler and linker.
 sub libtool_compiler
@@ -4858,6 +4916,8 @@ sub resolve_linker
 	if defined $linkers{'CXXLINK'};
     return 'F77LINK'
 	if defined $linkers{'F77LINK'};
+    return 'OBJCLINK'
+        if defined $linkers{'OBJCLINK'};
     return 'LINK';
 }
 
