@@ -1392,16 +1392,8 @@ sub handle_languages
 	# Generate the appropriate rules for this extension.  If
 	# dependency tracking was requested, and this extension
 	# supports it, then we don't generate the rule here.
-	my $comp = '';
-
 	if ($use_dependencies && $lang->autodep ne 'no')
 	  {
-	    # Don't generate the rule, but still generate the variables.
-	    if (defined $lang->compile)
-	      {
-		$comp = $lang->compile
-	      }
-
 	    my $compile = '$(' . $pfx . 'COMPILE)';
 	    my $ltcompile = '$(LT' . $pfx . 'COMPILE)';
 	    my %transform = (%transform,
@@ -1425,8 +1417,6 @@ sub handle_languages
 	  }
 	elsif (defined $lang->compile)
 	  {
-	    $comp = $lang->compile;
-
 	    my $outarg = $lang->output_arg;
 	    my $ltoutarg = '';
 	    if ($lang->flags eq 'CFLAGS')
@@ -1495,10 +1485,12 @@ sub handle_languages
 	# People linking Java code to Fortran code deserve pain.
 	$needs_c ||= ! $lang->pure;
 
-	if ($comp ne '')
+	if ($lang->compile)
 	  {
-	    &define_compiler_variable ($lang->compiler, $ltcompile, $comp);
+	    &define_compiler_variable ($lang->compiler,
+				       $ltcompile, $lang->compile);
 	  }
+
 	# The compiler's flag must be a configure variable.
 	if (defined $lang->flags)
 	  {
@@ -1507,8 +1499,6 @@ sub handle_languages
 
 	# Call the finisher.
 	$lang->finish;
-
-
       }
 
     # If the project is entirely C++ or entirely Fortran 77 (i.e., 1
