@@ -129,6 +129,7 @@ use Automake::Location;
 use Automake::Condition qw/TRUE FALSE/;
 use Automake::DisjConditions;
 use Automake::Version;
+use Automake::Wrap 'makefile_wrap';
 use File::Basename;
 use Tie::RefHash;
 use Carp;
@@ -3847,7 +3848,7 @@ sub handle_texinfo_helper
     &define_variable ('am__TEXINFO_TEX_DIR', $texinfodir, INTERNAL);
 
     # The return value.
-    my $texiclean = &pretty_print_internal ("", "\t  ", @texi_cleans);
+    my $texiclean = makefile_wrap ("", "\t  ", @texi_cleans);
 
     push (@dist_targets, 'dist-info');
 
@@ -5900,43 +5901,10 @@ sub derive_suffix ($$)
 
 ################################################################
 
-# Pretty-print something.  HEAD is what should be printed at the
-# beginning of the first line, FILL is what should be printed at the
-# beginning of every subsequent line.
-sub pretty_print_internal
-{
-    my ($head, $fill, @values) = @_;
-
-    my $column = length ($head);
-    my $result = $head;
-
-    # Fill length is number of characters.  However, each Tab
-    # character counts for eight.  So we count the number of Tabs and
-    # multiply by 7.
-    my $fill_length = length ($fill);
-    $fill_length += 7 * ($fill =~ tr/\t/\t/d);
-
-    foreach (@values)
-    {
-	# "71" because we also print a space.
-	if ($column + length ($_) > 71)
-	{
-	    $result .= " \\\n" . $fill;
-	    $column = $fill_length;
-	}
-	$result .= ' ' if $result =~ /\S\z/;
-	$result .= $_;
-	$column += length ($_) + 1;
-    }
-
-    $result .= "\n";
-    return $result;
-}
-
 # Pretty-print something and append to output_rules.
 sub pretty_print_rule
 {
-    $output_rules .= &pretty_print_internal (@_);
+    $output_rules .= &makefile_wrap (@_);
 }
 
 
@@ -6888,12 +6856,11 @@ sub variable_output ($@)
 
       if ($var_pretty{$var}{$cond} == VAR_PRETTY)
 	{
-	  # Suppress escaped new lines.  &pretty_print_internal will
+	  # Suppress escaped new lines.  &makefile_wrap will
 	  # add them back, maybe at other places.
 	  $val =~ s/\\$//mg;
-	  $output_vars .= pretty_print_internal ("$str$var $equals",
-						 "$str\t",
-						 split (' ' , $val));
+	  $output_vars .= makefile_wrap ("$str$var $equals",
+					 "$str\t", split (' ' , $val));
 	}
       else			# VAR_ASIS
 	{

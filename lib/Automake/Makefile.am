@@ -29,4 +29,5 @@ dist_perllib_DATA = \
   Location.pm \
   Struct.pm \
   Version.pm \
-  XFile.pm
+  XFile.pm \
+  Wrap.pm
