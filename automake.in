@@ -2338,10 +2338,6 @@ sub handle_texinfo
     &define_program_variable ('TEXI2DVI', 'src', 'texinfo/util',
 			      'texi2dvi');
 
-    # Set transform for including texinfos.am.  First, handle --cygnus
-    # stuff.
-    my $xform = &transform_cond ('CYGNUS' => $cygnus_mode);
-
     # Handle location of texinfo.tex.
     local ($need_texi_file) = 0;
     local ($texinfodir);
@@ -2369,10 +2365,11 @@ sub handle_texinfo
         $texinfodir = '$(srcdir)';
 	$need_texi_file = 1;
     }
-    $xform .= &transform ('TEXINFODIR' => $texinfodir,
-			  'TEXICLEAN' => &pretty_print_internal ("\t-rm -f",
-								 "\t  ",
-								 @texi_cleans));
+    my $xform =
+      &transform ('TEXINFODIR' => $texinfodir,
+		  'TEXICLEAN' => &pretty_print_internal ("\t-rm -f",
+							 "\t  ",
+							 @texi_cleans));
 
     $output_rules .= &file_contents ('texinfos', $xform);
     push (@dist_targets, 'dist-info');
@@ -2574,8 +2571,7 @@ sub handle_dist_worker
     my ($makefile) = @_;
 
     # Initialization; only at top level.
-    my $xform = &transform_cond ('TOPDIR'  => ($relative_dir eq '.'),
-				 'CK-NEWS' => defined $options{'check-news'});
+    my $xform = &transform_cond ('TOPDIR'  => ($relative_dir eq '.'));
 
     # Scan EXTRA_DIST to see if we need to distribute anything from a
     # subdir.  If so, add it to the list.  I didn't want to do this
@@ -2663,12 +2659,7 @@ sub handle_dist_worker
     $output_rules .=
       &file_contents ('distdir',
 		      $xform
-		      . &transform_cond ('CYGNUS'   => $cygnus_mode,
-					 'SHAR'     => $options{'dist-shar'},
-					 'BZIP2'    => $options{'dist-bzip2'},
-					 'ZIP'      => $options{'dist-zip'},
-					 'COMPRESS' => $options{'dist-tarZ'},
-					 'SUBDIRS'  =>
+		      . &transform_cond ('SUBDIRS'  =>
 					    &variable_defined ('SUBDIRS')));
 
     # If the target `dist-hook' exists, make sure it is run.  This
@@ -3921,9 +3912,7 @@ sub handle_tests_dejagnu
 {
     push (@check_tests, 'check-DEJAGNU');
 
-    $output_rules .=
-      &file_contents ('dejagnu',
-		      &transform_cond ('CYGNUS' => $cygnus_mode));
+    $output_rules .= &file_contents ('dejagnu');
 
     # In Cygnus mode, these are found in the build tree.
     # Otherwise they are looked for in $PATH.
@@ -6842,12 +6831,21 @@ sub flatten
 # as it is read; this command can modify $_.
 sub file_contents
 {
-    local ($basename, $command) = @_;
-    local ($file) = $am_dir . '/' . $basename . '.am';
+    my ($basename, $command) = @_;
 
+    # Sanity check over COMMAND, and complete it with global options.
     &prog_error ("file_contents: $command")
         if $command ne '' && substr ($command, -1) ne ';';
+    $command .= &transform_cond ('CYGNUS'   => $cygnus_mode,
+				 'SHAR'     => $options{'dist-shar'},
+				 'BZIP2'    => $options{'dist-bzip2'},
+				 'ZIP'      => $options{'dist-zip'},
+				 'COMPRESS' => $options{'dist-tarZ'},
+				 'CK-NEWS' => defined $options{'check-news'});
 
+
+    # Swallow the file and applied the COMMAND.
+    my $file = $am_dir . '/' . $basename . '.am';
     open (FC_FILE, $file)
 	|| die "automake: installation error: cannot open \`$file'\n";
     # Looks stupid?
