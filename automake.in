@@ -631,6 +631,10 @@ my %lang_specific_files;
 # we should no longer push on dist_common.
 my $handle_dist_run;
 
+# Used to store a set of linkers needed to generate the sources currently
+# under consideration.
+my %linkers_used;
+
 # True if we need `LINK' defined.  This is a hack.
 my $need_link;
 
@@ -1731,7 +1735,7 @@ sub check_libobjs_sources
 }
 
 
-# ($LINKER, @OBJECTS)
+# @OBJECTS
 # handle_single_transform_list ($VAR, $DERIVED, $OBJ, @FILES)
 # -----------------------------------------------------------
 # Does much of the actual work for handle_source_transform.
@@ -1739,16 +1743,14 @@ sub check_libobjs_sources
 #   $DERIVED is the name of resulting executable or library
 #   $OBJ is the object extension (e.g., `$U.lo')
 #   @FILES is the list of source files to transform
-# Result is a list
-#   $LINKER is name of linker to use (empty string for default linker)
-#   @OBJECTS are names of objects
+# Result is a list of the names of objects
+# %linkers_used will be updated with any linkers needed
 sub handle_single_transform_list ($$$@)
 {
     my ($var, $derived, $obj, @files) = @_;
     my @result = ();
     my $nonansi_obj = $obj;
     $nonansi_obj =~ s/\$U//g;
-    my %linkers_used = ();
 
     # Turn sources into objects.  We use a while loop like this
     # because we might add to @files in the loop.
@@ -2012,7 +2014,7 @@ sub handle_single_transform_list ($$$@)
         }
     }
 
-    return (&resolve_linker (%linkers_used), @result);
+    return @result;
 }
 
 
@@ -2041,6 +2043,8 @@ sub handle_source_transform
     }
 
     my %used_pfx = ();
+    my $needlinker;
+    %linkers_used = ();
     foreach my $prefix ('', 'EXTRA_', 'dist_', 'nodist_',
 			'dist_EXTRA_', 'nodist_EXTRA_')
     {
@@ -2063,18 +2067,21 @@ sub handle_source_transform
 	foreach my $cond (variable_conditions ($var))
 	  {
 	    my @files = &variable_value_as_list ($var, $cond);
-	    my ($temp, @result) =
+	    my (@result) =
 	      &handle_single_transform_list ($var, $one_file, $obj,
 					     @files);
 	    # If there are no files to compile, don't require a linker (yet).
-	    $linker ||= $temp
-	      if @files;
+	    $needlinker ||= "true" if @result;
 
 	    # Define _OBJECTS conditionally.
 	    &define_pretty_variable ($xpfx . $one_file . '_OBJECTS',
 				     $cond, @result)
 	      unless $prefix =~ /EXTRA_/;
 	  }
+    }
+    if ($needlinker)
+    {
+	$linker ||= &resolve_linker (%linkers_used);
     }
 
     my @keys = sort keys %used_pfx;
@@ -2084,11 +2091,12 @@ sub handle_source_transform
 	push (@sources, $unxformed . '.c');
 	push (@dist_sources, $unxformed . '.c');
 
-	my ($temp, @result) =
+	%linkers_used = ();
+	my (@result) =
 	  &handle_single_transform_list ($one_file . '_SOURCES',
 					 $one_file, $obj,
 					 "$unxformed.c");
-	$linker = $temp if $linker eq '';
+	$linker ||= &resolve_linker (%linkers_used);
 	&define_pretty_variable ($one_file . "_OBJECTS", '', @result)
     }
     else
