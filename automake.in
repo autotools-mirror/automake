@@ -2369,9 +2369,18 @@ sub handle_lib_objects_cond
 	}
     }
 
-    if ($xname ne '' && ! variable_defined ($xname . '_DEPENDENCIES', $cond))
+    if ($xname ne '')
     {
-	define_pretty_variable ($xname . '_DEPENDENCIES', $cond, @dep_list);
+	if (conditional_ambiguous_p ($xname . '_DEPENDENCIES', $cond) ne '')
+	{
+	    # Note that we've examined this.
+	    &examine_variable ($xname . '_DEPENDENCIES');
+	}
+	else
+	{
+	    define_pretty_variable ($xname . '_DEPENDENCIES', $cond,
+				    @dep_list);
+	}
     }
 
     return $seen_libobjs;
@@ -5673,29 +5682,42 @@ sub cond_stack_endif ($$$)
 sub check_ambiguous_conditional ($$)
 {
     my ($var, $cond) = @_;
+    my $message = conditional_ambiguous_p ($var, $cond);
+    if ($message ne '')
+    {
+	macro_error ($var, $message);
+	macro_dump ($var);
+    }
+}
+
+# $STRING
+# conditional_ambiguous_p ($VAR, $COND)
+# -------------------------------------
+# Check for an ambiguous conditional.  Return an error message if we
+# have one, the empty string otherwise.
+sub conditional_ambiguous_p ($$)
+{
+    my ($var, $cond) = @_;
     foreach my $vcond (keys %{$var_value{$var}})
     {
        my $message;
        if ($vcond eq $cond)
        {
-	   $message = "$var multiply defined in condition $cond";
+	   return "$var multiply defined in condition $cond";
        }
        elsif (&conditional_true_when ($vcond, $cond))
        {
-	 $message = ("$var was already defined in condition $vcond, "
-		     . "which implies condition $cond");
+	 return ("$var was already defined in condition $vcond, "
+		 . "which implies condition $cond");
        }
        elsif (&conditional_true_when ($cond, $vcond))
        {
-	   $message = ("$var was already defined in condition $vcond, "
-		       . "which is implied by condition $cond");
-       }
-       if ($message)
-       {
-	   macro_error ($var, $message);
-	   macro_dump ($var);
+	   return ("$var was already defined in condition $vcond, "
+		   . "which is implied by condition $cond");
        }
    }
+
+    return '';
 }
 
 
