@@ -1189,7 +1189,7 @@ sub output_variables ()
   return $res;
 }
 
-=item C<$var-E<gt>traverse_recursively (&fun_item, &fun_collect, [cond_filter =E<gt> $cond_filter], [inner_expand =E<gt> 1])>
+=item C<$var-E<gt>traverse_recursively (&fun_item, &fun_collect, [cond_filter =E<gt> $cond_filter], [inner_expand =E<gt> 1], [skip_ac_subst =E<gt> 1])>
 
 Split the value of the Automake::Variable C<$var> on space, and
 traverse its components recursively.
@@ -1217,6 +1217,9 @@ following arguments:
 If C<inner_expand> is set, variable references occuring in filename
 (as in C<$(BASE).ext>) are expansed before the filename is passed to
 C<&fun_item>.
+
+If C<skip_ac_subst> is set, Autoconf @substitutions@ will be skipped,
+i.e., C<&fun_item> will never be called for them.
 
 C<&fun_item> may return a list of items, they will be passed to
 C<&fun_store> later on.  Define C<&fun_item> as C<undef> when it serve
@@ -1254,16 +1257,18 @@ sub traverse_recursively ($&&;%)
   my ($var, $fun_item, $fun_collect, %options) = @_;
   my $cond_filter = $options{'cond_filter'};
   my $inner_expand = $options{'inner_expand'};
+  my $skip_ac_subst = $options{'skip_ac_subst'};
   return $var->_do_recursive_traversal ($var,
 					$fun_item, $fun_collect,
-					$cond_filter, TRUE, $inner_expand)
+					$cond_filter, TRUE, $inner_expand,
+					$skip_ac_subst)
 }
 
 # The guts of Automake::Variable::traverse_recursively.
-sub _do_recursive_traversal ($$&&$$$)
+sub _do_recursive_traversal ($$&&$$$$)
 {
   my ($var, $parent, $fun_item, $fun_collect, $cond_filter, $parent_cond,
-      $inner_expand) = @_;
+      $inner_expand, $skip_ac_subst) = @_;
 
   $var->set_seen;
 
@@ -1374,6 +1379,10 @@ sub _do_recursive_traversal ($$&&$$$)
 		}
 	      # We do not know any variable with this name.  Fall through
 	      # to filename processing.
+	    }
+	  elsif ($skip_ac_subst && $var =~ /^\@.+\@$/)
+	    {
+	      next;
 	    }
 
 	  if ($fun_item) # $var is a filename we must process
