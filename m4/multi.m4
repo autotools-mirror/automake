@@ -1,4 +1,5 @@
-# Copyright (C) 1998, 1999, 2000, 2001, 2003 Free Software Foundation, Inc.
+# Copyright (C) 1998, 1999, 2000, 2001, 2003, 2004
+# Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +16,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 
-# serial 3
+# serial 4
 
 # AM_ENABLE_MULTILIB([MAKEFILE], [REL-TO-TOP-SRCDIR])
 # ---------------------------------------------------
