@@ -375,9 +375,6 @@ my $seen_automake_version = 0;
 # generation.
 my %configure_vars = ();
 
-# TRUE if --cygnus seen.
-my $cygnus_mode = 0;
-
 # Files included by @configure.
 my @configure_deps = ();
 
@@ -515,6 +512,16 @@ my @check_tests;
 # to this factorization, but it is not unpleasant to have paragraphs
 # in Makefile: keeping related stuff altogether.
 my %dependencies;
+
+# &depend ($CATEGORY, @DEPENDENDEES)
+# ----------------------------------
+# The target $CATEGORY depends on @DEPENDENDEES.
+sub depend ($@)
+{
+  my ($category, @dependendees) = @_;
+  push (@{$dependencies{$category}}, @dependendees);
+}
+
 
 # Holds the factored actions.  Tied to %DEPENDENCIES, i.e., filled
 # only when keys exists in %DEPENDENCIES.
@@ -773,7 +780,11 @@ sub initialize_per_input ()
     $strictness = $default_strictness;
     $strictness_name = $default_strictness_name;
 
-    %options = ();
+    %options = 
+      (
+       # TRUE if --cygnus seen.
+       'cygnus' => 0,
+      );
 
     $use_dependencies = $cmdline_use_dependencies;
 
@@ -1180,10 +1191,6 @@ sub process_option_list
 	{
 	  &set_strictness ($_);
 	}
-      elsif ($_ eq 'cygnus')
-	{
-	  $cygnus_mode = $where;
-	}
       elsif (/^(.*\/)?ansi2knr$/)
 	{
 	  # An option like "../lib/ansi2knr" is allowed.  With no
@@ -1199,7 +1206,8 @@ sub process_option_list
 	     || $_ eq 'readme-alpha' || $_ eq 'check-news'
 	     || $_ eq 'subdir-objects' || $_ eq 'nostdinc'
 	     || $_ eq 'no-exeext' || $_ eq 'no-define'
-	     || $_ eq 'std-options')
+	     || $_ eq 'std-options'
+	     || $_ eq 'cygnus')
 	{
 	  # Explicitly recognize these.
 	}
@@ -3079,7 +3087,7 @@ sub handle_texinfo_helper ($)
   # Handle location of texinfo.tex.
   my $need_texi_file = 0;
   my $texinfodir;
-  if ($cygnus_mode)
+  if ($options{'cygnus'})
     {
       $texinfodir = '$(top_srcdir)/../texinfo';
       define_variable ('TEXINFO_TEX', "$texinfodir/texinfo.tex", INTERNAL);
@@ -3354,7 +3362,7 @@ sub handle_dist
 
   # `make dist' isn't used in a Cygnus-style tree.
   # Omit the rules so that people don't try to use them.
-  return if $cygnus_mode;
+  return if $options{'cygnus'};
 
   # At least one of the archive formats must be enabled.
   if ($relative_dir eq '.')
@@ -3653,249 +3661,250 @@ sub rewrite_inputs_into_dependencies ($@)
   return @newinputs;
 }
 
+
+# &handle_configure ($LOCAL, $INPUT, @SECONDARY_INPUTS)
+# -----------------------------------------------------
 # Handle remaking and configure stuff.
 # We need the name of the input file, to do proper remaking rules.
-sub handle_configure
+sub handle_configure ($$@)
 {
-    my ($local, $input, @secondary_inputs) = @_;
+  my ($local, $input, @secondary_inputs) = @_;
 
-    my $input_base = basename ($input);
-    my $local_base = basename ($local);
+  my $input_base = basename ($input);
+  my $local_base = basename ($local);
 
-    my $amfile = $input_base . '.am';
-    # We know we can always add '.in' because it really should be an
-    # error if the .in was missing originally.
-    my $infile = '$(srcdir)/' . $input_base . '.in';
-    my $colon_infile = '';
-    if ($local ne $input || @secondary_inputs)
+  my $amfile = $input_base . '.am';
+  # We know we can always add '.in' because it really should be an
+  # error if the .in was missing originally.
+  my $infile = '$(srcdir)/' . $input_base . '.in';
+  my $colon_infile = '';
+  if ($local ne $input || @secondary_inputs)
     {
-	$colon_infile = ':' . $input . '.in';
+      $colon_infile = ':' . $input . '.in';
     }
-    $colon_infile .= ':' . join (':', @secondary_inputs)
-	if @secondary_inputs;
+  $colon_infile .= ':' . join (':', @secondary_inputs)
+    if @secondary_inputs;
 
-    my @rewritten = rewrite_inputs_into_dependencies (1, @secondary_inputs);
+  my @rewritten = rewrite_inputs_into_dependencies (1, @secondary_inputs);
 
-    my ($regen_aclocal_m4, @aclocal_m4_deps) = scan_aclocal_m4 ();
+  my ($regen_aclocal_m4, @aclocal_m4_deps) = scan_aclocal_m4 ();
 
 
-    define_pretty_variable ('am__configure_deps', TRUE, INTERNAL,
-			    @configure_deps);
+  define_pretty_variable ('am__configure_deps', TRUE, INTERNAL,
+			  @configure_deps);
 
-    $output_rules .=
-      &file_contents ('configure',
-		      new Automake::Location,
-		      MAKEFILE              => $local_base,
-		      'MAKEFILE-DEPS'       => "@rewritten",
-		      'CONFIG-MAKEFILE'
-		       => ($relative_dir eq '.') ? '$@' : '$(subdir)/$@',
-		      'MAKEFILE-IN'         => $infile,
-		      'MAKEFILE-IN-DEPS'    => "@include_stack",
-		      'MAKEFILE-AM'         => $amfile,
-		      STRICTNESS => $cygnus_mode ? 'cygnus' : $strictness_name,
-		      'USE-DEPS'
-		        => $cmdline_use_dependencies ? '' : ' --ignore-deps',
-		      'MAKEFILE-AM-SOURCES' =>  "$input$colon_infile",
-		      'REGEN-ACLOCAL-M4'    => $regen_aclocal_m4,
-		      ACLOCAL_M4_DEPS       => "@aclocal_m4_deps");
-
-    if ($relative_dir eq '.')
+  $output_rules .= file_contents
+    ('configure',
+     new Automake::Location,
+     MAKEFILE              => $local_base,
+     'MAKEFILE-DEPS'       => "@rewritten",
+     'CONFIG-MAKEFILE'     => ($relative_dir eq '.') ? '$@' : '$(subdir)/$@',
+     'MAKEFILE-IN'         => $infile,
+     'MAKEFILE-IN-DEPS'    => "@include_stack",
+     'MAKEFILE-AM'         => $amfile,
+     STRICTNESS            => $options{'cygnus'} ? 'cygnus' : $strictness_name,
+     'USE-DEPS'           => $cmdline_use_dependencies ? '' : ' --ignore-deps',
+     'MAKEFILE-AM-SOURCES' =>  "$input$colon_infile",
+     'REGEN-ACLOCAL-M4'    => $regen_aclocal_m4,
+     ACLOCAL_M4_DEPS       => "@aclocal_m4_deps");
+  
+  if ($relative_dir eq '.')
     {
-	&push_dist_common ('acconfig.h')
-	    if -f 'acconfig.h';
+      &push_dist_common ('acconfig.h')
+	if -f 'acconfig.h';
     }
 
-    # If we have a configure header, require it.
-    my $hdr_index = 0;
-    my @distclean_config;
-    foreach my $spec (@config_headers)
-      {
-	$hdr_index += 1;
-	# $CONFIG_H_PATH: config.h from top level.
-	my ($config_h_path, @ins) = split_config_file_spec ($spec);
-	my $config_h_dir = dirname ($config_h_path);
+  # If we have a configure header, require it.
+  my $hdr_index = 0;
+  my @distclean_config;
+  foreach my $spec (@config_headers)
+    {
+      $hdr_index += 1;
+      # $CONFIG_H_PATH: config.h from top level.
+      my ($config_h_path, @ins) = split_config_file_spec ($spec);
+      my $config_h_dir = dirname ($config_h_path);
 
-	# If the header is in the current directory we want to build
-	# the header here.  Otherwise, if we're at the topmost
-	# directory and the header's directory doesn't have a
-	# Makefile, then we also want to build the header.
-	if ($relative_dir eq $config_h_dir
-	    || ($relative_dir eq '.' && ! &is_make_dir ($config_h_dir)))
+      # If the header is in the current directory we want to build
+      # the header here.  Otherwise, if we're at the topmost
+      # directory and the header's directory doesn't have a
+      # Makefile, then we also want to build the header.
+      if ($relative_dir eq $config_h_dir
+	  || ($relative_dir eq '.' && ! &is_make_dir ($config_h_dir)))
 	{
-	    my ($cn_sans_dir, $stamp_dir);
-	    if ($relative_dir eq $config_h_dir)
+	  my ($cn_sans_dir, $stamp_dir);
+	  if ($relative_dir eq $config_h_dir)
 	    {
-		$cn_sans_dir = basename ($config_h_path);
-		$stamp_dir = '';
+	      $cn_sans_dir = basename ($config_h_path);
+	      $stamp_dir = '';
 	    }
-	    else
+	  else
 	    {
-		$cn_sans_dir = $config_h_path;
-		if ($config_h_dir eq '.')
+	      $cn_sans_dir = $config_h_path;
+	      if ($config_h_dir eq '.')
 		{
-		    $stamp_dir = '';
+		  $stamp_dir = '';
 		}
-		else
+	      else
 		{
-		    $stamp_dir = $config_h_dir . '/';
+		  $stamp_dir = $config_h_dir . '/';
 		}
 	    }
 
-	    # Compute relative path from directory holding output
-	    # header to directory holding input header.  FIXME:
-	    # doesn't handle case where we have multiple inputs.
-	    my $in0_sans_dir;
-	    if (dirname ($ins[0]) eq $relative_dir)
+	  # Compute relative path from directory holding output
+	  # header to directory holding input header.  FIXME:
+	  # doesn't handle case where we have multiple inputs.
+	  my $in0_sans_dir;
+	  if (dirname ($ins[0]) eq $relative_dir)
 	    {
-		$in0_sans_dir = basename ($ins[0]);
+	      $in0_sans_dir = basename ($ins[0]);
 	    }
-	    else
+	  else
 	    {
-	        $in0_sans_dir = backname ($relative_dir) . '/' . $ins[0];
-	    }
-
-	    require_file ($config_header_location, FOREIGN, $in0_sans_dir);
-
-	    # Header defined and in this directory.
-	    my @files;
-	    if (-f $config_h_path . '.top')
-	    {
-		push (@files, "$cn_sans_dir.top");
-	    }
-	    if (-f $config_h_path . '.bot')
-	    {
-		push (@files, "$cn_sans_dir.bot");
+	      $in0_sans_dir = backname ($relative_dir) . '/' . $ins[0];
 	    }
 
-	    push_dist_common (@files);
+	  require_file ($config_header_location, FOREIGN, $in0_sans_dir);
 
-	    # For now, acconfig.h can only appear in the top srcdir.
-	    if (-f 'acconfig.h')
+	  # Header defined and in this directory.
+	  my @files;
+	  if (-f $config_h_path . '.top')
 	    {
-	        push (@files, '$(top_srcdir)/acconfig.h');
+	      push (@files, "$cn_sans_dir.top");
+	    }
+	  if (-f $config_h_path . '.bot')
+	    {
+	      push (@files, "$cn_sans_dir.bot");
 	    }
 
-	    my $stamp = "${stamp_dir}stamp-h${hdr_index}";
-            $output_rules .=
-	      file_contents ('remake-hdr',
-			     new Automake::Location,
-			     FILES         => "@files",
-			     CONFIG_H      => $cn_sans_dir,
-			     CONFIG_HIN    => $in0_sans_dir,
-			     CONFIG_H_PATH => $config_h_path,
-			     STAMP         => "$stamp");
+	  push_dist_common (@files);
 
-	    push @distclean_config, $cn_sans_dir, $stamp;
+	  # For now, acconfig.h can only appear in the top srcdir.
+	  if (-f 'acconfig.h')
+	    {
+	      push (@files, '$(top_srcdir)/acconfig.h');
+	    }
+
+	  my $stamp = "${stamp_dir}stamp-h${hdr_index}";
+	  $output_rules .=
+	    file_contents ('remake-hdr',
+			   new Automake::Location,
+			   FILES         => "@files",
+			   CONFIG_H      => $cn_sans_dir,
+			   CONFIG_HIN    => $in0_sans_dir,
+			   CONFIG_H_PATH => $config_h_path,
+			   STAMP         => "$stamp");
+
+	  push @distclean_config, $cn_sans_dir, $stamp;
 	}
     }
 
-    $output_rules .= file_contents ('clean-hdr',
-				    new Automake::Location,
-				    FILES => "@distclean_config")
-      if @distclean_config;
+  $output_rules .= file_contents ('clean-hdr',
+				  new Automake::Location,
+				  FILES => "@distclean_config")
+    if @distclean_config;
 
-    # Set location of mkinstalldirs.
-    define_variable ('mkinstalldirs',
-		     '$(SHELL) ' . $config_aux_dir . '/mkinstalldirs',
-		     INTERNAL);
+  # Set location of mkinstalldirs.
+  define_variable ('mkinstalldirs',
+		   '$(SHELL) ' . $config_aux_dir . '/mkinstalldirs',
+		   INTERNAL);
 
-    reject_var ('CONFIG_HEADER',
-		"`CONFIG_HEADER' is an anachronism; now determined "
-		. "automatically\nfrom `$configure_ac'");
+  reject_var ('CONFIG_HEADER',
+	      "`CONFIG_HEADER' is an anachronism; now determined "
+	      . "automatically\nfrom `$configure_ac'");
 
-    my @config_h;
-    foreach my $spec (@config_headers)
-      {
-	my ($out, @ins) = split_config_file_spec ($spec);
-	# Generate CONFIG_HEADER define.
-	if ($relative_dir eq dirname ($out))
-	{
-	    push @config_h, basename ($out);
-	}
-	else
-	{
-	    push @config_h, "\$(top_builddir)/$out";
-	}
-    }
-    define_variable ("CONFIG_HEADER", "@config_h", INTERNAL)
-      if @config_h;
-
-    # Now look for other files in this directory which must be remade
-    # by config.status, and generate rules for them.
-    my @actual_other_files = ();
-    foreach my $lfile (@other_input_files)
+  my @config_h;
+  foreach my $spec (@config_headers)
     {
-        my $file;
-	my @inputs;
-	if ($lfile =~ /^([^:]*):(.*)$/)
+      my ($out, @ins) = split_config_file_spec ($spec);
+      # Generate CONFIG_HEADER define.
+      if ($relative_dir eq dirname ($out))
 	{
-	    # This is the ":" syntax of AC_OUTPUT.
-	    $file = $1;
-	    @inputs = split (':', $2);
+	  push @config_h, basename ($out);
 	}
-	else
+      else
 	{
-	    # Normal usage.
-	    $file = $lfile;
-	    @inputs = $file . '.in';
+	  push @config_h, "\$(top_builddir)/$out";
+	}
+    }
+  define_variable ("CONFIG_HEADER", "@config_h", INTERNAL)
+    if @config_h;
+
+  # Now look for other files in this directory which must be remade
+  # by config.status, and generate rules for them.
+  my @actual_other_files = ();
+  foreach my $lfile (@other_input_files)
+    {
+      my $file;
+      my @inputs;
+      if ($lfile =~ /^([^:]*):(.*)$/)
+	{
+	  # This is the ":" syntax of AC_OUTPUT.
+	  $file = $1;
+	  @inputs = split (':', $2);
+	}
+      else
+	{
+	  # Normal usage.
+	  $file = $lfile;
+	  @inputs = $file . '.in';
 	}
 
-	# Automake files should not be stored in here, but in %MAKE_LIST.
-        prog_error "$lfile in \@other_input_files"
-	  if -f $file . '.am';
+      # Automake files should not be stored in here, but in %MAKE_LIST.
+      prog_error "$lfile in \@other_input_files"
+	if -f $file . '.am';
 
-	my $local = basename ($file);
+      my $local = basename ($file);
 
-	# Make sure the dist directory for each input file is created.
-	# We only have to do this at the topmost level though.  This
-	# is a bit ugly but it easier than spreading out the logic,
-	# especially in cases like AC_OUTPUT(foo/out:bar/in), where
-	# there is no Makefile in bar/.
-	if ($relative_dir eq '.')
+      # Make sure the dist directory for each input file is created.
+      # We only have to do this at the topmost level though.  This
+      # is a bit ugly but it easier than spreading out the logic,
+      # especially in cases like AC_OUTPUT(foo/out:bar/in), where
+      # there is no Makefile in bar/.
+      if ($relative_dir eq '.')
 	{
-	    foreach (@inputs)
+	  foreach (@inputs)
 	    {
-		$dist_dirs{dirname ($_)} = 1;
+	      $dist_dirs{dirname ($_)} = 1;
 	    }
 	}
 
-	# We skip files that aren't in this directory.  However, if
-	# the file's directory does not have a Makefile, and we are
-	# currently doing `.', then we create a rule to rebuild the
-	# file in the subdir.
-	my $fd = dirname ($file);
-	if ($fd ne $relative_dir)
+      # We skip files that aren't in this directory.  However, if
+      # the file's directory does not have a Makefile, and we are
+      # currently doing `.', then we create a rule to rebuild the
+      # file in the subdir.
+      my $fd = dirname ($file);
+      if ($fd ne $relative_dir)
 	{
-	    if ($relative_dir eq '.' && ! &is_make_dir ($fd))
+	  if ($relative_dir eq '.' && ! &is_make_dir ($fd))
 	    {
-		$local = $file;
+	      $local = $file;
 	    }
-	    else
+	  else
 	    {
-		next;
+	      next;
 	    }
 	}
 
-	my @rewritten_inputs = rewrite_inputs_into_dependencies (1, @inputs);
-	$output_rules .= ($local . ': '
-			  . '$(top_builddir)/config.status '
-			  . "@rewritten_inputs\n"
-			  . "\t"
-			  . 'cd $(top_builddir) && '
-			  . '$(SHELL) ./config.status '
-			  . ($relative_dir eq '.' ? '' : '$(subdir)/')
-   			  . '$@'
-			  . "\n");
-	push (@actual_other_files, $local);
+      my @rewritten_inputs = rewrite_inputs_into_dependencies (1, @inputs);
+      $output_rules .= ($local . ': '
+			. '$(top_builddir)/config.status '
+			. "@rewritten_inputs\n"
+			. "\t"
+			. 'cd $(top_builddir) && '
+			. '$(SHELL) ./config.status '
+			. ($relative_dir eq '.' ? '' : '$(subdir)/')
+			. '$@'
+			. "\n");
+      push (@actual_other_files, $local);
 
-	# Require all input files.
-	require_file ($ac_config_files_location, FOREIGN,
-		      rewrite_inputs_into_dependencies (0, @inputs));
+      # Require all input files.
+      require_file ($ac_config_files_location, FOREIGN,
+		    rewrite_inputs_into_dependencies (0, @inputs));
     }
 
-    # These files get removed by "make clean".
-    define_pretty_variable ('CONFIG_CLEAN_FILES', TRUE, INTERNAL,
-			    @actual_other_files);
+  # These files get removed by "make clean".
+  define_pretty_variable ('CONFIG_CLEAN_FILES', TRUE, INTERNAL,
+			  @actual_other_files);
 }
 
 # Handle C headers.
@@ -4086,44 +4095,46 @@ sub handle_all ($)
 }
 
 
+# &do_check_merge_target ()
+# -------------------------
 # Handle check merge target specially.
-sub do_check_merge_target
+sub do_check_merge_target ()
 {
-    if (&target_defined ('check-local'))
+  if (target_defined ('check-local'))
     {
-	# User defined local form of target.  So include it.
-	push (@check_tests, 'check-local');
-	&depend ('.PHONY', 'check-local');
+      # User defined local form of target.  So include it.
+      push @check_tests, 'check-local';
+      depend '.PHONY', 'check-local';
     }
 
-    # In --cygnus mode, check doesn't depend on all.
-    if ($cygnus_mode)
+  # In --cygnus mode, check doesn't depend on all.
+  if ($options{'cygnus'})
     {
-	# Just run the local check rules.
-	&pretty_print_rule ('check-am:', "\t\t", @check);
+      # Just run the local check rules.
+      pretty_print_rule ('check-am:', "\t\t", @check);
     }
-    else
+  else
     {
-	# The check target must depend on the local equivalent of
-	# `all', to ensure all the primary targets are built.  Then it
-	# must build the local check rules.
-	$output_rules .= "check-am: all-am\n";
-	&pretty_print_rule ("\t\$(MAKE) \$(AM_MAKEFLAGS)", "\t  ",
-			    @check)
-	    if @check;
+      # The check target must depend on the local equivalent of
+      # `all', to ensure all the primary targets are built.  Then it
+      # must build the local check rules.
+      $output_rules .= "check-am: all-am\n";
+      pretty_print_rule ("\t\$(MAKE) \$(AM_MAKEFLAGS)", "\t  ",
+			 @check)
+	if @check;
     }
-    &pretty_print_rule ("\t\$(MAKE) \$(AM_MAKEFLAGS)", "\t  ",
-			@check_tests)
-	if @check_tests;
+  pretty_print_rule ("\t\$(MAKE) \$(AM_MAKEFLAGS)", "\t  ",
+		     @check_tests)
+    if @check_tests;
 
-    &depend ('.PHONY', 'check', 'check-am');
-    # Handle recursion.  We have to honor BUILT_SOURCES like for `all:'.
-    $output_rules .= ("check: "
-		      . (var ('BUILT_SOURCES')
-			 ? "\$(BUILT_SOURCES)\n\t\$(MAKE) \$(AM_MAKEFLAGS) "
-			 : '')
-		      . (var ('SUBDIRS') ? 'check-recursive' : 'check-am')
-		      . "\n");
+  depend '.PHONY', 'check', 'check-am';
+  # Handle recursion.  We have to honor BUILT_SOURCES like for `all:'.
+  $output_rules .= ("check: "
+		    . (var ('BUILT_SOURCES')
+		       ? "\$(BUILT_SOURCES)\n\t\$(MAKE) \$(AM_MAKEFLAGS) "
+		       : '')
+		    . (var ('SUBDIRS') ? 'check-recursive' : 'check-am')
+		    . "\n");
 }
 
 # Handle all 'clean' targets.
@@ -4170,18 +4181,6 @@ sub handle_clean
      CLEAN_RMS            => join ('', @{$rms{&CLEAN}}),
      DISTCLEAN_RMS        => join ('', @{$rms{&DIST_CLEAN}}),
      MAINTAINER_CLEAN_RMS => join ('', @{$rms{&MAINTAINER_CLEAN}}));
-}
-
-
-# &depend ($CATEGORY, @DEPENDENDEES)
-# ----------------------------------
-# The target $CATEGORY depends on @DEPENDENDEES.
-sub depend
-{
-    my ($category, @dependendees) = @_;
-    {
-      push (@{$dependencies{$category}}, @dependendees);
-    }
 }
 
 
@@ -4707,11 +4706,11 @@ sub scan_autoconf_files
 # Set up for Cygnus mode.
 sub check_cygnus
 {
-  return unless $cygnus_mode;
+  return unless $options{'cygnus'};
 
   &set_strictness ('foreign');
-  $options{'no-installinfo'} = $cygnus_mode;
-  $options{'no-dependencies'} = $cygnus_mode;
+  $options{'no-installinfo'} = $options{'cygnus'};
+  $options{'no-dependencies'} = $options{'cygnus'};
   $use_dependencies = 0;
 
   err_ac "`AM_MAINTAINER_MODE' required when --cygnus specified"
@@ -6126,86 +6125,86 @@ sub flatten
 # paragraphs.
 sub make_paragraphs ($%)
 {
-    my ($file, %transform) = @_;
+  my ($file, %transform) = @_;
 
-    # Complete %transform with global options and make it a Perl
-    # $command.
-    my $command =
-      "s/$IGNORE_PATTERN//gm;"
-	. transform (%transform,
+  # Complete %transform with global options and make it a Perl
+  # $command.
+  my $command =
+    "s/$IGNORE_PATTERN//gm;"
+    . transform (%transform,
 
-		     'CYGNUS'          => $cygnus_mode,
-		     'MAINTAINER-MODE'
-		     => $seen_maint_mode ? subst ('MAINTAINER_MODE_TRUE') : '',
+		 'CYGNUS'          => $options{'cygnus'},
+		 'MAINTAINER-MODE'
+		 => $seen_maint_mode ? subst ('MAINTAINER_MODE_TRUE') : '',
 
-		     'BZIP2'       => $options{'dist-bzip2'} || 0,
-		     'COMPRESS'    => $options{'dist-tarZ'} || 0,
-		     'GZIP'        => $options{'no-dist-gzip'} ? 0 : 1,
-		     'SHAR'        => $options{'dist-shar'} || 0,
-		     'ZIP'         => $options{'dist-zip'} || 0,
+		 'BZIP2'       => $options{'dist-bzip2'} || 0,
+		 'COMPRESS'    => $options{'dist-tarZ'} || 0,
+		 'GZIP'        => $options{'no-dist-gzip'} ? 0 : 1,
+		 'SHAR'        => $options{'dist-shar'} || 0,
+		 'ZIP'         => $options{'dist-zip'} || 0,
 
-		     'INSTALL-INFO' => !$options{'no-installinfo'},
-		     'INSTALL-MAN'  => !$options{'no-installman'},
-		     'CK-NEWS'      => $options{'check-news'} || 0,
+		 'INSTALL-INFO' => !$options{'no-installinfo'},
+		 'INSTALL-MAN'  => !$options{'no-installman'},
+		 'CK-NEWS'      => $options{'check-news'} || 0,
 
-		     'SUBDIRS'      => !! var ('SUBDIRS'),
-		     'TOPDIR'       => backname ($relative_dir),
-		     'TOPDIR_P'     => $relative_dir eq '.',
-		     'CONFIGURE-AC' => $configure_ac,
+		 'SUBDIRS'      => !! var ('SUBDIRS'),
+		 'TOPDIR'       => backname ($relative_dir),
+		 'TOPDIR_P'     => $relative_dir eq '.',
+		 'CONFIGURE-AC' => $configure_ac,
 
-		     'BUILD'    => $seen_canonical == AC_CANONICAL_SYSTEM,
-		     'HOST'     => $seen_canonical,
-		     'TARGET'   => $seen_canonical == AC_CANONICAL_SYSTEM,
+		 'BUILD'    => $seen_canonical == AC_CANONICAL_SYSTEM,
+		 'HOST'     => $seen_canonical,
+		 'TARGET'   => $seen_canonical == AC_CANONICAL_SYSTEM,
 
-		     'LIBTOOL'      => !! var ('LIBTOOL'))
-	  # We don't need more than two consecutive new-lines.
-	  . 's/\n{3,}/\n\n/g';
+		 'LIBTOOL'      => !! var ('LIBTOOL'))
+    # We don't need more than two consecutive new-lines.
+    . 's/\n{3,}/\n\n/g';
 
-    # Swallow the file and apply the COMMAND.
-    my $fc_file = new Automake::XFile "< $file";
-    # Looks stupid?
-    verb "reading $file";
-    my $saved_dollar_slash = $/;
-    undef $/;
-    $_ = $fc_file->getline;
-    $/ = $saved_dollar_slash;
-    eval $command;
-    $fc_file->close;
-    my $content = $_;
+  # Swallow the file and apply the COMMAND.
+  my $fc_file = new Automake::XFile "< $file";
+  # Looks stupid?
+  verb "reading $file";
+  my $saved_dollar_slash = $/;
+  undef $/;
+  $_ = $fc_file->getline;
+  $/ = $saved_dollar_slash;
+  eval $command;
+  $fc_file->close;
+  my $content = $_;
 
-    # Split at unescaped new lines.
-    my @lines = split (/(?<!\\)\n/, $content);
-    my @res;
+  # Split at unescaped new lines.
+  my @lines = split (/(?<!\\)\n/, $content);
+  my @res;
 
-    while (defined ($_ = shift @lines))
-      {
-	my $paragraph = "$_";
-	# If we are a rule, eat as long as we start with a tab.
-	if (/$RULE_PATTERN/smo)
-	  {
-	    while (defined ($_ = shift @lines) && $_ =~ /^\t/)
-	      {
-		$paragraph .= "\n$_";
-	      }
-	    unshift (@lines, $_);
-	  }
+  while (defined ($_ = shift @lines))
+    {
+      my $paragraph = "$_";
+      # If we are a rule, eat as long as we start with a tab.
+      if (/$RULE_PATTERN/smo)
+	{
+	  while (defined ($_ = shift @lines) && $_ =~ /^\t/)
+	    {
+	      $paragraph .= "\n$_";
+	    }
+	  unshift (@lines, $_);
+	}
 
-	# If we are a comments, eat as much comments as you can.
-	elsif (/$COMMENT_PATTERN/smo)
-	  {
-	    while (defined ($_ = shift @lines)
-		   && $_ =~ /$COMMENT_PATTERN/smo)
-	      {
-		$paragraph .= "\n$_";
-	      }
-	    unshift (@lines, $_);
-	  }
+      # If we are a comments, eat as much comments as you can.
+      elsif (/$COMMENT_PATTERN/smo)
+	{
+	  while (defined ($_ = shift @lines)
+		 && $_ =~ /$COMMENT_PATTERN/smo)
+	    {
+	      $paragraph .= "\n$_";
+	    }
+	  unshift (@lines, $_);
+	}
 
-	push @res, $paragraph;
-	$paragraph = '';
-      }
+      push @res, $paragraph;
+      $paragraph = '';
+    }
 
-    return @res;
+  return @res;
 }
 
 
@@ -6428,25 +6427,25 @@ sub file_contents ($$%)
 #   - replaces %?$TOKEN% with TRUE or FALSE.
 sub transform (%)
 {
-    my (%pairs) = @_;
-    my $result = '';
-
-    while (my ($token, $val) = each %pairs)
+  my (%pairs) = @_;
+  my $result = '';
+  
+  while (my ($token, $val) = each %pairs)
     {
-        $result .= "s/\Q%$token%\E/\Q$val\E/gm;";
-	if ($val)
+      $result .= "s/\Q%$token%\E/\Q$val\E/gm;";
+      if ($val)
 	{
-	    $result .= "s/\Q?$token?\E//gm;s/^.*\Q?!$token?\E.*\\n//gm;";
-	    $result .= "s/\Q%?$token%\E/TRUE/gm;";
+	  $result .= "s/\Q?$token?\E//gm;s/^.*\Q?!$token?\E.*\\n//gm;";
+	  $result .= "s/\Q%?$token%\E/TRUE/gm;";
 	}
-	else
+      else
 	{
-	    $result .= "s/\Q?!$token?\E//gm;s/^.*\Q?$token?\E.*\\n//gm;";
-	    $result .= "s/\Q%?$token%\E/FALSE/gm;";
+	  $result .= "s/\Q?!$token?\E//gm;s/^.*\Q?$token?\E.*\\n//gm;";
+	  $result .= "s/\Q%?$token%\E/FALSE/gm;";
 	}
     }
-
-    return $result;
+  
+  return $result;
 }
 
 
@@ -7406,12 +7405,12 @@ sub parse_arguments ()
   # Start off as gnu.
   &set_strictness ('gnu');
 
-  my %options =
+  my %cli_options =
     (
      'libdir:s' 	=> \$libdir,
      'gnu' 		=> sub { &set_strictness ('gnu'); },
      'gnits' 		=> sub { &set_strictness ('gnits'); },
-     'cygnus' 	        => \$cygnus_mode,
+     'cygnus' 	        => \$options{'cygnus'},
      'foreign' 	        => sub { &set_strictness ('foreign'); },
      'include-deps' 	=> sub { $cmdline_use_dependencies = 1; },
      'i|ignore-deps' 	=> sub { $cmdline_use_dependencies = 0; },
@@ -7436,21 +7435,21 @@ sub parse_arguments ()
   # if we treat other options first.  (Handling other options first
   # could produce error diagnostics, and in this condition it is
   # confusing if Automake `exit 0'.)
-  my %options_1st_pass =
+  my %cli_options_1st_pass =
     (
      'version' => \&version,
      'help'    => \&usage,
      # Recognize all other options (and their arguments) but do nothing.
-     map { $_ => sub {} } (keys %options)
+     map { $_ => sub {} } (keys %cli_options)
      );
   my @ARGV_backup = @ARGV;
-  Getopt::Long::GetOptions %options_1st_pass
+  Getopt::Long::GetOptions %cli_options_1st_pass
     or exit 1;
   @ARGV = @ARGV_backup;
 
   # Now *really* process the options.  This time we know
   # that --help and --version are not present.
-  Getopt::Long::GetOptions %options
+  Getopt::Long::GetOptions %cli_options
     or exit 1;
 
   if (defined $output_directory)
