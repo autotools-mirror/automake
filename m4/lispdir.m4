@@ -4,7 +4,7 @@
 ## Almost entirely rewritten by Alexandre Oliva
 ## ------------------------
 
-# Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003
+# Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004
 # Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
@@ -22,7 +22,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 
-# serial 7
+# serial 8
 
 # AM_PATH_LISPDIR
 # ---------------
@@ -50,8 +50,8 @@ AC_DEFUN([AM_PATH_LISPDIR],
   AC_RUN_LOG([$EMACS -batch -q -eval '(while load-path (princ (concat (car load-path) "\n")) (setq load-path (cdr load-path)))' </dev/null >conftest.out])
 	am_cv_lispdir=`sed -n \
        -e 's,/$,,' \
-       -e '/.*\/lib\/x\?emacs\/site-lisp$/{s,.*/lib/\(x\?emacs/site-lisp\)$,${libdir}/\1,;p;q;}' \
-       -e '/.*\/share\/x\?emacs\/site-lisp$/{s,.*/share/\(x\?emacs/site-lisp\),${datadir}/\1,;p;q;}' \
+       -e '/.*\/lib\/x*emacs\/site-lisp$/{s,.*/lib/\(x*emacs/site-lisp\)$,${libdir}/\1,;p;q;}' \
+       -e '/.*\/share\/x*emacs\/site-lisp$/{s,.*/share/\(x*emacs/site-lisp\),${datadir}/\1,;p;q;}' \
        conftest.out`
        rm conftest.out
      fi
