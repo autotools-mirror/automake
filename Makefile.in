@@ -328,9 +328,16 @@ tags-recursive:
 	list='$(SUBDIRS)'; for subdir in $$list; do \
 	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) tags); \
 	done
+ctags-recursive:
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) ctags); \
+	done
 
 ETAGS = etags
 ETAGSFLAGS =
+
+CTAGS = ctags
+CTAGSFLAGS =
 
 tags: TAGS
 
@@ -362,13 +369,28 @@ TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 	  || $(ETAGS) $(ETAGSFLAGS) $(AM_ETAGSFLAGS) $(ETAGS_ARGS) \
 	     $$tags $$unique
 
+ctags: CTAGS
+CTAGS: ctags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+		$(TAGS_FILES) $(LISP)
+	tags=; \
+	here=`pwd`; \
+	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	test -z "$(CTAGS_ARGS)$$tags$$unique" \
+	  || $(CTAGS) $(CTAGSFLAGS) $(AM_CTAGSFLAGS) $(CTAGS_ARGS) \
+	     $$tags $$unique
+
 GTAGS:
 	here=`$(am__cd) $(top_builddir) && pwd` \
 	  && cd $(top_srcdir) \
 	  && gtags -i $(GTAGS_ARGS) $$here
 
 distclean-tags:
-	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH
+	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 
 top_distdir = .
@@ -595,23 +617,24 @@ uninstall-am: uninstall-binSCRIPTS uninstall-info-am
 
 uninstall-info: uninstall-info-recursive
 
-.PHONY: $(RECURSIVE_TARGETS) GTAGS all all-am check check-am clean \
-	clean-generic clean-recursive dist dist-all dist-bzip2 \
-	dist-gzip dist-info distcheck distclean distclean-generic \
-	distclean-recursive distclean-tags distcleancheck distdir dvi \
-	dvi-am dvi-recursive info info-am info-recursive install \
-	install-am install-binSCRIPTS install-data install-data-am \
-	install-data-recursive install-exec install-exec-am \
-	install-exec-recursive install-info install-info-am \
-	install-info-recursive install-man install-recursive \
-	install-strip installcheck installcheck-am installdirs \
-	installdirs-am installdirs-recursive maintainer-clean \
-	maintainer-clean-aminfo maintainer-clean-generic \
-	maintainer-clean-recursive maintainer-clean-vti mostlyclean \
-	mostlyclean-aminfo mostlyclean-generic mostlyclean-recursive \
-	mostlyclean-vti pdf pdf-am pdf-recursive ps ps-am ps-recursive \
-	tags tags-recursive uninstall uninstall-am uninstall-binSCRIPTS \
-	uninstall-info-am uninstall-info-recursive uninstall-recursive
+.PHONY: $(RECURSIVE_TARGETS) CTAGS GTAGS all all-am check check-am clean \
+	clean-generic clean-recursive ctags ctags-recursive dist \
+	dist-all dist-bzip2 dist-gzip dist-info distcheck distclean \
+	distclean-generic distclean-recursive distclean-tags \
+	distcleancheck distdir dvi dvi-am dvi-recursive info info-am \
+	info-recursive install install-am install-binSCRIPTS \
+	install-data install-data-am install-data-recursive \
+	install-exec install-exec-am install-exec-recursive \
+	install-info install-info-am install-info-recursive install-man \
+	install-recursive install-strip installcheck installcheck-am \
+	installdirs installdirs-am installdirs-recursive \
+	maintainer-clean maintainer-clean-aminfo \
+	maintainer-clean-generic maintainer-clean-recursive \
+	maintainer-clean-vti mostlyclean mostlyclean-aminfo \
+	mostlyclean-generic mostlyclean-recursive mostlyclean-vti pdf \
+	pdf-am pdf-recursive ps ps-am ps-recursive tags tags-recursive \
+	uninstall uninstall-am uninstall-binSCRIPTS uninstall-info-am \
+	uninstall-info-recursive uninstall-recursive
 
 
 install-exec-hook:

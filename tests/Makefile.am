@@ -174,6 +174,7 @@ gcj2.test \
 gcj3.test \
 gcj4.test \
 gcj5.test \
+getopt.test \
 gnits.test \
 gnits2.test \
 header.test \

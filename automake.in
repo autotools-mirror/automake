@@ -1410,47 +1410,68 @@ sub parse_warnings ($$)
 # Parse command line.
 sub parse_arguments ()
 {
-    # Start off as gnu.
-    &set_strictness ('gnu');
+  # Start off as gnu.
+  &set_strictness ('gnu');
 
-    use Getopt::Long;
-    Getopt::Long::config ("bundling", "pass_through");
-    Getopt::Long::GetOptions
-      (
-       'version' 	=> \&version,
-       'help'	 	=> \&usage,
-       'libdir:s' 	=> \$libdir,
-       'gnu' 		=> sub { &set_strictness ('gnu'); },
-       'gnits' 		=> sub { &set_strictness ('gnits'); },
-       'cygnus' 	=> \$cygnus_mode,
-       'foreign' 	=> sub { &set_strictness ('foreign'); },
-       'include-deps' 	=> sub { $cmdline_use_dependencies = 1; },
-       'i|ignore-deps' 	=> sub { $cmdline_use_dependencies = 0; },
-       'no-force' 	=> sub { $force_generation = 0; },
-       'f|force-missing'=> \$force_missing,
-       'o|output-dir:s'	=> \$output_directory,
-       'a|add-missing' 	=> \$add_missing,
-       'c|copy' 	=> \$copy_missing,
-       'v|verbose' 	=> sub { setup_channel 'verb', silent => 0; },
-       'W|warnings:s'   => \&parse_warnings,
-       # These long options (--Werror and --Wno-error) for backward
-       # compatibility.  Use -Werror and -Wno-error today.
-       'Werror'         => sub { parse_warnings 'W', 'error'; },
-       'Wno-error'      => sub { parse_warnings 'W', 'no-error'; },
-      )
-	or exit 1;
+  my %options =
+    (
+     'libdir:s' 	=> \$libdir,
+     'gnu' 		=> sub { &set_strictness ('gnu'); },
+     'gnits' 		=> sub { &set_strictness ('gnits'); },
+     'cygnus' 	        => \$cygnus_mode,
+     'foreign' 	        => sub { &set_strictness ('foreign'); },
+     'include-deps' 	=> sub { $cmdline_use_dependencies = 1; },
+     'i|ignore-deps' 	=> sub { $cmdline_use_dependencies = 0; },
+     'no-force' 	=> sub { $force_generation = 0; },
+     'f|force-missing'  => \$force_missing,
+     'o|output-dir:s'	=> \$output_directory,
+     'a|add-missing' 	=> \$add_missing,
+     'c|copy' 	        => \$copy_missing,
+     'v|verbose' 	=> sub { setup_channel 'verb', silent => 0; },
+     'W|warnings:s'     => \&parse_warnings,
+     # These long options (--Werror and --Wno-error) for backward
+     # compatibility.  Use -Werror and -Wno-error today.
+     'Werror'           => sub { parse_warnings 'W', 'error'; },
+     'Wno-error'        => sub { parse_warnings 'W', 'no-error'; },
+     );
 
-    if (defined $output_directory)
+  use Getopt::Long;
+  Getopt::Long::config ("bundling", "pass_through");
+
+  # See if --version or --help is used.  We want to process these before
+  # anything else because the GNU Coding Standards require us to
+  # `exit 0' after processing these options, and we can't garanty this
+  # if we treat other options first.  (Handling other options first
+  # could produce error diagnostics, and in this condition it is
+  # confusing if Automake `exit 0'.)
+  my %options_1st_pass =
+    (
+     'version' => \&version,
+     'help'    => \&usage,
+     # Recognize all other options (and their arguments) but do nothing.
+     map { $_ => sub {} } (keys %options)
+     );
+  my @ARGV_backup = @ARGV;
+  Getopt::Long::GetOptions %options_1st_pass
+    or exit 1;
+  @ARGV = @ARGV_backup;
+
+  # Now *really* process the options.  This time we know
+  # that --help and --version are not present.
+  Getopt::Long::GetOptions %options
+    or exit 1;
+
+  if (defined $output_directory)
     {
       msg 'obsolete', "`--output-dir' is deprecated\n";
     }
-    else
+  else
     {
       # In the next release we'll remove this entirely.
       $output_directory = '.';
     }
 
-    foreach my $arg (@ARGV)
+  foreach my $arg (@ARGV)
     {
       if ($arg =~ /^-./)
 	{
@@ -1479,9 +1500,9 @@ sub parse_arguments ()
       $output_files{$input} = join (':', ($local, @rest));
     }
 
-    # Take global strictness from whatever we currently have set.
-    $default_strictness = $strictness;
-    $default_strictness_name = $strictness_name;
+  # Take global strictness from whatever we currently have set.
+  $default_strictness = $strictness;
+  $default_strictness_name = $strictness_name;
 }
 
 ################################################################
@@ -8578,7 +8599,8 @@ Warning categories include:
 
     print "\nReport bugs to <bug-automake\@gnu.org>.\n";
 
-    exit $exit_code;
+    # --help always returns 0 per GNU standards.
+    exit 0;
 }
 
 
@@ -8595,7 +8617,8 @@ Copyright 2002 Free Software Foundation, Inc.
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 EOF
-  exit $exit_code;
+  # --version always returns 0 per GNU standards.
+  exit 0;
 }
 
 ### Setup "GNU" style for perl-mode and cperl-mode.
