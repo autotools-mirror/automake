@@ -3919,7 +3919,7 @@ sub handle_configure
 	if ($local eq 'stamp-h')
 	{
 	    # FIXME: allow real filename.
-	    &am_conf_error ($configure_ac, $ac_output_line,
+	    &am_file_error ("$configure_ac:$ac_output_line",
 			    'stamp-h should not appear in AC_OUTPUT');
 	    next;
 	}
@@ -4377,9 +4377,8 @@ sub handle_minor_options
 	    if ($package_version !~ /^$GNITS_VERSION_PATTERN$/)
 	    {
 		# FIXME: allow real filename.
-		&am_conf_line_error ($configure_ac,
-				     $package_version_line,
-				     "version `$package_version' doesn't follow Gnits standards");
+		&am_file_error ("$configure_ac:$package_version_line",
+				"version `$package_version' doesn't follow Gnits standards");
 	    }
 	    elsif (defined $1 && -f 'README-alpha')
 	    {
@@ -4699,7 +4698,7 @@ sub scan_one_autoconf_file
 	    {
 		$hint = '; ' . $obsolete_macros{$1};
 	    }
-	    &am_conf_line_error ($filename, $., "`$1' is obsolete$hint");
+	    &am_file_error ($here, "`$1' is obsolete$hint");
 	}
 
 	# Process the AC_OUTPUT and AC_CONFIG_FILES macros.
@@ -4724,8 +4723,8 @@ sub scan_one_autoconf_file
 		&& scalar keys %make_list == 0
 		&& @other_input_files == 0)
 	    {
-		&am_conf_line_error ($filename, $ac_output_line,
-				     "No files mentioned in `AC_OUTPUT'");
+		&am_file_error ("$filename:$ac_output_line",
+				"No files mentioned in `AC_OUTPUT'");
 		exit 1;
 	    }
 	}
@@ -4755,9 +4754,9 @@ sub scan_one_autoconf_file
 	if (/A([CM])_CONFIG_HEADERS?\s*\((.*)\)/
 	    && $2 ne '[$1]')
 	{
-	    &am_conf_line_error
- 		($filename, $., "`automake requires `AM_CONFIG_HEADER', not `AC_CONFIG_HEADER'")
- 		    if $1 eq 'C';
+	    &am_file_error ($here,
+	       "`automake requires `AM_CONFIG_HEADER', not `AC_CONFIG_HEADER'")
+	      if $1 eq 'C';
 
 	    $config_header_line = $.;
 	    foreach my $one_hdr (split (' ', &unquote_m4_arg ($2)))
@@ -4812,7 +4811,7 @@ sub scan_one_autoconf_file
 	{
 	    $configure_vars{'LEX'} = $here;
 	    $seen_prog_lex = $here;
- 	    &am_conf_line_warning ($filename, $.,
+ 	    &am_file_warning ($here,
 		   "automake requires `AM_PROG_LEX', not `AC_PROG_LEX'");
 	}
 
@@ -4876,7 +4875,7 @@ sub scan_one_autoconf_file
 
 	    # if (/AM_PROG_LIBTOOL/)
 	    # {
-	    # 	&am_conf_line_warning ($filename, $., "`AM_PROG_LIBTOOL' is obsolete, use `AC_PROG_LIBTOOL' instead");
+	    # 	&am_file_warning ($here, "`AM_PROG_LIBTOOL' is obsolete, use `AC_PROG_LIBTOOL' instead");
 	    # }
 	    $seen_libtool = $here;
 	    $libtool_line = $.;
@@ -4978,10 +4977,8 @@ sub check_cygnus
     $options{'no-dependencies'} = 1;
     $use_dependencies = 0;
 
-    if (! $seen_maint_mode)
-    {
-	&am_conf_error ("`AM_MAINTAINER_MODE' required when --cygnus specified");
-    }
+    am_conf_error ("`AM_MAINTAINER_MODE' required when --cygnus specified")
+      if !$seen_maint_mode;
 }
 
 # Do any extra checking for GNU standards.
@@ -7825,8 +7822,8 @@ sub require_file_internal
 		    if ($is_configure)
 		    {
 			# FIXME: allow actual file to be specified.
-			&am_conf_line_warning ($configure_ac, $line,
-					       "$message$trailer");
+			am_file_warning ("$configure_ac:$line",
+					 "$message$trailer");
 		    }
 		    else
 		    {
@@ -7838,12 +7835,12 @@ sub require_file_internal
 		    if ($is_configure)
 		    {
 			# FIXME: allow actual file to be specified.
-			&am_conf_line_error ($configure_ac, $line,
-					     "$message$trailer");
+			am_file_error ("$configure_ac:$line",
+				       "$message$trailer");
 		    }
 		    else
 		    {
-			&am_line_error ($line, "$message$trailer");
+			am_line_error ($line, "$message$trailer");
 		    }
 		}
 	    }
@@ -8049,7 +8046,7 @@ sub unquote_m4_arg
 # -------------------------------
 # Do the work of printing the error message.  Join @ARGS with spaces,
 # then split at newlines and add $LEADER to each line.  Uses `warn' to
-# print message.
+# print message.  Set exit status.
 sub am_print_error
 {
     my ($leader, @args) = @_;
@@ -8057,13 +8054,13 @@ sub am_print_error
     @args = split ("\n", $text);
     $text = $leader . join ("\n" . $leader, @args) . "\n";
     warn $text;
+    $exit_status = 1;
 }
 
 # Print an error message and set exit status.
 sub am_error
 {
     am_print_error ("$me: ${am_file}.am: ", @_);
-    $exit_status = 1;
 }
 
 # am_file_error ($FILE, @ARGS)
@@ -8073,7 +8070,6 @@ sub am_file_error
     my ($file, @args) = @_;
 
     am_print_error ("$file: ", @args);
-    $exit_status = 1;
 }
 
 sub am_line_error
@@ -8107,7 +8103,6 @@ sub am_line_error
 	}
 
 	am_print_error ("$file: ", @args);
-	$exit_status = 1;
     }
     else
     {
@@ -8120,39 +8115,22 @@ sub am_conf_error
 {
     # FIXME: can run in subdirs.
     am_print_error ("$me: $configure_ac: ", @_);
-    $exit_status = 1;
-}
-
-# Error message with line number referring to configure.ac.
-sub am_conf_line_error
-{
-    my ($file, $line, @args) = @_;
-
-    if ($line)
-    {
-	am_print_error ("$file: $line: ", @args);
-	$exit_status = 1;
-    }
-    else
-    {
-	&am_conf_error (@args);
-    }
 }
 
 # Warning message with line number referring to configure.ac.
 # Does not affect exit_status
-sub am_conf_line_warning
+sub am_file_warning (@)
 {
     my $saved_exit_status = $exit_status;
     my $sig = $SIG{'__WARN__'};
     $SIG{'__WARN__'} = 'DEFAULT';
-    am_conf_line_error (@_);
+    am_file_error (@_);
     $exit_status = $saved_exit_status;
     $SIG{'__WARN__'} = $sig;
 }
 
 # Like am_line_error, but doesn't affect exit status.
-sub am_line_warning
+sub am_line_warning (@)
 {
     my $saved_exit_status = $exit_status;
     my $sig = $SIG{'__WARN__'};
@@ -8163,14 +8141,14 @@ sub am_line_warning
 }
 
 # Tell user where our aclocal.m4 is, but only once.
-sub keyed_aclocal_warning
+sub keyed_aclocal_warning ($)
 {
     my ($key) = @_;
     warn "$me: macro `$key' can be generated by `aclocal'\n";
 }
 
 # Print usage information.
-sub usage
+sub usage ()
 {
     print <<EOF;
 Usage: $0 [OPTION] ... [Makefile]...
