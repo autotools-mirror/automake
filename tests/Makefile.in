@@ -46,6 +46,8 @@ DEFS = @DEFS@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
+EGREP = @EGREP@
+FGREP = @FGREP@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -510,13 +512,17 @@ yaccpp.test \
 yaccvpath.test
 
 
-EXTRA_DIST = defs ChangeLog-old $(TESTS)
+EXTRA_DIST = ChangeLog-old $(TESTS)
+
+# Every test case implicitely depends on defs.
+BUILT_SOURCES = defs
 subdir = tests
 mkinstalldirs = $(SHELL) $(top_srcdir)/lib/mkinstalldirs
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = defs
 DIST_SOURCES =
-DIST_COMMON = Makefile.am Makefile.in
-all: all-am
+DIST_COMMON = Makefile.am Makefile.in configure.in defs.in
+all: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
 $(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.in $(ACLOCAL_M4)
@@ -524,6 +530,8 @@ $(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.in $(ACLOCAL_M4)
 	  $(AUTOMAKE) --gnu  tests/Makefile
 Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)
+defs: $(top_builddir)/config.status defs.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 uninstall-info-am:
 tags: TAGS
 TAGS:
@@ -665,6 +673,7 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 clean: clean-am
 
 clean-am: clean-generic mostlyclean-am

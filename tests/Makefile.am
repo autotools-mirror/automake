@@ -421,7 +421,10 @@ yacc8.test \
 yaccpp.test \
 yaccvpath.test
 
-EXTRA_DIST = defs ChangeLog-old $(TESTS)
+EXTRA_DIST = ChangeLog-old $(TESTS)
+
+# Every test case implicitely depends on defs.
+BUILT_SOURCES = defs
 
 distclean-local:
 	-rm -rf testSubDir

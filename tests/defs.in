@@ -1,10 +1,44 @@
 # -*- shell-script -*-
+# Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002
+# Free Software Foundation, Inc.
+#
+# This file is part of GNU Automake.
+#
+# GNU Automake is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# GNU Automake is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with autoconf; see the file COPYING.  If not, write to
+# the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA 02111-1307, USA.
+
 # Defines for Automake testing environment.
 # Tom Tromey <tromey@cygnus.com>
 
-# Ensure $srcdir set correctly.
-test -f $srcdir/defs || {
-   echo "defs: installation error" 1>&2
+# Ensure we are running from the right directory.
+test -f ./defs || {
+   echo "defs: not found in current directory" 1>&2
+   exit 1
+}
+
+# If srcdir is not set, then we are not running from `make check', be verbose.
+if test -z "$srcdir"; then
+   test -z "$VERBOSE" && VERBOSE=x
+   # compute $srcdir.
+   srcdir=`echo "$0" | sed -e 's,/[^\\/]*$,,'`
+   test $srcdir = $0 && srcdir=.
+fi
+
+# Ensure $srcdir is set correctly.
+test -f $srcdir/defs.in || {
+   echo "$srcdir/defs.in not found, check \$srcdir" 1>&2
    exit 1
 }
 
@@ -17,10 +51,11 @@ test -z "$VERBOSE" && {
 }
 
 # User can override various tools used.
-test -z "$PERL" && PERL=perl
+#est -z "$SHELL" && SHELL=/bin/sh
+test -z "$PERL" && PERL='@PERL@'
 test -z "$MAKE" && MAKE=make
-test -z "$AUTOCONF" && AUTOCONF=autoconf
-test -z "$AUTOHEADER" && AUTOHEADER=autoheader
+test -z "$AUTOCONF" && AUTOCONF="@AUTOCONF@"
+test -z "$AUTOHEADER" && AUTOHEADER="@AUTOHEADER@"
 test -z "$AUTOUPDATE" && AUTOUPDATE=autoupdate
 
 if test -n "$required"
@@ -192,20 +227,8 @@ export AUTOMAKE ACLOCAL
 
 # POSIX no longer requires 'egrep' and 'fgrep',
 # but some hosts lack 'grep -E' and 'grep -F'.
-if test -z "$EGREP"; then
-   if echo a | (grep -E '(a|b)') >/dev/null 2>&1; then
-      EGREP='grep -E'
-   else
-      EGREP='egrep'
-   fi
-fi
-if test -z "$FGREP"; then
-   if echo 'ab*c' | (grep -F 'ab*c') >/dev/null 2>&1; then
-      FGREP='grep -F'
-   else
-      FGREP='fgrep'
-   fi
-fi
+EGREP='@EGREP@'
+FGREP='@FGREP@'
 
 # The tests call `make -e' but we do not want $srcdir from the evironment
 # to override the definition from the Makefile.
@@ -218,3 +241,4 @@ if test "x$VERBOSE" = xx; then
 else
   :
 fi
+pwd
