@@ -23,10 +23,15 @@ DVIPS = dvips
 	$(DVIPS) $< -o $@
 
 .PHONY: info info-am dvi dvi-am
-?SUBDIRS?.PHONY info: info-recursive
-?SUBDIRS?.PHONY dvi: dvi-recursive
-?!SUBDIRS?info: info-am
-?!SUBDIRS?dvi: dvi-am
+if %?SUBDIRS%
+RECURSIVE_TARGETS += info-recursive dvi-recursive
+.PHONY info: info-recursive
+.PHONY dvi: dvi-recursive
+else %?SUBDIRS%
+info: info-am
+dvi: dvi-am
+endif %?SUBDIRS%
+
 info-am: $(INFO_DEPS)
 dvi-am: $(DVIS)
 
@@ -39,10 +44,16 @@ dvi-am: $(DVIS)
 ##
 ## TEXINFOS primary are always installed in infodir, hence install-data
 ## is hard coded.
-?INSTALL-INFO?_am_installdirs += $(DESTDIR)$(infodir)
-?SUBDIRS?.PHONY install-info: install-info-recursive
-?!SUBDIRS?.PHONY install-info: install-info-am
-?INSTALL-INFO?install-data-am: install-info-am
+if %?INSTALL-INFO%
+_am_installdirs += $(DESTDIR)$(infodir)
+install-data-am: install-info-am
+if %?SUBDIRS%
+RECURSIVE_TARGETS += install-info-recursive
+.PHONY install-info: install-info-recursive
+else %?SUBDIRS%
+.PHONY install-info: install-info-am
+endif %?SUBDIRS%
+endif %?INSTALL-INFO%
 install-info-am: $(INFO_DEPS)
 	@$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(DESTDIR)$(infodir)
@@ -83,9 +94,11 @@ install-info-am: $(INFO_DEPS)
 ## Uninstalling info pages.  ##
 ## ------------------------- ##
 
+?SUBDIRS?RECURSIVE_TARGETS += uninstall-info-recursive
 ?SUBDIRS?.PHONY uninstall-info: uninstall-info-recursive
 ?!SUBDIRS?.PHONY uninstall-info: uninstall-info-am
 ?INSTALL-INFO?uninstall-am: uninstall-info-am
+
 uninstall-info-am:
 	$(PRE_UNINSTALL)
 ## Run two loops here so that we can handle PRE_UNINSTALL and
