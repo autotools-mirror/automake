@@ -1877,43 +1877,41 @@ sub handle_source_transform
 	return;
     }
 
-    my (@files, @result, $temp);
     my %used_pfx = ();
     foreach my $prefix ('', 'EXTRA_', 'dist_', 'nodist_',
 			'dist_EXTRA_', 'nodist_EXTRA_')
     {
+	my $var = $prefix . $one_file . "_SOURCES";
+	next
+	  if !variable_defined ($var);
+
 	# We are going to define _OBJECTS variables using the prefix.
 	# Then we glom them all together.  So we can't use the null
 	# prefix here as we need it later.
 	my $xpfx = ($prefix eq '') ? 'am_' : $prefix;
 
-	@files = ();
-	my $var = $prefix . $one_file . "_SOURCES";
-	if (&variable_defined ($var))
-	{
-	    # Keep track of which prefixes we saw.
-	    $used_pfx{$xpfx} = 1
-		unless $prefix =~ /EXTRA_/;
+	# Keep track of which prefixes we saw.
+	$used_pfx{$xpfx} = 1
+	  unless $prefix =~ /EXTRA_/;
 
-	    push (@sources, '$(' . $prefix . $one_file . "_SOURCES)");
-	    push (@objects, '$(' . $xpfx . $one_file . "_OBJECTS)")
-		unless $prefix =~ /EXTRA_/;
-	    push (@dist_sources, '$(' . $prefix . $one_file . "_SOURCES)")
-		unless $prefix =~ /^nodist_/;
-	    foreach my $cond (variable_conditions ($var))
-	      {
-		@files = &variable_value_as_list ($var, $cond);
-		($temp, @result) =
-		  &handle_single_transform_list ($var, $one_file, $obj,
-						 @files);
-		$linker = $temp if $linker eq '';
+	push (@sources, '$(' . $prefix . $one_file . "_SOURCES)");
+	push (@objects, '$(' . $xpfx . $one_file . "_OBJECTS)")
+	  unless $prefix =~ /EXTRA_/;
+	push (@dist_sources, '$(' . $prefix . $one_file . "_SOURCES)")
+	  unless $prefix =~ /^nodist_/;
+	foreach my $cond (variable_conditions ($var))
+	  {
+	    my @files = &variable_value_as_list ($var, $cond);
+	    my ($temp, @result) =
+	      &handle_single_transform_list ($var, $one_file, $obj,
+					     @files);
+	    $linker = $temp if $linker eq '';
 
-		# Define _OBJECTS conditionally.
-		&define_pretty_variable ($xpfx . $one_file . '_OBJECTS',
-					 $cond, @result)
-		  unless $prefix =~ /EXTRA_/;
-	      }
-	}
+	    # Define _OBJECTS conditionally.
+	    &define_pretty_variable ($xpfx . $one_file . '_OBJECTS',
+				     $cond, @result)
+	      unless $prefix =~ /EXTRA_/;
+	  }
     }
 
     my @keys = sort keys %used_pfx;
@@ -1923,12 +1921,11 @@ sub handle_source_transform
 	push (@sources, $unxformed . '.c');
 	push (@dist_sources, $unxformed . '.c');
 	push (@objects, $unxformed . $obj);
-	push (@files, $unxformed . '.c');
 
 	($temp, @result) =
 	  &handle_single_transform_list ($one_file . '_SOURCES',
 					 $one_file, $obj,
-					 @files);
+					 "$unxformed.c");
 	$linker = $temp if $linker eq '';
 	&define_pretty_variable ($one_file . "_OBJECTS", '', @result)
     }
