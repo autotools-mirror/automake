@@ -317,17 +317,30 @@ sub handle_source_transform
 	if (! defined $contents{$one_file . "_OBJECTS"})
 	{
 	    # Turn sources into objects.
-	    $_ = $contents{$one_file . "_SOURCES"};
-
+	    local (@files) = split (/\s+/, $contents{$one_file . "_SOURCES"});
 	    # Ugh: Perl syntax vs Emacs.
 	    local ($krc1, $krc2) = ('\.\$\{kr\}c', '\.\$\(kr\)c');
+	    local (@result) = ();
+	    foreach $one_source (@files)
+	    {
+		if (/^(.*)\.[yl]$/)
+		{
+		    # Automatically include generated .c file in
+		    # distribution.
+		    push_dist_common ($1 . '.c');
+		}
 
-	    s/\.cc/$obj/g;
-	    s/$krc1/$obj/g;
-	    s/$krc2/$obj/g;
-	    s/\.[cCmylfs]/$obj/g;
+		# Transform source files into .o files.
+		s/\.cc$/$obj/g;
+		s/$krc1$/$obj/g;
+		s/$krc2$/$obj/g;
+		s/\.[cCmylfs]$/$obj/g;
 
-	    $output_vars .= $one_file . "_OBJECTS = " . $_ . "\n";
+		push (@result, $_);
+	    }
+
+	    $output_vars .= ($one_file . "_OBJECTS = " . join (' ', @result)
+			     . "\n");
 	}
 	else
 	{
@@ -1340,6 +1353,19 @@ sub am_install_var
 
     # Push here because PRIMARY might be configure time determined.
     push (@all, '$(' . $primary . ')') if ($do_all && $#used >= 0);
+
+    # Look for misspellings.  It is an error to have a variable ending
+    # in a "reserved" suffix whose prefix is unknown, eg
+    # "bni_PROGRAMS".
+    local (%valid, $varname);
+    grep ($valid{$_} = 0, @prefixes);
+    foreach $varname (keys %contents)
+    {
+	if ($varname =~ /^(.*)_$primary$/ && ! defined $valid{$1})
+	{
+	    &am_error ("invalid variable \"$varname\"");
+	}
+    }
 
     return (@result);
 }

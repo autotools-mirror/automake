@@ -11,12 +11,14 @@ libraries.am library.am mans-vars.am \
 program.am programs.am remake-hdr.am \
 remake-subd.am remake.am scripts.am subdirs.am tags.am tags-subd.am \
 tags-clean.am \
-texi-clean.am texi-version.am texinfos-vars.am texinfos.am
+texi-clean.am texi-version.am texinfos-vars.am texinfos.am \
+libraries-clean.am scripts-clean.am programs-clean.am data-clean.am
 
 DIST_OTHER = automake.in
 
 # The following requires a fixed version of the Emacs 19.30 etags.
-ETAGS_ARGS = automake.in
+ETAGS_ARGS = automake.in --lang=none \
+ --regex='/^@node[ \t]+\([^,]+\)/\1/' automake.texi
 
 # The simplest form of checking.
 check-local: automake

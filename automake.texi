@@ -101,7 +101,7 @@ GNU Coding Standards})
 is long, complicated,
 and subject to change.  The goal of Automake is to remove the burden of
 Makefile maintenance from back the individual GNU maintainer (and put it
-on the back of the Automake maintainer)
+on the back of the Automake maintainer).
 
 Typical Automake input files are simply a series of macro definitions.
 Automake processes these files to produce @file{Makefile.in}s which are
@@ -116,16 +116,17 @@ Automake's convenience.
 @chapter Making @code{automake} templates
 
 @menu
+* Generalities::                General overview
 * configure::                   Automake and configure
 * Depth::                       Types of package hierarchy
-* Programs::                    What gets built
-* Source::                      Specifying source files
+* Naming::                      The uniform naming scheme
+* Programs::                    Building programs
+* ANSI::                        Automatic de-ANSI-fication
 * Scripts::                     Building scripts
 * Libraries::                   Building libraries
-* Libstuff::                    Programs that aren't user-visible
+* Headers::                     Header files
 * Data::                        Data files.
 * Docs::                        Specifying documentation files
-* ANSI::                        Automatic de-ANSI-fication
 * Install::                     What gets installed
 * Clean::                       What gets cleaned
 * Distribution::                What gets distributed
@@ -133,6 +134,22 @@ Automake's convenience.
 * Dependencies::                Automatic dependency tracking
 * Extending::                   If the defaults aren't enough
 @end menu
+
+@node Generalities
+@section General use of Automake
+
+@code{Automake} is a tool for automatically generating
+@file{Makefile.in}s from files called @file{Makefile.am}.  The
+@file{Makefile.am} is basically a series of @code{make} macro
+definitions (with the occasional rule thrown in).  The generated
+@file{Makefile.in}s are compliant with the GNU Makefile standards.
+
+There should be one @file{Makefile.am} per directory of a project
+(though it is possible to incorporate directories that don't use
+@code{automake} if necessary).
+
+@code{automake} assumes the package in question uses @code{autoconf}.
+
 
 @node configure
 @section How @code{automake} and @code{configure} interact
@@ -203,21 +220,20 @@ AC_SUBST(INSTALL_SCRIPT)dnl
 
 A flat package is one in which all the files are in a single directory.
 The @file{Makefile.am} for such a package by definition lacks a
-@samp{SUBDIRS} macro.  (There are not any @code{automake}-using packages
-which are flat)
+@samp{SUBDIRS} macro.  An example of such a package is @code{termutils}.
 
 A deep package is one in which all the source lies in subdirectories;
-the top level directory contains only configuration information.  GNU
-cpio is a good example of such a package (as is GNU tar, although it
-does not presently use @code{automake}).  The top level
+the top level directory contains mainly configuration information.  GNU
+cpio is a good example of such a package (as is GNU @code{tar}, although
+it does not presently use @code{automake}).  The top level
 @file{Makefile.am} for a deep package will contain a @samp{SUBDIRS}
-macro, but no other macros to define objects which are built (eg
-@samp{PROGRAMS}).
+macro, but no other macros to define objects which are built.
+Typically, @samp{PRGORAMS} is defined in @file{src/Makefile.am}.
 
 A shallow package is one in which the primary source resides in the
 top-level directory, while various parts (typically libraries) reside in
-subdirectories.  @code{automake} is one such package (as is GNU make,
-which does not currently use @code{automake}).
+subdirectories.  @code{automake} is one such package (as is GNU
+@code{make}, which does not currently use @code{automake}).
 
 
 The @samp{SUBDIRS} macro holds a list of subdirectories in which
@@ -232,6 +248,54 @@ If @samp{SUBDIRS} is defined, then your @file{configure.in} must include
 @code{AC_PROG_MAKE_SET}.
 
 FIXME supply complete list of recursive targets?
+
+
+@node Naming
+@section The uniform naming scheme
+
+@code{Automake} uses a uniform naming scheme to make it easy to decide
+how programs are built, and how they are installed.  This scheme also
+supports @code{configure}-time determination of what should be built.
+
+There are certain variables which are used at @code{make} time to
+determine which objects are to be built.  For instance, @samp{PROGRAMS}
+holds a list of programs which are to be compiled and linked.  These
+variables are called ``primary'' variables.
+
+A different set of variables are used to decide where the built objects
+should be installed.  These variables are named after the primary
+variables, but have a prefix indicating which standard directory should
+be used as the installation directory.  The standard directory names are
+given in the GNU standards (FIXME xref).  @code{automake} extends this
+list with @samp{pkglibdir}, @samp{pkgincludedir}, and @samp{pkgdatadir};
+these are the same as the non-@samp{pkg} versions, but with
+@code{@@PACKAGE@@} appended.
+
+For instance, @code{cpio} decides at configure time which programs are
+built.  Some of the programs are installed in @samp{bindir}, and some
+are installed in @samp{sbindir}:
+
+@example
+PROGRAMS = @@PROGRAMS@@
+bin_PROGRAMS = cpio pax
+sbin_PROGRAMS = rmt mt
+@end example
+
+Note that the common ``dir'' suffix is left off when constructing the
+variable names; thus one writes @samp{bin_PROGRAMS} and not
+@samp{bindir_PROGRAMS}.
+
+Not every sort of object can be installed in every directory.
+@code{automake} will flag those attempts it finds in error.
+
+The special prefix @code{noinst} indicates that the objects in question
+should not be installed at all.
+
+Possible primary names are @samp{PROGRAMS}, @samp{LIBRARIES},
+@samp{SCRIPTS}, @samp{DATA}, and @samp{HEADERS}.
+
+FIXME currently TEXINFOS and MANS don't follow this rule, but they
+probably should.
 
 
 @node Programs
@@ -262,20 +326,15 @@ single source file.  The source file must be listed in each ``_SOURCE''
 definition.
 
 Sometimes it is useful to determine the programs that are to be built at
-configure time.  For instance, GNU cpio only builts @code{mt} and
+configure time.  For instance, GNU @code{cpio} only builts @code{mt} and
 @code{rmt} under special circumstances.
 
 In this case, you must notify Automake of all the programs that can
 possibly be built, but at the same time cause the generated
 @file{Makefile.in} to use the programs specified by @code{configure}.
-You can do this using the @code{AM_PROGRAMS} variable.  Here is the
-relevant code from cpio:
-
-@example
-PROGRAMS = @@PROGS@@
-AM_PROGRAMS = cpio pax mt rmt
-@end example
-
+This is done trivially by making the @code{PROGRAMS} variable determined
+at configure time, and letting @code{automake} look in the install
+variables for the static list of programs.
 
 If you need to link against libraries that are not found by
 @code{configure}, you can use @samp{LDADD} to do so.  This variable
@@ -283,11 +342,12 @@ actually can be used to add any options to the linker command line.
 
 Sometimes, multiple programs are built in one directory but do not share
 the same link-time requirements.  In this case, you can use the
-@samp{@var{prog}_LDADD} variable to override the global @samp{LDADD}.
-(If this variable exists for a given program, then that program is not
-linked using @samp{LDADD}).
+@samp{@var{prog}_LDADD} variable (where @var{PROG} is the name of the
+program as it appears in @samp{PROGRAMS} to override the global
+@samp{LDADD}.  (If this variable exists for a given program, then that
+program is not linked using @samp{LDADD}.)
 
-For instance, in GNU cpio, @code{pax}, @code{cpio}, and @code{mt} are
+For instance, in GNU @code{cpio}, @code{pax}, @code{cpio}, and @code{mt} are
 linked against the library @file{libcpio.a}.  However, @code{rmt} is
 built in the same directory, and has no such link requirement.  Thus:
 
@@ -296,41 +356,29 @@ LDADD = ../lib/libcpio.a @@INTLLIBS@@
 rmt_LDADD =
 @end example
 
-
-@node Source
-@section Specifying Source Code
-
-Any header files in your distribution must be listed in the
-@samp{HEADERS} variable.  This is used both for making distributions,
-and for automatic de-ANSI-fication.
-
-@example
-HEADERS = hello.h getopt.h rx.h
-@end example
-
-@samp{HEADERS} should also be used to list any sources files which are
-conditionally built.  FIXME probably should use @samp{SOURCES} for this;
-that support might even work.
-
-
 @node Scripts
 @section Programs Which are Scripts
 
 It is possible to define and install programs which are scripts.  Such
 programs should be listed in the @samp{SCRIPTS} variable.
-@code{automake} doesn't define any dependencies for scripts; if a script
-is not to be installed as-is, the @file{Makefile.am} should include the
-appropriate rules.
+@code{automake} doesn't define any dependencies for scripts; the
+@file{Makefile.am} should include the appropriate rules.
+
+@code{automake} does assume that objects listed in the @samp{SCRIPTS}
+macro are derived objects; such objects are deleted by @code{make clean}.
 
 @code{automake} itself is a script that is generated at configure time
 from @file{automake.in}.  Here is how this is handled:
 
 @example
-SCRIPTS = automake
+bin_SCRIPTS = automake
 
 automake: automake.in
 	CONFIG_FILES=$@@ CONFIG_HEADERS= ./config.status
 @end example
+
+Script objects can be installed in @samp{bindir}, @samp{sbindir}, or
+@samp{libexecdir}.
 
 
 @node Libraries
@@ -342,61 +390,64 @@ configure time, you may define @samp{AM_LIBRARIES} to supply
 @code{automake} with the full static list of possible libraries.
 
 For a given library @samp{zot}, the sources are taken to be in
-@samp{@var{zot}_SOURCES}, just as for programs.  Note that libraries and
+@samp{zot_SOURCES}, just as for programs.  Note that libraries and
 programs share one namespace in @code{automake}: one directory cannot
 contain both a library (``liblob.a'') and a program (``lob'') with the
 same name.
 
-Here is how the @file{libcpio.a} library is built in the GNU cpio
+Here is how the @file{libcpio.a} library is built in the GNU @code{cpio}
 distribution's @file{lib} subdirectory:
 
 @example
-LIBRARIES = cpio
+noinst_LIBRARIES = cpio
 cpio_SOURCES = dirname.c dstring.c error.c filemode.c \
 getopt.c getopt1.c idcache.c makepath.c octal.c \
 stpcpy.c stripslash.c userspec.c xmalloc.c xstrdup.c
 @end example
 
-
-@node Libstuff
-@section Programs which are not User-Visible
-
-@code{automake} allows for the automatic building and installation of
-programs which are not actually used by the user, but are instead used
-by other user-visible programs.  Such programs are installed in a
-separate directory from user-visible programs.
-
-For programs of this sort which are build from C source, define the
-names in @samp{LIBPROGRAMS}.  For scripts, use @samp{LIBSCRIPTS}.  In
-other respects, these variables are similar to @samp{PROGRAMS} and
-@samp{SCRIPTS}.  Both of these variables have ``AM_'' override forms.
-
-Here is how to generate a program named @code{goodbye}, a helper for
-@code{hello}:
+Extra objects can be added to a library using the @code{library_LIBADD}
+variable.  This should be used for objects determined by
+@code{configure}.  Again from @code{cpio}:
 
 @example
-LIBPROGRAMS = goodbye
-goodbye_SOURCES = goodbye.c
+cpio_LIBADD = @@LIBOBJS@@ @@ALLOCA@@
 @end example
+
+Library objects can be installed in @samp{libdir} or @samp{pkglibdir}.
+
+
+@node Headers
+@section Header files
+
+Header files are specified by the @samp{HEADERS} family of variables.
+Generally header files are not installed, so the @samp{noinst_HEADERS}
+variable will be the most used.
+
+All header files must be listed somewhere; missing ones will not appear
+in the distribution.
+
+You can also put conditionally compiled source file names into a
+@samp{HEADERS} variable.  (This will probably change in a future
+release).
 
 
 @node Data
 @section Architecture-independent data files
 
-@code{automake} supports two different ways to install
-architecture-independent data files.
+@code{automake} supports the installation of miscellaneous data files
+using the @samp{DATA} family of variables.
 
-The first variable that can be used is @samp{DATA}.  This is intended to
-be used for only a small number of data files.  The files are installed
-in @samp{$@{datadir@}}.
+Such data can be installed in the directories @code{datadir},
+@code{sysconfdir}, @code{sharedstatedir}, @code{localstatedir}, or
+@code{pkgdatadir}.
 
-The second variable that can be used is @samp{PACKAGEDATA}.  This is
-intended for a larger number of data files.  The files are installed in
-@samp{$@{datadir@}/$@{PACKAGE@}}.  This variable is what @code{automake}
-itself uses:
+All such data files are included in the distribution.  (FIXME, this is
+probably a bug)
+
+Here is how @code{autoconf} installs its auxiliary data files:
 
 @example
-PACKAGEDATA = clean-kr.am clean.am compile-kr.am compile-vars.am \
+pkgdata_DATA = clean-kr.am clean.am compile-kr.am compile-vars.am \
 compile.am data.am depend.am dist-subd-top.am dist-subd-vars.am \
 dist-subd.am dist-vars.am dist.am footer.am header-vars.am header.am \
 libscripts.am libprograms.am libraries-vars.am libraries.am library.am \
@@ -404,9 +455,6 @@ mans-vars.am mans.am packagedata.am program.am programs.am remake-hdr.am \
 remake-subd.am remake.am scripts.am subdirs.am tags.am tags-subd.am \
 texinfos-vars.am texinfos.am hack-make.sed nl-remove.sed
 @end example
-
-All @samp{DATA} and @samp{PACKAGEDATA} files are included in a
-distribution.
 
 
 @node Docs
@@ -456,7 +504,7 @@ this matter.  FIXME xref).
 Man pages are declared using the @samp{MANS} macro.
 
 
-Here is how the documentation is handled in GNU cpio (which includes
+Here is how the documentation is handled in GNU @code{cpio} (which includes
 both Texinfo documentation and man pages):
 
 @example
@@ -564,10 +612,9 @@ esac
 @section What Gets Installed
 
 Naturally, @code{automake} handles the details of actually installing
-your program once it has been built.  Any objects specified in
-@samp{PROGRAMS}, @samp{LIBPROGRAMS}, @samp{SCRIPTS}, @samp{LIBSCRIPTS},
-@samp{DATA}, and @samp{PACKAGEDATA} are automatically installed in the
-appropriate place.
+your program once it has been built.  All @code{PROGRAMS},
+@code{SCRIPTS}, @code{LIBRARIES}, @code{DATA} and @code{HEADERS} are
+automatically installed in the appropriate places.
 
 @code{automake} also handles installing any specified info and man
 pages.
@@ -621,8 +668,6 @@ For instance, in the @code{automake} distribution,
 DIST_OTHER = automake.in
 @end example
 
-FIXME mention files that are found automatically but not printed by
---help.
 FIXME: describe DIST_SUBDIRS or not?  It is a hack which might go away.
 
 @node Tags
@@ -641,8 +686,14 @@ files from subdirectories.
 Also, if the variable @samp{ETAGS_ARGS} is defined, a @file{TAGS} file
 will be generated.  This variable is intended for use in directories
 which contain taggable source that @code{etags} does not understand.
-(For instance, it could be set to a regexp to recognize node names in
-Texinfo documentation)
+
+Here is how @code{automake} generates tags for its source, and for nodes
+in its Texinfo file:
+
+@example
+ETAGS_ARGS = automake.in --lang=none \
+ --regex='/^@@node[ \t]+\([^,]+\)/\1/' automake.texi
+@end example
 
 
 @node Dependencies
@@ -687,8 +738,7 @@ already used by @code{automake}.  However, various useful targets have a
 
 The targets that support a local version are @samp{all}, @samp{info},
 @samp{dvi}, @samp{check}, @samp{install-data}, @samp{install-exec}, and
-@samp{uninstall}.  (Currently @samp{install} is also supported, but this
-might go away)
+@samp{uninstall}.
 
 For instance, here is how to install a file in @file{/etc}:
 
