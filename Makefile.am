@@ -1,4 +1,4 @@
-SUBDIRS = intl po
+# SUBDIRS = intl po
 
 SCRIPTS = automake
 DISTCLEANFILES = automake
@@ -14,7 +14,7 @@ program.am programs.am remake-hdr.am \
 remake-subd.am remake.am scripts.am subdirs.am tags.am tags-subd.am \
 tags-clean.am texi-version.am texinfos-vars.am texinfos.am
 
-CONFIG_HEADER = config.h
+# CONFIG_HEADER = config.h
 
 DIST_OTHER = automake.in gettext-sh $(am_DATA)
 DIST_SUBDIRS = RCS samples
