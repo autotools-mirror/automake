@@ -111,6 +111,13 @@ $seen_gettext = 0;
 # Line number at which ud_GNU_GETTEXT seen.
 $ac_gettext_line = 0;
 
+# Whether ALL_LINGUAS has been seen.
+$seen_linguas = '';
+# The actual text.
+$all_linguas = '';
+# Line number at which it appears.
+$all_linguas_line = 0;
+
 # 1 if AC_PROG_INSTALL seen, 2 if fp_PROG_INSTALL seen.
 $seen_prog_install = 0;
 
@@ -324,6 +331,7 @@ sub generate_makefile
     &check_gnits_standards;
 
     &handle_configure;
+    &handle_gettext;
     &handle_libraries;
     &handle_programs;
     &handle_scripts;
@@ -598,7 +606,7 @@ sub handle_programs
     local (@proglist) = &am_install_var ('-clean',
 					 'programs', 'PROGRAMS',
 					 'bin', 'sbin', 'libexec', 'pkglib',
-					 'noinst');
+					 'noinst', 'check');
     return if ! @proglist;
 
     local ($obj) = &get_object_extension;
@@ -648,7 +656,7 @@ sub handle_libraries
 {
     local (@liblist) = &am_install_var ('-no-all', '-clean',
 					'libraries', 'LIBRARIES',
-					'lib', 'pkglib', 'noinst');
+					'lib', 'pkglib', 'noinst', 'check');
     return if ! @liblist;
 
     if (! $seen_ranlib)
@@ -720,7 +728,7 @@ sub handle_scripts
     # eg in Automake itself.
     $scripts_installed = &am_install_var ('scripts', 'SCRIPTS',
 					  'bin', 'sbin', 'libexec', 'pkgdata',
-					  'noinst');
+					  'noinst', 'check');
 
     # We really only want a boolean value.
     $scripts_installed = 1 if $scripts_installed;
@@ -954,7 +962,7 @@ sub handle_data
 {
     &am_install_var ('data', 'DATA', 'data', 'sysconf',
 		     'sharedstate', 'localstate', 'pkgdata',
-		     'noinst');
+		     'noinst', 'check');
 }
 
 # Handle TAGS.
@@ -1228,21 +1236,6 @@ sub handle_subdirs
 	return;
     }
 
-    # As of 0.10.6, gettext still wants @INTLSUB@ and @POSUB@ in
-    # SUBDIRS.  This is going to change in a future version.  So for
-    # now we simply do no checking.
-    if (0 && $seen_gettext)
-    {
-	&am_line_error
-	    ('SUBDIRS',
-	     "ud_GNU_GETTEXT in configure.in but \`po' not in SUBDIRS")
-		if $contents{'SUBDIRS'} !~ /\bpo\b/;
-	&am_line_error
-	    ('SUBDIRS',
-	     "ud_GNU_GETTEXT in configure.in but \`intl' not in SUBDIRS")
-		if $contents{'SUBDIRS'} !~ /\bintl\b/;
-    }
-
     &require_file_with_conf_line ($ac_gettext_line, $FOREIGN, 'ABOUT-NLS')
 	if $seen_gettext;
 
@@ -1404,7 +1397,56 @@ sub handle_headers
 {
     &am_install_var ('header', 'HEADERS', 'include',
 		     'oldinclude', 'pkginclude',
-		     'noinst');
+		     'noinst', 'check');
+}
+
+sub handle_gettext
+{
+    return if ! $seen_gettext || $relative_dir ne '.';
+
+    # As of 0.10.6, gettext still wants @INTLSUB@ and @POSUB@ in
+    # SUBDIRS.  This is going to change in a future version.  So for
+    # now we simply do no checking.
+    if (0 && defined $contents{'SUBDIRS'})
+    {
+	&am_line_error
+	    ('SUBDIRS',
+	     "ud_GNU_GETTEXT in configure.in but \`po' not in SUBDIRS")
+		if $contents{'SUBDIRS'} !~ /\bpo\b/;
+	&am_line_error
+	    ('SUBDIRS',
+	     "ud_GNU_GETTEXT in configure.in but \`intl' not in SUBDIRS")
+		if $contents{'SUBDIRS'} !~ /\bintl\b/;
+    }
+
+    # Ensure that each language in ALL_LINGUAS has a .po file, and
+    # each po file is mentioned in ALL_LINGUAS.
+    if ($seen_linguas)
+    {
+	local (%linguas) = ();
+	grep ($linguas{$_} = 1, split (/\s+/, $all_linguas));
+
+	foreach (<po/*.po>)
+	{
+	    s/^po\///;
+	    s/\.po$//;
+
+	    &am_line_error ($all_linguas_line,
+			    ("po/$_.po exists but \`$_' not in \`ALL_LINGUAS'"))
+		if ! $linguas{$_};
+	}
+
+	foreach (keys %linguas)
+	{
+	    &am_line_error ($all_linguas_line,
+			    "$_ in \`ALL_LINGUAS' but po/$_.po does not exist")
+		if ! -f "po/$_.po";
+	}
+    }
+    else
+    {
+	&am_error ("ud_GNU_GETTEXT in configure.in but \`ALL_LINGUAS' not defined");
+    }
 }
 
 # Handle footer elements.
@@ -1833,6 +1875,14 @@ sub scan_configure
 	    $ac_gettext_line = $.;
 	}
 
+        # Look for ALL_LINGUAS.
+        if (/ALL_LINGUAS="(.*)"$/ || /ALL_LINGUAS=(.*)$/)
+	{
+	    $seen_linguas = 1;
+	    $all_linguas = $1;
+	    $all_linguas_line = $.;
+	}
+
 	# Handle configuration headers.
 	if (/AC_CONFIG_HEADER\s*\((.*)\)/)
 	{
@@ -2198,13 +2248,6 @@ sub initialize_global_constants
 # This Makefile.in is free software; the Free Software Foundation
 # gives unlimited permission to copy, distribute and modify it.
 ";
-
-    # Element is TRUE if primary variable is further parsed by
-    # Automake.  In such a case the contents must be valid Makefile
-    # variable names.
-    %primary_uses_subobjects =
-	('PROGRAMS', 1,
-	 'LIBRARIES', 1);
 }
 
 # (Re)-Initialize per-Makefile.am variables.
@@ -2484,10 +2527,18 @@ sub am_install_var
 		&push_phony_cleaners ($X . $primary);
 	    }
 
-	    push (@used, '$(' . $one_name . ')');
-	    if ($X eq 'noinst')
+	    if ($X eq 'check')
 	    {
-		# Objects in noinst_FOO never get installed.
+		push (@check, '$(' . $one_name . ')');
+	    }
+	    else
+	    {
+		push (@used, '$(' . $one_name . ')');
+	    }
+	    if ($X eq 'noinst' || $X eq 'check')
+	    {
+		# Objects in noinst_FOO or check_FOO never get
+		# installed.
 		next;
 	    }
 
