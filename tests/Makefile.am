@@ -334,6 +334,8 @@ output4.test \
 output5.test \
 output6.test \
 output7.test \
+output8.test \
+output9.test \
 overrid.test \
 parse.test \
 percent.test \

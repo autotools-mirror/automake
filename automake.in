@@ -317,7 +317,7 @@ my @configure_input_files = ();
 # and their outputs.
 my @other_input_files = ();
 # Where the last AC_CONFIG_FILES/AC_OUTPUT appears.
-my $ac_config_files_location;
+my %ac_config_files_location = ();
 
 # List of directories to search for configure-required files.  This
 # can be set by AC_CONFIG_AUX_DIR.
@@ -3711,7 +3711,34 @@ sub handle_configure ($$$@)
 	    }
 	}
 
-      my @rewritten_inputs = rewrite_inputs_into_dependencies (1, @inputs);
+      # An input file is either output by some other AC_CONFIG_FILES,
+      # or it must exist and be relative to $(top_srcdir).  In the
+      # latter case, we distribute it; in the former, we should not.
+      my @rewritten_inputs = ();
+      for my $i (@inputs)
+	{
+	  if (exists $ac_config_files_location{$i})
+	    {
+	      if (dirname ($i) eq $relative_dir)
+		{
+		  $i = basename $i;
+		}
+	      else
+		{
+		  $i = '$(top_builddir)/' . $i;
+		}
+	    }
+	  else
+	    {
+	      msg ('error', $ac_config_files_location{$file},
+		   "required file `$i' not found")
+		unless -f $i;
+	      ($i) = rewrite_inputs_into_dependencies (1, $i);
+	      push_dist_common ($i);
+	    }
+	  push @rewritten_inputs, $i;
+	}
+
       $output_rules .= ($local . ': '
 			. '$(top_builddir)/config.status '
 			. "@rewritten_inputs\n"
@@ -3722,10 +3749,6 @@ sub handle_configure ($$$@)
 			. '$@'
 			. "\n");
       push (@actual_other_files, $local);
-
-      # Require all input files.
-      require_file ($ac_config_files_location, FOREIGN,
-		    rewrite_inputs_into_dependencies (0, @inputs));
     }
 
   foreach my $struct (@config_links)
@@ -4339,13 +4362,13 @@ sub locate_am (@)
 
 my %make_list;
 
-# &scan_autoconf_config_files ($CONFIG-FILES)
-# -------------------------------------------
+# &scan_autoconf_config_files ($WHERE, $CONFIG-FILES)
+# ---------------------------------------------------
 # Study $CONFIG-FILES which is the first argument to AC_CONFIG_FILES
 # (or AC_OUTPUT).
-sub scan_autoconf_config_files ($)
+sub scan_autoconf_config_files ($$)
 {
-  my ($config_files) = @_;
+  my ($where, $config_files) = @_;
 
   # Look at potential Makefile.am's.
   foreach (split ' ', $config_files)
@@ -4368,6 +4391,7 @@ sub scan_autoconf_config_files ($)
 	  # rebuilt, but shouldn't generate itself.
 	  push (@other_input_files, $_);
         }
+      $ac_config_files_location{$local} = $where;
     }
 }
 
@@ -4451,8 +4475,7 @@ sub scan_autoconf_traces ($)
       elsif ($macro eq 'AC_CONFIG_FILES')
 	{
 	  # Look at potential Makefile.am's.
-	  $ac_config_files_location = $where;
-	  &scan_autoconf_config_files ($args[1]);
+	  scan_autoconf_config_files ($where, $args[1]);
 	}
       elsif ($macro eq 'AC_CONFIG_HEADERS')
 	{
@@ -6421,7 +6444,7 @@ sub require_file_internal ($$@)
 
     foreach my $file (@files)
     {
-        my $fullfile;
+	my $fullfile;
 	my $errdir;
 	my $errfile;
 	my $save_dir;
