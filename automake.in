@@ -133,7 +133,7 @@ foreach $am_file (@input_files)
     }
 }
 
-&am_conf_error ($scripts_installed ? 'fp_PROG_INSTALL' : 'AC_PROG_INSTALL'
+&am_conf_error (($scripts_installed ? 'fp_PROG_INSTALL' : 'AC_PROG_INSTALL')
 		. " must be used in configure.in")
     unless $seen_prog_install > $scripts_installed;
 
@@ -346,7 +346,15 @@ sub get_object_extension
     if (! $dir_holds_sources)
     {
 	# Boilerplate.
-	$output_vars .= &file_contents ('compile-vars');
+	local ($xform) = '';
+	if (defined $contents{'CONFIG_HEADER'})
+	{
+	    ($xform = &dirname ($contents{'CONFIG_HEADER'}))
+		=~ s/(\W)/\\$1/g;
+	    $xform = 's/\@CONFIG_INCLUDE_SPEC\@/-I' . $xform . '/go';
+	}
+	$output_vars .= &file_contents_with_transform ($xform,
+						       'compile-vars');
 	$output_rules .= &file_contents ('compile');
 	&push_phony_cleaners ('compile');
 
@@ -392,7 +400,7 @@ sub handle_source_transform
 {
     local ($one_file, $obj) = @_;
     local ($objpat) = $obj;
-    $objpat =~ s/(\W)/\\\1/g;
+    $objpat =~ s/(\W)/\\$1/g;
 
     # Look for file_SOURCES and file_OBJECTS.
     if (defined $contents{$one_file . "_SOURCES"})
@@ -1333,22 +1341,17 @@ sub handle_merge_targets
     }
 
     # Step three: print definitions users can use.
-    if (@install_exec)
-    {
-	$output_rules .= ("install-exec: "
-			  . join (' ', @install_exec)
-			  . "\n\n");
-	push (@install, 'install-exec') if !$recursive_install;
-	push (@phony, 'install-exec');
-    }
-    if (@install_data)
-    {
-	$output_rules .= ("install-data: "
-			  . join (' ', @install_data)
-			  . "\n\n");
-	push (@install, 'install-data') if !$recursive_install;
-	push (@phony, 'install-data');
-    }
+    $output_rules .= ("install-exec: "
+		      . join (' ', @install_exec)
+		      . "\n\n");
+    push (@install, 'install-exec') if !$recursive_install;
+    push (@phony, 'install-exec');
+
+    $output_rules .= ("install-data: "
+		      . join (' ', @install_data)
+		      . "\n\n");
+    push (@install, 'install-data') if !$recursive_install;
+    push (@phony, 'install-data');
 
     # If no dependencies for 'install', add 'all'.  Why?  That way
     # "make install" at top level of distclean'd distribution won't
@@ -1636,6 +1639,12 @@ sub pretty_print_internal
     local ($column) = length ($head);
     local ($result) = $head;
 
+    # Fill length is number of characters.  However, each Tab
+    # character counts for eight.  So we count the number of Tabs and
+    # multiply by 7.
+    local ($fill_length) = length ($fill);
+    $fill_length += 7 * ($fill =~ tr/\t/\t/d);
+
     local ($bol) = 0;
     foreach (@values)
     {
@@ -1643,7 +1652,7 @@ sub pretty_print_internal
 	if ($column + length ($_) > 71)
 	{
 	    $result .= " \\\n" . $fill;
-	    $column = length ($fill);
+	    $column = $fill_length;
 	    $bol = 1;
 	}
 

@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# Test for bug where check target doesn't depend on all.
+
+. $srcdir/defs
+
+# Build source after derived, so derived must be remade.  We build
+# this way up here because without a delay between this and creating
+# 'source', the make will fail.  No, really.
+echo foo > derived
+
+cat > Makefile.am << 'END'
+bin_SCRIPTS = derived
+check-local:
+	true
+derived: source
+	cat source > derived
+END
+
+$AUTOMAKE || exit 1
+
+: > source
+
+# Bogus.
+make -f Makefile.in check
+
+echo "GOT `cat derived`"
+test -z "`cat derived`"
