@@ -7,15 +7,16 @@
 
 @SET_MAKE@
 
-# NOTE: "all" is separate because otherwise the AIX 3.2.5 make will
-# run all of the "all", "install", "uninstall", etc targets if run
-# with no arguments.
-all:: all-recursive
+RECURSIVE = all-recursive install-data-recursive install-exec-recursive \
+uninstall-data-recursive uninstall-exec-recursive install-recursive \
+uninstall-recursive check-recursive info-recursive dvi-recursive \
+mostlyclean-recursive clean-recursive distclean-recursive \
+maintainer-clean-recursive
 
-install install-exec install-data install-info uninstall check info dvi id ID::
+$(RECURSIVE):
 	for subdir in $(SUBDIRS); do		\
 	  echo making $@ in $$subdir;		\
-	  (cd $$subdir; $(MAKE) $@) 		\
+	  (cd $$subdir; $(MAKE) `echo $@ | sed s/-recursive//`)	\
 	   || case "$(MFLAGS)" in *k*) fail=yes;; *) exit 1;; esac; \
 	done && test -z "$$fail"
 
@@ -30,11 +31,6 @@ maintainer-clean: maintainer-clean-recursive
 	@echo "This command is intended for maintainers to use;"
 	@echo "it deletes files that may require special tools to rebuild."
 	$(MAKE) maintainerclean-local
-
-all-recursive mostlyclean-recursive clean-recursive distclean-recursive maintainer-clean-recursive:
-	for subdir in $(SUBDIRS); do \
-	  (cd $$subdir; $(MAKE) `echo $@ | sed s/-recursive//`); \
-	done
 
 mostlyclean-local:
 
