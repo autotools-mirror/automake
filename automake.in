@@ -6074,20 +6074,19 @@ sub conditional_ambiguous_p ($$$)
       my $message;
       if ($vcond eq $cond)
 	{
-	  return ("$var multiply defined in condition ". $cond->string,
+	  return ("$var multiply defined in condition " . $cond->human,
 		  $vcond);
 	}
       elsif ($vcond->true_when ($cond))
 	{
-	  return ("$var was already defined in condition "
-		  . $vcond->string . ", "
-		  . "which implies condition ". $cond->string, $vcond);
+	  return ("$var was already defined in condition " . $vcond->human
+		  . ", which implies condition ". $cond->human, $vcond);
 	}
       elsif ($cond->true_when ($vcond))
 	{
 	  return ("$var was already defined in condition "
-		  . $vcond->string . ", "
-		   . "which is implied by condition " . $cond->string, $vcond);
+		  . $vcond->human . ", which is implied by condition "
+		  . $cond->human, $vcond);
 	}
     }
   return ('', '');
@@ -6295,8 +6294,7 @@ sub macro_define ($$$$$$)
 	      err ($where,
 		   "Cannot apply `+=' because `$var' is not defined "
 		   . "in\nthe following conditions:\n  "
-		   . join ("\n  ",
-			   map { $_->string } $undef_cond->conds)
+		   . join ("\n  ", map { $_->human } $undef_cond->conds)
 		   . "\nEither define `$var' in these conditions,"
 		   . " or use\n`+=' in the same conditions as"
 		   . " the definitions.");
@@ -6321,7 +6319,7 @@ sub macro_define ($$$$$$)
 	{
 	  verb ("refusing to override the user definition of:\n"
 		. macro_dump ($var)
-		."with `$cond->string' => `$value'");
+		."with `$cond->human' => `$value'");
 	}
       else
 	{
@@ -7324,7 +7322,8 @@ sub rule_define ($$$$$)
       my $oldowner  = $target_owner{$target}{$cond};
 
       # Don't mention true conditions in diagnostics.
-      my $condmsg = $cond == TRUE ? " in condition `" . $cond->string . "'" : '';
+      my $condmsg =
+	$cond == TRUE ? " in condition `" . $cond->human . "'" : '';
 
       if ($owner == TARGET_USER)
 	{
@@ -8933,7 +8932,7 @@ sub require_variables ($$$@)
       if (! $undef_cond->true)
 	{
 	  $text .= ("in the following conditions:\n  "
-		    . join ("\n  ", map { $_->string } $undef_cond->conds));
+		    . join ("\n  ", map { $_->human } $undef_cond->conds));
 	}
 
       ++$res;

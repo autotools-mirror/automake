@@ -37,7 +37,12 @@ Automake::ConditionalSet - record a disjunction of conditions
   if ($set->false) { ... }
 
   # Return a string representing the ConditionalSet.
+  #   "COND1_TRUE COND2_FALSE | COND3_FALSE"
   my $str = $set->string;
+
+  # Return a human readable string representing the ConditionalSet.
+  #   "(COND1 and !COND2) or (!COND3)"
+  my $str = $set->human;
 
   # Build a new ConditionalSet from the permuation of all
   # subconditions appearing in $set.
@@ -225,6 +230,39 @@ sub string ($ )
     }
 
   $self->{'string'} = $res;
+  return $res;
+}
+
+=item C<$cond-E<gt>human>
+
+Build a human readable string which denotes the C<ConditionalSet>.
+
+=cut
+
+sub human ($ )
+{
+  my ($self) = @_;
+
+  return $self->{'human'} if defined $self->{'human'};
+
+  my $res = '';
+  if ($self->false)
+    {
+      $res = 'FALSE';
+    }
+  else
+    {
+      my @c = $self->conds;
+      if (1 == @c)
+	{
+	  $res = $self->human;
+	}
+      else
+	{
+	  $res = '(' . join (') or (', map { $_->human } $self->conds) . ')';
+	}
+    }
+  $self->{'human'} = $res;
   return $res;
 }
 

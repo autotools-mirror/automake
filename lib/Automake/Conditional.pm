@@ -57,6 +57,10 @@ Automake::Conditional - record a conjunction of conditions
   #  "COND1_TRUE COND2_FALSE"
   my $str = $cond->string;
 
+  # Return the list of conditions as a human readable string:
+  #  "COND1 and !COND2"
+  my $str = $cond->human;
+
   # Return the list of conditions as a AC_SUBST-style string:
   #  "@COND1_TRUE@@COND2_FALSE@"
   my $subst = $cond->subst_string;
@@ -296,9 +300,50 @@ sub string ($ )
     }
   else
     {
-      $res = join (' ', sort $self->conds);
+      $res = join (' ', $self->conds);
     }
   $self->{'string'} = $res;
+  return $res;
+}
+
+=item C<$cond-E<gt>human>
+
+Build a human readable string which denotes the conditional.
+
+For instance using the C<$cond> definition from L<SYNOPSYS>,
+C<$cond-E<gt>string> will return C<"COND1 and !COND2">.
+
+=cut
+
+sub _to_human ($ )
+{
+  my ($s) = @_;
+  if ($s =~ /^(.*)_(TRUE|FALSE)$/)
+    {
+      return (($2 eq 'FALSE') ? '!' : '') . $1;
+    }
+  else
+    {
+      return $s;
+    }
+}
+
+sub human ($ )
+{
+  my ($self) = @_;
+
+  return $self->{'human'} if defined $self->{'human'};
+
+  my $res = '';
+  if ($self->false)
+    {
+      $res = 'FALSE';
+    }
+  else
+    {
+      $res = join (' and ', map { _to_human $_ } $self->conds);
+    }
+  $self->{'human'} = $res;
   return $res;
 }
 
