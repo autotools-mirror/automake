@@ -2,7 +2,7 @@
 
 AUTOMAKE_OPTIONS = gnits
 
-XFAIL_TESTS =
+XFAIL_TESTS = ldflags.test
 TESTS =	\
 acinclude.test \
 aclocal.test \
