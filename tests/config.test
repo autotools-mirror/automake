@@ -1,0 +1,25 @@
+#! /bin/sh
+
+# Test to make sure config.h rule made even if it is in a subdir.  The
+# idea is that if config.h is in a subdir, and there is no Makefile in
+# that subdir, then we want to build config.h as the top level.
+
+. $srcdir/defs || exit 1
+
+cat > configure.in << 'END'
+AM_CONFIG_HEADER(subdir/config.h)
+PACKAGE=nonesuch
+VERSION=nonesuch
+AC_PROG_CC
+AC_ARG_PROGRAM
+AC_PROG_INSTALL
+AC_OUTPUT(Makefile)
+END
+
+: > Makefile.am
+mkdir subdir
+: > subdir/config.h.in
+
+$AUTOMAKE || exit 1
+
+grep '^subdir/config.h:' Makefile.in

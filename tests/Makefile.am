@@ -33,7 +33,7 @@ java.test sinclude.test javaprim.test javasubst.test aclocalii.test \
 lex2.test libobj8.test version3.test instdata.test exdir2.test \
 colon5.test library.test syntax.test cond4.test cond5.test recurs.test \
 ansi3.test cond6.test colon6.test texinfo7.test parse.test else.test \
-clean.test recurs2.test
+clean.test recurs2.test config.test
 
 EXTRA_DIST = defs $(TESTS)
 
