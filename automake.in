@@ -1087,6 +1087,27 @@ sub handle_languages
 	    # This is not used by depend2.am.
 	    my $der_ext = (&{$lang->output_extensions} ($ext))[0];
 
+	    # When we output an inference rule like `.c.o:' we
+	    # have two cases to consider: either subdir-objects
+	    # is used, or it is not.
+	    #
+	    # In the latter case the rule is used to build objects
+	    # in the current directory, and dependencies always
+	    # go into `./$(DEPDIR)/'.  We can hard-code this value.
+	    #
+	    # In the former case the rule can be used to build
+	    # objects in sub-directories too.  Dependencies should
+	    # go into the appropriate sub-directories, e.g.,
+	    # `sub/$(DEPDIR)/'.  The value of this directory
+	    # need the be computed on-the-fly.
+	    #
+	    # DEPBASE holds the name of this directory, plus the
+	    # basename part of the object file (extensions Po, TPo,
+	    # Plo, TPlo will be added later as appropriate).  It is
+	    # either hardcoded, or a shell variable (`$depbase') that
+	    # will be computed by the rule.
+	    my $depbase =
+	      option ('subdir-objects') ? '$$depbase' : '$(DEPDIR)/$*';
 	    $output_rules .=
 	      file_contents ($rule_file,
 			     new Automake::Location,
@@ -1095,11 +1116,7 @@ sub handle_languages
 
 			     'DERIVED-EXT' => $der_ext,
 
-			     # In this situation we know that the
-			     # object is in this directory, so
-			     # $(DEPDIR) is the correct location for
-			     # dependencies.
-			     DEPBASE   => '$(DEPDIR)/$*',
+			     DEPBASE   => $depbase,
 			     BASE      => '$*',
 			     SOURCE    => '$<',
 			     OBJ       => '$@',
@@ -1108,7 +1125,8 @@ sub handle_languages
 
 			     COMPILE   => '$(' . $lang->compiler . ')',
 			     LTCOMPILE => '$(LT' . $lang->compiler . ')',
-			     -o        => $output_flag);
+			     -o        => $output_flag,
+			     SUBDIROBJ => !! option 'subdir-objects');
 	}
 
 	# Now include code for each specially handled object with this
@@ -1209,11 +1227,6 @@ sub handle_languages
 		  if $source !~ /\$U/;
 
 		(my $source_ = $source) =~ s/\$U/_/g;
-		# Explicitly clean the _.c files if they are in
-		# a subdirectory. (In the current directory they get
-		# erased by a `rm -f *_.c' rule.)
-		$clean_files{$source_} = MOSTLY_CLEAN
-		  if $objdir ne '.';
 		# Output an additional rule if _.c and .c are not in
 		# the same directory.  (_.c is always in $objdir.)
 		if ($objdir ne $srcdir)
@@ -1531,13 +1544,37 @@ sub handle_single_transform_list ($$$$@)
                 $object = $directory . '/' . $object;
             }
 
-            # If doing dependency tracking, then we can't print
-            # the rule.  If we have a subdir object, we need to
-            # generate an explicit rule.  Actually, in any case
-            # where the object is not in `.' we need a special
-            # rule.  The per-object rules in this case are
-            # generated later, by handle_languages.
-            if ($renamed || $directory ne '')
+	    # If the object file has been renamed (because per-target
+	    # flags are used) we cannot compile the file with an
+	    # inference rule: we need an explicit rule.
+	    #
+	    # If the source is in a subdirectory and the object is in
+	    # the current directory, we also need an explicit rule.
+	    #
+	    # If both source and object files are in a subdirectory
+	    # (this happens when the subdir-objects option is used),
+	    # then the inference will work.
+	    #
+	    # The latter case deserves a historical note.  When the
+	    # subdir-objects option was added on 1999-04-11 it was
+	    # thought that inferences rules would work for
+	    # subdirectory objects too.  Later, on 1999-11-22,
+	    # automake was changed to output explicit rules even for
+	    # subdir-objects.  Nobody remembers why, but this occured
+	    # soon after the merge of the user-dep-gen-branch so it
+	    # might be related.  In late 2003 people complained about
+	    # the size of the generated Makefile.ins (libgcj, with
+	    # 2200+ subdir objects was reported to have a 9MB
+	    # Makefile), so we now rely on inference rules again.
+	    # Maybe we'll run across the same issue as in the past,
+	    # but at least this time we can document it.  However since
+	    # dependency tracking has evolved it is possible that
+	    # our old problem no longer exists.
+	    # Using inference rules for subdir-objects has been tested
+	    # with GNU make, Solaris make, Ultrix make, BSD make,
+	    # HP-UX make, and OSF1 make successfully.
+            if ($renamed ||
+		($directory ne '' && ! option 'subdir-objects'))
             {
                 my $obj_sans_ext = substr ($object, 0,
 					   - length ($this_obj_ext));
@@ -4935,6 +4972,12 @@ sub lang_c_finish
  	    push (@objects, $base . '_.$(OBJEXT)');
  	    push (@objects, $base . '_.lo')
 	      if var ('LIBTOOL');
+
+	    # Explicitly clean the _.c files if they are in a
+	    # subdirectory. (In the current directory they get erased
+	    # by a `rm -f *_.c' rule.)
+	    $clean_files{$base . '_.c'} = MOSTLY_CLEAN
+	      if dirname ($base) ne '.';
  	}
 
  	# Make all _.o (and _.lo) files depend on ansi2knr.

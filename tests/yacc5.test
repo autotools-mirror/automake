@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 2001, 2002, 2003  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -23,6 +23,8 @@
 
 . ./defs || exit 1
 
+set -e
+
 cat > configure.in << 'END'
 AC_INIT
 AM_INIT_AUTOMAKE(nonesuch, nonesuch)
@@ -41,10 +43,10 @@ mkdir sub
 
 : > sub/maude.y
 
-$ACLOCAL || exit 1
-$AUTOMAKE -a || exit 1
+$ACLOCAL
+$AUTOMAKE -a
 
-grep '^maude\.c:' Makefile.in || exit 1
+grep '^maude\.c:' Makefile.in
 
 
 ## Try again with subdir-objects.
@@ -55,10 +57,11 @@ bin_PROGRAMS = maude
 maude_SOURCES = sub/maude.y
 END
 
-$ACLOCAL || exit 1
-$AUTOMAKE -a || exit 1
+$ACLOCAL
+$AUTOMAKE -a
 
-grep '^sub/maude\.c:' Makefile.in || exit 1
+# No rule needed, the default .y.c: inference rule is enough.
+grep '^sub/maude\.c:' Makefile.in && exit 1
 
 
 ## Try again with per-exe flags.
@@ -80,6 +83,4 @@ grep 'AM_YFLAGS.*maude' Makefile.in && exit 1
 grep 'maudec' Makefile.in && exit 1
 
 # Make sure the .o file is required.
-grep '^am_maude_OBJECTS.*maude' Makefile.in || exit 1
-
-exit 0
+grep '^am_maude_OBJECTS.*maude' Makefile.in
