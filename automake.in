@@ -112,7 +112,7 @@ sub finish ($)
     }
 }
 
-sub target_hook ($$$$)
+sub target_hook ($$$$%)
 {
     my ($self) = @_;
     if (defined $self->_target_hook)
@@ -1724,7 +1724,7 @@ sub handle_single_transform ($$$$$%)
 	if (defined $lang)
 	{
 	    # Let the language do some special magic if required.
-	    $lang->target_hook ($aggregate, $object, $full);
+	    $lang->target_hook ($aggregate, $object, $full, %transform);
 	}
 
 	if ($derived_source)
@@ -1902,6 +1902,7 @@ sub handle_source_transform ($$$$%)
 					 $xpfx . $one_file . '_OBJECTS',
 					 $prefix =~ /EXTRA_/,
 					 $one_file, $obj, $varname, $where,
+					 DIST_SOURCE => ($prefix !~ /^nodist_/),
 					 %transform);
     }
     if ($needlinker)
@@ -5239,7 +5240,7 @@ sub lang_c_finish
 # compile a yacc file.
 sub lang_yacc_target_hook
 {
-    my ($self, $aggregate, $output, $input) = @_;
+    my ($self, $aggregate, $output, $input, %transform) = @_;
 
     my $flag = $aggregate . "_YFLAGS";
     my $flagvar = var $flag;
@@ -5253,7 +5254,6 @@ sub lang_yacc_target_hook
 	# Found a `-d' that applies to the compilation of this file.
 	# Add a dependency for the generated header file, and arrange
 	# for that file to be included in the distribution.
-	# FIXME: this fails for `nodist_*_SOURCES'.
 	foreach my $cond (Automake::Rule::define (${header}, 'internal',
 						  RULE_AUTOMAKE, TRUE,
 						  INTERNAL))
@@ -5266,7 +5266,11 @@ sub lang_yacc_target_hook
 			      . "$condstr\t  \$(MAKE) $output; \\\n"
 			      . "$condstr\telse :; fi\n");
 	  }
-	&push_dist_common ($header);
+	# Distribute the generated file, unless its .y source was
+	# listed in a nodist_ variable.  (&handle_source_transform
+	# will set DIST_SOURCE.)
+	&push_dist_common ($header)
+	  if $transform{'DIST_SOURCE'};
 
 	# If the files are built in the build directory, then we want
 	# to remove them with `make clean'.  If they are in srcdir
