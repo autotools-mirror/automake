@@ -7401,25 +7401,25 @@ sub am_install_var
     my $first = 1;
     foreach my $X (sort keys %valid)
     {
+	my $nodir_name = $X;
 	my $one_name = $X . '_' . $primary;
 	next
 	  unless (&variable_defined ($one_name));
 
 	my $strip_subdir = 1;
 	# If subdir prefix should be preserved, do so.
-	if ($X =~ /^nobase_/)
+	if ($nodir_name =~ /^nobase_/)
 	  {
 	    $strip_subdir = 0;
-	    $X =~ s/^nobase_//;
+	    $nodir_name =~ s/^nobase_//;
 	  }
 
-	my $nodir_name = $X;
 	# If files should be distributed, do so.
 	my $dist_p = 0;
 	if ($can_dist)
 	  {
-	    $dist_p = (($default_dist && $one_name !~ /^nodist_/)
-		       || (! $default_dist && $one_name =~ /^dist_/));
+	    $dist_p = (($default_dist && $nodir_name !~ /^nodist_/)
+		       || (! $default_dist && $nodir_name =~ /^dist_/));
 	    $nodir_name =~ s/^(dist|nodist)_//;
 	  }
 
@@ -7430,7 +7430,7 @@ sub am_install_var
 	    # Skip configure substitutions.  Possibly bogus.
 	    if ($rcurs =~ /^\@.*\@$/)
 	      {
-		if ($X eq 'EXTRA')
+		if ($nodir_name eq 'EXTRA')
 		  {
 		    if (! $warned_about_extra)
 		      {
@@ -7495,14 +7495,14 @@ sub am_install_var
 
 	# "EXTRA" shouldn't be used when generating clean targets,
 	# all, or install targets.
-	if ($X eq 'EXTRA')
+	if ($nodir_name eq 'EXTRA')
 	  {
 	    # We used to warn if EXTRA_FOO was defined uselessly,
 	    # but this was annoying.
 	    next;
 	  }
 
-	if ($X eq 'check')
+	if ($nodir_name eq 'check')
 	  {
 	    push (@check, '$(' . $one_name . ')');
 	  }
@@ -7512,12 +7512,12 @@ sub am_install_var
 	  }
 
 	# Is this to be installed?
-	my $install_p = $X ne 'noinst' && $X ne 'check';
+	my $install_p = $nodir_name ne 'noinst' && $nodir_name ne 'check';
 
 	# If so, with install-exec? (or install-data?).
-	my $exec_p = (defined $exec_dir_p {$X}
-		      ? $exec_dir_p {$X}
-		      : ($X =~ /exec/));
+	my $exec_p = (defined $exec_dir_p {$nodir_name}
+		      ? $exec_dir_p {$nodir_name}
+		      : ($nodir_name =~ /exec/));
 
 	# Singular form of $PRIMARY.
 	(my $one_primary = $primary) =~ s/S$//;
