@@ -30,7 +30,20 @@ tmpdepfile=${tmpdepfile-`echo "$depfile" | sed 's/\.\([^.]*\)$/.T\1/'`}
 
 rm -f "$tmpdepfile"
 
+if test "$depmode" = hp; then
+  # HP compiler uses -M and no extra arg.
+  flag=-M
+  depmode=gcc
+fi
+
 case "$depmode" in
+hp)
+  # This case exists only to let depend.m4 do its work.  It works by
+  # looking at the text of this script.  This case will never be run,
+  # since it is checked for above.
+  exit 1
+  ;;
+
 gcc)
 ## There are various ways to get dependency output from gcc.  Here's
 ## why we pick this rather obscure method:
@@ -41,7 +54,10 @@ gcc)
 ##   -MM, not -M (despite what the docs say).
 ## - Using -M directly means running the compiler twice (even worse
 ##   than renaming).
-  if "$@" -Wp,-MD,"$tmpdepfile"; then :
+  if test -z "$gccflag"; then
+    gccflag=-MD,
+  fi
+  if "$@" -Wp,"$gccflag$tmpdepfile"; then :
   else
     stat=$?
     rm -f "$tmpdepfile"
