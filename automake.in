@@ -9033,20 +9033,19 @@ sub require_variables ($$$@)
 	if ((exists $var_value{$var} && exists $var_value{$var}{$cond})
 	    || exists $configure_vars{$var});
 
-      # If the variable exists but was not defined in $cond,
-      # look for any definition implied by $cond.
-      if (exists $var_value{$var})
+      my @undef_cond = variable_not_always_defined_in_cond $var, $cond;
+      next VARIABLE
+	unless @undef_cond;
+
+      my $text = "$reason`$var' is undefined\n";
+      if (@undef_cond && $undef_cond[0] ne 'TRUE')
 	{
-	  for my $vcond (keys %{$var_value{$var}})
-	    {
-	      next VARIABLE
-		if (conditional_true_when ($vcond, $cond));
-	    }
+	  $text .= ("in the following conditions:\n  "
+		    . join ("\n  ", @undef_cond));
 	}
 
       ++$res;
 
-      my $text = "$reason`$var' is undefined.";
       if (exists $am_macro_for_var{$var})
 	{
 	  $text .= "\nThe usual way to define `$var' is to add "
