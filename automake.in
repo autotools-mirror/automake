@@ -624,8 +624,6 @@ sub generate_makefile
     &handle_programs;
     &handle_scripts;
 
-    &handle_built_sources;
-
     # This must be run after all the sources are scanned.
     &finish_languages;
 
@@ -1521,25 +1519,6 @@ sub handle_source_transform
     }
 
     return $linker;
-}
-
-# Handle the BUILT_SOURCES variable.
-sub handle_built_sources
-{
-    return unless &variable_defined ('BUILT_SOURCES');
-
-    local (@sources) = &variable_value_as_list ('BUILT_SOURCES', 'all');
-    local ($s);
-    foreach $s (@sources)
-    {
-	if (/^\@.*\@$/)
-	{
-	    # FIXME: is this really the right thing to do?
-	    &am_line_error ('BUILT_SOURCES',
-			    "\`BUILT_SOURCES' should not contain a configure substitution");
-	    last;
-	}
-    }
 }
 
 # Special-case @ALLOCA@ and @LIBOBJS@ in _LDADD or _LIBADD variables.
@@ -3789,10 +3768,12 @@ sub handle_merge_targets
 			"use \`install-data-local' or \`install-exec-local', not \`install-local'");
     }
 
-    if (@all)
+    if (@all || &variable_defined ('BUILT_SOURCES'))
     {
 	local ($one_name);
 	local ($local_headers) = '';
+	$local_headers = '$(BUILT_SOURCES)'
+	    if &variable_defined ('BUILT_SOURCES');
 	foreach $one_name (@config_names)
 	{
 	    if (&dirname ($one_name) eq $relative_dir)
