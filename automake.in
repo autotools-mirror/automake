@@ -166,12 +166,13 @@ for am_makefile in $mfiles; do
   SOURCES= CONFIG_HEADER= SUBDIRS= PROGRAMS= LIBPROGRAMS= SCRIPTS= LIBSCRIPTS=
   LIBRARIES= TEXINFOS= MANS= AM_PROGRAMS=
   am_suffixes=
+  am_recursive_install=no
+  am_dist_common=
   # The following are targets that formerly were implemented as
   # double-colon rules.  Nowadays we have to construct such lists
   # explicitly.
   installexec= uninstall= id= tags= info= dvi= check=
   installdata= all='${ALL}' install=
-  am_recursive_install=no
 
   eval `sed -n -f $am_rmnl ${am_makefile}.am | sed -n -f $am_ass`
 
@@ -317,11 +318,13 @@ p
 	# Only do version.texi if requested.
 	if grep version.texi $TEXINFOS > /dev/null; then
 	   am_deps="version.texi $am_deps"
+	   am_dist_common="version.texi $am_dist_common"
 	fi
 	if eval "test \"\$var_${am_infobase}_TEXINFOS\" = explicit"; then
 	   # User supplied eg automake_TEXINFOS.  So use those as
 	   # dependencies.
 	   am_deps="\$(${am_infobase}_TEXINFOS) $am_deps"
+	   am_dist_common"\$(${am_infobase}_TEXINFOS) $am_dist_common"
 	   sed "s/@TEXI@/$TEXINFOS/g" $am_dir/texi-version.am >&5
 	fi
 
@@ -432,13 +435,13 @@ p
   #
 
   # Look for certain common files and make sure they are included.
-  dlist=
   for cfile in $common; do
      if test -f $am_reldir/$cfile; then
-	dlist="$dlist $cfile"
+	am_dist_common="$am_dist_common $cfile"
      fi
   done
-  echo "DIST_COMMON = $dlist" >&4
+  echo "DIST_COMMON = $am_dist_common" >&4
+
   # Include "dist" boilerplate.
   case "$am_makefile" in
   */*) 
