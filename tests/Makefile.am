@@ -275,6 +275,7 @@ subobj6.test \
 subobj7.test \
 subobj8.test \
 subst.test \
+substref.test \
 substtarg.test \
 suffix.test \
 suffix2.test \
