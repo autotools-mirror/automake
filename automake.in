@@ -2201,6 +2201,9 @@ sub scan_texinfo_file
     return ($outfile, $vfile);
 }
 
+
+# handle_texinfo ()
+# -----------------
 # Handle all Texinfo source.
 sub handle_texinfo
 {
@@ -2353,35 +2356,32 @@ sub handle_texinfo
 
     # Handle location of texinfo.tex.
     local ($need_texi_file) = 0;
-    local ($texinfo_tex);
+    local ($texinfodir);
     if ($cygnus_mode)
     {
-	$texinfo_tex = '$(top_srcdir)/../texinfo/texinfo.tex';
-	&define_variable ('TEXINFO_TEX', $texinfo_tex);
+        $texinfodir = '$(top_srcdir)/../texinfo';
+	&define_variable ('TEXINFO_TEX', "$texinfodir/texinfo.tex");
 
     }
     elsif ($config_aux_dir ne '.' && $config_aux_dir ne '')
     {
-	$texinfo_tex = $config_aux_dir . '/texinfo.tex';
-	&define_variable ('TEXINFO_TEX', $texinfo_tex);
+        $texinfodir = $config_aux_dir;
+	&define_variable ('TEXINFO_TEX', "$texinfodir/texinfo.tex");
 	$need_texi_file = 2; # so that we require_conf_file later
     }
     elsif (&variable_defined ('TEXINFO_TEX'))
     {
 	# The user defined TEXINFO_TEX so assume he knows what he is
 	# doing.
-	$texinfo_tex = ('$(srcdir)/'
-			. &dirname (&variable_value ('TEXINFO_TEX')));
+        $texinfodir = ('$(srcdir)/'
+		       . &dirname (&variable_value ('TEXINFO_TEX')));
     }
     else
     {
-	$texinfo_tex = '$(srcdir)/texinfo.tex';
+        $texinfodir = '$(srcdir)';
 	$need_texi_file = 1;
     }
-    local ($xxform);
-    ($xxform = $texinfo_tex) =~ s/\/texinfo\.tex$//;
-    $xxform =~ s/(\W)/\\$1/g;
-    $xform .= ' s/\@TEXINFODIR\@/' . $xxform . '/g;';
+    $xform .= &transform ('TEXINFODIR' => $texinfodir);
 
     $output_rules .= &file_contents_with_transform ($xform, 'texinfos');
     push (@phony, 'install-info-am', 'uninstall-info');
@@ -6050,7 +6050,10 @@ sub variable_value_as_list
     return &variable_value_as_list_worker ($var, $cond, $parent);
 }
 
-# Define a new variable, but only if not already defined.
+
+# define_variable ($VAR, $VALUE)
+# ------------------------------
+# Define a new variable VAR to VALUE, but only if not already defined.
 sub define_variable
 {
     local ($var, $value) = @_;
