@@ -83,6 +83,10 @@ $default_strictness_name = 'gnu';
 # code should be included in generated Makefile.in.
 $cmdline_use_dependencies = 1;
 
+# This is the name of a dependency makefile bit (usually for inclusion in a
+# SMakefile or similar); empty if not set.
+$generate_deps = '';
+
 # TRUE if in verbose mode.
 $verbose = 0;
 
@@ -280,6 +284,27 @@ $obsolete_rx = '(' . join ('|', keys %obsolete_macros) . ')';
 die "automake: no \`Makefile.am' found or specified\n"
     if ! @input_files;
 
+# If --generate-deps was given, we don't do anything else
+#
+if ($generate_deps)
+{
+    die "automake: Must specify --include-deps (or -i) when generating\n"
+      if ($use_dependencies);
+    die "automake: Must provide --build-dir when generating\n"
+      if (!$build_directory);
+    die "automake: Must provide --srcdir-name when generating\n"
+      if (!$srcdir_name);
+
+    open(GDEP, ">$output_directory/.dep_segment")
+      || die "automake: Could not open `$output_directory/.dep_segment': $!\n";
+
+    &handle_dependencies;
+    print GDEP $output_rules;
+
+    close(GDEP);
+    exit $exit_status;
+}
+
 # Now do all the work on each file.
 foreach $am_file (@input_files)
 {
@@ -381,6 +406,10 @@ sub parse_arguments
 	elsif ($arglist[0] eq '--include-deps' || $arglist[0] eq '-i')
 	{
 	    $cmdline_use_dependencies = 0;
+	}
+	elsif ($arglist[0] eq '--generate-deps')
+	{
+	    $generate_deps = $1;
 	}
 	elsif ($arglist[0] eq '--no-force')
 	{
@@ -1179,7 +1208,7 @@ sub handle_single_transform_list
 	    elsif (s/\.[cly]$//)
   	    {
   		# .c is C.  .l is lex.  .y is yacc.
-  
+
  		# Note: first we rewrite (eg) foo.c to foo and push
  		# the file onto the list of deansified files.  Then we add
  		# $obj, which can either be `_.o', or simply `.o' if
