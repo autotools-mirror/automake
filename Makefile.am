@@ -19,9 +19,13 @@ program.am programs.am remake-hdr.am \
 remake-subd.am remake.am scripts.am subdirs.am tags.am tags-subd.am \
 tags-clean.am \
 texi-version.am texinfos-vars.am texinfos.am \
-libraries-clean.am scripts-clean.am programs-clean.am data-clean.am \
-COPYING INSTALL install-sh mdate-sh mkinstalldirs texinfo.tex \
-config.guess config.sub
+libraries-clean.am programs-clean.am data-clean.am \
+COPYING INSTALL texinfo.tex
+
+## These must all be executable when installed.
+pkgdata_SCRIPTS = config.guess config.sub install-sh mdate-sh mkinstalldirs
+
+CLEANFILES = automake
 
 # Gross.
 DIST_SUBDIRS = samples/cpio/*Makefile.am

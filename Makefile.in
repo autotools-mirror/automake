@@ -57,9 +57,12 @@ program.am programs.am remake-hdr.am \
 remake-subd.am remake.am scripts.am subdirs.am tags.am tags-subd.am \
 tags-clean.am \
 texi-version.am texinfos-vars.am texinfos.am \
-libraries-clean.am scripts-clean.am programs-clean.am data-clean.am \
-COPYING INSTALL install-sh mdate-sh mkinstalldirs texinfo.tex \
-config.guess config.sub
+libraries-clean.am programs-clean.am data-clean.am \
+COPYING INSTALL install-sh mdate-sh mkinstalldirs texinfo.tex
+
+pkgdata_SCRIPTS = config.guess config.sub
+
+CLEANFILES = automake
 
 # Gross.
 DIST_SUBDIRS = samples/cpio/*Makefile.am
@@ -68,7 +71,7 @@ DIST_SUBDIRS = samples/cpio/*Makefile.am
 ETAGS_ARGS = automake.in --lang=none \
  --regex='/^@node[ \t]+\([^,]+\)/\1/' automake.texi
 ACLOCAL = aclocal.m4
-SCRIPTS = $(bin_SCRIPTS)
+SCRIPTS = $(bin_SCRIPTS) $(pkgdata_SCRIPTS)
 
 
 MAKEINFO = makeinfo
@@ -110,15 +113,6 @@ $(srcdir)/configure: configure.in $(ACLOCAL)
 automake: $(top_builddir)/config.status automake.in
 	cd $(top_builddir) && CONFIG_FILES=$@ CONFIG_HEADERS= ./config.status
 
-mostlyclean-binSCRIPTS:
-
-clean-binSCRIPTS:
-	rm -f $(bin_SCRIPTS)
-
-distclean-binSCRIPTS:
-
-maintainer-clean-binSCRIPTS:
-
 install-binSCRIPTS: $(bin_SCRIPTS)
 	$(top_srcdir)/mkinstalldirs $(bindir)
 	for p in $(bin_SCRIPTS); do		\
@@ -130,6 +124,19 @@ install-binSCRIPTS: $(bin_SCRIPTS)
 uninstall-binSCRIPTS:
 	for p in $(bin_SCRIPTS); do		\
 	  rm -f $(bindir)/`echo $$p|sed '$(transform)'`; \
+	done
+
+install-pkgdataSCRIPTS: $(pkgdata_SCRIPTS)
+	$(top_srcdir)/mkinstalldirs $(pkgdatadir)
+	for p in $(pkgdata_SCRIPTS); do		\
+	  if test -f $$p; then			\
+	    $(INSTALL_SCRIPT) $$p $(pkgdatadir)/`echo $$p|sed '$(transform)'`; \
+	  else :; fi;				\
+	done
+
+uninstall-pkgdataSCRIPTS:
+	for p in $(pkgdata_SCRIPTS); do		\
+	  rm -f $(pkgdatadir)/`echo $$p|sed '$(transform)'`; \
 	done
 
 version.texi: stamp-vti
@@ -288,9 +295,9 @@ all-am: $(INFO_DEPS) $(SCRIPTS) $(DATA) Makefile
 
 install-exec-am: install-binSCRIPTS
 
-install-data-am: install-info install-pkgdataDATA
+install-data-am: install-info install-pkgdataSCRIPTS install-pkgdataDATA
 
-uninstall-am: uninstall-binSCRIPTS uninstall-info uninstall-pkgdataDATA
+uninstall-am: uninstall-binSCRIPTS uninstall-pkgdataSCRIPTS uninstall-info uninstall-pkgdataDATA
 
 install-exec: install-exec-recursive install-exec-am
 
@@ -304,7 +311,8 @@ uninstall: uninstall-recursive uninstall-am
 all: all-recursive all-am
 
 installdirs: installdirs-recursive
-	$(top_srcdir)/mkinstalldirs  $(bindir) $(infodir) $(pkgdatadir)
+	$(top_srcdir)/mkinstalldirs  $(bindir) $(pkgdatadir) $(infodir) \
+		$(pkgdatadir)
 
 
 mostlyclean-generic:
@@ -320,18 +328,17 @@ distclean-generic:
 maintainer-clean-generic:
 	test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 	test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
-mostlyclean-am:  mostlyclean-binSCRIPTS mostlyclean-vti mostlyclean-info \
-		mostlyclean-tags mostlyclean-generic
+mostlyclean-am:  mostlyclean-vti mostlyclean-info mostlyclean-tags \
+		mostlyclean-generic
 
-clean-am:  clean-binSCRIPTS clean-vti clean-info clean-tags \
-		clean-generic mostlyclean-am 
+clean-am:  clean-vti clean-info clean-tags clean-generic mostlyclean-am 
 
-distclean-am:  distclean-binSCRIPTS distclean-vti distclean-info \
-		distclean-tags distclean-generic clean-am 
+distclean-am:  distclean-vti distclean-info distclean-tags \
+		distclean-generic clean-am 
 
-maintainer-clean-am:  maintainer-clean-binSCRIPTS maintainer-clean-vti \
-		maintainer-clean-info maintainer-clean-tags \
-		maintainer-clean-generic distclean-am 
+maintainer-clean-am:  maintainer-clean-vti maintainer-clean-info \
+		maintainer-clean-tags maintainer-clean-generic \
+		distclean-am 
 
 mostlyclean:  mostlyclean-am mostlyclean-recursive
 
@@ -345,16 +352,15 @@ maintainer-clean:  maintainer-clean-am maintainer-clean-recursive
 	@echo "it deletes files that may require special tools to rebuild."
 	rm -f config.status
 
-.PHONY: default mostlyclean-binSCRIPTS distclean-binSCRIPTS \
-    clean-binSCRIPTS maintainer-clean-binSCRIPTS uninstall-binSCRIPTS \
-    install-binSCRIPTS mostlyclean-vti distclean-vti clean-vti \
-    maintainer-clean-vti install-info uninstall-info mostlyclean-info \
-    distclean-info clean-info maintainer-clean-info \
-    uninstall-pkgdataDATA install-pkgdataDATA install-data-recursive \
-    uninstall-data-recursive install-exec-recursive \
-    uninstall-exec-recursive installdirs-recursive \
-    uninstalldirs-recursive all-recursive check-recursive \
-    installcheck-recursive info-recursive dvi-recursive \
+.PHONY: default uninstall-binSCRIPTS install-binSCRIPTS \
+    uninstall-pkgdataSCRIPTS install-pkgdataSCRIPTS mostlyclean-vti \
+    distclean-vti clean-vti maintainer-clean-vti install-info \
+    uninstall-info mostlyclean-info distclean-info clean-info \
+    maintainer-clean-info uninstall-pkgdataDATA install-pkgdataDATA \
+    install-data-recursive uninstall-data-recursive \
+    install-exec-recursive uninstall-exec-recursive \
+    installdirs-recursive uninstalldirs-recursive all-recursive \
+    check-recursive installcheck-recursive info-recursive dvi-recursive \
     mostlyclean-recursive distclean-recursive clean-recursive \
     maintainer-clean-recursive tags mostlyclean-tags distclean-tags \
     clean-tags maintainer-clean-tags dist info dvi check installcheck \

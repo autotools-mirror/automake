@@ -115,6 +115,9 @@ $seen_path_xtra = 0;
 # Whether YACC variable has been seen in configure.in.
 $seen_prog_yacc = 0;
 
+# TRUE if we've seen AC_CANONICAL_(HOST|SYSTEM).
+$seen_canonical = 0;
+
 # Charsets used by maintainer and in distribution.  MAINT_CHARSET is
 # handled in a funny way: if seen in the top-level Makefile.am, it is
 # used for every directory which does not specify a different value.
@@ -276,6 +279,12 @@ sub generate_makefile
 
     &initialize_per_input;
     $relative_dir = &dirname ($makefile);
+
+    # AC_CANONICAL_HOST and AC_CANONICAL_SYSTEM need config.guess and
+    # config.sub.
+    &require_file ($NORMAL, 'config.guess', 'config.sub')
+	if $relative_dir eq '.' && $seen_canonical;
+
     # FIXME with new 'dist' target, don't need Makefile.in.  Probably
     # should remove it here.
     &push_dist_common ('Makefile.in', 'Makefile.am');
@@ -628,11 +637,12 @@ sub handle_libraries
 # Handle scripts.
 sub handle_scripts
 {
-    # FIXME can't determine if these scripts are really being
-    # installed or not.
-    $scripts_installed = &am_install_var ('-clean',
-					  'scripts', 'SCRIPTS',
-					  'bin', 'sbin', 'libexec', 'noinst');
+    # NOTE we no longer automatically clean SCRIPTS, because it is
+    # useful to sometimes distribute scripts verbatim.  This happens
+    # eg in Automake itself.
+    $scripts_installed = &am_install_var ('scripts', 'SCRIPTS',
+					  'bin', 'sbin', 'libexec', 'pkgdata',
+					  'noinst');
 }
 
 # Search a file for a "version.texi" Texinfo include.  Return the name
@@ -1593,7 +1603,6 @@ sub scan_configure
 
     local ($in_ac_output, @make_list) = 0;
     local ($seen_arg_prog) = 0;
-    local ($seen_canonical) = 0;
     local ($libobj_iter);
     while (<CONFIGURE>)
     {
@@ -1711,12 +1720,6 @@ sub scan_configure
 
     # Set input files if not specified by user.
     @input_files = @make_list if (! @input_files);
-
-    # AC_CANONICAL_HOST and AC_CANONICAL_SYSTEM need config.guess and
-    # config.sub.
-    # FIXME if this fails should error reference line in configure.in?
-    &require_file ($NORMAL, 'config.guess', 'config.sub')
-	if $seen_canonical;
 
     &am_conf_error ("AC_ARG_PROGRAM must be used in configure.in")
 	unless $seen_arg_prog;
