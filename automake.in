@@ -679,8 +679,8 @@ sub get_object_extension
     $dir_holds_sources = 1;
 
     # Maybe require libtool library object files.
-    local ($l, $extension) = ('', 'o');
-    $l = 'l' if ($out =~ /^lib.*\.la$/);
+    local ($extension) = '.o';
+    $extension = '.lo' if ($out =~ /\.la$/);
 
     if (! $included_generic_compile)
     {
@@ -736,7 +736,7 @@ sub get_object_extension
     # Check for automatic de-ANSI-fication.
     if (defined $options{'ansi2knr'})
     {
-	$extension = '$o';
+	$extension = '$U' . $extension;
 	if (! $included_knr_compile)
 	{
 	    if (! $am_c_prototypes)
@@ -747,9 +747,6 @@ sub get_object_extension
 		# Only give this error once.
 		$am_c_prototypes = 1;
 	    }
-
-	    push (@suffixes, '._c', '._o');
-	    push (@suffixes, '.l_o') if $seen_libtool;
 
 	    # Only require ansi2knr files if they should appear in
 	    # this directory.
@@ -778,8 +775,6 @@ sub get_object_extension
 				  . " && \$(MAKE) ansi2knr\n\n");
 	    }
 
-	    &define_variable ('o', "\@U\@o");
-
 	    # Make sure ansi2knr can be found: if no path specified,
 	    # specify "./".
 	    if ($options{'ansi2knr'} eq 'ansi2knr')
@@ -796,7 +791,6 @@ sub get_object_extension
 		&define_variable ("ANSI2KNR", $options{'ansi2knr'});
 	    }
 
-	    $output_rules .= &file_contents ('compile-kr');
 	    $output_rules .= &file_contents ('clean-kr');
 
 	    push (@clean, 'kr');
@@ -806,7 +800,7 @@ sub get_object_extension
 	}
     }
 
-    return '.' . $l . $extension;
+    return $extension;
 }
 
 # Handle yacc and lex.
@@ -920,22 +914,21 @@ sub handle_yacc_lex_cxx
     #
     # Handle some ansi2knr cleanup.
     #
-    if (defined $options{'ansi2knr'} && keys %de_ansi_objects)
+    if (defined $options{'ansi2knr'} && keys %de_ansi_files)
     {
-	# Make all ._o files depend on ansi2knr.  Use a sneaky little
-	# hack to make it print nicely.
-	&pretty_print_rule ('', '', ((sort keys %de_ansi_objects),
-				     ':', '$(ANSI2KNR)'));
-	# The ._c files also depend on ansi2knr.  We need both because
-	# some makes don't apply transitivity through implicit rules.
-	local (%de_ansi_sources, $x);
-	foreach $x (keys %de_ansi_objects)
-	{
-	    $x =~ s/o$/c/;
-	    $de_ansi_sources{$x} = 1;
-	}
-	&pretty_print_rule ('', '', ((sort keys %de_ansi_sources),
-				     ':', '$(ANSI2KNR)'));
+ 	# Make all _.c files depend on their corresponding .c files.
+ 	local ($base, @objects);
+ 	foreach $base (sort (keys %de_ansi_files))
+ 	{
+ 	    $output_rules .= $base . "_.c: $base.c\n\t"
+ 		. '$(ANSI2KNR) $< ' . $base . "_.c\n";
+ 	    push (@objects, $base . '_.o');
+ 	    push (@objects, $base . '_.lo') if $seen_libtool;
+ 	}
+
+ 	# Make all _.o (and _.lo) files depend on ansi2knr.
+ 	# Use a sneaky little hack to make it print nicely.
+ 	&pretty_print_rule ('', '', @objects, ':', '$(ANSI2KNR)');
     }
 
     #
@@ -1135,18 +1128,22 @@ sub handle_single_transform_list
 	    {
 		# .s is assembly.  Just rewrite it.  FIXME: not finished.
 	    }
-	    elsif (s/\.[cly]$/._o/)
-	    {
-		# .c is C.  .l is lex.  .y is yacc.
-
-		# Note: first we rewrite (eg) foo.c to foo._o and push
-		# the file onto the list of objects that require
-		# ansi2knr.  Then we rewrite ._o to $obj; $obj can be
-		# simply `.o' if deansification is not really
-		# required.
-		$de_ansi_objects{$_} = 1;
-		s/\._o$/$obj/;
-		$seen_c_source = -1 unless $seen_c_source;
+ 	    elsif (defined ($options{'ansi2knr'}) && s/_\.[cly]$/_.c/)
+ 	    {
+ 		# FIXME include line number in error.
+ 		&am_error ("C source file \`$_' would be deleted by ansi2knr rules");
+ 	    }
+	    elsif (s/\.[cly]$//)
+  	    {
+  		# .c is C.  .l is lex.  .y is yacc.
+  
+ 		# Note: first we rewrite (eg) foo.c to foo and push
+ 		# the file onto the list of deansified files.  Then we add
+ 		# $obj, which can either be `_.o', or simply `.o' if
+ 		# deansification is not required.
+ 		$de_ansi_files{$_} = 1;
+ 		$_ .= $obj;
+  		$seen_c_source = 1;
 	    }
 	    else
 	    {
@@ -5364,9 +5361,9 @@ sub initialize_per_input
     # This is a list of all targets to run during "make dist".
     @dist_targets = ();
 
-    # Keys in this hash are the names of ._o files which must depend
-    # on ansi2knr.  Ugh.
-    %de_ansi_objects = ();
+    # Keys in this hash are the basenames of files which must depend
+    # on ansi2knr.
+    %de_ansi_files = ();
 }
 
 
