@@ -34,7 +34,9 @@ lex2.test libobj8.test version3.test instdata.test exdir2.test \
 colon5.test library.test syntax.test cond4.test cond5.test recurs.test \
 ansi3.test cond6.test colon6.test texinfo7.test parse.test else.test \
 clean.test recurs2.test config.test colon7.test badline.test \
-extra3.test extra4.test confdist.test
+extra3.test extra4.test confdist.test fnoc.test fo.test fonly.test \
+link_c_cxx.test link_f_c.test link_f_c_cxx.test link_f_cxx.test	\
+link_f_only.test flibs.test compile_f_c_cxx.test
 
 EXTRA_DIST = defs $(TESTS)
 
