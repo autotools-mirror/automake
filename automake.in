@@ -343,7 +343,6 @@ $obsolete_rx = '(' . join ('|', keys %obsolete_macros) . ')';
 		    'r');
 &register_language ('java', 'linker=GCJLINK', 'autodep=GCJ',
 		    'java');
-&register_language ('asm', 's', 'S');
 
 
 # Parse command line.
@@ -4653,12 +4652,18 @@ sub lang_yacc_rewrite
 {
     local ($directory, $base, $ext) = @_;
 
-    &lang_c_rewrite ($directory, $base, $ext);
-    $yacc_sources{$base . '.' . $ext} = 1;
+    local ($r) = &lang_c_rewrite ($directory, $base, $ext);
+    local ($pfx) = '';
+    if ($r == $LANG_SUBDIR)
+    {
+	$pfx = $directory . '/';
+    }
+    $yacc_sources{$pfx . $base . '.' . $ext} = 1;
     $ext =~ tr/y/c/;
     &saw_extension ('c');
-    &push_dist_common ($base . '.' . $ext);
-    return $LANG_PROCESS;
+    # FIXME: nodist.
+    &push_dist_common ($pfx . $base . '.' . $ext);
+    return $r;
 }
 
 # Rewrite a single yacc++ file.
@@ -4666,11 +4671,19 @@ sub lang_yaccxx_rewrite
 {
     local ($directory, $base, $ext) = @_;
 
-    $yacc_sources{$base . '.' . $ext} = 1;
+    local ($r) = $LANG_PROCESS;
+    local ($pfx) = '';
+    if (defined $options{'subdir-objects'})
+    {
+	$pfx = $directory . '/';
+	$r = $LANG_SUBDIR;
+    }
+    $yacc_sources{$pfx . $base . '.' . $ext} = 1;
     $ext =~ tr/y/c/;
     &saw_extension ($ext);
-    &push_dist_common ($base . '.' . $ext);
-    return $LANG_PROCESS;
+    # FIXME: nodist.
+    &push_dist_common ($pfx . $base . '.' . $ext);
+    return $r;
 }
 
 # Rewrite a single lex file.
@@ -4678,12 +4691,18 @@ sub lang_lex_rewrite
 {
     local ($directory, $base, $ext) = @_;
 
-    &lang_c_rewrite ($directory, $base, $ext);
-    $lex_sources{$base . '.' . $ext} = 1;
+    local ($r) = &lang_c_rewrite ($directory, $base, $ext);
+    local ($pfx) = '';
+    if ($r == $LANG_SUBDIR)
+    {
+	$pfx = $directory . '/';
+    }
+    $lex_sources{$pfx . $base . '.' . $ext} = 1;
     $ext =~ tr/l/c/;
     &saw_extension ('c');
-    &push_dist_common ($base . '.' . $ext);
-    return $LANG_PROCESS;
+    # FIXME: nodist.
+    &push_dist_common ($pfx . $base . '.' . $ext);
+    return $r;
 }
 
 # Rewrite a single lex++ file.
@@ -4691,11 +4710,19 @@ sub lang_lexxx_rewrite
 {
     local ($directory, $base, $ext) = @_;
 
-    $lex_sources{$base . '.' . $ext} = 1;
+    local ($r) = $LANG_PROCESS;
+    local ($pfx) = '';
+    if (defined $options{'subdir-objects'})
+    {
+	$pfx = $directory . '/';
+	$r = $LANG_SUBDIR;
+    }
+    $lex_sources{$pfx . $base . '.' . $ext} = 1;
     $ext =~ tr/l/c/;
     &saw_extension ($ext);
-    &push_dist_common ($base . '.' . $ext);
-    return $LANG_PROCESS;
+    # FIXME: nodist.
+    &push_dist_common ($pfx . $base . '.' . $ext);
+    return $r;
 }
 
 # Rewrite a single assembly file.
@@ -4978,8 +5005,12 @@ sub lang_asm_finish
 	$output_rules .= ("$ext.obj:\n"
 			  . "\t\$(COMPILE) -c `cygpath -w \$<`\n")
 	    if $seen_objext;
-	# FIXME: what about `.lo' and asm?
+	$output_rules .= ("$ext.lo:\n"
+			  . "\t\$(LTCOMPILE) -c \$<\n")
+	    if $seen_libtool;
     }
+
+    push (@suffixes, @asm_list);
 }
 
 sub lang_f77_finish
