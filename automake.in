@@ -965,6 +965,25 @@ sub handle_options
   return 0;
 }
 
+# shadow_unconditionally ($varname, $where)
+# -----------------------------------------
+# Return a $(variable) that contains all possible values
+# $varname can take.
+# If the VAR wasn't defined conditionally, return $(VAR).
+# Otherwise we create a am__VAR_DIST variable which contains
+# all possible values, and return $(am__VAR_DIST).
+sub shadow_unconditionally ($$)
+{
+  my ($varname, $where) = @_;
+  my $var = var $varname;
+  if ($var->has_conditional_contents)
+    {
+      $varname = "am__${varname}_DIST";
+      my @files = uniq ($var->value_as_list_recursive);
+      define_pretty_variable ($varname, TRUE, $where, @files);
+    }
+  return "\$($varname)"
+}
 
 # get_object_extension ($OUT)
 # ---------------------------
@@ -1777,21 +1796,8 @@ sub handle_source_transform
 	  unless $prefix =~ /EXTRA_/;
 
 	push @sources, "\$($varname)";
-	if ($prefix !~ /^nodist_/)
-	  {
-	    # If the VAR wasn't defined conditionally, we add
-	    # it to DIST_SOURCES as is.  Otherwise we create a
-	    # am__VAR_DIST variable which contains all possible values,
-	    # and add this variable to DIST_SOURCES.
-	    my $distvar = $varname;
-	    if ($var->has_conditional_contents)
-	      {
-		$distvar = "am__${varname}_DIST";
-		my @files = uniq ($var->value_as_list_recursive);
-		define_pretty_variable ($distvar, TRUE, $where, @files);
-	      }
-	    push @dist_sources, "\$($distvar)"
-	  }
+	push @dist_sources, shadow_unconditionally ($varname, $where)
+	  unless ($prefix =~ /^nodist_/);
 
 	$needlinker |=
 	    define_objects_from_sources ($varname,
@@ -6345,6 +6351,11 @@ sub am_install_var
       # Use the location of the currently processed variable as context.
       $where->push_context ("while processing `$one_name'");
 
+      # The variable containing all file to distribute.
+      my $distvar = "\$($one_name)";
+      $distvar = shadow_unconditionally ($one_name, $where)
+	if ($dist_p && $one_var->has_conditional_contents);
+
       # Singular form of $PRIMARY.
       (my $one_primary = $primary) =~ s/S$//;
       $output_rules .= &file_contents ($file, $where,
@@ -6359,6 +6370,7 @@ sub am_install_var
 					 EXEC      => $exec_p,
 					 INSTALL   => $install_p,
 					 DIST      => $dist_p,
+				         DISTVAR   => $distvar,
 					 'CK-OPTS' => $check_options_p);
 
       $first = 0;
