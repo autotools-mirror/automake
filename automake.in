@@ -1070,8 +1070,10 @@ sub generate_makefile
 
     # Re-init SOURCES and OBJECTS.  FIXME: other code shouldn't depend
     # on this (but currently does).
-    $conditional{'SOURCES'}{'TRUE'} = join (' ', @sources);
-    $conditional{'OBJECTS'}{'TRUE'} = join (' ', @objects);
+    macro_define ('SOURCES', 1, '', 'TRUE',
+		     join (' ', @sources), 'internal');
+    macro_define ('OBJECTS', 1, '', 'TRUE',
+		     join (' ', @objects), 'internal');
     &define_pretty_variable ('DIST_SOURCES', '', @dist_sources);
 
     &handle_multilib;
@@ -5694,25 +5696,30 @@ sub variable_defined ($$)
 
     $cond ||= 'TRUE';
 
-    if (!$var_is_am{$var})
-    {
-      if (!exists $conditional{$var}{$cond})
-	{
-	  # The variable is not defined for the given condition.
-	  return 0;
-	}
+    # Unfortunately we can't just check for $conditional{VAR}{COND}
+    # as this would make perl create $condition{VAR}, which we
+    # don't want.
+    if (!exists $conditional{$var})
+      {
+	if (defined $targets{$var})
+	  {
+	    &am_line_error ($var, "`$var' is a target; expected a variable")
+	  }
+	# The variable is not defined
+	return 0;
+      }
 
-      # Even a conditional examination is good enough for us.  FIXME:
-      # really should maintain examined status on a per-condition
-      # basis.
-      $content_seen{$var} = 1;
-      return 1;
-    }
+    if ($var_is_am{$var}
+	|| !exists $conditional{$var}{$cond})
+      {
+	# The variable is not defined for the given condition.
+	return 0;
+      }
 
-    &am_line_error ($var, "`$var' is a target; expected a variable")
-      if defined $targets{$var};
-
-    return 0;
+    # Even a conditional examination is good enough for us.  FIXME:
+    # really should maintain examined status on a per-condition basis.
+    $content_seen{$var} = 1;
+    return 1;
 }
 
 # Mark a variable as examined.
