@@ -962,7 +962,7 @@ sub handle_yacc_lex_cxx
     #
     # Last, handle some C cleanup.
     #
-    if ($seen_c_source)
+    if ($seen_any_source)
     {
 	&define_configure_variable ('CFLAGS');
 	&define_variable ('COMPILE',
@@ -972,12 +972,12 @@ sub handle_yacc_lex_cxx
 			  '$(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)')
 	    if ($seen_libtool);
 	&define_variable ('LINK', $ltlink . '$(CC) $(CFLAGS) $(LDFLAGS) -o $@');
+    }
 
-	if (! defined $configure_vars{'CC'})
-	{
-	    &am_line_error ($seen_c_source,
-			    "C source seen but \`CC' not defined in \`configure.in'");
-	}
+    if ($seen_c_source && ! defined $configure_vars{'CC'})
+    {
+	&am_line_error ($seen_c_source,
+			"C source seen but \`CC' not defined in \`configure.in'");
     }
 }
 
@@ -1186,6 +1186,7 @@ sub handle_single_transform_list
 		next;
 	    }
 
+	    $seen_any_source = 1;
 	    push (@result, $_);
 
 	    # Transform .o or $o file into .P file (for automatic
@@ -1394,6 +1395,7 @@ sub handle_lib_objects_cond
 		if ($iter =~ /\.[cly]$/)
 		{
 		    $seen_c_source = $var;
+		    $seen_any_source = 1;
 		}
 
 		if ($iter =~ /\.h$/)
@@ -1417,6 +1419,7 @@ sub handle_lib_objects_cond
 	    $dep_files{'.deps/alloca.P'} = 1;
 	    &require_file_with_line ($var, $FOREIGN, 'alloca.c');
 	    $seen_c_source = $var;
+	    $seen_any_source = 1;
 	}
     }
 
@@ -5469,6 +5472,9 @@ sub initialize_per_input
     # we couldn't (easily) figure out which line of the Makefile.am
     # mentioned the sources.
     $seen_c_source = 0;
+
+    # TRUE if we've seen any sources at all.
+    $seen_any_source = 0;
 
     # This is a list of all targets to run during "make dist".
     @dist_targets = ();
