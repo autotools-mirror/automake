@@ -268,6 +268,7 @@ output4.test \
 output5.test \
 package.test \
 parse.test \
+percent.test \
 pluseq.test \
 pluseq2.test \
 pluseq3.test \
