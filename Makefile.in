@@ -42,7 +42,6 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
-CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
@@ -55,7 +54,6 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LIBS = @LIBS@
 LN = @LN@
-LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
@@ -106,6 +104,13 @@ TAGS_DEPENDENCIES = automake.texi
 
 EXTRA_DIST = ChangeLog.1996 ChangeLog.1998 ChangeLog.2000 ChangeLog.2001
 
+do_subst = sed -e 's,[@]datadir[@],$(datadir),g' -e 's,[@]PERL[@],$(PERL),g' \
+	    -e 's,[@]configure_input[@],@configure_input@,g' \
+	    -e 's,[@]PACKAGE[@],$(PACKAGE),g' \
+	    -e 's,[@]VERSION[@],$(VERSION),g' \
+	    -e 's,[@]APIVERSION[@],$(APIVERSION),g'
+
+
 WGET = wget
 
 FETCHFILES = config.guess config.sub texinfo.tex Automake/XFile.pm INSTALL \
@@ -114,7 +119,7 @@ FETCHFILES = config.guess config.sub texinfo.tex Automake/XFile.pm INSTALL \
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/lib/mkinstalldirs
-CONFIG_CLEAN_FILES = automake aclocal
+CONFIG_CLEAN_FILES =
 SCRIPTS = $(bin_SCRIPTS)
 
 DIST_SOURCES =
@@ -132,9 +137,9 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive pdf-recursive \
 	installdirs-recursive install-recursive uninstall-recursive \
 	check-recursive installcheck-recursive
 DIST_COMMON = README AUTHORS COPYING ChangeLog INSTALL Makefile.am \
-	Makefile.in NEWS THANKS TODO aclocal.in aclocal.m4 automake.in \
-	configure configure.in install-sh mdate-sh missing \
-	mkinstalldirs stamp-vti version.texi
+	Makefile.in NEWS THANKS TODO aclocal.m4 configure configure.in \
+	install-sh mdate-sh missing mkinstalldirs stamp-vti \
+	version.texi
 DIST_SUBDIRS = $(SUBDIRS)
 all: all-recursive
 
@@ -156,10 +161,6 @@ $(srcdir)/configure:  $(srcdir)/configure.in $(ACLOCAL_M4) $(CONFIGURE_DEPENDENC
 
 $(ACLOCAL_M4):  configure.in 
 	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
-automake: $(top_builddir)/config.status automake.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
-aclocal: $(top_builddir)/config.status aclocal.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
 binSCRIPT_INSTALL = $(INSTALL_SCRIPT)
 install-binSCRIPTS: $(bin_SCRIPTS)
 	@$(NORMAL_INSTALL)
@@ -180,24 +181,6 @@ uninstall-binSCRIPTS:
 	  echo " rm -f $(DESTDIR)$(bindir)/$$f"; \
 	  rm -f $(DESTDIR)$(bindir)/$$f; \
 	done
-
-.texi.info:
-	@rm -f $@ $@-[0-9] $@-[0-9][0-9]
-	$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) -I $(srcdir) \
-	`test -f '$<' || echo '$(srcdir)/'`$< -o $@
-
-.texi.dvi:
-	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
-	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) -I $(srcdir)' \
-	$(TEXI2DVI) `test -f '$<' || echo '$(srcdir)/'`$<
-
-.texi.pdf:
-	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
-	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) -I $(srcdir)' \
-	$(TEXI2PDF) `test -f '$<' || echo '$(srcdir)/'`$<
-automake.info: version.texi
-automake.dvi: version.texi
-automake.pdf: version.texi
 version.texi:  stamp-vti
 stamp-vti: automake.texi $(top_srcdir)/configure.in
 	@(dir=.; test -f ./automake.texi || dir=$(srcdir); \
@@ -217,9 +200,27 @@ mostlyclean-vti:
 
 maintainer-clean-vti:
 	-rm -f stamp-vti version.texi
+
+.texi.info:
+	@rm -f $@ $@-[0-9] $@-[0-9][0-9]
+	$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) -I $(srcdir) \
+	`test -f '$<' || echo '$(srcdir)/'`$< -o $@
+
+.texi.dvi:
+	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
+	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) -I $(srcdir)' \
+	$(TEXI2DVI) `test -f '$<' || echo '$(srcdir)/'`$< -o $@
+
+.texi.pdf:
+	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
+	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) -I $(srcdir)' \
+	$(TEXI2PDF) `test -f '$<' || echo '$(srcdir)/'`$< -o $@
+automake.info: version.texi
+automake.dvi: version.texi
+automake.pdf: version.texi
 TEXI2DVI = texi2dvi
 
-TEXI2PDF = $(TEXI2DVI) --pdf --batch
+TEXI2PDF = $(TEXI2DVI) --pdf
 DVIPS = dvips
 .dvi.ps:
 	$(DVIPS) $< -o $@
@@ -246,7 +247,7 @@ uninstall-info-am:
 dist-info: $(INFO_DEPS)
 	list='$(INFO_DEPS)'; \
 	for base in $$list; do \
-	  if test -f $$base; then d=.; else d=$(srcdir); fi; \
+	  d=$(srcdir); \
 	  for file in $$d/$$base*; do \
 	    relfile=`expr "$$file" : "$$d/\(.*\)"`; \
 	    test -f $(distdir)/$$relfile || \
@@ -256,12 +257,12 @@ dist-info: $(INFO_DEPS)
 
 mostlyclean-aminfo:
 	-rm -f automake.aux automake.cm automake.cp automake.cps automake.cv \
-	  automake.fn automake.ky automake.log automake.op automake.ov \
-	  automake.pg automake.tmp automake.toc automake.tp automake.tr \
-	  automake.vr automake.vrs automake.dvi automake.pdf \
-	  automake.ps
+	  automake.dvi automake.fn automake.ky automake.log automake.op \
+	  automake.ov automake.pdf automake.pg automake.ps automake.tmp \
+	  automake.toc automake.tp automake.tr automake.vr automake.vrs
 
 maintainer-clean-aminfo:
+	cd $(srcdir) && \
 	list='$(INFO_DEPS)'; for i in $$list; do \
 	  rm -f $$i; \
 	  if test "`echo $$i-[0-9]*`" != "$$i-[0-9]*"; then \
@@ -402,12 +403,8 @@ distcleancheck_listfiles = find . -type f -print
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkinstalldirs) $(distdir)/. $(distdir)/m4 $(distdir)/tests
-	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
-	list='$(DISTFILES)'; for file in $$list; do \
-	  case $$file in \
-	    $(srcdir)/*) file=`echo "$$file" | sed "s|^$$srcdirstrip/||"`;; \
-	  esac; \
+	$(mkinstalldirs) $(distdir)/m4 $(distdir)/tests
+	@list='$(DISTFILES)'; for file in $$list; do \
 	  if test -f $$file || test -d $$file; then d=.; else d=$(srcdir); fi; \
 	  dir=`echo "$$file" | sed -e 's,/[^/]*$$,,'`; \
 	  if test "$$dir" != "$$file" && test "$$dir" != "."; then \
@@ -492,7 +489,7 @@ distcheck: dist
 	       && (test `find "$$dc_destdir" -type f -print | wc -l` -le 1 \
 	           || { echo "ERROR: files left after uninstall (check DESTDIR support):" ; \
 	                find "$$dc_destdir" -type f -print ; \
-	                exit 1; } >&2 ); \
+	                exit 1; } >&2 ) \
 	      } || { rm -rf "$$dc_destdir"; exit 1; }) \
 	  && rm -rf "$$dc_destdir" \
 	  && $(MAKE) $(AM_MAKEFLAGS) dist-gzip \
@@ -570,7 +567,7 @@ install-info-am: $(INFO_DEPS)
 	$(mkinstalldirs) $(DESTDIR)$(infodir)
 	@list='$(INFO_DEPS)'; \
 	for file in $$list; do \
-	  if test -f $$file; then d=.; else d=$(srcdir); fi; \
+	  d=$(srcdir); \
 	  for ifile in echo $$d/$$file $$d/$$file-[0-9] $$d/$$file-[0-9][0-9]; do \
 	    if test -f $$ifile; then \
 	      relfile=`expr "$$ifile" : "$$d/\(.*\)"`; \
@@ -652,6 +649,14 @@ uninstall-hook:
 	  fv="$$f-$(APIVERSION)"; \
 	  rm -f $(DESTDIR)$(bindir)/$$fv; \
 	done
+
+automake: automake.in Makefile
+	$(do_subst) < $(srcdir)/automake.in > automake
+	chmod +x automake
+
+aclocal: aclocal.in Makefile
+	$(do_subst) < $(srcdir)/aclocal.in > aclocal
+	chmod +x aclocal
 
 ################################################################
 

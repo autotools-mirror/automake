@@ -57,6 +57,24 @@ uninstall-hook:
 	  rm -f $(DESTDIR)$(bindir)/$$fv; \
 	done
 
+
+## We can't use configure to do the substitution here; we must do it
+## by hand.  We use a funny notation here to avoid configure
+## substitutions in our text.
+do_subst = sed -e 's,[@]datadir[@],$(datadir),g' -e 's,[@]PERL[@],$(PERL),g' \
+	    -e 's,[@]configure_input[@],@configure_input@,g' \
+	    -e 's,[@]PACKAGE[@],$(PACKAGE),g' \
+	    -e 's,[@]VERSION[@],$(VERSION),g' \
+	    -e 's,[@]APIVERSION[@],$(APIVERSION),g'
+
+automake: automake.in Makefile
+	$(do_subst) < $(srcdir)/automake.in > automake
+	chmod +x automake
+
+aclocal: aclocal.in Makefile
+	$(do_subst) < $(srcdir)/aclocal.in > aclocal
+	chmod +x aclocal
+
 ################################################################
 ##
 ## Everything past here is useful to the maintainer, but probably not
