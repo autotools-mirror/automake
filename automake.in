@@ -694,6 +694,7 @@ sub handle_yacc_lex_cxx
 	push (@suffixes, '.l');
 	&define_variable ("LEX", "\@LEX\@");
 	&define_variable ("LEX_OUTPUT_ROOT", "\@LEX_OUTPUT_ROOT\@");
+	&define_variable ("LEXLIB", "\@LEXLIB\@");
 	$output_rules .= ".l.c:\n\t";
 	if ($lex_count > 1)
 	{
@@ -914,17 +915,24 @@ sub handle_source_transform
 # Arguments are:
 #   transformed name of object being built, or empty string if no object
 #   name of _LDADD/_LIBADD-type variable to examine
+#   boolean (lex_seen) which is true if a lex source file was seen in this
+#     object.  valid only for LDADDs, not LIBADDs.  If set, LEXLIB
+#     must be in LDADD.
 sub handle_lib_objects
 {
-    local ($xname, $var) = @_;
+    local ($xname, $var, $lex_seen) = @_;
 
-    die "programming error in handle_lib_objects"
+    die "programming error 1 in handle_lib_objects"
 	if ! &variable_defined ($var);
+
+    die "programming error 2 in handle_lib_objects"
+	if $lex_seen && $var =~ /LIBADD/;
 
     # We recognize certain things that are commonly put in LIBADD or
     # LDADD.
     local ($lsearch);
     local (@dep_list) = ();
+    local ($lex_ok) = 0;
 
     foreach $lsearch (&variable_value_as_list ($var))
     {
@@ -970,6 +978,20 @@ sub handle_lib_objects
 	    $dep_files{'.deps/alloca.P'} = 1;
 	    &require_file_with_line ($var, $FOREIGN, 'alloca.c');
 	}
+	elsif ($lsearch eq '@LEXLIB@')
+	{
+	    # FIXME: variable_value_as_list requires us to force
+	    # @LEXLIB@ here, where we're really prefer $(LEXLIB).
+	    # Nasty -- this will have to wait until many cleanups are
+	    # made, I think.
+	    $lex_ok = 1;
+	}
+
+    }
+
+    if (! $lex_ok)
+    {
+	&am_line_error ($var, 'lex source file used without @LEXLIB@');
     }
 
     if ($xname ne '' && ! &variable_defined ($xname . '_DEPENDENCIES'))
@@ -1012,11 +1034,16 @@ sub handle_programs
 	    }
 	}
 
+	# FIXME: Using a trick to figure out if any lex sources appear
+	# in our program; should use some cleaner method.
+	local ($lex_num) = scalar (keys %lex_sources);
 	local ($linker) = &handle_source_transform ($xname, $one_file, $obj);
+	local ($lex_file_seen) = (scalar (keys %lex_sources) > $lex_num);
 
 	if (&variable_defined ($xname . "_LDADD"))
 	{
-	    &handle_lib_objects ($xname, $xname . '_LDADD');
+	    &handle_lib_objects ($xname, $xname . '_LDADD', $lex_file_seen);
+	    $lex_file_seen = 0;
 	}
 	else
 	{
@@ -1025,8 +1052,17 @@ sub handle_programs
 
 	    # This does a bit too much work.  But we need it to
 	    # generate _DEPENDENCIES when appropriate.
-	    &handle_lib_objects ($xname, 'LDADD')
-		if (&variable_defined ('LDADD'));
+	    if (&variable_defined ('LDADD'))
+	    {
+		&handle_lib_objects ($xname, 'LDADD', $lex_file_seen);
+		$lex_file_seen = 0;
+	    }
+	}
+
+	if ($lex_file_seen)
+	{
+	    &am_line_error ($one_file . $xt,
+			    'lex source file used without @LEXLIB@');
 	}
 
 	# Determine program to use for link.
@@ -1048,7 +1084,7 @@ sub handle_programs
 		 'program');
     }
 
-    &handle_lib_objects ('', 'LDADD')
+    &handle_lib_objects ('', 'LDADD', 0)
 	if &variable_defined ('LDADD');
 }
 
@@ -1120,7 +1156,7 @@ sub handle_libraries
 
 	if (&variable_defined ($xlib . '_LIBADD'))
 	{
-	    &handle_lib_objects ($xlib, $xlib . '_LIBADD');
+	    &handle_lib_objects ($xlib, $xlib . '_LIBADD', 0);
 	}
 	else
 	{

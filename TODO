@@ -15,26 +15,23 @@ Further:
 - consider adding "echo"s to installs again.
   users can use make SHELL='sh -x' to get the full dirt
 
-Some long-term projects:
-* if $(FOO) is used somewhere, ensure FOO is defined, either by
-  user or by automake if possible
-* Don't rearrange order of `include' lines relative to += assignments.
-* Handle += assignments at all.
-
 Avoid loops when installing; instead unroll them in automake
 
 Franc,ois> * ansi2knr was uselessly compiled, and it might be an
 Franc,ois> Automake problem:
 
-MUST look @ Franc,ois' run-time-replacement code
-
-From David A Swierczek: automake should notice (eg) AC_CHECK_PROG and
-auto-generate Makefile substitution:
+Some long-term projects:
+* if $(FOO) is used somewhere, ensure FOO is defined, either by
+  user or by automake if possible
+* Don't rearrange order of `include' lines relative to += assignments.
+* Handle += assignments at all.
+* From David A Swierczek: automake should notice (eg) AC_CHECK_PROG and
+  auto-generate Makefile substitution:
 	AC_CHECK_PROG(AR, ...)
     =>  AR = @AR@ in Makefile.in
-Ditto AC_SUBST and other things that make sense.  Furthermore, other
-macros (eg AC_PROG_CC) should be handled via a similar mechanism; many
-special cases could be eliminated.
+  Ditto AC_SUBST and other things that make sense.  Furthermore, other
+  macros (eg AC_PROG_CC) should be handled via a similar mechanism; many
+  special cases could be eliminated.
 
 consider putting all check-* targets onto @check?
 To support --help/--version checking?
@@ -161,9 +158,6 @@ $output_rules.
 * Should be a way to have "nobuild_PROGRAMS" which aren't even built,
   but which could be by running the magic make command.
 
-* Should have tool like "autoreconf" that only remakes Makefiles that
-  need it.  Probably autoreconf should be modified to handle automake
-
 Other priorities:
 * Must rewrite am_install_var.  Should break into multiple functions.
   This will allow the callers to be a little smarter.
@@ -176,9 +170,6 @@ Things to finish libtool support:
 * Handle install changes
 * Handle clean changes
 * New definition for LINK
-
-Scan source directories and warn about missing files, eg .c/.h files
-that aren't mentioned?
 
 Need way to say there are no suffixes in a Makefile (Franc,ois'
 "override" idea suffices here)
@@ -205,13 +196,13 @@ whatever else François says here...
 Add support for html via an option.  Use texi2html.  Use
 "html_TEXINFOS", and htmldir = .../html.  Include html files in
 distribution.  Also allow "html_DATA", for raw .html files.
-  [ when will texinfo support html? ]
-  [ is there a texinfo.tex that supports texi2html extensions? ]
+  [ when will texinfo directly support html? ]
 
 uninstall and pkg-dirs should rm -rf the dir.
 
 a potential bug: configure puts "blah.o" into LIBOBJS, thus implying
 these files can't be de-ansified.  Not a problem?
+  [ fix by using ansi2knr wrapper program ]
 
 In general most .am files should be merged into automake.  For
 instance all the "clean" targets could be merged by keeping lists of
@@ -238,7 +229,6 @@ Lex, yacc support:
 * Consider supporting syntax from autoconf "derived:source", eg:
 	y.tab.c:perly.y
   for yacc and lex source
-* if AC_PROG_LEX used, ensure (no, *PUT*) LEXLIB in foo_LDADD
 
 Multi-language support:
 * should have mapping of file extensions to languages
@@ -249,8 +239,6 @@ This should be integrated in some way with Per's idea.
 Eg .f.o rules should be recognized & auto-handled in _SOURCES
 That way any random language can be treated with C/C++ on a first-class
 basis (maybe)
-
-Should 'distclean' "rm -rf .deps"?
 
 It might be cool to generate .texi dependencies by grepping for
 @include.  (If done, it should be done the same way C dependencies are
@@ -288,15 +276,6 @@ Check all source files to make sure that FSF address is up-to-date.
 Merge each -vars.am file with corresponding ".am" file.  Can do this
 because of changes to &file_contents.
 
-Looked at a program called 'ezmake', which seems to do something
-similar.  The only idea there that is possibly worth stealing is using
-globs in definitions.  Also has negations.  Eg in a directory with
-files a.c, b.c and c.c, the line:
-	foo_SOURCES = *.c ~c.c
-would be equivalent to:
-	foo_SOURCES = a.c b.c
-Is this worth implementing?
-
 Should libexec programs have the name transform done on them?
 
 Order the output rules sensibly, so FOO_SOURCES and FOO_OBJECTS are
@@ -314,7 +293,6 @@ some support for this.  Here are some of the issues:
     * can do this by looking at subdirs, seeing configure.in
       and auto-running Automake there
 
-These can both be handled via dist-hook:
 . Consider supporting guile-style PLUGIN directories automatically?
 
 djm says:
@@ -450,3 +428,17 @@ could eliminate a common source of problems.
 
 * make the auto-dep code crash if GNU make not in use?
   (doesn't it already?)
+
+Looked at a program called 'ezmake', which seems to do something
+similar.  The only idea there that is possibly worth stealing is using
+globs in definitions.  Also has negations.  Eg in a directory with
+files a.c, b.c and c.c, the line:
+	foo_SOURCES = *.c ~c.c
+would be equivalent to:
+	foo_SOURCES = a.c b.c
+Is this worth implementing?
+  [ No... it is more reliable to spell everything out. ]
+
+Scan source directories and warn about missing files, eg .c/.h files
+that aren't mentioned?
+  [ distcheck makes this less useful ]
