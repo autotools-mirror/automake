@@ -1223,8 +1223,7 @@ sub generate_makefile
 
     # Re-init SOURCES.  FIXME: other code shouldn't depend on this
     # (but currently does).
-    macro_define ('SOURCES', 1, '', 'TRUE',
-		     join (' ', @sources), 'internal');
+    macro_define ('SOURCES', 1, '', 'TRUE', "@sources", 'internal');
     define_pretty_variable ('DIST_SOURCES', '', @dist_sources);
 
     &handle_multilib;
@@ -3103,9 +3102,9 @@ sub handle_texinfo_helper
 	}
 
 	$output_rules .= ("\n" . $out_file . ": "
-			  . join (' ', @texi_deps)
+			  . "@texi_deps"
 			  . "\n" . $infobase . ".dvi: "
-			  . join (' ', @texi_deps)
+			  . "@texi_deps"
 			  . "\n");
 
 	push (@info_deps_list, $out_file);
@@ -3159,8 +3158,8 @@ sub handle_texinfo_helper
 	unshift (@all, '$(INFO_DEPS)');
     }
 
-    &define_variable ("INFO_DEPS", join (' ', @info_deps_list));
-    &define_variable ("DVIS", join (' ', @dvis_list));
+    &define_variable ("INFO_DEPS", "@info_deps_list");
+    &define_variable ("DVIS", "@dvis_list");
     # This next isn't strictly needed now -- the places that look here
     # could easily be changed to look in info_TEXINFOS.  But this is
     # probably better, in case noinst_TEXINFOS is ever supported.
@@ -3249,8 +3248,9 @@ sub handle_man_pages
 	$output_rules .= &file_contents ('mans', ('SECTION' => $section));
     }
 
-    $output_vars .= &file_contents ('mans-vars',
-				    ('MANS' => join (' ', sort keys %vlist)));
+    my @mans = sort keys %vlist;
+    $output_vars .= file_contents ('mans-vars',
+				   ('MANS' => "@mans"));
 
     if (! defined $options{'no-installman'})
     {
@@ -3398,10 +3398,8 @@ sub handle_dist
     {
        foreach my $file (split (' ' , $configure_dist_common))
        {
-           if (! &is_make_dir (dirname ($file)))
-           {
-               &push_dist_common ($file);
-           }
+	   push_dist_common ($file)
+	     unless is_make_dir (dirname ($file));
        }
     }
 
@@ -3669,14 +3667,14 @@ sub handle_configure
 		      ('MAKEFILE'
 		       => $local_base,
 		       'MAKEFILE-DEPS'
-		       => join (' ', @rewritten),
+		       => "@rewritten",
 		       'CONFIG-MAKEFILE'
 		       => ((($relative_dir eq '.') ? '$@' : '$(subdir)/$@')
 			   . $colon_infile),
 		       'MAKEFILE-IN'
 		       => $infile,
 		       'MAKEFILE-IN-DEPS'
-		       => join (' ', @include_stack),
+		       => "@include_stack",
 		       'MAKEFILE-AM'
 		       => $amfile,
 		       'STRICTNESS'
@@ -3688,7 +3686,7 @@ sub handle_configure
 		       'REGEN-ACLOCAL-M4'
 		       => $regen_aclocal_m4,
 		       'ACLOCAL_M4_DEPS'
-		       => join (' ', @aclocal_m4_deps)));
+		       => "@aclocal_m4_deps"));
 
     if ($relative_dir eq '.')
     {
@@ -3698,7 +3696,7 @@ sub handle_configure
 
     # If we have a configure header, require it.
     my $hdr_index = 0;
-    my $distclean_config = '';
+    my @distclean_config;
     foreach my $spec (@config_headers)
       {
 	my ($out, @ins) = split_config_file_spec ($spec);
@@ -3781,46 +3779,38 @@ sub handle_configure
 	    require_file ($config_header_location, $FOREIGN,
 			  "$out_dir/$stamp_name.in");
 
-	    $distclean_config .= ' ' if $distclean_config;
-	    $distclean_config .= $cn_sans_dir;
+	    push @distclean_config, $cn_sans_dir;
 	}
     }
 
-    if ($distclean_config)
-    {
-	$output_rules .= &file_contents ('clean-hdr',
-					 ('FILES' => $distclean_config));
-    }
+    $output_rules .= file_contents ('clean-hdr',
+				    ('FILES' => "@distclean_config"))
+      if @distclean_config;
 
     # Set location of mkinstalldirs.
-    &define_variable ('mkinstalldirs',
-		      ('$(SHELL) ' . $config_aux_dir . '/mkinstalldirs'));
+    define_variable ('mkinstalldirs',
+		     ('$(SHELL) ' . $config_aux_dir . '/mkinstalldirs'));
 
     macro_error ('CONFIG_HEADER',
 		 "`CONFIG_HEADER' is an anachronism; now determined from `$configure_ac'")
-	if &variable_defined ('CONFIG_HEADER');
+	if variable_defined ('CONFIG_HEADER');
 
-    my $config_header = '';
+    my @config_h;
     foreach my $spec (@config_headers)
       {
 	my ($out, @ins) = split_config_file_spec ($spec);
 	# Generate CONFIG_HEADER define.
 	if ($relative_dir eq dirname ($out))
 	{
-	    $out = basename ($out);
+	    push @config_h, basename ($out);
 	}
 	else
 	{
-	    $out = "\$(top_builddir)/$out";
+	    push @config_h, "\$(top_builddir)/$out";
 	}
-
-	$config_header .= ' ' if $config_header;
-	$config_header .= $out;
     }
-    if ($config_header)
-    {
-	&define_variable ("CONFIG_HEADER", $config_header);
-    }
+    define_variable ("CONFIG_HEADER", "@config_h")
+      if @config_h;
 
     # Now look for other files in this directory which must be remade
     # by config.status, and generate rules for them.
@@ -4045,7 +4035,7 @@ sub handle_all ($)
 	# by changing the order of dependencies to the "all" because
 	# that breaks when using parallel makes.  Instead we handle
 	# things explicitly.
-	$output_all .= ("all: " . join (' ', @local_headers)
+	$output_all .= ("all: @local_headers"
 			. "\n\t"
 			. '$(MAKE) $(AM_MAKEFLAGS) '
 			. (&variable_defined ('SUBDIRS')
@@ -4123,7 +4113,7 @@ sub handle_clean
 				      => join ('', @maintainer_clean_files),
 				      'MFILES'
 				      # A space is required in the join here.
-				      => join (' ', @maintainer_clean_files)));
+				      => "@maintainer_clean_files"));
 }
 
 
@@ -6515,7 +6505,7 @@ sub define_pretty_variable
 
     if (! &variable_defined ($var, $cond))
     {
-        macro_define ($var, 1, '', $cond, join (' ', @value), undef);
+        macro_define ($var, 1, '', $cond, "@value", undef);
 	variable_pretty_output ($var, $cond || 'TRUE');
 	$content_seen{$var} = 1;
     }
@@ -6868,7 +6858,7 @@ sub read_am_file ($)
 
     $output_trailer .= $comment;
 
-    if (join (' ', @saved_cond_stack) ne join (' ', @cond_stack))
+    if ("@saved_cond_stack" ne "@cond_stack")
     {
 	if (@cond_stack)
 	{
@@ -7245,7 +7235,7 @@ sub file_contents_internal ($$%)
  	}
     }
 
-    if (join (' ', @saved_cond_stack) ne join (' ', @cond_stack))
+    if ("@saved_cond_stack" ne "@cond_stack")
     {
 	if (@cond_stack)
 	{
@@ -7509,7 +7499,7 @@ sub am_install_var
 		}
 
 		push (@condvals, $cond);
-		push (@condvals, join (' ', @one_binlist));
+		push (@condvals, "@one_binlist");
 	    }
 
 	    variable_delete ($one_name);
@@ -7890,7 +7880,7 @@ sub push_dist_common
 {
     prog_error ("push_dist_common run after handle_dist")
         if $handle_dist_run;
-    macro_define ('DIST_COMMON', 1, '+', '', join (' ', @_), '');
+    macro_define ('DIST_COMMON', 1, '+', '', "@_", '');
 }
 
 
@@ -7977,7 +7967,7 @@ sub unquote_m4_arg
 sub print_error
 {
     my ($leader, @args) = @_;
-    my $text = join (' ', @args);
+    my $text = "@args";
     @args = split ("\n", $text);
     $text = $leader . join ("\n" . $leader, @args) . "\n";
     warn $text;
