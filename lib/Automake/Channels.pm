@@ -186,6 +186,10 @@ A string to prepend to each message emitted through this channel.
 
 A string to append to each message emitted through this channel.
 
+=item C<backtrace =E<gt> 0>
+
+Die with a stack backtrace after displaying the message.
+
 =back
 
 =cut
@@ -201,6 +205,7 @@ our %_default_options =
    uniq_part => UP_LOC_TEXT,
    header => '',
    footer => '',
+   backtrace => 0,
    );
 
 # Filled with output messages as keys, to detect duplicates.
@@ -468,6 +473,7 @@ sub msg ($$;$%)
 	}
 
       # Die on fatal messages.
+      confess if $opts{'backtrace'};
       exit $exit_code if $opts{'type'} eq 'fatal';
     }
 }
