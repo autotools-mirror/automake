@@ -12,7 +12,7 @@ AC_OUTPUT_COMMANDS([
 for mf in $CONFIG_FILES; do
   case "$mf" in
   Makefile) dirpart=.;;
-  */Makefile) dirpart=`echo "$mf" | sed -e 's|/[^/]*$||'`
+  */Makefile) dirpart=`echo "$mf" | sed -e 's|/[^/]*$||'`;;
   *) continue;;
   esac
   grep '^DEP_FILES = ..*' < "$mf" > /dev/null || continue
