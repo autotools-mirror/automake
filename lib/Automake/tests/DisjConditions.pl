@@ -309,7 +309,7 @@ sub test_sub_conditions ()
       my $t2 = new Automake::Condition @{$t->[1]};
       my $t3 = build_set @{$t->[2]};
 
-      # Make sure simplify() yields the expected result.
+      # Make sure sub_conditions() yields the expected result.
       my $s = $t1->sub_conditions ($t2);
       if ($s != $t3)
 	{

@@ -157,7 +157,7 @@ sub test_reduce_and ()
 
       if ($result ne $exresult)
 	{
-	  print '"'.join(",", @$inref) . '" => "' .
+	  print '"' . join(",", @$inref) . '" => "' .
 	    $result . '" expected "' .
 	      $exresult . '"' . "\n";
 	  $failed = 1;
@@ -233,7 +233,7 @@ sub test_reduce_or ()
 
       if ($result ne $exresult)
 	{
-	  print '"'.join(",", @$inref) . '" => "' .
+	  print '"' . join(",", @$inref) . '" => "' .
 	    $result . '" expected "' .
 	      $exresult . '"' . "\n";
 	  $failed = 1;

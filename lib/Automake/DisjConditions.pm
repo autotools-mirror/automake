@@ -625,7 +625,7 @@ sub simplify ($)
 Return the subconditions of C<$self> that contains C<$cond>, with
 C<$cond> stripped.  More formally, return C<$res> such that
 C<$res-E<gt>multiply ($cond) == $self-E<gt>multiply ($cond)> and
-C<$res> does not mention any of the variables in $cond.
+C<$res> does not mention any of the variables in C<$cond>.
 
 For instance, consider:
 
