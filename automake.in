@@ -381,13 +381,12 @@ my %configure_cond = ();
 # This maps extensions onto language names.
 my %extension_map = ();
 
+# List of the DIST_COMMON files we discovered while reading
+# configure.in
+my $configure_dist_common = '';
+
 # This maps languages names onto properties.
 my %language_map = ();
-
-# This holds all the files that would go in `dist_common' which we
-# discovered while scanning configure.ac.  We might distribute these
-# in the top-level Makefile.in.
-my %configure_dist_common = ();
 
 # List of targets we must always output.
 # FIXME: Complete, and remove falsely required targets.
@@ -477,10 +476,6 @@ my @conditional_stack;
 
 # This holds the set of included files.
 my @include_stack;
-
-# This holds a list of files that are included in the
-# distribution.
-my %dist_common;
 
 # This holds a list of directories which we must create at `dist'
 # time.  This is used in some strange scenarios involving weird
@@ -645,8 +640,6 @@ sub initialize_per_input ()
     $relative_dir = '';
 
     $am_relative_dir = '';
-
-    %dist_common = ();
 
     %dist_dirs = ();
 
@@ -996,6 +989,22 @@ sub generate_makefile
     $relative_dir = dirname ($output);
     $am_relative_dir = dirname ($makefile);
 
+    &read_main_am_file ($makefile . '.am');
+    if (&handle_options)
+    {
+	# Fatal error.  Just return, so we can continue with next file.
+	return;
+    }
+
+    # There are a few install-related variables that you should not define.
+    foreach my $var ('PRE_INSTALL', 'POST_INSTALL', 'NORMAL_INSTALL')
+    {
+	if (&variable_defined ($var))
+	{
+	    &am_line_error ($var, "`$var' should not be defined");
+	}
+    }
+
     # At the toplevel directory, we might need config.guess, config.sub
     # or libtool scripts (ltconfig and ltmain.sh).
     if ($relative_dir eq '.')
@@ -1024,22 +1033,6 @@ sub generate_makefile
 	if &variable_defined ('SOURCES');
     push (@objects, '$(OBJECTS)')
 	if &variable_defined ('OBJECTS');
-
-    &read_main_am_file ($makefile . '.am');
-    if (&handle_options)
-    {
-	# Fatal error.  Just return, so we can continue with next file.
-	return;
-    }
-
-    # There are a few install-related variables that you should not define.
-    foreach my $var ('PRE_INSTALL', 'POST_INSTALL', 'NORMAL_INSTALL')
-    {
-	if (&variable_defined ($var))
-	{
-	    &am_line_error ($var, "`$var' should not be defined");
-	}
-    }
 
     # If OBJEXT/EXEEXT were not set in configure.in, do it, it
     # simplifies our task, and anyway starting with Autoconf 2.50, it
@@ -2627,8 +2620,6 @@ sub handle_texinfo
 	    my $vti = ($done ? $done : 'vti');
 	    ++$done;
 
-	    &push_dist_common ($vtexi, 'stamp-' . $vti);
-
 	    &require_conf_file_with_line ('info_TEXINFOS', $FOREIGN,
 					  'mdate-sh');
 
@@ -2882,15 +2873,15 @@ sub handle_multilib
 
 
 # $BOOLEAN
-# &dist_cmp ($A, $B)
-# --------------------
+# &for_dist_common ($A, $B)
+# -------------------------
 # Subroutine for &handle_dist: sort files to dist.
 #
 # We put README first because it then becomes easier to make a
 # Usenet-compliant shar file (in these, README must be first).
 #
 # FIXME: do more ordering of files here.
-sub dist_cmp
+sub for_dist_common
 {
     return 0
         if $a eq $b;
@@ -2944,35 +2935,32 @@ sub handle_dist
 	}
     }
 
-    # Always require configure.ac and configure at top level, even if
-    # they don't exist.  This is especially important for configure,
-    # since it won't be created until autoconf is run -- which might
-    # be after automake is run.
-    &push_dist_common ($configure_ac, 'configure')
-	if $relative_dir eq '.';
-
-    # We might copy elements from %configure_dist_common to
+    # We might copy elements from $configure_dist_common to
     # %dist_common if we think we need to.  If the file appears in our
     # directory, we would have discovered it already, so we don't
     # check that.  But if the file is in a subdir without a Makefile,
     # we want to distribute it here if we are doing `.'.  Ugly!
     if ($relative_dir eq '.')
     {
-	foreach my $iter (keys %configure_dist_common)
-	{
-	    if (! &is_make_dir (dirname ($iter)))
-	    {
-		&push_dist_common ($iter);
-	    }
-	}
+       foreach my $file (split (' ' , $configure_dist_common))
+       {
+           if (! &is_make_dir (dirname ($file)))
+           {
+               &push_dist_common ($file);
+           }
+       }
     }
 
-    # Keys of %dist_common are names of files to distributed.
-    &define_pretty_variable ("DIST_COMMON", '',
-			     sort dist_cmp keys %dist_common);
-    $output_vars .= "\n";
 
-    # Now that we've processed %dist_common, disallow further attempts
+
+    # Files to distributed.  Don't use &variable_value_as_list
+    # as it recursively expands `$(dist_pkgdata_DATA)' etc.
+    check_variable_defined_unconditionally ('DIST_COMMON');
+    my @dist_common = split (' ', variable_value ('DIST_COMMON', 'TRUE'));
+    @dist_common = uniq (sort for_dist_common (@dist_common));
+    pretty_print ('DIST_COMMON = ', "\t", @dist_common);
+
+    # Now that we've processed DIST_COMMON, disallow further attempts
     # to set it.
     $handle_dist_run = 1;
 
@@ -3391,9 +3379,6 @@ sub handle_configure
 
     if ($relative_dir eq '.')
     {
-	&examine_variable ('CONFIG_STATUS_DEPENDENCIES');
-	&examine_variable ('CONFIGURE_DEPENDENCIES');
-
 	&push_dist_common ('acconfig.h')
 	    if -f 'acconfig.h';
     }
@@ -4693,7 +4678,7 @@ sub scan_autoconf_files
 	if $seen_pythondir;
 
     # Preserve dist_common for later.
-    %configure_dist_common = %dist_common;
+    $configure_dist_common = variable_value ('DIST_COMMON', 'TRUE');
 }
 
 ################################################################
@@ -7507,7 +7492,7 @@ sub push_dist_common
 {
     &prog_error ("push_dist_common run after handle_dist")
         if $handle_dist_run;
-    grep { $dist_common{$_} = 1 } @_;
+    macro_define ('DIST_COMMON', 1, '+', '', join (' ', @_), '');
 }
 
 
