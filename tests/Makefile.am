@@ -27,7 +27,7 @@ yaccpp.test texinfo3.test texinfo4.test tagsub.test cxxlibobj.test \
 seenc.test cygwin32.test lisp.test stamph.test ldadd.test \
 version2.test conf2.test cond.test cond2.test xsource.test \
 libobj6.test depend3.test output5.test ammissing.test install.test \
-libobj7.test objc.test cond3.test cxxcpp.test aclocal.test
+libobj7.test objc.test cond3.test cxxcpp.test aclocal.test alpha.test
 
 EXTRA_DIST = defs $(TESTS)
 

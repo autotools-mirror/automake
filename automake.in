@@ -610,73 +610,77 @@ sub generate_makefile
 # Handle AUTOMAKE_OPTIONS variable.  Return 1 on error, 0 otherwise.
 sub handle_options
 {
+    if (&variable_defined ('AUTOMAKE_OPTIONS'))
+    {
+	foreach (&variable_value_as_list ('AUTOMAKE_OPTIONS', ''))
+	{
+	    $options{$_} = 1;
+	    if ($_ eq 'gnits' || $_ eq 'gnu' || $_ eq 'foreign')
+	    {
+		&set_strictness ($_);
+	    }
+	    elsif ($_ eq 'cygnus')
+	    {
+		$cygnus_mode = 1;
+	    }
+	    elsif (/ansi2knr/)
+	    {
+		# An option like "../lib/ansi2knr" is allowed.  With
+		# no path prefix, we assume the required programs are
+		# in this directory.  We save the actual option for
+		# later.
+		$options{'ansi2knr'} = $_;
+	    }
+	    elsif ($_ eq 'no-installman' || $_ eq 'no-installinfo'
+		   || $_ eq 'dist-shar' || $_ eq 'dist-zip'
+		   || $_ eq 'dist-tarZ' || $_ eq 'dejagnu'
+		   || $_ eq 'no-texinfo.tex'
+		   || $_ eq 'readme-alpha' || $_ eq 'check-news')
+	    {
+		# Explicitly recognize these.
+	    }
+	    elsif ($_ eq 'no-dependencies')
+	    {
+		$use_dependencies = 0;
+	    }
+	    elsif (/([0-9]+)\.([0-9]+)/)
+	    {
+		# Got a version number.  Note that alpha releases
+		# count as the next higher release.  Note also that we
+		# assume there will be a maximum of 100 minor releases
+		# for any given major release.
+
+		local ($rmajor, $rminor) = ($1, $2);
+		if ($VERSION !~ /([0-9]+)\.([0-9]+)([a-z])?/)
+		{
+		    print STDERR
+			"automake: programming error: version is incorrect\n";
+		    exit 1;
+		}
+		local ($tmajor, $tminor) = ($1, $2);
+		# Handle alpha versions.
+		++$tminor if defined $3;
+
+		if ($rmajor > $tmajor
+		    || ($rmajor == $tmajor && $rminor > $tminor))
+		{
+		    &am_line_error ('AUTOMAKE_OPTIONS',
+				    "require version $_, only have $VERSION");
+		    return 1;
+		}
+	    }
+	    else
+	    {
+		&am_line_error ('AUTOMAKE_OPTIONS',
+				'option ', $_, 'not recognized');
+	    }
+	}
+    }
+
     if ($strictness == $GNITS)
     {
 	$options{'readme-alpha'} = 1;
 	$options{'check-news'} = 1;
-    }
-
-    return 0 if ! &variable_defined ('AUTOMAKE_OPTIONS');
-
-    foreach (&variable_value_as_list ('AUTOMAKE_OPTIONS', ''))
-    {
-	$options{$_} = 1;
-	if ($_ eq 'gnits' || $_ eq 'gnu' || $_ eq 'foreign')
-	{
-	    &set_strictness ($_);
-	}
-	elsif ($_ eq 'cygnus')
-	{
-	    $cygnus_mode = 1;
-	}
-	elsif (/ansi2knr/)
-	{
-	    # An option like "../lib/ansi2knr" is allowed.  With no
-	    # path prefix, we assume the required programs are in this
-	    # directory.  We save the actual option for later.
-	    $options{'ansi2knr'} = $_;
-	}
-	elsif ($_ eq 'no-installman' || $_ eq 'no-installinfo'
-	       || $_ eq 'dist-shar' || $_ eq 'dist-zip'
-	       || $_ eq 'dist-tarZ' || $_ eq 'dejagnu'
-	       || $_ eq 'no-texinfo.tex'
-	       || $_ eq 'readme-alpha' || $_ eq 'check-news')
-	{
-	    # Explicitly recognize these.
-	}
-	elsif ($_ eq 'no-dependencies')
-	{
-	    $use_dependencies = 0;
-	}
-	elsif (/([0-9]+)\.([0-9]+)/)
-	{
-	    # Got a version number.  Note that alpha releases count as
-	    # the next higher release.  Note also that we assume there
-	    # will be a maximum of 100 minor releases for any given
-	    # major release.
-	    local ($rmajor, $rminor) = ($1, $2);
-	    if ($VERSION !~ /([0-9]+)\.([0-9]+)([a-z])?/)
-	    {
-		print STDERR
-		    "automake: programming error: version is incorrect\n";
-		exit 1;
-	    }
-	    local ($tmajor, $tminor) = ($1, $2);
-	    # Handle alpha versions.
-	    ++$tminor if defined $3;
-
-	    if ($rmajor > $tmajor || ($rmajor == $tmajor && $rminor > $tminor))
-	    {
-		&am_line_error ('AUTOMAKE_OPTIONS',
-				"require version $_, only have $VERSION");
-		return 1;
-	    }
-	}
-	else
-	{
-	    &am_line_error ('AUTOMAKE_OPTIONS',
-			    'option ', $_, 'not recognized');
-	}
     }
 
     return 0;
