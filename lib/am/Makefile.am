@@ -15,3 +15,6 @@ install:: $(am_DATA)
 	for i in $(am_DATA); do			\
 	  $(INSTALL_DATA) $(srcdir)/$$i $(amdatadir)/$$i; \
 	done
+
+automake: automake.in
+	CONFIG_FILES=$@ CONFIG_HEADERS= ./config.status
