@@ -90,6 +90,8 @@ stamp-vti texinfo.tex version.texi ylwrap
 
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) \
 	$(TEXINFOS) $(MANS) $(EXTRA_DIST)
+
+GZIP = --best
 default: all
 
 .SUFFIXES:
@@ -101,7 +103,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status $(BUILT_SOURCES)
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
-$(srcdir)/aclocal.m4: configure.in
+$(srcdir)/aclocal.m4:  configure.in 
 	cd $(srcdir) && aclocal
 
 config.status: configure
@@ -234,7 +236,8 @@ dist-info: $(INFO_DEPS)
 mostlyclean-info:
 	rm -f automake.aux automake.cp automake.cps automake.dvi automake.fn \
 	  automake.fns automake.ky automake.log automake.pg \
-	  automake.toc automake.tp automake.vr automake.op
+	  automake.toc automake.tp automake.tps automake.vr \
+	  automake.vrs automake.op
 
 clean-info:
 
@@ -315,7 +318,7 @@ distdir = $(PACKAGE)-$(VERSION)
 # tarfile.
 distcheck: dist
 	rm -rf $(distdir)
-	$(TAR) zxf $(distdir).tar.gz
+	GZIP=$(GZIP) $(TAR) zxf $(distdir).tar.gz
 	mkdir $(distdir)/=build
 	mkdir $(distdir)/=inst
 	dc_install_base=`cd $(distdir)/=inst && pwd`; \
@@ -333,11 +336,11 @@ distcheck: dist
 	echo "========================"
 dist: distdir
 	-chmod -R a+r $(distdir)
-	$(TAR) chozf $(distdir).tar.gz $(distdir)
+	GZIP=$(GZIP) $(TAR) chozf $(distdir).tar.gz $(distdir)
 	rm -rf $(distdir)
 dist-all: distdir
 	-chmod -R a+r $(distdir)
-	$(TAR) chozf $(distdir).tar.gz $(distdir)
+	GZIP=$(GZIP) $(TAR) chozf $(distdir).tar.gz $(distdir)
 	rm -rf $(distdir)
 distdir: $(DISTFILES)
 	@if sed 15q $(srcdir)/NEWS | fgrep -e "$(VERSION)" > /dev/null; then :; else \
