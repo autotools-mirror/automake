@@ -666,26 +666,29 @@ sub handle_options
 	    {
 		$use_dependencies = 0;
 	    }
-	    elsif (/([0-9]+)\.([0-9]+)/)
+	    elsif (/([0-9]+)\.([0-9]+)([a-z])?/)
 	    {
 		# Got a version number.  Note that alpha releases
 		# count as the next higher release.  Note also that we
 		# assume there will be a maximum of 100 minor releases
 		# for any given major release.
 
-		local ($rmajor, $rminor) = ($1, $2);
+		local ($rmajor, $rminor, $ralpha) = ($1, $2);
 		if ($VERSION !~ /([0-9]+)\.([0-9]+)([a-z])?/)
 		{
 		    print STDERR
 			"automake: programming error: version is incorrect\n";
 		    exit 1;
 		}
-		local ($tmajor, $tminor) = ($1, $2);
-		# Handle alpha versions.
-		++$tminor if defined $3;
+		local ($tmajor, $tminor, $talpha) = ($1, $2, $3);
 
+		# 2.0 is better than 1.0.
+		# 1.2 is better than 1.1.
+		# 1.2a is better than 1.2.
 		if ($rmajor > $tmajor
-		    || ($rmajor == $tmajor && $rminor > $tminor))
+		    || ($rmajor == $tmajor && $rminor > $tminor)
+		    || ($rminor == $tminor && $rminor == $tminor
+			&& $ralpha > $talpha))
 		{
 		    &am_line_error ('AUTOMAKE_OPTIONS',
 				    "require version $_, only have $VERSION");
@@ -695,7 +698,7 @@ sub handle_options
 	    else
 	    {
 		&am_line_error ('AUTOMAKE_OPTIONS',
-				'option ', $_, 'not recognized');
+				"option \`" . $_ . "\' not recognized");
 	    }
 	}
     }
