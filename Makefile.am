@@ -63,7 +63,7 @@ TAGS_DEPENDENCIES = automake.in aclocal.in automake.texi
 ## doesn't exist, then this test is meaningless anyway.
 installcheck-local:
 	for file in $(script_DATA); do \
-	  $(PERL) -e "exit ! -x '$(pkgdatadir)/$$file';" || exit 1; \
+	  $(PERL) -e "exit ! -x '$(pkgvdatadir)/$$file';" || exit 1; \
 	done
 
 ################################################################
@@ -153,3 +153,6 @@ path-check: distdir
 ## any interesting tags show up.
 ETAGS_ARGS = $(amfiles)
 TAGS_DEPENDENCIES = $(ETAGS_ARGS)
+
+## A temporary hack for the release.
+DISTCLEANFILES = automake.cm automake.ov
