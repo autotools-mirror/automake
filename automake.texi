@@ -200,6 +200,7 @@ understand how Automake works.
 * Uniform::                     The Uniform Naming Scheme
 * Canonicalization::            How derived variables are named
 * User Variables::		Variables reserved for the user
+* Auxiliary Programs::          Programs automake might require
 @end menu
 
 
@@ -482,7 +483,7 @@ is an addition since Automake 1.4c, to make the use of Autoconf
 substitutions in macro names less obfuscating.
 
 
-@node User Variables, , Canonicalization, Generalities
+@node User Variables, Auxiliary Programs, Canonicalization, Generalities
 @section Variables reserved for the user
 
 @cindex variables, reserved for the user
@@ -509,6 +510,71 @@ sense.)  The shadow variable is named by prepending @samp{AM_} to the
 user variable's name.  For instance, the shadow variable for
 @code{YFLAGS} is @code{AM_YFLAGS}.
 
+
+@node Auxiliary Programs, , User Variables, Generalities
+@section Programs automake might require
+
+@cindex Programs, auxiliary
+@cindex Auxiliary programs
+
+Automake sometimes requires helper programs so that the generated
+@file{Makefile} can do its work properly.  There are a fairly large
+number of them, and we list them here.
+
+@table @code
+@item ansi2knr.c
+@itemx ansi2knr.1
+These two files are used by the automatic de-ANSI-fication support
+(@pxref{ANSI}).
+
+@item compile
+This is a wrapper for compilers which don't accept both @samp{-c} and
+@samp{-o} at the same time.  It is only used when absolutely required.
+Such compilers are rare.
+
+@item config.guess
+@itemx config.sub
+These programs compute the canonical triplets for the given build, host,
+or target architecture.
+
+@item depcomp
+This program understands how to run a compiler so that it will generate
+not only the desired output but also dependency information which is
+then used by the automatic dependency tracking feature.
+
+@item elisp-comp
+This program is used to byte-compile Emacs Lisp code.
+
+@item install-sh
+This is a replacement for the @code{install} program which works on
+platforms where @code{install} is unavailable or unusable.
+
+@item mdate-sh
+This script is used to generate a @file{version.texi} file.  It examines
+a file and prints some date information about it.
+
+@item missing
+This wraps a number of programs which are typically only required by
+maintainers.  If the program in question doesn't exist, @code{missing}
+prints an informative warning and attempts to fix things so that the
+build can continue.
+
+@item mkinstalldirs
+This works around the fact that @code{mkdir -p} is not portable.
+
+@item py-compile
+This is used to byte-compile Python scripts.
+
+@item texinfo.tex
+Not a program, this file is required for @code{make dvi} to work when
+Texinfo sources are in the package.
+
+@item ylwrap
+This program wraps @code{lex} and @code{yacc} and ensures that, for
+instance, multiple @code{yacc} instances can be invoked in a single
+directory in parallel.
+
+@end table
 
 
 @node Examples, Invoking Automake, Generalities, Top
@@ -1258,14 +1324,20 @@ header.  If you do use this macro, you must create the file
 @cvindex AM_CONFIG_HEADER
 
 @item AM_ENABLE_MULTILIB
-This is used when a ``multilib'' library is being built.  A
-@dfn{multilib} library is one that is built multiple times, once per
-target flag combination.  This is only useful when the library is
-intended to be cross-compiled.  The first optional argument is the name
-of the @file{Makefile} being generated; it defaults to @samp{Makefile}.
-The second option argument is used to find the top source directory; it
-defaults to the empty string (generally this should not be used unless
-you are familiar with the internals).
+This is used when a ``multilib'' library is being built.  The first
+optional argument is the name of the @file{Makefile} being generated; it
+defaults to @samp{Makefile}.  The second option argument is used to find
+the top source directory; it defaults to the empty string (generally
+this should not be used unless you are familiar with the internals).
+@xref{Multilibs}.
+
+@item AM_DEPENDENCIES
+@itemx AM_SET_DEPDIR
+@itemx AM_DEP_TRACK
+@itemx AM_OUTPUT_DEPENDENCY_COMMANDS
+These macros are used to implement automake's automatic dependency
+tracking scheme.  They are called automatically by automake when
+required, and there should be no need to invoke them manually.
 
 @item AM_FUNC_STRTOD
 If the @code{strtod} function is not available, or does not work
@@ -1303,10 +1375,20 @@ two required arguments, the package and the version number.  By default
 this macro @code{AC_DEFINE}'s @samp{PACKAGE} and @samp{VERSION}.  This
 can be avoided by passing in a non-empty third argument.
 
+@item AM_MAKE_INCLUDE
+This macro is used to discover how the user's @code{make} handles
+@code{include} statements.  This macro is automatically invoked when
+needed; there should be no need to invoke it manually.
+
 @item AM_PATH_LISPDIR
 Searches for the program @code{emacs}, and, if found, sets the output
 variable @code{lispdir} to the full path to Emacs' site-lisp directory.
 @cvindex AM_PATH_LISPDIR
+
+@item AM_PROG_CC_C_O
+This is like @code{AC_PROG_CC_C_O}, but it generates its results in the
+manner required by automake.  You must use this instead of
+@code{AC_PROG_CC_C_O} when you need this functionality.
 
 @item AM_PROG_CC_STDC
 If the C compiler in not in ANSI C mode by default, try to add an option
@@ -1342,6 +1424,11 @@ This macro finds the @code{gcj} program or causes an error.  It sets
 @samp{GCJ} and @samp{GCJFLAGS}.  @code{gcj} is the Java front-end to the
 GNU Compiler Collection.
 @cvindex AM_PROG_GCJ
+
+@item AM_PROG_INSTALL_STRIP
+This is used to find a version of @code{install} which can be used to
+@code{strip} a program at installation time.  This macro is
+automatically included when required.
 
 @item AM_SANITY_CHECK
 This checks to make sure that a file created in the build directory is
@@ -1837,6 +1924,17 @@ nodist_maude_SOURCES = nodist.c
 dist_maude_SOURCES = dist-me.c
 @end example
 
+By default the output file (on Unix systems, the @file{.o} file) will be
+put into the current build directory.  However, if the option
+@code{subdir-objects} is in effect in the current directory then the
+@file{.o} file will be put into the subdirectory named after the source
+file.  For instance, with @code{subdir-objects} enabled,
+@file{sub/dir/file.c} will be compiled to @file{sub/dir/file.o}.  Some
+people prefer this mode of operation.  You can specify
+@code{subdir-objects} in @code{AUTOMAKE_OPTIONS} (@pxref{Options}).
+@cindex Subdirectory, objects in
+@cindex Objects in subdirectory
+
 
 @item EXTRA_maude_SOURCES
 Automake needs to know the list of files you intend to compile
@@ -1898,6 +1996,17 @@ different name for the intermediate object files.  Ordinarily a file
 like @file{sample.c} will be compiled to produce @file{sample.o}.
 However, if the program's @samp{_CFLAGS} variable is set, then the
 object file will be named, for instance, @file{maude-sample.o}.
+
+In compilations with per-program flags, the ordinary @samp{AM_} form of
+the flags variable is @emph{not} automatically included in the
+compilation (however, the user form of the variable @emph{is}
+included).  So for instance, if you want the hypothetical @file{maude}
+compilation to also use the value of @samp{AM_CFLAGS}, you would need to
+write:
+
+@example
+maude_CFLAGS = ... your flags ... $(AM_CFLAGS)
+@end example
 
 @item maude_DEPENDENCIES
 It is also occasionally useful to have a program depend on some other
@@ -2088,6 +2197,10 @@ define the variable @samp{YACC}.  This is most easily done by invoking
 the macro @samp{AC_PROG_YACC} (@pxref{Particular Programs, , Particular
 Program Checks, autoconf, The Autoconf Manual}).
 
+When @code{yacc} is invoked, it is passed @samp{YFLAGS} and
+@samp{AM_YFLAGS}.  The former is a user variable and the latter is
+intended for the @file{Makefile.am} author.
+
 Similarly, if a @code{lex} source file is seen, then your
 @file{configure.in} must define the variable @samp{LEX}.  You can use
 @samp{AC_PROG_LEX} to do this (@pxref{Particular Programs, , Particular
@@ -2096,6 +2209,12 @@ support also requires that you use the @samp{AC_DECL_YYTEXT}
 macro---automake needs to know the value of @samp{LEX_OUTPUT_ROOT}.
 This is all handled for you if you use the @code{AM_PROG_LEX} macro
 (@pxref{Macros}).
+
+When @code{yacc} is invoked, it is passed @samp{LFLAGS} and
+@samp{AM_LFLAGS}.  The former is a user variable and the latter is
+intended for the @file{Makefile.am} author.
+
+
 
 @cindex ylwrap
 @cindex yacc, multiple parsers
@@ -3538,6 +3657,13 @@ non-alpha releases.  The second form is
 @samp{@var{MAJOR}.@var{MINOR}@var{ALPHA}}, where @var{ALPHA} is a
 letter; it should be omitted for non-alpha releases.
 
+@item @code{subdir-objects}
+If this option is specified, then objects are placed into the
+subdirectory of the build directory corresponding to the subdirectory of
+the source file.  For instance if the source file is
+@file{subdir/file.cxx}, then the output file would be
+@file{subdir/file.o}.
+
 @item @var{version}
 @cindex Option, version
 A version number (e.g. @samp{0.30}) can be specified.  If Automake is not
@@ -3556,6 +3682,7 @@ There are a few rules and variables that didn't fit anywhere else.
 @menu
 * Tags::                        Interfacing to etags and mkid
 * Suffixes::                    Handling new file extensions
+* Multilibs::                   Support for multilibbing.
 @end menu
 
 
@@ -3604,7 +3731,7 @@ target runs Global Tags automatically and puts the result in the top
 build directory.
 
 
-@node Suffixes,  , Tags, Miscellaneous
+@node Suffixes, Multilibs, Tags, Miscellaneous
 @section Handling new file extensions
 
 @cindex Adding new SUFFIXES
@@ -3634,6 +3761,20 @@ doit_SOURCES = doit.foo
 
 Any given @code{SUFFIXES} go at the start of the generated suffixes
 list, followed by automake generated suffixes not already in the list.
+
+
+@node Multilibs, , Suffixes, Miscellaneous
+@section Support for Multilibs
+
+Automake has support for an obscure feature called multilibs.  A
+@dfn{multilib} is a library which is built for multiple different ABIs
+at a single time; each time the library is built with a different target
+flag combination.  This is only useful when the library is intended to
+be cross-compiled, and it is almost exclusively used for compiler
+support libraries.
+
+The multilib support is still experimental.  Only use it if you are
+familiar with multilibs and can debug problems you might encounter.
 
 
 @node Include, Conditionals, Miscellaneous, Top
