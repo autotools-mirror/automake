@@ -548,7 +548,7 @@ sub generate_makefile
     &handle_dependencies;
     &handle_tests;
     &handle_footer;
-    &handle_merge_targets;
+    &handle_merge_targets ($makefile);
     &handle_installdirs;
     &handle_clean;
     &handle_phony;
@@ -2969,10 +2969,10 @@ sub handle_configure
 	# Skip files not in this directory.
 	next unless &dirname ($file) eq $relative_dir;
 
-	# Skip any Makefile.
-	next if $local eq 'Makefile';
+	# Skip any file that is an automake input.
+	next if -f $file . '.am';
 
-	# Some users might be tempted to put `stamp-h' in the
+	# Some users have been tempted to put `stamp-h' in the
 	# AC_OUTPUT line.  This won't do the right thing, so we
 	# explicitly fail here.
 	if ($local eq 'stamp-h')
@@ -3144,6 +3144,8 @@ sub handle_installdirs
 # avoid double colon rules, otherwise we'd use them instead.
 sub handle_merge_targets
 {
+    local ($makefile) = @_;
+
     # There are a few install-related variables that you should not define.
     local ($var);
     foreach $var ('PRE_INSTALL', 'POST_INSTALL', 'NORMAL_INSTALL')
@@ -3154,7 +3156,10 @@ sub handle_merge_targets
 	}
     }
 
-    push (@all, 'Makefile');
+    # Put this at the beginning for the sake of non-GNU makes.  This
+    # is still wrong if these makes can run parallel jobs.  But it is
+    # right enough.
+    unshift (@all, &basename ($makefile));
 
     local ($one_name);
     foreach $one_name (@config_names)
