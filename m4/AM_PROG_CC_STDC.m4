@@ -30,8 +30,8 @@ ac_save_CC="$CC"
 # AIX			-qlanglvl=ansi
 # Ultrix and OSF/1	-std1
 # HP-UX			-Aa -D_HPUX_SOURCE
-# SVR4			-Xc
-for ac_arg in "" -qlanglvl=ansi -std1 "-Aa -D_HPUX_SOURCE" -Xc
+# SVR4			-Xc -D__EXTENSIONS__
+for ac_arg in "" -qlanglvl=ansi -std1 "-Aa -D_HPUX_SOURCE" "-Xc -D__EXTENSIONS__"
 do
   CC="$ac_save_CC $ac_arg"
   AC_TRY_COMPILE(
