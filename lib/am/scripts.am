@@ -36,13 +36,15 @@ install-%DIR%SCRIPTS: $(%DIR%_SCRIPTS)
 	@list='$(%DIR%_SCRIPTS)'; for p in $$list; do \
 ## A file can be in the source directory or the build directory.
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  if test -f $$d$$p; then \
 ## If the _SCRIPTS variable has an entry like foo/bar, install it as
 ## $(destdir)/bar, not $(destdir)/foo/bar.  The user can make a
 ## new dir variable or use a nobase_ target for the latter case.
-?BASE?	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-?!BASE?	  f="$$p"; \
-	  if test -f $$d$$p; then \
-	    f="`echo $$f|sed '$(transform)'`"; \
+## However in all cases $(transform) applies only to the basename,
+## so we have to strip the directory part.
+	    f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
+## Prepend the directory part if nobase_ is used.
+?!BASE?	    f=`echo "$$p" | sed 's|[^/]*$$||'`"$$f"; \
 	    echo " $(%DIR%SCRIPT_INSTALL) $$d$$p $(DESTDIR)$(%NDIR%dir)/$$f"; \
 	    $(%DIR%SCRIPT_INSTALL) $$d$$p $(DESTDIR)$(%NDIR%dir)/$$f; \
 	  else :; fi; \
@@ -59,9 +61,10 @@ if %?INSTALL%
 uninstall-%DIR%SCRIPTS:
 	@$(NORMAL_UNINSTALL)
 	@list='$(%DIR%_SCRIPTS)'; for p in $$list; do \
-?BASE?	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-?!BASE?	  f="$$p"; \
-	  f="`echo $$f|sed '$(transform)'`"; \
+## Remove any leading directory before applying $(transform).
+	  f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
+## Prepend the directory part if nobase_ is used.
+?!BASE?	  f=`echo "$$p" | sed 's|[^/]*$$||'`"$$f"; \
 	  echo " rm -f $(DESTDIR)$(%NDIR%dir)/$$f"; \
 	  rm -f $(DESTDIR)$(%NDIR%dir)/$$f; \
 	done

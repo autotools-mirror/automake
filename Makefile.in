@@ -52,6 +52,7 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LIBS = @LIBS@
 LN = @LN@
+LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
@@ -160,9 +161,8 @@ install-binSCRIPTS: $(bin_SCRIPTS)
 	$(mkinstalldirs) $(DESTDIR)$(bindir)
 	@list='$(bin_SCRIPTS)'; for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  f="`echo $$p | sed -e 's|^.*/||'`"; \
 	  if test -f $$d$$p; then \
-	    f="`echo $$f|sed '$(transform)'`"; \
+	    f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
 	    echo " $(binSCRIPT_INSTALL) $$d$$p $(DESTDIR)$(bindir)/$$f"; \
 	    $(binSCRIPT_INSTALL) $$d$$p $(DESTDIR)$(bindir)/$$f; \
 	  else :; fi; \
@@ -171,8 +171,7 @@ install-binSCRIPTS: $(bin_SCRIPTS)
 uninstall-binSCRIPTS:
 	@$(NORMAL_UNINSTALL)
 	@list='$(bin_SCRIPTS)'; for p in $$list; do \
-	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  f="`echo $$f|sed '$(transform)'`"; \
+	  f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
 	  echo " rm -f $(DESTDIR)$(bindir)/$$f"; \
 	  rm -f $(DESTDIR)$(bindir)/$$f; \
 	done
@@ -733,6 +732,10 @@ maintainer-check: automake aclocal
 	fi
 	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*autoconf'; then \
 	  echo 'Do not run "autoconf" in the above tests.  Use "$$AUTOCONF" instead.' 1>&2; \
+	  exit 1; \
+	fi
+	@if grep -v '^#' $(srcdir)/tests/*.test | egrep ':[	]*autoupdate'; then \
+	  echo 'Do not run "autoupdate" in the above tests.  Use "$$AUTOUPDATE" instead.' 1>&2; \
 	  exit 1; \
 	fi
 	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*automake'; then \
