@@ -89,10 +89,10 @@ texinfo.tex version.texi ylwrap
 PACKAGE = @PACKAGE@
 VERSION = @VERSION@
 
-DISTFILES = $(DIST_COMMON) $(SOURCES) $(BUILT_SOURCES) $(HEADERS) \
-	$(TEXINFOS) $(INFOS) $(MANS) $(EXTRA_DIST) $(DATA)
-DEP_DISTFILES = $(DIST_COMMON) $(SOURCES) $(BUILT_SOURCES) $(HEADERS) \
-	$(TEXINFOS) $(INFO_DEPS) $(MANS) $(EXTRA_DIST) $(DATA)
+DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) \
+	$(TEXINFOS) $(INFOS) $(MANS) $(EXTRA_DIST)
+DEP_DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) \
+	$(TEXINFOS) $(INFO_DEPS) $(MANS) $(EXTRA_DIST)
 
 TAR = tar
 default: all
@@ -133,6 +133,20 @@ uninstall-binSCRIPTS:
 	  rm -f $(bindir)/`echo $$p|sed '$(transform)'`; \
 	done
 
+check-binSCRIPTS:
+	pid=$$$$; list="$(bin_SCRIPTS)"; for p in $$list; do \
+	  for opt in --help --version; do \
+	    if test -f $$p; then :; \
+	    else if test -f $(srcdir)/$$p; then \
+	      p=$(srcdir)/$$p; \
+	    else exit 1; fi; fi; \
+	    if $$p $$opt > .chkout$$pid 2> .chkerr$$pid \
+	         && test -n "`cat .chkout$$pid`" \
+	         && test -z "`cat .chkerr$$pid`"; then :; \
+	    else echo "$$p failed $$opt test" 1>&2; exit 1; fi; \
+	  done; \
+	done; rm -f .chk???$$pid
+
 install-pkgdataSCRIPTS: $(pkgdata_SCRIPTS)
 	$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(pkgdatadir)
@@ -149,6 +163,20 @@ uninstall-pkgdataSCRIPTS:
 	list="$(pkgdata_SCRIPTS)"; for p in $$list; do \
 	  rm -f $(pkgdatadir)/`echo $$p|sed '$(transform)'`; \
 	done
+
+check-pkgdataSCRIPTS:
+	pid=$$$$; list="$(pkgdata_SCRIPTS)"; for p in $$list; do \
+	  for opt in --help --version; do \
+	    if test -f $$p; then :; \
+	    else if test -f $(srcdir)/$$p; then \
+	      p=$(srcdir)/$$p; \
+	    else exit 1; fi; fi; \
+	    if $$p $$opt > .chkout$$pid 2> .chkerr$$pid \
+	         && test -n "`cat .chkout$$pid`" \
+	         && test -z "`cat .chkerr$$pid`"; then :; \
+	    else echo "$$p failed $$opt test" 1>&2; exit 1; fi; \
+	  done; \
+	done; rm -f .chk???$$pid
 
 version.texi: stamp-vti
 
@@ -265,9 +293,7 @@ TAGS: tags-recursive $(HEADERS) $(SOURCES) $(CONFIG_HEADER) \
 	tags=; \
 	here=`pwd`; \
 	for subdir in $(SUBDIRS); do \
-	  test -f $$subdir/TAGS && { \
-	    tags="$$tags -i $$here/$$subdir/TAGS"; \
-	  } \
+	  test -f $$subdir/TAGS && tags="$$tags -i $$here/$$subdir/TAGS"; \
 	done; \
 	test -z "$(ETAGS_ARGS)$(CONFIG_HEADER)$(SOURCES)$(HEADERS)$$tags" \
 	  || etags $(ETAGS_ARGS) $$tags $(CONFIG_HEADER) $(SOURCES) $(HEADERS)
@@ -339,7 +365,7 @@ info: $(INFO_DEPS) info-recursive
 
 dvi: $(DVIS) dvi-recursive
 
-check: check-recursive
+check: check-binSCRIPTS check-pkgdataSCRIPTS check-recursive
 
 installcheck: installcheck-recursive installcheck-local
 
@@ -378,7 +404,7 @@ clean-generic:
 
 distclean-generic:
 	rm -f Makefile $(DISTCLEANFILES)
-	rm -f config.cache config.log $(CONFIG_HEADER) stamp-h
+	rm -f config.cache config.log stamp-h
 	test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 
 maintainer-clean-generic:
