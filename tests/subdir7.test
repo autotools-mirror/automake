@@ -1,0 +1,32 @@
+#! /bin/sh
+
+# Naming a subdirectory `obj/' is a bad idea.  Automake should say so.
+
+. $srcdir/defs || exit 1
+
+set -e
+
+mkdir obj
+
+cat >>configure.in << 'END'
+AC_CONFIG_FILES(obj/Makefile)
+AC_OUTPUT
+END
+
+: > obj/Makefile.am
+echo 'SUBDIRS = obj' >Makefile.am
+
+$ACLOCAL
+
+$AUTOMAKE 2>stderr && exit 1
+cat stderr
+grep 'obj.*BSD' stderr
+
+cat >Makefile.am <<EOF
+SUBDIRS = @STH@
+DIST_SUBDIRS = obj
+EOF
+
+$AUTOMAKE 2>stderr && exit 1
+cat stderr
+grep 'obj.*BSD' stderr

@@ -4054,8 +4054,36 @@ sub handle_subdirs
     return
       unless variable_defined ('SUBDIRS');
 
+    my @subdirs = &variable_value_as_list_recursive ('SUBDIRS', 'all');
+    my @dsubdirs = ();
+    @dsubdirs = &variable_value_as_list_recursive ('DIST_SUBDIRS', 'all')
+      if variable_defined ('DIST_SUBDIRS');
+
+    # If an `obj/' directory exists, BSD make will enter it before
+    # reading `Makefile'.  Hence the `Makefile' in the current directory
+    # will not be read.
+    #
+    #  % cat Makefile
+    #  all:
+    #          echo Hello
+    #  % cat obj/Makefile
+    #  all:
+    #          echo World
+    #  % make      # GNU make
+    #  echo Hello
+    #  Hello
+    #  % pmake     # BSD make
+    #  echo World
+    #  World
+    msg_var ('portability', 'SUBDIRS',
+	     "naming a subdirectory `obj' causes troubles with BSD make")
+      if grep ($_ eq 'obj', @subdirs);
+    msg_var ('portability', 'DIST_SUBDIRS',
+	     "naming a subdirectory `obj' causes troubles with BSD make")
+      if grep ($_ eq 'obj', @dsubdirs);
+
     # Make sure each directory mentioned in SUBDIRS actually exists.
-    foreach my $dir (&variable_value_as_list_recursive ('SUBDIRS', 'all'))
+    foreach my $dir (@subdirs)
     {
 	# Skip directories substituted by configure.
 	next if $dir =~ /^\@.*\@$/;
