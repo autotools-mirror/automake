@@ -2317,7 +2317,8 @@ sub handle_configure
     # Now look for other files in this directory which must be remade
     # by config.status, and generate rules for them.
     local (@actual_other_files) = ();
-    local ($file, $local, $input);
+    local ($file, $local);
+    local (@inputs);
     foreach $file (@other_input_files)
     {
 	# Skip files not in this directory, any Makefile, and the
@@ -2330,18 +2331,19 @@ sub handle_configure
 	if ($local =~ /^(.*):(.*)$/)
 	{
 	    # This is the ":" syntax of AC_OUTPUT.
-	    $input = $2;
+	    @inputs = split (':', $2)
 	    $local = $1;
 	}
 	else
 	{
 	    # Normal usage.
-	    $input = $local . '.in';
+	    push (@inputs, $local . '.in');
 	}
 	# FIXME: when using autoconf ":" syntax, should we set CONFIG_FILES
 	# to $local:$input?
 	$output_rules .= ($local . ': '
-			  . '$(top_builddir)/config.status ' . $input . "\n"
+			  . '$(top_builddir)/config.status '
+			  . join (' ', @inputs) . "\n"
 			  . "\t"
 			  . 'cd $(top_builddir) && CONFIG_FILES='
 			  . ($relative_dir eq '.' ? '' : '$(subdir)/')
