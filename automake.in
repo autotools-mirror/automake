@@ -32,28 +32,6 @@ $VERSION = "@VERSION@";
 $prefix = "@prefix@";
 $am_dir = "@datadir@/@PACKAGE@";
 
-# Commonly found files we look for and automatically include in
-# DIST_FILES.
-@common_files =
-    (
-     "THANKS", "TODO", "README", "NEWS", "COPYING", "COPYING.LIB",
-     "INSTALL", "ABOUT-NLS", "ChangeLog", "configure", "configure.in",
-     "config.guess", "config.sub"
-     );
-
-# Commonly used files we auto-include, but only sometimes.
-@common_sometimes =
-    (
-     "version.texi", "aclocal.m4", "acconfig.h", "config.h.top",
-     "config.h.bot", "stamp-h.in", "mdate-sh", "ansi2knr.c",
-     "ansi2knr.1", 'stamp-vti', "mkinstalldirs", "install-sh"
-     );
-
-$USAGE = "  --amdir=DIR           directory storing config files
-  --help                print this help, then exit
-  --version             print version number, then exit
-  --include-deps        include generated dependencies in Makefile\n";
-
 
 
 # This is TRUE if GNU make specific automatic dependency generation
@@ -102,6 +80,8 @@ $dir_holds_sources = 0;
 $recursive_install = 0;
 
 
+
+&init_globals;
 
 # Parse command line.
 @input_files = &parse_arguments (@ARGV);
@@ -557,25 +537,6 @@ sub handle_texinfo
     &require_file ('texinfo.tex');
 }
 
-# Helper text for dealing with man pages.
-$install_man_format =
-    '	sect=@SECTION@;				\\
-	inst=`echo "@MAN@" | sed \'$(transform)\'`.@FULLSECT@; \\
-	echo installing @MAN@ as $(mandir)/man$$sect/$$inst; \\
-	$(INSTALL_DATA) $(srcdir)/@MAN@ $(mandir)/man$$sect/$$inst; \\
-	if test -d $(mandir)/cat$$sect; then	\\
-	  echo formatting @MAN@ as $(mandir)/cat$$sect/$$inst;  \\
-	  $(NROFF) -man $(srcdir)/@MAN@ > $(mandir)/cat$$sect/$$inst; \\
-	else					\\
-	  true;					\\
-	fi
-';
-
-$uninstall_man_format =
-    '	inst=`echo "@MAN@" | sed \'$(transform)\'`.@FULLSECT@; \\
-	rm -f $(mandir)/man@SECTION@/$$inst $(mandir)/cat@SECTION@/$$inst
-';
-
 # Handle any man pages.
 sub handle_man_pages
 {
@@ -611,6 +572,7 @@ sub handle_man_pages
 	s/@SECTION@/$secmap{$key}/g;
 	s/@MAN@/$inames{$key}/g;
 	s/@FULLSECT@/$fullsecmap{$key}/g;
+	s/@MANBASE@/$key/g;
 	$output_rules .= $_;
     }
     $output_rules .= "\n";
@@ -622,6 +584,7 @@ sub handle_man_pages
 	s/@SECTION@/$secmap{$key}/g;
 	s/@MAN@/$inames{$key}/g;
 	s/@FULLSECT@/$fullsecmap{$key}/g;
+	s/@MANBASE@/$key/g;
 	$output_rules .= $_;
     }
     $output_rules .= "\n";
@@ -1112,6 +1075,54 @@ sub read_am_file
     $output_trailer .= "\n";
 }
 
+################################################################
+
+# Initialize global variables.
+sub init_globals
+{
+    # Helper text for dealing with man pages.
+    $install_man_format =
+    '	sect=@SECTION@;				\\
+	inst=`echo "@MANBASE@" | sed \'$(transform)\'`.@FULLSECT@; \\
+	echo installing @MAN@ as $(mandir)/man$$sect/$$inst; \\
+	$(INSTALL_DATA) $(srcdir)/@MAN@ $(mandir)/man$$sect/$$inst; \\
+	if test -d $(mandir)/cat$$sect; then	\\
+	  echo formatting @MAN@ as $(mandir)/cat$$sect/$$inst;  \\
+	  $(NROFF) -man $(srcdir)/@MAN@ > $(mandir)/cat$$sect/$$inst; \\
+	else					\\
+	  true;					\\
+	fi
+';
+
+    $uninstall_man_format =
+    '	inst=`echo "@MANBASE@" | sed \'$(transform)\'`.@FULLSECT@; \\
+	rm -f $(mandir)/man@SECTION@/$$inst $(mandir)/cat@SECTION@/$$inst
+';
+
+    # Commonly found files we look for and automatically include in
+    # DIST_FILES.
+    @common_files =
+	(
+	 "THANKS", "TODO", "README", "NEWS", "COPYING", "COPYING.LIB",
+	 "INSTALL", "ABOUT-NLS", "ChangeLog", "configure", "configure.in",
+	 "config.guess", "config.sub"
+	 );
+
+    # Commonly used files we auto-include, but only sometimes.
+    @common_sometimes =
+	(
+	 "version.texi", "aclocal.m4", "acconfig.h", "config.h.top",
+	 "config.h.bot", "stamp-h.in", "mdate-sh", "ansi2knr.c",
+	 "ansi2knr.1", 'stamp-vti', "mkinstalldirs", "install-sh"
+	 );
+
+    $USAGE = "\
+  --amdir=DIR           directory storing config files
+  --help                print this help, then exit
+  --version             print version number, then exit
+  --include-deps        include generated dependencies in Makefile\n";
+
+}
 
 ################################################################
 
