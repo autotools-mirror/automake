@@ -1,12 +1,5 @@
 #!/bin/sh
 
-# Test for bug reported by Jim Meyering:
-# When I ran automake-0.29 on textutils,
-# I noticed that doc/Makefile.in had
-#   textutils.info: textutils.texi
-# instead of
-#   textutils.info: textutils.texi version.texi
-
 . $srcdir/defs || exit 1
 
 cat > Makefile.am << 'END'
@@ -22,6 +15,22 @@ END
 : > mdate-sh
 : > texinfo.tex
 
-$AUTOMAKE || exit 1
+set -e
+
+$AUTOMAKE
+
+# Test for bug reported by Jim Meyering:
+# When I ran automake-0.29 on textutils,
+# I noticed that doc/Makefile.in had
+#   textutils.info: textutils.texi
+# instead of
+#   textutils.info: textutils.texi version.texi
 
 grep '^textutils\.info: textutils\.texi .*version\.texi$' Makefile.in
+
+# Test for bug reported by Lars Hecking:
+# When running the first version of configure.ac aware automake,
+# @CONFIGURE_AC@ was not properly substitued.
+
+egrep '^\$\(srcdir\)/stamp-vti:.*textutils\.texi( .*)?$' Makefile.in
+egrep '^\$\(srcdir\)/stamp-vti:.*$\(top_srcdir\)/configure\.in( .*)?$' Makefile.in
