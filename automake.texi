@@ -4371,8 +4371,17 @@ entire directory will be recursively copied into the distribution.
 Please note that this will also copy @emph{everything} in the directory,
 including CVS/RCS version control files.  We recommend against using
 this feature.
-
 @vindex EXTRA_DIST
+
+If you define @code{SUBDIRS}, Automake will recursively include the
+subdirectories in the distribution.  If @code{SUBDIRS} is defined
+conditionally (@pxref{Conditionals}), Automake will normally include all
+directories that could possibly appear in @code{SUBDIRS} in the
+distribution.  If you need to specify the set of directories
+conditionally, you can set the variable @code{DIST_SUBDIRS} to the exact
+list of subdirectories to include in the distribution (@pxref{Top level}).
+@vindex DIST_SUBDIRS
+
 
 @section Fine-grained distribution control
 
@@ -4398,25 +4407,6 @@ nodist_foo_SOURCES = do-not-distribute.c
 
 @section The dist hook
 
-Another way to to use this is for removing unnecessary files that get
-recursively included by specifying a directory in EXTRA_DIST:
-
-@example
-EXTRA_DIST = doc
-
-dist-hook:
-	rm -rf `find $(distdir)/doc -name CVS`
-@end example
-
-If you define @code{SUBDIRS}, Automake will recursively include the
-subdirectories in the distribution.  If @code{SUBDIRS} is defined
-conditionally (@pxref{Conditionals}), Automake will normally include all
-directories that could possibly appear in @code{SUBDIRS} in the
-distribution.  If you need to specify the set of directories
-conditionally, you can set the variable @code{DIST_SUBDIRS} to the exact
-list of subdirectories to include in the distribution.
-@vindex DIST_SUBDIRS
-
 @trindex dist-hook
 
 Occasionally it is useful to be able to change the distribution before
@@ -4430,6 +4420,39 @@ dist-hook:
         mkdir $(distdir)/random
         cp -p $(srcdir)/random/a1 $(srcdir)/random/a2 $(distdir)/random
 @end example
+
+Another way to to use this is for removing unnecessary files that get
+recursively included by specifying a directory in EXTRA_DIST:
+
+@example
+EXTRA_DIST = doc
+
+dist-hook:
+	rm -rf `find $(distdir)/doc -name CVS`
+@end example
+
+@vindex distdir
+@vindex top_distdir
+Two variables that come handy when writting @code{dist-hook} targets are
+@code{$(distdir)} and @code{$(top_distdir)}.
+
+@code{$(distdir)} points to the directory where the @code{dist} target
+will copy files from the current directory before creating the
+tarball.  If you are at the top-level directory, then @code{distdir =
+$(PACKAGE)-$(VERSION)}.  When used from subdirectory named
+@file{foo/}, then @code{distdir = ../$(PACKAGE)-$(VERSION)/foo}.
+
+@code{$(top_distdir)} always points to the root directory of the
+distributed tree.  At the top-level it's equal to @code{$(distdir)}.
+In the @file{foo/} subdirectory
+@code{top_distdir = ../$(PACKAGE)-$(VERSION)}.
+
+Note that when packages are nested using @code{AC_CONFIG_SUBDIRS}
+(@pxref{Subdirectories, AC_CONFIG_SUBDIRS, Configuring Other Packages
+in Subdirectories, autoconf, The Autoconf Manual}), then
+@code{$(distdir)} and @code{$(top_distdir)} are relative to the
+package where @code{make dist} was run, not to any sub-packages
+involved.
 
 @section Checking the distribution
 

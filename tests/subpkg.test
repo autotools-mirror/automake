@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002  Free Software Foundation, Inc.
+# Copyright (C) 2002, 2003  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -36,6 +36,14 @@ SUBDIRS = lib
 # Yes, This program is named LDADD.  So what?
 bin_PROGRAMS = LDADD
 LDADD_LDADD = lib/liblib.a
+
+# It's ok to override distdir.
+distdir = subpack-1
+
+# Make sure $(distdir) and $(top_distdir) work as expected.
+dist-hook:
+	test -f $(distdir)/LDADD.c
+	test -f $(top_distdir)/LDADD.c
 EOF
 
 cat >LDADD.c <<'EOF'
@@ -63,6 +71,12 @@ EOF
 cat >lib/Makefile.am <<'EOF'
 noinst_LIBRARIES = liblib.a
 liblib_a_SOURCES = src/x.c
+
+dist-hook:
+	test ! -f $(distdir)/LDADD.c
+	test -f $(top_distdir)/LDADD.c
+	test -f $(distdir)/src/x.c
+	test ! -f $(top_distdir)/src/x.c
 EOF
 
 cat >lib/src/x.c <<'EOF'
@@ -84,3 +98,4 @@ cd ..
 
 ./configure
 $MAKE distcheck
+test -f subpack-1.tar.gz
