@@ -87,7 +87,7 @@ maintainer-check: automake aclocal
 ## This check avoids accidental configure substitutions in the source.
 ## There are exactly 7 lines that should be modified.  This works out
 ## to 22 lines of diffs.
-	@if test `diff $(srcdir)/automake.in automake | wc -l` -ne 28; then \
+	@if test `diff $(srcdir)/automake.in automake | wc -l` -ne 24; then \
 	  echo "found too many diffs between automake.in and automake"; 1>&2; \
 	  diff -c $(srcdir)/automake.in automake; \
 	  exit 1; \
@@ -239,6 +239,17 @@ maintainer-check: automake aclocal
 	fi
 	@if grep -E '\b[ef]grep\b' $(srcdir)/lib/am/*.am $(srcdir)/m4/*.m4; then \
 	  echo 'Do not use egrep or fgrep in the above files, they are not portable.' 1>&2; \
+	  exit 1; \
+	fi
+## Try to make sure all @...@ substitutions are covered by our
+## substitution rule.
+	@if test `grep -E '@[A-Za-z_0-9]+@' aclocal | wc -l` -ne 0; then \
+	  echo "Unresolved @...@ substitution in aclocal" 1>&2; \
+	  exit 1; \
+	fi
+## In automake there are a few valid ones.
+	@if test `grep -E '@[A-Za-z_0-9]+@' automake | wc -l` -ne 4; then \
+	  echo "Unresolved @...@ substitution in aclocal" 1>&2; \
 	  exit 1; \
 	fi
 

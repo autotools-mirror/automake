@@ -181,6 +181,24 @@ uninstall-binSCRIPTS:
 	  echo " rm -f $(DESTDIR)$(bindir)/$$f"; \
 	  rm -f $(DESTDIR)$(bindir)/$$f; \
 	done
+
+.texi.info:
+	@rm -f $@ $@-[0-9] $@-[0-9][0-9]
+	$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) -I $(srcdir) \
+	`test -f '$<' || echo '$(srcdir)/'`$< -o $@
+
+.texi.dvi:
+	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
+	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) -I $(srcdir)' \
+	$(TEXI2DVI) `test -f '$<' || echo '$(srcdir)/'`$<
+
+.texi.pdf:
+	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
+	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) -I $(srcdir)' \
+	$(TEXI2PDF) `test -f '$<' || echo '$(srcdir)/'`$<
+automake.info: version.texi
+automake.dvi: version.texi
+automake.pdf: version.texi
 version.texi:  stamp-vti
 stamp-vti: automake.texi $(top_srcdir)/configure.in
 	@(dir=.; test -f ./automake.texi || dir=$(srcdir); \
@@ -200,27 +218,9 @@ mostlyclean-vti:
 
 maintainer-clean-vti:
 	-rm -f stamp-vti version.texi
-
-.texi.info:
-	@rm -f $@ $@-[0-9] $@-[0-9][0-9]
-	$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) -I $(srcdir) \
-	`test -f '$<' || echo '$(srcdir)/'`$< -o $@
-
-.texi.dvi:
-	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
-	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) -I $(srcdir)' \
-	$(TEXI2DVI) `test -f '$<' || echo '$(srcdir)/'`$< -o $@
-
-.texi.pdf:
-	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
-	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) -I $(srcdir)' \
-	$(TEXI2PDF) `test -f '$<' || echo '$(srcdir)/'`$< -o $@
-automake.info: version.texi
-automake.dvi: version.texi
-automake.pdf: version.texi
 TEXI2DVI = texi2dvi
 
-TEXI2PDF = $(TEXI2DVI) --pdf
+TEXI2PDF = $(TEXI2DVI) --pdf --batch
 DVIPS = dvips
 .dvi.ps:
 	$(DVIPS) $< -o $@
@@ -247,7 +247,7 @@ uninstall-info-am:
 dist-info: $(INFO_DEPS)
 	list='$(INFO_DEPS)'; \
 	for base in $$list; do \
-	  d=$(srcdir); \
+	  if test -f $$base; then d=.; else d=$(srcdir); fi; \
 	  for file in $$d/$$base*; do \
 	    relfile=`expr "$$file" : "$$d/\(.*\)"`; \
 	    test -f $(distdir)/$$relfile || \
@@ -257,12 +257,12 @@ dist-info: $(INFO_DEPS)
 
 mostlyclean-aminfo:
 	-rm -f automake.aux automake.cm automake.cp automake.cps automake.cv \
-	  automake.dvi automake.fn automake.ky automake.log automake.op \
-	  automake.ov automake.pdf automake.pg automake.ps automake.tmp \
-	  automake.toc automake.tp automake.tr automake.vr automake.vrs
+	  automake.fn automake.ky automake.log automake.op automake.ov \
+	  automake.pg automake.tmp automake.toc automake.tp automake.tr \
+	  automake.vr automake.vrs automake.dvi automake.pdf \
+	  automake.ps
 
 maintainer-clean-aminfo:
-	cd $(srcdir) && \
 	list='$(INFO_DEPS)'; for i in $$list; do \
 	  rm -f $$i; \
 	  if test "`echo $$i-[0-9]*`" != "$$i-[0-9]*"; then \
@@ -404,7 +404,11 @@ distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
 	$(mkinstalldirs) $(distdir)/m4 $(distdir)/tests
-	@list='$(DISTFILES)'; for file in $$list; do \
+	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
+	list='$(DISTFILES)'; for file in $$list; do \
+	  case $$file in \
+	    $(srcdir)/*) file=`echo "$$file" | sed "s|^$$srcdirstrip/||"`;; \
+	  esac; \
 	  if test -f $$file || test -d $$file; then d=.; else d=$(srcdir); fi; \
 	  dir=`echo "$$file" | sed -e 's,/[^/]*$$,,'`; \
 	  if test "$$dir" != "$$file" && test "$$dir" != "."; then \
@@ -489,7 +493,7 @@ distcheck: dist
 	       && (test `find "$$dc_destdir" -type f -print | wc -l` -le 1 \
 	           || { echo "ERROR: files left after uninstall (check DESTDIR support):" ; \
 	                find "$$dc_destdir" -type f -print ; \
-	                exit 1; } >&2 ) \
+	                exit 1; } >&2 ); \
 	      } || { rm -rf "$$dc_destdir"; exit 1; }) \
 	  && rm -rf "$$dc_destdir" \
 	  && $(MAKE) $(AM_MAKEFLAGS) dist-gzip \
@@ -567,7 +571,7 @@ install-info-am: $(INFO_DEPS)
 	$(mkinstalldirs) $(DESTDIR)$(infodir)
 	@list='$(INFO_DEPS)'; \
 	for file in $$list; do \
-	  d=$(srcdir); \
+	  if test -f $$file; then d=.; else d=$(srcdir); fi; \
 	  for ifile in echo $$d/$$file $$d/$$file-[0-9] $$d/$$file-[0-9][0-9]; do \
 	    if test -f $$ifile; then \
 	      relfile=`expr "$$ifile" : "$$d/\(.*\)"`; \
@@ -663,7 +667,7 @@ aclocal: aclocal.in Makefile
 # Some simple checks, and then ordinary check.  These are only really
 # guaranteed to work on my machine.
 maintainer-check: automake aclocal
-	@if test `diff $(srcdir)/automake.in automake | wc -l` -ne 28; then \
+	@if test `diff $(srcdir)/automake.in automake | wc -l` -ne 24; then \
 	  echo "found too many diffs between automake.in and automake"; 1>&2; \
 	  diff -c $(srcdir)/automake.in automake; \
 	  exit 1; \
@@ -785,6 +789,14 @@ maintainer-check: automake aclocal
 	fi
 	@if grep -E '\b[ef]grep\b' $(srcdir)/lib/am/*.am $(srcdir)/m4/*.m4; then \
 	  echo 'Do not use egrep or fgrep in the above files, they are not portable.' 1>&2; \
+	  exit 1; \
+	fi
+	@if test `grep -E '@[A-Za-z_0-9]+@' aclocal | wc -l` -ne 0; then \
+	  echo "Unresolved @...@ substitution in aclocal" 1>&2; \
+	  exit 1; \
+	fi
+	@if test `grep -E '@[A-Za-z_0-9]+@' automake | wc -l` -ne 4; then \
+	  echo "Unresolved @...@ substitution in aclocal" 1>&2; \
 	  exit 1; \
 	fi
 
