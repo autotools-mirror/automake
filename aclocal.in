@@ -89,6 +89,9 @@ my %map = ();
 # Ditto, but records the last definition of each macro as returned by --trace.
 my %map_traced_defs = ();
 
+# Map basenames to macro names.
+my %invmap = ();
+
 # Map file names to file contents.
 my %file_contents = ();
 
@@ -107,6 +110,11 @@ my %file_added = ();
 # Files that have already been scanned.
 my %scanned_configure_dep = ();
 
+# Serial numbers, for files that have one.
+# The key is the basename of the file,
+# the value is the serial number represented as a list.
+my %serial = ();
+
 # Matches a macro definition.
 #   AC_DEFUN([macroname], ...)
 # or
@@ -123,6 +131,9 @@ my $ac_require_rx = "AC_REQUIRE\\((?:\\[([^]]+)\\]|([^],)\n]+))\\)";
 # Matches an m4_include line
 my $m4_include_rx = "(?:m4_)?s?include\\((?:\\[([^]]+)\\]|([^],)\n]+))\\)";
 
+# Match a serial number
+my $serial_line_rx = '^#\s*serial\s*(.*?)\s*$';
+my $serial_number_rx = '^\d+(?:\.\d+)*$';
 
 ################################################################
 
@@ -150,6 +161,8 @@ sub reset_maps ()
   %file_includes = ();
   %file_added = ();
   %scanned_configure_dep = ();
+  %invmap = ();
+  %serial = ();
   undef &search;
 }
 
@@ -170,6 +183,34 @@ sub install_file ($$)
 	{
 	  msg 'note', "installing `$dest'";
 	}
+    }
+}
+
+# Compare two lists of numbers.
+sub list_compare (\@\@)
+{
+  my @l = @{$_[0]};
+  my @r = @{$_[1]};
+  while (1)
+    {
+      if (0 == @l)
+	{
+	  return (0 == @r) ? 0 : -1;
+	}
+      elsif (0 == @r)
+	{
+	  return 1;
+	}
+      elsif ($l[0] < $r[0])
+	{
+	  return -1;
+	}
+      elsif ($l[0] > $r[0])
+	{
+	  return 1;
+	}
+      shift @l;
+      shift @r;
     }
 }
 
@@ -343,7 +384,8 @@ my $underquoted_manual_once = 0;
 sub scan_file ($$$)
 {
   my ($type, $file, $where) = @_;
-  my $base = dirname $file;
+  my $dirname = dirname $file;
+  my $basename = basename $file;
 
   # Do not scan the same file twice.
   return @{$file_includes{$file}} if exists $file_includes{$file};
@@ -360,6 +402,11 @@ sub scan_file ($$$)
   my $contents = '';
   my @inc_files = ();
   my %inc_lines = ();
+
+  my $defun_seen = 0;
+  my $serial_seen = 0;
+  my $serial_older = 0;
+
   while ($_ = $fh->getline)
     {
       # Ignore `##' lines.
@@ -368,8 +415,57 @@ sub scan_file ($$$)
       $contents .= $_;
       my $line = $_;
 
+      if ($line =~ /$serial_line_rx/go)
+	{
+	  my $number = $1;
+	  if ($number !~ /$serial_number_rx/go)
+	    {
+	      msg ('syntax', "$file:$.",
+		   "malformed serial number `$number', "
+		   . "expecting only digits and dots");
+	    }
+	  elsif ($defun_seen)
+	    {
+	      # aclocal removes all definitions from M4 file with the
+	      # same basename if a greater serial number is found.
+	      # Encountering a serial after some macros will undefine
+	      # these macros...
+	      msg ('syntax', "$file:$.",
+		   'the serial number must appear before any macro definition');
+	    }
+	  # We really care about serials only for non-automake macros
+	  # and when --install is used.  But the above diagnostics are
+	  # made regardless of this, because not using --install is
+	  # not a reason not the fix macro files.
+	  elsif ($install && $type != FT_AUTOMAKE)
+	    {
+	      $serial_seen = 1;
+	      my @new = split (/\./, $number);
+
+	      verb "$file:$.: serial $number";
+
+	      if (!exists $serial{$basename}
+		  || list_compare (@new, @{$serial{$basename}}) > 0)
+		{
+		  # Delete any definition we knew from the old macro.
+		  foreach my $def (@{$invmap{$basename}})
+		    {
+		      verb "$file:$.: ignoring previous definition of $def";
+		      delete $map{$def};
+		    }
+		  $invmap{$basename} = [];
+		  $serial{$basename} = \@new;
+		}
+	      else
+		{
+		  $serial_older = 1;
+		}
+	    }
+	}
+
       while ($line =~ /$ac_defun_rx/go)
 	{
+	  $defun_seen = 1;
 	  if (! defined $1)
 	    {
 	      msg ('syntax', "$file:$.", "warning: underquoted definition of $2"
@@ -379,11 +475,20 @@ sub scan_file ($$$)
 		unless $underquoted_manual_once;
 	      $underquoted_manual_once = 1;
 	    }
+
+	  # If this macro does not have a serial and we have already
+	  # seen a macro with the same basename earlier, we should
+	  # ignore the macro (don't exit immediately so we can still
+	  # diagnose later #serial numbers and underquoted macros).
+	  $serial_older ||= ($type != FT_AUTOMAKE
+			     && !$serial_seen && exists $serial{$basename});
+
 	  my $macro = $1 || $2;
-	  if (! defined $map{$macro})
+	  if (!$serial_older && !defined $map{$macro})
 	    {
 	      verb "found macro $macro in $file: $.";
 	      $map{$macro} = $file;
+	      push @{$invmap{$basename}}, $macro;
 	    }
 	  else
 	    {
@@ -406,12 +511,19 @@ sub scan_file ($$$)
 	  # paths (they might be used later of aclocal outputs an
 	  # m4_include for this file, or if the user itself includes
 	  # this file).
-	  $ifile = "$base/$ifile"
-	    unless $base eq '.' || File::Spec->file_name_is_absolute ($ifile);
+	  $ifile = "$dirname/$ifile"
+	    unless $dirname eq '.' || File::Spec->file_name_is_absolute ($ifile);
 	  push (@inc_files, $ifile);
 	  $inc_lines{$ifile} = $.;
 	}
     }
+
+  # Ignore any file that has an old serial (or no serial if we know
+  # another one with a serial).
+  return ()
+    if ($serial_older ||
+	($type != FT_AUTOMAKE && !$serial_seen && exists $serial{$basename}));
+
   $file_contents{$file} = $contents;
 
   # For some reason I don't understand, it does not work

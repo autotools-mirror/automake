@@ -1663,6 +1663,11 @@ Install system-wide third-party macros into the first directory
 specified with @code{-I @var{dir}} instead of copying them in the
 output files.
 
+When this option is used, @command{aclocal} will also honor
+@code{#serial @var{NUMBER}} lines that appear in macros: an M4 file is
+ignored if there exists another M4 file with the same basename and a
+greater serial number in the search path.
+
 @item --force
 @opindex --force
 Always overwrite the output file.  The default is to overwrite the output
@@ -2247,18 +2252,34 @@ Since Automake 1.10, @command{aclocal} offers an option to copy these
 system-wide third-party macros in your local macro directory, solving
 the above problem.  Simply use:
 
-@example
+@smallexample
  ACLOCAL_AMFLAGS = -I m4 --install
-@end example
+@end smallexample
 
 @noindent
 With this setup, system-wide macros will be copied to @file{m4/}
 the first time you run @command{autoreconf}.  Then the locally
 installed macros will have precedence over the system-wide installed
-macros each time @command{aclocal} is run again.  (So the only reason
-to keep @code{--install} in the flags after the first run is that when
-you later edit @file{configure.ac} and depend on a new macro, this
-macro will be installed in your @file{m4/} automatically.)
+macros each time @command{aclocal} is run again.
+
+One reason why you should keep @code{--install} in the flags even
+after the first run is that when you later edit @file{configure.ac}
+and depend on a new macro, this macro will be installed in your
+@file{m4/} automatically.  Another one is that serial numbers can be
+used to update the macros in your source tree automatically when new
+system-wide versions are installed.  A serial number should be a
+single line of the form
+
+@smallexample
+#serial @var{NNN}
+@end smallexample
+
+@noindent
+where @var{NNN} contains only digits and dots.  It should appear in
+the M4 file before any macro definition.  It is a good practice to
+maintain a serial number for each macro you distribute, even if you do
+not use the @code{--install} option of @command{aclocal}: this allows
+other people to use it.
 
 
 @node Future of aclocal
