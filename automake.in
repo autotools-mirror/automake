@@ -297,7 +297,7 @@ $cygnus_mode = 0;
      );
 
 # Regexp to match the above macros.
-$obsolete_rx = '(' . join ('|', keys %obsolete_macros) . ')';
+$obsolete_rx = '\b(' . join ('|', keys %obsolete_macros) . ')\b';
 
 # This maps extensions onto language names.
 %extension_map = ();
@@ -1160,7 +1160,7 @@ sub handle_single_transform_list
 		    $object = $base . $nonansi_obj;
 		}
 	    }
- 	    elsif ($extension =~ /^$source_suffix_pattern$/) 
+ 	    elsif ($extension =~ /^$source_suffix_pattern$/)
  	    {
 		# We just rewrite it.  Maybe we should do more.
 		$object = $base . '.' . $suffix_rules{$extension};
@@ -1732,7 +1732,7 @@ sub handle_ltlibraries
 
 	# Check that the library fits the standard naming convention.
     	$libname_rx = "^lib.*\.la";
-	if (&variable_value ($xlib . '_LDFLAGS') =~ /-module/) 
+	if (&variable_value ($xlib . '_LDFLAGS') =~ /-module/)
 	{
 		# Relax name checking for libtool modules.
 	    	$libname_rx = "\.la";
@@ -2463,7 +2463,7 @@ sub handle_dist_worker
 	# thing.  If we're in the topmost directory, then we use
 	# `distdir' instead of `top_distdir'; this lets us work
 	# correctly with an enclosing package.
-	$output_rules .= 
+	$output_rules .=
 	    ("\t" . 'for subdir in $(' . $dist_subdir_name . '); do ' . "\\\n"
 	     . "\t" . '  if test "$$subdir" = .; then :; else ' . "\\\n"
 	     . "\t" . '    test -d $(distdir)/$$subdir ' . "\\\n"
@@ -3168,7 +3168,7 @@ sub handle_configure
 	    $xform .= 's,\@CONFIG_HEADER_FULL\@,' . "${one_fullname}" . ',;';
 	    $xform .= 's,\@STAMP\@,' . "${stamp_dir}${stamp_name}" . ',;';
 	    $xform .= 's,\@CONFIGURE_AC\@,' . "${configure_ac}" . ',;';
-	    
+
 	    $output_rules .= &file_contents_with_transform ($xform,
 							    'remake-hdr');
 
@@ -4317,7 +4317,7 @@ sub scan_one_configure_file
         $seen_package = 1 if /PACKAGE=/;
 
 	# Skip VERSION of [$2]; that is from AM_INIT_AUTOMAKE.
-        if (/\bVERSION=(\S+)/ && $1 ne '[$2]')
+        if (/\bVERSION=(\S+)/ && $1 ne '$2' && $1 ne '[$2]')
 	{
 	    $seen_version = 1;
 	    $package_version = $1;
@@ -4986,10 +4986,10 @@ sub lang_objc_finish
     &define_variable ('LTOBJCCOMPILE',
                       $ltcompile . '$(OBJC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_OBJCFLAGS) $(OBJCFLAGS)')
         if ($seen_libtool);
-    
+
     &define_variable ('OBJCLD', '$(OBJC)');
     &define_variable ('OBJCLINK', $ltlink . '$(OBJCLD) $(AM_OBJCFLAGS) $(OBJCFLAGS) $(LDFLAGS) -o $@');
-    
+
     $output_rules .= (".m.o:\n"
                       . "\t\$(OBJCCOMPILE) -c \$<\n");
     # FIXME: Using cygpath should be somehow conditional.
@@ -4999,7 +4999,7 @@ sub lang_objc_finish
     $output_rules .= (".m.lo:\n"
                       . "\t\$(LTOBJCCOMPILE) -c \$<\n")
         if ($seen_libtool);
-    
+
     if (! defined $configure_vars{'OBJC'})
     {
 	&am_error ("Objective C source seen but \`OBJC' not defined in \`$configure_ac'");
@@ -5988,7 +5988,7 @@ sub read_am_file
 	    local ($source_suffix);
 	    local ($object_suffix);
 
-	    if (($source_suffix, $object_suffix) = ($1 =~ $SUFFIX_RULE_PATTERN)) 
+	    if (($source_suffix, $object_suffix) = ($1 =~ $SUFFIX_RULE_PATTERN))
 	    {
 	      $suffix_rules{$source_suffix} = $object_suffix;
 	      print "Sources ending in .$source_suffix become .$object_suffix\n" if $verbose;
