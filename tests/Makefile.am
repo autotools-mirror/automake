@@ -115,6 +115,7 @@ info.test \
 insh.test \
 insh2.test \
 install.test \
+install2.test \
 installsh.test \
 instdata.test \
 instexec.test \
