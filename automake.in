@@ -973,20 +973,28 @@ sub handle_dist_worker
 
 
 	$output_rules .=
-	    (
-	     # Create dist directory.
-	     '	rm -rf $(distdir)
+	    # Create dist directory.
+	    '	rm -rf $(distdir)
 	mkdir $(distdir)
 	chmod 777 $(distdir)
-'
-	     # We need an absolute path for --output-dir.  Thus the
-	     # weirdness.
-	     . '	distdir=`cd $(distdir) && pwd` \\
+';
+
+	# Only run automake in `dist' target if --include-deps not
+	# specified.  That way the recipient of a distribution can run
+	# "make dist" and not need Automake.
+	if ($cmdline_use_dependencies)
+	{
+	    $output_rules .=
+		(
+		 # We need an absolute path for --output-dir.  Thus the
+		 # weirdness.
+		 '	distdir=`cd $(distdir) && pwd` \\
 	  && cd $(srcdir) \\
 	  && automake --include-deps --output-dir=$$distdir --strictness='
-	     # Set strictness of output.
-	     . $strictness_name . "\n"
-	     );
+		 # Set strictness of output.
+		 . $strictness_name . "\n"
+		 );
+	}
     }
 
     # In loop, test for file existence because sometimes a file gets
