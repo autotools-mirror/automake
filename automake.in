@@ -1105,7 +1105,7 @@ sub generate_makefile
     &handle_scripts;
 
     # This must be run after all the sources are scanned.
-    &finish_languages;
+    &handle_languages;
     &handle_compile;
 
     # Re-init SOURCES and OBJECTS.  FIXME: other code shouldn't depend
@@ -1127,7 +1127,6 @@ sub generate_makefile
     &handle_subdirs;
     &handle_tags;
     &handle_minor_options;
-    &handle_dependencies;
     &handle_tests;
 
     # This must come after most other rules.
@@ -1312,8 +1311,9 @@ sub get_object_extension
     return $extension;
 }
 
+
 # Call finish function for each language that was used.
-sub finish_languages
+sub handle_languages
 {
     my ($ltcompile, $ltlink) = &libtool_compiler;
 
@@ -1406,6 +1406,68 @@ sub finish_languages
 	&define_variable ('CCLD', '$(CC)');
 	&define_variable ('LINK',
 			  $ltlink . '$(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
+    }
+
+    if ($use_dependencies)
+    {
+	# Include auto-dep code.  Don't include it if DEP_FILES would
+	# be empty.
+	if (&saw_sources_p (0) && keys %dep_files)
+	{
+	    my $config_aux_dir_specified = ($config_aux_dir ne '.'
+					    && $config_aux_dir ne '');
+
+	    # Set $require_file_found{'depcomp'} if the depcomp file exists,
+	    # before calling require_config_file on `depcomp'.  This makes
+	    # require_file_internal skip its buggy existence test that would
+	    # make automake fail (with `required file `lib/depcomp' not found')
+	    # when AC_CONFIG_AUX_DIR is not set.  See tests/subdir4.test.
+	    my $depcomp_dir = ($config_aux_dir_specified ? $config_aux_dir
+			       : '.');
+	    $require_file_found{'depcomp'} = 1 if -f "$depcomp_dir/depcomp";
+
+	    # Set location of depcomp.
+	    my $prefix = ($config_aux_dir_specified ? $config_aux_dir
+			  : '$(top_srcdir)');
+
+	    &define_variable ('depcomp', "\$(SHELL) $prefix/depcomp");
+
+	    &require_config_file ($FOREIGN, 'depcomp');
+
+	    my @deplist = sort keys %dep_files;
+
+	    # We define this as a conditional variable because BSD
+	    # make can't handle backslashes for continuing comments on
+	    # the following line.
+	    &define_pretty_variable ('DEP_FILES', 'AMDEP_TRUE', @deplist);
+
+	    # Generate each `include' individually.  Irix 6 make will
+	    # not properly include several files resulting from a
+	    # variable expansion; generating many separate includes
+	    # seems safest.
+	    $output_rules .= "\n";
+	    foreach my $iter (@deplist)
+ 	    {
+		# The strange concatentation is used to avoid
+		# substitutions from our own configure.
+		$output_rules .= ('@AMDEP' . '_TRUE@@_am_include@ @_am_quote@'
+				  . $iter . '@_am_quote@' . "\n");
+	    }
+
+	    $output_rules .= &file_contents ('depend');
+	}
+    }
+    else
+    {
+	&define_variable ('depcomp', '');
+    }
+
+    foreach my $lang (values %languages)
+    {
+        if ($lang->autodep ne 'no')
+	  {
+	    add_depend2 ($lang);
+	  }
     }
 }
 
