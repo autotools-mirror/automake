@@ -2775,8 +2775,7 @@ sub handle_texinfo
 				&transform ('TEXI'         => $info_cursor,
 					    'VTI'          => $vti,
 					    'VTEXI'        => $vtexi,
-					    'MDDIR'        => $conf_dir,
-					    'CONFIGURE_AC' => $configure_ac));
+					    'MDDIR'        => $conf_dir));
 	}
 
 	# If user specified file_TEXINFOS, then use that as explicit
@@ -3508,46 +3507,33 @@ sub handle_configure
 
     my @rewritten = &rewrite_inputs_into_dependencies (1, @secondary_inputs);
 
-    # This rule remakes the Makefile.in.  Note use of
-    # @MAINTAINER_MODE_TRUE@ forces us to abandon pretty-printing.
-    # Sigh.
-    $output_rules .= ($infile
-		      # NOTE perl 5.003 (with -w) gives a
-		      # uninitialized value error on the next line.
-		      # Don't know why.
-		      . ': '
-		      . ($seen_maint_mode ? "\@MAINTAINER_MODE_TRUE\@ " : '')
-		      . $amfile . ' '
-		      . '$(top_srcdir)/' . $configure_ac .' $(ACLOCAL_M4)'
-                      . ' ' . join (' ', @include_stack)
-                      . "\n"
-		      . "\tcd \$(top_srcdir) && \$(AUTOMAKE) "
-		      . ($cygnus_mode ? '--cygnus' : ('--' . $strictness_name))
-		      . ($cmdline_use_dependencies ? '' : ' --ignore-deps')
-		      . ' ' . $input . $colon_infile . "\n\n");
-
-    # This rule remakes the Makefile.
-    $output_rules .= ($local_base
-		      # NOTE: bogus uninit value error on next line;
-		      # see comment above.
-		      . ': '
-		      . $infile . ' '
-		      . join (' ', @rewritten)
-		      . ' $(top_builddir)/config.status'
-		      . "\n"
-		      . "\tcd \$(top_builddir) \\\n"
-		      . "\t  && CONFIG_FILES="
-		      . (($relative_dir eq '.') ? '$@' : '$(subdir)/$@')
-		      . $colon_infile
-		      . ' CONFIG_HEADERS= CONFIG_LINKS= $(SHELL) ./config.status'
-		      . "\n\n");
+    $output_rules .=
+      &file_contents
+	('configure',
+	 &transform ('MAKEFILE'
+		       => $local_base,
+		     'MAKEFILE-DEPS'
+		       => join (' ', @rewritten),
+		     'CONFIG-MAKEFILE'
+		       => ((($relative_dir eq '.') ? '$@' : '$(subdir)/$@')
+			   . $colon_infile),
+		     'MAKEFILE-IN'
+		       => $infile,
+		     'MAKEFILE-IN-DEPS'
+		       => join (' ', @include_stack),
+		     'MAKEFILE-AM'
+		       => $amfile,
+		     'STRICTNESS'
+		       => $cygnus_mode ? 'cygnus' : $strictness_name,
+		     'USE-DEPS'
+		       => $cmdline_use_dependencies ? '' : ' --ignore-deps',
+		     'MAKEFILE-AM-SOURCES'
+		       =>  "$input$colon_infile"));
 
     if ($relative_dir eq '.')
     {
 	&handle_aclocal_m4;
-	$output_rules .=
-	  &file_contents ('remake',
-			  &transform ('CONFIGURE_AC' => $configure_ac));
+	$output_rules .= &file_contents ('remake');
 	&examine_variable ('CONFIG_STATUS_DEPENDENCIES');
 	&examine_variable ('CONFIGURE_DEPENDENCIES');
 
@@ -3643,8 +3629,7 @@ sub handle_configure
             $output_rules .=
 	      &file_contents ('remake-hdr',
 			      &transform
-			      ('CONFIGURE_AC'       => $configure_ac,
-			       'FILES'              => join (' ', @files),
+			      ('FILES'              => join (' ', @files),
 			       'CONFIG_HEADER'      => $cn_sans_dir,
 			       'CONFIG_HEADER_IN'   => $ch_sans_dir,
 			       'CONFIG_HEADER_FULL' => $one_fullname,
@@ -6791,7 +6776,7 @@ sub file_contents
       # prevents us from matching the end of line.
       "s/##([^#\n].*)?\\n//gmo;"
 	. &transform ('CYGNUS'          => $cygnus_mode,
-		      'MAINTAINER_MODE' => $seen_maint_mode,
+		      'MAINTAINER-MODE' => $seen_maint_mode,
 
 		      'SHAR'        => $options{'dist-shar'},
 		      'BZIP2'       => $options{'dist-bzip2'},
@@ -6802,7 +6787,8 @@ sub file_contents
 		      'INSTALL-MAN'  => !$options{'no-installman'},
 		      'CK-NEWS'      => $options{'check-news'},
 
-		      'SUBDIRS' => &variable_defined ('SUBDIRS'))
+		      'SUBDIRS'      => &variable_defined ('SUBDIRS'),
+		      'CONFIGURE-AC' => $configure_ac)
 	  # We don't need more than two consecutive new-lines.
 	  . 's/\n{3,}/\n\n/g';
 
