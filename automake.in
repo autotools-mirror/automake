@@ -654,16 +654,14 @@ my @substfroms;
 # force.
 my @substtos;
 
-# Associates a variable name, together with a list of substitutions to be
-# performed on it, with a number.  Used to provide unique names for generated
-# variables.
-my %substnums = ();
-
 # If a file name appears as a key in this hash, then it has already
 # been checked for.  This variable is local to the "require file"
 # functions.
 my %require_file_found = ();
 
+# This keeps track of all variables defined by subobjname.
+# The key is the variable _content_, and the value is the variable name.
+my %subobjvar = ();
 
 ## --------------------------------- ##
 ## Forward subroutine declarations.  ##
@@ -801,6 +799,8 @@ sub initialize_per_input ()
     %libtool_clean_directories = ('.' => 1);
 
     %require_file_found = ();
+
+    %subobjvar = ();
 }
 
 
@@ -2198,15 +2198,18 @@ sub handle_single_transform_list ($$$$@)
 #
 # Arguments are:
 #   $VAR is the name of the _SOURCES variable
-#   $OBJVAR is the name of the _OBJECTS
+#   $OBJVAR is the name of the _OBJECTS variable if known (otherwise
+#     it will be generated and returned).
 #   $NODEFINE is a boolean: if true, $OBJVAR will not be defined (but
-#   work done to determine the linker will be).
+#     work done to determine the linker will be).
 #   $ONE_FILE is the canonical (transformed) name of object to build
 #   $OBJ is the object extension (ie either `.o' or `.lo').
 #   $PARENT is the variable in which $VAR is used, or $VAR if not applicable.
 #   $TOPPARENT is the _SOURCES variable being processed.
 #
-# Result is a boolean, true if a linker is needed to deal with the objects.
+# Result is a pair ($LINKER, $OBJVAR):
+#    $LINKER is a boolean, true if a linker is needed to deal with the objects,
+#    $OBJVAR is the name of the variable defined to hold the objects.
 #
 # %linkers_used, %vars_scanned, @substfroms and @substtos should be cleared
 # before use:
@@ -2254,12 +2257,12 @@ sub define_objects_from_sources ($$$$$$$)
 		push @substfroms, $from;
 		push @substtos, $to;
 
-		my $subobjvar = subobjname ($subvar);
-		push (@result, '$('. $subobjvar . ')');
+		my ($temp, $varname)
+		    = define_objects_from_sources ($subvar, undef,
+						   $nodefine, $one_file,
+						   $obj, $var, $topparent);
 
-		my $temp = define_objects_from_sources ($subvar, $subobjvar,
-						        $nodefine, $one_file,
-						        $obj, $var, $topparent);
+		push (@result, '$('. $varname . ')');
 		$needlinker ||= $temp;
 
 		pop @substfroms;
@@ -2282,53 +2285,62 @@ sub define_objects_from_sources ($$$$$$$)
 	    }
 	}
 
+	# Find an name for the variable, unless imposed.
+        $objvar = subobjname (@result) unless defined $objvar;
 	# Define _OBJECTS conditionally.
 	define_pretty_variable ($objvar, $cond, (@result))
-		unless $nodefine;
+	    unless $nodefine;
     }
 
     delete $vars_scanned{$var};
-    return $needlinker;
+    return ($needlinker, $objvar);
 }
 
 
-# $OBJNAME
-# subobjname ($VARNAME)
+# $VARNAME
+# subobjname (@OBJECTS)
 # ---------------------
-# Return a name for an object variable.
+# Return a name for an object variable that holds @OBJECTS.
 #
-# Arguments are:
-#   $VARNAME is the name of the variable the object variable is being
-#   generated from.
+# If we already have an object variable containing @OBJECTS, reuse it.
+# This way, we avoid combinatorial explosion of the generated
+# variables.  Especially, in a Makefile such as:
 #
-# This function also looks at @substfroms and @substtos to determine any
-# substitutions to be performed on the object variable.
+# | if FOO1
+# | A1=1
+# | endif
+# |
+# | if FOO2
+# | A2=2
+# | endif
+# |
+# | ...
+# |
+# | if FOON
+# | AN=N
+# | endif
+# |
+# | B=$(A1) $(A2) ... $(AN)
+# |
+# | c_SOURCES=$(B)
+# | d_SOURCES=$(B)
 #
-# The name returned is unique for the combination of $varname and
-# substitutions to be performed.
-sub subobjname ($)
+# The generated c_OBJECTS and d_OBJECTS will share the same variable
+# definitions.
+#
+# This setup can be the case of a testsuite containing lots (>100) of
+# small C programs, all testing the same set of source files.
+my $subobjnamenum = 0;
+sub subobjname (@)
 {
-    my ($varname) = @_;
-    my $key = $varname;
-    my $substnum=$#substfroms;
-    while ($substnum >= 0)
-    {
-	if (defined $substfroms[$substnum] &&
-	    ($substfroms[$substnum] || $substtos[$substnum]))
-	{
-	    $key .= ":" . $substfroms[$substnum] . "=" . $substtos[$substnum];
-	}
-	$substnum -= 1;
-    }
+    my $key = "@_";
 
-    my $num = $substnums{$key};
-    if (! $num)
-    {
-	$num = keys(%substnums) + 1;
-	$substnums{$key} = $num;
-    }
+    return $subobjvar{$key} if exists $subobjvar{$key};
 
-    return "am__objects_$num";
+    ++$subobjnamenum;
+    my $name = "am__objects_${subobjnamenum}";
+    $subobjvar{$key} = $name;
+    return $name;
 }
 
 
@@ -2381,10 +2393,11 @@ sub handle_source_transform
 	@substfroms = ();
 	@substtos = ();
 	%vars_scanned = ();
-	my $temp = define_objects_from_sources ($var,
-					        $xpfx . $one_file . '_OBJECTS',
-					        $prefix =~ /EXTRA_/,
-					        $one_file, $obj, $var, $var);
+	my ($temp, $objvar) =
+	    define_objects_from_sources ($var,
+					 $xpfx . $one_file . '_OBJECTS',
+					 $prefix =~ /EXTRA_/,
+					 $one_file, $obj, $var, $var);
 	$needlinker ||= $temp;
     }
     if ($needlinker)
