@@ -1531,6 +1531,7 @@ sub scan_configure
     local ($in_ac_output, @make_list) = 0;
     local ($seen_arg_prog) = 0;
     local ($seen_canonical) = 0;
+    local ($libobj_iter);
     while (<CONFIGURE>)
     {
 	# Remove comments from current line.
@@ -1561,13 +1562,16 @@ sub scan_configure
 		$libsources{$_ . '.c'} = 1;
 	    }
 	}
-	elsif (/LIBOBJS="(.*)\.o\s+\$LIBOBJS"/)
+	elsif (/LIBOBJS="(.*)\s+\$LIBOBJS"/
+	       || /LIBOBJS="\$LIBOBJS\s+(.*)"/)
 	{
-	    $libsources{$1 . '.c'} = 1;
-	}
-	elsif (/LIBOBJS="\$LIBOBJS\s+(.*)\.o"/)
-	{
-	    $libsources{$1 . '.c'} = 1;
+	    foreach $libobj_iter (split (/\s+/, $1))
+	    {
+		if ($libobj_iter =~ /^(.*)\.o$/)
+		{
+		    $libsources{$1 . '.c'} = 1;
+		}
+	    }
 	}
 
 	# Process the AC_OUTPUT macro.
