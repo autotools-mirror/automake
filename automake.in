@@ -7008,18 +7008,20 @@ sub file_contents_internal ($%)
 		  if (!defined $targets{$targets}
 		      && $cond ne 'FALSE')
 		    {
+		      $paragraph =~ s/^/make_condition (@cond_stack)/gme;
 		      $result_rules .= "$spacing$comment$paragraph\n";
-		      rule_define ($targets, $is_am, $cond, $.);
+		      rule_define ($targets, $is_am, $cond, $file);
 		    }
 		  $comment = $spacing = '';
 		  last;
 		}
 	    }
  	}
+
  	elsif (/$ASSIGNMENT_PATTERN/mso)
  	{
 	    my ($var, $type, $val) = ($1, $2, $3);
- 	    &prog_error ("$file:$.: macro `$var' with trailing backslash")
+ 	    &am_file_error ($file, "macro `$var' with trailing backslash")
 	      if /\\$/;;
 
 	    # Accumulating variables must not be output.
@@ -7027,9 +7029,7 @@ sub file_contents_internal ($%)
 	      if (!defined $var_comment{$var}
 		  || substr ($var_comment{$var}, -1) ne "\n");
 	    $var_comment{$var} .= "$comment";
-	    # Strip the continuation backslashes.
-	    $val =~ s/\\$//mg;
-	    macro_define ($var, $is_am, $type, $cond, $val, $.)
+	    macro_define ($var, $is_am, $type, $cond, $val, $file)
 	      if $cond ne 'FALSE';
 	    push (@var_list, $var);
 
@@ -7048,6 +7048,7 @@ sub file_contents_internal ($%)
 	    # or some part of a rule cut by an if/endif.
   	    if ($cond ne 'FALSE')
 	      {
+		s/^/make_condition (@cond_stack)/gme;
 		$result_rules .= "$spacing$comment$_\n";
 	      }
  	    $comment = $spacing = '';
