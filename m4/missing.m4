@@ -8,14 +8,14 @@ $1=${$1-"${am_missing_run}$2"}
 AC_SUBST($1)])
 
 dnl Like AM_MISSING_PROG, but only looks for install-sh.
-dnl AM_MISSING_INSTALL_SH(NAME)
+dnl AM_MISSING_INSTALL_SH()
 AC_DEFUN(AM_MISSING_INSTALL_SH, [
 AC_REQUIRE([AM_MISSING_HAS_RUN])
-if test -z "$1"; then
-   $1="${am_missing_run}install-sh"
-   test -f "$1" || $1="${am_missing_run}install.sh"
+if test -z "$install_sh"; then
+   install_sh="${am_missing_run}install-sh"
+   test -f "$install_sh" || install_sh="${am_missing_run}install.sh"
 fi
-AC_SUBST($1)])
+AC_SUBST(install_sh)])
 
 dnl AM_MISSING_HAS_RUN.
 dnl Define MISSING if not defined so far and test if it supports --run.
