@@ -58,6 +58,10 @@ $output_trailer = '';
 # for src/Makefile.in, this is "src".
 $relative_dir = '';
 
+# Directory where output files go.  Actually, output files are
+# relative to this directory.
+$output_directory = '.';
+
 # This holds a list of files that are included in the distribution.
 @dist_common = ();
 
@@ -128,7 +132,7 @@ sub parse_arguments
 	}
 	elsif ($arglist[0] eq '--amdir')
 	{
-	    if ($#arglist == 1)
+	    if ($#arglist == 0)
 	    {
 		print STDERR
 		    "automake: no argument given for option \`$arglist[0]'\n";
@@ -140,6 +144,22 @@ sub parse_arguments
 	elsif ($arglist[0] eq '--include-deps')
 	{
 	    $use_dependencies = 0;
+	}
+	elsif ($arglist[0] =~ /^--output-dir=(.*)$/)
+	{
+	    # Set output directory.
+	    $output_directory = $1;
+	}
+	elsif ($arglist[0] eq '--output-dir')
+	{
+	    if ($#arglist == 0)
+	    {
+		print STDERR
+		    "automake: no argument given for option \`$arglist[0]'\n";
+		exit 1;
+	    }
+	    shift (@arglist);
+	    $output_directory = $arglist[0];
 	}
 	elsif ($arglist[0] eq '--')
 	{
@@ -201,6 +221,8 @@ sub generate_makefile
     $output_trailer = '';
     @suffixes = ();
     %contents = ();
+    # FIXME with new 'dist' target, don't need Makefile.in.  Probably
+    # should remove it here.
     @dist_common = ('Makefile.in', 'Makefile.am');
     @install_data = ();
     @install_exec = ();
@@ -259,7 +281,7 @@ sub generate_makefile
     &handle_installdirs;
     &handle_clean;
 
-    if (! open (GM_FILE, "> " . $makefile . ".in"))
+    if (! open (GM_FILE, "> " $output_directory . '/' . $makefile . ".in"))
     {
 	print STDERR "automake: cannot open ", $makefile, ".in: ", $!, "\n";
 	$exit_status = 1;
@@ -1126,8 +1148,9 @@ sub init_globals
     $USAGE = "\
   --amdir=DIR           directory storing config files
   --help                print this help, then exit
-  --version             print version number, then exit
-  --include-deps        include generated dependencies in Makefile\n";
+  --include-deps        include generated dependencies in Makefile.in
+  --output-dir=DIR      put generated Makefile.in's into DIR
+  --version             print version number, then exit\n";
 
 }
 
