@@ -7,7 +7,7 @@ AC_DEFUN(AM_FUNC_ERROR_AT_LINE,
               am_cv_lib_error_at_line=yes,
 	      am_cv_lib_error_at_line=no)])
  if test $am_cv_lib_error_at_line = no; then
-   LIBOBJS="$LIBOBJS error.o"
+   LIBOBJS="$LIBOBJS error.$ac_objext"
  fi
  AC_SUBST(LIBOBJS)dnl
 ])

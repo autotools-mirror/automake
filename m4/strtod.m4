@@ -23,7 +23,7 @@
 ## @maindex FUNC_STRTOD
 ## @ovindex LIBOBJS
 ## If the @code{strtod} function is not available, or does not work
-## correctly (like the one on SunOS 5.4), add @samp{strtod.o} to output
+## correctly (like the one on SunOS 5.4), add @samp{strtod.$ac_objext} to output
 ## variable @code{LIBOBJS}.
 ## @end defmac
 
@@ -56,7 +56,7 @@ main()
   exit (0);
 }
 ], am_cv_func_strtod=yes, am_cv_func_strtod=no, am_cv_func_strtod=no)])
-test $am_cv_func_strtod = no && LIBOBJS="$LIBOBJS strtod.o"
+test $am_cv_func_strtod = no && LIBOBJS="$LIBOBJS strtod.$ac_objext"
 AC_SUBST(LIBOBJS)dnl
 am_cv_func_strtod_needs_libm=no
 if test $am_cv_func_strtod = no; then

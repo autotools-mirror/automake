@@ -27,11 +27,11 @@ if test -n "$am_with_regex"; then
     AC_TRY_LINK([], [extern int re_max_failures; re_max_failures = 1],
 		am_cv_gnu_regex=yes, am_cv_gnu_regex=no))
   if test $am_cv_gnu_regex = no; then
-    LIBOBJS="$LIBOBJS regex.o"
+    LIBOBJS="$LIBOBJS regex.$ac_objext"
   fi
 else
   AC_MSG_RESULT(rx)
-  AC_CHECK_FUNC(re_rx_search, , [LIBOBJS="$LIBOBJS rx.o"])
+  AC_CHECK_FUNC(re_rx_search, , [LIBOBJS="$LIBOBJS rx.$ac_objext"])
 fi
 AC_SUBST(LIBOBJS)dnl
 ])

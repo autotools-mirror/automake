@@ -162,6 +162,6 @@ changequote([, ])dnl
 	     am_cv_func_working_mktime=no)
   ])
   if test $am_cv_func_working_mktime = no; then
-    LIBOBJS="$LIBOBJS mktime.o"
+    LIBOBJS="$LIBOBJS mktime.$ac_objext"
   fi
 ])
