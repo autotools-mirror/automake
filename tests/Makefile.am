@@ -213,6 +213,7 @@ nobase.test \
 nodep.test \
 nodepcomp.test \
 nodist.test \
+nodist2.test \
 noinst.test \
 noinstdir.test \
 nolink.test \
