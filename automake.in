@@ -236,6 +236,7 @@ sub generate_makefile
     &check_gnu_standards;
     &check_gnits_standards;
 
+    &handle_configure;
     &handle_libraries;
     &handle_programs;
     &handle_scripts;
@@ -250,7 +251,6 @@ sub generate_makefile
     &handle_data;
     &handle_headers;
     &handle_subdirs;
-    &handle_configure;
     &handle_tags;
     &handle_dist;
     &handle_dependencies;
@@ -292,7 +292,7 @@ sub handle_options
 	{
 	    &set_strictness ($_);
 	}
-	elsif ($_ eq 'no-installman' || $_ eq 'ansi2knr')
+	elsif ($_ eq 'no-installman' || $_ eq 'ansi2knr' || $_ eq 'dist-shar')
 	{
 	    # Explicitly recognize these.
 	}
@@ -676,50 +676,23 @@ sub handle_tags
     }
 }
 
-# Handle 'dist' target.
-sub handle_dist
+# Generate actual 'dist' (or dist-shar) rule.
+sub handle_dist_worker
 {
-    # Look for common files that should be included in distribution.
-    local ($cfile);
-    foreach $cfile (@common_files)
-    {
-	if (-f ($relative_dir . "/" . $cfile))
-	{
-	    &push_dist_common ($cfile);
-	}
-    }
+    local ($distshar) = @_;
+    local ($target) = $distshar ? 'dist-shar' : 'dist';
 
-    # Keys of %dist_common are names of files to distributed.  We put
-    # README first because it then becomes easier to make a
-    # Usenet-compliant shar file (in these, README must be first).
-    # FIXME do more ordering of files here.
-    local (@coms);
-    if (defined $dist_common{'README'})
-    {
-	push (@coms, 'README');
-	undef $dist_common{'README'};
-    }
-    push (@coms, keys %dist_common);
-
-    &pretty_print ("DIST_COMMON =", '', @coms);
-    $output_vars .= "\n";
-
-    # Some boilerplate.
-    $output_vars .= &file_contents ('dist-vars');
-
+    $output_rules .= $target . ': $(DISTFILES)' . "\n";
+    
     # Initialization; only at top level.
     if ($relative_dir eq '.')
     {
 	$output_rules .=
 	    (
-	     # Some boilerplate.
-	     '
-distdir = $(PACKAGE)-$(VERSION)
-dist: $(DISTFILES)
-'
 	     # Create dist directory.
-	     . '	rm -rf $(distdir)
+	     '	rm -rf $(distdir)
 	mkdir $(distdir)
+	chmod 777 $(distdir)
 '
 	     # We need an absolute path for --output-dir.  Thus the
 	     # weirdness.
@@ -728,17 +701,6 @@ dist: $(DISTFILES)
 	  && automake --include-deps --output-dir=$$distdir --strictness='
 	     # Set strictness of output.
 	     . $strictness_name . "\n"
-	     );
-    }
-    else
-    {
-	$output_rules .=
-	    (
-	     # Some boilerplate.
-	     "\nsubdir = " . $relative_dir . "\n"
-	     . 'distdir = $(PACKAGE)-$(VERSION)/$(subdir)
-dist: $(DISTFILES)
-'
 	     );
     }
 
@@ -786,13 +748,68 @@ dist: $(DISTFILES)
     # Finalize.
     if ($relative_dir eq '.')
     {
-	$output_rules .= '	chmod -R a+r $(distdir)
-	tar -chozf $(distdir).tar.gz $(distdir)
-	rm -rf $(distdir)
-';
+	$output_rules .= '	chmod -R a+r $(distdir)' . "\n\t";
+	if ($distshar)
+	{
+	    $output_rules .= 'shar $(distdir) | gzip > $(distdir).shar.gz';
+	}
+	else
+	{
+	    $output_rules .= 'tar -chozf $(distdir).tar.gz $(distdir)';
+	}
+	$output_rules .= "\n\t" . 'rm -rf $(distdir)' . "\n";
     }
 
-    push (@phony, 'dist');
+    push (@phony, $target);
+}
+
+# Handle 'dist' target.
+sub handle_dist
+{
+    # Look for common files that should be included in distribution.
+    local ($cfile);
+    foreach $cfile (@common_files)
+    {
+	if (-f ($relative_dir . "/" . $cfile))
+	{
+	    &push_dist_common ($cfile);
+	}
+    }
+
+    # Keys of %dist_common are names of files to distributed.  We put
+    # README first because it then becomes easier to make a
+    # Usenet-compliant shar file (in these, README must be first).
+    # FIXME do more ordering of files here.
+    local (@coms);
+    if (defined $dist_common{'README'})
+    {
+	push (@coms, 'README');
+	undef $dist_common{'README'};
+    }
+    push (@coms, keys %dist_common);
+
+    &pretty_print ("DIST_COMMON =", '', @coms);
+    $output_vars .= "\n";
+
+    # Some boilerplate.
+    $output_vars .= &file_contents ('dist-vars');
+
+    # Put these things in rules section so it is easier for whoever
+    # reads Makefile.in.
+    if ($relative_dir eq '.')
+    {
+	$output_rules .= "\n" . 'distdir = $(PACKAGE)-$(VERSION)' . "\n";
+    }
+    else
+    {
+	$output_rules .= ("\nsubdir = " . $relative_dir . "\n"
+			  . 'distdir = $(PACKAGE)-$(VERSION)/$(subdir)'
+			  . "\n");
+    }
+
+    # Generate 'dist' target, and maybe dist-shar.
+    &handle_dist_worker (0);
+    &handle_dist_worker (1) if defined $options{'dist-shar'};
 }
 
 # Handle auto-dependency code.
@@ -874,19 +891,7 @@ sub handle_configure
     else
     {
 	&require_file ($NORMAL, 'configure.in');
-	# FIXME require 'configure'?  What if autoconf hasn't been run
-	# yet?
-
-	if (defined $contents{'SUBDIRS'})
-	{
-	    # We required AC_PROG_MAKE_SET.
-	    system ("grep AC_PROG_MAKE_SET configure.in > /dev/null 2>&1");
-	    if ($? >> 8)
-	    {
-		# Nope.
-		&am_error ("AC_PROG_MAKE_SET must be used in configure.in");
-	    }
-	}
+	&scan_configure;
 
 	if (-f 'aclocal.m4')
 	{
@@ -1182,6 +1187,60 @@ sub handle_phony
 {
     &pretty_print_rule ('.PHONY:', '', @phony);
     $output_rules .= "\n";
+}
+
+################################################################
+
+# Scan configure.in for interesting things.
+sub scan_configure
+{
+    open (CONFIGURE, 'configure.in')
+	|| die "automake: couldn't open configure.in: $!\n";
+
+    local ($seen_make_set) = 0;
+    while (<CONFIGURE>)
+    {
+	# Populate libobjs array.
+	if (/AC_FUNC_ALLOCA/)
+	{
+	    $libsources{'alloca.c'} = 1;
+	}
+	elsif (/AC_FUNC_GETLOADAVG/)
+	{
+	    $libsources{'getloadavg.c'} = 1;
+	}
+	elsif (/AC_FUNC_MEMCMP/)
+	{
+	    $libsources{'memcmp.c'} = 1;
+	}
+	elsif (/AC_STRUCT_ST_BLOCKS/)
+	{
+	    $libsources{'fileblocks.c'} = 1;
+	}
+	elsif (/AC_REPLACE_FUNCS\s*\((.*)\)/)
+	{
+	    foreach (split (/\s+/, $1))
+	    {
+		$libsources{$_ . '.c'} = 1;
+	    }
+	}
+	elsif (/LIBOBJS="(.*)\.o \$LIBOBJS"/)
+	{
+	    $libsources{$1 . '.c'} = 1;
+	}
+	elsif (/LIBOBJS="\$LIBOBJS (.*)\.o"/)
+	{
+	    $libsources{$1 . '.c'} = 1;
+	}
+
+	$seen_make_set = 1 if /AC_PROG_MAKE_SET/;
+    }
+
+    # If SUBDIRS defined, require AC_PROG_MAKE_SET.
+    &am_error ("AC_PROG_MAKE_SET must be used in configure.in")
+	if defined $contents{'SUBDIRS'} && ! $seen_make_set;
+
+    close (CONFIGURE);
 }
 
 ################################################################
@@ -1542,6 +1601,9 @@ sub initialize_per_input
 
     # Options from AUTOMAKE_OPTIONS.
     %options = ();
+
+    # Files found by scanning configure.in for LIBOBJS.
+    %libsources = ();
 }
 
 

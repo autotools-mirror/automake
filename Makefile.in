@@ -63,6 +63,7 @@ DIST_SUBDIRS = samples/cpio/*Makefile.am
 # The following requires a fixed version of the Emacs 19.30 etags.
 ETAGS_ARGS = automake.in --lang=none \
  --regex='/^@node[ \t]+\([^,]+\)/\1/' automake.texi
+ACLOCAL = aclocal.m4
 SCRIPTS = $(bin_SCRIPTS)
 
 
@@ -74,7 +75,6 @@ DVIS = automake.dvi
 
 DATA = $(pkgdata_DATA)
 
-ACLOCAL = aclocal.m4
 DIST_COMMON = README mkinstalldirs configure Makefile.in stamp-vti \
 AUTHORS configure.in ChangeLog THANKS README version.texi mdate-sh TODO \
 INSTALL COPYING Makefile.am texinfo.tex NEWS aclocal.m4 install-sh
@@ -87,6 +87,18 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(INFOS) $(MANS) \
 	$(DIST_OTHER) $(DATA)
 default: all
 
+
+$(srcdir)/Makefile.in: Makefile.am
+	cd $(srcdir) && automake Makefile
+
+# For an explanation of the following Makefile rules, see node
+# `Automatic Remaking' in GNU Autoconf documentation.
+Makefile: Makefile.in config.status
+	CONFIG_FILES=$@ CONFIG_HEADERS= ./config.status
+config.status: configure
+	./config.status --recheck
+$(srcdir)/configure: configure.in $(ACLOCAL)
+	cd $(srcdir) && autoconf
 
 mostlyclean-binSCRIPTS:
 
@@ -125,7 +137,7 @@ stamp-vti: automake.texi $(top_srcdir)/configure.in
 	echo timestamp > $(srcdir)/stamp-vti
 
 mostlyclean-vti:
-	rm -f *.tmp
+	rm -f version.tmp
 
 clean-vti:
 
@@ -178,18 +190,6 @@ uninstall-pkgdataDATA:
 	  rm -f $(pkgdatadir)/$$p;		\
 	done
 
-$(srcdir)/Makefile.in: Makefile.am
-	cd $(srcdir) && automake Makefile
-
-# For an explanation of the following Makefile rules, see node
-# `Automatic Remaking' in GNU Autoconf documentation.
-Makefile: Makefile.in config.status
-	CONFIG_FILES=$@ CONFIG_HEADERS= ./config.status
-config.status: configure
-	./config.status --recheck
-$(srcdir)/configure: configure.in $(ACLOCAL)
-	cd $(srcdir) && autoconf
-
 ID:	$(HEADERS) $(SOURCES)
 	here=`pwd` && cd $(srcdir) && mkid -f $$here/ID $(SOURCES) $(HEADERS)
 
@@ -211,6 +211,7 @@ distdir = $(PACKAGE)-$(VERSION)
 dist: $(DISTFILES)
 	rm -rf $(distdir)
 	mkdir $(distdir)
+	chmod 777 $(distdir)
 	distdir=`cd $(distdir) && pwd` \
 	  && cd $(srcdir) \
 	  && automake --include-deps --output-dir=$$distdir --strictness=gnits
