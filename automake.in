@@ -2098,14 +2098,6 @@ sub handle_languages
 	{
 	    my ($derived, $source, $obj, $myext) = split (' ', $file);
 
-	    # For any specially-generated object, we must respect the
-	    # ansi2knr setting so that we don't inadvertently try to
-	    # use the default rule.
-	    if ($lang->ansi && defined $options{'ansi2knr'})
-	    {
-		$myext = '$U' . $myext;
-	    }
-
 	    # We might see a given object twice, for instance if it is
 	    # used under different conditions.
 	    next if defined $seen_files{$obj};
@@ -2138,9 +2130,99 @@ sub handle_languages
 		unless $depbase eq '';
 	    $depbase .= '$(DEPDIR)/' . basename ($obj);
 
-	    # Generate a transform which will turn suffix targets in
-	    # depend2.am into real targets for the particular objects we
-	    # are building.
+	    # Support for deansified files in subdirectories is ugly
+	    # enough to deserve an explanation.
+	    #
+	    # A Note about normal ansi2knr processing first.  On
+	    #
+	    #   AUTOMAKE_OPTIONS = ansi2knr
+	    #   bin_PROGRAMS = foo
+	    #   foo_SOURCES = foo.c
+	    #
+	    # we generate rules similar to:
+	    #
+	    #   foo: foo$U.o; link ...
+	    #   foo$U.o: foo$U.c; compile ...
+	    #   foo_.c: foo.c; ansi2knr ...
+	    #
+	    # this is fairly compact, and will call ansi2knr depending
+	    # on the value of $U (`' or `_').
+	    #
+	    # It's harder with subdir sources. On
+	    #
+	    #   AUTOMAKE_OPTIONS = ansi2knr
+	    #   bin_PROGRAMS = foo
+	    #   foo_SOURCES = sub/foo.c
+	    #
+	    # we have to create foo_.c in the current directory.
+	    # (Unless the user asks 'subdir-objects'.)  This is important
+	    # in case the same file (`foo.c') is compiled from other
+	    # directories with different cpp options: foo_.c file would
+	    # be preprocessed for only once set of options if it were
+	    # but in the subdirectory.
+	    #
+	    # Because foo$U.o must be build from either foo_.c or
+	    # sub/foo.c we can't be as concise as in the first example.
+	    # Instead we output
+	    #
+	    #   foo: foo$U.o; link ...
+	    #   foo_.o: foo_.c; compile ...
+	    #   foo.o: sub/foo.c; compile ...
+	    #   foo_.c: foo.c; ansi2knr ...
+	    #
+	    # This is why we'll now transform $rule_file twice
+	    # if we detect this case.
+	    # A first time we output the compile rule with `$U'
+	    # replaced by `_' and the source directory removed,
+	    # and another time we simply remove `$U'.
+	    #
+	    # Note that at this point $source (as computed by
+	    # &handle_single_transform_list) is `sub/foo$U.c'.
+	    # This can be confusing: it can be used as-is when
+	    # subdir-objects is set, otherwise you have to know
+	    # it really means `foo_.c' or `sub/foo.c'.
+	    my $objdir = dirname ($obj);
+	    my $srcdir = dirname ($source);
+	    if ($lang->ansi && $obj =~ /\$U/)
+	      {
+		prog_error "`$obj' contains \$U, but `$source' doesn't."
+		  if $source !~ /\$U/;
+
+		(my $source_ = $source) =~ s/\$U/_/g;
+		# Explicitely clean the _.c files if they are in
+		# a subdirectory. (In the current directory they get
+		# erase by a `rm -f *_.c' rule.)
+		$clean_files{$source_} = MOSTLY_CLEAN
+		  if $srcdir ne '.';
+		# Output an additional rule if _.c and .c are not in
+		# the same directory.  (_.c is always in $objdir.)
+		if ($objdir ne $srcdir)
+		  {
+		    (my $obj_ = $obj) =~ s/\$U/_/g;
+		    (my $depbase_ = $depbase) =~ s/\$U/_/g;
+		    $source_ = basename ($source_);
+
+		    $output_rules .=
+		      file_contents ($rule_file,
+				     %transform,
+				     GENERIC   => 0,
+
+				     DEPBASE   => $depbase_,
+				     BASE      => $obj_,
+				     SOURCE    => $source_,
+				     OBJ       => "$obj_$myext",
+				     OBJOBJ    => "$obj_.obj",
+				     LTOBJ     => "$obj_.lo",
+
+				     COMPILE   => $obj_compile,
+				     LTCOMPILE => $obj_ltcompile,
+				     -o        => $output_flag);
+		    $obj =~ s/\$U//g;
+		    $depbase =~ s/\$U//g;
+		    $source =~ s/\$U//g;
+		  }
+	      }
+
 	    $output_rules .=
 	      file_contents ($rule_file,
 			     (%transform,
@@ -2312,7 +2394,6 @@ sub handle_single_transform_list ($$$$@)
         my $directory = $1 || '';
         my $base = $2;
         my $extension = $3;
-	my $full_ansi = $full;	# We'll add `$U' if needed.
 
         # We must generate a rule for the object if it requires its own flags.
         my $renamed = 0;
@@ -2432,9 +2513,11 @@ sub handle_single_transform_list ($$$$@)
             {
                 my $obj_sans_ext = substr ($object, 0,
 					   - length ($this_obj_ext));
+		my $full_ansi = $full;
 		if ($lang->ansi && defined $options{'ansi2knr'})
 		  {
 		    $full_ansi =~ s/$KNOWN_EXTENSIONS_PATTERN$/\$U$&/;
+		    $obj_sans_ext .= '$U';
 		  }
 
 		my $val = ("$full_ansi $obj_sans_ext "
@@ -2529,13 +2612,6 @@ sub handle_single_transform_list ($$$$@)
         {
             my @dep_list = ();
             $object_map{$object} = $full;
-
-            # If file is in subdirectory, we need explicit
-            # dependency.
-            if ($directory ne '' || $renamed)
-            {
-                push (@dep_list, $full_ansi);
-            }
 
             # If resulting object is in subdir, we need to make
             # sure the subdir exists at build time.
@@ -5541,8 +5617,7 @@ sub lang_c_finish
 	    # we can't use $< -- some makes only define $< during a
 	    # suffix rule.
 	    my $ansfile = $de_ansi_files{$base} . $base . '.c';
-	    my $root = $de_ansi_files{$base} . $base;
- 	    $output_rules .= ($root . "_.c: $ansfile \$(ANSI2KNR)\n\t"
+ 	    $output_rules .= ($base . "_.c: $ansfile \$(ANSI2KNR)\n\t"
 			      . '$(CPP) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) '
 			      . '`if test -f $(srcdir)/' . $ansfile
 			      . '; then echo $(srcdir)/' . $ansfile
