@@ -70,11 +70,11 @@ $2],
 ])# _AM_CONFIG_HEADER
 
 
-# AM_CONFIG_HEADER(HEADER[:SOURCES]..., COMMANDS, INIT-COMMANDS)
-# --------------------------------------------------------------
-AC_DEFUN([AM_CONFIG_HEADER],
+# _AM_CONFIG_HEADERS(HEADER[:SOURCES]..., COMMANDS, INIT-COMMANDS)
+# ----------------------------------------------------------------
+AC_DEFUN([_AM_CONFIG_HEADERS],
 [AC_FOREACH([_AM_File], [$1], [_AM_CONFIG_HEADER(_AM_File, [$2], [$3])])
-])# AM_CONFIG_HEADER
+])# _AM_CONFIG_HEADERS
 
 
 # _AM_CONFIG_HEADER_INSINUATE
@@ -91,6 +91,8 @@ dnl (Beware: this must be m4_copy, not m4_rename, because we will
 dnl lose the --trace bit of AC_CONFIG_HEADERS if we undefine it.)
 m4_copy([AC_CONFIG_HEADERS], [_AM_AC_CONFIG_HEADERS])dnl
 dnl Override AC_CONFIG_HEADERS with ours.
-dnl (Don't use m4_copy because we are tracing AM_CONFIG_HEADER.)
-AC_DEFUN([AC_CONFIG_HEADERS], [AM_CONFIG_HEADER($][@)])dnl
+AC_DEFUN([AC_CONFIG_HEADERS], [_AM_CONFIG_HEADERS($][@)])dnl
+dnl Define AM_CONFIG_HEADERS (obsolete) in terms of AC_CONFIG_HEADERS.
+dnl This way autoheader will `see' the calls to AM_CONFIG_HEADER.
+AC_DEFUN([AM_CONFIG_HEADER], [AC_CONFIG_HEADERS($][@)])dnl
 ])
