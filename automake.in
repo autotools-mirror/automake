@@ -722,7 +722,7 @@ sub handle_libraries
     # am_install_var.
     local ($onedir, $onelib);
     local (@outlist);
-    foreach $onedir ('lib', 'pkglib', 'noinst')
+    foreach $onedir ('lib', 'pkglib', 'noinst', 'check')
     {
 	if (&variable_defined ($onedir . '_LIBRARIES'))
 	{
@@ -1171,7 +1171,7 @@ sub handle_dist_worker
 	}
 	else
 	{
-	    $output_rules .= 'tar chozf $(distdir).tar.gz $(distdir)';
+	    $output_rules .= '$(TAR) chozf $(distdir).tar.gz $(distdir)';
 	}
 	$output_rules .= "\n\t" . 'rm -rf $(distdir)' . "\n";
     }
@@ -1399,7 +1399,8 @@ sub handle_configure
 		&push_dist_common ($config_name . '.bot');
 	    }
 
-	    &push_dist_common ('stamp-h.in');
+	    &require_file_with_conf_line ($config_header_line, $FOREIGN,
+					  'stamp-h.in');
 
 	    $output_rules .= &file_contents ('remake-hdr');
 	    $output_vars .= "CONFIG_HEADER_IN = ${config_header}\n";
@@ -1613,10 +1614,33 @@ sub handle_merge_targets
 
 	if (@all)
 	{
+	    local (@hackall) = ();
+	    if ($config_name && &dirname ($config_name) eq $relative_dir)
+	    {
+
+		# This is kind of a hack, but I couldn't see a better
+		# way to handle it.  In this particular case, we need
+		# to make sure config.h is built before we recurse.
+		# We can't do this by changing the order of
+		# dependencies to the "all" because that breaks when
+		# using parallel makes.  Instead we handle things
+		# explicitly.
+		$output_rules .= ('all-recursive-hack: $(CONFIG_HEADER)'
+				  . "\n\t" . '$(MAKE) all-recursive'
+				  . "\n\n");
+		push (@hackall, 'all-recursive-hack');
+		push (@phony, 'all-recursive-hack');
+	    }
+	    else
+	    {
+		push (@hackall, 'all-recursive');
+	    }
+
 	    $output_rules .= ('all-am: '
 			      . join (' ', @all)
 			      . "\n\n");
-	    @all = ('all-recursive', 'all-am');
+	    @all = @hackall;
+	    push (@all, 'all-am');
 	    push (@phony, 'all-am');
 	}
 	else
@@ -1663,7 +1687,8 @@ sub handle_merge_targets
 	}
     }
 
-    # Step three: print definitions users can use.
+    # Step three: print definitions users can use.  Code below knows
+    # that install-exec is done before install-data, beware.
     $output_rules .= ("install-exec: "
 		      . join (' ', @install_exec)
 		      . "\n");
@@ -1689,7 +1714,12 @@ sub handle_merge_targets
     # If no dependencies for 'install', add 'all'.  Why?  That way
     # "make install" at top level of distclean'd distribution won't
     # fail because stuff in 'lib' fails to build.
-    push (@install, 'all') if ! @install;
+    if (! @install || ($#install == 1
+		       && $install[0] eq 'install-exec'
+		       && $install[1] eq 'install-data'))
+    {
+	push (@install, 'all');
+    }
     $output_rules .= ('install: '
 		      . join (' ', @install)
 		      # Use "@:" as empty command so nothing prints.
@@ -1895,6 +1925,11 @@ sub scan_configure
 	    {
 		$libsources{$_ . '.c'} = 1;
 	    }
+	}
+	elsif (/AC_REPLACE_GNU_GETOPT/)
+	{
+	    $libsources{'getopt.c'} = 1;
+	    $libsources{'getopt1.c'} = 1;
 	}
 	elsif (/LIBOBJS="(.*)\s+\$LIBOBJS"/
 	       || /LIBOBJS="\$LIBOBJS\s+(.*)"/)
