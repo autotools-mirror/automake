@@ -100,6 +100,9 @@ $symlink_exists = (eval 'symlink ("", "");', $@ eq '');
 # TRUE if missing standard files should be installed.
 $add_missing = 0;
 
+# TRUE if we should copy missing files; otherwise symlink if possible.
+$copy_missing = 0;
+
 # Files found by scanning configure.in for LIBOBJS.
 %libsources = ();
 
@@ -428,6 +431,10 @@ sub parse_arguments
 	elsif ($arglist[0] eq '--add-missing' || $arglist[0] eq '-a')
 	{
 	    $add_missing = 1;
+	}
+	elsif ($arglist[0] eq '--copy' || $arglist[0] eq 'c')
+	{
+	    $copy_missing = 1;
 	}
 	elsif ($arglist[0] eq '--verbose' || $arglist[0] eq '-v')
 	{
@@ -1892,8 +1899,11 @@ sub handle_ltlibraries
 	local ($rpath);
 	if ($instdirs{$onelib} eq 'EXTRA')
 	{
-	    # It's an EXTRA_ library, so we can't specify -rpath.
-	    # Yuck.
+	    # It's an EXTRA_ library, so we can't specify -rpath,
+	    # because we don't know where the library will end up.
+	    # The user probably knows, but generally speaking automake
+	    # doesn't -- and in fact configure could decide
+	    # dynamically between two different locations.
 	    $rpath = 's/\@RPATH\@//go;';
 	}
 	else
@@ -5584,6 +5594,7 @@ sub initialize_global_constants
   -a, --add-missing     add missing standard files to package
   --amdir=DIR           directory storing config files
   --build-dir=DIR       directory where build being done (for dependencies)
+  -c, --copy            with -a, copy missing files (default is symlink)
   --cygnus              assume program is part of Cygnus-style tree
   --foreign             set strictness to foreign
   --gnits               set strictness to gnits
@@ -6255,7 +6266,7 @@ sub require_file_internal
 			# first, in case it is a dangling symlink.
 			$message = "installing \`$errfile'";
 			unlink ($errfile);
-			if ($symlink_exists)
+			if ($symlink_exists && ! $copy_missing)
 			{
 			    if (! symlink ($am_dir . '/' . $file, $errfile))
 			    {
@@ -6266,7 +6277,7 @@ sub require_file_internal
 			elsif (! system ('cp', $am_dir . '/' . $file, $errfile))
 			{
 			    $suppress = 0;
-			    $trailer = "\n    error while making link\n";
+			    $trailer = "\n    error while copying\n";
 			}
 		    }
 		}
