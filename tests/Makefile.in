@@ -95,7 +95,8 @@ texinfo5.test aclocali.test texinfo6.test condman2.test colon4.test \
 java.test sinclude.test javaprim.test javasubst.test aclocalii.test \
 lex2.test libobj8.test version3.test instdata.test exdir2.test \
 colon5.test library.test syntax.test cond4.test cond5.test recurs.test \
-ansi3.test cond6.test colon6.test texinfo7.test parse.test else.test
+ansi3.test cond6.test colon6.test texinfo7.test parse.test else.test \
+clean.am
 
 EXTRA_DIST = defs $(TESTS)
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
@@ -106,8 +107,7 @@ DIST_COMMON =  ChangeLog Makefile.am Makefile.in
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 GZIP = --best
-all: Makefile
-
+all: all-redirect
 .SUFFIXES:
 $(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4)
 	cd $(top_srcdir) && $(AUTOMAKE) --gnits tests/Makefile
@@ -134,7 +134,7 @@ distdir: $(DISTFILES)
 	  d=$(srcdir); \
 	  if test -d $$d/$$file; then \
 	    cp -pr $$/$$file $(distdir)/$$file; \
-	  else\
+	  else \
 	    test -f $(distdir)/$$file \
 	    || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
 	    || cp -p $$d/$$file $(distdir)/$$file; \
@@ -165,22 +165,28 @@ check-TESTS: $(TESTS)
 	echo "$$banner"; \
 	echo "$$dashes"; \
 	test "$$failed" -eq 0
-info:
-dvi:
-check: all
+info-am:
+info: info-am
+dvi-am:
+dvi: dvi-am
+check-am: all-am
 	$(MAKE) $(AM_MAKEFLAGS) check-TESTS
-installcheck:
-install-exec: 
-	@$(NORMAL_INSTALL)
+check: check-am
+installcheck-am:
+installcheck: installcheck-am
+install-exec-am:
+install-exec: install-exec-am
 
-install-data: 
-	@$(NORMAL_INSTALL)
+install-data-am:
+install-data: install-data-am
 
-install: install-exec install-data all
-	@:
-
-uninstall: 
-
+install-am: install-exec-am install-data-am install-exec-am \
+		install-data-am install-exec-am install-data-am
+install: install-am
+uninstall-am:
+uninstall: uninstall-am
+all-am: Makefile
+all-redirect: all-am
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM='$(INSTALL_PROGRAM) -s' INSTALL_SCRIPT='$(INSTALL_PROGRAM)' install
 installdirs:
@@ -195,19 +201,29 @@ distclean-generic:
 	-rm -f config.cache config.log stamp-h stamp-h[0-9]*
 
 maintainer-clean-generic:
-mostlyclean:  mostlyclean-generic
+mostlyclean-am:  mostlyclean-generic clean-am
 
-clean:  clean-generic mostlyclean
+mostlyclean: mostlyclean-am
 
-distclean:  distclean-generic clean distclean-local
+clean-am:  clean-generic mostlyclean-am
+
+clean: clean-am
+
+distclean-am:  distclean-generic clean-am distclean-local
 	-rm -f config.status
 
-maintainer-clean:  maintainer-clean-generic distclean
+distclean: distclean-am
+
+maintainer-clean-am:  maintainer-clean-generic distclean-am
 	@echo "This command is intended for maintainers to use;"
 	@echo "it deletes files that may require special tools to rebuild."
 
-.PHONY: tags distdir check-TESTS info dvi installcheck install-exec \
-install-data install uninstall all installdirs mostlyclean-generic \
+maintainer-clean: maintainer-clean-am
+
+.PHONY: tags distdir check-TESTS info-am info dvi-am dvi check check-am \
+installcheck-am installcheck install-exec-am install-exec \
+install-data-am install-data install-am install uninstall-am uninstall \
+all-redirect all-am all installdirs mostlyclean-generic \
 distclean-generic clean-generic maintainer-clean-generic clean \
 mostlyclean distclean maintainer-clean
 
