@@ -4,7 +4,7 @@ AUTOMAKE_OPTIONS = gnits
 MAINT_CHARSET = latin1
 PERL = @PERL@
 
-SUBDIRS = tests
+SUBDIRS = tests m4
 
 bin_SCRIPTS = automake
 info_TEXINFOS = automake.texi

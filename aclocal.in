@@ -1,0 +1,234 @@
+#!@PERL@
+# -*- perl -*-
+# @configure_input@
+
+eval 'exec @PERL@ -S $0 ${1+"$@"}'
+    if 0;
+
+# aclocal - scan configure.in and generate aclocal.m4.
+
+# Some constants.
+$VERSION = "@VERSION@";
+$prefix = "@prefix@";
+$acdir = "@datadir@/@PACKAGE@";
+
+# Some globals.
+
+# Exit status.
+$exit_status = 0;
+
+# Output.
+$output = '';
+
+# Which files have been seen.
+%file_seen = ();
+
+# How much to say.
+$verbosity = 0;
+
+@obsolete_macros =
+    (
+     'AC_FEATURE_CTYPE',
+     'AC_FEATURE_ERRNO',
+     'AC_FEATURE_EXIT',
+     'AC_SYSTEM_HEADER',
+     'fp_C_PROTOTYPES',
+     'fp_FUNC_FNMATCH',
+     'fp_PROG_CC_STDC',
+     'fp_PROG_INSTALL',
+     'fp_WITH_DMALLOC',
+     'fp_WITH_REGEX',
+     'gm_PROG_LIBTOOL',
+     'jm_MAINTAINER_MODE',
+     'md_PATH_PROG',
+     'md_TYPE_PTRDIFF_T',
+     'ud_GNU_GETTEXT',
+     'ud_LC_MESSAGES',
+     'ud_PATH_LISPDIR',
+     'ud_WITH_NLS'
+     );
+
+$obsolete_rx = '(' . join ('|', @obsolete_macros) . ')';
+
+
+
+&parse_arguments (@ARGV);
+&scan_configure;
+if (! $exit_status)
+{
+    &write_aclocal;
+}
+
+exit $exit_status;
+
+################################################################
+
+# Print usage and exit.
+sub usage
+{
+    local ($status) = @_;
+
+    print "Usage: aclocal [OPTIONS] ...\n";
+    print "\
+  --acdir=DIR           directory holding config files
+  --help                print this help, then exit
+  --verbose             don't be silent
+  --version             print version number, then exit\n";
+
+    exit $status;
+}
+
+# Parse command line.
+sub parse_arguments
+{
+    local (@arglist) = @_;
+
+    while (@arglist)
+    {
+	if ($arglist[0] =~ /^--acdir=(.+)$/)
+	{
+	    $acdir = $1;
+	}
+	elsif ($arglist[0] eq '--verbose')
+	{
+	    ++$verbosity;
+	}
+	elsif ($arglist[0] eq '--version')
+	{
+	    print "aclocal - Autosystem $VERSION\n";
+	    exit 0;
+	}
+	elsif ($arglist[0] eq '--help')
+	{
+	    &usage (0);
+	}
+	else
+	{
+	    &usage (1);
+	}
+
+	shift (@arglist);
+    }
+}
+
+################################################################
+
+sub scan_configure
+{
+    # First, construct list of regexps to match the things we actually
+    # have.
+    opendir (DIR, $acdir)
+	|| die "aclocal: couldn't open directory \`$acdir': $!\n";
+    local ($search, $elt);
+    foreach (sort grep (! /^\./, readdir (DIR)))
+    {
+	# Only examine .m4 files.
+	next unless s/\.m4$//;
+
+	# Skip some files when running out of srcdir.  Eg "aclocal.m4"
+	# must be skipped.
+	next unless /^[A-Za-z]+_[A-Z_]+$/;
+
+	print STDERR "Finding $_\n" if $verbosity;
+	($elt = $_) =~ s/(\W)/\\$1/g;
+	$search .= "&add_file (\"$elt\") if /$elt/;\n";
+    }
+    closedir (DIR);
+
+    # Construct a new function that does the searching.  We use a
+    # function (instead of just evalling $search in the loop) so that
+    # "die" is correctly and easily propagated if run.
+    eval 'sub search { ' . $search . '};';
+
+    open (CONFIGURE, "configure.in")
+	|| die "aclocal: couldn't open \`configure.in': $!\n";
+
+    while (<CONFIGURE>)
+    {
+	# Remove comments from current line.
+	s/\bdnl\b.*$//;
+	s/\#.*$//;
+
+	if (/$obsolete_rx/o)
+	{
+	    chop;
+	    warn "configure.in: $.: obsolete macro \`$_'\n";
+	    $exit_status = 1;
+	    next;
+	}
+
+	# Search for things we know about.  The "search" sub is
+	# constructed dynamically, above.
+	&search;
+    }
+
+    close (CONFIGURE);
+
+    # Include this file if it exists
+    if (-f 'acinclude.m4')
+    {
+	&add_file ('acinclude.m4');
+    }
+}
+
+################################################################
+
+# Add a file to output.
+sub add_file
+{
+    local ($file) = @_;
+    local ($fullfile) = $file;
+
+    return if ($file_seen{$file});
+    $file_seen{$file} = 1;
+
+    if (! -f $file)
+    {
+	$fullfile = $acdir . '/' . $file . '.m4';
+	if (! -f $fullfile)
+	{
+	    # Maybe the file is an Autoconf built-in.  Check the only
+	    # way we know how.  Suggestions on how to make this better
+	    # are welcome.
+	    return if $file =~ /^AC_[A-Z_]+$/;
+	    die "aclocal: file \`$file' not found\n";
+	}
+    }
+
+    open (FILE, $fullfile)
+	|| die "aclocal: couldn't open \`$fullfile': $!\n";
+
+    local (@rlist);
+    while (<FILE>)
+    {
+	$output .= $_;
+	# See if some other macro is required.
+	if (/AC_REQUIRE\(\[?([^])]*)\]?\)/)
+	{
+	    push (@rlist, $1);
+	}
+    }
+    $output .= "\n";
+    close (FILE);
+
+    foreach $file (@rlist)
+    {
+	&add_file ($file);
+    }
+}
+
+################################################################
+
+# Write output.
+sub write_aclocal
+{
+    return if ! $output;
+
+    print STDERR "Writing aclocal.m4\n" if $verbosity;
+
+    open (ACLOCAL, "> aclocal.m4")
+	|| die "aclocal: couldn't open \`aclocal.m4' for writing: $!\n";
+    print ACLOCAL "dnl aclocal.m4 generated automatically by aclocal $VERSION\n\n";
+    print ACLOCAL $output;
+    close (ACLOCAL);
+}

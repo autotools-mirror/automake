@@ -39,20 +39,18 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
 transform = @program_transform_name@
 
 AUTOMAKE_OPTIONS = gnits
+MAINT_CHARSET = latin1
 
-TESTS = mdate.test vtexi.test acoutput.test instexec.test checkall.test \
-acoutnoq.test acouttbs.test libobj.test proginst.test acoutqnl.test \
-confincl.test spelling.test prefix.test badprog.test depend.test exdir.test \
-canon.test installsh.test empty.test rulepat.test insh.test canon2.test \
-target.test extra.test noinst.test instman.test mkinstall.test auxdir.test \
-canon3.test mdate2.test subdir.test backsl.test package.test number.test \
-insh2.test outdir.test fpinstall.test fpinst2.test texinfo.test dejagnu.test \
-yacc.test mkinstall2.test texinfo2.test ansi.test depacl.test depacl2.test \
-error.test
-
-EXTRA_DIST = defs $(TESTS)
+pkgdata_DATA = AM_C_PROTOTYPES.m4 AM_FEATURE_CTYPE.m4 \
+AM_FEATURE_ERRNO.m4 AM_FEATURE_EXIT.m4 AM_FUNC_FNMATCH.m4 \
+AM_GNU_GETTEXT.m4 AM_LC_MESSAGES.m4 AM_MAINTAINER_MODE.m4 \
+AM_PATH_LISPDIR.m4 AM_PROG_CC_STDC.m4 AM_PROG_INSTALL.m4 \
+AM_PROG_LIBTOOL.m4 AM_SYSTEM_HEADER.m4 AM_TYPE_PTRDIFF_T.m4 \
+AM_WITH_DMALLOC.m4 AM_WITH_NLS.m4 AM_WITH_REGEX.m4
 mkinstalldirs = $(top_srcdir)/mkinstalldirs
-DIST_COMMON = ChangeLog Makefile.am Makefile.in
+DATA = $(pkgdata_DATA)
+
+DIST_COMMON = Makefile.am Makefile.in
 
 
 PACKAGE = @PACKAGE@
@@ -72,11 +70,26 @@ $(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in
 
 Makefile: $(top_builddir)/config.status Makefile.in
 	cd $(top_builddir) && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+
+install-pkgdataDATA: $(pkgdata_DATA)
+	$(mkinstalldirs) $(pkgdatadir)
+	list="$(pkgdata_DATA)"; for p in $$list; do \
+	  if test -f $(srcdir)/$$p; then \
+	    $(INSTALL_DATA) $(srcdir)/$$p $(pkgdatadir)/$$p; \
+	  else if test -f $$p; then \
+	    $(INSTALL_DATA) $$p $(pkgdatadir)/$$p; \
+	  fi; fi; \
+	done
+
+uninstall-pkgdataDATA:
+	list="$(pkgdata_DATA)"; for p in $$list; do \
+	  rm -f $(pkgdatadir)/$$p; \
+	done
 tags: TAGS
 TAGS:
 
 
-subdir = tests
+subdir = m4
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 distdir: $(DEP_DISTFILES)
 	@for file in `cd $(srcdir) && echo $(DISTFILES)`; do \
@@ -84,49 +97,29 @@ distdir: $(DEP_DISTFILES)
 	  || ln $(srcdir)/$$file $(distdir)/$$file 2> /dev/null \
 	  || cp -p $(srcdir)/$$file $(distdir)/$$file; \
 	done
-check-TESTS: $(TESTS)
-	@failed=0; all=0; \
-	srcdir=$(srcdir); export srcdir; \
-	for tst in $(TESTS); do \
-	  all=`expr $$all + 1`; \
-	  if test -f $$tst; then dir=.; \
-	  else dir="$(srcdir)"; fi; \
-	  if $(TESTS_ENVIRONMENT) $$dir/$$tst; then \
-	    echo "PASS: $$tst"; \
-	  else \
-	    failed=`expr $$failed + 1`; \
-	    echo "FAIL: $$tst"; \
-	  fi; \
-	done; \
-	if test "$$failed" -eq 0; then \
-	  echo "========================"; \
-	  echo "All $$all tests passed"; \
-	  echo "========================"; \
-	else \
-	  echo "$$failed of $$all tests failed"; \
-	fi
 info:
 
 dvi:
 
-check: all check-TESTS
+check: all
 
 installcheck:
 
 install-exec: 
 
-install-data: 
+install-data: install-pkgdataDATA
 
 install: install-exec install-data all
 	@:
 
-uninstall: 
+uninstall: uninstall-pkgdataDATA
 
-all: Makefile
+all: $(DATA) Makefile
 
 install-strip:
 	$(MAKE) INSTALL_PROGRAM='$(INSTALL_PROGRAM) -s' install
 installdirs:
+	$(mkinstalldirs)  $(pkgdatadir)
 
 
 mostlyclean-generic:
@@ -153,9 +146,9 @@ maintainer-clean:  maintainer-clean-generic distclean
 	@echo "This command is intended for maintainers to use;"
 	@echo "it deletes files that may require special tools to rebuild."
 
-.PHONY: default tags distdir check-TESTS info dvi check installcheck \
-install-exec install-data install uninstall all installdirs \
-mostlyclean-generic distclean-generic clean-generic \
+.PHONY: default uninstall-pkgdataDATA install-pkgdataDATA tags distdir \
+info dvi check installcheck install-exec install-data install uninstall \
+all installdirs mostlyclean-generic distclean-generic clean-generic \
 maintainer-clean-generic clean mostlyclean distclean maintainer-clean
 
 .SUFFIXES:
