@@ -116,18 +116,18 @@ maintainer-check: automake aclocal
 	  echo "Don't use \`local' with parens: use several \`local' above." >&2; \
 	  exit 1; \
 	fi
-## Up to now we manage to limit to 6 uses of local.
+## Up to now we manage to limit to 1 use of local.
 	@locals=`grep -c '^[ \t]*local [^*]' $(srcdir)/automake.in`; \
 	case $$locals in \
-	  [0-6] ) \
-	    echo "Wow, congrats!  There are $$locals \`local' now!." >&2; \
+	  [0] ) \
+	    echo "Wow, congrats!  There are no \`local' now!." >&2; \
 	    echo "Please update Makefile.am (maintainer-check)." >&2; \
 	    exit 1; \
 	  ;; \
-	  7 ) ;; \
+	  1 ) ;; \
 	  * ) \
 	    echo "Too many \`local'!  Are you sure you need $$locals of them?" >&2; \
-	    echo "Up to now 7 was enough." >&2; \
+	    echo "Up to now 1 was enough." >&2; \
 	    exit 1; \
 	  ;; \
 	esac

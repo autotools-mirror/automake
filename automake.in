@@ -28,7 +28,7 @@ eval 'exec @PERL@ -S $0 ${1+"$@"}'
 # Perl reimplementation by Tom Tromey <tromey@cygnus.com>.
 
 require 5.005;
-use strict;
+# FIXME: use strict;
 use File::Basename;
 use IO::File;
 
@@ -414,6 +414,16 @@ my %required_targets =
 ## Variables reset by &initialize_per_input.  ##
 ## ------------------------------------------ ##
 
+# Basename and relative dir of the input file.
+my $am_file_name;
+my $am_relative_dir;
+
+# Same but wrt Makefile.in.
+my $in_file_name;
+my $relative_dir;
+
+# These two variables are used when generating each Makefile.in.
+# They hold the Makefile.in until it is ready to be printed.
 my $output_rules;
 my $output_vars;
 my $output_trailer;
@@ -464,13 +474,6 @@ my @conditional_stack;
 
 # This holds the set of included files.
 my @include_stack;
-
-# This holds the "relative directory" of the current Makefile.in.
-# Eg for src/Makefile.in, this is "src".
-my $relative_dir;
-
-# Same but wrt Makefile.am.
-my $am_relative_dir;
 
 # This holds a list of files that are included in the
 # distribution.
@@ -602,6 +605,14 @@ my %def_type;
 # (Re)-Initialize per-Makefile.am variables.
 sub initialize_per_input ()
 {
+    # Basename and relative dir of the input file.
+    $am_file_name = '';
+    $am_relative_dir = '';
+
+    # Same but wrt Makefile.in.
+    $in_file_name = '';
+    $relative_dir = '';
+
     # These two variables are used when generating each Makefile.in.
     # They hold the Makefile.in until it is ready to be printed.
     $output_rules = '';
@@ -1040,11 +1051,10 @@ sub generate_makefile
 {
     my ($output, $makefile) = @_;
 
-    # Name of input file ("Makefile.in") and output file
-    # ("Makefile.am").  These have no directory components.
-    (my $am_file_name = $makefile) =~ s/^.*\///;
-    my $in_file_name = $am_file_name . '.in';
-    $am_file_name .= '.am';
+    # Name of input file ("Makefile.am") and output file
+    # ("Makefile.in").  These have no directory components.
+    $am_file_name = basename ($makefile) . '.am';
+    $in_file_name = basename ($makefile) . '.in';
 
     # $OUTPUT is encoded.  If it contains a ":" then the first element
     # is the real output file, and all remaining elements are input
@@ -4897,8 +4907,9 @@ sub scan_autoconf_files
     # check must be done for every run, even those where we are only
     # looking at a subdir Makefile.  We must set relative_dir so that
     # the file-finding machinery works.
-    # Needs dynamic scopes.
-    local $relative_dir = '.';
+    # FIXME: Is this broken because it needs dynamic scopes.
+    # My tests seems to show it's not the case.
+    $relative_dir = '.';
     &require_config_file ($FOREIGN, 'install-sh', 'mkinstalldirs', 'missing');
     &am_error ("\`install.sh' is an anachronism; use \`install-sh' instead")
         if -f $config_aux_path[0] . '/install.sh';
