@@ -303,6 +303,9 @@ distcheck: dist
 ## create this directory under $dc_install_base, because it would
 ## create very long directory names.
 	  && dc_destdir="$${TMPDIR-/tmp}/am-dc-$$$$/" \
+## Build the directory, so we can cd into it even if `make install'
+## didn't create it.
+	  && $(mkinstalldirs) $$dc_destdir \
 ?DISTCHECK-HOOK?	  && $(MAKE) $(AM_MAKEFLAGS) distcheck-hook \
 	  && cd $(distdir)/=build \
 	  && ../configure --srcdir=.. --prefix="$$dc_install_base" \
@@ -316,26 +319,21 @@ distcheck: dist
 	  && $(MAKE) $(AM_MAKEFLAGS) install \
 	  && $(MAKE) $(AM_MAKEFLAGS) installcheck \
 	  && $(MAKE) $(AM_MAKEFLAGS) uninstall \
-## We use -le 1 because the `dir' file might still exist after uninstall.
-	  && (test `find "$$dc_install_base" -type f -print | wc -l` -le 1 \
-	      || { echo "ERROR: files left after uninstall:" ; \
-	           find $$dc_install_base -type f -print ; \
-	           exit 1; } >&2 ) \
+	  && $(MAKE) $(AM_MAKEFLAGS) distuninstallcheck_dir="$$dc_install_base" \
+	        distuninstallcheck \
 ## Make sure the package has proper DESTDIR support (we could not test this
 ## in the previous install/installcheck/uninstall test, because it's reasonable
-## for installcheck to fails in a DESTDIR install).
+## for installcheck to fail in a DESTDIR install).
 ## We make the `$dc_install_base' read-only because this is where files
 ## with missing DESTDIR support are likely to be installed.
 	  && chmod -R a-w "$$dc_install_base" \
-## The logic here is quire convoluted because we must clean $dc_destdir
+## The logic here is quite convoluted because we must clean $dc_destdir
 ## whatever happens (it won't be erased by the next run of distcheck like
-## $(dirstir) is).
+## $(distdir) is).
 	  && ({   $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$dc_destdir" install \
 	       && $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$dc_destdir" uninstall \
-	       && (test `find "$$dc_destdir" -type f -print | wc -l` -le 1 \
-	           || { echo "ERROR: files left after uninstall (check DESTDIR support):" ; \
-	                find "$$dc_destdir" -type f -print ; \
-	                exit 1; } >&2 ); \
+	       && $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$dc_destdir" \
+	            distuninstallcheck_dir="$$dc_destdir" distuninstallcheck; \
 	      } || { rm -rf "$$dc_destdir"; exit 1; }) \
 	  && rm -rf "$$dc_destdir" \
 	  && $(MAKE) $(AM_MAKEFLAGS) dist-gzip \
@@ -347,8 +345,24 @@ distcheck: dist
 	@echo "$(distdir).tar.gz is ready for distribution" | \
 	  sed 'h;s/./=/g;p;x;p;x'
 
+## Define distuninstallcheck_listfiles and distuninstallcheck separately
+## from distcheck, so that they can be overridden by the user.
+.PHONY: distuninstallcheck
+distuninstallcheck_listfiles = find . -type f -print
+distuninstallcheck:
+## We use -le 1 because the `dir' file might still exist after
+## uninstall.
+	cd $(distuninstallcheck_dir) \
+	&& test `$(distuninstallcheck_listfiles) | wc -l` -le 1 \
+	   || { echo "ERROR: files left after uninstall:" ; \
+	        if test -n "$(DESTDIR)"; then \
+	          echo "  (check DESTDIR support)"; \
+	        fi ; \
+	        $(distuninstallcheck_listfiles) ; \
+	        exit 1; } >&2
+
 ## Define distcleancheck_listfiles and distcleancheck separately
-## from distcheck, so that they can be overriden by the user.
+## from distcheck, so that they can be overridden by the user.
 .PHONY: distcleancheck
 distcleancheck_listfiles = find . -type f -print
 distcleancheck: distclean
