@@ -42,7 +42,10 @@ m4_if([$1], [v7],
               [m4_fatal([Unknown tar format])])
 AC_MSG_CHECKING([how to create a $1 tar archive])
 # Loop over all known methods to create a tar archive until one works.
-for _am_tool in ${am_cv_prog_tar_$1-gnutar m4_if([$1], [ustar], [plaintar]) pax cpio none}
+_am_tools=${am_cv_prog_tar_$1-gnutar m4_if([$1], [ustar], [plaintar]) pax cpio none}
+# Do not replace $_am_tools by its definition on the `for' line, NetBSD 2.0F
+# /bin/sh will not perform IFS splitting on the right side of `-'.
+for _am_tool in $_am_tools
 do
   case $_am_tool in
   gnutar)
