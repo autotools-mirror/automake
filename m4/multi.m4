@@ -1,9 +1,3 @@
-# serial 2
-
-# AM_ENABLE_MULTILIB([MAKEFILE], [REL-TO-TOP-SRCDIR])
-# ---------------------------------------------------
-# Add --enable-multilib to configure.
-
 # Copyright 1998, 1999, 2000, 2001 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
@@ -21,6 +15,11 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 
+# serial 3
+
+# AM_ENABLE_MULTILIB([MAKEFILE], [REL-TO-TOP-SRCDIR])
+# ---------------------------------------------------
+# Add --enable-multilib to configure.
 AC_DEFUN([AM_ENABLE_MULTILIB],
 [# Default to --enable-multilib
 AC_ARG_ENABLE(multilib,
@@ -51,8 +50,8 @@ AC_OUTPUT_COMMANDS([
 # Only add multilib support code if we just rebuilt the top-level
 # Makefile.
 case " $CONFIG_FILES " in
- *" ifelse([$1],,Makefile,[$1]) "*)
-   ac_file=ifelse([$1],,Makefile,[$1]) . ${multi_basedir}/config-ml.in
+ *" ]m4_default([$1],Makefile)[ "*)
+   ac_file=]m4_default([$1],Makefile)[ . ${multi_basedir}/config-ml.in
    ;;
 esac],
                    [
