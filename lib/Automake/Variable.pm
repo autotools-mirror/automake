@@ -188,7 +188,8 @@ my %_silent_variable_override =
    AR => 1,
    ARFLAGS => 1,
    DEJATOOL => 1,
-   JAVAC => 1);
+   JAVAC => 1,
+   JAVAROOT => 1);
 
 # This hash records helper variables used to implement conditional '+='.
 # Keys have the form "VAR:CONDITIONS".  The value associated to a key is
