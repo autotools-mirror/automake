@@ -5794,40 +5794,6 @@ sub variable_conditions_sub
     }
     $vars_scanned{$var} = 1;
 
-    if (! $variable_conditionally_defined{$var})
-    {
-	foreach (split (' ', $conditional{$var}{'TRUE'}))
-	{
-	    # If a comment seen, just leave.
-	    last if /^#/;
-
-	    # Handle variable substitutions.
-	    if (/^\$\{(.*)\}$/ || /^\$\((.*)\)$/)
-	    {
-		push (@new_conds,
-		      &variable_conditions_sub ($1, $var, @parent_conds));
-	    }
-	}
-
-	# Now we want to return all permutations of the subvariable
-	# conditions.
-	my %allconds = ();
-	foreach my $item (@new_conds)
-	{
-	    foreach (split (' ', $item))
-	    {
-		s/_(TRUE|FALSE)$//;
-		$allconds{$_ . '_TRUE'} = 1;
-	    }
-	}
-
-	# Unset our entry in vars_scanned.  We only care about recursive
-	# definitions.
-	delete $vars_scanned{$var};
-
-	return &variable_conditions_permutations (sort keys %allconds);
-    }
-
     my @this_conds = ();
     foreach my $vcond (keys %{$conditional{$var}})
     {
@@ -6102,7 +6068,7 @@ sub variable_value_as_list_worker
 	# variables we've already examined.
 	&am_line_error ($parent, "variable `$var' recursively defined");
     }
-    elsif ($cond eq 'all' && $conditional{$var})
+    elsif ($cond eq 'all')
     {
 	$vars_scanned{$var} = 1;
 	foreach my $vcond (keys %{$conditional{$var}})
@@ -6111,8 +6077,9 @@ sub variable_value_as_list_worker
 	    push (@result, &value_to_list ($var, $val, $cond));
 	}
     }
-    elsif ($cond && $conditional{$var})
+    else
     {
+        $cond ||= 'TRUE';
 	$vars_scanned{$var} = 1;
 	my $onceflag;
 	foreach my $vcond (keys %{$conditional{$var}})
@@ -6128,13 +6095,6 @@ sub variable_value_as_list_worker
 		push (@result, &value_to_list ($var, $val, $cond));
 	    }
 	}
-    }
-    else
-    {
-	$vars_scanned{$var} = 1;
-	&check_variable_defined_unconditionally ($var, $parent);
-	$content_seen{$var} = 1;
-	push (@result, &value_to_list ($var, $conditional{$var}{'TRUE'}, $cond));
     }
 
     # Unset our entry in vars_scanned.  We only care about recursive
