@@ -4,13 +4,15 @@
 
 . $srcdir/defs || exit 1
 
+set -e
+
 cat >> configure.in << 'END'
 AC_PROG_CC
 AC_EXEEXT
 END
 
 cat > Makefile.am << 'END'
-bin_PROGRAMS = maude 
+bin_PROGRAMS = maude
 
 maude:
 	yeah
@@ -18,8 +20,14 @@ END
 
 $ACLOCAL
 
-$AUTOMAKE --Werror && exit 1
+$AUTOMAKE -Wnone
+$AUTOMAKE -Wnone -Wobsolete 2>stderr && exit 1
+cat stderr
+grep maude stderr
+$AUTOMAKE -Wall 2>stderr && exit 1
+cat stderr
+grep maude stderr
 
 echo 'AUTOMAKE_OPTIONS = no-exeext' >> Makefile.am
 
-$AUTOMAKE --Werror
+$AUTOMAKE -Wall
