@@ -1086,6 +1086,8 @@ sub handle_single_transform_list
 	    $base = $3;
 	    $extension = $4;
 
+	    local ($xbase) = $base;
+
 	    local ($lang) = $extension_map{$extension};
 	    if ($lang)
 	    {
@@ -1093,6 +1095,7 @@ sub handle_single_transform_list
 		# Found the language, so see what it says.
 		local ($subr) = 'lang_' . $lang . '_rewrite';
 		# Note: computed subr call.
+		# FIXME: should pass directory to this function.
 		local ($r) = & $subr ($base, $extension);
 		# Skip this entry if we were asked not to process it.
 		next if $r == $LANG_IGNORE;
@@ -1114,11 +1117,13 @@ sub handle_single_transform_list
 		if ($r == $LANG_SUBDIR && $directory ne '')
 		{
 		    $object = $directory . '/' . $object;
+		    $xbase = $directory . '/' . $base;
 		}
 	    }
  	    elsif ($extension =~ /^$source_suffix_pattern$/) 
  	    {
 		# We just rewrite it.  Maybe we should do more.
+		# FIXME: what about subdir handling here?
 		$object = $base . '.' . $suffix_rules{$extension};
 		$linker = '';
  	    }
@@ -1156,19 +1161,36 @@ sub handle_single_transform_list
 		# sure the subdir exists at build time.
 		if ($object =~ /\//)
 		{
+		    if ($object =~ /(\/|^)\.\.\//)
+		    {
+			&am_error ("\`$full' contains \`..' component but should not");
+		    }
+
 		    push (@dep_list, $directory . '/.dirstamp');
 		    $output_rules .= ($directory . "/.dirstamp:\n"
 				      . "\t\@\$(mkinstalldirs) $directory\n"
 				      . "\t\@: > $directory/.dirstamp\n");
+
+		    # If we're generating dependencies, we also want
+		    # to make sure that the appropriate subdir of the
+		    # .deps directory is created.
+		    if ($use_dependencies)
+		    {
+			push (@dep_list, '.deps/' . $directory . '/.dirstamp');
+			$output_rules .= ('.deps/' . $directory
+					  . "/.dirstamp:\n"
+					  . "\t\@\$(mkinstalldirs) .deps/$directory\n"
+					  . "\t\@: > .deps/$directory/.dirstamp\n");
+		    }
 		}
 
+		# FIXME: this fails with parallel builds!
 		&pretty_print_rule ($object . ':', "\t", @dep_list);
 	    }
 
 	    # Transform .o or $o file into .P file (for automatic
 	    # dependency code).
-	    # FIXME: LANG_SUBDIR.
-	    $dep_files{'.deps/' . $base . '.P'} = 1;
+	    $dep_files{'.deps/' . $xbase . '.P'} = 1;
 	}
     }
 
