@@ -68,13 +68,30 @@ sgi)
   ;;
 
 dashmstdout)
-  "$@" -M > "$tmpdepfile" &
+  ( IFS=" "
+    case " $* " in
+    *" --mode=compile "*) # this is libtool, let us make it quiet
+      for arg
+      do # cycle over the arguments
+        case "$arg" in
+	"--mode=compile")
+	  # insert --quiet before "--mode=compile"
+	  set fnord "$@" --quiet
+	  shift # fnord
+	  ;;
+	esac
+	set fnord "$@" "$1"
+	shift # fnord
+	shift # "$1"
+      done
+      ;;
+    esac
+    "$@" -M | sed 's:^[^:]*\:[ 	]*:'"$object"'\: :' > "$tmpdepfile") &
   proc=$!
   "$@"
   rm -f "$depfile" 
-  echo "$object : \\" > "$depfile"
   wait "$proc"
-  sed 's/^[^:]*: / /' < "$tmpdepfile" >> "$depfile"
+  cat < "$tmpdepfile" >> "$depfile"
   tr ' ' '
 ' < "$tmpdepfile" | \
     sed -e 's/^\\$//' -e '/^$/d' -e '/:$/d' -e 's/$/ :/' >> "$depfile"
