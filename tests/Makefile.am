@@ -10,6 +10,7 @@ aclocali1.test \
 aclocalii.test \
 acoutnoq.test \
 acoutput.test \
+acoutput2.test \
 acoutqnl.test \
 acouttbs.test \
 acsilent.test \
