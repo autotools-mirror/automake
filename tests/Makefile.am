@@ -92,6 +92,7 @@ defun2.test \
 dejagnu.test \
 depacl.test \
 depacl2.test \
+depcomp.test \
 depend.test \
 depend3.test \
 discover.test \
@@ -214,6 +215,7 @@ prefix.test \
 primary.test \
 primary2.test \
 proginst.test \
+python.test \
 ranlib.test \
 recurs.test \
 recurs2.test \

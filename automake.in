@@ -364,6 +364,7 @@ my $ac_output_line = 0;
 # can be set by AC_CONFIG_AUX_DIR.
 my @config_aux_path = ('.', '..', '../..');
 my $config_aux_dir = '';
+my $config_aux_dir_set_in_configure_in = 0;
 
 # Whether AM_GNU_GETTEXT has been seen in configure.ac.
 my $seen_gettext = 0;
@@ -400,7 +401,7 @@ my $package_version_line = 0;
 # TRUE if we've seen AM_PATH_LISPDIR.
 my $seen_lispdir = 0;
 
-# TRUE if we've seen AM_CHECK_PYTHON.
+# TRUE if we've seen AM_PATH_PYTHON.
 my $seen_pythondir = 0;
 
 # TRUE if we've seen AC_EXEEXT.
@@ -1447,23 +1448,8 @@ sub handle_languages
 	# be empty.
 	if (&saw_sources_p (0) && keys %dep_files)
 	{
-	    my $config_aux_dir_specified = ($config_aux_dir ne '.'
-					    && $config_aux_dir ne '');
-
-	    # Set $require_file_found{'depcomp'} if the depcomp file exists,
-	    # before calling require_config_file on `depcomp'.  This makes
-	    # require_file_internal skip its buggy existence test that would
-	    # make automake fail (with `required file `lib/depcomp' not found')
-	    # when AC_CONFIG_AUX_DIR is not set.  See tests/subdir4.test.
-	    my $depcomp_dir = ($config_aux_dir_specified ? $config_aux_dir
-			       : '.');
-	    $require_file_found{'depcomp'} = 1 if -f "$depcomp_dir/depcomp";
-
 	    # Set location of depcomp.
-	    my $prefix = ($config_aux_dir_specified ? $config_aux_dir
-			  : '$(top_srcdir)');
-
-	    &define_variable ('depcomp', "\$(SHELL) $prefix/depcomp");
+	    &define_variable ('depcomp', "\$(SHELL) $config_aux_dir/depcomp");
 
 	    &require_config_file ($FOREIGN, 'depcomp');
 
@@ -2859,14 +2845,14 @@ sub handle_texinfo
 					  'mdate-sh');
 
 	    my $conf_dir;
-	    if ($config_aux_dir eq '.' || $config_aux_dir eq '')
-	    {
-		$conf_dir = '$(srcdir)/';
-	    }
-	    else
+	    if ($config_aux_dir_set_in_configure_in)
 	    {
 		$conf_dir = $config_aux_dir;
 		$conf_dir .= '/' unless $conf_dir =~ /\/$/;
+	    }
+	    else
+	    {
+		$conf_dir = '$(srcdir)/';
 	    }
 	    $output_rules .= &file_contents ('texi-vers',
 					     ('TEXI'  => $info_cursor,
@@ -2909,7 +2895,7 @@ sub handle_texinfo
 	&define_variable ('TEXINFO_TEX', "$texinfodir/texinfo.tex");
 
     }
-    elsif ($config_aux_dir ne '.' && $config_aux_dir ne '')
+    elsif ($config_aux_dir_set_in_configure_in)
     {
         $texinfodir = $config_aux_dir;
 	&define_variable ('TEXINFO_TEX', "$texinfodir/texinfo.tex");
@@ -3580,16 +3566,8 @@ sub handle_configure
     }
 
     # Set location of mkinstalldirs.
-    if ($config_aux_dir ne '.' && $config_aux_dir ne '')
-    {
-	&define_variable ('mkinstalldirs', ('$(SHELL) ' . $config_aux_dir
-					    . '/mkinstalldirs'));
-    }
-    else
-    {
-	&define_variable ('mkinstalldirs',
-			  '$(SHELL) $(top_srcdir)/mkinstalldirs');
-    }
+    &define_variable ('mkinstalldirs',
+		      ('$(SHELL) ' . $config_aux_dir . '/mkinstalldirs'));
 
     &am_line_error ('CONFIG_HEADER',
 		    "`CONFIG_HEADER' is an anachronism; now determined from `$configure_ac'")
@@ -4123,10 +4101,11 @@ sub handle_python
     return if ! @pyfiles;
 
     # Found some python.
-    &am_error ("`python_PYTHON' defined but `AM_CHECK_PYTHON' not in `$configure_ac'")
+    &am_error ("`python_PYTHON' defined but `AM_PATH_PYTHON' not in `$configure_ac'")
 	if ! $seen_pythondir && &variable_defined ('python_PYTHON');
 
-    &require_file_with_conf_line ('AM_CHECK_PYTHON', $FOREIGN, 'py_comp');
+    &require_file_with_conf_line ('AM_PATH_PYTHON', $FOREIGN, 'py-compile');
+    &define_variable ('py_compile', $config_aux_dir . '/py-compile');
 }
 
 # Handle Java.
@@ -4451,6 +4430,7 @@ sub scan_one_autoconf_file
 	if (/$AC_CONFIG_AUX_DIR_PATTERN/o)
 	{
 	    @config_aux_path = &unquote_m4_arg ($1);
+	    $config_aux_dir_set_in_configure_in = 1;
 	}
 
 	# Check for ansi2knr.
@@ -5024,7 +5004,7 @@ sub yacc_lex_finish_helper
     # allow parallel builds to work correctly.  FIXME: for now, no
     # line number.
     &require_config_file ($FOREIGN, 'ylwrap');
-    if ($config_aux_dir ne '.' && $config_aux_dir ne '')
+    if ($config_aux_dir_set_in_configure_in)
     {
 	&define_variable ('YLWRAP', $config_aux_dir . "/ylwrap");
     }
@@ -7314,8 +7294,7 @@ sub maybe_push_required_file
 {
     my ($dir, $file, $fullfile) = @_;
 
-    # FIXME: Once again, special-case `.'.
-    if ($dir eq $relative_dir || $dir eq '.')
+    if ($dir eq $relative_dir)
     {
 	&push_dist_common ($file);
     }
@@ -7356,16 +7335,8 @@ sub require_file_internal
 	my $dangling_sym = 0;
 	foreach my $dir (@require_file_paths)
 	{
-	    if ($dir eq '.')
-	    {
-		$fullfile = $relative_dir . "/" . $file;
-		$errdir = $relative_dir unless $errdir;
-	    }
-	    else
-	    {
-		$fullfile = $dir . "/" . $file;
-		$errdir = $dir unless $errdir;
-	    }
+	    $fullfile = $dir . "/" . $file;
+	    $errdir = $dir unless $errdir;
 
 	    # Use different name for "error filename".  Otherwise on
 	    # an error the bad file will be reported as eg
@@ -7396,7 +7367,7 @@ sub require_file_internal
 	{
 	    if ($strictness >= $mystrict)
 	    {
-		if ($dangling_sym && ($force_missing || $add_missing))
+		if ($dangling_sym && $add_missing)
 		{
 		    unlink ($fullfile);
 		}
@@ -7449,6 +7420,9 @@ sub require_file_internal
 
 		    &maybe_push_required_file (dirname ($errfile),
 					       $file, $errfile);
+
+		    # Prune the path list.
+		    @require_file_paths = &dirname ($errfile);
 		}
 
 		if ($suppress)
@@ -7486,19 +7460,19 @@ sub require_file_internal
 # configure.ac, not the current Makefile.am.
 sub require_file_with_conf_line
 {
-    @require_file_paths = '.';
+    @require_file_paths = $relative_dir;
     &require_file_internal (1, @_);
 }
 
 sub require_file_with_line
 {
-    @require_file_paths = '.';
+    @require_file_paths = $relative_dir;
     &require_file_internal (0, @_);
 }
 
 sub require_file
 {
-    @require_file_paths = '.';
+    @require_file_paths = $relative_dir;
     &require_file_internal (0, '', @_);
 }
 
@@ -7510,14 +7484,8 @@ sub require_config_file
     &require_file_internal (1, '', @_);
     my $dir = $require_file_paths[0];
     @config_aux_path = @require_file_paths;
-    if ($dir eq '.')
-    {
-	$config_aux_dir = '.';
-    }
-    else
-    {
-	$config_aux_dir = '$(top_srcdir)/' . $dir;
-    }
+     # Avoid unsightly '/.'s.
+    $config_aux_dir = '$(top_srcdir)' . ($dir eq '.' ? "" : "/$dir");
 }
 
 # Assumes that the line number is in Makefile.am.
@@ -7527,14 +7495,8 @@ sub require_conf_file_with_line
     &require_file_internal (0, @_);
     my $dir = $require_file_paths[0];
     @config_aux_path = @require_file_paths;
-    if ($dir eq '.')
-    {
-	$config_aux_dir = '.';
-    }
-    else
-    {
-	$config_aux_dir = '$(top_srcdir)/' . $dir;
-    }
+     # Avoid unsightly '/.'s.
+    $config_aux_dir = '$(top_srcdir)' . ($dir eq '.' ? "" : "/$dir");
 }
 
 # Assumes that the line number is in configure.ac.
@@ -7544,14 +7506,8 @@ sub require_conf_file_with_conf_line
     &require_file_internal (1, @_);
     my $dir = $require_file_paths[0];
     @config_aux_path = @require_file_paths;
-    if ($dir eq '.')
-    {
-	$config_aux_dir = '.';
-    }
-    else
-    {
-	$config_aux_dir = '$(top_srcdir)/' . $dir;
-    }
+    # avoid unsightly '/.'s.
+    $config_aux_dir = '$(top_srcdir)' . ($dir eq '.' ? "" : "/$dir");
 }
 
 ################################################################
