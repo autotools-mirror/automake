@@ -3148,7 +3148,7 @@ sub add_depend2
 			 'COMPILE'   => $compile,
 			 'LTCOMPILE' => $ltcompile);
 
-	foreach my $ext (&lang_extensions ($lang->name))
+	foreach my $ext (grep ($extension_seen{$_}, @{$lang->extensions}))
 	{
 	    $output_rules .= (&file_contents ('depend2',
 					      (%transform,
@@ -5233,17 +5233,6 @@ sub lang_java_finish
     }
 }
 
-# A helper which computes a sorted list of all extensions for LANG.
-sub lang_extensions
-{
-    my ($lang) = @_;
-    my @r;
-    foreach my $key (sort keys %extension_seen)
-    {
-	push (@r, '.' . $key) if $extension_map{$key} eq $lang;
-    }
-    return @r;
-}
 
 # A helper which decides whether libtool is needed.  Returns prefix
 # for compiler and linker.
@@ -5297,8 +5286,8 @@ sub saw_sources_p
     }
     else
     {
-	my @exts = &lang_extensions ('header');
-	$headers = @exts;
+	$headers = grep ($extension_seen{$_},
+			 @{$languages{'header'}->extensions});
     }
 
     return scalar keys %extension_seen > $headers;
