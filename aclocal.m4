@@ -1,4 +1,4 @@
-# generated automatically by aclocal 1.6c -*- Autoconf -*-
+# generated automatically by aclocal  -*- Autoconf -*-
 
 # Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002
 # Free Software Foundation, Inc.

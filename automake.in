@@ -869,16 +869,16 @@ register_channel 'automake', type => 'fatal', backtrace => 1,
 	     "####################\n"),
   footer => "\nPlease contact <bug-automake\@gnu.org>.";
 
-# Warnings about unsupported (or mis-supported) features.
-register_channel 'unsupported', type => 'warning';
-# Unused variables.
-register_channel 'unused', type => 'warning';
+# Warnings related to GNU Coding Standards.
+register_channel 'gnu', type => 'warning';
 # Warnings about obsolete features (silent by default).
 register_channel 'obsolete', type => 'warning', silent => 1;
 # Warnings about non-portable constructs.
 register_channel 'portability', type => 'warning', silent => 1;
-# Warnings related to GNU Coding Standards.
-register_channel 'gnu', type => 'warning';
+# Weird syntax, unused variables, typos...
+register_channel 'syntax', type => 'warning';
+# Warnings about unsupported (or mis-supported) features.
+register_channel 'unsupported', type => 'warning';
 
 # For &verb.
 register_channel 'verb', type => 'debug', silent => 1;
@@ -3440,7 +3440,7 @@ sub check_typos ()
       foreach my $primary ('_SOURCES', '_LIBADD', '_LDADD', '_LDFLAGS',
 			   '_DEPENDENCIES')
 	{
-	  msg_var 'unused', $varname, "unused variable: `$varname'"
+	  msg_var 'syntax', $varname, "unused variable: `$varname'"
 	    # Note that a configure variable is always legitimate.
 	    if ($varname =~ /$primary$/ && ! $content_seen{$varname}
 		&& ! exists $configure_vars{$varname});
@@ -6519,7 +6519,8 @@ sub variable_defined ($;$)
 		# to create rules for things like `bin_PROGRAMS = LDADD'.
 		if ($target_owner{$var}{$tcond} == TARGET_USER)
 		  {
-		    err_cond_target ($tcond, $var, "`$var' is a target; "
+		    msg_cond_target ('syntax', $tcond, $var,
+				     "`$var' is a target; "
 				     . "expected a variable");
 		    return 0;
 		  }
@@ -8969,9 +8970,9 @@ Library files:
 Warning categories include:
   `gnu'           GNU coding standards (default in gnu and gnits modes)
   `obsolete'      obsolete features or constructions
-  `unsupported'   unsupported or incomplete features (default)
-  `unused'        unused variables (default)
   `portability'   portability issues
+  `syntax'        dubious syntactic constructs (default)
+  `unsupported'   unsupported or incomplete features (default)
   `all'           all the warnings
   `no-CATEGORY'   turn off warnings in CATEGORY
   `none'          turn off all the warnings
