@@ -1080,6 +1080,20 @@ sub accept_extensions (@)
 	'(?:' . join ('|', map (quotemeta, @known_extensions_list)) . ')';
 }
 
+# var_SUFFIXES_trigger ($TYPE, $VALUE)
+# ------------------------------------
+# This is called automagically by define_macro() when SUFFIXES
+# is defined ($TYPE eq '') or appended ($TYPE eq '+').
+# The work here needs to be performed as a side-effect of the
+# define_macro() call because SUFFIXES definitions impact
+# on $KNOWN_EXTENSIONS_PATTERN, and $KNOWN_EXTENSIONS_PATTERN
+# are used when parsing the input am file.
+sub var_SUFFIXES_trigger ($$)
+{
+    my ($type, $value) = @_;
+    accept_extensions (split (' ', $value));
+}
+
 ################################################################
 
 # Parse command line.
@@ -5777,6 +5791,13 @@ sub macro_define ($$$$$$)
     {
       $var_is_am{$var} = $var_is_am;
     }
+
+  # Call var_VAR_trigger if it's defined.
+  # This hook helps to update some internal state *while*
+  # parsing the file.  For instance the handling of SUFFIXES
+  # requires this (see var_SUFFIXES_trigger).
+  my $var_trigger = "var_${var}_trigger";
+  &$var_trigger($type, $value) if defined &$var_trigger;
 }
 
 
@@ -6590,13 +6611,24 @@ sub rule_define ($$$$)
 
 
   # Check the rule for being a suffix rule. If so, store in a hash.
-
-  if ((my ($source_suffix, $object_suffix)) = ($target =~ $SUFFIX_RULE_PATTERN))
+  # Either it's a rule for two known extensions...
+  if ($target =~ /^($KNOWN_EXTENSIONS_PATTERN)($KNOWN_EXTENSIONS_PATTERN)$/)
   {
-      $suffix_rules{$source_suffix} = $object_suffix;
-      verbose "Sources ending in $source_suffix become $object_suffix";
-      # Set SUFFIXES from suffix_rules.
-      push @suffixes, $source_suffix, $object_suffix;
+      $suffix_rules{$1} = $2;
+      verbose "Sources ending in $1 become $2";
+      push @suffixes, $1, $2;
+  }
+  # ...or it's a rule with unknown extensions (.i.e, the rule looks like
+  # `.foo.bar:' but `.foo' or `.bar' are not declared in SUFFIXES
+  # and are not known language extensions).
+  # Automake will complete SUFFIXES from @suffixes automatically
+  # (see handle_footer).
+  elsif ($target =~ /$SUFFIX_RULE_PATTERN/o)
+  {
+      $suffix_rules{$1} = $2;
+      verbose "Sources ending in $1 become $2";
+      push @suffixes, $1, $2;
+      accept_extensions($1);
   }
 
   return 1;
