@@ -2,7 +2,7 @@
 
 ## Makefile for Automake m4.
 
-## Copyright (C) 1996, 1997, 1998, 1999, 2001, 2002, 2003
+## Copyright (C) 1996, 1997, 1998, 1999, 2001, 2002, 2003, 2004
 ## Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
@@ -69,5 +69,5 @@ $(top_srcdir)/m4/amversion.m4: $(srcdir)/amversion.in
 	    -e 's,[@]APIVERSION[@],$(APIVERSION),g' \
 	    -e "s,[@]configure_input[@],Generated from amversion.in; do not edit by hand.,g" \
 	    $(srcdir)/amversion.in > $@t
-	chmod -w $@t
+	chmod a-w $@t
 	mv -f $@t $@

@@ -2,7 +2,7 @@
 
 ## Makefile for Automake.
 
-## Copyright (C) 1995, 1996, 1997, 1998, 1999, 2001, 2002, 2003
+## Copyright (C) 1995, 1996, 1997, 1998, 1999, 2001, 2002, 2003, 2004
 ## Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
@@ -69,19 +69,19 @@ do_subst = sed \
 
 ## These files depend on Makefile so they are rebuilt if $(VERSION),
 ## $(datadir) or other do_subst'ituted variables change.
-## Use chmod -w to prevent people from editing the wrong file by accident.
+## Use chmod a-w to prevent people from editing the wrong file by accident.
 automake: automake.in Makefile
 	rm -f $@ $@.tmp
 	$(do_subst) $(srcdir)/automake.in >$@.tmp
 	chmod +x $@.tmp
-	chmod -w $@.tmp
+	chmod a-w $@.tmp
 	mv -f $@.tmp $@
 
 aclocal: aclocal.in Makefile
 	rm -f $@ $@.tmp
 	$(do_subst) $(srcdir)/aclocal.in >$@.tmp
 	chmod +x $@.tmp
-	chmod -w $@.tmp
+	chmod a-w $@.tmp
 	mv -f $@.tmp $@
 
 ## The master location for INSTALL is lib/INSTALL.
