@@ -156,7 +156,6 @@ include.test \
 info.test \
 insh.test \
 insh2.test \
-install.test \
 install2.test \
 installsh.test \
 instdata.test \
@@ -219,7 +218,6 @@ nolink.test \
 nostdinc.test \
 number.test \
 obsolete.test \
-obsolete2.test \
 order.test \
 outdir.test \
 output.test \
