@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1999, 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 1998, 1999, 2001, 2002  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -18,27 +18,37 @@
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-# Test to make sure extensions are set correctly for various languages.
+# Test to make sure rules to invoke all compilers are selected with
+# mixed source objects.
+# (copied from compile_f_c_cxx.test) Mike Nolta <mrnolta@princeton.edu>
 
 . ./defs || exit 1
 
 cat >> configure.in << 'END'
-AC_PROG_F77
+AC_PROG_CC
+AC_PROG_CXX
 AC_PROG_FC
-_AM_DEPENDENCIES(OBJC)
-AC_SUBST(OBJC)
+AC_FC_LIBRARY_LDFLAGS
 END
 
 cat > Makefile.am << 'END'
 bin_PROGRAMS = foo
-foo_SOURCES = 1.f 2.for 3.f90 4.F 5.r 6.m
+foo_SOURCES  = foo.f90 bar.c baz.cc
+foo_LDADD    = @FLIBS@
 END
+
+: > foo.f90
+: > bar.c
+: > baz.cc
 
 $ACLOCAL || exit 1
 $AUTOMAKE || exit 1
 
-for ext in f for f90 F r m
-do
-   grep "^$ext\.o:" Makefile.in && exit 1
-done
+
+# Look for the macros at the beginning of rules.  Be careful, as there
+# are literal tabs at the beginning of the search strings.
+grep '	\$(COMPILE)'     Makefile.in  || exit 1
+grep '	\$(CXXCOMPILE)'  Makefile.in  || exit 1
+grep '	\$(FCCOMPILE)'  Makefile.in  || exit 1
+
 exit 0
