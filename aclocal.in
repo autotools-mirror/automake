@@ -62,6 +62,12 @@ my @system_includes = ('@datadir@/aclocal');
 # Whether we should copy M4 file in $user_includes[0].
 my $install = 0;
 
+# --diff
+my @diff_command;
+
+# --dry-run
+my $dry_run = 0;
+
 # configure.ac or configure.in.
 my $configure_ac;
 
@@ -170,18 +176,34 @@ sub reset_maps ()
 sub install_file ($$)
 {
   my ($src, $dest) = @_;
+  my $diff_dest = $dest;
 
   if ($force_output
       || !exists $file_contents{$dest}
       || $file_contents{$src} ne $file_contents{$dest})
     {
-      if (system ('cp', $src, $dest))
+      if (-e $dest)
 	{
-	  error ("error while copying `$src' to `$dest'");
+	  msg 'note', "overwriting `$dest' with `$src'";
 	}
       else
 	{
-	  msg 'note', "installing `$dest'";
+	  msg 'note', "installing `$dest' from `$src'";
+	  $diff_dest = '/dev/null';
+	}
+
+      if (@diff_command)
+	{
+	  my @cmd = (@diff_command, $diff_dest, $src);
+	  $! = 0;
+	  verb "running: @cmd";
+	  my $res = system (@cmd);
+	  Automake::FileUtils::handle_exec_errors "@cmd", 1
+	    if $res;
+	}
+      elsif (!$dry_run)
+	{
+	  xsystem ('cp', $src, $dest);
 	}
     }
 }
@@ -742,8 +764,11 @@ $output";
 
   verb "writing $output_file";
 
-  my $out = new Automake::XFile "> $output_file";
-  print $out $output;
+  if (!$dry_run)
+    {
+      my $out = new Automake::XFile "> $output_file";
+      print $out $output;
+    }
   return 1;
 }
 
@@ -760,6 +785,9 @@ Generate `aclocal.m4' by scanning `configure.ac' or `configure.in'
 
 Options:
       --acdir=DIR           directory holding config files (for debugging)
+      --diff[=COMMAND]      run COMMAND [diff -u] on M4 files that would be
+                              changed (implies --install and --dry-run)
+      --dry-run             pretend to, but do not actually update any file
       --force               always update output file
       --help                print this help, then exit
   -I DIR                    add directory to search list for .m4 files
@@ -802,6 +830,7 @@ EOF
 sub parse_arguments ()
 {
   my $print_and_exit = 0;
+  my $diff_command;
 
   my %cli_options =
     (
@@ -811,6 +840,8 @@ sub parse_arguments ()
 			       @automake_includes = ();
 			       @system_includes = ($_[1])
 			     },
+     'diff:s'		=> \$diff_command,
+     'dry-run'		=> \$dry_run,
      'force'		=> \$force_output,
      'I=s'		=> \@user_includes,
      'install'          => \$install,
@@ -875,6 +906,14 @@ sub parse_arguments ()
       exit 0;
     }
 
+  if (defined $diff_command)
+    {
+      $diff_command = 'diff -u' if $diff_command eq '';
+      @diff_command = split (' ', $diff_command);
+      $install = 1;
+      $dry_run = 1;
+    }
+
   if ($install && !@user_includes)
     {
       fatal ("--install should copy macros in the directory indicated by the"
@@ -934,6 +973,7 @@ while (1)
     last if $exit_code;
     my %macro_traced = trace_used_macros;
     last if write_aclocal ($output_file, keys %macro_traced);
+    last if $dry_run;
   }
 check_acinclude;
 
