@@ -1389,6 +1389,19 @@ sub handle_languages
 			 'LIBTOOL' => $seen_libtool,
 			 'AMDEP'   => $use_dependencies ? 'AMDEP' : 'FALSE');
 
+	my $outarg = $lang->output_arg;
+	my $ltoutarg = '';
+	if ($lang->flags eq 'CFLAGS')
+	  {
+	    # C compilers don't always support -c -o.
+	    if (defined $options{'subdir-objects'})
+	      {
+		$outarg .= ' -o $@';
+	      }
+	    # We can always use -c -o with libtool.
+	    $ltoutarg = ' -o $@';
+	  }
+
 	# Generate the appropriate rules for this extension.  If
 	# dependency tracking was requested, and this extension
 	# supports it, then we don't generate the rule here.
@@ -1396,40 +1409,22 @@ sub handle_languages
 	  {
 	    my $compile = '$(' . $pfx . 'COMPILE)';
 	    my $ltcompile = '$(LT' . $pfx . 'COMPILE)';
-	    my %transform = (%transform,
-			     'GENERIC'   => 1,
-			     'BASE'      => '$*',
-			     'SOURCE'    => '$<',
-			     'OBJ'       => '$@',
-			     'LTOBJ'     => '$@',
-			     'OBJOBJ'    => '$@',
-			     'COMPILE'   => $compile,
-			     'LTCOMPILE' => $ltcompile);
 
-	    foreach my $ext (grep ($extension_seen{$_},
-				   @{$lang->extensions}))
-	      {
-		$output_rules .= (&file_contents ('depend2',
-						  (%transform,
-						   'EXT' => $ext))
-				  . "\n");
-	      }
+	    $output_rules .= (&file_contents ('depend2',
+					      (%transform,
+					       'GENERIC'   => 1,
+					       'BASE'      => '$*',
+					       'SOURCE'    => '$<',
+					       'OBJ'       => '$@',
+					       'LTOBJ'     => '$@',
+					       'OBJOBJ'    => '$@',
+					       'COMPILE'   => $compile,
+					       'LTCOMPILE' => $ltcompile,
+					       'EXT'       => $ext))
+			      . "\n");
 	  }
 	elsif (defined $lang->compile)
 	  {
-	    my $outarg = $lang->output_arg;
-	    my $ltoutarg = '';
-	    if ($lang->flags eq 'CFLAGS')
-	      {
-		# C compilers don't always support -c -o.
-		if (defined $options{'subdir-objects'})
-		  {
-		    $outarg .= ' -o $@';
-		  }
-		# We can always use -c -o with libtool.
-		$ltoutarg = ' -o $@';
-	      }
-
 	    $output_rules .= file_contents ('ext-compile',
 					    ('EXT'      => $ext,
 					     'COMPILER' => $lang->compiler,
