@@ -67,7 +67,7 @@ gcc)
     rm -f "$tmpdepfile"
     exit $stat
   fi
-  rm -f "$depfile" 
+  rm -f "$depfile"
   echo "$object : \\" > "$depfile"
   alpha=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
 ## The second -e expression handles DOS-style file names with drive letters.
@@ -124,7 +124,7 @@ sgi)
     rm -f "$tmpdepfile"
     exit $stat
   fi
-  rm -f "$depfile" 
+  rm -f "$depfile"
 
   if test -f "$tmpdepfile"; then  # yes, the sourcefile depend on other files
     echo "$object : \\" > "$depfile"
@@ -185,7 +185,7 @@ dashmstdout)
   stat=$?
   wait "$proc"
   if test "$stat" != 0; then exit $stat; fi
-  rm -f "$depfile" 
+  rm -f "$depfile"
   cat < "$tmpdepfile" > "$depfile"
   tr ' ' '
 ' < "$tmpdepfile" | \
@@ -229,7 +229,7 @@ makedepend)
   stat=$?
   wait "$proc"
   if test "$stat" != 0; then exit $stat; fi
-  rm -f "$depfile" 
+  rm -f "$depfile"
   cat < "$tmpdepfile" > "$depfile"
   tail +3 "$tmpdepfile" | tr ' ' '
 ' | \
@@ -272,6 +272,44 @@ cpp)
   rm -f "$depfile"
   cat < "$tmpdepfile" > "$depfile"
   sed < "$tmpdepfile" -e 's/^[^:]*: //' -e 's/$/ :/' >> "$depfile"
+  rm -f "$tmpdepfile"
+  ;;
+
+msvisualcpp)
+  # Important note: in order to support this mode, a compiler *must*
+  # always write the proprocessed file to stdout, regardless of -o,
+  # because we must use -o when running libtool.
+  ( IFS=" "
+    case " $* " in
+    *" --mode=compile "*)
+      for arg
+      do # cycle over the arguments
+        case $arg in
+	"--mode=compile")
+	  # insert --quiet before "--mode=compile"
+	  set fnord "$@" --quiet
+	  shift # fnord
+	  ;;
+	esac
+	set fnord "$@" "$arg"
+	shift # fnord
+	shift # "$arg"
+      done
+      ;;
+    esac
+    "$@" -E |
+    sed -n '/^#line [0-9][0-9]* "\([^"]*\)"/ s::echo "`cygpath -u \\"\1\\"`":p' | sort | uniq > "$tmpdepfile"
+  ) &
+  proc=$!
+  "$@"
+  stat=$?
+  wait "$proc"
+  if test "$stat" != 0; then exit $stat; fi
+  rm -f "$depfile"
+  echo "$object : \\" > "$depfile"
+  . "$tmpdepfile" | sed 's% %\\ %g' | sed -n '/^\(.*\)$/ s::	\1 \\:p' >> "$depfile"
+  echo "	" >> "$depfile"
+  . "$tmpdepfile" | sed 's% %\\ %g' | sed -n '/^\(.*\)$/ s::\1\::p' >> "$depfile"
   rm -f "$tmpdepfile"
   ;;
 
