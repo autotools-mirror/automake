@@ -6,7 +6,7 @@ eval 'exec @PERL@ -S $0 ${1+"$@"}'
     if 0;
 
 # automake - create Makefile.in from Makefile.am
-# Copyright (C) 1994, 1995, 1996, 1997, 1998 Free Software Foundation, Inc.
+# Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -1660,15 +1660,6 @@ sub handle_ltlibraries
     local ($seen_libobjs) = 0;
     foreach $onelib (@liblist)
     {
-	# Check that the library fits the standard naming convention.
-	if ($onelib !~ /.*\.la$/)
-	{
-	    # FIXME this should only be a warning for foreign packages
-	    # FIXME should put line number here.  That means mapping
-	    # from library name back to variable name.
-	    &am_error ("\`$onelib' is not a standard libtool library name");
-	}
-
 	local ($obj) = &get_object_extension ($onelib);
 
 	# Canonicalize names and check for misspellings.
@@ -1680,6 +1671,21 @@ sub handle_ltlibraries
 	{
 	    # Define the lib_LDFLAGS variable.
 	    &define_variable ($xlib . '_LDFLAGS', '');
+	}
+
+	# Check that the library fits the standard naming convention.
+    	$libname_rx = "^lib.*\.la";
+	if (&variable_value ($xlib . '_LDFLAGS') =~ /-module/) 
+	{
+		# Relax name checking for libtool modules.
+	    	$libname_rx = "\.la";
+	}
+	if ($onelib !~ /$libname_rx$/)
+	{
+	    # FIXME this should only be a warning for foreign packages
+	    # FIXME should put line number here.  That means mapping
+	    # from library name back to variable name.
+	    &am_error ("\`$onelib' is not a standard libtool library name");
 	}
 
 	if (&variable_defined ($xlib . '_LIBADD'))
