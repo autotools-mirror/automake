@@ -254,6 +254,7 @@ Frequently Asked Questions about Automake
 * renamed objects::             Why are object files sometimes renamed?
 * Per-Object Flags::            How to simulate per-object flags?
 * Multiple Outputs::            Writing rules for tools with many output files
+* Hard-Coded Install Paths::    Installing to Hard-Coded Locations
 
 History of Automake
 
@@ -1970,6 +1971,11 @@ installed in @file{$(datadir)/aclocal}.  This is as simple as writing:
 aclocaldir = $(datadir)/aclocal
 aclocal_DATA = mymacro.m4 myothermacro.m4
 @end example
+
+@noindent
+Please do use @file{$(datadir)/aclocal}, and not something based on
+the result of @code{aclocal --print-ac-dir}.  @xref{Hard-Coded Install
+Paths}, for arguments.
 
 A file of macros should be a series of properly quoted
 @code{AC_DEFUN}'s (@pxref{Macro Definitions, , , autoconf, The
@@ -5330,7 +5336,8 @@ fine in @file{Makefiles}, but it makes these variables hard to use in
 that the user can run @code{make prefix=/foo install}.  The Autoconf
 manual has a section with more details on this topic
 (@pxref{Installation Directory Variables, , Installation Directory
-Variables, autoconf, The Autoconf Manual}).
+Variables, autoconf, The Autoconf Manual}).  See also @ref{Hard-Coded
+Install Paths}.
 
 
 @node Documentation
@@ -7018,12 +7025,17 @@ The targets that support a local version are @code{all}, @code{info},
 use @code{uninstall-local}.  It doesn't make sense to uninstall just
 data or just executables.
 
-For instance, here is one way to install a file in @file{/etc}:
+For instance, here is one way to erase a subdirectory during
+@code{make clean} (@pxref{Clean}).
 
-@example
-install-data-local:
-        $(INSTALL_DATA) $(srcdir)/afile $(DESTDIR)/etc/afile
-@end example
+@smallexample
+clean-local:
+        -rm -rf testSubDir
+@end smallexample
+
+Older version of this manual used to show how to use
+@code{install-data-local} to install a file to some hard-coded
+location, but you should avoid this.  (@pxref{Hard-Coded Install Paths})
 
 @cindex @code{-hook} targets
 @cindex hook targets
@@ -7412,6 +7424,7 @@ lists.
 * renamed objects::             Why are object files sometimes renamed?
 * Per-Object Flags::            How to simulate per-object flags?
 * Multiple Outputs::            Writing rules for tools with many output files
+* Hard-Coded Install Paths::    Installing to Hard-Coded Locations
 @end menu
 
 @node CVS
@@ -8432,6 +8445,135 @@ express rules with multiple output files using pattern rules
 Manual}).  We do not discuss pattern rules here because they are not
 portable, but they can be convenient in packages that assume GNU
 @command{make}.
+
+
+@node Hard-Coded Install Paths
+@section Installing to Hard-Coded Locations
+
+@display
+My package needs to install some configuration file.  I tried to use
+the following rule, but @code{make distcheck} fails.  Why?
+
+@example
+# Do not do this.
+install-data-local:
+        $(INSTALL_DATA) $(srcdir)/afile $(DESTDIR)/etc/afile
+@end example
+@end display
+
+@display
+My package needs to populate the installation directory of another
+package at install-time.  I can easily compute that installation
+directory in @file{configure}, but if I install files therein,
+@code{make distcheck} fails.  How else should I do?
+@end display
+
+These two setups share their symptoms: @code{make distcheck} fails
+because they are installing files to hard-coded paths.  In the later
+case the path is not really hard-coded in the package, but we can
+consider it to be hard-coded in the system (or in whichever tool that
+supplies the path).  As long as the path does not use any of the
+standard directory variables (@code{$(prefix)}, @code{$(bindir)},
+@code{$(datadir)}, etc.), the effect will be the same:
+user-installations are impossible.
+
+When a (non-root) user wants to install a package, he usually has no
+right to install anything in @code{/usr} or @code{/usr/local}.  So he
+does something like @code{./configure --prefix ~/usr} to install
+package in his own @code{~/usr} tree.
+
+If a package attempts to install something to some hard-coded path
+(e.g., @file{/etc/afile}), regardless of this @code{--prefix} setting,
+then the installation will fail.  @code{make distcheck} performs such
+a @code{--prefix} installation, hence it will fail too.
+
+Now, there are some easy solutions.
+
+The above @code{install-data-local} example for installing
+@file{/etc/afile} would be better replaced by
+
+@smallexample
+sysconf_DATA = afile
+@end smallexample
+
+@noindent
+by default @code{sysconfdir} will be @code{$(prefix)/etc}, because
+this is what the GNU Standards require.  When such a package is
+installed on a FHS compliant system, the installer will have to set
+@code{--sysconfdir=/etc}.  As the maintainer of the package you
+should not be concerned by such site policies: use the appropriate
+standard directory variable to install your files so that installer
+can easily redefine these variables to match their site conventions.
+
+Installing files that should be used by another package, is slightly
+more involved.  Let's take an example and assume you want to install
+shared library that is a Python extension module.  If you ask Python
+where to install the library, it will answer something like this:
+
+@example
+% @kbd{python -c 'from distutils import sysconfig;
+             print sysconfig.get_python_lib(1,0)'}
+/usr/lib/python2.3/site-packages
+@end example
+
+If you indeed use this absolute path to install your shared library,
+non-root users will not be able to install the package, hence
+distcheck fails.
+
+Let's do better.  The @code{sysconfig.get_python_lib()} function
+actually accepts a third argument that will replace Python's
+installation prefix.
+
+@example
+% @kbd{python -c 'from distutils import sysconfig;
+             print sysconfig.get_python_lib(1,0,"$@{exec_prefix@}")'}
+$@{exec_prefix@}/lib/python2.3/site-packages
+@end example
+
+You can also use this new path.  If you do
+@itemize @bullet
+@item
+root users can install your package with the same @code{--prefix}
+as Python (you get the behavior of the previous attempt)
+
+@item
+non-root users can install your package too, they will have the
+extension module in a place that is not searched by Python but they
+can work around this using environment variables (and if you installed
+scripts that use this shared library, it's easy to tell Python were to
+look in the beginning of your script, so the script works in both
+cases).
+@end itemize
+
+The @code{AM_PATH_PYTHON} macro uses similar commands to define
+@code{$(pythondir)} and @code{$(pyexecdir)} (@pxref{Python}).
+
+Of course not all tools are as advanced as Python regarding that
+substitution of @var{prefix}.  So another strategy is to figure the
+part of the of the installation directory that must be preserved.  For
+instance here is how @code{AM_PATH_LISPDIR} (@pxref{Emacs Lisp})
+computes @code{$(lispdir)}:
+
+@example
+$EMACS -batch -q -eval '(while load-path
+                          (princ (concat (car load-path) "\n"))
+                          (setq load-path (cdr load-path)))' >conftest.out
+lispdir=`sed -n \
+  -e 's,/$,,' \
+  -e '/.*\/lib\/x*emacs\/site-lisp$/@{s,.*/lib/\(x*emacs/site-lisp\)$,$@{libdir@}/\1,;p;q;@}' \
+  -e '/.*\/share\/x*emacs\/site-lisp$/@{s,.*/share/\(x*emacs/site-lisp\),$@{datadir@}/\1,;p;q;@}' \
+  conftest.out`
+@end example
+
+I.e., it just picks the first directory that looks like
+@file{*/lib/*emacs/site-lisp} or @file{*/share/*emacs/site-lisp} in
+the search path of emacs, and then substitutes @code{$@{libdir@}} or
+@code{$@{datadir@}} appropriately.
+
+The emacs case looks complicated because it processes a list and
+expect two possible layouts, otherwise it's easy, and the benefit for
+non-root users are really worth the extra @command{sed} invocation.
+
 
 @node History
 @chapter History of Automake
