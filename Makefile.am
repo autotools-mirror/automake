@@ -68,7 +68,8 @@ do_subst = sed -e 's,[@]datadir[@],$(datadir),g' -e 's,[@]PERL[@],$(PERL),g' \
 	    -e 's,[@]configure_input[@],@configure_input@,g' \
 	    -e 's,[@]PACKAGE[@],$(PACKAGE),g' \
 	    -e 's,[@]VERSION[@],$(VERSION),g' \
-	    -e 's,[@]APIVERSION[@],$(APIVERSION),g'
+	    -e 's,[@]APIVERSION[@],$(APIVERSION),g' \
+	    -e 's,[@]SHELL[@],$(SHELL),g'
 
 automake: automake.in Makefile
 	$(do_subst) < $(srcdir)/automake.in > automake
