@@ -3,7 +3,7 @@
 # @configure_input@
 
 # aclocal - create aclocal.m4 by scanning configure.ac
-# Copyright (C) 1996, 1997, 1998, 1999, 2001 Free Software Foundation, Inc.
+# Copyright (C) 1996, 1997, 1998, 1999, 2001, 2002 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,10 +29,13 @@ eval 'exec @PERL@ -S $0 ${1+"$@"}'
 
 # Some constants.
 $VERSION = "@VERSION@";
+$APIVERSION = "@APIVERSION@";
 $PACKAGE = "@PACKAGE@";
 $prefix = "@prefix@";
 # Note that this isn't pkgdatadir, but a separate directory.
+# Note also that the versioned directory is handled later.
 $acdir = "@datadir@/aclocal";
+$default_acdir = $acdir;
 
 # Some globals.
 
@@ -106,7 +109,7 @@ $ac_require_rx = "AC_REQUIRE\\(\\[?([^])]*)\\]?\\)";
 
 
 local (@dirlist) = &parse_arguments (@ARGV);
-&scan_m4_files ($acdir, @dirlist);
+&scan_m4_files (@dirlist);
 &scan_configure;
 if (! $exit_status)
 {
@@ -194,6 +197,18 @@ sub parse_arguments
 	print $acdir, "\n";
 	exit 0;
     }
+
+    # Search the versioned directory near the end, and then the
+    # unversioned directory last.  Only do this if the user didn't
+    # override acdir.
+    push (@dirlist, "$acdir-$APIVERSION")
+	if $acdir eq $default_acdir;
+
+    # By default $(datadir)/aclocal doesn't exist.  We don't want to
+    # get an error in the case where we are searching the default
+    # directory and it hasn't been created.
+    push (@dirlist, $acdir)
+	unless $acdir eq $default_acdir && ! -d $acdir;
 
     return @dirlist;
 }

@@ -692,7 +692,7 @@ fi
 
 PACKAGE=automake
 
-VERSION=1.4-p5
+VERSION=1.4-p5a
 
 if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status; then
   { echo "configure: error: source directory already configured; run "make distclean" there first" 1>&2; exit 1; }
@@ -853,6 +853,43 @@ if test -n "`$PERL -v | fgrep 'version 5.001' 2> /dev/null`"; then
    { echo "configure: error: perl 5.001 has bug which causes automake to fail" 1>&2; exit 1; }
 fi
 
+# The API version is the base version.  We must guarantee
+# compatibility for all releases with the same API version.
+# Our current rule is that:
+# * All releases, including the prereleases, in an X.Y series
+#   are compatible.  So 1.5.1c is compatible with 1.5.
+# * Prereleases on the trunk are all incompatible -- 1.5b and 1.5c
+#   aren't the same.
+APIVERSION=`echo "$VERSION" | sed -e 's/^\([0-9]*\.[0-9]*[a-z]*\).*$/\1/'`
+
+
+# A versioned directory, defined here for convenience.
+pkgvdatadir="\${datadir}/automake-${APIVERSION}"
+
+
+# Test for ln.  We need use it to install the versioned binaries.
+echo $ac_n "checking whether ln works""... $ac_c" 1>&6
+echo "configure:873: checking whether ln works" >&5
+if eval "test \"`echo '$''{'am_cv_prog_ln'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
+rm -f conftest conftest.file
+: >conftest.file
+if ln conftest.file conftest 2>/dev/null; then
+  am_cv_prog_ln=ln
+else
+  am_cv_prog_ln='cp -p'
+fi
+rm -f conftest conftest.file
+fi
+
+LN="$am_cv_prog_ln"
+
+result=no
+test "x$am_cv_prog_ln" = xln && result=yes
+echo "$ac_t""$result" 1>&6
+
 trap '' 1 2 15
 cat > confcache <<\EOF
 # This file is a shell script that caches the results of configure
@@ -966,7 +1003,7 @@ done
 ac_given_srcdir=$srcdir
 ac_given_INSTALL="$INSTALL"
 
-trap 'rm -fr `echo "Makefile automake aclocal m4/Makefile tests/Makefile" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
+trap 'rm -fr `echo "Makefile automake aclocal m4/amversion.m4:m4/amversion.in m4/Makefile tests/Makefile" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
 EOF
 cat >> $CONFIG_STATUS <<EOF
 
@@ -1011,6 +1048,9 @@ s%@MAKEINFO@%$MAKEINFO%g
 s%@SET_MAKE@%$SET_MAKE%g
 s%@TAR@%$TAR%g
 s%@PERL@%$PERL%g
+s%@APIVERSION@%$APIVERSION%g
+s%@pkgvdatadir@%$pkgvdatadir%g
+s%@LN@%$LN%g
 
 CEOF
 EOF
@@ -1052,7 +1092,7 @@ EOF
 
 cat >> $CONFIG_STATUS <<EOF
 
-CONFIG_FILES=\${CONFIG_FILES-"Makefile automake aclocal m4/Makefile tests/Makefile"}
+CONFIG_FILES=\${CONFIG_FILES-"Makefile automake aclocal m4/amversion.m4:m4/amversion.in m4/Makefile tests/Makefile"}
 EOF
 cat >> $CONFIG_STATUS <<\EOF
 for ac_file in .. $CONFIG_FILES; do if test "x$ac_file" != x..; then

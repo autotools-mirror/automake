@@ -14,5 +14,36 @@ if test -n "`$PERL -v | fgrep 'version 5.001' 2> /dev/null`"; then
    AC_MSG_ERROR([perl 5.001 has bug which causes automake to fail])
 fi
 
-AC_OUTPUT([Makefile automake aclocal m4/Makefile tests/Makefile],
+# The API version is the base version.  We must guarantee
+# compatibility for all releases with the same API version.
+# Our current rule is that:
+# * All releases, including the prereleases, in an X.Y series
+#   are compatible.  So 1.5.1c is compatible with 1.5.
+# * Prereleases on the trunk are all incompatible -- 1.5b and 1.5c
+#   aren't the same.
+APIVERSION=`echo "$VERSION" | sed -e 's/^\([[0-9]]*\.[[0-9]]*[[a-z]]*\).*$/\1/'`
+AC_SUBST(APIVERSION)
+
+# A versioned directory, defined here for convenience.
+pkgvdatadir="\${datadir}/automake-${APIVERSION}"
+AC_SUBST(pkgvdatadir)
+
+# Test for ln.  We need use it to install the versioned binaries.
+AC_MSG_CHECKING([whether ln works])
+AC_CACHE_VAL([am_cv_prog_ln], [
+rm -f conftest conftest.file
+: >conftest.file
+if ln conftest.file conftest 2>/dev/null; then
+  am_cv_prog_ln=ln
+else
+  am_cv_prog_ln='cp -p'
+fi
+rm -f conftest conftest.file])
+LN="$am_cv_prog_ln"
+AC_SUBST([LN])
+result=no
+test "x$am_cv_prog_ln" = xln && result=yes
+AC_MSG_RESULT([$result])
+
+AC_OUTPUT([Makefile automake aclocal m4/amversion.m4:m4/amversion.in m4/Makefile tests/Makefile],
 [chmod +x automake aclocal])

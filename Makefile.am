@@ -18,12 +18,12 @@ ltlib-clean.am ltlib.am ltlibrary.am mans-vars.am mans.am multilib.am \
 program.am progs-clean.am progs.am remake-hdr.am remake.am scripts.am \
 subdirs.am tags-clean.am tags.am texi-vers.am texinfos.am
 
-pkgdata_DATA = COPYING INSTALL texinfo.tex ansi2knr.c ansi2knr.1 $(amfiles)
+pkgvdata_DATA = COPYING INSTALL texinfo.tex ansi2knr.c ansi2knr.1 $(amfiles)
 
 ## These must all be executable when installed.  However, if we use
 ## _SCRIPTS, then the program transform will be applied, which is not
 ## what we want.  So we make them executable by hand.
-scriptdir = $(pkgdatadir)
+scriptdir = $(pkgvdatadir)
 script_DATA = config.guess config.sub install-sh mdate-sh missing \
 mkinstalldirs elisp-comp ylwrap acinstall
 
@@ -32,7 +32,27 @@ install-data-hook:
 	  chmod +x $(DESTDIR)$(scriptdir)/$$prog; \
 	done
 
-EXTRA_DIST = acinstall $(pkgdata_DATA) $(script_DATA)
+## Make versioned links.  We only run the transform on the root name;
+## then we make a versioned link with the transformed base name.  This
+## seemed like the most reasonable approach.
+install-exec-hook:
+	@$(POST_INSTALL)
+	@for p in $(bin_SCRIPTS); do \
+	  f="`echo $$p|sed '$(transform)'`"; \
+	  fv="$$f-$(APIVERSION)"; \
+	  rm -f $(DESTDIR)$(bindir)/$$fv; \
+	  echo " $(LN) $(DESTDIR)$(bindir)/$$f $(DESTDIR)$(bindir)/$$fv"; \
+	  $(LN) $(DESTDIR)$(bindir)/$$f $(DESTDIR)$(bindir)/$$fv; \
+	done
+
+uninstall-hook:
+	@for p in $(bin_SCRIPTS); do \
+	  f="`echo $$p|sed '$(transform)'`"; \
+	  fv="$$f-$(APIVERSION)"; \
+	  rm -f $(DESTDIR)$(bindir)/$$fv; \
+	done
+
+EXTRA_DIST = acinstall $(pkgvdata_DATA) $(script_DATA)
 
 # The following requires a fixed version of the Emacs 19.30 etags.
 ETAGS_ARGS = automake.in aclocal.in --lang=none \
