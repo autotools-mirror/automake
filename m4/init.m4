@@ -49,13 +49,8 @@ AC_DEFINE_UNQUOTED(VERSION, "$VERSION", [Version number of package])])
 
 # Autoconf 2.50 wants to disallow AM_ names.  We explicitly allow
 # the ones we care about.
-ifdef([m4_pattern_allow], [m4_pattern_allow([AM_CFLAGS])])
-ifdef([m4_pattern_allow], [m4_pattern_allow([AM_CPPFLAGS])])
-ifdef([m4_pattern_allow], [m4_pattern_allow([AM_CXXFLAGS])])
-ifdef([m4_pattern_allow], [m4_pattern_allow([AM_OBJCFLAGS])])
-ifdef([m4_pattern_allow], [m4_pattern_allow([AM_FFLAGS])])
-ifdef([m4_pattern_allow], [m4_pattern_allow([AM_RFLAGS])])
-ifdef([m4_pattern_allow], [m4_pattern_allow([AM_GCJFLAGS])])
+ifdef([m4_pattern_allow],
+      [m4_pattern_allow([^AM_(C|CPP|CXX|OBJC|F|R|GCJ)FLAGS])])dnl
 
 # Some tools Automake needs.
 AC_REQUIRE([AM_SANITY_CHECK])dnl
