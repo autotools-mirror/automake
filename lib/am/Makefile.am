@@ -30,7 +30,7 @@ TAGS_DEPENDENCIES = automake.in aclocal.in automake.texi
 
 ## `test -x' is not portable.  So we use Perl instead.  If Perl
 ## doesn't exist, then this test is meaningless anyway.
-# Check to make sure some installed files are executable.
+	-rm -rf testSubdir
 installcheck-local:
 	for file in $(pkgdata_SCRIPTS); do \
 	  $(PERL) -e "exit ! -x '$(pkgdatadir)/$$file';" || exit 1; \
