@@ -923,8 +923,16 @@ sub handle_yacc_lex_cxx
  	{
 	    # Each _.c file must depend on ansi2knr; otherwise it
 	    # might be used in a parallel build before it is built.
- 	    $output_rules .= $base . "_.c: $base.c \$(ANSI2KNR)\n\t"
- 		. '$(ANSI2KNR) ' . $base . '.c ' . $base . "_.c\n";
+	    # We need to support files in the srcdir and in the build
+	    # dir (because these files might be auto-generated.  But
+	    # we can't use $< -- some makes only define $< during a
+	    # suffix rule.
+ 	    $output_rules .= ($base . "_.c: $base.c \$(ANSI2KNR)\n\t"
+			      . '$(ANSI2KNR) '
+			      . '`if test -f $(srcdir)/' . $base . '.c'
+			      . '; then echo $(srcdir)/' . $base . '.c'
+			      . '; else echo ' . $base . '.c; fi` '
+			      . $base . "_.c\n");
  	    push (@objects, $base . '_.o');
  	    push (@objects, $base . '_.lo') if $seen_libtool;
  	}
@@ -3952,11 +3960,10 @@ sub scan_one_configure_file
 		}
 	    }
 
-	    if ($closing)
+	    if ($closing && @make_input_list == 0 && @other_input_files == 0)
 	    {
 		&am_conf_line_error ($filename, $ac_output_line,
-				     "No files mentioned in \`AC_OUTPUT'")
-		    if @make_input_list == 0 && @other_input_files == 0;
+				     "No files mentioned in \`AC_OUTPUT'");
 		exit 1;
 	    }
 	}
