@@ -9,7 +9,7 @@ dist-subd-top.am dist-subd-vars.am dist-subd.am dist-vars.am dist.am \
 footer.am header-vars.am header.am libprograms.am libraries-vars.am \
 libraries.am library.am mans-vars.am mans.am program.am programs.am \
 remake-hdr.am remake-subd.am remake.am subdirs.am tags.am tags-subd.am \
-texinfos-vars.am texinfos.am
+texinfos-vars.am texinfos.am hack-make.sed nl-remove.sed
 
 DIST_OTHER = automake.in stamp-vti $(am_DATA)
 DIST_SUBDIRS = RCS samples
