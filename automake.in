@@ -31,6 +31,8 @@ require 5.005;
 
 use IO::File;
 
+(my $me = $0) =~ s,.*[\\/],,;
+
 # Parameters set by configure.  Not to be changed.  NOTE: assign
 # VERSION as string so that eg version 0.30 will print correctly.
 my $VERSION = "@VERSION@";
@@ -412,7 +414,7 @@ my %configure_dist_common = ();
 # Do configure.ac scan only once.
 &scan_autoconf_files;
 
-die "automake: no \`Makefile.am' found or specified\n"
+die "$me: no \`Makefile.am' found or specified\n"
     if ! @input_files;
 
 # Now do all the work on each file.
@@ -441,7 +443,7 @@ exit $exit_status;
 # Signal a programming error, display PRINT-ME, and exit 1.
 sub prog_error (@)
 {
-    print STDERR "automake: programming error: @_\n";
+    print STDERR "$me: programming error: @_\n";
     exit 1;
 }
 
@@ -569,7 +571,7 @@ sub parse_arguments ()
 	  # automake input file is found.  Maybe not the best way, but
 	  # it is easy to explain.
 	  $input =~ s/\.in$//
-	    or die "automake: invalid input file name \`$arg'\n.";
+	    or die "$me: invalid input file name \`$arg'\n.";
 	}
       push (@input_files, $input);
       $output_files{$input} = join (':', ($local, @rest));
@@ -718,11 +720,11 @@ sub generate_makefile
     my $gm_file = new IO::File "> $out_file";
     if (! $gm_file)
     {
-	warn "automake: ${am_file}.in: cannot write: $!\n";
+	warn "$me: ${am_file}.in: cannot write: $!\n";
 	$exit_status = 1;
 	return;
     }
-    print "automake: creating ", $makefile, ".in\n" if $verbose;
+    print "$me: creating ", $makefile, ".in\n" if $verbose;
 
     # In case we're running under MSWindows, don't write with CRLF
     # (as it causes problems for the dependency-file extraction in
@@ -738,7 +740,7 @@ sub generate_makefile
 
     if (! $gm_file->close)
       {
-	warn "automake: $am_file.in: cannot close: $!\n";
+	warn "$me: $am_file.in: cannot close: $!\n";
 	$exit_status = 1;
 	return;
       }
@@ -2177,7 +2179,7 @@ sub scan_texinfo_file
 	&am_error ("couldn't open \`$filename': $!");
 	return '';
     }
-    print "automake: reading $filename\n" if $verbose;
+    print "$me: reading $filename\n" if $verbose;
 
     my ($outfile, $vfile);
     while ($_ = $texi->getline)
@@ -4035,9 +4037,9 @@ sub scan_autoconf_traces
     my $tracefh = new IO::File ("$traces |");
     if (! $tracefh)
     {
-	die "automake: couldn't open \`$traces': $!\n";
+	die "$me: couldn't open \`$traces': $!\n";
     }
-    print "automake: reading $traces\n" if $verbose;
+    print "$me: reading $traces\n" if $verbose;
 
     while ($_ = $tracefh->getline)
     {
@@ -4075,7 +4077,7 @@ sub scan_autoconf_traces
     }
 
     $tracefh->close
-	|| die "automake: close: $traces: $!\n";
+	|| die "$me: close: $traces: $!\n";
 }
 
 
@@ -4090,9 +4092,9 @@ sub scan_one_autoconf_file
     my $configfh = new IO::File ("< $filename");
     if (! $configfh)
     {
-	die "automake: couldn't open \`$filename': $!\n";
+	die "$me: couldn't open \`$filename': $!\n";
     }
-    print "automake: reading $filename\n" if $verbose;
+    print "$me: reading $filename\n" if $verbose;
 
     my ($in_ac_output, $in_ac_replace) = (0, 0);
     while ($_ = $configfh->getline)
@@ -4432,14 +4434,14 @@ sub scan_autoconf_files
     local %make_list;
     local @make_input_list;
 
-    warn "automake: both \`configure.ac' and \`configure.in' present:"
+    warn "$me: both \`configure.ac' and \`configure.in' present:"
          . " ignoring \`configure.in'\n"
         if -f 'configure.ac' && -f 'configure.in';
     $configure_ac = 'configure.in'
         if -f 'configure.in';
     $configure_ac = 'configure.ac'
         if -f 'configure.ac';
-    die "automake: \`configure.ac' or \`configure.in' is required\n"
+    die "$me: \`configure.ac' or \`configure.in' is required\n"
         if !$configure_ac;
 
     &scan_one_autoconf_file ($configure_ac);
@@ -4448,8 +4450,8 @@ sub scan_autoconf_files
 
     if (defined $ENV{'amtraces'})
     {
-        warn 'automake: Autoconf traces is an experimental feature';
-        warn 'automake: use at your own risks';
+        warn '$me: Autoconf traces is an experimental feature';
+        warn '$me: use at your own risks';
 
         &scan_autoconf_traces ($configure_ac);
     }
@@ -5886,9 +5888,9 @@ sub read_am_file
     my $am_file = new IO::File ("< $amfile");
     if (! $am_file)
     {
-	die "automake: couldn't open \`$amfile': $!\n";
+	die "$me: couldn't open \`$amfile': $!\n";
     }
-    print "automake: reading $amfile\n" if $verbose;
+    print "$me: reading $amfile\n" if $verbose;
 
     my $spacing = '';
     my $comment = '';
@@ -6626,10 +6628,10 @@ sub file_contents
     my $fc_file = new IO::File ("< $file");
     if (! $fc_file)
     {
-	die "automake: installation error: cannot open \`$file'\n";
+	die "$me: installation error: cannot open \`$file'\n";
     }
     # Looks stupid?
-    # print "automake: reading $file\n" if $verbose;
+    # print "$me: reading $file\n" if $verbose;
 
     # Swallow into $CONTENTS the whole content of the file, after
     # having performed the $COMMAND, and removed Automake comments.
@@ -7462,7 +7464,7 @@ sub set_strictness
     }
     else
     {
-	die "automake: level \`$strictness_name' not recognized\n";
+	die "$me: level \`$strictness_name' not recognized\n";
     }
 }
 
@@ -7521,7 +7523,7 @@ sub unquote_m4_arg
 # Print an error message and set exit status.
 sub am_error
 {
-    warn "automake: ${am_file}.am: @_\n";
+    warn "$me: ${am_file}.am: @_\n";
     $exit_status = 1;
 }
 
@@ -7578,7 +7580,7 @@ sub am_line_error
 sub am_conf_error
 {
     # FIXME: can run in subdirs.
-    warn "automake: $configure_ac: @_\n";
+    warn "$me: $configure_ac: @_\n";
     $exit_status = 1;
 }
 
@@ -7611,7 +7613,7 @@ sub am_conf_line_warning
 sub keyed_aclocal_warning
 {
     my ($key) = @_;
-    warn "automake: macro \`$key' can be generated by \`aclocal'\n";
+    warn "$me: macro \`$key' can be generated by \`aclocal'\n";
 }
 
 # Print usage information.
@@ -7620,7 +7622,7 @@ sub usage
     print <<EOF;
 Usage: automake [OPTION] ... [Makefile]...
 
-Generate Makefile.in for configure from Makefile.am
+Generate Makefile.in for configure from Makefile.am.
 
 Operation modes:
       --help             print this help, then exit
