@@ -2,7 +2,8 @@
 
 AUTOMAKE_OPTIONS = gnits
 
-XFAIL_TESTS = yaccvpath.test
+XFAIL_TESTS = cond3.test yaccvpath.test
+
 TESTS =	\
 acinclude.test \
 aclocal.test \

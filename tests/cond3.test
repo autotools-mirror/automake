@@ -1,7 +1,7 @@
 #! /bin/sh
 
 # Test sources listed in conditional.
-# Report from Rob Savoye <rob@cygnus.com>.
+# Report from Rob Savoye <rob@cygnus.com>, and Lars J. Aas.
 
 . $srcdir/defs || exit 1
 
@@ -40,4 +40,29 @@ END
 
 $AUTOMAKE || exit 1
 
-test "`grep 'am_targ_OBJECTS =' Makefile.in | wc -l`" -eq 8
+sed -n -e '/am_targ_OBJECTS =.*\\$/ {
+   :loop
+   p
+   n
+   /\\$/ b loop
+   p
+   n
+   }' -e '/am_targ_OBJECTS =/ p' Makefile.in >produced
+
+
+cat >expected << 'EOF'
+@ONE_FALSE@@THREE_FALSE@@TWO_TRUE@am_targ_OBJECTS = two.$(OBJEXT)
+@ONE_FALSE@@THREE_FALSE@@TWO_FALSE@am_targ_OBJECTS =
+@ONE_FALSE@@THREE_TRUE@@TWO_TRUE@am_targ_OBJECTS = two.$(OBJEXT) \
+@ONE_FALSE@@THREE_TRUE@@TWO_TRUE@ three.$(OBJEXT)
+@ONE_FALSE@@THREE_TRUE@@TWO_FALSE@am_targ_OBJECTS = three.$(OBJEXT)
+@ONE_TRUE@@THREE_FALSE@@TWO_TRUE@am_targ_OBJECTS = one.$(OBJEXT) \
+@ONE_TRUE@@THREE_FALSE@@TWO_TRUE@ two.$(OBJEXT)
+@ONE_TRUE@@THREE_FALSE@@TWO_FALSE@am_targ_OBJECTS = one.$(OBJEXT)
+@ONE_TRUE@@THREE_TRUE@@TWO_TRUE@am_targ_OBJECTS = one.$(OBJEXT) \
+@ONE_TRUE@@THREE_TRUE@@TWO_TRUE@ two.$(OBJEXT) three.$(OBJEXT)
+@ONE_TRUE@@THREE_TRUE@@TWO_FALSE@am_targ_OBJECTS = one.$(OBJEXT) \
+@ONE_TRUE@@THREE_TRUE@@TWO_FALSE@ three.$(OBJEXT)
+EOF
+
+diff expected produced || exit 1
