@@ -1,0 +1,31 @@
+#! /bin/sh
+
+# Test for bug reported by Janos Farkas.
+# Multiple man pages with the same basename don't all get installed.
+
+. $srcdir/defs || exit 1
+
+cat > Makefile.am << 'END'
+man_MANS = shadow.3 shadow.5 passwd.1 passwd.5
+END
+
+: > shadow.3
+: > shadow.5
+: > passwd.1
+: > passwd.5
+
+$AUTOMAKE || exit 1
+
+: > install
+chmod +x install
+
+mkdir man1 man3 man5
+
+make -f Makefile.in mkinstalldirs=: INSTALL_DATA=cp mandir=`pwd` \
+   srcdir=`pwd` transform='' install-man \
+   || exit 1
+
+test -f man3/shadow.3 || exit 1
+test -f man5/shadow.5 || exit 1
+test -f man1/passwd.1 || exit 1
+test -f man5/passwd.5 || exit 1
