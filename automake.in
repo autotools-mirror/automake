@@ -407,7 +407,7 @@ my %configure_dist_common = ();
 
 
 # Parse command line.
-&parse_arguments (@ARGV);
+&parse_arguments;
 
 # Do configure.ac scan only once.
 &scan_autoconf_files;
@@ -525,142 +525,59 @@ sub backname ($)
 ################################################################
 
 # Parse command line.
-sub parse_arguments
+sub parse_arguments ()
 {
-    my (@arglist) = @_;
-
     # Start off as gnu.
     &set_strictness ('gnu');
 
-    while (@arglist)
+    use Getopt::Long;
+    Getopt::Long::config ("bundling");
+    Getopt::Long::GetOptions
+      (
+       'version' 	=> \&version,
+       'help'	 	=> \&usage,
+       'amdir:s' 	=> \$am_dir,
+       'gnu' 		=> sub { &set_strictness ('gnu'); },
+       'gnits' 		=> sub { &set_strictness ('gnits'); },
+       'cygnus' 	=> \$cygnus_mode,
+       'foreign' 	=> sub { &set_strictness ('foreign'); },
+       'include-deps' 	=> sub { $cmdline_use_dependencies = 1; },
+       'i|ignore-deps' 	=> sub { $cmdline_use_dependencies = 0; },
+       'no-force' 	=> sub { $force_generation = 0; },
+       'f|force-missing'=> \$force_missing,
+       'o|output-dir:s'	=> \$output_directory,
+       'a|add-missing' 	=> \$add_missing,
+       'c|copy' 	=> \$copy_missing,
+       'v|verbose' 	=> \$verbose
+      )
+	or exit 1;
+
+    foreach my $arg (@ARGV)
     {
-	if ($arglist[0] eq "--version")
+      # Handle $local:$input syntax.  Note that we only examine the
+      # first ":" file to see if it is automake input; the rest are
+      # just taken verbatim.  We still keep all the files around for
+      # dependency checking, however.
+      my ($local, $input, @rest) = split (/:/, $arg);
+      if (! $input)
 	{
-	    print "automake (GNU $PACKAGE) $VERSION\n\n";
-	    print "Copyright 2000, 2001 Free Software Foundation, Inc.\n";
-	    print "This is free software; see the source for copying conditions.  There is NO\n";
-	    print "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n";
-	    print "Written by Tom Tromey <tromey\@cygnus.com>\n";
-
-	    exit 0;
+	  $input = $local;
 	}
-	elsif ($arglist[0] eq "--help")
+      else
 	{
-	    &usage;
+	  # Strip .in; later on .am is tacked on.  That is how the
+	  # automake input file is found.  Maybe not the best way, but
+	  # it is easy to explain.
+	  $input =~ s/\.in$//
+	    or die "automake: invalid input file name \`$arg'\n.";
 	}
-	elsif ($arglist[0] =~ /^--amdir=(.+)$/)
-	{
-	    $am_dir = $1;
-	}
-	elsif ($arglist[0] eq '--amdir')
-	{
-	    &require_argument (@arglist);
-	    shift (@arglist);
-	    $am_dir = $arglist[0];
-	}
-	elsif ($arglist[0] eq '--gnu')
-	{
-	    &set_strictness ('gnu');
-	}
-	elsif ($arglist[0] eq '--gnits')
-	{
-	    &set_strictness ('gnits');
-	}
-	elsif ($arglist[0] eq '--cygnus')
-	{
-	    $cygnus_mode = 1;
-	}
-	elsif ($arglist[0] eq '--foreign')
-	{
-	    &set_strictness ('foreign');
-	}
-	elsif ($arglist[0] eq '--include-deps')
-	{
-	    $cmdline_use_dependencies = 1;
-	}
-	elsif ($arglist[0] eq '--ignore-deps' || $arglist[0] eq '-i')
-	{
-	    $cmdline_use_dependencies = 0;
-	}
-	elsif ($arglist[0] eq '--no-force')
-	{
-	    $force_generation = 0;
-	}
-	elsif ($arglist[0] eq '--force-missing')
-	{
-	    $force_missing = 1;
-	}
-	elsif ($arglist[0] =~ /^--output-dir=(.*)$/)
-	{
-	    # Set output directory.
-	    $output_directory = $1;
-	}
-	elsif ($arglist[0] eq '--output-dir' || $arglist[0] eq '-o')
-	{
-	    &require_argument (@arglist);
-	    shift (@arglist);
-	    $output_directory = $arglist[0];
-	}
-	elsif ($arglist[0] eq '--add-missing' || $arglist[0] eq '-a')
-	{
-	    $add_missing = 1;
-	}
-	elsif ($arglist[0] eq '--copy' || $arglist[0] eq '-c')
-	{
-	    $copy_missing = 1;
-	}
-	elsif ($arglist[0] eq '--verbose' || $arglist[0] eq '-v')
-	{
-	    $verbose = 1;
-	}
-	elsif ($arglist[0] eq '--')
-	{
-	    # Stop option processing.
-	    shift (@arglist);
-	    push (@input_files, @arglist);
-	    last;
-	}
-	elsif ($arglist[0] =~ /^-/)
-	{
-	    die "automake: unrecognized option -- \`$arglist[0]'\nTry \`automake --help' for more information.\n";
-	}
-	else
-	{
-	    # Handle $local:$input syntax.  Note that we only examine
-	    # the first ":" file to see if it is automake input; the
-	    # rest are just taken verbatim.  We still keep all the
-	    # files around for dependency checking, however.
-	    my ($local, $input, @rest) = split (/:/, $arglist[0]);
-	    if (! $input)
-	    {
-		$input = $local;
-	    }
-	    else
-	    {
-		# Strip .in; later on .am is tacked on.  That is how
-		# the automake input file is found.  Maybe not the
-		# best way, but it is easy to explain.  FIXME: should
-		# be error if .in is missing.
-		$input =~ s/\.in$//;
-	    }
-	    push (@input_files, $input);
-	    $output_files{$input} = join (':', ($local, @rest));
-	}
-
-	shift (@arglist);
+      push (@input_files, $input);
+      $output_files{$input} = join (':', ($local, @rest));
     }
 
     # Take global strictness from whatever we currently have set.
     $default_strictness = $strictness;
     $default_strictness_name = $strictness_name;
-}
-
-# Ensure argument exists, or die.
-sub require_argument
-{
-    my ($arg, @arglist) = @_;
-    die "automake: no argument given for option \`$arg'\n"
-	if ! @arglist;
 }
 
 ################################################################
@@ -7706,7 +7623,7 @@ Operation modes:
       --version          print version number, then exit
   -v, --verbose          verbosely list files processed
   -o, --output-dir=DIR   put generated Makefile.in's into DIR
-      --no-force        only update Makefile.in's that are out of date
+      --no-force         only update Makefile.in's that are out of date
 
 Dependency tracking:
   -i, --ignore-deps   disable dependency tracking code
@@ -7722,7 +7639,7 @@ Library files:
   -a, --add-missing     add missing standard files to package
       --amdir=DIR       directory storing config files
   -c, --copy            with -a, copy missing files (default is symlink)
-      --force-missing   force update of standard files
+  -f, --force-missing   force update of standard files
 EOF
 
     my ($last, @lcomm);
@@ -7764,4 +7681,22 @@ EOF
     print "\nReport bugs to <bug-automake\@gnu.org>.\n";
 
     exit 0;
+}
+
+# &version ()
+# -----------
+# Print version information
+sub version ()
+{
+  print <<EOF;
+automake (GNU $PACKAGE) $VERSION
+Written by Tom Tromey <tromey\@cygnus.com>.
+
+Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001
+Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+EOF
+  exit 0;
+
 }
