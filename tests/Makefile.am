@@ -376,6 +376,7 @@ spell3.test \
 spelling.test \
 stamph2.test \
 stdlib.test \
+stdlib2.test \
 strip.test \
 subdir.test \
 subdir2.test \
