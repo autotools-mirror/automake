@@ -35,8 +35,14 @@ $am_dir = "@datadir@/@PACKAGE@";
     (
      "THANKS", "TODO", "README", "NEWS", "COPYING", "COPYING.LIB",
      "INSTALL", "ABOUT-NLS", "ChangeLog", "configure", "configure.in",
-     "config.guess", "config.sub", "mkinstalldirs", "install-sh",
-     "texinfo.tex"
+     "config.guess", "config.sub", "mkinstalldirs", "install-sh"
+     );
+
+# Commonly used files we auto-include, but only sometimes.
+@common_sometimes =
+    (
+     "version.texi", "aclocal.m4", "acconfig.h", "config.h.top",
+     "config.h.bot", "stamp-h.in", "mdate-sh"
      );
 
 $USAGE = "  --amdir=DIR           directory storing config files
@@ -481,6 +487,8 @@ sub handle_texinfo
 	local ($tfile);
 	($tfile = &file_contents ('texi-version')) =~ s/@TEXI@/$texis[0]/g;
 	$output_rules = $output_rules . $tfile;
+
+	&require_file ('mdate-sh');
     }
 
     # If user specified file_TEXINFOS, then use that as explicit
@@ -513,11 +521,7 @@ sub handle_texinfo
 		     . "DVIS = " . $infobase . ".dvi\n\n");
 
     # Do some error checking.
-    if (! -f ($relative_dir . "/texinfo.tex"))
-    {
-	print STDERR ("automake: \`TEXINFOS' defined in ", $relative_dir,
-		      ", but texinfo.tex does not exist there\n");
-    }
+    &require_file ('texinfo.tex');
 }
 
 # Handle any man pages.
@@ -743,7 +747,7 @@ sub handle_merge_targets
 
     if (defined $contents{'install-local'})
     {
-	print STDERR "automake: use \`install-data' or \`install-exec', not install\n";
+	print STDERR "automake: use \`install-data' or \`install-exec', not \`install'\n";
     }
 
     # Step two: if we are doing recursive makes, write out the
@@ -938,6 +942,26 @@ sub file_contents
 
 ################################################################
 
+# Verify that the file must exist in the current directory.
+sub require_file
+{
+    local ($file) = @_;
+    local ($fullfile) = $relative_dir . "/" . $file;
+
+    if (! -f $fullfile)
+    {
+	print STDERR "automake: required file \"$fullfile\" not found\n";
+	$exit_status = 1;
+    }
+    else
+    {
+	push (@dist_common, $file);
+    }
+}
+
+
+################################################################
+
 # Return directory name of file.
 sub dirname
 {
@@ -962,7 +986,7 @@ sub usage
     print $USAGE;
     print "\nFiles which are automatically distributed, if found:\n";
     $~ = "USAGE_FORMAT";
-    local (@lcomm) = sort (@common_files);
+    local (@lcomm) = sort ((@common_files, @common_sometimes));
     local ($one, $two);
     while ($#lcomm >= 0)
     {
