@@ -97,12 +97,14 @@ $add_missing = 0;
 # True if AM_C_PROTOTYPES appears in configure.in.
 $am_c_prototypes = 0;
 
-# Names used in AC_CONFIG_HEADER call.  $config_name is the actual
-# (first) argument.  $config_header is the '.in' file.  Ordinarily the
-# second is derived from the first, but they can be different if the
-# weird "NAME:FILE" syntax is used.
-$config_name = '';
-$config_header = '';
+# Names used in AC_CONFIG_HEADER call.  @config_fullnames holds the
+# name which appears in AC_CONFIG_HEADER, colon and all.
+# @config_names holds the file names.  @config_headers holds the '.in'
+# files.  Ordinarily these are similar, but they can be different if
+# the weird "NAME:FILE" syntax is used.
+@config_fullnames = ();
+@config_names = ();
+@config_headers = ();
 # Line number at which AC_CONFIG_HEADER appears in configure.in.
 $config_header_line = 0;
 
@@ -672,9 +674,14 @@ sub get_object_extension
 	local ($xform) = '';
 	if (&variable_defined ('CONFIG_HEADER'))
 	{
-	    ($xform = &dirname ($contents{'CONFIG_HEADER'}))
-		=~ s/(\W)/\\$1/g;
-	    $xform = '-I' . $xform;
+	    local ($one_hdr);
+	    foreach $one_hdr (split (' ', $contents{'CONFIG_HEADER'}))
+	    {
+		local ($var);
+		($var = &dirname ($one_hdr)) =~ s/(\W)/\\$1/g;
+		$xform .= ' ' if $xform;
+		$xform .= '-I' . $var;
+	    }
 	}
 	$xform = 's/\@CONFIG_INCLUDE_SPEC\@/' . $xform . '/go;';
 	$output_vars .= &file_contents_with_transform ($xform,
@@ -2096,10 +2103,17 @@ sub handle_tags
 	|| @tag_deps)
     {
 	local ($xform) = '';
-	if ($config_header && $relative_dir eq &dirname ($config_header))
+	local ($one_hdr);
+	foreach $one_hdr (@config_headers)
 	{
-	    # The config header is in this directory.  So require it.
-	    ($xform = &basename ($config_header)) =~ s/(\W)/\\$1/g;
+	    if ($relative_dir eq &dirname ($one_hdr))
+	    {
+		# The config header is in this directory.  So require it.
+		local ($var);
+		($var = &basename ($one_hdr)) =~ s/(\W)/\\$1/g;
+		$xform .= ' ' if $xform;
+		$xform .= $var;
+	    }
 	}
 	$xform = ('s/\@CONFIG\@/' . $xform . '/;'
 		  . 's/\@DIRS\@/' . join (' ', @tag_deps) . '/;');
@@ -2787,43 +2801,72 @@ sub handle_configure
     }
 
     # If we have a configure header, require it.
-    if ($config_header && $relative_dir eq &dirname ($config_header))
+    local ($one_hdr);
+    local (@local_fullnames) = @config_fullnames;
+    local (@local_names) = @config_names;
+    local ($hdr_index) = 0;
+    local ($distclean_config) = '';
+    foreach $one_hdr (@config_headers)
     {
-	local ($ch_sans_dir) = &basename ($config_header);
-	local ($cn_sans_dir) = &basename ($config_name);
-
-	&require_file_with_conf_line ($config_header_line,
-				      $FOREIGN, $ch_sans_dir);
-
-	# Header defined and in this directory.
-	local (@files);
-	if (-f $relative_dir . '/acconfig.h')
+	local ($one_fullname) = shift (@local_fullnames);
+	local ($one_name) = shift (@local_names);
+	$hdr_index += 1;
+	if ($relative_dir eq &dirname ($one_hdr))
 	{
-	    push (@files, 'acconfig.h');
-	}
-	if (-f $config_name . '.top')
-	{
-	    push (@files, "${cn_sans_dir}.top");
-	}
-	if (-f $config_name . '.bot')
-	{
-	    push (@files, "${cn_sans_dir}.bot");
-	}
+	    local ($ch_sans_dir) = &basename ($one_hdr);
+	    local ($cn_sans_dir) = &basename ($one_name);
 
-	&push_dist_common (@files);
+	    &require_file_with_conf_line ($config_header_line,
+					  $FOREIGN, $ch_sans_dir);
+
+	    # Header defined and in this directory.
+	    local (@files);
+	    if (-f $relative_dir . '/acconfig.h')
+	    {
+		push (@files, 'acconfig.h');
+	    }
+	    if (-f $one_name . '.top')
+	    {
+		push (@files, "${cn_sans_dir}.top");
+	    }
+	    if (-f $one_name . '.bot')
+	    {
+		push (@files, "${cn_sans_dir}.bot");
+	    }
+
+	    &push_dist_common (@files);
+
+	    local ($stamp_name) = 'stamp-h';
+	    $stamp_name .= "${hdr_index}" if scalar (@config_headers) > 1;
+
+	    local ($xform) = '';
+
+	    $xform = 's/\@FILES\@/' . join (' ', @files) . '/;';
+	    $xform .= 's/\@CONFIG_HEADER\@/' . "${cn_sans_dir}" . '/;';
+	    $xform .= 's/\@CONFIG_HEADER_IN\@/' . "${ch_sans_dir}" . '/;';
+	    $xform .= 's/\@CONFIG_HEADER_FULL\@/' . "${one_fullname}" . '/;';
+	    $xform .= 's/\@STAMP\@/' . "${stamp_name}" . '/;';
+
+	    $output_rules .= &file_contents_with_transform ($xform,
+							    'remake-hdr');
+
+	    &touch ($relative_dir . "/${stamp_name}.in");
+	    &require_file_with_conf_line ($config_header_line, $FOREIGN,
+					  "${stamp_name}.in");
+
+	    $distclean_config .= ' ' if $distclean_config;
+	    $distclean_config .= $cn_sans_dir;
+	}
+    }
+
+    if ($distclean_config)
+    {
 	$output_rules .= &file_contents_with_transform ('s/\@FILES\@/'
-							. join (' ', @files)
+							. $distclean_config
 							. '/;',
-							'remake-hdr');
-
-	&touch ($relative_dir . '/stamp-h.in');
-	&require_file_with_conf_line ($config_header_line, $FOREIGN,
-				      'stamp-h.in');
-
+							'clean-hdr');
 	push (@clean, 'hdr');
 	&push_phony_cleaners ('hdr');
-	&define_variable ("CONFIG_HEADER_IN", "${ch_sans_dir}");
-	&define_variable ('CONFIG_HEADER_FULL', $config_name);
     }
 
     # Set location of mkinstalldirs.
@@ -2842,18 +2885,27 @@ sub handle_configure
 		    "\`CONFIG_HEADER' is an anachronism; now determined from \`configure.in'")
 	if &variable_defined ('CONFIG_HEADER');
 
-    if ($config_name)
+    local ($one_name);
+    local ($config_header) = '';
+    foreach $one_name (@config_names)
     {
 	# Generate CONFIG_HEADER define.
-	if ($relative_dir eq &dirname ($config_name))
+	local ($one_hdr);
+	if ($relative_dir eq &dirname ($one_name))
 	{
-	    &define_variable ("CONFIG_HEADER", &basename ($config_name));
+	    $one_hdr = &basename ($one_name);
 	}
 	else
 	{
-	    &define_variable ("CONFIG_HEADER",
-			      "${top_builddir}/${config_name}");
+	    $one_hdr = "${top_builddir}/${one_name}";
 	}
+
+	$config_header .= ' ' if $config_header;
+	$config_header .= $one_hdr;
+    }
+    if ($config_header)
+    {
+	&define_variable ("CONFIG_HEADER", $config_header);
     }
 
     # Now look for other files in this directory which must be remade
@@ -2882,9 +2934,6 @@ sub handle_configure
 
 	# Skip files not in this directory.
 	next unless &dirname ($file) eq $relative_dir;
-
-	# Skip the config header.
-	next if $local eq $top_builddir . '/' . $config_name;
 
 	# Skip any Makefile.
 	next if $local eq 'Makefile';
@@ -3063,8 +3112,13 @@ sub handle_merge_targets
     }
 
     push (@all, 'Makefile');
-    push (@all, &basename ($config_name))
-	if $config_name && &dirname ($config_name) eq $relative_dir;
+
+    local ($one_name);
+    foreach $one_name (@config_names)
+    {
+	push (@all, &basename ($one_name))
+	    if &dirname ($one_name) eq $relative_dir;
+    }
 
     &do_one_merge_target ('info', @info);
     &do_one_merge_target ('dvi', @dvi);
@@ -3129,7 +3183,17 @@ sub handle_merge_targets
 	if (@all)
 	{
 	    local (@hackall) = ();
-	    if ($config_name && &dirname ($config_name) eq $relative_dir)
+	    local ($one_name);
+	    local ($local_headers) = '';
+	    foreach $one_name (@config_names)
+	    {
+		if (&dirname ($one_name) eq $relative_dir)
+		{
+		    $local_headers .= ' ' if $local_headers;
+		    $local_headers .= &basename ($one_name);
+		}
+	    }
+	    if ($local_headers)
 	    {
 
 		# This is kind of a hack, but I couldn't see a better
@@ -3139,7 +3203,7 @@ sub handle_merge_targets
 		# dependencies to the "all" because that breaks when
 		# using parallel makes.  Instead we handle things
 		# explicitly.
-		$output_rules .= ('all-recursive-am: $(CONFIG_HEADER)'
+		$output_rules .= ("all-recursive-am: ${local_headers}"
 				  . "\n\t" . '$(MAKE) all-recursive'
 				  . "\n\n");
 		push (@hackall, 'all-recursive-am');
@@ -3748,15 +3812,20 @@ sub scan_one_configure_file
  		    if $1 eq 'C';
 
 	    $config_header_line = $.;
-	    $config_name = $2;
-	    if ($config_name =~ /^([^:]+):(.+)$/)
+	    local ($one_hdr);
+	    foreach $one_hdr (split (' ', $2))
 	    {
-		$config_name = $1;
-		$config_header = $2;
-	    }
-	    else
-	    {
-		$config_header = $config_name . '.in';
+		push (@config_fullnames, $one_hdr);
+		if ($one_hdr =~ /^([^:]+):(.+)$/)
+		{
+		    push (@config_names, $1);
+		    push (@config_headers, $2);
+		}
+		else
+		{
+		    push (@config_names, $one_hdr);
+		    push (@config_headers, $one_hdr . '.in');
+		}
 	    }
 	}
 
