@@ -95,9 +95,9 @@ INSTALL: lib/INSTALL
 # guaranteed to work on my machine.
 maintainer-check: automake aclocal
 ## This check avoids accidental configure substitutions in the source.
-## There are exactly 7 lines that should be modified.  This works out
-## to 22 lines of diffs.
-	@if test `diff $(srcdir)/automake.in automake | wc -l` -ne 24; then \
+## There are exactly 8 lines that should be modified.  This works out
+## to 28 lines of diffs.
+	@if test `diff $(srcdir)/automake.in automake | wc -l` -ne 28; then \
 	  echo "found too many diffs between automake.in and automake"; 1>&2; \
 	  diff -c $(srcdir)/automake.in automake; \
 	  exit 1; \
