@@ -84,6 +84,8 @@ $LANG_SUBDIR = 2;
 
 # Variables global to entire run.
 
+# Variables related to the options.
+
 # TRUE if we should always generate Makefile.in.
 $force_generation = 1;
 
@@ -116,10 +118,16 @@ $copy_missing = 0;
 # TRUE if we should always update files that we know about.
 $force_missing = 0;
 
-# Files found by scanning configure.in for LIBOBJS.
+
+# Variables filled during files scanning.
+
+# Name of the top autoconf input: `configure.ac' or `configure.in'.
+$configure_ac = '';
+
+# Files found by scanning configure.ac for LIBOBJS.
 %libsources = ();
 
-# True if AM_C_PROTOTYPES appears in configure.in.
+# True if AM_C_PROTOTYPES appears in configure.ac.
 $am_c_prototypes = 0;
 
 # Names used in AC_CONFIG_HEADER call.  @config_fullnames holds the
@@ -130,7 +138,7 @@ $am_c_prototypes = 0;
 @config_fullnames = ();
 @config_names = ();
 @config_headers = ();
-# Line number at which AC_CONFIG_HEADER appears in configure.in.
+# Line number at which AC_CONFIG_HEADER appears in configure.ac.
 $config_header_line = 0;
 
 # Directory where output files go.  Actually, output files are
@@ -157,10 +165,10 @@ $ac_output_line = 0;
 @config_aux_path = ('.', '..', '../..');
 $config_aux_dir = '';
 
-# Whether AC_PROG_MAKE_SET has been seen in configure.in.
+# Whether AC_PROG_MAKE_SET has been seen in configure.ac.
 $seen_make_set = 0;
 
-# Whether AM_GNU_GETTEXT has been seen in configure.in.
+# Whether AM_GNU_GETTEXT has been seen in configure.ac.
 $seen_gettext = 0;
 # Line number at which AM_GNU_GETTEXT seen.
 $ac_gettext_line = 0;
@@ -175,7 +183,7 @@ $all_linguas_line = 0;
 # 1 if AC_PROG_INSTALL seen.
 $seen_prog_install = 0;
 
-# Whether AC_PATH_XTRA has been seen in configure.in.
+# Whether AC_PATH_XTRA has been seen in configure.ac.
 $seen_path_xtra = 0;
 
 # TRUE if AC_DECL_YYTEXT was seen.
@@ -273,7 +281,7 @@ $cygnus_mode = 0;
 
      # Note that we do not handle this one, because it is still run
      # from AM_CONFIG_HEADER.  So we deal with it specially in
-     # scan_configure.
+     # &scan_autoconf_files.
      # 'AC_CONFIG_HEADER', "use \`AM_CONFIG_HEADER'",
 
      'fp_C_PROTOTYPES', "use \`AM_C_PROTOTYPES'",
@@ -311,7 +319,7 @@ $obsolete_rx = '(' . join ('|', keys %obsolete_macros) . ')';
 %language_map = ();
 
 # This holds all the files that would go in `dist_common' which we
-# discovered while scanning configure.in.  We might distribute these
+# discovered while scanning configure.ac.  We might distribute these
 # in the top-level Makefile.in.
 %configure_dist_common = ();
 
@@ -385,8 +393,8 @@ $obsolete_rx = '(' . join ('|', keys %obsolete_macros) . ')';
 # Parse command line.
 &parse_arguments (@ARGV);
 
-# Do configure.in scan only once.
-&scan_configure;
+# Do configure.ac scan only once.
+&scan_autoconf_files;
 
 die "automake: no \`Makefile.am' found or specified\n"
     if ! @input_files;
@@ -404,7 +412,7 @@ foreach $am_file (@input_files)
     }
 }
 
-&am_conf_error ("AC_PROG_INSTALL must be used in configure.in")
+&am_conf_error ("AC_PROG_INSTALL must be used")
     if (! $seen_prog_install);
 
 exit $exit_status;
@@ -566,8 +574,8 @@ sub generate_makefile
     # $OUTPUT is encoded.  If it contains a ":" then the first element
     # is the real output file, and all remaining elements are input
     # files.  We don't scan or otherwise deal with these input file,
-    # other than to mark them as dependencies.  See scan_configure for
-    # details.
+    # other than to mark them as dependencies.  See
+    # &scan_autoconf_files for details.
     local (@secondary_inputs);
     ($output, @secondary_inputs) = split (/:/, $output);
 
@@ -672,7 +680,7 @@ sub generate_makefile
 	local ($am_time) = (stat ($makefile . '.am'))[9];
 	local ($in_time) = (stat ($out_file))[9];
 	# FIXME: should cache these times.
-	local ($conf_time) = (stat ('configure.in'))[9];
+	local ($conf_time) = (stat ($configure_ac))[9];
 	# FIXME: how to do unsigned comparison?
 	if ($am_time < $in_time || $am_time < $conf_time)
 	{
@@ -878,7 +886,7 @@ sub get_object_extension
 	    if (! $am_c_prototypes)
 	    {
 		&am_line_error ('AUTOMAKE_OPTIONS',
-				"option \`ansi2knr' in use but \`AM_C_PROTOTYPES' not in configure.in");
+				"option \`ansi2knr' in use but \`AM_C_PROTOTYPES' not in \`$configure_ac'");
 		&keyed_aclocal_warning ('AM_C_PROTOTYPES');
 		# Only give this error once.
 		$am_c_prototypes = 1;
@@ -1620,7 +1628,7 @@ sub handle_lib_objects_cond
 	    if (! keys %libsources
 		&& ! &variable_defined ($1 . 'LIBOBJS'))
 	    {
-		&am_line_error ($var, "\@$1" . "LIBOBJS\@ seen but never set in \`configure.in'");
+		&am_line_error ($var, "\@$1" . "LIBOBJS\@ seen but never set in \`$configure_ac'");
 	    }
 
 	    local ($iter, $rewrite);
@@ -1659,7 +1667,7 @@ sub handle_lib_objects_cond
 
 	    push (@dep_list, $lsearch);
 	    &am_line_error ($var,
-			    "\@$1" . "ALLOCA\@ seen but \`AC_FUNC_ALLOCA' not in \`configure.in'")
+			    "\@$1" . "ALLOCA\@ seen but \`AC_FUNC_ALLOCA' not in \`$configure_ac'")
 		if ! defined $libsources{'alloca.c'};
 	    $dep_files{'$(DEPDIR)/alloca.P' . $myobjext} = 1;
 	    &require_file_with_line ($var, $FOREIGN, 'alloca.c');
@@ -1710,7 +1718,7 @@ sub handle_programs
 
     # If a program is installed, this is required.  We only want this
     # error to appear once.
-    &am_conf_error ("AC_ARG_PROGRAM must be used in configure.in")
+    &am_conf_error ("AC_ARG_PROGRAM must be used")
 	unless $seen_arg_prog;
     $seen_arg_prog = 1;
 
@@ -1850,7 +1858,7 @@ sub handle_libraries
 	{
 	    if (&variable_defined ($key . '_LIBRARIES'))
 	    {
-		&am_line_error ($key . '_LIBRARIES', "library used but \`RANLIB' not defined in \`configure.in'");
+		&am_line_error ($key . '_LIBRARIES', "library used but \`RANLIB' not defined in \`$configure_am'");
 		# Only get this error once.  If this is ever printed,
 		# we have a bug.
 		$configure_vars{'RANLIB'} = 'BUG';
@@ -1953,7 +1961,7 @@ sub handle_ltlibraries
 	{
 	    if (!$seen_libtool)
 	    {
-		&am_line_error ($key . '_LTLIBRARIES', "library used but \`LIBTOOL' not defined in \`configure.in'");
+		&am_line_error ($key . '_LTLIBRARIES', "library used but \`LIBTOOL' not defined in \`$configure_ac'");
 		# Only get this error once.  If this is ever printed,
 		# we have a bug.
 		$configure_vars{'LIBTOOL'} = 'BUG';
@@ -2145,7 +2153,7 @@ sub handle_scripts
     {
 	# If a program is installed, this is required.  We only want this
 	# error to appear once.
-	&am_conf_error ("AC_ARG_PROGRAM must be used in configure.in")
+	&am_conf_error ("AC_ARG_PROGRAM must be used")
 	    unless $seen_arg_prog;
 	$seen_arg_prog = 1;
     }
@@ -2810,11 +2818,11 @@ sub handle_dist
 	}
     }
 
-    # Always require configure.in and configure at top level, even if
+    # Always require configure.ac and configure at top level, even if
     # they don't exist.  This is especially important for configure,
     # since it won't be created until autoconf is run -- which might
     # be after automake is run.
-    &push_dist_common ('configure.in', 'configure')
+    &push_dist_common ($configure_ac, 'configure')
 	if $relative_dir eq '.';
 
     # We might copy elements from %configure_dist_common to
@@ -3173,7 +3181,7 @@ sub handle_aclocal_m4
 			    ($seen_maint_mode
 			     ? "\@MAINTAINER_MODE_TRUE\@"
 			     : "") ,
-			    "configure.in",
+			    $configure_ac,
 			    ($acinclude ? ' acinclude.m4' : '')
 			    );
 
@@ -3286,7 +3294,7 @@ sub handle_configure
 		      . ': '
 		      . ($seen_maint_mode ? "\@MAINTAINER_MODE_TRUE\@ " : '')
 		      . $amfile . ' '
-		      . '$(top_srcdir)/configure.in $(ACLOCAL_M4)'
+		      . '$(top_srcdir)/' . $configure_ac .' $(ACLOCAL_M4)'
                       . ' ' . join (' ', @include_stack)
                       . "\n"
 		      . "\tcd \$(top_srcdir) && \$(AUTOMAKE) "
@@ -3317,8 +3325,10 @@ sub handle_configure
     }
     else
     {
+        local ($xform) = &transform ("CONFIGURE_AC" => $configure_ac);
 	&handle_aclocal_m4;
-	$output_rules .= &file_contents ('remake');
+	$output_rules .= &file_contents_with_transform ($xform,
+							'remake');
 	&examine_variable ('CONFIG_STATUS_DEPENDENCIES');
 	&examine_variable ('CONFIGURE_DEPENDENCIES');
 	$top_reldir = '';
@@ -3437,14 +3447,15 @@ sub handle_configure
 
 	    local ($xform) = '';
 
-	    $xform = 's,\@FILES\@,' . join (' ', @files) . ',;';
-	    $xform .= 's,\@CONFIG_HEADER\@,' . "${cn_sans_dir}" . ',;';
-	    $xform .= 's,\@CONFIG_HEADER_IN\@,' . "${ch_sans_dir}" . ',;';
-	    $xform .= 's,\@CONFIG_HEADER_FULL\@,' . "${one_fullname}" . ',;';
-	    $xform .= 's,\@STAMP\@,' . "${stamp_dir}${stamp_name}" . ',g;';
+	    $xform = &transform ('CONFIGURE_AC'       => $configure_ac,
+				 'FILES'              => join (' ', @files),
+				 'CONFIG_HEADER'      => $cn_sans_dir,
+				 'CONFIG_HEADER_IN'   => $ch_sans_dir,
+				 'CONFIG_HEADER_FULL' => $one_fullname,
+				 'STAMP'          => "$stamp_dir$stamp_name");
 
 	    local ($out_dir) = &dirname ($ch_sans_dir);
-	    $xform .= 's,\@SRC_STAMP\@,' . "${out_dir}/${stamp_name}" . ',g;';
+	    $xform .= &transform ('SRC_STAMP' => "${out_dir}/${stamp_name}");
 	    $output_rules .= &file_contents_with_transform ($xform,
 							    'remake-hdr');
 
@@ -3480,7 +3491,7 @@ sub handle_configure
     }
 
     &am_line_error ('CONFIG_HEADER',
-		    "\`CONFIG_HEADER' is an anachronism; now determined from \`configure.in'")
+		    "\`CONFIG_HEADER' is an anachronism; now determined from \`$configure_ac'")
 	if &variable_defined ('CONFIG_HEADER');
 
     local ($one_name);
@@ -3545,7 +3556,7 @@ sub handle_configure
 	if ($local eq 'stamp-h')
 	{
 	    # FIXME: allow real filename.
-	    &am_conf_error ('configure.in', $ac_output_line,
+	    &am_conf_error ($configure_ac, $ac_output_line,
 			    'stamp-h should not appear in AC_OUTPUT');
 	    next;
 	}
@@ -3594,7 +3605,7 @@ sub handle_gettext
     if (! &variable_defined ('SUBDIRS'))
     {
 	&am_conf_error
-	    ("AM_GNU_GETTEXT in configure.in but SUBDIRS not defined");
+	    ("AM_GNU_GETTEXT used but SUBDIRS not defined");
 	return;
     }
 
@@ -3604,11 +3615,11 @@ sub handle_gettext
     {
 	&am_line_error
 	    ('SUBDIRS',
-	     "AM_GNU_GETTEXT in configure.in but \`po' not in SUBDIRS")
+	     "AM_GNU_GETTEXT in \`$configure_ac' but \`po' not in SUBDIRS")
 		if $contents{'SUBDIRS'} !~ /\bpo\b/;
 	&am_line_error
 	    ('SUBDIRS',
-	     "AM_GNU_GETTEXT in configure.in but \`intl' not in SUBDIRS")
+	     "AM_GNU_GETTEXT in \`$configure_ac' but \`intl' not in SUBDIRS")
 		if $contents{'SUBDIRS'} !~ /\bintl\b/;
     }
 
@@ -3638,7 +3649,7 @@ sub handle_gettext
     }
     else
     {
-	&am_error ("AM_GNU_GETTEXT in configure.in but \`ALL_LINGUAS' not defined");
+	&am_error ("AM_GNU_GETTEXT in \`$configure_ac' but \`ALL_LINGUAS' not defined");
     }
 }
 
@@ -3815,7 +3826,7 @@ sub handle_merge_targets
 	}
     }
 
-    if (&variable_defined('lib_LTLIBRARIES') && 
+    if (&variable_defined('lib_LTLIBRARIES') &&
 	&variable_defined('bin_PROGRAMS'))
     {
 	$output_rules .= "install-binPROGRAMS: install-libLTLIBRARIES\n\n";
@@ -4219,7 +4230,7 @@ sub handle_emacs_lisp
 	if (&variable_defined ('lisp_LISP'))
 	{
 	    $varname = 'lisp_LISP';
-	    &am_error ("\`lisp_LISP' defined but \`AM_PATH_LISPDIR' not in \`configure.in'")
+	    &am_error ("\`lisp_LISP' defined but \`AM_PATH_LISPDIR' not in \`$configure_ac'")
 		if ! $seen_lispdir;
 	}
 	else
@@ -4245,7 +4256,7 @@ sub handle_python
     $output_rules .= &file_contents ('python-clean');
     push (@clean, 'python');
 
-    &am_error ("\`python_PYTHON' defined but \`AM_CHECK_PYTHON' not in \`configure.in'")
+    &am_error ("\`python_PYTHON' defined but \`AM_CHECK_PYTHON' not in \`$configure_ac'")
 	if ! $seen_pythondir && &variable_defined ('python_PYTHON');
 
     if ($config_aux_dir eq '.' || $config_aux_dir eq '')
@@ -4310,7 +4321,7 @@ sub handle_minor_options
 	    if ($package_version !~ /^$GNITS_VERSION_PATTERN$/)
 	    {
 		# FIXME: allow real filename.
-		&am_conf_line_error ('configure.in',
+		&am_conf_line_error ($configure_ac,
 				     $package_version_line,
 				     "version \`$package_version' doesn't follow Gnits standards");
 	    }
@@ -4326,8 +4337,11 @@ sub handle_minor_options
 
 ################################################################
 
-# Scan one file for interesting things.  Subroutine of scan_configure.
-sub scan_one_configure_file
+# &scan_one_autoconf_file ($FILENAME)
+# -----------------------------------
+# Scan one file for interesting things.  Subroutine of
+# &scan_autoconf_files.
+sub scan_one_autoconf_file
 {
     local ($filename) = @_;
     local (*CONFIGURE);
@@ -4351,7 +4365,7 @@ sub scan_one_configure_file
 	# Cygnus and hopefully nowhere else.
 	if (/sinclude\((.*)\)/ && -f $1)
 	{
-	    &scan_one_configure_file ($1);
+	    &scan_one_autoconf_file ($1);
 	}
 
 	# Populate libobjs array.
@@ -4685,12 +4699,15 @@ sub scan_one_configure_file
     close (CONFIGURE);
 }
 
-# Scan configure.in and aclocal.m4 for interesting things.  We must
-# scan aclocal.m4 because there might be AC_SUBSTs and such there.
-sub scan_configure
+# &scan_autoconf_files ()
+# -----------------------
+# Check whether we use `configure.ac' or `configure.in'.
+# Scan it (and possibly `aclocal.m4') for interesting things.
+# We must scan aclocal.m4 because there might be AC_SUBSTs and such there.
+sub scan_autoconf_files
 {
     # Reinitialize libsources here.  This isn't really necessary,
-    # since we currently assume there is only one configure.in.  But
+    # since we currently assume there is only one configure.ac.  But
     # that won't always be the case.
     %libsources = ();
 
@@ -4698,8 +4715,18 @@ sub scan_configure
     local (%make_list, @make_input_list);
     local ($libobj_iter);
 
-    &scan_one_configure_file ('configure.in');
-    &scan_one_configure_file ('aclocal.m4')
+    warn "automake: both \`configure.ac' and \`configure.in' present:"
+         . " ignoring \`configure.in'\n"
+        if -f 'configure.ac' && -f 'configure.in';
+    $configure_ac = 'configure.in'
+        if -f 'configure.in';
+    $configure_ac = 'configure.ac'
+        if -f 'configure.ac';
+    die "automake: \`configure.ac' or \`configure.in' is required\n"
+        if !$configure_ac;
+
+    &scan_one_autoconf_file ($configure_ac);
+    &scan_one_autoconf_file ('aclocal.m4')
 	if -f 'aclocal.m4';
 
     # Set input and output files if not specified by user.
@@ -4711,12 +4738,12 @@ sub scan_configure
 
     @configure_input_files = @make_input_list;
 
-    &am_conf_error ("\`AM_INIT_AUTOMAKE' must be used in configure.in")
+    &am_conf_error ("\`AM_INIT_AUTOMAKE' must be used")
 	if ! $seen_init_automake;
 
     # Always require AC_PROG_MAKE_SET.  We might randomly use $(MAKE)
     # for our own reasons.
-    &am_conf_error ("\`AC_PROG_MAKE_SET' must be used in configure.in")
+    &am_conf_error ("\`AC_PROG_MAKE_SET' must be used")
 	if ! $seen_make_set;
 
     # Look for some files we need.  Always check for these.  This
@@ -4836,7 +4863,7 @@ sub lang_c_rewrite
 	    # Only give error once.
 	    $seen_cc_c_o = 1;
 	    # FIXME: line number.
-	    &am_error ("C objects in subdir but \`AM_PROG_CC_C_O' not in \`configure.in'");
+	    &am_error ("C objects in subdir but \`AM_PROG_CC_C_O' not in \`$configure_ac'");
 	}
 
 	&require_file ($FOREIGN, 'compile')
@@ -5025,7 +5052,7 @@ sub lang_c_finish
     if (! defined $configure_vars{'CC'})
     {
 	# FIXME: line number.
-	&am_error ("C source seen but \`CC' not defined in \`configure.in'");
+	&am_error ("C source seen but \`CC' not defined in \`$configure_ac'");
     }
 }
 
@@ -5038,7 +5065,7 @@ sub lang_cxx_finish
 
     if (! defined $configure_vars{'CXX'})
     {
-	&am_error ("C++ source seen but \`CXX' not defined in \`configure.in'");
+	&am_error ("C++ source seen but \`CXX' not defined in \`$configure_ac'");
     }
 }
 
@@ -5113,7 +5140,7 @@ sub lang_yacc_finish
 
     if (! defined $configure_vars{'YACC'})
     {
-	&am_error ("yacc source seen but \`YACC' not defined in \`configure.in'");
+	&am_error ("yacc source seen but \`YACC' not defined in \`$configure_ac'");
     }
     if (&variable_defined ('YACCFLAGS'))
     {
@@ -5160,11 +5187,11 @@ sub lang_lex_finish
 
     if (! defined $configure_vars{'LEX'})
     {
-	&am_error ("lex source seen but \`LEX' not defined in \`configure.in'");
+	&am_error ("lex source seen but \`LEX' not defined in \`$configure_ac'");
     }
     if (! $seen_decl_yytext)
     {
-	&am_error ("lex source seen but \`AC_DECL_YYTEXT' not in \`configure.in'");
+	&am_error ("lex source seen but \`AC_DECL_YYTEXT' not in \`$configure_ac'");
     }
 
     if ($lex_count > 1)
@@ -5196,7 +5223,7 @@ sub lang_f77_finish
 
     if (! defined $configure_vars{'F77'})
     {
-	&am_error ("Fortran 77 source seen but \`F77' not defined in \`configure.in'");
+	&am_error ("Fortran 77 source seen but \`F77' not defined in \`$configure_ac'");
     }
 }
 
@@ -5243,7 +5270,7 @@ sub lang_objc_finish
 
     if (! defined $configure_vars{'OBJC'})
     {
-	&am_error ("Objective C source seen but \`OBJC' not defined in \`configure.in'");
+	&am_error ("Objective C source seen but \`OBJC' not defined in \`$configure_ac'");
     }
 }
 
@@ -5256,7 +5283,7 @@ sub lang_java_finish
 
     if (! defined $configure_vars{'GCJ'})
     {
-	&am_error ("Java source seen but \`GCJ' not defined in \`configure.in'");
+	&am_error ("Java source seen but \`GCJ' not defined in \`$configure_ac'");
     }
 }
 
@@ -6662,11 +6689,12 @@ sub initialize_global_constants
     # DISTFILES.
     @common_files =
 	(
-	 "README", "THANKS", "TODO", "NEWS", "COPYING", "COPYING.LIB",
-	 "INSTALL", "ABOUT-NLS", "ChangeLog", "configure", "configure.in",
-	 "config.guess", "config.sub", "AUTHORS", "BACKLOG", "ABOUT-GNU",
-	 "libversion.in", "mdate-sh", "mkinstalldirs", "install-sh",
-	 'texinfo.tex', "ansi2knr.c", "ansi2knr.1", 'elisp-comp',
+	 'README', 'THANKS', 'TODO', 'NEWS', 'COPYING', 'COPYING.LIB',
+	 'INSTALL', 'ABOUT-NLS', 'ChangeLog', 'configure.ac',
+	 'configure.in', 'configure', 'config.guess', 'config.sub',
+	 'AUTHORS', 'BACKLOG', 'ABOUT-GNU', 'libversion.in',
+	 'mdate-sh', 'mkinstalldirs', 'install-sh', 'texinfo.tex',
+	 'ansi2knr.c', 'ansi2knr.1', 'elisp-comp',
 	 # ltconfig appears here for compatibility with old versions
 	 # of libtool.
 	 'ylwrap', 'acinclude.m4', @libtoolize_files, @libtoolize_sometimes,
@@ -6676,8 +6704,8 @@ sub initialize_global_constants
     # Commonly used files we auto-include, but only sometimes.
     @common_sometimes =
 	(
-	 "aclocal.m4", "acconfig.h", "config.h.top",
-	 "config.h.bot", "stamp-h.in", 'stamp-vti'
+	 'aclocal.m4', 'acconfig.h', 'config.h.top',
+	 'config.h.bot', 'stamp-h.in', 'stamp-vti'
 	 );
 
     $USAGE = "\
@@ -7038,6 +7066,23 @@ sub file_contents
     return &file_contents_with_transform ('', @_);
 }
 
+# &transform (%PAIRS)
+# -------------------
+# Create a replacement expression suitable for file_contents_with_transform
+# to replace each key of %PAIRS by its value.
+sub transform
+{
+    local (%pairs) = @_;
+    local ($result) = '';
+
+    foreach $pattern (sort keys %pairs)
+    {
+        $result .= 's,\@' . $pattern . '\@,' . $pairs{$pattern} . ',g;';
+    }
+    print STDERR "transform: $result\n";
+    return $result;
+}
+
 # Find all variable prefixes that are used for install directories.  A
 # prefix `zar' qualifies iff:
 # * `zardir' is a variable.
@@ -7224,7 +7269,7 @@ sub am_install_var
 			}
 		    }
 		    # Check here to make sure variables defined in
-		    # configure.in do not imply that EXTRA_PRIMARY
+		    # configure.ac do not imply that EXTRA_PRIMARY
 		    # must be defined.
 		    elsif (! defined $configure_vars{$one_name})
 		    {
@@ -7580,7 +7625,7 @@ sub require_file_internal
 		if ($is_configure)
 		{
 		    # FIXME: allow actual file to be specified.
-		    &am_conf_line_error ('configure.in', $line,
+		    &am_conf_line_error ($configure_ac, $line,
 					 "$message$trailer");
 		}
 		else
@@ -7594,7 +7639,7 @@ sub require_file_internal
 }
 
 # Like require_file_with_line, but error messages refer to
-# configure.in, not the current Makefile.am.
+# configure.ac, not the current Makefile.am.
 sub require_file_with_conf_line
 {
     @require_file_paths = '.';
@@ -7648,7 +7693,7 @@ sub require_conf_file_with_line
     }
 }
 
-# Assumes that the line number is in configure.in.
+# Assumes that the line number is in configure.ac.
 sub require_conf_file_with_conf_line
 {
     @require_file_paths = @config_aux_path;
@@ -7792,7 +7837,7 @@ sub am_line_error
 	}
 	elsif (defined $configure_vars{$symbol})
 	{
-	    # SYMBOL is a variable defined in configure.in, so add the
+	    # SYMBOL is a variable defined in configure.ac, so add the
 	    # appropriate line number.
 	    $file = $configure_vars{$symbol};
 	}
@@ -7809,15 +7854,15 @@ sub am_line_error
     }
 }
 
-# Like am_error, but while scanning configure.in.
+# Like am_error, but while scanning configure.ac.
 sub am_conf_error
 {
     # FIXME: can run in subdirs.
-    warn "automake: configure.in: ", join (' ', @_), "\n";
+    warn "automake: $configure_ac: ", join (' ', @_), "\n";
     $exit_status = 1;
 }
 
-# Error message with line number referring to configure.in.
+# Error message with line number referring to configure.ac.
 sub am_conf_line_error
 {
     local ($file, $line, @args) = @_;
@@ -7833,7 +7878,7 @@ sub am_conf_line_error
     }
 }
 
-# Warning message with line number referring to configure.in.
+# Warning message with line number referring to configure.ac.
 # Does not affect exit_status
 sub am_conf_line_warning
 {

@@ -2,7 +2,7 @@
 # -*- perl -*-
 # @configure_input@
 
-# aclocal - create aclocal.m4 by scanning configure.in
+# aclocal - create aclocal.m4 by scanning configure.ac
 # Copyright 1996, 1997, 1998, 1999, 2000 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
@@ -25,7 +25,7 @@
 eval 'exec @PERL@ -S $0 ${1+"$@"}'
     if 0;
 
-# aclocal - scan configure.in and generate aclocal.m4.
+# aclocal - scan configure.ac and generate aclocal.m4.
 
 # Some constants.
 $VERSION = "@VERSION@";
@@ -38,6 +38,9 @@ $acdir = "@datadir@/aclocal";
 
 # Exit status.
 $exit_status = 0;
+
+# Name of the top autoconf input: `configure.ac' or `configure.in'.
+$configure_ac = '';
 
 # Text to output.
 $output = '';
@@ -130,7 +133,9 @@ sub usage
     local ($status) = @_;
 
     print "Usage: aclocal [OPTIONS] ...\n\n";
-    print "Generate aclocal.m4 by scanning configure.in\n
+    print "\
+Generate \`aclocal.m4' by scanning \`configure.ac' or \`configure.in'
+
   --acdir=DIR           directory holding config files
   --help                print this help, then exit
   -I DIR                add directory to search list for .m4 files
@@ -211,8 +216,18 @@ sub parse_arguments
 
 sub scan_configure
 {
-    open (CONFIGURE, "configure.in")
-	|| die "aclocal: couldn't open \`configure.in': $!\n";
+    warn "aclocal: both \`configure.ac' and \`configure.in' present:"
+         . " ignoring \`configure.in'\n"
+        if -f 'configure.ac' && -f 'configure.in';
+    $configure_ac = 'configure.in'
+        if -f 'configure.in';
+    $configure_ac = 'configure.ac'
+        if -f 'configure.ac';
+    die "aclocal: \`configure.ac' or \`configure.in' is required\n"
+        if !$configure_ac;
+
+    open (CONFIGURE, $configure_ac)
+	|| die "aclocal: couldn't open \`$configure_ac': $!\n";
 
     # Make sure we include acinclude.m4 if it exists.
     if (-f 'acinclude.m4')
@@ -233,7 +248,7 @@ sub scan_configure
 	    {
 		$hint = '; ' . $obsolete_macros{$1};
 	    }
-	    warn "aclocal: configure.in: $.: \`$1' is obsolete$hint\n";
+	    warn "aclocal: $configure_ac: $.: \`$1' is obsolete$hint\n";
 	    $exit_status = 1;
 	    next;
 	}
@@ -245,7 +260,7 @@ sub scan_configure
 	if (! &search && /(^|\s+)(AM_[A-Z_]+)($|[^\]\)=A-Z_])/)
 	{
 	    # Macro not found, but AM_ prefix found.
-	    warn "aclocal: configure.in: $.: macro \`$2' not found in library\n";
+	    warn "aclocal: $configure_ac: $.: macro \`$2' not found in library\n";
 	    $exit_status = 1;
 	}
     }
@@ -375,7 +390,7 @@ sub add_file
 	if (! &search && /(^|\s+)(AM_[A-Z_]+)($|[^\]\)=A-Z_])/)
 	{
 	    # Macro not found, but AM_ prefix found.
-	    warn "aclocal: configure.in: $.: macro \`$2' not found in library\n";
+	    warn "aclocal: $configure_ac: $.: macro \`$2' not found in library\n";
 	    $exit_status = 1;
 	}
     }
