@@ -30,20 +30,23 @@ tmpdepfile=${tmpdepfile-`echo "$depfile" | sed 's/\.\([^.]*\)$/.T\1/'`}
 
 rm -f "$tmpdepfile"
 
+# Some modes work just like other modes, but use different flags.  We
+# parameterize here, but still list the modes in the big case below,
+# to make depend.m4 easier to write.  Note that we *cannot* use a case
+# here, because this file can only contain one case statement.
 if test "$depmode" = hp; then
   # HP compiler uses -M and no extra arg.
   gccflag=-M
   depmode=gcc
 fi
 
-case "$depmode" in
-hp)
-  # This case exists only to let depend.m4 do its work.  It works by
-  # looking at the text of this script.  This case will never be run,
-  # since it is checked for above.
-  exit 1
-  ;;
+if test "$depmode" = dashXmstdout; then
+   # This is just like dashmstdout with a different argument.
+   dashmflag=-xM
+   depmode=dashmstdout
+fi
 
+case "$depmode" in
 gcc)
 ## There are various ways to get dependency output from gcc.  Here's
 ## why we pick this rather obscure method:
@@ -81,6 +84,13 @@ gcc)
 ## correctly.  Breaking it into two sed invocations is a workaround.
     sed -e 's/^\\$//' -e '/^$/d' -e '/:$/d' | sed -e 's/$/ :/' >> "$depfile"
   rm -f "$tmpdepfile"
+  ;;
+
+hp)
+  # This case exists only to let depend.m4 do its work.  It works by
+  # looking at the text of this script.  This case will never be run,
+  # since it is checked for above.
+  exit 1
   ;;
 
 dashmd)
@@ -123,6 +133,7 @@ dashmstdout)
   # Important note: in order to support this mode, a compiler *must*
   # always write the proprocessed file to stdout, regardless of -o,
   # because we must use -o when running libtool.
+  test -z "$dashmflag" && dashmflag=-M
   ( IFS=" "
     case " $* " in
     *" --mode=compile "*) # this is libtool, let us make it quiet
@@ -141,7 +152,7 @@ dashmstdout)
       done
       ;;
     esac
-    "$@" -M | sed 's:^[^:]*\:[ 	]*:'"$object"'\: :' > "$tmpdepfile"
+    "$@" $dashmflag | sed 's:^[^:]*\:[ 	]*:'"$object"'\: :' > "$tmpdepfile"
   ) &
   proc=$!
   "$@"
@@ -159,42 +170,9 @@ dashmstdout)
   ;;
 
 dashXmstdout)
-  # Important note: in order to support this mode, a compiler *must*
-  # always write the proprocessed file to stdout, regardless of -o,
-  # because we must use -o when running libtool.
-  ( IFS=" "
-    case " $* " in
-    *" --mode=compile "*) # this is libtool, let us make it quiet
-      for arg
-      do # cycle over the arguments
-        case "$arg" in
-	"--mode=compile")
-	  # insert --quiet before "--mode=compile"
-	  set fnord "$@" --quiet
-	  shift # fnord
-	  ;;
-	esac
-	set fnord "$@" "$arg"
-	shift # fnord
-	shift # "$arg"
-      done
-      ;;
-    esac
-    "$@" -xM | sed 's:^[^:]*\:[ 	]*:'"$object"'\: :' > "$tmpdepfile"
-  ) &
-  proc=$!
-  "$@"
-  stat=$?
-  wait "$proc"
-  if test "$stat" != 0; then exit $stat; fi
-  rm -f "$depfile" 
-  cat < "$tmpdepfile" > "$depfile"
-  tr ' ' '
-' < "$tmpdepfile" | \
-## Some versions of the HPUX 10.20 sed can't process this invocation
-## correctly.  Breaking it into two sed invocations is a workaround.
-    sed -e 's/^\\$//' -e '/^$/d' -e '/:$/d' | sed -e 's/$/ :/' >> "$depfile"
-  rm -f "$tmpdepfile"
+  # This case only exists to satisfy depend.m4.  It is never actually
+  # run, as this mode is specially recognized in the preamble.
+  exit 1
   ;;
 
 makedepend)
