@@ -43,7 +43,10 @@ $RULE_PATTERN = "^([\$a-zA-Z_.][-.a-zA-Z0-9_(){}/\$]*) *:([^=].*|)\$";
 $SUFFIX_RULE_PATTERN = "^\\.([a-zA-Z]+)\\.([a-zA-Z]+)\$";
 $MACRO_PATTERN = "^([A-Za-z][A-Za-z0-9_]*)[ \t]*([:+]?)=[ \t]*(.*)\$";
 $BOGUS_MACRO_PATTERN = "^([^ \t]*)[ \t]*([:+]?)=[ \t]*(.*)\$";
-$GNITS_VERSION_PATTERN = "[0-9]+\\.[0-9]+([a-z]|\\.[0-9]+)?";
+# This pattern recognizes a Gnits version id and sets $1 if the
+# release is an alpha release.  We also allow a suffix which can be
+# used to extend the version number with a "fork" identifier.
+$GNITS_VERSION_PATTERN = '[0-9]+\.[0-9]+([a-z]|\.[0-9]+)?(-[A-Za-z0-9]+)?';
 $IF_PATTERN = "^if[ \t]+\([A-Za-z][A-Za-z0-9_]*\)[ \t]*\(#.*\)?\$";
 $ELSE_PATTERN = "^else[ \t]*\(#.*\)?\$";
 $ENDIF_PATTERN = "^endif[ \t]*\(#.*\)?\$";
@@ -722,32 +725,38 @@ sub handle_options
 	    {
 		$use_dependencies = 0;
 	    }
-	    elsif (/([0-9]+)\.([0-9]+)([a-z])?/)
+	    elsif (/([0-9]+)\.([0-9]+)([a-z]?)(-[A-Za-z0-9]+)?/)
 	    {
 		# Got a version number.
 
-		local ($rmajor, $rminor, $ralpha) = ($1, $2, $3);
+		local ($rmajor, $rminor, $ralpha, $rfork) = ($1, $2, $3, $4);
 
-		if ($VERSION !~ /([0-9]+)\.([0-9]+)([a-z])?/)
+		if ($VERSION !~ /([0-9]+)\.([0-9]+)([a-z]?)(-[A-Za-z0-9]+)?/)
 		{
 		    print STDERR
 			"automake: programming error: version is incorrect\n";
 		    exit 1;
 		}
-		local ($tmajor, $tminor, $talpha) = ($1, $2, $3);
+		local ($tmajor, $tminor, $talpha, $tfork) = ($1, $2, $3, $4);
+
+		$rfork ||= '';
+		$tfork ||= '';
 
 		# 2.0 is better than 1.0.
 		# 1.2 is better than 1.1.
 		# 1.2a is better than 1.2.
+		# If we require 3.4n-foo then we require something
+		# >= 3.4n, with the `foo' fork identifier.
 		if ($rmajor > $tmajor
 		    || ($rmajor == $tmajor && $rminor > $tminor)
 		    || ($rminor == $tminor && $rminor == $tminor
-			&& $ralpha gt $talpha))
-		{
+			&& $ralpha gt $talpha)
+		    || ($rfork ne '' && $rfork ne $tfork))
+		  {
 		    &am_line_error ('AUTOMAKE_OPTIONS',
-				    "require version $_, only have $VERSION");
+				    "require version $_, but have $VERSION");
 		    return 1;
-		}
+		  }
 	    }
 	    else
 	    {
