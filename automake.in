@@ -2157,13 +2157,19 @@ sub handle_scripts
     }
 }
 
-# Search a file for a "version.texi" Texinfo include.  Return the name
-# of the include file if found, or the empty string if not.  A
-# "version.texi" file is actually any file whose name matches
-# "vers*.texi".
+
+# ($OUTFILE, $VFILE, @CLEAN_FILES)
+# &scan_texinfo_file ($FILENAME)
+# ------------------------------
+# $OUTFILE is the name of the info file produced by $FILENAME.
+# $VFILE is the name of the version.texi file used (empty if none).
+# @CLEAN_FILES is the list of by products (indexes etc.)
 sub scan_texinfo_file
 {
     my ($filename) = @_;
+    my @clean_suffixes = ('aux', 'dvi', 'log', 'ps', 'toc',
+			  # grep new.*index texinfo.tex
+			  'cp', 'fn', 'ky', 'vr', 'tp', 'pg');
 
     my $texi = new IO::File ("< $filename");
     if (! $texi)
@@ -2176,22 +2182,44 @@ sub scan_texinfo_file
     my ($outfile, $vfile);
     while ($_ = $texi->getline)
     {
-	if (/^\@setfilename +(\S+)/)
-	{
-	    $outfile = $1;
-	    last if ($vfile);
-	}
-
-	if (/^\@include\s+(vers[^.]*\.texi)\s*$/)
-	{
-	    # Found version.texi include.
-	    $vfile = $1;
-	    last if $outfile;
-	}
+      if (/^\@setfilename +(\S+)/)
+      {
+        $outfile = $1;
+        if ($outfile =~ /\.(.+)$/ && $1 ne 'info')
+          {
+            &am_file_error ($filename, "$.: ",
+                            "output \`$outfile' has unrecognized extension");
+            return;
+          }
+      }
+      # A "version.texi" file is actually any file whose name
+      # matches "vers*.texi".
+      elsif (/^\@include\s+(vers[^.]*\.texi)\s*$/)
+      {
+        $vfile = $1;
+      }
+      elsif (/^\@defcodeindex (\w*)/)
+      {
+        push @clean_suffixes, $1;
+      }
+      elsif (/^\@syncodeindex \w+ (\w*)/)
+      {
+        push @clean_suffixes, "$1s";
+      }
     }
-
     $texi->close;
-    return ($outfile, $vfile);
+
+    if ($outfile eq '')
+      {
+	&am_error ("\`$filename' missing \@setfilename");
+	return;
+      }
+
+    my $infobase = basename ($filename);
+    $infobase =~ s/\.te?xi(nfo)?$//;
+    my %clean_files;
+    grep { $clean_files{"$infobase.$_"} = 1 } @clean_suffixes;
+    return ($outfile, $vfile, (sort keys %clean_files));
 }
 
 
@@ -2237,21 +2265,10 @@ sub handle_texinfo
 
 	# If 'version.texi' is referenced by input file, then include
 	# automatic versioning capability.
-	my ($out_file, $vtexi) = &scan_texinfo_file ($relative_dir
-						     . "/" . $info_cursor);
-
-	if ($out_file eq '')
-	{
-	    &am_error ("\`$info_cursor' missing \@setfilename");
-	    next;
-	}
-
-	if ($out_file =~ /\.(.+)$/ && $1 ne 'info')
-	{
-	    # FIXME should report line number in input file.
-	    &am_error ("output of \`$info_cursor', \`$out_file', has unrecognized extension");
-	    next;
-	}
+	my ($out_file, $vtexi, @clean_files) =
+	  &scan_texinfo_file ("$relative_dir/$info_cursor")
+	    or next;
+	push (@texi_cleans, @clean_files);
 
 	if ($vtexi)
 	{
@@ -2312,19 +2329,6 @@ sub handle_texinfo
 
 	push (@info_deps_list, $out_file);
 	push (@dvis_list, $infobase . '.dvi');
-
-	# Generate list of things to clean for this target.  We do
-	# this explicitly because otherwise too many things could be
-	# removed.  In particular the ".log" extension might
-	# reasonably be used in other contexts by the user.
-	# FIXME: this is really out of control.
-	foreach my $tc_cursor ('aux', 'cp', 'cps', 'dvi', 'fn', 'fns', 'pgs',
-			       'ky', 'kys', 'ps', 'log', 'pg', 'toc', 'tp',
-			       'tps', 'vr', 'vrs', 'op', 'tr', 'cv', 'cn',
-			       'cm', 'ov')
-	{
-	    push (@texi_cleans, $infobase . '.' . $tc_cursor);
-	}
     }
 
     # Find these programs wherever they may lie.  Yes, this has
