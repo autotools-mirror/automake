@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002, 2003, 2004  Free Software Foundation, Inc.
+# Copyright (C) 2004  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -18,32 +18,42 @@
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-# Naming a subdirectory `obj/' is a bad idea.  Automake should say so.
+# Test SUDBIRS with /.
 
 . ./defs || exit 1
 
 set -e
 
-mkdir obj
-
-cat >>configure.in << 'END'
-AC_CONFIG_FILES(obj/Makefile)
+cat >> configure.in << 'END'
+AC_CONFIG_FILES([src/subdir/Makefile src/subdir2/Makefile])
 AC_OUTPUT
 END
 
-: > obj/Makefile.am
-echo 'SUBDIRS = obj' >Makefile.am
+echo SUBDIRS = src/subdir >Makefile.am
 
-$ACLOCAL
+mkdir src
+mkdir src/subdir
+mkdir src/subdir2
 
-AUTOMAKE_fails
-grep 'Makefile.am:1:.*obj.*BSD' stderr
+: >src/subdir/foo
+: >src/subdir2/foo
 
-cat >Makefile.am <<'EOF'
-SUBDIRS = @STH@
-FOO = obj
-DIST_SUBDIRS = $(FOO)
+cat >src/subdir/Makefile.am <<'EOF'
+EXTRA_DIST = foo
+SUBDIRS = ../subdir2
 EOF
 
-AUTOMAKE_fails
-grep 'Makefile.am:2:.*obj.*BSD' stderr
+cat >src/subdir2/Makefile.am <<'EOF'
+EXTRA_DIST = foo
+EOF
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE --copy --add-missing
+./configure
+$MAKE distdir
+test -f subdir9-1.0/src/subdir/foo
+test -f subdir9-1.0/src/subdir2/foo
+$MAKE clean
+$MAKE distclean
+test ! -f src/subdir2/Makefile

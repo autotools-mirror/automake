@@ -1225,8 +1225,8 @@ If C<skip_ac_subst> is set, Autoconf @substitutions@ will be skipped,
 i.e., C<&fun_item> will never be called for them.
 
 C<&fun_item> may return a list of items, they will be passed to
-C<&fun_store> later on.  Define C<&fun_item> as C<undef> when it serve
-no purpose, this will speed things up.
+C<&fun_store> later on.  Define C<&fun_item> or @<&fun_store> as
+C<undef> when they serve no purpose.
 
 Once all items of a variable have been processed, the result (of the
 calls to C<&fun_items>, or of recursive traversals of subvariables)
@@ -1338,7 +1338,8 @@ sub _do_recursive_traversal ($$&&$$$$)
 							  $fun_collect,
 							  $cond_filter,
 							  $full_cond,
-							  $inner_expand);
+							  $inner_expand,
+							  $skip_ac_subst);
 	      push (@result, @res);
 
 	      pop @_substfroms;
@@ -1383,7 +1384,7 @@ sub _do_recursive_traversal ($$&&$$$$)
 	      # We do not know any variable with this name.  Fall through
 	      # to filename processing.
 	    }
-	  elsif ($skip_ac_subst && $var =~ /^\@.+\@$/)
+	  elsif ($skip_ac_subst && $val =~ /^\@.+\@$/)
 	    {
 	      next;
 	    }
@@ -1412,6 +1413,8 @@ sub _do_recursive_traversal ($$&&$$$$)
   # is free to use the same variable several times in the same definition.
   $var->{'scanned'} = -1;
 
+  return ()
+    unless $fun_collect;
   # Make sure you update the doc of Automake::Variable::traverse_recursively
   # if you change the prototype of &fun_collect.
   return &$fun_collect ($var, $parent_cond, @allresults);

@@ -3527,20 +3527,16 @@ sub handle_dist ()
 }
 
 
-# &handle_subdirs ()
-# ------------------
-# Handle subdirectories.
-sub handle_subdirs ()
+# check_directory ($NAME, $WHERE)
+# -------------------------------
+# Ensure $NAME is a directory, and that it uses sane name.
+# Use $WHERE as a location in the diagnostic, if any.
+sub check_directory ($$)
 {
-  my $subdirs = var ('SUBDIRS');
-  return
-    unless $subdirs;
+  my ($dir, $where) = @_;
 
-  my @subdirs = $subdirs->value_as_list_recursive;
-  my @dsubdirs = ();
-  my $dsubdirs = var ('DIST_SUBDIRS');
-  @dsubdirs = $dsubdirs->value_as_list_recursive
-    if $dsubdirs;
+  error $where, "required directory $relative_dir/$dir does not exist"
+    unless -d "$relative_dir/$dir";
 
   # If an `obj/' directory exists, BSD make will enter it before
   # reading `Makefile'.  Hence the `Makefile' in the current directory
@@ -3558,29 +3554,48 @@ sub handle_subdirs ()
   #  % pmake     # BSD make
   #  echo World
   #  World
-  msg_var ('portability', 'SUBDIRS',
-	   "naming a subdirectory `obj' causes troubles with BSD make")
-    if grep ($_ eq 'obj', @subdirs);
-  msg_var ('portability', 'DIST_SUBDIRS',
-	   "naming a subdirectory `obj' causes troubles with BSD make")
-    if grep ($_ eq 'obj', @dsubdirs);
+  msg ('portability', $where,
+       "naming a subdirectory `obj' causes troubles with BSD make")
+    if $dir eq 'obj';
 
-  # Make sure each directory mentioned in SUBDIRS actually exists.
-  foreach my $dir (@subdirs)
-    {
-      # Skip directories substituted by configure.
-      next if $dir =~ /^\@.*\@$/;
+  # `aux' is probably the most important of the following forbidden name,
+  # since it's tempting to use it as an AC_CONFIG_AUX_DIR.
+  msg ('portability', $where,
+       "name `$dir' is reserved on W32 and DOS platforms")
+    if grep (/^$dir$/i, qw/aux lpt1 lpt2 lpt3 com1 com2 com3 com4 con prn/);
+}
 
-      if (! -d $relative_dir . '/' . $dir)
-	{
-	  err_var ('SUBDIRS', "required directory $relative_dir/$dir "
-		   . "does not exist");
-	  next;
-	}
+# check_directories_in_var ($VARIABLE)
+# ------------------------------------
+# Recursively check all items in variables $VARIABLE as directories
+sub check_directories_in_var ($)
+{
+  my ($var) = @_;
+  $var->traverse_recursively
+    (sub
+     {
+       my ($var, $val, $cond, $full_cond) = @_;
+       check_directory ($val, $var->rdef ($cond)->location);
+       return ();
+     },
+     undef,
+     skip_ac_subst => 1);
+}
 
-      err_var 'SUBDIRS', "directory should not contain `/'"
-	if $dir =~ /\//;
-    }
+# &handle_subdirs ()
+# ------------------
+# Handle subdirectories.
+sub handle_subdirs ()
+{
+  my $subdirs = var ('SUBDIRS');
+  return
+    unless $subdirs;
+
+  check_directories_in_var $subdirs;
+
+  my $dsubdirs = var ('DIST_SUBDIRS');
+  check_directories_in_var $dsubdirs
+    if $dsubdirs;
 
   $output_rules .= &file_contents ('subdirs', new Automake::Location);
   rvar ('RECURSIVE_TARGETS')->rdef (TRUE)->{'pretty'} = VAR_SORTED; # Gross!
@@ -4657,6 +4672,8 @@ sub scan_autoconf_traces ($)
 	    }
 	  $config_aux_dir = $args[1];
 	  $config_aux_dir_set_in_configure_ac = 1;
+	  $relative_dir = '.';
+	  check_directory ($config_aux_dir, $where);
 	}
       elsif ($macro eq 'AC_CONFIG_FILES')
 	{

@@ -56,6 +56,7 @@ autohdr4.test \
 auxdir.test \
 auxdir2.test \
 auxdir3.test \
+auxdir4.test \
 backsl.test \
 backsl2.test \
 backsl3.test \
@@ -450,6 +451,7 @@ subdir5.test \
 subdir6.test \
 subdir7.test \
 subdir8.test \
+subdir9.test \
 subdirbuiltsources.test \
 subcond.test \
 subcond2.test \

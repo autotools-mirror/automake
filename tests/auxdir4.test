@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002, 2003, 2004  Free Software Foundation, Inc.
+# Copyright (C) 2004  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -18,32 +18,22 @@
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-# Naming a subdirectory `obj/' is a bad idea.  Automake should say so.
+# Make sure we diagnose dangerous AC_CONFIG_AUX_DIR names.
 
 . ./defs || exit 1
 
 set -e
 
-mkdir obj
-
-cat >>configure.in << 'END'
-AC_CONFIG_FILES(obj/Makefile)
-AC_OUTPUT
+cat >configure.in <<'END'
+AC_INIT([auxdir4], [1.0])
+AC_CONFIG_AUX_DIR([aux])
+AM_INIT_AUTOMAKE
+AC_CONFIG_FILES([Makefile])
 END
 
-: > obj/Makefile.am
-echo 'SUBDIRS = obj' >Makefile.am
+: > Makefile.am
 
 $ACLOCAL
-
 AUTOMAKE_fails
-grep 'Makefile.am:1:.*obj.*BSD' stderr
-
-cat >Makefile.am <<'EOF'
-SUBDIRS = @STH@
-FOO = obj
-DIST_SUBDIRS = $(FOO)
-EOF
-
-AUTOMAKE_fails
-grep 'Makefile.am:2:.*obj.*BSD' stderr
+grep 'configure.in:2:.*aux.*does not exist' stderr
+grep 'configure.in:2:.*aux.*W32' stderr
