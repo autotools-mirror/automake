@@ -1143,7 +1143,13 @@ sub handle_languages
 			 'FASTDEP' => $FASTDEP,
 			 '-c'      => $lang->compile_flag || '',
 			 'MORE-THAN-ONE'
-			           => (count_files_for_language ($lang->name) > 1));
+			           => (count_files_for_language ($lang->name) > 1),
+			 # These are not used, but they need to be defined
+			 # so &transform do not complain.
+			 SUBDIROBJ     => 0,
+			 'DERIVED-EXT' => 'BUG',
+			 DIST_SOURCE   => 1,
+			);
 
 	# Generate the appropriate rules for this extension.
 	if (((! option 'no-dependencies') && $lang->autodep ne 'no')
@@ -6101,6 +6107,38 @@ sub flatten
   return $_;
 }
 
+# transform($TOKEN, \%PAIRS)
+# ==========================
+# If ($TOKEN, $VAL) is in %PAIRS:
+#   - replaces %$TOKEN% with $VAL,
+#   - enables/disables ?$TOKEN? and ?!$TOKEN?,
+#   - replaces %?$TOKEN% with TRUE or FALSE.
+sub transform($$)
+{
+  my ($token, $transform) = @_;
+
+  if (substr ($token, 0, 1) eq '%')
+    {
+      my $cond = (substr ($token, 1, 1) eq '?') ? 1 : 0;
+      $token = substr ($token, 1 + $cond, -1);
+      my $val = $transform->{$token};
+      prog_error "Unknown %token% `$token'" unless defined $val;
+      if ($cond)
+	{
+	  return $val ? 'TRUE' : 'FALSE';
+	}
+      else
+	{
+	  return $val;
+	}
+    }
+  # Now $token is '?xxx?' or '?!xxx?'.
+  my $neg = (substr ($token, 1, 1) eq '!') ? 1 : 0;
+  $token = substr ($token, 1 + $neg, -1);
+  my $val = $transform->{$token};
+  prog_error "Unknown ?token? `$token' (neg = $neg)" unless defined $val;
+  return (!!$val == $neg) ? '##%' : '';
+}
 
 # @PARAGRAPHS
 # &make_paragraphs ($MAKEFILE, [%TRANSFORM])
@@ -6111,11 +6149,9 @@ sub make_paragraphs ($%)
 {
   my ($file, %transform) = @_;
 
-  # Complete %transform with global options and make it a Perl $command.
+  # Complete %transform with global options.
   # Note that %transform goes last, so it overrides global options.
-  my $command =
-    "s/$IGNORE_PATTERN//gm;"
-    . transform ('CYGNUS'      => !! option 'cygnus',
+  %transform = ('CYGNUS'      => !! option 'cygnus',
 		 'MAINTAINER-MODE'
 		 => $seen_maint_mode ? subst ('MAINTAINER_MODE_TRUE') : '',
 
@@ -6140,9 +6176,7 @@ sub make_paragraphs ($%)
 		 'LIBTOOL'      => !! var ('LIBTOOL'),
 		 'NONLIBTOOL'   => 1,
 		 'FIRST'        => ! $transformed_files{$file},
-		 %transform)
-    # We don't need more than two consecutive new-lines.
-    . 's/\n{3,}/\n\n/g';
+		%transform);
 
   $transformed_files{$file} = 1;
 
@@ -6154,17 +6188,25 @@ sub make_paragraphs ($%)
   undef $/;
   $_ = $fc_file->getline;
   $/ = $saved_dollar_slash;
-  eval $command;
   $fc_file->close;
-  my $content = $_;
+
+  # Remove ##-comments.
+  # Besides we don't need more than two consecutive new-lines.
+  s/(?:$IGNORE_PATTERN|(?<=\n\n)\n+)//gom;
+  # Substitute Automake template tokens.
+  s/(?:%\??[\w\-]+%|\?!?[\w\-]+\?)/transform($&, \%transform)/ge;
+  # transform() may have added some ##%-comments to strip.
+  # (we use `##%' instead of `##' so we can distinguish ##%##%##% from
+  # ####### and do not remove the latter.)
+  s/^[ \t]*(?:##%)+.*\n//gm;
 
   # Split at unescaped new lines.
-  my @lines = split (/(?<!\\)\n/, $content);
+  my @lines = split (/(?<!\\)\n/, $_);
   my @res;
 
   while (defined ($_ = shift @lines))
     {
-      my $paragraph = "$_";
+      my $paragraph = $_;
       # If we are a rule, eat as long as we start with a tab.
       if (/$RULE_PATTERN/smo)
 	{
@@ -6187,7 +6229,6 @@ sub make_paragraphs ($%)
 	}
 
       push @res, $paragraph;
-      $paragraph = '';
     }
 
   return @res;
@@ -6407,38 +6448,6 @@ sub file_contents ($$%)
       file_contents_internal (1, "$libdir/am/$basename.am", $where,
 			      %transform);
     return "$comments$variables$rules";
-}
-
-
-# $REGEXP
-# &transform (%PAIRS)
-# -------------------
-# For each ($TOKEN, $VAL) in %PAIRS produce a replacement expression
-# suitable for file_contents which:
-#   - replaces %$TOKEN% with $VAL,
-#   - enables/disables ?$TOKEN? and ?!$TOKEN?,
-#   - replaces %?$TOKEN% with TRUE or FALSE.
-sub transform (%)
-{
-  my (%pairs) = @_;
-  my $result = '';
-
-  while (my ($token, $val) = each %pairs)
-    {
-      $result .= "s/\Q%$token%\E/\Q$val\E/gm;";
-      if ($val)
-	{
-	  $result .= "s/\Q?$token?\E//gm;s/^.*\Q?!$token?\E.*\\n//gm;";
-	  $result .= "s/\Q%?$token%\E/TRUE/gm;";
-	}
-      else
-	{
-	  $result .= "s/\Q?!$token?\E//gm;s/^.*\Q?$token?\E.*\\n//gm;";
-	  $result .= "s/\Q%?$token%\E/FALSE/gm;";
-	}
-    }
-
-  return $result;
 }
 
 
