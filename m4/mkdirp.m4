@@ -2,7 +2,7 @@
 # ---------------
 # Check whether `mkdir -p' is supported, fallback to mkinstalldirs otherwise.
 
-# Copyright (C) 2003 Free Software Foundation, Inc.
+# Copyright (C) 2003, 2004 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,23 +19,33 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 
+# Automake 1.8 used `mkdir -m 0755 -p --' to ensure that directories
+# created by `make install' are always world readable, even if the
+# installer happens to have an overly restrictive umask (e.g. 077).
+# This was a mistake.  There are at least two reasons why we must not
+# use `-m 0755':
+#   - it causes special bits like SGID to be ignored,
+#   - it may be too restrictive (some setups expect 775 directories).
+#
+# Do not use -m 0755 and let people choose whatever they expect by
+# setting umask.
 AC_DEFUN([AM_PROG_MKDIR_P],
-[if mkdir -m 0755 -p -- . 2>/dev/null; then
-  mkdir_p='mkdir -m 0755 -p --'
+[if mkdir -p -- . 2>/dev/null; then
+  mkdir_p='mkdir -p --'
 else
   # On NextStep and OpenStep, the `mkdir' command does not
   # recognize any option.  It will interpret all options as
   # directories to create, and then abort because `.' already
   # exists.
-  for d in ./-m ./0755 ./-p ./--;
+  for d in ./-p ./--;
   do
     test -d $d && rmdir $d
   done
   # $(mkinstalldirs) is defined by Automake if mkinstalldirs exists.
   if test -f "$ac_aux_dir/mkinstalldirs"; then
-    mkdir_p='$(mkinstalldirs) -m 0755'
+    mkdir_p='$(mkinstalldirs)'
   else
-    mkdir_p='$(install_sh) -m 0755 -d'
+    mkdir_p='$(install_sh) -d'
   fi
 fi
 AC_SUBST([mkdir_p])])
