@@ -54,6 +54,8 @@ cond6.test \
 cond7.test \
 cond8.test \
 cond9.test \
+condincl.test \
+condincl2.test \
 condman.test \
 condman2.test \
 conf2.test \
@@ -157,6 +159,7 @@ mkinstall.test \
 nodep.test \
 nodist.test \
 noinst.test \
+nostdinc.test \
 number.test \
 objc.test \
 obsolete.test \
@@ -213,6 +216,7 @@ subobj2.test \
 subobj3.test \
 subst.test \
 suffix.test \
+suffix2.test \
 symlink.test \
 syntax.test \
 tags.test \
