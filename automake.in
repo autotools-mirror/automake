@@ -1381,57 +1381,58 @@ sub handle_languages
 	 # Get information on $LANG.
 	my $pfx = $lang->autodep;
 	my $fpfx = ($pfx eq '') ? 'CC' : $pfx;
-	my $flag = $lang->flags || '';
 
-	# First include code for ordinary objects.
 	my %transform = ('PFX'  => $pfx,
 			 'FPFX' => $fpfx,
 			 'LIBTOOL' => $seen_libtool,
 			 'AMDEP'   => $use_dependencies ? 'AMDEP' : 'FALSE');
 
-	my $outarg = $lang->output_arg;
-	my $ltoutarg = '';
-	if ($lang->flags eq 'CFLAGS')
-	  {
-	    # C compilers don't always support -c -o.
-	    if (defined $options{'subdir-objects'})
-	      {
-		$outarg .= ' -o $@';
-	      }
-	    # We can always use -c -o with libtool.
-	    $ltoutarg = ' -o $@';
-	  }
+	# First include code for ordinary objects.
+	{
+	  my $outarg = $lang->output_arg;
+	  my $ltoutarg = '';
+	  if ($lang->flags eq 'CFLAGS')
+	    {
+	      # C compilers don't always support -c -o.
+	      if (defined $options{'subdir-objects'})
+		{
+		  $outarg .= ' -o $@';
+		}
+	      # We can always use -c -o with libtool.
+	      $ltoutarg = ' -o $@';
+	    }
 
-	# Generate the appropriate rules for this extension.  If
-	# dependency tracking was requested, and this extension
-	# supports it, then we don't generate the rule here.
-	if ($use_dependencies && $lang->autodep ne 'no')
-	  {
-	    my $compile = '$(' . $pfx . 'COMPILE)';
-	    my $ltcompile = '$(LT' . $pfx . 'COMPILE)';
+	  my %transform = (%transform,
+			   'GENERIC'   => 1,
+			   'EXT'       => $ext,
 
-	    $output_rules .= (&file_contents ('depend2',
-					      (%transform,
-					       'GENERIC'   => 1,
-					       'BASE'      => '$*',
-					       'SOURCE'    => '$<',
-					       'OBJ'       => '$@',
-					       'LTOBJ'     => '$@',
-					       'OBJOBJ'    => '$@',
-					       'COMPILE'   => $compile,
-					       'LTCOMPILE' => $ltcompile,
-					       'EXT'       => $ext))
-			      . "\n");
-	  }
-	elsif (defined $lang->compile)
-	  {
-	    $output_rules .= file_contents ('ext-compile',
-					    ('EXT'      => $ext,
-					     'COMPILER' => $lang->compiler,
-					     'OUTARG'   => $outarg,
-					     'LTOUTARG' => $ltoutarg));
-	  }
+			   'BASE'      => '$*',
+			   'SOURCE'    => '$<',
+			   'OBJ'       => '$@',
+			   'LTOBJ'     => '$@',
+			   'OBJOBJ'    => '$@',
 
+			   'COMPILER' => $lang->compiler,
+			   'COMPILE'   => '$(' . $pfx . 'COMPILE)',
+			   'LTCOMPILE' => '$(LT' . $pfx . 'COMPILE)',
+			   'OUTARG'   => $outarg,
+			   'LTOUTARG' => $ltoutarg);
+
+
+	  # Generate the appropriate rules for this extension.  If
+	  # dependency tracking was requested, and this extension
+	  # supports it, then we don't generate the rule here.
+	  if ($use_dependencies && $lang->autodep ne 'no')
+	    {
+	      $output_rules .= file_contents ('depend2', %transform);
+	    }
+	  elsif (defined $lang->compile)
+	    {
+	      $output_rules .= file_contents ('ext-compile', %transform);
+	    }
+	}
+
+	# Then handle files with specific flags.
         if ($lang->autodep ne 'no')
 	  {
 	    # Now include code for each specially handled object with this
@@ -1446,9 +1447,10 @@ sub handle_languages
 		next if defined $seen_files{$obj};
 		$seen_files{$obj} = 1;
 
-		my $val = "${derived}_${flag}";
+		my $flags = $lang->flags || '';
+		my $val = "${derived}_${flags}";
 
-		(my $obj_compile = $lang->compile) =~ s/\(AM_$flag/\($val/;
+		(my $obj_compile = $lang->compile) =~ s/\(AM_$flags/\($val/;
 		my $obj_ltcompile = '$(LIBTOOL) --mode=compile ' . $obj_compile;
 
 		# Generate a transform which will turn suffix targets in
