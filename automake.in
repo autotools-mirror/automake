@@ -3041,13 +3041,11 @@ sub for_dist_common
 }
 
 
-# handle_dist ($MAKEFILE)
-# -----------------------
+# handle_dist
+# -----------
 # Handle 'dist' target.
-sub handle_dist
+sub handle_dist ()
 {
-  my ($makefile) = @_;
-
   # `make dist' isn't used in a Cygnus-style tree.
   # Omit the rules so that people don't try to use them.
   return if option 'cygnus';
@@ -3260,9 +3258,9 @@ sub handle_subdirs ()
       # Skip directories substituted by configure.
       next if $dir =~ /^\@.*\@$/;
 
-      if (! -d $am_relative_dir . '/' . $dir)
+      if (! -d $relative_dir . '/' . $dir)
 	{
-	  err_var ('SUBDIRS', "required directory $am_relative_dir/$dir "
+	  err_var ('SUBDIRS', "required directory $relative_dir/$dir "
 		   . "does not exist");
 	  next;
 	}
@@ -3328,8 +3326,11 @@ sub scan_aclocal_m4 ()
 # AC_OUTPUT.  Consider what the dependencies should look like in this
 # case:
 #   AC_OUTPUT(src/out:src/in1:lib/in2)
-# The first argument, ADD_SRCDIR, is 1 if $(top_srcdir) should be added.
-# If 0 then files that require this addition will simply be ignored.
+# If the first argument, ADD_SRCDIR, is non-zero (e.g. 1), $(top_srcdir)
+# is added to files which are not in the current directory.
+# If ADD_SRCDIR is a filename and the filename occurs in INPUTS, it
+# will be prefixed with $(srcdir) unless already prefixed by $(top_srcdir)
+# by the above rule.
 sub rewrite_inputs_into_dependencies ($@)
 {
   my ($add_srcdir, @inputs) = @_;
@@ -3339,62 +3340,57 @@ sub rewrite_inputs_into_dependencies ($@)
     {
       if (dirname ($single) eq $relative_dir)
 	{
-	  push (@newinputs, basename ($single));
+	  push (@newinputs,
+		($add_srcdir eq $single ? '$(srcdir)/' : '')
+		. basename ($single));
 	}
       else
 	{
-	  push (@newinputs, ($add_srcdir ? '$(top_srcdir)/' : '') . $single);
+	  push (@newinputs,
+		($add_srcdir ? '$(top_srcdir)/' : '') . $single);
 	}
     }
   return @newinputs;
 }
 
 
-# &handle_configure ($LOCAL, $INPUT, @SECONDARY_INPUTS)
-# -----------------------------------------------------
+# &handle_configure ($MAKEFILE_AM, $MAKEFILE_IN, $MAKEFILE, @INPUTS)
+# ------------------------------------------------------------------
 # Handle remaking and configure stuff.
 # We need the name of the input file, to do proper remaking rules.
-sub handle_configure ($$@)
+sub handle_configure ($$$@)
 {
-  my ($local, $input, @secondary_inputs) = @_;
+  my ($makefile_am, $makefile_in, $makefile, @inputs) = @_;
 
-  my $input_base = basename ($input);
-  my $local_base = basename ($local);
+  prog_error 'empty @inputs'
+    unless @inputs;
 
-  my $amfile = $input_base . '.am';
-  # We know we can always add '.in' because it really should be an
-  # error if the .in was missing originally.
-  my $infile = '$(srcdir)/' . $input_base . '.in';
-  my $colon_infile = '';
-  if ($local ne $input || @secondary_inputs)
-    {
-      $colon_infile = ':' . $input . '.in';
-    }
-  $colon_infile .= ':' . join (':', @secondary_inputs)
-    if @secondary_inputs;
+  my ($rel_makefile_am) = rewrite_inputs_into_dependencies (1, $makefile_am);
+  my ($rel_makefile_in) = rewrite_inputs_into_dependencies ($makefile_in,
+							    $makefile_in);
+  my $rel_makefile = basename $makefile;
 
-  my @rewritten = rewrite_inputs_into_dependencies (1, @secondary_inputs);
-
+  my $colon_infile = ':' . join (':', @inputs);
+  $colon_infile = '' if $colon_infile eq ":$makefile.in";
+  my @rewritten = rewrite_inputs_into_dependencies ($makefile_in, @inputs);
   my ($regen_aclocal_m4, @aclocal_m4_deps) = scan_aclocal_m4;
-
-
   define_pretty_variable ('am__configure_deps', TRUE, INTERNAL,
 			  @configure_deps);
 
   $output_rules .= file_contents
     ('configure',
      new Automake::Location,
-     MAKEFILE              => $local_base,
+     MAKEFILE              => $rel_makefile,
      'MAKEFILE-DEPS'       => "@rewritten",
      'CONFIG-MAKEFILE'     => ($relative_dir eq '.') ? '$@' : '$(subdir)/$@',
-     'MAKEFILE-IN'         => $infile,
+     'MAKEFILE-IN'         => $rel_makefile_in,
      'MAKEFILE-IN-DEPS'    => "@include_stack",
-     'MAKEFILE-AM'         => $amfile,
+     'MAKEFILE-AM'         => $rel_makefile_am,
      STRICTNESS            => global_option 'cygnus'
                                 ? 'cygnus' : $strictness_name,
      'USE-DEPS'            => global_option 'no-dependencies'
                                 ? ' --ignore-deps' : '',
-     'MAKEFILE-AM-SOURCES' =>  "$input$colon_infile",
+     'MAKEFILE-AM-SOURCES' => "$makefile$colon_infile",
      'REGEN-ACLOCAL-M4'    => $regen_aclocal_m4,
      ACLOCAL_M4_DEPS       => "@aclocal_m4_deps");
 
@@ -3540,7 +3536,8 @@ sub handle_configure ($$@)
 	}
 
       # Automake files should not be stored in here, but in %MAKE_LIST.
-      prog_error "$lfile in \@other_input_files"
+      prog_error ("$lfile in \@other_input_files\n"
+		  . "\@other_input_files = (@other_input_files)")
 	if -f $file . '.am';
 
       my $local = basename ($file);
@@ -4174,6 +4171,26 @@ sub split_config_file_spec ($)
   return ($output, @inputs);
 }
 
+# $input
+# locate_am (@POSSIBLE_SOURCES)
+# -----------------------------
+# AC_CONFIG_FILES allow specifications such as Makefile:top.in:mid.in:bot.in
+# This functions returns the first *.in file for which a *.am exists.
+# It returns undef otherwise.
+sub locate_am (@)
+{
+  my (@rest) = @_;
+  my $input;
+  foreach my $file (@rest)
+    {
+      if (($file =~ /^(.*)\.in$/) && -f "$1.am")
+	{
+	  $input = $file;
+	  last;
+	}
+    }
+  return $input;
+}
 
 my %make_list;
 
@@ -4184,27 +4201,18 @@ my %make_list;
 sub scan_autoconf_config_files ($)
 {
   my ($config_files) = @_;
+
   # Look at potential Makefile.am's.
   foreach (split ' ', $config_files)
     {
       # Must skip empty string for Perl 4.
       next if $_ eq "\\" || $_ eq '';
 
-      # Handle $local:$input syntax.  Note that we ignore
-      # every input file past the first, though we keep
-      # those around for later.
-      my ($local, $input, @rest) = split (/:/);
-      if (! $input)
-        {
-	  $input = $local;
-        }
-      else
-        {
-	  # FIXME: should be error if .in is missing.
-	  $input =~ s/\.in$//;
-        }
-
-      if (-f $input . '.am')
+      # Handle $local:$input syntax.
+      my ($local, @rest) = split (/:/);
+      @rest = ("$local.in",) unless @rest;
+      my $input = locate_am @rest;
+      if ($input)
         {
 	  # We have a file that automake should generate.
 	  $make_list{$input} = join (':', ($local, @rest));
@@ -4424,14 +4432,14 @@ sub scan_autoconf_files ()
 
   scan_autoconf_traces ($configure_ac);
 
+  @configure_input_files = sort keys %make_list;
   # Set input and output files if not specified by user.
   if (! @input_files)
     {
-      @input_files = sort keys %make_list;
+      @input_files = @configure_input_files;
       %output_files = %make_list;
     }
 
-  @configure_input_files = sort keys %make_list;
 
   if (! $seen_init_automake)
     {
@@ -6501,13 +6509,13 @@ sub push_dist_common
 
 ################################################################
 
-# generate_makefile ($OUTPUT, $MAKEFILE)
-# --------------------------------------
+# generate_makefile ($MAKEFILE_AM, $MAKEFILE_IN)
+# ----------------------------------------------
 # Generate a Makefile.in given the name of the corresponding Makefile and
 # the name of the file output by config.status.
 sub generate_makefile ($$)
 {
-  my ($output, $makefile) = @_;
+  my ($makefile_am, $makefile_in) = @_;
 
   # Reset all the Makefile.am related variables.
   initialize_per_input;
@@ -6519,21 +6527,20 @@ sub generate_makefile ($$)
 
   # Name of input file ("Makefile.am") and output file
   # ("Makefile.in").  These have no directory components.
-  $am_file_name = basename ($makefile) . '.am';
-  $in_file_name = basename ($makefile) . '.in';
+  $am_file_name = basename ($makefile_am);
+  $in_file_name = basename ($makefile_in);
 
   # $OUTPUT is encoded.  If it contains a ":" then the first element
   # is the real output file, and all remaining elements are input
   # files.  We don't scan or otherwise deal with these input files,
   # other than to mark them as dependencies.  See
   # &scan_autoconf_files for details.
-  my (@secondary_inputs);
-  ($output, @secondary_inputs) = split (/:/, $output);
+  my ($makefile, @inputs) = split (/:/, $output_files{$makefile_in});
 
-  $relative_dir = dirname ($output);
-  $am_relative_dir = dirname ($makefile);
+  $relative_dir = dirname ($makefile);
+  $am_relative_dir = dirname ($makefile_am);
 
-  read_main_am_file ($makefile . '.am');
+  read_main_am_file ($makefile_am);
   if (handle_options)
     {
       # Process buffered warnings.
@@ -6582,7 +6589,7 @@ sub generate_makefile ($$)
   check_gnu_standards;
   check_gnits_standards;
 
-  handle_configure ($output, $makefile, @secondary_inputs);
+  handle_configure ($makefile_am, $makefile_in, $makefile, @inputs);
   handle_gettext;
   handle_libraries;
   handle_ltlibraries;
@@ -6618,11 +6625,11 @@ sub generate_makefile ($$)
   handle_tests;
 
   # This must come after most other rules.
-  handle_dist ($makefile);
+  handle_dist;
 
   handle_footer;
   do_check_merge_target;
-  handle_all ($output);
+  handle_all ($makefile);
 
   # FIXME: Gross!
   if (var ('lib_LTLIBRARIES') && var ('bin_PROGRAMS'))
@@ -6645,10 +6652,10 @@ sub generate_makefile ($$)
       mkdir ($output_directory . '/' . $am_relative_dir, 0755);
     }
 
-  my ($out_file) = $output_directory . '/' . $makefile . ".in";
+  my ($out_file) = $output_directory . '/' . $makefile_in;
 
   # We make sure that `all:' is the first target.
-  $output =
+  my $output =
     "$output_vars$output_all$output_header$output_rules$output_trailer";
 
   # Decide whether we must update the output file or not.
@@ -6871,25 +6878,19 @@ sub parse_arguments ()
 		 . "Try `$0 --help' for more information.");
 	}
 
-      # Handle $local:$input syntax.  Note that we only examine the
-      # first ":" file to see if it is automake input; the rest are
-      # just taken verbatim.  We still keep all the files around for
-      # dependency checking, however.
-      my ($local, $input, @rest) = split (/:/, $arg);
-      if (! $input)
+      # Handle $local:$input syntax.
+      my ($local, @rest) = split (/:/, $arg);
+      @rest = ("$local.in",) unless @rest;
+      my $input = locate_am @rest;
+      if ($input)
 	{
-	  $input = $local;
+	  push @input_files, $input;
+	  $output_files{$input} = join (':', ($local, @rest));
 	}
       else
 	{
-	  # Strip .in; later on .am is tacked on.  That is how the
-	  # automake input file is found.  Maybe not the best way, but
-	  # it is easy to explain.
-	  $input =~ s/\.in$//
-	    or fatal "invalid input file name `$arg'\n.";
+	  error "no Automake input file found in `$arg'";
 	}
-      push (@input_files, $input);
-      $output_files{$input} = join (':', ($local, @rest));
     }
 }
 
@@ -6924,7 +6925,7 @@ do
   # Now do all the work on each file.
   foreach my $file (@input_files)
     {
-      $am_file = $file;
+      ($am_file = $file) =~ s/\.in$//;
       if (! -f ($am_file . '.am'))
 	{
 	  error "`$am_file.am' does not exist";
@@ -6934,7 +6935,7 @@ do
 	  # Any warning setting now local to this Makefile.am.
 	  dup_channel_setup;
 
-	  generate_makefile ($output_files{$am_file}, $am_file);
+	  generate_makefile ($am_file . '.am', $file);
 
 	  # Back out any warning setting.
 	  drop_channel_setup;
