@@ -139,6 +139,17 @@ $seen_path_xtra = 0;
 # Whether YACC variable has been seen in configure.in.
 $seen_prog_yacc = 0;
 
+# Two variables to control lex use.  One is for AC_DECL_YYTEXT and the
+# other is for AC_PROG_LEX.
+$seen_decl_yytext = 0;
+$seen_prog_lex = 0;
+
+# TRUE if we've seen AC_PROG_CC.
+$seen_prog_cc = 0;
+
+# TRUE if we've seen AC_PROG_CXX.
+$seen_prog_cxx = 0;
+
 # TRUE if we've seen AC_CANONICAL_(HOST|SYSTEM).  The presence of
 # AC_CHECK_TOOL also sets this.
 $seen_canonical = 0;
@@ -572,10 +583,12 @@ sub get_object_extension
 # Handle yacc and lex.
 sub handle_yacc_lex_cxx
 {
+    #
+    # First do yacc and lex.
+    #
+
     local ($yacc_count) = scalar (keys %yacc_sources);
     local ($lex_count) = scalar (keys %lex_sources);
-    local ($cxx_count) = scalar (keys %cxx_extensions);
-
     if ($yacc_count)
     {
 	push (@suffixes, '.y');
@@ -590,35 +603,38 @@ sub handle_yacc_lex_cxx
 	    $output_rules .= '$(YACC) $(YFLAGS) $< && mv y.tab.c $@';
 	}
 	$output_rules .= "\n";
+
+	if (! $seen_prog_yacc)
+	{
+	    # FIXME should include a reference line.  FIXME maybe
+	    # directly reference AC_PROG_YACC somehow?
+	    &am_error ("yacc source seen but \`YACC' not defined in \`configure.in'\n");
+	}
     }
     if ($lex_count)
     {
 	push (@suffixes, '.l');
-	$output_vars .= "LEX = \@LEX\@\n";
+	$output_vars .= ("LEX = \@LEX\@\n"
+			 . "LEX_OUTPUT_ROOT = \@LEX_OUTPUT_ROOT\@\n");
 	$output_rules .= (".l.c:\n\t"
 			  . "\n");
 	if ($lex_count > 1)
 	{
-	    $output_rules .= '$(INTERLOCK) =lexlockdir $(YLWRAP) lex.yy.c $@ $(LEX) $(LFLAGS) $<';
+	    $output_rules .= '$(INTERLOCK) =lexlockdir $(YLWRAP) $(LEX_OUTPUT_ROOT).c $@ $(LEX) $(LFLAGS) $<';
 	}
 	else
 	{
-	    $output_rules .= '$(LEX) $(LFLAGS) $< && mv lex.yy.c $@';
+	    $output_rules .= '$(LEX) $(LFLAGS) $< && mv $(LEX_OUTPUT_ROOT).c $@';
 	}
 	$output_rules .= "\n";
-    }
-    if ($cxx_count)
-    {
-	$output_vars .= ("CXX = \@CXX\@\n"
-			 . "CXXFLAGS = \@CXXFLAGS\@\n"
-			 . "CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)\n"
-			 . "CXXLINK = $(CXX) $(LDFLAGS) -o $@\n");
 
-	local ($ext);
-	foreach $ext (keys %cxx_extensions)
+	if (! $seen_prog_lex)
 	{
-	    $output_rules .= ("$ext.o:\n"
-			      . "\t\$(CXXCOMPILE) -c \$<\n");
+	    &am_error ("lex source seen but \`AC_PROG_LEX' not in \`configure.in'\n");
+	}
+	if (! $seen_decl_yytext)
+	{
+	    &am_error ("lex source seen but \`AC_DECL_YYTEXT' not in \`configure.in'\n");
 	}
     }
 
@@ -631,6 +647,45 @@ sub handle_yacc_lex_cxx
 	&require_config_file ($FOREIGN, 'interlock', 'ylwrap');
 	$output_vars .= ('INTERLOCK = ' . $config_aux_dir . "/interlock\n"
 			 . 'YLWRAP = ' . $config_aux_dir . "/ylwrap\n");
+    }
+
+    #
+    # Now handle C++.
+    #
+    local ($cxx_count) = scalar (keys %cxx_extensions);
+    if ($cxx_count)
+    {
+	$output_vars .= ("CXX = \@CXX\@\n"
+			 . "CXXFLAGS = \@CXXFLAGS\@\n"
+			 . 'CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)'
+			 . "\n"
+			 . 'CXXLINK = $(CXX) $(LDFLAGS) -o $@'
+			 . "\n");
+
+	local ($ext);
+	foreach $ext (keys %cxx_extensions)
+	{
+	    $output_rules .= ("$ext.o:\n"
+			      . "\t\$(CXXCOMPILE) -c \$<\n");
+	}
+
+	if (! $seen_prog_cxx)
+	{
+	    &am_error ("C++ source seen but \`AC_PROG_CXX' not in \`configure.in'\n");
+	}
+    }
+
+    #
+    # Last, handle some C cleanup.
+    #
+    if ($seen_c_source)
+    {
+	$output_vars .= ("CC = \@CC\@\n"
+			 . "CFLAGS = \@CFLAGS\@\n"
+			 . 'COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)'
+			 . "\n"
+			 . 'LINK = $(CC) $(LDFLAGS) -o $@'
+			 . "\n");
     }
 }
 
@@ -729,15 +784,23 @@ sub handle_source_transform
 		    $cxx_extensions{$&} = 1;
 		    $linker = 'CXXLINK';
 		}
+		else
+		{
+		    # FORTRAN support.  FIXME not finished.
+		    s/\.f90$/$obj/g;
+		    s/\.for$/$obj/g;
 
-		# FORTRAN support.
-		s/\.f90$/$obj/g;
-		s/\.for$/$obj/g;
+		    # .y is yacc.  .l is lex.  .f and .F is fortran.
+		    # .s is assembly.  .M is Objective-C++.  .m is
+		    # Objective-C.
+		    s/\.[cylfFsmM]$/$obj/g;
 
-		# .y is yacc.  .l is lex.  .f and .F is fortran.  .s
-		# is assembly.  .M is Objective-C++.  .m is
-		# Objective-C.
-		s/\.[cylfFsmM]$/$obj/g;
+		    # FIXME of course, this should only happen for C
+		    # source.  The multi-language support must really
+		    # be cleaned up more globally.
+		    $seen_c_source = 1;
+		}
+
 		push (@result, $_)
 		    unless $prefix eq 'EXTRA_';
 
@@ -2490,6 +2553,10 @@ sub scan_configure
 	$seen_make_set = 1 if /AC_PROG_MAKE_SET/;
 	$seen_arg_prog = 1 if /AC_ARG_PROGRAM/;
 	$seen_ranlib = 1 if /AC_PROG_RANLIB/;
+        $seen_prog_cc = 1 if /AC_PROG_CC/;
+        $seen_prog_cxx = 1 if /AC_PROG_CXX/;
+        $seen_prog_lex = 1 if /AC_PROG_LEX/;
+        $seen_decl_yytext = 1 if /AC_DECL_YYTEXT/;
         $seen_maint_mode = 1 if /AM_MAINTAINER_MODE/;
         $seen_package = 1 if /PACKAGE=/;
         $seen_version = 1 if /VERSION=/;
@@ -2983,6 +3050,9 @@ sub initialize_per_input
 
     # C++ source extensions we've seen.
     %cxx_extensions = ();
+
+    # TRUE if we've seen any non-C++ sources.
+    $seen_c_source = 0;
 }
 
 
