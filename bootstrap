@@ -19,6 +19,16 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
+# Find the path separator
+echo "#! /bin/sh" >boot$$.sh
+echo  "exit 0"   >>boot$$.sh
+chmod +x boot$$.sh
+if (PATH="/nonexistent;."; boot$$.sh) >/dev/null 2>&1; then
+  PATH_SEPARATOR=';'
+else
+  PATH_SEPARATOR=:
+fi
+rm -f boot$$.sh
 
 # Don't ignore failures
 set -e
@@ -26,7 +36,7 @@ set -e
 # Find perl.  Code based on Autoconf, but without non-POSIX support.
 if test -z "$PERL"; then
 	save_IFS=$IFS
-	IFS=:
+	IFS=$PATH_SEPARATOR
 	for dir in $PATH; do
 		IFS=$save_IFS
 		test -z "$dir" && dir=.
