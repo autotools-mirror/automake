@@ -31,7 +31,10 @@ package Language;
 use Class::Struct;
 struct ('ansi'    => '$',
 	'autodep' => '$',
+        'compile'  => '$',
+        'compiler'  => '$',
 	'derived_autodep' => '$',
+        'flags' => '$',
         'linker' => '$',
 	'pure'   => '$');
 
@@ -1262,18 +1265,18 @@ sub finish_languages
 	if ($use_dependencies && $lang_obj->autodep ne 'no')
 	{
 	    # Don't generate the rule, but still generate the variables.
-	    if (exists $language_map{"$lang-compile"})
+	    if (defined $lang_obj->compile)
 	    {
-		$comp = $language_map{"$lang-compile"};
+		$comp = $lang_obj->compile
 	    }
 	}
-	elsif (exists $language_map{"$lang-compile"})
+	elsif (defined $lang_obj->compile)
 	{
-	    $comp = $language_map{"$lang-compile"};
+	    $comp = $lang_obj->compile;
 
 	    my $outarg = $language_map{"$lang-output-arg"};
 	    my $ltoutarg;
-	    if ($language_map{"$lang-flags"} eq 'CFLAGS')
+	    if ($lang_obj->flags eq 'CFLAGS')
 	    {
 		# C compilers don't always support -c -o.
 		if (defined $options{'subdir-objects'})
@@ -1284,10 +1287,9 @@ sub finish_languages
 		$ltoutarg = ' -o $@';
 	    }
 
-	    my $compiler = $language_map{"$lang-compiler-name"};
 	    $output_rules .= file_contents ('ext-compile',
 					    ('EXT'      => $ext,
-					     'COMPILER' => $compiler,
+					     'COMPILER' => $lang_obj->compiler,
 					     'OUTARG'   => $outarg,
 					     'LTOUTARG' => $ltoutarg));
 	}
@@ -1303,17 +1305,16 @@ sub finish_languages
 	# probably corner cases here that do not work properly.
 	# People linking Java code to Fortran code deserve pain.
 	$non_c = 0
-	    if $language_map{"$lang-pure"} eq 'no';
+	    if $lang_obj->pure eq 'no';
 
 	if ($comp ne '')
 	{
-	    &define_compiler_variable ($language_map{"$lang-compiler-name"},
-				       $ltcompile, $comp);
+	    &define_compiler_variable ($lang_obj->compiler, $ltcompile, $comp);
 	}
 	# The compiler's flag must be a configure variable.
-	if (exists $language_map{"$lang-flags"})
+	if (defined $lang_obj->flags)
 	{
-	    &define_configure_variable ($language_map{"$lang-flags"});
+	    &define_configure_variable ($lang_obj->flags);
 	}
 
 	# Compute the function name of the finisher and then call it.
@@ -1328,10 +1329,10 @@ sub finish_languages
     {
 	if (! defined $done{'c'})
 	{
-	    &define_configure_variable ($language_map{'c-flags'});
-	    &define_compiler_variable ($language_map{'c-compiler-name'},
+	    &define_configure_variable ($languages{'c'}->flags);
+	    &define_compiler_variable ($languages{'c'}->compiler,
 				       $ltcompile,
-				       $language_map{'c-compile'});
+				       $languages{'c'}->compile);
 	}
 	&define_variable ('CCLD', '$(CC)');
 	&define_variable ('LINK',
@@ -1465,7 +1466,7 @@ sub handle_single_transform_list ($$$@)
             next if $r == $LANG_IGNORE;
 
             # Now extract linker and other info.
-            $linker = $language_map{"$lang-linker"};
+            $linker = $lang_obj->linker;
 
             my $this_obj_ext;
 	    prog_error ("$lang-ansi-p = " . $language_map{"$lang-ansi-p"}
@@ -1482,9 +1483,8 @@ sub handle_single_transform_list ($$$@)
                 $this_obj_ext = $nonansi_obj;
             }
 
-            if (exists $language_map{"$lang-flags"}
-                && &variable_defined ($derived . '_'
-                                      . $language_map{"$lang-flags"}))
+            if (defined $lang_obj->flags
+                && &variable_defined ($derived . '_' . $lang_obj->flags))
             {
                 # We have a per-executable flag in effect for this
                 # object.  In this case we rewrite the object's
@@ -1514,18 +1514,17 @@ sub handle_single_transform_list ($$$@)
                     if $lang eq 'c';
 
                 &prog_error ("$lang flags defined without compiler")
-  		    if ! defined $language_map{"$lang-compile"};
+  		    if ! defined $lang_obj->compile;
 
                 # Compute the rule to compile this object.
-                my $flag = $language_map{"$lang-flags"};
+                my $flag = $lang_obj->flags;
                 my $val = "(${derived}_${flag}";
-                ($rule = $language_map{"$lang-compile"}) =~
-                    s/\(AM_$flag/$val/;
+                ($rule = $lang_obj->compile) =~ s/\(AM_$flag/$val/;
 
                 $rule .= ' ' . $language_map{"$lang-output-arg"};
                 # For C we have to add the -o, because the
                 # standard rule doesn't include it.
-                if ($language_map{"$lang-flags"} eq 'CFLAGS')
+                if ($lang_obj->flags eq 'CFLAGS')
                 {
                     $rule .= ' -o $@';
                 }
@@ -3066,7 +3065,7 @@ sub add_depend2
     # Get information on $LANG.
     my $pfx = $lang_obj->autodep;
     my $fpfx = ($pfx eq '') ? 'CC' : $pfx;
-    my $flag = $language_map{"$lang-flags"} || '';
+    my $flag = $lang_obj->flags || '';
 
     # First include code for ordinary objects.
     my %transform = ('PFX'  => $pfx,
@@ -3114,8 +3113,7 @@ sub add_depend2
 
 	my $val = "${derived}_${flag}";
 
-	my $obj_compile = $language_map{"$lang-compile"};
-	$obj_compile =~ s/\(AM_$flag/\($val/;
+	(my $obj_compile = $lang_obj->compile) =~ s/\(AM_$flag/\($val/;
 	my $obj_ltcompile = '$(LIBTOOL) --mode=compile ' . $obj_compile;
 
 	# Generate a transform which will turn suffix targets in
@@ -5302,7 +5300,13 @@ sub register_language
     my $obj = new Language;
     $obj->ansi ($language_map{"$lang-ansi-p"});
     $obj->autodep ($language_map{"$lang-autodep"});
+    $obj->compile ($language_map{"$lang-compile"})
+      if defined $language_map{"$lang-compile"};
+    $obj->compiler ($language_map{"$lang-compiler-name"})
+      if defined $language_map{"$lang-compiler-name"};
     $obj->derived_autodep ($language_map{"$lang-derived-autodep"});
+    $obj->flags ($language_map{"$lang-flags"})
+      if defined $language_map{"$lang-flags"};
     $obj->linker ($language_map{"$lang-linker"});
     $obj->pure ($language_map{"$lang-pure"});
 
