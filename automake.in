@@ -448,6 +448,12 @@ my %required_targets =
 # depcomp is added after the toplevel Makefile.in -- which
 # should distribute depcomp -- has been generated.)
 my $automake_needs_to_reprocess_all_files = 0;
+
+# Options set via AM_AUTOMAKE_OPTIONS.
+my $global_options = '';
+# Line number for AM_AUTOMAKE_OPTIONS.
+my $global_options_line;
+
 
 
 ################################################################
@@ -1390,57 +1396,87 @@ sub version_check ($$$$)
     return 0;
 }
 
-# Handle AUTOMAKE_OPTIONS variable.  Return 1 on error, 0 otherwise.
-sub handle_options
+# $BOOL
+# process_option_list ($CONFIG, @OPTIONS)
+# ------------------------------
+# Process a list of options.  Return 1 on error, 0 otherwise.
+# This is a helper for handle_options.  CONFIG is true if we're
+# handling global options.
+sub process_option_list
 {
-    if (variable_defined ('AUTOMAKE_OPTIONS'))
+    my ($config, @list) = @_;
+    foreach (@list)
     {
-	foreach (&variable_value_as_list_recursive ('AUTOMAKE_OPTIONS', ''))
+	$options{$_} = 1;
+	if ($_ eq 'gnits' || $_ eq 'gnu' || $_ eq 'foreign')
 	{
-	    $options{$_} = 1;
-	    if ($_ eq 'gnits' || $_ eq 'gnu' || $_ eq 'foreign')
+	    &set_strictness ($_);
+	}
+	elsif ($_ eq 'cygnus')
+	{
+	    $cygnus_mode = 1;
+	}
+	elsif (/^(.*\/)?ansi2knr$/)
+	{
+	    # An option like "../lib/ansi2knr" is allowed.  With no
+	    # path prefix, we assume the required programs are in this
+	    # directory.  We save the actual option for later.
+	    $options{'ansi2knr'} = $_;
+	}
+	elsif ($_ eq 'no-installman' || $_ eq 'no-installinfo'
+	       || $_ eq 'dist-shar' || $_ eq 'dist-zip'
+	       || $_ eq 'dist-tarZ' || $_ eq 'dist-bzip2'
+	       || $_ eq 'dejagnu' || $_ eq 'no-texinfo.tex'
+	       || $_ eq 'readme-alpha' || $_ eq 'check-news'
+	       || $_ eq 'subdir-objects' || $_ eq 'nostdinc'
+	       || $_ eq 'no-exeext')
+	{
+	    # Explicitly recognize these.
+	}
+	elsif ($_ eq 'no-dependencies')
+	{
+	    $use_dependencies = 0;
+	}
+	elsif (/(\d+)\.(\d+)([a-z]?)(-[A-Za-z0-9]+)?/)
+	{
+	    # Got a version number.
+	    if (version_check ($1, $2, $3, $4))
 	    {
-		&set_strictness ($_);
+		return 1;
 	    }
-	    elsif ($_ eq 'cygnus')
+	}
+	else
+	{
+	    if ($config)
 	    {
-		$cygnus_mode = 1;
-	    }
-	    elsif (/^(.*\/)?ansi2knr$/)
-	    {
-		# An option like "../lib/ansi2knr" is allowed.  With
-		# no path prefix, we assume the required programs are
-		# in this directory.  We save the actual option for
-		# later.
-		$options{'ansi2knr'} = $_;
-	    }
-	    elsif ($_ eq 'no-installman' || $_ eq 'no-installinfo'
-		   || $_ eq 'dist-shar' || $_ eq 'dist-zip'
-		   || $_ eq 'dist-tarZ' || $_ eq 'dist-bzip2'
-		   || $_ eq 'dejagnu' || $_ eq 'no-texinfo.tex'
-		   || $_ eq 'readme-alpha' || $_ eq 'check-news'
-		   || $_ eq 'subdir-objects' || $_ eq 'nostdinc'
-		   || $_ eq 'no-exeext')
-	    {
-		# Explicitly recognize these.
-	    }
-	    elsif ($_ eq 'no-dependencies')
-	    {
-		$use_dependencies = 0;
-	    }
-	    elsif (/(\d+)\.(\d+)([a-z]?)(-[A-Za-z0-9]+)?/)
-	    {
-		# Got a version number.
-		if (version_check ($1, $2, $3, $4))
-		{
-		    return 1;
-		}
+		file_error ($global_options_line,
+			    "option `" . $_ . "\' not recognized");
 	    }
 	    else
 	    {
 		macro_error ('AUTOMAKE_OPTIONS',
 			     "option `" . $_ . "\' not recognized");
 	    }
+	    return 1;
+	}
+    }
+}
+
+# Handle AUTOMAKE_OPTIONS variable.  Return 1 on error, 0 otherwise.
+sub handle_options
+{
+    # Process global options first so that more specific options can
+    # override.
+    if (&process_option_list (1, split (' ', $global_options)))
+    {
+	return 1;
+    }
+
+    if (variable_defined ('AUTOMAKE_OPTIONS'))
+    {
+	if (&process_option_list (0, &variable_value_as_list_recursive ('AUTOMAKE_OPTIONS', '')))
+	{
+	    return 1;
 	}
     }
 
@@ -4436,6 +4472,7 @@ sub scan_autoconf_traces ($)
 		  AM_C_PROTOTYPES
 		  AM_GNU_GETTEXT
 		  AM_INIT_AUTOMAKE
+		  AM_AUTOMAKE_OPTIONS
 		  AM_MAINTAINER_MODE
 		  AM_PATH_LISPDIR
 		  AM_PATH_PYTHON
@@ -4524,6 +4561,11 @@ sub scan_autoconf_traces ($)
 	  $package_version = $args[2];
 	  $package_version_location = $here;
 	  $seen_init_automake = 1;
+	}
+      elsif ($macro eq 'AM_AUTOMAKE_OPTIONS')
+        {
+	  $global_options = $args[1];
+	  $global_options_line = $here;
 	}
       elsif ($macro eq 'AM_MAINTAINER_MODE')
 	{
@@ -4759,6 +4801,12 @@ sub scan_one_autoconf_file
 	    ($package_version = $1) =~ s/$AM_PACKAGE_VERSION_PATTERN/$1/o;
 	    $package_version_location = $here;
 	    $seen_init_automake = $here;
+	}
+
+	if (/AM_AUTOMAKE_OPTIONS\(([^)]+)\)/)
+	{
+            $global_options = &unquote_m4_arg ($1);
+            $global_options_line = $here;
 	}
 
 	if (/AM_PROG_LEX/)

@@ -19,8 +19,6 @@
 ## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 ## 02111-1307, USA.
 
-AUTOMAKE_OPTIONS = 1.4 dist-bzip2
-
 ## We need `.' in SUBDIRS because we want `check' to build `.' before
 ## tests.
 SUBDIRS = . m4 lib tests
