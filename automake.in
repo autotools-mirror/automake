@@ -420,6 +420,19 @@ exit $exit_status;
 
 ################################################################
 
+
+# prog_error (@PRINT-ME)
+# ----------------------
+# Signal a programming error, display PRINT-ME, and exit 1.
+sub prog_error
+{
+    print STDERR "automake: programming error: @_\n";
+    exit 1;
+}
+
+
+################################################################
+
 # Parse command line.
 sub parse_arguments
 {
@@ -767,12 +780,9 @@ sub handle_options
 
 		local ($rmajor, $rminor, $ralpha) = ($1, $2, $3);
 
-		if ($VERSION !~ /([0-9]+)\.([0-9]+)([a-z])?/)
-		{
-		    print STDERR
-			"automake: programming error: version is incorrect\n";
-		    exit 1;
-		}
+		&prog_error ("version is incorrect: $VERSION")
+		    if $VERSION !~ /([0-9]+)\.([0-9]+)([a-z])?/;
+
 		local ($tmajor, $tminor, $talpha) = ($1, $2, $3);
 
 		# 2.0 is better than 1.0.
@@ -1260,11 +1270,9 @@ sub handle_single_transform_list
                 &require_file ($FOREIGN, 'compile')
                     if $lang eq 'c';
 
-                if (! defined $language_map{$lang . '-compile'})
-                {
-                    print STDERR "automake: programming error: $lang flags defined without compiler\n";
-                    exit 1;
-                }
+                &prog_error ("$lang flags defined without compiler")
+  		    if ! defined $language_map{$lang . '-compile'};
+
                 # Compute the rule to compile this object.
                 local ($flag) = $language_map{$lang . '-flags'};
                 local ($val) = "(${derived}_${flag}";
@@ -1556,10 +1564,10 @@ sub handle_lib_objects
     local ($xname, $var, $lex_seen) = @_;
     local ($ret);
 
-    die "automake: programming error 1 in handle_lib_objects\n"
+    &prog_error ("handle_lib_objects: $var undefined")
 	if ! &variable_defined ($var);
 
-    die "automake: programming error 2 in handle_lib_objects\n"
+    &prog_error ("handle_lib_objects: lex_seen and $var =~ /LIBADD/")
 	if $lex_seen && $var =~ /LIBADD/;
 
     local (@conds) = &variable_conditions ($var);
@@ -5390,9 +5398,7 @@ sub register_language
 	}
 	elsif (defined $extension_map{$iter})
 	{
-	    print STDERR
-		"automake: programming error: duplicate extension $iter\n";
-	    exit 1;
+	    &prog_error ("duplicate extension $iter");
 	}
 	else
 	{
@@ -6596,11 +6602,8 @@ sub read_main_am_file
     local (%def_type) = ();
 
     # This supports the strange variable tricks we are about to play.
-    if (scalar keys %contents > 0)
-    {
-	print STDERR "automake: programming error: variable defined before read_main_am_file\n";
-	exit 1;
-    }
+    &prog_error ("variable defined before read_main_am_file")
+        if scalar keys %contents > 0;
 
     # We want to predefine as many variables as possible.  This lets
     # the user set them with `+=' in Makefile.am.  However, we don't
@@ -6981,10 +6984,8 @@ sub file_contents_with_transform
     local ($command, $basename) = @_;
     local ($file) = $am_dir . '/' . $basename . '.am';
 
-    if ($command ne '' && substr ($command, -1) ne ';')
-    {
-	die "automake: programming error in file_contents_with_transform: $command\n";
-    }
+    &prog_error ("file_contents_with_transform: $command")
+        if $command ne '' && substr ($command, -1) ne ';';
 
     open (FC_FILE, $file)
 	|| die "automake: installation error: cannot open \`$file'\n";
@@ -7062,7 +7063,7 @@ sub file_contents_with_transform
 	    $result_vars .= $comment . $spacing . $_ if ! $skipping;
 	    $comment = $spacing = '';
 	    $saw_bk = /\\$/;
-	    print STDERR "automake: programming error: .am macro \`$1' with trailing backslash at $file:$.\n"
+	    &prog_error (".am macro \`$1' with trailing backslash at $file:$.")
 		if $saw_bk;
 	    $am_var_defs{$1} = $3;
 	}
@@ -7744,12 +7745,8 @@ sub push_dist_common
     {
 	if (! defined $dist_common{$file})
 	{
-	    if ($handle_dist_run)
-	    {
-		print STDERR
-		    "automake: programming error: push_dist_common run after handle_dist\n";
-		exit 1;
-	    }
+	    &prog_error ("push_dist_common run after handle_dist")
+	        if $handle_dist_run;
 	    $dist_common{$file} = 1;
 	}
     }
