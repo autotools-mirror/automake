@@ -31,7 +31,7 @@ AC_DEFUN([AM_CONFIG_HEADER],
 m4_ifndef([_AM_Config_Header_Index], m4_define([_AM_Config_Header_Index], [0]))
 dnl prepare to store our destination file list for use in config.status
 AC_FOREACH([_AM_File], [$1],
-           [m4_pushdef([_AM_Dest], m4_patsubst(_AM_File, [:.*]))
+           [m4_pushdef([_AM_Dest], patsubst(_AM_File, [:.*]))
             m4_define([_AM_Config_Header_Index],
                       m4_incr(_AM_Config_Header_Index))
             dnl and add it to the list of files AC keeps track of, along
