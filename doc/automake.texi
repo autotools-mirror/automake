@@ -1657,6 +1657,12 @@ Print a summary of the command line options and exit.
 Add the directory @var{dir} to the list of directories searched for
 @file{.m4} files.
 
+@item --install
+@opindex --install
+Install system-wide third-party macros into the first directory
+specified with @code{-I @var{dir}} instead of copying them in the
+output files.
+
 @item --force
 @opindex --force
 Always overwrite the output file.  The default is to overwrite the output
@@ -2237,6 +2243,24 @@ this requirement will hinder development.  An easy solution is to copy
 such third-party macros in your local @file{m4/} directory so they get
 distributed.
 
+Since Automake 1.10, @command{aclocal} offers an option to copy these
+system-wide third-party macros in your local macro directory, solving
+the above problem.  Simply use:
+
+@example
+ ACLOCAL_AMFLAGS = -I m4 --install
+@end example
+
+@noindent
+With this setup, system-wide macros will be copied to @file{m4/}
+the first time you run @command{autoreconf}.  Then the locally
+installed macros will have precedence over the system-wide installed
+macros each time @command{aclocal} is run again.  (So the only reason
+to keep @code{--install} in the flags after the first run is that when
+you later edit @file{configure.ac} and depend on a new macro, this
+macro will be installed in your @file{m4/} automatically.)
+
+
 @node Future of aclocal
 @section The Future of @command{aclocal}
 @cindex @command{aclocal}'s scheduled death
@@ -2250,9 +2274,7 @@ feature is misplaced.
 
 The new implementation will probably be done slightly differently.
 For instance it could enforce the @file{m4/}-style layout discussed in
-@ref{Local Macros}, and take care of copying (and even updating)
-third-party macros from @file{/usr/share/aclocal/} into the local
-@file{m4/} directory.
+@ref{Local Macros}.
 
 We have no idea when and how this will happen.  This has been
 discussed several times in the past, but someone still has to commit

@@ -59,17 +59,20 @@ my @user_includes = ();
 my @automake_includes = ("@datadir@/aclocal-$APIVERSION");
 my @system_includes = ('@datadir@/aclocal');
 
+# Whether we should copy M4 file in $user_includes[0].
+my $install = 0;
+
 # configure.ac or configure.in.
 my $configure_ac;
 
 # Output file name.
 my $output_file = 'aclocal.m4';
 
-# Modification time of the youngest dependency.
-my $greatest_mtime = 0;
-
 # Option --force.
 my $force_output = 0;
+
+# Modification time of the youngest dependency.
+my $greatest_mtime = 0;
 
 # Which macros have been seen.
 my %macro_seen = ();
@@ -97,6 +100,12 @@ use constant FT_SYSTEM => 3;
 
 # Map file names to included files (transitively closed).
 my %file_includes = ();
+
+# Files which have already been added.
+my %file_added = ();
+
+# Files that have already been scanned.
+my %scanned_configure_dep = ();
 
 # Matches a macro definition.
 #   AC_DEFUN([macroname], ...)
@@ -126,6 +135,41 @@ sub check_acinclude ()
       msg ('syntax', "warning: macro `$key' defined in "
 	   . "acinclude.m4 but never used")
 	if $map{$key} eq 'acinclude.m4' && ! exists $macro_seen{$key};
+    }
+}
+
+sub reset_maps ()
+{
+  $greatest_mtime = 0;
+  %macro_seen = ();
+  @file_order = ();
+  %map = ();
+  %map_traced_defs = ();
+  %file_contents = ();
+  %file_type = ();
+  %file_includes = ();
+  %file_added = ();
+  %scanned_configure_dep = ();
+  undef &search;
+}
+
+# install_file ($SRC, $DEST)
+sub install_file ($$)
+{
+  my ($src, $dest) = @_;
+
+  if ($force_output
+      || !exists $file_contents{$dest}
+      || $file_contents{$src} ne $file_contents{$dest})
+    {
+      if (system ('cp', $src, $dest))
+	{
+	  error ("error while copying `$src' to `$dest'");
+	}
+      else
+	{
+	  msg 'note', "installing `$dest'";
+	}
     }
 }
 
@@ -218,7 +262,6 @@ sub add_macro ($)
 # Scan a configure dependency (configure.ac, or separate m4 files)
 # for uses of know macros and AC_REQUIREs of possibly unknown macros.
 # Recursively scan m4_included files.
-my %scanned_configure_dep = ();
 sub scan_configure_dep ($)
 {
   my ($file) = @_;
@@ -275,7 +318,6 @@ sub scan_configure_dep ($)
 # add_file ($FILE)
 # ----------------
 # Add $FILE to output.
-my %file_added = ();		# files which have already been added.
 sub add_file ($)
 {
   my ($file) = @_;
@@ -468,6 +510,7 @@ sub scan_configure ()
 ################################################################
 
 # Write output.
+# Return 0 iff some files were installed locally.
 sub write_aclocal ($@)
 {
   my ($output_file, @macros) = @_;
@@ -493,6 +536,8 @@ sub write_aclocal ($@)
   # Never include configure.ac :)
   delete $files{$configure_ac};
 
+  my $installed = 0;
+
   for my $file (grep { exists $files{$_} } @file_order)
     {
       # Check the time stamp of this file, and of all files it includes.
@@ -508,7 +553,23 @@ sub write_aclocal ($@)
       if ($file_type{$file} != FT_USER
 	  || $file =~ m,^(?:\w:)?[\\/],)
 	{
-	  $output .= $file_contents{$file} . "\n";
+	  if (!$install || $file_type{$file} != FT_SYSTEM)
+	    {
+	      # Copy the file into aclocal.m4.
+	      $output .= $file_contents{$file} . "\n";
+	    }
+	  else
+	    {
+	      # Install the file (and any file it includes).
+	      my $dest;
+	      for my $ifile (@{$file_includes{$file}}, $file)
+		{
+		  $dest = "$user_includes[0]/" . basename $ifile;
+		  verb "installing $ifile to $dest";
+		  install_file ($ifile, $dest);
+		}
+	      $installed = 1;
+	    }
 	}
       else
 	{
@@ -517,9 +578,15 @@ sub write_aclocal ($@)
 	}
     }
 
+  if ($installed)
+    {
+      verb "running aclocal anew, because some files were installed locally";
+      return 0;
+    }
+
   # Nothing to output?!
   # FIXME: Shouldn't we diagnose this?
-  return if ! length ($output);
+  return 1 if ! length ($output);
 
   # We used to print `# $output_file generated automatically etc.'  But
   # this creates spurious differences when using autoreconf.  Autoreconf
@@ -558,14 +625,14 @@ $output";
       && $output eq contents ($output_file))
     {
       verb "$output_file unchanged";
-      return;
+      return 1;
     }
 
   verb "writing $output_file";
 
   my $out = new Automake::XFile "> $output_file";
   print $out $output;
-  return;
+  return 1;
 }
 
 ################################################################
@@ -584,6 +651,7 @@ Options:
       --force               always update output file
       --help                print this help, then exit
   -I DIR                    add directory to search list for .m4 files
+      --install             copy third-party files to the first -I directory
       --output=FILE         put output in FILE (default aclocal.m4)
       --print-ac-dir        print name of directory holding m4 files, then exit
       --verbose             don't be silent
@@ -633,6 +701,7 @@ sub parse_arguments ()
 			     },
      'force'		=> \$force_output,
      'I=s'		=> \@user_includes,
+     'install'          => \$install,
      'output=s'		=> \$output_file,
      'print-ac-dir'     => \$print_and_exit,
      'verbose'		=> sub { setup_channel 'verb', silent => 0; },
@@ -694,6 +763,12 @@ sub parse_arguments ()
       exit 0;
     }
 
+  if ($install && !@user_includes)
+    {
+      fatal ("--install should copy macros in the directory indicated by the"
+	     . "\nfirst -I option, but no -I was supplied.");
+    }
+
   if (! -d $system_includes[0])
     {
       # By default $(datadir)/aclocal doesn't exist.  We don't want to
@@ -727,12 +802,26 @@ sub parse_arguments ()
 parse_WARNINGS;		    # Parse the WARNINGS environment variable.
 parse_arguments;
 $configure_ac = require_configure_ac;
-scan_m4_files;
-scan_configure;
-if (! $exit_code)
+
+# We may have to rerun aclocal if some file have been installed, but
+# it should not happen more than once.  The reason we must run again
+# is that once the file has been moved from /usr/share/aclocal/ to the
+# local m4/ directory it appears at a new place in the search path,
+# hence it should be output at a different position in aclocal.m4.  If
+# we did not rerun aclocal, the next run of aclocal would produce a
+# different aclocal.m4.
+my $loop = 0;
+while (1)
   {
+    ++$loop;
+    prog_error "Too many loops." if $loop > 2;
+
+    reset_maps;
+    scan_m4_files;
+    scan_configure;
+    last if $exit_code;
     my %macro_traced = trace_used_macros;
-    write_aclocal ($output_file, keys %macro_traced);
+    last if write_aclocal ($output_file, keys %macro_traced);
   }
 check_acinclude;
 

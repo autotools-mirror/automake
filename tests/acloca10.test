@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2003  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2005  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -21,6 +21,8 @@
 # Make sure aclocal define macros in the same order as -I's.
 # This is the same as aclocal9.test, with the macro calls reversed.
 # (It did make a difference.)
+#
+# Also check for --install.
 
 . ./defs || exit 1
 
@@ -29,9 +31,10 @@ set -e
 cat >> configure.in << 'END'
 MACRO2
 MACRO1
+MACRO3
 END
 
-mkdir m4_1 m4_2
+mkdir m4_1 m4_2 dirlist-test
 
 cat >m4_1/somedefs.m4 <<EOF
 AC_DEFUN([MACRO1], [echo macro11 >> foo])
@@ -42,14 +45,51 @@ cat >m4_2/somedefs.m4 <<EOF
 AC_DEFUN([MACRO1], [echo macro12 >> foo])
 EOF
 
+cat >dirlist-test/macro.m4 <<EOF
+AC_DEFUN([MACRO3], [echo macro3 >> foo])
+EOF
+
 $ACLOCAL -I m4_1 -I m4_2
 $AUTOCONF
 ./configure
 grep macro11 foo
 grep macro21 foo
+grep macro3 foo
+grep MACRO3 aclocal.m4
+test ! -f m4_1/macro.m4
+test ! -f m4_2/macro.m4
 
 $ACLOCAL -I m4_2 -I m4_1
 $AUTOCONF
 ./configure
 grep macro12 foo
 grep macro21 foo
+grep macro3 foo
+grep MACRO3 aclocal.m4
+test ! -f m4_1/macro.m4
+test ! -f m4_2/macro.m4
+
+ACLOCAL_TESTSUITE_FLAGS='-I m4_1 -I m4_2'
+$ACLOCAL --install
+$AUTOCONF
+./configure
+grep macro11 foo
+grep macro21 foo
+grep macro3 foo
+grep MACRO3 aclocal.m4 && exit 1
+test -f m4_1/macro.m4
+test ! -f m4_2/macro.m4
+cp aclocal.m4 copy.m4
+
+echo '#GREPME' >>dirlist-test/macro.m4
+$ACLOCAL --install
+$AUTOCONF
+./configure
+grep macro11 foo
+grep macro21 foo
+grep macro3 foo
+grep MACRO3 aclocal.m4 && exit 1
+grep GREPME m4_1/macro.m4 && exit 1
+test -f m4_1/macro.m4
+test ! -f m4_2/macro.m4
+diff aclocal.m4 copy.m4
