@@ -2357,9 +2357,15 @@ sub handle_libraries
 
       my $seen_libobjs = 0;
       # Check that the library fits the standard naming convention.
-      if (basename ($onelib) !~ /^lib.*\.a/)
+      my $bn = basename ($onelib);
+      if ($bn !~ /^lib.*\.a$/)
 	{
-	  error $where, "`$onelib' is not a standard library name";
+	  $bn =~ s/^(?:lib)?(.*?)(?:\.[^.]*)?$/lib$1.a/;
+	  my $suggestion = dirname ($onelib) . "/$bn";
+	  $suggestion =~ s|^\./||g;
+	  msg ('error-gnu/warn', $where,
+	       "`$onelib' is not a standard library name\n"
+	       . "did you mean `$suggestion'?")
 	}
 
       $where->push_context ("while processing library `$onelib'");
@@ -2523,25 +2529,40 @@ sub handle_ltlibraries
 					    '_DEPENDENCIES');
 
       # Check that the library fits the standard naming convention.
-      my $libname_rx = "^lib.*\.la";
+      my $libname_rx = '^lib.*\.la';
       my $ldvar = var ("${xlib}_LDFLAGS") || var ('AM_LDFLAGS');
       my $ldvar2 = var ('LDFLAGS');
       if (($ldvar && grep (/-module/, $ldvar->value_as_list_recursive))
 	  || ($ldvar2 && grep (/-module/, $ldvar2->value_as_list_recursive)))
 	{
 	  # Relax name checking for libtool modules.
-	  $libname_rx = "\.la";
+	  $libname_rx = '\.la';
 	}
-      if (basename ($onelib) !~ /$libname_rx$/)
+
+      my $bn = basename ($onelib);
+      if ($bn !~ /$libname_rx$/)
 	{
+          my $type = 'library';
+          if ($libname_rx eq '\.la')
+	    {
+	      $bn =~ s/^(lib|)(.*?)(?:\.[^.]*)?$/$1$2.la/;
+              $type = 'module';
+	    }
+          else
+	    {
+	      $bn =~ s/^(?:lib)?(.*?)(?:\.[^.]*)?$/lib$1.la/;
+	    }
+	  my $suggestion = dirname ($onelib) . "/$bn";
+	  $suggestion =~ s|^\./||g;
 	  msg ('error-gnu/warn', $where,
-	       "`$onelib' is not a standard libtool library name");
+	       "`$onelib' is not a standard libtool $type name\n"
+	       . "did you mean `$suggestion'?")
 	}
 
       $where->push_context ("while processing Libtool library `$onelib'");
       $where->set (INTERNAL->get);
 
-      # Make sure we at look at these.
+      # Make sure we look at these.
       set_seen ($xlib . '_LDFLAGS');
       set_seen ($xlib . '_DEPENDENCIES');
 
