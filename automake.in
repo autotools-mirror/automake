@@ -849,7 +849,7 @@ sub handle_lib_objects
     foreach $lsearch (&variable_value_as_list ($var))
     {
 	# Skip -lfoo and -Ldir.
-	next if /^-[lL]/;
+	next if $lsearch =~ /^-[lL]/;
 
 	# Assume we have a file of some sort, and push it onto the
 	# dependency list.  This isn't perfect, but hopefully people
@@ -991,6 +991,7 @@ sub handle_libraries
     # am_install_var.
     local ($onedir, $onelib);
     local (@outlist);
+    local (@libfiles_list);
     foreach $onedir (keys %valid) 
     {
 	if (&variable_defined ($onedir . '_LIBRARIES'))
@@ -1002,6 +1003,9 @@ sub handle_libraries
 	    }
 	    &pretty_print ($onedir . '_LIBFILES =', "", @outlist);
 	}
+
+	push (@libfiles_list, '$(' . $onedir . '_LIBFILES)')
+	    unless $onedir eq 'EXTRA';
     }
     push (@all, '$(LIBFILES)');
 
@@ -1049,7 +1053,7 @@ sub handle_libraries
 
     if (! &variable_defined ('LIBFILES'))
     {
-	&pretty_print ('LIBFILES = ', "", @liblist);
+	&pretty_print ('LIBFILES = ', "", @libfiles_list);
     }
 
     if ($seen_libtool)
