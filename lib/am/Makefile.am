@@ -102,6 +102,12 @@ maintainer-check: automake aclocal
 	  echo "Found bad split in automake.in" 1>&2; \
 	  exit 1; \
 	fi
+## Look for `cd dir && pwd' without CDPATH=:
+	@if grep '` *cd ' $(srcdir)/automake.in $(srcdir)/*.am \
+	      $(srcdir)/m4/*.m4; then \
+	  echo "Consider setting CDPATH in the lines above" 1>&2; \
+	  exit 1; \
+	fi
 
 # Tag before making distribution.  Also, don't make a distribution if
 # checks fail.  Also, make sure the NEWS file is up-to-date.
