@@ -29,7 +29,7 @@ pkgdata_DATA = COPYING INSTALL texinfo.tex ansi2knr.c ansi2knr.1 $(amfiles)
 pkgdata_SCRIPTS = config.guess config.sub install-sh mdate-sh missing \
 mkinstalldirs elisp-comp ylwrap acinstall
 
-EXTRA_DIST = acinstall $(pkgdata_DATA) automake.spec.in
+EXTRA_DIST = acinstall $(pkgdata_DATA)
 
 # The following requires a fixed version of the Emacs 19.30 etags.
 ETAGS_ARGS = automake.in aclocal.in --lang=none \
