@@ -591,11 +591,14 @@ sub get_object_extension
 {
     local ($out) = @_;
 
+    # Always set this.
+    $dir_holds_sources = 1;
+
     # Maybe require libtool library object files.
-    local ($l) = '';
+    local ($l, $extension) = ('', 'o');
     $l = 'l' if ($out =~ /^lib.*\.la$/);
 
-    if (! $dir_holds_sources)
+    if (! $included_generic_compile)
     {
 	# Boilerplate.
 	local ($xform) = '';
@@ -623,22 +626,29 @@ sub get_object_extension
 	    }
 	}
 
-	# Check for automatic de-ANSI-fication.
-	$dir_holds_sources = 'o';
 	push (@suffixes, '.c', '.o');
 	push (@clean, 'compile');
 
-	if ($seen_libtool)
-	{
-	    # Output the libtool compilation rules.
-	    $output_rules .= &file_contents ('libtool');
-	    &push_phony_cleaners ('libtool');
+	$included_generic_compile = 1;
+    }
 
-	    push (@suffixes, '.lo');
-	    push (@clean, 'libtool');
-	}
+    if ($seen_libtool && ! $included_libtool_compile)
+    {
+	# Output the libtool compilation rules.
+	$output_rules .= &file_contents ('libtool');
+	&push_phony_cleaners ('libtool');
 
-	if (defined $options{'ansi2knr'})
+	push (@suffixes, '.lo');
+	push (@clean, 'libtool');
+
+	$included_libtool_compile = 1;
+    }
+
+    # Check for automatic de-ANSI-fication.
+    if (defined $options{'ansi2knr'})
+    {
+	$extension = '$o';
+	if (! $included_knr_compile)
 	{
 	    if (! $am_c_prototypes)
 	    {
@@ -649,8 +659,8 @@ sub get_object_extension
 		$am_c_prototypes = 1;
 	    }
 
-	    $dir_holds_sources = '$o';
 	    push (@suffixes, '._c', '._o');
+	    push (@suffixes, '._lo') if $seen_libtool;
 
 	    # Only require ansi2knr files if they should appear in
 	    # this directory.
@@ -686,11 +696,11 @@ sub get_object_extension
 	    push (@clean, 'kr');
 	    &push_phony_cleaners ('kr');
 
-	    # FIXME - should be able to do libtool objects, too.
+	    $included_knr_compile = 1;
 	}
     }
 
-    return '.' . $l . $dir_holds_sources;
+    return '.' . $l . $extension;
 }
 
 # Handle yacc and lex.
@@ -768,7 +778,7 @@ sub handle_yacc_lex_cxx
     if ($seen_libtool)
     {
 	&define_configure_variable ("LIBTOOL");
-	$libtool = '$(LIBTOOL) ';
+	$libtool = '$(LIBTOOL) --mode=link ';
     }
 
     #
@@ -790,7 +800,7 @@ sub handle_yacc_lex_cxx
 	    $output_rules .= ("$ext.o:\n"
 			      . "\t\$(CXXCOMPILE) -c \$<\n");
 	    $output_rules .= ("$ext.lo:\n"
-			      . "\t\$(LIBTOOL) $(CXXCOMPILE) -c \$<\n")
+			      . "\t\$(LIBTOOL) --mode=compile $(CXXCOMPILE) -c \$<\n")
 		if ($seen_libtool);
 	}
 
@@ -917,10 +927,13 @@ sub handle_single_transform_list
 	    {
 		# FORTRAN support.  FIXME: not finished.
 	    }
-	    elsif (s/\.[clysmM]$/._o/)
+	    elsif (s/\.s$/.o/)
 	    {
-		# .c is C.  .l is lex.  .y is yacc.  .s is assembly.
-		# .M is Objective-C++.  .m is Objective-C.
+		# .s is assembly.  Just rewrite it.  FIXME: not finished.
+	    }
+	    elsif (s/\.[cly]$/._o/)
+	    {
+		# .c is C.  .l is lex.  .y is yacc.
 
 		# Note: first we rewrite (eg) foo.c to foo._o and push
 		# the file onto the list of objects that require
@@ -929,10 +942,6 @@ sub handle_single_transform_list
 		# required.
 		$de_ansi_objects{$_} = 1;
 		s/\._o$/$obj/;
-
-		# FIXME: of course, this should only happen for C
-		# source.  The multi-language support must really be
-		# cleaned up more globally.
 		$seen_c_source = 1;
 	    }
 	    else
@@ -998,10 +1007,6 @@ sub handle_source_transform
 	    push (@sources, $unxformed . '.c');
 	    push (@objects, $unxformed . $obj);
 	    push (@files, $unxformed . '.c');
-	}
-	else
-	{
-	    &define_variable ("EXTRA_" . $one_file . "_SOURCES", '');
 	}
 
 	($temp, @result) = &handle_single_transform_list (@files);
@@ -3933,10 +3938,17 @@ sub initialize_per_input
     @sources = ();
     @objects = ();
 
-    # TRUE if current directory holds any C source files.  (Actually
-    # holds object extension, but this information is encapsulated in
-    # the function get_object_extension).
-    $dir_holds_sources = '';
+    # TRUE if current directory holds any C source files.
+    $dir_holds_sources = 0;
+
+    # These variables track inclusion of various compile-related .am
+    # files.  $included_generic_compile is TRUE if the basic code has
+    # been included.  $included_knr_compile is TRUE if the ansi2knr
+    # code has been included.  $included_libtool_compile is TRUE if
+    # libtool support has been included.
+    $included_generic_compile = 0;
+    $included_knr_compile = 0;
+    $included_libtool_compile = 0;
 
     # TRUE if current directory holds any headers.
     $dir_holds_headers = 0;
