@@ -2376,6 +2376,7 @@ values of @code{MAYBE_OPT} are, it is necessary to define
 @code{DIST_SUBDIRS}.
 
 @subsection Non-configured Subdirectories
+@cindex Subdirectories, configured conditionally
 
 The semantic of @code{DIST_SUBDIRS} is often misunderstood by some
 users that try to @emph{configure and build} subdirectories
@@ -2395,7 +2396,7 @@ directory must be configured and appear in @code{DIST_SUBDIRS}.
 Building packages that do not configure every subdirectory is a tricky
 business, and we do not recommend it to the novice as it is easy to
 produce an incomplete tarball by mistake.  We will not discuss this
-topic in depth here, yet for the adventurous there are a few rules to
+topic in depth here, yet for the adventurous here are a few rules to
 remember.
 
 @cartouche
@@ -2419,12 +2420,31 @@ lists all the directories that have been configured.
 @end cartouche
 
 In order to prevent recursion in some non-configured directory you
-must therefore ensure that this directory do not appear in
+must therefore ensure that this directory does not appear in
 @code{DIST_SUBDIRS} (and @code{SUBDIRS}).  For instance if you define
 @code{SUBDIRS} conditionally using @code{AC_SUBST} and do not define
 @code{DIST_SUBDIRS} explicitly, it will be default to
 @code{$(SUBDIRS)}; another possibility is to force @code{DIST_SUBDIRS
 = $(SUBDIRS)}.
+
+Of course, directories which are omitted from @code{DIST_SUBDIRS} will
+not be distributed unless you make other arrangements for this to
+happen (for instance always running @code{make dist} in a
+configuration where all directories are known to appear in
+@code{DIST_SUBDIRS}; or writing a @code{dist-hook} target to
+distribute these directories).
+
+@cindex Subdirectories, not distributed
+In few packages, non-configured directories are not even expected to
+be distributed.  Although these packages do not require the
+aforementioned extra arrangements, there is another pitfall.  If the
+name of a directory appears in @code{SUBDIRS} or @code{DIST_SUBDIRS},
+@command{automake} will make sure the directory exists.  Consequently
+@command{automake} cannot be run on such a distribution when one
+directory has been omitted.  One way to avoid this check is to use the
+@code{AC_SUBST} method to declare conditional directories; since
+@command{automake} does not know the values of @code{AC_SUBST}
+variables it cannot ensure the corresponding directory exist.
 
 @node Alternative
 @section An Alternative Approach to Subdirectories
