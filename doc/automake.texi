@@ -255,6 +255,7 @@ Frequently Asked Questions about Automake
 * maintainer-mode::             missing and AM_MAINTAINER_MODE
 * wildcards::                   Why doesn't Automake support wildcards?
 * distcleancheck::              Files left in build directory after distclean
+* Flag Variables Ordering::     CFLAGS vs. AM_CFLAGS vs. mumble_CFLAGS
 * renamed objects::             Why are object files sometimes renamed?
 * Multiple Outputs::            Writing rules for tools with many output files
 
@@ -675,6 +676,8 @@ sense.)  The shadow variable is named by prepending @samp{AM_} to the
 user variable's name.  For instance, the shadow variable for
 @code{YFLAGS} is @code{AM_YFLAGS}.
 
+@xref{Flag Variables Ordering}, for more discussion about these
+variables and how they interact with per-target variables.
 
 @node Auxiliary Programs
 @section Programs automake might require
@@ -3600,6 +3603,9 @@ to also use the value of @samp{AM_CFLAGS}, you would need to write:
 maude_CFLAGS = @dots{} your flags @dots{} $(AM_CFLAGS)
 @end example
 
+@xref{Flag Variables Ordering}, for more discussion about the
+interaction between user variables, @code{AM_} shadow variables, and
+per-target variables.
 
 @item maude_SHORTNAME
 On some platforms the allowable file names are very short.  In order to
@@ -7339,6 +7345,7 @@ lists.
 * maintainer-mode::             missing and AM_MAINTAINER_MODE
 * wildcards::                   Why doesn't Automake support wildcards?
 * distcleancheck::              Files left in build directory after distclean
+* Flag Variables Ordering::     CFLAGS vs. AM_CFLAGS vs. mumble_CFLAGS
 * renamed objects::             Why are object files sometimes renamed?
 * Multiple Outputs::            Writing rules for tools with many output files
 @end menu
@@ -7807,6 +7814,229 @@ setting @code{distcleancheck_listfiles} as documented in @ref{Dist}.
 Make sure you do understand the reason why @code{make distcheck}
 complains before you do this.  @code{distcleancheck_listfiles} is a
 way to @emph{hide} errors, not to fix them.  You can always do better.
+
+@node Flag Variables Ordering
+@section Flag Variables Ordering
+@cindex Ordering flag variables
+@cindex Flag variables, ordering
+
+@display
+What is the difference between @code{AM_CFLAGS}, @code{CFLAGS}, and
+@code{mumble_CFLAGS}?
+@end display
+
+@display
+Why does @command{automake} output @code{CPPFLAGS} after
+@code{AM_CPPFLAGS} on compile lines?  Shouldn't it be the converse?
+@end display
+
+@display
+My @file{configure} adds some warning flags into @code{CXXFLAGS}.  In
+one @file{Makefile.am} I would like to append a new flag, however if I
+put the flag into @code{AM_CXXFLAGS} it is prepended to the other
+flags, not appended.
+@end display
+
+@subsection Compile Flag Variables
+@cindex @code{AM_CCASFLAGS} and @code{CCASFLAGS}
+@cindex @code{AM_CFLAGS} and @code{CFLAGS}
+@cindex @code{AM_CPPFLAGS} and @code{CPPFLAGS}
+@cindex @code{AM_CXXFLAGS} and @code{CXXFLAGS}
+@cindex @code{AM_FCFLAGS} and @code{FCFLAGS}
+@cindex @code{AM_FFLAGS} and @code{FFLAGS}
+@cindex @code{AM_GCJFLAGS} and @code{GCJFLAGS}
+@cindex @code{AM_LDFLAGS} and @code{LDFLAGS}
+@cindex @code{AM_LFLAGS} and @code{LFLAGS}
+@cindex @code{AM_OBJCFLAGS} and @code{OBJCFLAGS}
+@cindex @code{AM_RFLAGS} and @code{RFLAGS}
+@cindex @code{AM_YFLAGS} and @code{YFLAGS}
+@cindex @code{CCASFLAGS} and @code{AM_CCASFLAGS}
+@cindex @code{CFLAGS} and @code{AM_CFLAGS}
+@cindex @code{CPPFLAGS} and @code{AM_CPPFLAGS}
+@cindex @code{CXXFLAGS} and @code{AM_CXXFLAGS}
+@cindex @code{FCFLAGS} and @code{AM_FCFLAGS}
+@cindex @code{FFLAGS} and @code{AM_FFLAGS}
+@cindex @code{GCJFLAGS} and @code{AM_GCJFLAGS}
+@cindex @code{LDFLAGS} and @code{AM_LDFLAGS}
+@cindex @code{LFLAGS} and @code{AM_LFLAGS}
+@cindex @code{OBJCFLAGS} and @code{AM_OBJCFLAGS}
+@cindex @code{RFLAGS} and @code{AM_RFLAGS}
+@cindex @code{YFLAGS} and @code{AM_YFLAGS}
+
+This section attempts to answer all the above questions.  We will
+mostly discuss @code{CPPFLAGS} in our examples, but actually the
+answer holds for all the compile flags used in Automake:
+@code{CCASFLAGS}, @code{CFLAGS}, @code{CPPFLAGS}, @code{CXXFLAGS},
+@code{FCFLAGS}, @code{FFLAGS}, @code{GCJFLAGS}, @code{LDFLAGS},
+@code{LFLAGS}, @code{OBJCFLAGS}, @code{RFLAGS}, and @code{YFLAGS}.
+
+@code{CPPFLAGS}, @code{AM_CPPFLAGS}, and @code{mumble_CPPFLAGS} are
+three variables that can be used to pass flags to the C preprocessor
+(actually these variables are also used for other languages like C++
+or preprocessed Fortran).  @code{CPPFLAGS} is the user variable
+(@pxref{User Variables}), @code{AM_CPPFLAGS} is the Automake variable,
+and @code{mumble_CPPFLAGS} is the variable specific to the
+@code{mumble} target (we call this a per-target variable,
+see @ref{Program and Library Variables}).
+
+Automake always uses two of these variables when compiling C sources
+files.  When compiling an object file for the @code{mumble} target,
+the first variable will be @code{mumble_CPPFLAGS} if it is defined, or
+@code{AM_CPPFLAGS} otherwise.  The second variable is always
+@code{CPPFLAGS}.
+
+In the following example,
+
+@example
+bin_PROGRAMS = foo bar
+foo_SOURCES = xyz.c
+bar_SOURCES = main.c
+foo_CPPFLAGS = -DFOO
+AM_CPPFLAGS = -DBAZ
+@end example
+
+@noindent
+@file{xyz.o} will be compiled with @code{$(foo_CPPFLAGS) $(CPPFLAGS)},
+(because @file{xyz.o} is part of the @code{foo} target), while
+@file{main.o} will be compiled with @code{$(AM_CPPFLAGS) $(CPPFLAGS)}
+(because there is no per-target variable for target @code{bar}).
+
+The difference between @code{mumble_CPPFLAGS} and @code{AM_CPPFLAGS}
+being clear enough, let's focus on @code{CPPFLAGS}.  @code{CPPFLAGS}
+is a user variable, i.e., a variable that users are entitled to modify
+in order to compile the package.  This variable, like many others,
+is documented at the end of the output of @code{configure --help}.
+
+For instance, someone who needs to add @file{/home/my/usr/include} to
+the C compiler's search path would configure a package with
+
+@example
+./configure CPPFLAGS='-I /home/my/usr/include'
+@end example
+
+@noindent
+and this flag would be propagated to the compile rules of all
+@file{Makefile}s.
+
+It is also not uncommon to override a user variable at
+@command{make}-time.  Many installers do this with @code{prefix}, but
+this can be useful with compiler flags too.  For instance if, while
+debugging a C++ project, you need to disable optimization in one
+specific object file, you can run something like
+
+@example
+rm file.o
+make CXXFLAGS=-O0 file.o
+make
+@end example
+
+The reason @code{$(CPPFLAGS)} appears after @code{$(AM_CPPFLAGS)} or
+@code{$(mumble_CPPFLAGS)} in the compile command is that users
+should always have the last say.  It probably makes more sense if you
+think about it while looking at the @code{CXXFLAGS=-O0} above, which
+should supersede any other switch from @code{AM_CXXFLAGS} or
+@code{mumble_CXXFLAGS} (and this of course replaces the previous value
+of @code{CXXFLAGS}).
+
+You should never redefine a user variable such as @code{CPPFLAGS} in
+@file{Makefile.am}.  Use @code{automake -Woverride} to diagnose such
+mistakes.  Even something like
+
+@example
+CPPFLAGS = -DDATADIR=\"$(datadir)\" @@CPPFLAGS@@
+@end example
+
+@noindent
+is erroneous.  Although this preserves @file{configure}'s value of
+@code{CPPFLAGS}, the definition of @code{DATADIR} will disappear if a
+user attempts to override @code{CPPFLAGS} from the @command{make}
+command line.
+
+@example
+AM_CPPFLAGS = -DDATADIR=\"$(datadir)\"
+@end example
+
+@noindent
+is all what is needed here if no per-target flags are used.
+
+You should not add options to these variables from inside
+@file{configure} either, for the same reason.  Occasionally you need
+to modify these variables to perform a test, but you should reset
+their value afterwards.
+
+What we recommend is that you define extra flags in separate
+variables.  For instance you may write an Autoconf macro that computes
+a set of warning options for the C compiler, and @code{AC_SUBST} them
+in @code{WARNINGCFLAGS}; you may also have an Autoconf macro that
+determines which compiler and which linker flags should be used to
+link with library @file{libfoo}, and @code{AC_SUBST} these in
+@code{LIBFOOCFLAGS} and @code{LIBFOOLDFLAGS}.  Then, a
+@file{Makefile.am} could use these variables as follows:
+
+@example
+AM_CFLAGS = $(WARNINGCFLAGS)
+bin_PROGRAMS = prog1 prog2
+prog1_SOURCES = @dots{}
+prog2_SOURCES = @dots{}
+prog2_CFLAGS = $(LIBFOOCFLAGS) $(AM_CFLAGS)
+prog2_LDFLAGS = $(LIBFOOLDFLAGS)
+@end example
+
+In this example both programs will be compiled with the flags
+substituted into @code{$(WARNINGCFLAGS)}, and @code{prog2} will
+additionally be compiled with the flags required to link with
+@file{libfoo}.
+
+Note that listing @code{AM_CFLAGS} in a per-target @code{CFLAGS}
+variable is a common idiom to ensure that @code{AM_CFLAGS} applies to
+every target in a @file{Makefile.in}.
+
+Using variables like this gives you full control over the ordering of
+the flags.  For instance if there is a flag in $(WARNINGCFLAGS) that
+you want to negate for a particular target, you can use something like
+@code{prog1_CFLAGS = $(AM_CFLAGS) -no-flag}.  If all these flags had
+been forcefully appended to @code{CFLAGS}, there would be no way to
+disable one flag.  Yet another reason to leave user variables to
+users.
+
+Finally, we have avoided naming the variable of the example
+@code{LIBFOO_LDFLAGS} (with an underscore) because that would cause
+Automake to think that this is actually a per-target variable (like
+@code{mumble_LDFLAGS}) for some non-declared @code{LIBFOO} target.
+
+@subsection Other Variables
+
+There are other variables in Automake that follow similar principles
+to allow user options.  For instance Texinfo rules (@pxref{Texinfo})
+uses @code{MAKEINFOFLAGS} and @code{AM_MAKEINFOFLAGS}.  Similarly,
+DejaGnu tests @pxref{Tests} use @code{RUNTESTDEFAULTFLAGS} and
+@code{AM_RUNTESTDEFAULTFLAGS}.  The tags and ctags rules
+(@pxref{Tags}) use @code{ETAGSFLAGS}, @code{AM_ETAGSFLAGS},
+@code{CTAGSFLAGS}, and @code{AM_CTAGSFLAGS}.  Java rules
+(@pxref{Java}) use @code{JAVACFLAGS} and @code{AM_JAVACFLAGS}.  None
+of these rules do support per-target flags (yet).
+
+To some extent, even @code{AM_MAKEFLAGS} (@pxref{Subdirectories})
+obeys this naming scheme.  The slight difference is that
+@code{MAKEFLAGS} is passed to sub-@command{make}s implicitly by
+@command{make} itself.
+
+However you should not think that all variables ending with
+@code{FLAGS} follow this convention.  For instance
+@code{DISTCHECK_CONFIGURE_FLAGS} (@pxref{Dist}),
+@code{ACLOCAL_AMFLAGS} (@pxref{Rebuilding} and @ref{Local Macros}),
+are two variables that are only useful to the maintainer and have no
+user counterpart.
+
+@code{ARFLAGS} (@pxref{A Library}) is usually defined by Automake and
+has neither @code{AM_} nor per-target cousin.
+
+Finally you should not think either that the existence of a per-target
+variable implies that of an @code{AM_} variable or that of a user
+variable.  For instance the @code{mumble_LDADD} per-target variable
+overrides the global @code{LDADD} variable (which is not a user
+variable), and @code{mumble_LIBADD} exists only as a per-target
+variable.  (@pxref{Program and Library Variables}.)
 
 @node renamed objects
 @section Why are object files sometimes renamed?
@@ -9281,5 +9511,6 @@ The number of test cases in the test suite.
 @c  LocalWords:  grep backported screenshots libgcj KB unnumberedsubsubsec pre
 @c  LocalWords:  precomputing hacky makedepend inline clearmake LD PRELOAD Rel
 @c  LocalWords:  syscalls perlhist acl pm multitable headitem fdl appendixsec
-@c  LocalWords:  LTALLOCA MALLOC malloc memcmp strdup alloca libcompat
-@c  LocalWords:  unprefixed buildable
+@c  LocalWords:  LTALLOCA MALLOC malloc memcmp strdup alloca libcompat xyz DFOO
+@c  LocalWords:  unprefixed buildable preprocessed DBAZ DDATADIR WARNINGCFLAGS
+@c  LocalWords:  LIBFOOCFLAGS LIBFOOLDFLAGS
