@@ -2597,11 +2597,10 @@ sub handle_tags
 		$config .= basename ($one_hdr);
 	    }
 	}
-	my $xform = &transform ('CONFIG' => $config,
-				'DIRS'   => join (' ', @tag_deps));
-	$xform .= &transform_cond ('SUBDIRS' => &variable_defined ('SUBDIRS'));
-
-	$output_rules .= &file_contents ('tags', $xform);
+	$output_rules .=
+	  &file_contents ('tags',
+			  &transform ('CONFIG' => $config,
+				      'DIRS'   => join (' ', @tag_deps)));
 	$output_rules .= &file_contents ('tags-clean');
 	&examine_variable ('TAGS_DEPENDENCIES');
     }
@@ -2816,8 +2815,6 @@ sub handle_dist
 				    'TOP_DISTDIR'  => $top_distdir)
 		      . &transform_cond ('DIST-TARGETS' =>
 					    scalar @dist_targets,
-					 'SUBDIRS'  =>
-					    &variable_defined ('SUBDIRS'),
 					 'DISTDIR' =>
 					    ! &variable_defined ('distdir')));
 }
@@ -2988,7 +2985,8 @@ sub handle_dependencies
 # Handle subdirectories.
 sub handle_subdirs
 {
-    return if ! &variable_defined ('SUBDIRS');
+    return
+      unless &variable_defined ('SUBDIRS');
 
     # Make sure each directory mentioned in SUBDIRS actually exists.
     foreach my $dir (&variable_value_as_list ('SUBDIRS', 'all'))
@@ -3013,8 +3011,6 @@ sub handle_subdirs
 		      ('INSTALLINFO' => (defined $options{'no-installinfo'}
 					 ? 'install-info-recursive'
 					 : '')));
-
-    $recursive_install = 1;
 }
 
 # Handle aclocal.m4.
@@ -3573,7 +3569,7 @@ sub handle_footer
 sub handle_installdirs
 {
     # GNU Makefile standards recommend this.
-    if ($recursive_install)
+    if (&variable_defined ('SUBDIRS'))
     {
 	# We create a separate `-am' target so that the -recursive
 	# rule will work correctly.
@@ -3677,7 +3673,7 @@ sub handle_merge_targets
 	    $output_rules .= ("all-redirect: ${local_headers}"
 			      . "\n\t"
 			      . '$(MAKE) $(AM_MAKEFLAGS) '
-			      . ($recursive_install
+			      . (&variable_defined ('SUBDIRS')
 				 ? 'all-recursive' : 'all-am')
 			      . "\n\n");
 	    $all_target = 'all-redirect';
@@ -3774,14 +3770,16 @@ sub do_one_merge_target
 	# appropriate actual redirect.
 	if ($all_target eq '')
 	{
-	    $all_target = $recursive_install ? 'all-recursive' : 'all-am';
+	    $all_target = (&variable_defined ('SUBDIRS')
+			   ? 'all-recursive' : 'all-am');
 	}
 
 	$output_all = "all: $all_target\n";
     }
     else
     {
-	my $lname = $name . ($recursive_install ? '-recursive' : '-am');
+      my $lname = ($name .
+		   (&variable_defined ('SUBDIRS') ? '-recursive' : '-am'));
 	&pretty_print_rule ($name . ":", "\t\t", $lname);
     }
     &depend ('.PHONY', $name . '-am', $name);
@@ -3820,7 +3818,8 @@ sub do_check_merge_target
 
     &depend ('.PHONY', 'check', 'check-am');
     $output_rules .= ("check: "
-		      . ($recursive_install ? 'check-recursive' : 'check-am')
+		      . (&variable_defined ('SUBDIRS')
+			 ? 'check-recursive' : 'check-am')
 		      . "\n");
 }
 
@@ -3857,10 +3856,7 @@ sub handle_clean
 		   . ',;');
     }
 
-    $output_rules .=
-      &file_contents ('clean',
-		      $xform
-		      . &transform_cond ('SUBDIRS' => $recursive_install));
+    $output_rules .= &file_contents ('clean', $xform);
 
     foreach ('clean', 'distclean', 'mostlyclean', 'maintainer-clean')
       {
@@ -6640,9 +6636,6 @@ sub initialize_per_input
     $included_knr_compile = 0;
     $included_libtool_compile = 0;
 
-    # TRUE if install targets should work recursively.
-    $recursive_install = 0;
-
     # All .P files.
     %dep_files = ();
 
@@ -6749,7 +6742,9 @@ sub file_contents
 
 		       'INSTALL-INFO' => !$options{'no-installinfo'},
 		       'INSTALL-MAN'  => !$options{'no-installman'},
-		       'CK-NEWS'      => $options{'check-news'});
+		       'CK-NEWS'      => $options{'check-news'},
+
+		       'SUBDIRS' => &variable_defined ('SUBDIRS'));
 
     # Swallow the file and applied the COMMAND.
     my $file = $am_dir . '/' . $basename . '.am';
