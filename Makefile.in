@@ -410,6 +410,7 @@ am__remove_distdir = \
          && rm -fr $(distdir); }; }
 
 GZIP_ENV = --best
+distuninstallcheck_listfiles = find . -type f -print
 distcleancheck_listfiles = find . -type f -print
 
 distdir: $(DISTFILES)
@@ -486,6 +487,7 @@ distcheck: dist
 	chmod a-w $(distdir)
 	dc_install_base=`$(am__cd) $(distdir)/=inst && pwd` \
 	  && dc_destdir="$${TMPDIR-/tmp}/am-dc-$$$$/" \
+	  && $(mkinstalldirs) $$dc_destdir \
 	  && cd $(distdir)/=build \
 	  && ../configure --srcdir=.. --prefix="$$dc_install_base" \
 	    $(DISTCHECK_CONFIGURE_FLAGS) \
@@ -495,17 +497,13 @@ distcheck: dist
 	  && $(MAKE) $(AM_MAKEFLAGS) install \
 	  && $(MAKE) $(AM_MAKEFLAGS) installcheck \
 	  && $(MAKE) $(AM_MAKEFLAGS) uninstall \
-	  && (test `find "$$dc_install_base" -type f -print | wc -l` -le 1 \
-	      || { echo "ERROR: files left after uninstall:" ; \
-	           find $$dc_install_base -type f -print ; \
-	           exit 1; } >&2 ) \
+	  && $(MAKE) $(AM_MAKEFLAGS) distuninstallcheck_dir="$$dc_install_base" \
+	        distuninstallcheck \
 	  && chmod -R a-w "$$dc_install_base" \
 	  && ({   $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$dc_destdir" install \
 	       && $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$dc_destdir" uninstall \
-	       && (test `find "$$dc_destdir" -type f -print | wc -l` -le 1 \
-	           || { echo "ERROR: files left after uninstall (check DESTDIR support):" ; \
-	                find "$$dc_destdir" -type f -print ; \
-	                exit 1; } >&2 ); \
+	       && $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$dc_destdir" \
+	            distuninstallcheck_dir="$$dc_destdir" distuninstallcheck; \
 	      } || { rm -rf "$$dc_destdir"; exit 1; }) \
 	  && rm -rf "$$dc_destdir" \
 	  && $(MAKE) $(AM_MAKEFLAGS) dist-gzip \
@@ -514,6 +512,15 @@ distcheck: dist
 	$(am__remove_distdir)
 	@echo "$(distdir).tar.gz is ready for distribution" | \
 	  sed 'h;s/./=/g;p;x;p;x'
+distuninstallcheck:
+	cd $(distuninstallcheck_dir) \
+	&& test `$(distuninstallcheck_listfiles) | wc -l` -le 1 \
+	   || { echo "ERROR: files left after uninstall:" ; \
+	        if test -n "$(DESTDIR)"; then \
+	          echo "  (check DESTDIR support)"; \
+	        fi ; \
+	        $(distuninstallcheck_listfiles) ; \
+	        exit 1; } >&2
 distcleancheck: distclean
 	if test '$(srcdir)' = . ; then \
 	  echo "ERROR: distcleancheck can only run from a VPATH build" ; \
@@ -634,20 +641,20 @@ uninstall-info: uninstall-info-recursive
 	clean-generic clean-recursive ctags ctags-recursive dist \
 	dist-all dist-bzip2 dist-gzip dist-info distcheck distclean \
 	distclean-generic distclean-recursive distclean-tags \
-	distcleancheck distdir dvi dvi-am dvi-recursive info info-am \
-	info-recursive install install-am install-binSCRIPTS \
-	install-data install-data-am install-data-recursive \
-	install-exec install-exec-am install-exec-recursive \
-	install-info install-info-am install-info-recursive install-man \
-	install-recursive install-strip installcheck installcheck-am \
-	installdirs installdirs-am installdirs-recursive \
-	maintainer-clean maintainer-clean-aminfo \
-	maintainer-clean-generic maintainer-clean-recursive \
-	maintainer-clean-vti mostlyclean mostlyclean-aminfo \
-	mostlyclean-generic mostlyclean-recursive mostlyclean-vti pdf \
-	pdf-am pdf-recursive ps ps-am ps-recursive tags tags-recursive \
-	uninstall uninstall-am uninstall-binSCRIPTS uninstall-info-am \
-	uninstall-info-recursive uninstall-recursive
+	distcleancheck distdir distuninstallcheck dvi dvi-am \
+	dvi-recursive info info-am info-recursive install install-am \
+	install-binSCRIPTS install-data install-data-am \
+	install-data-recursive install-exec install-exec-am \
+	install-exec-recursive install-info install-info-am \
+	install-info-recursive install-man install-recursive \
+	install-strip installcheck installcheck-am installdirs \
+	installdirs-am installdirs-recursive maintainer-clean \
+	maintainer-clean-aminfo maintainer-clean-generic \
+	maintainer-clean-recursive maintainer-clean-vti mostlyclean \
+	mostlyclean-aminfo mostlyclean-generic mostlyclean-recursive \
+	mostlyclean-vti pdf pdf-am pdf-recursive ps ps-am ps-recursive \
+	tags tags-recursive uninstall uninstall-am uninstall-binSCRIPTS \
+	uninstall-info-am uninstall-info-recursive uninstall-recursive
 
 
 install-exec-hook:
