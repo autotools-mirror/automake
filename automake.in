@@ -800,23 +800,28 @@ sub handle_libraries
 					'lib', 'pkglib', 'noinst', 'check');
     return if ! @liblist;
 
+    local (%valid) = &am_primary_prefixes ('LIBRARIES', 'lib', 'pkglib',
+					   'noinst', 'check');
     if (! $seen_ranlib)
     {
-	# FIXME need am_line_error here.  But we don't know which
-	# variable exists.  Must add a loop...  No.  Must have
-	# am_install_var return a hash.  Otherwise the user could add
-	# install directories that we'd never find.
-	&am_error ("library requires either \`AC_PROG_RANLIB' or `AM_PROG_LIBTOOL' in configure.in");
-	# Only get this error once.
-	$seen_ranlib = 1;
+	local ($key);
+	foreach $key (keys %valid)
+	{
+	    if (&variable_defined ($key . '_LIBRARIES'))
+	    {
+		&am_line_error ($key . '_LIBRARIES', "library requires either \`AC_PROG_RANLIB' or `AM_PROG_LIBTOOL' in configure.in");
+		# Only get this error once.
+		$seen_ranlib = 1;
+		last;
+	    }
+	}
     }
 
     # Generate _LIBFILES variables.  Too bad we can't do this in
     # am_install_var.
     local ($onedir, $onelib);
     local (@outlist);
-    foreach $onedir (&am_primary_prefixes ('LIBRARIES', 'lib', 'pkglib',
-					   'noinst', 'check'))
+    foreach $onedir (keys %valid) 
     {
 	if (&variable_defined ($onedir . '_LIBRARIES'))
 	{
@@ -904,7 +909,7 @@ sub handle_scripts
     # Set $scripts_installed if appropriate.  Make sure we only find
     # scripts which are actually installed -- this is why we can't
     # simply use the return value of am_install_var.
-    local (%valid) = &am_primary_prefixes ('scripts', 'bin', 'sbin',
+    local (%valid) = &am_primary_prefixes ('SCRIPTS', 'bin', 'sbin',
 					   'libexec', 'pkgdata',
 					   'noinst', 'check');
     local ($key);
