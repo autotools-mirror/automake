@@ -26,7 +26,7 @@ $(amfiles)
 ## what we want.  So we make them executable by hand.
 scriptdir = $(pkgdatadir)
 dist_script_DATA = config.guess config.sub install-sh mdate-sh missing \
-mkinstalldirs elisp-comp ylwrap acinstall depcomp
+mkinstalldirs elisp-comp ylwrap acinstall depcomp compile
 
 install-data-hook:
 	@$(POST_INSTALL)
@@ -46,6 +46,8 @@ installcheck-local:
 	for file in $(dist_script_DATA); do \
 	  $(PERL) -e "exit ! -x '$(pkgdatadir)/$$file';" || exit 1; \
 	done
+
+EXTRA_DIST = ChangeLog.1996 ChangeLog.1998
 
 ################################################################
 ##

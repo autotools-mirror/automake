@@ -68,6 +68,14 @@ $FOREIGN = 0;
 $GNU = 1;
 $GNITS = 2;
 
+# These constants are returned by lang_*_rewrite functions.
+# LANG_SUBDIR means that the resulting object file should be in a
+# subdir if the source file is.  In this case the file name cannot
+# have `..' components.
+$LANG_IGNORE = 0;
+$LANG_PROCESS = 1;
+$LANG_SUBDIR = 2;
+
 
 
 # Variables global to entire run.
@@ -128,6 +136,9 @@ $top_builddir = '';
 # List of Makefile.am's to process, and their corresponding outputs.
 @input_files = ();
 %output_files = ();
+
+# Complete list of Makefile.am's that exist.
+@configure_input_files = ();
 
 # List of files in AC_OUTPUT without Makefile.am, and their outputs.
 @other_input_files = ();
@@ -201,6 +212,9 @@ $seen_objext = 0;
 
 # TRUE if we've seen AC_ENABLE_MULTILIB.
 $seen_multilib = 0;
+
+# TRUE if we've seen AM_PROG_CC_C_O
+$seen_cc_c_o = 0;
 
 # Hash table of discovered configure substitutions.  Keys are names,
 # values are `FILE:LINE' strings which are used by error message
@@ -289,30 +303,32 @@ $obsolete_rx = '(' . join ('|', keys %obsolete_macros) . ')';
 # internally supported.
 &initialize_global_constants;
 
-&register_language ('c', '', 1,
+&register_language ('c', 'ansi-p=1', 'autodep=',
 		    'c');
-&register_language ('cxx', 'CXXLINK', 0,
+&register_language ('cxx', 'linker=CXXLINK', 'autodep=CXX',
 		    'c++', 'cc', 'cpp', 'cxx', 'C');
-&register_language ('objc', 'OBJCLINK', 0,
+&register_language ('objc', 'linker=OBJCLINK', 'autodep=OBJC',
                     'm');
-&register_language ('header', '', 0,
+&register_language ('header',
 		    'h', 'H', 'hxx', 'h++', 'hh', 'hpp', 'inc');
-&register_language ('yacc', '', 1,
+&register_language ('yacc', 'ansi-p=1',
 		    'y');
-&register_language ('yaccxx', 'CXXLINK', 0,
+&register_language ('yaccxx', 'linker=CXXLINK',
 		    'y++', 'yy', 'yxx', 'ypp');
-&register_language ('lex', '', 1,
+&register_language ('lex', 'ansi-p=1',
 		    'l');
-&register_language ('lexxx', 'CXXLINK', 0,
+&register_language ('lexxx', 'linker=CXXLINK',
 		    'l++', 'll', 'lxx', 'lpp');
-&register_language ('asm', '', 0,
+&register_language ('asm',
 		    's', 'S');
-&register_language ('f77', 'F77LINK', 0,
+&register_language ('f77', 'linker=F77LINK',
 		    'f', 'for', 'f90');
-&register_language ('ppf77', 'F77LINK', 0,
+&register_language ('ppf77', 'linker=F77LINK',
 		    'F');
-&register_language ('ratfor', 'F77LINK', 0,
+&register_language ('ratfor', 'linker=F77LINK',
 		    'r');
+&register_language ('java', 'linker=GCJLINK', 'autodep=GCJ',
+		    'java');
 
 
 # Parse command line.
@@ -556,6 +572,7 @@ sub generate_makefile
     # on this (but currently does).
     $contents{'SOURCES'} = join (' ', @sources);
     $contents{'OBJECTS'} = join (' ', @objects);
+    &define_pretty_variable ('DIST_SOURCES', '', @dist_sources);
 
     &handle_multilib;
     &handle_texinfo;
@@ -651,7 +668,8 @@ sub handle_options
 		   || $_ eq 'dist-shar' || $_ eq 'dist-zip'
 		   || $_ eq 'dist-tarZ' || $_ eq 'dist-bzip2'
 		   || $_ eq 'dejagnu' || $_ eq 'no-texinfo.tex'
-		   || $_ eq 'readme-alpha' || $_ eq 'check-news')
+		   || $_ eq 'readme-alpha' || $_ eq 'check-news'
+		   || $_ eq 'subdir-objects')
 	    {
 		# Explicitly recognize these.
 	    }
@@ -735,7 +753,10 @@ sub get_object_extension
 
 	# Note that order of transforms is important here.  We collude
 	# with compile.am to get the right result.
-	$xform = ($seen_objext ? 's/^OBJEXT//;' : 's/^OBJEXT.*$//;');
+	$xform = (($seen_objext ? 's/^OBJEXT//;' : 's/^OBJEXT.*$//;')
+		  . 's/\@MINUSO\@/'
+		  . (defined $options{'subdir-objects'} ? '-o \$\@' : '')
+		  . '/;');
 	$output_rules .= &file_contents_with_transform ($xform, 'compile');
 
 	&push_phony_cleaners ('compile');
@@ -752,7 +773,7 @@ sub get_object_extension
 	    }
 	}
 
-	push (@suffixes, '.c', '.o', '.S', '.s');
+	push (@suffixes, '.c', '.o');
 	push (@suffixes, '.obj') if $seen_objext;
 	push (@clean, 'compile');
 
@@ -948,7 +969,8 @@ sub check_libobjs_sources
     local ($one_file, $unxformed) = @_;
 
     local ($prefix, $file, @files);
-    foreach $prefix ('', 'EXTRA_')
+    foreach $prefix ('', 'EXTRA_', 'dist_', 'nodist_',
+		     'dist_EXTRA_', 'nodist_EXTRA_')
     {
 	if (&variable_defined ($prefix . $one_file . '_SOURCES'))
 	{
@@ -1009,6 +1031,8 @@ sub handle_single_transform_list
 	    $base = $3;
 	    $extension = $4;
 
+	    local ($xbase) = $base;
+
 	    local ($lang) = $extension_map{$extension};
 	    if ($lang)
 	    {
@@ -1016,9 +1040,9 @@ sub handle_single_transform_list
 		# Found the language, so see what it says.
 		local ($subr) = 'lang_' . $lang . '_rewrite';
 		# Note: computed subr call.
-		local ($r) = & $subr ($base, $extension);
+		local ($r) = & $subr ($directory, $base, $extension);
 		# Skip this entry if we were asked not to process it.
-		next if ! $r;
+		next if $r == $LANG_IGNORE;
 
 		# Now extract linker and other info.
 		$linker = $language_map{$lang . '-linker'};
@@ -1031,10 +1055,19 @@ sub handle_single_transform_list
 		{
 		    $object = $base . $nonansi_obj;
 		}
+
+		# If rewrite said it was ok, put the object into a
+		# subdir.
+		if ($r == $LANG_SUBDIR && $directory ne '')
+		{
+		    $object = $directory . '/' . $object;
+		    $xbase = $directory . '/' . $base;
+		}
 	    }
  	    elsif ($extension =~ /^$source_suffix_pattern$/) 
  	    {
 		# We just rewrite it.  Maybe we should do more.
+		# FIXME: what about subdir handling here?
 		$object = $base . '.' . $suffix_rules{$extension};
 		$linker = '';
  	    }
@@ -1058,17 +1091,65 @@ sub handle_single_transform_list
 	    }
 	    else
 	    {
+		local (@dep_list) = ();
 		$object_map{$object} = $full;
+
+		# If file is in subdirectory, we need explicit
+		# dependency.
 		if ($directory ne '')
 		{
-		    # If file is in subdirectory, we need explicit dependency.
-		    &pretty_print_rule ($object . ':', "\t", $full);
+		    push (@dep_list, $full);
 		}
+
+		# If resulting object is in subdir, we need to make
+		# sure the subdir exists at build time.
+		if ($object =~ /\//)
+		{
+		    # FIXME: check that $DIRECTORY is somewhere in the
+		    # project
+
+		    # We don't allow `..' in object file names for
+		    # *any* source, not just Java.  For Java it just
+		    # doesn't make sense, but in general it is
+		    # a problem because we can't pick a good name for
+		    # the .deps entry.
+		    if ($object =~ /(\/|^)\.\.\//)
+		    {
+			&am_error ("\`$full' contains \`..' component but should not");
+		    }
+
+		    push (@dep_list, $directory . '/.dirstamp');
+
+		    # If we're generating dependencies, we also want
+		    # to make sure that the appropriate subdir of the
+		    # .deps directory is created.
+		    if ($use_dependencies)
+		    {
+			push (@dep_list, '.deps/' . $directory . '/.dirstamp');
+		    }
+
+		    if (! defined $directory_map{$directory})
+		    {
+			$directory_map{$directory} = 1;
+			$output_rules .= ($directory . "/.dirstamp:\n"
+					  . "\t\@\$(mkinstalldirs) $directory\n"
+					  . "\t\@: > $directory/.dirstamp\n");
+			if ($use_dependencies)
+			{
+			    $output_rules .= ('.deps/' . $directory
+					      . "/.dirstamp:\n"
+					      . "\t\@\$(mkinstalldirs) .deps/$directory\n"
+					      . "\t\@: > .deps/$directory/.dirstamp\n");
+			}
+		    }
+		}
+
+		&pretty_print_rule ($object . ':', "\t", @dep_list);
 	    }
 
 	    # Transform .o or $o file into .P file (for automatic
 	    # dependency code).
-	    local ($depfile) = $object;
+	    local ($depfile) = $xbase;
 	    $depfile =~ s/\.([^.]*)$/.P\1/;
 	    $dep_files{'$(DEPDIR)/' . $depfile} = 1;
 	}
@@ -1100,16 +1181,25 @@ sub handle_source_transform
 	return;
     }
 
-    local (@files, @result, $prefix, $temp);
-    foreach $prefix ('', 'EXTRA_')
+    local (@files, @result, $prefix, $temp, $xpfx);
+    local (%used_pfx) = ();
+    foreach $prefix ('', 'EXTRA_', 'dist_', 'nodist_',
+		     'dist_EXTRA_', 'nodist_EXTRA_')
     {
+	# We are going to define _OBJECTS variables using the prefix.
+	# Then we glom them all together.  So we can't use the null
+	# prefix here as we need it later.
+	$xpfx = ($prefix eq '') ? 'am_' : $prefix;
+
 	@files = ();
 	local ($var) = $prefix . $one_file . "_SOURCES";
 	if (&variable_defined ($var))
 	{
 	    push (@sources, '$(' . $prefix . $one_file . "_SOURCES)");
-	    push (@objects, '$(' . $prefix . $one_file . "_OBJECTS)")
-		unless $prefix eq 'EXTRA_';
+	    push (@objects, '$(' . $xpfx . $one_file . "_OBJECTS)")
+		unless $prefix =~ /EXTRA_/;
+	    push (@dist_sources, '$(' . $prefix . $one_file . "_SOURCES)")
+		unless $prefix =~ /^nodist_/;
 	    local (@conds) = &variable_conditions ($var);
 	    if (! @conds)
 	    {
@@ -1126,26 +1216,49 @@ sub handle_source_transform
 		    $linker = $temp if $linker eq '';
 
 		    # Define _OBJECTS conditionally.
-		    &define_pretty_variable ($one_file . '_OBJECTS', $cond,
-					     @result)
-			unless $prefix eq 'EXTRA_';
+		    &define_pretty_variable ($xpfx . $one_file . '_OBJECTS',
+					     $cond, @result)
+			unless $prefix =~ /EXTRA_/;
 		}
+
+		# Keep track of which prefixes we saw.
+		$used_pfx{$xpfx} = 1
+		    unless $prefix =~ /EXTRA_/;
 
 		next;
 	    }
 	}
-	elsif ($prefix eq '')
-	{
-	    &define_variable ($one_file . "_SOURCES", $unxformed . ".c");
-	    push (@sources, $unxformed . '.c');
-	    push (@objects, $unxformed . $obj);
-	    push (@files, $unxformed . '.c');
-	}
+
+	# Avoid defining needless variables.
+	next if (scalar @files == 0);
+
+	# Keep track of which prefixes we saw.
+	$used_pfx{$xpfx} = 1
+	    unless $prefix =~ /EXTRA_/;
+
+	($temp, @result) = &handle_single_transform_list ($obj, @files);
+	$linker = $temp if $linker eq '';
+	&define_pretty_variable ($xpfx . $one_file . "_OBJECTS", '', @result)
+	    unless $prefix =~ /EXTRA_/;
+    }
+
+    local (@keys) = sort keys %used_pfx;
+    if (scalar @keys == 0)
+    {
+	&define_variable ($one_file . "_SOURCES", $unxformed . ".c");
+	push (@sources, $unxformed . '.c');
+	push (@dist_sources, $unxformed . '.c');
+	push (@objects, $unxformed . $obj);
+	push (@files, $unxformed . '.c');
 
 	($temp, @result) = &handle_single_transform_list ($obj, @files);
 	$linker = $temp if $linker eq '';
 	&define_pretty_variable ($one_file . "_OBJECTS", '', @result)
-	    unless $prefix eq 'EXTRA_';
+    }
+    else
+    {
+	grep ($_ = '$(' . $_ . $one_file . '_OBJECTS)', @keys);
+	&define_pretty_variable ($one_file . '_OBJECTS', '', @keys);
     }
 
     return $linker;
@@ -1574,7 +1687,7 @@ sub handle_ltlibraries
 {
     local (@liblist) = &am_install_var ('-clean',
 					'ltlib', 'LTLIBRARIES',
-					'noinst', 'lib', 'pkglib');
+					'noinst', 'lib', 'pkglib', 'check');
     return if ! @liblist;
 
     local (%instdirs);
@@ -1976,6 +2089,7 @@ sub handle_texinfo
     {
 	$texinfo_tex = $config_aux_dir . '/texinfo.tex';
 	&define_variable ('TEXINFO_TEX', $texinfo_tex);
+	$need_texi_file = 2; # so that we require_conf_file later
     }
     elsif (&variable_defined ('TEXINFO_TEX'))
     {
@@ -1986,7 +2100,7 @@ sub handle_texinfo
     }
     else
     {
-	$texinfo_tex = '.';
+	$texinfo_tex = '$(srcdir)/texinfo.tex';
 	$need_texi_file = 1;
     }
     local ($xxform);
@@ -2046,8 +2160,18 @@ sub handle_texinfo
     # Do some error checking.  Note that this file is not required
     # when in Cygnus mode; instead we defined TEXINFO_TEX explicitly
     # up above.
-    &require_file_with_line ('info_TEXINFOS', $FOREIGN, 'texinfo.tex')
-	if $need_texi_file && ! defined $options{'no-texinfo.tex'};
+    if ($need_texi_file && ! defined $options{'no-texinfo.tex'})
+    {
+	if ($need_texi_file > 1)
+	{
+	    &require_conf_file_with_line ('info_TEXINFOS', $FOREIGN,
+					  'texinfo.tex');
+	}
+	else
+	{
+	    &require_file_with_line ('info_TEXINFOS', $FOREIGN, 'texinfo.tex');
+	}
+    }
 }
 
 # Handle any man pages.
@@ -2455,7 +2579,7 @@ sub handle_dist
 # tarfile.
 distcheck: dist
 	-rm -rf $(distdir)
-	GZIP=$(GZIP_ENV) gunzip -c $(distdir).tar.gz | $(TAR) xf -
+	GZIP=$(GZIP_ENV) gunzip -c $(distdir).tar.gz | $(AMTAR) xf -
 	mkdir $(distdir)/=build
 	mkdir $(distdir)/=inst
 	dc_install_base=`cd $(distdir)/=inst && pwd`; \\'
@@ -2505,26 +2629,6 @@ distcheck: dist
     &handle_dist_worker ($makefile);
 }
 
-# Generate dependency-tracking code for a single language.
-# Subroutine of handle_dependencies.
-sub generate_dependency_code
-{
-    local ($lang, $fullname, $subst) = @_;
-
-    local ($xform) = $seen_objext ? 's/^OBJEXT//;' : 's/^OBJEXT.*$//;';
-    local ($error) = 0;
-    local ($ext);
-    foreach $ext (&lang_extensions ($lang))
-    {
-	$output_rules .=
-	    &file_contents_with_transform ('s/\@EXT\@/' . $ext . '/g;'
-					   . 's/\@FPFX\@/' . $fullname . '/g;'
-					   . 's/\@PFX\@/' . $subst . '/g;'
-					   . $xform,
-					   'depend2');
-    }
-}
-
 # Handle auto-dependency code.
 sub handle_dependencies
 {
@@ -2550,12 +2654,27 @@ sub handle_dependencies
 	    push (@clean, 'depend');
 	    &push_phony_cleaners ('depend');
 
-	    # FIXME: this should use another property of the language
-	    # instead having which languages can do dependency
-	    # tracking hard-coded.
-	    &generate_dependency_code ('c', 'CC', '');
-	    &generate_dependency_code ('objc', 'OBJC', 'OBJC');
-	    &generate_dependency_code ('cxx', 'CXX', 'CXX');
+	    local ($key, $lang, $ext, $xform);
+	    foreach $key (sort keys %language_map)
+	    {
+		next unless $key =~ /^(.*)-autodep$/;
+		next if $language_map{$key} eq 'no';
+		$lang = $1;
+
+		local ($pfx, $fpfx) = ($language_map{$key}, 'CC');
+		$fpfx = $pfx if ($pfx ne '');
+
+		$xform = ('s/\@PFX\@/' . $pfx . '/g;'
+			  . 's/\@FPFX\@/' . $fpfx . '/g;');
+		foreach $ext (&lang_extensions ($lang))
+		{
+		    $output_rules .=
+			&file_contents_with_transform ('s/\@EXT\@/'
+						       . $ext . '/g;'
+						       . $xform,
+						       'depend2');
+		}
+	    }
 	}
     }
     else
@@ -2797,12 +2916,15 @@ sub handle_configure
 	&examine_variable ('CONFIG_STATUS_DEPENDENCIES');
 	&examine_variable ('CONFIGURE_DEPENDENCIES');
 	$top_reldir = '';
+
+	&push_dist_common ('acconfig.h')
+	    if -f 'acconfig.h';
     }
 
     # Make it easy to see if there is a Makefile.am in a given
     # directory.
     local (%make_dirs, $iter);
-    foreach $iter (@input_files)
+    foreach $iter (@configure_input_files)
     {
 	$make_dirs{&dirname ($iter)} = 1;
     }
@@ -2894,10 +3016,6 @@ sub handle_configure
 
 	    # Header defined and in this directory.
 	    local (@files);
-	    if (-f $relative_dir . '/acconfig.h')
-	    {
-		push (@files, 'acconfig.h');
-	    }
 	    if (-f $one_name . '.top')
 	    {
 		push (@files, "${cn_sans_dir}.top");
@@ -2909,6 +3027,21 @@ sub handle_configure
 
 	    &push_dist_common (@files);
 
+	    # For now, acconfig.h can only appear in the top srcdir.
+	    if (-f 'acconfig.h')
+	    {
+		if ($relative_dir eq '.')
+		{
+		    push (@files, 'acconfig.h');
+		}
+		else
+		{
+		    # Strange quoting because this gets fed through
+		    # Perl.
+		    push (@files, '\$(top_srcdir)/acconfig.h');
+		}
+	    }
+
 	    local ($stamp_name) = 'stamp-h';
 	    $stamp_name .= "${hdr_index}" if scalar (@config_headers) > 1;
 
@@ -2918,7 +3051,7 @@ sub handle_configure
 	    $xform .= 's,\@CONFIG_HEADER\@,' . "${cn_sans_dir}" . ',;';
 	    $xform .= 's,\@CONFIG_HEADER_IN\@,' . "${ch_sans_dir}" . ',;';
 	    $xform .= 's,\@CONFIG_HEADER_FULL\@,' . "${one_fullname}" . ',;';
-	    $xform .= 's,\@STAMP\@,' . "${stamp_dir}${stamp_name}" . ',;';
+	    $xform .= 's,\@STAMP\@,' . "${stamp_dir}${stamp_name}" . ',g;';
 
 	    $output_rules .= &file_contents_with_transform ($xform,
 							    'remake-hdr');
@@ -3596,26 +3729,52 @@ sub handle_tests
 	push (@phony, 'check-TESTS');
 
 	# Note: Solaris 2.7 seems to expand TESTS using VPATH.  That's
-	# why we choose `dir=' and not `dir=.'
+	# why we also try `dir='
 	$output_rules .= 'check-TESTS: $(TESTS)
-	@failed=0; all=0; \\
+	@failed=0; all=0; xfail=0; xpass=0; \\
 	srcdir=$(srcdir); export srcdir; \\
 	for tst in $(TESTS); do \\
-	  if test -f $$tst; then dir=; \\
+	  if test -f ./$$tst; then dir=./; \\
+	  elif test -f $$tst; then dir=; \\
 	  else dir="$(srcdir)/"; fi; \\
 	  if $(TESTS_ENVIRONMENT) $${dir}$$tst; then \\
 	    all=`expr $$all + 1`; \\
-	    echo "PASS: $$tst"; \\
+	    case " $(XFAIL_TESTS) " in \\
+	    *" $$tst "*) \\
+	      xpass=`expr $$xpass + 1`; \\
+	      failed=`expr $$failed + 1`; \\
+	      echo "XPASS: $$tst"; \\
+	    ;; \\
+	    *) \\
+	      echo "PASS: $$tst"; \\
+	    ;; \\
+	    esac; \\
 	  elif test $$? -ne 77; then \\
 	    all=`expr $$all + 1`; \\
-	    failed=`expr $$failed + 1`; \\
-	    echo "FAIL: $$tst"; \\
+	    case " $(XFAIL_TESTS) " in \\
+	    *" $$tst "*) \\
+	      xfail=`expr $$xfail + 1`; \\
+	      echo "XFAIL: $$tst"; \\
+	    ;; \\
+	    *) \\
+	      failed=`expr $$failed + 1`; \\
+	      echo "FAIL: $$tst"; \\
+	    ;; \\
+	    esac; \\
 	  fi; \\
 	done; \\
 	if test "$$failed" -eq 0; then \\
-	  banner="All $$all tests passed"; \\
+	  if test "$$xfail" -eq 0; then \\
+	    banner="All $$all tests passed"; \\
+	  else \\
+	    banner="All $$all tests behaved as expected ($$xfail expected failures)"; \\
+	  fi; \\
 	else \\
-	  banner="$$failed of $$all tests failed"; \\
+	  if test "$$xpass" -eq 0; then \\
+	    banner="$$failed of $$all tests failed"; \\
+	  else \\
+	    banner="$$failed of $$all tests did not behave as expected ($$xpass unexpected passes)"; \\
+	  fi; \\
 	fi; \\
 	dashes=`echo "$$banner" | sed s/./=/g`; \\
 	echo "$$dashes"; \\
@@ -3935,6 +4094,9 @@ sub scan_one_configure_file
 	    $configure_vars{'OBJEXT'} = $filename . ':' . $.;
 	}
 
+	# Check for `-c -o' code.
+	$seen_cc_c_o = 1 if /AM_PROG_CC_C_O/;
+
 	# Check for NLS support.
 	if (/AM_GNU_GETTEXT/)
 	{
@@ -4145,6 +4307,8 @@ sub scan_configure
 	%output_files = %make_list;
     }
 
+    @configure_input_files = @make_input_list;
+
     &am_conf_error ("\`PACKAGE' not defined in configure.in")
         if ! $seen_package;
     &am_conf_error ("\`VERSION' not defined in configure.in")
@@ -4236,7 +4400,7 @@ sub check_gnits_standards
 # Functions to handle files of each language.
 
 # Each `lang_X_rewrite' function follows a simple formula:
-# * Args are the base name and extension of the file.
+# * Args are the directory, base name and extension of the file.
 # * Return value is 1 if file is to be dealt with, 0 otherwise.
 # Much of the actual processing is handled in handle_single_transform_list.
 # These functions exist so that auxiliary information can be recorded
@@ -4244,10 +4408,17 @@ sub check_gnits_standards
 # are computed, so don't bother searching for their precise names
 # in the source.
 
+# This is just a convenience function that can be used to determine
+# when a subdir object should be used.
+sub lang_sub_obj
+{
+    return defined $options{'subdir-objects'} ? $LANG_SUBDIR : $LANG_PROCESS;
+}
+
 # Rewrite a single C source file.
 sub lang_c_rewrite
 {
-    local ($base, $ext) = @_;
+    local ($directory, $base, $ext) = @_;
 
     if (defined $options{'ansi2knr'} && $base =~ /_$/)
     {
@@ -4255,101 +4426,153 @@ sub lang_c_rewrite
 	&am_error ("C source file \`$base.c' would be deleted by ansi2knr rules");
     }
 
+    local ($r) = $LANG_PROCESS;
+    if (defined $options{'subdir-objects'})
+    {
+	$r = $LANG_SUBDIR;
+	$base = $directory . '/' . $base;
+
+	if (! $seen_cc_c_o)
+	{
+	    # Only give error once.
+	    $seen_cc_c_o = 1;
+	    # FIXME: line number.
+	    &am_error ("C objects in subdir but \`AM_PROG_CC_C_O' not in \`configure.in'");
+	}
+
+	&require_file ($FOREIGN, 'compile')
+	    if $relative_dir eq '.';
+    }
+
     $de_ansi_files{$base} = 1;
-    return 1;
+    return $r;
 }
 
 # Rewrite a single C++ source file.
 sub lang_cxx_rewrite
 {
-    return 1;
+    return &lang_sub_obj;
 }
 
 # Rewrite a single header file.
 sub lang_header_rewrite
 {
     # Header files are simply ignored.
-    return 0;
+    return $LANG_IGNORE;
 }
 
 # Rewrite a single yacc file.
 sub lang_yacc_rewrite
 {
-    local ($base, $ext) = @_;
+    local ($directory, $base, $ext) = @_;
 
-    &lang_c_rewrite ($base, $ext);
-    $yacc_sources{$base . '.' . $ext} = 1;
+    local ($r) = &lang_c_rewrite ($directory, $base, $ext);
+    local ($pfx) = '';
+    if ($r == $LANG_SUBDIR)
+    {
+	$pfx = $directory . '/';
+    }
+    $yacc_sources{$pfx . $base . '.' . $ext} = 1;
     $ext =~ tr/y/c/;
     &saw_extension ('c');
-    &push_dist_common ($base . '.' . $ext);
-    return 1;
+    # FIXME: nodist.
+    &push_dist_common ($pfx . $base . '.' . $ext);
+    return $r;
 }
 
 # Rewrite a single yacc++ file.
 sub lang_yaccxx_rewrite
 {
-    local ($base, $ext) = @_;
+    local ($directory, $base, $ext) = @_;
 
-    $yacc_sources{$base . '.' . $ext} = 1;
+    local ($r) = $LANG_PROCESS;
+    local ($pfx) = '';
+    if (defined $options{'subdir-objects'})
+    {
+	$pfx = $directory . '/';
+	$r = $LANG_SUBDIR;
+    }
+    $yacc_sources{$pfx . $base . '.' . $ext} = 1;
     $ext =~ tr/y/c/;
     &saw_extension ($ext);
-    &push_dist_common ($base . '.' . $ext);
-    return 1;
+    # FIXME: nodist.
+    &push_dist_common ($pfx . $base . '.' . $ext);
+    return $r;
 }
 
 # Rewrite a single lex file.
 sub lang_lex_rewrite
 {
-    local ($base, $ext) = @_;
+    local ($directory, $base, $ext) = @_;
 
-    &lang_c_rewrite ($base, $ext);
-    $lex_sources{$base . '.' . $ext} = 1;
+    local ($r) = &lang_c_rewrite ($directory, $base, $ext);
+    local ($pfx) = '';
+    if ($r == $LANG_SUBDIR)
+    {
+	$pfx = $directory . '/';
+    }
+    $lex_sources{$pfx . $base . '.' . $ext} = 1;
     $ext =~ tr/l/c/;
     &saw_extension ('c');
-    &push_dist_common ($base . '.' . $ext);
-    return 1;
+    # FIXME: nodist.
+    &push_dist_common ($pfx . $base . '.' . $ext);
+    return $r;
 }
 
 # Rewrite a single lex++ file.
 sub lang_lexxx_rewrite
 {
-    local ($base, $ext) = @_;
+    local ($directory, $base, $ext) = @_;
 
-    $lex_sources{$base . '.' . $ext} = 1;
+    local ($r) = $LANG_PROCESS;
+    local ($pfx) = '';
+    if (defined $options{'subdir-objects'})
+    {
+	$pfx = $directory . '/';
+	$r = $LANG_SUBDIR;
+    }
+    $lex_sources{$pfx . $base . '.' . $ext} = 1;
     $ext =~ tr/l/c/;
     &saw_extension ($ext);
-    &push_dist_common ($base . '.' . $ext);
-    return 1;
+    # FIXME: nodist.
+    &push_dist_common ($pfx . $base . '.' . $ext);
+    return $r;
 }
 
 # Rewrite a single assembly file.
 sub lang_asm_rewrite
 {
-    return 1;
+    return &lang_sub_obj;
 }
 
 # Rewrite a single Fortran 77 file.
 sub lang_f77_rewrite
 {
-    return 1;
+    return $LANG_PROCESS;
 }
 
 # Rewrite a single preprocessed Fortran 77 file.
 sub lang_ppf77_rewrite
 {
-    return 1;
+    return $LANG_PROCESS;
 }
 
 # Rewrite a single ratfor file.
 sub lang_ratfor_rewrite
 {
-    return 1;
+    return $LANG_PROCESS;
 }
 
 # Rewrite a single Objective C file.
 sub lang_objc_rewrite
 {
-    return 1;
+    return &lang_sub_obj;
+}
+
+# Rewrite a single Java file.
+sub lang_java_rewrite
+{
+    return $LANG_SUBDIR;
 }
 
 # The lang_X_finish functions are called after all source file
@@ -4426,14 +4649,15 @@ sub lang_cxx_finish
 	local ($ext);
 	foreach $ext (@cxx_list)
 	{
+	    # Every known C++ compiler supports both -c and -o.
 	    $output_rules .= ("$ext.o:\n"
-			      . "\t\$(CXXCOMPILE) -c \$<\n");
+			      . "\t\$(CXXCOMPILE) -c -o \$\@ \$<\n");
 	    # FIXME: Using cygpath should be somehow conditional.
 	    $output_rules .= ("$ext.obj:\n"
-			      . "\t\$(CXXCOMPILE) -c `cygpath -w \$<`\n")
+			      . "\t\$(CXXCOMPILE) -c -o \$\@ `cygpath -w \$<`\n")
 		if ($seen_objext);
 	    $output_rules .= ("$ext.lo:\n"
-			      . "\t\$(LTCXXCOMPILE) -c \$<\n")
+			      . "\t\$(LTCXXCOMPILE) -c -o \$\@ \$<\n")
 		if ($seen_libtool);
 	}
 
@@ -4486,22 +4710,30 @@ sub lang_yacc_finish
 	    if ! defined $seen_suffix{$1};
 	$seen_suffix{$1} = 1;
 
-	# Now generate rule to make the header file.  This should only
-	# be generated if `yacc -d' specified.  But right now there is
-	# no way to determine that.  FIXME: examine AM_YFLAGS?
 	$file =~ /^(.*)\.(y|yy|y\+\+|yxx|ypp)$/;
 	$base = $1;
-	$hname = '.h';		# Always use `.h' for header file.
+	$hname = 'h';		# Always use `.h' for header file.
 	($cname = $2) =~ tr/y/c/;
-	$output_rules .= "${base}.${hname}: ${base}.${cname}\n";
 
-	# If the files are built in the build directory, then we want
-	# to remove them with `make clean'.  If they are in srcdir
-	# they shouldn't be touched.  However, we can't determine this
-	# statically, and the GNU rules say that yacc/lex output files
-	# should be removed by maintainer-clean.  So that's what we
-	# do.
-	push (@maintainer_clean_files, "${base}.${hname}", "${base}.${cname}");
+	if ((&variable_defined ('AM_YFLAGS')
+	     && &variable_value ('AM_YFLAGS') =~ /(^|\s)-d(\s|$)/)
+	    || (&variable_defined ('YFLAGS')
+		&& &variable_value ('YFLAGS') =~ /(^|\s)-d(\s|$)/)) {
+	    # Now generate rule to make the header file.  This should only
+	    # be generated if `yacc -d' specified.
+	    $output_rules .= "${base}.${hname}: ${base}.${cname}\n";
+
+	    # If the files are built in the build directory, then we want
+	    # to remove them with `make clean'.  If they are in srcdir
+	    # they shouldn't be touched.  However, we can't determine this
+	    # statically, and the GNU rules say that yacc/lex output files
+	    # should be removed by maintainer-clean.  So that's what we
+	    # do.
+	    push (@maintainer_clean_files, "${base}.${hname}");
+
+	    &push_dist_common ("${base}.${hname}");
+	}
+	push (@maintainer_clean_files, "${base}.${cname}");
     }
     $output_rules .= "\n";
 
@@ -4574,8 +4806,32 @@ sub lang_lexxx_finish
 
 sub lang_asm_finish
 {
-    # Pretend we're C.
+    # We need the C code for assembly.
     &lang_c_finish;
+
+    # We also need our own rules.
+    local ($minuso) = '';
+    if (defined $options{'subdir-objects'})
+    {
+	$minuso = '-o $@ ';
+    }
+    local (@asm_list) = &lang_extensions ('am');
+    local ($ext);
+    foreach $ext (@asm_list)
+    {
+	$output_rules .= ("$ext.o:\n"
+			  . "\t\$(COMPILE) -c " . $minuso . "\$<\n");
+	# FIXME: Using cygpath should be somehow conditional.
+	$output_rules .= ("$ext.obj:\n"
+			  . "\t\$(COMPILE) -c " . $minuso
+			  . "`cygpath -w \$<`\n")
+	    if $seen_objext;
+	$output_rules .= ("$ext.lo:\n"
+			  . "\t\$(LTCOMPILE) -c -o \$\@ \$<\n")
+	    if $seen_libtool;
+    }
+
+    push (@suffixes, @asm_list);
 }
 
 sub lang_f77_finish
@@ -4715,23 +4971,54 @@ sub lang_objc_finish
     &define_configure_variable ("OBJCFLAGS");
     &define_compiler_variable ('OBJCCOMPILE', $ltcompile,
 			       '$(OBJC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_OBJCFLAGS) $(OBJCFLAGS)');
-    
+
     &define_variable ('OBJCLD', '$(OBJC)');
     &define_variable ('OBJCLINK', $ltlink . '$(OBJCLD) $(AM_OBJCFLAGS) $(OBJCFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
-    
+
+    # All known ObjC compilers support -c and -o together.
     $output_rules .= (".m.o:\n"
-                      . "\t\$(OBJCCOMPILE) -c \$<\n");
+                      . "\t\$(OBJCCOMPILE) -c -o \$\@ \$<\n");
     # FIXME: Using cygpath should be somehow conditional.
     $output_rules .= (".m.obj:\n"
-                      . "\t\$(OBJCCOMPILE) -c `cygpath -w \$<`\n")
+                      . "\t\$(OBJCCOMPILE) -c -o \$\@ `cygpath -w \$<`\n")
         if ($seen_objext);
     $output_rules .= (".m.lo:\n"
-                      . "\t\$(LTOBJCCOMPILE) -c \$<\n")
+                      . "\t\$(LTOBJCCOMPILE) -c -o \$\@ \$<\n")
         if ($seen_libtool);
-    
+
     if (! defined $configure_vars{'OBJC'})
     {
 	&am_error ("Objective C source seen but \`OBJC' not defined in \`configure.in'");
+    }
+}
+
+sub lang_java_finish
+{
+    push (@suffixes, '.java');
+
+    local ($ltcompile, $ltlink) = &libtool_compiler;
+
+    &define_configure_variable ("GCJFLAGS");
+    &define_compiler_variable ('GCJCOMPILE', $ltcompile,
+			       '$(GCJ) $(DEFS) $(INCLUDES) $(AM_GCJFLAGS) $(GCJFLAGS)');
+
+    &define_variable ('GCJLD', '$(GCJ)');
+    &define_variable ('GCJLINK', $ltlink . '$(GCJLD) $(AM_GCJFLAGS) $(GCJFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
+
+    # All known Java compilers support -c and -o together.
+    $output_rules .= (".java.o:\n"
+                      . "\t\$(GCJCOMPILE) -c -o \$\@ \$<\n");
+    # FIXME: Using cygpath should be somehow conditional.
+    $output_rules .= (".java.obj:\n"
+                      . "\t\$(GCJCOMPILE) -c -o \$\@ `cygpath -w \$<`\n")
+        if ($seen_objext);
+    $output_rules .= (".java.lo:\n"
+                      . "\t\$(LTGCJCOMPILE) -c -o \$\@ \$<\n")
+        if ($seen_libtool);
+
+    if (! defined $configure_vars{'GCJ'})
+    {
+	&am_error ("Java source seen but \`GCJ' not defined in \`configure.in'");
     }
 }
 
@@ -4769,6 +5056,8 @@ sub resolve_linker
 {
     local (%linkers) = @_;
 
+    return 'GCJLINK'
+	if defined $linkers{'GCJLINK'};
     return 'CXXLINK'
 	if defined $linkers{'CXXLINK'};
     return 'F77LINK'
@@ -4804,28 +5093,36 @@ sub saw_sources_p
     return scalar keys %extension_seen > $headers;
 }
 
-# Register a single language.  If LINKER is the empty string, it means
-# to use the C linker.  DEANSI_P should only be 1 for languages where
-# de-ansi-fication makes sense (i.e., C).  EXTENSIONS is a list of
-# file extensions to match (no `.' included).
+# Register a single language.  LANGUAGE is the name of the language.
+# Each OPTION is either of the form NAME=VALUE, or is a file extension
+# (sans `.').
 sub register_language
 {
-    local ($language, $linker, $deansi_p, @extensions) = @_;
+    local ($language, @options) = @_;
+
+    # Set the defaults.
+    $language_map{$language . '-ansi-p'} = 0;
+    $language_map{$language . '-linker'} = '';
+    $language_map{$language . '-autodep'} = 'no';
 
     local ($iter);
-    foreach $iter (@extensions)
+    foreach $iter (@options)
     {
-	if (defined $extension_map{$iter})
+	if ($iter =~ /^(.*)=(.*)$/)
+	{
+	    $language_map{$language . '-' . $1} = $2;
+	}
+	elsif (defined $extension_map{$iter})
 	{
 	    print STDERR
 		"automake: programming error: duplicate extension $iter\n";
 	    exit 1;
 	}
-	$extension_map{$iter} = $language;
+	else
+	{
+	    $extension_map{$iter} = $language;
+	}
     }
-
-    $language_map{$language . '-ansi-p'} = $deansi_p;
-    $language_map{$language . '-linker'} = $linker;
 }
 
 
@@ -5007,8 +5304,7 @@ sub examine_variable
 sub quote_cond_val
 {
     local ($val) = @_;
-    $val =~ s/ /\001/g;
-    $val =~ s/\t/\003/g;
+    $val =~ tr/ \t\n/\001\003\004/;
     $val = "\002" if $val eq '';
     return $val;
 }
@@ -5017,8 +5313,7 @@ sub quote_cond_val
 sub unquote_cond_val
 {
     local ($val) = @_;
-    $val =~ s/\001/ /g;
-    $val =~ s/\003/\t/g;
+    $val =~ tr/\001\003\004/ \t\n/;
     $val =~ s/\002//g;
     return $val;
 }
@@ -5328,6 +5623,9 @@ sub value_to_list
 {
     local ($var, $val, $cond) = @_;
     local (@result);
+
+    # Strip backslashes
+    $val =~ s/\\(\n|$)/ /g;
 
     foreach (split (' ', $val))
     {
@@ -5650,10 +5948,6 @@ sub read_am_file
 	    else
 	    {
 		$saw_bk = /\\$/;
-		# Chop newline and backslash if this line is
-		# continued.  ensure trailing whitespace exists.
-		chop if $saw_bk;
-		chop if $saw_bk;
 		$contents{$last_var_name} .= ' '
 		    unless $contents{$last_var_name} =~ /\s$/;
 		$contents{$last_var_name} .= $_;
@@ -5764,7 +6058,10 @@ sub read_am_file
 	    local ($value);
 	    if ($3 ne '' && substr ($3, -1) eq "\\")
 	    {
-		$value = substr ($3, 0, length ($3) - 1);
+		# We preserve the `\' because otherwise the long lines
+		# that are generated will be truncated by broken
+		# `sed's.
+		$value = $3 . "\n";
 	    }
 	    else
 	    {
@@ -6005,9 +6302,13 @@ sub read_main_am_file
 	    {
 		local ($vcond) = shift (@cond_vals);
 		local ($val) = &unquote_cond_val (shift (@cond_vals));
-		$output_vars .= ($vcond . $curs
-				 . ' ' . $def_type{$curs} . '= '
-				 . $val . "\n");
+		$output_vars .= ($vcond . $curs . ' '
+				 . $def_type{$curs} . "= \\\n");
+		local ($line);
+		foreach $line (split ("\n", $val))
+		{
+		    $output_vars .= $vcond . $line . "\n";
+		}
 	    }
 	}
 	else
@@ -6080,7 +6381,7 @@ sub initialize_global_constants
 	 "libversion.in", "mdate-sh", "mkinstalldirs", "install-sh",
 	 'texinfo.tex', "ansi2knr.c", "ansi2knr.1", 'elisp-comp',
 	 'ylwrap', 'acinclude.m4', @libtoolize_files,
-	 'missing', 'depcomp'
+	 'missing', 'depcomp', 'compile'
 	 );
 
     # Commonly used files we auto-include, but only sometimes.
@@ -6123,17 +6424,17 @@ sub initialize_global_constants
     # if we chmod a symlink.
     $dist_header = "\t" . '-chmod -R a+r $(distdir)' . "\n";
     $dist{'dist-bzip2'} = ("\t"
-			   . '$(TAR) ch$(AMTARFLAGS)f - $(distdir) | bzip --best -c > $(distdir).bz2'
+			   . '$(AMTAR) ch$(AMTARFLAGS)f - $(distdir) | bzip --best -c > $(distdir).bz2'
 			   . "\n");
     $dist{'dist-tarZ'} = ("\t"
-		     . '$(TAR) ch$(AMTARFLAGS)f - $(distdir) | compress -c > $(distdir).tar.Z'
+		     . '$(AMTAR) ch$(AMTARFLAGS)f - $(distdir) | compress -c > $(distdir).tar.Z'
 		     . "\n");
     $dist{'dist-shar'} = ("\t"
 		     . 'shar $(distdir) | gzip > $(distdir).shar.gz'
 		     . "\n");
     $dist{'dist-zip'} = "\t" . 'zip -rq $(distdir).zip $(distdir)' . "\n";
     $dist{'dist'} = ("\t"
-		     .  'tar ch$(AMTARFLAGS)f - $(distdir) | GZIP=$(GZIP_ENV) gzip -c > $(distdir).tar.gz'
+		     .  '$(AMTAR) ch$(AMTARFLAGS)f - $(distdir) | GZIP=$(GZIP_ENV) gzip -c > $(distdir).tar.gz'
 		     . "\n");
     $dist_trailer = "\t" . '-rm -rf $(distdir)' . "\n";
 }
@@ -6220,11 +6521,17 @@ sub initialize_per_input
     # SOURCES and OBJECTS variables.
     @sources = ();
     @objects = ();
+    # Sources which go in the distribution.
+    @dist_sources = ();
 
-    # This hash maps object file names onto their corresopnding source
+    # This hash maps object file names onto their corresponding source
     # file names.  This is used to ensure that each object is created
     # by a single source file.
     %object_map = ();
+
+    # This keeps track of the directories for which we've already
+    # created `.dirstamp' code.
+    %directory_map = ();
 
     # These variables track inclusion of various compile-related .am
     # files.  $included_generic_compile is TRUE if the basic code has
@@ -6732,7 +7039,12 @@ sub am_install_var
     push (@all, '$(' . $primary . ')')
 	if @used && $primary ne 'JAVA';
 
-    return (@result);
+    # Make the result unique.  This lets the user use conditionals in
+    # a natural way, but still lets us program lazily -- we don't have
+    # to worry about handling a particular object more than once.
+    local (%uniquify) = ();
+    grep ($uniquify{$_} = 1, @result);
+    return sort keys %uniquify;
 }
 
 
@@ -6912,7 +7224,7 @@ sub require_conf_file_with_line
     }
 }
 
-# Assumes that the line number is in Makefile.am.
+# Assumes that the line number is in configure.in.
 sub require_conf_file_with_conf_line
 {
     @require_file_paths = @config_aux_path;

@@ -23,12 +23,17 @@
 	else :; fi
 ## Explicitly look in srcdir for benefit of non-GNU makes.
 @STAMP@: $(srcdir)/@CONFIG_HEADER_IN@ $(top_builddir)/config.status
+	@rm -f @STAMP@ @STAMP@T
+## We used to try to get a real timestamp here.  But the fear is that
+## that will cause unnecessary cvs conflicts
+	@echo timestamp > @STAMP@T 2> /dev/null
 	cd $(top_builddir) \
 	  && CONFIG_FILES= CONFIG_HEADERS=@CONFIG_HEADER_FULL@ \
 	     $(SHELL) ./config.status
-## We used to try to get a real timestamp here.  But the fear is that
-## that will cause unnecessary cvs conflicts
-	@echo timestamp > @STAMP@ 2> /dev/null
+## Creating the timestamp first, and moving it later, helps ensure that
+## it will be older than the header file, avoiding needless triggering
+## of the rebuild rule.
+	@mv @STAMP@T @STAMP@
 ## Explicitly look in srcdir for benefit of non-GNU makes.
 $(srcdir)/@CONFIG_HEADER_IN@: @MAINTAINER_MODE_TRUE@$(srcdir)/@STAMP@.in
 ## Recover from removal of CONFIG_HEADER_IN
@@ -37,7 +42,12 @@ $(srcdir)/@CONFIG_HEADER_IN@: @MAINTAINER_MODE_TRUE@$(srcdir)/@STAMP@.in
 		$(MAKE) $(srcdir)/@STAMP@.in; \
 	else :; fi
 $(srcdir)/@STAMP@.in: $(top_srcdir)/configure.in $(ACLOCAL_M4) @FILES@
-	cd $(top_srcdir) && $(AUTOHEADER)
+	@rm -f $(srcdir)/@STAMP@.in $(srcdir)/@STAMP@.inT
 ## We used to try to get a real timestamp here.  But the fear is that
 ## that will cause unnecessary cvs conflicts
-	@echo timestamp > $(srcdir)/@STAMP@.in 2> /dev/null
+	@echo timestamp > $(srcdir)/@STAMP@.inT 2> /dev/null
+	cd $(top_srcdir) && $(AUTOHEADER)
+## Creating the timestamp first, and moving it later, helps ensure that
+## it will be older than the header file, avoiding needless triggering
+## of the rebuild rule.
+	@mv $(srcdir)/@STAMP@.inT $(srcdir)/@STAMP@.in
