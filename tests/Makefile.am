@@ -2,41 +2,41 @@
 
 AUTOMAKE_OPTIONS = gnits
 
-TESTS = mdate.test vtexi.test acoutput.test instexec.test \
-checkall.test acoutnoq.test acouttbs.test libobj.test proginst.test \
-acoutqnl.test confincl.test spelling.test prefix.test badprog.test \
-depend.test exdir.test canon.test installsh.test empty.test \
-rulepat.test insh.test canon2.test target.test extra.test noinst.test \
-instman.test mkinstall.test auxdir.test canon3.test mdate2.test	\
-subdir.test backsl.test package.test number.test insh2.test \
-outdir.test fpinstall.test fpinst2.test texinfo.test dejagnu.test \
-yacc.test mkinst2.test texinfo2.test ansi.test depacl.test \
-depacl2.test error.test colon.test vtexi2.test tags.test comment.test \
-ansi2.test info.test obsolete.test lex.test scripts.test subdir2.test \
-exsource.test canon4.test dup.test defun.test cxxlink.test cxxnoc.test \
-order.test libobj2.test interp.test block.test libobj3.test dup2.test \
-gnits.test interp2.test colneq.test implicit.test spell.test \
-spell2.test confsub.test primary.test primary2.test depend2.test \
-spell3.test comment2.test vpath.test symlink.test discover.test	\
-acinclude.test req.test acsilent.test distdir.test libobj4.test	\
-libobj5.test version.test ranlib.test confvar.test confvar2.test \
-stdlib.test cxxo.test colon2.test colon3.test remake.test output.test \
-output2.test remake2.test output3.test output4.test colneq2.test \
-subst.test defun2.test yaccpp.test texinfo3.test texinfo4.test \
-tagsub.test cxxlibobj.test seenc.test cygwin32.test lisp.test \
-stamph.test ldadd.test version2.test conf2.test cond.test cond2.test \
-xsource.test libobj6.test depend3.test output5.test ammissing.test \
-install.test libobj7.test objc.test cond3.test cxxcpp.test \
-aclocal.test alpha.test whoami.test unused.test condman.test \
-texinfo5.test aclocali.test texinfo6.test condman2.test colon4.test \
-java.test sinclude.test javaprim.test javasubst.test aclocalii.test \
-lex2.test libobj8.test version3.test instdata.test exdir2.test \
-colon5.test library.test syntax.test cond4.test cond5.test recurs.test \
-ansi3.test cond6.test colon6.test texinfo7.test parse.test else.test \
-clean.test recurs2.test config.test colon7.test badline.test \
-extra3.test extra4.test confdist.test fnoc.test fo.test fonly.test \
-link_c_cxx.test link_f_c.test link_f_c_cxx.test link_f_cxx.test	\
-link_f_only.test flibs.test compile_f_c_cxx.test
+TESTS = acinclude.test aclocal.test aclocali.test aclocalii.test \
+acoutnoq.test acoutput.test acoutqnl.test acouttbs.test acsilent.test \
+alpha.test ammissing.test ansi.test ansi2.test ansi3.test auxdir.test \
+backsl.test badline.test badprog.test block.test canon.test \
+canon2.test canon3.test canon4.test checkall.test clean.test \
+colneq.test colneq2.test colon.test colon2.test colon3.test \
+colon4.test colon5.test colon6.test colon7.test comment.test \
+comment2.test compile_f_c_cxx.test cond.test cond2.test cond3.test \
+cond4.test cond5.test cond6.test condman.test condman2.test conf2.test \
+confdist.test config.test confincl.test confsub.test confvar.test \
+confvar2.test cxxcpp.test cxxlibobj.test cxxlink.test cxxnoc.test \
+cxxo.test cygwin32.test defun.test defun2.test dejagnu.test \
+depacl.test depacl2.test depend.test depend2.test depend3.test \
+discover.test distdir.test dup.test dup2.test else.test empty.test \
+error.test exdir.test exdir2.test exsource.test extra.test extra3.test \
+extra4.test flibs.test fnoc.test fo.test fonly.test fpinst2.test \
+fpinstall.test gnits.test implicit.test info.test insh.test insh2.test \
+install.test installsh.test instdata.test instexec.test instman.test \
+interp.test interp2.test java.test javaprim.test javasubst.test	\
+ldadd.test lex.test lex2.test libobj.test libobj2.test libobj3.test \
+libobj4.test libobj5.test libobj6.test libobj7.test libobj8.test \
+library.test link_c_cxx.test link_f_c.test link_f_c_cxx.test \
+link_f_cxx.test link_f_only.test lisp.test mdate.test mdate2.test \
+mkinst2.test mkinstall.test noinst.test number.test objc.test \
+obsolete.test order.test outdir.test output.test output2.test \
+output3.test output4.test output5.test package.test parse.test \
+prefix.test primary.test primary2.test proginst.test ranlib.test \
+recurs.test recurs2.test remake.test remake2.test req.test \
+rulepat.test scripts.test seenc.test sinclude.test spell.test \
+spell2.test spell3.test spelling.test stamph.test stdlib.test \
+subdir.test subdir2.test subst.test symlink.test syntax.test tags.test \
+tagsub.test target.test texinfo.test texinfo2.test texinfo3.test \
+texinfo4.test texinfo5.test texinfo6.test texinfo7.test unused.test \
+version.test version2.test version3.test vpath.test vtexi.test \
+vtexi2.test whoami.test xsource.test yacc.test yaccpp.test
 
 EXTRA_DIST = defs $(TESTS)
 
