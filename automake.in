@@ -24,6 +24,10 @@ AM_DIR=@prefix@/share/automake
 
 usage="Usage: automake [--help] [--version] Makefile..."
 
+# These are commonly found files that we look for and automatically
+# include in DIST_FILES.
+common='README NEWS COPYING INSTALL NLS ChangeLog configure configure.in mkinstalldirs install-sh'
+
 # NLS nuisances.
 # Only set `LANG' and `LC_ALL' to "C" if already set.
 # These must not be set unconditionally because not all systems understand
@@ -241,9 +245,12 @@ ${am_file}_OBJECTS = ${am_file}.${kr}o" >&4
 
   echo "SOURCES = $SOURCES" >&4
 
+  #
+  # Handle "dist" targets.
+  #
+  amdir=`echo "$am_makefile" | sed 's,//*[^/][^/]*$,,g'`
   case "$am_makefile" in
   */*) 
-     amdir=`echo "$am_makefile" | sed 's,//*[^/][^/]*$,,g'`
      cat $AM_DIR/dist-subd-vars.am >&4
      echo "subdir = $amdir" >&5
      cat $AM_DIR/dist-subd.am >&5
@@ -257,6 +264,14 @@ ${am_file}_OBJECTS = ${am_file}.${kr}o" >&4
      fi
      ;;
   esac
+  # Now look for certain common files and make sure they are included.
+  dlist=
+  for cfile in $common; do
+     if test -f $amdir/$cfile; then
+	dlist="$dlist $cfile"
+     fi
+  done
+  echo "DIST_COMMON = $dlist" >&4
 
   sed '/^[^#=]*:/,$d' ${am_makefile}.am >&4
   sed -n '/^[^#=]*:/,$p' ${am_makefile}.am >&5
