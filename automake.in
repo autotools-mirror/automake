@@ -469,6 +469,9 @@ my @include_stack;
 # Eg for src/Makefile.in, this is "src".
 my $relative_dir;
 
+# Same but wrt Makefile.am.
+my $am_relative_dir;
+
 # This holds a list of files that are included in the
 # distribution.
 my %dist_common;
@@ -655,6 +658,9 @@ sub initialize_per_input ()
     # This holds the "relative directory" of the current Makefile.in.
     # Eg for src/Makefile.in, this is "src".
     $relative_dir = '';
+
+    # Same but wrt Makefile.am.
+    $am_relative_dir = '';
 
     # This holds a list of files that are included in the
     # distribution.
@@ -4394,6 +4400,8 @@ sub handle_minor_options
 
 ################################################################
 
+my %make_list;
+my @make_input_list;
 # &scan_autoconf_config_files ($CONFIG-FILES)
 # -------------------------------------------
 # Study $CONFIG-FILES which is the first argument to AC_CONFIG_FILES
@@ -4845,10 +4853,6 @@ sub scan_autoconf_files
     # since we currently assume there is only one configure.ac.  But
     # that won't always be the case.
     %libsources = ();
-
-    # Watchout: these guys need dynamic scope!
-    local %make_list;
-    local @make_input_list;
 
     warn "$me: both \`configure.ac' and \`configure.in' present:"
          . " ignoring \`configure.in'\n"
@@ -7360,27 +7364,32 @@ sub maybe_push_required_file
     }
 }
 
-# Verify that the file must exist in the current directory.  Usage:
-# require_file (isconfigure, line_number, strictness, file) strictness
-# is the strictness level at which this file becomes required.  Must
-# set require_file_paths before calling this function.
+
+# &require_file_internal ($IS_CONFIGURE, $LINE, $MYSTRICT, @FILES)
+# ----------------------------------------------------------------
+# Verify that the file must exist in the current directory.
+# $MYSTRICT is the strictness level at which this file becomes required.
+#
+# Must set require_file_paths before calling this function.
 # require_file_paths is set to hold a single directory (the one in
 # which the first file was found) before return.
 sub require_file_internal
 {
     my ($is_configure, $line, $mystrict, @files) = @_;
-    my $fullfile;
-    my ($found_it, $dangling_sym, $errfile, $errdir);
-    my $save_dir;
 
     foreach my $file (@files)
     {
+        my $fullfile;
+	my $errdir;
+	my $errfile;
+	my $save_dir;
+
 	# If we've already looked for it, we're done.
 	next if defined $require_file_found{$file};
 	$require_file_found{$file} = 1;
 
-	$found_it = 0;
-	$dangling_sym = 0;
+	my $found_it = 0;
+	my $dangling_sym = 0;
 	foreach my $dir (@require_file_paths)
 	{
 	    if ($dir eq '.')
