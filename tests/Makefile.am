@@ -272,6 +272,7 @@ ltdeps.test \
 ltlibobjs.test \
 maintclean.test \
 make.test \
+makej.test \
 makevars.test \
 man.test \
 man2.test \
