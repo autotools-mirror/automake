@@ -1318,9 +1318,8 @@ sub handle_single_transform_list
                 $rule = '';
                 my $obj_sans_ext = substr ($object, 0,
 					   - length ($this_obj_ext));
-                $lang_specific_files{$lang} .= (' ' . $derived
-                                                . ' ' . $full
-                                                . ' ' . $obj_sans_ext);
+                push (@{$lang_specific_files{$lang}},
+		      "$derived $full $obj_sans_ext");
             }
         }
         elsif ($extension eq 'o')
@@ -2783,17 +2782,10 @@ sub add_depend2
 
     # Now include code for each specially handled object with this
     # language.
-    my @list = grep ($_ ne '', split (' ', $lang_specific_files{$lang}));
-    my $max = scalar @list;
-    my $i = 0;
-    my ($derived, $source, $obj);
     my %seen_files = ();
-    while ($i < $max)
+    foreach my $file (@{$lang_specific_files{$lang}})
     {
-	$derived = $list[$i];
-	$source = $list[$i + 1];
-	$obj = $list[$i + 2];
-	$i += 3;
+        my ($derived, $source, $obj) = split (' ', $file);
 
 	# We might see a given object twice, for instance if it is
 	# used under different conditions.
