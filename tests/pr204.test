@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002  Free Software Foundation, Inc.
+# Copyright (C) 2002, 2004  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -29,6 +29,7 @@ set -e
 cat > configure.in <<'EOF'
 AC_INIT(pr204, 0.1)
 AM_INIT_AUTOMAKE
+AM_MAINTAINER_MODE
 AC_PROG_CC
 AC_PROG_YACC
 AC_CONFIG_FILES(Makefile)
@@ -43,6 +44,14 @@ AM_YFLAGS = -d
 EXTRA_PROGRAMS = foo
 PARSE2 = parse2.y
 nodist_foo_SOURCES = parse.y $(PARSE2)
+
+distdirtest: distdir
+	test ! -f $(distdir)/parse.c
+	test ! -f $(distdir)/parse.y
+	test ! -f $(distdir)/parse.h
+	test ! -f $(distdir)/parse2.c
+	test ! -f $(distdir)/parse2.y
+	test ! -f $(distdir)/parse2.h
 EOF
 
 cat > parse.y << 'END'
@@ -60,12 +69,16 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 ./configure
-$MAKE distdir
-test -f pr204-0.1/parse.c && exit 1
-test -f pr204-0.1/parse.y && exit 1
-test -f pr204-0.1/parse.h && exit 1
-test -f pr204-0.1/parse2.c && exit 1
-test -f pr204-0.1/parse2.y && exit 1
-test -f pr204-0.1/parse2.h && exit 1
+$MAKE distdirtest
 # Make sure parse.c and parse2.c are still targets.
 $MAKE parse.c parse2.c
+test -f parse.c
+test -f parse2.c
+
+# Ensure the rebuild rule works despite AM_MAINTAINER_MODE, because
+# it's a nodist_ parser.
+$sleep
+touch parse.y
+$sleep
+$MAKE parse.c parse2.c
+test `ls -1t parse.c parse.y | sed 1q` = parse.c

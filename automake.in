@@ -100,7 +100,11 @@ struct (# Short name of the language (c, f77...).
 	# This is a subroutine which is called whenever we finally
 	# determine the context in which a source file will be
 	# compiled.
-	'_target_hook' => "\$");
+	'_target_hook' => "\$",
+
+	# If TRUE, nodist_ sources will be compiled using specific rules
+	# (i.e. not inference rules).  The default is FALSE.
+	'nodist_specific' => "\$");
 
 
 sub finish ($)
@@ -732,7 +736,8 @@ register_language ('name' => 'yacc',
 						return ($ext,) },
 		   'rule_file' => 'yacc',
 		   '_finish' => \&lang_yacc_finish,
-		   '_target_hook' => \&lang_yacc_target_hook);
+		   '_target_hook' => \&lang_yacc_target_hook,
+		   'nodist_specific' => 1);
 register_language ('name' => 'yaccxx',
 		   'Name' => 'Yacc (C++)',
 		   'config_vars' => ['YACC'],
@@ -744,7 +749,8 @@ register_language ('name' => 'yaccxx',
 		   'output_extensions' => sub { (my $ext = $_[0]) =~ tr/y/c/;
 						return ($ext,) },
 		   '_finish' => \&lang_yacc_finish,
-		   '_target_hook' => \&lang_yacc_target_hook);
+		   '_target_hook' => \&lang_yacc_target_hook,
+		   'nodist_specific' => 1);
 
 # Lex (C & C++).
 register_language ('name' => 'lex',
@@ -758,7 +764,8 @@ register_language ('name' => 'lex',
 		   'output_extensions' => sub { (my $ext = $_[0]) =~ tr/l/c/;
 						return ($ext,) },
 		   '_finish' => \&lang_lex_finish,
-		   '_target_hook' => \&lang_lex_target_hook);
+		   '_target_hook' => \&lang_lex_target_hook,
+		   'nodist_specific' => 1);
 register_language ('name' => 'lexxx',
 		   'Name' => 'Lex (C++)',
 		   'config_vars' => ['LEX'],
@@ -770,7 +777,8 @@ register_language ('name' => 'lexxx',
 		   'output_extensions' => sub { (my $ext = $_[0]) =~ tr/l/c/;
 						return ($ext,) },
 		   '_finish' => \&lang_lex_finish,
-		   '_target_hook' => \&lang_lex_target_hook);
+		   '_target_hook' => \&lang_lex_target_hook,
+		   'nodist_specific' => 1);
 
 # Assembler.
 register_language ('name' => 'asm',
@@ -1643,8 +1651,11 @@ sub handle_single_transform ($$$$$%)
 	    # Using inference rules for subdir-objects has been tested
 	    # with GNU make, Solaris make, Ultrix make, BSD make,
 	    # HP-UX make, and OSF1 make successfully.
-            if ($renamed ||
-		($directory ne '' && ! option 'subdir-objects'))
+            if ($renamed
+		|| ($directory ne '' && ! option 'subdir-objects')
+		# We must also use specific rules for a nodist_ source
+		# if its language requests it.
+		|| ($lang->nodist_specific && ! $transform{'DIST_SOURCE'}))
             {
                 my $obj_sans_ext = substr ($object, 0,
 					   - length ($this_obj_ext));
@@ -5447,6 +5458,8 @@ sub register_language (%)
     unless defined $option{'flags'};
   $option{'output_extensions'} = sub { return ( '.$(OBJEXT)', '.lo' ) }
     unless defined $option{'output_extensions'};
+  $option{'nodist_specific'} = 0
+    unless defined $option{'nodist_specific'};
 
   my $lang = new Language (%option);
 
