@@ -58,7 +58,7 @@ fi
 
 dnl Distinguish between old-style and new-style calls.
 m4_ifval([$2],
-  [m4_ifval([$3],, [_AM_SET_OPTION([no-define])])],
+  [m4_ifval([$3], [_AM_SET_OPTION([no-define])])],
   [_AM_SET_OPTIONS([$1])])dnl
 
 # Define the identity of the package.

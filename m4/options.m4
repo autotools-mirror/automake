@@ -40,4 +40,4 @@ AC_DEFUN([_AM_SET_OPTIONS],
 # -------------------------------------------
 # Execute IF-SET if OPTION is set, IF-NOT-SET otherwise.
 AC_DEFUN([_AM_IF_OPTION],
-[m4_if(_AM_MANGLE_OPTION([$1]), 1, [$2], [$3])])
+[m4_ifset(_AM_MANGLE_OPTION([$1]), [$2], [$3])])
