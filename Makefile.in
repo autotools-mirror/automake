@@ -74,10 +74,13 @@ info_TEXINFOS = automake.texi
 amfiles = clean-hdr.am clean-kr.am clean.am comp-vars.am compile.am data-clean.am data.am dejagnu.am depend.am depend2.am dist-vars.am footer.am header-vars.am header.am java-clean.am java.am kr-extra.am library.am libs-clean.am libs.am libtool.am lisp-clean.am lisp.am ltlib-clean.am ltlib.am ltlibrary.am mans-vars.am mans.am multilib.am program.am progs-clean.am progs.am remake-hdr.am remake.am scripts.am subdirs.am tags-clean.am tags.am texi-vers.am texinfos.am
 
 
-pkgdata_DATA = COPYING INSTALL texinfo.tex ansi2knr.c ansi2knr.1 $(amfiles) config.guess config.sub install-sh mdate-sh missing mkinstalldirs elisp-comp ylwrap acinstall
+pkgdata_DATA = COPYING INSTALL texinfo.tex ansi2knr.c ansi2knr.1 $(amfiles)
+
+scriptdir = $(pkgdatadir)
+script_DATA = config.guess config.sub install-sh mdate-sh missing mkinstalldirs elisp-comp ylwrap acinstall
 
 
-EXTRA_DIST = acinstall $(pkgdata_DATA)
+EXTRA_DIST = acinstall $(pkgdata_DATA) $(script_DATA)
 
 ETAGS_ARGS = $(amfiles)
 TAGS_DEPENDENCIES = $(ETAGS_ARGS)
@@ -90,7 +93,7 @@ TEXI2DVI = texi2dvi
 INFO_DEPS = automake.info
 DVIS = automake.dvi
 TEXINFOS = automake.texi
-DATA =  $(pkgdata_DATA)
+DATA =  $(pkgdata_DATA) $(script_DATA)
 
 DIST_COMMON =  README AUTHORS COPYING ChangeLog INSTALL Makefile.am \
 Makefile.in NEWS THANKS TODO aclocal.in aclocal.m4 ansi2knr.1 \
@@ -304,6 +307,25 @@ uninstall-pkgdataDATA:
 	  rm -f $(DESTDIR)$(pkgdatadir)/$$p; \
 	done
 
+install-scriptDATA: $(script_DATA)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(scriptdir)
+	@list='$(script_DATA)'; for p in $$list; do \
+	  if test -f $(srcdir)/$$p; then \
+	    echo " $(INSTALL_DATA) $(srcdir)/$$p $(DESTDIR)$(scriptdir)/$$p"; \
+	    $(INSTALL_DATA) $(srcdir)/$$p $(DESTDIR)$(scriptdir)/$$p; \
+	  else if test -f $$p; then \
+	    echo " $(INSTALL_DATA) $$p $(DESTDIR)$(scriptdir)/$$p"; \
+	    $(INSTALL_DATA) $$p $(DESTDIR)$(scriptdir)/$$p; \
+	  fi; fi; \
+	done
+
+uninstall-scriptDATA:
+	@$(NORMAL_UNINSTALL)
+	list='$(script_DATA)'; for p in $$list; do \
+	  rm -f $(DESTDIR)$(scriptdir)/$$p; \
+	done
+
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run `make' without going through this Makefile.
 # To change the values of `make' variables: instead of editing Makefiles,
@@ -468,7 +490,7 @@ installcheck: installcheck-recursive
 install-exec-am: install-binSCRIPTS
 install-exec: install-exec-recursive
 
-install-data-am: install-info-am install-pkgdataDATA
+install-data-am: install-info-am install-pkgdataDATA install-scriptDATA
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) install-data-hook
 install-data: install-data-recursive
@@ -476,7 +498,8 @@ install-data: install-data-recursive
 install-am: all-am
 	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
 install: install-recursive
-uninstall-am: uninstall-binSCRIPTS uninstall-info uninstall-pkgdataDATA
+uninstall-am: uninstall-binSCRIPTS uninstall-info uninstall-pkgdataDATA \
+		uninstall-scriptDATA
 uninstall: uninstall-recursive
 all-am: Makefile $(INFO_DEPS) $(SCRIPTS) $(DATA)
 all-redirect: all-recursive
@@ -485,7 +508,7 @@ install-strip:
 installdirs: installdirs-recursive
 installdirs-am:
 	$(mkinstalldirs)  $(DESTDIR)$(bindir) $(DESTDIR)$(infodir) \
-		$(DESTDIR)$(pkgdatadir)
+		$(DESTDIR)$(pkgdatadir) $(DESTDIR)$(scriptdir)
 
 
 mostlyclean-generic:
@@ -526,7 +549,8 @@ maintainer-clean: maintainer-clean-recursive
 distclean-vti clean-vti maintainer-clean-vti install-info-am \
 uninstall-info mostlyclean-aminfo distclean-aminfo clean-aminfo \
 maintainer-clean-aminfo uninstall-pkgdataDATA install-pkgdataDATA \
-install-data-recursive uninstall-data-recursive install-exec-recursive \
+uninstall-scriptDATA install-scriptDATA install-data-recursive \
+uninstall-data-recursive install-exec-recursive \
 uninstall-exec-recursive installdirs-recursive uninstalldirs-recursive \
 all-recursive check-recursive installcheck-recursive info-recursive \
 dvi-recursive mostlyclean-recursive distclean-recursive clean-recursive \
@@ -541,12 +565,12 @@ maintainer-clean
 
 
 install-data-hook:
-	@for prog in $(pkgdata_DATA); do \
-	  chmod +x $(pkgdatadir)/$$prog; \
+	@for prog in $(script_DATA); do \
+	  chmod +x $(scriptdir)/$$prog; \
 	done
 
 installcheck-local:
-	for file in $(pkgdata_SCRIPTS); do \
+	for file in $(script_DATA); do \
 	  $(PERL) -e "exit ! -x '$(pkgdatadir)/$$file';" || exit 1; \
 	done
 
