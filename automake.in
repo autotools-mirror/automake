@@ -1433,7 +1433,7 @@ sub handle_scripts
 	    && &variable_defined ($key . '_SCRIPTS'))
 	{
 	    $scripts_installed = 1;
-	    # push (@check, 'check-' . $key . 'SCRIPTS');
+	    # push (@check_tests, 'check-' . $key . 'SCRIPTS');
 	}
     }
 
@@ -2227,7 +2227,7 @@ sub handle_subdirs
     }
     &push_phony_cleaners ('recursive');
 
-    push (@check, "check-recursive");
+    push (@check_tests, "check-recursive");
     push (@installcheck, "installcheck-recursive");
     push (@info, "info-recursive");
     push (@dvi, "dvi-recursive");
@@ -2561,7 +2561,7 @@ sub handle_merge_targets
 
     &do_one_merge_target ('info', @info);
     &do_one_merge_target ('dvi', @dvi);
-    &do_one_merge_target ('check', @check);
+    &do_check_merge_target;
     &do_one_merge_target ('installcheck', @installcheck);
 
     if (defined $options{'no-installinfo'})
@@ -2766,30 +2766,46 @@ sub do_one_merge_target
 	push (@phony, $name . '-local');
     }
 
-    local ($done) = 0;
-    if ($name eq 'check')
+    &pretty_print_rule ($name . ":", "\t\t", @values);
+    push (@phony, $name);
+}
+
+# Handle check merge target specially.
+sub do_check_merge_target
+{
+    if (defined $contents{'check-local'})
     {
-	if (! &variable_defined ('SUBDIRS'))
-	{
-	    # 'check' must depend on `all', but not when doing
-	    # recursive build.
-	    unshift (@values, 'all');
-	}
-	else
-	{
-	    # When subdirs are used, do the `all' build and then do
-	    # all the recursive stuff.  Actually use `all-am' because
-	    # it doesn't recurse; we rely on the check target in the
-	    # subdirs to do the required builds there.
-	    $output_rules .= "check: all-am\n";
-	    &pretty_print_rule ("\t\$(MAKE)", "\t  ", @values);
-	    $done = 1;
-	}
+	# User defined local form of target.  So include it.
+	push (@check_tests, 'check-local');
+	push (@phony, 'check-local');
     }
 
-    &pretty_print_rule ($name . ":", "\t\t", @values)
-	unless $done;
-    push (@phony, $name);
+    if (! &variable_defined ('SUBDIRS'))
+    {
+	# 'check' must depend on `all', but not when doing recursive
+	# build.
+	unshift (@check, 'all');
+    }
+    else
+    {
+	# When subdirs are used, do the `all' build and then do all
+	# the recursive stuff.  Actually use `all-am' because it
+	# doesn't recurse; we rely on the check target in the subdirs
+	# to do the required builds there.
+	unshift (@check, 'all-am');
+    }
+
+    # The check target must depend on the local equivalent of `all',
+    # to ensure all the primary targets are built.  Also it must
+    # depend on the test code named in @check.
+    &pretty_print_rule ('check:', "\t\t", @check);
+
+    # Now the check rules must explicitly run anything named in
+    # @check_tests.  This is done via a separate make invocation to
+    # avoid problems with parallel makes.  Every time I write code
+    # like this I wonder: how could you invent a parallel make and not
+    # provide any real synchronization facilities?
+    &pretty_print_rule ("\t\$(MAKE)", "\t  ", @check_tests);
 }
 
 # Handle all 'clean' targets.
@@ -2874,7 +2890,7 @@ sub handle_tests
 {
     if (defined $options{'dejagnu'})
     {
-	push (@check, 'check-DEJAGNU');
+	push (@check_tests, 'check-DEJAGNU');
 	push (@phony, 'check-DEJAGNU');
 
 	local ($xform);
@@ -2948,7 +2964,7 @@ sub handle_tests
 
     if (&variable_defined ('TESTS'))
     {
-	push (@check, 'check-TESTS');
+	push (@check_tests, 'check-TESTS');
 	push (@phony, 'check-TESTS');
 	# FIXME: use $(SHELL) here?  That is what Ulrich suggests.
 	# Maybe a new macro, $(TEST_SHELL), a la $(CONFIG_SHELL)?  For
@@ -3906,6 +3922,7 @@ sub initialize_per_input
     @dvi = ();
     @all = ();
     @check = ();
+    @check_tests = ();
     @installcheck = ();
     @clean = ();
 
