@@ -445,12 +445,13 @@ The special prefix @samp{check} indicates that the objects in question
 should not be built until the @code{make check} command is run.
 
 Possible primary names are @samp{PROGRAMS}, @samp{LIBRARIES},
-@samp{LISP}, @samp{PYTHON}, @samp{SCRIPTS}, @samp{DATA}, @samp{HEADERS},
-@samp{MANS}, and @samp{TEXINFOS}.
+@samp{LISP}, @samp{PYTHON}, @samp{JAVA}, @samp{SCRIPTS}, @samp{DATA},
+@samp{HEADERS}, @samp{MANS}, and @samp{TEXINFOS}.
 @vindex PROGRAMS
 @vindex LIBRARIES
 @vindex LISP
 @vindex PYTHON
+@vindex JAVA
 @vindex SCRIPTS
 @vindex DATA
 @vindex HEADERS
@@ -2648,6 +2649,11 @@ A source file listed in @code{BUILT_SOURCES} is created before the other
 compiled unless explicitly requested by mentioning it in some other
 @samp{_SOURCES} variable.
 
+So, for instance, if you had header files which were created by a script
+run at build time, then you would list these headers in
+@code{BUILT_SOURCES}, to ensure that they would be built before any
+other compilations (perhaps ones using these headers) were started.
+
 
 @node Other GNU Tools, Documentation, Other objects, Top
 @chapter Other GNU Tools
@@ -2768,7 +2774,36 @@ Currently Automake enforces the restriction that only one @samp{_JAVA}
 primary can be used in a given @file{Makefile.am}.  The reason for this
 restriction is that, in general, it isn't possible to know which
 @file{.class} files were generated from which @file{.java} files -- so
-it would be impossible to know which files to install where.
+it would be impossible to know which files to install where.  For
+instance, a @file{.java} file can define multiple classes; the resulting
+@file{.class} file names cannot be predicted without parsing the
+@file{.java} file.
+
+There are a few variables which are used when compiling Java sources:
+
+@vtable @code
+@item JAVAC
+The name of the Java compiler.  This defaults to @samp{javac}.
+
+@item JAVACFLAGS
+The flags to pass to the compiler.  This is considered to be a user
+variable (@pxref{User Variables}).
+
+@item AM_JAVACFLAGS
+More flags to pass to the Java compiler.  This, and not
+@code{JAVACFLAGS}, should be used when it is necessary to put Java
+compiler flags into @file{Makefile.am}.
+
+@item JAVAROOT
+The value of this variable is passed to the @samp{-d} option to
+@code{javac}.  It defaults to @samp{$(top_builddir)}.
+
+@item CLASSPATH_ENV
+This variable is an @code{sh} expression which is used to set the
+@code{CLASSPATH} environment variable on the @code{javac} command line.
+(In the future we will probably handle class path setting differently.)
+@end vtable
+
 
 @node Python,  , Java, Other GNU Tools
 @section Python
@@ -2779,25 +2814,22 @@ it would be impossible to know which files to install where.
 
 
 Automake provides support for Python modules.  Automake will turn on
-Python support if the @code{AM_CHECK_PYTHON} macro is used in
+Python support if the @code{AM_PATH_PYTHON} macro is used in
 @file{configure.in}.  The @samp{PYTHON} primary is used to hold a list
 of @file{.py} files.  Possible prefixes for this primary are
 @samp{python_} and @samp{noinst_}.  Note that if @code{python_PYTHON} is
-defined, then @file{configure.in} must run @code{AM_CHECK_PYTHON}.
+defined, then @file{configure.in} must run @code{AM_PATH_PYTHON}.
+Python source files are included in the distribution by default.
 
-@code{AM_CHECK_PYTHON} takes a single argument --- either the word
-@samp{module} or @samp{package}.  The first installs files directly into
-the @file{site-packages} directory and is used when the @file{.py[co]}
-files must be on the @code{PYTHONPATH}.  The second is used for modules
-distributed as a package, which should be installed in a subdirectory
-of @file{site-packages} and contain the @file{__init__.py} file.  The
-subdirectory name is the same as the name given by @samp{PACKAGE}.
+@code{AM_PATH_PYTHON} takes a single optional argument.  This argument,
+if present, is the minimum version of Python which can be used for this
+package.  If the version of Python found on the system is older than the
+required version, then @code{AM_PATH_PYTHON} will cause an error.
 
-
-@code{AM_CHECK_PYTHON} creates several output variables based on the
+@code{AM_PATH_PYTHON} creates several output variables based on the
 Python installation found during configuration.
 
-@table @samp
+@vtable @code
 @item PYTHON
 The name of the Python executable.
 
@@ -2822,30 +2854,22 @@ given by @code{sys.platform}.  This value is sometimes needed when
 building Python extensions.
 
 @item pythondir
-The directory name for the top of the standard Python library.
+The directory name for the @file{site-packages} subdirectory of the
+standard Python install tree.
 
-@item PYTHON_SITE
-The location of the platform-independent @file{site-packages} directory,
-where `module' files are installed.  Note that older versions of Python
-(pre-1.5) used @file{$prefix/lib/site-python} so future versions of
-Automake's Python support may provide backwards compatibility.
+@item pkgpythondir
+This is is the directory under @code{pythondir} which is named after the
+package.  That is, it is @samp{$(pythondir)/$(PACKAGE)}.  It is provided
+as a convenience.
 
-@item PYTHON_SITE_PACKAGE
-The string @code{$PYTHON_SITE/$PACKAGE}.  This is the default
-installation directory for a Python `package.'
+@item pyexecdir
+This is the directory where Python extension modules (shared libraries)
+should be installed.
 
-@item PYTHON_SITE_INSTALL
-The top-level directory in which the Python files will be installed.  It
-will be the value of either @samp{PYTHON_SITE} or @samp{PYTHON_PACKAGE}
-depending on the argument given to @code{AM_CHECK_PYTHON}.
-
-@item PYTHON_SITE_EXEC
-The location of the platform-dependent @file{site-packages} directory,
-where shared library extensions should be placed.  Note that older
-versions of Python (pre-1.5) used @file{sharedmodules} so future version
-of Automake's Python support may provide backwards compatibility.
-
-@end table
+@item pkgpyexecdir
+This is a convenience variable which is defined as
+@samp{$(pyexecdir)/$(PACKAGE)}.
+@end vtable
 
 @vindex PYCFILES
 @vindex PYOFILES
@@ -3527,12 +3551,20 @@ notify GNU Make of the new suffixes.  This can be done by putting a list
 of new suffixes in the @code{SUFFIXES} variable.
 @vindex SUFFIXES
 
-For instance, currently Automake does not provide any Java support.  If
-you wrote a macro to generate @samp{.class} files from @samp{.java}
-source files, you would also need to add these suffixes to the list:
+For instance, suppose you had a compiler which could compile @samp{.foo}
+files to @samp{.o} files.  Then you would add @samp{.foo} to your suffix
+list:
 
 @example
-SUFFIXES = .java .class
+SUFFIXES = .foo
+@end example
+
+Then you could directly use a @samp{.foo} file in a @samp{_SOURCES}
+variable and expect the correct results:
+
+@example
+bin_PROGRAMS = doit
+doit_SOURCES = doit.foo
 @end example
 
 Any given @code{SUFFIXES} go at the start of the generated suffixes
@@ -3543,24 +3575,28 @@ list, followed by automake generated suffixes not already in the list.
 @chapter Include
 
 @cmindex include
-To include another file (perhaps for common rules),
-the following syntax is supported:
+@cindex Including Makefile fragment
+@cindex Makefile fragment, including
 
-include ($(srcdir)|$(top_srcdir))/filename
+Automake supports an @code{include} directive which can be used to
+include other @file{Makefile} fragments when @code{automake} is run.
+Note that these fragments are read and interpreted by @code{automake},
+not by @code{make}.  As with conditionals, @code{make} has no idea that
+@code{include} is in use.
 
-Using files in the current directory:
-@example
-include $(srcdir)/Makefile.extra
-@end example
+There are two forms of @code{include}:
 
-@example
-include Makefile.generated
-@end example
+@table @code
+@item include $(srcdir)/file
+Include a fragment which is found relative to the current source
+directory.
 
-Using a file in the top level directory:
-@example
-include $(top_srcdir)/filename
-@end example
+@item include $(top_srcdir)/file
+Include a fragment which is found relative to the top source directory.
+@end table
+
+Note that if a fragment is included inside a conditional, then the
+condition applies to the entire contents of that fragment.
 
 
 @node Conditionals, Gnits, Include, Top
