@@ -94,6 +94,7 @@ depacl.test \
 depacl2.test \
 depcomp.test \
 depend.test \
+depend2.test \
 depend3.test \
 discover.test \
 distcommon.test \
