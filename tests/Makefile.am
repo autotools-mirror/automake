@@ -2,10 +2,8 @@
 
 AUTOMAKE_OPTIONS = gnits
 
-## FIXME Ulrich has suggested implementing this in Automake.
-## Perhaps he is right.
 TESTS = mdate.test vtexi.test acoutput.test instexec.test checkall.test \
 acoutnoq.test acouttbs.test libobj.test proginst.test acoutqnl.test \
-confincl.test spelling.test prefix.test badprog.test depend.test
+confincl.test spelling.test prefix.test badprog.test depend.test exdir.test
 
-DIST_OTHER = defs
+EXTRA_DIST = defs

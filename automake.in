@@ -40,6 +40,9 @@ $COMMENT_PATTERN = "^#";
 $RULE_PATTERN = "^([a-zA-Z_.][-.a-zA-Z0-9_.]*) *:";
 $MACRO_PATTERN = "^([A-Za-z][A-Za-z0-9_]*)[ \t]*=[ \t]*(.*)\$";
 
+# Valid syntax for a derived object, eg a program name.  This must
+# satisfy both the filesystem and make.
+$OBJECT_PATTERN = "^[A-Za-z_][-+.A-Za-z_0-9]+\$";
 
 # Constants to define the "strictness" level.
 $FOREIGN = 0;
@@ -552,6 +555,46 @@ sub handle_source_transform
     return @result;
 }
 
+# Special-case @ALLOCA@ and @LIBOBJS@ in _LDADD or _LIBADD variables.
+sub handle_lib_objects
+{
+    local ($var) = @_;
+
+    die "programming error in handle_lib_objects"
+	if ! defined $contents{$var};
+
+    # We recognize certain things that are commonly put in LIBADD or
+    # LDADD.
+    local ($lsearch);
+
+    foreach $lsearch (split (/\s+/, $contents{$var}))
+    {
+	# Automatically handle @LIBOBJS@ and @ALLOCA@.  Basically this
+	# means adding entries to dep_files.
+	if ($lsearch eq '@LIBOBJS@')
+	{
+	    local ($iter, $rewrite);
+	    foreach $iter (keys %libsources)
+	    {
+		if ($iter ne 'alloca.c')
+		{
+		    ($rewrite = $iter) =~ s/\.c$/.P/;
+		    $dep_files{'$(srcdir)/.deps/' . $rewrite} = 1;
+		    &require_file_with_line ($var, $FOREIGN, $iter);
+		}
+	    }
+	}
+	elsif ($lsearch eq '@ALLOCA@')
+	{
+	    &am_line_error ($var,
+			    "\@ALLOCA\@ seen but \`AC_FUNC_ALLOCA' not in \`configure.in'")
+		if ! defined $libsources{'alloca.c'};
+	    $dep_files{'$(srcdir)/.deps/alloca.P'} = 1;
+	    &require_file_with_line ($var, $FOREIGN, 'alloca.c');
+	}
+    }
+}
+
 # Handle C programs.
 sub handle_programs
 {
@@ -568,7 +611,11 @@ sub handle_programs
     {
 	&handle_source_transform ($one_file, $obj);
 
-	if (! defined $contents{$one_file . "_LDADD"})
+	if (defined $contents{$one_file . "_LDADD"})
+	{
+	    &handle_lib_objects ($one_file . '_LDADD');
+	}
+	else
 	{
 	    # User didn't define prog_LDADD override.  So do it.
 	    $output_vars .= $one_file . '_LDADD = $(LDADD)' . "\n";
@@ -578,6 +625,9 @@ sub handle_programs
 	    &file_contents_with_transform ('s/\@PROGRAM\@/' . $one_file
 					   . '/go', 'program');
     }
+
+    &handle_lib_objects ('LDADD')
+	if defined $contents{'LDADD'};
 }
 
 # Handle libraries.
@@ -623,38 +673,7 @@ sub handle_libraries
     {
 	if (defined $contents{$onelib . '_LIBADD'})
 	{
-	    # We recognize certain things that are commonly put in
-	    # LIBADD.
-	    local ($lsearch);
-
-	    foreach $lsearch (split (/\s+/, $contents{$onelib . '_LIBADD'}))
-	    {
-		# Automatically handle @LIBOBJS@ and @ALLOCA@.
-		# Basically this means adding entries to dep_files.
-		if ($lsearch eq '@LIBOBJS@')
-		{
-		    local ($iter, $rewrite);
-		    foreach $iter (keys %libsources)
-		    {
-			if ($iter ne 'alloca.c')
-			{
-			    ($rewrite = $iter) =~ s/\.c$/.P/;
-			    $dep_files{'$(srcdir)/.deps/' . $rewrite} = 1;
-			    &require_file_with_line ($onelib . '_LIBADD',
-						     $FOREIGN, $iter);
-			}
-		    }
-		}
-		elsif ($lsearch eq '@ALLOCA@')
-		{
-		    &am_line_error ($onelib . '_LIBADD',
-				    "\@ALLOCA\@ seen but \`AC_FUNC_ALLOCA' not in \`configure.in'")
-			if ! defined $libsources{'alloca.c'};
-		    $dep_files{'$(srcdir)/.deps/alloca.P'} = 1;
-		    &require_file_with_line ($onelib . '_LIBADD', $FOREIGN,
-					     'alloca.c');
-		}
-	    }
+	    &handle_lib_objects ($onelib . '_LIBADD');
 	}
 	else
 	{
@@ -1041,6 +1060,9 @@ sub handle_dist_worker
     # is a hack which might go away.
     if (defined $contents{'DIST_SUBDIRS'})
     {
+	&am_line_error ('DIST_SUBDIRS',
+			"\`DIST_SUBDIRS' is deprecated; make a new \`Makefile.am' instead");
+
 	$output_rules .= '	@for dir in $(DIST_SUBDIRS); do		\\
 	  echo copying directory $$dir;		\\
 	  tar chf - $$dir | (cd $(distdir) && tar xBpf -); \\
@@ -1074,6 +1096,11 @@ sub handle_dist
 	if defined $contents{'MAINT_CHARSET'};
     $maint_charset = $local_maint_charset
 	if $relative_dir eq '.';
+
+    &am_line_error
+	('DIST_OTHER',
+	 "\`DIST_OTHER' is an anachronism; use \`EXTRA_DIST' instead")
+	    if defined $contents{'DIST_OTHER'};
 
     if (defined $contents{'DIST_CHARSET'})
     {
@@ -2398,13 +2425,20 @@ sub am_install_var
 	    {
 		&am_line_error ($varname, "invalid variable \"$varname\"");
 	    }
+	    else
+	    {
+		# Ensure all extended prefixes are actually used.
+		$valid{$1} = 1;
+	    }
 	}
     }
+    # We never want to examine EXTRA_blah.
+    undef $valid{'EXTRA'};
 
     local ($clean_file) = $file . '-clean';
     local ($one_name);
     local ($X);
-    foreach $X (@prefixes)
+    foreach $X (keys %valid)
     {
 	$one_name = $X . '_' . $primary;
 	if (defined $contents{$one_name})
@@ -2420,7 +2454,7 @@ sub am_install_var
 		push (@result, $rcurs);
 		&am_line_error ($one_name, "invalid object name \`$rcurs'")
 		    if $primary_uses_subobjects{$primary}
-			&& $rcurs !~ /^[A-Za-z_][A-Za-z_0-9]+$/;
+			&& $rcurs !~ /$OBJECT_PATTERN/;
 	    }
 
 	    if ($do_clean)
