@@ -13,7 +13,7 @@ mans-vars.am mans.am packagedata.am program.am programs.am remake-hdr.am \
 remake-subd.am remake.am scripts.am subdirs.am tags.am tags-subd.am \
 texinfos-vars.am texinfos.am hack-make.sed nl-remove.sed
 
-DIST_OTHER = automake.in stamp-vti $(am_DATA)
+DIST_OTHER = automake.in stamp-vti gettext-sh $(am_DATA)
 DIST_SUBDIRS = RCS samples
 
 automake: automake.in
