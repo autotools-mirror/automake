@@ -322,11 +322,15 @@ my @other_input_files = ();
 # The keys are the files created by these macros.
 my %ac_config_files_location = ();
 
-# List of directories to search for configure-required files.  This
-# can be set by AC_CONFIG_AUX_DIR.
-my @config_aux_path = qw(. .. ../..);
+# Directory to search for configure-required files.  This
+# will be computed by &locate_aux_dir and can be set using
+# AC_CONFIG_AUX_DIR in configure.ac.
+# $CONFIG_AUX_DIR is the `raw' directory, valid only in the source-tree.
 my $config_aux_dir = '';
-my $config_aux_dir_set_in_configure_in = 0;
+my $config_aux_dir_set_in_configure_ac = 0;
+# $AM_CONFIG_AUX_DIR is prefixed with $(top_srcdir), so it can be used
+# in Makefiles.
+my $am_config_aux_dir = '';
 
 # Whether AM_GNU_GETTEXT has been seen in configure.ac.
 my $seen_gettext = 0;
@@ -422,11 +426,6 @@ my %required_targets =
 # depcomp is added after the toplevel Makefile.in -- which
 # should distribute depcomp -- has been generated.)
 my $automake_needs_to_reprocess_all_files = 0;
-
-# If a file name appears as a key in this hash, then it has already
-# been checked for.  This variable is local to the "require file"
-# functions.
-my %require_file_found = ();
 
 # The name of the Makefile currently being processed.
 my $am_file = 'BUG';
@@ -1066,7 +1065,8 @@ sub handle_languages
 	if (&saw_sources_p (0) && keys %dep_files)
 	{
 	    # Set location of depcomp.
-	    &define_variable ('depcomp', "\$(SHELL) $config_aux_dir/depcomp",
+	    &define_variable ('depcomp',
+			      "\$(SHELL) $am_config_aux_dir/depcomp",
 			      INTERNAL);
 	    &define_variable ('am__depfiles_maybe', 'depfiles', INTERNAL);
 
@@ -3041,7 +3041,7 @@ sub handle_texinfo_helper ($)
 	  ++$done;
 
 	  # This is ugly, but it is our historical practice.
-	  if ($config_aux_dir_set_in_configure_in)
+	  if ($config_aux_dir_set_in_configure_ac)
 	    {
 	      require_conf_file_with_macro (TRUE, 'info_TEXINFOS', FOREIGN,
 					    'mdate-sh');
@@ -3053,10 +3053,9 @@ sub handle_texinfo_helper ($)
 	    }
 
 	  my $conf_dir;
-	  if ($config_aux_dir_set_in_configure_in)
+	  if ($config_aux_dir_set_in_configure_ac)
 	    {
-	      $conf_dir = $config_aux_dir;
-	      $conf_dir .= '/' unless $conf_dir =~ /\/$/;
+	      $conf_dir = "$am_config_aux_dir/";
 	    }
 	  else
 	    {
@@ -3088,9 +3087,9 @@ sub handle_texinfo_helper ($)
       $texinfodir = '$(top_srcdir)/../texinfo';
       define_variable ('TEXINFO_TEX', "$texinfodir/texinfo.tex", INTERNAL);
     }
-  elsif ($config_aux_dir_set_in_configure_in)
+  elsif ($config_aux_dir_set_in_configure_ac)
     {
-      $texinfodir = $config_aux_dir;
+      $texinfodir = $am_config_aux_dir;
       define_variable ('TEXINFO_TEX', "$texinfodir/texinfo.tex", INTERNAL);
       $need_texi_file = 2; # so that we require_conf_file later
     }
@@ -3363,12 +3362,10 @@ sub handle_dist ()
   # If the aux dir is set, and it does not have a Makefile.am, then
   # we check for these files there as well.
   my $check_aux = 0;
-  my $auxdir = '';
   if ($relative_dir eq '.'
-      && $config_aux_dir_set_in_configure_in)
+      && $config_aux_dir_set_in_configure_ac)
     {
-      ($auxdir = $config_aux_dir) =~ s,^\$\(top_srcdir\)/,,;
-      if (! &is_make_dir ($auxdir))
+      if (! &is_make_dir ($config_aux_dir))
 	{
 	  $check_aux = 1;
 	}
@@ -3384,9 +3381,9 @@ sub handle_dist ()
 
       # Don't use `elsif' here because a file might meaningfully
       # appear in both directories.
-      if ($check_aux && -f ($auxdir . '/' . $cfile))
+      if ($check_aux && -f "$config_aux_dir/$cfile")
 	{
-	  &push_dist_common ($auxdir . '/' . $cfile);
+	  &push_dist_common ("$config_aux_dir/$cfile")
 	}
     }
 
@@ -3809,14 +3806,14 @@ sub handle_configure ($$$@)
   # Distribute and define mkinstalldirs only if it is already present
   # in the package, for backward compatibility (some people my still
   # use $(mkinstalldirs)).
-  my $mkidpath = $config_aux_path[0] . '/mkinstalldirs';
+  my $mkidpath = "$config_aux_dir/mkinstalldirs";
   if (-f $mkidpath)
     {
       # Use require_file so that any existingscript gets updated
       # by --force-missing.
       require_conf_file ($mkidpath, FOREIGN, 'mkinstalldirs');
       define_variable ('mkinstalldirs',
-		       "\$(SHELL) $config_aux_dir/mkinstalldirs", INTERNAL);
+		       "\$(SHELL) $am_config_aux_dir/mkinstalldirs", INTERNAL);
     }
   else
     {
@@ -4413,7 +4410,7 @@ sub handle_emacs_lisp
   require_variables ($elfiles[0][0], "Emacs Lisp sources seen", TRUE,
 		     'EMACS', 'lispdir');
   require_conf_file ($elfiles[0][0], FOREIGN, 'elisp-comp');
-  &define_variable ('elisp_comp', $config_aux_dir . '/elisp-comp', INTERNAL);
+  &define_variable ('elisp_comp', "$am_config_aux_dir/elisp-comp", INTERNAL);
 }
 
 # Handle Python
@@ -4425,7 +4422,7 @@ sub handle_python
 
   require_variables ($pyfiles[0][0], "Python sources seen", TRUE, 'PYTHON');
   require_conf_file ($pyfiles[0][0], FOREIGN, 'py-compile');
-  &define_variable ('py_compile', $config_aux_dir . '/py-compile', INTERNAL);
+  &define_variable ('py_compile', "$am_config_aux_dir/py-compile", INTERNAL);
 }
 
 # Handle Java.
@@ -4631,8 +4628,8 @@ sub scan_autoconf_traces ($)
 	}
       elsif ($macro eq 'AC_CONFIG_AUX_DIR')
 	{
-	  @config_aux_path = $args[1];
-	  $config_aux_dir_set_in_configure_in = 1;
+	  $config_aux_dir = $args[1];
+	  $config_aux_dir_set_in_configure_ac = 1;
 	}
       elsif ($macro eq 'AC_CONFIG_FILES')
 	{
@@ -4836,16 +4833,15 @@ sub scan_autoconf_files ()
 	}
     }
 
+  locate_aux_dir ();
   # Look for some files we need.  Always check for these.  This
   # check must be done for every run, even those where we are only
-  # looking at a subdir Makefile.  We must set relative_dir so that
-  # the file-finding machinery works.
-  # FIXME: Is this broken because it needs dynamic scopes.
-  # My tests seems to show it's not the case.
+  # looking at a subdir Makefile.  We must set relative_dir for
+  # maybe_push_required_file to work.
   $relative_dir = '.';
   require_conf_file ($configure_ac, FOREIGN, 'install-sh', 'missing');
   err_am "`install.sh' is an anachronism; use `install-sh' instead"
-    if -f $config_aux_path[0] . '/install.sh';
+    if -f $config_aux_dir . '/install.sh';
 
   # Preserve dist_common for later.
   $configure_dist_common = variable_value ('DIST_COMMON') || '';
@@ -5200,9 +5196,9 @@ sub yacc_lex_finish_helper
     # allow parallel builds to work correctly.  FIXME: for now, no
     # line number.
     require_conf_file ($configure_ac, FOREIGN, 'ylwrap');
-    if ($config_aux_dir_set_in_configure_in)
+    if ($config_aux_dir_set_in_configure_ac)
     {
-	&define_variable ('YLWRAP', $config_aux_dir . "/ylwrap", INTERNAL);
+	&define_variable ('YLWRAP', "$am_config_aux_dir/ylwrap", INTERNAL);
     }
     else
     {
@@ -6631,8 +6627,31 @@ sub is_make_dir
 
 ################################################################
 
-# This variable is local to the "require file" set of functions.
-my @require_file_paths = ();
+# Find the aux dir.  This should match the algorithm used by
+# ./configure. (See the Autoconf documentation for for
+# AC_CONFIG_AUX_DIR.)
+sub locate_aux_dir ()
+{
+  if (! $config_aux_dir_set_in_configure_ac)
+    {
+      # The default auxiliary directory is the first
+      # of ., .., or ../.. that contains install-sh.
+      # Assume . if install-sh doesn't exist yet.
+      for my $dir (qw (. .. ../..))
+	{
+	  if (-f "$dir/install-sh")
+	    {
+	      $config_aux_dir = $dir;
+	      last;
+	    }
+	}
+      $config_aux_dir = '.' unless $config_aux_dir;
+    }
+  # Avoid unsightly '/.'s.
+  $am_config_aux_dir =
+    '$(top_srcdir)' . ($config_aux_dir eq '.' ? "" : "/$config_aux_dir");
+  $am_config_aux_dir =~ s,/*$,,;
+}
 
 
 # &maybe_push_required_file ($DIR, $FILE, $FULLFILE)
@@ -6690,148 +6709,127 @@ sub maybe_push_required_file
 }
 
 
-# &require_file_internal ($WHERE, $MYSTRICT, @FILES)
-# --------------------------------------------------
-# Verify that the file must exist in the current directory.
+# If a file name appears as a key in this hash, then it has already
+# been checked for.  This allows us not to report the same error more
+# than once.
+my %required_file_not_found = ();
+
+# &require_file_internal ($WHERE, $MYSTRICT, $DIRECTORY, @FILES)
+# --------------------------------------------------------------
+# Verify that the file must exist in $DIRECTORY, or install it.
 # $MYSTRICT is the strictness level at which this file becomes required.
-#
-# Must set require_file_paths before calling this function.
-# require_file_paths is set to hold a single directory (the one in
-# which the first file was found) before return.
-sub require_file_internal ($$@)
+sub require_file_internal ($$$@)
 {
-    my ($where, $mystrict, @files) = @_;
+  my ($where, $mystrict, $dir, @files) = @_;
 
-    foreach my $file (@files)
+  foreach my $file (@files)
     {
-	my $fullfile;
-	my $errdir;
-	my $errfile;
-	my $save_dir;
+      my $fullfile = "$dir/$file";
+      my $found_it = 0;
+      my $dangling_sym = 0;
 
-	my $found_it = 0;
-	my $dangling_sym = 0;
-	foreach my $dir (@require_file_paths)
+      if (-l $fullfile && ! -f $fullfile)
 	{
-	    $fullfile = $dir . "/" . $file;
-	    $errdir = $dir unless $errdir;
-
-	    # Use different name for "error filename".  Otherwise on
-	    # an error the bad file will be reported as e.g.
-	    # `../../install-sh' when using the default
-	    # config_aux_path.
-	    $errfile = $errdir . '/' . $file;
-
-	    if (-l $fullfile && ! -f $fullfile)
-	    {
-		$dangling_sym = 1;
-		last;
-	    }
-	    elsif (-f $fullfile)
-	    {
-		$found_it = 1;
-		maybe_push_required_file ($dir, $file, $fullfile);
-		$save_dir = $dir;
-		last;
-	    }
+	  $dangling_sym = 1;
+	}
+      elsif (-f $fullfile)
+	{
+	  $found_it = 1;
+	  maybe_push_required_file ($dir, $file, $fullfile);
 	}
 
-	# `--force-missing' only has an effect if `--add-missing' is
-	# specified.
-	if ($found_it && (! $add_missing || ! $force_missing))
+      # `--force-missing' only has an effect if `--add-missing' is
+      # specified.
+      if ($found_it && (! $add_missing || ! $force_missing))
 	{
-	    # Prune the path list.
-	    @require_file_paths = $save_dir;
+	  next;
 	}
-	else
+      else
 	{
-	    # If we've already looked for it, we're done.  You might
-	    # wonder why we don't do this before searching for the
-	    # file.  If we do that, then something like
-	    # AC_OUTPUT(subdir/foo foo) will fail to put foo.in into
-	    # DIST_COMMON.
-	    if (! $found_it)
+	  # If we've already looked for it, we're done.  You might
+	  # wonder why we don't do this before searching for the
+	  # file.  If we do that, then something like
+	  # AC_OUTPUT(subdir/foo foo) will fail to put foo.in into
+	  # DIST_COMMON.
+	  if (! $found_it)
 	    {
-		next if defined $require_file_found{$fullfile};
-		$require_file_found{$fullfile} = 1;
+	      next if defined $required_file_not_found{$fullfile};
+	      $required_file_not_found{$fullfile} = 1;
 	    }
 
-	    if ($strictness >= $mystrict)
+	  if ($strictness >= $mystrict)
 	    {
-		if ($dangling_sym && $add_missing)
+	      if ($dangling_sym && $add_missing)
 		{
-		    unlink ($fullfile);
+		  unlink ($fullfile);
 		}
 
-		my $trailer = '';
-		my $suppress = 0;
+	      my $trailer = '';
+	      my $suppress = 0;
 
-		# Only install missing files according to our desired
-		# strictness level.
-		my $message = "required file `$errfile' not found";
-		if ($add_missing)
+	      # Only install missing files according to our desired
+	      # strictness level.
+	      my $message = "required file `$fullfile' not found";
+	      if ($add_missing)
 		{
-		    if (-f ("$libdir/$file"))
+		  if (-f ("$libdir/$file"))
 		    {
-		        $suppress = 1;
+		      $suppress = 1;
 
-			# Install the missing file.  Symlink if we
-			# can, copy if we must.  Note: delete the file
-			# first, in case it is a dangling symlink.
-			$message = "installing `$errfile'";
-			# Windows Perl will hang if we try to delete a
-			# file that doesn't exist.
-			unlink ($errfile) if -f $errfile;
-			if ($symlink_exists && ! $copy_missing)
+		      # Install the missing file.  Symlink if we
+		      # can, copy if we must.  Note: delete the file
+		      # first, in case it is a dangling symlink.
+		      $message = "installing `$fullfile'";
+		      # Windows Perl will hang if we try to delete a
+		      # file that doesn't exist.
+		      unlink ($fullfile) if -f $fullfile;
+		      if ($symlink_exists && ! $copy_missing)
 			{
-			    if (! symlink ("$libdir/$file", $errfile))
+			  if (! symlink ("$libdir/$file", $fullfile))
 			    {
-				$suppress = 0;
-				$trailer = "; error while making link: $!";
+			      $suppress = 0;
+			      $trailer = "; error while making link: $!";
 			    }
 			}
-			elsif (system ('cp', "$libdir/$file", $errfile))
+		      elsif (system ('cp', "$libdir/$file", $fullfile))
 			{
-			    $suppress = 0;
-			    $trailer = "\n    error while copying";
+			  $suppress = 0;
+			  $trailer = "\n    error while copying";
 			}
 		    }
 
-		    if (! maybe_push_required_file (dirname ($errfile),
-                                                    $file, $errfile))
+		  if (! maybe_push_required_file (dirname ($fullfile),
+						  $file, $fullfile))
 		    {
-			if (! $found_it)
+		      if (! $found_it)
 			{
-			    # We have added the file but could not push it
-			    # into DIST_COMMON (probably because this is
-			    # an auxiliary file and we are not processing
-			    # the top level Makefile). This is unfortunate,
-			    # since it means we are using a file which is not
-			    # distributed!
+			  # We have added the file but could not push it
+			  # into DIST_COMMON (probably because this is
+			  # an auxiliary file and we are not processing
+			  # the top level Makefile). This is unfortunate,
+			  # since it means we are using a file which is not
+			  # distributed!
 
-			    # Get Automake to be run again: on the second
-			    # run the file will be found, and pushed into
-			    # the toplevel DIST_COMMON automatically.
-			    $automake_needs_to_reprocess_all_files = 1;
+			  # Get Automake to be run again: on the second
+			  # run the file will be found, and pushed into
+			  # the toplevel DIST_COMMON automatically.
+			  $automake_needs_to_reprocess_all_files = 1;
 			}
 		    }
-
-		    # Prune the path list.
-		    @require_file_paths = &dirname ($errfile);
 		}
 
-		# If --force-missing was specified, and we have
-		# actually found the file, then do nothing.
-		next
-		    if $found_it && $force_missing;
+	      # If --force-missing was specified, and we have
+	      # actually found the file, then do nothing.
+	      next
+		if $found_it && $force_missing;
 
-		# If we couldn' install the file, but it is a target in
-		# the Makefile, don't print anything.  This allows files
-		# like README, AUTHORS, or THANKS to be generated.
-		next
-		  if !$suppress && rule $file;
+	      # If we couldn' install the file, but it is a target in
+	      # the Makefile, don't print anything.  This allows files
+	      # like README, AUTHORS, or THANKS to be generated.
+	      next
+		if !$suppress && rule $file;
 
-		msg ($suppress ? 'note' : 'error', $where, "$message$trailer");
+	      msg ($suppress ? 'note' : 'error', $where, "$message$trailer");
 	    }
 	}
     }
@@ -6842,8 +6840,7 @@ sub require_file_internal ($$@)
 sub require_file ($$@)
 {
     my ($where, $mystrict, @files) = @_;
-    @require_file_paths = $relative_dir;
-    require_file_internal ($where, $mystrict, @files);
+    require_file_internal ($where, $mystrict, $relative_dir, @files);
 }
 
 # &require_file_with_macro ($COND, $MACRO, $MYSTRICT, @FILES)
@@ -6862,12 +6859,7 @@ sub require_file_with_macro ($$$@)
 sub require_conf_file ($$@)
 {
     my ($where, $mystrict, @files) = @_;
-    @require_file_paths = @config_aux_path;
-    require_file_internal ($where, $mystrict, @files);
-    my $dir = $require_file_paths[0];
-    @config_aux_path = @require_file_paths;
-     # Avoid unsightly '/.'s.
-    $config_aux_dir = '$(top_srcdir)' . ($dir eq '.' ? "" : "/$dir");
+    require_file_internal ($where, $mystrict, $config_aux_dir, @files);
 }
 
 
