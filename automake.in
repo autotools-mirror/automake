@@ -146,9 +146,9 @@ for am_makefile in $mfiles; do
   # The following are targets that formerly were implemented as
   # double-colon rules.  Nowadays we have to construct such lists
   # explicitly.
-  installexec= uninstallexec= id= tags= info= dvi= check=
-  installdata= uninstalldata= all='${ALL}'
-  install= uninstall=
+  installexec= uninstall= id= tags= info= dvi= check=
+  installdata= all='${ALL}' install=
+  am_recursive_install=no
 
   eval `sed -n -f $am_rmnl ${am_makefile}.am | sed -n -f $am_ass`
 
@@ -228,22 +228,22 @@ p
   if test -n "$PROGRAMS"; then
      cat $am_dir/programs.am >&5
      installexec="install-programs $installexec"
-     uninstallexec="uninstall-programs $uninstallexec"
+     uninstall="uninstall-programs $uninstall"
   fi
   if test -n "$SCRIPTS"; then
      cat $am_dir/scripts.am >&5
      installexec="install-scripts $installexec"
-     uninstallexec="uninstall-scripts $uninstallexec"
+     uninstall="uninstall-scripts $uninstall"
   fi
   if test -n "$LIBPROGRAMS$LIBSCRIPTS"; then
      cat $am_dir/libprograms.am >&5
      installexec="install-libprograms $installexec"
-     uninstallexec="uninstall-libprograms $uninstallexec"
+     uninstall="uninstall-libprograms $uninstall"
   fi
   if test -n "$LIBSCRIPTS"; then
      cat $am_dir/libscripts.am >&5
      installexec="install-libscripts $installexec"
-     uninstallexec="uninstall-libscripts $uninstallexec"
+     uninstall="uninstall-libscripts $uninstall"
   fi
 
   if test -n "$PROGRAMS$LIBPROGRAMS$SCRIPTS$LIBSCRIPTS"; then
@@ -270,7 +270,7 @@ p
     cat $am_dir/libraries.am >&5
 
     installexec="install-libraries $installexec"
-    uninstallexec="uninstall-libraries $uninstallexec"
+    uninstall="uninstall-libraries $uninstall"
 
     for am_lib in $LIBRARIES; do
       sed "s/@LIBRARY@/$am_lib/g" $am_dir/library.am >&5
@@ -282,7 +282,7 @@ p
     cat $am_dir/texinfos.am >&5
     am_suffixes=".texi .info .dvi $am_suffixes"
     installdata="install-info $installdata"
-    uninstalldata="uninstall-info $uninstalldata"
+    uninstall="uninstall-info $uninstall"
     info="\$(INFO_DEPS) $info"
     dvi="\$(DVIS) $dvi"
 
@@ -296,7 +296,7 @@ p
     cat $am_dir/mans.am >&5
 
     installdata="install-man $installdata"
-    uninstalldata="uninstall-man $uninstall"
+    uninstall="uninstall-man $uninstall"
   fi
 
 
@@ -306,12 +306,12 @@ p
   if test -n "$DATA"; then
      cat $am_dir/data.am >&5
      installdata="install-ddata $installdata"
-     uninstalldata="uninstall-ddata $uninstalldata"
+     uninstall="uninstall-ddata $uninstall"
   fi
   if test -n "$PACKAGEDATA"; then
      cat $am_dir/packagedata.am >&5
      installdata="install-pdata $installdata"
-     uninstalldata="uninstall-pdata $uninstalldata"
+     uninstall="uninstall-pdata $uninstall"
   fi
 
   case "$SUBDIRS" in
@@ -327,15 +327,10 @@ p
       cat $am_dir/subdirs.am >&5
 
       all="all-recursive $all"
-      installdata="install-data-recursive $installdata"
-      installexec="install-exec-recursive $installexec"
-      uninstalldata="uninstall-data-recursive $uninstalldata"
-      uninstallexec="uninstall-exec-recursive $uninstallexec"
       check="check-recursive $check"
       info="info-recursive $info"
       dvi="dvi-recursive $dvi"
-      install="install-recursive $install"
-      uninstall="uninstall-recursive $uninstall"
+      am_recursive_install=yes
       ;;
   esac
 
@@ -489,40 +484,60 @@ p
      echo >&6
   done
 
-  # Handle the various install targets specially, because we do name
-  # hackery.  This is truly gross.
+  # Handle the various install targets specially.  We do this so that
+  # (eg) "make install-exec" will run "install-exec-recursive" if
+  # required, but "make install" won't run it twice.  Step one is to
+  # see if the user specified local versions of any of the targets we
+  # handle.
   if test -n "$target_install_exec_local"; then
      installexec="install-exec-local $installexec"
   fi
-  if test -n "$target_uninstall_exec_local"; then
-     uninstallexec="uninstall-exec-local $uninstallexec"
+  if test -n "$target_uninstall_local"; then
+     uninstall="uninstall-local $uninstall"
   fi
   if test -n "$target_install_data_local"; then
      installdata="install-data-local $installdata"
   fi
-  if test -n "$target_uninstall_data_local"; then
-     uninstalldata="uninstall-data-local $uninstalldata"
+  # FIXME do install-local here?  Maybe make it an error and tell the
+  # user to use install-data or install-exec?
+
+  # Step two: if we are doing recursive makes, write out the
+  # appropriate rules.
+  if test $am_recursive_install = yes; then
+     install="install-recursive $install"
+     if test -n "$installexec"; then
+	echo "install-exec-am: $installexec" >&6
+	echo >&6
+	installexec="install-exec-recursive install-exec-am"
+	install="install-exec-am $install"
+     fi
+     if test -n "$installdata"; then
+	echo "install-data-am: $installdata" >&6
+	echo >&6
+	installdata="install-data-recursive install-data-am"
+	install="install-data-am $install"
+     fi
+     if test -n "$uninstall"; then
+	echo "uninstall-am: $uninstall" >&6
+	echo >&6
+	uninstall="uninstall-recursive uninstall-am"
+     fi
   fi
 
+  # Step three: print definitions users can use.
   if test -n "$installexec"; then
-     install="install-exec $install"
      echo "install-exec: $installexec" >&6
      echo >&6
-  fi
-  if test -n "$uninstallexec"; then
-     uninstall="uninstall-exec $uninstall"
-     echo "uninstall-exec: $uninstallexec" >&6
-     echo >&6
+     if test $am_recursive_install = no; then
+	install="install-exec $install"
+     fi
   fi
   if test -n "$installdata"; then
-     install="install-data $install"
      echo "install-data: $installdata" >&6
      echo >&6
-  fi
-  if test -n "$uninstalldata"; then
-     uninstall="uninstall-data $uninstall"
-     echo "uninstall-data: $uninstalldata" >&6
-     echo >&6
+     if test $am_recursive_install = no; then
+	install="install-data $install"
+     fi
   fi
 
   echo "install: $install" >&6
