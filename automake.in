@@ -746,7 +746,11 @@ sub get_object_extension
 	$xform = 's/\@CONFIG_INCLUDE_SPEC\@/' . $xform . '/go;';
 	$output_vars .= &file_contents_with_transform ($xform,
 						       'comp-vars');
-	$output_rules .= &file_contents ('compile');
+	$output_rules .=
+	    &file_contents_with_transform
+		($use_dependencies ? 's/^NOTDEPEND.*$//;' : 's/^NOTDEPEND//;',
+		 'compile');
+
 	&push_phony_cleaners ('compile');
 
 	# If using X, include some extra variable definitions.  NOTE
@@ -2761,19 +2765,21 @@ sub handle_dependencies
 	    $output_rules .= &file_contents ('depend');
 	    push (@clean, 'depend');
 	    &push_phony_cleaners ('depend');
+	    # FIXME: should use @EXT@ and @PFX@.  I don't know why it
+	    # didn't work.
 	    $output_rules .=
-		&file_contents_with_transform ('s/\@EXT\@/.c/g;'
-					       . 's/\@MKDEP\@/MKDEP/g;'
-					       . 's/^ONLYC//g;',
+		&file_contents_with_transform ('s/EXT/.c/g;'
+					       . 's/PFX//g;',
 					       'depend2');
 	    local ($ext);
 	    local ($need_cxx) = 0;
 	    foreach $ext (sort keys %cxx_extensions)
 	    {
+		# FIXME: should use @EXT@ and @PFX@.  I don't know why
+		# it didn't work.
 		$output_rules .=
-		    &file_contents_with_transform ('s/\@EXT\@/' . $ext .'/g;'
-						   . 's/\@MKDEP\@/CXXMKDEP/g;'
-						   . 's/^ONLYC.*$//;',
+		    &file_contents_with_transform ('s/EXT/' . $ext .'/g;'
+						   . 's/PFX/CXX/g;',
 						   'depend2');
 		$need_cxx = 1;
 	    }
@@ -5556,7 +5562,7 @@ sub file_contents_with_transform
 
     if ($command ne '' && substr ($command, -1) ne ';')
     {
-	die "automake: programming error in file_contents_with_transform\n";
+	die "automake: programming error in file_contents_with_transform: $command\n";
     }
 
     open (FC_FILE, $file)
