@@ -367,6 +367,9 @@ my $seen_multilib = 0;
 # TRUE if we've seen AM_PROG_CC_C_O
 my $seen_cc_c_o = 0;
 
+# Location of AC_REQUIRE_AUX_FILES calls, indexed by their argument.
+my %required_aux_file = ();
+
 # Where AM_INIT_AUTOMAKE is called;
 my $seen_init_automake = 0;
 
@@ -1538,6 +1541,17 @@ sub handle_single_transform ($$$$$%)
             # Found the language, so see what it says.
             &saw_extension ($extension);
 
+	    # Do we have per-executable flags for this executable?
+	    my $have_per_exec_flags = 0;
+	    foreach my $flag (@{$lang->flags})
+	      {
+		if (set_seen ("${derived}_$flag"))
+		  {
+		    $have_per_exec_flags = 1;
+		    last;
+		  }
+	      }
+
             # Note: computed subr call.  The language rewrite function
             # should return one of the LANG_* constants.  It could
             # also return a list whose first value is such a constant
@@ -1547,7 +1561,7 @@ sub handle_single_transform ($$$$$%)
             # further.
             my $subr = \&{'lang_' . $lang->name . '_rewrite'};
             my ($r, $source_extension)
-		= &$subr ($directory, $base, $extension);
+		= &$subr ($directory, $base, $extension, $have_per_exec_flags);
             # Skip this entry if we were asked not to process it.
             next if $r == LANG_IGNORE;
 
@@ -1570,24 +1584,11 @@ sub handle_single_transform ($$$$$%)
 	    }
 	    $object = $base . $this_obj_ext;
 
-	    # Do we have per-executable flags for this executable?
-	    my $have_per_exec_flags = 0;
-	    foreach my $flag (@{$lang->flags})
-	      {
-		if (set_seen ("${derived}_$flag"))
-		  {
-		    $have_per_exec_flags = 1;
-		    last;
-		  }
-	      }
-
             if ($have_per_exec_flags)
             {
                 # We have a per-executable flag in effect for this
                 # object.  In this case we rewrite the object's
-                # name to ensure it is unique.  We also require
-                # the `compile' program to deal with compilers
-                # where `-c -o' does not work.
+                # name to ensure it is unique.
 
                 # We choose the name `DERIVED_OBJECT' to ensure
                 # (1) uniqueness, and (2) continuity between
@@ -1607,9 +1608,6 @@ sub handle_single_transform ($$$$$%)
                     $dname = $var->variable_value;
                 }
                 $object = $dname . '-' . $object;
-
-                require_conf_file ("$am_file.am", FOREIGN, 'compile')
-                    if $lang->name eq 'c';
 
 		prog_error ($lang->name . " flags defined without compiler")
 		  if ! defined $lang->compile;
@@ -3900,7 +3898,7 @@ sub handle_configure ($$$@)
   my $mkidpath = "$config_aux_dir/mkinstalldirs";
   if (-f $mkidpath)
     {
-      # Use require_file so that any existingscript gets updated
+      # Use require_file so that any existing script gets updated
       # by --force-missing.
       require_conf_file ($mkidpath, FOREIGN, 'mkinstalldirs');
       define_variable ('mkinstalldirs',
@@ -4655,6 +4653,7 @@ sub scan_autoconf_traces ($)
 		AC_CONFIG_LINKS => 1,
 		AC_INIT => 0,
 		AC_LIBSOURCE => 1,
+                AC_REQUIRE_AUX_FILE => 1,
 		AC_SUBST => 1,
 		AM_AUTOMAKE_VERSION => 1,
 		AM_CONDITIONAL => 2,
@@ -4825,6 +4824,10 @@ sub scan_autoconf_traces ($)
 	{
 	  $seen_cc_c_o = $where;
 	}
+      elsif ($macro eq 'AC_REQUIRE_AUX_FILE')
+	{
+	  $required_aux_file{$args[1]} = $where;
+	}
       elsif ($macro eq 'm4_include'
 	     || $macro eq 'm4_sinclude'
 	     || $macro eq 'sinclude')
@@ -4968,7 +4971,10 @@ sub scan_autoconf_files ()
   # looking at a subdir Makefile.  We must set relative_dir for
   # maybe_push_required_file to work.
   $relative_dir = '.';
-  require_conf_file ($configure_ac, FOREIGN, 'install-sh', 'missing');
+  foreach my $file (keys %required_aux_file)
+    {
+      require_conf_file ($required_aux_file{$file}->get, FOREIGN, $file)
+    }
   err_am "`install.sh' is an anachronism; use `install-sh' instead"
     if -f $config_aux_dir . '/install.sh';
 
@@ -5061,7 +5067,7 @@ sub lang_sub_obj
 # Rewrite a single C source file.
 sub lang_c_rewrite
 {
-  my ($directory, $base, $ext) = @_;
+  my ($directory, $base, $ext, $have_per_exec_flags) = @_;
 
   if (option 'ansi2knr' && $base =~ /_$/)
     {
@@ -5081,8 +5087,6 @@ sub lang_c_rewrite
 	      uniq_scope => US_GLOBAL)
 	unless $seen_cc_c_o;
 
-      require_conf_file ("$am_file.am", FOREIGN, 'compile');
-
       # In this case we already have the directory information, so
       # don't add it again.
       $de_ansi_files{$base} = '';
@@ -5092,6 +5096,13 @@ sub lang_c_rewrite
       $de_ansi_files{$base} = (($directory eq '.' || $directory eq '')
 			       ? ''
 			       : "$directory/");
+    }
+
+  if (! $seen_cc_c_o && $have_per_exec_flags && ! option 'subdir-objects')
+    {
+      err_am ("C objects with per-target flags but `AM_PROG_CC_C_O' "
+	      . "not in `$configure_ac'",
+	      uniq_scope => US_GLOBAL)
     }
 
     return $r;
@@ -7123,18 +7134,6 @@ sub generate_makefile ($$)
   msg_var ('obsolete', 'INCLUDES',
 	   "`INCLUDES' is the old name for `AM_CPPFLAGS' (or `*_CPPFLAGS')")
     if var ('INCLUDES');
-
-  # At the toplevel directory, we might need config.guess, config.sub.
-  # (Libtool scripts such ltconfig as ltmain.sh are checked for in
-  # handle_libtool.)
-  if ($relative_dir eq '.')
-    {
-      # AC_CANONICAL_HOST, AC_CANONICAL_SYSTEM, and AC_CANONICAL_TARGET
-      # need config.guess and config.sub.
-      require_conf_file ($canonical_location, FOREIGN,
-			 'config.guess', 'config.sub')
-	if $seen_canonical;
-    }
 
   # Must do this after reading .am file.
   define_variable ('subdir', $relative_dir, INTERNAL);

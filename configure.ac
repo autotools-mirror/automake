@@ -18,12 +18,8 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 
-dnl Autoconf 2.58 defines abs_top_builddir incorrectly, so we
-dnl have to require 2.58a, otherwise all our test cases will fail
-dnl (abs_top_builddir is used in tests/automake.in).  Note that
-dnl this is a requirement for the Automake package itself.
-dnl Automake users can still use Autoconf 2.58.
-AC_PREREQ(2.58a)
+dnl Require Autoconf 2.59a for AC_REQUIRE_AUX_FILE.
+AC_PREREQ(2.59a)
 AC_INIT([GNU Automake], [1.9a], [bug-automake@gnu.org])
 
 AC_CONFIG_SRCDIR(automake.in)

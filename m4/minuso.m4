@@ -4,7 +4,7 @@
 # --------------
 # Like AC_PROG_CC_C_O, but changed for automake.
 
-# Copyright (C) 1999, 2000, 2001, 2003 Free Software Foundation, Inc.
+# Copyright (C) 1999, 2000, 2001, 2003, 2004 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 AC_DEFUN([AM_PROG_CC_C_O],
 [AC_REQUIRE([AC_PROG_CC_C_O])dnl
 AC_REQUIRE([AM_AUX_DIR_EXPAND])dnl
+AC_REQUIRE_AUX_FILE([compile])dnl
 # FIXME: we rely on the cache variable name because
 # there is no other way.
 set dummy $CC
