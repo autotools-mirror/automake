@@ -20,6 +20,7 @@
 ## 02111-1307, USA.
 
 info_TEXINFOS = automake.texi
+automake_TEXINFOS = fdl.texi
 
 # The following requires a fixed version of the Emacs 19.30 etags.
 ETAGS_ARGS = --lang=none \
