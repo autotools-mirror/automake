@@ -3884,7 +3884,7 @@ sub handle_java
     &define_variable ('JAVAC', 'javac');
     &define_variable ('JAVACFLAGS', '');
     &define_variable ('CLASSPATH_ENV',
-		      'CLASSPATH=../..:$(srcdir)/../..:$$CLASSPATH');
+		      'CLASSPATH=$(JAVAROOT):$(srcdir)/$(JAVAROOT):$$CLASSPATH');
     &define_variable ('JAVAROOT', '$(top_builddir)');
 
     local (%valid) = &am_primary_prefixes ('JAVA', 'java', 'noinst', 'check');
@@ -5785,9 +5785,11 @@ sub am_install_var
     local (@result) = ();
 
     # Now that configure substitutions are allowed in where_HOW
-    # variables, it is an error to actually define the primary.
+    # variables, it is an error to actually define the primary.  We
+    # allow `JAVA', as it is customarily used to mean the Java
+    # interpreter.  This is but one of several Java hacks.
     &am_line_error ($primary, "\`$primary' is an anachronism")
-	if &variable_defined ($primary);
+	if &variable_defined ($primary) && $primary ne 'JAVA';
 
 
     # Look for misspellings.  It is an error to have a variable ending
@@ -5962,7 +5964,8 @@ sub am_install_var
 	}
     }
 
-    if (@used)
+    # The JAVA variable is used as the name of the Java interpreter.
+    if (@used && $primary ne 'JAVA')
     {
 	# Define it.
 	&define_pretty_variable ($primary, '', @used);
