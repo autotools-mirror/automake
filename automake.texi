@@ -617,7 +617,9 @@ commands that @code{automake} needs.  The way to do this is to add an
 @code{AM_INIT_AUTOMAKE} call just after @code{AC_INIT}:
 
 @example
-AM_INIT_AUTOMAKE(zardoz, 1.0)
+AC_INIT(zardoz, 1.0)
+AM_INIT_AUTOMAKE
+...
 @end example
 
 Since your program doesn't have any complicating factors (e.g., it
@@ -686,6 +688,7 @@ has a manual and a test suite.
 @cindex Hello, configure.in
 
 Here is the @file{configure.in} from GNU Hello:
+@c FIXME: This definitively requires an update.
 
 @example
 dnl Process this file with autoconf to produce a configure script.
@@ -1329,11 +1332,6 @@ Print the version number of Automake and exit.
 @c consider generating this node automatically from m4 files.
 
 @table @code
-@item AM_AUTOMAKE_OPTIONS
-This takes a single argument which is a list of options which should be
-applied to every @file{Makefile.am} in the tree.  The effect is as if
-each option were listed in @code{AUTOMAKE_OPTIONS}.
-
 @item AM_CONFIG_HEADER
 Automake will generate rules to automatically regenerate the config
 header.
@@ -1369,11 +1367,41 @@ define @code{GWINSZ_IN_SYS_IOCTL}.  Otherwise @code{TIOCGWINSZ} can be
 found in @file{<termios.h>}.
 @cvindex AM_HEADER_TIOCGWINSZ_NEEDS_SYS_IOCTL
 
-@item AM_INIT_AUTOMAKE
+@item AM_INIT_AUTOMAKE([OPTIONS])
+@itemx AM_INIT_AUTOMAKE(PACKAGE, VERSION, [NO-DEFINE])
 Runs many macros that most @file{configure.in}'s need.  This macro has
-two required arguments, the package and the version number.  By default
-this macro @code{AC_DEFINE}'s @samp{PACKAGE} and @samp{VERSION}.  This
-can be avoided by passing in a non-empty third argument.
+two forms, the second of which has two required arguments: the package
+and the version number.  This latter form is obsolete because the
+@var{package} and @var{version} are now arguments of the @samp{AC_INIT}
+Autoconf macro, and Automake can get this information from there.
+
+If your @file{configure.in} has:
+@example
+AC_INIT(src/foo.c)
+AM_INIT_AUTOMAKE(mumble, 1.5)
+@end example
+you can modernize it as follow:
+@example
+AC_INIT(mumble, 1.5)
+AC_CONFIG_SRCDIR(src/foo.c)
+AM_INIT_AUTOMAKE
+@end example
+
+If this macro is called with a single argument, it is interpreted as a
+space-separated list of Automake options which should be applied to
+every @file{Makefile.am} in the tree.  The effect is as if each option
+were listed in @code{AUTOMAKE_OPTIONS}.
+
+By default this macro @code{AC_DEFINE}'s @samp{PACKAGE} and
+@samp{VERSION}.  This can be avoided by passing the @samp{no-define}
+option, as in:
+@example
+AM_INIT_AUTOMAKE([gnits 1.5 no-define dist-bzip2])
+@end example
+or by passing a third non-empty argument to the obsolete form.
+
+@cvindex PACKAGE, prevent definition
+@cvindex VERSION, prevent definition
 
 @item AM_MAKE_INCLUDE
 This macro is used to discover how the user's @code{make} handles
@@ -3850,8 +3878,12 @@ this by writing an @code{installcheck-local} target.
 @chapter Changing Automake's Behavior
 
 Various features of Automake can be controlled by options in the
-@file{Makefile.am}.  Such options are listed in a special variable named
-@code{AUTOMAKE_OPTIONS}.  Currently understood options are:
+@file{Makefile.am}.  Such options are applied on a per-@file{Makefile}
+basis when listed in a special @file{Makefile} variable named
+@code{AUTOMAKE_OPTIONS}.  They are applied globally to all processed
+@file{Makefiles} when listed in the first argument of
+@code{AM_INIT_AUTOMAKE} in @file{configure.in}.  Currently understood
+options are:
 @vindex AUTOMAKE_OPTIONS
 
 @table @asis
@@ -3912,6 +3944,12 @@ Generate a @code{dist-tarZ} target, creating a compressed tar archive of
 the distribution.  @code{dist} will create it in addition to the other
 formats.
 @trindex dist-tarZ
+
+@item @code{no-define}
+@cindex Option, no-define
+This options is meaningful only when passed as an argument to
+AM_INIT_AUTOMAKE.  It will prevent the @code{PACKAGE} and @code{VERSION}
+variable to be @code{AC_DEFINE}d.
 
 @item @code{no-dependencies}
 @cindex Option, no-dependencies

@@ -161,6 +161,7 @@ my $INCLUDE_PATTERN = ('^include\s+'
 # makes indentation work better in Emacs.
 my $AC_CONFIG_AUX_DIR_PATTERN = 'AC_CONFIG_AUX_DIR\(([^)]+)\)';
 my $AM_INIT_AUTOMAKE_PATTERN = 'AM_INIT_AUTOMAKE\([^,]*,([^,)]+)[,)]';
+my $AC_INIT_PATTERN = 'AC_INIT\([^,]*,([^,)]+)[,)]';
 my $AM_PACKAGE_VERSION_PATTERN = '^\s*\[?([^]\s]+)\]?\s*$';
 
 # This handles substitution references like ${foo:.a=.b}.
@@ -393,7 +394,7 @@ my $seen_multilib = 0;
 # TRUE if we've seen AM_PROG_CC_C_O
 my $seen_cc_c_o = 0;
 
-# TRUE if we've seen AM_INIT_AUTOMAKE.
+# Where AM_INIT_AUTOMAKE is called;
 my $seen_init_automake = 0;
 
 # TRUE if we've seen AM_AUTOMAKE_VERSION.
@@ -457,10 +458,8 @@ my %required_targets =
 # should distribute depcomp -- has been generated.)
 my $automake_needs_to_reprocess_all_files = 0;
 
-# Options set via AM_AUTOMAKE_OPTIONS.
+# Options set via AM_INIT_AUTOMAKE.
 my $global_options = '';
-# Line number for AM_AUTOMAKE_OPTIONS.
-my $global_options_line;
 
 
 
@@ -1444,7 +1443,7 @@ sub process_option_list
 	       || $_ eq 'dejagnu' || $_ eq 'no-texinfo.tex'
 	       || $_ eq 'readme-alpha' || $_ eq 'check-news'
 	       || $_ eq 'subdir-objects' || $_ eq 'nostdinc'
-	       || $_ eq 'no-exeext')
+	       || $_ eq 'no-exeext' || $_ eq 'no-define')
 	{
 	    # Explicitly recognize these.
 	}
@@ -1464,7 +1463,7 @@ sub process_option_list
 	{
 	    if ($config)
 	    {
-		file_error ($global_options_line,
+		file_error ($seen_init_automake,
 			    "option `" . $_ . "\' not recognized");
 	    }
 	    else
@@ -4495,17 +4494,17 @@ sub scan_autoconf_traces ($)
 		  AC_CANONICAL_SYSTEM
 		  AC_CONFIG_AUX_DIR
 		  AC_CONFIG_FILES
+		  AC_INIT
 		  AC_LIBSOURCE
-		  AC_PROG_LIBTOOL AM_PROG_LIBTOOL
 		  AC_PROG_LEX
+		  AC_PROG_LIBTOOL AM_PROG_LIBTOOL
 		  AC_SUBST
+		  AM_AUTOMAKE_VERSION
 		  AM_CONDITIONAL
 		  AM_CONFIG_HEADER
 		  AM_C_PROTOTYPES
 		  AM_GNU_GETTEXT
 		  AM_INIT_AUTOMAKE
-		  AM_AUTOMAKE_OPTIONS
-		  AM_AUTOMAKE_VERSION
 		  AM_MAINTAINER_MODE
 		  AM_PATH_LISPDIR
 		  AM_PATH_PYTHON
@@ -4552,6 +4551,14 @@ sub scan_autoconf_traces ($)
 	  $ac_config_files_location = $here;
 	  &scan_autoconf_config_files ($args[1]);
 	}
+      elsif ($macro eq 'AC_INIT')
+        {
+	  if (defined $args[2])
+	    {
+	      $package_version = $args[2];
+	      $package_version_location = $here;
+	    }
+	}
       elsif ($macro eq 'AC_LIBSOURCE')
 	{
 	  $libsources{$args[1]} = $here;
@@ -4571,6 +4578,17 @@ sub scan_autoconf_traces ($)
 	  $configure_vars{$args[1]} = $here
 	    if $args[1] =~ /^\w+$/;
 	}
+      elsif ($macro eq 'AM_AUTOMAKE_VERSION')
+        {
+	  file_error ($here,
+		      "version mismatch.  This is Automake $VERSION,\n" .
+		      "but the definition used by this AM_INIT_AUTOMAKE\n" .
+		      "comes from Automake $args[1].  You should recreate\n" .
+		      "aclocal.m4 with aclocal and run automake again.\n")
+	      if ($VERSION ne $args[1]);
+
+	  $seen_automake_version = 1;
+        }
       elsif ($macro eq 'AM_CONDITIONAL')
 	{
 	  $configure_cond{$args[1]} = $here;
@@ -4591,26 +4609,17 @@ sub scan_autoconf_traces ($)
 	}
       elsif ($macro eq 'AM_INIT_AUTOMAKE')
 	{
-	  $package_version = $args[2];
-	  $package_version_location = $here;
-	  $seen_init_automake = 1;
+	  $seen_init_automake = $here;
+	  if (defined $args[2])
+	    {
+	      $package_version = $args[2];
+	      $package_version_location = $here;
+	    }
+	  elsif (defined $args[1])
+	    {
+	      $global_options = $args[1];
+	    }
 	}
-      elsif ($macro eq 'AM_AUTOMAKE_OPTIONS')
-        {
-	  $global_options = $args[1];
-	  $global_options_line = $here;
-	}
-      elsif ($macro eq 'AM_AUTOMAKE_VERSION')
-        {
-	  file_error ($here,
-		      "version mismatch.  This is Automake $VERSION,\n" .
-		      "but the definition used by this AM_INIT_AUTOMAKE\n" .
-		      "comes from Automake $args[1].  You should recreate\n" .
-		      "aclocal.m4 with aclocal and run automake again.\n")
-	      if ($VERSION ne $args[1]);
-
-	  $seen_automake_version = 1;
-        }
       elsif ($macro eq 'AM_MAINTAINER_MODE')
 	{
 	  $seen_maint_mode = $here;
@@ -4839,18 +4848,26 @@ sub scan_one_autoconf_file
 	      }
 	  }
 
-        # This macro handles several different things.
-        if (/$AM_INIT_AUTOMAKE_PATTERN/o)
+	# AM_INIT_AUTOMAKE with any number of argument
+	if (/AM_INIT_AUTOMAKE/)
 	{
-	    ($package_version = $1) =~ s/$AM_PACKAGE_VERSION_PATTERN/$1/o;
-	    $package_version_location = $here;
 	    $seen_init_automake = $here;
+        }
+
+	# AC_INIT or AM_INIT_AUTOMAKE with two arguments
+        if (/$AC_INIT_PATTERN/o || /$AM_INIT_AUTOMAKE_PATTERN/o)
+	{
+            if ($1 =~ /$AM_PACKAGE_VERSION_PATTERN/o)
+            {
+		$package_version = $1;
+		$package_version_location = $here;
+	    }
 	}
 
-	if (/AM_AUTOMAKE_OPTIONS\(([^)]+)\)/)
+	# AM_INIT_AUTOMAKE with one argument.
+	if (/AM_INIT_AUTOMAKE\(([^),]+)\)/)
 	{
             $global_options = &unquote_m4_arg ($1);
-            $global_options_line = $here;
 	}
 
 	if (/AM_AUTOMAKE_VERSION\(([^)]+)\)/)
@@ -5012,14 +5029,14 @@ sub scan_autoconf_files
     {
 	if (-f 'aclocal.m4')
 	{
-	    file_error ($package_version_location || $me,
+	    file_error ($seen_init_automake || $me,
 			"your implementation of AM_INIT_AUTOMAKE comes from " .
 			"an\nold Automake version.  You should recreate " .
 			"aclocal.m4\nwith aclocal and run automake again.\n");
 	}
 	else
 	{
-	    file_error ($package_version_location || $me,
+	    file_error ($seen_init_automake || $me,
 			"no proper implementation of AM_INIT_AUTOMAKE was " .
 			"found,\nprobably because aclocal.m4 is missing...\n" .
 			"You should run aclocal to create this file, then\n" .

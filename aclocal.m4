@@ -34,7 +34,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 
-# serial 7
+# serial 8
 
 # There are a few dirty hacks below to avoid letting `AC_PROG_CC' be
 # written in clear, in which case automake, when reading aclocal.m4,
@@ -49,8 +49,17 @@ AC_PREREQ([2.52])
 # the ones we care about.
 m4_pattern_allow([^AM_[A-Z]+FLAGS$])dnl
 
-# AM_INIT_AUTOMAKE(PACKAGE,VERSION, [NO-DEFINE])
-# ----------------------------------------------
+# AM_INIT_AUTOMAKE(PACKAGE, VERSION, [NO-DEFINE])
+# AM_INIT_AUTOMAKE([OPTIONS])
+# -----------------------------------------------
+# The call with PACKAGE and VERSION arguments is the old style
+# call (pre autoconf-2.50), which is being phased out.  PACKAGE
+# and VERSION should now be passed to AC_INIT and removed from
+# the call to AM_INIT_AUTOMAKE.
+# We support both call styles for the transition.  After
+# the next Automake release, Autoconf can make the AC_INIT
+# arguments mandatory, and then we can depend on a new Autoconf
+# release and drop the old call support.
 AC_DEFUN([AM_INIT_AUTOMAKE],
 [AC_REQUIRE([AM_SET_CURRENT_AUTOMAKE_VERSION])dnl
  AC_REQUIRE([AC_PROG_INSTALL])dnl
@@ -60,13 +69,20 @@ if test "`cd $srcdir && pwd`" != "`pwd`" &&
   AC_MSG_ERROR([source directory already configured; run "make distclean" there first])
 fi
 
-# Define the identity of the package.
-AC_SUBST([PACKAGE], [$1])dnl
-AC_SUBST([VERSION], [$2])dnl
-ifelse([$3],,
-[AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE", [Name of package])
-AC_DEFINE_UNQUOTED(VERSION, "$VERSION", [Version number of package])])
+dnl Distinguish between old-style and new-style calls.
+m4_ifval([$2],
+  [m4_ifval([$3],, [_AM_SET_OPTION([no-define])])],
+  [_AM_SET_OPTIONS([$1])])dnl
 
+# Define the identity of the package.
+AC_SUBST([PACKAGE],
+[m4_ifset([AC_PACKAGE_TARNAME], [AC_PACKAGE_TARNAME], [$1])])dnl
+AC_SUBST([VERSION],
+[m4_ifset([AC_PACKAGE_VERSION], [AC_PACKAGE_VERSION], [$2])])dnl
+
+_AM_IF_OPTION([no-define],,
+[AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE", [Name of package])
+ AC_DEFINE_UNQUOTED(VERSION, "$VERSION", [Version number of package])])dnl
 
 # Some tools Automake needs.
 AC_REQUIRE([AM_SANITY_CHECK])dnl
@@ -123,6 +139,50 @@ AC_DEFUN([AM_AUTOMAKE_VERSION],[])
 # This function is AC_REQUIREd by AC_INIT_AUTOMAKE.
 AC_DEFUN([AM_SET_CURRENT_AUTOMAKE_VERSION],
 	 [AM_AUTOMAKE_VERSION([1.5c])])
+
+# Helper functions for option handling.                    -*- Autoconf -*-
+
+# Copyright 2001, 2002  Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+# 02111-1307, USA.
+
+# serial 2
+
+# _AM_MANGLE_OPTION(NAME)
+# -----------------------
+AC_DEFUN([_AM_MANGLE_OPTION],
+[[_AM_OPTION_]m4_bpatsubst($1, [[^a-zA-Z0-9_]], [_])])
+
+# _AM_SET_OPTION(NAME)
+# ------------------------------
+# Set option NAME.  Presently that only means defining a flag for this option.
+AC_DEFUN([_AM_SET_OPTION],
+[m4_define(_AM_MANGLE_OPTION([$1]), 1)])
+
+# _AM_SET_OPTIONS(OPTIONS)
+# ----------------------------------
+# OPTIONS is a space-separated list of Automake options.
+AC_DEFUN([_AM_SET_OPTIONS],
+[AC_FOREACH([_AM_Option], [$1], [_AM_SET_OPTION(_AM_Option)])])
+
+# _AM_IF_OPTION(OPTION, IF-SET, [IF-NOT-SET])
+# -------------------------------------------
+# Execute IF-SET if OPTION is set, IF-NOT-SET otherwise.
+AC_DEFUN([_AM_IF_OPTION],
+[m4_if(_AM_MANGLE_OPTION([$1]), 1, [$2], [$3])])
 
 #
 # Check to make sure that the build environment is sane.
@@ -681,34 +741,6 @@ AC_CONFIG_COMMANDS_PRE(
   AC_MSG_ERROR([conditional \"$1\" was never defined.
 Usually this means the macro was only invoked conditionally.])
 fi])])
-
-# Do all the work for Automake.                            -*- Autoconf -*-
-
-# Copyright 2001 Free Software Foundation, Inc.
-
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2, or (at your option)
-# any later version.
-
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
-# 02111-1307, USA.
-
-# serial 1
-
-# AM_AUTOMAKE_OPTIONS([OPTIONS])
-# ------------------------------
-# Set some automake options globally.
-AC_DEFUN([AM_AUTOMAKE_OPTIONS],
-[dnl nothing
-])
 
 # Copyright 2001 Free Software Foundation, Inc.             -*- Autoconf -*-
 
