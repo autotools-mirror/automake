@@ -2547,12 +2547,13 @@ sub handle_single_transform_list ($$$$@)
 # and cause recursion.  Other terms are assumed to be filenames.
 #
 # Each time a filename is encountered, &FUN_ITEM is called with the
-# following arguements:
+# following arguments:
 #   ($var,        -- the variable we are currently traversing
 #    $val,        -- the item (i.e., filename) to process
-#    $cond,       -- the conditions for the $var definitions we are examinating
-#    @cond_stack) -- other conditions inherited from parent variables during
-#                    recursion
+#    $cond,       -- the Condition for the $var definition we are examinating
+#                    (ignoring the recursion context)
+#    $full_cond)  -- the full Condition, taking into account conditions
+#                    inherited from parent variables during recursion
 # &FUN_ITEM may return a list of items, they will be passed to &FUN_STRORE
 # later on.   Define &FUN_ITEM as `undef' when it serve no purpose, this
 # will speed things up.
@@ -2560,13 +2561,15 @@ sub handle_single_transform_list ($$$$@)
 # Once all items of a variable have been processed, the
 # result (of the calls to &FUN_ITEMS, or of recursive
 # traversals of subvariables) are passed to &FUN_COLLECT.
-# &FUN_STORE receive two arguments:
-#   ($var,        -- the variable being traversed
-#    \@condlist,  -- a \list of [$cond, @results] pairs
-#                    where each $cond appear only once, and @result
-#                    are all the results for this condition.
-#    @cond_stack) -- oter conditions inherited from parent variables during
-#                    recursion
+# &FUN_COLLECT receives three arguments:
+#   ($var,         -- the variable being traversed
+#    $parent_cond, -- the Condition inherited from parent variables during
+#                     recursion
+#    @condlist)    -- a list of [$cond, @results] pairs
+#                     where each $cond appear only once, and @result
+#                     are all the results for this condition.
+# Typically you should do `$cond->merge ($parent_cond)' to recompute
+# the `$full_cond' associated to @result.
 # &FUN_COLLECT may return a list of items, that will be used as the
 # result of &traverse_variable_recursively (the top-level, or
 # it's recursive calls).
@@ -2582,13 +2585,13 @@ sub traverse_variable_recursively ($&&)
   @substfroms = ();
   @substtos = ();
   my ($var, @rest) = @_;
-  return traverse_variable_recursively_worker ($var, $var, @rest)
+  return traverse_variable_recursively_worker ($var, $var, @rest, TRUE)
 }
 
 # The guts of &traverse_variable_recursively.
-sub traverse_variable_recursively_worker ($$&&)
+sub traverse_variable_recursively_worker ($$&&$)
 {
-  my ($var, $parent, $fun_item, $fun_collect, @cond_stack) = @_;
+  my ($var, $parent, $fun_item, $fun_collect, $parent_cond) = @_;
 
   if (defined $vars_scanned{$var})
     {
@@ -2601,6 +2604,7 @@ sub traverse_variable_recursively_worker ($$&&)
   foreach my $cond (variable_conditions ($var)->conds)
     {
       my @result;
+      my $full_cond = $cond->merge ($parent_cond);
       foreach my $val (&variable_value_as_list ($var, $cond, $parent))
 	{
 	  # If $val is a variable (i.e. ${foo} or $(bar), not a filename),
@@ -2631,7 +2635,7 @@ sub traverse_variable_recursively_worker ($$&&)
 	      my $res =
 		&traverse_variable_recursively_worker ($subvar, $parent,
 						       $fun_item, $fun_collect,
-						       $cond, @cond_stack);
+						       $full_cond);
 	      push (@result, $res);
 
 	      pop @substfroms;
@@ -2649,7 +2653,7 @@ sub traverse_variable_recursively_worker ($$&&)
 
 	      # Make sure you update the doc of &traverse_variable_recursively
 	      # if you change the prototype of &fun_item.
-	      my @transformed = &$fun_item ($var, $val, $cond, @cond_stack);
+	      my @transformed = &$fun_item ($var, $val, $cond, $full_cond);
 	      push (@result, @transformed);
 	    }
 	}
@@ -2662,7 +2666,7 @@ sub traverse_variable_recursively_worker ($$&&)
 
   # Make sure you update the doc of &traverse_variable_recursively
   # if you change the prototype of &fun_collect.
-  return &$fun_collect ($var, \@allresults, @cond_stack);
+  return &$fun_collect ($var, $parent_cond, @allresults);
 }
 
 # $VARNAME
@@ -2748,11 +2752,11 @@ sub transform_variable_recursively ($$$$$&)
      # The code that define the variable holding the result
      # of the recursive transformation of a subvariable.
      sub {
-       my ($subvar, $allresults, @cond_stack) = @_;
+       my ($subvar, $parent_cond, @allresults) = @_;
        # Find a name for the variable, unless this is the top-variable
        # for which we want to use $resvar.
        my $varname =
-	 ($var ne $subvar) ? gen_varname ($base, @$allresults) : $resvar;
+	 ($var ne $subvar) ? gen_varname ($base, @allresults) : $resvar;
        # Define the variable if required.
        unless ($nodefine)
 	 {
@@ -2761,7 +2765,7 @@ sub transform_variable_recursively ($$$$$&)
 	   # the old variable first.
 	   macro_delete ($varname) if $varname eq $var;
 	   # Define for all conditions.
-	   foreach my $pair (@$allresults)
+	   foreach my $pair (@allresults)
 	     {
 	       my ($cond, @result) = @$pair;
 	       define_pretty_variable ($varname, $cond, $where, @result);
@@ -2801,7 +2805,7 @@ sub define_objects_from_sources ($$$$$$$)
     ($var, $objvar, 'am__objects', $nodefine, $where,
      # The transfom code to run on each filename.
      sub {
-       my ($subvar, $val, @cond_stack) = @_;
+       my ($subvar, $val, $cond, $full_cond) = @_;
        my @trans = &handle_single_transform_list ($subvar, $topparent,
 						  $one_file, $obj, $val);
        $needlinker = "true" if @trans;
@@ -2936,7 +2940,7 @@ sub handle_lib_objects
     ($var, $xname . '_DEPENDENCIES', 'am__DEPENDENCIES', ! $xname, INTERNAL,
      # Transformation function, run on each filename.
      sub {
-       my ($subvar, $val, @cond_stack) = @_;
+       my ($subvar, $val, $cond, $full_cond) = @_;
 
        if ($val =~ /^-/)
 	 {
@@ -2973,13 +2977,13 @@ sub handle_lib_objects
 	 }
        elsif ($val =~ /^\@(LT)?LIBOBJS\@$/)
 	 {
-	   handle_LIBOBJS ($subvar, TRUE->merge (@cond_stack), $1);
+	   handle_LIBOBJS ($subvar, $full_cond, $1);
 	   $seen_libobjs = 1;
 	   return $val;
 	 }
        elsif ($val =~ /^\@(LT)?ALLOCA\@$/)
 	 {
-	   handle_ALLOCA ($subvar, TRUE->merge (@cond_stack), $1);
+	   handle_ALLOCA ($subvar, $full_cond, $1);
 	   return $val;
 	 }
        else
@@ -6590,11 +6594,11 @@ sub variable_conditions_recursive ($)
      undef,
      # Record each condition seen
      sub {
-       my ($subvar, $allresults, @cond_stack) = @_;
-       foreach my $pair (@$allresults)
+       my ($subvar, $parent_conds, @allresults) = @_;
+       foreach my $pair (@allresults)
 	 {
 	   my ($cond, @result) = @$pair;
-	   my $c = $cond->merge (@cond_stack);
+	   my $c = $cond->merge ($parent_conds);
 	   # Store $c both as key and $value, keys() do not return
 	   # blessed objects.
 	   $condition_seen{$c} = $c;
@@ -8166,7 +8170,7 @@ sub append_exeext ($)
   transform_variable_recursively
     ($macro, $macro, 'am__EXEEXT', 0, INTERNAL,
      sub {
-       my ($subvar, $val, @cond_stack) = @_;
+       my ($subvar, $val, $cond, $full_cond) = @_;
        # Append $(EXEEXT) unless the user did it already.
        $val .= '$(EXEEXT)' unless $val =~ /\$\(EXEEXT\)$/;
        return $val;
