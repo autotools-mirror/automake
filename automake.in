@@ -2651,7 +2651,6 @@ sub handle_dist_worker
     # subdir.  If so, add it to the list.  I didn't want to do this
     # originally, but there were so many requests that I finally
     # relented.
-    local (@dist_dirs);
     if (&variable_defined ('EXTRA_DIST'))
     {
 	# FIXME: This should be fixed to work with conditionals.  That
@@ -2663,7 +2662,7 @@ sub handle_dist_worker
 	{
 	    next if /^\@.*\@$/;
 	    next unless s,/+[^/]+$,,;
-	    push (@dist_dirs, $_)
+	    $dist_dirs{$_} = 1
 		unless $_ eq '.';
 	}
     }
@@ -2674,18 +2673,17 @@ sub handle_dist_worker
     {
 	next if /^\@.*\@$/;
 	next unless s,/+[^/]+$,,;
-	push (@dist_dirs, $_)
+	$dist_dirs{$_} = 1
 	    unless $_ eq '.';
     }
 
-    if (@dist_dirs)
+    if (scalar keys %dist_dirs)
     {
 	# Prepend $(distdir) to each directory given.  Doing it via a
 	# hash lets us ensure that each directory is used only once.
-	local (%dhash);
-	grep ($dhash{'$(distdir)/' . $_} = 1, @dist_dirs);
+	grep ($dist_dirs{'$(distdir)/' . $_} = 1, keys %dist_dirs);
 	$output_rules .= "\t";
-	&pretty_print_rule ('$(mkinstalldirs)', "\t   ", sort keys %dhash);
+	&pretty_print_rule ('$(mkinstalldirs)', "\t   ", sort keys %dist_dirs);
     }
 
     # In loop, test for file existence because sometimes a file gets
@@ -3518,10 +3516,10 @@ sub handle_configure
     local (@actual_other_files) = ();
     local ($file, $local);
     local (@inputs, @rewritten_inputs, $single);
-    local ($need_rewritten);
-    foreach $file (@other_input_files)
+    local ($need_rewritten, $lfile);
+    foreach $lfile (@other_input_files)
     {
-	if ($file =~ /^([^:]*):(.*)$/)
+	if ($lfile =~ /^([^:]*):(.*)$/)
 	{
 	    # This is the ":" syntax of AC_OUTPUT.
 	    $file = $1;
@@ -3533,11 +3531,25 @@ sub handle_configure
 	else
 	{
 	    # Normal usage.
+	    $file = $lfile;
 	    $local = &basename ($file);
 	    @inputs = ($local . '.in');
 	    @rewritten_inputs =
 		&rewrite_inputs_into_dependencies (1, $file . '.in');
 	    $need_rewritten = 0;
+	}
+
+	# Make sure the dist directory for each input file is created.
+	# We only have to do this at the topmost level though.  This
+	# is a bit ugly but it easier than spreading out the logic,
+	# especially in cases like AC_OUTPUT(foo/out:bar/in), where
+	# there is no Makefile in bar/.
+	if ($relative_dir eq '.')
+	{
+	    foreach (@inputs)
+	    {
+		$dist_dirs{&dirname ($_)} = 1;
+	    }
 	}
 
 	# Skip files not in this directory.
@@ -3568,7 +3580,6 @@ sub handle_configure
 				    : '')
 			  . ' CONFIG_HEADERS= $(SHELL) ./config.status'
 			  . "\n");
-	&push_dist_common (@inputs);
 	push (@actual_other_files, $local);
 
 	# Require all input files.
@@ -6876,6 +6887,11 @@ sub initialize_per_input
     # This holds a list of files that are included in the
     # distribution.
     %dist_common = ();
+
+    # This holds a list of directories which we must create at `dist'
+    # time.  This is used in some strange scenarios involving weird
+    # AC_OUTPUT commands.
+    %dist_dirs = ();
 
     # List of dependencies for the obvious targets.
     @install_data = ();
