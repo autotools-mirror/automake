@@ -2,7 +2,7 @@
 
 AUTOMAKE_OPTIONS = gnits
 
-XFAIL_TESTS = yaccvpath.test
+XFAIL_TESTS = man.test yaccvpath.test
 
 TESTS =	\
 acinclude.test \
@@ -167,6 +167,7 @@ link_f_only.test \
 lisp.test \
 ltlibobjs.test \
 makevars.test \
+man.test \
 mclean.test \
 mdate.test \
 mdate2.test \
