@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1999, 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 1999, 2001, 2002, 2003  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -14,13 +14,15 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with autoconf; see the file COPYING.  If not, write to
+# along with Automake; see the file COPYING.  If not, write to
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
 # Test library-specific flags.
 
 . ./defs || exit 1
+
+set -e
 
 cat >> configure.in << 'END'
 AC_PROG_CC
@@ -37,22 +39,23 @@ libfoo_a_CXXFLAGS = -DZOT
 END
 
 # Make sure `compile' is required.
-$ACLOCAL || exit 1
-$AUTOMAKE && exit 1
+$ACLOCAL
+AUTOMAKE_fails
+grep 'required.*compile' stderr
 
 : > compile
 
-$AUTOMAKE || exit 1
+$AUTOMAKE
 
 # Look for $(COMPILE) -c in .c.o rule.
 grep 'COMPILE. [^-]' Makefile.in && exit 1
 
 # Look for libfoo_a-foo.o.
-grep foo Makefile.in || exit 1
+grep foo Makefile.in
 grep '[^-]foo\.o' Makefile.in && exit 1
 
 # Look for libfoo_a-bar.o.
-grep bar Makefile.in || exit 1
+grep bar Makefile.in
 grep '[^-]bar\.o' Makefile.in && exit 1
 
 exit 0

@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002  Free Software Foundation, Inc.
+# Copyright (C) 2002, 2003  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -14,13 +14,15 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with autoconf; see the file COPYING.  If not, write to
+# along with Automake; see the file COPYING.  If not, write to
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
 # Test the += diagnostics.
 
 . ./defs || exit 1
+
+set -e
 
 cat >>configure.in <<EOF
 AM_CONDITIONAL(COND1, true)
@@ -52,10 +54,8 @@ endif
 B += dd
 END
 
-$ACLOCAL || exit 1
-$AUTOMAKE 2>stderr && exit 1
-
-cat stderr # for debugging
+$ACLOCAL
+AUTOMAKE_fails
 
 # We expect the following diagnostic:
 #
@@ -69,8 +69,6 @@ cat stderr # for debugging
 # COND1_FALSE (merging the last two conditions), so we'll support
 # this case in the check too.
 
-grep ':   !COND1 and !COND3$' stderr || exit 1
+grep ':   !COND1 and !COND3$' stderr
 # Make sure there is exactly one missing condition.
-test `grep ':  ' stderr | wc -l` = 1 || exit 1
-
-:
+test `grep ':  ' stderr | wc -l` = 1

@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1999, 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 1999, 2001, 2002, 2003  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with autoconf; see the file COPYING.  If not, write to
+# along with Automake; see the file COPYING.  If not, write to
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
@@ -22,6 +22,8 @@
 # if (AM_)?YFLAGS do not contain -d.  Requested by Jim Meyering.
 
 . ./defs || exit 1
+
+set -e
 
 cat >> configure.in << 'END'
 AC_PROG_CC
@@ -39,8 +41,8 @@ cp Makefile.am Makefile.src
 
 
 
-$ACLOCAL || exit 1
-$AUTOMAKE || exit 1
+$ACLOCAL
+$AUTOMAKE
 
 # If zardoz.h IS mentioned, fail
 grep 'zardoz.h' Makefile.in > /dev/null && exit 1
@@ -50,17 +52,17 @@ grep 'zardoz.h' Makefile.in > /dev/null && exit 1
 cp Makefile.src Makefile.am
 echo 'AM_YFLAGS = -d' >> Makefile.am
 
-$AUTOMAKE || exit 1
+$AUTOMAKE
 
 # If zardoz.h is NOT mentioned, fail
-grep 'zardoz.h' Makefile.in > /dev/null || exit 1
+grep 'zardoz.h' Makefile.in > /dev/null
 
 
 
 cp Makefile.src Makefile.am
 echo 'AM_YFLAGS = ' >> Makefile.am
 
-$AUTOMAKE || exit 1
+$AUTOMAKE
 
 # If zardoz.h IS mentioned, fail
 grep 'zardoz.h' Makefile.in > /dev/null && exit 1
@@ -71,22 +73,21 @@ cp Makefile.src Makefile.am
 echo 'YFLAGS = -d' >> Makefile.am
 
 # YFLAGS is a use variable.
-$AUTOMAKE 2>stderr && exit 1
-cat stderr
-grep 'YFLAGS' stderr || exit 1
-$AUTOMAKE -Wno-gnu || exit 1
+AUTOMAKE_fails
+grep 'YFLAGS' stderr
+$AUTOMAKE -Wno-gnu
 
 # If zardoz.h is NOT mentioned, fail
-grep 'zardoz.h' Makefile.in > /dev/null || exit 1
+grep 'zardoz.h' Makefile.in > /dev/null
 
 
 
 cp Makefile.src Makefile.am
 echo 'YFLAGS = ' >> Makefile.am
 
-$AUTOMAKE -Wno-gnu || exit 1
+$AUTOMAKE -Wno-gnu
 
 # If zardoz.h IS mentioned, fail
 grep 'zardoz.h' Makefile.in > /dev/null && exit 1
 
-exit 0
+:

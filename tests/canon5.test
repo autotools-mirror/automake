@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1999, 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 1999, 2001, 2002, 2003  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -19,9 +19,11 @@
 # Boston, MA 02111-1307, USA.
 
 # Test to make sure that we allow variable names starting in
-# non-letters.
+# non-letters.  Whatever that might mean.
 
 . ./defs || exit 1
+
+set -e
 
 echo AC_PROG_CC >> configure.in
 
@@ -30,7 +32,7 @@ bin_PROGRAMS = 123test
 123test_SOURCES = 123.c
 END
 
-$ACLOCAL || exit 1
+$ACLOCAL
 $AUTOMAKE || exit 1
 
 cat > Makefile.am << 'END'
@@ -39,20 +41,21 @@ _foo_SOURCES = foo.c
 END
 
 # Variables starting with `_' are not portable.
-$AUTOMAKE -Wno-portability || exit 1
+$AUTOMAKE -Wno-portability
 
 cat > Makefile.am << 'END'
 bin_PROGRAMS = ,foo
 ,foo_SOURCES = foo.c
 END
 
-# Variables starting with `_' are not portable.
-$AUTOMAKE -Wno-portability && exit 1
+# Variables starting with `,' are not portable.
+AUTOMAKE_fails -Wno-portability
+grep 'Makefile.am:2:.*_foo_SOURCES' stderr
 
 cat > Makefile.am << 'END'
 bin_PROGRAMS = ,foo
 _foo_SOURCES = foo.c
 END
 
-# Variables starting with `_' are not portable.
+# Variables starting with `_' or `,' are not portable.
 $AUTOMAKE -Wno-portability

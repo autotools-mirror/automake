@@ -584,7 +584,7 @@ distcheck: dist
 	  && $(MAKE) $(AM_MAKEFLAGS) distcleancheck
 	$(am__remove_distdir)
 	@(echo "$(distdir) archives ready for distribution: "; \
-	  for i in $(DIST_ARCHIVES); do echo $$i; done) | \
+	  list='$(DIST_ARCHIVES)'; for i in $$list; do echo $$i; done) | \
 	  sed -e '1{h;s/./=/g;p;x}' -e '$${p;x}'
 distuninstallcheck:
 	@cd $(distuninstallcheck_dir) \
@@ -696,7 +696,7 @@ installcheck-am:
 
 maintainer-clean: maintainer-clean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf autom4te.cache
+	-rm -rf $(top_srcdir)/autom4te.cache
 maintainer-clean-am: distclean-am maintainer-clean-aminfo \
 	maintainer-clean-generic maintainer-clean-vti
 
@@ -847,6 +847,10 @@ maintainer-check: automake aclocal
 	  echo 'Do not run "automake" in the above tests.  Use "$$AUTOMAKE" instead.' 1>&2;  \
 	  exit 1; \
 	fi
+	@if grep -v '^#' $(srcdir)/tests/*.test | grep '\$$AUTOMAKE.*&&.*exit'; then \
+	  echo 'Use AUTOMAKE_fails + grep to catch automake failures in the above tests.' 1>&2;  \
+	  exit 1; \
+	fi
 	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*aclocal'; then \
 	  echo 'Do not run "aclocal" in the above tests.  Use "$$ACLOCAL" instead.' 1>&2;  \
 	  exit 1; \
@@ -882,11 +886,11 @@ maintainer-check: automake aclocal
 	  echo 'Do not use egrep or fgrep in the above files, they are not portable.' 1>&2; \
 	  exit 1; \
 	fi
-	@if test `grep -E '@[A-Za-z_0-9]+@' aclocal | wc -l` -ne 0; then \
+	@if test `grep -E '^[^#]*@[A-Za-z_0-9]+@' aclocal | wc -l` -ne 0; then \
 	  echo "Unresolved @...@ substitution in aclocal" 1>&2; \
 	  exit 1; \
 	fi
-	@if test `grep -E '@[A-Za-z_0-9]+@' automake | wc -l` -ne 5; then \
+	@if test `grep -E '^[^#]*@[A-Za-z_0-9]+@' automake | wc -l` -ne 0; then \
 	  echo "Unresolved @...@ substitution in automake" 1>&2; \
 	  exit 1; \
 	fi

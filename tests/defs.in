@@ -22,6 +22,18 @@
 # Defines for Automake testing environment.
 # Tom Tromey <tromey@cygnus.com>
 
+# Be Bourne compatible.
+# (Snippet copied from configure's initialization in Autoconf 2.57.)
+if test -n "${ZSH_VERSION+set}" && (emulate sh) >/dev/null 2>&1; then
+  emulate sh
+  NULLCMD=:
+  # Zsh 3.x and 4.x performs word splitting on ${1+"$@"}, which
+  # is contrary to our usage.  Disable this feature.
+  alias -g '${1+"$@"}'='"$@"'
+elif test -n "${BASH_VERSION+set}" && (set -o posix) >/dev/null 2>&1; then
+  set -o posix
+fi
+
 # Ensure we are running from the right directory.
 test -f ./defs || {
    echo "defs: not found in current directory" 1>&2
@@ -296,6 +308,30 @@ sleep='sleep @MODIFICATION_DELAY@'
 # to override the definition from the Makefile.
 testsrcdir=$srcdir
 unset srcdir
+
+# AUTOMAKE_run status [options...]
+# --------------------------------
+# Run Automake with OPTIONS, and fail if automake
+# does not exit with STATUS.
+AUTOMAKE_run ()
+{
+  expected_exitcode=$1
+  shift
+  exitcode=0
+  $AUTOMAKE ${1+"$@"} 2>stderr >stdout || exitcode=$?
+  cat stderr
+  cat stdout
+  test $exitcode = $expected_exitcode || exit 1
+}
+
+# AUTOMAKE_fails [options...]
+# ---------------------------
+# Run Automake with OPTIONS, and fail if automake
+# does not exit with STATUS.
+AUTOMAKE_fails ()
+{
+  AUTOMAKE_run 1 ${1+"$@"}
+}
 
 # Turn on shell traces when VERBOSE=x.
 if test "x$VERBOSE" = xx; then

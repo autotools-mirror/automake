@@ -190,6 +190,11 @@ maintainer-check: automake aclocal
 	  echo 'Do not run "automake" in the above tests.  Use "$$AUTOMAKE" instead.' 1>&2;  \
 	  exit 1; \
 	fi
+## Use AUTOMAKE_fails when appropriate
+	@if grep -v '^#' $(srcdir)/tests/*.test | grep '\$$AUTOMAKE.*&&.*exit'; then \
+	  echo 'Use AUTOMAKE_fails + grep to catch automake failures in the above tests.' 1>&2;  \
+	  exit 1; \
+	fi
 ## Tests should never call aclocal directly.
 	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*aclocal'; then \
 	  echo 'Do not run "aclocal" in the above tests.  Use "$$ACLOCAL" instead.' 1>&2;  \
@@ -236,12 +241,11 @@ maintainer-check: automake aclocal
 	fi
 ## Try to make sure all @...@ substitutions are covered by our
 ## substitution rule.
-	@if test `grep -E '@[A-Za-z_0-9]+@' aclocal | wc -l` -ne 0; then \
+	@if test `grep -E '^[^#]*@[A-Za-z_0-9]+@' aclocal | wc -l` -ne 0; then \
 	  echo "Unresolved @...@ substitution in aclocal" 1>&2; \
 	  exit 1; \
 	fi
-## In automake there are a few valid ones.
-	@if test `grep -E '@[A-Za-z_0-9]+@' automake | wc -l` -ne 5; then \
+	@if test `grep -E '^[^#]*@[A-Za-z_0-9]+@' automake | wc -l` -ne 0; then \
 	  echo "Unresolved @...@ substitution in automake" 1>&2; \
 	  exit 1; \
 	fi
