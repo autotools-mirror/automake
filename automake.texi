@@ -2572,6 +2572,20 @@ maude_LDADD = $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)
 This variable is used to pass extra flags to the link step of a program
 or a shared library.
 
+@item maude_DEPENDENCIES
+It is also occasionally useful to have a program depend on some other
+target which is not actually part of that program.  This can be done
+using the @samp{_DEPENDENCIES} variable.  Each program depends on the
+contents of such a variable, but no further interpretation is done.
+
+If @samp{_DEPENDENCIES} is not supplied, it is computed by Automake.
+The automatically-assigned value is the contents of @samp{_LDADD} or
+@samp{_LIBADD}, with most configure substitutions, @samp{-l}, @samp{-L},
+@samp{-dlopen} and @samp{-dlpreopen} options removed.  The configure
+substitutions that are left in are only @samp{$(LIBOBJS)} and
+@samp{$(ALLOCA)}; these are left because it is known that they will not
+cause an invalid value for @samp{_DEPENDENCIES} to be generated.
+
 @item maude_LINK
 You can override the linker on a per-program basis.  By default the
 linker is chosen according to the languages used by the program.  For
@@ -2595,11 +2609,12 @@ maude_LINK = $(CCLD) -magic -o $@@
 @itemx maude_OBJCFLAGS
 @itemx maude_RFLAGS
 @itemx maude_YFLAGS
+@cindex per-target compilation flags, defined
 Automake allows you to set compilation flags on a per-program (or
 per-library) basis.  A single source file can be included in several
 programs, and it will potentially be compiled with different flags for
 each program.  This works for any language directly supported by
-Automake.  The flags are
+Automake.  These @dfn{per-target compilation flags} are
 @samp{_CCASFLAGS},
 @samp{_CFLAGS},
 @samp{_CPPFLAGS},
@@ -2611,13 +2626,14 @@ Automake.  The flags are
 @samp{_RFLAGS}, and
 @samp{_YFLAGS}.
 
-When using a per-program compilation flag, Automake will choose a
+When using a per-target compilation flag, Automake will choose a
 different name for the intermediate object files.  Ordinarily a file
 like @file{sample.c} will be compiled to produce @file{sample.o}.
 However, if the program's @samp{_CFLAGS} variable is set, then the
 object file will be named, for instance, @file{maude-sample.o}.
+(See also @ref{renamed objects}.)
 
-In compilations with per-program flags, the ordinary @samp{AM_} form of
+In compilations with per-target flags, the ordinary @samp{AM_} form of
 the flags variable is @emph{not} automatically included in the
 compilation (however, the user form of the variable @emph{is} included).
 So for instance, if you want the hypothetical @file{maude} compilations
@@ -5448,6 +5464,7 @@ lists.
 * maintainer-mode::             missing and AM_MAINTAINER_MODE
 * wildcards::                   Why doesn't Automake support wildcards?
 * distcleancheck::              Files left in build directory after distclean
+* renamed objects::             Why are object files sometimes renamed?
 @end menu
 
 @node CVS, maintainer-mode, FAQ, FAQ
@@ -5768,7 +5785,7 @@ variables as far Automake is concerned.
 You can get warnings about @code{$(wildcard ...}) constructs using the
 @code{-Wportability} flag.
 
-@node distcleancheck,  , wildcards, FAQ
+@node distcleancheck, renamed objects, wildcards, FAQ
 @section Files left in build directory after distclean
 @cindex distclean, diagnostic
 @cindex dependencies and distributed files
@@ -5914,6 +5931,48 @@ setting @code{distcleancheck_listfiles} as documented in @ref{Dist}.
 Make sure you do understand the reason why @code{make distcheck}
 complains before you do this.  @code{distcleancheck_listfiles} is a
 way to @emph{hide} errors, not to fix them.  You can always do better.
+
+@node renamed objects,  , distcleancheck, FAQ
+@section Why are object files sometimes renamed?
+
+This happens when per-target compilation flags are used.  Object
+files need to be renamed just in case they would clash with object
+files compiled from the same sources, but with different flags.
+Consider the following example.
+
+@example
+bin_PROGRAMS = true false
+true_SOURCES = generic.c
+true_CPPFLAGS = -DEXIT_CODE=0
+false_SOURCES = generic.c
+false_CPPFLAGS = -DEXIT_CODE=1
+@end example
+@noindent
+Obviously the two programs are built from the same source, but it
+would be bad if they shared the same object, because @file{generic.o}
+cannot be built with both @code{-DEXIT_CODE=0} *and*
+@code{-DEXIT_CODE=1}.  Therefore @command{automake} outputs rules to
+build two different objects: @file{true-generic.o} and
+@file{false-generic.o}.
+
+@command{automake} doesn't actually look whether sources files are
+shared to decide if it must rename objects.  It will just rename all
+objects of a target as soon as it sees per-target compilation flags
+are used.
+
+It's OK to share object files when per-target compilation flags are not
+used.  For instance @file{true} and @file{false} will both use
+@file{version.o} in the following example.
+
+@example
+AM_CPPFLAGS = -DVERSION=1.0
+bin_PROGRAMS = true false
+true_SOURCES = true.c version.c
+false_SOURCES = false.c version.c
+@end example
+
+Note that the renaming of objects is also affected by the
+@code{_SHORTNAME} variable (@pxref{Program and Library Variables}).
 
 @page
 @node Macro and Variable Index, General Index, FAQ, Top
