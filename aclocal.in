@@ -66,38 +66,38 @@ $verbose = 0;
 # Map from obsolete macros to hints for new macros.
 # If you change this, change the corresponding list in automake.in.
 # FIXME: should just put this into a single file.
-%obsolete_macros =
+my %obsolete_macros =
     (
-     'AC_FEATURE_CTYPE', "use \`AC_HEADER_STDC'",
-     'AC_FEATURE_ERRNO', "add \`strerror' to \`AC_REPLACE_FUNCS(...)'",
-     'AC_FEATURE_EXIT', '',
-     'AC_SYSTEM_HEADER', '',
+     'AC_FEATURE_CTYPE'		=> "use `AC_HEADER_STDC'",
+     'AC_FEATURE_ERRNO'		=> "add `strerror' to `AC_REPLACE_FUNCS(...)'",
+     'AC_FEATURE_EXIT'		=> '',
+     'AC_SYSTEM_HEADER'		=> '',
 
      # Note that we do not handle this one, because it is still run
      # from AM_CONFIG_HEADER.  So we deal with it specially in
-     # scan_configure.
-     # 'AC_CONFIG_HEADER', "use \`AM_CONFIG_HEADER'",
+     # &scan_autoconf_files.
+     # 'AC_CONFIG_HEADER'	=> "use `AM_CONFIG_HEADER'",
 
-     'fp_C_PROTOTYPES', "use \`AM_C_PROTOTYPES'",
-     'fp_PROG_CC_STDC', "use \`AM_PROG_CC_STDC'",
-     'fp_PROG_INSTALL', "use \`AC_PROG_INSTALL'",
-     'fp_WITH_DMALLOC', "use \`AM_WITH_DMALLOC'",
-     'fp_WITH_REGEX', "use \`AM_WITH_REGEX'",
-     'gm_PROG_LIBTOOL', "use \`AM_PROG_LIBTOOL'",
-     'jm_MAINTAINER_MODE', "use \`AM_MAINTAINER_MODE'",
-     'md_TYPE_PTRDIFF_T', "use \`AM_TYPE_PTRDIFF_T'",
-     'ud_PATH_LISPDIR', "use \`AM_PATH_LISPDIR'",
-     'ud_GNU_GETTEXT', "use \`AM_GNU_GETTEXT'",
+     'fp_C_PROTOTYPES'		=> "use `AM_C_PROTOTYPES'",
+     'fp_PROG_CC_STDC'		=> "use `AM_PROG_CC_STDC'",
+     'fp_PROG_INSTALL'		=> "use `AC_PROG_INSTALL'",
+     'fp_WITH_DMALLOC'		=> "use `AM_WITH_DMALLOC'",
+     'fp_WITH_REGEX'		=> "use `AM_WITH_REGEX'",
+     'gm_PROG_LIBTOOL'		=> "use `AM_PROG_LIBTOOL'",
+     'jm_MAINTAINER_MODE'	=> "use `AM_MAINTAINER_MODE'",
+     'md_TYPE_PTRDIFF_T'	=> "use `AM_TYPE_PTRDIFF_T'",
+     'ud_PATH_LISPDIR'		=> "use `AM_PATH_LISPDIR'",
+     'ud_GNU_GETTEXT'		=> "use `AM_GNU_GETTEXT'",
 
      # Now part of autoconf proper, under a different name.
-     'AM_FUNC_FNMATCH', "use \`AC_FUNC_FNMATCH'",
-     'fp_FUNC_FNMATCH', "use \`AC_FUNC_FNMATCH'",
-     'AM_SANITY_CHECK_CC', "automatically done by \`AC_PROG_CC'",
-     'AM_PROG_INSTALL', "use \`AC_PROG_INSTALL'",
-     'AM_EXEEXT', "use \`AC_EXEEXT'",
-     'AM_CYGWIN32', "use \`AC_CYGWIN'",
-     'AM_MINGW32', "use \`AC_MINGW32'",
-     'AM_FUNC_MKTIME', "use \`AC_FUNC_MKTIME'",
+     'AM_FUNC_FNMATCH'		=> "use `AC_FUNC_FNMATCH'",
+     'fp_FUNC_FNMATCH'		=> "use `AC_FUNC_FNMATCH'",
+     'AM_SANITY_CHECK_CC'	=> "automatically done by `AC_PROG_CC'",
+     'AM_PROG_INSTALL'		=> "use `AC_PROG_INSTALL'",
+     'AM_EXEEXT'		=> "use `AC_EXEEXT'",
+     'AM_CYGWIN32'		=> "use `AC_CYGWIN'",
+     'AM_MINGW32'		=> "use `AC_MINGW32'",
+     'AM_FUNC_MKTIME'		=> "use `AC_FUNC_MKTIME'",
 
 # These aren't quite obsolete.
 #      'md_PATH_PROG',
@@ -134,7 +134,7 @@ sub usage
 
     print "Usage: aclocal [OPTIONS] ...\n\n";
     print "\
-Generate \`aclocal.m4' by scanning \`configure.ac' or \`configure.in'
+Generate `aclocal.m4' by scanning `configure.ac' or `configure.in'
 
   --acdir=DIR           directory holding config files
   --help                print this help, then exit
@@ -194,7 +194,7 @@ sub parse_arguments
 	}
 	else
 	{
-	    die "aclocal: unrecognized option -- \`$arglist[0]'\nTry \`aclocal --help' for more information.\n";
+	    die "aclocal: unrecognized option -- `$arglist[0]'\nTry `aclocal --help' for more information.\n";
 	}
 
 	shift (@arglist);
@@ -216,18 +216,18 @@ sub parse_arguments
 
 sub scan_configure
 {
-    warn "aclocal: both \`configure.ac' and \`configure.in' present:"
-         . " ignoring \`configure.in'\n"
+    warn "aclocal: both `configure.ac' and `configure.in' present:"
+         . " ignoring `configure.in'\n"
         if -f 'configure.ac' && -f 'configure.in';
     $configure_ac = 'configure.in'
         if -f 'configure.in';
     $configure_ac = 'configure.ac'
         if -f 'configure.ac';
-    die "aclocal: \`configure.ac' or \`configure.in' is required\n"
+    die "aclocal: `configure.ac' or `configure.in' is required\n"
         if !$configure_ac;
 
     open (CONFIGURE, $configure_ac)
-	|| die "aclocal: couldn't open \`$configure_ac': $!\n";
+	|| die "aclocal: couldn't open `$configure_ac': $!\n";
 
     # Make sure we include acinclude.m4 if it exists.
     if (-f 'acinclude.m4')
@@ -248,7 +248,7 @@ sub scan_configure
 	    {
 		$hint = '; ' . $obsolete_macros{$1};
 	    }
-	    warn "aclocal: $configure_ac: $.: \`$1' is obsolete$hint\n";
+	    warn "aclocal: $configure_ac: $.: `$1' is obsolete$hint\n";
 	    $exit_status = 1;
 	    next;
 	}
@@ -260,7 +260,7 @@ sub scan_configure
 	if (! &search && /(^|\s+)(AM_[A-Z_]+)($|[^\]\)=A-Z_])/)
 	{
 	    # Macro not found, but AM_ prefix found.
-	    warn "aclocal: $configure_ac: $.: macro \`$2' not found in library\n";
+	    warn "aclocal: $configure_ac: $.: macro `$2' not found in library\n";
 	    $exit_status = 1;
 	}
     }
@@ -281,7 +281,7 @@ sub check_acinclude
 	if (! $macro_seen{$key})
 	{
 	    # FIXME: should print line number of acinclude.m4.
-	    warn "aclocal: macro \`$key' defined in acinclude.m4 but never used\n";
+	    warn "aclocal: macro `$key' defined in acinclude.m4 but never used\n";
 	}
     }
 }
@@ -303,7 +303,7 @@ sub scan_m4_files
     foreach $m4dir (@dirlist)
     {
 	opendir (DIR, $m4dir)
-	    || die "aclocal: couldn't open directory \`$m4dir': $!\n";
+	    || die "aclocal: couldn't open directory `$m4dir': $!\n";
 	local ($file, $fullfile, $expr);
 	foreach $file (sort grep (! /^\./, readdir (DIR)))
 	{
@@ -349,7 +349,7 @@ sub add_macro
 
     if (! defined $map{$macro})
     {
-	warn "aclocal: macro \`$macro' required but not defined\n";
+	warn "aclocal: macro `$macro' required but not defined\n";
 	$exit_status = 1;
 	return;
     }
@@ -390,7 +390,7 @@ sub add_file
 	if (! &search && /(^|\s+)(AM_[A-Z_]+)($|[^\]\)=A-Z_])/)
 	{
 	    # Macro not found, but AM_ prefix found.
-	    warn "aclocal: $configure_ac: $.: macro \`$2' not found in library\n";
+	    warn "aclocal: $configure_ac: $.: macro `$2' not found in library\n";
 	    $exit_status = 1;
 	}
     }
@@ -408,7 +408,7 @@ sub scan_file
     local ($file) = @_;
 
     open (FILE, $file)
-	|| die "aclocal: couldn't open \`$file': $!\n";
+	|| die "aclocal: couldn't open `$file': $!\n";
     local ($contents) = '';
     while (<FILE>)
     {
@@ -427,7 +427,7 @@ sub scan_file
 	    {
 		# You basically never want a macro in the same .m4
 		# file twice.
-		warn "aclocal: $file: $.: duplicated macro \`$1'\n";
+		warn "aclocal: $file: $.: duplicated macro `$1'\n";
 		$exit_status = 1;
 	    }
 	    print STDERR "aclocal: found macro $1 in $file: $.\n" if $verbose;
@@ -448,7 +448,7 @@ sub write_aclocal
     print STDERR "aclocal: writing $output_file\n" if $verbose;
 
     open (ACLOCAL, "> " . $output_file)
-	|| die "aclocal: couldn't open \`$output_file' for writing: $!\n";
+	|| die "aclocal: couldn't open `$output_file' for writing: $!\n";
 
     # In case we're running under MSWindows, don't write with CRLF.
     # (This circumvents a bug in at least Cygwin bash where the shell
