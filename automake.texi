@@ -577,15 +577,8 @@ and their effects are:
 
 @table @code
 @item AC_CONFIG_HEADER
-Automake will generate rules to automatically regenerate the config
-header.  If you do use this macro, you must create the file
-@file{stamp-h.in} in your source directory.  It can be empty.  Also, the
-@code{AC_OUTPUT} command in @file{configure.in} must create
-@file{stamp-h}, eg:
-@example
-AC_OUTPUT(Makefile,
-[test -z "$CONFIG_HEADERS" || echo timestamp > stamp-h])
-@end example
+Automake requires the use of @code{AM_CONFIG_HEADER}, which is similar
+to @code{AC_CONFIG_HEADER} but does some useful Automake-specific work.
 @cvindex AC_CONFIG_HEADER
 
 @item AC_CONFIG_AUX_DIR
@@ -780,27 +773,103 @@ Print the version number of Automake and exit.
 @c consider generating this node automatically from m4 files.
 
 @table @code
+@item AM_CONFIG_HEADER
+Automake will generate rules to automatically regenerate the config
+header.  If you do use this macro, you must create the file
+@file{stamp-h.in} in your source directory.  It can be empty.
+@cvindex AM_CONFIG_HEADER
+
 @item AM_FUNC_STRTOD
 If the @code{strtod} function is not available, or does not work
-correctly (like the one on SunOS 5.4), add @samp{strtod.o} to output
+correctly (like the one on SunOS 5.4), add @file{strtod.o} to output
 variable @code{LIBOBJS}.
+@cvindex AM_FUNC_STRTOD
 
 @item AM_FUNC_ERROR_AT_LINE
+If the function @code{error_at_line} is not found, then add
+@file{error.o} to @code{LIBOBJS}.
+@cvindex AM_FUNC_ERROR_AT_LINE
+
 @item AM_FUNC_MKTIME
+Check for a working @code{mktime} function.  If not found, add
+@file{mktime.o} to @samp{LIBOBJS}.
+@cvindex AM_FUNC_MKTIME
+
 @item AM_FUNC_OBSTACK
+Check for the GNU obstacks code; if not found, add @file{obstack.o} to
+@samp{LIBOBJS}.
+@cvindex AM_FUNC_OBSTACK
 
 @item AM_C_PROTOTYPES
+Check to see if function prototypes are understood by the compiler.  If
+so, define @samp{PROTOTYPES} and set the output variables @samp{U} and
+@samp{ANSI2KNR} to the empty string.  Otherwise, set @samp{U} to
+@samp{_} and @samp{ANSI2KNR} to @samp{./ansi2knr}.  Automake uses these
+values to implement automatic de-ANSI-fication.
+@cvindex AM_C_PROTOTYPES
+
 @item AM_HEADER_TIOCGWINSZ_NEEDS_SYS_IOCTL
-@item AM_INIT_AUTOMAKE
-@item AM_MAINTAINER_MODE
+If the use of @code{TIOCGWINSZ} requires @file{<sys/ioctl.h>}, then
+define @code{GWINSZ_IN_SYS_IOCTL}.  Otherwise @code{TIOCGWINSZ} can be
+found in @file{<termios.h>}.
+@cvindex AM_HEADER_TIOCGWINSZ_NEEDS_SYS_IOCTL
+
 @item AM_PATH_LISPDIR
+Searches for the program @code{emacs}, and, if found, sets the output
+variable @code{lispdir} to the full path to Emacs' site-lisp directory.
+@cvindex AM_PATH_LISPDIR
+
 @item AM_PROG_CC_STDC
+If the C compiler in not in ANSI C mode by default, try to add an option
+to output variable @code{CC} to make it so.  This macro tries various
+options that select ANSI C on some system or another.  It considers the
+compiler to be in ANSI C mode if it defines @code{__STDC__} to 1 and
+handles function prototypes correctly.
+
+If you use this macro, you should check after calling it whether the C
+compiler has been set to accept ANSI C; if not, the shell variable
+@code{am_cv_prog_cc_stdc} is set to @samp{no}.  If you wrote your source
+code in ANSI C, you can make an un-ANSIfied copy of it by using the
+@code{ansi2knr} option.
+@cvindex AM_PROG_CC_STDC
+
 @item AM_PROG_INSTALL
+Like @code{AC_PROG_INSTALL}, but also defines @code{INSTALL_SCRIPT}.
+@cvindex AM_PROG_INSTALL
+
 @item AM_SANITY_CHECK_CC
+This checks to make sure that a file created in the build directory is
+newer than a file in the source directory.  This can fail on systems
+where the clock is set incorrectly.  This macro is automatically run
+from @code{AM_INIT_AUTOMAKE}.
+@cvindex AM_SANITY_CHECK_CC
+
 @item AM_SYS_POSIX_TERMIOS
+Check to see if POSIX termios headers and functions are available on the
+system.  If so, set the shell variable @code{am_cv_sys_posix_termios} to
+@samp{yes}.  If not, set the variable to @samp{no}.
+@cvindex AM_SYS_POSIX_TERMIOS
+
 @item AM_TYPE_PTRDIFF_T
+Define @samp{HAVE_PTRDIFF_T} if the type @samp{ptrdiff_t} is defined in
+@file{<stddef.h>}.
+@cvindex AM_TYPE_PTRDIFF_T
+
 @item AM_WITH_DMALLOC
+Add support for the @code{dmalloc} package.  If the user configures with
+@samp{--with-dmalloc}, then define @code{WITH_DMALLOC} and add
+@samp{-ldmalloc} to @code{LIBS}.  The @code{dmalloc} package can be
+found at @url{ftp://ftp.letters.com/src/dmalloc/dmalloc.tar.gz}
+@cvindex AM_WITH_DMALLOC
+
 @item AM_WITH_REGEX
+Adds @samp{--with-regex} to the @code{configure} command line.  If
+specified (the default), then the @samp{regex} regular expression
+library is used, @file{regex.o} is put into @samp{LIBOBJS}, and
+@samp{WITH_REGEX} is defined..  If @samp{--without-regex} is given, then
+the @samp{rx} regular expression library is used, and @file{rx.o} is put
+into @samp{LIBOBJS}.
+@cvindex AM_WITH_REGEX
 @end table
 
 
