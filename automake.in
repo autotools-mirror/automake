@@ -4146,6 +4146,7 @@ sub am_install_var
     local (@args) = @_;
 
     local ($do_clean, $do_ltlibs) = (0, 0);
+    local ($more_xform) = '';
     while (@args)
     {
 	if ($args[0] eq '-clean')
@@ -4155,6 +4156,16 @@ sub am_install_var
 	if ($args[0] eq '-ltlibs')
 	{
 	    $do_ltlibs = 1;
+	    if ($seen_libtool)
+	    {
+		# Note that we explicitly set the mode, to avoid
+		# lossage if the program name isn't what we expect.
+		$more_xform = 's/\@LIBTOOL\@/$(LIBTOOL) --mode=install/;';
+	    }
+	    else
+	    {
+		$more_xform = 's/\@LIBTOOL\@//;';
+	    }
 	}
 	elsif ($args[0] !~ /^-/)
 	{
@@ -4295,7 +4306,8 @@ sub am_install_var
 	    else
 	    {
 		$output_rules .=
-		    &file_contents_with_transform ('s/\@DIR\@/' . $X . '/go',
+		    &file_contents_with_transform ('s/\@DIR\@/' . $X . '/g;'
+						   . $more_xform,
 						   $file);
 	    }
 

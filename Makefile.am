@@ -82,7 +82,9 @@ cvs-dist: maintainer-check distcheck
 
 cvs-diff:
 	thisver=`echo "Release-$(VERSION)" | sed 's/\./-/g'`; \
-	prevno=`echo "$(VERSION)" - 0.01 | bc | sed 's/^\./0./'`; \
+	if test -z "$$OLDVERSION"; then \
+	  prevno=`echo "$(VERSION)" - 0.01 | bc | sed 's/^\./0./'`; \
+	else prevno="$$OLDVERSION"; fi; \
 	prevver=Release-`echo $$prevno | sed 's/\./-/g'`; \
 	cvs -f rdiff -c -r $$prevver -r $$thisver $(PACKAGE) \
 	    > $(PACKAGE)-$$prevno-$(VERSION).diff
