@@ -111,12 +111,12 @@ install-info-am: $(INFO_DEPS)
 	for file in $$list; do \
 ?CYGNUS?	  if test -f $$file; then d=.; else d=$(srcdir); fi; \
 ?!CYGNUS?	  d=$(srcdir); \
-## We use these strange circumlocutions because we want the "ifile" to
-## be relative, for the install.
-	  for ifile in `CDPATH=: && cd $$d && echo $$file $$file-[0-9] $$file-[0-9][0-9]`; do \
-	    if test -f $$d/$$ifile; then \
-	      echo " $(INSTALL_DATA) $$d/$$ifile $(DESTDIR)$(infodir)/$$ifile"; \
-	      $(INSTALL_DATA) $$d/$$ifile $(DESTDIR)$(infodir)/$$ifile; \
+	  for ifile in echo $$d/$$file $$d/$$file-[0-9] $$d/$$file-[0-9][0-9]; do \
+	    if test -f $$ifile; then \
+## Strip leading '$$d/'.
+	      relfile=`expr "$$ifile" : "$$d/\(.*\)"`; \
+	      echo " $(INSTALL_DATA) $$ifile $(DESTDIR)$(infodir)/$$relfile"; \
+	      $(INSTALL_DATA) $$ifile $(DESTDIR)$(infodir)/$$relfile; \
 	    else : ; fi; \
 	  done; \
 	done
@@ -197,9 +197,11 @@ dist-info: $(INFO_DEPS)
 ## other modes, allow only source dir.
 ?!CYGNUS?	  d=$(srcdir); \
 ?CYGNUS?	  if test -f $$base; then d=.; else d=$(srcdir); fi; \
-	  for file in `CDPATH=: && cd $$d && eval echo $$base*`; do \
-	    test -f $(distdir)/$$file \
-	    || cp -p $$d/$$file $(distdir)/$$file; \
+	  for file in $$d/$$base*; do \
+## Strip leading '$$d/'.
+	    relfile=`expr "$$file" : "$$d/\(.*\)"`; \
+	    test -f $(distdir)/$$relfile || \
+	      cp -p $$file $(distdir)/$$relfile; \
 	  done; \
 	done
 endif %?LOCAL-TEXIS%

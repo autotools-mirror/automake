@@ -90,10 +90,10 @@ maintainer-check: automake aclocal
 	  echo "Found bad split in the lines above." 1>&2; \
 	  exit 1; \
 	fi
-## Look for cd within backquotes without CDPATH=:
+## Look for cd within backquotes
 	@if grep -n '^[^#]*` *cd ' $(srcdir)/automake.in \
-	      $(srcdir)/lib/am/*.am $(srcdir)/m4/*.m4; then \
-	  echo "Consider setting CDPATH in the lines above" 1>&2; \
+	      $(srcdir)/lib/am/*.am; then \
+	  echo "Consider using $$$$(am__cd) in the line above." 1>&2; \
 	  exit 1; \
 	fi
 ## Using @_ in a scalar context is most probably a programming error.
