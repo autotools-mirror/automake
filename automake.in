@@ -631,7 +631,7 @@ sub get_object_extension
 		=~ s/(\W)/\\$1/g;
 	    $xform = '-I' . $xform;
 	}
-	$xform = 's/\@CONFIG_INCLUDE_SPEC\@/' . $xform . '/go';
+	$xform = 's/\@CONFIG_INCLUDE_SPEC\@/' . $xform . '/go;';
 	$output_vars .= &file_contents_with_transform ($xform,
 						       'comp-vars');
 	$output_rules .= &file_contents ('compile');
@@ -1086,10 +1086,10 @@ sub handle_lib_objects
 {
     local ($xname, $var, $lex_seen) = @_;
 
-    die "programming error 1 in handle_lib_objects"
+    die "automake: programming error 1 in handle_lib_objects\n"
 	if ! &variable_defined ($var);
 
-    die "programming error 2 in handle_lib_objects"
+    die "automake: programming error 2 in handle_lib_objects\n"
 	if $lex_seen && $var =~ /LIBADD/;
 
     # We recognize certain things that are commonly put in LIBADD or
@@ -1771,7 +1771,7 @@ sub handle_tags
 	    ($xform = &basename ($config_header)) =~ s/(\W)/\\$1/g;
 	}
 	$xform = ('s/\@CONFIG\@/' . $xform . '/;'
-		  . 's/\@DIRS\@/' . join (' ', @tag_deps) . '/');
+		  . 's/\@DIRS\@/' . join (' ', @tag_deps) . '/;');
 
 	$output_rules .= &file_contents_with_transform ($xform, 'tags');
 	$output_rules .= &file_contents ('tags-clean');
@@ -3009,7 +3009,7 @@ sub handle_tests
 	}
 	else
 	{
-	    $xform = 's/^CYGNUS.*$//';
+	    $xform = 's/^CYGNUS.*$//;';
 	}
 	$output_rules .= &file_contents_with_transform ($xform, 'dejagnu');
 
@@ -3876,7 +3876,7 @@ sub read_am_file
     local ($build_rx);
     ($build_rx = $top_builddir) =~ s/(\W)/\\$1/g;
     $output_vars .= &file_contents_with_transform
-                        ('s/\@top_builddir\@/' . $build_rx . '/g',
+                        ('s/\@top_builddir\@/' . $build_rx . '/g;',
 			 'header-vars');
 
     # Generate some useful variables when AC_CANONICAL_* used.  FIXME:
@@ -4131,6 +4131,11 @@ sub file_contents_with_transform
 {
     local ($command, $basename) = @_;
     local ($file) = $am_dir . '/' . $basename . '.am';
+
+    if ($command ne '' && substr ($command, -1) != '~')
+    {
+	die "automake: programming error in file_contents_with_transform\n";
+    }
 
     open (FC_FILE, $file)
 	|| die "automake: installation error: cannot open \`$file'\n";
@@ -4410,7 +4415,7 @@ sub am_install_var
 	    if ($do_clean)
 	    {
 		$output_rules .=
-		    &file_contents_with_transform ('s/\@DIR\@/' . $X . '/go',
+		    &file_contents_with_transform ('s/\@DIR\@/' . $X . '/go;',
 						   $clean_file);
 
 		push (@clean, $X . $primary);
@@ -4434,7 +4439,7 @@ sub am_install_var
 	    if ($do_ltlibs && $X eq 'lib')
 	    {
 		$output_rules .=
-		    &file_contents_with_transform ('s/\@DIR\@/' . $X . '/go',
+		    &file_contents_with_transform ('s/\@DIR\@/' . $X . '/go;',
 						   'ltlibs');
 	    }
 	    else
