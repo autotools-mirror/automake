@@ -860,8 +860,8 @@ sub handle_yacc_lex_cxx
 
 	if (! defined $configure_vars{'CC'})
 	{
-	    &am_error
-		("C source seen but \`CC' not defined in \`configure.in'");
+	    &am_line_error ($seen_c_source,
+			    "C source seen but \`CC' not defined in \`configure.in'");
 	}
     }
 }
@@ -1042,7 +1042,7 @@ sub handle_single_transform_list
 		# required.
 		$de_ansi_objects{$_} = 1;
 		s/\._o$/$obj/;
-		$seen_c_source = 1;
+		$seen_c_source = -1 unless $seen_c_source;
 	    }
 	    else
 	    {
@@ -1222,7 +1222,7 @@ sub handle_lib_objects
 	    {
 		if ($iter =~ /\.[cly]$/)
 		{
-		    $seen_c_source = 1;
+		    $seen_c_source = $var;
 		}
 
 		if ($iter =~ /\.h$/)
@@ -1245,7 +1245,7 @@ sub handle_lib_objects
 		if ! defined $libsources{'alloca.c'};
 	    $dep_files{'.deps/alloca.P'} = 1;
 	    &require_file_with_line ($var, $FOREIGN, 'alloca.c');
-	    $seen_c_source = 1;
+	    $seen_c_source = $var;
 	}
 	elsif ($lsearch eq '@LEXLIB@')
 	{
@@ -1497,7 +1497,7 @@ sub handle_libraries
 # EXTRA_ variables don't contain configure substitutions.
 sub check_typos
 {
-    local ($varname, $primary, $ckey);
+    local ($varname, $primary);
     foreach $varname (keys %contents)
     {
 	foreach $primary ('_SOURCES', '_LIBADD', '_LDADD', '_LDFLAGS', '_DEPENDENCIES')
@@ -1506,18 +1506,6 @@ sub check_typos
 	    {
 		&am_line_error ($varname,
 				"invalid unused variable name: \`$varname'");
-	    }
-	}
-
-	if ($varname =~ /^EXTRA_/)
-	{
-	    foreach $ckey (&variable_value_as_list ($varname))
-	    {
-		if ($ckey =~ /^\@.*\@$/)
-		{
-		    &am_line_error ($varname, "variable \`$varname' must not contain configure substitution");
-		    last;
-		}
 	    }
 	}
     }
@@ -4030,7 +4018,7 @@ sub read_am_file
 	    # Found a macro definition.
 	    $was_rule = 0;
 	    $last_var_name = $1;
-	    if (substr ($2, -1) eq "\\")
+	    if ($2 ne '' && substr ($2, -1) eq "\\")
 	    {
 		$contents{$1} = substr ($2, 0, length ($2) - 1);
 	    }
@@ -4317,7 +4305,11 @@ sub initialize_per_input
     # C++ source extensions we've seen.
     %cxx_extensions = ();
 
-    # TRUE if we've seen any non-C++ sources.
+    # TRUE if we've seen any non-C++ sources.  This actually holds a
+    # line number or the name of a symbol corresponding to a line
+    # number where the C sources were seen.  If it is -1 then it means
+    # we couldn't (easily) figure out which line of the Makefile.am
+    # mentioned the sources.
     $seen_c_source = 0;
 
     # This is a list of all targets to run during "make dist".
@@ -4989,7 +4981,7 @@ sub am_line_error
 {
     local ($symbol, @args) = @_;
 
-    if ($symbol)
+    if ($symbol && "$symbol" ne '-1')
     {
 	# If SYMBOL not already a line number, look it up in Makefile.am.
 	if ($symbol =~ /^\d+$/)

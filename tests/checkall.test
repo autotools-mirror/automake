@@ -4,34 +4,12 @@
 
 . $srcdir/defs || exit 1
 
-# Build source after derived, so derived must be remade.  We build
-# this way up here because without a delay between this and creating
-# 'source', the make will fail.  No, really.
-echo foo > derived
-
-# In fact, sometimes it still fails.  So we delay a little to make
-# sure the timestamps are ok.
-sleep 1
-
 cat > Makefile.am << 'END'
 bin_SCRIPTS = derived
 check-local:
 	true
-derived: source
-	cat source > derived
 END
 
 $AUTOMAKE || exit 1
 
-: > source
-
-# This hack fakes out the Makefile dependencies.
-: > configure
-: > config.status
-: > Makefile
-
-# Bogus.
-make -f Makefile.in check
-
-echo "GOT `cat derived`"
-test -z "`cat derived`"
+grep '^check:.* all' Makefile.in
