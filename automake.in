@@ -103,6 +103,9 @@ $seen_prog_install = 0;
 # 1 if any scripts installed, 0 otherwise.
 $scripts_installed = 0;
 
+# Whether AC_PATH_XTRA has been seen in configure.in
+$seen_path_xtra = 0;
+
 
 
 &initialize_global_constants;
@@ -119,6 +122,7 @@ die "automake: no \`Makefile.am' found or specified\n"
 # Now do all the work on each file.
 foreach $am_file (@input_files)
 {
+    # FIXME should support the AC_OUTPUT ":" syntax here.
     if (! -f ($am_file . '.am'))
     {
 	&am_error ('no such file');
@@ -341,11 +345,21 @@ sub get_object_extension
 {
     if (! $dir_holds_sources)
     {
-
 	# Boilerplate.
 	$output_vars .= &file_contents ('compile-vars');
 	$output_rules .= &file_contents ('compile');
 	&push_phony_cleaners ('compile');
+
+	# If using X, include some extra variable definitions.  NOTE
+	# we don't want to force these into CFLAGS or anything,
+	# because not all programs will necessarily use X.
+	if ($seen_path_xtra)
+	{
+	    $output_vars .= ("X_CFLAGS = \@X_CFLAGS\@\n"
+			     . "X_LIBS = \@X_LIBS\@\n"
+			     . "X_EXTRA_LIBS = \@X_EXTRA_LIBS\@\n"
+			     . "X_PRE_LIBS = \@X_PRE_LIBS\@\n");
+	}
 
 	# Check for automatic de-ANSI-fication.
 	$dir_holds_sources = '.o';
@@ -1144,7 +1158,7 @@ sub handle_configure
 
     # Now look for other files in this directory which must be remade
     # by config.status, and generate rules for them.
-    local ($file, $local);
+    local ($file, $local, $input);
     foreach $file (@other_input_files)
     {
 	# Skip files not in this directory, any Makefile, and the
@@ -1154,9 +1168,21 @@ sub handle_configure
 	($local = $file) =~ s/^.*\///;
 	next if $local eq 'Makefile';
 
-	# FIXME support ":" syntax of AC_OUTPUT here.
+	if ($local =~ /^(.*):(.*)$/)
+	{
+	    # This is the ":" syntax of AC_OUTPUT.
+	    $input = $2;
+	    $local = $1;
+	}
+	else
+	{
+	    # Normal usage.
+	    $input = $local . '.in';
+	}
+	# FIXME when using autoconf ":" syntax, should we set CONFIG_FILES
+	# to $local:$input?
 	$output_rules .= ($local . ': '
-			  . '$(top_builddir)/config.status ' . $local . ".in\n"
+			  . '$(top_builddir)/config.status ' . $input . "\n"
 			  . "\t"
 			  . 'cd $(top_srcdir) && CONFIG_FILES='
 			  . ($relative_dir eq '.' ? '' : '$(subdir)/')
@@ -1533,6 +1559,7 @@ sub scan_configure
 	}
 
 	$seen_canonical = 1 if /AC_CANONICAL_(HOST|SYSTEM)/;
+	$seen_path_xtra = 1 if /AC_PATH_XTRA/;
 
 	# Some things required by Automake.  FIXME we only really
 	# require fp_PROG_INSTALL if some scripts are installed.  And
