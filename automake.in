@@ -753,10 +753,7 @@ sub get_object_extension
 
 	# Note that order of transforms is important here.  We collude
 	# with compile.am to get the right result.
-	$xform = (($seen_objext ? 's/^OBJEXT//;' : 's/^OBJEXT.*$//;')
-		  . 's/\@MINUSO\@/'
-		  . (defined $options{'subdir-objects'} ? '-o \$\@' : '')
-		  . '/;');
+	$xform = ($seen_objext ? 's/^OBJEXT//;' : 's/^OBJEXT.*$//;');
 	$output_rules .= &file_contents_with_transform ($xform, 'compile');
 
 	&push_phony_cleaners ('compile');
@@ -1149,7 +1146,7 @@ sub handle_single_transform_list
 
 	    # Transform .o or $o file into .P file (for automatic
 	    # dependency code).
-	    local ($depfile) = $xbase;
+	    local ($depfile) = $object;
 	    $depfile =~ s/\.([^.]*)$/.P\1/;
 	    $dep_files{'$(DEPDIR)/' . $depfile} = 1;
 	}
@@ -2653,33 +2650,39 @@ sub handle_dependencies
 	    $output_rules .= &file_contents ('depend');
 	    push (@clean, 'depend');
 	    &push_phony_cleaners ('depend');
-
-	    local ($key, $lang, $ext, $xform);
-	    foreach $key (sort keys %language_map)
-	    {
-		next unless $key =~ /^(.*)-autodep$/;
-		next if $language_map{$key} eq 'no';
-		$lang = $1;
-
-		local ($pfx, $fpfx) = ($language_map{$key}, 'CC');
-		$fpfx = $pfx if ($pfx ne '');
-
-		$xform = ('s/\@PFX\@/' . $pfx . '/g;'
-			  . 's/\@FPFX\@/' . $fpfx . '/g;');
-		foreach $ext (&lang_extensions ($lang))
-		{
-		    $output_rules .=
-			&file_contents_with_transform ('s/\@EXT\@/'
-						       . $ext . '/g;'
-						       . $xform,
-						       'depend2');
-		}
-	    }
 	}
     }
     else
     {
 	&define_variable ('depcomp', '');
+    }
+
+    local ($key, $lang, $ext, $xform);
+    foreach $key (sort keys %language_map)
+    {
+	next unless $key =~ /^(.*)-autodep$/;
+	next if $language_map{$key} eq 'no';
+	$lang = $1;
+
+	local ($pfx, $fpfx) = ($language_map{$key}, 'CC');
+	$fpfx = $pfx if ($pfx ne '');
+
+	$xform = ('s/\@PFX\@/' . $pfx . '/g;'
+		  . 's/\@FPFX\@/' . $fpfx . '/g;');
+	foreach $ext (&lang_extensions ($lang))
+	{
+	    $output_rules .=
+		&file_contents_with_transform
+		  (($seen_objext ? 's/^OBJEXT//;' : 's/^OBJEXT.*$//;')
+		   . ($seen_libtool ? 's/^LIBTOOL//;' : 's/^LIBTOOL.*$//;')
+		   . 's/\@MINUSO\@/'
+		   . (defined $options{'subdir-objects'} ? ' -o \$\@' : '')
+		   . '/;'
+		   . 's/\@EXT\@/'
+		   . $ext . '/g;'
+		   . $xform,
+		   'depend2');
+	}
     }
 }
 
@@ -4646,21 +4649,6 @@ sub lang_cxx_finish
 	&define_variable ('CXXLD', '$(CXX)');
 	&define_variable ('CXXLINK', $ltlink . '$(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
 
-	local ($ext);
-	foreach $ext (@cxx_list)
-	{
-	    # Every known C++ compiler supports both -c and -o.
-	    $output_rules .= ("$ext.o:\n"
-			      . "\t\$(CXXCOMPILE) -c -o \$\@ \$<\n");
-	    # FIXME: Using cygpath should be somehow conditional.
-	    $output_rules .= ("$ext.obj:\n"
-			      . "\t\$(CXXCOMPILE) -c -o \$\@ `cygpath -w \$<`\n")
-		if ($seen_objext);
-	    $output_rules .= ("$ext.lo:\n"
-			      . "\t\$(LTCXXCOMPILE) -c -o \$\@ \$<\n")
-		if ($seen_libtool);
-	}
-
 	if (! defined $configure_vars{'CXX'})
 	{
 	    &am_error ("C++ source seen but \`CXX' not defined in \`configure.in'");
@@ -4975,17 +4963,6 @@ sub lang_objc_finish
     &define_variable ('OBJCLD', '$(OBJC)');
     &define_variable ('OBJCLINK', $ltlink . '$(OBJCLD) $(AM_OBJCFLAGS) $(OBJCFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
 
-    # All known ObjC compilers support -c and -o together.
-    $output_rules .= (".m.o:\n"
-                      . "\t\$(OBJCCOMPILE) -c -o \$\@ \$<\n");
-    # FIXME: Using cygpath should be somehow conditional.
-    $output_rules .= (".m.obj:\n"
-                      . "\t\$(OBJCCOMPILE) -c -o \$\@ `cygpath -w \$<`\n")
-        if ($seen_objext);
-    $output_rules .= (".m.lo:\n"
-                      . "\t\$(LTOBJCCOMPILE) -c -o \$\@ \$<\n")
-        if ($seen_libtool);
-
     if (! defined $configure_vars{'OBJC'})
     {
 	&am_error ("Objective C source seen but \`OBJC' not defined in \`configure.in'");
@@ -5004,17 +4981,6 @@ sub lang_java_finish
 
     &define_variable ('GCJLD', '$(GCJ)');
     &define_variable ('GCJLINK', $ltlink . '$(GCJLD) $(AM_GCJFLAGS) $(GCJFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
-
-    # All known Java compilers support -c and -o together.
-    $output_rules .= (".java.o:\n"
-                      . "\t\$(GCJCOMPILE) -c -o \$\@ \$<\n");
-    # FIXME: Using cygpath should be somehow conditional.
-    $output_rules .= (".java.obj:\n"
-                      . "\t\$(GCJCOMPILE) -c -o \$\@ `cygpath -w \$<`\n")
-        if ($seen_objext);
-    $output_rules .= (".java.lo:\n"
-                      . "\t\$(LTGCJCOMPILE) -c -o \$\@ \$<\n")
-        if ($seen_libtool);
 
     if (! defined $configure_vars{'GCJ'})
     {
