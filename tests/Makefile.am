@@ -158,6 +158,7 @@ info.test \
 insh.test \
 insh2.test \
 install2.test \
+installdir.test \
 installsh.test \
 instdata.test \
 instdata2.test \
