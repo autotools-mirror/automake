@@ -152,7 +152,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive pdf-recursive \
 DIST_COMMON = README AUTHORS COPYING ChangeLog INSTALL Makefile.am \
 	Makefile.in NEWS THANKS TODO aclocal.m4 configure configure.in \
 	stamp-vti version.texi
-DIST_SUBDIRS = $(SUBDIRS)
+DIST_SUBDIRS = . m4 lib tests
 all: all-recursive
 
 .SUFFIXES:
@@ -168,7 +168,7 @@ Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
 
 $(top_builddir)/config.status: $(srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck
-$(srcdir)/configure:  $(srcdir)/configure.in $(ACLOCAL_M4) $(CONFIGURE_DEPENDENCIES)
+$(srcdir)/configure:  $(srcdir)/configure.in $(ACLOCAL_M4) $(CONFIGURE_DEPENDENCIES) 
 	cd $(srcdir) && $(AUTOCONF)
 
 $(ACLOCAL_M4):  configure.in 
@@ -197,7 +197,7 @@ uninstall-binSCRIPTS:
 .texi.info:
 	@rm -f $@ $@-[0-9] $@-[0-9][0-9]
 	$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) -I $(srcdir) \
-	`test -f '$<' || echo '$(srcdir)/'`$< -o $@
+	 -o $@ `test -f '$<' || echo '$(srcdir)/'`$<
 
 .texi.dvi:
 	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
@@ -212,7 +212,7 @@ automake.info: automake.texi version.texi
 automake.dvi: automake.texi version.texi
 automake.pdf: automake.texi version.texi
 version.texi:  stamp-vti
-stamp-vti: automake.texi $(top_srcdir)/configure.in
+stamp-vti: automake.texi $(top_srcdir)/configure
 	@(dir=.; test -f ./automake.texi || dir=$(srcdir); \
 	set `$(SHELL) $(top_srcdir)/lib/mdate-sh $$dir/automake.texi`; \
 	echo "@set UPDATED $$1 $$2 $$3"; \
@@ -235,7 +235,7 @@ TEXI2DVI = texi2dvi
 TEXI2PDF = $(TEXI2DVI) --pdf --batch
 DVIPS = dvips
 .dvi.ps:
-	$(DVIPS) $< -o $@
+	$(DVIPS) -o $@ $<
 
 uninstall-info-am:
 	$(PRE_UNINSTALL)
@@ -443,7 +443,7 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	list='$(SUBDIRS)'; for subdir in $$list; do \
+	list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
 	  if test "$$subdir" = .; then :; else \
 	    test -d $(distdir)/$$subdir \
 	    || mkdir $(distdir)/$$subdir \
