@@ -175,6 +175,9 @@ my $AC_SUBST_PATTERN = 'AC_SUBST\(\[?(\w+)';
 my $AM_CONDITIONAL_PATTERN = 'AM_CONDITIONAL\(\[?(\w+)';
 # Match `-d' as a command-line argument in a string.
 my $DASH_D_PATTERN = "(^|\\s)-d(\\s|\$)";
+# Directories installed during 'install-exec' phase.
+my $EXEC_DIR_PATTERN =
+    '^(?:bin|sbin|libexec|sysconf|localstate|lib|pkglib|.*exec.*)$'; #'
 
 # Constants to define the "strictness" level.
 use constant FOREIGN => 0;
@@ -232,25 +235,6 @@ my $gen_copyright = "\
 my $LANG_IGNORE = 0;
 my $LANG_PROCESS = 1;
 my $LANG_SUBDIR = 2;
-
-# Directories installed during 'install-exec' phase.
-my %exec_dir_p =
-  (
-   'bin'	=> 1,
-   'sbin'	=> 1,
-   'libexec'	=> 1,
-   'data'	=> 0,
-   'sysconf'	=> 1,
-   'localstate'	=> 1,
-   'lib'	=> 1,
-   'info'	=> 0,
-   'man'	=> 0,
-   'include'	=> 0,
-   'oldinclude'	=> 0,
-   'pkgdata'	=> 0,
-   'pkglib'	=> 1,
-   'pkginclude'	=> 0
-  );
 
 # Map from obsolete macros to hints for new macros.
 # If you change this, change the corresponding list in aclocal.in.
@@ -7493,9 +7477,7 @@ sub am_install_var
 	my $install_p = $nodir_name ne 'noinst' && $nodir_name ne 'check';
 
 	# If so, with install-exec? (or install-data?).
-	my $exec_p = (defined $exec_dir_p {$nodir_name}
-		      ? $exec_dir_p {$nodir_name}
-		      : ($nodir_name =~ /exec/));
+	my $exec_p = ($nodir_name =~ /$EXEC_DIR_PATTERN/o);
 
 	# Singular form of $PRIMARY.
 	(my $one_primary = $primary) =~ s/S$//;
