@@ -257,6 +257,7 @@ scripts.test \
 seenc.test \
 sinclude.test \
 sourcesub.test \
+sourcesub2.test \
 space.test \
 specflags.test \
 specflags2.test	\

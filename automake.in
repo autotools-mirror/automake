@@ -646,12 +646,25 @@ my @var_list;
 # FIXME: This is a hack. a better switch should be found.
 my $get_object_extension_was_run;
 
+# Contains a stack of `from' parts of variable substitutions currently in
+# force.
+my @substfroms;
+
+# Contains a stack of `to' parts of variable substitutions currently in
+# force.
+my @substtos;
+
+# Associates a variable name, together with a list of substitutions to be
+# performed on it, with a number.  Used to provide unique names for generated
+# variables.
+my %substnums = ();
 
 ## --------------------------------- ##
 ## Forward subroutine declarations.  ##
 ## --------------------------------- ##
 sub register_language (%);
 sub file_contents_internal ($$%);
+sub define_objects_from_sources ($$$$$$$);
 
 
 # &initialize_per_input ()
@@ -1403,7 +1416,7 @@ sub handle_options
 {
     if (&variable_defined ('AUTOMAKE_OPTIONS'))
     {
-	foreach (&variable_value_as_list ('AUTOMAKE_OPTIONS', ''))
+	foreach (&variable_value_as_list_recursive ('AUTOMAKE_OPTIONS', ''))
 	{
 	    $options{$_} = 1;
 	    if ($_ eq 'gnits' || $_ eq 'gnu' || $_ eq 'foreign')
@@ -1710,9 +1723,9 @@ sub check_libobjs_sources
         my @files;
 	if (&variable_defined ($prefix . $one_file . '_SOURCES'))
 	{
-	    @files = &variable_value_as_list (($prefix
-					       . $one_file . '_SOURCES'),
-					      'all');
+	    @files = &variable_value_as_list_recursive (
+				($prefix . $one_file . '_SOURCES'),
+				'all');
 	}
 	elsif ($prefix eq '')
 	{
@@ -1736,18 +1749,20 @@ sub check_libobjs_sources
 
 
 # @OBJECTS
-# handle_single_transform_list ($VAR, $DERIVED, $OBJ, @FILES)
-# -----------------------------------------------------------
+# handle_single_transform_list ($VAR, $TOPPARENT, $DERIVED, $OBJ, @FILES)
+# -----------------------------------------------------------------------
 # Does much of the actual work for handle_source_transform.
 # Arguments are:
+#   $VAR is the name of the variable that the source filenames come from
+#   $TOPPARENT is the name of the _SOURCES variable which is being processed
 #   $DERIVED is the name of resulting executable or library
 #   $OBJ is the object extension (e.g., `$U.lo')
 #   @FILES is the list of source files to transform
 # Result is a list of the names of objects
 # %linkers_used will be updated with any linkers needed
-sub handle_single_transform_list ($$$@)
+sub handle_single_transform_list ($$$$@)
 {
-    my ($var, $derived, $obj, @files) = @_;
+    my ($var, $topparent, $derived, $obj, @files) = @_;
     my @result = ();
     my $nonansi_obj = $obj;
     $nonansi_obj =~ s/\$U//g;
@@ -1761,7 +1776,7 @@ sub handle_single_transform_list ($$$@)
         # Configure substitutions in _SOURCES variables are errors.
         if (/^\@.*\@$/)
         {
-            &am_line_error ($var, "$var includes configure substitution `$_'");
+            &am_line_error ($var, "`$var' includes configure substitution `$_', and is referred to from `$topparent': configure substitutions not allowed in _SOURCES variables");
             next;
         }
 
@@ -2017,6 +2032,144 @@ sub handle_single_transform_list ($$$@)
     return @result;
 }
 
+# $BOOL
+# define_objects_from_sources ($VAR, $OBJVAR, $NODEFINE, $ONE_FILE,
+#                              $OBJ, $PARENT, $TOPPARENT)
+# ---------------------------------------------------------------------
+# Define an _OBJECTS variable for a _SOURCES variable (or subvariable)
+# 
+# Arguments are:
+#   $VAR is the name of the _SOURCES variable
+#   $OBJVAR is the name of the _OBJECTS
+#   $NODEFINE is a boolean: if true, $OBJVAR will not be defined (but
+#   work done to determine the linker will be).
+#   $ONE_FILE is the canonical (transformed) name of object to build
+#   $OBJ is the object extension (ie either `.o' or `$o'.
+#   $PARENT is the variable in which $VAR is used, or $VAR if not applicable.
+#   $TOPPARENT is the _SOURCES variable being processed.
+#
+# Result is a boolean, true if a linker is needed to deal with the objects.
+#
+# %linkers_used, %vars_scanned, @substfroms and @substtos should be cleared
+# before use:
+#   %linkers_used variable will be set to contain the linkers desired.
+#   %vars_scanned will be used to check for recursive definitions.
+#   @substfroms and @substtos will be used to keep a stack of variable
+#   substitutions to be applied.
+#
+sub define_objects_from_sources ($$$$$$$)
+{
+    my ($var, $objvar, $nodefine, $one_file, $obj, $parent, $topparent) = @_;
+
+    if (defined $vars_scanned{$var})
+    {
+	&am_line_error ($var, "variable `$var' recursively defined");
+	return "";
+    }
+    $vars_scanned{$var} = 1;
+
+    my $needlinker = "";
+    foreach my $cond (&variable_conditions ($var))
+    {
+	my @result;
+	foreach my $val (&variable_value_as_list ($var, $cond, $parent))
+	{
+	    if ($val =~ /^\$\{([^}]*)\}$/ || $val =~ /^\$\(([^)]*)\)$/)
+	    {
+		# Handle a sub variable
+		my $subvar = $1;
+
+		# If the user uses a losing variable name, just ignore it.
+		# This isn't ideal, but people have requested it.
+		next if ($subvar =~ /\@.*\@/);
+
+		# See if the variable is actually a substitution reference
+		my ($from, $to);
+		my @temp_list;
+		if ($subvar =~ /$SUBST_REF_PATTERN/o)
+		{   
+		    $subvar = $1;
+		    $to = $3;
+		    ($from = $2) =~ s/(\W)/\\$1/g;
+		}
+		push @substfroms, $from;
+		push @substtos, $to;
+
+		my $subobjvar = &subobjname($subvar);
+		push (@result, '$('. $subobjvar . ')');
+
+		my $temp = define_objects_from_sources ($subvar, $subobjvar,
+						        $nodefine, $one_file,
+						        $obj, $var, $topparent);
+		$needlinker ||= $temp;
+
+		pop @substfroms;
+		pop @substtos;
+	    }
+	    else
+	    {
+	        my $substnum=$#substfroms;
+	        while ($substnum >= 0)
+		{
+		    $val =~ s/$substfroms[$substnum]$/$substtos[$substnum]/
+			if defined $substfroms[$substnum];
+		    $substnum -= 1;
+		}
+
+		my (@transformed) = 
+		      &handle_single_transform_list ($var, $topparent, $one_file, $obj, $val);
+		push (@result, @transformed);
+		$needlinker = "true" if @transformed;
+	    }
+	}
+
+	# Define _OBJECTS conditionally.
+	&define_pretty_variable ($objvar, $cond, (@result))
+		unless $nodefine;
+    }
+
+    delete $vars_scanned{$var};
+    return $needlinker;
+}
+
+# $OBJNAME
+# subobjname ($VARNAME)
+# ---------------------------------------------------------------------
+# Return a name for an object variable.
+#
+# Arguments are:
+#   $VARNAME is the name of the variable the object variable is being
+#   generated from.
+#
+# This function also looks at @substfroms and @substtos to determine any
+# substitutions to be performed on the object variable.
+#
+# The name returned is unique for the combination of $varname and
+# substitutions to be performed.
+sub subobjname($)
+{
+    my ($varname) = @_;
+    my $key = $varname;
+    my $substnum=$#substfroms;
+    while ($substnum >= 0)
+    {
+	if (defined $substfroms[$substnum] &&
+	    ($substfroms[$substnum] || $substtos[$substnum]))
+	{
+	    $key .= ":" . $substfroms[$substnum] . "=" . $substtos[$substnum];
+	}
+	$substnum -= 1;
+    }
+
+    my $num = $substnums{$key};
+    if (! $num)
+    {
+	$num = keys(%substnums) + 1;
+	$substnums{$key} = $num;
+    }
+
+    return "am__objects_$num";
+}
 
 
 # Handle SOURCE->OBJECT transform for one program or library.
@@ -2064,20 +2217,15 @@ sub handle_source_transform
 	push (@sources, '$(' . $prefix . $one_file . "_SOURCES)");
 	push (@dist_sources, '$(' . $prefix . $one_file . "_SOURCES)")
 	  unless $prefix =~ /^nodist_/;
-	foreach my $cond (variable_conditions ($var))
-	  {
-	    my @files = &variable_value_as_list ($var, $cond);
-	    my (@result) =
-	      &handle_single_transform_list ($var, $one_file, $obj,
-					     @files);
-	    # If there are no files to compile, don't require a linker (yet).
-	    $needlinker ||= "true" if @result;
 
-	    # Define _OBJECTS conditionally.
-	    &define_pretty_variable ($xpfx . $one_file . '_OBJECTS',
-				     $cond, @result)
-	      unless $prefix =~ /EXTRA_/;
-	  }
+	@substfroms = ();
+	@substtos = ();
+	%vars_scanned = ();
+	my $temp = define_objects_from_sources ($var,
+					        $xpfx . $one_file . '_OBJECTS',
+					        $prefix =~ /EXTRA_/,
+					        $one_file, $obj, $var, $var);
+	$needlinker ||= $temp;
     }
     if ($needlinker)
     {
@@ -2094,6 +2242,7 @@ sub handle_source_transform
 	%linkers_used = ();
 	my (@result) =
 	  &handle_single_transform_list ($one_file . '_SOURCES',
+					 $one_file . '_SOURCES',
 					 $one_file, $obj,
 					 "$unxformed.c");
 	$linker ||= &resolve_linker (%linkers_used);
@@ -2131,7 +2280,7 @@ sub handle_lib_objects
 	if ! &variable_defined ($var);
 
     my $ret = 0;
-    foreach my $cond (&variable_conditions ($var))
+    foreach my $cond (&variable_conditions_recursive ($var))
       {
 	if (&handle_lib_objects_cond ($xname, $var, $cond))
 	  {
@@ -2153,7 +2302,7 @@ sub handle_lib_objects_cond
     my $seen_libobjs = 0;
     my $flagvar = 0;
 
-    foreach my $lsearch (&variable_value_as_list ($var, $cond))
+    foreach my $lsearch (&variable_value_as_list_recursive ($var, $cond))
     {
 	# Skip -lfoo and -Ldir; these are explicitly allowed.
 	next if $lsearch =~ /^-[lL]/;
@@ -2219,8 +2368,8 @@ sub handle_lib_objects_cond
 		    # Only require the file if it is not a built source.
 		    if (! &variable_defined ('BUILT_SOURCES')
 			|| ! grep (/$rewrite/,
-				   &variable_value_as_list ('BUILT_SOURCES',
-							    'all')))
+				   &variable_value_as_list_recursive (
+				   	'BUILT_SOURCES', 'all')))
 		    {
 			&require_file_with_line ($var, $FOREIGN, $iter);
 		    }
@@ -2622,7 +2771,7 @@ sub handle_ltlibraries
 	    }
 
 	    # Get the installation directory of each library.
-	    for (&variable_value_as_list ($key . '_LTLIBRARIES', 'all'))
+	    for (&variable_value_as_list_recursive ($key . '_LTLIBRARIES', 'all'))
 	    {
 		if ($instdirs{$_})
 		{
@@ -2655,11 +2804,11 @@ sub handle_ltlibraries
 	# Check that the library fits the standard naming convention.
     	my $libname_rx = "^lib.*\.la";
 	if ((&variable_defined ($xlib . '_LDFLAGS')
-	     && grep (/-module/, &variable_value_as_list ($xlib . '_LDFLAGS',
-							  'all')))
+	     && grep (/-module/, &variable_value_as_list_recursive (
+	     				$xlib . '_LDFLAGS', 'all')))
 	    || (&variable_defined ('LDFLAGS')
-		&& grep (/-module/, &variable_value_as_list ('LDFLAGS',
-							     'all'))))
+		&& grep (/-module/, &variable_value_as_list_recursive (
+					'LDFLAGS', 'all'))))
 	{
 		# Relax name checking for libtool modules.
 	    	$libname_rx = "\.la";
@@ -2918,7 +3067,7 @@ sub handle_texinfo_helper
 	return (0, '');
     }
 
-    my @texis = &variable_value_as_list ('info_TEXINFOS', 'all');
+    my @texis = &variable_value_as_list_recursive ('info_TEXINFOS', 'all');
 
     my (@info_deps_list, @dvis_list, @texi_deps);
     my %versions;
@@ -3127,7 +3276,7 @@ sub handle_man_pages
 	if (&variable_defined ($pfx . 'man_MANS'))
 	{
 	    $vlist{'$(' . $pfx . 'man_MANS)'} = 1;
-	    foreach (&variable_value_as_list ($pfx . 'man_MANS', 'all'))
+	    foreach (&variable_value_as_list_recursive ($pfx . 'man_MANS', 'all'))
 	    {
 		# A page like `foo.1c' goes into man1dir.
 		if (/\.([0-9a-z])([a-z]*)$/)
@@ -3306,7 +3455,7 @@ sub handle_dist
 
 
 
-    # Files to distributed.  Don't use &variable_value_as_list
+    # Files to distributed.  Don't use &variable_value_as_list_recursive
     # as it recursively expands `$(dist_pkgdata_DATA)' etc.
     check_variable_defined_unconditionally ('DIST_COMMON');
     my @dist_common = split (' ', variable_value ('DIST_COMMON', 'TRUE'));
@@ -3328,7 +3477,7 @@ sub handle_dist
 	# appropriate condition.  This is meaningful if the nature of
 	# the distribution should depend upon the configure options
 	# used.
-	foreach (&variable_value_as_list ('EXTRA_DIST', ''))
+	foreach (&variable_value_as_list_recursive ('EXTRA_DIST', ''))
 	{
 	    next if /^\@.*\@$/;
 	    next unless s,/+[^/]+$,,;
@@ -3339,7 +3488,7 @@ sub handle_dist
 
     # We have to check DIST_COMMON for extra directories in case the
     # user put a source used in AC_OUTPUT into a subdir.
-    foreach (&variable_value_as_list ('DIST_COMMON', 'all'))
+    foreach (&variable_value_as_list_recursive ('DIST_COMMON', 'all'))
     {
 	next if /^\@.*\@$/;
 	next unless s,/+[^/]+$,,;
@@ -3375,7 +3524,7 @@ sub handle_dist
 	    {
 		&define_pretty_variable
 		  ('DIST_SUBDIRS', '',
-		   uniq (&variable_value_as_list ('SUBDIRS', 'all')));
+		   uniq (&variable_value_as_list_recursive ('SUBDIRS', 'all')));
 	    }
 	}
 	else
@@ -3411,7 +3560,7 @@ sub handle_subdirs
       unless &variable_defined ('SUBDIRS');
 
     # Make sure each directory mentioned in SUBDIRS actually exists.
-    foreach my $dir (&variable_value_as_list ('SUBDIRS', 'all'))
+    foreach my $dir (&variable_value_as_list_recursive ('SUBDIRS', 'all'))
     {
 	# Skip directories substituted by configure.
 	next if $dir =~ /^\@.*\@$/;
@@ -3481,7 +3630,7 @@ sub scan_aclocal_m4
 	# Scan all -I directories for m4 files.  These are our
 	# dependencies.
 	my $examine_next = 0;
-	foreach my $amdir (&variable_value_as_list ('ACLOCAL_AMFLAGS', ''))
+	foreach my $amdir (&variable_value_as_list_recursive ('ACLOCAL_AMFLAGS', ''))
 	{
 	    if ($examine_next)
 	    {
@@ -3848,7 +3997,7 @@ sub handle_gettext
 	return;
     }
 
-    my @subdirs = &variable_value_as_list ('SUBDIRS', 'all');
+    my @subdirs = &variable_value_as_list_recursive ('SUBDIRS', 'all');
     &am_line_error ('SUBDIRS',
 		    "AM_GNU_GETTEXT used but `po' not in SUBDIRS")
 	if ! grep ('po', @subdirs);
@@ -3886,7 +4035,7 @@ sub handle_footer
 	# actual suffixes, and not $(SUFFIXES).  Some versions of make
 	# do not like variable substitutions on the .SUFFIXES line.
 	my @user_suffixes = (&variable_defined ('SUFFIXES')
-			     ? &variable_value_as_list ('SUFFIXES', '')
+			     ? &variable_value_as_list_recursive ('SUFFIXES', '')
 			     : ());
 
 	my %suffixes = map { $_ => 1 } @suffixes;
@@ -5814,7 +5963,7 @@ sub examine_variable
 # then this returns both COND_TRUE and COND_FALSE.  This is
 # because we will need to define the variable under both conditions.
 
-sub variable_conditions ($)
+sub variable_conditions_recursive ($)
 {
     my ($var) = @_;
     my %uniqify;
@@ -5822,7 +5971,7 @@ sub variable_conditions ($)
 
     %vars_scanned = ();
 
-    my @new_conds = &variable_conditions_sub ($var, '');
+    my @new_conds = &variable_conditions_recursive_sub ($var, '');
     # Now we want to return all permutations of the subvariable
     # conditions.
     my %allconds = ();
@@ -5850,6 +5999,20 @@ sub variable_conditions ($)
     return @uniq_list;
 }
 
+# @CONDS
+# variable_conditions ($VAR)
+# ---------------------------------------
+# Get the list of conditions that a variable is defined with, without
+# recursing through the conditions of any subvariables.
+# Argument is $VAR: the variable to get the conditions of.
+# Returns the list of conditions.
+sub variable_conditions ($)
+{
+    my ($var) = @_;
+    my @conds = keys %{$var_value{$var}};
+    return @conds;
+}
+
 
 # $BOOLEAN
 # &variable_conditionally_defined ($VAR)
@@ -5857,7 +6020,7 @@ sub variable_conditions ($)
 sub variable_conditionally_defined ($)
 {
     my ($var) = @_;
-    foreach my $cond (variable_conditions ($var))
+    foreach my $cond (variable_conditions_recursive ($var))
       {
 	return 1
 	  unless $cond =~ /^TRUE|FALSE$/;
@@ -5867,11 +6030,11 @@ sub variable_conditionally_defined ($)
 
 
 
-# &variable_conditions_sub ($VAR, $PARENT)
+# &variable_conditions_recursive_sub ($VAR, $PARENT)
 # -------------------------------------------------------
-# A subroutine of variable_conditions.  This returns all the
+# A subroutine of variable_conditions_recursive.  This returns all the
 # conditions of $VAR, including those of any sub-variables.
-sub variable_conditions_sub
+sub variable_conditions_recursive_sub
 {
     my ($var, $parent) = @_;
     my @new_conds = ();
@@ -5910,7 +6073,7 @@ sub variable_conditions_sub
 		# Here we compute all the conditions under which the
 		# subvariable is defined.  Then we go through and add
 		# $VCOND to each.
-		my @svc = &variable_conditions_sub ($varname, $var);
+		my @svc = &variable_conditions_recursive_sub ($varname, $var);
 		foreach my $item (@svc)
 		{
 		    my $val = conditional_string ($vcond, split (' ', $item));
@@ -6132,7 +6295,7 @@ sub value_to_list
 	    }
 
 	    # Find the value.
-	    @temp_list = &variable_value_as_list_worker ($1, $cond, $var);
+	    @temp_list = &variable_value_as_list_recursive_worker ($1, $cond, $var);
 
 	    # Now rewrite the value if appropriate.
 	    if (defined $from)
@@ -6151,6 +6314,69 @@ sub value_to_list
     return @result;
 }
 
+# @VALUES
+# variable_value_as_list ($VAR, $COND, $PARENT)
+# ---------------------------------------------
+# Get the value of a variable given a specified condition. without
+# recursing through any subvariables.
+# Arguments are:
+#   $VAR    is the variable
+#   $COND   is the condition.  If this is not given, the value for the
+#           "TRUE" condition will be returned.
+#   $PARENT is the variable in which the variable is used: this is used
+#           only for error messages.
+# Returns the list of conditions.
+# For example, if A is defined as "foo $(B) bar", and B is defined as
+# "baz", this will return ("foo", "$(B)", "bar")
+sub variable_value_as_list
+{
+    my ($var, $cond, $parent) = @_;
+    my @result;
+
+    # Check defined
+    if (! defined $var_value{$var})
+    {
+        if (defined $targets{$var})
+	  {
+	    &am_line_error ($var, "`$var' is a target; expected a variable");
+	  }
+	else
+	  {
+	    &am_line_error ($parent, "variable `$var' not defined");
+	  }
+    }
+
+    # Get value for given condition
+    $cond ||= 'TRUE';
+    my $onceflag;
+    foreach my $vcond (keys %{$var_value{$var}})
+    {
+	my $val = $var_value{$var}{$vcond};
+
+	if (&conditional_true_when ($vcond, $cond))
+	{
+	    # Unless variable is not defined conditionally, there should only
+	    # be one value of $vcond true when $cond.
+	    &check_variable_defined_unconditionally ($var, $parent)
+		    if $onceflag;
+	    $onceflag = 1;
+
+	    # Strip backslashes
+	    $val =~ s/\\(\n|$)/ /g;
+
+	    foreach (split (' ', $val))
+	    {
+		# If a comment seen, just leave.
+		last if /^#/;
+
+		push (@result, $_);
+	    }
+	}
+    }
+
+    return @result;
+}
+
 # Return contents of variable as list, split as whitespace.  This will
 # recursively follow $(...) and ${...} inclusions.  It preserves @...@
 # substitutions.  If COND is 'all', then all values under all
@@ -6159,7 +6385,7 @@ sub value_to_list
 # that condition should be returned; otherwise, warn if VAR is
 # conditionally defined.  If PARENT is specified, it is the name of
 # the including variable; this is only used for error reports.
-sub variable_value_as_list_worker
+sub variable_value_as_list_recursive_worker
 {
     my ($var, $cond, $parent) = @_;
     my @result = ();
@@ -6269,14 +6495,14 @@ sub variable_pretty_output ($@)
 }
 
 
-# This is just a wrapper for variable_value_as_list_worker that
+# This is just a wrapper for variable_value_as_list_recursive_worker that
 # initializes the global hash `vars_scanned'.  This hash is used to
 # avoid infinite recursion.
-sub variable_value_as_list
+sub variable_value_as_list_recursive
 {
     my ($var, $cond, $parent) = @_;
     %vars_scanned = ();
-    return &variable_value_as_list_worker ($var, $cond, $parent);
+    return &variable_value_as_list_recursive_worker ($var, $cond, $parent);
 }
 
 
@@ -7245,7 +7471,7 @@ sub am_install_var
 
 	# Append actual contents of where_PRIMARY variable to
 	# result.
-	foreach my $rcurs (&variable_value_as_list ($one_name, 'all'))
+	foreach my $rcurs (&variable_value_as_list_recursive ($one_name, 'all'))
 	  {
 	    # Skip configure substitutions.  Possibly bogus.
 	    if ($rcurs =~ /^\@.*\@$/)
@@ -7278,13 +7504,13 @@ sub am_install_var
 	# EXEEXT.
 	if ($primary eq 'PROGRAMS')
 	{
-	    my @conds = &variable_conditions ($one_name);
+	    my @conds = &variable_conditions_recursive ($one_name);
 
 	    my @condvals;
 	    foreach my $cond (@conds)
 	    {
 		my @one_binlist = ();
-		my @condval = &variable_value_as_list ($one_name,
+		my @condval = &variable_value_as_list_recursive ($one_name,
 						       $cond);
 		foreach my $rcurs (@condval)
 		{
