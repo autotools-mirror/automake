@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002  Free Software Foundation, Inc.
+# Copyright (C) 2002, 2004  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -18,11 +18,53 @@
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-# Ensure that install-sh works with names that include spaces
+# Various install-sh checks
 
 . ./defs || exit 1
 
+set -e
+
+# Basic errors
+./install-sh && exit 1
+./install-sh -m 644 dest && exit 1
+
+# Directories
+
+# It should be OK to create no directory.  We sometimes need
+# this when directory are conditionally defined.
+./install-sh -d
+# One directory.
+./install-sh -d d0
+test -d d0
+# Multiple directories (for make installdirs).
+./install-sh -d d1 d2 d3
+test -d d1
+test -d d2
+test -d d3
+
+# Files.
+: > x
+./install-sh -c -m 644 x y
+test -f x
+test -f y
+./install-sh -m 644 y z
+test ! -f y
+test -f z
+# Multiple files
+./install-sh -m 644 -c x z d1
+test -f x
+test -f z
+test -f d1/x
+test -f d1/z
+./install-sh -m 644 x z d2
+test ! -f x
+test ! -f z
+test -f d2/x
+test -f d2/z
+
+# Ensure that install-sh works with names that include spaces
 touch 'a b'
-mkdir 'x y' || exit 1
-/bin/sh install-sh 'a b' 'x y' || exit 1
+mkdir 'x y'
+./install-sh 'a b' 'x y'
 test -f x\ y/a\ b
+test ! -f 'a b'

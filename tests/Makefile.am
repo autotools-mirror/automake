@@ -119,6 +119,7 @@ cond29.test \
 cond30.test \
 cond31.test \
 cond32.test \
+cond33.test \
 condd.test \
 condinc.test \
 condinc2.test \
