@@ -72,7 +72,7 @@ _am_include = @_am_include@
 _am_quote = @_am_quote@
 install_sh = @install_sh@
 
-AUTOMAKE_OPTIONS = gnits 1.4
+AUTOMAKE_OPTIONS = gnits 1.4 dist-bzip2
 MAINT_CHARSET = latin1
 
 SUBDIRS = . m4 lib tests
@@ -473,6 +473,10 @@ dist: distdir
 	$(AMTAR) chof - $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
 	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
 
+dist-bzip2: distdir
+	$(AMTAR) chof - $(distdir) | bzip2 -9 -c >$(distdir).tar.bz2
+	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
+
 # This target untars the dist file and tries a VPATH configuration.  Then
 # it guarantees that the distribution is self-contained by making another
 # tarfile.
@@ -540,8 +544,10 @@ clean: clean-recursive
 
 clean-am: clean-generic mostlyclean-am
 
-dist-all: dist
-
+dist-all: distdir
+	$(AMTAR) chof - $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
+	$(AMTAR) chof - $(distdir) | bzip2 -9 -c >$(distdir).tar.bz2
+	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
 distclean: distclean-recursive
 	-rm -f config.status
 distclean-am: clean-am distclean-generic distclean-tags
@@ -604,11 +610,12 @@ uninstall-am: uninstall-binSCRIPTS uninstall-dist_amDATA \
 uninstall-info: uninstall-info-recursive
 
 .PHONY: $(RECURSIVE_TARGETS) all all-am check check-am clean \
-	clean-generic clean-recursive dist dist-all dist-info distcheck \
-	distclean distclean-generic distclean-recursive distclean-tags \
-	distdir dvi dvi-am dvi-recursive info info-am info-recursive \
-	install install-am install-binSCRIPTS install-data \
-	install-data-am install-data-recursive install-dist_amDATA \
+	clean-generic clean-recursive dist dist-all dist-bzip2 \
+	dist-info distcheck distclean distclean-generic \
+	distclean-recursive distclean-tags distdir dvi dvi-am \
+	dvi-recursive info info-am info-recursive install install-am \
+	install-binSCRIPTS install-data install-data-am \
+	install-data-recursive install-dist_amDATA \
 	install-dist_pkgdataDATA install-dist_scriptDATA install-exec \
 	install-exec-am install-exec-recursive install-info \
 	install-info-recursive install-man install-recursive \

@@ -155,14 +155,13 @@ endif %?TOPDIR_P%
 if %?TOPDIR_P%
 
 GZIP_ENV = --best
-.PHONY: dist-all dist
-dist-all: dist
+.PHONY: dist
 dist: distdir
 	$(AMTAR) chof - $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
 	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
 
 if  %?BZIP2%
-.PHONY dist-all: dist-bzip2
+.PHONY: dist-bzip2
 dist-bzip2: distdir
 	$(AMTAR) chof - $(distdir) | bzip2 -9 -c >$(distdir).tar.bz2
 	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
@@ -170,7 +169,7 @@ endif  %?BZIP2%
 
 
 if  %?COMPRESS%
-.PHONY dist-all: dist-tarZ
+.PHONY: dist-tarZ
 dist-tarZ: distdir
 	$(AMTAR) chof - $(distdir) | compress -c >$(distdir).tar.Z
 	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
@@ -178,7 +177,7 @@ endif  %?COMPRESS%
 
 
 if  %?SHAR%
-.PHONY dist-all: dist-shar
+.PHONY: dist-shar
 dist-shar: distdir
 	shar $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).shar.gz
 	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
@@ -186,12 +185,35 @@ endif  %?SHAR%
 
 
 if  %?ZIP%
-.PHONY dist-all: dist-zip
+.PHONY: dist-zip
 dist-zip: distdir
 	-rm -f $(distdir).zip
 	zip -rq $(distdir).zip $(distdir)
 	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
 endif  %?ZIP%
+
+endif %?TOPDIR_P%
+
+
+
+## ------------------------------------------------- ##
+## Building all the requested distribution flavors.  ##
+## ------------------------------------------------- ##
+
+## Currently we cannot use if/endif inside a rule.  The file_contents
+## parser needs work.
+
+if %?TOPDIR_P%
+
+.PHONY: dist-all
+dist-all: distdir
+	$(AMTAR) chof - $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
+?BZIP2?	$(AMTAR) chof - $(distdir) | bzip2 -9 -c >$(distdir).tar.bz2
+?COMPRESS?	$(AMTAR) chof - $(distdir) | compress -c >$(distdir).tar.Z
+?SHAR?	shar $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).shar.gz
+?ZIP?	-rm -f $(distdir).zip
+?ZIP?	zip -rq $(distdir).zip $(distdir)
+	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
 
 endif %?TOPDIR_P%
 
