@@ -25,7 +25,37 @@ if test $# -eq 0; then
 fi
 
 am_status=0
-am_dir=`echo $0|sed s%automake%%`
+AM_DIR=`echo $0|sed s%automake%%`
+
+am_grep_assign='^[	 ]*[A-Za-z_][A-Za-z0-9_]*[	 ]*='
+
+# Remove \newline.
+am_rmnl=/tmp/am.sed1
+cat > $am_rmnl <<\EOF
+/\\$/{
+  s///
+  H
+  d
+}
+/[^\\]$/{
+  H
+  x
+  s/\n//g
+  p
+  s/.*//
+  h
+}
+EOF
+
+# Turn Makefile target and variable assignments
+# into shell variable assignments.
+am_ass=/tmp/am.sed2
+cat > $am_ass <<\EOF
+s/(/{/g
+s/)/}/g
+s/^ *\([a-zA-Z_][a-zA-Z0-9_]*\):.*/target_\1=explicit/p
+s/^ *\([A-Z][A-Z0-9_]*\)[	 ]*=[	 ]*\(.*\)/\1='\2'/p
+EOF
 
 for am_makefile
 do
@@ -35,80 +65,84 @@ do
     continue
   fi
 
-  exec 4> ${am_makefile}.in
+  echo creating ${am_makefile}.in
 
-  cat $am_dir/header.am >&4
+  exec 4> ${am_makefile}.vars
+  exec 5> ${am_makefile}.rules
 
-  cat ${am_makefile}.am >&4
+  cat $AM_DIR/header-vars.am >&4
+  cat $AM_DIR/header.am >&5
 
   target_distname=default
   DEFS= INCLUDES= CPPFLAGS= CFLAGS=
   SOURCES= CONFIG_HEADER= SUBDIRS= PROGRAMS= LIBRARIES= TEXINFOS= MANS=
 
-  eval `sed -n '
-s/^ *\([a-zA-Z_][a-zA-Z0-9_]*\):.*/target_\1=explicit/
-s/^ *\([A-Z][A-Z0-9_]*\)=[		]*\(.*\)/\1=\2/p' ${am_makefile}.am`
+  eval `sed -n -f $am_rmnl ${am_makefile}.am | sed -n -f $am_ass`
 
   if test -n "$PROGRAMS" || test -n "$LIBRARIES"; then
-    cat $am_dir/compile.am >&4
+    cat $AM_DIR/compile-vars.am >&4
+    cat $AM_DIR/compile.am >&5
     for am_file in $PROGRAMS $LIBRARIES; do
-      am_uc_file=`echo $am_file | tr '[a-z]' '[A-Z]'`
-      if grep "${am_uc_file}_SOURCES" ${am_makefile}.am >/dev/null; then
-        sed -n "/^[	]*${am_uc_file}_SOURCES[		]*=/{
+      if grep "^[	 ]*${am_file}_SOURCES[	 ]*=" ${am_makefile}.am >/dev/null; then
+        sed -n -f $am_rmnl ${am_makefile}.am |
+        sed -n "/^[	 ]*${am_file}_SOURCES[	 ]*=/{
 s/SOURCES/OBJECTS/
 s/\\.cc/.o/g
 s/\\.\${kr}c/.o/g
 s/\\.\$(kr)c/.o/g
 s/\\.[cCmylfs]/.o/g
 p
-}" ${am_makefile}.am >&4
-
-        SOURCES="$SOURCES `sed -n '
-s/^[	]*${am_uc_file}_SOURCES[	]*=\(.*\)/\1/p' ${am_makefile}.am`"
+}" >&4
+        SOURCES="$SOURCES \${${am_file}_SOURCES}"
       else
-        echo "${am_uc_file}_SOURCES = ${am_file}.c
-${am_uc_file}_OBJECTS = ${am_file}.o" >&4
+        echo "${am_file}_SOURCES = ${am_file}.c
+${am_file}_OBJECTS = ${am_file}.o" >&4
         SOURCES="$SOURCES ${am_file}.c"
       fi
       if test -n "$CONFIG_HEADER"; then
-        echo "\$(${am_uc_file}_OBJECTS): $CONFIG_HEADER" >&4
+        echo "\$(${am_file}_OBJECTS): $CONFIG_HEADER" >&4
       fi
     done
   fi
 
   if test -n "$PROGRAMS"; then
-    cat $am_dir/programs.am >&4
+    cat $AM_DIR/programs-vars.am >&4
+    cat $AM_DIR/programs.am >&5
     for am_prog in $PROGRAMS; do
-      sed "s/@PROGRAM@/$am_prog/g" $am_dir/program.am >&4
+      sed "s/@PROGRAM@/$am_prog/g" $AM_DIR/program.am >&5
     done
   fi
 
   if test -n "$LIBRARIES"; then
-    cat $am_dir/libraries.am >&4
+    echo "LIBFILES = " `echo "$LIBRARIES"|sed 's/\([a-zA-Z0-9_][a-zA-Z0-9_]*\)/lib\1.a/g'` >&4
+    cat $AM_DIR/libraries-vars.am >&4
+    cat $AM_DIR/libraries.am >&5
     for am_lib in $LIBRARIES; do
-      sed "s/@LIBRARY@/$am_lib/g" $am_dir/library.am >&4
+      sed "s/@LIBRARY@/$am_lib/g" $AM_DIR/library.am >&5
     done
   fi
 
   if test -n "$TEXINFOS"; then
-    cat $am_dir/texinfos.am >&4
+    cat $AM_DIR/texinfos-vars.am >&4
+    cat $AM_DIR/texinfos.am >&5
     echo "$TEXINFOS" | sed 's/^/INFOS = /; s/\.texi/.info/g' >&4
     echo "$TEXINFOS" | sed 's/^/DVIS = /; s/\.texi/.dvi/g' >&4
   fi
 
   if test -n "$MANS"; then
-    cat $am_dir/mans.am >&4
+    cat $AM_DIR/mans-vars.am >&4
+    cat $AM_DIR/mans.am >&5
   fi
 
   case "$SUBDIRS" in
-  "") cat $am_dir/clean.am >&4 ;;
-  *) cat $am_dir/subdirs.am >&4 ;;
+  "") cat $AM_DIR/clean.am >&5 ;;
+  *) cat $AM_DIR/subdirs.am >&5 ;;
   esac
 
   case "$am_makefile" in
-  */*) cat $am_dir/remake-subd.am >&4 ;;
+  */*) cat $AM_DIR/remake-subd.am >&5 ;;
   *) test -f aclocal.m4 && echo "ACLOCAL = aclocal.m4" >&4
-  cat $am_dir/remake.am >&4 ;;
+  cat $AM_DIR/remake.am >&5 ;;
   esac
 
   case "$CONFIG_HEADER" in
@@ -118,23 +152,30 @@ ${am_uc_file}_OBJECTS = ${am_file}.o" >&4
     test -f acconfig.h && echo "ACCONFIG = acconfig.h" >&4
     test -f config.h.top && echo "CONFIG_TOP = config.h.top" >&4
     test -f config.h.bot && echo "CONFIG_BOT = config.h.bot" >&4
-    cat $am_dir/remake-hdr.am >&4 ;;
+    cat $AM_DIR/remake-hdr.am >&5 ;;
   esac
 
   echo "SOURCES = $SOURCES" >&4
 
   case "$am_makefile" in
-  */*) cat $am_dir/dist-subd.am >&4 ;;
-  *) test "$target_distname" != explicit && cat $am_dir/distname.am >&4
-     cat $am_dir/dist.am >&4 ;;
+  */*) 
+     cat $AM_DIR/dist-subd-vars.am >&4
+     cat $AM_DIR/dist-subd.am >&5 ;;
+  *) test "$target_distname" != explicit && cat $AM_DIR/distname.am >&5
+     cat $AM_DIR/dist-vars.am >&4
+     cat $AM_DIR/dist.am >&5 ;;
   esac
 
-  cat $am_dir/footer.am >&4
+  cat $AM_DIR/footer.am >&5
 
-  if test -n "$SOURCES"; then
-    echo "# Dependencies generated automatically by mkdep:" >&4
-    mkdep -a -f ${am_makefile}.in $DEFS $INCLUDES $CPPFLAGS $CFLAGS $SOURCES
-  fi
+#  if test -n "$SOURCES"; then
+#    echo "# Dependencies generated automatically by mkdep:" >&5
+#    mkdep -a -f ${am_makefile}.in $DEFS $INCLUDES $CPPFLAGS $CFLAGS $SOURCES
+#  fi
+
+  cat ${am_makefile}.vars ${am_makefile}.am ${am_makefile}.rules \
+    > ${am_makefile}.in
+  rm -f ${am_makefile}.vars ${am_makefile}.rules
 
 done
 
