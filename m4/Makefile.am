@@ -19,7 +19,7 @@
 ## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 ## 02111-1307, USA.
 
-m4datadir = $(datadir)/aclocal
+m4datadir = $(datadir)/aclocal-$(VERSION)
 
 dist_m4data_DATA = as.m4 auxdir.m4 ccstdc.m4 cond.m4 depend.m4 depout.m4 \
 dmalloc.m4 gcj.m4 header.m4 init.m4 install-sh.m4 lex.m4 lispdir.m4 \

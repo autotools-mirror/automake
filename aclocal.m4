@@ -72,12 +72,12 @@ fi
 # Define the identity of the package.
 dnl Distinguish between old-style and new-style calls.
 m4_ifval([$2],
-  [m4_ifval([$3], [_AM_SET_OPTION([no-define])])dnl
-   AC_SUBST([PACKAGE], [$1])dnl
-   AC_SUBST([VERSION], [$2])],
-  [_AM_SET_OPTIONS([$1])
-   AC_SUBST([PACKAGE], [AC_PACKAGE_TARNAME])
-   AC_SUBST([VERSION], [AC_PACKAGE_VERSION])])dnl
+[m4_ifval([$3], [_AM_SET_OPTION([no-define])])dnl
+ AC_SUBST([PACKAGE], [$1])dnl
+ AC_SUBST([VERSION], [$2])],
+[_AM_SET_OPTIONS([$1])dnl
+ AC_SUBST([PACKAGE], [AC_PACKAGE_TARNAME])dnl
+ AC_SUBST([VERSION], [AC_PACKAGE_VERSION])])dnl
 
 _AM_IF_OPTION([no-define],,
 [AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE", [Name of package])
@@ -88,7 +88,7 @@ AC_REQUIRE([AM_SANITY_CHECK])dnl
 AC_REQUIRE([AC_ARG_PROGRAM])dnl
 AM_MISSING_PROG(ACLOCAL, aclocal)
 AM_MISSING_PROG(AUTOCONF, autoconf)
-AM_MISSING_PROG(AUTOMAKE, automake)
+AM_MISSING_PROG(AUTOMAKE, "automake-${am__version}")
 AM_MISSING_PROG(AUTOHEADER, autoheader)
 AM_MISSING_PROG(MAKEINFO, makeinfo)
 AM_MISSING_PROG(AMTAR, tar)
@@ -130,7 +130,7 @@ AC_PROVIDE_IFELSE([AC_PROG_][CXX],
 # ----------------------------
 # Automake X.Y traces this macro to ensure aclocal.m4 has been
 # generated from the m4 files accompanying Automake X.Y.
-AC_DEFUN([AM_AUTOMAKE_VERSION],[])
+AC_DEFUN([AM_AUTOMAKE_VERSION],[am__version="$1"])
 
 # AM_SET_CURRENT_AUTOMAKE_VERSION
 # -------------------------------

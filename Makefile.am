@@ -36,6 +36,19 @@ TAGS_DEPENDENCIES = automake.texi
 
 EXTRA_DIST = ChangeLog.1996 ChangeLog.1998 ChangeLog.2000
 
+## Make versioned links.  We only run the transform on the root name;
+## then we make a versioned link with the transformed base name.  This
+## seemed like the most reasonable approach.
+install-exec-hook:
+	@$(POST_INSTALL)
+	@for p in $(bin_SCRIPTS); do \
+	  f="`echo $$p|sed '$(transform)'`"; \
+	  fv="$$f-$(VERSION)"; \
+	  rm -f $(DESTDIR)$(bindir)/$$fv; \
+	  echo " ln $(DESTDIR)$(bindir)/$$f $(DESTDIR)$(bindir)/$$fv"; \
+	  ln $(DESTDIR)$(bindir)/$$f $(DESTDIR)$(bindir)/$$fv; \
+	done
+
 ################################################################
 ##
 ## Everything past here is useful to the maintainer, but probably not

@@ -19,7 +19,7 @@
 ## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 ## 02111-1307, USA.
 
-amdir = $(pkgdatadir)/am
+amdir = $(pkgvdatadir)/am
 
 dist_am_DATA = ansi2knr.am check.am clean-hdr.am clean.am compile.am \
 configure.am data.am dejagnu.am depend.am depend2.am distdir.am \
