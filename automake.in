@@ -349,8 +349,7 @@ sub handle_source_transform
 		push (@result, $_);
 	    }
 
-	    $output_vars .= ($one_file . "_OBJECTS = " . join (' ', @result)
-			     . "\n");
+	    &pretty_print ($one_file . "_OBJECTS =", '', @result);
 	}
 	else
 	{
@@ -427,8 +426,7 @@ sub handle_libraries
 	    {
 		push (@outlist, 'lib' . $onelib . '.a');
 	    }
-	    $output_vars .= ($onedir . '_LIBFILES = '
-			     . join (' ', @outlist) . "\n");
+	    &pretty_print ($onedir . '_LIBFILES =', '', @outlist);
 	}
     }
     push (@all, '$(LIBFILES)');
@@ -456,7 +454,7 @@ sub handle_libraries
 
     if (! defined $contents{'LIBFILES'})
     {
-	$output_vars .= 'LIBFILES = ' . join (' ', @liblist) . "\n";
+	&pretty_print ('LIBFILES = ', '', @liblist);
     }
     $output_vars .= &file_contents ('libraries-vars');
 }
@@ -518,8 +516,8 @@ sub handle_texinfo
     }
 
     # Some boilerplate.
-    $output_vars = $output_vars . &file_contents ('texinfos-vars');
-    $output_rules = $output_rules . &file_contents ('texinfos');
+    $output_vars .= &file_contents ('texinfos-vars');
+    $output_rules .= &file_contents ('texinfos');
 
     # How to clean.
     local ($crules) = &file_contents ('texi-clean');
@@ -654,8 +652,8 @@ sub handle_dist
 	}
     }
 
-    $output_vars .= ("DIST_COMMON = " . join (' ', keys (%dist_common))
-		     . "\n\n");
+    &pretty_print ("DIST_COMMON =", '', keys (%dist_common));
+    $output_vars .= "\n";
 
     # Some boilerplate.
     $output_vars .= &file_contents ('dist-vars');
@@ -803,11 +801,11 @@ sub handle_footer
 {
     if ($contents{'SOURCES'})
     {
-	$output_vars .= "SOURCES = " . $contents{'SOURCES'} . "\n";
+	&pretty_print ('SOURCES =', '', split (/\s+/, $contents{'SOURCES'}));
     }
     if ($contents{'OBJECTS'})
     {
-	$output_vars .= "OBJECTS = " . $contents{'OBJECTS'} . "\n";
+	&pretty_print ('OBJECTS =', '', split (/\s+/, $contents{'OBJECTS'}));
     }
     if ($contents{'SOURCES'} || $contents{'OBJECTS'})
     {
@@ -947,7 +945,12 @@ sub do_one_merge_target
 	push (@values, $name . '-local');
     }
 
-    $output_rules .= $name . ": " . join (' ', @values) . "\n\n";
+    $output_rules .= $name . ":";
+    if ($#values >= 0)
+    {
+	$output_rules .= ' ' . join (' ', @values);
+	}
+    $output_rules .= "\n\n";
 }
 
 # Handle all 'clean' targets.
@@ -1039,6 +1042,39 @@ sub check_gnits_standards
 
 ################################################################
 
+# Pretty-print something.  HEAD is what should be printed at the
+# beginning of the first line, FILL is what should be printed at the
+# beginning of every subsequent line.
+sub pretty_print
+{
+    local ($head, $fill, @values) = @_;
+
+    local ($column) = length ($head);
+    $output_vars .= $head;
+
+    local ($bol) = 0;
+    foreach (@values)
+    {
+	# "71" because we also print a space.
+	if ($column + length ($_) > 71)
+	{
+	    $output_vars .= " \\\n" . $fill;
+	    $column = length ($fill);
+	    $bol = 1;
+	}
+
+	$output_vars .= ' ' unless ($bol);
+	$output_vars .= $_;
+	$column += length ($_) + 1;
+	$bol = 0;
+    }
+
+    $output_vars .= "\n";
+}
+
+
+################################################################
+
 # Read Makefile.am and set up %contents.  Simultaneously copy lines
 # from Makefile.am into $output_trailer or $output_vars as
 # appropriate.  NOTE we put rules in the trailer section.  We want
@@ -1056,6 +1092,7 @@ sub read_am_file
     local ($saw_bk) = 0;
     local ($was_rule) = 0;
     local ($last_var_name) = '';
+    local ($saved_comments) = '';
 
     while (<AMFILE>)
     {
@@ -1081,6 +1118,12 @@ sub read_am_file
 		}
 	    }
 	}
+	elsif (/^\#/)
+	{
+	    # Got a comment.  We save comments until we get a
+	    # non-comment, and then we add the last comments.
+	    $saved_comments .= $_ . "\n";
+	}
 	elsif ($_ eq '@kr@')
 	{
 	    # Special case: this means we want automatic
@@ -1094,7 +1137,8 @@ sub read_am_file
 	    # Value here doesn't matter; for targets we only note
 	    # existence.
 	    $contents{$1} = 1;
-	    $output_trailer .= $_ . "\n";
+	    $output_trailer .= $saved_comments . $_ . "\n";
+	    $saved_comments = '';
 	}
 	elsif (m/^ *([A-Za-z][A-Za-z0-9_]*)[ \t]*=[ \t]*(.*)$/)
 	{
@@ -1109,7 +1153,8 @@ sub read_am_file
 	    {
 		$contents{$1} = $2;
 	    }
-	    $output_vars .= $_ . "\n";
+	    $output_vars .= $saved_comments . $_ . "\n";
+	    $saved_comments = '';
 	}
 	elsif (m/^$/)
 	{
@@ -1117,12 +1162,13 @@ sub read_am_file
 	    # whatever we saw last.
 	    if ($was_rule)
 	    {
-		$output_trailer .= "\n";
+		$output_trailer .= $saved_comments . "\n";
 	    }
 	    else
 	    {
-		$output_vars .= "\n";
+		$output_vars .= $saved_comments . "\n";
 	    }
+	    $saved_comments = '';
 	}
 	else
 	{
@@ -1133,6 +1179,9 @@ sub read_am_file
 
 	$saw_bk = (substr ($_, -1) eq "\\");
     }
+
+    # Include trailing comments with variables for now.
+    $output_vars .= $saved_comments;
 
     # Include some space after user code.
     $output_vars .= "\n";
@@ -1384,7 +1433,8 @@ sub am_install_var
     if (! defined $contents{$primary} && $#used >= 0)
     {
 	# Define it.
-	$output_vars .= $primary . " = " . join (' ', @used) . "\n\n";
+	&pretty_print ($primary . '=', '', @used);
+	$output_vars .= "\n";
     }
 
     # Push here because PRIMARY might be configure time determined.
