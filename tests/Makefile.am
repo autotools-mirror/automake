@@ -75,6 +75,7 @@ ccnoco.test \
 check.test \
 check2.test \
 check3.test \
+check4.test \
 checkall.test \
 clean.test \
 clean2.test \

@@ -32,7 +32,15 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
 # (2) otherwise, pass the desired values on the `make' command line.
 
 $(RECURSIVE_TARGETS):
-	@set fnord $$MAKEFLAGS; amf=$$2; \
+## Using $failcom allows "-k" to keep its natural meaning when running a
+## recursive rule.
+	@failcom='exit 1'; \
+	for f in x $$MAKEFLAGS; do \
+	  case $$f in \
+	    *=* | --[!k]*);; \
+	    *k*) failcom='fail=yes';; \
+	  esac; \
+	done; \
 	dot_seen=no; \
 	target=`echo $@ | sed s/-recursive//`; \
 	list='$(SUBDIRS)'; for subdir in $$list; do \
@@ -44,9 +52,7 @@ $(RECURSIVE_TARGETS):
 	    local_target="$$target"; \
 	  fi; \
 	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
-## This trick allows "-k" to keep its natural meaning when running a
-## recursive rule.
-	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
+	  || eval $$failcom; \
 	done; \
 	if test "$$dot_seen" = "no"; then \
 	  $(MAKE) $(AM_MAKEFLAGS) "$$target-am" || exit 1; \
@@ -65,7 +71,15 @@ maintainer-clean: maintainer-clean-recursive
 ## the dependencies are required before any target is examined, make
 ## bombs.
 $(RECURSIVE_CLEAN_TARGETS):
-	@set fnord $$MAKEFLAGS; amf=$$2; \
+## Using $failcom allows "-k" to keep its natural meaning when running a
+## recursive rule.
+	@failcom='exit 1'; \
+	for f in x $$MAKEFLAGS; do \
+	  case $$f in \
+	    *=* | --[!k]*);; \
+	    *k*) failcom='fail=yes';; \
+	  esac; \
+	done; \
 	dot_seen=no; \
 ## For distclean and maintainer-clean we make sure to use the full
 ## list of subdirectories.  We do this so that `configure; make
@@ -91,7 +105,5 @@ $(RECURSIVE_CLEAN_TARGETS):
 	    local_target="$$target"; \
 	  fi; \
 	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
-## This trick allows "-k" to keep its natural meaning when running a
-## recursive rule.
-	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
+	  || eval $$failcom; \
 	done && test -z "$$fail"
