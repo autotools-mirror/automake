@@ -2,7 +2,7 @@
 
 ## Makefile for Automake m4.
 
-## Copyright 1996, 1997, 1998, 1999, 2001, 2002, 2003
+## Copyright (C) 1996, 1997, 1998, 1999, 2001, 2002, 2003
 ## Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify

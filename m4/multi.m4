@@ -1,4 +1,4 @@
-# Copyright 1998, 1999, 2000, 2001 Free Software Foundation, Inc.
+# Copyright (C) 1998, 1999, 2000, 2001, 2003 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ AC_ARG_ENABLE(multilib,
   no)  multilib=no ;;
   *)   AC_MSG_ERROR([bad value $enableval for multilib option]) ;;
  esac],
-              [multilib=yes])
+	      [multilib=yes])
 
 # We may get other options which we leave undocumented:
 # --with-target-subdir, --with-multisrctop, --with-multisubdir
@@ -54,7 +54,7 @@ case " $CONFIG_FILES " in
    ac_file=]m4_default([$1],Makefile)[ . ${multi_basedir}/config-ml.in
    ;;
 esac],
-                   [
+		   [
 srcdir="$srcdir"
 host="$host"
 target="$target"

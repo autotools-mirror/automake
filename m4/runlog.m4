@@ -1,4 +1,4 @@
-# Copyright 2001 Free Software Foundation, Inc.             -*- Autoconf -*-
+# Copyright (C) 2001, 2003 Free Software Foundation, Inc.     -*- Autoconf -*-
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

@@ -4,8 +4,8 @@
 ## Almost entirely rewritten by Alexandre Oliva
 ## ------------------------
 
-# Copyright 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003
-#   Free Software Foundation, Inc.
+# Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003
+# Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -48,14 +48,14 @@ AC_DEFUN([AM_PATH_LISPDIR],
   # Redirecting /dev/null should help a bit; pity we can't detect "broken"
   #  emacsen earlier and avoid running this altogether.
   AC_RUN_LOG([$EMACS -batch -q -eval '(while load-path (princ (concat (car load-path) "\n")) (setq load-path (cdr load-path)))' </dev/null >conftest.out])
-        am_cv_lispdir=`sed -n \
+	am_cv_lispdir=`sed -n \
        -e 's,/$,,' \
        -e '/.*\/lib\/\(x\?emacs\/site-lisp\)$/{s,,${libdir}/\1,;p;q;}' \
        -e '/.*\/share\/\(x\?emacs\/site-lisp\)$/{s,,${datadir}/\1,;p;q;}' \
        conftest.out`
        rm conftest.out
        if test -z "$am_cv_lispdir"; then
-         am_cv_lispdir='${datadir}/emacs/site-lisp'
+	 am_cv_lispdir='${datadir}/emacs/site-lisp'
        fi
      ])
      lispdir="$am_cv_lispdir"

@@ -4,7 +4,7 @@
 ## Updated by James Henstridge
 ## ------------------------
 
-# Copyright 1999, 2000, 2001, 2002, 2003  Free Software Foundation, Inc.
+# Copyright (C) 1999, 2000, 2001, 2002, 2003  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -72,11 +72,11 @@ AC_DEFUN([AM_PATH_PYTHON],
       AC_CACHE_CHECK([for a Python interpreter with version >= $1],
 	[am_cv_pathless_PYTHON],[
 	for am_cv_pathless_PYTHON in _AM_PYTHON_INTERPRETER_LIST : ; do
-          if test "$am_cv_pathless_PYTHON" = : ; then
-            AC_MSG_ERROR([no suitable Python interpreter found])
+	  if test "$am_cv_pathless_PYTHON" = : ; then
+	    AC_MSG_ERROR([no suitable Python interpreter found])
 	  fi
-          AM_PYTHON_CHECK_VERSION([$am_cv_pathless_PYTHON], [$1], [break])
-        done])
+	  AM_PYTHON_CHECK_VERSION([$am_cv_pathless_PYTHON], [$1], [break])
+	done])
       # Set $PYTHON to the absolute path of $am_cv_pathless_PYTHON.
       AC_PATH_PROG([PYTHON], [$am_cv_pathless_PYTHON])
       am_display_PYTHON=$am_cv_pathless_PYTHON

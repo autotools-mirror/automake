@@ -1,6 +1,6 @@
 # AM_CONDITIONAL                                              -*- Autoconf -*-
 
-# Copyright 1997, 2000, 2001 Free Software Foundation, Inc.
+# Copyright (C) 1997, 2000, 2001, 2003 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ AC_PREREQ(2.52)
 # Define a conditional.
 AC_DEFUN([AM_CONDITIONAL],
 [ifelse([$1], [TRUE],  [AC_FATAL([$0: invalid condition: $1])],
-        [$1], [FALSE], [AC_FATAL([$0: invalid condition: $1])])dnl
+	[$1], [FALSE], [AC_FATAL([$0: invalid condition: $1])])dnl
 AC_SUBST([$1_TRUE])
 AC_SUBST([$1_FALSE])
 if $2; then
