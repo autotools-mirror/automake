@@ -1031,7 +1031,7 @@ sub handle_configure
 # Handle C headers.
 sub handle_headers
 {
-    &am_install_var ('data', 'HEADERS', 'include',
+    &am_install_var ('header', 'HEADERS', 'include',
 		     'oldinclude', 'pkginclude',
 		     'noinst');
 }
@@ -1304,6 +1304,7 @@ sub scan_configure
     local ($seen_make_set) = 0;
     local ($seen_prog_install) = 0;
     local ($seen_arg_prog) = 0;
+    local ($seen_canonical) = 0;
     while (<CONFIGURE>)
     {
 	# Remove comments from current line.
@@ -1380,6 +1381,8 @@ sub scan_configure
 	    }
 	}
 
+	$seen_canonical = 1 if /AC_CANONICAL_(HOST|SYSTEM)/;
+
 	# Some things required by Automake.  FIXME we only really
 	# require fp_PROG_INSTALL if some scripts are installed.  And
 	# we only really require AC_ARG_PROGRAM if any program is
@@ -1388,6 +1391,11 @@ sub scan_configure
 	$seen_prog_install = 1 if /fp_PROG_INSTALL/;
 	$seen_arg_prog = 1 if /AC_ARG_PROGRAM/;
     }
+
+    # AC_CANONICAL_HOST and AC_CANONICAL_SYSTEM need config.guess and
+    # config.sub.
+    &require_file ($NORMAL, 'config.guess', 'config.sub')
+	if $seen_canonical;
 
     # If SUBDIRS defined, require AC_PROG_MAKE_SET.
     &am_error ("AC_PROG_MAKE_SET must be used in configure.in")
@@ -1955,7 +1963,7 @@ sub am_install_var
     grep ($valid{$_} = 0, @prefixes);
     foreach $varname (keys %contents)
     {
-	if ($varname =~ /^(.*)_$primary$/o && ! defined $valid{$1})
+	if ($varname =~ /^(.*)_$primary$/ && ! defined $valid{$1})
 	{
 	    &am_error ("invalid variable \"$varname\"");
 	}

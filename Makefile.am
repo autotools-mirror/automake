@@ -9,7 +9,7 @@ info_TEXINFOS = automake.texi
 
 pkgdata_DATA = clean-kr.am clean.am compile-kr.am compile-vars.am \
 compile.am data.am depend.am \
-dist-vars.am footer.am header-vars.am \
+dist-vars.am footer.am header.am header-vars.am \
 kr-vars.am libraries-vars.am \
 libraries.am library.am mans-vars.am \
 program.am programs.am remake-hdr.am \
@@ -17,7 +17,8 @@ remake-subd.am remake.am scripts.am subdirs.am tags.am tags-subd.am \
 tags-clean.am \
 texi-clean.am texi-version.am texinfos-vars.am texinfos.am \
 libraries-clean.am scripts-clean.am programs-clean.am data-clean.am \
-COPYING INSTALL install-sh mdate-sh mkinstalldirs texinfo.tex
+COPYING INSTALL install-sh mdate-sh mkinstalldirs texinfo.tex \
+config.guess config.sub
 
 DIST_OTHER = automake.in
 
