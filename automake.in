@@ -5223,8 +5223,7 @@ sub examine_variable
 sub quote_cond_val
 {
     local ($val) = @_;
-    $val =~ s/ /\001/g;
-    $val =~ s/\t/\003/g;
+    $val =~ tr/ \t\n/\001\003\004/;
     $val = "\002" if $val eq '';
     return $val;
 }
@@ -5233,8 +5232,7 @@ sub quote_cond_val
 sub unquote_cond_val
 {
     local ($val) = @_;
-    $val =~ s/\001/ /g;
-    $val =~ s/\003/\t/g;
+    $val =~ tr/\001\003\004/ \t\n/;
     $val =~ s/\002//g;
     return $val;
 }
@@ -5866,10 +5864,6 @@ sub read_am_file
 	    else
 	    {
 		$saw_bk = /\\$/;
-		# Chop newline and backslash if this line is
-		# continued.  ensure trailing whitespace exists.
-		chop if $saw_bk;
-		chop if $saw_bk;
 		$contents{$last_var_name} .= ' '
 		    unless $contents{$last_var_name} =~ /\s$/;
 		$contents{$last_var_name} .= $_;
@@ -5980,7 +5974,10 @@ sub read_am_file
 	    local ($value);
 	    if ($3 ne '' && substr ($3, -1) eq "\\")
 	    {
-		$value = substr ($3, 0, length ($3) - 1);
+		# We preserve the `\' because otherwise the long lines
+		# that are generated will be truncated by broken
+		# `sed's.
+		$value = $3 . "\n";
 	    }
 	    else
 	    {
@@ -6221,9 +6218,13 @@ sub read_main_am_file
 	    {
 		local ($vcond) = shift (@cond_vals);
 		local ($val) = &unquote_cond_val (shift (@cond_vals));
-		$output_vars .= ($vcond . $curs
-				 . ' ' . $def_type{$curs} . '= '
-				 . $val . "\n");
+		$output_vars .= ($vcond . $curs . ' '
+				 . $def_type{$curs} . "= \\\n");
+		local ($line);
+		foreach $line (split ("\n", $val))
+		{
+		    $output_vars .= $vcond . $line . "\n";
+		}
 	    }
 	}
 	else
