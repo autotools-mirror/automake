@@ -666,12 +666,12 @@ Since @code{zardoz} is a user program, you want to install it where the
 rest of the user programs go: @code{bindir}.  Additionally,
 @code{zardoz} has some Texinfo documentation.  Your @file{configure.in}
 script uses @code{AC_REPLACE_FUNCS}, so you need to link against
-@samp{@@LIBOBJS@@}.  So here's what you'd write:
+@samp{$(LIBOBJS)}.  So here's what you'd write:
 
 @example
 bin_PROGRAMS = zardoz
 zardoz_SOURCES = main.c head.c float.c vortex9.c gun.c
-zardoz_LDADD = @@LIBOBJS@@
+zardoz_LDADD = $(LIBOBJS)
 
 info_TEXINFOS = zardoz.texi
 @end example
@@ -1165,7 +1165,7 @@ corresponding to the current @file{Makefile.am}, whichever is
 appropriate).  @xref{Input, , Finding `configure' Input, autoconf, The
 Autoconf Manual}.
 @cvindex AC_CONFIG_AUX_DIR
-FIXME: give complete list of things looked for in this directory
+@c FIXME: give complete list of things looked for in this directory
 
 @item AC_CANONICAL_HOST
 Automake will ensure that @file{config.guess} and @file{config.sub}
@@ -2313,7 +2313,7 @@ determined by @code{configure}.  Again from @code{cpio}:
 @vindex LIBADD
 
 @example
-libcpio_a_LIBADD = @@LIBOBJS@@ @@ALLOCA@@
+libcpio_a_LIBADD = $(LIBOBJS) $(ALLOCA)
 @end example
 
 In addition, sources for extra objects that will not exist until
@@ -2368,10 +2368,10 @@ library.  The @samp{@var{library}_LDFLAGS} variable contains any
 additional libtool flags, such as @samp{-version-info} or
 @samp{-static}.
 
-@cindex @@LTLIBOBJS@@, special handling
+@cindex @code{LTLIBOBJS}, special handling
 
-Where an ordinary library might include @code{@@LIBOBJS@@}, a libtool
-library must use @code{@@LTLIBOBJS@@}.  This is required because the
+Where an ordinary library might include @code{$(LIBOBJS)}, a libtool
+library must use @code{$(LTLIBOBJS)}.  This is required because the
 object files that libtool operates on do not necessarily end in
 @file{.o}.  The libtool manual contains more details on this topic.
 
@@ -2587,17 +2587,17 @@ it is required.
 @node LIBOBJS, Program variables, Program and Library Variables, Programs
 @section Special handling for LIBOBJS and ALLOCA
 
-@cindex @@LIBOBJS@@, special handling
-@cindex @@ALLOCA@@, special handling
+@cindex @code{LIBOBJS}, special handling
+@cindex @code{ALLOCA}, special handling
 
-Automake explicitly recognizes the use of @code{@@LIBOBJS@@} and
-@code{@@ALLOCA@@}, and uses this information, plus the list of
+Automake explicitly recognizes the use of @code{$(LIBOBJS)} and
+@code{$(ALLOCA)}, and uses this information, plus the list of
 @code{LIBOBJS} files derived from @file{configure.in} to automatically
 include the appropriate source files in the distribution (@pxref{Dist}).
 These source files are also automatically handled in the
 dependency-tracking scheme; see @xref{Dependencies}.
 
-@code{@@LIBOBJS@@} and @code{@@ALLOCA@@} are specially recognized in any
+@code{$(LIBOBJS)} and @code{$(ALLOCA)} are specially recognized in any
 @samp{_LDADD} or @samp{_LIBADD} variable.
 
 
@@ -3196,24 +3196,21 @@ AUTOMAKE_OPTIONS = ../lib/ansi2knr
 If no directory prefix is given, the files are assumed to be in the
 current directory.
 
-Files mentioned in @code{LIBOBJS} which need de-ANSI-fication will not
-be automatically handled.  That's because @code{configure} will generate
-an object name like @file{regex.o}, while @code{make} will be looking
-for @file{regex_.o} (when de-ANSI-fying).  Eventually this problem will
-be fixed via @code{autoconf} magic, but for now you must put this code
-into your @file{configure.in}, just before the @code{AC_OUTPUT} call:
-
-@example
-# This is necessary so that .o files in LIBOBJS are also built via
-# the ANSI2KNR-filtering rules.
-LIBOBJS=`echo $LIBOBJS|sed 's/\.o /\$U.o /g;s/\.o$/\$U.o/'`
-@end example
-@c FIXME: Ask Akim how this should be handled in the upcoming Autoconf.
-
 Note that automatic de-ANSI-fication will not work when the package is
 being built for a different host architecture.  That is because automake
 currently has no way to build @code{ansi2knr} for the build machine.
 
+@c FIXME: this paragraph might be better moved to an `upgrading' section.
+@cindex @code{LTLIBOBJS} and @code{ansi2knr}
+@cindex @code{LIBOBJS} and @code{ansi2knr}
+@cindex @code{ansi2knr} and @code{LTLIBOBJS}
+@cindex @code{ansi2knr} and @code{LIBOBJS}
+Using @code{LIBOBJS} with source de-ANSI-fication used to require
+hand-crafted code in @file{configure} to append @code{$U} to basenames
+in @code{LIBOBJS}.  This is no longer true today.  Starting with version
+2.54, Autoconf takes care of rewriting @code{LIBOBJS} and
+@code{LTLIBOBJS}.  (@pxref{AC_LIBOBJ vs LIBOBJS, , @code{AC_LIBOBJ}
+vs. @code{LIBOBJS}, autoconf, The Autoconf Manual})
 
 @node Dependencies, EXEEXT, ANSI, Programs
 @section Automatic dependency tracking
@@ -3499,7 +3496,7 @@ object.
 It might be important to emphasize that @code{BUILT_SOURCES} is honored
 only by @code{make all} and @code{make check}.  This means you cannot
 build a specific target (e.g., @code{make foo}) in a clean tree if it
-depends on a built source.  However if it will succeed if you have run
+depends on a built source.  However it will succeed if you have run
 @code{make all} earlier, because accurate dependencies are already
 available.
 
@@ -4558,7 +4555,6 @@ The contents of the variable @code{RUNTESTFLAGS} are passed to the
 @file{Makefile.am}, you can use @code{AM_RUNTESTFLAGS} instead.
 @vindex RUNTESTFLAGS
 @vindex AM_RUNTESTFLAGS
-@c FIXME xref dejagnu
 
 @cindex @file{site.exp}
 Automake will generate rules to create a local @file{site.exp} file,
@@ -4568,6 +4564,9 @@ to edit this file in order to tune the test suite.  However this is
 not the place where the test suite author should define new variables:
 this should be done elsewhere in the real test suite code.
 Especially, @file{site.exp} should not be distributed.
+
+For more information regarding DejaGnu test suites, see @xref{Top, , ,
+dejagnu, The DejaGnu Manual}.
 
 In either case, the testing is done via @samp{make check}.
 
