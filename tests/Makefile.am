@@ -7,4 +7,5 @@ acoutnoq.test acouttbs.test libobj.test proginst.test acoutqnl.test \
 confincl.test spelling.test prefix.test badprog.test depend.test exdir.test \
 canon.test
 
-EXTRA_DIST = defs
+## Maybe automake should distribute TESTS?  You tell me.
+EXTRA_DIST = defs $(TESTS)
