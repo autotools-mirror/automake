@@ -240,6 +240,7 @@ pluseq7.test \
 pluseq8.test \
 ppf77.test \
 pr2.test \
+pr211.test \
 pr220.test \
 pr243.test \
 pr266.test \

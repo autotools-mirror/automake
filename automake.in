@@ -236,6 +236,11 @@ my $LANG_IGNORE = 0;
 my $LANG_PROCESS = 1;
 my $LANG_SUBDIR = 2;
 
+# These are used when keeping track of whether an object can be built
+# by two different paths.
+my $COMPILE_LIBTOOL = 1;
+my $COMPILE_ORDINARY = 2;
+
 # Map from obsolete macros to hints for new macros.
 # If you change this, change the corresponding list in aclocal.in.
 # FIXME: should just put this into a single file.
@@ -551,6 +556,12 @@ my @dist_sources;
 # by a single source file.
 my %object_map;
 
+# This hash maps object file names onto an integer value representing
+# whether this object has been built via ordinary compilation or
+# libtool compilation (the COMPILE_* constants).
+my %object_compilation_map;
+
+
 # This keeps track of the directories for which we've already
 # created `.dirstamp' code.
 my %directory_map;
@@ -725,6 +736,7 @@ sub initialize_per_input ()
     @dist_sources = ();
 
     %object_map = ();
+    %object_compilation_map = ();
 
     %directory_map = ();
 
@@ -1966,6 +1978,20 @@ sub handle_single_transform_list ($$$$@)
                 am_error ("object `$object' created by `$full' and `$object_map{$object}'");
             }
         }
+
+	my $comp_val = (($object =~ /\.lo$/)
+			? $COMPILE_LIBTOOL : $COMPILE_ORDINARY);
+	(my $comp_obj = $object) =~ s/\.lo$/.\$(OBJEXT)/;
+	if (defined $object_compilation_map{$comp_obj}
+	    && $object_compilation_map{$comp_obj} != 0
+	    # Only see the error once.
+	    && ($object_compilation_map{$comp_obj}
+		!= ($COMPILE_LIBTOOL | $COMPILE_ORDINARY))
+	    && $object_compilation_map{$comp_obj} != $comp_val)
+	{
+	    am_error ("object `$object' created both with libtool and without");
+	}
+	$object_compilation_map{$comp_obj} |= $comp_val;
 
 	if (defined $lang) {
 	    # Let the language do some special magic if required.
