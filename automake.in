@@ -2386,26 +2386,14 @@ sub handle_texinfo
         $texinfodir = '$(srcdir)';
 	$need_texi_file = 1;
     }
-    $xform .= &transform ('TEXINFODIR' => $texinfodir);
+    $xform .= &transform ('TEXINFODIR' => $texinfodir,
+			  'TEXICLEAN' => &pretty_print_internal ("\t-rm -f",
+								 "\t  ",
+								 @texi_cleans));
 
     $output_rules .= &file_contents ('texinfos', $xform);
     push (@dist_targets, 'dist-info');
 
-    # How to clean.  The funny name is due to --cygnus influence; in
-    # Cygnus mode, `clean-info' is a target that users can use.
-    $output_rules .= "\nmostlyclean-aminfo:\n";
-    &pretty_print_rule ("\t-rm -f", "\t  ", @texi_cleans);
-    $output_rules .= ("\nclean-aminfo:\n\ndistclean-aminfo:\n\n"
-		      . "maintainer-clean-aminfo:\n\t"
-		      # Eww.  But how else can we find all the output
-		      # files from makeinfo?
-		      . ($cygnus_mode ? '' : 'cd $(srcdir) && ')
-		      . 'for i in $(INFO_DEPS); do' . " \\\n"
-		      . "\t" . '  rm -f $$i;' . " \\\n"
-		      . "\t" . '  if test "`echo $$i-[0-9]*`" != "$$i-[0-9]*"; then' . " \\\n"
-		      . "\t" . '    rm -f $$i-[0-9]*;' . " \\\n"
-		      . "\t" . '  fi;' . " \\\n"
-		      . "\tdone\n");
     &push_phony_cleaners ('aminfo');
     if ($cygnus_mode)
     {
