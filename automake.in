@@ -602,7 +602,6 @@ sub generate_makefile
 	# the generated makefile.
 	&push_dist_common ($in_file_name, $am_file_name);
     }
-    &define_variable ('subdir', $relative_dir);
 
     push (@sources, '$(SOURCES)')
 	if &variable_defined ('SOURCES');
@@ -615,6 +614,10 @@ sub generate_makefile
 	# Fatal error.  Just return, so we can continue with next file.
 	return;
     }
+
+    # Must do this after reading .am file.  See read_main_am_file to
+    # understand weird tricks we play there with variables.
+    &define_variable ('subdir', $relative_dir);
 
     # Check first, because we might modify some state.
     &check_cygnus;
@@ -6470,6 +6473,13 @@ sub read_main_am_file
     local (%am_vars) = ();
     local (@var_list) = ();
     local (%def_type) = ();
+
+    # This supports the strange variable tricks we are about to play.
+    if (scalar keys %contents > 0)
+    {
+	print STDERR "automake: programming error: variable defined before read_main_am_file\n";
+	exit 1;
+    }
 
     # We want to predefine as many variables as possible.  This lets
     # the user set them with `+=' in Makefile.am.  However, we don't

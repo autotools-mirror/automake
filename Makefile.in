@@ -95,6 +95,7 @@ ETAGS_ARGS = $(amfiles)
 TAGS_DEPENDENCIES = $(ETAGS_ARGS)
 
 EXTRA_DIST = ChangeLog.1996 ChangeLog.1998
+subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES =  automake aclocal
@@ -110,9 +111,9 @@ DATA =  $(dist_pkgdata_DATA) $(dist_script_DATA)
 DIST_COMMON =  README $(dist_pkgdata_DATA) $(dist_script_DATA) AUTHORS \
 COPYING ChangeLog INSTALL Makefile.am Makefile.in NEWS README-alpha \
 THANKS TODO aclocal.in aclocal.m4 ansi2knr.1 ansi2knr.c automake.in \
-config.guess config.sub configure configure.in elisp-comp install-sh \
-mdate-sh missing mkinstalldirs stamp-vti texinfo.tex version.texi \
-ylwrap
+compile config.guess config.sub configure configure.in elisp-comp \
+install-sh mdate-sh missing mkinstalldirs stamp-vti texinfo.tex \
+version.texi ylwrap
 
 
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -144,21 +145,22 @@ install-binSCRIPTS: $(bin_SCRIPTS)
 	@$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(DESTDIR)$(bindir)
 	@list='$(bin_SCRIPTS)'; for p in $$list; do \
+	  f="`echo $$p|sed '$(transform)'`"; \
 	  if test -f $$p; then \
-	    echo " $(INSTALL_SCRIPT) $$p $(DESTDIR)$(bindir)/`echo $$p|sed '$(transform)'`"; \
-	    $(INSTALL_SCRIPT) $$p $(DESTDIR)$(bindir)/`echo $$p|sed '$(transform)'`; \
-	  else if test -f $(srcdir)/$$p; then \
-	    echo " $(INSTALL_SCRIPT) $(srcdir)/$$p $(DESTDIR)$(bindir)/`echo $$p|sed '$(transform)'`"; \
-	    $(INSTALL_SCRIPT) $(srcdir)/$$p $(DESTDIR)$(bindir)/`echo $$p|sed '$(transform)'`; \
-	  else :; fi; fi; \
+	    echo " $(INSTALL_SCRIPT) $$p $(DESTDIR)$(bindir)/$$f"; \
+	    $(INSTALL_SCRIPT) $$p $(DESTDIR)$(bindir)/$$f; \
+	  elif test -f $(srcdir)/$$p; then \
+	    echo " $(INSTALL_SCRIPT) $(srcdir)/$$p $(DESTDIR)$(bindir)/$$f"; \
+	    $(INSTALL_SCRIPT) $(srcdir)/$$p $(DESTDIR)$(bindir)/$$f; \
+	  else :; fi; \
 	done
 
 uninstall-binSCRIPTS:
 	@$(NORMAL_UNINSTALL)
 	@list='$(bin_SCRIPTS)'; for p in $$list; do \
-	  file="`echo $$p|sed '$(transform)'`"; \
-	  echo " rm -f $(DESTDIR)$(bindir)/$$file"; \
-	  rm -f $(DESTDIR)$(bindir)/$$file; \
+	  f="`echo $$p|sed '$(transform)'`"; \
+	  echo " rm -f $(DESTDIR)$(bindir)/$$f"; \
+	  rm -f $(DESTDIR)$(bindir)/$$f; \
 	done
 
 $(srcdir)/version.texi: stamp-vti
@@ -437,7 +439,7 @@ top_distdir = $(distdir)
 # tarfile.
 distcheck: dist
 	-rm -rf $(distdir)
-	GZIP=$(GZIP_ENV) gunzip -c $(distdir).tar.gz | $(TAR) xf -
+	GZIP=$(GZIP_ENV) gunzip -c $(distdir).tar.gz | $(AMTAR) xf -
 	mkdir $(distdir)/=build
 	mkdir $(distdir)/=inst
 	dc_install_base=`cd $(distdir)/=inst && pwd`; \
@@ -457,11 +459,11 @@ distcheck: dist
 	echo "$$dashes"
 dist: distdir
 	-chmod -R a+r $(distdir)
-	$(TAR) ch$(AMTARFLAGS)f - $(distdir) | GZIP=$(GZIP_ENV) gzip -c > $(distdir).tar.gz
+	$(AMTAR) ch$(AMTARFLAGS)f - $(distdir) | GZIP=$(GZIP_ENV) gzip -c > $(distdir).tar.gz
 	-rm -rf $(distdir)
 dist-all: distdir
 	-chmod -R a+r $(distdir)
-	$(TAR) ch$(AMTARFLAGS)f - $(distdir) | GZIP=$(GZIP_ENV) gzip -c > $(distdir).tar.gz
+	$(AMTAR) ch$(AMTARFLAGS)f - $(distdir) | GZIP=$(GZIP_ENV) gzip -c > $(distdir).tar.gz
 	-rm -rf $(distdir)
 distdir: $(DISTFILES)
 	@if sed 15q $(srcdir)/NEWS | fgrep -e "$(VERSION)" > /dev/null; then :; else \
@@ -570,11 +572,11 @@ distclean-vti clean-vti maintainer-clean-vti install-info-am \
 uninstall-info mostlyclean-aminfo distclean-aminfo clean-aminfo \
 maintainer-clean-aminfo uninstall-dist_pkgdataDATA \
 install-dist_pkgdataDATA uninstall-dist_scriptDATA \
-install-dist_scriptDATA install-data-recursive uninstall-data-recursive \
-install-exec-recursive uninstall-exec-recursive installdirs-recursive \
-uninstalldirs-recursive all-recursive check-recursive \
-installcheck-recursive info-recursive dvi-recursive \
-mostlyclean-recursive distclean-recursive clean-recursive \
+install-dist_scriptDATA install-recursive uninstall-recursive \
+install-data-recursive uninstall-data-recursive install-exec-recursive \
+uninstall-exec-recursive installdirs-recursive uninstalldirs-recursive \
+all-recursive check-recursive installcheck-recursive info-recursive \
+dvi-recursive mostlyclean-recursive distclean-recursive clean-recursive \
 maintainer-clean-recursive tags tags-recursive mostlyclean-tags \
 distclean-tags clean-tags maintainer-clean-tags distdir info-am info \
 dvi-am dvi check check-am installcheck-local installcheck-am \
