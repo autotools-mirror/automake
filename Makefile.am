@@ -31,7 +31,13 @@ AUTOMAKESOURCES = automake.in aclocal.in
 
 TAGS_FILES = $(AUTOMAKESOURCES)
 
-EXTRA_DIST = ChangeLog.96 ChangeLog.98 ChangeLog.00 ChangeLog.01 ChangeLog.02 \
+EXTRA_DIST = \
+  ChangeLog.96 \
+  ChangeLog.98 \
+  ChangeLog.00 \
+  ChangeLog.01 \
+  ChangeLog.02 \
+  ChangeLog.03 \
   $(AUTOMAKESOURCES)
 
 ## Make versioned links.  We only run the transform on the root name;
