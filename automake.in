@@ -40,6 +40,7 @@ $IGNORE_PATTERN = "^##([^#].*)?\$";
 $WHITE_PATTERN = "^[ \t]*\$";
 $COMMENT_PATTERN = "^#";
 $RULE_PATTERN = "^([\$a-zA-Z_.][-.a-zA-Z0-9_(){}/\$]*) *:([^=].*|)\$";
+$SUFFIX_RULE_PATTERN = "^\\.([a-zA-Z]+)\\.([a-zA-Z]+)\$";
 $MACRO_PATTERN = "^([A-Za-z][A-Za-z0-9_]*)[ \t]*:?=[ \t]*(.*)\$";
 $BOGUS_MACRO_PATTERN = "^([^ \t]*)[ \t]*:?=[ \t]*(.*)\$";
 $GNITS_VERSION_PATTERN = "[0-9]+\\.[0-9]+([a-z]|\\.[0-9]+)?";
@@ -1147,6 +1148,11 @@ sub handle_single_transform_list
  		$_ .= $obj;
   		$seen_c_source = 1;
 	    }
+ 	    elsif (/\.$source_suffix_pattern$/) 
+ 	    {
+		# We just rewrite it.  Maybe we should do more.
+		s//.$suffix_rules{$1}/;
+ 	    }
 	    else
 	    {
 		# No error message here.  Used to have one, but it was
@@ -5057,6 +5063,22 @@ sub read_am_file
 	    $output_trailer .= $comment . $spacing . $cond_string . $_;
 	    $comment = $spacing = '';
 	    $saw_bk = /\\$/;
+
+	    # Check the rule for being a suffix rule. If so, store in
+	    # a hash.
+
+	    local ($source_suffix);
+	    local ($object_suffix);
+
+	    if (($source_suffix, $object_suffix) = ($1 =~ $SUFFIX_RULE_PATTERN)) 
+	    {
+	      $suffix_rules{$source_suffix} = $object_suffix;
+	      print "Sources ending in .$source_suffix become .$object_suffix\n" if $verbose;
+	      $source_suffix_pattern = "(" . join('|', keys %suffix_rules) . ")";
+	    }
+
+	    # FIXME: make sure both suffixes are in SUFFIXES? Or set
+	    # SUFFIXES from suffix_rules?
 	}
 	elsif (($is_ok_macro = /$MACRO_PATTERN/o)
 	       || /$BOGUS_MACRO_PATTERN/o)
@@ -5411,6 +5433,10 @@ sub initialize_per_input
     # Keys in this hash are the basenames of files which must depend
     # on ansi2knr.
     %de_ansi_files = ();
+
+    # This maps the source extension of a suffix rule to its
+    # corresponding output extension.
+    %suffix_rules = ();
 }
 
 
