@@ -663,7 +663,7 @@ sub define ($$$$$)
 	      $noam =~ s/-am$//;
 	      if (exists $dependencies{"$noam-am"})
 		{
-		  $hint = "consider using $target-local instead of $target";
+		  $hint = "consider using $noam-local instead of $target";
 		}
 
 	      msg_cond_rule ('override', $cond, $target,
