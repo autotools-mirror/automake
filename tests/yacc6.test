@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 2001, 2002, 2003  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -20,33 +20,86 @@
 
 # Test to make sure ylwrap put in right location.
 # Report from Tim Van Holder.
+# Also make sure depcomp does not needlessly update headers.
+# Report from Paolo Bonzini.
 
+required='gcc bison'
 . ./defs || exit 1
 
-cat > configure.in << 'END'
-AC_INIT
-AM_INIT_AUTOMAKE(nonesuch, nonesuch)
+set -e
+
+cat >> configure.in << 'END'
+AC_CONFIG_AUX_DIR([aux])
 AC_PROG_CC
 AC_PROG_YACC
-AC_OUTPUT(Makefile sub/Makefile)
+AC_CONFIG_FILES([sub/Makefile])
+AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
 SUBDIRS = sub
+
+test-time-unchanged:
+	test `ls -1t sub/main.$(OBJEXT) z | sed 1q` = z
+test-time-changed:
+	test `ls -1t sub/main.$(OBJEXT) z | sed 1q` = sub/main.$(OBJEXT)
 END
 
-mkdir sub
+mkdir aux sub
 
 cat > sub/Makefile.am << 'END'
-bin_PROGRAMS = foo
-foo_SOURCES = foo.y bar.y
+bin_PROGRAMS = foo bar
+AM_YFLAGS = -d
+foo_SOURCES = foo.y main.c
+foo_CPPFLAGS = -DFOO
+bar_SOURCES = bar.y main.c
 END
 
-: > sub/foo.y
-: > sub/bar.y
+cat > sub/foo.y << 'END'
+%{
+int yylex () {return 0;}
+void yyerror (char *s) {}
+%}
+%token TOKEN
+%%
+foobar : 'f' 'o' 'o' 'b' 'a' 'r' {};
+END
 
-$ACLOCAL || exit 1
-$AUTOMAKE -a || exit 1
-test -f ylwrap || exit 1
-$FGREP '(srcdir)/ylwrap' sub/Makefile.in && exit 1
-exit 0
+cp sub/foo.y sub/bar.y
+
+cat >sub/main.c <<'EOF'
+#ifdef FOO
+#  include "foo.h"
+#else
+#  include "bar.h"
+#endif
+
+int
+main()
+{
+  return 0;
+}
+EOF
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE -a
+test -f aux/ylwrap
+test ! -f ylwrap
+test ! -f sub/ylwrap
+$FGREP '(top_srcdir)/aux/ylwrap' sub/Makefile.in
+./configure
+$MAKE
+grep '#.*line.*foo.y' sub/foo.c
+grep '#.*line.*bar.y' sub/bar.c
+
+$sleep
+: > z
+$sleep
+touch sub/bar.y
+$MAKE
+$MAKE test-time-unchanged
+$sleep
+$PERL -pi -e s/TOKEN/TEKON/g sub/bar.y
+$MAKE
+$MAKE test-time-changed
