@@ -17,7 +17,10 @@ check-local:
 ## which are compiled -- a possibly useful feature.
 	  if test -f $$tst; then dir=.; \
 	  else dir="$(srcdir)"; fi; \
-	  $$dir/$$tst || failed=`expr $$failed + 1`; \
+	  $$dir/$$tst || { \
+	    failed=`expr $$failed + 1`; \
+	    echo "FAIL: $$tst"; \
+	  } \
 	done; \
 	if test "$$failed" -eq 0; then \
 	  echo "All $$all tests passed"; \
