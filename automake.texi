@@ -476,11 +476,12 @@ The special prefix @samp{check} indicates that the objects in question
 should not be built until the @code{make check} command is run.
 
 Possible primary names are @samp{PROGRAMS}, @samp{LIBRARIES},
-@samp{LISP}, @samp{SCRIPTS}, @samp{DATA}, @samp{HEADERS}, @samp{MANS},
-and @samp{TEXINFOS}.
+@samp{LISP}, @samp{PYTHON}, @samp{SCRIPTS}, @samp{DATA}, @samp{HEADERS},
+@samp{MANS}, and @samp{TEXINFOS}.
 @vindex PROGRAMS
 @vindex LIBRARIES
 @vindex LISP
+@vindex PYTHON
 @vindex SCRIPTS
 @vindex DATA
 @vindex HEADERS
@@ -2510,6 +2511,7 @@ use in GNU programs, it tries hard to interoperate with other GNU tools.
 * Guile::                       Guile
 * Libtool::                     Libtool
 * Java::                        Java
+* Python::                      Python
 @end menu
 
 
@@ -2595,7 +2597,7 @@ libtool, The Libtool Manual}) with the @samp{LTLIBRARIES} primary.
 @xref{A Shared Library}.
 
 
-@node Java,  , Libtool, Other GNU Tools
+@node Java, Python, Libtool, Other GNU Tools
 @section Java
 
 @cindex _JAVA primary, defined
@@ -2617,6 +2619,92 @@ primary can be used in a given @file{Makefile.am}.  The reason for this
 restriction is that, in general, it isn't possible to know which
 @file{.class} files were generated from which @file{.java} files -- so
 it would be impossible to know which files to install where.
+
+@node Python,  , Java, Other GNU Tools
+@section Python
+
+@cindex _PYTHON primary, defined
+@cindex PYTHON primary, defined
+@cindex Primary variable, PYTHON
+
+
+Automake provides support for Python modules.  Automake will turn on
+Python support if the @code{AM_CHECK_PYTHON} macro is used in
+@file{configure.in}.  The @samp{PYTHON} primary is used to hold a list
+of @file{.py} files.  Possible prefixes for this primary are
+@samp{python_} and @samp{noinst_}.  Note that if @code{python_PYTHON} is
+defined, then @file{configure.in} must run @code{AM_CHECK_PYTHON}.
+
+@code{AM_CHECK_PYTHON} takes a single argument --- either the word
+@samp{module} or @samp{package}.  The first installs files directly into
+the @file{site-packages} directory and is used when the @file{.py[co]}
+files must be on the @code{PYTHONPATH}.  The second is used for modules
+distributed as a package, which should be installed in a subdirectory
+of @file{site-packages} and contain the @file{__init__.py} file.  The
+subdirectory name is the same as the name given by @samp{PACKAGE}.
+
+
+@code{AM_CHECK_PYTHON} creates several output variables based on the
+Python installation found during configuration.
+
+@table @samp
+@item PYTHON
+The name of the Python executable.
+
+@item PYTHON_VERSION
+The Python version number, in the form @var{major}.@var{minor}
+(e.g. @samp{1.5}).  This is currently the value of
+@code{sys.version[:3]}.
+
+@item PYTHON_PREFIX
+The string @code{$prefix}.  This term may be used in future work
+which needs the contents of Python's @code{sys.prefix}, but general
+consensus is to always use the value from configure.
+
+@item PYTHON_EXEC_PREFIX
+The string @code{$exec_prefix}.  This term may be used in future work
+which needs the contents of Python's @code{sys.exec_prefix}, but general
+consensus is to always use the value from configure.
+
+@item PYTHON_PLATFORM
+The canonical name used by Python to describe the operating system, as
+given by @code{sys.platform}.  This value is sometimes needed when
+building Python extensions.
+
+@item pythondir
+The directory name for the top of the standard Python library.
+
+@item PYTHON_SITE
+The location of the platform-independent @file{site-packages} directory,
+where `module' files are installed.  Note that older versions of Python
+(pre-1.5) used @file{$prefix/lib/site-python} so future versions of
+Automake's Python support may provide backwards compatibility.
+
+@item PYTHON_SITE_PACKAGE
+The string @code{$PYTHON_SITE/$PACKAGE}.  This is the default
+installation directory for a Python `package.'
+
+@item PYTHON_SITE_INSTALL
+The top-level directory in which the Python files will be installed.  It
+will be the value of either @samp{PYTHON_SITE} or @samp{PYTHON_PACKAGE}
+depending on the argument given to @code{AM_CHECK_PYTHON}.
+
+@item PYTHON_SITE_EXEC
+The location of the platform-dependent @file{site-packages} directory,
+where shared library extensions should be placed.  Note that older
+versions of Python (pre-1.5) used @file{sharedmodules} so future version
+of Automake's Python support may provide backwards compatibility.
+
+@end table
+
+@vindex PYCFILES
+@vindex PYOFILES
+
+By default Automake will byte-compile all Python source files to both
+@file{.pyc} and @file{.pyo} forms.  If you wish to avoid generating the
+optimized byte-code files, simply define the variable @code{PYOFILES} to
+be empty.  Similarly, if you don't wish to generate the standard
+byte-compiled files, define the variable @code{PYCFILES} to be empty.
 
 
 @node Documentation, Install, Other GNU Tools, Top

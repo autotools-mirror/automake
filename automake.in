@@ -204,6 +204,9 @@ $package_version_line = 0;
 # TRUE if we've seen AM_PATH_LISPDIR.
 $seen_lispdir = 0;
 
+# TRUE if we've seen AM_CHECK_PYTHON.
+$seen_pythondir = 0;
+
 # TRUE if we've seen AC_EXEEXT.
 $seen_exeext = 0;
 
@@ -620,6 +623,7 @@ sub generate_makefile
     &handle_multilib;
     &handle_texinfo;
     &handle_emacs_lisp;
+    &handle_python;
     &handle_java;
     &handle_man_pages;
     &handle_data;
@@ -1117,7 +1121,7 @@ sub check_libobjs_sources
 #   remaining elements are names of objects
 sub handle_single_transform_list
 {
-    local ($derived, $obj, @files) = @_;
+    local ($var, $derived, $obj, @files) = @_;
     local (@result) = ();
     local ($nonansi_obj) = $obj;
     $nonansi_obj =~ s/_//g;
@@ -1127,8 +1131,12 @@ sub handle_single_transform_list
 	# Turn sources into objects.
 	foreach (@files)
 	{
-	    # Skip things that look like configure substitutions.
-	    next if /^\@.*\@$/;
+	    # Configure substitutions in _SOURCES variables are errors.
+	    if (/^\@.*\@$/)
+	    {
+		&am_line_error ($var, "$var includes configure substitution \`$_'");
+		next;
+	    }
 
 	    # If the source file is in a subdirectory then the `.o' is
 	    # put into the current directory.
@@ -1236,10 +1244,12 @@ sub handle_single_transform_list
 		}
 
 		# If doing dependency tracking, then we can't print
-		# the rule.
-		if ($use_dependencies
-		    && $rule ne ''
-		    && $language_map{$lang . '-autodep'} ne 'no')
+		# the rule.  Also, if we have a subdir object, we need
+		# to generate an explicit rule.
+		if (($use_dependencies
+		     && $rule ne ''
+		     && $language_map{$lang . '-autodep'} ne 'no')
+		    || ($r == $LANG_SUBDIR && $directory ne ''))
 		{
 		    $rule = '';
 		    local ($obj_sans_ext) = substr ($object, 0,
@@ -1418,7 +1428,7 @@ sub handle_source_transform
 		{
 		    @files = &variable_value_as_list ($var, $cond);
 		    ($temp, @result) =
-			&handle_single_transform_list ($one_file, $obj,
+			&handle_single_transform_list ($var, $one_file, $obj,
 						       @files);
 		    $linker = $temp if $linker eq '';
 
@@ -1435,8 +1445,8 @@ sub handle_source_transform
 	# Avoid defining needless variables.
 	next if (scalar @files == 0);
 
-	($temp, @result) = &handle_single_transform_list ($one_file, $obj,
-							  @files);
+	($temp, @result) = &handle_single_transform_list ($var, $one_file,
+							  $obj, @files);
 	$linker = $temp if $linker eq '';
 	&define_pretty_variable ($xpfx . $one_file . "_OBJECTS", '', @result)
 	    unless $prefix =~ /EXTRA_/;
@@ -1451,7 +1461,8 @@ sub handle_source_transform
 	push (@objects, $unxformed . $obj);
 	push (@files, $unxformed . '.c');
 
-	($temp, @result) = &handle_single_transform_list ($one_file, $obj,
+	($temp, @result) = &handle_single_transform_list ($one_file . '_SOURCES',
+							  $one_file, $obj,
 							  @files);
 	$linker = $temp if $linker eq '';
 	&define_pretty_variable ($one_file . "_OBJECTS", '', @result)
@@ -1574,7 +1585,8 @@ sub handle_lib_objects_cond
 
 	    push (@dep_list, $lsearch);
 	    $seen_libobjs = 1;
-	    if (! keys %libsources)
+	    if (! keys %libsources
+		&& ! &variable_defined ($1 . 'LIBOBJS'))
 	    {
 		&am_line_error ($var, "\@$1" . "LIBOBJS\@ seen but never set in \`configure.in'");
 	    }
@@ -4120,6 +4132,33 @@ sub handle_emacs_lisp
     }
 }
 
+# Handle Python
+sub handle_python
+{
+    local (@pyfiles) = &am_install_var ('-defaultdist', 'python', 'PYTHON',
+					'python', 'noinst');
+    return if ! @pyfiles;
+
+    # Found some python.
+    &define_configure_variable ('pythondir');
+    &define_configure_variable ('PYTHON');
+
+    $output_rules .= &file_contents ('python-clean');
+    push (@clean, 'python');
+
+    &am_error ("\`python_PYTHON' defined but \`AM_CHECK_PYTHON' not in \`configure.in'")
+	if ! $seen_pythondir && &variable_defined ('python_PYTHON');
+
+    if ($config_aux_dir eq '.' || $config_aux_dir eq '')
+    {
+	&define_variable ('py_compile', '$(top_srcdir)/py-compile');
+    }
+    else
+    {
+	&define_variable ('py_compile', $config_aux_dir . '/py-compile');
+    }
+}
+
 # Handle Java.
 sub handle_java
 {
@@ -4537,6 +4576,7 @@ sub scan_one_configure_file
 
 	$seen_prog_install = 1 if /AC_PROG_INSTALL/;
         $seen_lispdir = 1 if /AM_PATH_LISPDIR/;
+	$seen_pythondir = 1 if /AM_PATH_PYTHON/;
 
         if (/A(C|M)_PROG_LIBTOOL/)
 	{
@@ -4614,6 +4654,9 @@ sub scan_configure
     }
     &am_error ("\`install.sh' is an anachronism; use \`install-sh' instead")
         if -f $config_aux_path[0] . '/install.sh';
+
+    &require_config_file ($FOREIGN, 'py-compile')
+	if $seen_pythondir;
 }
 
 ################################################################
@@ -6515,7 +6558,7 @@ sub initialize_global_constants
 	 "libversion.in", "mdate-sh", "mkinstalldirs", "install-sh",
 	 'texinfo.tex', "ansi2knr.c", "ansi2knr.1", 'elisp-comp',
 	 'ylwrap', 'acinclude.m4', @libtoolize_files,
-	 'missing', 'depcomp', 'compile'
+	 'missing', 'depcomp', 'compile', 'py-compile'
 	 );
 
     # Commonly used files we auto-include, but only sometimes.
@@ -6972,9 +7015,11 @@ sub am_install_var
     # Now that configure substitutions are allowed in where_HOW
     # variables, it is an error to actually define the primary.  We
     # allow `JAVA', as it is customarily used to mean the Java
-    # interpreter.  This is but one of several Java hacks.
+    # interpreter.  This is but one of several Java hacks.  Similarly,
+    # `PYTHON' is customarily used to mean the Python interpreter.
     &am_line_error ($primary, "\`$primary' is an anachronism")
-	if &variable_defined ($primary) && $primary ne 'JAVA';
+	if &variable_defined ($primary)
+	    && ($primary ne 'JAVA' && $primary ne 'PYTHON');
 
 
     # Look for misspellings.  It is an error to have a variable ending
@@ -7172,7 +7217,8 @@ sub am_install_var
     }
 
     # The JAVA variable is used as the name of the Java interpreter.
-    if (@used && $primary ne 'JAVA')
+    # The PYTHON variable is used as the name of the Python interpreter.
+    if (@used && $primary ne 'JAVA' && $primary ne 'PYTHON')
     {
 	# Define it.
 	&define_pretty_variable ($primary, '', @used);
@@ -7187,7 +7233,7 @@ sub am_install_var
 
     # Push here because PRIMARY might be configure time determined.
     push (@all, '$(' . $primary . ')')
-	if @used && $primary ne 'JAVA';
+	if @used && $primary ne 'JAVA' && $primary ne 'PYTHON';
 
     # Make the result unique.  This lets the user use conditionals in
     # a natural way, but still lets us program lazily -- we don't have
