@@ -411,8 +411,8 @@ my $package_version = '';
 # Where version is defined.
 my $package_version_location;
 
-# TRUE if we've seen AM_PATH_LISPDIR.
-my $seen_lispdir = 0;
+# Where AM_PATH_LISPDIR appears.
+my $am_lispdir_location;
 
 # TRUE if we've seen AM_PATH_PYTHON.
 my $seen_pythondir = 0;
@@ -3085,7 +3085,7 @@ sub handle_texinfo_helper
 	    # This is ugly, but it is our historical practice.
 	    if ($config_aux_dir_set_in_configure_in)
 	    {
-		&require_conf_file_with_line ('info_TEXINFOS', $FOREIGN,
+		require_conf_file_with_macro ('info_TEXINFOS', $FOREIGN,
 					      'mdate-sh');
 	    }
 	    else
@@ -3197,7 +3197,7 @@ sub handle_texinfo_helper
     {
 	if ($need_texi_file > 1)
 	{
-	    &require_conf_file_with_line ('info_TEXINFOS', $FOREIGN,
+	    require_conf_file_with_macro ('info_TEXINFOS', $FOREIGN,
 					  'texinfo.tex');
 	}
 	else
@@ -4313,10 +4313,9 @@ sub handle_emacs_lisp
     push (@all, '$(ELCFILES)');
 
     &am_error ("`lisp_LISP' defined but `AM_PATH_LISPDIR' not in `$configure_ac'")
-      if ! $seen_lispdir && &variable_defined ('lisp_LISP');
+      if ! $am_lispdir_location && &variable_defined ('lisp_LISP');
 
-    &require_conf_file_with_conf_line ('AM_PATH_LISPDIR',
-				       $FOREIGN, 'elisp-comp');
+    require_conf_file ($am_lispdir_location,  $FOREIGN, 'elisp-comp');
     &define_variable ('elisp_comp', $config_aux_dir . '/elisp-comp');
 }
 
@@ -4568,7 +4567,7 @@ sub scan_autoconf_traces ($)
 	}
       elsif ($macro eq 'AM_PATH_LISPDIR')
 	{
-	  $seen_lispdir = $here;
+	  $am_lispdir_location = $here;
 	}
       elsif ($macro eq 'AM_PATH_PYTHON')
 	{
@@ -4857,7 +4856,7 @@ sub scan_one_autoconf_file
 	    $configure_cond{'MAINTAINER_MODE'} = $here;
 	}
 
-        $seen_lispdir = 1 if /AM_PATH_LISPDIR/;
+        $am_lispdir_location = $here if /AM_PATH_LISPDIR/;
 
         if (/AM_PATH_PYTHON/)
 	  {
