@@ -2011,7 +2011,7 @@ sub define_objects_from_sources ($$$$$$$)
 
   transform_variable_recursively
     ($var, $objvar, 'am__objects', $nodefine, $where,
-     # The transfom code to run on each filename.
+     # The transform code to run on each filename.
      sub {
        my ($subvar, $val, $cond, $full_cond) = @_;
        my @trans = &handle_single_transform_list ($subvar, $topparent,
@@ -2211,12 +2211,8 @@ sub handle_LIBOBJS ($$$)
   $lt ||= '';
   my $myobjext = ($1 ? 'l' : '') . 'o';
 
-  if (! keys %libsources)
-    {
-      require_variables_for_variable ($var,
-				      "\@${lt}LIBOBJS\@ used",
-				      $lt . 'LIBOBJS');
-    }
+  $var->requires_variables ("\@${lt}LIBOBJS\@ used", $lt . 'LIBOBJS')
+    if ! keys %libsources;
 
   foreach my $iter (keys %libsources)
     {
@@ -2252,8 +2248,7 @@ sub handle_ALLOCA ($$$)
   my ($var, $cond, $lt) = @_;
   my $myobjext = ($lt ? 'l' : '') . 'o';
   $lt ||= '';
-  require_variables_for_variable ($var, "\@${lt}ALLOCA\@ used",
-				  $lt . 'ALLOCA');
+  $var->requires_variables ("\@${lt}ALLOCA\@ used", $lt . 'ALLOCA');
   $dep_files{'$(DEPDIR)/alloca.P' . $myobjext} = 1;
   require_file_with_macro ($cond, $var, FOREIGN, 'alloca.c');
   &saw_extension ('c');
@@ -2502,9 +2497,11 @@ sub handle_libraries
   my @prefix = am_primary_prefixes ('LIBRARIES', 0, 'lib', 'pkglib',
 				    'noinst', 'check');
 
-  require_variables_for_variable ($prefix[0] . '_LIBRARIES',
-				  'library used', 'RANLIB')
-    if (@prefix);
+  if (@prefix)
+    {
+      my $var = rvar ($prefix[0] . '_LIBRARIES');
+      $var->requires_variables ('library used', 'RANLIB');
+    }
 
   foreach my $pair (@liblist)
     {
@@ -2588,9 +2585,11 @@ sub handle_ltlibraries
   my @prefix = am_primary_prefixes ('LTLIBRARIES', 0, 'lib', 'pkglib',
 				    'noinst', 'check');
 
-  require_variables_for_variable ($prefix[0] . '_LTLIBRARIES',
-				  'Libtool library used', 'LIBTOOL')
-    if (@prefix);
+  if (@prefix)
+    {
+      my $var = rvar ($prefix[0] . '_LTLIBRARIES');
+      $var->requires_variables ('Libtool library used', 'LIBTOOL');
+    }
 
   my %liblocations = ();	# Location (in Makefile.am) of each library.
 
@@ -6574,12 +6573,10 @@ sub am_primary_prefixes ($$@)
 	    }
 	  # A not explicitely valid directory is allowed if Xdir is defined.
 	  elsif (! defined $valid{$X} &&
-		 require_variables_for_variable ($varname,
-						 "`$varname' is used",
-						 "${X}dir"))
+		 $var->requires_variables ("`$varname' is used", "${X}dir"))
 	    {
 	      # Nothing to do.  Any error message has been output
-	      # by require_variables_for_variable.
+	      # by $var->requires_variables.
 	    }
 	  else
 	    {

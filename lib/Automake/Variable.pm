@@ -38,10 +38,9 @@ use vars '@ISA', '@EXPORT', '@EXPORT_OK';
 	      variable_delete
 	      variables_dump
 	      set_seen
-	      require_variables require_variables_for_variable
+	      require_variables
 	      variable_value
 	      output_variables
-	      traverse_variable_recursively
 	      transform_variable_recursively);
 
 =head1 NAME
@@ -191,8 +190,8 @@ my %_silent_variable_override =
 # the named of the helper variable used to append to VAR in CONDITIONS.
 my %_appendvar = ();
 
-# Each call to C<traverse_variable_recursively> gets an unique label.
-# This is used to detect recursively defined variables.
+# Each call to C<Automake::Variable::traverse_recursively> gets an
+# unique label. This is used to detect recursively defined variables.
 my $_traversal = 0;
 
 
@@ -756,9 +755,8 @@ sub _value_as_list_recursive_worker ($$$)
 {
   my ($var, $cond_filter, $loc_wanted) = @_;
 
-  return traverse_variable_recursively
-    ($var,
-     # Construct [$location, $value] pairs if requested.
+  return $var->traverse_recursively
+    (# Construct [$location, $value] pairs if requested.
      sub {
        my ($var, $val, $cond, $full_cond) = @_;
        return [$var->rdef ($cond)->location, $val] if $loc_wanted;
@@ -791,7 +789,7 @@ sub has_conditional_contents ($)
   # because we found a condition, or for some other error.
   eval
     {
-      $self->traverse_variable_recursively
+      $self->traverse_recursively
 	(sub
 	 {
 	   my ($subvar, $val, $cond, $full_cond) = @_;
@@ -1320,23 +1318,24 @@ sub require_variables ($$$@)
   return $res;
 }
 
-=item C<$count = require_variables_for_variable ($var, $reason, @variables)>
+=item C<$count = $var->requires_variables ($reason, @variables)>
 
-Same as C<require_variables>, but take a variable name as first argument.
+Same as C<require_variables>, but a method of Automake::Variable.
 C<@variables> should be defined in the same conditions as C<$var> is
-defined.  C<$var> can be a variable name or an C<Automake::Variable>.
+defined.
 
 =cut
 
-sub require_variables_for_variable ($$@)
+sub requires_variables ($$@)
 {
   my ($var, $reason, @args) = @_;
-  $var = rvar ($var) unless ref $var;
+  my $res = 0;
   for my $cond ($var->conditions->conds)
     {
-      return require_variables ($var->rdef ($cond)->location, $reason,
-				$cond, @args);
+      $res += require_variables ($var->rdef ($cond)->location, $reason,
+				 $cond, @args);
     }
+  return $res;
 }
 
 
@@ -1396,18 +1395,14 @@ sub output_variables ()
   return $res;
 }
 
-=item C<traverse_variable_recursively ($var, &fun_item, &fun_collect, [$cond_filter])>
+=item C<$var-E<gt>traverse_recursively (&fun_item, &fun_collect, [$cond_filter])>
 
-=item C<$var-E<gt>traverse_variable_recursively (&fun_item, &fun_collect, [$cond_filter])>
+Split the value of the Automake::Variable C<$var> on space, and
+traverse its components recursively.  If C<$cond_filter> is an
+C<Automake::Condition>, process any conditions which are true when
+C<$cond_filter> is true.  Otherwise, process all conditions.
 
-Split the value of the variable C<$var> on space, and traverse its
-componants recursively.  (C<$var> may be a variable name in the first
-syntax.  It must be an C<Automake::Variable> otherwise.)  If
-C<$cond_filter> is an C<Automake::Condition>, process any conditions
-which are true when C<$cond_filter> is true.  Otherwise, process all
-conditions.
-
-We distinguish to kinds of items in the content of C<$var>.
+We distinguish two kinds of items in the content of C<$var>.
 Terms that look like C<$(foo)> or C<${foo}> are subvariables
 and cause recursion.  Other terms are assumed to be filenames.
 
@@ -1442,8 +1437,8 @@ arguments:
 Typically you should do C<$cond->merge ($parent_cond)> to recompute
 the C<$full_cond> associated to C<@result>.  C<&fun_collect> may
 return a list of items, that will be used as the result of
-C<&traverse_variable_recursively> (the top-level, or it's recursive
-calls).
+C<Automake::Variable::traverse_recursively> (the top-level, or it's
+recursive calls).
 
 =cut
 
@@ -1451,27 +1446,23 @@ calls).
 # substitutions currently in force.
 my @_substfroms;
 my @_substtos;
-sub traverse_variable_recursively ($&&;$)
+sub traverse_recursively ($&&;$)
 {
   ++$_traversal;
   @_substfroms = ();
   @_substtos = ();
   my ($var, $fun_item, $fun_collect, $cond_filter) = @_;
-  return _traverse_variable_recursively_worker ($var, $var,
-						$fun_item, $fun_collect,
-						$cond_filter, TRUE)
+  return $var->_do_recursive_traversal ($var,
+					$fun_item, $fun_collect,
+					$cond_filter, TRUE)
 }
 
-# The guts of &traverse_variable_recursively.
-sub _traverse_variable_recursively_worker ($$&&$$)
+# The guts of Automake::Variable::traverse_recursively.
+sub _do_recursive_traversal ($$&&$$)
 {
   my ($var, $parent, $fun_item, $fun_collect, $cond_filter, $parent_cond) = @_;
 
-  # Don't recurse into undefined variables and mark
-  # existing variable as examined.
-  $var = set_seen $var;
-  return ()
-    unless $var;
+  $var->set_seen;
 
   if ($var->{'scanned'} == $_traversal)
     {
@@ -1505,38 +1496,39 @@ sub _traverse_variable_recursively_worker ($$&&$$)
 	  # only of Emacs's indentation.)
 	  if ($val =~ /^\$\{([^\}]*)\}$/ || $val =~ /^\$\(([^\)]*)\)$/)
 	    {
-	      my $subvar = $1;
+	      my $subvarname = $1;
 
 	      # If the user uses a losing variable name, just ignore it.
 	      # This isn't ideal, but people have requested it.
-	      next if ($subvar =~ /\@.*\@/);
-
+	      next if ($subvarname =~ /\@.*\@/);
 
 	      # See if the variable is actually a substitution reference
 	      my ($from, $to);
-	      my @temp_list;
               # This handles substitution references like ${foo:.a=.b}.
-	      if ($subvar =~ /^([^:]*):([^=]*)=(.*)$/o)
+	      if ($subvarname =~ /^([^:]*):([^=]*)=(.*)$/o)
 		{
-		  $subvar = $1;
+		  $subvarname = $1;
 		  $to = $3;
 		  $from = quotemeta $2;
 		}
 	      push @_substfroms, $from;
 	      push @_substtos, $to;
 
-	      my @res =
-		&_traverse_variable_recursively_worker ($subvar, $parent,
-							$fun_item,
-							$fun_collect,
-							$cond_filter,
-							$full_cond);
+	      my $subvar = var ($subvarname);
+	      # Don't recurse into undefined variables.
+	      next unless $subvar;
+
+	      my @res = $subvar->_do_recursive_traversal ($parent,
+							  $fun_item,
+							  $fun_collect,
+							  $cond_filter,
+							  $full_cond);
 	      push (@result, @res);
 
 	      pop @_substfroms;
 	      pop @_substtos;
 	    }
-	    elsif ($fun_item) # $var is a filename we must process
+	  elsif ($fun_item) # $var is a filename we must process
 	    {
 	      my $substnum=$#_substfroms;
 	      while ($substnum >= 0)
@@ -1546,7 +1538,8 @@ sub _traverse_variable_recursively_worker ($$&&$$)
 		  $substnum -= 1;
 		}
 
-	      # Make sure you update the doc of &traverse_variable_recursively
+	      # Make sure you update the doc of
+	      # Automake::Variable::traverse_recursively
 	      # if you change the prototype of &fun_item.
 	      my @transformed = &$fun_item ($var, $val, $cond, $full_cond);
 	      push (@result, @transformed);
@@ -1559,7 +1552,7 @@ sub _traverse_variable_recursively_worker ($$&&$$)
   # is free to use the same variable several times in the same definition.
   $var->{'scanned'} = -1;
 
-  # Make sure you update the doc of &traverse_variable_recursively
+  # Make sure you update the doc of Automake::Variable::traverse_recursively
   # if you change the prototype of &fun_collect.
   return &$fun_collect ($var, $parent_cond, @allresults);
 }
@@ -1637,7 +1630,7 @@ Arguments are:
              (this assumes &fun_item has some useful side-effect)
   $where     context into which variable definitions are done
   &fun_item  a transformation function -- see the documentation
-             of &fun_item in traverse_variable_recursively.
+             of &fun_item in Automake::Variable::traverse_recursively.
 
 This returns the string C<"\$($RESVAR)">.
 
@@ -1647,13 +1640,10 @@ sub transform_variable_recursively ($$$$$&)
 {
   my ($var, $resvar, $base, $nodefine, $where, $fun_item) = @_;
 
-  # Convert $var here, even though &traverse_variable_recursively
-  # would do it, because we need to compare $var and $subvar below.
   $var = ref $var ? $var : rvar $var;
 
-  my $res = &traverse_variable_recursively
-    ($var,
-     $fun_item,
+  my $res = $var->traverse_recursively
+    ($fun_item,
      # The code that define the variable holding the result
      # of the recursive transformation of a subvariable.
      sub {
