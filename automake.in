@@ -971,6 +971,8 @@ sub get_object_extension
 # Call finish function for each language that was used.
 sub finish_languages
 {
+    local ($ltcompile, $ltlink) = &libtool_compiler;
+
     local ($ext, $name, $lang, %done);
     local ($non_c) = 1;
     foreach $ext (sort keys %extension_seen)
@@ -1009,7 +1011,10 @@ sub finish_languages
 			      . "\t\$(LT"
 			      . $language_map{$lang . '-compiler-name'}
 			      . ") "
-			      . $outarg
+			      . $language_map{$lang . '-output-arg'}
+			      # We can always use -c -o with libtool.
+			      . ($language_map{$lang . '-flags'} eq 'CFLAGS'
+				 ? ' -o $@' : '')
 			      . " \$<\n")
 		if $seen_libtool;
 	}
@@ -1043,8 +1048,6 @@ sub finish_languages
     # it.
     if (! $non_c || scalar keys %suffix_rules > 0)
     {
-	local ($ltcompile, $ltlink) = &libtool_compiler;
-
 	if (! defined $done{'c'})
 	{
 	    &define_configure_variable ($language_map{'c-flags'});
