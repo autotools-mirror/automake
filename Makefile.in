@@ -26,6 +26,7 @@ am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
 INSTALL = @INSTALL@
 install_sh_DATA = $(install_sh) -c -m 644
 install_sh_PROGRAM = $(install_sh) -c
+install_sh_SCRIPT = $(install_sh) -c
 INSTALL_HEADER = $(INSTALL_DATA)
 NORMAL_INSTALL = :
 PRE_INSTALL = :
@@ -146,24 +147,25 @@ automake: $(top_builddir)/config.status automake.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 aclocal: $(top_builddir)/config.status aclocal.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
+binSCRIPT_INSTALL = $(INSTALL_SCRIPT)
 install-binSCRIPTS: $(bin_SCRIPTS)
 	@$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(DESTDIR)$(bindir)
 	@list='$(bin_SCRIPTS)'; for p in $$list; do \
-	  f="`echo $$p|sed '$(transform)'`"; \
-	  if test -f $$p; then \
-	    echo " $(INSTALL_SCRIPT) $$p $(DESTDIR)$(bindir)/$$f"; \
-	    $(INSTALL_SCRIPT) $$p $(DESTDIR)$(bindir)/$$f; \
-	  elif test -f $(srcdir)/$$p; then \
-	    echo " $(INSTALL_SCRIPT) $(srcdir)/$$p $(DESTDIR)$(bindir)/$$f"; \
-	    $(INSTALL_SCRIPT) $(srcdir)/$$p $(DESTDIR)$(bindir)/$$f; \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  if test -f $$d$$p; then \
+	    f="`echo $$f|sed '$(transform)'`"; \
+	    echo " $(binSCRIPT_INSTALL) $$d$$p $(DESTDIR)$(bindir)/$$f"; \
+	    $(binSCRIPT_INSTALL) $$d$$p $(DESTDIR)$(bindir)/$$f; \
 	  else :; fi; \
 	done
 
 uninstall-binSCRIPTS:
 	@$(NORMAL_UNINSTALL)
 	@list='$(bin_SCRIPTS)'; for p in $$list; do \
-	  f="`echo $$p|sed '$(transform)'`"; \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  f="`echo $$f|sed '$(transform)'`"; \
 	  echo " rm -f $(DESTDIR)$(bindir)/$$f"; \
 	  rm -f $(DESTDIR)$(bindir)/$$f; \
 	done
@@ -709,7 +711,7 @@ maintainer-check: automake aclocal
 	  echo 'it is more portable.' 1>&2; \
 	  exit 1; \
 	fi
-	@if grep '$$MAKE.*-e' $(srcdir)/tests/*.test | grep -v '-e.*SHELL' ; then \
+	@if grep '$$MAKE.* -e' $(srcdir)/tests/*.test | grep -v '-e.*SHELL' ; then \
 	  echo 'Always overwrite SHELL when using "$$MAKE -e".' 1>&2; \
 	  echo 'Use "$$MAKE -e SHELL=/bin/sh" in the above lines.' 1>&2; \
 	  exit 1; \

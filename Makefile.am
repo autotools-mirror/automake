@@ -192,7 +192,7 @@ maintainer-check: automake aclocal
 	fi
 ## On NetBSD (1.5) and OSF, the $SHELL variable is still inherited from
 ## the environment.
-	@if grep '$$MAKE.*-e' $(srcdir)/tests/*.test | grep -v '-e.*SHELL' ; then \
+	@if grep '$$MAKE.* -e' $(srcdir)/tests/*.test | grep -v '-e.*SHELL' ; then \
 	  echo 'Always overwrite SHELL when using "$$MAKE -e".' 1>&2; \
 	  echo 'Use "$$MAKE -e SHELL=/bin/sh" in the above lines.' 1>&2; \
 	  exit 1; \
