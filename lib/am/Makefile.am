@@ -142,12 +142,24 @@ path-check: distdir
 ## Program to use to fetch files.
 WGET = wget
 
-## We assume all these are at ftp.gnu.org.
-## FIXME: `missing'
-FETCHFILES = config/config.guess config/config.sub 
+## Files that we fetch and which we compare against.
+## FIXME should be a lot more here
+FETCHFILES = config.guess config.sub
 
 ## Fetch the latest versions of files we care about.
 fetch:
-	cd $(srcdir) && \
-	$(WGET) ftp://ftp.gnu.org/gnu/config/config.guess \
-	$(WGET) ftp://ftp.gnu.org/gnu/config/config.sub \
+	rm -rf Fetchdir > /dev/null 2>&1
+	mkdir Fetchdir
+## If a get fails then that is a problem.
+	(cd Fetchdir && \
+	$(WGET) ftp://ftp.gnu.org/gnu/config/config.guess; \
+	$(WGET) ftp://ftp.gnu.org/gnu/config/config.sub)
+## Don't exit after test because we want to give as many errors as
+## possible.
+	@stat=0; for file in $(FETCHFILES); do \
+	  if diff $(srcdir)/$$file Fetchdir/$$file > /dev/null 2>&1; then :; \
+	  else \
+	    stat=1; \
+	    echo "install Fetchdir/$$file into srcdir and commit"; \
+	  fi; \
+	done; exit $$stat

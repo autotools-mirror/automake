@@ -110,7 +110,7 @@ EXTRA_DIST = ChangeLog.1996 ChangeLog.1998
 
 WGET = wget
 
-FETCHFILES = config/config.guess config/config.sub 
+FETCHFILES = config.guess config.sub
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
@@ -692,9 +692,18 @@ path-check: distdir
 	  exit $$status
 
 fetch:
-	cd $(srcdir) && \
-	$(WGET) ftp://ftp.gnu.org/gnu/config/config.guess \
-	$(WGET) ftp://ftp.gnu.org/gnu/config/config.sub \
+	rm -rf Fetchdir > /dev/null 2>&1
+	mkdir Fetchdir
+	(cd Fetchdir && \
+	$(WGET) ftp://ftp.gnu.org/gnu/config/config.guess; \
+	$(WGET) ftp://ftp.gnu.org/gnu/config/config.sub)
+	@stat=0; for file in $(FETCHFILES); do \
+	  if diff $(srcdir)/$$file Fetchdir/$$file > /dev/null 2>&1; then :; \
+	  else \
+	    stat=1; \
+	    echo "install Fetchdir/$$file into srcdir and commit"; \
+	  fi; \
+	done; exit $$stat
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
