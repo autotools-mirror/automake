@@ -829,12 +829,13 @@ sub get_object_extension
 		}
 	    }
 	}
-	my $xform = &transform ('DEFAULT_INCLUDES' => $default_include);
-	$output_vars .= &file_contents ('comp-vars', $xform);
+	$output_vars .=
+	  &file_contents ('comp-vars',
+			  &transform ('DEFAULT_INCLUDES' => $default_include));
 
 	$output_rules .=
 	  &file_contents ('compile',
-			  &transform_cond ('OBJEXT' => $seen_objext));
+			  &transform ('OBJEXT' => $seen_objext));
 
 	# If using X, include some extra variable definitions.  NOTE
 	# we don't want to force these into CFLAGS or anything,
@@ -2346,9 +2347,9 @@ sub handle_texinfo
 
     my $xform =
       &transform ('TEXINFODIR' => $texinfodir,
-		  'TEXICLEAN' => &pretty_print_internal ("\t-rm -f",
-							 "\t  ",
-							 @texi_cleans));
+		  'TEXICLEAN'  => &pretty_print_internal ("\t-rm -f",
+							  "\t  ",
+							  @texi_cleans));
     foreach my $txsfx (sort keys %texi_suffixes)
     {
 	$output_rules .= &file_contents ('texibuild',
@@ -2645,9 +2646,9 @@ sub handle_dist
 
     # Rule to check whether a distribution is viable.
     my $xform =
-      &transform_cond ('TOPDIR'         => ($relative_dir eq '.'),
-		       'DISTCHECK-HOOK' => &target_defined ('distcheck-hook'),
-		       'GETTEXT'        => $seen_gettext);
+      &transform ('TOPDIR'         => ($relative_dir eq '.'),
+		  'DISTCHECK-HOOK' => &target_defined ('distcheck-hook'),
+		  'GETTEXT'        => $seen_gettext);
 
     # Prepend $(distdir) to each directory given.
     my %rewritten;
@@ -2695,10 +2696,9 @@ sub handle_dist
     $output_rules .=
       &file_contents ('distdir',
 		      $xform
-		      . &transform ('DIST-TARGETS' => join (" ", @dist_targets),
-				    'TOP_DISTDIR'  => $top_distdir)
-		      . &transform_cond ('DISTDIR' =>
-					    ! &variable_defined ('distdir')));
+		      . &transform ('DISTDIR' => !&variable_defined('distdir'),
+				    'DIST-TARGETS' => join(' ', @dist_targets),
+				    'TOP_DISTDIR'  => $top_distdir));
 }
 
 
@@ -2716,10 +2716,10 @@ sub add_depend2
     my $flag = $language_map{"$lang-flags"};
 
     # First include code for ordinary objects.
-    my $xform = (&transform ('PFX'  => $pfx,
-			     'FPFX' => $fpfx)
-		 . &transform_cond ('OBJEXT'  => $seen_objext,
-				    'LIBTOOL' => $seen_libtool));
+    my $xform = &transform ('PFX'  => $pfx,
+			    'FPFX' => $fpfx,
+			    'OBJEXT'  => $seen_objext,
+			    'LIBTOOL' => $seen_libtool);
 
     # This function can be called even when we don't want dependency
     # tracking.  This happens when we need an explicit rule for some
@@ -3166,18 +3166,18 @@ sub handle_configure
 	    my $stamp_name = 'stamp-h';
 	    $stamp_name .= "${hdr_index}" if scalar (@config_headers) > 1;
 
-            my $xform = '';
             my $out_dir = dirname ($ch_sans_dir);
 
-	    $xform = &transform ('CONFIGURE_AC'       => $configure_ac,
-				 'FILES'              => join (' ', @files),
-				 'CONFIG_HEADER'      => $cn_sans_dir,
-				 'CONFIG_HEADER_IN'   => $ch_sans_dir,
-				 'CONFIG_HEADER_FULL' => $one_fullname,
-                                 'STAMP'            => "$stamp_dir$stamp_name",
-                                 'SRC_STAMP'        => "$out_dir/$stamp_name");
-
-            $output_rules .= &file_contents ('remake-hdr', $xform);
+            $output_rules .=
+	      &file_contents ('remake-hdr',
+			      &transform
+			      ('CONFIGURE_AC'       => $configure_ac,
+			       'FILES'              => join (' ', @files),
+			       'CONFIG_HEADER'      => $cn_sans_dir,
+			       'CONFIG_HEADER_IN'   => $ch_sans_dir,
+			       'CONFIG_HEADER_FULL' => $one_fullname,
+			       'STAMP'            => "$stamp_dir$stamp_name",
+			       'SRC_STAMP'        => "$out_dir/$stamp_name"));
 
 	    &create ("${relative_dir}/${out_dir}/${stamp_name}.in");
 	    &require_file_with_conf_line ($config_header_line, $FOREIGN,
@@ -3633,8 +3633,8 @@ sub handle_clean
     # Don't include `MAINTAINER'; it is handled specially below.
     foreach my $name ('MOSTLY', '', 'DIST')
     {
-      $xform .= &transform_cond ("${name}CLEAN"
-				 => &variable_defined ("${name}CLEANFILES"));
+      $xform .= &transform ("${name}CLEAN"
+			    => &variable_defined ("${name}CLEANFILES"));
     }
 
     # Built sources are automatically removed by maintainer-clean.
@@ -3777,7 +3777,7 @@ sub handle_tests_dejagnu
     # one.
     $output_rules .=
       &file_contents ('dejagnu',
-		      &transform_cond
+		      &transform
 		      ('SITE-EXP' => ! &target_defined ('site.exp'),
 		       'BUILD'    => $seen_canonical == $AC_CANONICAL_SYSTEM,
 		       'HOST'     => $seen_canonical,
@@ -6196,12 +6196,11 @@ sub define_standard_variables
 {
     $output_vars .=
         &file_contents ('header-vars',
-			&transform_cond
+			&transform
 			('BUILD'    => $seen_canonical == $AC_CANONICAL_SYSTEM,
 			 'HOST'     => $seen_canonical,
-			 'TARGET'   => $seen_canonical == $AC_CANONICAL_SYSTEM)
-			. &transform
-			('top_builddir' => backname ($relative_dir)));
+			 'TARGET'   => $seen_canonical == $AC_CANONICAL_SYSTEM,
+			 'top_builddir' => backname ($relative_dir)));
 
     foreach my $curs (sort keys %configure_vars)
     {
@@ -6576,18 +6575,18 @@ sub file_contents
     &prog_error ("file_contents: $command")
         if $command ne '' && substr ($command, -1) ne ';';
     $command .=
-      &transform_cond ('CYGNUS'   => $cygnus_mode,
+      &transform ('CYGNUS'   => $cygnus_mode,
 
-		       'SHAR'        => $options{'dist-shar'},
-		       'BZIP2'       => $options{'dist-bzip2'},
-		       'ZIP'         => $options{'dist-zip'},
-		       'COMPRESS'    => $options{'dist-tarZ'},
+		  'SHAR'        => $options{'dist-shar'},
+		  'BZIP2'       => $options{'dist-bzip2'},
+		  'ZIP'         => $options{'dist-zip'},
+		  'COMPRESS'    => $options{'dist-tarZ'},
 
-		       'INSTALL-INFO' => !$options{'no-installinfo'},
-		       'INSTALL-MAN'  => !$options{'no-installman'},
-		       'CK-NEWS'      => $options{'check-news'},
+		  'INSTALL-INFO' => !$options{'no-installinfo'},
+		  'INSTALL-MAN'  => !$options{'no-installman'},
+		  'CK-NEWS'      => $options{'check-news'},
 
-		       'SUBDIRS' => &variable_defined ('SUBDIRS'));
+		  'SUBDIRS' => &variable_defined ('SUBDIRS'));
 
     # Swallow the file and applied the COMMAND.
     my $file = $am_dir . '/' . $basename . '.am';
@@ -6758,9 +6757,10 @@ sub file_contents
 # $REGEXP
 # &transform (%PAIRS)
 # -------------------
-# Create a replacement expression suitable for file_contents
-# to replace each key of %PAIRS by its value.  Also uses &transform_cond
-# on %PAIRS.
+# Foreach ($TOKEN, $VAL) in %PAIRS produce a replacement expression suitable
+# for file_contents which:
+#   - replaces @$TOKEN@ with $VALUE,
+#   - enables/disables ?$TOKEN?.
 sub transform (%)
 {
     my (%pairs) = @_;
@@ -6769,27 +6769,7 @@ sub transform (%)
     while (my ($token, $val) = each %pairs)
     {
         $result .= "s/\Q\@$token\@\E/\Q$val\E/g;";
-    }
-
-    $result .= &transform_cond (%pairs);
-    return $result;
-}
-
-
-# $REGEXP
-# &transform_cond (%PAIRS)
-# ------------------------
-# For each pair ($TOKEN => $COND), if $COND is positive then create a regexp
-# that removes `?$TOKEN?', otherwise that removes the whole line containing
-# `?$TOKEN?'.  Do the converse for the token `?!$TOKEN?'.
-sub transform_cond (%)
-{
-    my (%pairs) = @_;
-    my $result = '';
-
-    while (my ($token, $val) = each %pairs)
-    {
-        if ($val)
+	if ($val)
 	{
 	    $result .= "s/\Q?$token?\E//g;s/^.*\Q?!$token?\E.*\$//g;";
 	}
@@ -6798,6 +6778,7 @@ sub transform_cond (%)
 	    $result .= "s/\Q?!$token?\E//g;s/^.*\Q?$token?\E.*\$//g;";
 	}
     }
+
     return $result;
 }
 
@@ -7095,9 +7076,9 @@ sub am_install_var
 	    $output_rules .=
 	      &file_contents ($file,
 			      &transform ('DIR'  => $X,
-					  'NDIR' => $nodir_name)
-			      . &transform_cond ('BASE' => $strip_subdir,
-						 'EXEC' => $X =~ /exec/)
+					  'NDIR' => $nodir_name,
+					  'BASE' => $strip_subdir,
+					  'EXEC' => $X =~ /exec/)
 			      . $ltxform
 			      . $cygxform);
 	}
