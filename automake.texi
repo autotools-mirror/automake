@@ -3988,19 +3988,18 @@ variable @code{GTAGS_ARGS} holds arguments which are passed to
 
 @cindex Adding new SUFFIXES
 @cindex SUFFIXES, adding
-
-It is sometimes useful to introduce a new implicit rule to handle a file
-type that Automake does not know about.  If this is done, you must
-notify GNU Make of the new suffixes.  This can be done by putting a list
-of new suffixes in the @code{SUFFIXES} variable.
 @vindex SUFFIXES
 
+It is sometimes useful to introduce a new implicit rule to handle a file
+type that Automake does not know about.
+
 For instance, suppose you had a compiler which could compile @samp{.foo}
-files to @samp{.o} files.  Then you would add @samp{.foo} to your suffix
-list:
+files to @samp{.o} files.  You would simply define an suffix rule for
+your language:
 
 @example
-SUFFIXES = .foo
+.foo.o:
+        foocc -c -o $@@ $<
 @end example
 
 Then you could directly use a @samp{.foo} file in a @samp{_SOURCES}
@@ -4011,9 +4010,29 @@ bin_PROGRAMS = doit
 doit_SOURCES = doit.foo
 @end example
 
-Any given @code{SUFFIXES} go at the start of the generated suffixes
-list, followed by automake generated suffixes not already in the list.
+This was the simpler and more common case.  In other cases, you will
+have to help Automake to figure which extensions you are defining your
+suffix rule for.  This usually happens when your extensions does not
+start with a dot.  Then, all you have to do is to put a list of new
+suffixes in the @code{SUFFIXES} variable @strong{before} you define your
+implicit rule.
 
+For instance the following definition prevents Automake to misinterpret
+@samp{.idlC.cpp:} as an attemp to transform @samp{.idlC} into
+@samp{.cpp}.
+
+@example
+SUFFIXES = .idl C.cpp
+.idlC.cpp:
+        # whatever
+@end example
+
+As you may have noted, the @code{SUFFIXES} macro behaves like the
+@code{.SUFFIXES} special target of @code{make}.  You should not touch
+@code{.SUFFIXES} yourself, but use @code{SUFFIXES} instead and let
+Automake generate the suffix list for @code{.SUFFIXES}.  Any given
+@code{SUFFIXES} go at the start of the generated suffixes list, followed
+by Automake generated suffixes not already in the list.
 
 @node Multilibs, , Suffixes, Miscellaneous
 @section Support for Multilibs
