@@ -5603,6 +5603,76 @@ sub check_ambiguous_conditional ($$)
 }
 
 
+
+## ------------------------ ##
+## Handling the variables.  ##
+## ------------------------ ##
+
+
+# &macro_define($VAR, $VAR_IS_AM, $TYPE, $COND_STRING, $VALUE, $WHERE)
+# -----------------------------------------------------------------------
+sub macro_define ($$$$$$)
+{
+  my ($var, $var_is_am, $type, $cond_string, $value, $where) = @_;
+
+  if (! defined $contents{$var})
+    {
+      # The first assignment to a macro sets the line
+      # number.  Ideally I suppose we would associate line
+      # numbers with random bits of text.
+      $content_lines{$var} = $where;
+
+      # If first assignment, set `+=' indicator.
+      $var_was_plus_eq{$var} = $type eq '+' && ! $var_is_am{$var};
+    }
+
+  $var_is_am{$var} = $var_is_am;
+
+  # Handled unconditional macros.
+  if ($type eq '+')
+    {
+      if (substr ($contents{$var}, -1) eq "\n")
+       {
+         # Insert a backslash before a trailing newline.
+         $contents{$var} = substr ($contents{$var}, 0, -1) . "\\\n";
+       }
+      $contents{$var} .= ' ' . $value;
+    }
+  else
+    {
+      $contents{$var} = $value;
+    }
+
+  # Handle conditionalized macros.
+  if ($cond_string)
+    {
+      my $done = 0;
+      if ($conditional{$var})
+	{
+	  if ($type eq '+')
+	    {
+	      # If we're adding to the conditional, and it
+	      # exists, then we might want to simply replace the old
+	      # value with the new one.
+	      foreach my $vcond (keys %{$conditional{$var}})
+		{
+		  if ($vcond eq $cond_string)
+		    {
+		      $done = 1;
+		      ${$conditional{$var}}{$vcond} .=  ' ' . $value;
+		    }
+                }
+            }
+        }
+      if (! $done)
+	{
+	  &check_ambiguous_conditional ($var, $cond_string);
+	  ${$conditional{$var}}{$cond_string} = $value;
+        }
+    }
+}
+
+
 # $BOOLEAN
 # &variable_defined ($VAR, [$COND])
 # ---------------------------------
@@ -6382,64 +6452,9 @@ sub read_am_file
 	    }
 	    my $type = $2;
 
-	    if (! defined $contents{$last_var_name})
-	    {
-		# The first assignment to a macro sets the line
-		# number.  Ideally I suppose we would associate line
-		# numbers with random bits of text.
-		$content_lines{$last_var_name} = $.;
-
-		# If first assignment, set `+=' indicator.
-		$var_was_plus_eq{$last_var_name} =
-		    ($type eq '+'
-		     && ! $var_is_am{$last_var_name});
-	    }
-	    $var_is_am{$last_var_name} = 0;
-	    if ($type eq '+')
-	    {
-		if (substr ($contents{$last_var_name}, -1) eq "\n")
-		{
-		    # Insert a backslash before a trailing newline.
-		    $contents{$last_var_name}
-			= substr ($contents{$last_var_name}, 0, -1) . "\\\n";
-		}
-		$contents{$last_var_name} .= ' ' . $value;
-	    }
-	    else
-	    {
-		$contents{$last_var_name} = $value;
-	    }
-
-	    # Handle conditionalized macros.
-	    if (@conditional_stack)
-	    {
-	        my $cond_string = conditional_string (@conditional_stack);
-		my $done = 0;
-		if ($conditional{$last_var_name})
-		{
-		    if ($type eq '+')
-		    {
-			# If we're adding to the conditional, and it
-			# exists, then we might want to simply replace
-			# the old value with the new one.
-			foreach my $vcond (keys %{$conditional{$last_var_name}})
-			{
-			    if ($vcond eq $cond_string)
-			    {
-			        $done = 1;
-			        ${$conditional{$last_var_name}}{$vcond}
-			           .=  ' ' . $value;
-			    }
-			}
-		    }
-	        }
-	        if (! $done)
-		  {
-		    &check_ambiguous_conditional ($last_var_name,
-						  $cond_string);
-		    ${$conditional{$last_var_name}}{$cond_string} = $value;
-	          }
-	    }
+	    macro_define ($last_var_name, 0, $type,
+			     conditional_string (@conditional_stack),
+			     $value, $.);
 
 	    # FIXME: this doesn't always work correctly; it will group
 	    # all comments for a given variable, no matter where
