@@ -44,8 +44,10 @@ $(srcdir)/.deps/%.P: $(srcdir)/%.c
 ## Use funny regexp because otherwise too much can be matched when
 ## srcdir begins with ".".  Can't use \< since sed doesn't recognize
 ## "." as a word start.  Regexp-quote srcdir because "." is a matching
-## operator which commonly appears in filenames.
-	@re=`echo 's,^$(srcdir)/*,,g;s, $(srcdir)/*, ,g' | sed 's,\.,\\\\.,g'`; \
+## operator which commonly appears in filenames.  Need "//*" in
+## regexps because otherwise the regexp will fail when srcdir=. and
+## the path to the file is relative (eg ../lib/error.c matches "./*").
+	@re=`echo 's,^$(srcdir)//*,,g;s, $(srcdir)//*, ,g' | sed 's,\.,\\\\.,g'`; \
 	  $(MKDEP) $< | sed "$$re" > $@-tmp
 	@if test -n "$o"; then			\
 	  sed 's/\.o:/$$o:/' $@-tmp > $@;	\
