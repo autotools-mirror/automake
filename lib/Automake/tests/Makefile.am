@@ -20,6 +20,7 @@
 TESTS_ENVIRONMENT = $(PERL) -Mstrict -I $(top_srcdir)/lib -w
 TESTS = \
 Condition.pl \
-DisjConditions.pl
+DisjConditions.pl \
+Version.pl
 
 EXTRA_DIST = $(TESTS)

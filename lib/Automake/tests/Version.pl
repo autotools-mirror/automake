@@ -1,5 +1,4 @@
-#! /bin/sh
-# Copyright (C) 2002  Free Software Foundation, Inc.
+# Copyright (C) 2002, 2003  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -14,46 +13,36 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with autoconf; see the file COPYING.  If not, write to
+# along with Automake; see the file COPYING.  If not, write to
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-# Exercise &version_compare.
-
-. ./defs || exit 1
-
-set -e
-
-# FIXME: probably ought to let users override this like we do in `defs'.
-amfile=../../automake
-
-sed 1q $amfile >>automake_tmp
-cat << 'END' >> automake_tmp
+use Automake::Version;
 
 my $failed = 0;
 
 sub test_version_compare
 {
   my ($left, $right, $result) = @_;
-  my @leftver = Automake::version_split ($left);
-  my @rightver = Automake::version_split ($right);
+  my @leftver = Automake::Version::split ($left);
+  my @rightver = Automake::Version::split ($right);
   if ($#leftver == -1)
   {
-     print "can't grok \"$left\"\n";
-     $failed = 1;
-     return;
+    print "can't grok \"$left\"\n";
+    $failed = 1;
+    return;
   }
   if ($#rightver == -1)
   {
-     print "can't grok \"$right\"\n";
-     $failed = 1;
-     return;
+    print "can't grok \"$right\"\n";
+    $failed = 1;
+    return;
   }
-  my $res = Automake::version_compare (\@leftver, \@rightver);
+  my $res = Automake::Version::compare (@leftver, @rightver);
   if ($res != $result)
   {
-     print "version_compare (\"$left\", \"$right\") = $res! (not $result?)\n";
-     $failed = 1;
+    print "compare (\"$left\", \"$right\") = $res! (not $result?)\n";
+    $failed = 1;
   }
 }
 
@@ -93,8 +82,20 @@ my @tests = (
 test_version_compare (@{$_}) foreach @tests;
 
 exit $failed;
-END
 
-cat $amfile >>automake_tmp
-
-$PERL ./automake_tmp
+### Setup "GNU" style for perl-mode and cperl-mode.
+## Local Variables:
+## perl-indent-level: 2
+## perl-continued-statement-offset: 2
+## perl-continued-brace-offset: 0
+## perl-brace-offset: 0
+## perl-brace-imaginary-offset: 0
+## perl-label-offset: -2
+## cperl-indent-level: 2
+## cperl-brace-offset: 0
+## cperl-continued-brace-offset: 0
+## cperl-label-offset: -2
+## cperl-extra-newline-before-brace: t
+## cperl-merge-trailing-else: nil
+## cperl-continued-statement-offset: 2
+## End:

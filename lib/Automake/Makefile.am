@@ -28,4 +28,5 @@ dist_perllib_DATA = \
   General.pm \
   Location.pm \
   Struct.pm \
+  Version.pm \
   XFile.pm

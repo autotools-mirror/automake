@@ -128,6 +128,7 @@ use Automake::ChannelDefs;
 use Automake::Location;
 use Automake::Condition qw/TRUE FALSE/;
 use Automake::DisjConditions;
+use Automake::Version;
 use File::Basename;
 use Tie::RefHash;
 use Carp;
@@ -1634,92 +1635,6 @@ sub generate_makefile
 
 ################################################################
 
-# A version is a string that looks like
-#   MAJOR.MINOR[.MICRO][ALPHA][-FORK]
-# where
-#   MAJOR, MINOR, and MICRO are digits, ALPHA is a character, and
-# FORK any alphanumeric word.
-# Usually, ALPHA is used to label alpha releases or intermediate snapshots,
-# FORK is used for CVS branches or patched releases, and MICRO is used
-# for bug fixes releases on the MAJOR.MINOR branch.
-#
-# For the purpose of ordering, 1.4 is the same as 1.4.0, but 1.4g is
-# the same as 1.4.99g.  The FORK identifier is ignored in the
-# ordering, except when it looks like -pMINOR[ALPHA]: some versions
-# were labeled like 1.4-p3a, this is the same as an alpha release
-# labeled 1.4.3a.  Yes, it's horrible, but Automake did not support
-# two-dot versions in the past.
-
-# version_split (VERSION)
-# -----------------------
-# Split a version string into the corresponding (MAJOR, MINOR, MICRO,
-# ALPHA, FORK) tuple.  For instance "1.4g" would be split into
-# (1, 4, 99, 'g', '').
-# Return () on error.
-sub version_split ($)
-{
-    my ($ver) = @_;
-
-    # Special case for versions like 1.4-p2a.
-    if ($ver =~ /^(\d+)\.(\d+)(?:-p(\d+)([a-z]+)?)$/)
-    {
-	return ($1, $2, $3, $4 || '', '');
-    }
-    # Common case.
-    elsif ($ver =~ /^(\d+)\.(\d+)(?:\.(\d+))?([a-z])?(?:-([A-Za-z0-9]+))?$/)
-    {
-	return ($1, $2, $3 || (defined $4 ? 99 : 0), $4 || '', $5 || '');
-    }
-    return ();
-}
-
-# version_compare (\@LVERSION, \@RVERSION)
-# ----------------------------------------
-# Return 1 if LVERSION > RVERSION,
-#       -1 if LVERSION < RVERSION,
-#        0 if LVERSION = RVERSION.
-sub version_compare (\@\@)
-{
-    my @l = @{$_[0]};
-    my @r = @{$_[1]};
-
-    for my $i (0, 1, 2)
-    {
-	return 1  if ($l[$i] > $r[$i]);
-	return -1 if ($l[$i] < $r[$i]);
-    }
-    for my $i (3, 4)
-    {
-	return 1  if ($l[$i] gt $r[$i]);
-	return -1 if ($l[$i] lt $r[$i]);
-    }
-    return 0;
-}
-
-# Handles the logic of requiring a version number in AUTOMAKE_OPTIONS.
-# Return 0 if the required version is satisfied, 1 otherwise.
-sub version_check ($)
-{
-  my ($required) = @_;
-  my @version = version_split $VERSION;
-  my @required = version_split $required;
-
-  prog_error "version is incorrect: $VERSION"
-    if $#version == -1;
-
-  # This should not happen, because process_option_list and split_version
-  # use similar regexes.
-  prog_error "required version is incorrect: $required"
-    if $#required == -1;
-
-  # If we require 3.4n-foo then we require something
-  # >= 3.4n, with the `foo' fork identifier.
-  return 1
-    if ($required[4] ne '' && $required[4] ne $version[4]);
-
-  return 0 > version_compare @version, @required;
-}
-
 # $BOOL
 # process_option_list ($CONFIG, @OPTIONS)
 # ------------------------------
@@ -1771,7 +1686,7 @@ sub process_option_list
       elsif (/^\d+\.\d+(?:\.\d+)?[a-z]?(?:-[A-Za-z0-9]+)?$/)
 	{
 	  # Got a version number.
-	  if (version_check $&)
+	  if (Automake::Version::check ($VERSION, $&))
 	    {
 	      error ($where, "require Automake $_, but have $VERSION",
 		     uniq_scope => US_GLOBAL);
