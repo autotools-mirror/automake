@@ -1486,7 +1486,7 @@ sub _traverse_variable_recursively_worker ($$&&$$)
   if (defined $_vars_scanned{$var})
     {
       err_var $var, "variable `" . $var->name() . "' recursively defined";
-      return "";
+      return ();
     }
   $_vars_scanned{$var} = 1;
 
