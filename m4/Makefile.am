@@ -42,6 +42,7 @@ maintainer.m4 \
 make.m4 \
 minuso.m4 \
 missing.m4 \
+mkdirp.m4 \
 multi.m4 \
 obsol-gt.m4 \
 obsol-lt.m4 \

@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1996, 1997, 1998, 2000, 2001, 2002
+# Copyright (C) 1996, 1997, 1998, 2000, 2001, 2002, 2003
 # Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
@@ -24,28 +24,13 @@
 
 . ./defs || exit 1
 
-cat > Makefile.am << 'END'
-data_DATA =
-END
+set -e
 
-$ACLOCAL || exit 1
-$AUTOMAKE || exit 1
+echo AC_OUTPUT >>configure.in
+echo 'data_DATA =' >Makefile.am
 
-# Create configure so Makefile doesn't look out-of-date.
-echo frob > configure
-echo frob > config.status
-
-# Need a mkinstalldirs we can actually execute.  make on my Linux box
-# won't execute this file if is empty, or has just a colon in it (but
-# it will run from the shell).
-cat > mkinstalldirs << 'END'
-#!/bin/sh
-END
-chmod +x mkinstalldirs
-
-# Substitute variables we need.
-sed -e 's,@SHELL@,/bin/sh,g' -e 's/@srcdir@/./g' \
-   -e 's/@top_srcdir@/./g' -e 's/@datadir@/./g' \
-   -e 's/@SET_MAKE@//g' < Makefile.in > Makefile
-
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
+./configure --prefix `pwd`/inst
 $MAKE install

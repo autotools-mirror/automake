@@ -230,7 +230,6 @@ implicit.test \
 include.test \
 include2.test \
 info.test \
-insh.test \
 insh2.test \
 install2.test \
 installdir.test \

@@ -3616,10 +3616,22 @@ sub handle_configure ($$$@)
 				  FILES => "@distclean_config")
     if @distclean_config;
 
-  # Set location of mkinstalldirs.
-  define_variable ('mkinstalldirs',
-		   '$(SHELL) ' . $config_aux_dir . '/mkinstalldirs',
-		   INTERNAL);
+  # Distribute and define mkinstalldirs only if it is already present
+  # in the package, for backward compatibility (some people my still
+  # use $(mkinstalldirs)).
+  my $mkidpath = $config_aux_path[0] . '/mkinstalldirs';
+  if (-f $mkidpath)
+    {
+      # Use require_file so that any existingscript gets updated
+      # by --force-missing.
+      require_conf_file ($mkidpath, FOREIGN, 'mkinstalldirs');
+      define_variable ('mkinstalldirs',
+		       "\$(SHELL) $config_aux_dir/mkinstalldirs", INTERNAL);
+    }
+  else
+    {
+      define_variable ('mkinstalldirs', '$(mkdir_p)', INTERNAL);
+    }
 
   reject_var ('CONFIG_HEADER',
 	      "`CONFIG_HEADER' is an anachronism; now determined "
@@ -4613,8 +4625,7 @@ sub scan_autoconf_files ()
   # FIXME: Is this broken because it needs dynamic scopes.
   # My tests seems to show it's not the case.
   $relative_dir = '.';
-  require_conf_file ($configure_ac, FOREIGN,
-		     'install-sh', 'mkinstalldirs', 'missing');
+  require_conf_file ($configure_ac, FOREIGN, 'install-sh', 'missing');
   err_am "`install.sh' is an anachronism; use `install-sh' instead"
     if -f $config_aux_path[0] . '/install.sh';
 
@@ -6608,7 +6619,7 @@ sub require_build_directory ($)
       $clean_files{$dirstamp} = DIST_CLEAN;
 
       $output_rules .= ("$dirstamp:\n"
-			. "\t\@\$(mkinstalldirs) $directory\n"
+			. "\t\@\$(mkdir_p) $directory\n"
 			. "\t\@: > $dirstamp\n");
     }
 
