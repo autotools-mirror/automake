@@ -590,6 +590,9 @@ my %de_ansi_files;
 
 # This maps the source extension of a suffix rule to its
 # corresponding output extension.
+# FIXME: because this hash maps one input extension to one output
+# extension, Automake cannot handle two suffix rules with the same
+# input extension.
 my %suffix_rules;
 
 # This is the name of the redirect `all' target to use.
@@ -1744,7 +1747,7 @@ sub handle_single_transform_list ($$$$@)
 	# language function.
 	my $aggregate = 'AM';
 
-        $extension = &derive_suffix ($extension);
+        $extension = &derive_suffix ($extension, $nonansi_obj);
         my $lang;
         if ($extension_map{$extension} &&
             ($lang = $languages{$extension_map{$extension}}))
@@ -1865,12 +1868,11 @@ sub handle_single_transform_list ($$$$@)
                 push (@{$lang_specific_files{$lang->name}}, $val);
             }
         }
-        elsif ($extension eq 'o')
+        elsif (".$extension" eq $nonansi_obj)
         {
             # This is probably the result of a direct suffix rule.
-            # In this case we just accept the rewrite.  FIXME:
-            # this fails if we want libtool objects.
-            $object = $base . '.' . $extension;
+            # In this case we just accept the rewrite.
+            $object = "$base.$extension";
             $linker = '';
         }
         else
@@ -1984,7 +1986,7 @@ sub handle_single_transform_list ($$$$@)
 #   $NODEFINE is a boolean: if true, $OBJVAR will not be defined (but
 #   work done to determine the linker will be).
 #   $ONE_FILE is the canonical (transformed) name of object to build
-#   $OBJ is the object extension (ie either `.o' or `$o'.
+#   $OBJ is the object extension (ie either `.o' or `.lo').
 #   $PARENT is the variable in which $VAR is used, or $VAR if not applicable.
 #   $TOPPARENT is the _SOURCES variable being processed.
 #
@@ -2014,9 +2016,10 @@ sub define_objects_from_sources ($$$$$$$)
 	my @result;
 	foreach my $val (&variable_value_as_list ($var, $cond, $parent))
 	{
+	    # If $val is a variable (i.e. ${foo} or $(bar), not a filename),
+	    # handle the sub variable recursively.
 	    if ($val =~ /^\$\{([^}]*)\}$/ || $val =~ /^\$\(([^)]*)\)$/)
 	    {
-		# Handle a sub variable
 		my $subvar = $1;
 
 		# If the user uses a losing variable name, just ignore it.
@@ -2046,7 +2049,7 @@ sub define_objects_from_sources ($$$$$$$)
 		pop @substfroms;
 		pop @substtos;
 	    }
-	    else
+	    else # $var is a filename
 	    {
 	        my $substnum=$#substfroms;
 	        while ($substnum >= 0)
@@ -5333,16 +5336,16 @@ sub register_language (%)
     $languages{$lang->name} = $lang;
 }
 
-# This function is used to find a path from a user-specified suffix to
-# `o' or to some other suffix we recognize internally, eg `cc'.
-sub derive_suffix
+# derive_suffix ($EXT, $OBJ)
+# ==========================
+# This function is used to find a path from a user-specified suffix $EXT
+# to $OBJ or to some other suffix we recognize internally, eg `cc'.
+sub derive_suffix ($$)
 {
-    my ($source_ext) = @_;
+    my ($source_ext, $obj) = @_;
 
-    # FIXME: hard-coding `o' is a mistake.  Doing something
-    # intelligent is harder.
     while (! $extension_map{$source_ext}
-	   && $source_ext ne 'o'
+	   && ".$source_ext" ne $obj
 	   && defined $suffix_rules{$source_ext})
     {
 	$source_ext = $suffix_rules{$source_ext};

@@ -289,6 +289,7 @@ suffix.test \
 suffix2.test \
 suffix3.test \
 suffix4.test \
+suffix5.test \
 symlink.test \
 symlink2.test \
 symlink3.test \
