@@ -1398,42 +1398,35 @@ sub handle_languages
 	  if (! $output_flag
 	      && $lang->flags eq 'CFLAGS'
 	      && defined $options{'subdir-objects'});
+	my $AMDEP = (($use_dependencies && $lang->autodep ne 'no')
+		     ? 'AMDEP' : 'FALSE');
 
 	my %transform = ('EXT'     => $ext,
 			 'PFX'     => $pfx,
 			 'FPFX'    => $fpfx,
 			 'LIBTOOL' => $seen_libtool,
-			 'AMDEP'   => $use_dependencies ? 'AMDEP' : 'FALSE',
+			 'AMDEP'   => $AMDEP,
 			 '-c'      => $lang->compile_flag || '',
 			 '-o'      => $output_flag);
 
-	# First include code for ordinary objects.
-	{
-	  my %transform = (%transform,
-			   'GENERIC'   => 1,
+	# Generate the appropriate rules for this extension.
+	if ($use_dependencies && $lang->autodep ne 'no'
+	    || defined $lang->compile)
+	  {
+	    $output_rules .=
+	      file_contents ('depend2',
+			     %transform,
+			     'GENERIC'   => 1,
 
-			   'BASE'      => '$*',
-			   'SOURCE'    => '$<',
-			   'OBJ'       => '$@',
-			   'OBJOBJ'    => '$@',
-			   'LTOBJ'     => '$@',
+			     'BASE'      => '$*',
+			     'SOURCE'    => '$<',
+			     'OBJ'       => '$@',
+			     'OBJOBJ'    => '$@',
+			     'LTOBJ'     => '$@',
 
-			   'COMPILE'   => '$(' . $lang->compiler . ')',
-			   'LTCOMPILE' => '$(LT' . $lang->compiler . ')');
-
-
-	  # Generate the appropriate rules for this extension.  If
-	  # dependency tracking was requested, and this extension
-	  # supports it, then we don't generate the rule here.
-	  if ($use_dependencies && $lang->autodep ne 'no')
-	    {
-	      $output_rules .= file_contents ('depend2', %transform);
-	    }
-	  elsif (defined $lang->compile)
-	    {
-	      $output_rules .= file_contents ('ext-compile', %transform);
-	    }
-	}
+			     'COMPILE'   => '$(' . $lang->compiler . ')',
+			     'LTCOMPILE' => '$(LT' . $lang->compiler . ')');
+	  }
 
 	# Then handle files with specific flags.
         if ($lang->autodep ne 'no')
@@ -1459,19 +1452,20 @@ sub handle_languages
 		# Generate a transform which will turn suffix targets in
 		# depend2.am into real targets for the particular objects we
 		# are building.
-		$output_rules .= &file_contents ('depend2',
-						 (%transform,
-						  'GENERIC'   => 0,
+		$output_rules .=
+		  file_contents ('depend2',
+				 (%transform,
+				  'GENERIC'   => 0,
 
-						  'BASE'      => $obj,
-						  'SOURCE'    => $source,
-						  'OBJ'       => "$obj.o",
-						  'OBJOBJ'    => "$obj.obj",
-						  'LTOBJ'     => "$obj.lo",
+				  'BASE'      => $obj,
+				  'SOURCE'    => $source,
+				  'OBJ'       => "$obj.o",
+				  'OBJOBJ'    => "$obj.obj",
+				  'LTOBJ'     => "$obj.lo",
 
-						  'COMPILE'   => $obj_compile,
-						  'LTCOMPILE' => $obj_ltcompile))
-	      }
+				  'COMPILE'   => $obj_compile,
+				  'LTCOMPILE' => $obj_ltcompile))
+		}
 	  }
 
 	# The rest of the loop is done once per language.
