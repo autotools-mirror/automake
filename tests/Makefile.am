@@ -1,6 +1,6 @@
 ## Process this file with automake to create Makefile.in
 
-XFAIL_TESTS = subdir5.test substtarg.test exeext.test
+XFAIL_TESTS = subdir5.test substtarg.test
 
 TESTS =	\
 acinclude.test \

@@ -2462,11 +2462,17 @@ sub handle_programs
 	# make sure this directory will exist.
 	my $dirstamp = &require_build_directory_maybe ($one_file);
 
+	# Don't add $(EXEEXT) if user already did.
+	my $extension = (($seen_exeext && $one_file !~ /\$\(EXEEXT\)$/)
+			 ? "\$(EXEEXT)"
+			 : '');
+
 	$output_rules .= &file_contents ('program',
 					 ('PROGRAM'  => $one_file,
 					  'XPROGRAM' => $xname,
 					  'XLINK'    => $xlink,
-					  'DIRSTAMP' => $dirstamp));
+					  'DIRSTAMP' => $dirstamp,
+					  'EXEEXT'   => $extension));
     }
 
     if (&variable_defined ('LDADD') && &handle_lib_objects ('', 'LDADD'))
@@ -6815,8 +6821,6 @@ sub make_paragraphs ($%)
 		     'HOST'     => $seen_canonical,
 		     'TARGET'   => $seen_canonical == $AC_CANONICAL_SYSTEM,
 
-		     'EXEEXT'   => ($seen_exeext ? '$(EXEEXT)' : ''),
-
 		     'LIBTOOL'      => defined $configure_vars{'LIBTOOL'})
 	  # We don't need more than two consecutive new-lines.
 	  . 's/\n{3,}/\n\n/g';
@@ -7278,39 +7282,41 @@ sub am_install_var
 	# when it isn't available.  However, it isn't that simple.
 	# See nolink.test.
 	if ($seen_exeext && $primary eq 'PROGRAMS')
-	  {
+	{
 	    my @conds = &variable_conditions ($one_name);
 
 	    my @condvals;
 	    foreach my $cond (@conds)
-	      {
+	    {
 		my @one_binlist = ();
 		my @condval = &variable_value_as_list ($one_name,
 						       $cond);
 		foreach my $rcurs (@condval)
-		  {
-		    if ($rcurs =~ /\./ || $rcurs =~ /^\@.*\@$/)
-		      {
+		{
+		    # Skip autoconf substs.  Also skip if the user
+		    # already applied $(EXEEXT).
+		    if ($rcurs =~ /^\@.*\@$/ || $rcurs =~ /\$\(EXEEXT\)$/)
+		    {
 			push (@one_binlist, $rcurs);
-		      }
+		    }
 		    else
-		      {
+		    {
 			push (@one_binlist, $rcurs . '$(EXEEXT)');
-		      }
-		  }
+		    }
+		}
 
 		push (@condvals, $cond);
 		push (@condvals, join (' ', @one_binlist));
-	      }
+	    }
 
 	    variable_delete ($one_name);
 	    while (@condvals)
-	      {
+	    {
 		my $cond = shift (@condvals);
 		my @val = split (' ', shift (@condvals));
 		&define_pretty_variable ($one_name, $cond, @val);
-	      }
-	  }
+	    }
+	}
 
 	# "EXTRA" shouldn't be used when generating clean targets,
 	# all, or install targets.
