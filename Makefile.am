@@ -188,6 +188,13 @@ maintainer-check: automake aclocal
 	  echo 'the above lines.' 1>&2; \
 	  exit 1; \
 	fi
+## Never use `sleep 1' to create files with different timestamps.
+## Use `sleep 2' instead.  Some filesystems (e.g., Windows') have only
+## a 2sec resolution.
+	@if egrep '\bsleep +1\b' $(srcdir)/tests/*.test; then \
+	  echo 'Do not use "sleep 1" in the above tests.  Use "sleep 2" instead.' 1>&2; \
+	  exit 1; \
+	fi
 
 
 # Tag before making distribution.  Also, don't make a distribution if
