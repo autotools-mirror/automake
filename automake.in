@@ -3020,16 +3020,25 @@ sub handle_configure
 	if ($relative_dir eq $header_dir
 	    || ($relative_dir eq '.' && ! defined $make_dirs{$header_dir}))
 	{
-	    local ($ch_sans_dir, $cn_sans_dir);
+	    local ($ch_sans_dir, $cn_sans_dir, $stamp_dir);
 	    if ($relative_dir eq $header_dir)
 	    {
 		$ch_sans_dir = &basename ($one_hdr);
 		$cn_sans_dir = &basename ($one_name);
+		$stamp_dir = '';
 	    }
 	    else
 	    {
 		$ch_sans_dir = $one_hdr;
 		$cn_sans_dir = $one_name;
+		if ($header_dir eq '.')
+		{
+		    $stamp_dir = '';
+		}
+		else
+		{
+		    $stamp_dir = $header_dir . '/';
+		}
 	    }
 
 	    &require_file_with_conf_line ($config_header_line,
@@ -3061,14 +3070,14 @@ sub handle_configure
 	    $xform .= 's,\@CONFIG_HEADER\@,' . "${cn_sans_dir}" . ',;';
 	    $xform .= 's,\@CONFIG_HEADER_IN\@,' . "${ch_sans_dir}" . ',;';
 	    $xform .= 's,\@CONFIG_HEADER_FULL\@,' . "${one_fullname}" . ',;';
-	    $xform .= 's,\@STAMP\@,' . "${stamp_name}" . ',;';
+	    $xform .= 's,\@STAMP\@,' . "${stamp_dir}${stamp_name}" . ',;';
 
 	    $output_rules .= &file_contents_with_transform ($xform,
 							    'remake-hdr');
 
-	    &touch ($relative_dir . "/${stamp_name}.in");
+	    &touch ("${relative_dir}/${stamp_dir}${stamp_name}.in");
 	    &require_file_with_conf_line ($config_header_line, $FOREIGN,
-					  "${stamp_name}.in");
+					  "${stamp_dir}${stamp_name}.in");
 
 	    $distclean_config .= ' ' if $distclean_config;
 	    $distclean_config .= $cn_sans_dir;
@@ -4873,9 +4882,9 @@ sub lang_objc_finish
         if ($seen_libtool);
     
     if (! defined $configure_vars{'OBJC'})
-	{
-	    &am_error ("Objective C source seen but \`OBJC' not defined in \`configure.in'");
-	}
+    {
+	&am_error ("Objective C source seen but \`OBJC' not defined in \`configure.in'");
+    }
 }
 
 # A helper which computes a sorted list of all ObjC extensions which
