@@ -7,15 +7,17 @@
 
 @SET_MAKE@
 
-# NOTE: "_all" is separate because otherwise the AIX 3.2.5 make will
+# NOTE: "all" is separate because otherwise the AIX 3.2.5 make will
 # run all of the "all", "install", "uninstall", etc targets if run
 # with no arguments.
-_all: all
-all install install-exec install-data install-info uninstall check info dvi id ID::
-	for subdir in $(SUBDIRS); do \
-	  echo making $@ in $$subdir ; \
-	  (cd $$subdir; $(MAKE) $@); \
-	done
+all:: all-recursive
+
+all-recursive install install-exec install-data install-info uninstall check info dvi id ID::
+	for subdir in $(SUBDIRS); do		\
+	  echo making $@ in $$subdir;		\
+	  (cd $$subdir; $(MAKE) $@) 		\
+	   || case "$(MFLAGS)" in *k*) fail=yes;; *) exit 1;; esac; \
+	done && test -z "$$fail"
 
 mostlyclean: mostlyclean-recursive mostlyclean-local
 
