@@ -13,7 +13,7 @@ MAINT_CHARSET = latin1
 SUBDIRS = m4 tests
 
 bin_SCRIPTS = automake aclocal
-info_TEXINFOS = automake.texi am-f77.texi
+info_TEXINFOS = automake.texi
 
 amfiles = clean-hdr.am clean-kr.am clean.am comp-vars.am compile.am \
 data-clean.am data.am dejagnu.am depend.am depend2.am dist-vars.am \
