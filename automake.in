@@ -182,7 +182,7 @@ $seen_canonical = 0;
 # TRUE if we've seen AC_ARG_PROGRAM.
 $seen_arg_prog = 0;
 
-# TRUE if we've seen AM_PROG_LIBTOOL.
+# TRUE if we've seen AC_PROG_LIBTOOL.
 $seen_libtool = 0;
 $libtool_line = 0;
 
@@ -4280,14 +4280,18 @@ sub scan_one_configure_file
 	$seen_prog_install = 1 if /AC_PROG_INSTALL/;
         $seen_lispdir = 1 if /AM_PATH_LISPDIR/;
 
-        if (/AM_PROG_LIBTOOL/)
+        if (/A(C|M)_PROG_LIBTOOL/)
 	{
+	    if (/AM_PROG_LIBTOOL/)
+	    {
+	    	&am_conf_line_warning ($filename, $., "\`AM_PROG_LIBTOOL' is obsolete, use \`AC_PROG_LIBTOOL' instead");
+	    }
 	    $seen_libtool = 1;
 	    $libtool_line = $.;
 	    $configure_vars{'LIBTOOL'} = $filename . ':' . $.;
 	    $configure_vars{'RANLIB'} = $filename . ':' . $.;
 	    $configure_vars{'CC'} = $filename . ':' . $.;
-	    # AM_PROG_LIBTOOL runs AC_CANONICAL_HOST.  Make sure we
+	    # AC_PROG_LIBTOOL runs AC_CANONICAL_HOST.  Make sure we
 	    # never downgrade (if we've seen AC_CANONICAL_SYSTEM).
 	    $seen_canonical = $AC_CANONICAL_HOST if ! $seen_canonical;
 	}
