@@ -1318,29 +1318,28 @@ sub finish_languages
     my $non_c = 1;
     foreach my $ext (sort keys %extension_seen)
     {
-	my $lang = $extension_map{$ext};
-	my $lang_obj = $languages{$lang};
+	my $lang = $languages{$extension_map{$ext}};
 
 	# Generate the appropriate rules for this extension.  If
 	# dependency tracking was requested, and this extension
 	# supports it, then we don't generate the rule here.
 	my $comp = '';
 
-	if ($use_dependencies && $lang_obj->autodep ne 'no')
+	if ($use_dependencies && $lang->autodep ne 'no')
 	{
 	    # Don't generate the rule, but still generate the variables.
-	    if (defined $lang_obj->compile)
+	    if (defined $lang->compile)
 	    {
-		$comp = $lang_obj->compile
+		$comp = $lang->compile
 	    }
 	}
-	elsif (defined $lang_obj->compile)
+	elsif (defined $lang->compile)
 	{
-	    $comp = $lang_obj->compile;
+	    $comp = $lang->compile;
 
-	    my $outarg = $lang_obj->output_arg;
+	    my $outarg = $lang->output_arg;
 	    my $ltoutarg = '';
-	    if ($lang_obj->flags eq 'CFLAGS')
+	    if ($lang->flags eq 'CFLAGS')
 	    {
 		# C compilers don't always support -c -o.
 		if (defined $options{'subdir-objects'})
@@ -1353,14 +1352,14 @@ sub finish_languages
 
 	    $output_rules .= file_contents ('ext-compile',
 					    ('EXT'      => $ext,
-					     'COMPILER' => $lang_obj->compiler,
+					     'COMPILER' => $lang->compiler,
 					     'OUTARG'   => $outarg,
 					     'LTOUTARG' => $ltoutarg));
 	}
 
 	# The rest of the loop is done once per language.
-	next if defined $done{$lang_obj->name};
-	$done{$lang_obj} = 1;
+	next if defined $done{$lang};
+	$done{$lang} = 1;
 
 	# If the source to a program consists entirely of code from a
 	# `pure' language, for instance C++ for Fortran 77, then we
@@ -1369,22 +1368,20 @@ sub finish_languages
 	# probably corner cases here that do not work properly.
 	# People linking Java code to Fortran code deserve pain.
 	$non_c = 0
-	    if $lang_obj->pure eq 'no';
+	    if $lang->pure eq 'no';
 
 	if ($comp ne '')
 	{
-	    &define_compiler_variable ($lang_obj->compiler, $ltcompile, $comp);
+	    &define_compiler_variable ($lang->compiler, $ltcompile, $comp);
 	}
 	# The compiler's flag must be a configure variable.
-	if (defined $lang_obj->flags)
+	if (defined $lang->flags)
 	{
-	    &define_configure_variable ($lang_obj->flags);
+	    &define_configure_variable ($lang->flags);
 	}
 
-	# Compute the function name of the finisher and then call it.
-	$lang_obj->finish;
-	#my $name = 'lang_' . $lang . '_finish';
-	#& $name ();
+	# Call the finisher.
+	$lang->finish;
     }
 
     # If the project is entirely C++ or entirely Fortran 77 (i.e., 1
@@ -1518,23 +1515,22 @@ sub handle_single_transform_list ($$$@)
         my ($linker, $object);
 
         $extension = &derive_suffix ($extension);
-        my $lang = $extension_map{$extension};
-	my $lang_obj = $languages{$lang};
+        my $lang = $languages{$extension_map{$extension}};
         if ($lang)
         {
             &saw_extension ($extension);
             # Found the language, so see what it says.
-            my $subr = 'lang_' . $lang_obj->name . '_rewrite';
+            my $subr = 'lang_' . $lang->name . '_rewrite';
             # Note: computed subr call.
             my $r = & $subr ($directory, $base, $extension);
             # Skip this entry if we were asked not to process it.
             next if $r == $LANG_IGNORE;
 
             # Now extract linker and other info.
-            $linker = $lang_obj->linker;
+            $linker = $lang->linker;
 
             my $this_obj_ext;
-            if ($lang_obj->ansi)
+            if ($lang->ansi)
             {
                 $object = $base . $obj;
                 $this_obj_ext = $obj;
@@ -1545,8 +1541,8 @@ sub handle_single_transform_list ($$$@)
                 $this_obj_ext = $nonansi_obj;
             }
 
-            if (defined $lang_obj->flags
-                && &variable_defined ($derived . '_' . $lang_obj->flags))
+            if (defined $lang->flags
+                && &variable_defined ($derived . '_' . $lang->flags))
             {
                 # We have a per-executable flag in effect for this
                 # object.  In this case we rewrite the object's
@@ -1554,7 +1550,7 @@ sub handle_single_transform_list ($$$@)
                 # the `compile' program to deal with compilers
                 # where `-c -o' does not work.
 
-                # We choose the name `DERIVED-OBJECT' to ensure
+                # We choose the name `DERIVED_OBJECT' to ensure
                 # (1) uniqueness, and (2) continuity between
                 # invocations.  However, this will result in a
                 # name that is too long for losing systems, in
@@ -1573,20 +1569,20 @@ sub handle_single_transform_list ($$$@)
                 $object = $dname . '-' . $object;
 
                 &require_file ($FOREIGN, 'compile')
-                    if $lang_obj->name eq 'c';
+                    if $lang->name eq 'c';
 
-                &prog_error ("$lang_obj->name flags defined without compiler")
-  		    if ! defined $lang_obj->compile;
+                &prog_error ("$lang->name flags defined without compiler")
+  		    if ! defined $lang->compile;
 
                 # Compute the rule to compile this object.
-                my $flag = $lang_obj->flags;
+                my $flag = $lang->flags;
                 my $val = "(${derived}_${flag}";
-                ($rule = $lang_obj->compile) =~ s/\(AM_$flag/$val/;
+                ($rule = $lang->compile) =~ s/\(AM_$flag/$val/;
 
-                $rule .= ' ' . $lang_obj->output_arg;
+                $rule .= ' ' . $lang->output_arg;
                 # For C we have to add the -o, because the
                 # standard rule doesn't include it.
-                if ($lang_obj->flags eq 'CFLAGS')
+                if ($lang->flags eq 'CFLAGS')
                 {
                     $rule .= ' -o $@';
                 }
@@ -1609,13 +1605,13 @@ sub handle_single_transform_list ($$$@)
             # generated later, by add_depend2.
             if (($use_dependencies
                  && $rule ne ''
-                 && $lang_obj->autodep ne 'no')
+                 && $lang->autodep ne 'no')
                 || $directory ne '')
             {
                 $rule = '';
                 my $obj_sans_ext = substr ($object, 0,
 					   - length ($this_obj_ext));
-                push (@{$lang_specific_files{$lang_obj->name}},
+                push (@{$lang_specific_files{$lang->name}},
 		      "$derived $full $obj_sans_ext");
             }
         }
@@ -1722,9 +1718,9 @@ sub handle_single_transform_list ($$$@)
 
         # Transform .o or $o file into .P file (for automatic
         # dependency code).
-        if ($lang_obj->name
-            && ($lang_obj->autodep ne 'no'
-                || $lang_obj->derived_autodep eq 'yes'))
+        if ($lang
+            && ($lang->autodep ne 'no'
+                || $lang->derived_autodep eq 'yes'))
         {
             my $depfile = $object;
             $depfile =~ s/\.([^.]*)$/.P$1/;
@@ -3123,11 +3119,11 @@ sub handle_dist
 sub add_depend2
 {
     my ($lang) = @_;
-    my $lang_obj = $languages{$lang};
+
     # Get information on $LANG.
-    my $pfx = $lang_obj->autodep;
+    my $pfx = $lang->autodep;
     my $fpfx = ($pfx eq '') ? 'CC' : $pfx;
-    my $flag = $lang_obj->flags || '';
+    my $flag = $lang->flags || '';
 
     # First include code for ordinary objects.
     my %transform = ('PFX'  => $pfx,
@@ -3152,7 +3148,7 @@ sub add_depend2
 			 'COMPILE'   => $compile,
 			 'LTCOMPILE' => $ltcompile);
 
-	foreach my $ext (&lang_extensions ($lang_obj->name))
+	foreach my $ext (&lang_extensions ($lang->name))
 	{
 	    $output_rules .= (&file_contents ('depend2',
 					      (%transform,
@@ -3164,7 +3160,7 @@ sub add_depend2
     # Now include code for each specially handled object with this
     # language.
     my %seen_files = ();
-    foreach my $file (@{$lang_specific_files{$lang_obj->name}})
+    foreach my $file (@{$lang_specific_files{$lang->name}})
     {
         my ($derived, $source, $obj) = split (' ', $file);
 
@@ -3175,7 +3171,7 @@ sub add_depend2
 
 	my $val = "${derived}_${flag}";
 
-	(my $obj_compile = $lang_obj->compile) =~ s/\(AM_$flag/\($val/;
+	(my $obj_compile = $lang->compile) =~ s/\(AM_$flag/\($val/;
 	my $obj_ltcompile = '$(LIBTOOL) --mode=compile ' . $obj_compile;
 
 	# Generate a transform which will turn suffix targets in
@@ -3249,9 +3245,9 @@ sub handle_dependencies
 	&define_variable ('depcomp', '');
     }
 
-    while (my ($lang, $lang_obj) = each %languages)
+    foreach my $lang (values %languages)
     {
-        if ($lang_obj->autodep ne 'no')
+        if ($lang->autodep ne 'no')
 	  {
 	    add_depend2 ($lang);
 	  }
