@@ -34,10 +34,24 @@ am-three.el:
 	echo "(provide 'am-three)" > $@
 CLEANFILES = am-three.el
 
+test:
+	test ! -f am-one.elc
+	test ! -f am-two.elc
+	test ! -f am-three.elc
+	test ! -f elc-stamp
+
 install-test: install
 	test -f $(lispdir)/am-one.el
 	test -f $(lispdir)/am-two.el
 	test -f $(lispdir)/am-three.el
+	test ! -f $(lispdir)/am-one.elc
+	test ! -f $(lispdir)/am-two.elc
+	test ! -f $(lispdir)/am-three.elc
+
+install-test2: install
+	test ! -f $(lispdir)/am-one.el
+	test ! -f $(lispdir)/am-two.el
+	test ! -f $(lispdir)/am-three.el
 	test ! -f $(lispdir)/am-one.elc
 	test ! -f $(lispdir)/am-two.elc
 	test ! -f $(lispdir)/am-three.elc
@@ -55,13 +69,16 @@ echo "(require 'am-three) (provide 'am-two)" > am-two.el
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
+
 ./configure --prefix "`pwd`"
-
 $MAKE
-
-test ! -f am-one.elc
-test ! -f am-two.elc
-test ! -f am-three.elc
-test ! -f elc-stamp
-
+$MAKE test
 $MAKE install-test
+$MAKE uninstall
+
+# Fake the absence of emacs.
+# *.el files should not be installed.
+./configure EMACS=no --prefix "`pwd`"
+$MAKE
+$MAKE test
+$MAKE install-test2
