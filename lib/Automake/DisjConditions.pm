@@ -273,7 +273,7 @@ sub human ($ )
       my @c = $self->conds;
       if (1 == @c)
 	{
-	  $res = $self->human;
+	  $res = $c[0]->human;
 	}
       else
 	{
