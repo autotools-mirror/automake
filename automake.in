@@ -852,6 +852,8 @@ foreach $am_file (@input_files)
 
 exit $exit_status;
 
+# FIXME: This should be `my'ed next to its subs.
+# use vars '%require_file_found';
 
 ################################################################
 
@@ -5509,12 +5511,9 @@ sub variable_dump ($)
   print STDERR "  $var ($var_is_am, where = $where) $pluseq\n";
   print STDERR "  {\n";
   print STDERR "    (TRUE) => $contents{$var}\n";
-  foreach my $var (sort keys %conditional)
+  foreach my $vcond (sort by_condition keys %{$conditional{$var}})
     {
-      foreach my $vcond (sort by_condition keys %{$conditional{$var}})
-	{
-	  print STDERR "    $vcond => $conditional{$var}{$vcond}\n";
-	}
+      print STDERR "    $vcond => $conditional{$var}{$vcond}\n";
     }
   print STDERR "  }\n";
 }
@@ -5631,15 +5630,15 @@ sub check_ambiguous_conditional ($$)
 ## ------------------------ ##
 
 
-# &macro_define($VAR, $VAR_IS_AM, $TYPE, $COND_STRING, $VALUE, $WHERE)
-# -----------------------------------------------------------------------
+# &macro_define($VAR, $VAR_IS_AM, $TYPE, $COND, $VALUE, $WHERE)
+# ----------------------------------------------------------------
 # The $VAR can go from Automake to user, but not the converse.
 sub macro_define ($$$$$$)
 {
-  my ($var, $var_is_am, $type, $cond_string, $value, $where) = @_;
+  my ($var, $var_is_am, $type, $cond, $value, $where) = @_;
 
   if (defined $contents{$var}
-      && ($cond_string
+      && ($cond
 	  ? ! defined $conditional{$var}
 	  : defined $conditional{$var}))
     {
@@ -5686,30 +5685,16 @@ sub macro_define ($$$$$$)
     }
 
   # Handle conditionalized macros.
-  if ($cond_string)
+  if ($cond)
     {
-      my $done = 0;
-      if ($conditional{$var})
+      if ($type eq '+' && exists $conditional{$var}{$cond})
 	{
-	  if ($type eq '+')
-	    {
-	      # If we're adding to the conditional, and it
-	      # exists, then we might want to simply replace the old
-	      # value with the new one.
-	      foreach my $vcond (keys %{$conditional{$var}})
-		{
-		  if ($vcond eq $cond_string)
-		    {
-		      $done = 1;
-		      ${$conditional{$var}}{$vcond} .=  ' ' . $value;
-		    }
-                }
-            }
-        }
-      if (! $done)
+	  $conditional{$var}{$cond} .=  ' ' . $value;
+	}
+      else
 	{
-	  &check_ambiguous_conditional ($var, $cond_string);
-	  ${$conditional{$var}}{$cond_string} = $value;
+	  &check_ambiguous_conditional ($var, $cond);
+	  $conditional{$var}{$cond} = $value;
         }
     }
 
@@ -5734,21 +5719,13 @@ sub variable_defined ($$)
     {
 	if ($cond && $conditional{$var})
 	{
-	    # We have been asked to check for a particular condition,
-	    # and the variable is defined conditionally.  We need to
-	    # look through the conditions under which the variable is
-	    # defined, and see if any of them match the conditional we
-	    # have been asked to check.
-	    foreach my $vcond (keys %{$conditional{$var}})
+	  if (exists $conditional{$var}{$cond})
 	    {
-		if ($cond eq $vcond)
-		{
-		    # Even a conditional examination is good enough
-		    # for us.  FIXME: really should maintain examined
-		    # status on a per-condition basis.
-		    $content_seen{$var} = 1;
-		    return 1;
-		}
+	      # Even a conditional examination is good enough for us.
+	      # FIXME: really should maintain examined status on a
+	      # per-condition basis.
+	      $content_seen{$var} = 1;
+	      return 1;
 	    }
 
 	    # The variable is not defined for the given condition.
@@ -5999,9 +5976,13 @@ sub variable_conditions_permutations
     return @ret;
 }
 
+
+# $BOOL
+# &check_variable_defined_unconditionally($VAR, $PARENT)
+# ------------------------------------------------------
 # Warn if a variable is conditionally defined.  This is called if we
 # are using the value of a variable.
-sub variable_conditionally_defined
+sub check_variable_defined_unconditionally ($$)
 {
     my ($var, $parent) = @_;
     if ($conditional{$var})
@@ -6019,12 +6000,13 @@ sub variable_conditionally_defined
     }
 }
 
+
 # Get the value of a variable.  This just returns $contents, but warns
 # if the variable is conditionally defined.
 sub variable_value
 {
     my ($var) = @_;
-    &variable_conditionally_defined ($var);
+    &check_variable_defined_unconditionally ($var);
     return $contents{$var};
 }
 
@@ -6143,7 +6125,7 @@ sub variable_value_as_list_worker
 	    {
 		# Warn if we have an ambiguity.  It's hard to know how
 		# to handle this case correctly.
-		&variable_conditionally_defined ($var, $parent)
+		&check_variable_defined_unconditionally ($var, $parent)
 		    if $onceflag;
 		$onceflag = 1;
 		push (@result, &value_to_list ($var, $val, $cond));
@@ -6153,7 +6135,7 @@ sub variable_value_as_list_worker
     else
     {
 	$vars_scanned{$var} = 1;
-	&variable_conditionally_defined ($var, $parent);
+	&check_variable_defined_unconditionally ($var, $parent);
 	$content_seen{$var} = 1;
 	push (@result, &value_to_list ($var, $contents{$var}, $cond));
     }
@@ -6182,7 +6164,6 @@ sub variable_value_as_list
 sub define_variable
 {
     my ($var, $value) = @_;
-
     if (! defined $contents{$var})
     {
 	$output_vars .= $var . ' = ' . $value . "\n";
@@ -6279,10 +6260,10 @@ sub define_program_variable
 
 sub rule_define ($$$$)
 {
-  my ($target, $rule_is_am, $cond_string, $where) = @_;
+  my ($target, $rule_is_am, $cond, $where) = @_;
 
   if (defined $targets{$target}
-      && ($cond_string
+      && ($cond
 	  ? ! defined $target_conditional{$target}
 	  : defined $target_conditional{$target}))
     {
@@ -6292,13 +6273,13 @@ sub rule_define ($$$$)
 
   # Value here doesn't matter; for targets we only note existence.
   $targets{$target} = $where;
-  if ($cond_string)
+  if ($cond)
     {
       if ($target_conditional{$target})
 	{
-	  &check_ambiguous_conditional ($target, $cond_string);
+	  &check_ambiguous_conditional ($target, $cond);
 	}
-      ${$target_conditional{$target}}{$cond_string} = $where;
+      ${$target_conditional{$target}}{$cond} = $where;
     }
 
 
@@ -6374,7 +6355,7 @@ sub read_am_file
     # sure it is the same on exit.  This lets us conditonally include
     # other files.
     my @saved_cond_stack = @conditional_stack;
-    my $cond_string = conditional_string (@conditional_stack);
+    my $cond = conditional_string (@conditional_stack);
 
     my $saw_bk = 0;
     my $was_rule = 0;
@@ -6427,7 +6408,7 @@ sub read_am_file
 	      if (!/\\$/)
 		{
 		  macro_define ($last_var_name, 0,
-				   $last_var_type, $cond_string,
+				   $last_var_type, $cond,
 				   $last_var_value, $.);
 		  push (@var_list, $last_var_name);
 		}
@@ -6440,7 +6421,7 @@ sub read_am_file
 		if ! $configure_cond{$cond} && $cond !~ /^TRUE|FALSE$/;
 	    push (@conditional_stack,
 		  ($cond =~ /^TRUE|FALSE$/) ? "$cond" : "${cond}_TRUE");
-	    $cond_string = conditional_string (@conditional_stack);
+	    $cond = conditional_string (@conditional_stack);
 	}
 	elsif (/$ELSE_PATTERN/o)
 	{
@@ -6456,7 +6437,7 @@ sub read_am_file
 	    {
 		$conditional_stack[$#conditional_stack]
 		    =~ s/TRUE$/FALSE/;
-		$cond_string = conditional_string (@conditional_stack);
+		$cond = conditional_string (@conditional_stack);
 	    }
 	}
 	elsif (/$ENDIF_PATTERN/o)
@@ -6468,7 +6449,7 @@ sub read_am_file
 	    else
 	    {
 		pop @conditional_stack;
-		$cond_string = conditional_string (@conditional_stack);
+		$cond = conditional_string (@conditional_stack);
 	    }
 	}
 	elsif (/$RULE_PATTERN/o)
@@ -6476,7 +6457,7 @@ sub read_am_file
 	    # Found a rule.
 	    $was_rule = 1;
 
-	    rule_define ($1, 0, $cond_string, $.);
+	    rule_define ($1, 0, $cond, $.);
 
 	    $content_lines{$1} = $.;
 	    $output_trailer .= $comment . $spacing;
@@ -6513,7 +6494,7 @@ sub read_am_file
 	    if (!/\\$/)
 	      {
 		macro_define ($last_var_name, 0,
-				 $last_var_type, $cond_string,
+				 $last_var_type, $cond,
 				 $last_var_value, $.);
 		push (@var_list, $last_var_name);
 	      }
@@ -6769,7 +6750,7 @@ sub file_contents ($%)
     my $comment = '';
     my $separator = '';
     my @cond_stack = ();
-    my $cond_string = '';
+    my $cond = '';
     foreach (split (/(?<!\\)\n(?![\t#])/, $contents))
     {
         # Strip leading new lines.  This can happen for comments:
@@ -6805,7 +6786,7 @@ sub file_contents ($%)
 		if ! $configure_cond{$cond} && $cond !~ /^TRUE|FALSE$/;
 	    push (@cond_stack,
 		  ($cond =~ /^TRUE|FALSE$/) ? "$cond" : "${cond}_TRUE");
-	    $cond_string = conditional_string (@cond_stack);
+	    $cond = conditional_string (@cond_stack);
 	}
 	elsif (/$ELSE_PATTERN/o)
 	{
@@ -6820,7 +6801,7 @@ sub file_contents ($%)
 	    else
 	    {
 		$cond_stack[$#cond_stack] =~ s/TRUE$/FALSE/;
-		$cond_string = conditional_string (@cond_stack);
+		$cond = conditional_string (@cond_stack);
 	    }
 	}
 	elsif (/$ENDIF_PATTERN/o)
@@ -6832,7 +6813,7 @@ sub file_contents ($%)
 	    else
 	    {
 		pop @cond_stack;
-		$cond_string = conditional_string (@cond_stack);
+		$cond = conditional_string (@cond_stack);
 	    }
 	}
 
@@ -6863,7 +6844,7 @@ sub file_contents ($%)
 
 	      # Output only if not in FALSE.
 	      if (defined $dependencies{$_}
-		  && $cond_string ne "#")
+		  && $cond ne "#")
 		{
 		  &depend ($_, @deps);
 		  $actions{$_} .= $actions;
@@ -6873,10 +6854,10 @@ sub file_contents ($%)
 		  # Free lance dependency.  Output the rule for all the
 		  # targets instead of one by one.
 		  if (!defined $targets{$targets}
-		      && $cond_string ne "#")
+		      && $cond ne "#")
 		    {
 		      $result_rules .= "$separator$comment$paragraph\n";
-		      rule_define ($targets, 1, $cond_string, $.);
+		      rule_define ($targets, 1, $cond, $.);
 		    }
 		  $comment = $separator = '';
 		  last;
@@ -6890,7 +6871,7 @@ sub file_contents ($%)
 	      if /\\$/;;
 
 	    # Accumulating variables must not be output.
-	    macro_define ($var, 1, $type, $cond_string, $val, $.);
+	    macro_define ($var, 1, $type, $cond, $val, $.);
 	    push (@var_list, $var);
 
 	    # If the user has set some variables we were in charge
