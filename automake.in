@@ -2656,26 +2656,20 @@ sub handle_dist_worker
 			      'TOP_DISTDIR'      => $top_distdir);
     }
 
-    $output_rules .=
-      &file_contents ('distdir',
-		      $xform
-		      . &transform_cond ('SUBDIRS'  =>
-					    &variable_defined ('SUBDIRS')));
-
     # If the target `dist-hook' exists, make sure it is run.  This
     # allows users to do random weird things to the distribution
     # before it is packaged up.
-    push (@dist_targets, 'dist-hook') if &target_defined ('dist-hook');
+    push (@dist_targets, 'dist-hook')
+      if &target_defined ('dist-hook');
 
-    local ($targ);
-    foreach $targ (@dist_targets)
-    {
-	# We must explicitly set distdir and top_distdir for these
-	# sub-makes.
-	$output_rules .= ("\t\$(MAKE) \$(AM_MAKEFLAGS)"
-			  . " top_distdir=\"\$(top_distdir)\""
-			  . " distdir=\"\$(distdir)\" $targ\n");
-    }
+    $output_rules .=
+      &file_contents ('distdir',
+		      $xform
+		      . &transform ('DIST-TARGETS' => join " ", @dist_targets)
+		      . &transform_cond ('DIST-TARGETS' =>
+					    scalar @dist_targets,
+					 'SUBDIRS'  =>
+					    &variable_defined ('SUBDIRS')));
 }
 
 # Handle 'dist' target.
