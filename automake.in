@@ -4773,22 +4773,30 @@ sub lang_yacc_finish
 	    if ! defined $seen_suffix{$1};
 	$seen_suffix{$1} = 1;
 
-	# Now generate rule to make the header file.  This should only
-	# be generated if `yacc -d' specified.  But right now there is
-	# no way to determine that.  FIXME: examine AM_YFLAGS?
 	$file =~ /^(.*)\.(y|yy|y\+\+|yxx|ypp)$/;
 	$base = $1;
 	$hname = 'h';		# Always use `.h' for header file.
 	($cname = $2) =~ tr/y/c/;
-	$output_rules .= "${base}.${hname}: ${base}.${cname}\n";
 
-	# If the files are built in the build directory, then we want
-	# to remove them with `make clean'.  If they are in srcdir
-	# they shouldn't be touched.  However, we can't determine this
-	# statically, and the GNU rules say that yacc/lex output files
-	# should be removed by maintainer-clean.  So that's what we
-	# do.
-	push (@maintainer_clean_files, "${base}.${hname}", "${base}.${cname}");
+	if ((&variable_defined ('AM_YFLAGS')
+	     && &variable_value ('AM_YFLAGS') =~ /(^|\s)-d(\s|$)/)
+	    || (&variable_defined ('YFLAGS')
+		&& &variable_value ('YFLAGS') =~ /(^|\s)-d(\s|$)/)) {
+	    # Now generate rule to make the header file.  This should only
+	    # be generated if `yacc -d' specified.
+	    $output_rules .= "${base}.${hname}: ${base}.${cname}\n";
+
+	    # If the files are built in the build directory, then we want
+	    # to remove them with `make clean'.  If they are in srcdir
+	    # they shouldn't be touched.  However, we can't determine this
+	    # statically, and the GNU rules say that yacc/lex output files
+	    # should be removed by maintainer-clean.  So that's what we
+	    # do.
+	    push (@maintainer_clean_files, "${base}.${hname}");
+
+	    push_dist_common ("${base}.${hname}");
+	}
+	push (@maintainer_clean_files, "${base}.${cname}");
     }
     $output_rules .= "\n";
 
@@ -6555,7 +6563,7 @@ sub initialize_per_input
     # Sources which go in the distribution.
     @dist_sources = ();
 
-    # This hash maps object file names onto their corresopnding source
+    # This hash maps object file names onto their corresponding source
     # file names.  This is used to ensure that each object is created
     # by a single source file.
     %object_map = ();
