@@ -3540,7 +3540,6 @@ sub handle_merge_targets
 			  . "\n");
     }
     $output_rules .= "\n";
-    push (@install, 'install-exec-am');
 
     &do_one_merge_target ('install-data', @install_data);
     if (defined $contents{'install-data-hook'})
@@ -3550,9 +3549,8 @@ sub handle_merge_targets
 			  . "\n");
     }
     $output_rules .= "\n";
-    push (@install, 'install-data-am');
 
-    &do_one_merge_target ('install', @install);
+    &do_one_merge_target ('install', 'all-am');
     &do_one_merge_target ('uninstall', @uninstall);
 
     &do_one_merge_target ('all', @all);
@@ -3578,6 +3576,14 @@ sub do_one_merge_target
     }
 
     &pretty_print_rule ($name . "-am:", "\t\t", @values);
+    if ($name eq 'install')
+    {
+	# Special-case `install-am' to run install-exec-am and
+	# install-data-am after all-am is built.
+	&pretty_print_rule ("\t\$(MAKE) \$(AM_MAKEFLAGS)", "\t  ",
+			    'install-exec-am', 'install-data-am');
+    }
+
     local ($lname) = $name . ($recursive_install ? '-recursive' : '-am');
     local ($tname) = $name;
     # To understand this special case, see handle_merge_targets.
