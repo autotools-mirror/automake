@@ -194,10 +194,6 @@ $libtool_line = 0;
 # TRUE if we've seen AM_MAINTAINER_MODE.
 $seen_maint_mode = 0;
 
-# TRUE if we've seen PACKAGE and VERSION.
-$seen_package = 0;
-$seen_version = 0;
-
 # Actual version we've seen.
 $package_version = '';
 
@@ -4540,8 +4536,6 @@ sub scan_one_configure_file
         if (/$AM_INIT_AUTOMAKE_PATTERN/o)
 	{
 	    $seen_make_set = 1;
-	    $seen_package = 1;
-	    $seen_version = 1;
 	    $seen_arg_prog = 1;
 	    $seen_prog_install = 1;
 	    ($package_version = $1) =~ s/$AM_PACKAGE_VERSION_PATTERN/$1/o;
@@ -4602,19 +4596,6 @@ sub scan_one_configure_file
 	{
 	    $seen_maint_mode = 1;
 	    $configure_cond{'MAINTAINER_MODE'} = 1;
-	}
-        $seen_package = 1 if /PACKAGE=/;
-
-	# Skip VERSION of [$2]; that is from AM_INIT_AUTOMAKE.
-        if (/\bVERSION=(\S+)/ && $1 ne '[$2]')
-	{
-	    $seen_version = 1;
-	    $package_version = $1;
-	    $package_version_line = $.;
-	}
-        elsif (/VERSION=/)
-	{
-	    $seen_version = 1;
 	}
 
 	$seen_prog_install = 1 if /AC_PROG_INSTALL/;
@@ -4682,11 +4663,6 @@ sub scan_configure
 
     &am_conf_error ("\`AM_INIT_AUTOMAKE' must be used in configure.in")
 	if ! $seen_init_automake;
-
-    &am_conf_error ("\`PACKAGE' not defined in configure.in")
-        if ! $seen_package;
-    &am_conf_error ("\`VERSION' not defined in configure.in")
-        if ! $seen_version;
 
     # Always require AC_PROG_MAKE_SET.  We might randomly use $(MAKE)
     # for our own reasons.
