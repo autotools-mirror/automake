@@ -198,9 +198,18 @@ uninstall-binSCRIPTS:
 	done
 
 .texi.info:
-	@rm -f $@ $@-[0-9] $@-[0-9][0-9]
+	backupdir=somedir && rm -rf $$backupdir && mkdir $$backupdir && \
+	for f in $@ $@-[0-9] $@-[0-9][0-9] $(@:.info=).i[0-9] $(@:.info=).i[0-9][0-9]; do \
+	  if test -f $$f; then \
+	    mv $$f $$backupdir; \
+	  fi \
+	done; \
 	$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) -I $(srcdir) \
-	 -o $@ `test -f '$<' || echo '$(srcdir)/'`$<
+	 -o $@ `test -f '$<' || echo '$(srcdir)/'`$<; \
+	rc=$$?; \
+	test $$rc != 0 && mv $$backupdir/* `echo "./$@" | sed 's|[^/]*$$||'`; \
+	rm -rf $$backupdir; \
+	exit $$rc
 
 .texi.dvi:
 	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
@@ -255,9 +264,10 @@ uninstall-info-am:
 	@list='$(INFO_DEPS)'; \
 	for file in $$list; do \
 	  relfile=`echo "$$file" | sed 's|^.*/||'`; \
+	  relfile_i=`echo "$$relfile" | sed 's|\.info$$||;s|$$|.i|'`; \
 	  (if cd $(DESTDIR)$(infodir); then \
-	     echo " rm -f $$relfile $$relfile-[0-9] $$relfile-[0-9][0-9])"; \
-	     rm -f $$relfile $$relfile-[0-9] $$relfile-[0-9][0-9]; \
+	     echo " rm -f $$relfile $$relfile-[0-9] $$relfile-[0-9][0-9] $$relfile_i[0-9] $$relfile_i[0-9][0-9])"; \
+	     rm -f $$relfile $$relfile-[0-9] $$relfile-[0-9][0-9] $$relfile_i[0-9] $$relfile_i[0-9][0-9]; \
 	   else :; fi); \
 	done
 
@@ -280,11 +290,10 @@ mostlyclean-aminfo:
 	  automake.vrs automake.dvi automake.pdf automake.ps
 
 maintainer-clean-aminfo:
-	list='$(INFO_DEPS)'; for i in $$list; do \
-	  rm -f $$i; \
-	  if test "`echo $$i-[0-9]*`" != "$$i-[0-9]*"; then \
-	    rm -f $$i-[0-9]*; \
-	  fi; \
+	@list='$(INFO_DEPS)'; for i in $$list; do \
+	  i_i=`echo "$$i" | sed 's|\.info$$||;s|$$|.i|'`; \
+	  echo " rm -f $$i $$i-[0-9] $$i-[0-9][0-9] $$i_i[0-9] $$i_i[0-9][0-9]"; \
+	  rm -f $$i $$i-[0-9] $$i-[0-9][0-9] $$i_i[0-9] $$i_i[0-9][0-9]; \
 	done
 
 # This directory's subdirectories are mostly independent; you can cd
@@ -492,7 +501,7 @@ distcheck: dist
 	mkdir $(distdir)/_build
 	mkdir $(distdir)/_inst
 	chmod a-w $(distdir)
-	dc_install_base=`$(am__cd) $(distdir)/_inst && pwd` \
+	dc_install_base=`$(am__cd) $(distdir)/_inst && pwd | sed -e 's,^[^:\\/]:[\\/],/,'` \
 	  && dc_destdir="$${TMPDIR-/tmp}/am-dc-$$$$/" \
 	  && cd $(distdir)/_build \
 	  && ../configure --srcdir=.. --prefix="$$dc_install_base" \
@@ -600,7 +609,9 @@ install-info-am: $(INFO_DEPS)
 	@list='$(INFO_DEPS)'; \
 	for file in $$list; do \
 	  if test -f $$file; then d=.; else d=$(srcdir); fi; \
-	  for ifile in $$d/$$file $$d/$$file-[0-9] $$d/$$file-[0-9][0-9]; do \
+	  file_i=`echo "$$file" | sed 's|\.info$$||;s|$$|.i|'`; \
+	  for ifile in $$d/$$file $$d/$$file-[0-9] $$d/$$file-[0-9][0-9] \
+                       $$d/$$file_i[0-9] $$d/$$file_i[0-9][0-9] ; do \
 	    if test -f $$ifile; then \
 	      relfile=`echo "$$ifile" | sed 's|^.*/||'`; \
 	      echo " $(INSTALL_DATA) $$ifile $(DESTDIR)$(infodir)/$$relfile"; \
