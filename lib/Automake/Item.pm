@@ -1,4 +1,4 @@
-# Copyright (C) 2003  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2004  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -71,9 +71,12 @@ exists.  Return 0 otherwise.
 
 sub def ($$)
 {
-  my ($self, $cond) = @_;
-  return $self->{'defs'}{$cond} if exists $self->{'defs'}{$cond};
-  return 0;
+  # This method is called very often, so keep it small and fast.  We
+  # don't mind the extra undefined items introduced by lookup failure;
+  # avoiding this with `exists' means doing two hash lookup on
+  # success, and proved worse on benchmark.
+  my $def = $_[0]->{'defs'}{$_[1]};
+  return defined $def && $def;
 }
 
 =item C<$item-E<gt>rdef ($cond)>
