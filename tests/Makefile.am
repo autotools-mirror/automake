@@ -251,6 +251,7 @@ ppf77.test \
 pr2.test \
 pr211.test \
 pr220.test \
+pr229.test \
 pr243.test \
 pr266.test \
 pr279.test \
