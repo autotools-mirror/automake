@@ -2993,92 +2993,99 @@ sub handle_scripts
 }
 
 
+
+
+## ------------------------ ##
+## Handling Texinfo files.  ##
+## ------------------------ ##
+
 # ($OUTFILE, $VFILE, @CLEAN_FILES)
 # &scan_texinfo_file ($FILENAME)
 # ------------------------------
-# $OUTFILE is the name of the info file produced by $FILENAME.
-# $VFILE is the name of the version.texi file used (empty if none).
-# @CLEAN_FILES is the list of by products (indexes etc.)
-sub scan_texinfo_file
+# $OUTFILE     - name of the info file produced by $FILENAME.
+# $VFILE       - name of the version.texi file used (undef if none).
+# @CLEAN_FILES - list of byproducts (indexes etc.)
+sub scan_texinfo_file ($)
 {
-    my ($filename) = @_;
+  my ($filename) = @_;
 
-    # Some of the following extensions are always created, no matter
-    # whether indexes are used or not.  Other (like cps, fns, ... pgs)
-    # are only created when they are used.  We used to scan $FILENAME
-    # for their use, but that is not enough: they could be used in
-    # included files.  We can't scan included files because we don't
-    # know the include path.  Therefore we always erase these files,
-    # no matter whether they are used or not.
-    #
-    # (tmp is only created if an @macro is used and a certain e-TeX
-    # feature is not available.)
-    my %clean_suffixes =
-      map { $_ => 1 } (qw(aux log toc tmp
-			  cp cps
-			  fn fns
-			  ky kys
-			  vr vrs
-			  tp tps
-			  pg pgs)); # grep 'new.*index' texinfo.tex
+  # Some of the following extensions are always created, no matter
+  # whether indexes are used or not.  Other (like cps, fns, ... pgs)
+  # are only created when they are used.  We used to scan $FILENAME
+  # for their use, but that is not enough: they could be used in
+  # included files.  We can't scan included files because we don't
+  # know the include path.  Therefore we always erase these files, no
+  # matter whether they are used or not.
+  # 
+  # (tmp is only created if an @macro is used and a certain e-TeX
+  # feature is not available.)
+  my %clean_suffixes =
+    map { $_ => 1 } (qw(aux log toc tmp
+			cp cps
+			fn fns
+			ky kys
+			vr vrs
+			tp tps
+			pg pgs)); # grep 'new.*index' texinfo.tex
 
-    my $texi = new Automake::XFile "< $filename";
-    verb "reading $filename";
+  my $texi = new Automake::XFile "< $filename";
+  verb "reading $filename";
 
-    my ($outfile, $vfile);
-    while ($_ = $texi->getline)
+  my ($outfile, $vfile);
+  while ($_ = $texi->getline)
     {
       if (/^\@setfilename +(\S+)/)
-      {
-	# Honor only the first @setfilename.  (It's possible to have
-	# more occurences later if the manual shows examples of how
-	# to use @setfilename...)
-	next if $outfile;
+	{
+	  # Honor only the first @setfilename.  (It's possible to have
+	  # more occurences later if the manual shows examples of how
+	  # to use @setfilename...)
+	  next if $outfile;
 
-        $outfile = $1;
-        if ($outfile =~ /\.(.+)$/ && $1 ne 'info')
-          {
-	    error ("$filename:$.",
-		   "output `$outfile' has unrecognized extension");
-            return;
-          }
-      }
-      # A "version.texi" file is actually any file whose name
-      # matches "vers*.texi".
+	  $outfile = $1;
+	  if ($outfile =~ /\.(.+)$/ && $1 ne 'info')
+	    {
+	      error ("$filename:$.",
+		     "output `$outfile' has unrecognized extension");
+	      return;
+	    }
+	}
+      # A "version.texi" file is actually any file whose name matches
+      # "vers*.texi".
       elsif (/^\@include\s+(vers[^.]*\.texi)\s*$/)
-      {
-        $vfile = $1;
-      }
+	{
+	  $vfile = $1;
+	}
 
       # Try to find new or unused indexes.
 
       # Creating a new category of index.
       elsif (/^\@def(code)?index (\w+)/)
-      {
-	$clean_suffixes{$2} = 1;
-	$clean_suffixes{"$2s"} = 1;
-      }
+	{
+	  $clean_suffixes{$2} = 1;
+	  $clean_suffixes{"$2s"} = 1;
+	}
 
       # Merging an index into an another.
       elsif (/^\@syn(code)?index (\w+) (\w+)/)
-      {
-	delete $clean_suffixes{"$2s"};
-	$clean_suffixes{"$3s"} = 1;
-      }
+	{
+	  delete $clean_suffixes{"$2s"};
+	  $clean_suffixes{"$3s"} = 1;
+	}
 
     }
 
-    if ($outfile eq '')
-      {
-	err_am "`$filename' missing \@setfilename";
-	return;
-      }
+  if ($outfile eq '')
+    {
+      err_am "`$filename' missing \@setfilename";
+      return;
+    }
 
-    my $infobase = basename ($filename);
-    $infobase =~ s/\.te?xi(nfo)?$//;
-    return ($outfile, $vfile,
-	    map { "$infobase.$_" } (sort keys %clean_suffixes));
+  my $infobase = basename ($filename);
+  $infobase =~ s/\.te?xi(nfo)?$//;
+  return ($outfile, $vfile,
+	  map { "$infobase.$_" } (sort keys %clean_suffixes));
 }
+
 
 # ($DIRSTAMP, @CLEAN_FILES)
 # output_texinfo_build_rules ($SOURCE, $DEST, @DEPENDENCIES)
@@ -3097,15 +3104,15 @@ sub output_texinfo_build_rules ($$@)
   $ssfx ||= "";
   $dsfx ||= "";
 
-  # We can output two kinds of rules: the "generic" rules
-  # use Make suffix rules and are appropritate when
-  # $source and $dest lie in the current directory; the "specifix"
-  # rules is needed in the other case.
-  #
-  # The former are output only once (this is not really apparent
-  # here, but just remember that some logic deeper in Automake will
-  # not output the same rule twice); while the later need to be output
-  # for each Texinfo source.
+  # We can output two kinds of rules: the "generic" rules use Make
+  # suffix rules and are appropritate when $source and $dest lie in
+  # the current directory; the "specifix" rules is needed in the other
+  # case.
+  # 
+  # The former are output only once (this is not really apparent here,
+  # but just remember that some logic deeper in Automake will not
+  # output the same rule twice); while the later need to be output for
+  # each Texinfo source.
   my $generic;
   my $makeinfoflags;
   my $sdir = dirname $source;
@@ -3120,35 +3127,38 @@ sub output_texinfo_build_rules ($$@)
       $makeinfoflags = "-I $sdir -I \$(srcdir)/$sdir";
     }
 
-  # We cannot use a suffix rule to build info files with
-  # an empty extension.  Otherwise we would output a single suffix
-  # inference rule, with separate dependencies, as in
+  # We cannot use a suffix rule to build info files with an empty
+  # extension.  Otherwise we would output a single suffix inference
+  # rule, with separate dependencies, as in
+  # 
   #    .texi:
-  #	       $(MAKEINFO) ...
+  #             $(MAKEINFO) ...  
   #    foo.info: foo.texi
-  # which confuse Solaris make.  (See the Autoconf manual for details.)
-  # Therefore we use a specific rule in this case.  This applies
-  # to info files only (dvi and pdf files always have an extension).
+  # 
+  # which confuse Solaris make.  (See the Autoconf manual for
+  # details.)  Therefore we use a specific rule in this case.  This
+  # applies to info files only (dvi and pdf files always have an
+  # extension).
   my $generic_info = ($generic && $dsfx) ? 1 : 0;
 
   # If the resulting file lie into a subdirectory,
   # make sure this directory will exist.
   my $dirstamp = require_build_directory_maybe ($dest);
 
-  $output_rules .= &file_contents ('texibuild',
-				   new Automake::Location,
-                                   GENERIC       => $generic,
-                                   GENERIC_INFO  => $generic_info,
-                                   SOURCE_SUFFIX => $ssfx,
-                                   SOURCE => ($generic ? '$<' : $source),
-                                   SOURCE_INFO   => ($generic_info ?
-						     '$<' : $source),
-                                   SOURCE_REAL   => $source,
-                                   DEST_PREFIX   => $dpfx,
-                                   DEST_SUFFIX   => $dsfx,
-                                   MAKEINFOFLAGS => $makeinfoflags,
-                                   DEPS          => "@deps",
-				   DIRSTAMP      => $dirstamp);
+  $output_rules .= file_contents ('texibuild',
+				  new Automake::Location,
+				  GENERIC       => $generic,
+				  GENERIC_INFO  => $generic_info,
+				  SOURCE_SUFFIX => $ssfx,
+				  SOURCE => ($generic ? '$<' : $source),
+				  SOURCE_INFO   => ($generic_info ?
+						    '$<' : $source),
+				  SOURCE_REAL   => $source,
+				  DEST_PREFIX   => $dpfx,
+				  DEST_SUFFIX   => $dsfx,
+				  MAKEINFOFLAGS => $makeinfoflags,
+				  DEPS          => "@deps",
+				  DIRSTAMP      => $dirstamp);
   return ($dirstamp, "$dpfx.dvi", "$dpfx.pdf", "$dpfx.ps", "$dpfx.html");
 }
 
@@ -3157,201 +3167,203 @@ sub output_texinfo_build_rules ($$@)
 # handle_texinfo_helper ()
 # ------------------------
 # Handle all Texinfo source; helper for handle_texinfo
-sub handle_texinfo_helper
+sub handle_texinfo_helper ()
 {
-    reject_var 'TEXINFOS', "`TEXINFOS' is an anachronism; use `info_TEXINFOS'";
-    reject_var 'html_TEXINFOS', "HTML generation not yet supported";
+  reject_var 'TEXINFOS', "`TEXINFOS' is an anachronism; use `info_TEXINFOS'";
+  reject_var 'html_TEXINFOS', "HTML generation not yet supported";
 
-    my $info_texinfos = var ('info_TEXINFOS');
-    return (0, '') unless $info_texinfos;
+  my $info_texinfos = var ('info_TEXINFOS');
+  return (0, '') unless $info_texinfos;
 
-    my @texis = $info_texinfos->value_as_list_recursive ('all');
+  my @texis = $info_texinfos->value_as_list_recursive ('all');
 
-    my (@info_deps_list, @texi_deps);
-    my (@dvis_list, @pdfs_list, @pss_list, @htmls_list);
-    my %versions;
-    my $done = 0;
-    my @texi_cleans;
-    my $canonical;
+  my (@info_deps_list, @texi_deps);
+  my (@dvis_list, @pdfs_list, @pss_list, @htmls_list);
+  my %versions;
+  my $done = 0;
+  my @texi_cleans;
+  my $canonical;
 
-    foreach my $info_cursor (@texis)
+  foreach my $info_cursor (@texis)
     {
-        my $infobase = $info_cursor;
-        $infobase =~ s/\.(txi|texinfo|texi)$//;
+      my $infobase = $info_cursor;
+      $infobase =~ s/\.(txi|texinfo|texi)$//;
 
-	if ($infobase eq $info_cursor)
-	  {
-	    # FIXME: report line number.
-	    err_am "texinfo file `$info_cursor' has unrecognized extension";
-	    next;
-	  }
-
-	# If 'version.texi' is referenced by input file, then include
-	# automatic versioning capability.
-	my ($out_file, $vtexi, @clean_files) =
-	  &scan_texinfo_file ("$relative_dir/$info_cursor")
-	    or next;
-	push (@texi_cleans, @clean_files);
-
-	# If the Texinfo source is in a subdirectory, create the
-	# resulting info in this subdirectory.  If it is in the
-	# current directory, try hard to not prefix "./" because
-	# it breaks the generic rules.
-	my $outdir = dirname ($info_cursor) . '/';
-	$outdir = "" if $outdir eq './';
-	$out_file =  $outdir . $out_file;
-
-	# If user specified file_TEXINFOS, then use that as explicit
-	# dependency list.
-	@texi_deps = ();
-	push (@texi_deps, "$outdir$vtexi") if $vtexi;
-
-	my $canonical = &canonicalize ($infobase);
-	if (var ($canonical . "_TEXINFOS"))
+      if ($infobase eq $info_cursor)
 	{
-	    push (@texi_deps, '$(' . $canonical . '_TEXINFOS)');
-	    &push_dist_common ('$(' . $canonical . '_TEXINFOS)');
+	  # FIXME: report line number.
+	  err_am "texinfo file `$info_cursor' has unrecognized extension";
+	  next;
 	}
 
-	my ($dirstamp, @cfiles) =
-	  output_texinfo_build_rules ($info_cursor, $out_file, @texi_deps);
-	push (@texi_cleans, @cfiles);
+      # If 'version.texi' is referenced by input file, then include
+      # automatic versioning capability.
+      my ($out_file, $vtexi, @clean_files) =
+	scan_texinfo_file ("$relative_dir/$info_cursor")
+	or next;
+      push (@texi_cleans, @clean_files);
 
-	push (@info_deps_list, $out_file);
-	push (@dvis_list, $infobase . '.dvi');
-	push (@pdfs_list, $infobase . '.pdf');
-	push (@pss_list, $infobase . '.ps');
-	push (@htmls_list, $infobase . '.html');
+      # If the Texinfo source is in a subdirectory, create the
+      # resulting info in this subdirectory.  If it is in the current
+      # directory, try hard to not prefix "./" because it breaks the
+      # generic rules.
+      my $outdir = dirname ($info_cursor) . '/';
+      $outdir = "" if $outdir eq './';
+      $out_file =  $outdir . $out_file;
 
-	# If a vers*.texi file is needed, emit the rule.
-	if ($vtexi)
+      # If user specified file_TEXINFOS, then use that as explicit
+      # dependency list.
+      @texi_deps = ();
+      push (@texi_deps, "$outdir$vtexi") if $vtexi;
+
+      my $canonical = canonicalize ($infobase);
+      if (var ($canonical . "_TEXINFOS"))
 	{
-	    err_am ("`$vtexi', included in `$info_cursor', "
-		    . "also included in `$versions{$vtexi}'")
-	      if defined $versions{$vtexi};
-	    $versions{$vtexi} = $info_cursor;
-
-	    # We number the stamp-vti files.  This is doable since the
-	    # actual names don't matter much.  We only number starting
-	    # with the second one, so that the common case looks nice.
-	    my $vti = ($done ? $done : 'vti');
-	    ++$done;
-
-	    # This is ugly, but it is our historical practice.
-	    if ($config_aux_dir_set_in_configure_in)
-	    {
-		require_conf_file_with_macro (TRUE, 'info_TEXINFOS', FOREIGN,
-					      'mdate-sh');
-	    }
-	    else
-	    {
-		require_file_with_macro (TRUE, 'info_TEXINFOS',
-					 FOREIGN, 'mdate-sh');
-	    }
-
-	    my $conf_dir;
-	    if ($config_aux_dir_set_in_configure_in)
-	    {
-		$conf_dir = $config_aux_dir;
-		$conf_dir .= '/' unless $conf_dir =~ /\/$/;
-	    }
-	    else
-	    {
-		$conf_dir = '$(srcdir)/';
-	    }
-	    $output_rules .= &file_contents ('texi-vers',
-					     new Automake::Location,
-					     TEXI     => $info_cursor,
-					     VTI      => $vti,
-					     STAMPVTI => "${outdir}stamp-$vti",
-					     VTEXI    => "$outdir$vtexi",
-					     MDDIR    => $conf_dir,
-					     DIRSTAMP => $dirstamp);
+	  push (@texi_deps, '$(' . $canonical . '_TEXINFOS)');
+	  push_dist_common ('$(' . $canonical . '_TEXINFOS)');
 	}
-    }
 
-    # Handle location of texinfo.tex.
-    my $need_texi_file = 0;
-    my $texinfodir;
-    if ($cygnus_mode)
-    {
-        $texinfodir = '$(top_srcdir)/../texinfo';
-	&define_variable ('TEXINFO_TEX', "$texinfodir/texinfo.tex", INTERNAL);
-    }
-    elsif ($config_aux_dir_set_in_configure_in)
-    {
-        $texinfodir = $config_aux_dir;
-	&define_variable ('TEXINFO_TEX', "$texinfodir/texinfo.tex", INTERNAL);
-	$need_texi_file = 2; # so that we require_conf_file later
-    }
-    elsif (var ('TEXINFO_TEX'))
-    {
-	# The user defined TEXINFO_TEX so assume he knows what he is
-	# doing.
-        $texinfodir = ('$(srcdir)/'
-		       . dirname (&variable_value ('TEXINFO_TEX')));
-    }
-    else
-    {
-        $texinfodir = '$(srcdir)';
-	$need_texi_file = 1;
-    }
-    &define_variable ('am__TEXINFO_TEX_DIR', $texinfodir, INTERNAL);
+      my ($dirstamp, @cfiles) =
+	output_texinfo_build_rules ($info_cursor, $out_file, @texi_deps);
+      push (@texi_cleans, @cfiles);
 
-    # The return value.
-    my $texiclean = makefile_wrap ("", "\t  ", @texi_cleans);
+      push (@info_deps_list, $out_file);
+      push (@dvis_list, $infobase . '.dvi');
+      push (@pdfs_list, $infobase . '.pdf');
+      push (@pss_list, $infobase . '.ps');
+      push (@htmls_list, $infobase . '.html');
 
-    push (@dist_targets, 'dist-info');
-
-    if (! defined $options{'no-installinfo'})
-    {
-	# Make sure documentation is made and installed first.  Use
-	# $(INFO_DEPS), not 'info', because otherwise recursive makes
-	# get run twice during "make all".
-	unshift (@all, '$(INFO_DEPS)');
-    }
-
-    &define_variable ("INFO_DEPS", "@info_deps_list", INTERNAL);
-    &define_variable ("DVIS", "@dvis_list", INTERNAL);
-    &define_variable ("PDFS", "@pdfs_list", INTERNAL);
-    &define_variable ("PSS", "@pss_list", INTERNAL);
-    &define_variable ("HTMLS", "@htmls_list", INTERNAL);
-    # This next isn't strictly needed now -- the places that look here
-    # could easily be changed to look in info_TEXINFOS.  But this is
-    # probably better, in case noinst_TEXINFOS is ever supported.
-    &define_variable ("TEXINFOS", &variable_value ('info_TEXINFOS'), INTERNAL);
-
-    # Do some error checking.  Note that this file is not required
-    # when in Cygnus mode; instead we defined TEXINFO_TEX explicitly
-    # up above.
-    if ($need_texi_file && ! defined $options{'no-texinfo.tex'})
-    {
-	if ($need_texi_file > 1)
+      # If a vers*.texi file is needed, emit the rule.
+      if ($vtexi)
 	{
-	    require_conf_file_with_macro (TRUE, 'info_TEXINFOS', FOREIGN,
-					  'texinfo.tex');
-	}
-	else
-	{
-	    require_file_with_macro (TRUE, 'info_TEXINFOS', FOREIGN,
-				     'texinfo.tex');
+	  err_am ("`$vtexi', included in `$info_cursor', "
+		  . "also included in `$versions{$vtexi}'")
+	    if defined $versions{$vtexi};
+	  $versions{$vtexi} = $info_cursor;
+
+	  # We number the stamp-vti files.  This is doable since the
+	  # actual names don't matter much.  We only number starting
+	  # with the second one, so that the common case looks nice.
+	  my $vti = ($done ? $done : 'vti');
+	  ++$done;
+
+	  # This is ugly, but it is our historical practice.
+	  if ($config_aux_dir_set_in_configure_in)
+	    {
+	      require_conf_file_with_macro (TRUE, 'info_TEXINFOS', FOREIGN,
+					    'mdate-sh');
+	    }
+	  else
+	    {
+	      require_file_with_macro (TRUE, 'info_TEXINFOS',
+				       FOREIGN, 'mdate-sh');
+	    }
+
+	  my $conf_dir;
+	  if ($config_aux_dir_set_in_configure_in)
+	    {
+	      $conf_dir = $config_aux_dir;
+	      $conf_dir .= '/' unless $conf_dir =~ /\/$/;
+	    }
+	  else
+	    {
+	      $conf_dir = '$(srcdir)/';
+	    }
+	  $output_rules .= file_contents ('texi-vers',
+					  new Automake::Location,
+					  TEXI     => $info_cursor,
+					  VTI      => $vti,
+					  STAMPVTI => "${outdir}stamp-$vti",
+					  VTEXI    => "$outdir$vtexi",
+					  MDDIR    => $conf_dir,
+					  DIRSTAMP => $dirstamp);
 	}
     }
 
-    return (1, $texiclean);
+  # Handle location of texinfo.tex.
+  my $need_texi_file = 0;
+  my $texinfodir;
+  if ($cygnus_mode)
+    {
+      $texinfodir = '$(top_srcdir)/../texinfo';
+      define_variable ('TEXINFO_TEX', "$texinfodir/texinfo.tex", INTERNAL);
+    }
+  elsif ($config_aux_dir_set_in_configure_in)
+    {
+      $texinfodir = $config_aux_dir;
+      define_variable ('TEXINFO_TEX', "$texinfodir/texinfo.tex", INTERNAL);
+      $need_texi_file = 2; # so that we require_conf_file later
+    }
+  elsif (var ('TEXINFO_TEX'))
+    {
+      # The user defined TEXINFO_TEX so assume he knows what he is
+      # doing.
+      $texinfodir = ('$(srcdir)/'
+		     . dirname (variable_value ('TEXINFO_TEX')));
+    }
+  else
+    {
+      $texinfodir = '$(srcdir)';
+      $need_texi_file = 1;
+    }
+  define_variable ('am__TEXINFO_TEX_DIR', $texinfodir, INTERNAL);
+
+  # The return value.
+  my $texiclean = makefile_wrap ("", "\t  ", @texi_cleans);
+
+  push (@dist_targets, 'dist-info');
+
+  if (! defined $options{'no-installinfo'})
+    {
+      # Make sure documentation is made and installed first.  Use
+      # $(INFO_DEPS), not 'info', because otherwise recursive makes
+      # get run twice during "make all".
+      unshift (@all, '$(INFO_DEPS)');
+    }
+
+  define_variable ("INFO_DEPS", "@info_deps_list", INTERNAL);
+  define_variable ("DVIS", "@dvis_list", INTERNAL);
+  define_variable ("PDFS", "@pdfs_list", INTERNAL);
+  define_variable ("PSS", "@pss_list", INTERNAL);
+  define_variable ("HTMLS", "@htmls_list", INTERNAL);
+  # This next isn't strictly needed now -- the places that look here
+  # could easily be changed to look in info_TEXINFOS.  But this is
+  # probably better, in case noinst_TEXINFOS is ever supported.
+  define_variable ("TEXINFOS", variable_value ('info_TEXINFOS'), INTERNAL);
+
+  # Do some error checking.  Note that this file is not required
+  # when in Cygnus mode; instead we defined TEXINFO_TEX explicitly
+  # up above.
+  if ($need_texi_file && ! defined $options{'no-texinfo.tex'})
+    {
+      if ($need_texi_file > 1)
+	{
+	  require_conf_file_with_macro (TRUE, 'info_TEXINFOS', FOREIGN,
+					'texinfo.tex');
+	}
+      else
+	{
+	  require_file_with_macro (TRUE, 'info_TEXINFOS', FOREIGN,
+				   'texinfo.tex');
+	}
+    }
+
+  return (1, $texiclean);
 }
+
 
 # handle_texinfo ()
 # -----------------
 # Handle all Texinfo source.
-sub handle_texinfo
+sub handle_texinfo ()
 {
-    my ($do_something, $texiclean) = handle_texinfo_helper ();
-    $output_rules .=  &file_contents ('texinfos',
-				      new Automake::Location,
-				      TEXICLEAN => $texiclean,
-				      'LOCAL-TEXIS' => $do_something);
+  my ($do_something, $texiclean) = handle_texinfo_helper ();
+  $output_rules .=  file_contents ('texinfos',
+				   new Automake::Location,
+				   TEXICLEAN => $texiclean,
+				   'LOCAL-TEXIS' => $do_something);
 }
+
 
 # Handle any man pages.
 sub handle_man_pages
