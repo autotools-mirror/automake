@@ -43,6 +43,7 @@ all-local:
 EOF
 
 cat >mk/sub.am <<'EOF'
+EXTRA_DIST = foo
 all-local:
 	@echo in--sub
 EOF
@@ -52,6 +53,17 @@ all-local:
 	@echo at--toplevel
 SUBDIRS = mk sub
 EOF
+
+# We have to distribute something in foo, because some versions
+# of tar do not archive empty directories when passed the `o'
+# flags.  (This was fixed in GNU tar 1.12, but older
+# versions are still used: NetBSD 1.6.1 ships with tar 1.11.2).
+#
+# If sub/ is missing from the archive, config.status will fail
+# to compute $ac_abs_srcdir during a VPATH build: config.status
+# is able to create sub/ in the build tree, but it assumes the
+# directory already exists in the source tree.
+echo bar > sub/foo
 
 $ACLOCAL
 $AUTOCONF
