@@ -25,10 +25,18 @@ required=gcc
 
 set -e
 
+mkdir m4
+
+cat >m4/foo.m4 <<'EOF'
+AC_DEFUN([FOO],[
+  AC_PROG_CC
+  AC_OUTPUT
+])
+EOF
+
 cat >>configure.in <<'END'
 AC_CONFIG_SUBDIRS([lib])
-AC_PROG_CC
-AC_OUTPUT
+FOO
 END
 
 cat >Makefile.am <<'EOF'
@@ -44,6 +52,8 @@ distdir = subpack-1
 dist-hook:
 	test -f $(distdir)/LDADD.c
 	test -f $(top_distdir)/LDADD.c
+
+ACLOCAL_AMFLAGS = -I m4
 EOF
 
 cat >LDADD.c <<'EOF'
@@ -62,10 +72,9 @@ mkdir lib/src
 cat >lib/configure.ac <<'EOF'
 AC_INIT([lib], [2.3])
 AM_INIT_AUTOMAKE
-AC_PROG_CC
 AC_PROG_RANLIB
 AC_CONFIG_FILES([Makefile])
-AC_OUTPUT
+FOO
 EOF
 
 cat >lib/Makefile.am <<'EOF'
@@ -77,6 +86,8 @@ dist-hook:
 	test -f $(top_distdir)/LDADD.c
 	test -f $(distdir)/src/x.c
 	test ! -f $(top_distdir)/src/x.c
+
+ACLOCAL_AMFLAGS = -I ../m4
 EOF
 
 cat >lib/src/x.c <<'EOF'
@@ -86,12 +97,13 @@ int lib ()
 }
 EOF
 
-$ACLOCAL
+$ACLOCAL -I m4
 $AUTOCONF
 $AUTOMAKE -Wno-override
 
 cd lib
-$ACLOCAL
+$ACLOCAL -I ../m4
+$FGREP 'm4_include([../m4/foo.m4])' aclocal.m4
 $AUTOCONF
 $AUTOMAKE -Wno-override
 cd ..
