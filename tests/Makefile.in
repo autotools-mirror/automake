@@ -104,7 +104,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-XFAIL_TESTS = subdir5.test auxdir2.test cond17.test txinfo5.test
+XFAIL_TESTS = subdir8.test auxdir2.test cond17.test txinfo5.test
 TESTS = \
 acinclude.test \
 aclibobj.test \
@@ -486,6 +486,7 @@ subdir4.test \
 subdir5.test \
 subdir6.test \
 subdir7.test \
+subdir8.test \
 subdirbuiltsources.test \
 subcond.test \
 subcond2.test \
@@ -578,11 +579,27 @@ check_SCRIPTS = defs
 all: all-am
 
 .SUFFIXES:
-$(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.in $(ACLOCAL_M4)
+$(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.in $(ACLOCAL_M4) 
+	@for dep in $?; do \
+	  case '$(top_srcdir)/configure.in $(ACLOCAL_M4) ' in \
+	    *$$dep*) \
+	      echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu '; \
+	      cd $(top_srcdir) && $(AUTOMAKE) --gnu ; \
+	      exit 0;; \
+	  esac; \
+	done; \
+        echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  tests/Makefile'; \
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --gnu  tests/Makefile
 Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)
+	@case '$?' in \
+	  *config.status*) \
+	    echo ' cd $(top_builddir) && $(SHELL) ./config.status'; \
+	    cd $(top_builddir) && $(SHELL) ./config.status;; \
+	  *) \
+	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)'; \
+	    cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe);; \
+	esac;
 defs: $(top_builddir)/config.status defs.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 uninstall-info-am:

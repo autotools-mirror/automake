@@ -147,11 +147,27 @@ EXTRA_DIST = dirlist
 all: all-am
 
 .SUFFIXES:
-$(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.in $(ACLOCAL_M4)
+$(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.in $(ACLOCAL_M4) 
+	@for dep in $?; do \
+	  case '$(top_srcdir)/configure.in $(ACLOCAL_M4) ' in \
+	    *$$dep*) \
+	      echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu '; \
+	      cd $(top_srcdir) && $(AUTOMAKE) --gnu ; \
+	      exit 0;; \
+	  esac; \
+	done; \
+        echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  m4/Makefile'; \
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --gnu  m4/Makefile
 Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)
+	@case '$?' in \
+	  *config.status*) \
+	    echo ' cd $(top_builddir) && $(SHELL) ./config.status'; \
+	    cd $(top_builddir) && $(SHELL) ./config.status;; \
+	  *) \
+	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)'; \
+	    cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe);; \
+	esac;
 amversion.m4: $(top_builddir)/config.status amversion.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 uninstall-info-am:

@@ -1,5 +1,5 @@
 ## automake - create Makefile.in from Makefile.am
-## Copyright 2001
+## Copyright (C) 2001, 2002, 2003
 ## Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
@@ -22,17 +22,44 @@
 ## --------------------- ##
 
 ## This rule remakes the Makefile.in.
-%MAKEFILE-IN%: %MAINTAINER-MODE% %MAKEFILE-AM% %MAKEFILE-IN-DEPS% $(top_srcdir)/%CONFIGURE-AC% $(ACLOCAL_M4)
+%MAKEFILE-IN%: %MAINTAINER-MODE% %MAKEFILE-AM% %MAKEFILE-IN-DEPS% $(top_srcdir)/%CONFIGURE-AC% $(ACLOCAL_M4) %CONFIGURE_DEPS%
+## If configure.ac or one of configure's dependencies has changed, all
+## Makefile.in are to be updated; it is then more efficient to run
+## automake on all the Makefiles at once.  It also allow Automake to be
+## run for newly added directories.
+	@for dep in $?; do \
+	  case '$(top_srcdir)/%CONFIGURE-AC% $(ACLOCAL_M4) %CONFIGURE_DEPS%' in \
+	    *$$dep*) \
+	      echo ' cd $(top_srcdir) && $(AUTOMAKE) --%STRICTNESS% %USE-DEPS%'; \
+	      cd $(top_srcdir) && $(AUTOMAKE) --%STRICTNESS% %USE-DEPS%; \
+	      exit 0;; \
+	  esac; \
+	done; \
+## Otherwise, rebuild only this file.
+        echo ' cd $(top_srcdir) && $(AUTOMAKE) --%STRICTNESS% %USE-DEPS% %MAKEFILE-AM-SOURCES%'; \
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --%STRICTNESS% %USE-DEPS% %MAKEFILE-AM-SOURCES%
 
 ## This rule remakes the Makefile.
 %MAKEFILE%: %MAINTAINER-MODE% %MAKEFILE-IN% %MAKEFILE-DEPS% $(top_builddir)/config.status
+## If Makefile is to be updated because of config.status, then run
+## config.status without argument in order to (i) rerun all the
+## AC_CONFIG_COMMANDS including those that are not visible to
+## Automake, and (ii) to save time by running config.status all with
+## all the files, instead of once per file (iii) generate Makefiles
+## in newly added directories.
+	@case '$?' in \
+## Don't prefix $(top_builddir), because GNU make will strip it out
+## when it's `.'.
+	  *config.status*) \
+	    echo ' cd $(top_builddir) && $(SHELL) ./config.status'; \
+	    cd $(top_builddir) && $(SHELL) ./config.status;; \
+	  *) \
 ## FIXME: $(am__depfiles_maybe) lets us re-run the rule to create the
 ## .P files.  Ideally we wouldn't have to do this by hand.
-	cd $(top_builddir) && $(SHELL) ./config.status %CONFIG-MAKEFILE% $(am__depfiles_maybe)
-
-
+	    echo ' cd $(top_builddir) && $(SHELL) ./config.status %CONFIG-MAKEFILE% $(am__depfiles_maybe)'; \
+	    cd $(top_builddir) && $(SHELL) ./config.status %CONFIG-MAKEFILE% $(am__depfiles_maybe);; \
+	esac;
 
 ## --------------------------- ##
 ## config.status & configure.  ##

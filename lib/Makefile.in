@@ -132,11 +132,27 @@ mkinstalldirs elisp-comp ylwrap acinstall depcomp compile py-compile
 all: all-recursive
 
 .SUFFIXES:
-$(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.in $(ACLOCAL_M4)
+$(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.in $(ACLOCAL_M4) 
+	@for dep in $?; do \
+	  case '$(top_srcdir)/configure.in $(ACLOCAL_M4) ' in \
+	    *$$dep*) \
+	      echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu '; \
+	      cd $(top_srcdir) && $(AUTOMAKE) --gnu ; \
+	      exit 0;; \
+	  esac; \
+	done; \
+        echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  lib/Makefile'; \
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --gnu  lib/Makefile
 Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)
+	@case '$?' in \
+	  *config.status*) \
+	    echo ' cd $(top_builddir) && $(SHELL) ./config.status'; \
+	    cd $(top_builddir) && $(SHELL) ./config.status;; \
+	  *) \
+	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)'; \
+	    cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe);; \
+	esac;
 uninstall-info-am:
 dist_pkgvdataDATA_INSTALL = $(INSTALL_DATA)
 install-dist_pkgvdataDATA: $(dist_pkgvdata_DATA)
