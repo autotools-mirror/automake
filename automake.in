@@ -403,11 +403,6 @@ my $seen_automake_version = 0;
 # generation.
 my %configure_vars = ();
 
-# This is used to keep track of which variable definitions we are
-# scanning.  It is only used in certain limited ways, but it has to be
-# global.  It is declared just for documentation purposes.
-my %vars_scanned = ();
-
 # TRUE if --cygnus seen.
 my $cygnus_mode = 0;
 
@@ -2537,10 +2532,12 @@ sub handle_single_transform_list ($$$$@)
     return @result;
 }
 
-# traverse_variable_recursively ($VAR, &FUN_ITEM, &FUN_COLLECT)
-# -------------------------------------------------------------
-# Split the value of the variable named VAR on space, and
-# traverse its componants recursively, for all conditions.
+# traverse_variable_recursively ($VAR, &FUN_ITEM, &FUN_COLLECT, [$COND_FILTER])
+# -----------------------------------------------------------------------------
+# Split the value of the variable named VAR on space, and traverse its
+# componants recursively.  If $COND_FILTER is an Automake::Condition,
+# process any conditions which are true when $COND_FILTER is true.
+# Otherwise, process all conditions.
 #
 # We distinguish to kinds of items in the content of VARNAME.
 # Terms that look like `$(foo)' or `${foo}' are subvarible
@@ -2578,20 +2575,29 @@ sub handle_single_transform_list ($$$$@)
 # substitutions currently in force.
 my @substfroms;
 my @substtos;
+# This is used to keep track of which variable definitions we are
+# scanning.
+my %vars_scanned = ();
 
-sub traverse_variable_recursively ($&&)
+sub traverse_variable_recursively ($&&;$)
 {
   %vars_scanned = ();
   @substfroms = ();
   @substtos = ();
-  my ($var, @rest) = @_;
-  return traverse_variable_recursively_worker ($var, $var, @rest, TRUE)
+  my ($var, $fun_item, $fun_collect, $cond_filter) = @_;
+  return traverse_variable_recursively_worker ($var, $var,
+					       $fun_item, $fun_collect,
+					       $cond_filter, TRUE)
 }
 
 # The guts of &traverse_variable_recursively.
-sub traverse_variable_recursively_worker ($$&&$)
+sub traverse_variable_recursively_worker ($$&&$$)
 {
-  my ($var, $parent, $fun_item, $fun_collect, $parent_cond) = @_;
+  my ($var, $parent, $fun_item, $fun_collect, $cond_filter, $parent_cond) = @_;
+
+  # Don't recurse into undefined variables.
+  # This will also mark existing variables as examined.
+  return () if ! variable_defined ($var);
 
   if (defined $vars_scanned{$var})
     {
@@ -2601,9 +2607,21 @@ sub traverse_variable_recursively_worker ($$&&$)
   $vars_scanned{$var} = 1;
 
   my @allresults = ();
+  my $cond_once = 0;
   foreach my $cond (variable_conditions ($var)->conds)
     {
-      my @result;
+      if (ref $cond_filter)
+	{
+	  # Ignore conditions that don't match $cond_filter.
+	  next if ! $cond->true_when ($cond_filter);
+	  # If we found out several definitions of $var
+	  # match $cond_filter then we are in trouble.
+	  # Tell the user we don't support this.
+	  &check_variable_defined_unconditionally ($var, $parent)
+	    if $cond_once;
+	  $cond_once = 1;
+	}
+      my @result = ();
       my $full_cond = $cond->merge ($parent_cond);
       foreach my $val (&variable_value_as_list ($var, $cond, $parent))
 	{
@@ -2632,11 +2650,12 @@ sub traverse_variable_recursively_worker ($$&&$)
 	      push @substfroms, $from;
 	      push @substtos, $to;
 
-	      my $res =
+	      my @res =
 		&traverse_variable_recursively_worker ($subvar, $parent,
 						       $fun_item, $fun_collect,
+						       $cond_filter,
 						       $full_cond);
-	      push (@result, $res);
+	      push (@result, @res);
 
 	      pop @substfroms;
 	      pop @substtos;
@@ -2657,7 +2676,7 @@ sub traverse_variable_recursively_worker ($$&&$)
 	      push (@result, @transformed);
 	    }
 	}
-      push (@allresults, [$cond, @result]);
+      push (@allresults, [$cond, @result]) if @result;
     }
 
   # We only care about _recursive_ variable definitions.  The user
@@ -6714,86 +6733,6 @@ sub variable_value
 
 
 # @VALUES
-# &value_to_list ($VAR, $VAL, $COND, $WHERE, $LOC_WANTED)
-# -------------------------------------------------------
-# Convert a variable value to a list, split as whitespace.  This will
-# recursively follow $(...) and ${...} inclusions.  It preserves @...@
-# substitutions.
-#
-# If COND is 'all', then all values under all conditions should be
-# returned; if COND is a particular condition (all conditions are
-# surrounded by @...@) then only the value for that condition should
-# be returned; otherwise, warn if VAR is conditionally defined.
-# WHERE is the location where VAR=VAL.
-# If LOC_WANTED is set, return a list of [$location, @values] instead
-# of a list of @values.
-sub value_to_list ($$$$$)
-{
-  my ($var, $val, $cond, $where, $loc_wanted) = @_;
-  my @result;
-
-  # Strip backslashes
-  $val =~ s/\\$/ /gm;
-
-  foreach (split (' ', $val))
-    {
-      # If a comment seen, just leave.
-      last if /^#/;
-
-      # Handle variable substitutions. (The backslash in [^\}] and [^\)]
-      # is here to help Emacs indenting correctly.)
-      if (/^\$\{([^\}]*)\}$/ || /^\$\(([^\)]*)\)$/)
-	{
-	  my $varname = $1;
-
-	  # If the user uses a losing variable name, just ignore it.
-	  # This isn't ideal, but people have requested it.
-	  next if ($varname =~ /\@.*\@/);
-
-	  my ($from, $to);
-	  my @temp_list;
-	  if ($varname =~ /$SUBST_REF_PATTERN/o)
-	    {
-	      $varname = $1;
-	      $to = $3;
-	      $from = quotemeta $2;
-	    }
-
-	  # Find the value.
-	  @temp_list =
-	    variable_value_as_list_recursive_worker ($1, $cond, $var,
-						     $loc_wanted);
-
-	  # Now rewrite the values if appropriate.
-	  if (defined $from)
-	    {
-	      for my $val (@temp_list)
-		{
-		  if ($loc_wanted)
-		    {
-		      $val->[0] =~ s/$from$/$to/;
-		    }
-		  else
-		    {
-		      $val =~ s/$from$/$to/;
-		    }
-		}
-	    }
-
-	  push (@result, @temp_list);
-	}
-      else
-	{
-	  $_ = [$where->clone, $_] if $loc_wanted;
-	  push (@result, $_);
-	}
-    }
-
-  return @result;
-}
-
-
-# @VALUES
 # variable_value_as_list ($VAR, $COND, $PARENT)
 # ---------------------------------------------
 # Get the value of a variable given a specified condition. without
@@ -6847,69 +6786,51 @@ sub variable_value_as_list
 
 
 # @VALUE
-# &variable_value_as_list_recursive_worker ($VAR, $COND, $PARENT, $LOC_WANTED)
-# ----------------------------------------------------------------------------
+# &variable_value_as_list_recursive_worker ($VAR, $COND, $LOC_WANTED)
+# -------------------------------------------------------------------
 # Return contents of VAR as a list, split on whitespace.  This will
 # recursively follow $(...) and ${...} inclusions.  It preserves @...@
 # substitutions.  If COND is 'all', then all values under all
 # conditions should be returned; if COND is a particular condition
 # then only the value for that condition should be returned;
-# otherwise, warn if VAR is conditionally defined.  If PARENT is
-# specified, it is the name of the including variable; this is only
-# used for error reports.  If $LOC_WANTED is set, return a list of
-# [$location, @values] instead of a list of @values.
-sub variable_value_as_list_recursive_worker ($$$$)
+# otherwise, warn if VAR is conditionally defined.  If $LOC_WANTED is set,
+# return a list of [$location, $value] instead of a list of values.
+sub variable_value_as_list_recursive_worker ($$$)
 {
-    my ($var, $cond, $parent, $loc_wanted) = @_;
-    my @result = ();
+    my ($var, $cond_filter, $loc_wanted) = @_;
 
-    return
-      unless variable_assert $var, $parent;
+    return traverse_variable_recursively
+      ($var,
+       # Construct [$location, $value] pairs if requested.
+       sub {
+	 my ($var, $val, $cond, $full_cond) = @_;
+	 return [$var_location{$var}{$cond}, $val] if $loc_wanted;
+	 return $val;
+       },
+       # Collect results.
+       sub {
+	 my ($var, $parent_cond, @allresults) = @_;
+	 return map { my ($cond, @vals) = @$_; return @vals } @allresults;
+       },
+       $cond_filter);
+}
 
-    if (defined $vars_scanned{$var})
-    {
-	# `vars_scanned' is a global we use to keep track of which
-	# variables we've already examined.
-	err_var $parent, "variable `$var' recursively defined";
-    }
-    elsif ($cond eq 'all')
-    {
-	$vars_scanned{$var} = 1;
-	foreach my $vcond (variable_conditions ($var)->conds)
-	{
-	    push (@result, &value_to_list ($var,
-					   $var_value{$var}{$vcond},
-					   $cond,
-					   $var_location{$var}{$vcond},
-					   $loc_wanted));
-	}
-    }
-    else
-    {
-	$vars_scanned{$var} = 1;
-	my $onceflag;
-	foreach my $vcond (variable_conditions ($var)->conds)
-	{
-	    my $val = $var_value{$var}{$vcond};
-	    my $where = $var_location{$var}{$vcond};
-	    if ($vcond->true_when ($cond))
-	    {
-		# Warn if we have an ambiguity.  It's hard to know how
-		# to handle this case correctly.
-		&check_variable_defined_unconditionally ($var, $parent)
-		    if $onceflag;
-		$onceflag = 1;
-		push (@result, &value_to_list ($var, $val, $cond, $where,
-					       $loc_wanted));
-	    }
-	}
-    }
 
-    # Unset our entry in vars_scanned.  We only care about recursive
-    # definitions.
-    delete $vars_scanned{$var};
+# &variable_value_as_list_recursive ($VAR, $COND)
+# -----------------------------------------------
+# Return the list of values of $VAR in condition $COND.
+sub variable_value_as_list_recursive ($$)
+{
+  return &variable_value_as_list_recursive_worker (@_, 0);
+}
 
-    return @result;
+# &variable_loc_and_value_as_list_recursive ($VAR, $COND)
+# ----------------------------------------------------------------
+# Return the values of $VAR in condition $COND as a list of
+# [$location, @values] pairs.
+sub variable_loc_and_value_as_list_recursive ($$)
+{
+  return &variable_value_as_list_recursive_worker (@_, 1);
 }
 
 
@@ -6976,34 +6897,6 @@ sub variable_pretty_output ($@)
 					     "$make_condition\t",
 					     split (' ' , $val));
     }
-}
-
-
-# &variable_value_as_list_recursive ($VAR, $COND, [$PARENT])
-# ----------------------------------------------------------
-# Return the list of values of $VAR in condition $COND.
-# $PARENT (if known) is the variable where this variable occurs,
-# in case we need to print an error message.
-sub variable_value_as_list_recursive ($$;$)
-{
-    my ($var, $cond, $parent) = @_;
-    # This global hash is used to avoid infinite recursion in
-    # &variable_value_as_list_recursive_worker.
-    %vars_scanned = ();
-    return &variable_value_as_list_recursive_worker ($var, $cond, $parent, 0);
-}
-
-# &variable_loc_and_value_as_list_recursive ($VAR, $COND, [$PARENT])
-# ----------------------------------------------------------------
-# Return the values of $VAR in condition $COND as a list of
-# [$location, @values] pairs.
-# $PARENT (if known) is the variable where this variable occurs,
-# in case we need to print an error message.
-sub variable_loc_and_value_as_list_recursive ($$;$)
-{
-    my ($var, $cond, $parent) = @_;
-    %vars_scanned = ();
-    return &variable_value_as_list_recursive_worker ($var, $cond, $parent, 1);
 }
 
 
