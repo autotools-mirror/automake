@@ -83,6 +83,11 @@ maintainer-check: automake aclocal
 	  echo "Found undef in automake.in; use delete instead" 1>&2; \
 	  exit 1; \
 	fi
+## We never want split (/ /,...), only split (' ', ...).
+	@if fgrep 'split (/ /' $(srcdir)/automake.in > /dev/null 2>&1; then \
+	  echo "Found bad split in automake.in" 1>&2; \
+	  exit 1; \
+	fi
 
 # Tag before making distribution.  Also, don't make a distribution if
 # checks fail.  Also, make sure the NEWS file is up-to-date.
