@@ -2653,17 +2653,17 @@ sub handle_dependencies
 	    local ($iter);
 	    local (@deplist) = sort keys %dep_files;
 
-	    &define_pretty_variable ('DEP_FILES', '', ('@AMDEP@', @deplist));
+	    &define_pretty_variable ('DEP_FILES', '', ("\@AMDEP\@", @deplist));
 
 	    # Generate each `include' individually.  Irix 6 make will
 	    # not properly include several files resulting from a
 	    # variable expansion; generating many separate includes
 	    # seems safest.
+	    $output_rules .= "\n";
 	    foreach $iter (@deplist)
 	    {
 		$output_rules .= "\@AMDEP\@" . 'include ' . $iter . "\n";
 	    }
-	    $output_rules .= "\n";
 
 	    $output_rules .= &file_contents ('depend');
 	    push (@clean, 'depend');
@@ -2699,7 +2699,7 @@ sub handle_dependencies
 		   . 's/\@EXT\@/'
 		   . $ext . '/g;'
 		   . $xform,
-		   'depend2');
+		   'depend2') . "\n";
 	}
     }
 }
@@ -4236,14 +4236,11 @@ sub scan_one_configure_file
 	# but later define it elsewhere.  This is pretty hacky.  We
 	# also explicitly avoid INSTALL_SCRIPT and some other
 	# variables because they are defined in header-vars.am.
-	# Also avoid `DEP_' as it is erroneously extracted from
-	# depend.m4.
-	# FIXME.
+	# FIXME
 	if (/$AC_SUBST_PATTERN/o
 	    && $1 ne 'ANSI2KNR'
 	    && $1 ne 'INSTALL_SCRIPT'
-	    && $1 ne 'INSTALL_DATA'
-	    && $1 ne 'DEP_')
+	    && $1 ne 'INSTALL_DATA')
 	{
 	    $configure_vars{$1} = $filename . ':' . $.;
 	}
