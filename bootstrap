@@ -2,7 +2,7 @@
 
 # This script helps bootstrap automake, when checked out from CVS.
 #
-# Copyright 2002 Free Software Foundation, Inc.
+# Copyright (C) 2002, 2003  Free Software Foundation, Inc.
 # written by Pavel Roskin <proski@gnu.org> September 2002
 #
 # This program is free software; you can redistribute it and/or modify
@@ -47,6 +47,15 @@ VERSION=`sed -ne '/AC_INIT/s/^[^[]*\[[^[]*\[\([^]]*\)\].*$/\1/p' configure.in`
 PACKAGE=automake
 datadir=.
 
+# Override SHELL.  This is required on DJGPP so that Perl's system()
+# uses bash, not COMMAND.COM which doesn't quote arguments properly.
+# It's not used otherwise.
+if test -n $DJGPP; then
+    BOOTSTRAP_SHELL=/dev/env/DJDIR/bin/bash.exe
+else
+    BOOTSTRAP_SHELL=/bin/sh
+fi
+
 # Read the rule for calculating APIVERSION and execute it
 apiver_cmd=`sed -ne 's/\[\[/[/g;s/\]\]/]/g;/^APIVERSION=/p' configure.in`
 eval $apiver_cmd
@@ -66,7 +75,10 @@ fi
 rm -rf aclocal-$APIVERSION
 mkdir aclocal-$APIVERSION
 rm -rf automake-$APIVERSION
-ln -s lib automake-$APIVERSION
+ln -s lib automake-$APIVERSION || {
+  mkdir automake-$APIVERSION
+  cp -arf lib/* automake-$APIVERSION
+}
 
 # Create temporary replacement for aclocal
 sed -e "s%@PERL@%$PERL%g" \
@@ -74,6 +86,7 @@ sed -e "s%@PERL@%$PERL%g" \
     -e "s%@APIVERSION@%$APIVERSION%g" \
     -e "s%@PACKAGE@%$PACKAGE%g" \
     -e "s%@datadir@%$datadir%g" \
+    -e "s%@SHELL@%$BOOTSTRAP_SHELL%g" \
     aclocal.in >aclocal.tmp
 
 # Create temporary replacement for amversion.m4
@@ -93,6 +106,7 @@ sed -e "s%@PERL@%$PERL%g" \
     -e "s%@APIVERSION@%$APIVERSION%g" \
     -e "s%@PACKAGE@%$PACKAGE%g" \
     -e "s%@datadir@%$datadir%g" \
+    -e "s%@SHELL@%$BOOTSTRAP_SHELL%g" \
     automake.in >automake.tmp
 
 # Run automake
