@@ -38,9 +38,9 @@ $am_dir = "@datadir@/@PACKAGE@";
 $IGNORE_PATTERN = "^##([^#].*)?\$";
 $WHITE_PATTERN = "^[ \t]*\$";
 $COMMENT_PATTERN = "^#";
-$RULE_PATTERN = "^([\$a-zA-Z_.][-.a-zA-Z0-9_(){}/]*) *:";
-$MACRO_PATTERN = "^([A-Za-z][A-Za-z0-9_]*)[ \t]*=[ \t]*(.*)\$";
-$BOGUS_MACRO_PATTERN = "^([^ \t]*)[ \t]*=[ \t]*(.*)\$";
+$RULE_PATTERN = "^([\$a-zA-Z_.][-.a-zA-Z0-9_(){}/]*) *:([^=].*|)\$";
+$MACRO_PATTERN = "^([A-Za-z][A-Za-z0-9_]*)[ \t]*:?=[ \t]*(.*)\$";
+$BOGUS_MACRO_PATTERN = "^([^ \t]*)[ \t]*:?=[ \t]*(.*)\$";
 $GNITS_VERSION_PATTERN = "[0-9]+\\.[0-9]+([a-z]|\\.[0-9]+)?";
 
 # Constants to define the "strictness" level.
@@ -421,7 +421,11 @@ sub generate_makefile
     push (@phony, 'default');
 
     &read_am_file ($makefile . '.am');
-    &handle_options;
+    if (&handle_options)
+    {
+	# Fatal error.  Just return, so we can continue with next file.
+	return;
+    }
 
     # Check first, because we might modify some state.
     &check_gnu_standards;
@@ -492,10 +496,10 @@ sub generate_makefile
 
 ################################################################
 
-# Handle AUTOMAKE_OPTIONS variable.
+# Handle AUTOMAKE_OPTIONS variable.  Return 1 on error, 0 otherwise.
 sub handle_options
 {
-    return if ! &variable_defined ('AUTOMAKE_OPTIONS');
+    return 0 if ! &variable_defined ('AUTOMAKE_OPTIONS');
 
     foreach (&variable_value_as_list ('AUTOMAKE_OPTIONS'))
     {
@@ -523,16 +527,28 @@ sub handle_options
 	{
 	    $use_dependencies = 0;
 	}
-	elsif (/[0-9]+\.?[0-9]+/)
+	elsif (/([0-9]+)\.([0-9]+)/)
 	{
-	    # Got a version number.  Is the syntax too strict?
-	    local ($num_version);
-	    ($num_version = $VERSION) =~ tr/0-9//cd;
-	    if ($num_version < $_)
+	    # Got a version number.  Note that alpha releases count as
+	    # the next higher release.  Note also that we assume there
+	    # will be a maximum of 100 minor releases for any given
+	    # major release.
+	    local ($rmajor, $rminor) = ($1, $2);
+	    if ($VERSION !~ /([0-9]+)\.([0-9]+)([a-z])?/)
+	    {
+		print STDERR
+		    "automake: programming error: version is incorrect\n";
+		exit 1;
+	    }
+	    local ($tmajor, $tminor) = ($1, $2);
+	    # Handle alpha versions.
+	    ++$tminor if defined $3;
+
+	    if ($rmajor > $tmajor || ($rmajor == $tmajor && $rminor > $tminor))
 	    {
 		&am_line_error ('AUTOMAKE_OPTIONS',
 				"require version $_, only have $VERSION");
-		exit 1;
+		return 1;
 	    }
 	}
 	else
@@ -541,6 +557,8 @@ sub handle_options
 			    'option ', $_, 'not recognized');
 	}
     }
+
+    return 0;
 }
 
 # Return object extension.  Just once, put some code into the output.
@@ -1909,12 +1927,10 @@ sub handle_aclocal_m4
 	$regen_aclocal = 1;
 	$acinclude = 1;
     }
-    else
-    {
-	# FIXME: how to tell if aclocal.m4 should be automatically
-	# regenerated?
-    }
 
+    # Note that it might be possible that aclocal.m4 doesn't exist but
+    # should be auto-generated.  This case probably isn't very
+    # important.
     if ($regen_aclocal)
     {
 	$output_rules .= ("aclocal.m4: "
