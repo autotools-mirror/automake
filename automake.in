@@ -3212,6 +3212,49 @@ sub for_dist_common
 # Handle 'dist' target.
 sub handle_dist ()
 {
+  # Substutions for distdit.am
+  my %transform;
+
+  # Define DIST_SUBDIRS.  This must always be done, regardless of the
+  # no-dist setting: target like `distclean' or `maintainer-clean' use it.
+  my $subdirs = var ('SUBDIRS');
+  if ($subdirs)
+    {
+      # If SUBDIRS is conditionally defined, then set DIST_SUBDIRS
+      # to all possible directories, and use it.  If DIST_SUBDIRS is
+      # defined, just use it.
+      my $dist_subdir_name;
+      # Note that we check DIST_SUBDIRS first on purpose, so that
+      # we don't call has_conditional_contents for now reason.
+      # (In the past one project used so many conditional subdirectories
+      # that calling has_conditional_contents on SUBDIRS caused
+      # automake to grow to 150Mb -- this should not happen with
+      # the current implementation of has_conditional_contents,
+      # but it's more efficient to avoid the call anyway.)
+      if (var ('DIST_SUBDIRS'))
+	{
+	  $dist_subdir_name = 'DIST_SUBDIRS';
+	}
+      elsif ($subdirs->has_conditional_contents)
+	{
+	  $dist_subdir_name = 'DIST_SUBDIRS';
+	  define_pretty_variable
+	    ('DIST_SUBDIRS', TRUE, INTERNAL,
+	     uniq ($subdirs->value_as_list_recursive));
+	}
+      else
+	{
+	  $dist_subdir_name = 'SUBDIRS';
+	  # We always define this because that is what `distclean'
+	  # wants.
+	  define_pretty_variable ('DIST_SUBDIRS', TRUE, INTERNAL,
+				  '$(SUBDIRS)');
+	}
+
+      $transform{'DIST_SUBDIR_NAME'} = $dist_subdir_name;
+    }
+
+  # The remaining definitions are only required when a dist target is used.
   return if option 'no-dist';
 
   # At least one of the archive formats must be enabled.
@@ -3318,59 +3361,19 @@ sub handle_dist ()
 	unless $_ eq '.';
     }
 
-  # Rule to check whether a distribution is viable.
-  my %transform = ('DISTCHECK-HOOK' => !! rule 'distcheck-hook',
-		   'GETTEXT' => $seen_gettext && !$seen_gettext_external);
+  $transform{'DISTCHECK-HOOK'} = !! rule 'distcheck-hook';
+  $transform{'GETTEXT'} = $seen_gettext && !$seen_gettext_external;
 
   # Prepend $(distdir) to each directory given.
   my %rewritten = map { '$(distdir)/' . "$_" => 1 } keys %dist_dirs;
   $transform{'DISTDIRS'} = join (' ', sort keys %rewritten);
-
-  # If we have SUBDIRS, create all dist subdirectories and do
-  # recursive build.
-  my $subdirs = var ('SUBDIRS');
-  if ($subdirs)
-    {
-      # If SUBDIRS is conditionally defined, then set DIST_SUBDIRS
-      # to all possible directories, and use it.  If DIST_SUBDIRS is
-      # defined, just use it.
-      my $dist_subdir_name;
-      # Note that we check DIST_SUBDIRS first on purpose, so that
-      # we don't call has_conditional_contents for now reason.
-      # (In the past one project used so many conditional subdirectories
-      # that calling has_conditional_contents on SUBDIRS caused
-      # automake to grow to 150Mb -- this should not happen with
-      # the current implementation of has_conditional_contents,
-      # but it's more efficient to avoid the call anyway.)
-      if (var ('DIST_SUBDIRS'))
-	{
-	  $dist_subdir_name = 'DIST_SUBDIRS';
-	}
-      elsif ($subdirs->has_conditional_contents)
-	{
-	  $dist_subdir_name = 'DIST_SUBDIRS';
-	  define_pretty_variable
-	    ('DIST_SUBDIRS', TRUE, INTERNAL,
-	     uniq ($subdirs->value_as_list_recursive));
-	}
-      else
-	{
-	  $dist_subdir_name = 'SUBDIRS';
-	  # We always define this because that is what `distclean'
-	  # wants.
-	  define_pretty_variable ('DIST_SUBDIRS', TRUE, INTERNAL,
-				  '$(SUBDIRS)');
-	}
-
-      $transform{'DIST_SUBDIR_NAME'} = $dist_subdir_name;
-    }
 
   # If the target `dist-hook' exists, make sure it is run.  This
   # allows users to do random weird things to the distribution
   # before it is packaged up.
   push (@dist_targets, 'dist-hook')
     if rule 'dist-hook';
-  $transform{'DIST-TARGETS'} = join(' ', @dist_targets);
+  $transform{'DIST-TARGETS'} = join (' ', @dist_targets);
 
   $output_rules .= &file_contents ('distdir',
 				   new Automake::Location,
