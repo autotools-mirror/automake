@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2003  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2004  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -22,6 +22,14 @@
 
 required='icc'
 . ./defs || exit 1
+
+# Automake supports icc since version 7.0 through a dedicated depcomp mode.
+# icc 8.0 and greater understand gcc options, so depmode is set to gcc.
+if icc -V -help 2>&1 | grep 'Version 7'; then
+  expect='depmode=icc'
+else
+  expect='depmode=gcc'
+fi
 
 set -e
 
@@ -59,6 +67,6 @@ $AUTOCONF
 $AUTOMAKE -a
 
 ./configure
-grep 'depmode=icc' Makefile
+grep "$expect" Makefile
 $MAKE check
 $MAKE grepdeps
