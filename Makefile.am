@@ -196,7 +196,7 @@ maintainer-check: automake aclocal
 	  exit 1; \
 	fi
 ## Tests should never call automake directly.
-	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*automake'; then \
+	@if grep -v '^#' $(srcdir)/tests/*.test | grep -E ':[	]*automake([^:]|$$)'; then \
 	  echo 'Do not run "automake" in the above tests.  Use "$$AUTOMAKE" instead.' 1>&2;  \
 	  exit 1; \
 	fi
@@ -251,8 +251,8 @@ maintainer-check: automake aclocal
 	  exit 1; \
 	fi
 ## In automake there are a few valid ones.
-	@if test `grep -E '@[A-Za-z_0-9]+@' automake | wc -l` -ne 4; then \
-	  echo "Unresolved @...@ substitution in aclocal" 1>&2; \
+	@if test `grep -E '@[A-Za-z_0-9]+@' automake | wc -l` -ne 5; then \
+	  echo "Unresolved @...@ substitution in automake" 1>&2; \
 	  exit 1; \
 	fi
 
