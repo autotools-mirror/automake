@@ -3980,61 +3980,26 @@ sub handle_merge_targets
     {
 	$output_rules .= "install-binPROGRAMS: install-libLTLIBRARIES\n\n";
     }
-    # Print definitions users can use.
-    &do_one_merge_target ('all', @all);
-}
 
-
-# &do_one_merge_target ($NAME, @VALUES)
-# -------------------------------------
-# Helper for handle_merge_targets.  Note that handle_merge_targets
-# relies on the fact that this doesn't add an extra \n at the end.
-sub do_one_merge_target
-{
-    my ($name, @values) = @_;
-
-    # Install hooks.
-    if (&target_defined ("$name-local"))
+    # Install `all' hooks.
+    if (&target_defined ("all-local"))
     {
-	# User defined local form of target.  So include it.
-        if (defined $dependencies{"$name-am"})
-	  {
-	    depend ("$name-am", "$name-local");
-	  }
-	else
-	  {
-	    push (@values, "$name-local");
-	  }
-	&depend ('.PHONY', "$name-local");
+      push (@all, "all-local");
+      &depend ('.PHONY', "all-local");
     }
 
-    # FIXME: Gross, should disapear once all these targets properly
-    # registered in %dependencies.
-    if (!defined $dependencies {"$name-am"})
+    &pretty_print_rule ("all-am:", "\t\t", @all);
+
+    # If we aren't using a redirect target then find the
+    # appropriate actual redirect.
+    if ($all_target eq '')
       {
-	&pretty_print_rule ("$name-am:", "\t\t", @values);
+	$all_target = (&variable_defined ('SUBDIRS')
+		       ? 'all-recursive' : 'all-am');
       }
 
-    # To understand this special case, see handle_merge_targets.
-    if ($name eq 'all')
-    {
-	# If we aren't using a redirect target then find the
-	# appropriate actual redirect.
-	if ($all_target eq '')
-	{
-	    $all_target = (&variable_defined ('SUBDIRS')
-			   ? 'all-recursive' : 'all-am');
-	}
-
-	$output_all = "all: $all_target\n";
-    }
-    else
-    {
-      my $lname = ($name .
-		   (&variable_defined ('SUBDIRS') ? '-recursive' : '-am'));
-	&pretty_print_rule ($name . ":", "\t\t", $lname);
-    }
-    &depend ('.PHONY', $name . '-am', $name);
+    $output_all = "all: $all_target\n";
+    &depend ('.PHONY', 'all-am', all);
 }
 
 
