@@ -6,7 +6,7 @@ eval 'exec @PERL@ -S $0 ${1+"$@"}'
     if 0;
 
 # automake - create Makefile.in from Makefile.am
-# Copyright (C) 1994, 1995, 1996 Free Software Foundation, Inc.
+# Copyright (C) 1994, 1995, 1996, 1997 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -748,23 +748,38 @@ sub get_object_extension
 		&push_phony_cleaners ('krextra');
 	    }
 
+	    # Generate rules to build ansi2knr.  If it is in some
+	    # other directory, then generate dependencies but have the
+	    # rule just run elsewhere.
+	    $output_rules .= ($options{'ansi2knr'} . ': '
+			      . $options{'ansi2knr'} . ".o\n");
+	    if ($options{'ansi2knr'} eq 'ansi2knr')
+	    {
+		$output_rules .= ("\t\$(LINK) ansi2knr.o \$(LIBS)\n"
+				  . "ansi2knr.o: \$(CONFIG_HEADER)\n\n");
+	    }
+	    else
+	    {
+		$output_rules .= ("\tcd " . &dirname ($options{'ansi2knr'})
+				  . " && \$(MAKE) ansi2knr\n\n");
+	    }
+
 	    &define_variable ('o', "\@U\@o");
 
 	    # Make sure ansi2knr can be found: if no path specified,
 	    # specify "./".
-	    local ($apath) = $options{'ansi2knr'};
-	    if ($apath =~ /\//)
-	    {
-		# Found in another directory.
-		&define_variable ("ANSI2KNR", $apath);
-	    }
-	    else
+	    if ($options{'ansi2knr'} eq 'ansi2knr')
 	    {
 		# Substitution from AM_C_PROTOTYPES.  This makes it be
 		# built only when necessary.
 		&define_configure_variable ('ANSI2KNR');
 		# ansi2knr needs to be built before subdirs, so unshift it.
 		unshift (@all, '$(ANSI2KNR)');
+	    }
+	    else
+	    {
+		# Found in another directory.
+		&define_variable ("ANSI2KNR", &dirname ($options{'ansi2knr'}));
 	    }
 
 	    $output_rules .= &file_contents ('compile-kr');
@@ -897,7 +912,13 @@ sub handle_yacc_lex_cxx
     {
 	# Make all ._o files depend on ansi2knr.  Use a sneaky little
 	# hack to make it print nicely.
-	&pretty_print_rule ('', '', (sort keys %de_ansi_objects,
+	&pretty_print_rule ('', '', ((sort keys %de_ansi_objects),
+				     ':', '$(ANSI2KNR)'));
+	# The ._c files also depend on ansi2knr.  We need both because
+	# some makes don't apply transitivity through implicit rules.
+	local (%de_ansi_sources);
+	grep (($de_ansi_sources{$_} = $_) =~ s/o$/c/, keys %de_ansi_objects);
+	&pretty_print_rule ('', '', ((sort keys %de_ansi_sources),
 				     ':', '$(ANSI2KNR)'));
     }
 
@@ -943,7 +964,7 @@ sub output_yacc_build_rule
 	if ($use_interlock)
 	{
 	    $output_rules .= ('$(SHELL) $(INTERLOCK) =yacclockdir $(YLWRAP)'
-			      . ' "$(YACC)" y.tab.c $*' . $suffix 
+			      . ' "$(YACC)" y.tab.c $*' . $suffix
 			      . ' y.tab.h $*.h -- $(YFLAGS) $<');
 	}
 	else
@@ -967,9 +988,9 @@ sub output_lex_build_rule
     &define_configure_variable ('LEX_OUTPUT_ROOT');
     &define_configure_variable ('LEXLIB');
     $output_rules .= "$lex_suffix$c_suffix:\n\t";
-    
+
     if ($use_interlock)
-    { 
+    {
         # is the $@ correct here?  If so, why not use it in the
         # interlock build rule for yacc above?
 	$output_rules .= '$(SHELL) $(INTERLOCK) =lexlockdir $(YLWRAP)'
@@ -1052,7 +1073,7 @@ sub handle_single_transform_list
 	    # distribution.  If the extension is the regular '.y' or
 	    # '.l', we assume C compilation, and the generated file
 	    # has exension .c.  Otherwise, we compile with C++, and
-	    # make the following association: (yy -> cc, y++ -> c++, 
+	    # make the following association: (yy -> cc, y++ -> c++,
 	    # yxx -> cxx), similarly for .ll, etc.
 	    if (/^(.*)\.(y|yy|y\+\+|yxx)$/)
 	    {
@@ -1921,7 +1942,8 @@ sub handle_texinfo
     # Find these programs wherever they may lie.  Yes, this has
     # intimate knowledge of the structure of the texinfo distribution.
     &define_program_variable ('MAKEINFO', 'build', 'texinfo/makeinfo',
-			      'makeinfo', '@MAKEINFO@');
+			      'makeinfo',
+			      '@MAKEINFO@');
     &define_program_variable ('TEXI2DVI', 'src', 'texinfo/util',
 			      'texi2dvi');
 
