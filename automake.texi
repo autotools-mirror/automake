@@ -370,20 +370,35 @@ distribution.
 @subsection Texinfo
 If the current directory contains Texinfo source, you must declare it
 with the @samp{TEXINFOS} macro.
-Note that Texinfo source must end in the @file{.texi} extension
+Note that any Texinfo source file must end in the @file{.texi} extension
 (@file{.texinfo} won't work).
-Currently the Texinfo support is in flux.  Some ideas which might be
-implemented:
 
-@itemize @bullet
-@item
-Automatic support for generating a @file{version.texi} file.  This file
-conventionally holds macro definitions recording the date of the last
-change to the manual, and the version number of the package.
+If the @file{.texi} file ``@include''s @file{version.texi}, then that
+file will be automatically generated.  @file{version.texi} defines three
+Texinfo macros you can reference: @samp{EDITION}, @samp{VERSION}, and
+@samp{UPDATED}.  The first two hold the version number of your package
+(but are kept separate for clarity); the last is the date the primary
+file was last modified.
+The @file{version.texi} support requires a version of @code{date} that
+accepts the @samp{-r} (read time from a file) option.
 
-@item
-Better support for installing only the correct info files.
-@end itemize
+Sometimes an info file actually depends on more than one @file{.texi}
+file.  For instance, in the @samp{xdvik} distribution,
+@file{kpathsea.texi} includes the files @file{install.texi},
+@file{copying.texi}, and @file{freedom.texi}.  You can tell
+@code{automake} about these dependencies using the @samp{texi_TEXINFOS}
+variable.  Here is how @samp{xdvik} could do it:
+
+@example
+TEXINFOS = kpathsea.texi
+kpathsea_TEXINFOS = install.texi copying.texi freedom.texi
+@end example
+
+@code{automake} might be modified to detect these dependencies
+automatically.
+
+Currently @code{automake} can only handle one primary @file{.texi} file.
+This restriction will be lifted if it proves too onerous.
 
 @code{automake} will warn if a directory containing Texinfo source does
 not also contain the file @file{texinfo.tex}.  (I'm not sure if this is
