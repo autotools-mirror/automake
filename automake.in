@@ -247,13 +247,13 @@ sub parse_arguments
 	{
 	    &set_strictness ('foreign');
 	}
-	elsif ($arglist[0] eq '--strictness')
+	elsif ($arglist[0] eq '--strictness' || $arglist[0] eq '-s')
 	{
 	    &require_argument (@arglist);
 	    shift (@arglist);
 	    &set_strictness ($arglist[0]);
 	}
-	elsif ($arglist[0] eq '--include-deps')
+	elsif ($arglist[0] eq '--include-deps' || $arglist[0] eq '-i')
 	{
 	    $cmdline_use_dependencies = 0;
 	}
@@ -262,17 +262,17 @@ sub parse_arguments
 	    # Set output directory.
 	    $output_directory = $1;
 	}
-	elsif ($arglist[0] eq '--output-dir')
+	elsif ($arglist[0] eq '--output-dir' || $arglist[0] eq '-o')
 	{
 	    &require_argument (@arglist);
 	    shift (@arglist);
 	    $output_directory = $arglist[0];
 	}
-	elsif ($arglist[0] eq '--add-missing')
+	elsif ($arglist[0] eq '--add-missing' || $arglist[0] eq '-a')
 	{
 	    $add_missing = 1;
 	}
-	elsif ($arglist[0] eq '--verbose')
+	elsif ($arglist[0] eq '--verbose' || $arglist[0] eq '-v')
 	{
 	    $verbose = 1;
 	}
@@ -332,8 +332,10 @@ sub generate_makefile
     # We still need Makefile.in here, because sometimes the `dist'
     # target doesn't re-run automake.
     &push_dist_common ($in_file_name, $am_file_name);
-    push (@sources, '$(SOURCES)') if defined $contents{'SOURCES'};
-    push (@objects, '$(OBJECTS)') if defined $contents{'OBJECTS'};
+    push (@sources, '$(SOURCES)')
+	if &variable_defined ('SOURCES');
+    push (@objects, '$(OBJECTS)')
+	if &variable_defined ('OBJECTS');
 
     # This is always the default target.  This gives us freedom to do
     # things in whatever order is convenient.
@@ -396,7 +398,7 @@ sub generate_makefile
 # Handle AUTOMAKE_OPTIONS variable.
 sub handle_options
 {
-    return if ! defined $contents{'AUTOMAKE_OPTIONS'};
+    return if ! &variable_defined ('AUTOMAKE_OPTIONS');
 
     foreach (split (/\s+/, $contents{'AUTOMAKE_OPTIONS'}))
     {
@@ -438,7 +440,7 @@ sub get_object_extension
     {
 	# Boilerplate.
 	local ($xform) = '';
-	if (defined $contents{'CONFIG_HEADER'})
+	if (&variable_defined ('CONFIG_HEADER'))
 	{
 	    ($xform = &dirname ($contents{'CONFIG_HEADER'}))
 		=~ s/(\W)/\\$1/g;
@@ -501,7 +503,7 @@ sub handle_source_transform
     local ($objpat) = $obj;
     $objpat =~ s/(\W)/\\$1/g;
 
-    if (defined $contents{$one_file . "_OBJECTS"})
+    if (&variable_defined ($one_file . "_OBJECTS"))
     {
 	&am_line_error ($one_file . '_OBJECTS',
 			$one_file . '_OBJECTS', 'should not be defined');
@@ -514,7 +516,7 @@ sub handle_source_transform
     foreach $prefix ('', 'EXTRA_')
     {
 	$source_list = '';
-	if (defined $contents{$prefix . $one_file . "_SOURCES"})
+	if (&variable_defined ($prefix . $one_file . "_SOURCES"))
 	{
 	    push (@sources, '$(' . $prefix . $one_file . "_SOURCES)");
 	    push (@objects, '$(' . $prefix . $one_file . "_OBJECTS)")
@@ -584,7 +586,7 @@ sub handle_source_transform
 	}
     }
 
-    if (defined $contents{'CONFIG_HEADER'})
+    if (&variable_defined ('CONFIG_HEADER'))
     {
 	$output_rules .= ('$(' . $one_file . "_OBJECTS): "
 			  . $contents{'CONFIG_HEADER'} . "\n");
@@ -599,7 +601,7 @@ sub handle_lib_objects
     local ($var) = @_;
 
     die "programming error in handle_lib_objects"
-	if ! defined $contents{$var};
+	if ! &variable_defined ($var);
 
     # We recognize certain things that are commonly put in LIBADD or
     # LDADD.
@@ -663,13 +665,13 @@ sub handle_programs
 		&am_line_error ($one_file . $xt,
 				"invalid variable \`" . $one_file . $xt
 				. "'; should be \`" . $xname . $xt . "'")
-		    if defined $contents{$one_file . $xt};
+		    if &variable_defined ($one_file . $xt);
 	    }
 	}
 
 	&handle_source_transform ($xname, $obj);
 
-	if (defined $contents{$xname . "_LDADD"})
+	if (&variable_defined ($xname . "_LDADD"))
 	{
 	    &handle_lib_objects ($xname . '_LDADD');
 	}
@@ -687,7 +689,7 @@ sub handle_programs
     }
 
     &handle_lib_objects ('LDADD')
-	if defined $contents{'LDADD'};
+	if &variable_defined ('LDADD');
 }
 
 # Handle libraries.
@@ -722,7 +724,7 @@ sub handle_libraries
     local (@outlist);
     foreach $onedir ('lib', 'pkglib', 'noinst')
     {
-	if (defined $contents{$onedir . '_LIBRARIES'})
+	if (&variable_defined ($onedir . '_LIBRARIES'))
 	{
 	    @outlist = ();
 	    foreach $onelib (split (/\s+/, $contents{$onedir . '_LIBRARIES'}))
@@ -738,7 +740,7 @@ sub handle_libraries
     local ($munge);
     foreach $onelib (@liblist)
     {
-	if (defined $contents{$onelib . '_LIBADD'})
+	if (&variable_defined ($onelib . '_LIBADD'))
 	{
 	    &handle_lib_objects ($onelib . '_LIBADD');
 	}
@@ -759,7 +761,7 @@ sub handle_libraries
     # Turn "foo" into "libfoo.a" and include macro definition.
     grep (($_ = 'lib' . $_ . '.a') && 0, @liblist);
 
-    if (! defined $contents{'LIBFILES'})
+    if (! &variable_defined ('LIBFILES'))
     {
 	&pretty_print ('LIBFILES = ', "", @liblist);
     }
@@ -836,9 +838,9 @@ sub handle_texinfo
 {
     &am_line_error ('TEXINFOS',
 		    "\`TEXINFOS' is an anachronism; use \`info_TEXINFOS'")
-	if defined $contents{'TEXINFOS'};
-    return if (! defined $contents{'info_TEXINFOS'}
-	       && ! defined $contents{'html_TEXINFOS'});
+	if &variable_defined ('TEXINFOS');
+    return if (! &variable_defined ('info_TEXINFOS')
+	       && ! &variable_defined ('html_TEXINFOS'));
 
     local (@texis) = split (/\s+/, $contents{'info_TEXINFOS'});
 
@@ -896,7 +898,7 @@ sub handle_texinfo
 
 	# Canonicalize name first.
 	($canonical = $infobase) =~ tr/A-Za-z0-9_/_/c;
-	if (defined $contents{$canonical . "_TEXINFOS"})
+	if (&variable_defined ($canonical . "_TEXINFOS"))
 	{
 	    push (@texi_deps, '$(' . $canonical . '_TEXINFOS)');
 	    &push_dist_common ('$(' . $canonical . '_TEXINFOS)');
@@ -964,8 +966,8 @@ sub handle_texinfo
 sub handle_man_pages
 {
     &am_line_error ('MANS', "\`MANS' is an anachronism; use \`man_MANS'")
-	if defined $contents{'MANS'};
-    return if ! defined $contents{'man_MANS'};
+	if &variable_defined ('MANS');
+    return if ! &variable_defined ('man_MANS');
 
     # We generate the manpage install code by hand to avoid the use of
     # basename in the generated Makefile.
@@ -1046,12 +1048,12 @@ sub handle_tags
     local ($tagging) = 0;
 
     push (@phony, 'tags');
-    if (defined $contents{'SUBDIRS'})
+    if (&variable_defined ('SUBDIRS'))
     {
 	$output_rules .= &file_contents ('tags');
 	$tagging = 1;
     }
-    elsif ($dir_holds_sources || defined $contents{'ETAGS_ARGS'})
+    elsif ($dir_holds_sources || &variable_defined ('ETAGS_ARGS'))
     {
 	$output_rules .= &file_contents ('tags-subd');
 	$tagging = 1;
@@ -1137,7 +1139,7 @@ sub handle_dist_worker
 
     # If we have SUBDIRS, create all dist subdirectories and do
     # recursive build.
-    if (defined $contents{'SUBDIRS'})
+    if (&variable_defined ('SUBDIRS'))
     {
 	# Test for directory existence here because previous automake
 	# invocation might have created some directories.
@@ -1182,11 +1184,11 @@ sub handle_dist
 {
     # Set up maint_charset.
     $local_maint_charset = $contents{'MAINT_CHARSET'}
-	if defined $contents{'MAINT_CHARSET'};
+	if &variable_defined ('MAINT_CHARSET');
     $maint_charset = $local_maint_charset
 	if $relative_dir eq '.';
 
-    if (defined $contents{'DIST_CHARSET'})
+    if (&variable_defined ('DIST_CHARSET'))
     {
 	&am_line_error ('DIST_CHARSET',
 			"DIST_CHARSET defined but no MAINT_CHARSET defined")
@@ -1291,7 +1293,7 @@ sub handle_dependencies
 # Handle subdirectories.
 sub handle_subdirs
 {
-    if (! defined $contents{'SUBDIRS'})
+    if (! &variable_defined ('SUBDIRS'))
     {
 	&am_conf_error
 	    ("ud_GNU_GETTEXT in configure.in but SUBDIRS not defined")
@@ -1302,7 +1304,7 @@ sub handle_subdirs
     &require_file_with_conf_line ($ac_gettext_line, $FOREIGN, 'ABOUT-NLS')
 	if $seen_gettext;
 
-    return if ! defined $contents{'SUBDIRS'};
+    return if ! &variable_defined ('SUBDIRS');
 
     # Make sure each directory mentioned in SUBDIRS actually exists.
     local ($dir);
@@ -1343,7 +1345,7 @@ sub handle_configure
 {
     # If SUBDIRS defined, require AC_PROG_MAKE_SET.
     &am_line_error ('SUBDIRS', "AC_PROG_MAKE_SET must be used in configure.in")
-	if defined $contents{'SUBDIRS'} && ! $seen_make_set;
+	if &variable_defined ('SUBDIRS') && ! $seen_make_set;
 
     local ($top_reldir);
     if ($relative_dir ne '.')
@@ -1408,7 +1410,7 @@ sub handle_configure
 
     &am_line_error ('CONFIG_HEADER',
 		    "\`CONFIG_HEADER' is an anachronism; now determined from \`configure.in'")
-	if defined $contents{'CONFIG_HEADER'};
+	if &variable_defined ('CONFIG_HEADER');
 
     # Generate CONFIG_HEADER define, and define interally.
     $output_vars .= "CONFIG_HEADER = ${top_builddir}/${config_name}\n"
@@ -1469,7 +1471,7 @@ sub handle_gettext
     # As of 0.10.6, gettext still wants @INTLSUB@ and @POSUB@ in
     # SUBDIRS.  This is going to change in a future version.  So for
     # now we simply do no checking.
-    if (0 && defined $contents{'SUBDIRS'})
+    if (0 && &variable_defined ('SUBDIRS'))
     {
 	&am_line_error
 	    ('SUBDIRS',
@@ -1571,7 +1573,7 @@ sub handle_merge_targets
     &do_one_merge_target ('info', @info);
     &do_one_merge_target ('dvi', @dvi);
 
-    if (! defined $contents{'SUBDIRS'} || $relative_dir ne '.')
+    if (! &variable_defined ('SUBDIRS') || $relative_dir ne '.')
     {
 	# 'check' must depend on 'all', but not at top level.
 	# Ditto install.
@@ -1809,7 +1811,7 @@ sub handle_phony
 # Handle TESTS variable.
 sub handle_tests
 {
-    return if ! defined $contents{'TESTS'};
+    return if ! &variable_defined ('TESTS');
 
     &push_dist_common (split (/\s+/, $contents{'TESTS'}));
     push (@check, 'check-TESTS');
@@ -2085,6 +2087,17 @@ sub pretty_print_rule
 
 ################################################################
 
+# See if a variable exists.
+sub variable_defined
+{
+    local ($var) = @_;
+    if (defined $targets{$var})
+    {
+	&am_line_error ($var, "\`$var' is target; expected variable");
+    }
+    return (defined $contents{$var} && ! defined $targets{$var});
+}
+
 # Read Makefile.am and set up %contents.  Simultaneously copy lines
 # from Makefile.am into $output_trailer or $output_vars as
 # appropriate.  NOTE we put rules in the trailer section.  We want
@@ -2131,6 +2144,7 @@ sub read_am_file
     local ($spacing) = '';
     local ($comment) = '';
     local ($last_var_name) = '';
+    local ($blank) = 0;
 
     while (<AM_FILE>)
     {
@@ -2142,10 +2156,13 @@ sub read_am_file
 	{
 	    # Stick a single white line before the incoming macro or rule.
 	    $spacing = "\n";
+	    $blank = 1;
 	}
 	elsif (/$COMMENT_PATTERN/o)
 	{
-	    # Stick comments before the incoming macro or rule.
+	    # Stick comments before the incoming macro or rule.  Make
+	    # sure a blank line preceeds comments.
+	    $spacing = "\n" unless $blank;
 	    $comment .= $spacing . $_;
 	    $spacing = '';
 	}
@@ -2204,6 +2221,7 @@ sub read_am_file
 	    # Value here doesn't matter; for targets we only note
 	    # existence.
 	    $contents{$1} = 1;
+	    $targets{$1} = 1;
 	    $content_lines{$1} = $.;
 	    $output_trailer .= $comment . $spacing . $_;
 	    $comment = $spacing = '';
@@ -2308,11 +2326,13 @@ sub initialize_global_constants
   --gnits               same as --strictness=gnits
   --gnu                 same as --strictness=gnu
   --help                print this help, then exit
-  --include-deps        include generated dependencies in Makefile.in
-  --add-missing         add missing standard files to package
-  --output-dir=DIR      put generated Makefile.in's into DIR
-  --strictness=LEVEL    set strictness level.  LEVEL is foreign, gnu, gnits
-  --verbose             verbosely list files processed
+  -i, --include-deps    include generated dependencies in Makefile.in
+  -a, --add-missing     add missing standard files to package
+  -o DIR, --output-dir=DIR
+                        put generated Makefile.in's into DIR
+  -s LEVEL, --strictness=LEVEL
+                        set strictness level.  LEVEL is foreign, gnu, gnits
+  -v, --verbose         verbosely list files processed
   --version             print version number, then exit\n";
 
     # Copyright on generated Makefile.ins.
@@ -2338,6 +2358,10 @@ sub initialize_per_input
     # This holds the contents of a Makefile.am, as parsed by
     # read_am_file.
     %contents = ();
+
+    # This holds the names which are targets.  These also appear in
+    # %contents.
+    %targets = ();
 
     # This holds the line numbers at which various elements of
     # %contents are defined.
@@ -2538,7 +2562,7 @@ sub am_install_var
     # Now that configure substitutions are allowed in where_HOW
     # variables, it is an error to actually define the primary.
     &am_line_error ($primary, "\`$primary' is an anachronism")
-	if defined $contents{$primary};
+	if &variable_defined ($primary);
 
 
     # Look for misspellings.  It is an error to have a variable ending
@@ -2558,7 +2582,7 @@ sub am_install_var
     {
 	if ($varname =~ /^(.*)_$primary$/)
 	{
-	    if (! defined $valid{$1} && ! defined $contents{$1 . 'dir'})
+	    if (! defined $valid{$1} && ! &variable_defined ($1 . 'dir'))
 	    {
 		&am_line_error ($varname, "invalid variable \"$varname\"");
 	    }
@@ -2578,7 +2602,7 @@ sub am_install_var
     foreach $X (keys %valid)
     {
 	$one_name = $X . '_' . $primary;
-	if (defined $contents{$one_name})
+	if (&variable_defined ($one_name))
 	{
 	    # Append actual contents of where_PRIMARY variable to
 	    # result.
