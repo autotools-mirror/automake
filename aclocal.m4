@@ -83,7 +83,7 @@ AM_MISSING_PROG(AUTOMAKE, automake)
 AM_MISSING_PROG(AUTOHEADER, autoheader)
 AM_MISSING_PROG(MAKEINFO, makeinfo)
 AM_MISSING_PROG(AMTAR, tar)
-AM_MISSING_INSTALL_SH
+AM_PROG_INSTALL_SH
 AM_PROG_INSTALL_STRIP
 # We need awk for the "check" target.  The system "awk" is bad on
 # some platforms.
@@ -159,25 +159,6 @@ $1=${$1-"${am_missing_run}$2"}
 AC_SUBST($1)])
 
 
-# AM_MISSING_INSTALL_SH
-# ---------------------
-# Like AM_MISSING_PROG, but only looks for install-sh.
-AC_DEFUN([AM_MISSING_INSTALL_SH],
-[AC_REQUIRE([AM_MISSING_HAS_RUN])
-if test -z "$install_sh"; then
-   for install_sh in "$ac_aux_dir/install-sh" \
-                     "$ac_aux_dir/install.sh" \
-                     "${am_missing_run}${ac_aux_dir}/install-sh";
-   do
-     test -f "$install_sh" && break
-   done
-   # FIXME: an evil hack: we remove the SHELL invocation from
-   # install_sh because automake adds it back in.  Sigh.
-   install_sh=`echo $install_sh | sed -e 's/\${SHELL}//'`
-fi
-AC_SUBST(install_sh)])
-
-
 # AM_MISSING_HAS_RUN
 # ------------------
 # Define MISSING if not defined so far and test if it supports --run.
@@ -195,6 +176,59 @@ else
 fi
 ])
 
+# AM_PROG_INSTALL_SH
+# ------------------
+# Define $install_sh.
+AC_DEFUN([AM_PROG_INSTALL_SH],
+[AC_REQUIRE([AM_AUX_DIR_EXPAND])dnl
+install_sh=${install_sh-"$am_aux_dir/install-sh"}
+AC_SUBST(install_sh)])
+
+# AM_AUX_DIR_EXPAND
+
+# For projects using AC_CONFIG_AUX_DIR([foo]), Autoconf sets
+# $ac_aux_dir to `$srcdir/foo'.  In other projects, it is set to
+# `$srcdir', `$srcdir/..', or `$srcdir/../..'.
+#
+# Of course, Automake must honor this variable whenever it calls a
+# tool from the auxiliary directory.  The problem is that $srcdir (and
+# therefore $ac_aux_dir as well) can be either absolute or relative,
+# depending on how configure is run.  This is pretty annoying, since
+# it makes $ac_aux_dir quite unusable in subdirectories: in the top
+# source directory, any form will work fine, but in subdirectories a
+# relative path needs to be adjusted first.
+#
+# $ac_aux_dir/missing
+#    fails when called from a subdirectory if $ac_aux_dir is relative
+# $top_srcdir/$ac_aux_dir/missing
+#    fails if $ac_aux_dir is absolute,
+#    fails when called from a subdirectory in a VPATH build with
+#          a relative $ac_aux_dir
+#
+# The reason of the latter failure is that $top_srcdir and $ac_aux_dir
+# are both prefixed by $srcdir.  In an in-source build this is usually
+# harmless because $srcdir is `.', but things will broke when you
+# start a VPATH build or use an absolute $srcdir.
+#
+# So we could use something similar to $top_srcdir/$ac_aux_dir/missing,
+# iff we strip the leading $srcdir from $ac_aux_dir.  That would be:
+#   am_aux_dir='\$(top_srcdir)/'`expr "$ac_aux_dir" : "$srcdir//*\(.*\)"`
+# and then we would define $MISSING as
+#   MISSING="\${SHELL} $am_aux_dir/missing"
+# This will work as long as MISSING is not called from configure, because
+# unfortunately $(top_srcdir) has no meaning in configure.
+# However there are other variables, like CC, which are often used in
+# configure, and could therefore not use this "fixed" $ac_aux_dir.
+#
+# Another solution, used here, is to always expand $ac_aux_dir to an
+# absolute PATH.  The drawback is that using absolute paths prevent a
+# configured tree to be moved without reconfiguration.
+
+AC_DEFUN([AM_AUX_DIR_EXPAND], [
+# expand $ac_aux_dir to an absolute path
+am_aux_dir=`CDPATH=:; cd $ac_aux_dir && pwd`
+])
+
 # One issue with vendor `install' (even GNU) is that you can't
 # specify the program used to strip binaries.  This is especially
 # annoying in cross-compiling environments, where the build's strip
@@ -203,9 +237,8 @@ fi
 # always use install-sh in `make install-strip', and initialize
 # STRIPPROG with the value of the STRIP variable (set by the user).
 AC_DEFUN([AM_PROG_INSTALL_STRIP],
-[AC_REQUIRE([AM_MISSING_INSTALL_SH])dnl
-_am_dirpart="`echo $install_sh | sed -e 's,//*[[^/]]*$,,'`"
-INSTALL_STRIP_PROGRAM="\${SHELL} \`CDPATH=: && cd $_am_dirpart && pwd\`/install-sh -c -s"
+[AC_REQUIRE([AM_PROG_INSTALL_SH])dnl
+INSTALL_STRIP_PROGRAM="\${SHELL} \$(install_sh) -c -s"
 AC_SUBST([INSTALL_STRIP_PROGRAM])])
 
 # serial 4						-*- Autoconf -*-
