@@ -3415,21 +3415,9 @@ sub handle_merge_targets
 
     # Print definitions users can use.
     &do_one_merge_target ('install-exec', @install_exec);
-    if (&target_defined ('install-exec-hook'))
-    {
-	$output_rules .= ("\t\@\$(NORMAL_INSTALL)\n"
-			  . "\t" . '$(MAKE) $(AM_MAKEFLAGS) install-exec-hook'
-			  . "\n");
-    }
     $output_rules .= "\n";
 
     &do_one_merge_target ('install-data', @install_data);
-    if (defined $contents{'install-data-hook'})
-    {
-	$output_rules .= ("\t\@\$(NORMAL_INSTALL)\n"
-			  . "\t" . '$(MAKE) $(AM_MAKEFLAGS) install-data-hook'
-			  . "\n");
-    }
     $output_rules .= "\n";
 
     &do_one_merge_target ('install', 'all-am');
@@ -3464,6 +3452,18 @@ sub do_one_merge_target
 	# install-data-am after all-am is built.
 	&pretty_print_rule ("\t\@\$(MAKE) \$(AM_MAKEFLAGS)", "\t  ",
 			    'install-exec-am', 'install-data-am');
+    }
+    elsif ($name eq 'install-exec' && &target_defined ('install-exec-hook'))
+    {
+	$output_rules .= ("\t\@\$(NORMAL_INSTALL)\n"
+			  . "\t" . '$(MAKE) $(AM_MAKEFLAGS) install-exec-hook'
+			  . "\n");
+    }
+    elsif ($name eq 'install-data' && &target_defined ('install-data-hook'))
+    {
+	$output_rules .= ("\t\@\$(NORMAL_INSTALL)\n"
+			  . "\t" . '$(MAKE) $(AM_MAKEFLAGS) install-data-hook'
+			  . "\n");
     }
 
     local ($lname) = $name . ($recursive_install ? '-recursive' : '-am');
