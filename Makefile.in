@@ -55,15 +55,16 @@ INFO_DEPS = automake.info
 DVIS = automake.dvi
 PDFS = automake.pdf
 PSS = automake.ps
+HTMLS = automake.html
 TEXINFOS = automake.texi
 TEXI2DVI = texi2dvi
 TEXI2PDF = $(TEXI2DVI) --pdf --batch
 DVIPS = dvips
 RECURSIVE_TARGETS = info-recursive dvi-recursive pdf-recursive \
-	ps-recursive install-info-recursive uninstall-info-recursive \
-	all-recursive install-data-recursive install-exec-recursive \
-	installdirs-recursive install-recursive uninstall-recursive \
-	check-recursive installcheck-recursive
+	ps-recursive html-recursive install-info-recursive \
+	uninstall-info-recursive all-recursive install-data-recursive \
+	install-exec-recursive installdirs-recursive install-recursive \
+	uninstall-recursive check-recursive installcheck-recursive
 ETAGS = etags
 ETAGSFLAGS = 
 CTAGS = ctags
@@ -176,7 +177,7 @@ texinfo.tex
 all: all-recursive
 
 .SUFFIXES:
-.SUFFIXES: .dvi .info .pdf .ps .texi
+.SUFFIXES: .dvi .html .info .pdf .ps .texi
 
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno
@@ -242,9 +243,14 @@ uninstall-binSCRIPTS:
 	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
 	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) -I $(srcdir)' \
 	$(TEXI2PDF) $<
+
+.texi.html:
+	$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) --html -I $(srcdir) \
+	 -o $@ $<
 automake.info: automake.texi version.texi
 automake.dvi: automake.texi version.texi
 automake.pdf: automake.texi version.texi
+automake.html: automake.texi version.texi
 version.texi:  stamp-vti
 stamp-vti: automake.texi $(top_srcdir)/configure
 	@(dir=.; test -f ./automake.texi || dir=$(srcdir); \
@@ -306,11 +312,12 @@ dist-info: $(INFO_DEPS)
 	done
 
 mostlyclean-aminfo:
-	-rm -f automake.aux automake.cm automake.cp automake.cps automake.cv \
+	-rm -rf automake.aux automake.cm automake.cp automake.cps automake.cv \
 	  automake.fn automake.ky automake.kys automake.log automake.op \
 	  automake.ov automake.pg automake.pgs automake.tmp \
 	  automake.toc automake.tp automake.tps automake.tr automake.vr \
-	  automake.vrs automake.dvi automake.pdf automake.ps
+	  automake.vrs automake.dvi automake.pdf automake.ps \
+	  automake.html
 
 maintainer-clean-aminfo:
 	@list='$(INFO_DEPS)'; for i in $$list; do \
@@ -620,6 +627,10 @@ dvi: dvi-recursive
 
 dvi-am: $(DVIS)
 
+html: html-recursive
+
+html-am: $(HTMLS)
+
 info: info-recursive
 
 info-am: $(INFO_DEPS)
@@ -691,19 +702,20 @@ uninstall-info: uninstall-info-recursive
 	dist-all dist-bzip2 dist-gzip dist-info distcheck distclean \
 	distclean-generic distclean-recursive distclean-tags \
 	distcleancheck distdir distuninstallcheck dvi dvi-am \
-	dvi-recursive info info-am info-recursive install install-am \
-	install-binSCRIPTS install-data install-data-am \
-	install-data-recursive install-exec install-exec-am \
-	install-exec-recursive install-info install-info-am \
-	install-info-recursive install-man install-recursive \
-	install-strip installcheck installcheck-am installdirs \
-	installdirs-am installdirs-recursive maintainer-clean \
-	maintainer-clean-aminfo maintainer-clean-generic \
-	maintainer-clean-recursive maintainer-clean-vti mostlyclean \
-	mostlyclean-aminfo mostlyclean-generic mostlyclean-recursive \
-	mostlyclean-vti pdf pdf-am pdf-recursive ps ps-am ps-recursive \
-	tags tags-recursive uninstall uninstall-am uninstall-binSCRIPTS \
-	uninstall-info-am uninstall-info-recursive uninstall-recursive
+	dvi-recursive html html-am html-recursive info info-am \
+	info-recursive install install-am install-binSCRIPTS \
+	install-data install-data-am install-data-recursive \
+	install-exec install-exec-am install-exec-recursive \
+	install-info install-info-am install-info-recursive install-man \
+	install-recursive install-strip installcheck installcheck-am \
+	installdirs installdirs-am installdirs-recursive \
+	maintainer-clean maintainer-clean-aminfo \
+	maintainer-clean-generic maintainer-clean-recursive \
+	maintainer-clean-vti mostlyclean mostlyclean-aminfo \
+	mostlyclean-generic mostlyclean-recursive mostlyclean-vti pdf \
+	pdf-am pdf-recursive ps ps-am ps-recursive tags tags-recursive \
+	uninstall uninstall-am uninstall-binSCRIPTS uninstall-info-am \
+	uninstall-info-recursive uninstall-recursive
 
 
 install-exec-hook:
