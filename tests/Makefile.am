@@ -7,7 +7,7 @@ AUTOMAKE_OPTIONS = gnits
 TESTS = mdate.test vtexi.test acoutput.test instexec.test checkall.test \
 acoutnoq.test acouttbs.test libobj.test proginst.test
 
-DIST_OTHER = $(TESTS)
+DIST_OTHER = $(TESTS) defs
 
 check-local:
 	@failed=0; all=0; \
