@@ -1134,7 +1134,7 @@ sub handle_languages
 	my %seen_files = ();
 	foreach my $file (@{$lang_specific_files{$lang->name}})
 	{
-	    my ($derived, $source, $obj, $myext) = split (' ', $file);
+	    my ($derived, $source, $obj, $myext, %file_transform) = @$file;
 
 	    # We might see a given object twice, for instance if it is
 	    # used under different conditions.
@@ -1215,7 +1215,7 @@ sub handle_languages
 	    # and another time we simply remove `$U'.
 	    #
 	    # Note that at this point $source (as computed by
-	    # &handle_single_transform_list) is `sub/foo$U.c'.
+	    # &handle_single_transform) is `sub/foo$U.c'.
 	    # This can be confusing: it can be used as-is when
 	    # subdir-objects is set, otherwise you have to know
 	    # it really means `foo_.c' or `sub/foo.c'.
@@ -1250,7 +1250,8 @@ sub handle_languages
 
 				     COMPILE   => $obj_compile,
 				     LTCOMPILE => $obj_ltcompile,
-				     -o        => $output_flag);
+				     -o        => $output_flag,
+				     %file_transform);
 		    $obj =~ s/\$U//g;
 		    $depbase =~ s/\$U//g;
 		    $source =~ s/\$U//g;
@@ -1275,7 +1276,8 @@ sub handle_languages
 
 			     COMPILE   => $obj_compile,
 			     LTCOMPILE => $obj_ltcompile,
-			     -o        => $output_flag);
+			     -o        => $output_flag,
+			     %file_transform);
 	}
 
 	# The rest of the loop is done once per language.
@@ -1387,20 +1389,23 @@ sub check_libobjs_sources
 
 
 # @OBJECTS
-# handle_single_transform_list ($VAR, $TOPPARENT, $DERIVED, $OBJ, @FILES)
-# -----------------------------------------------------------------------
+# handle_single_transform ($VAR, $TOPPARENT, $DERIVED, $OBJ, $FILE, %TRANSFORM)
+# -----------------------------------------------------------------------------
 # Does much of the actual work for handle_source_transform.
 # Arguments are:
 #   $VAR is the name of the variable that the source filenames come from
 #   $TOPPARENT is the name of the _SOURCES variable which is being processed
 #   $DERIVED is the name of resulting executable or library
 #   $OBJ is the object extension (e.g., `$U.lo')
-#   @FILES is the list of source files to transform
+#   $FILE the source file to transform
+#   %TRANSFORM contains extras arguments to pass to file_contents
+#     when producing explicit rules
 # Result is a list of the names of objects
 # %linkers_used will be updated with any linkers needed
-sub handle_single_transform_list ($$$$@)
+sub handle_single_transform ($$$$$%)
 {
-    my ($var, $topparent, $derived, $obj, @files) = @_;
+    my ($var, $topparent, $derived, $obj, $_file, %transform) = @_;
+    my @files = ($_file);
     my @result = ();
     my $nonansi_obj = $obj;
     $nonansi_obj =~ s/\$U//g;
@@ -1585,32 +1590,34 @@ sub handle_single_transform_list ($$$$@)
 		    $obj_sans_ext .= '$U';
 		  }
 
-		my $val = ("$full_ansi $obj_sans_ext "
-			   # Only use $this_obj_ext in the derived
-			   # source case because in the other case we
-			   # *don't* want $(OBJEXT) to appear here.
-			   . ($derived_source ? $this_obj_ext : '.o'));
+		my @specifics = ($full_ansi, $obj_sans_ext,
+				 # Only use $this_obj_ext in the derived
+				 # source case because in the other case we
+				 # *don't* want $(OBJEXT) to appear here.
+				 ($derived_source ? $this_obj_ext : '.o'));
 
 		# If we renamed the object then we want to use the
 		# per-executable flag name.  But if this is simply a
 		# subdir build then we still want to use the AM_ flag
 		# name.
 		if ($renamed)
-		{
-		    $val = "$derived $val";
+		  {
+		    unshift @specifics, $derived;
 		    $aggregate = $derived;
-		}
+		  }
 		else
-		{
-		    $val = "AM $val";
-		}
+		  {
+		    unshift @specifics, 'AM';
+		  }
 
-		# Each item on this list is a string consisting of
-		# four space-separated values: the derived flag prefix
+		# Each item on this list is a reference to a list consisting
+		# of four values followed by additional transform flags for
+		# file_contents.   The four values are the derived flag prefix
 		# (e.g. for `foo_CFLAGS', it is `foo'), the name of the
 		# source file, the base name of the output file, and
 		# the extension for the object file.
-                push (@{$lang_specific_files{$lang->name}}, $val);
+                push (@{$lang_specific_files{$lang->name}},
+		      [@specifics, %transform]);
             }
         }
         elsif ($extension eq $nonansi_obj)
@@ -1737,8 +1744,8 @@ sub handle_single_transform_list ($$$$@)
 
 # $LINKER
 # define_objects_from_sources ($VAR, $OBJVAR, $NODEFINE, $ONE_FILE,
-#                              $OBJ, $PARENT, $TOPPARENT, $WHERE)
-# ---------------------------------------------------------------------
+#                              $OBJ, $PARENT, $TOPPARENT, $WHERE, %TRANSFORM)
+# ---------------------------------------------------------------------------
 # Define an _OBJECTS variable for a _SOURCES variable (or subvariable)
 #
 # Arguments are:
@@ -1751,12 +1758,15 @@ sub handle_single_transform_list ($$$$@)
 #   $OBJ is the object extension (i.e. either `.o' or `.lo').
 #   $TOPPARENT is the _SOURCES variable being processed.
 #   $WHERE context into which this definition is done
+#   %TRANSFORM extra arguments to pass to file_contents when producing
+#     rules
 #
 # Result is a pair ($LINKER, $OBJVAR):
 #    $LINKER is a boolean, true if a linker is needed to deal with the objects
-sub define_objects_from_sources ($$$$$$$)
+sub define_objects_from_sources ($$$$$$$%)
 {
-  my ($var, $objvar, $nodefine, $one_file, $obj, $topparent, $where) = @_;
+  my ($var, $objvar, $nodefine, $one_file,
+      $obj, $topparent, $where, %transform) = @_;
 
   my $needlinker = "";
 
@@ -1765,8 +1775,9 @@ sub define_objects_from_sources ($$$$$$$)
      # The transform code to run on each filename.
      sub {
        my ($subvar, $val, $cond, $full_cond) = @_;
-       my @trans = &handle_single_transform_list ($subvar, $topparent,
-						  $one_file, $obj, $val);
+       my @trans = handle_single_transform ($subvar, $topparent,
+					    $one_file, $obj, $val,
+					    %transform);
        $needlinker = "true" if @trans;
        return @trans;
      });
@@ -1775,18 +1786,22 @@ sub define_objects_from_sources ($$$$$$$)
 }
 
 
+# handle_source_transform ($CANON_TARGET, $TARGET, $OBJEXT, $WHERE, %TRANSFORM)
+# -----------------------------------------------------------------------------
 # Handle SOURCE->OBJECT transform for one program or library.
 # Arguments are:
-#   canonical (transformed) name of object to build
-#   actual name of object to build
+#   canonical (transformed) name of target to build
+#   actual target of object to build
 #   object extension (i.e. either `.o' or `$o'.
+#   location of the source variable
+#   extra arguments to pass to file_contents when producing rules
 # Return result is name of linker variable that must be used.
 # Empty return means just use `LINK'.
-sub handle_source_transform
+sub handle_source_transform ($$$$%)
 {
     # one_file is canonical name.  unxformed is given name.  obj is
     # object extension.
-    my ($one_file, $unxformed, $obj, $where) = @_;
+    my ($one_file, $unxformed, $obj, $where, %transform) = @_;
 
     my ($linker) = '';
 
@@ -1834,7 +1849,8 @@ sub handle_source_transform
 	    define_objects_from_sources ($varname,
 					 $xpfx . $one_file . '_OBJECTS',
 					 $prefix =~ /EXTRA_/,
-					 $one_file, $obj, $varname, $where);
+					 $one_file, $obj, $varname, $where,
+					 %transform);
     }
     if ($needlinker)
     {
@@ -1866,10 +1882,10 @@ sub handle_source_transform
 
 	%linkers_used = ();
 	my (@result) =
-	  &handle_single_transform_list ($one_file . '_SOURCES',
-					 $one_file . '_SOURCES',
-					 $one_file, $obj,
-					 $default_source);
+	  handle_single_transform ($one_file . '_SOURCES',
+				   $one_file . '_SOURCES',
+				   $one_file, $obj,
+				   $default_source, %transform);
 	$linker ||= &resolve_linker (%linkers_used);
 	define_pretty_variable ($one_file . '_OBJECTS', TRUE, $where, @result);
     }
@@ -2187,7 +2203,8 @@ sub handle_programs
       $where->push_context ("while processing program `$one_file'");
       $where->set (INTERNAL->get);
 
-      my $linker = &handle_source_transform ($xname, $one_file, $obj, $where);
+      my $linker = &handle_source_transform ($xname, $one_file, $obj, $where,
+					     NONLIBTOOL => 1, LIBTOOL => 0);
 
       if (var ($xname . "_LDADD"))
 	{
@@ -2314,7 +2331,8 @@ sub handle_libraries
       # Make sure we at look at this.
       set_seen ($xlib . '_DEPENDENCIES');
 
-      &handle_source_transform ($xlib, $onelib, $obj, $where);
+      &handle_source_transform ($xlib, $onelib, $obj, $where,
+				NONLIBTOOL => 1, LIBTOOL => 0);
 
       # If the resulting library lies into a subdirectory,
       # make sure this directory will exist.
@@ -2451,7 +2469,8 @@ sub handle_ltlibraries
 		  "use `${xlib}_LIBADD', not `${xlib}_LDADD'");
 
 
-      my $linker = &handle_source_transform ($xlib, $onelib, $obj, $where);
+      my $linker = &handle_source_transform ($xlib, $onelib, $obj, $where,
+					     NONLIBTOOL => 0, LIBTOOL => 1);
 
       # Determine program to use for link.
       my $xlink;
@@ -4788,7 +4807,7 @@ sub check_gnits_standards
 # file is to be dealt with, LANG_IGNORE otherwise.
 
 # Much of the actual processing is handled in
-# handle_single_transform_list.  These functions exist so that
+# handle_single_transform.  These functions exist so that
 # auxiliary information can be recorded for a later cleanup pass.
 # Note that the calls to these functions are computed, so don't bother
 # searching for their precise names in the source.
@@ -5808,12 +5827,11 @@ sub make_paragraphs ($%)
 {
   my ($file, %transform) = @_;
 
-  # Complete %transform with global options and make it a Perl
-  # $command.
+  # Complete %transform with global options and make it a Perl $command.
+  # Note that %transform goes last, so it overrides global options.
   my $command =
     "s/$IGNORE_PATTERN//gm;"
-    . transform (%transform,
-		 'CYGNUS'      => !! option 'cygnus',
+    . transform ('CYGNUS'      => !! option 'cygnus',
 		 'MAINTAINER-MODE'
 		 => $seen_maint_mode ? subst ('MAINTAINER_MODE_TRUE') : '',
 
@@ -5835,7 +5853,9 @@ sub make_paragraphs ($%)
 		 'HOST'     => $seen_canonical,
 		 'TARGET'   => $seen_canonical == AC_CANONICAL_SYSTEM,
 
-		 'LIBTOOL'      => !! var ('LIBTOOL'))
+		 'LIBTOOL'      => !! var ('LIBTOOL'),
+		 'NONLIBTOOL'   => 1,
+		 %transform)
     # We don't need more than two consecutive new-lines.
     . 's/\n{3,}/\n\n/g';
 

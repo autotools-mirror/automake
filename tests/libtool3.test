@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002  Free Software Foundation, Inc.
+# Copyright (C) 2002, 2004  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -19,6 +19,7 @@
 # Boston, MA 02111-1307, USA.
 
 # Try to build and package a program linked to a Libtool library.
+# Also make sure we do not bloat the Makefile with unneeded rules.
 
 required='libtoolize gcc'
 . ./defs || exit 1
@@ -37,11 +38,11 @@ lib0_la_SOURCES = 0.c
 liba_liba_la_SOURCES = liba/a.c
 
 bin_PROGRAMS = 1
-1_SOURCES = 1.c
+1_SOURCES = sub/1.c
 1_LDADD = lib0.la $(top_builddir)/liba/liba.la
 END
 
-mkdir liba
+mkdir liba sub
 
 cat > 0.c << 'END'
 int
@@ -51,7 +52,7 @@ zero (void)
 }
 END
 
-cat > 1.c << 'END'
+cat > sub/1.c << 'END'
 int zero ();
 
 int
@@ -78,6 +79,13 @@ libtoolize --force --copy
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing --copy
+
+# We need explicit rules to build 1.o and a.lo.  Make sure
+# Automake did not output additional rules for 1.lo and and a.lo.
+$FGREP '1.o:' Makefile.in
+$FGREP '1.lo:' Makefile.in && exit 1
+$FGREP 'a.o:' Makefile.in && exit 1
+$FGREP 'a.lo:' Makefile.in
 
 ./configure
 $MAKE
