@@ -156,7 +156,7 @@ my $SUFFIX_RULE_PATTERN =
 # Only recognize leading spaces, not leading tabs.  If we recognize
 # leading tabs here then we need to make the reader smarter, because
 # otherwise it will think rules like `foo=bar; \' are errors.
-my $MACRO_PATTERN = '^[A-Za-z0-9_@]+' . "\$";
+my $MACRO_PATTERN = '^[.A-Za-z0-9_@]+' . "\$";
 my $ASSIGNMENT_PATTERN = '^ *([^ \t=:+]*)\s*([:+]?)=\s*(.*)' . "\$";
 # This pattern recognizes a Gnits version id and sets $1 if the
 # release is an alpha release.  We also allow a suffix which can be
@@ -1337,10 +1337,10 @@ sub accept_extensions (@)
 
 # var_SUFFIXES_trigger ($TYPE, $VALUE)
 # ------------------------------------
-# This is called automagically by define_macro() when SUFFIXES
+# This is called automagically by macro_define() when SUFFIXES
 # is defined ($TYPE eq '') or appended ($TYPE eq '+').
 # The work here needs to be performed as a side-effect of the
-# define_macro() call because SUFFIXES definitions impact
+# macro_define() call because SUFFIXES definitions impact
 # on $KNOWN_EXTENSIONS_PATTERN, and $KNOWN_EXTENSIONS_PATTERN
 # are used when parsing the input am file.
 sub var_SUFFIXES_trigger ($$)
@@ -3402,8 +3402,7 @@ sub handle_ltlibraries
     }
 }
 
-# See if any _SOURCES variable were misspelled.  Also, make sure that
-# EXTRA_ variables don't contain configure substitutions.
+# See if any _SOURCES variable were misspelled.
 sub check_typos ()
 {
   # It is ok if the user sets this particular variable.
@@ -6169,6 +6168,8 @@ sub macro_define ($$$$$$)
        "$var: variable names starting with `_' are not portable")
     if $var =~ /^_/;
 
+  check_variable_expansions ($value, $where);
+
   $cond ||= 'TRUE';
 
   # An Automake variable must be consistently defined with the same
@@ -6573,7 +6574,56 @@ sub variable_conditionally_defined ($)
     return 0;
 }
 
+# @LIST
+# &scan_variable_expansions ($TEXT)
+# ---------------------------------
+# Return the list of variable names expanded in $TEXT.
+# Note that unlike some other functions, $TEXT is not split
+# on spaces before we check for subvariables.
+sub scan_variable_expansions ($)
+{
+  my ($text) = @_;
+  my @result = ();
 
+  # Strip comments.
+  $text =~ s/#.*$//;
+
+  # Record each use of ${stuff} or $(stuff) that do not follow a $.
+  while ($text =~ /(?<!\$)\$(?:\{([^\}]*)\}|\(([^\)]*)\))/g)
+    {
+      my $var = $1 || $2;
+      # The occurent may look like $(string1[:subst1=[subst2]]) but
+      # we want only `string1'.
+      $var =~ s/:[^:=]*=[^=]*$//;
+      push @result, $var;
+    }
+
+  return @result;
+}
+
+# &check_variable_expansions ($TEXT, $WHERE)
+# ------------------------------------------
+# Check variable expansions in $TEXT and warn about any name that
+# does not conform to POSIX.  $WHERE is the location of $TEXT for
+# the error message.
+sub check_variable_expansions ($$)
+{
+  my ($text, $where) = @_;
+  # Catch expansion of variables whose name does not conform to POSIX.
+  foreach my $var (scan_variable_expansions ($text))
+    {
+      if ($var !~ /$MACRO_PATTERN/)
+	{
+	  # If the variable name contains a space, it's likely
+	  # to be a GNU make extension (such as $(addsuffix ...)).
+	  # Mention this in the diagnostic.
+	  my $gnuext = "";
+	  $gnuext = "\n(probably a GNU make extension)" if $var =~ / /;
+	  msg ('portability', $where,
+	       "$var: non-POSIX variable name$gnuext");
+	}
+    }
+}
 
 # &variable_conditions_recursive_sub ($VAR, $PARENT)
 # -------------------------------------------------------
@@ -6595,50 +6645,41 @@ sub variable_conditions_recursive_sub
     # Examine every condition under which $VAR is defined.
     foreach my $vcond (keys %{$var_value{$var}})
     {
-	push (@this_conds, $vcond);
+      push (@this_conds, $vcond);
 
-	# If $VAR references some other variable, then compute the
-	# conditions for that subvariable.
-	my @subvar_conds = ();
-	foreach (split (' ', $var_value{$var}{$vcond}))
+      # If $VAR references some other variable, then compute the
+      # conditions for that subvariable.
+      my @subvar_conds = ();
+      foreach my $varname (scan_variable_expansions $var_value{$var}{$vcond})
 	{
-	    # If a comment seen, just leave.
-	    last if /^#/;
-
-	    # Handle variable substitutions.
-	    if (/^\$\{(.*)\}$/ || /^\$\((.*)\)$/)
+	  if ($varname =~ /$SUBST_REF_PATTERN/o)
 	    {
-	        my $varname = $1;
-		if ($varname =~ /$SUBST_REF_PATTERN/o)
-		{
-		    $varname = $1;
-		}
+	      $varname = $1;
+	    }
 
-
-		# Here we compute all the conditions under which the
-		# subvariable is defined.  Then we go through and add
-		# $VCOND to each.
-		my @svc = variable_conditions_recursive_sub ($varname, $var);
-		foreach my $item (@svc)
-		{
-		    my $val = conditional_string ($vcond, split (' ', $item));
-		    $val ||= 'TRUE';
-		    push (@subvar_conds, $val);
-		}
+	  # Here we compute all the conditions under which the
+	  # subvariable is defined.  Then we go through and add
+	  # $VCOND to each.
+	  my @svc = variable_conditions_recursive_sub ($varname, $var);
+	  foreach my $item (@svc)
+	    {
+	      my $val = conditional_string ($vcond, split (' ', $item));
+	      $val ||= 'TRUE';
+	      push (@subvar_conds, $val);
 	    }
 	}
 
-	# If there are no conditional subvariables, then we want to
-	# return this condition.  Otherwise, we want to return the
-	# permutations of the subvariables, taking into account the
-	# conditions of $VAR.
-	if (! @subvar_conds)
+      # If there are no conditional subvariables, then we want to
+      # return this condition.  Otherwise, we want to return the
+      # permutations of the subvariables, taking into account the
+      # conditions of $VAR.
+      if (! @subvar_conds)
 	{
-	    push (@new_conds, $vcond);
+	  push (@new_conds, $vcond);
 	}
-	else
+      else
 	{
-	    push (@new_conds, variable_conditions_reduce (@subvar_conds));
+	  push (@new_conds, variable_conditions_reduce (@subvar_conds));
 	}
     }
 
@@ -7483,6 +7524,7 @@ sub read_am_file ($)
 	    $prev_state = IN_RULE_DEF;
 
 	    rule_define ($1, 0, $cond, $here);
+	    check_variable_expansions ($_, $here);
 
 	    $output_trailer .= $comment . $spacing;
             $output_trailer .= &make_condition (@cond_stack);
@@ -7545,6 +7587,7 @@ sub read_am_file ($)
 	    # This isn't an error; it is probably a continued rule.
 	    # In fact, this is what we assume.
 	    $prev_state = IN_RULE_DEF;
+	    check_variable_expansions ($_, $here);
 	    $output_trailer .= $comment . $spacing;
 	    $output_trailer .= &make_condition  (@cond_stack);
 	    $output_trailer .= $_;
