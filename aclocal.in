@@ -304,7 +304,7 @@ sub scan_m4_files
     {
 	opendir (DIR, $m4dir)
 	    || die "aclocal: couldn't open directory `$m4dir': $!\n";
-	local ($file, $fullfile, $expr);
+	local ($file, $fullfile);
 	foreach $file (sort grep (! /^\./, readdir (DIR)))
 	{
 	    # Only examine .m4 files.
@@ -322,17 +322,17 @@ sub scan_m4_files
     # Construct a new function that does the searching.  We use a
     # function (instead of just evalling $search in the loop) so that
     # "die" is correctly and easily propagated if run.
-    local ($search, $expr, $key) = '';
-    foreach $key (reverse sort keys %map)
+    my $search = "sub search {\nmy \$found = 0;\n";
+    foreach my $key (reverse sort keys %map)
     {
 	# EXPR is a regexp matching the name of the macro.
-	($expr = $key) =~ s/(\W)/\\$1/g;
-	$search .= ("if (/" . $expr . "/) { & add_macro (" . $key
-		    . "); return 1; }\n");
+	(my $expr = $key) =~ s/(\W)/\\$1/g;
+	$search .= ('if (/\b' . $key . '\b/) { & add_macro (' . $key
+		    . '); $found = 1; }' . "\n");
     }
-    $search .= "return 0;\n";
-    eval 'sub search { ' . $search . '};';
-    die "internal error: $@\n search is $search " if $@;
+    $search .= "return \$found;\n};\n";
+    eval $search;
+    die "internal error: $@\n search is $search" if $@;
 }
 
 ################################################################
