@@ -1,6 +1,5 @@
-# automake - create Makefile.in from Makefile.am
-# Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001
-# Free Software Foundation, Inc.
+# autoconf -- create `configure' using m4 macros
+# Copyright 2001 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,8 +16,11 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 
-# Originally written by David Mackenzie <djm@gnu.ai.mit.edu>.
-# Perl reimplementation by Tom Tromey <tromey@cygnus.com>.
+# This file is basically Perl 5.6's Class::Struct, but made compatible
+# with Perl 5.5.  If someday this has to be updated, be sure to rename
+# all the occurrences of Class::Struct into Automake::Struct, otherwise
+# if we `use' a Perl module (e.g., File::stat) that uses Class::Struct,
+# we would have two packages defining the same symbols.  Boom.
 
 package Automake::Struct;
 
@@ -47,7 +49,7 @@ sub printem {
 }
 
 {
-    package Class::Struct::Tie_ISA;
+    package Automake::Struct::Tie_ISA;
 
     sub TIEARRAY {
         my $class = shift;
@@ -56,7 +58,7 @@ sub printem {
 
     sub STORE {
         my ($self, $index, $value) = @_;
-        Class::Struct::_subclass_error();
+        Automake::Struct::_subclass_error();
     }
 
     sub FETCH {
@@ -106,7 +108,7 @@ sub struct {
         \@{$class . '::ISA'};
     };
     _subclass_error() if @$isa;
-    tie @$isa, 'Class::Struct::Tie_ISA';
+    tie @$isa, 'Automake::Struct::Tie_ISA';
 
     # Create constructor.
 
@@ -248,24 +250,24 @@ __END__
 
 =head1 NAME
 
-Class::Struct - declare struct-like datatypes as Perl classes
+Automake::Struct - declare struct-like datatypes as Perl classes
 
 =head1 SYNOPSIS
 
-    use Class::Struct;
+    use Automake::Struct;
             # declare struct, based on array:
     struct( CLASS_NAME => [ ELEMENT_NAME => ELEMENT_TYPE, ... ]);
             # declare struct, based on hash:
     struct( CLASS_NAME => { ELEMENT_NAME => ELEMENT_TYPE, ... });
 
     package CLASS_NAME;
-    use Class::Struct;
+    use Automake::Struct;
             # declare struct, based on array, implicit class name:
     struct( ELEMENT_NAME => ELEMENT_TYPE, ... );
 
 
     package Myobj;
-    use Class::Struct;
+    use Automake::Struct;
             # declare struct with four types of elements:
     struct( s => '$', a => '@', h => '%', c => 'My_Other_Class' );
 
@@ -293,7 +295,7 @@ Class::Struct - declare struct-like datatypes as Perl classes
 
 =head1 DESCRIPTION
 
-C<Class::Struct> exports a single function, C<struct>.
+C<Automake::Struct> exports a single function, C<struct>.
 Given a list of element names and types, and optionally
 a class name, C<struct> creates a Perl 5 class that implements
 a "struct-like" data structure.
@@ -443,7 +445,7 @@ structs are nested.  Here, C<timeval> represents a time (seconds and
 microseconds), and C<rusage> has two elements, each of which is of
 type C<timeval>.
 
-    use Class::Struct;
+    use Automake::Struct;
 
     struct( rusage => {
         ru_utime => timeval,  # seconds
@@ -474,7 +476,7 @@ element always to be nonnegative, so we redefine the C<count>
 accessor accordingly.
 
     package MyObj;
-    use Class::Struct;
+    use Automake::Struct;
 
     # declare the struct
     struct ( 'MyObj', { count => '$', stuff => '%' } );
@@ -514,7 +516,7 @@ as an anonymous hash of initializers, which is passed on to the nested
 struct's constructor.
 
 
-    use Class::Struct;
+    use Automake::Struct;
 
     struct Breed =>
     {
@@ -545,6 +547,12 @@ struct's constructor.
 
 =head1 Author and Modification History
 
+Modified by Akim Demaille, 2001-08-03
+
+    Rename as Automake::Struct to avoid name clashes with
+    Class::Struct.
+
+    Make it compatible with Perl 5.5.
 
 Modified by Damian Conway, 1999-03-05, v0.58.
 

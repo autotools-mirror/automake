@@ -112,11 +112,10 @@ package Automake;
 
 require 5.005;
 use strict 'vars', 'subs';
-use File::Basename;
+use Automake::General;
+use Automake::XFile;
 use IO::File;
-
-my $me = basename ($0);
-
+use File::Basename;
 
 ## ----------- ##
 ## Constants.  ##
@@ -1039,25 +1038,6 @@ sub prog_error (@)
     exit 1;
 }
 
-
-# @RES
-# uniq (@LIST)
-# ------------
-# Return LIST with no duplicates.
-sub uniq (@)
-{
-   my @res = ();
-   my %seen = ();
-   foreach my $item (@_)
-     {
-       if (! defined $seen{$item})
-	 {
-	   $seen{$item} = 1;
-	   push (@res, $item);
-	 }
-     }
-   return @res;
-}
 
 # subst ($TEXT)
 # -------------
@@ -4474,11 +4454,7 @@ sub scan_autoconf_traces
     $traces .= ' -t AC_LIBSOURCE';
     $traces .= ' -t AC_SUBST';
 
-    my $tracefh = new IO::File ("$traces |");
-    if (! $tracefh)
-    {
-	die "$me: couldn't open `$traces': $!\n";
-    }
+    my $tracefh = new Automake::XFile ("$traces |");
     print "$me: reading $traces\n" if $verbose;
 
     while ($_ = $tracefh->getline)
@@ -4529,11 +4505,7 @@ sub scan_one_autoconf_file
 {
     my ($filename) = @_;
 
-    my $configfh = new IO::File ("< $filename");
-    if (! $configfh)
-    {
-	die "$me: couldn't open `$filename': $!\n";
-    }
+    my $configfh = new Automake::XFile ("< $filename");
     print "$me: reading $filename\n" if $verbose;
 
     my ($in_ac_output, $in_ac_replace) = (0, 0);
@@ -6662,11 +6634,7 @@ sub read_am_file
 {
     my ($amfile) = @_;
 
-    my $am_file = new IO::File ("< $amfile");
-    if (! $am_file)
-    {
-	die "$me: couldn't open `$amfile': $!\n";
-    }
+    my $am_file = new Automake::XFile ("< $amfile");
     print "$me: reading $amfile\n" if $verbose;
 
     my $spacing = '';
@@ -7016,11 +6984,7 @@ sub make_paragraphs ($%)
 	  . 's/\n{3,}/\n\n/g';
 
     # Swallow the file and apply the COMMAND.
-    my $fc_file = new IO::File ("< $file");
-    if (! $fc_file)
-    {
-	die "$me: installation error: cannot open `$file'\n";
-    }
+    my $fc_file = new Automake::XFile ("< $file");
     # Looks stupid?
     print "$me: reading $file\n"
       if $verbose;
