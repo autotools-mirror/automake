@@ -5,7 +5,7 @@ MAINT_CHARSET = latin1
 
 ## We need `.' in SUBDIRS because we want `check' to build `.' before
 ## tests.
-SUBDIRS = . m4 Automake tests
+SUBDIRS = . m4 lib tests
 
 bin_SCRIPTS = automake aclocal
 info_TEXINFOS = automake.texi
