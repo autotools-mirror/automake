@@ -892,7 +892,7 @@ sub handle_yacc_lex_cxx
 			  $ltcompile . '$(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)')
 	    if ($seen_libtool);
 
-	&define_variable ('CXXLINK', $ltlink . '$(CXX) $(LDFLAGS) -o $@');
+	&define_variable ('CXXLINK', $ltlink . '$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@');
 
 	local ($ext);
 	foreach $ext (@cxx_list)
@@ -943,7 +943,7 @@ sub handle_yacc_lex_cxx
 			  $ltcompile .
 			  '$(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)')
 	    if ($seen_libtool);
-	&define_variable ('LINK', $ltlink . '$(CC) $(LDFLAGS) -o $@');
+	&define_variable ('LINK', $ltlink . '$(CC) $(CFLAGS) $(LDFLAGS) -o $@');
 
 	if (! defined $configure_vars{'CC'})
 	{
@@ -2341,13 +2341,30 @@ sub handle_dist_worker
     # recursive build.
     if (&variable_defined ('SUBDIRS'))
     {
+	# If SUBDIRS is conditionally defined, then set DIST_SUBDIRS
+	# to all possible directories, and use it.
+	if (! &variable_conditions ('SUBDIRS'))
+	{
+	    $dist_subdir_name = 'SUBDIRS';
+	}
+	else
+	{
+	    $dist_subdir_name = 'DIST_SUBDIRS';
+	    if (! &variable_defined ('DIST_SUBDIRS'))
+	    {
+		&define_pretty_variable ('DIST_SUBDIRS', '',
+					 &variable_value_as_list ('SUBDIRS',
+								  'all'));
+	    }
+	}
+
 	# Test for directory existence here because previous automake
 	# invocation might have created some directories.  Note that
 	# we explicitly set distdir for the subdir make; that lets us
 	# mix-n-match many automake-using packages into one large
 	# package, and have "dist" at the top level do the right
 	# thing.
-	$output_rules .= '	for subdir in $(SUBDIRS); do		\\
+	$output_rules .= '	for subdir in $(' . $dist_subdir_name . '); do		\\
 	  test -d $(distdir)/$$subdir		\\
 	  || mkdir $(distdir)/$$subdir		\\
 	  || exit 1;				\\
@@ -4753,9 +4770,12 @@ sub define_variable
     }
 }
 
-# Like define_variable, but second arg is a list, and is
-# pretty-printed.  The third argument is the conditional under which
-# the value should be defined.
+# Like define_variable, but the value is a list, and the variable may
+# be defined conditionally.  The second argument is the conditional
+# under which the value should be defined; this should be the empty
+# string to define the variable unconditionally.  The third argument
+# is a list holding the values to use for the variable.  The value is
+# pretty printed in the output file.
 sub define_pretty_variable
 {
     local ($var, $cond, @value) = @_;
