@@ -96,6 +96,8 @@ $top_builddir = '';
 
 # List of files in AC_OUTPUT without Makefile.am.
 @other_input_files = ();
+# Line number at which AC_OUTPUT seen.
+$ac_output_line = 0;
 
 # List of directories to search for configure-required files.  This
 # can be set by AC_CONFIG_AUX_DIR.
@@ -106,6 +108,8 @@ $seen_make_set = 0;
 
 # Whether ud_GNU_GETTEXT has been seen in configure.in.
 $seen_gettext = 0;
+# Line number at which ud_GNU_GETTEXT seen.
+$ac_gettext_line = 0;
 
 # 1 if AC_PROG_INSTALL seen, 2 if fp_PROG_INSTALL seen.
 $seen_prog_install = 0;
@@ -301,8 +305,8 @@ sub generate_makefile
     &require_config_file ($FOREIGN, 'config.guess', 'config.sub')
 	if $relative_dir eq '.' && $seen_canonical;
 
-    # FIXME with new 'dist' target, don't need Makefile.in.  Probably
-    # should remove it here.
+    # We still need Makefile.in here, because sometimes the `dist'
+    # target doesn't re-run automake.
     &push_dist_common ('Makefile.in', 'Makefile.am');
     push (@sources, '$(SOURCES)') if defined $contents{'SOURCES'};
     push (@objects, '$(OBJECTS)') if defined $contents{'OBJECTS'};
@@ -391,7 +395,6 @@ sub handle_options
 	    {
 		&am_line_error ('AUTOMAKE_OPTIONS',
 				"require version $_, only have $VERSION");
-		# FIXME -- what else to do?
 		exit 1;
 	    }
 	}
@@ -490,13 +493,14 @@ sub handle_source_transform
 		next if /^\$\(.*\)$/;
 		next if /^\$\{.*\}$/;
 		# Skip things that look like configure substitutions.
-		# FIXME maybe this should be an error?
 		next if /^\@.*\@$/;
 
 		# One wonders how this can happen.  But, apparently,
-		# it can.  FIXME find out why.  Anyway, skip empty
-		# strings.  (See tests/depend.test for an example of
-		# how to trigger this code)
+		# it can.  I believe it happens when nothing precedes
+		# a backslash-newline on a line -- the \s+ regexp
+		# doesn't match the newline.  Anyway, skip empty
+		# strings.  See tests/depend.test for an example of
+		# how to trigger this code.
 		next if /^\s*$/;
 
 		if (/^(.*)\.[yl]$/)
@@ -587,7 +591,9 @@ sub handle_libraries
     if (! $seen_ranlib)
     {
 	# FIXME need am_line_error here.  But we don't know which
-	# variable exists.  Must add a loop...
+	# variable exists.  Must add a loop...  No.  Must have
+	# am_install_var return a hash.  Otherwise the user could add
+	# install directories that we'd never find.
 	&am_error ("building a library but \`AC_PROG_RANLIB' not in configure.in");
 	# Only get this error once.
 	$seen_ranlib = 1;
@@ -720,8 +726,6 @@ sub grep_for_vers_texi
 # Handle all Texinfo source.
 sub handle_texinfo
 {
-    # FIXME can this really be right?  Might want to have configure
-    # determine list of texinfos.  Fix this when someone complains.
     &am_line_error ('TEXINFOS',
 		    "\`TEXINFOS' is an anachronism; use \`info_TEXINFOS'")
 	if defined $contents{'TEXINFOS'};
@@ -767,9 +771,9 @@ sub handle_texinfo
 
 	    &push_phony_cleaners ($vti);
 
-	    # Only require once.  FIXME should be able to use
-	    # require_file_with_line here.
-	    &require_file ($FOREIGN, 'mdate-sh') if ! $done;
+	    # Only require once.
+	    &require_file_with_line ('info_TEXINFOS', $FOREIGN, 'mdate-sh')
+		if ! $done;
 	    ++$done;
 	}
 
@@ -825,7 +829,7 @@ sub handle_texinfo
 
     # Make sure documentation is made and installed first.  Use
     # $(INFO_DEPS), not 'info', because otherwise recursive makes get
-    # run twice during "make all".  FIXME add test case.
+    # run twice during "make all".
     unshift (@all, '$(INFO_DEPS)');
 
     $output_vars .= ("INFOS = " . join (' ', @infos_list) . "\n"
@@ -838,9 +842,8 @@ sub handle_texinfo
 		     # supported.
 		     . "TEXINFOS = " . $contents{'info_TEXINFOS'} . "\n\n");
 
-    # Do some error checking.  FIXME should be able to use
-    # require_file_with_line here.
-    &require_file ($FOREIGN, 'texinfo.tex');
+    # Do some error checking.
+    &require_file_with_line ('info_TEXINFOS', $FOREIGN, 'texinfo.tex');
 }
 
 # Handle any man pages.
@@ -1197,8 +1200,8 @@ sub handle_subdirs
 		if $contents{'SUBDIRS'} !~ /\bintl\b/;
     }
 
-    # FIXME should be able to use require_file_with_line here.
-    &require_file ($FOREIGN, 'ABOUT-NLS') if $seen_gettext;
+    &require_file_with_conf_line ($ac_gettext_line, $FOREIGN, 'ABOUT-NLS')
+	if $seen_gettext;
 
     return if ! defined $contents{'SUBDIRS'};
 
@@ -1272,13 +1275,12 @@ sub handle_configure
 	{
 	    # FIXME this restriction should be lifted.
 	    # FIXME first see if it is even needed as-is.
-	    # FIXME shouldn't this message reference configure.in?
-	    &am_line_error ($config_header_line,
-			    "argument to AC_CONFIG_HEADER contains \`/'\n")
+	    &am_conf_line_error ($config_header_line,
+				 "argument to AC_CONFIG_HEADER contains \`/'\n")
 		if ($config_header =~ /\//);
 
-	    # FIXME should be able to use require_file_with_line here.
-	    &require_file ($FOREIGN, $config_header);
+	    &require_file_with_conf_line ($config_header_line,
+					  $FOREIGN, $config_header);
 
 	    # Header defined and in this directory.
 	    if (-f 'acconfig.h')
@@ -1348,8 +1350,9 @@ sub handle_configure
 			  . ($relative_dir eq '.' ? '' : '$(subdir)/')
 			  . '$@ CONFIG_HEADERS= ./config.status'
 			  . "\n");
-	# FIXME should be able to use require_file_with_line here.
-	&require_file ($FOREIGN, $local . '.in');
+
+	&require_file_with_conf_line ($ac_output_line, $FOREIGN,
+				      $local . '.in');
     }
 }
 
@@ -1653,6 +1656,7 @@ sub handle_tests
 
     &push_dist_common (split (/\s+/, $contents{'TESTS'}));
     push (@check, 'check-TESTS');
+    push (@phony, 'check-TESTS');
     # FIXME use $(SHELL) here?  That is what Ulrich suggests.  Maybe a
     # new macro, $(TEST_SHELL), a la $(CONFIG_SHELL)?  For now we just
     # execute the file directly; this allows test files which are
@@ -1750,6 +1754,7 @@ sub scan_configure
 	if (! $in_ac_output && s/AC_OUTPUT\s*\(\[?//)
 	{
 	    $in_ac_output = 1;
+	    $ac_output_line = $.;
 	}
 	if ($in_ac_output)
 	{
@@ -1770,7 +1775,6 @@ sub scan_configure
 	    }
 	}
 
-	# FIXME can this actually be a list of paths?
 	if (/AC_CONFIG_AUX_DIR\(([^)]+)\)/)
 	{
 	    @config_aux_path = $1;
@@ -1783,6 +1787,7 @@ sub scan_configure
 	if (/ud_GNU_GETTEXT/)
 	{
 	    $seen_gettext = 1;
+	    $ac_gettext_line = $.;
 	}
 
 	# Handle configuration headers.
@@ -2476,12 +2481,12 @@ sub am_install_var
 ################################################################
 
 # Verify that the file must exist in the current directory.
-# Usage: require_file (strictness, file)
+# Usage: require_file (isconfigure, line_number, strictness, file)
 # strictness is the strictness level at which this file becomes
 # required.
-sub require_file_with_line
+sub require_file_internal
 {
-    local ($line, $mystrict, @files) = @_;
+    local ($is_configure, $line, $mystrict, @files) = @_;
     local ($file, $fullfile);
 
     foreach $file (@files)
@@ -2511,23 +2516,53 @@ sub require_file_with_line
 
 		# FIXME this is a hack.  Should have am_warn.
 		local ($save) = $exit_status;
-		&am_line_error
-		    ($line,
-		     "required file \"$fullfile\" not found; installing");
+		if ($is_configure)
+		{
+		    &am_conf_line_error
+			($line,
+			 "required file \"$fullfile\" not found; installing");
+		}
+		else
+		{
+		    &am_line_error
+			($line,
+			 "required file \"$fullfile\" not found; installing");
+		}
 		$exit_status = $save;
 	    }
 	    else
 	    {
 		# Only an error if strictness constraint violated.
-		&am_error ($line, "required file \"$fullfile\" not found");
+		if ($is_configure)
+		{
+		    &am_conf_line_error
+			($line, "required file \"$fullfile\" not found");
+		}
+		else
+		{
+		    &am_conf_error
+			($line, "required file \"$fullfile\" not found");
+		}
 	    }
 	}
     }
 }
 
+# Like require_file_with_line, but error messages refer to
+# configure.in, not the current Makefile.am.
+sub require_file_with_conf_line
+{
+    &require_file_internal (1, @_);
+}
+
+sub require_file_with_line
+{
+    &require_file_internal (0, @_);
+}
+
 sub require_file
 {
-    &require_file_with_line ('', @_);
+    &require_file_internal (0, '', @_);
 }
 
 # Require a file that is also required by Autoconf.  Looks in
@@ -2668,21 +2703,42 @@ sub am_line_error
 {
     local ($symbol, @args) = @_;
 
-    # If SYMBOL not already a line number, look it up in Makefile.am.
-    # Use \d* and not \d+ so that empty symbol will pass through.
-    $symbol = $content_lines{$symbol} unless $symbol =~ /^\d*$/;
-    $symbol .= ': ' if $symbol;
-    warn "${am_file}.am:", $symbol, join (' ', @args),
-         "\n";
-    $exit_status = 1;
+    if ($symbol)
+    {
+	# If SYMBOL not already a line number, look it up in Makefile.am.
+	$symbol = $content_lines{$symbol} unless $symbol =~ /^\d+$/;
+	$symbol .= ': ' if $symbol;
+	warn "${am_file}.am:", $symbol, join (' ', @args), "\n";
+	$exit_status = 1;
+    }
+    else
+    {
+	&am_error (@args);
+    }
 }
 
-# The same, but while scanning configure.in.
+# Like am_error, but while scanning configure.in.
 sub am_conf_error
 {
     # FIXME can run in subdirs.
     warn "automake: configure.in: ", join (' ', @_), "\n";
     $exit_status = 1;
+}
+
+# Error message with line number referring to configure.in.
+sub am_conf_line_error
+{
+    local ($line, @args) = @_;
+
+    if ($line)
+    {
+	warn "configure.in: $line: ", join (' ', @args), "\n";
+	$exit_status = 1;
+    }
+    else
+    {
+	&am_conf_error (@args);
+    }
 }
 
 # Tell user where our aclocal.m4 is, but only once.
