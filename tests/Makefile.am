@@ -89,6 +89,7 @@ depacl2.test \
 depend.test \
 depend3.test \
 discover.test \
+distcommon.test \
 distdir.test \
 double.test \
 dup.test \
