@@ -24,8 +24,8 @@
 AC_DEFUN([AM_PROG_AS],
 [# By default we simply use the C compiler to build assembly code.
 AC_REQUIRE([AC_PROG_CC])
-: ${AS='$(CC)'}
+: ${CCAS='$(CC)'}
 # Set ASFLAGS if not already set.
-: ${ASFLAGS='$(CFLAGS)'}
-AC_SUBST(AS)
-AC_SUBST(ASFLAGS)])
+: ${CCASFLAGS='$(CFLAGS)'}
+AC_SUBST(CCAS)
+AC_SUBST(CCASFLAGS)])
