@@ -6563,54 +6563,6 @@ sub examine_variable
 }
 
 
-# &variable_conditions_recursive ($VAR)
-# -------------------------------------
-# Return the set of conditions (as a DisjConditions)
-# for which a variable is defined.
-
-# If the variable is not defined conditionally, and is not defined in
-# terms of any variables which are defined conditionally, then this
-# returns TRUE.
-
-# If the variable is defined conditionally, but is not defined in
-# terms of any variables which are defined conditionally, then this
-# returns the disjounctions of conditions for which the variable is defined.
-
-# If the variable is defined in terms of any variables which are
-# defined conditionally, then this returns a full set of permutations
-# of the subvariable conditions.  For example, if the variable is
-# defined in terms of a variable which is defined for COND_TRUE,
-# then this returns both COND_TRUE and COND_FALSE.  This is
-# because we will need to define the variable under both conditions.
-sub variable_conditions_recursive ($)
-{
-  my ($var) = @_;
-
-  my %condition_seen = ();
-
-  traverse_variable_recursively
-    ($var,
-     # Nothing to do on filenames.
-     undef,
-     # Record each condition seen
-     sub {
-       my ($subvar, $parent_conds, @allresults) = @_;
-       foreach my $pair (@allresults)
-	 {
-	   my ($cond, @result) = @$pair;
-	   my $c = $cond->merge ($parent_conds);
-	   # Store $c both as key and $value, keys() do not return
-	   # blessed objects.
-	   $condition_seen{$c} = $c;
-	 }
-     });
-
-  # Now we want to return all permutations of the subvariable
-  # conditions.
-  return (new Automake::DisjConditions (values %condition_seen)->permutations);
-}
-
-
 # @CONDS
 # variable_conditions ($VAR)
 # --------------------------
@@ -6643,10 +6595,28 @@ sub target_conditions ($)
 sub variable_conditionally_defined ($)
 {
     my ($var) = @_;
-    foreach my $cond (variable_conditions_recursive ($var)->conds)
+
+    # Traverse the variable recursively until we
+    # find a variable defined conditionally.
+    # Use `die' to abort the traversal, and pass it `$full_cond'
+    # to we can find easily whether the `eval' block aborted
+    # because we found a condition, or for some other error.
+    eval
       {
-	return 1
-	  unless $cond == TRUE;
+	traverse_variable_recursively
+	  ($var,
+	   sub {
+	     my ($subvar, $val, $cond, $full_cond) = @_;
+	     die $full_cond if ! $full_cond->true;
+	     return ();
+	   },
+	   sub { return (); });
+      };
+    if ($@)
+      {
+	return 1 if ref($@) && $@->isa ("Automake::Condition");
+	# Propagate other errors.
+	die;
       }
     return 0;
 }
