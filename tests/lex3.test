@@ -1,25 +1,65 @@
 #! /bin/sh
 
-# Test to make sure that lex source generates correct clean rule.
-# From Ralf Corsepius.
+# Test associated with PR 19.
+# From Matthew D. Langston.
 
 . $srcdir/defs || exit 1
 
-cat >> configure.in << 'END'
+# Fail gracefully if no autoconf.
+$needs_autoconf
+
+# Likewise for gcc.
+(gcc -v) > /dev/null 2>&1 || exit 77
+
+# Likewise for gzip.
+(gzip --version) > /dev/null 2>&1 || exit 77
+
+cat > configure.in << 'END'
+AC_INIT
+dnl Prevent automake from looking in .. and ../..
+AC_CONFIG_AUX_DIR(.)
+AM_INIT_AUTOMAKE(am_lex_bug, 0.1.1)
+
+dnl Checks for programs.
 AC_PROG_CC
 AM_PROG_LEX
+AC_PROG_YACC
+AC_OUTPUT(Makefile)
 END
 
 cat > Makefile.am << 'END'
-bin_PROGRAMS = zot
-zot_SOURCES = joe.l
-LDADD = @LEXLIB@
+AUTOMAKE_OPTIONS  = foreign
+LDADD             = @LEXLIB@
+
+noinst_PROGRAMS   = foo
+foo_SOURCES       = foo.l
 END
 
-: > joe.l
+cat > foo.l << 'END'
+%%
+"END"   return EOF;
+.
+%%
+int
+main ()
+{
+  while (yylex () != EOF)
+    ;
 
-$ACLOCAL || exit 1
-$AUTOMAKE || exit 1
+  return 0;
+}
+END
 
-fgrep joel Makefile.in && exit 1
-exit 0
+set -e
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE -a
+./configure
+$MAKE
+echo 'This is the END' | ./foo
+$MAKE distcheck
+
+# foo.c must be shipped.
+gunzip am_lex_bug-0.1.1.tar.gz
+tar tf am_lex_bug-0.1.1.tar | fgrep foo.c
