@@ -5646,12 +5646,6 @@ sub macro_define ($$$$$$)
       $var_was_plus_eq{$var} = $type eq '+' && ! $var_is_am{$var};
     }
 
-  # An Automake variable can be given to the user, but not the converse.
-  if (! defined $var_is_am{$var} || !$var_is_am)
-    {
-      $var_is_am{$var} = $var_is_am;
-    }
-
   # Differentiate the first assignment (including with `+=').
   if ($type eq '+' && defined $conditional{$var}{$cond})
     {
@@ -5678,14 +5672,22 @@ sub macro_define ($$$$$$)
       $content_lines{$var} = $where
 	unless defined $content_lines{$var};
 
-      # There must be no previous value.
-      check_ambiguous_conditional ($var, $cond);
+      # There must be no previous value unless the user is redefining
+      # an Automake variable or an AC_SUBST variable.
+      check_ambiguous_conditional ($var, $cond)
+	unless ($var_is_am{$var} && !$var_is_am
+		|| exists $configure_vars{$var});
+
       $conditional{$var}{$cond} = $value;
     }
 
-    # FIXME: I don't understand what's so special wrt `:', nor
-    # why we forget the `+' nature of a var.
-    $def_type{$var} = ($type eq ':') ? ':' : '';
+  # An Automake variable can be given to the user, but not the converse.
+  if (! defined $var_is_am{$var} || !$var_is_am)
+    {
+      $var_is_am{$var} = $var_is_am;
+    }
+
+  $def_type{$var} = ($type eq ':') ? ':' : '';
 }
 
 
