@@ -2756,6 +2756,11 @@ sub transform_variable_recursively ($$$$$&)
        # Define the variable if required.
        unless ($nodefine)
 	 {
+	   # If the new variable is the source variable, we assume
+	   # we are trying to override a user variable.  Delete
+	   # the old variable first.
+	   macro_delete ($varname) if $varname eq $var;
+	   # Define for all conditions.
 	   foreach my $pair (@$allresults)
 	     {
 	       my ($cond, @result) = @$pair;
@@ -3217,6 +3222,10 @@ sub handle_programs
       $where->push_context ("while processing program `$one_file'");
       $where->set (INTERNAL->get);
 
+      # Strip any $(EXEEXT) suffix the user might have added, or this
+      # will confuse &handle_source_transform.  We'll add $(EXEEXT) back
+      # later anyway.
+      $one_file =~ s/\$\(EXEEXT\)$//;
       my $linker = &handle_source_transform ($xname, $one_file, $obj, $where);
 
       my $xt = '';
@@ -3267,18 +3276,13 @@ sub handle_programs
       # make sure this directory will exist.
       my $dirstamp = require_build_directory_maybe ($one_file);
 
-      # Don't add $(EXEEXT) if user already did.
-      my $extension = ($one_file !~ /\$\(EXEEXT\)$/
-		       ? "\$(EXEEXT)"
-		       : '');
-
       $output_rules .= &file_contents ('program',
 				       $where,
 				       PROGRAM  => $one_file,
 				       XPROGRAM => $xname,
 				       XLINK    => $xlink,
 				       DIRSTAMP => $dirstamp,
-				       EXEEXT   => $extension);
+				       EXEEXT   => '$(EXEEXT)');
 
       if ($seen_libobjs || $seen_global_libobjs)
 	{
@@ -8175,46 +8179,15 @@ sub append_exeext ($)
   prog_error "append_exeext ($macro)"
     unless $macro =~ /_PROGRAMS$/;
 
-  # FIXME: we should use traverse_variable_recursively to fix PR/352.
-  my @conds = variable_conditions_recursive ($macro)->conds;
-
-  my @condvals;
-  foreach my $cond (@conds)
-    {
-      my @one_binlist = ();
-      my @condval = variable_value_as_list_recursive ($macro, $cond);
-      foreach my $rcurs (@condval)
-	{
-	  # Skip autoconf substs.  Also skip if the user
-	  # already applied $(EXEEXT).
-	  if ($rcurs =~ /^\@.*\@$/ || $rcurs =~ /\$\(EXEEXT\)$/)
-	    {
-	      push (@one_binlist, $rcurs);
-	    }
-	  else
-	    {
-	      push (@one_binlist, $rcurs . '$(EXEEXT)');
-	    }
-	}
-
-      push (@condvals, $cond);
-      push (@condvals, "@one_binlist");
-    }
-
-  # FIXME: Currently it's a bit hard to chose a condition becose the
-  # set of input condition is different from the set of ouput
-  # conditions.  See also PR/352.   So we just pick the first one.
-  my $cond = variable_conditions ($macro)->one_cond;
-  my $where = $var_location{$macro}{$cond};
-
-  macro_delete ($macro);
-  while (@condvals)
-    {
-      my $cond = shift (@condvals);
-      my @val = split (' ', shift (@condvals));
-      define_pretty_variable ($macro, $cond, $where, @val);
-    }
- }
+  transform_variable_recursively
+    ($macro, $macro, 'am__EXEEXT', 0, INTERNAL,
+     sub {
+       my ($subvar, $val, @cond_stack) = @_;
+       # Append $(EXEEXT) unless the user did it already.
+       $val .= '$(EXEEXT)' unless $val =~ /\$\(EXEEXT\)$/;
+       return $val;
+     });
+}
 
 
 # @PREFIX

@@ -21,13 +21,15 @@
 # Test to make sure `.' in an exe name doesn't fool us.
 # Report from Robert Collins.
 # Also make sure we rewrite conditionals variables.
+# Also check for PR/352.
 
 . ./defs || exit 1
 
 cat >> configure.in << 'END'
 AC_PROG_CC
-AM_CONDITIONAL([WANT_MT], [:])
-AM_CONDITIONAL([WANT_RMT], [:])
+AM_CONDITIONAL([WANT_MT], [test -z "$revert"])
+AM_CONDITIONAL([WANT_RMT], [test -z "$revert"])
+AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
@@ -44,24 +46,42 @@ endif
 if WANT_RMT
   libexec_PROGRAMS = rmt
 endif
+
+print:
+	@echo 1BEG: $(bin_PROGRAMS) :END1
+	@echo 2BEG: $(sbin_PROGRAMS) :END2
+	@echo 3BEG: $(check_PROGRAMS) :END3
+	@echo 4BEG: $(libexec_PROGRAMS) :END4
 END
 
 set -e
 
 $ACLOCAL
+$AUTOCONF
 $AUTOMAKE
 
 grep '^maude$(EXEEXT):' Makefile.in
-grep 'bin_PROGRAMS =.*maude$(EXEEXT)' Makefile.in
-
 grep '^maude\.static$(EXEEXT):' Makefile.in
-grep 'sbin_PROGRAMS =.*maude\.static$(EXEEXT)' Makefile.in
-
 grep '^maude3$(EXEEXT):' Makefile.in
-grep 'check_PROGRAMS =.*maude3$(EXEEXT)' Makefile.in
-
 grep '^mt$(EXEEXT):' Makefile.in
-grep '@WANT_MT_TRUE@bin_PROGRAMS =.* mt$(EXEEXT)' Makefile.in
-
 grep '^rmt$(EXEEXT):' Makefile.in
-grep '@WANT_RMT_TRUE@libexec_PROGRAMS =.*rmt$(EXEEXT)' Makefile.in
+
+./configure
+
+EXEEXT=.foo $MAKE -e print > stdout
+cat stdout
+
+grep '1BEG: maude.foo mt.foo :END1' stdout
+grep '2BEG: maude.static.foo :END2' stdout
+grep '3BEG: maude3.foo :END3' stdout
+grep '4BEG: rmt.foo :END4' stdout
+
+./configure revert=yes
+
+EXEEXT=.foo $MAKE -e print > stdout
+cat stdout
+
+grep '1BEG: maude.foo :END1' stdout
+grep '2BEG: maude.static.foo :END2' stdout
+grep '3BEG: maude3.foo :END3' stdout
+grep '4BEG: :END4' stdout

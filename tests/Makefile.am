@@ -98,6 +98,8 @@ cond25.test \
 cond26.test \
 cond27.test \
 cond28.test \
+cond29.test \
+cond30.test \
 condd.test \
 condinc.test \
 condinc2.test \
