@@ -2599,7 +2599,7 @@ sub handle_libraries
     return if ! @liblist;
 
     my @prefix = am_primary_prefixes ('LIBRARIES', 0, 'lib', 'pkglib',
-				     'noinst', 'check');
+				      'noinst', 'check');
     if (! defined $configure_vars{'RANLIB'}
 	&& @prefix)
       {
@@ -2694,7 +2694,7 @@ sub handle_ltlibraries
 
     my %instdirs;
     my @prefix = am_primary_prefixes ('LTLIBRARIES', 0, 'lib', 'pkglib',
-				     'noinst', 'check');
+				      'noinst', 'check');
 
     foreach my $key (@prefix)
       {
@@ -4279,7 +4279,7 @@ sub handle_java
     return if ! @sourcelist;
 
     my @prefix = am_primary_prefixes ('JAVA', 1,
-				     'java', 'noinst', 'check');
+				      'java', 'noinst', 'check');
 
     my $dir;
     foreach my $curs (@prefix)
@@ -7269,6 +7269,52 @@ sub transform (%)
 }
 
 
+# &append_exeext ($MACRO)
+# -----------------------
+# Macro is an Automake magic macro which primary is PROGRAMS, e.g.
+# bin_PROGRAMS.  Make sure these programs have $(EXEEXT) appended.
+sub append_exeext ($)
+{
+  my ($macro) = @_;
+
+  prog_error "append_exeext ($macro)"
+    unless $macro =~ /_PROGRAMS$/;
+
+  my @conds = variable_conditions_recursive ($macro);
+
+  my @condvals;
+  foreach my $cond (@conds)
+    {
+      my @one_binlist = ();
+      my @condval = variable_value_as_list_recursive ($macro, $cond);
+      foreach my $rcurs (@condval)
+	{
+	  # Skip autoconf substs.  Also skip if the user
+	  # already applied $(EXEEXT).
+	  if ($rcurs =~ /^\@.*\@$/ || $rcurs =~ /\$\(EXEEXT\)$/)
+	    {
+	      push (@one_binlist, $rcurs);
+	    }
+	  else
+	    {
+	      push (@one_binlist, $rcurs . '$(EXEEXT)');
+	    }
+	}
+
+      push (@condvals, $cond);
+      push (@condvals, "@one_binlist");
+    }
+
+  variable_delete ($macro);
+  while (@condvals)
+    {
+      my $cond = shift (@condvals);
+      my @val = split (' ', shift (@condvals));
+      define_pretty_variable ($macro, $cond, @val);
+    }
+ }
+
+
 # @PREFIX
 # &am_primary_prefixes ($PRIMARY, $CAN_DIST, @PREFIXES)
 # -----------------------------------------------------
@@ -7363,7 +7409,7 @@ sub am_install_var
 	shift (@args);
     }
 
-    my ($file, $primary, @prefixes) = @args;
+    my ($file, $primary, @prefix) = @args;
 
     # Now that configure substitutions are allowed in where_HOW
     # variables, it is an error to actually define the primary.  We
@@ -7382,7 +7428,7 @@ sub am_install_var
     # instance, if the variable "zardir" is defined, then
     # "zar_PROGRAMS" becomes valid.  This is to provide a little extra
     # flexibility in those cases which need it.
-    my @prefix = am_primary_prefixes ($primary, $can_dist, @prefixes);
+    @prefix = am_primary_prefixes ($primary, $can_dist, @prefix);
 
     # If a primary includes a configure substitution, then the EXTRA_
     # form is required.  Otherwise we can't properly do our job.
@@ -7450,51 +7496,14 @@ sub am_install_var
 
 	# A blatant hack: we rewrite each _PROGRAMS primary to include
 	# EXEEXT.
-	if ($primary eq 'PROGRAMS')
-	{
-	    my @conds = variable_conditions_recursive ($one_name);
-
-	    my @condvals;
-	    foreach my $cond (@conds)
-	    {
-		my @one_binlist = ();
-		my @condval = &variable_value_as_list_recursive ($one_name,
-						       $cond);
-		foreach my $rcurs (@condval)
-		{
-		    # Skip autoconf substs.  Also skip if the user
-		    # already applied $(EXEEXT).
-		    if ($rcurs =~ /^\@.*\@$/ || $rcurs =~ /\$\(EXEEXT\)$/)
-		    {
-			push (@one_binlist, $rcurs);
-		    }
-		    else
-		    {
-			push (@one_binlist, $rcurs . '$(EXEEXT)');
-		    }
-		}
-
-		push (@condvals, $cond);
-		push (@condvals, "@one_binlist");
-	    }
-
-	    variable_delete ($one_name);
-	    while (@condvals)
-	    {
-		my $cond = shift (@condvals);
-		my @val = split (' ', shift (@condvals));
-		define_pretty_variable ($one_name, $cond, @val);
-	    }
-	}
+	append_exeext ($one_name)
+	  if $primary eq 'PROGRAMS';
 
 	# "EXTRA" shouldn't be used when generating clean targets,
-	# all, or install targets.
-	if ($nodir_name eq 'EXTRA')
-	  {
-	    # We used to warn if EXTRA_FOO was defined uselessly,
-	    # but this was annoying.
-	    next;
-	  }
+	# all, or install targets.  We used to warn if EXTRA_FOO was
+	# defined uselessly, but this was annoying.
+	next
+	  if $nodir_name eq 'EXTRA';
 
 	if ($nodir_name eq 'check')
 	  {
