@@ -41,4 +41,4 @@ vtexi2.test whoami.test xsource.test yacc.test yaccpp.test
 EXTRA_DIST = defs $(TESTS)
 
 distclean-local:
-	-rm -rf testSubdir
+	-rm -rf testSubDir
