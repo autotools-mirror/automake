@@ -2453,8 +2453,6 @@ sub handle_single_transform_list ($$$$@)
 		if ($lang->ansi && defined $options{'ansi2knr'})
 		  {
 		    $full_ansi =~ s/$KNOWN_EXTENSIONS_PATTERN$/\$U$&/;
-		    $full_ansi = basename $full_ansi
-		      unless defined $options{'subdir-objects'};
 		  }
 
 		my $val = ("$full_ansi $obj_sans_ext "
@@ -5610,16 +5608,17 @@ sub lang_c_finish
 	    # we can't use $< -- some makes only define $< during a
 	    # suffix rule.
 	    my $ansfile = $de_ansi_files{$base} . $base . '.c';
- 	    $output_rules .= ($base . "_.c: $ansfile \$(ANSI2KNR)\n\t"
+	    my $root = $de_ansi_files{$base} . $base;
+ 	    $output_rules .= ($root . "_.c: $ansfile \$(ANSI2KNR)\n\t"
 			      . '$(CPP) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) '
 			      . '`if test -f $(srcdir)/' . $ansfile
 			      . '; then echo $(srcdir)/' . $ansfile
 			      . '; else echo ' . $ansfile . '; fi` '
 			      . "| sed 's/^# \\([0-9]\\)/#line \\1/' "
-			      . '| $(ANSI2KNR) > ' . $base . "_.c"
+			      . '| $(ANSI2KNR) > $@'
 			      # If ansi2knr fails then we shouldn't
 			      # create the _.c file
-			      . " || rm -f ${base}_.c\n");
+			      . " || rm -f ${root}_.c\n");
  	    push (@objects, $base . '_.$(OBJEXT)');
  	    push (@objects, $base . '_.lo')
 	      if variable_defined ('LIBTOOL');
