@@ -145,6 +145,31 @@ maintainer-check: automake aclocal
 	  echo "Don't put AMDEP_TRUE substitution in automake.in" 1>&2; \
 	  exit 1; \
 	fi
+## Tests should never call make directly.
+	@if grep -v '^#' $(srcdir)/tests/*.test | egrep ':[	]*make'; then \
+	  echo 'Do not run "make" in the above tests.  Use "$$MAKE" instead.' \
+	  exit 1; \
+	fi
+## Tests should never call autoconf directly.
+	@if grep -v '^#' $(srcdir)/tests/*.test | egrep ':[	]*autoconf'; then \
+	  echo 'Do not run "autoconf" in the above tests.  Use "$$AUTOCONF" instead.' \
+	  exit 1; \
+	fi
+## Tests should never call automake directly.
+	@if grep -v '^#' $(srcdir)/tests/*.test | egrep ':[	]*automake'; then \
+	  echo 'Do not run "automake" in the above tests.  Use "$$AUTOMAKE" instead.' \
+	  exit 1; \
+	fi
+## Tests should never call aclocal directly.
+	@if grep -v '^#' $(srcdir)/tests/*.test | egrep ':[	]*aclocal'; then \
+	  echo 'Do not run "aclocal" in the above tests.  Use "$$ACLOCAL" instead.' \
+	  exit 1; \
+	fi
+## Tests should never call perl directly.
+	@if grep -v '^#' $(srcdir)/tests/*.test | egrep ':[	]*perl'; then \
+	  echo 'Do not run "perl" in the above tests.  Use "$$PERL" instead.' \
+	  exit 1; \
+	fi
 
 # Tag before making distribution.  Also, don't make a distribution if
 # checks fail.  Also, make sure the NEWS file is up-to-date.
