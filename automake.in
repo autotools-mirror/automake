@@ -1329,9 +1329,7 @@ sub handle_source_transform
 	    }
 	    else
 	    {
-		local ($cond, $cond_var_name);
-		local ($count) = 0;
-		local (@namelist) = ();
+		local ($cond);
 		foreach $cond (@conds)
 		{
 		    @files = &variable_value_as_list ($var, $cond);
@@ -1339,19 +1337,11 @@ sub handle_source_transform
 								      @files);
 		    $linker = $temp if $linker eq '';
 
-		    # We have to have a new name for each such
-		    # variable.  Then we define the _OBJECTS variable
-		    # as the union of all such variables.  Hopefully
-		    # this is the Right Thing.
-		    $cond_var_name = 'cond' . $count . $one_file . '_OBJECTS';
-		    &define_pretty_variable ($cond_var_name, $cond, @result)
+		    # Define _OBJECTS conditionally.
+		    &define_pretty_variable ($one_file . '_OBJECTS', $cond,
+					     @result)
 			unless $prefix eq 'EXTRA_';
-		    push (@namelist, '$(' . $cond_var_name . ')');
-		    ++$count;
 		}
-
-		&define_pretty_variable ($one_file . '_OBJECTS', '',
-					 @namelist);
 
 		next;
 	    }
@@ -4748,7 +4738,20 @@ sub variable_conditions_sub
 	    }
 	}
 
-	return &variable_conditions_reduce (@new_conds);
+	# Now we want to return all permutations of the subvariable
+	# conditions.
+	local (%allconds, $item);
+	foreach $item (@new_conds)
+	{
+	    foreach (split ('@', $item))
+	    {
+		next if ! $_;
+		s/_(TRUE|FALSE)$//;
+		$allconds{$_ . '_TRUE'} = 1;
+	    }
+	}
+
+	return &variable_conditions_permutations (keys %allconds);
     }
 
     local (@this_conds) = ();
