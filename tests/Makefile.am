@@ -130,7 +130,9 @@ cond33.test \
 cond34.test \
 cond35.test \
 cond36.test \
+cond37.test \
 condd.test \
+condhook.test \
 condinc.test \
 condinc2.test \
 condlib.test \

@@ -3353,6 +3353,31 @@ sub handle_multilib
 }
 
 
+# user_phony_rule ($NAME)
+# -----------------------
+# Return false if rule $NAME does not exist.  Otherwise,
+# declare it as phony, complete its definition (in case it is
+# conditional), and return its Automake::Rule instance.
+sub user_phony_rule ($)
+{
+  my ($name) = @_;
+  my $rule = rule $name;
+  if ($rule)
+    {
+      depend ('.PHONY', $name);
+      # Define $NAME in all condition where it is not already defined,
+      # so that it is always OK to depend on $NAME.
+      for my $c ($rule->not_always_defined_in_cond (TRUE)->conds)
+	{
+	  Automake::Rule::define ($name, 'internal', RULE_AUTOMAKE,
+				  $c, INTERNAL);
+	  $output_rules .= $c->subst_string . "$name:\n";
+	}
+    }
+  return $rule;
+}
+
+
 # $BOOLEAN
 # &for_dist_common ($A, $B)
 # -------------------------
@@ -3535,7 +3560,7 @@ sub handle_dist ()
   # allows users to do random weird things to the distribution
   # before it is packaged up.
   push (@dist_targets, 'dist-hook')
-    if rule 'dist-hook';
+    if user_phony_rule 'dist-hook';
   $transform{'DIST-TARGETS'} = join (' ', @dist_targets);
 
   my $flm = option ('filename-length-max');
@@ -4150,7 +4175,7 @@ sub handle_install ()
 			     ? (" \$(BUILT_SOURCES)\n"
 				. "\t\$(MAKE) \$(AM_MAKEFLAGS)")
 			     : ''),
-     'installdirs-local' => (rule 'installdirs-local'
+     'installdirs-local' => (user_phony_rule 'installdirs-local'
 			     ? ' installdirs-local' : ''),
      am__installdirs => variable_value ('am__installdirs') || '');
 }
@@ -4176,11 +4201,8 @@ sub handle_all ($)
       }
 
     # Install `all' hooks.
-    if (rule "all-local")
-    {
-      push (@all, "all-local");
-      &depend ('.PHONY', "all-local");
-    }
+    push (@all, "all-local")
+      if user_phony_rule "all-local";
 
     &pretty_print_rule ("all-am:", "\t\t", @all);
     &depend ('.PHONY', 'all-am', 'all');
@@ -4225,12 +4247,9 @@ sub handle_all ($)
 # Handle check merge target specially.
 sub do_check_merge_target ()
 {
-  if (rule 'check-local')
-    {
-      # User defined local form of target.  So include it.
-      push @check_tests, 'check-local';
-      depend '.PHONY', 'check-local';
-    }
+  # Include user-defined local form of target.
+  push @check_tests, 'check-local'
+    if user_phony_rule 'check-local';
 
   # In --cygnus mode, check doesn't depend on all.
   if (option 'cygnus')
@@ -4358,18 +4377,15 @@ sub handle_factored_dependencies
     {
       # Hooks are installed on the -am targets.
       s/-am$// or next;
-      if (rule "$_-local")
-	{
-	  depend ("$_-am", "$_-local");
-	  depend ('.PHONY', "$_-local");
-	}
+      depend ("$_-am", "$_-local")
+	if user_phony_rule "$_-local";
     }
 
   # Install the -hook hooks.
   # FIXME: Why not be as liberal as we are with -local hooks?
   foreach ('install-exec', 'install-data', 'uninstall')
     {
-      if (rule ("$_-hook"))
+      if (user_phony_rule "$_-hook")
 	{
 	  $actions{"$_-am"} .=
 	    ("\t\@\$(NORMAL_INSTALL)\n"
