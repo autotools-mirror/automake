@@ -1337,6 +1337,12 @@ Programs, , Particular Program Checks, autoconf, The Autoconf Manual}),
 but uses the @code{missing} script on systems that do not have
 @code{lex}.  @samp{HP-UX 10} is one such system.
 
+@item AM_PROG_GCJ
+This macro finds the @code{gcj} program or causes an error.  It sets
+@samp{GCJ} and @samp{GCJFLAGS}.  @code{gcj} is the Java front-end to the
+GNU C compiler.
+@cvindex AM_PROG_GCJ
+
 @item AM_SANITY_CHECK
 This checks to make sure that a file created in the build directory is
 newer than a file in the source directory.  This can fail on systems
@@ -1491,6 +1497,7 @@ to build programs and libraries.
 * Yacc and Lex::                Yacc and Lex support
 * C++ Support::                 
 * Fortran 77 Support::          
+* Java Support::
 * Support for Other Languages::  
 * ANSI::                        Automatic de-ANSI-fication
 * Dependencies::                Automatic dependency tracking
@@ -1954,7 +1961,7 @@ The command used to actually link a C++ program.
 @end vtable
 
 
-@node Fortran 77 Support, Support for Other Languages, C++ Support, Programs
+@node Fortran 77 Support, Java Support, C++ Support, Programs
 @comment  node-name,  next,  previous,  up
 @section Fortran 77 Support
 
@@ -2200,14 +2207,32 @@ Fortran 77 support was added to Autoconf 2.13, so you will want to use
 that version of Autoconf or later.
 
 
-@node Support for Other Languages, ANSI, Fortran 77 Support, Programs
+@node Java Support, Support for Other Languages, Fortran 77 Support, Programs
+@comment  node-name,  next,  previous,  up
+
+Automake includes support for compiled Java, using @code{gcj}, the Java
+front end to the GNU C compiler.
+
+Any package including Java code to be compiled must define the output
+variable @samp{GCJ} in @file{configure.in}; the variable @samp{GCJFLAGS}
+must also be defined somehow (either in @file{configure.in} or
+@file{Makefile.am}).  The simplest way to do this is to use the
+@code{AM_PROG_GCJ} macro.
+
+By default, programs including Java source files are linked with
+@code{gcj}.
+
+
+@node Support for Other Languages, ANSI, Java Support, Programs
 @comment  node-name,  next,  previous,  up
 @section Support for Other Languages
 
 Automake currently only includes full support for C, C++ (@pxref{C++
-Support})and Fortran 77 (@pxref{Fortran 77 Support}).  There is only
-rudimentary support for other languages, support for which will be
-improved based on user demand.
+Support}), Fortran 77 (@pxref{Fortran 77 Support}), and Java
+(@pxref{Java Support}).  There is only rudimentary support for other
+languages, support for which will be improved based on user demand.
+
+@c FIXME: mention suffix rule processing here.
 
 
 @node ANSI, Dependencies, Support for Other Languages, Programs
@@ -2859,6 +2884,26 @@ subdirectories in @code{EXTRA_DIST}.  You can also mention a directory
 there; in this case the entire directory will be recursively copied into
 the distribution.
 @vindex EXTRA_DIST
+
+Sometimes you need tighter control over what does @emph{not} go into the
+distribution; for instance you might have source files which are
+generated and which you do not want to distribute.  In this case
+Automake gives fine-grained control using the @samp{dist} and
+@samp{nodist} prefixes.  Any primary or @samp{_SOURCES} variable can be
+prefixed with @samp{dist_} to add the listed files to the distribution.
+Similarly, @samp{nodist_} can be used to omit the files from the
+distribution.
+@vindex dist_
+@vindex nodist_
+
+As an example, here is how you would cause some data to be distributed
+while leaving some source code out of the distribution:
+
+@example
+dist_data_DATA = distribute-this
+bin_PROGRAMS = foo
+nodist_foo_SOURCES = do-not-distribute.c
+@end example
 
 If you define @code{SUBDIRS}, Automake will recursively include the
 subdirectories in the distribution.  If @code{SUBDIRS} is defined
