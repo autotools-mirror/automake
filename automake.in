@@ -856,7 +856,8 @@ register_language ('name' => 'lex',
 		   'compile' => '$(LEX) $(LFLAGS) $(AM_LFLAGS)',
 		   'compiler' => 'LEXCOMPILE',
 		   'extensions' => ['.l'],
-		   '_finish' => \&lang_lex_finish);
+		   '_finish' => \&lang_lex_finish,
+		   '_target_hook' => \&lang_lex_target_hook);
 register_language ('name' => 'lexxx',
 		   'Name' => 'Lex (C++)',
 		   'config_vars' => ['LEX'],
@@ -865,7 +866,8 @@ register_language ('name' => 'lexxx',
 		   'compile' => '$(LEX) $(LFLAGS) $(AM_LFLAGS)',
 		   'compiler' => 'LEXCOMPILE',
 		   'extensions' => ['.l++', '.ll', '.lxx', '.lpp'],
-		   '_finish' => \&lang_lex_finish);
+		   '_finish' => \&lang_lex_finish,
+		   '_target_hook' => \&lang_lex_target_hook);
 
 # Assembler.
 register_language ('name' => 'asm',
@@ -5117,6 +5119,19 @@ sub lang_yacc_target_hook
     }
     # Erase $OUTPUT on `make maintainer-clean' (by GNU standards).
     # See the comment above for $HEADER.
+    push (@maintainer_clean_files, $output);
+}
+
+# This is a lex helper which is called whenever we have decided to
+# compile a lex file.
+sub lang_lex_target_hook
+{
+    my ($self, $aggregate, $output, $input) = @_;
+    # If the files are built in the build directory, then we want to
+    # remove them with `make clean'.  If they are in srcdir they
+    # shouldn't be touched.  However, we can't determine this
+    # statically, and the GNU rules say that yacc/lex output files
+    # should be removed by maintainer-clean.  So that's what we do.
     push (@maintainer_clean_files, $output);
 }
 
