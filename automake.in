@@ -569,10 +569,8 @@ my @maintainer_clean_files;
 # when the file should be removed.
 my %compile_clean_files;
 
-# These are pretty obvious, too.  They are used to define the
-# SOURCES and OBJECTS variables.
+# Value of `$(SOURCES)', used by tags.am.
 my @sources;
-my @objects;
 # Sources which go in the distribution.
 my @dist_sources;
 
@@ -746,7 +744,6 @@ sub initialize_per_input ()
     @maintainer_clean_files = ();
 
     @sources = ();
-    @objects = ();
     @dist_sources = ();
 
     %object_map = ();
@@ -1211,8 +1208,6 @@ sub generate_makefile
 
     push (@sources, '$(SOURCES)')
 	if &variable_defined ('SOURCES');
-    push (@objects, '$(OBJECTS)')
-	if &variable_defined ('OBJECTS');
 
     # If OBJEXT/EXEEXT were not set in configure.in, do it, it
     # simplifies our task, and anyway starting with Autoconf 2.50, it
@@ -1242,12 +1237,10 @@ sub generate_makefile
     &handle_languages;
     &handle_compile;
 
-    # Re-init SOURCES and OBJECTS.  FIXME: other code shouldn't depend
-    # on this (but currently does).
+    # Re-init SOURCES.  FIXME: other code shouldn't depend on this
+    # (but currently does).
     macro_define ('SOURCES', 1, '', 'TRUE',
 		     join (' ', @sources), 'internal');
-    macro_define ('OBJECTS', 1, '', 'TRUE',
-		     join (' ', @objects), 'internal');
     &define_pretty_variable ('DIST_SOURCES', '', @dist_sources);
 
     &handle_multilib;
@@ -2107,8 +2100,6 @@ sub handle_source_transform
 	  unless $prefix =~ /EXTRA_/;
 
 	push (@sources, '$(' . $prefix . $one_file . "_SOURCES)");
-	push (@objects, '$(' . $xpfx . $one_file . "_OBJECTS)")
-	  unless $prefix =~ /EXTRA_/;
 	push (@dist_sources, '$(' . $prefix . $one_file . "_SOURCES)")
 	  unless $prefix =~ /^nodist_/;
 	foreach my $cond (variable_conditions ($var))
@@ -2134,7 +2125,6 @@ sub handle_source_transform
 	&define_variable ($one_file . "_SOURCES", $unxformed . ".c");
 	push (@sources, $unxformed . '.c');
 	push (@dist_sources, $unxformed . '.c');
-	push (@objects, $unxformed . $obj);
 
 	my ($temp, @result) =
 	  &handle_single_transform_list ($one_file . '_SOURCES',
@@ -3976,28 +3966,15 @@ sub handle_gettext
 # Handle footer elements.
 sub handle_footer
 {
-    if (variable_value ('SOURCES'))
-    {
-	# NOTE don't use define_pretty_variable here, because
-	# $contents{...} is already defined.
-	$output_vars .= 'SOURCES = ' . variable_value ('SOURCES') . "\n";
-    }
-    if (variable_value ('OBJECTS'))
-    {
-	# NOTE don't use define_pretty_variable here, because
-	# $contents{...} is already defined.
-	$output_vars .= 'OBJECTS = ' . variable_value ('OBJECTS') . "\n";
-    }
-    if (variable_value ('SOURCES') || variable_value ('OBJECTS'))
-    {
-	$output_vars .= "\n";
-    }
+    # NOTE don't use define_pretty_variable here, because
+    # $contents{...} is already defined.
+    $output_vars .= 'SOURCES = ' . variable_value ('SOURCES') . "\n\n"
+      if variable_value ('SOURCES');
 
-    if (&target_defined ('.SUFFIXES'))
-    {
-	&am_line_error ('.SUFFIXES',
-			"use variable `SUFFIXES', not target `.SUFFIXES'");
-    }
+
+    &am_line_error ('.SUFFIXES',
+		    "use variable `SUFFIXES', not target `.SUFFIXES'")
+      if target_defined ('.SUFFIXES');
 
     # Note: AIX 4.1 /bin/make will fail if any suffix rule appears
     # before .SUFFIXES.  So we make sure that .SUFFIXES appears before
@@ -4024,7 +4001,8 @@ sub handle_footer
 			   . join (' ', @user_suffixes, sort keys %suffixes)
 			   . "\n");
     }
-    $output_trailer .= &file_contents ('footer');
+
+    $output_trailer .= file_contents ('footer');
 }
 
 # Deal with installdirs target.
