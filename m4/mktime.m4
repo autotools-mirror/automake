@@ -104,11 +104,7 @@ bigtime_test (j)
   struct tm tm;
   time_t now;
   tm.tm_year = tm.tm_mon = tm.tm_mday = tm.tm_hour = tm.tm_min = tm.tm_sec = j;
-  /* This test makes some buggy mktime implementations loop.
-     Give up after 10 seconds.  */
-  alarm (10);
   now = mktime (&tm);
-  alarm (0);
   if (now != (time_t) -1)
     {
       struct tm *lt = localtime (&now);
@@ -132,6 +128,11 @@ main ()
 {
   time_t t, delta;
   int i, j;
+
+  /* This test makes some buggy mktime implementations loop.
+     Give up after 60 seconds; a mktime slower than that
+     isn't worth using anyway.  */
+  alarm (60);
 
   for (time_t_max = 1; 0 < time_t_max; time_t_max *= 2)
     continue;
