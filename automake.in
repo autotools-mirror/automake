@@ -3275,11 +3275,31 @@ sub handle_dist
     return if $cygnus_mode;
 
     # Look for common files that should be included in distribution.
+    # If the aux dir is set, and it does not have a Makefile.am, then
+    # we check for these files there as well.
+    my $check_aux = 0;
+    my $auxdir = '';
+    if ($relative_dir eq '.'
+	&& $config_aux_dir_set_in_configure_in)
+    {
+	($auxdir = $config_aux_dir) =~ s,^\$\(top_srcdir\)/,,;
+	if (! &is_make_dir ($auxdir))
+	{
+	    $check_aux = 1;
+	}
+    }
     foreach my $cfile (@common_files)
     {
 	if (-f ($relative_dir . "/" . $cfile))
 	{
 	    &push_dist_common ($cfile);
+	}
+
+	# Don't use `elsif' here because a file might meaningfully
+	# appear in both directories.
+	if ($check_aux && -f ($auxdir . '/' . $cfile))
+	{
+	    &push_dist_common ($auxdir . '/' . $cfile);
 	}
     }
 
