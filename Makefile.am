@@ -3,7 +3,7 @@
 AUTOMAKE_OPTIONS = gnits
 
 bin_SCRIPTS = automake
-TEXINFOS = automake.texi
+info_TEXINFOS = automake.texi
 # SUBDIRS = intl po
 # CONFIG_HEADER = config.h
 

@@ -75,6 +75,13 @@ $install_missing = 0;
 # True if fp_C_PROTOTYPES appears in configure.in.
 $fp_c_prototypes = 0;
 
+# Names used in AC_CONFIG_HEADER call.  $config_name is the actual
+# (first) argument.  $config_header is the '.in' file.  Ordinarily the
+# second is derived from the first, but they can be different if the
+# weird "NAME:FILE" syntax is used.
+$config_name = '';
+$config_header = '';
+
 
 
 &initialize_global_constants;
@@ -541,13 +548,14 @@ sub handle_scripts
 # Handle all Texinfo source.
 sub handle_texinfo
 {
-    local ($texis) = &am_variable ('TEXINFOS');
-    return if ! $texis;
+    &am_error ("\`TEXINFOS' is an anachronism")
+	if defined $contents{'TEXINFOS'};
+    return if ! defined $contents{'info_TEXINFOS'};
 
-    local (@texis) = split (/\s+/, $texis);
+    local (@texis) = split (/\s+/, $contents{'info_TEXINFOS'});
     if (@texis > 1)
     {
-	&am_error ('sorry, only one file allowed in `TEXINFOS\'');
+	&am_error ('sorry, only one file allowed in `info_TEXINFOS\'');
 	return;
     }
 
@@ -610,7 +618,13 @@ sub handle_texinfo
 
     $output_vars .= ("INFOS = " . $infobase . ".info*\n"
 		     . "INFO_DEPS = " . $infobase . ".info\n"
-		     . "DVIS = " . $infobase . ".dvi\n\n");
+		     . "DVIS = " . $infobase . ".dvi\n"
+		     # This next isn't strictly needed now -- the
+		     # places that look here could easily be changed
+		     # to look in info_TEXINFOS.  But this is probably
+		     # better, in case noinst_TEXINFOS is ever
+		     # supported.
+		     . "TEXINFOS = " . $contents{'info_TEXINFOS'} . "\n\n");
 
     # Do some error checking.
     &require_file ($NORMAL, 'texinfo.tex');
@@ -619,11 +633,13 @@ sub handle_texinfo
 # Handle any man pages.
 sub handle_man_pages
 {
-    return if ! defined $contents{'MANS'};
+    &am_error ("\`MANS' is an anachronism")
+	if defined $contents{'MANS'};
+    return if ! defined $contents{'man_MANS'};
 
     # We generate the manpage install code by hand to avoid the use of
     # basename in the generated Makefile.
-    local (@mans) = split (/\s+/, $contents{'MANS'});
+    local (@mans) = split (/\s+/, $contents{'man_MANS'});
     local (%sections, %inames, %secmap, %fullsecmap);
     foreach (@mans)
     {
@@ -634,6 +650,10 @@ sub handle_man_pages
 	$secmap{$1} = $2;
 	$fullsecmap{$1} = $2 . $3;
     }
+
+    # We don't really need this, but we use it in case we ever want to
+    # support noinst_MANS.
+    $output_vars .= "MANS = " . $contents{'man_MANS'} . "\n";
 
     # Generate list of install dirs.
     $output_rules .= "install-man: $(MANS)\n";
@@ -942,10 +962,12 @@ sub handle_subdirs
 # Handle remaking and configure stuff.
 sub handle_configure
 {
+    local ($top_reldir);
     if ($relative_dir ne '.')
     {
 	# In subdirectory.
 	$output_rules .= &file_contents ('remake-subd');
+	$top_reldir = '../';
     }
     else
     {
@@ -961,32 +983,49 @@ sub handle_configure
 
 	# Look for some files we need.
 	&require_file ($NORMAL, 'install-sh', 'mkinstalldirs');
+
+	# If we have a configure header, require it.
+	if ($config_header)
+	{
+	    # FIXME this restriction should be lifted.
+	    # FIXME first see if it is even needed as-is.
+	    &am_error ("argument to AC_CONFIG_HEADER contains \`/'\n")
+		if ($config_header =~ /\//);
+
+	    &require_file ($NORMAL, $config_header);
+
+	    # Header defined and in this directory.
+	    if (-f 'acconfig.h')
+	    {
+		$output_vars .= "ACCONFIG = acconfig.h\n";
+		&push_dist_common ('acconfig.h');
+	    }
+	    if (-f $config_name . '.top')
+	    {
+		$output_vars .= "CONFIG_TOP = ${config_name}.top\n";
+		&push_dist_common ($config_name . '.top');
+	    }
+	    if (-f $config_name . '.bot')
+	    {
+		$output_vars .= "CONFIG_BOT = ${config_name}.bot\n";
+		&push_dist_common ($config_name . '.bot');
+	    }
+
+	    &push_dist_common ('stamp-h.in');
+
+	    $output_rules .= &file_contents ('remake-hdr');
+	    $output_vars .= "CONFIG_HEADER_IN = ${config_header}\n";
+	}
+
+	$top_reldir = '';
     }
 
-    if (defined $contents{'CONFIG_HEADER'}
-	&& $contents{'CONFIG_HEADER'} !~ /\//)
-    {
-	# Header defined and in this directory.
-	if (-f 'acconfig.h')
-	{
-	    $output_vars .= "ACCONFIG = acconfig.h\n";
-	    &push_dist_common ('acconfig.h');
-	}
-	if (-f 'config.h.top')
-	{
-	    $output_vars .= "CONFIG_TOP = config.h.top\n";
-	    &push_dist_common ('config.h.top');
-	}
-	if (-f 'config.h.bot')
-	{
-	    $output_vars .= "CONFIG_BOT = config.h.bot\n";
-	    &push_dist_common ('config.h.bot');
-	}
+    &am_error ("\`CONFIG_HEADER' is an anachronism")
+	if defined $contents{'CONFIG_HEADER'};
 
-	&push_dist_common ('stamp-h.in', $contents{'CONFIG_HEADER'} . '.in');
-
-	$output_rules .= &file_contents ('remake-hdr');
-    }
+    # Generate CONFIG_HEADER define.
+    $output_vars .= "CONFIG_HEADER = ${top_reldir}${config_name}\n"
+	if $config_name;
 }
 
 # Handle C headers.
@@ -1267,6 +1306,10 @@ sub scan_configure
     local ($seen_arg_prog) = 0;
     while (<CONFIGURE>)
     {
+	# Remove comments from current line.
+	s/\bdnl\b.*$//;
+	s/\b\#.*$//;
+
 	# Populate libobjs array.
 	if (/AC_FUNC_ALLOCA/)
 	{
@@ -1320,6 +1363,21 @@ sub scan_configure
 	    }
 
 	    &require_file ($NORMAL, 'ABOUT-NLS');
+	}
+
+	# Handle configuration headers.
+	if (/AC_CONFIG_HEADER\s*\((.*)\)/)
+	{
+	    $config_name = $1;
+	    if ($config_name =~ /^([^:]+):(.+)$/)
+	    {
+		$config_name = $1;
+		$config_header = $2;
+	    }
+	    else
+	    {
+		$config_header = $config_name . '.in';
+	    }
 	}
 
 	# Some things required by Automake.  FIXME we only really
@@ -1795,17 +1853,6 @@ sub file_contents_with_transform
 sub file_contents
 {
     return &file_contents_with_transform ('', @_);
-}
-
-# Return contents of some Makefile.am variable.  Allow for AM_ style
-# overrides.
-sub am_variable
-{
-    local ($varname) = @_;
-
-    return (defined $contents{'AM_' . $varname}
-	    ? $contents{'AM_' . $varname}
-	    : $contents{$varname});
 }
 
 # Handle `where_HOW' variable magic.  Does all lookups, generates
