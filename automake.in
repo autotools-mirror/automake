@@ -2719,14 +2719,14 @@ sub handle_dependencies
 					       . 's/\@PFX\@//g;',
 					       'depend2');
 	    local ($ext);
-	    foreach $ext (&objc_extensions)
+	    foreach $ext (&lang_extensions ('objc'))
 	    {
 		$output_rules .=
 		    &file_contents_with_transform ('s/\@EXT\@/' . $ext . '/g;'
 						   . 's/\@PFX\@/OBJC/g;',
 						   'depend2');
 	    }
-	    foreach $ext (&cxx_extensions)
+	    foreach $ext (&lang_extensions ('cxx'))
 	    {
 		$output_rules .=
 		    &file_contents_with_transform ('s/\@EXT\@/' . $ext .'/g;'
@@ -4578,21 +4578,9 @@ sub lang_c_finish
     }
 }
 
-# A helper which computes a sorted list of all C++ extensions which
-# were seen.
-sub cxx_extensions
-{
-    local ($key, @r);
-    foreach $key (sort keys %extension_seen)
-    {
-	push (@r, '.' . $key) if $extension_map{$key} eq 'cxx';
-    }
-    return @r;
-}
-
 sub lang_cxx_finish
 {
-    local (@cxx_list) = &cxx_extensions;
+    local (@cxx_list) = &lang_extensions ('cxx');
     local ($cxx_count) = scalar @cxx_list;
     if ($cxx_count)
     {
@@ -4764,21 +4752,9 @@ sub lang_asm_finish
     &lang_c_finish;
 }
 
-# A helper which computes a sorted list of all Fortran 77 extensions
-# which were seen.
-sub f77_extensions
-{
-    local ($key, @r);
-    foreach $key (sort keys %extension_seen)
-    {
-	push (@r, '.' . $key) if $extension_map{$key} eq 'f77';
-    }
-    return @r;
-}
-
 sub lang_f77_finish
 {
-    local (@f77_list) = &f77_extensions;
+    local (@f77_list) = &lang_extensions ('f77');
     local ($f77_count) = scalar @f77_list;
     if ($f77_count)
     {
@@ -4834,7 +4810,9 @@ sub lang_ppf77_finish
 {
     local ($ext) = 'F';
     last unless $extension_seen{$ext};
-    push (@suffixes, '.' . $ext);
+
+    $ext = '.' . $ext;
+    push (@suffixes, $ext);
 
     local ($ltcompile, $ltlink) = &libtool_compiler;
 
@@ -4872,7 +4850,8 @@ sub lang_ratfor_finish
 {
     local ($ext) = 'r';
     last unless $extension_seen{$ext};
-    push (@suffixes, '.' . $ext);
+    $ext = '.' . $ext;
+    push (@suffixes, $ext);
 
     local ($ltcompile, $ltlink) = &libtool_compiler;
 
@@ -4938,14 +4917,14 @@ sub lang_objc_finish
     }
 }
 
-# A helper which computes a sorted list of all ObjC extensions which
-# were seen.
-sub objc_extensions
+# A helper which computes a sorted list of all extensions for LANG.
+sub lang_extensions
 {
+    local ($lang) = @_;
     local ($key, @r);
     foreach $key (sort keys %extension_seen)
     {
-	push (@r, '.' . $key) if $extension_map{$key} eq 'objc';
+	push (@r, '.' . $key) if $extension_map{$key} eq $lang;
     }
     return @r;
 }
