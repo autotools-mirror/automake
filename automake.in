@@ -2838,26 +2838,37 @@ sub handle_man_pages
     # "standard" sections, and then looking for any additional
     # sections used in man_MANS.
     my (%sections, %vlist);
-    # Add more sections as needed.
-    foreach my $section ('0'..'9', 'n', 'l')
+    # We handle nodist_ for uniformity.  man pages aren't distributed
+    # by default so it isn't actually very important.
+    foreach my $pfx ('', 'dist_', 'nodist_')
     {
-	if (&variable_defined ('man' . $section . '_MANS'))
+	# Add more sections as needed.
+	foreach my $section ('0'..'9', 'n', 'l')
 	{
-	    $sections{$section} = 1;
-	    $vlist{'$(man' . $section . '_MANS)'} = 1;
-	}
-    }
-
-    if (&variable_defined ('man_MANS'))
-    {
-	$vlist{'$(man_MANS)'} = 1;
-	foreach (&variable_value_as_list ('man_MANS', 'all'))
-	{
-	    # A page like `foo.1c' goes into man1dir.
-	    if (/\.([0-9a-z])([a-z]*)$/)
+	    if (&variable_defined ($pfx . 'man' . $section . '_MANS'))
 	    {
-		$sections{$1} = 1;
+		$sections{$section} = 1;
+		$vlist{'$(' . $pfx . 'man' . $section . '_MANS)'} = 1;
+
+		&push_dist_common ('$(' . $pfx . 'man' . $section . '_MANS)')
+		    if $pfx eq 'dist_';
 	    }
+	}
+
+	if (&variable_defined ($pfx . 'man_MANS'))
+	{
+	    $vlist{'$(' . $pfx . 'man_MANS)'} = 1;
+	    foreach (&variable_value_as_list ($pfx . 'man_MANS', 'all'))
+	    {
+		# A page like `foo.1c' goes into man1dir.
+		if (/\.([0-9a-z])([a-z]*)$/)
+		{
+		    $sections{$1} = 1;
+		}
+	    }
+
+	    &push_dist_common ('$(' . $pfx . 'man_MANS)')
+		if $pfx eq 'dist_';
 	}
     }
 
@@ -2867,7 +2878,7 @@ sub handle_man_pages
     # Sort sections so output is deterministic.
     foreach my $section (sort keys %sections)
     {
-	$output_rules .= &file_contents ('mans', ('SECTION', $section));
+	$output_rules .= &file_contents ('mans', ('SECTION' => $section));
     }
 
     $output_vars .= &file_contents ('mans-vars',
