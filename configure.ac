@@ -56,8 +56,11 @@ AC_PATH_PROG(PERL, perl)
 if test -z "$PERL"; then
    AC_MSG_ERROR([perl not found])
 fi
-$PERL -e 'require 5.005;' || {
-   AC_MSG_ERROR([perl 5.005 or better is required])
+$PERL -e 'require 5.006;' || {
+   AC_MSG_ERROR(
+[perl 5.6 or better is required.  If you have several perl
+versions installed, select the one Automake should use using
+  ./configure PERL=/path/to/perl])
 }
 
 # The test suite will skip some tests if tex is absent.
