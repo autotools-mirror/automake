@@ -89,6 +89,7 @@ $relative_dir = '';
 @dvi = ();
 @all = ('${ALL}');
 @check = ();
+@clean = ();
 
 # TRUE if current directory holds any C source files.
 $dir_holds_sources = 0;
@@ -226,6 +227,7 @@ sub generate_makefile
     @dvi = ();
     @all = ('${ALL}');
     @check = ();
+    @clean = ();
 
     # Generate header before reading .am file.  The header must come
     # before anything else, and read_am_file copies code into the
@@ -269,6 +271,7 @@ sub generate_makefile
     &handle_dependencies;
     &handle_footer;
     &handle_merge_targets;
+    &handle_clean;
 
     if (! open (GM_FILE, "> " . $makefile . ".in"))
     {
@@ -328,6 +331,9 @@ sub handle_programs
 
 	$output_vars .= &file_contents ('kr-vars');
 	$output_rules .= &file_contents ('compile-kr');
+	$output_rules .= &file_contents ('clean-kr');
+
+	push (@clean, 'kr');
     }
 
     local (@sources, @objects);
@@ -391,12 +397,14 @@ sub handle_programs
 	$output_rules .= &file_contents ('programs');
 	push (@install_exec, "install-programs");
 	push (@uninstall, 'uninstall-programs');
+	push (@clean, 'programs');
     }
     if ($libprograms)
     {
 	$output_rules .= &file_contents ('libprograms');
 	push (@install_exec, 'install-libprograms');
 	push (@uninstall, 'uninstall-libprograms');
+	push (@clean, 'libprograms');
     }
 
     # Handle linking.
@@ -443,6 +451,7 @@ sub handle_libraries
 
     push (@install_exec, 'install-libraries');
     push (@uninstall, 'uninstall-libraries');
+    push (@clean, 'libraries');
 }
 
 # Handle scripts.
@@ -455,6 +464,7 @@ sub handle_scripts
 	$output_rules .= &file_contents ('scripts');
 	push (@install_exec, 'install-scripts');
 	push (@uninstall, 'uninstall-scripts');
+	push (@clean, 'scripts');
     }
 
     if ($libscripts)
@@ -462,6 +472,7 @@ sub handle_scripts
 	$output_rules .= &file_contents ('libscripts');
 	push (@install_exec, 'install-libscripts');
 	push (@uninstall, 'uninstall-libscripts');
+	push (@clean, 'libscripts');
     }
 }
 
@@ -490,6 +501,8 @@ sub handle_texinfo
 	# Got a hit.
 	push (@texis, 'version.texi');
 	push (@dist_common, 'version.texi');
+	push (@clean, 'vti');
+
 	local ($tfile);
 	($tfile = &file_contents ('texi-version')) =~ s/@TEXI@/$texis[0]/g;
 	$output_rules = $output_rules . $tfile;
@@ -516,11 +529,13 @@ sub handle_texinfo
     $output_rules = $output_rules . &file_contents ('texinfos');
 
     push (@suffixes, '.texi', '.info', '.dvi');
-    push (@install_data, 'install-info');
     push (@uninstall, 'uninstall-info');
-
+    push (@clean, 'info');
     push (@info, '$(INFO_DEPS)');
     push (@dvi, '$(DVIS)');
+    # Make sure documentation is made and installed first.
+    unshift (@install_data, 'install-info');
+    unshift (@all, 'info');
 
     $output_vars .= ("INFOS = " . $infobase . "info*\n"
 		     . "INFO_DEPS = " . $infobase . ".info\n"
@@ -563,13 +578,23 @@ sub handle_data
 # Handle TAGS.
 sub handle_tags
 {
+    local ($tagging) = 0;
+
     if (defined ($contents{'SUBDIRS'}))
     {
 	$output_rules .= &file_contents ('tags');
+	$tagging = 1;
     }
     elsif ($dir_holds_sources || defined ($contents{'ETAGS_ARGS'}))
     {
 	$output_rules .= &file_contents ('tags-subd');
+	$tagging = 1;
+    }
+
+    if ($tagging)
+    {
+	$output_rules .= &file_contents ('tags-clean');
+	push (@clean, 'tags');
     }
 }
 
@@ -827,12 +852,60 @@ sub do_one_merge_target
     $output_rules .= $name . ": " . join (' ', @values) . "\n\n";
 }
 
+# Handle all 'clean' targets.
+sub handle_clean
+{
+    local ($target) = $recursive_install ? 'clean-am' : 'clean';
+    &do_one_clean_target ($target, 'mostly', '', @clean);
+    &do_one_clean_target ($target, '', 'mostly', @clean);
+    &do_one_clean_target ($target, 'dist', '', @clean);
+    &do_one_clean_target ($target, 'maintainer-', 'dist', @clean);
+
+    local (@deps);
+    if ($recursive_install)
+    {
+	@deps = ('am', 'recursive');
+	&do_one_clean_target ('', 'mostly', '', @deps);
+	&do_one_clean_target ('', '', '', @deps);
+	&do_one_clean_target ('', 'dist', '', @deps);
+	&do_one_clean_target ('', 'maintainer-', '', @deps);
+    }
+}
+
+# Helper for handle_clean.
+sub do_one_clean_target
+{
+    local ($target, $name, $last_name, @deps) = @_;
+
+    # Special case: if target not passed, then don't generate
+    # dependency on next "lower" clean target (eg no
+    # clean<-mostlyclean derivation).  In this case the target is
+    # implicitly known to be 'clean'.
+    local ($flag) = $target;
+    if (!$flag)
+    {
+	$target = 'clean';
+    }
+
+    $output_rules .= $name . $target . ": ";
+    if ($flag)
+    {
+	if ($last_name || $name ne 'mostly')
+	{
+	    $output_rules .= $last_name . $target . " ";
+	}
+    }
+
+    $output_rules .= ($name . 'clean-' . join (' ' . $name . 'clean-', @deps)
+		      . "\n\n");
+}
+
 ################################################################
 
 # Read Makefile.am and set up %contents.  Simultaneously copy lines
-# from Makefile.am into $output_rules or $output_vars as appropriate.
-# NOTE we put rules in the trailer section.  We want user rules
-# to come after our generated stuff.
+# from Makefile.am into $output_trailer or $output_vars as
+# appropriate.  NOTE we put rules in the trailer section.  We want
+# user rules to come after our generated stuff.
 sub read_am_file
 {
     local ($amfile) = @_;
