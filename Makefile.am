@@ -244,15 +244,24 @@ maintainer-check: automake aclocal
 	fi
 
 
-# Tag before making distribution.  Also, don't make a distribution if
-# checks fail.  Also, make sure the NEWS file is up-to-date.
-cvs-dist: maintainer-check distcheck
+cvs-dist: maintainer-check
+## Make sure clcommit exists (we use it at the end of cvs-dist).
+	@if (clcommit --version)>/dev/null 2>/dev/null; then :; else \
+	  echo "Get clcommit from module cvs-utils on Savannah."; \
+	  exit 1; \
+	fi
+## Make sure the NEWS file is up-to-date.
 	@if sed 1q $(srcdir)/NEWS | grep -e "$(VERSION)" > /dev/null; then :; else \
 	  echo "NEWS not updated; not releasing" 1>&2; \
 	  exit 1;				\
 	fi
-	cd $(srcdir) && cvs -q tag `echo "Release-$(VERSION)" | sed 's/\./-/g'`
-	$(MAKE) dist
+## Build the distribution
+	$(MAKE) distcheck
+## Finally, if anything was successful, commit the last changes and tag
+## the release in the repository.  We don't use RCS keywords so it's OK
+## to distribute the files before they were committed.
+	cd $(srcdir) && clcommit && \
+	  cvs -q tag -c `echo "Release-$(VERSION)" | sed 's/\./-/g'`
 
 cvs-diff:
 	thisver=`echo "Release-$(VERSION)" | sed 's/\./-/g'`; \
