@@ -317,11 +317,11 @@ $obsolete_rx = '(' . join ('|', keys %obsolete_macros) . ')';
 		    'l++', 'll', 'lxx');
 &register_language ('asm', '', 0,
 		    's', 'S');
-&register_language ('f77', 'FLINK', 0,
+&register_language ('f77', 'F77LINK', 0,
 		    'f', 'for', 'f90');
-&register_language ('ppf77', 'FLINK', 0,
+&register_language ('ppf77', 'F77LINK', 0,
 		    'F');
-&register_language ('ratfor', 'FLINK', 0,
+&register_language ('ratfor', 'F77LINK', 0,
 		    'r');
 
 
@@ -4150,7 +4150,7 @@ sub scan_one_configure_file
  	    &am_conf_line_warning ($filename, $., "automake requires \`AM_PROG_LEX', not \`AC_PROG_LEX'");
 	}
 
-	if (/AC_PROG_(FC|YACC|RANLIB|CC|CXXCPP|CXX|LEX|AWK|CPP|LN_S)/)
+	if (/AC_PROG_(F77|YACC|RANLIB|CC|CXXCPP|CXX|LEX|AWK|CPP|LN_S)/)
 	{
 	    $configure_vars{$1} = $filename . ':' . $.;
 	}
@@ -4705,31 +4705,31 @@ sub lang_f77_finish
 	local ($ltcompile, $ltlink) = &libtool_compiler;
 
 	&define_configure_variable ('FFLAGS');
-	&define_variable ('FCOMPILE', '$(FC) $(AM_FFLAGS) $(FFLAGS)');
-	&define_variable ('LTFCOMPILE',
-			  $ltcompile . '$(FC) $(AM_FFLAGS) $(FFLAGS)')
+	&define_variable ('F77COMPILE', '$(F77) $(AM_FFLAGS) $(FFLAGS)');
+	&define_variable ('LTF77COMPILE',
+			  $ltcompile . '$(F77) $(AM_FFLAGS) $(FFLAGS)')
 	    if ($seen_libtool);
 
-	&define_variable ('FLD', '$(FC)');
-	&define_variable ('FLINK', $ltlink . '$(FLD) $(AM_FFLAGS) $(FFLAGS) $(LDFLAGS) -o $@');
+	&define_variable ('F77LD', '$(F77)');
+	&define_variable ('F77LINK', $ltlink . '$(F77LD) $(AM_FFLAGS) $(FFLAGS) $(LDFLAGS) -o $@');
 
 	local ($ext);
 	foreach $ext (@f77_list)
 	{
 	    $output_rules .= ("$ext.o:\n"
-			      . "\t\$(FCOMPILE) -c \$<\n");
+			      . "\t\$(F77COMPILE) -c \$<\n");
 	    # FIXME: Using cygpath should be somehow conditional.
 	    $output_rules .= ("$ext.obj:\n"
-			      . "\t\$(FCOMPILE) -c `cygpath -w \$<`\n")
+			      . "\t\$(F77COMPILE) -c `cygpath -w \$<`\n")
 		if ($seen_objext);
 	    $output_rules .= ("$ext.lo:\n"
-			      . "\t\$(LTFCOMPILE) -c \$<\n")
+			      . "\t\$(LTF77COMPILE) -c \$<\n")
 		if ($seen_libtool);
 	}
 
-	if (! defined $configure_vars{'FC'})
+	if (! defined $configure_vars{'F77'})
 	{
-	    &am_error ("Fortran source seen but \`FC' not defined in \`configure.in'");
+	    &am_error ("Fortran 77 source seen but \`F77' not defined in \`configure.in'");
 	}
     }
 }
@@ -4757,32 +4757,32 @@ sub lang_ppf77_finish
     local ($ltcompile, $ltlink) = &libtool_compiler;
 
     &define_configure_variable ('FFLAGS');
-    &define_variable ('FCOMPILE', '$(FC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_FFLAGS) $(FFLAGS)');
-    &define_variable ('LTFCOMPILE',
-		      $ltcompile . '$(FC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_FFLAGS) $(FFLAGS)')
+    &define_variable ('F77COMPILE', '$(F77) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_FFLAGS) $(FFLAGS)');
+    &define_variable ('LTF77COMPILE',
+		      $ltcompile . '$(F77) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_FFLAGS) $(FFLAGS)')
 	if ($seen_libtool);
 
-    &define_variable ('FLD', '$(FC)');
-    &define_variable ('FLINK', $ltlink . '$(FLD) $(AM_FFLAGS) $(FFLAGS) $(LDFLAGS) -o $@');
+    &define_variable ('F77LD', '$(F77)');
+    &define_variable ('F77LINK', $ltlink . '$(F77LD) $(AM_FFLAGS) $(FFLAGS) $(LDFLAGS) -o $@');
 
     $output_rules .= ("$ext.o:\n"
-		      . "\t\$(FCOMPILE) -c \$<\n");
+		      . "\t\$(F77COMPILE) -c \$<\n");
     # FIXME: Using cygpath should be somehow conditional.
     $output_rules .= ("$ext.obj:\n"
-		      . "\t\$(FCOMPILE) -c `cygpath -w \$<`\n")
+		      . "\t\$(F77COMPILE) -c `cygpath -w \$<`\n")
 	if ($seen_objext);
     $output_rules .= ("$ext.lo:\n"
-		      . "\t\$(LTFCOMPILE) -c \$<\n")
+		      . "\t\$(LTF77COMPILE) -c \$<\n")
 	if ($seen_libtool);
 
     # We also handle the case of preprocessing `.F' files into `.f'
     # files.
     $output_rules .= ("$ext.f:\n"
-		      . "\t\$(FCOMPILE) -F \$<\n");
+		      . "\t\$(F77COMPILE) -F \$<\n");
 
-    if (! defined $configure_vars{'FC'})
+    if (! defined $configure_vars{'F77'})
     {
-	&am_error ("Fortran source seen but \`FC' not defined in \`configure.in'");
+	&am_error ("Fortran 77 source seen but \`F77' not defined in \`configure.in'");
     }
 }
 
@@ -4796,13 +4796,13 @@ sub lang_ratfor_finish
 
     &define_configure_variable ('FFLAGS');
     &define_configure_variable ('RFLAGS');
-    &define_variable ('RCOMPILE', '$(FC) $(AM_FFLAGS) $(FFLAGS) $(AM_RFLAGS) $(RFLAGS)');
+    &define_variable ('RCOMPILE', '$(F77) $(AM_FFLAGS) $(FFLAGS) $(AM_RFLAGS) $(RFLAGS)');
     &define_variable ('LTRCOMPILE',
-		      $ltcompile . '$(FC) $(AM_FFLAGS) $(FFLAGS) $(AM_RFLAGS) $(RFLAGS)')
+		      $ltcompile . '$(F77) $(AM_FFLAGS) $(FFLAGS) $(AM_RFLAGS) $(RFLAGS)')
 	if ($seen_libtool);
 
-    &define_variable ('FLD', '$(FC)');
-    &define_variable ('FLINK', $ltlink . '$(FLD) $(AM_FFLAGS) $(FFLAGS) $(AM_RFLAGS) $(RFLAGS) $(LDFLAGS) -o $@');
+    &define_variable ('F77LD', '$(F77)');
+    &define_variable ('F77LINK', $ltlink . '$(F77LD) $(AM_FFLAGS) $(FFLAGS) $(AM_RFLAGS) $(RFLAGS) $(LDFLAGS) -o $@');
 
     $output_rules .= ("$ext.o:\n"
 		      . "\t\$(RCOMPILE) -c \$<\n");
@@ -4819,9 +4819,9 @@ sub lang_ratfor_finish
     $output_rules .= ("$ext.f:\n"
 		      . "\t\$(RCOMPILE) -F \$<\n");
 
-    if (! defined $configure_vars{'FC'})
+    if (! defined $configure_vars{'F77'})
     {
-	&am_error ("Fortran source seen but \`FC' not defined in \`configure.in'");
+	&am_error ("Ratfor source seen but \`F77' not defined in \`configure.in'");
     }
 }
 
@@ -4849,8 +4849,8 @@ sub resolve_linker
 
     return 'CXXLINK'
 	if defined $linkers{'CXXLINK'};
-    return 'FLINK'
-	if defined $linkers{'FLINK'};
+    return 'F77LINK'
+	if defined $linkers{'F77LINK'};
     return 'LINK';
 }
 
