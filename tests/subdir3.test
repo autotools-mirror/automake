@@ -1,0 +1,26 @@
+#! /bin/sh
+
+# Test to make sure subdir source file generates explicit dependency.
+# Also test to make sure only one such dependency is generated.
+
+. $srcdir/defs || exit 1
+
+cat > Makefile.am << 'END'
+bin_PROGRAMS = zardoz widdershins
+zardoz_SOURCES = y.c x/z.c
+widdershins = x/z.c
+END
+
+cat >> configure.in << 'END'
+AC_PROG_CC
+END
+
+mkdir x
+
+: > y.c
+: > x/z.c
+
+$AUTOMAKE || exit 1
+
+num=`grep '^z\.o: x/z\.c$' Makefile.in | wc -l`
+test $num -eq 1
