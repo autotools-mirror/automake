@@ -90,15 +90,34 @@ if test $status -eq 0; then
    set X $pairlist
    shift
    first=yes
+   # Since DOS filename conventions don't allow two dots,
+   # the DOS version of Bison writes out y_tab.c instead of y.tab.c
+   # and y_tab.h instead of y.tab.h. Test to see if this is the case.
+   y_tab_nodot="no"
+   if test -f y_tab.c || test -f y_tab.h; then
+      y_tab_nodot="yes"
+   fi
+
    while test "$#" -ne 0; do
-      if test -f "$1"; then
+      from="$1"
+      # Handle y_tab.c and y_tab.h output by DOS
+      if test $y_tab_nodot = "yes"; then
+	 if test $from = "y.tab.c"; then
+	    from="y_tab.c"
+	 else
+	    if test $from = "y.tab.h"; then
+	       from="y_tab.h"
+	    fi
+	 fi
+      fi
+      if test -f "$from"; then
          # If $2 is an absolute path name, then just use that,
          # otherwise prepend `../'.
          case "$2" in
 	   /* | [A-Za-z]:*) target="$2";;
 	   *) target="../$2";;
 	 esac
-	 mv "$1" "$target" || status=$?
+	 mv "$from" "$target" || status=$?
       else
 	 # A missing file is only an error for the first file.  This
 	 # is a blatant hack to let us support using "yacc -d".  If -d
