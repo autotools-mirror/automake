@@ -264,6 +264,9 @@ pr266.test \
 pr279.test \
 pr279-2.test \
 pr287.test \
+pr300-lib.test \
+pr300-ltlib.test \
+pr300-prog.test \
 prefix.test \
 primary.test \
 primary2.test \

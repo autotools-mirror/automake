@@ -33,6 +33,8 @@ endif %?FIRST%
 
 if %?INSTALL%
 _am_installdirs += $(DESTDIR)$(%NDIR%dir)
+?BASE?%DIR%LIBRARIES_INSTALL = $(INSTALL_DATA)
+?!BASE?%DIR%LIBRARIES_INSTALL = $(install_sh_DATA)
 ?EXEC?.PHONY install-exec-am: install-%DIR%LIBRARIES
 ?!EXEC?.PHONY install-data-am: install-%DIR%LIBRARIES
 install-%DIR%LIBRARIES: $(%DIR%_LIBRARIES)
@@ -42,8 +44,13 @@ install-%DIR%LIBRARIES: $(%DIR%_LIBRARIES)
 ## a syntax error in sh.
 	@list='$(%DIR%_LIBRARIES)'; for p in $$list; do \
 	  if test -f $$p; then \
-	    echo " $(INSTALL_DATA) $$p $(DESTDIR)$(%NDIR%dir)/$$p"; \
-	    $(INSTALL_DATA) $$p $(DESTDIR)$(%NDIR%dir)/$$p; \
+## Compute basename of source file.  Unless this is a nobase_ target, we
+## want to install 'python/foo.py' as '$(DESTDIR)$(%NDIR%dir)/foo.yo',
+## not '$(DESTDIR)$(%NDIR%dir)/python/foo.yo'.
+?BASE?	    f="`echo $$p | sed -e 's|^.*/||'`"; \
+?!BASE?	    f="$$p"; \
+	    echo " $(%DIR%LIBRARIES_INSTALL) $$p $(DESTDIR)$(%NDIR%dir)/$$f"; \
+	    $(%DIR%LIBRARIES_INSTALL) $$p $(DESTDIR)$(%NDIR%dir)/$$f; \
 	  else :; fi; \
 	done
 ## We do two loops here so that $(POST_INSTALL) can be empty.  If we
@@ -54,6 +61,7 @@ install-%DIR%LIBRARIES: $(%DIR%_LIBRARIES)
 	@$(POST_INSTALL)
 	@list='$(%DIR%_LIBRARIES)'; for p in $$list; do \
 	  if test -f $$p; then \
+?BASE?	    p="`echo $$p | sed -e 's|^.*/||'`"; \
 ## Must ranlib after installing because mod time changes.
 	    echo " $(RANLIB) $(DESTDIR)$(%NDIR%dir)/$$p"; \
 	    $(RANLIB) $(DESTDIR)$(%NDIR%dir)/$$p; \
@@ -71,6 +79,7 @@ if %?INSTALL%
 uninstall-%DIR%LIBRARIES:
 	@$(NORMAL_UNINSTALL)
 	@list='$(%DIR%_LIBRARIES)'; for p in $$list; do \
+?BASE?	  p="`echo $$p | sed -e 's|^.*/||'`"; \
 	  echo " rm -f $(DESTDIR)$(%NDIR%dir)/$$p"; \
 	  rm -f $(DESTDIR)$(%NDIR%dir)/$$p; \
 	done
