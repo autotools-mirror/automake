@@ -89,6 +89,7 @@ distdir.test \
 double.test \
 dup.test \
 dup2.test \
+dup3.test \
 else.test \
 empty.test \
 empty2.test \
