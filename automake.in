@@ -5522,7 +5522,7 @@ sub am_primary_prefixes
 		# primary, so we explicitly allow it.
 		&& ! defined $configure_vars{$varname})
 	    {
-		&am_line_error ($varname, "invalid variable \"$varname\"");
+		&am_line_error ($varname, "invalid variable \`$varname'");
 	    }
 	    else
 	    {
@@ -5787,6 +5787,7 @@ sub require_file_internal
 
 		# Only install missing files according to our desired
 		# strictness level.
+		local ($message) = "required file \`$errfile' not found";
 		if ($add_missing)
 		{
 		    $suppress = 1;
@@ -5796,29 +5797,29 @@ sub require_file_internal
 			&& grep ($_ eq $file, @libtoolize_files)
 			&& system ('libtoolize', '--automake'))
 		    {
-			$trailer = "; installing";
+			$message = "installing \`$errfile'";
 			$suppress = 0;
-			$trailer .= "; cannot run \`libtoolize': $!";
+			$trailer = "; cannot run \`libtoolize': $!";
 		    }
 		    elsif (-f ($am_dir . '/' . $file))
 		    {
 			# Install the missing file.  Symlink if we
 			# can, copy if we must.  Note: delete the file
 			# first, in case it is a dangling symlink.
-			$trailer = "; installing";
+			$message = "installing \`$errfile'";
 			unlink ($errfile);
 			if ($symlink_exists)
 			{
 			    if (! symlink ($am_dir . '/' . $file, $errfile))
 			    {
 				$suppress = 0;
-				$trailer .= "; error while making link: $!\n";
+				$trailer = "; error while making link: $!\n";
 			    }
 			}
 			elsif (! system ('cp', $am_dir . '/' . $file, $errfile))
 			{
 			    $suppress = 0;
-			    $trailer .= "\n    error while making link\n";
+			    $trailer = "\n    error while making link\n";
 			}
 		    }
 		}
@@ -5827,15 +5828,12 @@ sub require_file_internal
 		if ($is_configure)
 		{
 		    # FIXME: allow actual file to be specified.
-		    &am_conf_line_error
-			('configure.in', $line,
-			 "required file \"$errfile\" not found$trailer");
+		    &am_conf_line_error ('configure.in', $line,
+					 "$message$trailer");
 		}
 		else
 		{
-		    &am_line_error
-			($line,
-			 "required file \"$errfile\" not found$trailer");
+		    &am_line_error ($line, "$message$trailer");
 		}
 		$exit_status = $save if $suppress;
 	    }
