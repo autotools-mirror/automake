@@ -280,6 +280,7 @@ mdate3.test \
 mdate4.test \
 mkinst2.test \
 mkinstall.test \
+multlib.test \
 nobase.test \
 nodef.test \
 nodef2.test \

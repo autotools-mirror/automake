@@ -28,7 +28,8 @@ dist_pkgvdata_DATA = COPYING INSTALL texinfo.tex ansi2knr.c ansi2knr.1
 ## what we want.  So we make them executable by hand.
 scriptdir = $(pkgvdatadir)
 dist_script_DATA = config.guess config.sub install-sh mdate-sh missing \
-mkinstalldirs elisp-comp ylwrap acinstall depcomp compile py-compile
+  mkinstalldirs elisp-comp ylwrap acinstall depcomp compile py-compile \
+  config-ml.in symlink-tree
 
 install-data-hook:
 	@$(POST_INSTALL)
