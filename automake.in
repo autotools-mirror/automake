@@ -69,6 +69,12 @@ $symlink_exists = (eval 'symlink ("", "");', $@ eq '');
 # TRUE if missing standard files should be installed.
 $install_missing = 0;
 
+# Files found by scanning configure.in for LIBOBJS.
+%libsources = ();
+
+# True if fp_C_PROTOTYPES appears in configure.in.
+$fp_c_prototypes = 0;
+
 
 
 &initialize_global_constants;
@@ -324,6 +330,9 @@ sub get_object_extension
 
 	if (defined $options{'ansi2knr'} || defined $contents{'@kr@'})
 	{
+	    &am_error ("option \`ansi2knr' in use but \`fp_C_PROTOTYPES' not in configure.in")
+		if ! $fp_c_prototypes;
+
 	    $dir_holds_sources = '$o';
 	    push (@suffixes, '._c', '._o');
 
@@ -354,11 +363,12 @@ sub handle_source_transform
 	{
 	    # Turn sources into objects.
 	    local (@files) = split (/\s+/, $contents{$one_file . "_SOURCES"});
-	    # Ugh: Perl syntax vs Emacs.
-	    # local ($krc1, $krc2) = ('\.\$\{kr\}c', '\.\$\(kr\)c');
 	    local (@result) = ();
 	    foreach (@files)
 	    {
+		# Just skip header files.
+		next if /\.h$/;
+
 		if (/^(.*)\.[yl]$/)
 		{
 		    # Automatically include generated .c file in
@@ -368,8 +378,6 @@ sub handle_source_transform
 
 		# Transform source files into .o files.
 		s/\.cc$/$obj/g;
-		# s/$krc1$/$obj/g;
-		# s/$krc2$/$obj/g;
 		s/\.[cCmylfs]$/$obj/g;
 		push (@result, $_);
 
@@ -466,7 +474,39 @@ sub handle_libraries
     local ($munge);
     foreach $onelib (@liblist)
     {
-	if (! defined $contents{$onelib . '_LIBADD'})
+	if (defined $contents{$onelib . '_LIBADD'})
+	{
+	    # We recognize certain things that are commonly put in
+	    # LIBADD.
+	    local ($lsearch);
+
+	    foreach $lsearch (split (/\s+/, $contents{$onelib . '_LIBADD'}))
+	    {
+		# Automatically handle @LIBOBJS@ and @ALLOCA@.
+		# Basically this means adding entries to dep_files.
+		if ($lsearch eq '@LIBOBJS@')
+		{
+		    local ($iter, $rewrite);
+		    foreach $iter (keys %libsources)
+		    {
+			if ($iter ne 'alloca.c')
+			{
+			    ($rewrite = $iter) =~ s/\.c$/.P/;
+			    $dep_files{$rewrite} = 1;
+			    &require_file ($NORMAL, $iter);
+			}
+		    }
+		}
+		elsif ($lsearch eq '@ALLOCA@')
+		{
+		    &am_error ("\@ALLOCA\@ seen but \`AC_FUNC_ALLOCA' not in \`configure.in'")
+			if ! defined $libsources{'alloca.c'};
+		    $dep_files{'alloca.P'} = 1;
+		    &require_file ($NORMAL, 'alloca.c');
+		}
+	    }
+	}
+	else
 	{
 	    # Generate support for conditional object inclusion in
 	    # libraries.
@@ -1217,6 +1257,11 @@ sub scan_configure
     open (CONFIGURE, 'configure.in')
 	|| die "automake: couldn't open configure.in: $!\n";
 
+    # Reinitialize libsources here.  This isn't really necessary,
+    # since we currently assume there is only one configure.in.  But
+    # that won't always be the case.
+    %libsources = ();
+
     local ($seen_make_set) = 0;
     local ($seen_prog_install) = 0;
     local ($seen_arg_prog) = 0;
@@ -1255,17 +1300,24 @@ sub scan_configure
 	    $libsources{$1 . '.c'} = 1;
 	}
 
+	# Check for ansi2knr.
+	$fp_c_prototypes = 1 if /fp_C_PROTOTYPES/;
+
 	# Check for NLS support.
 	if (/ud_GNU_GETTEXT/)
 	{
-	    &am_error
-		("ud_GNU_GETTEXT in configure.in but SUBDIRS not defined")
-		    if ! defined $contents{'SUBDIRS'};
-	    &am_error ("ud_GNU_GETTEXT if configure.in but po not in SUBDIRS")
-		if $contents{'SUBDIRS'} !~ /\<po\>/;
-	    &am_error
-		("ud_GNU_GETTEXT if configure.in but intl not in SUBDIRS")
-		    if $contents{'SUBDIRS'} !~ /\<intl\>/;
+	    if (! defined $contents{'SUBDIRS'})
+	    {
+		&am_error
+		    ("ud_GNU_GETTEXT in configure.in but SUBDIRS not defined");
+	    }
+	    else
+	    {
+		&am_error ("ud_GNU_GETTEXT in configure.in but \`po' not in SUBDIRS")
+		    if $contents{'SUBDIRS'} !~ /\bpo\b/;
+		&am_error ("ud_GNU_GETTEXT in configure.in but \`intl' not in SUBDIRS")
+		    if $contents{'SUBDIRS'} !~ /\bintl\b/;
+	    }
 
 	    &require_file ($NORMAL, 'ABOUT-NLS');
 	}
@@ -1648,9 +1700,6 @@ sub initialize_per_input
 
     # Options from AUTOMAKE_OPTIONS.
     %options = ();
-
-    # Files found by scanning configure.in for LIBOBJS.
-    %libsources = ();
 }
 
 
@@ -1888,23 +1937,30 @@ sub require_file
 	{
 	    &push_dist_common ($file);
 	}
-	elsif ($install_missing && -f ($am_dir . '/' . $file))
+	elsif ($strictness >= $mystrict)
 	{
-	    # Install the missing file.  Symlink if we can, copy if we must.
-	    if ($symlink_exists)
+	    # Only install missing files according to our desired
+	    # strictness level.
+	    if ($install_missing && -f ($am_dir . '/' . $file))
 	    {
-		symlink ($am_dir . '/' . $file, $fullfile);
+		# Install the missing file.  Symlink if we can, copy
+		# if we must.
+		if ($symlink_exists)
+		{
+		    symlink ($am_dir . '/' . $file, $fullfile);
+		}
+		else
+		{
+		    system ('cp', $am_dir . '/' . $file, $fullfile);
+		}
+		&am_error
+		    ("required file \"$fullfile\" not found; installing");
 	    }
 	    else
 	    {
-		system ('cp', $am_dir . '/' . $file, $fullfile);
+		# Only an error if strictness constraint violated.
+		&am_error ("required file \"$fullfile\" not found");
 	    }
-	    &am_error ("required file \"$fullfile\" not found; installing");
-	}
-	elsif ($strictness >= $mystrict)
-	{
-	    # Only an error if strictness constraint violated.
-	    &am_error ("required file \"$fullfile\" not found");
 	}
     }
 }
