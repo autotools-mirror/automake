@@ -2478,15 +2478,18 @@ sub handle_configure
 	if ($file =~ /^(.*):(.*)$/)
 	{
 	    # This is the ":" syntax of AC_OUTPUT.
-	    @inputs = split (':', $2);
 	    $file = $1;
 	    $local = &basename ($file);
+	    @inputs = split (':', $2);
+	    @rewritten_inputs = &rewrite_inputs_into_dependencies (@inputs);
 	}
 	else
 	{
 	    # Normal usage.
 	    $local = &basename ($file);
 	    @inputs = ($local . '.in');
+	    @rewritten_inputs =
+		&rewrite_inputs_into_dependencies ($file . '.in');
 	}
 
 	# Skip files not in this directory.
@@ -2497,8 +2500,6 @@ sub handle_configure
 
 	# Skip any Makefile.
 	next if $local eq 'Makefile';
-
-	@rewritten_inputs = &rewrite_inputs_into_dependencies (@inputs);
 
 	$output_rules .= ($local . ': '
 			  . '$(top_builddir)/config.status '
