@@ -2,23 +2,29 @@
 
 # Test to make sure dependencies are generated correctly for .h files.
 # Report from Richard Boulton.
+#
+# Also check that the sources of the generated parser are distributed.
+# PR/47.
 
 . $srcdir/defs || exit 1
 
 $needs_gnu_make
 
-cat > configure.in << 'END'
-AC_INIT
-AM_INIT_AUTOMAKE(nonesuch, nonesuch)
+cat >> configure.in << 'END'
 AC_PROG_CC
 AC_PROG_YACC
-AC_OUTPUT(Makefile)
+AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
 bin_PROGRAMS = foo
 foo_SOURCES = foo.y
 AM_YFLAGS = -d
+
+check-dist: distdir
+	test -f $(distdir)/foo.y
+	test -f $(distdir)/foo.c
+	test -f $(distdir)/foo.h
 END
 
 cat > foo.y << 'END'
@@ -35,5 +41,8 @@ $AUTOCONF || exit 1
 $MAKE foo.h || exit 1
 
 test -f foo.h || exit 1
+
+rm -f foo.h foo.c
+$MAKE check-dist || exit 1
 
 exit 0
