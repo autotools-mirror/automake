@@ -109,11 +109,10 @@ sub test_invert ()
 
 	       [[["COND1_TRUE", "COND2_TRUE"],
 		 ["COND3_FALSE", "COND2_TRUE"]],
-		[["COND1_FALSE","COND2_FALSE","COND3_FALSE"],
-		 ["COND1_TRUE", "COND2_FALSE","COND3_FALSE"],
-		 ["COND1_FALSE","COND2_FALSE","COND3_TRUE"],
-		 ["COND1_TRUE", "COND2_FALSE","COND3_TRUE"],
-		 ["COND1_FALSE","COND2_TRUE", "COND3_TRUE"]]],
+		[["COND2_FALSE"],
+		 ["COND2_FALSE", "COND3_TRUE"],
+		 ["COND1_FALSE", "COND2_FALSE"],
+		 ["COND1_FALSE", "COND3_TRUE"]]],
 
 	       [[["COND1_TRUE", "COND2_TRUE"],
 		 ["TRUE"]],
@@ -121,9 +120,8 @@ sub test_invert ()
 
 	       [[["COND1_TRUE", "COND2_TRUE"],
 		 ["FALSE"]],
-		[["COND1_FALSE", "COND2_TRUE"],
-		 ["COND1_FALSE", "COND2_FALSE"],
-		 ["COND1_TRUE", "COND2_FALSE"]]],
+		[["COND1_FALSE"],
+		 ["COND2_FALSE"]]],
 
 	       [[["COND1_TRUE"],
 		 ["COND2_FALSE"]],
@@ -137,7 +135,8 @@ sub test_invert ()
       my $inv = $set->invert;
       if ($inv != $res)
 	{
-	  print " (I) " . $inv->string . ' != ' . $res->string . "\n";
+	  print " (I) " . $set->string . "\n\t"
+	    . $inv->string . ' != ' . $res->string . "\n";
 	  return 1;
 	}
     }

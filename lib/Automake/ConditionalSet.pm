@@ -153,7 +153,7 @@ sub conds ($ )
 {
   my ($self) = @_;
   return @{$self->{'conds'}} if exists $self->{'conds'};
-  my @conds = map { $self->{'hash'}{$_} } (keys %{$self->{'hash'}});
+  my @conds = values %{$self->{'hash'}};
   @conds = sort { $a->string cmp $b->string } @conds;
   $self->{'conds'} = [@conds];
   return @conds;
@@ -309,10 +309,53 @@ sub permutations ($ )
   return $res;
 }
 
-=item C<$inv = $res-E<gt>invert>
+=item C<$prod = $set1->multiply ($set2)>
+
+Multiply to conditional sets.
+
+  my $set1 = new Automake::ConditionalSet
+    (new Automake::Conditional ("A_TRUE"),
+     new Automake::Conditional ("B_TRUE"));
+  my $set2 = new Automake::ConditionalSet
+    (new Automake::Conditional ("C_FALSE"),
+     new Automake::Conditional ("D_FALSE"));
+
+C<$set1-E<gt>multiply ($set2)> will return
+
+  new Automake::ConditionalSet
+    (new Automake::Conditional ("A_TRUE", "C_FALSE"),
+     new Automake::Conditional ("B_TRUE", "C_FALSE"),;
+     new Automake::Conditional ("A_TRUE", "D_FALSE"),
+     new Automake::Conditional ("B_TRUE", "D_FALSE"));
+
+=cut
+
+# Same as multiply() but take a list of Conditonal as second argument.
+# We use this in invert().
+sub _multiply ($@)
+{
+  my ($self, @set) = @_;
+  my @res = ();
+  foreach my $selfcond ($self->conds)
+    {
+      foreach my $setcond (@set)
+	{
+	  push @res, $selfcond->merge ($setcond);
+	}
+    }
+  return new Automake::ConditionalSet @res;
+}
+
+sub multiply ($$)
+{
+  my ($self, $set) = @_;
+  return $self->_multiply ($set->conds);
+}
+
+=item C<$inv = $set-E<gt>invert>
 
 Invert a C<ConditionalSet>.  Return a C<ConditionalSet> which is true
-when C<$res> is false, and vice-versa.
+when C<$set> is false, and vice-versa.
 
   my $set = new Automake::ConditionalSet
     (new Automake::Conditional ("A_TRUE", "B_TRUE"),
@@ -332,14 +375,21 @@ sub invert($ )
 
   return $self->{'invert'} if defined $self->{'invert'};
 
-  # Generate permutations for all subconditions.
-  my @perm = $self->permutations->conds;
+  # The invert of an empty ConditionalSet is TRUE.
+  my $res = new Automake::ConditionalSet TRUE;
 
-  # Now remove all conditions which imply one of the input conditions.
-  my @conds = $self->conds;
-  my @notconds =
-    grep { ! $_->implies_any (@conds) } $self->permutations->conds;
-  my $res = new Automake::ConditionalSet @notconds;
+  #   !((a.b)+(c.d)+(e.f))
+  # = (!a+!b).(!c+!d).(!e+!f)
+  # We develop this into a sum of product iteratively, starting from TRUE:
+  # 1) TRUE
+  # 2) TRUE.!a + TRUE.!b
+  # 3) TRUE.!a.!c + TRUE.!b.!c + TRUE.!a.!d + TRUE.!b.!d
+  # 4) TRUE.!a.!c.!e + TRUE.!b.!c.!e + TRUE.!a.!d.!e + TRUE.!b.!d.!e
+  #    + TRUE.!a.!c.!f + TRUE.!b.!c.!f + TRUE.!a.!d.!f + TRUE.!b.!d.!f
+  foreach my $cond ($self->conds)
+    {
+      $res = $res->_multiply ($cond->not);
+    }
 
   # Cache result.
   $self->{'invert'} = $res;

@@ -5925,21 +5925,6 @@ sub pretty_print_rule
 ################################################################
 
 
-# $NEGATION
-# condition_negate ($COND)
-# ------------------------
-sub condition_negate ($)
-{
-    my ($cond) = @_;
-
-    $cond =~ s/TRUE$/TRUEO/;
-    $cond =~ s/FALSE$/TRUE/;
-    $cond =~ s/TRUEO$/FALSE/;
-
-    return $cond;
-}
-
-
 ## ------------------------------ ##
 ## Handling the condition stack.  ##
 ## ------------------------------ ##
@@ -5957,7 +5942,7 @@ sub cond_stack_if ($$$)
 
   $cond = "${cond}_TRUE"
     unless $cond =~ /^TRUE|FALSE$/;
-  $cond = condition_negate ($cond)
+  $cond = Automake::Conditional::condition_negate ($cond)
     if $negate;
 
   push (@cond_stack, $cond);
@@ -5979,14 +5964,15 @@ sub cond_stack_else ($$$)
       return;
     }
 
-  $cond_stack[$#cond_stack] = condition_negate ($cond_stack[$#cond_stack]);
+  $cond_stack[$#cond_stack] =
+  Automake::Conditional::condition_negate ($cond_stack[$#cond_stack]);
 
   # If $COND is given, check against it.
   if (defined $cond)
     {
       $cond = "${cond}_TRUE"
 	unless $cond =~ /^TRUE|FALSE$/;
-      $cond = condition_negate ($cond)
+      $cond = Automake::Conditional::condition_negate ($cond)
 	if $negate;
 
       err ($where, "else reminder ($negate$cond) incompatible with "
@@ -6018,7 +6004,7 @@ sub cond_stack_endif ($$$)
     {
       $cond = "${cond}_TRUE"
 	unless $cond =~ /^TRUE|FALSE$/;
-      $cond = condition_negate ($cond)
+      $cond = Automake::Conditional::condition_negate ($cond)
 	if $negate;
 
       err ($where, "endif reminder ($negate$cond) incompatible with "

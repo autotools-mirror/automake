@@ -77,6 +77,9 @@ Automake::Conditional - record a conjunction of conditions
   # $other and $cond are implied by $both.)
   @conds = Automake::Conditional::reduce ($other, $both, $cond);
 
+  # Invert a Conditional.  This returns a ConditionalSet.
+  $set = $both->not;
+
 =head1 DESCRIPTION
 
 A C<Conditional> is a conjunction of atomic conditions.  In Automake they
@@ -394,6 +397,28 @@ sub implies_any ($@)
   return 0;
 }
 
+=item C<$cond-E<gt>not>
+
+Return a negation of @<$cond> as a list of C<Conditional>s.
+This list should be used to construct a C<ConditionalSet>
+(we cannot return a C<ConditionalSet> from C<Automake::Conditional>,
+because that would make these two packages interdependent).
+
+=cut
+
+sub not ($ )
+{
+  my ($self) = @_;
+  return @{$self->{'not'}} if defined $self->{'not'};
+  my @res;
+  for my $cond ($self->conds)
+    {
+      push @res, new Automake::Conditional &condition_negate ($cond);
+    }
+  $self->{'not'} = [@res];
+  return @res;
+}
+
 =head2 Other helper functions
 
 =over 4
@@ -441,6 +466,23 @@ sub reduce (@)
 
   return TRUE if @ret == 0;
   return @ret;
+}
+
+=item C<condition_negate ($condstr)>
+
+Negate a condition string.
+
+=cut
+
+sub condition_negate ($)
+{
+  my ($cond) = @_;
+
+  $cond =~ s/TRUE$/TRUEO/;
+  $cond =~ s/FALSE$/TRUE/;
+  $cond =~ s/TRUEO$/FALSE/;
+
+  return $cond;
 }
 
 =head1 SEE ALSO
