@@ -360,6 +360,9 @@ remake-subd.am remake.am scripts.am subdirs.am tags.am tags-subd.am \
 texinfos-vars.am texinfos.am hack-make.sed nl-remove.sed
 @end example
 
+All @samp{DATA} and @samp{PACKAGEDATA} files are included in a
+distribution.
+
 
 @node Docs
 @section Texinfo and Man Pages
@@ -501,21 +504,20 @@ problems can be worked around by simply adding some @code{make} targets
 and rules to @file{Makefile.in}.  @code{automake} will ignore these
 additions.
 
-There are some caveats to doing this.  If you introduce a target whose
-name is also used by @code{automake}, you should make sure it is a
-double-colon target (FIXME xref make docs).
+There are some caveats to doing this.  You can't overload a target
+already used by @code{automake}.  However, various useful targets have a
+``-local'' version you can specify in your @file{Makefile.in}.
 
-For instance, in @code{automake}, many data files are installed.
-However, the code for this installation is not generated automatically,
-but is instead done explicitly in @file{Makefile.am}:
+The targets that support a local version are @samp{all}, @samp{info},
+@samp{dvi}, @samp{check}, @samp{install-data}, @samp{install-exec}, and
+@samp{uninstall}.  (Currently @samp{install} is also supported, but this
+might go away)
+
+For instance, here is how to install a file in @file{/etc}:
 
 @example
-amdatadir = $(datadir)/automake
-install:: $(am_DATA)
-	$(srcdir)/mkinstalldirs $(amdatadir)
-	for i in $(am_DATA); do			\
-	  $(INSTALL_DATA) $(srcdir)/$$i $(amdatadir)/$$i; \
-	done
+install-data-local:
+        $(INSTALL_DATA) $(srcdir)/afile /etc/afile
 @end example
 
 
