@@ -1,7 +1,6 @@
 # SUBDIRS = intl po
 
 SCRIPTS = automake
-DISTCLEANFILES = automake
 
 TEXINFOS = automake.texi
 
