@@ -33,6 +33,7 @@ $VERSION = "@VERSION@";
 $PACKAGE = "@PACKAGE@";
 $prefix = "@prefix@";
 $am_dir = "@datadir@/@PACKAGE@";
+$TAR = "@TAR@";
 
 # String constants.
 $IGNORE_PATTERN = "^##([^#].*)?\$";
@@ -1597,7 +1598,8 @@ sub handle_texinfo
 	# removed.  In particular the ".log" extension might
 	# reasonably be used in other contexts by the user.
 	foreach $tc_cursor ('aux', 'cp', 'cps', 'dvi', 'fn', 'fns',
-			    'ky', 'log', 'pg', 'toc', 'tp', 'vr', 'op')
+			    'ky', 'log', 'pg', 'toc', 'tp', 'tps',
+			    'vr', 'vrs', 'op')
 	{
 	    push (@texi_cleans, $infobase . '.' . $tc_cursor);
 	}
@@ -1979,7 +1981,7 @@ sub handle_dist
     $output_vars .= "\n";
 
     # Some boilerplate.
-    $output_vars .= &file_contents ('dist-vars');
+    $output_vars .= &file_contents ('dist-vars') . "\nTAR = " . $TAR . "\n";
 
     # Put these things in rules section so it is easier for whoever
     # reads Makefile.in.
@@ -4001,10 +4003,11 @@ sub initialize_global_constants
 
     # Helper text for dealing with man pages.
     $install_man_format =
-    '	sect=@SECTION@;				\\
+    '	@sect=@SECTION@;				\\
 	inst=`echo "@MANBASE@" | sed \'$(transform)\'`.@FULLSECT@; \\
 	if test -f $(srcdir)/@MAN@; then file=$(srcdir)/@MAN@; \\
 	else file=@MAN@; fi; \\
+	echo " $(INSTALL_DATA) $$file $(mandir)/man$$sect/$$inst"; \\
 	$(INSTALL_DATA) $$file $(mandir)/man$$sect/$$inst
 ';
 
