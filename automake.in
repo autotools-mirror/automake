@@ -183,10 +183,20 @@ ${am_file}_OBJECTS = ${am_file}.${kr}o" >&4
       cat $AM_DIR/libprograms.am >&5
     fi
     if test -n "$AM_PROGRAMS$LIBPROGRAMS"; then
-      for am_prog in $AM_PROGRAMS $LIBPROGRAMS; do
-        eval "test \"\$target_$am_prog\" != explicit" &&
-          sed "s/@PROGRAM@/$am_prog/g" $AM_DIR/program.am >&5
-      done
+       for am_prog in $AM_PROGRAMS $LIBPROGRAMS; do
+	  # If `prog_LDADD' is explicitly defined, use it.  Otherwise,
+	  # use LDADD.
+	  eval "am_ldadd=\"\${${am_prog}_LDADD+set}\""
+	  test "$am_ldadd" = set || {
+	     # Not set, so set it.
+	     echo "${am_prog}_LDADD = \${LDADD}" >&5
+	  }
+
+	  # Insert rule for this target, unless it is explicitly given
+	  # in Makefile.am.
+	  eval "test \"\$target_$am_prog\" != explicit" &&
+	  sed "s/@PROGRAM@/$am_prog/g" $AM_DIR/program.am >&5
+       done
     fi
   fi
 
