@@ -1161,6 +1161,7 @@ sub handle_single_transform_list
 	    local ($rule) = '';
 	    local ($renamed) = 0;
 
+	    $extension = &derive_suffix ($extension);
 	    local ($lang) = $extension_map{$extension};
 	    if ($lang)
 	    {
@@ -1264,11 +1265,12 @@ sub handle_single_transform_list
 						    . ' ' . $obj_sans_ext);
 		}
 	    }
- 	    elsif ($extension =~ /^$source_suffix_pattern$/) 
+ 	    elsif ($extension eq 'o')
  	    {
-		# We just rewrite it.  Maybe we should do more.
-		# FIXME: what about subdir handling here?
-		$object = $base . '.' . $suffix_rules{$extension};
+		# This is probably the result of a direct suffix rule.
+		# In this case we just accept the rewrite.  FIXME:
+		# this fails if we want libtool objects.
+		$object = $base . '.' . $extension;
 		$linker = '';
  	    }
 	    else
@@ -5309,6 +5311,24 @@ sub register_language
     }
 }
 
+# This function is used to find a path from a user-specified suffix to
+# `o' or to some other suffix we recognize internally, eg `cc'.
+sub derive_suffix
+{
+    local ($source_ext) = @_;
+
+    # FIXME: hard-coding `o' is a mistake.  Doing something
+    # intelligent is harder.
+    while ($extension_map{$source_ext} eq ''
+	   && $source_ext ne 'o'
+	   && defined $suffix_rules{$source_ext})
+    {
+	$source_ext = $suffix_rules{$source_ext};
+    }
+
+    return $source_ext;
+}
+
 
 ################################################################
 
@@ -6224,7 +6244,7 @@ sub read_am_file
 	    {
 	      $suffix_rules{$source_suffix} = $object_suffix;
 	      print "Sources ending in .$source_suffix become .$object_suffix\n" if $verbose;
-	      $source_suffix_pattern = "(" . join('|', keys %suffix_rules) . ")";
+	      $source_suffix_pattern = "(" . join ('|', keys %suffix_rules) . ")";
 	    }
 
 	    # FIXME: make sure both suffixes are in SUFFIXES? Or set
@@ -6809,6 +6829,11 @@ sub initialize_per_input
     # This maps the source extension of a suffix rule to its
     # corresponding output extension.
     %suffix_rules = ();
+
+    # This is a regular expression which matches all the known source
+    # suffix.  A source suffix is one that appears in the first
+    # position of a suffix rule.
+    $source_suffix_pattern = '';
 
     # This is the name of the recursive `all' target to use.
     $all_target = 'all-recursive';
