@@ -576,6 +576,7 @@ sub generate_makefile
 
     &handle_texinfo;
     &handle_emacs_lisp;
+    &handle_java;
     &handle_man_pages;
     &handle_data;
     &handle_headers;
@@ -3882,6 +3883,47 @@ sub handle_emacs_lisp
     }
 }
 
+# Handle Java.
+sub handle_java
+{
+    local (@sourcelist) = &am_install_var ('-clean', 'java', 'JAVA',
+					   'java', 'noinst', 'check');
+    return if ! @sourcelist;
+
+    &define_variable ('JAVAC', 'javac');
+    &define_variable ('JAVACFLAGS', '');
+    &define_variable ('CLASSPATH_ENV',
+		      'CLASSPATH=../..:$(srcdir)/../..:$$CLASSPATH');
+    &define_variable ('JAVAROOT', '$(top_builddir)');
+
+    local (%valid) = &am_primary_prefixes ('JAVA', 'java', 'noinst', 'check');
+
+    local ($dir, $curs);
+    foreach $curs (keys %valid)
+    {
+	if (! &variable_defined ($curs . '_JAVA') || $curs eq 'noinst'
+	    || $curs eq 'EXTRA')
+	{
+	    next;
+	}
+
+	if (defined $dir)
+	{
+	    print STDERR "got $curs\n";
+	    &am_line_error ($curs . '_JAVA',
+			    "multiple _JAVA primaries in use");
+	}
+	$dir = $curs;
+    }
+
+    $output_rules .= ('class' . $dir . '.stamp: $(' . $dir . '_JAVA)' . "\n"
+		      . "\t" . '$(CLASSPATH_ENV) $(JAVAC) $(JAVACFLAGS) '
+		      . '-d $(JAVAROOT) $?' . "\n"
+		      . "\t" . 'echo timestamp > class' . $dir . '.stamp'
+		      . "\n");
+    push (@all, 'class' . $dir . '.stamp');
+}
+
 # Handle some of the minor options.
 sub handle_minor_options
 {
@@ -5936,7 +5978,7 @@ sub am_install_var
 
     # Push here because PRIMARY might be configure time determined.
     push (@all, '$(' . $primary . ')')
-	if @used;
+	if @used && $primary ne 'JAVA';
 
     return (@result);
 }
