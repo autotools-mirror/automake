@@ -4256,11 +4256,7 @@ sub handle_tests_dejagnu
 
     # Only create site.exp rule if user hasn't already written one.
     $output_rules .=
-      &file_contents ('dejagnu',
-		      ('SITE-EXP' => ! &target_defined ('site.exp'),
-		       'BUILD'    => $seen_canonical == $AC_CANONICAL_SYSTEM,
-		       'HOST'     => $seen_canonical,
-		       'TARGET'   => $seen_canonical == $AC_CANONICAL_SYSTEM));
+      file_contents ('dejagnu', ('SITE-EXP' => ! target_defined ('site.exp')));
 }
 
 
@@ -6691,7 +6687,6 @@ sub read_am_file
 	}
 	elsif (/$ASSIGNMENT_PATTERN/o)
 	{
-	    # print STDERR;
 	    # Found a macro definition.
 	    $was_rule = 0;
 	    $last_var_name = $1;
@@ -6717,7 +6712,6 @@ sub read_am_file
 		$var_comment{$last_var_name} .= "$comment";
 		$comment = $spacing = '';
 
-		# print STDERR "$last_var_name => $last_var_value\n";
 		macro_define ($last_var_name, 0,
 			      $last_var_type, $cond,
 			      $last_var_value, $.)
@@ -6782,11 +6776,7 @@ sub define_standard_variables
 {
     my $saved_output_vars = $output_vars;
     my ($comments, undef, $rules) =
-      &file_contents_internal (1, "$am_dir/header-vars.am",
-		     ('BUILD'    => $seen_canonical == $AC_CANONICAL_SYSTEM,
-		      'HOST'     => $seen_canonical,
-		      'TARGET'   => $seen_canonical == $AC_CANONICAL_SYSTEM,
-		      'top_builddir' => backname ($relative_dir)));
+      file_contents_internal (1, "$am_dir/header-vars.am");
 
     # This will output the definitions in $output_vars, which we don't
     # want...
@@ -6897,6 +6887,10 @@ sub make_paragraphs ($%)
 		     'TOPDIR'       => backname ($relative_dir),
 		     'TOPDIR_P'     => $relative_dir eq '.',
 		     'CONFIGURE-AC' => $configure_ac,
+
+		     'BUILD'    => $seen_canonical == $AC_CANONICAL_SYSTEM,
+		     'HOST'     => $seen_canonical,
+		     'TARGET'   => $seen_canonical == $AC_CANONICAL_SYSTEM,
 
 		     'LIBTOOL'      => defined $configure_vars{'LIBTOOL'})
 	  # We don't need more than two consecutive new-lines.
@@ -7078,7 +7072,7 @@ sub file_contents_internal ($$%)
  	{
 	    my ($var, $type, $val) = ($1, $2, $3);
  	    &am_file_error ($file, "macro `$var' with trailing backslash")
-	      if /\\$/;;
+	      if /\\$/;
 
 	    # Accumulating variables must not be output.
 	    $var_comment{$var} .= "$spacing"
