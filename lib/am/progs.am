@@ -109,11 +109,16 @@ if %?CK-OPTS%
 .PHONY installcheck-am: installcheck-%DIR%PROGRAMS
 installcheck-%DIR%PROGRAMS: $(%DIR%_PROGRAMS)
 	bad=0; pid=$$$$; list="$(%DIR%_PROGRAMS)"; for p in $$list; do \
+## Strip the directory and $(EXEEXT) before applying $(transform).
+	  f=`echo "$$p" | \
+	     sed 's,^.*/,,;s/$(EXEEXT)$$//;$(transform);s/$$/$(EXEEXT)/'`; \
+## Insert the directory back if nobase_ is used.
+?!BASE?	  f=`echo "$$p" | sed 's|[^/]*$$||'`"$$f"; \
 	  for opt in --help --version; do \
-	    if $(DESTDIR)$(%NDIR%dir)/$$p $$opt > c$${pid}_.out 2> c$${pid}_.err \
+	    if $(DESTDIR)$(%NDIR%dir)/$$f $$opt > c$${pid}_.out 2> c$${pid}_.err \
 	         && test -n "`cat c$${pid}_.out`" \
 	         && test -z "`cat c$${pid}_.err`"; then :; \
-	    else echo "$$p does not support $$opt" 1>&2; bad=1; fi; \
+	    else echo "$$f does not support $$opt" 1>&2; bad=1; fi; \
 	  done; \
 	done; rm -f c$${pid}_.???; exit $$bad
 endif %?CK-OPTS%
