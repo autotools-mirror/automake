@@ -439,6 +439,7 @@ subobj8.test \
 subobj9.test \
 subobjname.test \
 subpkg.test \
+subpkg2.test \
 subst.test \
 substref.test \
 substtarg.test \
