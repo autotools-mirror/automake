@@ -1,24 +1,31 @@
 ## ------------------------
 ## Python file handling
 ## From Andrew Dalke
+## Updated by James Henstridge
 ## ------------------------
 
-# AM_PATH_PYTHON([package, module])
-# 
+# AM_PATH_PYTHON([MINIMUM-VERSION])
 
-# Adds support for distributing Python modules or the special form
-# of a module called a `package.'  Modules of the first type are 
-# files ending in `.py' with no '__init__.py' file.  This must be
-# placed on the PYTHONPATH, and the default location is PYTHON_SITE,
-# or $(prefix)/lib/python$(PYTHON_VERSION)/site-package
-# 
-# A package module is contained in its own directory.  This directory
-# is named PACKAGE, which was the name given to automake.  The full
-# directory path is PYTHON_SITE_PACKAGE or
-#   $(prefix)/lib/python$(PYTHON_VERSION)/site-package/$(PACKAGE)
-# where site-package is on the PYTHONPATH.  The `__init__.py' file is
-# located in the directory, along with any other submodules which may
-# be necessary.
+# Adds support for distributing Python modules and packages.  To
+# install modules, copy them to $(pythondir), using the python_PYTHON
+# automake variable.  To install a package with the same name as the
+# automake package, install to $(pkgpythondir), or use the
+# pkgpython_PYTHON automake variable.
+
+# The variables $(pyexecdir) and $(pkgpyexecdir) are provided as
+# locations to install python extension modules (shared libraries).
+# Another macro is required to find the appropriate flags to compile
+# extension modules.
+
+# If your package is configured with a different prefix to python,
+# users will have to add the install directory to the PYTHONPATH
+# environment variable, or create a .pth file (see the python
+# documentation for details).
+
+# If the MINIUMUM-VERSION argument is passed, AM_PATH_PYTHON will
+# cause an error if the version of python installed on the system
+# doesn't meet the requirement.  MINIMUM-VERSION should consist of
+# numbers and dots only.
 
 
 AC_DEFUN([AM_PATH_PYTHON],
@@ -28,7 +35,32 @@ AC_DEFUN([AM_PATH_PYTHON],
   dnl $prefix/lib/site-python in 1.4 to $prefix/lib/python1.5/site-packages
   dnl in 1.5, and I don't want to maintain that logic.
 
-  AC_PATH_PROG(PYTHON, python python1.5)
+  AC_PATH_PROG(PYTHON, python python2.1 python2.0 python1.6 python1.5)
+
+  dnl should we do the version check?
+  ifelse([$1],[],,[
+    AC_MSG_CHECKING(if Python version >= $1)
+    changequote(<<, >>)dnl
+    prog="
+import sys, string
+minver = '$1'
+pyver = string.split(sys.version)[0]  # first word is version string
+# split strings by '.' and convert to numeric
+minver = map(string.atoi, string.split(minver, '.'))
+pyver = map(string.atoi, string.split(pyver, '.'))
+# we can now do comparisons on the two lists:
+if pyver >= minver:
+	sys.exit(0)
+else:
+	sys.exit(1)"
+    changequote([, ])dnl
+    if $PYTHON -c "$prog" 1>&AC_FD_CC 2>&AC_FD_CC
+    then
+      AC_MSG_RESULT(okay)
+    else
+      AC_MSG_ERROR(too old)
+    fi
+  ])
 
   AC_MSG_CHECKING([local Python configuration])
 
@@ -62,42 +94,36 @@ AC_DEFUN([AM_PATH_PYTHON],
 
   dnl Set up 4 directories:
 
-  dnl   pythondir -- location of the standard python libraries 
-  dnl     Also lets automake think PYTHON means something.
+  dnl pythondir -- where to install python scripts.  This is the
+  dnl   site-packages directory, not the python standard library
+  dnl   directory like in previous automake betas.  This behaviour
+  dnl   is more consistent with lispdir.m4 for example.
+  dnl
+  dnl Also, if the package prefix isn't the same as python's prefix,
+  dnl then the old $(pythondir) was pretty useless.
 
   AC_SUBST(pythondir)
-  pythondir=$PYTHON_PREFIX"/lib/python"$PYTHON_VERSION
+  pythondir=$PYTHON_PREFIX"/lib/python"$PYTHON_VERSION/site-packages
 
-  dnl   PYTHON_SITE -- the platform independent site-packages directory
+  dnl pkgpythondir -- $PACKAGE directory under pythondir.  Was
+  dnl   PYTHON_SITE_PACKAGE in previous betas, but this naming is
+  dnl   more consistent with the rest of automake.
+  dnl   Maybe this should be put in python.am?
 
-  AC_SUBST(PYTHON_SITE)
-  PYTHON_SITE=$pythondir/site-packages
+  AC_SUBST(pkgpythondir)
+  pkgpythondir=\${pythondir}/$PACKAGE
 
-  dnl   PYTHON_SITE_PACKAGE -- the $PACKAGE directory under PYTHON_SITE
+  dnl pyexecdir -- directory for installing python extension modules
+  dnl   (shared libraries)  Was PYTHON_SITE_EXEC in previous betas.
 
-  AC_SUBST(PYTHON_SITE_PACKAGE)
-  PYTHON_SITE_PACKAGE=$pythondir/site-packages/$PACKAGE
+  AC_SUBST(pyexecdir)
+  pyexecdir=$PYTHON_EXEC_PREFIX"/lib/python"$PYTHON_VERSION/site-packages
 
-  dnl   PYTHON_SITE_EXEC -- platform dependent site-packages dir (eg, for
-  dnl        shared libraries)
+  dnl pkgpyexecdir -- $(pyexecdir)/$(PACKAGE)
+  dnl   Maybe this should be put in python.am?
 
-  AC_SUBST(PYTHON_SITE_EXEC)
-  PYTHON_SITE_EXEC=$PYTHON_EXEC_PREFIX"/lib/python"$PYTHON_VERSION/site-packages
-
-
-  dnl Configure PYTHON_SITE_INSTALL so it points to either the module
-  dnl directory or the package subdirectory, depending on the $1
-  dnl parameter ("module" or "package").
-
-  AC_SUBST(PYTHON_SITE_INSTALL)
-  ifelse($1, module, [PYTHON_SITE_INSTALL=$PYTHON_SITE],
-         $1, package, [PYTHON_SITE_INSTALL=$PYTHON_SITE_PACKAGE],
-   [errprint([Unknown option `$1' used in call to AM_PATH_PYTHON.
-Valid options are `module' or `package'
-])m4exit(4)])
-
-
-  dnl All done.
+  AC_SUBST(pkgpyexecdir)
+  pkgpyexecdir=\${pyexecdir}/$PACKAGE
 
   AC_MSG_RESULT([looks good])
 ])
