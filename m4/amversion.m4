@@ -19,7 +19,7 @@
 # ----------------------------
 # Automake X.Y traces this macro to ensure aclocal.m4 has been
 # generated from the m4 files accompanying Automake X.Y.
-AC_DEFUN([AM_AUTOMAKE_VERSION],[am__api_version="1.7c"])
+AC_DEFUN([AM_AUTOMAKE_VERSION], [am__api_version="1.7c"])
 
 # AM_SET_CURRENT_AUTOMAKE_VERSION
 # -------------------------------
