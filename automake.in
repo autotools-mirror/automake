@@ -5843,8 +5843,7 @@ sub read_am_file
 	    if (@conditional_stack)
 	    {
 		local ($found) = 0;
-		local ($val) = $contents{$last_var_name};
-		$val = &quote_cond_val ($val);
+		local ($val);
 		if ($conditional{$last_var_name})
 		{
 		    if ($type eq '+')
@@ -5858,11 +5857,12 @@ sub read_am_file
 			{
 			    local ($vcond) = shift (@cond_vals);
 			    push (@new_vals, $vcond);
-			    if (&conditional_stack ($vcond, $cond_string))
+			    if (&conditional_same ($vcond, $cond_string))
 			    {
 				$found = 1;
-				shift (@cond_vals);
-				push (@new_vals, $val);
+				$val = (&unquote_cond_val (shift (@cond_vals))
+					. ' ' . $value);
+				push (@new_vals, &quote_cond_val ($val));
 			    }
 			    else
 			    {
@@ -5881,17 +5881,19 @@ sub read_am_file
 			&check_ambiguous_conditional ($last_var_name,
 						      $cond_string);
 			$conditional{$last_var_name} .= ' ';
+			$val = $value;
 		    }
 		}
 		else
 		{
 		    $conditional{$last_var_name} = '';
+		    $val = $contents{$last_var_name};
 		}
 		if (! $found)
 		{
 		    $conditional{$last_var_name} .= ($cond_string
 						     . ' '
-						     . $val);
+						     . &quote_cond_val ($val));
 		}
 	    }
 
