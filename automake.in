@@ -1159,7 +1159,7 @@ sub generate_makefile
     # There are a few install-related variables that you should not define.
     foreach my $var ('PRE_INSTALL', 'POST_INSTALL', 'NORMAL_INSTALL')
     {
-	if (&variable_defined ($var) && !$var_is_am{$var})
+	if (variable_defined ($var) && !$var_is_am{$var})
 	{
 	    macro_error ($var, "`$var' should not be defined");
 	}
@@ -1188,7 +1188,7 @@ sub generate_makefile
     }
 
     push (@sources, '$(SOURCES)')
-	if &variable_defined ('SOURCES');
+	if variable_defined ('SOURCES');
 
     # Must do this after reading .am file.  See read_main_am_file to
     # understand weird tricks we play there with variables.
@@ -1240,8 +1240,8 @@ sub generate_makefile
     &handle_all ($output);
 
     # FIXME: Gross!
-    if (&variable_defined('lib_LTLIBRARIES') &&
-	&variable_defined('bin_PROGRAMS'))
+    if (variable_defined ('lib_LTLIBRARIES') &&
+	variable_defined ('bin_PROGRAMS'))
     {
 	$output_rules .= "install-binPROGRAMS: install-libLTLIBRARIES\n\n";
     }
@@ -1250,7 +1250,7 @@ sub generate_makefile
     &handle_clean;
     &handle_factored_dependencies;
 
-    &check_typos;
+    check_typos ();
 
     if (! -d ($output_directory . '/' . $am_relative_dir))
     {
@@ -1356,7 +1356,7 @@ sub version_check ($$$$)
 # Handle AUTOMAKE_OPTIONS variable.  Return 1 on error, 0 otherwise.
 sub handle_options
 {
-    if (&variable_defined ('AUTOMAKE_OPTIONS'))
+    if (variable_defined ('AUTOMAKE_OPTIONS'))
     {
 	foreach (&variable_value_as_list_recursive ('AUTOMAKE_OPTIONS', ''))
 	{
@@ -1663,7 +1663,7 @@ sub check_libobjs_sources
 			'dist_EXTRA_', 'nodist_EXTRA_')
     {
         my @files;
-	if (&variable_defined ($prefix . $one_file . '_SOURCES'))
+	if (variable_defined ($prefix . $one_file . '_SOURCES'))
 	{
 	    @files = &variable_value_as_list_recursive (
 				($prefix . $one_file . '_SOURCES'),
@@ -1680,11 +1680,9 @@ sub check_libobjs_sources
 
 	foreach my $file (@files)
 	{
-	    if (defined $libsources{$file})
-	    {
-		macro_error ($prefix . $one_file . '_SOURCES',
-			     "automatically discovered file `$file' should not be explicitly mentioned");
-	    }
+	  macro_error ($prefix . $one_file . '_SOURCES',
+		       "automatically discovered file `$file' should not be explicitly mentioned")
+	    if defined $libsources{$file};
 	}
     }
 }
@@ -1790,7 +1788,7 @@ sub handle_single_transform_list ($$$$@)
 	    $object = $base . $this_obj_ext;
 
             if (defined $lang->flags
-                && &variable_defined ($derived . '_' . $lang->flags))
+                && variable_defined ($derived . '_' . $lang->flags))
             {
                 # We have a per-executable flag in effect for this
                 # object.  In this case we rewrite the object's
@@ -1806,7 +1804,7 @@ sub handle_single_transform_list ($$$$@)
                 # override.
 
                 my $dname = $derived;
-                if (&variable_defined ($derived . '_SHORTNAME'))
+                if (variable_defined ($derived . '_SHORTNAME'))
                 {
                     # FIXME: should use the same conditional as
                     # the _SOURCES variable.  But this is really
@@ -2131,7 +2129,7 @@ sub handle_source_transform
 
     my ($linker) = '';
 
-    if (&variable_defined ($one_file . "_OBJECTS"))
+    if (variable_defined ($one_file . "_OBJECTS"))
     {
 	macro_error ($one_file . '_OBJECTS',
 		     $one_file . '_OBJECTS', 'should not be defined');
@@ -2158,8 +2156,8 @@ sub handle_source_transform
 	$used_pfx{$xpfx} = 1
 	  unless $prefix =~ /EXTRA_/;
 
-	push (@sources, '$(' . $prefix . $one_file . "_SOURCES)");
-	push (@dist_sources, '$(' . $prefix . $one_file . "_SOURCES)")
+	push @sources, "\$($var)";
+	push @dist_sources, "\$($var)"
 	  unless $prefix =~ /^nodist_/;
 
 	@substfroms = ();
@@ -2221,7 +2219,7 @@ sub handle_lib_objects
     my ($xname, $var) = @_;
 
     prog_error ("handle_lib_objects: $var undefined")
-	if ! &variable_defined ($var);
+	if ! variable_defined ($var);
 
     my $ret = 0;
     foreach my $cond (variable_conditions_recursive ($var))
@@ -2287,7 +2285,7 @@ sub handle_lib_objects_cond
 	    push (@dep_list, $lsearch);
 	    $seen_libobjs = 1;
 	    if (! keys %libsources
-		&& ! &variable_defined ($lt . 'LIBOBJS'))
+		&& ! variable_defined ($lt . 'LIBOBJS'))
 	    {
 		macro_error ($var,
 			     "\@$lt" . "LIBOBJS\@ seen but never set in `$configure_ac'");
@@ -2313,7 +2311,7 @@ sub handle_lib_objects_cond
 		    ($rewrite = $iter) =~ s/(\W)/\\$1/g;
 		    $rewrite = "^" . $rewrite . "\$";
 		    # Only require the file if it is not a built source.
-		    if (! &variable_defined ('BUILT_SOURCES')
+		    if (! variable_defined ('BUILT_SOURCES')
 			|| ! grep (/$rewrite/,
 				   &variable_value_as_list_recursive (
 				   	'BUILT_SOURCES', 'all')))
@@ -2338,7 +2336,7 @@ sub handle_lib_objects_cond
 	}
     }
 
-    if ($xname ne '' && ! &variable_defined ($xname . '_DEPENDENCIES', $cond))
+    if ($xname ne '' && ! variable_defined ($xname . '_DEPENDENCIES', $cond))
     {
 	define_pretty_variable ($xname . '_DEPENDENCIES', $cond, @dep_list);
     }
@@ -2369,7 +2367,7 @@ sub check_canonical_spelling
 	    macro_error ("$name$xt",
 			 "invalid variable `$name$xt'; "
 			 . "should be `$xname$xt'")
-		if &variable_defined ("$name$xt");
+		if variable_defined ("$name$xt");
 	}
     }
 
@@ -2391,7 +2389,7 @@ sub handle_compile ()
       {
 	$default_includes = ' -I. -I$(srcdir)';
 
-	if (&variable_defined ('CONFIG_HEADER'))
+	if (variable_defined ('CONFIG_HEADER'))
 	  {
 	    foreach my $hdr (split (' ', &variable_value ('CONFIG_HEADER')))
 	      {
@@ -2497,7 +2495,7 @@ sub handle_programs
 	my $linker = &handle_source_transform ($xname, $one_file, $obj);
 
 	my $xt = '';
-	if (&variable_defined ($xname . "_LDADD"))
+	if (variable_defined ($xname . "_LDADD"))
 	{
 	    if (&handle_lib_objects ($xname, $xname . '_LDADD'))
 	    {
@@ -2512,28 +2510,28 @@ sub handle_programs
 
 	    # This does a bit too much work.  But we need it to
 	    # generate _DEPENDENCIES when appropriate.
-	    if (&variable_defined ('LDADD'))
+	    if (variable_defined ('LDADD'))
 	    {
 		if (&handle_lib_objects ($xname, 'LDADD'))
 		{
 		    $seen_libobjs = 1;
 		}
 	    }
-	    elsif (! &variable_defined ($xname . '_DEPENDENCIES'))
+	    elsif (! variable_defined ($xname . '_DEPENDENCIES'))
 	    {
 		&define_variable ($xname . '_DEPENDENCIES', '');
 	    }
 	    $xt = '_SOURCES'
 	}
 
-	if (&variable_defined ($xname . '_LIBADD'))
+	if (variable_defined ($xname . '_LIBADD'))
 	{
 	    macro_error ($xname . '_LIBADD',
 			 "use `" . $xname . "_LDADD', not `"
 			 . $xname . "_LIBADD'");
 	}
 
-	if (! &variable_defined ($xname . '_LDFLAGS'))
+	if (! variable_defined ($xname . '_LDFLAGS'))
 	{
 	    # Define the prog_LDFLAGS variable.
 	    &define_variable ($xname . '_LDFLAGS', '');
@@ -2541,7 +2539,7 @@ sub handle_programs
 
 	# Determine program to use for link.
 	my $xlink;
-	if (&variable_defined ($xname . '_LINK'))
+	if (variable_defined ($xname . '_LINK'))
 	{
 	    $xlink = $xname . '_LINK';
 	}
@@ -2567,7 +2565,7 @@ sub handle_programs
 					  'EXEEXT'   => $extension));
     }
 
-    if (&variable_defined ('LDADD') && &handle_lib_objects ('', 'LDADD'))
+    if (variable_defined ('LDADD') && &handle_lib_objects ('', 'LDADD'))
     {
 	$seen_libobjs = 1;
     }
@@ -2578,11 +2576,11 @@ sub handle_programs
 	{
 	    my $xname = &canonicalize ($one_file);
 
-	    if (&variable_defined ($xname . '_LDADD'))
+	    if (variable_defined ($xname . '_LDADD'))
 	    {
 		&check_libobjs_sources ($xname, $xname . '_LDADD');
 	    }
-	    elsif (&variable_defined ('LDADD'))
+	    elsif (variable_defined ('LDADD'))
 	    {
 		&check_libobjs_sources ($xname, 'LDADD');
 	    }
@@ -2636,12 +2634,12 @@ sub handle_libraries
 					      '_OBJECTS', '_DEPENDENCIES',
 					      '_AR');
 
-	if (! &variable_defined ($xlib . '_AR'))
+	if (! variable_defined ($xlib . '_AR'))
 	{
 	    &define_variable ($xlib . '_AR', '$(AR) cru');
 	}
 
-	if (&variable_defined ($xlib . '_LIBADD'))
+	if (variable_defined ($xlib . '_LIBADD'))
 	{
 	    if (&handle_lib_objects ($xlib, $xlib . '_LIBADD'))
 	    {
@@ -2655,7 +2653,7 @@ sub handle_libraries
 	    &define_variable ($xlib . "_LIBADD", '');
 	}
 
-	if (&variable_defined ($xlib . '_LDADD'))
+	if (variable_defined ($xlib . '_LDADD'))
 	{
 	    macro_error ($xlib . '_LDADD',
 			 "use `" . $xlib . "_LIBADD', not `"
@@ -2682,7 +2680,7 @@ sub handle_libraries
 	foreach my $onelib (@liblist)
 	{
 	    my $xlib = &canonicalize ($onelib);
-	    if (&variable_defined ($xlib . '_LIBADD'))
+	    if (variable_defined ($xlib . '_LIBADD'))
 	    {
 		&check_libobjs_sources ($xlib, $xlib . '_LIBADD');
 	    }
@@ -2720,11 +2718,11 @@ sub handle_ltlibraries
 	  }
 
 	# Get the installation directory of each library.
-	for (&variable_value_as_list_recursive ($key . '_LTLIBRARIES', 'all'))
+	for (variable_value_as_list_recursive ($key . '_LTLIBRARIES', 'all'))
 	  {
 	    if ($instdirs{$_})
 	      {
-		&am_error ("`$_' is already going to be installed in `$instdirs{$_}'");
+		am_error ("`$_' is already going to be installed in `$instdirs{$_}'");
 	      }
 	    else
 	      {
@@ -2743,7 +2741,7 @@ sub handle_ltlibraries
 					      '_SOURCES', '_OBJECTS',
 					      '_DEPENDENCIES');
 
-	if (! &variable_defined ($xlib . '_LDFLAGS'))
+	if (! variable_defined ($xlib . '_LDFLAGS'))
 	{
 	    # Define the lib_LDFLAGS variable.
 	    &define_variable ($xlib . '_LDFLAGS', '');
@@ -2751,10 +2749,10 @@ sub handle_ltlibraries
 
 	# Check that the library fits the standard naming convention.
     	my $libname_rx = "^lib.*\.la";
-	if ((&variable_defined ($xlib . '_LDFLAGS')
+	if ((variable_defined ($xlib . '_LDFLAGS')
 	     && grep (/-module/, &variable_value_as_list_recursive (
 	     				$xlib . '_LDFLAGS', 'all')))
-	    || (&variable_defined ('LDFLAGS')
+	    || (variable_defined ('LDFLAGS')
 		&& grep (/-module/, &variable_value_as_list_recursive (
 					'LDFLAGS', 'all'))))
 	{
@@ -2769,7 +2767,7 @@ sub handle_ltlibraries
 	    &am_error ("`$onelib' is not a standard libtool library name");
 	}
 
-	if (&variable_defined ($xlib . '_LIBADD'))
+	if (variable_defined ($xlib . '_LIBADD'))
 	{
 	    if (&handle_lib_objects ($xlib, $xlib . '_LIBADD'))
 	    {
@@ -2783,7 +2781,7 @@ sub handle_ltlibraries
 	    &define_variable ($xlib . "_LIBADD", '');
 	}
 
-	if (&variable_defined ($xlib . '_LDADD'))
+	if (variable_defined ($xlib . '_LDADD'))
 	{
 	    macro_error ($xlib . '_LDADD',
 			 "use `" . $xlib . "_LIBADD', not `"
@@ -2797,7 +2795,7 @@ sub handle_ltlibraries
 
 	# Determine program to use for link.
 	my $xlink;
-	if (&variable_defined ($xlib . '_LINK'))
+	if (variable_defined ($xlib . '_LINK'))
 	{
 	    $xlink = $xlib . '_LINK';
 	}
@@ -2840,7 +2838,7 @@ sub handle_ltlibraries
 	foreach my $onelib (@liblist)
 	{
 	    my $xlib = &canonicalize ($onelib);
-	    if (&variable_defined ($xlib . '_LIBADD'))
+	    if (variable_defined ($xlib . '_LIBADD'))
 	    {
 		&check_libobjs_sources ($xlib, $xlib . '_LIBADD');
 	    }
@@ -2850,21 +2848,20 @@ sub handle_ltlibraries
 
 # See if any _SOURCES variable were misspelled.  Also, make sure that
 # EXTRA_ variables don't contain configure substitutions.
-sub check_typos
+sub check_typos ()
 {
     foreach my $varname (keys %var_value)
     {
 	foreach my $primary ('_SOURCES', '_LIBADD', '_LDADD', '_LDFLAGS',
 			     '_DEPENDENCIES')
 	{
-	    if ($varname =~ /$primary$/ && ! $content_seen{$varname})
-	    {
-		macro_error ($varname,
-			     "invalid unused variable name: `$varname'");
-	    }
+	  macro_error ($varname,
+		       "invalid unused variable name: `$varname'")
+	    if $varname =~ /$primary$/ && ! $content_seen{$varname};
 	}
     }
 }
+
 
 # Handle scripts.
 sub handle_scripts
@@ -2992,17 +2989,17 @@ sub scan_texinfo_file
 
 # ($DO-SOMETHING, $TEXICLEANS)
 # handle_texinfo_helper ()
-# -----------------
+# ------------------------
 # Handle all Texinfo source; helper for handle_texinfo
 sub handle_texinfo_helper
 {
     macro_error ('TEXINFOS',
 		 "`TEXINFOS' is an anachronism; use `info_TEXINFOS'")
-	if &variable_defined ('TEXINFOS');
-    return (0, '') if (! &variable_defined ('info_TEXINFOS')
-		       && ! &variable_defined ('html_TEXINFOS'));
+	if variable_defined ('TEXINFOS');
+    return (0, '') if (! variable_defined ('info_TEXINFOS')
+		       && ! variable_defined ('html_TEXINFOS'));
 
-    if (&variable_defined ('html_TEXINFOS'))
+    if (variable_defined ('html_TEXINFOS'))
     {
 	macro_error ('html_TEXINFOS',
 		     "HTML generation not yet supported");
@@ -3088,7 +3085,7 @@ sub handle_texinfo_helper
 	push (@texi_deps, '$(srcdir)/' . $vtexi) if $vtexi;
 
 	my $canonical = &canonicalize ($infobase);
-	if (&variable_defined ($canonical . "_TEXINFOS"))
+	if (variable_defined ($canonical . "_TEXINFOS"))
 	{
 	    push (@texi_deps, '$(' . $canonical . '_TEXINFOS)');
 	    &push_dist_common ('$(' . $canonical . '_TEXINFOS)');
@@ -3118,7 +3115,7 @@ sub handle_texinfo_helper
 	&define_variable ('TEXINFO_TEX', "$texinfodir/texinfo.tex");
 	$need_texi_file = 2; # so that we require_conf_file later
     }
-    elsif (&variable_defined ('TEXINFO_TEX'))
+    elsif (variable_defined ('TEXINFO_TEX'))
     {
 	# The user defined TEXINFO_TEX so assume he knows what he is
 	# doing.
@@ -3192,7 +3189,7 @@ sub handle_texinfo
 sub handle_man_pages
 {
     macro_error ('MANS', "`MANS' is an anachronism; use `man_MANS'")
-	if &variable_defined ('MANS');
+	if variable_defined ('MANS');
 
     # Find all the sections in use.  We do this by first looking for
     # "standard" sections, and then looking for any additional
@@ -3205,7 +3202,7 @@ sub handle_man_pages
 	# Add more sections as needed.
 	foreach my $section ('0'..'9', 'n', 'l')
 	{
-	    if (&variable_defined ($pfx . 'man' . $section . '_MANS'))
+	    if (variable_defined ($pfx . 'man' . $section . '_MANS'))
 	    {
 		$sections{$section} = 1;
 		$vlist{'$(' . $pfx . 'man' . $section . '_MANS)'} = 1;
@@ -3215,7 +3212,7 @@ sub handle_man_pages
 	    }
 	}
 
-	if (&variable_defined ($pfx . 'man_MANS'))
+	if (variable_defined ($pfx . 'man_MANS'))
 	{
 	    $vlist{'$(' . $pfx . 'man_MANS)'} = 1;
 	    foreach (&variable_value_as_list_recursive ($pfx . 'man_MANS', 'all'))
@@ -3263,7 +3260,7 @@ sub handle_data
 sub handle_tags
 {
     my @tag_deps = ();
-    if (&variable_defined ('SUBDIRS'))
+    if (variable_defined ('SUBDIRS'))
     {
 	$output_rules .= ("tags-recursive:\n"
 			  . "\tlist=\'\$(SUBDIRS)\'; for subdir in \$\$list; do \\\n"
@@ -3277,7 +3274,7 @@ sub handle_tags
     }
 
     if (&saw_sources_p (1)
-	|| &variable_defined ('ETAGS_ARGS')
+	|| variable_defined ('ETAGS_ARGS')
 	|| @tag_deps)
     {
 	my @config;
@@ -3297,7 +3294,7 @@ sub handle_tags
 					  'DIRS'   => "@tag_deps"));
 	&examine_variable ('TAGS_DEPENDENCIES');
     }
-    elsif (&variable_defined ('TAGS_DEPENDENCIES'))
+    elsif (variable_defined ('TAGS_DEPENDENCIES'))
     {
 	macro_error ('TAGS_DEPENDENCIES',
 		     "doesn't make sense to define `TAGS_DEPENDENCIES' without sources or `ETAGS_ARGS'");
@@ -3413,7 +3410,7 @@ sub handle_dist
     # subdir.  If so, add it to the list.  I didn't want to do this
     # originally, but there were so many requests that I finally
     # relented.
-    if (&variable_defined ('EXTRA_DIST'))
+    if (variable_defined ('EXTRA_DIST'))
     {
 	# FIXME: This should be fixed to work with conditionals.  That
 	# will require only making the entries in %dist_dirs under the
@@ -3449,7 +3446,7 @@ sub handle_dist
 
     # If we have SUBDIRS, create all dist subdirectories and do
     # recursive build.
-    if (&variable_defined ('SUBDIRS'))
+    if (variable_defined ('SUBDIRS'))
     {
 	# If SUBDIRS is conditionally defined, then set DIST_SUBDIRS
 	# to all possible directories, and use it.  If DIST_SUBDIRS is
@@ -3459,11 +3456,11 @@ sub handle_dist
 	# one project uses so many conditional subdirectories that
 	# calling variable_conditionally_defined on SUBDIRS will cause
 	# automake to grow to 150Mb.  Sigh.
-	if (&variable_defined ('DIST_SUBDIRS')
+	if (variable_defined ('DIST_SUBDIRS')
 	    || variable_conditionally_defined ('SUBDIRS'))
 	{
 	    $dist_subdir_name = 'DIST_SUBDIRS';
-	    if (! &variable_defined ('DIST_SUBDIRS'))
+	    if (! variable_defined ('DIST_SUBDIRS'))
 	    {
 		define_pretty_variable
 		  ('DIST_SUBDIRS', '',
@@ -3489,7 +3486,7 @@ sub handle_dist
     $transform{'DIST-TARGETS'} = join(' ', @dist_targets);
 
     # Defining $(DISTDIR).
-    $transform{'DISTDIR'} = !&variable_defined('distdir');
+    $transform{'DISTDIR'} = !variable_defined('distdir');
     $transform{'TOP_DISTDIR'} = backname ($relative_dir);
 
     $output_rules .= &file_contents ('distdir', %transform);
@@ -3500,7 +3497,7 @@ sub handle_dist
 sub handle_subdirs
 {
     return
-      unless &variable_defined ('SUBDIRS');
+      unless variable_defined ('SUBDIRS');
 
     # Make sure each directory mentioned in SUBDIRS actually exists.
     foreach my $dir (&variable_value_as_list_recursive ('SUBDIRS', 'all'))
@@ -3556,11 +3553,11 @@ sub scan_aclocal_m4
 	push @ac_deps, 'acinclude.m4';
     }
 
-    if (&variable_defined ('ACLOCAL_M4_SOURCES'))
+    if (variable_defined ('ACLOCAL_M4_SOURCES'))
     {
 	push (@ac_deps, '$(ACLOCAL_M4_SOURCES)');
     }
-    elsif (&variable_defined ('ACLOCAL_AMFLAGS'))
+    elsif (variable_defined ('ACLOCAL_AMFLAGS'))
     {
 	# Scan all -I directories for m4 files.  These are our
 	# dependencies.
@@ -3910,7 +3907,7 @@ sub handle_gettext
 {
     return if ! $seen_gettext || $relative_dir ne '.';
 
-    if (! &variable_defined ('SUBDIRS'))
+    if (! variable_defined ('SUBDIRS'))
     {
 	conf_error ("AM_GNU_GETTEXT used but SUBDIRS not defined");
 	return;
@@ -3944,7 +3941,7 @@ sub handle_footer
     # before .SUFFIXES.  So we make sure that .SUFFIXES appears before
     # anything else, by sticking it right after the default: target.
     $output_header .= ".SUFFIXES:\n";
-    if (@suffixes || &variable_defined ('SUFFIXES'))
+    if (@suffixes || variable_defined ('SUFFIXES'))
     {
 	# Make sure suffixes has unique elements.  Sort them to ensure
 	# the output remains consistent.  However, $(SUFFIXES) is
@@ -3953,7 +3950,7 @@ sub handle_footer
 	# suffixes, and this lets the user have some control.  Push
 	# actual suffixes, and not $(SUFFIXES).  Some versions of make
 	# do not like variable substitutions on the .SUFFIXES line.
-	my @user_suffixes = (&variable_defined ('SUFFIXES')
+	my @user_suffixes = (variable_defined ('SUFFIXES')
 			     ? &variable_value_as_list_recursive ('SUFFIXES', '')
 			     : ());
 
@@ -4012,7 +4009,7 @@ sub handle_all ($)
 
     my @local_headers = ();
     push @local_headers, '$(BUILT_SOURCES)'
-      if &variable_defined ('BUILT_SOURCES');
+      if variable_defined ('BUILT_SOURCES');
     foreach my $spec (@config_headers)
       {
         my ($out, @ins) = split_config_file_spec ($spec);
@@ -4031,13 +4028,13 @@ sub handle_all ($)
 	$output_all .= ("all: @local_headers"
 			. "\n\t"
 			. '$(MAKE) $(AM_MAKEFLAGS) '
-			. (&variable_defined ('SUBDIRS')
+			. (variable_defined ('SUBDIRS')
 			   ? 'all-recursive' : 'all-am')
 			. "\n\n");
       }
     else
       {
-	$output_all .= "all: " . (&variable_defined ('SUBDIRS')
+	$output_all .= "all: " . (variable_defined ('SUBDIRS')
 				  ? 'all-recursive' : 'all-am') . "\n\n";
       }
 }
@@ -4075,7 +4072,7 @@ sub do_check_merge_target
 
     &depend ('.PHONY', 'check', 'check-am');
     $output_rules .= ("check: "
-		      . (&variable_defined ('SUBDIRS')
+		      . (variable_defined ('SUBDIRS')
 			 ? 'check-recursive' : 'check-am')
 		      . "\n");
 }
@@ -4088,14 +4085,14 @@ sub handle_clean
     # Don't include `MAINTAINER'; it is handled specially below.
     foreach my $name ('MOSTLY', '', 'DIST')
     {
-      $transform{"${name}CLEAN"} = &variable_defined ("${name}CLEANFILES");
+      $transform{"${name}CLEAN"} = variable_defined ("${name}CLEANFILES");
     }
 
     # Built sources are automatically removed by maintainer-clean.
     push (@maintainer_clean_files, '$(BUILT_SOURCES)')
-	if &variable_defined ('BUILT_SOURCES');
+	if variable_defined ('BUILT_SOURCES');
     push (@maintainer_clean_files, '$(MAINTAINERCLEANFILES)')
-	if &variable_defined ('MAINTAINERCLEANFILES');
+	if variable_defined ('MAINTAINERCLEANFILES');
 
     $output_rules .= &file_contents ('clean',
 				     (%transform,
@@ -4235,11 +4232,11 @@ sub handle_tests
 	{
 	    macro_error ($c,
 			 "`$c' defined but `dejagnu' not in `AUTOMAKE_OPTIONS'")
-	      if &variable_defined ($c);
+	      if variable_defined ($c);
 	}
     }
 
-    if (&variable_defined ('TESTS'))
+    if (variable_defined ('TESTS'))
     {
 	push (@check_tests, 'check-TESTS');
 	$output_rules .= &file_contents ('check');
@@ -4261,7 +4258,7 @@ sub handle_emacs_lisp
     push (@all, '$(ELCFILES)');
 
     &am_error ("`lisp_LISP' defined but `AM_PATH_LISPDIR' not in `$configure_ac'")
-      if ! $am_lispdir_location && &variable_defined ('lisp_LISP');
+      if ! $am_lispdir_location && variable_defined ('lisp_LISP');
 
     require_conf_file ($am_lispdir_location,  $FOREIGN, 'elisp-comp');
     &define_variable ('elisp_comp', $config_aux_dir . '/elisp-comp');
@@ -4276,7 +4273,7 @@ sub handle_python
 
     # Found some python.
     &am_error ("`python_PYTHON' defined but `AM_PATH_PYTHON' not in `$configure_ac'")
-	if ! $pythondir_location && &variable_defined ('python_PYTHON');
+	if ! $pythondir_location && variable_defined ('python_PYTHON');
 
     require_conf_file ($pythondir_location, $FOREIGN, 'py-compile');
     &define_variable ('py_compile', $config_aux_dir . '/py-compile');
@@ -4296,7 +4293,7 @@ sub handle_java
     my $dir;
     foreach my $curs (@valid)
     {
-	if (! &variable_defined ($curs . '_JAVA') || $curs eq 'EXTRA')
+	if (! variable_defined ($curs . '_JAVA') || $curs eq 'EXTRA')
 	{
 	    next;
 	}
@@ -5162,9 +5159,9 @@ sub lang_yacc_target_hook
     my ($self, $aggregate, $output, $input) = @_;
 
     my $flag = $aggregate . "_YFLAGS";
-    if ((&variable_defined ($flag)
+    if ((variable_defined ($flag)
 	 && &variable_value ($flag) =~ /$DASH_D_PATTERN/o)
-	|| (&variable_defined ('YFLAGS')
+	|| (variable_defined ('YFLAGS')
 	    && &variable_value ('YFLAGS') =~ /$DASH_D_PATTERN/o))
     {
 	(my $output_base = $output) =~ s/\..*$//;
@@ -5212,7 +5209,7 @@ sub lang_yacc_finish
     return if defined $language_scratch{'yacc-done'};
     $language_scratch{'yacc-done'} = 1;
 
-    if (&variable_defined ('YACCFLAGS'))
+    if (variable_defined ('YACCFLAGS'))
     {
 	macro_error ('YACCFLAGS',
 		     "`YACCFLAGS' obsolete; use `YFLAGS' instead");
@@ -5875,13 +5872,13 @@ sub macros_dump ()
 
 
 # $BOOLEAN
-# &variable_defined ($VAR, [$COND])
+# variable_defined ($VAR, [$COND])
 # ---------------------------------
 # See if a variable exists.  $VAR is the variable name, and $COND is
 # the condition which we should check.  If no condition is given, we
 # currently return true if the variable is defined under any
 # condition.
-sub variable_defined ($$)
+sub variable_defined ($;$)
 {
     my ($var, $cond) = @_;
 
@@ -5914,7 +5911,7 @@ sub variable_defined ($$)
 sub examine_variable
 {
     my ($var) = @_;
-    &variable_defined ($var);
+    variable_defined ($var);
 }
 
 # Return the set of conditions for which a variable is defined.
@@ -6490,7 +6487,7 @@ sub define_pretty_variable
     # macro_define and variable_pretty_output.
     $cond ||= 'TRUE';
 
-    if (! &variable_defined ($var, $cond))
+    if (! variable_defined ($var, $cond))
     {
         macro_define ($var, 1, '', $cond, "@value", undef);
 	variable_pretty_output ($var, $cond || 'TRUE');
@@ -6977,7 +6974,7 @@ sub make_paragraphs ($%)
 		     'INSTALL-MAN'  => !$options{'no-installman'},
 		     'CK-NEWS'      => $options{'check-news'} || 0,
 
-		     'SUBDIRS'      => &variable_defined ('SUBDIRS'),
+		     'SUBDIRS'      => variable_defined ('SUBDIRS'),
 		     'TOPDIR'       => backname ($relative_dir),
 		     'TOPDIR_P'     => $relative_dir eq '.',
 		     'CONFIGURE-AC' => $configure_ac,
@@ -7316,7 +7313,7 @@ sub am_primary_prefixes ($$@)
 			    "invalid variable `$varname': `dist' is forbidden")
 		  if ! exists $configure_vars{$varname};
 	    }
-	    elsif (! defined $valid{$X} && ! &variable_defined ("${X}dir"))
+	    elsif (! defined $valid{$X} && ! variable_defined ("${X}dir"))
 	    {
 		# Note that a configure variable is always legitimate.
 		# It is natural to name such variables after the
@@ -7383,7 +7380,7 @@ sub am_install_var
     # interpreter.  This is but one of several Java hacks.  Similarly,
     # `PYTHON' is customarily used to mean the Python interpreter.
     macro_error ($primary, "`$primary' is an anachronism")
-	if &variable_defined ($primary)
+	if variable_defined ($primary)
 	    && ($primary ne 'JAVA' && $primary ne 'PYTHON');
 
 
@@ -7412,7 +7409,7 @@ sub am_install_var
 	my $nodir_name = $X;
 	my $one_name = $X . '_' . $primary;
 	next
-	  unless (&variable_defined ($one_name));
+	  unless (variable_defined ($one_name));
 
 	my $strip_subdir = 1;
 	# If subdir prefix should be preserved, do so.
@@ -7554,7 +7551,7 @@ sub am_install_var
 	$output_vars .= "\n";
     }
 
-    if ($require_extra && ! &variable_defined ('EXTRA_' . $primary))
+    if ($require_extra && ! variable_defined ('EXTRA_' . $primary))
     {
 	macro_error ($require_extra,
 		     "`$require_extra' contains configure substitution, but `EXTRA_$primary' not defined");
