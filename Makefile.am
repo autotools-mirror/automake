@@ -276,6 +276,7 @@ path-check: distdir
 
 ## Program to use to fetch files.
 WGET = wget
+WGETSGO = $(WGET) http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~
 
 ## Files that we fetch and which we compare against.
 ## FIXME should be a lot more here
@@ -293,14 +294,12 @@ fetch:
 	mkdir Fetchdir
 ## If a get fails then that is a problem.
 	(cd Fetchdir && \
-	$(WGET) ftp://ftp.gnu.org/gnu/config/config.guess; \
-	$(WGET) ftp://ftp.gnu.org/gnu/config/config.sub; \
-	$(WGET) ftp://ftp.gnu.org/gnu/texinfo/texinfo.tex; \
-	$(WGET) http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~/autoconf/autoconf/INSTALL?content-type=text/plain -O INSTALL; \
-	$(WGET) http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~/gcc/gcc/config-ml.in; \
-	$(WGET) http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~/gcc/gcc/symlink-tree)
-	perl -pi -e 's/Autom4te::/Automake::/g' \
-	  Fetchdir/Automake/Struct.pm Fetchdir/Automake/XFile.pm
+	$(WGETSGO)/config/config/config.guess; \
+	$(WGETSGO)/config/config/config.sub; \
+	$(WGETSGO)/texinfo/texinfo/doc/texinfo.tex; \
+	$(WGETSGO)/autoconf/autoconf/INSTALL; \
+	$(WGETSGO)/gcc/gcc/config-ml.in; \
+	$(WGETSGO)/gcc/gcc/symlink-tree)
 ## Don't exit after test because we want to give as many errors as
 ## possible.
 	@stat=0; for file in $(FETCHFILES); do \
