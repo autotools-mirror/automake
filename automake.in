@@ -3,7 +3,7 @@
 # @configure_input@
 
 eval 'exec @PERL@ -S $0 ${1+"$@"}'
-    if $running_under_some_shell;
+    if 0;
 
 # automake - create Makefile.in from Makefile.am
 # Copyright (C) 1994, 1995, 1996 Free Software Foundation, Inc.
@@ -147,6 +147,10 @@ $libtool_line = 0;
 
 # TRUE if we've seen jm_MAINTAINER_MODE.
 $seen_maint_mode = 0;
+
+# TRUE if we've seen PACKAGE and VERSION.
+$seen_package = 0;
+$seen_version = 0;
 
 
 # Charsets used by maintainer and in distribution.  MAINT_CHARSET is
@@ -414,14 +418,15 @@ sub handle_options
 {
     return if ! &variable_defined ('AUTOMAKE_OPTIONS');
 
-    foreach (split (/\s+/, $contents{'AUTOMAKE_OPTIONS'}))
+    foreach (split (' ', $contents{'AUTOMAKE_OPTIONS'}))
     {
 	$options{$_} = 1;
 	if ($_ eq 'gnits' || $_ eq 'gnu' || $_ eq 'foreign')
 	{
 	    &set_strictness ($_);
 	}
-	elsif ($_ eq 'no-installman' || $_ eq 'ansi2knr' || $_ eq 'dist-shar')
+	elsif ($_ eq 'no-installman' || $_ eq 'ansi2knr'
+	       || $_ eq 'dist-shar' || $_ eq 'dist-zip')
 	{
 	    # Explicitly recognize these.
 	}
@@ -556,7 +561,7 @@ sub handle_source_transform
 	if ($source_list)
 	{
 	    # Turn sources into objects.
-	    local (@files) = split (/\s+/, $source_list);
+	    local (@files) = split (' ', $source_list);
 	    local (@result) = ();
 	    foreach (@files)
 	    {
@@ -568,14 +573,6 @@ sub handle_source_transform
 		next if /^\$\{.*\}$/;
 		# Skip things that look like configure substitutions.
 		next if /^\@.*\@$/;
-
-		# One wonders how this can happen.  But, apparently,
-		# it can.  I believe it happens when nothing precedes
-		# a backslash-newline on a line -- the \s+ regexp
-		# doesn't match the newline.  Anyway, skip empty
-		# strings.  See tests/depend.test for an example of
-		# how to trigger this code.
-		next if /^\s*$/;
 
 		if (/^(.*)\.[yl]$/)
 		{
@@ -623,7 +620,7 @@ sub handle_lib_objects
     # LDADD.
     local ($lsearch);
 
-    foreach $lsearch (split (/\s+/, $contents{$var}))
+    foreach $lsearch (split (' ', $contents{$var}))
     {
 	# Automatically handle @LIBOBJS@ and @ALLOCA@.  Basically this
 	# means adding entries to dep_files.
@@ -736,7 +733,7 @@ sub handle_libraries
 	if (&variable_defined ($onedir . '_LIBRARIES'))
 	{
 	    @outlist = ();
-	    foreach $onelib (split (/\s+/, $contents{$onedir . '_LIBRARIES'}))
+	    foreach $onelib (split (' ', $contents{$onedir . '_LIBRARIES'}))
 	    {
 		push (@outlist, 'lib' . $onelib . '.a');
 	    }
@@ -851,7 +848,7 @@ sub handle_texinfo
     return if (! &variable_defined ('info_TEXINFOS')
 	       && ! &variable_defined ('html_TEXINFOS'));
 
-    local (@texis) = split (/\s+/, $contents{'info_TEXINFOS'});
+    local (@texis) = split (' ', $contents{'info_TEXINFOS'});
 
     local (@infos_list, @info_deps_list, @dvis_list, @texi_deps);
     local ($infobase, $info_cursor);
@@ -982,7 +979,7 @@ sub handle_man_pages
 
     # We generate the manpage install code by hand to avoid the use of
     # basename in the generated Makefile.
-    local (@mans) = split (/\s+/, $contents{'man_MANS'});
+    local (@mans) = split (' ', $contents{'man_MANS'});
     local (%sections, %inames, %secmap, %fullsecmap);
     foreach (@mans)
     {
@@ -1085,7 +1082,7 @@ sub handle_tags
     }
 }
 
-# Generate actual 'dist' (or dist-shar) rule.
+# Worker for handle_dist.
 sub handle_dist_worker
 {
     $output_rules .= 'distdir: $(DEP_DISTFILES)' . "\n";
@@ -1243,7 +1240,7 @@ sub handle_dist
 			  . "\n");
     }
 
-    # Generate 'dist' target, and maybe dist-shar.
+    # Generate 'dist' target, and maybe dist-shar / dist-zip.
     if ($relative_dir eq '.')
     {
 	# Rule to check whether a distribution is viable.
@@ -1275,6 +1272,14 @@ distcheck: dist
 	    $output_rules .= 'dist-shar: distdir' . "\n\t";
 	    $output_rules .= 'chmod -R a+r $(distdir)' . "\n\t";
 	    $output_rules .= 'shar $(distdir) | gzip > $(distdir).shar.gz';
+	    $output_rules .= "\n\t" . 'rm -rf $(distdir)' . "\n";
+	}
+
+	if (defined $options{'dist-zip'})
+	{
+	    $output_rules .= 'dist-zip: distdir' . "\n\t";
+	    $output_rules .= 'chmod -R a+r $(distdir)' . "\n\t";
+	    $output_rules .= 'zip -rq $(distdir).zip $(distdir)';
 	    $output_rules .= "\n\t" . 'rm -rf $(distdir)' . "\n";
 	}
     }
@@ -1341,7 +1346,7 @@ sub handle_subdirs
 
     # Make sure each directory mentioned in SUBDIRS actually exists.
     local ($dir);
-    foreach $dir (split (/\s+/, $contents{'SUBDIRS'}))
+    foreach $dir (split (' ', $contents{'SUBDIRS'}))
     {
 	# Skip directories substituted by configure.
 	next if $dir =~ /^\@.*\@$/;
@@ -1530,7 +1535,7 @@ sub handle_gettext
     if ($seen_linguas)
     {
 	local (%linguas) = ();
-	grep ($linguas{$_} = 1, split (/\s+/, $all_linguas));
+	grep ($linguas{$_} = 1, split (' ', $all_linguas));
 
 	foreach (<po/*.po>)
 	{
@@ -1561,12 +1566,12 @@ sub handle_footer
     if ($contents{'SOURCES'})
     {
 	&pretty_print ('SOURCES =', "",
-		       split (/\s+/, $contents{'SOURCES'}));
+		       split (' ', $contents{'SOURCES'}));
     }
     if ($contents{'OBJECTS'})
     {
 	&pretty_print ('OBJECTS =', "",
-		       split (/\s+/, $contents{'OBJECTS'}));
+		       split (' ', $contents{'OBJECTS'}));
     }
     if ($contents{'SOURCES'} || $contents{'OBJECTS'})
     {
@@ -1884,7 +1889,7 @@ sub handle_tests
 {
     return if ! &variable_defined ('TESTS');
 
-    &push_dist_common (split (/\s+/, $contents{'TESTS'}));
+    &push_dist_common (split (' ', $contents{'TESTS'}));
     push (@check, 'check-TESTS');
     push (@phony, 'check-TESTS');
     # FIXME use $(SHELL) here?  That is what Ulrich suggests.  Maybe a
@@ -1962,7 +1967,7 @@ sub scan_configure
 	}
 	elsif (/AC_REPLACE_FUNCS\s*\((.*)\)/)
 	{
-	    foreach (split (/\s+/, $1))
+	    foreach (split (' ', $1))
 	    {
 		$libsources{$_ . '.c'} = 1;
 	    }
@@ -1975,7 +1980,7 @@ sub scan_configure
 	elsif (/LIBOBJS="(.*)\s+\$LIBOBJS"/
 	       || /LIBOBJS="\$LIBOBJS\s+(.*)"/)
 	{
-	    foreach $libobj_iter (split (/\s+/, $1))
+	    foreach $libobj_iter (split (' ', $1))
 	    {
 		if ($libobj_iter =~ /^(.*)\.o$/)
 		{
@@ -2065,6 +2070,8 @@ sub scan_configure
 	$seen_arg_prog = 1 if /AC_ARG_PROGRAM/;
 	$seen_ranlib = 1 if /AC_PROG_RANLIB/;
         $seen_maint_mode = 1 if /jm_MAINTAINER_MODE/;
+        $seen_package = 1 if /PACKAGE=/;
+        $seen_version = 1 if /VERSION=/;        
 
         if (/AC_PROG_LIBTOOL/ || /gm_PROG_LIBTOOL/)
 	{
@@ -2078,6 +2085,11 @@ sub scan_configure
     @input_files = @make_list if (! @input_files);
 
     close (CONFIGURE);
+
+    &am_conf_error ("\`PACKAGE' not defined in configure.in")
+        if ! $seen_package;
+    &am_conf_error ("\`VERSION' not defined in configure.in")
+        if ! $seen_version;
 
     # Look for some files we need.  Always check for these.  This
     # check must be done for every run, even those where we are only
@@ -2698,7 +2710,7 @@ sub am_install_var
 	    # Append actual contents of where_PRIMARY variable to
 	    # result.
 	    local ($rcurs);
-	    foreach $rcurs (split (/\s+/, $contents{$one_name}))
+	    foreach $rcurs (split (' ', $contents{$one_name}))
 	    {
 		# Skip configure substitutions.  Possibly bogus.
 		next if $rcurs =~ /^\@.*\@$/;
