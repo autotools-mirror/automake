@@ -1,5 +1,5 @@
 ## automake - create Makefile.in from Makefile.am
-## Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001
+## Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2003
 ## Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
@@ -50,10 +50,19 @@ TAGS: %TAGSDIRS% $(HEADERS) $(SOURCES) %CONFIG% $(TAGS_DEPENDENCIES) \
 	here=`pwd`; \
 ## It is tempting to use if/endif here, but don't: the previous
 ## backslash will cause bad results (automake doesn't `see' the `if').
+## Exuberant Ctags wants --etags-include,
+## GNU Etags             --include
+?SUBDIRS?	if (etags --etags-include --version) >/dev/null 2>&1; then \
+?SUBDIRS?	  include_option=--etags-include; \
+?SUBDIRS?	else \
+?SUBDIRS?	  include_option=--include; \
+?SUBDIRS?	fi; \
 ?SUBDIRS?	list='$(SUBDIRS)'; for subdir in $$list; do \
 ## Do nothing if we're trying to look in `.'.
 ?SUBDIRS?	  if test "$$subdir" = .; then :; else \
-?SUBDIRS?	    test -f $$subdir/TAGS && tags="$$tags -i $$here/$$subdir/TAGS"; \
+?SUBDIRS?	    test -f $$subdir/TAGS && \
+## Note that the = is mandatory for --etags-include.
+?SUBDIRS?	      tags="$$tags $$include_option=$$here/$$subdir/TAGS"; \
 ?SUBDIRS?	  fi; \
 ?SUBDIRS?	done; \
 ## Make sure the list of sources is unique.
