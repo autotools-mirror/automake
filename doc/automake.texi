@@ -244,6 +244,7 @@ Frequently Asked Questions about Automake
 * wildcards::                   Why doesn't Automake support wildcards?
 * distcleancheck::              Files left in build directory after distclean
 * renamed objects::             Why are object files sometimes renamed?
+* Multiple Outputs::            Writing rules for tools with many output files
 
 Copying This Manual
 
@@ -6727,6 +6728,7 @@ lists.
 * wildcards::                   Why doesn't Automake support wildcards?
 * distcleancheck::              Files left in build directory after distclean
 * renamed objects::             Why are object files sometimes renamed?
+* Multiple Outputs::            Writing rules for tools with many output files
 @end menu
 
 @node CVS
@@ -7235,6 +7237,127 @@ false_SOURCES = false.c version.c
 
 Note that the renaming of objects is also affected by the
 @code{_SHORTNAME} variable (@pxref{Program and Library Variables}).
+
+
+@node Multiple Outputs
+@section Handling Tools that Produce Many Outputs
+@cindex multiple outputs, rules with
+@cindex many outputs, rules with
+@cindex rules with multiple outputs
+
+This section describes a @command{make} idiom that can be used when a
+tool produces multiple outputs.  It is not specific to Automake and
+can be used in ordinary @file{Makefile}s.
+
+Suppose we have a program called @command{foo} that will read one file
+called @file{data.foo} and produce two files called @file{data.c} and
+@file{data.h}.  We want to write a @file{Makefile} rule that captures
+this one-to-two dependency.
+
+The naive rule is incorrect:
+
+@example
+# This is incorrect.
+data.c data.h: data.foo
+        foo data.foo
+@end example
+
+@noindent
+What the above rule really says is that @file{data.c} and
+@file{data.h} each depend on @file{data.foo}, and can each be built by
+running @code{foo data.foo}.  In other words it is equivalent to:
+
+@example
+# We do not want this.
+data.c: data.foo
+        foo data.foo
+data.h: data.foo
+        foo data.foo
+@end example
+
+@noindent
+which means that @command{foo} can be run twice.  It will not
+@emph{necessarily} run twice, because many @command{make}
+implementations will check for the second file after the first one has
+been built and will therefore detect that it already exists.  However
+it can run twice, and we should avoid that.  An easy way to trigger
+the problem is to run a parallel make; if @file{data.c} and
+@file{data.h} are built in parallel, two @code{foo data.foo}
+commands will run concurrently.
+
+Another idea is to write the following:
+
+@example
+# There is still a problem with this one.
+data.c: data.foo
+        foo data.foo
+data.h: data.c
+@end example
+
+@noindent
+The idea is that @code{foo data.foo} is run only when @file{data.c}
+need to be updated, but we further state that @file{data.h} depends
+upon @file{data.c}.  That way, if @file{data.h} is required and
+@file{data.foo} is out of data, the dependency on @file{data.c} will
+trigger the build.
+
+This is almost perfect, but suppose we have built @file{data.h} and
+@file{data.c}, and then we erase @file{data.h}.  Then, running
+@code{make data.h} will not rebuild @file{data.h}.  The above rules
+just state that @file{data.c} must be up-to-date with respect to
+@file{data.foo}, and this is the case.
+
+What we need is a rule that forces a rebuild when data.h is missing.
+
+@example
+data.c: data.foo
+        foo data.foo
+data.h: data.c
+        @@if test -f $@@; then :; else \
+          rm -f data.c; \
+          $(MAKE) $(AM_MAKEFLAGS) data.c; \
+        fi
+@end example
+
+The above scales easily to more outputs and more inputs.  For instance
+if @command{foo} should read @file{data.bar} and will also produce
+@file{data.w} and @file{data.x}, we would write:
+
+@example
+data.c: data.foo data.bar
+        foo data.foo data.bar
+data.h data.w data.x: data.c
+        @@if test -f $@@; then :; else \
+          rm -f data.c; \
+          $(MAKE) $(AM_MAKEFLAGS) data.c; \
+        fi
+@end example
+
+One of the output files (here @file{data.c}) is used as a witness of
+the run of @command{foo}.  The other files depend upon that witness.
+Ideally the witness should have the oldest timestamp among the output
+files, so that the second rule (@code{data.h data.w data.x: data.c})
+is not triggered needlessly.  For this reason, it is often better to
+use a different file (not one of the output files) as witness.
+
+@example
+data.stamp: data.foo data.bar
+        @@rm -f data.tmp
+        @@touch data.tmp
+        foo data.foo data.bar
+        @@mv -f data.tmp $@@
+data.c data.h data.w data.x: data.stamp
+        @@if test -f $@@; then :; else \
+          rm -f data.stamp; \
+          $(MAKE) $(AM_MAKEFLAGS) data.stamp; \
+        fi
+@end example
+
+@file{data.tmp} is created before @command{foo} is run, so that is has
+a timestamp older than output files output by @command{foo}.  It is
+then renamed to @file{data.stamp} after @command{foo} has run, because
+we do not want to update @file{data.stamp} if @command{foo} fails.
+
 
 @c ========================================================== Appendices
 
