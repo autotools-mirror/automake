@@ -207,8 +207,13 @@ sub scan_configure
 	}
 
 	# Search for things we know about.  The "search" sub is
-	# constructed dynamically, above.
-	&search;
+	# constructed dynamically by scan_m4_files.
+	if (! &search && /(AM_[A-Z_]+)/)
+	{
+	    # Macro not found, but AM_ prefix found.
+	    warn "aclocal: configure.in: $.: macro \`$1' not found in library\n";
+	    $exit_status = 1;
+	}
     }
 
     close (CONFIGURE);
@@ -273,8 +278,10 @@ sub scan_m4_files
     {
 	# EXPR is a regexp matching the name of the macro.
 	($expr = $key) =~ s/(\W)/\\$1/g;
-	$search .= "&add_macro ('" . $key . "') if /" . $expr . "/;\n";
+	$search .= ("if (/" . $expr "/) { & add_macro (" . $key
+		    . "); return 1; }\n");
     }
+    $search .= "return 0;\n";
     eval 'sub search { ' . $search . '};';
     die "internal error: $@\n search is $search " if $@;
 }
