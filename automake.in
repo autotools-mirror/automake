@@ -786,8 +786,16 @@ sub handle_yacc_lex_cxx
 	# required to allow parallel builds to work correctly.  FIXME:
 	# for now, no line number.
 	&require_config_file ($FOREIGN, 'interlock', 'ylwrap');
-	&define_variable ('INTERLOCK', $config_aux_dir . "/interlock");
-	&define_variable ('YLWRAP', $config_aux_dir . "/ylwrap");
+	if ($config_aux_dir ne '.' && $config_aux_dir ne '')
+	{
+		&define_variable ('INTERLOCK', $config_aux_dir . "/interlock");
+		&define_variable ('YLWRAP', $config_aux_dir . "/ylwrap");
+	}
+	else
+	{
+		&define_variable ('INTERLOCK', '$(srcdir)/interlock');
+		&define_variable ('YLWRAP', '$(srcdir)/ylwrap');
+	}
     }
 
     #
@@ -819,7 +827,7 @@ sub handle_yacc_lex_cxx
 	    $output_rules .= ("$ext.o:\n"
 			      . "\t\$(CXXCOMPILE) -c \$<\n");
 	    $output_rules .= ("$ext.lo:\n"
-			      . "\t\$(LIBTOOL) --mode=compile $(CXXCOMPILE) -c \$<\n")
+			      . "\t\$(LIBTOOL) --mode=compile \x$(CXXCOMPILE) -c \$<\n")
 		if ($seen_libtool);
 	}
 
@@ -959,6 +967,8 @@ sub handle_single_transform_list
     local (@files) = @_;
     local ($linker) = '';
     local (@result) = ();
+    local ($nonansi_obj) = $obj;
+    $nonansi_obj =~ s/_//g;
     if (length (@files))
     {
 	# Turn sources into objects.
@@ -1000,12 +1010,12 @@ sub handle_single_transform_list
 
 	    # Transform source files into .o files.  List of C++
 	    # extensions comes from Emacs 19.34 etags.
-	    if (s/\.(c\+\+|cc|cpp|cxx|C)$/.o/)
+	    if (s/\.(c\+\+|cc|cpp|cxx|C)$/$nonansi_obj/)
 	    {
 		$cxx_extensions{'.' . $1} = 1;
 		$linker = 'CXXLINK';
 	    }
-	    elsif (s/\.(yy|y\+\+|yxx|ll|l\+\+|lxx)$/\.o/)
+	    elsif (s/\.(yy|y\+\+|yxx|ll|l\+\+|lxx)$/$nonansi_obj/)
 	    {
 		# Compiling lex or yacc with C++
 		local ($ext) = $1;
@@ -1013,11 +1023,11 @@ sub handle_single_transform_list
 		$cxx_extensions{".$ext"} = 1;
 		$linker = 'CXXLINK';
 	    }
-	    elsif (s/\.([Ff]\\|f90\\|for)$/.o/)
+	    elsif (s/\.([Ff]\\|f90\\|for)$/$nonansi_obj/)
 	    {
 		# FORTRAN support.  FIXME: not finished.
 	    }
-	    elsif (s/\.[sS]$/.o/)
+	    elsif (s/\.[sS]$/$nonansi_obj/)
 	    {
 		# .s is assembly.  Just rewrite it.  FIXME: not finished.
 	    }
@@ -1547,7 +1557,7 @@ sub handle_scripts
 # of the include file if found, or the empty string if not.  A
 # "version.texi" file is actually any file whose name matches
 # "vers*.texi".
-sub grep_for_vers_texi
+sub scan_texinfo_file
 {
     local ($filename) = @_;
 
@@ -1558,18 +1568,25 @@ sub grep_for_vers_texi
     }
     print "automake: reading $filename\n" if $verbose;
 
+    local ($vfile, $outfile);
     while (<TEXI>)
     {
+	if (/^\@setfilename +(\S+)/)
+	{
+	    $outfile = $1;
+	    last if ($vfile);
+	}
+
 	if (/^\@include\s+(vers[^.]*\.texi)\s*$/)
 	{
-	    # Found it.
-	    close (TEXI);
-	    return $1;
+	    # Found version.texi include.
+	    $vfile = $1;
+	    last if $outfile;
 	}
     }
 
     close (TEXI);
-    return '';
+    return ($outfile, $vfile);
 }
 
 # Handle all Texinfo source.
@@ -1597,8 +1614,22 @@ sub handle_texinfo
 
 	# If 'version.texi' is referenced by input file, then include
 	# automatic versioning capability.
-	local ($vtexi)
-	    = &grep_for_vers_texi ($relative_dir . "/" . $info_cursor);
+	local ($out_file, $vtexi) = &scan_texinfo_file ($relative_dir
+							. "/" . $info_cursor);
+
+	if ($out_file eq '')
+	{
+	    &am_error ("\`$info_cursor' missing \@setfilename");
+	    next;
+	}
+
+	if ($out_file =~ /\.(.+)$/ && $1 ne 'info')
+	{
+	    # FIXME should report line number in input file.
+	    &am_error ("output of \`$info_cursor', \`$out_file', has unrecognized extension");
+	    next;
+	}
+
 	if ($vtexi)
 	{
 	    &am_error ("\`$vtexi', included in \`$info_cursor', also included in \`$versions{$vtexi}'")
@@ -1645,13 +1676,13 @@ sub handle_texinfo
 	    &push_dist_common ('$(' . $canonical . '_TEXINFOS)');
 	}
 
-	$output_rules .= ("\n" . $infobase . ".info: "
+	$output_rules .= ("\n" . $out_file . ": "
 			  . join (' ', @texi_deps)
 			  . "\n" . $infobase . ".dvi: "
 			  . join (' ', @texi_deps)
 			  . "\n\n");
 
-	push (@info_deps_list, $infobase . '.info');
+	push (@info_deps_list, $out_file);
 	push (@dvis_list, $infobase . '.dvi');
 
 	# Generate list of things to clean for this target.  We do
