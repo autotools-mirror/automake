@@ -977,7 +977,7 @@ sub define ($$$$$$$$)
 
   # NEWS-OS 4.2R complains if a Makefile variable begins with `_'.
   msg ('portability', $where,
-       "$var: variable names starting with `_' are not portable")
+       "$var: Make variable names starting with `_' are not portable")
     if $var =~ /^_/;
 
   # `:='-style assignments are not acknowledged by POSIX.  Moreover it
