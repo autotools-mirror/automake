@@ -440,7 +440,6 @@ txinfo22.test \
 transform.test \
 unused.test \
 vars.test \
-vars2.test \
 vars3.test \
 vartar.test \
 version.test \
