@@ -222,6 +222,7 @@ sub generate_makefile
     # This is always the default target.  This gives us freedom to do
     # things in whatever order is convenient.
     $output_rules .= "default: all\n\n";
+    push (@phony, 'default');
 
     &read_am_file ($makefile . '.am');
 
@@ -251,6 +252,7 @@ sub generate_makefile
     &handle_merge_targets;
     &handle_installdirs;
     &handle_clean;
+    &handle_phony;
 
     if (! -d ($output_directory . '/' . $relative_dir))
     {
@@ -280,7 +282,7 @@ sub generate_header
 	 . $VERSION
 	 . " from Makefile.am\n");
 
-    $output_vars = $output_vars . &file_contents ('header-vars');
+    $output_vars .= &file_contents ('header-vars');
 }
 
 # Return object extension.  Just once, put some code into the output.
@@ -292,6 +294,7 @@ sub get_object_extension
 	# Boilerplate.
 	$output_vars .= &file_contents ('compile-vars');
 	$output_rules .= &file_contents ('compile');
+	&push_phony_cleaners ('compile');
 
 	# Check for automatic de-ANSI-fication.
 	$dir_holds_sources = '.o';
@@ -311,6 +314,7 @@ sub get_object_extension
 	    $output_rules .= &file_contents ('clean-kr');
 
 	    push (@clean, 'kr');
+	    &push_phony_cleaners ('kr');
 	}
     }
     return $dir_holds_sources;
@@ -497,6 +501,7 @@ sub handle_texinfo
 	local ($tfile);
 	($tfile = &file_contents ('texi-version')) =~ s/\@TEXI\@/$texis[0]/g;
 	$output_rules = $output_rules . $tfile;
+	&push_phony_cleaners ('vti');
 
 	&require_file ($NORMAL, 'mdate-sh');
     }
@@ -511,18 +516,20 @@ sub handle_texinfo
 
     if ($#texis >= 0)
     {
-	$output_rules = ($output_rules . $infobase . ".info: "
-			 . join (' ', @texis) . "\n\n");
+	$output_rules .= ($infobase . ".info: "
+			  . join (' ', @texis) . "\n\n");
     }
 
     # Some boilerplate.
     $output_vars .= &file_contents ('texinfos-vars');
     $output_rules .= &file_contents ('texinfos');
+    push (@phony, 'install-info', 'uninstall-info');
 
     # How to clean.
     local ($crules) = &file_contents ('texi-clean');
     $crules =~ s/\@TEXI\@/$infobase/g;
     $output_rules .= $crules;
+    &push_phony_cleaners ('info');
 
     push (@suffixes, '.texi', '.info', '.dvi');
     push (@uninstall, 'uninstall-info');
@@ -568,6 +575,7 @@ sub handle_man_pages
 	$output_rules .= ("\t" . '$(top_srcdir)/mkinstalldirs $(mandir)/man'
 			  . $_ . "\n");
     }
+    push (@phony, 'install-man');
 
     # Generate install target.
     local ($key);
@@ -593,6 +601,7 @@ sub handle_man_pages
 	$output_rules .= $_;
     }
     $output_rules .= "\n";
+    push (@phony, 'uninstall-man');
 
     $output_vars .= &file_contents ('mans-vars');
 
@@ -614,6 +623,7 @@ sub handle_tags
 {
     local ($tagging) = 0;
 
+    push (@phony, 'tags');
     if (defined ($contents{'SUBDIRS'}))
     {
 	$output_rules .= &file_contents ('tags');
@@ -622,6 +632,7 @@ sub handle_tags
     elsif ($dir_holds_sources || defined ($contents{'ETAGS_ARGS'}))
     {
 	$output_rules .= &file_contents ('tags-subd');
+	push (@phony, 'id');
 	$tagging = 1;
     }
 
@@ -629,6 +640,7 @@ sub handle_tags
     {
 	$output_rules .= &file_contents ('tags-clean');
 	push (@clean, 'tags');
+	&push_phony_cleaners ('tags');
     }
     else
     {
@@ -669,6 +681,7 @@ sub handle_dist
 					 ? 'dist-subd-top'
 					 : 'dist');
     }
+    push (@phony, 'dist');
 }
 
 # Handle auto-dependency code.
@@ -715,6 +728,19 @@ sub handle_subdirs
     return if (! defined ($contents{'SUBDIRS'}));
 
     $output_rules .= &file_contents ('subdirs');
+
+    # Push a bunch of phony targets.
+    local ($phonies);
+    foreach $phonies ('-data', '-exec', 'dirs')
+    {
+	push (@phony, 'install' . $phonies . '-recursive');
+	push (@phony, 'uninstall' . $phonies . '-recursive');
+    }
+    foreach $phonies ('all', 'check', 'installcheck', 'info', 'dvi')
+    {
+	push (@phony, $phonies . '-recursive');
+    }
+    &push_phony_cleaners ('recursive');
 
     push (@all, "all-recursive");
     push (@check, "check-recursive");
@@ -828,17 +854,16 @@ sub handle_footer
 # Deal with installdirs target.
 sub handle_installdirs
 {
-    # GNU Makefile standards recommend this.  FIXME prettyprint rule
-    # here.
+    # GNU Makefile standards recommend this.
     $output_rules .= ("installdirs:"
 		      . ($recursive_install
 			 ? " installdirs-recursive\n"
 			 : "\n"));
+    push (@phony, 'installdirs');
     if ($#installdirs >= 0)
     {
-	$output_rules .= ("\t\$(top_srcdir)/mkinstalldirs "
-			  . join (' ', @installdirs)
-			  . "\n");
+	&pretty_print_rule ("\t\$(top_srcdir)/mkinstalldirs ", "\t\t",
+			    @installdirs);
     }
     $output_rules .= "\n";
 }
@@ -892,6 +917,7 @@ sub handle_merge_targets
 			      . "\n\n");
 	    @install_exec = ('install-exec-recursive', 'install-exec-am');
 	    push (@install, 'install-exec-am');
+	    push (@phony, 'install-exec-am');
 	}
 	if ($#install_data >= 0)
 	{
@@ -900,6 +926,7 @@ sub handle_merge_targets
 			      . "\n\n");
 	    @install_data = ('install-data-recursive', 'install-data-am');
 	    push (@install, 'install-data-am');
+	    push (@phony, 'install-data-am');
 	}
 	if ($#uninstall >= 0)
 	{
@@ -907,6 +934,7 @@ sub handle_merge_targets
 			      . join (' ', @uninstall)
 			      . "\n\n");
 	    @uninstall = ('uninstall-recursive', 'uninstall-am');
+	    push (@phony, 'uninstall-am');
 	}
     }
 
@@ -917,6 +945,7 @@ sub handle_merge_targets
 			  . join (' ', @install_exec)
 			  . "\n\n");
 	push (@install, 'install-exec') if (!$recursive_install);
+	push (@phony, 'install-exec');
     }
     if ($#install_data >= 0)
     {
@@ -924,6 +953,7 @@ sub handle_merge_targets
 			  . join (' ', @install_data)
 			  . "\n\n");
 	push (@install, 'install-data') if (!$recursive_install);
+	push (@phony, 'install-data');
     }
 
     $output_rules .= ('install: '
@@ -933,6 +963,7 @@ sub handle_merge_targets
 		      . 'uninstall: '
 		      . join (' ', @uninstall)
 		      . "\n\n");
+    push (@phony, 'install', 'uninstall');
 }
 
 # Helper for handle_merge_targets.
@@ -944,14 +975,16 @@ sub do_one_merge_target
     {
 	# User defined local form of target.  So include it.
 	push (@values, $name . '-local');
+	push (@phony, $name . '-local');
     }
 
     $output_rules .= $name . ":";
     if ($#values >= 0)
     {
 	$output_rules .= ' ' . join (' ', @values);
-	}
+    }
     $output_rules .= "\n\n";
+    push (@phony, $name);
 }
 
 # Handle all 'clean' targets.
@@ -959,12 +992,15 @@ sub handle_clean
 {
     push (@clean, 'generic');
     $output_rules .= &file_contents ('clean');
+    &push_phony_cleaners ('generic');
 
     local ($target) = $recursive_install ? 'clean-am' : 'clean';
     &do_one_clean_target ($target, 'mostly', '', @clean);
     &do_one_clean_target ($target, '', 'mostly', @clean);
     &do_one_clean_target ($target, 'dist', '', @clean);
     &do_one_clean_target ($target, 'maintainer-', 'dist', @clean);
+
+    push (@phony, 'clean', 'mostlyclean', 'distclean', 'maintainer-clean');
 
     local (@deps);
     if ($recursive_install)
@@ -992,17 +1028,16 @@ sub do_one_clean_target
 	$target = 'clean';
     }
 
-    $output_rules .= $name . $target . ": ";
+    grep (($_ = $name . 'clean-' . $_) && 0, @deps);
     if ($flag)
     {
 	if ($last_name || $name ne 'mostly')
 	{
-	    $output_rules .= $last_name . $target . " ";
+	    push (@deps, $last_name . $target . " ");
 	}
     }
-
-    $output_rules .= ($name . 'clean-' . join (' ' . $name . 'clean-', @deps)
-		      . "\n");
+    &pretty_print_rule ($name . $target . ": ", '', @deps);
+    $output_rules .= "\n";
 
     # FIXME shouldn't we really print these messages before running
     # the dependencies?
@@ -1019,6 +1054,13 @@ sub do_one_clean_target
     {
 	$output_rules .= "\trm -f config.status\n";
     }
+    $output_rules .= "\n";
+}
+
+# Handle .PHONY target.
+sub handle_phony
+{
+    &pretty_print_rule ('.PHONY:', '', @phony);
     $output_rules .= "\n";
 }
 
@@ -1046,12 +1088,12 @@ sub check_gnits_standards
 # Pretty-print something.  HEAD is what should be printed at the
 # beginning of the first line, FILL is what should be printed at the
 # beginning of every subsequent line.
-sub pretty_print
+sub pretty_print_internal
 {
     local ($head, $fill, @values) = @_;
 
     local ($column) = length ($head);
-    $output_vars .= $head;
+    local ($result) .= $head;
 
     local ($bol) = 0;
     foreach (@values)
@@ -1059,18 +1101,31 @@ sub pretty_print
 	# "71" because we also print a space.
 	if ($column + length ($_) > 71)
 	{
-	    $output_vars .= " \\\n" . $fill;
+	    $result .= " \\\n" . $fill;
 	    $column = length ($fill);
 	    $bol = 1;
 	}
 
-	$output_vars .= ' ' unless ($bol);
-	$output_vars .= $_;
+	$result .= ' ' unless ($bol);
+	$result .= $_;
 	$column += length ($_) + 1;
 	$bol = 0;
     }
 
-    $output_vars .= "\n";
+    $result .= "\n";
+    return $result;
+}
+
+# Pretty-print something and append to output_vars.
+sub pretty_print
+{
+    $output_vars .= &pretty_print_internal (@_);
+}
+
+# Pretty-print something and append to output_rules.
+sub pretty_print_rule
+{
+    $output_rules .= &pretty_print_internal (@_);
 }
 
 
@@ -1218,18 +1273,12 @@ sub initialize_global_constants
     '	\@sect=@SECTION@;				\\
 	inst=`echo "@MANBASE@" | sed \'$(transform)\'`.@FULLSECT@; \\
 	echo installing @MAN@ as $(mandir)/man$$sect/$$inst; \\
-	$(INSTALL_DATA) $(srcdir)/@MAN@ $(mandir)/man$$sect/$$inst; \\
-	if test -d $(mandir)/cat$$sect; then	\\
-	  echo formatting @MAN@ as $(mandir)/cat$$sect/$$inst;  \\
-	  $(NROFF) -man $(srcdir)/@MAN@ > $(mandir)/cat$$sect/$$inst; \\
-	else					\\
-	  true;					\\
-	fi
+	$(INSTALL_DATA) $(srcdir)/@MAN@ $(mandir)/man$$sect/$$inst
 ';
 
     $uninstall_man_format =
     '	inst=`echo "@MANBASE@" | sed \'$(transform)\'`.@FULLSECT@; \\
-	rm -f $(mandir)/man@SECTION@/$$inst $(mandir)/cat@SECTION@/$$inst
+	rm -f $(mandir)/man@SECTION@/$$inst
 ';
 
     # Commonly found files we look for and automatically include in
@@ -1300,6 +1349,8 @@ sub initialize_per_input
     @installcheck = ();
     @clean = ();
 
+    @phony = ();
+
     # These are pretty obvious, too.  They are used to define the
     # SOURCES and OBJECTS variables.
     @sources = ();
@@ -1354,10 +1405,8 @@ sub am_variable
 # install code,and possibly generates code to define the primary
 # variable.  The first argument is the name of the .am file to munge,
 # the second argument is the primary variable (eg HEADERS), and all
-# subsequent arguments are possible installation locations.  FIXME
-# should scan all defined variables and do some error checking to
-# avoid typos (eg 'bni_PROGRAMS' should give error).  Returns list of
-# all values of all _HOW targets.
+# subsequent arguments are possible installation locations.  Returns
+# list of all values of all _HOW targets.
 #
 # FIXME this should be rewritten to be cleaner.  It should be broken
 # up into multiple functions.
@@ -1406,6 +1455,7 @@ sub am_install_var
 		($munge = $clean_templ) =~ s/\@DIR\@/$_/g;
 		$output_rules .= $munge;
 		push (@clean, $_ . $primary);
+		push (@phony, $_ . $primary);
 	    }
 
 	    push (@used, '$(' . $one_name . ')');
@@ -1419,6 +1469,7 @@ sub am_install_var
 	    $output_rules .= $munge;
 
 	    push (@uninstall, 'uninstall-' . $_ . $primary);
+	    push (@phony, 'uninstall-' . $_ . $primary);
 	    push (@installdirs, '$(' . $_ . 'dir)');
 	    if ($exec_dir_p{$_})
 	    {
@@ -1502,6 +1553,17 @@ sub push_dist_common
     foreach $file (@files)
     {
 	$dist_common{$file} = 1;
+    }
+}
+
+# Push a list of clean targets onto phony.
+sub push_phony_cleaners
+{
+    local ($base) = @_;
+    local ($target);
+    foreach $target ('mostly', 'dist', '', 'maintainer-')
+    {
+	push (@phony, $target . 'clean-' . $base);
     }
 }
 

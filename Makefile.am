@@ -31,11 +31,11 @@ ETAGS_ARGS = automake.in --lang=none \
 # These are only really guaranteed to work on my machine.
 maintainer-check: automake
 	@PERL@ -c -w automake
-	if grep '^[^#].*true' $(srcdir)/[a-z]*.am; then \
+	@if grep '^[^#].*true' $(srcdir)/[a-z]*.am; then \
 	  echo "can't use 'true' in GNU Makefile" 1>&2; \
 	  exit 1;				\
 	else :; fi
-	if test `fgrep '$${' $(srcdir)/[a-z]*.am | wc -l` -ne 2; then \
+	@if test `fgrep '$${' $(srcdir)/[a-z]*.am | wc -l` -ne 2; then \
 	  echo "found too many uses of '\$${'" 1>&2; \
 	  exit 1;				\
 	fi
