@@ -83,6 +83,9 @@ aclocal: aclocal.in Makefile
 ## Make sure we also update the copy used by Automake.
 mdate-sh: lib/mdate-sh
 	cp lib/mdate-sh $@
+## Likewise for INSTALL
+INSTALL: lib/INSTALL
+	cp lib/INSTALL $@
 
 ################################################################
 ##
