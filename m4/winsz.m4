@@ -1,8 +1,8 @@
-dnl From Jim Meyering.
+# From Jim Meyering.
 
 # serial 1
 
-AC_DEFUN(AM_HEADER_TIOCGWINSZ_NEEDS_SYS_IOCTL,
+AC_DEFUN([AM_HEADER_TIOCGWINSZ_NEEDS_SYS_IOCTL],
 [AC_REQUIRE([AM_SYS_POSIX_TERMIOS])
  AC_CACHE_CHECK([whether use of TIOCGWINSZ requires sys/ioctl.h],
 	        am_cv_sys_tiocgwinsz_needs_sys_ioctl_h,

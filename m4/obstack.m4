@@ -1,7 +1,7 @@
-dnl From Jim Meyering.
-dnl FIXME: migrate into libit.
+# From Jim Meyering.
+# FIXME: migrate into libit.
 
-AC_DEFUN(AM_FUNC_OBSTACK,
+AC_DEFUN([AM_FUNC_OBSTACK],
 [AC_CACHE_CHECK([for obstacks], am_cv_func_obstack,
  [AC_TRY_LINK([#include "obstack.h"],
 	      [struct obstack *mem;obstack_free(mem,(char *) 0)],

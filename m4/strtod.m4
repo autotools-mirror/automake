@@ -27,7 +27,7 @@
 ## variable @code{LIBOBJS}.
 ## @end defmac
 
-AC_DEFUN(AM_FUNC_STRTOD,
+AC_DEFUN([AM_FUNC_STRTOD],
 [AC_CACHE_CHECK(for working strtod, am_cv_func_strtod,
 [AC_TRY_RUN([
 double strtod ();

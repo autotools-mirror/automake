@@ -1,11 +1,11 @@
-dnl See how the compiler implements dependency checking.
-dnl Usage:
-dnl AM_DEPENDENCIES(NAME)
-dnl NAME is "CC", "CXX" or "OBJC".
+# See how the compiler implements dependency checking.
+# Usage:
+# AM_DEPENDENCIES(NAME)
+# NAME is "CC", "CXX" or "OBJC".
 
-dnl We try a few techniques and use that to set a single cache variable.
+# We try a few techniques and use that to set a single cache variable.
 
-AC_DEFUN(AM_DEPENDENCIES,[
+AC_DEFUN([AM_DEPENDENCIES],[
 AC_REQUIRE([AM_SET_DEPDIR])
 AC_REQUIRE([AM_OUTPUT_DEPENDENCY_COMMANDS])
 ifelse([$1],CC,[
@@ -61,10 +61,10 @@ AC_MSG_RESULT($am_cv_[$1]_dependencies_compiler_type)
 AC_SUBST([$1]DEPMODE)
 ])
 
-dnl Choose a directory name for dependency files.
-dnl This macro is AC_REQUIREd in AM_DEPENDENCIES
+# Choose a directory name for dependency files.
+# This macro is AC_REQUIREd in AM_DEPENDENCIES
 
-AC_DEFUN(AM_SET_DEPDIR,[
+AC_DEFUN([AM_SET_DEPDIR],[
 if test -d .deps || mkdir .deps 2> /dev/null || test -d .deps; then
   DEPDIR=.deps
 else
@@ -73,7 +73,7 @@ fi
 AC_SUBST(DEPDIR)
 ])
 
-AC_DEFUN(AM_DEP_TRACK,[
+AC_DEFUN([AM_DEP_TRACK],[
 AC_ARG_ENABLE(dependency-tracking,
 [  --disable-dependency-tracking Speeds up one-time builds
   --enable-dependency-tracking  Do not reject slow dependency extractors])

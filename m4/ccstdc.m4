@@ -20,7 +20,7 @@
 # program @code{ansi2knr}, which comes with Ghostscript.
 # @end defmac
 
-AC_DEFUN(AM_PROG_CC_STDC,
+AC_DEFUN([AM_PROG_CC_STDC],
 [AC_REQUIRE([AC_PROG_CC])
 AC_BEFORE([$0], [AC_C_INLINE])
 AC_BEFORE([$0], [AC_C_CONST])

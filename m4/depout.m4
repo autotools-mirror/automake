@@ -1,13 +1,13 @@
-dnl Generate code to set up dependency tracking.
-dnl This macro should only be invoked once -- use via AC_REQUIRE.
-dnl Usage:
-dnl AM_OUTPUT_DEPENDENCY_COMMANDS
+# Generate code to set up dependency tracking.
+# This macro should only be invoked once -- use via AC_REQUIRE.
+# Usage:
+# AM_OUTPUT_DEPENDENCY_COMMANDS
 
-dnl
-dnl This code is only required when automatic dependency tracking
-dnl is enabled.  FIXME.  This creates each `.P' file that we will
-dnl need in order to bootstrap the dependency handling code.
-AC_DEFUN(AM_OUTPUT_DEPENDENCY_COMMANDS,[
+#
+# This code is only required when automatic dependency tracking
+# is enabled.  FIXME.  This creates each `.P' file that we will
+# need in order to bootstrap the dependency handling code.
+AC_DEFUN([AM_OUTPUT_DEPENDENCY_COMMANDS],[
 AC_OUTPUT_COMMANDS([
 test x"$AMDEP" != x"" ||
 for mf in $CONFIG_FILES; do

@@ -1,8 +1,8 @@
-dnl Add --enable-multilib to configure.
-dnl Usage: AM_ENABLE_MULTILIB([makefile, [rel-to-top-srcdir]])
+# Add --enable-multilib to configure.
+# Usage: AM_ENABLE_MULTILIB([makefile, [rel-to-top-srcdir]])
 
-AC_DEFUN(AM_ENABLE_MULTILIB, [
-dnl Default to --enable-multilib
+AC_DEFUN([AM_ENABLE_MULTILIB], [
+# Default to --enable-multilib
 AC_ARG_ENABLE(multilib,
 [  --enable-multilib         build many library versions (default)],
 [case "${enableval}" in
@@ -11,8 +11,8 @@ AC_ARG_ENABLE(multilib,
   *)   AC_MSG_ERROR(bad value ${enableval} for multilib option) ;;
  esac], [multilib=yes]
 
-dnl We may get other options which we are undocumented:
-dnl --with-target-subdir, --with-multisrctop, --with-multisubdir
+# We may get other options which we are undocumented:
+# --with-target-subdir, --with-multisrctop, --with-multisubdir
 
 if test "[$]{srcdir}" = "."; then
   if test "[$]{with_target_subdir}" != "."; then

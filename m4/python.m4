@@ -3,25 +3,25 @@
 ## From Andrew Dalke
 ## ------------------------
 
-dnl AM_PATH_PYTHON([package, module])
-dnl 
+# AM_PATH_PYTHON([package, module])
+# 
 
-dnl Adds support for distributing Python modules or the special form
-dnl of a module called a `package.'  Modules of the first type are 
-dnl files ending in `.py' with no '__init__.py' file.  This must be
-dnl placed on the PYTHONPATH, and the default location is PYTHON_SITE,
-dnl or $(prefix)/lib/python$(PYTHON_VERSION)/site-package
-dnl 
-dnl A package module is contained in its own directory.  This directory
-dnl is named PACKAGE, which was the name given to automake.  The full
-dnl directory path is PYTHON_SITE_PACKAGE or
-dnl   $(prefix)/lib/python$(PYTHON_VERSION)/site-package/$(PACKAGE)
-dnl where site-package is on the PYTHONPATH.  The `__init__.py' file is
-dnl located in the directory, along with any other submodules which may
-dnl be necessary.
+# Adds support for distributing Python modules or the special form
+# of a module called a `package.'  Modules of the first type are 
+# files ending in `.py' with no '__init__.py' file.  This must be
+# placed on the PYTHONPATH, and the default location is PYTHON_SITE,
+# or $(prefix)/lib/python$(PYTHON_VERSION)/site-package
+# 
+# A package module is contained in its own directory.  This directory
+# is named PACKAGE, which was the name given to automake.  The full
+# directory path is PYTHON_SITE_PACKAGE or
+#   $(prefix)/lib/python$(PYTHON_VERSION)/site-package/$(PACKAGE)
+# where site-package is on the PYTHONPATH.  The `__init__.py' file is
+# located in the directory, along with any other submodules which may
+# be necessary.
 
 
-AC_DEFUN(AM_PATH_PYTHON,
+AC_DEFUN([AM_PATH_PYTHON],
  [
   dnl Find a version of Python.  I could check for python versions 1.4
   dnl or earlier, but the default installation locations changed from

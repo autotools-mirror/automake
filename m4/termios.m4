@@ -1,8 +1,8 @@
-dnl From Jim Meyering.
+# From Jim Meyering.
 
 # serial 1
 
-AC_DEFUN(AM_SYS_POSIX_TERMIOS,
+AC_DEFUN([AM_SYS_POSIX_TERMIOS],
 [AC_CACHE_CHECK([POSIX termios], am_cv_sys_posix_termios,
   [AC_TRY_LINK([#include <sys/types.h>
 #include <unistd.h>
