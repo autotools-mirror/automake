@@ -59,6 +59,7 @@ cond8.test \
 cond9.test \
 condincl.test \
 condincl2.test \
+condlib.test \
 condman.test \
 condman2.test \
 conf2.test \
