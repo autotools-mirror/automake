@@ -5480,19 +5480,25 @@ sub variable_dump ($)
 {
   my ($var)= @_;
 
-  my $var_is_am = $var_is_am{$var} ? "Automake" : "User";
-  my $where = (defined $content_lines{$var}
-	       ? $content_lines{$var} : "undefined");
-  my $pluseq = ((defined $var_was_plus_eq{$var} && $var_was_plus_eq{$var})
-		? "+=" : "=");
-
-  print STDERR "  $var ($var_is_am, where = $where) $pluseq\n";
-  print STDERR "  {\n";
-  foreach my $vcond (sort by_condition keys %{$conditional{$var}})
+  if (!exists $conditional{$var})
     {
-      print STDERR "    $vcond => $conditional{$var}{$vcond}\n";
+      print STDERR "  $var does not exist\n";
     }
-  print STDERR "  }\n";
+  else
+    {
+      my $var_is_am = $var_is_am{$var} ? "Automake" : "User";
+      my $where = (defined $content_lines{$var}
+		   ? $content_lines{$var} : "undefined");
+      my $pluseq = ((defined $var_was_plus_eq{$var} && $var_was_plus_eq{$var})
+		    ? "+=" : "=");
+      print STDERR "  $var ($var_is_am, where = $where) $pluseq\n";
+      print STDERR "  {\n";
+      foreach my $vcond (sort by_condition keys %{$conditional{$var}})
+	{
+	  print STDERR "    $vcond => $conditional{$var}{$vcond}\n";
+	}
+      print STDERR "  }\n";
+    }
 }
 
 
@@ -5591,14 +5597,25 @@ sub check_ambiguous_conditional ($$)
     my ($var, $cond) = @_;
     foreach my $vcond (keys %{$conditional{$var}})
     {
-	if (&conditional_true_when ($vcond, $cond)
-	    || &conditional_true_when ($cond, $vcond))
-	{
-	    &am_line_error ($var,
-			    "$var multiply defined in condition $cond");
-	    variable_dump ($var);
-	}
-    }
+       my $message;
+       if ($vcond eq $cond)
+       {
+	   $message = "$var multiply defined in condition $cond";
+       }
+       elsif (&conditional_true_when ($vcond, $cond))
+       {
+	 $message = "$var was already defined in condition $vcond, which implies condition $cond";
+       }
+       elsif (&conditional_true_when ($cond, $vcond))
+       {
+	   $message = "$var was already defined in condition $vcond, which is implied by condition $cond";
+       }
+       if ($message)
+       {
+	   &am_line_error ($var, $message);
+	   variable_dump ($var);
+       }
+   }
 }
 
 
@@ -5617,40 +5634,36 @@ sub macro_define ($$$$$$)
 
   $cond ||= 'TRUE';
 
-  check_ambiguous_conditional ($var, $cond)
-    unless $type eq '+';
-
-  if (! defined $conditional{$var}{$cond})
+  # A variable which was `+=' must not be `='.
+  if (defined $var_was_plus_eq{$var})
     {
-      # Initialize: we rely on defined.
-      $conditional{$var}{$cond} = '';
-
-      # The first assignment to a macro sets the line number.  Ideally
-      # I suppose we would associate line numbers with random bits of
-      # text.
-      # FIXME: We sometimes redefine some variables, but we want to keep
-      # the original location.  More subs are needed to handle properly
-      # variables.  Once this done, remove this hack.
-      $content_lines{$var} = $where
-	unless defined $content_lines{$var};
-
-      # If first assignment, set `+=' indicator.
+      if ($var_was_plus_eq{$var} && $type ne '+')
+	{
+	  am_line_error ($var,
+			 ("$var was set with `+=' "
+			  . "and is now set with `$type='"));
+	}
+    }
+  else
+    {
       $var_was_plus_eq{$var} = $type eq '+' && ! $var_is_am{$var};
     }
 
+  # An Automake variable can be given to the user, but not the converse.
   if (! defined $var_is_am{$var} || !$var_is_am)
     {
       $var_is_am{$var} = $var_is_am;
     }
 
-  if ($type eq '+')
+  # Differentiate the first assignment (including with `+=').
+  if ($type eq '+' && defined $conditional{$var}{$cond})
     {
       if (substr ($conditional{$var}{$cond}, -1) eq "\n")
-       {
-         # Insert a backslash before a trailing newline.
-         $conditional{$var}{$cond} =
-	   substr ($conditional{$var}{$cond}, 0, -1) . "\\\n";
-       }
+	{
+	  # Insert a backslash before a trailing newline.
+	  $conditional{$var}{$cond} =
+	    substr ($conditional{$var}{$cond}, 0, -1) . "\\\n";
+	}
       elsif ($conditional{$var}{$cond})
 	{
 	  # Insert a separator.
@@ -5660,6 +5673,16 @@ sub macro_define ($$$$$$)
     }
   else
     {
+      # The first assignment to a macro sets the line number.  Ideally I
+      # suppose we would associate line numbers with random bits of text.
+      # FIXME: We sometimes redefine some variables, but we want to keep
+      # the original location.  More subs are needed to handle
+      # properly variables.  Once this done, remove this hack.
+      $content_lines{$var} = $where
+	unless defined $content_lines{$var};
+
+      # There must be no previous value.
+      check_ambiguous_conditional ($var, $cond);
       $conditional{$var}{$cond} = $value;
     }
 
@@ -5694,8 +5717,6 @@ sub variable_defined ($$)
 {
     my ($var, $cond) = @_;
 
-    $cond ||= 'TRUE';
-
     # Unfortunately we can't just check for $conditional{VAR}{COND}
     # as this would make perl create $condition{VAR}, which we
     # don't want.
@@ -5710,7 +5731,7 @@ sub variable_defined ($$)
       }
 
     if ($var_is_am{$var}
-	|| !exists $conditional{$var}{$cond})
+	|| ($cond && !exists $conditional{$var}{$cond}))
       {
 	# The variable is not defined for the given condition.
 	return 0;
@@ -6569,7 +6590,16 @@ sub read_main_am_file
 
     # First pass.
     &define_standard_variables;
-    my %saved_conditional = %conditional;
+    # Deep copy. With `%saved_conditional = %conditional' modifying
+    # one modifes the other.
+    my %saved_conditional;
+    foreach my $var (keys %conditional)
+      {
+	foreach my $cond (keys %{$conditional{$var}})
+	  {
+	    $saved_conditional{$var}{$cond} = $conditional{$var}{$cond};
+	  }
+      }
 
     # Read user file, but discard text of variable assignments we just
     # made.
@@ -6923,15 +6953,26 @@ sub am_primary_prefixes
 	if ($varname =~ /^(nobase_)?(dist_|nodist_)?(.*)_$primary$/)
 	{
 	    my ($base, $dist, $X) = ($1 || '', $2 || '', $3 || '');
-	    if (($dist ne '' && ! $can_dist)
-		|| (! defined $valid{$X} && ! &variable_defined ("${X}dir")))
+	    if ($dist ne '' && ! $can_dist)
 	    {
 		# Note that a configure variable is always legitimate.
 		# It is natural to name such variables after the
 		# primary, so we explicitly allow it.
 		if (! defined $configure_vars{$varname})
 		{
-		    &am_line_error ($varname, "invalid variable `$varname'");
+		    &am_line_error ($varname,
+				    "invalid variable `$varname': `dist' is forbidden");
+		}
+	    }
+	    elsif (! defined $valid{$X} && ! &variable_defined ("${X}dir"))
+	    {
+		# Note that a configure variable is always legitimate.
+		# It is natural to name such variables after the
+		# primary, so we explicitly allow it.
+		if (! defined $configure_vars{$varname})
+		{
+		    &am_line_error ($varname,
+				    "invalid variable `$varname'");
 		}
 	    }
 	    else
