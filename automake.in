@@ -2762,18 +2762,18 @@ sub handle_texinfo
 	$need_texi_file = 1;
     }
 
-    my $xform =
-      &transform ('TEXINFODIR' => $texinfodir,
-		  'TEXICLEAN'  => &pretty_print_internal ("\t-rm -f",
-							  "\t  ",
-							  @texi_cleans));
     foreach my $txsfx (sort keys %texi_suffixes)
     {
-	$output_rules .= &file_contents ('texibuild',
-					 $xform
-					 . &transform ('SUFFIX' => $txsfx));
+	$output_rules .=
+	  &file_contents ('texibuild',
+			  &transform ('TEXINFODIR' => $texinfodir,
+				      'SUFFIX'     => $txsfx));
     }
-    $output_rules .= &file_contents ('texinfos', $xform);
+
+    my $texiclean = &pretty_print_internal ("", "\t  ", @texi_cleans);
+    $output_rules .=  &file_contents ('texinfos',
+				      &transform ('TEXICLEAN' => $texiclean));
+
     push (@dist_targets, 'dist-info');
     push (@suffixes, '.texi', '.texinfo', '.txi', '.info', '.dvi', '.ps');
 
@@ -3059,15 +3059,14 @@ sub handle_dist
     }
 
     # Rule to check whether a distribution is viable.
-    my $xform =
-      &transform ('TOPDIR'         => ($relative_dir eq '.'),
-		  'DISTCHECK-HOOK' => &target_defined ('distcheck-hook'),
-		  'GETTEXT'        => $seen_gettext);
+    my %transform = ('TOPDIR'         => ($relative_dir eq '.'),
+		     'DISTCHECK-HOOK' => &target_defined ('distcheck-hook'),
+		     'GETTEXT'        => $seen_gettext);
 
     # Prepend $(distdir) to each directory given.
     my %rewritten;
     grep ($rewritten{'$(distdir)/' . $_} = 1, keys %dist_dirs);
-    $xform .= &transform ('DISTDIRS', join (' ', sort keys %rewritten));
+    $transform{'DISTDIRS'} = join (' ', sort keys %rewritten);
 
     # If we have SUBDIRS, create all dist subdirectories and do
     # recursive build.
@@ -3096,7 +3095,7 @@ sub handle_dist
 	    &define_pretty_variable ('DIST_SUBDIRS', '', '$(SUBDIRS)');
 	}
 
-	$xform .= &transform ('DIST_SUBDIR_NAME' => $dist_subdir_name);
+	$transform{'DIST_SUBDIR_NAME'} = $dist_subdir_name;
     }
 
     # If the target `dist-hook' exists, make sure it is run.  This
@@ -3104,15 +3103,13 @@ sub handle_dist
     # before it is packaged up.
     push (@dist_targets, 'dist-hook')
       if &target_defined ('dist-hook');
+    $transform{'DIST-TARGETS'} = join(' ', @dist_targets);
 
-    my $top_distdir = backname ($relative_dir);
+    # Defining $(DISTDIR).
+    $transform{'DISTDIR'} = !&variable_defined('distdir');
+    $transform{'TOP_DISTDIR'} = backname ($relative_dir);
 
-    $output_rules .=
-      &file_contents ('distdir',
-		      $xform
-		      . &transform ('DISTDIR' => !&variable_defined('distdir'),
-				    'DIST-TARGETS' => join(' ', @dist_targets),
-				    'TOP_DISTDIR'  => $top_distdir));
+    $output_rules .= &file_contents ('distdir', &transform (%transform));
 }
 
 
@@ -3130,10 +3127,10 @@ sub add_depend2
     my $flag = $language_map{"$lang-flags"};
 
     # First include code for ordinary objects.
-    my $xform = &transform ('PFX'  => $pfx,
-			    'FPFX' => $fpfx,
-			    'LIBTOOL' => $seen_libtool,
-			    'AMDEP'   => $use_dependencies);
+    my %transform = ('PFX'  => $pfx,
+		     'FPFX' => $fpfx,
+		     'LIBTOOL' => $seen_libtool,
+		     'AMDEP'   => $use_dependencies);
 
     # This function can be called even when we don't want dependency
     # tracking.  This happens when we need an explicit rule for some
@@ -3142,21 +3139,21 @@ sub add_depend2
     {
         my $compile = '$(' . $pfx . 'COMPILE)';
 	my $ltcompile = '$(LT' . $pfx . 'COMPILE)';
-	my $xform1 = ($xform
-		      . &transform ('GENERIC'   => 1,
-				    'BASE'      => '$*',
-				    'SOURCE'    => '$<',
-				    'OBJ'       => '$@',
-				    'LTOBJ'     => '$@',
-				    'OBJOBJ'    => '$@',
-				    'COMPILE'   => $compile,
-				    'LTCOMPILE' => $ltcompile));
+	my %transform = (%transform,
+			 'GENERIC'   => 1,
+			 'BASE'      => '$*',
+			 'SOURCE'    => '$<',
+			 'OBJ'       => '$@',
+			 'LTOBJ'     => '$@',
+			 'OBJOBJ'    => '$@',
+			 'COMPILE'   => $compile,
+			 'LTCOMPILE' => $ltcompile);
 
 	foreach my $ext (&lang_extensions ($lang))
 	{
 	    $output_rules .= (&file_contents ('depend2',
-					      &transform ('EXT' => $ext)
-					      . $xform1)
+					      &transform (%transform,
+							  'EXT' => $ext))
 			      . "\n");
 	}
     }
@@ -3183,17 +3180,16 @@ sub add_depend2
 	# depend2.am into real targets for the particular objects we
 	# are building.
 	$output_rules .=
-	    &file_contents
-	        ('depend2',
-		 $xform
-		 . &transform ('GENERIC'   => 0,
-			       'BASE'      => $obj,
-			       'SOURCE'    => $source,
-			       'OBJ'       => "$obj.o",
-			       'OBJOBJ'    => "$obj.obj",
-			       'LTOBJ'     => "$obj.lo",
-			       'COMPILE'   => $obj_compile,
-			       'LTCOMPILE' => $obj_ltcompile))
+	    &file_contents ('depend2',
+			    &transform (%transform,
+					'GENERIC'   => 0,
+					'BASE'      => $obj,
+					'SOURCE'    => $source,
+					'OBJ'       => "$obj.o",
+					'OBJOBJ'    => "$obj.obj",
+					'LTOBJ'     => "$obj.lo",
+					'COMPILE'   => $obj_compile,
+					'LTCOMPILE' => $obj_ltcompile))
     }
 }
 
@@ -3950,13 +3946,12 @@ sub do_check_merge_target
 # Handle all 'clean' targets.
 sub handle_clean
 {
-    my $xform = '';
+    my %transform;
 
     # Don't include `MAINTAINER'; it is handled specially below.
     foreach my $name ('MOSTLY', '', 'DIST')
     {
-      $xform .= &transform ("${name}CLEAN"
-			    => &variable_defined ("${name}CLEANFILES"));
+      $transform{"${name}CLEAN"} = &variable_defined ("${name}CLEANFILES");
     }
 
     # Built sources are automatically removed by maintainer-clean.
@@ -3967,15 +3962,15 @@ sub handle_clean
 
     $output_rules .=
       &file_contents ('clean',
-		      $xform
-		      . &transform ('MCFILES'
-				    # Join with no space to avoid
-				    # spurious `test -z' success at
-				    # runtime.
-				    => join ('', @maintainer_clean_files),
-				    'MFILES'
-				    # A space is required in the join here.
-				    => join (' ', @maintainer_clean_files)));
+		      &transform (%transform,
+				  'MCFILES'
+				  # Join with no space to avoid
+				  # spurious `test -z' success at
+				  # runtime.
+				     => join ('', @maintainer_clean_files),
+				  'MFILES'
+				  # A space is required in the join here.
+				     => join (' ', @maintainer_clean_files)));
 
     # We special-case config.status here.  If we do it as part of the
     # normal clean processing for this directory, then it might be
