@@ -2612,8 +2612,7 @@ sub handle_dist_worker
 
 	# Create dist directory.
 	$output_rules .= ("\t-rm -rf \$(distdir)\n"
-			  . "\tmkdir \$(distdir)\n"
-			  . "\t-chmod 777 \$(distdir)\n");
+			  . "\tmkdir \$(distdir)\n");
     }
 
     # Only run automake in `dist' target if --include-deps and
@@ -2745,7 +2744,6 @@ sub handle_dist_worker
 	     . "\t" . '    test -d $(distdir)/$$subdir ' . "\\\n"
 	     . "\t" . '    || mkdir $(distdir)/$$subdir ' . "\\\n"
 	     . "\t" . '    || exit 1; ' . "\\\n"
-	     . "\t" . '    chmod 777 $(distdir)/$$subdir; ' . "\\\n"
 	     . "\t" . '    (cd $$subdir'
 	     . ' && $(MAKE) $(AM_MAKEFLAGS) top_distdir=../$('
 	     . (($relative_dir eq '.') ? 'distdir' : 'top_distdir')
@@ -6707,9 +6705,19 @@ sub initialize_global_constants
 # PARTICULAR PURPOSE.
 ";
 
+    # This complex find command will try to avoid changing the modes of
+    # links into the source tree, in case they're hard-linked.  It will
+    # also make directories writable by everybody, because some
+    # brain-dead tar implementations change ownership and permissions of
+    # a directory before extracting the files, thus becoming unable to
+    # extract them.
     # Ignore return result from chmod, because it might give an error
     # if we chmod a symlink.
-    $dist_header = "\t" . '-chmod -R a+r $(distdir)' . "\n";
+    $dist_header = '	-find $(distdir) -type d ! -perm -777 -exec chmod a+rwx {} \; -o \\
+	  ! -type d ! -perm -444 -links 1 -exec chmod a+r {} \; -o \\
+	  ! -type d ! -perm -444 -exec $(SHELL) $(install_sh) -c -m a+r {} {} \; \\
+	|| chmod -R a+r $(distdir)
+';
     $dist{'dist-bzip2'} = ("\t"
 			   . '$(AMTAR) ch$(AMTARFLAGS)f - $(distdir) | bzip --best -c > $(distdir).bz2'
 			   . "\n");
