@@ -1350,6 +1350,9 @@ sub handle_installdirs
 # avoid double colon rules, otherwise we'd use them instead.
 sub handle_merge_targets
 {
+    push (@all, 'Makefile');
+    push (@all, $config_name)
+	if $config_name && &dirname ($config_name) eq $relative_dir;
     &do_one_merge_target ('all', @all);
     &do_one_merge_target ('info', @info);
     &do_one_merge_target ('dvi', @dvi);
@@ -1357,7 +1360,9 @@ sub handle_merge_targets
     if (! defined $contents{'SUBDIRS'} || $relative_dir ne '.')
     {
 	# 'check' must depend on 'all', but not at top level.
+	# Ditto install.
 	unshift (@check, 'all');
+	unshift (@install, 'all');
     }
     &do_one_merge_target ('check', @check);
     &do_one_merge_target ('installcheck', @installcheck);
@@ -1392,7 +1397,6 @@ sub handle_merge_targets
     if ($recursive_install)
     {
 	push (@install, 'install-recursive');
-	push (@uninstall, 'uninstall-recursive');
 
 	if (@install_exec)
 	{
@@ -1403,6 +1407,10 @@ sub handle_merge_targets
 	    push (@install, 'install-exec-am');
 	    push (@phony, 'install-exec-am');
 	}
+	else
+	{
+	    @install_exec = ('install-exec-recursive');
+	}
 	if (@install_data)
 	{
 	    $output_rules .= ('install-data-am: '
@@ -1412,6 +1420,10 @@ sub handle_merge_targets
 	    push (@install, 'install-data-am');
 	    push (@phony, 'install-data-am');
 	}
+	else
+	{
+	    @install_data = ('install-data-recursive');
+	}
 	if (@uninstall)
 	{
 	    $output_rules .= ('uninstall-am: '
@@ -1419,6 +1431,10 @@ sub handle_merge_targets
 			      . "\n\n");
 	    @uninstall = ('uninstall-recursive', 'uninstall-am');
 	    push (@phony, 'uninstall-am');
+	}
+	else
+	{
+	    @uninstall = ('uninstall-recursive');
 	}
     }
 
