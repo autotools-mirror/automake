@@ -2753,10 +2753,10 @@ sub scan_configure
         # Handle AC_CANONICAL_*.  Always allow upgrading to
         # AC_CANONICAL_SYSTEM, but never downgrading.
 	$seen_canonical = $AC_CANONICAL_HOST
-	    if ! $seen_canonical && /AC_CANONICAL_HOST/;
+	    if ! $seen_canonical
+		&& (/AC_CANONICAL_HOST/ || /AC_CHECK_TOOL);
         $seen_canonical = $AC_CANONICAL_SYSTEM if /AC_CANONICAL_SYSTEM/;
 
-	$seen_canonical = 1 if /AC_CHECK_TOOL/;
 	$seen_path_xtra = 1 if /AC_PATH_XTRA/;
 
 	# Sometimes it is desirable to explicitly set YACC.  For
@@ -3054,14 +3054,16 @@ sub read_am_file
     # Generate some useful variables when AC_CANONICAL_* used.
     if ($seen_canonical)
     {
-	$header_vars .= ('host_alias = @host_alias@' . "\n"
-			 . 'host_triplet = @host@' . "\n");
+	local ($curs, @varlist);
+	push (@varlist, 'host_alias', 'host_triplet');
 	if ($seen_canonical == $AC_CANONICAL_SYSTEM)
 	{
-	    $header_vars .= ('build_alias = @build_alias@' . "\n"
-			     . 'build_triplet = @build@' . "\n");
-	    $header_vars .= ('target_alias = @target_alias@' . "\n"
-			     . 'target_triplet = @target@' . "\n");
+	    push (@varlist, 'build_alias', 'target_alias');
+	}
+	foreach $curs (@varlist)
+	{
+	    $header_vars .= "$curs = \@$curs\@\n";
+	    $contents{$curs} = "\@$curs\@";
 	}
     }
 
