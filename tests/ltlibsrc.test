@@ -23,37 +23,52 @@
 required='libtool gcc'
 . ./defs || exit 1
 
-cat > configure.in << 'END'
-AC_INIT([foo], [0.1])
-AC_CONFIG_SRCDIR([foo.c])
-AM_INIT_AUTOMAKE
+set -e
+
+cat >> configure.in << 'END'
 AC_PROG_CC
 AC_PROG_LIBTOOL
-AC_CONFIG_FILES(Makefile)
 AC_OUTPUT
 END
 
+mkdir zoo.d
+
 cat > Makefile.am << 'END'
-pkglib_LTLIBRARIES = foo.la
-foo_la_LDFLAGS = -module
+AM_LDFLAGS = -module
+pkglib_LTLIBRARIES = zoo.d/bar.la old.la
+noinst_LTLIBRARIES = foo.la zoo.d/old2.la
+
+zoo_d_old2_la.c: old_la.c
+	cp $< $@
 END
 
 cat > foo.c << 'END'
 int foo (void) { return 0; }
 END
 
+cp foo.c zoo.d/bar.c
+cp foo.c old_la.c
+
 libtoolize
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE -a
+AUTOMAKE_fails -a
+grep 'Makefile.am:2:.*old_la.c' stderr
+grep 'Makefile.am:2:.*old.c' stderr
+grep 'Makefile.am:3:.*zoo_d_old2_la.c' stderr
+grep 'Makefile.am:3:.*zoo\.d/old2.c' stderr
+
+$AUTOMAKE -Wno-obsolete
 
 mkdir sub
 cd sub
 
 ../configure
-$MAKE || exit 1
+$MAKE
 
-test -f foo.la || exit 1
-:
+test -f foo.la
+test -f zoo.d/bar.la
+test -f old.la
+test -f zoo.d/old2.la
 
-exit 0
+$MAKE distcheck

@@ -1807,7 +1807,22 @@ sub handle_source_transform
     my @keys = sort keys %used_pfx;
     if (scalar @keys == 0)
     {
-        (my $default_source = $unxformed) =~ s/(\..*)?$/.c/;
+	# The default source for libfoo.la is libfoo.c, but for
+	# backward compatibility we first look at libfoo_la.c
+	my $old_default_source = "$one_file.c";
+	(my $default_source = $unxformed) =~ s,(\.[^./\\]*)?$,.c,;
+	if ($old_default_source ne $default_source
+	    && (rule $old_default_source || -f $old_default_source))
+	  {
+	    my $loc = $where->clone;
+	    $loc->pop_context;
+	    msg ('obsolete', $loc,
+		 "the default source for `$unxformed' has been changed "
+		 . "to `$default_source'.\n(Using `$old_default_source' for "
+		 . "backward compatibility.)");
+	    $default_source = $old_default_source;
+	  }
+
 	&define_variable ($one_file . "_SOURCES", $default_source, $where);
 	push (@sources, $default_source);
 	push (@dist_sources, $default_source);

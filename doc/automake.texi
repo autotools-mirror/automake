@@ -2231,6 +2231,7 @@ to build programs and libraries.
 * A Shared Library::            Building a Libtool library
 * Program and Library Variables::  Variables controlling program and
                                 library builds
+* Default _SOURCES::            Default source files
 * LIBOBJS::                     Special handling for LIBOBJS and ALLOCA
 * Program variables::           Variables used when building a program
 * Yacc and Lex::                Yacc and Lex support
@@ -2309,25 +2310,9 @@ corresponding @samp{.o}.  Then all are linked to produce @file{hello}.
 @cindex Primary variable, SOURCES
 
 If @samp{hello_SOURCES} is not specified, then it defaults to the single
-file @file{hello.c}; that is, the default is to compile a single C file
-whose base name is the name of the program itself.  In this context,
-the base name is always the name that would have gone to the left of
-the @samp{_SOURCES} primary, before canonicalization and with any
-suffixes replaced with @samp{.c} (This is a terrible default but we
-are stuck with it for historical reasons.)
+file @file{hello.c} (@pxref{Default _SOURCES}).
 @vindex _SOURCES
 @vindex SOURCES
-
-For example if you have the following somewhere in your
-@file{Makefile.am} with no corresponding @samp{libfoo_a_SOURCES}:
-
-@example
-lib_LIBRARIES = libfoo.a
-@end example
-
-@noindent
-@file{libfoo.a} will be built using a default source file named
-@file{libfoo.c}.
 
 Multiple programs can be built in a single directory.  Multiple programs
 can share a single source file, which must be listed in each
@@ -2883,12 +2868,8 @@ Ordinarily, Automake requires that a Library's name starts with
 @samp{lib}.  However, when building a dynamically loadable module you
 might wish to use a "nonstandard" name.
 
-If @samp{mymodule_SOURCES} is not specified, then it defaults to the single
-file @file{mymodule.c}; that is, the default is to compile a single C file
-whose base name is the name of the module itself.  (This is a terrible
-default but we are stuck with it for historical reasons.)
-@vindex _SOURCES
-@vindex SOURCES
+If @samp{mymodule_la_SOURCES} is not specified, then it defaults to the single
+file @file{mymodule.c} (@pxref{Default _SOURCES}).
 
 @node Libtool Flags
 @subsection _LIBADD and _LDFLAGS
@@ -3207,6 +3188,80 @@ the object file would be named @file{m-sample.o} rather than
 This facility is rarely needed in practice,
 and we recommend avoiding it until you find it is required.
 @end table
+
+@node Default _SOURCES
+@section Default @code{_SOURCES}
+
+@vindex _SOURCES
+@vindex SOURCES
+@cindex @code{_SOURCES}, default
+@cindex default @code{_SOURCES}
+
+@code{_SOURCES} variables are used to specify source files of programs
+(@pxref{A Program}), libraries (@pxref{A Library}), and Libtool
+libraries (@pxref{A Shared Library}).
+
+When no such variable is specified for a target, Automake will define
+one itself.  The default is to compile a single C file whose base name
+is the name of the target itself, with any extension replaced by
+@file{.c}.  (Defaulting to C is terrible but we are stuck with it for
+historical reasons.)
+
+For example if you have the following somewhere in your
+@file{Makefile.am} with no corresponding @samp{libfoo_a_SOURCES}:
+
+@example
+lib_LIBRARIES = libfoo.a sub/libc++.a
+@end example
+
+@noindent
+@file{libfoo.a} will be built using a default source file named
+@file{libfoo.c}, and @file{sub/libc++.a} will be built from
+@file{sub/libc++.c}.  (In older versions @file{sub/libc++.a}
+would be built from @file{sub_libc___a.c}, i.e., the default source
+was the canonized name of the target, with @file{.c} appended.
+Be believe the new behavior is more sensible, but for backward
+compatibility automake will use the old name if a file or a rule
+with that name exist.)
+
+@cindex @code{check_PROGRAMS} example
+@vindex check_PROGRAMS
+Default sources are mainly useful in test suites, when building many
+tests programs each from a single source.  For instance in
+
+@example
+check_PROGRAMS = test1 test2 test3
+@end example
+
+@noindent
+@file{test1}, @file{test2}, and @file{test3} will be built
+from @file{test1.c}, @file{test2.c}, and @file{test3.c}.
+
+@cindex Libtool modules, default source example
+@cindex default source, Libtool modules example
+Another case where is this convenient is building many Libtool modules
+(@file{moduleN.la}), each defined in its own file (@file{moduleN.c}).
+
+@example
+AM_LDFLAGS = -module
+lib_LTLIBRARIES = module1.la module2.la module3.la
+@end example
+
+@cindex empty @code{_SOURCES}
+@cindex @code{_SOURCES}, empty
+Finally, there is one situation where this default source computation
+needs to be avoided: when a target should not be built from sources.
+We already saw such an example in @xref{true}; this happens when all
+the constituents of a target have already been compiled and need just
+to be combined using a @code{_LDADD} variable.  Then it is necessary
+to define an empty @code{_SOURCES} variable, so that automake does not
+compute a default.
+
+@example
+bin_PROGRAMS = target
+target_SOURCES =
+target_LDADD = libmain.a libmisc.a
+@end example
 
 @node LIBOBJS
 @section Special handling for LIBOBJS and ALLOCA
