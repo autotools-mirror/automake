@@ -448,14 +448,10 @@ sub generate_makefile
     &handle_programs;
     &handle_scripts;
 
+    &handle_built_sources;
+
     # This must be run after all the sources are scanned.
     &handle_yacc_lex_cxx;
-
-    # This is here for lack of a better place to put it.
-    if (&variable_defined ('BUILT_SOURCES'))
-    {
-	push (@all, '$(BUILT_SOURCES)');
-    }
 
     # Re-init SOURCES and OBJECTS.  FIXME: other code shouldn't depend
     # on this (but currently does).
@@ -803,6 +799,91 @@ sub check_libobjs_sources
     }
 }
 
+# Does much of the actual work for handle_source_transform.
+# Arguments are:
+#   list of source files to transform
+# Result is a list
+#   first element is name of linker to use (empty string for default linker)
+#   remaining elements are names of `.o's
+sub handle_single_transform_list
+{
+    local (@files) = @_;
+    local ($linker) = '';
+    local (@result) = ();
+    if (length (@files))
+    {
+	# Turn sources into objects.
+	foreach (@files)
+	{
+	    # Skip header files, including C++-ish ones.  The list
+	    # of C++ header extensions comes from Emacs 19.32
+	    # etags.
+	    next if /\.[hH]$/;
+	    next if /\.hxx$/;
+	    next if /\.h\+\+$/;
+	    next if /\.hh$/;
+	    next if /\.hpp$/;
+	    # Skip things that look like configure substitutions.
+	    next if /^\@.*\@$/;
+
+	    # Include .c file for lex or yacc source in distribution.
+	    if (/^(.*)\.y$/)
+	    {
+		# Yacc source.
+		&push_dist_common ($1 . '.c');
+		$yacc_sources{$_} = 1;
+	    }
+	    elsif (/^(.*)\.l$/)
+	    {
+		# Lex source.
+		&push_dist_common ($1 . '.c');
+		$lex_sources{$_} = 1;
+	    }
+
+	    # Transform source files into .o files.  List of C++
+	    # extensions comes from Emacs 19.32 etags.
+	    if (s/\.c\+\+$/.o/g
+		|| s/\.cc$/.o/g
+		|| s/\.cpp$/.o/g
+		|| s/\.cxx$/.o/g
+		|| s/\.C$/.o/g)
+	    {
+		$cxx_extensions{$&} = 1;
+		$linker = 'CXXLINK';
+	    }
+	    else
+	    {
+		# FORTRAN support.  FIXME: not finished.
+		s/\.f90$/.o/g;
+		s/\.for$/.o/g;
+
+		# C, yacc, and lex need special $obj extension, for
+		# de-ansification.  Hopefully someday this will go
+		# away.
+		s/\.[cly]$/$obj/g;
+
+		# .f and .F are fortran.  .s is assembly.  .M is
+		# Objective-C++.  .m is Objective-C.
+		s/\.[fFsmM]$/$obj/g;
+
+		# FIXME: of course, this should only happen for C
+		# source.  The multi-language support must really be
+		# cleaned up more globally.
+		$seen_c_source = 1;
+	    }
+
+	    push (@result, $_);
+
+	    # Transform .o or $o file into .P file (for automatic
+	    # dependency code).
+	    s/$objpat$/.P/g;
+	    $dep_files{'.deps/' . $_} = 1;
+	}
+    }
+
+    return ($linker, @result);
+}
+
 # Handle SOURCE->OBJECT transform for one program or library.
 # Arguments are:
 #   canonical (transformed) name of object to build
@@ -830,8 +911,7 @@ sub handle_source_transform
 	return;
     }
 
-    local (@files);
-    local ($prefix);
+    local (@files, @result, $prefix, $temp);
     foreach $prefix ('', 'EXTRA_')
     {
 	@files = ();
@@ -855,81 +935,10 @@ sub handle_source_transform
 	    &define_variable ("EXTRA_" . $one_file . "_SOURCES", '');
 	}
 
-	if (length (@files))
-	{
-	    # Turn sources into objects.
-	    local (@result) = ();
-	    foreach (@files)
-	    {
-		# Skip header files, including C++-ish ones.  The list
-		# of C++ header extensions comes from Emacs 19.32
-		# etags.
-		next if /\.[hH]$/;
-		next if /\.hxx$/;
-		next if /\.h\+\+$/;
-		next if /\.hh$/;
-		next if /\.hpp$/;
-		# Skip things that look like configure substitutions.
-		next if /^\@.*\@$/;
-
-		# Include .c file for lex or yacc source in distribution.
-		if (/^(.*)\.y$/)
-		{
-		    # Yacc source.
-		    &push_dist_common ($1 . '.c');
-		    $yacc_sources{$_} = 1;
-		}
-		elsif (/^(.*)\.l$/)
-		{
-		    # Lex source.
-		    &push_dist_common ($1 . '.c');
-		    $lex_sources{$_} = 1;
-		}
-
-		# Transform source files into .o files.  List of C++
-		# extensions comes from Emacs 19.32 etags.
-		if (s/\.c\+\+$/.o/g
-		    || s/\.cc$/.o/g
-		    || s/\.cpp$/.o/g
-		    || s/\.cxx$/.o/g
-		    || s/\.C$/.o/g)
-		{
-		    $cxx_extensions{$&} = 1;
-		    $linker = 'CXXLINK';
-		}
-		else
-		{
-		    # FORTRAN support.  FIXME: not finished.
-		    s/\.f90$/.o/g;
-		    s/\.for$/.o/g;
-
-		    # C, yacc, and lex need special $obj extension,
-		    # for de-ansification.  Hopefully someday this
-		    # will go away.
-		    s/\.[cly]$/$obj/g;
-
-		    # .f and .F is fortran.  .s is assembly.  .M is
-		    # Objective-C++.  .m is Objective-C.
-		    s/\.[fFsmM]$/$obj/g;
-
-		    # FIXME: of course, this should only happen for C
-		    # source.  The multi-language support must really
-		    # be cleaned up more globally.
-		    $seen_c_source = 1;
-		}
-
-		push (@result, $_)
-		    unless $prefix eq 'EXTRA_';
-
-		# Transform .o or $o file into .P file (for automatic
-		# dependency code).
-		s/$objpat$/.P/g;
-		$dep_files{'.deps/' . $_} = 1;
-	    }
-
-	    &define_pretty_variable ($one_file . "_OBJECTS", @result)
-		unless $prefix eq 'EXTRA_';
-	}
+	($temp, @result) = &handle_single_transform_list (@files);
+	$linker = $temp if $linker eq '';
+	&define_pretty_variable ($one_file . "_OBJECTS", @result)
+	    unless $prefix eq 'EXTRA_';
     }
 
     if (&variable_defined ('CONFIG_HEADER'))
@@ -939,6 +948,30 @@ sub handle_source_transform
     }
 
     return $linker;
+}
+
+# Handle the BUILT_SOURCES variable.
+sub handle_built_sources
+{
+    return unless &variable_defined ('BUILT_SOURCES');
+    push (@all, '$(BUILT_SOURCES)');
+
+    local (@sources) = &variable_value_as_list ('BUILT_SOURCES');
+    local ($s);
+    foreach $s (@sources)
+    {
+	if (/^\@.*\@$/)
+	{
+	    # FIXME: is this really the right thing to do?
+	    &am_line_error ('BUILT_SOURCES', "\`BUILT_SOURCES' should not contain a configure substitution");
+	    last;
+	}
+    }
+
+    # We don't care about the return value of this function.  We just
+    # want to make sure to update %dep_files with the contents of
+    # BUILT_SOURCES.
+    &handle_single_transform_list (@sources);
 }
 
 # Special-case @ALLOCA@ and @LIBOBJS@ in _LDADD or _LIBADD variables.
