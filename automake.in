@@ -2950,6 +2950,9 @@ sub handle_dist
     &handle_dist_worker ($makefile);
 }
 
+
+# add_depend2 ($LANG)
+# -------------------
 # A subroutine of handle_dependencies.  This function includes
 # `depend2' with appropriate transformations.
 sub add_depend2
@@ -2962,10 +2965,10 @@ sub add_depend2
 
     local ($pfx) = $language_map{$key};
     local ($fpfx) = ($pfx eq '') ? 'CC' : $pfx;
-    $xform = ('s/\@PFX\@/' . $pfx . '/g;'
-	      . 's/\@FPFX\@/' . $fpfx . '/g;'
-	      . ($seen_objext ? 's/^OBJEXT//;' : 's/^OBJEXT.*$//;')
-	      . ($seen_libtool ? 's/^LIBTOOL//;' : 's/^LIBTOOL.*$//;'));
+    $xform = &transform ('PFX'  => $pfx,
+			 'FPFX' => $fpfx);
+    $xform .= $seen_objext  ? 's/^OBJEXT//;'  : 's/^OBJEXT.*$//;';
+    $xform .= $seen_libtool ? 's/^LIBTOOL//;' : 's/^LIBTOOL.*$//;';
 
     # This function can be called even when we don't want dependency
     # tracking.  This happens when we need an explicit rule for some
@@ -2973,16 +2976,17 @@ sub add_depend2
     if ($use_dependencies)
     {
 	local ($xform1) = ($xform
-			   . 's/\@BASE\@/\$\*/g;'
-			   . 's/\@SOURCE\@/\$\</g;'
-			   . 's/\@(LT|OBJ)?OBJ\@/\$\@/g;');
+			   . &transform ('BASE'   => '$*',
+					 'SOURCE' => '$<',
+					 'OBJ'    => '$@',
+					 'LTOBJ'  => '$@',
+					 'OBJOBJ' => '$@'));
 
 	foreach $ext (&lang_extensions ($lang))
 	{
-	    $output_rules .= (&file_contents_with_transform ('s/\@EXT\@/'
-							     . $ext . '/g;'
-							     . $xform1,
-							     'depend2')
+	    $output_rules .= (&file_contents_with_transform
+			          (&transform ('EXT' => $ext) . $xform1,
+				   'depend2')
 			      . "\n");
 	}
     }
@@ -3003,8 +3007,8 @@ sub add_depend2
     while ($i < $max)
     {
 	$derived = $list[$i];
-	($source = $list[$i + 1]) =~ s,([/\$]),\\$1,g;
-	($obj = $list[$i + 2]) =~ s,([/\$]),\\$1,g;
+	$source = $list[$i + 1];
+	$obj = $list[$i + 2];
 	$i += 3;
 
 	local ($flag) = $language_map{$lang . '-flags'};
@@ -3012,42 +3016,31 @@ sub add_depend2
 	($rule = $language_map{$lang . '-compile'}) =~
 	    s/\(AM_$flag/$val/;
 
-	$rule =~ s,([/\$]),\\$1,g;
-
 	# Generate a transform which will turn suffix targets in
 	# depend2.am into real targets for the particular objects we
 	# are building.
 	$output_rules .=
-	    &file_contents_with_transform ($xform
- 					   . 's/\$\(' . $pfx . 'COMPILE\)/'
- 					   . $rule . '/g;'
- 					   . 's/\$\(LT' . $pfx . 'COMPILE\)/'
- 					   . '\$(LIBTOOL) --mode=compile '
- 					   . $rule . '/g;'
-					   # Generate rule for `.o'.
-					   . 's/^\@EXT\@\.o:/'
-					   . $obj . '.o: ' . $source
-					   . '/g;'
-					   # Maybe generate rule for `.lo'.
-					   # Might be eliminated by
-					   # $XFORM.
-					   . 's/^\@EXT\@\.lo:/'
-					   . $obj . '.lo: ' . $source
-					   . '/g;'
-					   # Maybe generate rule for `.obj'.
-					   # Might be eliminated by
-					   # $XFORM.
-					   . 's/^\@EXT\@\.obj:/'
-					   . $obj . '.obj: ' . $source
-					   . '/g;'
-					   # Handle source and obj
-					   # transforms.
-					   . 's/\@OBJ\@/' . $obj . '.o/g;'
-					   . 's/\@OBJOBJ\@/' . $obj . '.obj/g;'
-					   . 's/\@LTOBJ\@/' . $obj . '.lo/g;'
-					   . 's/\@BASE\@/' . $obj . '/g;'
-					   . 's/\@SOURCE\@/' . $source . '/g;',
-					   'depend2');
+	    &file_contents_with_transform
+	        ($xform
+		 . &transform ('$(' . $pfx . 'COMPILE)'
+			         => $rule,
+			       '$(LT' . $pfx . 'COMPILE)'
+			         => '$(LIBTOOL) --mode=compile ' . $rule,
+			       # Handle source and obj transforms.
+			       'OBJ'    => $obj . '.o',
+			       'OBJOBJ' => $obj . '.obj',
+			       'LTOBJ'  => $obj . '.lo',
+			       'BASE'   => $obj,
+			       'SOURCE' => $source)
+		 # Generate rule for `.o'.
+		 . 's/^\@EXT\@\.o:/' . $obj . '.o: ' . $source . '/g;'
+		 # Maybe generate rule for `.lo'.  Might be eliminated
+		 # by $XFORM.
+		 . 's/^\@EXT\@\.lo:/' . $obj . '.lo: ' . $source . '/g;'
+		 # Maybe generate rule for `.obj'.  Might be
+		 # eliminated by $XFORM.
+		 . 's/^\@EXT\@\.obj:/' . $obj . '.obj: ' . $source . '/g;',
+		 'depend2');
     }
 }
 
