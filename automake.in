@@ -2201,10 +2201,10 @@ sub handle_languages
 # do this check.
 sub check_libobjs_sources
 {
-    my ($one_file, $unxformed) = @_;
+  my ($one_file, $unxformed) = @_;
 
-    foreach my $prefix ('', 'EXTRA_', 'dist_', 'nodist_',
-			'dist_EXTRA_', 'nodist_EXTRA_')
+  foreach my $prefix ('', 'EXTRA_', 'dist_', 'nodist_',
+		      'dist_EXTRA_', 'nodist_EXTRA_')
     {
         my @files;
 	if (variable_defined ($prefix . $one_file . '_SOURCES'))
@@ -3090,108 +3090,95 @@ sub handle_libtool
 # Handle C programs.
 sub handle_programs
 {
-    my @proglist = &am_install_var ('progs', 'PROGRAMS',
-				    'bin', 'sbin', 'libexec', 'pkglib',
-				    'noinst', 'check');
-    return if ! @proglist;
+  my @proglist = &am_install_var ('progs', 'PROGRAMS',
+				  'bin', 'sbin', 'libexec', 'pkglib',
+				  'noinst', 'check');
+  return if ! @proglist;
 
-    my $seen_libobjs = 0;
-    foreach my $one_file (@proglist)
+  my $seen_global_libobjs =
+    variable_defined ('LDADD') && &handle_lib_objects ('', 'LDADD');
+
+  foreach my $one_file (@proglist)
     {
-	my $obj = &get_object_extension ($one_file);
+      my $seen_libobjs = 0;
+      my $obj = &get_object_extension ($one_file);
 
-	# Canonicalize names and check for misspellings.
-	my $xname = &check_canonical_spelling ($one_file, '_LDADD', '_LDFLAGS',
-					       '_SOURCES', '_OBJECTS',
-					       '_DEPENDENCIES');
+      # Canonicalize names and check for misspellings.
+      my $xname = &check_canonical_spelling ($one_file, '_LDADD', '_LDFLAGS',
+					     '_SOURCES', '_OBJECTS',
+					     '_DEPENDENCIES');
 
-	my $linker = &handle_source_transform ($xname, $one_file, $obj);
+      my $linker = &handle_source_transform ($xname, $one_file, $obj);
 
-	my $xt = '';
-	if (variable_defined ($xname . "_LDADD"))
+      my $xt = '';
+      if (variable_defined ($xname . "_LDADD"))
 	{
-	    if (&handle_lib_objects ($xname, $xname . '_LDADD'))
+	  $seen_libobjs = &handle_lib_objects ($xname, $xname . '_LDADD');
+	  $xt = '_LDADD';
+	}
+      else
+	{
+	  # User didn't define prog_LDADD override.  So do it.
+	  &define_variable ($xname . '_LDADD', '$(LDADD)');
+
+	  # This does a bit too much work.  But we need it to
+	  # generate _DEPENDENCIES when appropriate.
+	  if (variable_defined ('LDADD'))
 	    {
-		$seen_libobjs = 1;
+	      $seen_libobjs = $seen_global_libobjs;
 	    }
-	    $xt = '_LDADD';
-	}
-	else
-	{
-	    # User didn't define prog_LDADD override.  So do it.
-	    &define_variable ($xname . '_LDADD', '$(LDADD)');
-
-	    # This does a bit too much work.  But we need it to
-	    # generate _DEPENDENCIES when appropriate.
-	    if (variable_defined ('LDADD'))
+	  elsif (! variable_defined ($xname . '_DEPENDENCIES'))
 	    {
-		if (&handle_lib_objects ($xname, 'LDADD'))
-		{
-		    $seen_libobjs = 1;
-		}
+	      &define_variable ($xname . '_DEPENDENCIES', '');
 	    }
-	    elsif (! variable_defined ($xname . '_DEPENDENCIES'))
+	  $xt = '_SOURCES';
+	}
+
+      reject_var ($xname . '_LIBADD',
+		  "use `${xname}_LDADD', not `${xname}_LIBADD'");
+
+      if (! variable_defined ($xname . '_LDFLAGS'))
+	{
+	  # Define the prog_LDFLAGS variable.
+	  &define_variable ($xname . '_LDFLAGS', '');
+	}
+
+      # Determine program to use for link.
+      my $xlink;
+      if (variable_defined ($xname . '_LINK'))
+	{
+	  $xlink = $xname . '_LINK';
+	}
+      else
+	{
+	  $xlink = $linker ? $linker : 'LINK';
+	}
+
+      # If the resulting program lies into a subdirectory,
+      # make sure this directory will exist.
+      my $dirstamp = require_build_directory_maybe ($one_file);
+
+      # Don't add $(EXEEXT) if user already did.
+      my $extension = ($one_file !~ /\$\(EXEEXT\)$/
+		       ? "\$(EXEEXT)"
+		       : '');
+
+      $output_rules .= &file_contents ('program',
+				       ('PROGRAM'  => $one_file,
+					'XPROGRAM' => $xname,
+					'XLINK'    => $xlink,
+					'DIRSTAMP' => $dirstamp,
+					'EXEEXT'   => $extension));
+
+      if ($seen_libobjs || $seen_global_libobjs)
+	{
+	  if (variable_defined ($xname . '_LDADD'))
 	    {
-		&define_variable ($xname . '_DEPENDENCIES', '');
+	      &check_libobjs_sources ($xname, $xname . '_LDADD');
 	    }
-	    $xt = '_SOURCES'
-	}
-
-	reject_var ($xname . '_LIBADD',
-		    "use `${xname}_LDADD', not `${xname}_LIBADD'");
-
-	if (! variable_defined ($xname . '_LDFLAGS'))
-	{
-	    # Define the prog_LDFLAGS variable.
-	    &define_variable ($xname . '_LDFLAGS', '');
-	}
-
-	# Determine program to use for link.
-	my $xlink;
-	if (variable_defined ($xname . '_LINK'))
-	{
-	    $xlink = $xname . '_LINK';
-	}
-	else
-	{
-	    $xlink = $linker ? $linker : 'LINK';
-	}
-
-	# If the resulting program lies into a subdirectory,
-	# make sure this directory will exist.
-	my $dirstamp = require_build_directory_maybe ($one_file);
-
-	# Don't add $(EXEEXT) if user already did.
-	my $extension = ($one_file !~ /\$\(EXEEXT\)$/
-			 ? "\$(EXEEXT)"
-			 : '');
-
-	$output_rules .= &file_contents ('program',
-					 ('PROGRAM'  => $one_file,
-					  'XPROGRAM' => $xname,
-					  'XLINK'    => $xlink,
-					  'DIRSTAMP' => $dirstamp,
-					  'EXEEXT'   => $extension));
-    }
-
-    if (variable_defined ('LDADD') && &handle_lib_objects ('', 'LDADD'))
-    {
-	$seen_libobjs = 1;
-    }
-
-    if ($seen_libobjs)
-    {
-	foreach my $one_file (@proglist)
-	{
-	    my $xname = &canonicalize ($one_file);
-
-	    if (variable_defined ($xname . '_LDADD'))
+	  elsif (variable_defined ('LDADD'))
 	    {
-		&check_libobjs_sources ($xname, $xname . '_LDADD');
-	    }
-	    elsif (variable_defined ('LDADD'))
-	    {
-		&check_libobjs_sources ($xname, 'LDADD');
+	      &check_libobjs_sources ($xname, 'LDADD');
 	    }
 	}
     }
@@ -3203,80 +3190,76 @@ sub handle_programs
 # Handle libraries.
 sub handle_libraries
 {
-    my @liblist = &am_install_var ('libs', 'LIBRARIES',
-				   'lib', 'pkglib', 'noinst', 'check');
-    return if ! @liblist;
+  my @liblist = &am_install_var ('libs', 'LIBRARIES',
+				 'lib', 'pkglib', 'noinst', 'check');
+  return if ! @liblist;
 
-    my @prefix = am_primary_prefixes ('LIBRARIES', 0, 'lib', 'pkglib',
-				      'noinst', 'check');
+  my @prefix = am_primary_prefixes ('LIBRARIES', 0, 'lib', 'pkglib',
+				    'noinst', 'check');
 
-    require_variables_for_macro ($prefix[0] . '_LIBRARIES',
-				 'library used', 'RANLIB')
-      if (@prefix);
+  require_variables_for_macro ($prefix[0] . '_LIBRARIES',
+			       'library used', 'RANLIB')
+    if (@prefix);
 
-    my $seen_libobjs = 0;
-    foreach my $onelib (@liblist)
+  foreach my $onelib (@liblist)
     {
-	# Check that the library fits the standard naming convention.
-	if (basename ($onelib) !~ /^lib.*\.a/)
-	  {
-	    # FIXME should put line number here.  That means mapping
-	    # from library name back to variable name.
-	    err_am "`$onelib' is not a standard library name";
-	  }
-
-	my $obj = &get_object_extension ($onelib);
-
-	# Canonicalize names and check for misspellings.
-	my $xlib = &check_canonical_spelling ($onelib, '_LIBADD', '_SOURCES',
-					      '_OBJECTS', '_DEPENDENCIES',
-					      '_AR');
-
-	if (! variable_defined ($xlib . '_AR'))
+      my $seen_libobjs = 0;
+      # Check that the library fits the standard naming convention.
+      if (basename ($onelib) !~ /^lib.*\.a/)
 	{
-	    &define_variable ($xlib . '_AR', '$(AR) cru');
+	  # FIXME should put line number here.  That means mapping
+	  # from library name back to variable name.
+	  err_am "`$onelib' is not a standard library name";
 	}
 
-	if (variable_defined ($xlib . '_LIBADD'))
+      my $obj = &get_object_extension ($onelib);
+
+      # Canonicalize names and check for misspellings.
+      my $xlib = &check_canonical_spelling ($onelib, '_LIBADD', '_SOURCES',
+					    '_OBJECTS', '_DEPENDENCIES',
+					    '_AR');
+
+      if (! variable_defined ($xlib . '_AR'))
 	{
-	    if (&handle_lib_objects ($xlib, $xlib . '_LIBADD'))
+	  &define_variable ($xlib . '_AR', '$(AR) cru');
+	}
+
+      if (variable_defined ($xlib . '_LIBADD'))
+	{
+	  if (&handle_lib_objects ($xlib, $xlib . '_LIBADD'))
 	    {
-		$seen_libobjs = 1;
+	      $seen_libobjs = 1;
 	    }
 	}
-	else
+      else
 	{
-	    # Generate support for conditional object inclusion in
-	    # libraries.
-	    &define_variable ($xlib . "_LIBADD", '');
+	  # Generate support for conditional object inclusion in
+	  # libraries.
+	  &define_variable ($xlib . "_LIBADD", '');
 	}
 
-	reject_var ($xlib . '_LDADD',
-		    "use `${xlib}_LIBADD', not `${xlib}_LDADD'");
+      reject_var ($xlib . '_LDADD',
+		  "use `${xlib}_LIBADD', not `${xlib}_LDADD'");
 
-	# Make sure we at look at this.
-	&examine_variable ($xlib . '_DEPENDENCIES');
+      # Make sure we at look at this.
+      &examine_variable ($xlib . '_DEPENDENCIES');
 
-	&handle_source_transform ($xlib, $onelib, $obj);
+      &handle_source_transform ($xlib, $onelib, $obj);
 
-	# If the resulting library lies into a subdirectory,
-	# make sure this directory will exist.
-	my $dirstamp = require_build_directory_maybe ($onelib);
+      # If the resulting library lies into a subdirectory,
+      # make sure this directory will exist.
+      my $dirstamp = require_build_directory_maybe ($onelib);
 
-	$output_rules .= &file_contents ('library',
-					 ('LIBRARY'  => $onelib,
-					  'XLIBRARY' => $xlib,
-					  'DIRSTAMP' => $dirstamp));
-    }
+      $output_rules .= &file_contents ('library',
+				       ('LIBRARY'  => $onelib,
+					'XLIBRARY' => $xlib,
+					'DIRSTAMP' => $dirstamp));
 
-    if ($seen_libobjs)
-    {
-	foreach my $onelib (@liblist)
+      if ($seen_libobjs)
 	{
-	    my $xlib = &canonicalize ($onelib);
-	    if (variable_defined ($xlib . '_LIBADD'))
+	  if (variable_defined ($xlib . '_LIBADD'))
 	    {
-		&check_libobjs_sources ($xlib, $xlib . '_LIBADD');
+	      &check_libobjs_sources ($xlib, $xlib . '_LIBADD');
 	    }
 	}
     }
@@ -3288,142 +3271,138 @@ sub handle_libraries
 # Handle shared libraries.
 sub handle_ltlibraries
 {
-    my @liblist = &am_install_var ('ltlib', 'LTLIBRARIES',
-				   'noinst', 'lib', 'pkglib', 'check');
-    return if ! @liblist;
+  my @liblist = &am_install_var ('ltlib', 'LTLIBRARIES',
+				 'noinst', 'lib', 'pkglib', 'check');
+  return if ! @liblist;
 
-    my %instdirs;
-    my @prefix = am_primary_prefixes ('LTLIBRARIES', 0, 'lib', 'pkglib',
-				      'noinst', 'check');
+  my %instdirs;
+  my @prefix = am_primary_prefixes ('LTLIBRARIES', 0, 'lib', 'pkglib',
+				    'noinst', 'check');
 
-    require_variables_for_macro ($prefix[0] . '_KTLIBRARIES',
-				 'Libtool library used', 'LIBTOOL')
-      if (@prefix);
+  require_variables_for_macro ($prefix[0] . '_KTLIBRARIES',
+			       'Libtool library used', 'LIBTOOL')
+    if (@prefix);
 
-    foreach my $key (@prefix)
-      {
-	# Get the installation directory of each library.
-	(my $dir = $key) =~ s/^nobase_//;
-	for (variable_value_as_list_recursive ($key . '_LTLIBRARIES', 'all'))
-	  {
-	    if ($instdirs{$_})
-	      {
-		err_am ("`$_' is already going to be installed in "
-			. "`$instdirs{$_}'");
-	      }
-	    else
-	      {
-		$instdirs{$_} = $dir;
-	      }
-	  }
-      }
-
-    my $seen_libobjs = 0;
-    foreach my $onelib (@liblist)
+  foreach my $key (@prefix)
     {
-	my $obj = &get_object_extension ($onelib);
-
-	# Canonicalize names and check for misspellings.
-	my $xlib = &check_canonical_spelling ($onelib, '_LIBADD', '_LDFLAGS',
-					      '_SOURCES', '_OBJECTS',
-					      '_DEPENDENCIES');
-
-	if (! variable_defined ($xlib . '_LDFLAGS'))
+      # Get the installation directory of each library.
+      (my $dir = $key) =~ s/^nobase_//;
+      for (variable_value_as_list_recursive ($key . '_LTLIBRARIES', 'all'))
 	{
-	    # Define the lib_LDFLAGS variable.
-	    &define_variable ($xlib . '_LDFLAGS', '');
-	}
-
-	# Check that the library fits the standard naming convention.
-    	my $libname_rx = "^lib.*\.la";
-	if ((variable_defined ($xlib . '_LDFLAGS')
-	     && grep (/-module/, &variable_value_as_list_recursive (
-	     				$xlib . '_LDFLAGS', 'all')))
-	    || (variable_defined ('LDFLAGS')
-		&& grep (/-module/, &variable_value_as_list_recursive (
-					'LDFLAGS', 'all'))))
-	{
-		# Relax name checking for libtool modules.
-	    	$libname_rx = "\.la";
-	}
-	if (basename ($onelib) !~ /$libname_rx$/)
-	  {
-	    # FIXME should put line number here.  That means mapping
-	    # from library name back to variable name.
-	    msg_am ('error-gnu/warn',
-		    "`$onelib' is not a standard libtool library name");
-	  }
-
-	if (variable_defined ($xlib . '_LIBADD'))
-	{
-	    if (&handle_lib_objects ($xlib, $xlib . '_LIBADD'))
+	  if ($instdirs{$_})
 	    {
-		$seen_libobjs = 1;
+	      err_am ("`$_' is already going to be installed in "
+		      . "`$instdirs{$_}'");
+	    }
+	  else
+	    {
+	      $instdirs{$_} = $dir;
 	    }
 	}
-	else
-	{
-	    # Generate support for conditional object inclusion in
-	    # libraries.
-	    &define_variable ($xlib . "_LIBADD", '');
-	}
-
-	reject_var ("${xlib}_LDADD",
-		    "use `${xlib}_LIBADD', not `${xlib}_LDADD'");
-
-	# Make sure we at look at this.
-	&examine_variable ($xlib . '_DEPENDENCIES');
-
-	my $linker = &handle_source_transform ($xlib, $onelib, $obj);
-
-	# Determine program to use for link.
-	my $xlink;
-	if (variable_defined ($xlib . '_LINK'))
-	{
-	    $xlink = $xlib . '_LINK';
-	}
-	else
-	{
-	    $xlink = $linker ? $linker : 'LINK';
-	}
-
-	my $rpath;
-	if ($instdirs{$onelib} eq 'EXTRA'
-	    || $instdirs{$onelib} eq 'noinst'
-	    || $instdirs{$onelib} eq 'check')
-	{
-	    # It's an EXTRA_ library, so we can't specify -rpath,
-	    # because we don't know where the library will end up.
-	    # The user probably knows, but generally speaking automake
-	    # doesn't -- and in fact configure could decide
-	    # dynamically between two different locations.
-	    $rpath = '';
-	}
-	else
-	{
-	    $rpath = ('-rpath $(' . $instdirs{$onelib} . 'dir)');
-	}
-
-	# If the resulting library lies into a subdirectory,
-	# make sure this directory will exist.
-	my $dirstamp = require_build_directory_maybe ($onelib);
-
-	$output_rules .= &file_contents ('ltlibrary',
-					 ('LTLIBRARY'  => $onelib,
-					  'XLTLIBRARY' => $xlib,
-					  'RPATH'      => $rpath,
-					  'XLINK'      => $xlink,
-					  'DIRSTAMP'   => $dirstamp));
     }
 
-    if ($seen_libobjs)
+  foreach my $onelib (@liblist)
     {
-	foreach my $onelib (@liblist)
+      my $seen_libobjs = 0;
+      my $obj = &get_object_extension ($onelib);
+
+      # Canonicalize names and check for misspellings.
+      my $xlib = &check_canonical_spelling ($onelib, '_LIBADD', '_LDFLAGS',
+					    '_SOURCES', '_OBJECTS',
+					    '_DEPENDENCIES');
+
+      if (! variable_defined ($xlib . '_LDFLAGS'))
 	{
-	    my $xlib = &canonicalize ($onelib);
-	    if (variable_defined ($xlib . '_LIBADD'))
+	  # Define the lib_LDFLAGS variable.
+	  &define_variable ($xlib . '_LDFLAGS', '');
+	}
+
+      # Check that the library fits the standard naming convention.
+      my $libname_rx = "^lib.*\.la";
+      if ((variable_defined ($xlib . '_LDFLAGS')
+	   && grep (/-module/,
+		    &variable_value_as_list_recursive ($xlib . '_LDFLAGS',
+						       'all')))
+	  || (variable_defined ('LDFLAGS')
+	      && grep (/-module/,
+		       &variable_value_as_list_recursive ('LDFLAGS', 'all'))))
+	{
+	  # Relax name checking for libtool modules.
+	  $libname_rx = "\.la";
+	}
+      if (basename ($onelib) !~ /$libname_rx$/)
+	{
+	  # FIXME should put line number here.  That means mapping
+	  # from library name back to variable name.
+	  msg_am ('error-gnu/warn',
+		  "`$onelib' is not a standard libtool library name");
+	}
+
+      if (variable_defined ($xlib . '_LIBADD'))
+	{
+	  if (&handle_lib_objects ($xlib, $xlib . '_LIBADD'))
 	    {
-		&check_libobjs_sources ($xlib, $xlib . '_LIBADD');
+	      $seen_libobjs = 1;
+	    }
+	}
+      else
+	{
+	  # Generate support for conditional object inclusion in
+	  # libraries.
+	  &define_variable ($xlib . "_LIBADD", '');
+	}
+
+      reject_var ("${xlib}_LDADD",
+		  "use `${xlib}_LIBADD', not `${xlib}_LDADD'");
+
+      # Make sure we at look at this.
+      &examine_variable ($xlib . '_DEPENDENCIES');
+
+      my $linker = &handle_source_transform ($xlib, $onelib, $obj);
+
+      # Determine program to use for link.
+      my $xlink;
+      if (variable_defined ($xlib . '_LINK'))
+	{
+	  $xlink = $xlib . '_LINK';
+	}
+      else
+	{
+	  $xlink = $linker ? $linker : 'LINK';
+	}
+
+      my $rpath;
+      if ($instdirs{$onelib} eq 'EXTRA'
+	  || $instdirs{$onelib} eq 'noinst'
+	  || $instdirs{$onelib} eq 'check')
+	{
+	  # It's an EXTRA_ library, so we can't specify -rpath,
+	  # because we don't know where the library will end up.
+	  # The user probably knows, but generally speaking automake
+	  # doesn't -- and in fact configure could decide
+	  # dynamically between two different locations.
+	  $rpath = '';
+	}
+      else
+	{
+	  $rpath = ('-rpath $(' . $instdirs{$onelib} . 'dir)');
+	}
+
+      # If the resulting library lies into a subdirectory,
+      # make sure this directory will exist.
+      my $dirstamp = require_build_directory_maybe ($onelib);
+
+      $output_rules .= &file_contents ('ltlibrary',
+				       ('LTLIBRARY'  => $onelib,
+					'XLTLIBRARY' => $xlib,
+					'RPATH'      => $rpath,
+					'XLINK'      => $xlink,
+					'DIRSTAMP'   => $dirstamp));
+      if ($seen_libobjs)
+	{
+	  if (variable_defined ($xlib . '_LIBADD'))
+	    {
+	      &check_libobjs_sources ($xlib, $xlib . '_LIBADD');
 	    }
 	}
     }
