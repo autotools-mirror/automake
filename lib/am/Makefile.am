@@ -23,6 +23,7 @@ version.texi: stamp-vti
 stamp-vti: automake.texi configure.in
 	echo "@set UPDATED `date -r $(srcdir)/automake.texi '+%B %Y'`" \
 		> version.tmp
+	echo "@set EDITION $(VERSION)" >> version.tmp
 	echo "@set VERSION $(VERSION)" >> version.tmp
 	if cmp -s version.tmp $(srcdir)/version.texi; then rm version.tmp; \
 	else mv version.tmp $(srcdir)/version.texi; fi
