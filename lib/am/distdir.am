@@ -238,19 +238,19 @@ if %?TOPDIR_P%
 GZIP_ENV = --best
 .PHONY: dist-gzip
 dist-gzip: distdir
-	$(AMTAR) chof - $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
+	tardir=$(distdir) && $(am__tar) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
 	$(am__remove_distdir)
 
 ?BZIP2?DIST_ARCHIVES += $(distdir).tar.bz2
 .PHONY: dist-bzip2
 dist-bzip2: distdir
-	$(AMTAR) chof - $(distdir) | bzip2 -9 -c >$(distdir).tar.bz2
+	tardir=$(distdir) && $(am__tar) | bzip2 -9 -c >$(distdir).tar.bz2
 	$(am__remove_distdir)
 
 ?COMPRESS?DIST_ARCHIVES += $(distdir).tar.Z
 .PHONY: dist-tarZ
 dist-tarZ: distdir
-	$(AMTAR) chof - $(distdir) | compress -c >$(distdir).tar.Z
+	tardir=$(distdir) && $(am__tar) | compress -c >$(distdir).tar.Z
 	$(am__remove_distdir)
 
 ?SHAR?DIST_ARCHIVES += $(distdir).shar.gz
@@ -281,9 +281,9 @@ if %?TOPDIR_P%
 
 .PHONY: dist dist-all
 dist dist-all: distdir
-?GZIP?	$(AMTAR) chof - $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
-?BZIP2?	$(AMTAR) chof - $(distdir) | bzip2 -9 -c >$(distdir).tar.bz2
-?COMPRESS?	$(AMTAR) chof - $(distdir) | compress -c >$(distdir).tar.Z
+?GZIP?	tardir=$(distdir) && $(am__tar) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
+?BZIP2?	tardir=$(distdir) && $(am__tar) | bzip2 -9 -c >$(distdir).tar.bz2
+?COMPRESS?	tardir=$(distdir) && $(am__tar) | compress -c >$(distdir).tar.Z
 ?SHAR?	shar $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).shar.gz
 ?ZIP?	-rm -f $(distdir).zip
 ?ZIP?	zip -rq $(distdir).zip $(distdir)
@@ -305,11 +305,11 @@ if %?TOPDIR_P%
 distcheck: dist
 	case '$(DIST_ARCHIVES)' in \
 	*.tar.gz*) \
-	  GZIP=$(GZIP_ENV) gunzip -c $(distdir).tar.gz | $(AMTAR) xf - ;;\
+	  GZIP=$(GZIP_ENV) gunzip -c $(distdir).tar.gz | $(am__untar) ;;\
 	*.tar.bz2*) \
-	  bunzip2 -c $(distdir).tar.bz2 | $(AMTAR) xf - ;;\
+	  bunzip2 -c $(distdir).tar.bz2 | $(am__untar) ;;\
 	*.tar.Z*) \
-	  uncompress -c $(distdir).tar.Z | $(AMTAR) xf - ;;\
+	  uncompress -c $(distdir).tar.Z | $(am__untar) ;;\
 	*.shar.gz*) \
 	  GZIP=$(GZIP_ENV) gunzip -c $(distdir).shar.gz | unshar ;;\
 	*.zip*) \

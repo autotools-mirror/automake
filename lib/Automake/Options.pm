@@ -1,4 +1,4 @@
-# Copyright (C) 2003  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2004  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -270,6 +270,22 @@ sub _process_option_list (\%$@)
 	     || $_ eq 'cygnus' || $_ eq 'no-dependencies')
 	{
 	  # Explicitly recognize these.
+	}
+      elsif ($_ eq 'tar-v7' || $_ eq 'tar-ustar' || $_ eq 'tar-pax')
+	{
+	  error ($where,
+		 "option `$_' must be an argument of AM_INIT_AUTOMAKE")
+	    if $where->get !~ /^configure\./;
+	  for my $opt ('tar-v7', 'tar-ustar', 'tar-pax')
+	    {
+	      next if $opt eq $_;
+	      if (exists $options->{$opt})
+		{
+		  error ($where,
+			 "options `$_' and `$opt' are mutually exclusive");
+		  last;
+		}
+	    }
 	}
       elsif (/^\d+\.\d+(?:\.\d+)?[a-z]?(?:-[A-Za-z0-9]+)?$/)
 	{

@@ -5916,6 +5916,46 @@ the source file.  For instance if the source file is
 @file{subdir/file.cxx}, then the output file would be
 @file{subdir/file.o}.
 
+@item @code{tar-v7}
+@itemx @code{tar-ustar}
+@itemx @code{tar-pax}
+These three mutually exclusive options select the tar format to use
+when generating tarballs with @code{make dist}.  (The tar file created
+is then compressed according to the set of @code{no-dist-gzip},
+@code{dist-bzip2} and @code{dist-tarZ} options in use.)
+
+These options must be passed as argument to @code{AM_INIT_AUTOMAKE}
+(@xref{Macros}) because they can causes new configure check to be
+performed.  Automake will complain if it sees such option in a
+@code{AUTOMAKE_OPTIONS} variable.
+
+@code{tar-v7} selects the old V7 tar format.  This is the historical
+default.  This antiquated format is understood by all tar
+implementations and supports filenames with up to 99 characters. When
+given longer filenames some tar implementations will diagnose the
+problem while other will generate broken tarballs or use non-portable
+extensions.  Furthermore, the V7 format cannot store empty
+directories.
+
+@code{tar-ustar} selects the ustar format defined by POSIX
+1003.1-1988.  This format is believed to be old enough to be portable.
+It fully supports directories, and stores filenames with up to 255
+characters.  However you may run against broken tar implementations
+that incorrectly handle filenames longer than 99 characters (please
+report them to @email{bug-automake@@gnu.org} so we can document this
+accurately).
+
+@code{tar-pax} selects the new pax interchange format defined by POSIX
+1003.1-2001.  It does not limit the length of filenames.  However,
+this format is very young and should probably be restricted to
+packages which target only very modern platforms.  There are moves to
+change the pax format in an upward-compatible way, so this option may
+refer to a more recent version in the future.
+
+@code{configure} knows several ways to construct these formats.  It
+will not abort if it cannot find a tool up to the task (so that the
+package can still be built), but @code{make dist} will fail.
+
 @item @var{version}
 @cindex Option, version
 A version number (e.g. @samp{0.30}) can be specified.  If Automake is not

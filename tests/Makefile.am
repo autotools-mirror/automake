@@ -484,6 +484,9 @@ symlink3.test \
 syntax.test \
 tags.test \
 tagsub.test \
+tar.test \
+tar2.test \
+tar3.test \
 target-cflags.test \
 targetclash.test \
 txinfo.test \

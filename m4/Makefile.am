@@ -53,7 +53,8 @@ python.m4 \
 regex.m4 \
 runlog.m4 \
 sanity.m4 \
-strip.m4
+strip.m4 \
+tar.m4
 
 EXTRA_DIST = dirlist amversion.in
 
