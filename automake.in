@@ -879,12 +879,14 @@ sub handle_texinfo
 		if ! $done;
 	    ++$done;
 
+	    local ($conf_pat);
+	    ($conf_pat = $config_aux_dir) =~ s/(\W)/\\$1/g;
 	    $output_rules .=
 		&file_contents_with_transform
 		    ('s/\@TEXI\@/' . $info_cursor . '/g; '
 		     . 's/\@VTI\@/' . $vti . '/g; '
 		     . 's/\@VTEXI\@/' . $vtexi . '/g;'
-		     . 's,\@MDDIR\@,' . $config_aux_dir . ',g;',
+		     . 's,\@MDDIR\@,' . $conf_pat . ',g;',
 		     'texi-version');
 
 	    &push_phony_cleaners ($vti);
@@ -992,8 +994,7 @@ sub handle_man_pages
     foreach (keys %sections)
     {
 	push (@installdirs, '$(mandir)/man' . $_);
-	$output_rules .= ("\t" . $config_aux_dir
-			  . '/mkinstalldirs $(mandir)/man'
+	$output_rules .= ("\t" . '$(mkinstalldirs) $(mandir)/man'
 			  . $_ . "\n");
     }
     push (@phony, 'install-man');
@@ -1077,10 +1078,7 @@ sub handle_tags
 # Generate actual 'dist' (or dist-shar) rule.
 sub handle_dist_worker
 {
-    local ($distshar) = @_;
-    local ($target) = $distshar ? 'dist-shar' : 'dist';
-
-    $output_rules .= $target . ': $(DEP_DISTFILES)' . "\n";
+    $output_rules .= 'distdir: $(DEP_DISTFILES)' . "\n";
 
     # Initialization; only at top level.
     if ($relative_dir eq '.')
@@ -1142,13 +1140,18 @@ sub handle_dist_worker
     if (&variable_defined ('SUBDIRS'))
     {
 	# Test for directory existence here because previous automake
-	# invocation might have created some directories.
+	# invocation might have created some directories.  Note that
+	# we explicitly set distdir for the subdir make; that lets us
+	# mix-n-match many automake-using packages into one large
+	# package, and have "dist" at the top level do the right
+	# thing.
 	$output_rules .= '	for subdir in $(SUBDIRS); do		\\
 	  test -d $(distdir)/$$subdir		\\
 	  || mkdir $(distdir)/$$subdir		\\
 	  || exit 1;				\\
 	  chmod 777 $(distdir)/$$subdir;	\\
-	  (cd $$subdir && $(MAKE) dist) || exit 1; \\
+	  (cd $$subdir && $(MAKE) distdir=../$(distdir)/$$subdir distdir) \\
+	    || exit 1; \\
 	done
 ';
     }
@@ -1161,22 +1164,7 @@ sub handle_dist_worker
 	$output_rules .= "\t\$(MAKE) dist-hook\n";
     }
 
-    # Finalize.
-    if ($relative_dir eq '.')
-    {
-	$output_rules .= '	chmod -R a+r $(distdir)' . "\n\t";
-	if ($distshar)
-	{
-	    $output_rules .= 'shar $(distdir) | gzip > $(distdir).shar.gz';
-	}
-	else
-	{
-	    $output_rules .= '$(TAR) chozf $(distdir).tar.gz $(distdir)';
-	}
-	$output_rules .= "\n\t" . 'rm -rf $(distdir)' . "\n";
-    }
-
-    push (@phony, $target);
+    push (@phony, 'distdir');
 }
 
 # Handle 'dist' target.
@@ -1246,8 +1234,24 @@ sub handle_dist
     }
 
     # Generate 'dist' target, and maybe dist-shar.
-    &handle_dist_worker (0);
-    &handle_dist_worker (1) if defined $options{'dist-shar'};
+    if ($relative_dir eq '.')
+    {
+	$output_rules .= 'dist: distdir' . "\n\t";
+	$output_rules .= 'chmod -R a+r $(distdir)' . "\n\t";
+	$output_rules .= '$(TAR) chozf $(distdir).tar.gz $(distdir)';
+	$output_rules .= "\n\t" . 'rm -rf $(distdir)' . "\n";
+
+	if (defined $options{'dist-shar'})
+	{
+	    $output_rules .= 'dist-shar: distdir' . "\n\t";
+	    $output_rules .= 'chmod -R a+r $(distdir)' . "\n\t";
+	    $output_rules .= 'shar $(distdir) | gzip > $(distdir).shar.gz';
+	    $output_rules .= "\n\t" . 'rm -rf $(distdir)' . "\n";
+	}
+    }
+
+    # Generate distdir target.
+    &handle_dist_worker;
 }
 
 # Handle auto-dependency code.
@@ -1409,6 +1413,17 @@ sub handle_configure
 	$top_reldir = '';
     }
 
+    # Set location of mkinstalldirs.
+    if ($config_aux_dir ne '.')
+    {
+	$output_vars .= 'mkinstalldirs = ' . $config_aux_dir;
+    }
+    else
+    {
+	$output_vars .= 'mkinstalldirs = $(top_srcdir)';
+    }
+    $output_vars .= '/mkinstalldirs' . "\n";
+
     &am_line_error ('CONFIG_HEADER',
 		    "\`CONFIG_HEADER' is an anachronism; now determined from \`configure.in'")
 	if &variable_defined ('CONFIG_HEADER');
@@ -1556,7 +1571,7 @@ sub handle_installdirs
     push (@phony, 'installdirs');
     if (@installdirs)
     {
-	&pretty_print_rule ("\t$config_aux_dir/mkinstalldirs ", "\t\t",
+	&pretty_print_rule ("\t" . '$(mkinstalldirs) ', "\t\t",
 			    @installdirs);
     }
     $output_rules .= "\n";

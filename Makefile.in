@@ -71,6 +71,7 @@ CLEANFILES = automake
 ETAGS_ARGS = automake.in --lang=none \
  --regex='/^@node[ \t]+\([^,]+\)/\1/' automake.texi
 ACLOCAL = aclocal.m4
+mkinstalldirs = $(top_srcdir)/mkinstalldirs
 SCRIPTS = $(bin_SCRIPTS) $(pkgdata_SCRIPTS)
 
 
@@ -96,6 +97,8 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(BUILT_SOURCES) $(HEADERS) \
 	$(TEXINFOS) $(INFOS) $(MANS) $(EXTRA_DIST) $(DATA)
 DEP_DISTFILES = $(DIST_COMMON) $(SOURCES) $(BUILT_SOURCES) $(HEADERS) \
 	$(TEXINFOS) $(INFO_DEPS) $(MANS) $(EXTRA_DIST) $(DATA)
+
+TAR = tar
 default: all
 
 
@@ -114,7 +117,7 @@ automake: $(top_builddir)/config.status automake.in
 	cd $(top_builddir) && CONFIG_FILES=$@ CONFIG_HEADERS= ./config.status
 
 install-binSCRIPTS: $(bin_SCRIPTS)
-	$(top_srcdir)/mkinstalldirs $(bindir)
+	$(mkinstalldirs) $(bindir)
 	list="$(bin_SCRIPTS)"; for p in $$list; do \
 	  if test -f $$p; then \
 	    $(INSTALL_SCRIPT) $$p $(bindir)/`echo $$p|sed '$(transform)'`; \
@@ -130,7 +133,7 @@ uninstall-binSCRIPTS:
 	done
 
 install-pkgdataSCRIPTS: $(pkgdata_SCRIPTS)
-	$(top_srcdir)/mkinstalldirs $(pkgdatadir)
+	$(mkinstalldirs) $(pkgdatadir)
 	list="$(pkgdata_SCRIPTS)"; for p in $$list; do \
 	  if test -f $$p; then \
 	    $(INSTALL_SCRIPT) $$p $(pkgdatadir)/`echo $$p|sed '$(transform)'`; \
@@ -179,7 +182,7 @@ automake.info: automake.texi version.texi
 	TEXINPUTS=$(srcdir):$$TEXINPUTS $(TEXI2DVI) $<
 
 install-info: $(INFO_DEPS)
-	$(top_srcdir)/mkinstalldirs $(infodir)
+	$(mkinstalldirs) $(infodir)
 	for file in $(INFO_DEPS); do		\
 	  for ifile in `cd $(srcdir) && echo $$file*`; do \
 	    $(INSTALL_DATA) $(srcdir)/$$ifile $(infodir)/$$ifile; \
@@ -204,7 +207,7 @@ maintainer-clean-info:
 	rm -f $(INFOS)
 
 install-pkgdataDATA: $(pkgdata_DATA)
-	$(top_srcdir)/mkinstalldirs $(pkgdatadir)
+	$(mkinstalldirs) $(pkgdatadir)
 	list="$(pkgdata_DATA)"; for p in $$list; do \
 	  if test -f $(srcdir)/$$p; then \
 	    $(INSTALL_DATA) $(srcdir)/$$p $(pkgdatadir)/$$p; \
@@ -263,7 +266,11 @@ distclean-tags:
 maintainer-clean-tags:
 
 distdir = $(PACKAGE)-$(VERSION)
-dist: $(DEP_DISTFILES)
+dist: distdir
+	chmod -R a+r $(distdir)
+	$(TAR) chozf $(distdir).tar.gz $(distdir)
+	rm -rf $(distdir)
+distdir: $(DEP_DISTFILES)
 	@if sed 15q $(srcdir)/NEWS | grep -e "$(VERSION)" > /dev/null; then :; else \
 	  echo "NEWS not updated; not releasing" 1>&2; \
 	  exit 1;				\
@@ -284,11 +291,9 @@ dist: $(DEP_DISTFILES)
 	  || mkdir $(distdir)/$$subdir		\
 	  || exit 1;				\
 	  chmod 777 $(distdir)/$$subdir;	\
-	  (cd $$subdir && $(MAKE) dist) || exit 1; \
+	  (cd $$subdir && $(MAKE) distdir=../$(distdir)/$$subdir distdir) \
+	    || exit 1; \
 	done
-	chmod -R a+r $(distdir)
-	tar chozf $(distdir).tar.gz $(distdir)
-	rm -rf $(distdir)
 info: $(INFO_DEPS) info-recursive
 
 dvi: $(DVIS) dvi-recursive
@@ -319,7 +324,7 @@ all: all-recursive all-am
 install-strip:
 	$(MAKE) INSTALL_PROGRAM='$(INSTALL_PROGRAM) -s' install
 installdirs: installdirs-recursive
-	./mkinstalldirs  $(bindir) $(pkgdatadir) $(infodir) $(pkgdatadir)
+	$(mkinstalldirs)  $(bindir) $(pkgdatadir) $(infodir) $(pkgdatadir)
 
 
 mostlyclean-generic:
@@ -369,10 +374,10 @@ uninstall-exec-recursive installdirs-recursive uninstalldirs-recursive \
 all-recursive check-recursive installcheck-recursive info-recursive \
 dvi-recursive mostlyclean-recursive distclean-recursive clean-recursive \
 maintainer-clean-recursive tags mostlyclean-tags distclean-tags \
-clean-tags maintainer-clean-tags dist info dvi check installcheck-local \
-installcheck all-am install-exec-am install-data-am uninstall-am \
-install-exec install-data install uninstall all installdirs \
-mostlyclean-generic distclean-generic clean-generic \
+clean-tags maintainer-clean-tags distdir info dvi check \
+installcheck-local installcheck all-am install-exec-am install-data-am \
+uninstall-am install-exec install-data install uninstall all \
+installdirs mostlyclean-generic distclean-generic clean-generic \
 maintainer-clean-generic clean mostlyclean distclean maintainer-clean
 
 
