@@ -3310,7 +3310,25 @@ sub handle_ltlibraries
       (my $dir = $key) =~ s/^nobase_//;
       for (variable_value_as_list_recursive ($key . '_LTLIBRARIES', 'all'))
 	{
-	  if ($instdirs{$_})
+	  # We reject libraries which are installed in several places,
+	  # because we don't handle this in the rules (think `-rpath').
+	  #
+	  # However, we allow the same library to be listed many times
+	  # for the same directory.  This is for users who need setups
+	  # like
+	  #   if COND1
+	  #     lib_LTLIBRARIES = libfoo.la
+	  #   endif
+	  #   if COND2
+	  #     lib_LTLIBRARIES = libfoo.la
+	  #   endif
+	  #
+	  # Actually this will also allow
+	  #   lib_LTLIBRARIES = libfoo.la libfoo.la
+	  # Diagnosing this case doesn't seem worth the plain (we'd
+	  # have to fill $instdirs on a per-condition basis, check
+	  # implied conditions, etc.)
+	  if (defined $instdirs{$_} && $instdirs{$_} ne $dir)
 	    {
 	      err_am ("`$_' is already going to be installed in "
 		      . "`$instdirs{$_}'");

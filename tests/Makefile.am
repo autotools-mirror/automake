@@ -228,6 +228,8 @@ libtool.test \
 libtool2.test \
 libtool3.test \
 libtool4.test \
+libtool5.test \
+libtool6.test \
 link_c_cxx.test	\
 link_dist.test \
 link_f_c.test \
