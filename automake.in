@@ -7665,18 +7665,32 @@ sub require_file_internal
 					       $file, $errfile);
 		}
 
-		my $save = $exit_status;
-		if ($is_configure)
+		if ($suppress)
 		{
-		    # FIXME: allow actual file to be specified.
-		    &am_conf_line_error ($configure_ac, $line,
-					 "$message$trailer");
+		    if ($is_configure)
+		    {
+			# FIXME: allow actual file to be specified.
+			&am_conf_line_warning ($configure_ac, $line,
+					       "$message$trailer");
+		    }
+		    else
+		    {
+			&am_line_warning ($line, "$message$trailer");
+		    }
 		}
 		else
 		{
-		    &am_line_error ($line, "$message$trailer");
+		    if ($is_configure)
+		    {
+			# FIXME: allow actual file to be specified.
+			&am_conf_line_error ($configure_ac, $line,
+					     "$message$trailer");
+		    }
+		    else
+		    {
+			&am_line_error ($line, "$message$trailer");
+		    }
 		}
-		$exit_status = $save if $suppress;
 	    }
 	}
     }
@@ -7846,7 +7860,6 @@ sub am_error
     $exit_status = 1;
 }
 
-
 # am_file_error ($FILE, @ARGS)
 # ----------------------------
 sub am_file_error
@@ -7924,8 +7937,22 @@ sub am_conf_line_error
 sub am_conf_line_warning
 {
     my $saved_exit_status = $exit_status;
+    my $sig = $SIG{'__WARN__'};
+    $SIG{'__WARN__'} = 'DEFAULT';
     &am_conf_line_error (@_);
     $exit_status = $saved_exit_status;
+    $SIG{'__WARN__'} = $sig;
+}
+
+# Like am_line_error, but doesn't affect exit status.
+sub am_line_warning
+{
+    my $saved_exit_status = $exit_status;
+    my $sig = $SIG{'__WARN__'};
+    $SIG{'__WARN__'} = 'DEFAULT';
+    &am_line_warning (@_);
+    $exit_status = $saved_exit_status;
+    $SIG{'__WARN__'} = $sig;
 }
 
 # Tell user where our aclocal.m4 is, but only once.
