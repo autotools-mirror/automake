@@ -57,7 +57,7 @@ $default_strictness_name = 'normal';
 
 # This is TRUE if GNU make specific automatic dependency generation
 # code should be included in generated Makefile.in.
-$use_dependencies = 1;
+$cmdline_use_dependencies = 1;
 
 # This holds our (eventual) exit status.  We don't actually exit until
 # we have processed all input files.
@@ -187,7 +187,7 @@ sub parse_arguments
 	}
 	elsif ($arglist[0] eq '--include-deps')
 	{
-	    $use_dependencies = 0;
+	    $cmdline_use_dependencies = 0;
 	}
 	elsif ($arglist[0] =~ /^--output-dir=(.*)$/)
 	{
@@ -327,7 +327,6 @@ sub handle_options
 	}
 	elsif ($_ eq 'no-dependencies')
 	{
-	    # FIXME for now this is global.
 	    $use_dependencies = 0;
 	}
 	else
@@ -415,7 +414,7 @@ sub handle_source_transform
 		$dep_files{'$(srcdir)/.deps/' . $_} = 1;
 	    }
 
-	    &pretty_print ($one_file . "_OBJECTS =", '', @result);
+	    &pretty_print ($one_file . "_OBJECTS =", "    ", @result);
 	}
 	else
 	{
@@ -449,7 +448,8 @@ sub handle_programs
 {
     local (@proglist) = &am_install_var ('-clean',
 					 'programs', 'PROGRAMS',
-					 'bin', 'sbin', 'libexec', 'noinst');
+					 'bin', 'sbin', 'libexec', 'pkglib',
+					 'noinst');
     # FIXME error if PROGRAMS defined but no blah_PROGRAMS defined.
     return if ! @proglist;
 
@@ -494,7 +494,7 @@ sub handle_libraries
 	    {
 		push (@outlist, 'lib' . $onelib . '.a');
 	    }
-	    &pretty_print ($onedir . '_LIBFILES =', '', @outlist);
+	    &pretty_print ($onedir . '_LIBFILES =', "    ", @outlist);
 	}
     }
     push (@all, '$(LIBFILES)');
@@ -554,7 +554,7 @@ sub handle_libraries
 
     if (! defined $contents{'LIBFILES'})
     {
-	&pretty_print ('LIBFILES = ', '', @liblist);
+	&pretty_print ('LIBFILES = ', "    ", @liblist);
     }
     $output_vars .= &file_contents ('libraries-vars');
 }
@@ -958,7 +958,7 @@ sub handle_dist
     }
     push (@coms, sort keys %dist_common);
 
-    &pretty_print ("DIST_COMMON =", '', @coms);
+    &pretty_print ("DIST_COMMON =", "    ", @coms);
     $output_vars .= "\n";
 
     # Some boilerplate.
@@ -990,7 +990,7 @@ sub handle_dependencies
 	# Include GNU-make-specific auto-dep code.
 	if ($dir_holds_sources)
 	{
-	    &pretty_print ('DEP_FILES =', '', sort keys %dep_files);
+	    &pretty_print ('DEP_FILES =', "    ", sort keys %dep_files);
 	    $output_rules .= &file_contents ('depend');
 	}
     }
@@ -1179,11 +1179,13 @@ sub handle_footer
 {
     if ($contents{'SOURCES'})
     {
-	&pretty_print ('SOURCES =', '', split (/\s+/, $contents{'SOURCES'}));
+	&pretty_print ('SOURCES =', "    ",
+		       split (/\s+/, $contents{'SOURCES'}));
     }
     if ($contents{'OBJECTS'})
     {
-	&pretty_print ('OBJECTS =', '', split (/\s+/, $contents{'OBJECTS'}));
+	&pretty_print ('OBJECTS =', "    ",
+		       split (/\s+/, $contents{'OBJECTS'}));
     }
     if ($contents{'SOURCES'} || $contents{'OBJECTS'})
     {
@@ -1396,7 +1398,8 @@ sub do_one_clean_target
 	    push (@deps, $last_name . $target . " ");
 	}
     }
-    &pretty_print_rule ($name . $target . ": ", '', @deps);
+    # FIXME not sure if I like the tabs here.
+    &pretty_print_rule ($name . $target . ": ", "\t\t", @deps);
 
     # FIXME shouldn't we really print these messages before running
     # the dependencies?
@@ -1421,7 +1424,7 @@ sub do_one_clean_target
 # Handle .PHONY target.
 sub handle_phony
 {
-    &pretty_print_rule ('.PHONY:', '', @phony);
+    &pretty_print_rule ('.PHONY:', "    ", @phony);
     $output_rules .= "\n";
 }
 
@@ -1935,6 +1938,10 @@ sub initialize_per_input
 
     # Options from AUTOMAKE_OPTIONS.
     %options = ();
+
+    # Whether or not dependencies are handled.  Can be further changed
+    # in handle_options.
+    $use_dependencies = $cmdline_use_dependencies;
 }
 
 
