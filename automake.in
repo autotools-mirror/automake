@@ -6374,6 +6374,7 @@ sub read_am_file
     # sure it is the same on exit.  This lets us conditonally include
     # other files.
     my @saved_cond_stack = @conditional_stack;
+    my $cond_string = conditional_string (@conditional_stack);
 
     my $saw_bk = 0;
     my $was_rule = 0;
@@ -6436,6 +6437,7 @@ sub read_am_file
 		if ! $configure_cond{$cond} && $cond !~ /^TRUE|FALSE$/;
 	    push (@conditional_stack,
 		  ($cond =~ /^TRUE|FALSE$/) ? "$cond" : "${cond}_TRUE");
+	    $cond_string = conditional_string (@conditional_stack);
 	}
 	elsif (/$ELSE_PATTERN/o)
 	{
@@ -6451,6 +6453,7 @@ sub read_am_file
 	    {
 		$conditional_stack[$#conditional_stack]
 		    =~ s/TRUE$/FALSE/;
+		$cond_string = conditional_string (@conditional_stack);
 	    }
 	}
 	elsif (/$ENDIF_PATTERN/o)
@@ -6462,6 +6465,7 @@ sub read_am_file
 	    else
 	    {
 		pop @conditional_stack;
+		$cond_string = conditional_string (@conditional_stack);
 	    }
 	}
 	elsif (/$RULE_PATTERN/o)
@@ -6469,7 +6473,7 @@ sub read_am_file
 	    # Found a rule.
 	    $was_rule = 1;
 
-	    rule_define ($1, 0, conditional_string (@conditional_stack), $.);
+	    rule_define ($1, 0, $cond_string, $.);
 
 	    $content_lines{$1} = $.;
 	    $output_trailer .= $comment . $spacing;
@@ -6498,8 +6502,7 @@ sub read_am_file
 		$value = $3 . "\n";
 	    }
 
-	    macro_define ($last_var_name, 0, $type,
-			     conditional_string (@conditional_stack),
+	    macro_define ($last_var_name, 0, $type, $cond_string,
 			     $value, $.);
 	    push (@var_list, $last_var_name);
 
