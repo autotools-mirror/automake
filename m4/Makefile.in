@@ -74,21 +74,22 @@ install_sh = @install_sh@
 
 m4datadir = $(datadir)/aclocal
 
-m4data_DATA = as.m4 auxdir.m4 ccstdc.m4 cond.m4 depend.m4 depout.m4 \
+dist_m4data_DATA = as.m4 auxdir.m4 ccstdc.m4 cond.m4 depend.m4 depout.m4 \
 dmalloc.m4 gcj.m4 header.m4 init.m4 install-sh.m4 lex.m4 lispdir.m4 \
 make.m4 maintainer.m4 minuso.m4 missing.m4 multi.m4 options.m4 \
 protos.m4 python.m4 regex.m4 runlog.m4 sanity.m4 strip.m4 termios.m4 \
 winsz.m4
 
 
-EXTRA_DIST = $(m4data_DATA)
+nodist_m4data_DATA = amversion.m4
+DISTCLEANFILES = amversion.m4
 subdir = m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/lib/mkinstalldirs
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = amversion.m4
 DIST_SOURCES =
-DATA = $(m4data_DATA)
+DATA = $(dist_m4data_DATA) $(nodist_m4data_DATA)
 
-DIST_COMMON = Makefile.am Makefile.in
+DIST_COMMON = $(dist_m4data_DATA) Makefile.am Makefile.in amversion.in
 all: all-am
 
 .SUFFIXES:
@@ -96,22 +97,42 @@ $(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.in $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --gnu  m4/Makefile
 Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)
+amversion.m4: $(top_builddir)/config.status amversion.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 uninstall-info-am:
-m4dataDATA_INSTALL = $(INSTALL_DATA)
-install-m4dataDATA: $(m4data_DATA)
+dist_m4dataDATA_INSTALL = $(INSTALL_DATA)
+install-dist_m4dataDATA: $(dist_m4data_DATA)
 	@$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(DESTDIR)$(m4datadir)
-	@list='$(m4data_DATA)'; for p in $$list; do \
+	@list='$(dist_m4data_DATA)'; for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " $(m4dataDATA_INSTALL) $$d$$p $(DESTDIR)$(m4datadir)/$$f"; \
-	  $(m4dataDATA_INSTALL) $$d$$p $(DESTDIR)$(m4datadir)/$$f; \
+	  echo " $(dist_m4dataDATA_INSTALL) $$d$$p $(DESTDIR)$(m4datadir)/$$f"; \
+	  $(dist_m4dataDATA_INSTALL) $$d$$p $(DESTDIR)$(m4datadir)/$$f; \
 	done
 
-uninstall-m4dataDATA:
+uninstall-dist_m4dataDATA:
 	@$(NORMAL_UNINSTALL)
-	@list='$(m4data_DATA)'; for p in $$list; do \
+	@list='$(dist_m4data_DATA)'; for p in $$list; do \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(m4datadir)/$$f"; \
+	  rm -f $(DESTDIR)$(m4datadir)/$$f; \
+	done
+nodist_m4dataDATA_INSTALL = $(INSTALL_DATA)
+install-nodist_m4dataDATA: $(nodist_m4data_DATA)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(m4datadir)
+	@list='$(nodist_m4data_DATA)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " $(nodist_m4dataDATA_INSTALL) $$d$$p $(DESTDIR)$(m4datadir)/$$f"; \
+	  $(nodist_m4dataDATA_INSTALL) $$d$$p $(DESTDIR)$(m4datadir)/$$f; \
+	done
+
+uninstall-nodist_m4dataDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(nodist_m4data_DATA)'; for p in $$list; do \
 	  f="`echo $$p | sed -e 's|^.*/||'`"; \
 	  echo " rm -f $(DESTDIR)$(m4datadir)/$$f"; \
 	  rm -f $(DESTDIR)$(m4datadir)/$$f; \
@@ -145,7 +166,7 @@ check: check-am
 all-am: Makefile $(DATA)
 
 installdirs:
-	$(mkinstalldirs) $(DESTDIR)$(m4datadir)
+	$(mkinstalldirs) $(DESTDIR)$(m4datadir) $(DESTDIR)$(m4datadir)
 
 install: install-am
 install-exec: install-exec-am
@@ -167,6 +188,7 @@ clean-generic:
 
 distclean-generic:
 	-rm -f Makefile $(CONFIG_CLEAN_FILES) stamp-h stamp-h[0-9]*
+	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -187,7 +209,7 @@ info: info-am
 
 info-am:
 
-install-data-am: install-m4dataDATA
+install-data-am: install-dist_m4dataDATA install-nodist_m4dataDATA
 
 install-exec-am:
 
@@ -205,16 +227,18 @@ mostlyclean: mostlyclean-am
 
 mostlyclean-am: mostlyclean-generic
 
-uninstall-am: uninstall-info-am uninstall-m4dataDATA
+uninstall-am: uninstall-dist_m4dataDATA uninstall-info-am \
+	uninstall-nodist_m4dataDATA
 
 .PHONY: all all-am check check-am clean clean-generic distclean \
 	distclean-generic distdir dvi dvi-am info info-am install \
-	install-am install-data install-data-am install-exec \
-	install-exec-am install-info install-info-am install-m4dataDATA \
-	install-man install-strip installcheck installcheck-am \
-	installdirs maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-generic uninstall uninstall-am \
-	uninstall-info-am uninstall-m4dataDATA
+	install-am install-data install-data-am install-dist_m4dataDATA \
+	install-exec install-exec-am install-info install-info-am \
+	install-man install-nodist_m4dataDATA install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-generic \
+	uninstall uninstall-am uninstall-dist_m4dataDATA \
+	uninstall-info-am uninstall-nodist_m4dataDATA
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

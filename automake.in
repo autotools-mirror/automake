@@ -6,7 +6,7 @@ eval 'exec @PERL@ -S $0 ${1+"$@"}'
     if 0;
 
 # automake - create Makefile.in from Makefile.am
-# Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001
+# Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002
 # Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
@@ -395,6 +395,9 @@ my $seen_cc_c_o = 0;
 
 # TRUE if we've seen AM_INIT_AUTOMAKE.
 my $seen_init_automake = 0;
+
+# TRUE if we've seen AM_AUTOMAKE_VERSION.
+my $seen_automake_version = 0;
 
 # Hash table of discovered configure substitutions.  Keys are names,
 # values are `FILE:LINE' strings which are used by error message
@@ -4502,6 +4505,7 @@ sub scan_autoconf_traces ($)
 		  AM_GNU_GETTEXT
 		  AM_INIT_AUTOMAKE
 		  AM_AUTOMAKE_OPTIONS
+		  AM_AUTOMAKE_VERSION
 		  AM_MAINTAINER_MODE
 		  AM_PATH_LISPDIR
 		  AM_PATH_PYTHON
@@ -4596,6 +4600,17 @@ sub scan_autoconf_traces ($)
 	  $global_options = $args[1];
 	  $global_options_line = $here;
 	}
+      elsif ($macro eq 'AM_AUTOMAKE_VERSION')
+        {
+	  file_error ($here,
+		      "version mismatch.  This is Automake $VERSION,\n" .
+		      "but the definition used by this AM_INIT_AUTOMAKE\n" .
+		      "comes from Automake $args[1].  You should recreate\n" .
+		      "aclocal.m4 with aclocal and run automake again.\n")
+	      if ($VERSION ne $args[1]);
+
+	  $seen_automake_version = 1;
+        }
       elsif ($macro eq 'AM_MAINTAINER_MODE')
 	{
 	  $seen_maint_mode = $here;
@@ -4838,6 +4853,19 @@ sub scan_one_autoconf_file
             $global_options_line = $here;
 	}
 
+	if (/AM_AUTOMAKE_VERSION\(([^)]+)\)/)
+	{
+	    my $vers = &unquote_m4_arg ($1);
+	    file_error ($here,
+			"version mismatch.  This is Automake $VERSION, " .
+			"but $filename\nwas generated for Automake $vers.  " .
+			"You should recreate\n$filename with aclocal and " .
+			"run automake again.\n")
+		    if ($VERSION ne $vers);
+
+	    $seen_automake_version = 1;
+	}
+
 	if (/AM_PROG_LEX/)
 	{
 	    $configure_vars{'LEX'} = $here;
@@ -4979,6 +5007,25 @@ sub scan_autoconf_files
 
     conf_error ("`AM_INIT_AUTOMAKE' must be used")
 	if ! $seen_init_automake;
+
+    if (! $seen_automake_version)
+    {
+	if (-f 'aclocal.m4')
+	{
+	    file_error ($package_version_location || $me,
+			"your implementation of AM_INIT_AUTOMAKE comes from " .
+			"an\nold Automake version.  You should recreate " .
+			"aclocal.m4\nwith aclocal and run automake again.\n");
+	}
+	else
+	{
+	    file_error ($package_version_location || $me,
+			"no proper implementation of AM_INIT_AUTOMAKE was " .
+			"found,\nprobably because aclocal.m4 is missing...\n" .
+			"You should run aclocal to create this file, then\n" .
+			"run automake again.\n");
+	}
+    }
 
     # Look for some files we need.  Always check for these.  This
     # check must be done for every run, even those where we are only
