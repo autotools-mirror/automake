@@ -137,7 +137,7 @@ my $TARGET_PATTERN='[$a-zA-Z_.@][-.a-zA-Z0-9_(){}/$+@]*';
 my $RULE_PATTERN =
   "^($TARGET_PATTERN(?:(?:\\\\\n|\\s)+$TARGET_PATTERN)*) *:([^=].*|)\$";
 
-my $SUFFIX_RULE_PATTERN = '^\.([a-zA-Z0-9+]+)\.([a-zA-Z0-9+]+)$';
+my $SUFFIX_RULE_PATTERN = '^(\.[a-zA-Z0-9+]+)(\.[a-zA-Z0-9+]+)$';
 # Only recognize leading spaces, not leading tabs.  If we recognize
 # leading tabs here then we need to make the reader smarter, because
 # otherwise it will think rules like `foo=bar; \' are errors.
@@ -775,7 +775,7 @@ register_language ('name' => 'c',
 		   'linker' => 'LINK',
 		   'link' => '$(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@',
 		   'compile_flag' => '-c',
-		   'extensions' => ['c'],
+		   'extensions' => ['.c'],
 		   '_finish' => \&lang_c_finish);
 
 # C++.
@@ -793,7 +793,7 @@ register_language ('name' => 'cxx',
 		   'lder' => 'CXXLD',
 		   'ld' => '$(CXX)',
 		   'pure' => 1,
-		   'extensions' => ['c++', 'cc', 'cpp', 'cxx', 'C']);
+		   'extensions' => ['.c++', '.cc', '.cpp', '.cxx', '.C']);
 
 # Objective C.
 register_language ('name' => 'objc',
@@ -810,12 +810,13 @@ register_language ('name' => 'objc',
 		   'lder' => 'OBJCLD',
 		   'ld' => '$(OBJC)',
 		   'pure' => 1,
-		   'extensions' => ['m']);
+		   'extensions' => ['.m']);
 
 # Headers.
 register_language ('name' => 'header',
 		   'Name' => 'Header',
-		   'extensions' => ['h', 'H', 'hxx', 'h++', 'hh', 'hpp', 'inc'],
+		   'extensions' => ['.h', '.H', '.hxx', '.h++', '.hh',
+				    '.hpp', '.inc'],
 		   # Nothing to do.
 		   '_finish' => sub { });
 
@@ -827,7 +828,7 @@ register_language ('name' => 'yacc',
 		   'define_flag' => 0,
 		   'compile' => '$(YACC) $(YFLAGS) $(AM_YFLAGS)',
 		   'compiler' => 'YACCCOMPILE',
-		   'extensions' => ['y'],
+		   'extensions' => ['.y'],
 		   'rule_file' => 'yacc',
 		   '_finish' => \&lang_yacc_finish,
 		   '_target_hook' => \&lang_yacc_target_hook);
@@ -839,7 +840,7 @@ register_language ('name' => 'yaccxx',
 		   'define_flag' => 0,
 		   'compiler' => 'YACCCOMPILE',
 		   'compile' => '$(YACC) $(YFLAGS) $(AM_YFLAGS)',
-		   'extensions' => ['y++', 'yy', 'yxx', 'ypp'],
+		   'extensions' => ['.y++', '.yy', '.yxx', '.ypp'],
 		   '_finish' => \&lang_yacc_finish,
 		   '_target_hook' => \&lang_yacc_target_hook);
 
@@ -852,7 +853,7 @@ register_language ('name' => 'lex',
 		   'define_flag' => 0,
 		   'compile' => '$(LEX) $(LFLAGS) $(AM_LFLAGS)',
 		   'compiler' => 'LEXCOMPILE',
-		   'extensions' => ['l'],
+		   'extensions' => ['.l'],
 		   '_finish' => \&lang_lex_finish);
 register_language ('name' => 'lexxx',
 		   'Name' => 'Lex (C++)',
@@ -862,7 +863,7 @@ register_language ('name' => 'lexxx',
 		   'define_flag' => 0,
 		   'compile' => '$(LEX) $(LFLAGS) $(AM_LFLAGS)',
 		   'compiler' => 'LEXCOMPILE',
-		   'extensions' => ['l++', 'll', 'lxx', 'lpp'],
+		   'extensions' => ['.l++', '.ll', '.lxx', '.lpp'],
 		   '_finish' => \&lang_lex_finish);
 
 # Assembler.
@@ -876,7 +877,7 @@ register_language ('name' => 'asm',
 		   'compile' => '$(AS) $(AM_ASFLAGS) $(ASFLAGS)',
 		   'compiler' => 'ASCOMPILE',
 		   'compile_flag' => '-c',
-		   'extensions' => ['s', 'S'],
+		   'extensions' => ['.s', '.S'],
 
 		   # With assembly we still use the C linker.
 		   '_finish' => \&lang_c_finish);
@@ -894,7 +895,7 @@ register_language ('name' => 'f77',
 		   'lder' => 'F77LD',
 		   'ld' => '$(F77)',
 		   'pure' => 1,
-		   'extensions' => ['f', 'for', 'f90']);
+		   'extensions' => ['.f', '.for', '.f90']);
 
 # Preprocessed Fortran 77
 #
@@ -924,7 +925,7 @@ register_language ('name' => 'ppf77',
 		   'compile_flag' => '-c',
 		   'output_flag' => '-o',
 		   'pure' => 1,
-		   'extensions' => ['F']);
+		   'extensions' => ['.F']);
 
 # Ratfor.
 register_language ('name' => 'ratfor',
@@ -941,7 +942,7 @@ register_language ('name' => 'ratfor',
 		   'compile_flag' => '-c',
 		   'output_flag' => '-o',
 		   'pure' => 1,
-		   'extensions' => ['r']);
+		   'extensions' => ['.r']);
 
 # Java via gcj.
 register_language ('name' => 'java',
@@ -958,7 +959,7 @@ register_language ('name' => 'java',
 		   'lder' => 'GCJLD',
 		   'ld' => '$(GCJ)',
 		   'pure' => 1,
-		   'extensions' => ['java', 'class', 'zip', 'jar']);
+		   'extensions' => ['.java', '.class', '.zip', '.jar']);
 
 ################################################################
 
@@ -1526,7 +1527,7 @@ sub handle_languages
 	    (my $der_ext = $ext) =~ tr/yl/cc/;
 
 	    # Another yacc/lex hack.
-	    my $destfile = '$*.' . $der_ext;
+	    my $destfile = '$*' . $der_ext;
 
 	    $output_rules .=
 	      file_contents ($rule_file,
@@ -1723,7 +1724,7 @@ sub handle_single_transform_list ($$$$@)
         # is in effect.
 
         # Split file name into base and extension.
-        next if ! /^(?:(.*)\/)?([^\/]*)\.(.*)$/;
+        next if ! /^(?:(.*)\/)?([^\/]*)(\..*?)$/;
         my $full = $_;
         my $directory = $1 || '';
         my $base = $2;
@@ -1771,7 +1772,7 @@ sub handle_single_transform_list ($$$$@)
             my $this_obj_ext;
 	    if (defined $source_extension)
 	    {
-		$this_obj_ext = '.' . $source_extension;
+		$this_obj_ext = $source_extension;
 		$derived_source = 1;
 	    }
 	    elsif ($lang->ansi)
@@ -1865,11 +1866,11 @@ sub handle_single_transform_list ($$$$@)
                 push (@{$lang_specific_files{$lang->name}}, $val);
             }
         }
-        elsif (".$extension" eq $nonansi_obj)
+        elsif ($extension eq $nonansi_obj)
         {
             # This is probably the result of a direct suffix rule.
             # In this case we just accept the rewrite.
-            $object = "$base.$extension";
+            $object = "$base$extension";
             $linker = '';
         }
         else
@@ -2292,10 +2293,10 @@ sub handle_lib_objects_cond
 
 	    foreach my $iter (keys %libsources)
 	    {
-		if ($iter =~ /\.([cly])$/)
+		if ($iter =~ /\.[cly]$/)
 		{
-		    &saw_extension ($1);
-		    &saw_extension ('c');
+		    &saw_extension ($&);
+		    &saw_extension ('.c');
 		}
 
 		if ($iter =~ /\.h$/)
@@ -3868,8 +3869,8 @@ sub handle_headers
 			     'noinst', 'check');
     foreach (@r)
     {
-	next unless /\.(.*)$/;
-	&saw_extension ($1);
+	next unless /\..*$/;
+	&saw_extension ($&);
     }
 }
 
@@ -5321,7 +5322,7 @@ sub derive_suffix ($$)
     my ($source_ext, $obj) = @_;
 
     while (! $extension_map{$source_ext}
-	   && ".$source_ext" ne $obj
+	   && $source_ext ne $obj
 	   && defined $suffix_rules{$source_ext})
     {
 	$source_ext = $suffix_rules{$source_ext};
@@ -6570,9 +6571,9 @@ sub rule_define ($$$$)
   if ((my ($source_suffix, $object_suffix)) = ($target =~ $SUFFIX_RULE_PATTERN))
   {
       $suffix_rules{$source_suffix} = $object_suffix;
-      verbose "Sources ending in .$source_suffix become .$object_suffix";
+      verbose "Sources ending in $source_suffix become $object_suffix";
       # Set SUFFIXES from suffix_rules.
-      push @suffixes, ".$source_suffix", ".$object_suffix";
+      push @suffixes, $source_suffix, $object_suffix;
   }
 
   return 1;
