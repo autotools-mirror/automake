@@ -16,6 +16,7 @@ acouttbs.test \
 acsilent.test \
 all.test \
 alpha.test \
+amassign.test \
 ammissing.test \
 ansi.test \
 ansi2.test \
