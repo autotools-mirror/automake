@@ -3038,7 +3038,7 @@ platform-independent way.
 * Conditional Libtool Sources::  Choosing Library Sources Conditionally
 * Libtool Convenience Libraries::  Building Convenience Libtool Libraries
 * Libtool Modules::             Building Libtool Modules
-* Libtool Flags::               Using _LIBADD and _LDFLAGS
+* Libtool Flags::               Using _LIBADD, _LDFLAGS, and _LIBTOOLFLAGS
 * LTLIBOBJS::                   Using $(LTLIBOBJS) and $(LTALLOCA)
 * Libtool Issues::              Common Issues Related to Libtool's Use
 @end menu
@@ -3343,18 +3343,48 @@ If @samp{mymodule_la_SOURCES} is not specified, then it defaults to
 the single file @file{mymodule.c} (@pxref{Default _SOURCES}).
 
 @node Libtool Flags
-@subsection _LIBADD and _LDFLAGS
+@subsection @code{_LIBADD}, @code{_LDFLAGS}, and @code{_LIBTOOLFLAGS}
 @cindex @code{_LIBADD}, libtool
 @cindex @code{_LDFLAGS}, libtool
+@cindex @code{_LIBTOOLFLAGS}, libtool
+@vindex AM_LIBTOOLFLAGS
+@vindex LIBTOOLFLAGS
+@vindex maude_LIBTOOLFLAGS
 
 As shown in previous sections, the @samp{@var{library}_LIBADD}
 variable should be used to list extra libtool objects (@file{.lo}
 files) or libtool libraries (@file{.la}) to add to @var{library}.
 
 The @samp{@var{library}_LDFLAGS} variable is the place to list
-additional libtool flags, such as @samp{-version-info},
-@samp{-static}, and a lot more.  See @xref{Link mode, , Using libltdl,
+additional libtool linking flags, such as @samp{-version-info},
+@samp{-static}, and a lot more.  See @xref{Link mode, , Link mode,
 libtool, The Libtool Manual}.
+
+The @command{libtool} command has two kinds of options: mode-specific
+options and generic options.  Mode-specific options such as the
+aforementioned linking flags should be lumped with the other flags
+passed to the tool invoked by @command{libtool} (hence the use of
+@samp{@var{library}_LDFLAGS} for libtool linking flags).  Generic
+options include @samp{--tag=@var{TAG}} and @samp{--silent}
+(@pxref{Invoking libtool, , Invoking @command{libtool}, libtool, The
+Libtool Manual} for more options) should appear before the mode
+selection on the command line; in @file{Makefile.am}s they should
+be listed in the @samp{@var{library}_LIBTOOLFLAGS} variable.
+
+If @samp{@var{library}_LIBTOOLFLAGS} is not defined, the global
+@samp{AM_LIBTOOLFLAGS} variable is used instead.
+
+These flags are passed to libtool after the @samp{--tag=@var{TAG}}
+option computed by Automake (if any), so
+@samp{@var{library}_LIBTOOLFLAGS} (or @samp{AM_LIBTOOLFLAGS}) is the
+good place to override or supplement the @samp{--tag=@var{TAG}}
+setting.
+
+The libtool rules also use a @code{LIBTOOLFLAGS} variable that should
+not be set in @file{Makefile.am}: this is a user variable (@pxref{Flag
+Variables Ordering}.  It allows users to run @samp{make
+LIBTOOLFLAGS=--silent}, for instance.
+
 
 @node LTLIBOBJS, Libtool Issues, Libtool Flags, A Shared Library
 @subsection @code{LTLIBOBJS} and @code{LTALLOCA}
@@ -3571,6 +3601,12 @@ maude_LDADD = $(X_PRE_LIBS) $(X_LIBS) $(X_EXTRA_LIBS)
 @item maude_LDFLAGS
 This variable is used to pass extra flags to the link step of a program
 or a shared library.
+
+@item maude_LIBTOOLFLAGS
+This variable is used to pass extra options to @command{libtool}.
+These options are output before @command{libtool}'s @code{--mode=MODE}
+option, so they should not be mode-specific options (those belong to
+the compiler or linker flags).  @xref{Libtool Flags}.
 
 @item maude_DEPENDENCIES
 It is also occasionally useful to have a program depend on some other
@@ -7953,6 +7989,7 @@ flags, not appended.
 @cindex @code{AM_GCJFLAGS} and @code{GCJFLAGS}
 @cindex @code{AM_LDFLAGS} and @code{LDFLAGS}
 @cindex @code{AM_LFLAGS} and @code{LFLAGS}
+@cindex @code{AM_LIBTOOLFLAGS} and @code{LIBTOOLFLAGS}
 @cindex @code{AM_OBJCFLAGS} and @code{OBJCFLAGS}
 @cindex @code{AM_RFLAGS} and @code{RFLAGS}
 @cindex @code{AM_YFLAGS} and @code{YFLAGS}
@@ -7965,6 +8002,7 @@ flags, not appended.
 @cindex @code{GCJFLAGS} and @code{AM_GCJFLAGS}
 @cindex @code{LDFLAGS} and @code{AM_LDFLAGS}
 @cindex @code{LFLAGS} and @code{AM_LFLAGS}
+@cindex @code{LIBTOOLFLAGS} and @code{AM_LIBTOOLFLAGS}
 @cindex @code{OBJCFLAGS} and @code{AM_OBJCFLAGS}
 @cindex @code{RFLAGS} and @code{AM_RFLAGS}
 @cindex @code{YFLAGS} and @code{AM_YFLAGS}
@@ -7974,7 +8012,8 @@ mostly discuss @code{CPPFLAGS} in our examples, but actually the
 answer holds for all the compile flags used in Automake:
 @code{CCASFLAGS}, @code{CFLAGS}, @code{CPPFLAGS}, @code{CXXFLAGS},
 @code{FCFLAGS}, @code{FFLAGS}, @code{GCJFLAGS}, @code{LDFLAGS},
-@code{LFLAGS}, @code{OBJCFLAGS}, @code{RFLAGS}, and @code{YFLAGS}.
+@code{LFLAGS}, @code{LIBTOOLFLAGS}, @code{OBJCFLAGS}, @code{RFLAGS},
+and @code{YFLAGS}.
 
 @code{CPPFLAGS}, @code{AM_CPPFLAGS}, and @code{mumble_CPPFLAGS} are
 three variables that can be used to pass flags to the C preprocessor
@@ -9696,5 +9735,5 @@ The number of test cases in the test suite.
 @c  LocalWords:  syscalls perlhist acl pm multitable headitem fdl appendixsec
 @c  LocalWords:  LTALLOCA MALLOC malloc memcmp strdup alloca libcompat xyz DFOO
 @c  LocalWords:  unprefixed buildable preprocessed DBAZ DDATADIR WARNINGCFLAGS
-@c  LocalWords:  LIBFOOCFLAGS LIBFOOLDFLAGS ftable testSubDir obj
+@c  LocalWords:  LIBFOOCFLAGS LIBFOOLDFLAGS ftable testSubDir obj LIBTOOLFLAGS
 @c  LocalWords:  barexec Pinard's

@@ -37,6 +37,10 @@ END
 cat > Makefile.am << 'END'
 noinst_LTLIBRARIES = libfoo.la
 libfoo_la_SOURCES = src/foo.cc
+
+print:
+	@echo BEG1: "$(LTCXXCOMPILE)" :1END
+	@echo BEG2: "$(CXXLINK)" :2END
 END
 
 mkdir src
@@ -59,8 +63,10 @@ $AUTOMAKE -a
 
 # opportunistically check that --tag=CXX is used when supported
 if test -n "`./libtool --help | grep tag=TAG`"; then
-  grep 'LTCXXCOMPILE.*--tag=CXX --mode=compile' Makefile.in
-  grep 'CXXLINK.*--tag=CXX --mode=link' Makefile.in
+  $MAKE print >stdout
+  cat stdout
+  grep 'BEG1: .*--tag=CXX.*--mode=compile.* :1END' stdout
+  grep 'BEG2: .*--tag=CXX.*--mode=link.* :2END' stdout
 fi
 
 $MAKE

@@ -1087,6 +1087,31 @@ sub get_object_extension ($)
     return $extension;
 }
 
+# check_user_variables (@LIST)
+# ----------------------------
+# Make sure each variable VAR in @LIST do not exist, suggest using AM_VAR
+# otherwise.
+sub check_user_variables (@)
+{
+  my @dont_override = @_;
+  foreach my $flag (@dont_override)
+    {
+      my $var = var $flag;
+      if ($var)
+	{
+	  for my $cond ($var->conditions->conds)
+	    {
+	      if ($var->rdef ($cond)->owner == VAR_MAKEFILE)
+		{
+		  msg_cond_var ('gnu', $cond, $flag,
+				"`$flag' is a user variable, "
+				. "you should not override it;\n"
+				. "use `AM_$flag' instead.");
+		}
+	    }
+	}
+    }
+}
 
 # Call finish function for each language that was used.
 sub handle_languages
@@ -1261,8 +1286,12 @@ sub handle_languages
 		$libtool_tag = '--tag=' . $lang->libtool_tag . ' '
 	      }
 
+	    my $ptltflags = "${derived}_LIBTOOLFLAGS";
+	    $ptltflags = 'AM_LIBTOOLFLAGS' unless set_seen $ptltflags;
+
 	    my $obj_ltcompile =
-	      "\$(LIBTOOL) $libtool_tag--mode=compile $obj_compile";
+	      "\$(LIBTOOL) $libtool_tag\$($ptltflags) \$(LIBTOOLFLAGS) "
+	      . "--mode=compile $obj_compile";
 
 	    # We _need_ `-o' for per object rules.
 	    my $output_flag = $lang->output_flag || '-o';
@@ -1423,23 +1452,7 @@ sub handle_languages
 	# ... and so is LDFLAGS.
 	push @dont_override, 'LDFLAGS' if $lang->link;
 
-	foreach my $flag (@dont_override)
-	  {
-	    my $var = var $flag;
-	    if ($var)
-	      {
-		for my $cond ($var->conditions->conds)
-		  {
-		    if ($var->rdef ($cond)->owner == VAR_MAKEFILE)
-		      {
-			msg_cond_var ('gnu', $cond, $flag,
-				      "`$flag' is a user variable, "
-				      . "you should not override it;\n"
-				      . "use `AM_$flag' instead.");
-		      }
-		  }
-	      }
-	  }
+	check_user_variables @dont_override;
     }
 
     # If the project is entirely C++ or entirely Fortran 77 (i.e., 1
@@ -1571,7 +1584,9 @@ sub handle_single_transform ($$$$$%)
 
 	    # Do we have per-executable flags for this executable?
 	    my $have_per_exec_flags = 0;
-	    foreach my $flag (@{$lang->flags})
+	    my @peflags = @{$lang->flags};
+	    push @peflags, 'LIBTOOLFLAGS' if $nonansi_obj eq '.lo';
+	    foreach my $flag (@peflags)
 	      {
 		if (set_seen ("${derived}_$flag"))
 		  {
@@ -2269,6 +2284,8 @@ sub handle_libtool
       # .libs is for Unix, _libs for DOS.
       push (@libtool_rms, "\t-rm -rf ${dir}.libs ${dir}_libs");
     }
+
+  check_user_variables 'LIBTOOLFLAGS';
 
   # Output the libtool compilation rules.
   $output_rules .= &file_contents ('libtool',
@@ -5694,7 +5711,8 @@ sub define_pretty_variable ($$$@)
 
 # define_variable ($VAR, $VALUE, $WHERE)
 # --------------------------------------
-# Define a new user variable VAR to VALUE, but only if not already defined.
+# Define a new Automake Makefile variable VAR to VALUE, but only if
+# not already defined.
 sub define_variable ($$$)
 {
     my ($var, $value, $where) = @_;
@@ -5754,7 +5772,8 @@ sub define_compiler_variable ($)
       if $lang->libtool_tag && exists $libtool_tags{$lang->libtool_tag};
     &define_variable ($var, $value, INTERNAL);
     &define_variable ("LT$var",
-		      "\$(LIBTOOL) $libtool_tag--mode=compile $value",
+		      "\$(LIBTOOL) $libtool_tag\$(AM_LIBTOOLFLAGS) "
+		      . "\$(LIBTOOLFLAGS) --mode=compile $value",
 		      INTERNAL)
       if var ('LIBTOOL');
 }
@@ -5776,7 +5795,8 @@ sub define_linker_variable ($)
     # CCLINK = $(CCLD) blah blah...
     &define_variable ($lang->linker,
 		      ((var ('LIBTOOL') ?
-			"\$(LIBTOOL) $libtool_tag--mode=link " : '')
+			"\$(LIBTOOL) $libtool_tag\$(AM_LIBTOOLFLAGS) "
+			. "\$(LIBTOOLFLAGS) --mode=link " : '')
 		       . $lang->link),
 		      INTERNAL);
 }
