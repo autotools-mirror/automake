@@ -27,6 +27,7 @@ instexec.test insthook.test instman.test interp.test interp2.test \
 java.test javaprim.test javasubst.test ldadd.test lex.test lex2.test \
 lex3.test libobj.test libobj2.test libobj3.test libobj4.test \
 libobj5.test libobj6.test libobj7.test libobj8.test libobj9.test \
+libobj10.test \
 library.test link_c_cxx.test link_f_c.test link_f_c_cxx.test \
 link_f_cxx.test link_f_only.test lisp.test mclean.test mdate.test \
 mdate2.test mdate3.test mkinst2.test mkinstall.test nodep.test \
