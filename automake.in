@@ -4660,29 +4660,33 @@ sub scan_autoconf_traces ($)
 {
   my ($filename) = @_;
 
-  my @traced = qw(AC_CANONICAL_HOST
-		  AC_CANONICAL_SYSTEM
-		  AC_CONFIG_AUX_DIR
-		  AC_CONFIG_FILES
-		  AC_CONFIG_HEADERS
-		  AC_INIT
-		  AC_LIBSOURCE
-		  AC_SUBST
-		  AM_AUTOMAKE_VERSION
-		  AM_CONDITIONAL
-		  AM_GNU_GETTEXT
-		  AM_INIT_AUTOMAKE
-		  AM_MAINTAINER_MODE
-		  AM_PROG_CC_C_O
-		  m4_include
-		  m4_sinclude);
+  # Macros to trace, with their minimal number of arguments.
+  my %traced = (
+		AC_CANONICAL_HOST => 0,
+		AC_CANONICAL_SYSTEM => 0,
+		AC_CONFIG_AUX_DIR => 1,
+		AC_CONFIG_FILES => 1,
+		AC_CONFIG_HEADERS => 1,
+		AC_INIT => 0,
+		AC_LIBSOURCE => 1,
+		AC_SUBST => 1,
+		AM_AUTOMAKE_VERSION => 1,
+		AM_CONDITIONAL => 2,
+		AM_GNU_GETTEXT => 0,
+		AM_INIT_AUTOMAKE => 0,
+		AM_MAINTAINER_MODE => 0,
+		AM_PROG_CC_C_O => 0,
+		m4_include => 1,
+		m4_sinclude => 1,
+	      );
 
   my $traces = ($ENV{AUTOCONF} || 'autoconf') . " ";
 
   # Use a separator unlikely to be used, not `:', the default, which
   # has a precise meaning for AC_CONFIG_FILES and so on.
   $traces .= join (' ',
-		   map { "--trace=$_" . ':\$f:\$l::\$n::\${::}%' } @traced);
+		   map { "--trace=$_" . ':\$f:\$l::\$n::\${::}%' }
+		   (keys %traced));
 
   my $tracefh = new Automake::XFile ("$traces $filename |");
   verb "reading $traces";
@@ -4693,6 +4697,16 @@ sub scan_autoconf_traces ($)
       my ($here, @args) = split /::/;
       my $where = new Automake::Location $here;
       my $macro = $args[0];
+
+      prog_error ("unrequested trace `$macro'")
+	unless exists $traced{$macro};
+
+      # Skip and diagnose malformed calls.
+      if ($#args < $traced{$macro})
+	{
+	  msg ('syntax', $where, "not enough arguments for $macro");
+	  next;
+	}
 
       # Alphabetical ordering please.
       if ($macro eq 'AC_CANONICAL_HOST')
