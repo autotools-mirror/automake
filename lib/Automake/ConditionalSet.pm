@@ -2,7 +2,7 @@ package Automake::ConditionalSet;
 
 use Carp;
 use strict;
-use Automake::Conditional;
+use Automake::Conditional qw/TRUE FALSE/;
 
 =head1 NAME
 
@@ -247,23 +247,23 @@ sub _permutations_worker (@)
   return () unless @conds;
 
   my $cond = shift @conds;
+
+  # Ignore "TRUE" conditions, since they add nothing to permutations.
+  return &_permutations_worker (@conds) if $cond eq "TRUE";
+
   (my $neg = $cond) =~ s/TRUE$/FALSE/;
 
   # Recurse.
-
-  # Don't merge `FALSE' conditions, since this will just create
-  # a false Conditional, and we'll drop them later in ConditionalSet.
-  # (Dropping them now limits the combinatoric explosion.)
   my @ret = ();
   foreach my $c (&_permutations_worker (@conds))
     {
       push (@ret, $c->merge_conds ($cond));
-      push (@ret, $c->merge_conds ($neg)) if $neg ne 'FALSE';
+      push (@ret, $c->merge_conds ($neg));
     }
   if (! @ret)
     {
       push (@ret, new Automake::Conditional $cond);
-      push (@ret, new Automake::Conditional $neg) if $neg ne 'FALSE';
+      push (@ret, new Automake::Conditional $neg);
     }
 
   return @ret;
@@ -311,6 +311,9 @@ sub permutations ($ )
     }
 
   my @res = _permutations_worker (keys %atomic_conds);
+  # An empty permutation is TRUE, because we ignore TRUE conditions
+  # in the recursions.
+  @res = (TRUE) unless @res;
   my $res = new Automake::ConditionalSet @res;
 
   $self->{'permutations'} = $res;
@@ -343,24 +346,17 @@ sub invert($ )
 
   # Generate permutations for all subconditions.
   my @perm = $self->permutations->conds;
-  # Remove redundant conditions.
-  @perm = Automake::Conditional::reduce @perm;
 
   # Now remove all conditions which imply one of the input conditions.
   my @conds = $self->conds;
-  my @notconds = ();
-  foreach my $perm (@perm)
-    {
-      push @notconds, $perm
-	if ! $perm->implies_any (@conds);
-    }
-
+  my @notconds =
+    grep { ! $_->implies_any (@conds) } $self->permutations->conds;
   my $res = new Automake::ConditionalSet @notconds;
 
   # Cache result.
   $self->{'invert'} = $res;
   # It's tempting to also set $res->{'invert'} to $self, but that
-  # isn't a bad idea as $self hasn't been normalized in any way.
+  # is a bad idea as $self hasn't been normalized in any way.
   # (Different inputs can produce the same inverted set.)
   return $res;
 }
