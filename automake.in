@@ -1917,7 +1917,10 @@ sub handle_source_transform ($$$$%)
 	my $old_default_source = "$one_file.c";
 	(my $default_source = $unxformed) =~ s,(\.[^./\\]*)?$,.c,;
 	if ($old_default_source ne $default_source
-	    && (rule $old_default_source || -f $old_default_source))
+	    && (rule $old_default_source
+		|| rule '$(srcdir)/' . $old_default_source
+		|| rule '${srcdir}/' . $old_default_source
+		|| -f $old_default_source))
 	  {
 	    my $loc = $where->clone;
 	    $loc->pop_context;
@@ -1926,6 +1929,14 @@ sub handle_source_transform ($$$$%)
 		 . "to `$default_source'.\n(Using `$old_default_source' for "
 		 . "backward compatibility.)");
 	    $default_source = $old_default_source;
+	  }
+	# If a rule exists to build this source with a $(srcdir)
+	# prefix, use that prefix in our variables too.  This is for
+	# the sake of BSD Make.
+	if (rule '$(srcdir)/' . $default_source
+	    || rule '${srcdir}/' . $default_source)
+	  {
+	    $default_source = '$(srcdir)/' . $default_source;
 	  }
 
 	&define_variable ($one_file . "_SOURCES", $default_source, $where);
