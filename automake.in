@@ -221,6 +221,35 @@ my %standard_prefix =
 			pkgincludedir pkglibdir sbin sharedstate
 			sysconf));
 
+# Declare the macros that define known variables, so we can
+# hint the user if she try to use one of these variables.
+my %am_macro_for_var =
+  (
+   ANSI2KNR => 'AM_C_PROTOTYPES',
+   CCAS => 'AM_PROG_AS',
+   CCASFLAGS => 'AM_PROG_AS',
+   EMACS => 'AM_PATH_LISPDIR',
+   GCJ => 'AM_PROG_GCJ',
+   LEX => 'AM_PROG_LEX',
+   lispdir => 'AM_PATH_LISPDIR',
+   pkgpyexecdir => 'AM_PATH_PYTHON',
+   pkgpythondir => 'AM_PATH_PYTHON',
+   pyexecdir => 'AM_PATH_PYTHON',
+   PYTHON => 'AM_PATH_PYTHON',
+   pythondir => 'AM_PATH_PYTHON',
+   U => 'AM_C_PROTOTYPES',
+   );
+
+my %ac_macro_for_var =
+  (
+   CC => 'AC_PROG_CC',
+   CFLAGS => 'AC_PROG_CC',
+   CXX => 'AC_PROG_CXX',
+   CXXFLAGS => 'AC_PROG_CXX',
+   F77 => 'AC_PROG_F77',
+   F77FLAGS => 'AC_PROG_F77',
+   );
+
 # Copyright on generated Makefile.ins.
 my $gen_copyright = "\
 # Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002
@@ -294,9 +323,6 @@ my $configure_ac = '';
 # Files found by scanning configure.ac for LIBOBJS.
 my %libsources = ();
 
-# True if AM_C_PROTOTYPES appears in configure.ac.
-my $am_c_prototypes = 0;
-
 # Names used in AC_CONFIG_HEADER call.
 my @config_headers = ();
 # Where AC_CONFIG_HEADER appears.
@@ -330,9 +356,6 @@ my $seen_gettext = 0;
 # Where AM_GNU_GETTEXT appears.
 my $ac_gettext_location;
 
-# TRUE if AC_PROG_LEX or AM_PROG_LEX were seen.
-my $seen_prog_lex = 0;
-
 # TRUE if we've seen AC_CANONICAL_(HOST|SYSTEM).
 my $seen_canonical = 0;
 my $canonical_location;
@@ -348,12 +371,6 @@ my $package_version = '';
 
 # Where version is defined.
 my $package_version_location;
-
-# Where AM_PATH_LISPDIR appears.
-my $am_lispdir_location;
-
-# Where AM_PATH_PYTHON appears.
-my $pythondir_location;
 
 # TRUE if we've seen AC_ENABLE_MULTILIB.
 my $seen_multilib = 0;
@@ -632,6 +649,13 @@ my %subobjvar = ();
 # the named of the helper variable used to append to VAR in CONDITIONS.
 my %appendvar = ();
 
+# Variables required via &require_variables.
+# FIXME: This is a temporary hack so that &require_variables prints error
+# messages only once.  It should not be needed the day we have an error
+# reporting function which can print an error message only once.
+my %required_variables = ();
+
+
 ## --------------------------------- ##
 ## Forward subroutine declarations.  ##
 ## --------------------------------- ##
@@ -776,6 +800,8 @@ sub initialize_per_input ()
     %subobjvar = ();
 
     %appendvar = ();
+
+    %required_variables = ();
 }
 
 
@@ -1784,13 +1810,8 @@ sub handle_languages
 	define_linker_variable ($lang)
 	  if ($lang->link);
 
-	foreach my $var (@{$lang->config_vars})
-	  {
-	    am_error ($lang->Name
-		      . " source seen but `$var' not defined in"
-		      . " `$configure_ac'")
-	      if !exists $configure_vars{$var};
-	  }
+	require_variables ("$am_file.am", $lang->Name . " source seen",
+			   @{$lang->config_vars});
 
 	# Call the finisher.
 	$lang->finish;
@@ -2649,14 +2670,9 @@ sub handle_compile ()
     # Check for automatic de-ANSI-fication.
     if (defined $options{'ansi2knr'})
       {
-	if (! $am_c_prototypes)
-	  {
-	    macro_error ('AUTOMAKE_OPTIONS',
-			 "option `ansi2knr' in use but `AM_C_PROTOTYPES' not in `$configure_ac'");
-	    &keyed_aclocal_warning ('AM_C_PROTOTYPES');
-	    # Only give this error once.
-	    $am_c_prototypes = 1;
-	  }
+	require_variables_for_macro ('AUTOMAKE_OPTIONS',
+				     "option `ansi2knr' is used",
+				     "ANSI2KNR", "U");
 
 	# topdir is where ansi2knr should be.
 	if ($options{'ansi2knr'} eq 'ansi2knr')
@@ -4459,37 +4475,33 @@ sub handle_tests
 # Handle Emacs Lisp.
 sub handle_emacs_lisp
 {
-    my @elfiles = &am_install_var ('-candist', 'lisp', 'LISP',
-				   'lisp', 'noinst');
+  my @elfiles = &am_install_var ('-candist', 'lisp', 'LISP',
+				 'lisp', 'noinst');
 
-    return if ! @elfiles;
+  return if ! @elfiles;
 
-    # Generate .elc files.
-    my @elcfiles = map { $_ . 'c' } @elfiles;
-    define_pretty_variable ('ELCFILES', '', @elcfiles);
+  # Generate .elc files.
+  my @elcfiles = map { $_ . 'c' } @elfiles;
+  define_pretty_variable ('ELCFILES', '', @elcfiles);
 
-    push (@all, '$(ELCFILES)');
+  push (@all, '$(ELCFILES)');
 
-    &am_error ("`lisp_LISP' defined but `AM_PATH_LISPDIR' not in `$configure_ac'")
-      if ! $am_lispdir_location && variable_defined ('lisp_LISP');
-
-    require_conf_file ($am_lispdir_location, FOREIGN, 'elisp-comp');
-    &define_variable ('elisp_comp', $config_aux_dir . '/elisp-comp');
+  require_variables ("$am_file.am", "Emacs Lisp sources seen",
+		     'EMACS', 'lispdir');
+  require_conf_file ("$am_file.am", FOREIGN, 'elisp-comp');
+  &define_variable ('elisp_comp', $config_aux_dir . '/elisp-comp');
 }
 
 # Handle Python
 sub handle_python
 {
-    my @pyfiles = &am_install_var ('-defaultdist', 'python', 'PYTHON',
-				   'python', 'noinst');
-    return if ! @pyfiles;
+  my @pyfiles = &am_install_var ('-defaultdist', 'python', 'PYTHON',
+				 'noinst');
+  return if ! @pyfiles;
 
-    # Found some python.
-    &am_error ("`python_PYTHON' defined but `AM_PATH_PYTHON' not in `$configure_ac'")
-	if ! $pythondir_location && variable_defined ('python_PYTHON');
-
-    require_conf_file ($pythondir_location, FOREIGN, 'py-compile');
-    &define_variable ('py_compile', $config_aux_dir . '/py-compile');
+  require_variables ("$am_file.am", "Python sources seen", 'PYTHON');
+  require_conf_file ("$am_file.am", FOREIGN, 'py-compile');
+  &define_variable ('py_compile', $config_aux_dir . '/py-compile');
 }
 
 # Handle Java.
@@ -4620,17 +4632,13 @@ sub scan_autoconf_traces ($)
 		  AC_CONFIG_HEADERS
 		  AC_INIT
 		  AC_LIBSOURCE
-		  AC_PROG_LEX
 		  AC_PROG_LIBTOOL AM_PROG_LIBTOOL
 		  AC_SUBST
 		  AM_AUTOMAKE_VERSION
 		  AM_CONDITIONAL
-		  AM_C_PROTOTYPES
 		  AM_GNU_GETTEXT
 		  AM_INIT_AUTOMAKE
 		  AM_MAINTAINER_MODE
-		  AM_PATH_LISPDIR
-		  AM_PATH_PYTHON
 		  AM_PROG_CC_C_O);
 
   my $traces = ($ENV{AUTOCONF} || 'autoconf') . " ";
@@ -4695,17 +4703,7 @@ sub scan_autoconf_traces ($)
 	{
 	  $seen_libtool = $here;
 	}
-      elsif ($macro eq 'AC_PROG_LEX')
-	{
-	  $seen_prog_lex = $here;
-	}
-      elsif ($macro eq 'AC_SUBST'
-	     # Explicitly avoid ANSI2KNR -- we AC_SUBST that in
-	     # protos.m4, but later define it elsewhere.  This is
-	     # pretty hacky.  We also explicitly avoid AMDEPBACKSLASH:
-	     # it might be subst'd by `\', which certainly would not be
-	     # appreciated by Make.
-	     && ! grep { $_ eq $args[1] } (qw(ANSI2KNR AMDEPBACKSLASH)))
+      elsif ($macro eq 'AC_SUBST')
 	{
 	  # Just check for alphanumeric in AC_SUBST.  If you do
 	  # AC_SUBST(5), then too bad.
@@ -4726,10 +4724,6 @@ sub scan_autoconf_traces ($)
       elsif ($macro eq 'AM_CONDITIONAL')
 	{
 	  $configure_cond{$args[1]} = $here;
-	}
-      elsif ($macro eq 'AM_C_PROTOTYPES')
-	{
-	  $am_c_prototypes = $here;
 	}
       elsif ($macro eq 'AM_GNU_GETTEXT')
 	{
@@ -4752,14 +4746,6 @@ sub scan_autoconf_traces ($)
       elsif ($macro eq 'AM_MAINTAINER_MODE')
 	{
 	  $seen_maint_mode = $here;
-	}
-      elsif ($macro eq 'AM_PATH_LISPDIR')
-	{
-	  $am_lispdir_location = $here;
-	}
-      elsif ($macro eq 'AM_PATH_PYTHON')
-	{
-	  $pythondir_location = $here;
 	}
       elsif ($macro eq 'AM_PROG_CC_C_O')
 	{
@@ -4829,9 +4815,6 @@ sub scan_autoconf_files
 		       'install-sh', 'mkinstalldirs', 'missing');
     am_error ("`install.sh' is an anachronism; use `install-sh' instead")
         if -f $config_aux_path[0] . '/install.sh';
-
-    require_conf_file ($pythondir_location, FOREIGN, 'py-compile')
-      if $pythondir_location;
 
     # Preserve dist_common for later.
     $configure_dist_common = variable_value ('DIST_COMMON', 'TRUE') || '';
@@ -5195,9 +5178,6 @@ sub lang_lex_finish
 {
     return if defined $language_scratch{'lex-done'};
     $language_scratch{'lex-done'} = 1;
-
-    am_error ("lex source seen but `AM_PROG_LEX' not in `$configure_ac'")
-      unless $seen_prog_lex;
 
     if (count_files_for_language ('lex') > 1)
     {
@@ -6718,13 +6698,19 @@ sub define_variable ($$)
 # substitution by the same name.
 sub define_configure_variable ($)
 {
-    my ($var) = @_;
-    if (! variable_defined ($var, 'TRUE'))
+  my ($var) = @_;
+  if (! variable_defined ($var, 'TRUE')
+      # Explicitly avoid ANSI2KNR -- we AC_SUBST that in
+      # protos.m4, but later define it elsewhere.  This is
+      # pretty hacky.  We also explicitly avoid AMDEPBACKSLASH:
+      # it might be subst'd by `\', which certainly would not be
+      # appreciated by Make.
+      && ! grep { $_ eq $var } (qw(ANSI2KNR AMDEPBACKSLASH)))
     {
-	# A macro defined via configure is a `user' macro -- we should not
-	# override it.
-	macro_define ($var, 0, '', 'TRUE', subst $var, $configure_vars{$var});
-	variable_pretty_output ($var, 'TRUE');
+      # A macro defined via configure is a `user' macro -- we should not
+      # override it.
+      macro_define ($var, 0, '', 'TRUE', subst $var, $configure_vars{$var});
+      variable_pretty_output ($var, 'TRUE');
     }
 }
 
@@ -7630,51 +7616,58 @@ sub append_exeext ($)
 # need it.
 sub am_primary_prefixes ($$@)
 {
-    my ($primary, $can_dist, @prefixes) = @_;
+  my ($primary, $can_dist, @prefixes) = @_;
 
-    local $_;
-    my %valid = map { $_ => 0 } @prefixes;
-    $valid{'EXTRA'} = 0;
-    foreach my $varname (keys %var_value)
+  local $_;
+  my %valid = map { $_ => 0 } @prefixes;
+  $valid{'EXTRA'} = 0;
+  foreach my $varname (keys %var_value)
     {
-        # Automake is allowed to define variables that look like they
-        # are magic variables, such as INSTALL_DATA.
-        next
-	  if $var_is_am{$varname};
+      # Automake is allowed to define variables that look like primaries
+      # but which aren't.  E.g. INSTALL_sh_DATA.
+      next
+	if $var_is_am{$varname};
+      # Autoconf can also define variables like INSTALL_DATA, so
+      # ignore all configure variables.
+      # FIXME: Actually we'd better ignore configure variables which
+      # are not overridden in Makefile.am; but it's not clear how to
+      # do this presently.
+      next
+	if exists $configure_vars{$varname};
 
-	if ($varname =~ /^(nobase_)?(dist_|nodist_)?(.*)_$primary$/)
+      if ($varname =~ /^(nobase_)?(dist_|nodist_)?(.*)_$primary$/)
 	{
-	    my ($base, $dist, $X) = ($1 || '', $2 || '', $3 || '');
-	    if ($dist ne '' && ! $can_dist)
+	  my ($base, $dist, $X) = ($1 || '', $2 || '', $3 || '');
+	  if ($dist ne '' && ! $can_dist)
             {
-		# Note that a configure variable is always legitimate.
-		# It is natural to name such variables after the
-		# primary, so we explicitly allow it.
-		macro_error ($varname,
-			    "invalid variable `$varname': `dist' is forbidden")
-		  if ! exists $configure_vars{$varname};
+	      macro_error ($varname,
+			   "invalid variable `$varname': `dist' is forbidden");
 	    }
-	    # A not-explicitely-allowed prefix X is allowed if Xdir
-	    # has been defined and X is not a standard prefix.
-	    elsif (! defined $valid{$X} && (! variable_defined ("${X}dir")
-					    || exists $standard_prefix{$X}))
+	  # Standard directories must be explicitely allowed.
+	  elsif (! defined $valid{$X} && exists $standard_prefix{$X})
 	    {
-		# Note that a configure variable is always legitimate.
-		# It is natural to name such variables after the
-		# primary, so we explicitly allow it.
-	        macro_error ($varname, "invalid variable `$varname'")
-		  if ! exists $configure_vars{$varname};
+	      macro_error ($varname,
+			   "`${X}dir' is not a legitimate " .
+			   "directory for `$primary'");
 	    }
-	    else
+	  # A not explicitely valid directory is allowed if Xdir is defined.
+	  elsif (! defined $valid{$X} &&
+		 require_variables_for_macro ($varname, "`$varname' is used",
+					      "${X}dir"))
 	    {
-		# Ensure all extended prefixes are actually used.
-		$valid{"$base$dist$X"} = 1;
+	      # Nothing to do.  Any error message has been output
+	      # by require_variables_for_macro.
+	    }
+	  else
+	    {
+	      # Ensure all extended prefixes are actually used.
+	      $valid{"$base$dist$X"} = 1;
 	    }
 	}
     }
 
-    # Return only those which are actually defined.
-    return sort grep { variable_defined ($_ . '_' . $primary) } keys %valid;
+  # Return only those which are actually defined.
+  return sort grep { variable_defined ($_ . '_' . $primary) } keys %valid;
 }
 
 
@@ -8305,6 +8298,59 @@ sub keyed_aclocal_warning ($)
 {
     my ($key) = @_;
     warn "$me: macro `$key' can be generated by `aclocal'\n";
+}
+
+# INTEGER
+# require_variables ($WHERE, $REASON, @VARIABLES)
+# -----------------------------------------------
+# Make sure that each supplied variable is defined.
+# Otherwise, issue a warning.  If we know which macro can
+# define this variable, hint the user.
+# Return the number of undefined variables.
+sub require_variables ($$@)
+{
+  my ($where, $reason, @vars) = @_;
+  my $res = 0;
+  $reason .= ' but ' unless $reason eq '';
+
+  foreach my $var (@vars)
+    {
+      # Nothing to do if the variable exists.
+      next if (exists $var_value{$var});
+
+      ++$res;
+
+      # Don't print the error message twice.
+      next if exists $required_variables{$var};
+      $required_variables{$var} = $where; # The value doesn't matter.
+
+      my $text = "$reason`$var' is undefined.";
+      if (exists $am_macro_for_var{$var})
+	{
+	  $text .= "\nThe usual way to define `$var' is to add "
+	    . "`$am_macro_for_var{$var}'\nto `$configure_ac' and run "
+	    . "`aclocal' and `autoconf' again.";
+	}
+      elsif (exists $ac_macro_for_var{$var})
+	{
+	  $text .= "\nThe usual way to define `$var' is to add "
+	    . "`$ac_macro_for_var{$var}'\nto `$configure_ac' and run "
+	    . "`autoconf' again.";
+	}
+
+      file_error ($where, $text);
+    }
+  return $res;
+}
+
+# INTEGER
+# require_variables_for_macro ($MACRO, $REASON, @VARIABLES)
+# ---------------------------------------------------------
+# Same as require_variables, but take a macro mame as first argument.
+sub require_variables_for_macro ($$@)
+{
+  my ($macro, $reason, @args) = @_;
+  return require_variables ($var_location{$macro}, $reason, @args);
 }
 
 # Print usage information.

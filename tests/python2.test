@@ -1,0 +1,102 @@
+#! /bin/sh
+
+# Make sure that Automake suggests using AM_PATH_PYTHON.
+
+. $srcdir/defs || exit 1
+
+set -e
+
+echo 1
+# pythondir not defined
+
+cat > Makefile.am <<'END'
+PYTHON = x
+python_PYTHON = foo.py
+END
+
+$ACLOCAL
+$AUTOMAKE -a 2>stderr && exit 1
+cat stderr
+grep AM_PATH_PYTHON stderr
+
+echo 2
+# pkgpythondir not defined
+
+cat > Makefile.am <<'END'
+PYTHON = x
+pkgpython_PYTHON = foo.py
+END
+
+$ACLOCAL
+$AUTOMAKE -a 2>stderr && exit 1
+cat stderr
+grep AM_PATH_PYTHON stderr
+
+
+echo 3
+# pyexecdir not defined
+
+cat > Makefile.am <<'END'
+PYTHON = x
+pyexec_PYTHON = foo.py
+END
+
+$ACLOCAL
+$AUTOMAKE -a 2>stderr && exit 1
+cat stderr
+grep AM_PATH_PYTHON stderr
+
+
+echo 4
+# pkgpyexecdir not defined
+
+cat > Makefile.am <<'END'
+PYTHON = x
+pkgpyexec_PYTHON = foo.py
+END
+
+$ACLOCAL
+$AUTOMAKE -a 2>stderr && exit 1
+cat stderr
+grep AM_PATH_PYTHON stderr
+
+
+echo 5
+# PYTHON not defined.
+
+cat > Makefile.am <<'END'
+pkgpyexecdir = /here/we/go
+pkgpyexec_PYTHON = foo.py
+END
+
+$ACLOCAL
+$AUTOMAKE -a 2>stderr && exit 1
+cat stderr
+grep AM_PATH_PYTHON stderr
+
+
+echo 6
+# Ok.
+
+cat > Makefile.am <<'END'
+PYTHON = x
+pkgpyexecdir = /here/we/go
+pkgpyexec_PYTHON = foo.py
+END
+
+$ACLOCAL
+$AUTOMAKE -a
+test -f py-compile
+
+
+echo 7
+# Ok.
+
+cat > Makefile.am <<'END'
+PYTHON = x
+fubardir = /here/we/go
+fubar_PYTHON = foo.py
+END
+
+$ACLOCAL
+$AUTOMAKE -a

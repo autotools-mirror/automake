@@ -28,6 +28,7 @@ ansi4.test \
 ansi5.test \
 ansi6.test \
 ansi7.test \
+ansi8.test \
 ar.test \
 asm.test \
 autoheader.test \
@@ -108,6 +109,7 @@ confvar2.test \
 copy.test \
 ctarget1.test \
 cxx.test \
+cxx2.test \
 cxxansi.test \
 cxxcpp.test \
 cxxlibobj.test \
@@ -171,6 +173,7 @@ gcj.test \
 gcj2.test \
 gcj3.test \
 gcj4.test \
+gcj5.test \
 gnits.test \
 gnits2.test \
 header.test \
@@ -220,6 +223,7 @@ link_f_c_cxx.test \
 link_f_cxx.test	\
 link_f_only.test \
 lisp.test \
+lisp2.test \
 listval.test \
 ltdeps.test \
 ltlibobjs.test \
@@ -291,6 +295,7 @@ primary.test \
 primary2.test \
 proginst.test \
 python.test \
+python2.test \
 ranlib.test \
 recurs.test \
 recurs2.test \

@@ -1,0 +1,58 @@
+#! /bin/sh
+
+# Make sure that Automake suggest using AM_PATH_LISPDIR to define lispdir.
+
+. $srcdir/defs || exit 1
+
+set -e
+
+echo 1
+
+cat > Makefile.am << 'END'
+lisp_LISP = foo.el
+END
+
+$ACLOCAL
+$AUTOMAKE 2>stderr && exit 1
+cat stderr
+grep AM_PATH_LISPDIR stderr
+
+
+echo 2
+# Setting lispdir should not be enough.
+
+cat > Makefile.am << 'END'
+lispdir = /usr/share/emacs/site-lisp
+lisp_LISP = foo.el
+END
+
+$ACLOCAL
+$AUTOMAKE -a 2>stderr && exit 1
+cat stderr
+grep AM_PATH_LISPDIR stderr
+
+echo 3
+# Setting EMACS should not be enough.
+
+cat > Makefile.am << 'END'
+EMACS = emacs
+lisp_LISP = foo.el
+END
+
+$ACLOCAL
+$AUTOMAKE -a 2>stderr && exit 1
+cat stderr
+grep AM_PATH_LISPDIR stderr
+
+
+echo 4
+# Setting both is OK.
+
+cat > Makefile.am << 'END'
+lispdir = /usr/share/emacs/site-lisp
+EMACS = emacs
+lisp_LISP = foo.el
+END
+
+$ACLOCAL
+$AUTOMAKE -a
