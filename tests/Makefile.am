@@ -184,6 +184,7 @@ lex.test \
 lex2.test \
 lex3.test \
 lex4.test \
+lex5.test \
 libobj.test \
 libobj2.test \
 libobj3.test \
@@ -355,6 +356,7 @@ yacc4.test \
 yacc5.test \
 yacc6.test \
 yacc7.test \
+yacc8.test \
 yaccpp.test \
 yaccvpath.test
 
