@@ -39,7 +39,7 @@ for mf in $CONFIG_FILES; do
     /^DEP_FILES = / s/^DEP_FILES = //p' < "$mf" | \
        sed -e 's/\$(DEPDIR)/'"$DEPDIR"'/g' -e 's/\$U/'"$U"'/g'`; do
     test -f "$dirpart/$file" && continue
-    echo "creating $dirpart/$file"
+    # echo "creating $dirpart/$file"
     echo '# dummy' > "$dirpart/$file"
   done
 done
