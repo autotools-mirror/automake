@@ -3605,23 +3605,6 @@ sub handle_merge_targets
 			"\`install-info-local' target defined but \`no-installinfo' option not in use");
     }
 
-    foreach my $utarg ('uninstall-data-local', 'uninstall-data-hook',
-		       'uninstall-exec-local', 'uninstall-exec-hook')
-    {
-	if (&target_defined ($utarg))
-	{
-	    my $x = $utarg;
-	    $x =~ s/(data|exec)-//;
-	    &am_line_error ($utarg, "use \`$x', not \`$utarg'");
-	}
-    }
-
-    if (&target_defined ('install-local'))
-    {
-	&am_line_error ('install-local',
-			"use \`install-data-local' or \`install-exec-local', not \`install-local'");
-    }
-
     if (@all || &variable_defined ('BUILT_SOURCES'))
     {
 	my $local_headers = '';
@@ -3660,11 +3643,7 @@ sub handle_merge_targets
 	$output_rules .= "install-binPROGRAMS: install-libLTLIBRARIES\n\n";
     }
     # Print definitions users can use.
-    &do_one_merge_target ('install-exec');
-    &do_one_merge_target ('install-data');
-
     &do_one_merge_target ('install', 'all-am');
-    &do_one_merge_target ('uninstall');
 
     &do_one_merge_target ('all', @all);
 }
@@ -3705,20 +3684,6 @@ sub do_one_merge_target
 	# install-data-am after all-am is built.
 	&pretty_print_rule ("\t\@\$(MAKE) \$(AM_MAKEFLAGS)", "\t  ",
 			    'install-exec-am', 'install-data-am');
-    }
-    elsif ($name eq 'install-exec' && &target_defined ('install-exec-hook'))
-    {
-        $actions{'install-exec-am'} .=
-	  ("\t\@\$(NORMAL_INSTALL)\n"
-	   . "\t" . '$(MAKE) $(AM_MAKEFLAGS) install-exec-hook'
-	   . "\n");
-    }
-    elsif ($name eq 'install-data' && &target_defined ('install-data-hook'))
-    {
-        $actions{'install-data-am'} .=
-	  ("\t\@\$(NORMAL_INSTALL)\n"
-	   . "\t" . '$(MAKE) $(AM_MAKEFLAGS) install-data-hook'
-	   . "\n");
     }
 
     # To understand this special case, see handle_merge_targets.
@@ -3816,12 +3781,6 @@ sub handle_clean
 
     $output_rules .= &file_contents ('clean', $xform);
 
-    foreach ('clean', 'distclean', 'mostlyclean', 'maintainer-clean')
-      {
-	&depend ("$_-am", "$_-local")
-	  if &target_defined ("$_-local");
-      }
-
     # We special-case config.status here.  If we do it as part of the
     # normal clean processing for this directory, then it might be
     # removed before some subdir is cleaned.  However, that subdir's
@@ -3863,9 +3822,52 @@ sub target_cmp ($$)
 
 # &handle_factored_dependencies ()
 # --------------------------------
-# Handle .PHONY target.
+# Handle everything related to gathered targets.
 sub handle_factored_dependencies
 {
+    # Reject bad hooks.
+    foreach my $utarg ('uninstall-data-local', 'uninstall-data-hook',
+		       'uninstall-exec-local', 'uninstall-exec-hook')
+    {
+	if (&target_defined ($utarg))
+	{
+	    my $x = $utarg;
+	    $x =~ s/(data|exec)-//;
+	    &am_line_error ($utarg, "use \`$x', not \`$utarg'");
+	}
+    }
+
+    if (&target_defined ('install-local'))
+    {
+	&am_line_error ('install-local',
+			"use \`install-data-local' or \`install-exec-local', not \`install-local'");
+    }
+
+    # Install the -local hooks.
+    foreach (keys %dependencies)
+    {
+      # Hooks are installed on the -am targets.
+      s/-am$// or next;
+      if (&target_defined ("$_-local"))
+	{
+	  depend ("$_-am", "$_-local");
+	  &depend ('.PHONY', "$_-local");
+	}
+    }
+
+    # Install the -hook hooks.
+    # FIXME: Why not be as liberal as we are with -local hooks?
+    foreach ('install-exec', 'install-data')
+    {
+      if (&target_defined ("$_-hook"))
+	{
+	  $actions{"$_-am"} .=
+	    ("\t\@\$(NORMAL_INSTALL)\n"
+	     . "\t" . '$(MAKE) $(AM_MAKEFLAGS) ' . "$_-hook\n");
+	}
+    }
+
+    # Actually output gathered targets.
     foreach (sort target_cmp keys %dependencies)
     {
         # If there is nothing about this guy, skip it.
