@@ -2650,8 +2650,21 @@ sub handle_dependencies
 			  '$(SHELL) $(top_srcdir)/depcomp');
 	    }
 			      
-	    &define_pretty_variable ('DEP_FILES', '', ('@AMDEP@',
-						       sort keys %dep_files));
+	    local ($iter);
+	    local (@deplist) = sort keys %dep_files;
+
+	    &define_pretty_variable ('DEP_FILES', '', ('@AMDEP@', @deplist));
+
+	    # Generate each `include' individually.  Irix 6 make will
+	    # not properly include several files resulting from a
+	    # variable expansion; generating many separate includes
+	    # seems safest.
+	    foreach $iter (@deplist)
+	    {
+		$output_rules .= '@AMDEP@include ' . $iter . "\n";
+	    }
+	    $output_rules .= "\n";
+
 	    $output_rules .= &file_contents ('depend');
 	    push (@clean, 'depend');
 	    &push_phony_cleaners ('depend');
