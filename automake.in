@@ -6434,22 +6434,52 @@ my @require_file_paths = ();
 # encodes the rules for deciding when to do so.
 sub maybe_push_required_file
 {
-    my ($dir, $file, $fullfile) = @_;
+  my ($dir, $file, $fullfile) = @_;
 
-    if ($dir eq $relative_dir)
+  if ($dir eq $relative_dir)
     {
-	push_dist_common ($file);
-	return 1;
+      push_dist_common ($file);
+      return 1;
     }
-    elsif ($relative_dir eq '.' && ! &is_make_dir ($dir))
+  elsif ($relative_dir eq '.' && ! &is_make_dir ($dir))
     {
-	# If we are doing the topmost directory, and the file is in a
-	# subdir which does not have a Makefile, then we distribute it
-	# here.
-	push_dist_common ($fullfile);
-	return 1;
+      # If we are doing the topmost directory, and the file is in a
+      # subdir which does not have a Makefile, then we distribute it
+      # here.
+
+      # If a required file is above the source tree, it is important
+      # to prefix it with `$(srcdir)' so that no VPATH search is
+      # performed.  Otherwise problems occur with Make implementations
+      # that rewrite and simplify rules whose dependencies are found in a
+      # VPATH location.  Here is an example with OSF1/Tru64 Make.
+      #
+      #   % cat Makefile
+      #   VPATH = sub
+      #   distdir: ../a
+      #	          echo ../a
+      #   % ls
+      #   Makefile a
+      #   % make
+      #   echo a
+      #   a
+      #
+      # Dependency `../a' was found in `sub/../a', but this make
+      # implementation simplified it as `a'.  (Note that the sub/
+      # directory does not even exist.)
+      #
+      # This kind of VPATH rewriting seems hard to cancel.  The
+      # distdir.am hack against VPATH rewriting works only when no
+      # simplification is done, i.e., for dependencies which are in
+      # subdirectories, not in enclosing directories.  Hence, in
+      # the latter case we use a full path to make sure no VPATH
+      # search occurs.
+      $fullfile = '$(srcdir)/' . $fullfile
+	if $dir =~ m,^\.\.(?:$|/),;
+
+      push_dist_common ($fullfile);
+      return 1;
     }
-    return 0;
+  return 0;
 }
 
 
