@@ -2741,12 +2741,12 @@ sub handle_man_pages
     # sections used in man_MANS.
     my (%sections, %vlist);
     # Add more sections as needed.
-    foreach my $sect ('0'..'9', 'n', 'l')
+    foreach my $section ('0'..'9', 'n', 'l')
     {
-	if (&variable_defined ('man' . $sect . '_MANS'))
+	if (&variable_defined ('man' . $section . '_MANS'))
 	{
-	    $sections{$sect} = 1;
-	    $vlist{'$(man' . $sect . '_MANS)'} = 1;
+	    $sections{$section} = 1;
+	    $vlist{'$(man' . $section . '_MANS)'} = 1;
 	}
     }
 
@@ -2767,18 +2767,13 @@ sub handle_man_pages
 
     # Now for each section, generate an install and unintall rule.
     # Sort sections so output is deterministic.
-    foreach my $sect (sort keys %sections)
+    foreach my $section (sort keys %sections)
     {
-	&define_variable ('man' . $sect . 'dir', '$(mandir)/man' . $sect);
-	$output_rules .= &file_contents ('mans',
-					 ('SECTION', $sect));
+	$output_rules .= &file_contents ('mans', ('SECTION', $section));
     }
 
-    # We don't really need this, but we use it in case we ever want to
-    # support noinst_MANS.
-    &define_variable ("MANS", join (' ', sort keys %vlist));
-
-    $output_vars .= &file_contents ('mans-vars');
+    $output_vars .= &file_contents ('mans-vars',
+				    ('MANS' => join (' ', sort keys %vlist)));
 
     if (! defined $options{'no-installman'})
     {
