@@ -86,6 +86,7 @@ dup.test \
 dup2.test \
 else.test \
 empty.test \
+empty2.test \
 error.test \
 exdir.test \
 exdir2.test \
