@@ -791,7 +791,7 @@ sub define ($$$$$$$$)
   my ($var, $owner, $type, $cond, $value, $comment, $where, $pretty) = @_;
 
   prog_error "$cond is not a reference"
-    unless ref $where;
+    unless ref $cond;
 
   prog_error "$where is not a reference"
     unless ref $where;
