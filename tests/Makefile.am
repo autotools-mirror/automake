@@ -1,6 +1,6 @@
 ## Process this file with automake to create Makefile.in
 
-XFAIL_TESTS = subdir5.test auxdir2.test cond17.test
+XFAIL_TESTS = subdir5.test auxdir2.test cond17.test nobase.test
 
 TESTS =	\
 acinclude.test \
@@ -208,6 +208,7 @@ mdate3.test \
 mdate4.test \
 mkinst2.test \
 mkinstall.test \
+nobase.test \
 nodep.test \
 nodepcomp.test \
 nodist.test \
