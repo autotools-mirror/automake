@@ -38,7 +38,15 @@ struct ('ansi'    => '$',
         'flags' => '$',
         'linker' => '$',
         'output_arg' => '$',
-	'pure'   => '$');
+	'pure'   => '$',
+        '_finish' => '$');
+
+
+sub finish ($)
+{
+  my ($self) = @_;
+  &{$self->_finish} ();
+}
 
 
 package Automake;
@@ -736,7 +744,8 @@ register_language ('c',
 		    'compile' => '$(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)',
 		    'compiler' => 'COMPILE',
 		    'output-arg' => '-c',
-		    'extensions' => ['c']));
+		    'extensions' => ['c'],
+		    '_finish' => \&lang_c_finish));
 register_language ('cxx',
 		   ('linker' => 'CXXLINK',
 		    'autodep' => 'CXX',
@@ -745,7 +754,8 @@ register_language ('cxx',
 		    'compiler' => 'CXXCOMPILE',
 		    'output-arg' => '-c -o $@',
 		    'pure' => 'yes',
-		    'extensions' => ['c++', 'cc', 'cpp', 'cxx', 'C']));
+		    'extensions' => ['c++', 'cc', 'cpp', 'cxx', 'C'],
+		    '_finish' => \&lang_cxx_finish));
 register_language ('objc',
 		   ('linker' => 'OBJCLINK',
 		    'autodep' => 'OBJC',
@@ -754,26 +764,33 @@ register_language ('objc',
 		    'compiler' => 'OBJCCOMPILE',
 		    'output-arg' => '-c -o $@',
 		    'pure' => 'yes',
-		    'extensions' => ['m']));
+		    'extensions' => ['m'],
+		    '_finish' => \&lang_objc_finish));
 register_language ('header',
-		   ('extensions' => ['h', 'H', 'hxx', 'h++', 'hh', 'hpp', 'inc']));
+		   ('extensions' => ['h', 'H', 'hxx', 'h++', 'hh', 'hpp', 'inc'],
+		    # Nothing to do.
+		    '_finish' => sub { }));
 # For now, yacc and lex can't be handled on a per-exe basis.
 register_language ('yacc',
 		   ('ansi' => '1',
 		    'derived-autodep' => 'yes',
-		    'extensions' => ['y']));
+		    'extensions' => ['y'],
+		    '_finish' => \&lang_yacc_finish));
 register_language ('yaccxx',
 		   ('linker' => 'CXXLINK',
 		    'derived-autodep' => 'yes',
-		    'extensions' => ['y++', 'yy', 'yxx', 'ypp']));
+		    'extensions' => ['y++', 'yy', 'yxx', 'ypp'],
+		    '_finish' => \&lang_yacc_finish));
 register_language ('lex',
 		   ('ansi' => '1',
 		    'derived-autodep' => 'yes',
-		    'extensions' => ['l']));
+		    'extensions' => ['l'],
+		    '_finish' => \&lang_lex_finish));
 register_language ('lexxx',
 		   ('linker' => 'CXXLINK',
 		    'derived-autodep' => 'yes',
-		    'extensions' => ['l++', 'll', 'lxx', 'lpp']));
+		    'extensions' => ['l++', 'll', 'lxx', 'lpp'],
+		    '_finish' => \&lang_lex_finish));
 register_language ('asm',
 		   ('flags' => 'CFLAGS',
 		    # FIXME: asmflags?
@@ -781,7 +798,9 @@ register_language ('asm',
 		    # FIXME: a different compiler?
 		    'compiler' => 'COMPILE',
 		    'output-arg' => '-c',
-		    'extensions' => ['s', 'S']));
+		    'extensions' => ['s', 'S'],
+		    # We need the C code for assembly.
+		    '_finish' => \&lang_c_finish));
 
 register_language ('f77',
 		   ('linker' => 'F77LINK',
@@ -790,7 +809,8 @@ register_language ('f77',
 		    'compiler' => 'F77COMPILE',
 		    'output-arg' => '-c -o $@',
 		    'pure' => 'yes',
-		    'extensions' => ['f', 'for', 'f90']));
+		    'extensions' => ['f', 'for', 'f90'],
+		    '_finish' => \&lang_f77_finish));
 register_language ('ppf77',
 		   ('linker' => 'F77LINK',
 		    'flags' => 'FFLAGS',
@@ -798,7 +818,8 @@ register_language ('ppf77',
 		    'compiler' => 'PPF77COMPILE',
 		    'output-arg' => '-c -o $@',
 		    'pure' => 'yes',
-		    'extensions' => ['F']));
+		    'extensions' => ['F'],
+		    '_finish' => \&lang_ppf77_finish));
 register_language ('ratfor',
 		   ('linker' => 'F77LINK',
 		    'flags' => 'RFLAGS',
@@ -807,7 +828,8 @@ register_language ('ratfor',
 		    'compiler' => 'RCOMPILE',
 		    'output-arg' => '-c -o $@',
 		    'pure' => 'yes',
-		    'extensions' => ['r']));
+		    'extensions' => ['r'],
+		    '_finish' => \&lang_ratfor_finish));
 # FIXME: for now we can't do dependency tracking for Java.
 # autodep=GCJ
 register_language ('java',
@@ -817,7 +839,8 @@ register_language ('java',
 		    'compiler' => 'GCJCOMPILE',
 		    'output-arg' => '-c -o $@',
 		    'pure' => 'yes',
-		    'extensions' => ['java', 'class', 'zip', 'jar']));
+		    'extensions' => ['java', 'class', 'zip', 'jar'],
+		    '_finish' => \&lang_java_finish));
 
 ################################################################
 
@@ -1342,8 +1365,9 @@ sub finish_languages
 	}
 
 	# Compute the function name of the finisher and then call it.
-	my $name = 'lang_' . $lang . '_finish';
-	& $name ();
+	$lang_obj->finish;
+	#my $name = 'lang_' . $lang . '_finish';
+	#& $name ();
     }
 
     # If the project is entirely C++ or entirely Fortran 77 (i.e., 1
@@ -4993,11 +5017,6 @@ sub lang_cxx_finish
     }
 }
 
-sub lang_header_finish
-{
-    # Nothing to do.
-}
-
 # This is a helper for both lex and yacc.
 sub yacc_lex_finish_helper
 {
@@ -5078,10 +5097,6 @@ sub lang_yacc_finish
     }
 }
 
-sub lang_yaccxx_finish
-{
-    &lang_yacc_finish;
-}
 
 sub lang_lex_finish
 {
@@ -5124,16 +5139,6 @@ sub lang_lex_finish
     }
 }
 
-sub lang_lexxx_finish
-{
-    &lang_lex_finish;
-}
-
-sub lang_asm_finish
-{
-    # We need the C code for assembly.
-    &lang_c_finish;
-}
 
 sub lang_f77_finish
 {
@@ -5327,6 +5332,16 @@ sub register_language ($%)
 	{
 	  $lang_obj->derived_autodep ($value);
 	}
+      elsif ($attr eq 'extensions')
+	{
+	  # This array accessor is stupid...
+	  my $cnt = 0;
+	  foreach (@{$value})
+	    {
+	      $lang_obj->extensions ($cnt, $_);
+	      ++$cnt;
+	    }
+	}
       elsif ($attr eq 'flags')
 	{
 	  $lang_obj->flags ($value);
@@ -5343,19 +5358,13 @@ sub register_language ($%)
 	{
 	  $lang_obj->pure ($value);
 	}
-      elsif ($attr eq 'extensions')
+      elsif ($attr eq '_finish')
 	{
-	  # This array accessor is stupid...
-	  my $cnt = 0;
-	  foreach (@{$value})
-	    {
-	      $lang_obj->extensions ($cnt, $_);
-	      ++$cnt;
-	    }
+	  $lang_obj->_finish ($value);
 	}
       else
 	{
-	  prog_error ("register_language: invalid attribute: $attr");
+	  prog_error ("register_language: $lang: invalid attribute: $attr");
 	}
     }
 
