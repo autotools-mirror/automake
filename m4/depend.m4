@@ -38,11 +38,15 @@ AC_CACHE_CHECK([dependency style of $depcc],
   # in D'.
   mkdir confdir
   cd confdir
-  echo '#include "conftest.h"' > conftest.c
-  echo 'int i;' > conftest.h
 
   am_cv_$1_dependencies_compiler_type=none
   for depmode in `sed -n ['s/^#*\([a-zA-Z0-9]*\))$/\1/p'] < "$am_depcomp"`; do
+    # We need to recreate these files for each test, as the compiler may
+    # overwrite some of them when testing with obscure command lines.
+    # This happens at least with the AIX C compiler.
+    echo '#include "conftest.h"' > conftest.c
+    echo 'int i;' > conftest.h
+
     case "$depmode" in
     nosideeffect)
       # after this tag, mechanisms are not by side-effect, so they'll
