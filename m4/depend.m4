@@ -10,17 +10,17 @@
 
 
 
-# AM_DEPENDENCIES(NAME)
+# _AM_DEPENDENCIES(NAME)
 # ---------------------
 # See how the compiler implements dependency checking.
 # NAME is "CC", "CXX" or "OBJC".
 # We try a few techniques and use that to set a single cache variable.
 #
 # We don't AC_REQUIRE the corresponding AC_PROG_CC since the latter was
-# modified to invoke AM_DEPENDENCIES(CC); we would have a circular
+# modified to invoke _AM_DEPENDENCIES(CC); we would have a circular
 # dependency, and given that the user is not expected to run this macro,
 # just rely on AC_PROG_CC.
-AC_DEFUN([AM_DEPENDENCIES],
+AC_DEFUN([_AM_DEPENDENCIES],
 [AC_REQUIRE([AM_SET_DEPDIR])dnl
 AC_REQUIRE([AM_OUTPUT_DEPENDENCY_COMMANDS])dnl
 AC_REQUIRE([AM_MAKE_INCLUDE])dnl
@@ -96,7 +96,7 @@ AC_SUBST([$1DEPMODE])
 # AM_SET_DEPDIR
 # -------------
 # Choose a directory name for dependency files.
-# This macro is AC_REQUIREd in AM_DEPENDENCIES
+# This macro is AC_REQUIREd in _AM_DEPENDENCIES
 AC_DEFUN([AM_SET_DEPDIR],
 [if test -d .deps || mkdir .deps 2> /dev/null || test -d .deps; then
   DEPDIR=.deps

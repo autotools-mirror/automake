@@ -70,11 +70,11 @@ AC_REQUIRE([AC_PROG_MAKE_SET])dnl
 AC_REQUIRE([AM_DEP_TRACK])dnl
 AC_REQUIRE([AM_SET_DEPDIR])dnl
 AC_PROVIDE_IFELSE([AC_PROG_][CC],
-                  [AM_DEPENDENCIES(CC)],
+                  [_AM_DEPENDENCIES(CC)],
                   [define([AC_PROG_][CC],
-                          defn([AC_PROG_][CC])[AM_DEPENDENCIES(CC)])])dnl
+                          defn([AC_PROG_][CC])[_AM_DEPENDENCIES(CC)])])dnl
 AC_PROVIDE_IFELSE([AC_PROG_][CXX],
-                  [AM_DEPENDENCIES(CXX)],
+                  [_AM_DEPENDENCIES(CXX)],
                   [define([AC_PROG_][CXX],
-                          defn([AC_PROG_][CXX])[AM_DEPENDENCIES(CXX)])])dnl
+                          defn([AC_PROG_][CXX])[_AM_DEPENDENCIES(CXX)])])dnl
 ])
