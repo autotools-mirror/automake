@@ -1741,8 +1741,6 @@ configure substitutions that are left in are only @samp{@@LIBOBJS@@} and
 cause an invalid value for @samp{@var{prog}_DEPENDENCIES} to be
 generated.
 
-Sometimes you want to compile a single source file two different ways 
-
 
 @node A Library, Program and Library Variables, A Program, Programs
 @section Building a library
@@ -1855,10 +1853,32 @@ files in the @samp{EXTRA_} variable.
 This variable also supports @samp{dist_} and @samp{nodist_} prefixes,
 e.g., @samp{nodist_EXTRA_maude_SOURCES}.
 
+@item maude_AR
+A static library is created by default by invoking @code{$(AR) cru}
+followed by the name of the library and then the objects being put into
+the library.  You can override this by setting the @samp{_AR} variable.
+This is usually used with C++; some C++ compilers require a special
+invocation in order to instantiate all the templates which should go
+into a library.
+
 @item maude_LIBADD
+Extra objects can be added to a static library using the @samp{_LIBADD}
+variable.  This should be used for objects determined by
+@code{configure}.  Note that @samp{_LIBADD} is not used for shared
+libraries; there you must use @samp{_LDADD}.
+
 @item maude_LDADD
+Extra objects can be added to a shared library or a program by listing
+them in the @samp{_LDADD} variable.  This should be used for objects
+determined by @code{configure}.
+
+@samp{_LDADD} is inappropriate for passing program-specific linker flags
+(except for @samp{-l}, @samp{-L}, @samp{-dlopen} and @samp{-dlpreopen}).
+Use the @samp{_LDFLAGS} variable for this purpose.
+
 @item maude_LDFLAGS
-FIXME
+This variable is used to pass extra flags to the link step of a program
+or a shared library.
 
 @item maude_CFLAGS
 Automake allows you to set compilation flags on a per-program (or
@@ -1876,7 +1896,18 @@ However, if the program's @samp{_CFLAGS} variable is set, then the
 object file will be named, for instance, @file{maude-sample.o}.
 
 @item maude_DEPENDENCIES
-FIXME
+It is also occasionally useful to have a program depend on some other
+target which is not actually part of that program.  This can be done
+using the @samp{_DEPENDENCIES} variable.  Each program depends on the
+contents of such a variable, but no further interpretation is done.
+
+If @samp{_DEPENDENCIES} is not supplied, it is computed by Automake.
+The automatically-assigned value is the contents of @samp{_LDADD}, with
+most configure substitutions, @samp{-l}, @samp{-L}, @samp{-dlopen} and
+@samp{-dlpreopen} options removed.  The configure substitutions that are
+left in are only @samp{@@LIBOBJS@@} and @samp{@@ALLOCA@@}; these are
+left because it is known that they will not cause an invalid value for
+@samp{_DEPENDENCIES} to be generated.
 
 @item maude_SHORTNAME
 On some platforms the allowable file names are very short.  In order to
