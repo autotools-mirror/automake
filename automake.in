@@ -2467,13 +2467,46 @@ sub handle_scripts
 sub scan_texinfo_file
 {
     my ($filename) = @_;
+
+    # These are always created, no matter whether indexes are used or not.
     my @clean_suffixes = ('aux', 'dvi', 'log', 'ps', 'toc',
 			  # grep new.*index texinfo.tex
 			  'cp', 'fn', 'ky', 'vr', 'tp', 'pg');
 
+    # There are predefined indexes which don't follow the regular rules.
+    my %predefined_index =
+      (
+       # cindex => *.cps
+       'c' => 'cps', 'f' => 'fns', 'k' => 'kys',
+       'v' => 'vrs', 't' => 'tps', 'p' => 'pgs'
+      );
+
+    # There are commands which include a hidden index command.
+    my %hidden_index =
+      (
+       # deffn => *.fns.
+       'fn' => 'fns',     'un' => 'fns',
+       'typefn' => 'fns', 'typefun' => 'fns',
+       'mac' => 'fns', 'spec' => 'fns',
+       'op' => 'fns',  'typeop' => 'fns',
+       'method' => 'fns', 'typemethod' => 'fns',
+
+       'vr' => 'vrs', 'var' => 'vrs',
+       'typevr' => 'vrs', 'typevar' => 'vrs',
+       'opt' => 'vrs',
+       'cv' => 'vrs',
+       'ivar' => 'vrs', 'typeivar' => 'vrs',
+
+       'tp' => 'tps'
+      );
+
+    # Indexes stored into another one.  In this case, the *.??s file
+    # is not created.
+    my @syncodeindexes = ();
+
     my $texi = new IO::File ("< $filename");
     if (! $texi)
-    {
+      {
 	&am_error ("couldn't open `$filename': $!");
 	return '';
     }
@@ -2498,14 +2531,31 @@ sub scan_texinfo_file
       {
         $vfile = $1;
       }
-      elsif (/^\@defcodeindex (\w*)/)
+
+      # Try to find what are the indexes which are used.
+
+      # Creating a new category of index.
+      elsif (/^\@defcodeindex (\w+)/)
       {
         push @clean_suffixes, $1;
       }
-      elsif (/^\@syncodeindex \w+ (\w*)/)
+
+      # Storing in a predefined index.
+      elsif (/^\@([cfkvtp])index /)
       {
-        push @clean_suffixes, "$1s";
+        push @clean_suffixes, $predefined_index{$1};
       }
+      elsif (/^\@def(\w+) /)
+      {
+        push @clean_suffixes, $hidden_index{$1};
+      }
+
+      # Merging an index into an another.
+      elsif (/^\@syncodeindex (\w+) \w+/)
+      {
+	push @syncodeindexes, "$1s";
+      }
+
     }
     $texi->close;
 
@@ -2518,7 +2568,8 @@ sub scan_texinfo_file
     my $infobase = basename ($filename);
     $infobase =~ s/\.te?xi(nfo)?$//;
     my %clean_files;
-    grep { $clean_files{"$infobase.$_"} = 1 } @clean_suffixes;
+    grep { $clean_files{"$infobase.$_"} = 1    } @clean_suffixes;
+    grep { delete $clean_files{"$infobase.$_"} } @syncodeindexes;
     return ($outfile, $vfile, (sort keys %clean_files));
 }
 
