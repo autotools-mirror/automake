@@ -448,10 +448,10 @@ my %contents;
 # variable was first defined with `+='.
 my %var_was_plus_eq;
 
-# This holds definitions of all variables defined in .am files.
+# Maps a variable name to true iff the variable was defined by Automake.
 # This is used during startup to determine which variables can be
-# assigned with `
-my %am_var_defs;
+# assigned with `+='.
+my %var_is_am;
 
 # For a variable or target $ITEM which is defined conditionally,
 # this holds a hash of the conditional values.  The keys of
@@ -632,7 +632,7 @@ sub initialize_per_input ()
 
     %var_was_plus_eq = ();
 
-    %am_var_defs = ();
+    %var_is_am = ();
 
     %conditional = ();
 
@@ -3827,7 +3827,7 @@ sub handle_installdirs ()
     $output_rules .=
       &file_contents ('install',
 		      ('_am_installdirs'
-		       => $am_var_defs{'_am_installdirs'} || ''));
+		       => $contents{'_am_installdirs'} || ''));
 }
 
 
@@ -5606,15 +5606,15 @@ sub check_ambiguous_conditional ($$)
 # $BOOLEAN
 # &variable_defined ($VAR, [$COND])
 # ---------------------------------
-# See if a variable exists.  $VAR is the variable name, and $COND is
-# the condition which we should check.  If no condition is given, we
-# currently return true if the variable is defined under any
-# condition.
+# See if a variable exists, and is a user variable.  $VAR is the
+# variable name, and $COND is the condition which we should check.  If
+# no condition is given, we currently return true if the variable is
+# defined under any condition.
 sub variable_defined ($$)
 {
     my ($var, $cond) = @_;
 
-    if (defined $contents{$var})
+    if (defined $contents{$var} && !$var_is_am{$var})
     {
 	if ($cond && $conditional{$var})
 	{
@@ -5990,7 +5990,7 @@ sub variable_value_as_list_worker
     my ($var, $cond, $parent) = @_;
     my @result = ();
 
-    if (! defined $contents{$var} && ! defined $am_var_defs{$var})
+    if (! defined $contents{$var})
     {
         if (defined $targets{$var})
 	  {
@@ -6034,13 +6034,6 @@ sub variable_value_as_list_worker
 	    }
 	}
     }
-    elsif (defined $am_var_defs{$var})
-    {
-	$vars_scanned{$var} = 1;
-	&variable_conditionally_defined ($var, $parent);
-	$content_seen{$var} = 1;
-	push (@result, &value_to_list ($var, $am_var_defs{$var}, $cond));
-    }
     else
     {
 	$vars_scanned{$var} = 1;
@@ -6069,7 +6062,7 @@ sub variable_value_as_list
 
 # define_variable ($VAR, $VALUE)
 # ------------------------------
-# Define a new variable VAR to VALUE, but only if not already defined.
+# Define a new user variable VAR to VALUE, but only if not already defined.
 sub define_variable
 {
     my ($var, $value) = @_;
@@ -6079,6 +6072,7 @@ sub define_variable
 	$output_vars .= $var . ' = ' . $value . "\n";
 	$contents{$var} = $value;
 	$content_seen{$var} = 1;
+	$var_is_am{$var} = 0;
     }
     elsif ($var_was_plus_eq{$var})
     {
@@ -6398,16 +6392,11 @@ sub read_am_file
 		# If first assignment, set `+=' indicator.
 		$var_was_plus_eq{$last_var_name} =
 		    ($type eq '+'
-		     && ! defined $am_var_defs{$last_var_name});
+		     && ! $var_is_am{$last_var_name});
 	    }
-
+	    $var_is_am{$last_var_name} = 0;
 	    if ($type eq '+')
 	    {
-		if (! defined $contents{$last_var_name}
-		    && defined $am_var_defs{$last_var_name})
-		{
-		    $contents{$last_var_name} = $am_var_defs{$last_var_name};
-		}
 		if (substr ($contents{$last_var_name}, -1) eq "\n")
 		{
 		    # Insert a backslash before a trailing newline.
@@ -6791,17 +6780,23 @@ sub file_contents ($%)
  	    &prog_error ("$file:$.: macro `$var' with trailing backslash")
 	      if /\\$/;;
 	    # Accumulating variables must not be output.
-	    $am_var_defs{$var} = ''
-	      unless defined $am_var_defs{$var};
+	    $contents{$var} = ''
+	      unless defined $contents{$var};
+	    $var_is_am{$var} = 1
+	      unless defined $var_is_am{$var};
 	    if ($type eq '+')
 	      {
-		$am_var_defs{$var} .= ($am_var_defs{$var} && ' ') . $val;
+		$contents{$var} .= ($contents{$var} && ' ') . $val;
 	      }
 	    else
 	      {
-		$am_var_defs{$var} = $val;
+		$contents{$var} = $val;
+		# If the user has set some variables we were in charge
+		# of (which is detected by the first reading of
+		# `header-vars.am'), we must not output them.
 		$result_vars .= "$separator$comment$_\n"
-		  unless defined $contents{$var};
+		  if $var_is_am{$var};
+
 	      }
  	    $comment = $separator = '';
  	}
@@ -6860,6 +6855,11 @@ sub am_primary_prefixes
     $valid{'EXTRA'} = 0;
     foreach my $varname (keys %contents)
     {
+        # Automake is allowed to define variables that look like they
+        # are magic variables, such as INSTALL_DATA.
+        next
+	  if $var_is_am{$varname};
+
 	if ($varname =~ /^(nobase_)?(dist_|nodist_)?(.*)_$primary$/)
 	{
 	    my ($base, $dist, $X) = ($1 || '', $2 || '', $3 || '');
