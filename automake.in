@@ -1431,8 +1431,6 @@ sub handle_single_transform_list ($$$@)
         my $base = $2;
         my $extension = $3;
 
-        my $xbase = $base;
-
         # We must generate a rule for the object if it requires
         # its own flags.
         my $rule = '';
@@ -1522,7 +1520,6 @@ sub handle_single_transform_list ($$$@)
             if ($r == $LANG_SUBDIR && $directory ne '')
             {
                 $object = $directory . '/' . $object;
-                $xbase = $directory . '/' . $base;
             }
 
             # If doing dependency tracking, then we can't print
@@ -1768,7 +1765,6 @@ sub handle_source_transform
 sub handle_lib_objects
 {
     my ($xname, $var, $lex_seen) = @_;
-    my $ret;
 
     &prog_error ("handle_lib_objects: $var undefined")
 	if ! &variable_defined ($var);
@@ -1776,23 +1772,14 @@ sub handle_lib_objects
     &prog_error ("handle_lib_objects: lex_seen and $var =~ /LIBADD/")
 	if $lex_seen && $var =~ /LIBADD/;
 
-    my @conds = &variable_conditions ($var);
-    if (! @conds)
-    {
-	$ret = &handle_lib_objects_cond ($xname, $var, $lex_seen, '');
-    }
-    else
-    {
-	$ret = 0;
-	foreach my $cond (@conds)
-	{
-	    if (&handle_lib_objects_cond ($xname, $var, $lex_seen, $cond))
-	    {
-		$ret = 1;
-	    }
-	}
-    }
-
+    my $ret = 0;
+    foreach my $cond (&variable_conditions ($var))
+      {
+	if (&handle_lib_objects_cond ($xname, $var, $lex_seen, $cond))
+	  {
+	    $ret = 1;
+	  }
+      }
     return $ret;
 }
 
@@ -5594,18 +5581,29 @@ sub macro_define ($$$$$$)
 }
 
 
-# &variable_delete ($VAR)
-# -----------------------
-# Forget about a variable.
-sub variable_delete ($)
+# &variable_delete ($VAR, [@CONDS])
+# ---------------------------------
+# Forget about $VAR under the conditions @CONDS, or completely if
+# @CONDS is empty.
+sub variable_delete ($@)
 {
-  my ($var) = @_;
+  my ($var, @conds) = @_;
 
-  delete $var_value{$var};
-  delete $var_line{$var};
-  delete $var_is_am{$var};
-  delete $var_comment{$var};
-  delete $var_type{$var};
+  if (!@conds)
+    {
+      delete $var_value{$var};
+      delete $var_line{$var};
+      delete $var_is_am{$var};
+      delete $var_comment{$var};
+      delete $var_type{$var};
+    }
+  else
+    {
+      foreach my $cond (@conds)
+	{
+	  delete $var_value{$var}{$cond};
+	}
+    }
 }
 
 

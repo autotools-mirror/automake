@@ -1,5 +1,189 @@
 2001-04-09  Akim Demaille  <akim@epita.fr>
 
+	* automake.in (&handle_single_transform_list): Remove $xbase,
+	unused.
+	(&handle_source_transform): All the variables have conditions now,
+	simplify.
+	(&variable_delete): Admit an argument @conds.
+
+2001-04-09  Akim Demaille  <akim@epita.fr>
+
+	* automake.in (&am_install_var): When adding `$(EXEEXT)' to PROGRAMS,
+	merge the `build' and `set' loops into one.
+
+	@@ -7086,37 +7082,21 @@ sub am_install_var
+	# include EXEEXT when in Cygwin32 mode.
+	if ($primary eq 'PROGRAMS')
+	{
+	-		my @conds = &variable_conditions ($one_name);
+	-
+	-		my @condvals;
+	-		foreach my $cond (@conds)
+	-		  {
+	-		    my @one_binlist = ();
+	-		    my @condval = &variable_value_as_list ($one_name,
+	-							   $cond);
+	-		    foreach my $rcurs (@condval)
+	-		      {
+	-			if ($rcurs =~ /\./ || $rcurs =~ /^\@.*\@$/)
+	-			  {
+	-			    push (@one_binlist, $rcurs);
+	-			  }
+	-			else
+	-			  {
+	-			    push (@one_binlist, $rcurs . '$(EXEEXT)');
+	-			  }
+	-		      }
+	-
+	-		    push (@condvals, $cond);
+	-		    push (@condvals, join (' ', @one_binlist));
+	-		  }
+	-
+	-		variable_delete ($one_name);
+	-		while (@condvals)
+	-		  {
+	-		    my $cond = shift (@condvals);
+	-		    my @val = split (' ', shift (@condvals));
+	-		    &define_pretty_variable ($one_name, $cond, @val);
+	-		  }
+	+	      foreach my $cond (&variable_conditions ($one_name))
+	+		{
+	+		  my @sources;
+	+		  foreach my $source (&variable_value_as_list ($one_name,
+	+							       $cond))
+	+		    {
+	+		      if ($source !~ /\./ && $source !~ /^\@.*\@$/)
+	+			{
+	+			  $source .= '$(EXEEXT)';
+	+			}
+	+		      push (@sources, $source);
+	+		    }
+	+		  variable_delete ($one_name, $cond);
+	+		  &define_pretty_variable ($one_name, $cond, @sources);
+	+		}
+	}
+
+	# "EXTRA" shouldn't be used when generating clean targets,
+
+This is yet another bug found by Robert.  There was no change in the
+Makefile.in, but here is what happened (doubled line are debugging
+messages).
+
+	|| BEFORE
+	||   bin_PROGRAMS (User, where = 21) =
+	||   {
+	||
+	|| 	TRUE => hell hell.static $(BUILD_helldl)
+	||   }
+	|| -> BINARY_HELLDL_TRUE
+	| Makefile.am:21: bin_PROGRAMS was already defined in condition TRUE, which implies condition BINARY_HELLDL_TRUE
+	|   bin_PROGRAMS (User, where = 21) =
+	|   {
+	|
+	| 	TRUE => hell hell.static $(BUILD_helldl)
+	|   }
+	|| -> BINARY_HELLDL_FALSE
+	|| AFTER
+	||   bin_PROGRAMS (User, where = 21) =
+	||   {
+	||
+	|| 	TRUE => hell hell.static $(BUILD_helldl)
+	|| 	BINARY_HELLDL_TRUE => hell$(EXEEXT) hell.static helldl$(EXEEXT)
+	|| 	BINARY_HELLDL_FALSE =>
+	||   }
+
+I had not understood this loop was in charge of expanding PROGRAMS
+into its closed set of conditionals.  I thought it was here just to
+append EXEEXT everywhere needed (*including* in the sub variables),
+but no redefine it.  Since it was already defined to TRUE adding any
+new definition (but under FALSE) will necessarily cause a conflict
+(good to see all work properly and catch it :).
+
+In fact, to be honest, I no longer understand very well why we perform
+such a closure.  I mean, as is, Automake transforms (this is
+cond3.test)
+
+	| bin_PROGRAMS = targ
+	|
+	| if ONE
+	| SONE = one.c
+	| else
+	| SONE =
+	| endif
+	|
+	| if TWO
+	| STWO = two.c
+	| else
+	| STWO =
+	| endif
+	|
+	| if THREE
+	| STHREE = three.c
+	| else
+	| STHREE =
+	| endif
+	|
+	| targ_SOURCES = $(SONE) $(STWO) $(STHREE)
+
+into
+
+	| @ONE_FALSE@@THREE_FALSE@@TWO_TRUE@am_targ_OBJECTS = two.$(OBJEXT)
+	| @ONE_FALSE@@THREE_FALSE@@TWO_FALSE@am_targ_OBJECTS =
+	| @ONE_FALSE@@THREE_TRUE@@TWO_TRUE@am_targ_OBJECTS = two.$(OBJEXT) \
+	| @ONE_FALSE@@THREE_TRUE@@TWO_TRUE@ three.$(OBJEXT)
+	| @ONE_FALSE@@THREE_TRUE@@TWO_FALSE@am_targ_OBJECTS = three.$(OBJEXT)
+	| @ONE_TRUE@@THREE_FALSE@@TWO_TRUE@am_targ_OBJECTS = one.$(OBJEXT) \
+	| @ONE_TRUE@@THREE_FALSE@@TWO_TRUE@ two.$(OBJEXT)
+	| @ONE_TRUE@@THREE_FALSE@@TWO_FALSE@am_targ_OBJECTS = one.$(OBJEXT)
+	| @ONE_TRUE@@THREE_TRUE@@TWO_TRUE@am_targ_OBJECTS = one.$(OBJEXT) \
+	| @ONE_TRUE@@THREE_TRUE@@TWO_TRUE@ two.$(OBJEXT) three.$(OBJEXT)
+	| @ONE_TRUE@@THREE_TRUE@@TWO_FALSE@am_targ_OBJECTS = one.$(OBJEXT) \
+	| @ONE_TRUE@@THREE_TRUE@@TWO_FALSE@ three.$(OBJEXT)
+
+why don't we just output
+
+	| @ONE_TRUE@am_SONE_OBJECTS = one.$(OBJEXT)
+	| @ONE_FALSE@am_SONE_OBJECTS =
+	|
+	| @TWO_TRUE@am_STWO_OBJECTS = two.$(OBJEXT)
+	| @TWO_FALSE@am_STWO_OBJECTS =
+	|
+	| @THREE_TRUE@am_STHREE_OBJECTS = three.$(OBJEXT)
+	| @THREE_FALSE@am_STHREE_OBJECTS =
+	|
+	| am_targ_OBJECTS = $(am_SONE_OBJECTS) $(am_STWO_OBJECTS) $(am_STHREE_OBJECTS)
+
+which means also, why do we look for the closure of PROGRAMS, instead
+of just adding $(EXEEXT) to all its components and sub components
+(i.e., inside sub vars such as $(SONE) above being a sub var of
+targ_SOURCES)?
+
+
+Aaaaaaaaaaah!  I think I know... Must be because of `+='.
+
+Hm... No.  Indeed we transform
+
+	| FOO = foo
+	| if BAR
+	| FOO += BAR
+	| endif
+
+into
+
+	| @BAR_TRUE@FOO = foo bar
+	| @BAR_FALSE@FOO = foo
+
+but this seems good to me too?
+
+	| FOO = foo $(BAR_FOO)
+	| @BAR_TRUE@BAR_FOO = bar
+	| @BAR_FALSE@BAR_FOO =
+
+
+
+
+2001-04-09  Akim Demaille  <akim@epita.fr>
+
 	* automake.in ($source_suffix_pattern): Remove, unused.
 	%extension_map seems to have replaced it.
 
