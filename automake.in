@@ -126,8 +126,17 @@ my $libdir = "@datadir@/@PACKAGE@-@APIVERSION@";
 # Some regular expressions.  One reason to put them here is that it
 # makes indentation work better in Emacs.
 
+# Writting singled-quoted-$-terminated regexes is a pain because
+# perl-mode thinks of $' as the ${'} variable (intead of a $ followed
+# by a closing quote.  Letting perl-mode think the quote is not closed
+# leads to all sort of misindentations.  On the other hand, defining
+# regexes as double-quoted strings is far less readable.  So usually
+# we will write:
+#
+#  $REGEX = '^regex_value' . "\$";
+
 my $IGNORE_PATTERN = '^\s*##([^#\n].*)?\n';
-my $WHITE_PATTERN = '^\s*$';
+my $WHITE_PATTERN = '^\s*' . "\$";
 my $COMMENT_PATTERN = '^#';
 my $TARGET_PATTERN='[$a-zA-Z_.@][-.a-zA-Z0-9_(){}/$+@]*';
 # A rule has three parts: a list of targets, a list of dependencies,
@@ -135,25 +144,29 @@ my $TARGET_PATTERN='[$a-zA-Z_.@][-.a-zA-Z0-9_(){}/$+@]*';
 my $RULE_PATTERN =
   "^($TARGET_PATTERN(?:(?:\\\\\n|\\s)+$TARGET_PATTERN)*) *:([^=].*|)\$";
 
-my $SUFFIX_RULE_PATTERN = '^(\.[a-zA-Z0-9_(){}$+@]+)(\.[a-zA-Z0-9_(){}$+@]+)$';
+my $SUFFIX_RULE_PATTERN =
+    '^(\.[a-zA-Z0-9_(){}$+@]+)(\.[a-zA-Z0-9_(){}$+@]+)' . "\$";
 # Only recognize leading spaces, not leading tabs.  If we recognize
 # leading tabs here then we need to make the reader smarter, because
 # otherwise it will think rules like `foo=bar; \' are errors.
-my $MACRO_PATTERN = '^[A-Za-z0-9_@]+$';
-my $ASSIGNMENT_PATTERN = '^ *([^ \t=:+]*)\s*([:+]?)=\s*(.*)$';
+my $MACRO_PATTERN = '^[A-Za-z0-9_@]+' . "\$";
+my $ASSIGNMENT_PATTERN = '^ *([^ \t=:+]*)\s*([:+]?)=\s*(.*)' . "\$";
 # This pattern recognizes a Gnits version id and sets $1 if the
 # release is an alpha release.  We also allow a suffix which can be
 # used to extend the version number with a "fork" identifier.
 my $GNITS_VERSION_PATTERN = '\d+\.\d+([a-z]|\.\d+)?(-[A-Za-z0-9]+)?';
-my $IF_PATTERN =          '^if\s+(!?)\s*([A-Za-z][A-Za-z0-9_]*)\s*(?:#.*)?$';
-my $ELSE_PATTERN =   '^else(?:\s+(!?)\s*([A-Za-z][A-Za-z0-9_]*))?\s*(?:#.*)?$';
-my $ENDIF_PATTERN = '^endif(?:\s+(!?)\s*([A-Za-z][A-Za-z0-9_]*))?\s*(?:#.*)?$';
-my $PATH_PATTERN='(\w|[/.-])+';
+
+my $IF_PATTERN = '^if\s+(!?)\s*([A-Za-z][A-Za-z0-9_]*)\s*(?:#.*)?' . "\$";
+my $ELSE_PATTERN =
+  '^else(?:\s+(!?)\s*([A-Za-z][A-Za-z0-9_]*))?\s*(?:#.*)?' . "\$";
+my $ENDIF_PATTERN =
+  '^endif(?:\s+(!?)\s*([A-Za-z][A-Za-z0-9_]*))?\s*(?:#.*)?' . "\$";
+my $PATH_PATTERN = '(\w|[/.-])+';
 # This will pass through anything not of the prescribed form.
 my $INCLUDE_PATTERN = ('^include\s+'
 		       . '((\$\(top_srcdir\)/' . $PATH_PATTERN . ')'
 		       . '|(\$\(srcdir\)/' . $PATH_PATTERN . ')'
-		       . '|([^/\$]' . $PATH_PATTERN. '))\s*(#.*)?$');
+		       . '|([^/\$]' . $PATH_PATTERN . '))\s*(#.*)?' . "\$");
 
 # This handles substitution references like ${foo:.a=.b}.
 my $SUBST_REF_PATTERN = "^([^:]*):([^=]*)=(.*)\$";
@@ -162,7 +175,7 @@ my $SUBST_REF_PATTERN = "^([^:]*):([^=]*)=(.*)\$";
 my $DASH_D_PATTERN = "(^|\\s)-d(\\s|\$)";
 # Directories installed during 'install-exec' phase.
 my $EXEC_DIR_PATTERN =
-    '^(?:bin|sbin|libexec|sysconf|localstate|lib|pkglib|.*exec.*)$'; #'
+  '^(?:bin|sbin|libexec|sysconf|localstate|lib|pkglib|.*exec.*)' . "\$";
 
 # Constants to define the "strictness" level.
 use constant FOREIGN => 0;
@@ -8324,6 +8337,7 @@ Library files:
   -c, --copy             with -a, copy missing files (default is symlink)
   -f, --force-missing    force update of standard files
 EOF
+#' <- unfool perl-mode
 
     my ($last, @lcomm);
     $last = '';
@@ -8392,3 +8406,20 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 EOF
   exit 0;
 }
+
+### Setup "GNU" style for perl-mode and cperl-mode.
+## Local Variables:
+## perl-indent-level: 2
+## perl-continued-statement-offset: 2
+## perl-continued-brace-offset: 0
+## perl-brace-offset: 0
+## perl-brace-imaginary-offset: 0
+## perl-label-offset: -2
+## cperl-indent-level: 2
+## cperl-brace-offset: 0
+## cperl-continued-brace-offset: 0
+## cperl-label-offset: -2
+## cperl-extra-newline-before-brace: t
+## cperl-merge-trailing-else: nil
+## cperl-continued-statement-offset: 2
+## End:
