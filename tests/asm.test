@@ -1,0 +1,73 @@
+#! /bin/sh
+
+# Test of basic assembly functionality
+
+. $srcdir/defs || exit 1
+
+cat > configure.in << 'END'
+AC_INIT
+AM_INIT_AUTOMAKE(nonesuch, nonesuch)
+AC_ARG_PROGRAM
+AC_PROG_INSTALL
+AC_PROG_MAKE_SET
+AC_SUBST(ASFLAGS)
+AC_OUTPUT(Makefile)
+END
+
+cat > Makefile.am << 'END'
+noinst_PROGRAMS = maude
+maude_SOURCES = maude.s
+END
+
+: > maude.s
+
+# Should fail because we need cc and as.
+echo 1
+$AUTOMAKE && exit 1
+
+cat > configure.in << 'END'
+AC_INIT
+AM_INIT_AUTOMAKE(nonesuch, nonesuch)
+AC_ARG_PROGRAM
+AC_PROG_INSTALL
+AC_PROG_MAKE_SET
+AC_PROG_CC
+AC_SUBST(ASFLAGS)
+AC_OUTPUT(Makefile)
+END
+
+# We still need as.
+echo 2
+$AUTOMAKE && exit 1
+
+cat > configure.in << 'END'
+AC_INIT
+AM_INIT_AUTOMAKE(nonesuch, nonesuch)
+AC_ARG_PROGRAM
+AC_PROG_INSTALL
+AC_PROG_MAKE_SET
+AS='$(CC)'
+AC_SUBST(AS)
+AC_PROG_CC
+AC_OUTPUT(Makefile)
+END
+
+# We need ASFLAGS.
+echo 3
+$AUTOMAKE && exit 1
+
+cat > configure.in << 'END'
+AC_INIT
+AM_INIT_AUTOMAKE(nonesuch, nonesuch)
+AC_ARG_PROGRAM
+AC_PROG_INSTALL
+AC_PROG_MAKE_SET
+AS='$(CC)'
+AC_SUBST(AS)
+AC_PROG_CC
+AC_SUBST(ASFLAGS)
+AC_OUTPUT(Makefile)
+END
+
+echo 4
+$AUTOMAKE

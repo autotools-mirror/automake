@@ -888,15 +888,14 @@ register_language ('name' => 'lexxx',
 # Assembler.
 register_language ('name' => 'asm',
 		   'Name' => 'Assembler',
-		   'flags' => 'CFLAGS',
-		   # FIXME: asmflags?
-		   'compile' => '$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)',
-		   # FIXME: a different compiler?
-		   'compiler' => 'COMPILE',
+		   'flags' => 'ASFLAGS',
+		   # Users can set AM_ASFLAGS to includes DEFS, INCLUDES,
+		   # or anything else required.  They can also set AS.
+		   'compile' => '$(AS) $(AM_ASFLAGS) $(ASFLAGS)',
+		   'compiler' => 'ASCOMPILE',
 		   'compile_flag' => '-c',
 		   'extensions' => ['s', 'S'],
-		   # We need the C code for assembly.
-		   '_finish' => \&lang_c_finish);
+		   '_finish' => \&lang_asm_finish);
 
 # Fortran 77
 register_language ('name' => 'f77',
@@ -5211,6 +5210,22 @@ sub lang_c_finish
 	# FIXME: line number.
 	&am_error ("C source seen but `CC' not defined in `$configure_ac'");
     }
+}
+
+sub lang_asm_finish
+{
+    if (! defined $configure_vars{'AS'})
+    {
+	&am_error ("assembly source seen but `AS' not defined");
+    }
+
+    if (! defined $configure_vars{'ASFLAGS'})
+    {
+	&am_error ("assembly source seen but `ASFLAGS' not defined in `$configure_ac'");
+    }
+
+    # Also use the C code, since with assembly we still use the C linker.
+    &lang_c_finish;
 }
 
 # This is a helper for both lex and yacc.
