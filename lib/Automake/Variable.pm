@@ -620,7 +620,7 @@ sub value_as_list_recursive ($;%)
      # Collect results.
      sub {
        my ($var, $parent_cond, @allresults) = @_;
-       return map { my ($cond, @vals) = @$_; return @vals } @allresults;
+       return map { my ($cond, @vals) = @$_; @vals } @allresults;
      },
      %options);
 }
