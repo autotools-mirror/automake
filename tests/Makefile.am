@@ -259,6 +259,7 @@ texinfo5.test \
 texinfo6.test \
 texinfo7.test \
 texinfo8.test \
+texinfo9.test \
 unused.test \
 version.test \
 version2.test \

@@ -2290,10 +2290,19 @@ sub handle_texinfo
     my @texi_cleans;
     my $canonical;
 
+    my %texi_suffixes;
     foreach my $info_cursor (@texis)
     {
         my $infobase = $info_cursor;
         $infobase =~ s/\.(txi|texinfo|texi)$//;
+
+	if ($infobase eq $info_cursor)
+	{
+	    # FIXME: report line number.
+	    &am_error ("texinfo file \`$info_cursor' has unrecognized extension");
+	    next;
+	}
+	$texi_suffixes{$1} = 1;
 
 	# If 'version.texi' is referenced by input file, then include
 	# automatic versioning capability.
@@ -2368,7 +2377,7 @@ sub handle_texinfo
 			  . join (' ', @texi_deps)
 			  . "\n" . $infobase . ".dvi: "
 			  . join (' ', @texi_deps)
-			  . "\n\n");
+			  . "\n");
 
 	push (@info_deps_list, $out_file);
 	push (@dvis_list, $infobase . '.dvi');
@@ -2424,12 +2433,18 @@ sub handle_texinfo
         $texinfodir = '$(srcdir)';
 	$need_texi_file = 1;
     }
+
     my $xform =
       &transform ('TEXINFODIR' => $texinfodir,
 		  'TEXICLEAN' => &pretty_print_internal ("\t-rm -f",
 							 "\t  ",
 							 @texi_cleans));
-
+    foreach my $txsfx (sort keys %texi_suffixes)
+    {
+	$output_rules .= &file_contents ('texibuild',
+					 $xform
+					 . &transform ('SUFFIX' => $txsfx));
+    }
     $output_rules .= &file_contents ('texinfos', $xform);
     push (@dist_targets, 'dist-info');
 

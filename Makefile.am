@@ -17,7 +17,7 @@ java-clean.am java.am kr-extra.am library.am libs-clean.am libs.am \
 libtool.am lisp-clean.am lisp.am ltlib-clean.am ltlib.am ltlibrary.am \
 mans-vars.am mans.am multilib.am program.am progs-clean.am progs.am \
 python.am python-clean.am remake-hdr.am remake.am scripts.am \
-subdirs.am tags-clean.am tags.am texi-vers.am texinfos.am
+subdirs.am tags-clean.am tags.am texi-vers.am texinfos.am texibuild.am
 
 dist_pkgdata_DATA = COPYING INSTALL texinfo.tex ansi2knr.c ansi2knr.1 \
 $(amfiles)
