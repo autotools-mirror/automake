@@ -9,6 +9,8 @@ dnl AM_INIT_AUTOMAKE(package,version, [no-define])
 
 AC_DEFUN(AM_INIT_AUTOMAKE,
 [AC_REQUIRE([AC_PROG_INSTALL])
+dnl We require 2.13 because we rely on SHELL being computed by configure.
+AC_PREREQ([2.13])
 PACKAGE=[$1]
 AC_SUBST(PACKAGE)
 VERSION=[$2]
