@@ -5660,6 +5660,10 @@ sub define_variable
 	$contents{$var} = $value;
 	$content_seen{$var} = 1;
     }
+    elsif ($var_was_plus_eq{$var})
+    {
+	&am_line_error ($var, "internally generated variable \`$var' was set with \`+='");
+    }
 }
 
 # Like define_variable, but the value is a list, and the variable may
@@ -5950,22 +5954,32 @@ sub read_am_file
 		$value = $3;
 	    }
 	    local ($type) = $2;
+
+	    if (! defined $contents{$last_var_name})
+	    {
+		# The first assignment to a macro sets the line
+		# number.  Ideally I suppose we would associate line
+		# numbers with random bits of text.
+		$content_lines{$last_var_name} = $.;
+
+		# If first assignment, set `+=' indicator.
+		$var_was_plus_eq{$last_var_name} =
+		    ($type eq '+'
+		     && ! defined $am_var_defs{$last_var_name});
+	    }
+
 	    if ($type eq '+')
 	    {
 		if (! defined $contents{$last_var_name}
-		    && defined $configure_vars{$last_var_name})
+		    && defined $am_var_defs{$last_var_name})
 		{
-		    $contents{$last_var_name} = '@' . $last_var_name . '@';
+		    $contents{$last_var_name} = $am_var_defs{$last_var_name};
 		}
 		$contents{$last_var_name} .= ' ' . $value;
 	    }
 	    else
 	    {
 		$contents{$last_var_name} = $value;
-		# The first assignment to a macro sets the line
-		# number.  Ideally I suppose we would associate line
-		# numbers with random bits of text.
-		$content_lines{$last_var_name} = $.;
 	    }
 	    local ($cond_string) = join ('', @conditional_stack);
 	    if (@conditional_stack)
@@ -6074,25 +6088,11 @@ sub read_am_file
 	if (@conditional_stack);
 }
 
-# Read main am file.
-sub read_main_am_file
+# A helper for read_main_am_file which initializes configure variables
+# and variables from header-vars.am.  This is a subr so we can call it
+# twice.
+sub define_standard_variables
 {
-    local ($amfile) = @_;
-
-    $output_vars = ("# $in_file_name generated automatically by automake "
-		    . $VERSION . " from $am_file_name\n");
-
-    # Generate copyright for generated Makefile.in.
-    $output_vars .= $gen_copyright;
-
-    # The keys here are variables we want to dump at the end of this
-    # function.  The values are corresponding comments.
-    local (%am_vars) = ();
-    local (@var_list) = ();
-    local (%def_type) = ();
-
-    &read_am_file ($amfile);
-
     # Compute relative location of the top object directory.
     local (@topdir) = ();
     foreach (split (/\//, $relative_dir))
@@ -6142,6 +6142,35 @@ sub read_main_am_file
     {
 	&define_configure_variable ($curs);
     }
+}
+
+# Read main am file.
+sub read_main_am_file
+{
+    local ($amfile) = @_;
+
+    # The keys here are variables we want to dump at the end of this
+    # function.  The values are corresponding comments.
+    local (%am_vars) = ();
+    local (@var_list) = ();
+    local (%def_type) = ();
+
+    # We want to predefine as many variables as possible.  This lets
+    # the user set them with `+=' in Makefile.am.  However, we don't
+    # want these initial definitions to end up in the output quite
+    # yet.  So we adopt a hack: read the `.am' file twice, throwing
+    # away the output the first time.  We also squirrel away a list of
+    # all the variables defined by the .am file so that we know which
+    # ones to remove from the content list.
+
+    # First pass.
+    &define_standard_variables;
+    local (%saved_contents) = %contents;
+
+    # Read user file, but discard text of variable assignments we just
+    # made.
+    $output_vars = '';
+    &read_am_file ($amfile);
 
     # Now dump the variables that were defined.  We do it in the same
     # order in which they were defined (skipping duplicates).
@@ -6170,6 +6199,30 @@ sub read_main_am_file
 			     . $contents{$curs} . "\n");
 	}
     }
+
+    # Generate copyright header for generated Makefile.in.
+    local ($ov) = $output_vars;
+    $output_vars = ("# $in_file_name generated automatically by automake "
+		   . $VERSION . " from $am_file_name\n");
+    $output_vars .= $gen_copyright;
+
+    # Now go through and delete all the variables that the user did
+    # not change.
+    local ($var);
+    foreach $var (keys %saved_contents)
+    {
+	if ($contents{$var} eq $saved_contents{$var})
+	{
+	    delete $contents{$var};
+	}
+    }
+
+    # Re-read the standard variables, and this time keep their
+    # contributions to the output.  Then add the user's output to the
+    # end.
+    &define_standard_variables;
+    $output_vars .= $ov;
+
 }
 
 ################################################################
@@ -6286,6 +6339,15 @@ sub initialize_per_input
     # This holds the names which are targets.  These also appear in
     # %contents.
     %targets = ();
+
+    # This maps a variable name onto a flag.  The flag is true iff the
+    # variable was first defined with `+='.
+    %var_was_plus_eq = ();
+
+    # This holds definitions of all variables defined in .am files.
+    # This is used during startup to determine which variables can be
+    # assigned with `+='.
+    %am_var_defs = ();
 
     # For a variable or target which is defined conditionally, this
     # holds an array of the conditional values.  The array is composed
@@ -6495,6 +6557,9 @@ sub file_contents_with_transform
 	    $result_vars .= $comment . $spacing . $_ if ! $skipping;
 	    $comment = $spacing = '';
 	    $saw_bk = /\\$/;
+	    print STDERR "automake: programming error: .am macro \`$1' with trailing backslash\n"
+		if $saw_bk;
+	    $am_var_defs{$1} = $3;
 	}
 	else
 	{
