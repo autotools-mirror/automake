@@ -88,8 +88,7 @@ published by the Free Software Foundation raise funds for
 * Examples::                    Some example packages
 * Invoking Automake::           Creating a Makefile.in
 * configure::                   Scanning configure.ac or configure.in
-* Top level::                   The top-level Makefile.am
-* Alternative::                 An alternative approach to subdirectories
+* Directories::                 Declaring subdirectories
 * Programs::                    Building programs and libraries
 * Other objects::               Other derived objects
 * Other GNU Tools::             Other GNU Tools
@@ -152,6 +151,13 @@ Autoconf macros supplied with Automake
 
 * Public macros::               Macros that you can use.
 * Private macros::              Macros that you should not use.
+
+Directories
+
+* Subdirectories::              Building subdirectories recursively
+* Conditional Subdirectories::  Conditionally not building directories
+* Alternative::                 Subdirectories without recursion
+* Subpackages::                 Nesting packages
 
 Building Programs and Libraries
 
@@ -2138,9 +2144,30 @@ compatibility should be really easy provided all macros are properly
 written (@pxref{Extending aclocal}).
 
 
-@node Top level
-@chapter The top-level @file{Makefile.am}
 
+@node Directories
+@chapter Directories
+
+For simple projects that distributes all files in the same directory
+it is enough to have a single @file{Makefile.am} that builds
+everything in place.
+
+In larger projects it is common to organize files in different
+directories, in a tree.  For instance one directory per program, per
+library or per module.  The traditional approach is to build these
+subdirectory recursively: each directory contains its @file{Makefile}
+(generated from @file{Makefile.am}), and when @command{make} is run
+from the top level directory it enters each subdirectory in turn to
+build its contents.
+
+@menu
+* Subdirectories::              Building subdirectories recursively
+* Conditional Subdirectories::  Conditionally not building directories
+* Alternative::                 Subdirectories without recursion
+* Subpackages::                 Nesting packages
+@end menu
+
+@node Subdirectories
 @section Recursing subdirectories
 
 @cindex SUBDIRS, explained
@@ -2157,7 +2184,8 @@ both locally and in all specified subdirectories.  Note that the
 directories listed in @code{SUBDIRS} are not required to contain
 @file{Makefile.am}s; only @file{Makefile}s (after configuration).
 This allows inclusion of libraries from packages which do not use
-Automake (such as @code{gettext}).
+Automake (such as @code{gettext}; see also @ref{Third-Party
+Makefiles}).
 
 In packages that use subdirectories, the top-level @file{Makefile.am} is
 often very short.  For instance, here is the @file{Makefile.am} from the
@@ -2174,7 +2202,7 @@ of the @code{MAKE} variable.  It passes the value of the variable
 @file{Makefile.am} if there are flags you must always pass to
 @code{make}.
 @vindex MAKE
-@vindex MAKEFLAGS
+@vindex AM_MAKEFLAGS
 
 The directories mentioned in @code{SUBDIRS} are usually direct
 children of the current directory, each subdirectory containing its
@@ -2183,13 +2211,29 @@ subdirectories.  Automake can be used to construct packages of
 arbitrary depth this way.
 
 By default, Automake generates @file{Makefiles} which work depth-first
-(@samp{postfix}).  However, it is possible to change this ordering.
-You can do this by putting @samp{.} into @code{SUBDIRS}.  For
-instance, putting @samp{.}  first will cause a @samp{prefix} ordering
-of directories.  All @samp{clean} rules are run in reverse
-order of build rules.
+in postfix order: the subdirectories are built before the current
+directory.  However, it is possible to change this ordering.  You can
+do this by putting @samp{.} into @code{SUBDIRS}.  For instance,
+putting @samp{.}  first will cause a @samp{prefix} ordering of
+directories.
 
-@section Conditional subdirectories
+Using
+
+@example
+SUBDIRS = lib src . test
+@end example
+
+@noindent
+will cause @file{lib/} to be built before @file{src/}, then the
+current directory will be built, finally the @file{test/} directory
+will be built.  It is customary to arrange test directories to be
+built after everything else since they are meant to test what have
+been constructed.
+
+All @samp{clean} rules are run in reverse order of build rules.
+
+@node Conditional Subdirectories
+@section Conditional Subdirectories
 @cindex Subdirectories, building conditionally
 @cindex Conditional subdirectories
 @cindex @code{SUBDIRS}, conditional
@@ -2208,18 +2252,49 @@ built when the variable @code{$want_opt} was set to @code{yes}.)
 Running @code{make} should thus recurse into @file{src/} always, and
 then maybe in @file{opt/}.
 
-However @code{make dist} should always recurse into both @file{src/} and
-@file{opt/}.  Because @file{opt/} should be distributed even if it is
-not needed in the current configuration. This means @file{opt/Makefile}
-should be created unconditionally.  @footnote{Don't try seeking a
-solution where @file{opt/Makefile} is created conditionally, this is a
-lot trickier than the solutions presented here.}
+However @code{make dist} should always recurse into both @file{src/}
+and @file{opt/}.  Because @file{opt/} should be distributed even if it
+is not needed in the current configuration. This means
+@file{opt/Makefile} should be created @emph{unconditionally}.
 
 There are two ways to setup a project like this.  You can use Automake
 conditionals (@pxref{Conditionals}) or use Autoconf @code{AC_SUBST}
-variables (@pxref{Setting Output Variables, , Setting Output Variables,
-autoconf, The Autoconf Manual}).  Using Automake conditionals is the
-preferred solution.
+variables (@pxref{Setting Output Variables, , Setting Output
+Variables, autoconf, The Autoconf Manual}).  Using Automake
+conditionals is the preferred solution.  Before we illustrate these
+two possibility, let's introduce @code{DIST_SUBDIRS}.
+
+@subsection @code{SUBDIRS} vs. @code{DIST_SUBDIRS}
+@cindex @code{DIST_SUBDIRS}, explained
+
+Automake considers two sets of directories, defined by the variables
+@code{SUBDIRS} and @code{DIST_SUBDIRS}.
+
+@code{SUBDIRS} contains the subdirectories of the current directory
+that must be built (@pxref{Subdirectories}).  It must be defined
+manually; Automake will never guess a directory is to be built.  As we
+will see in the next two sections, it is possible to define it
+conditionally so that some directory will be omitted from the build.
+
+@code{DIST_SUBDIRS} is used in rules that need to recurse in all
+directories, even those which have been conditionally left out of the
+build.  Recall our example where we may not want to build subdirectory
+@file{opt/}, but yet we want to distribute it?  This is where
+@code{DIST_SUBDIRS} come into play: @code{opt} may not appear in
+@code{SUBDIRS}, but it must appear in @code{DIST_SUBDIRS}.
+
+Precisely, @code{DIST_SUBDIRS} is used by @code{make dist}, @code{make
+distclean}, and @code{make maintainer-clean}.  All other recursive
+rules use @code{SUBDIRS}.
+
+If @code{SUBDIRS} is defined conditionally using Automake
+conditionals, Automake will define @code{DIST_SUBDIRS} automatically
+from the possibles values of @code{SUBDIRS} in all conditions.
+
+If @code{SUBDIRS} contains @code{AC_SUBST} variables,
+@code{DIST_SUBDIRS} will not be defined correctly because Automake
+does not know the possible values of these variables.  In this case
+@code{DIST_SUBDIRS} needs to be defined manually.
 
 @subsection Conditional subdirectories with @code{AM_CONDITIONAL}
 @cindex @code{SUBDIRS} and @code{AM_CONDITIONAL}
@@ -2262,7 +2337,7 @@ In this case Automake will define @code{DIST_SUBDIRS = src opt}
 automatically because it knows that @code{MAYBE_OPT} can contain
 @code{opt} in some condition.
 
-@subsection Conditional subdirectories with @code{AC_SUBST}
+@subsection Conditional Subdirectories with @code{AC_SUBST}
 @cindex @code{SUBDIRS} and @code{AC_SUBST}
 @cindex @code{AC_SUBST} and @code{SUBDIRS}
 
@@ -2270,8 +2345,8 @@ automatically because it knows that @code{MAYBE_OPT} can contain
 @c     test/subdircond3.test
 @c Try to keep it in sync.
 
-Another idea is to define @code{MAYBE_OPT} from @file{./configure} using
-@code{AC_SUBST}:
+Another possibility is to define @code{MAYBE_OPT} from
+@file{./configure} using @code{AC_SUBST}:
 
 @example
 @dots{}
@@ -2296,32 +2371,63 @@ The drawback is that since Automake cannot guess what the possible
 values of @code{MAYBE_OPT} are, it is necessary to define
 @code{DIST_SUBDIRS}.
 
-@subsection How @code{DIST_SUBDIRS} is used
-@cindex @code{DIST_SUBDIRS}, explained
+@subsection Non-configured Subdirectories
 
-As shown in the above examples, @code{DIST_SUBDIRS} is used in rules
-that need to recurse in all directories, even those which have been
-conditionally left out of the build.
+The semantic of @code{DIST_SUBDIRS} is often misunderstood by some
+users that try to @emph{configure and build} subdirectories
+conditionally.  Here by configuring we mean creating the
+@file{Makefile} (it might also involve running a nested
+@command{configure} script: this is a costly operation that explains
+why people want to do it conditionally, but only the @file{Makefile}
+is relevant to the discussion).
 
-Precisely, @code{DIST_SUBDIRS} is used by @code{make dist}, @code{make
-distclean}, and @code{make maintainer-clean}.  All other recursive
-rules use @code{SUBDIRS}.
+The above examples all assume that every @file{Makefile} is created,
+even in directories that are not going to be built.  The simple reason
+is that we want @code{make dist} to distribute even the directories
+that are not being built (e.g. platform-dependent code), hence
+@file{make dist} must recurse into the subdirectory, hence this
+directory must be configured and appear in @code{DIST_SUBDIRS}.
 
-Automake will define @code{DIST_SUBDIRS} automatically from the
-possibles values of @code{SUBDIRS} in all conditions.
+Building packages that do not configure every subdirectory is a tricky
+business, and we do not recommend it to the novice as it is easy to
+produce an incomplete tarball by mistake.  We will not discuss this
+topic in depth here, yet for the adventurous there are a few rules to
+remember.
 
-If @code{SUBDIRS} contains @code{AC_SUBST} variables,
-@code{DIST_SUBDIRS} will not be defined correctly because Automake
-doesn't know the possible values of these variables.  In this case
-@code{DIST_SUBDIRS} needs to be defined manually.
+@cartouche
+@itemize
+@item @code{SUBDIRS} should always be a subset of @code{DIST_SUBDIRS}.
 
+It makes little sense to have a directory in @code{SUBDIRS} that
+is not in @code{DIST_SUBDIRS}.  Think of the former as a way to tell
+which directories listed in the latter should be built.
+@item Any directory listed in @code{DIST_SUBDIRS} and @code{SUBDIRS}
+must be configured.
+
+I.e., the @file{Makefile} must exists or the recursive @code{make}
+rules will not be able to process the directory.
+@item Any configured directory must be listed in @code{DIST_SUBDIRS}.
+
+So that the cleaning rule remove the generated @file{Makefile}s.
+It would be correct to see @code{DIST_SUBDIRS} as a variable that
+lists all the directories that have been configured.
+@end itemize
+@end cartouche
+
+In order to prevent recursion in some non-configured directory you
+must therefore ensure that this directory do not appear in
+@code{DIST_SUBDIRS} (and @code{SUBDIRS}).  For instance if you define
+@code{SUBDIRS} conditionally using @code{AC_SUBST} and do not define
+@code{DIST_SUBDIRS} explicitly, it will be default to
+@code{$(SUBDIRS)}; another possibility is to force @code{DIST_SUBDIRS
+= $(SUBDIRS)}.
 
 @node Alternative
-@chapter An Alternative Approach to Subdirectories
+@section An Alternative Approach to Subdirectories
 
 If you've ever read Peter Miller's excellent paper,
 @uref{http://www.pcug.org.au/~millerp/rmch/recu-make-cons-harm.html,
-Recursive Make Considered Harmful}, the preceding section on the use of
+Recursive Make Considered Harmful}, the preceding sections on the use of
 subdirectories will probably come as unwelcome advice.  For those who
 haven't read the paper, Miller's main thesis is that recursive
 @code{make} invocations are both slow and error-prone.
@@ -2364,6 +2470,110 @@ either @samp{dist_} or @samp{nodist_} (@pxref{Dist}).  For instance:
 @example
 nobase_dist_pkgdata_DATA = images/vortex.pgm
 @end example
+
+
+@node Subpackages
+@section Nesting Packages
+@cindex Nesting packages
+@cindex Subpackages
+@cvindex AC_CONFIG_SUBDIRS
+@cvindex AC_CONFIG_AUX_DIR
+
+
+In the GNU Build System, packages can be nested to arbitrary depth.
+This means that a package can embedded other packages with their own
+@file{configure}, @file{Makefile}s, etc.
+
+These other packages should just appear as subdirectories of their
+parent package.  They must be listed in @code{SUBDIRS} like other
+ordinary directories.  However the subpackage's @file{Makefile}s
+should be output by its own @file{configure} script, not by the
+parent's @file{configure}.  This is achieved using the
+@code{AC_CONFIG_SUBDIRS} Autoconf macro (@pxref{Subdirectories,
+AC_CONFIG_SUBDIRS, Configuring Other Packages in Subdirectories,
+autoconf, The Autoconf Manual}).
+
+Here is an example package for an @code{arm} program that links with
+an @code{hand} library that is a nested package in subdirectory
+@file{hand/}.
+
+@code{arm}'s @file{configure.ac}:
+
+@example
+AC_INIT([arm], [1.0])
+AC_CONFIG_AUX_DIR([.])
+AM_INIT_AUTOMAKE
+AC_PROG_CC
+AC_CONFIG_FILES([Makefile])
+# Call hand's ./configure script recursively.
+AC_CONFIG_SUBDIRS([hand])
+AC_OUTPUT
+@end example
+
+@code{arm}'s @file{Makefile.am}:
+
+@example
+# Build the library in the hand subdirectory first.
+SUBDIRS = hand
+
+# Include hand's header when compiling this directory.
+AM_CPPFLAGS = -I$(srcdir)/hand
+
+bin_PROGRAMS = arm
+arm_SOURCES = arm.c
+# link with the hand library.
+arm_LDADD = hand/libhand.a
+@end example
+
+Now here is @code{hand}'s @file{hand/configure.ac}:
+
+@example
+AC_INIT([hand], [1.2])
+AC_CONFIG_AUX_DIR([.])
+AM_INIT_AUTOMAKE
+AC_PROG_CC
+AC_PROG_RANLIB
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
+@end example
+
+@noindent
+and its @file{hand/Makefile.am}:
+
+@example
+lib_LIBRARIES = libhand.a
+libhand_a_SOURCES = hand.c
+@end example
+
+When @code{make dist} is run from the top-level directory it will
+create an archive @file{arm-1.0.tar.gz} that contains the @code{arm}
+code as well as the @file{hand} subdirectory.  This package can be
+built and installed like any ordinary package, with the usual
+@code{./configure && make && make install} sequence (the @code{hand}
+subpackage will be built and installed by the process).
+
+When @code{make dist} is run from the hand directory, it will create a
+self-contained @file{hand-1.2.tar.gz} archive.  So although it appears
+to be embedded in another package, it can still be used separately.
+
+The purpose of the @code{AC_CONFIG_AUX_DIR([.])} instruction is to
+force Automake and Autoconf into search auxiliary script in the
+current directory.  For instance this means that there will be two
+copies of @file{install-sh}: one in the top-level of the @code{arm}
+package, and another one in the @file{hand/} subdirectory for the
+@code{hand} package.
+
+The historical default is to search these auxiliary scripts in the
+immediate parent and grand-parent directories.  So if the
+@code{AC_CONFIG_AUX_DIR([.])} line was removed from
+@file{hand/configure.ac}, that subpackage would share the auxiliary
+script of the @code{arm} package.  This may looks like a gain in size
+(a few kilobytes), but it is actually a loss of modularity as the
+@code{hand} subpackage is no longer self-contained (@code{make dist}
+in the subdirectory will not work anymore).
+
+Packages that do not use Automake need more work to be integrated this
+way.  @xref{Third-Party Makefiles}.
 
 @node Programs
 @chapter Building Programs and Libraries
@@ -5390,11 +5600,12 @@ this feature.
 
 If you define @code{SUBDIRS}, Automake will recursively include the
 subdirectories in the distribution.  If @code{SUBDIRS} is defined
-conditionally (@pxref{Conditionals}), Automake will normally include all
-directories that could possibly appear in @code{SUBDIRS} in the
+conditionally (@pxref{Conditionals}), Automake will normally include
+all directories that could possibly appear in @code{SUBDIRS} in the
 distribution.  If you need to specify the set of directories
-conditionally, you can set the variable @code{DIST_SUBDIRS} to the exact
-list of subdirectories to include in the distribution (@pxref{Top level}).
+conditionally, you can set the variable @code{DIST_SUBDIRS} to the
+exact list of subdirectories to include in the distribution
+(@pxref{Conditional Subdirectories}).
 @vindex DIST_SUBDIRS
 
 
@@ -5466,11 +5677,9 @@ In the @file{foo/} subdirectory
 @code{$(top_distdir)} too can be a relative or absolute path.
 
 Note that when packages are nested using @code{AC_CONFIG_SUBDIRS}
-(@pxref{Subdirectories, AC_CONFIG_SUBDIRS, Configuring Other Packages
-in Subdirectories, autoconf, The Autoconf Manual}), then
-@code{$(distdir)} and @code{$(top_distdir)} are relative to the
-package where @code{make dist} was run, not to any sub-packages
-involved.
+(@pxref{Subpackages}), then @code{$(distdir)} and
+@code{$(top_distdir)} are relative to the package where @code{make
+dist} was run, not to any sub-packages involved.
 
 @section Checking the distribution
 
@@ -6680,7 +6889,8 @@ implement all these targets.  That way they can be added to
 
 Directories which are only listed in @code{DIST_SUBDIRS} but not in
 @code{SUBDIRS} need only the @code{distclean},
-@code{maintainer-clean}, and @code{distdir} rules (@pxref{Top level}).
+@code{maintainer-clean}, and @code{distdir} rules (@pxref{Conditional
+Subdirectories}).
 
 Usually, many of these rules are irrelevant to the third-party
 subproject, but they are required for the whole package to work.  It's
@@ -7744,4 +7954,4 @@ portable, but they can be convenient in packages that assume GNU
 @c  LocalWords:  LTLIBOBJ Libtool's libtool's libltdl dlopening itutions libbar
 @c  LocalWords:  WANTEDLIBS libhello sublibraries libtop libsub dlopened Ratfor
 @c  LocalWords:  mymodule timestamps timestamp underquoted MAKEINFOHTMLFLAGS
-@c  LocalWords:  GNUmakefile buildir
+@c  LocalWords:  GNUmakefile buildir Subpackages subpackage's subpackages
