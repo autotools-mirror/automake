@@ -36,6 +36,7 @@ struct ('ansi'    => '$',
 	'derived_autodep' => '$',
         'flags' => '$',
         'linker' => '$',
+        'output_arg' => '$',
 	'pure'   => '$');
 
 
@@ -402,8 +403,6 @@ my %extension_map = ();
 # configure.in
 my $configure_dist_common = '';
 
-# This maps languages names onto properties.
-my %language_map = ();
 # This maps languages names onto objects.
 my %languages = ();
 
@@ -1274,7 +1273,7 @@ sub finish_languages
 	{
 	    $comp = $lang_obj->compile;
 
-	    my $outarg = $language_map{"$lang-output-arg"};
+	    my $outarg = $lang_obj->output_arg;
 	    my $ltoutarg;
 	    if ($lang_obj->flags eq 'CFLAGS')
 	    {
@@ -1469,9 +1468,6 @@ sub handle_single_transform_list ($$$@)
             $linker = $lang_obj->linker;
 
             my $this_obj_ext;
-	    prog_error ("$lang-ansi-p = " . $language_map{"$lang-ansi-p"}
-			. " != ". $lang_obj->ansi)
-	      if $language_map{"$lang-ansi-p"} != $lang_obj->ansi;
             if ($lang_obj->ansi)
             {
                 $object = $base . $obj;
@@ -1521,7 +1517,7 @@ sub handle_single_transform_list ($$$@)
                 my $val = "(${derived}_${flag}";
                 ($rule = $lang_obj->compile) =~ s/\(AM_$flag/$val/;
 
-                $rule .= ' ' . $language_map{"$lang-output-arg"};
+                $rule .= ' ' . $lang_obj->output_arg;
                 # For C we have to add the -o, because the
                 # standard rule doesn't include it.
                 if ($lang_obj->flags eq 'CFLAGS')
@@ -5269,23 +5265,63 @@ sub saw_sources_p
 sub register_language
 {
     my ($lang, @options) = @_;
+    my $lang_obj = new Language;
 
     # Set the defaults.
-    $language_map{"$lang-ansi-p"} = 0;
-    $language_map{"$lang-autodep"} = 'no';
-    $language_map{"$lang-derived-autodep"} = 'no';
-    $language_map{"$lang-linker"} = '';
+    $lang_obj->ansi (0);
+    $lang_obj->autodep ('no');
+    $lang_obj->derived_autodep ('no');
+    $lang_obj->linker ('');
 
     # `-pure' is `yes' or `no'.  A `pure' language is one where, if
     # all the files in a directory are of that language, then we do
     # not require the C compiler or any code to call it.
-    $language_map{"$lang-pure"} = 'no';
+    $lang_obj->pure ('no');
 
     foreach my $iter (@options)
     {
 	if ($iter =~ /^(.*)=(.*)$/)
 	{
-	    $language_map{"$lang-$1"} = $2;
+	  if ($1 eq 'ansi-p')
+	    {
+	      $lang_obj->ansi ($2);
+	    }
+	  elsif ($1 eq 'autodep')
+	    {
+	      $lang_obj->autodep ($2);
+	    }
+	  elsif ($1 eq 'compile')
+	    {
+	      $lang_obj->compile ($2);
+	    }
+	  elsif ($1 eq 'compiler-name')
+	    {
+	      $lang_obj->compiler ($2);
+	    }
+	  elsif ($1 eq 'derived-autodep')
+	    {
+	      $lang_obj->derived_autodep ($2);
+	    }
+	  elsif ($1 eq 'flags')
+	    {
+	      $lang_obj->flags ($2);
+	    }
+	  elsif ($1 eq 'linker')
+	    {
+	      $lang_obj->linker ($2);
+	    }
+	  elsif ($1 eq 'output-arg')
+	    {
+	      $lang_obj->output_arg ($2);
+	    }
+	  elsif ($1 eq 'pure')
+	    {
+	      $lang_obj->pure ($2);
+	    }
+	  else
+	    {
+	      prog_error ("register_language: invalid attribute: $iter");
+	    }
 	}
 	elsif (defined $extension_map{$iter})
 	{
@@ -5297,20 +5333,7 @@ sub register_language
 	}
     }
 
-    my $obj = new Language;
-    $obj->ansi ($language_map{"$lang-ansi-p"});
-    $obj->autodep ($language_map{"$lang-autodep"});
-    $obj->compile ($language_map{"$lang-compile"})
-      if defined $language_map{"$lang-compile"};
-    $obj->compiler ($language_map{"$lang-compiler-name"})
-      if defined $language_map{"$lang-compiler-name"};
-    $obj->derived_autodep ($language_map{"$lang-derived-autodep"});
-    $obj->flags ($language_map{"$lang-flags"})
-      if defined $language_map{"$lang-flags"};
-    $obj->linker ($language_map{"$lang-linker"});
-    $obj->pure ($language_map{"$lang-pure"});
-
-    $languages{$lang} = $obj;
+    $languages{$lang} = $lang_obj;
 }
 
 # This function is used to find a path from a user-specified suffix to
