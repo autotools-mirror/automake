@@ -27,6 +27,7 @@ ammissing.test \
 ansi.test \
 ansi2.test \
 ansi3.test \
+ansi3b.test \
 ansi4.test \
 ansi5.test \
 ansi6.test \
