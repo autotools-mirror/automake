@@ -324,6 +324,8 @@ sub handle_programs
     # Check for automatic de-ANSI-fication.
     local ($obj) = '.o';
     push (@suffixes, '.c', '.o');
+    push (@clean, 'compile');
+
     if (defined $contents{'@kr@'})
     {
 	$obj = '.${kr}o';
@@ -865,6 +867,9 @@ sub do_one_merge_target
 # Handle all 'clean' targets.
 sub handle_clean
 {
+    push (@clean, 'generic');
+    $output_rules .= &file_contents ('clean');
+
     local ($target) = $recursive_install ? 'clean-am' : 'clean';
     &do_one_clean_target ($target, 'mostly', '', @clean);
     &do_one_clean_target ($target, '', 'mostly', @clean);
@@ -907,7 +912,19 @@ sub do_one_clean_target
     }
 
     $output_rules .= ($name . 'clean-' . join (' ' . $name . 'clean-', @deps)
-		      . "\n\n");
+		      . "\n");
+
+    # FIXME shouldn't we really print these messages before running
+    # the dependencies?
+    if ($name . $target eq 'maintainer-clean')
+    {
+	# Print a special warning.
+	$output_rules .=
+	    ('@echo "This command is intended for maintainers to use;"'
+	     . "\n"
+	     . '@echo "it deletes files that may require special tools to rebuild."');
+    }
+    $output_rules .= "\n";
 }
 
 ################################################################
