@@ -88,7 +88,7 @@ AC_REQUIRE([AM_SANITY_CHECK])dnl
 AC_REQUIRE([AC_ARG_PROGRAM])dnl
 AM_MISSING_PROG(ACLOCAL, aclocal)
 AM_MISSING_PROG(AUTOCONF, autoconf)
-AM_MISSING_PROG(AUTOMAKE, "automake-${am__version}")
+AM_MISSING_PROG(AUTOMAKE, "automake-${am__api_version}")
 AM_MISSING_PROG(AUTOHEADER, autoheader)
 AM_MISSING_PROG(MAKEINFO, makeinfo)
 AM_MISSING_PROG(AMTAR, tar)
@@ -130,7 +130,7 @@ AC_PROVIDE_IFELSE([AC_PROG_][CXX],
 # ----------------------------
 # Automake X.Y traces this macro to ensure aclocal.m4 has been
 # generated from the m4 files accompanying Automake X.Y.
-AC_DEFUN([AM_AUTOMAKE_VERSION],[am__version="$1"])
+AC_DEFUN([AM_AUTOMAKE_VERSION],[am__api_version="1.5c"])
 
 # AM_SET_CURRENT_AUTOMAKE_VERSION
 # -------------------------------

@@ -43,7 +43,7 @@ install-exec-hook:
 	@$(POST_INSTALL)
 	@for p in $(bin_SCRIPTS); do \
 	  f="`echo $$p|sed '$(transform)'`"; \
-	  fv="$$f-$(VERSION)"; \
+	  fv="$$f-$(APIVERSION)"; \
 	  rm -f $(DESTDIR)$(bindir)/$$fv; \
 	  echo " ln $(DESTDIR)$(bindir)/$$f $(DESTDIR)$(bindir)/$$fv"; \
 	  ln $(DESTDIR)$(bindir)/$$f $(DESTDIR)$(bindir)/$$fv; \
