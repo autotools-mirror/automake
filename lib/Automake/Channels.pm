@@ -193,6 +193,45 @@ A string to append to each message emitted through this channel.
 
 Die with a stack backtrace after displaying the message.
 
+=item C<partial =E<gt> 0>
+
+When set, indicates a partial message that should
+be output along with the next message with C<partial> unset.
+Several partial messages can be stacked this way.
+
+Duplicate filtering will apply to the I<global> message resulting from
+all I<partial> messages, using the options from the last (non-partial)
+message.  Linking associated messages is the main reason to use this
+option.
+
+For instance the following messages
+
+  msg 'channel', 'foo:2', 'redefinition of A ...';
+  msg 'channel', 'foo:1', '... A previously defined here';
+  msg 'channel', 'foo:3', 'redefinition of A ...';
+  msg 'channel', 'foo:1', '... A previously defined here';
+
+will result in
+
+ foo:2: redefinition of A ...
+ foo:1: ... A previously defined here
+ foo:3: redefinition of A ...
+
+where the duplicate "I<... A previously defined here>" has been
+filtered out.
+
+Linking these messages using C<partial> as follows will prevent the
+fourth message to disappear.
+
+  msg 'channel', 'foo:2', 'redefinition of A ...', partial => 1;
+  msg 'channel', 'foo:1', '... A previously defined here';
+  msg 'channel', 'foo:3', 'redefinition of A ...', partial => 1;
+  msg 'channel', 'foo:1', '... A previously defined here';
+
+Note that because the stack of C<partial> messages is printed with the
+first non-C<partial> message, most options of C<partial> messages will
+be ignored.
+
 =back
 
 =cut
@@ -212,6 +251,7 @@ use vars qw (%_default_options %_global_duplicate_messages
    header => '',
    footer => '',
    backtrace => 0,
+   partial => 0,
    );
 
 # Filled with output messages as keys, to detect duplicates.
@@ -320,14 +360,46 @@ sub channel_type ($)
   return '';
 }
 
-# _format_message ($LEADER, $MESSAGE)
-# -----------------------------------
+# _format_sub_message ($LEADER, $MESSAGE)
+# ---------------------------------------
 # Split $MESSAGE at new lines and add $LEADER to each line.
-sub _format_message ($$)
+sub _format_sub_message ($$)
 {
   my ($leader, $message) = @_;
   return $leader . join ("\n" . $leader, split ("\n", $message)) . "\n";
 }
+
+# _format_message ($LOCATION, $MESSAGE, %OPTIONS)
+# -----------------------------------------------
+# Format the message.  Return a string ready to print.
+sub _format_message ($$%)
+{
+  my ($location, $message, %opts) = @_;
+  my $msg = '';
+  if (ref $location)
+    {
+      # If $LOCATION is a reference, assume it's an instance of the
+      # Automake::Location class and display contexts.
+      my $loc = $location->get || $me;
+      $msg = _format_sub_message ("$loc: ", $opts{'header'}
+				  . $message . $opts{'footer'});
+      for my $pair ($location->get_contexts)
+	{
+	  $msg .= _format_sub_message ($pair->[0] . ":   ", $pair->[1]);
+	}
+    }
+  else
+    {
+      $location ||= $me;
+      $msg = _format_sub_message ("$location: ", $opts{'header'}
+				  . $message . $opts{'footer'});
+    }
+  return $msg;
+}
+
+# Store partial messages here. (See the 'partial' option.)
+use vars qw ($partial);
+$partial = '';
 
 # _print_message ($LOCATION, $MESSAGE, %OPTIONS)
 # ----------------------------------------------
@@ -338,25 +410,17 @@ sub _print_message ($$%)
 
   return 0 if ($opts{'silent'});
 
-  # Format the message.
-  my $msg = '';
-  if (ref $location)
+  my $msg = _format_message ($location, $message, %opts);
+  if ($opts{'partial'})
     {
-      # If $LOCATION is a reference, assume it's an instance of the
-      # Automake::Location class and display contexts.
-      my $loc = $location->get || $me;
-      $msg = _format_message ("$loc: ",
-			      $opts{'header'} . $message . $opts{'footer'});
-      for my $pair ($location->get_contexts)
-	{
-	  $msg .= _format_message ($pair->[0] . ":   ", $pair->[1]);
-	}
+      # Incomplete message.   Store, don't print.
+      $partial .= $msg;
+      return;
     }
   else
     {
-      $location ||= $me;
-      $msg = _format_message ("$location: ",
-			      $opts{'header'} . $message . $opts{'footer'});
+      # Prefix with any partial message send so far.
+      $msg = $partial . $msg;
     }
 
   # Check for duplicate message if requested.
@@ -454,7 +518,7 @@ both print
 =cut
 
 
-use vars qw (@backlog %buffering);
+use vars qw (@backlog %buffering @chain);
 
 # See buffer_messages() and flush_messages() below.
 %buffering = ();	# The map of channel types to buffer.
