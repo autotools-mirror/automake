@@ -99,7 +99,7 @@ cvs-dist: maintainer-check perl4-check distcheck
 	  echo "NEWS not updated; not releasing" 1>&2; \
 	  exit 1;				\
 	fi
-	cvs -q tag `echo "Release-$(VERSION)" | sed 's/\./-/g'`
+	cd $(srcdir) && cvs -q tag `echo "Release-$(VERSION)" | sed 's/\./-/g'`
 	$(MAKE) dist
 
 cvs-diff:
