@@ -170,18 +170,19 @@ uninstall-pkgdataSCRIPTS:
 	  rm -f $(DESTDIR)$(pkgdatadir)/`echo $$p|sed '$(transform)'`; \
 	done
 
-version.texi: stamp-vti
-	cp $(srcdir)/stamp-vti $(srcdir)/version.texi
+$(srcdir)/version.texi: stamp-vti
+	@:
 
-stamp-vti: automake.texi $(top_srcdir)/configure.in
+$(srcdir)/stamp-vti: automake.texi $(top_srcdir)/configure.in
 	@echo "@set UPDATED `cd $(srcdir) \
 	  && $(SHELL) ./mdate-sh automake.texi`" > vti.tmp
 	@echo "@set EDITION $(VERSION)" >> vti.tmp
 	@echo "@set VERSION $(VERSION)" >> vti.tmp
-	@cmp -s vti.tmp $(srcdir)/stamp-vti \
-	  || (echo "Updating $(srcdir)/stamp-vti"; \
-	      cp vti.tmp $(srcdir)/stamp-vti)
+	@cmp -s vti.tmp $(srcdir)/version.texi \
+	  || (echo "Updating $(srcdir)/version.texi"; \
+	      cp vti.tmp $(srcdir)/version.texi)
 	-@rm -f vti.tmp
+	@cp $(srcdir)/version.texi $@
 
 mostlyclean-vti:
 	-rm -f vti.tmp
@@ -372,7 +373,7 @@ maintainer-clean-recursive:
 	  else \
 	    local_target="$$target"; \
 	  fi; \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$target) \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
 	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
 	done && test -z "$$fail"
 tags-recursive:
@@ -491,7 +492,8 @@ install-data-am: install-info-am install-pkgdataSCRIPTS \
 		install-pkgdataDATA
 install-data: install-data-recursive
 
-install-am: install-exec-am install-data-am
+install-am: all-am
+	$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
 install: install-recursive
 uninstall-am: uninstall-binSCRIPTS uninstall-pkgdataSCRIPTS \
 		uninstall-info uninstall-pkgdataDATA
@@ -516,7 +518,7 @@ distclean-generic:
 
 maintainer-clean-generic:
 mostlyclean-am:  mostlyclean-vti mostlyclean-aminfo mostlyclean-tags \
-		mostlyclean-generic clean-am
+		mostlyclean-generic
 
 mostlyclean: mostlyclean-recursive
 

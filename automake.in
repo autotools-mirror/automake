@@ -285,9 +285,38 @@ $cygnus_mode = 0;
 # Regexp to match the above macros.
 $obsolete_rx = '(' . join ('|', keys %obsolete_macros) . ')';
 
+# This maps extensions onto language names.
+%extension_map = ();
+
+# This maps languages names onto properties.
+%language_map = ();
+
 
 
+# Initialize global constants and our list of languages that are
+# internally supported.
 &initialize_global_constants;
+
+&register_language ('c', '', 1,
+		    'c');
+&register_language ('cxx', 'CXXLINK', 0,
+		    'c++', 'cc', 'cpp', 'cxx', 'C');
+&register_language ('header', '', 0,
+		    'h', 'H', 'hxx', 'h++', 'hh', 'hpp');
+&register_language ('yacc', '', 1,
+		    'y');
+&register_language ('yaccxx', 'CXXLINK', 0,
+		    'y++', 'yy', 'yxx');
+&register_language ('lex', '', 1,
+		    'l');
+&register_language ('lexxx', 'CXXLINK', 0,
+		    'l++', 'll', 'lxx');
+&register_language ('asm', '', 0,
+		    's', 'S');
+# FIXME: fortran not finished.
+&register_language ('fortran', '', 0,
+		    'F', 'f', 'f90', 'for');
+
 
 # Parse command line.
 &parse_arguments (@ARGV);
@@ -571,7 +600,7 @@ sub generate_makefile
     &handle_built_sources;
 
     # This must be run after all the sources are scanned.
-    &handle_yacc_lex_cxx;
+    &finish_languages;
 
     # Re-init SOURCES and OBJECTS.  FIXME: other code shouldn't depend
     # on this (but currently does).
@@ -729,9 +758,6 @@ sub get_object_extension
 {
     local ($out) = @_;
 
-    # Always set this.
-    $dir_holds_sources = 1;
-
     # Maybe require libtool library object files.
     local ($extension) = '.o';
     $extension = '.$(OBJEXT)' if $seen_objext;
@@ -878,204 +904,29 @@ sub get_object_extension
     return $extension;
 }
 
-# Handle yacc and lex.
-sub handle_yacc_lex_cxx
+# Call finish function for each language that was used.
+sub finish_languages
 {
-    #
-    # First do yacc and lex.
-    #
-
-    local ($yacc_count) = scalar (keys %yacc_sources);
-    local ($lex_count) = scalar (keys %lex_sources);
-
-    if ($yacc_count)
+    local ($ext, $name, $lang, %done);
+    local ($all_cxx) = 1;
+    foreach $ext (sort keys %extension_seen)
     {
-	local ($file, $base, $hname, $cname);
-	local (%seen_suffix) = ();
-	foreach $file (keys %yacc_sources)
-	{
-	    $file =~ /(\..*)$/;
-	    &output_yacc_build_rule ($1, $yacc_count > 1)
-		if (! defined $seen_suffix{$1});
-	    $seen_suffix{$1} = 1;
+	$lang = $extension_map{$ext};
+	next if defined $done{$lang};
+	$done{$lang} = 1;
+	$all_cxx = 0 if $lang ne 'cxx';
 
-	    # Now generate rule to make the header file.  This should
-	    # only be generated if `yacc -d' specified.  But right now
-	    # there is no way to determine that.  FIXME: the
-	    # AM_FOOFLAGS idea would suffice here.
-	    $file =~ /^(.*)\.(y|yy|y\+\+|yxx)$/;
-	    $base = $1;
-	    ($hname = $2) =~ tr/y/h/;
-	    ($cname = $2) =~ tr/y/c/;
-	    $output_rules .= "${base}.${hname}: ${base}.${cname}\n";
-
-	    # If the files are built in the build directory, then we
-	    # want to remove them with `make clean'.  If they are in
-	    # srcdir they shouldn't be touched.  However, we can't
-	    # determine this statically, and the GNU rules say that
-	    # yacc/lex output files should be removed by
-	    # maintainer-clean.  So that's what we do.
-	    push (@maintainer_clean_files, $base . $hname, $base . $cname);
-	}
-	$output_rules .= "\n";
-
-	if (! defined $configure_vars{'YACC'})
-	{
-	    &am_error ("yacc source seen but \`YACC' not defined in \`configure.in'");
-	}
-	if (&variable_defined ('YACCFLAGS'))
-	{
-	    &am_line_error ('YACCFLAGS',
-			    "\`YACCFLAGS' obsolete; use \`YFLAGS' instead");
-	}
-    }
-    if ($lex_count)
-    {
-	local (%seen_suffix) = ();
-	local ($file, $cname);
-	foreach $file (keys %lex_sources)
-	{
-	    $file =~ /(\..*)$/;
-	    &output_lex_build_rule ($1, $lex_count > 1)
-		if (! defined $seen_suffix{$1});
-	    $seen_suffix{$1} = 1;
-
-	    # If the files are built in the build directory, then we
-	    # want to remove them with `make clean'.  If they are in
-	    # srcdir they shouldn't be touched.  However, we can't
-	    # determine this statically, and the GNU rules say that
-	    # yacc/lex output files should be removed by
-	    # maintainer-clean.  So that's what we do.
-	    $file =~ /^(.*)\.(l|ll|l\+\+|lxx)$/;
-	    ($cname = $2) =~ tr/y/c/;
-	    push (@maintainer_clean_files, $1 . $cname);
-	}
-
-	if (! defined $configure_vars{'LEX'})
-	{
-	    &am_error ("lex source seen but \`LEX' not defined in \`configure.in'");
-	}
-	if (! $seen_decl_yytext)
-	{
-	    &am_error ("lex source seen but \`AC_DECL_YYTEXT' not in \`configure.in'");
-	}
+	# Compute the function name of the finisher and then call it.
+	$name = 'lang_' . $lang . '_finish';
+	do $name ();
     }
 
-    if ($yacc_count > 1 || $lex_count > 1)
+    # If the project is entirely C++, don't bother with the C stuff.
+    # But if anything else creeps in, then use it.
+    if (! $all_cxx || scalar keys %suffix_rules > 0)
     {
-	# If there is more than one distinct yacc (resp lex) source
-	# file in a given directory, then the `ylwrap' program is
-	# required to allow parallel builds to work correctly.  FIXME:
-	# for now, no line number.
-	&require_config_file ($FOREIGN, 'ylwrap');
-	if ($config_aux_dir ne '.' && $config_aux_dir ne '')
-	{
-		&define_variable ('YLWRAP', $config_aux_dir . "/ylwrap");
-	}
-	else
-	{
-		&define_variable ('YLWRAP', '$(srcdir)/ylwrap');
-	}
-    }
+	local ($ltcompile, $ltlink) = &libtool_compiler;
 
-    #
-    # Handle libtool.
-    #
-    local ($ltcompile, $ltlink) = ('', '');
-    if ($seen_libtool)
-    {
-	&define_configure_variable ("LIBTOOL");
-	$ltcompile = '$(LIBTOOL) --mode=compile ';
-	$ltlink = '$(LIBTOOL) --mode=link ';
-    }
-
-    #
-    # Now handle C++.
-    #
-    local (@cxx_list) = keys %cxx_extensions;
-    local ($cxx_count) = scalar @cxx_list;
-    if ($cxx_count)
-    {
-	push (@suffixes, @cxx_list);
-
-	&define_configure_variable ("CXXFLAGS");
-	&define_variable ('CXXCOMPILE', '$(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)');
-	&define_variable ('LTCXXCOMPILE',
-			  $ltcompile . '$(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)')
-	    if ($seen_libtool);
-
-	&define_variable ('CXXLINK', $ltlink . '$(CXX) $(AM_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@');
-
-	local ($ext);
-	foreach $ext (@cxx_list)
-	{
-	    $output_rules .= ("$ext.o:\n"
-			      . "\t\$(CXXCOMPILE) -c \$<\n");
-	    # FIXME: Using cygpath should be somehow conditional.
-	    $output_rules .= ("$ext.obj:\n"
-			      . "\t\$(CXXCOMPILE) -c `cygpath -w \$<`\n")
-		if ($seen_objext);
-	    $output_rules .= ("$ext.lo:\n"
-			      . "\t\$(LTCXXCOMPILE) -c \$<\n")
-		if ($seen_libtool);
-	}
-
-	if (! defined $configure_vars{'CXX'})
-	{
-	    &am_error ("C++ source seen but \`CXX' not defined in \`configure.in'");
-	}
-    }
-
-    #
-    # Handle some ansi2knr cleanup.
-    #
-
-    # Push all libobjs files onto de_ansi_files.  We actually only
-    # push files which exist in the current directory, and which are
-    # genuine source files.
-    local ($file);
-    foreach $file (keys %libsources)
-    {
-	if ($file =~ /^(.*)\.[cly]$/ && -f "$relative_dir/$file")
-	{
-	    $de_ansi_files{$1} = 1;
-	}
-    }
-
-    if (defined $options{'ansi2knr'} && keys %de_ansi_files)
-    {
- 	# Make all _.c files depend on their corresponding .c files.
- 	local ($base, @objects);
- 	foreach $base (sort (keys %de_ansi_files))
- 	{
-	    # Each _.c file must depend on ansi2knr; otherwise it
-	    # might be used in a parallel build before it is built.
-	    # We need to support files in the srcdir and in the build
-	    # dir (because these files might be auto-generated.  But
-	    # we can't use $< -- some makes only define $< during a
-	    # suffix rule.
- 	    $output_rules .= ($base . "_.c: $base.c \$(ANSI2KNR)\n\t"
-			      . '$(CPP) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) '
-			      . '`if test -f $(srcdir)/' . $base . '.c'
-			      . '; then echo $(srcdir)/' . $base . '.c'
-			      . '; else echo ' . $base . '.c; fi` '
-			      . "| sed 's/^# \\([0-9]\\)/#line \\1/' "
-			      . '| $(ANSI2KNR) > ' . $base . "_.c\n");
- 	    push (@objects, $base . '_'
-		  . ($seen_objext ? '.$(OBJEXT)' : '.o'));
- 	    push (@objects, $base . '_.lo') if $seen_libtool;
- 	}
-
- 	# Make all _.o (and _.lo) files depend on ansi2knr.
- 	# Use a sneaky little hack to make it print nicely.
- 	&pretty_print_rule ('', '', @objects, ':', '$(ANSI2KNR)');
-    }
-
-    #
-    # Last, handle some C cleanup.
-    #
-    if ($seen_any_source)
-    {
 	&define_configure_variable ('CFLAGS');
 	&define_variable ('COMPILE',
 			  '$(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)');
@@ -1085,14 +936,7 @@ sub handle_yacc_lex_cxx
 	    if ($seen_libtool);
 	&define_variable ('LINK', $ltlink . '$(CC) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS) -o $@');
     }
-
-    if ($seen_c_source && ! defined $configure_vars{'CC'})
-    {
-	&am_line_error ($seen_c_source,
-			"C source seen but \`CC' not defined in \`configure.in'");
-    }
 }
-
 
 # Output a rule to build from a YACC source.  The output from YACC is
 # compiled with C or C++, depending on the extension of the YACC file.
@@ -1189,107 +1033,71 @@ sub check_libobjs_sources
 
 # Does much of the actual work for handle_source_transform.
 # Arguments are:
-#   pattern matching object extension (e.g., .o)
+#   object extension (e.g., `$U.lo')
 #   list of source files to transform
 # Result is a list
 #   first element is name of linker to use (empty string for default linker)
-#   remaining elements are names of `.o's
+#   remaining elements are names of objects
 sub handle_single_transform_list
 {
-    local ($objpat, @files) = @_;
-    local ($linker) = '';
+    local ($obj, @files) = @_;
     local (@result) = ();
     local ($nonansi_obj) = $obj;
     $nonansi_obj =~ s/_//g;
+    local (%linkers_used) = ();
     if (@files > 0)
     {
 	# Turn sources into objects.
 	foreach (@files)
 	{
-	    # Skip header files, including C++-ish ones.  The list
-	    # of C++ header extensions comes from Emacs 19.32
-	    # etags.
-	    next if /\.[hH]$/;
-	    next if /\.hxx$/;
-	    next if /\.h\+\+$/;
-	    next if /\.hh$/;
-	    next if /\.hpp$/;
 	    # Skip things that look like configure substitutions.
 	    next if /^\@.*\@$/;
 
-	    # Include appropriate file for lex or yacc source in
-	    # distribution.  If the extension is the regular '.y' or
-	    # '.l', we assume C compilation, and the generated file
-	    # has exension .c.  Otherwise, we compile with C++, and
-	    # make the following association: (yy -> cc, y++ -> c++,
-	    # yxx -> cxx), similarly for .ll, etc.
-	    if (/^(.*)\.(y|yy|y\+\+|yxx)$/)
+	    # We don't support source files in a subdirectory.  The
+	    # reason is that we'd want to put the .o into a similar
+	    # subdirectory, but this means finding a good way to make
+	    # the directory.  Later.
+	    if (/\//)
 	    {
-		# Yacc source.
-		local ($ext) = $2;
-		$ext =~ tr/y/c/;
-		&push_dist_common ("$1.$ext");
-		$yacc_sources{$_} = 1;
-	    }
-	    elsif (/^(.*)\.(l|ll|l\+\+|lxx)$/)
-	    {
-		# Lex source.
-		local ($ext) = $2;
-		$ext =~ tr/l/c/;
-		&push_dist_common ("$1.$ext");
-		$lex_sources{$_} = 1;
+		&am_error
+		    ("not supported: source file `$_' is in subdirectory");
+		next;
 	    }
 
-	    # Strip any directory prefix.
-	    $_ = &basename ($_);
+	    # Split file name into base and extension.
+	    local ($base, $extension, $linker, $object);
+	    next if ! /^(.*)\.(.*)$/;
+	    $base = $1;
+	    $extension = $2;
 
-	    local ($is_cxx) = 0;
-	    # Transform source files into .o files.  List of C++
-	    # extensions comes from Emacs 19.34 etags.
-	    if (s/\.(c\+\+|cc|cpp|cxx|C)$/$nonansi_obj/)
+	    local ($lang) = $extension_map{$extension};
+	    if ($lang)
 	    {
-		$cxx_extensions{'.' . $1} = 1;
-		$linker = 'CXXLINK';
-		$is_cxx = 1;
-	    }
-	    elsif (s/\.(yy|y\+\+|yxx|ll|l\+\+|lxx)$/$nonansi_obj/)
-	    {
-		# Compiling lex or yacc with C++
-		local ($ext) = $1;
-		$ext =~ tr/ly/cc/;
-		$cxx_extensions{".$ext"} = 1;
-		$linker = 'CXXLINK';
-	    }
-	    elsif (s/\.([Ff]|f90|for)$/$nonansi_obj/)
-	    {
-		# FORTRAN support.  FIXME: not finished.
-	    }
-	    elsif (s/\.[sS]$/$nonansi_obj/)
-	    {
-		# .s is assembly.  Just rewrite it.  FIXME: not finished.
-	    }
- 	    elsif (defined ($options{'ansi2knr'}) && s/_\.[cly]$/_.c/)
- 	    {
- 		# FIXME include line number in error.
- 		&am_error ("C source file \`$_' would be deleted by ansi2knr rules");
- 	    }
-	    elsif (s/\.[cly]$//)
-  	    {
-  		# .c is C.  .l is lex.  .y is yacc.
+		&saw_extension ($extension);
+		# Found the language, so see what it says.
+		local ($subr) = 'lang_' . $lang . '_rewrite';
+		# Note: computed subr call.
+		local ($r) = do $subr ($base, $extension);
+		# Skip this entry if we were asked not to process it.
+		next if ! $r;
 
- 		# Note: first we rewrite (eg) foo.c to foo and push
- 		# the file onto the list of deansified files.  Then we add
- 		# $obj, which can either be `_.o', or simply `.o' if
- 		# deansification is not required.
- 		$de_ansi_files{$_} = 1;
- 		$_ .= $obj;
-  		$seen_c_source = 1;
+		# Now extract linker and other info.
+		$linker = $language_map{$lang . '-linker'};
+
+		if ($language_map{$lang . '-ansi-p'})
+		{
+		    $object = $base . $obj;
+		}
+		else
+		{
+		    $object = $base . $nonansi_obj;
+		}
 	    }
- 	    elsif (/\.$source_suffix_pattern$/) 
+ 	    elsif ($extension =~ /^$source_suffix_pattern$/) 
  	    {
 		# We just rewrite it.  Maybe we should do more.
-		s//.$suffix_rules{$1}/;
-		$objpat = "\\." . $suffix_rules{$1};
+		$object = $base . '.' . $suffix_rules{$extension};
+		$linker = '';
  	    }
 	    else
 	    {
@@ -1298,17 +1106,17 @@ sub handle_single_transform_list
 		next;
 	    }
 
-	    $seen_any_source = 1 unless $is_cxx;
-	    push (@result, $_);
+	    $linkers_used{$linker} = 1;
+
+	    push (@result, $object);
 
 	    # Transform .o or $o file into .P file (for automatic
 	    # dependency code).
-	    s/$objpat$/.P/g;
-	    $dep_files{'.deps/' . $_} = 1;
+	    $dep_files{'.deps/' . $base . '.P'} = 1;
 	}
     }
 
-    return ($linker, @result);
+    return (&resolve_linker (%linkers_used), @result);
 }
 
 # Handle SOURCE->OBJECT transform for one program or library.
@@ -1323,10 +1131,6 @@ sub handle_source_transform
     # one_file is canonical name.  unxformed is given name.  obj is
     # object extension.
     local ($one_file, $unxformed, $obj) = @_;
-    local ($objpat) = $obj;
-    $objpat =~ s/(\W)/\\$1/g;
-    # Handle explicit `.o' as well as whatever we're passed.
-    $objpat = '(' . $objpat . "|\\.o)";
 
     local ($linker) = '';
 
@@ -1359,7 +1163,7 @@ sub handle_source_transform
 		foreach $cond (@conds)
 		{
 		    @files = &variable_value_as_list ($var, $cond);
-		    ($temp, @result) = &handle_single_transform_list ($objpat,
+		    ($temp, @result) = &handle_single_transform_list ($obj,
 								      @files);
 		    $linker = $temp if $linker eq '';
 
@@ -1380,7 +1184,7 @@ sub handle_source_transform
 	    push (@files, $unxformed . '.c');
 	}
 
-	($temp, @result) = &handle_single_transform_list ($objpat, @files);
+	($temp, @result) = &handle_single_transform_list ($obj, @files);
 	$linker = $temp if $linker eq '';
 	&define_pretty_variable ($one_file . "_OBJECTS", '', @result)
 	    unless $prefix eq 'EXTRA_';
@@ -1410,7 +1214,7 @@ sub handle_built_sources
     # We don't care about the return value of this function.  We just
     # want to make sure to update %dep_files with the contents of
     # BUILT_SOURCES.
-    &handle_single_transform_list ("\\.o", @sources);
+    &handle_single_transform_list (".o", @sources);
 }
 
 # Special-case @ALLOCA@ and @LIBOBJS@ in _LDADD or _LIBADD variables.
@@ -1507,10 +1311,10 @@ sub handle_lib_objects_cond
 	    local ($iter, $rewrite);
 	    foreach $iter (keys %libsources)
 	    {
-		if ($iter =~ /\.[cly]$/)
+		if ($iter =~ /\.([cly])$/)
 		{
-		    $seen_c_source = $var;
-		    $seen_any_source = 1;
+		    &saw_extension ($1);
+		    &saw_extension ('c');
 		}
 
 		if ($iter =~ /\.h$/)
@@ -1533,8 +1337,7 @@ sub handle_lib_objects_cond
 		if ! defined $libsources{'alloca.c'};
 	    $dep_files{'.deps/alloca.P'} = 1;
 	    &require_file_with_line ($var, $FOREIGN, 'alloca.c');
-	    $seen_c_source = $var;
-	    $seen_any_source = 1;
+	    &saw_extension ('c');
 	}
     }
 
@@ -2046,6 +1849,13 @@ sub handle_texinfo
     return if (! &variable_defined ('info_TEXINFOS')
 	       && ! &variable_defined ('html_TEXINFOS'));
 
+    if (&variable_defined ('html_TEXINFOS'))
+    {
+	&am_line_error ('html_TEXINFOS',
+			"HTML generation not yet supported");
+	return;
+    }
+
     local (@texis) = &variable_value_as_list ('info_TEXINFOS', 'all');
 
     local (@info_deps_list, @dvis_list, @texi_deps);
@@ -2349,8 +2159,7 @@ sub handle_tags
 	push (@phony, 'tags-recursive');
     }
 
-    if ($dir_holds_sources
-	|| $dir_holds_headers
+    if (&saw_sources_p (1)
 	|| &variable_defined ('ETAGS_ARGS')
 	|| @tag_deps)
     {
@@ -2839,18 +2648,20 @@ sub handle_dependencies
     {
 	# Include GNU-make-specific auto-dep code.  Don't include it
 	# if DEP_FILES would be empty.
-	if ($dir_holds_sources && keys %dep_files)
+	if (&saw_sources_p (0) && keys %dep_files)
 	{
 	    &define_pretty_variable ('DEP_FILES', '', sort keys %dep_files);
 	    $output_rules .= &file_contents ('depend');
 	    push (@clean, 'depend');
 	    &push_phony_cleaners ('depend');
+	    # FIXME: this should use another property of the language
+	    # instead of being hard-coded.
 	    $output_rules .=
 		&file_contents_with_transform ('s/\@EXT\@/.c/g;'
 					       . 's/\@PFX\@//g;',
 					       'depend2');
 	    local ($ext);
-	    foreach $ext (sort keys %cxx_extensions)
+	    foreach $ext (&cxx_extensions)
 	    {
 		$output_rules .=
 		    &file_contents_with_transform ('s/\@EXT\@/' . $ext .'/g;'
@@ -3286,9 +3097,15 @@ sub handle_configure
 # Handle C headers.
 sub handle_headers
 {
-    $dir_holds_headers = &am_install_var ('header', 'HEADERS', 'include',
-					  'oldinclude', 'pkginclude',
-					  'noinst', 'check');
+    local (@r);
+    @r = &am_install_var ('header', 'HEADERS', 'include',
+			  'oldinclude', 'pkginclude',
+			  'noinst', 'check');
+    foreach (@r)
+    {
+	next unless /\.(.*)$/;
+	&saw_extension ($1);
+    }
 }
 
 sub handle_gettext
@@ -3695,8 +3512,10 @@ sub do_one_clean_target
     # Change each dependency `BLARG' into `clean-BLARG'.
     grep (($_ = $name . 'clean-' . $_) && 0, @deps);
 
-    # Push the previous clean target.
-    push (@deps, $last_name . $target . '-am');
+    # Push the previous clean target.  There is no previous clean
+    # target if we're doing mostlyclean.
+    push (@deps, $last_name . $target . '-am')
+	unless $name eq 'mostly';
 
     # If a -local version of the rule is given, add it to the list.
     if (&target_defined ($name . $target . '-local'))
@@ -4434,6 +4253,430 @@ sub check_gnits_standards
 	&require_file ($GNITS, 'THANKS');
     }
 }
+
+################################################################
+#
+# Functions to handle files of each language.
+
+# Each `lang_X_rewrite' function follows a simple formula:
+# * Args are the base name and extension of the file.
+# * Return value is 1 if file is to be dealt with, 0 otherwise.
+# Much of the actual processing is handled in handle_single_transform_list.
+# These functions exist so that auxiliary information can be recorded
+# for a later cleanup pass.  Note that the calls to these functions
+# are computed, so don't bother searching for their precise names
+# in the source.
+
+# Rewrite a single C source file.
+sub lang_c_rewrite
+{
+    local ($base, $ext) = @_;
+
+    if (defined $options{'ansi2knr'} && $base =~ /_$/)
+    {
+	# FIXME: include line number in error.
+	&am_error ("C source file \`$base.c' would be deleted by ansi2knr rules");
+    }
+
+    $de_ansi_files{$base} = 1;
+    return 1;
+}
+
+# Rewrite a single C++ source file.
+sub lang_cxx_rewrite
+{
+    return 1;
+}
+
+# Rewrite a single header file.
+sub lang_header_rewrite
+{
+    # Header files are simply ignored.
+    return 0;
+}
+
+# Rewrite a single yacc file.
+sub lang_yacc_rewrite
+{
+    local ($base, $ext) = @_;
+
+    &lang_c_rewrite ($base, $ext);
+    $yacc_sources{$base . '.' . $ext} = 1;
+    $ext =~ tr/y/c/;
+    &saw_extension ('c');
+    &push_dist_common ($base . '.' . $ext);
+    return 1;
+}
+
+# Rewrite a single yacc++ file.
+sub lang_yaccxx_rewrite
+{
+    local ($base, $ext) = @_;
+
+    $yacc_sources{$base . '.' . $ext} = 1;
+    $ext =~ tr/y/c/;
+    &saw_extension ($ext);
+    &push_dist_common ($base . '.' . $ext);
+    return 1;
+}
+
+# Rewrite a single lex file.
+sub lang_lex_rewrite
+{
+    local ($base, $ext) = @_;
+
+    &lang_c_rewrite ($base, $ext);
+    $lex_sources{$base . '.' . $ext} = 1;
+    $ext =~ tr/l/c/;
+    &saw_extension ('c');
+    &push_dist_common ($base . '.' . $ext);
+    return 1;
+}
+
+# Rewrite a single lex++ file.
+sub lang_lexxx_rewrite
+{
+    local ($base, $ext) = @_;
+
+    $lex_sources{$base . '.' . $ext} = 1;
+    $ext =~ tr/l/c/;
+    &saw_extension ($ext);
+    &push_dist_common ($base . '.' . $ext);
+    return 1;
+}
+
+# Rewrite a single assembly file.
+sub lang_asm_rewrite
+{
+    return 1;
+}
+
+# Rewrite a single Fortran file.
+sub lang_fortran_rewrite
+{
+    # FIXME: not done yet.
+    return 0;
+}
+
+# The lang_X_finish functions are called after all source file
+# processing is done.  Each should handle defining rules for the
+# language, etc.  A finish function is only called if a source file of
+# the appropriate type has been seen.
+
+sub lang_c_finish
+{
+    # Push all libobjs files onto de_ansi_files.  We actually only
+    # push files which exist in the current directory, and which are
+    # genuine source files.
+    local ($file);
+    foreach $file (keys %libsources)
+    {
+	if ($file =~ /^(.*)\.[cly]$/ && -f "$relative_dir/$file")
+	{
+	    $de_ansi_files{$1} = 1;
+	}
+    }
+
+    if (defined $options{'ansi2knr'} && keys %de_ansi_files)
+    {
+ 	# Make all _.c files depend on their corresponding .c files.
+ 	local ($base, @objects);
+ 	foreach $base (sort keys %de_ansi_files)
+ 	{
+	    # Each _.c file must depend on ansi2knr; otherwise it
+	    # might be used in a parallel build before it is built.
+	    # We need to support files in the srcdir and in the build
+	    # dir (because these files might be auto-generated.  But
+	    # we can't use $< -- some makes only define $< during a
+	    # suffix rule.
+ 	    $output_rules .= ($base . "_.c: $base.c \$(ANSI2KNR)\n\t"
+			      . '$(CPP) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) '
+			      . '`if test -f $(srcdir)/' . $base . '.c'
+			      . '; then echo $(srcdir)/' . $base . '.c'
+			      . '; else echo ' . $base . '.c; fi` '
+			      . "| sed 's/^# \\([0-9]\\)/#line \\1/' "
+			      . '| $(ANSI2KNR) > ' . $base . "_.c\n");
+ 	    push (@objects, $base . '_'
+		  . ($seen_objext ? '.$(OBJEXT)' : '.o'));
+ 	    push (@objects, $base . '_.lo') if $seen_libtool;
+ 	}
+
+ 	# Make all _.o (and _.lo) files depend on ansi2knr.
+ 	# Use a sneaky little hack to make it print nicely.
+ 	&pretty_print_rule ('', '', @objects, ':', '$(ANSI2KNR)');
+    }
+
+    if (! defined $configure_vars{'CC'})
+    {
+	# FIXME: line number.
+	&am_error ("C source seen but \`CC' not defined in \`configure.in'");
+    }
+}
+
+# A helper which computes a sorted list of all C++ extensions which
+# were seen.
+sub cxx_extensions
+{
+    local ($key, @r);
+    foreach $key (sort keys %extension_seen)
+    {
+	push (@r, '.' . $key) if $extension_map{$key} eq 'cxx';
+    }
+    return @r;
+}
+
+sub lang_cxx_finish
+{
+    local (@cxx_list) = &cxx_extensions;
+    local ($cxx_count) = scalar @cxx_list;
+    if ($cxx_count)
+    {
+	push (@suffixes, @cxx_list);
+
+	local ($ltcompile, $ltlink) = &libtool_compiler;
+
+	&define_configure_variable ("CXXFLAGS");
+	&define_variable ('CXXCOMPILE', '$(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)');
+	&define_variable ('LTCXXCOMPILE',
+			  $ltcompile . '$(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)')
+	    if ($seen_libtool);
+
+	&define_variable ('CXXLINK', $ltlink . '$(CXX) $(AM_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@');
+
+	local ($ext);
+	foreach $ext (@cxx_list)
+	{
+	    $output_rules .= ("$ext.o:\n"
+			      . "\t\$(CXXCOMPILE) -c \$<\n");
+	    # FIXME: Using cygpath should be somehow conditional.
+	    $output_rules .= ("$ext.obj:\n"
+			      . "\t\$(CXXCOMPILE) -c `cygpath -w \$<`\n")
+		if ($seen_objext);
+	    $output_rules .= ("$ext.lo:\n"
+			      . "\t\$(LTCXXCOMPILE) -c \$<\n")
+		if ($seen_libtool);
+	}
+
+	if (! defined $configure_vars{'CXX'})
+	{
+	    &am_error ("C++ source seen but \`CXX' not defined in \`configure.in'");
+	}
+    }
+}
+
+sub lang_header_finish
+{
+    # Nothing to do.
+}
+
+# This is a helper for both lex and yacc.
+sub yacc_lex_finish_helper
+{
+    return if defined $language_scratch{'lex-yacc-done'};
+    $language_scratch{'lex-yacc-done'} = 1;
+
+    # If there is more than one distinct yacc (resp lex) source file
+    # in a given directory, then the `ylwrap' program is required to
+    # allow parallel builds to work correctly.  FIXME: for now, no
+    # line number.
+    &require_config_file ($FOREIGN, 'ylwrap');
+    if ($config_aux_dir ne '.' && $config_aux_dir ne '')
+    {
+	&define_variable ('YLWRAP', $config_aux_dir . "/ylwrap");
+    }
+    else
+    {
+	&define_variable ('YLWRAP', '$(srcdir)/ylwrap');
+    }
+}
+
+sub lang_yacc_finish
+{
+    return if defined $language_scratch{'yacc-done'};
+    $language_scratch{'yacc-done'} = 1;
+
+    local ($file, $base, $hname, $cname);
+    local (%seen_suffix) = ();
+    local (@yacc_files) = sort keys %yacc_sources;
+    local ($yacc_count) = scalar (@yacc_files);
+    foreach $file (@yacc_files)
+    {
+	$file =~ /(\..*)$/;
+	&output_yacc_build_rule ($1, $yacc_count > 1)
+	    if ! defined $seen_suffix{$1};
+	$seen_suffix{$1} = 1;
+
+	# Now generate rule to make the header file.  This should only
+	# be generated if `yacc -d' specified.  But right now there is
+	# no way to determine that.  FIXME: examine AM_YFLAGS?
+	$file =~ /^(.*)\.(y|yy|y\+\+|yxx)$/;
+	$base = $1;
+	($hname = $2) =~ tr/y/h/;
+	($cname = $2) =~ tr/y/c/;
+	$output_rules .= "${base}.${hname}: ${base}.${cname}\n";
+
+	# If the files are built in the build directory, then we want
+	# to remove them with `make clean'.  If they are in srcdir
+	# they shouldn't be touched.  However, we can't determine this
+	# statically, and the GNU rules say that yacc/lex output files
+	# should be removed by maintainer-clean.  So that's what we
+	# do.
+	push (@maintainer_clean_files, $base . $hname, $base . $cname);
+    }
+    $output_rules .= "\n";
+
+    if (! defined $configure_vars{'YACC'})
+    {
+	&am_error ("yacc source seen but \`YACC' not defined in \`configure.in'");
+    }
+    if (&variable_defined ('YACCFLAGS'))
+    {
+	&am_line_error ('YACCFLAGS',
+			"\`YACCFLAGS' obsolete; use \`YFLAGS' instead");
+    }
+
+    if ($yacc_count > 1)
+    {
+	&yacc_lex_finish_helper;
+    }
+}
+
+sub lang_yaccxx_finish
+{
+    &lang_yacc_finish;
+}
+
+sub lang_lex_finish
+{
+    return if defined $language_scratch{'lex-done'};
+    $language_scratch{'lex-done'} = 1;
+
+    local (%seen_suffix) = ();
+    local ($file, $cname);
+    local ($lex_count) = scalar (keys %lex_sources);
+    foreach $file (sort keys %lex_sources)
+    {
+	$file =~ /(\..*)$/;
+	&output_lex_build_rule ($1, $lex_count > 1)
+	    if (! defined $seen_suffix{$1});
+	$seen_suffix{$1} = 1;
+
+	# If the files are built in the build directory, then we want
+	# to remove them with `make clean'.  If they are in srcdir
+	# they shouldn't be touched.  However, we can't determine this
+	# statically, and the GNU rules say that yacc/lex output files
+	# should be removed by maintainer-clean.  So that's what we
+	# do.
+	$file =~ /^(.*)\.(l|ll|l\+\+|lxx)$/;
+	($cname = $2) =~ tr/y/c/;
+	push (@maintainer_clean_files, $1 . $cname);
+    }
+
+    if (! defined $configure_vars{'LEX'})
+    {
+	&am_error ("lex source seen but \`LEX' not defined in \`configure.in'");
+    }
+    if (! $seen_decl_yytext)
+    {
+	&am_error ("lex source seen but \`AC_DECL_YYTEXT' not in \`configure.in'");
+    }
+
+    if ($lex_count > 1)
+    {
+	&yacc_lex_finish_helper;
+    }
+}
+
+sub lang_lexxx_finish
+{
+    &lang_lex_finish;
+}
+
+sub lang_asm_finish
+{
+    # Pretend we're C.
+    &lang_c_finish;
+}
+
+sub lang_fortran_finish
+{
+    # FIXME: Nothing to do.
+}
+
+# A helper which decides whether libtool is needed.  Returns prefix
+# for compiler and linker.
+sub libtool_compiler
+{
+    local ($ltcompile, $ltlink) = ('', '');
+    if ($seen_libtool)
+    {
+	&define_configure_variable ("LIBTOOL");
+	$ltcompile = '$(LIBTOOL) --mode=compile ';
+	$ltlink = '$(LIBTOOL) --mode=link ';
+    }
+    return ($ltcompile, $ltlink);
+}
+
+# Given a hash table of linker names, pick the name that has the most
+# precedence.  This is lame, but something has to have global
+# knowledge in order to eliminate the conflict.  Add more linkers as
+# required.
+sub resolve_linker
+{
+    local (%linkers) = @_;
+
+    return 'CXXLINK'
+	if defined $linkers{'CXXLINK'};
+    return 'LINK';
+}
+
+# Called to indicate that an extension was used.
+sub saw_extension
+{
+    local ($ext) = @_;
+    $extension_seen{$ext} = 1;
+}
+
+# Called to ask whether there source files have been seen . If HEADERS
+# is 1, headers can be included.
+sub saw_sources_p
+{
+    local ($headers) = @_;
+
+    if ($headers)
+    {
+	$headers = 0;
+    }
+    else
+    {
+	$headers = defined $extension_seen{'header'};
+    }
+
+    return scalar keys %extension_seen > $headers;
+}
+
+# Register a single language.  If LINKER is the empty string, it means
+# to use the C linker.
+sub register_language
+{
+    local ($language, $linker, $deansi_p, @extensions) = @_;
+
+    local ($iter);
+    foreach $iter (@extensions)
+    {
+	if (defined $extension_map{$iter})
+	{
+	    print STDERR
+		"automake: programming error: duplicate extension $iter\n";
+	    exit 1;
+	}
+	$extension_map{$iter} = $language;
+    }
+
+    $language_map{$language . '-ansi-p'} = $deansi_p;
+    $language_map{$language . '-linker'} = $linker;
+}
+
 
 ################################################################
 
@@ -5644,9 +5887,6 @@ sub initialize_per_input
     @sources = ();
     @objects = ();
 
-    # TRUE if current directory holds any C source files.
-    $dir_holds_sources = 0;
-
     # These variables track inclusion of various compile-related .am
     # files.  $included_generic_compile is TRUE if the basic code has
     # been included.  $included_knr_compile is TRUE if the ansi2knr
@@ -5655,9 +5895,6 @@ sub initialize_per_input
     $included_generic_compile = 0;
     $included_knr_compile = 0;
     $included_libtool_compile = 0;
-
-    # TRUE if current directory holds any headers.
-    $dir_holds_headers = 0;
 
     # TRUE if install targets should work recursively.
     $recursive_install = 0;
@@ -5686,19 +5923,6 @@ sub initialize_per_input
     %yacc_sources = ();
     %lex_sources = ();
 
-    # C++ source extensions we've seen.
-    %cxx_extensions = ();
-
-    # TRUE if we've seen any non-C++ sources.  This actually holds a
-    # line number or the name of a symbol corresponding to a line
-    # number where the C sources were seen.  If it is -1 then it means
-    # we couldn't (easily) figure out which line of the Makefile.am
-    # mentioned the sources.
-    $seen_c_source = 0;
-
-    # TRUE if we've seen any sources at all.
-    $seen_any_source = 0;
-
     # This is a list of all targets to run during "make dist".
     @dist_targets = ();
 
@@ -5712,6 +5936,14 @@ sub initialize_per_input
 
     # This is the name of the recursive `all' target to use.
     $all_target = 'all-recursive';
+
+    # This keeps track of which extensions we've seen (that we care
+    # about).
+    %extension_seen = ();
+
+    # This is random scratch space for the language finish functions.
+    # Don't randomly overwrite it; examine other uses of keys first.
+    %language_scratch = ();
 }
 
 
