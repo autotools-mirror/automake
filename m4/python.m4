@@ -99,5 +99,5 @@ Valid options are `module' or `package'
 
   dnl All done.
 
-  AC_MSG_RESULT(looks good)
+  AC_MSG_RESULT([looks good])
 ])

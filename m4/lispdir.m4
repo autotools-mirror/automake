@@ -11,7 +11,7 @@ AC_DEFUN([AM_PATH_LISPDIR],
   [   --with-lispdir            Override the default lisp directory ],
   [ lispdir="$withval" 
     AC_MSG_CHECKING([where .elc files should go])
-    AC_MSG_RESULT($lispdir)],
+    AC_MSG_RESULT([$lispdir])],
   [
   # If set to t, that means we are running in a shell under Emacs.
   # If you have an Emacs named "t", then use the full path.

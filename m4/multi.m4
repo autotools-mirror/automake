@@ -8,7 +8,7 @@ AC_ARG_ENABLE(multilib,
 [case "${enableval}" in
   yes) multilib=yes ;;
   no)  multilib=no ;;
-  *)   AC_MSG_ERROR(bad value ${enableval} for multilib option) ;;
+  *)   AC_MSG_ERROR([bad value ${enableval} for multilib option]) ;;
  esac], [multilib=yes])
 
 # We may get other options which we are undocumented:

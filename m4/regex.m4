@@ -15,7 +15,7 @@
 # will result in a smaller executable file.
 
 AC_DEFUN([AM_WITH_REGEX],
-[AC_MSG_CHECKING(which of GNU rx or gawk's regex is wanted)
+[AC_MSG_CHECKING([which of GNU rx or gawk's regex is wanted])
 AC_ARG_WITH(regex,
 [  --without-regex         use GNU rx in lieu of gawk's regex for matching],
 [test "$withval" = yes && am_with_regex=1],
@@ -24,8 +24,8 @@ if test -n "$am_with_regex"; then
   AC_MSG_RESULT(regex)
   AC_DEFINE(WITH_REGEX,1,[Define if using GNU regex])
   AC_CACHE_CHECK([for GNU regex in libc], am_cv_gnu_regex,
-    AC_TRY_LINK([], [extern int re_max_failures; re_max_failures = 1],
-		am_cv_gnu_regex=yes, am_cv_gnu_regex=no))
+    [AC_TRY_LINK([], [extern int re_max_failures; re_max_failures = 1],
+		am_cv_gnu_regex=yes, am_cv_gnu_regex=no)])
   if test $am_cv_gnu_regex = no; then
     LIBOBJS="$LIBOBJS regex.$ac_objext"
   fi
