@@ -4,8 +4,12 @@
 dnl AM_MISSING_PROG(NAME, PROGRAM, DIRECTORY)
 dnl The program must properly implement --version.
 AC_DEFUN(AM_MISSING_PROG,
-[if $2 --version > /dev/null 2>&1; then
-    $1=$2
- else
-    $1="$3/missing $2"
- fi])
+[AC_MSG_CHECKING(for working $2)
+if $2 --version > /dev/null 2>&1; then
+   $1=$2
+   AC_MSG_RESULT(found)
+else
+   $1="$3/missing $2"
+   AC_MSG_RESULT(missing)
+fi
+AC_SUBST($1)])
