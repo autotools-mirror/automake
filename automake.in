@@ -190,6 +190,9 @@ $package_version_line = 0;
 # TRUE if we've seen AM_PATH_LISPDIR.
 $seen_lispdir = 0;
 
+# TRUE if we've seen AM_CYGWIN32.
+$seen_cygwin32 = 0;
+
 # Hash table of discovered configure substitutions.  Keys are names,
 # values are meaningless.
 %configure_vars = ();
@@ -228,7 +231,7 @@ $cygnus_mode = 0;
 
      # Note that we do not handle this one, because it is still run
      # from AM_CONFIG_HEADER.  So we deal with it specially in
-     # handle_configure.
+     # scan_configure.
      # 'AC_CONFIG_HEADER', "use \`AM_CONFIG_HEADER'",
 
      'fp_C_PROTOTYPES', "use \`AM_C_PROTOTYPES'",
@@ -304,10 +307,11 @@ sub parse_arguments
     {
 	if ($arglist[0] eq "--version")
 	{
-	    print "automake (GNU $PACKAGE) $VERSION\n";
+	    print "automake (GNU $PACKAGE) $VERSION\n\n";
 	    print "Copyright (C) 1994, 1995, 1996, 1997 Free Software Foundation, Inc.\n";
 	    print "This is free software; see the source for copying conditions.  There is NO\n";
-	    print "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n";
+	    print "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n";
+	    print "Written by Tom Tromey <tromey\@cygnus.com>\n";
 
 	    exit 0;
 	}
@@ -1409,11 +1413,18 @@ sub handle_programs
 	    $xlink = $linker ? $linker : 'LINK';
 	}
 
+	local ($cygxform) = '';
+	if (! $seen_cygwin32)
+	{
+	    $cygxform .= 's/^CYGWIN.*$//;';
+	}
+
 	$output_rules .=
 	    &file_contents_with_transform
 		('s/\@PROGRAM\@/' . $one_file . '/go;'
 		 . 's/\@XPROGRAM\@/' . $xname . '/go;'
-		 . 's/\@XLINK\@/' . $xlink . '/go;',
+		 . 's/\@XLINK\@/' . $xlink . '/go;'
+		 . $cygxform,
 		 'program');
     }
 
@@ -3634,6 +3645,13 @@ sub scan_one_configure_file
 	# Check for ansi2knr.
 	$am_c_prototypes = 1 if /AM_C_PROTOTYPES/;
 
+	# Check for Cygwin32.
+	if (/AM_CYGWIN32/)
+	{
+	    $seen_cygwin32 = 1;
+	    $configure_vars{'EXEEXT'} = 1;
+	}
+
 	# Check for NLS support.
 	if (/AM_GNU_GETTEXT/)
 	{
@@ -3820,6 +3838,11 @@ sub check_cygnus
     if (! $seen_maint_mode)
     {
 	&am_conf_error ("\`AM_MAINTAINER_MODE' required when --cygnus specified");
+    }
+
+    if (! $seen_cygwin32)
+    {
+	&am_conf_error ("\`AM_CYGWIN32' required when --cygnus specified");
     }
 }
 
@@ -4691,6 +4714,16 @@ sub am_install_var
 	$ltxform = 's/\@LIBTOOL([^\@]*)\@//;';
     }
 
+    local ($cygxform);
+    if (! $seen_cygwin32)
+    {
+	$cygxform = 's/\@EXEEXT\@//g; s/^NOTCYGWIN.*$//;';
+    }
+    else
+    {
+	$cygxform .= 's/^CYGWIN.*$//;';
+    }
+
     while (@args)
     {
 	if ($args[0] eq '-clean')
@@ -4775,7 +4808,8 @@ sub am_install_var
 	    if ($do_clean)
 	    {
 		$output_rules .=
-		    &file_contents_with_transform ('s/\@DIR\@/' . $X . '/go;',
+		    &file_contents_with_transform ('s/\@DIR\@/' . $X . '/go;'
+						   . $cygxform,
 						   $clean_file);
 
 		push (@clean, $X . $primary);
@@ -4796,10 +4830,10 @@ sub am_install_var
 		next;
 	    }
 
-		$output_rules .=
-		    &file_contents_with_transform ('s/\@DIR\@/' . $X . '/g;'
-					       . $ltxform,
-						   $file);
+	    $output_rules .=
+		&file_contents_with_transform ('s/\@DIR\@/' . $X . '/g;'
+					       . $ltxform . $cygxform,
+					       $file);
 
 	    push (@uninstall, 'uninstall-' . $X . $primary);
 	    push (@phony, 'uninstall-' . $X . $primary);
