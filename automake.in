@@ -5738,11 +5738,10 @@ sub macro_define ($$$$$$)
   # Differentiate the first assignment (including with `+=').
   if ($type eq '+' && defined $var_value{$var}{$cond})
     {
-      if (substr ($var_value{$var}{$cond}, -1) eq "\n")
+      if ($var_value{$var}{$cond} =~ /\n$/o)
 	{
 	  # Insert a backslash before a trailing newline.
-	  $var_value{$var}{$cond} =
-	    substr ($var_value{$var}{$cond}, 0, -1) . "\\\n";
+	  $var_value{$var}{$cond} = chomp ($var_value{$var}{$cond}) . "\\\n";
 	}
       elsif ($var_value{$var}{$cond})
 	{
@@ -6649,6 +6648,19 @@ sub target_defined
 
 ################################################################
 
+# &append_comments ($VARIABLE, $SPACING, $COMMENT)
+# ------------------------------------------------
+# Apped $COMMENT to the other comments for $VARIABLE, using
+# $SPACING as separator.
+sub append_comments ($$$)
+{
+    my ($var, $spacing, $comment) = @_;
+    $var_comment{$var} .= $spacing
+	if (!defined $var_comment{$var} || $var_comment{$var} !~ /\n$/o);
+    $var_comment{$var} .= $comment;
+}
+
+
 # &read_am_file ($AMFILE)
 # -----------------------
 # Read Makefile.am and set up %contents.  Simultaneously copy lines
@@ -6713,8 +6725,9 @@ sub read_am_file ($)
     {
         my $here = "$amfile:$.";
 
-	$_ .= "\n"
-	    unless substr ($_, -1, 1) eq "\n";
+	# Make sure the line is \n-terminated.
+	chomp;
+	$_ .= "\n";
 
 	# Don't look at MAINTAINER_MODE_TRUE here.  That shouldn't be
 	# used by users.  @MAINT@ is an anachronism now.
@@ -6757,10 +6770,7 @@ sub read_am_file ($)
 
 	      if (!/\\$/)
 		{
-		  $var_comment{$last_var_name} .= "$spacing"
-		    if (!defined $var_comment{$last_var_name}
-			|| substr ($var_comment{$last_var_name}, -1) ne "\n");
-		  $var_comment{$last_var_name} .= "$comment";
+		  append_comments $last_var_name, $spacing, $comment;
 		  $comment = $spacing = '';
 		  macro_define ($last_var_name, 0,
 				$last_var_type, $cond,
@@ -6817,10 +6827,7 @@ sub read_am_file ($)
 		# group all comments for a given variable, no matter
 		# where defined.
 		# Accumulating variables must not be output.
-		$var_comment{$last_var_name} .= "$spacing"
-		  if (!defined $var_comment{$last_var_name}
-		      || substr ($var_comment{$last_var_name}, -1) ne "\n");
-		$var_comment{$last_var_name} .= "$comment";
+		append_comments $last_var_name, $spacing, $comment;
 		$comment = $spacing = '';
 
 		macro_define ($last_var_name, 0,
@@ -7212,10 +7219,7 @@ sub file_contents_internal ($$%)
 	      if /\\$/;
 
 	    # Accumulating variables must not be output.
-	    $var_comment{$var} .= "$spacing"
-	      if (!defined $var_comment{$var}
-		  || substr ($var_comment{$var}, -1) ne "\n");
-	    $var_comment{$var} .= "$comment";
+	    append_comments $var, $spacing, $comment;
 	    macro_define ($var, $is_am, $type, $cond, $val, $file)
 	      if $cond ne 'FALSE';
 	    push (@var_list, $var);
