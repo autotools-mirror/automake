@@ -123,6 +123,8 @@ confh.test \
 confh4.test \
 config.test \
 confincl.test \
+conflnk.test \
+conflnk2.test \
 confsub.test \
 confvar.test \
 confvar2.test \

@@ -316,6 +316,9 @@ my @config_headers = ();
 # Where AC_CONFIG_HEADER appears.
 my $config_header_location;
 
+# Names used in AC_CONFIG_LINKS call.
+my @config_links = ();
+
 # Directory where output files go.  Actually, output files are
 # relative to this directory.
 my $output_directory;
@@ -3903,7 +3906,61 @@ sub handle_configure ($$@)
 		    rewrite_inputs_into_dependencies (0, @inputs));
     }
 
-  # These files get removed by "make clean".
+  foreach my $struct (@config_links)
+    {
+      my ($spec, $where) = @$struct;
+      my ($link, $file) = split /:/, $spec;
+
+      # We skip links that aren't in this directory.  However, if
+      # the link's directory does not have a Makefile, and we are
+      # currently doing `.', then we add the link to CONFIG_CLEAN_FILES
+      # in `.'s Makefile.in.
+      my $local = basename ($link);
+      my $fd = dirname ($link);
+      if ($fd ne $relative_dir)
+	{
+	  if ($relative_dir eq '.' && ! &is_make_dir ($fd))
+	    {
+	      $local = $link;
+	    }
+	  else
+	    {
+	      undef $local;
+	    }
+	}
+
+      push @actual_other_files, $local if $local;
+
+      $local = basename ($file);
+      $fd = dirname ($file);
+
+      # Make sure the dist directory for each input file is created.
+      # We only have to do this at the topmost level though.
+      if ($relative_dir eq '.')
+	{
+	  $dist_dirs{$fd} = 1;
+	}
+
+      # We skip files that aren't in this directory.  However, if
+      # the files's directory does not have a Makefile, and we are
+      # currently doing `.', then we require the file from `.'.
+      if ($fd ne $relative_dir)
+	{
+	  if ($relative_dir eq '.' && ! &is_make_dir ($fd))
+	    {
+	      $local = $file;
+	    }
+	  else
+	    {
+	      next;
+	    }
+	}
+
+      # Require all input files.
+      require_file ($where, FOREIGN, $local);
+  }
+
+  # These files get removed by "make distclean".
   define_pretty_variable ('CONFIG_CLEAN_FILES', TRUE, INTERNAL,
 			  @actual_other_files);
 }
@@ -4487,6 +4544,7 @@ sub scan_autoconf_traces ($)
 		AC_CONFIG_AUX_DIR => 1,
 		AC_CONFIG_FILES => 1,
 		AC_CONFIG_HEADERS => 1,
+		AC_CONFIG_LINKS => 1,
 		AC_INIT => 0,
 		AC_LIBSOURCE => 1,
 		AC_SUBST => 1,
@@ -4558,6 +4616,10 @@ sub scan_autoconf_traces ($)
 	{
 	  $config_header_location = $where;
 	  push @config_headers, split (' ', $args[1]);
+	}
+      elsif ($macro eq 'AC_CONFIG_LINKS')
+	{
+	  push @config_links, map { [$_, $where] } split (' ', $args[1]);
 	}
       elsif ($macro eq 'AC_INIT')
         {
