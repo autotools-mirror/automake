@@ -260,7 +260,7 @@ maintainer-check: automake aclocal
 	fi
 	@if grep '	' $(srcdir)/doc/automake.texi; then \
 	  echo 'Do not use tabs in the manual.' 1>&2; \
-	  exit 1;
+	  exit 1; \
 	fi
 
 
