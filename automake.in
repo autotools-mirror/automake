@@ -4520,7 +4520,10 @@ sub scan_autoconf_traces ($)
 	}
       elsif ($macro eq 'AC_SUBST')
 	{
-	  $configure_vars{$args[1]} = $here;
+	  # Just check for alphanumeric in AC_SUBST.  If you do
+	  # AC_SUBST(5), then too bad.
+	  $configure_vars{$args[1]} = $here
+	    if $args[1] =~ /^\w+$/;
 	}
       elsif ($macro eq 'AM_CONDITIONAL')
 	{
@@ -4639,6 +4642,9 @@ sub scan_one_autoconf_file
 	    s/$generalize/$generalize{$generalize}/g;
 	  }
 
+
+	my $here = "$filename:$.";
+
 	# Populate libobjs array.
 	if (/LIBOBJS="(.*)\s+\$LIBOBJS"/
 	       || /LIBOBJS="\$LIBOBJS\s+(.*)"/)
@@ -4649,23 +4655,23 @@ sub scan_one_autoconf_file
 		    || $libobj_iter =~ /^(.*)\.\$ac_objext$/
 		    || $libobj_iter =~ /^(.*)\.\$\{ac_objext\}$/)
 		{
-		    $libsources{$1 . '.c'} = 1;
+		    $libsources{$1 . '.c'} = $here;
 		}
 	    }
 	}
 	elsif (/AC_LIBOBJ\(([^)]+)\)/)
 	{
-	    $libsources{"$1.c"} = 1;
+	    $libsources{"$1.c"} = $here;
 	}
         elsif (/AC_LIBSOURCE\(([^)]+)\)/)
 	{
-	    $libsources{&unquote_m4_arg ($1)} = 1;
+	    $libsources{&unquote_m4_arg ($1)} = $here;
 	}
         elsif (/AC_LIBSOURCES\(([^)]+)\)/)
 	{
 	    foreach my $lc_iter (split (/[, ]+/, &unquote_m4_arg ($1)))
 	    {
-		$libsources{$lc_iter} = 1;
+		$libsources{$lc_iter} = $here;
 	    }
 	}
 
@@ -4682,7 +4688,7 @@ sub scan_one_autoconf_file
 	    {
 		# Need to skip empty elements for Perl 4.
 		next if $_ eq '';
-		$libsources{$_ . '.c'} = 1;
+		$libsources{$_ . '.c'} = $here;
 	    }
 	}
 
@@ -4727,19 +4733,19 @@ sub scan_one_autoconf_file
 	if (/$AC_CONFIG_AUX_DIR_PATTERN/o)
 	{
 	    @config_aux_path = &unquote_m4_arg ($1);
-	    $config_aux_dir_set_in_configure_in = 1;
+	    $config_aux_dir_set_in_configure_in = $here;
 	}
 
 	# Check for ansi2knr.
-	$am_c_prototypes = 1 if /AM_C_PROTOTYPES/;
+	$am_c_prototypes = $here if /AM_C_PROTOTYPES/;
 
 	# Check for `-c -o' code.
-	$seen_cc_c_o = 1 if /AM_PROG_CC_C_O/;
+	$seen_cc_c_o = $here if /AM_PROG_CC_C_O/;
 
 	# Check for NLS support.
 	if (/AM_GNU_GETTEXT/)
 	{
-	    $seen_gettext = 1;
+	    $seen_gettext = $here;
 	    $ac_gettext_line = $.;
 	}
 
@@ -4785,7 +4791,7 @@ sub scan_one_autoconf_file
 	    foreach my $var ('X_CFLAGS', 'X_LIBS', 'X_EXTRA_LIBS',
 			     'X_PRE_LIBS')
 	      {
-		$configure_vars{$var} = $filename . ':' . $.
+		$configure_vars{$var} = $here;
 	      }
 	  }
 
@@ -4794,29 +4800,29 @@ sub scan_one_autoconf_file
 	{
 	    ($package_version = $1) =~ s/$AM_PACKAGE_VERSION_PATTERN/$1/o;
 	    $package_version_line = $.;
-	    $seen_init_automake = 1;
+	    $seen_init_automake = $here;
 	}
 
 	if (/AM_PROG_LEX/)
 	{
-	    $configure_vars{'LEX'} = $filename . ':' . $.;
-	    $seen_prog_lex = 1;
+	    $configure_vars{'LEX'} = $here;
+	    $seen_prog_lex = $here;
 	}
 	if (/AC_PROG_LEX/ && $filename =~ /configure\.(ac|in)$/)
 	{
-	    $configure_vars{'LEX'} = $filename . ':' . $.;
-	    $seen_prog_lex = 1;
+	    $configure_vars{'LEX'} = $here;
+	    $seen_prog_lex = $here;
  	    &am_conf_line_warning ($filename, $.,
 		   "automake requires `AM_PROG_LEX', not `AC_PROG_LEX'");
 	}
 
 	if (/AC_PROG_(F77|YACC|RANLIB|CC|CXXCPP|CXX|LEX|AWK|CPP|LN_S)/)
 	{
-	    $configure_vars{$1} = $filename . ':' . $.;
+	    $configure_vars{$1} = $here;
 	}
 	if (/$AC_CHECK_PATTERN/o)
 	{
-	    $configure_vars{$3} = $filename . ':' . $.;
+	    $configure_vars{$3} = $here;
 	}
 	if (/$AM_MISSING_PATTERN/o
 	    && $1 ne 'ACLOCAL'
@@ -4827,7 +4833,7 @@ sub scan_one_autoconf_file
 	    # we handle it elsewhere.
 	    && $1 ne 'MAKEINFO')
 	{
-	    $configure_vars{$1} = $filename . ':' . $.;
+	    $configure_vars{$1} = $here;
 	}
 
 	# Explicitly avoid ANSI2KNR -- we AC_SUBST that in protos.m4,
@@ -4842,22 +4848,22 @@ sub scan_one_autoconf_file
 	    && $1 ne 'INSTALL_DATA'
 	    && $1 ne 'AMDEPBACKSLASH')
 	{
-	    $configure_vars{$1} = $filename . ':' . $.;
+	    $configure_vars{$1} = $here;
 	}
 
 	if (/AM_MAINTAINER_MODE/)
 	{
-	    $seen_maint_mode = 1;
-	    $configure_cond{'MAINTAINER_MODE'} = 1;
+	    $seen_maint_mode = $here;
+	    $configure_cond{'MAINTAINER_MODE'} = $here;
 	}
 
         $seen_lispdir = 1 if /AM_PATH_LISPDIR/;
 
         if (/AM_PATH_PYTHON/)
 	  {
-	    $seen_pythondir = 1;
-	    $configure_vars{'pythondir'} = $filename . ':' . $.;
-	    $configure_vars{'PYTHON'} = $filename . ':' . $.;
+	    $seen_pythondir = $here;
+	    $configure_vars{'pythondir'} = $here;
+	    $configure_vars{'PYTHON'} = $here;
 	  }
 
         if (/A(C|M)_PROG_LIBTOOL/)
@@ -4872,27 +4878,27 @@ sub scan_one_autoconf_file
 	    # {
 	    # 	&am_conf_line_warning ($filename, $., "`AM_PROG_LIBTOOL' is obsolete, use `AC_PROG_LIBTOOL' instead");
 	    # }
-	    $seen_libtool = 1;
+	    $seen_libtool = $here;
 	    $libtool_line = $.;
-	    $configure_vars{'LIBTOOL'} = $filename . ':' . $.;
-	    $configure_vars{'RANLIB'} = $filename . ':' . $.;
-	    $configure_vars{'CC'} = $filename . ':' . $.;
+	    $configure_vars{'LIBTOOL'} = $here;
+	    $configure_vars{'RANLIB'} = $here;
+	    $configure_vars{'CC'} = $here;
 	    # AC_PROG_LIBTOOL runs AC_CANONICAL_HOST.  Make sure we
 	    # never downgrade (if we've seen AC_CANONICAL_SYSTEM).
 	    $seen_canonical = $AC_CANONICAL_HOST if ! $seen_canonical;
 	}
 
-	$seen_multilib = 1 if (/AM_ENABLE_MULTILIB/);
+	$seen_multilib = $here if (/AM_ENABLE_MULTILIB/);
 
 	if (/$AM_CONDITIONAL_PATTERN/o)
 	{
-	    $configure_cond{$1} = 1;
+	    $configure_cond{$1} = $here;
 	}
 
 	# Check for Fortran 77 intrinsic and run-time libraries.
 	if (/AC_F77_LIBRARY_LDFLAGS/)
 	{
-	    $configure_vars{'FLIBS'} = $filename . ':' . $.;
+	    $configure_vars{'FLIBS'} = $here;
 	}
     }
 
