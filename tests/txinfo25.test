@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002, 2003  Free Software Foundation, Inc.
+# Copyright (C) 2003  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -18,7 +18,8 @@
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-# Check that info files are not built in $(srcdir).
+# Similar to texinfo24.test, but with two info files, only one of
+# which being cleaned.
 
 required='makeinfo tex'
 . ./defs || exit 1
@@ -28,7 +29,8 @@ set -e
 echo AC_OUTPUT >> configure.in
 
 cat > Makefile.am << 'END'
-info_TEXINFOS = main.texi
+CLEANFILES = [a-m]*.info
+info_TEXINFOS = main.texi other.texi
 END
 
 cat > main.texi << 'END'
@@ -41,6 +43,16 @@ Hello walls.
 @bye
 END
 
+cat > other.texi << 'END'
+\input texinfo
+@setfilename other.info
+@settitle other
+@node Top
+Hello walls.
+@include version2.texi
+@bye
+END
+
 $ACLOCAL
 $AUTOMAKE --add-missing
 $AUTOCONF
@@ -49,44 +61,50 @@ mkdir build
 cd build
 ../configure
 $MAKE
-test -f ../main.info
-test ! -f main.info
-test -f ../stamp-vti
-test ! -f stamp-vti
-test -f ../version.texi
-test ! -f version.texi
+test -f main.info
+test ! -f ../main.info
+test ! -f other.info
+test -f ../other.info
 
 cd ..
-rm -rf build make.info* stamp-vti version.texi
+rm -rf build
 ./configure
 $MAKE
 test -f main.info
+test -f other.info
 
 # Make sure stamp-vti is older that version.texi.
 # (A common situation in a real tree.)
 # This is needed to test the "subtle" issue described below.
 test -f stamp-vti
 test -f version.texi
+test -f stamp-1
+test -f version2.texi
 $sleep
 touch stamp-vti
+touch stamp-1
 
 $MAKE distclean
 test -f stamp-vti
+test -f stamp-1
 test -f version.texi
+test -f version2.texi
 
 mkdir build
 cd build
 ../configure
 $MAKE
-# main.info should not be rebuilt in the current directory, since
+# other.info should not be rebuilt in the current directory, since
 # it's up-to-date in $(srcdir).
 # This can be caused by a subtle issue related to VPATH handling
 # of version.texi (see also the comment in texi-vers.am): because
 # stamp-vti is newer than version.texi, the `version.texi: stamp-vti'
 # rule is always triggered.  Still that's not a reason for `make'
 # to think `version.texi' has been created...
-test ! -f main.info
+test -f main.info
+test ! -f other.info
 $MAKE dvi
 test -f main.dvi
+test -f other.dvi
 
 $MAKE distcheck

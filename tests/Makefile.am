@@ -476,6 +476,9 @@ txinfo19.test \
 txinfo20.test \
 txinfo21.test \
 txinfo22.test \
+txinfo23.test \
+txinfo24.test \
+txinfo25.test \
 transform.test \
 unused.test \
 vars.test \

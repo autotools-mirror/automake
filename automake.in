@@ -2595,14 +2595,15 @@ sub scan_texinfo_file ($)
 
 
 # ($DIRSTAMP, @CLEAN_FILES)
-# output_texinfo_build_rules ($SOURCE, $DEST, @DEPENDENCIES)
-# ----------------------------------------------------------
+# output_texinfo_build_rules ($SOURCE, $DEST, $INSRC, @DEPENDENCIES)
+# ------------------------------------------------------------------
 # SOURCE - the source Texinfo file
 # DEST - the destination Info file
+# INSRC - wether DEST should be built in the source tree
 # DEPENDENCIES - known dependencies
-sub output_texinfo_build_rules ($$@)
+sub output_texinfo_build_rules ($$$@)
 {
-  my ($source, $dest, @deps) = @_;
+  my ($source, $dest, $insrc, @deps) = @_;
 
   # Split `a.texi' into `a' and `.texi'.
   my ($spfx, $ssfx) = ($source =~ /^(.*?)(\.[^.]*)?$/);
@@ -2612,8 +2613,8 @@ sub output_texinfo_build_rules ($$@)
   $dsfx ||= "";
 
   # We can output two kinds of rules: the "generic" rules use Make
-  # suffix rules and are appropriate when $source and $dest lie in
-  # the current directory; the "specific" rules are needed in the other
+  # suffix rules and are appropriate when $source and $dest do not lie
+  # in a sub-directory; the "specific" rules are needed in the other
   # case.
   #
   # The former are output only once (this is not really apparent here,
@@ -2634,6 +2635,15 @@ sub output_texinfo_build_rules ($$@)
       $makeinfoflags = "-I $sdir -I \$(srcdir)/$sdir";
     }
 
+  # A directory can contain two kinds of info files: some built in the
+  # source tree, and some built in the build tree.  The rules are
+  # different in each case.  However we cannot output two different
+  # set of generic rules.  Because in-source builds are more usual, we
+  # use generic rules in this case and fall back to "specific" rules
+  # for build-dir builds.  (It should not be a problem to invert this
+  # if needed.)
+  $generic = 0 unless $insrc;
+
   # We cannot use a suffix rule to build info files with an empty
   # extension.  Otherwise we would output a single suffix inference
   # rule, with separate dependencies, as in
@@ -2652,20 +2662,26 @@ sub output_texinfo_build_rules ($$@)
   # make sure this directory will exist.
   my $dirstamp = require_build_directory_maybe ($dest);
 
+  my $dipfx = ($insrc ? '$(srcdir)/' : '') . $dpfx;
+
   $output_rules .= file_contents ('texibuild',
 				  new Automake::Location,
-				  GENERIC       => $generic,
-				  GENERIC_INFO  => $generic_info,
-				  SOURCE_SUFFIX => $ssfx,
-				  SOURCE => ($generic ? '$<' : $source),
-				  SOURCE_INFO   => ($generic_info ?
-						    '$<' : $source),
-				  SOURCE_REAL   => $source,
-				  DEST_PREFIX   => $dpfx,
-				  DEST_SUFFIX   => $dsfx,
-				  MAKEINFOFLAGS => $makeinfoflags,
-				  DEPS          => "@deps",
-				  DIRSTAMP      => $dirstamp);
+				  DEPS             => "@deps",
+				  DEST_PREFIX      => $dpfx,
+				  DEST_INFO_PREFIX => $dipfx,
+				  DEST_SUFFIX      => $dsfx,
+				  DIRSTAMP         => $dirstamp,
+				  GENERIC          => $generic,
+				  GENERIC_INFO     => $generic_info,
+				  INSRC		   => $insrc,
+				  MAKEINFOFLAGS    => $makeinfoflags,
+				  SOURCE           => ($generic
+						       ? '$<' : $source),
+				  SOURCE_INFO      => ($generic_info
+						       ? '$<' : $source),
+				  SOURCE_REAL      => $source,
+				  SOURCE_SUFFIX    => $ssfx,
+				  );
   return ($dirstamp, "$dpfx.dvi", "$dpfx.pdf", "$dpfx.ps", "$dpfx.html");
 }
 
@@ -2681,6 +2697,15 @@ sub handle_texinfo_helper ($)
   my %versions;
   my $done = 0;
   my @texi_cleans;
+
+  # Build a regex matching user-cleaned files.
+  my $d = var 'DISTCLEANFILES';
+  my $c = var 'CLEANFILES';
+  my @f = ();
+  push @f, $d->value_as_list_recursive (TRUE) if $d;
+  push @f, $c->value_as_list_recursive (TRUE) if $c;
+  @f = map { s|[^A-Za-z_0-9*\[\]\-]|\\$&|g; s|\*|[^/]*|g; $_; } @f;
+  my $user_cleaned_files = '^(?:' . join ('|', @f) . ')$';
 
   foreach my $texi ($info_texinfos->value_as_list_recursive ('all'))
     {
@@ -2711,10 +2736,114 @@ sub handle_texinfo_helper ($)
       $outdir = "" if $outdir eq './';
       $out_file =  $outdir . $out_file;
 
+      # Until Automake 1.6.3, .info files were built in the
+      # source tree.  This was an obstacle to the support of
+      # non-distributed .info files, and non-distributed .texi
+      # files.
+      #
+      # * Non-distributed .texi files is important in some packages
+      #   where .texi files are built at make time, probably using
+      #   other binaries built in the package itself, maybe using
+      #   tools or information found on the build host.  Because
+      #   these files are not distributed they are always rebuilt
+      #   at make time; they should therefore not lie in the source
+      #   directory.  One plan was to support this using
+      #   nodist_info_TEXINFOS or something similar.  (Doing this
+      #   requires some sanity checks.  For instance Automake should
+      #   not allow:
+      #      dist_info_TEXINFO = foo.texi
+      #      nodist_foo_TEXINFO = included.texi
+      #   because a distributed file should never depend on a
+      #   non-distributed file.)
+      #
+      # * If .texi files are not distributed, then .info files should
+      #   not be distributed either.  There are also cases where one
+      #   want to distribute .texi files, but do not want to
+      #   distribute the .info files.  For instance the Texinfo package
+      #   distributes the tool used to build these files; it would
+      #   be a waste of space to distribute them.  It's not clear
+      #   which syntax we should use to indicate that .info files should
+      #   not be distributed.  Akim Demaille suggested that eventually
+      #   we switch to a new syntax:
+      #   |  Maybe we should take some inspiration from what's already
+      #   |  done in the rest of Automake.  Maybe there is too much
+      #   |  syntactic sugar here, and you want
+      #   |     nodist_INFO = bar.info
+      #   |     dist_bar_info_SOURCES = bar.texi
+      #   |     bar_texi_DEPENDENCIES = foo.texi
+      #   |  with a bit of magic to have bar.info represent the whole
+      #   |  bar*info set.  That's a lot more verbose that the current
+      #   |  situation, but it is # not new, hence the user has less
+      #   |  to learn.
+      #	  |
+      #   |  But there is still too much room for meaningless specs:
+      #   |     nodist_INFO = bar.info
+      #   |     dist_bar_info_SOURCES = bar.texi
+      #   |     dist_PS = bar.ps something-written-by-hand.ps
+      #   |     nodist_bar_ps_SOURCES = bar.texi
+      #   |     bar_texi_DEPENDENCIES = foo.texi
+      #   |  here bar.texi is dist_ in line 2, and nodist_ in 4.
+      #
+      # Back to the point, it should be clear that in order to support
+      # non-distributed .info files, we need to build them in the
+      # build tree, not in the source tree (non-distributed .texi
+      # files are less of a problem, because we do not output build
+      # rules for them).  In Automake 1.7 .info build rules have been
+      # largely cleaned up so that .info files get always build in the
+      # build tree, even when distributed.  The idea was that
+      #   (1) if during a VPATH build the .info file was found to be
+      #       absent or out-of-date (in the source tree or in the
+      #       build tree), Make would rebuild it in the build tree.
+      #       If an up-to-date source-tree of the .info file existed,
+      #       make would not rebuild it in the build tree.
+      #   (2) having two copies of .info files, one in the source tree
+      #       and one (newer) in the build tree is not a problem
+      #       because `make dist' always pick files in the build tree
+      #       first.
+      # However it turned out the be a bad idea for several reasons:
+      #   * Tru64, OpenBSD, and FreeBSD (not NetBSD) Make do behave
+      #     like GNU Make on point (1) above.  These implementations
+      #     of Make would always rebuild .info files in the build
+      #     tree, even if such files were up to date in the source
+      #     tree.  Consequently, it was impossible the perform a VPATH
+      #     build of a package containing Texinfo files using these
+      #     Make implementations.
+      #     (Refer to the Autoconf Manual, section "Limitation of
+      #     Make", paragraph "VPATH", item "target lookup", for
+      #     an account of the differences between these
+      #     implementations.)
+      #   * The GNU Coding Standards require these files to be built
+      #     in the source-tree (when they are distributed, that is).
+      #   * Keeping a fresher copy of distributed files in the
+      #     build tree can be annoying during development because
+      #     - if the files is kept under CVS, you really want it
+      #       to be updated in the source tree
+      #     - it os confusing that `make distclean' does not erase
+      #       all files in the build tree.
+      #
+      # Consequently, starting with Automake 1.8, .info files are
+      # built in the source tree again.  Because we still plan to
+      # support non-distributed .info files at some point, we
+      # have a single variable ($INSRC) that controls whether
+      # the current .info file must be built in the source tree
+      # or in the build tree.  Actually this variable is switched
+      # off for .info files that appear to be cleaned; this is
+      # for backward compatibility with package such as Texinfo,
+      # which do things like
+      #   info_TEXINFOS = texinfo.txi info-stnd.texi info.texi
+      #   DISTCLEANFILES = texinfo texinfo-* info*.info*
+      #   # Do not create info files for distribution.
+      #   dist-info:
+      # in order not to distribute .info files.
+      my $insrc = ($out_file =~ $user_cleaned_files) ? 0 : 1;
+
+      my $soutdir = '$(srcdir)/' . $outdir;
+      $outdir = $soutdir if $insrc;
+
       # If user specified file_TEXINFOS, then use that as explicit
       # dependency list.
       @texi_deps = ();
-      push (@texi_deps, "$outdir$vtexi") if $vtexi;
+      push (@texi_deps, "$soutdir$vtexi") if $vtexi;
 
       my $canonical = canonicalize ($infobase);
       if (var ($canonical . "_TEXINFOS"))
@@ -2724,7 +2853,7 @@ sub handle_texinfo_helper ($)
 	}
 
       my ($dirstamp, @cfiles) =
-	output_texinfo_build_rules ($texi, $out_file, @texi_deps);
+	output_texinfo_build_rules ($texi, $out_file, $insrc, @texi_deps);
       push (@texi_cleans, @cfiles);
 
       push (@info_deps_list, $out_file);
@@ -2769,8 +2898,8 @@ sub handle_texinfo_helper ($)
 					  new Automake::Location,
 					  TEXI     => $texi,
 					  VTI      => $vti,
-					  STAMPVTI => "${outdir}stamp-$vti",
-					  VTEXI    => "$outdir$vtexi",
+					  STAMPVTI => "${soutdir}stamp-$vti",
+					  VTEXI    => "$soutdir$vtexi",
 					  MDDIR    => $conf_dir,
 					  DIRSTAMP => $dirstamp);
 	}
@@ -2814,7 +2943,6 @@ sub handle_texinfo_helper ($)
       unshift (@all, '$(INFO_DEPS)');
     }
 
-  define_variable ("INFO_DEPS", "@info_deps_list", INTERNAL);
   define_files_variable ("DVIS", @infobase, 'dvi', INTERNAL);
   define_files_variable ("PDFS", @infobase, 'pdf', INTERNAL);
   define_files_variable ("PSS", @infobase, 'ps', INTERNAL);

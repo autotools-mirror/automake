@@ -19,12 +19,12 @@
 
 
 ?GENERIC_INFO?%SOURCE_SUFFIX%%DEST_SUFFIX%:
-?!GENERIC_INFO?%DEST_PREFIX%%DEST_SUFFIX%: %SOURCE_INFO% %DEPS%
+?!GENERIC_INFO?%DEST_INFO_PREFIX%%DEST_SUFFIX%: %SOURCE_INFO% %DEPS%
 ## It is wrong to have `info' files dependent on %DIRSTAMP%, because
 ## `info' files are distributed and %DIRSTAMP% isn't: a distributed file
 ## should never be dependent upon a non-distributed built file.
 ## Therefore we ensure that %DIRSTAMP% exists in the rule.
-?DIRSTAMP?	@test -f %DIRSTAMP% || $(MAKE) %DIRSTAMP%
+?!INSRC??DIRSTAMP?	@test -f %DIRSTAMP% || $(MAKE) %DIRSTAMP%
 ## Back up the info files before running makeinfo. This is the cheapest
 ## way to ensure that
 ## 1) If the texinfo file shrinks (or if you start using --no-split),
@@ -36,6 +36,7 @@
 ## *.iNN files are used on DJGPP.  See the comments in install-info-am
 	restore=: && \
 	backupdir="$(am__leading_dot)am$$$$" && \
+?INSRC?	am__cwd=`pwd` && cd $(srcdir) && \
 	rm -rf $$backupdir && mkdir $$backupdir && \
 	for f in $@ $@-[0-9] $@-[0-9][0-9] $(@:.info=).i[0-9] $(@:.info=).i[0-9][0-9]; do \
 	  if test -f $$f; then \
@@ -43,15 +44,24 @@
 	    restore=mv; \
 	  fi; \
 	done; \
+?INSRC?	cd "$$am__cwd"; \
 	if $(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) %MAKEINFOFLAGS% \
-	 -o $@ `test -f '%SOURCE_INFO%' || echo '$(srcdir)/'`%SOURCE_INFO%; \
-	then rc=0; else \
+?!INSRC?	 -o $@ `test -f '%SOURCE_INFO%' || echo '$(srcdir)/'`%SOURCE_INFO%; \
+?INSRC??!GENERIC_INFO?	 -o $@ $(srcdir)/%SOURCE_INFO%; \
+?INSRC??GENERIC_INFO?	 -o $@ $<; \
+	then \
+	  rc=0; \
+?INSRC?	  cd $(srcdir); \
+	else \
 	  rc=$$?; \
 ## Beware that backup info files might come from a subdirectory.
+?INSRC?	  cd $(srcdir) && \
 	  $$restore $$backupdir/* `echo "./$@" | sed 's|[^/]*$$||'`; \
 	fi; \
 	rm -rf $$backupdir; \
 	exit $$rc
+
+INFO_DEPS += %DEST_INFO_PREFIX%%DEST_SUFFIX%
 
 ?GENERIC?%SOURCE_SUFFIX%.dvi:
 ?!GENERIC?%DEST_PREFIX%.dvi: %SOURCE% %DEPS% %DIRSTAMP%
@@ -83,7 +93,7 @@
 ## (Don't wonder about %DIRSTAMP% here, this is used only by non-generic
 ## rules.)
 if %?GENERIC_INFO%
-%DEST_PREFIX%%DEST_SUFFIX%: %SOURCE_REAL% %DEPS%
+%DEST_INFO_PREFIX%%DEST_SUFFIX%: %SOURCE_REAL% %DEPS%
 endif %?GENERIC_INFO%
 if %?GENERIC%
 %DEST_PREFIX%.dvi: %SOURCE_REAL% %DEPS%

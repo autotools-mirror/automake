@@ -18,10 +18,10 @@
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-# Check for subdir Texinfo.
-# PR/343
+# Check that info files are built in builddir when needed.
+# (Similar to txinfo16.test, plus CLEANFILES.)
 
-required='makeinfo tex texi2dvi-o'
+required='makeinfo tex'
 . ./defs || exit 1
 
 set -e
@@ -29,30 +29,19 @@ set -e
 echo AC_OUTPUT >> configure.in
 
 cat > Makefile.am << 'END'
-info_TEXINFOS = subdir/main.texi
-subdir_main_TEXINFOS = subdir/inc.texi
-
-installcheck-local:
-	test -f $(infodir)/main.info
+CLEANFILES = main.info
+info_TEXINFOS = main.texi
 END
 
-mkdir subdir
-
-cat > subdir/main.texi << 'END'
+cat > main.texi << 'END'
 \input texinfo
 @setfilename main.info
 @settitle main
 @node Top
 Hello walls.
 @include version.texi
-@include inc.texi
 @bye
 END
-
-cat > subdir/inc.texi << 'END'
-I'm included.
-END
-
 
 $ACLOCAL
 $AUTOMAKE --add-missing
@@ -61,6 +50,34 @@ $AUTOCONF
 mkdir build
 cd build
 ../configure
+$MAKE
+test -f main.info
+
+cd ..
+rm -rf build
+./configure
+$MAKE
+test -f main.info
+
+# Make sure stamp-vti is older that version.texi.
+# (A common situation in a real tree.)
+test -f stamp-vti
+test -f version.texi
+$sleep
+touch stamp-vti
+
+$MAKE distclean
+test -f stamp-vti
+test -f version.texi
+
+mkdir build
+cd build
+../configure
+$MAKE
+# main.info should be rebuilt in the current directory
+test -f main.info
+test ! -f ../main.info
+$MAKE dvi
+test -f main.dvi
+
 $MAKE distcheck
-test -f ../subdir/main.info
-test ! -f subdir/main.info
