@@ -4645,15 +4645,22 @@ sub check_gnu_standards
   if ($relative_dir eq '.')
     {
       # In top level (or only) directory.
+      require_file ("$am_file.am", GNU,
+		    qw/INSTALL NEWS README AUTHORS ChangeLog/);
 
       # Accept one of these three licenses; default to COPYING.
-      my $license = 'COPYING';
-      foreach (qw /COPYING.LIB COPYING.LESSER/)
+      # Make sure we do not overwrite an existing license.
+      my $license;
+      foreach (qw /COPYING COPYING.LIB COPYING.LESSER/)
 	{
-	  $license = $_ if -f $_;
+	  if (-f $_)
+	    {
+	      $license = $_;
+	      last;
+	    }
 	}
-      require_file ("$am_file.am", GNU, $license,
-		    qw/INSTALL NEWS README AUTHORS ChangeLog/);
+      require_file ("$am_file.am", GNU, 'COPYING')
+	unless $license;
     }
 
   for my $opt ('no-installman', 'no-installinfo')

@@ -275,6 +275,7 @@ libtool4.test \
 libtool5.test \
 libtool6.test \
 libtool7.test \
+license.test \
 link_c_cxx.test	\
 link_dist.test \
 link_fc.test \
