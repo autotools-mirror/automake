@@ -2721,7 +2721,8 @@ sub add_depend2
     my $xform = &transform ('PFX'  => $pfx,
 			    'FPFX' => $fpfx,
 			    'OBJEXT'  => $seen_objext,
-			    'LIBTOOL' => $seen_libtool);
+			    'LIBTOOL' => $seen_libtool,
+			    'AMDEP'   => $use_dependencies);
 
     # This function can be called even when we don't want dependency
     # tracking.  This happens when we need an explicit rule for some
@@ -2746,11 +2747,6 @@ sub add_depend2
 					      . $xform1)
 			      . "\n");
 	}
-    }
-    else
-    {
-        # If dependency tracking is disabled, we just elide the code.
-        $xform .= 's/\@AMDEP\@.*$//;';
     }
 
     # Now include code for each specially handled object with this
@@ -3644,23 +3640,18 @@ sub handle_clean
 	if &variable_defined ('BUILT_SOURCES');
     push (@maintainer_clean_files, '\$(MAINTAINERCLEANFILES)')
 	if &variable_defined ('MAINTAINERCLEANFILES');
-    if (! @maintainer_clean_files)
-    {
-	$xform .= 's/^MAINTAINERCLEAN.*$//;';
-    }
-    else
-    {
-	$xform .= ('s/^MAINTAINERCLEAN//;'
-		   # Join with no space to avoid spurious `test -z'
-		   # success at runtime.
-		   . 's,\@MCFILES\@,' . join ('', @maintainer_clean_files)
-		   . ',;'
-		   # A space is required in the join here.
-		   . 's,\@MFILES\@,' . join (' ', @maintainer_clean_files)
-		   . ',;');
-    }
 
-    $output_rules .= &file_contents ('clean', $xform);
+    $output_rules .=
+      &file_contents ('clean',
+		      $xform
+		      . &transform ('MCFILES'
+				    # Join with no space to avoid
+				    # spurious `test -z' success at
+				    # runtime.
+				    => join ('', @maintainer_clean_files),
+				    'MFILES'
+				    # A space is required in the join here.
+				    => join (' ', @maintainer_clean_files)));
 
     # We special-case config.status here.  If we do it as part of the
     # normal clean processing for this directory, then it might be
@@ -6577,7 +6568,8 @@ sub file_contents
     &prog_error ("file_contents: $command")
         if $command ne '' && substr ($command, -1) ne ';';
     $command .=
-      &transform ('CYGNUS'   => $cygnus_mode,
+      &transform ('CYGNUS'          => $cygnus_mode,
+		  'MAINTAINER_MODE' => $seen_maint_mode,
 
 		  'SHAR'        => $options{'dist-shar'},
 		  'BZIP2'       => $options{'dist-bzip2'},
@@ -6770,7 +6762,7 @@ sub transform (%)
 
     while (my ($token, $val) = each %pairs)
     {
-        $result .= "s/\Q\@$token\@\E/\Q$val\E/g;";
+        $result .= "s/\Q%$token%\E/\Q$val\E/g;";
 	if ($val)
 	{
 	    $result .= "s/\Q?$token?\E//g;s/^.*\Q?!$token?\E.*\$//g;";
@@ -6840,23 +6832,23 @@ sub am_install_var
     my $ltxform;
     if (defined $configure_vars{'LIBTOOL'})
     {
-	# Transform '@LIBTOOL ...@' to '$(LIBTOOL) ...'
-	$ltxform = 's/\@LIBTOOL([^\@]*)\@/\$(LIBTOOL) $1/;';
+	# Transform '%LIBTOOL ...%' to '$(LIBTOOL) ...'
+	$ltxform = 's/%LIBTOOL([^\%]*)%/\$(LIBTOOL) $1/;';
     }
     else
     {
-	# Delete '@LIBTOOL ...@'
-	$ltxform = 's/\@LIBTOOL([^\@]*)\@//;';
+	# Delete '%LIBTOOL ...%'
+	$ltxform = 's/%LIBTOOL([^%]*)%//;';
     }
 
     my $cygxform;
     if (! $seen_exeext)
     {
-	$cygxform = 's/\@EXEEXT\@//g;';
+	$cygxform = 's/%EXEEXT%//g;';
     }
     else
     {
-	$cygxform = 's/\@EXEEXT\@/\$(EXEEXT)/g;';
+	$cygxform = 's/%EXEEXT%/\$(EXEEXT)/g;';
     }
 
     my $do_clean = 0;
