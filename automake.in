@@ -1310,7 +1310,7 @@ sub version_check ($$$$)
 {
     my ($rmajor, $rminor, $ralpha, $rfork) = ($1, $2, $3, $4);
 
-    &prog_error ("version is incorrect: $VERSION")
+    prog_error ("version is incorrect: $VERSION")
 	if $VERSION !~ /(\d+)\.(\d+)([a-z]?)-?([A-Za-z0-9]+)?/;
 
     my ($tmajor, $tminor, $talpha, $tfork) = ($1, $2, $3, $4);
@@ -1833,7 +1833,7 @@ sub handle_single_transform_list ($$$$@)
                 require_conf_file ("$am_file.am", $FOREIGN, 'compile')
                     if $lang->name eq 'c';
 
-                &prog_error ("$lang->name flags defined without compiler")
+                prog_error ("$lang->name flags defined without compiler")
   		    if ! defined $lang->compile;
 
                 $renamed = 1;
@@ -1916,7 +1916,7 @@ sub handle_single_transform_list ($$$$@)
 
 	if ($derived_source)
 	{
-	    &prog_error ("$lang->name has automatic dependency tracking")
+	    prog_error ("$lang->name has automatic dependency tracking")
 		if $lang->autodep ne 'no';
 	    # Make sure this new source file is handled next.  That will
 	    # make it appear to be at the right place in the list.
@@ -2234,7 +2234,7 @@ sub handle_lib_objects
 {
     my ($xname, $var) = @_;
 
-    &prog_error ("handle_lib_objects: $var undefined")
+    prog_error ("handle_lib_objects: $var undefined")
 	if ! &variable_defined ($var);
 
     my $ret = 0;
@@ -2427,7 +2427,7 @@ sub handle_compile ()
 	}
 	else
 	{
-	    &prog_error ("invalid entry in \%compile_clean_files");
+	    prog_error ("invalid entry in \%compile_clean_files");
 	}
     }
 
@@ -3608,6 +3608,10 @@ sub scan_aclocal_m4
     return ($regen_aclocal, @ac_deps);
 }
 
+
+# @DEPENDENCY
+# &rewrite_inputs_into_dependencies ($ADD_SRCDIR, @INPUTS)
+# --------------------------------------------------------
 # Rewrite a list of input files into a form suitable to put on a
 # dependency list.  The idea is that if an input file has a directory
 # part the same as the current directory, then the directory part is
@@ -3619,7 +3623,7 @@ sub scan_aclocal_m4
 #   AC_OUTPUT(src/out:src/in1:lib/in2)
 # The first argument, ADD_SRCDIR, is 1 if $(top_srcdir) should be added.
 # If 0 then files that require this addition will simply be ignored.
-sub rewrite_inputs_into_dependencies
+sub rewrite_inputs_into_dependencies ($@)
 {
     my ($add_srcdir, @inputs) = @_;
     my @newinputs;
@@ -3660,7 +3664,7 @@ sub handle_configure
     $colon_infile .= ':' . join (':', @secondary_inputs)
 	if @secondary_inputs;
 
-    my @rewritten = &rewrite_inputs_into_dependencies (1, @secondary_inputs);
+    my @rewritten = rewrite_inputs_into_dependencies (1, @secondary_inputs);
 
     my ($regen_aclocal_m4, @aclocal_m4_deps) = scan_aclocal_m4 ();
 
@@ -3839,21 +3843,23 @@ sub handle_configure
 	{
 	    # This is the ":" syntax of AC_OUTPUT.
 	    $file = $1;
-	    $local = basename ($file);
 	    @inputs = split (':', $2);
-	    @rewritten_inputs = &rewrite_inputs_into_dependencies (1, @inputs);
 	    $need_rewritten = 1;
 	}
 	else
 	{
 	    # Normal usage.
 	    $file = $lfile;
-	    $local = basename ($file);
-	    @inputs = ($file . '.in');
-	    @rewritten_inputs =
-		&rewrite_inputs_into_dependencies (1, @inputs);
+	    @inputs = $file . '.in';
 	    $need_rewritten = 0;
 	}
+
+	# Automake files should not be stored in here, but in %MAKE_LIST.
+        prog_error ("$lfile in \@other_input_files")
+	  if -f $file . '.am';
+
+	$local = basename ($file);
+	@rewritten_inputs = rewrite_inputs_into_dependencies (1, @inputs);
 
 	# Make sure the dist directory for each input file is created.
 	# We only have to do this at the topmost level though.  This
@@ -3868,12 +3874,10 @@ sub handle_configure
 	    }
 	}
 
-	# We skip any automake input files, as they are handled
-	# elsewhere.  We also skip files that aren't in this
-	# directory.  However, if the file's directory does not have a
-	# Makefile, and we are currently doing `.', then we create a
-	# rule to rebuild the file in the subdir.
-	next if -f $file . '.am';
+	# We skip files that aren't in this directory.  However, if
+	# the file's directory does not have a Makefile, and we are
+	# currently doing `.', then we create a rule to rebuild the
+	# file in the subdir.
 	my $fd = dirname ($file);
 	if ($fd ne $relative_dir)
 	{
@@ -3913,7 +3917,7 @@ sub handle_configure
 
 	# Require all input files.
 	require_file ($ac_config_files_location, $FOREIGN,
-		      &rewrite_inputs_into_dependencies (0, @inputs));
+		      rewrite_inputs_into_dependencies (0, @inputs));
     }
 
     # These files get removed by "make clean".
@@ -6932,7 +6936,7 @@ sub read_main_am_file
     if (scalar keys %var_value > 0)
       {
 	macros_dump ();
-	&prog_error ("variable defined before read_main_am_file");
+	prog_error ("variable defined before read_main_am_file");
       }
 
     # Generate copyright header for generated Makefile.in.
@@ -7905,7 +7909,7 @@ sub require_build_directory_maybe ($)
 # Push a list of files onto dist_common.
 sub push_dist_common
 {
-    &prog_error ("push_dist_common run after handle_dist")
+    prog_error ("push_dist_common run after handle_dist")
         if $handle_dist_run;
     macro_define ('DIST_COMMON', 1, '+', '', join (' ', @_), '');
 }
