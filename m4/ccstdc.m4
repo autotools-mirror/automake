@@ -55,7 +55,11 @@ struct s2 {int (*f) (double a);};],
 done
 CC="$ac_save_CC"
 ])
-AC_MSG_RESULT($am_cv_prog_cc_stdc)
+if test -z "$am_cv_prog_cc_stdc"; then
+  AC_MSG_RESULT([none needed])
+else
+  AC_MSG_RESULT($am_cv_prog_cc_stdc)
+fi
 case "x$am_cv_prog_cc_stdc" in
   x|xno) ;;
   *) CC="$CC $am_cv_prog_cc_stdc" ;;
