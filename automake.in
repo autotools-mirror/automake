@@ -435,7 +435,7 @@ sub generate_makefile
     &handle_gettext;
     &handle_libraries;
     &handle_programs;
-    &check_source_typos;
+    &check_typos;
     &handle_scripts;
 
     # This must be run after all the sources are scanned.
@@ -905,10 +905,11 @@ sub handle_lib_objects
 	next if $lsearch =~ /^-[lL]/;
 
 	# Assume we have a file of some sort, and push it onto the
-	# dependency list.  This isn't perfect, but hopefully people
-	# will point out the exceptions I'm obviously too lazy to
-	# think of myself.
-	push (@dep_list, $lsearch);
+	# dependency list.  Autoconf substitutions are not pushed;
+	# rarely is a new dependency substituted into (eg) foo_LDADD
+	# -- but "bad things (eg -lX11) are routinely substituted.
+	push (@dep_list, $lsearch)
+	    unless $lsearch =~ /^\@.*\@$/;
 
 	# Automatically handle @LIBOBJS@ and @ALLOCA@.  Basically this
 	# means adding entries to dep_files.
@@ -1133,15 +1134,18 @@ sub handle_libraries
 }
 
 # See if any _SOURCES variable were misspelled.
-sub check_source_typos
+sub check_typos
 {
-    local ($varname);
+    local ($varname, $primary);
     foreach $varname (keys %contents)
     {
-	if ($varname =~ /_SOURCES$/ && ! $content_seen{$varname})
+	foreach $primary ('_SOURCES', '_LIBADD', '_LDADD', '_DEPENDENCIES')
 	{
-	    &am_line_error ($varname,
-			    "invalid unused variable name: \`$varname'");
+	    if ($varname =~ /$primary$/ && ! $content_seen{$varname})
+	    {
+		&am_line_error ($varname,
+				"invalid unused variable name: \`$varname'");
+	    }
 	}
     }
 }
@@ -2624,7 +2628,6 @@ sub handle_emacs_lisp
 ################################################################
 
 # Scan configure.in for interesting things.
-# FIXME: ensure VERSION, PACKAGE are set.
 sub scan_configure
 {
     open (CONFIGURE, 'configure.in')
@@ -2974,8 +2977,14 @@ sub variable_defined
     if (defined $targets{$var})
     {
 	&am_line_error ($var, "\`$var' is target; expected variable");
+	return 0;
     }
-    return (defined $contents{$var} && ! defined $targets{$var});
+    elsif (defined $contents{$var})
+    {
+	$content_seen{$var} = 1;
+	return 1;
+    }
+    return 0;
 }
 
 # Return contents of variable as list, split as whitespace.  This will
