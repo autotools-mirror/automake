@@ -23,6 +23,8 @@
 required='libtoolize gcc'
 . ./defs || exit 1
 
+set -e
+
 cat >> configure.in << 'END'
 AC_PROG_CC
 AM_PROG_LIBTOOL
@@ -30,13 +32,16 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-lib_LTLIBRARIES = lib0.la
+lib_LTLIBRARIES = lib0.la liba/liba.la
 lib0_la_SOURCES = 0.c
+liba_liba_la_SOURCES = liba/a.c
 
 bin_PROGRAMS = 1
 1_SOURCES = 1.c
-1_LDADD = lib0.la
+1_LDADD = lib0.la $(top_builddir)/liba/liba.la
 END
+
+mkdir liba
 
 cat > 0.c << 'END'
 int
@@ -56,7 +61,13 @@ main ()
 }
 END
 
-set -e
+cat > liba/a.c << 'END'
+int
+a (void)
+{
+   return 'a';
+}
+END
 
 # Use --copy to workaround a bug in Cygwin's `cp -p' during distcheck.
 # (This bug is already exhibited by subobj9.test.)  In brief: Cygwin's
