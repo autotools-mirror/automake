@@ -439,27 +439,19 @@ my $output_header;
 # Suffixes found during a run.
 my @suffixes;
 
-# This maps a variable name onto a flag.  The flag is true iff the
-# variable was first defined with `+='.
-my %var_was_plus_eq;
-
-# Maps a variable name to true iff the variable was defined by Automake.
-# This is used during startup to determine which variables can be
-# assigned with `+='.
-my %var_is_am;
-
-# For a variable or target $ITEM which is defined conditionally,
-# this holds a hash of the conditional values.  The keys of
-# %CONDITIONAL{$ITEM} are the conditions (the variables which
-# configure will substitute), and the values, the associated
-# values (meaningless for targets).
+# Handling the variables.
 #
-# By definition, for an unconditional variable, this is empty.
-my %conditional;
-
-# This holds the line numbers at which various elements of
-# %conditional are defined.
-my %content_lines;
+# For a $VAR:
+# - $var_value{$VAR}{$COND} is its value associated to $COND,
+# - $var_line{$VAR} is where it has been defined,
+# - $var_comment{$VAR} are the comments associated to it.
+# - $var_type{$VAR} is how it has been defined (`', `+', or `:'),
+# - $var_is_am{$VAR} is true if the variable is owned by Automake.
+my %var_value;
+my %var_line;
+my %var_comment;
+my %var_type;
+my %var_is_am;
 
 # This holds a 1 if a particular variable was examined.
 my %content_seen;
@@ -468,7 +460,7 @@ my %content_seen;
 # %contents.
 my %targets;
 
-# Same as %CONDITIONAL, but for targets.
+# Same as %VAR_VALUE, but for targets.
 my %target_conditional;
 
 # This is the conditional stack.
@@ -588,16 +580,9 @@ my $handle_dist_run;
 # True if we need `LINK' defined.  This is a hack.
 my $need_link;
 
-# The keys here are variables we want to dump at the end of this
-# function.  The values are corresponding comments.
-my %am_vars;
-
 # This is the list of such variables to output.
 # FIXME: Might be useless actually.
 my @var_list;
-
-# Is $am_var{'foo'} defined with `=', or `+='?
-my %def_type;
 
 
 # &initialize_per_input ()
@@ -619,13 +604,11 @@ sub initialize_per_input ()
 
     @suffixes = ();
 
-    %var_was_plus_eq = ();
-
+    %var_value = ();
+    %var_line = ();
+    %var_comment = ();
+    %var_type = ();
     %var_is_am = ();
-
-    %conditional = ();
-
-    %content_lines = ();
 
     %content_seen = ();
 
@@ -735,9 +718,7 @@ sub initialize_per_input ()
 
     $need_link = 0;
 
-    %am_vars = ();
     @var_list = ();
-    %def_type = ();
 }
 
 
@@ -2443,7 +2424,7 @@ sub handle_ltlibraries
 # EXTRA_ variables don't contain configure substitutions.
 sub check_typos
 {
-    foreach my $varname (keys %conditional)
+    foreach my $varname (keys %var_value)
     {
 	foreach my $primary ('_SOURCES', '_LIBADD', '_LDADD', '_LDFLAGS',
 			     '_DEPENDENCIES')
@@ -5421,24 +5402,24 @@ sub variable_dump ($)
 {
   my ($var)= @_;
 
-  if (!exists $conditional{$var})
+  if (!exists $var_value{$var})
     {
       print STDERR "  $var does not exist\n";
     }
   else
     {
       my $var_is_am = $var_is_am{$var} ? "Automake" : "User";
-      my $where = (defined $content_lines{$var}
-		   ? $content_lines{$var} : "undefined");
-      my $pluseq = ((defined $var_was_plus_eq{$var} && $var_was_plus_eq{$var})
+      my $where = (defined $var_line{$var}
+		   ? $var_line{$var} : "undefined");
+      my $pluseq = ((defined $var_type{$var} && $var_type{$var})
 		    ? "+=" : "=");
       print STDERR "  $var ($var_is_am, where = $where) $pluseq\n";
       print STDERR "  {\n";
-      print STDERR "$am_vars{$var}"
-	if defined $am_vars{$var};
-      foreach my $vcond (sort by_condition keys %{$conditional{$var}})
+      print STDERR "$var_comment{$var}"
+	if defined $var_comment{$var};
+      foreach my $vcond (sort by_condition keys %{$var_value{$var}})
 	{
-	  print STDERR "    $vcond => $conditional{$var}{$vcond}\n";
+	  print STDERR "    $vcond => $var_value{$var}{$vcond}\n";
 	}
       print STDERR "  }\n";
     }
@@ -5451,9 +5432,9 @@ sub variables_dump ()
 {
   my ($var)= @_;
 
-  print STDERR "%conditional =\n";
+  print STDERR "%var_value =\n";
   print STDERR "{\n";
-  foreach my $var (sort (keys %conditional))
+  foreach my $var (sort (keys %var_value))
     {
       variable_dump ($var);
     }
@@ -5551,7 +5532,7 @@ sub condition_negate ($)
 sub check_ambiguous_conditional ($$)
 {
     my ($var, $cond) = @_;
-    foreach my $vcond (keys %{$conditional{$var}})
+    foreach my $vcond (keys %{$var_value{$var}})
     {
        my $message;
        if ($vcond eq $cond)
@@ -5591,9 +5572,9 @@ sub macro_define ($$$$$$)
   $cond ||= 'TRUE';
 
   # A variable which was `+=' must not be `='.
-  if (defined $var_was_plus_eq{$var})
+  if (defined $var_type{$var})
     {
-      if ($var_was_plus_eq{$var} && $type ne '+')
+      if ($var_type{$var} && $type ne '+')
 	{
 	  am_line_error ($var,
 			 ("$var was set with `+=' "
@@ -5602,24 +5583,24 @@ sub macro_define ($$$$$$)
     }
   else
     {
-      $var_was_plus_eq{$var} = $type eq '+' && ! $var_is_am{$var};
+      $var_type{$var} = $type;
     }
 
   # Differentiate the first assignment (including with `+=').
-  if ($type eq '+' && defined $conditional{$var}{$cond})
+  if ($type eq '+' && defined $var_value{$var}{$cond})
     {
-      if (substr ($conditional{$var}{$cond}, -1) eq "\n")
+      if (substr ($var_value{$var}{$cond}, -1) eq "\n")
 	{
 	  # Insert a backslash before a trailing newline.
-	  $conditional{$var}{$cond} =
-	    substr ($conditional{$var}{$cond}, 0, -1) . "\\\n";
+	  $var_value{$var}{$cond} =
+	    substr ($var_value{$var}{$cond}, 0, -1) . "\\\n";
 	}
-      elsif ($conditional{$var}{$cond})
+      elsif ($var_value{$var}{$cond})
 	{
 	  # Insert a separator.
-	  $conditional{$var}{$cond} .= ' ';
+	  $var_value{$var}{$cond} .= ' ';
 	}
-       $conditional{$var}{$cond} .= $value;
+       $var_value{$var}{$cond} .= $value;
     }
   else
     {
@@ -5628,8 +5609,8 @@ sub macro_define ($$$$$$)
       # FIXME: We sometimes redefine some variables, but we want to keep
       # the original location.  More subs are needed to handle
       # properly variables.  Once this done, remove this hack.
-      $content_lines{$var} = $where
-	unless defined $content_lines{$var};
+      $var_line{$var} = $where
+	unless defined $var_line{$var};
 
       # There must be no previous value unless the user is redefining
       # an Automake variable or an AC_SUBST variable.
@@ -5637,7 +5618,7 @@ sub macro_define ($$$$$$)
 	unless ($var_is_am{$var} && !$var_is_am
 		|| exists $configure_vars{$var});
 
-      $conditional{$var}{$cond} = $value;
+      $var_value{$var}{$cond} = $value;
     }
 
   # An Automake variable can be given to the user, but not the converse.
@@ -5645,8 +5626,6 @@ sub macro_define ($$$$$$)
     {
       $var_is_am{$var} = $var_is_am;
     }
-
-  $def_type{$var} = ($type eq ':') ? ':' : '';
 }
 
 
@@ -5657,10 +5636,11 @@ sub variable_delete ($)
 {
   my ($var) = @_;
 
-  delete $content_lines{$var};
-  delete $conditional{$var};
+  delete $var_value{$var};
+  delete $var_line{$var};
   delete $var_is_am{$var};
-  delete $def_type{$var};
+  delete $var_comment{$var};
+  delete $var_type{$var};
 }
 
 
@@ -5675,10 +5655,10 @@ sub variable_defined ($$)
 {
     my ($var, $cond) = @_;
 
-    # Unfortunately we can't just check for $conditional{VAR}{COND}
+    # Unfortunately we can't just check for $var_value{VAR}{COND}
     # as this would make perl create $condition{VAR}, which we
     # don't want.
-    if (!exists $conditional{$var})
+    if (!exists $var_value{$var})
       {
 	if (defined $targets{$var})
 	  {
@@ -5689,13 +5669,13 @@ sub variable_defined ($$)
       }
 
     if ($var_is_am{$var}
-	|| ($cond && !exists $conditional{$var}{$cond}))
+	|| ($cond && !exists $var_value{$var}{$cond}))
       {
 	# The variable is not defined for the given condition.
 	return 0;
       }
 
-    # Even a conditional examination is good enough for us.  FIXME:
+    # Even a var_value examination is good enough for us.  FIXME:
     # really should maintain examined status on a per-condition basis.
     $content_seen{$var} = 1;
     return 1;
@@ -5779,7 +5759,7 @@ sub variable_conditions_sub
     $vars_scanned{$var} = 1;
 
     my @this_conds = ();
-    foreach my $vcond (keys %{$conditional{$var}})
+    foreach my $vcond (keys %{$var_value{$var}})
     {
 	next
 	  if ! conditionals_true_when ((@parent_conds), ($vcond));
@@ -5788,7 +5768,7 @@ sub variable_conditions_sub
 
 	push (@parent_conds, $vcond);
 	my @subvar_conds = ();
-	foreach (split (' ', $conditional{$var}{$vcond}))
+	foreach (split (' ', $var_value{$var}{$vcond}))
 	{
 	    # If a comment seen, just leave.
 	    last if /^#/;
@@ -5947,7 +5927,7 @@ sub variable_conditions_permutations
 sub check_variable_defined_unconditionally ($$)
 {
     my ($var, $parent) = @_;
-    foreach my $cond (keys %{$conditional{$var}})
+    foreach my $cond (keys %{$var_value{$var}})
     {
         next
 	  if $cond =~ /^TRUE|FALSE$/;
@@ -5974,7 +5954,7 @@ sub variable_value
 {
     my ($var) = @_;
     &check_variable_defined_unconditionally ($var);
-    return $conditional{$var}{'TRUE'};
+    return $var_value{$var}{'TRUE'};
 }
 
 
@@ -6055,7 +6035,7 @@ sub variable_value_as_list_worker
     my ($var, $cond, $parent) = @_;
     my @result = ();
 
-    if (! defined $conditional{$var})
+    if (! defined $var_value{$var})
     {
         if (defined $targets{$var})
 	  {
@@ -6075,9 +6055,9 @@ sub variable_value_as_list_worker
     elsif ($cond eq 'all')
     {
 	$vars_scanned{$var} = 1;
-	foreach my $vcond (keys %{$conditional{$var}})
+	foreach my $vcond (keys %{$var_value{$var}})
 	{
-	    my $val = $conditional{$var}{$vcond};
+	    my $val = $var_value{$var}{$vcond};
 	    push (@result, &value_to_list ($var, $val, $cond));
 	}
     }
@@ -6086,9 +6066,9 @@ sub variable_value_as_list_worker
         $cond ||= 'TRUE';
 	$vars_scanned{$var} = 1;
 	my $onceflag;
-	foreach my $vcond (keys %{$conditional{$var}})
+	foreach my $vcond (keys %{$var_value{$var}})
 	{
-	    my $val = $conditional{$var}{$vcond};
+	    my $val = $var_value{$var}{$vcond};
 	    if (&conditional_true_when ($vcond, $cond))
 	    {
 		# Warn if we have an ambiguity.  It's hard to know how
@@ -6117,16 +6097,16 @@ sub variable_output ($@)
 {
   my ($var, @conds) = @_;
 
-  @conds = sort by_condition keys %{$conditional{$var}}
+  @conds = sort by_condition keys %{$var_value{$var}}
     unless @conds;
 
-  $output_vars .= $am_vars{$var}
-    if defined $am_vars{$var};
+  $output_vars .= $var_comment{$var}
+    if defined $var_comment{$var};
 
   foreach my $cond (@conds)
     {
-      my $val = $conditional{$var}{$cond};
-      my $output_var = "$var $def_type{$var}= $val";
+      my $val = $var_value{$var}{$cond};
+      my $output_var = "$var $var_type{$var}= $val";
       $output_var =~ s/^/&make_condition ($cond)/meg;
       $output_vars .= $output_var . "\n";
     }
@@ -6141,18 +6121,18 @@ sub variable_pretty_output ($@)
 {
   my ($var, @conds) = @_;
 
-  @conds = sort by_condition keys %{$conditional{$var}}
+  @conds = sort by_condition keys %{$var_value{$var}}
     unless @conds;
 
-  $output_vars .= $am_vars{$var}
-    if defined $am_vars{$var};
+  $output_vars .= $var_comment{$var}
+    if defined $var_comment{$var};
 
   foreach my $cond (@conds)
     {
-      my $val = $conditional{$var}{$cond};
+      my $val = $var_value{$var}{$cond};
       my $make_condition = make_condition ($cond);
       $output_vars .= pretty_print_internal ("$make_condition$var"
-					     . " $def_type{$var}=",
+					     . " $var_type{$var}=",
 					     "$make_condition\t",
 					     split (' ' , $val));
     }
@@ -6190,7 +6170,7 @@ sub define_pretty_variable
 	variable_pretty_output ($var, $cond || 'TRUE');
 	$content_seen{$var} = 1;
     }
-    elsif ($var_was_plus_eq{$var})
+    elsif ($var_type{$var})
     {
 	&am_line_error ($var,
 			"internally generated variable `$var' was set with `+='");
@@ -6418,10 +6398,10 @@ sub read_am_file
 
 	      if (!/\\$/)
 		{
-		  $am_vars{$last_var_name} .= "$spacing"
-		    if (!defined $am_vars{$last_var_name}
-			|| substr ($am_vars{$last_var_name}, -1) ne "\n");
-		  $am_vars{$last_var_name} .= "$comment";
+		  $var_comment{$last_var_name} .= "$spacing"
+		    if (!defined $var_comment{$last_var_name}
+			|| substr ($var_comment{$last_var_name}, -1) ne "\n");
+		  $var_comment{$last_var_name} .= "$comment";
 		  $comment = $spacing = '';
 		  macro_define ($last_var_name, 0,
 				   $last_var_type, $cond,
@@ -6476,7 +6456,7 @@ sub read_am_file
 
 	    rule_define ($1, 0, $cond, $.);
 
-	    $content_lines{$1} = $.;
+	    $var_line{$1} = $.;
 	    $output_trailer .= $comment . $spacing;
             $output_trailer .= &make_condition (@conditional_stack);
             $output_trailer .= $_;
@@ -6508,10 +6488,10 @@ sub read_am_file
 		# group all comments for a given variable, no matter
 		# where defined.
 		# Accumulating variables must not be output.
-		$am_vars{$last_var_name} .= "$spacing"
-		  if (!defined $am_vars{$last_var_name}
-		      || substr ($am_vars{$last_var_name}, -1) ne "\n");
-		$am_vars{$last_var_name} .= "$comment";
+		$var_comment{$last_var_name} .= "$spacing"
+		  if (!defined $var_comment{$last_var_name}
+		      || substr ($var_comment{$last_var_name}, -1) ne "\n");
+		$var_comment{$last_var_name} .= "$comment";
 		$comment = $spacing = '';
 
 		macro_define ($last_var_name, 0,
@@ -6601,7 +6581,7 @@ sub read_main_am_file
     my ($amfile) = @_;
 
     # This supports the strange variable tricks we are about to play.
-    if (scalar keys %conditional > 0)
+    if (scalar keys %var_value > 0)
       {
 	variables_dump ();
 	&prog_error ("variable defined before read_main_am_file");
@@ -6896,10 +6876,10 @@ sub file_contents_internal ($%)
 	      if /\\$/;;
 
 	    # Accumulating variables must not be output.
-	    $am_vars{$var} .= "$spacing"
-	      if (!defined $am_vars{$var}
-		  || substr ($am_vars{$var}, -1) ne "\n");
-	    $am_vars{$var} .= "$comment";
+	    $var_comment{$var} .= "$spacing"
+	      if (!defined $var_comment{$var}
+		  || substr ($var_comment{$var}, -1) ne "\n");
+	    $var_comment{$var} .= "$comment";
 	    macro_define ($var, 1, $type, $cond, $val, $.);
 	    push (@var_list, $var);
 
@@ -6984,7 +6964,7 @@ sub am_primary_prefixes
     my %valid;
     grep ($valid{$_} = 0, @prefixes);
     $valid{'EXTRA'} = 0;
-    foreach my $varname (keys %conditional)
+    foreach my $varname (keys %var_value)
     {
         # Automake is allowed to define variables that look like they
         # are magic variables, such as INSTALL_DATA.
@@ -7636,11 +7616,11 @@ sub am_line_error
 	    # SYMBOL is a line number, so just add the colon.
 	    $file .= ':' . $symbol;
 	}
-	elsif (defined $content_lines{$symbol})
+	elsif (defined $var_line{$symbol})
 	{
 	    # SYMBOL is a variable defined in Makefile.am, so add the
 	    # line number we saved from there.
-	    $file .= ':' . $content_lines{$symbol};
+	    $file .= ':' . $var_line{$symbol};
 	}
 	elsif (defined $configure_vars{$symbol})
 	{
