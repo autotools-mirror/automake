@@ -216,6 +216,7 @@ lisp.test \
 listval.test \
 ltdeps.test \
 ltlibobjs.test \
+maintclean.test \
 make.test \
 makevars.test \
 man.test \
