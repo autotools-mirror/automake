@@ -73,6 +73,10 @@ $force_output = 0;
 # Which files have been seen.
 %file_seen = ();
 
+# Remember the order into which we scanned the files.
+# It's important to output the contents of aclocal.m4 in the opposite order.
+@file_order = ();
+
 # Map macro names to file names.
 %map = ();
 
@@ -228,7 +232,6 @@ sub parse_arguments (@)
 	close (DEFAULT_DIRLIST);
     }
 
-
     return @dirlist;
 }
 
@@ -313,7 +316,9 @@ sub scan_m4_files (@)
 	  }
 
 	local ($file, $fullfile);
-	foreach $file (sort grep (! /^\./, readdir (DIR)))
+	# We reverse the directory contents so that foo2.m4 gets
+	# used in preference to foo1.m4.
+	foreach $file (reverse sort grep (! /^\./, readdir (DIR)))
 	{
 	    # Only examine .m4 files.
 	    next unless $file =~ /\.m4$/;
@@ -424,35 +429,41 @@ sub add_file ($)
 # Scan a single M4 file.  Return contents.
 sub scan_file ($)
 {
-    local ($file) = @_;
+  local ($file) = @_;
 
-    my $fh = new Automake::XFile $file;
-    my $contents = '';
-    while ($_ = $fh->getline)
+  unshift @file_order, $file;
+
+  my $fh = new Automake::XFile $file;
+  my $contents = '';
+  while ($_ = $fh->getline)
     {
-	# Ignore `##' lines.
-	next if /^##/;
+      # Ignore `##' lines.
+      next if /^##/;
 
-	$contents .= $_;
+      $contents .= $_;
 
-	if (/$ac_defun_rx/)
+      if (/$ac_defun_rx/)
 	{
-	    if (! defined $map{$1 || $2})
+	  if (! defined $map{$1 || $2})
 	    {
-		$map{$1 || $2} = $file;
+	      print STDERR "aclocal: found macro $1 in $file: $.\n"
+		if $verbose;
+	      $map{$1 || $2} = $file;
 	    }
-
-	    # Note: we used to give an error here if we saw a
-	    # duplicated macro.  However, this turns out to be
-	    # extremely unpopular.  It causes actual problems which
-	    # are hard to work around, especially when you must
-	    # mix-and-match tool versions.
-
-	    print STDERR "aclocal: found macro $1 in $file: $.\n" if $verbose;
+	  else
+	    {
+	      # Note: we used to give an error here if we saw a
+	      # duplicated macro.  However, this turns out to be
+	      # extremely unpopular.  It causes actual problems which
+	      # are hard to work around, especially when you must
+	      # mix-and-match tool versions.
+	      print STDERR "aclocal: ignoring macro $1 in $file: $.\n"
+		if $verbose;
+	    }
 	}
     }
 
-    return $contents;
+  return $contents;
 }
 
 sub trace_used_macros ($)
@@ -464,7 +475,7 @@ sub trace_used_macros ($)
   my $traces = ($ENV{AUTOM4TE} || 'autom4te');
   $traces .= " --language Autoconf-without-aclocal-m4 $filename ";
   # All candidate files.
-  $traces .= join (' ', sort keys %files) . " ";
+  $traces .= join (' ', grep { exists $files{$_} } @file_order) . " ";
   # All candidate macros.
   $traces .= join (' ', map { "--trace='$_:\$n'" } (keys %macro_seen));
 
@@ -493,7 +504,7 @@ sub write_aclocal ($@)
   my %files = map { $map{$_} => 1 } @macros;
   $files{'acinclude.m4'} = 1 if -f 'acinclude.m4';
 
-  for $file (sort keys %files)
+  for $file (grep { exists $files{$_} } @file_order)
     {
       my $mtime = mtime $file;
       $greatest_mtime = $mtime if $greatest_mtime < $mtime;
