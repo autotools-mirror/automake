@@ -35,10 +35,12 @@ install-data-hook:
 	  chmod +x $(DESTDIR)$(scriptdir)/$$prog; \
 	done
 
+TAGS_FILES = automake.in aclocal.in $(amfiles)
+
 # The following requires a fixed version of the Emacs 19.30 etags.
-ETAGS_ARGS = automake.in aclocal.in --lang=none \
- --regex='/^@node[ \t]+\([^,]+\)/\1/' automake.texi
-TAGS_DEPENDENCIES = automake.in aclocal.in automake.texi
+ETAGS_ARGS = --lang=none \
+ --regex='/^@node[ \t]+\([^,]+\)/\1/' $(srcdir)/automake.texi
+TAGS_DEPENDENCIES = automake.texi
 
 ## `test -x' is not portable.  So we use Perl instead.  If Perl
 ## doesn't exist, then this test is meaningless anyway.
@@ -131,8 +133,3 @@ path-check: distdir
 	  status=$$?; \
 	  rm -rf $(distdir); \
 	  exit $$status
-
-## Just get the .am files into TAGS.  We don't really care too much if
-## any interesting tags show up.
-ETAGS_ARGS = $(amfiles)
-TAGS_DEPENDENCIES = $(ETAGS_ARGS)
