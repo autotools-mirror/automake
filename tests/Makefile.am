@@ -172,7 +172,6 @@ destdir.test \
 dirforbid.test \
 dirlist.test \
 discover.test \
-distcom.test \
 distcom2.test \
 distcom3.test \
 distcom4.test \
@@ -337,6 +336,7 @@ output6.test \
 output7.test \
 output8.test \
 output9.test \
+output10.test \
 overrid.test \
 parse.test \
 percent.test \
