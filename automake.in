@@ -182,6 +182,9 @@ $seen_version = 0;
 # Actual version we've seen.
 $package_version = '';
 
+# Line number where we saw version definition.
+$package_version_line = 0;
+
 # TRUE if we've seen AM_PATH_LISPDIR.
 $seen_lispdir = 0;
 
@@ -2757,7 +2760,8 @@ sub scan_configure
 	    $seen_version = 1;
 	    $seen_arg_prog = 1;
 	    $seen_prog_install = 2;
-	    $package_version = $1;
+	    ($package_version = $1) =~ s/\s//;
+	    $package_version_line = $.;
 	}
 
 	# Some things required by Automake.
@@ -2775,6 +2779,7 @@ sub scan_configure
 	{
 	    $seen_version = 1;
 	    $package_version = $1;
+	    $package_version_line = $.;
 	}
         elsif (/VERSION=/)
 	{
@@ -2853,15 +2858,19 @@ sub check_gnits_standards
 	    &am_error ("\`${relative_dir}/COPYING.LIB' disallowed by Gnits standards");
 	}
 
-	if ($package_version !~ /^$GNITS_VERSION_PATTERN$/)
+	if ($relative_dir eq '.')
 	{
-	    &am_error ("version \`$package_version' doesn't follow Gnits standards");
-	}
-	elsif (defined $1 && -f 'README-alpha' && $relative_dir eq '.')
-	{
-	    # This means we have an alpha release.  See
-	    # GNITS_VERSION_PATTERN for details.
-	    &require_file ($GNITS, 'README-alpha');
+	    if ($package_version !~ /^$GNITS_VERSION_PATTERN$/)
+	    {
+		&am_conf_line_error ($package_version_line,
+				     "version \`$package_version' doesn't follow Gnits standards");
+	    }
+	    elsif (defined $1 && -f 'README-alpha')
+	    {
+		# This means we have an alpha release.  See
+		# GNITS_VERSION_PATTERN for details.
+		&require_file ($GNITS, 'README-alpha');
+	    }
 	}
     }
 
