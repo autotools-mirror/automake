@@ -21,7 +21,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 
-# AM_PATH_PYTHON([MINIMUM-VERSION])
+# AM_PATH_PYTHON([MINIMUM-VERSION], [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND])
 
 # Adds support for distributing Python modules and packages.  To
 # install modules, copy them to $(pythondir), using the python_PYTHON
@@ -56,7 +56,10 @@ AC_DEFUN([AM_PATH_PYTHON],
   m4_if([$1],[],[
     dnl No version check is needed.
     # Find any Python interpreter.
-    AC_PATH_PROGS([PYTHON], _AM_PYTHON_INTERPRETER_LIST)
+    if test -z "$PYTHON"; then
+      PYTHON=:
+      AC_PATH_PROGS([PYTHON], _AM_PYTHON_INTERPRETER_LIST)
+    fi
     am_display_PYTHON=python
   ], [
     dnl A version check is needed.
@@ -71,17 +74,24 @@ AC_DEFUN([AM_PATH_PYTHON],
       # VERSION.
       AC_CACHE_CHECK([for a Python interpreter with version >= $1],
 	[am_cv_pathless_PYTHON],[
-	for am_cv_pathless_PYTHON in _AM_PYTHON_INTERPRETER_LIST : ; do
-	  if test "$am_cv_pathless_PYTHON" = : ; then
-	    AC_MSG_ERROR([no suitable Python interpreter found])
-	  fi
+	for am_cv_pathless_PYTHON in _AM_PYTHON_INTERPRETER_LIST none; do
+	  test "$am_cv_pathless_PYTHON" = none && break
 	  AM_PYTHON_CHECK_VERSION([$am_cv_pathless_PYTHON], [$1], [break])
 	done])
       # Set $PYTHON to the absolute path of $am_cv_pathless_PYTHON.
-      AC_PATH_PROG([PYTHON], [$am_cv_pathless_PYTHON])
+      if test "$am_cv_pathless_PYTHON" = none; then
+	PYTHON=:
+      else
+        AC_PATH_PROG([PYTHON], [$am_cv_pathless_PYTHON])
+      fi
       am_display_PYTHON=$am_cv_pathless_PYTHON
     fi
   ])
+
+  if test "$PYTHON" = :; then
+  dnl Run any user-specified action, or abort.
+    m4_default([$3], [AC_MSG_ERROR([no suitable Python interpreter found])])
+  else
 
   dnl Query Python for its version number.  Getting [:3] seems to be
   dnl the best way to do this; it's what "site.py" does in the standard
@@ -142,6 +152,11 @@ AC_DEFUN([AM_PATH_PYTHON],
   dnl pkgpyexecdir -- $(pyexecdir)/$(PACKAGE)
 
   AC_SUBST([pkgpyexecdir], [\${pyexecdir}/$PACKAGE])
+
+  dnl Run any user-specified action.
+  $2
+  fi
+
 ])
 
 

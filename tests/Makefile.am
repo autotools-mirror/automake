@@ -361,6 +361,12 @@ proginst.test \
 python.test \
 python2.test \
 python3.test \
+python4.test \
+python5.test \
+python6.test \
+python7.test \
+python8.test \
+python9.test \
 recurs.test \
 recurs2.test \
 remake.test \

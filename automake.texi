@@ -4392,17 +4392,45 @@ variables: @samp{python_PYTHON}, @samp{pkgpython_PYTHON},
 @samp{pyexecdir_PYTHON}, @samp{pkgpyexecdir_PYTHON}, depending where you
 want your files installed.
 
-@code{AM_PATH_PYTHON} takes a single optional argument.  This argument,
-if present, is the minimum version of Python which can be used for this
-package.  If the version of Python found on the system is older than the
-required version, then @code{AM_PATH_PYTHON} will cause an error.
+@code{AM_PATH_PYTHON([@var{VERSION}], [@var{ACTION-IF-FOUND}],
+[@var{ACTION-IF-NOT-FOUND}])} takes three optional arguments.  It will
+search a Python interpreter on the system.  The first argument, if
+present, is the minimum version of Python required for this package:
+@code{AM_PATH_PYTHON} will skip any Python interpreter which is older
+than @var{VERSION}.  If an interpreter is found and satisfies
+@var{VERSION}, then @var{ACTION-IF-FOUND} is run.  Otherwise,
+@var{ACTION-IF-NOT-FOUND} is run.
+
+If @var{ACTION-IF-NOT-FOUND} is not specified, the default is to abort
+configure.  This is fine when Python is an absolute requirement for the
+package.  Therefore if Python >= 2.2 is only @emph{optional} to the
+package, @code{AM_PATH_PYTHON} could be called as follows.
+
+@example
+  AM_PATH_PYTHON(2.2,, :)
+@end example
 
 @code{AM_PATH_PYTHON} creates several output variables based on the
 Python installation found during configuration.
 
 @vtable @code
 @item PYTHON
-The name of the Python executable.
+The name of the Python executable, or @code{:} if no suitable
+interpreter could be found.
+
+Assuming @var{ACTION-IF-NOT-FOUND} is used (otherwise @file{./configure}
+will abort if Python is absent), the value of @code{PYTHON} can be used
+to setup a conditional in order to disable the relevant part of a build
+as follows.
+
+@example
+  AM_PATH_PYTHON(,, :)
+  AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
+@end example
+
+
+If the @var{ACTION-IF-NOT-FOUND}
+is specified
 
 @item PYTHON_VERSION
 The Python version number, in the form @var{major}.@var{minor}
