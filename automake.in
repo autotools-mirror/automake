@@ -2589,97 +2589,6 @@ sub handle_dist_worker
 {
     my ($makefile) = @_;
 
-    # Initialization; only at top level.
-    my $xform = &transform_cond ('TOPDIR'  => ($relative_dir eq '.'));
-
-    # Scan EXTRA_DIST to see if we need to distribute anything from a
-    # subdir.  If so, add it to the list.  I didn't want to do this
-    # originally, but there were so many requests that I finally
-    # relented.
-    if (&variable_defined ('EXTRA_DIST'))
-    {
-	# FIXME: This should be fixed to work with conditionals.  That
-	# will require only making the entries in @dist_dirs under the
-	# appropriate condition.  This is meaningful if the nature of
-	# the distribution should depend upon the configure options
-	# used.
-	foreach (&variable_value_as_list ('EXTRA_DIST', ''))
-	{
-	    next if /^\@.*\@$/;
-	    next unless s,/+[^/]+$,,;
-	    $dist_dirs{$_} = 1
-		unless $_ eq '.';
-	}
-    }
-
-    # We have to check DIST_COMMON for extra directories in case the
-    # user put a source used in AC_OUTPUT into a subdir.
-    foreach (&variable_value_as_list ('DIST_COMMON', 'all'))
-    {
-	next if /^\@.*\@$/;
-	next unless s,/+[^/]+$,,;
-	$dist_dirs{$_} = 1
-	    unless $_ eq '.';
-    }
-
-    if (scalar keys %dist_dirs)
-    {
-	# Prepend $(distdir) to each directory given.  Doing it via a
-	# hash lets us ensure that each directory is used only once.
-	grep ($dist_dirs{'$(distdir)/' . $_} = 1, keys %dist_dirs);
-	$xform .= &transform ('DISTDIRS', join (' ', sort keys %dist_dirs));
-    }
-    else
-    {
-        $xform .= 's/.*\@DISTDIRS\@.*//g;';
-    }
-
-    # If we have SUBDIRS, create all dist subdirectories and do
-    # recursive build.
-    if (&variable_defined ('SUBDIRS'))
-    {
-	# If SUBDIRS is conditionally defined, then set DIST_SUBDIRS
-	# to all possible directories, and use it.  If DIST_SUBDIRS is
-	# defined, just use it.
-	local ($dist_subdir_name);
-	if (&variable_conditions ('SUBDIRS')
-	    || &variable_defined ('DIST_SUBDIRS'))
-	{
-	    $dist_subdir_name = 'DIST_SUBDIRS';
-	    if (! &variable_defined ('DIST_SUBDIRS'))
-	    {
-		&define_pretty_variable
-		  ('DIST_SUBDIRS', '',
-		   uniq (&variable_value_as_list ('SUBDIRS', 'all')));
-	    }
-	}
-	else
-	{
-	    $dist_subdir_name = 'SUBDIRS';
-	    # We always define this because that is what `distclean'
-	    # wants.
-	    &define_pretty_variable ('DIST_SUBDIRS', '', '$(SUBDIRS)');
-	}
-
-	my $top_distdir = ($relative_dir eq '.') ? 'distdir' : 'top_distdir';
-	$xform .= &transform ('DIST_SUBDIR_NAME' => $dist_subdir_name,
-			      'TOP_DISTDIR'      => $top_distdir);
-    }
-
-    # If the target `dist-hook' exists, make sure it is run.  This
-    # allows users to do random weird things to the distribution
-    # before it is packaged up.
-    push (@dist_targets, 'dist-hook')
-      if &target_defined ('dist-hook');
-
-    $output_rules .=
-      &file_contents ('distdir',
-		      $xform
-		      . &transform ('DIST-TARGETS' => join " ", @dist_targets)
-		      . &transform_cond ('DIST-TARGETS' =>
-					    scalar @dist_targets,
-					 'SUBDIRS'  =>
-					    &variable_defined ('SUBDIRS')));
 }
 
 # Handle 'dist' target.
@@ -2786,20 +2695,100 @@ sub handle_dist
     }
     $output_rules .= "\n";
 
-    # Generate 'dist' target, and maybe other dist targets.
-    if ($relative_dir eq '.')
+    # Scan EXTRA_DIST to see if we need to distribute anything from a
+    # subdir.  If so, add it to the list.  I didn't want to do this
+    # originally, but there were so many requests that I finally
+    # relented.
+    if (&variable_defined ('EXTRA_DIST'))
     {
-	# Rule to check whether a distribution is viable.
-	my ($xform) =
-	  &transform_cond ('DISTHOOK' => &target_defined ('distcheck-hook'),
-			   'GETTEXT'  => $seen_gettext);
-
-	# Arg, this file should have been named `distcheck'.
-	$output_rules .= &file_contents ('dist', $xform);
+	# FIXME: This should be fixed to work with conditionals.  That
+	# will require only making the entries in @dist_dirs under the
+	# appropriate condition.  This is meaningful if the nature of
+	# the distribution should depend upon the configure options
+	# used.
+	foreach (&variable_value_as_list ('EXTRA_DIST', ''))
+	{
+	    next if /^\@.*\@$/;
+	    next unless s,/+[^/]+$,,;
+	    $dist_dirs{$_} = 1
+		unless $_ eq '.';
+	}
     }
 
-    # Generate distdir target.
-    &handle_dist_worker ($makefile);
+    # We have to check DIST_COMMON for extra directories in case the
+    # user put a source used in AC_OUTPUT into a subdir.
+    foreach (&variable_value_as_list ('DIST_COMMON', 'all'))
+    {
+	next if /^\@.*\@$/;
+	next unless s,/+[^/]+$,,;
+	$dist_dirs{$_} = 1
+	    unless $_ eq '.';
+    }
+
+    # Rule to check whether a distribution is viable.
+    my $xform =
+      &transform_cond ('TOPDIR'         => ($relative_dir eq '.'),
+		       'DISTCHECK-HOOK' => &target_defined ('distcheck-hook'),
+		       'GETTEXT'        => $seen_gettext);
+
+    if (scalar keys %dist_dirs)
+    {
+	# Prepend $(distdir) to each directory given.  Doing it via a
+	# hash lets us ensure that each directory is used only once.
+	grep ($dist_dirs{'$(distdir)/' . $_} = 1, keys %dist_dirs);
+	$xform .= &transform ('DISTDIRS', join (' ', sort keys %dist_dirs));
+    }
+    else
+    {
+        $xform .= 's/.*\@DISTDIRS\@.*//g;';
+    }
+
+    # If we have SUBDIRS, create all dist subdirectories and do
+    # recursive build.
+    if (&variable_defined ('SUBDIRS'))
+    {
+	# If SUBDIRS is conditionally defined, then set DIST_SUBDIRS
+	# to all possible directories, and use it.  If DIST_SUBDIRS is
+	# defined, just use it.
+	local ($dist_subdir_name);
+	if (&variable_conditions ('SUBDIRS')
+	    || &variable_defined ('DIST_SUBDIRS'))
+	{
+	    $dist_subdir_name = 'DIST_SUBDIRS';
+	    if (! &variable_defined ('DIST_SUBDIRS'))
+	    {
+		&define_pretty_variable
+		  ('DIST_SUBDIRS', '',
+		   uniq (&variable_value_as_list ('SUBDIRS', 'all')));
+	    }
+	}
+	else
+	{
+	    $dist_subdir_name = 'SUBDIRS';
+	    # We always define this because that is what `distclean'
+	    # wants.
+	    &define_pretty_variable ('DIST_SUBDIRS', '', '$(SUBDIRS)');
+	}
+
+	my $top_distdir = ($relative_dir eq '.') ? 'distdir' : 'top_distdir';
+	$xform .= &transform ('DIST_SUBDIR_NAME' => $dist_subdir_name,
+			      'TOP_DISTDIR'      => $top_distdir);
+    }
+
+    # If the target `dist-hook' exists, make sure it is run.  This
+    # allows users to do random weird things to the distribution
+    # before it is packaged up.
+    push (@dist_targets, 'dist-hook')
+      if &target_defined ('dist-hook');
+
+    $output_rules .=
+      &file_contents ('distdir',
+		      $xform
+		      . &transform ('DIST-TARGETS' => join " ", @dist_targets)
+		      . &transform_cond ('DIST-TARGETS' =>
+					    scalar @dist_targets,
+					 'SUBDIRS'  =>
+					    &variable_defined ('SUBDIRS')));
 }
 
 
@@ -6902,11 +6891,17 @@ sub file_contents
     # perl goes loopy if you try to
     #
     #  $result_rules =~ /^($TARGET_PATTERN *)+: ($TARGET_PATTERN *)+\n\n/sm
-    local ($result_vars) = '';
-    local ($result_rules) = '';
-    local ($comment) = '';
+    my $result_vars = '';
+    my $result_rules = '';
+    my $comment = '';
     foreach (split (/(?<!\\)\n(?![\t#])/, $contents))
     {
+        # Strip leading new lines.  This can happen for comments:
+        # the pattern above allows `\n\n# comment' to yield
+        # `\n# comment'.
+        s/^\n+//;
+
+        # Sanity checks.
 	&am_file_error ("$basename.am",
 			"blank line following trailing backslash:\n$_")
 	  if /\\$/;
@@ -6922,7 +6917,7 @@ sub file_contents
  	elsif (/$COMMENT_PATTERN/mso)
  	{
  	    # Stick comments before the incoming macro or rule.
- 	    $comment = $_;
+ 	    $comment = "$_\n";
  	}
  	elsif (/$RULE_PATTERN/mso)
  	{
@@ -6957,7 +6952,7 @@ sub file_contents
 		    {
 		      # Some hair to avoid spurious trailing blank
 		      # when there are no dependencies.
-		      $result_rules .= "$comment$separator";
+		      $result_rules .= "$separator$comment";
 		      $result_rules .= "$targets:";
 		      $result_rules .= " $dependencies"
 			if $dependencies;
@@ -6975,7 +6970,7 @@ sub file_contents
  	}
  	elsif (/$MACRO_PATTERN/mso)
  	{
- 	    $result_vars .= "$comment$separator$_\n"
+ 	    $result_vars .= "$separator$comment$_\n"
 	      unless defined $contents{$1};
  	    $comment = $separator = '';
  	    &prog_error (".am macro \`$1' with trailing backslash at $file:$.")
@@ -6986,7 +6981,7 @@ sub file_contents
  	{
 	    # This isn't an error; it is probably some tokens which
 	    # configure is supposed to replace, such as `@SET-MAKE@'.
- 	    $result_rules .= "$comment$separator$_\n";
+ 	    $result_rules .= "$separator$comment$_\n";
  	    $comment = $separator = '';
  	}
     }

@@ -154,3 +154,49 @@ distdir: $(DISTFILES)
 ?TOPDIR??ZIP?	-rm -f $(distdir).zip
 ?TOPDIR??ZIP?	zip -rq $(distdir).zip $(distdir)
 ?TOPDIR??ZIP?	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
+
+
+
+## ------------------------- ##
+## Checking a distribution.  ##
+## ------------------------- ##
+
+
+?TOPDIR?# This target untars the dist file and tries a VPATH configuration.  Then
+?TOPDIR?# it guarantees that the distribution is self-contained by making another
+?TOPDIR?# tarfile.
+?TOPDIR?.PHONY: distcheck
+?TOPDIR?distcheck: dist
+## Make sure we can remove distdir before trying to remove it.
+?TOPDIR?	-chmod -R a+w $(distdir) > /dev/null 2>&1; rm -rf $(distdir)
+?TOPDIR?	GZIP=$(GZIP_ENV) gunzip -c $(distdir).tar.gz | $(AMTAR) xf -
+## Make the new source tree read-only.  Distributions ought to work in
+## this case.  However, make the top-level directory writable so we
+## can make our new subdirs.
+?TOPDIR?	chmod -R a-w $(distdir); chmod a+w $(distdir)
+?TOPDIR?	mkdir $(distdir)/=build
+?TOPDIR?	mkdir $(distdir)/=inst
+## Undo the write access.
+?TOPDIR?	chmod a-w $(distdir)
+?TOPDIR?	dc_install_base=`CDPATH=: && cd $(distdir)/=inst && pwd` \
+?TOPDIR??DISTCHECK-HOOK?	  && $(MAKE) $(AM_MAKEFLAGS) distcheck-hook \
+?TOPDIR?	  && cd $(distdir)/=build \
+?TOPDIR?	  && ../configure --srcdir=.. --prefix=$$dc_install_base \
+?TOPDIR??GETTEXT?	    --with-included-gettext \
+?TOPDIR?	  && $(MAKE) $(AM_MAKEFLAGS) \
+?TOPDIR?	  && $(MAKE) $(AM_MAKEFLAGS) dvi \
+?TOPDIR?	  && $(MAKE) $(AM_MAKEFLAGS) check \
+?TOPDIR?	  && $(MAKE) $(AM_MAKEFLAGS) install \
+?TOPDIR?	  && $(MAKE) $(AM_MAKEFLAGS) installcheck \
+?TOPDIR?	  && $(MAKE) $(AM_MAKEFLAGS) uninstall \
+## We use -le 1 because the `dir' file might still exist after uninstall.
+?TOPDIR?	  && test `find $$dc_install_base -type f -print | wc -l` -le 1 \
+?TOPDIR?	  && $(MAKE) $(AM_MAKEFLAGS) dist \
+?TOPDIR?	  && $(MAKE) $(AM_MAKEFLAGS) distclean \
+## Make sure to remove the dist file we created in the test build
+## directory.
+?TOPDIR?	  && rm -f $(distdir).tar.gz \
+?TOPDIR?	  && test `find . -type f -print | wc -l` -eq 0
+?TOPDIR?	-chmod -R a+w $(distdir) > /dev/null 2>&1; rm -rf $(distdir)
+?TOPDIR?	@echo "$(distdir).tar.gz is ready for distribution" | \
+?TOPDIR?	  sed 'h;s/./=/g;p;x;p;x'
