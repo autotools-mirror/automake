@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002  Free Software Foundation, Inc.
+# Copyright (C) 2002, 2003  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -37,6 +37,19 @@ subdir_wish_SOURCES = a.c
 
 nobase_bin_PROGRAMS = subdir/want
 subdir_want_SOURCES = a.c
+
+test-all: all
+	test -f subdir/wish$(EXEEXT)
+	test -f subdir/want$(EXEEXT)
+test-install: install
+	test -f inst/bin/wish$(EXEEXT)
+	test -f inst/bin/subdir/want$(EXEEXT)
+test-uninstall: uninstall
+	test ! -f inst/bin/wish$(EXEEXT)
+	test ! -f inst/bin/subdir/want$(EXEEXT)
+test-install-strip: install-strip
+	test -f inst/bin/wish$(EXEEXT)
+	test -f inst/bin/subdir/want$(EXEEXT)
 END
 
 cat > a.c << 'END'
@@ -55,22 +68,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --copy --add-missing
 ./configure --prefix `pwd`/inst
-$MAKE
-
-test -f subdir/wish
-test -f subdir/want
-
-$MAKE install
-
-test -f inst/bin/wish
-test -f inst/bin/subdir/want
-
-$MAKE uninstall
-
-test -f inst/bin/wish && exit 1
-test -f inst/bin/subdir/want && exit 1
-
-$MAKE install-strip
-
-test -f inst/bin/wish
-test -f inst/bin/subdir/want
+$MAKE test-all
+$MAKE test-install
+$MAKE test-uninstall
+$MAKE test-install-strip
