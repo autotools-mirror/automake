@@ -362,8 +362,11 @@ my $seen_automake_version = 0;
 # generation.
 my %configure_vars = ();
 
-# Files included by @configure.
+# Files included by $configure_ac.
 my @configure_deps = ();
+
+# Greatest timestamp of configure's dependencies.
+my $configure_deps_greatest_timestamp = 0;
 
 # Hash table of AM_CONDITIONAL variables seen in configure.
 my %configure_cond = ();
@@ -436,6 +439,10 @@ my $am_relative_dir;
 # Same but wrt Makefile.in.
 my $in_file_name;
 my $relative_dir;
+
+# Greatest timestamp of the output's dependencies (excluding
+# configure's dependencies).
+my $output_deps_greatest_timestamp;
 
 # These two variables are used when generating each Makefile.in.
 # They hold the Makefile.in until it is ready to be printed.
@@ -578,6 +585,8 @@ sub initialize_per_input ()
 
     $in_file_name = '';
     $relative_dir = '';
+
+    $output_deps_greatest_timestamp = 0;
 
     $output_rules = '';
     $output_vars = '';
@@ -4376,6 +4385,13 @@ sub scan_autoconf_traces ($)
 	  # so we skip absolute filenames here.
 	  push @configure_deps, '$(top_srcdir)/' . $args[1]
 	    unless $here =~ m,^(?:\w:)?[\\/],;
+	  # Keep track of the greatest timestamp.
+	  if (-e $args[1])
+	    {
+	      my $mtime = mtime $args[1];
+	      $configure_deps_greatest_timestamp = $mtime
+		if $mtime > $configure_deps_greatest_timestamp;
+	    }
 	}
    }
 }
@@ -4392,6 +4408,15 @@ sub scan_autoconf_files ()
   # since we currently assume there is only one configure.ac.  But
   # that won't always be the case.
   %libsources = ();
+
+  # Keep track of the youngest configure dependency.
+  $configure_deps_greatest_timestamp = mtime $configure_ac;
+  if (-e 'aclocal.m4')
+    {
+      my $mtime = mtime 'aclocal.m4';
+      $configure_deps_greatest_timestamp = $mtime
+	if $mtime > $configure_deps_greatest_timestamp;
+    }
 
   scan_autoconf_traces ($configure_ac);
 
@@ -5195,6 +5220,11 @@ sub read_am_file ($$)
 
     my $am_file = new Automake::XFile ("< $amfile");
     verb "reading $amfile";
+
+    # Keep track of the youngest output dependency.
+    my $mtime = mtime $amfile;
+    $output_deps_greatest_timestamp = $mtime
+      if $mtime > $output_deps_greatest_timestamp;
 
     my $spacing = '';
     my $comment = '';
@@ -6476,8 +6506,6 @@ sub generate_makefile ($$)
   # Reset all the Makefile.am related variables.
   initialize_per_input;
 
-  # Any warning setting now local to this Makefile.am.
-  dup_channel_setup;
   # AUTOMAKE_OPTIONS can contains -W flags to disable or enable
   # warnings for this file.  So hold any warning issued before
   # we have processed AUTOMAKE_OPTIONS.
@@ -6612,42 +6640,44 @@ sub generate_makefile ($$)
     }
 
   my ($out_file) = $output_directory . '/' . $makefile . ".in";
-  if (! $force_generation && -e $out_file)
-    {
-      my ($am_time) = (stat ($makefile . '.am'))[9];
-      my ($in_time) = (stat ($out_file))[9];
-      # FIXME: should cache these times.
-      my ($conf_time) = (stat ($configure_ac))[9];
-      # FIXME: how to do unsigned comparison?
-      if ($am_time < $in_time || $am_time < $conf_time)
-	{
-	  # No need to update.
-	  return;
-	}
-      if (-f 'aclocal.m4')
-	{
-	  my ($acl_time) = (stat _)[9];
-	  return if ($am_time < $acl_time);
-	}
+
+  # We make sure that `all:' is the first target.
+  $output =
+    "$output_vars$output_all$output_header$output_rules$output_trailer";
+
+  # Decide whether we must update the output file or not.
+  # We have to update in the following situations.
+  #  * $force_generation is set.
+  #  * any of the output dependencies is younger than the output
+  #  * the contents of the output is different (this can happen
+  #    if the project has been populated with a file listed in
+  #    @common_files since the last run).
+  # Output's dependencies are split in two sets:
+  #  * dependencies which are also configure dependencies
+  #    These do not change between each Makefile.am
+  #  * other dependencies, specific to the Makefile.am being processed
+  #    (such as the Makefile.am itself, or any Makefile fragment
+  #    it includes).
+  my $timestamp = mtime $out_file;
+  if (! $force_generation
+      && $configure_deps_greatest_timestamp < $timestamp
+      && $output_deps_greatest_timestamp < $timestamp
+      && $output eq contents ($out_file))
+  {
+      verb "$out_file unchanged";
+      # No need to update.
+      return;
     }
 
-  if (-e "$out_file")
+  if (-e $out_file)
     {
       unlink ($out_file)
 	or fatal "cannot remove $out_file: $!\n";
     }
+
   my $gm_file = new Automake::XFile "> $out_file";
-  verb "creating $makefile.in";
-
-  print $gm_file $output_vars;
-  # We make sure that `all:' is the first target.
-  print $gm_file $output_all;
-  print $gm_file $output_header;
-  print $gm_file $output_rules;
-  print $gm_file $output_trailer;
-
-  # Back out any warning setting.
-  drop_channel_setup;
+  verb "creating $out_file";
+  print $gm_file $output;
 }
 
 ################################################################
@@ -6893,7 +6923,13 @@ do
 	}
       else
 	{
+	  # Any warning setting now local to this Makefile.am.
+	  dup_channel_setup;
+
 	  generate_makefile ($output_files{$am_file}, $am_file);
+
+	  # Back out any warning setting.
+	  drop_channel_setup;
 	}
     }
   ++$automake_has_run;
