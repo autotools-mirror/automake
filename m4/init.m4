@@ -68,7 +68,6 @@ find . -name Makefile -print | while read mf; do
   if test -n "$deps"; then
     dirpart="`echo $mf | sed -e 's|/.*$||'`"
     test -d "$dirpart/.deps" || mkdir "$dirpart/.deps"
-    : > "$dirpart/.deps/.P"
     for file in $deps; do
       test -f "$dirpart/$file" || : > "$dirpart/$file"
     done
