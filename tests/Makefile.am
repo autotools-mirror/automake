@@ -314,6 +314,7 @@ nodep.test \
 nodepcomp.test \
 nodist.test \
 nodist2.test \
+nodist3.test \
 nogzip.test \
 nogzip2.test \
 noinst.test \
