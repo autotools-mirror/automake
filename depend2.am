@@ -21,25 +21,38 @@
 ## - once per language for generic compilation rules
 ## - once for each file which requires specific flags.
 
-?GENERIC??AMDEP?@AMDEP@%FPFX%DEPMODE = @%FPFX%DEPMODE@
+## Note it is on purpose we wrote `if %AMDEP%', since %AMDEP% becomes
+## '@AMDEP_TRUE@' if dependencies are to be used, otherwise FALSE.
+
+if %AMDEP%
+?GENERIC?%FPFX%DEPMODE = @%FPFX%DEPMODE@
+endif %AMDEP%
 
 ?GENERIC?%EXT%.o:
 ?!GENERIC?%OBJ%: %SOURCE%
-?AMDEP?@AMDEP@	source='%SOURCE%' object='%OBJ%' libtool=no @AMDEPBACKSLASH@
-?AMDEP?@AMDEP@	depfile='$(DEPDIR)/%BASE%.Po' tmpdepfile='$(DEPDIR)/%BASE%.TPo' @AMDEPBACKSLASH@
-?AMDEP?@AMDEP@	$(%FPFX%DEPMODE) $(depcomp) @AMDEPBACKSLASH@
+if %AMDEP%
+	source='%SOURCE%' object='%OBJ%' libtool=no @AMDEPBACKSLASH@
+	depfile='$(DEPDIR)/%BASE%.Po' tmpdepfile='$(DEPDIR)/%BASE%.TPo' @AMDEPBACKSLASH@
+	$(%FPFX%DEPMODE) $(depcomp) @AMDEPBACKSLASH@
+endif %AMDEP%
 	%COMPILE% -c -o %OBJ% `test -f %SOURCE% || echo '$(srcdir)/'`%SOURCE%
 
-?LIBTOOL??GENERIC?%EXT%.lo:
-?LIBTOOL??!GENERIC?%LTOBJ%: %SOURCE%
-?LIBTOOL??AMDEP?@AMDEP@	source='%SOURCE%' object='%LTOBJ%' libtool=yes @AMDEPBACKSLASH@
-?LIBTOOL??AMDEP?@AMDEP@	depfile='$(DEPDIR)/%BASE%.Plo' tmpdepfile='$(DEPDIR)/%BASE%.TPlo' @AMDEPBACKSLASH@
-?LIBTOOL??AMDEP?@AMDEP@	$(%FPFX%DEPMODE) $(depcomp) @AMDEPBACKSLASH@
-?LIBTOOL?	%LTCOMPILE% -c -o %LTOBJ% `test -f %SOURCE% || echo '$(srcdir)/'`%SOURCE%
+if %?LIBTOOL?%
+?GENERIC?%EXT%.lo:
+?!GENERIC?%LTOBJ%: %SOURCE%
+if  %AMDEP%
+	source='%SOURCE%' object='%LTOBJ%' libtool=yes @AMDEPBACKSLASH@
+	depfile='$(DEPDIR)/%BASE%.Plo' tmpdepfile='$(DEPDIR)/%BASE%.TPlo' @AMDEPBACKSLASH@
+	$(%FPFX%DEPMODE) $(depcomp) @AMDEPBACKSLASH@
+endif  %AMDEP%
+	%LTCOMPILE% -c -o %LTOBJ% `test -f %SOURCE% || echo '$(srcdir)/'`%SOURCE%
+endif %?LIBTOOL?%
 
 ?GENERIC?%EXT%.obj:
 ?!GENERIC?%OBJOBJ%: %SOURCE%
-?AMDEP?@AMDEP@	source='%SOURCE%' object='%OBJOBJ%' libtool=no @AMDEPBACKSLASH@
-?AMDEP?@AMDEP@	depfile='$(DEPDIR)/%BASE%.Po' tmpdepfile='$(DEPDIR)/%BASE%.TPo' @AMDEPBACKSLASH@
-?AMDEP?@AMDEP@	$(%FPFX%DEPMODE) $(depcomp) @AMDEPBACKSLASH@
+if %AMDEP%
+	source='%SOURCE%' object='%OBJOBJ%' libtool=no @AMDEPBACKSLASH@
+	depfile='$(DEPDIR)/%BASE%.Po' tmpdepfile='$(DEPDIR)/%BASE%.TPo' @AMDEPBACKSLASH@
+	$(%FPFX%DEPMODE) $(depcomp) @AMDEPBACKSLASH@
+endif %AMDEP%
 	%COMPILE% -c -o %OBJOBJ% `cygpath -w %SOURCE%`
