@@ -2802,8 +2802,23 @@ sub handle_source_transform
 	  unless $prefix =~ /EXTRA_/;
 
 	push @sources, "\$($var)";
-	push @dist_sources, "\$($var)"
-	  unless $prefix =~ /^nodist_/;
+	if ($prefix !~ /^nodist_/)
+	  {
+	    # If the VAR wasn't definined conditionally, we add
+	    # it to DIST_SOURCES as is.  Otherwise we create a
+	    # am__VAR_DIST variable which contains all possible values,
+	    # and add this variable to DIST_SOURCES.
+	    my $distvar = "$var";
+	    my @conds = variable_conditions_recursive ($var);
+	    if (@conds && $conds[0] ne 'TRUE')
+	      {
+		$distvar = "am__${var}_DIST";
+		my @files =
+		  uniq (variable_value_as_list_recursive ($var, 'all'));
+		define_pretty_variable ($distvar, '', $where, @files);
+	      }
+	    push @dist_sources, "\$($distvar)"
+	  }
 
 	@substfroms = ();
 	@substtos = ();
