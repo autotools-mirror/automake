@@ -70,15 +70,50 @@ AC_CHECK_PROG([TEX], [tex], [tex])
 
 # Test for Autoconf.  We run Autoconf in a subdirectory to ease
 # deletion of any files created (such as those added to
-# autom4te.cache).
-mkdir conftest
+# autom4te.cache).  We used to perform only the last of the three
+# following tests, but some users were unable to figure out that their
+# installation was broken since --version appeared to work.
+
+AC_CACHE_CHECK([whether autoconf is installed], [am_cv_autoconf_installed],
+[if AM_RUN_LOG([eval $am_AUTOCONF --version]);
+then
+  am_cv_autoconf_installed=yes
+else
+  am_cv_autoconf_installed=no
+fi])
+if test "$am_cv_autoconf_installed" = no; then
+  AC_MSG_ERROR([Autoconf 2.58 or better is required.
+    Please make sure it is installed and in your PATH.])
+fi
+
+AC_CACHE_CHECK([whether autoconf works], [am_cv_autoconf_works],
+[mkdir conftest
+echo 'AC''_INIT' > conftest/conftest.ac
+if AM_RUN_LOG([cd conftest && eval $am_AUTOCONF -o /dev/null conftest.ac]);
+then
+  am_cv_autoconf_works=yes
+else
+  am_cv_autoconf_works=no
+fi
+rm -rf conftest])
+if test "$am_cv_autoconf_works" = no; then
+  AC_MSG_ERROR([The installed version of autoconf does not work.
+    Please check config.log for error messages before this one.])
+fi
+
+AC_CACHE_CHECK([whether autoconf is recent enough], [am_cv_autoconf_version],
+[mkdir conftest
 echo 'AC''_PREREQ(2.58)' > conftest/conftest.ac
-AM_RUN_LOG([cd conftest && eval $am_AUTOCONF -o /dev/null conftest.ac]) || {
-   AC_MSG_ERROR([Autoconf 2.58 or better is required.
-  Is it installed?  Is it in your PATH?  (try running `autoconf --version')
-  Is it working?  See also config.log for error messages before this one.])
-}
-rm -rf conftest
+if AM_RUN_LOG([cd conftest && eval $am_AUTOCONF -o /dev/null conftest.ac]);
+then
+  am_cv_autoconf_version=yes
+else
+  am_cv_autoconf_version=no
+fi
+rm -rf conftest])
+if test "$am_cv_autoconf_version" = no; then
+  AC_MSG_ERROR([Autoconf 2.58 or better is required.])
+fi
 
 # Test for ln.  We need use it to install the versioned binaries.
 AC_MSG_CHECKING([whether ln works])
