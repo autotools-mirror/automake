@@ -4095,28 +4095,18 @@ sub handle_emacs_lisp
     my @elfiles = &am_install_var ('-candist', 'lisp', 'LISP',
 				   'lisp', 'noinst');
 
-    if (@elfiles)
-    {
-	# Generate .elc files.
-	grep ($_ .= 'c', @elfiles);
-	&define_pretty_variable ('ELCFILES', '', @elfiles);
+    return if ! @elfiles;
 
-	push (@all, '$(ELCFILES)');
+    # Generate .elc files.
+    grep ($_ .= 'c', @elfiles);
+    &define_pretty_variable ('ELCFILES', '', @elfiles);
 
-	my $varname;
-	if (&variable_defined ('lisp_LISP'))
-	{
-	    $varname = 'lisp_LISP';
-	    &am_error ("`lisp_LISP' defined but `AM_PATH_LISPDIR' not in `$configure_ac'")
-		if ! $seen_lispdir;
-	}
-	else
-	{
-	    $varname = 'noinst_LISP';
-	}
+    push (@all, '$(ELCFILES)');
 
-	&require_file_with_line ($varname, $FOREIGN, 'elisp-comp');
-    }
+    &am_error ("`lisp_LISP' defined but `AM_PATH_LISPDIR' not in `$configure_ac'")
+      if ! $seen_lispdir && &variable_defined ('lisp_LISP');
+
+    &require_file_with_conf_line ('AM_PATH_LISPDIR', $FOREIGN, 'elisp-comp');
 }
 
 # Handle Python
@@ -4127,20 +4117,10 @@ sub handle_python
     return if ! @pyfiles;
 
     # Found some python.
-    &define_configure_variable ('pythondir');
-    &define_configure_variable ('PYTHON');
-
     &am_error ("`python_PYTHON' defined but `AM_CHECK_PYTHON' not in `$configure_ac'")
 	if ! $seen_pythondir && &variable_defined ('python_PYTHON');
 
-    if ($config_aux_dir eq '.' || $config_aux_dir eq '')
-    {
-	&define_variable ('py_compile', '$(top_srcdir)/py-compile');
-    }
-    else
-    {
-	&define_variable ('py_compile', $config_aux_dir . '/py-compile');
-    }
+    &require_file_with_conf_line ('AM_CHECK_PYTHON', $FOREIGN, 'py_comp');
 }
 
 # Handle Java.
@@ -4150,12 +4130,6 @@ sub handle_java
 				      'java', 'JAVA',
 				      'java', 'noinst', 'check');
     return if ! @sourcelist;
-
-    &define_variable ('JAVAC', 'javac');
-    &define_variable ('JAVACFLAGS', '');
-    &define_variable ('CLASSPATH_ENV',
-		      'CLASSPATH=$(JAVAROOT):$(srcdir)/$(JAVAROOT):$$CLASSPATH');
-    &define_variable ('JAVAROOT', '$(top_builddir)');
 
     my %valid = &am_primary_prefixes ('JAVA', 1,
 				      'java', 'noinst', 'check');
@@ -4176,14 +4150,9 @@ sub handle_java
 	$dir = $curs;
     }
 
-    $output_rules .= ('class' . $dir . '.stamp: $(' . $dir . '_JAVA)' . "\n"
-		      . "\t" . '$(CLASSPATH_ENV) $(JAVAC) -d $(JAVAROOT) '
-		      . '$(JAVACFLAGS) $?' . "\n"
-		      . "\t" . 'echo timestamp > class' . $dir . '.stamp'
-		      . "\n");
     push (@all, 'class' . $dir . '.stamp');
-    &push_dist_common ('$(' . $dir . '_JAVA)');
 }
+
 
 # Handle some of the minor options.
 sub handle_minor_options
@@ -4616,7 +4585,13 @@ sub scan_one_autoconf_file
 
 	$seen_prog_install = 1 if /AC_PROG_INSTALL/;
         $seen_lispdir = 1 if /AM_PATH_LISPDIR/;
-	$seen_pythondir = 1 if /AM_PATH_PYTHON/;
+
+        if (/AM_PATH_PYTHON/)
+	  {
+	    $seen_pythondir = 1;
+	    $configure_vars{'pythondir'} = $filename . ':' . $.;
+	    $configure_vars{'PYTHON'} = $filename . ':' . $.;
+	  }
 
         if (/A(C|M)_PROG_LIBTOOL/)
 	{
