@@ -70,7 +70,9 @@ AC_SUBST([$1]DEPMODE)
 AC_DEFUN([AM_SET_DEPDIR],[
 if test -d .deps || mkdir .deps 2> /dev/null || test -d .deps; then
   DEPDIR=.deps
-  rmdir .deps
+  # We redirect because .deps might already exist and be populated.
+  # In this situation we don't want to see an error.
+  rmdir .deps > /dev/null 2>&1
 else
   DEPDIR=_deps
 fi
