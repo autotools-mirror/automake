@@ -8,7 +8,7 @@ libraries.am library.am mans-vars.am mans.am program.am programs.am \
 remake-hdr.am remake-subd.am remake.am subdirs.am texinfos-vars.am \
 texinfos.am
 
-DIST_OTHER = ChangeLog TODO automake.in $(am_DATA)
+DIST_OTHER = ChangeLog TODO automake.in install-sh $(am_DATA)
 
 install:: $(am_DATA)
 	$(srcdir)/mkinstalldirs $(amdatadir)
