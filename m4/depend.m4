@@ -1,6 +1,6 @@
-# serial 4						-*- Autoconf -*-
+# serial 5						-*- Autoconf -*-
 
-# Copyright 1999, 2000, 2001 Free Software Foundation, Inc.
+# Copyright (C) 1999, 2000, 2001, 2002, 2003  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -118,16 +118,8 @@ AM_CONDITIONAL([am__fastdep$1], [
 # Choose a directory name for dependency files.
 # This macro is AC_REQUIREd in _AM_DEPENDENCIES
 AC_DEFUN([AM_SET_DEPDIR],
-[rm -f .deps 2>/dev/null
-mkdir .deps 2>/dev/null
-if test -d .deps; then
-  DEPDIR=.deps
-else
-  # MS-DOS does not allow filenames that begin with a dot.
-  DEPDIR=_deps
-fi
-rmdir .deps 2>/dev/null
-AC_SUBST([DEPDIR])
+[AC_REQUIRE([AM_SET_LEADING_DOT])dnl
+AC_SUBST([DEPDIR], ["${am__leading_dot}deps"])dnl
 ])
 
 

@@ -594,7 +594,7 @@ my %object_compilation_map;
 
 
 # This keeps track of the directories for which we've already
-# created `.dirstamp' code.
+# created dirstamp code.
 my %directory_map;
 
 # All .P files.
@@ -9026,23 +9026,28 @@ sub require_conf_file_with_macro ($$$@)
 # dependent upon.
 sub require_build_directory ($)
 {
-    my $directory = shift;
-    my $dirstamp = "$directory/.dirstamp";
+  my $directory = shift;
+  my $dirstamp = "$directory/\$(am__dirstamp)";
 
-    # Don't emit the rule twice.
-    if (! defined $directory_map{$directory})
+  # Don't emit the rule twice.
+  if (! defined $directory_map{$directory})
     {
-	$directory_map{$directory} = 1;
+      $directory_map{$directory} = 1;
 
-	# Directory must be removed by `make distclean'.
-	$clean_files{$dirstamp} = DIST_CLEAN;
+      # Set a variable for the dirstamp basename.
+      define_pretty_variable ('am__dirstamp', 'TRUE',
+			      '$(am__leading_dot)dirstamp')
+	unless variable_defined ('am__dirstamp');
 
-	$output_rules .= ("$dirstamp:\n"
-			  . "\t\@\$(mkinstalldirs) $directory\n"
-			  . "\t\@: > $dirstamp\n");
+      # Directory must be removed by `make distclean'.
+      $clean_files{$dirstamp} = DIST_CLEAN;
+
+      $output_rules .= ("$dirstamp:\n"
+			. "\t\@\$(mkinstalldirs) $directory\n"
+			. "\t\@: > $dirstamp\n");
     }
 
-    return $dirstamp;
+  return $dirstamp;
 }
 
 # &require_build_directory_maybe ($FILE)

@@ -2,7 +2,8 @@
 
 ## Makefile for Automake m4.
 
-## Copyright 1996, 1997, 1998, 1999, 2001, 2002  Free Software Foundation, Inc.
+## Copyright 1996, 1997, 1998, 1999, 2001, 2002, 2003
+## Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -33,6 +34,7 @@ gcj.m4 \
 header.m4 \
 init.m4 \
 install-sh.m4 \
+lead-dot.m4 \
 lex.m4 \
 lispdir.m4 \
 maintainer.m4 \
