@@ -9,9 +9,9 @@
 #   later, in the generated Makefile.
 s/(/{/g
 s/)/}/g
-/^ *\([a-zA-Z_.][a-zA-Z0-9_.]*\):.*/{
+/^ *\([a-zA-Z_.][-a-zA-Z0-9_.]*\):.*/{
 s//target_\1=explicit/
-s/\./_/g
+s/[.-]/_/g
 p
 }
 s/^ *\([A-Z][A-Z0-9_]*\)[	 ]*=[	 ]*\(.*\)/\1='\2'/p
