@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 2001, 2002, 2004  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -23,6 +23,8 @@
 required=gcc
 . ./defs || exit 1
 
+set -e
+
 cat >main.c <<EOF
 int main() { return 0; }
 EOF
@@ -36,9 +38,7 @@ bin_PROGRAMS = main
 main_SOURCES = main.c $(NEVER_DEFINED)
 EOF
 
-cat > configure.in << 'EOF'
-AC_INIT(main.c)
-AM_INIT_AUTOMAKE(test_am, 1.0)
+cat >> configure.in << 'EOF'
 AC_PROG_CC
 AC_ARG_ENABLE(foo,
 [  --enable-foo          Enable foo],
@@ -48,18 +48,17 @@ AC_ARG_ENABLE(foo,
     AM_CONDITIONAL(NEVER_TRUE, false)
   fi
 ])
-AC_OUTPUT(Makefile)
+AC_OUTPUT
 EOF
-
-touch README NEWS AUTHORS ChangeLog
 
 mkdir build
 
-$ACLOCAL \
-   && $AUTOCONF \
-   && $AUTOMAKE -a || exit 1
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE -a
 
 cd build
 # configure should fail since we've done something invalid.
-../configure && exit 1
-exit 0
+../configure 2>stderr && exit 1
+cat stderr
+grep NEVER_TRUE stderr
