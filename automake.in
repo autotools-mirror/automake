@@ -3155,13 +3155,20 @@ sub handle_subdirs
 }
 
 
-# @DEPENDENCIES
+# ($REGEN, @DEPENDENCIES)
 # &scan_aclocal_m4
 # ----------------
 # If aclocal.m4 creation is automated, return the list of its dependencies.
 sub scan_aclocal_m4
 {
     my $regen_aclocal = 0;
+
+    return (0, ())
+      unless $relative_dir eq '.';
+
+    &examine_variable ('CONFIG_STATUS_DEPENDENCIES');
+    &examine_variable ('CONFIGURE_DEPENDENCIES');
+
     if (-f 'aclocal.m4')
     {
 	&define_variable ("ACLOCAL_M4", '$(top_srcdir)/aclocal.m4');
@@ -3180,20 +3187,13 @@ sub scan_aclocal_m4
 	}
     }
 
-    my $acinclude = 0;
+    my @ac_deps = ();
+
     if (-f 'acinclude.m4')
     {
 	$regen_aclocal = 1;
-	$acinclude = 1;
+	push @ac_deps, 'acinclude.m4';
     }
-
-    return ()
-      unless $regen_aclocal;
-
-    # Note that it might be possible that aclocal.m4 doesn't exist but
-    # should be auto-generated.  This case probably isn't very
-    # important.
-    my @ac_deps = ($acinclude ? ' acinclude.m4' : '');
 
     if (&variable_defined ('ACLOCAL_M4_SOURCES'))
     {
@@ -3226,7 +3226,12 @@ sub scan_aclocal_m4
 	    }
 	}
     }
-    return @ac_deps;
+
+    # Note that it might be possible that aclocal.m4 doesn't exist but
+    # should be auto-generated.  This case probably isn't very
+    # important.
+
+    return ($regen_aclocal, @ac_deps);
 }
 
 # Rewrite a list of input files into a form suitable to put on a
@@ -3283,14 +3288,7 @@ sub handle_configure
 
     my @rewritten = &rewrite_inputs_into_dependencies (1, @secondary_inputs);
 
-    my @aclocal_m4_deps;
-    if ($relative_dir eq '.')
-    {
-        @aclocal_m4_deps = &scan_aclocal_m4 ();
-	&examine_variable ('CONFIG_STATUS_DEPENDENCIES');
-	&examine_variable ('CONFIGURE_DEPENDENCIES');
-    }
-
+    my ($regen_aclocal_m4, @aclocal_m4_deps) = scan_aclocal_m4 ();
 
     $output_rules .=
       &file_contents ('configure',
@@ -3313,6 +3311,8 @@ sub handle_configure
 		       => $cmdline_use_dependencies ? '' : ' --ignore-deps',
 		       'MAKEFILE-AM-SOURCES'
 		       =>  "$input$colon_infile",
+		       'REGEN-ACLOCAL-M4'
+		       => $regen_aclocal_m4,
 		       'ACLOCAL_M4_DEPS'
 		       => join (' ', @aclocal_m4_deps)));
 
