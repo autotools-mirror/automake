@@ -23,7 +23,12 @@ AC_ARG_WITH(regex,
 if test -n "$am_with_regex"; then
   AC_MSG_RESULT(regex)
   AC_DEFINE(WITH_REGEX)
-  LIBOBJS="$LIBOBJS regex.o"
+  AC_CACHE_CHECK([for GNU regex in libc], am_cv_gnu_regex,
+    AC_TRY_LINK([], [extern int re_max_failures; re_max_failures = 1],
+		am_cv_gnu_regex=yes, am_cv_gnu_regex=no))
+  if test $am_cv_gnu_regex = no; then
+    LIBOBJS="$LIBOBJS regex.o"
+  fi
 else
   AC_MSG_RESULT(rx)
   AC_CHECK_FUNC(re_rx_search, , [LIBOBJS="$LIBOBJS rx.o"])
