@@ -30,14 +30,14 @@ am_cv_[$1]_dependencies_compiler_type=none
 if test "$depgcc" = yes; then
    am_cv_[$1]_dependencies_compiler_type=gcc
 else
-   echo '#include "confest.h"' > conftest.c
+   echo '#include "conftest.h"' > conftest.c
    echo > conftest.h
 
    dnl SGI compiler has its own method for side-effect dependency
    dnl tracking.
    if test "$am_cv_[$1]_dependencies_compiler_type" = none; then
       rm -f conftest.P
-      if $depcc -c -MDupdate conftest.P && test -f conftest.P; then
+      if $depcc -c -MDupdate conftest.P conftest.c && test -f conftest.P; then
 	 am_cv_[$1]_dependencies_compiler_type=sgi
       fi
    fi

@@ -13,13 +13,15 @@ find . -name Makefile -print | while read mf; do
   # Extract the definition of DEP_FILES from the Makefile without
   # running `make'.
   DEPDIR=`sed -n -e '/^DEPDIR = / s///p' $mf`
-  deps="`sed -n -e 's/\$(DEPDIR)/'"$DEPDIR/g" -e '
+  deps="`sed -n -e '
     /^DEP_FILES = .*\\\\$/ {
       s/^DEP_FILES = //
       :loop
+        s/\$(DEPDIR)/'"$DEPDIR"'/g
 	s/\\\\$//
 	p
 	n
+        s/\$(DEPDIR)/'"$DEPDIR"'/g
 	/\\\\$/ b loop
       p
     }
