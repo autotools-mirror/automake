@@ -942,12 +942,8 @@ sub finish_languages
 	local ($ltcompile, $ltlink) = &libtool_compiler;
 
 	&define_configure_variable ('CFLAGS');
-	&define_variable ('COMPILE',
-			  '$(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)');
-	&define_variable ('LTCOMPILE',
-			  $ltcompile .
-			  '$(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)')
-	    if ($seen_libtool);
+	&define_compiler_variable ('COMPILE', $ltcompile,
+				   '$(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)');
 	&define_variable ('CCLD', '$(CC)');
 	&define_variable ('LINK', $ltlink . '$(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
     }
@@ -3795,13 +3791,15 @@ sub handle_tests
 	push (@check_tests, 'check-TESTS');
 	push (@phony, 'check-TESTS');
 
+	# Note: Solaris 2.7 seems to expand TESTS using VPATH.  That's
+	# why we choose `dir=' and not `dir=.'
 	$output_rules .= 'check-TESTS: $(TESTS)
 	@failed=0; all=0; \\
 	srcdir=$(srcdir); export srcdir; \\
 	for tst in $(TESTS); do \\
-	  if test -f $$tst; then dir=.; \\
-	  else dir="$(srcdir)"; fi; \\
-	  if $(TESTS_ENVIRONMENT) $$dir/$$tst; then \\
+	  if test -f $$tst; then dir=; \\
+	  else dir="$(srcdir)/"; fi; \\
+	  if $(TESTS_ENVIRONMENT) $${dir}$$tst; then \\
 	    all=`expr $$all + 1`; \\
 	    echo "PASS: $$tst"; \\
 	  elif test $$? -ne 77; then \\
@@ -4606,10 +4604,7 @@ sub lang_cxx_finish
 	local ($ltcompile, $ltlink) = &libtool_compiler;
 
 	&define_configure_variable ("CXXFLAGS");
-	&define_variable ('CXXCOMPILE', '$(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)');
-	&define_variable ('LTCXXCOMPILE',
-			  $ltcompile . '$(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)')
-	    if ($seen_libtool);
+	&define_compiler_variable ('CXXCOMPILE', $ltcompile, '$(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)');
 
 	&define_variable ('CXXLD', '$(CXX)');
 	&define_variable ('CXXLINK', $ltlink . '$(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
@@ -4780,10 +4775,8 @@ sub lang_f77_finish
 	local ($ltcompile, $ltlink) = &libtool_compiler;
 
 	&define_configure_variable ('FFLAGS');
-	&define_variable ('F77COMPILE', '$(F77) $(AM_FFLAGS) $(FFLAGS)');
-	&define_variable ('LTF77COMPILE',
-			  $ltcompile . '$(F77) $(AM_FFLAGS) $(FFLAGS)')
-	    if ($seen_libtool);
+	&define_compiler_variable ('F77COMPILE', $ltcompile,
+				   '$(F77) $(AM_FFLAGS) $(FFLAGS)');
 
 	&define_variable ('F77LD', '$(F77)');
 	&define_variable ('F77LINK', $ltlink . '$(F77LD) $(AM_FFLAGS) $(FFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
@@ -4834,10 +4827,8 @@ sub lang_ppf77_finish
     local ($ltcompile, $ltlink) = &libtool_compiler;
 
     &define_configure_variable ('FFLAGS');
-    &define_variable ('F77COMPILE', '$(F77) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_FFLAGS) $(FFLAGS)');
-    &define_variable ('LTF77COMPILE',
-		      $ltcompile . '$(F77) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_FFLAGS) $(FFLAGS)')
-	if ($seen_libtool);
+    &define_compiler_variable ('F77COMPILE', $ltcompile,
+			       '$(F77) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_FFLAGS) $(FFLAGS)');
 
     &define_variable ('F77LD', '$(F77)');
     &define_variable ('F77LINK', $ltlink . '$(F77LD) $(AM_FFLAGS) $(FFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
@@ -4874,10 +4865,8 @@ sub lang_ratfor_finish
 
     &define_configure_variable ('FFLAGS');
     &define_configure_variable ('RFLAGS');
-    &define_variable ('RCOMPILE', '$(F77) $(AM_FFLAGS) $(FFLAGS) $(AM_RFLAGS) $(RFLAGS)');
-    &define_variable ('LTRCOMPILE',
-		      $ltcompile . '$(F77) $(AM_FFLAGS) $(FFLAGS) $(AM_RFLAGS) $(RFLAGS)')
-	if ($seen_libtool);
+    &define_variable ('RCOMPILE', $ltcompile,
+		      '$(F77) $(AM_FFLAGS) $(FFLAGS) $(AM_RFLAGS) $(RFLAGS)');
 
     &define_variable ('F77LD', '$(F77)');
     &define_variable ('F77LINK', $ltlink . '$(F77LD) $(AM_FFLAGS) $(FFLAGS) $(AM_RFLAGS) $(RFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
@@ -4910,10 +4899,8 @@ sub lang_objc_finish
     local ($ltcompile, $ltlink) = &libtool_compiler;
 
     &define_configure_variable ("OBJCFLAGS");
-    &define_variable ('OBJCCOMPILE', '$(OBJC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_OBJCFLAGS) $(OBJCFLAGS)');
-    &define_variable ('LTOBJCCOMPILE',
-                      $ltcompile . '$(OBJC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_OBJCFLAGS) $(OBJCFLAGS)')
-        if ($seen_libtool);
+    &define_compiler_variable ('OBJCCOMPILE', $ltcompile,
+			       '$(OBJC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_OBJCFLAGS) $(OBJCFLAGS)');
     
     &define_variable ('OBJCLD', '$(OBJC)');
     &define_variable ('OBJCLINK', $ltlink . '$(OBJCLD) $(AM_OBJCFLAGS) $(OBJCFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
@@ -5709,6 +5696,19 @@ sub define_configure_variable
     local ($var) = @_;
     local ($value) = '@' . $var . '@';
     &define_variable ($var, $value);
+}
+
+# Define a compiler variable.  When tracking dependencies, we want to
+# define a slightly different variable here so that the actual
+# compilation command contains all the dependency magic.  We also
+# handle defining the `LT' version of the command when using libtool.
+sub define_compiler_variable
+{
+    local ($var, $ltcompile, $value) = @_;
+    local ($name) = $var . ($use_dependencies ? '_' : '');
+    &define_variable ($name, $value);
+    &define_variable ('LT' . $name, $ltcompile . $value)
+	if $seen_libtool;
 }
 
 # Define a variable that represents a program to run.  If in Cygnus
