@@ -2061,7 +2061,7 @@ are part of it, and which libraries it should be linked with.
 
 This section also covers conditional compilation of sources or
 programs.  Most of the comments about these also apply to libraries
-(@pxref{A Library}) and Libtool libraries (@pxref{A Shared Library}).
+(@pxref{A Library}) and libtool libraries (@pxref{A Shared Library}).
 
 @menu
 * Program Sources::             Defining program sources
@@ -2360,7 +2360,7 @@ name of the primary is @samp{LIBRARIES}.  Libraries can be installed in
 @code{libdir} or @code{pkglibdir}.
 
 @xref{A Shared Library}, for information on how to build shared
-libraries using Libtool and the @samp{LTLIBRARIES} primary.
+libraries using libtool and the @samp{LTLIBRARIES} primary.
 
 Each @samp{_LIBRARIES} variable is a list of the libraries to be built.
 For instance to create a library named @file{libcpio.a}, but not install
@@ -2400,71 +2400,384 @@ configure-time must be added to the @code{BUILT_SOURCES} variable
 
 @cindex Shared libraries, support for
 
-Building shared libraries is a relatively complex matter.  For this
-reason, GNU Libtool (@pxref{Top, , Introduction, libtool, The
+Building shared libraries portably is a relatively complex matter.
+For this reason, GNU Libtool (@pxref{Top, , Introduction, libtool, The
 Libtool Manual}) was created to help build shared libraries in a
 platform-independent way.
+
+@menu
+* Libtool Concept::             Introducing Libtool
+* Libtool Libraries::           Declaring Libtool Libraries
+* Conditional Libtool Libraries::  Building Libtool Libraries Conditionally
+* Conditional Libtool Sources::  Choosing Library Sources Conditionally
+* Libtool Convenience Libraries::  Building Convenience Libtool Libraries
+* Libtool Modules::             Building Libtool Modules
+* Libtool Flags::               Using _LIBADD and _LDFLAGS
+* LTLIBOBJ::                    Using $(LTLIBOBJ)
+* Libtool Issues::              Common Issues Related to Libtool's Use
+@end menu
+
+@node Libtool Concept, Libtool Libraries, A Shared Library, A Shared Library
+@subsection The Libtool Concept
+
+@cindex libtool, introduction
+@cindex libtool library, definition
+@cindex suffix .la, defined
+@cindex .la suffix, defined
+
+Libtool abstracts shared and static libraries into a unified
+concept henceforth called @dfn{libtool libraries}.  Libtool libraries
+are files using the @file{.la} suffix, and can designate a static
+library, a shared library, or maybe both.  Their exact nature cannot
+be determined until @file{./configure} is run: not all platforms
+support all kinds of libraries, and users can explicitly select which
+libraries should be built.  (However the package's maintainers can
+tune the default, @xref{AC_PROG_LIBTOOL, , The @code{AC_PROG_LIBTOOL}
+macro, libtool, The Libtool Manual}.)
+
+@cindex suffix .lo, defined
+Because object files for shared and static libraries must be compiled
+differently, libtool is also used during compilation.  Object files
+built by libtool are called @dfn{libtool objects}: these are files
+using the @file{.lo} suffix.  Libtool libraries are built from these
+libtool objects.
+
+You should not assume anything about the structure of @file{.la} or
+@file{.lo} files and how libtool constructs them: this is libtool's
+concern, and the last thing one wants is to learn about libtool's
+guts.  However the existence of these files matters, because they are
+used as targets and dependencies in @file{Makefile}s when building
+libtool libraries.  There are situations where you may have to refer
+to these, for instance when expressing dependencies for building
+source files conditionally (@pxref{Conditional Libtool Sources}).
+
+@cindex libltdl, introduction
+
+People considering writing a plug-in system, with dynamically loaded
+modules, should look into @file{libltdl}: libtool's dlopening library
+(@pxref{Using libltdl, , Using libltdl, libtool, The Libtool Manual}).
+This offers a portable dlopening facility to load libtool libraries
+dynamically, and can also achieve static linking where unavoidable.
+
+Before we discuss how to use libtool with Automake in details, it
+should be noted that the libtool manual also has a section about how
+to use Automake with libtool (@pxref{Using Automake, , Using Automake
+with Libtool, libtool, The Libtool Manual}).
+
+@node Libtool Libraries, Conditional Libtool Libraries, Libtool Concept, A Shared Library
+@subsection Building Libtool Libraries
 
 @cindex _LTLIBRARIES primary, defined
 @cindex LTLIBRARIES primary, defined
 @cindex Primary variable, LTLIBRARIES
 @cindex Example of shared libraries
+@vindex lib_LTLIBRARIES
+@vindex pkglib_LTLIBRARIES
 
-@cindex suffix .la, defined
-
-Automake uses Libtool to build libraries declared with the
-@samp{LTLIBRARIES} primary.  Each @samp{_LTLIBRARIES} variable is a list
-of shared libraries to build.  For instance, to create a library named
-@file{libgettext.a} and its corresponding shared libraries, and install
-them in @samp{libdir}, write:
+Automake uses libtool to build libraries declared with the
+@samp{LTLIBRARIES} primary.  Each @samp{_LTLIBRARIES} variable is a
+list of libtool libraries to build.  For instance, to create a libtool
+library named @file{libgettext.la}, and install it in @samp{libdir},
+write:
 
 @example
 lib_LTLIBRARIES = libgettext.la
+libgettext_la_SOURCES = gettext.c gettext.h @dots{}
 @end example
 
-@vindex lib_LTLIBRARIES
-@vindex pkglib_LTLIBRARIES
+Automake predefines the variable @samp{pkglibdir}, so you can use
+@code{pkglib_LTLIBRARIES} to install libraries in
+@code{$(libdir)/@@PACKAGE@@/}.
+
+@node Conditional Libtool Libraries, Conditional Libtool Sources, Libtool Libraries, A Shared Library
+@subsection Building Libtool Libraries Conditionally
+@cindex libtool libraries, conditional
+@cindex conditional libtool libraries
+
+Like conditional programs (@pxref{Conditional Programs}), there are
+two main ways to build conditional libraries: using Automake
+conditionals or using Autoconf @code{AC_SUBST}itutions.
+
+The important implementation detail you have to be aware of is that
+the place where a library will be installed matters to libtool: it
+needs to be indicated @emph{at link-time} using the @code{-rpath}
+option.
+
+For libraries whose destination directory is known when Automake runs,
+Automake will automatically supply the appropriate @samp{-rpath}
+option to libtool. This is the case for libraries listed explicitly in
+some installable @code{_LTLIBRARIES} variables such as
+@code{lib_LTLIBRARIES}.
+
+However, for libraries determined at configure time (and thus
+mentioned in @code{EXTRA_LTLIBRARIES}), Automake does not know the
+final installation directory.  For such libraries you must add the
+@samp{-rpath} option to the appropriate @samp{_LDFLAGS} variable by
+hand.
+
+The examples below illustrate the differences between these two methods.
+
+Here is an example where @code{$(WANTEDLIBS)} is an @code{AC_SUBST}ed
+variable set at @file{./configure}-time to either @file{libfoo.la},
+@file{libbar.la}, both, or none.  Although @code{$(WANTEDLIBS)}
+appears in the @code{lib_LTLIBRARIES}, Automake cannot guess it
+relates to @file{libfoo.la} or @file{libbar.la} by the time it creates
+the link rule for these two libraries.  Therefore the @code{-rpath}
+argument must be explicitly supplied.
+
+@example
+EXTRA_LTLIBRARIES = libfoo.la libbar.la
+lib_LTLIBRARIES = $(WANTEDLIBS)
+libfoo_la_SOURCES = foo.c @dots{}
+libfoo_la_LDFLAGS = -rpath '$(libdir)'
+libbar_la_SOURCES = bar.c @dots{}
+libbar_la_LDFLAGS = -rpath '$(libdir)'
+@end example
+
+Here is how the same @file{Makefile.am} would look using Automake
+conditionals named @code{WANT_LIBFOO} and @code{WANT_LIBBAR}.  Now
+Automake is able to compute the @code{-rpath} setting itself, because
+it's clear that both libraries will end up in @code{$(libdir)} if they
+are installed.
+
+@example
+lib_LTLIBRARIES =
+if WANT_LIBFOO
+lib_LTLIBRARIES += libfoo.la
+endif
+if WANT_LIBBAR
+lib_LTLIBRARIES += libbar.la
+endif
+libfoo_la_SOURCES = foo.c @dots{}
+libbar_la_SOURCES = bar.c @dots{}
+@end example
+
+@node Conditional Libtool Sources, Libtool Convenience Libraries, Conditional Libtool Libraries, A Shared Library
+@subsection Libtool Libraries with Conditional Sources
+
+Conditional compilation of sources in a library can be achieved in the
+same way as conditional compilation of sources in a program
+(@pxref{Conditional Sources}).  The only difference is that
+@code{_LIBADD} should be used instead of @code{_LDADD} and that it
+should mention libtool objects (@file{.lo} files).
+
+So, to mimic the @file{hello} example from @ref{Conditional Sources},
+we could build a @file{libhello.la} library using either
+@file{hello-linux.c} or @file{hello-generic.c} with the following
+@file{Makefile.am}.
+
+@example
+lib_LTLIBRARIES = libhello.la
+libhello_la_SOURCES = hello-common.c
+EXTRA_libhello_la_SOURCES = hello-linux.c hello-generic.c
+libhello_la_LIBADD = $(HELLO_SYSTEM)
+libhello_la_DEPENDENCIES = $(HELLO_SYSTEM)
+@end example
+
+@noindent
+And make sure @code{$(HELLO_SYSTEM)} is set to either
+@file{hello-linux.lo} or @file{hello-generic.lo} in
+@file{./configure}.
+
+Or we could simply use an Automake conditional as follows.
+
+@example
+lib_LTLIBRARIES = libhello.la
+libhello_la_SOURCES = hello-common.c
+if LINUX
+libhello_la_SOURCES += hello-linux.c
+else
+libhello_la_SOURCES += hello-generic.c
+endif
+@end example
+
+@node Libtool Convenience Libraries, Libtool Modules, Conditional Libtool Sources, A Shared Library
+@subsection Libtool Convenience Libraries
+@cindex convenience libraries, libtool
+@cindex libtool convenience libraries
 @vindex noinst_LTLIBRARIES
 @vindex check_LTLIBRARIES
 
-@cindex check_LTLIBRARIES, not allowed
+Sometimes you want to build libtool libraries which should not be
+installed.  These are called @dfn{libtool convenience libraries} and
+are typically used to encapsulate many sublibraries, later gathered
+into one big installed library.
 
-Note that shared libraries @emph{must} be installed in order to work
-properly, so @code{check_LTLIBRARIES} is not allowed.  However,
-@code{noinst_LTLIBRARIES} is allowed.  This feature should be used for
-libtool ``convenience libraries''.
+Libtool convenience libraries are declared by
+@code{noinst_LTLIBRARIES}, @code{check_LTLIBRARIES}, or even
+@code{EXTRA_LTLIBRARIES}.  Unlike installed libtool libraries they do
+not need an @code{-rpath} flag at link time (actually this is the only
+difference).
 
-@cindex suffix .lo, defined
+Convenience libraries listed in @code{noinst_LTLIBRARIES} are always
+built.  Those listed in @code{check_LTLIBRARIES} are built only upon
+@code{make check}.  Finally, libraries listed in
+@code{EXTRA_LTLIBRARIES} are never built explicitly: Automake outputs
+rules to build them, but if the library does not appear as a Makefile
+dependency anywhere it won't be built (this is why
+@code{EXTRA_LTLIBRARIES} is used for conditional compilation).
 
-For each library, the @samp{@var{library}_LIBADD} variable contains the
-names of extra libtool objects (@file{.lo} files) to add to the shared
-library.  The @samp{@var{library}_LDFLAGS} variable contains any
-additional libtool flags, such as @samp{-version-info} or
-@samp{-static}.
+Here is a sample setup merging libtool convenience libraries from
+subdirectories into one main @file{libtop.la} library.
 
+@example
+# -- Top-level Makefile.am --
+SUBDIRS = sub1 sub2 @dots{}
+lib_LTLIBRARIES = libtop.la
+libtop_la_SOURCES =
+libtop_la_LIBADD = \
+  sub1/libsub1.la \
+  sub2/libsub2.la \
+  @dots{}
+
+# -- sub1/Makefile.am --
+noinst_LTLIBRARIES = libsub1.la
+libsub1_la_SOURCES = @dots{}
+
+# -- sub2/Makefile.am --
+# showing nested convenience libraries
+SUBDIRS = sub2.1 sub2.2 @dots{}
+noinst_LTLIBRARIES = libsub2.la
+libsub2_la_SOURCES =
+libsub2_la_LIBADD = \
+  sub21/libsub21.la \
+  sub22/libsub22.la \
+  @dots{}
+@end example
+
+@node Libtool Modules, Libtool Flags, Libtool Convenience Libraries, A Shared Library
+@subsection Libtool Modules
+@cindex modules, libtool
+@cindex libtool modules
+@cindex -module, libtool
+
+These are libtool libraries meant to be dlopened.  They are
+indicated to libtool by passing @code{-module} at link-time.
+
+@example
+pkglib_LTLIBRARIES = mymodule.la
+mymodule_la_SOURCES = doit.c
+mymodule_LDFLAGS = -module
+@end example
+
+Ordinarily, Automake requires that a Library's name starts with
+@samp{lib}.  However, when building a dynamically loadable module you
+might wish to use a "nonstandard" name.
+
+@node Libtool Flags, LTLIBOBJ, Libtool Modules, A Shared Library
+@subsection _LIBADD and _LDFLAGS
+@cindex _LIBADD, libtool
+@cindex _LDFLAGS, libtool
+
+As shown in previous sections, the @samp{@var{library}_LIBADD}
+variable should be used to list extra libtool objects (@file{.lo}
+files) or libtool libraries (@file{.la}) to add to @var{library}.
+
+The @samp{@var{library}_LDFLAGS} variable is the place to list
+additional libtool flags, such as @samp{-version-info},
+@samp{-static}, and a lot more.  See @xref{Link mode, , Using libltdl,
+libtool, The Libtool Manual}.
+
+@node LTLIBOBJ, Libtool Issues, Libtool Flags, A Shared Library
+@subsection @code{LTLIBOBJS}
 @cindex @code{LTLIBOBJS}, special handling
+@vindex LTLIBOBJS
+@vindex LIBOBJS
+@cvindex AC_LIBOBJ
 
 Where an ordinary library might include @code{$(LIBOBJS)}, a libtool
 library must use @code{$(LTLIBOBJS)}.  This is required because the
 object files that libtool operates on do not necessarily end in
-@file{.o}.  The libtool manual contains more details on this topic.
+@file{.o}.
 
-For libraries installed in some directory, Automake will automatically
-supply the appropriate @samp{-rpath} option.  However, for libraries
-determined at configure time (and thus mentioned in
-@code{EXTRA_LTLIBRARIES}), Automake does not know the eventual
-installation directory; for such libraries you must add the
-@samp{-rpath} option to the appropriate @samp{_LDFLAGS} variable by
-hand.
+Nowadays, the computation of @code{LTLIBOBJS} from @code{LIBOBJS} is
+performed automatically by Autoconf (@pxref{AC_LIBOBJ vs LIBOBJS, ,
+@code{AC_LIBOBJ} vs. @code{LIBOBJS}, autoconf, The Autoconf Manual}).
 
-Ordinarily, Automake requires that a shared library's name start with
-@samp{lib}.  However, if you are building a dynamically loadable module
-then you might wish to use a "nonstandard" name.  In this case, put
-@code{-module} into the @samp{_LDFLAGS} variable.
+@node Libtool Issues,  , LTLIBOBJ, A Shared Library
+@subsection Common Issues Related to Libtool's Use
 
-@xref{Using Automake, Using Automake with Libtool, The Libtool Manual,
-libtool, The Libtool Manual}, for more information.
+@subsubsection @code{required file `./ltmain.sh' not found}
+@cindex ltmain.sh not found
+@cindex libtoolize, no longer run by Automake
+@cindex libtoolize and autoreconf
+@cindex autoreconf and libtoolize
+@cindex bootstrap.sh and autoreconf
+@cindex autogen.sh and autoreconf
 
+Libtool comes with a tool called @command{libtoolize} that will
+install libtool's supporting files into a package.  Running this
+command will install @file{ltmain.sh}.  You should execute it before
+@command{aclocal} and @command{automake}.
+
+People upgrading old packages to newer autotools are likely to face
+this issue because older Automake versions used to call
+@command{libtoolize}.  Therefore old build scripts do not call
+@command{libtoolize}.
+
+Since Automake 1.6, it has been decided that running
+@command{libtoolize} was none of Automake's business.  Instead, that
+functionality has been moved into the @command{autoreconf} command
+(@pxref{autoreconf Invocation, , Using @command{autoreconf}, autoconf,
+The Autoconf Manual}).  If you do not want to remember what to run and
+when, just learn the @command{autoreconf} command.  Hopefully,
+replacing existing @file{bootstrap.sh} or @file{autogen.sh} scripts by
+a call to @command{autoreconf} should also free you from any similar
+incompatible change in the future.
+
+@subsubsection Objects @code{created with both libtool and without}
+
+Sometimes, the same source file is used both to build a libtool
+library and to build another non-libtool target (be it a program or
+another library).
+
+Let's consider the following @file{Makefile.am}.
+
+@example
+bin_PROGRAMS = prog
+prog_SOURCES = prog.c foo.c @dots{}
+
+lib_LTLIBRARIES = libfoo.la
+libfoo_la_SOURCES = foo.c @dots{}
+@end example
+
+@noindent
+(In this trivial case the issue could be avoided by linking
+@file{libfoo.la} with @file{prog} instead of listing @file{foo.c} in
+@code{prog_SOURCES}.  But let's assume we really want to keep
+@file{prog} and @file{libfoo.la} separate.)
+
+Technically, it means that we should build @file{foo.$(OBJEXT)} for
+@file{prog}, and @file{foo.lo} for @file{libfoo.la}.  The problem is
+that in the course of creating @file{foo.lo}, libtool may erase (or
+replace) @file{foo.$(OBJEXT)} -- and this cannot be avoided.
+
+Therefore, when Automake detects this situation it will complain
+with a message such as
+@example
+object `foo.$(OBJEXT)' created both with libtool and without
+@end example
+
+A workaround for this issue is to ensure that these two objects get
+different basenames.  As explained in @ref{renamed objects}, this
+happens automatically when per-targets flags are used.
+
+@example
+bin_PROGRAMS = prog
+prog_SOURCES = prog.c foo.c @dots{}
+prog_CFLAGS = $(AM_CFLAGS)
+
+lib_LTLIBRARIES = libfoo.la
+libfoo_la_SOURCES = foo.c @dots{}
+@end example
+
+@noindent
+Adding @code{prog_CFLAGS = $(AM_CFLAGS)} is almost a no-op, because
+when the @code{prog_CFLAGS} is defined, it is used instead of
+@code{AM_CFLAGS}.  However as a side effect it will cause
+@file{prog.c} and @file{foo.c} to be compiled as
+@file{prog-prog.$(OBJEXT)} and @file{prog-foo.$(OBJEXT)} which solves
+the issue.
 
 @node Program and Library Variables, LIBOBJS, A Shared Library, Programs
 @section Program and Library Variables
@@ -5502,7 +5815,7 @@ triggered when a user unpacks and builds a package.
 @cindex CVS and timestamps
 
 Unless you use CVS keywords (in which case files must be updated at
-commit time), CVS preserves timestamp during @code{cvs commit} and
+commit time), CVS preserves timestamps during @code{cvs commit} and
 @code{cvs import -d} operations.
 
 When you check out a file using @code{cvs checkout} its timestamp is
