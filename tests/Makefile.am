@@ -217,6 +217,7 @@ subobj3.test \
 subst.test \
 suffix.test \
 suffix2.test \
+suffix3.test \
 symlink.test \
 syntax.test \
 tags.test \
