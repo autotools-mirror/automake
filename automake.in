@@ -2195,6 +2195,7 @@ sub handle_single_transform_list ($$$$@)
         # into the current directory, unless the subdir-objects option
         # is in effect.
 
+	print "1. $_\n";
         # Split file name into base and extension.
         next if ! /^(?:(.*)\/)?([^\/]*)($KNOWN_EXTENSIONS_PATTERN)$/;
         my $full = $_;
@@ -2218,6 +2219,7 @@ sub handle_single_transform_list ($$$$@)
 	my $aggregate = 'AM';
 
         $extension = &derive_suffix ($extension, $nonansi_obj);
+	print "2. $extension\n";
         my $lang;
         if ($extension_map{$extension} &&
             ($lang = $languages{$extension_map{$extension}}))
@@ -5923,6 +5925,9 @@ sub derive_suffix ($$)
 {
   my ($source_ext, $obj) = @_;
 
+  print "3. @{[keys %{$suffix_rules->{$source_ext}}]}\n";
+  print "3. @{[$suffix_rules->{$source_ext}{$obj}]}\n";
+
   while (! $extension_map{$source_ext}
 	 && $source_ext ne $obj
 	 && exists $suffix_rules->{$source_ext}
@@ -7062,19 +7067,22 @@ sub register_suffix_rule ($$$)
       $suffix_rules->{$src} = { $dest => [ $dest, 1 ] };
     }
 
-  # If we know how to transform $dest in something else, then
-  # we know how to transform $src in that "something else".
-  if (exists $suffix_rules->{$dest})
+  # If we know how to transform any suffix of $dest into something else,
+  # then we know how to transform $src in that "something else".
+  foreach my $suffix (keys %$suffix_rules)
     {
-      for my $dest2 (keys %{$suffix_rules->{$dest}})
+      if ($dest =~ /\Q$suffix\E$/)
 	{
-	  my $dist = $suffix_rules->{$dest}{$dest2}[1] + 1;
-	  # Overwrite an existing $src->$dest2 path only if
-	  # the path via $dest which is shorter.
-	  if (! exists $suffix_rules->{$src}{$dest2}
-	      || $suffix_rules->{$src}{$dest2}[1] > $dist)
+	  for my $dest2 (keys %{$suffix_rules->{$suffix}})
 	    {
-	      $suffix_rules->{$src}{$dest2} = [ $dest, $dist ];
+	      my $dist = $suffix_rules->{$suffix}{$dest2}[1] + 1;
+	      # Overwrite an existing $src->$dest2 path only if
+	      # the path via $suffix which is shorter.
+	      if (! exists $suffix_rules->{$src}{$dest2}
+		  || $suffix_rules->{$src}{$dest2}[1] > $dist)
+		{
+		  $suffix_rules->{$src}{$dest2} = [ $suffix, $dist ];
+		}
 	    }
 	}
     }
@@ -7084,17 +7092,20 @@ sub register_suffix_rule ($$$)
   my @dest2 = keys %{$suffix_rules->{$src}};
   for my $src2 (keys %$suffix_rules)
     {
-      if (exists $suffix_rules->{$src2}{$src})
+      foreach my $suffix2 (keys %{$suffix_rules->{$src2}})
 	{
-	  for my $dest2 (@dest2)
+	  if ($suffix2 =~ /\Q$src\E$/)
 	    {
-	      my $dist = $suffix_rules->{$src}{$dest2} + 1;
-	      # Overwrite an existing $src2->$dest2 path only if
-	      # the path via $src is shorter.
-	      if (! exists $suffix_rules->{$src2}{$dest2}
-		  || $suffix_rules->{$src2}{$dest2}[1] > $dist)
+	      for my $dest2 (@dest2)
 		{
-		  $suffix_rules->{$src2}{$dest2} = [ $src, $dist ];
+		  my $dist = $suffix_rules->{$src}{$dest2} + 1;
+		  # Overwrite an existing $src2->$dest2 path only if
+		  # the path via $src is shorter.
+		  if (! exists $suffix_rules->{$src2}{$dest2}
+		      || $suffix_rules->{$src2}{$dest2}[1] > $dist)
+		    {
+		      $suffix_rules->{$src2}{$dest2} = [ $src, $dist ];
+		    }
 		}
 	    }
 	}

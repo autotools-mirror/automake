@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 2001, 2002, 2003  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -19,21 +19,40 @@
 # Boston, MA 02111-1307, USA.
 
 # Test to make sure Automake supports implicit rules "confusing"
-# extensions.  Inspired by a mail from Alex Hornby. 
+# extensions.  Inspired by a mail from Alex Hornby.
 
+required=gcc
 . ./defs || exit 1
+
+set -e
+
+cat >> configure.in << 'END'
+AC_PROG_CXX
+AC_OUTPUT
+END
 
 cat > Makefile.am << 'END'
 SUFFIXES = .idl S.cpp C.h
 SUFFIXES += C.cpp S.h
 .idlC.cpp:
 	cp $< $@
+
+bin_PROGRAMS = foo
+foo_SOURCES = foo.idl
+
+echo:
+	@echo 'BEG: $(foo_OBJECTS) :END'
 END
 
 : > fooa
 
-$ACLOCAL || exit 1
-$AUTOMAKE || exit 1
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
+./configure
+OBJEXT=bar $MAKE -e echo >stdout
+cat stdout
+grep 'BEG: foo.bar :END' stdout
 
 # Make sure Automake has NOT recognized .cpp and .idlC as two new
 # extensions.
