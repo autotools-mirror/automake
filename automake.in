@@ -525,7 +525,7 @@ sub backname ($)
 # Parse command line.
 sub parse_arguments
 {
-    local (@arglist) = @_;
+    my (@arglist) = @_;
 
     # Start off as gnu.
     &set_strictness ('gnu');
@@ -628,7 +628,7 @@ sub parse_arguments
 	    # the first ":" file to see if it is automake input; the
 	    # rest are just taken verbatim.  We still keep all the
 	    # files around for dependency checking, however.
-	    local ($local, $input, @rest) = split (/:/, $arglist[0]);
+	    my ($local, $input, @rest) = split (/:/, $arglist[0]);
 	    if (! $input)
 	    {
 		$input = $local;
@@ -656,7 +656,7 @@ sub parse_arguments
 # Ensure argument exists, or die.
 sub require_argument
 {
-    local ($arg, @arglist) = @_;
+    my ($arg, @arglist) = @_;
     die "automake: no argument given for option \`$arg'\n"
 	if ! @arglist;
 }
@@ -667,7 +667,7 @@ sub require_argument
 # the name of the file output by config.status.
 sub generate_makefile
 {
-    local ($output, $makefile) = @_;
+    my ($output, $makefile) = @_;
 
     ($am_file_name = $makefile) =~ s/^.*\///;
     $in_file_name = $am_file_name . '.in';
@@ -678,7 +678,7 @@ sub generate_makefile
     # files.  We don't scan or otherwise deal with these input file,
     # other than to mark them as dependencies.  See
     # &scan_autoconf_files for details.
-    local (@secondary_inputs);
+    my (@secondary_inputs);
     ($output, @secondary_inputs) = split (/:/, $output);
 
     &initialize_per_input;
@@ -776,13 +776,13 @@ sub generate_makefile
 	mkdir ($output_directory . '/' . $am_relative_dir, 0755);
     }
 
-    local ($out_file) = $output_directory . '/' . $makefile . ".in";
+    my ($out_file) = $output_directory . '/' . $makefile . ".in";
     if (! $force_generation && -e $out_file)
     {
-	local ($am_time) = (stat ($makefile . '.am'))[9];
-	local ($in_time) = (stat ($out_file))[9];
+	my ($am_time) = (stat ($makefile . '.am'))[9];
+	my ($in_time) = (stat ($out_file))[9];
 	# FIXME: should cache these times.
-	local ($conf_time) = (stat ($configure_ac))[9];
+	my ($conf_time) = (stat ($configure_ac))[9];
 	# FIXME: how to do unsigned comparison?
 	if ($am_time < $in_time || $am_time < $conf_time)
 	{
@@ -791,7 +791,7 @@ sub generate_makefile
 	}
 	if (-f 'aclocal.m4')
 	{
-	    local ($acl_time) = (stat _)[9];
+	    my ($acl_time) = (stat _)[9];
 	    return if ($am_time < $acl_time);
 	}
     }
@@ -867,12 +867,12 @@ sub handle_options
 	    {
 		# Got a version number.
 
-		local ($rmajor, $rminor, $ralpha) = ($1, $2, $3);
+		my ($rmajor, $rminor, $ralpha) = ($1, $2, $3);
 
 		&prog_error ("version is incorrect: $VERSION")
 		    if $VERSION !~ /([0-9]+)\.([0-9]+)([a-z])?/;
 
-		local ($tmajor, $tminor, $talpha) = ($1, $2, $3);
+		my ($tmajor, $tminor, $talpha) = ($1, $2, $3);
 
 		# 2.0 is better than 1.0.
 		# 1.2 is better than 1.1.
@@ -911,17 +911,17 @@ sub handle_options
 # OUT is the name of the output file
 sub get_object_extension
 {
-    local ($out) = @_;
+    my ($out) = @_;
 
     # Maybe require libtool library object files.
-    local ($extension) = '.o';
+    my $extension = '.o';
     $extension = '.$(OBJEXT)' if $seen_objext;
     $extension = '.lo' if ($out =~ /\.la$/);
 
     if (! $included_generic_compile)
     {
 	# Boilerplate.
-	local ($default_include) = '';
+	my $default_include = '';
 	if (! defined $options{'nostdinc'})
 	{
 	    $default_include = ' -I. -I$(srcdir)';
@@ -934,7 +934,7 @@ sub get_object_extension
 		}
 	    }
 	}
-	local ($xform) = &transform ('DEFAULT_INCLUDES' => $default_include);
+	my $xform = &transform ('DEFAULT_INCLUDES' => $default_include);
 	$output_vars .= &file_contents ('comp-vars', $xform);
 
 	$output_rules .=
@@ -1071,7 +1071,7 @@ sub finish_languages
 	{
 	    $comp = $language_map{$lang . '-compile'};
 
-	    local ($outarg) = $language_map{$lang . '-output-arg'};
+	    my $outarg = $language_map{$lang . '-output-arg'};
 	    if ($language_map{$lang . '-flags'} eq 'CFLAGS')
 	    {
 		# C compilers don't always support -c -o.
@@ -1151,25 +1151,25 @@ sub finish_languages
 # compiled with C or C++, depending on the extension of the YACC file.
 sub output_yacc_build_rule
 {
-    local ($yacc_suffix, $use_ylwrap, $c_suffix) = @_;
+    my ($yacc_suffix, $use_ylwrapd) = @_;
 
-    local ($suffix);
-    ($suffix = $yacc_suffix) =~ tr/y/c/;
-    push (@suffixes, $yacc_suffix, $suffix);
+    my $c_suffix = $yacc_suffix;
+    $c_suffix =~ tr/y/c/;
+    push (@suffixes, $yacc_suffix, $c_suffix);
 
     # Generate rule for c/c++.
-    $output_rules .= "$yacc_suffix$suffix:\n\t";
+    $output_rules .= "$yacc_suffix$c_suffix:\n\t";
 
     if ($use_ylwrap)
     {
 	$output_rules .= ('$(SHELL) $(YLWRAP)'
-			  . ' "$(YACC)" $< y.tab.c $*' . $suffix
+			  . ' "$(YACC)" $< y.tab.c $*' . $c_suffix
 			  . ' y.tab.h $*.h -- $(AM_YFLAGS) $(YFLAGS)');
     }
     else
     {
 	$output_rules .= ('$(YACC) $(AM_YFLAGS) $(YFLAGS) $< && mv y.tab.c $*'
-			  . $suffix . "\n"
+			  . $c_suffix . "\n"
 			  . "\tif test -f y.tab.h; then \\\n"
 			  . "\tif cmp -s y.tab.h \$*.h; then rm -f y.tab.h; else mv y.tab.h \$*.h; fi; \\\n"
 			  . "\telse :; fi");
@@ -1179,10 +1179,10 @@ sub output_yacc_build_rule
 
 sub output_lex_build_rule
 {
-    local ($lex_suffix, $use_ylwrap) = @_;
-    local ($c_suffix);
+    my ($lex_suffix, $use_ylwrap) = @_;
 
-    ($c_suffix = $lex_suffix) =~ tr/l/c/;
+    (my $c_suffix = $lex_suffix) =~ tr/l/c/;
+
     push (@suffixes, $lex_suffix);
     &define_configure_variable ('LEX_OUTPUT_ROOT');
     &define_configure_variable ('LEXLIB');
@@ -1255,11 +1255,11 @@ sub check_libobjs_sources
 #   @OBJECTS are names of objects
 sub handle_single_transform_list
 {
-    local ($var, $derived, $obj, @files) = @_;
-    local (@result) = ();
-    local ($nonansi_obj) = $obj;
+    my ($var, $derived, $obj, @files) = @_;
+    my @result = ();
+    my $nonansi_obj = $obj;
     $nonansi_obj =~ s/\$U//g;
-    local (%linkers_used) = ();
+    my %linkers_used = ();
 
     # Turn sources into objects.
     foreach (@files)
@@ -1275,36 +1275,36 @@ sub handle_single_transform_list
         # put into the current directory.
 
         # Split file name into base and extension.
-        local ($full, $directory, $base, $extension, $linker, $object);
+        my ($linker, $object);
         next if ! /^((.*)\/)?([^\/]*)\.(.*)$/;
-        $full = $_;
-        $directory = $2;
-        $base = $3;
-        $extension = $4;
+        my $full = $_;
+        my $directory = $2;
+        my $base = $3;
+        my $extension = $4;
 
-        local ($xbase) = $base;
+        my $xbase = $base;
 
         # We must generate a rule for the object if it requires
         # its own flags.
-        local ($rule) = '';
-        local ($renamed) = 0;
+        my $rule = '';
+        my $renamed = 0;
 
         $extension = &derive_suffix ($extension);
-        local ($lang) = $extension_map{$extension};
+        $lang = $extension_map{$extension};
         if ($lang)
         {
             &saw_extension ($extension);
             # Found the language, so see what it says.
-            local ($subr) = 'lang_' . $lang . '_rewrite';
+            my $subr = 'lang_' . $lang . '_rewrite';
             # Note: computed subr call.
-            local ($r) = & $subr ($directory, $base, $extension);
+            my $r = & $subr ($directory, $base, $extension);
             # Skip this entry if we were asked not to process it.
             next if $r == $LANG_IGNORE;
 
             # Now extract linker and other info.
             $linker = $language_map{$lang . '-linker'};
 
-            local ($this_obj_ext);
+            my $this_obj_ext;
             if ($language_map{$lang . '-ansi-p'})
             {
                 $object = $base . $obj;
@@ -1333,7 +1333,7 @@ sub handle_single_transform_list
                 # some situations.  So we provide _SHORTNAME to
                 # override.
 
-                local ($dname) = $derived;
+                my $dname = $derived;
                 if (&variable_defined ($derived . '_SHORTNAME'))
                 {
                     # FIXME: should use the same conditional as
@@ -1351,8 +1351,8 @@ sub handle_single_transform_list
   		    if ! defined $language_map{$lang . '-compile'};
 
                 # Compute the rule to compile this object.
-                local ($flag) = $language_map{$lang . '-flags'};
-                local ($val) = "(${derived}_${flag}";
+                my $flag = $language_map{$lang . '-flags'};
+                my $val = "(${derived}_${flag}";
                 ($rule = $language_map{$lang . '-compile'}) =~
                     s/\(AM_$flag/$val/;
 
@@ -1387,8 +1387,8 @@ sub handle_single_transform_list
                 || $directory ne '')
             {
                 $rule = '';
-                local ($obj_sans_ext) = substr ($object, 0,
-                                                - length ($this_obj_ext));
+                my $obj_sans_ext = substr ($object, 0,
+					   - length ($this_obj_ext));
                 $lang_specific_files{$lang} .= (' ' . $derived
                                                 . ' ' . $full
                                                 . ' ' . $obj_sans_ext);
@@ -1422,7 +1422,7 @@ sub handle_single_transform_list
         }
         else
         {
-            local (@dep_list) = ();
+            my @dep_list = ();
             $object_map{$object} = $full;
 
             # If file is in subdirectory, we need explicit
@@ -1482,8 +1482,8 @@ sub handle_single_transform_list
             if ($rule ne '')
             {
                 # Turn `$@' into name of our object file.
-                local ($xform);
-                ($xform = $object) =~ s,/,\\/,g;
+                my $xform = $object;
+                $xform =~ s,/,\\/,g;
                 $rule =~ s/\$\@/$xform/;
 
                 # We cannot use $< here since this is an explicit
@@ -1501,7 +1501,7 @@ sub handle_single_transform_list
             && ($language_map{$lang . '-autodep'} ne 'no'
                 || $language_map{$lang . '-derived-autodep'} eq 'yes'))
         {
-            local ($depfile) = $object;
+            my $depfile = $object;
             $depfile =~ s/\.([^.]*)$/.P$1/;
             $depfile =~ s/\$\(OBJEXT\)$/o/ if $seen_objext;
             $dep_files{'$(DEPDIR)/' . $depfile} = 1;
@@ -2596,7 +2596,7 @@ sub handle_tags
 	|| &variable_defined ('ETAGS_ARGS')
 	|| @tag_deps)
     {
-	local ($config) = '';
+	my $config = '';
 	foreach my $one_hdr (@config_headers)
 	{
 	    if ($relative_dir eq dirname ($one_hdr))
@@ -2606,7 +2606,7 @@ sub handle_tags
 		$config .= basename ($one_hdr);
 	    }
 	}
-	my $xform = &transform ('CONFIG' => $xform,
+	my $xform = &transform ('CONFIG' => $config,
 				'DIRS'   => join (' ', @tag_deps));
 	$xform .= &transform_cond ('SUBDIRS' => &variable_defined ('SUBDIRS'));
 
