@@ -38,7 +38,7 @@ dnl we can find it.  If we can't find a tar, it doesn't really matter.
 AC_CHECK_PROGS(TAR, gnutar gtar tar)
 AMTARFLAGS=
 if test -n "$TAR"; then
-  if $(SHELL) -c "$TAR --version" > /dev/null 2>&1; then
+  if $SHELL -c "$TAR --version" > /dev/null 2>&1; then
     dnl We have GNU tar.
     AMTARFLAGS=o
   fi
