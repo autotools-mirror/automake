@@ -1166,7 +1166,6 @@ sub handle_subdirs
     }
     &push_phony_cleaners ('recursive');
 
-    push (@all, "all-recursive");
     push (@check, "check-recursive");
     push (@installcheck, "installcheck-recursive");
     push (@info, "info-recursive");
@@ -1353,7 +1352,7 @@ sub handle_merge_targets
     push (@all, 'Makefile');
     push (@all, $config_name)
 	if $config_name && &dirname ($config_name) eq $relative_dir;
-    &do_one_merge_target ('all', @all);
+
     &do_one_merge_target ('info', @info);
     &do_one_merge_target ('dvi', @dvi);
 
@@ -1371,19 +1370,16 @@ sub handle_merge_targets
     # that (eg) "make install-exec" will run "install-exec-recursive"
     # if required, but "make install" won't run it twice.  Step one is
     # to see if the user specified local versions of any of the
-    # targets we handle.
-    if (defined $contents{'install-exec-local'})
-    {
-	push (@install_exec, 'install-exec-local');
-    }
-    if (defined $contents{'install-data-local'})
-    {
-	push (@install_data, 'install-data-local');
-    }
-    if (defined $contents{'uninstall-local'})
-    {
-	push (@uninstall, 'uninstall-local');
-    }
+    # targets we handle.  "all" is treated as one of these since
+    # "install" can run it.
+    push (@install_exec, 'install-exec-local')
+	if defined $contents{'install-exec-local'};
+    push (@install_data, 'install-data-local')
+	if defined $contents{'install-data-local'};
+    push (@uninstall, 'uninstall-local')
+	if defined $contents{'uninstall-local'};
+    push (@all, 'all-local')
+	if defined $contents{'all-local'};
 
     if (defined $contents{'install-local'})
     {
@@ -1398,6 +1394,18 @@ sub handle_merge_targets
     {
 	push (@install, 'install-recursive');
 
+	if (@all)
+	{
+	    $output_rules .= ('all-am: '
+			      . join (' ', @all)
+			      . "\n\n");
+	    @all = ('all-recursive', 'all-am');
+	    push (@phony, 'all-am');
+	}
+	else
+	{
+	    @all = ('all-recursive');
+	}
 	if (@install_exec)
 	{
 	    $output_rules .= ('install-exec-am: '
@@ -1464,6 +1472,11 @@ sub handle_merge_targets
 		      . join (' ', @uninstall)
 		      . "\n\n");
     push (@phony, 'install', 'uninstall');
+
+    $output_rules .= ('all: '
+		      . join (' ', @all)
+		      . "\n\n");
+    push (@phony, 'all');
 }
 
 # Helper for handle_merge_targets.
@@ -2249,6 +2262,11 @@ sub am_install_var
     local (@used) = ();
     local (@result) = ();
 
+    # Now that configure substitutions are allowed in where_HOW
+    # variables, it is an error to actually define the primary.
+    &am_line_error ($primary, "\`$primary' is an anachronism")
+	if defined $contents{$primary};
+
     local ($clean_file) = $file . '-clean';
     local ($one_name);
     local ($X);
@@ -2257,8 +2275,10 @@ sub am_install_var
 	$one_name = $X . '_' . $primary;
 	if (defined $contents{$one_name})
 	{
-	    # Append actual contents to result.
-	    push (@result, split (/\s+/, $contents{$one_name}));
+	    # Append actual contents to result.  Skip elements that
+	    # look like configure substitutions.
+	    push (@result, grep (! /^\@.*\@$/,
+				 split (/\s+/, $contents{$one_name})));
 
 	    if ($do_clean)
 	    {
@@ -2287,15 +2307,17 @@ sub am_install_var
 	    if ($exec_dir_p{$X})
 	    {
 		push (@install_exec, 'install-' . $X . $primary);
+		push (@phony, 'install-' . $X . $primary);
 	    }
 	    else
 	    {
 		push (@install_data, 'install-' . $X . $primary);
+		push (@phony, 'install-' . $X . $primary);
 	    }
 	}
     }
 
-    if (! defined $contents{$primary} && @used)
+    if (@used)
     {
 	# Define it.
 	&pretty_print ($primary . ' =', '', @used);
@@ -2303,13 +2325,15 @@ sub am_install_var
     }
 
     # Push here because PRIMARY might be configure time determined.
-    push (@all, '$(' . $primary . ')') if ($do_all && @used);
+    push (@all, '$(' . $primary . ')')
+	if $do_all && @used;
 
     # Look for misspellings.  It is an error to have a variable ending
     # in a "reserved" suffix whose prefix is unknown, eg
     # "bni_PROGRAMS".
     local (%valid, $varname);
     grep ($valid{$_} = 0, @prefixes);
+    $valid{'EXTRA'} = 0;
     foreach $varname (keys %contents)
     {
 	if ($varname =~ /^(.*)_$primary$/ && ! defined $valid{$1})
@@ -2317,6 +2341,9 @@ sub am_install_var
 	    &am_line_error ($varname, "invalid variable \"$varname\"");
 	}
     }
+
+    push (@result, split (/\s+/, $contents{'EXTRA_' . $primary}))
+	if defined $contents{'EXTRA_' . $primary};
 
     return (@result);
 }
