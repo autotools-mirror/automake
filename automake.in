@@ -352,13 +352,7 @@ my %libsources = ();
 # True if AM_C_PROTOTYPES appears in configure.ac.
 my $am_c_prototypes = 0;
 
-# Names used in AC_CONFIG_HEADER call.  @config_fullnames holds the
-# name which appears in AC_CONFIG_HEADER, colon and all.
-# @config_names holds the file names.  @config_headers holds the '.in'
-# files.  Ordinarily these are similar, but they can be different if
-# the weird "NAME:FILE" syntax is used.
-my @config_fullnames = ();
-my @config_names = ();
+# Names used in AC_CONFIG_HEADER call.
 my @config_headers = ();
 # Where AC_CONFIG_HEADER appears.
 my $config_header_location;
@@ -3293,19 +3287,21 @@ sub handle_tags
 	|| &variable_defined ('ETAGS_ARGS')
 	|| @tag_deps)
     {
-	my $config = '';
-	foreach my $one_hdr (@config_headers)
+	my @config;
+	foreach my $spec (@config_headers)
 	{
-	    if ($relative_dir eq dirname ($one_hdr))
-	    {
-		# The config header is in this directory.  So require it.
-		$config .= ' ' if $config;
-		$config .= basename ($one_hdr);
-	    }
+	    my ($out, @ins) = split_config_file_spec ($spec);
+	    foreach my $in (@ins)
+	      {
+		# If the config header source is in this directory,
+		# require it.
+		push @config, basename ($in)
+		  if $relative_dir eq dirname ($in);
+	      }
 	}
 	$output_rules .= &file_contents ('tags',
-					 ('CONFIG' => $config,
-					  'DIRS'   => join (' ', @tag_deps)));
+					 ('CONFIG' => "@config",
+					  'DIRS'   => "@tag_deps"));
 	&examine_variable ('TAGS_DEPENDENCIES');
     }
     elsif (&variable_defined ('TAGS_DEPENDENCIES'))
@@ -3701,16 +3697,13 @@ sub handle_configure
     }
 
     # If we have a configure header, require it.
-    my @local_fullnames = @config_fullnames;
-    my @local_names = @config_names;
     my $hdr_index = 0;
     my $distclean_config = '';
-    foreach my $one_hdr (@config_headers)
-    {
-	my $one_fullname = shift (@local_fullnames);
-	my $one_name = shift (@local_names);
+    foreach my $spec (@config_headers)
+      {
+	my ($out, @ins) = split_config_file_spec ($spec);
 	$hdr_index += 1;
-	my $header_dir = dirname ($one_name);
+	my $header_dir = dirname ($out);
 
 	# If the header is in the current directory we want to build
 	# the header here.  Otherwise, if we're at the topmost
@@ -3722,12 +3715,12 @@ sub handle_configure
 	    my ($cn_sans_dir, $stamp_dir);
 	    if ($relative_dir eq $header_dir)
 	    {
-		$cn_sans_dir = basename ($one_name);
+		$cn_sans_dir = basename ($out);
 		$stamp_dir = '';
 	    }
 	    else
 	    {
-		$cn_sans_dir = $one_name;
+		$cn_sans_dir = $out;
 		if ($header_dir eq '.')
 		{
 		    $stamp_dir = '';
@@ -3741,25 +3734,25 @@ sub handle_configure
 	    # Compute relative path from directory holding output
 	    # header to directory holding input header.  FIXME:
 	    # doesn't handle case where we have multiple inputs.
-	    my $ch_sans_dir;
-	    if (dirname ($one_hdr) eq $relative_dir)
+	    my $in0_sans_dir;
+	    if (dirname ($ins[0]) eq $relative_dir)
 	    {
-		$ch_sans_dir = basename ($one_hdr);
+		$in0_sans_dir = basename ($ins[0]);
 	    }
 	    else
 	    {
-	        $ch_sans_dir = backname ($relative_dir) . '/' . $one_hdr;
+	        $in0_sans_dir = backname ($relative_dir) . '/' . $ins[0];
 	    }
 
-	    require_file ($config_header_location, $FOREIGN, $ch_sans_dir);
+	    require_file ($config_header_location, $FOREIGN, $in0_sans_dir);
 
 	    # Header defined and in this directory.
 	    my @files;
-	    if (-f $one_name . '.top')
+	    if (-f $out . '.top')
 	    {
 		push (@files, "${cn_sans_dir}.top");
 	    }
-	    if (-f $one_name . '.bot')
+	    if (-f $out . '.bot')
 	    {
 		push (@files, "${cn_sans_dir}.bot");
 	    }
@@ -3772,23 +3765,21 @@ sub handle_configure
 	        push (@files, '$(top_srcdir)/acconfig.h');
 	    }
 
-	    my $stamp_name = 'stamp-h';
-	    $stamp_name .= "${hdr_index}";
-
-            my $out_dir = dirname ($ch_sans_dir);
+	    my $stamp_name = "stamp-h$hdr_index";
+            my $out_dir = dirname ($in0_sans_dir);
 
             $output_rules .=
-	      &file_contents ('remake-hdr',
-			      ('FILES'              => join (' ', @files),
-			       'CONFIG_HEADER'      => $cn_sans_dir,
-			       'CONFIG_HEADER_IN'   => $ch_sans_dir,
-			       'CONFIG_HEADER_FULL' => $one_name,
-			       'STAMP'            => "$stamp_dir$stamp_name",
-			       'SRC_STAMP'        => "$out_dir/$stamp_name"));
+	      file_contents ('remake-hdr',
+			     ('FILES'              => "@files",
+			      'CONFIG_HEADER'      => $cn_sans_dir,
+			      'CONFIG_HEADER_IN'   => $in0_sans_dir,
+			      'CONFIG_HEADER_FULL' => $out,
+			      'STAMP'              => "$stamp_dir$stamp_name",
+			      'SRC_STAMP'          => "$out_dir/$stamp_name"));
 
-	    &create ("${relative_dir}/${out_dir}/${stamp_name}.in");
+	    create ("$relative_dir/$out_dir/$stamp_name.in");
 	    require_file ($config_header_location, $FOREIGN,
-			  "${out_dir}/${stamp_name}.in");
+			  "$out_dir/$stamp_name.in");
 
 	    $distclean_config .= ' ' if $distclean_config;
 	    $distclean_config .= $cn_sans_dir;
@@ -3810,21 +3801,21 @@ sub handle_configure
 	if &variable_defined ('CONFIG_HEADER');
 
     my $config_header = '';
-    foreach my $one_name (@config_names)
-    {
+    foreach my $spec (@config_headers)
+      {
+	my ($out, @ins) = split_config_file_spec ($spec);
 	# Generate CONFIG_HEADER define.
-	my $one_hdr;
-	if ($relative_dir eq dirname ($one_name))
+	if ($relative_dir eq dirname ($out))
 	{
-	    $one_hdr = basename ($one_name);
+	    $out = basename ($out);
 	}
 	else
 	{
-	    $one_hdr = "\$(top_builddir)/${one_name}";
+	    $out = "\$(top_builddir)/$out";
 	}
 
 	$config_header .= ' ' if $config_header;
-	$config_header .= $one_hdr;
+	$config_header .= $out;
     }
     if ($config_header)
     {
@@ -4016,11 +4007,12 @@ sub handle_all ($)
     # right enough.
     unshift (@all, basename ($makefile));
 
-    foreach my $one_name (@config_names)
-    {
-	push (@all, basename ($one_name))
-	    if dirname ($one_name) eq $relative_dir;
-    }
+    foreach my $spec (@config_headers)
+      {
+        my ($out, @ins) = split_config_file_spec ($spec);
+	push (@all, basename ($out))
+	  if dirname ($out) eq $relative_dir;
+      }
 
     # Install `all' hooks.
     if (&target_defined ("all-local"))
@@ -4038,10 +4030,11 @@ sub handle_all ($)
     my @local_headers = ();
     push @local_headers, '$(BUILT_SOURCES)'
       if &variable_defined ('BUILT_SOURCES');
-    foreach my $one_name (@config_names)
+    foreach my $spec (@config_headers)
       {
-	push @local_headers, basename ($one_name)
-	  if dirname ($one_name) eq $relative_dir;
+        my ($out, @ins) = split_config_file_spec ($spec);
+	push @local_headers, basename ($out)
+	  if dirname ($out) eq $relative_dir;
       }
 
     if (@local_headers)
@@ -4363,6 +4356,23 @@ sub handle_minor_options
 
 ################################################################
 
+# ($OUTPUT, @INPUTS)
+# &split_config_file_spec ($SPEC)
+# -------------------------------
+# Decode the Autoconf syntax for config files (files, headers, links
+# etc.).
+sub split_config_file_spec ($)
+{
+  my ($spec) = @_;
+  my ($output, @inputs) = split (/:/, $spec);
+
+  push @inputs, "$output.in"
+    unless @inputs;
+
+  return ($output, @inputs);
+}
+
+
 my %make_list;
 
 # &scan_autoconf_config_files ($CONFIG-FILES)
@@ -4506,20 +4516,7 @@ sub scan_autoconf_traces ($)
       elsif ($macro eq 'AM_CONFIG_HEADER')
 	{
 	  $config_header_location = $here;
-	  foreach my $one_hdr (split (' ', $args[1]))
-	    {
-	      push (@config_fullnames, $one_hdr);
-	      if ($one_hdr =~ /^([^:]+):(.+)$/)
-		{
-		  push (@config_names, $1);
-		  push (@config_headers, $2);
-		}
-	      else
-		{
-		  push (@config_names, $one_hdr);
-		  push (@config_headers, $one_hdr . '.in');
-		}
-	    }
+	  push @config_headers, split (' ', $args[1]);
 	}
       elsif ($macro eq 'AM_C_PROTOTYPES')
 	{
@@ -4725,8 +4722,8 @@ sub scan_one_autoconf_file
 
 	# Handle configuration headers.  A config header of `[$1]'
 	# means we are actually scanning AM_CONFIG_HEADER from
-	# aclocal.m4.
-	if (/A([CM])_CONFIG_HEADERS?\s*\((.*)\)/
+	# aclocal.m4.  Same thing with a leading underscore.
+	if (/(?<!_)A([CM])_CONFIG_HEADERS?\s*\((.*)\)/
 	    && $2 ne '[$1]')
 	{
 	    file_error ($here,
@@ -4734,20 +4731,7 @@ sub scan_one_autoconf_file
 	      if $1 eq 'C';
 
 	    $config_header_location = $here;
-	    foreach my $one_hdr (split (' ', &unquote_m4_arg ($2)))
-	    {
-		push (@config_fullnames, $one_hdr);
-		if ($one_hdr =~ /^([^:]+):(.+)$/)
-		{
-		    push (@config_names, $1);
-		    push (@config_headers, $2);
-		}
-		else
-		{
-		    push (@config_names, $one_hdr);
-		    push (@config_headers, $one_hdr . '.in');
-		}
-	    }
+	    push @config_headers, split (' ', unquote_m4_arg ($2));
 	}
 
         # Handle AC_CANONICAL_*.  Always allow upgrading to
