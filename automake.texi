@@ -109,8 +109,7 @@ AutoMake's convenience.
 
 @menu
 * configure::                   AutoMake and configure
-* Single::                      Single directory packages
-* Multi::                       Multiple directory packages
+* Depth::                       Types of package hierarchy
 * Programs::                    What gets built
 * Source::                      Specifying source files
 * Scripts::                     Building scripts
@@ -187,18 +186,41 @@ AC_SUBST(INSTALL_SCRIPT)dnl
 @samp{AC_ARG_PROGRAM}.
 
 
-@node Single
-@section Single directory packages
+@node Depth
+@section Types of directory hierarchy
 
-Blah blah.
+@code{automake} supports three kinds of directory hierarcy: ``flat'',
+``shallow'', and ``deep''.
 
-A good example of a single directory package is AutoMake itself.
+A flat package is one in which all the files are in a single directory.
+The @file{Makefile.am} for such a package by definition lacks a
+@samp{SUBDIRS} macro.  (There are not any @code{automake}-using packages
+which are flat)
+
+A deep package is one in which all the source lies in subdirectories;
+the top level directory contains only configuration information.  GNU
+cpio is a good example of such a package (as is GNU tar, although it
+does not presently use @code{automake}).  The top level
+@file{Makefile.am} for a deep package will contain a @samp{SUBDIRS}
+macro, but no other macros to define objects which are built (eg
+@samp{PROGRAMS}).
+
+A shallow package is one in which the primary source resides in the
+top-level directory, while various parts (typically libraries) reside in
+subdirectories.  @code{automake} is one such package (as is GNU make,
+which does not currently use @code{automake}).
 
 
-@node Multi
-@section Multiple directory packages
+The @samp{SUBDIRS} macro holds a list of subdirectories in which
+building of various sorts can occur.  Many targets (eg @samp{all}) in
+the generated @file{Makefile} will run both locally and in all specified
+subdirectories.  Note that the directories listed in @samp{SUBDIRS} are
+not expected to contain @file{Makefile.am}s; only @file{Makefile}s
+(after configuration).  This allows inclusion of libraries from packages
+which do not use @code{automake} (such as gettext).
 
-A good example of a multiple directory package is GNU cpio.
+FIXME supply complete list of recursive targets?
+
 
 @node Programs
 @section Which Programs Are Built
@@ -267,26 +289,33 @@ rmt_LDADD =
 @section Specifying Source Code
 
 Any header files in your distribution must be listed in the
-@samp{HEADERS} variable:
+@samp{HEADERS} variable.  This is used both for making distributions,
+and for automatic de-ANSI-fication.
 
 @example
 HEADERS = hello.h getopt.h rx.h
 @end example
 
-Although there appears to be support in @code{automake} to allow a
-@file{Makefile.am} to specify the @samp{SOURCE} variable, it is
-currently not recommended.  This support is still preliminary, and does
-not work.
-
-Eventually @code{automake} might be modified to ignore header files
-listed in ``_SOURCE'' definitions.  At that time the @samp{HEADERS}
-macro will go away.
-
 
 @node Scripts
 @section Programs Which are Scripts
 
-La.
+It is possible to define and install programs which are scripts.  Such
+programs should be listed in the @samp{SCRIPTS} variable.
+@code{automake} doesn't define any dependencies for scripts; if a script
+is not to be installed as-is, the @file{Makefile.am} should include the
+appropriate rules.
+
+@code{automake} itself is a script that is generated at configure time
+from @file{automake.in}.  Here is how this is handled:
+
+@example
+SCRIPTS = automake
+
+automake: automake.in
+	CONFIG_FILES=$@ CONFIG_HEADERS= ./config.status
+@end example
+
 
 @node Libraries
 @section Building Libraries
@@ -426,12 +455,43 @@ Texinfo source, info pages and man pages are all considered to be
 @node ANSI
 @section Automatic de-ANSI-fication of Source
 
-For.
+If @file{Makefile.am} includes the text @samp{@@kr@@}, then code to
+handle automatic de-ANSI-fication is included in the generated
+@file{Makefile.in}.
+
+This means that each C source file will be treated as ANSI C.  If no
+ANSI C compiler is available on the build system, then the code will be
+turned into K&R C before compilation.
+
+FIXME need a section here about what really goes on here, what
+constraints there are, and what new files need to be in the
+distribution.  Only, I don't know.
+
 
 @node Install
 @section What Gets Installed
 
-Today.
+Naturally, @code{automake} handles the details of actually installing
+your program once it has been built.  Any objects specified in
+@samp{PROGRAMS}, @samp{LIBPROGRAMS}, @samp{SCRIPTS}, @samp{LIBSCRIPTS},
+@samp{DATA}, and @samp{PACKAGEDATA} are automatically installed in the
+appropriate place.
+
+@code{automake} also handles installing any specified info and man
+pages.
+
+FIXME xref to Extending node here; sometimes you need to install more.
+
+@code{automake} generates separate @samp{install-data} and
+@samp{install-exec} targets, in case the installer is installing on
+multiple machines which share directory structure -- these targets allow
+the machine-independent parts to be installed only once.
+
+@code{automake} also generates an @samp{uninstall} target.
+
+In the future @code{automake} will be extended to generate an
+@samp{installdirs} target.
+
 
 @node Distribution
 @section Building a Release
@@ -451,13 +511,13 @@ Still, sometimes there are files which must be distributed, but which
 are not covered in the automatic rules.  These files should be listed in
 the @samp{DIST_OTHER} variable.
 
-For instance, in the @code{automake} distribution, there are many data
-files which are distributed.  Also, @file{automake.in} (the source to
+For instance, in the @code{automake} distribution, 
+@file{automake.in} (the source to
 @code{automake}) is not found automatically.  So in the
 @file{Makefile.am}, we have:
 
 @example
-DIST_OTHER = automake.in stamp-vti $(am_DATA)
+DIST_OTHER = automake.in
 @end example
 
 FIXME: plan to remove the data files and make rules for this.
