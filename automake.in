@@ -54,6 +54,12 @@ $use_dependencies = 1;
 # we have processed all input files.
 $exit_status = 0;
 
+# From the Perl manual.
+$symlink_exists = (eval 'symlink ("", "");', $@ eq '');
+
+# TRUE if missing standard files should be installed.
+$install_missing = 0;
+
 
 
 &initialize_global_constants;
@@ -130,6 +136,10 @@ sub parse_arguments
 	    &require_argument (@arglist);
 	    shift (@arglist);
 	    $output_directory = $arglist[0];
+	}
+	elsif ($arglist[0] eq '--install-missing')
+	{
+	    $install_missing = 1;
 	}
 	elsif ($arglist[0] eq '--')
 	{
@@ -1193,6 +1203,7 @@ sub initialize_global_constants
   --amdir=DIR           directory storing config files
   --help                print this help, then exit
   --include-deps        include generated dependencies in Makefile.in
+  --install-missing     install missing standard files
   --output-dir=DIR      put generated Makefile.in's into DIR
   --strictness=LEVEL    set strictness level.  LEVEL is normal, gnu, gnits
   --version             print version number, then exit\n";
@@ -1410,6 +1421,19 @@ sub require_file
     if (-f $fullfile)
     {
 	&push_dist_common ($file);
+    }
+    elsif ($install_missing && -f ($am_dir . '/' . $file))
+    {
+	# Install the missing file.  Symlink if we can, copy if we must.
+	if ($symlink_exists)
+	{
+	    symlink ($am_dir . '/' . $file, $fullfile);
+	}
+	else
+	{
+	    system ('cp', $am_dir . '/' . $file, $fullfile);
+	}
+	&am_error ("required file \"$fullfile\" not found; installing");
     }
     elsif ($strictness >= $mystrict)
     {

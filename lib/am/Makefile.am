@@ -12,7 +12,8 @@ program.am programs.am remake-hdr.am \
 remake-subd.am remake.am scripts.am subdirs.am tags.am tags-subd.am \
 tags-clean.am \
 texi-clean.am texi-version.am texinfos-vars.am texinfos.am \
-libraries-clean.am scripts-clean.am programs-clean.am data-clean.am
+libraries-clean.am scripts-clean.am programs-clean.am data-clean.am \
+INSTALL install-sh mdate-sh mkinstalldirs texinfo.tex
 
 DIST_OTHER = automake.in
 
@@ -27,9 +28,9 @@ ETAGS_ARGS = automake.in --lang=none \
 # * syntax check with perl4 and perl5.
 # * make sure the scripts don't use 'true'
 # These are only really guaranteed to work on my machine.
-check-local: automake
+maintainer-check: automake
 	@PERL@ -c -w automake
-	if grep '^[^#].*true' [a-z]*.am; then	\
+	if grep '^[^#].*true' $(srcdir)/[a-z]*.am; then \
 	  echo "can't use 'true' in GNU Makefile" 1>&2; \
 	  exit 1;				\
 	else :; fi
@@ -42,8 +43,7 @@ automake: automake.in
 
 # Tag before making distribution.  Also, don't make a distribution if
 # checks fail.  Also, make sure the NEWS file is up-to-date.
-cvs-dist:
-	$(MAKE) check
+cvs-dist: maintainer-check
 	if sed 1q NEWS | grep -e "$(VERSION)"; then :; else \
 	  echo "NEWS not updated; not releasing" 1>&2; \
 	  exit 1;				\
