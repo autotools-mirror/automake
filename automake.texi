@@ -228,9 +228,19 @@ system.
 
 @cindex GNU make extensions
 
-Note that GNU make extensions are not recognized by Automake.  Using
+Note that most GNU make extensions are not recognized by Automake.  Using
 such extensions in a @file{Makefile.am} will lead to errors or confusing
 behavior.
+
+@cindex Append operator
+A special exception is that the GNU make append operator, @samp{+=}, is
+supported.  This operator appends its right hand argument to the macro
+specified on the left.  Automake will translate the operator into
+an ordinary @samp{=} operator; @samp{+=} will thus work with any make program.
+
+Note that it is only valid to append to a macro in the same conditional
+context as the macro was originally defined. @xref{Conditional Append}, for
+more information.
 
 Automake tries to group comments with adjoining targets and macro
 definitions in an intelligent way.
@@ -4371,6 +4381,30 @@ endif !DEBUG
 
 @noindent
 Unbalanced conditions are errors.
+
+@anchor{Conditional Append}
+Conditionals do not interact very smoothly with the append operator.
+In particular, an append must happen in the same conditional context as
+the original assignment.  This means that the following will not work:
+
+@example
+DBG = foo
+if DEBUG
+DBG += bar
+endif DEBUG
+@end example
+
+The behaviour which is probably desired in this situation can be obtained
+using a temporary variable:
+
+@example
+if DEBUG
+TMP_DBG = bar
+endif DEBUG
+DBG = foo $(TMP_DBG)
+@end example
+
+This restriction may be lifted in future versions of automake.
 
 Note that conditionals in Automake are not the same as conditionals in
 GNU Make.  Automake conditionals are checked at configure time by the
