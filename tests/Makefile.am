@@ -82,6 +82,7 @@ confvar.test \
 confvar2.test \
 copy.test \
 ctarget1.test \
+cxx.test \
 cxxansi.test \
 cxxcpp.test \
 cxxlibobj.test \
