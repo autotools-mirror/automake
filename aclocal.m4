@@ -131,7 +131,16 @@ AC_PROVIDE_IFELSE([AC_PROG_CXX],
 # loop where config.status creates the headers, so we can generate
 # our stamp files there.
 AC_DEFUN([_AC_AM_CONFIG_HEADER_HOOK],
-[_am_stamp_count=`expr ${_am_stamp_count-0} + 1`
+[# Compute $1's index in $config_headers.
+_am_stamp_count=1
+for _am_header in $config_headers :; do
+  case $_am_header in
+    $1 | $1:* )
+      break ;;
+    * )
+      _am_stamp_count=`expr $_am_stamp_count + 1` ;;
+  esac
+done
 echo "timestamp for $1" >`AS_DIRNAME([$1])`/stamp-h[]$_am_stamp_count])
 
 # Copyright 2002  Free Software Foundation, Inc.
