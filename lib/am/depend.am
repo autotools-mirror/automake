@@ -22,7 +22,11 @@ $(DEP_FILES): $(srcdir)/.deps/.P
 
 $(srcdir)/.deps/%.P: $(srcdir)/%.c
 	@echo "mkdeps $< > $@"
-	@$(MKDEP) $< | sed 's,$(srcdir)/,,g' > $@-tmp
+## Need \< in regexp because otherwise when srcdir=. too much can be
+## matched.  Also we regexp-quote srcdir because "." is a matching
+## operator, and commonly appears in filenames.
+	@re=`echo 's,\<$(srcdir),,g' | sed 's/\./\\./g'`; \
+	  $(MKDEP) $< | sed $$re > $@-tmp
 	@mv $@-tmp $@
 
 # End of maintainer-only section
