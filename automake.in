@@ -7533,18 +7533,35 @@ sub rule_define ($$$$$)
       $target_name{$target}{$c} = $realtarget;
     }
 
-  # Check the rule for being a suffix rule. If so, store in a hash.
-  # Either it's a rule for two known extensions...
-  if ($target =~ /^($KNOWN_EXTENSIONS_PATTERN)($KNOWN_EXTENSIONS_PATTERN)$/
-      # ...or it's a rule with unknown extensions (.i.e, the rule looks like
-      # `.foo.bar:' but `.foo' or `.bar' are not declared in SUFFIXES
-      # and are not known language extensions).
-      # Automake will complete SUFFIXES from @suffixes automatically
-      # (see handle_footer).
-      || ($target =~ /$SUFFIX_RULE_PATTERN/o && accept_extensions($1)))
+  # We honor inference rules with multiple targets because many
+  # make support this and people use it.  However this is disallowed
+  # by POSIX.  We'll print a warning later.
+  my $target_count = 0;
+  my $inference_rule_count = 0;
+  for my $t (split (' ', $target))
     {
-      register_suffix_rule ($where, $1, $2);
+      ++$target_count;
+      # Check the rule for being a suffix rule. If so, store in a hash.
+      # Either it's a rule for two known extensions...
+      if ($t =~ /^($KNOWN_EXTENSIONS_PATTERN)($KNOWN_EXTENSIONS_PATTERN)$/
+	  # ...or it's a rule with unknown extensions (.i.e, the rule
+	  # looks like `.foo.bar:' but `.foo' or `.bar' are not
+	  # declared in SUFFIXES and are not known language
+	  # extensions).  Automake will complete SUFFIXES from
+	  # @suffixes automatically (see handle_footer).
+	  || ($t =~ /$SUFFIX_RULE_PATTERN/o && accept_extensions($1)))
+	{
+	  ++$inference_rule_count;
+	  register_suffix_rule ($where, $1, $2);
+	}
     }
+
+  # POSIX allow multiple targets befor the colon, but disallow
+  # definitions of multiple Inference rules.  It's also
+  # disallowed to mix plain targets with inference rules.
+  msg ('portability', $where,
+       "Inference rules can have only one target before the colon (POSIX).")
+    if $inference_rule_count > 0 && $target_count > 1;
 
   return @conds;
 }
