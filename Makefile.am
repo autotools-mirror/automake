@@ -11,46 +11,14 @@ bin_SCRIPTS = automake aclocal
 info_TEXINFOS = automake.texi
 
 
-amdir = $(pkgdatadir)/am
+dist_pkgdata_DATA = COPYING INSTALL
 
-dist_am_DATA = ansi2knr.am check.am clean-hdr.am clean.am compile.am \
-configure.am data.am dejagnu.am depend.am depend2.am distdir.am \
-footer.am header-vars.am header.am install.am java.am lang-compile.am \
-lex.am library.am libs.am libtool.am lisp.am ltlib.am ltlibrary.am \
-mans-vars.am mans.am multilib.am program.am progs.am python.am \
-remake-hdr.am scripts.am subdirs.am tags.am texi-vers.am texibuild.am \
-texinfos.am yacc.am
-
-
-dist_pkgdata_DATA = COPYING INSTALL texinfo.tex ansi2knr.c ansi2knr.1
-
-## These must all be executable when installed.  However, if we use
-## _SCRIPTS, then the program transform will be applied, which is not
-## what we want.  So we make them executable by hand.
-scriptdir = $(pkgdatadir)
-dist_script_DATA = config.guess config.sub install-sh mdate-sh missing \
-mkinstalldirs elisp-comp ylwrap acinstall depcomp compile py-compile
-
-install-data-hook:
-	@$(POST_INSTALL)
-	@for prog in $(dist_script_DATA); do \
-	  echo " chmod +x $(DESTDIR)$(scriptdir)/$$prog"; \
-	  chmod +x $(DESTDIR)$(scriptdir)/$$prog; \
-	done
-
-TAGS_FILES = automake.in aclocal.in $(amfiles)
+TAGS_FILES = automake.in aclocal.in
 
 # The following requires a fixed version of the Emacs 19.30 etags.
 ETAGS_ARGS = --lang=none \
  --regex='/^@node[ \t]+\([^,]+\)/\1/' $(srcdir)/automake.texi
 TAGS_DEPENDENCIES = automake.texi
-
-## `test -x' is not portable.  So we use Perl instead.  If Perl
-## doesn't exist, then this test is meaningless anyway.
-installcheck-local:
-	for file in $(dist_script_DATA); do \
-	  $(PERL) -e "exit ! -x '$(pkgdatadir)/$$file';" || exit 1; \
-	done
 
 EXTRA_DIST = ChangeLog.1996 ChangeLog.1998
 
@@ -66,7 +34,7 @@ maintainer-check: automake aclocal
 ## This check avoids accidental configure substitutions in the source.
 ## There are exactly 7 lines that should be modified.  This works out
 ## to 22 lines of diffs.
-	@if test `diff $(srcdir)/automake.in automake | wc -l` -ne 30; then \
+	@if test `diff $(srcdir)/automake.in automake | wc -l` -ne 28; then \
 	  echo "found too many diffs between automake.in and automake"; 1>&2; \
 	  diff -c $(srcdir)/automake.in automake; \
 	  exit 1; \
@@ -77,20 +45,20 @@ maintainer-check: automake aclocal
 ## expect no instances of '${...}'.  However, $${...} is ok, since that
 ## is a shell construct, not a Makefile construct.
 ## The backslash in `$${' is needed for some versions of bash.
-	@if fgrep '\$${' $(srcdir)/[a-z]*.am | \
+	@if fgrep '\$${' $(srcdir)/lib/am/[a-z]*.am | \
 	       fgrep -v '$$$$'; then \
 	  echo "Found too many uses of '\$${' in the lines above." 1>&2; \
 	  exit 1;				\
 	else :; fi
 ## Make sure `rm' is called with `-f'.
 	@if egrep '\<rm ([^-]|\-[^f ]*\>)' \
-	          $(srcdir)/[a-z]*.am $(srcdir)/tests/*.test | \
+	          $(srcdir)/lib/am/[a-z]*.am $(srcdir)/tests/*.test | \
 	      fgrep -v '##'; then \
 	  echo "Suspicious 'rm' invocation." 1>&2; \
 	  exit 1;				\
 	else :; fi
 ## Make sure all invocations of mkinstalldirs are correct.
-	@if fgrep -n 'mkinstalldirs' $(srcdir)/[a-z]*.am | \
+	@if fgrep -n 'mkinstalldirs' $(srcdir)/lib/am/[a-z]*.am | \
 	      fgrep -v '$$(mkinstalldirs)'; then \
 	  echo "Found incorrect use of mkinstalldirs in the lines above" 1>&2; \
 	  exit 1; \
@@ -107,8 +75,8 @@ maintainer-check: automake aclocal
 	  exit 1; \
 	fi
 ## Look for cd within backquotes without CDPATH=:
-	@if grep -n '^[^#]*` *cd ' $(srcdir)/automake.in $(srcdir)/*.am \
-	      $(srcdir)/m4/*.m4; then \
+	@if grep -n '^[^#]*` *cd ' $(srcdir)/automake.in \
+	      $(srcdir)/lib/am/*.am $(srcdir)/m4/*.m4; then \
 	  echo "Consider setting CDPATH in the lines above" 1>&2; \
 	  exit 1; \
 	fi

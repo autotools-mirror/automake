@@ -80,25 +80,9 @@ SUBDIRS = . m4 lib tests
 bin_SCRIPTS = automake aclocal
 info_TEXINFOS = automake.texi
 
-amdir = $(pkgdatadir)/am
+dist_pkgdata_DATA = COPYING INSTALL
 
-dist_am_DATA = ansi2knr.am check.am clean-hdr.am clean.am compile.am \
-configure.am data.am dejagnu.am depend.am depend2.am distdir.am \
-footer.am header-vars.am header.am install.am java.am lang-compile.am \
-lex.am library.am libs.am libtool.am lisp.am ltlib.am ltlibrary.am \
-mans-vars.am mans.am multilib.am program.am progs.am python.am \
-remake-hdr.am scripts.am subdirs.am tags.am texi-vers.am texibuild.am \
-texinfos.am yacc.am
-
-
-dist_pkgdata_DATA = COPYING INSTALL texinfo.tex ansi2knr.c ansi2knr.1
-
-scriptdir = $(pkgdatadir)
-dist_script_DATA = config.guess config.sub install-sh mdate-sh missing \
-mkinstalldirs elisp-comp ylwrap acinstall depcomp compile py-compile
-
-
-TAGS_FILES = automake.in aclocal.in $(amfiles)
+TAGS_FILES = automake.in aclocal.in
 
 # The following requires a fixed version of the Emacs 19.30 etags.
 ETAGS_ARGS = --lang=none \
@@ -115,28 +99,27 @@ EXEEXT =
 OBJEXT = o
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
+mkinstalldirs = $(SHELL) $(top_srcdir)/lib/mkinstalldirs
 CONFIG_CLEAN_FILES = automake aclocal
 SCRIPTS = $(bin_SCRIPTS)
 
 DIST_SOURCES =
+TEXINFO_TEX = $(top_srcdir)/lib/texinfo.tex
 INFO_DEPS = automake.info
 DVIS = automake.dvi
 TEXINFOS = automake.texi
-DATA = $(dist_am_DATA) $(dist_pkgdata_DATA) $(dist_script_DATA)
+DATA = $(dist_pkgdata_DATA)
 
 
 RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	uninstall-info-recursive all-recursive install-data-recursive \
 	install-exec-recursive installdirs-recursive install-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
-DIST_COMMON = README $(dist_am_DATA) $(dist_pkgdata_DATA) \
-	$(dist_script_DATA) AUTHORS COPYING ChangeLog INSTALL \
-	Makefile.am Makefile.in NEWS README-alpha THANKS TODO \
-	aclocal.in aclocal.m4 ansi2knr.1 ansi2knr.c automake.in compile \
-	config.guess config.sub configure configure.in depcomp \
-	elisp-comp install-sh mdate-sh missing mkinstalldirs py-compile \
-	stamp-vti texinfo.tex version.texi ylwrap
+DIST_COMMON = README $(dist_pkgdata_DATA) AUTHORS COPYING ChangeLog \
+	INSTALL Makefile.am Makefile.in NEWS README-alpha THANKS TODO \
+	aclocal.in aclocal.m4 automake.in configure configure.in \
+	install-sh mdate-sh missing mkinstalldirs stamp-vti \
+	version.texi
 DIST_SUBDIRS = $(SUBDIRS)
 all: all-recursive
 
@@ -190,7 +173,7 @@ $(srcdir)/version.texi:  $(srcdir)/stamp-vti
 	@:
 
 $(srcdir)/stamp-vti: automake.texi $(top_srcdir)/configure.in
-	@(set `$(SHELL) $(srcdir)/mdate-sh $(srcdir)/automake.texi`; \
+	@(set `$(SHELL) $(top_srcdir)/lib/mdate-sh $(srcdir)/automake.texi`; \
 	echo "@set UPDATED $$1 $$2 $$3"; \
 	echo "@set UPDATED-MONTH $$2 $$3"; \
 	echo "@set EDITION $(VERSION)"; \
@@ -216,7 +199,7 @@ automake.dvi: automake.texi $(srcdir)/version.texi
 	  && $(MAKEINFO) `echo $< | sed 's,.*/,,'`
 
 .texi.dvi:
-	TEXINPUTS=$(srcdir):$$TEXINPUTS \
+	TEXINPUTS=$(top_srcdir)/lib:$$TEXINPUTS \
 	  MAKEINFO='$(MAKEINFO) -I $(srcdir)' $(TEXI2DVI) $<
 
 .texi:
@@ -273,23 +256,6 @@ maintainer-clean-aminfo:
 	    rm -f $$i-[0-9]*; \
 	  fi; \
 	done
-install-dist_amDATA: $(dist_am_DATA)
-	@$(NORMAL_INSTALL)
-	$(mkinstalldirs) $(DESTDIR)$(amdir)
-	@list='$(dist_am_DATA)'; for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " $(INSTALL_DATA) $$d$$p $(DESTDIR)$(amdir)/$$f"; \
-	  $(INSTALL_DATA) $$d$$p $(DESTDIR)$(amdir)/$$f; \
-	done
-
-uninstall-dist_amDATA:
-	@$(NORMAL_UNINSTALL)
-	@list='$(dist_am_DATA)'; for p in $$list; do \
-	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " rm -f $(DESTDIR)$(amdir)/$$f"; \
-	  rm -f $(DESTDIR)$(amdir)/$$f; \
-	done
 install-dist_pkgdataDATA: $(dist_pkgdata_DATA)
 	@$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)
@@ -306,23 +272,6 @@ uninstall-dist_pkgdataDATA:
 	  f="`echo $$p | sed -e 's|^.*/||'`"; \
 	  echo " rm -f $(DESTDIR)$(pkgdatadir)/$$f"; \
 	  rm -f $(DESTDIR)$(pkgdatadir)/$$f; \
-	done
-install-dist_scriptDATA: $(dist_script_DATA)
-	@$(NORMAL_INSTALL)
-	$(mkinstalldirs) $(DESTDIR)$(scriptdir)
-	@list='$(dist_script_DATA)'; for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " $(INSTALL_DATA) $$d$$p $(DESTDIR)$(scriptdir)/$$f"; \
-	  $(INSTALL_DATA) $$d$$p $(DESTDIR)$(scriptdir)/$$f; \
-	done
-
-uninstall-dist_scriptDATA:
-	@$(NORMAL_UNINSTALL)
-	@list='$(dist_script_DATA)'; for p in $$list; do \
-	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " rm -f $(DESTDIR)$(scriptdir)/$$f"; \
-	  rm -f $(DESTDIR)$(scriptdir)/$$f; \
 	done
 
 # This directory's subdirectories are mostly independent; you can cd
@@ -512,7 +461,7 @@ all-am: Makefile $(INFO_DEPS) $(SCRIPTS) $(DATA)
 
 installdirs: installdirs-recursive
 installdirs-am:
-	$(mkinstalldirs) $(DESTDIR)$(bindir) $(DESTDIR)$(infodir) $(DESTDIR)$(amdir) $(DESTDIR)$(pkgdatadir) $(DESTDIR)$(scriptdir)
+	$(mkinstalldirs) $(DESTDIR)$(bindir) $(DESTDIR)$(infodir) $(DESTDIR)$(pkgdatadir)
 
 install: install-recursive
 install-exec: install-exec-recursive
@@ -560,10 +509,7 @@ info: info-recursive
 
 info-am: $(INFO_DEPS)
 
-install-data-am: install-dist_amDATA install-dist_pkgdataDATA \
-	install-dist_scriptDATA install-info-am
-	@$(NORMAL_INSTALL)
-	$(MAKE) $(AM_MAKEFLAGS) install-data-hook
+install-data-am: install-dist_pkgdataDATA install-info-am
 
 install-exec-am: install-binSCRIPTS
 
@@ -592,7 +538,7 @@ install-info-am: $(INFO_DEPS)
 	else : ; fi
 install-man:
 
-installcheck-am: installcheck-local
+installcheck-am:
 
 maintainer-clean: maintainer-clean-recursive
 	-rm -f config.status
@@ -603,8 +549,7 @@ mostlyclean: mostlyclean-recursive
 
 mostlyclean-am: mostlyclean-aminfo mostlyclean-generic mostlyclean-vti
 
-uninstall-am: uninstall-binSCRIPTS uninstall-dist_amDATA \
-	uninstall-dist_pkgdataDATA uninstall-dist_scriptDATA \
+uninstall-am: uninstall-binSCRIPTS uninstall-dist_pkgdataDATA \
 	uninstall-info-am
 
 uninstall-info: uninstall-info-recursive
@@ -615,58 +560,43 @@ uninstall-info: uninstall-info-recursive
 	distclean-recursive distclean-tags distdir dvi dvi-am \
 	dvi-recursive info info-am info-recursive install install-am \
 	install-binSCRIPTS install-data install-data-am \
-	install-data-recursive install-dist_amDATA \
-	install-dist_pkgdataDATA install-dist_scriptDATA install-exec \
+	install-data-recursive install-dist_pkgdataDATA install-exec \
 	install-exec-am install-exec-recursive install-info \
 	install-info-recursive install-man install-recursive \
-	install-strip installcheck installcheck-am installcheck-local \
-	installdirs installdirs-am installdirs-recursive \
-	maintainer-clean maintainer-clean-aminfo \
-	maintainer-clean-generic maintainer-clean-recursive \
-	maintainer-clean-vti mostlyclean mostlyclean-aminfo \
-	mostlyclean-generic mostlyclean-recursive mostlyclean-vti tags \
-	tags-recursive uninstall uninstall-am uninstall-binSCRIPTS \
-	uninstall-dist_amDATA uninstall-dist_pkgdataDATA \
-	uninstall-dist_scriptDATA uninstall-info-recursive \
-	uninstall-recursive
+	install-strip installcheck installcheck-am installdirs \
+	installdirs-am installdirs-recursive maintainer-clean \
+	maintainer-clean-aminfo maintainer-clean-generic \
+	maintainer-clean-recursive maintainer-clean-vti mostlyclean \
+	mostlyclean-aminfo mostlyclean-generic mostlyclean-recursive \
+	mostlyclean-vti tags tags-recursive uninstall uninstall-am \
+	uninstall-binSCRIPTS uninstall-dist_pkgdataDATA \
+	uninstall-info-recursive uninstall-recursive
 
-
-install-data-hook:
-	@$(POST_INSTALL)
-	@for prog in $(dist_script_DATA); do \
-	  echo " chmod +x $(DESTDIR)$(scriptdir)/$$prog"; \
-	  chmod +x $(DESTDIR)$(scriptdir)/$$prog; \
-	done
-
-installcheck-local:
-	for file in $(dist_script_DATA); do \
-	  $(PERL) -e "exit ! -x '$(pkgdatadir)/$$file';" || exit 1; \
-	done
 
 ################################################################
 
 # Some simple checks, and then ordinary check.  These are only really
 # guaranteed to work on my machine.
 maintainer-check: automake aclocal
-	@if test `diff $(srcdir)/automake.in automake | wc -l` -ne 30; then \
+	@if test `diff $(srcdir)/automake.in automake | wc -l` -ne 28; then \
 	  echo "found too many diffs between automake.in and automake"; 1>&2; \
 	  diff -c $(srcdir)/automake.in automake; \
 	  exit 1; \
 	fi
 	$(PERL) -c -w automake
 	$(PERL) -c -w aclocal
-	@if fgrep '\$${' $(srcdir)/[a-z]*.am | \
+	@if fgrep '\$${' $(srcdir)/lib/am/[a-z]*.am | \
 	       fgrep -v '$$$$'; then \
 	  echo "Found too many uses of '\$${' in the lines above." 1>&2; \
 	  exit 1;				\
 	else :; fi
 	@if egrep '\<rm ([^-]|\-[^f ]*\>)' \
-	          $(srcdir)/[a-z]*.am $(srcdir)/tests/*.test | \
+	          $(srcdir)/lib/am/[a-z]*.am $(srcdir)/tests/*.test | \
 	      fgrep -v '##'; then \
 	  echo "Suspicious 'rm' invocation." 1>&2; \
 	  exit 1;				\
 	else :; fi
-	@if fgrep -n 'mkinstalldirs' $(srcdir)/[a-z]*.am | \
+	@if fgrep -n 'mkinstalldirs' $(srcdir)/lib/am/[a-z]*.am | \
 	      fgrep -v '$$(mkinstalldirs)'; then \
 	  echo "Found incorrect use of mkinstalldirs in the lines above" 1>&2; \
 	  exit 1; \
@@ -680,8 +610,8 @@ maintainer-check: automake aclocal
 	  echo "Found bad split in the lines above." 1>&2; \
 	  exit 1; \
 	fi
-	@if grep -n '^[^#]*` *cd ' $(srcdir)/automake.in $(srcdir)/*.am \
-	      $(srcdir)/m4/*.m4; then \
+	@if grep -n '^[^#]*` *cd ' $(srcdir)/automake.in \
+	      $(srcdir)/lib/am/*.am $(srcdir)/m4/*.m4; then \
 	  echo "Consider setting CDPATH in the lines above" 1>&2; \
 	  exit 1; \
 	fi

@@ -72,18 +72,30 @@ _am_include = @_am_include@
 _am_quote = @_am_quote@
 install_sh = @install_sh@
 
-SUBDIRS = Automake
+SUBDIRS = Automake am
+
+dist_pkgdata_DATA = COPYING INSTALL texinfo.tex ansi2knr.c ansi2knr.1
+
+scriptdir = $(pkgdatadir)
+dist_script_DATA = config.guess config.sub install-sh mdate-sh missing \
+mkinstalldirs elisp-comp ylwrap acinstall depcomp compile py-compile
+
 EXEEXT =
 OBJEXT = o
 subdir = lib
-mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
+mkinstalldirs = $(SHELL) $(top_srcdir)/lib/mkinstalldirs
 CONFIG_CLEAN_FILES =
 DIST_SOURCES =
+DATA = $(dist_pkgdata_DATA) $(dist_script_DATA)
+
 
 RECURSIVE_TARGETS = all-recursive install-data-recursive \
 	install-exec-recursive installdirs-recursive install-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
-DIST_COMMON = Makefile.am Makefile.in
+DIST_COMMON = $(dist_pkgdata_DATA) $(dist_script_DATA) COPYING INSTALL \
+	Makefile.am Makefile.in ansi2knr.1 ansi2knr.c compile \
+	config.guess config.sub depcomp elisp-comp install-sh mdate-sh \
+	missing mkinstalldirs py-compile texinfo.tex ylwrap
 DIST_SUBDIRS = $(SUBDIRS)
 all: all-recursive
 
@@ -91,12 +103,46 @@ all: all-recursive
 
 $(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.in $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  lib/Makefile
+	  $(AUTOMAKE) --gnits  lib/Makefile
 
 Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && \
 	  CONFIG_HEADERS= CONFIG_LINKS= \
 	  CONFIG_FILES=$(subdir)/$@ $(SHELL) ./config.status
+install-dist_pkgdataDATA: $(dist_pkgdata_DATA)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)
+	@list='$(dist_pkgdata_DATA)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " $(INSTALL_DATA) $$d$$p $(DESTDIR)$(pkgdatadir)/$$f"; \
+	  $(INSTALL_DATA) $$d$$p $(DESTDIR)$(pkgdatadir)/$$f; \
+	done
+
+uninstall-dist_pkgdataDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(dist_pkgdata_DATA)'; for p in $$list; do \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(pkgdatadir)/$$f"; \
+	  rm -f $(DESTDIR)$(pkgdatadir)/$$f; \
+	done
+install-dist_scriptDATA: $(dist_script_DATA)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(scriptdir)
+	@list='$(dist_script_DATA)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " $(INSTALL_DATA) $$d$$p $(DESTDIR)$(scriptdir)/$$f"; \
+	  $(INSTALL_DATA) $$d$$p $(DESTDIR)$(scriptdir)/$$f; \
+	done
+
+uninstall-dist_scriptDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(dist_script_DATA)'; for p in $$list; do \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(scriptdir)/$$f"; \
+	  rm -f $(DESTDIR)$(scriptdir)/$$f; \
+	done
 
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run `make' without going through this Makefile.
@@ -226,10 +272,11 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-recursive
-all-am: Makefile
+all-am: Makefile $(DATA)
 
 installdirs: installdirs-recursive
 installdirs-am:
+	$(mkinstalldirs) $(DESTDIR)$(pkgdatadir) $(DESTDIR)$(scriptdir)
 
 install: install-recursive
 install-exec: install-exec-recursive
@@ -273,7 +320,9 @@ info:
 
 info-am:
 
-install-data-am:
+install-data-am: install-dist_pkgdataDATA install-dist_scriptDATA
+	@$(NORMAL_INSTALL)
+	$(MAKE) $(AM_MAKEFLAGS) install-data-hook
 
 install-exec-am:
 
@@ -281,7 +330,7 @@ install-info:
 
 install-man:
 
-installcheck-am:
+installcheck-am: installcheck-local
 
 maintainer-clean: maintainer-clean-recursive
 
@@ -291,21 +340,35 @@ mostlyclean: mostlyclean-recursive
 
 mostlyclean-am: mostlyclean-generic
 
-uninstall-am:
+uninstall-am: uninstall-dist_pkgdataDATA uninstall-dist_scriptDATA
 
 .PHONY: $(RECURSIVE_TARGETS) all all-am check check-am clean \
 	clean-generic clean-recursive distclean distclean-generic \
 	distclean-recursive distclean-tags distdir dvi dvi-am info \
 	info-am install install-am install-data install-data-am \
-	install-data-recursive install-exec install-exec-am \
+	install-data-recursive install-dist_pkgdataDATA \
+	install-dist_scriptDATA install-exec install-exec-am \
 	install-exec-recursive install-info install-man \
 	install-recursive install-strip installcheck installcheck-am \
-	installdirs installdirs-am installdirs-recursive \
-	maintainer-clean maintainer-clean-generic \
+	installcheck-local installdirs installdirs-am \
+	installdirs-recursive maintainer-clean maintainer-clean-generic \
 	maintainer-clean-recursive mostlyclean mostlyclean-generic \
 	mostlyclean-recursive tags tags-recursive uninstall \
-	uninstall-am uninstall-recursive
+	uninstall-am uninstall-dist_pkgdataDATA \
+	uninstall-dist_scriptDATA uninstall-recursive
 
+
+install-data-hook:
+	@$(POST_INSTALL)
+	@for prog in $(dist_script_DATA); do \
+	  echo " chmod +x $(DESTDIR)$(scriptdir)/$$prog"; \
+	  chmod +x $(DESTDIR)$(scriptdir)/$$prog; \
+	done
+
+installcheck-local:
+	for file in $(dist_script_DATA); do \
+	  $(PERL) -e "exit ! -x '$(pkgdatadir)/$$file';" || exit 1; \
+	done
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -107,8 +107,7 @@ my $me = basename ($0);
 my $VERSION = "@VERSION@";
 my $PACKAGE = "@PACKAGE@";
 my $prefix = "@prefix@";
-my $am_dir = "@datadir@/@PACKAGE@/am";
-my $pkgdata_dir = "@datadir@/@PACKAGE@";
+my $libdir = "@datadir@/@PACKAGE@";
 
 # String constants.
 my $IGNORE_PATTERN = '^##([^#\n].*)?\n';
@@ -1099,7 +1098,7 @@ sub parse_arguments ()
       (
        'version' 	=> \&version,
        'help'	 	=> \&usage,
-       'amdir:s' 	=> \$am_dir,
+       'libdir:s' 	=> \$libdir,
        'gnu' 		=> sub { &set_strictness ('gnu'); },
        'gnits' 		=> sub { &set_strictness ('gnits'); },
        'cygnus' 	=> \$cygnus_mode,
@@ -2225,7 +2224,7 @@ sub handle_compile ()
     }
 
     my ($coms, $vars, $rules) =
-      &file_contents_internal (1, "$am_dir/compile.am",
+      &file_contents_internal (1, "$libdir/am/compile.am",
 			       ('DEFAULT_INCLUDES' => $default_includes,
 				'MOSTLYRMS' => join ("\n", @mostly_rms),
 				'DISTRMS' => join ("\n", @dist_rms)));
@@ -6529,7 +6528,7 @@ sub define_standard_variables
 {
     my $saved_output_vars = $output_vars;
     my ($comments, undef, $rules) =
-      file_contents_internal (1, "$am_dir/header-vars.am");
+      file_contents_internal (1, "$libdir/am/header-vars.am");
 
     # This will output the definitions in $output_vars, which we don't
     # want...
@@ -6706,7 +6705,7 @@ sub make_paragraphs ($%)
 # ($COMMENT, $VARIABLES, $RULES)
 # &file_contents_internal ($IS_AM, $FILE, [%TRANSFORM])
 # -----------------------------------------------------
-# Return contents of a file from $am_dir, automatically skipping
+# Return contents of a file from $libdir/am, automatically skipping
 # macros or rules which are already known. $IS_AM iff the caller is
 # reading an Automake file (as opposed to the user's Makefile.am).
 sub file_contents_internal ($$%)
@@ -6748,7 +6747,7 @@ sub file_contents_internal ($$%)
         {
 	    if ($cond ne 'FALSE')
 	      {
-		my $file = ($is_am ? "$am_dir/" : '') . $1;
+		my $file = ($is_am ? "$libdir/am/" : '') . $1;
 		# N-ary `.=' fails.
 		my ($com, $vars, $rules)
 		  = file_contents_internal ($is_am, $file, %transform);
@@ -6878,13 +6877,13 @@ sub file_contents_internal ($$%)
 # $CONTENTS
 # &file_contents ($BASENAME, [%TRANSFORM])
 # ----------------------------------------
-# Return contents of a file from $am_dir, automatically skipping
+# Return contents of a file from $libdir/am, automatically skipping
 # macros or rules which are already known.
 sub file_contents ($%)
 {
     my ($basename, %transform) = @_;
     my ($comments, $variables, $rules) =
-      file_contents_internal (1, "$am_dir/$basename.am", %transform);
+      file_contents_internal (1, "$libdir/am/$basename.am", %transform);
     return "$comments$variables$rules";
 }
 
@@ -7352,7 +7351,7 @@ sub require_file_internal
 			$suppress = 0;
 			$trailer = "; cannot run `libtoolize': $!";
 		    }
-		    elsif (-f ("$pkgdata_dir/$file"))
+		    elsif (-f ("$libdir/$file"))
 		    {
 			# Install the missing file.  Symlink if we
 			# can, copy if we must.  Note: delete the file
@@ -7363,13 +7362,13 @@ sub require_file_internal
 			unlink ($errfile) if -f $errfile;
 			if ($symlink_exists && ! $copy_missing)
 			{
-			    if (! symlink ("$pkgdata_dir/$file", $errfile))
+			    if (! symlink ("$libdir/$file", $errfile))
 			    {
 				$suppress = 0;
 				$trailer = "; error while making link: $!";
 			    }
 			}
-			elsif (system ('cp', "$pkgdata_dir/$file", $errfile))
+			elsif (system ('cp', "$libdir/$file", $errfile))
 			{
 			    $suppress = 0;
 			    $trailer = "\n    error while copying";
@@ -7689,7 +7688,7 @@ Flavors:
 
 Library files:
   -a, --add-missing      add missing standard files to package
-      --amdir=DIR        directory storing config files
+      --libdir=DIR       directory storing library files
   -c, --copy             with -a, copy missing files (default is symlink)
   -f, --force-missing    force update of standard files
 EOF
