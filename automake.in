@@ -226,8 +226,10 @@ $cygnus_mode = 0;
      'AC_FEATURE_EXIT', 0,
      'AC_SYSTEM_HEADER', 0,
 
-     # Autoconf macros that Automake enhances.
-     'AC_CONFIG_HEADER', "use \`AM_CONFIG_HEADER'",
+     # Note that we do not handle this one, because it is still run
+     # from AM_CONFIG_HEADER.  So we deal with it specially in
+     # handle_configure.
+     # 'AC_CONFIG_HEADER', "use \`AM_CONFIG_HEADER'",
 
      'fp_C_PROTOTYPES', "use \`AM_C_PROTOTYPES'",
      'fp_PROG_CC_STDC', "use \`AM_PROG_CC_STDC'",
@@ -782,7 +784,7 @@ sub handle_yacc_lex_cxx
 	foreach (keys %yacc_sources)
 	{
 	    /(\..*)$/;
-	    output_yacc_build_rule ($1, $yacc_count > 1)
+	    &output_yacc_build_rule ($1, $yacc_count > 1)
 		if (! defined $seen_suffix{$1});
 	    $seen_suffix{$1} = 1;
 	}
@@ -798,7 +800,7 @@ sub handle_yacc_lex_cxx
 	foreach (keys %lex_sources)
 	{
 	    /(\..*)$/;
-	    output_lex_build_rule ($1, $lex_count > 1)
+	    &output_lex_build_rule ($1, $lex_count > 1)
 		if (! defined $seen_suffix{$1});
 	    $seen_suffix{$1} = 1;
 	}
@@ -3654,6 +3656,11 @@ sub scan_one_configure_file
 	if (/A([CM])_CONFIG_HEADER\s*\((.*)\)/
 	    && $2 ne '[$1]')
 	{
+	    &am_conf_line_error
+ 		($filename, $.,
+		 "\`AC_CONFIG_HEADER' is obsolete; use \`AM_CONFIG_HEADER'")
+ 		    if $1 eq 'C';
+
 	    $config_header_line = $.;
 	    $config_name = $2;
 	    if ($config_name =~ /^([^:]+):(.+)$/)
