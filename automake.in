@@ -214,6 +214,11 @@ $seen_objext = 0;
 # values are meaningless.
 %configure_vars = ();
 
+# This is used to keep track of which variable definitions we are
+# scanning.  It is only used in certain limited ways, but it has to be
+# global.  It is declared just for documentation purposes.
+%vars_scanned = ();
+
 # Charsets used by maintainer and in distribution.  MAINT_CHARSET is
 # handled in a funny way: if seen in the top-level Makefile.am, it is
 # used for every directory which does not specify a different value.
@@ -4692,6 +4697,10 @@ sub variable_conditions_sub
 	    }
 	}
 
+	# Unset our entry in vars_scanned.  We only care about recursive
+	# definitions.
+	delete $vars_scanned{$var};
+
 	return &variable_conditions_permutations (keys %allconds);
     }
 
@@ -4748,6 +4757,10 @@ sub variable_conditions_sub
 	    push (@new_conds, &variable_conditions_reduce (@subvar_conds));
 	}
     }
+
+    # Unset our entry in vars_scanned.  We only care about recursive
+    # definitions.
+    delete $vars_scanned{$var};
 
     return @new_conds
 	if ! $parent;
@@ -5020,6 +5033,10 @@ sub variable_value_as_list_worker
 	$content_seen{$var} = 1;
 	push (@result, &value_to_list ($var, $contents{$var}, $cond));
     }
+
+    # Unset our entry in vars_scanned.  We only care about recursive
+    # definitions.
+    delete $vars_scanned{$var};
 
     return @result;
 }
