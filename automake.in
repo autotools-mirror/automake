@@ -2598,19 +2598,16 @@ sub scan_dependency_file
 				 ? ''
 				 : $top_builddir . '/');
 
-    while (<DEP_FILE>)
+    while (<DEP_FILE> && ! $last_line)
     {
-	if ($last_line)
-	{
-	    # If LAST_LINE set then we've already seen what we thought
-	    # was the last line.
-	    goto bad_format;
-	}
 	next if (/$WHITE_PATTERN/o);
 	chop;
 	if (! s/\\$//)
 	{
-	    # No trailing "\" means this should be the last line.
+	    # No trailing "\" means this should be the last line of
+	    # the first target.  We can have multiple targets due to
+	    # the "deleted header file" fix.  For the generated
+	    # Makefile we simply skip these fake targets.
 	    $last_line = 1;
 	}
 
