@@ -37,17 +37,24 @@ BEGIN
 }
 
 use Automake::Struct;
-struct ('ansi'    => '$',
+struct (# Short name of the language (c, f77...).
+        'name'       => '$',
+
+        'ansi'    => '$',
 	'autodep' => '$',
+	# Name of the compiling variable (COMPILE).
+        'compiler'  => '$',
+        # Content of the compiling variable.
         'compile'  => '$',
         # Flag to require compilation without linking (-c).
         'compile_flag' => '$',
-        'compiler'  => '$',
 	'derived_autodep' => '$',
         'extensions'      => '@',
         'flags' => '$',
+        # Name of the linking variable (LINK).
         'linker' => '$',
-        'name'       => '$',
+        # Content of the linking variable.
+        'link' => '$',
         # Flag to specify the output file (-o).
         'output_flag' => '$',
 	# `pure' is `1' or `'.  A `pure' language is one where, if
@@ -754,6 +761,8 @@ sub initialize_per_input ()
 ################################################################
 
 # Initialize our list of languages that are internally supported.
+
+# C.
 register_language ('name' => 'c',
 		   'ansi' => 1,
 		   'autodep' => '',
@@ -763,19 +772,25 @@ register_language ('name' => 'c',
 		   'compile_flag' => '-c',
 		   'extensions' => ['c'],
 		   '_finish' => \&lang_c_finish);
+
+# C++.
 register_language ('name' => 'cxx',
 		   'linker' => 'CXXLINK',
+		   'link' => '$(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@',
 		   'autodep' => 'CXX',
 		   'flags' => 'CXXFLAGS',
-		    'compile' => '$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)',
+		   'compile' => '$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)',
 		   'compiler' => 'CXXCOMPILE',
 		   'compile_flag' => '-c',
 		   'output_flag' => '-o',
 		   'pure' => 1,
 		   'extensions' => ['c++', 'cc', 'cpp', 'cxx', 'C'],
 		   '_finish' => \&lang_cxx_finish);
+
+# Objective C.
 register_language ('name' => 'objc',
-		   'linker' => 'OBJCLINK',
+		   'linker' => 'OBJCLINK',,
+ 		   'link' => '$(OBJCLD) $(AM_OBJCFLAGS) $(OBJCFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@',
 		   'autodep' => 'OBJC',
 		   'flags' => 'OBJCFLAGS',
 		   'compile' => '$(OBJC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_OBJCFLAGS) $(OBJCFLAGS)',
@@ -785,11 +800,16 @@ register_language ('name' => 'objc',
 		   'pure' => 1,
 		   'extensions' => ['m'],
 		   '_finish' => \&lang_objc_finish);
+
+# Headers.
 register_language ('name' => 'header',
 		   'extensions' => ['h', 'H', 'hxx', 'h++', 'hh', 'hpp', 'inc'],
 		   # Nothing to do.
 		   '_finish' => sub { });
+
 # For now, yacc and lex can't be handled on a per-exe basis.
+
+# Yacc (C & C++).
 register_language ('name' => 'yacc',
 		   'ansi' => 1,
 		   'derived_autodep' => 'yes',
@@ -799,7 +819,9 @@ register_language ('name' => 'yaccxx',
 		   'linker' => 'CXXLINK',
 		   'derived_autodep' => 'yes',
 		   'extensions' => ['y++', 'yy', 'yxx', 'ypp'],
-		    '_finish' => \&lang_yacc_finish);
+		   '_finish' => \&lang_yacc_finish);
+
+# Lex (C & C++).
 register_language ('name' => 'lex',
 		   'ansi' => 1,
 		   'derived_autodep' => 'yes',
@@ -810,6 +832,8 @@ register_language ('name' => 'lexxx',
 		   'derived_autodep' => 'yes',
 		   'extensions' => ['l++', 'll', 'lxx', 'lpp'],
 		   '_finish' => \&lang_lex_finish);
+
+# Assembler.
 register_language ('name' => 'asm',
 		   'flags' => 'CFLAGS',
 		   # FIXME: asmflags?
@@ -821,8 +845,10 @@ register_language ('name' => 'asm',
 		   # We need the C code for assembly.
 		   '_finish' => \&lang_c_finish);
 
+# Fortran 77
 register_language ('name' => 'f77',
 		   'linker' => 'F77LINK',
+		   'link' => '$(F77LD) $(AM_FFLAGS) $(FFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@',
 		   'flags' => 'FFLAGS',
 		   'compile' => '$(F77) $(AM_FFLAGS) $(FFLAGS)',
 		   'compiler' => 'F77COMPILE',
@@ -831,6 +857,8 @@ register_language ('name' => 'f77',
 		   'pure' => 1,
 		   'extensions' => ['f', 'for', 'f90'],
 		   '_finish' => \&lang_f77_finish);
+
+# Preprocessed Fortran 77.
 register_language ('name' => 'ppf77',
 		   'linker' => 'F77LINK',
 		   'flags' => 'FFLAGS',
@@ -840,10 +868,12 @@ register_language ('name' => 'ppf77',
 		   'output_flag' => '-o',
 		   'pure' => 1,
 		   'extensions' => ['F'],
-		    '_finish' => \&lang_ppf77_finish);
+		   '_finish' => \&lang_ppf77_finish);
+
+# Ratfor.
 register_language ('name' => 'ratfor',
 		   'linker' => 'F77LINK',
-		    'flags' => 'RFLAGS',
+		   'flags' => 'RFLAGS',
 		   # FIXME also FFLAGS.
 		   'compile' => '$(F77) $(AM_FFLAGS) $(FFLAGS) $(AM_RFLAGS) $(RFLAGS)',
 		   'compiler' => 'RCOMPILE',
@@ -852,10 +882,13 @@ register_language ('name' => 'ratfor',
 		   'pure' => 1,
 		   'extensions' => ['r'],
 		   '_finish' => \&lang_ratfor_finish);
+
+# Java via gcj.
 # FIXME: for now we can't do dependency tracking for Java.
 # autodep=GCJ
 register_language ('name' => 'java',
 		   'linker' => 'GCJLINK',
+		   'link' => '$(GCJLD) $(AM_GCJFLAGS) $(GCJFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@',
 		   'flags' => 'GCJFLAGS',
 		   'compile' => '$(GCJ) $(AM_GCJFLAGS) $(GCJFLAGS)',
 		   'compiler' => 'GCJCOMPILE',
@@ -5056,7 +5089,7 @@ sub lang_cxx_finish
     my ($ltcompile, $ltlink) = &libtool_compiler;
 
     &define_variable ('CXXLD', '$(CXX)');
-    &define_variable ('CXXLINK', $ltlink . '$(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
+    &define_variable ('CXXLINK', $ltlink . $languages{'cxx'}->link);
 
     if (! defined $configure_vars{'CXX'})
     {
@@ -5195,8 +5228,7 @@ sub lang_f77_finish
     my ($ltcompile, $ltlink) = &libtool_compiler;
 
     &define_variable ('F77LD', '$(F77)');
-    &define_variable ('F77LINK',
-		      $ltlink . '$(F77LD) $(AM_FFLAGS) $(FFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
+    &define_variable ('F77LINK', $ltlink . $languages{'f77'}->link);
 
     if (! defined $configure_vars{'F77'})
     {
@@ -5243,7 +5275,7 @@ sub lang_objc_finish
     my ($ltcompile, $ltlink) = &libtool_compiler;
 
     &define_variable ('OBJCLD', '$(OBJC)');
-    &define_variable ('OBJCLINK', $ltlink . '$(OBJCLD) $(AM_OBJCFLAGS) $(OBJCFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
+    &define_variable ('OBJCLINK', $ltlink . $languages{'objc'}->link);
 
     if (! defined $configure_vars{'OBJC'})
     {
@@ -5256,8 +5288,7 @@ sub lang_java_finish
     my ($ltcompile, $ltlink) = &libtool_compiler;
 
     &define_variable ('GCJLD', '$(GCJ)');
-    &define_variable ('GCJLINK',
-		      $ltlink . '$(GCJLD) $(AM_GCJFLAGS) $(GCJFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
+    &define_variable ('GCJLINK', $ltlink . $languages{'java'}->link);
 
     if (! defined $configure_vars{'GCJ'})
     {
