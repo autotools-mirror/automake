@@ -21,11 +21,35 @@
 
 m4datadir = $(datadir)/aclocal-$(APIVERSION)
 
-dist_m4data_DATA = as.m4 auxdir.m4 ccstdc.m4 cond.m4 depend.m4 depout.m4 \
-dmalloc.m4 gcj.m4 header.m4 init.m4 install-sh.m4 lex.m4 lispdir.m4 \
-make.m4 maintainer.m4 minuso.m4 missing.m4 multi.m4 options.m4 \
-protos.m4 python.m4 regex.m4 runlog.m4 sanity.m4 strip.m4 termios.m4 \
-winsz.m4
+dist_m4data_DATA = \
+as.m4 \
+auxdir.m4 \
+ccstdc.m4 \
+cond.m4 \
+depend.m4 \
+depout.m4 \
+dmalloc.m4 \
+gcj.m4 \
+header.m4 \
+init.m4 \
+install-sh.m4 \
+lex.m4 \
+lispdir.m4 \
+maintainer.m4 \
+make.m4 \
+minuso.m4 \
+missing.m4 \
+multi.m4 \
+obsol-gt.m4 \
+obsol-lt.m4 \
+obsolete.m4 \
+options.m4 \
+protos.m4 \
+python.m4 \
+regex.m4 \
+runlog.m4 \
+sanity.m4 \
+strip.m4
 
 nodist_m4data_DATA = amversion.m4
 DISTCLEANFILES = amversion.m4

@@ -3,7 +3,7 @@
 ## From Franc,ois Pinard               ##
 ## ----------------------------------- ##
 
-# Copyright 1996, 1998, 1999, 2000, 2001 Free Software Foundation, Inc.
+# Copyright 1996, 1998, 1999, 2000, 2001, 2002  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 
-# serial 1
+# serial 2
 
 AC_DEFUN([AM_WITH_DMALLOC],
 [AC_MSG_CHECKING([if malloc debugging is wanted])
@@ -37,3 +37,5 @@ else
   AC_MSG_RESULT(no)
 fi], [AC_MSG_RESULT(no)])
 ])
+
+AU_DEFUN([fp_WITH_DMALLOC], [AM_WITH_DMALLOC])

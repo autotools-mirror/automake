@@ -1,16 +1,32 @@
 #! /bin/sh
 
-# Test to make sure obsolete macros really are.
+# Test to make sure obsolete macros can be autoupdated.
 
 . $srcdir/defs || exit 1
 
-cat >> configure.in << 'END'
-fp_PROG_INSTALL
+cat > configure.in << 'END'
+AC_INIT
 END
 
-: > Makefile.am
+$PERL -ne '/AU_DEFUN\(\[(\w+)\]/ && print "$1\n"' \
+    $testsrcdir/../m4/obsolete.m4 >> obs
+cat obs >> configure.in
+$PERL -ne 'chomp; print "grep $_ stderr || exit 1\n"; ' obs > obs.1
+$PERL -ne 'chomp; print "grep $_ configure.in && exit 1\n"; ' obs > obs.2
 
-$ACLOCAL  2>stderr          && exit 1
-grep AC_PROG_INSTALL stderr || exit 1
+# Sanity check.  Make sure we have added something to configure.in.
+test `cat configure.in | wc -l` -gt 1 || exit 1
+
+$ACLOCAL || exit 1
+
+# Expect Autoconf to complain about each of the macros in obs.
+$AUTOCONF -Wobsolete >stderr 2>&1
+. obs.1
+# Make sure Autoupdate remove each of these macros.
+$AUTOUPDATE || exit 1
+. obs.2
+
+# Autoconf should be able to grok the updated configure.in.
+$AUTOCONF || exit 1
 
 exit 0

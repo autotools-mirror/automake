@@ -3,7 +3,7 @@
 ## From Franc,ois Pinard                     ##
 ## ----------------------------------------- ##
 
-# Copyright 1996, 1997, 1999, 2000, 2001 Free Software Foundation, Inc.
+# Copyright 1996, 1997, 1999, 2000, 2001, 2002  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 
-# serial 1
+# serial 2
 
 # @defmac AC_PROG_CC_STDC
 # @maindex PROG_CC_STDC
@@ -107,3 +107,5 @@ case "x$am_cv_prog_cc_stdc" in
   *) CC="$CC $am_cv_prog_cc_stdc" ;;
 esac
 ])
+
+AU_DEFUN([fp_PROG_CC_STDC], [AM_PROG_CC_STDC])

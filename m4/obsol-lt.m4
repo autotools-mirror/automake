@@ -1,6 +1,6 @@
-# AM_SYS_POSIX_TERMIOS
+# Support for obsolete Libtool macro.                      -*- Autoconf -*-
 
-# Copyright 1996, 2000, 2001 Free Software Foundation, Inc.
+# Copyright 2002  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,17 +17,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 
-# From Jim Meyering.
-
 # serial 1
 
-AC_DEFUN([AM_SYS_POSIX_TERMIOS],
-[AC_CACHE_CHECK([POSIX termios], am_cv_sys_posix_termios,
-  [AC_TRY_LINK([#include <sys/types.h>
-#include <unistd.h>
-#include <termios.h>],
-  [/* SunOS 4.0.3 has termios.h but not the library calls.  */
-   tcgetattr(0, 0);],
-  am_cv_sys_posix_termios=yes,
-  am_cv_sys_posix_termios=no)])
-])
+# See comment in obsolete.m4.
+AU_DEFUN([gm_PROG_LIBTOOL], [AM_PROG_LIBTOOL])

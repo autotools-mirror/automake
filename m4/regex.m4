@@ -2,7 +2,7 @@
 ## Check if --with-regex was given.  ##
 ## --------------------------------- ##
 
-# Copyright 1996, 1998, 1999, 2000, 2001 Free Software Foundation, Inc.
+# Copyright 1996, 1998, 1999, 2000, 2001, 2002  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 
-# serial 3
+# serial 4
 AC_PREREQ(2.50)
 
 # AM_WITH_REGEX
@@ -61,3 +61,5 @@ else
 fi
 AC_SUBST(LIBOBJS)dnl
 ])
+
+AU_DEFUN([fp_WITH_REGEX], [AM_WITH_REGEX])

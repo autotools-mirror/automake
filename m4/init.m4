@@ -30,7 +30,7 @@
 # CC etc. in the Makefile, will ask for an AC_PROG_CC use...
 
 
-AC_PREREQ([2.52])
+AC_PREREQ([2.53b])
 
 # Autoconf 2.50 wants to disallow AM_ names.  We explicitly allow
 # the ones we care about.

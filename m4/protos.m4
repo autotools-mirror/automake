@@ -3,7 +3,7 @@
 ## From Franc,ois Pinard           ##
 ## ------------------------------- ##
 
-# Copyright 1996, 1997, 1998, 2000, 2001 Free Software Foundation, Inc.
+# Copyright 1996, 1997, 1998, 2000, 2001, 2002  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 
-# serial 1
+# serial 2
 
 AC_DEFUN([AM_C_PROTOTYPES],
 [AC_REQUIRE([AM_PROG_CC_STDC])
@@ -40,3 +40,5 @@ AC_CHECK_HEADERS(string.h)
 AC_SUBST(U)dnl
 AC_SUBST(ANSI2KNR)dnl
 ])
+
+AU_DEFUN([fp_C_PROTOTYPES], [AM_C_PROTOTYPES])

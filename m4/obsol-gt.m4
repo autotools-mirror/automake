@@ -1,6 +1,6 @@
-# Like AC_CONFIG_HEADER, but automatically create stamp file. -*- Autoconf -*-
+# Support for obsolete Gettext macro.                      -*- Autoconf -*-
 
-# Copyright 1996, 1997, 2000, 2001 Free Software Foundation, Inc.
+# Copyright 2002  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,9 +17,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 
-AC_PREREQ([2.52])
+# serial 1
 
-# serial 6
-
-# AM_CONFIG_HEADER is obsolete.  It has been replaced by AC_CONFIG_HEADERS.
-AU_DEFUN([AM_CONFIG_HEADER], [AC_CONFIG_HEADERS($@)])
+# See comment in obsolete.m4.
+AU_DEFUN([ud_GNU_GETTEXT], [AM_GNU_GETTEXT])

@@ -76,44 +76,8 @@ $output_file = 'aclocal.m4';
 # How much to say.
 $verbose = 0;
 
-# Map from obsolete macros to hints for new macros.
-my %obsolete_macros =
-    (
-     'AC_FEATURE_CTYPE'		=> "use `AC_HEADER_STDC'",
-     'AC_FEATURE_ERRNO'		=> "add `strerror' to `AC_REPLACE_FUNCS(...)'",
-     'AC_FEATURE_EXIT'		=> '',
-     'AC_SYSTEM_HEADER'		=> '',
-
-     # Note that we do not handle this one, because it is still run
-     # from AM_CONFIG_HEADER.
-     # 'AC_CONFIG_HEADER'	=> "use `AM_CONFIG_HEADER'",
-
-     'fp_C_PROTOTYPES'		=> "use `AM_C_PROTOTYPES'",
-     'fp_PROG_CC_STDC'		=> "use `AM_PROG_CC_STDC'",
-     'fp_PROG_INSTALL'		=> "use `AC_PROG_INSTALL'",
-     'fp_WITH_DMALLOC'		=> "use `AM_WITH_DMALLOC'",
-     'fp_WITH_REGEX'		=> "use `AM_WITH_REGEX'",
-     'gm_PROG_LIBTOOL'		=> "use `AM_PROG_LIBTOOL'",
-     'jm_MAINTAINER_MODE'	=> "use `AM_MAINTAINER_MODE'",
-     'md_TYPE_PTRDIFF_T'	=> "add `ptrdiff_t' to `AC_CHECK_TYPES(...)'",
-     'ud_PATH_LISPDIR'		=> "use `AM_PATH_LISPDIR'",
-     'ud_GNU_GETTEXT'		=> "use `AM_GNU_GETTEXT'",
-
-     # Now part of autoconf proper, under a different name.
-     'fp_FUNC_FNMATCH'		=> "use `AC_FUNC_FNMATCH'",
-     'AM_SANITY_CHECK_CC'	=> "automatically done by `AC_PROG_CC'",
-     'AM_PROG_INSTALL'		=> "use `AC_PROG_INSTALL'",
-     'AM_EXEEXT'		=> "automatically done by `AC_PROG_(CC|CXX|F77)'",
-     'AM_CYGWIN32'		=> "use `AC_CYGWIN'",
-     'AM_MINGW32'		=> "use `AC_MINGW32'",
-     'AM_FUNC_MKTIME'		=> "use `AC_FUNC_MKTIME'",
-     );
-
-# Regexp to match the above macros.
-$obsolete_rx = '\b(' . join ('|', keys %obsolete_macros) . ')\b';
-
 # Matches a macro definition.
-$ac_defun_rx = "AC_DEFUN\\(\\[?([^],)\n]+)\\]?";
+$ac_defun_rx = "A[CU]_DEFUN\\(\\[?([^],)\n]+)\\]?";
 
 # Matches an AC_REQUIRE line.
 $ac_require_rx = "AC_REQUIRE\\(\\[?([^])]*)\\]?\\)";
@@ -248,18 +212,6 @@ sub scan_configure
 	# Remove comments from current line.
 	s/\bdnl\b.*$//;
 	s/\#.*$//;
-
-	if (/$obsolete_rx/o)
-	{
-	    local ($hint) = '';
-	    if ($obsolete_macros{$1} ne '')
-	    {
-		$hint = '; ' . $obsolete_macros{$1};
-	    }
-	    warn "aclocal: $configure_ac: $.: `$1' is obsolete$hint\n";
-	    $exit_status = 1;
-	    next;
-	}
 
 	# Search for things we know about.  The "search" sub is
 	# constructed dynamically by scan_m4_files.  The last

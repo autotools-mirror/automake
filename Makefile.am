@@ -162,6 +162,11 @@ maintainer-check: automake aclocal
 	  echo 'Do not run "autoconf" in the above tests.  Use "$$AUTOCONF" instead.' 1>&2; \
 	  exit 1; \
 	fi
+## Tests should never call autoupdate directly.
+	@if grep -v '^#' $(srcdir)/tests/*.test | egrep ':[	]*autoupdate'; then \
+	  echo 'Do not run "autoupdate" in the above tests.  Use "$$AUTOUPDATE" instead.' 1>&2; \
+	  exit 1; \
+	fi
 ## Tests should never call automake directly.
 	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*automake'; then \
 	  echo 'Do not run "automake" in the above tests.  Use "$$AUTOMAKE" instead.' 1>&2;  \
