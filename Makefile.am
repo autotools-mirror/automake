@@ -49,6 +49,13 @@ install-exec-hook:
 	  ln $(DESTDIR)$(bindir)/$$f $(DESTDIR)$(bindir)/$$fv; \
 	done
 
+uninstall-hook:
+	@for p in $(bin_SCRIPTS); do \
+	  f="`echo $$p|sed '$(transform)'`"; \
+	  fv="$$f-$(APIVERSION)"; \
+	  rm -f $(DESTDIR)$(bindir)/$$fv; \
+	done
+
 ################################################################
 ##
 ## Everything past here is useful to the maintainer, but probably not
