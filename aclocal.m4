@@ -1,4 +1,4 @@
-dnl aclocal.m4 generated automatically by aclocal 1.1b
+dnl aclocal.m4 generated automatically by aclocal 1.1c
 
 # Do all the work for Automake.  This macro actually does too much --
 # some checks are only needed if your package does certain things.

@@ -825,9 +825,13 @@ sub handle_source_transform
 }
 
 # Special-case @ALLOCA@ and @LIBOBJS@ in _LDADD or _LIBADD variables.
+# Also, generate _DEPENDENCIES variable if appropriate.
+# Arguments are:
+#   transformed name of object being built, or empty string if no object
+#   name of _LDADD/_LIBADD-type variable to examine
 sub handle_lib_objects
 {
-    local ($var) = @_;
+    local ($xname, $var) = @_;
 
     die "programming error in handle_lib_objects"
 	if ! &variable_defined ($var);
@@ -835,9 +839,19 @@ sub handle_lib_objects
     # We recognize certain things that are commonly put in LIBADD or
     # LDADD.
     local ($lsearch);
+    local (@dep_list) = ();
 
     foreach $lsearch (split (' ', $contents{$var}))
     {
+	# Skip -lfoo and -Ldir.
+	next if /^-[lL]/;
+
+	# Assume we have a file of some sort, and push it onto the
+	# dependency list.  This isn't perfect, but hopefully people
+	# will point out the exceptions I'm obviously too lazy to
+	# think of myself.
+	push (@dep_list, $lsearch);
+
 	# Automatically handle @LIBOBJS@ and @ALLOCA@.  Basically this
 	# means adding entries to dep_files.
 	if ($lsearch eq '@LIBOBJS@')
@@ -861,6 +875,11 @@ sub handle_lib_objects
 	    $dep_files{'$(srcdir)/.deps/alloca.P'} = 1;
 	    &require_file_with_line ($var, $FOREIGN, 'alloca.c');
 	}
+    }
+
+    if ($xname ne '' && ! &variable_defined ($xname . '_DEPENDENCIES'))
+    {
+	&pretty_print ($xname . '_DEPENDENCIES = ', '', @dep_list);
     }
 }
 
@@ -902,7 +921,7 @@ sub handle_programs
 
 	if (&variable_defined ($xname . "_LDADD"))
 	{
-	    &handle_lib_objects ($xname . '_LDADD');
+	    &handle_lib_objects ($xname, $xname . '_LDADD');
 	}
 	else
 	{
@@ -929,7 +948,7 @@ sub handle_programs
 		 'program');
     }
 
-    &handle_lib_objects ('LDADD')
+    &handle_lib_objects ('', 'LDADD')
 	if &variable_defined ('LDADD');
 }
 
@@ -997,7 +1016,7 @@ sub handle_libraries
 
 	if (&variable_defined ($xlib . '_LIBADD'))
 	{
-	    &handle_lib_objects ($xlib . '_LIBADD');
+	    &handle_lib_objects ($xlib, $xlib . '_LIBADD');
 	}
 	else
 	{
