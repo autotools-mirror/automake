@@ -375,10 +375,11 @@ my %output_files = ();
 # Complete list of Makefile.am's that exist.
 my @configure_input_files = ();
 
-# List of files in AC_OUTPUT without Makefile.am, and their outputs.
+# List of files in AC_CONFIG_FILES/AC_OUTPUT without Makefile.am's,
+# and their outputs.
 my @other_input_files = ();
-# Where AC_OUTPUT appears.
-my $ac_output_location;
+# Where the last AC_CONFIG_FILES/AC_OUTPUT appears.
+my $ac_config_files_location;
 
 # List of directories to search for configure-required files.  This
 # can be set by AC_CONFIG_AUX_DIR.
@@ -3918,7 +3919,7 @@ sub handle_configure
 	if ($local eq 'stamp-h')
 	{
 	    # FIXME: allow real filename.
-	    am_file_error ($ac_output_location,
+	    am_file_error ($ac_config_files_location,
 			   'stamp-h should not appear in AC_OUTPUT');
 	    next;
 	}
@@ -3937,7 +3938,7 @@ sub handle_configure
 	push (@actual_other_files, $local);
 
 	# Require all input files.
-	require_file ($ac_output_location, $FOREIGN,
+	require_file ($ac_config_files_location, $FOREIGN,
 		      &rewrite_inputs_into_dependencies (0, @inputs));
     }
 
@@ -4466,7 +4467,7 @@ sub scan_autoconf_traces ($)
   # Use a separator unlikely to be used, not `:', the default, which
   # has a precise meaning for AC_CONFIG_FILES and so on.
   $traces .= join (' ',
-		   map { "--trace=$_" . ':\$f::\$l::\$n::\${::}%' } @traced);
+		   map { "--trace=$_" . ':\$f:\$l::\$n::\${::}%' } @traced);
 
   my $tracefh = new Automake::XFile ("$traces |");
   verbose "reading $traces";
@@ -4474,9 +4475,8 @@ sub scan_autoconf_traces ($)
   while ($_ = $tracefh->getline)
     {
       chomp;
-      my ($file, $line, @args) = split /::/;
+      my ($here, @args) = split /::/;
       my $macro = $args[0];
-      my $here = "$file:$line";
 
       # Alphabetical ordering please.
       if ($macro eq 'AC_CANONICAL_HOST')
@@ -4496,6 +4496,7 @@ sub scan_autoconf_traces ($)
       elsif ($macro eq 'AC_CONFIG_FILES')
 	{
 	  # Look at potential Makefile.am's.
+	  $ac_config_files_location = $here;
 	  &scan_autoconf_config_files ($args[1]);
 	}
       elsif ($macro eq 'AC_LIBSOURCE')
@@ -4509,7 +4510,7 @@ sub scan_autoconf_traces ($)
       elsif ($macro =~ /A(C|M)_PROG_LIBTOOL/)
 	{
 	  $seen_libtool = $here;
-	  $libtool_location = $line;
+	  $libtool_location = $here;
 	}
       elsif ($macro =~ /AC_PROG_LEX/)
 	{
@@ -4700,10 +4701,10 @@ sub scan_one_autoconf_file
 	}
 
 	# Process the AC_OUTPUT and AC_CONFIG_FILES macros.
-	if (! $in_ac_output && s/AC_(OUTPUT|CONFIG_FILES)\s*\(\[?//)
+	if (! $in_ac_output && s/(AC_(OUTPUT|CONFIG_FILES))\s*\(\[?//)
 	{
-	    $in_ac_output = 1;
-	    $ac_output_location = $here;
+	    $in_ac_output = $1;
+	    $ac_config_files_location = $here;
 	}
 	if ($in_ac_output)
 	{
@@ -4721,8 +4722,8 @@ sub scan_one_autoconf_file
 		&& scalar keys %make_list == 0
 		&& @other_input_files == 0)
 	    {
-		am_file_error ($ac_output_location,
-			       "No files mentioned in `AC_OUTPUT'");
+		am_file_error ($ac_config_files_location,
+			       "no files mentioned in `$in_ac_output'");
 		exit 1;
 	    }
 	}
