@@ -1,4 +1,4 @@
-dnl aclocal.m4 generated automatically by aclocal 1.4-p5a
+dnl aclocal.m4 generated automatically by aclocal 1.4-p6
 
 dnl Copyright (C) 1994, 1995-8, 1999, 2001 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
@@ -71,7 +71,7 @@ AC_DEFUN([AM_AUTOMAKE_VERSION],[am__api_version="1.4"])
 # Call AM_AUTOMAKE_VERSION so it can be traced.
 # This function is AC_REQUIREd by AC_INIT_AUTOMAKE.
 AC_DEFUN([AM_SET_CURRENT_AUTOMAKE_VERSION],
-	 [AM_AUTOMAKE_VERSION([1.4-p5a])])
+	 [AM_AUTOMAKE_VERSION([1.4-p6])])
 
 #
 # Check to make sure that the build environment is sane.
