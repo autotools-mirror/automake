@@ -448,6 +448,8 @@ sub handle_options
 
     foreach (split (' ', $contents{'AUTOMAKE_OPTIONS'}))
     {
+	last if /^#/;
+
 	$options{$_} = 1;
 	if ($_ eq 'gnits' || $_ eq 'gnu' || $_ eq 'foreign')
 	{
@@ -455,7 +457,8 @@ sub handle_options
 	}
 	elsif ($_ eq 'no-installman' || $_ eq 'ansi2knr'
 	       || $_ eq 'dist-shar' || $_ eq 'dist-zip'
-	       || $_ eq 'dejagnu' || $_ eq 'no-installinfo')
+	       || $_ eq 'dist-tarZ' || $_ eq 'dejagnu'
+	       || $_ eq 'no-installinfo')
 	{
 	    # Explicitly recognize these.
 	}
@@ -1289,18 +1292,25 @@ sub handle_dist
 
     # Put these things in rules section so it is easier for whoever
     # reads Makefile.in.
-    if ($relative_dir eq '.')
+    if (! &variable_defined ('distdir'))
     {
-	$output_rules .= "\n" . 'distdir = $(PACKAGE)-$(VERSION)' . "\n";
+	if ($relative_dir eq '.')
+	{
+	    $output_rules .= "\n" . 'distdir = $(PACKAGE)-$(VERSION)' . "\n";
+	}
+	else
+	{
+	    $output_rules .= ("\n"
+			      . 'distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)'
+			      . "\n");
+	}
     }
-    else
+    if ($relative_dir ne '.')
     {
-	$output_rules .= ("\nsubdir = " . $relative_dir . "\n"
-			  . 'distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)'
-			  . "\n");
+	$output_rules .= "\nsubdir = " . $relative_dir . "\n";
     }
 
-    # Generate 'dist' target, and maybe dist-shar / dist-zip.
+    # Generate 'dist' target, and maybe dist-shar / dist-zip / dist-tarZ.
     if ($relative_dir eq '.')
     {
 	# Rule to check whether a distribution is viable.
@@ -1352,6 +1362,14 @@ distcheck: dist
 	    $output_rules .= 'dist-zip: distdir' . "\n\t";
 	    $output_rules .= 'chmod -R a+r $(distdir)' . "\n\t";
 	    $output_rules .= 'zip -rq $(distdir).zip $(distdir)';
+	    $output_rules .= "\n\t" . 'rm -rf $(distdir)' . "\n";
+	}
+
+	if (defined $options{'dist-tarZ'})
+	{
+	    $output_rules .= 'dist-tarZ: distdir' . "\n\t";
+	    $output_rules .= 'chmod -R a+r $(distdir)' . "\n\t";
+	    $output_rules .= '$(TAR) choZf $(distdir).tar.Z $(distdir)';
 	    $output_rules .= "\n\t" . 'rm -rf $(distdir)' . "\n";
 	}
     }
