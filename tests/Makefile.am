@@ -53,6 +53,7 @@ autohdr3.test \
 autohdr4.test \
 auxdir.test \
 auxdir2.test \
+auxdir3.test \
 backsl.test \
 backsl2.test \
 backsl3.test \

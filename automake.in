@@ -4596,7 +4596,7 @@ sub scan_autoconf_traces ($)
   while ($_ = $tracefh->getline)
     {
       chomp;
-      my ($here, @args) = split /::/;
+      my ($here, @args) = split (/::/);
       my $where = new Automake::Location $here;
       my $macro = $args[0];
 
@@ -4626,6 +4626,12 @@ sub scan_autoconf_traces ($)
 	}
       elsif ($macro eq 'AC_CONFIG_AUX_DIR')
 	{
+	  if ($seen_init_automake)
+	    {
+	      error ($where, "AC_CONFIG_AUX_DIR must be called before "
+		     . "AM_INIT_AUTOMAKE...", partial => 1);
+	      error ($seen_init_automake, "... AM_INIT_AUTOMAKE called here");
+	    }
 	  $config_aux_dir = $args[1];
 	  $config_aux_dir_set_in_configure_ac = 1;
 	}

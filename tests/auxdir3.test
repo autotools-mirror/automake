@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001, 2002, 2004  Free Software Foundation, Inc.
+# Copyright (C) 2004  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -18,20 +18,18 @@
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-# It should be possible to use a computed auxdir.  This might seem
-# bizarre, but it is actually used in multilib builds.
+# Test to make sure we diagnose misplaced AC_CONFIG_AUX_DIR.
 
 . ./defs || exit 1
 
-# The "./." is here so we don't have to mess with subdirs.
-cat > configure.in << 'END'
-AC_INIT([auxdir2], [1.0])
-AC_CONFIG_AUX_DIR($foo)
-AM_INIT_AUTOMAKE
-AC_CONFIG_FILES([Makefile])
+set -e
+
+cat >> configure.in << 'END'
+AC_CONFIG_AUX_DIR(.)
 END
 
 : > Makefile.am
 
-$ACLOCAL || exit 1
-$AUTOMAKE
+$ACLOCAL
+AUTOMAKE_fails
+grep 'AC_CONFIG_AUX_DIR.*AM_INIT_AUTOMAKE' stderr
