@@ -12,9 +12,9 @@ info_TEXINFOS = automake.texi
 
 amfiles = check.am clean-hdr.am clean-kr.am clean.am comp-vars.am \
 compile.am data-clean.am data.am dejagnu.am depend.am depend2.am \
-dist.am dist-vars.am footer.am header-vars.am header.am java-clean.am \
-java.am kr-extra.am library.am libs-clean.am libs.am libtool.am \
-lisp-clean.am lisp.am ltlib-clean.am ltlib.am ltlibrary.am \
+dist.am distdir.am dist-vars.am footer.am header-vars.am header.am \
+java-clean.am java.am kr-extra.am library.am libs-clean.am libs.am \
+libtool.am lisp-clean.am lisp.am ltlib-clean.am ltlib.am ltlibrary.am \
 mans-vars.am mans.am multilib.am program.am progs-clean.am progs.am \
 python.am python-clean.am remake-hdr.am remake.am scripts.am \
 subdirs.am tags-clean.am tags.am texi-vers.am texinfos.am

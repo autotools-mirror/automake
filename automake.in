@@ -2613,28 +2613,26 @@ sub handle_multilib
 # Worker for handle_dist.
 sub handle_dist_worker
 {
-    local ($makefile) = @_;
-
-    $output_rules .= 'distdir: $(DISTFILES)' . "\n";
+    my ($makefile) = @_;
+    my $xform = '';
 
     # Initialization; only at top level.
     if ($relative_dir eq '.')
     {
-	if (defined $options{'check-news'})
-	{
-	    # For Gnits users, this is pretty handy.  Look at 15 lines
-	    # in case some explanatory text is desirable.
-	    $output_rules .= '	@if sed 15q $(srcdir)/NEWS | fgrep -e "$(VERSION)" > /dev/null; then :; else \\
-	  echo "NEWS not updated; not releasing" 1>&2; \\
-	  exit 1; \\
-	fi
-';
-	}
+        $xform .= 's/\@TOPDIR\@//g;';
+    }
+    else
+    {
+        $xform .= 's/\@TOPDIR\@.*//g;';
+    }
 
-
-	# Create dist directory.
-	$output_rules .= ("\t-chmod -R a+w \$(distdir) > /dev/null 2>&1; rm -rf \$(distdir)\n"
-			  . "\tmkdir \$(distdir)\n");
+    if (defined $options{'check-news'})
+    {
+        $xform .= 's/\@CK-NEWS\@//g;';
+    }
+    else
+    {
+        $xform .= 's/\@CK-NEWS\@.*//g;';
     }
 
     # Scan EXTRA_DIST to see if we need to distribute anything from a
@@ -2672,8 +2670,11 @@ sub handle_dist_worker
 	# Prepend $(distdir) to each directory given.  Doing it via a
 	# hash lets us ensure that each directory is used only once.
 	grep ($dist_dirs{'$(distdir)/' . $_} = 1, keys %dist_dirs);
-	$output_rules .= "\t";
-	&pretty_print_rule ('$(mkinstalldirs)', "\t   ", sort keys %dist_dirs);
+	$xform .= &transform ('DISTDIRS', join (' ', sort keys %dist_dirs));
+    }
+    else
+    {
+        $xform .= 's/.*\@DISTDIRS\@.*//g;';
     }
 
     # In loop, test for file existence because sometimes a file gets
@@ -2686,25 +2687,14 @@ sub handle_dist_worker
     $output_rules .= "\t\@for file in \$(DISTFILES); do \\\n";
     if ($cygnus_mode)
     {
-	$output_rules .= "\t  if test -f \$\$file; then d=.; else d=\$(srcdir); fi; \\\n";
+	$xform .= 's/\@CYGNUS\@\t*/\t/g;';
+        $xform .= 's/.*\@NCYGNUS\@.*//g;';
     }
     else
     {
-	$output_rules .= "\t  d=\$(srcdir); \\\n";
+	$xform .= 's/\@NCYGNUS\@\t*/\t/g;';
+        $xform .= 's/.*\@CYGNUS\@.*//g;';
     }
-    $output_rules .= ("\t  if test -d \$\$d/\$\$file; then \\\n"
-		      # Don't mention $$file in destination argument,
-		      # since this fails if destination directory
-		      # already exists.  Also, use `-R' and not `-r'.
-		      # `-r' is almost always incorrect.
-		      . "\t    cp -pR \$\$d/\$\$file \$(distdir) \\\n"
-		      . "\t    || exit 1; \\\n"
-		      . "\t  else \\\n"
-		      . "\t    test -f \$(distdir)/\$\$file \\\n"
-		      . "\t    || cp -p \$\$d/\$\$file \$(distdir)/\$\$file \\\n"
-		      . "\t    || exit 1; \\\n"
-		      . "\t  fi; \\\n"
-		      . "\tdone\n");
 
     # If we have SUBDIRS, create all dist subdirectories and do
     # recursive build.
@@ -2742,28 +2732,19 @@ sub handle_dist_worker
 	    &define_pretty_variable ('DIST_SUBDIRS', '', '$(SUBDIRS)');
 	}
 
-	# Test for directory existence here because previous automake
-	# invocation might have created some directories.  Note that
-	# we explicitly set distdir for the subdir make; that lets us
-	# mix-n-match many automake-using packages into one large
-	# package, and have "dist" at the top level do the right
-	# thing.  If we're in the topmost directory, then we use
-	# `distdir' instead of `top_distdir'; this lets us work
-	# correctly with an enclosing package.
-	$output_rules .=
-	    ("\t" . 'for subdir in $(' . $dist_subdir_name . '); do ' . "\\\n"
-	     . "\t" . '  if test "$$subdir" = .; then :; else ' . "\\\n"
-	     . "\t" . '    test -d $(distdir)/$$subdir ' . "\\\n"
-	     . "\t" . '    || mkdir $(distdir)/$$subdir ' . "\\\n"
-	     . "\t" . '    || exit 1; ' . "\\\n"
-	     . "\t" . '    (cd $$subdir'
-	     . ' && $(MAKE) $(AM_MAKEFLAGS) top_distdir=../$('
-	     . (($relative_dir eq '.') ? 'distdir' : 'top_distdir')
-	     . ') distdir=../$(distdir)/$$subdir distdir) ' . "\\\n"
-	     . "\t" . '      || exit 1; ' . "\\\n"
-	     . "\t" . '  fi; ' . "\\\n"
-	     . "\tdone\n");
+	$xform .= ('s/\@SUBDIRS\@//g;'
+		   . &transform ('DIST_SUBDIR_NAME'
+				 => $dist_subdir_name,
+				 'TOP_DISTDIR'
+				 => (($relative_dir eq '.')
+				     ? 'distdir' : 'top_distdir')));
     }
+    else
+    {
+	$xform .= 's/\@SUBDIRS\@.*//g;';
+    }
+
+    $output_rules .= &file_contents ('distdir', $xform);
 
     # If the target `dist-hook' exists, make sure it is run.  This
     # allows users to do random weird things to the distribution
@@ -2779,8 +2760,6 @@ sub handle_dist_worker
 			  . " top_distdir=\"\$(top_distdir)\""
 			  . " distdir=\"\$(distdir)\" $targ\n");
     }
-
-    &depend ('.PHONY', 'distdir');
 }
 
 # Handle 'dist' target.
@@ -2911,6 +2890,7 @@ sub handle_dist
 	    $xform .= 's/^GETTEXT.*$//;';
 	}
 
+	# Arg, this file should have been named `distcheck'.
 	$output_rules .= &file_contents ('dist', $xform);
 
 	local ($dist_all) = ('dist-all: distdir' . "\n"
