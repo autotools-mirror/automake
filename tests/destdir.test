@@ -1,0 +1,33 @@
+#! /bin/sh
+
+# Make sure that `make distcheck' can find some $(DESTDIR) omissions.
+# PR/186.
+
+. $srcdir/defs || exit 1
+
+set -e
+
+cat >> configure.in <<'EOF'
+AC_OUTPUT
+EOF
+
+cat > Makefile.am <<'EOF'
+dist_data_DATA = foo
+
+# This rule is bogus because it doesn't use $(DESTDIR) on the
+# second argument of cp.  distcheck is expected to catch this.
+install-data-hook:
+	cp $(DESTDIR)$(datadir)/foo $(datadir)/bar
+
+uninstall-local:
+	rm -f $(DESTDIR)$(datadir)/bar
+EOF
+
+: > foo
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE -a
+./configure
+$MAKE distcheck && exit 1
+:

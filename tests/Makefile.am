@@ -124,6 +124,7 @@ depend.test \
 depend2.test \
 depend3.test \
 depend4.test \
+destdir.test \
 dirforbid.test \
 dirname.test \
 discover.test \

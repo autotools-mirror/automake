@@ -270,9 +270,13 @@ distcheck: dist
 ## Undo the write access.
 	chmod a-w $(distdir)
 	dc_install_base=`$(am__cd) $(distdir)/=inst && pwd` \
+## We will attemp a DESTDIR install in $dc_destdir.  We don't
+## create this directory under $dc_install_base, because it would
+## create very long directory names.
+	  && dc_destdir="$${TMPDIR-/tmp}/am-dc-$$$$/" \
 ?DISTCHECK-HOOK?	  && $(MAKE) $(AM_MAKEFLAGS) distcheck-hook \
 	  && cd $(distdir)/=build \
-	  && ../configure --srcdir=.. --prefix=$$dc_install_base \
+	  && ../configure --srcdir=.. --prefix="$$dc_install_base" \
 ?GETTEXT?	    --with-included-gettext \
 ## Additional flags for configure.  Keep this last in the configure
 ## invocation so the user can override previous options.
@@ -284,10 +288,27 @@ distcheck: dist
 	  && $(MAKE) $(AM_MAKEFLAGS) installcheck \
 	  && $(MAKE) $(AM_MAKEFLAGS) uninstall \
 ## We use -le 1 because the `dir' file might still exist after uninstall.
-	  && (test `find $$dc_install_base -type f -print | wc -l` -le 1 \
+	  && (test `find "$$dc_install_base" -type f -print | wc -l` -le 1 \
 	      || { echo "ERROR: files left after uninstall:" ; \
 	           find $$dc_install_base -type f -print ; \
 	           exit 1; } >&2 ) \
+## Make sure the package has proper DESTDIR support (we could not test this
+## in the previous install/installcheck/uninstall test, because it's reasonable
+## for installcheck to fails in a DESTDIR install).
+## We make the `$dc_install_base' read-only because this is where files
+## with missing DESTDIR support are likely to be installed.
+	  && chmod -R a-w "$$dc_install_base" \
+## The logic here is quire convoluted because we must clean $dc_destdir
+## whatever happens (it won't be erased by the next run of distcheck like
+## $(dirstir) is).
+	  && ({   $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$dc_destdir" install \
+	       && $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$dc_destdir" uninstall \
+	       && (test `find "$$dc_destdir" -type f -print | wc -l` -le 1 \
+	           || { echo "ERROR: files left after uninstall (check DESTDIR support):" ; \
+	                find "$$dc_destdir" -type f -print ; \
+	                exit 1; } >&2 ) \
+	      } || { rm -rf "$$dc_destdir"; exit 1; }) \
+	  && rm -rf "$$dc_destdir" \
 	  && $(MAKE) $(AM_MAKEFLAGS) dist-gzip \
 ## Make sure to remove the dist file we created in the test build
 ## directory.
