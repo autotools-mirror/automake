@@ -84,8 +84,6 @@ conf2.test \
 confdeps.test \
 confdist.test \
 confh.test \
-confh2.test \
-confh3.test \
 confh4.test \
 config.test \
 confincl.test \
