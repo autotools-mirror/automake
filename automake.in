@@ -167,6 +167,9 @@ $seen_arg_prog = 0;
 $seen_libtool = 0;
 $libtool_line = 0;
 
+# Files installed by libtoolize.
+@libtoolize_files = ('ltconfig', 'ltmain.sh', 'config.guess', 'config.sub');
+
 # TRUE if we've seen AM_MAINTAINER_MODE.
 $seen_maint_mode = 0;
 
@@ -411,8 +414,7 @@ sub generate_makefile
     {
  	# libtool requires some files.
  	&require_conf_file_with_conf_line ($libtool_line, $FOREIGN,
- 					   'config.sub', 'config.guess',
- 					   'ltconfig', 'ltmain.sh')
+ 					   @libtoolize_files)
 	    if $seen_libtool;
 
         # AC_CANONICAL_HOST and AC_CANONICAL_SYSTEM need config.guess and
@@ -584,8 +586,15 @@ sub handle_options
 }
 
 # Return object extension.  Just once, put some code into the output.
+# Argument is the name of the output file
 sub get_object_extension
 {
+    local ($out) = @_;
+
+    # Maybe require libtool library object files.
+    local ($l) = '';
+    $l = 'l' if ($out =~ /^lib.*\.la$/);
+
     if (! $dir_holds_sources)
     {
 	# Boilerplate.
@@ -615,9 +624,19 @@ sub get_object_extension
 	}
 
 	# Check for automatic de-ANSI-fication.
-	$dir_holds_sources = '.o';
+	$dir_holds_sources = 'o';
 	push (@suffixes, '.c', '.o');
 	push (@clean, 'compile');
+
+	if ($seen_libtool)
+	{
+	    # Output the libtool compilation rules.
+	    $output_rules .= &file_contents ('libtool');
+	    &push_phony_cleaners ('libtool');
+
+	    push (@suffixes, '.lo');
+	    push (@clean, 'libtool');
+	}
 
 	if (defined $options{'ansi2knr'})
 	{
@@ -666,9 +685,12 @@ sub get_object_extension
 
 	    push (@clean, 'kr');
 	    &push_phony_cleaners ('kr');
+
+	    # FIXME - should be able to do libtool objects, too.
 	}
     }
-    return $dir_holds_sources;
+
+    return '.' . $l . $dir_holds_sources;
 }
 
 # Handle yacc and lex.
@@ -740,6 +762,16 @@ sub handle_yacc_lex_cxx
     }
 
     #
+    # Handle libtool.
+    #
+    local ($libtool) = '';
+    if ($seen_libtool)
+    {
+	&define_configure_variable ("LIBTOOL");
+	$libtool = '$(LIBTOOL) ';
+    }
+
+    #
     # Now handle C++.
     #
     local (@cxx_list) = keys %cxx_extensions;
@@ -750,13 +782,16 @@ sub handle_yacc_lex_cxx
 
 	&define_configure_variable ("CXXFLAGS");
 	&define_variable ('CXXCOMPILE', '$(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)');
-	&define_variable ('CXXLINK', '$(CXX) $(LDFLAGS) -o $@');
+	&define_variable ('CXXLINK', $libtool . '$(CXX) $(LDFLAGS) -o $@');
 
 	local ($ext);
 	foreach $ext (@cxx_list)
 	{
 	    $output_rules .= ("$ext.o:\n"
 			      . "\t\$(CXXCOMPILE) -c \$<\n");
+	    $output_rules .= ("$ext.lo:\n"
+			      . "\t\$(LIBTOOL) $(CXXCOMPILE) -c \$<\n")
+		if ($seen_libtool);
 	}
 
 	if (! defined $configure_vars{'CXX'})
@@ -784,7 +819,7 @@ sub handle_yacc_lex_cxx
 	&define_configure_variable ('CFLAGS');
 	&define_variable ('COMPILE',
 			  '$(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)');
-	&define_variable ('LINK', '$(CC) $(LDFLAGS) -o $@');
+	&define_variable ('LINK', $libtool . '$(CC) $(LDFLAGS) -o $@');
 
 	if (! defined $configure_vars{'CC'})
 	{
@@ -1036,11 +1071,29 @@ sub handle_lib_objects
     local ($lex_ok) = $lex_seen ? 0 : 1;
 
     local ($seen_libobjs) = 0;
+    local ($flagvar) = 0;
 
     foreach $lsearch (&variable_value_as_list ($var))
     {
 	# Skip -lfoo and -Ldir.
 	next if $lsearch =~ /^-[lL]/;
+	if (! $flagvar && $lsearch =~ /^-/)
+	{
+	    if ($var =~ /^(.*)LDADD$/)
+	    {
+		$flagvar = $1 . 'LDFLAGS';
+	    }
+	    if ($flagvar)
+	    {
+		&am_line_error ($var, "linker flags such as \`$lsearch' belong in $flagvar");
+	    }
+	    else
+	    {
+		# Only get this error once.
+		$flagvar = 1;
+		&am_line_error ($var, "you cannot use linker flags such as \`$lsearch' in $var");
+	    }
+	}
 
 	# Assume we have a file of some sort, and push it onto the
 	# dependency list.  Autoconf substitutions are not pushed;
@@ -1113,7 +1166,7 @@ sub handle_lib_objects
 # Handle C programs.
 sub handle_programs
 {
-    local (@proglist) = &am_install_var ('-clean',
+    local (@proglist) = &am_install_var ('-clean', '-ltlibs',
 					 'progs', 'PROGRAMS',
 					 'bin', 'sbin', 'libexec', 'pkglib',
 					 'noinst', 'check');
@@ -1125,18 +1178,19 @@ sub handle_programs
 	unless $seen_arg_prog;
     $seen_arg_prog = 1;
 
-    local ($obj) = &get_object_extension;
     local ($one_file, $xname, $munge);
 
     local ($seen_libobjs) = 0;
     foreach $one_file (@proglist)
     {
+	local ($obj) = &get_object_extension ($one_file);
+
 	# Canonicalize names.
 	($xname = $one_file) =~ tr/A-Za-z0-9_/_/c;
 	if ($xname ne $one_file)
 	{
 	    local ($xt);
-	    foreach $xt ('_LDADD', '_SOURCES', '_OBJECTS', '_DEPENDENCIES')
+	    foreach $xt ('_LDADD', '_LDFLAGS', '_SOURCES', '_OBJECTS', '_DEPENDENCIES')
 	    {
 		&am_line_error ($one_file . $xt,
 				"invalid variable \`" . $one_file . $xt
@@ -1175,6 +1229,12 @@ sub handle_programs
 		}
 		$lex_file_seen = 0;
 	    }
+	}
+
+	if (! &variable_defined ($xname . '_LDFLAGS'))
+	{
+	    # Define the prog_LDFLAGS variable.
+	    &define_variable ($xname . '_LDFLAGS', '');
 	}
 
 	if ($lex_file_seen)
@@ -1226,6 +1286,7 @@ sub handle_programs
     }
 }
 
+
 # Handle libraries.
 sub handle_libraries
 {
@@ -1252,7 +1313,6 @@ sub handle_libraries
     }
 
     local ($onelib);
-    local ($obj) = &get_object_extension;
     local ($munge);
     local ($xlib);
     local ($seen_libobjs) = 0;
@@ -1265,6 +1325,8 @@ sub handle_libraries
 	    &am_line_error ($onelib . $xt,
 			    "\`$onelib' is not a standard library name");
 	}
+
+	local ($obj) = &get_object_extension ($onelib);
 
 	# Canonicalize names.
 	($xlib = $onelib) =~ tr/A-Za-z0-9_/_/c;
@@ -1327,7 +1389,7 @@ sub check_typos
     local ($varname, $primary, $ckey);
     foreach $varname (keys %contents)
     {
-	foreach $primary ('_SOURCES', '_LIBADD', '_LDADD', '_DEPENDENCIES')
+	foreach $primary ('_SOURCES', '_LIBADD', '_LDADD', '_LDFLAGS', '_DEPENDENCIES')
 	{
 	    if ($varname =~ /$primary$/ && ! $content_seen{$varname})
 	    {
@@ -3756,7 +3818,7 @@ sub initialize_global_constants
     @common_sometimes =
 	(
 	 "aclocal.m4", "acconfig.h", "config.h.top",
-	 "config.h.bot", "stamp-h.in", 'stamp-vti', 'ltconfig', 'ltmain.sh'
+	 "config.h.bot", "stamp-h.in", 'stamp-vti', @libtoolize_files
 	 );
 
     $USAGE = "\
@@ -4054,12 +4116,16 @@ sub am_install_var
 {
     local (@args) = @_;
 
-    local ($do_all, $do_clean) = (1, 0);
+    local ($do_clean, $do_ltlibs) = (0, 0);
     while (@args)
     {
 	if ($args[0] eq '-clean')
 	{
 	    $do_clean = 1;
+	}
+	if ($args[0] eq '-ltlibs')
+	{
+	    $do_ltlibs = 1;
 	}
 	elsif ($args[0] !~ /^-/)
 	{
@@ -4068,6 +4134,7 @@ sub am_install_var
 	shift (@args);
     }
     local ($file, $primary, @prefixes) = @args;
+    unshift (@prefixes, 'lib') if ($do_ltlibs);
 
     local (@used) = ();
     local (@result) = ();
@@ -4129,6 +4196,36 @@ sub am_install_var
 		    }
 		    next;
 		}
+
+		if ($do_ltlibs)
+		{
+		    if ($rcurs =~ /^lib.*\.l?a$/)
+		    {
+			if (! $seen_libtool)
+			{
+			    &am_line_error ($one_name,
+					    "\`$rcurse' is a libtool library name, but AM_PROG_LIBTOOL is not in \`configure.in'");
+			    $seen_libtool = 1;
+			}
+
+			# Check that libtool libraries go only into libdir.
+			if ($rcurs =~ /^lib.*\.la$/ && $X ne 'lib')
+			{
+			    &am_line_error ($one_name,
+					    "libtool library \`$rcurs' must only be installed in libdir");
+			}
+			elsif ($X =~ /^s?bin|libexec$/)
+			{
+			    &am_line_error ($one_name,
+					    "library \`$rcurs' must not be installed in a binary directory");
+			}
+		    }
+		    elsif ($X eq 'lib')
+		    {
+			&am_line_error ($one_name,
+					"only libraries (not \`$rcurs') may be installed in libdir");
+		    }
+		}
 		push (@result, $rcurs);
 	    }
 
@@ -4160,9 +4257,18 @@ sub am_install_var
 		next;
 	    }
 
-	    $output_rules .=
-		&file_contents_with_transform ('s/\@DIR\@/' . $X . '/go',
-					       $file);
+	    if ($do_ltlibs && $X eq 'lib')
+	    {
+		$output_rules .=
+		    &file_contents_with_transform ('s/\@DIR\@/' . $X . '/go',
+						   'ltlibs');
+	    }
+	    else
+	    {
+		$output_rules .=
+		    &file_contents_with_transform ('s/\@DIR\@/' . $X . '/go',
+						   $file);
+	    }
 
 	    push (@uninstall, 'uninstall-' . $X . $primary);
 	    push (@phony, 'uninstall-' . $X . $primary);
@@ -4195,7 +4301,7 @@ sub am_install_var
 
     # Push here because PRIMARY might be configure time determined.
     push (@all, '$(' . $primary . ')')
-	if $do_all && @used;
+	if @used;
 
     return (@result);
 }
@@ -4266,28 +4372,40 @@ sub require_file_internal
 
 		# Only install missing files according to our desired
 		# strictness level.
-		if ($add_missing && -f ($am_dir . '/' . $file))
+		if ($add_missing)
 		{
 		    $trailer = "; installing";
 		    $suppress = 1;
-		    # Install the missing file.  Symlink if we can,
-		    # copy if we must.  Note: delete the file first,
-		    # in case it is a dangling symlink.
-		    unlink ($errfile);
-		    if ($symlink_exists)
+
+		    # Maybe run libtoolize.
+		    if ($seen_libtool
+			&& grep ($_ eq $file, @libtoolize_files)
+			&& system ('libtoolize', '--automake'))
 		    {
-			if (! symlink ($am_dir . '/' . $file, $errfile))
-			{
-			    $suppress = 0;
-			    $trailer .= "; error while making link: $!\n";
-			}
+			$suppress = 0;
+			$trailer .= "; cannot run \`libtoolize': $!";
 		    }
-		    else
+		    elsif (-f ($am_dir . '/' . $file))
 		    {
-			if (! system ('cp', $am_dir . '/' . $file, $errfile))
+			# Install the missing file.  Symlink if we
+			# can, copy if we must.  Note: delete the file
+			# first, in case it is a dangling symlink.
+			unlink ($errfile);
+			if ($symlink_exists)
 			{
-			    $suppress = 0;
-			    $trailer .= "\n    error while making link: $!\n";
+			    if (! symlink ($am_dir . '/' . $file, $errfile))
+			    {
+				$suppress = 0;
+				$trailer .= "; error while making link: $!\n";
+			    }
+			}
+			else
+			{
+			    if (! system ('cp', $am_dir . '/' . $file, $errfile))
+			    {
+				$suppress = 0;
+				$trailer .= "\n    error while making link: $!\n";
+			    }
 			}
 		    }
 		}
