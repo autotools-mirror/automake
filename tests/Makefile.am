@@ -271,7 +271,7 @@ yacc2.test \
 yacc3.test \
 yaccpp.test
 
-EXTRA_DIST = defs $(TESTS)
+EXTRA_DIST = defs ChangeLog-old $(TESTS)
 
 distclean-local:
 	-rm -rf testSubDir
