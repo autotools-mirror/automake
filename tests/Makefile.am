@@ -107,6 +107,7 @@ flibs.test \
 fnoc.test \
 fo.test	\
 fonly.test \
+fortdep.test \
 fpinst2.test \
 fpinstall.test \
 gcj.test \
