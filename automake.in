@@ -97,6 +97,10 @@ $top_builddir = '';
 # List of files in AC_OUTPUT without Makefile.am.
 @other_input_files = ();
 
+# List of directories to search for configure-required files.  This
+# can be set by AC_CONFIG_AUX_DIR.
+@config_aux_path = ('.', '..', '../..');
+
 # Whether AC_PROG_MAKE_SET has been seen in configure.in.
 $seen_make_set = 0;
 
@@ -290,7 +294,7 @@ sub generate_makefile
 
     # AC_CANONICAL_HOST and AC_CANONICAL_SYSTEM need config.guess and
     # config.sub.
-    &require_file ($NORMAL, 'config.guess', 'config.sub')
+    &require_config_file ($NORMAL, 'config.guess', 'config.sub')
 	if $relative_dir eq '.' && $seen_canonical;
 
     # FIXME with new 'dist' target, don't need Makefile.in.  Probably
@@ -406,8 +410,9 @@ sub get_object_extension
 	{
 	    ($xform = &dirname ($contents{'CONFIG_HEADER'}))
 		=~ s/(\W)/\\$1/g;
-	    $xform = 's/\@CONFIG_INCLUDE_SPEC\@/-I' . $xform . '/go';
+	    $xform = '-I' . $xform;
 	}
+	$xform = 's/\@CONFIG_INCLUDE_SPEC\@/' . $xform . '/go';
 	$output_vars .= &file_contents_with_transform ($xform,
 						       'compile-vars');
 	$output_rules .= &file_contents ('compile');
@@ -1507,6 +1512,11 @@ sub handle_merge_targets
 		      . join (' ', @all)
 		      . "\n\n");
     push (@phony, 'all');
+
+    # Generate the new 'install-strip' target.
+    $output_rules .= ("install-strip:\n\t"
+		      . '$(MAKE) INSTALL_PROGRAM=\'$(INSTALL_PROGRAM) -s\' install'
+		      . "\n");
 }
 
 # Helper for handle_merge_targets.
@@ -1728,6 +1738,12 @@ sub scan_configure
 		    push (@other_input_files, $_);
 		}
 	    }
+	}
+
+	# FIXME can this actually be a list of paths?
+	if (/AC_CONFIG_AUX_DIR\(([^)]+)\)/)
+	{
+	    @config_aux_path = $1;
 	}
 
 	# Check for ansi2knr.
@@ -2449,6 +2465,65 @@ sub require_file
 	}
     }
 }
+
+# Require a file that is also required by Autoconf.  Looks in
+# configuration path, as specified by AC_CONFIG_AUX_DIR.
+sub require_config_file
+{
+    local ($mystrict, @files) = @_;
+    local ($file, $dir);
+    local ($found_it);
+
+    foreach $file (@files)
+    {
+	$found_it = 0;
+	foreach $dir (@config_aux_path)
+	{
+	    $fullfile = $dir . "/" . $file;
+
+	    if (-f $fullfile)
+	    {
+		$found_it = 1;
+		&push_dist_common ($file) if $dir eq $relative_dir;
+		last;
+	    }
+	}
+	if (! $found_it)
+	{
+	    if ($strictness >= $mystrict)
+	    {
+		# Only install missing files according to our desired
+		# strictness level.
+		if ($install_missing && -f ($am_dir . '/' . $file))
+		{
+		    # Install the missing file.  Symlink if we can, copy
+		    # if we must.
+		    if ($symlink_exists)
+		    {
+			symlink ($am_dir . '/' . $file, $fullfile);
+		    }
+		    else
+		    {
+			system ('cp', $am_dir . '/' . $file, $fullfile);
+		    }
+
+		    # FIXME this is a hack.  Should have am_warn.
+		    local ($save) = $exit_status;
+		    &am_error
+			("required file \"$fullfile\" not found; installing");
+		    $exit_status = $save;
+		}
+		else
+		{
+		    # Only an error if strictness constraint violated.
+		    &am_error ("required file \"$fullfile\" not found");
+		}
+	    }
+	}
+    }
+}
+
+################################################################
 
 # Push a list of files onto dist_common.
 sub push_dist_common
