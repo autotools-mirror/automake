@@ -780,7 +780,8 @@ sub handle_libraries
     # am_install_var.
     local ($onedir, $onelib);
     local (@outlist);
-    foreach $onedir ('lib', 'pkglib', 'noinst', 'check')
+    foreach $onedir (&am_primary_prefixes ('LIBRARIES', 'lib', 'pkglib',
+					   'noinst', 'check'))
     {
 	if (&variable_defined ($onedir . '_LIBRARIES'))
 	{
@@ -1360,7 +1361,7 @@ distcheck: dist
 	if (defined $options{'dist-zip'})
 	{
 	    $output_rules .= 'dist-zip: distdir' . "\n\t";
-	    $output_rules .= 'chmod -R a+r $(distdir)' . "\n\t";
+	    $output_rules .= '-chmod -R a+r $(distdir)' . "\n\t";
 	    $output_rules .= 'zip -rq $(distdir).zip $(distdir)';
 	    $output_rules .= "\n\t" . 'rm -rf $(distdir)' . "\n";
 	}
@@ -1368,8 +1369,8 @@ distcheck: dist
 	if (defined $options{'dist-tarZ'})
 	{
 	    $output_rules .= 'dist-tarZ: distdir' . "\n\t";
-	    $output_rules .= 'chmod -R a+r $(distdir)' . "\n\t";
-	    $output_rules .= '$(TAR) choZf $(distdir).tar.Z $(distdir)';
+	    $output_rules .= '-chmod -R a+r $(distdir)' . "\n\t";
+	    $output_rules .= '$(TAR) chf - $(distdir) | compress -c > $(distdir).tar.Z';
 	    $output_rules .= "\n\t" . 'rm -rf $(distdir)' . "\n";
 	}
     }
@@ -2843,6 +2844,36 @@ sub file_contents
     return &file_contents_with_transform ('', @_);
 }
 
+# Find all variable prefixes that are used for install directories.  A
+# prefix `zar' qualifies iff:
+# * `zardir' is a variable.
+# * `zar_PRIMARY' is a variable.
+sub am_primary_prefixes
+{
+    local ($primary, @prefixes) = @_;
+
+    local (%valid, $varname);
+    grep ($valid{$_} = 0, @prefixes);
+    $valid{'EXTRA'} = 0;
+    foreach $varname (keys %contents)
+    {
+	if ($varname =~ /^(.*)_$primary$/)
+	{
+	    if (! defined $valid{$1} && ! &variable_defined ($1 . 'dir'))
+	    {
+		&am_line_error ($varname, "invalid variable \"$varname\"");
+	    }
+	    else
+	    {
+		# Ensure all extended prefixes are actually used.
+		$valid{$1} = 1;
+	    }
+	}
+    }
+
+    return %valid;
+}
+
 # Handle `where_HOW' variable magic.  Does all lookups, generates
 # install code, and possibly generates code to define the primary
 # variable.  The first argument is the name of the .am file to munge,
@@ -2896,24 +2927,7 @@ sub am_install_var
     # disallowed in the Gnits case?  The problem is, sometimes it is
     # useful to put things in a subdir of eg pkgdatadir, perhaps even
     # for Gnitsoids.
-    local (%valid, $varname);
-    grep ($valid{$_} = 0, @prefixes);
-    $valid{'EXTRA'} = 0;
-    foreach $varname (keys %contents)
-    {
-	if ($varname =~ /^(.*)_$primary$/)
-	{
-	    if (! defined $valid{$1} && ! &variable_defined ($1 . 'dir'))
-	    {
-		&am_line_error ($varname, "invalid variable \"$varname\"");
-	    }
-	    else
-	    {
-		# Ensure all extended prefixes are actually used.
-		$valid{$1} = 1;
-	    }
-	}
-    }
+    local (%valid) = &am_primary_prefixes ($primary, @prefixes);
 
     local ($clean_file) = $file . '-clean';
     local ($one_name);
