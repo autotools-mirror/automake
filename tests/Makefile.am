@@ -2,7 +2,7 @@
 
 AUTOMAKE_OPTIONS = gnits
 
-XFAIL_TESTS = sourcesub.test ltlibobjs.test subobj3.test
+XFAIL_TESTS = subobj3.test
 TESTS =	\
 acinclude.test \
 aclocal.test \
