@@ -2509,8 +2509,7 @@ sub handle_man_pages
     # Find all the sections in use.  We do this by first looking for
     # "standard" sections, and then looking for any additional
     # sections used in man_MANS.
-    local (%sections, %vlist);
-    local ($found) = 0;
+    my (%sections, %vlist);
     # Add more sections as needed.
     foreach my $sect ('0'..'9', 'n', 'l')
     {
@@ -2536,7 +2535,7 @@ sub handle_man_pages
 	}
     }
 
-    return unless $found;
+    return unless %sections;
 
     # Now for each section, generate an install and unintall rule.
     # Sort sections so output is deterministic.
@@ -2572,7 +2571,7 @@ sub handle_data
 # Handle TAGS.
 sub handle_tags
 {
-    local (@tag_deps) = ();
+    my @tag_deps = ();
     if (&variable_defined ('SUBDIRS'))
     {
 	$output_rules .= ("tags-recursive:\n"
@@ -2781,7 +2780,7 @@ sub handle_dist
 	# If SUBDIRS is conditionally defined, then set DIST_SUBDIRS
 	# to all possible directories, and use it.  If DIST_SUBDIRS is
 	# defined, just use it.
-	local ($dist_subdir_name);
+	my $dist_subdir_name;
 	if (&variable_conditions ('SUBDIRS')
 	    || &variable_defined ('DIST_SUBDIRS'))
 	{
@@ -2869,20 +2868,18 @@ sub add_depend2
 			      . "\n");
 	}
     }
+    else
+    {
+        # If dependency tracking is disabled, we just elide the code.
+        $xform .= 's/\@AMDEP\@.*$//;';
+    }
 
     # Now include code for each specially handled object with this
     # language.
-    local (@list) = grep ($_ ne '', split (' ', $lang_specific_files{$lang}));
-    local ($max) = scalar @list;
-    local ($i) = 0;
-    local ($derived, $source, $obj);
-
-    # If dependency tracking is disabled, we just elide the code.
-    if (! $use_dependencies)
-    {
-	$xform .= 's/\@AMDEP\@.*$//;';
-    }
-
+    my @list = grep ($_ ne '', split (' ', $lang_specific_files{$lang}));
+    my $max = scalar @list;
+    my $i = 0;
+    my ($derived, $source, $obj);
     my %seen_files = ();
     while ($i < $max)
     {
@@ -2937,21 +2934,21 @@ sub handle_dependencies
 	# be empty.
 	if (&saw_sources_p (0) && keys %dep_files)
 	{
-	    local ($config_aux_dir_specified) = ($config_aux_dir ne '.'
-						 && $config_aux_dir ne '');
+	    my $config_aux_dir_specified = ($config_aux_dir ne '.'
+					    && $config_aux_dir ne '');
 
 	    # Set $require_file_found{'depcomp'} if the depcomp file exists,
 	    # before calling require_config_file on `depcomp'.  This makes
 	    # require_file_internal skip its buggy existence test that would
 	    # make automake fail (with `required file `lib/depcomp' not found')
 	    # when AC_CONFIG_AUX_DIR is not set.  See tests/subdir4.test.
-	    local ($depcomp_dir) = ($config_aux_dir_specified ? $config_aux_dir
-				    : '.');
+	    my $depcomp_dir = ($config_aux_dir_specified ? $config_aux_dir
+			       : '.');
 	    $require_file_found{'depcomp'} = 1 if -f "$depcomp_dir/depcomp";
 
 	    # Set location of depcomp.
-	    local ($prefix) = ($config_aux_dir_specified ? $config_aux_dir
-			       : '$(top_srcdir)');
+	    my $prefix = ($config_aux_dir_specified ? $config_aux_dir
+			  : '$(top_srcdir)');
 
 	    &define_variable ('depcomp', "\$(SHELL) $prefix/depcomp");
 
@@ -3025,7 +3022,7 @@ sub handle_subdirs
 # Handle aclocal.m4.
 sub handle_aclocal_m4
 {
-    local ($regen_aclocal) = 0;
+    my $regen_aclocal = 0;
     if (-f 'aclocal.m4')
     {
 	&define_variable ("ACLOCAL_M4", '$(top_srcdir)/aclocal.m4');
@@ -3033,8 +3030,7 @@ sub handle_aclocal_m4
 
 	if (open (ACLOCAL, '< aclocal.m4'))
 	{
-	    local ($line);
-	    $line = <ACLOCAL>;
+	    my $line = <ACLOCAL>;
 	    close (ACLOCAL);
 
 	    if ($line =~ 'generated automatically by aclocal')
@@ -3044,7 +3040,7 @@ sub handle_aclocal_m4
 	}
     }
 
-    local ($acinclude) = 0;
+    my $acinclude = 0;
     if (-f 'acinclude.m4')
     {
 	$regen_aclocal = 1;
@@ -3056,13 +3052,9 @@ sub handle_aclocal_m4
     # important.
     if ($regen_aclocal)
     {
-	local (@ac_deps) = (
-			    ($seen_maint_mode
-			     ? "\@MAINTAINER_MODE_TRUE\@"
-			     : "") ,
-			    $configure_ac,
-			    ($acinclude ? ' acinclude.m4' : '')
-			    );
+	my @ac_deps = (($seen_maint_mode ? "\@MAINTAINER_MODE_TRUE\@": "") ,
+		       $configure_ac,
+		       ($acinclude ? ' acinclude.m4' : ''));
 
 	if (&variable_defined ('ACLOCAL_M4_SOURCES'))
 	{
@@ -3158,8 +3150,7 @@ sub handle_configure
     $colon_infile .= ':' . join (':', @secondary_inputs)
 	if @secondary_inputs;
 
-    local (@rewritten) = &rewrite_inputs_into_dependencies (1,
-							    @secondary_inputs);
+    my @rewritten = &rewrite_inputs_into_dependencies (1, @secondary_inputs);
 
     # This rule remakes the Makefile.in.  Note use of
     # @MAINTAINER_MODE_TRUE@ forces us to abandon pretty-printing.
@@ -3234,7 +3225,7 @@ sub handle_configure
 	if ($relative_dir eq $header_dir
 	    || ($relative_dir eq '.' && ! &is_make_dir ($header_dir)))
 	{
-	    local ($ch_sans_dir, $cn_sans_dir, $stamp_dir);
+	    my ($cn_sans_dir, $stamp_dir);
 	    if ($relative_dir eq $header_dir)
 	    {
 		$cn_sans_dir = basename ($one_name);
@@ -3256,6 +3247,7 @@ sub handle_configure
 	    # Compute relative path from directory holding output
 	    # header to directory holding input header.  FIXME:
 	    # doesn't handle case where we have multiple inputs.
+	    my $ch_sans_dir;
 	    if (dirname ($one_hdr) eq $relative_dir)
 	    {
 		$ch_sans_dir = basename ($one_hdr);
@@ -3346,7 +3338,7 @@ sub handle_configure
     foreach my $one_name (@config_names)
     {
 	# Generate CONFIG_HEADER define.
-	local ($one_hdr);
+	my $one_hdr;
 	if ($relative_dir eq dirname ($one_name))
 	{
 	    $one_hdr = basename ($one_name);
@@ -3499,7 +3491,7 @@ sub handle_gettext
     # each po file is mentioned in ALL_LINGUAS.
     if ($seen_linguas)
     {
-	local (%linguas) = ();
+	my %linguas = ();
 	grep ($linguas{$_} = 1, split (' ', $all_linguas));
 
 	foreach (<po/*.po>)
@@ -3564,11 +3556,11 @@ sub handle_footer
 	# suffixes, and this lets the user have some control.  Push
 	# actual suffixes, and not $(SUFFIXES).  Some versions of make
 	# do not like variable substitutions on the .SUFFIXES line.
-	local (%suffixes);
-	local (@user_suffixes) = (&variable_defined ('SUFFIXES')
-				  ? &variable_value_as_list ('SUFFIXES', '')
-				  : ());
+	my @user_suffixes = (&variable_defined ('SUFFIXES')
+			     ? &variable_value_as_list ('SUFFIXES', '')
+			     : ());
 
+	my %suffixes;
 	grep ($suffixes{$_} = 1, @suffixes);
 	delete @suffixes{@user_suffixes};
 
@@ -3609,7 +3601,7 @@ sub handle_installdirs
 # avoid double colon rules, otherwise we'd use them instead.
 sub handle_merge_targets
 {
-    local ($makefile) = @_;
+    my ($makefile) = @_;
 
     # There are a few install-related variables that you should not define.
     foreach my $var ('PRE_INSTALL', 'POST_INSTALL', 'NORMAL_INSTALL')
@@ -3651,8 +3643,8 @@ sub handle_merge_targets
     {
 	if (&target_defined ($utarg))
 	{
-	    local ($x);
-	    ($x = $utarg) =~ s/(data|exec)-//;
+	    my $x = $utarg;
+	    $x =~ s/(data|exec)-//;
 	    &am_line_error ($utarg, "use \`$x', not \`$utarg'");
 	}
     }
@@ -3791,7 +3783,7 @@ sub do_one_merge_target
     }
     else
     {
-	local ($lname) = $name . ($recursive_install ? '-recursive' : '-am');
+	my $lname = $name . ($recursive_install ? '-recursive' : '-am');
 	&pretty_print_rule ($name . ":", "\t\t", $lname);
     }
     &depend ('.PHONY', $name . '-am', $name);
@@ -4010,7 +4002,7 @@ sub handle_emacs_lisp
 
 	push (@all, '$(ELCFILES)');
 
-	local ($varname);
+	my $varname;
 	if (&variable_defined ('lisp_LISP'))
 	{
 	    $varname = 'lisp_LISP';
@@ -4135,7 +4127,7 @@ sub scan_autoconf_config_files
         # Handle $local:$input syntax.  Note that we ignore
         # every input file past the first, though we keep
         # those around for later.
-        local ($local, $input, @rest) = split (/:/);
+        my ($local, $input, @rest) = split (/:/);
         if (! $input)
         {
             $input = $local;
@@ -4167,10 +4159,10 @@ sub scan_autoconf_config_files
 # FIXME: For the time being, we don't care about the FILENAME.
 sub scan_autoconf_traces
 {
-    local ($filename) = @_;
+    my ($filename) = @_;
     local (*TRACES);
 
-    local ($traces) = "$ENV{amtraces} ";
+    my $traces = "$ENV{amtraces} ";
 
     $traces .= ' -t AC_CONFIG_FILES';
     $traces .= ' -t AC_LIBSOURCE';
@@ -4183,8 +4175,8 @@ sub scan_autoconf_traces
     while (<TRACES>)
     {
         chomp;
-        local ($file, $line, $macro, @args) = split /:/;
-	local ($here) = "$file:$line";
+        my ($file, $line, $macro, @args) = split /:/;
+	my $here = "$file:$line";
 
 	# Alphabetical ordering please.
         if ($macro eq 'AC_CONFIG_FILES')
@@ -4194,7 +4186,7 @@ sub scan_autoconf_traces
 	}
         elsif ($macro eq 'AC_LIBSOURCE')
 	{
-	    local ($source) = "$args[0].c";
+	    my $source = "$args[0].c";
 	    # We should actually also `close' the sources: getopt.c
 	    # wants getopt.h etc.  But actually it should be done in the
 	    # macro itself, i.e., we have to first fix Autoconf to extend
@@ -4226,13 +4218,15 @@ sub scan_autoconf_traces
 # &scan_autoconf_files.
 sub scan_one_autoconf_file
 {
-    local ($filename) = @_;
+    my ($filename) = @_;
     local (*CONFIGURE);
 
     open (CONFIGURE, $filename)
 	|| die "automake: couldn't open \`$filename': $!\n";
     print "automake: reading $filename\n" if $verbose;
 
+
+    my ($in_ac_output, $in_ac_replace) = (0, 0);
     while (<CONFIGURE>)
     {
 	# Remove comments from current line.
@@ -4335,7 +4329,7 @@ sub scan_one_autoconf_file
 
 	if (/$obsolete_rx/o)
 	{
-	    local ($hint) = '';
+	    my $hint = '';
 	    if ($obsolete_macros{$1} ne '')
 	    {
 		$hint = '; ' . $obsolete_macros{$1};
@@ -4351,7 +4345,7 @@ sub scan_one_autoconf_file
 	}
 	if ($in_ac_output)
 	{
-	    local ($closing) = 0;
+	    my $closing = 0;
 	    if (s/[\]\),].*$//)
 	    {
 		$in_ac_output = 0;
@@ -4566,7 +4560,7 @@ sub scan_autoconf_files
     # that won't always be the case.
     %libsources = ();
 
-    local ($in_ac_output, $in_ac_replace) = (0, 0);
+    # Watchout: these guys need dynamic scope!
     local (%make_list, @make_input_list);
 
     warn "automake: both \`configure.ac' and \`configure.in' present:"
