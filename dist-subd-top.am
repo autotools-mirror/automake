@@ -1,13 +1,21 @@
-dist: $(DIST_FILES) $(DIST_DIRS) distname
-	rm -rf `cat distname`; mkdir `cat distname`
+PACKAGE = @PACKAGE@
+VERSION = @VERSION@
+
+distdir = $(PACKAGE)-$(VERSION)
+dist: $(DIST_FILES) $(DIST_DIRS)
+	rm -rf $(distdir)
+	mkdir $(distdir)
 	@for file in $(DIST_FILES); do \
 	  echo linking $$file; \
-	  ln $(srcdir)/$$file `cat distname`/$$file || \
-	    { echo copying $$file instead; cp -p $(srcdir)/$$file `cat distname`/$$file;}; \
+	  ln $(srcdir)/$$file $(distdir)/$$file || \
+	    { echo copying $$file instead; cp -p $(srcdir)/$$file $(distdir)/$$file;}; \
 	done
-	for subdir in $(SUBDIRS); do \
-	  (cd $$subdir; $(MAKE) subdir=$$subdir $@); done
-	chmod -R a+r `cat distname`
-	tar -chozf `cat distname`.tar.gz `cat distname`
-	rm -rf `cat distname` distname
+	for subdir in $(SUBDIRS); do		\
+	  mkdir $(distdir)/$$subdir || exit 1;	\
+	  chmod 777 $(distdir)/$$subdir;	\
+	  (cd $$subdir; $(MAKE) subdir=$$subdir $@) || exit 1; \
+	done
+	chmod -R a+r $(distdir)
+	tar -chozf $(distdir).tar.gz $(distdir)
+	rm -rf $(distdir)
 
