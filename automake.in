@@ -508,12 +508,12 @@ my @suffixes;
 #
 # For a $VAR:
 # - $var_value{$VAR}{$COND} is its value associated to $COND,
-# - $var_line{$VAR} is where it has been defined,
+# - $var_location{$VAR} is where it was defined,
 # - $var_comment{$VAR} are the comments associated to it.
 # - $var_type{$VAR} is how it has been defined (`', `+', or `:'),
 # - $var_is_am{$VAR} is true if the variable is owned by Automake.
 my %var_value;
-my %var_line;
+my %var_location;
 my %var_comment;
 my %var_type;
 my %var_is_am;
@@ -678,7 +678,7 @@ sub initialize_per_input ()
     @suffixes = ();
 
     %var_value = ();
-    %var_line = ();
+    %var_location = ();
     %var_comment = ();
     %var_type = ();
     %var_is_am = ();
@@ -5820,13 +5820,13 @@ sub macro_define ($$$$$$)
     }
   else
     {
-      # The first assignment to a macro sets the line number.  Ideally I
+      # The first assignment to a macro sets its location.  Ideally I
       # suppose we would associate line numbers with random bits of text.
       # FIXME: We sometimes redefine some variables, but we want to keep
       # the original location.  More subs are needed to handle
       # properly variables.  Once this done, remove this hack.
-      $var_line{$var} = $where
-	unless defined $var_line{$var};
+      $var_location{$var} = $where
+	unless defined $var_location{$var};
 
       # If Automake tries to override a value specified by the user,
       # just don't let it do.
@@ -5870,7 +5870,7 @@ sub variable_delete ($@)
   if (!@conds)
     {
       delete $var_value{$var};
-      delete $var_line{$var};
+      delete $var_location{$var};
       delete $var_is_am{$var};
       delete $var_comment{$var};
       delete $var_type{$var};
@@ -5898,8 +5898,8 @@ sub macro_dump ($)
   else
     {
       my $var_is_am = $var_is_am{$var} ? "Automake" : "User";
-      my $where = (defined $var_line{$var}
-		   ? $var_line{$var} : "undefined");
+      my $where = (defined $var_location{$var}
+		   ? $var_location{$var} : "undefined");
       print STDERR "$var_comment{$var}"
 	if defined $var_comment{$var};
       print STDERR "  $var ($var_is_am, where = $where) $var_type{$var}=\n";
@@ -6685,16 +6685,18 @@ sub target_defined
 
 ################################################################
 
+# &read_am_file ($AMFILE)
+# -----------------------
 # Read Makefile.am and set up %contents.  Simultaneously copy lines
 # from Makefile.am into $output_trailer or $output_vars as
 # appropriate.  NOTE we put rules in the trailer section.  We want
 # user rules to come after our generated stuff.
-sub read_am_file
+sub read_am_file ($)
 {
     my ($amfile) = @_;
 
     my $am_file = new Automake::XFile ("< $amfile");
-    print "$me: reading $amfile\n" if $verbose;
+    verbose "reading $amfile";
 
     my $spacing = '';
     my $comment = '';
@@ -6796,7 +6798,7 @@ sub read_am_file
 		  $comment = $spacing = '';
 		  macro_define ($last_var_name, 0,
 				$last_var_type, $cond,
-				$last_var_value, $.)
+				$last_var_value, "$amfile:$.")
 		    if $cond ne 'FALSE';
 		  push (@var_list, $last_var_name);
 		}
@@ -6823,7 +6825,6 @@ sub read_am_file
 
 	    rule_define ($1, 0, $cond, $.);
 
-	    $var_line{$1} = $.;
 	    $output_trailer .= $comment . $spacing;
             $output_trailer .= &make_condition (@cond_stack);
             $output_trailer .= $_;
@@ -6858,7 +6859,7 @@ sub read_am_file
 
 		macro_define ($last_var_name, 0,
 			      $last_var_type, $cond,
-			      $last_var_value, $.)
+			      $last_var_value, "$amfile:$.")
 		  if $cond ne 'FALSE';
 		push (@var_list, $last_var_name);
 	      }
@@ -8088,11 +8089,10 @@ sub am_line_error ($@)
 	    # SYMBOL is a line number, then it must be a Makefile.am.
 	    $where = "${am_file}.am:$symbol";
 	}
-	elsif (defined $var_line{$symbol})
+	elsif (defined $var_location{$symbol})
 	{
-	    # SYMBOL is a variable defined in Makefile.am, so add the
-	    # line number we saved from there.
-	    $where = "${am_file}.am:$var_line{$symbol}";
+	    # SYMBOL is a macro defined in an Makefile.am or a *.am file.
+	    $where = $var_location{$symbol};
 	}
 	elsif (defined $configure_vars{$symbol})
 	{
