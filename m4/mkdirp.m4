@@ -20,8 +20,7 @@
 # 02111-1307, USA.
 
 AC_DEFUN([AM_PROG_MKDIR_P],
-[AC_REQUIRE([AM_AUX_DIR_EXPAND])dnl
-if mkdir -m 0755 -p -- . 2>/dev/null; then
+[if mkdir -m 0755 -p -- . 2>/dev/null; then
   mkdir_p='mkdir -m 0755 -p --'
 else
   # On NextStep and OpenStep, the `mkdir' command does not
@@ -33,7 +32,7 @@ else
     test -d $d && rmdir $d
   done
   # $(mkinstalldirs) is defined by Automake if mkinstalldirs exists.
-  if test -f "$am_aux_dir/mkinstalldirs"; then
+  if test -f "$ac_aux_dir/mkinstalldirs"; then
     mkdir_p='$(mkinstalldirs) -m 0755'
   else
     mkdir_p='$(install_sh) -m 0755 -d'
