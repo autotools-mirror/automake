@@ -131,5 +131,5 @@ path-check: distdir
 ## of files on stdin, at least.
 	  find . -print | xargs pathchk -p); \
 	  status=$$?; \
-	  rm -rf $(distdir); \
+	  chmod -R a+w $(distdir) > /dev/null 2>&1; rm -rf $(distdir); \
 	  exit $$status
