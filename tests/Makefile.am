@@ -178,6 +178,7 @@ gettext2.test \
 gnuwarn.test \
 gnits.test \
 gnits2.test \
+gnits3.test \
 header.test \
 implicit.test \
 include.test \

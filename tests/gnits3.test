@@ -1,0 +1,80 @@
+#! /bin/sh
+
+# Check that AM_INSTALLCHECK_STD_OPTIONS_EXEMPT works.
+
+required=gcc
+. $srcdir/defs || exit 1
+
+cat >> configure.in << 'END'
+AC_PROG_CC
+AC_OUTPUT
+END
+
+# We use the same basename for all targets on purpose.  This way
+# we make sure that `AM_INSTALLCHECK_STD_OPTIONS_EXEMPT = nok'
+# will not match anything containing `nok'.
+cat > Makefile.am << 'END'
+AUTOMAKE_OPTIONS = gnits
+
+nobase_bin_PROGRAMS = nok sub/nok
+nok_SOURCES = nok.c
+sub_nok_SOURCES = nok.c
+
+nobase_bin_SCRIPTS = nok.sh sub/nok.sh
+
+AM_INSTALLCHECK_STD_OPTIONS_EXEMPT = nok nok.sh
+END
+
+echo 'int main () { return 0; }' > nok.c
+
+mkdir sub
+
+cat >nok.sh <<EOF
+#!/bin/sh
+echo "Which version? Which usage?"
+exit 1
+EOF
+
+cp nok.sh sub/nok.sh
+
+chmod +x nok.sh
+chmod +x sub/nok.sh
+
+# Files required by Gnits.
+: > INSTALL
+: > NEWS
+: > README
+: > COPYING
+: > AUTHORS
+: > ChangeLog
+: > THANKS
+
+set -e
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE -a
+
+mkdir build
+cd build
+
+# Use --program-prefix to make sure the std-options check honors it.
+../configure --prefix=`pwd`/../inst-dir --program-prefix=p
+$MAKE
+$MAKE install
+$MAKE -k installcheck 2>stderr && exit 1
+cat stderr
+grep 'sub/pnok does not support' stderr
+grep 'sub/pnok.sh does not support' stderr
+# Only two failures please.
+test `grep 'does not support --help' stderr | wc -l` = 2
+test `grep 'does not support --version' stderr | wc -l` = 2
+
+
+# Make sure there is no more error when all targets are exempted.
+cd ..
+echo 'AM_INSTALLCHECK_STD_OPTIONS_EXEMPT += sub/nok sub/nok.sh' >> Makefile.am
+$AUTOMAKE
+cd build
+./config.status  # Don't rely on the rebuild rules (they need GNU make).
+$MAKE installcheck
