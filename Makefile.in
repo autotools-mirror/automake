@@ -58,9 +58,9 @@ remake-subd.am remake.am scripts.am subdirs.am tags.am tags-subd.am \
 tags-clean.am \
 texi-version.am texinfos-vars.am texinfos.am \
 libraries-clean.am programs-clean.am data-clean.am \
-COPYING INSTALL install-sh mdate-sh mkinstalldirs texinfo.tex
+COPYING INSTALL texinfo.tex
 
-pkgdata_SCRIPTS = config.guess config.sub
+pkgdata_SCRIPTS = config.guess config.sub install-sh mdate-sh mkinstalldirs
 
 CLEANFILES = automake
 
@@ -289,7 +289,7 @@ dvi: $(DVIS) dvi-recursive
 
 check: check-recursive
 
-installcheck: installcheck-recursive
+installcheck: installcheck-recursive installcheck-local
 
 all-am: $(INFO_DEPS) $(SCRIPTS) $(DATA) Makefile
 
@@ -363,19 +363,28 @@ maintainer-clean:  maintainer-clean-am maintainer-clean-recursive
     check-recursive installcheck-recursive info-recursive dvi-recursive \
     mostlyclean-recursive distclean-recursive clean-recursive \
     maintainer-clean-recursive tags mostlyclean-tags distclean-tags \
-    clean-tags maintainer-clean-tags dist info dvi check installcheck \
-    all-am install-exec-am install-data-am uninstall-am install-exec \
-    install-data install uninstall all installdirs mostlyclean-generic \
-    distclean-generic clean-generic maintainer-clean-generic clean \
-    mostlyclean distclean maintainer-clean
+    clean-tags maintainer-clean-tags dist info dvi check \
+    installcheck-local installcheck all-am install-exec-am \
+    install-data-am uninstall-am install-exec install-data install \
+    uninstall all installdirs mostlyclean-generic distclean-generic \
+    clean-generic maintainer-clean-generic clean mostlyclean distclean \
+    maintainer-clean
 
+
+# Check to make sure some installed files are executable.
+installcheck-local:
+	test -x $(pkgdatadir)/config.guess
+	test -x $(pkgdatadir)/config.sub
+	test -x $(pkgdatadir)/install-sh
+	test -x $(pkgdatadir)/mdate-sh
+	test -x $(pkgdatadir)/mkinstalldirs
 
 # Some simple checks:
 # * syntax check with perl4 and perl5.
 # * make sure the scripts don't use 'true'
 # * expect no instances of '${...}'
 # These are only really guaranteed to work on my machine.
-maintainer-check: automake
+maintainer-check: automake check
 	@PERL@ -c -w automake
 	@if grep '^[^#].*true' $(srcdir)/[a-z]*.am; then \
 	  echo "can't use 'true' in GNU Makefile" 1>&2; \

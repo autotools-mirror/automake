@@ -34,12 +34,20 @@ DIST_SUBDIRS = samples/cpio/*Makefile.am
 ETAGS_ARGS = automake.in --lang=none \
  --regex='/^@node[ \t]+\([^,]+\)/\1/' automake.texi
 
+# Check to make sure some installed files are executable.
+installcheck-local:
+	test -x $(pkgdatadir)/config.guess
+	test -x $(pkgdatadir)/config.sub
+	test -x $(pkgdatadir)/install-sh
+	test -x $(pkgdatadir)/mdate-sh
+	test -x $(pkgdatadir)/mkinstalldirs
+
 # Some simple checks:
 # * syntax check with perl4 and perl5.
 # * make sure the scripts don't use 'true'
 # * expect no instances of '${...}'
 # These are only really guaranteed to work on my machine.
-maintainer-check: automake
+maintainer-check: automake check
 	@PERL@ -c -w automake
 	@if grep '^[^#].*true' $(srcdir)/[a-z]*.am; then \
 	  echo "can't use 'true' in GNU Makefile" 1>&2; \
