@@ -1,7 +1,6 @@
 ## Process this file with automake to create Makefile.in
 
 AUTOMAKE_OPTIONS = gnits 1.4 dist-bzip2
-MAINT_CHARSET = latin1
 
 ## We need `.' in SUBDIRS because we want `check' to build `.' before
 ## tests.

@@ -1,7 +1,6 @@
 ## Process this file with automake to create Makefile.in
 
 AUTOMAKE_OPTIONS = gnits
-MAINT_CHARSET = latin1
 
 m4datadir = $(datadir)/aclocal
 m4data_DATA = ccstdc.m4 cond.m4 depend.m4 depout.m4 dmalloc.m4 \
