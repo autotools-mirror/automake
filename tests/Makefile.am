@@ -2,7 +2,7 @@
 
 AUTOMAKE_OPTIONS = gnits
 
-XFAIL_TESTS = subdir5.test
+XFAIL_TESTS = subdir5.test comment3.test
 
 TESTS =	\
 acinclude.test \
@@ -49,6 +49,7 @@ colon6.test \
 colon7.test \
 comment.test \
 comment2.test \
+comment3.test \
 compile_f_c_cxx.test \
 cond.test \
 cond2.test \
