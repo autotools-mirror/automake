@@ -186,6 +186,7 @@ instman2.test \
 interp.test \
 interp2.test \
 java.test \
+java2.test \
 javaprim.test \
 javasubst.test \
 ldadd.test \
