@@ -148,6 +148,9 @@ $srcdir_name = '';
 @input_files = ();
 %output_files = ();
 
+# Complete list of Makefile.am's that exist.
+@configure_input_files = ();
+
 # List of files in AC_OUTPUT without Makefile.am, and their outputs.
 @other_input_files = ();
 # Line number at which AC_OUTPUT seen.
@@ -3091,12 +3094,15 @@ sub handle_configure
 	&examine_variable ('CONFIG_STATUS_DEPENDENCIES');
 	&examine_variable ('CONFIGURE_DEPENDENCIES');
 	$top_reldir = '';
+
+	&push_dist_common ('acconfig.h')
+	    if -f 'acconfig.h';
     }
 
     # Make it easy to see if there is a Makefile.am in a given
     # directory.
     local (%make_dirs, $iter);
-    foreach $iter (@input_files)
+    foreach $iter (@configure_input_files)
     {
 	$make_dirs{&dirname ($iter)} = 1;
     }
@@ -3188,10 +3194,6 @@ sub handle_configure
 
 	    # Header defined and in this directory.
 	    local (@files);
-	    if (-f $relative_dir . '/acconfig.h')
-	    {
-		push (@files, 'acconfig.h');
-	    }
 	    if (-f $one_name . '.top')
 	    {
 		push (@files, "${cn_sans_dir}.top");
@@ -3202,6 +3204,21 @@ sub handle_configure
 	    }
 
 	    &push_dist_common (@files);
+
+	    # For now, acconfig.h can only appear in the top srcdir.
+	    if (-f 'acconfig.h')
+	    {
+		if ($relative_dir eq '.')
+		{
+		    push (@files, 'acconfig.h');
+		}
+		else
+		{
+		    # Strange quoting because this gets fed through
+		    # Perl.
+		    push (@files, '\$(top_srcdir)/acconfig.h');
+		}
+	    }
 
 	    local ($stamp_name) = 'stamp-h';
 	    $stamp_name .= "${hdr_index}" if scalar (@config_headers) > 1;
@@ -4461,6 +4478,8 @@ sub scan_configure
 	@input_files = @make_input_list;
 	%output_files = %make_list;
     }
+
+    @configure_input_files = @make_input_list;
 
     &am_conf_error ("\`PACKAGE' not defined in configure.in")
         if ! $seen_package;
