@@ -32,23 +32,40 @@ END
 
 chmod +x hammer
 
+cat > spanner << 'END'
+#! /bin/sh
+echo "I'm a right spanner!"
+END
+
+chmod +x spanner
+
 echo AC_OUTPUT >> configure.in
 
 cat > Makefile.am << 'END'
 AUTOMAKE_OPTIONS = dejagnu
 
-DEJATOOL = hammer
+DEJATOOL = hammer spanner
 
-AM_RUNTESTFLAGS = HAMMER=$(srcdir)/hammer
+AM_RUNTESTFLAGS = HAMMER=$(srcdir)/hammer SPANNER=$(srcdir)/spanner
 END
 
 mkdir hammer.test
+mkdir spanner.test
 
 cat > hammer.test/hammer.exp << 'END'
 set test test
 spawn $HAMMER
 expect {
     "Everything looks like a nail to me!" { pass "$test" }
+    default { fail "$test" }
+}
+END
+
+cat > spanner.test/spanner.exp << 'END'
+set test test
+spawn $SPANNER
+expect {
+    "I'm a right spanner!" { pass "$test" }
     default { fail "$test" }
 }
 END
@@ -62,5 +79,7 @@ $AUTOMAKE --add-missing
 $MAKE check
 test -f hammer.log
 test -f hammer.sum
+test -f spanner.log
+test -f spanner.sum
 
 $MAKE distcheck

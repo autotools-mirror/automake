@@ -18,37 +18,40 @@
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-# Check that the DejaGnu rules work for a simple program and test case.
+# Check that the DejaGnu rules do look for a testsuite named after
+# the package by default.
 
 required=runtest
 . ./defs || exit 1
 
 set -e
 
-cat > hammer << 'END'
+# Get the package name from configure.in.
+package=`$FGREP AC_INIT configure.in | sed -e 's:^[^[]*\[\([^]]*\)\].*$:\1:'`
+
+cat > $package << 'END'
 #! /bin/sh
-echo "Everything looks like a nail to me!"
+echo "Ah, we have been expecting you, Mr. Blond."
 END
 
-chmod +x hammer
+chmod +x $package
 
 echo AC_OUTPUT >> configure.in
 
 cat > Makefile.am << 'END'
 AUTOMAKE_OPTIONS = dejagnu
 
-DEJATOOL = hammer
-
-AM_RUNTESTFLAGS = HAMMER=$(srcdir)/hammer
 END
 
-mkdir hammer.test
+echo "AM_RUNTESTFLAGS = PACKAGE=\$(srcdir)/$package" >> Makefile.am
 
-cat > hammer.test/hammer.exp << 'END'
-set test test
-spawn $HAMMER
+mkdir $package.test
+
+cat > $package.test/$package.exp << 'END'
+set test "test"
+spawn $PACKAGE
 expect {
-    "Everything looks like a nail to me!" { pass "$test" }
+    "Ah, we have been expecting you, Mr. Blond." { pass "$test" }
     default { fail "$test" }
 }
 END
@@ -60,7 +63,7 @@ $AUTOMAKE --add-missing
 ./configure
 
 $MAKE check
-test -f hammer.log
-test -f hammer.sum
+test -f $package.log
+test -f $package.sum
 
 $MAKE distcheck
