@@ -2879,16 +2879,6 @@ sub handle_texinfo
 	push (@dvis_list, $infobase . '.dvi');
     }
 
-    # Find these programs wherever they may lie.  Yes, this has
-    # intimate knowledge of the structure of the texinfo distribution.
-    &define_program_variable ('MAKEINFO', 'build', 'texinfo/makeinfo',
-			      'makeinfo',
-			      # Circumlocution to avoid accidental
-			      # configure substitution.
-			      '@MAKE' . 'INFO@');
-    &define_program_variable ('TEXI2DVI', 'src', 'texinfo/util',
-			      'texi2dvi');
-
     # Handle location of texinfo.tex.
     my $need_texi_file = 0;
     my $texinfodir;
@@ -4638,7 +4628,10 @@ sub scan_one_autoconf_file
 	    && $1 ne 'ACLOCAL'
 	    && $1 ne 'AUTOCONF'
 	    && $1 ne 'AUTOMAKE'
-	    && $1 ne 'AUTOHEADER')
+	    && $1 ne 'AUTOHEADER'
+	    # AM_INIT_AUTOMAKE is AM_MISSING_PROG'ing MAKEINFO.  But
+	    # we handle it elsewhere.
+	    && $1 ne 'MAKEINFO')
 	{
 	    $configure_vars{$1} = $filename . ':' . $.;
 	}
@@ -6408,43 +6401,6 @@ sub define_compiler_variable
     &define_variable ('LT' . $name, $ltcompile . $value)
 	if $seen_libtool;
 }
-
-
-# define_program_variable ($VAR, $WHATDIR, $SUBDIR, $PROGRAM, $OVERRIDE)
-# ----------------------------------------------------------------------
-# Define a variable that represents a program to run.  If in Cygnus
-# mode, the program is searched for in the build (or source) tree.
-# Otherwise no searching is done at all.  Arguments are:
-# * VAR      Name of variable to define
-# * WHATDIR  Either `src' or `build', depending on where program should
-#            be found.  (runtest is in srcdir!)
-# * SUBDIR   Subdir of top-level dir
-# * PROGRAM  Name of program
-# * OVERRIDE If specified, the name of the program to use when not in
-#            Cygnus mode.  Defaults to PROGRAM.
-sub define_program_variable
-{
-    my ($var, $whatdir, $subdir, $program, $override) = @_;
-
-    if (! $override)
-    {
-	$override = $program;
-    }
-
-    if ($cygnus_mode)
-    {
-	my $full = ('$(top_' . $whatdir . 'dir)/../'
-		    . $subdir . '/' . $program);
-	&define_variable ($var, ('`if test -f ' . $full
-				 . '; then echo ' . $full . '; else echo '
-				 . $program . '; fi`'));
-    }
-    else
-    {
-	&define_variable ($var, $override);
-    }
-}
-
 
 ################################################################
 
