@@ -38,9 +38,19 @@ BEGIN
 
 use Automake::Struct;
 struct (# Short name of the language (c, f77...).
-        'name'       => '$',
+        'name' => '$',
+        # Nice name of the language (C, Fortran 77...).
+        'Name' => '$',
+
+	# List of configure variables which must be defined.
+	'config_vars' => '@',
 
         'ansi'    => '$',
+	# `pure' is `1' or `'.  A `pure' language is one where, if
+	# all the files in a directory are of that language, then we
+	# do not require the C compiler or any code to call it.
+	'pure'   => '$',
+
 	'autodep' => '$',
 
 	# Name of the compiling variable (COMPILE).
@@ -65,17 +75,16 @@ struct (# Short name of the language (c, f77...).
 
         # Flag to specify the output file (-o).
         'output_flag' => '$',
-	# `pure' is `1' or `'.  A `pure' language is one where, if
-	# all the files in a directory are of that language, then we
-	# do not require the C compiler or any code to call it.
-	'pure'   => '$',
         '_finish' => '$');
 
 
 sub finish ($)
 {
   my ($self) = @_;
-  &{$self->_finish} ();
+  if (defined $self->_finish)
+    {
+      &{$self->_finish} ();
+    }
 }
 
 
@@ -772,6 +781,8 @@ sub initialize_per_input ()
 
 # C.
 register_language ('name' => 'c',
+		   'Name' => 'C',
+		   'config_vars' => ['CC'],
 		   'ansi' => 1,
 		   'autodep' => '',
 		   'flags' => 'CFLAGS',
@@ -787,6 +798,8 @@ register_language ('name' => 'c',
 
 # C++.
 register_language ('name' => 'cxx',
+		   'Name' => 'C++',
+		   'config_vars' => ['CXX'],
 		   'linker' => 'CXXLINK',
 		   'link' => '$(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@',
 		   'autodep' => 'CXX',
@@ -798,11 +811,12 @@ register_language ('name' => 'cxx',
 		   'lder' => 'CXXLD',
 		   'ld' => '$(CXX)',
 		   'pure' => 1,
-		   'extensions' => ['c++', 'cc', 'cpp', 'cxx', 'C'],
-		   '_finish' => \&lang_cxx_finish);
+		   'extensions' => ['c++', 'cc', 'cpp', 'cxx', 'C']);
 
 # Objective C.
 register_language ('name' => 'objc',
+		   'Name' => 'Objective C',
+		   'config_vars' => ['OBJC'],
 		   'linker' => 'OBJCLINK',,
  		   'link' => '$(OBJCLD) $(AM_OBJCFLAGS) $(OBJCFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@',
 		   'autodep' => 'OBJC',
@@ -814,11 +828,11 @@ register_language ('name' => 'objc',
 		   'lder' => 'OBJCLD',
 		   'ld' => '$(OBJC)',
 		   'pure' => 1,
-		   'extensions' => ['m'],
-		   '_finish' => \&lang_objc_finish);
+		   'extensions' => ['m']);
 
 # Headers.
 register_language ('name' => 'header',
+		   'Name' => 'Header',
 		   'extensions' => ['h', 'H', 'hxx', 'h++', 'hh', 'hpp', 'inc'],
 		   # Nothing to do.
 		   '_finish' => sub { });
@@ -827,11 +841,13 @@ register_language ('name' => 'header',
 
 # Yacc (C & C++).
 register_language ('name' => 'yacc',
+		   'Name' => 'Yacc',
 		   'ansi' => 1,
 		   'derived_autodep' => 'yes',
 		   'extensions' => ['y'],
 		   '_finish' => \&lang_yacc_finish);
 register_language ('name' => 'yaccxx',
+		   'Name' => 'Yacc (C++)',
 		   'linker' => 'CXXLINK',
 		   'derived_autodep' => 'yes',
 		   'extensions' => ['y++', 'yy', 'yxx', 'ypp'],
@@ -839,11 +855,13 @@ register_language ('name' => 'yaccxx',
 
 # Lex (C & C++).
 register_language ('name' => 'lex',
+		   'Name' => 'Lex',
 		   'ansi' => 1,
 		   'derived_autodep' => 'yes',
 		   'extensions' => ['l'],
 		   '_finish' => \&lang_lex_finish);
 register_language ('name' => 'lexxx',
+		   'Name' => 'Lex (C++)',
 		   'linker' => 'CXXLINK',
 		   'derived_autodep' => 'yes',
 		   'extensions' => ['l++', 'll', 'lxx', 'lpp'],
@@ -851,6 +869,7 @@ register_language ('name' => 'lexxx',
 
 # Assembler.
 register_language ('name' => 'asm',
+		   'Name' => 'Assembler',
 		   'flags' => 'CFLAGS',
 		   # FIXME: asmflags?
 		   'compile' => '$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)',
@@ -863,6 +882,7 @@ register_language ('name' => 'asm',
 
 # Fortran 77
 register_language ('name' => 'f77',
+		   'Name' => 'Fortran 77',
 		   'linker' => 'F77LINK',
 		   'link' => '$(F77LD) $(AM_FFLAGS) $(FFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@',
 		   'flags' => 'FFLAGS',
@@ -873,15 +893,33 @@ register_language ('name' => 'f77',
 		   'lder' => 'F77LD',
 		   'ld' => '$(F77)',
 		   'pure' => 1,
-		   'extensions' => ['f', 'for', 'f90'],
-		   '_finish' => \&lang_f77_finish);
+		   'extensions' => ['f', 'for', 'f90']);
 
-# Preprocessed Fortran 77.
+# Preprocessed Fortran 77
+#
+# The current support for preprocessing Fortran 77 just involves
+# passing `$(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS)
+# $(CPPFLAGS)' as additional flags to the Fortran 77 compiler, since
+# this is how GNU Make does it; see the `GNU Make Manual, Edition 0.51
+# for `make' Version 3.76 Beta' (specifically, from info file
+# `(make)Catalogue of Rules').
+#
+# A better approach would be to write an Autoconf test
+# (i.e. AC_PROG_FPP) for a Fortran 77 preprocessor, because not all
+# Fortran 77 compilers know how to do preprocessing.  The Autoconf
+# macro AC_PROG_FPP should test the Fortran 77 compiler first for
+# preprocessing capabilities, and then fall back on cpp (if cpp were
+# available).
 register_language ('name' => 'ppf77',
+		   'Name' => 'Preprocessed Fortran 77',
+		   'config_vars' => ['F77'],
 		   'linker' => 'F77LINK',
+		   'link' => '$(F77LD) $(AM_FFLAGS) $(FFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@',
+		   'lder' => 'F77LD',
+		   'ld' => '$(F77)',
 		   'flags' => 'FFLAGS',
-		   'compile' => '$(F77) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_FFLAGS) $(FFLAGS)',
 		   'compiler' => 'PPF77COMPILE',
+		   'compile' => '$(F77) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_FFLAGS) $(FFLAGS)',
 		   'compile_flag' => '-c',
 		   'output_flag' => '-o',
 		   'pure' => 1,
@@ -890,7 +928,12 @@ register_language ('name' => 'ppf77',
 
 # Ratfor.
 register_language ('name' => 'ratfor',
+		   'Name' => 'Ratfor',
+		   'config_vars' => ['F77'],
 		   'linker' => 'F77LINK',
+		   'link' => '$(F77LD) $(AM_FFLAGS) $(FFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@',
+		   'lder' => 'F77LD',
+		   'ld' => '$(F77)',
 		   'flags' => 'RFLAGS',
 		   # FIXME also FFLAGS.
 		   'compile' => '$(F77) $(AM_FFLAGS) $(FFLAGS) $(AM_RFLAGS) $(RFLAGS)',
@@ -905,6 +948,8 @@ register_language ('name' => 'ratfor',
 # FIXME: for now we can't do dependency tracking for Java.
 # autodep=GCJ
 register_language ('name' => 'java',
+		   'Name' => 'Java',
+		   'config_vars' => ['GCJ'],
 		   'linker' => 'GCJLINK',
 		   'link' => '$(GCJLD) $(AM_GCJFLAGS) $(GCJFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@',
 		   'flags' => 'GCJFLAGS',
@@ -915,8 +960,7 @@ register_language ('name' => 'java',
 		   'lder' => 'GCJLD',
 		   'ld' => '$(GCJ)',
 		   'pure' => 1,
-		   'extensions' => ['java', 'class', 'zip', 'jar'],
-		   '_finish' => \&lang_java_finish);
+		   'extensions' => ['java', 'class', 'zip', 'jar']);
 
 ################################################################
 
@@ -1536,6 +1580,19 @@ sub handle_languages
 
 	define_compiler_variable ($lang)
 	  if ($lang->compile);
+
+	define_linker_variable ($lang)
+	  if ($lang->link);
+
+	foreach my $var (@{$lang->config_vars})
+	  {
+	    if (!exists $configure_vars{$var})
+	      {
+		am_error ($lang->Name
+			  . " source seen but `$var' not defined in"
+			  . " `$configure_ac'");
+	      }
+	  }
 
 	# The compiler's flag must be a configure variable.
 	define_configure_variable ($lang->flags)
@@ -5089,16 +5146,6 @@ sub lang_c_finish
     }
 }
 
-sub lang_cxx_finish
-{
-    define_linker_variable ($languages{'cxx'});
-
-    if (! defined $configure_vars{'CXX'})
-    {
-	&am_error ("C++ source seen but `CXX' not defined in `$configure_ac'");
-    }
-}
-
 # This is a helper for both lex and yacc.
 sub yacc_lex_finish_helper
 {
@@ -5222,37 +5269,8 @@ sub lang_lex_finish
 }
 
 
-sub lang_f77_finish
-{
-    # FIXME: this function can be called more than once.  We should
-    # arrange for it to only do anything the first time through.
-
-    define_linker_variable ($languages{'f77'});
-
-    if (! defined $configure_vars{'F77'})
-    {
-	&am_error ("Fortran 77 source seen but `F77' not defined in `$configure_ac'");
-    }
-}
-
-# Preprocessed Fortran 77
-#
-# The current support for preprocessing Fortran 77 just involves passing
-# `$(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS)' as additional flags
-# to the Fortran 77 compiler, since this is how GNU Make does it; see
-# the `GNU Make Manual, Edition 0.51 for `make' Version 3.76 Beta'
-# (specifically, from info file `(make)Catalogue of Rules').
-#
-# A better approach would be to write an Autoconf test
-# (i.e. AC_PROG_FPP) for a Fortran 77 preprocessor, because not all
-# Fortran 77 compilers know how to do preprocessing.  The Autoconf macro
-# AC_PROG_FPP should test the Fortran 77 compiler first for
-# preprocessing capabilities, and then fall back on cpp (if cpp were
-# available).
 sub lang_ppf77_finish
 {
-    &lang_f77_finish;
-
     # We also handle the case of preprocessing `.F' files into `.f'
     # files.
     $output_rules .= (".F.f:\n"
@@ -5261,32 +5279,10 @@ sub lang_ppf77_finish
 
 sub lang_ratfor_finish
 {
-    &lang_f77_finish;
-
     # We also handle the case of preprocessing `.r' files into `.f'
     # files.
     $output_rules .= (".r.f:\n"
 		      . "\t\$(RCOMPILE) -F \$<\n");
-}
-
-sub lang_objc_finish
-{
-    define_linker_variable ($languages{'objc'});
-
-    if (! defined $configure_vars{'OBJC'})
-    {
-	&am_error ("Objective C source seen but `OBJC' not defined in `$configure_ac'");
-    }
-}
-
-sub lang_java_finish
-{
-    define_linker_variable ($languages{'java'});
-
-    if (! defined $configure_vars{'GCJ'})
-    {
-	&am_error ("Java source seen but `GCJ' not defined in `$configure_ac'");
-    }
 }
 
 
