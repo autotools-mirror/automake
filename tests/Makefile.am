@@ -46,6 +46,7 @@ ar.test \
 asm.test \
 autohdr.test \
 autohdr2.test \
+autohdr4.test \
 auxdir.test \
 auxdir2.test \
 backsl.test \

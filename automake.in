@@ -3437,20 +3437,14 @@ sub handle_configure ($$$@)
 		}
 	    }
 
-	  # Compute relative path from directory holding output
-	  # header to directory holding input header.  FIXME:
-	  # doesn't handle case where we have multiple inputs.
-	  my $in0_sans_dir;
-	  if (dirname ($ins[0]) eq $relative_dir)
+	  # Distribute all inputs.
+	  for my $in (@ins)
 	    {
-	      $in0_sans_dir = basename ($ins[0]);
+	      error $config_header_location, "required file `$in' not found"
+		unless -f $in;
+	      push_dist_common (rewrite_inputs_into_dependencies (1, $in));
 	    }
-	  else
-	    {
-	      $in0_sans_dir = backname ($relative_dir) . '/' . $ins[0];
-	    }
-
-	  require_file ($config_header_location, FOREIGN, $in0_sans_dir);
+	  @ins = rewrite_inputs_into_dependencies (1, @ins);
 
 	  # Header defined and in this directory.
 	  my @files;
@@ -3475,11 +3469,13 @@ sub handle_configure ($$$@)
 	  $output_rules .=
 	    file_contents ('remake-hdr',
 			   new Automake::Location,
-			   FILES         => "@files",
-			   CONFIG_H      => $cn_sans_dir,
-			   CONFIG_HIN    => $in0_sans_dir,
-			   CONFIG_H_PATH => $config_h_path,
-			   STAMP         => "$stamp");
+			   FILES            => "@files",
+			   CONFIG_H         => $cn_sans_dir,
+			   CONFIG_HIN       => $ins[0],
+			   CONFIG_H_DEPS    => "@ins",
+			   CONFIG_H_PATH    => $config_h_path,
+			   FIRST_CONFIG_HIN => ($hdr_index == 1),
+			   STAMP            => "$stamp");
 
 	  push @distclean_config, $cn_sans_dir, $stamp;
 	}

@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1998, 2000, 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 1998, 2000, 2001, 2002, 2003  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -22,21 +22,29 @@
 # idea is that if config.h is in a subdir, and there is no Makefile in
 # that subdir, then we want to build config.h as the top level.
 
+required=GNUmake
 . ./defs || exit 1
 
-cat > configure.in << 'END'
-AC_INIT
-AM_INIT_AUTOMAKE(nonesuch, nonesuch)
+set -e
+
+cat >> configure.in << 'END'
 AM_CONFIG_HEADER(subdir/config.h)
-AC_PROG_CC
-AC_OUTPUT(Makefile)
+AC_OUTPUT
 END
 
 : > Makefile.am
 mkdir subdir
 : > subdir/config.h.in
 
-$ACLOCAL || exit 1
-$AUTOMAKE || exit 1
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
+./configure
+$MAKE
 
-grep '^subdir/config.h:' Makefile.in
+$sleep
+echo '#define FOO' > subdir/config.h.in
+$MAKE subdir/config.h
+grep FOO subdir/config.h
+
+$MAKE distcheck
