@@ -160,11 +160,8 @@ $all_linguas = '';
 # Line number at which it appears.
 $all_linguas_line = 0;
 
-# 1 if AC_PROG_INSTALL seen, 2 if AM_PROG_INSTALL seen.
+# 1 if AC_PROG_INSTALL seen.
 $seen_prog_install = 0;
-
-# 1 if any scripts installed, 0 otherwise.
-$scripts_installed = 0;
 
 # Whether AC_PATH_XTRA has been seen in configure.in.
 $seen_path_xtra = 0;
@@ -202,7 +199,7 @@ $package_version_line = 0;
 # TRUE if we've seen AM_PATH_LISPDIR.
 $seen_lispdir = 0;
 
-# TRUE if we've seen AM_EXEEXT or AC_EXEEXT.
+# TRUE if we've seen AC_EXEEXT.
 $seen_exeext = 0;
 
 # TRUE if we've seen AC_OBJEXT.
@@ -254,7 +251,7 @@ $cygnus_mode = 0;
 
      'fp_C_PROTOTYPES', "use \`AM_C_PROTOTYPES'",
      'fp_PROG_CC_STDC', "use \`AM_PROG_CC_STDC'",
-     'fp_PROG_INSTALL', "use \`AM_PROG_INSTALL'",
+     'fp_PROG_INSTALL', "use \`AC_PROG_INSTALL'",
      'fp_WITH_DMALLOC', "use \`AM_WITH_DMALLOC'",
      'fp_WITH_REGEX', "use \`AM_WITH_REGEX'",
      'gm_PROG_LIBTOOL', "use \`AM_PROG_LIBTOOL'",
@@ -266,6 +263,10 @@ $cygnus_mode = 0;
      'AM_FUNC_FNMATCH', "use \`AC_FUNC_FNMATCH'",
      'fp_FUNC_FNMATCH', "use \`AC_FUNC_FNMATCH'",
      'AM_SANITY_CHECK_CC', "automatically done by \`AC_PROG_CC'",
+     'AM_PROG_INSTALL', "use \`AC_PROG_INSTALL'",
+     'AM_EXEEEXT', "use \`AC_EXEEXT'",
+     'AM_CYGWIN32', "use \`AC_CYGWIN32'",
+     'AM_MINGW32', "use \`AC_MINGW32'",
 
 # These aren't quite obsolete.
 #      'md_PATH_PROG',
@@ -321,13 +322,8 @@ foreach $am_file (@input_files)
     }
 }
 
-if ($seen_prog_install <= $scripts_installed)
-{
-    &am_conf_error (($scripts_installed ? 'AM_PROG_INSTALL' : 'AC_PROG_INSTALL')
-		    . " must be used in configure.in");
-    &keyed_aclocal_warning ('AM_PROG_INSTALL')
-	if $scripts_installed;
-}
+&am_conf_error ("AC_PROG_INSTALL must be used in configure.in")
+    if (! $seen_prog_install);
 
 exit $exit_status;
 
@@ -1959,6 +1955,7 @@ sub handle_scripts
 		     'bin', 'sbin', 'libexec', 'pkgdata',
 		     'noinst', 'check');
 
+    local ($scripts_installed) = 0;
     # Set $scripts_installed if appropriate.  Make sure we only find
     # scripts which are actually installed -- this is why we can't
     # simply use the return value of am_install_var.
@@ -4231,7 +4228,7 @@ sub scan_one_configure_file
 	$am_c_prototypes = 1 if /AM_C_PROTOTYPES/;
 
 	# Check for exe extension stuff.
-	if (/AM_EXEEXT/ || /AC_EXEEXT/)
+	if (/AC_EXEEXT/)
 	{
 	    $seen_exeext = 1;
 	    $configure_vars{'EXEEXT'} = 1;
@@ -4304,7 +4301,7 @@ sub scan_one_configure_file
 	    $seen_package = 1;
 	    $seen_version = 1;
 	    $seen_arg_prog = 1;
-	    $seen_prog_install = 2;
+	    $seen_prog_install = 1;
 	    ($package_version = $1) =~ s/$AM_PACKAGE_VERSION_PATTERN/$1/o;
 	    $package_version_line = $.;
 	}
@@ -4319,7 +4316,7 @@ sub scan_one_configure_file
 	    $seen_package = 1;
 	    $seen_version = 1;
 	    $seen_arg_prog = 1;
-	    $seen_prog_install = 2;
+	    $seen_prog_install = 1;
 	    @config_aux_path = ('..');
 	}
 
@@ -4389,12 +4386,7 @@ sub scan_one_configure_file
 	    $seen_version = 1;
 	}
 
-        # Weird conditionals here because it is always allowed to
-        # upgrade to AM_PROG_INSTALL but never to downgrade to
-        # AC_PROG_INSTALL.
-	$seen_prog_install = 1 if ! $seen_prog_install && /AC_PROG_INSTALL/;
-	$seen_prog_install = 2 if /AM_PROG_INSTALL/;
-
+	$seen_prog_install = 1 if /AC_PROG_INSTALL/;
         $seen_lispdir = 1 if /AM_PATH_LISPDIR/;
 
         if (/AM_PROG_LIBTOOL/)
@@ -4476,7 +4468,7 @@ sub check_cygnus
 
     if (! $seen_exeext)
     {
-	&am_conf_error ("\`AM_EXEEXT' or \`AC_EXEEXT' required when --cygnus specified");
+	&am_conf_error ("\`AC_EXEEXT' required when --cygnus specified");
     }
 }
 
