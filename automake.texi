@@ -1729,6 +1729,20 @@ AUTOMAKE_OPTIONS = ../lib/ansi2knr
 If no directory prefix is given, the files are assumed to be in the
 current directory.
 
+Files mentioned in @code{LIBOBJS} which need de-ANSI-fication will not
+be automatically handled.  That's because @code{configure} will generate
+an object name like @file{regex.o}, while @code{make} will be looking
+for @file{regex_.o} (when de-ANSI-fying).  Eventually this problem will
+be fixed via @code{autoconf} magic, but for now you must put this code
+into your @file{configure.in}, just before the @code{AC_OUTPUT} call:
+
+@example
+# This is necessary so that .o files in LIBOBJS are also built via
+# the ANSI2KNR-filtering rules.
+LIBOBJS=`echo $LIBOBJS|sed 's/\.o /\$U.o /g;s/\.o$/\$U.o/'`
+@end example
+
+
 @node Dependencies,  , ANSI, Programs
 @section Automatic dependency tracking
 
@@ -2199,7 +2213,7 @@ files in subdirectories for which a new @file{Makefile.am} is overkill:
 @example
 dist-hook:
         mkdir $(distdir)/random
-        cp -p random/a1 random/a2 $(distdir)/random
+        cp -p $(srcdir)/random/a1 $(srcdir)/random/a2 $(distdir)/random
 @end example
 
 Automake also generates a @code{distcheck} target which can be help to
