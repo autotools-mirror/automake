@@ -22,7 +22,7 @@ ansi2knr.1 aclocal.m4 lisp.am lisp-clean.am
 
 ## These must all be executable when installed.
 pkgdata_SCRIPTS = config.guess config.sub install-sh interlock mdate-sh \
-mkinstalldirs elisp-comp
+mkinstalldirs elisp-comp ylwrap
 
 CLEANFILES = automake aclocal
 

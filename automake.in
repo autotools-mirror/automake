@@ -583,7 +583,7 @@ sub handle_yacc_lex_cxx
 	$output_rules .= ".y.c:\n\t";
 	if ($yacc_count > 1)
 	{
-	    $output_rules .= '$(INTERLOCK) y.tab.c $@ $(YACC) $(YFLAGS) $<';
+	    $output_rules .= '$(INTERLOCK) =yacclockdir $(YLWRAP) y.tab.c $@ $(YACC) $(YFLAGS) $<';
 	}
 	else
 	{
@@ -599,7 +599,7 @@ sub handle_yacc_lex_cxx
 			  . "\n");
 	if ($lex_count > 1)
 	{
-	    $output_rules .= '$(INTERLOCK) lex.yy.c $@ $(LEX) $(LFLAGS) $<';
+	    $output_rules .= '$(INTERLOCK) =lexlockdir $(YLWRAP) lex.yy.c $@ $(LEX) $(LFLAGS) $<';
 	}
 	else
 	{
@@ -628,21 +628,19 @@ sub handle_yacc_lex_cxx
 	# file in a given directory, then the `interlock' program is
 	# required to allow parallel builds to work correctly.  FIXME
 	# for now, no line number.
-	&require_config_file ($FOREIGN, 'interlock');
-	$output_vars .= 'INTERLOCK = ';
-	if ($config_aux_dir ne '.' && $config_aux_dir ne '')
-	{
-	    $output_vars .= $config_aux_dir;
-	}
-	else
-	{
-	    $output_vars .= '$(top_srcdir)';
-	}
-	$output_vars .= "/interlock\n";
+	&require_config_file ($FOREIGN, 'interlock', 'ylwrap');
+	$output_vars .= ('INTERLOCK = ' . $config_aux_dir . "/interlock\n"
+			 . 'YLWRAP = ' . $config_aux_dir . "/ylwrap\n");
     }
 }
 
 # Handle SOURCE->OBJECT transform for one program or library.
+# Arguments are:
+#   canonical (transformed) name of object to build
+#   actual name of object to build
+#   object extension (ie either `.o' or `$o'.
+# Return result is name of linker variable that must be used.
+# Empty return means just use `LINK'.
 sub handle_source_transform
 {
     # one_file is canonical name.  unxformed is given name.  obj is
@@ -650,6 +648,8 @@ sub handle_source_transform
     local ($one_file, $unxformed, $obj) = @_;
     local ($objpat) = $obj;
     $objpat =~ s/(\W)/\\$1/g;
+
+    local ($linker) = '';
 
     if (&variable_defined ($one_file . "_OBJECTS"))
     {
@@ -727,6 +727,7 @@ sub handle_source_transform
 		    || s/\.C$/$obj/g)
 		{
 		    $cxx_extensions{$&} = 1;
+		    $linker = 'CXXLINK';
 		}
 
 		# FORTRAN support.
@@ -757,7 +758,7 @@ sub handle_source_transform
 			  . $contents{'CONFIG_HEADER'} . "\n");
     }
 
-    return @result;
+    return $linker;
 }
 
 # Special-case @ALLOCA@ and @LIBOBJS@ in _LDADD or _LIBADD variables.
@@ -834,7 +835,7 @@ sub handle_programs
 	    }
 	}
 
-	&handle_source_transform ($xname, $one_file, $obj);
+	local ($linker) = &handle_source_transform ($xname, $one_file, $obj);
 
 	if (&variable_defined ($xname . "_LDADD"))
 	{
@@ -854,7 +855,7 @@ sub handle_programs
 	}
 	else
 	{
-	    $xlink = 'LINK';
+	    $xlink = $linker ? $linker : 'LINK';
 	}
 
 	$output_rules .=
