@@ -394,9 +394,9 @@ my $ac_gettext_location;
 # TRUE if AC_PROG_LEX or AM_PROG_LEX were seen.
 my $seen_prog_lex = 0;
 
-# TRUE if we've seen AC_CANONICAL_(HOST|SYSTEM).  The presence of
-# AC_CHECK_TOOL also sets this.
+# TRUE if we've seen AC_CANONICAL_(HOST|SYSTEM).
 my $seen_canonical = 0;
+my $canonical_location;
 
 # TRUE if we've seen AC_PROG_LIBTOOL.
 my $seen_libtool = 0;
@@ -1186,8 +1186,9 @@ sub generate_makefile
     {
         # AC_CANONICAL_HOST and AC_CANONICAL_SYSTEM need config.guess and
         # config.sub.
-        &require_config_file ($FOREIGN, 'config.guess', 'config.sub')
-	    if $seen_canonical;
+        require_conf_file ($canonical_location, $FOREIGN,
+			   'config.guess', 'config.sub')
+	  if $seen_canonical;
     }
 
     # We still need Makefile.in here, because sometimes the `dist'
@@ -1464,7 +1465,7 @@ sub handle_languages
 	    # Set location of depcomp.
 	    &define_variable ('depcomp', "\$(SHELL) $config_aux_dir/depcomp");
 
-	    &require_conf_file ("$am_file.am", $FOREIGN, 'depcomp');
+	    require_conf_file ("$am_file.am", $FOREIGN, 'depcomp');
 
 	    my @deplist = sort keys %dep_files;
 
@@ -1829,7 +1830,7 @@ sub handle_single_transform_list ($$$$@)
                 }
                 $object = $dname . '-' . $object;
 
-                &require_conf_file ("$am_file.am", $FOREIGN, 'compile')
+                require_conf_file ("$am_file.am", $FOREIGN, 'compile')
                     if $lang->name eq 'c';
 
                 &prog_error ("$lang->name flags defined without compiler")
@@ -1961,12 +1962,12 @@ sub handle_single_transform_list ($$$$@)
 		# Make sure object is removed by `make mostlyclean'.
 		$compile_clean_files{$object} = $MOSTLY_CLEAN;
 
-                push (@dep_list, &require_build_directory ($directory));
+                push (@dep_list, require_build_directory ($directory));
 
                 # If we're generating dependencies, we also want
                 # to make sure that the appropriate subdir of the
                 # .deps directory is created.
-		push (@dep_list, &require_build_directory ('$(DEPDIR)/' . $directory))
+		push (@dep_list, require_build_directory ('$(DEPDIR)/' . $directory))
 		    if ($use_dependencies);
             }
 
@@ -2565,7 +2566,7 @@ sub handle_programs
 
 	# If the resulting program lies into a subdirectory,
 	# make sure this directory will exist.
-	my $dirstamp = &require_build_directory_maybe ($one_file);
+	my $dirstamp = require_build_directory_maybe ($one_file);
 
 	# Don't add $(EXEEXT) if user already did.
 	my $extension = ($one_file !~ /\$\(EXEEXT\)$/
@@ -2682,7 +2683,7 @@ sub handle_libraries
 
 	# If the resulting library lies into a subdirectory,
 	# make sure this directory will exist.
-	my $dirstamp = &require_build_directory_maybe ($onelib);
+	my $dirstamp = require_build_directory_maybe ($onelib);
 
 	$output_rules .= &file_contents ('library',
 					 ('LIBRARY'  => $onelib,
@@ -2838,7 +2839,7 @@ sub handle_ltlibraries
 
 	# If the resulting library lies into a subdirectory,
 	# make sure this directory will exist.
-	my $dirstamp = &require_build_directory_maybe ($onelib);
+	my $dirstamp = require_build_directory_maybe ($onelib);
 
 	$output_rules .= &file_contents ('ltlibrary',
 					 ('LTLIBRARY'  => $onelib,
@@ -4453,12 +4454,16 @@ sub scan_autoconf_traces ($)
       # Alphabetical ordering please.
       if ($macro eq 'AC_CANONICAL_HOST')
 	{
-	  $seen_canonical = $AC_CANONICAL_HOST
-	    if ! $seen_canonical;
+	  if (! $seen_canonical)
+	    {
+	      $seen_canonical = $AC_CANONICAL_HOST;
+	      $canonical_location = $here;
+	    };
 	}
       elsif ($macro eq 'AC_CANONICAL_SYSTEM')
 	{
 	  $seen_canonical = $AC_CANONICAL_SYSTEM;
+	  $canonical_location = $here;
 	}
       elsif ($macro eq 'AC_CONFIG_AUX_DIR')
 	{
@@ -4748,10 +4753,19 @@ sub scan_one_autoconf_file
 
         # Handle AC_CANONICAL_*.  Always allow upgrading to
         # AC_CANONICAL_SYSTEM, but never downgrading.
-	$seen_canonical = $AC_CANONICAL_HOST
-	    if ! $seen_canonical
-		&& (/AC_CANONICAL_HOST/ || /AC_CHECK_TOOL/);
-        $seen_canonical = $AC_CANONICAL_SYSTEM if /AC_CANONICAL_SYSTEM/;
+	if (/AC_CANONICAL_HOST/ || /AC_CHECK_TOOL/)
+	  {
+	    if (! $seen_canonical)
+	      {
+		$seen_canonical = $AC_CANONICAL_HOST;
+		$canonical_location = $here;
+	      }
+	  }
+	if (/AC_CANONICAL_SYSTEM/)
+	  {
+	    $seen_canonical = $AC_CANONICAL_SYSTEM;
+	    $canonical_location = $here;
+	  }
 
         # If using X, include some extra variable definitions.  NOTE
         # we don't want to force these into CFLAGS or anything,
@@ -4923,12 +4937,13 @@ sub scan_autoconf_files
     # FIXME: Is this broken because it needs dynamic scopes.
     # My tests seems to show it's not the case.
     $relative_dir = '.';
-    &require_config_file ($FOREIGN, 'install-sh', 'mkinstalldirs', 'missing');
-    &am_error ("`install.sh' is an anachronism; use `install-sh' instead")
+    require_conf_file ($configure_ac, $FOREIGN,
+		       'install-sh', 'mkinstalldirs', 'missing');
+    am_error ("`install.sh' is an anachronism; use `install-sh' instead")
         if -f $config_aux_path[0] . '/install.sh';
 
-    &require_config_file ($FOREIGN, 'py-compile')
-	if $pythondir_location;
+    require_conf_file ($pythondir_location, $FOREIGN, 'py-compile')
+      if $pythondir_location;
 
     # Preserve dist_common for later.
     $configure_dist_common = variable_value ('DIST_COMMON', 'TRUE') || '';
@@ -5221,7 +5236,7 @@ sub yacc_lex_finish_helper
     # in a given directory, then the `ylwrap' program is required to
     # allow parallel builds to work correctly.  FIXME: for now, no
     # line number.
-    &require_config_file ($FOREIGN, 'ylwrap');
+    require_conf_file ($configure_ac, $FOREIGN, 'ylwrap');
     if ($config_aux_dir_set_in_configure_in)
     {
 	&define_variable ('YLWRAP', $config_aux_dir . "/ylwrap");
@@ -7330,26 +7345,21 @@ sub am_primary_prefixes
 	{
 	    my ($base, $dist, $X) = ($1 || '', $2 || '', $3 || '');
 	    if ($dist ne '' && ! $can_dist)
-	    {
+            {
 		# Note that a configure variable is always legitimate.
 		# It is natural to name such variables after the
 		# primary, so we explicitly allow it.
-		if (! defined $configure_vars{$varname})
-		{
-		    line_error ($varname,
-				"invalid variable `$varname': `dist' is forbidden");
-		}
+		macro_error ($varname,
+			    "invalid variable `$varname': `dist' is forbidden")
+		  if ! exists $configure_vars{$varname};
 	    }
 	    elsif (! defined $valid{$X} && ! &variable_defined ("${X}dir"))
 	    {
 		# Note that a configure variable is always legitimate.
 		# It is natural to name such variables after the
 		# primary, so we explicitly allow it.
-		if (! defined $configure_vars{$varname})
-		{
-		    line_error ($varname,
-				"invalid variable `$varname'");
-		}
+	      macro_error ($varname, "invalid variable `$varname'")
+		if ! exists $configure_vars{$varname};
 	    }
 	    else
 	    {
@@ -7834,16 +7844,6 @@ sub require_conf_file ($$@)
 }
 
 
-# &require_config_file ($MYSTRICT, @FILES)
-# ----------------------------------------
-# Require a file that is also required by Autoconf.  Looks in
-# configuration path, as specified by AC_CONFIG_AUX_DIR.
-sub require_config_file ($@)
-{
-    my ($mystrict, @files) = @_;
-    require_conf_file ($configure_ac, $mystrict, @files);
-}
-
 # &require_conf_file_with_macro ($MACRO, $MYSTRICT, @FILES)
 # ---------------------------------------------------------
 sub require_conf_file_with_macro ($$@)
@@ -7892,7 +7892,7 @@ sub require_build_directory_maybe ($)
 
     if ($directory ne '.')
     {
-	return &require_build_directory ($directory);
+	return require_build_directory ($directory);
     }
     else
     {
@@ -7987,7 +7987,7 @@ sub unquote_m4_arg
 ################################################################
 
 # print_error ($LEADER, @ARGS)
-# -------------------------------
+# ----------------------------
 # Do the work of printing the error message.  Join @ARGS with spaces,
 # then split at newlines and add $LEADER to each line.  Uses `warn' to
 # print message.  Set exit status.
@@ -8037,47 +8037,6 @@ sub target_error ($@)
     file_error ($targets{$target}, @args);
 }
 
-
-# &line_error ($SYMBOL or $LINE, @ARGS)
-# -------------------------------------
-# Report an error about $SYMBOL.  The error message is composed of the
-# @ARGS, and try to find the location of the error of $SYMBOL.
-sub line_error ($@)
-{
-    my ($symbol, @args) = @_;
-
-    if ($symbol && "$symbol" ne '-1')
-    {
-	if ($symbol =~ /^\d+$/)
-	{
-	    # SYMBOL is a line number, then it must be a Makefile.am.
-	    file_error ("${am_file}.am:$symbol", @args);
-	}
-	elsif (defined $configure_vars{$symbol})
-	{
-	    # SYMBOL is a variable defined in configure.ac, so add the
-	    # appropriate line number.
-	    file_error ($configure_vars{$symbol}, @args);
-	}
-	elsif (defined $var_location{$symbol})
-	{
-	    croak "use macro_error for macro: $symbol\n";
-	}
-	elsif (defined $targets{$symbol})
-	{
-	    croak "use target_error for macros: $symbol\n";
-	}
-	else
-	{
-	    # Couldn't find the line number.
-	    file_error ("${am_file}.am", @args);
-	}
-    }
-    else
-    {
-	&am_error (@args);
-    }
-}
 
 # Like am_error, but while scanning configure.ac.
 sub conf_error
