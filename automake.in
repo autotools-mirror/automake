@@ -977,12 +977,12 @@ sub handle_yacc_lex_cxx
 	push (@suffixes, @cxx_list);
 
 	&define_configure_variable ("CXXFLAGS");
-	&define_variable ('CXXCOMPILE', '$(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)');
+	&define_variable ('CXXCOMPILE', '$(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)');
 	&define_variable ('LTCXXCOMPILE',
-			  $ltcompile . '$(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)')
+			  $ltcompile . '$(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)')
 	    if ($seen_libtool);
 
-	&define_variable ('CXXLINK', $ltlink . '$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@');
+	&define_variable ('CXXLINK', $ltlink . '$(CXX) $(AM_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@');
 
 	local ($ext);
 	foreach $ext (@cxx_list)
@@ -1029,7 +1029,7 @@ sub handle_yacc_lex_cxx
 	    # we can't use $< -- some makes only define $< during a
 	    # suffix rule.
  	    $output_rules .= ($base . "_.c: $base.c \$(ANSI2KNR)\n\t"
-			      . '$(CPP) $(DEFS) $(INCLUDES) $(CPPFLAGS) '
+			      . '$(CPP) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) '
 			      . '`if test -f $(srcdir)/' . $base . '.c'
 			      . '; then echo $(srcdir)/' . $base . '.c'
 			      . '; else echo ' . $base . '.c; fi` '
@@ -1050,12 +1050,12 @@ sub handle_yacc_lex_cxx
     {
 	&define_configure_variable ('CFLAGS');
 	&define_variable ('COMPILE',
-			  '$(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)');
+			  '$(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)');
 	&define_variable ('LTCOMPILE',
 			  $ltcompile .
-			  '$(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)')
+			  '$(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)')
 	    if ($seen_libtool);
-	&define_variable ('LINK', $ltlink . '$(CC) $(CFLAGS) $(LDFLAGS) -o $@');
+	&define_variable ('LINK', $ltlink . '$(CC) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS) -o $@');
     }
 
     if ($seen_c_source && ! defined $configure_vars{'CC'})
@@ -1083,11 +1083,11 @@ sub output_yacc_build_rule
     {
 	$output_rules .= ('$(SHELL) $(YLWRAP)'
 			  . ' "$(YACC)" $< y.tab.c $*' . $suffix
-			  . ' y.tab.h $*.h -- $(YFLAGS)');
+			  . ' y.tab.h $*.h -- $(AM_YFLAGS) $(YFLAGS)');
     }
     else
     {
-	$output_rules .= ('$(YACC) $(YFLAGS) $< && mv y.tab.c $*'
+	$output_rules .= ('$(YACC) $(AM_YFLAGS) $(YFLAGS) $< && mv y.tab.c $*'
 			  . $suffix . "\n"
 			  . "\tif test -f y.tab.h; then \\\n"
 			  . "\tif cmp -s y.tab.h \$*.h; then rm -f y.tab.h; else mv y.tab.h \$*.h; fi; \\\n"
@@ -1112,11 +1112,11 @@ sub output_lex_build_rule
         # Is the $@ correct here?  If so, why not use it in the ylwrap
         # build rule for yacc above?
 	$output_rules .= '$(SHELL) $(YLWRAP)'
-	    . ' "$(LEX)" $< $(LEX_OUTPUT_ROOT).c $@ -- $(LFLAGS)';
+	    . ' "$(LEX)" $< $(LEX_OUTPUT_ROOT).c $@ -- $(AM_LFLAGS) $(LFLAGS)';
     }
     else
     {
-	$output_rules .= '$(LEX) $(LFLAGS) $< && mv $(LEX_OUTPUT_ROOT).c $@';
+	$output_rules .= '$(LEX) $(AM_LFLAGS) $(LFLAGS) $< && mv $(LEX_OUTPUT_ROOT).c $@';
     }
     $output_rules .= "\n";
 }
@@ -2814,18 +2814,12 @@ sub handle_dependencies
 					       . 's/\@PFX\@//g;',
 					       'depend2');
 	    local ($ext);
-	    local ($need_cxx) = 0;
 	    foreach $ext (sort keys %cxx_extensions)
 	    {
 		$output_rules .=
 		    &file_contents_with_transform ('s/\@EXT\@/' . $ext .'/g;'
 						   . 's/\@PFX\@/CXX/g;',
 						   'depend2');
-		$need_cxx = 1;
-	    }
-	    if ($need_cxx)
-	    {
-		&define_variable ('CXXMKDEP', '$(CXX) -M $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)');
 	    }
 	}
     }
