@@ -215,6 +215,15 @@ my @common_files =
 my @common_sometimes =
     qw(aclocal.m4 acconfig.h config.h.top config.h.bot stamp-vti);
 
+# Standard directories from the GNU Coding Standards, and additional
+# pkg* directories from Automake.  Stored in a hash for fast member check.
+my %standard_prefix =
+    map { $_ => 1 } (qw(bin data exec include info lib libexec lisp
+			localstate man man1 man2 man3 man4 man5 man6
+			man7 man8 man9 oldinclude pkgdatadir
+			pkgincludedir pkglibdir sbin sharedstate
+			sysconf));
+
 # Copyright on generated Makefile.ins.
 my $gen_copyright = "\
 # Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002
@@ -7670,7 +7679,10 @@ sub am_primary_prefixes ($$@)
 			    "invalid variable `$varname': `dist' is forbidden")
 		  if ! exists $configure_vars{$varname};
 	    }
-	    elsif (! defined $valid{$X} && ! variable_defined ("${X}dir"))
+	    # A not-explicitely-allowed prefix X is allowed if Xdir
+	    # has been defined and X is not a standard prefix.
+	    elsif (! defined $valid{$X} && (! variable_defined ("${X}dir")
+					    || exists $standard_prefix{$X}))
 	    {
 		# Note that a configure variable is always legitimate.
 		# It is natural to name such variables after the

@@ -119,6 +119,7 @@ depend.test \
 depend2.test \
 depend3.test \
 depend4.test \
+dirforbid.test \
 dirname.test \
 discover.test \
 distcommon.test \
@@ -177,7 +178,6 @@ interp2.test \
 java.test \
 javaprim.test \
 javasubst.test \
-listval.test \
 ldadd.test \
 ldflags.test \
 lex.test \
@@ -206,6 +206,7 @@ link_f_c_cxx.test \
 link_f_cxx.test	\
 link_f_only.test \
 lisp.test \
+listval.test \
 ltdeps.test \
 ltlibobjs.test \
 make.test \
@@ -219,10 +220,10 @@ mdate4.test \
 mkinst2.test \
 mkinstall.test \
 nobase.test \
-nodep.test \
-nodepcomp.test \
 nodefine.test \
 nodefine2.test \
+nodep.test \
+nodepcomp.test \
 nodist.test \
 nodist2.test \
 noinst.test \
@@ -250,6 +251,9 @@ pluseq7.test \
 pluseq8.test \
 ppf77.test \
 pr2.test \
+pr9.test \
+pr72.test \
+pr87.test \
 pr204.test \
 pr211.test \
 pr220.test \
@@ -260,9 +264,6 @@ pr266.test \
 pr279.test \
 pr279-2.test \
 pr287.test \
-pr9.test \
-pr72.test \
-pr87.test \
 prefix.test \
 primary.test \
 primary2.test \
