@@ -43,10 +43,12 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 transform = @program_transform_name@
 
-NORMAL_INSTALL = @:
-PRE_INSTALL = @:
-POST_INSTALL = @:
-INSTALL_SCRIPT = @INSTALL_SCRIPT@
+NORMAL_INSTALL = true
+PRE_INSTALL = true
+POST_INSTALL = true
+NORMAL_UNINSTALL = true
+PRE_UNINSTALL = true
+POST_UNINSTALL = true
 PACKAGE = @PACKAGE@
 PERL = @PERL@
 TAR = @TAR@
@@ -125,7 +127,7 @@ aclocal: $(top_builddir)/config.status aclocal.in
 	cd $(top_builddir) && CONFIG_FILES=$@ CONFIG_HEADERS= ./config.status
 
 install-binSCRIPTS: $(bin_SCRIPTS)
-	$(NORMAL_INSTALL)
+	@$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(bindir)
 	@list="$(bin_SCRIPTS)"; for p in $$list; do \
 	  if test -f $$p; then \
@@ -138,12 +140,13 @@ install-binSCRIPTS: $(bin_SCRIPTS)
 	done
 
 uninstall-binSCRIPTS:
+	$(NORMAL_UNINSTALL)
 	list="$(bin_SCRIPTS)"; for p in $$list; do \
 	  rm -f $(bindir)/`echo $$p|sed '$(transform)'`; \
 	done
 
 install-pkgdataSCRIPTS: $(pkgdata_SCRIPTS)
-	$(NORMAL_INSTALL)
+	@$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(pkgdatadir)
 	@list="$(pkgdata_SCRIPTS)"; for p in $$list; do \
 	  if test -f $$p; then \
@@ -156,6 +159,7 @@ install-pkgdataSCRIPTS: $(pkgdata_SCRIPTS)
 	done
 
 uninstall-pkgdataSCRIPTS:
+	$(NORMAL_UNINSTALL)
 	list="$(pkgdata_SCRIPTS)"; for p in $$list; do \
 	  rm -f $(pkgdatadir)/`echo $$p|sed '$(transform)'`; \
 	done
@@ -164,13 +168,14 @@ version.texi: stamp-vti
 	cp $(srcdir)/stamp-vti $(srcdir)/version.texi
 
 stamp-vti: automake.texi $(top_srcdir)/configure.in
-	echo "@set UPDATED `cd $(srcdir) \
+	@echo "@set UPDATED `cd $(srcdir) \
 	  && $(SHELL) ./mdate-sh automake.texi`" > vti.tmp
-	echo "@set EDITION $(VERSION)" >> vti.tmp
-	echo "@set VERSION $(VERSION)" >> vti.tmp
-	cmp -s vti.tmp $(srcdir)/stamp-vti \
-	  || cp vti.tmp $(srcdir)/stamp-vti
-	rm -f vti.tmp
+	@echo "@set EDITION $(VERSION)" >> vti.tmp
+	@echo "@set VERSION $(VERSION)" >> vti.tmp
+	@cmp -s vti.tmp $(srcdir)/stamp-vti \
+	  || (echo "Updating $(srcdir)/stamp-vti"; \
+	      cp vti.tmp $(srcdir)/stamp-vti)
+	@rm -f vti.tmp
 
 mostlyclean-vti:
 	rm -f vti.tmp
@@ -215,7 +220,7 @@ DVIPS = dvips
 	$(DVIPS) $< -o $@
 
 install-info-am: $(INFO_DEPS)
-	$(NORMAL_INSTALL)
+	@$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(infodir)
 	@for file in $(INFO_DEPS); do \
 	  for ifile in `cd $(srcdir) && echo $$file $$file-[0-9] $$file-[0-9][0-9]`; do \
@@ -225,7 +230,7 @@ install-info-am: $(INFO_DEPS)
 	    else : ; fi; \
 	  done; \
 	done
-	$(POST_INSTALL)
+	@$(POST_INSTALL)
 	@if $(SHELL) -c 'install-info --version' >/dev/null 2>&1; then \
 	  for file in $(INFO_DEPS); do \
 	    echo " install-info --info-dir=$(infodir) $(infodir)/$$file";\
@@ -234,12 +239,16 @@ install-info-am: $(INFO_DEPS)
 	else : ; fi
 
 uninstall-info:
+	$(PRE_UNINSTALL)
 	if $(SHELL) -c 'install-info --version' >/dev/null 2>&1; then \
 	  ii=yes; \
 	else ii=; fi; \
 	for file in $(INFO_DEPS); do \
-	  (cd $(infodir) && rm -f $$file $$file-[0-9] $$file-[0-9][0-9]); \
 	  test -z $ii || install-info --info-dir=$(infodir) --remove $$file; \
+	done
+	$(NORMAL_UNINSTALL)
+	for file in $(INFO_DEPS); do \
+	  (cd $(infodir) && rm -f $$file $$file-[0-9] $$file-[0-9][0-9]); \
 	done
 
 dist-info: $(INFO_DEPS)
@@ -266,7 +275,7 @@ maintainer-clean-info:
 	for i in $(INFO_DEPS); do rm -f `eval echo $$i*`; done
 
 install-pkgdataDATA: $(pkgdata_DATA)
-	$(NORMAL_INSTALL)
+	@$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(pkgdatadir)
 	@list="$(pkgdata_DATA)"; for p in $$list; do \
 	  if test -f $(srcdir)/$$p; then \
@@ -279,6 +288,7 @@ install-pkgdataDATA: $(pkgdata_DATA)
 	done
 
 uninstall-pkgdataDATA:
+	$(NORMAL_UNINSTALL)
 	list="$(pkgdata_DATA)"; for p in $$list; do \
 	  rm -f $(pkgdatadir)/$$p; \
 	done
@@ -401,10 +411,10 @@ install-data-am: install-info-am install-pkgdataSCRIPTS install-pkgdataDATA
 uninstall-am: uninstall-binSCRIPTS uninstall-pkgdataSCRIPTS uninstall-info uninstall-pkgdataDATA
 
 install-exec: install-exec-recursive install-exec-am
-	$(NORMAL_INSTALL)
+	@$(NORMAL_INSTALL)
 
 install-data: install-data-recursive install-data-am
-	$(NORMAL_INSTALL)
+	@$(NORMAL_INSTALL)
 
 install: install-recursive install-exec-am install-data-am
 	@:

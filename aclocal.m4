@@ -7,16 +7,17 @@ dnl aclocal.m4 generated automatically by aclocal 1.1n
 # serial 1
 
 dnl Usage:
-dnl AM_INIT_AUTOMAKE(package,version)
+dnl AM_INIT_AUTOMAKE(package,version, [no-define])
 
 AC_DEFUN(AM_INIT_AUTOMAKE,
 [AC_REQUIRE([AM_PROG_INSTALL])
 PACKAGE=[$1]
 AC_SUBST(PACKAGE)
-AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE")
 VERSION=[$2]
 AC_SUBST(VERSION)
-AC_DEFINE_UNQUOTED(VERSION, "$VERSION")
+ifelse([$3],,
+AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE")
+AC_DEFINE_UNQUOTED(VERSION, "$VERSION"))
 AM_SANITY_CHECK
 AC_ARG_PROGRAM
 dnl FIXME This is truly gross.
@@ -73,7 +74,9 @@ dnl AM_MISSING_PROG(NAME, PROGRAM, DIRECTORY)
 dnl The program must properly implement --version.
 AC_DEFUN(AM_MISSING_PROG,
 [AC_MSG_CHECKING(for working $2)
-if $2 --version > /dev/null 2>&1; then
+# Run test in a subshell; some versions of sh will print an error if
+# an executable is not found, even if stderr is redirected.
+if ($2 --version) > /dev/null 2>&1; then
    $1=$2
    AC_MSG_RESULT(found)
 else
