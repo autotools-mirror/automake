@@ -87,8 +87,10 @@ dnl Since the substitution is only effective after AM_INIT_AUTOMAKE,
 dnl make sure AC_CONFIG_HEADERS is not called before.
 AC_BEFORE([AM_INIT_AUTOMAKE], [AC_CONFIG_HEADERS])dnl
 dnl Save the previous AC_CONFIG_HEADERS definition
-m4_rename([AC_CONFIG_HEADERS], [_AM_AC_CONFIG_HEADERS])dnl
-dnl Setup ours.
+dnl (Beware: this must be m4_copy, not m4_rename, because we will
+dnl lose the --trace bit of AC_CONFIG_HEADERS if we undefine it.)
+m4_copy([AC_CONFIG_HEADERS], [_AM_AC_CONFIG_HEADERS])dnl
+dnl Override AC_CONFIG_HEADERS with ours.
 dnl (Don't use m4_copy because we are tracing AM_CONFIG_HEADER.)
 AC_DEFUN([AC_CONFIG_HEADERS], [AM_CONFIG_HEADER($][@)])dnl
 ])

@@ -30,6 +30,7 @@ ansi6.test \
 ansi7.test \
 ar.test \
 asm.test \
+autoheader.test \
 auxdir.test \
 auxdir2.test \
 backsl.test \
