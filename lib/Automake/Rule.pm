@@ -128,7 +128,7 @@ use vars '%actions';
 =item <$suffix_rules>
 
 This maps the source extension for all suffix rule seen to
-a C<\hash> whose keys are the possible output extensions.
+a C<hash> whose keys are the possible output extensions.
 
 Note that this is transitively closed by construction:
 if we have
@@ -162,7 +162,7 @@ by the languages supported by Automake).  Using this pattern (instead
 of `\..*$') to match extensions allows Automake to support dot-less
 extensions.
 
-New extension should be registered with C<accept_extensions>.
+New extensions should be registered with C<accept_extensions>.
 
 =cut
 
@@ -218,7 +218,7 @@ sub msg_cond_rule ($$$$;%)
 
 Messages about rules.
 
-=cute
+=cut
 
 sub msg_rule ($$$;%)
 {
@@ -774,8 +774,8 @@ sub define ($$$$$)
   for my $t (split (' ', $target))
     {
       ++$target_count;
-      # Check the rule for being a suffix rule. If so, store in a hash.
-      # Either it's a rule for two known extensions...
+      # Check if the rule is a suffix rule: either it's a rule for
+      # two known extensions...
       if ($t =~ /^($KNOWN_EXTENSIONS_PATTERN)($KNOWN_EXTENSIONS_PATTERN)$/
 	  # ...or it's a rule with unknown extensions (.i.e, the rule
 	  # looks like `.foo.bar:' but `.foo' or `.bar' are not

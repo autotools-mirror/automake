@@ -133,7 +133,7 @@ non-object).
 my $_VARIABLE_PATTERN = '^[.A-Za-z0-9_@]+' . "\$";
 
 # The order in which variables should be output.  (May contain
-# duplicates -- only the first occurence matters.)
+# duplicates -- only the first occurrence matters.)
 my @_var_order;
 
 # This keeps track of all variables defined by &_gen_varname.
@@ -229,7 +229,7 @@ sub msg_cond_var ($$$$;%)
 
 =item C<msg_var ($channel, $var, $message, [%options])>
 
-messages about variables.
+Messages about variables.
 
 =cut
 

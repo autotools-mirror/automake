@@ -458,7 +458,7 @@ sub ambiguous_p ($$$)
 {
   my ($self, $var, $cond) = @_;
 
-  # Note that these rules doesn't consider the following
+  # Note that these rules don't consider the following
   # example as ambiguous.
   #
   #   if COND1
