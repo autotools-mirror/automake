@@ -536,15 +536,6 @@ sub generate_makefile
     push (@objects, '$(OBJECTS)')
 	if &variable_defined ('OBJECTS');
 
-    # This is always the default target.  This gives us freedom to do
-    # things in whatever order is convenient.  Note that we set up
-    # $output_header here so that we can insert some text just after
-    # the "default" target, but before any other targets.  In
-    # particular we want to support the .SUFFIX hack here; this is
-    # documented elsewhere.
-    $output_header = "default: all\n\n";
-    push (@phony, 'default');
-
     &read_am_file ($makefile . '.am');
     if (&handle_options)
     {
@@ -628,6 +619,8 @@ sub generate_makefile
     print "automake: creating ", $makefile, ".in\n" if $verbose;
 
     print GM_FILE $output_vars;
+    # We make sure that `all:' is the first target.
+    print GM_FILE $output_all;
     print GM_FILE $output_header;
     print GM_FILE $output_rules;
     print GM_FILE $output_trailer;
@@ -3573,9 +3566,7 @@ sub handle_merge_targets
 		      . "\n\n");
     push (@phony, 'install', 'uninstall');
 
-    $output_rules .= ('all: '
-		      . join (' ', @all)
-		      . "\n\n");
+    $output_all = 'all: ' . join (' ', @all) . "\n\n";
     push (@phony, 'all');
 
     # Generate the new 'install-strip' target.  Must set
@@ -5458,6 +5449,7 @@ sub initialize_per_input
     $output_rules = '';
     $output_vars = '';
     $output_trailer = '';
+    $output_all = '';
     $output_header = '';
 
     # Suffixes found during a run.
