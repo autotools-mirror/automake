@@ -2335,7 +2335,7 @@ sub handle_tags
 			  . "\tlist=\'\$(SUBDIRS)\'; for subdir in \$\$list; do \\\n"
 			  # Never fail here if a subdir fails; it
 			  # isn't important.
-			  . "\t  (cd \$\$subdir"
+			  . "\t  test \"\$\$subdir\" = . || (cd \$\$subdir"
 			  . " && \$(MAKE) \$(AM_MAKEFLAGS) tags); \\\n"
 			  . "\tdone\n");
 	push (@tag_deps, 'tags-recursive');
@@ -2545,22 +2545,24 @@ sub handle_dist_worker
 	# correctly with an enclosing package.
 	$output_rules .= 
 	    ("\t" . 'for subdir in $(' . $dist_subdir_name . '); do ' . "\\\n"
-	     . "\t" . '  test -d $(distdir)/$$subdir ' . "\\\n"
-	     . "\t" . '  || mkdir $(distdir)/$$subdir ' . "\\\n"
-	     . "\t" . '  || exit 1; ' . "\\\n"
-	     . "\t" . '  chmod 777 $(distdir)/$$subdir; ' . "\\\n"
-	     . "\t" . '  (cd $$subdir'
+	     . "\t" . '  if test "$$srcdir" = .; then :; else ' . "\\\n"
+	     . "\t" . '    test -d $(distdir)/$$subdir ' . "\\\n"
+	     . "\t" . '    || mkdir $(distdir)/$$subdir ' . "\\\n"
+	     . "\t" . '    || exit 1; ' . "\\\n"
+	     . "\t" . '    chmod 777 $(distdir)/$$subdir; ' . "\\\n"
+	     . "\t" . '    (cd $$subdir'
 	     . ' && $(MAKE) $(AM_MAKEFLAGS) top_distdir=../$('
 	     . (($relative_dir eq '.') ? 'distdir' : 'top_distdir')
 	     . ') distdir=../$(distdir)/$$subdir distdir) ' . "\\\n"
-	     . "\t" . '    || exit 1; ' . "\\\n"
+	     . "\t" . '      || exit 1; ' . "\\\n"
+	     . "\t" . '  fi; ' . "\\\n"
 	     . "\tdone\n");
     }
 
     # If the target `dist-hook' exists, make sure it is run.  This
     # allows users to do random weird things to the distribution
     # before it is packaged up.
-    push (@dist_targets, 'dist-hook') if defined $contents{'dist-hook'};
+    push (@dist_targets, 'dist-hook') if &target_defined ('dist-hook');
 
     local ($targ);
     foreach $targ (@dist_targets)
@@ -2669,7 +2671,7 @@ distcheck: dist
 	mkdir $(distdir)/=build
 	mkdir $(distdir)/=inst
 	dc_install_base=`cd $(distdir)/=inst && pwd`; \\'
-			  . (defined $contents{'distcheck-hook'}
+			  . (&target_defined ('distcheck-hook')
 			     ? ("\t\$(MAKE) \$(AM_MAKEFLAGS)"
 				. " distcheck-hook")
 			     : '')
@@ -2911,11 +2913,6 @@ sub handle_subdirs
 	push (@phony, $phonies . '-recursive');
     }
     &push_phony_cleaners ('recursive');
-
-    push (@check_tests, "check-recursive");
-    push (@installcheck, "installcheck-recursive");
-    push (@info, "info-recursive");
-    push (@dvi, "dvi-recursive");
 
     $recursive_install = 1;
 }
@@ -3398,10 +3395,18 @@ sub handle_footer
 sub handle_installdirs
 {
     # GNU Makefile standards recommend this.
-    $output_rules .= ("installdirs:"
-		      . ($recursive_install
-			 ? " installdirs-recursive\n"
-			 : "\n"));
+    if ($recursive_install)
+    {
+	# We create a separate `-am' target so that the -recursive
+	# rule will work correctly.
+	$output_rules .= ("installdirs: installdirs-recursive\n"
+			  . "installdirs-am:\n");
+	push (@phony, 'installdirs-am');
+    }
+    else
+    {
+	$output_rules .= "installdirs:\n";
+    }
     push (@phony, 'installdirs');
     if (@installdirs)
     {
@@ -3447,18 +3452,12 @@ sub handle_merge_targets
 
     if (defined $options{'no-installinfo'})
     {
-	# FIXME: this is kind of a hack; should find another way to
-	# know that this is required.
-	local (@dirs);
-	if (grep ($_ eq 'install-info-am', @phony))
-	{
-	    push (@dirs, 'install-info-am');
-	}
-	if (&variable_defined ('SUBDIRS'))
-	{
-	    push (@dirs, 'install-info-recursive');
-	}
-	&do_one_merge_target ('install-info', @dirs);
+	&do_one_merge_target ('install-info', '');
+    }
+    elsif (&target_defined ('install-info-local'))
+    {
+	&am_line_error ('install-info-local',
+			"\`install-info-local' target defined but \`no-installinfo' option not in use");
     }
 
     # Handle the various install targets specially.  We do this so
@@ -3468,16 +3467,16 @@ sub handle_merge_targets
     # targets we handle.  "all" is treated as one of these since
     # "install" can run it.
     push (@install_exec, 'install-exec-local')
-	if defined $contents{'install-exec-local'};
+	if &target_defined ('install-exec-local');
     push (@install_data, 'install-data-local')
-	if defined $contents{'install-data-local'};
+	if &target_defined ('install-data-local');
     push (@uninstall, 'uninstall-local')
-	if defined $contents{'uninstall-local'};
+	if &target_defined ('uninstall-local');
     local ($utarg);
     foreach $utarg ('uninstall-data-local', 'uninstall-data-hook',
 		    'uninstall-exec-local', 'uninstall-exec-hook')
     {
-	if (defined $contents{$utarg})
+	if (&target_defined ($utarg))
 	{
 	    local ($x);
 	    ($x = $utarg) =~ s/(data|exec)-//;
@@ -3485,163 +3484,69 @@ sub handle_merge_targets
 	}
     }
     push (@all, 'all-local')
-	if defined $contents{'all-local'};
+	if &target_defined ('all-local');
 
-    if (defined $contents{'install-local'})
+    if (&target_defined ('install-local'))
     {
 	&am_line_error ('install-local',
-			"use \`install-data' or \`install-exec', not \`install'");
+			"use \`install-data-local' or \`install-exec-local', not \`install-local'");
     }
 
-    # Step two: if we are doing recursive makes, write out the
-    # appropriate rules.
-    local (@install);
-    if ($recursive_install)
+    if (@all)
     {
-	push (@install, 'install-recursive');
-
-	if (@all)
+	local ($one_name);
+	local ($local_headers) = '';
+	foreach $one_name (@config_names)
 	{
-	    local (@hackall) = ();
-	    local ($one_name);
-	    local ($local_headers) = '';
-	    foreach $one_name (@config_names)
+	    if (&dirname ($one_name) eq $relative_dir)
 	    {
-		if (&dirname ($one_name) eq $relative_dir)
-		{
-		    $local_headers .= ' ' if $local_headers;
-		    $local_headers .= &basename ($one_name);
-		}
+		$local_headers .= ' ' if $local_headers;
+		$local_headers .= &basename ($one_name);
 	    }
-	    if ($local_headers)
-	    {
-
-		# This is kind of a hack, but I couldn't see a better
-		# way to handle it.  In this particular case, we need
-		# to make sure config.h is built before we recurse.
-		# We can't do this by changing the order of
-		# dependencies to the "all" because that breaks when
-		# using parallel makes.  Instead we handle things
-		# explicitly.
-		$output_rules .= ("all-recursive-am: ${local_headers}"
+	}
+	if ($local_headers)
+	{
+	    # This is kind of a hack, but I couldn't see a better way
+	    # to handle it.  In this particular case, we need to make
+	    # sure config.h is built before we recurse.  We can't do
+	    # this by changing the order of dependencies to the "all"
+	    # because that breaks when using parallel makes.  Instead
+	    # we handle things explicitly.
+	    $output_rules .= ("all-recursive-am: ${local_headers}"
 				  . "\n\t"
 				  . '$(MAKE) $(AM_MAKEFLAGS)'
 				  . " all-recursive"
 				  . "\n\n");
-		push (@hackall, 'all-recursive-am');
-		push (@phony, 'all-recursive-am');
-	    }
-	    else
-	    {
-		push (@hackall, 'all-recursive');
-	    }
-
-	    $output_rules .= ('all-am: '
-			      . join (' ', @all)
-			      . "\n\n");
-	    @all = @hackall;
-	    push (@all, 'all-am');
-	    push (@phony, 'all-am');
-	}
-	else
-	{
-	    @all = ('all-recursive');
-
-	    # Must always generate `all-am' target, so it can be
-	    # referred to elsewhere.
-	    $output_rules .= "all-am:\n";
-	}
-	if (@install_exec)
-	{
-	    $output_rules .= ('install-exec-am: '
-			      . join (' ', @install_exec)
-			      . "\n\n");
-	    @install_exec = ('install-exec-recursive', 'install-exec-am');
-	    push (@install, 'install-exec-am');
-	    push (@phony, 'install-exec-am');
-	}
-	else
-	{
-	    @install_exec = ('install-exec-recursive');
-	}
-	if (@install_data)
-	{
-	    $output_rules .= ('install-data-am: '
-			      . join (' ', @install_data)
-			      . "\n\n");
-	    @install_data = ('install-data-recursive', 'install-data-am');
-	    push (@install, 'install-data-am');
-	    push (@phony, 'install-data-am');
-	}
-	else
-	{
-	    @install_data = ('install-data-recursive');
-	}
-	if (@uninstall)
-	{
-	    $output_rules .= ('uninstall-am: '
-			      . join (' ', @uninstall)
-			      . "\n\n");
-	    @uninstall = ('uninstall-recursive', 'uninstall-am');
-	    push (@phony, 'uninstall-am');
-	}
-	else
-	{
-	    @uninstall = ('uninstall-recursive');
+	    $all_target = 'all-recursive-am';
+	    push (@phony, 'all-recursive-am');
 	}
     }
 
-    # Step three: print definitions users can use.  Code below knows
-    # that install-exec is done before install-data, beware.
-    $output_rules .= ("install-exec: "
-		      . join (' ', @install_exec)
-		      . "\n");
-    $output_rules .= "\t\@\$(NORMAL_INSTALL)\n";
-    if (defined $contents{'install-exec-hook'})
+    # Print definitions users can use.
+    &do_one_merge_target ('install-exec', @install_exec);
+    if (&target_defined ('install-exec-hook'))
     {
-	$output_rules .= ("\t"
-			  . '$(MAKE) $(AM_MAKEFLAGS) install-exec-hook'
+	$output_rules .= ("\t\@\$(NORMAL_INSTALL)\n"
+			  . "\t" . '$(MAKE) $(AM_MAKEFLAGS) install-exec-hook'
 			  . "\n");
     }
     $output_rules .= "\n";
-    push (@install, 'install-exec') if !$recursive_install;
-    push (@phony, 'install-exec');
+    push (@install, 'install-exec-am');
 
-    $output_rules .= ("install-data: "
-		      . join (' ', @install_data)
-		      . "\n");
-    $output_rules .= "\t\@\$(NORMAL_INSTALL)\n";
+    &do_one_merge_target ('install-data', @install_data);
     if (defined $contents{'install-data-hook'})
     {
-	$output_rules .= ("\t"
-			  . '$(MAKE) $(AM_MAKEFLAGS) install-data-hook'
+	$output_rules .= ("\t\@\$(NORMAL_INSTALL)\n"
+			  . "\t" . '$(MAKE) $(AM_MAKEFLAGS) install-data-hook'
 			  . "\n");
     }
     $output_rules .= "\n";
-    push (@install, 'install-data') if !$recursive_install;
-    push (@phony, 'install-data');
+    push (@install, 'install-data-am');
 
-    # If no dependencies for 'install', add 'all'.  Why?  That way
-    # "make install" at top level of distclean'd distribution won't
-    # fail because stuff in 'lib' fails to build.
-    if (! @install || (scalar (@install) == 2
-		       && $install[0] eq 'install-exec'
-		       && $install[1] eq 'install-data'))
-    {
-	push (@install, 'all');
-    }
-    $output_rules .= ('install: '
-		      . join (' ', @install)
-		      # Use "@:" as empty command so nothing prints.
-		      . "\n\t\@:"
-		      . "\n\n"
-		      . 'uninstall: '
-		      . join (' ', @uninstall)
-		      . "\n\n");
-    push (@phony, 'install', 'uninstall');
+    &do_one_merge_target ('install', @install);
+    &do_one_merge_target ('uninstall', @uninstall);
 
-    $output_all = 'all: ' . join (' ', @all) . "\n\n";
-    push (@phony, 'all');
+    &do_one_merge_target ('all', @all);
 
     # Generate the new 'install-strip' target.  Must set
     # INSTALL_SCRIPT to avoid stripping scripts.
@@ -3650,26 +3555,38 @@ sub handle_merge_targets
 		      . "\n");
 }
 
-# Helper for handle_merge_targets.
+# Helper for handle_merge_targets.  Note that handle_merge_targets
+# relies on the fact that this doesn't add an extra \n at the end.
 sub do_one_merge_target
 {
     local ($name, @values) = @_;
 
-    if (defined $contents{$name . '-local'})
+    if (&target_defined ($name . '-local'))
     {
 	# User defined local form of target.  So include it.
 	push (@values, $name . '-local');
 	push (@phony, $name . '-local');
     }
 
-    &pretty_print_rule ($name . ":", "\t\t", @values);
-    push (@phony, $name);
+    &pretty_print_rule ($name . "-am:", "\t\t", @values);
+    local ($lname) = $name . ($recursive_install ? '-recursive' : '-am');
+    local ($tname) = $name;
+    # To understand this special case, see handle_merge_targets.
+    if ($name eq 'all')
+    {
+	$tname = 'all-redirect';
+	$lname = $all_target if $recursive_install;
+	push (@phony, 'all-redirect');
+	$output_all = "all: all-redirect\n";
+    }
+    &pretty_print_rule ($tname . ":", "\t\t", $lname);
+    push (@phony, $name . '-am', $name);
 }
 
 # Handle check merge target specially.
 sub do_check_merge_target
 {
-    if (defined $contents{'check-local'})
+    if (&target_defined ('check-local'))
     {
 	# User defined local form of target.  So include it.
 	push (@check_tests, 'check-local');
@@ -3677,38 +3594,29 @@ sub do_check_merge_target
     }
 
     # In --cygnus mode, check doesn't depend on all.
-    if (! $cygnus_mode)
+    if ($cygnus_mode)
     {
-	if (! &variable_defined ('SUBDIRS'))
-	{
-	    # 'check' must depend on `all', but not when doing
-	    # recursive build.
-	    unshift (@check, 'all');
-	}
-	else
-	{
-	    # When subdirs are used, do the `all' build and then do
-	    # all the recursive stuff.  Actually use `all-am' because
-	    # it doesn't recurse; we rely on the check target in the
-	    # subdirs to do the required builds there.
-	    unshift (@check, 'all-am');
-	}
+	# Just run the local check rules.
+	&pretty_print_rule ('check-am:', "\t\t", @check);
     }
-
-    # The check target must depend on the local equivalent of `all',
-    # to ensure all the primary targets are built.  Also it must
-    # depend on the test code named in @check.
-    &pretty_print_rule ('check:', "\t\t", @check);
-
-    # Now the check rules must explicitly run anything named in
-    # @check_tests.  This is done via a separate make invocation to
-    # avoid problems with parallel makes.  Every time I write code
-    # like this I wonder: how could you invent a parallel make and not
-    # provide any real synchronization facilities?  The official
-    # answer is that you can push the dependencies out to the leaves
-    # of the dependency tree.  That seems fairly gross to me.
-    &pretty_print_rule ("\t\$(MAKE) \$(AM_MAKEFLAGS)", "\t  ", @check_tests)
+    else
+    {
+	# The check target must depend on the local equivalent of
+	# `all', to ensure all the primary targets are built.  Then it
+	# must build the local check rules.
+	$output_rules .= "check-am: all-am\n";
+	&pretty_print_rule ("\t\$(MAKE) \$(AM_MAKEFLAGS)", "\t  ",
+			    @check)
+	    if @check;
+    }
+    &pretty_print_rule ("\t\$(MAKE) \$(AM_MAKEFLAGS)", "\t  ",
+			@check_tests)
 	if @check_tests;
+
+    push (@phony, 'check', 'check-am');
+    $output_rules .= ("check: "
+		      . ($recursive_install ? 'check-recursive' : 'check-am')
+		      . "\n");
 }
 
 # Handle all 'clean' targets.
@@ -3756,25 +3664,12 @@ sub handle_clean
     push (@clean, 'generic');
     &push_phony_cleaners ('generic');
 
-    local ($target) = $recursive_install ? 'clean-am' : 'clean';
-    &do_one_clean_target ($target, 'mostly', '', @clean);
-    &do_one_clean_target ($target, '', 'mostly', @clean);
-    &do_one_clean_target ($target, 'dist', '', @clean);
-    &do_one_clean_target ($target, 'maintainer-', 'dist', @clean);
+    &do_one_clean_target ('clean', 'mostly', '', @clean);
+    &do_one_clean_target ('clean', '', 'mostly', @clean);
+    &do_one_clean_target ('clean', 'dist', '', @clean);
+    &do_one_clean_target ('clean', 'maintainer-', 'dist', @clean);
 
     push (@phony, 'clean', 'mostlyclean', 'distclean', 'maintainer-clean');
-
-    local (@deps);
-    if ($recursive_install)
-    {
-	# Do -recursive before -am.  If you aren't doing a parallel
-	# make, this can be nicer.
-	@deps = ('recursive', 'am');
-	&do_one_clean_target ('', 'mostly', '', @deps);
-	&do_one_clean_target ('', '', '', @deps);
-	&do_one_clean_target ('', 'dist', '', @deps);
-	&do_one_clean_target ('', 'maintainer-', '', @deps);
-    }
 }
 
 # Helper for handle_clean.
@@ -3782,30 +3677,20 @@ sub do_one_clean_target
 {
     local ($target, $name, $last_name, @deps) = @_;
 
-    # Special case: if target not passed, then don't generate
-    # dependency on next "lower" clean target (eg no
-    # clean<-mostlyclean derivation).  In this case the target is
-    # implicitly known to be 'clean'.
-    local ($flag) = $target;
-    $target = 'clean' if ! $flag;
-
+    # Change each dependency `BLARG' into `clean-BLARG'.
     grep (($_ = $name . 'clean-' . $_) && 0, @deps);
-    if ($flag)
-    {
-	if ($last_name || $name ne 'mostly')
-	{
-	    push (@deps, $last_name . $target);
-	}
-    }
+
+    # Push the previous clean target.
+    push (@deps, $last_name . $target . '-am');
 
     # If a -local version of the rule is given, add it to the list.
-    if (defined $contents{$name . $target . '-local'})
+    if (&target_defined ($name . $target . '-local'))
     {
 	push (@deps, $name . $target . '-local');
     }
 
     # Print the target and the dependencies.
-    &pretty_print_rule ($name . $target . ": ", "\t\t", @deps);
+    &pretty_print_rule ($name . $target . "-am: ", "\t\t", @deps);
 
     # FIXME: shouldn't we really print these messages before running
     # the dependencies?
@@ -3826,6 +3711,9 @@ sub do_one_clean_target
 	$output_rules .= "\t-rm -f libtool\n" if $seen_libtool;
     }
     $output_rules .= "\n";
+    $output_rules .= ($name . $target . ": " . $name . $target
+		      . ($recursive_install ? '-recursive' : '-am')
+		      . "\n\n");
 }
 
 # Handle .PHONY target.
@@ -5774,6 +5662,9 @@ sub initialize_per_input
     # This maps the source extension of a suffix rule to its
     # corresponding output extension.
     %suffix_rules = ();
+
+    # This is the name of the recursive `all' target to use.
+    $all_target = 'all-recursive';
 }
 
 

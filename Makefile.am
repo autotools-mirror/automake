@@ -3,7 +3,9 @@
 AUTOMAKE_OPTIONS = gnits
 MAINT_CHARSET = latin1
 
-SUBDIRS = tests m4
+## We need `.' in SUBDIRS because we want `check' to build `.' before
+## tests.
+SUBDIRS = . m4 tests
 
 bin_SCRIPTS = automake aclocal
 info_TEXINFOS = automake.texi
