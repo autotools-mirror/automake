@@ -83,6 +83,7 @@ cond18.test \
 cond19.test \
 cond20.test \
 cond21.test \
+cond22.test \
 condd.test \
 condincl.test \
 condincl2.test \
