@@ -805,8 +805,11 @@ sub handle_options
     return 0;
 }
 
+
+# get_object_extension ($OUT)
+# ---------------------------
 # Return object extension.  Just once, put some code into the output.
-# Argument is the name of the output file
+# OUT is the name of the output file
 sub get_object_extension
 {
     local ($out) = @_;
@@ -819,10 +822,10 @@ sub get_object_extension
     if (! $included_generic_compile)
     {
 	# Boilerplate.
-	local ($xform) = '';
+	local ($default_include) = '';
 	if (! defined $options{'nostdinc'})
 	{
-	    $xform = ' -I. -I\$(srcdir)';
+	    $default_include = ' -I. -I$(srcdir)';
 
 	    if (&variable_defined ('CONFIG_HEADER'))
 	    {
@@ -830,13 +833,11 @@ sub get_object_extension
 		foreach $one_hdr (split (' ',
 					 &variable_value ('CONFIG_HEADER')))
 		{
-		    local ($var);
-		    ($var = &dirname ($one_hdr)) =~ s/(\W)/\\$1/g;
-		    $xform .= ' -I' . $var;
+		    $default_include .= ' -I' . &dirname ($one_hdr);
 		}
 	    }
 	}
-	$xform = 's/\@DEFAULT_INCLUDES\@/' . $xform . '/go;';
+	local ($xform) = &transform ('DEFAULT_INCLUDES' => $default_include);
 	$output_vars .= &file_contents_with_transform ($xform,
 						       'comp-vars');
 
