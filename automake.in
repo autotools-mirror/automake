@@ -324,16 +324,6 @@ $obsolete_rx = '(\b' . join ('\b|\b', keys %obsolete_macros) . '\b)';
 # discovered while scanning configure.ac.  We might distribute these
 # in the top-level Makefile.in.
 %configure_dist_common = ();
-
-# Holds the dependencies of target which dependencies are factored.
-# Typically, `.PHONY' will appear in plenty of *.am files, but must
-# be output once.  Arguably all pure dependencies could be subject
-# to this factorization, but it is not unpleasant to have paragraphs
-# in Makefile: keeping related stuff altogether.
-%dependencies =
-(
-    ".PHONY" => []
-);
 
 
 # Initialize global constants and our list of languages that are
@@ -2522,12 +2512,12 @@ sub handle_man_pages
     $output_rules .= ("install-man: \$(MANS)\n"
 		      . "\t\@\$(NORMAL_INSTALL)\n");
     &pretty_print_rule ("\t\$(MAKE) \$(AM_MAKEFLAGS)", "\t ", @namelist);
-    push (@phony, 'install-man');
+    &depend ('.PHONY', 'install-man');
 
     $output_rules .= "uninstall-man:\n\t\@\$(NORMAL_UNINSTALL)\n";
     grep ($_ = 'un' . $_, @namelist);
     &pretty_print_rule ("\t\$(MAKE) \$(AM_MAKEFLAGS)", "\t ", @namelist);
-    push (@phony, 'uninstall-man');
+    &depend ('.PHONY', 'uninstall-man');
 
     $output_vars .= &file_contents ('mans-vars');
 
@@ -2561,7 +2551,7 @@ sub handle_tags
 			  . " && \$(MAKE) \$(AM_MAKEFLAGS) tags); \\\n"
 			  . "\tdone\n");
 	push (@tag_deps, 'tags-recursive');
-	push (@phony, 'tags-recursive');
+	&depend ('.PHONY', 'tags-recursive');
     }
 
     if (&saw_sources_p (1)
@@ -2790,7 +2780,7 @@ sub handle_dist_worker
 			  . " distdir=\"\$(distdir)\" $targ\n");
     }
 
-    push (@phony, 'distdir');
+    &depend ('.PHONY', 'distdir');
 }
 
 # Handle 'dist' target.
@@ -3727,13 +3717,13 @@ sub handle_installdirs
 	# rule will work correctly.
 	$output_rules .= ("installdirs: installdirs-recursive\n"
 			  . "installdirs-am:\n");
-	push (@phony, 'installdirs-am');
+	&depend ('.PHONY', 'installdirs-am');
     }
     else
     {
 	$output_rules .= "installdirs:\n";
     }
-    push (@phony, 'installdirs');
+    &depend ('.PHONY', 'installdirs');
     if (@installdirs)
     {
 	&pretty_print_rule ("\t" . '$(mkinstalldirs) ', "\t\t",
@@ -3832,7 +3822,7 @@ sub handle_merge_targets
 				  . " all-recursive"
 				  . "\n\n");
 	    $all_target = 'all-recursive-am';
-	    push (@phony, 'all-recursive-am');
+	    &depend ('.PHONY', 'all-recursive-am');
 	}
     }
 
@@ -3858,7 +3848,7 @@ sub handle_merge_targets
     $output_rules .= ("install-strip:\n\t"
 		      . '$(MAKE) $(AM_MAKEFLAGS) INSTALL_STRIP_FLAG=-s install'
 		      . "\n");
-    push (@phony, 'install-strip');
+    &depend ('.PHONY', 'install-strip');
 }
 
 # Helper for handle_merge_targets.  Note that handle_merge_targets
@@ -3871,7 +3861,7 @@ sub do_one_merge_target
     {
 	# User defined local form of target.  So include it.
 	push (@values, $name . '-local');
-	push (@phony, $name . '-local');
+	&depend ('.PHONY', $name . '-local');
     }
 
     &pretty_print_rule ($name . "-am:", "\t\t", @values);
@@ -3902,11 +3892,11 @@ sub do_one_merge_target
     {
 	$tname = 'all-redirect';
 	$lname = $all_target if $recursive_install;
-	push (@phony, 'all-redirect');
+	&depend ('.PHONY', 'all-redirect');
 	$output_all = "all: all-redirect\n";
     }
     &pretty_print_rule ($tname . ":", "\t\t", $lname);
-    push (@phony, $name . '-am', $name);
+    &depend ('.PHONY', $name . '-am', $name);
 }
 
 # Handle check merge target specially.
@@ -3916,7 +3906,7 @@ sub do_check_merge_target
     {
 	# User defined local form of target.  So include it.
 	push (@check_tests, 'check-local');
-	push (@phony, 'check-local');
+	&depend ('.PHONY', 'check-local');
     }
 
     # In --cygnus mode, check doesn't depend on all.
@@ -3939,7 +3929,7 @@ sub do_check_merge_target
 			@check_tests)
 	if @check_tests;
 
-    push (@phony, 'check', 'check-am');
+    &depend ('.PHONY', 'check', 'check-am');
     $output_rules .= ("check: "
 		      . ($recursive_install ? 'check-recursive' : 'check-am')
 		      . "\n");
@@ -3995,7 +3985,7 @@ sub handle_clean
     &do_one_clean_target ('clean', 'dist', '', @clean);
     &do_one_clean_target ('clean', 'maintainer-', 'dist', @clean);
 
-    push (@phony, 'clean', 'mostlyclean', 'distclean', 'maintainer-clean');
+    &depend ('.PHONY', 'clean', 'mostlyclean', 'distclean', 'maintainer-clean');
 }
 
 # Helper for handle_clean.
@@ -4054,13 +4044,25 @@ sub do_one_clean_target
     $output_rules .= "\n";
 }
 
+
+# &depend ($CATEGORY, @DEPENDENDEES)
+# ----------------------------------
+sub depend
+{
+    my ($category, @dependendees) = @_;
+    {
+      push (@{${dependencies{$category}}}, @dependendees);
+    }
+}
+
+
+
+# &handle_factored_dependencies ()
+# --------------------------------
 # Handle .PHONY target.
 sub handle_factored_dependencies
 {
-    # FIXME: @PHONY must die!
-    push (@{${dependencies{".PHONY"}}}, @phony);
-
-    my ($category);
+    my $category;
     foreach $category (sort keys %dependencies)
     {
         &pretty_print_rule ("$category:", "",
@@ -4070,8 +4072,8 @@ sub handle_factored_dependencies
 }
 
 
-# handle_tests_dejagnu()
-# ----------------------
+# &handle_tests_dejagnu ()
+# ------------------------
 sub handle_tests_dejagnu
 {
     push (@check_tests, 'check-DEJAGNU');
@@ -6916,7 +6918,15 @@ sub initialize_per_input
     @installcheck = ();
     @clean = ();
 
-    @phony = ();
+    # Holds the dependencies of target which dependencies are factored.
+    # Typically, `.PHONY' will appear in plenty of *.am files, but must
+    # be output once.  Arguably all pure dependencies could be subject
+    # to this factorization, but it is not unpleasant to have paragraphs
+    # in Makefile: keeping related stuff altogether.
+    %dependencies =
+      (
+       '.PHONY' => []
+      );
 
     # A list of files deleted by `maintainer-clean'.
     @maintainer_clean_files = ();
@@ -7109,7 +7119,7 @@ sub file_contents
 	    {
 	        if (defined $dependencies{$_})
 		{
-		    push (@{$dependencies{$_}}, split (/\s/, $dependees));
+		    &depend ($_, split (/\s/, $dependees));
 		}
 		else
 		{
@@ -7485,17 +7495,17 @@ sub am_install_var
 			      . $subdir_xform);
 
 	    push (@uninstall, 'uninstall-' . $X . $primary);
-	    push (@phony, 'uninstall-' . $X . $primary);
+	    &depend ('.PHONY', 'uninstall-' . $X . $primary);
 	    push (@installdirs, '$(DESTDIR)$(' . $X . 'dir)');
 	    if (defined $exec_dir_p{$X} ? $exec_dir_p{$X} : ($X =~ /exec/))
 	    {
 		push (@install_exec, 'install-' . $X . $primary);
-		push (@phony, 'install-' . $X . $primary);
+		&depend ('.PHONY', 'install-' . $X . $primary);
 	    }
 	    else
 	    {
 		push (@install_data, 'install-' . $X . $primary);
-		push (@phony, 'install-' . $X . $primary);
+		&depend ('.PHONY', 'install-' . $X . $primary);
 	    }
 	}
     }
@@ -7820,7 +7830,7 @@ sub push_phony_cleaners
     local ($target);
     foreach $target ('mostly', 'dist', '', 'maintainer-')
     {
-	push (@phony, $target . 'clean-' . $base);
+	&depend ('.PHONY', $target . 'clean-' . $base);
     }
 }
 
