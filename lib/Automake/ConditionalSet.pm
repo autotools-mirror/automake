@@ -99,8 +99,7 @@ false.
 
 As explained previously, the reference (object) returned is unique
 with respect to C<@conds>.  For this purpose, duplicate elements are
-ignored, and C<@conds> is rewriten as C<("TRUE")> if it contains
-C<"TRUE">.
+ignored.
 
 =cut
 
@@ -127,12 +126,6 @@ sub new ($;@)
       # false conditions.  We'll always treat an "empty"
       # ConditionalSet as false for this reason.
       next if $cond->false;
-
-      # If we see true, then the whole set is true!
-      if ($cond->true && $#conds > 0)
-	{
-	  return new Automake::ConditionalSet $cond;
-	}
 
       # Store conditions as keys AND as values, because blessed
       # objects are converted to string when used as keys (so
@@ -218,10 +211,7 @@ conditions). Return 0 otherwise.
 sub true ($ )
 {
   my ($self) = @_;
-  # To know whether a ConditionalSet covers all
-  # we invert it.  invert() will set $self->{'true'}.
-  $self->invert unless exists $self->{'true'};
-  return $self->{'true'};
+  return $self->invert->false;
 }
 
 =item C<$str = $set-E<gt>string>
@@ -292,14 +282,14 @@ For instance consider this initial C<ConditionalSet>.
 Calling $<$set-E<gt>permutations> will return the following Conditional set.
 
   new Automake::ConditionalSet
-    (new Automake::Conditional ("COND1_TRUE", "COND2_TRUE", "COND2_TRUE"),
-     new Automake::Conditional ("COND1_FALSE","COND2_TRUE", "COND2_TRUE"),
-     new Automake::Conditional ("COND1_TRUE", "COND2_FALSE","COND2_TRUE"),
-     new Automake::Conditional ("COND1_FALSE","COND2_FALSE","COND2_TRUE"),
-     new Automake::Conditional ("COND1_TRUE", "COND2_TRUE", "COND2_FALSE"),
-     new Automake::Conditional ("COND1_FALSE","COND2_TRUE", "COND2_FALSE"),
-     new Automake::Conditional ("COND1_TRUE", "COND2_FALSE","COND2_FALSE"),
-     new Automake::Conditional ("COND1_FALSE","COND2_FALSE","COND2_FALSE"));
+    (new Automake::Conditional ("COND1_TRUE", "COND2_TRUE", "COND3_TRUE"),
+     new Automake::Conditional ("COND1_FALSE","COND2_TRUE", "COND3_TRUE"),
+     new Automake::Conditional ("COND1_TRUE", "COND2_FALSE","COND3_TRUE"),
+     new Automake::Conditional ("COND1_FALSE","COND2_FALSE","COND3_TRUE"),
+     new Automake::Conditional ("COND1_TRUE", "COND2_TRUE", "COND3_FALSE"),
+     new Automake::Conditional ("COND1_FALSE","COND2_TRUE", "COND3_FALSE"),
+     new Automake::Conditional ("COND1_TRUE", "COND2_FALSE","COND3_FALSE"),
+     new Automake::Conditional ("COND1_FALSE","COND2_FALSE","COND3_FALSE"));
 
 =cut
 
@@ -372,11 +362,6 @@ sub invert($ )
   # It's tempting to also set $res->{'invert'} to $self, but that
   # isn't a bad idea as $self hasn't been normalized in any way.
   # (Different inputs can produce the same inverted set.)
-
-  # If $res is false, then $self covers all cases.  The true()
-  # method relies on this function to figure that.
-  $self->{'true'} = $res->false;
-
   return $res;
 }
 
