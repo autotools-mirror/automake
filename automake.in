@@ -75,16 +75,16 @@ do
   cat $AM_DIR/header-vars.am >&4
   cat $AM_DIR/header.am >&5
 
-  target_distname=default
   DEFS= INCLUDES= CPPFLAGS= CFLAGS=
-  SOURCES= CONFIG_HEADER= SUBDIRS= PROGRAMS= LIBRARIES= TEXINFOS= MANS=
+  SOURCES= CONFIG_HEADER= SUBDIRS= PROGRAMS= LIBPROGRAMS=
+  LIBRARIES= TEXINFOS= MANS=
 
   eval `sed -n -f $am_rmnl ${am_makefile}.am | sed -n -f $am_ass`
 
-  if test -n "$PROGRAMS" || test -n "$LIBRARIES"; then
+  if test -n "$PROGRAMS$LIBPROGRAMS$LIBRARIES"; then
     cat $AM_DIR/compile-vars.am >&4
     cat $AM_DIR/compile.am >&5
-    for am_file in $PROGRAMS $LIBRARIES; do
+    for am_file in $PROGRAMS $LIBPROGRAMS $LIBRARIES; do
       if grep "^[	 ]*${am_file}_SOURCES[	 ]*=" ${am_makefile}.am >/dev/null; then
         if grep "^[	 ]*${am_file}_OBJECTS[	 ]*=" ${am_makefile}.am >/dev/null; then
           :
@@ -114,11 +114,18 @@ ${am_file}_OBJECTS = ${am_file}.\${kr}o" >&4
     done
   fi
 
-  if test -n "$PROGRAMS"; then
-    cat $AM_DIR/programs-vars.am >&4
-    cat $AM_DIR/programs.am >&5
-    for am_prog in $PROGRAMS; do
-      sed "s/@PROGRAM@/$am_prog/g" $AM_DIR/program.am >&5
+  if test -n "$PROGRAMS$LIBPROGRAMS"; then
+    if test -n "$PROGRAMS"; then
+      cat $AM_DIR/programs-vars.am >&4
+      cat $AM_DIR/programs.am >&5
+    fi
+    if test -n "$LIBPROGRAMS"; then
+      cat $AM_DIR/libprograms-vars.am >&4
+      cat $AM_DIR/libprograms.am >&5
+    fi
+    for am_prog in $PROGRAMS $LIBPROGRAMS; do
+      eval "test \"\$target_$am_prog\" != explicit" &&
+        sed "s/@PROGRAM@/$am_prog/g" $AM_DIR/program.am >&5
     done
   fi
 
