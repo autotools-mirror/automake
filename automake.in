@@ -102,6 +102,7 @@ $ac_output_line = 0;
 # List of directories to search for configure-required files.  This
 # can be set by AC_CONFIG_AUX_DIR.
 @config_aux_path = ('.', '..', '../..');
+$config_aux_dir = '';
 
 # Whether AC_PROG_MAKE_SET has been seen in configure.in.
 $seen_make_set = 0;
@@ -916,7 +917,8 @@ sub handle_man_pages
     foreach (keys %sections)
     {
 	push (@installdirs, '$(mandir)/man' . $_);
-	$output_rules .= ("\t" . '$(top_srcdir)/mkinstalldirs $(mandir)/man'
+	$output_rules .= ("\t" . $config_aux_dir
+			  . 'mkinstalldirs $(mandir)/man'
 			  . $_ . "\n");
     }
     push (@phony, 'install-man');
@@ -2690,6 +2692,14 @@ sub require_config_file
 	    {
 		$found_it = 1;
 		&push_dist_common ($file) if $dir eq $relative_dir;
+
+		# The first config file found set the config aux path
+		# for all other files.
+		@config_aux_path = $dir;
+		$config_aux_dir = '$(top_srcdir)';
+		$config_aux_dir .= '/' . $dir
+		    unless $dir eq '.';
+
 		last;
 	    }
 	}
