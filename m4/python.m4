@@ -56,7 +56,7 @@ AC_DEFUN([AM_PATH_PYTHON],
   m4_if([$1],[],[
     dnl No version check is needed.
     # Find any Python interpreter.
-    AC_PATH_PROG([PYTHON], _AM_PYTHON_INTERPRETER_LIST)
+    AC_PATH_PROGS([PYTHON], _AM_PYTHON_INTERPRETER_LIST)
     am_display_PYTHON=python
   ], [
     dnl A version check is needed.
