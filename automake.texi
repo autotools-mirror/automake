@@ -20,7 +20,7 @@
 @ifinfo
 This file documents GNU automake @value{VERSION}
 
-Copyright 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002
+Copyright 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003
 Free Software Foundation, Inc.
 
 Permission is granted to make and distribute verbatim copies of
@@ -393,8 +393,8 @@ directory.  The standard directory names are given in the GNU standards
 (@pxref{Directory Variables, , , standards, The GNU Coding Standards}).
 Automake extends this list with @code{pkglibdir}, @code{pkgincludedir},
 and @code{pkgdatadir}; these are the same as the non-@samp{pkg}
-versions, but with @samp{@@PACKAGE@@} appended.  For instance,
-@code{pkglibdir} is defined as @code{$(libdir)/@@PACKAGE@@}.
+versions, but with @samp{$(PACKAGE)} appended.  For instance,
+@code{pkglibdir} is defined as @code{$(libdir)/$(PACKAGE)}.
 @cvindex PACKAGE, directory
 
 @cindex EXTRA_, prepending
@@ -417,7 +417,7 @@ are installed in @code{sbindir}:
 @example
 EXTRA_PROGRAMS = mt rmt
 bin_PROGRAMS = cpio pax
-sbin_PROGRAMS = @@MORE_PROGRAMS@@
+sbin_PROGRAMS = $(MORE_PROGRAMS)
 @end example
 
 Defining a primary without a prefix as a variable, e.g.,
@@ -788,7 +788,7 @@ Last we have @file{src/Makefile.am}, where all the real work is done:
 @example
 bin_PROGRAMS = hello
 hello_SOURCES = hello.c version.c getopt.c getopt1.c getopt.h system.h
-hello_LDADD = @@INTLLIBS@@ @@ALLOCA@@
+hello_LDADD = $(INTLLIBS) $(ALLOCA)
 localedir = $(datadir)/locale
 INCLUDES = -I../intl -DLOCALEDIR=\"$(localedir)\"
 @end example
@@ -2125,11 +2125,11 @@ built in the same directory, and has no such link requirement.  Also,
 is what cpio's @file{src/Makefile.am} looks like (abridged):
 
 @example
-bin_PROGRAMS = cpio pax @@MT@@
-libexec_PROGRAMS = @@RMT@@
+bin_PROGRAMS = cpio pax $(MT)
+libexec_PROGRAMS = $(RMT)
 EXTRA_PROGRAMS = mt rmt
 
-LDADD = ../lib/libcpio.a @@INTLLIBS@@
+LDADD = ../lib/libcpio.a $(INTLLIBS)
 rmt_LDADD =
 
 cpio_SOURCES = @dots{}
@@ -2158,8 +2158,8 @@ If @samp{@var{prog}_DEPENDENCIES} is not supplied, it is computed by
 Automake.  The automatically-assigned value is the contents of
 @samp{@var{prog}_LDADD}, with most configure substitutions, @samp{-l},
 @samp{-L}, @samp{-dlopen} and @samp{-dlpreopen} options removed.  The
-configure substitutions that are left in are only @samp{@@LIBOBJS@@} and
-@samp{@@ALLOCA@@}; these are left because it is known that they will not
+configure substitutions that are left in are only @samp{$(LIBOBJS)} and
+@samp{$(ALLOCA)}; these are left because it is known that they will not
 cause an invalid value for @samp{@var{prog}_DEPENDENCIES} to be
 generated.
 
@@ -2167,10 +2167,11 @@ generated.
 @node Conditional Sources, Conditional Programs, Linking, A Program
 @subsection Conditional compilation of sources
 
-You can't put a configure substitution (e.g., @samp{@@FOO@@}) into a
-@samp{_SOURCES} variable.  The reason for this is a bit hard to explain,
-but suffice to say that it simply won't work.  Automake will give an
-error if you try to do this.
+You can't put a configure substitution (e.g., @samp{@@FOO@@} or
+@samp{$(FOO)} where @code{FOO} is defined via @code{AC_SUBST}) into a
+@samp{_SOURCES} variable.  The reason for this is a bit hard to
+explain, but suffice to say that it simply won't work.  Automake will
+give an error if you try to do this.
 
 Fortunately there are two other ways to achieve the same result.  One is
 to use configure substitutions in @code{_LDADD} variables, the other is
@@ -2191,12 +2192,12 @@ in @code{hello}, the @file{Makefile.am} would contain:
 bin_PROGRAMS = hello
 hello_SOURCES = hello-common.c
 EXTRA_hello_SOURCES = hello-linux.c hello-generic.c
-hello_LDADD = @@HELLO_SYSTEM@@
-hello_DEPENDENCIES = @@HELLO_SYSTEM@@
+hello_LDADD = $(HELLO_SYSTEM)
+hello_DEPENDENCIES = $(HELLO_SYSTEM)
 @end example
 
 @noindent
-You can then setup the @code{@@HELLO_SYSTEM@@} substitution from
+You can then setup the @code{$(HELLO_SYSTEM)} substitution from
 @file{configure.in}:
 
 @example
@@ -2567,8 +2568,8 @@ If @samp{_DEPENDENCIES} is not supplied, it is computed by Automake.
 The automatically-assigned value is the contents of @samp{_LDADD} or
 @samp{_LIBADD}, with most configure substitutions, @samp{-l}, @samp{-L},
 @samp{-dlopen} and @samp{-dlpreopen} options removed.  The configure
-substitutions that are left in are only @samp{@@LIBOBJS@@} and
-@samp{@@ALLOCA@@}; these are left because it is known that they will not
+substitutions that are left in are only @samp{$(LIBOBJS)} and
+@samp{$(ALLOCA)}; these are left because it is known that they will not
 cause an invalid value for @samp{_DEPENDENCIES} to be generated.
 
 @item maude_SHORTNAME
@@ -2997,11 +2998,11 @@ If Automake detects that a program or shared library (as mentioned in
 some @code{_PROGRAMS} or @code{_LTLIBRARIES} primary) contains source
 code that is a mixture of Fortran 77 and C and/or C++, then it requires
 that the macro @code{AC_F77_LIBRARY_LDFLAGS} be called in
-@file{configure.in}, and that either @code{$(FLIBS)} or @code{@@FLIBS@@}
+@file{configure.in}, and that either @code{$(FLIBS)}
 appear in the appropriate @code{_LDADD} (for programs) or @code{_LIBADD}
 (for shared libraries) variables.  It is the responsibility of the
 person writing the @file{Makefile.am} to make sure that @code{$(FLIBS)}
-or @code{@@FLIBS@@} appears in the appropriate @code{_LDADD} or
+appears in the appropriate @code{_LDADD} or
 @code{_LIBADD} variable.
 
 @cindex Mixed language example
@@ -3012,7 +3013,7 @@ For example, consider the following @file{Makefile.am}:
 @example
 bin_PROGRAMS = foo
 foo_SOURCES  = main.cc foo.f
-foo_LDADD    = libfoo.la @@FLIBS@@
+foo_LDADD    = libfoo.la $(FLIBS)
 
 pkglib_LTLIBRARIES = libfoo.la
 libfoo_la_SOURCES  = bar.f baz.c zardoz.cc
@@ -3020,7 +3021,7 @@ libfoo_la_LIBADD   = $(FLIBS)
 @end example
 
 In this case, Automake will insist that @code{AC_F77_LIBRARY_LDFLAGS}
-is mentioned in @file{configure.in}.  Also, if @code{@@FLIBS@@} hadn't
+is mentioned in @file{configure.in}.  Also, if @code{$(FLIBS)} hadn't
 been mentioned in @code{foo_LDADD} and @code{libfoo_la_LIBADD}, then
 Automake would have issued a warning.
 
