@@ -346,6 +346,9 @@ my $ac_gettext_location;
 
 # Lists of tags supported by Libtool.
 my %libtool_tags = ();
+# 1 if Libtool uses LT_SUPPORTED_TAG.  If it does, then it also
+# use AC_REQUIRE_AUX_FILE.
+my $libtool_new_api = 0;
 
 # Most important AC_CANONICAL_* macro seen so far.
 my $seen_canonical = 0;
@@ -367,7 +370,7 @@ my $seen_multilib = 0;
 # TRUE if we've seen AM_PROG_CC_C_O
 my $seen_cc_c_o = 0;
 
-# Location of AC_REQUIRE_AUX_FILES calls, indexed by their argument.
+# Location of AC_REQUIRE_AUX_FILE calls, indexed by their argument.
 my %required_aux_file = ();
 
 # Where AM_INIT_AUTOMAKE is called;
@@ -2228,8 +2231,10 @@ sub handle_libtool
   return unless var ('LIBTOOL');
 
   # Libtool requires some files, but only at top level.
+  # (Starting with Libtool 2.0 we do not have to bother.  These
+  # requirements are done with AC_REQUIRE_AUX_FILE.)
   require_conf_file_with_macro (TRUE, 'LIBTOOL', FOREIGN, @libtool_files)
-    if $relative_dir eq '.';
+    if $relative_dir eq '.' && ! $libtool_new_api;
 
   my @libtool_rms;
   foreach my $item (sort keys %libtool_clean_directories)
@@ -4826,7 +4831,9 @@ sub scan_autoconf_traces ($)
 	}
       elsif ($macro eq 'AC_REQUIRE_AUX_FILE')
 	{
-	  $required_aux_file{$args[1]} = $where;
+          # Only remember the first time a file is required.
+	  $required_aux_file{$args[1]} = $where
+            unless exists $required_aux_file{$args[1]};
 	}
       elsif ($macro eq 'm4_include'
 	     || $macro eq 'm4_sinclude'
@@ -4850,6 +4857,7 @@ sub scan_autoconf_traces ($)
       elsif ($macro eq 'LT_SUPPORTED_TAG')
 	{
           $libtool_tags{$args[1]} = 1;
+	  $libtool_new_api = 1;
 	}
       elsif ($macro eq '_LT_AC_TAGCONFIG')
 	{
