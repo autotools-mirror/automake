@@ -3341,12 +3341,16 @@ sub handle_ltlibraries
 			       'Libtool library used', 'LIBTOOL')
     if (@prefix);
 
+  my %liblocations = ();	# Location (in Makefile.am) of each library.
+
   foreach my $key (@prefix)
     {
       # Get the installation directory of each library.
       (my $dir = $key) =~ s/^nobase_//;
-      for (variable_value_as_list_recursive ($key . '_LTLIBRARIES', 'all'))
+      for my $pair (variable_loc_and_value_as_list_recursive
+		    ($key . '_LTLIBRARIES', 'all'))
 	{
+	  my ($where, $lib) = @$pair;
 	  # We reject libraries which are installed in several places,
 	  # because we don't handle this in the rules (think `-rpath').
 	  #
@@ -3365,14 +3369,16 @@ sub handle_ltlibraries
 	  # Diagnosing this case doesn't seem worth the plain (we'd
 	  # have to fill $instdirs on a per-condition basis, check
 	  # implied conditions, etc.)
-	  if (defined $instdirs{$_} && $instdirs{$_} ne $dir)
+	  if (defined $instdirs{$lib} && $instdirs{$lib} ne $dir)
 	    {
-	      err_am ("`$_' is already going to be installed in "
-		      . "`$instdirs{$_}'");
+	      err ($where, "`$lib' is already going to be installed in "
+		   . "`$instdirs{$lib}'");
+	      err ($liblocations{$lib}, "`$lib' previously declared here");
 	    }
 	  else
 	    {
-	      $instdirs{$_} = $dir;
+	      $instdirs{$lib} = $dir;
+	      $liblocations{$lib} = $where->clone;
 	    }
 	}
     }
