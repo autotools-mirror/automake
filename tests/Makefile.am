@@ -215,6 +215,7 @@ ltlibobjs.test \
 make.test \
 makevars.test \
 man.test \
+man2.test \
 mclean.test \
 mdate.test \
 mdate2.test \
