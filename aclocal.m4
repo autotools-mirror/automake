@@ -103,3 +103,35 @@ AC_DEFUN(jm_MAINTAINER_MODE,
   AC_SUBST(MAINT)dnl
 ]
 )
+
+## ------------------------
+## Emacs LISP file handling
+## ------------------------
+AC_DEFUN(ud_PATH_LISPDIR,
+ [AC_PATH_PROG(EMACS, emacs, no)
+  if test $EMACS != "no"; then
+    AC_MSG_CHECKING([where .elc files should go])
+    dnl Set default value
+    lispdir="\$(datadir)/emacs/site-lisp"
+    if test "x$prefix" = "xNONE"; then
+      if test -d $ac_default_prefix/share/emacs/site-lisp; then
+	lispdir="\$(prefix)/share/emacs/site-lisp"
+      else
+	if test -d $ac_default_prefix/lib/emacs/site-lisp; then
+	  lispdir="\$(prefix)/lib/emacs/site-lisp"
+	fi
+      fi
+    else
+      if test -d $prefix/share/emacs/site-lisp; then
+	lispdir="\$(prefix)/share/emacs/site-lisp"
+      else
+	if test -d $prefix/lib/emacs/site-lisp; then
+	  lispdir="\$(prefix)/lib/emacs/site-lisp"
+	fi
+      fi
+    fi
+    AC_MSG_RESULT($lispdir)
+    ELCFILES="\$(ELCFILES)"
+  fi
+  AC_SUBST(lispdir)
+  AC_SUBST(ELCFILES)])

@@ -18,10 +18,11 @@ mans-vars.am program.am programs.am remake-hdr.am remake-subd.am \
 remake.am scripts.am subdirs.am tags.am tags-subd.am tags-clean.am \
 texi-version.am texinfos-vars.am texinfos.am libraries-clean.am \
 programs-clean.am data-clean.am COPYING INSTALL texinfo.tex ansi2knr.c \
-ansi2knr.1 aclocal.m4
+ansi2knr.1 aclocal.m4 lisp.am
 
 ## These must all be executable when installed.
-pkgdata_SCRIPTS = config.guess config.sub install-sh mdate-sh mkinstalldirs
+pkgdata_SCRIPTS = config.guess config.sub install-sh mdate-sh \
+mkinstalldirs elisp-comp
 
 CLEANFILES = automake
 
@@ -40,22 +41,23 @@ installcheck-local:
 	$(PERL) -e "exit ! -x '$(pkgdatadir)/mdate-sh';"
 	$(PERL) -e "exit ! -x '$(pkgdatadir)/mkinstalldirs';"
 
-# Some simple checks:
-# * syntax check with perl4 and perl5.
-# * make sure the scripts don't use 'true'
-# * expect no instances of '${...}'
-# These are only really guaranteed to work on my machine.
+# Some simple checks, and then ordinary check.  These are only really
+# guaranteed to work on my machine.
 maintainer-check: automake
-## Do syntax, etc, checks before make check.
+## Syntax check with default Perl (on my machine, Perl 5).
 	$(PERL) -c -w automake
+## Ensure `true' is never used; I've accidentally used it before.
 	@if grep '^[^#].*true' $(srcdir)/[a-z]*.am; then \
 	  echo "can't use 'true' in GNU Makefile" 1>&2; \
 	  exit 1;				\
 	else :; fi
-	@if test `fgrep '$${' $(srcdir)/[a-z]*.am | wc -l` -ne 0; then \
+## expect no instances of '${...}'.  However, $${...} is ok, since that
+## is a shell construct, not a Makefile construct.
+	@if test `fgrep '$${' $(srcdir)/[a-z]*.am | fgrep -v '$$$$' | wc -l` -ne 0; then \
 	  echo "found too many uses of '\$${'" 1>&2; \
 	  exit 1;				\
 	fi
+## Another syntax check, this time with Perl 4, if it exists.
 	if $(SHELL) -c 'perl4.036 -v' >/dev/null 2>&1; then \
 	  perl4.036 -c -w automake; \
 	else :; fi
