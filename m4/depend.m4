@@ -1,4 +1,6 @@
-# serial 3
+# serial 4						-*- Autoconf -*-
+
+
 
 # There are a few dirty hacks below to avoid letting `AC_PROG_CC' be
 # written in clear, in which case automake, when reading aclocal.m4,
@@ -6,36 +8,29 @@
 # C support machinery.  Also note that it means that autoscan, seeing
 # CC etc. in the Makefile, will ask for an AC_PROG_CC use...
 
+
+
 # AM_DEPENDENCIES(NAME)
 # ---------------------
 # See how the compiler implements dependency checking.
 # NAME is "CC", "CXX" or "OBJC".
 # We try a few techniques and use that to set a single cache variable.
+#
+# We don't AC_REQUIRE the corresponding AC_PROG_CC since the latter was
+# modified to invoke AM_DEPENDENCIES(CC); we would have a circular
+# dependency, and given that the user is not expected to run this macro,
+# just rely on AC_PROG_CC.
 AC_DEFUN([AM_DEPENDENCIES],
 [AC_REQUIRE([AM_SET_DEPDIR])dnl
 AC_REQUIRE([AM_OUTPUT_DEPENDENCY_COMMANDS])dnl
-am_compiler_list=
-ifelse([$1], CC,
-       [AC_REQUIRE([AC_PROG_][CC])dnl
-AC_REQUIRE([AC_PROG_][CPP])
-depcc="$CC"
-depcpp="$CPP"],
-       [$1], CXX, [AC_REQUIRE([AC_PROG_][CXX])dnl
-AC_REQUIRE([AC_PROG_][CXXCPP])
-depcc="$CXX"
-depcpp="$CXXCPP"],
-       [$1], OBJC, [am_compiler_list='gcc3 gcc'
-depcc="$OBJC"
-depcpp=""],
-       [$1], GCJ,  [am_compiler_list='gcc3 gcc'
-depcc="$GCJ"
-depcpp=""],
-       [AC_REQUIRE([AC_PROG_][$1])dnl
-depcc="$$1"
-depcpp=""])
+AC_REQUIRE([AM_MAKE_INCLUDE])dnl
+AC_REQUIRE([AM_DEP_TRACK])dnl
 
-AC_REQUIRE([AM_MAKE_INCLUDE])
-AC_REQUIRE([AM_DEP_TRACK])
+ifelse([$1], CC,   [depcc="$CC"   am_compiler_list=],
+       [$1], CXX,  [depcc="$CXX"  am_compiler_list=],
+       [$1], OBJC, [depcc="$OBJC" am_compiler_list='gcc3 gcc']
+       [$1], GCJ,  [depcc="$GCJ"  am_compiler_list='gcc3 gcc'],
+                   [depcc="$$1"   am_compiler_list=])
 
 AC_CACHE_CHECK([dependency style of $depcc],
                [am_cv_$1_dependencies_compiler_type],
@@ -45,15 +40,15 @@ AC_CACHE_CHECK([dependency style of $depcc],
   # instance it was reported that on HP-UX the gcc test will end up
   # making a dummy file named `D' -- because `-MD' means `put the output
   # in D'.
-  mkdir confdir
+  mkdir conftest.dir
   # Copy depcomp to subdir because otherwise we won't find it if we're
   # using a relative directory.
-  cp "$am_depcomp" confdir
-  cd confdir
+  cp "$am_depcomp" conftest.dir
+  cd conftest.dir
 
   am_cv_$1_dependencies_compiler_type=none
   if test "$am_compiler_list" = ""; then
-     am_compiler_list="`sed -n ['s/^#*\([a-zA-Z0-9]*\))$/\1/p'] < ./depcomp`"
+     am_compiler_list=`sed -n ['s/^#*\([a-zA-Z0-9]*\))$/\1/p'] < ./depcomp`
   fi
   for depmode in $am_compiler_list; do
     # We need to recreate these files for each test, as the compiler may
@@ -62,7 +57,7 @@ AC_CACHE_CHECK([dependency style of $depcc],
     echo '#include "conftest.h"' > conftest.c
     echo 'int i;' > conftest.h
 
-    case "$depmode" in
+    case $depmode in
     nosideeffect)
       # after this tag, mechanisms are not by side-effect, so they'll
       # only be used when explicitly requested
@@ -77,18 +72,18 @@ AC_CACHE_CHECK([dependency style of $depcc],
     # We check with `-c' and `-o' for the sake of the "dashmstdout"
     # mode.  It turns out that the SunPro C++ compiler does not properly
     # handle `-M -o', and we need to detect this.
-    if depmode="$depmode" \
+    if depmode=$depmode \
        source=conftest.c object=conftest.o \
        depfile=conftest.Po tmpdepfile=conftest.TPo \
        $SHELL ./depcomp $depcc -c conftest.c -o conftest.o >/dev/null 2>&1 &&
        grep conftest.h conftest.Po > /dev/null 2>&1; then
-      am_cv_$1_dependencies_compiler_type="$depmode"
+      am_cv_$1_dependencies_compiler_type=$depmode
       break
     fi
   done
 
   cd ..
-  rm -rf confdir
+  rm -rf conftest.dir
 else
   am_cv_$1_dependencies_compiler_type=none
 fi
