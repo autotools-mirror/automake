@@ -19,6 +19,11 @@ package Automake::Conditional;
 use strict;
 use Carp;
 
+require Exporter;
+use vars '@ISA', '@EXPORT_OK';
+@ISA = qw/Exporter/;
+@EXPORT_OK = qw/TRUE FALSE reduce/;
+
 =head1 NAME
 
 Automake::Conditional - record a conjunction of conditions
@@ -66,6 +71,11 @@ Automake::Conditional - record a conjunction of conditions
   # Does $cond imply any of {$other, $both}?
   # (Not in this example)
   if ($cond->implies_any ($other, $both)) { ... }
+
+  # Remove superfluous conditions.
+  # (Returns @cons = ($both) in this example, because
+  # $other and $cond are implied by $both.)
+  @conds = Automake::Conditional::reduce ($other, $both, $cond);
 
 =head1 DESCRIPTION
 
@@ -138,7 +148,10 @@ both create the C<"FALSE"> conditional).
 # associated object conditions.  This is used by `new' to reuse
 # Conditional objects with identical conditions.
 use vars '%_conditional_singletons';
-%_conditional_singletons = ();
+# Do NOT reset this hash here.  It's already empty by default,
+# and any reset would otherwise occur AFTER the `TRUE' and `FALSE'
+# constants definitions.
+#   %_conditional_singletons = ();
 
 sub new ($;@)
 {
@@ -166,7 +179,7 @@ sub new ($;@)
 	  || ($cond =~ /^(.*)_TRUE$/ && exists $self->{'hash'}{"${1}_FALSE"})
 	  || ($cond =~ /^(.*)_FALSE$/ && exists $self->{'hash'}{"${1}_TRUE"}))
 	{
-	  return new Automake::Conditional 'FALSE';
+	  return &FALSE;
 	}
 
       $self->{'hash'}{$cond} = 1;
@@ -370,10 +383,6 @@ Return 0 otherwise.
 
 =cut
 
-# $BOOLEAN
-# &conditional_implies_any ($COND, @CONDS)
-# ----------------------------------------
-# Returns true iff $COND implies any of the conditions in @CONDS.
 sub implies_any ($@)
 {
   my ($self, @conds) = @_;
@@ -385,13 +394,62 @@ sub implies_any ($@)
   return 0;
 }
 
+=head2 Other helper functions
+
+=over 4
+
+=item C<TRUE>
+
+The C<"TRUE"> conditional.
+
+=item C<FALSE>
+
+The C<"FALSE"> conditional.
+
+=cut
+
+use constant TRUE => new Automake::Conditional "TRUE";
+use constant FALSE => new Automake::Conditional "FALSE";
+
+=item C<reduce (@conds)>
+
+Filter a list of conditionals so that only the exclusive ones are
+retained.  For example, if both C<COND1_TRUE COND2_TRUE> and
+C<COND1_TRUE> are in the list, discard the latter.
+If the input list is empty, return C<(TRUE)>.
+
+=cut
+
+sub reduce (@)
+{
+  my (@conds) = @_;
+  my @ret = ();
+  my $cond;
+  while (@conds > 0)
+    {
+      $cond = shift @conds;
+
+      # FALSE is absorbent.
+      return FALSE
+	if $cond == FALSE;
+
+      if (! $cond->redundant_wrt (@ret, @conds))
+	{
+	  push (@ret, $cond);
+	}
+    }
+
+  return TRUE if @ret == 0;
+  return @ret;
+}
+
 =head1 HISTORY
 
 C<AM_CONDITIONAL>s and supporting code were added to Automake 1.1o by
 Ian Lance Taylor <ian@cygnus.org> in 1997.  Since then it has been
 improved by Tom Tromey <tromey@redhat.com>, Richard Boulton
 <richard@tartarus.org>, Raja R Harinath <harinath@cs.umn.edu>, and
-Akim Demaile <akim@epita.fr>.  Alexandre Duret-Lutz <adl@gnu.org>
+Akim Demaille <akim@epita.fr>.  Alexandre Duret-Lutz <adl@gnu.org>
 extracted the code out of Automake to create this package in 2002.
 
 =cut

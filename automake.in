@@ -116,7 +116,7 @@ use Automake::General;
 use Automake::XFile;
 use Automake::Channels;
 use Automake::Location;
-use Automake::Conditional;
+use Automake::Conditional qw/TRUE FALSE/;
 use File::Basename;
 use Tie::RefHash;
 use Carp;
@@ -294,10 +294,6 @@ use constant COMPILE_ORDINARY => 2;
 # We can't always associate a location to a variable or a rule,
 # when its defined by Automake.  We use INTERNAL in this case.
 use constant INTERNAL => new Automake::Location;
-
-# The TRUE and FALSE conditionals.
-use constant TRUE => new Automake::Conditional;
-use constant FALSE => new Automake::Conditional "FALSE";
 
 
 ## ---------------------------------- ##
@@ -6784,7 +6780,7 @@ sub variable_conditions_recursive_sub
 	}
       else
 	{
-	  push (@new_conds, variable_conditions_reduce (@subvar_conds));
+	  push (@new_conds, Automake::Conditional::reduce (@subvar_conds));
 	}
     }
 
@@ -6824,33 +6820,6 @@ sub variable_conditions_recursive_sub
 }
 
 
-# Filter a list of conditionals so that only the exclusive ones are
-# retained.  For example, if both `COND1_TRUE COND2_TRUE' and
-# `COND1_TRUE' are in the list, discard the latter.
-# If the list is empty, return TRUE
-sub variable_conditions_reduce
-{
-  my (@conds) = @_;
-  my @ret = ();
-  my $cond;
-  while (@conds > 0)
-    {
-      $cond = shift @conds;
-
-      # FALSE is absorbent.
-      return FALSE
-	if $cond == FALSE;
-
-      if (! $cond->redundant_wrt (@ret, @conds))
-	{
-	  push (@ret, $cond);
-	}
-    }
-
-  return TRUE if @ret == 0;
-  return @ret;
-}
-
 # @CONDS
 # invert_conditions (@CONDS)
 # --------------------------
@@ -6873,7 +6842,7 @@ sub invert_conditions
     # Generate all permutation for all inputs.
     my @perm = map { variable_conditions_permutations ($_->conds); } @conds;
     # Remove redundant conditions.
-    @perm = variable_conditions_reduce @perm;
+    @perm = Automake::Conditional::reduce @perm;
 
     # Now remove all conditions which imply one of the input conditions.
     foreach my $perm (@perm)
