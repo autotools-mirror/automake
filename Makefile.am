@@ -29,7 +29,7 @@ mkinstalldirs elisp-comp ylwrap acinstall
 
 install-data-hook:
 	@for prog in $(script_DATA); do \
-	  chmod +x $(DESTDIR)/$(scriptdir)/$$prog; \
+	  chmod +x $(DESTDIR)$(scriptdir)/$$prog; \
 	done
 
 EXTRA_DIST = acinstall $(pkgdata_DATA) $(script_DATA)
