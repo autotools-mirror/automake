@@ -40,6 +40,8 @@ transform = @program_transform_name@
 
 AUTOMAKE_OPTIONS = gnits
 
+SUBDIRS = tests
+
 bin_SCRIPTS = automake
 info_TEXINFOS = automake.texi
 # SUBDIRS = intl po
@@ -198,13 +200,40 @@ uninstall-pkgdataDATA:
 	  rm -f $(pkgdatadir)/$$p;		\
 	done
 
-ID: $(HEADERS) $(SOURCES)
-	here=`pwd` && cd $(srcdir) && mkid -f $$here/ID $(SOURCES) $(HEADERS)
+# This directory's subdirectories are mostly independent; you can cd
+# into them and run `make' without going through this Makefile.
+# To change the values of `make' variables: instead of editing Makefiles,
+# (1) if the variable is set in `config.status', edit `config.status'
+#     (which will cause the Makefiles to be regenerated when you run `make');
+# (2) otherwise, pass the desired values on the `make' command line.
+
+@SET_MAKE@
+
+all-recursive install-data-recursive install-exec-recursive \
+installdirs-recursive install-recursive uninstall-recursive \
+check-recursive installcheck-recursive info-recursive dvi-recursive \
+mostlyclean-recursive clean-recursive distclean-recursive \
+maintainer-clean-recursive: $(CONFIG_HEADER) Makefile
+	for subdir in $(SUBDIRS); do		\
+	  target=`echo $@ | sed s/-recursive//`; \
+	  echo making $$target in $$subdir;	\
+	  (cd $$subdir && $(MAKE) $$target)	\
+	   || case "$(MFLAGS)" in *k*) fail=yes;; *) exit 1;; esac; \
+	done && test -z "$$fail"
 
 tags: TAGS
 
 TAGS:
-	here=`pwd` && cd $(srcdir) && etags $(ETAGS_ARGS) $(SOURCES) $(HEADERS) -o $$here/TAGS
+	tags=;					\
+	here=`pwd`;				\
+	for subdir in $(SUBDIRS); do		\
+	  (cd $$subdir && $(MAKE) TAGS);	\
+	  test -f $$subdir/TAGS && {		\
+	    tags="$$tags -i $$here/$$subdir/TAGS"; \
+	  }					\
+	done;					\
+	test -z "$(ETAGS_ARGS)$(CONFIG_HEADER)$(SOURCES)$(HEADERS)$$tags" \
+	  || etags $(ETAGS_ARGS) $$tags $(CONFIG_HEADER) $(SOURCES) $(HEADERS)
 
 mostlyclean-tags:
 
@@ -232,6 +261,13 @@ dist: $(DEP_DISTFILES)
 	  || ln $(srcdir)/$$file $(distdir)/$$file 2> /dev/null \
 	  || cp -p $(srcdir)/$$file $(distdir)/$$file; \
 	done
+	for subdir in $(SUBDIRS); do		\
+	  test -d $(distdir)/$$subdir		\
+	  || mkdir $(distdir)/$$subdir		\
+	  || exit 1;				\
+	  chmod 777 $(distdir)/$$subdir;	\
+	  (cd $$subdir && $(MAKE) dist) || exit 1; \
+	done
 	@for dir in $(DIST_SUBDIRS); do		\
 	  echo copying directory $$dir;		\
 	  tar chf - $$dir | (cd $(distdir) && tar xBpf -); \
@@ -239,26 +275,32 @@ dist: $(DEP_DISTFILES)
 	chmod -R a+r $(distdir)
 	tar chozf $(distdir).tar.gz $(distdir)
 	rm -rf $(distdir)
-all: info $(SCRIPTS) $(DATA)
+all: info $(SCRIPTS) $(DATA) all-recursive
 
-info: $(INFO_DEPS)
+info: $(INFO_DEPS) info-recursive
 
-dvi: $(DVIS)
+dvi: $(DVIS) dvi-recursive
 
-check: all
+check: check-recursive
 
-installcheck:
+installcheck: installcheck-recursive
 
-install-exec: install-binSCRIPTS
+install-exec-am: install-binSCRIPTS
 
-install-data: install-info install-pkgdataDATA
+install-data-am: install-info install-pkgdataDATA
 
-install: install-exec install-data
+uninstall-am: uninstall-binSCRIPTS uninstall-info uninstall-pkgdataDATA uninstall-recursive
+
+install-exec: install-exec-recursive install-exec-am
+
+install-data: install-data-recursive install-data-am
+
+install: install-recursive install-exec-am install-data-am
 	@:
 
-uninstall: uninstall-binSCRIPTS uninstall-info uninstall-pkgdataDATA
+uninstall: uninstall-recursive uninstall-am
 
-installdirs:
+installdirs: installdirs-recursive
 	$(top_srcdir)/mkinstalldirs  $(bindir) $(infodir) $(pkgdatadir)
 
 
@@ -275,19 +317,27 @@ distclean-generic:
 maintainer-clean-generic:
 	test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 	test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
-mostlyclean:  mostlyclean-binSCRIPTS mostlyclean-vti mostlyclean-info \
+mostlyclean-am:  mostlyclean-binSCRIPTS mostlyclean-vti mostlyclean-info \
 		mostlyclean-tags mostlyclean-generic
 
-clean:  clean-binSCRIPTS clean-vti clean-info clean-tags clean-generic \
-		mostlyclean 
+clean-am:  clean-binSCRIPTS clean-vti clean-info clean-tags \
+		clean-generic mostlyclean-am 
 
-distclean:  distclean-binSCRIPTS distclean-vti distclean-info \
-		distclean-tags distclean-generic clean 
+distclean-am:  distclean-binSCRIPTS distclean-vti distclean-info \
+		distclean-tags distclean-generic clean-am 
+
+maintainer-clean-am:  maintainer-clean-binSCRIPTS maintainer-clean-vti \
+		maintainer-clean-info maintainer-clean-tags maintainer-clean-generic \
+		distclean-am 
+
+mostlyclean:  mostlyclean-am mostlyclean-recursive
+
+clean:  clean-am clean-recursive
+
+distclean:  distclean-am distclean-recursive
 	rm -f config.status
 
-maintainer-clean:  maintainer-clean-binSCRIPTS maintainer-clean-vti \
-		maintainer-clean-info maintainer-clean-tags maintainer-clean-generic \
-		distclean 
+maintainer-clean:  maintainer-clean-am maintainer-clean-recursive
 	@echo "This command is intended for maintainers to use;"
 	@echo "it deletes files that may require special tools to rebuild."
 	rm -f config.status
@@ -296,11 +346,18 @@ maintainer-clean:  maintainer-clean-binSCRIPTS maintainer-clean-vti \
     clean-binSCRIPTS maintainer-clean-binSCRIPTS uninstall-binSCRIPTS \
     mostlyclean-vti distclean-vti clean-vti maintainer-clean-vti \
     install-info uninstall-info mostlyclean-info distclean-info \
-    clean-info maintainer-clean-info uninstall-pkgdataDATA tags \
-    mostlyclean-tags distclean-tags clean-tags maintainer-clean-tags \
-    dist all info dvi check installcheck install-exec install-data \
-    install uninstall installdirs mostlyclean-generic distclean-generic \
-    clean-generic maintainer-clean-generic clean mostlyclean distclean \
+    clean-info maintainer-clean-info uninstall-pkgdataDATA \
+    install-data-recursive uninstall-data-recursive \
+    install-exec-recursive uninstall-exec-recursive \
+    installdirs-recursive uninstalldirs-recursive all-recursive \
+    check-recursive installcheck-recursive info-recursive dvi-recursive \
+    mostlyclean-recursive distclean-recursive clean-recursive \
+    maintainer-clean-recursive tags mostlyclean-tags distclean-tags \
+    clean-tags maintainer-clean-tags dist all info dvi check \
+    installcheck install-exec-am install-data-am uninstall-am \
+    install-exec install-data install uninstall installdirs \
+    mostlyclean-generic distclean-generic clean-generic \
+    maintainer-clean-generic clean mostlyclean distclean \
     maintainer-clean
 
 

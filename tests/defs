@@ -1,0 +1,42 @@
+# -*- ksh -*-
+# Defines for Automake testing environment.
+# Tom Tromey <tromey@cygnus.com>
+
+# Ensure $srcdir set correctly.
+test -f $srcdir/defs || {
+   echo "defs: installation error" 1>&2
+   exit 1
+}
+
+# If srcdir is relative, we need to modify it.
+case "$srcdir" in
+ /*)
+    ;;
+
+ *)
+    srcdir="../$srcdir"
+    ;;
+esac
+
+rm -rf testSubDir > /dev/null 2>&1
+mkdir testSubDir
+cd testSubDir
+
+# FIXME: build appropriate environment in test directory.
+# Eg create configure.in, touch all necessary files, etc.
+cat > configure.in << 'END'
+AC_ARG_PROGRAM
+AC_PROG_INSTALL
+AC_OUTPUT(Makefile)
+END
+
+: > install-sh
+: > mkinstalldirs
+
+# See how redirections should work.
+test -z "$VERBOSE" && {
+   exec > /dev/null 2>&1
+}
+
+# See how Automake should be run.
+AUTOMAKE="$srcdir/../automake --amdir=$srcdir/.."

@@ -2,6 +2,8 @@
 
 AUTOMAKE_OPTIONS = gnits
 
+SUBDIRS = tests
+
 bin_SCRIPTS = automake
 info_TEXINFOS = automake.texi
 # SUBDIRS = intl po
