@@ -443,6 +443,11 @@ my %required_targets =
    'install-man' => 1,
   );
 
+# This is set to 1 when Automake needs to be run again.
+# (For instance, this happens when an auxiliary file such as
+# depcomp is added after the toplevel Makefile.in -- which
+# should distribute depcomp -- has been generated.)
+my $automake_needs_to_reprocess_all_files = 0;
 
 
 ################################################################
@@ -966,21 +971,36 @@ register_language ('name' => 'java',
 die "$me: no `Makefile.am' found or specified\n"
     if ! @input_files;
 
-# Now do all the work on each file.
-# This guy must be local otherwise it's private to the loop.
-use vars '$am_file';
-local $am_file;
-foreach $am_file (@input_files)
+my $automake_has_run = 0;
+
+do
 {
-    if (! -f ($am_file . '.am'))
+    if ($automake_has_run)
     {
-	&am_error ("`" . $am_file . ".am' does not exist");
+	print "$me: processing Makefiles another time to fix them up.\n";
+	&prog_error ("running more than two times should never be needed.")
+	    if $automake_has_run >= 2;
     }
-    else
+    $automake_needs_to_reprocess_all_files = 0;
+
+    # Now do all the work on each file.
+    # This guy must be local otherwise it's private to the loop.
+    use vars '$am_file';
+    local $am_file;
+    foreach $am_file (@input_files)
     {
- 	&generate_makefile ($output_files{$am_file}, $am_file);
+	if (! -f ($am_file . '.am'))
+	{
+	    &am_error ("`" . $am_file . ".am' does not exist");
+	}
+	else
+	{
+	    &generate_makefile ($output_files{$am_file}, $am_file);
+	}
     }
+    ++$automake_has_run;
 }
+while ($automake_needs_to_reprocess_all_files);
 
 exit $exit_status;
 
@@ -7574,6 +7594,7 @@ sub maybe_push_required_file
     if ($dir eq $relative_dir)
     {
 	push_dist_common ($file);
+	return 1;
     }
     elsif ($relative_dir eq '.' && ! &is_make_dir ($dir))
     {
@@ -7581,7 +7602,9 @@ sub maybe_push_required_file
 	# subdir which does not have a Makefile, then we distribute it
 	# here.
 	push_dist_common ($fullfile);
+	return 1;
     }
+    return 0;
 }
 
 
@@ -7692,8 +7715,24 @@ sub require_file_internal ($$@)
 			}
 		    }
 
-		    maybe_push_required_file (dirname ($errfile),
-					      $file, $errfile);
+		    if (! maybe_push_required_file (dirname ($errfile),
+                                                    $file, $errfile))
+		    {
+			if (! $found_it)
+			{
+			    # We have added the file but could not push it
+			    # into DIST_COMMON (probably because this is
+			    # an auxiliary file and we are not processing
+			    # the top level Makefile). This is unfortunate,
+			    # since it means we are using a file which is not
+			    # distributed!
+
+			    # Get Automake to be run again: on the second
+			    # run the file will be found, and pushed into
+			    # the toplevel DIST_COMMON automatically.
+			    $automake_needs_to_reprocess_all_files = 1;
+			}
+		    }
 
 		    # Prune the path list.
 		    @require_file_paths = &dirname ($errfile);

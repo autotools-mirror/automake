@@ -117,6 +117,7 @@ depend4.test \
 dirname.test \
 discover.test \
 distcommon.test \
+distcommon2.test \
 distdir.test \
 distname.test \
 double.test \
