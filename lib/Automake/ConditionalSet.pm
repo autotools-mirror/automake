@@ -52,6 +52,13 @@ Automake::ConditionalSet - record a disjunction of conditions
   # that complements $set.
   my $inv = $set->invert;
 
+  # Multiply two ConditionalSets.
+  my $prod = $set1->multiply ($set2)
+
+  # Return the subconditions of a ConditionalSet with respect to
+  # a Conditional.  See the description for a real example.
+  my $subconds = $set->sub_conditions ($cond)
+
 =head1 DESCRIPTION
 
 A C<ConditionalSet> is a disjunction of atomic conditions.  In
@@ -712,7 +719,6 @@ C<ConditionalSet>.
 sub sub_conditions ($$)
 {
   my ($self, $subcond) = @_;
-  my @res;
 
   # Make $subcond blindingly apparent in the ConditionalSet.
   # For instance `$a->_multiply($b)' (from the POD example) is:
@@ -723,19 +729,11 @@ sub sub_conditions ($$)
   # 	 new Automake::Conditional ("FALSE"));
   my $prod = $self->_multiply ($subcond);
 
-  # Now, strip $subcond from the non-false Conditionals.
+  # Now, strip $subcond from the remaining (i.e., non-false) Conditionals.
+  my @res;
   foreach my $c ($prod->conds)
     {
-      if (! $c->false)
-	{
-	  my @rescond;
-	  foreach my $cc ($c->conds)
-	    {
-	      push @rescond, $cc
-		unless $subcond->has ($cc);
-	    }
-	  push @res, new Automake::Conditional @rescond;
-	}
+      push @res, $c->strip ($subcond) unless $c->false;
     }
   return new Automake::ConditionalSet @res;
 }

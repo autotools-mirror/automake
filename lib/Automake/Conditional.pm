@@ -44,6 +44,10 @@ Automake::Conditional - record a conjunction of conditions
   # Likewise, but using a list of atomic conditional strings
   my $both2 = $cond->merge_conds ("COND3_FALSE");
 
+  # Strip from $both any subconditions which are in $other.
+  # This is the opposite of merge.
+  $cond = $both->strip ($other);
+
   # Return the list of conditions ("COND1_TRUE", "COND2_FALSE"):
   my @conds = $cond->conds;
 
@@ -226,6 +230,24 @@ sub merge_conds ($@)
 {
   my ($self, @conds) = @_;
   new Automake::Conditional $self->conds, @conds;
+}
+
+=item C<$newcond = $cond-E<gt>strip ($minuscond)>
+
+Return a new condition which has all the subconditions of C<$cond>
+except those of C<$minuscond>.  This is the opposite of C<merge>.
+
+=cut
+
+sub strip ($$)
+{
+  my ($self, $minus) = @_;
+  my @res;
+  foreach my $cond ($self->conds)
+    {
+      push @res, $cond unless $minus->has ($cond);
+    }
+  return new Automake::Conditional @res;
 }
 
 =item C<@list = $cond-E<gt>conds>
