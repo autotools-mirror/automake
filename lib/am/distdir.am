@@ -23,14 +23,14 @@ distdir: $(DISTFILES)
 ## For Gnits users, this is pretty handy.  Look at 15 lines
 ## in case some explanatory text is desirable.
 ##
-?TOPDIR??CK-NEWS?	@if sed 15q $(srcdir)/NEWS | fgrep -e "$(VERSION)" > /dev/null; then :; else \
+?TOPDIR??CK-NEWS?	@if sed 15q $(srcdir)/NEWS | fgrep -e "$(VERSION)" >/dev/null; then :; else \
 ?TOPDIR??CK-NEWS?	  echo "NEWS not updated; not releasing" 1>&2; \
 ?TOPDIR??CK-NEWS?	  exit 1; \
 ?TOPDIR??CK-NEWS?	fi
 ##
 ## Only for the top dir.
 ##
-?TOPDIR?	-chmod -R a+w $(distdir) > /dev/null 2>&1; rm -rf $(distdir)
+?TOPDIR?	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
 ?TOPDIR?	mkdir $(distdir)
 ##
 ##
@@ -80,3 +80,69 @@ distdir: $(DISTFILES)
 ?SUBDIRS?	      || exit 1; \
 ?SUBDIRS?	  fi; \
 ?SUBDIRS?	done
+##
+## This complex find command will try to avoid changing the modes of
+## links into the source tree, in case they're hard-linked.  It will
+## also make directories writable by everybody, because some
+## brain-dead tar implementations change ownership and permissions of
+## a directory before extracting the files, thus becoming unable to
+## extract them.
+##
+## Ignore return result from chmod, because it might give an error
+## if we chmod a symlink.
+##
+## Another nastiness: if the file is unreadable by us, we make it
+## readable regardless of the number of links to it.  This only
+## happens in perverse cases.
+##
+## We use $(install_sh) because that is a known-portable way to modify
+## the file in place in the source tree.
+##
+?TOPDIR?	-find $(distdir) -type d ! -perm -777 -exec chmod a+rwx {} \; -o \
+?TOPDIR?	  ! -type d ! -perm -444 -links 1 -exec chmod a+r {} \; -o \
+?TOPDIR?	  ! -type d ! -perm -400 -exec chmod a+r {} \; -o \
+?TOPDIR?	  ! -type d ! -perm -444 -exec $(SHELL) $(install_sh) -c -m a+r {} {} \; \
+?TOPDIR?	|| chmod -R a+r $(distdir)
+
+
+
+
+## --------------------------------------- ##
+## Building various distribution flavors.  ##
+## --------------------------------------- ##
+
+## Note that we don't use GNU tar's `-z' option.  One reason (but not
+## the only reason) is that some versions of tar (e.g., OSF1)
+## interpret `-z' differently.
+
+?TOPDIR?.PHONY: dist-all dist
+?TOPDIR?dist-all: dist
+?TOPDIR?dist: distdir
+?TOPDIR?	$(AMTAR) chof - $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
+?TOPDIR?	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
+
+
+?TOPDIR??BZIP2?.PHONY dist-all: dist-bzip2
+?TOPDIR??BZIP2?.PHONY: dist-bzip2
+?TOPDIR??BZIP2?dist-bzip2: distdir
+?TOPDIR??BZIP2?	$(AMTAR) chof - $(distdir) | bzip2 -9 -c >$(distdir).tar.bz2
+?TOPDIR??BZIP2?	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
+
+
+?TOPDIR??COMPRESS?.PHONY dist-all: dist-tarZ
+?TOPDIR??COMPRESS?dist-tarZ: distdir
+?TOPDIR??COMPRESS?	$(AMTAR) chof - $(distdir) | compress -c >$(distdir).tar.Z
+?TOPDIR??COMPRESS?	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
+
+
+?TOPDIR??SHAR?.PHONY dist-all: dist-shar
+?TOPDIR??SHAR?dist-shar: distdir
+?TOPDIR??SHAR?	shar $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).shar.gz
+?TOPDIR??SHAR?	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
+
+
+?TOPDIR??ZIP?.PHONY dist-all: dist-zip
+?TOPDIR??ZIP?dist-zip: distdir
+?TOPDIR??ZIP?	-rm -f $(distdir).zip
+?TOPDIR??ZIP?	zip -rq $(distdir).zip $(distdir)
+?TOPDIR??ZIP?	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)

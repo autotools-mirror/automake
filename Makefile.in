@@ -486,29 +486,13 @@ distcheck: dist
 	echo "$$dashes"; \
 	echo "$$banner"; \
 	echo "$$dashes"
-dist: distdir
-	-find $(distdir) -type d ! -perm -777 -exec chmod a+rwx {} \; -o \
-	  ! -type d ! -perm -444 -links 1 -exec chmod a+r {} \; -o \
-	  ! -type d ! -perm -400 -exec chmod a+r {} \; -o \
-	  ! -type d ! -perm -444 -exec $(SHELL) $(install_sh) -c -m a+r {} {} \; \
-	|| chmod -R a+r $(distdir)
-	$(AMTAR) chof - $(distdir) | GZIP=$(GZIP_ENV) gzip -c > $(distdir).tar.gz
-	-chmod -R a+w $(distdir) > /dev/null 2>&1; rm -rf $(distdir)
-dist-all: distdir
-	-find $(distdir) -type d ! -perm -777 -exec chmod a+rwx {} \; -o \
-	  ! -type d ! -perm -444 -links 1 -exec chmod a+r {} \; -o \
-	  ! -type d ! -perm -400 -exec chmod a+r {} \; -o \
-	  ! -type d ! -perm -444 -exec $(SHELL) $(install_sh) -c -m a+r {} {} \; \
-	|| chmod -R a+r $(distdir)
-	$(AMTAR) chof - $(distdir) | GZIP=$(GZIP_ENV) gzip -c > $(distdir).tar.gz
-	-chmod -R a+w $(distdir) > /dev/null 2>&1; rm -rf $(distdir)
 
 distdir: $(DISTFILES)
-	@if sed 15q $(srcdir)/NEWS | fgrep -e "$(VERSION)" > /dev/null; then :; else \
+	@if sed 15q $(srcdir)/NEWS | fgrep -e "$(VERSION)" >/dev/null; then :; else \
 	  echo "NEWS not updated; not releasing" 1>&2; \
 	  exit 1; \
 	fi
-	-chmod -R a+w $(distdir) > /dev/null 2>&1; rm -rf $(distdir)
+	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
 	mkdir $(distdir)
 	$(mkinstalldirs) $(distdir)/. .
 	@for file in $(DISTFILES); do \
@@ -532,6 +516,15 @@ distdir: $(DISTFILES)
 	      || exit 1; \
 	  fi; \
 	done
+	-find $(distdir) -type d ! -perm -777 -exec chmod a+rwx {} \; -o \
+	  ! -type d ! -perm -444 -links 1 -exec chmod a+r {} \; -o \
+	  ! -type d ! -perm -400 -exec chmod a+r {} \; -o \
+	  ! -type d ! -perm -444 -exec $(SHELL) $(install_sh) -c -m a+r {} {} \; \
+	|| chmod -R a+r $(distdir)
+
+dist: distdir
+	$(AMTAR) chof - $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
+	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
 	$(MAKE) $(AM_MAKEFLAGS) top_distdir="$(top_distdir)" distdir="$(distdir)" dist-info
 info-am: $(INFO_DEPS)
 info: info-recursive
@@ -558,8 +551,7 @@ uninstall-am: uninstall-binSCRIPTS uninstall-info \
 uninstall: uninstall-recursive
 all-am: Makefile $(INFO_DEPS) $(SCRIPTS) $(DATA)
 install-strip:
-	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
-	  INSTALL_PROGRAM_ENV='$(INSTALL_STRIP_PROGRAM_ENV)' install
+	$(MAKE) $(AM_MAKEFLAGS) INSTALL_STRIP_FLAG=-s install
 installdirs: installdirs-recursive
 installdirs-am:
 	$(mkinstalldirs)  $(DESTDIR)$(bindir) $(DESTDIR)$(infodir) \
@@ -583,6 +575,8 @@ clean: clean-recursive
 
 clean-am: clean-generic mostlyclean-am
 
+dist-all: dist
+
 distclean: distclean-recursive
 	-rm -f config.status
 
@@ -599,10 +593,10 @@ mostlyclean: mostlyclean-recursive
 mostlyclean-am: mostlyclean-aminfo mostlyclean-generic mostlyclean-vti
 
 .PHONY: all all-am all-recursive check check-am check-recursive clean \
-	clean-generic clean-recursive distclean distclean-generic \
-	distclean-recursive distclean-tags distdir dvi dvi-am \
-	dvi-recursive info info-am info-recursive install install-am \
-	install-binSCRIPTS install-data install-data-am \
+	clean-generic clean-recursive dist dist-all distclean \
+	distclean-generic distclean-recursive distclean-tags distdir \
+	dvi dvi-am dvi-recursive info info-am info-recursive install \
+	install-am install-binSCRIPTS install-data install-data-am \
 	install-data-recursive install-dist_pkgdataDATA \
 	install-dist_scriptDATA install-exec install-exec-am \
 	install-exec-recursive install-info-am install-recursive \
