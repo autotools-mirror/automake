@@ -1,4 +1,4 @@
-## --------------------------------- ##
+## --------------------------------- ##              -*- Autoconf -*-
 ## Check if --with-regex was given.  ##
 ## --------------------------------- ##
 
@@ -19,7 +19,8 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 
-# serial 2
+# serial 3
+AC_PREREQ(2.50)
 
 # AM_WITH_REGEX
 # -------------
@@ -37,8 +38,7 @@
 # FIXME: This macro seems quite obsolete now since rx doesn't seem to
 # be maintained, while regex is.
 AC_DEFUN([AM_WITH_REGEX],
-[ifdef([AC_LIBSOURCES],
-       [AC_LIBSOURCES([rx.h, rx.c, regex.c, regex.h])])dnl
+[AC_LIBSOURCES([rx.h, rx.c, regex.c, regex.h])dnl
 AC_MSG_CHECKING([which of GNU rx or gawk's regex is wanted])
 AC_ARG_WITH(regex,
 [  --without-regex         use GNU rx in lieu of gawk's regex for matching],
@@ -53,11 +53,11 @@ if test -n "$am_with_regex"; then
 		 [am_cv_gnu_regex=yes],
                  [am_cv_gnu_regex=no])])
   if test $am_cv_gnu_regex = no; then
-    LIBOBJS="$LIBOBJS regex.$ac_objext"
+    AC_LIBOBJ([regex])
   fi
 else
   AC_MSG_RESULT(rx)
-  AC_CHECK_FUNC(re_rx_search, , [LIBOBJS="$LIBOBJS rx.$ac_objext"])
+  AC_CHECK_FUNC(re_rx_search, , [AC_LIBOBJ([rx])])
 fi
 AC_SUBST(LIBOBJS)dnl
 ])

@@ -1,4 +1,6 @@
-# Figure out how to run the assembler.
+# Figure out how to run the assembler.             -*- Autoconf -*-
+
+# serial 2
 
 # Copyright 2001 Free Software Foundation, Inc.
 
@@ -18,6 +20,7 @@
 # 02111-1307, USA.
 
 # AM_PROG_AS
+# ----------
 AC_DEFUN([AM_PROG_AS],
 [# By default we simply use the C compiler to build assembly code.
 AC_REQUIRE([AC_PROG_CC])
