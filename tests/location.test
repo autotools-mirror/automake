@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1996, 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 2002  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -18,23 +18,34 @@
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-# Test "not a standard library" error.
+# Test for locations in error messages.
 
 . ./defs || exit 1
 
 set -e
 
 cat >> configure.in << 'END'
+AM_CONDITIONAL([COND1], [true])
+AM_CONDITIONAL([COND2], [true])
 AC_PROG_CC
 AC_PROG_RANLIB
 END
 
 cat > Makefile.am << 'END'
-noinst_LIBRARIES = foo
+bin_PROGRAMS = libfoo.a
+if COND2
+  lib_LIBRARIES = libfoo.a
+endif
+if COND1
+  bin_PROGRAMS += ctags
+endif
 END
 
 $ACLOCAL
-$AUTOMAKE 2> output.log && exit 1
-cat output.log
-# We're specifically testing for line-number information.
-grep 'Makefile.am:1:.*foo.*standard library name' output.log
+$AUTOMAKE 2>stderr && exit 1
+cat stderr
+grep 'Makefile\.am:1:.*program.*libfoo\.a' stderr
+grep 'Makefile\.am:3:.*library.*libfoo\.a' stderr
+grep 'Makefile\.am:6:.*program.*ctags' stderr
+grep 'redefinition of.*libfoo\.a' stderr
+grep 'redefinition of.*ctags' stderr

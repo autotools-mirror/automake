@@ -240,6 +240,7 @@ link_f_only.test \
 lisp.test \
 lisp2.test \
 listval.test \
+location.test \
 ltdeps.test \
 ltlibobjs.test \
 maintclean.test \

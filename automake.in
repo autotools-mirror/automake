@@ -704,7 +704,7 @@ my %appendvar = ();
 ## --------------------------------- ##
 sub register_language (%);
 sub file_contents_internal ($$$%);
-sub define_objects_from_sources ($$$$$$$);
+sub define_objects_from_sources ($$$$$$$$);
 
 
 # &initialize_per_input ()
@@ -2596,7 +2596,7 @@ sub handle_single_transform_list ($$$$@)
 
 # ($LINKER, $OBJVAR)
 # define_objects_from_sources ($VAR, $OBJVAR, $NODEFINE, $ONE_FILE,
-#                              $OBJ, $PARENT, $TOPPARENT)
+#                              $OBJ, $PARENT, $TOPPARENT, $WHERE)
 # ---------------------------------------------------------------------
 # Define an _OBJECTS variable for a _SOURCES variable (or subvariable)
 #
@@ -2610,6 +2610,7 @@ sub handle_single_transform_list ($$$$@)
 #   $OBJ is the object extension (ie either `.o' or `.lo').
 #   $PARENT is the variable in which $VAR is used, or $VAR if not applicable.
 #   $TOPPARENT is the _SOURCES variable being processed.
+#   $WHERE context into which this definition is done
 #
 # Result is a pair ($LINKER, $OBJVAR):
 #    $LINKER is a boolean, true if a linker is needed to deal with the objects,
@@ -2622,9 +2623,10 @@ sub handle_single_transform_list ($$$$@)
 #   @substfroms and @substtos will be used to keep a stack of variable
 #   substitutions to be applied.
 #
-sub define_objects_from_sources ($$$$$$$)
+sub define_objects_from_sources ($$$$$$$$)
 {
-    my ($var, $objvar, $nodefine, $one_file, $obj, $parent, $topparent) = @_;
+    my ($var, $objvar, $nodefine, $one_file, $obj,
+	$parent, $topparent, $where) = @_;
 
     if (defined $vars_scanned{$var})
     {
@@ -2665,7 +2667,8 @@ sub define_objects_from_sources ($$$$$$$)
 		my ($temp, $varname)
 		    = define_objects_from_sources ($subvar, undef,
 						   $nodefine, $one_file,
-						   $obj, $var, $topparent);
+						   $obj, $var, $topparent,
+						   $where);
 
 		push (@result, '$('. $varname . ')');
 		$needlinker ||= $temp;
@@ -2699,7 +2702,7 @@ sub define_objects_from_sources ($$$$$$$)
 	foreach my $pair (@allresults)
 	{
 	    my ($cond, @result) = @$pair;
-	    define_pretty_variable ($objvar, $cond, INTERNAL, @result);
+	    define_pretty_variable ($objvar, $cond, $where, @result);
 	}
     }
 
@@ -2771,7 +2774,7 @@ sub handle_source_transform
 {
     # one_file is canonical name.  unxformed is given name.  obj is
     # object extension.
-    my ($one_file, $unxformed, $obj) = @_;
+    my ($one_file, $unxformed, $obj, $where) = @_;
 
     my ($linker) = '';
 
@@ -2809,7 +2812,7 @@ sub handle_source_transform
 	    define_objects_from_sources ($var,
 					 $xpfx . $one_file . '_OBJECTS',
 					 $prefix =~ /EXTRA_/,
-					 $one_file, $obj, $var, $var);
+					 $one_file, $obj, $var, $var, $where);
 	$needlinker ||= $temp;
     }
     if ($needlinker)
@@ -2820,7 +2823,7 @@ sub handle_source_transform
     my @keys = sort keys %used_pfx;
     if (scalar @keys == 0)
     {
-	&define_variable ($one_file . "_SOURCES", $unxformed . ".c", INTERNAL);
+	&define_variable ($one_file . "_SOURCES", $unxformed . ".c", $where);
 	push (@sources, $unxformed . '.c');
 	push (@dist_sources, $unxformed . '.c');
 
@@ -2831,12 +2834,12 @@ sub handle_source_transform
 					 $one_file, $obj,
 					 "$unxformed.c");
 	$linker ||= &resolve_linker (%linkers_used);
-	define_pretty_variable ($one_file . '_OBJECTS', '', INTERNAL, @result)
+	define_pretty_variable ($one_file . '_OBJECTS', '', $where, @result)
     }
     else
     {
 	grep ($_ = '$(' . $_ . $one_file . '_OBJECTS)', @keys);
-	define_pretty_variable ($one_file . '_OBJECTS', '', INTERNAL, @keys);
+	define_pretty_variable ($one_file . '_OBJECTS', '', $where, @keys);
     }
 
     # If we want to use `LINK' we must make sure it is defined.
@@ -3143,8 +3146,10 @@ sub handle_programs
   my $seen_global_libobjs =
     variable_defined ('LDADD') && &handle_lib_objects ('', 'LDADD');
 
-  foreach my $one_file (@proglist)
+  foreach my $pair (@proglist)
     {
+      my ($where, $one_file) = @$pair;
+
       my $seen_libobjs = 0;
       my $obj = &get_object_extension ($one_file);
 
@@ -3153,7 +3158,10 @@ sub handle_programs
 					     '_SOURCES', '_OBJECTS',
 					     '_DEPENDENCIES');
 
-      my $linker = &handle_source_transform ($xname, $one_file, $obj);
+      $where->push_context ("while processing program `$one_file'");
+      $where->set (INTERNAL->get);
+
+      my $linker = &handle_source_transform ($xname, $one_file, $obj, $where);
 
       my $xt = '';
       if (variable_defined ($xname . "_LDADD"))
@@ -3164,7 +3172,7 @@ sub handle_programs
       else
 	{
 	  # User didn't define prog_LDADD override.  So do it.
-	  &define_variable ($xname . '_LDADD', '$(LDADD)', INTERNAL);
+	  &define_variable ($xname . '_LDADD', '$(LDADD)', $where);
 
 	  # This does a bit too much work.  But we need it to
 	  # generate _DEPENDENCIES when appropriate.
@@ -3174,7 +3182,7 @@ sub handle_programs
 	    }
 	  elsif (! variable_defined ($xname . '_DEPENDENCIES'))
 	    {
-	      &define_variable ($xname . '_DEPENDENCIES', '', INTERNAL);
+	      &define_variable ($xname . '_DEPENDENCIES', '', $where);
 	    }
 	  $xt = '_SOURCES';
 	}
@@ -3185,7 +3193,7 @@ sub handle_programs
       if (! variable_defined ($xname . '_LDFLAGS'))
 	{
 	  # Define the prog_LDFLAGS variable.
-	  &define_variable ($xname . '_LDFLAGS', '', INTERNAL);
+	  &define_variable ($xname . '_LDFLAGS', '', $where);
 	}
 
       # Determine program to use for link.
@@ -3209,7 +3217,7 @@ sub handle_programs
 		       : '');
 
       $output_rules .= &file_contents ('program',
-				       new Automake::Location,
+				       $where,
 				       PROGRAM  => $one_file,
 				       XPROGRAM => $xname,
 				       XLINK    => $xlink,
@@ -3247,16 +3255,19 @@ sub handle_libraries
 			       'library used', 'RANLIB')
     if (@prefix);
 
-  foreach my $onelib (@liblist)
+  foreach my $pair (@liblist)
     {
+      my ($where, $onelib) = @$pair;
+
       my $seen_libobjs = 0;
       # Check that the library fits the standard naming convention.
       if (basename ($onelib) !~ /^lib.*\.a/)
 	{
-	  # FIXME should put line number here.  That means mapping
-	  # from library name back to variable name.
-	  err_am "`$onelib' is not a standard library name";
+	  err $where, "`$onelib' is not a standard library name";
 	}
+
+      $where->push_context ("while processing library `$onelib'");
+      $where->set (INTERNAL->get);
 
       my $obj = &get_object_extension ($onelib);
 
@@ -3267,7 +3278,7 @@ sub handle_libraries
 
       if (! variable_defined ($xlib . '_AR'))
 	{
-	  &define_variable ($xlib . '_AR', '$(AR) cru', INTERNAL);
+	  &define_variable ($xlib . '_AR', '$(AR) cru', $where);
 	}
 
       if (variable_defined ($xlib . '_LIBADD'))
@@ -3281,7 +3292,7 @@ sub handle_libraries
 	{
 	  # Generate support for conditional object inclusion in
 	  # libraries.
-	  &define_variable ($xlib . "_LIBADD", '', INTERNAL);
+	  &define_variable ($xlib . "_LIBADD", '', $where);
 	}
 
       reject_var ($xlib . '_LDADD',
@@ -3290,14 +3301,14 @@ sub handle_libraries
       # Make sure we at look at this.
       &examine_variable ($xlib . '_DEPENDENCIES');
 
-      &handle_source_transform ($xlib, $onelib, $obj);
+      &handle_source_transform ($xlib, $onelib, $obj, $where);
 
       # If the resulting library lies into a subdirectory,
       # make sure this directory will exist.
       my $dirstamp = require_build_directory_maybe ($onelib);
 
       $output_rules .= &file_contents ('library',
-				       new Automake::Location,
+				       $where,
 				       LIBRARY  => $onelib,
 				       XLIBRARY => $xlib,
 				       DIRSTAMP => $dirstamp);
@@ -3366,8 +3377,10 @@ sub handle_ltlibraries
 	}
     }
 
-  foreach my $onelib (@liblist)
+  foreach my $pair (@liblist)
     {
+      my ($where, $onelib) = @$pair;
+
       my $seen_libobjs = 0;
       my $obj = &get_object_extension ($onelib);
 
@@ -3375,12 +3388,6 @@ sub handle_ltlibraries
       my $xlib = &check_canonical_spelling ($onelib, '_LIBADD', '_LDFLAGS',
 					    '_SOURCES', '_OBJECTS',
 					    '_DEPENDENCIES');
-
-      if (! variable_defined ($xlib . '_LDFLAGS'))
-	{
-	  # Define the lib_LDFLAGS variable.
-	  &define_variable ($xlib . '_LDFLAGS', '', INTERNAL);
-	}
 
       # Check that the library fits the standard naming convention.
       my $libname_rx = "^lib.*\.la";
@@ -3397,10 +3404,17 @@ sub handle_ltlibraries
 	}
       if (basename ($onelib) !~ /$libname_rx$/)
 	{
-	  # FIXME should put line number here.  That means mapping
-	  # from library name back to variable name.
-	  msg_am ('error-gnu/warn',
-		  "`$onelib' is not a standard libtool library name");
+	  msg ($where, 'error-gnu/warn',
+	       "`$onelib' is not a standard libtool library name");
+	}
+
+      $where->push_context ("while processing Libtool library `$onelib'");
+      $where->set (INTERNAL->get);
+
+      if (! variable_defined ($xlib . '_LDFLAGS'))
+	{
+	  # Define the lib_LDFLAGS variable.
+	  &define_variable ($xlib . '_LDFLAGS', '', $where);
 	}
 
       if (variable_defined ($xlib . '_LIBADD'))
@@ -3414,7 +3428,7 @@ sub handle_ltlibraries
 	{
 	  # Generate support for conditional object inclusion in
 	  # libraries.
-	  &define_variable ($xlib . "_LIBADD", '', INTERNAL);
+	  &define_variable ($xlib . "_LIBADD", '', $where);
 	}
 
       reject_var ("${xlib}_LDADD",
@@ -3423,7 +3437,7 @@ sub handle_ltlibraries
       # Make sure we at look at this.
       &examine_variable ($xlib . '_DEPENDENCIES');
 
-      my $linker = &handle_source_transform ($xlib, $onelib, $obj);
+      my $linker = &handle_source_transform ($xlib, $onelib, $obj, $where);
 
       # Determine program to use for link.
       my $xlink;
@@ -3462,7 +3476,7 @@ sub handle_ltlibraries
       $libtool_clean_directories{$dirname} = 1;
 
       $output_rules .= &file_contents ('ltlibrary',
-				       new Automake::Location,
+				       $where,
 				       LTLIBRARY  => $onelib,
 				       XLTLIBRARY => $xlib,
 				       RPATH      => $rpath,
@@ -4605,8 +4619,8 @@ sub handle_headers
 			     'noinst', 'check');
     foreach (@r)
     {
-	next unless /\..*$/;
-	&saw_extension ($&);
+      next unless $_->[1] =~ /\..*$/;
+      &saw_extension ($&);
     }
 }
 
@@ -4969,14 +4983,14 @@ sub handle_emacs_lisp
   return if ! @elfiles;
 
   # Generate .elc files.
-  my @elcfiles = map { $_ . 'c' } @elfiles;
+  my @elcfiles = map { $_->[1] . 'c' } @elfiles;
   define_pretty_variable ('ELCFILES', '', INTERNAL, @elcfiles);
 
   push (@all, '$(ELCFILES)');
 
-  require_variables ("$am_file.am", "Emacs Lisp sources seen", 'TRUE',
+  require_variables ($elfiles[0][0], "Emacs Lisp sources seen", 'TRUE',
 		     'EMACS', 'lispdir');
-  require_conf_file ("$am_file.am", FOREIGN, 'elisp-comp');
+  require_conf_file ($elfiles[0][0], FOREIGN, 'elisp-comp');
   &define_variable ('elisp_comp', $config_aux_dir . '/elisp-comp', INTERNAL);
 }
 
@@ -4987,9 +5001,8 @@ sub handle_python
 				 'noinst');
   return if ! @pyfiles;
 
-  require_variables ("$am_file.am", "Python sources seen", 'TRUE',
-		     'PYTHON');
-  require_conf_file ("$am_file.am", FOREIGN, 'py-compile');
+  require_variables ($pyfiles[0][0], "Python sources seen", 'TRUE', 'PYTHON');
+  require_conf_file ($pyfiles[0][0], FOREIGN, 'py-compile');
   &define_variable ('py_compile', $config_aux_dir . '/py-compile', INTERNAL);
 }
 
@@ -6126,7 +6139,7 @@ sub check_ambiguous_conditional ($$$)
   if ($message)
     {
       msg 'syntax', $where, "$message ...";
-      msg_var ('syntax', $var, "... `$var' previously defined here.");
+      msg_var ('syntax', $var, "... `$var' previously defined here");
       verb (macro_dump ($var));
     }
 }
@@ -7022,8 +7035,8 @@ sub variable_value
 
 
 # @VALUES
-# &value_to_list ($VAR, $VAL, $COND)
-# ----------------------------------
+# &value_to_list ($VAR, $VAL, $COND, $WHERE, $LOC_WANTED)
+# -------------------------------------------------------
 # Convert a variable value to a list, split as whitespace.  This will
 # recursively follow $(...) and ${...} inclusions.  It preserves @...@
 # substitutions.
@@ -7032,58 +7045,72 @@ sub variable_value
 # returned; if COND is a particular condition (all conditions are
 # surrounded by @...@) then only the value for that condition should
 # be returned; otherwise, warn if VAR is conditionally defined.
-# SCANNED is a global hash listing whose keys are all the variables
-# already scanned; it is an error to rescan a variable.
-sub value_to_list ($$$)
+# WHERE is the location where VAR=VAL.
+# If LOC_WANTED is set, return a list of [$location, @values] instead
+# of a list of @values.
+sub value_to_list ($$$$$)
 {
-    my ($var, $val, $cond) = @_;
-    my @result;
+  my ($var, $val, $cond, $where, $loc_wanted) = @_;
+  my @result;
 
-    # Strip backslashes
-    $val =~ s/\\(\n|$)/ /g;
+  # Strip backslashes
+  $val =~ s/\\$/ /gm;
 
-    foreach (split (' ', $val))
+  foreach (split (' ', $val))
     {
-	# If a comment seen, just leave.
-	last if /^#/;
+      # If a comment seen, just leave.
+      last if /^#/;
 
-	# Handle variable substitutions.
-	if (/^\$\{([^}]*)\}$/ || /^\$\(([^)]*)\)$/)
+      # Handle variable substitutions. (The backslash in [^\}] and [^\)]
+      # is here to help Emacs indenting correctly.)
+      if (/^\$\{([^\}]*)\}$/ || /^\$\(([^\)]*)\)$/)
 	{
-	    my $varname = $1;
+	  my $varname = $1;
 
-	    # If the user uses a losing variable name, just ignore it.
-	    # This isn't ideal, but people have requested it.
-	    next if ($varname =~ /\@.*\@/);
+	  # If the user uses a losing variable name, just ignore it.
+	  # This isn't ideal, but people have requested it.
+	  next if ($varname =~ /\@.*\@/);
 
-	    my ($from, $to);
-	    my @temp_list;
-	    if ($varname =~ /$SUBST_REF_PATTERN/o)
+	  my ($from, $to);
+	  my @temp_list;
+	  if ($varname =~ /$SUBST_REF_PATTERN/o)
 	    {
-		$varname = $1;
-		$to = $3;
-		$from = quotemeta $2;
+	      $varname = $1;
+	      $to = $3;
+	      $from = quotemeta $2;
 	    }
 
-	    # Find the value.
-	    @temp_list =
-	      variable_value_as_list_recursive_worker ($1, $cond, $var);
+	  # Find the value.
+	  @temp_list =
+	    variable_value_as_list_recursive_worker ($1, $cond, $var,
+						     $loc_wanted);
 
-	    # Now rewrite the value if appropriate.
-	    if (defined $from)
+	  # Now rewrite the values if appropriate.
+	  if (defined $from)
 	    {
-		grep (s/$from$/$to/, @temp_list);
+	      for my $val (@temp_list)
+		{
+		  if ($loc_wanted)
+		    {
+		      $val->[0] =~ s/$from$/$to/;
+		    }
+		  else
+		    {
+		      $val =~ s/$from$/$to/;
+		    }
+		}
 	    }
 
-	    push (@result, @temp_list);
+	  push (@result, @temp_list);
 	}
-	else
+      else
 	{
-	    push (@result, $_);
+	  $_ = [$where->clone, $_] if $loc_wanted;
+	  push (@result, $_);
 	}
     }
 
-    return @result;
+  return @result;
 }
 
 
@@ -7143,8 +7170,8 @@ sub variable_value_as_list
 
 
 # @VALUE
-# &variable_value_as_list_recursive_worker ($VAR, $COND, $PARENT)
-# ---------------------------------------------------------------
+# &variable_value_as_list_recursive_worker ($VAR, $COND, $PARENT, $LOC_WANTED)
+# ----------------------------------------------------------------------------
 # Return contents of VAR as a list, split on whitespace.  This will
 # recursively follow $(...) and ${...} inclusions.  It preserves @...@
 # substitutions.  If COND is 'all', then all values under all
@@ -7153,9 +7180,11 @@ sub variable_value_as_list
 # that condition should be returned; otherwise, warn if VAR is
 # conditionally defined.  If PARENT is specified, it is the name of
 # the including variable; this is only used for error reports.
-sub variable_value_as_list_recursive_worker ($$$)
+# If $LOC_WANTED is set, return a list of [$location, @values] instead
+# of a list of @values.
+sub variable_value_as_list_recursive_worker ($$$$)
 {
-    my ($var, $cond, $parent) = @_;
+    my ($var, $cond, $parent, $loc_wanted) = @_;
     my @result = ();
 
     return
@@ -7172,8 +7201,11 @@ sub variable_value_as_list_recursive_worker ($$$)
 	$vars_scanned{$var} = 1;
 	foreach my $vcond (keys %{$var_value{$var}})
 	{
-	    my $val = $var_value{$var}{$vcond};
-	    push (@result, &value_to_list ($var, $val, $cond));
+	    push (@result, &value_to_list ($var,
+					   $var_value{$var}{$vcond},
+					   $cond,
+					   $var_location{$var}{$vcond},
+					   $loc_wanted));
 	}
     }
     else
@@ -7184,6 +7216,7 @@ sub variable_value_as_list_recursive_worker ($$$)
 	foreach my $vcond (keys %{$var_value{$var}})
 	{
 	    my $val = $var_value{$var}{$vcond};
+	    my $where = $var_location{$var}{$vcond};
 	    if (&conditional_true_when ($vcond, $cond))
 	    {
 		# Warn if we have an ambiguity.  It's hard to know how
@@ -7191,7 +7224,8 @@ sub variable_value_as_list_recursive_worker ($$$)
 		&check_variable_defined_unconditionally ($var, $parent)
 		    if $onceflag;
 		$onceflag = 1;
-		push (@result, &value_to_list ($var, $val, $cond));
+		push (@result, &value_to_list ($var, $val, $cond, $where,
+					       $loc_wanted));
 	    }
 	}
     }
@@ -7265,16 +7299,31 @@ sub variable_pretty_output ($@)
 }
 
 
-# &variable_value_as_list_recursive ($VAR, $COND, $PARENT)
-# --------------------------------------------------------
-# This is just a wrapper for variable_value_as_list_recursive_worker that
-# initializes the global hash `vars_scanned'.  This hash is used to
-# avoid infinite recursion.
-sub variable_value_as_list_recursive ($$@)
+# &variable_value_as_list_recursive ($VAR, $COND, [$PARENT])
+# ----------------------------------------------------------
+# Return the list of values of $VAR in condition $COND.
+# $PARENT (if known) is the variable where this variable occurs,
+# in case we need to print an error message.
+sub variable_value_as_list_recursive ($$;$)
+{
+    my ($var, $cond, $parent) = @_;
+    # This global hash is used to avoid infinite recursion in
+    # &variable_value_as_list_recursive_worker.
+    %vars_scanned = ();
+    return &variable_value_as_list_recursive_worker ($var, $cond, $parent, 0);
+}
+
+# &variable_loc_and_value_as_list_recursive ($VAR, $COND, [$PARENT])
+# ----------------------------------------------------------------
+# Return the values of $VAR in condition $COND as a list of
+# [$location, @values] pairs.
+# $PARENT (if known) is the variable where this variable occurs,
+# in case we need to print an error message.
+sub variable_loc_and_value_as_list_recursive ($$;$)
 {
     my ($var, $cond, $parent) = @_;
     %vars_scanned = ();
-    return &variable_value_as_list_recursive_worker ($var, $cond, $parent);
+    return &variable_value_as_list_recursive_worker ($var, $cond, $parent, 1);
 }
 
 
@@ -7450,7 +7499,7 @@ sub register_suffix_rule ($$$)
 # is the filename the rule comes from.  $OWNER is the
 # owener of the rule (TARGET_AUTOMAKE or TARGET_USER).
 # $COND is the condition string under which the rule is defined.
-# $WHERE is where the rule is defined (file name and/or line number).
+# $WHERE is the location where the rule is defined.
 # Returns a (possibly empty) list of conditions where the rule
 # should be defined.
 sub rule_define ($$$$$)
@@ -7474,12 +7523,14 @@ sub rule_define ($$$$$)
       # The no-exeext option enables this feature.
       if (! defined $options{'no-exeext'})
 	{
-	  msg ('obsolete', $noexe,
-	       "deprecated feature: `$noexe' overrides `$noexe\$(EXEEXT)'\n"
+	  msg ('obsolete', $targets{$noexe}{$cond},
+	       "deprecated feature: target `$noexe' overrides "
+	       . "`$noexe\$(EXEEXT)'\n"
 	       . "change your target to read `$noexe\$(EXEEXT)'");
+	  msg ('obsolete', $where, "target `$target' was defined here");
 	}
-      # Don't define.
-      return ();
+      # Don't `return ()' now, as this might hide target clashes
+      # detected below.
     }
 
   # For now on, strip off $(EXEEXT) from $target, so we can diagnose
@@ -7530,7 +7581,7 @@ sub rule_define ($$$$$)
 		  # msg ('syntax', $where,
 		  #      "redefinition of `$target'$condmsg...");
 		  # msg_cond_target ('syntax', $cond, $target,
-		  # 		   "... `$target' previously defined here.");
+		  # 		   "... `$target' previously defined here");
 		}
 	      # Return so we don't redefine the rule in our tables,
 	      # don't check for ambiguous conditional, etc.  The rule
@@ -7569,7 +7620,7 @@ sub rule_define ($$$$$)
 
 	      msg ('syntax', $where, "redefinition of `$target'$condmsg...");
 	      msg_cond_target ('syntax', $cond, $target,
-			       "... `$target' previously defined here.");
+			       "... `$target' previously defined here");
 	      return ();
 	    }
 	}
@@ -7590,7 +7641,7 @@ sub rule_define ($$$$$)
 	  # For user rules, just diagnose the ambiguity.
 	  msg 'syntax', $where, "$message ...";
 	  msg_cond_target ('syntax', $ambig_cond, $target,
-			   "... `$target' previously defined here.");
+			   "... `$target' previously defined here");
 	  return ();
 	}
       else
@@ -7626,7 +7677,7 @@ sub rule_define ($$$$$)
 	    {
 	      msg 'syntax', $where, "$message ...";
 	      msg_cond_target ('syntax', $ambig_cond, $target,
-			       "... `$target' previously defined here.");
+			       "... `$target' previously defined here");
 	      return ();
 	    }
 	}
@@ -8510,8 +8561,12 @@ sub am_primary_prefixes ($$@)
 # install code, and possibly generates code to define the primary
 # variable.  The first argument is the name of the .am file to munge,
 # the second argument is the primary variable (eg HEADERS), and all
-# subsequent arguments are possible installation locations.  Returns
-# list of all values of all _HOW targets.
+# subsequent arguments are possible installation locations.
+#
+# Returns list of [$location, $value] pairs, where
+# $value's are the values in all where_HOW variable, and $location
+# there associated location (the place here their parent variables were
+# defined).
 #
 # FIXME: this should be rewritten to be cleaner.  It should be broken
 # up into multiple functions.
@@ -8519,143 +8574,151 @@ sub am_primary_prefixes ($$@)
 # Usage is: am_install_var (OPTION..., file, HOW, where...)
 sub am_install_var
 {
-    my (@args) = @_;
+  my (@args) = @_;
 
-    my $do_require = 1;
-    my $can_dist = 0;
-    my $default_dist = 0;
-    while (@args)
+  my $do_require = 1;
+  my $can_dist = 0;
+  my $default_dist = 0;
+  while (@args)
     {
-	if ($args[0] eq '-noextra')
+      if ($args[0] eq '-noextra')
 	{
-	    $do_require = 0;
+	  $do_require = 0;
 	}
-	elsif ($args[0] eq '-candist')
+      elsif ($args[0] eq '-candist')
 	{
-	    $can_dist = 1;
+	  $can_dist = 1;
 	}
-	elsif ($args[0] eq '-defaultdist')
+      elsif ($args[0] eq '-defaultdist')
 	{
-	    $default_dist = 1;
-	    $can_dist = 1;
+	  $default_dist = 1;
+	  $can_dist = 1;
 	}
-	elsif ($args[0] !~ /^-/)
+      elsif ($args[0] !~ /^-/)
 	{
-	    last;
+	  last;
 	}
-	shift (@args);
+      shift (@args);
     }
 
-    my ($file, $primary, @prefix) = @args;
+  my ($file, $primary, @prefix) = @args;
 
-    # Now that configure substitutions are allowed in where_HOW
-    # variables, it is an error to actually define the primary.  We
-    # allow `JAVA', as it is customarily used to mean the Java
-    # interpreter.  This is but one of several Java hacks.  Similarly,
-    # `PYTHON' is customarily used to mean the Python interpreter.
-    reject_var $primary, "`$primary' is an anachronism"
-      unless $primary eq 'JAVA' || $primary eq 'PYTHON';
+  # Now that configure substitutions are allowed in where_HOW
+  # variables, it is an error to actually define the primary.  We
+  # allow `JAVA', as it is customarily used to mean the Java
+  # interpreter.  This is but one of several Java hacks.  Similarly,
+  # `PYTHON' is customarily used to mean the Python interpreter.
+  reject_var $primary, "`$primary' is an anachronism"
+    unless $primary eq 'JAVA' || $primary eq 'PYTHON';
 
-    # Get the prefixes which are valid and actually used.
-    @prefix = am_primary_prefixes ($primary, $can_dist, @prefix);
+  # Get the prefixes which are valid and actually used.
+  @prefix = am_primary_prefixes ($primary, $can_dist, @prefix);
 
-    # If a primary includes a configure substitution, then the EXTRA_
-    # form is required.  Otherwise we can't properly do our job.
-    my $require_extra;
+  # If a primary includes a configure substitution, then the EXTRA_
+  # form is required.  Otherwise we can't properly do our job.
+  my $require_extra;
 
-    my @used = ();
-    my @result = ();
+  my @used = ();
+  my @result = ();
 
-    # True if the iteration is the first one.  Used for instance to
-    # output parts of the associated file only once.
-    my $first = 1;
-    foreach my $X (@prefix)
+  # True if the iteration is the first one.  Used for instance to
+  # output parts of the associated file only once.
+  my $first = 1;
+  foreach my $X (@prefix)
     {
-	my $nodir_name = $X;
-	my $one_name = $X . '_' . $primary;
+      my $nodir_name = $X;
+      my $one_name = $X . '_' . $primary;
 
-	my $strip_subdir = 1;
-	# If subdir prefix should be preserved, do so.
-	if ($nodir_name =~ /^nobase_/)
-	  {
-	    $strip_subdir = 0;
-	    $nodir_name =~ s/^nobase_//;
-	  }
+      my $strip_subdir = 1;
+      # If subdir prefix should be preserved, do so.
+      if ($nodir_name =~ /^nobase_/)
+	{
+	  $strip_subdir = 0;
+	  $nodir_name =~ s/^nobase_//;
+	}
 
-	# If files should be distributed, do so.
-	my $dist_p = 0;
-	if ($can_dist)
-	  {
-	    $dist_p = (($default_dist && $nodir_name !~ /^nodist_/)
-		       || (! $default_dist && $nodir_name =~ /^dist_/));
-	    $nodir_name =~ s/^(dist|nodist)_//;
-	  }
+      # If files should be distributed, do so.
+      my $dist_p = 0;
+      if ($can_dist)
+	{
+	  $dist_p = (($default_dist && $nodir_name !~ /^nodist_/)
+		     || (! $default_dist && $nodir_name =~ /^dist_/));
+	  $nodir_name =~ s/^(dist|nodist)_//;
+	}
 
-	# Append actual contents of where_PRIMARY variable to
-	# result.
-	foreach my $rcurs (&variable_value_as_list_recursive ($one_name, 'all'))
-	  {
-	    # Skip configure substitutions.  Possibly bogus.
-	    if ($rcurs =~ /^\@.*\@$/)
-	      {
-		if ($nodir_name eq 'EXTRA')
-		  {
-		    err_var ($one_name,
-			     "`$one_name' contains configure substitution, "
-			     . "but shouldn't");
-		  }
-		# Check here to make sure variables defined in
-		# configure.ac do not imply that EXTRA_PRIMARY
-		# must be defined.
-		elsif (! defined $configure_vars{$one_name})
-		  {
-		    $require_extra = $one_name
-		      if $do_require;
-		  }
 
-		next;
-	      }
+      # Use the location of the currently processed variable.
+      # We are not processing a particular condition, so pick the first
+      # available.
+      my $tmpcond = (keys %{$var_value{$one_name}})[0];
+      my $where = $var_location{$one_name}{$tmpcond}->clone;
 
-	    push (@result, $rcurs);
-	  }
-	# A blatant hack: we rewrite each _PROGRAMS primary to include
-	# EXEEXT.
-	append_exeext ($one_name)
-	  if $primary eq 'PROGRAMS';
-	# "EXTRA" shouldn't be used when generating clean targets,
-	# all, or install targets.  We used to warn if EXTRA_FOO was
-	# defined uselessly, but this was annoying.
-	next
-	  if $nodir_name eq 'EXTRA';
+      # Append actual contents of where_PRIMARY variable to
+      # result.
+      foreach my $locvals (&variable_loc_and_value_as_list_recursive
+			   ($one_name, 'all'))
+	{
+	  my ($loc, @values) = @$locvals;
+	  my @nosubst = (); # @values without substitutions.
+	  for my $rcurs (@values)
+	    {
+	      # Skip configure substitutions.  Possibly bogus.
+	      if ($rcurs =~ /^\@.*\@$/)
+		{
+		  if ($nodir_name eq 'EXTRA')
+		    {
+		      err ($where,
+			   "`$one_name' contains configure substitution, "
+			   . "but shouldn't");
+		    }
+		  # Check here to make sure variables defined in
+		  # configure.ac do not imply that EXTRA_PRIMARY
+		  # must be defined.
+		  elsif (! defined $configure_vars{$one_name})
+		    {
+		      $require_extra = $one_name
+			if $do_require;
+		    }
+		  next;
+		}
+	      push @nosubst, $rcurs;
+	    }
+	  push (@result, [$loc, @nosubst]) if @nosubst;
+	}
+      # A blatant hack: we rewrite each _PROGRAMS primary to include
+      # EXEEXT.
+      append_exeext ($one_name)
+	if $primary eq 'PROGRAMS';
+      # "EXTRA" shouldn't be used when generating clean targets,
+      # all, or install targets.  We used to warn if EXTRA_FOO was
+      # defined uselessly, but this was annoying.
+      next
+	if $nodir_name eq 'EXTRA';
 
-	if ($nodir_name eq 'check')
-	  {
-	    push (@check, '$(' . $one_name . ')');
-	  }
-	else
-	  {
-	    push (@used, '$(' . $one_name . ')');
-	  }
+      if ($nodir_name eq 'check')
+	{
+	  push (@check, '$(' . $one_name . ')');
+	}
+      else
+	{
+	  push (@used, '$(' . $one_name . ')');
+	}
 
-	# Is this to be installed?
-	my $install_p = $nodir_name ne 'noinst' && $nodir_name ne 'check';
+      # Is this to be installed?
+      my $install_p = $nodir_name ne 'noinst' && $nodir_name ne 'check';
 
-	# If so, with install-exec? (or install-data?).
-	my $exec_p = ($nodir_name =~ /$EXEC_DIR_PATTERN/o);
+      # If so, with install-exec? (or install-data?).
+      my $exec_p = ($nodir_name =~ /$EXEC_DIR_PATTERN/o);
 
-	my $check_options_p = $install_p
-			      && defined $options{'std-options'};
+      my $check_options_p = $install_p
+	&& defined $options{'std-options'};
 
-	# Use the location of the currently processed variable as context.
-	# We are not processing a particular condition, so pick the first
-	# available.
-	my $cond = (keys %{$var_value{$one_name}})[0];
-	my $where = $var_location{$one_name}{$cond}->clone;
-	$where->push_context ("while processing `$one_name'");
+      # Use the location of the currently processed variable as context.
+      $where->push_context ("while processing `$one_name'");
 
-	# Singular form of $PRIMARY.
-	(my $one_primary = $primary) =~ s/S$//;
-	$output_rules .= &file_contents ($file, $where,
+      # Singular form of $PRIMARY.
+      (my $one_primary = $primary) =~ s/S$//;
+      $output_rules .= &file_contents ($file, $where,
 					 FIRST => $first,
 
 					 PRIMARY     => $primary,
@@ -8669,31 +8732,42 @@ sub am_install_var
 					 DIST      => $dist_p,
 					 'CK-OPTS' => $check_options_p);
 
-	$first = 0;
+      $first = 0;
     }
 
-    # The JAVA variable is used as the name of the Java interpreter.
-    # The PYTHON variable is used as the name of the Python interpreter.
-    if (@used && $primary ne 'JAVA' && $primary ne 'PYTHON')
+  # The JAVA variable is used as the name of the Java interpreter.
+  # The PYTHON variable is used as the name of the Python interpreter.
+  if (@used && $primary ne 'JAVA' && $primary ne 'PYTHON')
     {
-	# Define it.
-	define_pretty_variable ($primary, '', INTERNAL, @used);
-	$output_vars .= "\n";
+      # Define it.
+      define_pretty_variable ($primary, '', INTERNAL, @used);
+      $output_vars .= "\n";
     }
 
-    err_var ($require_extra,
-	     "`$require_extra' contains configure substitution,\n"
-	     . "but `EXTRA_$primary' not defined")
-      if ($require_extra && ! variable_defined ('EXTRA_' . $primary));
+  err_var ($require_extra,
+	   "`$require_extra' contains configure substitution,\n"
+	   . "but `EXTRA_$primary' not defined")
+    if ($require_extra && ! variable_defined ('EXTRA_' . $primary));
 
-    # Push here because PRIMARY might be configure time determined.
-    push (@all, '$(' . $primary . ')')
-	if @used && $primary ne 'JAVA' && $primary ne 'PYTHON';
+  # Push here because PRIMARY might be configure time determined.
+  push (@all, '$(' . $primary . ')')
+    if @used && $primary ne 'JAVA' && $primary ne 'PYTHON';
 
-    # Make the result unique.  This lets the user use conditionals in
-    # a natural way, but still lets us program lazily -- we don't have
-    # to worry about handling a particular object more than once.
-    return uniq (sort @result);
+  # Make the result unique.  This lets the user use conditionals in
+  # a natural way, but still lets us program lazily -- we don't have
+  # to worry about handling a particular object more than once.
+  # We will keep only one location per object.
+  my %result = ();
+  for my $pair (@result)
+    {
+      my ($loc, @values) = @$pair;
+      for my $val (@values)
+	{
+	  $result{$val} = $loc;
+	}
+    }
+  my @l = sort keys %result;
+  return map { [$result{$_}->clone, $_] } @l;
 }
 
 
