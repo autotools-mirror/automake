@@ -1495,28 +1495,13 @@ sub output_yacc_build_rule
 {
     my ($yacc_suffix, $use_ylwrap) = @_;
 
-    my $c_suffix = $yacc_suffix;
-    $c_suffix =~ tr/y/c/;
-    push (@suffixes, $yacc_suffix, $c_suffix);
+    (my $c_suffix = $yacc_suffix) =~ tr/y/c/;
 
     # Generate rule for c/c++.
-    $output_rules .= "$yacc_suffix$c_suffix:\n\t";
-
-    if ($use_ylwrap)
-    {
-	$output_rules .= ('$(SHELL) $(YLWRAP)'
-			  . ' "$(YACC)" $< y.tab.c $*' . $c_suffix
-			  . ' y.tab.h $*.h -- $(AM_YFLAGS) $(YFLAGS)');
-    }
-    else
-    {
-	$output_rules .= ('$(YACC) $(AM_YFLAGS) $(YFLAGS) $< && mv y.tab.c $*'
-			  . $c_suffix . "\n"
-			  . "\tif test -f y.tab.h; then \\\n"
-			  . "\tif cmp -s y.tab.h \$*.h; then rm -f y.tab.h; else mv y.tab.h \$*.h; fi; \\\n"
-			  . "\telse :; fi");
-    }
-    $output_rules .= "\n";
+    $output_rules .= &file_contents ('yacc',
+				     ('YACC_SUFFIX' => $yacc_suffix,
+				      'C_SUFFIX'    => $c_suffix,
+				      'YLWRAP'      => $use_ylwrap));
 }
 
 sub output_lex_build_rule
@@ -5589,6 +5574,19 @@ sub conditionals_true_when (@@)
     return 1;
 }
 
+
+sub condition_negate ($)
+{
+    my ($cond) = @_;
+
+    $cond =~ s/TRUE$/TRUEO/;
+    $cond =~ s/FALSE$/TRUE/;
+    $cond =~ s/TRUEO$/FALSE/;
+
+    return $cond;
+}
+
+
 # Check for an ambiguous conditional.  This is called when a variable
 # or target is being defined conditionally.  If we already know about
 # a definition that is true under the same conditions, then we have an
@@ -5967,10 +5965,8 @@ sub variable_conditions_permutations
     my $comp = shift (@comps);
     return &variable_conditions_permutations (@comps)
 	if $comp eq '';
-    my $neg = $comp;
-    $neg =~ s/TRUE$/TRUEO/;
-    $neg =~ s/FALSE$/TRUE/;
-    $neg =~ s/TRUEO$/FALSE/;
+    my $neg = condition_negate ($comp);
+
     my @ret;
     foreach my $sub (&variable_conditions_permutations (@comps))
     {
@@ -6459,14 +6455,14 @@ sub read_am_file
 	    {
 		&am_line_error ($., "else without if");
 	    }
-	    elsif ($conditional_stack[$#conditional_stack] =~ /^(.*_)?FALSE$/)
+	    elsif ($conditional_stack[$#conditional_stack] =~ /_FALSE$/)
 	    {
 		&am_line_error ($., "else after else");
 	    }
 	    else
 	    {
 		$conditional_stack[$#conditional_stack]
-		    =~ s/TRUE$/FALSE/;
+		  = condition_negate ($conditional_stack[$#conditional_stack]);
 		$cond = conditional_string (@conditional_stack);
 	    }
 	}
@@ -6827,14 +6823,15 @@ sub file_contents_internal ($%)
 	    {
 		&am_error ("else without if");
 	    }
-	    elsif ($cond_stack[$#cond_stack] =~ /^(.*_)?FALSE$/)
+	    elsif ($cond_stack[$#cond_stack] =~ /_FALSE$/)
 	    {
 		&am_error ("else after else");
 	    }
 	    else
 	    {
-		$cond_stack[$#cond_stack] =~ s/TRUE$/FALSE/;
-		$cond = conditional_string (@cond_stack);
+	      $cond_stack[$#cond_stack] =
+		condition_negate ($cond_stack[$#cond_stack]);
+	      $cond = conditional_string (@cond_stack);
 	    }
 	}
 	elsif (/$ENDIF_PATTERN/o)
