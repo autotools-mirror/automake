@@ -88,8 +88,10 @@ maintainer-check: automake aclocal
 	  echo "Found incorrect use of mkinstalldirs in the lines above" 1>&2; \
 	  exit 1; \
 	else :; fi
-## We never want to use "undef", only "delete".
-	@if grep -n -w undef $(srcdir)/automake.in; then \
+## We never want to use "undef", only "delete", but for $/.
+	@if grep -n -w undef $(srcdir)/automake.in | \
+	      fgrep -v 'undef $/' | \
+	      grep . ; then \
 	  echo "Found undef in automake.in; use delete instead" 1>&2; \
 	  exit 1; \
 	fi
