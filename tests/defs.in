@@ -74,7 +74,9 @@ test -z "$AUTOCONF" && AUTOCONF="@am_AUTOCONF@"
 test -z "$AUTOHEADER" && AUTOHEADER="@AUTOHEADER@"
 test -z "$AUTOUPDATE" && AUTOUPDATE=autoupdate
 test -z "$MISSING" && MISSING=`pwd`/../lib/missing
-test -z "$ACLOCAL" && ACLOCAL="aclocal-@APIVERSION@"
+# Use -Werror because this also turns some Perl warnings into error.
+# (Tests for which this is inappropriate should use -Wno-error.)
+test -z "$ACLOCAL" && ACLOCAL="aclocal-@APIVERSION@ -Werror"
 # See how Automake should be run.  We put --foreign as the default
 # strictness to avoid having to create lots and lots of files.  A test
 # can override this by specifying a different strictness.  Use -Wall
@@ -264,6 +266,8 @@ echo "=== Running test $0"
 # Use `-I $srcdir/../m4' in addition to `--acdir=$srcdir/../m4', because the
 # other `-I' directories added for libtool and gettext might contain
 # files from an old version of Automake that we don't want to use.
+# Use `-Wno-syntax' because we do not want our test suite to fail because
+# some third-party .m4 file is underquoted.
 aclocaldir='@prefix@/share/aclocal'
 extra_includes=""
 if [ -f $aclocaldir/dirlist ] ; then
@@ -282,7 +286,7 @@ case $required in
        fi
     done
     test "x$libtool_found" = "xyes" || exit 77
-    ACLOCAL="$ACLOCAL -I $srcdir/../m4 $extra_includes -I $aclocaldir"
+    ACLOCAL="$ACLOCAL -Wno-syntax -I $srcdir/../m4 $extra_includes -I $aclocaldir"
     ;;
   *gettext* )
     gettext_found=no
@@ -292,7 +296,7 @@ case $required in
        fi
     done
     test "x$gettext_found" = "xyes" || exit 77
-    ACLOCAL="$ACLOCAL -I $srcdir/../m4 $extra_includes -I $aclocaldir"
+    ACLOCAL="$ACLOCAL -Wno-syntax -I $srcdir/../m4 $extra_includes -I $aclocaldir"
     ;;
 esac
 

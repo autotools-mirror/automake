@@ -40,6 +40,7 @@ use Automake::Config;
 use Automake::General;
 use Automake::Configure_ac;
 use Automake::Channels;
+use Automake::ChannelDefs;
 use Automake::XFile;
 use Automake::FileUtils;
 use File::Basename;
@@ -94,9 +95,6 @@ my %file_contents = ();
 # Map file names to included files (transitively closed).
 my %file_includes = ();
 
-# How much to say.
-my $verbose = 0;
-
 # Matches a macro definition.
 #   AC_DEFUN([macroname], ...)
 # or
@@ -122,9 +120,9 @@ sub check_acinclude ()
   foreach my $key (keys %map)
     {
       # FIXME: should print line number of acinclude.m4.
-      warn ("aclocal: warning: macro `$key' defined in "
-	    . "acinclude.m4 but never used\n")
-	if $map{$key} eq 'acinclude.m4' && ! $macro_seen{$key};
+      msg ('syntax', "warning: macro `$key' defined in "
+	   . "acinclude.m4 but never used")
+	if $map{$key} eq 'acinclude.m4' && ! exists $macro_seen{$key};
     }
 }
 
@@ -150,8 +148,7 @@ sub scan_m4_files (@)
     {
       if (! opendir (DIR, $m4dir))
 	{
-	  print STDERR "aclocal: couldn't open directory `$m4dir': $!\n";
-	  exit 1;
+	  fatal "couldn't open directory `$m4dir': $!";
 	}
 
       # We reverse the directory contents so that foo2.m4 gets
@@ -181,7 +178,7 @@ sub scan_m4_files (@)
     }
   $search .= "return \$found;\n};\n";
   eval $search;
-  die "internal error: $@\n search is $search" if $@;
+  prog_error "$@\n search is $search" if $@;
 }
 
 ################################################################
@@ -197,7 +194,7 @@ sub add_macro ($)
   # complain when we trace for macro usage later.
   return unless defined $map{$macro};
 
-  print STDERR "aclocal: saw macro $macro\n" if $verbose;
+  verb "saw macro $macro";
   $macro_seen{$macro} = 1;
   &add_file ($map{$macro});
 }
@@ -251,8 +248,8 @@ sub scan_configure_dep ($)
 	  # Macro not found, but AM_ prefix found.
 	  # Make this just a warning, because we do not know whether
 	  # the macro is actually used (it could be called conditionally).
-	  warn ("aclocal:$file:$line: warning: "
-		. "macro `$2' not found in library\n");
+	  msg ('unsupported', "$file:$line",
+	       "warning: macro `$2' not found in library");
 	}
     }
 
@@ -294,11 +291,7 @@ sub scan_file ($$)
 
   unshift @file_order, $file;
 
-  if (! -e $file)
-    {
-      print STDERR "$where: file `$file' does not exist\n";
-      exit 1;
-    }
+  fatal "$where: file `$file' does not exist" if ! -e $file;
 
   my $fh = new Automake::XFile $file;
   my $contents = '';
@@ -310,23 +303,23 @@ sub scan_file ($$)
       next if /^##/;
 
       $contents .= $_;
+      my $line = $_;
 
-      while (/$ac_defun_rx/go)
+      while ($line =~ /$ac_defun_rx/go)
 	{
 	  if (! defined $1)
 	    {
-	      print STDERR "$file:$.: warning: underquoted definition of $2\n";
-	      print STDERR "  run info '(automake)Extending aclocal'\n"
-		. "  or see http://sources.redhat.com/automake/"
-		. "automake.html#Extending-aclocal\n"
+	      msg ('syntax', "$file:$.", "warning: underquoted definition of $2"
+		   . "\n  run info '(automake)Extending aclocal'\n"
+		   . "  or see http://sources.redhat.com/automake/"
+		   . "automake.html#Extending-aclocal")
 		unless $underquoted_manual_once;
 	      $underquoted_manual_once = 1;
 	    }
 	  my $macro = $1 || $2;
 	  if (! defined $map{$macro})
 	    {
-	      print STDERR "aclocal: found macro $macro in $file: $.\n"
-		if $verbose;
+	      verb "found macro $macro in $file: $.";
 	      $map{$macro} = $file;
 	    }
 	  else
@@ -336,12 +329,11 @@ sub scan_file ($$)
 	      # extremely unpopular.  It causes actual problems which
 	      # are hard to work around, especially when you must
 	      # mix-and-match tool versions.
-	      print STDERR "aclocal: ignoring macro $macro in $file: $.\n"
-		if $verbose;
+	      verb "ignoring macro $macro in $file: $.";
 	    }
 	}
 
-      while (/$m4_include_rx/go)
+      while ($line =~ /$m4_include_rx/go)
 	{
 	  my $ifile = $1 || $2;
 	  # m4_include is relative to the directory of the file which
@@ -389,8 +381,7 @@ sub strip_redundant_includes (%)
 	{
 	  next unless exists $files{$ifile};
 	  delete $files{$ifile};
-	  print STDERR "$ifile is already included by $file\n"
-	    if $verbose;
+	  verb "$ifile is already included by $file";
 	}
     }
   return %files;
@@ -409,12 +400,16 @@ sub trace_used_macros ()
   # All candidate files.
   $traces .= join (' ', grep { exists $files{$_} } @file_order) . " ";
   # All candidate macros.
-  $traces .= join (' ', map { "--trace='$_:\$f:\$n:\$1'" } ('AC_DEFUN',
-							    'AC_DEFUN_ONCE',
-							    'AU_DEFUN',
-							    keys %macro_seen));
+  $traces .= join (' ',
+		   (map { "--trace='$_:\$f::\$n::\$1'" } ('AC_DEFUN',
+							  'AC_DEFUN_ONCE',
+							  'AU_DEFUN')),
+		   # Do not trace $1 for all other macros as we do
+		   # not need it and it might contains harmful
+		   # characters (like newlines).
+		   (map { "--trace='$_:\$f::\$n'" } (keys %macro_seen)));
 
-  print STDERR "aclocal: running $traces $configure_ac\n" if $verbose;
+  verb "running $traces $configure_ac";
 
   my $tracefh = new Automake::XFile ("$traces $configure_ac |");
 
@@ -423,9 +418,9 @@ sub trace_used_macros ()
   while ($_ = $tracefh->getline)
     {
       chomp;
-      my ($file, $macro, $arg1) = split (/:/);
+      my ($file, $macro, $arg1) = split (/::/);
 
-      $traced{$macro} = 1 if $macro_seen{$macro};
+      $traced{$macro} = 1 if exists $macro_seen{$macro};
 
       $map_traced_defs{$arg1} = $file
 	if ($macro eq 'AC_DEFUN'
@@ -536,11 +531,11 @@ $output";
       && $greatest_mtime < mtime ($output_file)
       && $output eq contents ($output_file))
     {
-      print STDERR "aclocal: $output_file unchanged\n" if $verbose;
+      verb "$output_file unchanged";
       return;
     }
 
-  print STDERR "aclocal: writing $output_file\n" if $verbose;
+  verb "writing $output_file";
 
   my $out = new Automake::XFile "> $output_file";
   print $out $output;
@@ -554,79 +549,93 @@ sub usage ($)
 {
   my ($status) = @_;
 
-  print "Usage: aclocal [OPTIONS] ...\n\n";
-  print "\
+  print "Usage: aclocal [OPTIONS] ...
+
 Generate `aclocal.m4' by scanning `configure.ac' or `configure.in'
 
-  --acdir=DIR           directory holding config files
-  --help                print this help, then exit
-  -I DIR                add directory to search list for .m4 files
-  --force               always update output file
-  --output=FILE         put output in FILE (default aclocal.m4)
-  --print-ac-dir        print name of directory holding m4 files
-  --verbose             don't be silent
-  --version             print version number, then exit
+Options:
+      --acdir=DIR           directory holding config files (for debugging)
+      --force               always update output file
+      --help                print this help, then exit
+  -I DIR                    add directory to search list for .m4 files
+      --output=FILE         put output in FILE (default aclocal.m4)
+      --print-ac-dir        print name of directory holding m4 files, then exit
+      --verbose             don't be silent
+      --version             print version number, then exit
+  -W, --warnings=CATEGORY   report the warnings falling in CATEGORY
+
+Warning categories include:
+  `syntax'        dubious syntactic constructs (default)
+  `unsupported'   unknown macros (default)
+  `all'           all the warnings (default)
+  `no-CATEGORY'   turn off warnings in CATEGORY
+  `none'          turn off all the warnings
+  `error'         treat warnings as errors
 
 Report bugs to <bug-automake\@gnu.org>.\n";
 
   exit $status;
 }
 
-# Parse command line.
-sub parse_arguments (@)
+# Print version and exit.
+sub version()
 {
-  my @arglist = @_;
+  print "\
+aclocal (GNU $PACKAGE) $VERSION
+Written by Tom Tromey <tromey\@redhat.com>
+       and Alexandre Duret-Lutz <adl\@gnu.org>
+Copyright (C) 2004 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.";
+  exit 0;
+}
+
+# Parse command line.
+sub parse_arguments ()
+{
   my @dirlist;
   my $print_and_exit = 0;
 
-  while (@arglist)
-    {
-      if ($arglist[0] =~ /^--acdir=(.+)$/)
-	{
-	  $acdir = $1;
-	}
-      elsif ($arglist[0] =~/^--output=(.+)$/)
-	{
-	  $output_file = $1;
-	}
-      elsif ($arglist[0] eq '-I')
-	{
-	  shift (@arglist);
-	  push (@dirlist, $arglist[0]);
-	}
-      elsif ($arglist[0] eq '--print-ac-dir')
-	{
-	  $print_and_exit = 1;
-	}
-      elsif ($arglist[0] eq '--force')
-	{
-	  $force_output = 1;
-	}
-      elsif ($arglist[0] eq '--verbose')
-	{
-	  ++$verbose;
-	}
-      elsif ($arglist[0] eq '--version')
-	{
-	  print "aclocal (GNU $PACKAGE) $VERSION\n";
-	  print "Written by Tom Tromey <tromey\@redhat.com>\n";
-	  print "       and Alexandre Duret-Lutz <adl\@gnu.org>\n\n";
-	  print "Copyright (C) 2004 Free Software Foundation, Inc.\n";
-	  print "This is free software; see the source for copying conditions.  There is NO\n";
-	  print "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n";
-	  exit 0;
-	}
-      elsif ($arglist[0] eq '--help')
-	{
-	  &usage (0);
-	}
-      else
-	{
-	  print STDERR "aclocal: unrecognized option -- `$arglist[0]'\nTry `aclocal --help' for more information.\n";
-	  exit 1;
-	}
+  my %cli_options =
+    (
+     'acdir=s'		=> \$acdir,
+     'force'		=> \$force_output,
+     'I=s'		=> \@dirlist,
+     'output=s'		=> \$output_file,
+     'print_ac_dir'     => \$print_and_exit,
+     'verbose'		=> sub { setup_channel 'verb', silent => 0; },
+     'W|warnings:s'     => \&parse_warnings,
+     );
+  use Getopt::Long;
+  Getopt::Long::config ("bundling", "pass_through");
 
-      shift (@arglist);
+  # See if --version or --help is used.  We want to process these before
+  # anything else because the GNU Coding Standards require us to
+  # `exit 0' after processing these options, and we can't guarantee this
+  # if we treat other options first.  (Handling other options first
+  # could produce error diagnostics, and in this condition it is
+  # confusing if Automake does `exit 0'.)
+  my %cli_options_1st_pass =
+    (
+     'version' => \&version,
+     'help'    => sub { usage(0); },
+     # Recognize all other options (and their arguments) but do nothing.
+     map { $_ => sub {} } (keys %cli_options)
+     );
+  my @ARGV_backup = @ARGV;
+  Getopt::Long::GetOptions %cli_options_1st_pass
+    or exit 1;
+  @ARGV = @ARGV_backup;
+
+  # Now *really* process the options.  This time we know
+  # that --help and --version are not present.
+  Getopt::Long::GetOptions %cli_options
+    or exit 1;
+
+  if (@ARGV)
+    {
+      fatal ("unrecognized option `$ARGV[0]'\n"
+	     . "Try `$0 --help' for more information.");
     }
 
   if ($print_and_exit)
@@ -670,7 +679,8 @@ sub parse_arguments (@)
 
 ################################################################
 
-my @dirlist = parse_arguments (@ARGV);
+parse_WARNINGS;		    # Parse the WARNINGS environment variable.
+my @dirlist = parse_arguments;
 $configure_ac = require_configure_ac;
 scan_m4_files (@dirlist);
 scan_configure;
