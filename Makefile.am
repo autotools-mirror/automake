@@ -24,8 +24,6 @@ ansi2knr.1 aclocal.m4 lisp.am lisp-clean.am
 pkgdata_SCRIPTS = config.guess config.sub install-sh interlock mdate-sh \
 mkinstalldirs elisp-comp ylwrap
 
-CLEANFILES = automake aclocal
-
 # The following requires a fixed version of the Emacs 19.30 etags.
 ETAGS_ARGS = automake.in aclocal.in --lang=none \
  --regex='/^@node[ \t]+\([^,]+\)/\1/' automake.texi

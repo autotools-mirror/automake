@@ -1834,6 +1834,7 @@ sub handle_configure
 
     # Now look for other files in this directory which must be remade
     # by config.status, and generate rules for them.
+    local (@actual_other_files) = ();
     local ($file, $local, $input);
     foreach $file (@other_input_files)
     {
@@ -1864,10 +1865,14 @@ sub handle_configure
 			  . ($relative_dir eq '.' ? '' : '$(subdir)/')
 			  . '$@ CONFIG_HEADERS= ./config.status'
 			  . "\n");
+	push (@actual_other_files, $local);
 
 	&require_file_with_conf_line ($ac_output_line, $FOREIGN,
 				      $input);
     }
+
+    # These files get removed by "make clean".
+    @pretty_print ('CONFIG_CLEAN_FILES = ', '', @actual_other_files);
 }
 
 # Handle C headers.
