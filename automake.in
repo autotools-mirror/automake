@@ -1242,25 +1242,33 @@ sub handle_source_transform
 # Handle the BUILT_SOURCES variable.
 sub handle_built_sources
 {
-    return unless &variable_defined ('BUILT_SOURCES');
-    push (@all, '$(BUILT_SOURCES)');
+    local ($prefix);
 
-    local (@sources) = &variable_value_as_list ('BUILT_SOURCES', 'all');
-    local ($s);
-    foreach $s (@sources)
+    foreach $prefix ('', 'PRE_')
     {
-	if (/^\@.*\@$/)
-	{
-	    # FIXME: is this really the right thing to do?
-	    &am_line_error ('BUILT_SOURCES', "\`BUILT_SOURCES' should not contain a configure substitution");
-	    last;
-	}
-    }
+	next unless &variable_defined ($prefix . 'BUILT_SOURCES');
+	push (@all, '$(' . $prefix . 'BUILT_SOURCES)');
 
-    # We don't care about the return value of this function.  We just
-    # want to make sure to update %dep_files with the contents of
-    # BUILT_SOURCES.
-    &handle_single_transform_list (@sources);
+	local (@sources) = &variable_value_as_list ($prefix. 'BUILT_SOURCES',
+						    'all');
+	local ($s);
+	foreach $s (@sources)
+	{
+	    if (/^\@.*\@$/)
+	    {
+		# FIXME: is this really the right thing to do?
+		&am_line_error ($prefix . 'BUILT_SOURCES',
+				"\`" . $prefix
+				. "BUILT_SOURCES' should not contain a configure substitution");
+		last;
+	    }
+	}
+
+	# We don't care about the return value of this function.  We
+	# just want to make sure to update %dep_files with the
+	# contents of BUILT_SOURCES.
+	&handle_single_transform_list (@sources);
+    }
 }
 
 # Special-case @ALLOCA@ and @LIBOBJS@ in _LDADD or _LIBADD variables.
@@ -2902,7 +2910,7 @@ sub handle_configure
 		      # a workaround for an obscure bug with
 		      # AC_LINK_FILES.  Anyway, when dependencies are
 		      # turned off, this shouldn't matter.
-		      . ($use_dependencies ? ' $(BUILT_SOURCES)' : '')
+		      . ($use_dependencies ? ' $(PRE_BUILT_SOURCES) $(BUILT_SOURCES)' : '')
 		      . "\n"
 		      . "\tcd \$(top_builddir) \\\n"
 		      . "\t  && CONFIG_FILES="
