@@ -870,7 +870,7 @@ sub get_object_extension
 
 	push (@suffixes, '.c', '.o');
 	push (@suffixes, '.obj') if $seen_objext;
-	push (@clean, 'compile');
+	&depend ('clean', 'compile');
 
 	$included_generic_compile = 1;
     }
@@ -883,7 +883,7 @@ sub get_object_extension
 	&push_phony_cleaners ('libtool');
 
 	push (@suffixes, '.lo');
-	push (@clean, 'libtool');
+	&depend ('clean', 'libtool');
 
 	$included_libtool_compile = 1;
     }
@@ -910,7 +910,7 @@ sub get_object_extension
 		&require_file_with_line ('AUTOMAKE_OPTIONS', $FOREIGN,
 					 'ansi2knr.c', 'ansi2knr.1');
 		$output_rules .= &file_contents ('kr-extra');
-		push (@clean, 'krextra');
+		&depend ('clean', 'krextra');
 		&push_phony_cleaners ('krextra');
 	    }
 
@@ -957,7 +957,7 @@ sub get_object_extension
 
 	    $output_rules .= &file_contents ('clean-kr');
 
-	    push (@clean, 'kr');
+	    &depend ('clean', 'kr');
 	    &push_phony_cleaners ('kr');
 
 	    $included_knr_compile = 1;
@@ -2273,7 +2273,7 @@ sub handle_texinfo
 	    ++$done;
 
 	    &push_dist_common ($vtexi, 'stamp-' . $vti);
-	    push (@clean, $vti);
+	    &depend ('clean', $vti);
 
 	    &require_conf_file_with_line ('info_TEXINFOS', $FOREIGN,
 					  'mdate-sh');
@@ -2425,7 +2425,7 @@ sub handle_texinfo
 	# get run twice during "make all".
 	unshift (@all, '$(INFO_DEPS)');
     }
-    push (@clean, 'aminfo');
+    &depend ('clean', 'aminfo');
     push (@info, '$(INFO_DEPS)');
     push (@dvi, '$(DVIS)');
 
@@ -2583,7 +2583,7 @@ sub handle_tags
 
 	$output_rules .= &file_contents ('tags', $xform);
 	$output_rules .= &file_contents ('tags-clean');
-	push (@clean, 'tags');
+	&depend ('clean', 'tags');
 	&push_phony_cleaners ('tags');
 	&examine_variable ('TAGS_DEPENDENCIES');
     }
@@ -3081,7 +3081,7 @@ sub handle_dependencies
 	    }
 
 	    $output_rules .= &file_contents ('depend');
-	    push (@clean, 'depend');
+	    &depend ('clean', 'depend');
 	    &push_phony_cleaners ('depend');
 	}
     }
@@ -3461,7 +3461,7 @@ sub handle_configure
 	$output_rules .=
 	    &file_contents ('clean-hdr',
 			    &transform ('FILES' => $distclean_config));
-	push (@clean, 'hdr');
+	&depend ('clean', 'hdr');
 	&push_phony_cleaners ('hdr');
     }
 
@@ -3977,42 +3977,47 @@ sub handle_clean
 
     $output_rules .= &file_contents ('clean', $xform);
 
-    push (@clean, 'generic');
+    &depend ('clean', 'generic');
     &push_phony_cleaners ('generic');
 
-    &do_one_clean_target ('clean', 'mostly', '', @clean);
-    &do_one_clean_target ('clean', '', 'mostly', @clean);
-    &do_one_clean_target ('clean', 'dist', '', @clean);
-    &do_one_clean_target ('clean', 'maintainer-', 'dist', @clean);
+    &do_one_clean_target ('mostly', '');
+    &do_one_clean_target ('', 'mostly');
+    &do_one_clean_target ('dist', '');
+    &do_one_clean_target ('maintainer-', 'dist');
 
-    &depend ('.PHONY', 'clean', 'mostlyclean', 'distclean', 'maintainer-clean');
+    &depend ('.PHONY',
+	     'clean', 'mostlyclean', 'distclean', 'maintainer-clean');
 }
 
+
+# &do_one_clean_target ($NAME, $LAST_NAME)
+# ----------------------------------------
 # Helper for handle_clean.
 sub do_one_clean_target
 {
-    local ($target, $name, $last_name, @deps) = @_;
+    my ($name, $last_name) = @_;
+    my (@deps) = @{$dependencies{'clean'}};
 
     # Change each dependency `BLARG' into `clean-BLARG'.
     grep (($_ = $name . 'clean-' . $_) && 0, @deps);
 
     # Push the previous clean target.  There is no previous clean
     # target if we're doing mostlyclean.
-    push (@deps, $last_name . $target . '-am')
+    push (@deps, $last_name . 'clean-am')
 	unless $name eq 'mostly';
 
     # If a -local version of the rule is given, add it to the list.
-    if (&target_defined ($name . $target . '-local'))
+    if (&target_defined ($name . 'clean-local'))
     {
-	push (@deps, $name . $target . '-local');
+	push (@deps, $name . 'clean-local');
     }
 
     # Print the target and the dependencies.
-    &pretty_print_rule ($name . $target . "-am: ", "\t\t", @deps);
+    &pretty_print_rule ($name . 'clean-am: ', "\t\t", @deps);
 
     # FIXME: shouldn't we really print these messages before running
     # the dependencies?
-    if ($name . $target eq 'maintainer-clean')
+    if ($name eq 'maintainer-')
     {
 	# Print a special warning.
 	$output_rules .=
@@ -4020,14 +4025,14 @@ sub do_one_clean_target
 	     . "\t\@echo \"it deletes files that may require special "
 	     . "tools to rebuild.\"\n");
     }
-    elsif ($name . $target eq 'distclean')
+    elsif ($name eq 'dist')
     {
 	$output_rules .= "\t-rm -f libtool\n" if $seen_libtool;
     }
     $output_rules .= "\n";
 
     # Now generate the actual clean target.
-    $output_rules .= ($name . $target . ": " . $name . $target
+    $output_rules .= ($name . 'clean' . ": " . $name . 'clean'
 		      . ($recursive_install ? '-recursive' : '-am')
 		      . "\n");
 
@@ -4035,8 +4040,8 @@ sub do_one_clean_target
     # normal clean processing for this directory, then it might be
     # removed before some subdir is cleaned.  However, that subdir's
     # Makefile depends on config.status.
-    if (($name . $target eq 'maintainer-clean'
-	 || $name . $target eq 'distclean')
+    if (($name eq 'maintainer-'
+	 || $name eq 'dist')
 	&& $relative_dir eq '.')
     {
 	$output_rules .= "\t-rm -f config.status\n";
@@ -4051,7 +4056,7 @@ sub depend
 {
     my ($category, @dependendees) = @_;
     {
-      push (@{${dependencies{$category}}}, @dependendees);
+      push (@{$dependencies{$category}}, @dependendees);
     }
 }
 
@@ -4065,8 +4070,13 @@ sub handle_factored_dependencies
     my $category;
     foreach $category (sort keys %dependencies)
     {
+        # FIXME: For the time being, there are targets which we
+        # handle specifically.  When all the clean targets stick to
+        # this scheme, it should be possible to avoid these special cases.
+        next
+	  if $category =~ /^(clean)$/;
         &pretty_print_rule ("$category:", "",
-			    sort @{${dependencies{$category}}});
+			    sort @{$dependencies{$category}});
         $output_rules .= "\n";
     }
 }
@@ -4194,7 +4204,7 @@ sub handle_emacs_lisp
 	&define_pretty_variable ('ELCFILES', '', @elfiles);
 
 	$output_rules .= &file_contents ('lisp-clean');
-	push (@clean, 'lisp');
+	&depend ('clean', 'lisp');
 	&push_phony_cleaners ('lisp');
 
 	push (@all, '$(ELCFILES)');
@@ -4227,7 +4237,7 @@ sub handle_python
     &define_configure_variable ('PYTHON');
 
     $output_rules .= &file_contents ('python-clean');
-    push (@clean, 'python');
+    &depend ('clean', 'python');
 
     &am_error ("\`python_PYTHON' defined but \`AM_CHECK_PYTHON' not in \`$configure_ac'")
 	if ! $seen_pythondir && &variable_defined ('python_PYTHON');
@@ -6916,7 +6926,6 @@ sub initialize_per_input
     @check = ();
     @check_tests = ();
     @installcheck = ();
-    @clean = ();
 
     # Holds the dependencies of target which dependencies are factored.
     # Typically, `.PHONY' will appear in plenty of *.am files, but must
@@ -6925,6 +6934,7 @@ sub initialize_per_input
     # in Makefile: keeping related stuff altogether.
     %dependencies =
       (
+       'clean'  => [],
        '.PHONY' => []
       );
 
@@ -7458,7 +7468,7 @@ sub am_install_var
 				  &transform ('DIR' => $X)
 				  . $cygxform);
 
-		push (@clean, $X . $primary);
+		&depend ('clean', $X . $primary);
 		&push_phony_cleaners ($X . $primary);
 	    }
 
