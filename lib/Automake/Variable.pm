@@ -36,7 +36,7 @@ use vars '@ISA', '@EXPORT', '@EXPORT_OK';
 	      scan_variable_expansions check_variable_expansions
 	      condition_ambiguous_p
 	      variable_delete
-	      variable_dump variables_dump
+	      variables_dump
 	      set_seen
 	      require_variables require_variables_for_variable
 	      variable_value
@@ -461,7 +461,7 @@ sub rdef ($$)
   my ($self, $cond) = @_;
   my $d = $self->def ($cond);
   prog_error ("undefined condition `" . $cond->human . "' for `"
-	      . $self->name . "'\n" . variable_dump ($self->name))
+	      . $self->name . "'\n" . $self->dump)
     unless $d;
   return $d;
 }
@@ -513,7 +513,7 @@ sub _check_ambiguous_condition ($$$)
     {
       msg 'syntax', $where, "$message ...", partial => 1;
       msg_var ('syntax', $var, "... `$var' previously defined here");
-      verb (variable_dump ($var));
+      verb ($self->dump);
     }
 }
 
@@ -807,6 +807,34 @@ sub has_conditional_contents ($)
       die;
     }
   return 0;
+}
+
+
+=item C<$string = $var-E<gt>dump>
+
+=item C<$string = Automake::Variable::dump ($varname)>
+
+Return a string describing all we know about C<$var> (or C<$varname>).
+For debugging.
+
+=cut
+
+sub dump ($)
+{
+  my ($self) = @_;
+
+  my $v = ref $self ? $self : var $self;
+
+  return "$self does not exist\n"
+    unless $v;
+
+  my $text = $v->name . ": \n  {\n";
+  foreach my $vcond ($v->conditions->conds)
+    {
+      $text .= "    " . $vcond->human . " => " . $v->rdef ($vcond)->dump;
+    }
+  $text .= "  }\n";
+  return $text;
 }
 
 
@@ -1130,7 +1158,7 @@ sub define ($$$$$$$$)
 		   "... overrides Automake variable `$var' defined here");
 	    }
 	  verb ("refusing to override the user definition of:\n"
-		. variable_dump ($var)
+		. Automake::Variable::dump $var
 		."with `" . $cond->human . "' => `$value'");
 	}
       else
@@ -1196,39 +1224,6 @@ sub variable_delete ($@)
     }
 }
 
-=item C<$str = variable_dump ($varname)>
-
-Return a string describing all we know about C<$varname>.
-For debugging.
-
-=cut
-
-# &variable_dump ($VAR)
-# ---------------------
-sub variable_dump ($)
-{
-  my ($var) = @_;
-  my $text = '';
-
-  my $v = var $var;
-
-  if (!$v)
-    {
-      $text = "  $var does not exist\n";
-    }
-  else
-    {
-      $text .= "$var: \n  {\n";
-      foreach my $vcond ($v->conditions->conds)
-	{
-	  $text .= "    " . $vcond->human . " => " . $v->rdef ($vcond)->dump;
-	}
-      $text .= "  }\n";
-    }
-  return $text;
-}
-
-
 =item C<$str = variables_dump ($varname)>
 
 Return a string describing all we know about all variables.
@@ -1241,9 +1236,9 @@ sub variables_dump ()
   my ($var) = @_;
 
   my $text = "All variables:\n{\n";
-  foreach my $var (sort (variables()))
+  foreach my $var (sort variables)
     {
-      $text .= variable_dump ($var);
+      $text .= Automake::Variable::dump $var;
     }
   $text .= "}\n";
   return $text;
