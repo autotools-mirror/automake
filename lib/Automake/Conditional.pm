@@ -36,7 +36,7 @@ Automake::Conditional - record a conjunction of conditions
   #   "COND1 and not COND2 and not COND3".
   my $both = $cond->merge ($other);
 
-  # Likewise, but using a list of atomica conditional strings
+  # Likewise, but using a list of atomic conditional strings
   my $both2 = $cond->merge_conds ("COND3_FALSE");
 
   # Return the list of conditions ("COND1_TRUE", "COND2_FALSE"):
@@ -231,11 +231,7 @@ sub conds ($ )
 sub has ($$)
 {
   my ($self, $cond) = @_;
-  if (exists $self->{'hash'}{$cond})
-    {
-      return $self->{'hash'}{$cond};
-    }
-  return 0;
+  return exists $self->{'hash'}{$cond};
 }
 
 =item C<$cond-E<gt>false>
