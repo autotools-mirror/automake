@@ -28,7 +28,7 @@ eval 'exec @PERL@ -S $0 ${1+"$@"}'
 # Perl reimplementation by Tom Tromey <tromey@cygnus.com>.
 
 require 5.005;
-# FIXME: use strict;
+use strict 'vars', 'subs';
 use File::Basename;
 use IO::File;
 
@@ -847,7 +847,7 @@ foreach $am_file (@input_files)
 exit $exit_status;
 
 # FIXME: This should be `my'ed next to its subs.
-# use vars '%require_file_found';
+use vars '%require_file_found';
 
 ################################################################
 
@@ -1924,7 +1924,7 @@ sub handle_source_transform
 	push (@dist_sources, $unxformed . '.c');
 	push (@objects, $unxformed . $obj);
 
-	($temp, @result) =
+	my ($temp, @result) =
 	  &handle_single_transform_list ($one_file . '_SOURCES',
 					 $one_file, $obj,
 					 "$unxformed.c");
@@ -6746,10 +6746,10 @@ sub make_paragraphs ($%)
 
     while (defined ($_ = shift @lines))
       {
+	my $paragraph = "$_";
 	# If we are a rule, eat as long as we start with a tab.
 	if (/$RULE_PATTERN/smo)
 	  {
-	    $paragraph = "$_";
 	    while (defined ($_ = shift @lines) && $_ =~ /^\t/)
 	      {
 		$paragraph .= "\n$_";
@@ -6760,18 +6760,12 @@ sub make_paragraphs ($%)
 	# If we are a comments, eat as much comments as you can.
 	elsif (/$COMMENT_PATTERN/smo)
 	  {
-	    $paragraph = "$_";
 	    while (defined ($_ = shift @lines)
 		   && $_ =~ /$COMMENT_PATTERN/smo)
 	      {
 		$paragraph .= "\n$_";
 	      }
 	    unshift (@lines, $_);
-	  }
-	# Otherwise, consider it as a lone content.
-	else
-	  {
-	    $paragraph .= "$_";
 	  }
 
 	push @res, $paragraph;
