@@ -38,10 +38,35 @@ static time_t time_t_max;
 
 /* Values we'll use to set the TZ environment variable.  */
 static const char *const tz_strings[] = {
-  (const char *) 0, "GMT0", "JST-9",
-  "EST+3EDT+2,M10.1.0/00:00:00,M2.3.0/00:00:00"
+  (const char *) 0, "TZ=GMT0", "TZ=JST-9",
+  "TZ=EST+3EDT+2,M10.1.0/00:00:00,M2.3.0/00:00:00"
 };
 #define N_STRINGS (sizeof (tz_strings) / sizeof (tz_strings[0]))
+
+/* Fail if mktime fails to convert a date in the spring-forward gap.
+   Based on a problem report from Andreas Jaeger.  */
+static void
+spring_forward_gap ()
+{
+  /* glibc (up to about 1998-10-07) failed this test) */
+  struct tm tm;
+
+  /* Use the portable POSIX.1 specification "TZ=PST8PDT,M4.1.0,M10.5.0"
+     instead of "TZ=America/Vancouver" in order to detect the bug even
+     on systems that don't support the Olson extension, or don't have the
+     full zoneinfo tables installed.  */
+  putenv ("TZ=PST8PDT,M4.1.0,M10.5.0");
+
+  tm.tm_year = 98;
+  tm.tm_mon = 3;
+  tm.tm_mday = 5;
+  tm.tm_hour = 2;
+  tm.tm_min = 0;
+  tm.tm_sec = 0;
+  tm.tm_isdst = -1;
+  if (mktime (&tm) == (time_t)-1)
+    exit (1);
+}
 
 static void
 mktime_test (now)
@@ -127,6 +152,7 @@ main ()
       bigtime_test (j - 1);
     }
   irix_6_4_bug ();
+  spring_forward_gap ();
   exit (0);
 }
 	      >>,
