@@ -112,7 +112,7 @@ $ac_require_rx = "AC_REQUIRE\\(\\[?([^])]*)\\]?\\)";
 
 
 local (@dirlist) = &parse_arguments (@ARGV);
-&scan_m4_files ($acdir, @dirlist);
+&scan_m4_files (@dirlist);
 &scan_configure;
 if (! $exit_status)
 {
@@ -200,6 +200,9 @@ sub parse_arguments
 	print $acdir, "\n";
 	exit 0;
     }
+
+    # Search our install directory last.
+    push (@dirlist, $acdir);
 
     return @dirlist;
 }
@@ -392,13 +395,14 @@ sub scan_file
 
 	if (/$ac_defun_rx/)
 	{
-	    if (!defined $map{$1})
+	    if (! defined $map{$1})
 	    {
 		$map{$1} = $file;
 	    }
-	    # Allow acinclude.m4 to override other macro files.
-	    elsif ($map{$1} ne 'acinclude.m4' || $file eq 'acinclude.m4')
+	    elsif ($map{$1} eq $file)
 	    {
+		# You basically never want a macro in the same .m4
+		# file twice.
 		warn "aclocal: $file: $.: duplicated macro \`$1'\n";
 		$exit_status = 1;
 	    }
