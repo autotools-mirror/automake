@@ -296,8 +296,7 @@ sub get_object_extension
 	    $dir_holds_sources = '.$(kr)o';
 	    push (@suffixes, '._c', '._o');
 
-	    &require_file ($NORMAL, 'ansi2knr.c');
-	    &require_file ($NORMAL, 'ansi2knr.1');
+	    &require_file ($NORMAL, 'ansi2knr.c', 'ansi2knr.1');
 
 	    $output_vars .= &file_contents ('kr-vars');
 	    $output_rules .= &file_contents ('compile-kr');
@@ -862,8 +861,7 @@ sub handle_configure
 	$output_rules .= &file_contents ('remake');
 
 	# Look for some files we need.
-	&require_file ($NORMAL, 'install-sh');
-	&require_file ($NORMAL, 'mkinstalldirs');
+	&require_file ($NORMAL, 'install-sh', 'mkinstalldirs');
     }
 
     if (defined $contents{'CONFIG_HEADER'}
@@ -1159,7 +1157,8 @@ sub check_gnu_standards
     if ($relative_dir eq '.')
     {
 	# In top level (or only) directory.
-	&require_file ($GNU, 'INSTALL', 'NEWS', 'README', 'COPYING');
+	&require_file ($GNU, 'INSTALL', 'NEWS', 'README', 'COPYING',
+		       'AUTHORS');
     }
 }
 
@@ -1720,30 +1719,35 @@ sub am_install_var
 # required.
 sub require_file
 {
-    local ($mystrict, $file) = @_;
-    local ($fullfile) = $relative_dir . "/" . $file;
+    local ($mystrict, @files) = @_;
+    local ($file, $fullfile);
 
-    if (-f $fullfile)
+    foreach $file (@files)
     {
-	&push_dist_common ($file);
-    }
-    elsif ($install_missing && -f ($am_dir . '/' . $file))
-    {
-	# Install the missing file.  Symlink if we can, copy if we must.
-	if ($symlink_exists)
+	$fullfile = $relative_dir . "/" . $file;
+
+	if (-f $fullfile)
 	{
-	    symlink ($am_dir . '/' . $file, $fullfile);
+	    &push_dist_common ($file);
 	}
-	else
+	elsif ($install_missing && -f ($am_dir . '/' . $file))
 	{
-	    system ('cp', $am_dir . '/' . $file, $fullfile);
+	    # Install the missing file.  Symlink if we can, copy if we must.
+	    if ($symlink_exists)
+	    {
+		symlink ($am_dir . '/' . $file, $fullfile);
+	    }
+	    else
+	    {
+		system ('cp', $am_dir . '/' . $file, $fullfile);
+	    }
+	    &am_error ("required file \"$fullfile\" not found; installing");
 	}
-	&am_error ("required file \"$fullfile\" not found; installing");
-    }
-    elsif ($strictness >= $mystrict)
-    {
-	# Only an error if strictness constraint violated.
-	&am_error ("required file \"$fullfile\" not found");
+	elsif ($strictness >= $mystrict)
+	{
+	    # Only an error if strictness constraint violated.
+	    &am_error ("required file \"$fullfile\" not found");
+	}
     }
 }
 
