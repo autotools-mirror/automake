@@ -412,6 +412,7 @@ texinfo10.test \
 texinfo13.test \
 texinfo16.test \
 texinfo17.test \
+texinfo18.test \
 transform.test \
 unused.test \
 vars.test \

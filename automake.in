@@ -3604,30 +3604,24 @@ sub scan_texinfo_file
 {
     my ($filename) = @_;
 
-    # These are always created, no matter whether indexes are used or not.
-    # (Actually tmp is only created if an @macro is used and a certain e-TeX
+    # Some of the following extensions are always created, no matter
+    # whether indexes are used or not.  Other (like cps, fns, ... pgs)
+    # are only created when they are used.  We used to scan $FILENAME
+    # for their use, but that is not enough: they could be used in
+    # included files.  We can't scan included files because we don't
+    # know the include path.  Therefore we always erase these files,
+    # no matter whether they are used or not.
+    #
+    # (tmp is only created if an @macro is used and a certain e-TeX
     # feature is not available.)
-    my @clean_suffixes = qw(aux log toc tmp
-			    cp fn ky vr tp pg); # grep new.*index texinfo.tex
-
-    # There are predefined indexes which don't follow the regular rules.
-    my %predefined_index = qw(c cps
-			      f fns
-			      k kys
-			      v vrs
-			      t tps
-			      p pgs);
-
-    # There are commands which include a hidden index command.
-    my %hidden_index = (tp => 'tps');
-    $hidden_index{$_} = 'fns' foreach qw(fn un typefn typefun max spec
-					 op typeop method typemethod);
-    $hidden_index{$_} = 'vrs' foreach qw(vr var typevr typevar opt cv
-					 ivar typeivar);
-
-    # Indexes stored into another one.  In this case, the *.??s file
-    # is not created.
-    my @syncodeindexes = ();
+    my %clean_suffixes =
+      map { $_ => 1 } (qw(aux log toc tmp
+			  cp cps
+			  fn fns
+			  ky kys
+			  vr vrs
+			  tp tps
+			  pg pgs)); # grep 'new.*index' texinfo.tex
 
     my $texi = new Automake::XFile "< $filename";
     verb "reading $filename";
@@ -3656,30 +3650,20 @@ sub scan_texinfo_file
         $vfile = $1;
       }
 
-      # Try to find what are the indexes which are used.
+      # Try to find new or unused indexes.
 
       # Creating a new category of index.
       elsif (/^\@def(code)?index (\w+)/)
       {
-        push @clean_suffixes, $2;
-      }
-
-      # Storing in a predefined index.
-      elsif (/^\@([cfkvtp])index /)
-      {
-        push @clean_suffixes, $predefined_index{$1};
-      }
-      elsif (/^\@def(\w+) /)
-      {
-	push @clean_suffixes, $hidden_index{$1}
-	  if defined $hidden_index{$1};
+	$clean_suffixes{$2} = 1;
+	$clean_suffixes{"$2s"} = 1;
       }
 
       # Merging an index into an another.
       elsif (/^\@syn(code)?index (\w+) (\w+)/)
       {
-	push @syncodeindexes, "$2s";
-	push @clean_suffixes, "$3s";
+	delete $clean_suffixes{"$2s"};
+	$clean_suffixes{"$3s"} = 1;
       }
 
     }
@@ -3692,9 +3676,8 @@ sub scan_texinfo_file
 
     my $infobase = basename ($filename);
     $infobase =~ s/\.te?xi(nfo)?$//;
-    my %clean_files = map { +"$infobase.$_" => 1 } @clean_suffixes;
-    grep { delete $clean_files{"$infobase.$_"} } @syncodeindexes;
-    return ($outfile, $vfile, (sort keys %clean_files));
+    return ($outfile, $vfile,
+	    map { "$infobase.$_" } (sort keys %clean_suffixes));
 }
 
 # ($DIRSTAMP, @CLEAN_FILES)
