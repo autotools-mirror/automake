@@ -338,6 +338,11 @@ standard is actually published (which may never happen).
 For more information on the precise implications of the strictness
 level, see @ref{Gnits}.
 
+Automake also has a special ``cygnus'' mode which is similar to
+strictness but handled differently.  This mode is useful for packages
+which are put into a ``Cygnus'' style tree (e.g., the GCC tree).  For
+more information on this mode, see @ref{Cygnus}.
+
 
 @node Uniform, Canonicalization, Strictness, Generalities
 @section The Uniform Naming Scheme
@@ -357,8 +362,11 @@ determination of what should be built.
 @cindex Primary variable, defined
 
 At @code{make} time, certain variables are used to determine which
-objects are to be built.  These variables are called @dfn{primary
-variables}.  For instance, the primary variable @code{PROGRAMS} holds a
+objects are to be built.  The variable names are made of several pieces
+which are concatenated together.
+
+The piece which tells automake what is being built is commonly called
+the @dfn{primary}.  For instance, the primary @code{PROGRAMS} holds a
 list of programs which are to be compiled and linked.
 @vindex PROGRAMS
 
@@ -370,16 +378,15 @@ list of programs which are to be compiled and linked.
 @vindex pkgincludedir
 @vindex pkgdatadir
 
-A different set of variables is used to decide where the built objects
-should be installed.  These variables are named after the primary
-variables, but have a prefix indicating which standard directory should
-be used as the installation directory.  The standard directory names are
-given in the GNU standards (@pxref{Directory Variables, , , standards,
-The GNU Coding Standards}).  Automake extends this list with
-@code{pkglibdir}, @code{pkgincludedir}, and @code{pkgdatadir}; these are
-the same as the non-@samp{pkg} versions, but with @samp{@@PACKAGE@@}
-appended.  For instance, @code{pkglibdir} is defined as
-@code{$(libdir)/@@PACKAGE@@}.
+A different set of names is used to decide where the built objects
+should be installed.  These names are prefixes to the primary which
+indicate which standard directory should be used as the installation
+directory.  The standard directory names are given in the GNU standards
+(@pxref{Directory Variables, , , standards, The GNU Coding Standards}).
+Automake extends this list with @code{pkglibdir}, @code{pkgincludedir},
+and @code{pkgdatadir}; these are the same as the non-@samp{pkg}
+versions, but with @samp{@@PACKAGE@@} appended.  For instance,
+@code{pkglibdir} is defined as @code{$(libdir)/@@PACKAGE@@}.
 @cvindex PACKAGE
 
 @cindex EXTRA_, prepending
@@ -405,8 +412,8 @@ bin_PROGRAMS = cpio pax
 sbin_PROGRAMS = @@MORE_PROGRAMS@@
 @end example
 
-Defining a primary variable without a prefix (e.g. @code{PROGRAMS}) is
-an error.
+Defining a primary without a prefix as a variable, e.g.,
+@code{PROGRAMS}, is an error.
 
 Note that the common @samp{dir} suffix is left off when constructing the
 variable names; thus one writes @samp{bin_PROGRAMS} and not
@@ -446,7 +453,7 @@ should not be installed at all.
 The special prefix @samp{check} indicates that the objects in question
 should not be built until the @code{make check} command is run.
 
-Possible primary names are @samp{PROGRAMS}, @samp{LIBRARIES},
+The current primary names are @samp{PROGRAMS}, @samp{LIBRARIES},
 @samp{LISP}, @samp{PYTHON}, @samp{JAVA}, @samp{SCRIPTS}, @samp{DATA},
 @samp{HEADERS}, @samp{MANS}, and @samp{TEXINFOS}.
 @vindex PROGRAMS
@@ -471,16 +478,21 @@ are explained later.
 
 @cindex canonicalizing Automake macros
 
-Sometimes a Makefile variable name is derived from some text the user
-supplies.  For instance, program names are rewritten into Makefile macro
-names.  Automake canonicalizes this text, so that it does not have to
-follow Makefile macro naming rules.  All characters in the name except
-for letters, numbers, the strudel (@@), and the underscore are turned into
-underscores when making macro references.  For example, if your program
-is named @code{sniff-glue}, the derived variable name would be
-@code{sniff_glue_SOURCES}, not @code{sniff-glue_SOURCES}.  The strudel
-is an addition since Automake 1.4c, to make the use of Autoconf
-substitutions in macro names less obfuscating.
+Sometimes a Makefile variable name is derived from some text the
+maintainer supplies.  For instance, a program name listed in
+@samp{_PROGRAMS} is rewritten into the name of a @samp{_SOURCES}
+variable.  In cases like this, Automake canonicalizes the text, so that
+program names and the like do not have to follow Makefile macro naming
+rules.  All characters in the name except for letters, numbers, the
+strudel (@@), and the underscore are turned into underscores when making
+macro references.
+
+For example, if your program is named @code{sniff-glue}, the derived
+variable name would be @code{sniff_glue_SOURCES}, not
+@code{sniff-glue_SOURCES}.
+
+The strudel is an addition, to make the use of Autoconf substitutions in
+macro names less obfuscating.
 
 
 @node User Variables, Auxiliary Programs, Canonicalization, Generalities
@@ -3350,10 +3362,10 @@ them.  In this situation you can use the @samp{nobase_} prefix to
 suppress the base name step.  For example:
 
 @example
-include_HEADERS = stdio.h sys/types.h
+nobase_include_HEADERS = stdio.h sys/types.h
 @end example
 
-Will include @file{stdio.h} in @code{$(includedir)} and @file{types.h}
+Will install @file{stdio.h} in @code{$(includedir)} and @file{types.h}
 in @code{$(includedir)/sys}.
 
 Automake generates separate @code{install-data} and @code{install-exec}
@@ -3432,7 +3444,7 @@ be defined to specify additional files to clean.  These variables are
 @vindex MAINTAINERCLEANFILES
 
 As the GNU Standards aren't always explicit as to which files should be
-removed by which target, we've adopted a heuristic which we believe were
+removed by which target, we've adopted a heuristic which we believe was
 first formulated by Fran@,{c}ois Pinard:
 
 @itemize @bullet 
@@ -3459,6 +3471,8 @@ We recommend that you follow this same set of heuristics in your
 @node Dist, Tests, Clean, Top
 @chapter What Goes in a Distribution
 
+@section Basics of distribution
+
 @cindex make dist
 @cindex make distcheck
 
@@ -3484,13 +3498,17 @@ current directory, are automatically included.  This list is printed by
 Still, sometimes there are files which must be distributed, but which
 are not covered in the automatic rules.  These files should be listed in
 the @code{EXTRA_DIST} variable.  You can mention files from
-subdirectories in @code{EXTRA_DIST}.  You can also mention a directory
-there; in this case the entire directory will be recursively copied into
-the distribution.  Please note that this will also copy
-@emph{everything} in the directory, including CVS/RCS version control
-files.
+subdirectories in @code{EXTRA_DIST}.
+
+You can also mention a directory in @code{EXTRA_DIST}; in this case the
+entire directory will be recursively copied into the distribution.
+Please note that this will also copy @emph{everything} in the directory,
+including CVS/RCS version control files.  We recommend against using
+this feature.
 
 @vindex EXTRA_DIST
+
+@section Fine-grained distribution control
 
 Sometimes you need tighter control over what does @emph{not} go into the
 distribution; for instance you might have source files which are
@@ -3511,6 +3529,8 @@ dist_data_DATA = distribute-this
 bin_PROGRAMS = foo
 nodist_foo_SOURCES = do-not-distribute.c
 @end example
+
+@section The dist hook
 
 Another way to to use this is for removing unnecessary files that get
 recursively included by specifying a directory in EXTRA_DIST:
@@ -3544,6 +3564,8 @@ dist-hook:
         mkdir $(distdir)/random
         cp -p $(srcdir)/random/a1 $(srcdir)/random/a2 $(distdir)/random
 @end example
+
+@section Checking the distribution
 
 Automake also generates a @code{distcheck} target which can be of help
 to ensure that a given distribution will actually work.
@@ -3657,7 +3679,7 @@ Various features of Automake can be controlled by options in the
 @item @code{gnits}
 @itemx @code{gnu}
 @itemx @code{foreign}
-@item @code{cygnus}
+@itemx @code{cygnus}
 @cindex Option, gnits
 @cindex Option, gnu
 @cindex Option, foreign
@@ -3667,13 +3689,13 @@ Set the strictness as appropriate.  The @code{gnits} option also implies
 @code{readme-alpha} and @code{check-news}.
 
 @item @code{ansi2knr}
-@itemx @code{path/ansi2knr}
+@itemx @code{@var{path}/ansi2knr}
 @cindex Option, ansi2knr
 Turn on automatic de-ANSI-fication.  @xref{ANSI}.  If preceded by a
 path, the generated @file{Makefile.in} will look in the specified
-directory to find the @file{ansi2knr} program.  Generally the path
-should be a relative path to another directory in the same distribution
-(though Automake currently does not check this).
+directory to find the @file{ansi2knr} program.  The path should be a
+relative path to another directory in the same distribution (Automake
+currently does not check this).
 
 @item @code{check-news}
 @cindex Option, check-news
@@ -3813,9 +3835,10 @@ target file will be generated which, when run, will generate a
 @file{TAGS} file that includes by reference all @file{TAGS} files from
 subdirectories.
 
-Also, if the variable @code{ETAGS_ARGS} is defined, a @code{tags} target
-will be generated.  This variable is intended for use in directories
-which contain taggable source that @code{etags} does not understand.
+The @code{tags} target will also be generated if the variable
+@code{ETAGS_ARGS} is defined.  This variable is intended for use in
+directories which contain taggable source that @code{etags} does not
+understand.
 @vindex ETAGS_ARGS
 
 Here is how Automake generates tags for its source, and for nodes in its
@@ -4069,10 +4092,14 @@ The file @file{THANKS} is required.
 
 @cindex Cygnus strictness
 
-Cygnus Solutions has slightly different rules for how a
-@file{Makefile.in} is to be constructed.  Passing @samp{--cygnus} to
-@code{automake} will cause any generated @file{Makefile.in} to comply
-with Cygnus rules.
+Some packages, notably GNU GCC and GNU gdb, have a build environment
+originally written at Cygnus Support (subsequently renamed Cygnus
+Solutions, and then later purchased by Red Hat).  Packages with this
+ancestry are sometimes referred to as ``Cygnus'' trees.
+
+A Cygnus tree has slightly different rules for how a @file{Makefile.in}
+is to be constructed.  Passing @samp{--cygnus} to @code{automake} will
+cause any generated @file{Makefile.in} to comply with Cygnus rules.
 
 Here are the precise effects of @samp{--cygnus}:
 
@@ -4088,9 +4115,8 @@ place that Automake cannot find.  This assumption is an artifact of how
 Cygnus packages are typically bundled.
 
 @item
-@samp{make dist} will look for files in the build directory as well as
-the source directory.  This is required to support putting info files
-into the build directory.
+@samp{make dist} is not supported, and the rules for it are not
+generated.  Cygnus-style trees use their own distribution mechanism.
 
 @item
 Certain tools will be searched for in the build tree as well as in the
@@ -4113,7 +4139,10 @@ The @code{check} target doesn't depend on @code{all}.
 @end itemize
 
 GNU maintainers are advised to use @samp{gnu} strictness in preference
-to the special Cygnus mode.
+to the special Cygnus mode.  Some day, perhaps, the differences between
+Cygnus trees and GNU trees will disappear (for instance, as GCC is made
+more standards compliant).  At that time the special Cygnus mode will be
+removed.
 
 
 @node Extending, Distributing, Cygnus, Top
