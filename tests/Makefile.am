@@ -234,6 +234,7 @@ subdir.test \
 subdir2.test \
 subdir3.test \
 subdir4.test \
+subdirbuiltsources.test \
 subobj.test \
 subobj2.test \
 subobj3.test \

@@ -3679,19 +3679,20 @@ sub handle_merge_targets
 	}
 	if ($local_headers)
 	{
-	    # This is kind of a hack, but I couldn't see a better way
-	    # to handle it.  In this particular case, we need to make
-	    # sure config.h is built before we recurse.  We can't do
-	    # this by changing the order of dependencies to the "all"
-	    # because that breaks when using parallel makes.  Instead
-	    # we handle things explicitly.
-	    $output_rules .= ("all-recursive-am: ${local_headers}"
-				  . "\n\t"
-				  . '$(MAKE) $(AM_MAKEFLAGS)'
-				  . " all-recursive"
-				  . "\n\n");
-	    $all_target = 'all-recursive-am';
-	    &depend ('.PHONY', 'all-recursive-am');
+	    # We need to make sure config.h is built before we
+	    # recurse.  We also want to make sure that built sources
+	    # are built before any ordinary `all' targets are run.  We
+	    # can't do this by changing the order of dependencies to
+	    # the "all" because that breaks when using parallel makes.
+	    # Instead we handle things explicitly.
+	    $output_rules .= ("all-redirect: ${local_headers}"
+			      . "\n\t"
+			      . '$(MAKE) $(AM_MAKEFLAGS) '
+			      . ($recursive_install
+				 ? 'all-recursive' : 'all-am')
+			      . "\n\n");
+	    $all_target = 'all-redirect';
+	    &depend ('.PHONY', 'all-redirect');
 	}
     }
 
@@ -3755,18 +3756,24 @@ sub do_one_merge_target
 			  . "\n");
     }
 
-    local ($lname) = $name . ($recursive_install ? '-recursive' : '-am');
-    local ($tname) = $name;
     # To understand this special case, see handle_merge_targets.
     if ($name eq 'all')
     {
-	$tname = 'all-redirect';
-	$lname = $all_target if $recursive_install;
-	&depend ('.PHONY', 'all-redirect');
-	$output_all = "all: all-redirect\n";
+	# If we aren't using a redirect target then find the
+	# appropriate actual redirect.
+	if ($all_target eq '')
+	{
+	    $all_target = $recursive_install ? 'all-recursive' : 'all-am';
+	}
+
+	$output_all = "all: $all_target\n";
     }
-    &pretty_print_rule ($tname . ":", "\t\t", $lname);
-    &depend ('.PHONY', $name . '-am', $name);
+    else
+    {
+	local ($lname) = $name . ($recursive_install ? '-recursive' : '-am');
+	&pretty_print_rule ($name . ":", "\t\t", $lname);
+	&depend ('.PHONY', $name . '-am', $name);
+    }
 }
 
 # Handle check merge target specially.
@@ -6815,8 +6822,8 @@ sub initialize_per_input
     # position of a suffix rule.
     $source_suffix_pattern = '';
 
-    # This is the name of the recursive `all' target to use.
-    $all_target = 'all-recursive';
+    # This is the name of the redirect `all' target to use.
+    $all_target = '';
 
     # This keeps track of which extensions we've seen (that we care
     # about).
