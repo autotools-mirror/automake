@@ -2865,38 +2865,18 @@ sub handle_dist
     if ($relative_dir eq '.')
     {
 	# Rule to check whether a distribution is viable.
-	$output_rules .= ('# This target untars the dist file and tries a VPATH configuration.  Then
-# it guarantees that the distribution is self-contained by making another
-# tarfile.
-distcheck: dist
-	-rm -rf $(distdir)
-	GZIP=$(GZIP_ENV) gunzip -c $(distdir).tar.gz | $(AMTAR) xf -
-	mkdir $(distdir)/=build
-	mkdir $(distdir)/=inst
-	dc_install_base=`cd $(distdir)/=inst && pwd` \\'
-			  . (&target_defined ('distcheck-hook')
-			     ? ("\n\t  && \$(MAKE) \$(AM_MAKEFLAGS)"
-				. " distcheck-hook \\")
-			     : '')
-			  . '
-	  && cd $(distdir)/=build \\
-	  && ../configure '
+	local ($xform) = '';
 
-			  . ($seen_gettext ? '--with-included-gettext ' : '')
-			  . '--srcdir=.. --prefix=$$dc_install_base \\
-	  && $(MAKE) $(AM_MAKEFLAGS) \\
-	  && $(MAKE) $(AM_MAKEFLAGS) dvi \\
-	  && $(MAKE) $(AM_MAKEFLAGS) check \\
-	  && $(MAKE) $(AM_MAKEFLAGS) install \\
-	  && $(MAKE) $(AM_MAKEFLAGS) installcheck \\
-	  && $(MAKE) $(AM_MAKEFLAGS) dist
-	-rm -rf $(distdir)
-	@banner="$(distdir).tar.gz is ready for distribution"; \\
-	dashes=`echo "$$banner" | sed s/./=/g`; \\
-	echo "$$dashes"; \\
-	echo "$$banner"; \\
-	echo "$$dashes"
-');
+	if (! &target_defined ('distcheck-hook'))
+	{
+	    $xform .= 's/^DISTHOOK.*$//;';
+	}
+	if (! $seen_gettext)
+	{
+	    $xform .= 's/^GETTEXT.*$//;';
+	}
+
+	$output_rules .= &file_contents_with_transform ($xform, 'dist');
 
 	local ($dist_all) = ('dist-all: distdir' . "\n"
 			     . $dist_header);
