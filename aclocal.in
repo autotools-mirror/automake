@@ -41,6 +41,7 @@ use Automake::XFile;
 use Automake::FileUtils;
 use File::Basename;
 use File::stat;
+use Cwd;
 
 # Note that this isn't pkgdatadir, but a separate directory.
 # Note also that the versioned directory is handled later.
@@ -202,8 +203,30 @@ sub add_macro ($)
     &add_file ($map{$macro});
 }
 
-# scan_contents ($file)
-# --------------------------------
+# rel2abs ($file, $directory)
+# ---------------------------
+# Similar to File::Spec->rel2abs ($file, $directory), but
+# work with Perl 5.005.  (File::Spec->rel2abs is available
+# only in Perl 5.6.)
+# Remove this once we require 5.6.
+sub rel2abs ($$)
+{
+  my ($file, $dir) = @_;
+  if (! File::Spec->file_name_is_absolute ($file))
+    {
+      $dir = cwd () . "/$dir"
+	unless File::Spec->file_name_is_absolute ($dir);
+      $file = "$dir/$file";
+    }
+  $file = File::Spec->canonpath ($file);
+  return $file;
+}
+
+# scan_configure_dep ($file)
+# --------------------------
+# Scan a configure dependency (configure.ac, or separate m4 files)
+# for uses of know macros and AC_REQUIREs of possibly unknown macros.
+# Recursively scan m4_included files.
 my %scanned_configure_dep = ();
 sub scan_configure_dep ($)
 {
@@ -253,7 +276,7 @@ sub scan_configure_dep ($)
 
   add_macro ($_) foreach (@rlist);
   my $dirname = dirname $file;
-  &scan_configure_dep (File::Spec->rel2abs ($_, $dirname)) foreach (@ilist);
+  &scan_configure_dep (rel2abs ($_, $dirname)) foreach (@ilist);
 }
 
 # Add a file to output.
