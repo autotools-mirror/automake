@@ -2344,6 +2344,10 @@ sub handle_merge_targets
 	else
 	{
 	    @all = ('all-recursive');
+
+	    # Must always generate `all-am' target, so it can be
+	    # referred to elsewhere.
+	    $output_rules .= "all-am:\n";
 	}
 	if (@install_exec)
 	{
@@ -2458,15 +2462,17 @@ sub do_one_merge_target
     {
 	if (! &variable_defined ('SUBDIRS'))
 	{
-	    # 'check' must depend on 'all', but not when doing
+	    # 'check' must depend on `all', but not when doing
 	    # recursive build.
 	    unshift (@values, 'all');
 	}
 	else
 	{
 	    # When subdirs are used, do the `all' build and then do
-	    # all the recursive stuff.
-	    $output_rules .= "check: all\n";
+	    # all the recursive stuff.  Actually use `all-am' because
+	    # it doesn't recurse; we rely on the check target in the
+	    # subdirs to do the required builds there.
+	    $output_rules .= "check: all-am\n";
 	    &pretty_print_rule ("\t\$(MAKE)", "\t  ", @values);
 	    $done = 1;
 	}
