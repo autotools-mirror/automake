@@ -46,7 +46,7 @@ $SUFFIX_RULE_PATTERN = "^\\.([a-zA-Z0-9]+)\\.([a-zA-Z0-9]+)\$";
 # Only recognize leading spaces, not leading tabs.  If we recognize
 # leading tabs here then we need to make the reader smarter, because
 # otherwise it will think rules like `foo=bar; \' are errors.
-$MACRO_PATTERN = "^ *([A-Za-z0-9_]+)[ \t]*([:+]?)=[ \t]*(.*)\$";
+$MACRO_PATTERN = "^ *([A-Za-z0-9_\@]+)[ \t]*([:+]?)=[ \t]*(.*)\$";
 $BOGUS_MACRO_PATTERN = "^ *([^ \t]*)[ \t]*([:+]?)=[ \t]*(.*)\$";
 $GNITS_VERSION_PATTERN = "[0-9]+\\.[0-9]+([a-z]|\\.[0-9]+)?";
 $IF_PATTERN = "^if[ \t]+\([A-Za-z][A-Za-z0-9_]*\)[ \t]*\(#.*\)?\$";
@@ -1689,6 +1689,14 @@ sub handle_lib_objects_cond
     return $seen_libobjs;
 }
 
+# Canonicalize the input parameter
+sub canonicalize
+{
+    local($string) = @_;
+    $string =~ tr/A-Za-z0-9_\@/_/c;
+    return $string;
+}
+
 # Canonicalize a name, and check to make sure the non-canonical name
 # is never used.  Returns canonical name.  Arguments are name and a
 # list of suffixes to check for.
@@ -1697,7 +1705,7 @@ sub check_canonical_spelling
     local ($name, @suffixes) = @_;
     local ($xname, $xt);
 
-    ($xname = $name) =~ tr/A-Za-z0-9_/_/c;
+    $xname = &canonicalize ($name);
     if ($xname ne $name)
     {
 	local ($xt);
@@ -1828,8 +1836,7 @@ sub handle_programs
     {
 	foreach $one_file (@proglist)
 	{
-	    # Canonicalize names.
-	    ($xname = $one_file) =~ tr/A-Za-z0-9_/_/c;
+	    $xname = &canonicalize ($one_file);
 
 	    if (&variable_defined ($xname . '_LDADD'))
 	    {
@@ -1932,8 +1939,7 @@ sub handle_libraries
     {
 	foreach $onelib (@liblist)
 	{
-	    # Canonicalize names.
-	    ($xlib = $onelib) =~ tr/A-Za-z0-9_/_/c;
+	    $xlib = &canonicalize ($onelib);
 	    if (&variable_defined ($xlib . '_LIBADD'))
 	    {
 		&check_libobjs_sources ($xlib, $xlib . '_LIBADD');
@@ -2093,8 +2099,7 @@ sub handle_ltlibraries
     {
 	foreach $onelib (@liblist)
 	{
-	    # Canonicalize names.
-	    ($xlib = $onelib) =~ tr/A-Za-z0-9_/_/c;
+	    $xlib = &canonicalize ($onelib);
 	    if (&variable_defined ($xlib . '_LIBADD'))
 	    {
 		&check_libobjs_sources ($xlib, $xlib . '_LIBADD');
@@ -2294,8 +2299,7 @@ sub handle_texinfo
 	# work if the target has it and the dependency doesn't.
 	push (@texi_deps, '$(srcdir)/' . $vtexi) if $vtexi;
 
-	# Canonicalize name first.
-	($canonical = $infobase) =~ tr/A-Za-z0-9_/_/c;
+	$canonical = &canonicalize ($infobase);
 	if (&variable_defined ($canonical . "_TEXINFOS"))
 	{
 	    push (@texi_deps, '$(' . $canonical . '_TEXINFOS)');
