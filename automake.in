@@ -309,10 +309,6 @@ sub parse_arguments
 	    shift (@arglist);
 	    $srcdir_name = $arglist[0];
 	}
-	elsif ($arglist[0] =~ /^--strictness=(.+)$/)
-	{
-	    &set_strictness ($1);
-	}
 	elsif ($arglist[0] eq '--gnu')
 	{
 	    &set_strictness ('gnu');
@@ -328,12 +324,6 @@ sub parse_arguments
 	elsif ($arglist[0] eq '--foreign')
 	{
 	    &set_strictness ('foreign');
-	}
-	elsif ($arglist[0] eq '--strictness' || $arglist[0] eq '-s')
-	{
-	    &require_argument (@arglist);
-	    shift (@arglist);
-	    &set_strictness ($arglist[0]);
 	}
 	elsif ($arglist[0] eq '--include-deps' || $arglist[0] eq '-i')
 	{
@@ -1808,10 +1798,9 @@ sub handle_dist_worker
 		 # weirdness.
 		 '	here=`pwd`; distdir=`cd $(distdir) && pwd` \\
 	  && cd $(srcdir) \\
-	  && automake --include-deps --build-dir=$$here --srcdir-name=$(srcdir) --output-dir=$$distdir --strictness='
+	  && automake --include-deps --build-dir=$$here --srcdir-name=$(srcdir) --output-dir=$$distdir '
 		 # Set strictness of output.
-		 . $strictness_name
-		 . ($cygnus_mode ? ' --cygnus' : '')
+		 . ($cygnus_mode ? ' --cygnus' : ('--' . $strictness_name))
 		 . "\n"
 		 );
 	}
@@ -2296,8 +2285,9 @@ sub handle_configure
 	if &variable_defined ('SUBDIRS') && ! $seen_make_set;
 
     local ($top_reldir);
-    local ($xform) = ('s/\@ARGS\@/--strictness=' . $strictness_name
-		      . ($cygnus_mode ? ' --cygnus' : '')
+    local ($xform) = ('s/\@ARGS\@/'
+		      . ($cygnus_mode ? ' --cygnus'
+			 : ('--' . $strictness_name))
 		      . '/;');
     if ($relative_dir ne '.')
     {
@@ -3860,17 +3850,15 @@ sub initialize_global_constants
   --amdir=DIR           directory storing config files
   --build-dir=DIR       directory where build being done (for dependencies)
   --cygnus              assume program is part of Cygnus-style tree
-  --foreign             same as --strictness=foreign
-  --gnits               same as --strictness=gnits
-  --gnu                 same as --strictness=gnu
+  --foreign             set strictness to foreign
+  --gnits               set strictness to gnits
+  --gnu                 set strictness to gnu
   --help                print this help, then exit
   -i, --include-deps    include generated dependencies in Makefile.in
   --no-force            only update Makefile.in's that are out of date
   -o DIR, --output-dir=DIR
                         put generated Makefile.in's into DIR
   --srcdir-name=DIR     name used for srcdir (for dependencies)
-  -s LEVEL, --strictness=LEVEL
-                        set strictness level.  LEVEL is foreign, gnu, gnits
   -v, --verbose         verbosely list files processed
   --version             print version number, then exit\n";
 
