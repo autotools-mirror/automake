@@ -194,6 +194,7 @@ exdir2.test \
 exeext.test \
 exeext2.test \
 exeext3.test \
+exeext4.test \
 exsource.test \
 ext.test \
 ext2.test \
