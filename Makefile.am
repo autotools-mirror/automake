@@ -143,6 +143,13 @@ maintainer-check: automake aclocal
 	  echo "Found incorrect use of mkinstalldirs in the lines above" 1>&2; \
 	  exit 1; \
 	else :; fi
+## Make sure all calls to PRE/NORMAL/POST_INSTALL/UNINSTALL
+	@if grep -E -n '\((PRE|NORMAL|POST)_(|UN)INSTALL\)' \
+                 $(srcdir)/lib/am/[a-z]*.am | \
+	      grep -v ':##' | grep -v ':	@\$$('; then \
+	  echo "Found incorrect use of PRE/NORMAL/POST_INSTALL/UNINSTALL in the lines above" 1>&2; \
+	  exit 1; \
+	else :; fi
 ## We never want to use "undef", only "delete", but for $/.
 	@if grep -n -w 'undef ' $(srcdir)/automake.in | \
 	      grep -F -v 'undef $$/'; then \
@@ -161,7 +168,7 @@ maintainer-check: automake aclocal
 	  exit 1; \
 	fi
 ## Using @_ in a scalar context is most probably a programming error.
-	@if grep -Hn '[^) ] *= *@_' $(srcdir)/automake.in; then \
+	@if grep -Hn '[^@_A-Za-z0-9][_A-Za-z0-9]*[^) ] *= *@_' $(srcdir)/automake.in; then \
 	  echo "Using @_ in a scalar context in the lines above." 1>&2; \
 	  exit 1; \
 	fi

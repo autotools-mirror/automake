@@ -677,6 +677,12 @@ maintainer-check: automake aclocal
 	  echo "Found incorrect use of mkinstalldirs in the lines above" 1>&2; \
 	  exit 1; \
 	else :; fi
+	@if grep -E -n '\((PRE|NORMAL|POST)_(|UN)INSTALL\)' \
+                 $(srcdir)/lib/am/[a-z]*.am | \
+	      grep -v ':##' | grep -v ':	@\$$('; then \
+	  echo "Found incorrect use of PRE/NORMAL/POST_INSTALL/UNINSTALL in the lines above" 1>&2; \
+	  exit 1; \
+	else :; fi
 	@if grep -n -w 'undef ' $(srcdir)/automake.in | \
 	      grep -F -v 'undef $$/'; then \
 	  echo "Found undef in automake.in; use delete instead" 1>&2; \
@@ -691,7 +697,7 @@ maintainer-check: automake aclocal
 	  echo "Consider using $$$$(am__cd) in the line above." 1>&2; \
 	  exit 1; \
 	fi
-	@if grep -Hn '[^) ] *= *@_' $(srcdir)/automake.in; then \
+	@if grep -Hn '[^@_A-Za-z0-9][_A-Za-z0-9]*[^) ] *= *@_' $(srcdir)/automake.in; then \
 	  echo "Using @_ in a scalar context in the lines above." 1>&2; \
 	  exit 1; \
 	fi
