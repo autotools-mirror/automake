@@ -4169,6 +4169,8 @@ sub handle_dist
 	next if /^\@.*\@$/;
 	s/\$\(top_srcdir\)/$topsrcdir/;
 	s/\$\(srcdir\)/./;
+	# Strip any leading `./'.
+	s,^(:?\./+)*,,;
 	next unless s,/+[^/]+$,,;
 	$dist_dirs{$_} = 1
 	    unless $_ eq '.';
@@ -4299,7 +4301,8 @@ sub scan_aclocal_m4
 
     if (-f 'aclocal.m4')
     {
-	&push_dist_common ('aclocal.m4');
+	&push_dist_common ('aclocal.m4')
+	  if $relative_dir eq '.';
 	&define_variable ("ACLOCAL_M4", '$(top_srcdir)/aclocal.m4', INTERNAL);
 
 	my $aclocal = new Automake::XFile "< aclocal.m4";
@@ -4318,33 +4321,9 @@ sub scan_aclocal_m4
     if (variable_defined ('ACLOCAL_M4_SOURCES'))
     {
 	push (@ac_deps, '$(ACLOCAL_M4_SOURCES)');
-    }
-    elsif (variable_defined ('ACLOCAL_AMFLAGS'))
-    {
-	# Scan all -I directories for m4 files.  These are our
-	# dependencies.
-	my $examine_next = 0;
-	foreach my $amdir (&variable_value_as_list_recursive ('ACLOCAL_AMFLAGS', TRUE))
-	{
-	    if ($examine_next)
-	    {
-		$examine_next = 0;
-		if ($amdir !~ /^\// && -d $amdir)
-		{
-		    foreach my $ac_dep (&my_glob ($amdir . '/*.m4'))
-		    {
-			$ac_dep =~ s/^\.\/+//;
-			push (@ac_deps, '$(top_srcdir)/' . $ac_dep)
-			  unless $ac_dep eq "aclocal.m4"
-			    || $ac_dep eq "acinclude.m4";
-		    }
-		}
-	    }
-	    elsif ($amdir eq '-I')
-	    {
-		$examine_next = 1;
-	    }
-	}
+	msg_var ('obsolete', 'ACLOCAL_M4_SOURCES',
+		 "`ACLOCAL_M4_SOURCES' is obsolete.\n"
+		 . "It should be safe to simply remove it.");
     }
 
     # Note that it might be possible that aclocal.m4 doesn't exist but
@@ -8720,16 +8699,6 @@ sub set_strictness
     }
 }
 
-
-################################################################
-
-# Glob something.  Do this to avoid indentation screwups everywhere we
-# want to glob.  Gross!
-sub my_glob
-{
-    my ($pat) = @_;
-    return <${pat}>;
-}
 
 ################################################################
 

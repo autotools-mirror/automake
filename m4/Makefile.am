@@ -53,6 +53,19 @@ runlog.m4 \
 sanity.m4 \
 strip.m4
 
-nodist_m4data_DATA = amversion.m4
+# Use `$(srcdir)' for the benefit of non-GNU makes.
+# Many implementations do not know that `./foo' is the same target as `foo'.
+nodist_m4data_DATA = $(srcdir)/amversion.m4
 DISTCLEANFILES = amversion.m4
 EXTRA_DIST = dirlist
+
+# We build amversion.m4 here, instead of from config.status,
+# because config.status is rerun each time one of configure's
+# dependencies change and amversion.m4 happens to be a configure
+# dependency.  configure and amversion.m4 would be rebuilt in
+# loop otherwise.
+$(srcdir)/amversion.m4: $(srcdir)/amversion.in
+	sed -e 's,[@]VERSION[@],$(VERSION),g' \
+	    -e 's,[@]APIVERSION[@],$(APIVERSION),g' \
+	    $(srcdir)/amversion.in > $@t
+	mv -f $@t $@

@@ -7,7 +7,7 @@ eval 'case $# in 0) exec @PERL@ -S "$0";; *) exec @PERL@ -S "$0" "$@";; esac'
 
 # aclocal - create aclocal.m4 by scanning configure.ac
 
-# Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002
+# Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003
 #           Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
@@ -161,7 +161,7 @@ sub parse_arguments (@)
 	elsif ($arglist[0] eq '--version')
 	{
 	    print "aclocal (GNU $PACKAGE) $VERSION\n\n";
-	    print "Copyright (C) 2002 Free Software Foundation, Inc.\n";
+	    print "Copyright (C) 2003 Free Software Foundation, Inc.\n";
 	    print "This is free software; see the source for copying conditions.  There is NO\n";
 	    print "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n";
 	    print "Written by Tom Tromey <tromey\@redhat.com>\n";
@@ -357,7 +357,19 @@ sub add_file ($)
     return if ($file_seen{$file});
     $file_seen{$file} = 1;
 
-    $output .= $file_contents{$file} . "\n";
+    # If the file to add looks like path outside the project,
+    # copy it to the output.
+    # The regex catches filenames starting with things like
+    #   / \ c:\ ../ ./../ etc.
+    if ($file =~ m,^(?:(?:\w:)?[\\/]|(?:\.[\\/]+)*\.\.[\\/]),)
+      {
+	$output .= $file_contents{$file} . "\n";
+      }
+    else
+      {
+	# Otherwise, simply include the file.
+	$output .= "m4_include([$file])\n";
+      }
     my (@rlist);
     foreach (split ("\n", $file_contents{$file}))
     {
@@ -443,7 +455,7 @@ sub write_aclocal ()
     print $out
 "# generated automatically by aclocal $VERSION -*- Autoconf -*-
 
-# Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002
+# Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003
 # Free Software Foundation, Inc.
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
