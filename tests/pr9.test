@@ -1,0 +1,42 @@
+#! /bin/sh
+
+# Test for bug in PR 9.
+
+. $srcdir/defs || exit 1
+
+cat > configure.in << 'END'
+AC_INIT(Makefile.am)
+AC_CONFIG_AUX_DIR(support)
+AM_INIT_AUTOMAKE(pr9, 0)
+AC_OUTPUT(Makefile)
+END
+
+: > Makefile.am
+
+# Remove some files installed by defs.  These will be reinstalled by
+# automake.
+rm -f install-sh missing mkinstalldirs
+
+mkdir support
+
+# Fail gracefully if no autoconf.
+(autoconf --version) > /dev/null 2>&1 || exit 0
+
+# Likewise for gzip.
+(gzip --version) > /dev/null 2>&1 || exit 0
+
+$ACLOCAL || exit 1
+
+autoconf || exit 1
+$AUTOMAKE -a -c || exit 1
+./configure || exit 1
+$MAKE || exit 1
+$MAKE distcheck || exit 1
+
+gunzip pr9-0.tar.gz || exit 1
+
+(tar tf pr9-0.tar | fgrep support) || exit 1
+
+# Opportunistic test for bug noticed while writing this test case.
+test -f depcomp && exit 1
+exit 0
