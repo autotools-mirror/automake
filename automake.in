@@ -47,6 +47,8 @@ $GNITS_VERSION_PATTERN = "[0-9]+\\.[0-9]+([a-z]|\\.[0-9]+)?";
 $IF_PATTERN = "^if[ \t]+\([A-Za-z][A-Za-z0-9_]*\)[ \t]*\(#.*\)?\$";
 $ELSE_PATTERN = "^else[ \t]*\(#.*\)?\$";
 $ENDIF_PATTERN = "^endif[ \t]*\(#.*\)?\$";
+# This will pass through anything not of the prescribed form.
+$INCLUDE_PATTERN = "^include[ \t]+((\\\$\\\(top_srcdir\\\)/[^ \t\n]+)|(\\\$\\\(srcdir\\\)/[^ \t\n]+)|([^/][^\\\ \t]+))[ \t]*(#.*)?\$";
 
 # Some regular expressions.  One reason to put them here is that it
 # makes indentation work better in Emacs.
@@ -3058,7 +3060,9 @@ sub handle_configure
 		      . ': '
 		      . ($seen_maint_mode ? '@MAINT@ ' : '')
 		      . $amfile . ' '
-		      . '$(top_srcdir)/configure.in $(ACLOCAL_M4)' . "\n"
+		      . '$(top_srcdir)/configure.in $(ACLOCAL_M4)'
+                      . ' ' . join (' ', @include_stack)
+                      . "\n"
 		      . "\tcd \$(top_srcdir) && \$(AUTOMAKE) "
 		      . ($cygnus_mode ? '--cygnus' : ('--' . $strictness_name))
 		      . ($cmdline_use_dependencies ? '' : ' --include-deps')
@@ -5127,6 +5131,7 @@ sub define_program_variable
 sub read_am_file
 {
     local ($amfile) = @_;
+    local (*AM_FILE);
 
     open (AM_FILE, $amfile) || die "automake: couldn't open \`$amfile': $!\n";
     print "automake: reading $amfile\n" if $verbose;
@@ -5361,8 +5366,24 @@ sub read_am_file
 	    &am_line_error ($., "bad macro name \`$last_var_name'")
 		if ! $is_ok_macro;
 	}
+        elsif (/$INCLUDE_PATTERN/o)
+        {
+            local ($path) = $1;
+
+            if ($path =~ s/^\$\(top_srcdir\)\///)
+            {
+                push (@include_stack, "\$\(top_srcdir\)/$path");
+            }
+            else
+            {
+                $path =~ s/\$\(srcdir\)\///;
+                push (@include_stack, "\$\(srcdir\)/$path");
+                $path = $relative_dir . "/" . $path;
+            }
+            &read_am_file ($path);
+        }
 	else
-	{
+        {
 	    # This isn't an error; it is probably a continued rule.
 	    # In fact, this is what we assume.
 	    $was_rule = 1;
@@ -5564,6 +5585,9 @@ sub initialize_per_input
 
     # This is the conditional stack.
     @conditional_stack = ();
+
+    # This holds the set of included files.
+    @include_stack = ();
 
     # This holds the "relative directory" of the current Makefile.in.
     # Eg for src/Makefile.in, this is "src".
