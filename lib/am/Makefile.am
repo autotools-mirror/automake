@@ -26,6 +26,10 @@ ETAGS_ARGS = automake.in --lang=none \
 # The simplest form of checking.
 check-local: automake
 	@PERL@ -c -w automake
+	if grep '^[^#].*true' *.am; then :; else \
+	  echo "can't use 'true' in GNU Makefile" 1>&2; \
+	  exit 1;				\
+	fi
 
 automake: automake.in
 	CONFIG_FILES=$@ CONFIG_HEADERS= ./config.status
