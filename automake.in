@@ -572,11 +572,18 @@ sub generate_makefile
     {
 	local ($am_time) = (stat ($makefile . '.am'))[9];
 	local ($in_time) = (stat ($out_file))[9];
+	# FIXME: should cache these times.
+	local ($conf_time) = (stat ('configure.in'))[9];
 	# FIXME: how to do unsigned comparison?
-	if ($am_time < $in_time)
+	if ($am_time < $in_time || $am_time < $conf_time)
 	{
 	    # No need to update.
 	    return;
+	}
+	if (-f 'aclocal.m4')
+	{
+	    local ($acl_time) = (stat _)[9];
+	    return if ($am_time < $acl_time);
 	}
     }
 
