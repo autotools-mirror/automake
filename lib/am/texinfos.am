@@ -121,10 +121,10 @@ install-info-am: $(INFO_DEPS)
 	@list='$(INFO_DEPS)'; \
 	for file in $$list; do \
 	  if test -f $$file; then d=.; else d=$(srcdir); fi; \
-	  for ifile in echo $$d/$$file $$d/$$file-[0-9] $$d/$$file-[0-9][0-9]; do \
+	  for ifile in $$d/$$file $$d/$$file-[0-9] $$d/$$file-[0-9][0-9]; do \
 	    if test -f $$ifile; then \
-## Strip leading '$$d/'.
-	      relfile=`expr "$$ifile" : "$$d/\(.*\)"`; \
+## Strip directory
+	      relfile=`echo "$$ifile" | sed 's|^.*/||'`; \
 	      echo " $(INSTALL_DATA) $$ifile $(DESTDIR)$(infodir)/$$relfile"; \
 	      $(INSTALL_DATA) $$ifile $(DESTDIR)$(infodir)/$$relfile; \
 	    else : ; fi; \
@@ -144,15 +144,17 @@ install-info-am: $(INFO_DEPS)
 	     install-info --version | grep -i -v debian) >/dev/null 2>&1; then \
 	  list='$(INFO_DEPS)'; \
 	  for file in $$list; do \
+## Strip directory
+	    relfile=`echo "$$file" | sed 's|^.*/||'`; \
 ## Run `:' after install-info in case install-info fails.  We really
 ## don't care about failures here, because they can be spurious.  For
 ## instance if you don't have a dir file, install-info will fail.  I
 ## think instead it should create a new dir file for you.  This bug
 ## causes the `make distcheck' target to fail reliably.
-	    echo " install-info --info-dir=$(DESTDIR)$(infodir) $(DESTDIR)$(infodir)/$$file";\
+	    echo " install-info --info-dir=$(DESTDIR)$(infodir) $(DESTDIR)$(infodir)/$$relfile";\
 ## Use `|| :' here because Sun make passes -e to sh; if install-info
 ## fails then we'd fail if we used `;'.
-	    install-info --info-dir=$(DESTDIR)$(infodir) $(DESTDIR)$(infodir)/$$file || :;\
+	    install-info --info-dir=$(DESTDIR)$(infodir) $(DESTDIR)$(infodir)/$$relfile || :;\
 	  done; \
 	else : ; fi
 else ! %?LOCAL-TEXIS%
@@ -180,18 +182,20 @@ uninstall-info-am:
 	     install-info --version | grep -i -v debian) >/dev/null 2>&1; then \
 	  list='$(INFO_DEPS)'; \
 	  for file in $$list; do \
+	    relfile=`echo "$$file" | sed 's|^.*/||'`; \
 ## install-info needs the actual info file.  We use the installed one,
 ## rather than relying on one still being in srcdir or builddir.
-	    echo " install-info --info-dir=$(DESTDIR)$(infodir) --remove $(DESTDIR)$(infodir)/$$file"; \
-	    install-info --info-dir=$(DESTDIR)$(infodir) --remove $(DESTDIR)$(infodir)/$$file; \
+	    echo " install-info --info-dir=$(DESTDIR)$(infodir) --remove $(DESTDIR)$(infodir)/$$relfile"; \
+	    install-info --info-dir=$(DESTDIR)$(infodir) --remove $(DESTDIR)$(infodir)/$$relfile; \
 	  done; \
 	else :; fi
 	@$(NORMAL_UNINSTALL)
 	@list='$(INFO_DEPS)'; \
 	for file in $$list; do \
+	  relfile=`echo "$$file" | sed 's|^.*/||'`; \
 	  (if cd $(DESTDIR)$(infodir); then \
-	     echo " rm -f $$file $$file-[0-9] $$file-[0-9][0-9])"; \
-	     rm -f $$file $$file-[0-9] $$file-[0-9][0-9]; \
+	     echo " rm -f $$relfile $$relfile-[0-9] $$relfile-[0-9][0-9])"; \
+	     rm -f $$relfile $$relfile-[0-9] $$relfile-[0-9][0-9]; \
 	   else :; fi); \
 	done
 else ! %?LOCAL-TEXIS%
