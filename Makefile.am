@@ -147,29 +147,48 @@ maintainer-check: automake aclocal
 	fi
 ## Tests should never call make directly.
 	@if grep -v '^#' $(srcdir)/tests/*.test | egrep ':[	]*make'; then \
-	  echo 'Do not run "make" in the above tests.  Use "$$MAKE" instead.' \
+	  echo 'Do not run "make" in the above tests.  Use "$$MAKE" instead.' 1>&2; \
 	  exit 1; \
 	fi
 ## Tests should never call autoconf directly.
 	@if grep -v '^#' $(srcdir)/tests/*.test | egrep ':[	]*autoconf'; then \
-	  echo 'Do not run "autoconf" in the above tests.  Use "$$AUTOCONF" instead.' \
+	  echo 'Do not run "autoconf" in the above tests.  Use "$$AUTOCONF" instead.' 1>&2; \
 	  exit 1; \
 	fi
 ## Tests should never call automake directly.
 	@if grep -v '^#' $(srcdir)/tests/*.test | egrep ':[	]*automake'; then \
-	  echo 'Do not run "automake" in the above tests.  Use "$$AUTOMAKE" instead.' \
+	  echo 'Do not run "automake" in the above tests.  Use "$$AUTOMAKE" instead.' 1>&2;  \
 	  exit 1; \
 	fi
 ## Tests should never call aclocal directly.
 	@if grep -v '^#' $(srcdir)/tests/*.test | egrep ':[	]*aclocal'; then \
-	  echo 'Do not run "aclocal" in the above tests.  Use "$$ACLOCAL" instead.' \
+	  echo 'Do not run "aclocal" in the above tests.  Use "$$ACLOCAL" instead.' 1>&2;  \
 	  exit 1; \
 	fi
 ## Tests should never call perl directly.
 	@if grep -v '^#' $(srcdir)/tests/*.test | egrep ':[	]*perl'; then \
-	  echo 'Do not run "perl" in the above tests.  Use "$$PERL" instead.' \
+	  echo 'Do not run "perl" in the above tests.  Use "$$PERL" instead.' 1>&2; \
 	  exit 1; \
 	fi
+## Overriding a Makefile macro on the command line is not portable when
+## recursive targets are used.  Better use an envvar.  SHELL is an exception,
+## POSIX says it can't come from the environment.
+	@if egrep '\$$MAKE .*(SHELL=.*=|=.*SHELL=)' $(srcdir)/tests/*.test; then \
+	  echo 'Rewrite "$$MAKE foo=bar SHELL=/bin/sh" as "foo=bar $$MAKE -e SHELL=/bin/sh"' 1>&2; \
+	  echo ' in the above lines, it is more portable.' 1>&2; \
+	  exit 1; \
+	fi
+	@if grep -v SHELL $(srcdir)/tests/*.test | grep '\$$MAKE .*=' ; then \
+	  echo 'Rewrite "$$MAKE foo=bar" as "foo=bar $$MAKE -e" in the above lines,' 1>&2; \
+	  echo 'it is more portable.' 1>&2; \
+	  exit 1; \
+	fi
+	@if egrep 'SHELL=.*\$$MAKE' $(srcdir)/tests/*.test; then \
+	  echo '$$MAKE ignores the SHELL envvar, use "$$MAKE SHELL=/bin/sh" in' 1>&2; \
+	  echo 'the above lines.' 1>&2; \
+	  exit 1; \
+	fi
+
 
 # Tag before making distribution.  Also, don't make a distribution if
 # checks fail.  Also, make sure the NEWS file is up-to-date.
