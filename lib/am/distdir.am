@@ -308,9 +308,6 @@ distcheck: dist
 ## create this directory under $dc_install_base, because it would
 ## create very long directory names.
 	  && dc_destdir="$${TMPDIR-/tmp}/am-dc-$$$$/" \
-## Build the directory, so we can cd into it even if `make install'
-## didn't create it.
-	  && $(mkinstalldirs) $$dc_destdir \
 ?DISTCHECK-HOOK?	  && $(MAKE) $(AM_MAKEFLAGS) distcheck-hook \
 	  && cd $(distdir)/=build \
 	  && ../configure --srcdir=.. --prefix="$$dc_install_base" \
@@ -335,7 +332,11 @@ distcheck: dist
 ## The logic here is quite convoluted because we must clean $dc_destdir
 ## whatever happens (it won't be erased by the next run of distcheck like
 ## $(distdir) is).
-	  && ({   $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$dc_destdir" install \
+	  && ({ \
+## Build the directory, so we can cd into it even if `make install'
+## didn't create it.
+	       (cd ../.. && $(mkinstalldirs) "$$dc_destdir") \
+	       && $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$dc_destdir" install \
 	       && $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$dc_destdir" uninstall \
 	       && $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$dc_destdir" \
 	            distuninstallcheck_dir="$$dc_destdir" distuninstallcheck; \
