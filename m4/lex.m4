@@ -19,16 +19,15 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 
-# serial 3
-
-AC_PREREQ(2.50)
+# serial 4
 
 # AM_PROG_LEX
 # -----------
 # Autoconf leaves LEX=: if lex or flex can't be found.  Change that to a
 # "missing" invocation, for better error output.
 AC_DEFUN([AM_PROG_LEX],
-[AC_REQUIRE([AM_MISSING_HAS_RUN])dnl
+[AC_PREREQ(2.50)dnl
+AC_REQUIRE([AM_MISSING_HAS_RUN])dnl
 AC_REQUIRE([AC_PROG_LEX])dnl
 if test "$LEX" = :; then
   LEX=${am_missing_run}flex

@@ -20,8 +20,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 
-# serial 4
-AC_PREREQ(2.50)
+# serial 5
 
 # AM_WITH_REGEX
 # -------------
@@ -39,7 +38,8 @@ AC_PREREQ(2.50)
 # FIXME: This macro seems quite obsolete now since rx doesn't seem to
 # be maintained, while regex is.
 AC_DEFUN([AM_WITH_REGEX],
-[AC_LIBSOURCES([rx.h, rx.c, regex.c, regex.h])dnl
+[AC_PREREQ(2.50)dnl
+AC_LIBSOURCES([rx.h, rx.c, regex.c, regex.h])dnl
 AC_MSG_CHECKING([which of GNU rx or gawk's regex is wanted])
 AC_ARG_WITH(regex,
 [  --without-regex         use GNU rx in lieu of gawk's regex for matching],
