@@ -8903,11 +8903,11 @@ data.h: data.c
 @end example
 
 The above scheme can be extended to handle more outputs and more
-inputs.  One of the output is picked up to serve as a witness of the
-run of the command, it depends upon all inputs, and all other outputs
-depend upon it.  For instance if @command{foo} should additionally
-read @file{data.bar} and also produce @file{data.w} and @file{data.x},
-we would write:
+inputs.  One of the outputs is selected to serve as a witness to the
+successful completion of the command, it depends upon all inputs, and
+all other outputs depend upon it.  For instance if @command{foo}
+should additionally read @file{data.bar} and also produce
+@file{data.w} and @file{data.x}, we would write:
 
 @example
 data.c: data.foo data.bar
@@ -8923,7 +8923,7 @@ data.h data.w data.x: data.c
 However there are now two minor problems in this setup.  One is related
 to the timestamp ordering of @file{data.h}, @file{data.w},
 @file{data.x}, and @file{data.c}.  The other one is a race condition
-if a parallel @command{make} attempts to run multiple instance of the
+if a parallel @command{make} attempts to run multiple instances of the
 recover block at once.
 
 Let us deal with the first problem.  @command{foo} outputs four files,
@@ -8976,21 +8976,21 @@ do not want to update @file{data.stamp} if @command{foo} fails.
 
 This solution still suffers from the second problem: the race
 condition in the recover rule.  If, after a successful build, a user
-erases @file{data.c} and @file{data.h}, and run @samp{make -j}, then
+erases @file{data.c} and @file{data.h}, and runs @samp{make -j}, then
 @command{make} may start both recover rules in parallel.  If the two
 instances of the rule execute @samp{$(MAKE) $(AM_MAKEFLAGS)
 data.stamp} concurrently the build is likely to fail (for instance the
 two rules will create @file{data.tmp}, but only one can rename it).
 
-Admittedly, such weird situation does not happen during ordinary
+Admittedly, such a weird situation does not happen during ordinary
 builds.  It occurs only when the build tree is mutilated.  Here
 @file{data.c} and @file{data.h} have been explicitly removed without
 also removing @file{data.stamp} and the other output files.
 @code{make clean; make} will always recover from these situations even
-with parallel makes, so you may decide that the recover rule is just
+with parallel makes, so you may decide that the recover rule is solely
 an help to non-parallel make users and leave things as-is.  Fixing
 this requires some locking mechanism to ensure only one instance of
-the recover rule rebuild @code{data.stamp}.  One could imagine
+the recover rule rebuilds @code{data.stamp}.  One could imagine
 something along the following lines.
 
 @example
