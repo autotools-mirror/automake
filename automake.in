@@ -1027,7 +1027,7 @@ sub finish_languages
     # If the project is entirely C++ or entirely Fortran 77, don't
     # bother with the C stuff.  But if anything else creeps in, then use
     # it.
-    if (! $non_c || scalar keys %suffix_rules > 0)
+    if ($need_link || ! $non_c || scalar keys %suffix_rules > 0)
     {
 	if (! defined $done{'c'})
 	{
@@ -1503,6 +1503,12 @@ sub handle_source_transform
     {
 	grep ($_ = '$(' . $_ . $one_file . '_OBJECTS)', @keys);
 	&define_pretty_variable ($one_file . '_OBJECTS', '', @keys);
+    }
+
+    # If we want to use `LINK' we must make sure it is defined.
+    if ($linker eq '')
+    {
+	$need_link = 1;
     }
 
     return $linker;
@@ -6884,6 +6890,9 @@ sub initialize_per_input
     # This is set when `handle_dist' has finished.  Once this happens,
     # we should no longer push on dist_common.
     $handle_dist_run = 0;
+
+    # True if we need `LINK' defined.  This is a hack.
+    $need_link = 0;
 }
 
 
