@@ -5,10 +5,6 @@ why is that?
 check should depend on all
   from ben elliston
 
-refactor handle_source_transform and handle_single_transform_list
-we suffer combinatorial explosion here, but there's no need to
-we could transform source variables one at a time
-
 the new YFLAGS code doesn't correctly handle srcdir
 
 allow foo_NAME to rename an object (library or program)
@@ -112,9 +108,6 @@ Alex Hornby
 
 * support prog_LIBS as override for LIBS
 
-* Scan configure.in using traces as autoheader does.
-  This will be much more reliable.
-
 * Test subdir-objects option with yacc, lex, ansi2knr
   Our locking scheme won't prevent a parallel make from losing
   if there are two `bar.o' files and the timing is just right
@@ -141,21 +134,12 @@ Alex Hornby
   still won't put the file into the disty.  This is wrong.
   From Mark H Wilkinson <mhw@kremvax.demon.co.uk>
 
-* CFLAGS only defined if C source seen
-  but really it should be a configure variable, shouldn't it?
-  There are other examples of this
-  [ moving to autoconf --trace ought to fix this ]
-
 * in gnu/gnits mode, give error if Makefile.am overrides a user
   variable like CFLAGS.
   [ this is low priority because the package author can always
     circumvent our check by redefining in configure.in
     plus it is probably better to encourage good behavior than to
     punish bad ]
-
-* If we see `foo.o' in LIBOBJS, and we've seen AC_OBJEXT, then complain.
-  [ how will we know that?  it is better to handle this automatically
-    via an autoconf hook ]
 
 * examine possibility of using any character in a macro name
   and rewriting names automatically.  this means we must rewrite
@@ -169,22 +153,9 @@ Alex Hornby
   [ this should no matter in the future as acconfig.h and so on are
     obsoleted by the AH series of macros.]
 
-* header stamp files still in wrong dirs.
-  stamp-h.in must be in dir with h.in file
-  stamp-h must be in dir with output file
-
 * `distcheck' and `dist' should depend on `all'
 
 * Add code to generate foo-config script like gnome, gtk
-
-* `DEFS += foo' won't work.
-  That's because DEFS is defined in header-vars.am, which is read
-  after the user's Makefile.am.
-  This will be a problem for any macro defined internally
-    [ fixing this will probably fix the nasty `exeext redefines
-      foo_PROGRAMS' hack that is in there right now ]
-    [ we currently give an error when this occurs, so this is very low
-      priority ]
 
 * document user namespace for macro/target names
   adopt some conventions and use uniformly
@@ -225,9 +196,6 @@ Alex Hornby
 * make sure `missing' defines are generated
 
 * missing should handle install -d and rmdir -p (for uninstall)
-
-* notice when a .c file is a target somewhere, and auto-add it to
-    BUILT_SOURCES
 
 * NORMAL_INSTALL / NORMAL_UNINSTALL -vs- recursive rules
   [ requires changes to the standard ]
@@ -277,6 +245,7 @@ might make editing conceptually easier.
   requests for pkg-dirs with version included
 
 Avoid loops when installing; instead unroll them in automake
+[ Impossible when @AC_SUBST@ values are used. ]
 
 * for new autoconf:
   * completely handle multi-":" mode for AC_CONFIG_HEADER
@@ -318,6 +287,10 @@ Per> 	.java.class:
 Per> then it should be able to realize it can build .class files from
 Per> .java files, and thus be able to generate a list of
 Per> .class files from a list of .java source files.
+[What Per wanted here was a way to have automate automatically follow
+suffix rules.  So for instance if you had a `.x.y:' rule, and automake
+saw a `.x' file, it would automatically build and install the
+corresponding `.y' file.]
 
 !! Must fix require_file stuff.  It is really gross, and I don't
    understand it any more.
@@ -355,16 +328,6 @@ should be able to determine what is built by looking at rules (and
 configure.in).  Then built man pages (eg) could automatically be
 omitted from the distribution.
 
-Henrik Frystyk Nielsen says:
-Henrik> 4) Flags like --include-deps are lost when you make changes to
-Henrik> Makefile.am files and automake is run automatically. It would
-Henrik> be nice to keep these flags as I now have to redo everything
-Henrik> manually.
-... what about other options here too?
-
-Think about: maybe "make check" should just bomb if error occurs?
-Then user must use "make -k check".  This is probably more natural.
-
 Consider: "cvs" option adds some cvs-specific rules?
 
 Right now, targets generated internally (eg "install") are not
@@ -377,6 +340,7 @@ $output_rules.
 
 * Should be a way to have "nobuild_PROGRAMS" which aren't even built,
   but which could be by running the magic make command.
+  [ How does it differ from EXTRA_PROGRAMS? ]
 
 Other priorities:
 * Must rewrite am_install_var.  Should break into multiple functions.
@@ -560,20 +524,6 @@ CCLD, CXXLD, FLD
 
 ================================================================
 
-Things to do for gcc:
-
-Regularize dependency generation.  Add new flags:
-
--MH   Generate a dummy dependency for each header file mentioned.
--MT NAME
-      Set name of target
--MF NAME
-      Set name of output file
-
-Then automake can use -MD -MH -MT 'foo.o foo.lo' -MF .deps/...
-
-================================================================
-
 Libraries:
 
 * Should support standalone library along with subdir library in same
@@ -652,10 +602,17 @@ that aren't mentioned?
   - how to install file with a space in its name?
   [ don't bother with this -- make is just too losing ]
 
+* notice when a .c file is a target somewhere, and auto-add it to
+    BUILT_SOURCES
+  [ BUILT_SOURCES are for files that need to be built before anything
+    else because of hidden dependencies (something .c files are
+    unlikely to be) ]
+
+
 * copyright notice
 
-Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001 Free Software
-Foundation, Inc.
+Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002 Free
+Software Foundation, Inc.
 
 This file is part of GNU Automake.
 
