@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1998, 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 1998, 2001, 2002, 2004  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -22,11 +22,36 @@
 
 . ./defs || exit 1
 
+set -e
+
+cat >>configure.in <<'EOF'
+AC_CHECK_PROG([HAS_JAVAC], [javac], [:], [exit])
+$HAS_JAVAC 77
+AC_OUTPUT
+EOF
+
+
 cat > Makefile.am << 'END'
 javadir = $(datadir)/java
-java_JAVA = a.java b.java c.java
+dist_java_JAVA = a.java b.java
 END
 
-$ACLOCAL || exit 1
-$AUTOMAKE || exit 1
-grep '^all[-a-z]*:.*classjava\.stamp' Makefile.in
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
+grep '^all[-a-z]*:.*classdist_java\.stamp' Makefile.in
+
+cat >a.java <<EOF
+class a
+{
+}
+EOF
+
+cat >b.java <<EOF
+class b
+{
+}
+EOF
+
+./configure --prefix `pwd`
+$MAKE distcheck
