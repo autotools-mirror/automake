@@ -12,7 +12,8 @@ AC_ARG_WITH(dmalloc,
                           ftp://ftp.letters.com/src/dmalloc/dmalloc.tar.gz],
 [if test "$withval" = yes; then
   AC_MSG_RESULT(yes)
-  AC_DEFINE(WITH_DMALLOC)
+  AC_DEFINE(WITH_DMALLOC,1,
+            [Define if using the dmalloc debugging malloc package])
   LIBS="$LIBS -ldmalloc"
   LDFLAGS="$LDFLAGS -g"
 else

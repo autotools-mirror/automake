@@ -22,7 +22,7 @@ AC_ARG_WITH(regex,
 [am_with_regex=1])
 if test -n "$am_with_regex"; then
   AC_MSG_RESULT(regex)
-  AC_DEFINE(WITH_REGEX)
+  AC_DEFINE(WITH_REGEX,1,[Define if using GNU regex])
   AC_CACHE_CHECK([for GNU regex in libc], am_cv_gnu_regex,
     AC_TRY_LINK([], [extern int re_max_failures; re_max_failures = 1],
 		am_cv_gnu_regex=yes, am_cv_gnu_regex=no))

@@ -11,7 +11,7 @@ AC_REQUIRE([AC_PROG_CPP])
 AC_MSG_CHECKING([for function prototypes])
 if test "$am_cv_prog_cc_stdc" != no; then
   AC_MSG_RESULT(yes)
-  AC_DEFINE(PROTOTYPES)
+  AC_DEFINE(PROTOTYPES,1,[Define if compiler has function prototypes])
   U= ANSI2KNR=
 else
   AC_MSG_RESULT(no)

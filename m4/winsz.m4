@@ -30,6 +30,7 @@ AC_DEFUN(AM_HEADER_TIOCGWINSZ_NEEDS_SYS_IOCTL,
   fi
   ])
   if test $am_cv_sys_tiocgwinsz_needs_sys_ioctl_h = yes; then
-    AC_DEFINE(GWINSZ_IN_SYS_IOCTL)
+    AC_DEFINE(GWINSZ_IN_SYS_IOCTL,1,
+              [Define if TIOCGWINSZ requires sys/ioctl.h])
   fi
 ])
