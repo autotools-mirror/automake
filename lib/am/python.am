@@ -28,16 +28,20 @@ _am_installdirs += $(DESTDIR)$(%DIR%dir)
 install-%DIR%PYTHON: $(%DIR%_PYTHON)
 	@$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(DESTDIR)$(%DIR%dir)
-	@list='$(%DIR%_PYTHON)'; for p in $$list; do\
+	@list='$(%DIR%_PYTHON)'; dlist=''; for p in $$list; do\
 	  if test -f $(srcdir)/$$p; then \
+## Compute basename of source file.  We want to install 'python/foo.py'
+## as '$(DESTDIR)$(%DIR%dir)/foo.yo', not '$(DESTDIR)$(%DIR%dir)/python/foo.yo'
+	    d=`echo "$$p" | sed -e 's,^.*/,,'`; \
+	    dlist="$$dlist $$d"; \
 ## Don't perform translation, since script name is important.
-	    echo " $(INSTALL_PROGRAM) $(srcdir)/$$p $(DESTDIR)$(%DIR%dir)/$$p"; \
-	    $(INSTALL_DATA) $(srcdir)/$$p $(DESTDIR)$(%DIR%dir)/$$p; \
+	    echo " $(INSTALL_PROGRAM) $(srcdir)/$$p $(DESTDIR)$(%DIR%dir)/$$d"; \
+	    $(INSTALL_DATA) $(srcdir)/$$p $(DESTDIR)$(%DIR%dir)/$$d; \
 	  else :; fi; \
-	done
+	done; \
 ## Byte-compile must be done at install time, since file times are
 ## encoded in the actual files.
-	@PYTHON=$(PYTHON) $(py_compile) --basedir $(DESTDIR)$(%DIR%dir) $(%DIR%_PYTHON)
+	PYTHON=$(PYTHON) $(py_compile) --basedir $(DESTDIR)$(%DIR%dir) $$dlist
 endif %?INSTALL%
 
 
@@ -50,11 +54,12 @@ if %?INSTALL%
 uninstall-%DIR%PYTHON:
 	@$(NORMAL_UNINSTALL)
 	list='$(%DIR%_PYTHON)'; for p in $$list; do \
-	  rm -f $(DESTDIR)$(%DIR%dir)/$$p; \
+	  d=`echo "$$p" | sed -e 's,^.*/,,'`; \
+	  rm -f $(DESTDIR)$(%DIR%dir)/$$d; \
 ## This is to remove the .pyc and .pyo byte compiled versions (a bit
 ## of a hack).
-	  rm -f $(DESTDIR)$(%DIR%dir)/$${p}c; \
-	  rm -f $(DESTDIR)$(%DIR%dir)/$${p}o; \
+	  rm -f $(DESTDIR)$(%DIR%dir)/$${d}c; \
+	  rm -f $(DESTDIR)$(%DIR%dir)/$${d}o; \
 	done
 endif %?INSTALL%
 
@@ -63,9 +68,19 @@ endif %?INSTALL%
 ## Cleaning.  ##
 ## ---------- ##
 
-.PHONY clean-am: clean-python
-clean-python:
-	-test -z "$(PYCFILES)$(PYOFILES)" || rm -f $(PYCFILES) $(PYOFILES)
+## FIXME: There is nothing to clean here since files are
+##        byte-compiled when (and where) they are installed.
+##        Some points thought:
+##          1) clean-python ought to be named clean-%DIR%PYTHON, to allow
+##             multiple _PYTHON targets.
+##          2) PYCFILES and PYOFILES are documented but not used anywhere
+##             else.
+##          3) PYCFILES and PYOFILES shoud be target-dependent for the same
+##             reason.
+##
+##.PHONY clean-am: clean-python
+##clean-python:
+##	-test -z "$(PYCFILES)$(PYOFILES)" || rm -f $(PYCFILES) $(PYOFILES)
 
 
 ## -------------- ##
