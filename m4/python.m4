@@ -142,12 +142,16 @@ AC_DEFUN([AM_PATH_PYTHON],
 # ---------------------------------------------------------------------------
 # Run ACTION-IF-TRUE if the Python interpreter PROG has version >= VERSION.
 # Run ACTION-IF-FALSE otherwise.
+# This test uses sys.hexversion instead of the string equivalant (first
+# word of sys.version), in order to cope with versions such as 2.2c1.
+# hexversion has been introduced in Python 1.5.2; it's probably not
+# worth to support older versions (1.5.1 was released on October 31, 1998).
 AC_DEFUN([AM_PYTHON_CHECK_VERSION],
  [prog="import sys, string
-pyver = string.split(sys.version)[[0]]  # first word is version string
-# split strings by '.' and convert to numeric
-minver = map(string.atoi, string.split('$2', '.'))
-pyver = map(string.atoi, string.split(pyver, '.'))
-# we can now do comparisons on the two lists:
-sys.exit(pyver < minver)"
+# split strings by '.' and convert to numeric.  Append some zeros
+# because we need at least 4 digits for the hex conversion.
+minver = map(int, string.split('$2', '.')) + [[0, 0, 0]]
+minverhex = 0
+for i in xrange(0, 4): minverhex = (minverhex << 8) + minver[[i]]
+sys.exit(sys.hexversion < minverhex)"
   AS_IF([AM_RUN_LOG([$1 -c "$prog"])], [$3], [$4])])
