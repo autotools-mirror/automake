@@ -1573,10 +1573,12 @@ sub handle_dist_worker
     }
     if (@dist_dirs)
     {
-	# Prepend $(distdir) to each directory given.
-	grep ($_ = '$(distdir)/' . $_, @dist_dirs);
+	# Prepend $(distdir) to each directory given.  Doing it via a
+	# hash lets us ensure that each directory is used only once.
+	local (%dhash);
+	grep ($dhash{'$(distdir)/' . _} = 1, @dist_dirs);
 	$output_rules .= "\t";
-	&pretty_print_rule ('$(mkinstalldirs)', "\t   ", @dist_dirs);
+	&pretty_print_rule ('$(mkinstalldirs)', "\t   ", sort keys %dhash);
     }
 
     # In loop, test for file existence because sometimes a file gets
