@@ -71,14 +71,15 @@ SUBDIRS = . m4 tests
 bin_SCRIPTS = automake aclocal
 info_TEXINFOS = automake.texi
 
-pkgdata_DATA = clean-kr.am clean.am clean-hdr.am comp-vars.am \
-compile.am data.am dejagnu.am depend.am depend2.am dist-vars.am	\
-footer.am header.am header-vars.am kr-extra.am libs.am library.am \
-libtool.am ltlib.am ltlibrary.am mans-vars.am program.am progs.am \
-remake-hdr.am remake.am scripts.am subdirs.am tags.am tags-clean.am \
-texi-vers.am texinfos.am libs-clean.am ltlib-clean.am progs-clean.am \
-data-clean.am COPYING INSTALL texinfo.tex ansi2knr.c ansi2knr.1	\
-lisp.am lisp-clean.am mans.am java.am java-clean.am
+amfiles = clean-hdr.am clean-kr.am clean.am comp-vars.am compile.am \
+data-clean.am data.am dejagnu.am depend.am depend2.am dist-vars.am \
+footer.am header-vars.am header.am java-clean.am java.am kr-extra.am \
+library.am libs-clean.am libs.am libtool.am lisp-clean.am lisp.am \
+ltlib-clean.am ltlib.am ltlibrary.am mans-vars.am mans.am program.am \
+progs-clean.am progs.am remake-hdr.am remake.am scripts.am subdirs.am \
+tags-clean.am tags.am texi-vers.am texinfos.am
+
+pkgdata_DATA = COPYING INSTALL texinfo.tex ansi2knr.c ansi2knr.1 $(amfiles)
 
 pkgdata_SCRIPTS = config.guess config.sub install-sh mdate-sh missing \
 mkinstalldirs elisp-comp ylwrap acinstall
@@ -89,6 +90,9 @@ EXTRA_DIST = acinstall $(pkgdata_DATA)
 ETAGS_ARGS = automake.in aclocal.in --lang=none \
  --regex='/^@node[ \t]+\([^,]+\)/\1/' automake.texi
 TAGS_DEPENDENCIES = automake.in aclocal.in automake.texi
+
+ETAGS_ARGS = $(amfiles)
+TAGS_DEPENDENCIES = $(ETAGS_ARGS)
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES =  automake aclocal
@@ -247,7 +251,8 @@ DVIPS = dvips
 install-info-am: $(INFO_DEPS)
 	@$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(DESTDIR)$(infodir)
-	@for file in $(INFO_DEPS); do \
+	@list='$(INFO_DEPS)'; \
+	for file in $$list; do \
 	  d=$(srcdir); \
 	  for ifile in `cd $$d && echo $$file $$file-[0-9] $$file-[0-9][0-9]`; do \
 	    if test -f $$d/$$ifile; then \
@@ -258,7 +263,8 @@ install-info-am: $(INFO_DEPS)
 	done
 	@$(POST_INSTALL)
 	@if $(SHELL) -c 'install-info --version | sed 1q | fgrep -s -v -i debian' >/dev/null 2>&1; then \
-	  for file in $(INFO_DEPS); do \
+	  list='$(INFO_DEPS)'; \
+	  for file in $$list; do \
 	    echo " install-info --info-dir=$(DESTDIR)$(infodir) $(DESTDIR)$(infodir)/$$file";\
 	    install-info --info-dir=$(DESTDIR)$(infodir) $(DESTDIR)$(infodir)/$$file || :;\
 	  done; \
@@ -269,17 +275,20 @@ uninstall-info:
 	@if $(SHELL) -c 'install-info --version | sed 1q | fgrep -s -v -i debian' >/dev/null 2>&1; then \
 	  ii=yes; \
 	else ii=; fi; \
-	for file in $(INFO_DEPS); do \
+	list='$(INFO_DEPS)'; \
+	for file in $$list; do \
 	  test -z "$ii" \
 	    || install-info --info-dir=$(DESTDIR)$(infodir) --remove $$file; \
 	done
 	@$(NORMAL_UNINSTALL)
-	for file in $(INFO_DEPS); do \
+	list='$(INFO_DEPS)'; \
+	for file in $$list; do \
 	  (cd $(DESTDIR)$(infodir) && rm -f $$file $$file-[0-9] $$file-[0-9][0-9]); \
 	done
 
 dist-info: $(INFO_DEPS)
-	for base in $(INFO_DEPS); do \
+	list='$(INFO_DEPS)'; \
+	for base in $$list; do \
 	  d=$(srcdir); \
 	  for file in `cd $$d && eval echo $$base*`; do \
 	    test -f $(distdir)/$$file \

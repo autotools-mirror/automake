@@ -2920,6 +2920,22 @@ sub handle_configure
 	$top_reldir = '';
     }
 
+    # Make it easy to see if there is a Makefile.am in a given
+    # directory.
+    local (%make_dirs, $iter);
+    foreach $iter (@input_files)
+    {
+	$make_dirs{&dirname ($iter)} = 1;
+    }
+    # We also want to notice Makefile.in's.
+    foreach $iter (@other_input_files)
+    {
+	if ($iter =~ /Makefile\.in$/)
+	{
+	    $make_dirs{&dirname ($iterm)} = 1;
+	}
+    }
+
     # If we have a configure header, require it.
     local ($one_hdr);
     local (@local_fullnames) = @config_fullnames;
@@ -2931,10 +2947,26 @@ sub handle_configure
 	local ($one_fullname) = shift (@local_fullnames);
 	local ($one_name) = shift (@local_names);
 	$hdr_index += 1;
-	if ($relative_dir eq &dirname ($one_hdr))
+	local ($header_dir) = &dirname ($one_hdr);
+
+	# If the header is in the current directory we want to build
+	# the header here.  Otherwise, if we're at the topmost
+	# directory and the header's directory doesn't have a
+	# Makefile, then we also want to build the header.
+	if ($relative_dir eq $header_dir
+	    || ($relative_dir eq '.' && ! defined $make_dirs{$header_dir}))
 	{
-	    local ($ch_sans_dir) = &basename ($one_hdr);
-	    local ($cn_sans_dir) = &basename ($one_name);
+	    local ($ch_sans_dir, $cn_sans_dir);
+	    if ($relative_dir eq $header_dir)
+	    {
+		$ch_sans_dir = &basename ($one_hdr);
+		$cn_sans_dir = &basename ($one_name);
+	    }
+	    else
+	    {
+		$ch_sans_dir = $one_hdr;
+		$cn_sans_dir = $one_name;
+	    }
 
 	    &require_file_with_conf_line ($config_header_line,
 					  $FOREIGN, $ch_sans_dir);

@@ -10,14 +10,15 @@ SUBDIRS = . m4 tests
 bin_SCRIPTS = automake aclocal
 info_TEXINFOS = automake.texi
 
-pkgdata_DATA = clean-kr.am clean.am clean-hdr.am comp-vars.am \
-compile.am data.am dejagnu.am depend.am depend2.am dist-vars.am	\
-footer.am header.am header-vars.am kr-extra.am libs.am library.am \
-libtool.am ltlib.am ltlibrary.am mans-vars.am program.am progs.am \
-remake-hdr.am remake.am scripts.am subdirs.am tags.am tags-clean.am \
-texi-vers.am texinfos.am libs-clean.am ltlib-clean.am progs-clean.am \
-data-clean.am COPYING INSTALL texinfo.tex ansi2knr.c ansi2knr.1	\
-lisp.am lisp-clean.am mans.am java.am java-clean.am
+amfiles = clean-hdr.am clean-kr.am clean.am comp-vars.am compile.am \
+data-clean.am data.am dejagnu.am depend.am depend2.am dist-vars.am \
+footer.am header-vars.am header.am java-clean.am java.am kr-extra.am \
+library.am libs-clean.am libs.am libtool.am lisp-clean.am lisp.am \
+ltlib-clean.am ltlib.am ltlibrary.am mans-vars.am mans.am program.am \
+progs-clean.am progs.am remake-hdr.am remake.am scripts.am subdirs.am \
+tags-clean.am tags.am texi-vers.am texinfos.am
+
+pkgdata_DATA = COPYING INSTALL texinfo.tex ansi2knr.c ansi2knr.1 $(amfiles)
 
 ## These must all be executable when installed.
 pkgdata_SCRIPTS = config.guess config.sub install-sh mdate-sh missing \
@@ -118,3 +119,8 @@ path-check: distdir
 	  status=$$?; \
 	  rm -rf $(distdir); \
 	  exit $$status
+
+## Just get the .am files into TAGS.  We don't really care too much if
+## any interesting tags show up.
+ETAGS_ARGS = $(amfiles)
+TAGS_DEPENDENCIES = $(ETAGS_ARGS)
