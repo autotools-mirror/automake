@@ -760,7 +760,7 @@ register_language ('name' => 'c',
 		   'flags' => 'CFLAGS',
 		   'compile' => '$(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)',
 		   'compiler' => 'COMPILE',
-		   'output-arg' => '-c',
+		   'output_arg' => '-c',
 		   'extensions' => ['c'],
 		   '_finish' => \&lang_c_finish);
 register_language ('name' => 'cxx',
@@ -769,7 +769,7 @@ register_language ('name' => 'cxx',
 		   'flags' => 'CXXFLAGS',
 		    'compile' => '$(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)',
 		   'compiler' => 'CXXCOMPILE',
-		   'output-arg' => '-c -o $@',
+		   'output_arg' => '-c -o $@',
 		   'pure' => 'yes',
 		   'extensions' => ['c++', 'cc', 'cpp', 'cxx', 'C'],
 		   '_finish' => \&lang_cxx_finish);
@@ -779,7 +779,7 @@ register_language ('name' => 'objc',
 		   'flags' => 'OBJCFLAGS',
 		   'compile' => '$(OBJC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_OBJCFLAGS) $(OBJCFLAGS)',
 		   'compiler' => 'OBJCCOMPILE',
-		   'output-arg' => '-c -o $@',
+		   'output_arg' => '-c -o $@',
 		   'pure' => 'yes',
 		   'extensions' => ['m'],
 		   '_finish' => \&lang_objc_finish);
@@ -790,22 +790,22 @@ register_language ('name' => 'header',
 # For now, yacc and lex can't be handled on a per-exe basis.
 register_language ('name' => 'yacc',
 		   'ansi' => '1',
-		   'derived-autodep' => 'yes',
+		   'derived_autodep' => 'yes',
 		   'extensions' => ['y'],
 		   '_finish' => \&lang_yacc_finish);
 register_language ('name' => 'yaccxx',
 		   'linker' => 'CXXLINK',
-		   'derived-autodep' => 'yes',
+		   'derived_autodep' => 'yes',
 		   'extensions' => ['y++', 'yy', 'yxx', 'ypp'],
 		    '_finish' => \&lang_yacc_finish);
 register_language ('name' => 'lex',
 		   'ansi' => '1',
-		   'derived-autodep' => 'yes',
+		   'derived_autodep' => 'yes',
 		   'extensions' => ['l'],
 		   '_finish' => \&lang_lex_finish);
 register_language ('name' => 'lexxx',
 		   'linker' => 'CXXLINK',
-		   'derived-autodep' => 'yes',
+		   'derived_autodep' => 'yes',
 		   'extensions' => ['l++', 'll', 'lxx', 'lpp'],
 		   '_finish' => \&lang_lex_finish);
 register_language ('name' => 'asm',
@@ -814,7 +814,7 @@ register_language ('name' => 'asm',
 		   'compile' => '$(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)',
 		   # FIXME: a different compiler?
 		   'compiler' => 'COMPILE',
-		   'output-arg' => '-c',
+		   'output_arg' => '-c',
 		   'extensions' => ['s', 'S'],
 		   # We need the C code for assembly.
 		   '_finish' => \&lang_c_finish);
@@ -824,7 +824,7 @@ register_language ('name' => 'f77',
 		   'flags' => 'FFLAGS',
 		   'compile' => '$(F77) $(AM_FFLAGS) $(FFLAGS)',
 		   'compiler' => 'F77COMPILE',
-		   'output-arg' => '-c -o $@',
+		   'output_arg' => '-c -o $@',
 		   'pure' => 'yes',
 		   'extensions' => ['f', 'for', 'f90'],
 		   '_finish' => \&lang_f77_finish);
@@ -833,7 +833,7 @@ register_language ('name' => 'ppf77',
 		   'flags' => 'FFLAGS',
 		   'compile' => '$(F77) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_FFLAGS) $(FFLAGS)',
 		   'compiler' => 'PPF77COMPILE',
-		   'output-arg' => '-c -o $@',
+		   'output_arg' => '-c -o $@',
 		   'pure' => 'yes',
 		   'extensions' => ['F'],
 		    '_finish' => \&lang_ppf77_finish);
@@ -843,7 +843,7 @@ register_language ('name' => 'ratfor',
 		   # FIXME also FFLAGS.
 		   'compile' => '$(F77) $(AM_FFLAGS) $(FFLAGS) $(AM_RFLAGS) $(RFLAGS)',
 		   'compiler' => 'RCOMPILE',
-		   'output-arg' => '-c -o $@',
+		   'output_arg' => '-c -o $@',
 		   'pure' => 'yes',
 		   'extensions' => ['r'],
 		   '_finish' => \&lang_ratfor_finish);
@@ -854,7 +854,7 @@ register_language ('name' => 'java',
 		   'flags' => 'GCJFLAGS',
 		   'compile' => '$(GCJ) $(DEFS) $(INCLUDES) $(AM_GCJFLAGS) $(GCJFLAGS)',
 		   'compiler' => 'GCJCOMPILE',
-		   'output-arg' => '-c -o $@',
+		   'output_arg' => '-c -o $@',
 		   'pure' => 'yes',
 		   'extensions' => ['java', 'class', 'zip', 'jar'],
 		   '_finish' => \&lang_java_finish);
@@ -5316,19 +5316,24 @@ sub saw_sources_p
 sub register_language ($%)
 {
     my (%option) = @_;
-    my $lang = new Language;
 
     # Set the defaults.
-    $lang->ansi (0);
-    $lang->autodep ('no');
-    $lang->derived_autodep ('no');
-    $lang->linker ('');
+    $option{'ansi'} = 0
+      unless defined $option{'ansi'};
+    $option{'autodep'} = 'no'
+      unless defined $option{'autodep'};
+    $option{'derived_autodep'} = 'no'
+      unless defined $option{'derived_autodep'};
+    $option{'linker'} = ''
+      unless defined $option{'linker'};
 
     # `pure' is `yes' or `no'.  A `pure' language is one where, if all
     # the files in a directory are of that language, then we do not
     # require the C compiler or any code to call it.
-    $lang->pure ('no');
+    $option{'pure'} = 'no'
+      unless defined $option{'pure'};
 
+    my $lang = new Language;
     while (my ($attr, $value) = each %option)
     {
       if ($attr eq 'ansi')
@@ -5347,7 +5352,7 @@ sub register_language ($%)
 	{
 	  $lang->compiler ($value);
 	}
-      elsif ($attr eq 'derived-autodep')
+      elsif ($attr eq 'derived_autodep')
 	{
 	  $lang->derived_autodep ($value);
 	}
@@ -5373,7 +5378,7 @@ sub register_language ($%)
 	{
 	  $lang->name ($value);
 	}
-      elsif ($attr eq 'output-arg')
+      elsif ($attr eq 'output_arg')
 	{
 	  $lang->output_arg ($value);
 	}
