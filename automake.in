@@ -375,12 +375,14 @@ my %configure_dist_common = ();
 		    'compile=$(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)',
 		    'compiler-name=CXXCOMPILE',
 		    'output-arg=-c -o $@',
+		    'pure=yes',
 		    'c++', 'cc', 'cpp', 'cxx', 'C');
 &register_language ('objc', 'linker=OBJCLINK', 'autodep=OBJC',
 		    'flags=OBJCFLAGS',
 		    'compile=$(OBJC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_OBJCFLAGS) $(OBJCFLAGS)',
 		    'compiler-name=OBJCCOMPILE',
 		    'output-arg=-c -o $@',
+		    'pure=yes',
                     'm');
 &register_language ('header',
 		    'h', 'H', 'hxx', 'h++', 'hh', 'hpp', 'inc');
@@ -406,17 +408,20 @@ my %configure_dist_common = ();
 		    'compile=$(F77) $(AM_FFLAGS) $(FFLAGS)',
 		    'compiler-name=F77COMPILE',
 		    'output-arg=-c -o $@',
+		    'pure=yes',
 		    'f', 'for', 'f90');
 &register_language ('ppf77', 'linker=F77LINK', 'flags=FFLAGS',
 		    'compile=$(F77) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_FFLAGS) $(FFLAGS)',
 		    'compiler-name=PPF77COMPILE',
 		    'output-arg=-c -o $@',
+		    'pure=yes',
 		    'F');
 &register_language ('ratfor', 'linker=F77LINK',
 		    'flags=RFLAGS', # FIXME also FFLAGS.
 		    'compile=$(F77) $(AM_FFLAGS) $(FFLAGS) $(AM_RFLAGS) $(RFLAGS)',
 		    'compiler-name=RCOMPILE',
 		    'output-arg=-c -o $@',
+		    'pure=yes',
 		    'r');
 # FIXME: for now we can't do dependency tracking for Java.
 # autodep=GCJ
@@ -424,6 +429,7 @@ my %configure_dist_common = ();
 		    'compile=$(GCJ) $(DEFS) $(INCLUDES) $(AM_GCJFLAGS) $(GCJFLAGS)',
 		    'compiler-name=GCJCOMPILE',
 		    'output-arg=-c -o $@',
+		    'pure=yes',
 		    'java', 'class', 'zip', 'jar');
 
 
@@ -1027,7 +1033,14 @@ sub finish_languages
 	next if defined $done{$lang};
 	$done{$lang} = 1;
 
-	$non_c = 0 if $lang !~ /(objc|cxx|f77|ratfor)$/;
+	# If the source to a program consists entirely of code from a
+	# `pure' language, for instance C++ for Fortran 77, then we
+	# don't need the C compiler code.  However if we run into
+	# something unusual then we do generate the C code.  There are
+	# probably corner cases here that do not work properly.
+	# People linking Java code to Fortran code deserve pain.
+	$non_c = 0
+	    if $language_map{$lang . '-pure'} eq 'no';
 
 	if ($comp ne '')
 	{
@@ -5061,6 +5074,11 @@ sub register_language
     $language_map{$language . '-linker'} = '';
     $language_map{$language . '-autodep'} = 'no';
     $language_map{$language . '-derived-autodep'} = 'no';
+
+    # `-pure' is `yes' or `no'.  A `pure' language is one where, if
+    # all the files in a directory are of that language, then we do
+    # not require the C compiler or any code to call it.
+    $language_map{$language . '-pure'} = 'no';
 
     foreach my $iter (@options)
     {
