@@ -1486,7 +1486,7 @@ sub handle_languages
 	    # Set location of depcomp.
 	    &define_variable ('depcomp', "\$(SHELL) $config_aux_dir/depcomp");
 
-	    &require_config_file ($FOREIGN, 'depcomp');
+	    &require_conf_file ($FOREIGN, 'depcomp');
 
 	    my @deplist = sort keys %dep_files;
 
@@ -1850,7 +1850,7 @@ sub handle_single_transform_list ($$$$@)
                 }
                 $object = $dname . '-' . $object;
 
-                &require_config_file ($FOREIGN, 'compile')
+                &require_conf_file ($FOREIGN, 'compile')
                     if $lang->name eq 'c';
 
                 &prog_error ("$lang->name flags defined without compiler")
@@ -5000,7 +5000,7 @@ sub lang_c_rewrite
 	    &am_error ("C objects in subdir but `AM_PROG_CC_C_O' not in `$configure_ac'");
 	}
 
-	&require_config_file ($FOREIGN, 'compile');
+	&require_conf_file ($FOREIGN, 'compile');
     }
 
     $de_ansi_files{$base} = 1;
@@ -7804,13 +7804,18 @@ sub require_file
     &require_file_internal (0, '', @_);
 }
 
-# Require a file that is also required by Autoconf.  Looks in
-# configuration path, as specified by AC_CONFIG_AUX_DIR.
-sub require_config_file
+# Require an auxiliary file.
+# Looks in configuration path, as specified by AC_CONFIG_AUX_DIR.
+sub require_aux_file_with_line
 {
+    my $from = shift;  # 1 for configure.ac, 0 for Makefile.am
+    my $line = shift;
     @require_file_paths = @config_aux_path;
-    &require_file_internal (1, '', @_);
+    &require_file_internal ($from, $line, @_);
     my $dir = $require_file_paths[0];
+    # &require_file_internal pruned the file path to the
+    # exact directory where the file is lying.  Update
+    # @config_aux_path to speed up future uses.
     @config_aux_path = @require_file_paths;
      # Avoid unsightly '/.'s.
     $config_aux_dir = '$(top_srcdir)' . ($dir eq '.' ? "" : "/$dir");
@@ -7819,23 +7824,25 @@ sub require_config_file
 # Assumes that the line number is in Makefile.am.
 sub require_conf_file_with_line
 {
-    @require_file_paths = @config_aux_path;
-    &require_file_internal (0, @_);
-    my $dir = $require_file_paths[0];
-    @config_aux_path = @require_file_paths;
-     # Avoid unsightly '/.'s.
-    $config_aux_dir = '$(top_srcdir)' . ($dir eq '.' ? "" : "/$dir");
+    &require_aux_file_with_line (0, @_);
+}
+
+# File required from a Makefile.am.  No line number available.
+sub require_conf_file
+{
+    &require_conf_file_with_line ('', @_);
 }
 
 # Assumes that the line number is in configure.ac.
 sub require_conf_file_with_conf_line
 {
-    @require_file_paths = @config_aux_path;
-    &require_file_internal (1, @_);
-    my $dir = $require_file_paths[0];
-    @config_aux_path = @require_file_paths;
-    # avoid unsightly '/.'s.
-    $config_aux_dir = '$(top_srcdir)' . ($dir eq '.' ? "" : "/$dir");
+    &require_aux_file_with_line (1, @_);
+}
+
+# Require a file that is also required by Autoconf.  No line number available.
+sub require_config_file
+{
+    &require_conf_file_with_conf_line ('', @_);
 }
 
 ################################################################
