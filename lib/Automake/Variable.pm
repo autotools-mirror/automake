@@ -40,7 +40,9 @@ use vars '@ISA', '@EXPORT', '@EXPORT_OK';
 	      set_seen
 	      require_variables require_variables_for_variable
 	      variable_value
-	      output_variables);
+	      output_variables
+	      traverse_variable_recursively
+	      transform_variable_recursively);
 
 =head1 NAME
 
@@ -133,6 +135,13 @@ my $_VARIABLE_PATTERN = '^[.A-Za-z0-9_@]+' . "\$";
 # The order in which variables should be output.  (May contain
 # duplicates -- only the first occurence matters.)
 my @_var_order;
+
+# This keeps track of all variables defined by &_gen_varname.
+# $_gen_varname{$base} is a hash for all variable defined with
+# prefix `$base'.  Values stored this this hash are the variable names.
+# Keys have the form "(COND1)VAL1(COND2)VAL2..." where VAL1 and VAL2
+# are the values of the variable for condition COND1 and COND2.
+my %_gen_varname = ();
 
 # Declare the macros that define known variables, so we can
 # hint the user if she try to use one of these variables.
@@ -301,6 +310,7 @@ sub reset ()
   %_variable_dict = ();
   %_appendvar = ();
   @_var_order = ();
+  %_gen_varname = ();
 }
 
 =item C<var ($varname)>
@@ -692,6 +702,98 @@ sub value_as_list ($$;$$)
     }
   return @result;
 }
+
+=item C<@values = $var-E<gt>value_as_list_recursive ($cond)>
+
+Return the list of values of C<$var> and any subvariable in condition
+C<$cond>.
+
+=cut
+
+sub value_as_list_recursive ($$)
+{
+  return &_value_as_list_recursive_worker (@_, 0);
+}
+
+=item C<@values = $var-E<gt>loc_and_value_as_list_recursive ($cond)>
+
+Return the values of C<$var> and any subvariable in condition
+C<$cond> as a list of C<[$location, @values]> pairs.
+
+=cut
+
+sub loc_and_value_as_list_recursive ($$)
+{
+  return &_value_as_list_recursive_worker (@_, 1);
+}
+
+# @VALUE
+# &_value_as_list_recursive_worker ($VAR, $COND, $LOC_WANTED)
+# -----------------------------------------------------------
+# Return contents of VAR as a list, split on whitespace.  This will
+# recursively follow $(...) and ${...} inclusions.  It preserves @...@
+# substitutions.  If COND is 'all', then all values under all
+# conditions should be returned; if COND is a particular condition
+# then only the value for that condition should be returned;
+# otherwise, warn if VAR is conditionally defined.  If $LOC_WANTED is set,
+# return a list of [$location, $value] instead of a list of values.
+sub _value_as_list_recursive_worker ($$$)
+{
+  my ($var, $cond_filter, $loc_wanted) = @_;
+
+  return traverse_variable_recursively
+    ($var,
+     # Construct [$location, $value] pairs if requested.
+     sub {
+       my ($var, $val, $cond, $full_cond) = @_;
+       return [$var->rdef ($cond)->location, $val] if $loc_wanted;
+       return $val;
+     },
+     # Collect results.
+     sub {
+       my ($var, $parent_cond, @allresults) = @_;
+       return map { my ($cond, @vals) = @$_; return @vals } @allresults;
+     },
+     $cond_filter);
+}
+
+
+=item C<$bool = $var-E<gt>has_conditional_contents>
+
+Return 1 if C<$var> or one of its subvariable was conditionally
+defined.  Return 0 otherwise.
+
+=cut
+
+sub has_conditional_contents ($)
+{
+  my ($self) = @_;
+
+  # Traverse the variable recursively until we
+  # find a variable defined conditionally.
+  # Use `die' to abort the traversal, and pass it `$full_cond'
+  # to we can find easily whether the `eval' block aborted
+  # because we found a condition, or for some other error.
+  eval
+    {
+      $self->traverse_variable_recursively
+	(sub
+	 {
+	   my ($subvar, $val, $cond, $full_cond) = @_;
+	   die $full_cond if ! $full_cond->true;
+	   return ();
+	 },
+	 sub { return (); });
+    };
+  if ($@)
+    {
+      return 1 if ref ($@) && $@->isa ("Automake::Condition");
+      # Propagate other errors.
+      die;
+    }
+  return 0;
+}
+
 
 =back
 
@@ -1134,7 +1236,7 @@ sub variables_dump ()
 
 =item C<$var = set_seen ($varname)>
 
-=item C<$var = $var->set_seen>
+=item C<$var = $var-E<gt>set_seen>
 
 Mark all definitions of this variable as examined, if the variable
 exists.  See L<Automake::VarDef::set_seen>.
@@ -1214,21 +1316,21 @@ sub require_variables ($$$@)
   return $res;
 }
 
-=item C<$count = require_variables_for_variable ($varname, $reason, @variables)>
+=item C<$count = require_variables_for_variable ($var, $reason, @variables)>
 
 Same as C<require_variables>, but take a variable name as first argument.
-C<@variables> should be defined in the same conditions as C<$varname> is
-defined.
+C<@variables> should be defined in the same conditions as C<$var> is
+defined.  C<$var> can be a variable name or an C<Automake::Variable>.
 
 =cut
 
 sub require_variables_for_variable ($$@)
 {
-  my ($varname, $reason, @args) = @_;
-  my $v = rvar ($varname);
-  for my $cond ($v->conditions->conds)
+  my ($var, $reason, @args) = @_;
+  $var = rvar ($var) unless ref $var;
+  for my $cond ($var->conditions->conds)
     {
-      return require_variables ($v->rdef ($cond)->location, $reason,
+      return require_variables ($var->rdef ($cond)->location, $reason,
 				$cond, @args);
     }
 }
@@ -1287,6 +1389,298 @@ sub output_variables ()
 	    if $v->rdef ($cond)->owner != VAR_AUTOMAKE;
 	}
     }
+  return $res;
+}
+
+=item C<traverse_variable_recursively ($var, &fun_item, &fun_collect, [$cond_filter])>
+
+=item C<$var-E<gt>traverse_variable_recursively (&fun_item, &fun_collect, [$cond_filter])>
+
+Split the value of the variable C<$var> on space, and traverse its
+componants recursively.  (C<$var> may be a variable name in the first
+syntax.  It must be an C<Automake::Variable> otherwise.)  If
+C<$cond_filter> is an C<Automake::Condition>, process any conditions
+which are true when C<$cond_filter> is true.  Otherwise, process all
+conditions.
+
+We distinguish to kinds of items in the content of C<$var>.
+Terms that look like C<$(foo)> or C<${foo}> are subvariables
+and cause recursion.  Other terms are assumed to be filenames.
+
+Each time a filename is encountered, C<&fun_item> is called with the
+following arguments:
+
+  ($var,        -- the Automake::Variable we are currently
+                   traversing
+   $val,        -- the item (i.e., filename) to process
+   $cond,       -- the Condition for the $var definition we are
+                   examinating (ignoring the recursion context)
+   $full_cond)  -- the full Condition, taking into account
+                   conditions inherited from parent variables
+                   during recursion
+
+C<&fun_item> may return a list of items, they will be passed to
+C<&fun_store> later on.  Define C<&fun_item> as C<undef> when it serve
+no purpose, this will speed things up.
+
+Once all items of a variable have been processed, the result (of the
+calls to C<&fun_items>, or of recursive traversals of subvariables)
+are passed to C<&fun_collect>.  C<&fun_collect> receives three
+arguments:
+
+  ($var,         -- the variable being traversed
+   $parent_cond, -- the Condition inherited from parent
+                    variables during recursion
+   @condlist)    -- a list of [$cond, @results] pairs
+                    where each $cond appear only once, and @result
+                    are all the results for this condition.
+
+Typically you should do C<$cond->merge ($parent_cond)> to recompute
+the C<$full_cond> associated to C<@result>.  C<&fun_collect> may
+return a list of items, that will be used as the result of
+C<&traverse_variable_recursively> (the top-level, or it's recursive
+calls).
+
+=cut
+
+# Contains a stack of `from' and `to' parts of variable
+# substitutions currently in force.
+my @_substfroms;
+my @_substtos;
+# This is used to keep track of which variable definitions we are
+# scanning.
+my %_vars_scanned = ();
+
+sub traverse_variable_recursively ($&&;$)
+{
+  %_vars_scanned = ();
+  @_substfroms = ();
+  @_substtos = ();
+  my ($var, $fun_item, $fun_collect, $cond_filter) = @_;
+  return _traverse_variable_recursively_worker ($var, $var,
+						$fun_item, $fun_collect,
+						$cond_filter, TRUE)
+}
+
+# The guts of &traverse_variable_recursively.
+sub _traverse_variable_recursively_worker ($$&&$$)
+{
+  my ($var, $parent, $fun_item, $fun_collect, $cond_filter, $parent_cond) = @_;
+
+  # Don't recurse into undefined variables and mark
+  # existing variable as examined.
+  $var = set_seen $var;
+  return ()
+    unless $var;
+
+  if (defined $_vars_scanned{$var})
+    {
+      err_var $var, "variable `" . $var->name() . "' recursively defined";
+      return undef;
+    }
+  $_vars_scanned{$var} = 1;
+
+  my @allresults = ();
+  my $cond_once = 0;
+  foreach my $cond ($var->conditions->conds)
+    {
+      if (ref $cond_filter)
+	{
+	  # Ignore conditions that don't match $cond_filter.
+	  next if ! $cond->true_when ($cond_filter);
+	  # If we found out several definitions of $var
+	  # match $cond_filter then we are in trouble.
+	  # Tell the user we don't support this.
+	  $var->check_defined_unconditionally ($parent, $parent_cond)
+	    if $cond_once;
+	  $cond_once = 1;
+	}
+      my @result = ();
+      my $full_cond = $cond->merge ($parent_cond);
+      foreach my $val ($var->value_as_list ($cond, $parent, $parent_cond))
+	{
+	  # If $val is a variable (i.e. ${foo} or $(bar), not a filename),
+	  # handle the sub variable recursively.
+	  # (Backslashes between bracklets, before `}' and `)' are required
+	  # only of Emacs's indentation.)
+	  if ($val =~ /^\$\{([^\}]*)\}$/ || $val =~ /^\$\(([^\)]*)\)$/)
+	    {
+	      my $subvar = $1;
+
+	      # If the user uses a losing variable name, just ignore it.
+	      # This isn't ideal, but people have requested it.
+	      next if ($subvar =~ /\@.*\@/);
+
+
+	      # See if the variable is actually a substitution reference
+	      my ($from, $to);
+	      my @temp_list;
+              # This handles substitution references like ${foo:.a=.b}.
+	      if ($subvar =~ /^([^:]*):([^=]*)=(.*)$/o)
+		{
+		  $subvar = $1;
+		  $to = $3;
+		  $from = quotemeta $2;
+		}
+	      push @_substfroms, $from;
+	      push @_substtos, $to;
+
+	      my @res =
+		&_traverse_variable_recursively_worker ($subvar, $parent,
+							$fun_item,
+							$fun_collect,
+							$cond_filter,
+							$full_cond);
+	      push (@result, @res);
+
+	      pop @_substfroms;
+	      pop @_substtos;
+	    }
+	    elsif ($fun_item) # $var is a filename we must process
+	    {
+	      my $substnum=$#_substfroms;
+	      while ($substnum >= 0)
+		{
+		  $val =~ s/$_substfroms[$substnum]$/$_substtos[$substnum]/
+		    if defined $_substfroms[$substnum];
+		  $substnum -= 1;
+		}
+
+	      # Make sure you update the doc of &traverse_variable_recursively
+	      # if you change the prototype of &fun_item.
+	      my @transformed = &$fun_item ($var, $val, $cond, $full_cond);
+	      push (@result, @transformed);
+	    }
+	}
+      push (@allresults, [$cond, @result]) if @result;
+    }
+
+  # We only care about _recursive_ variable definitions.  The user
+  # is free to use the same variable several times in the same definition.
+  delete $_vars_scanned{$var};
+
+  # Make sure you update the doc of &traverse_variable_recursively
+  # if you change the prototype of &fun_collect.
+  return &$fun_collect ($var, $parent_cond, @allresults);
+}
+
+# $VARNAME
+# _gen_varname ($BASE, @DEFINITIONS)
+# ---------------------------------
+# Return a variable name starting with $BASE, that will be
+# used to store definitions @DEFINITIONS.
+# @DEFINITIONS is a list of pair [$COND, @OBJECTS].
+#
+# If we already have a $BASE-variable containing @DEFINITIONS, reuse it.
+# This way, we avoid combinatorial explosion of the generated
+# variables.  Especially, in a Makefile such as:
+#
+# | if FOO1
+# | A1=1
+# | endif
+# |
+# | if FOO2
+# | A2=2
+# | endif
+# |
+# | ...
+# |
+# | if FOON
+# | AN=N
+# | endif
+# |
+# | B=$(A1) $(A2) ... $(AN)
+# |
+# | c_SOURCES=$(B)
+# | d_SOURCES=$(B)
+#
+# The generated c_OBJECTS and d_OBJECTS will share the same variable
+# definitions.
+#
+# This setup can be the case of a testsuite containing lots (>100) of
+# small C programs, all testing the same set of source files.
+sub _gen_varname ($@)
+{
+  my $base = shift;
+  my $key = '';
+  foreach my $pair (@_)
+    {
+      my ($cond, @values) = @$pair;
+      $key .= "($cond)@values";
+    }
+
+  return $_gen_varname{$base}{$key} if exists $_gen_varname{$base}{$key};
+
+  my $num = 1 + keys (%{$_gen_varname{$base}});
+  my $name = "${base}_${num}";
+  $_gen_varname{$base}{$key} = $name;
+  return $name;
+}
+
+=item C<$resvar = transform_variable_recursively ($var, $resvar, $base, $nodefine, $where, &fun_item)>
+
+=item C<$resvar = $var-E<gt>transform_variable_recursively ($resvar, $base, $nodefine, $where, &fun_item)>
+
+Traverse C<$var> recursively, and create a C<$resvar> variable in
+which each filename in C<$var> have been transformed using
+C<&fun_item>.  (C<$var> may be a variable name in the first syntax.
+It must be an C<Automake::Variable> otherwise.)
+
+Helper variables (corresponding to sub-variables of C<$var>) are
+created as needed, using C<$base> as prefix.
+
+Arguments are:
+  $var       source variable to traverse
+  $resvar    resulting variable to define
+  $base      prefix to use when naming subvariables of $resvar
+  $nodefine  if true, traverse $var but do not define any variable
+             (this assumes &fun_item has some useful side-effect)
+  $where     context into which variable definitions are done
+  &fun_item  a transformation function -- see the documentation
+             of &fun_item in traverse_variable_recursively.
+
+This returns the string C<"\$($RESVAR)">.
+
+=cut
+
+sub transform_variable_recursively ($$$$$&)
+{
+  my ($var, $resvar, $base, $nodefine, $where, $fun_item) = @_;
+
+  # Convert $var here, even though &traverse_variable_recursively
+  # would do it, because we need to compare $var and $subvar below.
+  $var = ref $var ? $var : rvar $var;
+
+  my $res = &traverse_variable_recursively
+    ($var,
+     $fun_item,
+     # The code that define the variable holding the result
+     # of the recursive transformation of a subvariable.
+     sub {
+       my ($subvar, $parent_cond, @allresults) = @_;
+       # Find a name for the variable, unless this is the top-variable
+       # for which we want to use $resvar.
+       my $varname =
+	 ($var != $subvar) ? _gen_varname ($base, @allresults) : $resvar;
+       # Define the variable if required.
+       unless ($nodefine)
+	 {
+	   # If the new variable is the source variable, we assume
+	   # we are trying to override a user variable.  Delete
+	   # the old variable first.
+	   variable_delete ($varname) if $varname eq $var->name;
+	   # Define for all conditions.
+	   foreach my $pair (@allresults)
+	     {
+	       my ($cond, @result) = @$pair;
+	       define ($varname, VAR_AUTOMAKE, '', $cond, "@result",
+		       '', $where, VAR_PRETTY)
+		 unless vardef ($varname, $cond);
+	       rvardef ($varname, $cond)->set_seen;
+	     }
+	 }
+       return "\$($varname)";
+     });
   return $res;
 }
 

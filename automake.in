@@ -191,9 +191,6 @@ my $INCLUDE_PATTERN = ('^include\s+'
 		       . '|(\$\(srcdir\)/' . $PATH_PATTERN . ')'
 		       . '|([^/\$]' . $PATH_PATTERN . '))\s*(#.*)?' . "\$");
 
-# This handles substitution references like ${foo:.a=.b}.
-my $SUBST_REF_PATTERN = "^([^:]*):([^=]*)=(.*)\$";
-
 # Match `-d' as a command-line argument in a string.
 my $DASH_D_PATTERN = "(^|\\s)-d(\\s|\$)";
 # Directories installed during 'install-exec' phase.
@@ -632,13 +629,6 @@ my $need_link;
 # FIXME: This is a hack. a better switch should be found.
 my $get_object_extension_was_run;
 
-# This keeps track of all variables defined by gen_varname.
-# $gen_varname{$base} is a hash for all variable defined with
-# prefix `$base'.  Values stored this this hash are the variable names.
-# Keys have the form "(COND1)VAL1(COND2)VAL2..." where VAL1 and VAL2
-# are the values of the variable for condition COND1 and COND2.
-my %gen_varname = ();
-
 ################################################################
 
 # Pattern that matches all know input extensions (i.e. extensions used
@@ -820,8 +810,6 @@ sub initialize_per_input ()
 
     # We always include `.'.  This isn't strictly correct.
     %libtool_clean_directories = ('.' => 1);
-
-    %gen_varname = ();
 }
 
 
@@ -1449,9 +1437,10 @@ sub handle_options
       return 1;
     }
 
-  if (var ('AUTOMAKE_OPTIONS'))
+  my $var = var ('AUTOMAKE_OPTIONS');
+  if ($var)
     {
-      if (&process_option_list (0, &variable_value_as_list_recursive ('AUTOMAKE_OPTIONS', TRUE)))
+      if (&process_option_list (0, $var->value_as_list_recursive (TRUE)))
 	{
 	  return 1;
 	}
@@ -1855,7 +1844,7 @@ sub check_libobjs_sources
       my $var = var ($varname);
       if ($var)
 	{
-	  @files = &variable_value_as_list_recursive ($varname, 'all');
+	  @files = $var->value_as_list_recursive ('all');
 	}
       elsif ($prefix eq '')
 	{
@@ -2198,270 +2187,6 @@ sub handle_single_transform_list ($$$$@)
     return @result;
 }
 
-# traverse_variable_recursively ($VAR, &FUN_ITEM, &FUN_COLLECT, [$COND_FILTER])
-# -----------------------------------------------------------------------------
-# Split the value of the variable named VAR on space, and traverse its
-# componants recursively.  If $COND_FILTER is an Automake::Condition,
-# process any conditions which are true when $COND_FILTER is true.
-# Otherwise, process all conditions.
-#
-# We distinguish to kinds of items in the content of VARNAME.
-# Terms that look like `$(foo)' or `${foo}' are subvarible
-# and cause recursion.  Other terms are assumed to be filenames.
-#
-# Each time a filename is encountered, &FUN_ITEM is called with the
-# following arguments:
-#   ($var,        -- the variable we are currently traversing
-#    $val,        -- the item (i.e., filename) to process
-#    $cond,       -- the Condition for the $var definition we are examinating
-#                    (ignoring the recursion context)
-#    $full_cond)  -- the full Condition, taking into account conditions
-#                    inherited from parent variables during recursion
-# &FUN_ITEM may return a list of items, they will be passed to &FUN_STRORE
-# later on.   Define &FUN_ITEM as `undef' when it serve no purpose, this
-# will speed things up.
-#
-# Once all items of a variable have been processed, the
-# result (of the calls to &FUN_ITEMS, or of recursive
-# traversals of subvariables) are passed to &FUN_COLLECT.
-# &FUN_COLLECT receives three arguments:
-#   ($var,         -- the variable being traversed
-#    $parent_cond, -- the Condition inherited from parent variables during
-#                     recursion
-#    @condlist)    -- a list of [$cond, @results] pairs
-#                     where each $cond appear only once, and @result
-#                     are all the results for this condition.
-# Typically you should do `$cond->merge ($parent_cond)' to recompute
-# the `$full_cond' associated to @result.
-# &FUN_COLLECT may return a list of items, that will be used as the
-# result of &traverse_variable_recursively (the top-level, or
-# it's recursive calls).
-
-# Contains a stack of `from' and `to' parts of variable
-# substitutions currently in force.
-my @substfroms;
-my @substtos;
-# This is used to keep track of which variable definitions we are
-# scanning.
-my %vars_scanned = ();
-
-sub traverse_variable_recursively ($&&;$)
-{
-  %vars_scanned = ();
-  @substfroms = ();
-  @substtos = ();
-  my ($var, $fun_item, $fun_collect, $cond_filter) = @_;
-  return traverse_variable_recursively_worker ($var, $var,
-					       $fun_item, $fun_collect,
-					       $cond_filter, TRUE)
-}
-
-# The guts of &traverse_variable_recursively.
-sub traverse_variable_recursively_worker ($$&&$$)
-{
-  my ($var, $parent, $fun_item, $fun_collect, $cond_filter, $parent_cond) = @_;
-
-  # Don't recurse into undefined variables and mark
-  # existing variable as examined.
-  my $v = set_seen $var;
-  return ()
-    unless $v;
-
-  if (defined $vars_scanned{$var})
-    {
-      err_var $var, "variable `$var' recursively defined";
-      return undef;
-    }
-  $vars_scanned{$var} = 1;
-
-  my @allresults = ();
-  my $cond_once = 0;
-  foreach my $cond ($v->conditions->conds)
-    {
-      if (ref $cond_filter)
-	{
-	  # Ignore conditions that don't match $cond_filter.
-	  next if ! $cond->true_when ($cond_filter);
-	  # If we found out several definitions of $var
-	  # match $cond_filter then we are in trouble.
-	  # Tell the user we don't support this.
-	  $v->check_defined_unconditionally ($parent, $parent_cond)
-	    if $cond_once;
-	  $cond_once = 1;
-	}
-      my @result = ();
-      my $full_cond = $cond->merge ($parent_cond);
-      foreach my $val ($v->value_as_list ($cond, $parent, $parent_cond))
-	{
-	  # If $val is a variable (i.e. ${foo} or $(bar), not a filename),
-	  # handle the sub variable recursively.
-	  # (Backslashes between bracklets, before `}' and `)' are required
-	  # only of Emacs's indentation.)
-	  if ($val =~ /^\$\{([^\}]*)\}$/ || $val =~ /^\$\(([^\)]*)\)$/)
-	    {
-	      my $subvar = $1;
-
-	      # If the user uses a losing variable name, just ignore it.
-	      # This isn't ideal, but people have requested it.
-	      next if ($subvar =~ /\@.*\@/);
-
-
-	      # See if the variable is actually a substitution reference
-	      my ($from, $to);
-	      my @temp_list;
-	      if ($subvar =~ /$SUBST_REF_PATTERN/o)
-		{
-		  $subvar = $1;
-		  $to = $3;
-		  $from = quotemeta $2;
-		}
-	      push @substfroms, $from;
-	      push @substtos, $to;
-
-	      my @res =
-		&traverse_variable_recursively_worker ($subvar, $parent,
-						       $fun_item, $fun_collect,
-						       $cond_filter,
-						       $full_cond);
-	      push (@result, @res);
-
-	      pop @substfroms;
-	      pop @substtos;
-	    }
-	    elsif ($fun_item) # $var is a filename we must process
-	    {
-	      my $substnum=$#substfroms;
-	      while ($substnum >= 0)
-		{
-		  $val =~ s/$substfroms[$substnum]$/$substtos[$substnum]/
-		    if defined $substfroms[$substnum];
-		  $substnum -= 1;
-		}
-
-	      # Make sure you update the doc of &traverse_variable_recursively
-	      # if you change the prototype of &fun_item.
-	      my @transformed = &$fun_item ($var, $val, $cond, $full_cond);
-	      push (@result, @transformed);
-	    }
-	}
-      push (@allresults, [$cond, @result]) if @result;
-    }
-
-  # We only care about _recursive_ variable definitions.  The user
-  # is free to use the same variable several times in the same definition.
-  delete $vars_scanned{$var};
-
-  # Make sure you update the doc of &traverse_variable_recursively
-  # if you change the prototype of &fun_collect.
-  return &$fun_collect ($var, $parent_cond, @allresults);
-}
-
-# $VARNAME
-# gen_varname ($BASE, @DEFINITIONS)
-# ---------------------------------
-# Return a variable name starting with $BASE, that will be
-# used to store definitions @DEFINITIONS.
-# @DEFINITIONS is a list of pair [$COND, @OBJECTS].
-#
-# If we already have a $BASE-variable containing @DEFINITIONS, reuse it.
-# This way, we avoid combinatorial explosion of the generated
-# variables.  Especially, in a Makefile such as:
-#
-# | if FOO1
-# | A1=1
-# | endif
-# |
-# | if FOO2
-# | A2=2
-# | endif
-# |
-# | ...
-# |
-# | if FOON
-# | AN=N
-# | endif
-# |
-# | B=$(A1) $(A2) ... $(AN)
-# |
-# | c_SOURCES=$(B)
-# | d_SOURCES=$(B)
-#
-# The generated c_OBJECTS and d_OBJECTS will share the same variable
-# definitions.
-#
-# This setup can be the case of a testsuite containing lots (>100) of
-# small C programs, all testing the same set of source files.
-sub gen_varname ($@)
-{
-  my $base = shift;
-  my $key = '';
-  foreach my $pair (@_)
-    {
-      my ($cond, @values) = @$pair;
-      $key .= "($cond)@values";
-    }
-
-  return $gen_varname{$base}{$key} if exists $gen_varname{$base}{$key};
-
-  my $num = 1 + keys (%{$gen_varname{$base}});
-  my $name = "${base}_${num}";
-  $gen_varname{$base}{$key} = $name;
-  return $name;
-}
-
-# $RESVAR
-# transform_variable_recursively ($VAR, $RESVAR, $BASE,
-#                                 $NODEFINE, $WHERE, &FUN_ITEM)
-# -------------------------------------------------------------
-# Traverse $VAR recursively, and create a $RESVAR variable in which
-# each filename in $VAR have been transformed using &FUN_ITEM.
-# Helper variables (corresponding to sub-variables of $VAR) are
-# created as needed, using $BASE as prefix.
-#
-# Arguments are:
-#   $VAR       source variable to traverse
-#   $RESVAR    resulting variable to define
-#   $BASE      prefix to use when naming subvariables of $RESVAR
-#   $NODEFINE  if true, traverse $VAR but do not define any variable
-#              (this assumes &FUN_ITEM has some useful side-effect)
-#   $WHERE     context into which variable definitions are done
-#   &FUN_ITEM  a transformation function -- see the documentation
-#              of &FUN_ITEM in traverse_variable_recursively.
-#
-# This returns the string "\$($RESVAR)".
-sub transform_variable_recursively ($$$$$&)
-{
-  my ($var, $resvar, $base, $nodefine, $where, $fun_item) = @_;
-
-  my $res = &traverse_variable_recursively
-    ($var,
-     $fun_item,
-     # The code that define the variable holding the result
-     # of the recursive transformation of a subvariable.
-     sub {
-       my ($subvar, $parent_cond, @allresults) = @_;
-       # Find a name for the variable, unless this is the top-variable
-       # for which we want to use $resvar.
-       my $varname =
-	 ($var ne $subvar) ? gen_varname ($base, @allresults) : $resvar;
-       # Define the variable if required.
-       unless ($nodefine)
-	 {
-	   # If the new variable is the source variable, we assume
-	   # we are trying to override a user variable.  Delete
-	   # the old variable first.
-	   variable_delete ($varname) if $varname eq $var;
-	   # Define for all conditions.
-	   foreach my $pair (@allresults)
-	     {
-	       my ($cond, @result) = @$pair;
-	       define_pretty_variable ($varname, $cond, $where, @result);
-	     }
-	 }
-       return "\$($varname)";
-     });
-  return $res;
-}
 
 # $LINKER
 # define_objects_from_sources ($VAR, $OBJVAR, $NODEFINE, $ONE_FILE,
@@ -2549,11 +2274,11 @@ sub handle_source_transform
 	    # am__VAR_DIST variable which contains all possible values,
 	    # and add this variable to DIST_SOURCES.
 	    my $distvar = $varname;
-	    if (variable_conditionally_defined ($varname))
+	    if ($var->has_conditional_contents)
 	      {
 		$distvar = "am__${varname}_DIST";
 		my @files =
-		  uniq (variable_value_as_list_recursive ($varname, 'all'));
+		  uniq ($var->value_as_list_recursive ('all'));
 		define_pretty_variable ($distvar, TRUE, $where, @files);
 	      }
 	    push @dist_sources, "\$($distvar)"
@@ -2716,10 +2441,9 @@ sub handle_LIBOBJS ($$$)
 	  $dep_files{'$(DEPDIR)/' . $rewrite} = 1;
 	  $rewrite = "^" . quotemeta ($iter) . "\$";
 	  # Only require the file if it is not a built source.
-	  if (! var ('BUILT_SOURCES')
-	      || ! grep (/$rewrite/,
-			 &variable_value_as_list_recursive ('BUILT_SOURCES',
-							    'all')))
+	  my $bs = var ('BUILT_SOURCES');
+	  if (! $bs
+	      || ! grep (/$rewrite/, $bs->value_as_list_recursive ('all')))
 	    {
 	      require_file_with_macro ($cond, $var, FOREIGN, $iter);
 	    }
@@ -3078,8 +2802,8 @@ sub handle_ltlibraries
     {
       # Get the installation directory of each library.
       (my $dir = $key) =~ s/^nobase_//;
-      for my $pair (variable_loc_and_value_as_list_recursive
-		    ($key . '_LTLIBRARIES', 'all'))
+      my $var = rvar ($key . '_LTLIBRARIES');
+      for my $pair ($var->loc_and_value_as_list_recursive ('all'))
 	{
 	  my ($where, $lib) = @$pair;
 	  # We reject libraries which are installed in several places,
@@ -3128,13 +2852,8 @@ sub handle_ltlibraries
 
       # Check that the library fits the standard naming convention.
       my $libname_rx = "^lib.*\.la";
-      if ((var ($xlib . '_LDFLAGS')
-	   && grep (/-module/,
-		    &variable_value_as_list_recursive ($xlib . '_LDFLAGS',
-						       'all')))
-	  || (var ('LDFLAGS')
-	      && grep (/-module/,
-		       &variable_value_as_list_recursive ('LDFLAGS', 'all'))))
+      my $ldvar = var ("${xlib}_LDFLAGS") || var ('LDFLAGS');
+      if ($ldvar && grep (/-module/, $ldvar->value_as_list_recursive ('all')))
 	{
 	  # Relax name checking for libtool modules.
 	  $libname_rx = "\.la";
@@ -3440,9 +3159,10 @@ sub handle_texinfo_helper
     reject_var 'TEXINFOS', "`TEXINFOS' is an anachronism; use `info_TEXINFOS'";
     reject_var 'html_TEXINFOS', "HTML generation not yet supported";
 
-    return (0, '') unless var ('info_TEXINFOS');
+    my $info_texinfos = var ('info_TEXINFOS');
+    return (0, '') unless $info_texinfos;
 
-    my @texis = &variable_value_as_list_recursive ('info_TEXINFOS', 'all');
+    my @texis = $info_texinfos->value_as_list_recursive ('all');
 
     my (@info_deps_list, @texi_deps);
     my (@dvis_list, @pdfs_list, @pss_list, @htmls_list);
@@ -3659,9 +3379,10 @@ sub handle_man_pages
 	}
 
       my $varname = $pfx . 'man_MANS';
-      if (var ($varname))
+      my $var = var ($varname);
+      if ($var)
 	{
-	  foreach (&variable_value_as_list_recursive ($varname, 'all'))
+	  foreach ($var->value_as_list_recursive ('all'))
 	    {
 	      # A page like `foo.1c' goes into man1dir.
 	      if (/\.([0-9a-z])([a-z]*)$/)
@@ -3874,7 +3595,7 @@ sub handle_dist
 	}
     }
 
-  # Files to distributed.  Don't use &variable_value_as_list_recursive
+  # Files to distributed.  Don't use ->value_as_list_recursive
   # as it recursively expands `$(dist_pkgdata_DATA)' etc.
   my @dist_common = split (' ', rvar ('DIST_COMMON')->variable_value);
   @dist_common = uniq (sort for_dist_common (@dist_common));
@@ -3889,14 +3610,15 @@ sub handle_dist
   # subdir.  If so, add it to the list.  I didn't want to do this
   # originally, but there were so many requests that I finally
   # relented.
-  if (var ('EXTRA_DIST'))
+  my $extra_dist = var ('EXTRA_DIST');
+  if ($extra_dist)
     {
       # FIXME: This should be fixed to work with conditions.  That
       # will require only making the entries in %dist_dirs under the
       # appropriate condition.  This is meaningful if the nature of
       # the distribution should depend upon the configure options
       # used.
-      foreach (&variable_value_as_list_recursive ('EXTRA_DIST', 'all'))
+      foreach ($extra_dist->value_as_list_recursive ('all'))
 	{
 	  next if /^\@.*\@$/;
 	  next unless s,/+[^/]+$,,;
@@ -3908,7 +3630,7 @@ sub handle_dist
   # We have to check DIST_COMMON for extra directories in case the
   # user put a source used in AC_OUTPUT into a subdir.
   my $topsrcdir = backname ($relative_dir);
-  foreach (&variable_value_as_list_recursive ('DIST_COMMON', 'all'))
+  foreach (rvar ('DIST_COMMON')->value_as_list_recursive ('all'))
     {
       next if /^\@.*\@$/;
       s/\$\(top_srcdir\)/$topsrcdir/;
@@ -3930,26 +3652,30 @@ sub handle_dist
 
   # If we have SUBDIRS, create all dist subdirectories and do
   # recursive build.
-  if (var ('SUBDIRS'))
+  my $subdirs = var ('SUBDIRS');
+  if ($subdirs)
     {
       # If SUBDIRS is conditionally defined, then set DIST_SUBDIRS
       # to all possible directories, and use it.  If DIST_SUBDIRS is
       # defined, just use it.
       my $dist_subdir_name;
-      # Note that we check DIST_SUBDIRS first on purpose.  At least
-      # one project uses so many conditional subdirectories that
-      # calling variable_conditionally_defined on SUBDIRS will cause
-      # automake to grow to 150Mb.  Sigh.
+      # Note that we check DIST_SUBDIRS first on purpose, so that
+      # we don't call has_conditional_contents for now reason.
+      # (In the past one project used so many conditional subdirectories
+      # that calling has_conditional_contents on SUBDIRS caused
+      # automake to grow to 150Mb -- this should not happen with
+      # the current implementation of has_conditional_contents,
+      # but it's more efficient to avoid the call anyway.)
       if (var ('DIST_SUBDIRS'))
 	{
 	  $dist_subdir_name = 'DIST_SUBDIRS';
 	}
-      elsif (variable_conditionally_defined ('SUBDIRS'))
+      elsif ($subdirs->has_conditional_contents)
 	{
 	  $dist_subdir_name = 'DIST_SUBDIRS';
 	  define_pretty_variable
 	    ('DIST_SUBDIRS', TRUE, INTERNAL,
-	     uniq (&variable_value_as_list_recursive ('SUBDIRS', 'all')));
+	     uniq ($subdirs->value_as_list_recursive ('all')));
 	}
       else
 	{
@@ -3979,56 +3705,58 @@ sub handle_dist
 # Handle subdirectories.
 sub handle_subdirs
 {
-    return
-      unless var ('SUBDIRS');
+  my $subdirs = var ('SUBDIRS');
+  return
+    unless $subdirs;
 
-    my @subdirs = &variable_value_as_list_recursive ('SUBDIRS', 'all');
-    my @dsubdirs = ();
-    @dsubdirs = &variable_value_as_list_recursive ('DIST_SUBDIRS', 'all')
-      if var ('DIST_SUBDIRS');
+  my @subdirs = $subdirs->value_as_list_recursive ('all');
+  my @dsubdirs = ();
+  my $dsubdirs = var ('DIST_SUBDIRS');
+  @dsubdirs = $dsubdirs->value_as_list_recursive ('all')
+    if $dsubdirs;
 
-    # If an `obj/' directory exists, BSD make will enter it before
-    # reading `Makefile'.  Hence the `Makefile' in the current directory
-    # will not be read.
-    #
-    #  % cat Makefile
-    #  all:
-    #          echo Hello
-    #  % cat obj/Makefile
-    #  all:
-    #          echo World
-    #  % make      # GNU make
-    #  echo Hello
-    #  Hello
-    #  % pmake     # BSD make
-    #  echo World
-    #  World
-    msg_var ('portability', 'SUBDIRS',
-	     "naming a subdirectory `obj' causes troubles with BSD make")
-      if grep ($_ eq 'obj', @subdirs);
-    msg_var ('portability', 'DIST_SUBDIRS',
-	     "naming a subdirectory `obj' causes troubles with BSD make")
-      if grep ($_ eq 'obj', @dsubdirs);
+  # If an `obj/' directory exists, BSD make will enter it before
+  # reading `Makefile'.  Hence the `Makefile' in the current directory
+  # will not be read.
+  #
+  #  % cat Makefile
+  #  all:
+  #          echo Hello
+  #  % cat obj/Makefile
+  #  all:
+  #          echo World
+  #  % make      # GNU make
+  #  echo Hello
+  #  Hello
+  #  % pmake     # BSD make
+  #  echo World
+  #  World
+  msg_var ('portability', 'SUBDIRS',
+	   "naming a subdirectory `obj' causes troubles with BSD make")
+    if grep ($_ eq 'obj', @subdirs);
+  msg_var ('portability', 'DIST_SUBDIRS',
+	   "naming a subdirectory `obj' causes troubles with BSD make")
+    if grep ($_ eq 'obj', @dsubdirs);
 
-    # Make sure each directory mentioned in SUBDIRS actually exists.
-    foreach my $dir (@subdirs)
+  # Make sure each directory mentioned in SUBDIRS actually exists.
+  foreach my $dir (@subdirs)
     {
-	# Skip directories substituted by configure.
-	next if $dir =~ /^\@.*\@$/;
+      # Skip directories substituted by configure.
+      next if $dir =~ /^\@.*\@$/;
 
-	if (! -d $am_relative_dir . '/' . $dir)
+      if (! -d $am_relative_dir . '/' . $dir)
 	{
-	    err_var ('SUBDIRS', "required directory $am_relative_dir/$dir "
-		     . "does not exist");
-	    next;
+	  err_var ('SUBDIRS', "required directory $am_relative_dir/$dir "
+		   . "does not exist");
+	  next;
 	}
 
-	err_var 'SUBDIRS', "directory should not contain `/'"
-	  if $dir =~ /\//;
+      err_var 'SUBDIRS', "directory should not contain `/'"
+	if $dir =~ /\//;
     }
 
-    $output_rules .= &file_contents ('subdirs', new Automake::Location);
-    rvar ('RECURSIVE_TARGETS')->rdef (TRUE)->{'pretty'} = VAR_PRETTY; # Gross!
+  $output_rules .= &file_contents ('subdirs', new Automake::Location);
+  rvar ('RECURSIVE_TARGETS')->rdef (TRUE)->{'pretty'} = VAR_PRETTY; # Gross!
 }
 
 
@@ -4367,7 +4095,9 @@ sub handle_gettext
 {
   return if ! $seen_gettext || $relative_dir ne '.';
 
-  if (! var ('SUBDIRS'))
+  my $subdirs = var 'SUBDIRS';
+
+  if (! $subdirs)
     {
       err_ac "AM_GNU_GETTEXT used but SUBDIRS not defined";
       return;
@@ -4392,21 +4122,21 @@ sub handle_gettext
 
   if (-d 'po')
     {
-      my @subdirs = &variable_value_as_list_recursive ('SUBDIRS', 'all');
+      my @subdirs = $subdirs->value_as_list_recursive ('all');
 
-      msg_var ('syntax', 'SUBDIRS',
+      msg_var ('syntax', $subdirs,
 	       "AM_GNU_GETTEXT used but `po' not in SUBDIRS")
 	if ! grep ($_ eq 'po', @subdirs);
 
       # intl/ is not required when AM_GNU_GETTEXT is called with
       # the `external' option.
-      msg_var ('syntax', 'SUBDIRS',
+      msg_var ('syntax', $subdirs,
 	       "AM_GNU_GETTEXT used but `intl' not in SUBDIRS")
 	if (! $seen_gettext_external
 	    && ! grep ($_ eq 'intl', @subdirs));
 
       # intl/ should not be used with AM_GNU_GETTEXT([external])
-      msg_var ('syntax', 'SUBDIRS',
+      msg_var ('syntax', $subdirs,
 	       "`intl' should not be in SUBDIRS when "
 	       . "AM_GNU_GETTEXT([external]) is used")
 	if ($seen_gettext_external && grep ($_ eq 'intl', @subdirs));
@@ -4430,7 +4160,8 @@ sub handle_footer
     # before .SUFFIXES.  So we make sure that .SUFFIXES appears before
     # anything else, by sticking it right after the default: target.
     $output_header .= ".SUFFIXES:\n";
-    if (@suffixes || var ('SUFFIXES'))
+    my $suffixes = var 'SUFFIXES';
+    if (@suffixes || $suffixes)
     {
 	# Make sure suffixes has unique elements.  Sort them to ensure
 	# the output remains consistent.  However, $(SUFFIXES) is
@@ -4439,9 +4170,8 @@ sub handle_footer
 	# suffixes, and this lets the user have some control.  Push
 	# actual suffixes, and not $(SUFFIXES).  Some versions of make
 	# do not like variable substitutions on the .SUFFIXES line.
-	my @user_suffixes = (var ('SUFFIXES')
-			     ? &variable_value_as_list_recursive ('SUFFIXES',
-								  'all')
+	my @user_suffixes = ($suffixes
+			     ? $suffixes->value_as_list_recursive ('all')
 			     : ());
 
 	my %suffixes = map { $_ => 1 } @suffixes;
@@ -5760,87 +5490,6 @@ sub target_conditions ($)
     return new Automake::DisjConditions @conds;
 }
 
-# $BOOLEAN
-# &variable_conditionally_defined ($VAR)
-# --------------------------------------
-sub variable_conditionally_defined ($)
-{
-    my ($var) = @_;
-
-    # Traverse the variable recursively until we
-    # find a variable defined conditionally.
-    # Use `die' to abort the traversal, and pass it `$full_cond'
-    # to we can find easily whether the `eval' block aborted
-    # because we found a condition, or for some other error.
-    eval
-      {
-	traverse_variable_recursively
-	  ($var,
-	   sub {
-	     my ($subvar, $val, $cond, $full_cond) = @_;
-	     die $full_cond if ! $full_cond->true;
-	     return ();
-	   },
-	   sub { return (); });
-      };
-    if ($@)
-      {
-	return 1 if ref($@) && $@->isa ("Automake::Condition");
-	# Propagate other errors.
-	die;
-      }
-    return 0;
-}
-
-
-# @VALUE
-# &variable_value_as_list_recursive_worker ($VAR, $COND, $LOC_WANTED)
-# -------------------------------------------------------------------
-# Return contents of VAR as a list, split on whitespace.  This will
-# recursively follow $(...) and ${...} inclusions.  It preserves @...@
-# substitutions.  If COND is 'all', then all values under all
-# conditions should be returned; if COND is a particular condition
-# then only the value for that condition should be returned;
-# otherwise, warn if VAR is conditionally defined.  If $LOC_WANTED is set,
-# return a list of [$location, $value] instead of a list of values.
-sub variable_value_as_list_recursive_worker ($$$)
-{
-    my ($var, $cond_filter, $loc_wanted) = @_;
-
-    return traverse_variable_recursively
-      ($var,
-       # Construct [$location, $value] pairs if requested.
-       sub {
-	 my ($var, $val, $cond, $full_cond) = @_;
-	 return [rvar ($var)->rdef ($cond)->location, $val] if $loc_wanted;
-	 return $val;
-       },
-       # Collect results.
-       sub {
-	 my ($var, $parent_cond, @allresults) = @_;
-	 return map { my ($cond, @vals) = @$_; return @vals } @allresults;
-       },
-       $cond_filter);
-}
-
-
-# &variable_value_as_list_recursive ($VAR, $COND)
-# -----------------------------------------------
-# Return the list of values of $VAR in condition $COND.
-sub variable_value_as_list_recursive ($$)
-{
-  return &variable_value_as_list_recursive_worker (@_, 0);
-}
-
-# &variable_loc_and_value_as_list_recursive ($VAR, $COND)
-# ----------------------------------------------------------------
-# Return the values of $VAR in condition $COND as a list of
-# [$location, @values] pairs.
-sub variable_loc_and_value_as_list_recursive ($$)
-{
-  return &variable_value_as_list_recursive_worker (@_, 1);
-}
-
 
 # &define_pretty_variable ($VAR, $COND, $WHERE, @VALUE)
 # -----------------------------------------------------
@@ -7151,8 +6800,7 @@ sub am_install_var
 
       # Append actual contents of where_PRIMARY variable to
       # @result, skipping @substitutions@.
-      foreach my $locvals (&variable_loc_and_value_as_list_recursive
-			   ($one_name, 'all'))
+      foreach my $locvals ($one_var->loc_and_value_as_list_recursive ('all'))
 	{
 	  my ($loc, $value) = @$locvals;
 	  # Skip configure substitutions.
@@ -7482,7 +7130,8 @@ sub require_file ($$@)
 sub require_file_with_macro ($$$@)
 {
     my ($cond, $macro, $mystrict, @files) = @_;
-    require_file (rvar ($macro)->rdef ($cond)->location, $mystrict, @files);
+    $macro = rvar ($macro) unless ref $macro;
+    require_file ($macro->rdef ($cond)->location, $mystrict, @files);
 }
 
 
