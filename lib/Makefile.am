@@ -2,7 +2,7 @@
 
 ## Makefile for Automake lib.
 
-## Copyright (C) 2001, 2003 Free Software Foundation, Inc.
+## Copyright (C) 2001, 2003, 2004 Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -31,6 +31,8 @@ scriptdir = $(pkgvdatadir)
 dist_script_DATA = config.guess config.sub install-sh mdate-sh missing \
   mkinstalldirs elisp-comp ylwrap acinstall depcomp compile py-compile \
   symlink-tree
+
+EXTRA_DIST = gnupload
 
 install-data-hook:
 	@$(POST_INSTALL)
