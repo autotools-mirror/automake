@@ -552,6 +552,56 @@ sub check_defined_unconditionally ($;$)
     }
 }
 
+=item C<$str = $var->output ([@conds])>
+
+Format all the definitions of C<$var> if C<@cond> is not specified,
+else only that corresponding to C<@cond>.
+
+=cut
+
+sub output ($@)
+{
+  my ($var, @conds) = @_;
+
+  @conds = $var->conditions->conds
+    unless @conds;
+
+  my $res = '';
+  my $name = $var->name;
+
+  foreach my $cond (@conds)
+    {
+      my $def = $var->def ($cond);
+      prog_error ("unknown condition `" . $cond->human . "' for `$var'")
+	unless $def;
+
+      next
+	if $def->pretty == VAR_SILENT;
+
+      $res .= $def->comment;
+
+      my $val = $def->value;
+      my $equals = $def->type eq ':' ? ':=' : '=';
+      my $str = $cond->subst_string;
+
+      if ($def->pretty == VAR_PRETTY)
+	{
+	  # Suppress escaped new lines.  &makefile_wrap will
+	  # add them back, maybe at other places.
+	  $val =~ s/\\$//mg;
+	  $res .= makefile_wrap ("$str$name $equals", "$str\t",
+				 split (' ' , $val));
+	}
+      else			# VAR_ASIS
+	{
+	  my $output_var = "$name $equals $val";
+	  $output_var =~ s/^/$str/meg;
+	  $res .= "$output_var\n";
+	}
+    }
+  return $res;
+}
+
 =back
 
 =head2 Utility functions
@@ -680,7 +730,7 @@ Variables can be overriden, provided the new owner is not weaker
 C<$type>: the type of the assignment (C<''> for C<FOO = bar>,
 C<':'> for C<FOO := bar>, and C<'+'> for C<'FOO += bar'>).
 
-C<$cond>: the DisjConditions in which C<$var> is being defined.
+C<$cond>: the C<Condition> in which C<$var> is being defined.
 
 C<$value>: the value assigned to C<$var> in condition C<$cond>.
 
@@ -1245,58 +1295,6 @@ sub variable_value_as_list($$;$)
 	}
     }
   return @result;
-}
-
-=item C<$str = output ($var, [@conds])>
-
-Format all the definitions of C<$var> if C<@cond> is not specified,
-else only that corresponding to C<@cond>.
-
-=cut
-
-sub output ($@)
-{
-  my ($var, @conds) = @_;
-
-  $var = ref ($var) ? $var : rvar ($var);
-
-  @conds = $var->conditions->conds
-    unless @conds;
-
-  my $res = '';
-  my $name = $var->name;
-
-  foreach my $cond (@conds)
-    {
-      my $def = $var->def ($cond);
-      prog_error ("unknown condition `" . $cond->human . "' for `$var'")
-	unless $def;
-
-      next
-	if $def->pretty == VAR_SILENT;
-
-      $res .= $def->comment;
-
-      my $val = $def->value;
-      my $equals = $def->type eq ':' ? ':=' : '=';
-      my $str = $cond->subst_string;
-
-      if ($def->pretty == VAR_PRETTY)
-	{
-	  # Suppress escaped new lines.  &makefile_wrap will
-	  # add them back, maybe at other places.
-	  $val =~ s/\\$//mg;
-	  $res .= makefile_wrap ("$str$name $equals", "$str\t",
-				 split (' ' , $val));
-	}
-      else			# VAR_ASIS
-	{
-	  my $output_var = "$name $equals $val";
-	  $output_var =~ s/^/$str/meg;
-	  $res .= "$output_var\n";
-	}
-    }
-  return $res;
 }
 
 
