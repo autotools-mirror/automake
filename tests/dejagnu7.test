@@ -18,39 +18,37 @@
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-# Check that the DejaGnu rules work for a simple program and test case.
+# Check that "make check" fails, when we invoke DejaGnu tests with --status
+# (to detect TCL errors) on a file with TCL errors.
 
 required=runtest
 . ./defs || exit 1
 
-set -e
-
-cat > hammer << 'END'
+cat > failtcl << 'END'
 #! /bin/sh
-echo "Everything looks like a nail to me!"
+echo whatever
 END
 
-chmod +x hammer
+chmod +x failtcl
 
 echo AC_OUTPUT >> configure.in
 
 cat > Makefile.am << 'END'
 AUTOMAKE_OPTIONS = dejagnu
 
-DEJATOOL = hammer
+DEJATOOL = failtcl
 
-AM_RUNTESTFLAGS = HAMMER=$(srcdir)/hammer
+AM_RUNTESTFLAGS = --status FAILTCL=$(srcdir)/failtcl
 END
 
-mkdir hammer.test
+mkdir failtcl.test
 
-cat > hammer.test/hammer.exp << 'END'
+cat > failtcl.test/failtcl.exp << 'END'
 set test test
-spawn $HAMMER
+spawn $FAILTCL
 expect {
-    "Everything looks like a nail to me!" { pass "$test" }
-    default { fail "$test" }
-}
+    default { pass "$test" }
+# Oops, no closing brace.
 END
 
 $ACLOCAL
@@ -59,8 +57,7 @@ $AUTOMAKE --add-missing
 
 ./configure
 
-$MAKE check
-test -f hammer.log
-test -f hammer.sum
-
-$MAKE distcheck
+$MAKE check && exit 1
+test -f failtcl.log
+test -f failtcl.sum
+$FGREP 'missing close-brace' failtcl.sum
