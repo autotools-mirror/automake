@@ -2222,9 +2222,9 @@ sub handle_dependencies
 	    && -f ($build_directory . $relative_dir . "/.deps/.P"))
 	{
 	    local ($depfile);
-	    local ($gpat) = $build_directory . $relative_dir . "/.deps/*.P";
 
-	    foreach $depfile (<${gpat}>)
+	    foreach $depfile (&my_glob ($build_directory
+					. $relative_dir . "/.deps/*.P"))
 	    {
 		&scan_dependency_file ($depfile);
 	    }
@@ -2312,15 +2312,35 @@ sub handle_aclocal_m4
     # important.
     if ($regen_aclocal)
     {
-	$output_rules .= ("\$(srcdir)/aclocal.m4: "
-			  . ($seen_maint_mode ? "\@MAINT\@" : "")
-			  . "configure.in"
-			  . ($acinclude ? ' acinclude.m4' : '')
-			  . "\n\t"
-			  . 'cd $(srcdir) && aclocal'
-			  . (&variable_defined ('ACLOCAL_AMFLAGS')
-			     ? ' $(ACLOCAL_AMFLAGS)' : '')
-			  . "\n");
+	local (@ac_deps) = (
+			    ($seen_maint_mode ? "\@MAINT\@" : "") ,
+			    "configure.in",
+			    ($acinclude ? ' acinclude.m4' : '')
+			    );
+
+	# Scan all -I directories for m4 files.  These are our
+	# dependencies.
+	if (&variable_defined ('ACLOCAL_AMFLAGS'))
+	{
+	    local ($amdir);
+	    foreach $amdir (&variable_value_as_list ('ACLOCAL_AMFLAGS'))
+	    {
+		if ($amdir =~ s/^-I//
+		    && $amdir !~ /^\//
+		    && -d $amdir)
+		{
+		    push (@ac_deps, &my_glob ($am_dir . '/*.m4'));
+		}
+	    }
+	}
+
+	&pretty_print_rule ("\$(srcdir)/aclocal.m4:", "\t\t", @ac_deps);
+
+	$output_rules .=  ("\t"
+			   . 'cd $(srcdir) && aclocal'
+			   . (&variable_defined ('ACLOCAL_AMFLAGS')
+			      ? ' $(ACLOCAL_AMFLAGS)' : '')
+			   . "\n");
     }
 }
 
@@ -4824,6 +4844,14 @@ sub touch
 
     open (TOUCH, ">> $file");
     close (TOUCH);
+}
+
+# Glob something.  Do this to avoid indentation screwups everywhere we
+# want to glob.  Gross!
+sub my_glob
+{
+    local ($pat) = @_;
+    return <${pat}>;
 }
 
 ################################################################
