@@ -180,8 +180,7 @@ sub not_always_defined_in_cond ($$)
     $self->conditions
       ->sub_conditions ($cond)
 	->invert
-	  ->simplify
-	    ->multiply ($cond);
+	  ->multiply ($cond);
 }
 
 

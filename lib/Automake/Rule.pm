@@ -740,11 +740,8 @@ sub define ($$$$$)
 	  # was already defined in condition COND1 and we want to define
 	  # it in condition TRUE, then define it only in condition !COND1.
 	  # (See cond14.test and cond15.test for some test cases.)
-	  @conds = ();
-	  for my $undefined_cond ($rule->conditions->invert->conds)
-	    {
-	      push @conds, $cond->merge ($undefined_cond);
-	    }
+	  @conds = $rule->not_always_defined_in_cond ($cond)->conds;
+
 	  # No conditions left to define the rule.
 	  # Warn, because our workaround is meaningless in this case.
 	  if (scalar @conds == 0)

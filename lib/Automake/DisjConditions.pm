@@ -433,11 +433,8 @@ sub sub_conditions ($$)
   my @prodconds = $subcond->multiply ($self->conds);
 
   # Now, strip $subcond from the remaining (i.e., non-false) Conditions.
-  my @res;
-  foreach my $c (@prodconds)
-    {
-      push @res, $c->strip ($subcond) unless $c->false;
-    }
+  my @res = map { $_->false ? () : $_->strip ($subcond) } @prodconds;
+
   return new Automake::DisjConditions @res;
 }
 

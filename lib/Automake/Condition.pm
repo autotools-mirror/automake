@@ -251,11 +251,7 @@ except those of C<$minuscond>.  This is the opposite of C<merge>.
 sub strip ($$)
 {
   my ($self, $minus) = @_;
-  my @res;
-  foreach my $cond ($self->conds)
-    {
-      push @res, $cond unless $minus->has ($cond);
-    }
+  my @res = grep { not $minus->has ($_) } $self->conds;
   return new Automake::Condition @res;
 }
 
@@ -486,11 +482,8 @@ sub not ($ )
 {
   my ($self) = @_;
   return @{$self->{'not'}} if defined $self->{'not'};
-  my @res;
-  for my $cond ($self->conds)
-    {
-      push @res, new Automake::Condition &conditional_negate ($cond);
-    }
+  my @res =
+    map { new Automake::Condition &conditional_negate ($_) } $self->conds;
   $self->{'not'} = [@res];
   return @res;
 }
