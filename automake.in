@@ -276,6 +276,13 @@ my %ac_macro_for_var =
    YACC => 'AC_PROG_YACC',
    );
 
+# Variables that can be overriden without complaint from -Woverride
+my %silent_variable_override =
+  (AR => 1,
+   ARFLAGS => 1,
+   DEJATOOL => 1,
+   JAVAC => 1);
+
 # Copyright on generated Makefile.ins.
 my $gen_copyright = "\
 # Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003
@@ -6376,9 +6383,19 @@ sub macro_define ($$$$$$$$)
 	  && $var_owner{$var}{$cond} != VAR_AUTOMAKE
 	  && $owner == VAR_AUTOMAKE)
 	{
+	  if (! exists $silent_variable_override{$var})
+	    {
+	      my $condmsg = ($cond == TRUE
+			     ? '' : (" in condition `" . $cond->human . "'"));
+	      msg_cond_var ('override', $cond, $var,
+			    "user variable `$var' defined here$condmsg...",
+			    partial => 1);
+	      msg ('override', $where,
+		   "... overrides Automake variable `$var' defined here");
+	    }
 	  verb ("refusing to override the user definition of:\n"
 		. macro_dump ($var)
-		."with `$cond->human' => `$value'");
+		."with `" . $cond->human . "' => `$value'");
 	}
       else
 	{
@@ -7133,11 +7150,11 @@ sub rule_define ($$$$$)
 
       # Don't mention true conditions in diagnostics.
       my $condmsg =
-	$cond == TRUE ? " in condition `" . $cond->human . "'" : '';
+	$cond == TRUE ? '' : " in condition `" . $cond->human . "'";
 
       if ($owner == TARGET_USER)
 	{
-	  if ($oldowner eq TARGET_USER)
+	  if ($oldowner == TARGET_USER)
 	    {
 	      # Ignore `%'-style pattern rules.  We'd need the
 	      # dependencies to detect duplicates, and they are
@@ -7174,6 +7191,11 @@ sub rule_define ($$$$$)
 	{
 	  if ($oldowner == TARGET_USER)
 	    {
+	      msg_cond_target ('override', $cond, $target,
+			       "user target `$target' defined here"
+			       . "$condmsg...", partial => 1);
+	      msg ('override', $where,
+		   "... overrides Automake target `$target' defined here");
 	      # Don't overwrite the user definition of TARGET.
 	      return ();
 	    }

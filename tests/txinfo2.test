@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1996, 1997, 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 1996, 1997, 2001, 2002, 2003  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -23,6 +23,10 @@
 
 . ./defs || exit 1
 
+set -e
+
+echo AC_OUTPUT >> configure.in
+
 cat > Makefile.am << 'END'
 info_TEXINFOS = textutils.texi
 magic:
@@ -33,7 +37,12 @@ END
 echo '@setfilename textutils.info' > textutils.texi
 : > textutils.info~
 
-$ACLOCAL || exit 1
-$AUTOMAKE || exit 1
 
-test -z "`$MAKE -s -f Makefile.in magic | grep '~'`"
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
+./configure
+$MAKE magic >stdout
+cat stdout
+grep '~' stdout && exit 1
+exit 0

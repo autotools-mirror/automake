@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 2001, 2002, 2003  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -22,15 +22,29 @@
 
 . ./defs || exit 1
 
+set -e
+
+echo 'AC_OUTPUT' >> configure.in
+
 cat > Makefile.am << 'END'
 AUTOMAKE_OPTIONS = dejagnu
 
 site.exp:
-    echo foo
+	@echo foo
 END
 
-$ACLOCAL || exit 1
-$AUTOMAKE || exit 1
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE -Wno-override
 
 grep site.exp Makefile.in
 test `grep '^site\.exp:' Makefile.in | wc -l` -eq 1
+
+./configure
+$MAKE site.exp >stdout
+cat stdout
+grep foo stdout
+
+$AUTOMAKE 2>stderr && exit 1
+cat stderr
+grep 'Makefile.am:3:.*site.exp' stderr

@@ -1,4 +1,4 @@
-# Copyright (C) 2002 Free Software Foundation, Inc.
+# Copyright (C) 2002, 2003 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -98,13 +98,18 @@ Warnings related to GNU Coding Standards.
 
 Warnings about obsolete features (silent by default).
 
+=item C<override>
+
+Warnings about user redefinitions of Automake rules or
+variables (silent by default).
+
 =item C<portability>
 
 Warnings about non-portable constructs.
 
 =item C<syntax>
 
-Weird syntax, unused variables, typos...
+Warnings about weird syntax, unused variables, typos...
 
 =item C<unsupported>
 
@@ -139,6 +144,7 @@ register_channel 'automake', type => 'fatal', backtrace => 1,
 
 register_channel 'gnu', type => 'warning';
 register_channel 'obsolete', type => 'warning', silent => 1;
+register_channel 'override', type => 'warning', silent => 1;
 register_channel 'portability', type => 'warning', silent => 1;
 register_channel 'syntax', type => 'warning';
 register_channel 'unsupported', type => 'warning';
@@ -161,6 +167,7 @@ sub usage ()
   print "Warning categories include:
   `gnu'           GNU coding standards (default in gnu and gnits modes)
   `obsolete'      obsolete features or constructions
+  `override'      user redefinitions of Automake rules or variables
   `portability'   portability issues
   `syntax'        dubious syntactic constructs (default)
   `unsupported'   unsupported or incomplete features (default)
