@@ -18,9 +18,7 @@
 # the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-# Like the true/false example from the manual,
-# with one extra indirection in the sources (PR/315), and
-# use of _CPPFLAGS (PR/337).
+# Check that target clashes are diagnosed.
 
 required=gcc
 . ./defs || exit 1
@@ -29,41 +27,14 @@ set -e
 
 cat >> configure.in << 'END'
 AC_PROG_CC
-AC_OUTPUT
 END
-
-# Using a separate variable to hold all the sources for a program is
-# common when building many flavors of this program, each with
-# different flags.
 
 cat > Makefile.am << 'END'
-FALSESOURCE = false.c
-bin_PROGRAMS = false true
-true_SOURCES = $(FALSESOURCE)
-true_CPPFLAGS = -DTRUE
-false_SOURCES = $(FALSESOURCE)
-false_CPPFLAGS = -DFALSE
-END
-
-cat > false.c << 'END'
-#include <stdio.h>
-int
-main (int argc, char *argv[])
-{
-#ifdef TRUE
-   puts ("true");
-#else
-   puts ("false");
-#endif
-   return 0;
-}
+bin_PROGRAMS = ctags
 END
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE -a
-
-./configure
-$MAKE
-./true | grep true
-./false | grep false
+$AUTOMAKE -a 2>stderr && exit 1
+cat stderr
+grep 'redefinition.*ctags' stderr

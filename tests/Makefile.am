@@ -380,6 +380,7 @@ tags.test \
 tagsub.test \
 target.test \
 target-cflags.test \
+targetclash.test \
 texinfo.test \
 texinfo2.test \
 texinfo3.test \
