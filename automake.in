@@ -1034,6 +1034,15 @@ sub generate_makefile
 	return;
     }
 
+    # There are a few install-related variables that you should not define.
+    foreach my $var ('PRE_INSTALL', 'POST_INSTALL', 'NORMAL_INSTALL')
+    {
+	if (&variable_defined ($var))
+	{
+	    &am_line_error ($var, "`$var' should not be defined");
+	}
+    }
+
     # If OBJEXT/EXEEXT were not set in configure.in, do it, it
     # simplifies our task, and anyway starting with Autoconf 2.50, it
     # will always be defined, and this code will be dead.
@@ -1085,7 +1094,16 @@ sub generate_makefile
     &handle_dist ($makefile);
 
     &handle_footer;
-    &handle_merge_targets ($output);
+    &do_check_merge_target;
+    &handle_all ($output);
+
+    # FIXME: Gross!
+    if (&variable_defined('lib_LTLIBRARIES') &&
+	&variable_defined('bin_PROGRAMS'))
+    {
+	$output_rules .= "install-binPROGRAMS: install-libLTLIBRARIES\n\n";
+    }
+
     &handle_installdirs;
     &handle_clean;
     &handle_factored_dependencies;
@@ -3802,28 +3820,18 @@ sub handle_footer
 }
 
 # Deal with installdirs target.
-sub handle_installdirs
+sub handle_installdirs ()
 {
     $output_rules .= &file_contents ('install',
 				     ('_am_installdirs'
 				      => $am_var_defs{'_am_installdirs'}));
 }
 
-# There are several targets which need to be merged.  This is because
-# their complete definition is compiled from many parts.  Note that we
-# avoid double colon rules, otherwise we'd use them instead.
-sub handle_merge_targets
+
+# Deal with all and all-am.
+sub handle_all ($)
 {
     my ($makefile) = @_;
-
-    # There are a few install-related variables that you should not define.
-    foreach my $var ('PRE_INSTALL', 'POST_INSTALL', 'NORMAL_INSTALL')
-    {
-	if (&variable_defined ($var))
-	{
-	    &am_line_error ($var, "`$var' should not be defined");
-	}
-    }
 
     # Put this at the beginning for the sake of non-GNU makes.  This
     # is still wrong if these makes can run parallel jobs.  But it is
@@ -3836,44 +3844,33 @@ sub handle_merge_targets
 	    if dirname ($one_name) eq $relative_dir;
     }
 
-    &do_check_merge_target;
-
-    if (@all || &variable_defined ('BUILT_SOURCES'))
-    {
-	my $local_headers = '';
-	$local_headers = '$(BUILT_SOURCES)'
-	    if &variable_defined ('BUILT_SOURCES');
-	foreach my $one_name (@config_names)
-	{
-	    if (dirname ($one_name) eq $relative_dir)
-	    {
-		$local_headers .= ' ' if $local_headers;
-		$local_headers .= basename ($one_name);
-	    }
-	}
-	if ($local_headers)
-	{
-	    # We need to make sure config.h is built before we
-	    # recurse.  We also want to make sure that built sources
-	    # are built before any ordinary `all' targets are run.  We
-	    # can't do this by changing the order of dependencies to
-	    # the "all" because that breaks when using parallel makes.
-	    # Instead we handle things explicitly.
-	    $output_rules .= ("all-redirect: ${local_headers}"
-			      . "\n\t"
-			      . '$(MAKE) $(AM_MAKEFLAGS) '
-			      . (&variable_defined ('SUBDIRS')
-				 ? 'all-recursive' : 'all-am')
-			      . "\n\n");
-	    $all_target = 'all-redirect';
-	    &depend ('.PHONY', 'all-redirect');
-	}
-    }
-
-    if (&variable_defined('lib_LTLIBRARIES') &&
-	&variable_defined('bin_PROGRAMS'))
-    {
-	$output_rules .= "install-binPROGRAMS: install-libLTLIBRARIES\n\n";
+    my $local_headers = '';
+    $local_headers = '$(BUILT_SOURCES)'
+      if &variable_defined ('BUILT_SOURCES');
+    foreach my $one_name (@config_names)
+      {
+	if (dirname ($one_name) eq $relative_dir)
+	  {
+	    $local_headers .= ' ' if $local_headers;
+	    $local_headers .= basename ($one_name);
+	  }
+      }
+    if ($local_headers)
+      {
+	# We need to make sure config.h is built before we
+	# recurse.  We also want to make sure that built sources
+	# are built before any ordinary `all' targets are run.  We
+	# can't do this by changing the order of dependencies to
+	# the "all" because that breaks when using parallel makes.
+	# Instead we handle things explicitly.
+	$output_rules .= ("all-redirect: ${local_headers}"
+			  . "\n\t"
+			  . '$(MAKE) $(AM_MAKEFLAGS) '
+			  . (&variable_defined ('SUBDIRS')
+			     ? 'all-recursive' : 'all-am')
+			  . "\n\n");
+	$all_target = 'all-redirect';
+	&depend ('.PHONY', 'all-redirect');
     }
 
     # Install `all' hooks.
