@@ -5655,7 +5655,11 @@ sub macro_define ($$$$$$)
       # The first assignment to a macro sets the line number.  Ideally
       # I suppose we would associate line numbers with random bits of
       # text.
-      $content_lines{$var} = $where;
+      # FIXME: We sometimes redefine some variables, but we want to keep
+      # the original location.  More subs are needed to handle properly
+      # variables.  Once this done, remove this hack.
+      $content_lines{$var} = $where
+	unless defined $content_lines{$var};
 
       # If first assignment, set `+=' indicator.
       $var_was_plus_eq{$var} = $type eq '+' && ! $var_is_am{$var};
@@ -5712,7 +5716,6 @@ sub macro_define ($$$$$$)
     # FIXME: I don't understand what's so special wrt `:', nor
     # why we forget the `+' nature of a var.
     $def_type{$var} = ($type eq ':') ? ':' : '';
-    push (@var_list, $var);
 }
 
 
@@ -6203,14 +6206,11 @@ sub define_variable
 sub define_pretty_variable
 {
     my ($var, $cond, @value) = @_;
+
     if (! defined $contents{$var}
 	|| ($cond && ! &variable_defined ($var, $cond)))
     {
-	$contents{$var} = join (' ', @value);
-	if ($cond)
-	{
-	    ${$conditional{$var}}{$cond} = $contents{$var};
-	}
+        macro_define ($var, 0, '', $cond, join (' ', @value), undef);
         my $make_condition = &make_condition ($cond);
 	&pretty_print ($make_condition . $var . ' =',
 		       $make_condition, @value);
@@ -6502,6 +6502,7 @@ sub read_am_file
 	    macro_define ($last_var_name, 0, $type,
 			     conditional_string (@conditional_stack),
 			     $value, $.);
+	    push (@var_list, $last_var_name);
 
 	    # FIXME: this doesn't always work correctly; it will group
 	    # all comments for a given variable, no matter where
@@ -6884,6 +6885,7 @@ sub file_contents ($%)
 
 	    # Accumulating variables must not be output.
 	    macro_define ($var, 1, $type, $cond_string, $val, $.);
+	    push (@var_list, $var);
 
 	    # If the user has set some variables we were in charge
 	    # of (which is detected by the first reading of
@@ -7170,6 +7172,7 @@ sub am_install_var
 		    {
 			my $cond = shift (@condvals);
 			my @val = split (' ', shift (@condvals));
+			delete $conditional{$one_name}{$cond};
 			&define_pretty_variable ($one_name, $cond, @val);
 		    }
 		}
