@@ -114,6 +114,7 @@ This edition documents version @value{VERSION}.
 * Invoking Automake::           Creating a Makefile.in
 * configure::                   Scanning configure.ac or configure.in
 * Top level::                   The top-level Makefile.am
+* Alternative::                 An alternative approach to subdirectories
 * Rebuilding::                  Automatic rebuilding of Makefile
 * Programs::                    Building programs and libraries
 * Other objects::               Other derived objects
@@ -869,13 +870,15 @@ Set the global strictness to @samp{gnu}.  For more information, see
 Print a summary of the command line options and exit.
 
 @item -i
-@itemx --include-deps
+@itemx --ignore-deps
 @opindex -i
+This disables the dependency tracking feature; see @ref{Dependencies}.
+
+@item --include-deps
 @opindex --include-deps
-Include all automatically generated dependency information
-(@pxref{Dependencies}) in the generated
-@file{Makefile.in}.  This is generally done when making a distribution;
-see @ref{Dist}.
+This enables the dependency tracking feature.  This feature is enabled
+by default.  This option is provided for historical reasons only and
+probably should not be used.
 
 @item --no-force
 @opindex --no-force
@@ -1337,7 +1340,7 @@ current compatibility with Autoconf 2.13 prevents this.
 @item AM_PROG_GCJ
 This macro finds the @code{gcj} program or causes an error.  It sets
 @samp{GCJ} and @samp{GCJFLAGS}.  @code{gcj} is the Java front-end to the
-GNU C compiler.
+GNU Compiler Collection.
 @cvindex AM_PROG_GCJ
 
 @item AM_SANITY_CHECK
@@ -1409,7 +1412,7 @@ A macro file's name should end in @file{.m4}.  Such files should be
 installed in @file{$(datadir)/aclocal}.
 
 
-@node Top level, Rebuilding, configure, Top
+@node Top level, Alternative, configure, Top
 @chapter The top-level @file{Makefile.am}
 
 @cindex SUBDIRS, explained
@@ -1498,7 +1501,46 @@ full list of subdirectories in the project.  If this macro is not set,
 Automake will attempt to set it for you.
 
 
-@node Rebuilding, Programs, Top level, Top
+@node Alternative, Rebuilding, Top level, Top
+@chapter An Alternative Approach to Subdirectories
+
+If you've ever read Peter Miller's excellent paper,
+@uref{http://www.pcug.org.au/~millerp/rmch/recu-make-cons-harm.html,
+Recursive Make Considered Harmful}, the preceding section on the use of
+subdirectories will probably come as unwelcome advice.  For those who
+haven't read the paper, Miller's main thesis is that recursive
+@code{make} invocations are both slow and error-prone.
+
+Automake provides sufficient cross-directory support @footnote{We
+believe.  This work is new and there are probably warts.
+@xref{Introduction}, for information on reporting bugs.} to enable you
+to write a single @file{Makefile.am} for a complex multi-directory
+package.
+
+
+By default an installable file specified in a subdirectory will have its
+directory name stripped before installation.  For instance, in this
+example, the header file will be installed as
+@file{$(includedir)/stdio.h}:
+
+@example
+include_HEADERS = inc/stdio.h
+@end example
+
+@cindex nobase_
+@cindex Path stripping, avoiding
+@cindex Avoiding path stripping
+
+However, the @samp{nobase_} prefix can be used to circumvent this path
+stripping.  In this example, the header file will be installed as
+@file{$(includedir)/sys/types.h}:
+
+@example
+nobase_include_HEADERS = sys/types.h
+@end example
+
+
+@node Rebuilding, Programs, Alternative, Top
 @chapter Rebuilding Makefiles
 
 Automake generates rules to automatically rebuild @file{Makefile}s,
@@ -1816,6 +1858,7 @@ e.g., @samp{nodist_EXTRA_maude_SOURCES}.
 @item maude_LIBADD
 @item maude_LDADD
 @item maude_LDFLAGS
+FIXME
 
 @item maude_CFLAGS
 Automake allows you to set compilation flags on a per-program (or
@@ -1833,7 +1876,7 @@ However, if the program's @samp{_CFLAGS} variable is set, then the
 object file will be named, for instance, @file{maude-sample.o}.
 
 @item maude_DEPENDENCIES
-
+FIXME
 
 @item maude_SHORTNAME
 On some platforms the allowable file names are very short.  In order to
@@ -2373,7 +2416,7 @@ that version of Autoconf or later.
 @cindex Support for Java
 
 Automake includes support for compiled Java, using @code{gcj}, the Java
-front end to the GNU C compiler.
+front end to the GNU Compiler Collection.
 
 Any package including Java code to be compiled must define the output
 variable @samp{GCJ} in @file{configure.in}; the variable @samp{GCJFLAGS}
@@ -2469,56 +2512,42 @@ LIBOBJS=`echo $LIBOBJS|sed 's/\.o /\$U.o /g;s/\.o$/\$U.o/'`
 As a developer it is often painful to continually update the
 @file{Makefile.in} whenever the include-file dependencies change in a
 project.  Automake supplies a way to automatically track dependency
-changes, and distribute the dependencies in the generated
-@file{Makefile.in}.
+changes.
 
-Currently this support requires the use of GNU @code{make} and
-@code{gcc}.  It might become possible in the future to supply a
-different dependency generating program, if there is enough demand.  In
-the meantime, this mode is enabled by default if any C program or
-library is defined in the current directory, so you may get a @samp{Must
-be a separator} error from non-GNU make.
+@cindex Dependency tracking
+@cindex Automatic dependency tracking
 
-@trindex dist
+Automake always uses complete dependencies for a compilation, including
+system headers.  Automake's model is that dependency computation should
+be a side effect of the build.  To this end, dependencies are computed
+by running all compilations through a special wrapper program called
+@code{depcomp}.  @code{depcomp} understands how to coax many different C
+and C++ compilers into generating dependency information in the format
+it requires.  @code{automake -a} will install @code{depcomp} into your
+source tree for you.  If @code{depcomp} can't figure out how to properly
+invoke your compiler, dependency tracking will simply be disabled for
+your build.
 
-When you decide to make a distribution, the @code{dist} target will
-re-run @code{automake} with @samp{--include-deps} and other options.
-@xref{Invoking Automake}, and @ref{Options}.  This will cause the
-previously generated dependencies to be inserted into the generated
-@file{Makefile.in}, and thus into the distribution.  This step also
-turns off inclusion of the dependency generation code, so that those who
-download your distribution but don't use GNU @code{make} and @code{gcc}
-will not get errors.
+@cindex depcomp
 
-@vindex OMIT_DEPENDENCIES
+Experience with earlier versions of Automake taught us that it is not
+reliable to generate dependencies only on the maintainer's system, as
+configurations vary too much.  So instead Automake implements dependency
+tracking at build time.
 
-When added to the @file{Makefile.in}, the dependencies have all
-system-specific dependencies automatically removed.  This can be done by
-listing the files in @samp{OMIT_DEPENDENCIES}.  For instance all
-references to system header files are removed by Automake.  Sometimes it
-is useful to specify that a certain header file should be removed.  For
-instance if your @file{configure.in} uses @samp{AM_WITH_REGEX}, then any
-dependency on @file{rx.h} or @file{regex.h} should be removed, because
-the correct one cannot be known until the user configures the package.
-
-As it turns out, Automake is actually smart enough to handle the
-particular case of the regular expression header.  It will also
-automatically omit @file{libintl.h} if @samp{AM_GNU_GETTEXT} is used.
+Automatic dependency tracking can be suppressed by putting
+@code{no-dependencies} in the variable @code{AUTOMAKE_OPTIONS}.  Or, you
+can invoke @code{automake} with the @code{-i} option.  Dependency
+tracking is enabled by default.
 
 @vindex AUTOMAKE_OPTIONS
 @opindex no-dependencies
 
-Automatic dependency tracking can be suppressed by putting
-@code{no-dependencies} in the variable @code{AUTOMAKE_OPTIONS}.
+The person building your package also can choose to disable dependency
+tracking by configuring with @code{--disable-dependency-tracking}.
 
-If you unpack a distribution made by @code{make dist}, and you want to
-turn on the dependency-tracking code again, simply re-run
-@code{automake}.
-
-The actual dependency files are put under the build directory, in a
-subdirectory named @file{.deps}.  These dependencies are machine
-specific.  It is safe to delete them if you like; they will be
-automatically recreated during the next build.
+@cindex Disabling dependency tracking
+@cindex Dependency tracking, disabling
 
 
 @node Other objects, Other GNU Tools, Programs, Top
@@ -3097,11 +3126,9 @@ reason, they are not automatically included in the distribution.
 @cindex make install support
 
 Naturally, Automake handles the details of actually installing your
-program once it has been built.  All @code{PROGRAMS}, @code{SCRIPTS},
-@code{LIBRARIES}, @code{LISP}, @code{DATA} and @code{HEADERS} are
-automatically installed in the appropriate places.
-
-Automake also handles installing any specified info and man pages.
+program once it has been built.  All files named by the various
+primaries are automatically installed in the appropriate places when the
+user runs @code{make install}.
 
 Automake generates separate @code{install-data} and @code{install-exec}
 targets, in case the installer is installing on multiple machines which
