@@ -1,19 +1,15 @@
-mandir = $(prefix)/man
-catdir = $(prefix)/cat
-
-NROFF = nroff
-
 install:: install-man
 
 install-man:
 	for man in $(MANS); do \
-	  sect=`echo $$man|sed 's%.*\(\.[0-9][a-z]*\)$$%\1%'; \
-	  inst=`basename $$man $sect|sed '$(transform)'`.$$sect; \
+	  sect=`echo $$man|sed 's%.*\.\([0-9][a-z]*\)$$%\1%'`; \
+	  inst=`basename $$man $$sect|sed '$(transform)'`$$sect; \
 	  mdir=$(mandir)/man$$sect; \
+	  $(top_srcdir)/mkinstalldirs $(mdir); \
 	  echo installing $$man as $$mdir/$$inst; \
 	  $(INSTALL_DATA) $(srcdir)/$$man $$mdir/$$inst; \
-	  if test -d $(catdir); then
-	    cdir=$(mandir)/cat$$sect; \
+	  cdir=$(mandir)/cat$$sect; \
+	  if test -d $$cdir; then \
 	    echo formatting $$man as $$cdir/$$inst; \
 	    $(NROFF) -man $(srcdir)/$$man > $$cdir/$$inst; \
 	  fi; \
@@ -29,3 +25,4 @@ uninstall-man:
 	  cdir=$(mandir)/cat$$sect; \
 	  rm -f $$mdir/$$inst $$cdir/$$inst; \
 	done
+
