@@ -11,6 +11,7 @@ AC_PROG_YACC
 END
 
 cat > Makefile.am <<'END'
+AUTOMAKE_OPTIONS = no-dependencies
 bin_PROGRAMS = zardoz
 zardoz_SOURCES = zardoz.y
 magic:
@@ -20,14 +21,17 @@ END
 $ACLOCAL || exit 1
 $AUTOMAKE || exit 1
 
+fgrep -v @SET_MAKE@ Makefile.in > Makefile.sed
 # It should not be disted here
-$MAKE -f Makefile.in SHELL=/bin/sh magic |
-grep 'zardoz.h' Makefile.in > /dev/null && exit 1
+grep 'zardoz.h' Makefile.in && exit 1
 
-echo 'YFLAGS = -d' >> Makefile.am
+cp Makefile.am Save
+# Test all available flags to make sure header is distributed with
+# `-d'.
+for flag in YFLAGS AM_YFLAGS zardoz_YFLAGS; do
+   cp Save Makefile.am
+   echo "$flag = -d" >> Makefile.am
 
-$AUTOMAKE || exit 1
-
-# But it should here
-$MAKE -f Makefile.in SHELL=/bin/sh magic |
-grep 'zardoz.h' Makefile.in > /dev/null
+   $AUTOMAKE || exit 1
+   grep 'zardoz.h' Makefile.in || exit 1
+done

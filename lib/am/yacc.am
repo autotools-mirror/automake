@@ -16,17 +16,26 @@
 ## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 ## 02111-1307, USA.
 
-## Generate rule for c/c++.
-%YACC_SUFFIX%%C_SUFFIX%:
-if %?YLWRAP%
-	$(SHELL) $(YLWRAP) $(YACC) $< y.tab.c $*%C_SUFFIX% y.tab.h $*.h -- $(AM_YFLAGS) $(YFLAGS)
-else !%?YLWRAP%
-	$(YACC) $(AM_YFLAGS) $(YFLAGS) $< && mv y.tab.c $*%C_SUFFIX%
+?GENERIC?.%EXT%.%DERIVED-EXT%:
+?!GENERIC?%OBJ%: %SOURCE%
+if %?MORE-THAN-ONE%
+	$(SHELL) $(YLWRAP) %SOURCE% y.tab.c %OBJ% y.tab.h %BASE%.h -- %COMPILE%
+else !%?MORE-THAN-ONE%
+	%COMPILE% %SOURCE% && mv y.tab.c %OBJ%
 	if test -f y.tab.h; then \
-	  if cmp -s y.tab.h $*.h; then \
+	  if cmp -s y.tab.h %BASE%.h; then \
 	    rm -f y.tab.h; \
 	  else \
-	    mv y.tab.h $*.h; \
+	    mv y.tab.h %BASE%.h; \
 	  fi; \
 	fi
-endif !%?YLWRAP%
+endif !%?MORE-THAN-ONE%
+
+## Also generate a dependency for the .h file.
+## FIXME: does this sort of suffix rule really work?
+if %?GENERIC%
+.%EXT%.h:
+	@:
+else !%?GENERIC%
+%BASE%.h: %SOURCE%
+endif !%?GENERIC%

@@ -38,44 +38,56 @@ BEGIN
 
 use Automake::Struct;
 struct (# Short name of the language (c, f77...).
-        'name' => '$',
+        'name' => "\$",
         # Nice name of the language (C, Fortran 77...).
-        'Name' => '$',
+        'Name' => "\$",
 
 	# List of configure variables which must be defined.
 	'config_vars' => '@',
 
-        'ansi'    => '$',
+        'ansi'    => "\$",
 	# `pure' is `1' or `'.  A `pure' language is one where, if
 	# all the files in a directory are of that language, then we
 	# do not require the C compiler or any code to call it.
-	'pure'   => '$',
+	'pure'   => "\$",
 
-	'autodep' => '$',
+	'autodep' => "\$",
 
 	# Name of the compiling variable (COMPILE).
-        'compiler'  => '$',
+        'compiler'  => "\$",
         # Content of the compiling variable.
-        'compile'  => '$',
+        'compile'  => "\$",
         # Flag to require compilation without linking (-c).
-        'compile_flag' => '$',
-	'derived_autodep' => '$',
+        'compile_flag' => "\$",
         'extensions'      => '@',
-        'flags' => '$',
+        'flags' => "\$",
+	# Should the flag be defined as a configure variable.
+	# Defaults to true.  FIXME: this should go away once
+	# we move to autoconf tracing.
+	'define_flag' => "\$",
+
+	# The file to use when generating rules for this language.
+	# The default is 'depend2'.
+	'rule_file' => "\$",
 
         # Name of the linking variable (LINK).
-        'linker' => '$',
+        'linker' => "\$",
         # Content of the linking variable.
-        'link' => '$',
+        'link' => "\$",
 
         # Name of the linker variable (LD).
-        'lder' => '$',
+        'lder' => "\$",
         # Content of the linker variable ($(CC)).
-        'ld' => '$',
+        'ld' => "\$",
 
         # Flag to specify the output file (-o).
-        'output_flag' => '$',
-        '_finish' => '$');
+        'output_flag' => "\$",
+        '_finish' => "\$",
+
+	# This is a subroutine which is called whenever we finally
+	# determine the context in which a source file will be
+	# compiled.
+	'_target_hook' => "\$");
 
 
 sub finish ($)
@@ -87,6 +99,14 @@ sub finish ($)
     }
 }
 
+sub target_hook ($$$$)
+{
+    my ($self) = @_;
+    if (defined $self->_target_hook)
+    {
+	&{$self->_target_hook} (@_);
+    }
+}
 
 package Automake;
 
@@ -151,6 +171,8 @@ my $AM_MISSING_PATTERN = 'AM_MISSING_PROG\(\[?(\w+)';
 # then too bad.
 my $AC_SUBST_PATTERN = 'AC_SUBST\(\[?(\w+)';
 my $AM_CONDITIONAL_PATTERN = 'AM_CONDITIONAL\(\[?(\w+)';
+# Match `-d' as a command-line argument in a string.
+my $DASH_D_PATTERN = "(^|\\s)-d(\\s|\$)";
 
 # Constants to define the "strictness" level.
 my $FOREIGN = 0;
@@ -585,13 +607,6 @@ my %options;
 # in handle_options.
 my $use_dependencies;
 
-# All yacc and lex source filenames for this directory.  Use
-# filenames instead of raw count so that multiple instances are
-# counted correctly (eg one yacc file can appear in multiple
-# programs without harm).
-my %yacc_sources;
-my %lex_sources;
-
 # This is a list of all targets to run during "make dist".
 my @dist_targets;
 
@@ -744,9 +759,6 @@ sub initialize_per_input ()
 
     $use_dependencies = $cmdline_use_dependencies;
 
-    %yacc_sources = ();
-    %lex_sources = ();
-
     @dist_targets = ();
 
     %de_ansi_files = ();
@@ -835,37 +847,49 @@ register_language ('name' => 'header',
 		   # Nothing to do.
 		   '_finish' => sub { });
 
-# For now, yacc and lex can't be handled on a per-exe basis.
-
 # Yacc (C & C++).
 register_language ('name' => 'yacc',
 		   'Name' => 'Yacc',
-		   'ansi' => 1,
 		   'config_vars' => ['YACC'],
-		   'derived_autodep' => 'yes',
+		   'flags' => 'YFLAGS',
+		   'define_flag' => 0,
+		   'compile' => '$(YACC) $(YFLAGS) $(AM_YFLAGS)',
+		   'compiler' => 'YACCCOMPILE',
 		   'extensions' => ['y'],
-		   '_finish' => \&lang_yacc_finish);
+		   'rule_file' => 'yacc',
+		   '_finish' => \&lang_yacc_finish,
+		   '_target_hook' => \&lang_yacc_target_hook);
 register_language ('name' => 'yaccxx',
 		   'Name' => 'Yacc (C++)',
 		   'config_vars' => ['YACC'],
-		   'linker' => 'CXXLINK',
-		   'derived_autodep' => 'yes',
+		   'rule_file' => 'yacc',
+		   'flags' => 'YFLAGS',
+		   'define_flag' => 0,
+		   'compiler' => 'YACCCOMPILE',
+		   'compile' => '$(YACC) $(YFLAGS) $(AM_YFLAGS)',
 		   'extensions' => ['y++', 'yy', 'yxx', 'ypp'],
-		   '_finish' => \&lang_yacc_finish);
+		   '_finish' => \&lang_yacc_finish,
+		   '_target_hook' => \&lang_yacc_target_hook);
 
 # Lex (C & C++).
 register_language ('name' => 'lex',
 		   'Name' => 'Lex',
-		   'ansi' => 1,
 		   'config_vars' => ['LEX'],
-		   'derived_autodep' => 'yes',
+		   'rule_file' => 'lex',
+		   'flags' => 'LFLAGS',
+		   'define_flag' => 0,
+		   'compile' => '$(LEX) $(LFLAGS) $(AM_LFLAGS)',
+		   'compiler' => 'LEXCOMPILE',
 		   'extensions' => ['l'],
 		   '_finish' => \&lang_lex_finish);
 register_language ('name' => 'lexxx',
 		   'Name' => 'Lex (C++)',
 		   'config_vars' => ['LEX'],
-		   'linker' => 'CXXLINK',
-		   'derived_autodep' => 'yes',
+		   'rule_file' => 'lex',
+		   'flags' => 'LFLAGS',
+		   'define_flag' => 0,
+		   'compile' => '$(LEX) $(LFLAGS) $(AM_LFLAGS)',
+		   'compiler' => 'LEXCOMPILE',
 		   'extensions' => ['l++', 'll', 'lxx', 'lpp'],
 		   '_finish' => \&lang_lex_finish);
 
@@ -1519,10 +1543,12 @@ sub handle_languages
     # Is the c linker needed?
     my $needs_c = 0;
     foreach my $ext (sort keys %extension_seen)
-      {
+    {
 	next unless $extension_map{$ext};
 
 	my $lang = $languages{$extension_map{$ext}};
+
+	my $rule_file = $lang->rule_file || 'depend2';
 
 	# Get information on $LANG.
 	my $pfx = $lang->autodep;
@@ -1536,12 +1562,14 @@ sub handle_languages
 			 'FPFX'    => $fpfx,
 			 'LIBTOOL' => $seen_libtool,
 			 'AMDEP'   => $AMDEP,
-			 '-c'      => $lang->compile_flag || '');
+			 '-c'      => $lang->compile_flag || '',
+			 'MORE-THAN-ONE'
+			           => (count_files_for_language ($lang->name) > 1));
 
 	# Generate the appropriate rules for this extension.
-	if ($use_dependencies && $lang->autodep ne 'no'
+	if (($use_dependencies && $lang->autodep ne 'no')
 	    || defined $lang->compile)
-	  {
+	{
 	    # Some C compilers don't support -c -o.  Use it only if really
 	    # needed.
 	    my $output_flag = $lang->output_flag || '';
@@ -1550,10 +1578,19 @@ sub handle_languages
 		  && $lang->flags eq 'CFLAGS'
 		  && defined $options{'subdir-objects'});
 
+	    # FIXME: this is a temporary hack to compute a possible
+	    # derived extension.  This is not used by depend2.am.
+	    (my $der_ext = $ext) =~ tr/yl/cc/;
+
+	    # Another yacc/lex hack.
+	    my $destfile = '$*.' . $der_ext;
+
 	    $output_rules .=
-	      file_contents ('depend2',
+	      file_contents ($rule_file,
 			     %transform,
 			     'GENERIC'   => 1,
+
+			     'DERIVED-EXT' => $der_ext,
 
 			     'BASE'      => '$*',
 			     'SOURCE'    => '$<',
@@ -1564,14 +1601,14 @@ sub handle_languages
 			     'COMPILE'   => '$(' . $lang->compiler . ')',
 			     'LTCOMPILE' => '$(LT' . $lang->compiler . ')',
 			     '-o'        => $output_flag);
-	  }
+	}
 
 	# Now include code for each specially handled object with this
 	# language.
 	my %seen_files = ();
 	foreach my $file (@{$lang_specific_files{$lang->name}})
-	  {
-	    my ($derived, $source, $obj) = split (' ', $file);
+	{
+	    my ($derived, $source, $obj, $myext) = split (' ', $file);
 
 	    # We might see a given object twice, for instance if it is
 	    # used under different conditions.
@@ -1580,6 +1617,9 @@ sub handle_languages
 
 	    my $flags = $lang->flags || '';
 	    my $val = "${derived}_${flags}";
+
+	    &prog_error ("found $lang->name in handle_languages, but compiler not defined")
+		unless defined $lang->compile;
 
 	    (my $obj_compile = $lang->compile) =~ s/\(AM_$flags/\($val/;
 	    my $obj_ltcompile = '$(LIBTOOL) --mode=compile ' . $obj_compile;
@@ -1591,20 +1631,23 @@ sub handle_languages
 	    # depend2.am into real targets for the particular objects we
 	    # are building.
 	    $output_rules .=
-	      file_contents ('depend2',
+	      file_contents ($rule_file,
 			     (%transform,
 			      'GENERIC'   => 0,
 
 			      'BASE'      => $obj,
 			      'SOURCE'    => $source,
-			      'OBJ'       => "$obj.o",
+			      # Use $myext and not `.o' here, in case
+			      # we are actually building a new source
+			      # file -- e.g. via yacc.
+			      'OBJ'       => "$obj$myext",
 			      'OBJOBJ'    => "$obj.obj",
 			      'LTOBJ'     => "$obj.lo",
 
 			      'COMPILE'   => $obj_compile,
 			      'LTCOMPILE' => $obj_ltcompile,
 			      '-o'        => $output_flag));
-	    }
+	}
 
 	# The rest of the loop is done once per language.
 	next if defined $done{$lang};
@@ -1639,11 +1682,11 @@ sub handle_languages
 
 	# The compiler's flag must be a configure variable.
 	define_configure_variable ($lang->flags)
-	  if (defined $lang->flags);
+	    if defined $lang->flags && $lang->define_flag;
 
 	# Call the finisher.
 	$lang->finish;
-      }
+    }
 
     # If the project is entirely C++ or entirely Fortran 77 (i.e., 1
     # suffix rule was learned), don't bother with the C stuff.  But if
@@ -1660,33 +1703,6 @@ sub handle_languages
 	  }
 	define_linker_variable ($languages{'c'});
       }
-}
-
-# Output a rule to build from a YACC source.  The output from YACC is
-# compiled with C or C++, depending on the extension of the YACC file.
-sub output_yacc_build_rule
-{
-    my ($yacc_suffix, $use_ylwrap) = @_;
-
-    (my $c_suffix = $yacc_suffix) =~ tr/y/c/;
-
-    # Generate rule for c/c++.
-    $output_rules .= &file_contents ('yacc',
-				     ('YLWRAP'      => $use_ylwrap,
-				      'YACC_SUFFIX' => $yacc_suffix,
-				      'C_SUFFIX'    => $c_suffix));
-}
-
-sub output_lex_build_rule
-{
-    my ($lex_suffix, $use_ylwrap) = @_;
-
-    (my $c_suffix = $lex_suffix) =~ tr/l/c/;
-
-    $output_rules .= &file_contents ('lex',
-				     ('YLWRAP'     => $use_ylwrap,
-				      'LEX_SUFFIX' => $lex_suffix,
-				      'C_SUFFIX'   => $c_suffix));
 }
 
 # Check to make sure a source defined in LIBOBJS is not explicitly
@@ -1747,9 +1763,12 @@ sub handle_single_transform_list ($$$@)
     $nonansi_obj =~ s/\$U//g;
     my %linkers_used = ();
 
-    # Turn sources into objects.
-    foreach (@files)
+    # Turn sources into objects.  We use a while loop like this
+    # because we might add to @files in the loop.
+    while (scalar @files > 0)
     {
+	$_ = shift @files;
+
         # Configure substitutions in _SOURCES variables are errors.
         if (/^\@.*\@$/)
         {
@@ -1757,8 +1776,9 @@ sub handle_single_transform_list ($$$@)
             next;
         }
 
-        # If the source file is in a subdirectory then the `.o' is
-        # put into the current directory.
+        # If the source file is in a subdirectory then the `.o' is put
+        # into the current directory, unless the subdir-objects option
+        # is in effect.
 
         # Split file name into base and extension.
         next if ! /^(?:(.*)\/)?([^\/]*)\.(.*)$/;
@@ -1771,23 +1791,55 @@ sub handle_single_transform_list ($$$@)
         my $renamed = 0;
         my ($linker, $object);
 
+	# This records whether we've seen a derived source file (eg,
+	# yacc output).
+	my $derived_source = 0;
+
+	# This holds the `aggregate context' of the file we are
+	# currently examining.  If the file is compiled with
+	# per-object flags, then it will be the name of the object.
+	# Otherwise it will be `AM'.  This is used by the target hook
+	# language function.
+	my $aggregate = 'AM';
+
         $extension = &derive_suffix ($extension);
         my $lang;
         if ($extension_map{$extension} &&
             ($lang = $languages{$extension_map{$extension}}))
 	{
-            &saw_extension ($extension);
             # Found the language, so see what it says.
+            &saw_extension ($extension);
+
+            # Note: computed subr call.  The language rewrite function
+            # should return one of the $LANG_* constants.  It could
+            # also return a list whose first value is such a constant
+            # and whose second value is a new source extension which
+            # should be applied.  This means this particular language
+            # generates another source file which we must then process
+            # further.
             my $subr = 'lang_' . $lang->name . '_rewrite';
-            # Note: computed subr call.
-            my $r = & $subr ($directory, $base, $extension);
+            my ($r, $source_extension)
+		= & $subr ($directory, $base, $extension);
             # Skip this entry if we were asked not to process it.
             next if $r == $LANG_IGNORE;
 
             # Now extract linker and other info.
             $linker = $lang->linker;
 
-            my $this_obj_ext = $lang->ansi ? $obj : $nonansi_obj;
+            my $this_obj_ext;
+	    if (defined $source_extension)
+	    {
+		$this_obj_ext = '.' . $source_extension;
+		$derived_source = 1;
+	    }
+	    elsif ($lang->ansi)
+	    {
+		$this_obj_ext = $obj;
+	    }
+	    else
+	    {
+		$this_obj_ext = $nonansi_obj;
+	    }
 	    $object = $base . $this_obj_ext;
 
             if (defined $lang->flags
@@ -1843,7 +1895,11 @@ sub handle_single_transform_list ($$$@)
             {
                 my $obj_sans_ext = substr ($object, 0,
 					   - length ($this_obj_ext));
-		my $val = "$full $obj_sans_ext";
+		my $val = ("$full $obj_sans_ext "
+			   # Only use $this_obj_ext in the derived
+			   # source case because in the other case we
+			   # *don't* want $(OBJEXT) to appear here.
+			   . ($derived_source ? $this_obj_ext : '.o'));
 
 		# If we renamed the object then we want to use the
 		# per-executable flag name.  But if this is simply a
@@ -1852,12 +1908,18 @@ sub handle_single_transform_list ($$$@)
 		if ($renamed)
 		{
 		    $val = "$derived $val";
+		    $aggregate = $derived;
 		}
 		else
 		{
 		    $val = "AM $val";
 		}
 
+		# Each item on this list is a string consisting of
+		# four space-separated values: the derived flag prefix
+		# (eg, for `foo_CFLAGS', it is `foo'), the name of the
+		# source file, the base name of the output file, and
+		# the extension for the object file.
                 push (@{$lang_specific_files{$lang->name}}, $val);
             }
         }
@@ -1873,12 +1935,12 @@ sub handle_single_transform_list ($$$@)
         {
             # No error message here.  Used to have one, but it was
             # very unpopular.
+	    # FIXME: we could potentially do more processing here,
+	    # perhaps treating the new extension as though it were a
+	    # new source extension (as above).  This would require
+	    # more restructuring than is appropriate right now.
             next;
         }
-
-        $linkers_used{$linker} = 1;
-
-        push (@result, $object);
 
         if (defined $object_map{$object})
         {
@@ -1887,7 +1949,27 @@ sub handle_single_transform_list ($$$@)
                 &am_error ("object `$object' created by `$full' and `$object_map{$object}'");
             }
         }
-        else
+
+	# Let the language do some special magic if required.
+	$lang->target_hook ($aggregate, $object, $full);
+
+	if ($derived_source)
+	{
+	    &prog_error ("$lang->name has automatic dependency tracking")
+		if $lang->autodep ne 'no';
+	    # Make sure this new source file is handled next.  That will
+	    # make it appear to be at the right place in the list.
+	    unshift (@files, $object);
+	    # FIXME: nodist.
+	    &push_dist_common ($object);
+	    next;
+	}
+
+        $linkers_used{$linker} = 1;
+
+        push (@result, $object);
+
+        if (! defined $object_map{$object})
         {
             my @dep_list = ();
             $object_map{$object} = $full;
@@ -1955,9 +2037,7 @@ sub handle_single_transform_list ($$$@)
 
         # Transform .o or $o file into .P file (for automatic
         # dependency code).
-        if ($lang
-            && ($lang->autodep ne 'no'
-                || $lang->derived_autodep eq 'yes'))
+        if ($lang && $lang->autodep ne 'no')
         {
             my $depfile = $object;
             $depfile =~ s/\.([^.]*)$/.P$1/;
@@ -4866,18 +4946,9 @@ sub lang_yacc_rewrite
 {
     my ($directory, $base, $ext) = @_;
 
-    my $r = &lang_c_rewrite ($directory, $base, $ext);
-    my $pfx = '';
-    if ($r == $LANG_SUBDIR)
-    {
-	$pfx = $directory . '/';
-    }
-    $yacc_sources{$pfx . $base . '.' . $ext} = 1;
-    $ext =~ tr/y/c/;
-    &saw_extension ('c');
-    # FIXME: nodist.
-    &push_dist_common ($pfx . $base . '.' . $ext);
-    return $r;
+    my $r = &lang_sub_obj;
+    (my $newext = $ext) =~ tr/y/c/;
+    return ($r, $newext);
 }
 
 # Rewrite a single yacc++ file.
@@ -4885,19 +4956,9 @@ sub lang_yaccxx_rewrite
 {
     my ($directory, $base, $ext) = @_;
 
-    my $r = $LANG_PROCESS;
-    my $pfx = '';
-    if (defined $options{'subdir-objects'})
-    {
-	$pfx = $directory . '/';
-	$r = $LANG_SUBDIR;
-    }
-    $yacc_sources{$pfx . $base . '.' . $ext} = 1;
-    $ext =~ tr/y/c/;
-    &saw_extension ($ext);
-    # FIXME: nodist.
-    &push_dist_common ($pfx . $base . '.' . $ext);
-    return $r;
+    my $r = &lang_sub_obj;
+    (my $newext = $ext) =~ tr/y/c/;
+    return ($r, $newext);
 }
 
 # Rewrite a single lex file.
@@ -4905,18 +4966,9 @@ sub lang_lex_rewrite
 {
     my ($directory, $base, $ext) = @_;
 
-    my $r = &lang_c_rewrite ($directory, $base, $ext);
-    my $pfx = '';
-    if ($r == $LANG_SUBDIR)
-    {
-	$pfx = $directory . '/';
-    }
-    $lex_sources{$pfx . $base . '.' . $ext} = 1;
-    $ext =~ tr/l/c/;
-    &saw_extension ('c');
-    # FIXME: nodist.
-    &push_dist_common ($pfx . $base . '.' . $ext);
-    return $r;
+    my $r = &lang_sub_obj;
+    (my $newext = $ext) =~ tr/l/c/;
+    return ($r, $newext);
 }
 
 # Rewrite a single lex++ file.
@@ -4924,19 +4976,9 @@ sub lang_lexxx_rewrite
 {
     my ($directory, $base, $ext) = @_;
 
-    my $r = $LANG_PROCESS;
-    my $pfx = '';
-    if (defined $options{'subdir-objects'})
-    {
-	$pfx = $directory . '/';
-	$r = $LANG_SUBDIR;
-    }
-    $lex_sources{$pfx . $base . '.' . $ext} = 1;
-    $ext =~ tr/l/c/;
-    &saw_extension ($ext);
-    # FIXME: nodist.
-    &push_dist_common ($pfx . $base . '.' . $ext);
-    return $r;
+    my $r = &lang_sub_obj;
+    (my $newext = $ext) =~ tr/l/c/;
+    return ($r, $newext);
 }
 
 # Rewrite a single assembly file.
@@ -5026,6 +5068,36 @@ sub lang_c_finish
     }
 }
 
+# This is a yacc helper which is called whenever we have decided to
+# compile a yacc file.
+sub lang_yacc_target_hook
+{
+    my ($self, $aggregate, $output, $input) = @_;
+
+    my $flag = $aggregate . "_YFLAGS";
+    if ((&variable_defined ($flag)
+	 && &variable_value ($flag) =~ /$DASH_D_PATTERN/o)
+	|| (&variable_defined ('YFLAGS')
+	    && &variable_value ('YFLAGS') =~ /$DASH_D_PATTERN/o))
+    {
+	(my $output_base = $output) =~ s/\..*$//;
+	my $header = $output_base . '.h';
+
+	# Found a `-d' that applies to the compilation of this file.
+	# Add a dependency for the generated header file, and arrange
+	# for that file to be included in the distribution.
+	# FIXME: this fails for `nodist_*_SOURCES'.
+	$output_rules .= "${header}: $input\n";
+	&push_dist_common ($header);
+	# If the files are built in the build directory, then we want
+	# to remove them with `make clean'.  If they are in srcdir
+	# they shouldn't be touched.  However, we can't determine this
+	# statically, and the GNU rules say that yacc/lex output files
+	# should be removed by maintainer-clean.  So that's what we
+	# do.
+	push (@maintainer_clean_files, $header);
+    }
+}
 
 # This is a helper for both lex and yacc.
 sub yacc_lex_finish_helper
@@ -5053,51 +5125,13 @@ sub lang_yacc_finish
     return if defined $language_scratch{'yacc-done'};
     $language_scratch{'yacc-done'} = 1;
 
-    my %seen_suffix = ();
-    my @yacc_files = sort keys %yacc_sources;
-    my $yacc_count = scalar (@yacc_files);
-    foreach my $file (@yacc_files)
-    {
-	$file =~ /(\..*)$/;
-	&output_yacc_build_rule ($1, $yacc_count > 1)
-	    if ! defined $seen_suffix{$1};
-	$seen_suffix{$1} = 1;
-
-	$file =~ /^(.*)\.(y|yy|y\+\+|yxx|ypp)$/;
-	my $base = $1;
-	my $hname = 'h';		# Always use `.h' for header file.
-	my $cname = $2;
-	$cname =~ tr/y/c/;
-
-	if ((&variable_defined ('AM_YFLAGS')
-	     && &variable_value ('AM_YFLAGS') =~ /(^|\s)-d(\s|$)/)
-	    || (&variable_defined ('YFLAGS')
-		&& &variable_value ('YFLAGS') =~ /(^|\s)-d(\s|$)/)) {
-	    # Now generate rule to make the header file.  This should only
-	    # be generated if `yacc -d' specified.
-	    $output_rules .= "${base}.${hname}: ${base}.${cname}\n";
-
-	    # If the files are built in the build directory, then we want
-	    # to remove them with `make clean'.  If they are in srcdir
-	    # they shouldn't be touched.  However, we can't determine this
-	    # statically, and the GNU rules say that yacc/lex output files
-	    # should be removed by maintainer-clean.  So that's what we
-	    # do.
-	    push (@maintainer_clean_files, "${base}.${hname}");
-
-	    &push_dist_common ("${base}.${hname}");
-	}
-	push (@maintainer_clean_files, "${base}.${cname}");
-    }
-    $output_rules .= "\n";
-
     if (&variable_defined ('YACCFLAGS'))
     {
 	&am_line_error ('YACCFLAGS',
 			"`YACCFLAGS' obsolete; use `YFLAGS' instead");
     }
 
-    if ($yacc_count > 1)
+    if (count_files_for_language ('yacc') > 1)
     {
 	&yacc_lex_finish_helper;
     }
@@ -5109,33 +5143,12 @@ sub lang_lex_finish
     return if defined $language_scratch{'lex-done'};
     $language_scratch{'lex-done'} = 1;
 
-    my %seen_suffix = ();
-    my $lex_count = scalar (keys %lex_sources);
-    foreach my $file (sort keys %lex_sources)
-    {
-	$file =~ /(\..*)$/;
-	&output_lex_build_rule ($1, $lex_count > 1)
-	    if (! defined $seen_suffix{$1});
-	$seen_suffix{$1} = 1;
-
-	# If the files are built in the build directory, then we want
-	# to remove them with `make clean'.  If they are in srcdir
-	# they shouldn't be touched.  However, we can't determine this
-	# statically, and the GNU rules say that yacc/lex output files
-	# should be removed by maintainer-clean.  So that's what we
-	# do.
-	$file =~ /^(.*)\.(l|ll|l\+\+|lxx|lpp)$/;
-	my $cname;
-	($cname = $2) =~ tr/l/c/;
-	push (@maintainer_clean_files, "${1}.${cname}");
-    }
-
     if (! $seen_decl_yytext)
     {
 	&am_error ("lex source seen but `AC_DECL_YYTEXT' not in `$configure_ac'");
     }
 
-    if ($lex_count > 1)
+    if (count_files_for_language ('lex') > 1)
     {
 	&yacc_lex_finish_helper;
     }
@@ -5165,7 +5178,52 @@ sub resolve_linker
 sub saw_extension
 {
     my ($ext) = @_;
-    $extension_seen{$ext} = 1;
+    if (! defined $extension_seen{$ext})
+    {
+	$extension_seen{$ext} = 1;
+    }
+    else
+    {
+	++$extension_seen{$ext};
+    }
+}
+
+# Return the number of files seen for a given language.  Knows about
+# special cases we care about.  FIXME: this is hideous.  We need
+# something that involves real language objects.  For instance yacc
+# and yaccxx could both derive from a common yacc class which would
+# know about the strange ylwrap requirement.  (Or better yet we could
+# just not support legacy yacc!)
+sub count_files_for_language
+{
+    my ($name) = @_;
+
+    my @names;
+    if ($name eq 'yacc' || $name eq 'yaccxx')
+    {
+	@names = ('yacc', 'yaccxx');
+    }
+    elsif ($name eq 'lex' || $name eq 'lexxx')
+    {
+	@names = ('lex', 'lexxx');
+    }
+    else
+    {
+	@names = ($name);
+    }
+
+    my $r = 0;
+    foreach $name (@names)
+    {
+	my $lang = $languages{$name};
+	foreach my $ext (@{$lang->extensions})
+	{
+	    $r += $extension_seen{$ext}
+	        if defined $extension_seen{$ext};
+	}
+    }
+
+    return $r
 }
 
 # Called to ask whether source files have been seen . If HEADERS is 1,
@@ -5180,8 +5238,7 @@ sub saw_sources_p
     }
     else
     {
-	$headers = grep ($extension_seen{$_},
-			 @{$languages{'header'}->extensions});
+	$headers = count_files_for_language ('header');
     }
 
     return scalar keys %extension_seen > $headers;
@@ -5201,10 +5258,10 @@ sub register_language (%)
       unless defined $option{'ansi'};
     $option{'autodep'} = 'no'
       unless defined $option{'autodep'};
-    $option{'derived_autodep'} = 'no'
-      unless defined $option{'derived_autodep'};
     $option{'linker'} = ''
       unless defined $option{'linker'};
+    $option{'define_flag'} = 1
+      unless defined $option{'define_flag'};
 
     my $lang = new Language (%option);
 
