@@ -4057,7 +4057,7 @@ sub do_one_clean_target
 # Handle .PHONY target.
 sub handle_phony
 {
-    &pretty_print_rule ('.PHONY:', "", @phony);
+    &pretty_print_rule ('.PHONY:', "", sort @phony);
     $output_rules .= "\n";
 }
 
@@ -4146,65 +4146,10 @@ sub handle_tests
     if (&variable_defined ('TESTS'))
     {
 	push (@check_tests, 'check-TESTS');
-	push (@phony, 'check-TESTS');
 
 	# Note: Solaris 2.7 seems to expand TESTS using VPATH.  That's
 	# why we also try `dir='
-	$output_rules .= 'check-TESTS: $(TESTS)
-	@failed=0; all=0; xfail=0; xpass=0; \\
-	srcdir=$(srcdir); export srcdir; \\
-	list=' . "'\$(TESTS)'; \\" . '
-	if test -n "$$list"; then \\
-	  for tst in $$list; do \\
-	    if test -f ./$$tst; then dir=./; \\
-	    elif test -f $$tst; then dir=; \\
-	    else dir="$(srcdir)/"; fi; \\
-	    if $(TESTS_ENVIRONMENT) $${dir}$$tst; then \\
-	      all=`expr $$all + 1`; \\
-	      case " $(XFAIL_TESTS) " in \\
-	      *" $$tst "*) \\
-	        xpass=`expr $$xpass + 1`; \\
-	        failed=`expr $$failed + 1`; \\
-	        echo "XPASS: $$tst"; \\
-	      ;; \\
-	      *) \\
-	        echo "PASS: $$tst"; \\
-	      ;; \\
-	      esac; \\
-	    elif test $$? -ne 77; then \\
-	      all=`expr $$all + 1`; \\
-	      case " $(XFAIL_TESTS) " in \\
-	      *" $$tst "*) \\
-	        xfail=`expr $$xfail + 1`; \\
-	        echo "XFAIL: $$tst"; \\
-	      ;; \\
-	      *) \\
-	        failed=`expr $$failed + 1`; \\
-	        echo "FAIL: $$tst"; \\
-	      ;; \\
-	      esac; \\
-	    fi; \\
-	  done; \\
-	  if test "$$failed" -eq 0; then \\
-	    if test "$$xfail" -eq 0; then \\
-	      banner="All $$all tests passed"; \\
-	    else \\
-	      banner="All $$all tests behaved as expected ($$xfail expected failures)"; \\
-	    fi; \\
-	  else \\
-	    if test "$$xpass" -eq 0; then \\
-	      banner="$$failed of $$all tests failed"; \\
-	    else \\
-	      banner="$$failed of $$all tests did not behave as expected ($$xpass unexpected passes)"; \\
-	    fi; \\
-	  fi; \\
-	  dashes=`echo "$$banner" | sed s/./=/g`; \\
-	  echo "$$dashes"; \\
-	  echo "$$banner"; \\
-	  echo "$$dashes"; \\
-	  test "$$failed" -eq 0; \\
-	fi
-';
+	$output_rules .= &file_contents ('check');
     }
 }
 
@@ -6968,6 +6913,10 @@ sub initialize_per_input
 
 ################################################################
 
+
+# $CONTENTS
+# &file_contents_with_transform ($COMMAND, $BASENAME)
+# ---------------------------------------------------
 # Return contents of a file from $am_dir, automatically skipping
 # macros or rules which are already known.  Runs command on each line
 # as it is read; this command can modify $_.
@@ -7037,6 +6986,12 @@ sub file_contents_with_transform
 		$result_vars .= $_ if ! $skipping;
 	    }
 	    $saw_bk = /\\$/;
+	}
+	elsif (/^.PHONY: (.*)$/)
+	{
+	    # Having a special case for PHONY upstream seems much easier than
+	    # trying to have it fit in RULE_PATTERN and extract it later.
+	    push (@phony, split (/\s+/, $1));
 	}
 	elsif (/$RULE_PATTERN/o)
 	{

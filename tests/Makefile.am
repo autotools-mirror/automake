@@ -33,6 +33,7 @@ canon2.test \
 canon3.test \
 canon4.test \
 canon5.test \
+check.test \
 checkall.test \
 clean.test \
 colneq.test \
