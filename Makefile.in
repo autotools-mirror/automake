@@ -1,4 +1,4 @@
-# Makefile.in generated automatically by automake 1.1g from Makefile.am
+# Makefile.in generated automatically by automake 1.1m from Makefile.am
 
 # Copyright (C) 1994, 1995, 1996 Free Software Foundation, Inc.
 # This Makefile.in is free software; the Free Software Foundation
@@ -37,8 +37,11 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 transform = @program_transform_name@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+PACKAGE = @PACKAGE@
 PERL = @PERL@
 TAR = @TAR@
+VERSION = @VERSION@
 
 AUTOMAKE_OPTIONS = gnits
 MAINT_CHARSET = latin1
@@ -85,23 +88,23 @@ configure.in elisp-comp install-sh interlock mdate-sh mkinstalldirs \
 stamp-vti texinfo.tex version.texi ylwrap
 
 
-PACKAGE = @PACKAGE@
-VERSION = @VERSION@
+DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
-DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) \
-	$(TEXINFOS) $(MANS) $(EXTRA_DIST)
+GZIP = --best
 default: all
 
-aclocal.m4: configure.in
+.SUFFIXES:
+.SUFFIXES: .texi .texinfo .info .dvi .ps
+$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL) 
+	cd $(top_srcdir) && automake --gnits Makefile
+
+Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status $(BUILT_SOURCES)
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+$(srcdir)/aclocal.m4:  configure.in 
 	cd $(srcdir) && aclocal
 
-$(srcdir)/Makefile.in: Makefile.am configure.in
-	cd $(srcdir) && automake --strictness=gnits Makefile
-
-# For an explanation of the following Makefile rules, see node
-# `Automatic Remaking' in GNU Autoconf documentation.
-Makefile: $(srcdir)/Makefile.in config.status $(BUILT_SOURCES)
-	CONFIG_FILES=$@ CONFIG_HEADERS= $(SHELL) ./config.status
 config.status: configure
 	$(SHELL) ./config.status --recheck
 $(srcdir)/configure: configure.in $(ACLOCAL) $(CONFIGURE_DEPENDENCIES)
@@ -114,12 +117,13 @@ aclocal: $(top_builddir)/config.status aclocal.in
 install-binSCRIPTS: $(bin_SCRIPTS)
 	$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(bindir)
-	list="$(bin_SCRIPTS)"; for p in $$list; do \
+	@list="$(bin_SCRIPTS)"; for p in $$list; do \
 	  if test -f $$p; then \
+	    echo " $(INSTALL_SCRIPT) $$p $(bindir)/`echo $$p|sed '$(transform)'`"; \
 	    $(INSTALL_SCRIPT) $$p $(bindir)/`echo $$p|sed '$(transform)'`; \
 	  else if test -f $(srcdir)/$$p; then \
-	    $(INSTALL_SCRIPT) $(srcdir)/$$p \
-	      $(bindir)/`echo $$p|sed '$(transform)'`; \
+	    echo " $(INSTALL_SCRIPT) $(srcdir)/$$p $(bindir)/`echo $$p|sed '$(transform)'`"; \
+	    $(INSTALL_SCRIPT) $(srcdir)/$$p $(bindir)/`echo $$p|sed '$(transform)'`; \
 	  else :; fi; fi; \
 	done
 
@@ -131,12 +135,13 @@ uninstall-binSCRIPTS:
 install-pkgdataSCRIPTS: $(pkgdata_SCRIPTS)
 	$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(pkgdatadir)
-	list="$(pkgdata_SCRIPTS)"; for p in $$list; do \
+	@list="$(pkgdata_SCRIPTS)"; for p in $$list; do \
 	  if test -f $$p; then \
+	    echo " $(INSTALL_SCRIPT) $$p $(pkgdatadir)/`echo $$p|sed '$(transform)'`"; \
 	    $(INSTALL_SCRIPT) $$p $(pkgdatadir)/`echo $$p|sed '$(transform)'`; \
 	  else if test -f $(srcdir)/$$p; then \
-	    $(INSTALL_SCRIPT) $(srcdir)/$$p \
-	      $(pkgdatadir)/`echo $$p|sed '$(transform)'`; \
+	    echo " $(INSTALL_SCRIPT) $(srcdir)/$$p $(pkgdatadir)/`echo $$p|sed '$(transform)'`"; \
+	    $(INSTALL_SCRIPT) $(srcdir)/$$p $(pkgdatadir)/`echo $$p|sed '$(transform)'`; \
 	  else :; fi; fi; \
 	done
 
@@ -146,15 +151,18 @@ uninstall-pkgdataSCRIPTS:
 	done
 
 version.texi: stamp-vti
+	cp $(srcdir)/stamp-vti $(srcdir)/version.texi
 
 stamp-vti: automake.texi $(top_srcdir)/configure.in
 	echo "@set UPDATED `cd $(srcdir) \
 	  && $(SHELL) ./mdate-sh automake.texi`" > vti.tmp
 	echo "@set EDITION $(VERSION)" >> vti.tmp
 	echo "@set VERSION $(VERSION)" >> vti.tmp
-	cmp -s vti.tmp $(srcdir)/version.texi || cp vti.tmp $(srcdir)/version.texi
-	rm vti.tmp
-	echo timestamp > $(srcdir)/stamp-vti
+	if cmp -s vti.tmp $(srcdir)/version.texi; then \
+	  rm -f vti.tmp; \
+	else \
+	  cp vti.tmp $(srcdir)/stamp-vti; \
+	fi
 
 mostlyclean-vti:
 	rm -f vti.tmp
@@ -170,6 +178,8 @@ automake.info: automake.texi version.texi
 automake.dvi: automake.texi version.texi
 
 
+DVIPS = dvips
+
 .texi.info:
 	cd $(srcdir) \
 	  && $(MAKEINFO) `echo $< | sed 's,.*/,,'`
@@ -178,27 +188,39 @@ automake.dvi: automake.texi version.texi
 	TEXINPUTS=$(srcdir):$$TEXINPUTS \
 	  MAKEINFO='$(MAKEINFO) -I $(srcdir)' $(TEXI2DVI) $<
 
+.texi:
+	cd $(srcdir) \
+	  && $(MAKEINFO) `echo $< | sed 's,.*/,,'`
+
 .texinfo.info:
+	cd $(srcdir) \
+	  && $(MAKEINFO) `echo $< | sed 's,.*/,,'`
+
+.texinfo:
 	cd $(srcdir) \
 	  && $(MAKEINFO) `echo $< | sed 's,.*/,,'`
 
 .texinfo.dvi:
 	TEXINPUTS=$(srcdir):$$TEXINPUTS $(TEXI2DVI) $<
+.dvi.ps:
+	$(DVIPS) $< -o $@
 
 install-info-am: $(INFO_DEPS)
 	$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(infodir)
-	for file in $(INFO_DEPS); do \
+	@for file in $(INFO_DEPS); do \
 	  for ifile in `cd $(srcdir) && echo $$file $$file-[0-9] $$file-[0-9][0-9]`; do \
 	    if test -f $(srcdir)/$$ifile; then \
+	      echo " $(INSTALL_DATA) $(srcdir)/$$ifile $(infodir)/$$ifile"; \
 	      $(INSTALL_DATA) $(srcdir)/$$ifile $(infodir)/$$ifile; \
 	    else : ; fi; \
 	  done; \
 	done
 	$(POST_INSTALL)
-	if $(SHELL) -c 'install-info --version' >/dev/null 2>&1; then \
+	@if $(SHELL) -c 'install-info --version' >/dev/null 2>&1; then \
 	  for file in $(INFO_DEPS); do \
-	    install-info --info-dir=$(infodir) $$file; :;\
+	    echo " install-info --info-dir=$(infodir) $(infodir)/$$file";\
+	    install-info --info-dir=$(infodir) $(infodir)/$$file; :;\
 	  done; \
 	else : ; fi
 
@@ -224,22 +246,25 @@ dist-info: $(INFO_DEPS)
 mostlyclean-info:
 	rm -f automake.aux automake.cp automake.cps automake.dvi automake.fn \
 	  automake.fns automake.ky automake.log automake.pg \
-	  automake.toc automake.tp automake.vr automake.op
+	  automake.toc automake.tp automake.tps automake.vr \
+	  automake.vrs automake.op
 
 clean-info:
 
 distclean-info:
 
 maintainer-clean-info:
-	for i in $(INFO_DEPS); do rm `eval echo $i*`; done
+	for i in $(INFO_DEPS); do rm -f `eval echo $$i*`; done
 
 install-pkgdataDATA: $(pkgdata_DATA)
 	$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(pkgdatadir)
-	list="$(pkgdata_DATA)"; for p in $$list; do \
+	@list="$(pkgdata_DATA)"; for p in $$list; do \
 	  if test -f $(srcdir)/$$p; then \
+	    echo " $(INSTALL_DATA) $(srcdir)/$$p $(pkgdatadir)/$$p"; \
 	    $(INSTALL_DATA) $(srcdir)/$$p $(pkgdatadir)/$$p; \
 	  else if test -f $$p; then \
+	    echo " $(INSTALL_DATA) $$p $(pkgdatadir)/$$p"; \
 	    $(INSTALL_DATA) $$p $(pkgdatadir)/$$p; \
 	  fi; fi; \
 	done
@@ -263,28 +288,30 @@ installdirs-recursive install-recursive uninstall-recursive  \
 check-recursive installcheck-recursive info-recursive dvi-recursive \
 mostlyclean-recursive clean-recursive distclean-recursive \
 maintainer-clean-recursive:
-	for subdir in $(SUBDIRS); do		\
+	@for subdir in $(SUBDIRS); do \
 	  target=`echo $@ | sed s/-recursive//`; \
-	  (cd $$subdir && $(MAKE) $$target)	\
+	  echo "Making $$target in $$subdir"; \
+	  (cd $$subdir && $(MAKE) $$target) \
 	   || case "$(MFLAGS)" in *k*) fail=yes;; *) exit 1;; esac; \
 	done && test -z "$$fail"
-
-tags: TAGS
-
 tags-recursive:
 	list="$(SUBDIRS)"; for subdir in $$list; do \
 	  (cd $$subdir && $(MAKE) tags); \
 	done
 
-TAGS: tags-recursive $(HEADERS) $(SOURCES) $(CONFIG_HEADER) \
-		$(TAGS_DEPENDENCIES)
+tags: TAGS
+
+ID: $(HEADERS) $(SOURCES)
+	here=`pwd` && cd $(srcdir) && mkid -f$$here/ID $(SOURCES) $(HEADERS)
+
+TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES)
 	tags=; \
 	here=`pwd`; \
-	for subdir in $(SUBDIRS); do \
+	list="$(SUBDIRS)"; for subdir in $$list; do \
 	  test -f $$subdir/TAGS && tags="$$tags -i $$here/$$subdir/TAGS"; \
 	done; \
-	test -z "$(ETAGS_ARGS)$(CONFIG_HEADER)$(SOURCES)$(HEADERS)$$tags" \
-	  || etags $(ETAGS_ARGS) $$tags $(CONFIG_HEADER) $(SOURCES) $(HEADERS)
+	test -z "$(ETAGS_ARGS)$(SOURCES)$(HEADERS)$$tags" \
+	  || cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $(SOURCES) $(HEADERS) -o $$here/TAGS
 
 mostlyclean-tags:
 
@@ -301,7 +328,7 @@ distdir = $(PACKAGE)-$(VERSION)
 # tarfile.
 distcheck: dist
 	rm -rf $(distdir)
-	$(TAR) zxf $(distdir).tar.gz
+	GZIP=$(GZIP) $(TAR) zxf $(distdir).tar.gz
 	mkdir $(distdir)/=build
 	mkdir $(distdir)/=inst
 	dc_install_base=`cd $(distdir)/=inst && pwd`; \
@@ -319,11 +346,11 @@ distcheck: dist
 	echo "========================"
 dist: distdir
 	-chmod -R a+r $(distdir)
-	$(TAR) chozf $(distdir).tar.gz $(distdir)
+	GZIP=$(GZIP) $(TAR) chozf $(distdir).tar.gz $(distdir)
 	rm -rf $(distdir)
 dist-all: distdir
 	-chmod -R a+r $(distdir)
-	$(TAR) chozf $(distdir).tar.gz $(distdir)
+	GZIP=$(GZIP) $(TAR) chozf $(distdir).tar.gz $(distdir)
 	rm -rf $(distdir)
 distdir: $(DISTFILES)
 	@if sed 15q $(srcdir)/NEWS | fgrep -e "$(VERSION)" > /dev/null; then :; else \
@@ -335,7 +362,7 @@ distdir: $(DISTFILES)
 	-chmod 755 $(distdir)
 	here=`pwd`; distdir=`cd $(distdir) && pwd` \
 	  && cd $(srcdir) \
-	  && automake --include-deps --build-dir=$$here --srcdir-name=$(srcdir) --output-dir=$$distdir --strictness=gnits
+	  && automake --include-deps --build-dir=$$here --srcdir-name=$(srcdir) --output-dir=$$distdir --gnits
 	@for file in $(DISTFILES); do \
 	  d=$(srcdir); \
 	  test -f $(distdir)/$$file \
@@ -400,23 +427,23 @@ maintainer-clean-generic:
 mostlyclean-am:  mostlyclean-vti mostlyclean-info mostlyclean-tags \
 		mostlyclean-generic
 
-clean-am:  clean-vti clean-info clean-tags clean-generic mostlyclean-am 
+clean-am:  clean-vti clean-info clean-tags clean-generic mostlyclean-am
 
 distclean-am:  distclean-vti distclean-info distclean-tags \
-		distclean-generic clean-am 
+		distclean-generic clean-am
 
 maintainer-clean-am:  maintainer-clean-vti maintainer-clean-info \
 		maintainer-clean-tags maintainer-clean-generic \
-		distclean-am 
+		distclean-am
 
-mostlyclean:  mostlyclean-am mostlyclean-recursive
+mostlyclean:  mostlyclean-recursive mostlyclean-am
 
-clean:  clean-am clean-recursive
+clean:  clean-recursive clean-am
 
-distclean:  distclean-am distclean-recursive
+distclean:  distclean-recursive distclean-am
 	rm -f config.status
 
-maintainer-clean:  maintainer-clean-am maintainer-clean-recursive
+maintainer-clean:  maintainer-clean-recursive maintainer-clean-am
 	@echo "This command is intended for maintainers to use;"
 	@echo "it deletes files that may require special tools to rebuild."
 	rm -f config.status
@@ -431,7 +458,7 @@ uninstall-exec-recursive installdirs-recursive uninstalldirs-recursive \
 all-recursive check-recursive installcheck-recursive info-recursive \
 dvi-recursive mostlyclean-recursive distclean-recursive clean-recursive \
 maintainer-clean-recursive tags tags-recursive mostlyclean-tags \
-distclean-tags clean-tags maintainer-clean-tags distdir info dvi check \
+distclean-tags clean-tags maintainer-clean-tags distdir info dvi \
 installcheck-local installcheck all-am install-exec-am install-data-am \
 uninstall-am install-exec install-data install uninstall all \
 installdirs mostlyclean-generic distclean-generic clean-generic \
@@ -499,8 +526,6 @@ path-check: distdir
 	  status=$$?; \
 	  rm -rf $(distdir); \
 	  exit $$status
-.SUFFIXES:
-.SUFFIXES: .texi .texinfo .info .dvi
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
