@@ -1,3 +1,10 @@
+Top priorities:
+* Handle version.texi automatically
+* Fix up 'clean' rules
+* Make sure auto-deANSIfication works
+
+Rename --included-deps to --insert-deps?
+
 Fix up how 'clean' targets are handled (they should be handled like
 install, etc)
 
@@ -21,9 +28,6 @@ Allow ".h" files to appear in blah_SOURCES; just write them out of
 existence.  [ This is nixed for now because of the auto-dependency
 tracking stuff ]
 
-separate install-data and install-exec.  "install" doesn't need to be
-"::" rule any more
-
 should have "all:: info" in texinfos.am?
 
 automake.in: should ".cc" really -> ".${kr}o"?  This doesn't really
@@ -32,10 +36,6 @@ check
 
 automake.in should disallow setting of LC_ALL and LANG variables by
 Makefile.am.
-
-must write rules to handle data files.  They should be installed in
-$(datadir)/$(PACKAGE).  What to do if file in list is actually a
-directory?
 
 consider auto-including any file that matches "*.in".
 
@@ -46,19 +46,7 @@ clean.am: clean: if all the macros are empty, the rule expands to:
 	rm -rf
 which should be fixed
 
-Consider automating stamp-vti stuff.  What does GNITS say about this?
-What about this case: multiple .texi files (and thus multiple
-version.texi's), and a filesystem with short names?  What to do?
-
-Consider rewriting recursive rules to use static value of SUBDIRS:
-	SUBDIRS = x y z
-	all:: all-x all-y all-z
-	all-x: deps
-		(cd x; $(MAKE) all)
-Not sure if this is a win or not.  But it allows "make -k" to work
-without hackery.
-
-Internationalize.
+Internationalize. [ gettext doesn't have the necessary machinery yet ]
 
 ================================================================
 
@@ -155,23 +143,3 @@ It is assumed that your configure script defines VERSION and PACKAGE.
 These variables are used when making the distribution.  The
 distribution file will be a gzip'd tar file named
 PACKAGE-VERSION.tar.gz.
-
-================================================================
-
-Automatic dependency generation:
-
-* If a special flag is given to automake, and SOURCES exists, include
-  some auto-dep generating code.  This code can depend on gcc and GNU
-  make.  (Use gcc's -MMD or -MM option).  (--use-deps)
-
-* When making distribution, first ensure all dependency files are up
-  to date.  Then re-run automake, with flag to include deps in
-  generated Makefile.in (--include-deps)
-
-Maybe it would be nice to support dependency computation with tools
-other than gcc.
-
-Maybe make --use-deps the default, and have --included-deps suppress
-it?
-
-Rename --included-deps to --insert-deps?
