@@ -26,12 +26,30 @@
 ##   -MM, not -M (despite what the docs say).
 ## - Using -M directly means running the compiler twice (even worse
 ##   than renaming).
-	$(@PFX@COMPILE) -Wp,-MD,.deps/$(*F).P -c $<
+	$(@PFX@COMPILE) -Wp,-MD,.deps/$(*F).p -c $<
+## This next piece of magic avoids the `deleted header file' problem.
+## The problem is that when a header file which appears in a .P file
+## is deleted, the dependency causes make to die (because there is
+## typically no way to rebuild the header).  We avoid this by adding
+## dummy dependencies for each header file.  Too bad gcc doesn't do
+## this for us directly.
+	@-tr '\\ ' '\n\n' < .deps/$(*F).p \
+## The very first nondeleted line is always the primary source file.
+## No need for that, so we remove it too via `1d'.
+	  | sed -e '/^$$/ d' -e '/:$$/ d' -e 1d -e 's/$$/:/' > .deps/$(*F).P; \
+	rm .deps/$(*F).p
 
 %.lo: %@EXT@
 	@echo '$(LT@PFX@COMPILE) -c $<'; \
 ## See above to understand implementation weirdness.
 	$(LT@PFX@COMPILE) -Wp,-MD,.deps/$(*F).p -c $<
 	@-sed -e 's/^\([^:]*\)\.o:/\1.lo \1.o:/' \
-	  < .deps/$(*F).p > .deps/$(*F).P
-	@-rm -f .deps/$(*F).p
+	  < .deps/$(*F).p > .deps/$(*F).P; \
+## See above to understand deleted header file trick.
+	tr '\\ ' '\n\n' < .deps/$(*F).p \
+## The very first nondeleted line is always the primary source file.
+## No need for that, so we remove it too via `1d'.
+	  | sed -e '/^$$/ d' -e '/:$$/ d' -e 1d -e 's/$$/:/' \
+## Note subtle difference: here we append to the .P file.
+	    >> .deps/$(*F).P; \
+	rm -f .deps/$(*F).p
