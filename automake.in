@@ -643,9 +643,18 @@ sub get_object_extension
 	    # Make sure ansi2knr can be found: if no path specified,
 	    # specify "./".
 	    local ($apath) = $options{'ansi2knr'};
-	    $apath = './' . $apath
-		unless $apath =~ /\//;
-	    &define_variable ("ANSI2KNR", $apath);
+	    if ($apath =~ /\//)
+	    {
+		# Found in another directory.
+		&define_variable ("ANSI2KNR", $apath);
+	    }
+	    else
+	    {
+		# Substitution from AM_C_PROTOTYPES.  This makes it be
+		# built only when necessary.
+		&define_configure_variable ('ANSI2KNR');
+		push (@all, '$(ANSI2KNR)');
+	    }
 
 	    $output_rules .= &file_contents ('compile-kr');
 	    $output_rules .= &file_contents ('clean-kr');
