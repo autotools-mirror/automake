@@ -9,13 +9,13 @@ SUBDIRS = tests m4
 bin_SCRIPTS = automake aclocal
 info_TEXINFOS = automake.texi
 
-pkgdata_DATA = clean-kr.am clean.am compile-kr.am compile-vars.am \
+pkgdata_DATA = clean-kr.am clean.am compile-kr.am comp-vars.am \
 compile.am data.am dejagnu.am depend.am depend2.am dist-vars.am footer.am \
-header.am header-vars.am kr-extra.am libraries.am library.am \
-mans-vars.am program.am programs.am remake-hdr.am remake-subd.am \
+header.am header-vars.am kr-extra.am libs.am library.am \
+mans-vars.am program.am progs.am remake-hdr.am remake-subd.am \
 remake.am scripts.am subdirs.am tags.am tags-subd.am tags-clean.am \
-texi-version.am texinfos-vars.am texinfos.am libraries-clean.am \
-programs-clean.am data-clean.am COPYING INSTALL texinfo.tex ansi2knr.c \
+texi-vers.am texi-vars.am texinfos.am libs-clean.am \
+progs-clean.am data-clean.am COPYING INSTALL texinfo.tex ansi2knr.c \
 ansi2knr.1 aclocal.m4 lisp.am lisp-clean.am
 
 ## These must all be executable when installed.

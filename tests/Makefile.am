@@ -9,13 +9,13 @@ canon.test installsh.test empty.test rulepat.test insh.test canon2.test \
 target.test extra.test noinst.test instman.test mkinstall.test auxdir.test \
 canon3.test mdate2.test subdir.test backsl.test package.test number.test \
 insh2.test outdir.test fpinstall.test fpinst2.test texinfo.test dejagnu.test \
-yacc.test mkinstall2.test texinfo2.test ansi.test depacl.test depacl2.test \
+yacc.test mkinst2.test texinfo2.test ansi.test depacl.test depacl2.test \
 error.test colon.test vtexi2.test tags.test comment.test libfiles.test \
 man.test info.test obsolete.test lex.test scripts.test subdir2.test \
 exsource.test canon4.test dup.test defun.test cxxlink.test cxxnoc.test \
 order.test libobj2.test interp.test alllib.test block.test libobj3.test \
 gnits.test interp2.test colneq.test implicit.test spell.test spell2.test \
 confsub.test primary.test primary2.test depend2.test spell3.test \
-comment2.test vpath.test
+comment2.test vpath.test symlink.test discover.test
 
 EXTRA_DIST = defs $(TESTS)

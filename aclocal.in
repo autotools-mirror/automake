@@ -51,6 +51,12 @@ $output_file = 'aclocal.m4';
 # Which files have been seen.
 %file_seen = ();
 
+# Map macro names to file names.
+%map = ();
+
+# Map file names to file contents.
+%file_contents = ();
+
 # How much to say.
 $verbosity = 0;
 
@@ -79,14 +85,22 @@ $verbosity = 0;
 
 $obsolete_rx = '(' . join ('|', @obsolete_macros) . ')';
 
+# Matches a macro definition.
+$ac_defun_rx = "AC_DEFUN\\(\\[?([^],)\n]+)\\]?";
+
+# Matches an AC_REQUIRE line.
+$ac_require_rx = "AC_REQUIRE\\(\\[?([^])]*)\\]?\\)";
+
 
 
 &parse_arguments (@ARGV);
+&scan_m4_files ($acdir);
 &scan_configure;
 if (! $exit_status)
 {
     &write_aclocal;
 }
+&check_acinclude;
 
 exit $exit_status;
 
@@ -145,7 +159,7 @@ sub parse_arguments
 	}
 	else
 	{
-	    &usage (1);
+	    die "aclocal: unrecognized option -- \`$arglist[0]'\n";
 	}
 
 	shift (@arglist);
@@ -156,33 +170,18 @@ sub parse_arguments
 
 sub scan_configure
 {
-    # First, construct list of regexps to match the things we actually
-    # have.
-    opendir (DIR, $acdir)
-	|| die "aclocal: couldn't open directory \`$acdir': $!\n";
-    local ($search, $elt);
-    foreach (sort grep (! /^\./, readdir (DIR)))
-    {
-	# Only examine .m4 files.
-	next unless s/\.m4$//;
-
-	# Skip some files when running out of srcdir.  Eg "aclocal.m4"
-	# must be skipped.
-	next unless /^[A-Za-z]+_[A-Z_]+$/;
-
-	print STDERR "Finding $_\n" if $verbosity;
-	($elt = $_) =~ s/(\W)/\\$1/g;
-	$search .= "&add_file (\"$elt\") if /$elt/;\n";
-    }
-    closedir (DIR);
-
-    # Construct a new function that does the searching.  We use a
-    # function (instead of just evalling $search in the loop) so that
-    # "die" is correctly and easily propagated if run.
-    eval 'sub search { ' . $search . '};';
-
     open (CONFIGURE, "configure.in")
 	|| die "aclocal: couldn't open \`configure.in': $!\n";
+
+    # Add acinclude.m4 first.  That way it can override installed
+    # macros.
+    if (-f 'acinclude.m4')
+    {
+	# Do it this way so that any AC_REQUIRE in acinclude.m4 will
+	# take effect.
+	&scan_file ('acinclude.m4');
+	&add_file ('acinclude.m4');
+    }
 
     while (<CONFIGURE>)
     {
@@ -204,72 +203,140 @@ sub scan_configure
     }
 
     close (CONFIGURE);
+}
 
-    # Include this file if it exists
-    if (-f 'acinclude.m4')
+################################################################
+
+# Check macros in acinclude.m4.  If one is not used, warn.
+sub check_acinclude
+{
+    local ($key);
+
+    foreach $key (keys %map)
     {
-	&add_file ('acinclude.m4');
+	next unless $map{$key} eq 'acinclude.m4';
+	if (! $macro_seen{$key})
+	{
+	    warn "aclocal: macro \`$key' defined in acinclude.m4 but never used\n";
+	}
     }
 }
 
 ################################################################
 
+# Scan all the installed m4 files and construct a map.
+sub scan_m4_files
+{
+    local ($m4dir) = @_;
+
+    opendir (DIR, $m4dir)
+	|| die "aclocal: couldn't open directory \`$m4dir': $!\n";
+    local ($file, $fullfile, $expr);
+    foreach $file (sort grep (! /^\./, readdir (DIR)))
+    {
+	# Only examine .m4 files.
+	next unless $file =~ /\.m4$/;
+
+	# Skip some files when running out of srcdir.
+	next if $file eq 'aclocal.m4';
+
+	$fullfile = $m4dir . '/' . $file;
+	$file_contents{$fullfile} = &scan_file ($fullfile);
+    }
+    closedir (DIR);
+
+    # Construct a new function that does the searching.  We use a
+    # function (instead of just evalling $search in the loop) so that
+    # "die" is correctly and easily propagated if run.
+    local ($search, $expr, $key);
+    foreach $key (keys %map)
+    {
+	# acinclude.m4 doesn't matter for the search, since it is
+	# unconditionally included.
+	next if $map{$key} eq 'acinclude.m4';
+
+	# EXPR is a regexp matching the name of the macro.
+	($expr = $key) =~ s/(\W)/\\$1/g;
+	$search .= "&add_macro ('" . $key . "') if /" . $expr . "/;\n";
+    }
+    eval 'sub search { ' . $search . '};';
+    die "internal error: $@\n search is $search " if $@;
+}
+
+################################################################
+
+# Add a macro to the output.
+sub add_macro
+{
+    local ($macro) = @_;
+
+    # Ignore AC_ macros.
+    return if $macro =~ /^AC_/;
+
+    if (! defined $map{$macro})
+    {
+	warn "aclocal: macro \`$macro' required but not defined\n";
+	$exit_status = 1;
+	return;
+    }
+
+    $macro_seen{$macro} = 1;
+    &add_file ($map{$macro});
+}
+
 # Add a file to output.
 sub add_file
 {
     local ($file) = @_;
-    local ($fullfile) = $file;
 
+    # Only add a file once.
     return if ($file_seen{$file});
     $file_seen{$file} = 1;
 
-    if (! -f $file)
+    $output .= $file_contents{$file} . "\n";
+    local (@rlist);
+    while ($file_contents{$file} =~ /$ac_require_rx/g)
     {
-	$fullfile = $acdir . '/' . $file . '.m4';
-	if (! -f $fullfile)
-	{
-	    # Maybe the file is an Autoconf built-in.  Check the only
-	    # way we know how.  Suggestions on how to make this better
-	    # are welcome.  FIXME should give file and line number of
-	    # enclosing file.
-	    return if $file =~ /^AC_[A-Z_]+$/;
-	    die "aclocal: file \`$file' not found\n";
-	}
+	print "pushing $1\n";
+	push (@rlist, $1);
     }
 
-    open (FILE, $fullfile)
-	|| die "aclocal: couldn't open \`$fullfile': $!\n";
+    local ($macro);
+    foreach $macro (@rlist)
+    {
+	&add_macro ($macro);
+    }
+}
 
-    local (@rlist);
+# Scan a single M4 file.  Return contents.
+sub scan_file
+{
+    local ($file) = @_;
+
+    open (FILE, $file)
+	|| die "aclocal: couldn't open \`$file': $!\n";
+    local ($contents) = '';
     while (<FILE>)
     {
-	$output .= $_;
+	# Ignore `##' lines.
+	next if /^##/;
 
-	# See if we're defining a macro that was already seen.  This
-	# is mostly a special case for `acinclude.m4'.
-	if (/AC_DEFUN\(\[?([^])\n]+)\]?/)
-        {
-	    if ($1 ne $file && $file_seen{$1})
+	$contents .= $_;
+
+	if (/$ac_defun_rx/)
+	{
+	    if (defined $map{$1})
 	    {
-		warn "aclocal: $fullfile: $.: duplicated macro \`$1'\n";
+		warn "aclocal: $file: $.: duplicated macro \`$1'\n";
 		$exit_status = 1;
 	    }
-	    $macro_seen{$1} = 1;
-	}
-
-	# See if some other macro is required.
-	if (/AC_REQUIRE\(\[?([^])]*)\]?\)/)
-	{
-	    push (@rlist, $1) unless defined $macro_seen{$1};
+	    print STDERR "Found macro $1 in $file\n" if $verbosity;
+	    $map{$1} = $file;
 	}
     }
-    $output .= "\n";
     close (FILE);
 
-    foreach $file (@rlist)
-    {
-	&add_file ($file);
-    }
+    return $contents;
 }
 
 ################################################################
@@ -277,7 +344,7 @@ sub add_file
 # Write output.
 sub write_aclocal
 {
-    return if ! $output;
+    return if ! length ($output);
 
     print STDERR "Writing aclocal.m4\n" if $verbosity;
 

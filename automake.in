@@ -445,6 +445,12 @@ sub generate_makefile
     # This must be run after all the sources are scanned.
     &handle_yacc_lex_cxx;
 
+    # This is here for lack of a better place to put it.
+    if (&variable_defined ('BUILT_SOURCES'))
+    {
+	push (@all, '$(BUILT_SOURCES)');
+    }
+
     # Re-init SOURCES and OBJECTS.  FIXME: other code shouldn't depend
     # on this (but currently does).
     $contents{'SOURCES'} = join (' ', @sources);
@@ -581,7 +587,7 @@ sub get_object_extension
 	}
 	$xform = 's/\@CONFIG_INCLUDE_SPEC\@/' . $xform . '/go';
 	$output_vars .= &file_contents_with_transform ($xform,
-						       'compile-vars');
+						       'comp-vars');
 	$output_rules .= &file_contents ('compile');
 	&push_phony_cleaners ('compile');
 
@@ -662,7 +668,7 @@ sub handle_yacc_lex_cxx
 	$output_rules .= ".y.c:\n\t";
 	if ($yacc_count > 1)
 	{
-	    $output_rules .= '$(INTERLOCK) =yacclockdir $(YLWRAP) y.tab.c $@ $(YACC) $(YFLAGS) $<';
+	    $output_rules .= '$(INTERLOCK) =yacclockdir $(YLWRAP) "$(YACC)" y.tab.c $*.c y.tab.h $*.h -- $(YFLAGS) $<';
 	}
 	else
 	{
@@ -685,7 +691,7 @@ sub handle_yacc_lex_cxx
 	$output_rules .= ".l.c:\n\t";
 	if ($lex_count > 1)
 	{
-	    $output_rules .= '$(INTERLOCK) =lexlockdir $(YLWRAP) $(LEX_OUTPUT_ROOT).c $@ $(LEX) $(LFLAGS) $<';
+	    $output_rules .= '$(INTERLOCK) =lexlockdir $(YLWRAP) "$(LEX)" $(LEX_OUTPUT_ROOT).c $@ -- $(LFLAGS) $<';
 	}
 	else
 	{
@@ -810,6 +816,17 @@ sub handle_source_transform
 	    local (@result) = ();
 	    foreach (@files)
 	    {
+		# If an automatically-discovered source file is
+		# mentioned, that is an error.
+		if (defined $libsources{$_})
+		{
+		    # FIXME: saving $_ is stupid.
+		    local ($save) = $_;
+		    &am_line_error ($prefix . $one_file . '_SOURCES',
+				    "automatically discovered file \`$_' should not be explicitly mentioned");
+		    $_ = $save;
+		}
+
 		# Skip header files, including C++-ish ones.  The list
 		# of C++ header extensions comes from Emacs 19.32
 		# etags.
@@ -959,7 +976,7 @@ sub handle_lib_objects
 sub handle_programs
 {
     local (@proglist) = &am_install_var ('-clean',
-					 'programs', 'PROGRAMS',
+					 'progs', 'PROGRAMS',
 					 'bin', 'sbin', 'libexec', 'pkglib',
 					 'noinst', 'check');
     return if ! @proglist;
@@ -1033,7 +1050,7 @@ sub handle_programs
 sub handle_libraries
 {
     local (@liblist) = &am_install_var ('-no-all', '-clean',
-					'libraries', 'LIBRARIES',
+					'libs', 'LIBRARIES',
 					'lib', 'pkglib', 'noinst', 'check');
     return if ! @liblist;
 
@@ -1275,7 +1292,7 @@ sub handle_texinfo
 		     . 's/\@VTI\@/' . $vti . '/g; '
 		     . 's/\@VTEXI\@/' . $vtexi . '/g;'
 		     . 's,\@MDDIR\@,' . $conf_pat . ',g;',
-		     'texi-version');
+		     'texi-vers');
 
 	    &push_phony_cleaners ($vti);
 	}
@@ -1318,7 +1335,7 @@ sub handle_texinfo
     }
 
     # Some boilerplate.
-    $output_vars .= &file_contents ('texinfos-vars');
+    $output_vars .= &file_contents ('texi-vars');
     $output_rules .= &file_contents ('texinfos');
     push (@phony, 'install-info', 'uninstall-info');
 
@@ -2217,14 +2234,6 @@ sub handle_merge_targets
 
     &do_one_merge_target ('info', @info);
     &do_one_merge_target ('dvi', @dvi);
-
-    if (! &variable_defined ('SUBDIRS') || $relative_dir ne '.')
-    {
-	# 'check' must depend on 'all', but not at top level.
-	# Ditto install.
-	unshift (@check, 'all');
-	unshift (@install, 'all');
-    }
     &do_one_merge_target ('check', @check);
     &do_one_merge_target ('installcheck', @installcheck);
 
@@ -2410,12 +2419,27 @@ sub do_one_merge_target
 	push (@phony, $name . '-local');
     }
 
-    $output_rules .= $name . ":";
-    if (@values)
+    local ($done) = 0;
+    if ($name eq 'check')
     {
-	$output_rules .= ' ' . join (' ', @values);
+	if (! &variable_defined ('SUBDIRS'))
+	{
+	    # 'check' must depend on 'all', but not when doing
+	    # recursive build.
+	    unshift (@values, 'all');
+	}
+	else
+	{
+	    # When subdirs are used, do the `all' build and then do
+	    # all the recursive stuff.
+	    $output_rules .= "check: all\n";
+	    &pretty_print_rule ("\t\$(MAKE)", "\t  ", @values);
+	    $done = 1;
+	}
     }
-    $output_rules .= "\n\n";
+
+    &pretty_print_rule ($name . ":", "\t\t", @values)
+	unless $done;
     push (@phony, $name);
 }
 
@@ -2691,6 +2715,20 @@ sub scan_configure
 	    $libsources{'rx.h'} = 1;
 	    $libsources{'regex.c'} = 1;
 	    $libsources{'regex.h'} = 1;
+	}
+	elsif (/AM_FUNC_MKTIME/)
+	{
+	    $libsources{'mktime.c'} = 1;
+	}
+	elsif (/AM_FUNC_ERROR_AT_LINE/)
+	{
+	    $libsources{'error.c'} = 1;
+	    $libsources{'error.h'} = 1;
+	}
+	elsif (/AM_FUNC_OBSTACK/)
+	{
+	    $libsources{'obstack.c'} = 1;
+	    $libsources{'obstack.h'} = 1;
 	}
 	elsif (/LIBOBJS="(.*)\s+\$LIBOBJS"/
 	       || /LIBOBJS="\$LIBOBJS\s+(.*)"/)
@@ -3810,51 +3848,49 @@ sub require_file_internal
 	{
 	    if ($strictness >= $mystrict)
 	    {
+		local ($trailer) = '';
+		local ($suppress) = 0;
+
 		# Only install missing files according to our desired
 		# strictness level.
 		if ($add_missing && -f ($am_dir . '/' . $file))
 		{
+		    $trailer = "; installing";
+		    $suppress = 1;
 		    # Install the missing file.  Symlink if we can, copy
 		    # if we must.
 		    if ($symlink_exists)
 		    {
-			symlink ($am_dir . '/' . $file, $errfile);
+			if (! symlink ($am_dir . '/' . $file, $errfile))
+			{
+			    $suppress = 0;
+			    $trailer .= "; error while making link: $!\n";
+			}
 		    }
 		    else
 		    {
-			system ('cp', $am_dir . '/' . $file, $errfile);
+			if (! system ('cp', $am_dir . '/' . $file, $errfile))
+			{
+			    $suppress = 0;
+			    $trailer .= "\n    error while making link: $!\n";
+			}
 		    }
+		}
 
-		    # FIXME: this is a hack.  Should have am_warn.
-		    local ($save) = $exit_status;
-		    if ($is_configure)
-		    {
-			&am_conf_line_error
-			    ($line,
-			     "required file \"$errfile\" not found; installing");
-		    }
-		    else
-		    {
-			&am_line_error
-			    ($line,
-			     "required file \"$errfile\" not found; installing");
-		    }
-		    $exit_status = $save;
+		local ($save) = $exit_status;
+		if ($is_configure)
+		{
+		    &am_conf_line_error
+			($line,
+			 "required file \"$errfile\" not found$trailer");
 		}
 		else
 		{
-		    # Only an error if strictness constraint violated.
-		    if ($is_configure)
-		    {
-			&am_conf_line_error
-			    ($line, "required file \"$errfile\" not found");
-		    }
-		    else
-		    {
-			&am_line_error
-			    ($line, "required file \"$errfile\" not found");
-		    }
+		    &am_line_error
+			($line,
+			 "required file \"$errfile\" not found$trailer");
 		}
+		$exit_status = $save if $suppress;
 	    }
 	}
     }
@@ -3885,7 +3921,7 @@ sub require_file
 sub require_config_file
 {
     @require_file_paths = @config_aux_path;
-    &require_file_internal (0, '', @_);
+    &require_file_internal (1, '', @_);
     local ($dir) = $require_file_paths[0];
     @config_aux_path = @require_file_paths;
     if ($dir eq '.')

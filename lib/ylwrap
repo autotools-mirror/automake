@@ -16,25 +16,47 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
+# Usage:
+#     ylwrap PROG [OUTPUT DESIRED]... -- [ARGS]...
+# * PROG is program to run.
+# * OUTPUT is file PROG generates
+# * DESIRED is file we actually want
+# * ARGS are passed to PROG
+# Any number of OUTPUT,DESIRED pairs may be used.
+
 # The program to run.
 prog="$1"
-
-# The output file the program generates, eg `y.tab.c'.
-progoutput="$2"
-
-# The output file we actually want.
-realoutput="$3"
-
-# Strip arguments we've used; remaining arguments go to PROG.
 shift
-shift
-shift
+
+pairlist=
+while test "$#" -ne 0; do
+   if test "$1" = "--"; then
+      break
+   fi
+   pairlist="$pairlist $1"
+   shift
+done
 
 $prog ${1+"$@"} || exit $?
 
-if test -f "$progoutput"; then
-   mv "$progoutput" "$realoutput" || exit $?
-else
-   exit 1
-fi
-exit 0
+set X $pairlist
+shift
+status=0
+first=yes
+while "$#" -ne 0; do
+   if test -f "$1"; then
+      mv "$1" "$2" || status=$?
+   else
+      # A missing file is only an error for the first file.  This is a
+      # blatant hack to let us support using "yacc -d".  If -d is not
+      # specified, we don't want an error when the header file is
+      # "missing".
+      if test $first = yes; then
+	 status=1
+      fi
+   fi
+   shift
+   shift
+   first=no
+done
+exit $status
