@@ -889,8 +889,11 @@ sub handle_yacc_lex_cxx
 
 	    # If the files are built in the build directory, then we
 	    # want to remove them with `make clean'.  If they are in
-	    # srcdir they shouldn't be touched.
-	    push (@clean, $base . $hname, $base . $cname);
+	    # srcdir they shouldn't be touched.  However, we can't
+	    # determine this statically, and the GNU rules say that
+	    # yacc/lex output files should be removed by
+	    # maintainer-clean.  So that's what we do.
+	    push (@maintainer_clean_files, $base . $hname, $base . $cname);
 	}
 	$output_rules .= "\n";
 
@@ -917,10 +920,13 @@ sub handle_yacc_lex_cxx
 
 	    # If the files are built in the build directory, then we
 	    # want to remove them with `make clean'.  If they are in
-	    # srcdir they shouldn't be touched.
+	    # srcdir they shouldn't be touched.  However, we can't
+	    # determine this statically, and the GNU rules say that
+	    # yacc/lex output files should be removed by
+	    # maintainer-clean.  So that's what we do.
 	    $file =~ /^(.*)\.(l|ll|l\+\+|lxx)$/;
 	    ($cname = $2) =~ tr/y/c/;
-	    push (@clean, $1 . $cname);
+	    push (@maintainer_clean_files, $1 . $cname);
 	}
 
 	if (! defined $configure_vars{'LEX'})
@@ -3677,8 +3683,46 @@ sub do_check_merge_target
 # Handle all 'clean' targets.
 sub handle_clean
 {
+    local ($xform) = '';
+    local ($name);
+
+    # Don't include `MAINTAINER'; it is handled specially below.
+    foreach $name ('MOSTLY', '', 'DIST')
+    {
+	if (! &variable_defined ($name . 'CLEANFILES'))
+	{
+	    $xform .= 's/^' . $name . 'CLEAN.*$//;';
+	}
+	else
+	{
+	    $xform .= 's/^' . $name . 'CLEAN//;';
+	}
+    }
+
+    # Built sources are automatically removed by maintainer-clean.
+    push (@maintainer_clean_files, '$(BUILT_SOURCES')
+	if &variable_defined ('BUILT_SOURCES');
+    push (@maintainer_clean_files, '$(MAINTAINERCLEANFILES)')
+	if &variable_defined ('MAINTAINERCLEANFILES');
+    if (! @maintainer_clean_files)
+    {
+	$xform .= 's/^MAINTAINERCLEAN.*$//;';
+    }
+    else
+    {
+	$xform .= ('s/^MAINTAINERCLEAN//;'
+		   # Join with no space to avoid spurious `test -z'
+		   # success at runtime.
+		   . 's,\@MCFILES\@,' . join ('', @maintainer_clean_files)
+		   . ',;'
+		   # A space is required in the join here.
+		   . 's,\@MFILES\@,' . join (' ', @maintainer_clean_files)
+		   . ',;');
+    }
+
+    $output_rules .= &file_contents_with_transform ($xform, 'clean');
+
     push (@clean, 'generic');
-    $output_rules .= &file_contents ('clean');
     &push_phony_cleaners ('generic');
 
     local ($target) = $recursive_install ? 'clean-am' : 'clean';
@@ -5568,6 +5612,9 @@ sub initialize_per_input
     @clean = ();
 
     @phony = ();
+
+    # A list of files deleted by `maintainer-clean'.
+    @maintainer_clean_files = ();
 
     # These are pretty obvious, too.  They are used to define the
     # SOURCES and OBJECTS variables.
