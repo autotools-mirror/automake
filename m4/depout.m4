@@ -13,19 +13,20 @@ find . -name Makefile -print | while read mf; do
   # Extract the definition of DEP_FILES from the Makefile without
   # running `make'.
   DEPDIR=`sed -n -e '/^DEPDIR = / s///p' $mf`
+  # We invoke sed twice because it is the simplest approach to
+  # changing $(DEPDIR) to its actual value in the expansion.
   deps="`sed -n -e '
     /^DEP_FILES = .*\\\\$/ {
       s/^DEP_FILES = //
       :loop
-        s/\$(DEPDIR)/'"$DEPDIR"'/g
 	s/\\\\$//
 	p
 	n
-        s/\$(DEPDIR)/'"$DEPDIR"'/g
 	/\\\\$/ b loop
       p
     }
-    /^DEP_FILES = / s/^DEP_FILES = //p' $mf`"
+    /^DEP_FILES = / s/^DEP_FILES = //p' $mf | \
+       sed -e 's/\$(DEPDIR)/'"$DEPDIR"'/g'`"
   # If we found a definition, proceed to create all the files.
   if test -n "$deps"; then
     dirpart="`echo $mf | sed -e 's|/[^/]*$||'`"
