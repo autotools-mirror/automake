@@ -1309,10 +1309,11 @@ sub handle_libraries
     &define_configure_variable ('RANLIB');
 }
 
-# See if any _SOURCES variable were misspelled.
+# See if any _SOURCES variable were misspelled.  Also, make sure that
+# EXTRA_ variables don't contain configure substitutions.
 sub check_typos
 {
-    local ($varname, $primary);
+    local ($varname, $primary, $ckey);
     foreach $varname (keys %contents)
     {
 	foreach $primary ('_SOURCES', '_LIBADD', '_LDADD', '_DEPENDENCIES')
@@ -1321,6 +1322,18 @@ sub check_typos
 	    {
 		&am_line_error ($varname,
 				"invalid unused variable name: \`$varname'");
+	    }
+	}
+
+	if ($varname =~ /^EXTRA_/)
+	{
+	    foreach $ckey (&variable_value_as_list ($varname))
+	    {
+		if ($ckey =~ /^\@.*\@$/)
+		{
+		    &am_line_error ($varname, "variable \`$varname' must not contain configure substitution");
+		    last;
+		}
 	    }
 	}
     }
@@ -1633,34 +1646,43 @@ sub handle_data
 # Handle TAGS.
 sub handle_tags
 {
-    local ($tagging) = 0;
-
     push (@phony, 'tags');
+    local (@tag_deps) = ();
     if (&variable_defined ('SUBDIRS'))
     {
-	$output_rules .= &file_contents ('tags');
+	$output_rules .= ("tags-recursive:\n"
+			  . "\tlist=\"\$(SUBDIRS)\"; for subdir in \$\$list; do \\\n"
+			  # Never fail here if a subdir fails; it
+			  # isn't important.
+			  . "\t  (cd \$\$subdir && \$(MAKE) tags); \\\n"
+			  . "\tdone\n");
+	push (@tag_deps, 'tags-recursive');
 	push (@phony, 'tags-recursive');
-	$tagging = 1;
     }
-    elsif ($dir_holds_sources
-	   || $dir_holds_headers
-	   || &variable_defined ('ETAGS_ARGS'))
+
+    if ($dir_holds_sources
+	|| $dir_holds_headers
+	|| &variable_defined ('ETAGS_ARGS'))
     {
-	$output_rules .= &file_contents ('tags-subd');
-	$tagging = 1;
+	local ($xform) = '';
+	if ($config_header && $relative_dir eq &dirname ($config_header))
+	{
+	    # The config header is in this directory.  So require it.
+	    ($xform = &basename ($config_header)) =~ s/(\W)/\\\1/g;
+	}
+	$xform = ('s/\@CONFIG\@/' . $xform . '/;'
+		  . 's/\@DIRS\@/' . join (' ', @tag_deps) . '/');
+
+	$output_rules .= &file_contents_with_transform ($xform, 'tags');
+	$output_rules .= &file_contents ('tags-clean');
+	push (@clean, 'tags');
+	&push_phony_cleaners ('tags');
+	&examine_variable ('TAGS_DEPENDENCIES');
     }
     elsif (&variable_defined ('TAGS_DEPENDENCIES'))
     {
 	&am_line_error ('TAGS_DEPENDENCIES',
 			"doesn't make sense to define \`TAGS_DEPENDENCIES' without sources or \`ETAGS_ARGS'");
-    }
-
-    if ($tagging)
-    {
-	$output_rules .= &file_contents ('tags-clean');
-	push (@clean, 'tags');
-	&push_phony_cleaners ('tags');
-	&examine_variable ('TAGS_DEPENDENCIES');
     }
     else
     {
@@ -1732,10 +1754,6 @@ sub handle_dist_worker
 	    push (@dist_dirs, $_)
 		unless $_ eq '.';
 	}
-    }
-    if (&variable_defined ('EXTRA_DIST_DIRS'))
-    {
-	push (@dist_dirs, &variable_value_as_list ('EXTRA_DIST_DIRS'));
     }
     if (@dist_dirs)
     {

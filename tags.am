@@ -17,19 +17,17 @@
 ## 02111-1307, USA.
 tags: TAGS
 
-tags-recursive:
-	list="$(SUBDIRS)"; for subdir in $$list; do \
-## Never fail here if a subdir fails.
-	  (cd $$subdir && $(MAKE) tags); \
-	done
+ID: $(HEADERS) $(SOURCES)
+	here=`pwd` && cd $(srcdir) && mkid -f$$here/ID $(SOURCES) $(HEADERS)
 
-TAGS: tags-recursive $(HEADERS) $(SOURCES) $(CONFIG_HEADER) \
-		$(TAGS_DEPENDENCIES)
+TAGS: @DIRS@ $(HEADERS) $(SOURCES) @CONFIG@ $(TAGS_DEPENDENCIES)
 	tags=; \
 	here=`pwd`; \
-	for subdir in $(SUBDIRS); do \
+## It is ok to examine SUBDIRS here in every case; if it is empty,
+## there is a slight performance hit.  But we don't care.
+	list="$(SUBDIRS)"; for subdir in $$list; do \
 	  test -f $$subdir/TAGS && tags="$$tags -i $$here/$$subdir/TAGS"; \
 	done; \
 ## Make sure we have something to run etags on.
-	test -z "$(ETAGS_ARGS)$(CONFIG_HEADER)$(SOURCES)$(HEADERS)$$tags" \
-	  || etags $(ETAGS_ARGS) $$tags $(CONFIG_HEADER) $(SOURCES) $(HEADERS)
+	test -z "$(ETAGS_ARGS)@CONFIG@$(SOURCES)$(HEADERS)$$tags" \
+	  || cd $(srcdir) && etags $(ETAGS_ARGS) $$tags @CONFIG@ $(SOURCES) $(HEADERS) -o $$here/TAGS
