@@ -2959,7 +2959,7 @@ sub handle_dependencies
 	    # We define this as a conditional variable because BSD
 	    # make can't handle backslashes for continuing comments on
 	    # the following line.
-	    &define_pretty_variable ('DEP_FILES', "\@AMDEP\@", @deplist);
+	    &define_pretty_variable ('DEP_FILES', 'AMDEP', @deplist);
 
 	    # Generate each `include' individually.  Irix 6 make will
 	    # not properly include several files resulting from a
@@ -5326,6 +5326,24 @@ sub target_defined
     return defined $targets{$target};
 }
 
+
+# &make_condition (@CONDITIONS)
+# -----------------------------
+# Transform a list of conditions (themselves can be an internal list
+# of conditions, e.g., @CONDITIONS = ('cond1 cond2', 'cond3')) into a
+# Make conditional (a pattern for AC_SUBST).
+# Correctly returns the empty string when there are no conditions.
+sub make_condition
+{
+    my $res = join ('@@', @_);
+    return ''
+      unless $res;
+
+    $res = '@' . $res . '@';
+    $res =~ s/ /@@/;
+    return $res;
+}
+
 # See if two conditionals are the same.
 sub conditional_same
 {
@@ -5342,11 +5360,11 @@ sub conditional_dump ()
 {
   print STDERR "%conditional =\n";
   print STDERR "{\n";
-  foreach my $var (keys %conditional)
+  foreach my $var (sort keys %conditional)
     {
       print STDERR "  $var = \n";
       print STDERR "  {\n";
-      foreach my $vcond (keys %{${conditional{$var}}})
+      foreach my $vcond (sort by_condition keys %{$conditional{$var}})
       {
 	print STDERR "    $vcond => $conditional{$var}{$vcond}\n";
       }
@@ -5354,6 +5372,7 @@ sub conditional_dump ()
     }
   print STDERR "}\n";
 }
+
 
 # $BOOLEAN
 # &conditional_true_when ($COND, $WHEN)
@@ -5368,13 +5387,9 @@ sub conditional_true_when ($$)
     my ($cond, $when) = @_;
 
     # Check each component of $cond, which looks @COND1@@COND2@.
-    foreach my $comp (split ('@', $cond))
+    foreach my $comp (split (' ', $cond))
     {
-	# The way we split will give null strings between each
-	# condition.
-	next if ! $comp;
-
-	if (index ($when, '@' . $comp . '@') == -1)
+	if (index ($when, $comp) == -1)
 	{
 	    return 0;
 	}
@@ -5511,7 +5526,7 @@ sub variable_conditions
 	$uniqify{$cond} = 1;
     }
 
-    @uniq_list = sort keys %uniqify;
+    @uniq_list = sort by_condition keys %uniqify;
     # Note we cannot just do `return sort keys %uniqify', because this
     # function is sometimes used in a scalar context.
     return @uniq_list;
@@ -5553,9 +5568,8 @@ sub variable_conditions_sub
 	my %allconds = ();
 	foreach my $item (@new_conds)
 	{
-	    foreach (split ('@', $item))
+	    foreach (split (' ', $item))
 	    {
-		next if ! $_;
 		s/_(TRUE|FALSE)$//;
 		$allconds{$_ . '_TRUE'} = 1;
 	    }
@@ -5620,7 +5634,7 @@ sub variable_conditions_sub
     foreach my $this_cond (@this_conds)
     {
 	my @perms =
-	    &variable_conditions_permutations (split('@', $this_cond));
+	    &variable_conditions_permutations (split(' ', $this_cond));
 	foreach my $perm (@perms)
 	{
 	    my $ok = 1;
@@ -5647,25 +5661,32 @@ sub variable_conditions_sub
     return @new_conds;
 }
 
-# Subroutine for variable_conditions_sort
-sub variable_conditions_cmp
+
+# Compare condition names.
+# Issue them in alphabetical order, foo_TRUE before foo_FALSE.
+sub by_condition
 {
-    my $as = $a;
-    $as =~ s/[^@]//g;
-    my $bs = $b;
-    $bs =~ s/[^@]//g;
-    return (length ($as) <=> length ($bs)
+    $a =~ /^(.*)_(TRUE|FALSE)$/;
+    my ($aname, $abool) = ($1, $2);
+    $b =~ /^(.*)_(TRUE|FALSE)$/;
+    my ($bname, $bbool) = ($1, $2);
+    return ($aname cmp $bname
+	    # Don't bother with IFs, given that TRUE is after FALSE
+	    # just cmp in the reverse order.
+	    || $bbool cmp $abool
+	    # Just in case...
 	    || $a cmp $b);
 }
 
-# Sort a list of conditionals so that only the exclusive ones are
-# retained.  For example, if both @COND1_TRUE@@COND2_TRUE@ and
-# @COND1_TRUE@ are in the list, discard the latter.
+
+# Filter a list of conditionals so that only the exclusive ones are
+# retained.  For example, if both `COND1_TRUE COND2_TRUE' and
+# `COND1_TRUE' are in the list, discard the latter.
 sub variable_conditions_reduce
 {
     my (@conds) = @_;
     my @ret = ();
-    foreach my $cond (sort variable_conditions_cmp @conds)
+    foreach my $cond (@conds)
     {
 	next
 	  if ! conditionals_true_when (($cond), (@ret));
@@ -5691,13 +5712,13 @@ sub variable_conditions_permutations
     my @ret;
     foreach my $sub (&variable_conditions_permutations (@comps))
     {
-	push (@ret, '@' . $comp . '@' . $sub);
-	push (@ret, '@' . $neg . '@' . $sub);
+	push (@ret, $comp . $sub);
+	push (@ret, $neg . $sub);
     }
     if (! @ret)
     {
-	push (@ret, '@' . $comp . '@');
-	push (@ret, '@' . $neg . '@');
+	push (@ret, $comp);
+	push (@ret, $neg);
     }
     return @ret;
 }
@@ -5923,7 +5944,9 @@ sub define_pretty_variable
 	{
 	    ${$conditional{$var}}{$cond} = $contents{$var};
 	}
-	&pretty_print ($cond . $var . ' = ', $cond, @value);
+        my $make_condition = &make_condition ($cond);
+	&pretty_print ($make_condition . $var . ' = ',
+		       $make_condition, @value);
 	$content_seen{$var} = 1;
     }
 }
@@ -6073,7 +6096,8 @@ sub read_am_file
 	{
 	    if ($was_rule)
 	    {
-		$output_trailer .= join ('', @conditional_stack) . $_;
+	        $output_trailer .= &make_condition (@conditional_stack);
+		$output_trailer .= $_;
 		$saw_bk = /\\$/;
 	    }
 	    else
@@ -6084,7 +6108,7 @@ sub read_am_file
 		$contents{$last_var_name} .= $_;
 		if (@conditional_stack)
 		{
-		    my $cond_string = join ('', @conditional_stack);
+		    my $cond_string = join (' ', @conditional_stack);
 		    ${conditional{$last_var_name}}{$cond_string} .= $_;
 		}
 	    }
@@ -6093,7 +6117,7 @@ sub read_am_file
 	{
 	    &am_line_error ($., "$1 does not appear in AM_CONDITIONAL")
 		if (! $configure_cond{$1});
-	    push (@conditional_stack, "\@" . $1 . "_TRUE\@");
+	    push (@conditional_stack, "$1_TRUE");
 	}
 	elsif (/$ELSE_PATTERN/o)
 	{
@@ -6101,14 +6125,14 @@ sub read_am_file
 	    {
 		&am_line_error ($., "else without if");
 	    }
-	    elsif ($conditional_stack[$#conditional_stack] =~ /_FALSE\@$/)
+	    elsif ($conditional_stack[$#conditional_stack] =~ /_FALSE$/)
 	    {
 		&am_line_error ($., "else after else");
 	    }
 	    else
 	    {
 		$conditional_stack[$#conditional_stack]
-		    =~ s/_TRUE\@$/_FALSE\@/;
+		    =~ s/_TRUE$/_FALSE/;
 	    }
 	}
 	elsif (/$ENDIF_PATTERN/o)
@@ -6137,9 +6161,9 @@ sub read_am_file
 	    # Value here doesn't matter; for targets we only note
 	    # existence.
 	    $targets{$1} = 1;
-	    my $cond_string = join ('', @conditional_stack);
 	    if (@conditional_stack)
 	    {
+		my $cond_string = join (' ', @conditional_stack);
 		if ($target_conditional{$1})
 		{
 		    &check_ambiguous_conditional ($1, $cond_string);
@@ -6147,7 +6171,9 @@ sub read_am_file
 		${$target_conditional{$1}}{$cond_string} = '1';
 	    }
 	    $content_lines{$1} = $.;
-	    $output_trailer .= $comment . $spacing . $cond_string . $_;
+	    $output_trailer .= $comment . $spacing;
+            $output_trailer .= &make_condition (@conditional_stack);
+            $output_trailer .= $_;
 	    $comment = $spacing = '';
 	    $saw_bk = /\\$/;
 
@@ -6233,7 +6259,7 @@ sub read_am_file
 	    # Handle conditionalized macros.
 	    if (@conditional_stack)
 	    {
-	        my $cond_string = join ('', @conditional_stack);
+	        my $cond_string = join (' ', @conditional_stack);
 		my $done = 0;
 		if ($conditional{$last_var_name})
 		{
@@ -6295,8 +6321,9 @@ sub read_am_file
 	    # This isn't an error; it is probably a continued rule.
 	    # In fact, this is what we assume.
 	    $was_rule = 1;
-	    $output_trailer .= ($comment . $spacing
-				. join ('', @conditional_stack) . $_);
+	    $output_trailer .= $comment . $spacing;
+	    $output_trailer .= &make_condition  (@conditional_stack);
+	    $output_trailer .= $_;
 	    $comment = $spacing = '';
 	    $saw_bk = /\\$/;
 	}
@@ -6388,17 +6415,14 @@ sub read_main_am_file
 	$output_vars .= $am_vars{$var};
 	if ($conditional{$var})
 	{
-	    foreach my $vcond (keys %{$conditional{$var}})
+	    foreach my $vcond (sort by_condition keys %{$conditional{$var}})
 	    {
 	        my $val = ${$conditional{$var}}{$vcond};
-		$output_vars .= ($vcond . $var . ' '
-				 . $def_type{$var} . "= ");
-		foreach my $line (split ("\n", $val))
-		{
-		    $output_vars .= $vcond . $line . "\n";
-		}
-		$output_vars .= "\n"
-		    if $val eq '';
+	        my $output_var = ($var . ' '
+				  . $def_type{$var} . "= "
+				  . $val);
+	        $output_var =~ s/^/&make_condition ($vcond)/meg;
+		$output_vars .= $output_var . "\n";
 	    }
 	}
 	else
