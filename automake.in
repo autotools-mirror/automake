@@ -1324,6 +1324,69 @@ sub generate_makefile
 
 ################################################################
 
+# A helper which handles the logic of requiring a version number in
+# AUTOMAKE_OPTIONS.  Return 1 on error, 0 on success.
+sub version_check ($$$$)
+{
+    my ($rmajor, $rminor, $ralpha, $rfork) = ($1, $2, $3, $4);
+
+    &prog_error ("version is incorrect: $VERSION")
+	if $VERSION !~ /(\d+)\.(\d+)([a-z]?)-?([A-Za-z0-9]+)?/;
+
+    my ($tmajor, $tminor, $talpha, $tfork) = ($1, $2, $3, $4);
+
+    $rfork ||= '';
+    $tfork ||= '';
+
+    my $rminorminor = 0;
+    my $tminorminor = 0;
+
+    # Some versions were labelled like `1.4-p3a'.  This is the same as
+    # an alpha release labelled `1.4.3a'.  However, a version like
+    # `1.4g' is the same as `1.4.99g'.  Yes, this sucks.  Moral:
+    # always listen to the users.
+    if ($rfork =~ /p([0-9]+)([a-z]?)/)
+    {
+	$rminorminor = $1;
+	# `1.4a-p3b' never existed.  But we'll accept it anyway.
+	$ralpha = $ralpha || $2 || '';
+	$rfork = '';
+    }
+    if ($tfork =~ /p([0-9]+)([a-z]?)/)
+    {
+	$tminorminor = $1;
+	# `1.4a-p3b' never existed.  But we'll accept it anyway.
+	$talpha = $talpha || $2 || '';
+	$tfork = '';
+    }
+
+    $rminorminor = 99 if $ralpha ne '' && $rminorminor == 0;
+    $tminorminor = 99 if $talpha ne '' && $tminorminor == 0;
+
+    # 2.0 is better than 1.0.
+    # 1.2 is better than 1.1.
+    # 1.2a is better than 1.2.
+    # If we require 3.4n-foo then we require something
+    # >= 3.4n, with the `foo' fork identifier.
+    # The $r* variables are what the user specified.
+    # The $t* variables denote automake itself.
+    if ($rmajor > $tmajor
+	|| ($rmajor == $tmajor && $rminor > $tminor)
+	|| ($rminor == $tminor && $rminor == $tminor
+	    && $rminorminor > $tminorminor)
+	|| ($rminor == $tminor && $rminor == $tminor
+	    && $rminorminor == $tminorminor
+	    && $ralpha gt $talpha)
+	|| ($rfork ne '' && $rfork ne $tfork))
+    {
+	&am_line_error ('AUTOMAKE_OPTIONS',
+			"require version $_, but have $VERSION");
+	return 1;
+    }
+
+    return 0;
+}
+
 # Handle AUTOMAKE_OPTIONS variable.  Return 1 on error, 0 otherwise.
 sub handle_options
 {
@@ -1364,32 +1427,10 @@ sub handle_options
 	    elsif (/(\d+)\.(\d+)([a-z]?)(-[A-Za-z0-9]+)?/)
 	    {
 		# Got a version number.
-
-		my ($rmajor, $rminor, $ralpha, $rfork) = ($1, $2, $3, $4);
-
-		&prog_error ("version is incorrect: $VERSION")
-		  if $VERSION !~ /(\d+)\.(\d+)([a-z]?)(-[A-Za-z0-9]+)?/;
-
-		my ($tmajor, $tminor, $talpha, $tfork) = ($1, $2, $3, $4);
-
-		$rfork ||= '';
-		$tfork ||= '';
-
-		# 2.0 is better than 1.0.
-		# 1.2 is better than 1.1.
-		# 1.2a is better than 1.2.
-		# If we require 3.4n-foo then we require something
-		# >= 3.4n, with the `foo' fork identifier.
-		if ($rmajor > $tmajor
-		    || ($rmajor == $tmajor && $rminor > $tminor)
-		    || ($rminor == $tminor && $rminor == $tminor
-			&& $ralpha gt $talpha)
-		    || ($rfork ne '' && $rfork ne $tfork))
-		  {
-		    &am_line_error ('AUTOMAKE_OPTIONS',
-				    "require version $_, but have $VERSION");
+		if (version_check ($1, $2, $3, $4))
+		{
 		    return 1;
-		  }
+		}
 	    }
 	    else
 	    {
