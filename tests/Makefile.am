@@ -210,6 +210,7 @@ scripts.test \
 seenc.test \
 sinclude.test \
 sourcesub.test \
+space.test \
 specflags.test \
 specflags2.test	\
 specflags3.test	\
