@@ -27,7 +27,8 @@ eval 'exec /usr/local/bin/perl -S $0 ${1+"$@"}'
 # Perl reimplementation by Tom Tromey <tromey@drip.colorado.edu>.
 
 
-# Parameters set by configure.  Not to be changed.
+# Parameters set by configure.  Not to be changed.  NOTE: assign
+# VERSION as string so that eg version 0.30 will print correctly.
 $VERSION = "@VERSION@";
 $prefix = "@prefix@";
 $am_dir = "@datadir@/@PACKAGE@";
@@ -344,6 +345,16 @@ sub handle_options
 	elsif ($_ eq 'no-dependencies')
 	{
 	    $use_dependencies = 0;
+	}
+	elsif (/[0-9]+\.?[0-9]+/)
+	{
+	    # Got a version number.  Is the syntax too strict?
+	    if ($VERSION < $_)
+	    {
+		&am_error ("require version $_, only have $VERSION");
+		# FIXME -- what else to do?
+		exit 1;
+	    }
 	}
 	else
 	{
@@ -737,9 +748,12 @@ sub handle_texinfo
     push (@info, '$(INFO_DEPS)');
     push (@dvi, '$(DVIS)');
     push (@installdirs, '$(infodir)');
-    # Make sure documentation is made and installed first.
     unshift (@install_data, 'install-info');
-    unshift (@all, 'info');
+
+    # Make sure documentation is made and installed first.  Use
+    # $(INFO_DEPS), not 'info', because otherwise recursive makes get
+    # run twice during "make all".  FIXME add test case.
+    unshift (@all, '$(INFO_DEPS)');
 
     $output_vars .= ("INFOS = " . join (' ', @infos_list) . "\n"
 		     . "INFO_DEPS = " . join (' ', @info_deps_list)  . "\n"
