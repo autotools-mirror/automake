@@ -61,7 +61,7 @@ AC_SUBST(LIBOBJS)dnl
 am_cv_func_strtod_needs_libm=no
 if test $am_cv_func_strtod = no; then
   AC_CHECK_FUNCS(pow)
-  if test $am_cv_func_pow = no; then
+  if test $ac_cv_func_pow = no; then
     AC_CHECK_LIB(m, pow, [am_cv_func_strtod_needs_libm=yes],
 		 [AC_MSG_WARN(can't find library containing definition of pow)])
   fi
