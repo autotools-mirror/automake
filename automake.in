@@ -2139,7 +2139,7 @@ sub handle_man_pages
 # Handle DATA variables.
 sub handle_data
 {
-    &am_install_var ('data', 'DATA', 'data', 'sysconf',
+    &am_install_var ('-noextra', 'data', 'DATA', 'data', 'sysconf',
 		     'sharedstate', 'localstate', 'pkgdata',
 		     'noinst', 'check');
 }
@@ -6155,6 +6155,7 @@ sub am_install_var
     local (@args) = @_;
 
     local ($do_clean) = 0;
+    local ($do_require) = 1;
 
     local ($ltxform);
     if (defined $configure_vars{'LIBTOOL'})
@@ -6183,6 +6184,10 @@ sub am_install_var
 	if ($args[0] eq '-clean')
 	{
 	    $do_clean = 1;
+	}
+	elsif ($args[0] eq '-noextra')
+	{
+	    $do_require = 0;
 	}
 	elsif ($args[0] !~ /^-/)
 	{
@@ -6241,8 +6246,15 @@ sub am_install_var
 			if (! $warned_about_extra)
 			{
 			    $warned_about_extra = 1;
-			    &am_line_error ($one_name,
-					    "\`$one_name' contains configure substitution, but shouldn't");
+			    if (! $do_require)
+			    {
+				&am_line_error ($one_name, "\`$one_name' should not be defined");
+			    }
+			    else
+			    {
+				&am_line_error ($one_name,
+						"\`$one_name' contains configure substitution, but shouldn't");
+			    }
 			}
 		    }
 		    # Check here to make sure variables defined in
@@ -6250,7 +6262,8 @@ sub am_install_var
 		    # must be defined.
 		    elsif (! defined $configure_vars{$one_name})
 		    {
-			$require_extra = $one_name;
+			$require_extra = $one_name
+			    if $do_require;
 		    }
 
 		    next;
