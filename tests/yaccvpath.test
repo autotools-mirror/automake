@@ -37,8 +37,15 @@ END
 
 # Fail gracefully if no autoconf.
 $needs_autoconf
-# Likewise for gcc.
+# Likewise for some other tools.
 (gcc -v) > /dev/null 2>&1 || exit 77
+(flex -V) > /dev/null 2>&1 || exit 77
+(bison -V) > /dev/null 2>&1 || exit 77
+
+LEX=flex
+export LEX
+YACC=bison
+export YACC
 
 # Remove some files installed by defs.
 # They will be reinstalled by automake.
@@ -50,10 +57,8 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-./configure
-$MAKE
-$MAKE distclean
-# this should left parse.c in the current directory
+bison -y parse.y
+mv y.tab.c parse.c
 
 cat >> parse.y << 'END'
 fubar : 'f' foobar {};
