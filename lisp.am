@@ -17,23 +17,27 @@
 ## 02111-1307, USA.
 install-@DIR@LISP: $(@DIR@_LISP) $(ELCFILES)
 	@$(NORMAL_INSTALL)
-	$(mkinstalldirs) $(DESTDIR)$(@DIR@dir)
+	@if test -n "$(lispdir)"; then \
+	  $(mkinstalldirs) $(DESTDIR)$(@DIR@dir); \
 ## Funny invocation because Makefile variable can be empty, leading to
 ## a syntax error in sh.
-	@list='$(@DIR@_LISP)'; for p in $$list; do \
+	  @list='$(@DIR@_LISP)'; for p in $$list; do \
 ## A header file can be in the source directory or the build directory.
-	  if test -f "$$p"; then d= ; else d="$(srcdir)/"; fi; \
-	  echo " $(INSTALL_DATA) $$d$$p $(DESTDIR)$(@DIR@dir)/$$p"; \
-	  $(INSTALL_DATA) $$d$$p $(DESTDIR)$(@DIR@dir)/$$p; \
+	    if test -f "$$p"; then d= ; else d="$(srcdir)/"; fi; \
+	    echo " $(INSTALL_DATA) $$d$$p $(DESTDIR)$(@DIR@dir)/$$p"; \
+	    $(INSTALL_DATA) $$d$$p $(DESTDIR)$(@DIR@dir)/$$p; \
 ## Only install .elc file if it exists.
-	  if test -f $${p}c; then \
-	    echo " $(INSTALL_DATA) $${p}c $(DESTDIR)$(@DIR@dir)/$${p}c"; \
-	    $(INSTALL_DATA) $${p}c $(DESTDIR)$(@DIR@dir)/$${p}c; \
-	  else : ; fi; \
-	done
+	    if test -f $${p}c; then \
+	      echo " $(INSTALL_DATA) $${p}c $(DESTDIR)$(@DIR@dir)/$${p}c"; \
+	      $(INSTALL_DATA) $${p}c $(DESTDIR)$(@DIR@dir)/$${p}c; \
+	    else : ; fi; \
+	  done; \
+	else : ; fi
 
 uninstall-@DIR@LISP:
 	@$(NORMAL_UNINSTALL)
-	list='$(@DIR@_LISP)'; for p in $$list; do \
-	  rm -f $(DESTDIR)$(@DIR@dir)/$$p $(DESTDIR)$(@DIR@dir)/$${p}c; \
-	done
+	@if test -n "$(lispdir)"; then \
+	  list='$(@DIR@_LISP)'; for p in $$list; do \
+	    rm -f $(DESTDIR)$(@DIR@dir)/$$p $(DESTDIR)$(@DIR@dir)/$${p}c; \
+	  done; \
+	else : ; fi
