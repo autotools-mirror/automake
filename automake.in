@@ -219,6 +219,9 @@ $seen_multilib = 0;
 # TRUE if we've seen AM_PROG_CC_C_O
 $seen_cc_c_o = 0;
 
+# TRUE if we've seen AM_INIT_AUTOMAKE.
+$seen_init_automake = 0;
+
 # Hash table of discovered configure substitutions.  Keys are names,
 # values are `FILE:LINE' strings which are used by error message
 # generation.
@@ -4537,20 +4540,7 @@ sub scan_one_configure_file
 	    $seen_prog_install = 1;
 	    ($package_version = $1) =~ s/$AM_PACKAGE_VERSION_PATTERN/$1/o;
 	    $package_version_line = $.;
-	}
-
-	# This is like AM_INIT_AUTOMAKE, but doesn't actually set the
-	# package and version number.  (This might change in the
-	# future).  Yes, I'm not above hacking Automake so it works
-	# well with other GNU tools -- that is actually the point.
-	if (/AM_INIT_GUILE_MODULE/)
-	{
-	    $seen_make_set = 1;
-	    $seen_package = 1;
-	    $seen_version = 1;
-	    $seen_arg_prog = 1;
-	    $seen_prog_install = 1;
-	    @config_aux_path = ('..');
+	    $seen_init_automake = 1;
 	}
 
 	# Some things required by Automake.
@@ -4683,6 +4673,9 @@ sub scan_configure
     }
 
     @configure_input_files = @make_input_list;
+
+    &am_conf_error ("\`AM_INIT_AUTOMAKE' must be used in configure.in")
+	if ! $seen_init_automake;
 
     &am_conf_error ("\`PACKAGE' not defined in configure.in")
         if ! $seen_package;
