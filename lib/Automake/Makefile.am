@@ -49,14 +49,23 @@ CLEANFILES = $(nodist_perllib_DATA)
 ## We can't use configure to do the substitution here; we must do it
 ## by hand.  We use a funny notation here to avoid configure
 ## substitutions in our text.
-do_subst = sed -e 's,[@]datadir[@],$(datadir),g' -e 's,[@]PERL[@],$(PERL),g' \
-	    -e 's,[@]configure_input[@],@configure_input@,g' \
-	    -e 's,[@]PACKAGE[@],$(PACKAGE),g' \
-	    -e 's,[@]VERSION[@],$(VERSION),g' \
-	    -e 's,[@]APIVERSION[@],$(APIVERSION),g' \
-	    -e 's,[@]SHELL[@],$(SHELL),g'
+do_subst = in=`echo $@ | sed 's/\.[^.]*$$//'`; sed \
+  -e 's,[@]APIVERSION[@],$(APIVERSION),g' \
+  -e 's,[@]PACKAGE[@],$(PACKAGE),g' \
+  -e 's,[@]PERL[@],$(PERL),g' \
+  -e 's,[@]SHELL[@],$(SHELL),g' \
+  -e 's,[@]VERSION[@],$(VERSION),g' \
+  -e "s,[@]configure_input[@],Generated from $$in.in; do not edit by hand.,g" \
+  -e 's,[@]datadir[@],$(datadir),g'
 
+## This file depend on Makefile so it is rebuilt if $(VERSION),
+## $(datadir) or other do_subst'ituted variables change.
+## Use chmod -w to prevent people from editing the wrong file by accident.
 Config.pm: Config.in Makefile
-	$(do_subst) <$(srcdir)/Config.in >$@
+	rm -f Config.tmp Config.pm
+	$(do_subst) $(srcdir)/Config.in >Config.tmp
+	chmod +x Config.tmp
+	chmod -w Config.tmp
+	mv -f Config.tmp Config.pm
 
 EXTRA_DIST = Config.in

@@ -149,12 +149,14 @@ TAGS_FILES = $(AUTOMAKESOURCES)
 EXTRA_DIST = ChangeLog.96 ChangeLog.98 ChangeLog.00 ChangeLog.01 ChangeLog.02 \
   $(AUTOMAKESOURCES)
 
-do_subst = sed -e 's,[@]datadir[@],$(datadir),g' -e 's,[@]PERL[@],$(PERL),g' \
-	    -e 's,[@]configure_input[@],@configure_input@,g' \
-	    -e 's,[@]PACKAGE[@],$(PACKAGE),g' \
-	    -e 's,[@]VERSION[@],$(VERSION),g' \
-	    -e 's,[@]APIVERSION[@],$(APIVERSION),g' \
-	    -e 's,[@]SHELL[@],$(SHELL),g'
+do_subst = sed \
+  -e 's,[@]APIVERSION[@],$(APIVERSION),g' \
+  -e 's,[@]PACKAGE[@],$(PACKAGE),g' \
+  -e 's,[@]PERL[@],$(PERL),g' \
+  -e 's,[@]SHELL[@],$(SHELL),g' \
+  -e 's,[@]VERSION[@],$(VERSION),g' \
+  -e 's,[@]configure_input[@],Generated from $@.in; do not edit by hand.,g' \
+  -e 's,[@]datadir[@],$(datadir),g'
 
 WGET = wget
 WGETSGO = $(WGET) http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~
@@ -599,12 +601,18 @@ uninstall-hook:
 	done
 
 automake: automake.in Makefile
-	$(do_subst) < $(srcdir)/automake.in > automake
-	chmod +x automake
+	rm -f $@ $@.tmp
+	$(do_subst) $(srcdir)/automake.in >$@.tmp
+	chmod +x $@.tmp
+	chmod -w $@.tmp
+	mv -f $@.tmp $@
 
 aclocal: aclocal.in Makefile
-	$(do_subst) < $(srcdir)/aclocal.in > aclocal
-	chmod +x aclocal
+	rm -f $@ $@.tmp
+	$(do_subst) $(srcdir)/aclocal.in >$@.tmp
+	chmod +x $@.tmp
+	chmod -w $@.tmp
+	mv -f $@.tmp $@
 
 INSTALL: lib/INSTALL
 	cp lib/INSTALL $@

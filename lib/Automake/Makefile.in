@@ -156,12 +156,14 @@ nodist_perllib_DATA = \
   Config.pm
 
 CLEANFILES = $(nodist_perllib_DATA)
-do_subst = sed -e 's,[@]datadir[@],$(datadir),g' -e 's,[@]PERL[@],$(PERL),g' \
-	    -e 's,[@]configure_input[@],@configure_input@,g' \
-	    -e 's,[@]PACKAGE[@],$(PACKAGE),g' \
-	    -e 's,[@]VERSION[@],$(VERSION),g' \
-	    -e 's,[@]APIVERSION[@],$(APIVERSION),g' \
-	    -e 's,[@]SHELL[@],$(SHELL),g'
+do_subst = in=`echo $@ | sed 's/\.[^.]*$$//'`; sed \
+  -e 's,[@]APIVERSION[@],$(APIVERSION),g' \
+  -e 's,[@]PACKAGE[@],$(PACKAGE),g' \
+  -e 's,[@]PERL[@],$(PERL),g' \
+  -e 's,[@]SHELL[@],$(SHELL),g' \
+  -e 's,[@]VERSION[@],$(VERSION),g' \
+  -e "s,[@]configure_input[@],Generated from $$in.in; do not edit by hand.,g" \
+  -e 's,[@]datadir[@],$(datadir),g'
 
 EXTRA_DIST = Config.in
 all: all-recursive
@@ -485,7 +487,11 @@ uninstall-info: uninstall-info-recursive
 
 
 Config.pm: Config.in Makefile
-	$(do_subst) <$(srcdir)/Config.in >$@
+	rm -f Config.tmp Config.pm
+	$(do_subst) $(srcdir)/Config.in >Config.tmp
+	chmod +x Config.tmp
+	chmod -w Config.tmp
+	mv -f Config.tmp Config.pm
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -67,5 +67,7 @@ EXTRA_DIST = dirlist amversion.in
 $(top_srcdir)/m4/amversion.m4: $(srcdir)/amversion.in
 	sed -e 's,[@]VERSION[@],$(VERSION),g' \
 	    -e 's,[@]APIVERSION[@],$(APIVERSION),g' \
+	    -e "s,[@]configure_input[@],Generated from amversion.in; do not edit by hand.,g" \
 	    $(srcdir)/amversion.in > $@t
+	chmod -w $@t
 	mv -f $@t $@

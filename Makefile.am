@@ -58,20 +58,31 @@ uninstall-hook:
 ## We can't use configure to do the substitution here; we must do it
 ## by hand.  We use a funny notation here to avoid configure
 ## substitutions in our text.
-do_subst = sed -e 's,[@]datadir[@],$(datadir),g' -e 's,[@]PERL[@],$(PERL),g' \
-	    -e 's,[@]configure_input[@],@configure_input@,g' \
-	    -e 's,[@]PACKAGE[@],$(PACKAGE),g' \
-	    -e 's,[@]VERSION[@],$(VERSION),g' \
-	    -e 's,[@]APIVERSION[@],$(APIVERSION),g' \
-	    -e 's,[@]SHELL[@],$(SHELL),g'
+do_subst = sed \
+  -e 's,[@]APIVERSION[@],$(APIVERSION),g' \
+  -e 's,[@]PACKAGE[@],$(PACKAGE),g' \
+  -e 's,[@]PERL[@],$(PERL),g' \
+  -e 's,[@]SHELL[@],$(SHELL),g' \
+  -e 's,[@]VERSION[@],$(VERSION),g' \
+  -e 's,[@]configure_input[@],Generated from $@.in; do not edit by hand.,g' \
+  -e 's,[@]datadir[@],$(datadir),g'
 
+## These files depend on Makefile so they are rebuilt if $(VERSION),
+## $(datadir) or other do_subst'ituted variables change.
+## Use chmod -w to prevent people from editing the wrong file by accident.
 automake: automake.in Makefile
-	$(do_subst) < $(srcdir)/automake.in > automake
-	chmod +x automake
+	rm -f $@ $@.tmp
+	$(do_subst) $(srcdir)/automake.in >$@.tmp
+	chmod +x $@.tmp
+	chmod -w $@.tmp
+	mv -f $@.tmp $@
 
 aclocal: aclocal.in Makefile
-	$(do_subst) < $(srcdir)/aclocal.in > aclocal
-	chmod +x aclocal
+	rm -f $@ $@.tmp
+	$(do_subst) $(srcdir)/aclocal.in >$@.tmp
+	chmod +x $@.tmp
+	chmod -w $@.tmp
+	mv -f $@.tmp $@
 
 ## The master location for INSTALL is lib/INSTALL.
 ## This is where `make fetch' will install new versions.
