@@ -117,6 +117,7 @@ use Automake::XFile;
 use Automake::Channels;
 use Automake::Location;
 use Automake::Conditional qw/TRUE FALSE/;
+use Automake::ConditionalSet;
 use File::Basename;
 use Tie::RefHash;
 use Carp;
@@ -1248,7 +1249,7 @@ sub msg_var ($$$;%)
 {
   my ($channel, $var, $msg, %opts) = @_;
   # Don't know which condition is concerned.  Pick any.
-  my $cond = (variable_conditions ($var))[0];
+  my $cond = variable_conditions ($var)->one_cond;
   msg_cond_var $channel, $cond, $var, $msg, %opts;
 }
 
@@ -1268,7 +1269,7 @@ sub msg_target ($$$;%)
 {
   my ($channel, $target, $msg, %opts) = @_;
   # Don't know which condition is concerned.  Pick any.
-  my $cond = (target_conditions ($target))[0];
+  my $cond = target_conditions ($target)->one_cond;
   msg_cond_target ($channel, $cond, $target, $msg, %opts);
 }
 
@@ -2655,7 +2656,7 @@ sub define_objects_from_sources ($$$$$$$$)
 
     my $needlinker = "";
     my @allresults = ();
-    foreach my $cond (variable_sorted_conditions ($var))
+    foreach my $cond (variable_conditions ($var)->conds)
     {
 	my @result;
 	foreach my $val (&variable_value_as_list ($var, $cond, $parent))
@@ -2827,7 +2828,7 @@ sub handle_source_transform
 	    # am__VAR_DIST variable which contains all possible values,
 	    # and add this variable to DIST_SOURCES.
 	    my $distvar = "$var";
-	    my @conds = variable_conditions_recursive ($var);
+	    my @conds = variable_conditions_recursive ($var)->conds;
 	    if (@conds && $conds[0] != TRUE)
 	      {
 		$distvar = "am__${var}_DIST";
@@ -2901,7 +2902,7 @@ sub handle_lib_objects
       if ! variable_defined ($var);
 
     my $ret = 0;
-    foreach my $cond (variable_conditions_recursive ($var))
+    foreach my $cond (variable_conditions_recursive ($var)->conds)
       {
 	if (&handle_lib_objects_cond ($xname, $var, $cond))
 	  {
@@ -5941,24 +5942,6 @@ sub condition_negate ($)
 }
 
 
-# Compare condition names.
-# Issue them in alphabetical order, foo_TRUE before foo_FALSE.
-sub by_condition
-{
-    # Be careful we might be comparing `' or `#'.
-    $a->string =~ /^(.*)_(TRUE|FALSE)$/;
-    my ($aname, $abool) = ($1 || '', $2 || '');
-    $b->string =~ /^(.*)_(TRUE|FALSE)$/;
-    my ($bname, $bbool) = ($1 || '', $2 || '');
-    return ($aname cmp $bname
-	    # Don't bother with IFs, given that TRUE is after FALSE
-	    # just cmp in the reverse order.
-	    || $bbool cmp $abool
-	    # Just in case...
-	    || $a cmp $b);
-}
-
-
 ## ------------------------------ ##
 ## Handling the condition stack.  ##
 ## ------------------------------ ##
@@ -6079,18 +6062,18 @@ sub check_ambiguous_conditional ($$$)
 }
 
 # $STRING, $AMBIG_COND
-# conditional_ambiguous_p ($WHAT, $COND, @CONDS)
+# conditional_ambiguous_p ($WHAT, $COND, $CONDSET)
 # ----------------------------------------------
 # Check for an ambiguous conditional.  Return an error message and
 # the other condition involved if we have one, two empty strings otherwise.
-#   WHAT:  the thing being defined
-#   COND:  the condition under which is is being defined
-#   CONDS: the conditons under which is had already been defined
-sub conditional_ambiguous_p ($$@)
+#   WHAT:    the thing being defined
+#   COND:    the Conditional under which it is being defined
+#   CONDSET: the ConditionalSet under which it had already been defined
+sub conditional_ambiguous_p ($$$)
 {
-  my ($var, $cond, @conds) = @_;
+  my ($var, $cond, $condset) = @_;
 
-  foreach my $vcond (@conds)
+  foreach my $vcond ($condset->conds)
     {
       # Note that these rules doesn't consider the following
       # example as ambiguous.
@@ -6194,10 +6177,10 @@ sub variable_not_always_defined_in_cond ($$)
   #     COND1_TRUE.  This yields an empty list and we are done.
 
   my @res = ();
-  my @cond_defs = variable_conditions ($var); # (1)
-  foreach my $icond (invert_conditions (@cond_defs)) # (2)
+  my $cond_defs = variable_conditions ($var); # (1)
+  foreach my $icond ($cond_defs->invert->conds) # (2)
     {
-      prog_error "invert_conditions returned an input condition"
+      prog_error "->invert returned an input condition"
 	if exists $var_value{$var}{$icond};
 
       push @res, $icond
@@ -6284,7 +6267,7 @@ sub macro_define ($$$$$$)
        $var_value{$var}{$cond} .= $value;
     }
   # 2. append (+=) to a variable defined for *another* condition
-  elsif ($type eq '+' && variable_conditions ($var))
+  elsif ($type eq '+' && ! variable_conditions ($var)->false)
     {
       # * Generally, $cond is not TRUE.  For instance:
       #     FOO = foo
@@ -6335,7 +6318,7 @@ sub macro_define ($$$$$$)
 	}
 
       # Add VALUE to all definitions of VAR.
-      foreach my $vcond (variable_conditions ($var))
+      foreach my $vcond (variable_conditions ($var)->conds)
         {
 	  # We have a bit of error detection to do here.
 	  # This:
@@ -6463,7 +6446,7 @@ sub macro_dump ($)
   else
     {
       $text .= "  $var $var_type{$var}=\n  {\n";
-      foreach my $vcond (variable_sorted_conditions ($var))
+      foreach my $vcond (variable_conditions ($var)->conds)
 	{
 	  prog_error ("`$var' is a key in \$var_value, "
 		      . "but not in \$var_owner\n")
@@ -6550,7 +6533,7 @@ sub variable_defined ($;$)
 	if (exists $targets{$var}
 	    && (! defined $cond || exists $targets{$var}{$cond}))
 	  {
-	    for my $tcond ($cond || target_conditions ($var))
+	    for my $tcond ($cond || ! target_conditions ($var)->false)
 	      {
 		prog_error ("\$targets{$var}{$tcond} exists but "
 			    . "\$target_owner doesn't")
@@ -6630,21 +6613,7 @@ sub variable_conditions_recursive ($)
 
   # Now we want to return all permutations of the subvariable
   # conditions.
-  my %allconds = ();
-    foreach my $item (@new_conds)
-      {
-	foreach ($item->conds)
-	  {
-	    s/^(.*)_(TRUE|FALSE)$/$1_TRUE/;
-	    $allconds{$_} = 1;
-	  }
-      }
-  @new_conds = variable_conditions_permutations (sort keys %allconds);
-
-  # Note we cannot just do `return sort @new_conds', because this
-  # function is sometimes used in a scalar context.
-  my @uniq_list = sort by_condition @new_conds;
-  return @uniq_list;
+  return (new Automake::ConditionalSet @new_conds)->permutations;
 }
 
 
@@ -6658,18 +6627,8 @@ sub variable_conditions_recursive ($)
 sub variable_conditions ($)
 {
     my ($var) = @_;
-    return keys %{$var_value{$var}};
-}
-
-
-# @CONDS
-# variable_sorted_conditions ($VAR)
-# ---------------------------------
-# Same as &variable_conditions, but return a sorted list.
-sub variable_sorted_conditions ($)
-{
-    my ($var) = @_;
-    return sort by_condition variable_conditions $var;
+    my @conds = keys %{$var_value{$var}};
+    return new Automake::ConditionalSet @conds;
 }
 
 
@@ -6680,7 +6639,8 @@ sub variable_sorted_conditions ($)
 sub target_conditions ($)
 {
     my ($target) = @_;
-    return keys %{$targets{$target}};
+    my @conds = keys %{$targets{$target}};
+    return new Automake::ConditionalSet @conds;
 }
 
 # $BOOLEAN
@@ -6689,7 +6649,7 @@ sub target_conditions ($)
 sub variable_conditionally_defined ($)
 {
     my ($var) = @_;
-    foreach my $cond (variable_conditions_recursive ($var))
+    foreach my $cond (variable_conditions_recursive ($var)->conds)
       {
 	return 1
 	  unless $cond =~ /^TRUE|FALSE$/;
@@ -6766,7 +6726,7 @@ sub variable_conditions_recursive_sub
 
     my @this_conds = ();
     # Examine every condition under which $VAR is defined.
-    foreach my $vcond (variable_conditions ($var))
+    foreach my $vcond (variable_conditions ($var)->conds)
     {
       push (@this_conds, $vcond);
 
@@ -6815,8 +6775,8 @@ sub variable_conditions_recursive_sub
     # in @this_conds.
     foreach my $this_cond (@this_conds)
     {
-	my @perms =
-	    variable_conditions_permutations ($this_cond->conds);
+      my @perms =
+	  (new Automake::ConditionalSet $this_cond)->permutations->conds;
 	foreach my $perm (@perms)
 	{
 	    my $ok = 1;
@@ -6840,80 +6800,6 @@ sub variable_conditions_recursive_sub
 }
 
 
-# @CONDS
-# invert_conditions (@CONDS)
-# --------------------------
-# Invert a list of conditionals.  Returns a set of conditionals which
-# are never true for any of the input conditionals, and when taken
-# together with the input conditionals cover all possible cases.
-#
-# For example:
-#   invert_conditions("A_TRUE B_TRUE", "A_FALSE B_FALSE")
-#     => ("A_FALSE B_TRUE", "A_TRUE B_FALSE")
-#
-#   invert_conditions("A_TRUE B_TRUE", "A_TRUE B_FALSE", "A_FALSE")
-#     => ()
-sub invert_conditions
-{
-    my (@conds) = @_;
-
-    my @notconds = ();
-
-    # Generate all permutation for all inputs.
-    my @perm = map { variable_conditions_permutations ($_->conds); } @conds;
-    # Remove redundant conditions.
-    @perm = Automake::Conditional::reduce @perm;
-
-    # Now remove all conditions which imply one of the input conditions.
-    foreach my $perm (@perm)
-    {
-	push @notconds, $perm
-	    if ! $perm->implies_any (@conds);
-    }
-    return @notconds;
-}
-
-# Return a list of permutations of a conditional string.
-# (But never output FALSE conditions, they are useless.)
-#
-# Examples:
-#   variable_conditions_permutations ("FOO_FALSE", "BAR_TRUE")
-#     => ("FOO_FALSE BAR_FALSE",
-#         "FOO_FALSE BAR_TRUE",
-#         "FOO_TRUE BAR_FALSE",
-#         "FOO_TRUE BAR_TRUE")
-#   variable_conditions_permutations ("FOO_FALSE", "TRUE")
-#     => ("FOO_FALSE TRUE",
-#         "FOO_TRUE TRUE")
-#   variable_conditions_permutations ("TRUE")
-#     => ("TRUE")
-#   variable_conditions_permutations ("FALSE")
-#     => ("TRUE")
-sub variable_conditions_permutations
-{
-  my (@comps) = @_;
-  return ()
-    if ! @comps;
-  my $comp = shift (@comps);
-  return variable_conditions_permutations (@comps)
-    if $comp eq '';
-  my $neg = condition_negate ($comp);
-
-  my @ret;
-  foreach my $sub (variable_conditions_permutations (@comps))
-    {
-      push (@ret, $sub->merge_conds ($comp)) if $comp ne 'FALSE';
-      push (@ret, $sub->merge_conds ($neg)) if $neg ne 'FALSE';
-    }
-  if (! @ret)
-    {
-      push (@ret, new Automake::Conditional $comp) if $comp ne 'FALSE';
-      push (@ret, new Automake::Conditional $neg) if $neg ne 'FALSE';
-    }
-  return @ret;
-}
-
-
 # $BOOL
 # &check_variable_defined_unconditionally($VAR, $PARENT)
 # ------------------------------------------------------
@@ -6922,7 +6808,7 @@ sub variable_conditions_permutations
 sub check_variable_defined_unconditionally ($$)
 {
   my ($var, $parent) = @_;
-  foreach my $cond (variable_conditions ($var))
+  foreach my $cond (variable_conditions ($var)->conds)
     {
       next
 	if $cond->true || $cond->false;
@@ -7058,7 +6944,7 @@ sub variable_value_as_list
 
     # Get value for given condition
     my $onceflag;
-    foreach my $vcond (variable_conditions ($var))
+    foreach my $vcond (variable_conditions ($var)->conds)
     {
 	my $val = $var_value{$var}{$vcond};
 
@@ -7117,7 +7003,7 @@ sub variable_value_as_list_recursive_worker ($$$$)
     elsif ($cond eq 'all')
     {
 	$vars_scanned{$var} = 1;
-	foreach my $vcond (variable_conditions ($var))
+	foreach my $vcond (variable_conditions ($var)->conds)
 	{
 	    push (@result, &value_to_list ($var,
 					   $var_value{$var}{$vcond},
@@ -7130,7 +7016,7 @@ sub variable_value_as_list_recursive_worker ($$$$)
     {
 	$vars_scanned{$var} = 1;
 	my $onceflag;
-	foreach my $vcond (variable_conditions ($var))
+	foreach my $vcond (variable_conditions ($var)->conds)
 	{
 	    my $val = $var_value{$var}{$vcond};
 	    my $where = $var_location{$var}{$vcond};
@@ -7163,7 +7049,7 @@ sub variable_output ($@)
 {
   my ($var, @conds) = @_;
 
-  @conds = variable_sorted_conditions $var
+  @conds = variable_conditions ($var)->conds
     unless @conds;
 
   foreach my $cond (@conds)
@@ -7194,7 +7080,7 @@ sub variable_pretty_output ($@)
 {
   my ($var, @conds) = @_;
 
-  @conds = variable_sorted_conditions $var
+  @conds = variable_conditions ($var)->conds
     unless @conds;
 
   foreach my $cond (@conds)
@@ -7582,9 +7468,9 @@ sub rule_define ($$$$$)
 	  # was already defined in condition COND1 and we want to define
 	  # it in condition TRUE, then define it only in condition !COND1.
 	  # (See cond14.test and cond15.test for some test cases.)
-	  my @defined_conds = target_conditions ($target);
+	  my $defined_conds = target_conditions ($target);
 	  @conds = ();
-	  for my $undefined_cond (invert_conditions(@defined_conds))
+	  for my $undefined_cond ($defined_conds->invert->conds)
 	    {
 	      push @conds, $cond->merge ($undefined_cond);
 	    }
@@ -8358,7 +8244,7 @@ sub append_exeext ($)
   prog_error "append_exeext ($macro)"
     unless $macro =~ /_PROGRAMS$/;
 
-  my @conds = variable_conditions_recursive ($macro);
+  my @conds = variable_conditions_recursive ($macro)->conds;
 
   my @condvals;
   foreach my $cond (@conds)
@@ -8386,7 +8272,7 @@ sub append_exeext ($)
   # FIXME: Currently it's a bit hard to chose a condition becose the
   # set of input condition is different from the set of ouput
   # conditions.  See also PR/352.   So we just pick the first one.
-  my $cond = (variable_conditions ($macro))[0];
+  my $cond = variable_conditions ($macro)->one_cond;
   my $where = $var_location{$macro}{$cond};
 
   macro_delete ($macro);
@@ -8565,7 +8451,7 @@ sub am_install_var
       # Use the location of the currently processed variable.
       # We are not processing a particular condition, so pick the first
       # available.
-      my $tmpcond = (variable_conditions ($one_name))[0];
+      my $tmpcond = variable_conditions ($one_name)->one_cond;
       my $where = $var_location{$one_name}{$tmpcond}->clone;
 
       # Append actual contents of where_PRIMARY variable to
@@ -9115,7 +9001,7 @@ sub require_variables ($$$@)
 sub require_variables_for_macro ($$@)
 {
   my ($macro, $reason, @args) = @_;
-  for my $cond (variable_conditions ($macro))
+  for my $cond (variable_conditions ($macro)->conds)
     {
       return require_variables ($var_location{$macro}{$cond}, $reason,
 				$cond, @args);

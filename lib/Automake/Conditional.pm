@@ -99,7 +99,7 @@ the following statement.
 Remember that a C<Conditional> is a I<conjunction> of conditions, so
 the above C<Conditional> means C<VAR> is defined when C<COND1> is true
 B<and> C<COND2> are true. There is no way to express disjunctions
-(i.e., I<or>s) with this class.
+(i.e., I<or>s) with this class (see L<ConditionalSet>).
 
 Another point worth to mention is that each C<Conditional> object is
 unique with respect to its conditions.  Two C<Conditional> objects
@@ -442,6 +442,10 @@ sub reduce (@)
   return TRUE if @ret == 0;
   return @ret;
 }
+
+=head1 SEE ALSO
+
+L<Automake::ConditionalSet>.
 
 =head1 HISTORY
 
