@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002, 2003  Free Software Foundation, Inc.
+# Copyright (C) 2002, 2003, 2004  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -71,6 +71,8 @@ $MAKE foo/foo.o
 
 test -f foo/foo.c
 test -f foo/foo.o
+# ylwrap is not needed
+test ! -f ./ylwrap
 
 # Now, adds another lexer to test ylwrap.
 
@@ -80,7 +82,14 @@ cat >> Makefile.am << 'END'
 EXTRA_foo_foo_SOURCES = foo/foo2.l
 END
 
-$AUTOMAKE -a
+# Make sure Makefile.in has a new time stamp: the rebuild rules are
+# used below.  We do this after updating Makefile.am, that way we can
+# ensure that automake, even with --no-force, is not confused if the
+# new Makefile.am has the same time stamp as the older one (since the
+# output will change, --no-force should have no effect).
+$sleep
+
+$AUTOMAKE -a --no-force
 test -f ./ylwrap
 
 cd sub
