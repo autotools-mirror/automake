@@ -938,8 +938,7 @@ register_language ('name' => 'ppf77',
 		   'compile_flag' => '-c',
 		   'output_flag' => '-o',
 		   'pure' => 1,
-		   'extensions' => ['F'],
-		   '_finish' => \&lang_ppf77_finish);
+		   'extensions' => ['F']);
 
 # Ratfor.
 register_language ('name' => 'ratfor',
@@ -956,8 +955,7 @@ register_language ('name' => 'ratfor',
 		   'compile_flag' => '-c',
 		   'output_flag' => '-o',
 		   'pure' => 1,
-		   'extensions' => ['r'],
-		   '_finish' => \&lang_ratfor_finish);
+		   'extensions' => ['r']);
 
 # Java via gcj.
 register_language ('name' => 'java',
@@ -1578,6 +1576,10 @@ sub handle_languages
 	next if defined $done{$lang};
 	$done{$lang} = 1;
 
+	# Load the language dependent Makefile chunks.
+	my %lang = map { uc ($_) => 0 } keys %languages;
+	$lang{uc ($lang->name)} = 1;
+	$output_rules .= file_contents ('lang-compile', %transform, %lang);
 
 	# If the source to a program consists entirely of code from a
 	# `pure' language, for instance C++ for Fortran 77, then we
@@ -5113,23 +5115,6 @@ sub lang_lex_finish
     {
 	&yacc_lex_finish_helper;
     }
-}
-
-
-sub lang_ppf77_finish
-{
-    # We also handle the case of preprocessing `.F' files into `.f'
-    # files.
-    $output_rules .= (".F.f:\n"
-		      . "\t\$(F77COMPILE) -F \$<\n");
-}
-
-sub lang_ratfor_finish
-{
-    # We also handle the case of preprocessing `.r' files into `.f'
-    # files.
-    $output_rules .= (".r.f:\n"
-		      . "\t\$(RCOMPILE) -F \$<\n");
 }
 
 
