@@ -1,0 +1,22 @@
+#! /bin/sh
+
+# Check that Automake warns about variables starting with `_'.
+# PR/291
+
+. $srcdir/defs || exit 1
+
+set -e
+
+cat >Makefile.am <<EOF
+GOOD_ = 1
+_BAD  = 2
+ _bad = 3
+EOF
+
+$ACLOCAL
+# Make sure this warning is print in the `portability' category.
+$AUTOMAKE -Wno-error -Wnone -Wportability 2>stderr
+cat stderr
+grep GOOD stderr && exit 1
+grep _BAD stderr
+grep _bad stderr
