@@ -6,7 +6,6 @@
 # always use install-sh in `make install-strip', and initialize
 # STRIPPROG with the value of the STRIP variable (set by the user).
 AC_DEFUN([AM_PROG_INSTALL_STRIP],
-[AC_REQUIRE([AM_MISSING_INSTALL_SH])dnl
-_am_dirpart="`echo $install_sh | sed -e 's,//*[[^/]]*$,,'`"
-INSTALL_STRIP_PROGRAM="\${SHELL} \`CDPATH=: && cd $_am_dirpart && pwd\`/install-sh -c -s"
+[AC_REQUIRE([AM_PROG_INSTALL_SH])dnl
+INSTALL_STRIP_PROGRAM="\${SHELL} \$(install_sh) -c -s"
 AC_SUBST([INSTALL_STRIP_PROGRAM])])
