@@ -5948,19 +5948,55 @@ removed.
 @node Extending
 @chapter When Automake Isn't Enough
 
-Automake's implicit copying semantics means that many problems can be
-worked around by simply adding some @code{make} targets and rules to
-@file{Makefile.in}.  Automake will ignore these additions.
+With some minor exceptions (like @code{_PROGRAMS} variables being
+rewritten to append @code{$(EXEEXT)}), the contents of a
+@file{Makefile.am} is copied to @file{Makefile.in} verbatim.
+
+@cindex copying semantics
+
+These copying semantics means that many problems can be worked around
+by simply adding some @code{make} variables and rules to
+@file{Makefile.am}.  Automake will ignore these additions.
+
+@cindex conflicting definitions
+@cindex rules, conflicting
+@cindex variables, conflicting
+@cindex definitions, conflicts
+
+Since a @file{Makefile.in} is built from data gathered from three
+different places (@file{Makefile.am}, @file{configure.ac}, and
+@command{automake} itself), it is possible to have conflicting
+definitions of rules or variables.  When building @file{Makefile.in}
+the following priorities are respected by @command{automake} to ensure
+the user always have the last word.  User defined variables in
+@file{Makefile.am} have priority over variables @code{AC_SUBST}ed from
+@file{configure.ac}, and @code{AC_SUBST}ed variables have priority
+over @command{automake}-defined variables.  As far rules are
+concerned, a user-defined rule overrides any
+@command{automake}-defined rule for the same target.
+
+@cindex overriding rules
+@cindex overriding semantics
+@cindex rules, overriding
+
+These overriding semantics make it possible to fine tune some default
+settings of Automake, or replace some of its rules.  Overriding
+Automake rules is often inadvisable, particularly in the topmost
+directory of a package with subdirectories.  The @code{-Woverride}
+option (@pxref{Invoking Automake}) comes handy to catch overridden
+definitions.
+
+Note that Automake does not make any difference between rules with
+commands and rules that only specify dependencies.  So it is not
+possible to append new dependencies to an @code{automake}-defined
+target without redefining the entire rule.
 
 @cindex -local targets
 @cindex local targets
 
-There are some caveats to doing this.  Although you can overload a
-target already used by Automake, it is often inadvisable, particularly
-in the topmost directory of a package with subdirectories.  However,
-various useful targets have a @samp{-local} version you can specify in
-your @file{Makefile.in}.  Automake will supplement the standard target
-with these user-supplied targets.
+However, various useful targets have a @samp{-local} version you can
+specify in your @file{Makefile.in}.  Automake will supplement the
+standard target with these user-supplied targets.
 
 @trindex  all
 @trindex  all-local

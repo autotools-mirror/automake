@@ -209,6 +209,38 @@ New in 1.7e:
   - Fix ylwrap so that it does not overwrite header files that haven't
     changed, as the inline rule already does.
 
+  - User-defined rules override automake-defined rules for the same
+    targets, even when rules do not have commands.  This is not new
+    (and was documented), however some of the automake-generated
+    rules have escaped this principle in former Automake versions.
+    Rules for the following targets are affected by this fix:
+
+       clean, clean-am, dist-all, distclean, distclean-am, dvi, dvi-am,
+       info, info-am, install-data-am, install-exec-am, install-info,
+       install-info-am, install-man, installcheck-am, maintainer-clean,
+       maintainer-clean-am, mostlyclean, mostlyclean-am, pdf, pdf-am,
+       ps, ps-am, uninstall-am, uninstall-info, uninstall-man
+
+    Practically it means that an attempt to supplement the dependencies
+    of some target, as in
+
+       clean: my-clean-rule
+
+    will now *silently override* the automake definition of the
+    rule for this target.  Running `automake -Woverride' will diagnose
+    all such overriding definitions.
+
+    It should be noted that almost all these targets support a *-local
+    variant that is meant to supplement the automake-defined rule
+    (See node `Extending' in the manual).  The above rule should
+    be rewritten as
+
+      clean-local: my-clean-rule
+
+    These *-local targets have been documented since at least
+    Automake 1.2, so you should not fear the change if you have
+    to support multiple automake versions.
+
 * Miscellaneous
 
   - The Automake manual is now distributed under the terms of the GNU FDL.
