@@ -201,25 +201,6 @@ sub add_macro ($)
     &add_file ($map{$macro});
 }
 
-# rel2abs ($file, $directory)
-# ---------------------------
-# Similar to File::Spec->rel2abs ($file, $directory), but
-# work with Perl 5.005.  (File::Spec->rel2abs is available
-# only in Perl 5.6.)
-# Remove this once we require 5.6.
-sub rel2abs ($$)
-{
-  my ($file, $dir) = @_;
-  if (! File::Spec->file_name_is_absolute ($file))
-    {
-      $dir = cwd () . "/$dir"
-	unless File::Spec->file_name_is_absolute ($dir);
-      $file = "$dir/$file";
-    }
-  $file = File::Spec->canonpath ($file);
-  return $file;
-}
-
 # scan_configure_dep ($file)
 # --------------------------
 # Scan a configure dependency (configure.ac, or separate m4 files)
@@ -278,8 +259,7 @@ sub scan_configure_dep ($)
     }
 
   add_macro ($_) foreach (@rlist);
-  my $dirname = dirname $file;
-  &scan_configure_dep (rel2abs ($_, $dirname)) foreach (@ilist);
+  &scan_configure_dep ($_) foreach (@ilist);
 }
 
 # Add a file to output.
@@ -306,7 +286,6 @@ my $underquoted_manual_once = 0;
 sub scan_file ($$)
 {
   my ($file, $where) = @_;
-  my $base = dirname $file;
 
   # Do not scan the same file twice.
   return @$file_includes{$file} if exists $file_includes{$file};
@@ -367,15 +346,6 @@ sub scan_file ($$)
 	  my $ifile = $2 || $3;
 	  # Skip missing `sinclude'd files.
 	  next if $1 eq 's' && ! -f $ifile;
-	  # m4_include is relative to the directory of the file which
-	  # perform the include, but we want paths relative to the
-	  # directory where aclocal is run.  Do not use
-	  # File::Spec->rel2abs, because we want to store relative
-	  # paths (they might be used later of aclocal outputs an
-	  # m4_include for this file, or if the user itself includes
-	  # this file).
-	  $ifile = "$base/$ifile"
-	    unless $base eq '.' || File::Spec->file_name_is_absolute ($ifile);
 	  push (@inc_files, $ifile);
 	  $inc_lines{$ifile} = $.;
 	}
