@@ -2971,9 +2971,11 @@ sub handle_aclocal_m4
 # AC_OUTPUT.  Consider what the dependencies should look like in this
 # case:
 #   AC_OUTPUT(src/out:src/in1:lib/in2)
+# The first argument, ADD_SRCDIR, is 1 if $(top_srcdir) should be added.
+# If 0 then files that require this addition will simply be ignored.
 sub rewrite_inputs_into_dependencies
 {
-    local (@inputs) = @_;
+    local ($add_srcdir, @inputs) = @_;
     local ($single, @newinputs);
 
     foreach $single (@inputs)
@@ -2982,7 +2984,7 @@ sub rewrite_inputs_into_dependencies
 	{
 	    push (@newinputs, &basename ($single));
 	}
-	else
+	elsif ($add_srcdir)
 	{
 	    push (@newinputs, '$(top_srcdir)/' . $single);
 	}
@@ -3018,7 +3020,8 @@ sub handle_configure
     $colon_infile .= ':' . join (':', @secondary_inputs)
 	if @secondary_inputs;
 
-    local (@rewritten) = &rewrite_inputs_into_dependencies (@secondary_inputs);
+    local (@rewritten) = &rewrite_inputs_into_dependencies (1,
+							    @secondary_inputs);
     # This rule remakes the Makefile.in.  Note use of @MAINT@ forces
     # us to abandon pretty-printing.  Sigh.
     $output_rules .= ($infile
@@ -3192,7 +3195,7 @@ sub handle_configure
 	    $file = $1;
 	    $local = &basename ($file);
 	    @inputs = split (':', $2);
-	    @rewritten_inputs = &rewrite_inputs_into_dependencies (@inputs);
+	    @rewritten_inputs = &rewrite_inputs_into_dependencies (1, @inputs);
 	    $need_rewritten = 1;
 	}
 	else
@@ -3201,7 +3204,7 @@ sub handle_configure
 	    $local = &basename ($file);
 	    @inputs = ($local . '.in');
 	    @rewritten_inputs =
-		&rewrite_inputs_into_dependencies ($file . '.in');
+		&rewrite_inputs_into_dependencies (1, $file . '.in');
 	    $need_rewritten = 0;
 	}
 
@@ -3229,7 +3232,7 @@ sub handle_configure
 			  . 'cd $(top_builddir) && CONFIG_FILES='
 			  . ($relative_dir eq '.' ? '' : '$(subdir)/')
    			  . '$@' . ($need_rewritten
-				    ? (':' . join (':', @rewritten_inputs))
+				    ? (':' . join (':', @inputs))
 				    : '')
 			  . ' CONFIG_HEADERS= $(SHELL) ./config.status'
 			  . "\n");
@@ -3237,7 +3240,7 @@ sub handle_configure
 
 	# Require all input files.
 	&require_file_with_conf_line ($ac_output_line, $FOREIGN,
-				      @inputs);
+				      &rewrite_inputs_into_dependencies (0, @inputs));
     }
 
     # These files get removed by "make clean".
