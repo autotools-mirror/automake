@@ -420,10 +420,10 @@ end, Automake allows you to extend the list of possible installation
 directories.  A given prefix (e.g. @samp{zar}) is valid if a variable of
 the same name with @samp{dir} appended is defined (e.g. @code{zardir}).
 
-@cindex HTML support, example
+@cindex HTML installation, example
 
-For instance, until HTML support is part of Automake, you could use this
-to install raw HTML documentation:
+For instance, installation of HTML files is part of Automake, you could
+use this to install raw HTML documentation:
 
 @example
 htmldir = $(prefix)/html
@@ -4611,6 +4611,10 @@ Currently Automake provides support for Texinfo and man pages.
 @cindex _TEXINFOS primary, defined
 @cindex TEXINFOS primary, defined
 @cindex Primary variable, TEXINFOS
+@cindex HTML output using Texinfo
+@cindex PDF output using Texinfo
+@cindex PS output using Texinfo
+@cindex DVI output using Texinfo
 
 If the current directory contains Texinfo source, you must declare it
 with the @samp{TEXINFOS} primary.  Generally Texinfo files are converted
@@ -4670,18 +4674,6 @@ file for each Texinfo file.  Automake will treat any include in a
 Texinfo file that matches @samp{vers*.texi} just as an automatically
 generated version file.
 
-When an info file is rebuilt, the program named by the @code{MAKEINFO}
-variable is used to invoke it.  If the @code{makeinfo} program is found
-on the system then it will be used by default; otherwise @code{missing}
-will be used instead.  The flags in the variables @code{MAKEINFOFLAGS}
-and @code{AM_MAKEINFOFLAGS} will be passed to the @code{makeinfo}
-invocation; the first of these is intended for use by the user
-(@pxref{User Variables}) and the second by the @file{Makefile.am}
-writer.
-@vindex MAKEINFO
-@vindex MAKEINFOFLAGS
-@vindex AM_MAKEINFOFLAGS
-
 Sometimes an info file actually depends on more than one @file{.texi}
 file.  For instance, in GNU Hello, @file{hello.texi} includes the file
 @file{gpl.texi}.  You can tell Automake about these dependencies using
@@ -4697,23 +4689,12 @@ hello_TEXINFOS = gpl.texi
 @cindex texinfo.tex
 
 By default, Automake requires the file @file{texinfo.tex} to appear in
-the same directory as the Texinfo source.  However, if you used
+the same directory as the Texinfo source (this can be changed using the
+@code{TEXINFO_TEX} variable, see below).  However, if you used
 @code{AC_CONFIG_AUX_DIR} in @file{configure.ac} (@pxref{Input, , Finding
 `configure' Input, autoconf, The Autoconf Manual}), then
 @file{texinfo.tex} is looked for there.  Automake supplies
 @file{texinfo.tex} if @samp{--add-missing} is given.
-
-@vindex TEXINFO_TEX
-
-If your package has Texinfo files in many directories, you can use the
-variable @code{TEXINFO_TEX} to tell Automake where to find the canonical
-@file{texinfo.tex} for your package.  The value of this variable should
-be the relative path from the current @file{Makefile.am} to
-@file{texinfo.tex}:
-
-@example
-TEXINFO_TEX = ../doc/texinfo.tex
-@end example
 
 @opindex no-texinfo.tex
 
@@ -4733,6 +4714,71 @@ requirement for @file{texinfo.tex}.  Use of the variable
 Automake generates an @code{install-info} target; some people apparently
 use this.  By default, info pages are installed by @samp{make install}.
 This can be prevented via the @code{no-installinfo} option.
+
+The following variables are used by the Texinfo build rules.
+
+@vtable @code
+@item MAKEINFO
+The name of the program invoked to build @file{.info} files.  This
+variable is defined by Automake.  If the @code{makeinfo} program is
+found on the system then it will be used by default; otherwise
+@code{missing} will be used instead.
+
+@item MAKEINFOHTML
+The command invoked to build @file{.html} files.  Automake
+defines this to @code{$(MAKEINFO) --html}.
+
+@item MAKEINFOFLAGS
+User flags passed to each invocation of @code{$(MAKEINFO)} and
+@code{$(MAKEINFOHTML)}.  This user variable (@pxref{User Variables}) is
+not expected to be defined in any @file{Makefile}; it can be used by
+users to pass extra flags to suit their needs.
+
+@item AM_MAKEINFOFLAGS
+@itemx AM_MAKEINFOHTMLFLAGS
+Maintainer flags passed to each @code{makeinfo} invocation.  These
+are maintainer variables that can be overridden in @file{Makefile.am}.
+@code{$(AM_MAKEINFOFLAGS)} is passed to @code{makeinfo} when building
+@file{.info} files; and @code{$(AM_MAKEINFOHTMLFLAGS)} is used when
+building @file{.html} files.
+
+For instance the following setting can be used to obtain one single
+@file{.html} file per manual, without node separators.
+@example
+AM_MAKEINFOHTMLFLAGS = --no-headers --no-split
+@end example
+
+By default, @code{$(AM_MAKEINFOHTMLFLAGS)} is set to
+@code{$(AM_MAKEINFOFLAGS)}.  This means that defining
+@code{$(AM_MAKEINFOFLAGS)} without defining
+@code{$(AM_MAKEINFOHTMLFLAGS)} will impact builds of both @file{.info}
+and @file{.html} files.
+
+@item TEXI2DVI
+The name of the command that converts a @file{.texi} file into a
+@file{.dvi} file.  This defaults to @code{texi2dvi}, a script that ships
+with the Texinfo package.
+
+@item TEXI2PDF
+The name of the command that translates a @file{.texi} file into a
+@file{.pdf} file.  This defaults to @code{$(TEXI2DVI) --pdf --batch}.
+
+@item DVIPS
+The name of the command that build a @file{.ps} file out of a
+@file{.dvi} file.  This defaults to @code{dvips}.
+
+@item TEXINFO_TEX
+
+If your package has Texinfo files in many directories, you can use the
+variable @code{TEXINFO_TEX} to tell Automake where to find the canonical
+@file{texinfo.tex} for your package.  The value of this variable should
+be the relative path from the current @file{Makefile.am} to
+@file{texinfo.tex}:
+
+@example
+TEXINFO_TEX = ../doc/texinfo.tex
+@end example
+@end vtable
 
 
 @node Man pages
@@ -6699,7 +6745,7 @@ Note that the renaming of objects is also affected by the
 @c  LocalWords:  DISTCLEANFILES MAINTAINERCLEANFILES gzip'd GZIP gzip shar exp
 @c  LocalWords:  distdir distcheck distcleancheck listfiles distuninstallcheck
 @c  LocalWords:  VPATH tarfile stdout XFAIL DejaGnu dejagnu DEJATOOL runtest ln
-@c  LocalWords:  RUNTESTDEFAULTFLAGS toolchain RUNTESTFLAGS asis readme
+@c  LocalWords:  RUNTESTDEFAULTFLAGS toolchain RUNTESTFLAGS asis readme DVIPS
 @c  LocalWords:  installcheck gzipped tarZ std utils etags mkid multilibbing cd
 @c  LocalWords:  ARGS taggable ETAGSFLAGS lang ctags CTAGSFLAGS GTAGS gtags idl
 @c  LocalWords:  foocc doit idlC multilibs ABIs cmindex defmac ARG enableval
@@ -6709,4 +6755,4 @@ Note that the renaming of objects is also affected by the
 @c  LocalWords:  DSOMEFLAG DVERSION automake Lutz insertcopying versioning FAQ
 @c  LocalWords:  LTLIBOBJ Libtool's libtool's libltdl dlopening itutions libbar
 @c  LocalWords:  WANTEDLIBS libhello sublibraries libtop libsub dlopened Ratfor
-@c  LocalWords:  mymodule timestamps timestamp underquoted
+@c  LocalWords:  mymodule timestamps timestamp underquoted MAKEINFOHTMLFLAGS

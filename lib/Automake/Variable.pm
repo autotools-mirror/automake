@@ -184,7 +184,8 @@ my $configure_ac = find_configure_ac;
 
 # Variables that can be overriden without complaint from -Woverride
 my %_silent_variable_override =
-  (AR => 1,
+  (AM_MAKEINFOHTMLFLAGS => 1,
+   AR => 1,
    ARFLAGS => 1,
    DEJATOOL => 1,
    JAVAC => 1);
