@@ -1319,6 +1319,30 @@ sub handle_lib_objects
     return $seen_libobjs;
 }
 
+# Canonicalize a name, and check to make sure the non-canonical name
+# is never used.  Returns canonical name.  Arguments are name and a
+# list of suffixes to check for.
+sub check_canonical_spelling
+{
+    local ($name, @suffixes) = @_;
+    local ($xname, $xt);
+
+    ($xname = $name) =~ tr/A-Za-z0-9_/_/c;
+    if ($xname ne $name)
+    {
+	local ($xt);
+	foreach $xt (@suffixes)
+	{
+	    &am_line_error ($name . $xt,
+			    "invalid variable \`" . $name . $xt
+			    . "'; should be \`" . $xname . $xt . "'")
+		if &variable_defined ($name . $xt);
+	}
+    }
+
+    return $xname;
+}
+
 # Handle C programs.
 sub handle_programs
 {
@@ -1341,19 +1365,10 @@ sub handle_programs
     {
 	local ($obj) = &get_object_extension ($one_file);
 
-	# Canonicalize names.
-	($xname = $one_file) =~ tr/A-Za-z0-9_/_/c;
-	if ($xname ne $one_file)
-	{
-	    local ($xt);
-	    foreach $xt ('_LDADD', '_LDFLAGS', '_SOURCES', '_OBJECTS', '_DEPENDENCIES')
-	    {
-		&am_line_error ($one_file . $xt,
-				"invalid variable \`" . $one_file . $xt
-				. "'; should be \`" . $xname . $xt . "'")
-		    if &variable_defined ($one_file . $xt);
-	    }
-	}
+	# Canonicalize names and check for misspellings.
+	$xname = &check_canonical_spelling ($one_file, '_LDADD', '_LDFLAGS',
+					    '_SOURCES', '_OBJECTS',
+					    '_DEPENDENCIES');
 
 	# FIXME: Using a trick to figure out if any lex sources appear
 	# in our program; should use some cleaner method.
@@ -1388,6 +1403,13 @@ sub handle_programs
 		$lex_file_seen = 0;
 	    }
 	    $xt = '_SOURCES'
+	}
+
+	if (&variable_defined ($xname . '_LIBADD'))
+	{
+	    &am_line_error ($xname . '_LIBADD',
+			    "use \`" . $xname . "_LDADD', not \`"
+			    . $xname . "_LIBADD'");
 	}
 
 	if (! &variable_defined ($xname . '_LDFLAGS'))
@@ -1499,19 +1521,9 @@ sub handle_libraries
 
 	local ($obj) = &get_object_extension ($onelib);
 
-	# Canonicalize names.
-	($xlib = $onelib) =~ tr/A-Za-z0-9_/_/c;
-	if ($xlib ne $onelib)
-	{
-	    local ($xt);
-	    foreach $xt ('_LIBADD', '_SOURCES', '_OBJECTS', '_DEPENDENCIES')
-	    {
-		&am_line_error ($onelib . $xt,
-				"invalid variable \`" . $onelib . $xt
-				. "'; should be \`" . $xlib . $xt . "'")
-		    if &variable_defined ($onelib . $xt);
-	    }
-	}
+	# Canonicalize names and check for misspellings.
+	$xlib = &check_canonical_spelling ($onelib, '_LIBADD', '_SOURCES',
+					   '_OBJECTS', '_DEPENDENCIES');
 
 	if (&variable_defined ($xlib . '_LIBADD'))
 	{
@@ -1525,6 +1537,13 @@ sub handle_libraries
 	    # Generate support for conditional object inclusion in
 	    # libraries.
 	    &define_variable ($xlib . "_LIBADD", '');
+	}
+
+	if (&variable_defined ($xlib . '_LDADD'))
+	{
+	    &am_line_error ($xlib . '_LDADD',
+			    "use \`" . $xlib . "_LIBADD', not \`"
+			    . $xlib . "_LDADD'");
 	}
 
 	&handle_source_transform ($xlib, $onelib, $obj);
@@ -1610,19 +1629,10 @@ sub handle_ltlibraries
 
 	local ($obj) = &get_object_extension ($onelib);
 
-	# Canonicalize names.
-	($xlib = $onelib) =~ tr/A-Za-z0-9_/_/c;
-	if ($xlib ne $onelib)
-	{
-	    local ($xt);
-	    foreach $xt ('_LIBADD', '_LDFLAGS', '_SOURCES', '_OBJECTS', '_DEPENDENCIES')
-	    {
-		&am_line_error ($onelib . $xt,
-				"invalid variable \`" . $onelib . $xt
-				. "'; should be \`" . $xlib . $xt . "'")
-		    if &variable_defined ($onelib . $xt);
-	    }
-	}
+	# Canonicalize names and check for misspellings.
+	$xlib = &check_canonical_spelling ($onelib, '_LIBADD', '_LDFLAGS',
+					   '_SOURCES', '_OBJECTS',
+					   '_DEPENDENCIES');
 
 	if (! &variable_defined ($xlib . '_LDFLAGS'))
 	{
@@ -1642,6 +1652,13 @@ sub handle_ltlibraries
 	    # Generate support for conditional object inclusion in
 	    # libraries.
 	    &define_variable ($xlib . "_LIBADD", '');
+	}
+
+	if (&variable_defined ($xlib . '_LDADD'))
+	{
+	    &am_line_error ($xlib . '_LDADD',
+			    "use \`" . $xlib . "_LIBADD', not \`"
+			    . $xlib . "_LDADD'");
 	}
 
 	local ($linker) = &handle_source_transform ($xlib, $onelib, $obj);
