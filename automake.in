@@ -440,10 +440,6 @@ my $output_header;
 # Suffixes found during a run.
 my @suffixes;
 
-# This holds the contents of a Makefile.am, as parsed by
-# read_am_file.
-my %contents;
-
 # This maps a variable name onto a flag.  The flag is true iff the
 # variable was first defined with `+='.
 my %var_was_plus_eq;
@@ -463,7 +459,7 @@ my %var_is_am;
 my %conditional;
 
 # This holds the line numbers at which various elements of
-# %contents are defined.
+# %conditional are defined.
 my %content_lines;
 
 # This holds a 1 if a particular variable was examined.
@@ -627,8 +623,6 @@ sub initialize_per_input ()
     $output_header = '';
 
     @suffixes = ();
-
-    %contents = ();
 
     %var_was_plus_eq = ();
 
@@ -1076,8 +1070,8 @@ sub generate_makefile
 
     # Re-init SOURCES and OBJECTS.  FIXME: other code shouldn't depend
     # on this (but currently does).
-    $contents{'SOURCES'} = join (' ', @sources);
-    $contents{'OBJECTS'} = join (' ', @objects);
+    $conditional{'SOURCES'}{'TRUE'} = join (' ', @sources);
+    $conditional{'OBJECTS'}{'TRUE'} = join (' ', @objects);
     &define_pretty_variable ('DIST_SOURCES', '', @dist_sources);
 
     &handle_multilib;
@@ -2520,7 +2514,7 @@ sub handle_ltlibraries
 # EXTRA_ variables don't contain configure substitutions.
 sub check_typos
 {
-    foreach my $varname (keys %contents)
+    foreach my $varname (keys %conditional)
     {
 	foreach my $primary ('_SOURCES', '_LIBADD', '_LDADD', '_LDFLAGS',
 			     '_DEPENDENCIES')
@@ -3094,7 +3088,7 @@ sub handle_dist
 	# to all possible directories, and use it.  If DIST_SUBDIRS is
 	# defined, just use it.
 	my $dist_subdir_name;
-	if (&variable_conditions ('SUBDIRS')
+	if (variable_conditionally_defined ('SUBDIRS')
 	    || &variable_defined ('DIST_SUBDIRS'))
 	{
 	    $dist_subdir_name = 'DIST_SUBDIRS';
@@ -5510,7 +5504,6 @@ sub variable_dump ($)
 
   print STDERR "  $var ($var_is_am, where = $where) $pluseq\n";
   print STDERR "  {\n";
-  print STDERR "    (TRUE) => $contents{$var}\n";
   foreach my $vcond (sort by_condition keys %{$conditional{$var}})
     {
       print STDERR "    $vcond => $conditional{$var}{$vcond}\n";
@@ -5525,9 +5518,9 @@ sub variables_dump ()
 {
   my ($var)= @_;
 
-  print STDERR "%contents =\n";
+  print STDERR "%conditional =\n";
   print STDERR "{\n";
-  foreach my $var (sort (keys %contents, keys %conditional))
+  foreach my $var (sort (keys %conditional))
     {
       variable_dump ($var);
     }
@@ -5560,13 +5553,13 @@ sub conditional_string
 # See if a conditional is true.  Both arguments are conditional
 # strings.  This returns true if the first conditional is true when
 # the second conditional is true.
-# For instance with $COND = @FOO@@BAR@, and $WHEN = @FOO@@BAR@@BAZ@,
-# obviously return 1, and 0 when, for instance, $WHEN = @FOO@.
+# For instance with $COND = `BAR FOO', and $WHEN = `BAR BAZ FOO',
+# obviously return 1, and 0 when, for instance, $WHEN = `FOO'.
 sub conditional_true_when ($$)
 {
     my ($cond, $when) = @_;
 
-    # Check each component of $cond, which looks @COND1@@COND2@.
+    # Check each component of $cond, which looks `COND1 COND2'.
     foreach my $comp (split (' ', $cond))
     {
 	if (index ($when, $comp) == -1)
@@ -5618,7 +5611,8 @@ sub check_ambiguous_conditional ($$)
 	    || &conditional_true_when ($cond, $vcond))
 	{
 	    &am_line_error ($var,
-			    "$var multiply defined in condition");
+			    "$var multiply defined in condition $cond");
+	    variable_dump ($var);
 	}
     }
 }
@@ -5637,19 +5631,15 @@ sub macro_define ($$$$$$)
 {
   my ($var, $var_is_am, $type, $cond, $value, $where) = @_;
 
-  if (defined $contents{$var}
-      && ($cond
-	  ? ! defined $conditional{$var}
-	  : defined $conditional{$var}))
-    {
-      &am_line_error ($var,
-		      "$var defined both conditionally and unconditionally");
-    }
+  $cond ||= 'TRUE';
 
-  if (! defined $contents{$var})
+  check_ambiguous_conditional ($var, $cond)
+    unless $type eq '+';
+
+  if (! defined $conditional{$var}{$cond})
     {
       # Initialize: we rely on defined.
-      $contents{$var} = '';
+      $conditional{$var}{$cond} = '';
 
       # The first assignment to a macro sets the line number.  Ideally
       # I suppose we would associate line numbers with random bits of
@@ -5669,38 +5659,43 @@ sub macro_define ($$$$$$)
       $var_is_am{$var} = $var_is_am;
     }
 
-  # Handled unconditional macros.
   if ($type eq '+')
     {
-      if (substr ($contents{$var}, -1) eq "\n")
+      if (substr ($conditional{$var}{$cond}, -1) eq "\n")
        {
          # Insert a backslash before a trailing newline.
-         $contents{$var} = substr ($contents{$var}, 0, -1) . "\\\n";
+         $conditional{$var}{$cond} =
+	   substr ($conditional{$var}{$cond}, 0, -1) . "\\\n";
        }
-      $contents{$var} .= ($contents{$var} && ' ') . $value;
+      elsif ($conditional{$var}{$cond})
+	{
+	  # Insert a separator.
+	  $conditional{$var}{$cond} .= ' ';
+	}
+       $conditional{$var}{$cond} .= $value;
     }
   else
     {
-      $contents{$var} = $value;
-    }
-
-  # Handle conditionalized macros.
-  if ($cond)
-    {
-      if ($type eq '+' && exists $conditional{$var}{$cond})
-	{
-	  $conditional{$var}{$cond} .=  ' ' . $value;
-	}
-      else
-	{
-	  &check_ambiguous_conditional ($var, $cond);
-	  $conditional{$var}{$cond} = $value;
-        }
+      $conditional{$var}{$cond} = $value;
     }
 
     # FIXME: I don't understand what's so special wrt `:', nor
     # why we forget the `+' nature of a var.
     $def_type{$var} = ($type eq ':') ? ':' : '';
+}
+
+
+# &variable_delete ($VAR)
+# -----------------------
+# Forget about a variable.
+sub variable_delete ($)
+{
+  my ($var) = @_;
+
+  delete $content_lines{$var};
+  delete $conditional{$var};
+  delete $var_is_am{$var};
+  delete $def_type{$var};
 }
 
 
@@ -5715,7 +5710,7 @@ sub variable_defined ($$)
 {
     my ($var, $cond) = @_;
 
-    if (defined $contents{$var} && !$var_is_am{$var})
+    if (exists $conditional{$var} && !$var_is_am{$var})
     {
 	if ($cond && $conditional{$var})
 	{
@@ -5766,7 +5761,7 @@ sub examine_variable
 # then this returns both COND_TRUE and COND_FALSE.  This is
 # because we will need to define the variable under both conditions.
 
-sub variable_conditions
+sub variable_conditions ($)
 {
     my ($var) = @_;
     my %uniqify;
@@ -5784,6 +5779,23 @@ sub variable_conditions
     return @uniq_list;
 }
 
+
+# $BOOLEAN
+# &variable_conditionally_defined ($VAR)
+# --------------------------------------
+sub variable_conditionally_defined ($)
+{
+    my ($var) = @_;
+    foreach my $cond (variable_conditions ($var))
+      {
+	return 1
+	  unless $cond =~ /^TRUE|FALSE$/;
+      }
+    return 0;
+}
+
+
+
 # &variable_conditions_sub ($VAR, $PARENT, @PARENT_CONDS)
 # -------------------------------------------------------
 # A subroutine of variable_conditions.  We only return conditions
@@ -5800,9 +5812,9 @@ sub variable_conditions_sub
     }
     $vars_scanned{$var} = 1;
 
-    if (! $conditional{$var})
+    if (! $variable_conditionally_defined{$var})
     {
-	foreach (split (' ', $contents{$var}))
+	foreach (split (' ', $conditional{$var}{'TRUE'}))
 	{
 	    # If a comment seen, just leave.
 	    last if /^#/;
@@ -5985,8 +5997,11 @@ sub variable_conditions_permutations
 sub check_variable_defined_unconditionally ($$)
 {
     my ($var, $parent) = @_;
-    if ($conditional{$var})
+    foreach my $cond (keys %{$conditional{$var}})
     {
+        next
+	  if $cond =~ /^TRUE|FALSE$/;
+
 	if ($parent)
 	{
 	    &am_line_error ($parent,
@@ -6001,13 +6016,13 @@ sub check_variable_defined_unconditionally ($$)
 }
 
 
-# Get the value of a variable.  This just returns $contents, but warns
-# if the variable is conditionally defined.
+# Get the TRUE value of a variable, warn if the variable is
+# conditionally defined.
 sub variable_value
 {
     my ($var) = @_;
     &check_variable_defined_unconditionally ($var);
-    return $contents{$var};
+    return $conditional{$var}{'TRUE'};
 }
 
 
@@ -6088,7 +6103,7 @@ sub variable_value_as_list_worker
     my ($var, $cond, $parent) = @_;
     my @result = ();
 
-    if (! defined $contents{$var})
+    if (! defined $conditional{$var})
     {
         if (defined $targets{$var})
 	  {
@@ -6137,7 +6152,7 @@ sub variable_value_as_list_worker
 	$vars_scanned{$var} = 1;
 	&check_variable_defined_unconditionally ($var, $parent);
 	$content_seen{$var} = 1;
-	push (@result, &value_to_list ($var, $contents{$var}, $cond));
+	push (@result, &value_to_list ($var, $conditional{$var}{'TRUE'}, $cond));
     }
 
     # Unset our entry in vars_scanned.  We only care about recursive
@@ -6164,7 +6179,7 @@ sub variable_value_as_list
 sub define_variable
 {
     my ($var, $value) = @_;
-    if (! defined $contents{$var})
+    if (! defined $conditional{$var}{'TRUE'})
     {
 	$output_vars .= $var . ' = ' . $value . "\n";
 	macro_define ($var, 0, '', '', $value, undef);
@@ -6187,7 +6202,7 @@ sub define_pretty_variable
 {
     my ($var, $cond, @value) = @_;
 
-    if (! defined $contents{$var}
+    if (! defined $conditional{$var}{'TRUE'}
 	|| ($cond && ! &variable_defined ($var, $cond)))
     {
         macro_define ($var, 0, '', $cond, join (' ', @value), undef);
@@ -6575,7 +6590,7 @@ sub read_main_am_file
 
     # This supports the strange variable tricks we are about to play.
     &prog_error ("variable defined before read_main_am_file")
-        if scalar keys %contents > 0;
+        if scalar keys %conditional > 0;
 
     # We want to predefine as many variables as possible.  This lets
     # the user set them with `+=' in Makefile.am.  However, we don't
@@ -6587,7 +6602,7 @@ sub read_main_am_file
 
     # First pass.
     &define_standard_variables;
-    my %saved_contents = %contents;
+    my %saved_conditional = %conditional;
 
     # Read user file, but discard text of variable assignments we just
     # made.
@@ -6635,11 +6650,11 @@ sub read_main_am_file
 
     # Now go through and delete all the variables that the user did
     # not change.
-    foreach my $var (keys %saved_contents)
+    foreach my $var (keys %saved_conditional)
     {
-	if (variable_value ($var) eq $saved_contents{$var})
+	if (variable_value ($var) eq $saved_conditional{$var}{'TRUE'})
 	{
-	    delete $contents{$var};
+	    variable_delete ($var);
 	}
     }
 
@@ -6938,7 +6953,7 @@ sub am_primary_prefixes
     my %valid;
     grep ($valid{$_} = 0, @prefixes);
     $valid{'EXTRA'} = 0;
-    foreach my $varname (keys %contents)
+    foreach my $varname (keys %conditional)
     {
         # Automake is allowed to define variables that look like they
         # are magic variables, such as INSTALL_DATA.
@@ -7105,65 +7120,35 @@ sub am_install_var
 	    {
 		my @conds = &variable_conditions ($one_name);
 
-		# FIXME: This code is mad, rewrite!
-
-		# FIXME: this definitely loses aesthetically; it
-		# redefines $ONE_NAME.  Instead we should arrange for
-		# variable definitions to be output later, instead of
-		# at scan time.
-
-		if (! @conds)
-		{
+		my @condvals;
+		foreach my $cond (@conds)
+		  {
 		    my @one_binlist = ();
-		    foreach my $rcurs (&variable_value_as_list ($one_name, ''))
-		    {
+		    my @condval = &variable_value_as_list ($one_name,
+							   $cond);
+		    foreach my $rcurs (@condval)
+		      {
 			if ($rcurs =~ /\./ || $rcurs =~ /^\@.*\@$/)
-			{
+			  {
 			    push (@one_binlist, $rcurs);
-			}
+			  }
 			else
-			{
+			  {
 			    push (@one_binlist, $rcurs . '$(EXEEXT)');
-			}
-		    }
+			  }
+		      }
 
-		    delete $contents{$one_name};
-		    &define_pretty_variable ($one_name, '', @one_binlist);
-		}
-		else
-		{
-		    my @condvals;
-		    foreach my $cond (@conds)
-		    {
-			my @one_binlist = ();
-			my @condval = &variable_value_as_list ($one_name,
-							       $cond);
-			foreach my $rcurs (@condval)
-			{
-			    if ($rcurs =~ /\./ || $rcurs =~ /^\@.*\@$/)
-			    {
-				push (@one_binlist, $rcurs);
-			    }
-			    else
-			    {
-				push (@one_binlist, $rcurs . '$(EXEEXT)');
-			    }
-			}
+		    push (@condvals, $cond);
+		    push (@condvals, join (' ', @one_binlist));
+		  }
 
-			push (@condvals, $cond);
-			push (@condvals, join (' ', @one_binlist));
-		    }
-
-		    delete $contents{$one_name};
-
-		    while (@condvals)
-		    {
-			my $cond = shift (@condvals);
-			my @val = split (' ', shift (@condvals));
-			delete $conditional{$one_name}{$cond};
-			&define_pretty_variable ($one_name, $cond, @val);
-		    }
-		}
+		variable_delete ($one_name);
+		while (@condvals)
+		  {
+		    my $cond = shift (@condvals);
+		    my @val = split (' ', shift (@condvals));
+		    &define_pretty_variable ($one_name, $cond, @val);
+		  }
 	    }
 
 	    # "EXTRA" shouldn't be used when generating clean targets,
