@@ -4482,50 +4482,45 @@ Automake would have issued a warning.
 @cindex Automatic linker selection
 @cindex Selecting the linker automatically
 
-The following diagram demonstrates under what conditions a particular
-linker is chosen by Automake.
+When a program or library mixes several languages, Automake choose the
+linker according to the following priorities.  (The names in
+parentheses are the variables containing the link command.)
 
-For example, if Fortran 77, C and C++ source code were to be compiled
+@enumerate
+@item
+@vindex GCJLINK
+Native Java (@code{GCJLINK})
+@item
+@vindex CXXLINK
+C++ (@code{CXXLINK})
+@item
+@vindex F77LINK
+Fortran 77 (@code{F77LINK})
+@item
+@vindex FCLINK
+Fortran (@code{FCLINK})
+@item
+@vindex OBJCLINK
+Objective C (@code{OBJCLINK})
+@item
+@vindex LINK
+C (@code{LINK})
+@end enumerate
+
+For example, if Fortran 77, C and C++ source code is compiled
 into a program, then the C++ linker will be used.  In this case, if the
 C or Fortran 77 linkers required any special libraries that weren't
 included by the C++ linker, then they must be manually added to an
 @code{_LDADD} or @code{_LIBADD} variable by the user writing the
 @file{Makefile.am}.
 
-@example
-                     \              Linker
-          source      \
-           code        \     C        C++     Fortran
-     -----------------  +---------+---------+---------+
-                        |         |         |         |
-     C                  |    x    |         |         |
-                        |         |         |         |
-                        +---------+---------+---------+
-                        |         |         |         |
-         C++            |         |    x    |         |
-                        |         |         |         |
-                        +---------+---------+---------+
-                        |         |         |         |
-               Fortran  |         |         |    x    |
-                        |         |         |         |
-                        +---------+---------+---------+
-                        |         |         |         |
-     C + C++            |         |    x    |         |
-                        |         |         |         |
-                        +---------+---------+---------+
-                        |         |         |         |
-     C +       Fortran  |         |         |    x    |
-                        |         |         |         |
-                        +---------+---------+---------+
-                        |         |         |         |
-         C++ + Fortran  |         |    x    |         |
-                        |         |         |         |
-                        +---------+---------+---------+
-                        |         |         |         |
-     C + C++ + Fortran  |         |    x    |         |
-                        |         |         |         |
-                        +---------+---------+---------+
-@end example
+Automake only looks at the filenames listed in @file{_SOURCES}
+variables to choose the linker, and defaults to the C linker.
+Sometimes this is inconvenient because you are linking against a
+library written in another language and would like to set the linker
+more appropriately.  @xref{Libtool Convenience Libraries}, for a
+trick with @code{nodist_EXTRA_@dots{}_SOURCES}.
+
 
 @node Fortran 9x Support
 @comment  node-name,  next,  previous,  up
