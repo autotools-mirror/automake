@@ -402,9 +402,63 @@ underscores when making macro references.  E.g., if your program is named
 @chapter Some example packages
 
 @menu
+* Complete::                    A simple example, start to finish
 * Hello::                       A classic program
 * etags::                       Building etags and ctags
 @end menu
+
+@node Complete
+@section A simple example, start to finish
+
+Let's suppose you just finished writing @code{zardoz}, a program to make
+your head float around.  You've been using @code{autoconf} to provide a
+portability framework, but your @file{Makefile.in}s have been ad-hoc.
+You want to make them bulletproof, so you turn to @code{automake}.
+
+The first step is to update your @file{configure.in} to include the
+commands that @code{automake} needs.  The simplest way to do this is to
+add an @code{AM_INIT_AUTOMAKE} call near the beginning:
+
+@example
+AM_INIT_AUTOMAKE(zardoz, 1.0)
+@end example
+
+Since your program doesn't have any complicating factors (e.g., it
+doesn't use @code{gettext}, it doesn't want to build a shared library),
+you're done with this part.  That was easy!
+
+Now you must regenerate @file{configure}.  But to do that, you'll need
+to tell @code{autoconf} how to find the new macro you've used.  The
+easiest way to do this is to use the @code{aclocal} program to generate
+your @file{aclocal.m4} for you.  But wait... you already have an
+@file{aclocal.m4}, because you had to write some hairy macros for your
+program.  @code{aclocal} lets you put your own macros into
+@file{acinclude.m4}, so simply rename and then run:
+
+@example
+mv aclocal.m4 acinclude.m4
+aclocal
+autoconf
+@end example
+
+Now it is time to write your @file{Makefile.am} for @code{zardoz}.
+@code{zardoz} is a user program, so you want to install it where the
+rest of the user programs go.  @code{zardoz} also has some Texinfo
+documentation.  Your @file{configure.in} script uses
+@code{AC_REPLACE_FUNCS}, so you need to link against @samp{@@LIBOBJS@@}.
+So here's what you'd write:
+
+@example
+bin_PROGRAMS = zardoz
+zardoz_SOURCES = main.c head.c float.c vortex9.c gun.c
+zardoz_LDADD = @@LIBOBJS@@
+
+info_TEXINFOS = zardoz.texi
+@end example
+
+Now you can run @code{automake} to generate your @file{Makefile.in}, and
+you're done!
+
 
 @node Hello
 @section A classic program
