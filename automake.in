@@ -435,7 +435,7 @@ sub handle_options
 	}
 	elsif ($_ eq 'no-installman' || $_ eq 'ansi2knr'
 	       || $_ eq 'dist-shar' || $_ eq 'dist-zip'
-	       || $_ eq 'dejagnu')
+	       || $_ eq 'dejagnu' || $_ eq 'no-installinfo')
 	{
 	    # Explicitly recognize these.
 	}
@@ -953,17 +953,21 @@ sub handle_texinfo
     &push_phony_cleaners ('info');
 
     push (@suffixes, '.texi', '.info', '.dvi');
-    push (@uninstall, 'uninstall-info');
+
+    if (! defined $options{'no-installinfo'})
+    {
+	push (@uninstall, 'uninstall-info');
+	push (@installdirs, '$(infodir)');
+	unshift (@install_data, 'install-info');
+
+	# Make sure documentation is made and installed first.  Use
+	# $(INFO_DEPS), not 'info', because otherwise recursive makes
+	# get run twice during "make all".
+	unshift (@all, '$(INFO_DEPS)');
+    }
     push (@clean, 'info');
     push (@info, '$(INFO_DEPS)');
     push (@dvi, '$(DVIS)');
-    push (@installdirs, '$(infodir)');
-    unshift (@install_data, 'install-info');
-
-    # Make sure documentation is made and installed first.  Use
-    # $(INFO_DEPS), not 'info', because otherwise recursive makes get
-    # run twice during "make all".
-    unshift (@all, '$(INFO_DEPS)');
 
     $output_vars .= ("INFOS = " . join (' ', @infos_list) . "\n"
 		     . "INFO_DEPS = " . join (' ', @info_deps_list)  . "\n"
@@ -1008,7 +1012,8 @@ sub handle_man_pages
     $output_rules .= "install-man: \$(MANS)\n";
     foreach (keys %sections)
     {
-	push (@installdirs, '$(mandir)/man' . $_);
+	push (@installdirs, '$(mandir)/man' . $_)
+	    unless defined $options{'no-installman'};
 	$output_rules .= ("\t" . '$(mkinstalldirs) $(mandir)/man'
 			  . $_ . "\n");
     }
@@ -1914,7 +1919,7 @@ sub handle_tests
 			  . "\t\@echo '# edit the last section' >> site.exp\n"
 			  . "\t\@echo 'set tool \$(DEJATOOL)' >> site.exp\n"
 			  . "\t\@echo 'set srcdir \$(srcdir)' >> site.exp\n"
-			  . "\t\@echo 'set objdir \`pwd\`' >> site.exp\n");
+			  . "\t\@echo 'set objdir' \`pwd\` >> site.exp\n");
 
 	# Extra stuff for AC_CANONICAL_*
 	local (@whatlist) = ();
