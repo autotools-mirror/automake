@@ -3,7 +3,7 @@
 AUTOMAKE_OPTIONS = gnits
 
 XFAIL_TESTS = objc.test subobj2.test yaccvpath.test texinfo10.test \
-subobj6.test subdir5.test
+subdir5.test
 
 TESTS =	\
 acinclude.test \

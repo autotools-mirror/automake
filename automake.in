@@ -162,6 +162,12 @@ my $GNITS = 2;
 my $AC_CANONICAL_HOST = 1;
 my $AC_CANONICAL_SYSTEM = 2;
 
+# Values indicating when something should be cleaned.  Right now we
+# only need to handle `mostly'- and `dist'-clean; add more as
+# required.
+my $MOSTLY_CLEAN = 0;
+my $DIST_CLEAN = 1;
+
 # Files installed by libtoolize.
 my @libtoolize_files = ('ltmain.sh', 'config.guess', 'config.sub');
 # ltconfig appears here for compatibility with old versions of libtool.
@@ -557,6 +563,12 @@ my %actions;
 # A list of files deleted by `maintainer-clean'.
 my @maintainer_clean_files;
 
+# Keys in this hash table are object files or other files in
+# subdirectories which need to be removed.  This only holds files
+# which are created by compilations.  The value in the hash indicates
+# when the file should be removed.
+my %compile_clean_files;
+
 # These are pretty obvious, too.  They are used to define the
 # SOURCES and OBJECTS variables.
 my @sources;
@@ -776,6 +788,8 @@ sub initialize_per_input ()
     @var_list = ();
 
     $get_object_extension_was_run = 0;
+
+    %compile_clean_files = ();
 }
 
 
@@ -1975,6 +1989,9 @@ sub handle_single_transform_list ($$$@)
                     &am_error ("`$full' contains `..' component but should not");
                 }
 
+		# Make sure object is removed by `make mostlyclean'.
+		$compile_clean_files{$object} = $MOSTLY_CLEAN;
+
                 push (@dep_list, $directory . '/.dirstamp');
 
                 # If we're generating dependencies, we also want
@@ -1988,6 +2005,10 @@ sub handle_single_transform_list ($$$@)
                 if (! defined $directory_map{$directory})
                 {
                     $directory_map{$directory} = 1;
+
+		    # Directory must be removed by `make distclean'.
+		    $compile_clean_files{$directory . "/.dirstamp"} =
+			$DIST_CLEAN;
                     $output_rules .= ($directory . "/.dirstamp:\n"
                                       . "\t\@\$(mkinstalldirs) $directory\n"
                                       . "\t\@: > $directory/.dirstamp\n");
@@ -2303,9 +2324,28 @@ sub handle_compile ()
 	  }
       }
 
+    my (@mostly_rms, @dist_rms);
+    foreach my $item (sort keys %compile_clean_files)
+    {
+	if ($compile_clean_files{$item} == $MOSTLY_CLEAN)
+	{
+	    push (@mostly_rms, "\t-rm -f $item");
+	}
+	elsif ($compile_clean_files{$item} == $DIST_CLEAN)
+	{
+	    push (@dist_rms, "\t-rm -f $item");
+	}
+	else
+	{
+	    &prog_error ("invalid entry in \%compile_clean_files");
+	}
+    }
+
     my ($coms, $vars, $rules) =
       &file_contents_internal (1, "$am_dir/compile.am",
-			       ('DEFAULT_INCLUDES' => $default_includes));
+			       ('DEFAULT_INCLUDES' => $default_includes,
+				'MOSTLYRMS' => join ("\n", @mostly_rms),
+				'DISTRMS' => join ("\n", @dist_rms)));
     $output_vars .= $vars;
     $output_rules .= "$coms$rules";
 
