@@ -3,7 +3,7 @@
 # @configure_input@
 
 # aclocal - create aclocal.m4 by scanning configure.in
-# Copyright (C) 1996 Free Software Foundation, Inc.
+# Copyright (C) 1996, 1997 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -227,6 +227,7 @@ sub check_acinclude
 	next unless $map{$key} eq 'acinclude.m4';
 	if (! $macro_seen{$key})
 	{
+	    # FIXME: should print line number of acinclude.m4.
 	    warn "aclocal: macro \`$key' defined in acinclude.m4 but never used\n";
 	}
     }
@@ -286,8 +287,10 @@ sub add_macro
 {
     local ($macro) = @_;
 
-    # Ignore AC_ macros.
-    return if $macro =~ /^AC_/;
+    # We want to ignore AC_ macros.  However, if an AC_ macro is
+    # defined in (eg) acinclude.m4, then we want to make sure we mark
+    # it as seen.
+    return if $macro =~ /^AC_/ && ! defined $map{$macro};
 
     if (! defined $map{$macro})
     {
