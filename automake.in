@@ -1174,10 +1174,7 @@ sub generate_makefile
     # or libtool scripts (ltconfig and ltmain.sh).
     if ($relative_dir eq '.')
     {
- 	# libtool requires some files.
- 	&require_conf_file_with_conf_line ($libtool_line, $FOREIGN,
- 					   @libtoolize_files)
-	    if $seen_libtool;
+	&handle_libtool;
 
         # AC_CANONICAL_HOST and AC_CANONICAL_SYSTEM need config.guess and
         # config.sub.
@@ -2276,12 +2273,6 @@ sub handle_compile ()
     $output_vars .= $vars;
     $output_rules .= "$coms$rules";
 
-    if ($seen_libtool)
-      {
-	# Output the libtool compilation rules.
-	$output_rules .= &file_contents ('libtool');
-      }
-
     # Check for automatic de-ANSI-fication.
     if (defined $options{'ansi2knr'})
       {
@@ -2316,7 +2307,19 @@ sub handle_compile ()
     }
 }
 
+# handle_libtool ()
+# -----------------
+# Handle libtool rules.  Only called when RELATIVE_DIR is `.'.
+sub handle_libtool
+{
+    return unless $seen_libtool;
 
+    # libtool requires some files.
+    &require_conf_file_with_conf_line ($libtool_line, $FOREIGN,
+				       @libtoolize_files);
+    # Output the libtool compilation rules.
+    $output_rules .= &file_contents ('libtool');
+}
 
 # handle_programs ()
 # ------------------
