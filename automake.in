@@ -74,7 +74,7 @@ while test $# -gt 0; do
 
     --amdir | --a* )
        if test $# -eq 1; then
-	  echo "automake: no argument given for option \`$1'" 1>&2
+	  $echo "automake: no argument given for option \`$1'" 1>&2
 	  exit 1
        fi
        shift
@@ -144,7 +144,16 @@ for am_makefile in $mfiles; do
   fi
 
 (
+  am_localstatus=0
+
   $echo "creating ${am_makefile}.in"
+
+  # Find our directory relative to top.
+  am_reldir=`echo "$am_makefile" | sed 's,//*[^/][^/]*$,,g'`
+  if test "$am_reldir" = "$am_makefile"; then
+     # Bogus.
+     am_reldir=.
+  fi
 
   exec 4> ${am_makefile}.vars
   exec 5> ${am_makefile}.rules
@@ -196,6 +205,8 @@ for am_makefile in $mfiles; do
   if test -n "$PROGRAMS$LIBPROGRAMS$LIBRARIES"; then
     cat $am_dir/compile-vars.am >&4
     cat $am_dir/compile.am >&5
+
+    am_suffixes=".c .o $am_suffixes"
 
     # Check for automatic de-ANSIfication.
     if grep @kr@ ${am_makefile}.am >/dev/null; then
@@ -292,17 +303,41 @@ p
   fi
 
   if test -n "$TEXINFOS"; then
-    cat $am_dir/texinfos-vars.am >&4
-    cat $am_dir/texinfos.am >&5
-    am_suffixes=".texi .info .dvi $am_suffixes"
-    installdata="install-info $installdata"
-    uninstall="uninstall-info $uninstall"
-    info="\$(INFO_DEPS) $info"
-    dvi="\$(DVIS) $dvi"
+     # Give an error if more than one texinfo is defined -- we
+     # can't handle that.  But how to count?  Sigh.  We do the naive,
+     # broken thing.
+     set $TEXINFOS
+     if test $# -gt 1; then
+	$echo "automake: $am_makefile specified more than one file in \`TEXINFOS'"
+	am_localstatus=1
+     else
+	sed "s/@TEXI@/$TEXINFOS/g" $am_dir/texi-version.am >&5
 
-    echo "$TEXINFOS" | sed 's/^/INFOS = /; s/\.texi/.info*/g' >&4
-    echo "$TEXINFOS" | sed 's/^/INFO_DEPS = /; s/\.texi/.info/g' >&4
-    echo "$TEXINFOS" | sed 's/^/DVIS = /; s/\.texi/.dvi/g' >&4
+	am_infobase=`echo "$TEXINFOS" | sed 's/\.texi//'`
+
+	am_deps=version.texi
+	if eval "test \"\$var_${am_infobase}_TEXINFOS\" = explicit"; then
+	   # User supplied eg automake_TEXINFOS.  So use those as
+	   # dependencies.
+	   am_deps="\$(${am_infobase}_TEXINFOS) $am_deps"
+	fi
+
+
+	echo "${am_infobase}.info: $am_deps" >&5
+	echo >&5
+
+	cat $am_dir/texinfos-vars.am >&4
+	cat $am_dir/texinfos.am >&5
+	am_suffixes=".texi .info .dvi $am_suffixes"
+	installdata="install-info $installdata"
+	uninstall="uninstall-info $uninstall"
+	info="\$(INFO_DEPS) $info"
+	dvi="\$(DVIS) $dvi"
+
+	echo "$TEXINFOS" | sed 's/^/INFOS = /; s/\.texi/.info*/g' >&4
+	echo "$TEXINFOS" | sed 's/^/INFO_DEPS = /; s/\.texi/.info/g' >&4
+	echo "$TEXINFOS" | sed 's/^/DVIS = /; s/\.texi/.dvi/g' >&4
+     fi
   fi
 
   if test -n "$MANS"; then
@@ -391,11 +426,7 @@ p
   #
   # Handle "dist" targets.
   #
-  am_reldir=`echo "$am_makefile" | sed 's,//*[^/][^/]*$,,g'`
-  if test "$am_reldir" = "$am_makefile"; then
-     # Bogus.
-     am_reldir=.
-  fi
+
   # Look for certain common files and make sure they are included.
   dlist=
   for cfile in $common; do
@@ -563,7 +594,10 @@ p
   cat ${am_makefile}.rules >&6
   rm -f ${am_makefile}.vars ${am_makefile}.rules
 
-)
+  exit $am_localstatus
+) || {
+   am_status = 1
+}
 done
 
 exit $am_status
