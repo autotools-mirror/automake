@@ -334,13 +334,17 @@ sub scan_file
 
 	if (/$ac_defun_rx/)
 	{
-	    if (defined $map{$1})
+	    if (!defined $map{$1})
+	    {
+		$map{$1} = $file;
+	    }
+	    # Allow acinclude.m4 to override other macro files.
+	    elsif ($map{$1} ne 'acinclude.m4' || $file eq 'acinclude.m4')
 	    {
 		warn "aclocal: $file: $.: duplicated macro \`$1'\n";
 		$exit_status = 1;
 	    }
-	    print STDERR "Found macro $1 in $file\n" if $verbosity;
-	    $map{$1} = $file;
+	    print STDERR "Found macro $1 in $file: $.\n" if $verbosity;
 	}
     }
     close (FILE);

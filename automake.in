@@ -660,7 +660,7 @@ sub get_object_extension
 	    }
 
 	    push (@suffixes, '._c', '._o');
-	    push (@suffixes, '._lo') if $seen_libtool;
+	    push (@suffixes, '.l_o') if $seen_libtool;
 
 	    # Only require ansi2knr files if they should appear in
 	    # this directory.
@@ -673,7 +673,7 @@ sub get_object_extension
 		&push_phony_cleaners ('krextra');
 	    }
 
-	    &define_variable ('o', ".\@U\@o");
+	    &define_variable ('o', "\@U\@o");
 
 	    # Make sure ansi2knr can be found: if no path specified,
 	    # specify "./".
@@ -688,6 +688,8 @@ sub get_object_extension
 		# Substitution from AM_C_PROTOTYPES.  This makes it be
 		# built only when necessary.
 		&define_configure_variable ('ANSI2KNR');
+		# ansi2knr needs to be built before subdirs, so unshift it.
+		unshift (@all, '$(ANSI2KNR)');
 	    }
 
 	    $output_rules .= &file_contents ('compile-kr');
@@ -2155,7 +2157,8 @@ sub handle_dependencies
 	    &push_phony_cleaners ('depend');
 	    $output_rules .=
 		&file_contents_with_transform ('s/\@EXT\@/.c/g;'
-					       . 's/\@MKDEP\@/MKDEP/g',
+					       . 's/\@MKDEP\@/MKDEP/g'
+					       . 's/^ONLYC//g',
 					       'depend2');
 	    local ($ext);
 	    local ($need_cxx) = 0;
@@ -2163,7 +2166,8 @@ sub handle_dependencies
 	    {
 		$output_rules .=
 		    &file_contents_with_transform ('s/\@EXT\@/' . $ext .'/g;'
-						   . 's/\@MKDEP\@/CXXMKDEP/g',
+						   . 's/\@MKDEP\@/CXXMKDEP/g'
+						   . 'next if /^ONLYC/;',
 						   'depend2');
 		$need_cxx = 1;
 	    }
@@ -3013,7 +3017,7 @@ sub handle_emacs_lisp
 	&define_configure_variable ('EMACS');
 	$output_rules .= (".el.elc:\n"
 			  . "\t\@echo 'WARNING: Warnings can be ignored. :-)'\n"
-			  . "\t\EMACS=$(EMACS) $(SHELL) \$(srcdir)/elisp-comp \$<\n");
+			  . "\tEMACS=\$(EMACS) \$(SHELL) \$(srcdir)/elisp-comp \$<\n");
 	push (@suffixes, '.el', '.elc');
 
 	# Generate .elc files.
@@ -3267,7 +3271,7 @@ sub scan_configure
         $seen_maint_mode = 1 if /AM_MAINTAINER_MODE/;
         $seen_package = 1 if /PACKAGE=/;
 
-        if (/VERSION=(\S+)/)
+        if (/\bVERSION=(\S+)/)
 	{
 	    $seen_version = 1;
 	    $package_version = $1;
@@ -4440,13 +4444,10 @@ sub require_file_internal
 				$trailer .= "; error while making link: $!\n";
 			    }
 			}
-			else
+			elsif (! system ('cp', $am_dir . '/' . $file, $errfile))
 			{
-			    if (! system ('cp', $am_dir . '/' . $file, $errfile))
-			    {
-				$suppress = 0;
-				$trailer .= "\n    error while making link: $!\n";
-			    }
+			    $suppress = 0;
+			    $trailer .= "\n    error while making link\n";
 			}
 		    }
 		}
