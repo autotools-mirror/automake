@@ -3,7 +3,7 @@
 % Load plain if necessary, i.e., if running under initex.
 \expandafter\ifx\csname fmtname\endcsname\relax\input plain\fi
 %
-\def\texinfoversion{2003-11-24.06}
+\def\texinfoversion{2003-12-01.17}
 %
 % Copyright (C) 1985, 1986, 1988, 1990, 1991, 1992, 1993, 1994, 1995,
 % 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003 Free Software Foundation, Inc.
@@ -1559,11 +1559,18 @@ where each line of input produces a line of output.}
 \def\smartslanted#1{{\ifusingtt\ttsl\sl #1}\futurelet\next\smartitalicx}
 \def\smartitalic#1{{\ifusingtt\ttsl\it #1}\futurelet\next\smartitalicx}
 
+% like \smartslanted except unconditionally uses \ttsl.
+% @var is set to this for defun arguments.
+\def\ttslanted#1{{\ttsl #1}\futurelet\next\smartitalicx}
+
+% like \smartslanted except unconditionally use \sl.  We never want
+% ttsl for book titles, do we?
+\def\cite#1{{\sl #1}\futurelet\next\smartitalicx}
+
 \let\i=\smartitalic
 \let\var=\smartslanted
 \let\dfn=\smartslanted
 \let\emph=\smartitalic
-\let\cite=\smartslanted
 
 \def\b#1{{\bf #1}}
 \let\strong=\b
@@ -4830,7 +4837,7 @@ width0pt\relax} \fi
   \begingroup
     \makevalueexpandable
     \setupverbatim
-    \input\thisfile\space
+    \input #1
   \nonfillfinish % contains \endgroup
 }
 
@@ -5221,11 +5228,17 @@ width0pt\relax} \fi
 % Print arguments in slanted typewriter, prevent hyphenation at `-' chars.
 % 
 \def\normaldefunargs#1{%
-  % use tt here (used to be sl) for the same reasons as we are now using
+  % use sl by default (not ttsl), inconsistently with using tt for the
+  % name.  This is because literal text is sometimes needed in the
+  % argument list (groff manual), and ttsl and tt are not very
+  % distinguishable.
   % tt for the names.
-  \df \ttsl \hyphenchar\font=0
+  \df \sl \hyphenchar\font=0
+  % On the other hand, if an argument has two dashes (for instance), we
+  % want a way to get ttsl.  Let's try @var for that.
+  \let\var=\ttslanted
   #1%
-  \ttsl\hyphenchar\font=45
+  \sl\hyphenchar\font=45
 }
 
 % We want ()&[] to print specially on the defun line.
@@ -5929,8 +5942,8 @@ width0pt\relax} \fi
 \endgroup}
 
 
-\message{footnotes,}
-% and other hacking with inserts
+\message{insertions,}
+% including footnotes.
 
 \newcount \footnoteno
 
@@ -6069,8 +6082,6 @@ width0pt\relax} \fi
 \newsaveins\margin
 
 
-\message{figures,}
-
 % @image.  We use the macros from epsf.tex to support this.
 % If epsf.tex is not installed and @image is used, we complain.
 %
@@ -6138,6 +6149,47 @@ width0pt\relax} \fi
   %
   \ifimagevmode \hss \egroup \bigbreak \fi  % space after the image
 \endgroup}
+
+
+% @float FLOATTYPE,LOC ... @end float for displayed figures, tables, etc.
+% We don't actually implement floating yet, we just plop the float "here".
+% But it seemed the best name for the future.
+% 
+\def\float{\parsearg\parsefloat}
+\def\parsefloat#1{\dofloat #1,\finish}
+
+% #1 is the text label for this float, typically "Figure", "Table",
+% "Example", etc.  #2 is optional and ignored; it will be for specifying
+% the positions allowed to float to (here, top, bottom).
+% 
+\def\dofloat#1,#2\finish{\vtop\bgroup
+  % xx should we indent the whole thing? center it?
+  % 
+  % allow @[short]caption now.
+  \let\thiscaption=\empty
+  \def\caption##1{\def\thiscaption{##1}}%
+  %
+  \let\thisshortcaption=\empty
+  \def\shortcaption##1{\def\thisshortcaption{##1}}%
+  %
+  \def\Efloat{%
+    \ifx\thiscaption\empty \else
+      \vskip.5\parskip
+      \thiscaption
+      \vskip\parskip
+    \fi
+    \egroup  % end of \vtop
+  }%
+}
+
+% @listoffloats FLOATTYPE - print a list of floats like a table of contents.
+\def\listoffloats{\parsearg\dolistoffloats}
+\def\dolistoffloats#1{%xx
+}
+
+% Default definitions.
+\def\caption{\errmessage{@caption while not in @float environment}}
+\def\shortcaption{\errmessage{@shortcaption while not in @float environment}}
 
 
 \message{localization,}
@@ -6479,6 +6531,7 @@ should work if nowhere else does.}
   @let>=@normalgreater
   @let+=@normalplus
   @let$=@normaldollar %$ font-lock fix
+  @unsepspaces
 }
 
 % Same as @turnoffactive except outputs \ as {\tt\char`\\} instead of
