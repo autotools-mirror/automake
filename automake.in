@@ -386,6 +386,9 @@ sub generate_makefile
     &handle_programs;
     &handle_scripts;
 
+    # This must be run after all the sources are scanned.
+    &handle_yacc_lex_cxx;
+
     # Re-init SOURCES and OBJECTS.  FIXME other code shouldn't depend
     # on this (but currently does).
     $contents{'SOURCES'} = join (' ', @sources);
@@ -566,6 +569,79 @@ sub get_object_extension
     return $dir_holds_sources;
 }
 
+# Handle yacc and lex.
+sub handle_yacc_lex_cxx
+{
+    local ($yacc_count) = scalar (keys %yacc_sources);
+    local ($lex_count) = scalar (keys %lex_sources);
+    local ($cxx_count) = scalar (keys %cxx_extensions);
+
+    if ($yacc_count)
+    {
+	push (@suffixes, '.y');
+	$output_vars .= "YACC = \@YACC\@\n";
+	$output_rules .= ".y.c:\n\t";
+	if ($yacc_count > 1)
+	{
+	    $output_rules .= '$(INTERLOCK) y.tab.c $@ $(YACC) $(YFLAGS) $<';
+	}
+	else
+	{
+	    $output_rules .= '$(YACC) $(YFLAGS) $< && mv y.tab.c $@';
+	}
+	$output_rules .= "\n";
+    }
+    if ($lex_count)
+    {
+	push (@suffixes, '.l');
+	$output_vars .= "LEX = \@LEX\@\n";
+	$output_rules .= (".l.c:\n\t"
+			  . "\n");
+	if ($lex_count > 1)
+	{
+	    $output_rules .= '$(INTERLOCK) lex.yy.c $@ $(LEX) $(LFLAGS) $<';
+	}
+	else
+	{
+	    $output_rules .= '$(LEX) $(LFLAGS) $< && mv lex.yy.c $@';
+	}
+	$output_rules .= "\n";
+    }
+    if ($cxx_count)
+    {
+	$output_vars .= ("CXX = \@CXX\@\n"
+			 . "CXXFLAGS = \@CXXFLAGS\@\n"
+			 . "CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)\n"
+			 . "CXXLINK = $(CXX) $(LDFLAGS) -o $@\n");
+
+	local ($ext);
+	foreach $ext (keys %cxx_extensions)
+	{
+	    $output_rules .= ("$ext.o:\n"
+			      . "\t\$(CXXCOMPILE) -c \$<\n");
+	}
+    }
+
+    if ($yacc_count > 1 || $lex_count > 1)
+    {
+	# If there is more than one distinct yacc (resp lex) source
+	# file in a given directory, then the `interlock' program is
+	# required to allow parallel builds to work correctly.  FIXME
+	# for now, no line number.
+	&require_config_file ($FOREIGN, 'interlock');
+	$output_vars .= 'INTERLOCK = ';
+	if ($config_aux_dir ne '.' && $config_aux_dir ne '')
+	{
+	    $output_vars .= $config_aux_dir;
+	}
+	else
+	{
+	    $output_vars .= '$(top_srcdir)';
+	}
+	$output_vars .= "/interlock\n";
+    }
+}
+
 # Handle SOURCE->OBJECT transform for one program or library.
 sub handle_source_transform
 {
@@ -633,55 +709,34 @@ sub handle_source_transform
 		{
 		    # Yacc source.
 		    &push_dist_common ($1 . '.c');
-		    if (! defined $targets{$1 . '.c'})
-		    {
-			# Generate a target.
-			$output_rules .= ($1 . '.c: ' . $_ . "\n"
-					  . "\t"
-					  . 'cd $(srcdir) && $(YACC) $(YFLAGS) $< && mv y.tab.c '
-					  . $1 . '.c' . "\n");
-		    }
-
-		    if (! &variable_defined ('YACC'))
-		    {
-			$output_vars .= "YACC = \@YACC\@\n";
-			$targets{'YACC'} = 1;
-		    }
+		    $yacc_sources{$_} = 1;
 		}
 		elsif (/^(.*)\.l$/)
 		{
 		    # Lex source.
 		    &push_dist_common ($1 . '.c');
-		    if (! defined $targets{$1 . '.c'})
-		    {
-			$output_rules .= ($1 . '.c: ' . $_ . "\n"
-					  . "\t"
-					  . 'cd $(srcdir) && $(LEX) $(LFLAGS) $< && mv lex.yy.c '
-					  . $1 . '.c' . "\n");
-		    }
-
-		    if (! &variable_defined ('LEX'))
-		    {
-			$output_vars .= "LEX = \@YACC\@\n";
-			$targets{'LEX'} = 1;
-		    }
+		    $lex_sources{$_} = 1;
 		}
 
 		# Transform source files into .o files.  List of C++
 		# extensions comes from Emacs 19.32 etags.
-		s/\.c\+\+$/$obj/g;
-		s/\.cc$/$obj/g;
-		s/\.cpp$/$obj/g;
-		s/\.cxx$/$obj/g;
+		if (s/\.c\+\+$/$obj/g
+		    || s/\.cc$/$obj/g
+		    || s/\.cpp$/$obj/g
+		    || s/\.cxx$/$obj/g
+		    || s/\.C$/$obj/g)
+		{
+		    $cxx_extensions{$&} = 1;
+		}
 
 		# FORTRAN support.
 		s/\.f90$/$obj/g;
 		s/\.for$/$obj/g;
 
-		# .C is C++.  .y is yacc.  .l is lex.  .f and .F is
-		# fortran.  .s is assembly.  .M is Objective-C++.  .m
-		# is Objective-C.
-		s/\.[cCylfFsmM]$/$obj/g;
+		# .y is yacc.  .l is lex.  .f and .F is fortran.  .s
+		# is assembly.  .M is Objective-C++.  .m is
+		# Objective-C.
+		s/\.[cylfFsmM]$/$obj/g;
 		push (@result, $_)
 		    unless $prefix eq 'EXTRA_';
 
@@ -1485,6 +1540,24 @@ sub handle_dependencies
 	{
 	    &pretty_print ('DEP_FILES =', "", sort keys %dep_files);
 	    $output_rules .= &file_contents ('depend');
+	    $output_rules .=
+		&file_contents_with_transform ('s/\@EXT\@/.c/g;'
+					       . 's/\@MKDEP\@/MKDEP/g',
+					       'depend2');
+	    local ($ext);
+	    local ($need_cxx) = 0;
+	    foreach $ext (keys %cxx_extensions)
+	    {
+		$output_rules .=
+		    &file_contents_with_transform ('s/\@EXT\@/' . $ext .'/g;'
+						   . 's/\@MKDEP\@/CXXMKDEP/g',
+						   'depend2');
+		$need_cxx = 1;
+	    }
+	    if ($need_cxx)
+	    {
+		$output_vars .= 'CXXMKDEP = $(CXX) -MM $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)' . "\n";
+	    }
 	}
     }
     else
@@ -1990,7 +2063,7 @@ sub handle_merge_targets
     # If no dependencies for 'install', add 'all'.  Why?  That way
     # "make install" at top level of distclean'd distribution won't
     # fail because stuff in 'lib' fails to build.
-    if (! @install || ($#install == 1
+    if (! @install || (scalar (@install) == 2
 		       && $install[0] eq 'install-exec'
 		       && $install[1] eq 'install-data'))
     {
@@ -2899,6 +2972,16 @@ sub initialize_per_input
 
     # Per Makefile.am.
     $local_maint_charset = $maint_charset;
+
+    # All yacc and lex source filenames for this directory.  Use
+    # filenames instead of raw count so that multiple instances are
+    # counted correctly (eg one yacc file can appear in multiple
+    # programs without harm).
+    %yacc_sources = ();
+    %lex_sources = ();
+
+    # C++ source extensions we've seen.
+    %cxx_extensions = ();
 }
 
 
