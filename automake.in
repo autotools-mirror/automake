@@ -1265,6 +1265,7 @@ sub finish_languages
 	    $comp = $language_map{"$lang-compile"};
 
 	    my $outarg = $language_map{"$lang-output-arg"};
+	    my $ltoutarg;
 	    if ($language_map{"$lang-flags"} eq 'CFLAGS')
 	    {
 		# C compilers don't always support -c -o.
@@ -1272,32 +1273,17 @@ sub finish_languages
 		{
 		    $outarg .= ' -o $@';
 		}
+		# We can always use -c -o with libtool.
+		$ltoutarg = ' -o $@';
 	    }
 
-	    my $full = ("\t\$("
-			. $language_map{"$lang-compiler-name"}
-			. ") "
-			. $outarg);
-	    $output_rules .= (".$ext.o:\n"
-			      . $full
-			      . " \$<\n");
-	    # FIXME: Using cygpath should be somehow conditional.
-	    $output_rules .= (".$ext.obj:\n"
-			      . $full
-			      . " `cygpath -w \$<`\n");
-	    $output_rules .= (".$ext.lo:\n"
-			      . "\t\$(LT"
-			      . $language_map{"$lang-compiler-name"}
-			      . ") "
-			      . $language_map{"$lang-output-arg"}
-			      # We can always use -c -o with libtool.
-			      . ($language_map{"$lang-flags"} eq 'CFLAGS'
-				 ? ' -o $@' : '')
-			      . " \$<\n")
-		if $seen_libtool;
+	    my $compiler = $language_map{"$lang-compiler-name"};
+	    $output_rules .= file_contents ('ext-compile',
+					    ('EXT'      => $ext,
+					     'COMPILER' => $compiler,
+					     'OUTARG'   => $outarg,
+					     'LTOUTARG' => $ltoutarg));
 	}
-
-	push (@suffixes, '.' . $ext);
 
 	# The rest of the loop is done once per language.
 	next if defined $done{$lang};
@@ -1328,10 +1314,10 @@ sub finish_languages
 	& $name ();
     }
 
-    # If the project is entirely C++ or entirely Fortran 77, don't
-    # bother with the C stuff.  But if anything else creeps in, then use
-    # it.
-    if ($need_link || ! $non_c || scalar keys %suffix_rules > 0)
+    # If the project is entirely C++ or entirely Fortran 77 (i.e., 1
+    # suffix rule was learned), don't bother with the C stuff.  But if
+    # anything else creeps in, then use it.
+    if ($need_link || ! $non_c || scalar keys %suffix_rules > 1)
     {
 	if (! defined $done{'c'})
 	{
@@ -1996,14 +1982,10 @@ sub handle_compile ()
 	  }
       }
 
-    push (@suffixes, '.c', '.o', '.obj');
-
     if ($seen_libtool)
       {
 	# Output the libtool compilation rules.
 	$output_rules .= &file_contents ('libtool');
-
-	push (@suffixes, '.lo');
       }
 
     # Check for automatic de-ANSI-fication.
