@@ -28,8 +28,9 @@
 # CC etc. in the Makefile, will ask for an AC_PROG_CC use...
 
 
-# We require 2.13 because we rely on SHELL being computed by configure.
-AC_PREREQ([2.13])
+# We require 2.50 because we need the PATH_SEPARATOR output variable, and
+# we rely on autoconf to neutralize CDPATH.
+AC_PREREQ([2.50])
 
 # AC_PROVIDE_IFELSE(MACRO-NAME, IF-PROVIDED, IF-NOT-PROVIDED)
 # -----------------------------------------------------------
@@ -50,7 +51,7 @@ ifdef([AC_PROVIDE_IFELSE],
 AC_DEFUN([AM_INIT_AUTOMAKE],
 [AC_REQUIRE([AC_PROG_INSTALL])dnl
 # test to see if srcdir already configured
-if test "`CDPATH=:; cd $srcdir && pwd`" != "`pwd`" &&
+if test "`cd $srcdir && pwd`" != "`pwd`" &&
    test -f $srcdir/config.status; then
   AC_MSG_ERROR([source directory already configured; run \"make distclean\" there first])
 fi
@@ -68,15 +69,6 @@ AC_DEFINE_UNQUOTED(VERSION, "$VERSION", [Version number of package])])
 # the ones we care about.
 ifdef([m4_pattern_allow],
       [m4_pattern_allow([^AM_[A-Z]+FLAGS])])dnl
-
-# Autoconf 2.50 always computes EXEEXT.  However we need to be
-# compatible with 2.13, for now.  So we always define EXEEXT, but we
-# don't compute it.
-AC_SUBST(EXEEXT)
-# Similar for OBJEXT -- only we only use OBJEXT if the user actually
-# requests that it be used.  This is a bit dumb.
-: ${OBJEXT=o}
-AC_SUBST(OBJEXT)
 
 # Some tools Automake needs.
 AC_REQUIRE([AM_SANITY_CHECK])dnl

@@ -55,7 +55,10 @@
 # absolute PATH.  The drawback is that using absolute paths prevent a
 # configured tree to be moved without reconfiguration.
 
+# Rely on autoconf to set up CDPATH properly.
+AC_PREREQ([2.50])
+
 AC_DEFUN([AM_AUX_DIR_EXPAND], [
 # expand $ac_aux_dir to an absolute path
-am_aux_dir=`CDPATH=:; cd $ac_aux_dir && pwd`
+am_aux_dir=`cd $ac_aux_dir && pwd`
 ])
