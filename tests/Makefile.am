@@ -2,7 +2,7 @@
 
 AUTOMAKE_OPTIONS = gnits
 
-XFAIL_TESTS = subdir5.test
+XFAIL_TESTS = subdir5.test ltdeps.test
 
 TESTS =	\
 acinclude.test \
@@ -175,6 +175,7 @@ link_f_c_cxx.test \
 link_f_cxx.test	\
 link_f_only.test \
 lisp.test \
+ltdeps.test \
 ltlibobjs.test \
 make.test \
 makevars.test \
