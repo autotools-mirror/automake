@@ -74,9 +74,6 @@ my $force_output = 0;
 # Which macros have been seen.
 my %macro_seen = ();
 
-# Which files have been seen.
-my %file_seen = ();
-
 # Remember the order into which we scanned the files.
 # It's important to output the contents of aclocal.m4 in the opposite order.
 # (Definitions in first files we have scanned should override those from
@@ -275,14 +272,17 @@ sub scan_configure_dep ($)
   &scan_configure_dep (File::Spec->rel2abs ($_, $dirname)) foreach (@ilist);
 }
 
-# Add a file to output.
+# add_file ($FILE)
+# ----------------
+# Add $FILE to output.
+my %file_added = ();		# files which have already been added.
 sub add_file ($)
 {
   my ($file) = @_;
 
   # Only add a file once.
-  return if ($file_seen{$file});
-  $file_seen{$file} = 1;
+  return if ($file_added{$file});
+  $file_added{$file} = 1;
 
   scan_configure_dep $file;
 }
