@@ -33,11 +33,9 @@ TAGS_DEPENDENCIES = automake.in aclocal.in automake.texi
 ## doesn't exist, then this test is meaningless anyway.
 # Check to make sure some installed files are executable.
 installcheck-local:
-	$(PERL) -e "exit ! -x '$(pkgdatadir)/config.guess';"
-	$(PERL) -e "exit ! -x '$(pkgdatadir)/config.sub';"
-	$(PERL) -e "exit ! -x '$(pkgdatadir)/install-sh';"
-	$(PERL) -e "exit ! -x '$(pkgdatadir)/mdate-sh';"
-	$(PERL) -e "exit ! -x '$(pkgdatadir)/mkinstalldirs';"
+	for file in $(pkgdata_SCRIPTS); do \
+	  $(PERL) -e "exit ! -x $(pkgdatadir)/$$file;" || exit 1; \
+	done
 
 # Some simple checks, and then ordinary check.  These are only really
 # guaranteed to work on my machine.
