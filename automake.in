@@ -2052,8 +2052,14 @@ sub handle_texinfo
     &pretty_print_rule ("\trm -f", "\t  ", @texi_cleans);
     $output_rules .= ("\nclean-aminfo:\n\ndistclean-aminfo:\n\n"
 		      . "maintainer-clean-aminfo:\n\t"
-		      . 'for i in $(INFO_DEPS); do rm -f `eval echo $$i*`; done'
-		      . "\n");
+		      # Eww.  But how else can we find all the output
+		      # files from makeinfo?
+		      . 'for i in $(INFO_DEPS); do' . " \\\n"
+		      . "\t" . '  rm -f $$i;' . " \\\n"
+		      . "\t" . '  if test "`echo $$i-[0-9]*`" = "$$i-[0-9]*"; then' . " \\\n"
+		      . "\t" . '    rm -f $$i-[0-9]*;' . " \\\n"
+		      . "\t" . '  fi;' . " \\\n"
+		      . "\tdone\n");
     &push_phony_cleaners ('aminfo');
     if ($cygnus_mode)
     {

@@ -2,7 +2,8 @@
 
 # Copyright (C) 1994, 1995, 1996, 1997 Free Software Foundation, Inc.
 # This Makefile.in is free software; the Free Software Foundation
-# gives unlimited permission to copy, distribute and modify it.
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
 
 
 SHELL = /bin/sh
@@ -122,9 +123,9 @@ config.status: $(srcdir)/configure
 $(srcdir)/configure: $(srcdir)/configure.in $(ACLOCAL_M4) $(CONFIGURE_DEPENDENCIES)
 	cd $(srcdir) && $(AUTOCONF)
 automake: $(top_builddir)/config.status automake.in
-	cd $(top_builddir) && CONFIG_FILES=$@ CONFIG_HEADERS= ./config.status
+	cd $(top_builddir) && CONFIG_FILES=$@:automake.in CONFIG_HEADERS= ./config.status
 aclocal: $(top_builddir)/config.status aclocal.in
-	cd $(top_builddir) && CONFIG_FILES=$@ CONFIG_HEADERS= ./config.status
+	cd $(top_builddir) && CONFIG_FILES=$@:aclocal.in CONFIG_HEADERS= ./config.status
 
 install-binSCRIPTS: $(bin_SCRIPTS)
 	@$(NORMAL_INSTALL)
@@ -277,7 +278,12 @@ clean-aminfo:
 distclean-aminfo:
 
 maintainer-clean-aminfo:
-	for i in $(INFO_DEPS); do rm -f `eval echo $$i*`; done
+	for i in $(INFO_DEPS); do \
+	  rm -f $$i; \
+	  if test "`echo $$i-[0-9]*`" = "$$i-[0-9]*"; then \
+	    rm -f $$i-[0-9]*; \
+	  fi; \
+	done
 
 install-pkgdataDATA: $(pkgdata_DATA)
 	@$(NORMAL_INSTALL)
