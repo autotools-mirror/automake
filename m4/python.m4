@@ -71,6 +71,7 @@ python2.1 python2.0 python1.6 python1.5])
       AM_PYTHON_CHECK_VERSION([$PYTHON], [$1],
 			      [AC_MSG_RESULT(yes)],
 			      [AC_MSG_ERROR(too old)])
+      am_display_PYTHON=$PYTHON
     else
       # Otherwise, try each interpreter until we find one that satisfies
       # VERSION.
