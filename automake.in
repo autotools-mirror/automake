@@ -557,6 +557,11 @@ my @maintainer_clean_files;
 # when the file should be removed.
 my %compile_clean_files;
 
+# Keys in this hash table are directories where we expect to build a
+# libtool object.  We use this information to decide what directories
+# to delete.
+my %libtool_clean_directories;
+
 # Value of `$(SOURCES)', used by tags.am.
 my @sources;
 # Sources which go in the distribution.
@@ -785,6 +790,9 @@ sub initialize_per_input ()
     $get_object_extension_was_run = 0;
 
     %compile_clean_files = ();
+
+    # We always include `.'.  This isn't strictly correct.
+    %libtool_clean_directories = ('.' => 1);
 }
 
 
@@ -1245,8 +1253,6 @@ sub generate_makefile
 	}
     }
 
-    &handle_libtool;
-
     # At the toplevel directory, we might need config.guess, config.sub
     # or libtool scripts (ltconfig and ltmain.sh).
     if ($relative_dir eq '.')
@@ -1293,6 +1299,9 @@ sub generate_makefile
     &handle_compile;
     # This must be run after all the sources are scanned.
     &handle_languages;
+
+    # We have to run this after dealing with all the programs.
+    &handle_libtool;
 
     # Re-init SOURCES.  FIXME: other code shouldn't depend on this
     # (but currently does).
@@ -2137,6 +2146,15 @@ sub handle_single_transform_list ($$$$@)
 
 		# Make sure object is removed by `make mostlyclean'.
 		$compile_clean_files{$object} = MOSTLY_CLEAN;
+		# If we have a libtool object then we also must remove
+		# the ordinary .o.
+		if ($object =~ /\.lo$/)
+		{
+		    (my $xobj = $object) =~ s,lo$,\$(OBJEXT),;
+		    $compile_clean_files{$xobj} = MOSTLY_CLEAN;
+
+		    $libtool_clean_directories{$directory} = 1;
+		}
 
                 push (@dep_list, require_build_directory ($directory));
 
@@ -2672,8 +2690,17 @@ sub handle_libtool
     require_conf_file ($seen_libtool, FOREIGN, @libtool_files)
 	if $relative_dir eq '.';
 
+    my @libtool_rms;
+    foreach my $item (sort keys %libtool_clean_directories)
+    {
+	my $dir = ($item eq '.') ? '' : "$item/";
+	# .libs is for Unix, _libs for DOS.
+	push (@libtool_rms, "\t-rm -rf ${dir}.libs ${dir}_libs");
+    }
+
     # Output the libtool compilation rules.
-    $output_rules .= &file_contents ('libtool');
+    $output_rules .= &file_contents ('libtool',
+				     ('LTRMS' => join ("\n", @libtool_rms)));
 }
 
 # handle_programs ()
@@ -3051,8 +3078,8 @@ sub check_typos ()
 	foreach my $primary ('_SOURCES', '_LIBADD', '_LDADD', '_LDFLAGS',
 			     '_DEPENDENCIES')
 	{
-	  macro_error ($varname,
-		       "invalid unused variable name: `$varname'")
+	    macro_error ($varname,
+			 "invalid unused variable name: `$varname'")
 	    # Note that a configure variable is always legitimate.
 	    # It is natural to name such variables after the
 	    # primary, so we explicitly allow it.

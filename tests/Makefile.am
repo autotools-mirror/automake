@@ -315,6 +315,7 @@ subobj5.test \
 subobj6.test \
 subobj7.test \
 subobj8.test \
+subobj9.test \
 subst.test \
 substref.test \
 substtarg.test \
