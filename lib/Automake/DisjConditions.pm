@@ -289,7 +289,7 @@ sub human ($ )
 }
 
 
-=item C<$prod = $set1->multiply ($set2)>
+=item C<$prod = $set1-E<gt>multiply ($set2)>
 
 Multiply two conditional sets.
 
@@ -317,15 +317,8 @@ The argument can also be a C<Condition>.
 sub _multiply ($@)
 {
   my ($self, @set) = @_;
-  my @res = ();
-  foreach my $selfcond ($self->conds)
-    {
-      foreach my $setcond (@set)
-	{
-	  push @res, $selfcond->merge ($setcond);
-	}
-    }
-  return new Automake::DisjConditions @res;
+  my @res = map { $_->multiply (@set) } $self->conds;
+  return new Automake::DisjConditions (Automake::Condition::reduce_or @res);
 }
 
 sub multiply ($$)
@@ -382,7 +375,7 @@ sub invert($ )
   return $res;
 }
 
-=item C<$simp = $set->simplify>
+=item C<$simp = $set-E<gt>simplify>
 
 Find prime implicants and return a simplified C<DisjConditions>.
 
@@ -630,7 +623,9 @@ sub simplify ($)
 =item C<$self-E<gt>sub_conditions ($cond)>
 
 Return the subconditions of C<$self> that contains C<$cond>, with
-C<$cond> stripped.
+C<$cond> stripped.  More formally, return C<$res> such that
+C<$res-E<gt>multiply ($cond) == $self-E<gt>multiply ($cond)> and
+C<$res> does not mention any of the variables in $cond.
 
 For instance, consider:
 
@@ -656,17 +651,16 @@ sub sub_conditions ($$)
   my ($self, $subcond) = @_;
 
   # Make $subcond blindingly apparent in the DisjConditions.
-  # For instance `$a->_multiply($b)' (from the POD example) is:
-  #   new Automake::DisjConditions
+  # For instance `$b->multiply($a->conds)' (from the POD example) is:
   # 	(new Automake::Condition ("FALSE"),
   # 	 new Automake::Condition ("A_TRUE", "B_FALSE", "C_FALSE"),
   # 	 new Automake::Condition ("A_TRUE", "B_FALSE", "C_TRUE"),
-  # 	 new Automake::Condition ("FALSE"));
-  my $prod = $self->_multiply ($subcond);
+  # 	 new Automake::Condition ("FALSE"))
+  my @prodconds = $subcond->multiply ($self->conds);
 
   # Now, strip $subcond from the remaining (i.e., non-false) Conditions.
   my @res;
-  foreach my $c ($prod->conds)
+  foreach my $c (@prodconds)
     {
       push @res, $c->strip ($subcond) unless $c->false;
     }

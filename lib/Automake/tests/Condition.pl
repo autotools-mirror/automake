@@ -90,9 +90,11 @@ sub test_true_when ()
   return $failed;
 }
 
-sub test_reduce ()
+sub test_reduce_and ()
 {
   my @tests = (# If no conditions are given, TRUE should be returned
+	       [[], ["TRUE"]],
+	       # An empty condition is TRUE
 	       [[""], ["TRUE"]],
 	       # A single condition should be passed through unchanged
 	       [["FOO"], ["FOO"]],
@@ -149,7 +151,7 @@ sub test_reduce ()
       my @inconds = map { new Automake::Condition $_ } @$inref;
       my @outconds = map { (new Automake::Condition $_)->string } @$outref;
       my @res =
-	map { $_->string } (Automake::Condition::reduce (@inconds));
+	map { $_->string } (Automake::Condition::reduce_and (@inconds));
       my $result = join (",", sort @res);
       my $exresult = join (",", @outconds);
 
@@ -164,7 +166,83 @@ sub test_reduce ()
   return $failed;
 }
 
-exit (test_basics || test_true_when || test_reduce);
+sub test_reduce_or ()
+{
+  my @tests = (# If no conditions are given, FALSE should be returned
+	       [[], ["FALSE"]],
+	       # An empty condition is TRUE
+	       [[""], ["TRUE"]],
+	       # A single condition should be passed through unchanged
+	       [["FOO"], ["FOO"]],
+	       [["FALSE"], ["FALSE"]],
+	       [["TRUE"], ["TRUE"]],
+	       # FALSE and TRUE should be discarded and overwhelm
+	       # the result, respectively
+	       [["FOO", "TRUE"], ["TRUE"]],
+	       [["FOO", "FALSE"], ["FOO"]],
+	       # Repetitions should be removed
+	       [["FOO", "FOO"], ["FOO"]],
+	       [["FALSE", "FOO", "FOO"], ["FOO"]],
+	       [["FOO", "FALSE", "FOO"], ["FOO"]],
+	       [["FOO", "FOO", "FALSE"], ["FOO"]],
+	       # Two different conditions should be preserved,
+	       # but FALSEs should be removed
+	       [["FOO", "BAR"], ["BAR,FOO"]],
+	       [["FALSE", "FOO", "BAR"], ["BAR,FOO"]],
+	       [["FOO", "FALSE", "BAR"], ["BAR,FOO"]],
+	       [["FOO", "BAR", "FALSE"], ["BAR,FOO"]],
+	       # A condition implying another condition should be removed.
+	       [["FOO BAR", "BAR"], ["BAR"]],
+	       [["BAR", "FOO BAR"], ["BAR"]],
+	       [["FALSE", "FOO BAR", "BAR"], ["BAR"]],
+	       [["FOO BAR", "FALSE", "BAR"], ["BAR"]],
+	       [["FOO BAR", "BAR", "FALSE"], ["BAR"]],
+
+	       [["BAR FOO", "BAR"], ["BAR"]],
+	       [["BAR", "BAR FOO"], ["BAR"]],
+	       [["FALSE", "BAR FOO", "BAR"], ["BAR"]],
+	       [["BAR FOO", "FALSE", "BAR"], ["BAR"]],
+	       [["BAR FOO", "BAR", "FALSE"], ["BAR"]],
+
+	       # Check that reduction happens even when there are
+	       # two conditions to remove.
+	       [["FOO", "FOO BAR", "BAR"], ["BAR,FOO"]],
+	       [["FOO", "FOO BAR", "BAZ", "FOO BAZ"], ["BAZ,FOO"]],
+	       [["FOO", "FOO BAR", "BAZ", "FOO BAZ", "FOO BAZ BAR"],
+		["BAZ,FOO"]],
+
+	       # Duplicated condionals should be removed
+	       [["FOO", "BAR", "BAR"], ["BAR,FOO"]],
+
+	       # Equivalent conditions in different forms should be
+	       # reduced: which one is left is unfortunately order
+	       # dependent.
+	       [["BAR FOO", "FOO BAR"], ["FOO BAR"]],
+	       [["FOO BAR", "BAR FOO"], ["BAR FOO"]]);
+
+  my $failed = 0;
+  foreach (@tests)
+    {
+      my ($inref, $outref) = @$_;
+      my @inconds = map { new Automake::Condition $_ } @$inref;
+      my @outconds = map { (new Automake::Condition $_)->string } @$outref;
+      my @res =
+	map { $_->string } (Automake::Condition::reduce_or (@inconds));
+      my $result = join (",", sort @res);
+      my $exresult = join (",", @outconds);
+
+      if ($result ne $exresult)
+	{
+	  print '"'.join(",", @$inref) . '" => "' .
+	    $result . '" expected "' .
+	      $exresult . '"' . "\n";
+	  $failed = 1;
+	}
+    }
+  return $failed;
+}
+
+exit (test_basics || test_true_when || test_reduce_and || test_reduce_or);
 
 ### Setup "GNU" style for perl-mode and cperl-mode.
 ## Local Variables:

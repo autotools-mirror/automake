@@ -55,8 +55,6 @@ sub test_invert ()
 	       [[["COND1_TRUE", "COND2_TRUE"],
 		 ["COND3_FALSE", "COND2_TRUE"]],
 		[["COND2_FALSE"],
-		 ["COND2_FALSE", "COND3_TRUE"],
-		 ["COND1_FALSE", "COND2_FALSE"],
 		 ["COND1_FALSE", "COND3_TRUE"]]],
 
 	       [[["COND1_TRUE", "COND2_TRUE"],
@@ -246,9 +244,6 @@ sub test_simplify ()
 	}
 
       # Also exercize invert() while we are at it.
-
-      # FIXME: Can't run invert() with too much conditions, this is too slow.
-      next if $#{$t->[0][0]} > 8;
 
       my $inv1 = $set->invert->simplify;
       my $inv2 = $sim->invert->simplify;

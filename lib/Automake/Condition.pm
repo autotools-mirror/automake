@@ -22,7 +22,7 @@ use Carp;
 require Exporter;
 use vars '@ISA', '@EXPORT_OK';
 @ISA = qw/Exporter/;
-@EXPORT_OK = qw/TRUE FALSE reduce/;
+@EXPORT_OK = qw/TRUE FALSE reduce_and reduce_or/;
 
 =head1 NAME
 
@@ -80,10 +80,18 @@ Automake::Condition - record a conjunction of conditionals
   # (Not in this example)
   if ($cond->implies_any ($other, $both)) { ... }
 
-  # Remove superfluous conditionals.
-  # (Returns @cons = ($both) in this example, because
+  # Remove superfluous conditionals assuming they will eventually
+  # be multiplied together.
+  # (Returns @conds = ($both) in this example, because
   # $other and $cond are implied by $both.)
-  @conds = Automake::Condition::reduce ($other, $both, $cond);
+  @conds = Automake::Condition::reduce_and ($other, $both, $cond);
+
+  # Remove superfluous conditionals assuming they will eventually
+  # be summed together.
+  # (Returns @conds = ($cond, $other) in this example, because
+  # $both is a subset condition of $cond: $cond is true whenever $both
+  # is true.)
+  @conds = Automake::Condition::reduce_or ($other, $both, $cond);
 
   # Invert a Condition.  This returns a list of Conditions.
   @conds = $both->not;
@@ -467,7 +475,7 @@ sub implies_any ($@)
 
 =item C<$cond-E<gt>not>
 
-Return a negation of @<$cond> as a list of C<Condition>s.
+Return a negation of C<$cond> as a list of C<Condition>s.
 This list should be used to construct a C<DisjConditions>
 (we cannot return a C<DisjConditions> from C<Automake::Condition>,
 because that would make these two packages interdependent).
@@ -487,6 +495,37 @@ sub not ($ )
   return @res;
 }
 
+=item C<$cond-E<gt>multiply (@conds)>
+
+Assumption: C<@conds> represent a disjunction of conditions.
+
+Return the result of multiplying C<$cond> with that disjunction.
+The result will be a list of conditions suitable to construct a
+C<DisjConditions>.
+
+=cut
+
+sub multiply ($@)
+{
+  my ($self, @set) = @_;
+  my %res = ();
+  for my $cond (@set)
+    {
+      my $ans = $self->merge ($cond);
+      $res{$ans} = $ans;
+    }
+
+  # FALSE can always be removed from a disjunction.
+  delete $res{FALSE};
+
+  # Now, $self is a common factor of the remaining conditions.
+  # If one of the conditions is $self, we can discard the rest.
+  return ($self, ())
+    if exists $res{$self};
+
+  return (values %res);
+}
+
 =head2 Other helper functions
 
 =over 4
@@ -504,16 +543,16 @@ The C<"FALSE"> conditional.
 use constant TRUE => new Automake::Condition "TRUE";
 use constant FALSE => new Automake::Condition "FALSE";
 
-=item C<reduce (@conds)>
+=item C<reduce_and (@conds)>
 
-Filter a list of conditions so that only the exclusive ones are
-retained.  For example, if both C<COND1_TRUE COND2_TRUE> and
-C<COND1_TRUE> are in the list, discard the latter.
-If the input list is empty, return C<(TRUE)>.
+Return a subset of @conds with the property that the conjunction of
+the subset is the same as the conjunction of @conds.  For example, if
+both C<COND1_TRUE COND2_TRUE> and C<COND1_TRUE> are in the list,
+discard the latter.  If the input list is empty, return C<(TRUE)>.
 
 =cut
 
-sub reduce (@)
+sub reduce_and (@)
 {
   my (@conds) = @_;
   my @ret = ();
@@ -533,6 +572,37 @@ sub reduce (@)
     }
 
   return TRUE if @ret == 0;
+  return @ret;
+}
+
+=item C<reduce_or (@conds)>
+
+Return a subset of @conds with the property that the disjunction of
+the subset is equivalent to the disjunction of @conds.  For example,
+if both C<COND1_TRUE COND2_TRUE> and C<COND1_TRUE> are in the list,
+discard the former.  If the input list is empty, return C<(FALSE)>.
+
+=cut
+
+sub reduce_or (@)
+{
+  my (@conds) = @_;
+  my @ret = ();
+  my $cond;
+  while (@conds > 0)
+    {
+      $cond = shift @conds;
+
+      next
+       if $cond == FALSE;
+      return TRUE
+       if $cond == TRUE;
+
+      push (@ret, $cond)
+       unless $cond->implies_any (@ret, @conds);
+    }
+
+  return FALSE if @ret == 0;
   return @ret;
 }
 
