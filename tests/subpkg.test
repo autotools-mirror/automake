@@ -1,0 +1,67 @@
+#! /bin/sh
+
+# Check subpackage handling.
+
+. $srcdir/defs || exit 1
+
+set -e
+
+cat >>configure.in <<'END'
+AC_CONFIG_SUBDIRS([lib])
+AC_PROG_CC
+AC_OUTPUT
+END
+
+cat >Makefile.am <<'EOF'
+SUBDIRS = lib
+# Yes, This program is named LDADD.  So what?
+bin_PROGRAMS = LDADD
+LDADD_LDADD = lib/liblib.a
+EOF
+
+cat >LDADD.c <<'EOF'
+int lib ();
+
+int
+main ()
+{
+  return lib ();
+}
+EOF
+
+mkdir lib
+mkdir lib/src
+
+cat >lib/configure.ac <<'EOF'
+AC_INIT([lib], [2.3])
+AM_INIT_AUTOMAKE
+AC_PROG_CC
+AC_PROG_RANLIB
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
+EOF
+
+cat >lib/Makefile.am <<'EOF'
+noinst_LIBRARIES = liblib.a
+liblib_a_SOURCES = src/x.c
+EOF
+
+cat >lib/src/x.c <<'EOF'
+int lib ()
+{
+  return 0;
+}
+EOF
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
+
+cd lib
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
+cd ..
+
+./configure
+$MAKE distcheck
