@@ -1,4 +1,4 @@
-# Copyright (C) 2002  Free Software Foundation, Inc.
+# Copyright (C) 2002, 2003  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -138,10 +138,11 @@ sub clone ($)
 sub dump ($)
 {
   my ($self) = @_;
-  my $res = $self->get . ":\n";
+  my $res = ($self->get || 'INTERNAL') . ":\n";
   for my $pair (reverse $self->get_contexts)
     {
-      $res .= "$pair->[0]: $pair->[1]\n";
+      $res .= $pair->[0] || 'INTERNAL';
+      $res .= ": $pair->[1]\n";
     }
   return $res;
 }
