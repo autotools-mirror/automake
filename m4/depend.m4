@@ -51,6 +51,14 @@ else
       fi
    fi
 
+   if test "$am_cv_[$1]_dependencies_compiler_type" = none; then
+      # -o /dev/null avoids selecting -E for a compiler that would
+      # output dependencies to the object file
+      if test -n "`$depcc -E conftest.c -o /dev/null 2>/dev/null`"; then
+	 am_cv_[$1]_dependencies_compiler_type=cpp
+      fi
+   fi
+
    dnl As a last resort, see if we can run CPP and extract line
    dnl information from the output.
    dnl FIXME

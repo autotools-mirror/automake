@@ -68,6 +68,9 @@ sgi)
   ;;
 
 dashmstdout)
+  # Important note: in order to support this mode, a compiler *must*
+  # always write the proprocessed file to stdout, regardless of -o,
+  # because we must use -o when running libtool.
   ( IFS=" "
     case " $* " in
     *" --mode=compile "*) # this is libtool, let us make it quiet
@@ -80,18 +83,21 @@ dashmstdout)
 	  shift # fnord
 	  ;;
 	esac
-	set fnord "$@" "$1"
+	set fnord "$@" "$arg"
 	shift # fnord
-	shift # "$1"
+	shift # "$arg"
       done
       ;;
     esac
-    "$@" -M | sed 's:^[^:]*\:[ 	]*:'"$object"'\: :' > "$tmpdepfile") &
+    "$@" -M | sed 's:^[^:]*\:[ 	]*:'"$object"'\: :' > "$tmpdepfile"
+  ) &
   proc=$!
   "$@"
-  rm -f "$depfile" 
+  stat=$?
   wait "$proc"
-  cat < "$tmpdepfile" >> "$depfile"
+  if test "$stat" != 0; then exit $stat; fi
+  rm -f "$depfile" 
+  cat < "$tmpdepfile" > "$depfile"
   tr ' ' '
 ' < "$tmpdepfile" | \
     sed -e 's/^\\$//' -e '/^$/d' -e '/:$/d' -e 's/$/ :/' >> "$depfile"
@@ -99,11 +105,39 @@ dashmstdout)
   ;;
 
 cpp)
-  # We want a pre compilation step which runs CPP (but with all
-  # the right options!  This is hard).  Then we want to run sed
-  # on the output, extract `#line' or `# NNN' lines, and turn
-  # that into correct dependencies.  We might as well do this
-  # all in one step, so we have no post-compilation step here.
+  # Important note: in order to support this mode, a compiler *must*
+  # always write the proprocessed file to stdout, regardless of -o,
+  # because we must use -o when running libtool.
+  ( IFS=" "
+    case " $* " in
+    *" --mode=compile "*)
+      for arg
+      do # cycle over the arguments
+        case "$arg" in
+	"--mode=compile")
+	  # insert --quiet before "--mode=compile"
+	  set fnord "$@" --quiet
+	  shift # fnord
+	  ;;
+	esac
+	set fnord "$@" "$arg"
+	shift # fnord
+	shift # "$arg"
+      done
+      ;;
+    esac
+    "$@" -E |
+    sed -n '/^# [0-9][0-9]* "\([^"]*\)"/ s::'"$object"'\: \1:p' > "$tmpdepfile"
+  ) &
+  proc=$!
+  "$@"
+  stat=$?
+  wait "$proc"
+  if test "$stat" != 0; then exit $stat; fi
+  rm -f "$depfile"
+  cat < "$tmpdepfile" > "$depfile"
+  sed < "$tmpdepfile" -e 's/^[^:]*: //' -e 's/$/ :/' >> "$depfile"
+  rm -f "$tmpdepfile"
   ;;
 
 none)
