@@ -6745,6 +6745,7 @@ sub read_am_file ($)
     my $last_var_name = '';
     my $last_var_type = '';
     my $last_var_value = '';
+    my $here = "$amfile:$.";
     # FIXME: shouldn't use $_ in this loop; it is too big.
     while ($_)
     {
@@ -6766,7 +6767,7 @@ sub read_am_file ($)
 	{
 	    # Stick a single white line before the incoming macro or rule.
 	    $spacing = "\n";
-	    &am_line_error ($., "blank line following trailing backslash")
+	    am_file_error ($here, "blank line following trailing backslash")
 		if $saw_bk;
 	}
 	elsif (/$COMMENT_PATTERN/o)
@@ -6774,7 +6775,7 @@ sub read_am_file ($)
 	    # Stick comments before the incoming macro or rule.
 	    $comment .= $spacing . $_;
 	    $spacing = '';
-	    &am_line_error ($., "comment following trailing backslash")
+	    am_file_error ($here, "comment following trailing backslash")
 		if $saw_bk;
 	}
 	elsif ($saw_bk)
@@ -6799,7 +6800,7 @@ sub read_am_file ($)
 		  $comment = $spacing = '';
 		  macro_define ($last_var_name, 0,
 				$last_var_type, $cond,
-				$last_var_value, "$amfile:$.")
+				$last_var_value, $here)
 		    if $cond ne 'FALSE';
 		  push (@var_list, $last_var_name);
 		}
@@ -6808,15 +6809,15 @@ sub read_am_file ($)
 
 	elsif (/$IF_PATTERN/o)
 	  {
-	    $cond = cond_stack_if ($1, $2, "$amfile:$.");
+	    $cond = cond_stack_if ($1, $2, $here);
 	  }
 	elsif (/$ELSE_PATTERN/o)
 	  {
-	    $cond = cond_stack_else ($1, $2, "$amfile:$.");
+	    $cond = cond_stack_else ($1, $2, $here);
 	  }
 	elsif (/$ENDIF_PATTERN/o)
 	  {
-	    $cond = cond_stack_endif ($1, $2, "$amfile:$.");
+	    $cond = cond_stack_endif ($1, $2, $here);
 	  }
 
 	elsif (/$RULE_PATTERN/o)
@@ -6824,7 +6825,7 @@ sub read_am_file ($)
 	    # Found a rule.
 	    $was_rule = 1;
 
-	    rule_define ($1, 0, $cond, $.);
+	    rule_define ($1, 0, $cond, $here);
 
 	    $output_trailer .= $comment . $spacing;
             $output_trailer .= &make_condition (@cond_stack);
@@ -6860,7 +6861,7 @@ sub read_am_file ($)
 
 		macro_define ($last_var_name, 0,
 			      $last_var_type, $cond,
-			      $last_var_value, "$amfile:$.")
+			      $last_var_value, $here)
 		  if $cond ne 'FALSE';
 		push (@var_list, $last_var_name);
 	      }
@@ -6890,7 +6891,7 @@ sub read_am_file ($)
 	    $output_trailer .= &make_condition  (@cond_stack);
 	    $output_trailer .= $_;
 	    $comment = $spacing = '';
-	    &am_line_error ($., "`#' comment at start of rule is unportable")
+	    am_file_error ($here, "`#' comment at start of rule is unportable")
 		if $_ =~ /^\t\s*\#/;
 	}
 
