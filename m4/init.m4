@@ -17,9 +17,11 @@ AC_SUBST(VERSION)
 AC_DEFINE_UNQUOTED(VERSION, "$VERSION")
 AM_SANITY_CHECK
 AC_ARG_PROGRAM
-AC_CHECK_PROG(ACLOCAL, aclocal, aclocal, \$(SHELL) missing aclocal)
-AC_CHECK_PROG(AUTOCONF, autoconf, autoconf, \$(SHELL) missing autoconf)
-AC_CHECK_PROG(AUTOMAKE, automake, automake, \$(SHELL) missing automake)
-AC_CHECK_PROG(AUTOHEADER, autoheader, autoheader, \$(SHELL) missing autoheader)
-AM_CHECK_PROG(MAKEINFO, makeinfo, makeinfo, \$(SHELL) ../missing makeinfo)
+dnl FIXME This is truly gross.
+missing_dir=`cd $ac_aux_dir && pwd`
+AM_MISSING_PROG(ACLOCAL, aclocal, $missing_dir)
+AM_MISSING_PROG(AUTOCONF, autoconf, $missing_dir)
+AM_MISSING_PROG(AUTOMAKE, automake, $missing_dir)
+AM_MISSING_PROG(AUTOHEADER, autoheader, $missing_dir)
+AM_MISSING_PROG(MAKEINFO, makeinfo, $missing_dir)
 AC_PROG_MAKE_SET])
