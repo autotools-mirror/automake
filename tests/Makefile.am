@@ -182,6 +182,7 @@ mclean.test \
 mdate.test \
 mdate2.test \
 mdate3.test \
+mdate4.test \
 mkinst2.test \
 mkinstall.test \
 nodep.test \
