@@ -46,7 +46,7 @@ AUTOMAKE = @AUTOMAKE@
 AUTOHEADER = @AUTOHEADER@
 
 INSTALL = @INSTALL@
-INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@ $(AM_INSTALL_PROGRAM_FLAGS)
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 transform = @program_transform_name@
@@ -150,8 +150,7 @@ $(srcdir)/version.texi: stamp-vti
 	@:
 
 $(srcdir)/stamp-vti: automake.texi $(top_srcdir)/configure.in
-	@echo "@set UPDATED `cd $(srcdir) \
-	  && $(SHELL) $(srcdir)//mdate-sh automake.texi`" > vti.tmp
+	@echo "@set UPDATED `$(SHELL) $(srcdir)/mdate-sh $(srcdir)/automake.texi`" > vti.tmp
 	@echo "@set EDITION $(VERSION)" >> vti.tmp
 	@echo "@set VERSION $(VERSION)" >> vti.tmp
 	@cmp -s vti.tmp $(srcdir)/version.texi \
@@ -168,7 +167,7 @@ clean-vti:
 distclean-vti:
 
 maintainer-clean-vti:
-	-rm -f stamp-vti version.texi
+	-rm -f $(srcdir)/stamp-vti $(srcdir)/version.texi
 
 automake.info: automake.texi version.texi
 automake.dvi: automake.texi version.texi
@@ -384,8 +383,12 @@ tags-recursive:
 tags: TAGS
 
 ID: $(HEADERS) $(SOURCES) $(LISP)
+	list='$(SOURCES) $(HEADERS)'; \
+	unique=`for i in $$list; do echo $$i; done | \
+	  awk '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
 	here=`pwd` && cd $(srcdir) \
-	  && mkid -f$$here/ID $(SOURCES) $(HEADERS) $(LISP)
+	  && mkid -f$$here/ID $$unique $(LISP)
 
 TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
 	tags=; \
@@ -465,7 +468,7 @@ distdir: $(DISTFILES)
 	  else \
 	    test -f $(distdir)/$$file \
 	    || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
-	    || cp -p $$d/$$file $(distdir)/$$file; \
+	    || cp -p $$d/$$file $(distdir)/$$file || :; \
 	  fi; \
 	done
 	for subdir in $(SUBDIRS); do \
