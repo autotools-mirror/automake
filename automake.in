@@ -81,6 +81,10 @@ $default_strictness = $GNU;
 # Name of strictness level, as set on command line.
 $default_strictness_name = 'gnu';
 
+# This is TRUE if GNU make specific automatic dependency generation
+# code should be included in generated Makefile.in.
+$cmdline_use_dependencies = 1;
+
 # TRUE if in verbose mode.
 $verbose = 0;
 
@@ -393,7 +397,7 @@ sub parse_arguments
 	}
 	elsif ($arglist[0] eq '--ignore-deps' || $arglist[0] eq '-i')
 	{
-	    # Just ignore.
+	    $cmdline_use_dependencies = 0;
 	}
 	elsif ($arglist[0] eq '--no-force')
 	{
@@ -2524,6 +2528,8 @@ sub generate_dependency_code
 # Handle auto-dependency code.
 sub handle_dependencies
 {
+    if ($use_dependencies)
+    {
 	# Include auto-dep code.  Don't include it if DEP_FILES would be empty.
 	if (&saw_sources_p (0) && keys %dep_files)
 	{
@@ -2551,6 +2557,11 @@ sub handle_dependencies
 	    &generate_dependency_code ('objc', 'OBJC', 'OBJC');
 	    &generate_dependency_code ('cxx', 'CXX', 'CXX');
 	}
+    }
+    else
+    {
+	&define_variable ('depcomp', '');
+    }
 }
 
 # Handle subdirectories.
@@ -2749,6 +2760,7 @@ sub handle_configure
                       . "\n"
 		      . "\tcd \$(top_srcdir) && \$(AUTOMAKE) "
 		      . ($cygnus_mode ? '--cygnus' : ('--' . $strictness_name))
+		      . ($cmdline_use_dependencies ? '' : ' --ignore-deps')
 		      . ' ' . $input . $colon_infile . "\n\n");
 
     # This rule remakes the Makefile.
@@ -4143,7 +4155,11 @@ sub scan_configure
     # looking at a subdir Makefile.  We must set relative_dir so that
     # the file-finding machinery works.
     local ($relative_dir) = '.';
-    &require_config_file ($FOREIGN, 'install-sh', 'mkinstalldirs', 'missing', 'depcomp');
+    &require_config_file ($FOREIGN, 'install-sh', 'mkinstalldirs', 'missing');
+    if ($cmdline_use_dependencies)
+    {
+      &require_config_file ($FOREIGN, 'depcomp');
+    }
     &am_error ("\`install.sh' is an anachronism; use \`install-sh' instead")
         if -f $config_aux_path[0] . '/install.sh';
 }
@@ -6083,6 +6099,7 @@ sub initialize_global_constants
   --gnits               set strictness to gnits
   --gnu                 set strictness to gnu
   --help                print this help, then exit
+  -i, --ignore-deps     disable dependency tracking code
   --no-force            only update Makefile.in's that are out of date
   -o DIR, --output-dir=DIR
                         put generated Makefile.in's into DIR
