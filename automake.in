@@ -1305,6 +1305,7 @@ sub handle_man_pages
 
     # Generate list of install dirs.
     $output_rules .= "install-man: \$(MANS)\n";
+    $output_rules .= "\t\$(NORMAL_INSTALL)\n";
     foreach (keys %sections)
     {
 	push (@installdirs, '$(mandir)/man' . $_)
@@ -2021,6 +2022,16 @@ sub handle_installdirs
 # avoid double colon rules, otherwise we'd use them instead.
 sub handle_merge_targets
 {
+    # There are a few install-related variables that you should not define.
+    local ($var);
+    foreach $var ('PRE_INSTALL', 'POST_INSTALL', 'NORMAL_INSTALL')
+    {
+	if (&variable_defined ($var))
+	{
+	    &am_line_error ($var, "should not define \`$var'");
+	}
+    }
+
     push (@all, 'Makefile');
     push (@all, $config_name)
 	if $config_name && &dirname ($config_name) eq $relative_dir;
@@ -2146,6 +2157,7 @@ sub handle_merge_targets
     $output_rules .= ("install-exec: "
 		      . join (' ', @install_exec)
 		      . "\n");
+    $output_rules .= "\t\$(NORMAL_INSTALL)\n";
     if (defined $contents{'install-exec-hook'})
     {
 	$output_rules .= "\t" . '$(MAKE) install-exec-hook' . "\n";
@@ -2157,6 +2169,7 @@ sub handle_merge_targets
     $output_rules .= ("install-data: "
 		      . join (' ', @install_data)
 		      . "\n");
+    $output_rules .= "\t\$(NORMAL_INSTALL)\n";
     if (defined $contents{'install-data-hook'})
     {
 	$output_rules .= "\t" . '$(MAKE) install-data-hook' . "\n";
