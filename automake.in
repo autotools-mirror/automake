@@ -177,19 +177,19 @@ my $AM_CONDITIONAL_PATTERN = 'AM_CONDITIONAL\(\[?(\w+)';
 my $DASH_D_PATTERN = "(^|\\s)-d(\\s|\$)";
 
 # Constants to define the "strictness" level.
-my $FOREIGN = 0;
-my $GNU = 1;
-my $GNITS = 2;
+use constant FOREIGN => 0;
+use constant GNU     => 1;
+use constant GNITS   => 2;
 
 # Values for AC_CANONICAL_*
-my $AC_CANONICAL_HOST = 1;
-my $AC_CANONICAL_SYSTEM = 2;
+use constant AC_CANONICAL_HOST   => 1;
+use constant AC_CANONICAL_SYSTEM => 2;
 
 # Values indicating when something should be cleaned.  Right now we
 # only need to handle `mostly'- and `dist'-clean; add more as
 # required.
-my $MOSTLY_CLEAN = 0;
-my $DIST_CLEAN = 1;
+use constant MOSTLY_CLEAN => 0;
+use constant DIST_CLEAN   => 1;
 
 # Libtool files.
 my @libtool_files = qw(ltmain.sh config.guess config.sub);
@@ -301,7 +301,7 @@ my $obsolete_rx = '\b(' . join ('|', keys %obsolete_macros) . ')\b';
 my $force_generation = 1;
 
 # Strictness level as set on command line.
-my $default_strictness = $GNU;
+my $default_strictness = GNU;
 
 # Name of strictness level, as set on command line.
 my $default_strictness_name = 'gnu';
@@ -1166,7 +1166,7 @@ sub generate_makefile
     {
         # AC_CANONICAL_HOST and AC_CANONICAL_SYSTEM need config.guess and
         # config.sub.
-        require_conf_file ($canonical_location, $FOREIGN,
+        require_conf_file ($canonical_location, FOREIGN,
 			   'config.guess', 'config.sub')
 	  if $seen_canonical;
     }
@@ -1400,7 +1400,7 @@ sub handle_options
 	}
     }
 
-    if ($strictness == $GNITS)
+    if ($strictness == GNITS)
     {
 	$options{'readme-alpha'} = 1;
 	$options{'check-news'} = 1;
@@ -1444,7 +1444,7 @@ sub handle_languages
 	    # Set location of depcomp.
 	    &define_variable ('depcomp', "\$(SHELL) $config_aux_dir/depcomp");
 
-	    require_conf_file ("$am_file.am", $FOREIGN, 'depcomp');
+	    require_conf_file ("$am_file.am", FOREIGN, 'depcomp');
 
 	    my @deplist = sort keys %dep_files;
 
@@ -1807,7 +1807,7 @@ sub handle_single_transform_list ($$$$@)
                 }
                 $object = $dname . '-' . $object;
 
-                require_conf_file ("$am_file.am", $FOREIGN, 'compile')
+                require_conf_file ("$am_file.am", FOREIGN, 'compile')
                     if $lang->name eq 'c';
 
                 prog_error ("$lang->name flags defined without compiler")
@@ -1938,7 +1938,7 @@ sub handle_single_transform_list ($$$$@)
                 }
 
 		# Make sure object is removed by `make mostlyclean'.
-		$compile_clean_files{$object} = $MOSTLY_CLEAN;
+		$compile_clean_files{$object} = MOSTLY_CLEAN;
 
                 push (@dep_list, require_build_directory ($directory));
 
@@ -2296,7 +2296,7 @@ sub handle_lib_objects_cond
 
 		if ($iter =~ /\.h$/)
 		{
-		    require_file_with_macro ($var, $FOREIGN, $iter);
+		    require_file_with_macro ($var, FOREIGN, $iter);
 		}
 		elsif ($iter ne 'alloca.c')
 		{
@@ -2311,7 +2311,7 @@ sub handle_lib_objects_cond
 				   &variable_value_as_list_recursive (
 				   	'BUILT_SOURCES', 'all')))
 		    {
-			require_file_with_macro ($var, $FOREIGN, $iter);
+			require_file_with_macro ($var, FOREIGN, $iter);
 		    }
 		}
 	    }
@@ -2326,7 +2326,7 @@ sub handle_lib_objects_cond
 			 "\@$lt" . "ALLOCA\@ seen but `AC_FUNC_ALLOCA' not in `$configure_ac'")
 		if ! defined $libsources{'alloca.c'};
 	    $dep_files{'$(DEPDIR)/alloca.P' . $myobjext} = 1;
-	    require_file_with_macro ($var, $FOREIGN, 'alloca.c');
+	    require_file_with_macro ($var, FOREIGN, 'alloca.c');
 	    &saw_extension ('c');
 	}
     }
@@ -2395,11 +2395,11 @@ sub handle_compile ()
     my (@mostly_rms, @dist_rms);
     foreach my $item (sort keys %compile_clean_files)
     {
-	if ($compile_clean_files{$item} == $MOSTLY_CLEAN)
+	if ($compile_clean_files{$item} == MOSTLY_CLEAN)
 	{
 	    push (@mostly_rms, "\t-rm -f $item");
 	}
-	elsif ($compile_clean_files{$item} == $DIST_CLEAN)
+	elsif ($compile_clean_files{$item} == DIST_CLEAN)
 	{
 	    push (@dist_rms, "\t-rm -f $item");
 	}
@@ -2434,7 +2434,7 @@ sub handle_compile ()
 	  {
 	    # Only require ansi2knr files if they should appear in
 	    # this directory.
-	    require_file_with_macro ('AUTOMAKE_OPTIONS', $FOREIGN,
+	    require_file_with_macro ('AUTOMAKE_OPTIONS', FOREIGN,
 				     'ansi2knr.c', 'ansi2knr.1');
 
 	    # ansi2knr needs to be built before subdirs, so unshift it.
@@ -2459,7 +2459,7 @@ sub handle_libtool
     return unless $seen_libtool;
 
     # Libtool requires some files, but only at top level.
-    require_conf_file ($seen_libtool, $FOREIGN, @libtool_files)
+    require_conf_file ($seen_libtool, FOREIGN, @libtool_files)
 	if $relative_dir eq '.';
 
     # Output the libtool compilation rules.
@@ -3022,12 +3022,12 @@ sub handle_texinfo_helper
 	    # This is ugly, but it is our historical practice.
 	    if ($config_aux_dir_set_in_configure_in)
 	    {
-		require_conf_file_with_macro ('info_TEXINFOS', $FOREIGN,
+		require_conf_file_with_macro ('info_TEXINFOS', FOREIGN,
 					      'mdate-sh');
 	    }
 	    else
 	    {
-		require_file_with_macro ('info_TEXINFOS', $FOREIGN,
+		require_file_with_macro ('info_TEXINFOS', FOREIGN,
 					 'mdate-sh');
 	    }
 
@@ -3134,12 +3134,12 @@ sub handle_texinfo_helper
     {
 	if ($need_texi_file > 1)
 	{
-	    require_conf_file_with_macro ('info_TEXINFOS', $FOREIGN,
+	    require_conf_file_with_macro ('info_TEXINFOS', FOREIGN,
 					  'texinfo.tex');
 	}
 	else
 	{
-	    require_file_with_macro ('info_TEXINFOS', $FOREIGN, 'texinfo.tex');
+	    require_file_with_macro ('info_TEXINFOS', FOREIGN, 'texinfo.tex');
 	}
     }
 
@@ -3705,7 +3705,7 @@ sub handle_configure
 	        $in0_sans_dir = backname ($relative_dir) . '/' . $ins[0];
 	    }
 
-	    require_file ($config_header_location, $FOREIGN, $in0_sans_dir);
+	    require_file ($config_header_location, FOREIGN, $in0_sans_dir);
 
 	    # Header defined and in this directory.
 	    my @files;
@@ -3848,7 +3848,7 @@ sub handle_configure
 	push (@actual_other_files, $local);
 
 	# Require all input files.
-	require_file ($ac_config_files_location, $FOREIGN,
+	require_file ($ac_config_files_location, FOREIGN,
 		      rewrite_inputs_into_dependencies (0, @inputs));
     }
 
@@ -3887,7 +3887,7 @@ sub handle_gettext
 		 "AM_GNU_GETTEXT used but `intl' not in SUBDIRS")
 	if ! grep ('intl', @subdirs);
 
-    require_file ($ac_gettext_location, $GNU, 'ABOUT-NLS');
+    require_file ($ac_gettext_location, GNU, 'ABOUT-NLS');
 }
 
 # Handle footer elements.
@@ -4226,7 +4226,7 @@ sub handle_emacs_lisp
     &am_error ("`lisp_LISP' defined but `AM_PATH_LISPDIR' not in `$configure_ac'")
       if ! $am_lispdir_location && variable_defined ('lisp_LISP');
 
-    require_conf_file ($am_lispdir_location,  $FOREIGN, 'elisp-comp');
+    require_conf_file ($am_lispdir_location, FOREIGN, 'elisp-comp');
     &define_variable ('elisp_comp', $config_aux_dir . '/elisp-comp');
 }
 
@@ -4241,7 +4241,7 @@ sub handle_python
     &am_error ("`python_PYTHON' defined but `AM_PATH_PYTHON' not in `$configure_ac'")
 	if ! $pythondir_location && variable_defined ('python_PYTHON');
 
-    require_conf_file ($pythondir_location, $FOREIGN, 'py-compile');
+    require_conf_file ($pythondir_location, FOREIGN, 'py-compile');
     &define_variable ('py_compile', $config_aux_dir . '/py-compile');
 }
 
@@ -4291,7 +4291,7 @@ sub handle_minor_options
 		# This means we have an alpha release.  See
 		# GNITS_VERSION_PATTERN for details.
 		require_file_with_macro ('AUTOMAKE_OPTIONS',
-					 $FOREIGN, 'README-alpha');
+					 FOREIGN, 'README-alpha');
 	    }
 	}
     }
@@ -4406,13 +4406,13 @@ sub scan_autoconf_traces ($)
 	{
 	  if (! $seen_canonical)
 	    {
-	      $seen_canonical = $AC_CANONICAL_HOST;
+	      $seen_canonical = AC_CANONICAL_HOST;
 	      $canonical_location = $here;
 	    };
 	}
       elsif ($macro eq 'AC_CANONICAL_SYSTEM')
 	{
-	  $seen_canonical = $AC_CANONICAL_SYSTEM;
+	  $seen_canonical = AC_CANONICAL_SYSTEM;
 	  $canonical_location = $here;
 	}
       elsif ($macro eq 'AC_CONFIG_AUX_DIR')
@@ -4676,13 +4676,13 @@ sub scan_one_autoconf_file
 	  {
 	    if (! $seen_canonical)
 	      {
-		$seen_canonical = $AC_CANONICAL_HOST;
+		$seen_canonical = AC_CANONICAL_HOST;
 		$canonical_location = $here;
 	      }
 	  }
 	if (/AC_CANONICAL_SYSTEM/)
 	  {
-	    $seen_canonical = $AC_CANONICAL_SYSTEM;
+	    $seen_canonical = AC_CANONICAL_SYSTEM;
 	    $canonical_location = $here;
 	  }
 
@@ -4786,7 +4786,7 @@ sub scan_one_autoconf_file
 	    $configure_vars{'CC'} = $here;
 	    # AC_PROG_LIBTOOL runs AC_CANONICAL_HOST.  Make sure we
 	    # never downgrade (if we've seen AC_CANONICAL_SYSTEM).
-	    $seen_canonical = $AC_CANONICAL_HOST if ! $seen_canonical;
+	    $seen_canonical = AC_CANONICAL_HOST if ! $seen_canonical;
 	}
 
 	$seen_multilib = $here if (/AM_ENABLE_MULTILIB/);
@@ -4854,12 +4854,12 @@ sub scan_autoconf_files
     # FIXME: Is this broken because it needs dynamic scopes.
     # My tests seems to show it's not the case.
     $relative_dir = '.';
-    require_conf_file ($configure_ac, $FOREIGN,
+    require_conf_file ($configure_ac, FOREIGN,
 		       'install-sh', 'mkinstalldirs', 'missing');
     am_error ("`install.sh' is an anachronism; use `install-sh' instead")
         if -f $config_aux_path[0] . '/install.sh';
 
-    require_conf_file ($pythondir_location, $FOREIGN, 'py-compile')
+    require_conf_file ($pythondir_location, FOREIGN, 'py-compile')
       if $pythondir_location;
 
     # Preserve dist_common for later.
@@ -4888,18 +4888,18 @@ sub check_gnu_standards
     if ($relative_dir eq '.')
     {
 	# In top level (or only) directory.
-	require_file ('', $GNU,
+	require_file ('', GNU,
 		      qw(INSTALL NEWS README COPYING AUTHORS ChangeLog));
     }
 
-    if ($strictness >= $GNU
+    if ($strictness >= GNU
 	&& defined $options{'no-installman'})
     {
 	macro_error ('AUTOMAKE_OPTIONS',
 		     "option `no-installman' disallowed by GNU standards");
     }
 
-    if ($strictness >= $GNU
+    if ($strictness >= GNU
 	&& defined $options{'no-installinfo'})
     {
 	macro_error ('AUTOMAKE_OPTIONS',
@@ -4913,7 +4913,7 @@ sub check_gnits_standards
     if ($relative_dir eq '.')
     {
 	# In top level (or only) directory.
-	require_file ('', $GNITS, 'THANKS');
+	require_file ('', GNITS, 'THANKS');
     }
 }
 
@@ -4964,7 +4964,7 @@ sub lang_c_rewrite
 	    am_error ("C objects in subdir but `AM_PROG_CC_C_O' not in `$configure_ac'");
 	}
 
-	require_conf_file ("$am_file.am", $FOREIGN, 'compile');
+	require_conf_file ("$am_file.am", FOREIGN, 'compile');
     }
 
     $de_ansi_files{$base} = 1;
@@ -5152,7 +5152,7 @@ sub yacc_lex_finish_helper
     # in a given directory, then the `ylwrap' program is required to
     # allow parallel builds to work correctly.  FIXME: for now, no
     # line number.
-    require_conf_file ($configure_ac, $FOREIGN, 'ylwrap');
+    require_conf_file ($configure_ac, FOREIGN, 'ylwrap');
     if ($config_aux_dir_set_in_configure_in)
     {
 	&define_variable ('YLWRAP', $config_aux_dir . "/ylwrap");
@@ -5309,7 +5309,7 @@ sub register_language (%)
 }
 
 # derive_suffix ($EXT, $OBJ)
-# ==========================
+# --------------------------
 # This function is used to find a path from a user-specified suffix $EXT
 # to $OBJ or to some other suffix we recognize internally, eg `cc'.
 sub derive_suffix ($$)
@@ -6938,9 +6938,9 @@ sub make_paragraphs ($%)
 		     'TOPDIR_P'     => $relative_dir eq '.',
 		     'CONFIGURE-AC' => $configure_ac,
 
-		     'BUILD'    => $seen_canonical == $AC_CANONICAL_SYSTEM,
+		     'BUILD'    => $seen_canonical == AC_CANONICAL_SYSTEM,
 		     'HOST'     => $seen_canonical,
-		     'TARGET'   => $seen_canonical == $AC_CANONICAL_SYSTEM,
+		     'TARGET'   => $seen_canonical == AC_CANONICAL_SYSTEM,
 
 		     'LIBTOOL'      => defined $configure_vars{'LIBTOOL'})
 	  # We don't need more than two consecutive new-lines.
@@ -7794,7 +7794,7 @@ sub require_build_directory ($)
 	$directory_map{$directory} = 1;
 
 	# Directory must be removed by `make distclean'.
-	$compile_clean_files{$dirstamp} = $DIST_CLEAN;
+	$compile_clean_files{$dirstamp} = DIST_CLEAN;
 
 	$output_rules .= ("$dirstamp:\n"
 			  . "\t\@\$(mkinstalldirs) $directory\n"
@@ -7841,15 +7841,15 @@ sub set_strictness
     $strictness_name = $_[0];
     if ($strictness_name eq 'gnu')
     {
-	$strictness = $GNU;
+	$strictness = GNU;
     }
     elsif ($strictness_name eq 'gnits')
     {
-	$strictness = $GNITS;
+	$strictness = GNITS;
     }
     elsif ($strictness_name eq 'foreign')
     {
-	$strictness = $FOREIGN;
+	$strictness = FOREIGN;
     }
     else
     {
