@@ -24,6 +24,7 @@ dist_perllib_DATA = \
   ChannelDefs.pm \
   Channels.pm \
   Condition.pm \
+  Configure_ac.pm \
   DisjConditions.pm \
   General.pm \
   Location.pm \

@@ -20,6 +20,7 @@ use strict;
 use Carp;
 use Automake::Channels;
 use Automake::ChannelDefs;
+use Automake::Configure_ac;
 use Automake::VarDef;
 use Automake::Condition qw (TRUE FALSE);
 use Automake::DisjConditions;
@@ -1226,13 +1227,13 @@ sub require_variables ($$$@)
       if (exists $_am_macro_for_var{$var})
 	{
 	  $text .= "\nThe usual way to define `$var' is to add "
-	    . "`$_am_macro_for_var{$var}'\nto `$Automake::configure_ac' and "
+	    . "`$_am_macro_for_var{$var}'\nto `$configure_ac' and "
 	    . "run `aclocal' and `autoconf' again.";
 	}
       elsif (exists $_ac_macro_for_var{$var})
 	{
 	  $text .= "\nThe usual way to define `$var' is to add "
-	    . "`$_ac_macro_for_var{$var}'\nto `$Automake::configure_ac' and "
+	    . "`$_ac_macro_for_var{$var}'\nto `$configure_ac' and "
 	    . "run `autoconf' again.";
 	}
 

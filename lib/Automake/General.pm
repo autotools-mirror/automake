@@ -28,7 +28,7 @@ use strict;
 use vars qw (@ISA @EXPORT);
 
 @ISA = qw (Exporter);
-@EXPORT = qw (&debug &find_configure_ac &find_file &getopt &mktmpdir &mtime
+@EXPORT = qw (&debug &find_file &getopt &mktmpdir &mtime
               &uniq &update_file &verbose &xsystem &contents
 	      $debug $help $me $tmp $verbose $version);
 
@@ -95,28 +95,6 @@ sub debug (@)
 {
   print STDERR "$me: ", @_, "\n"
     if $verbose && $debug;
-}
-
-
-# $CONFIGURE_AC
-# &find_configure_ac ()
-# ---------------------
-sub find_configure_ac ()
-{
-  if (-f 'configure.ac')
-    {
-      if (-f 'configure.in')
-	{
-	  carp "warning: `configure.ac' and `configure.in' both present.\n";
-	  carp "warning: proceeding with `configure.ac'.\n";
-	}
-      return 'configure.ac';
-    }
-  elsif (-f 'configure.in')
-    {
-      return 'configure.in';
-    }
-  return;
 }
 
 
