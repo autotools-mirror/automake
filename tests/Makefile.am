@@ -188,15 +188,12 @@ lex2.test \
 lex3.test \
 lex4.test \
 lex5.test \
-libobj.test \
 libobj2.test \
 libobj3.test \
 libobj4.test \
 libobj5.test \
-libobj6.test \
 libobj7.test \
 libobj8.test \
-libobj9.test \
 libobj10.test \
 libobj11.test \
 library.test \
