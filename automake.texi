@@ -114,6 +114,7 @@ documents version @value{VERSION}.
 * Tests::                       Support for test suites
 * Options::                     Changing Automake's behavior
 * Miscellaneous::               Miscellaneous rules
+* Conditionals::		Conditionals
 * Gnits::                       The effect of @code{--gnu} and @code{--gnits}
 * Cygnus::                      The effect of @code{--cygnus}
 * Extending::                   Extending Automake
@@ -2246,6 +2247,68 @@ source files, you would also need to add these suffixes to the list:
 SUFFIXES = .java .class
 @end example
 
+@node Conditionals
+@chapter Conditionals
+
+Automake supports a simple type of conditionals.
+
+@cvindex AM_CONDITIONAL
+Before using a conditiona, you must define it by using
+@code{AM_CONDITIONAL} in the @code{configure.in} file.  The
+@code{AM_CONDITIONAL} macro takes two arguments.
+
+The first argument to @code{AM_CONDITIONAL} is the name of the
+conditional.  This should be a simple string starting with a letter and
+containing only letters, digits, and underscores.
+
+The second argument to @code{AM_CONDITIONAL} is a shell condition,
+suitable for use in a shell if statement.  The condition is evaluated
+when @code{configure} is run.
+
+Conditionals typically depend upon options which the user provides to
+the @code{configure} script.  Here is an example of how to write a
+conditional which is true if the user uses the @samp{--enable-debug}
+option.
+
+@example
+AC_ARG_ENABLE(debug,
+[  --enable-debug    Turn on debugging],
+[case "$@{enableval@}" in
+  yes) debug=true ;;
+  no)  debug=false ;;
+  *) AC_MSG_ERROR(bad value $@{enableval@} for --enable-debug) ;;
+esac],[debug=false])
+AM_CONDITIONAL(DEBUG, test x$debug = xtrue)
+@end example
+
+Here is an example of how to use that conditional in @file{Makefile.am}:
+
+@example
+if DEBUG
+DBG = debug
+else
+DBG =
+endif
+noinst_PROGRAMS = $(DBG)
+@end example
+
+This trivial example could also be handled using EXTRA_PROGRAMS
+(@pxref{A Program}).
+
+You may only test a single variable in an @code{if} statement.  The
+@code{else} statement may be omitted.  Conditionals may be nested to any
+depth.
+
+Note that conditionals in Automake are not the same as conditionals in
+GNU Make.  Automake conditionals are checked at configure time by the
+@file{configure} script, and affect the translation from
+@file{Makefile.in} to @file{Makefile}.  They are based on options passed
+to @file{configure} and on results that @file{configure} has discovered
+about the host system.  GNU Make conditionals are checked at make time,
+and are based on variables passed to the make program or defined in the
+@file{Makefile}.
+
+Automake conditionals will work with any make program.
 
 @node Gnits
 @chapter The effect of @code{--gnu} and @code{--gnits}

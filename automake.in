@@ -43,6 +43,9 @@ $RULE_PATTERN = "^([\$a-zA-Z_.][-.a-zA-Z0-9_(){}/]*) *:([^=].*|)\$";
 $MACRO_PATTERN = "^([A-Za-z][A-Za-z0-9_]*)[ \t]*:?=[ \t]*(.*)\$";
 $BOGUS_MACRO_PATTERN = "^([^ \t]*)[ \t]*:?=[ \t]*(.*)\$";
 $GNITS_VERSION_PATTERN = "[0-9]+\\.[0-9]+([a-z]|\\.[0-9]+)?";
+$IF_PATTERN = "^if[ \t]+\([A-Za-z][A-Za-z0-9_]*\)[ \t]*\(#.*\)?\$";
+$ELSE_PATTERN = "^else[ \t]*\(#.*\)?\$";
+$ENDIF_PATTERN = "^endif[ \t]*\(#.*\)?\$";
 
 # Some regular expressions.  One reason to put them here is that it
 # makes indentation work better in Emacs.
@@ -55,6 +58,7 @@ $AM_MISSING_PATTERN = "AM_MISSING_PROG\\(\\[?(\\w+)";
 # Just check for alphanumeric in AC_SUBST.  If you do AC_SUBST(5),
 # then too bad.
 $AC_SUBST_PATTERN = "AC_SUBST\\(\\[?(\\w+)";
+$AM_CONDITIONAL_PATTERN = "AM_CONDITIONAL\\((\\w+)";
 
 # Constants to define the "strictness" level.
 $FOREIGN = 0;
@@ -222,6 +226,9 @@ $cygnus_mode = 0;
 
 # Keys of this hash are names of dependency files to ignore.
 %omit_dependencies = ();
+
+# Hash table of AM_CONDITIONAL variables seen in configure.
+%configure_cond = ();
 
 # Map from obsolete macros to hints for new macros.
 # FIXME complete the list so that there are no `0' hints.
@@ -596,7 +603,7 @@ sub handle_options
 {
     return 0 if ! &variable_defined ('AUTOMAKE_OPTIONS');
 
-    foreach (&variable_value_as_list ('AUTOMAKE_OPTIONS'))
+    foreach (&variable_value_as_list ('AUTOMAKE_OPTIONS', ''))
     {
 	$options{$_} = 1;
 	if ($_ eq 'gnits' || $_ eq 'gnu' || $_ eq 'foreign')
@@ -675,7 +682,7 @@ sub get_object_extension
 	if (&variable_defined ('CONFIG_HEADER'))
 	{
 	    local ($one_hdr);
-	    foreach $one_hdr (split (' ', $contents{'CONFIG_HEADER'}))
+	    foreach $one_hdr (split (' ', &variable_value ('CONFIG_HEADER')))
 	    {
 		local ($var);
 		($var = &dirname ($one_hdr)) =~ s/(\W)/\\$1/g;
@@ -1019,8 +1026,9 @@ sub check_libobjs_sources
     {
 	if (&variable_defined ($prefix . $one_file . '_SOURCES'))
 	{
-	    @files = &variable_value_as_list ($prefix
-					      . $one_file . '_SOURCES');
+	    @files = &variable_value_as_list (($prefix
+					       . $one_file . '_SOURCES'),
+					      'all');
 	}
 	elsif ($prefix eq '')
 	{
@@ -1180,13 +1188,32 @@ sub handle_source_transform
     foreach $prefix ('', 'EXTRA_')
     {
 	@files = ();
-	if (&variable_defined ($prefix . $one_file . "_SOURCES"))
+	local ($var) = $prefix . $one_file . "_SOURCES";
+	if (&variable_defined ($var))
 	{
 	    push (@sources, '$(' . $prefix . $one_file . "_SOURCES)");
 	    push (@objects, '$(' . $prefix . $one_file . "_OBJECTS)")
 		unless $prefix eq 'EXTRA_';
-	    @files = &variable_value_as_list ($prefix
-					      . $one_file . "_SOURCES");
+	    local (@conds) = &variable_conditions ($var);
+	    if (! @conds)
+	    {
+		@files = &variable_value_as_list ($var, '');
+	    }
+	    else
+	    {
+		local ($cond);
+		foreach $cond (@conds)
+		{
+		    @files = &variable_value_as_list ($var, $cond);
+		    ($temp, @result) = &handle_single_transform_list (@files);
+		    $linker = $temp if $linker eq '';
+		    &define_pretty_variable ($one_file . "_OBJECTS", $cond,
+					     @result)
+			unless $prefix eq 'EXTRA_';
+		}
+
+		next;
+	    }
 	}
 	elsif ($prefix eq '')
 	{
@@ -1198,7 +1225,7 @@ sub handle_source_transform
 
 	($temp, @result) = &handle_single_transform_list (@files);
 	$linker = $temp if $linker eq '';
-	&define_pretty_variable ($one_file . "_OBJECTS", @result)
+	&define_pretty_variable ($one_file . "_OBJECTS", '', @result)
 	    unless $prefix eq 'EXTRA_';
     }
 
@@ -1211,7 +1238,7 @@ sub handle_built_sources
     return unless &variable_defined ('BUILT_SOURCES');
     push (@all, '$(BUILT_SOURCES)');
 
-    local (@sources) = &variable_value_as_list ('BUILT_SOURCES');
+    local (@sources) = &variable_value_as_list ('BUILT_SOURCES', 'all');
     local ($s);
     foreach $s (@sources)
     {
@@ -1241,12 +1268,39 @@ sub handle_built_sources
 sub handle_lib_objects
 {
     local ($xname, $var, $lex_seen) = @_;
+    local ($ret);
 
     die "automake: programming error 1 in handle_lib_objects\n"
 	if ! &variable_defined ($var);
 
     die "automake: programming error 2 in handle_lib_objects\n"
 	if $lex_seen && $var =~ /LIBADD/;
+
+    local (@conds) = &variable_conditions ($var);
+    if (! @conds)
+    {
+	$ret = &handle_lib_objects_cond ($xname, $var, $lex_seen, '');
+    }
+    else
+    {
+	local ($cond);
+	$ret = 0;
+	foreach $cond (@conds)
+	{
+	    if (&handle_lib_objects_cond ($xname, $var, $lex_seen, $cond))
+	    {
+		$ret = 1;
+	    }
+	}
+    }
+
+    return $ret;
+}
+
+# Subroutine of handle_lib_objects: handle a particular condition.
+sub handle_lib_objects_cond
+{
+    local ($xname, $var, $lex_seen, $cond) = @_;
 
     # We recognize certain things that are commonly put in LIBADD or
     # LDADD.
@@ -1259,7 +1313,7 @@ sub handle_lib_objects
     local ($seen_libobjs) = 0;
     local ($flagvar) = 0;
 
-    foreach $lsearch (&variable_value_as_list ($var))
+    foreach $lsearch (&variable_value_as_list ($var, $cond))
     {
 	# Skip -lfoo and -Ldir; these are explicitly allowed.
 	next if $lsearch =~ /^-[lL]/;
@@ -1342,9 +1396,9 @@ sub handle_lib_objects
 	&am_line_error ($var, 'lex source file used without @LEXLIB@');
     }
 
-    if ($xname ne '' && ! &variable_defined ($xname . '_DEPENDENCIES'))
+    if ($xname ne '' && ! &variable_defined ($xname . '_DEPENDENCIES', $cond))
     {
-	&define_pretty_variable ($xname . '_DEPENDENCIES', @dep_list);
+	&define_pretty_variable ($xname . '_DEPENDENCIES', $cond, @dep_list);
     }
 
     return $seen_libobjs;
@@ -1628,7 +1682,7 @@ sub handle_ltlibraries
 	    }
 
 	    # Get the installation directory of each library.
-	    for (&variable_value_as_list ($key . '_LTLIBRARIES'))
+	    for (&variable_value_as_list ($key . '_LTLIBRARIES', 'all'))
 	    {
 		if ($instdirs{$_})
 		{
@@ -1842,7 +1896,7 @@ sub handle_texinfo
     return if (! &variable_defined ('info_TEXINFOS')
 	       && ! &variable_defined ('html_TEXINFOS'));
 
-    local (@texis) = &variable_value_as_list ('info_TEXINFOS');
+    local (@texis) = &variable_value_as_list ('info_TEXINFOS', 'all');
 
     local (@info_deps_list, @dvis_list, @texi_deps);
     local ($infobase, $info_cursor);
@@ -1973,7 +2027,7 @@ sub handle_texinfo
     {
 	&define_variable ('TEXINFO_TEX', '$(srcdir)/texinfo.tex');
     }
-    local ($xxform) = &dirname ($contents{'TEXINFO_TEX'});
+    local ($xxform) = &dirname (&variable_value ('TEXINFO_TEX'));
     $xxform =~ s/(\W)/\\$1/g;
     $xform .= ' s/\@TEXINFODIR\@/' . $xxform . '/g;';
 
@@ -2017,7 +2071,7 @@ sub handle_texinfo
     # This next isn't strictly needed now -- the places that look here
     # could easily be changed to look in info_TEXINFOS.  But this is
     # probably better, in case noinst_TEXINFOS is ever supported.
-    &define_variable ("TEXINFOS", $contents{'info_TEXINFOS'});
+    &define_variable ("TEXINFOS", &variable_value ('info_TEXINFOS'));
 
     # Do some error checking.  Note that this file is not required
     # when in Cygnus mode; instead we defined TEXINFO_TEX explicitly
@@ -2036,7 +2090,7 @@ sub handle_man_pages
 
     # We generate the manpage install code by hand to avoid the use of
     # basename in the generated Makefile.
-    local (@mans) = &variable_value_as_list ('man_MANS');
+    local (@mans) = &variable_value_as_list ('man_MANS', 'all');
     local (%sections, %inames, %mbases, %secmap, %fullsecmap);
     local ($i) = 1;
     foreach (@mans)
@@ -2053,7 +2107,7 @@ sub handle_man_pages
 
     # We don't really need this, but we use it in case we ever want to
     # support noinst_MANS.
-    &define_variable ("MANS", $contents{'man_MANS'});
+    &define_variable ("MANS", &variable_value ('man_MANS'));
 
     # Generate list of install dirs.
     $output_rules .= "install-man: \$(MANS)\n";
@@ -2238,7 +2292,12 @@ sub handle_dist_worker
     local (@dist_dirs);
     if (&variable_defined ('EXTRA_DIST'))
     {
-	foreach (&variable_value_as_list ('EXTRA_DIST'))
+	# FIXME: This should be fixed to work with conditionals.  That
+	# will require only making the entries in @dist_dirs under the
+	# appropriate condition.  This is meaningful if the nature of
+	# the distribution should depend upon the configure options
+	# used.
+	foreach (&variable_value_as_list ('EXTRA_DIST', ''))
 	{
 	    next if /^\@.*\@$/;
 	    next unless s,/+[^/]+$,,;
@@ -2321,7 +2380,7 @@ sub handle_dist
     local ($makefile) = @_;
 
     # Set up maint_charset.
-    $local_maint_charset = $contents{'MAINT_CHARSET'}
+    $local_maint_charset = &variable_value ('MAINT_CHARSET')
 	if &variable_defined ('MAINT_CHARSET');
     $maint_charset = $local_maint_charset
 	if $relative_dir eq '.';
@@ -2333,7 +2392,7 @@ sub handle_dist
 	    if ! $local_maint_charset;
 	if ($relative_dir eq '.')
 	{
-	    $dist_charset = $contents{'DIST_CHARSET'}
+	    $dist_charset = &variable_value ('DIST_CHARSET')
 	}
 	else
 	{
@@ -2364,7 +2423,7 @@ sub handle_dist
     }
     push (@coms, sort keys %dist_common);
 
-    &define_pretty_variable ("DIST_COMMON", @coms);
+    &define_pretty_variable ("DIST_COMMON", '', @coms);
     $output_vars .= "\n";
 
     # Some boilerplate.
@@ -2466,7 +2525,10 @@ sub scan_dependency_file
     local (%omit) = %omit_dependencies;
     if (&variable_defined ('OMIT_DEPENDENCIES'))
     {
-	grep ($omit{$_} = 1, &variable_value_as_list ('OMIT_DEPENDENCIES'));
+	# FIXME: Doesn't work with conditionals.  I'm not sure if this
+	# matters.
+	grep ($omit{$_} = 1,
+	      &variable_value_as_list ('OMIT_DEPENDENCIES', ''));
     }
 
     local ($first_line) = 1;
@@ -2578,7 +2640,7 @@ sub handle_dependencies
 	# Include GNU-make-specific auto-dep code.
 	if ($dir_holds_sources)
 	{
-	    &define_pretty_variable ('DEP_FILES', sort keys %dep_files);
+	    &define_pretty_variable ('DEP_FILES', '', sort keys %dep_files);
 	    $output_rules .= &file_contents ('depend');
 	    push (@clean, 'depend');
 	    &push_phony_cleaners ('depend');
@@ -2631,7 +2693,7 @@ sub handle_subdirs
 
     # Make sure each directory mentioned in SUBDIRS actually exists.
     local ($dir);
-    foreach $dir (&variable_value_as_list ('SUBDIRS'))
+    foreach $dir (&variable_value_as_list ('SUBDIRS', 'all'))
     {
 	# Skip directories substituted by configure.
 	next if $dir =~ /^\@.*\@$/;
@@ -2720,7 +2782,7 @@ sub handle_aclocal_m4
 	if (&variable_defined ('ACLOCAL_AMFLAGS'))
 	{
 	    local ($amdir);
-	    foreach $amdir (&variable_value_as_list ('ACLOCAL_AMFLAGS'))
+	    foreach $amdir (&variable_value_as_list ('ACLOCAL_AMFLAGS', ''))
 	    {
 		if ($amdir =~ s/^-I//
 		    && $amdir !~ /^\//
@@ -3009,7 +3071,7 @@ sub handle_configure
     }
 
     # These files get removed by "make clean".
-    &define_pretty_variable ('CONFIG_CLEAN_FILES', @actual_other_files);
+    &define_pretty_variable ('CONFIG_CLEAN_FILES', '', @actual_other_files);
 }
 
 # Handle C headers.
@@ -3101,7 +3163,7 @@ sub handle_footer
 	# Push actual suffixes, and not $(SUFFIXES).  Some versions of
 	# make do not like variable substitutions on the .SUFFIXES
 	# line.
-	push (@suffixes, &variable_value_as_list ('SUFFIXES'));
+	push (@suffixes, &variable_value_as_list ('SUFFIXES', ''));
     }
     if (&target_defined ('.SUFFIXES'))
     {
@@ -3647,7 +3709,7 @@ sub handle_emacs_lisp
 
 	# Generate .elc files.
 	grep ($_ .= 'c', @elfiles);
-	&define_pretty_variable ('ELCFILES', @elfiles);
+	&define_pretty_variable ('ELCFILES', '', @elfiles);
 
 	push (@clean, 'lisp');
 	&push_phony_cleaners ('lisp');
@@ -3982,6 +4044,11 @@ sub scan_one_configure_file
 	    # never downgrade (if we've seen AC_CANONICAL_SYSTEM).
 	    $seen_canonical = $AC_CANONICAL_HOST if ! $seen_canonical;
 	}
+
+	if (/$AM_CONDITIONAL_PATTERN/o)
+	{
+	    $configure_cond{$1} = 1;
+	}
     }
 
     close (CONFIGURE);
@@ -4171,10 +4238,72 @@ sub target_defined
     return defined $targets{$target};
 }
 
-# See if a variable exists.
+# See if two conditionals are the same.
+sub conditional_same
+{
+    local ($cond1, $cond2) = @_;
+
+    return (&conditional_true_when ($cond1, $cond2)
+	    && &conditional_true_when ($cond2, $cond1));
+}
+
+# See if a conditional is true.  Both arguments are conditional
+# strings.  This returns true if the first conditional is true when
+# the second conditional is true.
+sub conditional_true_when
+{
+    local ($cond, $when) = @_;
+
+    # Check the easy case first.
+    if ($cond eq $when)
+    {
+	return 1;
+    }
+
+    # Check each component of $cond, which looks @COND1@@COND2@.
+    foreach $comp (split ('@', $cond))
+    {
+	# The way we split will give null strings between each
+	# condition.
+	next if ! $comp;
+
+	if (index ($when, '@' . $comp . '@') == -1)
+	{
+	    return 0;
+	}
+    }
+
+    return 1;
+}
+
+# Check for an ambiguous conditional.  This is called when a variable
+# or target is being defined conditionally.  If we already know about
+# a definition that is true under the same conditions, then we have an
+# ambiguity.
+sub check_ambiguous_conditional
+{
+    local ($var_name, $cond) = @_;
+    local (@cond_vals) = split (/ /, $conditional{$var_name});
+    while (@cond_vals)
+    {
+	local ($vcond) = shift (@cond_vals);
+	shift (@cond_vals);
+	if (&conditional_true_when ($vcond, $cond)
+	    || &conditional_true_when ($cond, $vcond))
+	{
+	    &am_line_error ($var_name,
+			    "$var_name multiply defined in condition");
+	}
+    }
+}
+
+# See if a variable exists.  The first argument is the variable name,
+# and the optional second argument is the condition which we should
+# check.  If no condition is given, we currently return true if the
+# variable is defined under any condition.
 sub variable_defined
 {
-    local ($var) = @_;
+    local ($var, $cond) = @_;
     if (defined $targets{$var})
     {
 	&am_line_error ($var, "\`$var' is target; expected variable");
@@ -4182,6 +4311,27 @@ sub variable_defined
     }
     elsif (defined $contents{$var})
     {
+	if ($cond && $conditional{$var})
+	{
+	    # We have been asked to check for a particular condition,
+	    # and the variable is defined conditionally.  We need to
+	    # look through the conditions under which the variable is
+	    # defined, and see if any of them match the conditional we
+	    # have been asked to check.
+	    local (@cond_vars) = split (/ /, $conditional{$var});
+	    while (@cond_vars)
+	    {
+		if (&conditional_same ($cond, shift (@cond_vars)))
+		{
+		    return 1;
+		}
+		shift (@cond_vars);
+	    }
+
+	    # The variable is not defined for the given condition.
+	    return 0;
+	}
+
 	$content_seen{$var} = 1;
 	return 1;
     }
@@ -4195,13 +4345,346 @@ sub examine_variable
     &variable_defined ($var);
 }
 
-# Return contents of variable as list, split as whitespace.  This will
-# recursively follow $(...) and ${...} inclusions.  It preserves @...@
-# substitutions.  If PARENT is specified, it is the name of the
-# including variable; this is only used for error reports.
-sub variable_value_as_list
+# Quote a value in order to put it in $conditional.  We need to quote
+# spaces, and we need to handle null strings, so that we can later
+# retrieve values by splitting on space.
+sub quote_cond_val
+{
+    local ($val) = @_;
+    $val =~ s/ /\001/g;
+    $val = '\002' if $val eq '';
+    return $val;
+}
+
+# Unquote a value in $conditional.
+sub unquote_cond_val
+{
+    local ($val) = @_;
+    $val =~ s/\001/ /g;
+    $val = '' if $val eq '\002';
+    return $val;
+}
+
+# Return the set of conditions for which a variable is defined.
+
+# If the variable is not defined conditionally, and is not defined in
+# terms of any variables which are defined conditionally, then this
+# returns the empty list.
+
+# If the variable is defined conditionally, but is not defined in
+# terms of any variables which are defined conditionally, then this
+# returns the list of conditions for which the variable is defined.
+
+# If the variable is defined in terms of any variables which are
+# defined conditionally, then this returns a full set of permutations
+# of the subvariable conditions.  For example, if the variable is
+# defined in terms of a variable which is defined for @COND_TRUE@,
+# then this returns both @COND_TRUE@ and @COND_FALSE@.  This is
+# because we will need to define the variable under both conditions.
+
+sub variable_conditions
+{
+    local ($var) = @_;
+    local (%uniqify);
+    local ($cond);
+
+    foreach $cond (&variable_conditions_sub ($var, '', ()))
+    {
+	$uniqify{$cond} = 1;
+    }
+
+    return keys %uniqify;
+}
+
+# A subroutine of variable_conditions.  We only return conditions
+# which are true for all the conditions in @PARENT_CONDS.
+sub variable_conditions_sub
+{
+    local ($var, $parent, @parent_conds) = @_;
+    local (@new_conds) = ();
+
+    if (! $conditional{$var})
+    {
+	foreach (split (' ', $contents{$var}))
+	{
+	    # If a comment seen, just leave.
+	    last if /^#/;
+
+	    # Handle variable substitutions.
+	    if (/^\$\{(.*)\}$/ || /^\$\((.*)\)$/)
+	    {
+		push (@new_conds,
+		      &variable_conditions_sub ($1, $var, @parent_conds));
+	    }
+	}
+
+	return &variable_conditions_reduce (@new_conds);
+    }
+
+    local (@this_conds) = ();
+    local (@condvals) = split (/ /, $conditional{$var});
+    while (@condvals)
+    {
+	local ($cond) = shift (@condvals);
+	local ($val) = &unquote_cond_val (shift (@condvals));
+
+	if (@parent_conds)
+	{
+	    local ($ok) = 1;
+	    local ($parent_cond);
+	    foreach $parent_cond (@parent_conds)
+	    {
+		if (! &conditional_true_when ($parent_cond, $cond))
+		{
+		    $ok = 0;
+		    last;
+		}
+	    }
+
+	    next if ! $ok;
+	}
+
+	push (@this_conds, $cond);
+
+	push (@parent_conds, $cond);
+	local (@subvar_conds) = ();
+	foreach (split (' ', $val))
+	{
+	    # If a comment seen, just leave.
+	    last if /^#/;
+
+	    # Handle variable substitutions.
+	    if (/^\$\{(.*)\}$/ || /^\$\((.*)\)$/)
+	    {
+		push (@subvar_conds,
+		      &variable_conditions_sub ($1, $var, @parent_conds));
+	    }
+	}
+	pop (@parent_conds);
+
+	# If there are no conditional subvariables, then we want to
+	# return this condition.  Otherwise, we want to return the
+	# permutations of the subvariables.
+	if (! @subvar_conds)
+	{
+	    push (@new_conds, $cond);
+	}
+	else
+	{
+	    push (@new_conds, &variable_conditions_reduce (@subvar_conds));
+	}
+    }
+
+    return @new_conds
+	if ! $parent;
+
+    # If we are being called on behalf of another variable, we need to
+    # return all possible permutations of the conditions.  We have
+    # already handled everything in @this_conds along with their
+    # subvariables.  We now need to add any permutations that are not
+    # in @this_conds.
+    local ($this_cond);
+    foreach $this_cond (@this_conds)
+    {
+	local (@perms) =
+	    &variable_conditions_permutations (split '@', $this_cond);
+	local ($perm);
+	foreach $perm (@perms)
+	{
+	    local ($scan);
+	    local ($ok) = 1;
+	    foreach $scan (@this_conds)
+	    {
+		if (&conditional_true_when ($perm, $scan)
+		    || &conditional_true_when ($scan, $perm))
+		{
+		    $ok = 0;
+		    last;
+		}
+	    }
+	    next if ! $ok;
+
+	    if (@parent_conds)
+	    {
+		local ($ok) = 1;
+		local ($parent_cond);
+		foreach $parent_cond (@parent_conds)
+		{
+		    if (! &conditional_true_when ($parent_cond, $perm))
+		    {
+			$ok = 0;
+			last;
+		    }
+		}
+
+		next if ! $ok;
+	    }
+
+	    # This permutation was not already handled, and is valid
+	    # for the parents.
+	    push (@new_conds, $perm);
+	}
+    }
+
+    return @new_conds;
+}
+
+# Subroutine for variable_conditions_sort
+sub variable_conditions_cmp
+{
+    local ($as) = $a;
+    $as =~ s/[^@]//g;
+    local ($bs) = $b;
+    $bs =~ s/[^@]//g;
+    return (length ($as) <=> length ($bs)
+	    or $a cmp $b);
+}
+
+# Sort a list of conditionals so that only the exclusive ones are
+# retained.  For example, if both @COND1_TRUE@@COND2_TRUE@ and
+# @COND1_TRUE@ are in the list, discard the latter.
+sub variable_conditions_reduce
+{
+    local (@conds) = @_;
+    local (@ret) = ();
+    local ($cond);
+    foreach $cond (sort variable_conditions_cmp @conds)
+    {
+	local ($ok) = 1;
+	local ($scan);
+	foreach $scan (@ret)
+	{
+	    if (&conditional_true_when ($cond, $scan))
+	    {
+		$ok = 0;
+		last;
+	    }
+	}
+	next if ! $ok;
+	push (@ret, $cond);
+    }
+
+    return @ret;
+}
+
+# Return a list of permutations of a conditional string.
+sub variable_conditions_permutations
+{
+    local (@comps) = @_;
+    return ()
+	if ! @comps;
+    local ($comp) = shift (@comps);
+    return &variable_conditions_permutations (@comps)
+	if $comp eq '';
+    local ($neg) = $comp;
+    $neg =~ s/TRUE$/TRUEO/;
+    $neg =~ s/FALSE$/TRUE/;
+    $neg =~ s/TRUEO$/FALSE/;
+    local (@ret);
+    local ($sub);
+    foreach $sub (&variable_conditions_permutations (@comps))
+    {
+	push (@ret, '@' . $comp . '@' . $sub);
+	push (@ret, '@' . $neg . '@' . $sub);
+    }
+    if (! @ret)
+    {
+	push (@ret, '@' . $comp . '@');
+	push (@ret, '@' . $neg . '@');
+    }
+    return @ret;
+}
+
+# Warn if a variable is conditionally defined.  This is called if we
+# are using the value of a variable.
+sub variable_conditionally_defined
 {
     local ($var, $parent) = @_;
+    if ($conditional{$var})
+    {
+	if ($parent)
+	{
+	    &am_line_error ($parent,
+			    "warning: automake does not support conditional definition of $var in $parent");
+	}
+	else
+	{
+	    &am_line_error ($parent,
+			    "warning: automake does not support $var being defined conditionally")
+	}
+    }
+}
+
+# Get the value of a variable.  This just returns $contents, but warns
+# if the variable is conditionally defined.
+sub variable_value
+{
+    local ($var) = @_;
+    &variable_conditionally_defined ($var);
+    return $contents{$var};
+}
+
+# Convert a variable value to a list, split as whitespace.  This will
+# recursively follow $(...) and ${...} inclusions.  It preserves @...@
+# substitutions.  If COND is 'all', then all values under all
+# conditions should be returned; if COND is a particular condition
+# (all conditions are surrounded by @...@) then only the value for
+# that condition should be returned; otherwise, warn if VAR is
+# conditionally defined.
+sub value_to_list
+{
+    local ($var, $val, $cond) = @_;
+    local (@result);
+
+    foreach (split (' ', $val))
+    {
+	# If a comment seen, just leave.
+	last if /^#/;
+
+	# Handle variable substitutions.
+	if (/^\$\{(.*)\}$/ || /^\$\((.*)\)$/)
+	{
+	    local ($varname) = $1;
+	    local ($from, $to);
+	    local (@temp_list);
+	    if ($varname =~ /^([^:]*):([^=]*)=(.*)$/)
+	    {
+		$varname = $1;
+		$to = $3;
+		($from = $2) =~ s/(\W)/\\$1/g;
+	    }
+
+	    # Find the value.
+	    @temp_list = &variable_value_as_list ($1, $cond, $var);
+
+	    # Now rewrite the value if appropriate.
+	    if ($from)
+	    {
+		grep (s/$from$/$to/, @temp_list);
+	    }
+
+	    push (@result, @temp_list);
+	}
+	else
+	{
+	    push (@result, $_);
+	}
+    }
+
+    return @result;
+}
+
+# Return contents of variable as list, split as whitespace.  This will
+# recursively follow $(...) and ${...} inclusions.  It preserves @...@
+# substitutions.  If COND is 'all', then all values under all
+# conditions should be returned; if COND is a particular condition
+# (all conditions are surrounded by @...@) then only the value for
+# that condition should be returned; otherwise, warn if VAR is
+# conditionally defined.  If PARENT is specified, it is the name of
+# the including variable; this is only used for error reports.
+sub variable_value_as_list
+{
+    local ($var, $cond, $parent) = @_;
     local (@result);
 
     if (defined $targets{$var})
@@ -4212,43 +4695,40 @@ sub variable_value_as_list
     {
 	&am_line_error ($parent, "variable \`$var' not defined");
     }
-    else
+    elsif ($cond eq 'all' && $conditional{$var})
     {
-	local (@temp_list);
-	$content_seen{$var} = 1;
-	foreach (split (' ', $contents{$var}))
+	local (@condvals) = split (/ /, $conditional{$var});
+	while (@condvals)
 	{
-	    # If a comment seen, just leave.
-	    last if /^#/;
-
-	    # Handle variable substitutions.
-	    if (/^\$\{(.*)\}$/ || /^\$\((.*)\)$/)
+	    shift (@condvals);
+	    local ($val) = &unquote_cond_val (shift (@condvals));
+	    push (@result, &value_to_list ($var, $val, $cond));
+	}
+    }
+    elsif ($cond && $conditional{$var})
+    {
+	local (@condvals) = split (/ /, $conditional{$var});
+	local ($onceflag);
+	while (@condvals)
+	{
+	    local ($vcond) = shift (@condvals);
+	    local ($val) = &unquote_cond_val (shift (@condvals));
+	    if (&conditional_true_when ($vcond, $cond))
 	    {
-		local ($varname) = $1;
-		local ($from, $to);
-		if ($varname =~ /^([^:]*):([^=]*)=(.*)$/)
-		{
-		    $varname = $1;
-		    $to = $3;
-		    ($from = $2) =~ s/(\W)/\\$1/g;
-		}
-
-		# Find the value.
-		@temp_list = &variable_value_as_list ($1, $var);
-
-		# Now rewrite the value if appropriate.
-		if ($from)
-		{
-		    grep (s/$from$/$to/, @temp_list);
-		}
-
-		push (@result, @temp_list);
-	    }
-	    else
-	    {
-		push (@result, $_);
+		# Warn if we have an ambiguity.  It's hard to know how
+		# to handle this case correctly.
+		&variable_conditionally_defined ($var, $parent)
+		    if $onceflag;
+		$onceflag = 1;
+		push (@result, &value_to_list ($var, $val, $cond));
 	    }
 	}
+    }
+    else
+    {
+	&variable_conditionally_defined ($var, $parent);
+	$content_seen{$var} = 1;
+	push (@result, &value_to_list ($var, $contents{$var}, $cond));
     }
 
     return @result;
@@ -4268,14 +4748,30 @@ sub define_variable
 }
 
 # Like define_variable, but second arg is a list, and is
-# pretty-printed.
+# pretty-printed.  The third argument is the conditional under which
+# the value should be defined.
 sub define_pretty_variable
 {
-    local ($var, @value) = @_;
-    if (! defined $contents{$var})
+    local ($var, $cond, @value) = @_;
+    if (! defined $contents{$var}
+	|| ($cond && ! &variable_defined ($var, $cond)))
     {
 	$contents{$var} = join (' ', @value);
-	&pretty_print ($var . ' = ', '', @value);
+	if ($cond)
+	{
+	    if ($conditional{$var})
+	    {
+		$conditional{$var} .= ' ';
+	    }
+	    else
+	    {
+		$conditional{$var} = '';
+	    }
+	    $conditional{$var} .= ($cond
+				   . ' '
+				   . &quote_cond_val ($contents{$var}));
+	}
+	&pretty_print ($cond . $var . ' = ', $cond, @value);
 	$content_seen{$var} = 1;
     }
 }
@@ -4409,12 +4905,12 @@ sub read_am_file
 	{
 	    if ($was_rule)
 	    {
-		$output_trailer .= $_;
+		$output_trailer .= join ('', @conditional_stack) . $_;
 		$saw_bk = /\\$/;
 	    }
 	    else
 	    {
-		$am_vars .= $_;
+		$am_vars .= join ('', @conditional_stack) . $_;
 		$saw_bk = /\\$/;
 		# Chop newline and backslash if this line is
 		# continued.  FIXME: maybe ensure trailing whitespace
@@ -4422,6 +4918,43 @@ sub read_am_file
 		chop if $saw_bk;
 		chop if $saw_bk;
 		$contents{$last_var_name} .= $_;
+		if (@conditional_stack)
+		{
+		    $conditional{$last_var_name} .= &quote_cond_val ($_);
+		}
+	    }
+	}
+	elsif (/$IF_PATTERN/o)
+	{
+	    &am_line_error ($., "$1 does not appear in AM_CONDITIONAL")
+		if (! $configure_cond{$1});
+	    push (@conditional_stack, "\@" . $1 . "_TRUE\@");
+	}
+	elsif (/$ELSE_PATTERN/o)
+	{
+	    if (! @conditional_stack)
+	    {
+		&am_line_error ($., "else without if");
+	    }
+	    elsif ($conditional_stack[$#conditional_stack] =~ /_FALSE\@$/)
+	    {
+		&am_line_error ($., "else after else");
+	    }
+	    else
+	    {
+		$conditional_stack[$#conditional_stack]
+		    =~ s/_TRUE\@$/_FALSE\@/;
+	    }
+	}
+	elsif (/$ENDIF_PATTERN/o)
+	{
+	    if (! @conditional_stack)
+	    {
+		&am_line_error ($., "endif without if");
+	    }
+	    else
+	    {
+		pop @conditional_stack;
 	    }
 	}
 	elsif (/$RULE_PATTERN/o)
@@ -4429,12 +4962,35 @@ sub read_am_file
 	    # warn "** Saw rule .$1.\n";
 	    # Found a rule.
 	    $was_rule = 1;
+	    if (defined $contents{$1}
+		&& (@conditional_stack
+		    ? ! defined $conditional{$1}
+		    : defined $conditional{$1}))
+	    {
+		&am_line_error ($1,
+				"$1 defined both conditionally and unconditionally");
+	    }
 	    # Value here doesn't matter; for targets we only note
 	    # existence.
 	    $contents{$1} = 1;
 	    $targets{$1} = 1;
+	    local ($cond_string) = join ('', @conditional_stack);
+	    if (@conditional_stack)
+	    {
+		if ($conditional{$1})
+		{
+		    &check_ambiguous_conditional ($last_var_name,
+						  $cond_string);
+		    $conditional{$1} .= ' ';
+		}
+		else
+		{
+		    $conditional{$1} = '';
+		}
+		$conditional{$1} .= $cond_string . ' 1';
+	    }
 	    $content_lines{$1} = $.;
-	    $output_trailer .= $comment . $spacing . $_;
+	    $output_trailer .= $comment . $spacing . $cond_string . $_;
 	    $comment = $spacing = '';
 	    $saw_bk = /\\$/;
 	}
@@ -4444,21 +5000,47 @@ sub read_am_file
 	    # Found a macro definition.
 	    $was_rule = 0;
 	    $last_var_name = $1;
+	    if (defined $contents{$1}
+		&& (@conditional_stack
+		    ? ! defined $conditional{$1}
+		    : defined $conditional{$1}))
+	    {
+		&am_line_error ($1,
+				"$1 defined both conditionally and unconditionally");
+	    }
 	    if ($2 ne '' && substr ($2, -1) eq "\\")
 	    {
-		$contents{$1} = substr ($2, 0, length ($2) - 1);
+		$contents{$last_var_name} = substr ($2, 0, length ($2) - 1);
 	    }
 	    else
 	    {
-		$contents{$1} = $2;
+		$contents{$last_var_name} = $2;
 	    }
-	    $content_lines{$1} = $.;
-	    $am_vars .= $comment . $spacing . $_;
+	    local ($cond_string) = join ('', @conditional_stack);
+	    if (@conditional_stack)
+	    {
+		if ($conditional{$last_var_name})
+		{
+		    &check_ambiguous_conditional ($last_var_name,
+						  $cond_string);
+		    $conditional{$last_var_name} .= ' ';
+		}
+		else
+		{
+		    $conditional{$last_var_name} = '';
+		}
+		local ($val) = $contents{$last_var_name};
+		$conditional{$last_var_name} .= ($cond_string
+						 . ' '
+						 . &quote_cond_val ($val));
+	    }
+	    $content_lines{$last_var_name} = $.;
+	    $am_vars .= $comment . $spacing . $cond_string . $_;
 	    $comment = $spacing = '';
 	    $saw_bk = /\\$/;
 
 	    # Error if bogus.
-	    &am_line_error ($., "bad macro name \`$1'")
+	    &am_line_error ($., "bad macro name \`$last_var_name'")
 		if ! $is_ok_macro;
 	}
 	else
@@ -4466,7 +5048,8 @@ sub read_am_file
 	    # This isn't an error; it is probably a continued rule.
 	    # In fact, this is what we assume.
 	    $was_rule = 1;
-	    $output_trailer .= $comment . $spacing . $_;
+	    $output_trailer .= ($comment . $spacing
+				. join ('', @conditional_stack) . $_);
 	    $comment = $spacing = '';
 	    $saw_bk = /\\$/;
 	}
@@ -4475,6 +5058,9 @@ sub read_am_file
     }
 
     $output_trailer .= $comment;
+
+    &am_error ("unterminated conditionals: " . join (' ', @conditional_stack))
+	if (@conditional_stack);
 
     # Compute relative location of the top object directory.
     local (@topdir) = ();
@@ -4651,12 +5237,22 @@ sub initialize_per_input
     # %contents.
     %targets = ();
 
+    # For a variable or target which is defined conditionally, this
+    # holds an array of the conditional values.  The array is composed
+    # of pairs of condition strings (the variables which configure
+    # will substitute) and values (the value of a target is
+    # meaningless).  For an unconditional variable, this is empty.
+    %conditional = ();
+
     # This holds the line numbers at which various elements of
     # %contents are defined.
     %content_lines = ();
 
     # This holds a 1 if a particular variable was examined.
     %content_seen = ();
+
+    # This is the conditional stack.
+    @conditional_stack = ();
 
     # This holds the "relative directory" of the current Makefile.in.
     # Eg for src/Makefile.in, this is "src".
@@ -4986,7 +5582,7 @@ sub am_install_var
 	    # Append actual contents of where_PRIMARY variable to
 	    # result.
 	    local ($rcurs);
-	    foreach $rcurs (&variable_value_as_list ($one_name))
+	    foreach $rcurs (&variable_value_as_list ($one_name, 'all'))
 	    {
 		# Skip configure substitutions.  Possibly bogus.
 		if ($rcurs =~ /^\@.*\@$/)
@@ -5065,7 +5661,7 @@ sub am_install_var
     if (@used)
     {
 	# Define it.
-	&define_pretty_variable ($primary, @used);
+	&define_pretty_variable ($primary, '', @used);
 	$output_vars .= "\n";
     }
 
