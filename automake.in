@@ -1670,63 +1670,6 @@ sub output_lex_build_rule
 				      'C_SUFFIX'   => $c_suffix));
 }
 
-    if ($use_dependencies)
-    {
-	# Include auto-dep code.  Don't include it if DEP_FILES would
-	# be empty.
-	if (&saw_sources_p (0) && keys %dep_files)
-	{
-	    my $config_aux_dir_specified = ($config_aux_dir ne '.'
-					    && $config_aux_dir ne '');
-
-	    # Set $require_file_found{'depcomp'} if the depcomp file exists,
-	    # before calling require_config_file on `depcomp'.  This makes
-	    # require_file_internal skip its buggy existence test that would
-	    # make automake fail (with `required file `lib/depcomp' not found')
-	    # when AC_CONFIG_AUX_DIR is not set.  See tests/subdir4.test.
-	    my $depcomp_dir = ($config_aux_dir_specified ? $config_aux_dir
-			       : '.');
-	    $require_file_found{'depcomp'} = 1 if -f "$depcomp_dir/depcomp";
-
-	    # Set location of depcomp.
-	    my $prefix = ($config_aux_dir_specified ? $config_aux_dir
-			  : '$(top_srcdir)');
-
-	    &define_variable ('depcomp', "\$(SHELL) $prefix/depcomp");
-
-	    &require_config_file ($FOREIGN, 'depcomp');
-
-	    my @deplist = sort keys %dep_files;
-
-	    # We define this as a conditional variable because BSD
-	    # make can't handle backslashes for continuing comments on
-	    # the following line.
-	    &define_pretty_variable ('DEP_FILES', 'AMDEP_TRUE', @deplist);
-
-	    # Generate each `include' individually.  Irix 6 make will
-	    # not properly include several files resulting from a
-	    # variable expansion; generating many separate includes
-	    # seems safest.
-	    $output_rules .= "\n";
-	    foreach my $iter (@deplist)
- 	    {
-		$output_rules .= (subst ('AMDEP_TRUE')
-				  . subst ('_am_include')
-				  . ' '
-				  . subst ('_am_quote')
-				  . $iter
-				  . subst ('_am_quote')
-				  . "\n");
-	    }
-
-	    $output_rules .= &file_contents ('depend');
-	}
-    }
-    else
-    {
-	&define_variable ('depcomp', '');
-    }
-
 # Check to make sure a source defined in LIBOBJS is not explicitly
 # mentioned.  This is a separate function (as opposed to being inlined
 # in handle_source_transform) because it isn't always appropriate to
@@ -1765,62 +1708,6 @@ sub check_libobjs_sources
     }
 }
 
-    if ($use_dependencies)
-    {
-	# Include auto-dep code.  Don't include it if DEP_FILES would
-	# be empty.
-	if (&saw_sources_p (0) && keys %dep_files)
-	{
-	    my $config_aux_dir_specified = ($config_aux_dir ne '.'
-					    && $config_aux_dir ne '');
-
-	    # Set $require_file_found{'depcomp'} if the depcomp file exists,
-	    # before calling require_config_file on `depcomp'.  This makes
-	    # require_file_internal skip its buggy existence test that would
-	    # make automake fail (with `required file `lib/depcomp' not found')
-	    # when AC_CONFIG_AUX_DIR is not set.  See tests/subdir4.test.
-	    my $depcomp_dir = ($config_aux_dir_specified ? $config_aux_dir
-			       : '.');
-	    $require_file_found{'depcomp'} = 1 if -f "$depcomp_dir/depcomp";
-
-	    # Set location of depcomp.
-	    my $prefix = ($config_aux_dir_specified ? $config_aux_dir
-			  : '$(top_srcdir)');
-
-	    &define_variable ('depcomp', "\$(SHELL) $prefix/depcomp");
-
-	    &require_config_file ($FOREIGN, 'depcomp');
-
-	    my @deplist = sort keys %dep_files;
-
-	    # We define this as a conditional variable because BSD
-	    # make can't handle backslashes for continuing comments on
-	    # the following line.
-	    &define_pretty_variable ('DEP_FILES', 'AMDEP_TRUE', @deplist);
-
-	    # Generate each `include' individually.  Irix 6 make will
-	    # not properly include several files resulting from a
-	    # variable expansion; generating many separate includes
-	    # seems safest.
-	    $output_rules .= "\n";
-	    foreach my $iter (@deplist)
- 	    {
-		$output_rules .= (subst ('AMDEP_TRUE')
-				  . subst ('_am_include')
-				  . ' '
-				  . subst ('_am_quote')
-				  . $iter
-				  . subst ('_am_quote')
-				  . "\n");
-	    }
-
-	    $output_rules .= &file_contents ('depend');
-	}
-    }
-    else
-    {
-	&define_variable ('depcomp', '');
-    }
 
 # ($LINKER, @OBJECTS)
 # handle_single_transform_list ($VAR, $DERIVED, $OBJ, @FILES)
@@ -3404,72 +3291,6 @@ sub handle_dist
     $output_rules .= &file_contents ('distdir', %transform);
 }
 
-
-# Handle auto-dependency code.
-sub handle_dependencies
-{
-    if ($use_dependencies)
-    {
-	# Include auto-dep code.  Don't include it if DEP_FILES would
-	# be empty.
-	if (&saw_sources_p (0) && keys %dep_files)
-	{
-	    my $config_aux_dir_specified = ($config_aux_dir ne '.'
-					    && $config_aux_dir ne '');
-
-	    # Set $require_file_found{'depcomp'} if the depcomp file exists,
-	    # before calling require_config_file on `depcomp'.  This makes
-	    # require_file_internal skip its buggy existence test that would
-	    # make automake fail (with `required file `lib/depcomp' not found')
-	    # when AC_CONFIG_AUX_DIR is not set.  See tests/subdir4.test.
-	    my $depcomp_dir = ($config_aux_dir_specified ? $config_aux_dir
-			       : '.');
-	    $require_file_found{'depcomp'} = 1 if -f "$depcomp_dir/depcomp";
-
-	    # Set location of depcomp.
-	    my $prefix = ($config_aux_dir_specified ? $config_aux_dir
-			  : '$(top_srcdir)');
-
-	    &define_variable ('depcomp', "\$(SHELL) $prefix/depcomp");
-
-	    &require_config_file ($FOREIGN, 'depcomp');
-
-	    my @deplist = sort keys %dep_files;
-
-	    # We define this as a conditional variable because BSD
-	    # make can't handle backslashes for continuing comments on
-	    # the following line.
-	    &define_pretty_variable ('DEP_FILES', 'AMDEP_TRUE', @deplist);
-
-	    # Generate each `include' individually.  Irix 6 make will
-	    # not properly include several files resulting from a
-	    # variable expansion; generating many separate includes
-	    # seems safest.
-	    $output_rules .= "\n";
-	    foreach my $iter (@deplist)
- 	    {
-		# The strange concatentation is used to avoid
-		# substitutions from our own configure.
-		$output_rules .= ('@AMDEP' . '_TRUE@@_am_include@ @_am_quote@'
-				  . $iter . '@_am_quote@' . "\n");
-	    }
-
-	    $output_rules .= &file_contents ('depend');
-	}
-    }
-    else
-    {
-	&define_variable ('depcomp', '');
-    }
-
-    foreach my $lang (values %languages)
-    {
-        if ($lang->autodep ne 'no')
-	  {
-	    add_depend2 ($lang);
-	  }
-    }
-}
 
 # Handle subdirectories.
 sub handle_subdirs
