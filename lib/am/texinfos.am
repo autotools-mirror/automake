@@ -1,6 +1,6 @@
 ## automake - create Makefile.in from Makefile.am
 
-## Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002
+## Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003
 ## Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
@@ -121,7 +121,18 @@ install-info-am: $(INFO_DEPS)
 	@list='$(INFO_DEPS)'; \
 	for file in $$list; do \
 	  if test -f $$file; then d=.; else d=$(srcdir); fi; \
-	  for ifile in $$d/$$file $$d/$$file-[0-9] $$d/$$file-[0-9][0-9]; do \
+## 8+3 filesystems cannot deal with foo.info-N filenames: they all
+## conflict.  DJGPP comes with a tool, DJTAR, that will rename these
+## files to foo.iNN while extracting the archive.  DJGPP's makeinfo
+## is patched to grok these filenames.  However we have to account
+## for the renaming when installing the info files.
+##
+## If $file == foo.info, then $file_i == foo.i.  The reason we use two
+## shell commands instead of one ('s|\.info$$|.i|') is so that a suffix-less
+## `foo' becomes `foo.i' too.
+	  file_i=`echo "$$file" | sed 's|\.info$$||;s|$$|.i|'`; \
+	  for ifile in $$d/$$file $$d/$$file-[0-9] $$d/$$file-[0-9][0-9] \
+                       $$d/$$file_i[0-9] $$d/$$file_i[0-9][0-9] ; do \
 	    if test -f $$ifile; then \
 ## Strip directory
 	      relfile=`echo "$$ifile" | sed 's|^.*/||'`; \
@@ -193,9 +204,11 @@ uninstall-info-am:
 	@list='$(INFO_DEPS)'; \
 	for file in $$list; do \
 	  relfile=`echo "$$file" | sed 's|^.*/||'`; \
+## DJGPP-style info files.  See comment in install-info-am.
+	  relfile_i=`echo "$$relfile" | sed 's|\.info$$||;s|$$|.i|'`; \
 	  (if cd $(DESTDIR)$(infodir); then \
-	     echo " rm -f $$relfile $$relfile-[0-9] $$relfile-[0-9][0-9])"; \
-	     rm -f $$relfile $$relfile-[0-9] $$relfile-[0-9][0-9]; \
+	     echo " rm -f $$relfile $$relfile-[0-9] $$relfile-[0-9][0-9] $$relfile_i[0-9] $$relfile_i[0-9][0-9])"; \
+	     rm -f $$relfile $$relfile-[0-9] $$relfile-[0-9][0-9] $$relfile_i[0-9] $$relfile_i[0-9][0-9]; \
 	   else :; fi); \
 	done
 else ! %?LOCAL-TEXIS%
@@ -234,12 +247,11 @@ mostlyclean-aminfo:
 .PHONY: maintainer-clean-aminfo
 maintainer-clean-am: maintainer-clean-aminfo
 maintainer-clean-aminfo:
-## Eww.  But how else can we find all the output files from makeinfo?
-	list='$(INFO_DEPS)'; for i in $$list; do \
-	  rm -f $$i; \
-	  if test "`echo $$i-[0-9]*`" != "$$i-[0-9]*"; then \
-	    rm -f $$i-[0-9]*; \
-	  fi; \
+	@list='$(INFO_DEPS)'; for i in $$list; do \
+## .iNN files are DJGPP-style info files.
+	  i_i=`echo "$$i" | sed 's|\.info$$||;s|$$|.i|'`; \
+	  echo " rm -f $$i $$i-[0-9] $$i-[0-9][0-9] $$i_i[0-9] $$i_i[0-9][0-9]"; \
+	  rm -f $$i $$i-[0-9] $$i-[0-9][0-9] $$i_i[0-9] $$i_i[0-9][0-9]; \
 	done
 
 ?CYGNUS?.PHONY: clean-info
