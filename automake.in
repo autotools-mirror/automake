@@ -3935,22 +3935,17 @@ sub handle_tests
     }
     else
     {
-	local ($c);
-	foreach $c ('DEJATOOL', 'RUNTEST', 'RUNTESTFLAGS')
+	foreach my $c ('DEJATOOL', 'RUNTEST', 'RUNTESTFLAGS')
 	{
-	    if (&variable_defined ($c))
-	    {
-		&am_line_error ($c, "\`$c' defined but \`dejagnu' not in \`AUTOMAKE_OPTIONS'");
-	    }
+	    &am_line_error ($c,
+			    "\`$c' defined but \`dejagnu' not in \`AUTOMAKE_OPTIONS'")
+	      if &variable_defined ($c);
 	}
     }
 
     if (&variable_defined ('TESTS'))
     {
 	push (@check_tests, 'check-TESTS');
-
-	# Note: Solaris 2.7 seems to expand TESTS using VPATH.  That's
-	# why we also try `dir='
 	$output_rules .= &file_contents ('check');
     }
 }
@@ -6533,24 +6528,6 @@ sub initialize_global_constants
 	 'config.h.bot', 'stamp-h.in', 'stamp-vti'
 	 );
 
-    $USAGE = "\
-  -a, --add-missing     add missing standard files to package
-  --amdir=DIR           directory storing config files
-  -c, --copy            with -a, copy missing files (default is symlink)
-  --cygnus              assume program is part of Cygnus-style tree
-  --force-missing       force update of standard files
-  --foreign             set strictness to foreign
-  --gnits               set strictness to gnits
-  --gnu                 set strictness to gnu
-  --help                print this help, then exit
-  -i, --ignore-deps     disable dependency tracking code
-  --include-deps        enable dependency tracking code
-  --no-force            only update Makefile.in's that are out of date
-  -o DIR, --output-dir=DIR
-                        put generated Makefile.in's into DIR
-  -v, --verbose         verbosely list files processed
-  --version             print version number, then exit\n";
-
     # Copyright on generated Makefile.ins.
     $gen_copyright = "\
 # Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001
@@ -7871,9 +7848,35 @@ sub keyed_aclocal_warning
 # Print usage information.
 sub usage
 {
-    print "Usage: automake [OPTION] ... [Makefile]...\n\n";
-    print "Generate Makefile.in for autoconf from Makefile.am\n";
-    print $USAGE;
+    print <<EOF;
+Usage: automake [OPTION] ... [Makefile]...
+
+Generate Makefile.in for configure from Makefile.am
+
+Operation modes:
+      --help             print this help, then exit
+      --version          print version number, then exit
+  -v, --verbose          verbosely list files processed
+  -o, --output-dir=DIR   put generated Makefile.in's into DIR
+      --no-force        only update Makefile.in's that are out of date
+
+Dependency tracking:
+  -i, --ignore-deps   disable dependency tracking code
+      --include-deps  enable dependency tracking code
+
+Flavors:
+      --cygnus    assume program is part of Cygnus-style tree
+      --foreign   set strictness to foreign
+      --gnits     set strictness to gnits
+      --gnu       set strictness to gnu
+
+Library files:
+  -a, --add-missing     add missing standard files to package
+      --amdir=DIR       directory storing config files
+  -c, --copy            with -a, copy missing files (default is symlink)
+      --force-missing   force update of standard files
+EOF
+
     print "\nFiles which are automatically distributed, if found:\n";
     $~ = "USAGE_FORMAT";
     local ($last, $iter, @lcomm);
