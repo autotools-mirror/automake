@@ -1158,200 +1158,6 @@ sub backname ($)
 
 ################################################################
 
-# Generate a Makefile.in given the name of the corresponding Makefile and
-# the name of the file output by config.status.
-sub generate_makefile
-{
-    my ($output, $makefile) = @_;
-
-    # Reset all the Makefile.am related variables.
-    &initialize_per_input;
-
-    # Any warning setting now local to this Makefile.am.
-    &dup_channel_setup;
-    # AUTOMAKE_OPTIONS can contains -W flags to disable or enable
-    # warnings for this file.  So hold any warning issued before
-    # we have processed AUTOMAKE_OPTIONS.
-    &buffer_messages ('warning');
-
-    # Name of input file ("Makefile.am") and output file
-    # ("Makefile.in").  These have no directory components.
-    $am_file_name = basename ($makefile) . '.am';
-    $in_file_name = basename ($makefile) . '.in';
-
-    # $OUTPUT is encoded.  If it contains a ":" then the first element
-    # is the real output file, and all remaining elements are input
-    # files.  We don't scan or otherwise deal with these input file,
-    # other than to mark them as dependencies.  See
-    # &scan_autoconf_files for details.
-    my (@secondary_inputs);
-    ($output, @secondary_inputs) = split (/:/, $output);
-
-    $relative_dir = dirname ($output);
-    $am_relative_dir = dirname ($makefile);
-
-    &read_main_am_file ($makefile . '.am');
-    if (&handle_options)
-    {
-      # Process buffered warnings.
-      &flush_messages;
-      # Fatal error.  Just return, so we can continue with next file.
-      return;
-    }
-    # Process buffered warnings.
-    &flush_messages;
-
-    # There are a few install-related variables that you should not define.
-    foreach my $var ('PRE_INSTALL', 'POST_INSTALL', 'NORMAL_INSTALL')
-      {
-	my $v = var $var;
-	if ($v)
-	  {
-	    my $def = $v->def (TRUE);
-	    prog_error "$var not defined in condition TRUE"
-	      unless $def;
-	    reject_var $var, "`$var' should not be defined"
-	      if $def->owner != VAR_AUTOMAKE;
-	  }
-      }
-
-    # Catch some obsolete variables.
-    msg_var ('obsolete', 'INCLUDES',
-	     "`INCLUDES' is the old name for `AM_CPPFLAGS'")
-      if var ('INCLUDES');
-
-    # At the toplevel directory, we might need config.guess, config.sub
-    # or libtool scripts (ltconfig and ltmain.sh).
-    if ($relative_dir eq '.')
-    {
-        # AC_CANONICAL_HOST and AC_CANONICAL_SYSTEM need config.guess and
-        # config.sub.
-        require_conf_file ($canonical_location, FOREIGN,
-			   'config.guess', 'config.sub')
-	  if $seen_canonical;
-    }
-
-    # We still need Makefile.in here, because sometimes the `dist'
-    # target doesn't re-run automake.
-    if ($am_relative_dir eq $relative_dir)
-    {
-	# Only distribute the files if they are in the same subdir as
-	# the generated makefile.
-	&push_dist_common ($in_file_name, $am_file_name);
-    }
-
-    # Must do this after reading .am file.
-    &define_variable ('subdir', $relative_dir, INTERNAL);
-
-    # Check first, because we might modify some state.
-    &check_cygnus;
-    &check_gnu_standards;
-    &check_gnits_standards;
-
-    &handle_configure ($output, $makefile, @secondary_inputs);
-    &handle_gettext;
-    &handle_libraries;
-    &handle_ltlibraries;
-    &handle_programs;
-    &handle_scripts;
-
-    # This must run first so that the ANSI2KNR definition is generated
-    # before it is used by the _.c rules.  We have to do this because
-    # a variable which is used in a dependency must be defined before
-    # the target, or else make won't properly see it.
-    &handle_compile;
-    # This must be run after all the sources are scanned.
-    &handle_languages;
-
-    # We have to run this after dealing with all the programs.
-    &handle_libtool;
-
-    # Variables used by distdir.am and tags.am.
-    define_pretty_variable ('SOURCES', TRUE, INTERNAL, @sources);
-    define_pretty_variable ('DIST_SOURCES', TRUE, INTERNAL, @dist_sources);
-
-    &handle_multilib;
-    &handle_texinfo;
-    &handle_emacs_lisp;
-    &handle_python;
-    &handle_java;
-    &handle_man_pages;
-    &handle_data;
-    &handle_headers;
-    handle_subdirs;
-    &handle_tags;
-    &handle_minor_options;
-    &handle_tests;
-
-    # This must come after most other rules.
-    &handle_dist ($makefile);
-
-    &handle_footer;
-    &do_check_merge_target;
-    &handle_all ($output);
-
-    # FIXME: Gross!
-    if (var ('lib_LTLIBRARIES') && var ('bin_PROGRAMS'))
-    {
-	$output_rules .= "install-binPROGRAMS: install-libLTLIBRARIES\n\n";
-    }
-
-    &handle_install;
-    &handle_clean;
-    &handle_factored_dependencies;
-
-    # Comes last, because all the above procedures may have
-    # defined or overridden variables.
-    $output_vars .= output_variables;
-
-    check_typos ();
-
-    if (! -d ($output_directory . '/' . $am_relative_dir))
-    {
-	mkdir ($output_directory . '/' . $am_relative_dir, 0755);
-    }
-
-    my ($out_file) = $output_directory . '/' . $makefile . ".in";
-    if (! $force_generation && -e $out_file)
-    {
-	my ($am_time) = (stat ($makefile . '.am'))[9];
-	my ($in_time) = (stat ($out_file))[9];
-	# FIXME: should cache these times.
-	my ($conf_time) = (stat ($configure_ac))[9];
-	# FIXME: how to do unsigned comparison?
-	if ($am_time < $in_time || $am_time < $conf_time)
-	{
-	    # No need to update.
-	    return;
-	}
-	if (-f 'aclocal.m4')
-	{
-	    my ($acl_time) = (stat _)[9];
-	    return if ($am_time < $acl_time);
-	}
-    }
-
-    if (-e "$out_file")
-    {
-	unlink ($out_file)
-	    or fatal "cannot remove $out_file: $!\n";
-    }
-    my $gm_file = new Automake::XFile "> $out_file";
-    verb "creating $makefile.in";
-
-    print $gm_file $output_vars;
-    # We make sure that `all:' is the first target.
-    print $gm_file $output_all;
-    print $gm_file $output_header;
-    print $gm_file $output_rules;
-    print $gm_file $output_trailer;
-
-    # Back out any warning setting.
-    &drop_channel_setup;
-}
-
-################################################################
-
 # $BOOL
 # process_option_list ($CONFIG, @OPTIONS)
 # ---------------------------------------
@@ -7262,6 +7068,203 @@ sub push_dist_common
   Automake::Variable::define ('DIST_COMMON', VAR_AUTOMAKE, '+', TRUE, "@_",
 			      '', INTERNAL, VAR_PRETTY);
 }
+
+
+################################################################
+
+# Generate a Makefile.in given the name of the corresponding Makefile and
+# the name of the file output by config.status.
+sub generate_makefile
+{
+  my ($output, $makefile) = @_;
+
+  # Reset all the Makefile.am related variables.
+  initialize_per_input;
+
+  # Any warning setting now local to this Makefile.am.
+  dup_channel_setup;
+  # AUTOMAKE_OPTIONS can contains -W flags to disable or enable
+  # warnings for this file.  So hold any warning issued before
+  # we have processed AUTOMAKE_OPTIONS.
+  buffer_messages ('warning');
+
+  # Name of input file ("Makefile.am") and output file
+  # ("Makefile.in").  These have no directory components.
+  $am_file_name = basename ($makefile) . '.am';
+  $in_file_name = basename ($makefile) . '.in';
+
+  # $OUTPUT is encoded.  If it contains a ":" then the first element
+  # is the real output file, and all remaining elements are input
+  # files.  We don't scan or otherwise deal with these input file,
+  # other than to mark them as dependencies.  See
+  # &scan_autoconf_files for details.
+  my (@secondary_inputs);
+  ($output, @secondary_inputs) = split (/:/, $output);
+
+  $relative_dir = dirname ($output);
+  $am_relative_dir = dirname ($makefile);
+
+  read_main_am_file ($makefile . '.am');
+  if (handle_options)
+    {
+      # Process buffered warnings.
+      flush_messages;
+      # Fatal error.  Just return, so we can continue with next file.
+      return;
+    }
+  # Process buffered warnings.
+  flush_messages;
+
+  # There are a few install-related variables that you should not define.
+  foreach my $var ('PRE_INSTALL', 'POST_INSTALL', 'NORMAL_INSTALL')
+    {
+      my $v = var $var;
+      if ($v)
+	{
+	  my $def = $v->def (TRUE);
+	  prog_error "$var not defined in condition TRUE"
+	    unless $def;
+	  reject_var $var, "`$var' should not be defined"
+	    if $def->owner != VAR_AUTOMAKE;
+	}
+    }
+
+  # Catch some obsolete variables.
+  msg_var ('obsolete', 'INCLUDES',
+	   "`INCLUDES' is the old name for `AM_CPPFLAGS'")
+    if var ('INCLUDES');
+
+  # At the toplevel directory, we might need config.guess, config.sub
+  # or libtool scripts (ltconfig and ltmain.sh).
+  if ($relative_dir eq '.')
+    {
+      # AC_CANONICAL_HOST and AC_CANONICAL_SYSTEM need config.guess and
+      # config.sub.
+      require_conf_file ($canonical_location, FOREIGN,
+			 'config.guess', 'config.sub')
+	if $seen_canonical;
+    }
+
+  # We still need Makefile.in here, because sometimes the `dist'
+  # target doesn't re-run automake.
+  if ($am_relative_dir eq $relative_dir)
+    {
+      # Only distribute the files if they are in the same subdir as
+      # the generated makefile.
+      push_dist_common ($in_file_name, $am_file_name);
+    }
+
+  # Must do this after reading .am file.
+  define_variable ('subdir', $relative_dir, INTERNAL);
+
+  # Check first, because we might modify some state.
+  check_cygnus;
+  check_gnu_standards;
+  check_gnits_standards;
+
+  handle_configure ($output, $makefile, @secondary_inputs);
+  handle_gettext;
+  handle_libraries;
+  handle_ltlibraries;
+  handle_programs;
+  handle_scripts;
+
+  # This must run first so that the ANSI2KNR definition is generated
+  # before it is used by the _.c rules.  We have to do this because
+  # a variable which is used in a dependency must be defined before
+  # the target, or else make won't properly see it.
+  handle_compile;
+  # This must be run after all the sources are scanned.
+  handle_languages;
+
+  # We have to run this after dealing with all the programs.
+  handle_libtool;
+
+  # Variables used by distdir.am and tags.am.
+  define_pretty_variable ('SOURCES', TRUE, INTERNAL, @sources);
+  define_pretty_variable ('DIST_SOURCES', TRUE, INTERNAL, @dist_sources);
+
+  handle_multilib;
+  handle_texinfo;
+  handle_emacs_lisp;
+  handle_python;
+  handle_java;
+  handle_man_pages;
+  handle_data;
+  handle_headers;
+  handle_subdirs;
+  handle_tags;
+  handle_minor_options;
+  handle_tests;
+
+  # This must come after most other rules.
+  handle_dist ($makefile);
+
+  handle_footer;
+  do_check_merge_target;
+  handle_all ($output);
+
+  # FIXME: Gross!
+  if (var ('lib_LTLIBRARIES') && var ('bin_PROGRAMS'))
+    {
+      $output_rules .= "install-binPROGRAMS: install-libLTLIBRARIES\n\n";
+    }
+
+  handle_install;
+  handle_clean;
+  handle_factored_dependencies;
+
+  # Comes last, because all the above procedures may have
+  # defined or overridden variables.
+  $output_vars .= output_variables;
+
+  check_typos;
+
+  if (! -d ($output_directory . '/' . $am_relative_dir))
+    {
+      mkdir ($output_directory . '/' . $am_relative_dir, 0755);
+    }
+
+  my ($out_file) = $output_directory . '/' . $makefile . ".in";
+  if (! $force_generation && -e $out_file)
+    {
+      my ($am_time) = (stat ($makefile . '.am'))[9];
+      my ($in_time) = (stat ($out_file))[9];
+      # FIXME: should cache these times.
+      my ($conf_time) = (stat ($configure_ac))[9];
+      # FIXME: how to do unsigned comparison?
+      if ($am_time < $in_time || $am_time < $conf_time)
+	{
+	  # No need to update.
+	  return;
+	}
+      if (-f 'aclocal.m4')
+	{
+	  my ($acl_time) = (stat _)[9];
+	  return if ($am_time < $acl_time);
+	}
+    }
+
+  if (-e "$out_file")
+    {
+      unlink ($out_file)
+	or fatal "cannot remove $out_file: $!\n";
+    }
+  my $gm_file = new Automake::XFile "> $out_file";
+  verb "creating $makefile.in";
+
+  print $gm_file $output_vars;
+  # We make sure that `all:' is the first target.
+  print $gm_file $output_all;
+  print $gm_file $output_header;
+  print $gm_file $output_rules;
+  print $gm_file $output_trailer;
+
+  # Back out any warning setting.
+  drop_channel_setup;
+}
+
+################################################################
 
 
 # Set strictness.
