@@ -581,9 +581,6 @@ sub define ($$$$$)
       && $tdef
       && $noexerule->name ne $target)
     {
-      print "1. $noexe\n";
-      print "2. $target\n";
-      print "3. " . $noexerule->name . "\n";
       # The no-exeext option enables this feature.
       if (! option 'no-exeext')
 	{
