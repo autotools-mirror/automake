@@ -31,8 +31,13 @@ find . -name Makefile -print | while read mf; do
   if test -n "$deps"; then
     dirpart="`echo $mf | sed -e 's|/[^/]*$||'`"
     test -d "$dirpart/$DEPDIR" || mkdir "$dirpart/$DEPDIR"
-    for file in `echo "$deps" | sed 's/\$U//g'` \
-		`echo "$deps" | sed 's/\$U/_/g'`; do
+    case "$deps" in
+    *'$U'*) # When using ansi2knr, U may be empty or an underscore; expand it
+	U=`sed -n -e '/^U = / s///p' $mf`
+	deps=`echo "$deps" | sed 's/\$U/'"$U"'/g'`
+	;;
+    esac	
+    for file in $deps; do
       if test ! -f "$dirpart/$file"; then
 	echo "creating $dirpart/$file"
 	echo '# dummy' > "$dirpart/$file"
