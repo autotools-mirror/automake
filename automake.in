@@ -1201,7 +1201,7 @@ sub handle_programs
 # Handle libraries.
 sub handle_libraries
 {
-    local (@liblist) = &am_install_var ('-no-all', '-clean',
+    local (@liblist) = &am_install_var ('-clean',
 					'libs', 'LIBRARIES',
 					'lib', 'pkglib', 'noinst', 'check');
     return if ! @liblist;
@@ -1223,47 +1223,21 @@ sub handle_libraries
 	}
     }
 
-    # Generate _LIBFILES variables.  Too bad we can't do this in
-    # am_install_var.
-    local ($onedir, $onelib);
-    local (@outlist);
-    local (@libfiles_list);
-    foreach $onedir (keys %valid) 
-    {
-	if (&variable_defined ($onedir . '_LIBRARIES'))
-	{
-	    @outlist = ();
-	    foreach $onelib (&variable_value_as_list ($onedir . '_LIBRARIES'))
-	    {
-		# FIXME: configure substitutions are just preserved.
-		# So your configure.in must say MYLIB=libfoo.a instead
-		# of MYLIB=foo.  Otherwise, you end up with an entry
-		# like lib@MYLIB@.a in LIBFILES, which can turn into
-		# "lib.a" -- major lossage.  Something better must be
-		# done here.
-		if (/^\@.*\@$/)
-		{
-		    push (@outlist, $onelib);
-		}
-		else
-		{
-		    push (@outlist, 'lib' . $onelib . '.a');
-		}
-	    }
-	    &define_pretty_variable ($onedir . '_LIBFILES', @outlist);
-	}
-
-	push (@libfiles_list, '$(' . $onedir . '_LIBFILES)')
-	    unless $onedir eq 'EXTRA';
-    }
-    push (@all, '$(LIBFILES)');
-
+    local ($onelib);
     local ($obj) = &get_object_extension;
     local ($munge);
     local ($xlib);
     local ($seen_libobjs) = 0;
     foreach $onelib (@liblist)
     {
+	# Check that the library fits the standard naming convention.
+	if ($onelib !~ /^lib.*\.a$/)
+	{
+	    # FIXME this should only be a warning for foreign packages
+	    &am_line_error ($onelib . $xt,
+			    "\`$onelib' is not a standard library name");
+	}
+
 	# Canonicalize names.
 	($xlib = $onelib) =~ tr/A-Za-z0-9_/_/c;
 	if ($xlib ne $onelib)
@@ -1271,7 +1245,7 @@ sub handle_libraries
 	    local ($xt);
 	    foreach $xt ('_LIBADD', '_SOURCES', '_OBJECTS', '_DEPENDENCIES')
 	    {
-		&am_line_error ($one_file . $xt,
+		&am_line_error ($onelib . $xt,
 				"invalid variable \`" . $onelib . $xt
 				. "'; should be \`" . $xlib . $xt . "'")
 		    if &variable_defined ($onelib . $xt);
@@ -1312,14 +1286,6 @@ sub handle_libraries
 		&check_libobjs_sources ($xlib, $xlib . '_LIBADD');
 	    }
 	}
-    }
-
-    # Turn "foo" into "libfoo.a" and include macro definition.
-    grep (($_ = 'lib' . $_ . '.a') && 0, @liblist);
-
-    if (! &variable_defined ('LIBFILES'))
-    {
-	&define_pretty_variable ('LIBFILES ', @libfiles_list);
     }
 
     &define_variable ('AR', 'ar');
@@ -3191,6 +3157,10 @@ sub scan_configure
 	    $seen_libtool = 1;
 	    $libtool_line = $.;
 	    $configure_vars{'RANLIB'} = 1;
+	    $configure_vars{'CC'} = 1;
+	    # AM_PROG_LIBTOOL runs AC_CANONICAL_HOST.  Make sure we
+	    # never downgrade (if we've seen AC_CANONICAL_SYSTEM).
+	    $seen_canonical = $AC_CANONICAL_HOST if ! $seen_canonical;
 	}
     }
 
@@ -4029,10 +3999,6 @@ sub am_install_var
 	if ($args[0] eq '-clean')
 	{
 	    $do_clean = 1;
-	}
-	elsif ($args[0] eq '-no-all')
-	{
-	    $do_all = 0;
 	}
 	elsif ($args[0] !~ /^-/)
 	{
