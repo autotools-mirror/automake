@@ -82,6 +82,7 @@ depend2.test \
 depend3.test \
 discover.test \
 distdir.test \
+double.test \
 dup.test \
 dup2.test \
 else.test \
