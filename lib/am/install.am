@@ -16,17 +16,22 @@
 ## Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 ## 02111-1307, USA.
 
-## -------------------------- ##
-## Creating the installdirs.  ##
-## -------------------------- ##
-?SUBDIRS?.PHONY: installdirs installdirs-am installdirs-recursive
-?SUBDIRS?installdirs: installdirs-recursive
-?SUBDIRS?installdirs-am:%installdirs-local%
-?SUBDIRS??am__installdirs?	$(mkinstalldirs) %am__installdirs%
+## ----------------------------------------- ##
+## installdirs -- Creating the installdirs.  ##
+## ----------------------------------------- ##
 
-?!SUBDIRS?.PHONY: installdirs
-?!SUBDIRS?installdirs:%installdirs-local%
-?!SUBDIRS??am__installdirs?	$(mkinstalldirs) %am__installdirs%
+
+if %?SUBDIRS%
+.PHONY: installdirs installdirs-am
+RECURSIVE_TARGETS += installdirs-recursive
+installdirs: installdirs-recursive
+installdirs-am:%installdirs-local%
+?am__installdirs?	$(mkinstalldirs) %am__installdirs%
+else !%?SUBDIRS%
+.PHONY: installdirs
+installdirs:%installdirs-local%
+?am__installdirs?	$(mkinstalldirs) %am__installdirs%
+endif !%?SUBDIRS%
 
 
 ## ----------------- ##
@@ -37,7 +42,8 @@
 .PHONY: install-exec-am install-data-am uninstall-am
 
 if %?SUBDIRS%
-.PHONY: install-recursive install-exec-recursive install-data-recursive uninstall-recursive
+RECURSIVE_TARGETS += install-data-recursive install-exec-recursive \
+		     install-recursive uninstall-recursive
 install:%maybe_BUILT_SOURCES% install-recursive
 install-exec: install-exec-recursive
 install-data: install-data-recursive
