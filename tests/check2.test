@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 2002  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -24,21 +24,39 @@
 
 set -e
 
-cat > Makefile.am << 'END'
-TESTS = frob.test
+cat >> configure.in << 'END'
+AC_CONFIG_FILES([dir/Makefile])
+AC_OUTPUT
 END
 
-: > frob.test
+mkdir dir
+
+cat > Makefile.am << 'END'
+SUBDIRS = dir
+TESTS = subrun.sh
+subrun.sh:
+	(echo '#! /bin/sh'; echo 'dir/echo.sh') > $@
+	chmod +x $@
+CLEANFILES = subrun.sh
+END
+
+cat > dir/Makefile.am << 'END'
+check_SCRIPTS = echo.sh
+echo.sh:
+	(echo '#! /bin/sh'; echo 'echo Hello') > $@
+	chmod +x $@
+CLEANFILES = echo.sh
+END
 
 $ACLOCAL
+$AUTOCONF
 $AUTOMAKE
-
-grep '^check-TESTS:' Makefile.in
-grep '^check-DEJAGNU' Makefile.in && exit 1
-
-# check-TESTS is phony.
-sed -n '/^\.PHONY:/,/^$/p' Makefile.in | grep check-TESTS
+./configure
+$MAKE check >stdout
+cat stdout
+grep 'PASS: subrun.sh' stdout
 
 # check should depend directly on check-am (similar tests are
-# in check2.test and check3.test).
-grep '^check: check-am' Makefile.in
+# in check.test and check3.test).
+grep 'check: check-recursive' Makefile.in
+grep 'check: check-am' dir/Makefile.in
