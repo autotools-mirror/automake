@@ -21,9 +21,6 @@
 
 MKDEP = gcc -MM $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
 
-## Use $(kr) in case we are doing auto-deANSIfication.
-DEP_FILES = $(patsubst %.$(kr)o, $(srcdir)/.deps/%.P,$(OBJECTS))
-
 ## We use ".P" as the name of our placeholder because it can't be
 ## duplicated by any C source file.  (Well, there could be ".c", but
 ## no one does that in practice)
@@ -44,6 +41,10 @@ $(srcdir)/.deps/%.P: $(srcdir)/%.c
 ## operator, and commonly appears in filenames.
 	@re=`echo 's,\<$(srcdir),,g' | sed 's/\./\\./g'`; \
 	  $(MKDEP) $< | sed $$re > $@-tmp
-	@mv $@-tmp $@
+	@if test -n "$o"; then			\
+	  sed 's/\.o:/$$o:/' $@-tmp > $@;	\
+	else					\
+	  mv $@-tmp $@;				\
+	fi
 
 # End of maintainer-only section

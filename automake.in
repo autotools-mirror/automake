@@ -49,11 +49,11 @@ $GNITS = 2;
 
 # Variables global to entire run.
 
-# Strictness level.
-$strictness = $NORMAL;
+# Strictness level as set on command line.
+$default_strictness = $NORMAL;
 
-# Name of strictness level.
-$strictness_name = 'normal';
+# Name of strictness level, as set on command line.
+$default_strictness_name = 'normal';
 
 # This is TRUE if GNU make specific automatic dependency generation
 # code should be included in generated Makefile.in.
@@ -177,6 +177,10 @@ sub parse_arguments
 	shift (@arglist);
     }
 
+    # Take global strictness from whatever we currently have set.
+    $default_strictness = $strictness;
+    $default_strictness_name = $strictness_name;
+
     if (! @make_list)
     {
 	# Look around for some files.
@@ -226,6 +230,7 @@ sub generate_makefile
     push (@phony, 'default');
 
     &read_am_file ($makefile . '.am');
+    &handle_options;
 
     # Check first, because we might modify some state.
     &check_gnu_standards;
@@ -275,6 +280,29 @@ sub generate_makefile
 
 ################################################################
 
+# Handle AUTOMAKE_OPTIONS variable.
+sub handle_options
+{
+    return if ! defined $contents{'AUTOMAKE_OPTIONS'};
+
+    foreach (split (/\s+/, $contents{'AUTOMAKE_OPTIONS'}))
+    {
+	$options{$_} = 1;
+	if ($_ eq 'gnits' || $_ eq 'gnu' || $_ eq 'normal')
+	{
+	    &set_strictness ($_);
+	}
+	elsif ($_ eq 'no-installman' || $_ eq 'ansi2knr')
+	{
+	    # Explicitly recognize these.
+	}
+	else
+	{
+	    &am_error ('option ', $_, 'not recognized');
+	}
+    }
+}
+
 # Return object extension.  Just once, put some code into the output.
 sub get_object_extension
 {
@@ -291,9 +319,9 @@ sub get_object_extension
 	push (@suffixes, '.c', '.o');
 	push (@clean, 'compile');
 
-	if (defined $contents{'@kr@'})
+	if (defined $options{'ansi2knr'} || defined $contents{'@kr@'})
 	{
-	    $dir_holds_sources = '.$(kr)o';
+	    $dir_holds_sources = '$o';
 	    push (@suffixes, '._c', '._o');
 
 	    &require_file ($NORMAL, 'ansi2knr.c', 'ansi2knr.1');
@@ -322,7 +350,7 @@ sub handle_source_transform
 	    # Turn sources into objects.
 	    local (@files) = split (/\s+/, $contents{$one_file . "_SOURCES"});
 	    # Ugh: Perl syntax vs Emacs.
-	    local ($krc1, $krc2) = ('\.\$\{kr\}c', '\.\$\(kr\)c');
+	    # local ($krc1, $krc2) = ('\.\$\{kr\}c', '\.\$\(kr\)c');
 	    local (@result) = ();
 	    foreach (@files)
 	    {
@@ -335,11 +363,15 @@ sub handle_source_transform
 
 		# Transform source files into .o files.
 		s/\.cc$/$obj/g;
-		s/$krc1$/$obj/g;
-		s/$krc2$/$obj/g;
+		# s/$krc1$/$obj/g;
+		# s/$krc2$/$obj/g;
 		s/\.[cCmylfs]$/$obj/g;
-
 		push (@result, $_);
+
+		# Transform .o file into .P file (for automatic
+		# dependency code).
+		s/$obj/.P/g;
+		$dep_files{$_} = 1;
 	    }
 
 	    &pretty_print ($one_file . "_OBJECTS =", '', @result);
@@ -559,7 +591,7 @@ sub handle_man_pages
     }
 
     # Generate list of install dirs.
-    $output_rules .= "install-man:\n";
+    $output_rules .= "install-man: $(MANS)\n";
     foreach (keys %sections)
     {
 	push (@installdirs, '$(mandir)/man' . $_);
@@ -596,9 +628,12 @@ sub handle_man_pages
 
     $output_vars .= &file_contents ('mans-vars');
 
-    push (@install_data, 'install-man');
-    push (@uninstall, 'uninstall-man');
-    push (@all, '$(MANS)');
+    if (! defined $options{'no-installman'})
+    {
+	push (@install_data, 'install-man');
+	push (@uninstall, 'uninstall-man');
+	push (@all, '$(MANS)');
+    }
 }
 
 # Handle DATA variables.
@@ -623,7 +658,6 @@ sub handle_tags
     elsif ($dir_holds_sources || defined $contents{'ETAGS_ARGS'})
     {
 	$output_rules .= &file_contents ('tags-subd');
-	push (@phony, 'id');
 	$tagging = 1;
     }
 
@@ -717,7 +751,7 @@ dist: $(DISTFILES)
     # distribution.
     $output_rules .= '	@for file in $(DISTFILES); do		\\
 	  test -f $(distdir)/$$file \\
-	  || ln $(srcdir)/$$file $(distdir)/$$file \\
+	  || ln $(srcdir)/$$file $(distdir)/$$file 2> /dev/null \\
 	  || cp -p $(srcdir)/$$file $(distdir)/$$file; \\
 	done
 ';
@@ -769,6 +803,7 @@ sub handle_dependencies
 	# Include GNU-make-specific auto-dep code.
 	if ($dir_holds_sources)
 	{
+	    &pretty_print ('DEP_FILES =', '', sort keys %dep_files);
 	    $output_rules .= &file_contents ('depend');
 	}
     }
@@ -1130,8 +1165,10 @@ sub do_one_clean_target
 	$output_rules .=
 	    ("\t\@echo \"This command is intended for maintainers to use;\"\n"
 	     . "\t\@echo \"it deletes files that may require special "
-	     . "tools to rebuild.\"\n"
-	     . "\trm -f config.status\n");
+	     . "tools to rebuild.\"\n");
+
+	$output_rules .= "\trm -f config.status\n"
+	    if $relative_dir eq '.';
     }
     elsif ($name . $target eq 'distclean')
     {
@@ -1346,8 +1383,10 @@ sub read_am_file
 	elsif ($_ eq "\@kr\@\n")
 	{
 	    # Special case: this means we want automatic
-	    # de-ANSI-fication.  FIXME think of a better way.
+	    # de-ANSI-fication.  This is deprecated.  Remove in the
+	    # future.
 	    $contents{'@kr@'} = 1;
+	    &am_error ('@kr@ is deprecated; put "ansi2knr" in AUTOMAKE_OPTIONS instead');
 	}
 	else
 	{
@@ -1493,6 +1532,16 @@ sub initialize_per_input
 
     # TRUE if install targets should work recursively.
     $recursive_install = 0;
+
+    # All .P files.
+    %dep_files = ();
+
+    # Strictness levels.
+    $strictness = $default_strictness;
+    $strictness_name = $default_strictness_name;
+
+    # Options from AUTOMAKE_OPTIONS.
+    %options = ();
 }
 
 
