@@ -30,3 +30,7 @@ check-local: automake
 automake: automake.in
 	CONFIG_FILES=$@ CONFIG_HEADERS= ./config.status
 
+# Tag before making distribution.
+cvs-dist:
+	cvs tag `echo "Release-$(VERSION)" | sed 's/\./-/g'`
+	$(MAKE) dist
