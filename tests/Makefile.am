@@ -99,6 +99,7 @@ depend3.test \
 discover.test \
 distcommon.test \
 distdir.test \
+distname.test \
 double.test \
 dup.test \
 dup2.test \
