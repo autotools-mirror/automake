@@ -5389,14 +5389,14 @@ sub conditionals_true_when (@@)
 # ambiguity.
 sub check_ambiguous_conditional
 {
-    my ($var_name, $cond) = @_;
-    foreach my $vcond (keys %{$conditional{$var_name}})
+    my ($var, $cond) = @_;
+    foreach my $vcond (keys %{$conditional{$var}})
     {
 	if (&conditional_true_when ($vcond, $cond)
 	    || &conditional_true_when ($cond, $vcond))
 	{
-	    &am_line_error ($var_name,
-			    "$var_name multiply defined in condition");
+	    &am_line_error ($var,
+			    "$var multiply defined in condition");
 	}
     }
 }
@@ -5449,26 +5449,6 @@ sub examine_variable
 {
     local ($var) = @_;
     &variable_defined ($var);
-}
-
-# Quote a value in order to put it in $conditional.  We need to quote
-# spaces, and we need to handle null strings, so that we can later
-# retrieve values by splitting on space.
-sub quote_cond_val
-{
-    local ($val) = @_;
-    $val =~ tr/ \t\n/\001\003\004/;
-    $val = "\002" if $val eq '';
-    return $val;
-}
-
-# Unquote a value in $conditional.
-sub unquote_cond_val
-{
-    local ($val) = @_;
-    $val =~ tr/\001\003\004/ \t\n/;
-    $val =~ s/\002//g;
-    return $val;
 }
 
 # Return the set of conditions for which a variable is defined.
@@ -5561,8 +5541,6 @@ sub variable_conditions_sub
     my @this_conds = ();
     foreach my $vcond (keys %{$conditional{$var}})
     {
-	my $val = ${$conditional{$var}}{$vcond};
-
 	next
 	  if ! conditionals_true_when ((@parent_conds), ($vcond));
 
@@ -5570,7 +5548,7 @@ sub variable_conditions_sub
 
 	push (@parent_conds, $vcond);
 	my @subvar_conds = ();
-	foreach (split (' ', $val))
+	foreach (split (' ', ${$conditional{$var}}{$vcond}))
 	{
 	    # If a comment seen, just leave.
 	    last if /^#/;
@@ -6072,7 +6050,8 @@ sub read_am_file
 		$contents{$last_var_name} .= $_;
 		if (@conditional_stack)
 		{
-		    ${conditional{$last_var_name}}{$conditional_stack[$#conditional_stack]} .= $_;
+		    my $cond_string = join ('', @conditional_stack);
+		    ${conditional{$last_var_name}}{$cond_string} .= $_;
 		}
 	    }
 	}
@@ -6363,22 +6342,22 @@ sub read_main_am_file
 
     # Now dump the variables that were defined.  We do it in the same
     # order in which they were defined (skipping duplicates).
-    local (%done);
-    foreach $curs (@var_list)
+    my %done;
+    foreach my $var (@var_list)
     {
-	next if $done{$curs};
-	$done{$curs} = 1;
+	next
+	  if $done{$var};
+	$done{$var} = 1;
 
-	$output_vars .= $am_vars{$curs};
-	if ($conditional{$curs})
+	$output_vars .= $am_vars{$var};
+	if ($conditional{$var})
 	{
-	    foreach my $vcond (keys %{$conditional{$curs}})
+	    foreach my $vcond (keys %{$conditional{$var}})
 	    {
-	        my $val = ${$conditional{$curs}}{$vcond};
-		$output_vars .= ($vcond . $curs . ' '
-				 . $def_type{$curs} . "= ");
-		local ($line);
-		foreach $line (split ("\n", $val))
+	        my $val = ${$conditional{$var}}{$vcond};
+		$output_vars .= ($vcond . $var . ' '
+				 . $def_type{$var} . "= ");
+		foreach my $line (split ("\n", $val))
 		{
 		    $output_vars .= $vcond . $line . "\n";
 		}
@@ -6388,8 +6367,8 @@ sub read_main_am_file
 	}
 	else
 	{
-	    $output_vars .= ($curs . ' ' . $def_type{$curs} . '= '
-			     . $contents{$curs} . "\n");
+	    $output_vars .= ($var . ' ' . $def_type{$var} . '= '
+			     . $contents{$var} . "\n");
 	}
     }
 
@@ -6515,11 +6494,13 @@ sub initialize_per_input
     # assigned with `+='.
     %am_var_defs = ();
 
-    # For a variable or target which is defined conditionally, this
-    # holds an array of the conditional values.  The array is composed
-    # of pairs of condition strings (the variables which configure
-    # will substitute) and values (the value of a target is
-    # meaningless).  For an unconditional variable, this is empty.
+    # For a variable or target $ITEM which is defined conditionally,
+    # this holds a hash of the conditional values.  The keys of
+    # %CONDITIONAL{$ITEM} are the conditions (the variables which
+    # configure will substitute), and the values, the associated
+    # values (meaningless for targets).
+    #
+    # By definition, for an unconditional variable, this is empty.
     %conditional = ();
 
     # This holds the line numbers at which various elements of
