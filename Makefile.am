@@ -2,7 +2,8 @@
 
 ## Makefile for Automake.
 
-## Copyright 1995, 1996, 1997, 1998, 1999, 2001 Free Software Foundation, Inc.
+## Copyright (C) 1995, 1996, 1997, 1998, 1999, 2001, 2002 Free
+## Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -78,33 +79,32 @@ maintainer-check: automake aclocal
 	perllibdir=$(srcdir)/lib $(PERL) -c -w aclocal
 ## expect no instances of '${...}'.  However, $${...} is ok, since that
 ## is a shell construct, not a Makefile construct.
-## The backslash in `$${' is needed for some versions of bash.
-	@if fgrep '\$${' $(srcdir)/lib/am/[a-z]*.am | \
-	       fgrep -v '$$$$'; then \
+	@if grep -F '$${' $(srcdir)/lib/am/[a-z]*.am | \
+	       grep -F -v '$$$$'; then \
 	  echo "Found too many uses of '\$${' in the lines above." 1>&2; \
 	  exit 1;				\
 	else :; fi
 ## Make sure `rm' is called with `-f'.
-	@if egrep '\<rm ([^-]|\-[^f ]*\>)' \
+	@if grep -E '\<rm ([^-]|\-[^f ]*\>)' \
 	          $(srcdir)/lib/am/[a-z]*.am $(srcdir)/tests/*.test | \
-	      fgrep -v '##'; then \
+	      grep -v '##'; then \
 	  echo "Suspicious 'rm' invocation." 1>&2; \
 	  exit 1;				\
 	else :; fi
 ## Make sure all invocations of mkinstalldirs are correct.
-	@if fgrep -n 'mkinstalldirs' $(srcdir)/lib/am/[a-z]*.am | \
-	      fgrep -v '$$(mkinstalldirs)'; then \
+	@if grep -n 'mkinstalldirs' $(srcdir)/lib/am/[a-z]*.am | \
+	      grep -F -v '$$(mkinstalldirs)'; then \
 	  echo "Found incorrect use of mkinstalldirs in the lines above" 1>&2; \
 	  exit 1; \
 	else :; fi
 ## We never want to use "undef", only "delete", but for $/.
 	@if grep -n -w 'undef ' $(srcdir)/automake.in | \
-	      fgrep -v 'undef $$/'; then \
+	      grep -F -v 'undef $$/'; then \
 	  echo "Found undef in automake.in; use delete instead" 1>&2; \
 	  exit 1; \
 	fi
 ## We never want split (/ /,...), only split (' ', ...).
-	@if fgrep -n 'split (/ /' $(srcdir)/automake.in; then \
+	@if grep -n 'split (/ /' $(srcdir)/automake.in; then \
 	  echo "Found bad split in the lines above." 1>&2; \
 	  exit 1; \
 	fi
@@ -146,34 +146,34 @@ maintainer-check: automake aclocal
 	  exit 1; \
 	fi
 ## Tests should never call make directly.
-	@if grep -v '^#' $(srcdir)/tests/*.test | egrep ':[	]*make'; then \
+	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*make'; then \
 	  echo 'Do not run "make" in the above tests.  Use "$$MAKE" instead.' 1>&2; \
 	  exit 1; \
 	fi
 ## Tests should never call autoconf directly.
-	@if grep -v '^#' $(srcdir)/tests/*.test | egrep ':[	]*autoconf'; then \
+	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*autoconf'; then \
 	  echo 'Do not run "autoconf" in the above tests.  Use "$$AUTOCONF" instead.' 1>&2; \
 	  exit 1; \
 	fi
 ## Tests should never call automake directly.
-	@if grep -v '^#' $(srcdir)/tests/*.test | egrep ':[	]*automake'; then \
+	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*automake'; then \
 	  echo 'Do not run "automake" in the above tests.  Use "$$AUTOMAKE" instead.' 1>&2;  \
 	  exit 1; \
 	fi
 ## Tests should never call aclocal directly.
-	@if grep -v '^#' $(srcdir)/tests/*.test | egrep ':[	]*aclocal'; then \
+	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*aclocal'; then \
 	  echo 'Do not run "aclocal" in the above tests.  Use "$$ACLOCAL" instead.' 1>&2;  \
 	  exit 1; \
 	fi
 ## Tests should never call perl directly.
-	@if grep -v '^#' $(srcdir)/tests/*.test | egrep ':[	]*perl'; then \
+	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*perl'; then \
 	  echo 'Do not run "perl" in the above tests.  Use "$$PERL" instead.' 1>&2; \
 	  exit 1; \
 	fi
 ## Overriding a Makefile macro on the command line is not portable when
 ## recursive targets are used.  Better use an envvar.  SHELL is an exception,
 ## POSIX says it can't come from the environment.
-	@if egrep '\$$MAKE .*(SHELL=.*=|=.*SHELL=)' $(srcdir)/tests/*.test; then \
+	@if grep -E '\$$MAKE .*(SHELL=.*=|=.*SHELL=)' $(srcdir)/tests/*.test; then \
 	  echo 'Rewrite "$$MAKE foo=bar SHELL=/bin/sh" as "foo=bar $$MAKE -e SHELL=/bin/sh"' 1>&2; \
 	  echo ' in the above lines, it is more portable.' 1>&2; \
 	  exit 1; \
@@ -190,7 +190,7 @@ maintainer-check: automake aclocal
 	  echo 'Use "$$MAKE -e SHELL=/bin/sh" in the above lines.' 1>&2; \
 	  exit 1; \
 	fi
-	@if egrep 'SHELL=.*\$$MAKE' $(srcdir)/tests/*.test; then \
+	@if grep 'SHELL=.*\$$MAKE' $(srcdir)/tests/*.test; then \
 	  echo '$$MAKE ignores the SHELL envvar, use "$$MAKE SHELL=/bin/sh" in' 1>&2; \
 	  echo 'the above lines.' 1>&2; \
 	  exit 1; \
@@ -198,7 +198,7 @@ maintainer-check: automake aclocal
 ## Never use `sleep 1' to create files with different timestamps.
 ## Use `sleep 2' instead.  Some filesystems (e.g., Windows') have only
 ## a 2sec resolution.
-	@if egrep '\bsleep +1\b' $(srcdir)/tests/*.test; then \
+	@if grep -E '\bsleep +1\b' $(srcdir)/tests/*.test; then \
 	  echo 'Do not use "sleep 1" in the above tests.  Use "sleep 2" instead.' 1>&2; \
 	  exit 1; \
 	fi
