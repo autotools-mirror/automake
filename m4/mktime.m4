@@ -1,14 +1,9 @@
 dnl From Jim Meyering.
 dnl FIXME: this should migrate into libit.
 
-dnl This little macro is solely so AM_FUNC_MKTIME can require
-dnl that AC_CHECK_HEADERS(sys/time.h) has been run.
-AC_DEFUN(AC_HEADER_SYS_TIME_H,
- [AC_CHECK_HEADERS(sys/time.h)])
-
 AC_DEFUN(AM_FUNC_MKTIME,
 [AC_REQUIRE([AC_HEADER_TIME])dnl
- AC_REQUIRE([AC_HEADER_SYS_TIME_H])dnl
+ AC_CHECK_HEADERS(sys/time.h)
  AC_CACHE_CHECK([for working mktime], am_cv_func_working_mktime,
   [AC_TRY_RUN([/* Test program from Tony Leneis (tony@plaza.ds.adp.com).  */
 #if TIME_WITH_SYS_TIME
