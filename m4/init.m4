@@ -35,7 +35,7 @@ AC_DEFUN([AM_INIT_AUTOMAKE],
 # test to see if srcdir already configured
 if test "`CDPATH=:; cd $srcdir && pwd`" != "`pwd`" &&
    test -f $srcdir/config.status; then
-  AC_MSG_ERROR([source directory already configured; run "make distclean" there first])
+  AC_MSG_ERROR([source directory already configured; run \"make distclean\" there first])
 fi
 
 # Define the identity of the package.
