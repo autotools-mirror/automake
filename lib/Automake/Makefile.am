@@ -1,5 +1,7 @@
 ## Process this file with automake to create Makefile.in
 
+SUBDIRS = tests
+
 perllibdir = $(pkgvdatadir)/Automake
 dist_perllib_DATA = \
   Channels.pm \

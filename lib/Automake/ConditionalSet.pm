@@ -143,24 +143,7 @@ sub new ($;@)
   return $self;
 }
 
-# Compare condition names.
-# Issue them in alphabetical order, foo_TRUE before foo_FALSE.
-sub by_condition
-{
-    # Be careful we might be comparing `' or `#'.
-    $a->string =~ /^(.*)_(TRUE|FALSE)$/;
-    my ($aname, $abool) = ($1 || '', $2 || '');
-    $b->string =~ /^(.*)_(TRUE|FALSE)$/;
-    my ($bname, $bbool) = ($1 || '', $2 || '');
-    return ($aname cmp $bname
-	    # Don't bother with IFs, given that TRUE is after FALSE
-	    # just cmp in the reverse order.
-	    || $bbool cmp $abool
-	    # Just in case...
-	    || $a cmp $b);
-}
-
-=item C<@conds = $set-$<gt>conds>
+=item C<@conds = $set-E<gt>conds>
 
 Return the list of C<Conditional> objects involved in C<$set>.
 
@@ -171,11 +154,12 @@ sub conds ($ )
   my ($self) = @_;
   return @{$self->{'conds'}} if exists $self->{'conds'};
   my @conds = map { $self->{'hash'}{$_} } (keys %{$self->{'hash'}});
-  $self->{'conds'} = [sort by_condition @conds];
+  @conds = sort { $a->string cmp $b->string } @conds;
+  $self->{'conds'} = [@conds];
   return @conds;
 }
 
-=item C<$cond = $set-$<gt>one_cond>
+=item C<$cond = $set-E<gt>one_cond>
 
 Return one C<Conditional> object involved in C<$set>.
 
@@ -187,7 +171,7 @@ sub one_cond ($)
   return (%{$self->{'hash'}},)[1];
 }
 
-=item C<$et = $set-$<gt>false>
+=item C<$et = $set-E<gt>false>
 
 Return 1 iff the C<ConditionalSet> object is always false (i.e., if it
 is empty, or if it contains only false C<Conditional>s). Return 0
@@ -201,7 +185,7 @@ sub false ($ )
   return 0 == keys %{$self->{'hash'}};
 }
 
-=item C<$et = $set-$<gt>true>
+=item C<$et = $set-E<gt>true>
 
 Return 1 iff the C<ConditionalSet> object is always true (i.e. covers all
 conditions). Return 0 otherwise.
@@ -233,7 +217,7 @@ sub string ($ )
     }
   else
     {
-      $res = join (',', $self->conds);
+      $res = join (' | ', map { $_->string } $self->conds);
     }
 
   $self->{'string'} = $res;
@@ -279,7 +263,7 @@ For instance consider this initial C<ConditionalSet>.
     (new Automake::Conditional ("COND1_TRUE", "COND2_TRUE"),
      new Automake::Conditional ("COND3_FALSE", "COND2_TRUE"));
 
-Calling $<$set-E<gt>permutations> will return the following Conditional set.
+Calling C<$set-E<gt>permutations> will return the following Conditional set.
 
   new Automake::ConditionalSet
     (new Automake::Conditional ("COND1_TRUE", "COND2_TRUE", "COND3_TRUE"),

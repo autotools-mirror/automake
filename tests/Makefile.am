@@ -79,7 +79,6 @@ cond8.test \
 cond9.test \
 cond10.test \
 cond11.test \
-cond12.test \
 cond13.test \
 cond14.test \
 cond15.test \
