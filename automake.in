@@ -325,6 +325,15 @@ $obsolete_rx = '(\b' . join ('\b|\b', keys %obsolete_macros) . '\b)';
 # in the top-level Makefile.in.
 %configure_dist_common = ();
 
+# Holds the dependencies of target which dependencies are factored.
+# Typically, `.PHONY' will appear in plenty of *.am files, but must
+# be output once.  Arguably all pure dependencies could be subject
+# to this factorization, but it is not unpleasant to have paragraphs
+# in Makefile: keeping related stuff altogether.
+%dependencies =
+(
+    ".PHONY" => []
+);
 
 
 # Initialize global constants and our list of languages that are
@@ -680,7 +689,7 @@ sub generate_makefile
     &handle_merge_targets ($output);
     &handle_installdirs;
     &handle_clean;
-    &handle_phony;
+    &handle_factored_dependencies;
 
     &check_typos;
 
@@ -4028,10 +4037,18 @@ sub do_one_clean_target
 }
 
 # Handle .PHONY target.
-sub handle_phony
+sub handle_factored_dependencies
 {
-    &pretty_print_rule ('.PHONY:', "", sort @phony);
-    $output_rules .= "\n";
+    # FIXME: @PHONY must die!
+    push (@{${dependencies{".PHONY"}}}, @phony);
+
+    my ($category);
+    foreach $category (sort keys %dependencies)
+    {
+        &pretty_print_rule ("$category:", "",
+			    sort @{${dependencies{$category}}});
+        $output_rules .= "\n";
+    }
 }
 
 
@@ -7053,11 +7070,27 @@ sub file_contents
  	    # Stick comments before the incoming macro or rule.
  	    $comment = $_;
  	}
- 	elsif (/^\.PHONY: (.*)$/mso)
+ 	elsif (/$RULE_PATTERN/mso && !/\t/ && /^([^:]+): ([^:]+)$/som)
  	{
- 	    # Having a special case for PHONY upstream seems much easier than
- 	    # trying to have it fit in RULE_PATTERN and extract it later.
- 	    push (@phony, split (/\s/, $1));
+	    # Pure dependencies: take some Dude, it's good stuff!
+	    my ($dependers, $dependees) = ($1, $2);
+	    $dependers =~ s/\\\n//somg;
+	    $dependees =~ s/\\\n//somg;
+	    foreach (split (/\s/ , $dependers))
+	    {
+	        if (defined $dependencies{$_})
+		{
+		    print STDERR "Pushing $dependees into $_\n";
+		    push (@{$dependencies{$_}}, split (/\s/, $dependees));
+		}
+		else
+		{
+		    # Free lance dependency.
+		    $result_rules .= "$comment$separator$1: $2\n"
+		      unless defined $contents{$1};
+		    $comment = $separator = '';
+		}
+	    }
  	}
  	elsif (/$RULE_PATTERN/mso)
  	{
