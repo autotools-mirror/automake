@@ -38,6 +38,6 @@ else
 fi
 AC_CONFIG_COMMANDS_PRE(
 [if test -z "${$1_TRUE}" && test -z "${$1_FALSE}"; then
-  AC_MSG_ERROR([conditional \"$1\" was never defined.
+  AC_MSG_ERROR([conditional "$1" was never defined.
 Usually this means the macro was only invoked conditionally.])
 fi])])
