@@ -40,7 +40,10 @@ var = foo
 EOF
 
 $ACLOCAL
-$AUTOMAKE && exit 1
+$AUTOMAKE 2>stderr && exit 1
+cat stderr
+grep '^Makefile.am:5: blank line following trailing backslash' stderr
+
 
 ## Here is a second test because head comments are
 ## handled differently in Automake 1.5.
@@ -55,7 +58,24 @@ all-local:
 var = foo
 EOF
 
-$AUTOMAKE && exit 1
+$AUTOMAKE 2>stderr && exit 1
+cat stderr
+grep '^Makefile.am:2: blank line following trailing backslash' stderr
+
+
+## Make sure we print an 'included' stack on errors.
+
+echo 'include Makefile.inc'> Makefile.am
+cat > Makefile.inc << 'EOF'
+# a comment with backslash \
+
+EOF
+
+$AUTOMAKE 2>stderr && exit 1
+cat stderr
+grep '^Makefile.inc:2: blank line following trailing backslash' stderr
+grep '^Makefile.am:1: .*included from here' stderr
+
 
 ## Make sure backslashes are still allowed within a comment.
 ## This usually happens when commenting out a Makefile rule.

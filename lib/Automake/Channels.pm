@@ -338,17 +338,26 @@ sub _print_message ($$%)
 
   return 0 if ($opts{'silent'});
 
-  if ($location)
+  # Format the message.
+  my $msg = '';
+  if (ref $location)
     {
-      $location .= ': ';
+      # If $LOCATION is a reference, assume it's an instance of the
+      # Automake::Location class and display contexts.
+      my $loc = $location->get || $me;
+      $msg = _format_message ("$loc: ",
+			      $opts{'header'} . $message . $opts{'footer'});
+      for my $pair ($location->get_contexts)
+	{
+	  $msg .= _format_message ($pair->[0] . ":   ", $pair->[1]);
+	}
     }
   else
     {
-      $location = "$me: ";
+      $location ||= $me;
+      $msg = _format_message ("$location: ",
+			      $opts{'header'} . $message . $opts{'footer'});
     }
-
-  my $msg = _format_message ($location,
-			     $opts{'header'} . $message . $opts{'footer'});
 
   # Check for duplicate message if requested.
   if ($opts{'uniq_part'} != UP_NONE)
@@ -418,6 +427,9 @@ the following would be output:
 
   foo.c:10: unused variable `mumble'
 
+C<$location> can also be an instance of C<Automake::Location>.  In this
+case the stack of contexts will be displayed in addition.
+
 If C<$message> contains new line caracters, C<$location> is prepended
 to each line.  For instance
 
@@ -465,7 +477,7 @@ sub msg ($$;$%)
 
   if (exists $buffering{$opts{'type'}})
     {
-      push @backlog, [@_];
+      push @backlog, [$channel, $location->clone, $message, %options];
       return;
     }
 
@@ -593,6 +605,10 @@ sub flush_messages ()
 }
 
 =back
+
+=head1 SEE ALSO
+
+L<Automake::Location>
 
 =head1 HISTORY
 
