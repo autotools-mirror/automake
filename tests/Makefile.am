@@ -98,6 +98,7 @@ depcomp2.test \
 depend.test \
 depend2.test \
 depend3.test \
+depend4.test \
 discover.test \
 distcommon.test \
 distdir.test \
