@@ -501,13 +501,44 @@ sub handle_source_transform
     local ($objpat) = $obj;
     $objpat =~ s/(\W)/\\$1/g;
 
-    # Look for file_SOURCES and file_OBJECTS.
-    if (defined $contents{$one_file . "_SOURCES"})
+    if (defined $contents{$one_file . "_OBJECTS"})
     {
-	if (! defined $contents{$one_file . "_OBJECTS"})
+	&am_line_error ($one_file . '_OBJECTS',
+			$one_file . '_OBJECTS', 'should not be defined');
+	# No point in continuing.
+	return;
+    }
+
+    local ($source_list);
+    local ($prefix);
+    foreach $prefix ('', 'EXTRA_')
+    {
+	$source_list = '';
+	if (defined $contents{$prefix . $one_file . "_SOURCES"})
+	{
+	    push (@sources, '$(' . $prefix . $one_file . "_SOURCES)");
+	    push (@objects, '$(' . $prefix . $one_file . "_OBJECTS)")
+		unless $prefix eq 'EXTRA_';
+	    $source_list = $contents{$prefix . $one_file . "_SOURCES"};
+	}
+	elsif ($prefix eq '')
+	{
+	    $output_vars .= ($one_file . "_SOURCES = " . $one_file . ".c\n"
+			     . $one_file . "_OBJECTS = ". $one_file
+			     . $obj . "\n");
+	    push (@sources, $one_file . '.c');
+	    push (@objects, $one_file . $obj);
+	    $source_list = $one_file . ".c ";
+	}
+	else
+	{
+	    $output_vars .= "EXTRA_" . $one_file . "_SOURCES =\n";
+	}
+
+	if ($source_list)
 	{
 	    # Turn sources into objects.
-	    local (@files) = split (/\s+/, $contents{$one_file . "_SOURCES"});
+	    local (@files) = split (/\s+/, $source_list);
 	    local (@result) = ();
 	    foreach (@files)
 	    {
@@ -539,7 +570,8 @@ sub handle_source_transform
 		s/\.cc$/$obj/g;
 		s/\.cxx$/$obj/g;
 		s/\.[cCmylfs]$/$obj/g;
-		push (@result, $_);
+		push (@result, $_)
+		    unless $prefix eq 'EXTRA_';
 
 		# Transform .o or $o file into .P file (for automatic
 		# dependency code).
@@ -547,25 +579,9 @@ sub handle_source_transform
 		$dep_files{'$(srcdir)/.deps/' . $_} = 1;
 	    }
 
-	    &pretty_print ($one_file . "_OBJECTS =", "", @result);
+	    &pretty_print ($one_file . "_OBJECTS =", "", @result)
+		unless $prefix eq 'EXTRA_';
 	}
-	else
-	{
-	    &am_line_error ($one_file . '_OBJECTS',
-			    $one_file . '_OBJECTS', 'should not be defined');
-	}
-
-	push (@sources, '$(' . $one_file . "_SOURCES)");
-	push (@objects, '$(' . $one_file . "_OBJECTS)");
-    }
-    else
-    {
-	$output_vars .= ($one_file . "_SOURCES = " . $one_file . ".c\n"
-			 . $one_file . "_OBJECTS = ". $one_file
-			 . $obj . "\n");
-	push (@sources, $one_file . '.c');
-	push (@objects, $one_file . $obj);
-	$dep_files{'$(srcdir)/.deps/' . $one_file . '.P'} = 1;
     }
 
     if (defined $contents{'CONFIG_HEADER'})
@@ -1135,12 +1151,12 @@ sub handle_dist_worker
 ';
     }
 
-    # If the target `dist-local' exists, run it now.  This allows
+    # If the target `dist-hook' exists, run it now.  This allows
     # users to do random weird things to the distribution before it is
     # packaged up.
-    if (defined $contents{'dist-local'})
+    if (defined $contents{'dist-hook'})
     {
-	$output_rules .= "\t\$(MAKE) dist-local\n";
+	$output_rules .= "\t\$(MAKE) dist-hook\n";
     }
 
     # Finalize.
@@ -1648,13 +1664,23 @@ sub handle_merge_targets
     # Step three: print definitions users can use.
     $output_rules .= ("install-exec: "
 		      . join (' ', @install_exec)
-		      . "\n\n");
+		      . "\n");
+    if (defined $contents{'install-exec-hook'})
+    {
+	$output_rules .= "\t" . '$(MAKE) install-exec-hook' . "\n";
+    }
+    $output_rules .= "\n";
     push (@install, 'install-exec') if !$recursive_install;
     push (@phony, 'install-exec');
 
     $output_rules .= ("install-data: "
 		      . join (' ', @install_data)
-		      . "\n\n");
+		      . "\n");
+    if (defined $contents{'install-data-hook'})
+    {
+	$output_rules .= "\t" . '$(MAKE) install-data-hook' . "\n";
+    }
+    $output_rules .= "\n";
     push (@install, 'install-data') if !$recursive_install;
     push (@phony, 'install-data');
 
