@@ -29,7 +29,7 @@ distdir: $(DISTFILES)
 ## For Gnits users, this is pretty handy.  Look at 15 lines
 ## in case some explanatory text is desirable.
 ##
-if %?TOPDIR%
+if %?TOPDIR_P%
 if  %?CK-NEWS%
 	@if sed 15q $(srcdir)/NEWS | fgrep -e "$(VERSION)" >/dev/null;
 	then :; else \
@@ -37,12 +37,14 @@ if  %?CK-NEWS%
 	  exit 1; \
 	fi
 endif  %?CK-NEWS%
-endif %?TOPDIR%
+endif %?TOPDIR_P%
 ##
 ## Only for the top dir.
 ##
-?TOPDIR?	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
-?TOPDIR?	mkdir $(distdir)
+if %?TOPDIR_P%
+	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
+	mkdir $(distdir)
+endif %?TOPDIR_P%
 ##
 ##
 ?DISTDIRS?	$(mkinstalldirs) %DISTDIRS%
@@ -124,13 +126,13 @@ endif %?DIST-TARGETS%
 ## We use $(install_sh) because that is a known-portable way to modify
 ## the file in place in the source tree.
 ##
-if %?TOPDIR%
+if %?TOPDIR_P%
 	-find $(distdir) -type d ! -perm -777 -exec chmod a+rwx {} \; -o \
 	  ! -type d ! -perm -444 -links 1 -exec chmod a+r {} \; -o \
 	  ! -type d ! -perm -400 -exec chmod a+r {} \; -o \
 	  ! -type d ! -perm -444 -exec $(SHELL) $(install_sh) -c -m a+r {} {} \; \
 	|| chmod -R a+r $(distdir)
-endif %?TOPDIR%
+endif %?TOPDIR_P%
 
 
 
@@ -143,7 +145,7 @@ endif %?TOPDIR%
 ## the only reason) is that some versions of tar (e.g., OSF1)
 ## interpret `-z' differently.
 
-if %?TOPDIR%
+if %?TOPDIR_P%
 
 GZIP_ENV = --best
 .PHONY: dist-all dist
@@ -184,7 +186,7 @@ dist-zip: distdir
 	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
 endif  %?ZIP%
 
-endif %?TOPDIR%
+endif %?TOPDIR_P%
 
 
 ## ------------------------- ##
@@ -192,7 +194,7 @@ endif %?TOPDIR%
 ## ------------------------- ##
 
 
-if %?TOPDIR%
+if %?TOPDIR_P%
 # This target untars the dist file and tries a VPATH configuration.  Then
 # it guarantees that the distribution is self-contained by making another
 # tarfile.
@@ -233,4 +235,4 @@ distcheck: dist
 	-chmod -R a+w $(distdir) > /dev/null 2>&1; rm -rf $(distdir)
 	@echo "$(distdir).tar.gz is ready for distribution" | \
 	  sed 'h;s/./=/g;p;x;p;x'
-endif %?TOPDIR%
+endif %?TOPDIR_P%

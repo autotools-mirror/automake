@@ -3054,8 +3054,7 @@ sub handle_dist
     }
 
     # Rule to check whether a distribution is viable.
-    my %transform = ('TOPDIR'         => ($relative_dir eq '.'),
-		     'DISTCHECK-HOOK' => &target_defined ('distcheck-hook'),
+    my %transform = ('DISTCHECK-HOOK' => &target_defined ('distcheck-hook'),
 		     'GETTEXT'        => $seen_gettext);
 
     # Prepend $(distdir) to each directory given.
@@ -3937,16 +3936,6 @@ sub handle_clean
 				      'MFILES'
 				      # A space is required in the join here.
 				      => join (' ', @maintainer_clean_files)));
-
-    # We special-case config.status here.  If we do it as part of the
-    # normal clean processing for this directory, then it might be
-    # removed before some subdir is cleaned.  However, that subdir's
-    # Makefile depends on config.status.
-    if ($relative_dir eq '.')
-    {
-	$actions{'distclean'} .= "\t-rm -f config.status\n";
-	$actions{'maintainer-clean'} .= "\t-rm -f config.status\n";
-    }
 }
 
 
@@ -6711,6 +6700,8 @@ sub make_paragraphs ($%)
 		      'CK-NEWS'      => $options{'check-news'} || 0,
 
 		      'SUBDIRS'      => &variable_defined ('SUBDIRS'),
+		      'TOPDIR'       => backname ($relative_dir),
+		      'TOPDIR_P'     => $relative_dir eq '.',
 		      'CONFIGURE-AC' => $configure_ac,
 
 		      'LIBTOOL'      => defined $configure_vars{'LIBTOOL'})
