@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2003  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2004  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -37,7 +37,13 @@ EOF
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
-./configure
+
+# See missing.test for explanations about this.
+MYAUTOCONF="`pwd`/missing --run $AUTOCONF"
+unset AUTOCONF
+
+./configure AUTOCONF="$MYAUTOCONF"
+
 $MAKE
 $sleep
 # Hopefully the install version of Autoconf cannot compete with this one...
@@ -46,7 +52,7 @@ $MAKE distdir
 
 # Run again, but without missing, to ensure that timestamps were updated.
 export AUTOMAKE ACLOCAL
-./configure
+./configure AUTOCONF="$MYAUTOCONF"
 $MAKE
 
 # Make sure $MAKE fail when timestamps aren't updated and missing is not used.
