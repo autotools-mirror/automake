@@ -1375,8 +1375,19 @@ sub handle_languages
     # Is the c linker needed?
     my $needs_c = 0;
     foreach my $ext (sort keys %extension_seen)
-    {
+      {
 	my $lang = $languages{$extension_map{$ext}};
+
+	 # Get information on $LANG.
+	my $pfx = $lang->autodep;
+	my $fpfx = ($pfx eq '') ? 'CC' : $pfx;
+	my $flag = $lang->flags || '';
+
+	# First include code for ordinary objects.
+	my %transform = ('PFX'  => $pfx,
+			 'FPFX' => $fpfx,
+			 'LIBTOOL' => $seen_libtool,
+			 'AMDEP'   => $use_dependencies ? 'AMDEP' : 'FALSE');
 
 	# Generate the appropriate rules for this extension.  If
 	# dependency tracking was requested, and this extension
@@ -1384,124 +1395,60 @@ sub handle_languages
 	my $comp = '';
 
 	if ($use_dependencies && $lang->autodep ne 'no')
-	{
+	  {
 	    # Don't generate the rule, but still generate the variables.
 	    if (defined $lang->compile)
-	    {
+	      {
 		$comp = $lang->compile
-	    }
-	}
+	      }
+
+	    my $compile = '$(' . $pfx . 'COMPILE)';
+	    my $ltcompile = '$(LT' . $pfx . 'COMPILE)';
+	    my %transform = (%transform,
+			     'GENERIC'   => 1,
+			     'BASE'      => '$*',
+			     'SOURCE'    => '$<',
+			     'OBJ'       => '$@',
+			     'LTOBJ'     => '$@',
+			     'OBJOBJ'    => '$@',
+			     'COMPILE'   => $compile,
+			     'LTCOMPILE' => $ltcompile);
+
+	    foreach my $ext (grep ($extension_seen{$_},
+				   @{$lang->extensions}))
+	      {
+		$output_rules .= (&file_contents ('depend2',
+						  (%transform,
+						   'EXT' => $ext))
+				  . "\n");
+	      }
+	  }
 	elsif (defined $lang->compile)
-	{
+	  {
 	    $comp = $lang->compile;
 
 	    my $outarg = $lang->output_arg;
 	    my $ltoutarg = '';
 	    if ($lang->flags eq 'CFLAGS')
-	    {
+	      {
 		# C compilers don't always support -c -o.
 		if (defined $options{'subdir-objects'})
-		{
+		  {
 		    $outarg .= ' -o $@';
-		}
+		  }
 		# We can always use -c -o with libtool.
 		$ltoutarg = ' -o $@';
-	    }
+	      }
 
 	    $output_rules .= file_contents ('ext-compile',
 					    ('EXT'      => $ext,
 					     'COMPILER' => $lang->compiler,
 					     'OUTARG'   => $outarg,
 					     'LTOUTARG' => $ltoutarg));
-	}
+	  }
 
-	# The rest of the loop is done once per language.
-	next if defined $done{$lang};
-	$done{$lang} = 1;
-
-	# If the source to a program consists entirely of code from a
-	# `pure' language, for instance C++ for Fortran 77, then we
-	# don't need the C compiler code.  However if we run into
-	# something unusual then we do generate the C code.  There are
-	# probably corner cases here that do not work properly.
-	# People linking Java code to Fortran code deserve pain.
-	$needs_c ||= ! $lang->pure;
-
-	if ($comp ne '')
-	{
-	    &define_compiler_variable ($lang->compiler, $ltcompile, $comp);
-	}
-	# The compiler's flag must be a configure variable.
-	if (defined $lang->flags)
-	{
-	    &define_configure_variable ($lang->flags);
-	}
-
-	# Call the finisher.
-	$lang->finish;
-    }
-
-    # If the project is entirely C++ or entirely Fortran 77 (i.e., 1
-    # suffix rule was learned), don't bother with the C stuff.  But if
-    # anything else creeps in, then use it.
-    $needs_c = 1
-      if $need_link || scalar keys %suffix_rules > 1;
-
-    if ($needs_c)
-    {
-	if (! defined $done{$languages{'c'}})
-	{
-	    &define_configure_variable ($languages{'c'}->flags);
-	    &define_compiler_variable ($languages{'c'}->compiler,
-				       $ltcompile,
-				       $languages{'c'}->compile);
-	}
-	&define_variable ('CCLD', '$(CC)');
-	&define_variable ('LINK',
-			  $ltlink . '$(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
-    }
-
-    foreach my $lang (values %languages)
-    {
         if ($lang->autodep ne 'no')
 	  {
-	    # Get information on $LANG.
-	    my $pfx = $lang->autodep;
-	    my $fpfx = ($pfx eq '') ? 'CC' : $pfx;
-	    my $flag = $lang->flags || '';
-
-	    # First include code for ordinary objects.
-	    my %transform = ('PFX'  => $pfx,
-			     'FPFX' => $fpfx,
-			     'LIBTOOL' => $seen_libtool,
-			     'AMDEP'   => $use_dependencies ? 'AMDEP' : 'FALSE');
-
-	    # This function can be called even when we don't want dependency
-	    # tracking.  This happens when we need an explicit rule for some
-	    # target.  In this case we don't want to include the generic code.
-	    if ($use_dependencies)
-	      {
-		my $compile = '$(' . $pfx . 'COMPILE)';
-		my $ltcompile = '$(LT' . $pfx . 'COMPILE)';
-		my %transform = (%transform,
-				 'GENERIC'   => 1,
-				 'BASE'      => '$*',
-				 'SOURCE'    => '$<',
-				 'OBJ'       => '$@',
-				 'LTOBJ'     => '$@',
-				 'OBJOBJ'    => '$@',
-				 'COMPILE'   => $compile,
-				 'LTCOMPILE' => $ltcompile);
-
-		foreach my $ext (grep ($extension_seen{$_}, @{$lang->extensions}))
-		  {
-		    $output_rules .= (&file_contents ('depend2',
-						      (%transform,
-						       'EXT' => $ext))
-				      . "\n");
-		  }
-	      }
-
 	    # Now include code for each specially handled object with this
 	    # language.
 	    my %seen_files = ();
@@ -1534,6 +1481,54 @@ sub handle_languages
 						  'LTCOMPILE' => $obj_ltcompile))
 	      }
 	  }
+
+	# The rest of the loop is done once per language.
+	next if defined $done{$lang};
+	$done{$lang} = 1;
+
+
+	# If the source to a program consists entirely of code from a
+	# `pure' language, for instance C++ for Fortran 77, then we
+	# don't need the C compiler code.  However if we run into
+	# something unusual then we do generate the C code.  There are
+	# probably corner cases here that do not work properly.
+	# People linking Java code to Fortran code deserve pain.
+	$needs_c ||= ! $lang->pure;
+
+	if ($comp ne '')
+	  {
+	    &define_compiler_variable ($lang->compiler, $ltcompile, $comp);
+	  }
+	# The compiler's flag must be a configure variable.
+	if (defined $lang->flags)
+	  {
+	    &define_configure_variable ($lang->flags);
+	  }
+
+	# Call the finisher.
+	$lang->finish;
+
+
+      }
+
+    # If the project is entirely C++ or entirely Fortran 77 (i.e., 1
+    # suffix rule was learned), don't bother with the C stuff.  But if
+    # anything else creeps in, then use it.
+    $needs_c = 1
+      if $need_link || scalar keys %suffix_rules > 1;
+
+    if ($needs_c)
+      {
+	if (! defined $done{$languages{'c'}})
+	  {
+	    &define_configure_variable ($languages{'c'}->flags);
+	    &define_compiler_variable ($languages{'c'}->compiler,
+				       $ltcompile,
+				       $languages{'c'}->compile);
+	  }
+	&define_variable ('CCLD', '$(CC)');
+	&define_variable ('LINK',
+			  $ltlink . '$(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@');
       }
 }
 
