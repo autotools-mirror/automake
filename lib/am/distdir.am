@@ -62,7 +62,35 @@ endif %?TOPDIR_P%
 ?DISTDIRS?	$(mkinstalldirs) %DISTDIRS%
 ##
 ##
-	@list='$(DISTFILES)'; for file in $$list; do \
+	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
+	list='$(DISTFILES)'; for file in $$list; do \
+##
+## Yet another hack to support SUN make.
+##
+## Let's assume `foo' appears in DISTFILES and is not a built file.
+## When building with VPATH=$(srcdir), SUN make will rewrite `foo' as
+## `$(srcdir)/foo'.  An attempt to install the file with
+##    cp $file $(distdir)/$file
+## will thus install $(srcdir)/foo as $(distdir)/$(srcdir)/foo
+## instead of $(distdir)/foo.
+##
+## So let's strip this leading $(srcdir)/ when it exists.  (As far we
+## know, only SUN make adds it.)  Searching whether the file is to be
+## found in the source or build directory will be done latter.
+##
+## In case we are _not_ using SUN make, how can we be sure we are
+## not stripping a legitimate filename that starts with the same
+## pattern as $(srcdir)?
+## Well, it can't happen without the Makefile author distributing
+## something out of the distribution (which is bad).   As an example,
+## consider `EXTRA_DIST = ../bar'.  This is an issue if $srcdir is `..',
+## however getting this value for srcdir is impossible: `EXTRA_DIST = ../bar'
+## implies we are in a subdirectory (so `../bar' is within the package),
+## hence `$srcdir' is something like `../../subdir'.
+##
+	  case $$file in \
+	    $(srcdir)/*) file=`echo "$$file" | sed "s|^$$srcdirstrip/||"`;; \
+	  esac; \
 ##
 ## Always look for the file in the build directory first.  That way
 ## for something like yacc output we will correctly pick up the latest
