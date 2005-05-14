@@ -1450,23 +1450,17 @@ macros and tailor the generated @file{Makefile.in} appropriately.
 Currently recognized macros and their effects are:
 
 @ftable @code
-@item AC_CONFIG_HEADERS
-Automake will generate rules to rebuild these headers.  Older versions
-of Automake required the use of @code{AM_CONFIG_HEADER}
-(@pxref{Macros}); this is no longer the case today.
-
-As for @code{AC_CONFIG_FILES} (@pxref{Requirements}), parts of the
-specification using shell variables will be ignored as far as
-cleaning, distributing, and rebuilding is concerned.
-
-@item AC_CONFIG_LINKS
-Automake will generate rules to remove @file{configure} generated
-links on @samp{make distclean} and to distribute named source files as
-part of @samp{make dist}.
-
-As for @code{AC_CONFIG_FILES} (@pxref{Requirements}), parts of the
-specification using shell variables will be ignored as far as cleaning
-and distributing is concerned.  (There is no rebuild rules for links.)
+@item AC_CANONICAL_BUILD
+@itemx AC_CANONICAL_HOST
+@itemx AC_CANONICAL_TARGET
+@vindex build_triplet
+@vindex host_triplet
+@vindex target_triplet
+Automake will ensure that @file{config.guess} and @file{config.sub}
+exist.  Also, the @file{Makefile} variables @code{build_triplet},
+@code{host_triplet} and @code{target_triplet} are introduced.  See
+@ref{Canonicalizing, , Getting the Canonical System Type, autoconf,
+The Autoconf Manual}.
 
 @item AC_CONFIG_AUX_DIR
 Automake will look for various helper scripts, such as
@@ -1491,21 +1485,32 @@ autoconf, The Autoconf Manual}.
 Required files from @code{AC_CONFIG_AUX_DIR} are automatically
 distributed, even if there is no @file{Makefile.am} in this directory.
 
-@item AC_CANONICAL_BUILD
-@itemx AC_CANONICAL_HOST
-@itemx AC_CANONICAL_TARGET
-@vindex build_triplet
-@vindex host_triplet
-@vindex target_triplet
-Automake will ensure that @file{config.guess} and @file{config.sub}
-exist.  Also, the @file{Makefile} variables @code{build_triplet},
-@code{host_triplet} and @code{target_triplet} are introduced.  See
-@ref{Canonicalizing, , Getting the Canonical System Type, autoconf,
-The Autoconf Manual}.
+@item AC_CONFIG_LIBOBJ_DIR
+Automake will require the sources file declared with
+@code{AC_LIBSOURCE} (see below) in the directory specified by this
+macro.
 
-@item AC_LIBSOURCE
+@item AC_CONFIG_HEADERS
+Automake will generate rules to rebuild these headers.  Older versions
+of Automake required the use of @code{AM_CONFIG_HEADER}
+(@pxref{Macros}); this is no longer the case today.
+
+As for @code{AC_CONFIG_FILES} (@pxref{Requirements}), parts of the
+specification using shell variables will be ignored as far as
+cleaning, distributing, and rebuilding is concerned.
+
+@item AC_CONFIG_LINKS
+Automake will generate rules to remove @file{configure} generated
+links on @samp{make distclean} and to distribute named source files as
+part of @samp{make dist}.
+
+As for @code{AC_CONFIG_FILES} (@pxref{Requirements}), parts of the
+specification using shell variables will be ignored as far as cleaning
+and distributing is concerned.  (There is no rebuild rules for links.)
+
+@item AC_LIBOBJ
+@itemx AC_LIBSOURCE
 @itemx AC_LIBSOURCES
-@itemx AC_LIBOBJ
 @vindex LIBOBJS
 Automake will automatically distribute any file listed in
 @code{AC_LIBSOURCE} or @code{AC_LIBSOURCES}.
@@ -4303,9 +4308,9 @@ AC_OUTPUT
 
 The @code{AC_CONFIG_LIBOBJ_DIR} tells Autoconf that the source files
 of these object files are to be found in the @file{lib/} directory.
-Automake does not yet use this information; it knows the source files
-are expected to be in the directory where the @samp{$(LIBOBJS)} and
-@samp{$(ALLOCA)} variables are used.
+Automake can also use this information, otherwise it expects the
+source files are to be in the directory where the @samp{$(LIBOBJS)}
+and @samp{$(ALLOCA)} variables are used.
 
 The @file{lib/} directory should therefore contain @file{malloc.c},
 @file{memcmp.c}, @file{strdup.c}, @file{alloca.c}.  Here is its
@@ -4349,13 +4354,25 @@ tool1_SOURCES = @dots{}
 tool2_SOURCES = @dots{}
 @end example
 
-Please note it would be wrong to use the variables @samp{$(LIBOBJS)} or
-@samp{$(ALLOCA)} in @file{src/Makefile.am}, because these variables
-contains unprefixed object names, and, for instance,
-@file{malloc.$(OBJEXT)} is not buildable in the @file{src/} directory.
-(Actually if you try using @samp{$(LIBOBJS)} in @file{src/}, Automake
-will require a copy of @file{malloc.c}, @file{memcmp.c},
-@file{strdup.c}, @file{alloca.c} in @file{src/} too.)
+When option @option{subdir-objects} is not used, as in the above
+example, the variables @samp{$(LIBOBJS)} or @samp{$(ALLOCA)} can only
+be used in the directory where their sources lie.  E.g., here it would
+be wrong to use @samp{$(LIBOBJS)} or @samp{$(ALLOCA)} in
+@file{src/Makefile.am}.  However if both @option{subdir-objects} and
+@code{AC_CONFIG_LIBOBJ_DIR} are used, it is OK to use these variables
+in other directories.  For instance @file{src/Makefile.am} could be
+changed as follows.
+
+@example
+# src/Makefile.am
+
+AUTOMAKE_OPTIONS = subdir-objects
+LDADD = $(LIBOBJS) $(ALLOCA)
+
+bin_PROGRAMS = tool1 tool2 @dots{}
+tool1_SOURCES = @dots{}
+tool2_SOURCES = @dots{}
+@end example
 
 Because @samp{$(LIBOBJS)} and @samp{$(ALLOCA)} contain object
 file names that end with @samp{.$(OBJEXT)}, they are not suitable for

@@ -338,6 +338,10 @@ my $config_aux_dir_set_in_configure_ac = 0;
 # in Makefiles.
 my $am_config_aux_dir = '';
 
+# Directory to search for AC_LIBSOURCE files, as set by AC_CONFIG_LIBOBJ_DIR
+# in configure.ac.
+my $config_libobj_dir = '';
+
 # Whether AM_GNU_GETTEXT has been seen in configure.ac.
 my $seen_gettext = 0;
 # Whether AM_GNU_GETTEXT([external]) is used.
@@ -1856,7 +1860,7 @@ sub handle_single_transform ($$$$$%)
             $depfile =~ s/\.([^.]*)$/.P$1/;
             $depfile =~ s/\$\(OBJEXT\)$/o/;
             $dep_files{dirname ($depfile) . '/$(DEPDIR)/'
-			   . basename ($depfile)} = 1;
+			 . basename ($depfile)} = 1;
         }
     }
 
@@ -1914,10 +1918,10 @@ sub define_objects_from_sources ($$$$$$$%)
 # Arguments are:
 #   canonical (transformed) name of target to build
 #   actual target of object to build
-#   object extension (i.e. either `.o' or `$o'.
+#   object extension (i.e., either `.o' or `$o')
 #   location of the source variable
 #   extra arguments to pass to file_contents when producing rules
-# Return result is name of linker variable that must be used.
+# Return the name of the linker variable that must be used.
 # Empty return means just use `LINK'.
 sub handle_source_transform ($$$$%)
 {
@@ -2108,6 +2112,42 @@ sub handle_lib_objects
   return $seen_libobjs;
 }
 
+# handle_LIBOBJS_or_ALLOCA ($VAR)
+# -------------------------------
+# Definitions common to LIBOBJS and ALLOCA.
+# VAR should be one of LIBOBJS, LTLIBOBJS, ALLOCA, or LTALLOCA.
+sub handle_LIBOBJS_or_ALLOCA ($)
+{
+  my ($var) = @_;
+
+  my $dir = $config_libobj_dir ? "$config_libobj_dir/" : '';
+
+  # If LIBOBJS files must be built in another directory we have
+  # to define LIBOBJDIR and ensure the files get cleaned.
+  # Otherwise LIBOBJDIR can be left undefined, and the cleaning
+  # is achieved by `rm -f *.($OBJEXT)' in compile.am.
+  if ($config_libobj_dir
+      && $relative_dir ne $config_libobj_dir)
+    {
+      if (option 'subdir-objects')
+	{
+	  define_variable ('LIBOBJDIR', "\$(top_builddir)/$dir", INTERNAL);
+	  $clean_files{"\$($var)"} = MOSTLY_CLEAN;
+	  # If LTLIBOBJS is used, we must also clear LIBOBJS (which might
+	  # be created by libtool as a side-effect of creating LTLIBOBJS).
+	  $clean_files{"\$($var)"} = MOSTLY_CLEAN if $var =~ s/^LT//;
+
+	}
+      else
+	{
+	  error ("`\$($var)' cannot be used outside `$dir' if"
+		 . " `subdir-objects' is not set");
+	}
+    }
+
+  return $dir;
+}
+
 sub handle_LIBOBJS ($$$)
 {
   my ($var, $cond, $lt) = @_;
@@ -2116,6 +2156,8 @@ sub handle_LIBOBJS ($$$)
 
   $var->requires_variables ("\@${lt}LIBOBJS\@ used", $lt . 'LIBOBJS')
     if ! keys %libsources;
+
+  my $dir = handle_LIBOBJS_or_ALLOCA "${lt}LIBOBJS";
 
   foreach my $iter (keys %libsources)
     {
@@ -2127,19 +2169,19 @@ sub handle_LIBOBJS ($$$)
 
       if ($iter =~ /\.h$/)
 	{
-	  require_file_with_macro ($cond, $var, FOREIGN, $iter);
+	  require_libsource_with_macro ($cond, $var, FOREIGN, $iter);
 	}
       elsif ($iter ne 'alloca.c')
 	{
 	  my $rewrite = $iter;
 	  $rewrite =~ s/\.c$/.P$myobjext/;
-	  $dep_files{'$(DEPDIR)/' . $rewrite} = 1;
+	  $dep_files{$dir . '$(DEPDIR)/' . $rewrite} = 1;
 	  $rewrite = "^" . quotemeta ($iter) . "\$";
 	  # Only require the file if it is not a built source.
 	  my $bs = var ('BUILT_SOURCES');
 	  if (! $bs || ! grep (/$rewrite/, $bs->value_as_list_recursive))
 	    {
-	      require_file_with_macro ($cond, $var, FOREIGN, $iter);
+	      require_libsource_with_macro ($cond, $var, FOREIGN, $iter);
 	    }
 	}
     }
@@ -2150,10 +2192,12 @@ sub handle_ALLOCA ($$$)
   my ($var, $cond, $lt) = @_;
   my $myobjext = ($lt ? 'l' : '') . 'o';
   $lt ||= '';
+  my $dir = handle_LIBOBJS_or_ALLOCA "${lt}ALLOCA";
+
   $var->requires_variables ("\@${lt}ALLOCA\@ used", $lt . 'ALLOCA');
-  $dep_files{'$(DEPDIR)/alloca.P' . $myobjext} = 1;
-  require_file_with_macro ($cond, $var, FOREIGN, 'alloca.c');
-  &saw_extension ('c');
+  $dep_files{$dir . '$(DEPDIR)/alloca.P' . $myobjext} = 1;
+  require_libsource_with_macro ($cond, $var, FOREIGN, 'alloca.c');
+  &saw_extension ('.c');
 }
 
 # Canonicalize the input parameter
@@ -4715,6 +4759,7 @@ sub scan_autoconf_traces ($)
 		AC_CONFIG_AUX_DIR => 1,
 		AC_CONFIG_FILES => 1,
 		AC_CONFIG_HEADERS => 1,
+		AC_CONFIG_LIBOBJ_DIR => 1,
 		AC_CONFIG_LINKS => 1,
 		AC_INIT => 0,
 		AC_LIBSOURCE => 1,
@@ -4810,6 +4855,12 @@ sub scan_autoconf_traces ($)
 	      $ac_config_files_location{$dest} = $where;
 	      push @config_headers, $spec;
 	    }
+	}
+      elsif ($macro eq 'AC_CONFIG_LIBOBJ_DIR')
+	{
+	  $config_libobj_dir = $args[1];
+	  $relative_dir = '.';
+	  check_directory ($config_libobj_dir, $where);
 	}
       elsif ($macro eq 'AC_CONFIG_LINKS')
 	{
@@ -7169,6 +7220,24 @@ sub require_file_with_macro ($$$@)
     require_file ($macro->rdef ($cond)->location, $mystrict, @files);
 }
 
+# &require_libsource_with_macro ($COND, $MACRO, $MYSTRICT, @FILES)
+# ----------------------------------------------------------------
+# Require an AC_LIBSOURCEd file.  If AC_CONFIG_LIBOBJ_DIR was called, it
+# must be in that directory.  Otherwise expect it in the current directory.
+sub require_libsource_with_macro ($$$@)
+{
+    my ($cond, $macro, $mystrict, @files) = @_;
+    $macro = rvar ($macro) unless ref $macro;
+    if ($config_libobj_dir)
+      {
+	require_file_internal ($macro->rdef ($cond)->location, $mystrict,
+			       $config_libobj_dir, @files);
+      }
+    else
+      {
+	require_file ($macro->rdef ($cond)->location, $mystrict, @files);
+      }
+}
 
 # &require_conf_file ($WHERE, $MYSTRICT, @FILES)
 # ----------------------------------------------

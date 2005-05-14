@@ -415,6 +415,9 @@ pr300-lib.test \
 pr300-ltlib.test \
 pr300-prog.test \
 pr307.test \
+pr401.test \
+pr401b.test \
+pr401c.test \
 prefix.test \
 primary.test \
 primary2.test \
