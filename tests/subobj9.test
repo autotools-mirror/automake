@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002, 2004  Free Software Foundation, Inc.
+# Copyright (C) 2002, 2004, 2005  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -36,7 +36,7 @@ END
 
 cat > Makefile.am << 'END'
 noinst_LTLIBRARIES = libfoo.la
-libfoo_la_SOURCES = src/foo.cc
+libfoo_la_SOURCES = src/foo.cc .//src/bar.cc  # the `.//' is meant.
 
 print:
 	@echo BEG1: "$(LTCXXCOMPILE)" :1END
@@ -45,7 +45,15 @@ END
 
 mkdir src
 cat > src/foo.cc << 'END'
+int doit2 (void);
 int doit (void)
+{
+   return doit2();
+}
+END
+
+cat > src/bar.cc << 'END'
+int doit2 (void)
 {
    return 23;
 }
@@ -70,4 +78,8 @@ if test -n "`./libtool --help | grep tag=TAG`"; then
 fi
 
 $MAKE
-$MAKE distcheck
+$MAKE distcheck 2>&1 | tee out
+# GNU Make used to complain that the Makefile contained two rules
+# for `src/.dirstamp' and `.//src/.dirstamp'.
+grep 'overriding commands' out && exit 1
+:
