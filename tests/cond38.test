@@ -1,5 +1,5 @@
-#! /bin/sh
-# Copyright (C) 2002, 2005  Free Software Foundation, Inc.
+#!/bin/sh
+# Copyright (C) 2005  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -18,63 +18,54 @@
 # the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301, USA.
 
-# Check for use of = and += in different conditions.
+# Check conditional variable ordering.
+# Report from Ed Hartnett.
 
-. ./defs || exit 1
-
-cat >> configure.in << 'END'
-AC_PROG_CC
-AM_CONDITIONAL(COND1, true)
-AM_CONDITIONAL(COND2, true)
-AM_CONDITIONAL(COND3, true)
-AC_OUTPUT
-END
-
-cat > Makefile.am << 'END'
-
-FOO = foo
-if COND1
-  FOO += foo1
-else
-  FOO += foon1
-endif
-if COND2
-  FOO += foo2
-else
-  FOO += foon2
-endif
-if COND1
-  FOO += foo1b
-else
-  FOO += foon1b
-endif
-
-if COND1
-if COND2
-  BAR = bar12
-else
-  BAR = bar1n2
-endif
-else
-  BAR = barn1
-endif
-
-BAR += bar
-
-if COND3
-  BAR += bar3
-endif
-
-test:
-	@echo BAR: $(BAR) :BAR
-	@echo FOO: $(FOO) :FOO
-END
+. ./defs
 
 set -e
 
+cat >>configure.in <<'EOF'
+AM_CONDITIONAL([CASE_A], :)
+AM_CONDITIONAL([CASE_B], :)
+AC_OUTPUT
+EOF
+
+cat >>Makefile.am <<'EOF'
+SUBDIRS = a
+if CASE_A
+SUBDIRS += b
+endif
+SUBDIRS += c
+if CASE_A
+SUBDIRS += d
+if CASE_B
+SUBDIRS += e
+endif
+SUBDIRS += f
+endif
+SUBDIRS += g
+if CASE_B
+SUBDIRS += h
+endif
+if CASE_B
+SUBDIRS += iXYZ
+SUBDIRS += jZYX
+endif
+print:
+	@echo BEG: $(SUBDIRS) :END
+EOF
+
+mkdir a b c d e f g h iXYZ jZYX
+
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE -a
+$AUTOMAKE
+
 ./configure
-$MAKE test | $FGREP 'BAR: bar12 bar bar3 :BAR'
-$MAKE test | $FGREP 'FOO: foo foo1 foo2 foo1b :FOO'
+$MAKE print >stdout
+cat stdout
+# Check good ordering
+grep 'BEG: a b c d e f g h iXYZ jZYX :END' stdout
+# Make sure no extra variable was created for the last 3 items.
+grep 'append.*=.* h iXYZ jZYX' Makefile

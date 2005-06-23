@@ -1,4 +1,4 @@
-# Copyright (C) 2003, 2004  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2004, 2005  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -193,10 +193,8 @@ my %_silent_variable_override =
    JAVAC => 1,
    JAVAROOT => 1);
 
-# This hash records helper variables used to implement conditional '+='.
-# Keys have the form "VAR:CONDITIONS".  The value associated to a key is
-# the named of the helper variable used to append to VAR in CONDITIONS.
-my %_appendvar = ();
+# Count of helper variables used to implement conditional '+='.
+my $_appendvar;
 
 # Each call to C<Automake::Variable::traverse_recursively> gets an
 # unique label. This is used to detect recursively defined variables.
@@ -335,7 +333,7 @@ sub reset ()
 {
   %_variable_dict = ();
   %_primary_dict = ();
-  %_appendvar = ();
+  $_appendvar = 0;
   @_var_order = ();
   %_gen_varname = ();
   $_traversal = 0;
@@ -436,6 +434,7 @@ sub _new ($$)
   my ($class, $name) = @_;
   my $self = Automake::Item::new ($class, $name);
   $self->{'scanned'} = 0;
+  $self->{'last-append'} = []; # helper variable for last conditional append.
   $_variable_dict{$name} = $self;
   if ($name =~ /_([[:alnum:]]+)$/)
     {
@@ -892,6 +891,7 @@ sub define ($$$$$$$$)
   if ($type eq '+' && ! $new_var)
     {
       $def->append ($value, $comment);
+      $self->{'last-append'} = [];
 
       # Only increase owners.  A VAR_CONFIGURE variable augmented in a
       # Makefile.am becomes a VAR_MAKEFILE variable.
@@ -924,32 +924,39 @@ sub define ($$$$$$$$)
       #     @COND_TRUE@FOO = foo1 bar
       #     @COND_FALSE@FOO = foo2 bar
 
+      my $lastappend = [];
       # Do we need an helper variable?
       if ($cond != TRUE)
         {
-	    # Does the helper variable already exists?
-	    my $key = "$var:" . $cond->string;
-	    if (exists $_appendvar{$key})
-	      {
-		# Yes, let's simply append to it.
-		$var = $_appendvar{$key};
-		$owner = VAR_AUTOMAKE;
-		$self = var ($var);
-		$def = $self->rdef ($cond);
-		$new_var = 0;
-	      }
-	    else
-	      {
-		# No, create it.
-		my $num = 1 + keys (%_appendvar);
-		my $hvar = "am__append_$num";
-		$_appendvar{$key} = $hvar;
-		&define ($hvar, VAR_AUTOMAKE, '+',
-			 $cond, $value, $comment, $where, $pretty);
-		# Now HVAR is to be added to VAR.
-		$comment = '';
-		$value = "\$($hvar)";
-	      }
+	  # Can we reuse the helper variable created for the previous
+	  # append?  (We cannot reuse older helper variables because
+	  # we must preserve the order of items appended to the
+	  # variable.)
+	  my $condstr = $cond->string;
+	  my $key = "$var:$condstr";
+	  my ($appendvar, $appendvarcond) = @{$self->{'last-append'}};
+	  if ($appendvar && $condstr eq $appendvarcond)
+	    {
+	      # Yes, let's simply append to it.
+	      $var = $appendvar;
+	      $owner = VAR_AUTOMAKE;
+	      $self = var ($var);
+	      $def = $self->rdef ($cond);
+	      $new_var = 0;
+	    }
+	  else
+	    {
+	      # No, create it.
+	      my $num = ++$_appendvar;
+	      my $hvar = "am__append_$num";
+	      $lastappend = [$hvar, $condstr];
+	      &define ($hvar, VAR_AUTOMAKE, '+',
+		       $cond, $value, $comment, $where, $pretty);
+
+	      # Now HVAR is to be added to VAR.
+	      $comment = '';
+	      $value = "\$($hvar)";
+	    }
 	}
 
       # Add VALUE to all definitions of SELF.
@@ -980,6 +987,7 @@ sub define ($$$$$$$$)
 		       $where, $pretty);
 	    }
 	}
+      $self->{'last-append'} = $lastappend;
     }
   # 3. first assignment (=, :=, or +=)
   else
