@@ -347,8 +347,9 @@ mdate4.test \
 missing.test \
 missing2.test \
 missing3.test \
-mkinst2.test \
 mkinstall.test \
+mkinst2.test \
+mkinst3.test \
 mmodely.test \
 multlib.test \
 nobase.test \
