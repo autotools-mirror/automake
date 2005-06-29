@@ -316,7 +316,7 @@ other internal data.
 sub reset ()
 {
   %_variable_dict = ();
-  %_appendvar = ();
+  $_appendvar = 0;
   @_var_order = ();
   %_gen_varname = ();
   $_traversal = 0;
