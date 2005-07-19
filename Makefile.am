@@ -77,16 +77,11 @@ do_subst = sed \
 ## These files depend on Makefile so they are rebuilt if $(VERSION),
 ## $(datadir) or other do_subst'ituted variables change.
 ## Use chmod a-w to prevent people from editing the wrong file by accident.
-automake: automake.in Makefile
+automake: automake.in
+aclocal: aclocal.in
+automake aclocal: Makefile
 	rm -f $@ $@.tmp
-	$(do_subst) $(srcdir)/automake.in >$@.tmp
-	chmod +x $@.tmp
-	chmod a-w $@.tmp
-	mv -f $@.tmp $@
-
-aclocal: aclocal.in Makefile
-	rm -f $@ $@.tmp
-	$(do_subst) $(srcdir)/aclocal.in >$@.tmp
+	$(do_subst) $(srcdir)/$@.in >$@.tmp
 	chmod +x $@.tmp
 	chmod a-w $@.tmp
 	mv -f $@.tmp $@
