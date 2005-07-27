@@ -272,34 +272,33 @@ echo "=== Running test $0"
 # files from an old version of Automake that we don't want to use.
 # Use `-Wno-syntax' because we do not want our test suite to fail because
 # some third-party .m4 file is underquoted.
-aclocaldir='@prefix@/share/aclocal'
-extra_includes=""
-if [ -f $aclocaldir/dirlist ] ; then
-   extra_includes=`(tmp_inc=""
-   while read LINE ; do
-      tmp_inc="$tmp_inc -I $LINE"
-   done
-   echo $tmp_inc) < $aclocaldir/dirlist`
-fi
 case $required in
-  *libtool* )
+  *libtool* | *gettext* )
+    aclocaldir='@prefix@/share/aclocal'
+    extra_includes=""
+    if [ -f $aclocaldir/dirlist ] ; then
+       extra_includes=`(tmp_inc=""
+       while read LINE ; do
+	  tmp_inc="$tmp_inc -I $LINE"
+       done
+       echo $tmp_inc) < $aclocaldir/dirlist`
+    fi
+
     libtool_found=no
-    for d in $extra_includes $aclocaldir ; do
-       if [ "x$d" != "x-I" ] && [ -f "$d/libtool.m4" ] ; then
-          libtool_found=yes
-       fi
-    done
-    test "x$libtool_found" = "xyes" || exit 77
-    ACLOCAL="$ACLOCAL -Wno-syntax -I $srcdir/../m4 $extra_includes -I $aclocaldir"
-    ;;
-  *gettext* )
     gettext_found=no
     for d in $extra_includes $aclocaldir ; do
-       if [ "x$d" != "x-I" ] && [ -f "$d/gettext.m4" ] ; then
+       [ "x$d" != x-I ] || continue
+       if [ -f "$d/libtool.m4" ] ; then
+          libtool_found=yes
+       fi
+       if [ -f "$d/gettext.m4" ] ; then
           gettext_found=yes
        fi
     done
-    test "x$gettext_found" = "xyes" || exit 77
+    case $required in
+      *libtool* ) test $libtool_found = yes || exit 77 ;;
+      *gettext* ) test $gettext_found = yes || exit 77 ;;
+    esac
     ACLOCAL="$ACLOCAL -Wno-syntax -I $srcdir/../m4 $extra_includes -I $aclocaldir"
     ;;
 esac
