@@ -1125,21 +1125,28 @@ sub require_variables ($$$@)
 	  next VARIABLE
 	    if $undef_cond->false;
 	  $text .= ("in the following conditions:\n  "
-		    . join ("\n  ", map { $_->human } $undef_cond->conds));
+		    . join ("\n  ", map { $_->human } $undef_cond->conds)
+		    . "\n");
 	}
 
       ++$res;
 
       if (exists $_am_macro_for_var{$var})
 	{
-	  $text .= "\nThe usual way to define `$var' is to add "
-	    . "`$_am_macro_for_var{$var}'\nto `$configure_ac' and "
-	    . "run `aclocal' and `autoconf' again.";
+	  my $mac = $_am_macro_for_var{$var};
+	  $text .= "  The usual way to define `$var' is to add "
+	    . "`$mac'\n  to `$configure_ac' and run `aclocal' and "
+	    . "`autoconf' again.";
+	  # aclocal will not warn about undefined macros unless it
+	  # starts with AM_.
+	  $text .= "\n  If `$mac' is in `$configure_ac', make sure\n"
+	    . "  its definition is in aclocal's search path."
+	    unless $mac =~ /^AM_/;
 	}
       elsif (exists $_ac_macro_for_var{$var})
 	{
-	  $text .= "\nThe usual way to define `$var' is to add "
-	    . "`$_ac_macro_for_var{$var}'\nto `$configure_ac' and "
+	  $text .= "  The usual way to define `$var' is to add "
+	    . "`$_ac_macro_for_var{$var}'\n  to `$configure_ac' and "
 	    . "run `autoconf' again.";
 	}
 
