@@ -2,7 +2,7 @@
 
 ## Makefile for Automake.
 
-## Copyright (C) 1995, 1996, 1997, 1998, 1999, 2001, 2002, 2003, 2004
+## Copyright (C) 1995, 1996, 1997, 1998, 1999, 2001, 2002, 2003, 2004, 2005
 ## Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
@@ -181,6 +181,12 @@ maintainer-check: automake aclocal
 ## Don't let AMDEP_TRUE substitution appear in automake.in.
 	@if grep '@AMDEP''_TRUE@' $(srcdir)/automake.in; then \
 	  echo "Don't put AMDEP_TRUE substitution in automake.in" 1>&2; \
+	  exit 1; \
+	fi
+## Tests should never call make directly.
+	@if grep '^[^#].*(MAKE) ' $(srcdir)/lib/am/*.am $(srcdir)/automake.in |\
+		grep -v 'AM_MAKEFLAGS'; then \
+	  echo 'Use $$(MAKE) $$(AM_MAKEFLAGS).' 1>&2; \
 	  exit 1; \
 	fi
 ## Tests should never call make directly.
