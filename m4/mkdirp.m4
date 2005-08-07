@@ -25,30 +25,34 @@
 # parallel make tries to run `mkdir -p a/b' and `mkdir -p a/c'
 # concurrently, both version can detect that a/ is missing, but only
 # one can create it and the other will error out.  Consequently we
-# restrict ourselves to GNU make (using the --version option ensures
+# restrict ourselves to GNU mkdir (using the --version option ensures
 # this.)
 AC_DEFUN([AM_PROG_MKDIR_P],
 [if mkdir -p --version . >/dev/null 2>&1 && test ! -d ./--version; then
-  # We used to keeping the `.' as first argument, in order to
+  # We used to define $(mkdir_p) as `mkdir -p -- .', in order to
   # allow $(mkdir_p) to be used without argument.  As in
   #   $(mkdir_p) $(somedir)
-  # where $(somedir) is conditionally defined.  However this is wrong
-  # for two reasons:
-  #  1. if the package is installed by a user who cannot write `.'
-  #     make install will fail,
-  #  2. the above comment should most certainly read
-  #     $(mkdir_p) $(DESTDIR)$(somedir)
-  #     so it does not work when $(somedir) is undefined and
-  #     $(DESTDIR) is not.
-  #  To support the latter case, we have to write
-  #     test -z "$(somedir)" || $(mkdir_p) $(DESTDIR)$(somedir),
-  #  so the `.' trick is pointless.
+  # where $(somedir) is conditionally defined.  However we don't do
+  # that anymore.
+  #  1. before we restricted the check to GNU mkdir, `mkdir -p .' was
+  #     reported to fail in read-only directories.  The system where this
+  #     happened has been forgotten.
+  #  2. in practice we call $(mkdir_p) on directories such as
+  #       $(mkdir_p) "$(DESTDIR)$(somedir)"
+  #     and we don't want to create $(DESTDIR) if $(somedir) is empty.
+  #     To support the latter case, we have to write
+  #       test -z "$(somedir)" || $(mkdir_p) "$(DESTDIR)$(somedir)"
+  #     so $(mkdir_p) always has an argument.
+  #     We will have better chances of detecting a missing test if
+  #     $(mkdir_p) complains about missing arguments.
+  #  3. $(mkdir_p) is named after `mkdir -p' and we don't expect this
+  #     to accept no argument.
+  #  4. having something like `mkdir .' in the output is unsightly.
   mkdir_p='mkdir -p --'
 else
   # On NextStep and OpenStep, the `mkdir' command does not
   # recognize any option.  It will interpret all options as
-  # directories to create, and then abort because `.' already
-  # exists.
+  # directories to create.
   for d in ./-p ./--version;
   do
     test -d $d && rmdir $d
