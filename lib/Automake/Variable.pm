@@ -1180,7 +1180,7 @@ sub requires_variables ($$@)
 
 Get the C<TRUE> value of a variable, warn if the variable is
 conditionally defined.  C<$var> can be either a variable name
-or a C<Automake::Variable> instance (this allows to calls sucha
+or a C<Automake::Variable> instance (this allows calls such
 as C<$var-E<gt>variable_value>).
 
 =cut
@@ -1191,7 +1191,8 @@ sub variable_value ($)
     my $v = ref ($var) ? $var : var ($var);
     return () unless $v;
     $v->check_defined_unconditionally;
-    return $v->rdef (TRUE)->value;
+    my $d = $v->def (TRUE);
+    return $d ? $d->value : "";
 }
 
 =item C<$str = output_variables>
