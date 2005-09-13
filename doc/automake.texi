@@ -253,6 +253,7 @@ Frequently Asked Questions about Automake
 * CVS::                         CVS and generated files
 * maintainer-mode::             missing and AM_MAINTAINER_MODE
 * wildcards::                   Why doesn't Automake support wildcards?
+* limitations on file names::   Limitations on source and installed file names
 * distcleancheck::              Files left in build directory after distclean
 * Flag Variables Ordering::     CFLAGS vs.@: AM_CFLAGS vs.@: mumble_CFLAGS
 * renamed objects::             Why are object files sometimes renamed?
@@ -8031,6 +8032,7 @@ lists.
 * CVS::                         CVS and generated files
 * maintainer-mode::             missing and AM_MAINTAINER_MODE
 * wildcards::                   Why doesn't Automake support wildcards?
+* limitations on file names::   Limitations on source and installed file names
 * distcleancheck::              Files left in build directory after distclean
 * Flag Variables Ordering::     CFLAGS vs.@: AM_CFLAGS vs.@: mumble_CFLAGS
 * renamed objects::             Why are object files sometimes renamed?
@@ -8356,6 +8358,69 @@ variables as far Automake is concerned.
 
 You can get warnings about @samp{$(wildcard ...}) constructs using the
 @option{-Wportability} flag.
+
+@node limitations on file names
+@section Limitations on file names
+@cindex file names, limitations on
+
+Automake attempts to support all kinds of file names, even those that
+contain unusual characters or are unusually long.  However, some
+limitations are imposed by the underlying operating system and tools.
+
+Most operating systems prohibit the use of the null byte in file
+names, and reserve @samp{/} as a directory separator.  Also, they
+require that file names are properly encoded for the user's locale.
+Automake is subject to these limits.
+
+Portable packages should limit themselves to @acronym{POSIX} file
+names.  These can contain @acronym{ASCII} letters and digits,
+@samp{_}, @samp{.}, and @samp{-}.  File names consist of components
+separated by @samp{/}.  File name components cannot begin with
+@samp{-}.
+
+Portable POSIX file names cannot contain components that exceed a
+14-byte limit, but nowadays it's normally safe to assume the
+more-generous @acronym{XOPEN} limit of 255 bytes.  @acronym{POSIX}
+limits file names to 255 bytes (@acronym{XOPEN} allows 1023 bytes),
+but you may want to limit a source tarball to file names to 99 bytes
+to avoid interoperability problems with old versions of @command{tar}.
+
+If you depart from these rules (e.g., by using non-@acronym{ASCII}
+characters in file names, or by using lengthy file names), your
+installers may have problems for reasons unrelated to Automake.
+However, if this does not concern you, you should know about the
+limitations imposed by Automake itself.  These limitations are
+undesirable, but some of them seem to be inherent to underlying tools
+like Autoconf, Make, M4, and the shell.  They fall into three
+categories: install directories, build directories, and file names.
+
+The following characters:
+
+@example
+@r{newline} " # $ ' `
+@end example
+
+should not appear in the names of install directories.  For example,
+the operand of @command{configure}'s @option{--prefix} option should
+not contain these characters.
+
+Build directories suffer the same limitations as install directories,
+and in addition should not contain the following characters:
+
+@example
+& @@ \
+@end example
+
+For example, the full name of the directory containing the source
+files should not contain these characters.
+
+Source and installation file names like @file{main.c} are limited even
+further: they should conform to the @acronym{POSIX}/@acronym{XOPEN}
+rules described above.  In addition, if you plan to port to
+non-@acronym{POSIX} environments, you should avoid file names that
+differ only in case (e.g., @file{makefile} and @file{Makefile}).
+Nowadays it is no longer worth worrying about the 8.3 limits of
+@acronym{DOS} file systems.
 
 @node distcleancheck
 @section Files left in build directory after distclean
