@@ -1518,7 +1518,7 @@ sub transform_variable_recursively ($$$$$&;%)
 
   my $res = $var->traverse_recursively
     ($fun_item,
-     # The code that define the variable holding the result
+     # The code that defines the variable holding the result
      # of the recursive transformation of a subvariable.
      sub {
        my ($subvar, $parent_cond, @allresults) = @_;
