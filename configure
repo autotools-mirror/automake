@@ -20,7 +20,7 @@ if test -n "${ZSH_VERSION+set}" && (emulate sh) >/dev/null 2>&1; then
   # is contrary to our usage.  Disable this feature.
   alias -g '${1+"$@"}'='"$@"'
   setopt NO_GLOB_SUBST
-elif test -n "${BASH_VERSION+set}${KSH_VERSION+set}" && (set -o posix) >/dev/null 2>&1; then
+elif (set -o posix) >/dev/null 2>&1; then
   set -o posix
 fi
 BIN_SH=xpg4; export BIN_SH # for Tru64
@@ -220,7 +220,7 @@ if test -n "${ZSH_VERSION+set}" && (emulate sh) >/dev/null 2>&1; then
   # is contrary to our usage.  Disable this feature.
   alias -g '${1+"$@"}'='"$@"'
   setopt NO_GLOB_SUBST
-elif test -n "${BASH_VERSION+set}${KSH_VERSION+set}" && (set -o posix) >/dev/null 2>&1; then
+elif (set -o posix) >/dev/null 2>&1; then
   set -o posix
 fi
 BIN_SH=xpg4; export BIN_SH # for Tru64
@@ -240,7 +240,7 @@ if test -n "${ZSH_VERSION+set}" && (emulate sh) >/dev/null 2>&1; then
   # is contrary to our usage.  Disable this feature.
   alias -g '${1+"$@"}'='"$@"'
   setopt NO_GLOB_SUBST
-elif test -n "${BASH_VERSION+set}${KSH_VERSION+set}" && (set -o posix) >/dev/null 2>&1; then
+elif (set -o posix) >/dev/null 2>&1; then
   set -o posix
 fi
 BIN_SH=xpg4; export BIN_SH # for Tru64
@@ -520,7 +520,9 @@ ac_hostname=`(hostname || uname -n) 2>/dev/null | sed 1q`
 # Initializations.
 #
 ac_default_prefix=/usr/local
+ac_clean_files=
 ac_config_libobj_dir=.
+LIBOBJS=
 cross_compiling=no
 subdirs=
 MFLAGS=
@@ -590,7 +592,6 @@ AUTOHEADER
 MAKEINFO
 install_sh
 STRIP
-ac_ct_STRIP
 INSTALL_STRIP_PROGRAM
 mkdir_p
 AWK
@@ -614,6 +615,7 @@ ac_subst_files=''
       ac_precious_vars='build_alias
 host_alias
 target_alias'
+
 
 # Initialize some variables set by options.
 ac_init_help=
@@ -1037,6 +1039,16 @@ test -n "$host_alias" && ac_tool_prefix=$host_alias-
 test "$silent" = yes && exec 6>/dev/null
 
 
+ac_pwd=`pwd` && test -n "$ac_pwd" &&
+ac_ls_di=`ls -di .` &&
+ac_pwd_ls_di=`cd "$ac_pwd" && ls -di .` ||
+  { echo "$as_me: error: Working directory cannot be determined" >&2
+   { (exit 1); exit 1; }; }
+test "X$ac_ls_di" = "X$ac_pwd_ls_di" ||
+  { echo "$as_me: error: pwd does not report name of working directory" >&2
+   { (exit 1); exit 1; }; }
+
+
 # Find the source files, if location was not specified.
 if test -z "$srcdir"; then
   ac_srcdir_defaulted=yes
@@ -1065,22 +1077,21 @@ if test ! -r "$srcdir/$ac_unique_file"; then
   { echo "$as_me: error: cannot find sources ($ac_unique_file) in $srcdir" >&2
    { (exit 1); exit 1; }; }
 fi
-(cd $srcdir && test -r "./$ac_unique_file") 2>/dev/null ||
-  { echo "$as_me: error: sources are in $srcdir, but \`cd $srcdir' does not work" >&2
+ac_msg="sources are in $srcdir, but \`cd $srcdir' does not work"
+ac_abs_confdir=`(
+	cd $srcdir && test -r "./$ac_unique_file" || { echo "$as_me: error: $ac_msg" >&2
    { (exit 1); exit 1; }; }
+	pwd)`
+# When building in place, set srcdir=.
+if test "$ac_abs_confdir" = "$ac_pwd"; then
+  srcdir=.
+fi
+# Remove unnecessary trailing slashes from srcdir.
+# Double slashes in file names in object file debugging info
+# mess up M-x gdb in Emacs.
 case $srcdir in
 */) srcdir=`expr "X$srcdir" : 'X\(.*[^/]\)' \| "X$srcdir" : 'X\(.*\)'`;;
 esac
-
-ac_pwd=`pwd` && test -n "$ac_pwd" &&
-ac_ls_di=`ls -di .` &&
-ac_pwd_ls_di=`cd "$ac_pwd" && ls -di .` ||
-  { echo "$as_me: error: Working directory cannot be determined" >&2
-   { (exit 1); exit 1; }; }
-test "X$ac_ls_di" = "X$ac_pwd_ls_di" ||
-  { echo "$as_me: error: pwd does not report name of working directory" >&2
-   { (exit 1); exit 1; }; }
-
 for ac_var in $ac_precious_vars; do
   eval ac_env_${ac_var}_set=\${${ac_var}+set}
   eval ac_env_${ac_var}_value=\$${ac_var}
@@ -1196,7 +1207,7 @@ ac_abs_builddir=$ac_pwd$ac_dir_suffix
 ac_top_builddir=$ac_top_build_prefix
 
 case $srcdir in
-  .)  # No --srcdir option.  We are building in place.
+  .)  # We are building in place.
     ac_srcdir=.
     ac_top_srcdir=$ac_top_builddir_sub
     ac_abs_top_srcdir=$ac_pwd ;;
@@ -1637,23 +1648,21 @@ echo "$as_me: error: $ac_config_sub $ac_build_alias failed" >&2;}
 fi
 { echo "$as_me:$LINENO: result: $ac_cv_build" >&5
 echo "${ECHO_T}$ac_cv_build" >&6; }
+case $ac_cv_build in
+*-*-*) ;;
+*) { { echo "$as_me:$LINENO: error: invalid value of canonical build" >&5
+echo "$as_me: error: invalid value of canonical build" >&2;}
+   { (exit 1); exit 1; }; };;
+esac
 build=$ac_cv_build
 ac_save_IFS=$IFS; IFS='-'
 set x $ac_cv_build
 shift
-IFS=$ac_save_IFS
-
 build_cpu=$1
 build_vendor=$2
-build_os=$3
-case $# in
-0|1|2) ;;
-*)
-  shift; shift; shift
-  for ac_arg
-  do build_os=$build_os-$ac_arg
-  done;;
-esac
+shift; shift
+build_os=$*
+IFS=$ac_save_IFS
 
 
 
@@ -1889,6 +1898,7 @@ else
 echo "${ECHO_T}no" >&6; }
 fi
 
+
   test -n "$AWK" && break
 done
 
@@ -2022,6 +2032,7 @@ else
 echo "${ECHO_T}no" >&6; }
 fi
 
+
 fi
 if test -z "$ac_cv_prog_STRIP"; then
   ac_ct_STRIP=$STRIP
@@ -2141,8 +2152,6 @@ done
   ;;
 esac
 fi
-PERL=$ac_cv_path_PERL
-
 if test -n "$PERL"; then
   { echo "$as_me:$LINENO: result: $PERL" >&5
 echo "${ECHO_T}$PERL" >&6; }
@@ -2150,6 +2159,8 @@ else
   { echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6; }
 fi
+
+PERL=$ac_cv_path_PERL
 
 if test -z "$PERL"; then
    { { echo "$as_me:$LINENO: error: perl not found" >&5
@@ -2201,6 +2212,7 @@ else
   { echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6; }
 fi
+
 
 
 # Test for Autoconf.  We run Autoconf in a subdirectory to ease
@@ -2341,8 +2353,7 @@ else
   ac_path_GREP_found=false
 # Loop through the user's path and test for each of PROGNAME-LIST
 as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-as_dummy="$PATH:/usr/xpg4/bin"
-for as_dir in $as_dummy
+for as_dir in $PATH$PATH_SEPARATOR/usr/xpg4/bin
 do
   IFS=$as_save_IFS
   test -z "$as_dir" && as_dir=.
@@ -2390,8 +2401,8 @@ fi
 
 GREP="$ac_cv_path_GREP"
 if test -z "$GREP"; then
-  { { echo "$as_me:$LINENO: error: no acceptable $ac_prog_name could be found in $PATH:/usr/xpg4/bin" >&5
-echo "$as_me: error: no acceptable $ac_prog_name could be found in $PATH:/usr/xpg4/bin" >&2;}
+  { { echo "$as_me:$LINENO: error: no acceptable $ac_prog_name could be found in $PATH$PATH_SEPARATOR/usr/xpg4/bin" >&5
+echo "$as_me: error: no acceptable $ac_prog_name could be found in $PATH$PATH_SEPARATOR/usr/xpg4/bin" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -2423,8 +2434,7 @@ else
   ac_path_EGREP_found=false
 # Loop through the user's path and test for each of PROGNAME-LIST
 as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-as_dummy="$PATH:/usr/xpg4/bin"
-for as_dir in $as_dummy
+for as_dir in $PATH$PATH_SEPARATOR/usr/xpg4/bin
 do
   IFS=$as_save_IFS
   test -z "$as_dir" && as_dir=.
@@ -2472,8 +2482,8 @@ fi
 
 EGREP="$ac_cv_path_EGREP"
 if test -z "$EGREP"; then
-  { { echo "$as_me:$LINENO: error: no acceptable $ac_prog_name could be found in $PATH:/usr/xpg4/bin" >&5
-echo "$as_me: error: no acceptable $ac_prog_name could be found in $PATH:/usr/xpg4/bin" >&2;}
+  { { echo "$as_me:$LINENO: error: no acceptable $ac_prog_name could be found in $PATH$PATH_SEPARATOR/usr/xpg4/bin" >&5
+echo "$as_me: error: no acceptable $ac_prog_name could be found in $PATH$PATH_SEPARATOR/usr/xpg4/bin" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -2506,8 +2516,7 @@ else
   ac_path_FGREP_found=false
 # Loop through the user's path and test for each of PROGNAME-LIST
 as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-as_dummy="$PATH:/usr/xpg4/bin"
-for as_dir in $as_dummy
+for as_dir in $PATH$PATH_SEPARATOR/usr/xpg4/bin
 do
   IFS=$as_save_IFS
   test -z "$as_dir" && as_dir=.
@@ -2555,8 +2564,8 @@ fi
 
 FGREP="$ac_cv_path_FGREP"
 if test -z "$FGREP"; then
-  { { echo "$as_me:$LINENO: error: no acceptable $ac_prog_name could be found in $PATH:/usr/xpg4/bin" >&5
-echo "$as_me: error: no acceptable $ac_prog_name could be found in $PATH:/usr/xpg4/bin" >&2;}
+  { { echo "$as_me:$LINENO: error: no acceptable $ac_prog_name could be found in $PATH$PATH_SEPARATOR/usr/xpg4/bin" >&5
+echo "$as_me: error: no acceptable $ac_prog_name could be found in $PATH$PATH_SEPARATOR/usr/xpg4/bin" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -2573,11 +2582,11 @@ echo "${ECHO_T}$ac_cv_path_FGREP" >&6; }
 
 
 
-                                                                                          ac_config_files="$ac_config_files Makefile doc/Makefile lib/Automake/Makefile lib/Automake/tests/Makefile lib/Makefile lib/am/Makefile m4/Makefile tests/Makefile tests/defs"
+ac_config_files="$ac_config_files Makefile doc/Makefile lib/Automake/Makefile lib/Automake/tests/Makefile lib/Makefile lib/am/Makefile m4/Makefile tests/Makefile tests/defs"
 
-          ac_config_files="$ac_config_files tests/aclocal-${APIVERSION}:tests/aclocal.in"
+ac_config_files="$ac_config_files tests/aclocal-${APIVERSION}:tests/aclocal.in"
 
-          ac_config_files="$ac_config_files tests/automake-${APIVERSION}:tests/automake.in"
+ac_config_files="$ac_config_files tests/automake-${APIVERSION}:tests/automake.in"
 
 
 cat >confcache <<\_ACEOF
@@ -2638,21 +2647,6 @@ rm -f confcache
 test "x$prefix" = xNONE && prefix=$ac_default_prefix
 # Let make expand exec_prefix.
 test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
-
-# VPATH may cause trouble with some makes, so we remove $(srcdir),
-# ${srcdir} and @srcdir@ from VPATH if srcdir is ".", strip leading and
-# trailing colons and then remove the whole line if VPATH becomes empty
-# (actually we leave an empty line to preserve line numbers).
-if test "x$srcdir" = x.; then
-  ac_vpsub='/^[	 ]*VPATH[	 ]*=/{
-s/:*\$(srcdir):*/:/;
-s/:*\${srcdir}:*/:/;
-s/:*@srcdir@:*/:/;
-s/^\([^=]*=[	 ]*\):*/\1/;
-s/:*$//;
-s/^[^=]*=[	 ]*$//;
-}'
-fi
 
 # Transform confdefs.h into DEFS.
 # Protect against shell expansion while executing Makefile rules.
@@ -2735,7 +2729,7 @@ if test -n "${ZSH_VERSION+set}" && (emulate sh) >/dev/null 2>&1; then
   # is contrary to our usage.  Disable this feature.
   alias -g '${1+"$@"}'='"$@"'
   setopt NO_GLOB_SUBST
-elif test -n "${BASH_VERSION+set}${KSH_VERSION+set}" && (set -o posix) >/dev/null 2>&1; then
+elif (set -o posix) >/dev/null 2>&1; then
   set -o posix
 fi
 BIN_SH=xpg4; export BIN_SH # for Tru64
@@ -2791,8 +2785,7 @@ if test "x$as_myself" = x; then
   as_myself=$0
 fi
 if test ! -f "$as_myself"; then
-  { { echo "$as_me:$LINENO: error: cannot find myself; rerun with an absolute file name" >&5
-echo "$as_me: error: cannot find myself; rerun with an absolute file name" >&2;}
+  { echo "$as_me: error: cannot find myself; rerun with an absolute file name" >&2
    { (exit 1); exit 1; }; }
 fi
 
@@ -2877,8 +2870,7 @@ echo X/"$0" |
       s,-\n.*,,
     ' >$as_me.lineno &&
   chmod +x $as_me.lineno ||
-    { { echo "$as_me:$LINENO: error: cannot create $as_me.lineno; rerun with a POSIX shell" >&5
-echo "$as_me: error: cannot create $as_me.lineno; rerun with a POSIX shell" >&2;}
+    { echo "$as_me: error: cannot create $as_me.lineno; rerun with a POSIX shell" >&2
    { (exit 1); exit 1; }; }
 
   # Don't try to exec as it changes $[0], causing all sort of problems
@@ -2964,18 +2956,10 @@ $as_unset CDPATH
 
 exec 6>&1
 
-# Open the log real soon, to keep \$[0] and so on meaningful, and to
+# Save the log message, to keep $[0] and so on meaningful, and to
 # report actual input values of CONFIG_FILES etc. instead of their
-# values after options handling.  Logging --version etc. is OK.
-exec 5>>config.log
-{
-  echo
-  sed 'h;s/./-/g;s/^.../## /;s/...$/ ##/;p;x;p;x' <<_ASBOX
-## Running $as_me. ##
-_ASBOX
-} >&5
-cat >&5 <<_CSEOF
-
+# values after options handling.
+ac_log="
 This file was extended by GNU Automake $as_me 1.9a, which was
 generated by GNU Autoconf 2.59c.  Invocation command line was
 
@@ -2985,18 +2969,18 @@ generated by GNU Autoconf 2.59c.  Invocation command line was
   CONFIG_COMMANDS = $CONFIG_COMMANDS
   $ $0 $@
 
-_CSEOF
-echo "on `(hostname || uname -n) 2>/dev/null | sed 1q`" >&5
-echo >&5
+on `(hostname || uname -n) 2>/dev/null | sed 1q`
+"
+
 _ACEOF
 
-# Files that config.status was made for.
 cat >>$CONFIG_STATUS <<_ACEOF
+# Files that config.status was made for.
 config_files="$ac_config_files"
+
 _ACEOF
 
 cat >>$CONFIG_STATUS <<\_ACEOF
-
 ac_cs_usage="\
 \`$as_me' instantiates files from templates according to the
 current configuration.
@@ -3015,8 +2999,8 @@ Configuration files:
 $config_files
 
 Report bugs to <bug-autoconf@gnu.org>."
-_ACEOF
 
+_ACEOF
 cat >>$CONFIG_STATUS <<_ACEOF
 ac_cs_version="\\
 GNU Automake config.status 1.9a
@@ -3026,9 +3010,11 @@ configured by $0, generated by GNU Autoconf 2.59c,
 Copyright (C) 2005 Free Software Foundation, Inc.
 This config.status script is free software; the Free Software Foundation
 gives unlimited permission to copy, distribute and modify it."
+
 ac_pwd='$ac_pwd'
 srcdir='$srcdir'
-INSTALL="$INSTALL"
+INSTALL='$INSTALL'
+
 _ACEOF
 
 cat >>$CONFIG_STATUS <<\_ACEOF
@@ -3043,21 +3029,15 @@ do
     ac_optarg=`expr "X$1" : 'X[^=]*=\(.*\)'`
     ac_shift=:
     ;;
-  -*)
+  *)
     ac_option=$1
     ac_optarg=$2
     ac_shift=shift
     ;;
-  *) # This is not an option, so the user has probably given explicit
-     # arguments.
-     ac_option=$1
-     ac_need_defaults=false;;
   esac
 
   case $ac_option in
   # Handling of the options.
-_ACEOF
-cat >>$CONFIG_STATUS <<\_ACEOF
   -recheck | --recheck | --rechec | --reche | --rech | --rec | --re | --r)
     ac_cs_recheck=: ;;
   --version | --versio | --versi | --vers | --ver | --ve | --v | -V )
@@ -3075,13 +3055,12 @@ cat >>$CONFIG_STATUS <<\_ACEOF
     ac_cs_silent=: ;;
 
   # This is an error.
-  -*) { { echo "$as_me:$LINENO: error: unrecognized option: $1
-Try \`$0 --help' for more information." >&5
-echo "$as_me: error: unrecognized option: $1
-Try \`$0 --help' for more information." >&2;}
+  -*) { echo "$as_me: error: unrecognized option: $1
+Try \`$0 --help' for more information." >&2
    { (exit 1); exit 1; }; } ;;
 
-  *) ac_config_targets="$ac_config_targets $1" ;;
+  *) ac_config_targets="$ac_config_targets $1"
+     ac_need_defaults=false ;;
 
   esac
   shift
@@ -3094,47 +3073,54 @@ if $ac_cs_silent; then
   ac_configure_extra_args="$ac_configure_extra_args --silent"
 fi
 
+exec 5>>config.log
+{
+  echo
+  sed 'h;s/./-/g;s/^.../## /;s/...$/ ##/;p;x;p;x' <<_ASBOX
+## Running $as_me. ##
+_ASBOX
+  echo "$ac_log"
+} >&5
+
 _ACEOF
 cat >>$CONFIG_STATUS <<_ACEOF
 if \$ac_cs_recheck; then
-  echo "running $SHELL $0 " $ac_configure_args \$ac_configure_extra_args " --no-create --no-recursion" >&6
+  echo "running CONFIG_SHELL=$SHELL $SHELL $0 " $ac_configure_args \$ac_configure_extra_args " --no-create --no-recursion" >&6
+  CONFIG_SHELL=$SHELL
+  export CONFIG_SHELL
   exec $SHELL $0 $ac_configure_args \$ac_configure_extra_args --no-create --no-recursion
 fi
-
-_ACEOF
-
-cat >>$CONFIG_STATUS <<_ACEOF
 #
-# INIT-COMMANDS section.
+# INIT-COMMANDS
 #
-
 APIVERSION=$APIVERSION
 
 _ACEOF
 
-
-
 cat >>$CONFIG_STATUS <<\_ACEOF
+
+# Handling of arguments.
 for ac_config_target in $ac_config_targets
 do
-  case "$ac_config_target" in
-  # Handling of arguments.
-  "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
-  "doc/Makefile" ) CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
-  "lib/Automake/Makefile" ) CONFIG_FILES="$CONFIG_FILES lib/Automake/Makefile" ;;
-  "lib/Automake/tests/Makefile" ) CONFIG_FILES="$CONFIG_FILES lib/Automake/tests/Makefile" ;;
-  "lib/Makefile" ) CONFIG_FILES="$CONFIG_FILES lib/Makefile" ;;
-  "lib/am/Makefile" ) CONFIG_FILES="$CONFIG_FILES lib/am/Makefile" ;;
-  "m4/Makefile" ) CONFIG_FILES="$CONFIG_FILES m4/Makefile" ;;
-  "tests/Makefile" ) CONFIG_FILES="$CONFIG_FILES tests/Makefile" ;;
-  "tests/defs" ) CONFIG_FILES="$CONFIG_FILES tests/defs" ;;
-  "tests/aclocal-${APIVERSION}" ) CONFIG_FILES="$CONFIG_FILES tests/aclocal-${APIVERSION}:tests/aclocal.in" ;;
-  "tests/automake-${APIVERSION}" ) CONFIG_FILES="$CONFIG_FILES tests/automake-${APIVERSION}:tests/automake.in" ;;
+  case $ac_config_target in
+    Makefile) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+    doc/Makefile) CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
+    lib/Automake/Makefile) CONFIG_FILES="$CONFIG_FILES lib/Automake/Makefile" ;;
+    lib/Automake/tests/Makefile) CONFIG_FILES="$CONFIG_FILES lib/Automake/tests/Makefile" ;;
+    lib/Makefile) CONFIG_FILES="$CONFIG_FILES lib/Makefile" ;;
+    lib/am/Makefile) CONFIG_FILES="$CONFIG_FILES lib/am/Makefile" ;;
+    m4/Makefile) CONFIG_FILES="$CONFIG_FILES m4/Makefile" ;;
+    tests/Makefile) CONFIG_FILES="$CONFIG_FILES tests/Makefile" ;;
+    tests/defs) CONFIG_FILES="$CONFIG_FILES tests/defs" ;;
+    tests/aclocal-${APIVERSION}) CONFIG_FILES="$CONFIG_FILES tests/aclocal-${APIVERSION}:tests/aclocal.in" ;;
+    tests/automake-${APIVERSION}) CONFIG_FILES="$CONFIG_FILES tests/automake-${APIVERSION}:tests/automake.in" ;;
+
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
    { (exit 1); exit 1; }; };;
   esac
 done
+
 
 # If the user did not use the arguments to specify the items to instantiate,
 # then the envvar interface is used.  Set only those that are not.
@@ -3148,9 +3134,14 @@ fi
 # simply because there is no reason against having it here, and in addition,
 # creating and moving files from /tmp can sometimes cause problems.
 # Hook for its removal unless debugging.
+# Note that there is a small window in which the directory will not be cleaned:
+# after its creation but before its name has been assigned to `$tmp'.
 $debug ||
 {
-  trap 'exit_status=$?; rm -fr "$tmp" && exit $exit_status' 0
+  tmp=
+  trap 'exit_status=$?
+  { test -z "$tmp" || test ! -d "$tmp" || rm -fr "$tmp"; } && exit $exit_status
+' 0
   trap '{ (exit 1); exit 1; }' 1 2 13 15
 }
 # Create a (secure) tmp directory for tmp files.
@@ -3168,11 +3159,8 @@ $debug ||
    { (exit 1); exit 1; }
 }
 
-_ACEOF
-
-cat >>$CONFIG_STATUS <<\_ACEOF
 #
-# CONFIG_FILES section.
+# Set up the sed scripts for CONFIG_FILES section.
 #
 
 # No need to generate the scripts if there are no CONFIG_FILES.
@@ -3241,7 +3229,6 @@ AUTOHEADER!$AUTOHEADER$ac_delim
 MAKEINFO!$MAKEINFO$ac_delim
 install_sh!$install_sh$ac_delim
 STRIP!$STRIP$ac_delim
-ac_ct_STRIP!$ac_ct_STRIP$ac_delim
 INSTALL_STRIP_PROGRAM!$INSTALL_STRIP_PROGRAM$ac_delim
 mkdir_p!$mkdir_p$ac_delim
 AWK!$AWK$ac_delim
@@ -3263,7 +3250,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `grep -c "$ac_delim\$" conf$$subs.sed` = 75; then
+  if test `grep -c "$ac_delim\$" conf$$subs.sed` = 74; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -3274,8 +3261,11 @@ echo "$as_me: error: could not make $CONFIG_STATUS" >&2;}
   fi
 done
 
-ac_eof=`sed -n '/^CEOF0-9*$/s/CEOF//p' conf$$subs.sed | sort -nru | sed 1q`
-ac_eof=`expr 0$ac_eof + 1`
+ac_eof=
+if grep '^CEOF$' conf$$subs.sed >/dev/null; then
+  ac_eof=`sed -n '/^CEOF[0-9]*$/s/CEOF//p' conf$$subs.sed | sort -nru | sed 1q`
+  ac_eof=`expr 0$ac_eof + 1`
+fi
 
 cat >>$CONFIG_STATUS <<_ACEOF
 cat >"\$tmp/subs-1.sed" <<\CEOF$ac_eof
@@ -3297,23 +3287,87 @@ s/|#_!!_#|//g
 CEOF$ac_eof
 _ACEOF
 
+
+# VPATH may cause trouble with some makes, so we remove $(srcdir),
+# ${srcdir} and @srcdir@ from VPATH if srcdir is ".", strip leading and
+# trailing colons and then remove the whole line if VPATH becomes empty
+# (actually we leave an empty line to preserve line numbers).
+if test "x$srcdir" = x.; then
+  ac_vpsub='/^[	 ]*VPATH[	 ]*=/{
+s/:*\$(srcdir):*/:/;
+s/:*\${srcdir}:*/:/;
+s/:*@srcdir@:*/:/;
+s/^\([^=]*=[	 ]*\):*/\1/;
+s/:*$//;
+s/^[^=]*=[	 ]*$//;
+}'
+fi
+
 cat >>$CONFIG_STATUS <<\_ACEOF
 fi # test -n "$CONFIG_FILES"
 
-for ac_file in : $CONFIG_FILES; do test "x$ac_file" = x: && continue
-  # Support "outfile[:infile[:infile...]]", defaulting infile="outfile.in".
-  case $ac_file in
-  - | *:- | *:-:* ) # input from stdin
-	cat >"$tmp/stdin" ;;
-  esac
-  case $ac_file in
-  *:*)		ac_file_in=`expr "X$ac_file" : 'X[^:]*:\(.*\)'`
-	ac_file=`expr "X$ac_file" : 'X\([^:]*\)'` ;;
-  -)	ac_file_in=- ;;
-  *)	ac_file_in=$ac_file.in ;;
-esac
 
-  # Compute @srcdir@, @top_srcdir@, and @INSTALL@ for subdirectories.
+for ac_tag in  :F $CONFIG_FILES
+do
+  case $ac_tag in
+  :[FHLC]) ac_mode=$ac_tag; continue;;
+  esac
+  case $ac_mode$ac_tag in
+  :[FHL]*:*);;
+  :L* | :C*:*) { { echo "$as_me:$LINENO: error: Invalid tag $ac_tag." >&5
+echo "$as_me: error: Invalid tag $ac_tag." >&2;}
+   { (exit 1); exit 1; }; };;
+  :[FH]-) ac_tag=-:-;;
+  :[FH]*) ac_tag=$ac_tag:$ac_tag.in;;
+  esac
+  ac_save_IFS=$IFS
+  IFS=:
+  set x $ac_tag
+  IFS=$ac_save_IFS
+  shift
+  ac_file=$1
+  shift
+
+  case $ac_mode in
+  :L) ac_source=$1;;
+  :[FH])
+    ac_file_inputs=
+    for ac_f
+    do
+      case $ac_f in
+      -) ac_f="$tmp/stdin";;
+      *) # Look for the file first in the build tree, then in the source tree
+	 # (if the path is not absolute).  The absolute path cannot be DOS-style,
+	 # because $ac_f cannot contain `:'.
+	 test -f "$ac_f" ||
+	   case $ac_f in
+	   [\\/$]*) false;;
+	   *) test -f "$srcdir/$ac_f" && ac_f="$srcdir/$ac_f";;
+	   esac ||
+	   { { echo "$as_me:$LINENO: error: cannot find input file: $ac_f" >&5
+echo "$as_me: error: cannot find input file: $ac_f" >&2;}
+   { (exit 1); exit 1; }; };;
+      esac
+      ac_file_inputs="$ac_file_inputs $ac_f"
+    done
+
+    # Let's still pretend it is `configure' which instantiates (i.e., don't
+    # use $as_me), people would be surprised to read:
+    #    /* config.h.  Generated by config.status.  */
+    configure_input="Generated from "`IFS=:
+	  echo $* | sed 's|^[^:]*/||;s|:[^:]*/|, |g'`" by configure."
+    if test x"$ac_file" != x-; then
+      configure_input="$ac_file.  $configure_input"
+      { echo "$as_me:$LINENO: creating $ac_file" >&5
+echo "$as_me: creating $ac_file" >&6;}
+    fi
+
+    case $ac_tag in
+    *:-:* | *:-) cat >"$tmp/stdin";;
+    esac
+    ;;
+  esac
+
   ac_dir=`(dirname "$ac_file") 2>/dev/null ||
 $as_expr X"$ac_file" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
 	 X"$ac_file" : 'X\(//\)[^/]' \| \
@@ -3370,7 +3424,7 @@ ac_abs_builddir=$ac_pwd$ac_dir_suffix
 ac_top_builddir=$ac_top_build_prefix
 
 case $srcdir in
-  .)  # No --srcdir option.  We are building in place.
+  .)  # We are building in place.
     ac_srcdir=.
     ac_top_srcdir=$ac_top_builddir_sub
     ac_abs_top_srcdir=$ac_pwd ;;
@@ -3386,55 +3440,22 @@ esac
 ac_abs_srcdir=$ac_abs_top_srcdir$ac_dir_suffix
 
 
+  case $ac_mode in
+  :F)
+  #
+  # CONFIG_FILE
+  #
+
   case $INSTALL in
   [\\/$]* | ?:[\\/]* ) ac_INSTALL=$INSTALL ;;
   *) ac_INSTALL=$ac_top_build_prefix$INSTALL ;;
   esac
 
-  if test x"$ac_file" != x-; then
-    { echo "$as_me:$LINENO: creating $ac_file" >&5
-echo "$as_me: creating $ac_file" >&6;}
-    rm -f "$ac_file"
-  fi
-  # Let's still pretend it is `configure' which instantiates (i.e., don't
-  # use $as_me), people would be surprised to read:
-  #    /* config.h.  Generated by config.status.  */
-  if test x"$ac_file" = x-; then
-    configure_input=
-  else
-    configure_input="$ac_file.  "
-  fi
-  configure_input=$configure_input"Generated from `echo $ac_file_in |
-				     sed 's,.*/,,'` by configure."
-
-  # First look for the input files in the build tree, otherwise in the
-  # src tree.
-  ac_file_inputs=`IFS=:
-    for f in $ac_file_in; do
-      case $f in
-      -) echo "$tmp/stdin" ;;
-      [\\/$]*)
-	 # Absolute (can't be DOS-style, as IFS=:)
-	 test -f "$f" || { { echo "$as_me:$LINENO: error: cannot find input file: $f" >&5
-echo "$as_me: error: cannot find input file: $f" >&2;}
-   { (exit 1); exit 1; }; }
-	 echo "$f";;
-      *) # Relative
-	 if test -f "$f"; then
-	   # Build tree
-	   echo "$f"
-	 elif test -f "$srcdir/$f"; then
-	   # Source tree
-	   echo "$srcdir/$f"
-	 else
-	   # /dev/null tree
-	   { { echo "$as_me:$LINENO: error: cannot find input file: $f" >&5
-echo "$as_me: error: cannot find input file: $f" >&2;}
-   { (exit 1); exit 1; }; }
-	 fi;;
-      esac
-    done` || { (exit 1); exit 1; }
 _ACEOF
+
+# Neutralize VPATH when `$srcdir' = `.'.
+# Shell code in configure.ac might set extrasub.
+# FIXME: do we really want to maintain this feature?
 cat >>$CONFIG_STATUS <<_ACEOF
   sed "$ac_vpsub
 $extrasub
@@ -3453,23 +3474,26 @@ s&@abs_builddir@&$ac_abs_builddir&;t t
 s&@abs_top_builddir@&$ac_abs_top_builddir&;t t
 s&@INSTALL@&$ac_INSTALL&;t t
 " $ac_file_inputs | sed -f "$tmp/subs-1.sed" >$tmp/out
+
   rm -f "$tmp/stdin"
-  if test x"$ac_file" != x-; then
-    mv "$tmp/out" $ac_file
-  else
-    cat "$tmp/out"
-    rm -f "$tmp/out"
-  fi
-
-  # Run the commands associated with the file.
   case $ac_file in
-    tests/aclocal-${APIVERSION} ) chmod +x tests/aclocal-${APIVERSION} ;;
-    tests/automake-${APIVERSION} ) chmod +x tests/automake-${APIVERSION} ;;
+  -) cat "$tmp/out"; rm -f "$tmp/out";;
+  *) rm -f "$ac_file"; mv "$tmp/out" $ac_file;;
   esac
-done
-_ACEOF
+ ;;
 
-cat >>$CONFIG_STATUS <<\_ACEOF
+
+
+  esac
+
+
+  case $ac_file$ac_mode in
+    tests/aclocal-${APIVERSION}:F) chmod +x tests/aclocal-${APIVERSION} ;;
+    tests/automake-${APIVERSION}:F) chmod +x tests/automake-${APIVERSION} ;;
+
+  esac
+done # for ac_tag
+
 
 { (exit 0); exit 0; }
 _ACEOF
