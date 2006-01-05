@@ -7,7 +7,7 @@ eval 'case $# in 0) exec @PERL@ -S "$0";; *) exec @PERL@ -S "$0" "$@";; esac'
 
 # automake - create Makefile.in from Makefile.am
 # Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002,
-# 2003, 2004, 2005  Free Software Foundation, Inc.
+# 2003, 2004, 2005, 2006  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -462,6 +462,9 @@ my $am_relative_dir;
 # Same but wrt Makefile.in.
 my $in_file_name;
 my $relative_dir;
+
+# Relative path to the top directory.
+my $topsrcdir;
 
 # Greatest timestamp of the output's dependencies (excluding
 # configure's dependencies).
@@ -3485,6 +3488,23 @@ sub for_dist_common
     return $a cmp $b;
 }
 
+# fill_dist_dirs(@FILES)
+# ----------------------
+# Record in %dist_dirs the directory part of any file passed.
+sub fill_dist_dirs (@)
+{
+  my @copy = @_;
+  foreach (@copy)
+    {
+      s/\$\(top_srcdir\)/$topsrcdir/;
+      s/\$\(srcdir\)/./;
+      # Strip any leading `./'.
+      s,^(:?\./+)*,,;
+      next unless s,/+[^/]+$,,;
+      $dist_dirs{$_} = 1
+	unless $_ eq '.';
+    }
+}
 
 # handle_dist
 # -----------
@@ -3602,34 +3622,18 @@ sub handle_dist ()
   # originally, but there were so many requests that I finally
   # relented.
   my $extra_dist = var ('EXTRA_DIST');
-  if ($extra_dist)
-    {
-      # FIXME: This should be fixed to work with conditions.  That
-      # will require only making the entries in %dist_dirs under the
-      # appropriate condition.  This is meaningful if the nature of
-      # the distribution should depend upon the configure options
-      # used.
-      foreach ($extra_dist->value_as_list_recursive (skip_ac_subst => 1))
-	{
-	  next unless s,/+[^/]+$,,;
-	  $dist_dirs{$_} = 1
-	    unless $_ eq '.';
-	}
-    }
+  # FIXME: This should be fixed to work with conditions.  That
+  # will require only making the entries in %dist_dirs under the
+  # appropriate condition.  This is meaningful if the nature of
+  # the distribution should depend upon the configure options
+  # used.
+  fill_dist_dirs ($extra_dist->value_as_list_recursive (skip_ac_subst => 1))
+    if $extra_dist;
 
   # We have to check DIST_COMMON for extra directories in case the
   # user put a source used in AC_OUTPUT into a subdir.
-  my $topsrcdir = backname ($relative_dir);
-  foreach (rvar ('DIST_COMMON')->value_as_list_recursive (skip_ac_subst => 1))
-    {
-      s/\$\(top_srcdir\)/$topsrcdir/;
-      s/\$\(srcdir\)/./;
-      # Strip any leading `./'.
-      s,^(:?\./+)*,,;
-      next unless s,/+[^/]+$,,;
-      $dist_dirs{$_} = 1
-	unless $_ eq '.';
-    }
+  fill_dist_dirs (rvar ('DIST_COMMON')
+                  ->value_as_list_recursive (skip_ac_subst => 1));
 
   $transform{'DISTCHECK-HOOK'} = !! rule 'distcheck-hook';
   $transform{'GETTEXT'} = $seen_gettext && !$seen_gettext_external;
@@ -4065,13 +4069,8 @@ sub handle_configure ($$$@)
       # is a bit ugly but it easier than spreading out the logic,
       # especially in cases like AC_OUTPUT(foo/out:bar/in), where
       # there is no Makefile in bar/.
-      if ($relative_dir eq '.')
-	{
-	  foreach (@inputs)
-	    {
-	      $dist_dirs{dirname ($_)} = 1;
-	    }
-	}
+      fill_dist_dirs (@inputs)
+	if $relative_dir eq '.';
 
       # We skip files that aren't in this directory.  However, if
       # the file's directory does not have a Makefile, and we are
@@ -7370,6 +7369,7 @@ sub generate_makefile ($$)
 
   $relative_dir = dirname ($makefile);
   $am_relative_dir = dirname ($makefile_am);
+  $topsrcdir = backname ($relative_dir);
 
   read_main_am_file ($makefile_am);
   if (handle_options)
