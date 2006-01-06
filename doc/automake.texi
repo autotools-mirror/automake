@@ -3214,9 +3214,18 @@ this purpose.
 @vindex maude_DEPENDENCIES
 It is also occasionally useful to have a program depend on some other
 target that is not actually part of that program.  This can be done
-using the @code{@var{prog}_DEPENDENCIES} variable.  Each program depends
-on the contents of such a variable, but no further interpretation is
-done.
+using the @code{@var{prog}_DEPENDENCIES} variable.  Each program
+depends on the contents of such a variable, but no further
+interpretation is done.
+
+Since these dependencies are associated to the link rule used to
+create the programs they should normally list files used by the link
+command.  That is @file{*.$(OBJEXT)}, @file{*.a}, or @file{*.la}
+files.  In rare cases you may need to add other kinds of files such as
+linker scripts, but @emph{listing a source file in
+@code{_DEPENDENCIES} is wrong}.  If some source file needs to be built
+before all the components of a program are built, consider using the
+@code{BUILT_SOURCES} variable instead (@pxref{Sources}).
 
 If @code{@var{prog}_DEPENDENCIES} is not supplied, it is computed by
 Automake.  The automatically-assigned value is the contents of
@@ -3226,6 +3235,9 @@ configure substitutions that are left in are only @samp{$(LIBOBJS)} and
 @samp{$(ALLOCA)}; these are left because it is known that they will not
 cause an invalid value for @code{@var{prog}_DEPENDENCIES} to be
 generated.
+
+@ref{Conditional Sources} shows a situation where @code{_DEPENDENCIES}
+is useful.
 
 @cindex @code{LDADD} and @option{-l}
 @cindex @option{-l} and @code{LDADD}
@@ -4085,10 +4097,22 @@ option, so they should not be mode-specific options (those belong to
 the compiler or linker flags).  @xref{Libtool Flags}.
 
 @item maude_DEPENDENCIES
-It is also occasionally useful to have a program depend on some other
-target that is not actually part of that program.  This can be done
-using the @code{_DEPENDENCIES} variable.  Each program depends on the
-contents of such a variable, but no further interpretation is done.
+It is also occasionally useful to have a target (program or library)
+depend on some other file that is not actually part of that target.
+This can be done using the @code{_DEPENDENCIES} variable.  Each
+targets depends on the contents of such a variable, but no further
+interpretation is done.
+
+Since these dependencies are associated to the link rule used to
+create the programs they should normally list files used by the link
+command.  That is @file{*.$(OBJEXT)}, @file{*.a}, or @file{*.la} files
+for programs; @file{*.lo} and @file{*.la} files for Libtool libraries;
+and @file{*.$(OBJEXT)} files for static libraries.  In rare cases you
+may need to add other kinds of files such as linker scripts, but
+@emph{listing a source file in @code{_DEPENDENCIES} is wrong}.  If
+some source file needs to be built before all the components of a
+program are built, consider using the @code{BUILT_SOURCES} variable
+(@pxref{Sources}).
 
 If @code{_DEPENDENCIES} is not supplied, it is computed by Automake.
 The automatically-assigned value is the contents of @code{_LDADD} or
@@ -4097,6 +4121,11 @@ The automatically-assigned value is the contents of @code{_LDADD} or
 substitutions that are left in are only @samp{$(LIBOBJS)} and
 @samp{$(ALLOCA)}; these are left because it is known that they will not
 cause an invalid value for @code{_DEPENDENCIES} to be generated.
+
+@code{_DEPENDENCIES} is more likely used to perform conditional
+compilation using an @code{AC_SUBST} variable that contains a list of
+objects.  @xref{Conditional Sources}, and @ref{Conditional Libtool
+Sources}.
 
 @item maude_LINK
 You can override the linker on a per-program basis.  By default the
