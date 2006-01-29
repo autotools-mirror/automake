@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (C) 2003  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2006  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -28,6 +28,7 @@ cat >>configure.in <<'EOF'
 AC_PROG_CC
 AM_CONDITIONAL(C1, [test -z "$two"])
 AM_CONDITIONAL(C2, [test -n "$two"])
+AM_CONDITIONAL(C3, [test -z "$three"])
 AC_SUBST([MYSUB], [foo.o])
 AC_OUTPUT
 EOF
@@ -41,7 +42,12 @@ a_DEPENDENCIES = $(MYSUB) nonsense.a
 # using some self computed a_DEPENDENCIES variable.
 endif
 if C2
-a_LDADD = bar.o
+if C3
+BAR = bar.o
+else
+BAR = baz.o
+endif
+a_LDADD = $(BAR)
 endif
 print:
 	@echo BEG: $(a_DEPENDENCIES) :END
@@ -56,7 +62,12 @@ $MAKE -e print > stdout
 cat stdout
 grep 'BEG: foo.o nonsense.a :END' stdout
 
-./configure two=yes
+./configure two=yes three=
 $MAKE -e print > stdout
 cat stdout
 grep 'BEG: bar.o :END' stdout
+
+./configure two=yes three=yes
+$MAKE -e print > stdout
+cat stdout
+grep 'BEG: baz.o :END' stdout

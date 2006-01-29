@@ -5198,6 +5198,11 @@ bin_PROGRAMS = liver$(EXEEXT)
 The targets Automake generates are likewise given the @samp{$(EXEEXT)}
 extension.
 
+The variable @code{TESTS} (@pxref{Tests}) is also rewritten if it
+contains filenames that have been declared as programs in the same
+@file{Makefile}.  (This is mostly useful when some programs from
+@code{check_PROGRAMS} are listed in @code{TESTS}.)
+
 However, Automake cannot apply this rewriting to @command{configure}
 substitutions.  This means that if you are conditionally building a
 program using such a substitution, then your @file{configure.ac} must
@@ -6681,15 +6686,13 @@ Automake supports two forms of test suites.
 
 @section Simple Tests
 
-If the variable @code{TESTS} is defined, its value is taken to be a list
-of programs to run in order to do the testing.  The programs can either
-be derived objects or source objects; the generated rule will look both
-in @code{srcdir} and @file{.}.  Programs needing data files should look
-for them in @code{srcdir} (which is both an environment variable and a
-make variable) so they work when building in a separate directory
-(@pxref{Build Directories, , Build Directories , autoconf, The Autoconf
-Manual}), and in particular for the @code{distcheck} rule
-(@pxref{Dist}).
+If the variable @code{TESTS} is defined, its value is taken to be a
+list of programs or scripts to run in order to do the testing.
+Programs needing data files should look for them in @code{srcdir}
+(which is both an environment variable and a make variable) so they
+work when building in a separate directory (@pxref{Build Directories,
+, Build Directories , autoconf, The Autoconf Manual}), and in
+particular for the @code{distcheck} rule (@pxref{Dist}).
 
 @cindex Exit status 77, special interpretation
 
@@ -6698,13 +6701,20 @@ given test program exits with a status of 77, then its result is ignored
 in the final count.  This feature allows non-portable tests to be
 ignored in environments where they don't make sense.
 
+@vindex TESTS
+@vindex TESTS_ENVIRONMENT
 The variable @code{TESTS_ENVIRONMENT} can be used to set environment
 variables for the test run; the environment variable @code{srcdir} is
 set in the rule.  If all your test programs are scripts, you can also
 set @code{TESTS_ENVIRONMENT} to an invocation of the shell (e.g.
-@samp{$(SHELL) -x}); this can be useful for debugging the tests.
-@vindex TESTS
-@vindex TESTS_ENVIRONMENT
+@samp{$(SHELL) -x} can be useful for debugging the tests), or any other
+interpreter.  For instance the following setup is used by the Automake
+package to run four tests in Perl.
+@example
+TESTS_ENVIRONMENT = $(PERL) -Mstrict -I $(top_srcdir)/lib -w
+TESTS = Condition.pl DisjConditions.pl Version.pl Wrap.pl
+@end example
+
 
 @cindex Tests, expected failure
 @cindex Expected test failure
@@ -6714,12 +6724,22 @@ You may define the variable @code{XFAIL_TESTS} to a list of tests
 reverse the result of those tests.
 @vindex XFAIL_TESTS
 
-Automake ensures that each program listed in @code{TESTS} is built
-before any tests are run; you can list both source and derived programs
-in @code{TESTS}.  For instance, you might want to run a C program as a
-test.  To do this you would list its name in @code{TESTS} and also in
-@code{check_PROGRAMS}, and then specify it as you would any other
-program.
+Automake ensures that each file listed in @code{TESTS} is built before
+any tests are run; you can list both source and derived programs (or
+scripts) in @code{TESTS}; the generated rule will look both in
+@code{srcdir} and @file{.}.  For instance, you might want to run a C
+program as a test.  To do this you would list its name in @code{TESTS}
+and also in @code{check_PROGRAMS}, and then specify it as you would
+any other program.
+
+Programs listed in @code{check_PROGRAMS} (and @code{check_LIBRARIES},
+@code{check_LTLIBRARIES}...) are only built during @code{make check},
+not during @code{make all}.  You should list there any program needed
+by your tests that does not need to be built by @code{make all}.  Note
+that @code{check_PROGRAMS} are @emph{not} automatically added to
+@code{TESTS} because @code{check_PROGRAMS} usually lists programs used
+by the tests, not the tests themselves.  Of course you can set
+@code{TESTS = $(check_PROGRAMS)} if all your programs are test cases.
 
 @section DejaGnu Tests
 

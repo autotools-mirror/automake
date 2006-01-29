@@ -538,6 +538,10 @@ my %dep_files;
 # This is a list of all targets to run during "make dist".
 my @dist_targets;
 
+# Keep track of all programs declared in this Makefile, without
+# $(EXEEXT).  @substitution@ are not listed.
+my %known_programs;
+
 # Keys in this hash are the basenames of files which must depend on
 # ansi2knr.  Values are either the empty string, or the directory in
 # which the ANSI source file appears; the directory must have a
@@ -658,6 +662,8 @@ sub initialize_per_input ()
     %dep_files = ();
 
     @dist_targets = ();
+
+    %known_programs = ();
 
     %de_ansi_files = ();
 
@@ -1481,6 +1487,32 @@ sub handle_languages
 	define_linker_variable ($languages{'c'});
       }
 }
+
+
+# append_exeext { PREDICATE } $MACRO
+# ----------------------------------
+# Append $(EXEEXT) to each filename in $F appearing in the Makefile
+# variable $MACRO if &PREDICATE($F) is true.  @substitutions@ are
+# ignored.
+#
+# This is typically used on all filenames of *_PROGRAMS, and filenames
+# of TESTS that are programs.
+sub append_exeext (&$)
+{
+  my ($pred, $macro) = @_;
+
+  transform_variable_recursively
+    ($macro, $macro, 'am__EXEEXT', 0, INTERNAL,
+     sub {
+       my ($subvar, $val, $cond, $full_cond) = @_;
+       # Append $(EXEEXT) unless the user did it already, or it's a
+       # @substitution@.
+       $val .= '$(EXEEXT)'
+	 if $val !~ /(?:\$\(EXEEXT\)$|^[@]\w+[@]$)/ && &$pred ($val);
+       return $val;
+     });
+}
+
 
 # Check to make sure a source defined in LIBOBJS is not explicitly
 # mentioned.  This is a separate function (as opposed to being inlined
@@ -2370,6 +2402,8 @@ sub handle_programs
       # will confuse &handle_source_transform and &check_canonical_spelling.
       # We'll add $(EXEEXT) back later anyway.
       $one_file =~ s/\$\(EXEEXT\)$//;
+
+      $known_programs{$one_file} = $where;
 
       # Canonicalize names and check for misspellings.
       my $xname = &check_canonical_spelling ($one_file, '_LDADD', '_LDFLAGS',
@@ -4577,6 +4611,9 @@ sub handle_tests
     {
       push (@check_tests, 'check-TESTS');
       $output_rules .= &file_contents ('check', new Automake::Location);
+
+      # Tests that are known programs should have $(EXEEXT) appended.
+      append_exeext { exists $known_programs{$_[0]} } 'TESTS';
     }
 }
 
@@ -6660,29 +6697,6 @@ sub file_contents ($$%)
 }
 
 
-# &append_exeext ($MACRO)
-# -----------------------
-# Macro is an Automake magic macro which primary is PROGRAMS, e.g.
-# bin_PROGRAMS.  Make sure these programs have $(EXEEXT) appended.
-sub append_exeext ($)
-{
-  my ($macro) = @_;
-
-  prog_error "append_exeext ($macro)"
-    unless $macro =~ /_PROGRAMS$/;
-
-  transform_variable_recursively
-    ($macro, $macro, 'am__EXEEXT', 0, INTERNAL,
-     sub {
-       my ($subvar, $val, $cond, $full_cond) = @_;
-       # Append $(EXEEXT) unless the user did it already, or it's a
-       # @substitution@.
-       $val .= '$(EXEEXT)' unless $val =~ /(?:\$\(EXEEXT\)$|^[@]\w+[@]$)/;
-       return $val;
-     });
-}
-
-
 # @PREFIX
 # &am_primary_prefixes ($PRIMARY, $CAN_DIST, @PREFIXES)
 # -----------------------------------------------------
@@ -6883,7 +6897,7 @@ sub am_install_var
 	}
       # A blatant hack: we rewrite each _PROGRAMS primary to include
       # EXEEXT.
-      append_exeext ($one_name)
+      append_exeext { 1 } $one_name
 	if $primary eq 'PROGRAMS';
       # "EXTRA" shouldn't be used when generating clean targets,
       # all, or install targets.  We used to warn if EXTRA_FOO was
@@ -7446,6 +7460,7 @@ sub generate_makefile ($$)
   handle_subdirs;
   handle_tags;
   handle_minor_options;
+  # Must come after handle_programs so that %known_programs is up-to-date.
   handle_tests;
 
   # This must come after most other rules.
