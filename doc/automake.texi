@@ -5831,24 +5831,32 @@ This variable is an @code{sh} expression that is used to set the
 @cindex Primary variable, @code{PYTHON}
 @vindex _PYTHON
 
-Automake provides support for Python compilation with the @code{PYTHON}
-primary.
+Automake provides support for Python compilation with the
+@code{PYTHON} primary.  A typical setup is to call
+@code{AM_PATH_PYTHON} in @file{configure.ac} and use a line like the
+following in @file{Makefile.am}:
+
+@example
+python_PYTHON = tree.py leave.py
+@end example
 
 Any files listed in a @code{_PYTHON} variable will be byte-compiled
 with @command{py-compile} at install time.  @command{py-compile}
-actually creates both standard (@file{.pyc}) and byte-compiled
-(@file{.pyo}) versions of the source files.  Note that because
-byte-compilation occurs at install time, any files listed in
+actually creates both standard (@file{.pyc}) and optimized
+(@file{.pyo}) byte-compiled versions of the source files.  Note that
+because byte-compilation occurs at install time, any files listed in
 @code{noinst_PYTHON} will not be compiled.  Python source files are
-included in the distribution by default.
+included in the distribution by default, prepend @code{nodist_} (as in
+@code{nodist_python_PYTHON}) to omit them.
 
-Automake ships with an Autoconf macro called @code{AM_PATH_PYTHON} that
-will determine some Python-related directory variables (see below).  If
-you have called @code{AM_PATH_PYTHON} from @file{configure.ac}, then you
-may use the following variables to list you Python source files in your
-variables: @code{python_PYTHON}, @code{pkgpython_PYTHON},
-@code{pyexecdir_PYTHON}, @code{pkgpyexecdir_PYTHON}, depending where you
-want your files installed.
+Automake ships with an Autoconf macro called @code{AM_PATH_PYTHON}
+that will determine some Python-related directory variables (see
+below).  If you have called @code{AM_PATH_PYTHON} from
+@file{configure.ac}, then you may use the variables
+@code{python_PYTHON} or @code{pkgpython_PYTHON} to list Python source
+files in your @file{Makefile.am}, depending where you want your files
+installed (see the definitions of @code{pythondir} and
+@code{pkgpythondir} below).
 
 @defmac AM_PATH_PYTHON ([@var{VERSION}], [@var{ACTION-IF-FOUND}], [@var{ACTION-IF-NOT-FOUND}])
 
@@ -5860,10 +5868,17 @@ If an interpreter is found and satisfies @var{VERSION}, then
 @var{ACTION-IF-FOUND} is run.  Otherwise, @var{ACTION-IF-NOT-FOUND} is
 run.
 
-If @var{ACTION-IF-NOT-FOUND} is not specified, the default is to abort
-configure.  This is fine when Python is an absolute requirement for the
-package.  Therefore if Python >= 2.2 is only @emph{optional} to the
-package, @code{AM_PATH_PYTHON} could be called as follows.
+If @var{ACTION-IF-NOT-FOUND} is not specified, as in the following
+example, the default is to abort @command{configure}.
+
+@example
+AM_PATH_PYTHON(2.2)
+@end example
+
+@noindent
+This is fine when Python is an absolute requirement for the package.
+If Python >= 2.2 was only @emph{optional} to the package,
+@code{AM_PATH_PYTHON} could be called as follows.
 
 @example
 AM_PATH_PYTHON(2.2,, :)
@@ -5919,7 +5934,14 @@ as a convenience.
 
 @item pyexecdir
 This is the directory where Python extension modules (shared libraries)
-should be installed.
+should be installed.  An extension module written in C could be declared
+as follows to Automake:
+
+@example
+pyexec_LTLIBRARIES = quaternion.la
+quaternion_SOURCES = quaternion.c support.c support.h
+quaternion_la_LDFLAGS = -avoid-version -module
+@end example
 
 @item pkgpyexecdir
 This is a convenience variable that is defined as
