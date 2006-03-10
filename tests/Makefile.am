@@ -74,6 +74,7 @@ canon3.test \
 canon4.test \
 canon5.test \
 ccnoco.test \
+ccnoco2.test \
 check.test \
 check2.test \
 check3.test \
