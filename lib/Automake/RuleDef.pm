@@ -37,7 +37,7 @@ Automake::RuleDef - a class for rule definitions
 
 =head1 DESCRIPTION
 
-This class gather data related to one Makefile-rule definition.
+This class gathers data related to one Makefile-rule definition.
 
 =head2 Constants
 
