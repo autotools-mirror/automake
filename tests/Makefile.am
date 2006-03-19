@@ -499,6 +499,7 @@ subobj9.test \
 subobjname.test \
 subpkg.test \
 subpkg2.test \
+subpkg3.test \
 subst.test \
 subst2.test \
 substref.test \
