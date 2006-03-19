@@ -192,6 +192,8 @@ depcomp2.test \
 depcomp3.test \
 depcomp4.test \
 depcomp5.test \
+depcomp6.test \
+depcomp7.test \
 depdist.test \
 depend.test \
 depend2.test \
