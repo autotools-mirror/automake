@@ -177,6 +177,8 @@ my %_ac_macro_for_var =
    F77FLAGS => 'AC_PROG_F77',
    FC => 'AC_PROG_FC',
    FCFLAGS => 'AC_PROG_FC',
+   OBJC => 'AC_PROG_OBJC',
+   OBJCFLAGS => 'AC_PROG_OBJC',
    RANLIB => 'AC_PROG_RANLIB',
    YACC => 'AC_PROG_YACC',
    );

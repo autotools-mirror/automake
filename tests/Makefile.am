@@ -373,6 +373,8 @@ noinstdir.test \
 nolink.test \
 nostdinc.test \
 number.test \
+objc.test \
+objc2.test \
 obsolete.test \
 order.test \
 outdir.test \

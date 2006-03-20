@@ -88,6 +88,10 @@ AC_PROVIDE_IFELSE([AC_PROG_CXX],
                   [_AM_DEPENDENCIES(CXX)],
                   [define([AC_PROG_CXX],
                           defn([AC_PROG_CXX])[_AM_DEPENDENCIES(CXX)])])dnl
+AC_PROVIDE_IFELSE([AC_PROG_OBJC],
+                  [_AM_DEPENDENCIES(OBJC)],
+                  [define([AC_PROG_OBJC],
+                          defn([AC_PROG_OBJC])[_AM_DEPENDENCIES(OBJC)])])dnl
 ])
 ])
 
