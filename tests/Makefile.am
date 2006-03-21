@@ -202,6 +202,7 @@ depend4.test \
 destdir.test \
 dirforbid.test \
 dirlist.test \
+dirlist2.test \
 discover.test \
 distcom2.test \
 distcom3.test \
