@@ -58,7 +58,7 @@ do_subst = in=`echo $@ | sed 's/\.[^.]*$$//'`; sed \
   -e "s,[@]configure_input[@],Generated from $$in.in; do not edit by hand.,g" \
   -e 's,[@]datadir[@],$(datadir),g'
 
-## This file depend on Makefile so it is rebuilt if $(VERSION),
+## This file depends on Makefile so it is rebuilt if $(VERSION),
 ## $(datadir) or other do_subst'ituted variables change.
 ## Use chmod a-w to prevent people from editing the wrong file by accident.
 Config.pm: Config.in Makefile
