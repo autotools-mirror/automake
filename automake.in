@@ -390,6 +390,10 @@ my $seen_automake_version = 0;
 # generation.
 my %configure_vars = ();
 
+# Ignored configure substitutions (i.e., variables not to be output in
+# Makefile.in)
+my %ignored_configure_vars = ();
+
 # Files included by $configure_ac.
 my @configure_deps = ();
 
@@ -4808,6 +4812,7 @@ sub scan_autoconf_traces ($)
 		AM_INIT_AUTOMAKE => 0,
 		AM_MAINTAINER_MODE => 0,
 		AM_PROG_CC_C_O => 0,
+                _AM_SUBST_NOTMAKE => 1,
 		LT_SUPPORTED_TAG => 1,
 		_LT_AC_TAGCONFIG => 0,
 		m4_include => 1,
@@ -4919,6 +4924,12 @@ sub scan_autoconf_traces ($)
 	{
 	  $libsources{$args[1]} = $here;
 	}
+      elsif ($macro eq 'AC_REQUIRE_AUX_FILE')
+	{
+          # Only remember the first time a file is required.
+	  $required_aux_file{$args[1]} = $where
+            unless exists $required_aux_file{$args[1]};
+	}
       elsif ($macro eq 'AC_SUBST_TRACE')
 	{
 	  # Just check for alphanumeric in AC_SUBST_TRACE.  If you do
@@ -4976,11 +4987,9 @@ sub scan_autoconf_traces ($)
 	{
 	  $seen_cc_c_o = $where;
 	}
-      elsif ($macro eq 'AC_REQUIRE_AUX_FILE')
+      elsif ($macro eq '_AM_SUBST_NOTMAKE')
 	{
-          # Only remember the first time a file is required.
-	  $required_aux_file{$args[1]} = $where
-            unless exists $required_aux_file{$args[1]};
+	  $ignored_configure_vars{$args[1]} = $where;
 	}
       elsif ($macro eq 'm4_include'
 	     || $macro eq 'm4_sinclude'
@@ -5874,16 +5883,16 @@ sub define_configure_variable ($)
   my $pretty = VAR_ASIS;
   my $owner = VAR_CONFIGURE;
 
-  # Do not output the ANSI2KNR configure variable -- we AC_SUBST
-  # it in protos.m4, but later redefine it elsewhere.  This is
-  # pretty hacky.  We also don't output AMDEPBACKSLASH: it might
-  # be subst'd by `\', which certainly would not be appreciated by
-  # Make.
-  if ($var eq 'ANSI2KNR' || $var eq 'AMDEPBACKSLASH')
-    {
-      $pretty = VAR_SILENT;
-      $owner = VAR_AUTOMAKE;
-    }
+  # Some variables we do not want to output.  For instance it
+  # would be a bad idea to output `U = @U@` when `@U@` can be
+  # substituted as `\`.
+  $pretty = VAR_SILENT if exists $ignored_configure_vars{$var};
+
+  # ANSI2KNR is a variable that Automake wants to redefine, so
+  # it must be owned by Automake.  (It is also used as a proof
+  # that AM_C_PROTOTYPES has been run, that's why we do not simply
+  # omit the AC_SUBST.)
+  $owner = VAR_AUTOMAKE if $var eq 'ANSI2KNR';
 
   Automake::Variable::define ($var, $owner, '', TRUE, subst $var,
 			      '', $configure_vars{$var}, $pretty);

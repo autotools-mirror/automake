@@ -2,7 +2,7 @@
 
 ## Makefile for Automake m4.
 
-## Copyright (C) 1996, 1997, 1998, 1999, 2001, 2002, 2003, 2004
+## Copyright (C) 1996, 1997, 1998, 1999, 2001, 2002, 2003, 2004, 2006
 ## Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
@@ -54,6 +54,7 @@ regex.m4 \
 runlog.m4 \
 sanity.m4 \
 strip.m4 \
+substnot.m4 \
 tar.m4
 
 EXTRA_DIST = dirlist amversion.in

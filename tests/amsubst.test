@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1997, 2001, 2002, 2006  Free Software Foundation, Inc.
+# Copyright (C) 2006  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -18,29 +18,28 @@
 # the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301, USA.
 
-# Check basic use of conditionals.
+# Check for _AM_SUBST_NOTMAKE.
 
 . ./defs || exit 1
 
 set -e
 
 cat >> configure.in << 'END'
-AM_CONDITIONAL(TEST, true)
+AC_SUBST([backslash], "\\")
+_AM_SUBST_NOTMAKE([backslash])
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-if TEST
-VAR = true
-else
-VAR = false
-endif
+test:
+	@echo $(backslash) @backslash@$$
 END
 
 $ACLOCAL
+$AUTOCONF
 $AUTOMAKE
+./configure
 
-grep '^TEST_FALSE' Makefile.in && exit 1
-grep '^TEST_TRUE' Makefile.in && exit 1
-grep '^@TEST_TRUE@VAR = true$' Makefile.in
-grep '^@TEST_FALSE@VAR = false$' Makefile.in
+# If _AM_SUBST_NOTMAKE is not honored, the backslash
+# variable will not be empty.
+$MAKE test | grep '^[$]$'

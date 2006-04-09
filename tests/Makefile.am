@@ -39,6 +39,7 @@ alpha.test \
 alpha2.test \
 amassign.test \
 ammissing.test \
+amsubst.test \
 ansi.test \
 ansi2.test \
 ansi3.test \
