@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2003  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2006  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -25,6 +25,7 @@
 set -e
 
 cat >> configure.in << 'END'
+AC_PROG_CC
 AC_SUBST([ABCDEFGHIJKLMNOPQRSTUVWX])
 AC_SUBST([ABCDEFGHIJKLMNOPQRSTUVWXY])
 AC_SUBST([ABCDEFGHIJKLMNOPQRSTUVWXYZ])
@@ -32,7 +33,7 @@ AC_OUTPUT
 END
 
 cat >Makefile.am <<'END'
-bin_PROGRAMS = @ABCDEFGHIJKLMNOPQRSTUVWX@ @ABCDEFGHIJKLMNOPQRSTUVWXY@ @ABCDEFGHIJKLMNOPQRSTUVWXYZ@
+bin_PROGRAMS = x @ABCDEFGHIJKLMNOPQRSTUVWX@ @ABCDEFGHIJKLMNOPQRSTUVWXY@ @ABCDEFGHIJKLMNOPQRSTUVWXYZ@
 EXTRA_PROGRAMS =
 
 EXEEXT = .bin
@@ -45,12 +46,12 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 ./configure
-$MAKE print-programs >foo
+EXEEXT=.bin $MAKE print-programs >foo
 cat foo
-grep 'BEG: :END' foo
-am__empty=X $MAKE -e print-programs >foo
+grep 'BEG: x.bin :END' foo
+EXEEXT=.bin am__empty=X $MAKE -e print-programs >foo
 cat foo
-grep 'BEG: X :END' foo
+grep 'BEG: x.bin X :END' foo
 
 # Test for another bug, where EXTRA_PROGRAMS was removed because it was empty.
 grep EXTRA_PROGRAMS Makefile.in
