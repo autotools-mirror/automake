@@ -52,8 +52,8 @@ use vars qw (@ISA @EXPORT);
 Return the first path for a C<$file_name> in the C<include>s.
 
 We match exactly the behavior of GNU M4: first look in the current
-directory (which includes the case of absolute file names), and, if
-the file is not absolute, just fail.  Otherwise, look in C<@include>.
+directory (which includes the case of absolute file names), and then,
+if the file name is not absolute, look in C<@include>.
 
 If the file is flagged as optional (ends with C<?>), then return undef
 if absent, otherwise exit with error.
@@ -76,22 +76,17 @@ sub find_file ($@)
   return File::Spec->canonpath ($file_name)
     if -e $file_name;
 
-  if (File::Spec->file_name_is_absolute ($file_name))
+  if (!File::Spec->file_name_is_absolute ($file_name))
     {
-      fatal "$file_name: no such file or directory"
-	unless $optional;
-      return undef;
-    }
-
-  foreach my $path (@include)
-    {
-      return File::Spec->canonpath (File::Spec->catfile ($path, $file_name))
-	if -e File::Spec->catfile ($path, $file_name)
+      foreach my $path (@include)
+	{
+	  return File::Spec->canonpath (File::Spec->catfile ($path, $file_name))
+	    if -e File::Spec->catfile ($path, $file_name)
+	}
     }
 
   fatal "$file_name: no such file or directory"
     unless $optional;
-
   return undef;
 }
 

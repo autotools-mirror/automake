@@ -137,8 +137,8 @@ my $_VARIABLE_PATTERN = '^[.A-Za-z0-9_@]+' . "\$";
 my @_var_order;
 
 # This keeps track of all variables defined by &_gen_varname.
-# $_gen_varname{$base} is a hash for all variable defined with
-# prefix `$base'.  Values stored this this hash are the variable names.
+# $_gen_varname{$base} is a hash for all variables defined with
+# prefix `$base'.  Values stored in this hash are the variable names.
 # Keys have the form "(COND1)VAL1(COND2)VAL2..." where VAL1 and VAL2
 # are the values of the variable for condition COND1 and COND2.
 my %_gen_varname = ();
