@@ -140,6 +140,10 @@ my $m4_include_rx = "(m4_|m4_s|s)include\\((?:\\[([^]]+)\\]|([^],)\n]+))\\)";
 # Match a serial number.
 my $serial_line_rx = '^#\s*serial\s+(\S*)';
 my $serial_number_rx = '^\d+(?:\.\d+)*$';
+
+# Autoconf version
+# Set by trace_used_macros.
+my $ac_version;
 
 ################################################################
 
@@ -607,9 +611,11 @@ sub trace_used_macros ()
   $traces .= join (' ', grep { exists $files{$_} } @file_order) . " ";
   # All candidate macros.
   $traces .= join (' ',
-		   (map { "--trace='$_:\$f::\$n::\$1'" } ('AC_DEFUN',
-							  'AC_DEFUN_ONCE',
-							  'AU_DEFUN')),
+		   (map { "--trace='$_:\$f::\$n::\$1'" }
+		    ('AC_DEFUN',
+		     'AC_DEFUN_ONCE',
+		     'AU_DEFUN',
+		     '_AM_AUTOCONF_VERSION')),
 		   # Do not trace $1 for all other macros as we do
 		   # not need it and it might contains harmful
 		   # characters (like newlines).
@@ -632,6 +638,8 @@ sub trace_used_macros ()
 	if ($macro eq 'AC_DEFUN'
 	    || $macro eq 'AC_DEFUN_ONCE'
 	    || $macro eq 'AU_DEFUN');
+
+      $ac_version = $arg1 if $macro eq '_AM_AUTOCONF_VERSION';
     }
 
   $tracefh->close;
@@ -725,6 +733,17 @@ sub write_aclocal ($@)
   # Nothing to output?!
   # FIXME: Shouldn't we diagnose this?
   return 1 if ! length ($output);
+
+  if ($ac_version)
+    {
+      # Do not use "$output_file" here for the same reason we do not
+      # use it in the header below.  autom4te will output the name of
+      # the file in the diagnostic anyway.
+      $output = "m4_if(m4_PACKAGE_VERSION, [$ac_version],,
+[m4_fatal([this file was generated for autoconf $ac_version], [63])])
+
+$output";
+    }
 
   # We used to print `# $output_file generated automatically etc.'  But
   # this creates spurious differences when using autoreconf.  Autoreconf
