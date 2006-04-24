@@ -1,5 +1,5 @@
 ##                                                          -*- Autoconf -*-
-# Copyright (C) 2003, 2004, 2005  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2004, 2005, 2006  Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -29,7 +29,7 @@
 # this.)
 AC_DEFUN([AM_PROG_MKDIR_P],
 [if mkdir -p --version . >/dev/null 2>&1 && test ! -d ./--version; then
-  # We used to define $(mkdir_p) as `mkdir -p -- .', in order to
+  # We used to define $(mkdir_p) as `mkdir -p .', in order to
   # allow $(mkdir_p) to be used without argument.  As in
   #   $(mkdir_p) $(somedir)
   # where $(somedir) is conditionally defined.  However we don't do
@@ -48,7 +48,7 @@ AC_DEFUN([AM_PROG_MKDIR_P],
   #  3. $(mkdir_p) is named after `mkdir -p' and we don't expect this
   #     to accept no argument.
   #  4. having something like `mkdir .' in the output is unsightly.
-  mkdir_p='mkdir -p --'
+  mkdir_p='mkdir -p'
 else
   # On NextStep and OpenStep, the `mkdir' command does not
   # recognize any option.  It will interpret all options as
