@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.
 
-# Copyright (C) 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004
-# Free Software Foundation, Inc.
+# Copyright (C) 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003,
+# 2004, 2006  Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,8 +58,9 @@ if test -z "$PERL"; then
 fi
 $PERL -e 'require 5.006;' || {
    AC_MSG_ERROR(
-[perl 5.6 or better is required.  If you have several perl
-versions installed, select the one Automake should use using
+[perl 5.6 or better is required; perl 5.8.2 or better
+is recommended.  If you have several perl versions
+installed, select the one Automake should use using
   ./configure PERL=/path/to/perl])
 }
 
