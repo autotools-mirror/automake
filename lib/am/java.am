@@ -26,10 +26,13 @@ CLASSPATH_ENV = CLASSPATH=$(JAVAROOT):$(srcdir)/$(JAVAROOT):$$CLASSPATH
 JAVAROOT = $(top_builddir)
 
 class%DIR%.stamp: $(%DIR%_JAVA)
-	@if test -n "$?"; then \
-	  echo '$(CLASSPATH_ENV) $(JAVAC) -d $(JAVAROOT) $(AM_JAVACFLAGS) $(JAVACFLAGS) $?' ; \
-	  $(CLASSPATH_ENV) $(JAVAC) -d $(JAVAROOT) \
-	    $(AM_JAVACFLAGS) $(JAVACFLAGS) $?; \
+	@list1='$?'; list2=; if test -n "$$list1"; then \
+	  for p in $$list1; do \
+	    if test -f $$p; then d=; else d="$(srcdir)/"; fi; \
+	    list2="$$list2 $$d$$p"; \
+	  done; \
+	  echo '$(CLASSPATH_ENV) $(JAVAC) -d $(JAVAROOT) $(AM_JAVACFLAGS) $(JAVACFLAGS) '"$$list2"; \
+	  $(CLASSPATH_ENV) $(JAVAC) -d $(JAVAROOT) $(AM_JAVACFLAGS) $(JAVACFLAGS) $$list2; \
 	else :; fi
 	echo timestamp > class%DIR%.stamp
 
