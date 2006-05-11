@@ -225,6 +225,13 @@ maintainer-check: automake aclocal
 	  echo 'Do not run "perl" in the above tests.  Use "$$PERL" instead.' 1>&2; \
 	  exit 1; \
 	fi
+## Setting `required' after sourcing `./defs' is a bug.
+	@for file in $(srcdir)/tests/*.test; do \
+	  if out=`sed -n '/defs/,$${/required=/p;}' $$file`; test -n "$$out"; then \
+	    echo 'Do not set "required" after sourcing "defs" in '"$$file: $$out" 1>&2; \
+	    exit 1; \
+	  fi; \
+	done
 ## Overriding a Makefile macro on the command line is not portable when
 ## recursive targets are used.  Better use an envvar.  SHELL is an exception,
 ## POSIX says it can't come from the environment.
