@@ -1,4 +1,4 @@
-# Copyright (C) 2003  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2006  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ use vars '@ISA', '@EXPORT_OK';
 
 =head1 NAME
 
-Automake::Wrap - a paragraph formater
+Automake::Wrap - a paragraph formatter
 
 =head1 SYNOPSIS
 
@@ -41,7 +41,7 @@ Automake::Wrap - a paragraph formater
 
 This modules provide facility to format list of strings.  It is
 comparable to Perl's L<Text::Wrap>, however we can't use L<Text::Wrap>
-because some versions will abort when some word to print exceed the
+because some versions will abort when some word to print exceeds the
 maximum length allowed.  (Ticket #17141, fixed in Perl 5.8.0.)
 
 =head2 Functions
@@ -65,7 +65,7 @@ sub tab_length($)
 
 Format C<@values> as a block of text that starts with C<$head>,
 followed by the strings in C<@values> separated by spaces or by
-C<"$eol\n$fill"> so that the lenght of each line never exceed
+C<"$eol\n$fill"> so that the length of each line never exceeds
 C<$max_len>.
 
 The C<$max_len> contraint is ignored for C<@values> items which

@@ -1,4 +1,4 @@
-# Copyright (C) 2003, 2004  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2004, 2006  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -71,7 +71,7 @@ Automake::VarDef - a class for variable definitions
 
 =head1 DESCRIPTION
 
-This class gather data related to one Makefile-variable definition.
+This class gathers data related to one Makefile-variable definition.
 
 =head2 Constants
 

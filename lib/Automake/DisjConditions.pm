@@ -1,4 +1,4 @@
-# Copyright (C) 1997, 2001, 2002, 2003, 2004  Free Software Foundation, Inc.
+# Copyright (C) 1997, 2001, 2002, 2003, 2004, 2006  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -116,7 +116,7 @@ That's indeed the condition into which C<VAR> has a value.
 
 Like C<Condition> objects, a C<DisjConditions> object is unique
 with respect to its conditions.  Two C<DisjConditions> objects created
-for the same set of conditions will have the same adress.  This makes
+for the same set of conditions will have the same address.  This makes
 it easy to compare C<DisjConditions>s: just compare the references.
 
 =head2 Methods

@@ -1,4 +1,4 @@
-# Copyright (C) 1997, 2001, 2002, 2003  Free Software Foundation, Inc.
+# Copyright (C) 1997, 2001, 2002, 2003, 2006  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -123,8 +123,8 @@ B<and> C<COND2> are true. There is no way to express disjunctions
 
 Another point worth to mention is that each C<Condition> object is
 unique with respect to its conditionals.  Two C<Condition> objects
-created for the same set of conditionals will have the same adress.
-This makes it easy to compare C<Condition>s, just compare the
+created for the same set of conditionals will have the same address.
+This makes it easy to compare C<Condition>s: just compare the
 references.
 
   my $c1 = new Automake::Condition "COND1_TRUE", "COND2_TRUE";

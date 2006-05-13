@@ -1,4 +1,4 @@
-# Copyright (C) 2003, 2004  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2004, 2006  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -159,7 +159,7 @@ Query the state of an option.  If the option is unset, this
 returns the empty list.  Otherwise it returns the option's value,
 as set by C<set_option> or C<set_global_option>.
 
-Not that C<global_option> should be used only when it is
+Note that C<global_option> should be used only when it is
 important to make sure an option hasn't been set locally.
 Otherwise C<option> should be the standard function to
 check for options (be they global or local).
