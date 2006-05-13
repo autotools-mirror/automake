@@ -1,9 +1,9 @@
 #!/bin/sh
 # Sign files and upload them.
 
-scriptversion=2005-05-14.22
+scriptversion=2006-05-11.09
 
-# Copyright (C) 2004, 2005  Free Software Foundation
+# Copyright (C) 2004, 2005, 2006  Free Software Foundation
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,8 +39,11 @@ Options:
   --version                output version information and exit
 
 Recognized destinations are:
-  alpha.gnu.org:DIRECTORY  build directive files and upload files by FTP
-  ftp.gnu.org:DIRECTORY    build directive files and upload files by FTP
+  alpha.gnu.org:DIRECTORY
+  savannah.gnu.org:DIRECTORY
+  savannah.nongnu.org:DIRECTORY
+  ftp.gnu.org:DIRECTORY
+                           build directive files and upload files by FTP
   [user@]host:DIRECTORY    upload files with scp
 
 Example:
@@ -136,20 +139,27 @@ do
   do
     echo "Uploading $file to $dest..."
     files="$file $file.sig"
+    destdir=`echo $dest | sed 's/[^:]*://'`
     case $dest in
       alpha.gnu.org:*)
 	rm -f $file.directive $file.directive.asc
-	echo directory: `echo $dest | sed 's/[^:]*://'` >$file.directive
+	echo directory: $destdir >$file.directive
 	echo "$passphrase" | $GPG --passphrase-fd 0 --clearsign $file.directive
         ncftpput ftp-upload.gnu.org /incoming/alpha $files $file.directive.asc
 	rm -f $file.directive $file.directive.asc
 	;;
       ftp.gnu.org:*)
 	rm -f $file.directive $file.directive.asc
-	echo directory: `echo $dest | sed 's/[^:]*://'` >$file.directive
+	echo directory: $destdir >$file.directive
 	echo "$passphrase" | $GPG --passphrase-fd 0 --clearsign $file.directive
         ncftpput ftp-upload.gnu.org /incoming/ftp $files $file.directive.asc
 	rm -f $file.directive $file.directive.asc
+	;;
+      savannah.gnu.org:*)
+        ncftpput savannah.gnu.org /incoming/savannah/$destdir $files
+	;;
+      savannah.nongnu.org:*)
+        ncftpput savannah.nongnu.org /incoming/savannah/$destdir $files
 	;;
       *)
 	scp $files $dest
