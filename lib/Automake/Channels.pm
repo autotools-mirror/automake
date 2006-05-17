@@ -15,6 +15,11 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
+###############################################################
+# The main copy of this file is in Automake's CVS repository. #
+# Updates should be sent to automake-patches@gnu.org.         #
+###############################################################
+
 package Automake::Channels;
 
 =head1 NAME
