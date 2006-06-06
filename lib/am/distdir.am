@@ -58,9 +58,8 @@ endif %?TOPDIR_P%
 ?DISTDIRS?	$(mkdir_p) %DISTDIRS%
 ##
 ##
-	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
-	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
-	list='$(DISTFILES)'; for file in $$list; do \
+	@srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
+	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
 ##
 ## Yet another hack to support SUN make.
 ##
@@ -75,7 +74,7 @@ endif %?TOPDIR_P%
 ## So let's strip this leading $(srcdir)/ when it exists.  (As far we
 ## know, only SUN make and OSF1/Tru64 make add it.)  Searching whether
 ## the file is to be found in the source or build directory will be
-## done latter.
+## done later.
 ##
 ## In case we are _not_ using SUN or OSF1/Tru64 make, how can we be sure
 ## we are not stripping a legitimate filename that starts with the
@@ -99,13 +98,27 @@ endif %?TOPDIR_P%
 ## above the current directory.  Fortunately, apart from auxdir files which
 ## can be located in .. or ../.., this situation hardly occurs in practice.
 ##
-	  case $$file in \
-	    $(srcdir)/*) file=`echo "$$file" | sed "s|^$$srcdirstrip/||"`;; \
 ## Also rewrite $(top_srcdir) (which sometimes appears in DISTFILES, and can
 ## be absolute) by $(top_builddir) (which is always relative).  $(srcdir) will
-## be prepended latter.
-	    $(top_srcdir)/*) file=`echo "$$file" | sed "s|^$$topsrcdirstrip/|$(top_builddir)/|"`;; \
-	  esac; \
+## be prepended later.
+	list='$(DISTFILES)'; \
+	  dist_files=`for file in $$list; do echo $$file; done | \
+	  sed -e "s|^$$srcdirstrip/||;t" \
+	      -e "s|^$$topsrcdirstrip/|$(top_builddir)/|;t"`; \
+## (The second `t' command clears the flag for the next round.)
+##
+## Make the subdirectories for the files.
+## (The DISTDIRS list can be incomplete, because files in subdirectories can
+## be specified for `dist' conditionally.)
+##
+	case $$dist_files in \
+	  */*) ( cd "$(distdir)" && \
+	        $(mkdir_p) `echo "$$dist_files" | \
+	                    sed -n 's,/[^/]*$$,,p' | sort -u`) ;; \
+	esac; \
+##
+##
+	for file in $$dist_files; do \
 ##
 ## Always look for the file in the build directory first.  That way
 ## for something like yacc output we will correctly pick up the latest
@@ -114,26 +127,14 @@ endif %?TOPDIR_P%
 ##
 	  if test -f $$file || test -d $$file; then d=.; else d=$(srcdir); fi; \
 ##
-## Make the subdirectory for the file.  This is going to make `dist'
-## really crawl, but it seems like the only way to do it, given that
-## files in subdirectories can be specified for `dist' conditionally.
-##
-	  dir=`echo "$$file" | sed -e 's,/[^/]*$$,,'`; \
-	  if test "$$dir" != "$$file" && test "$$dir" != "."; then \
-	    dir="/$$dir"; \
-	    $(mkdir_p) "$(distdir)$$dir"; \
-	  else \
-	    dir=''; \
-	  fi; \
-##
 ## Use cp, not ln.  There are situations in which "ln" can fail.  For
 ## instance a file to distribute could actually be a cross-filesystem
 ## symlink -- this can easily happen if "gettextize" was run on the
 ## distribution.
 ##
 	  if test -d $$d/$$file; then \
-## Don't mention $$file in destination argument, since this fails if
-## destination directory already exists.  Also, use `-R' and not `-r'.
+## Don't mention $$file in the destination argument, since this fails if
+## the destination directory already exists.  Also, use `-R' and not `-r'.
 ## `-r' is almost always incorrect.
 ##
 ## If a directory exists both in `.' and $(srcdir), then
@@ -142,6 +143,7 @@ endif %?TOPDIR_P%
 ## source files _and_ generated files.  It is also important when the
 ## directory exists only in $(srcdir), because some vendor Make (such
 ## as Tru64) will magically create an empty directory in `.'
+	    dir=`echo "/$$file" | sed -e 's,/[^/]*$$,,'`; \
 	    if test -d $(srcdir)/$$file && test $$d != $(srcdir); then \
 	      cp -pR $(srcdir)/$$file $(distdir)$$dir || exit 1; \
 	    fi; \
@@ -176,9 +178,9 @@ if %?SUBDIRS%
 	      $(MAKE) $(AM_MAKEFLAGS) \
 	        top_distdir="$$top_distdir" \
 	        distdir="$$distdir/$$subdir" \
- ## Disable am__remove_distdir so that sub-packages do not clear a
- ## directory we have already cleared and might even have populated
- ## (e.g. shared AUX dir in the sub-package).
+## Disable am__remove_distdir so that sub-packages do not clear a
+## directory we have already cleared and might even have populated
+## (e.g. shared AUX dir in the sub-package).
 		am__remove_distdir=: \
 	        distdir) \
 	      || exit 1; \

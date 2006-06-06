@@ -386,22 +386,21 @@ distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	test -d $(distdir) || mkdir $(distdir)
 	$(mkdir_p) $(distdir)/m4 $(distdir)/tests
-	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
-	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
-	list='$(DISTFILES)'; for file in $$list; do \
-	  case $$file in \
-	    $(srcdir)/*) file=`echo "$$file" | sed "s|^$$srcdirstrip/||"`;; \
-	    $(top_srcdir)/*) file=`echo "$$file" | sed "s|^$$topsrcdirstrip/|$(top_builddir)/|"`;; \
-	  esac; \
+	@srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
+	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
+	list='$(DISTFILES)'; \
+	  dist_files=`for file in $$list; do echo $$file; done | \
+	  sed -e "s|^$$srcdirstrip/||;t" \
+	      -e "s|^$$topsrcdirstrip/|$(top_builddir)/|;t"`; \
+	case $$dist_files in \
+	  */*) ( cd "$(distdir)" && \
+	        $(mkdir_p) `echo "$$dist_files" | \
+	                    sed -n 's,/[^/]*$$,,p' | sort -u`) ;; \
+	esac; \
+	for file in $$dist_files; do \
 	  if test -f $$file || test -d $$file; then d=.; else d=$(srcdir); fi; \
-	  dir=`echo "$$file" | sed -e 's,/[^/]*$$,,'`; \
-	  if test "$$dir" != "$$file" && test "$$dir" != "."; then \
-	    dir="/$$dir"; \
-	    $(mkdir_p) "$(distdir)$$dir"; \
-	  else \
-	    dir=''; \
-	  fi; \
 	  if test -d $$d/$$file; then \
+	    dir=`echo "/$$file" | sed -e 's,/[^/]*$$,,'`; \
 	    if test -d $(srcdir)/$$file && test $$d != $(srcdir); then \
 	      cp -pR $(srcdir)/$$file $(distdir)$$dir || exit 1; \
 	    fi; \
