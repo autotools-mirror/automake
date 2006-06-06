@@ -49,7 +49,7 @@ AC_SUBST([pkgvdatadir], ["\${datadir}/$PACKAGE-$APIVERSION"])
 
 # $AUTOMAKE and $ACLOCAL are always run after a `cd $top_srcdir',
 # hence `.' is really what we want for perllibdir, libdir, and acdir.
-ACLOCAL="perllibdir=`pwd`\"/lib$PATH_SEPARATOR./lib\" `pwd`/aclocal --acdir=m4"
+ACLOCAL="perllibdir=`pwd`\"/lib$PATH_SEPARATOR./lib\" `pwd`/aclocal -I m4"
 AUTOMAKE="perllibdir=`pwd`\"/lib$PATH_SEPARATOR./lib\" `pwd`/automake --libdir=lib"
 
 AC_PATH_PROG(PERL, perl)
