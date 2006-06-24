@@ -11,5 +11,5 @@
 AC_DEFUN([AM_PROG_MKDIR_P],
 [AC_PREREQ([2.59c])dnl
 AC_REQUIRE([AC_PROG_MKDIR_P])dnl
-AC_SUBST([mkdir_p], [$MKDIR_P])dnl
+AC_SUBST([mkdir_p], ['$(MKDIR_P)'])dnl
 ])
