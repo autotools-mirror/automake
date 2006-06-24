@@ -11,8 +11,8 @@
 # even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 # PARTICULAR PURPOSE.
 
-m4_if(m4_PACKAGE_VERSION, [2.59e],,
-[m4_fatal([this file was generated for autoconf 2.59e], [63])])
+m4_if(m4_PACKAGE_VERSION, [2.60],,
+[m4_fatal([this file was generated for autoconf 2.60], [63])])
 
 m4_include([m4/amversion.m4])
 m4_include([m4/auxdir.m4])
