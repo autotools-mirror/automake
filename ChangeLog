@@ -1,3 +1,32 @@
+2006-07-09  Paul Eggert  <eggert@cs.ucla.edu>
+
+	* lib/install-sh: Don't incorrectly claim that this implementation
+	can install only one file at a time.
+	(doit_exec): New var, for using 'exec' if possible, to save a process.
+	(test_mode, intermediate_mode): Remove.
+	(mode): Check for IFS or globbing characters in mode, since they might
+	cause weird behavior with the other changes below.  All later uses
+	of '"$mode"' changed to '$mode', since the ""s no longer matter.
+	Use octal modes if the invoker specifies an octal mode, and use
+	octal umask values if 'umask' outputs octal values; this is more
+	likely to work with older operating systems since Automake uses
+	octal modes, and also works around a bug with HP-UX 11.23
+	'mkdir -p -m u=rwx,g=rx,o=rx,u+wx' reported by Ralf Wildenhues in
+	<http://lists.gnu.org/archive/html/bug-automake/2006-06/msg00024.html>.
+	(cp_umask, mkdir_umask): New variables, to avoid
+	temporarily creating files or directories with too-permissive modes.
+	(mkdir_mode): Use the FreeBSD 'install' method for computing modes of
+	intermediate directories; this is safer.
+	(posix_mkdir): Also test mkdir -p -m ... by making a directory in
+	/tmp and checking the resulting mode with 'ls', to catch a bug in
+	HP-UX 11.23 and IRIX 6.5 mkdir reported by Ralf in the same message.
+	Use ':' for true, not 'true'; this is a bit faster on
+	traditional implementations.
+
+2006-07-09  Jim Meyering  <jim@meyering.net>
+
+	* lib/depcomp: "in in" -> "in" in comment.
+
 2006-07-06  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
 
 	* tests/defs.in (AUTOMAKE_run): Redirect stdout before stderr,
@@ -531,6 +560,9 @@
 	* doc/automake.texi (limitations on file names): New section.
 	* lib/install-sh: Rewrite to support '*' in file names.
 	Also, tune so that we don't invoke so many commands in the usual case.
+	This has the side effect of fixing `install-sh -d' to not fail if it
+	loses the race in creating the last path component against another
+	process.
 	* tests/instspc.test: The "*" test is now fixed.
 
 2005-09-13  Stepan Kasal  <kasal@ucw.cz>
