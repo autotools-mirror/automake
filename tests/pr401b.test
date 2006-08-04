@@ -36,7 +36,7 @@ feep ()
 }
 EOF
 
-cat >src/feep.c <<'EOF'
+cat >src/main.c <<'EOF'
 #include <stdio.h>
 
 extern char *feep ();
@@ -76,10 +76,10 @@ libfeep_la_LIBADD = $(LTLIBOBJS)
 EOF
 
 cat >src/Makefile.am <<'EOF'
-check_PROGRAMS = feep
-feep_LDADD = ../lib/libfeep.la
+check_PROGRAMS = main
+main_LDADD = ../lib/libfeep.la
 
-TESTS = feep
+TESTS = main
 EOF
 
 libtoolize
@@ -108,16 +108,18 @@ noinst_LTLIBRARIES = libfeep.la
 libfeep_la_SOURCES =
 libfeep_la_LIBADD = $(LTLIBOBJS)
 
-check_PROGRAMS = feep
-feep_LDADD = libfeep.la
+check_PROGRAMS = main
+main_LDADD = libfeep.la
 
-TESTS = feep
+TESTS = main
 EOF
 
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
 ./configure
+test ! -d src/lib
+test ! -d 'src/$(top_builddir)'
 $MAKE
 $MAKE check
 $MAKE distclean
@@ -137,14 +139,16 @@ noinst_LTLIBRARIES = lib/libfeep.la
 lib_libfeep_la_SOURCES =
 lib_libfeep_la_LIBADD = $(LTLIBOBJS)
 
-check_PROGRAMS = src/feep
-src_feep_SOURCES = src/feep.c
-src_feep_LDADD = lib/libfeep.la
+check_PROGRAMS = src/main
+src_main_SOURCES = src/main.c
+src_main_LDADD = lib/libfeep.la
 
-TESTS = src/feep
+TESTS = src/main
 
 check-local:
-	test -f src/feep.$(OBJEXT)
+	test -f src/main.$(OBJEXT)
+	test -f lib/feep.lo
+	test ! -f src/$(DEPDIR)/feep.Po
 EOF
 
 $ACLOCAL

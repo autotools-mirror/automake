@@ -39,7 +39,7 @@ feep ()
 }
 EOF
 
-cat >src/feep.c <<'EOF'
+cat >src/main.c <<'EOF'
 #include <stdio.h>
 
 extern char *feep ();
@@ -78,10 +78,10 @@ libfeep_a_LIBADD = $(ALLOCA)
 EOF
 
 cat >src/Makefile.am <<'EOF'
-check_PROGRAMS = feep
-feep_LDADD = ../lib/libfeep.a
+check_PROGRAMS = main
+main_LDADD = ../lib/libfeep.a
 
-TESTS = feep
+TESTS = main
 EOF
 
 $ACLOCAL
@@ -109,10 +109,10 @@ noinst_LIBRARIES = libfeep.a
 libfeep_a_SOURCES =
 libfeep_a_LIBADD = $(ALLOCA) $(LIBOBJS) # Add LIBOBJS for fun
 
-check_PROGRAMS = feep
-feep_LDADD = libfeep.a
+check_PROGRAMS = main
+main_LDADD = libfeep.a
 
-TESTS = feep
+TESTS = main
 EOF
 
 $ACLOCAL
@@ -120,6 +120,8 @@ $AUTOCONF
 $AUTOMAKE --add-missing
 ./configure
 $MAKE
+test ! -d src/lib
+test ! -d 'src/$(top_builddir)'
 $MAKE check
 $MAKE distclean
 
@@ -138,14 +140,16 @@ noinst_LIBRARIES = lib/libfeep.a
 lib_libfeep_a_SOURCES =
 lib_libfeep_a_LIBADD = $(ALLOCA)
 
-check_PROGRAMS = src/feep
-src_feep_SOURCES = src/feep.c
-src_feep_LDADD = lib/libfeep.a
+check_PROGRAMS = src/main
+src_main_SOURCES = src/main.c
+src_main_LDADD = lib/libfeep.a
 
-TESTS = src/feep
+TESTS = src/main
 
 check-local:
-	test -f src/feep.$(OBJEXT)
+	test -f src/main.$(OBJEXT)
+	test -f lib/alloca.$(OBJEXT)
+	test ! -f src/$(DEPDIR)/alloca.Po
 EOF
 
 $ACLOCAL
