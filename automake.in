@@ -1055,12 +1055,16 @@ sub handle_options
   my $var = var ('AUTOMAKE_OPTIONS');
   if ($var)
     {
-      # FIXME: We should disallow conditional definitions of AUTOMAKE_OPTIONS.
-      if (process_option_list ($var->rdef (TRUE)->location,
-			       $var->value_as_list_recursive (cond_filter =>
-							      TRUE)))
+      if ($var->has_conditional_contents)
 	{
-	  return 1;
+	  msg_var ('unsupported', $var,
+		   "`AUTOMAKE_OPTIONS' cannot have conditional contents");
+	}
+      foreach my $locvals ($var->value_as_list_recursive (cond_filter => TRUE,
+							  location => 1))
+  	{
+	  my ($loc, $value) = @$locvals;
+	  return 1 if (process_option_list ($loc, $value))
 	}
     }
 

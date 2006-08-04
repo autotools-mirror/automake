@@ -7422,6 +7422,8 @@ they are needed to rebuild @file{Makefile.in}.
 
 Automake supports a simple type of conditionals.
 
+@unnumberedsec Usage
+
 @acindex AM_CONDITIONAL
 Before using a conditional, you must define it by using
 @code{AM_CONDITIONAL} in the @file{configure.ac} file (@pxref{Macros}).
@@ -7496,6 +7498,12 @@ endif !DEBUG
 @noindent
 Unbalanced conditions are errors.
 
+The @code{else} branch of the above two examples could be omitted,
+since assigning the empty string to an otherwise undefined variable
+makes no difference.
+
+@unnumberedsec Portability
+
 Note that conditionals in Automake are not the same as conditionals in
 GNU Make.  Automake conditionals are checked at configure time by the
 @file{configure} script, and affect the translation from
@@ -7507,6 +7515,42 @@ in the @file{Makefile}.
 
 Automake conditionals will work with any make program.
 
+@unnumberedsec Limits
+
+Conditionals should enclose complete statements like variables or
+rules definitions.  Automake cannot deal with conditionals used inside
+a variable definition, for instance, and is not even able to diagnose
+this situation.  The following example would not work:
+
+@example
+# This syntax is not understood by Automake
+AM_CPPFLAGS = \
+  -DFEATURE_A \
+if WANT_DEBUG
+  -DDEBUG \
+endif
+  -DFEATURE_B
+@end example
+
+However the intended definition of @code{AM_CPPFLAGS} can be achieved
+with
+
+@example
+if WANT_DEBUG
+  DEBUGFLAGS = -DDEBUG
+endif
+AM_CPPFLAGS = -DFEATURE_A $(DEBUGFLAGS) -DFEATURE_B
+@end example
+
+@noindent or
+
+@example
+AM_CPPFLAGS = -DFEATURE_A
+if WANT_DEBUG
+AM_CPPFLAGS += -DDEBUG
+endif
+AM_CPPFLAGS += -DFEATURE_B
+@end example
 
 @node Gnits
 @chapter The effect of @option{--gnu} and @option{--gnits}
