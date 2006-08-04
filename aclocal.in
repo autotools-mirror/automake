@@ -144,8 +144,24 @@ my $serial_number_rx = '^\d+(?:\.\d+)*$';
 # Autoconf version
 # Set by trace_used_macros.
 my $ac_version;
+
+# If set, names a temporary file that must be erased on abnormal exit.
+my $erase_me;
 
 ################################################################
+
+# Erase temporary file ERASE_ME.
+sub unlink_tmp
+{
+  if (defined $erase_me && -e $erase_me && !unlink ($erase_me))
+    {
+      fatal "could not remove `$erase_me': $!";
+    }
+  undef $erase_me;
+}
+
+$SIG{'INT'} = $SIG{'TERM'} = $SIG{'QUIT'} = $SIG{'HUP'} = 'unlink_tmp';
+END { unlink_tmp }
 
 # Check macros in acinclude.m4.  If one is not used, warn.
 sub check_acinclude ()
@@ -180,7 +196,7 @@ sub reset_maps ()
 sub install_file ($$)
 {
   my ($src, $dest) = @_;
-  my $diff_dest = $dest;
+  my $diff_dest;
 
   if ($force_output
       || !exists $file_contents{$dest}
@@ -189,21 +205,48 @@ sub install_file ($$)
       if (-e $dest)
 	{
 	  msg 'note', "overwriting `$dest' with `$src'";
+	  $diff_dest = $dest;
 	}
       else
 	{
 	  msg 'note', "installing `$dest' from `$src'";
-	  $diff_dest = '/dev/null';
 	}
 
       if (@diff_command)
 	{
+	  if (! defined $diff_dest)
+	    {
+	      # $dest does not exist.  We create an empty one just to
+	      # run diff, and we erase it afterward.  Using the real
+	      # the destination file (rather than a temporary file) is
+	      # good when diff is run with options that display the
+	      # file name.
+	      #
+	      # If creating $dest fails, fall back to /dev/null.  At
+	      # least one diff implementation (Tru64's) cannot deal
+	      # with /dev/null.  However working around this is not
+	      # worth the trouble since nobody run aclocal on a
+	      # read-only tree anyway.
+	      $erase_me = $dest;
+	      my $f = new IO::File "> $dest";
+	      if (! defined $f)
+		{
+		  undef $erase_me;
+		  $diff_dest = '/dev/null';
+		}
+	      else
+		{
+		  $diff_dest = $dest;
+		  $f->close;
+		}
+	    }
 	  my @cmd = (@diff_command, $diff_dest, $src);
 	  $! = 0;
 	  verb "running: @cmd";
 	  my $res = system (@cmd);
 	  Automake::FileUtils::handle_exec_errors "@cmd", 1
 	    if $res;
+	  unlink_tmp;
 	}
       elsif (!$dry_run)
 	{
