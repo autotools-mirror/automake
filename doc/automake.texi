@@ -5298,22 +5298,47 @@ distribution.
 @cindex @code{SCRIPTS} primary, defined
 @cindex Primary variable, @code{SCRIPTS}
 @vindex _SCRIPTS
+@cindex Installing scripts
 
 It is possible to define and install programs that are scripts.  Such
-programs are listed using the @code{SCRIPTS} primary name.  Automake
-doesn't define any dependencies for scripts; the @file{Makefile.am}
-should include the appropriate rules.
+programs are listed using the @code{SCRIPTS} primary name.  When the
+script is distributed in its final, installable form, the
+@file{Makefile} usually looks as follows:
 @vindex SCRIPTS
 
-Automake does not assume that scripts are derived objects; such objects
-must be deleted by hand (@pxref{Clean}).
+@example
+# Install my_script in $(bindir) and distribute it.
+dist_bin_SCRIPTS = my_script
+@end example
 
-The @command{automake} program itself is a Perl script that is generated
-from @file{automake.in}.  Here is how this is handled:
+Script are not distributed by default; as we have just seen, those
+that should be distributed can be specified using a @code{dist_}
+prefix as with other primaries.
+
+@cindex @code{SCRIPTS}, installation directories
+@vindex bin_SCRIPTS
+@vindex sbin_SCRIPTS
+@vindex libexec_SCRIPTS
+@vindex pkgdata_SCRIPTS
+@vindex noinst_SCRIPTS
+@vindex check_SCRIPTS
+
+Scripts can be installed in @code{bindir}, @code{sbindir},
+@code{libexecdir}, or @code{pkgdatadir}.
+
+Scripts that need not being installed can be listed in
+@code{noinst_SCRIPTS}, and among them, those which are needed only by
+@samp{make check} should go in @code{check_SCRIPTS}.
+
+When a script needs to be built, the @file{Makefile.am} should include
+the appropriate rules.  For instance the @command{automake} program
+itself is a Perl script that is generated from @file{automake.in}.
+Here is how this is handled:
 
 @example
 bin_SCRIPTS = automake
 CLEANFILES = $(bin_SCRIPTS)
+EXTRA_DIST = automake.in
 
 do_subst = sed -e 's,[@@]datadir[@@],$(datadir),g' \
             -e 's,[@@]PERL[@@],$(PERL),g' \
@@ -5326,34 +5351,38 @@ automake: automake.in Makefile
         chmod +x automake
 @end example
 
-Because---as we have just seen---scripts can be built, they are not
-distributed by default.  Scripts that should be distributed can be
-specified using a @code{dist_} prefix as in other primaries.  For
-instance, the following @file{Makefile.am} declares that
-@file{my_script} should be distributed and installed in
-@samp{$(sbindir)}.
+Such scripts for which a build rule has been supplied need to be
+deleted explicitly using @code{CLEANFILES} (@pxref{Clean}), and their
+sources have to be distributed, usually with @code{EXTRA_DIST}
+(@pxref{Dist}).
+
+Another common way to build scripts is to process them from
+@file{configure} with @code{AC_CONFIG_FILES}.  In this situation
+Automake knows which files should be cleaned and distributed, and what
+the rebuild rules should look like.
+
+For instance if @file{configure.ac} contains
 
 @example
-dist_sbin_SCRIPTS = my_script
+AC_CONFIG_FILES([src/my_script])
 @end example
 
-@cindex @code{SCRIPTS}, installation directories
-@cindex Installing scripts
+@noindent
+to build @file{src/my_script} from @file{src/my_script}, then an
+@file{src/Makefile.am} to install this script in @code{$(bindir)} can
+be as simple as
 
-@vindex bin_SCRIPTS
-@vindex sbin_SCRIPTS
-@vindex libexec_SCRIPTS
-@vindex pkgdata_SCRIPTS
-@vindex noinst_SCRIPTS
-@vindex check_SCRIPTS
+@example
+bin_SCRIPTS = my_script
+@end example
 
-Script objects can be installed in @code{bindir}, @code{sbindir},
-@code{libexecdir}, or @code{pkgdatadir}.
-
-Scripts that need not being installed can be listed in
-@code{noinst_SCRIPTS}, and among them, those which are needed only by
-@samp{make check} should go in @code{check_SCRIPTS}.
-
+@noindent
+There is no need for @code{EXTRA_DIST}, @code{CLEANFILES}, or any
+build rule: Automake infers them from @code{AC_CONFIG_FILES}
+(@pxref{Requirements}).  This looks simpler, however building scripts
+this way has one drawback: directory variables such as
+@code{$(datadir)} are not fully expanded and may refer to other
+directory variables.
 
 @node Headers
 @section Header files
