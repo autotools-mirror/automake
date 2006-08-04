@@ -45,13 +45,22 @@ $AUTOMAKE
 mkdir foo woo
 touch foo/bar joe woo/doo dada
 
-grep '\$(mkdir_p).*\.' Makefile.in && exit 1
-grep '\$(mkdir_p).*srcdir' Makefile.in && exit 1
-grep '\$(mkdir_p).*foo' Makefile.in
-
+mkdir build
+cd build
+../configure
+$MAKE distdir
 # Check to make sure `foo' isn't made in build directory.
-grep 'mkdir_p.*foo.*foo' Makefile.in && exit 1
+test -d foo && exit 1
 
+rm -rf distdir-1.0
+# Remove the dot from VERSION for the next grep.
+VERSION=10 mkdir_p='echo mkdir_p' $MAKE -e distdir >make.log || :
+
+# Make sure no `./' appear in the directory names.  srcdir is `..', so
+# this also checks that no directory is created in the source tree.
+grep 'mkdir_p.*\.' make.log && exit 1
+
+cd ..
 ./configure --prefix `pwd`
 $MAKE distcheck
 

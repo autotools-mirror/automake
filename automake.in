@@ -489,11 +489,6 @@ my @cond_stack;
 # This holds the set of included files.
 my @include_stack;
 
-# This holds a list of directories which we must create at `dist'
-# time.  This is used in some strange scenarios involving weird
-# AC_OUTPUT commands.
-my %dist_dirs;
-
 # List of dependencies for the obvious targets.
 my @all;
 my @check;
@@ -646,8 +641,6 @@ sub initialize_per_input ()
     @cond_stack = ();
 
     @include_stack = ();
-
-    %dist_dirs = ();
 
     @all = ();
     @check = ();
@@ -3536,24 +3529,6 @@ sub for_dist_common
     return $a cmp $b;
 }
 
-# fill_dist_dirs(@FILES)
-# ----------------------
-# Record in %dist_dirs the directory part of any file passed.
-sub fill_dist_dirs (@)
-{
-  my @copy = @_;
-  foreach (@copy)
-    {
-      s/\$\(top_srcdir\)/$topsrcdir/;
-      s/\$\(srcdir\)/./;
-      # Strip any leading `./'.
-      s,^(:?\./+)*,,;
-      next unless s,/+[^/]+$,,;
-      $dist_dirs{$_} = 1
-	unless $_ eq '.';
-    }
-}
-
 # handle_dist
 # -----------
 # Handle 'dist' target.
@@ -3670,25 +3645,9 @@ sub handle_dist ()
   # originally, but there were so many requests that I finally
   # relented.
   my $extra_dist = var ('EXTRA_DIST');
-  # FIXME: This should be fixed to work with conditions.  That
-  # will require only making the entries in %dist_dirs under the
-  # appropriate condition.  This is meaningful if the nature of
-  # the distribution should depend upon the configure options
-  # used.
-  fill_dist_dirs ($extra_dist->value_as_list_recursive (skip_ac_subst => 1))
-    if $extra_dist;
-
-  # We have to check DIST_COMMON for extra directories in case the
-  # user put a source used in AC_OUTPUT into a subdir.
-  fill_dist_dirs (rvar ('DIST_COMMON')
-                  ->value_as_list_recursive (skip_ac_subst => 1));
 
   $transform{'DISTCHECK-HOOK'} = !! rule 'distcheck-hook';
   $transform{'GETTEXT'} = $seen_gettext && !$seen_gettext_external;
-
-  # Prepend $(distdir) to each directory given.
-  my %rewritten = map { '$(distdir)/' . "$_" => 1 } keys %dist_dirs;
-  $transform{'DISTDIRS'} = join (' ', sort keys %rewritten);
 
   # If the target `dist-hook' exists, make sure it is run.  This
   # allows users to do random weird things to the distribution
@@ -4112,14 +4071,6 @@ sub handle_configure ($$$@)
 
       my $local = basename ($file);
 
-      # Make sure the dist directory for each input file is created.
-      # We only have to do this at the topmost level though.  This
-      # is a bit ugly but it easier than spreading out the logic,
-      # especially in cases like AC_OUTPUT(foo/out:bar/in), where
-      # there is no Makefile in bar/.
-      fill_dist_dirs (@inputs)
-	if $relative_dir eq '.';
-
       # We skip files that aren't in this directory.  However, if
       # the file's directory does not have a Makefile, and we are
       # currently doing `.', then we create a rule to rebuild the
@@ -4190,13 +4141,6 @@ sub handle_configure ($$$@)
       if ((substitute_ac_subst_variables $file) !~ /\$/)
 	{
 	  my $fd = dirname ($file);
-
-	  # Make sure the dist directory for each input file is created.
-	  # We only have to do this at the topmost level though.
-	  if ($relative_dir eq '.')
-	    {
-	      $dist_dirs{$fd} = 1;
-	    }
 
 	  # We distribute files that are in this directory.
 	  # At the top-level (`.') we also distribute files whose
