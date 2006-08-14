@@ -570,6 +570,9 @@ txinfo30.test \
 txinfo31.test \
 transform.test \
 unused.test \
+upc.test \
+upc2.test \
+upc3.test \
 vars.test \
 vars3.test \
 vartar.test \

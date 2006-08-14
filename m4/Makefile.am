@@ -55,7 +55,8 @@ runlog.m4 \
 sanity.m4 \
 strip.m4 \
 substnot.m4 \
-tar.m4
+tar.m4 \
+upc.m4
 
 EXTRA_DIST = dirlist amversion.in
 

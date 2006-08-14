@@ -185,6 +185,8 @@ my %_ac_macro_for_var =
    OBJC => 'AC_PROG_OBJC',
    OBJCFLAGS => 'AC_PROG_OBJC',
    RANLIB => 'AC_PROG_RANLIB',
+   UPC => 'AM_PROG_UPC',
+   UPCFLAGS => 'AM_PROG_UPC',
    YACC => 'AC_PROG_YACC',
    );
 

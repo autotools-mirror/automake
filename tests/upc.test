@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1999, 2001, 2002, 2006  Free Software Foundation, Inc.
+# Copyright (C) 2006  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -18,27 +18,36 @@
 # the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301, USA.
 
-# Test to make sure extensions are set correctly for various languages.
+# A simple Hello World for UPC.
 
 . ./defs || exit 1
+set -e
 
 cat >> configure.in << 'END'
-AC_PROG_F77
-AC_PROG_FC
-AC_PROG_OBJC
 AM_PROG_UPC
+AC_OUTPUT
+END
+
+cat > hello.upc << 'END'
+#include <stdio.h>
+#include <upc.h>
+int
+main (void)
+{
+  printf ("Thread %d says, 'Hello.'\n", MYTHREAD);
+  return 0;
+}
 END
 
 cat > Makefile.am << 'END'
-bin_PROGRAMS = foo
-foo_SOURCES = 1.f 2.for 3.f90 4.F 5.r 6.m 7.upc
+bin_PROGRAMS = hello
+hello_SOURCES = hello.upc
+hello_LDADD = -lm
 END
 
-$ACLOCAL || exit 1
-$AUTOMAKE || exit 1
+$ACLOCAL
+$AUTOMAKE
+$AUTOCONF
 
-for ext in f for f90 F r m upc
-do
-   grep "^$ext\.o:" Makefile.in && exit 1
-done
-exit 0
+./configure
+$MAKE distcheck
