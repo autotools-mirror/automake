@@ -18,8 +18,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
-dnl Require Autoconf 2.59a for AC_REQUIRE_AUX_FILE.
-AC_PREREQ(2.59a)
+dnl Require Autoconf 2.60 for AC_REQUIRE_AUX_FILE.
+AC_PREREQ(2.60)
 AC_INIT([GNU Automake], [1.9a], [bug-automake@gnu.org])
 
 AC_CONFIG_SRCDIR(automake.in)
