@@ -20,9 +20,11 @@
 ## Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 ## 02110-1301, USA.
 
-## We need `.' in SUBDIRS because we want `check' to build `.' before
-## tests.  It should go before `doc', because doc/amhello uses automake.
-SUBDIRS = . doc m4 lib tests
+## lib goes first, because it builds Config.pm, used by aclocal and
+## automake (run in doc, tests, and in the rebuild rules.)
+## `.' goes before doc and check, because the latter two directories
+## run aclocal and automake.
+SUBDIRS = lib . doc m4 tests
 
 bin_SCRIPTS = automake aclocal
 
