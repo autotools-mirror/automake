@@ -1,5 +1,5 @@
 ## automake - create Makefile.in from Makefile.am
-## Copyright (C) 1998, 1999, 2001, 2002, 2003, 2004
+## Copyright (C) 1998, 1999, 2001, 2002, 2003, 2004, 2006
 ##   Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
@@ -28,7 +28,7 @@
 ## Point #4 is because parsers listed in nodist_*_SOURCES are always
 ## built on the user's side, so it makes no sense to disable them.
 ##
-## Points #1, #2, #3 are solved by unconditionally prefixing the rules
+## Points #1, #2, #3 are solved by unconditionally prefixing the rule
 ## with $(am__skipyacc) defined below only when needed.
 ##
 ## Point #4 requires a condition on whether parser.y/parser.c are
@@ -43,42 +43,7 @@ endif %?MAINTAINER-MODE%
 
 ?GENERIC?%EXT%%DERIVED-EXT%:
 ?!GENERIC?%OBJ%: %SOURCE%
-if %?MORE-THAN-ONE%
 ?GENERIC?	$(am__skipyacc) $(SHELL) $(YLWRAP) %SOURCE% y.tab.c %OBJ% y.tab.h %BASE%.h y.output %BASE%.output -- %COMPILE%
 ?!GENERIC??DIST_SOURCE?	$(am__skipyacc) \
 ## For non-suffix rules, we must emulate a VPATH search on %SOURCE%.
 ?!GENERIC?	$(SHELL) $(YLWRAP) `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE% y.tab.c %OBJ% y.tab.h %BASE%.h y.output %BASE%.output -- %COMPILE%
-else !%?MORE-THAN-ONE%
-?GENERIC?	$(am__skipyacc) %COMPILE% %SOURCE%
-?!GENERIC??DIST_SOURCE?	$(am__skipyacc) \
-## For non-suffix rules, we must emulate a VPATH search on %SOURCE%.
-?!GENERIC?	%COMPILE% `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%
-## Edit out Bison multiple inclusion guards.  It may be BISON_Y_TAB_H,
-## or Y_TAB_H depending upon the version, that's why the regexp is
-## so loose.
-?GENERIC?	$(am__skipyacc) \
-?!GENERIC??DIST_SOURCE?	$(am__skipyacc) \
-	if test -f y.tab.h; then \
-	  to=`echo "%BASE%_H" | sed \
-                -e 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/' \
-                -e 's/[^ABCDEFGHIJKLMNOPQRSTUVWXYZ]/_/g'`; \
-	  sed -e "/^#/!b" -e "s/Y_TAB_H/$$to/g" -e "s|y\.tab\.h|%BASE%.h|" \
-            y.tab.h >%BASE%.ht; \
-	  rm -f y.tab.h; \
-	  if cmp -s %BASE%.ht %BASE%.h; then \
-	    rm -f %BASE%.ht ;\
-	  else \
-	    mv %BASE%.ht %BASE%.h; \
-	  fi; \
-	fi
-?GENERIC?	$(am__skipyacc) \
-?!GENERIC??DIST_SOURCE?	$(am__skipyacc) \
-	if test -f y.output; then \
-	  mv y.output %BASE%.output; \
-	fi
-?GENERIC?	$(am__skipyacc) \
-?!GENERIC??DIST_SOURCE?	$(am__skipyacc) \
-## Edit out `#line' or `#' directives.
-	{ sed '/^#/ s|y\.tab\.c|%OBJ%|' y.tab.c >%OBJ%t && mv %OBJ%t %OBJ% && \
-	rm -f y.tab.c; }
-endif !%?MORE-THAN-ONE%
