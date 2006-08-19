@@ -21,7 +21,7 @@
 ## 02110-1301, USA.
 
 ## We need `.' in SUBDIRS because we want `check' to build `.' before
-## tests.
+## tests.  It should go before `doc', because doc/amhello uses automake.
 SUBDIRS = . doc m4 lib tests
 
 bin_SCRIPTS = automake aclocal

@@ -13,6 +13,7 @@
 # PARTICULAR PURPOSE.
 
 @SET_MAKE@
+
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
@@ -31,7 +32,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 subdir = doc
-DIST_COMMON = $(automake_TEXINFOS) $(srcdir)/Makefile.am \
+DIST_COMMON = $(automake_TEXINFOS) $(dist_doc_DATA) \
+	$(dist_noinst_DATA) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/stamp-vti \
 	$(srcdir)/version.texi
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -61,13 +63,15 @@ TEXI2PDF = $(TEXI2DVI) --pdf --batch
 MAKEINFOHTML = $(MAKEINFO) --html
 AM_MAKEINFOHTMLFLAGS = $(AM_MAKEINFOFLAGS)
 DVIPS = dvips
-am__installdirs = "$(DESTDIR)$(infodir)"
+am__installdirs = "$(DESTDIR)$(infodir)" "$(DESTDIR)$(docdir)"
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
     *) f=$$p;; \
   esac;
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
+dist_docDATA_INSTALL = $(INSTALL_DATA)
+DATA = $(dist_doc_DATA) $(dist_noinst_DATA)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -163,6 +167,26 @@ ETAGS_ARGS = --lang=none \
  --regex='/^@node[ \t]+\([^,]+\)/\1/' $(srcdir)/automake.texi
 
 TAGS_DEPENDENCIES = automake.texi
+amhello_sources = \
+  amhello/configure.ac \
+  amhello/Makefile.am \
+  amhello/README \
+  amhello/src/main.c \
+  amhello/src/Makefile.am
+
+amhello_configury = \
+  aclocal.m4 \
+  autom4te.cache \
+  Makefile.in \
+  config.h.in \
+  configure \
+  depcomp \
+  install-sh \
+  missing \
+  src/Makefile.in
+
+dist_noinst_DATA = $(amhello_sources)
+dist_doc_DATA = $(srcdir)/amhello-1.0.tar.gz
 all: all-am
 
 .SUFFIXES:
@@ -356,6 +380,23 @@ maintainer-clean-aminfo:
 	  echo " rm -f $$i $$i-[0-9] $$i-[0-9][0-9] $$i_i[0-9] $$i_i[0-9][0-9]"; \
 	  rm -f $$i $$i-[0-9] $$i-[0-9][0-9] $$i_i[0-9] $$i_i[0-9][0-9]; \
 	done
+install-dist_docDATA: $(dist_doc_DATA)
+	@$(NORMAL_INSTALL)
+	test -z "$(docdir)" || $(mkdir_p) "$(DESTDIR)$(docdir)"
+	@list='$(dist_doc_DATA)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f=$(am__strip_dir) \
+	  echo " $(dist_docDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(docdir)/$$f'"; \
+	  $(dist_docDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(docdir)/$$f"; \
+	done
+
+uninstall-dist_docDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(dist_doc_DATA)'; for p in $$list; do \
+	  f=$(am__strip_dir) \
+	  echo " rm -f '$(DESTDIR)$(docdir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(docdir)/$$f"; \
+	done
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -436,9 +477,9 @@ distdir: $(DISTFILES)
 	  dist-info
 check-am: all-am
 check: check-am
-all-am: Makefile $(INFO_DEPS)
+all-am: Makefile $(INFO_DEPS) $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(infodir)"; do \
+	for dir in "$(DESTDIR)$(infodir)" "$(DESTDIR)$(docdir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
 install: install-am
@@ -485,7 +526,7 @@ info: info-am
 
 info-am: $(INFO_DEPS)
 
-install-data-am: install-info-am
+install-data-am: install-dist_docDATA install-info-am
 
 install-dvi: install-dvi-am
 
@@ -593,26 +634,43 @@ ps: ps-am
 
 ps-am: $(PSS)
 
-uninstall-am: uninstall-dvi-am uninstall-html-am uninstall-info-am \
-	uninstall-pdf-am uninstall-ps-am
+uninstall-am: uninstall-dist_docDATA uninstall-dvi-am \
+	uninstall-html-am uninstall-info-am uninstall-pdf-am \
+	uninstall-ps-am
 
 .MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
 	ctags dist-info distclean distclean-generic distclean-tags \
 	distdir dvi dvi-am html html-am info info-am install \
-	install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-aminfo \
+	install-am install-data install-data-am install-dist_docDATA \
+	install-dvi install-dvi-am install-exec install-exec-am \
+	install-html install-html-am install-info install-info-am \
+	install-man install-pdf install-pdf-am install-ps \
+	install-ps-am install-strip installcheck installcheck-am \
+	installdirs maintainer-clean maintainer-clean-aminfo \
 	maintainer-clean-generic maintainer-clean-vti mostlyclean \
 	mostlyclean-aminfo mostlyclean-generic mostlyclean-vti pdf \
-	pdf-am ps ps-am tags uninstall uninstall-am uninstall-dvi-am \
-	uninstall-html-am uninstall-info-am uninstall-pdf-am \
-	uninstall-ps-am
+	pdf-am ps ps-am tags uninstall uninstall-am \
+	uninstall-dist_docDATA uninstall-dvi-am uninstall-html-am \
+	uninstall-info-am uninstall-pdf-am uninstall-ps-am
 
+
+# We depend on configure.ac so that we regenerate the tarball
+# whenever the Automake version changes.
+# aclocal-$(APIVERSION) and automake-$(APIVERSION) are generated by
+# configure in tests/.
+$(srcdir)/amhello-1.0.tar.gz: $(amhello_sources) $(top_srcdir)/configure.ac
+	PATH="`pwd`/../tests$(PATH_SEPARATOR)$$PATH" && \
+	export PATH && \
+	cd $(srcdir)/amhello && \
+	ACLOCAL=aclocal-$(APIVERSION) AUTOMAKE=automake-$(APIVERSION) \
+	autoreconf -vfi && \
+	./configure && \
+	make distcheck && \
+	make distclean && \
+	rm -rf $(amhello_configury) && \
+	mv amhello-1.0.tar.gz ..
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
