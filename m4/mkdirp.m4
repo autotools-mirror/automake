@@ -11,5 +11,9 @@
 AC_DEFUN([AM_PROG_MKDIR_P],
 [AC_PREREQ([2.60])dnl
 AC_REQUIRE([AC_PROG_MKDIR_P])dnl
-AC_SUBST([mkdir_p], ['$(MKDIR_P)'])dnl
+dnl Automake 1.8 to 1.9.6 used to define mkdir_p.
+dnl We now use MKDIR_P, while keeping a definition of mkdir_p for
+dnl backward compatibility. Do not define mkdir_p as $(MKDIR_P) for
+dnl the sake of Makefile.ins that do not define MKDIR_P.
+AC_SUBST([mkdir_p], ["$MKDIR_P"])dnl
 ])

@@ -268,6 +268,10 @@ maintainer-check: automake aclocal
 	  echo 'Do not use egrep or fgrep in the above files, they are not portable.' 1>&2; \
 	  exit 1; \
 	fi
+	@if grep 'mkdir_p' $(srcdir)/lib/am/*.am $(srcdir)/tests/*.test; then \
+	  echo 'Do not use mkdir_p in the above files, use MKDIR_P.' 1>&2; \
+	  exit 1; \
+	fi
 ## Try to make sure all @...@ substitutions are covered by our
 ## substitution rule.
 	@if test `grep -E '^[^#]*@[A-Za-z_0-9]+@' aclocal | wc -l` -ne 0; then \
