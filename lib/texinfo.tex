@@ -3,7 +3,7 @@
 % Load plain if necessary, i.e., if running under initex.
 \expandafter\ifx\csname fmtname\endcsname\relax\input plain\fi
 %
-\def\texinfoversion{2006-05-07.15}
+\def\texinfoversion{2006-07-17.16}
 %
 % Copyright (C) 1985, 1986, 1988, 1990, 1991, 1992, 1993, 1994, 1995,
 % 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006 Free
@@ -327,9 +327,9 @@
       \pagebody{#1}%
       \ifdim\ht\footlinebox > 0pt
         % Only leave this space if the footline is nonempty.
-        % (We lessened \vsize for it in \oddfootingxxx.)
+        % (We lessened \vsize for it in \oddfootingyyy.)
         % The \baselineskip=24pt in plain's \makefootline has no effect.
-        \vskip 2\baselineskip
+        \vskip 24pt
         \unvbox\footlinebox
       \fi
       %
@@ -1084,15 +1084,24 @@ where each line of input produces a line of output.}
 \def\minus{$-$}
 
 % @dots{} outputs an ellipsis using the current font.
-% We do .5em per period so that it has the same spacing in a typewriter
-% font as three actual period characters.
+% We do .5em per period so that it has the same spacing in the cm
+% typewriter fonts as three actual period characters; on the other hand,
+% in other typewriter fonts three periods are wider than 1.5em.  So do
+% whichever is larger.
 %
 \def\dots{%
   \leavevmode
-  \hbox to 1.5em{%
-    \hskip 0pt plus 0.25fil
-    .\hfil.\hfil.%
-    \hskip 0pt plus 0.5fil
+  \setbox0=\hbox{...}% get width of three periods
+  \ifdim\wd0 > 1.5em
+    \dimen0 = \wd0
+  \else
+    \dimen0 = 1.5em
+  \fi
+  \hbox to \dimen0{%
+    \hskip 0pt plus.25fil
+    .\hskip 0pt plus1fil
+    .\hskip 0pt plus1fil
+    .\hskip 0pt plus.5fil
   }%
 }
 
@@ -2042,11 +2051,11 @@ where each line of input produces a line of output.}
 % and arrange explicitly to hyphenate at a dash.
 %  -- rms.
 {
-  \catcode`\-=\active
-  \catcode`\_=\active
+  \catcode`\-=\active \catcode`\_=\active \catcode`\'=\active
   %
   \global\def\code{\begingroup
-    \catcode`\-=\active  \catcode`\_=\active
+    \catcode`\-=\active  \catcode`\_=\active \catcode`\'=\active
+    \let'\singlequotechar
     \ifallowcodebreaks
      \let-\codedash
      \let_\codeunder
@@ -2463,8 +2472,8 @@ where each line of input produces a line of output.}
   %
   % Leave some space for the footline.  Hopefully ok to assume
   % @evenfooting will not be used by itself.
-  \global\advance\pageheight by -\baselineskip
-  \global\advance\vsize by -\baselineskip
+  \global\advance\pageheight by -12pt
+  \global\advance\vsize by -12pt
 }
 
 \parseargdef\everyfooting{\oddfootingxxx{#1}\evenfootingxxx{#1}}
@@ -3391,11 +3400,38 @@ where each line of input produces a line of output.}
   \escapechar = `\\     % use backslash in output files.
   \def\@{@}% change to @@ when we switch to @ as escape char in index files.
   \def\ {\realbackslash\space }%
+  %
   % Need these in case \tex is in effect and \{ is a \delimiter again.
   % But can't use \lbracecmd and \rbracecmd because texindex assumes
   % braces and backslashes are used only as delimiters.
   \let\{ = \mylbrace
   \let\} = \myrbrace
+  %
+  % I don't entirely understand this, but when an index entry is
+  % generated from a macro call, the \endinput which \scanmacro inserts
+  % causes processing to be prematurely terminated.  This is,
+  % apparently, because \indexsorttmp is fully expanded, and \endinput
+  % is an expandable command.  The redefinition below makes \endinput
+  % disappear altogether for that purpose -- although logging shows that
+  % processing continues to some further point.  On the other hand, it
+  % seems \endinput does not hurt in the printed index arg, since that
+  % is still getting written without apparent harm.
+  % 
+  % Sample source (mac-idx3.tex, reported by Graham Percival to
+  % help-texinfo, 22may06):
+  % @macro funindex {WORD}
+  % @findex xyz
+  % @end macro
+  % ...
+  % @funindex commtest
+  % 
+  % The above is not enough to reproduce the bug, but it gives the flavor.
+  % 
+  % Sample whatsit resulting:
+  % .@write3{\entry{xyz}{@folio }{@code {xyz@endinput }}}
+  % 
+  % So:
+  \let\endinput = \empty
   %
   % Do the redefinitions.
   \commondummies
@@ -3969,9 +4005,9 @@ where each line of input produces a line of output.}
   \endgroup
 }
 
-% Like \dotfill except takes at least 1 em.
+% Like plain.tex's \dotfill, except uses up at least 1 em.
 \def\indexdotfill{\cleaders
-  \hbox{$\mathsurround=0pt \mkern1.5mu ${\it .}$ \mkern1.5mu$}\hskip 1em plus 1fill}
+  \hbox{$\mathsurround=0pt \mkern1.5mu.\mkern1.5mu$}\hskip 1em plus 1fill}
 
 \def\primary #1{\line{#1\hfil}}
 
@@ -4545,14 +4581,17 @@ where each line of input produces a line of output.}
     \ifx\temptype\Ynothingkeyword
       \setbox0 = \hbox{}%
       \def\toctype{unnchap}%
+      \gdef\thischapternum{}%
       \gdef\thischapter{#1}%
     \else\ifx\temptype\Yomitfromtockeyword
       \setbox0 = \hbox{}% contents like unnumbered, but no toc entry
       \def\toctype{omit}%
+      \gdef\thischapternum{}%
       \gdef\thischapter{}%
     \else\ifx\temptype\Yappendixkeyword
       \setbox0 = \hbox{\putwordAppendix{} #3\enspace}%
       \def\toctype{app}%
+      \xdef\thischapternum{\appendixletter}%
       % We don't substitute the actual chapter name into \thischapter
       % because we don't want its macros evaluated now.  And we don't
       % use \thissection because that changes with each section.
@@ -4562,6 +4601,7 @@ where each line of input produces a line of output.}
     \else
       \setbox0 = \hbox{#3\enspace}%
       \def\toctype{numchap}%
+      \xdef\thischapternum{\the\chapno}%
       \xdef\thischapter{\putwordChapter{} \the\chapno:
                         \noexpand\thischaptername}%
     \fi\fi\fi
@@ -5002,7 +5042,7 @@ where each line of input produces a line of output.}
 {\tentt \global\dimen0 = 3em}% Width of the box.
 \dimen2 = .55pt % Thickness of rules
 % The text. (`r' is open on the right, `e' somewhat less so on the left.)
-\setbox0 = \hbox{\kern-.75pt \tensf error\kern-1.5pt}
+\setbox0 = \hbox{\kern-.75pt \reducedsf error\kern-1.5pt}
 %
 \setbox\errorbox=\hbox to \dimen0{\hfil
    \hsize = \dimen0 \advance\hsize by -5.8pt % Space to left+right.
@@ -5225,11 +5265,10 @@ where each line of input produces a line of output.}
 %
 \maketwodispenvs {lisp}{example}{%
   \nonfillstart
-  \tt
+  \tt\quoteexpand
   \let\kbdfont = \kbdexamplefont % Allow @kbd to do something special.
   \gobble       % eat return
 }
-
 % @display/@smalldisplay: same as @lisp except keep current font.
 %
 \makedispenv {display}{%
@@ -5357,6 +5396,22 @@ where each line of input produces a line of output.}
 \newdimen\tabw \setbox0=\hbox{\tt\space} \tabw=8\wd0 % tab amount
 %
 \def\starttabbox{\setbox0=\hbox\bgroup}
+
+% Allow an option to not replace quotes with a regular directed right
+% quote/apostrophe (char 0x27), but instead use the undirected quote
+% from cmtt (char 0x0d).  The undirected quote is ugly, so don't make it
+% the default, but it works for pasting with more pdf viewers (at least
+% evince), the lilypond developers report.  xpdf does work with the
+% regular 0x27.  
+% 
+\def\singlequotechar{%
+  \expandafter\ifx\csname SETcodequoteundirected\endcsname\relax
+    '%
+  \else
+    \char'15
+  \fi
+}
+%
 \begingroup
   \catcode`\^^I=\active
   \gdef\tabexpand{%
@@ -5369,7 +5424,13 @@ where each line of input produces a line of output.}
       \wd0=\dimen0 \box0 \starttabbox
     }%
   }
+  \catcode`\'=\active
+  \gdef\quoteexpand{%
+    \catcode`\'=\active
+    \def'{\singlequotechar}
+  }%
 \endgroup
+%
 \def\setupverbatim{%
   \let\nonarrowing = t%
   \nonfillstart
@@ -5378,6 +5439,7 @@ where each line of input produces a line of output.}
   \def\par{\leavevmode\egroup\box0\endgraf}%
   \catcode`\`=\active
   \tabexpand
+  \quoteexpand
   % Respect line breaks,
   % print special symbols as themselves, and
   % make each space count
@@ -5827,7 +5889,6 @@ where each line of input produces a line of output.}
     \spaceisspace
     %
     % Append \endinput to make sure that TeX does not see the ending newline.
-    %
     % I've verified that it is necessary both for e-TeX and for ordinary TeX
     %							--kasal, 29nov03
     \scantokens{#1\endinput}%
