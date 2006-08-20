@@ -20,7 +20,7 @@
 
 dnl Require Autoconf 2.60 for AC_REQUIRE_AUX_FILE.
 AC_PREREQ(2.60)
-AC_INIT([GNU Automake], [1.9b], [bug-automake@gnu.org])
+AC_INIT([GNU Automake], [1.9c], [bug-automake@gnu.org])
 
 AC_CONFIG_SRCDIR(automake.in)
 AC_CONFIG_AUX_DIR(lib)
