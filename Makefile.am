@@ -290,7 +290,7 @@ maintainer-check: automake aclocal
 	  echo 'Do not use tabs in the manual.' 1>&2; \
 	  exit 1; \
 	fi
-	@if grep -E '([^@]|^)@([	 ]|$$)' $(srcdir)/doc/automake.texi; \
+	@if grep -E '([^@]|^)@([	 ][^@]|$$)' $(srcdir)/doc/automake.texi; \
 	then \
 	  echo 'Unescaped @.' 1>&2; \
 	  exit 1; \
