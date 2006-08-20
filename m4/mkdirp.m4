@@ -20,7 +20,7 @@ dnl adjustment using top_builddir (which is defined more often than
 dnl MKDIR_P).
 AC_SUBST([mkdir_p], ["$MKDIR_P"])dnl
 case $mkdir_p in
-  [\\/$]* | ?:[\\/]*) ;;
+  [[\\/$]]* | ?:[[\\/]]*) ;;
   */*) mkdir_p="\$(top_builddir)/$mkdir_p" ;;
 esac
 ])
