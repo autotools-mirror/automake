@@ -22,7 +22,7 @@
 
 ## lib goes first, because it builds Config.pm, used by aclocal and
 ## automake (run in doc, tests, and in the rebuild rules.)
-## `.' goes before doc and check, because the latter two directories
+## `.' goes before doc and tests, because the latter two directories
 ## run aclocal and automake.
 SUBDIRS = lib . doc m4 tests
 
