@@ -168,7 +168,7 @@ sub usage ()
   `gnu'           GNU coding standards (default in gnu and gnits modes)
   `obsolete'      obsolete features or constructions
   `override'      user redefinitions of Automake rules or variables
-  `portability'   portability issues
+  `portability'   portability issues (default in gnu and gnits modes)
   `syntax'        dubious syntactic constructs (default)
   `unsupported'   unsupported or incomplete features (default)
   `all'           all the warnings
