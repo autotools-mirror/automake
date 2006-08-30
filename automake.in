@@ -2301,16 +2301,22 @@ sub handle_compile ()
     my $default_includes = '';
     if (! option 'nostdinc')
       {
-	$default_includes = ' -I. -I$(srcdir)';
+	my @incs = ('-I.');
 
 	my $var = var 'CONFIG_HEADER';
 	if ($var)
 	  {
 	    foreach my $hdr (split (' ', $var->variable_value))
 	      {
-		$default_includes .= ' -I' . dirname ($hdr);
+		push @incs, '-I' . dirname ($hdr);
 	      }
 	  }
+	# We want `-I. -I$(srcdir)', but the latter -I is redundant
+	# and unaesthetic in non-VPATH builds.  We use `-I.@am__isrc@`
+	# instead.  It will be replaced by '-I.' or '-I. -I$(srcdir)'.
+	# Items in CONFIG_HEADER are never in $(srcdir) so it is safe
+	# to just append @am__isrc@.
+	$default_includes = ' ' . uniq (@incs) . '@am__isrc@';
       }
 
     my (@mostly_rms, @dist_rms);
