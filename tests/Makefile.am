@@ -244,6 +244,7 @@ flibs.test \
 fn99.test \
 fnoc.test \
 fo.test	\
+fort1.test \
 fonly.test \
 fortdep.test \
 fpinst2.test \
