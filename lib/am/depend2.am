@@ -1,6 +1,6 @@
 ## automake - create Makefile.in from Makefile.am
 ## Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002,
-## 2003, 2004  Free Software Foundation, Inc.
+## 2003, 2004, 2006  Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -65,10 +65,11 @@ if %?NONLIBTOOL%
 if %FASTDEP%
 ## In fast-dep mode, we can always use -o.
 ## For non-suffix rules, we must emulate a VPATH search on %SOURCE%.
-?!GENERIC?	if %COMPILE% -MT %OBJ% -MD -MP -MF "%DEPBASE%.Tpo" %-c% -o %OBJ% `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%; \
-?SUBDIROBJ??GENERIC?	depbase=`echo %OBJ% | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`; \
-?GENERIC?	if %COMPILE% -MT %OBJ% -MD -MP -MF "%DEPBASE%.Tpo" %-c% -o %OBJ% %SOURCE%; \
-	then mv -f "%DEPBASE%.Tpo" "%DEPBASE%.Po"; else rm -f "%DEPBASE%.Tpo"; exit 1; fi
+?!GENERIC?	%COMPILE% -MT %OBJ% -MD -MP -MF %DEPBASE%.Tpo %-c% -o %OBJ% `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%
+?GENERIC??!SUBDIROBJ?	%COMPILE% -MT %OBJ% -MD -MP -MF %DEPBASE%.Tpo %-c% -o %OBJ% %SOURCE%
+?GENERIC??SUBDIROBJ?	depbase=`echo %OBJ% | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+?GENERIC??SUBDIROBJ?	%COMPILE% -MT %OBJ% -MD -MP -MF %DEPBASE%.Tpo %-c% -o %OBJ% %SOURCE% &&\
+	mv -f %DEPBASE%.Tpo %DEPBASE%.Po
 else !%FASTDEP%
 if %AMDEP%
 	source='%SOURCE%' object='%OBJ%' libtool=no @AMDEPBACKSLASH@
@@ -89,10 +90,11 @@ endif !%FASTDEP%
 if %FASTDEP%
 ## In fast-dep mode, we can always use -o.
 ## For non-suffix rules, we must emulate a VPATH search on %SOURCE%.
-?!GENERIC?	if %COMPILE% -MT %OBJOBJ% -MD -MP -MF "%DEPBASE%.Tpo" %-c% -o %OBJOBJ% `if test -f '%SOURCE%'; then $(CYGPATH_W) '%SOURCE%'; else $(CYGPATH_W) '$(srcdir)/%SOURCE%'; fi`; \
-?SUBDIROBJ??GENERIC?	depbase=`echo %OBJ% | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`; \
-?GENERIC?	if %COMPILE% -MT %OBJOBJ% -MD -MP -MF "%DEPBASE%.Tpo" %-c% -o %OBJOBJ% `$(CYGPATH_W) '%SOURCE%'`; \
-	then mv -f "%DEPBASE%.Tpo" "%DEPBASE%.Po"; else rm -f "%DEPBASE%.Tpo"; exit 1; fi
+?!GENERIC?	%COMPILE% -MT %OBJOBJ% -MD -MP -MF %DEPBASE%.Tpo %-c% -o %OBJOBJ% `if test -f '%SOURCE%'; then $(CYGPATH_W) '%SOURCE%'; else $(CYGPATH_W) '$(srcdir)/%SOURCE%'; fi`
+?GENERIC??!SUBDIROBJ?	%COMPILE% -MT %OBJOBJ% -MD -MP -MF %DEPBASE%.Tpo %-c% -o %OBJOBJ% `$(CYGPATH_W) '%SOURCE%'`
+?GENERIC??SUBDIROBJ?	depbase=`echo %OBJ% | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+?GENERIC??SUBDIROBJ?	%COMPILE% -MT %OBJOBJ% -MD -MP -MF %DEPBASE%.Tpo %-c% -o %OBJOBJ% `$(CYGPATH_W) '%SOURCE%'` &&\
+	mv -f %DEPBASE%.Tpo %DEPBASE%.Po
 else !%FASTDEP%
 if %AMDEP%
 	source='%SOURCE%' object='%OBJOBJ%' libtool=no @AMDEPBACKSLASH@
@@ -115,10 +117,11 @@ if %?LIBTOOL%
 if %FASTDEP%
 ## In fast-dep mode, we can always use -o.
 ## For non-suffix rules, we must emulate a VPATH search on %SOURCE%.
-?!GENERIC?	if %LTCOMPILE% -MT %LTOBJ% -MD -MP -MF "%DEPBASE%.Tpo" %-c% -o %LTOBJ% `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%; \
-?SUBDIROBJ??GENERIC?	depbase=`echo %OBJ% | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`; \
-?GENERIC?	if %LTCOMPILE% -MT %LTOBJ% -MD -MP -MF "%DEPBASE%.Tpo" %-c% -o %LTOBJ% %SOURCE%; \
-	then mv -f "%DEPBASE%.Tpo" "%DEPBASE%.Plo"; else rm -f "%DEPBASE%.Tpo"; exit 1; fi
+?!GENERIC?	%LTCOMPILE% -MT %LTOBJ% -MD -MP -MF %DEPBASE%.Tpo %-c% -o %LTOBJ% `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%
+?GENERIC??!SUBDIROBJ?	%LTCOMPILE% -MT %LTOBJ% -MD -MP -MF %DEPBASE%.Tpo %-c% -o %LTOBJ% %SOURCE%
+?GENERIC??SUBDIROBJ?	depbase=`echo %OBJ% | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
+?GENERIC??SUBDIROBJ?	%LTCOMPILE% -MT %LTOBJ% -MD -MP -MF %DEPBASE%.Tpo %-c% -o %LTOBJ% %SOURCE% &&\
+	mv -f %DEPBASE%.Tpo %DEPBASE%.Plo
 else !%FASTDEP%
 if %AMDEP%
 	source='%SOURCE%' object='%LTOBJ%' libtool=yes @AMDEPBACKSLASH@
