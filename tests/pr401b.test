@@ -53,7 +53,7 @@ cat >>configure.in << 'EOF'
 ## These lines are activated for later tests
 #: AC_CONFIG_LIBOBJ_DIR([lib])
 AC_PROG_CC
-#: AM_PROG_CC_C_O
+#x AM_PROG_CC_C_O
 AC_LIBOBJ([feep])
 AC_LIBSOURCE([feep.c])
 AC_PROG_LIBTOOL
@@ -90,11 +90,29 @@ $AUTOMAKE -a
 $MAKE distcheck
 
 
+## ------------------------------------------ ##
+## Traditional LIBOBJS with LIBOBJDIR set.    ##
+## ------------------------------------------ ##
+
+# Invocation of AC_CONFIG_LIBOBJ_DIR may be necessary for reasons
+# unrelated to Automake or Makefile.am layout.
+
+sed 's/#: //' configure.in >configure.int
+mv -f configure.int configure.in
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE -a
+./configure
+test ! -d lib/lib
+$MAKE distcheck
+
+
 ## ---------------------------------------------- ##
 ## Test using LTLIBOBJS from a sibling directory. ##
 ## ---------------------------------------------- ##
 
-sed 's/#: //; s/lib\/Makefile //' configure.in >configure.int
+sed 's/#x //; s/lib\/Makefile //' configure.in >configure.int
 mv -f configure.int configure.in
 
 cat >Makefile.am <<'EOF'
