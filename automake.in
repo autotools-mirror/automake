@@ -5732,6 +5732,19 @@ sub make_conditional_string ($$)
 }
 
 
+my %_am_macro_for_cond =
+  (
+  AMDEP => "one of the compiler tests\n"
+           . "    AC_PROG_CC, AC_PROG_CXX, AC_PROG_CXX, AC_PROG_OBJC,\n"
+	   . "    AM_PROG_AS, AM_PROG_GCJ, AM_PROG_UPC",
+  am__fastdepCC => 'AC_PROG_CC',
+  am__fastdepCCAS => 'AM_PROG_AS',
+  am__fastdepCXX => 'AC_PROG_CXX',
+  am__fastdepGCJ => 'AM_PROG_GCJ',
+  am__fastdepOBJC => 'AC_PROG_OBJC',
+  am__fastdepUPC => 'AM_PROG_UPC'
+  );
+
 # $COND
 # cond_stack_if ($NEGATE, $COND, $WHERE)
 # --------------------------------------
@@ -5739,8 +5752,22 @@ sub cond_stack_if ($$$)
 {
   my ($negate, $cond, $where) = @_;
 
-  error $where, "$cond does not appear in AM_CONDITIONAL"
-    if ! $configure_cond{$cond} && $cond !~ /^TRUE|FALSE$/;
+  if (! $configure_cond{$cond} && $cond !~ /^TRUE|FALSE$/)
+    {
+      my $text = "$cond does not appear in AM_CONDITIONAL";
+      my $scope = US_LOCAL;
+      if (exists $_am_macro_for_cond{$cond})
+        {
+	  my $mac = $_am_macro_for_cond{$cond};
+	  $text .= "\n  The usual way to define `$cond' is to add ";
+	  $text .= ($mac =~ / /) ? $mac : "`$mac'";
+	  $text .= "\n  to `$configure_ac' and run `aclocal' and `autoconf' again.";
+	  # These warnings appear in Automake files (depend2.am),
+	  # so there is no need to display them more than once:
+	  $scope = US_GLOBAL;
+	}
+      error $where, $text, uniq_scope => $scope;
+    }
 
   push (@cond_stack, make_conditional_string ($negate, $cond));
 
