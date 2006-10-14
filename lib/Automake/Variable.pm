@@ -1108,7 +1108,7 @@ sub set_seen ($)
 
 Make sure that each supplied variable is defined in C<$cond>.
 Otherwise, issue a warning showing C<$reason> (C<$reason> should be
-the reason why these variable are required, for instance C<'option foo
+the reason why these variables are required, for instance C<'option foo
 used'>).  If we know which macro can define this variable, hint the
 user.  Return the number of undefined variables.
 
