@@ -372,6 +372,7 @@ nobase.test \
 nodef.test \
 nodef2.test \
 nodep.test \
+nodep2.test \
 nodepcomp.test \
 nodist.test \
 nodist2.test \
