@@ -349,6 +349,8 @@ my $seen_gettext = 0;
 my $seen_gettext_external = 0;
 # Where AM_GNU_GETTEXT appears.
 my $ac_gettext_location;
+# Whether AM_GNU_GETTEXT_INTL_SUBDIR has been seen.
+my $seen_gettext_intl = 0;
 
 # Lists of tags supported by Libtool.
 my %libtool_tags = ();
@@ -4234,18 +4236,20 @@ sub handle_gettext
 	       "AM_GNU_GETTEXT used but `po' not in SUBDIRS")
 	if ! grep ($_ eq 'po', @subdirs);
 
-      # intl/ is not required when AM_GNU_GETTEXT is called with
-      # the `external' option.
+      # intl/ is not required when AM_GNU_GETTEXT is called with the
+      # `external' option and AM_GNU_GETTEXT_INTL_SUBDIR is not called.
       msg_var ('syntax', $subdirs,
 	       "AM_GNU_GETTEXT used but `intl' not in SUBDIRS")
-	if (! $seen_gettext_external
+	if (! ($seen_gettext_external && ! $seen_gettext_intl)
 	    && ! grep ($_ eq 'intl', @subdirs));
 
-      # intl/ should not be used with AM_GNU_GETTEXT([external])
+      # intl/ should not be used with AM_GNU_GETTEXT([external]), except
+      # if AM_GNU_GETTEXT_INTL_SUBDIR is called.
       msg_var ('syntax', $subdirs,
 	       "`intl' should not be in SUBDIRS when "
 	       . "AM_GNU_GETTEXT([external]) is used")
-	if ($seen_gettext_external && grep ($_ eq 'intl', @subdirs));
+	if ($seen_gettext_external && ! $seen_gettext_intl
+	    && grep ($_ eq 'intl', @subdirs));
     }
 
   require_file ($ac_gettext_location, GNU, 'ABOUT-NLS');
@@ -4785,6 +4789,7 @@ sub scan_autoconf_traces ($)
 		AM_CONDITIONAL => 2,
 		AM_ENABLE_MULTILIB => 0,
 		AM_GNU_GETTEXT => 0,
+		AM_GNU_GETTEXT_INTL_SUBDIR => 0,
 		AM_INIT_AUTOMAKE => 0,
 		AM_MAINTAINER_MODE => 0,
 		AM_PROG_CC_C_O => 0,
@@ -4939,6 +4944,10 @@ sub scan_autoconf_traces ($)
 	  $seen_gettext = $where;
 	  $ac_gettext_location = $where;
 	  $seen_gettext_external = grep ($_ eq 'external', @args);
+	}
+      elsif ($macro eq 'AM_GNU_GETTEXT_INTL_SUBDIR')
+	{
+	  $seen_gettext_intl = $where;
 	}
       elsif ($macro eq 'AM_INIT_AUTOMAKE')
 	{
