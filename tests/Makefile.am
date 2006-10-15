@@ -243,6 +243,7 @@ extra7.test \
 f90only.test \
 flibs.test \
 fn99.test \
+fn99subdir.test \
 fnoc.test \
 fo.test	\
 fort1.test \
