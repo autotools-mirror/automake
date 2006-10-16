@@ -301,6 +301,7 @@ lex2.test \
 lex3.test \
 lex4.test \
 lex5.test \
+libexec.test \
 libobj2.test \
 libobj3.test \
 libobj4.test \
