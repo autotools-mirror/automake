@@ -417,6 +417,9 @@ my %languages = ();
 # Maps each linker variable onto a language object.
 my %link_languages = ();
 
+# maps extensions to needed source flags.
+my %sourceflags = ();
+
 # List of targets we must always output.
 # FIXME: Complete, and remove falsely required targets.
 my %required_targets =
@@ -1282,6 +1285,7 @@ sub handle_languages
 			     DEPBASE   => $depbase,
 			     BASE      => '$*',
 			     SOURCE    => '$<',
+			     SOURCEFLAG => $sourceflags{$ext} || '',
 			     OBJ       => '$@',
 			     OBJOBJ    => '$@',
 			     LTOBJ     => '$@',
@@ -1297,7 +1301,7 @@ sub handle_languages
 	my %seen_files = ();
 	foreach my $file (@{$lang_specific_files{$lang->name}})
 	{
-	    my ($derived, $source, $obj, $myext, %file_transform) = @$file;
+	    my ($derived, $source, $obj, $myext, $srcext, %file_transform) = @$file;
 
 	    # We might see a given object twice, for instance if it is
 	    # used under different conditions.
@@ -1418,6 +1422,7 @@ sub handle_languages
 				     DEPBASE   => $depbase_,
 				     BASE      => $obj_,
 				     SOURCE    => $source_,
+				     SOURCEFLAG => $sourceflags{$srcext} || '',
 				     OBJ       => "$obj_$myext",
 				     OBJOBJ    => "$obj_.obj",
 				     LTOBJ     => "$obj_.lo",
@@ -1441,6 +1446,7 @@ sub handle_languages
 			     DEPBASE   => $depbase,
 			     BASE      => $obj,
 			     SOURCE    => $source,
+			     SOURCEFLAG => $sourceflags{$srcext} || '',
 			     # Use $myext and not `.o' here, in case
 			     # we are actually building a new source
 			     # file -- e.g. via yacc.
@@ -1779,7 +1785,8 @@ sub handle_single_transform ($$$$$%)
 				 # Only use $this_obj_ext in the derived
 				 # source case because in the other case we
 				 # *don't* want $(OBJEXT) to appear here.
-				 ($derived_source ? $this_obj_ext : '.o'));
+				 ($derived_source ? $this_obj_ext : '.o'),
+			         $extension);
 
 		# If we renamed the object then we want to use the
 		# per-executable flag name.  But if this is simply a
@@ -4782,6 +4789,7 @@ sub scan_autoconf_traces ($)
 		AC_CONFIG_HEADERS => 1,
 		AC_CONFIG_LIBOBJ_DIR => 1,
 		AC_CONFIG_LINKS => 1,
+		AC_FC_SRCEXT => 1,
 		AC_INIT => 0,
 		AC_LIBSOURCE => 1,
                 AC_REQUIRE_AUX_FILE => 1,
@@ -4893,6 +4901,14 @@ sub scan_autoconf_traces ($)
 	      $ac_config_files_location{$dest} = $where;
 	      push @config_links, $spec;
 	    }
+	}
+      elsif ($macro eq 'AC_FC_SRCEXT')
+        {
+	  my $suffix = $args[1];
+	  # These flags are used as %SOURCEFLAG% in depend2.am,
+	  # where the trailing space is important.
+	  $sourceflags{'.' . $suffix} = '$(FCFLAGS_' . $suffix . ') '
+	    if ($suffix eq 'f90' || $suffix eq 'f95');
 	}
       elsif ($macro eq 'AC_INIT')
         {

@@ -1,0 +1,58 @@
+#! /bin/sh
+# Copyright (C) 2006  Free Software Foundation, Inc.
+#
+# This file is part of GNU Automake.
+#
+# GNU Automake is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# GNU Automake is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Automake; see the file COPYING.  If not, write to
+# the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+# Boston, MA 02110-1301, USA.
+
+# Test that AC_FC_SRCEXT(f9x) works as intended:
+# - $(FCFLAGS_f) will be used
+
+# Cf. fort1.test and link_f90_only.test.
+
+. ./defs || exit 1
+
+set -e
+
+mkdir sub
+
+cat >>configure.in <<'END'
+AC_PROG_FC
+AC_FC_SRCEXT([f90])
+AC_FC_SRCEXT([f95])
+AC_FC_SRCEXT([blabla])
+END
+
+cat >Makefile.am <<'END'
+bin_PROGRAMS = hello goodbye
+hello_SOURCES = hello.f90 foo.f95 sub/bar.f95
+goodbye_SOURCES = bye.f95 sub/baz.f90
+goodbye_FCFLAGS =
+END
+
+$ACLOCAL
+$AUTOMAKE
+# The following tests aren't fool-proof, but they don't
+# need a Fortran compiler.
+grep '.\$(LINK)'       Makefile.in && exit 1
+grep '.\$(FCLINK)'     Makefile.in
+grep '.\$(FCCOMPILE)'  Makefile.in > stdout
+grep -v '\$(FCFLAGS_f' stdout && exit 1
+grep '.\$(FC.*\$(FCFLAGS_blabla' Makefile.in && exit 1
+# Notice the TAB:
+grep '^[	].*\$(FC.*\$(FCFLAGS_f90).*\.f95' Makefile.in && exit 1
+grep '^[	].*\$(FC.*\$(FCFLAGS_f95).*\.f90' Makefile.in && exit 1
+:
