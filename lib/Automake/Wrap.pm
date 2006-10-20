@@ -68,7 +68,7 @@ followed by the strings in C<@values> separated by spaces or by
 C<"$eol\n$fill"> so that the length of each line never exceeds
 C<$max_len>.
 
-The C<$max_len> contraint is ignored for C<@values> items which
+The C<$max_len> constraint is ignored for C<@values> items which
 are too big to fit alone one a line.
 
 The constructed paragraph is C<"\n">-terminated.

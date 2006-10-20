@@ -144,13 +144,13 @@ An item in C<@conds> should be either C<"FALSE">, C<"TRUE">, or have
 the form C<"NAME_FALSE"> or C<"NAME_TRUE"> where C<NAME> can be
 anything (in practice C<NAME> should be the name of a conditional
 declared in F<configure.ac> with C<AM_CONDITIONAL>, but it's not
-C<Automake::Condition>'s responsability to ensure this).
+C<Automake::Condition>'s responsibility to ensure this).
 
 An empty C<@conds> means C<"TRUE">.
 
 As explained previously, the reference (object) returned is unique
 with respect to C<@conds>.  For this purpose, duplicate elements are
-ignored, and C<@conds> is rewriten as C<("FALSE")> if it contains
+ignored, and C<@conds> is rewritten as C<("FALSE")> if it contains
 C<"FALSE"> or two contradictory conditionals (such as C<"NAME_FALSE">
 and C<"NAME_TRUE">.)
 

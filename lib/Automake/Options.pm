@@ -104,11 +104,11 @@ use constant GNITS   => 2;
 
 =item C<$strictness>
 
-The current stricness.  One of C<FOREIGN>, C<GNU>, or C<GNITS>.
+The current strictness.  One of C<FOREIGN>, C<GNU>, or C<GNITS>.
 
 =item C<$strictness_name>
 
-The current stricness name.  One of C<'foreign'>, C<'gnu'>, or C<'gnits'>.
+The current strictness name.  One of C<'foreign'>, C<'gnu'>, or C<'gnits'>.
 
 =back
 
@@ -239,7 +239,7 @@ Return 1 on error, 0 otherwise.
 # -------------------------------------------------
 # Process a list of options.  Return 1 on error, 0 otherwise.
 # \%OPTIONS is the hash to fill with options data, $WHERE is
-# the location where @OPTIONS occured.
+# the location where @OPTIONS occurred.
 sub _process_option_list (\%$@)
 {
   my ($options, $where, @list) = @_;

@@ -66,7 +66,7 @@ Automake::XFile - supply object methods for filehandles with error handling
 C<Automake::XFile> inherits from C<IO::File>.  It provides the method
 C<name> returning the file name.  It provides dying version of the
 methods C<close>, C<lock> (corresponding to C<flock>), C<new>,
-C<open>, C<seek>, and C<trunctate>.  It also overrides the C<getline>
+C<open>, C<seek>, and C<truncate>.  It also overrides the C<getline>
 and C<getlines> methods to translate C<\r\n> to C<\n>.
 
 =head1 SEE ALSO

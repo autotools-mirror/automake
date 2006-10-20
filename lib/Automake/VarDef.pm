@@ -100,7 +100,7 @@ C<VAR_SORTED> variables should be sorted and then handled as
 C<VAR_PRETTY> variables.
 
 C<VAR_SILENT> variables can also be overridden silently (unlike the
-other kinds of variables whose overridding may sometimes produce
+other kinds of variables whose overriding may sometimes produce
 warnings).
 
 =cut
@@ -130,7 +130,7 @@ C<$comment> is any comment preceding the definition.  (Because
 Automake reorders variable definitions in the output, it also tries to
 carry comments around.)
 
-C<$location> is the place where the definition occured, it should be
+C<$location> is the place where the definition occurred, it should be
 an instance of L<Automake::Location>.
 
 C<$type> should be C<''> for definitions made with C<=>, and C<':'>
@@ -167,7 +167,7 @@ sub new ($$$$$$$$)
 
 =item C<$def-E<gt>append ($value, $comment)>
 
-Append C<$value> and <$comment> to the exisiting value and comment of
+Append C<$value> and <$comment> to the existing value and comment of
 C<$def>.  This is normally called on C<+=> definitions.
 
 =cut
