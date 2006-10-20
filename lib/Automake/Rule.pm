@@ -143,7 +143,7 @@ C<$suffix_rules{'.foo'}{'.$(OBJEXT)'}> exists.  This will work even if
 transforming C<.foo> to C<.$(OBJEXT)> involves a chain of several
 suffix rules.
 
-The value of C<$suffix_rules{$ext1}{$ext2}> is the a pair
+The value of C<$suffix_rules{$ext1}{$ext2}> is a pair
 C<[ $next_sfx, $dist ]> where C<$next_sfx> is target suffix
 for the next rule to use to reach C<$ext2>, and C<$dist> the
 distance to C<$ext2'>.
@@ -555,7 +555,7 @@ sub _new ($$)
 }
 
 
-=itcem C<@conds = define ($rulename, $source, $owner, $cond, $where)>
+=item C<@conds = define ($rulename, $source, $owner, $cond, $where)>
 
 Define a new rule.  C<$rulename> is the list of targets.  C<$source>
 is the filename the rule comes from.  C<$owner> is the owner of the
@@ -644,7 +644,7 @@ sub define ($$$$$)
 		}
 	      # Return so we don't redefine the rule in our tables,
 	      # don't check for ambiguous condition, etc.  The rule
-	      # will be output anyway beauce &read_am_file ignore the
+	      # will be output anyway because &read_am_file ignore the
 	      # return code.
 	      return ();
 	    }
@@ -689,7 +689,7 @@ sub define ($$$$$)
 	      # Automake should ignore redefinitions of its own
 	      # rules if they came from the same file.  This makes
 	      # it easier to process a Makefile fragment several times.
-	      # Hower it's an error if the target is defined in many
+	      # However it's an error if the target is defined in many
 	      # files.  E.g., the user might be using bin_PROGRAMS = ctags
 	      # which clashes with our `ctags' rule.
 	      # (It would be more accurate if we had a way to compare
@@ -780,7 +780,7 @@ sub define ($$$$$)
       # Check if the rule is a suffix rule: either it's a rule for
       # two known extensions...
       if ($t =~ /^($KNOWN_EXTENSIONS_PATTERN)($KNOWN_EXTENSIONS_PATTERN)$/
-	  # ...or it's a rule with unknown extensions (.i.e, the rule
+	  # ...or it's a rule with unknown extensions (i.e., the rule
 	  # looks like `.foo.bar:' but `.foo' or `.bar' are not
 	  # declared in SUFFIXES and are not known language
 	  # extensions).  Automake will complete SUFFIXES from

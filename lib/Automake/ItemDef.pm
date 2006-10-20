@@ -1,4 +1,4 @@
-# Copyright (C) 2003  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2006  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@ C<$comment> is any comment preceding the definition.  (Because
 Automake reorders items in the output, it also tries to carry comments
 around.)
 
-C<$location> is the place where the definition occured, it should be
+C<$location> is the place where the definition occurred, it should be
 an instance of L<Automake::Location>.
 
 C<$owner> specifies who owns the rule.

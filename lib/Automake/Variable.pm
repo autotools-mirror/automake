@@ -193,7 +193,7 @@ my %_ac_macro_for_var =
 # The name of the configure.ac file.
 my $configure_ac = find_configure_ac;
 
-# Variables that can be overriden without complaint from -Woverride
+# Variables that can be overridden without complaint from -Woverride
 my %_silent_variable_override =
   (AM_MAKEINFOHTMLFLAGS => 1,
    AR => 1,
@@ -743,7 +743,7 @@ sub scan_variable_expansions ($)
   while ($text =~ /(?<!\$)\$(?:\{([^\}]*)\}|\(([^\)]*)\))/g)
     {
       my $var = $1 || $2;
-      # The occurence may look like $(string1[:subst1=[subst2]]) but
+      # The occurrence may look like $(string1[:subst1=[subst2]]) but
       # we want only `string1'.
       $var =~ s/:[^:=]*=[^=]*$//;
       push @result, $var;
@@ -789,7 +789,7 @@ C<$varname>: the name of the variable being defined.
 
 C<$owner>: owner of the variable (one of C<VAR_MAKEFILE>,
 C<VAR_CONFIGURE>, or C<VAR_AUTOMAKE>, defined by L<Automake::VarDef>).
-Variables can be overriden, provided the new owner is not weaker
+Variables can be overridden, provided the new owner is not weaker
 (C<VAR_AUTOMAKE> < C<VAR_CONFIGURE> < C<VAR_MAKEFILE>).
 
 C<$type>: the type of the assignment (C<''> for C<FOO = bar>,
@@ -1263,12 +1263,12 @@ following arguments:
                    traversing
    $val,        -- the item (i.e., filename) to process
    $cond,       -- the Condition for the $var definition we are
-                   examinating (ignoring the recursion context)
+                   examining (ignoring the recursion context)
    $full_cond)  -- the full Condition, taking into account
                    conditions inherited from parent variables
                    during recursion
 
-If C<inner_expand> is set, variable references occuring in filename
+If C<inner_expand> is set, variable references occurring in filename
 (as in C<$(BASE).ext>) are expansed before the filename is passed to
 C<&fun_item>.
 
@@ -1489,7 +1489,7 @@ sub _hash_varname ($)
 
 # _hash_values (@VALUES)
 # ----------------------
-# Hash @VALUES for %_gen_varname.  @VALUES shoud be a list
+# Hash @VALUES for %_gen_varname.  @VALUES should be a list
 # of pairs: ([$cond, @values], [$cond, @values], ...).
 # See _gen_varname() below.
 sub _hash_values (@)

@@ -46,7 +46,7 @@ Automake::DisjConditions - record a disjunction of Conditions
   my $cond = $set->one_cond;
 
   # Return true iff $set is always true (i.e. its subconditions
-  # conver all cases).
+  # cover all cases).
   if ($set->true) { ... }
 
   # Return false iff $set is always false (i.e. is empty, or contains
@@ -331,7 +331,7 @@ The argument can also be a C<Condition>.
 
 =cut
 
-# Same as multiply() but take a list of Conditonals as second argument.
+# Same as multiply() but take a list of Conditionals as second argument.
 # We use this in invert().
 sub _multiply ($@)
 {
