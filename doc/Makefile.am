@@ -59,7 +59,7 @@ $(srcdir)/amhello-1.0.tar.gz: $(amhello_sources) $(top_srcdir)/configure.ac
 	ACLOCAL=aclocal-$(APIVERSION) AUTOMAKE=automake-$(APIVERSION) \
 	autoreconf -vfi && \
 	./configure && \
-	make distcheck && \
-	make distclean && \
+	$(MAKE) $(AM_MAKEFLAGS) distcheck && \
+	$(MAKE) $(AM_MAKEFLAGS) distclean && \
 	rm -rf $(amhello_configury) && \
 	mv amhello-1.0.tar.gz ..
