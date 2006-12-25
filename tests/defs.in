@@ -50,7 +50,7 @@ if test -z "$srcdir"; then
    # compute $srcdir.
    srcdir=`echo "$0" | sed -e 's,/[^\\/]*$,,'`
    test $srcdir = $0 && srcdir=.
-fi
+else :; fi
 
 # Ensure $srcdir is set correctly.
 test -f $srcdir/defs.in || {
@@ -97,131 +97,125 @@ echo $PATH
 # (See note about `export' in the Autoconf manual.)
 export PATH
 
-if test -n "$required"
-then
-  for tool in $required
-  do
-    # Check that each required tool is present.
-    case $tool in
-      bison)
-	# Since bison is required, we pick YACC for ./configure.
-	YACC='bison -y'
-	export YACC
-	echo "$me: running bison --version"
-	( bison --version ) || exit 77
-	;;
-      bzip2)
-	# Do not use --version, bzip2 still tries to compress stdin.
-	echo "$me: running bzip2 --help"
-	( bzip2 --help ) || exit 77
-	;;
-      etags)
-	# Exuberant Ctags will create a TAGS file even
-	# when asked for --help or --version.  (Emacs's etags
-	# does not have such problem.)  Use -o /dev/null
-	# to make sure we do not pollute the tests/ directory.
-	echo "$me: running etags --version -o /dev/null"
-	( etags --version -o /dev/null ) || exit 77
-	;;
-      GNUmake)
-	# Use --version AND -v, because SGI Make doesn't fail on --version.
-	# Also grep for GNU because newer versions of FreeBSD make do
-	# not complain about `--version' (they seem to silently ignore it).
-	echo "$me: running $MAKE --version -v | grep GNU"
-	( $MAKE --version -v | grep GNU ) || exit 77
-	;;
-      gcc)
-        # When gcc is required, export `CC=gcc' so that ./configure
-        # always use it.  This is important only when the user
-        # has defined CC in his environment, otherwise ./configure will
-        # prefer gcc to other compilers.
-        CC=gcc
-	export CC
-	echo "$me: running $CC --version"
-	( $CC --version ) || exit 77
-	;;
-      g++)
-        CXX=g++
-	export CXX
-	echo "$me: running $CXX --version"
-	( $CXX --version ) || exit 77
-	;;
-      icc)
-        CC=icc
-	export CC
-	# There is no way to ask *only* the compiler's version.
-	# This tool always want to do something (by default
-	# it will try link *nothing* and complain it cannot find
-	# main(); funny).  Use -help so it does not try linking anything.
-	echo "$me: running $CC -V -help"
-	( $CC -V -help ) || exit 77
-	;;
-      makedepend)
-	echo "$me: running makedepend -f-"
-	( makedepend -f- ) || exit 77
-	;;
-      makeinfo-html)
-	# Make sure makeinfo understands --html.
-	echo "$me: running makeinfo --html --version"
-	( makeinfo --html --version ) || exit 77
-	;;
-      non-root)
-	# Skip this test case if the user is root.
-	# We try to append to a read-only file to detect this.
-	priv_check_temp=priv-check.$$
-	touch $priv_check_temp || exit 1
-	chmod a-w $priv_check_temp || exit 1
-	(echo foo >> $priv_check_temp) >/dev/null 2>&1
-	overwrite_status=$?
-	rm -f $priv_check_temp
-	test $overwrite_status = 0 && exit 77
-	;;
-      python)
-	# Python doesn't support --version, it has -V
-	echo "$me: running python -V"
-	( python -V ) || exit 77
-	;;
-      ro-dir)
-	# Skip this test case if read-only directories aren't supported
-	# (e.g., under DOS.)
-	ro_dir_temp=ro_dir.$$
-	mkdir $ro_dir_temp || exit 1
-	chmod a-w $ro_dir_temp || exit 1
-	(: > $ro_dir_temp/probe) >/dev/null 2>/dev/null
-	create_status=$?
-	rm -rf $ro_dir_temp
-	test $create_status = 0 && exit 77
-	;;
-      runtest)
-	# DejaGnu's runtest program. We rely on being able to specify
-	# the program on the runtest command-line. This requires
-	# DejaGnu 1.4.3 or later.
-	echo "$me: running runtest --version"
-	(runtest SOMEPROGRAM=someprogram --version) || exit 77
-	;;
-      tex)
-        # No all versions of Tex support `--version', so we use
-        # a configure check.
-        test -n "@TEX@" || exit 77
-	;;
-      texi2dvi-o)
-        # Texi2dvi supports `-o' since Texinfo 4.1.
-	echo "$me: running texi2dvi -o /dev/null --version"
-	( texi2dvi -o /dev/null --version ) || exit 77
-	;;
-      # Generic case: the tool must support --version.
-      *)
-	echo "$me: running $tool --version"
-	( $tool --version ) || exit 77
-	;;
-    esac
-    # Additional variables to define if some $tool is required.
-    case $tool in
-      gcc)
-	;;
-    esac
-  done
-fi
+for tool in : $required
+do
+  # Check that each required tool is present.
+  case $tool in
+    :) ;;
+    bison)
+      # Since bison is required, we pick YACC for ./configure.
+      YACC='bison -y'
+      export YACC
+      echo "$me: running bison --version"
+      ( bison --version ) || exit 77
+      ;;
+    bzip2)
+      # Do not use --version, bzip2 still tries to compress stdin.
+      echo "$me: running bzip2 --help"
+      ( bzip2 --help ) || exit 77
+      ;;
+    etags)
+      # Exuberant Ctags will create a TAGS file even
+      # when asked for --help or --version.  (Emacs's etags
+      # does not have such problem.)  Use -o /dev/null
+      # to make sure we do not pollute the tests/ directory.
+      echo "$me: running etags --version -o /dev/null"
+      ( etags --version -o /dev/null ) || exit 77
+      ;;
+    GNUmake)
+      # Use --version AND -v, because SGI Make doesn't fail on --version.
+      # Also grep for GNU because newer versions of FreeBSD make do
+      # not complain about `--version' (they seem to silently ignore it).
+      echo "$me: running $MAKE --version -v | grep GNU"
+      ( $MAKE --version -v | grep GNU ) || exit 77
+      ;;
+    gcc)
+      # When gcc is required, export `CC=gcc' so that ./configure
+      # always use it.  This is important only when the user
+      # has defined CC in his environment, otherwise ./configure will
+      # prefer gcc to other compilers.
+      CC=gcc
+      export CC
+      echo "$me: running $CC --version"
+      ( $CC --version ) || exit 77
+      ;;
+    g++)
+      CXX=g++
+      export CXX
+      echo "$me: running $CXX --version"
+      ( $CXX --version ) || exit 77
+      ;;
+    icc)
+      CC=icc
+      export CC
+      # There is no way to ask *only* the compiler's version.
+      # This tool always want to do something (by default
+      # it will try link *nothing* and complain it cannot find
+      # main(); funny).  Use -help so it does not try linking anything.
+      echo "$me: running $CC -V -help"
+      ( $CC -V -help ) || exit 77
+      ;;
+    makedepend)
+      echo "$me: running makedepend -f-"
+      ( makedepend -f- ) || exit 77
+      ;;
+    makeinfo-html)
+      # Make sure makeinfo understands --html.
+      echo "$me: running makeinfo --html --version"
+      ( makeinfo --html --version ) || exit 77
+      ;;
+    non-root)
+      # Skip this test case if the user is root.
+      # We try to append to a read-only file to detect this.
+      priv_check_temp=priv-check.$$
+      touch $priv_check_temp || exit 1
+      chmod a-w $priv_check_temp || exit 1
+      (echo foo >> $priv_check_temp) >/dev/null 2>&1
+      overwrite_status=$?
+      rm -f $priv_check_temp
+      test $overwrite_status = 0 && exit 77
+      ;;
+    python)
+      # Python doesn't support --version, it has -V
+      echo "$me: running python -V"
+      ( python -V ) || exit 77
+      ;;
+    ro-dir)
+      # Skip this test case if read-only directories aren't supported
+      # (e.g., under DOS.)
+      ro_dir_temp=ro_dir.$$
+      mkdir $ro_dir_temp || exit 1
+      chmod a-w $ro_dir_temp || exit 1
+      (: > $ro_dir_temp/probe) >/dev/null 2>/dev/null
+      create_status=$?
+      rm -rf $ro_dir_temp
+      test $create_status = 0 && exit 77
+      ;;
+    runtest)
+      # DejaGnu's runtest program. We rely on being able to specify
+      # the program on the runtest command-line. This requires
+      # DejaGnu 1.4.3 or later.
+      echo "$me: running runtest --version"
+      (runtest SOMEPROGRAM=someprogram --version) || exit 77
+      ;;
+    tex)
+      # No all versions of Tex support `--version', so we use
+      # a configure check.
+      test -n "@TEX@" || exit 77
+      ;;
+    texi2dvi-o)
+      # Texi2dvi supports `-o' since Texinfo 4.1.
+      echo "$me: running texi2dvi -o /dev/null --version"
+      ( texi2dvi -o /dev/null --version ) || exit 77
+      ;;
+    # Generic case: the tool must support --version.
+    *)
+      echo "$me: running $tool --version"
+      ( $tool --version ) || exit 77
+      ;;
+  esac
+done
+
 
 # Always use an absolute srcdir.  Otherwise symlinks made in subdirs
 # of the test dir just won't work.
@@ -278,23 +272,23 @@ case $required in
   *libtool* | *gettext* )
     aclocaldir='@prefix@/share/aclocal'
     extra_includes=""
-    if [ -f $aclocaldir/dirlist ] ; then
+    if test -f $aclocaldir/dirlist; then
        extra_includes=`(tmp_inc=""
        while read LINE ; do
 	  tmp_inc="$tmp_inc -I $LINE"
        done
        echo $tmp_inc) < $aclocaldir/dirlist`
-    fi
+    else :; fi
 
     libtool_found=no
     gettext_found=no
     for d in $extra_includes $aclocaldir ; do
-       [ "x$d" != x-I ] || continue
-       if [ -f "$d/libtool.m4" ] ; then
-          libtool_found=yes
+       test "x$d" != x-I || continue
+       if test -f "$d/libtool.m4"; then
+	  libtool_found=yes
        fi
-       if [ -f "$d/gettext.m4" ] ; then
-          gettext_found=yes
+       if test -f "$d/gettext.m4"; then
+	  gettext_found=yes
        fi
     done
     case $required in
