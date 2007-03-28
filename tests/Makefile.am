@@ -78,6 +78,7 @@ canon2.test \
 canon3.test \
 canon4.test \
 canon5.test \
+canon-name.test \
 ccnoco.test \
 ccnoco2.test \
 check.test \
