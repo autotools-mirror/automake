@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2006  Free Software Foundation, Inc.
+# Copyright (C) 2006, 2007  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -65,7 +65,7 @@ cat >sub/bar.c <<'END'
 int bar() { return 0; }
 END
 
-touch sub2/sub3/ba3.h
+echo 'extern int x;' > sub2/sub3/ba3.h
 
 cat >sub/bar.h <<'END'
 #include <stdio.h>
@@ -91,15 +91,23 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-./configure --enable-dependency-tracking
-$MAKE 
+for staticshared in --disable-shared "" --disable-static; do
+  ./configure --enable-dependency-tracking $staticshared
+  $MAKE 
 
-# check that dependency tracking works
-if grep 'depmode=none' Makefile; then :
-else
-  cd sub2
-  $sleep
-  echo 'choke me' > sub3/ba3.h
-  if $MAKE; then exit 1; fi
-fi
-:
+  # check that dependency tracking works
+  if grep 'depmode=none' Makefile; then :
+  else
+    cd sub2
+    $sleep
+    echo 'choke me' > sub3/ba3.h
+    if $MAKE; then exit 1; fi
+    cd ..
+  fi
+
+  $MAKE distclean
+  test ! -f sub2/sub3/ba3.u
+  test ! -f sub2/sub3/ba3.d
+
+  echo 'extern int x;' > sub2/sub3/ba3.h
+done
