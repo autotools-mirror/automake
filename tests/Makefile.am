@@ -87,6 +87,7 @@ check3.test \
 check4.test \
 check5.test \
 check6.test \
+check7.test \
 checkall.test \
 clean.test \
 clean2.test \
