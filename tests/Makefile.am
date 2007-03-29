@@ -363,6 +363,7 @@ mdate.test \
 mdate2.test \
 mdate3.test \
 mdate4.test \
+mdate5.test \
 missing.test \
 missing2.test \
 missing3.test \
