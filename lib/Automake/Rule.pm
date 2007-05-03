@@ -1,4 +1,4 @@
-# Copyright (C) 2003, 2004, 2006  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2004, 2006, 2007  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -482,7 +482,7 @@ sub rule ($)
   return 0;
 }
 
-=item C<rule ($rulename, $cond>
+=item C<ruledef ($rulename, $cond)>
 
 Return the C<Automake::RuleDef> object for the rule named
 C<$rulename> if defined in condition C<$cond>.  Return false
