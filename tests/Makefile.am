@@ -24,6 +24,7 @@ acloca18.test \
 acloca19.test \
 acloca20.test \
 acloca21.test \
+acloca22.test \
 acoutnoq.test \
 acoutpt.test \
 acoutpt2.test \
