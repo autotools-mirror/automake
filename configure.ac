@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.
 
 # Copyright (C) 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2006,
-# 2004, 2006  Free Software Foundation, Inc.
+# 2004, 2006, 2007  Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -81,7 +81,7 @@ else
   am_cv_autoconf_installed=no
 fi])
 if test "$am_cv_autoconf_installed" = no; then
-  AC_MSG_ERROR([Autoconf 2.58 or better is required.
+  AC_MSG_ERROR([Autoconf 2.60 or better is required.
     Please make sure it is installed and in your PATH.])
 fi
 
@@ -102,7 +102,7 @@ fi
 
 AC_CACHE_CHECK([whether autoconf is recent enough], [am_cv_autoconf_version],
 [mkdir conftest
-echo 'AC''_PREREQ(2.58)' > conftest/conftest.ac
+echo 'AC''_PREREQ(2.60)' > conftest/conftest.ac
 if AM_RUN_LOG([cd conftest && eval $am_AUTOCONF -o /dev/null conftest.ac]);
 then
   am_cv_autoconf_version=yes
@@ -111,7 +111,7 @@ else
 fi
 rm -rf conftest])
 if test "$am_cv_autoconf_version" = no; then
-  AC_MSG_ERROR([Autoconf 2.58 or better is required.])
+  AC_MSG_ERROR([Autoconf 2.60 or better is required.])
 fi
 
 # Test for ln.  We need use it to install the versioned binaries.
