@@ -358,6 +358,7 @@ ltconv.test \
 ltdeps.test \
 ltlibobjs.test \
 ltlibsrc.test \
+lzma.test \
 maintclean.test \
 make.test \
 makej.test \
