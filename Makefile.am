@@ -3,7 +3,7 @@
 ## Makefile for Automake.
 
 ## Copyright (C) 1995, 1996, 1997, 1998, 1999, 2001, 2002, 2003, 2004,
-## 2005, 2006  Free Software Foundation, Inc.
+## 2005, 2006, 2007  Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -298,8 +298,8 @@ maintainer-check: automake aclocal
 	fi
 
 
-cvs-dist: maintainer-check
-## Make sure clcommit exists (we use it at the end of cvs-dist).
+git-dist: maintainer-check
+## Make sure clcommit exists (we use it at the end of git-dist).
 	@if (clcommit --version)>/dev/null 2>/dev/null; then :; else \
 	  echo "Get clcommit from module cvs-utils on Savannah."; \
 	  exit 1; \
@@ -315,9 +315,9 @@ cvs-dist: maintainer-check
 ## the release in the repository.  We don't use RCS keywords so it's OK
 ## to distribute the files before they were committed.
 	cd $(srcdir) && clcommit && \
-	  cvs -q tag -c `echo "Release-$(VERSION)" | sed 's/\./-/g'`
+	  git tag -s `echo "Release-$(VERSION)" | sed 's/\./-/g'`
 
-cvs-release: cvs-dist
+git-release: git-dist
 	case $(VERSION) in \
 	  *[a-z]) dest=alpha;; \
 	  *)      dest=ftp;; \
@@ -333,6 +333,15 @@ cvs-diff:
 	else prevno="$$OLDVERSION"; fi; \
 	prevver=Release-`echo $$prevno | sed 's/\./-/g'`; \
 	cvs -f rdiff -c -r $$prevver -r $$thisver $(PACKAGE) \
+	    > $(PACKAGE)-$$prevno-$(VERSION).diff
+
+git-diff:
+	thisver=`echo "Release-$(VERSION)" | sed 's/\./-/g'`; \
+	if test -z "$$OLDVERSION"; then \
+	  prevno=`echo "$(VERSION)" - 0.01 | bc | sed 's/^\./0./'`; \
+	else prevno="$$OLDVERSION"; fi; \
+	prevver=Release-`echo $$prevno | sed 's/\./-/g'`; \
+	git diff $$prevver $$thisver $(PACKAGE) \
 	    > $(PACKAGE)-$$prevno-$(VERSION).diff
 
 ## Check our path lengths.
