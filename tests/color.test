@@ -1,0 +1,104 @@
+#! /bin/sh
+# Copyright (C) 2007  Free Software Foundation, Inc.
+#
+# This file is part of GNU Automake.
+#
+# GNU Automake is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# GNU Automake is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Automake; see the file COPYING.  If not, write to
+# the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+# Boston, MA 02110-1301, USA.
+
+# Test Automake TESTS color output.
+
+. ./defs || exit 1
+
+set -e
+
+red='[0;31m'
+grn='[0;32m'
+lgn='[1;32m'
+blu='[1;34m'
+std='[m'
+
+cat >>configure.in <<END
+AC_OUTPUT
+END
+
+cat >Makefile.am <<'END'
+AUTOMAKE_OPTIONS = color-tests
+TESTS = $(check_SCRIPTS)
+check_SCRIPTS = pass fail skip xpass xfail
+XFAIL_TESTS = xpass xfail
+END
+
+cat >pass <<END
+#! /bin/sh
+exit 0
+END
+
+cat >fail <<END
+#! /bin/sh
+exit 1
+END
+
+cat >skip <<END
+#! /bin/sh
+exit 77
+END
+
+cp fail xfail
+cp pass xpass
+chmod +x pass fail skip xpass xfail
+
+$ACLOCAL
+$AUTOMAKE
+$AUTOCONF
+./configure
+
+test_color ()
+{
+  grep ": pass" stdout | $FGREP "$grn"
+  grep ": fail" stdout | $FGREP "$red"
+  grep ": xfail" stdout | $FGREP "$lgn"
+  grep ": xpass" stdout | $FGREP "$red"
+  grep ": skip" stdout | $FGREP "$blu"
+}
+
+test_no_color ()
+{
+  grep ": pass" stdout | $FGREP "$grn" && exit 1
+  grep ": fail" stdout | $FGREP "$red" && exit 1
+  grep ": xfail" stdout | $FGREP "$lgn" && exit 1
+  grep ": xpass" stdout | $FGREP "$red" && exit 1
+  grep ": skip" stdout | $FGREP "$blu" && exit 1
+  :
+}
+
+cat >expect-make <<'END'
+#! /usr/bin/expect -f
+spawn $env(MAKE) check $argv
+expect eof
+END
+
+$MAKE check AM_COLOR_TESTS=always >stdout && { cat stdout; exit 1; }
+cat stdout
+test_color
+
+MAKE=$MAKE expect -f expect-make foo= >stdout || exit 77
+cat stdout
+test_color
+
+MAKE=$MAKE expect -f expect-make AM_COLOR_TESTS=no >stdout || exit 77
+cat stdout
+test_no_color
+:
