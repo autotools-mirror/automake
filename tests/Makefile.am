@@ -494,6 +494,7 @@ spell2.test \
 spell3.test \
 spelling.test \
 spy.test \
+stdinc.test \
 stamph2.test \
 stdlib.test \
 stdlib2.test \
