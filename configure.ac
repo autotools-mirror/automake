@@ -32,7 +32,7 @@ AC_CANONICAL_BUILD
 # suite) without being bothered by `missing'.
 AC_SUBST([am_AUTOCONF], ["${AUTOCONF-autoconf}"])
 
-AM_INIT_AUTOMAKE([1.8a dist-bzip2 filename-length-max=99 color-tests])
+AM_INIT_AUTOMAKE([1.10a dist-bzip2 filename-length-max=99 color-tests])
 
 # The API version is the base version.  We must guarantee
 # compatibility for all releases with the same API version.
