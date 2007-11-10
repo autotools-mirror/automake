@@ -235,16 +235,35 @@ case "$srcdir" in
     ;;
 esac
 
-chmod -R a+rwx testSubDir > /dev/null 2>&1
-rm -rf testSubDir > /dev/null 2>&1
-mkdir testSubDir
+curdir=`pwd`
+testSubDir=$me.dir
+chmod -R u+rwx $testSubDir > /dev/null 2>&1
+rm -rf $testSubDir > /dev/null 2>&1
+mkdir $testSubDir
+
+trap 'exit_status=$?
+  cd "$curdir"
+  case $exit_status,$keep_testdirs in
+  0,)
+    chmod -R a+rwx $testSubDir > /dev/null 2>&1
+    rm -rf "$testSubDir" ;;
+  esac
+  test "$signal" != 0 &&
+    echo "$as_me: caught signal $signal"
+  echo "$as_me: exit $exit_status"
+  exit $exit_status
+' 0
+for signal in 1 2 13 15; do
+  trap 'signal='$signal'; { (exit 1); exit 1; }' $signal
+done
+signal=0
 
 # Copy in some files we need.
 for file in install-sh missing depcomp; do
-   cp $srcdir/../lib/$file testSubDir/$file || exit 1
+   cp $srcdir/../lib/$file $testSubDir/$file || exit 1
 done
 
-cd ./testSubDir
+cd ./$testSubDir
 
 # Build appropriate environment in test directory.  Eg create
 # configure.in, touch all necessary files, etc.
