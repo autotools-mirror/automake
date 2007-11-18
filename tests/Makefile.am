@@ -409,6 +409,7 @@ output9.test \
 output10.test \
 output11.test \
 output12.test \
+output13.test \
 overrid.test \
 parse.test \
 percent.test \
