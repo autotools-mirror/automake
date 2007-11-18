@@ -150,14 +150,27 @@ my $erase_me;
 
 ################################################################
 
-# Erase temporary file ERASE_ME.
+# Erase temporary file ERASE_ME.  Handle signals.
 sub unlink_tmp
 {
+  my ($sig) = @_;
+
+  if ($sig)
+    {
+      verb "caught SIG$sig, bailing out";
+    }
   if (defined $erase_me && -e $erase_me && !unlink ($erase_me))
     {
       fatal "could not remove `$erase_me': $!";
     }
   undef $erase_me;
+
+  # reraise default handler.
+  if ($sig)
+    {
+      $SIG{$sig} = 'DEFAULT';
+      kill $sig => $$;
+    }
 }
 
 $SIG{'INT'} = $SIG{'TERM'} = $SIG{'QUIT'} = $SIG{'HUP'} = 'unlink_tmp';
