@@ -6399,38 +6399,62 @@ sub flatten
   return $_;
 }
 
-# transform($TOKEN, \%PAIRS)
-# ==========================
+
+# transform_token ($TOKEN, \%PAIRS, $KEY)
+# =======================================
+# Return the value associated to $KEY in %PAIRS, as used on $TOKEN
+# (which should be ?KEY? or any of the special %% requests)..
+sub transform_token ($$$)
+{
+  my ($token, $transform, $key) = @_;
+  my $res = $transform->{$key};
+  prog_error "Unknown key `$key' in `$token'" unless defined $res;
+  return $res;
+}
+
+
+# transform ($TOKEN, \%PAIRS)
+# ===========================
 # If ($TOKEN, $VAL) is in %PAIRS:
-#   - replaces %$TOKEN% with $VAL,
-#   - enables/disables ?$TOKEN? and ?!$TOKEN?,
-#   - replaces %?$TOKEN% with TRUE or FALSE.
-sub transform($$)
+#   - replaces %KEY% with $VAL,
+#   - enables/disables ?KEY? and ?!KEY?,
+#   - replaces %?KEY% with TRUE or FALSE.
+#   - replaces %KEY?IFTRUE%, %KEY:IFFALSE%, and %KEY?IFTRUE:IFFALSE% with
+#     IFTRUE / IFFALSE, as appropriate.
+sub transform ($$)
 {
   my ($token, $transform) = @_;
 
-  if (substr ($token, 0, 1) eq '%')
+  # %KEY%.
+  # Must be before the following pattern to exclude the case
+  # when there is neither IFTRUE nor IFFALSE.
+  if ($token =~ /^%([\w\-]+)%$/)
     {
-      my $cond = (substr ($token, 1, 1) eq '?') ? 1 : 0;
-      $token = substr ($token, 1 + $cond, -1);
-      my $val = $transform->{$token};
-      prog_error "Unknown %token% `$token'" unless defined $val;
-      if ($cond)
-	{
-	  return $val ? 'TRUE' : 'FALSE';
-	}
-      else
-	{
-	  return $val;
-	}
+      return transform_token ($token, $transform, $1);
     }
-  # Now $token is '?xxx?' or '?!xxx?'.
-  my $neg = (substr ($token, 1, 1) eq '!') ? 1 : 0;
-  $token = substr ($token, 1 + $neg, -1);
-  my $val = $transform->{$token};
-  prog_error "Unknown ?token? `$token' (neg = $neg)" unless defined $val;
-  return (!!$val == $neg) ? '##%' : '';
+  # %KEY?IFTRUE%, %KEY:IFFALSE%, and %KEY?IFTRUE:IFFALSE%.
+  elsif ($token =~ /^%([\w\-]+)(?:\?([^?:%]+))?(?::([^?:%]+))?%$/)
+    {
+      return transform_token ($token, $transform, $1) ? ($2 || '') : ($3 || '');
+    }
+  # %?KEY%.
+  elsif ($token =~ /^%\?([\w\-]+)%$/)
+    {
+      return transform_token ($token, $transform, $1) ? 'TRUE' : 'FALSE';
+    }
+  # ?KEY? and ?!KEY?.
+  elsif ($token =~ /^ \? (!?) ([\w\-]+) \? $/x)
+    {
+      my $neg = ($1 eq '!') ? 1 : 0;
+      my $val = transform_token ($token, $transform, $2);
+      return (!!$val == $neg) ? '##%' : '';
+    }
+  else
+    {
+      prog_error "Unknown request format: $token";
+    }
 }
+
 
 # @PARAGRAPHS
 # &make_paragraphs ($MAKEFILE, [%TRANSFORM])
@@ -6492,7 +6516,10 @@ sub make_paragraphs ($%)
     }
 
   # Substitute Automake template tokens.
-  s/(?:%\??[\w\-]+%|\?!?[\w\-]+\?)/transform($&, \%transform)/ge;
+  s/(?: % \?? [\w\-]+ %
+      | % [\w\-]+ (?:\?[^?:%]+)? (?::[^?:%]+)? %
+      | \? !? [\w\-]+ \?
+    )/transform($&, \%transform)/gex;
   # transform() may have added some ##%-comments to strip.
   # (we use `##%' instead of `##' so we can distinguish ##%##%##% from
   # ####### and do not remove the latter.)

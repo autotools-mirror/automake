@@ -1,5 +1,5 @@
 ## automake - create Makefile.in from Makefile.am
-## Copyright (C) 1994, 1995, 1996, 1998, 1999, 2001, 2002, 2003, 2004, 2006
+## Copyright (C) 1994, 1995, 1996, 1998, 1999, 2001, 2002, 2003, 2004, 2006, 2007
 ## Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
@@ -27,10 +27,8 @@ endif %?INSTALL%
 
 if %?INSTALL%
 am__installdirs += "$(DESTDIR)$(%NDIR%dir)"
-?BASE?%DIR%LIBRARIES_INSTALL = $(INSTALL_DATA)
-?!BASE?%DIR%LIBRARIES_INSTALL = $(install_sh_DATA)
-?EXEC?.PHONY install-exec-am: install-%DIR%LIBRARIES
-?!EXEC?.PHONY install-data-am: install-%DIR%LIBRARIES
+%DIR%LIBRARIES_INSTALL = %BASE?$(INSTALL_DATA):$(install_sh_DATA)%
+.PHONY install-%EXEC?exec:data%-am: install-%DIR%LIBRARIES
 install-%DIR%LIBRARIES: $(%DIR%_LIBRARIES)
 	@$(NORMAL_INSTALL)
 	test -z "$(%NDIR%dir)" || $(MKDIR_P) "$(DESTDIR)$(%NDIR%dir)"
@@ -55,10 +53,10 @@ install-%DIR%LIBRARIES: $(%DIR%_LIBRARIES)
 	@$(POST_INSTALL)
 	@list='$(%DIR%_LIBRARIES)'; for p in $$list; do \
 	  if test -f $$p; then \
-?BASE?	    p=$(am__strip_dir) \
+?BASE?	    $(am__strip_dir) \
 ## Must ranlib after installing because mod time changes.
-	    echo " $(RANLIB) '$(DESTDIR)$(%NDIR%dir)/$$p'"; \
-	    $(RANLIB) "$(DESTDIR)$(%NDIR%dir)/$$p"; \
+	    echo " $(RANLIB) '$(DESTDIR)$(%NDIR%dir)/$$f'"; \
+	    $(RANLIB) "$(DESTDIR)$(%NDIR%dir)/$$f"; \
 	  else :; fi; \
 	done
 endif %?INSTALL%
@@ -73,7 +71,7 @@ if %?INSTALL%
 uninstall-%DIR%LIBRARIES:
 	@$(NORMAL_UNINSTALL)
 	@list='$(%DIR%_LIBRARIES)'; for p in $$list; do \
-?BASE?	  p=$(am__strip_dir) \
+?BASE?	  $(am__strip_dir) \
 	  echo " rm -f '$(DESTDIR)$(%NDIR%dir)/$$p'"; \
 	  rm -f "$(DESTDIR)$(%NDIR%dir)/$$p"; \
 	done
