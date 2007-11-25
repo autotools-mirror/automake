@@ -1,6 +1,10 @@
 ## Process this file with automake to create Makefile.in
 
-XFAIL_TESTS = auxdir2.test cond17.test txinfo5.test
+XFAIL_TESTS = 					\
+all.test					\
+auxdir2.test					\
+cond17.test					\
+txinfo5.test
 
 TESTS =	\
 aclibobj.test \

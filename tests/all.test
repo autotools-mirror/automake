@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1999, 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 1999, 2001, 2002, 2007  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -21,14 +21,27 @@
 # Test to make sure all-local and other -local targets work correctly.
 
 . ./defs || exit 1
+set -e
 
-for target in all install-exec install-data uninstall; do
+targets='all install-exec install-data uninstall'
+for target in $targets; do
    echo "Doing $target"
    echo "${target}-local:" > Makefile.am
 
-   $ACLOCAL || exit 1
-$AUTOMAKE || exit 1
+   $ACLOCAL
+   $AUTOMAKE
 
    $FGREP "${target}-local ${target}-local" Makefile.in && exit 1
 done
+
+# Several *-local's in a single rule.
+echo "Doing $targets"
+echo "$targets:" | sed -e 's/[ :]/-local&/g' > Makefile.am
+$ACLOCAL
+$AUTOMAKE
+
+for target in $targets; do
+  $EGREP "${target}-am:.*${target}-local" Makefile.in
+done
+
 exit 0
