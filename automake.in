@@ -4530,10 +4530,10 @@ sub handle_factored_dependencies
     {
       if (user_phony_rule "$_-hook")
 	{
-	  $actions{"$_-am"} .=
-	    ("\t\@\$(NORMAL_INSTALL)\n"
-	     . "\t" . '$(MAKE) $(AM_MAKEFLAGS) ' . "$_-hook\n");
 	  depend ('.MAKE', "$_-am");
+	  register_action("$_-am",
+			  ("\t\@\$(NORMAL_INSTALL)\n"
+			   . "\t\$(MAKE) \$(AM_MAKEFLAGS) $_-hook"));
 	}
     }
 
@@ -6686,14 +6686,7 @@ sub file_contents_internal ($$$%)
 	      if (defined $dependencies{$_} && $cond != FALSE)
 		{
 		  &depend ($_, @deps);
-		  if ($actions{$_})
-		    {
-		      $actions{$_} .= "\n$actions" if $actions;
-		    }
-		  else
-		    {
-		      $actions{$_} = $actions;
-		    }
+		  register_action ($_, $actions);
 		}
 	      else
 		{

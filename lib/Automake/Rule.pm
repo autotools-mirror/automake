@@ -31,7 +31,8 @@ use vars '@ISA', '@EXPORT', '@EXPORT_OK';
 @ISA = qw/Automake::Item Exporter/;
 @EXPORT = qw (reset register_suffix_rule suffix_rules_count
 	      suffixes rules $suffix_rules $KNOWN_EXTENSIONS_PATTERN
-	      depend %dependencies %actions accept_extensions
+	      depend %dependencies %actions register_action
+	      accept_extensions
 	      reject_rule msg_rule msg_cond_rule err_rule err_cond_rule
 	      rule rrule ruledef rruledef);
 
@@ -62,9 +63,9 @@ and one to look up the conditional definition:
     {
       my $def = $rule->def ($cond);
       if ($def)
-        {
-          return $def->location;
-        }
+	{
+	  return $def->location;
+	}
       ...
     }
   ...
@@ -76,7 +77,7 @@ being looked up exist, the above can be simplified to
 
 but is better written
 
-  return rrule ($name)->rrule ($cond)->location;
+  return rrule ($name)->rdef ($cond)->location;
 
 or even
 
@@ -109,7 +110,7 @@ use vars '$_suffix_rules_default';
 Holds the dependencies of targets which dependencies are factored.
 Typically, C<.PHONY> will appear in plenty of F<*.am> files, but must
 be output once.  Arguably all pure dependencies could be subject to
-this factorization, but it is not unpleasant to have paragraphs in
+this factoring, but it is not unpleasant to have paragraphs in
 Makefile: keeping related stuff altogether.
 
 =cut
@@ -272,7 +273,7 @@ sub accept_extensions (@)
 
 =item C<rules>
 
-Returns the list of all L<Automake::Rule> instances.  (I.e., all
+Return the list of all L<Automake::Rule> instances.  (I.e., all
 rules defined so far.)
 
 =cut
@@ -281,6 +282,27 @@ use vars '%_rule_dict';
 sub rules ()
 {
   return values %_rule_dict;
+}
+
+
+=item C<register_action($target, $action)>
+
+Append the C<$action> to C<$actions{$target}> taking care of special
+cases.
+
+=cut
+
+sub register_action ($$)
+{
+  my ($target, $action) = @_;
+  if ($actions{$target})
+    {
+      $actions{$target} .= "\n$action" if $action;
+    }
+  else
+    {
+      $actions{$target} = $action;
+    }
 }
 
 
@@ -478,8 +500,7 @@ sub rule ($)
   # Strip $(EXEEXT) from $name, so we can diagnose
   # a clash if `ctags$(EXEEXT):' is redefined after `ctags:'.
   $name =~ s,\$\(EXEEXT\)$,,;
-  return $_rule_dict{$name} if exists $_rule_dict{$name};
-  return 0;
+  return $_rule_dict{$name} || 0;
 }
 
 =item C<ruledef ($rulename, $cond)>
@@ -640,7 +661,7 @@ sub define ($$$$$)
 		  # msg ('syntax', $where,
 		  #      "redefinition of `$target'$condmsg...", partial => 1);
 		  # msg_cond_rule ('syntax', $cond, $target,
-		  # 		   "... `$target' previously defined here");
+		  #		   "... `$target' previously defined here");
 		}
 	      # Return so we don't redefine the rule in our tables,
 	      # don't check for ambiguous condition, etc.  The rule
