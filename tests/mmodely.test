@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2004, 2006  Free Software Foundation, Inc.
+# Copyright (C) 2004, 2006, 2007  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -70,14 +70,21 @@ $AUTOMAKE -a
 ./configure
 $MAKE
 
-echo 'echo "$@" >y.tab.c' > myyacc.sh
-echo 'echo "$@" >lex.yy.c' > mylex.sh
+cat >myyacc.sh <<'END'
+#! /bin/sh
+echo "$@" >y.tab.c
+END
+cat >mylex.sh <<'END'
+echo "$@" >lex.yy.c
+END
+chmod +x myyacc.sh mylex.sh
+PATH="`pwd`:$PATH"
 
 # make maintainer-clean; ./configure; make should always work,
 # per GNU Standard.
 $MAKE maintainer-clean
 ./configure
-YACC="$SHELL `pwd`/myyacc.sh" LEX="$SHELL `pwd`/mylex.sh" \
+YACC="myyacc.sh" LEX="mylex.sh" \
    LEX_OUTPUT_ROOT='lex.yy' $MAKE -e zardoz.c joe.c
 grep zardoz.y zardoz.c
 grep joe.l joe.c
