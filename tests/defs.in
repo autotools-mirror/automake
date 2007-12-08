@@ -49,11 +49,11 @@ if test -z "$srcdir"; then
    VERBOSE=x
    # compute $srcdir.
    srcdir=`echo "$0" | sed -e 's,/[^\\/]*$,,'`
-   test $srcdir = $0 && srcdir=.
+   test "$srcdir" = $0 && srcdir=.
 else :; fi
 
 # Ensure $srcdir is set correctly.
-test -f $srcdir/defs.in || {
+test -f "$srcdir/defs.in" || {
    echo "$srcdir/defs.in not found, check \$srcdir" 1>&2
    exit 1
 }
@@ -92,7 +92,7 @@ export ACLOCAL_TESTSUITE_FLAGS
 test -z "$AUTOMAKE" && AUTOMAKE="automake-@APIVERSION@ --foreign -Werror -Wall"
 
 PATH="`pwd`@PATH_SEPARATOR@$PATH"
-echo $PATH
+echo "$PATH"
 # Some shells forget to export modified environment variables.
 # (See note about `export' in the Autoconf manual.)
 export PATH
@@ -260,7 +260,7 @@ signal=0
 
 # Copy in some files we need.
 for file in install-sh missing depcomp; do
-   cp $srcdir/../lib/$file $testSubDir/$file || exit 1
+   cp "$srcdir/../lib/$file" "$testSubDir/$file" || exit 1
 done
 
 cd ./$testSubDir
@@ -319,6 +319,12 @@ case $required in
     case $required in
       *libtool* ) test $libtool_found = yes || exit 77 ;;
       *gettext* ) test $gettext_found = yes || exit 77 ;;
+    esac
+    # Libtool cannot cope with spaces in the build tree.  Our testsuite setup
+    # cannot cope with spaces in the source tree name for Libtool and gettext
+    # tests.
+    case $srcdir,`pwd` in
+      *\ * | *\	*) exit 77 ;;
     esac
     ACLOCAL="$ACLOCAL -Wno-syntax -I $srcdir/../m4 $extra_includes -I $aclocaldir"
     ;;
