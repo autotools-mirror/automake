@@ -1,5 +1,5 @@
 ## automake - create Makefile.in from Makefile.am
-## Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006  Free Software
+## Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006, 2007  Free Software
 ## Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
@@ -25,10 +25,45 @@ distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
 
 am__remove_distdir = \
-  { test ! -d $(distdir) \
-    || { find $(distdir) -type d ! -perm -200 -exec chmod u+w {} ';' \
-         && rm -fr $(distdir); }; }
+  { test ! -d "$(distdir)" \
+    || { find "$(distdir)" -type d ! -perm -200 -exec chmod u+w {} ';' \
+         && rm -fr "$(distdir)"; }; }
+
 endif %?TOPDIR_P%
+
+if %?SUBDIRS%
+## computes a relative pathname RELDIR such that DIR1/RELDIR = DIR2.
+## Input:
+## - DIR1            relative pathname, relative to the current directory
+## - DIR2            relative pathname, relative to the current directory
+## Output:
+## - reldir          relative pathname of DIR2, relative to DIR1
+am__relativize = \
+  dir0=`pwd`; \
+  sed_first='s,^\([^/]*\)/.*$$,\1,'; \
+  sed_rest='s,^[^/]*/*,,'; \
+  sed_last='s,^.*/\([^/]*\)$$,\1,'; \
+  sed_butlast='s,/*[^/]*$$,,'; \
+  while test -n "$$dir1"; do \
+    first=`echo "$$dir1" | sed -e "$$sed_first"`; \
+    if test "$$first" != "."; then \
+      if test "$$first" = ".."; then \
+        dir2=`echo "$$dir0" | sed -e "$$sed_last"`/"$$dir2"; \
+        dir0=`echo "$$dir0" | sed -e "$$sed_butlast"`; \
+      else \
+        first2=`echo "$$dir2" | sed -e "$$sed_first"`; \
+        if test "$$first2" = "$$first"; then \
+          dir2=`echo "$$dir2" | sed -e "$$sed_rest"`; \
+        else \
+          dir2="../$$dir2"; \
+        fi; \
+        dir0="$$dir0"/"$$first"; \
+      fi; \
+    fi; \
+    dir1=`echo "$$dir1" | sed -e "$$sed_rest"`; \
+  done; \
+  reldir="$$dir2"
+endif %?SUBDIRS%
 
 .PHONY: distdir
 distdir: $(DISTFILES)
@@ -51,7 +86,7 @@ endif %?TOPDIR_P%
 ##
 if %?TOPDIR_P%
 	$(am__remove_distdir)
-	test -d $(distdir) || mkdir $(distdir)
+	test -d "$(distdir)" || mkdir "$(distdir)"
 endif %?TOPDIR_P%
 ##
 ##
@@ -140,15 +175,15 @@ endif %?TOPDIR_P%
 ## as Tru64) will magically create an empty directory in `.'
 	    dir=`echo "/$$file" | sed -e 's,/[^/]*$$,,'`; \
 	    if test -d $(srcdir)/$$file && test $$d != $(srcdir); then \
-	      cp -pR $(srcdir)/$$file $(distdir)$$dir || exit 1; \
+	      cp -pR $(srcdir)/$$file "$(distdir)$$dir" || exit 1; \
 	    fi; \
-	    cp -pR $$d/$$file $(distdir)$$dir || exit 1; \
+	    cp -pR $$d/$$file "$(distdir)$$dir" || exit 1; \
 	  else \
 ## Test for file existence because sometimes a file gets included in
 ## DISTFILES twice.  For example this happens when a single source
 ## file is used in building more than one program.
-	    test -f $(distdir)/$$file \
-	    || cp -p $$d/$$file $(distdir)/$$file \
+	    test -f "$(distdir)/$$file" \
+	    || cp -p $$d/$$file "$(distdir)/$$file" \
 	    || exit 1; \
 	  fi; \
 	done
@@ -167,12 +202,16 @@ if %?SUBDIRS%
 	    test -d "$(distdir)/$$subdir" \
 	    || $(MKDIR_P) "$(distdir)/$$subdir" \
 	    || exit 1; \
-	    distdir=`$(am__cd) $(distdir) && pwd`; \
-	    top_distdir=`$(am__cd) $(top_distdir) && pwd`; \
+	    dir1=$$subdir; dir2="$(distdir)/$$subdir"; \
+	    $(am__relativize); \
+	    new_distdir=$$reldir; \
+	    dir1=$$subdir; dir2="$(top_distdir)"; \
+	    $(am__relativize); \
+	    new_top_distdir=$$reldir; \
 	    (cd $$subdir && \
 	      $(MAKE) $(AM_MAKEFLAGS) \
-	        top_distdir="$$top_distdir" \
-	        distdir="$$distdir/$$subdir" \
+	        top_distdir="$$new_top_distdir" \
+	        distdir="$$new_distdir" \
 ## Disable am__remove_distdir so that sub-packages do not clear a
 ## directory we have already cleared and might even have populated
 ## (e.g. shared AUX dir in the sub-package).
@@ -213,13 +252,13 @@ endif %?DIST-TARGETS%
 ## the file in place in the source tree.
 ##
 if %?TOPDIR_P%
-	-find $(distdir) -type d ! -perm -777 -exec chmod a+rwx {} \; -o \
+	-find "$(distdir)" -type d ! -perm -777 -exec chmod a+rwx {} \; -o \
 	  ! -type d ! -perm -444 -links 1 -exec chmod a+r {} \; -o \
 	  ! -type d ! -perm -400 -exec chmod a+r {} \; -o \
 	  ! -type d ! -perm -444 -exec $(install_sh) -c -m a+r {} {} \; \
-	|| chmod -R a+r $(distdir)
+	|| chmod -R a+r "$(distdir)"
 if %?FILENAME_FILTER%
-	@if test -z "$(am__skip_length_check)" && find $(distdir) -type f -print | \
+	@if test -z "$(am__skip_length_check)" && find "$(distdir)" -type f -print | \
 	  grep '^%FILENAME_FILTER%' 1>&2; then \
 	  echo 'error: the above filenames are too long' 1>&2; \
 	  exit 1; \
@@ -403,7 +442,7 @@ distuninstallcheck_listfiles = find . -type f -print
 distuninstallcheck:
 ## We use -le 1 because the `dir' file (created by install-info)
 ## might still exist after uninstall.
-	@cd $(distuninstallcheck_dir) \
+	@cd '$(distuninstallcheck_dir)' \
 	&& test `$(distuninstallcheck_listfiles) | wc -l` -le 1 \
 	   || { echo "ERROR: files left after uninstall:" ; \
 	        if test -n "$(DESTDIR)"; then \
