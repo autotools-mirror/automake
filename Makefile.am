@@ -360,7 +360,10 @@ path-check: distdir
 
 ## Program to use to fetch files.
 WGET = wget
-WGETSGO = $(WGET) http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~
+WGET_SV_CVS = $(WGET) http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~/
+WGET_SV_GIT_AC = $(WGET) 'http://git.savannah.gnu.org/gitweb/?p=autoconf.git;a=blob_plain;hb=HEAD;f='
+WGET_SV_GIT_GL = $(WGET) 'http://git.savannah.gnu.org/gitweb/?p=gnulib.git;a=blob_plain;hb=HEAD;f='
+WGET_GCC = $(WGET) 'http://gcc.gnu.org/viewcvs/*checkout*/trunk/'
 
 ## Files that we fetch and which we compare against.
 ## FIXME should be a lot more here
@@ -378,12 +381,12 @@ fetch:
 	mkdir Fetchdir
 ## If a get fails then that is a problem.
 	(cd Fetchdir && \
-	$(WGETSGO)/config/config/config.guess; \
-	$(WGETSGO)/config/config/config.sub; \
-	$(WGETSGO)/texinfo/texinfo/doc/texinfo.tex; \
-	$(WGETSGO)/autoconf/autoconf/INSTALL; \
-	$(WGETSGO)/gcc/gcc/config-ml.in; \
-	$(WGETSGO)/gcc/gcc/symlink-tree)
+	$(WGET_SV_CVS)config/config/config.guess -O config.guess && \
+	$(WGET_SV_CVS)config/config/config.sub -O config.sub && \
+	$(WGET_SV_CVS)texinfo/texinfo/doc/texinfo.tex -O texinfo.tex && \
+	$(WGET_SV_GIT_GL)doc/INSTALL -O INSTALL && \
+	$(WGET_GCC)config-ml.in -O config-ml.in && \
+	$(WGET_GCC)symlink-tree -O symlink-tree)
 ## Don't exit after test because we want to give as many errors as
 ## possible.
 	@stat=0; for file in $(FETCHFILES); do \
