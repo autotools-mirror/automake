@@ -3,7 +3,7 @@
 ## Makefile for Automake.
 
 ## Copyright (C) 1995, 1996, 1997, 1998, 1999, 2001, 2002, 2003, 2004,
-## 2005, 2006, 2007  Free Software Foundation, Inc.
+## 2005, 2006, 2007, 2008  Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -98,6 +98,10 @@ INSTALL: lib/INSTALL
 ## Everything past here is useful to the maintainer, but probably not
 ## to anybody else
 ##
+
+# Ensure tests are world-executable
+dist-hook:
+	cd $(distdir)/tests && chmod a+rx *.test
 
 # Some simple checks, and then ordinary check.  These are only really
 # guaranteed to work on my machine.
