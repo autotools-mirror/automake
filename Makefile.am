@@ -345,7 +345,7 @@ git-diff:
 	  prevno=`echo "$(VERSION)" - 0.01 | bc | sed 's/^\./0./'`; \
 	else prevno="$$OLDVERSION"; fi; \
 	prevver=Release-`echo $$prevno | sed 's/\./-/g'`; \
-	git diff $$prevver $$thisver $(PACKAGE) \
+	git diff $$prevver..$$thisver $(PACKAGE) \
 	    > $(PACKAGE)-$$prevno-$(VERSION).diff
 
 ## Check our path lengths.

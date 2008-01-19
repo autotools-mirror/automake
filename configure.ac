@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.
 
 # Copyright (C) 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2006,
-# 2004, 2006, 2007  Free Software Foundation, Inc.
+# 2004, 2006, 2007, 2008  Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 dnl Require Autoconf 2.60 for AC_REQUIRE_AUX_FILE.
 AC_PREREQ(2.60)
-AC_INIT([GNU Automake], [1.10.0a], [bug-automake@gnu.org])
+AC_INIT([GNU Automake], [1.10.1], [bug-automake@gnu.org])
 
 AC_CONFIG_SRCDIR(automake.in)
 AC_CONFIG_AUX_DIR(lib)
