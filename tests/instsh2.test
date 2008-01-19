@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002, 2004  Free Software Foundation, Inc.
+# Copyright (C) 2002, 2004, 2006  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -21,7 +21,6 @@
 # Various install-sh checks
 
 . ./defs || exit 1
-
 set -e
 
 # Basic errors
@@ -81,6 +80,20 @@ test -f x
 test -f d3/y
 ./install-sh -T x d3 && exit 1
 ./install-sh -T x d4// && exit 1
+
+# Do not change the timestamps when using -C.
+echo foo >file
+./install-sh -C file d1
+TZ=UTC0 touch -t $old_timestamp d1/file
+./install-sh -C file d1
+is_newest file d1/file
+echo foo1 >file
+./install-sh -C file d1
+diff file d1/file
+# Rights must be updated.
+./install-sh -C -m 444 file d1
+test -r d1/file
+test ! -w d1/file
 
 # Ensure that install-sh works with names that include spaces
 touch 'a  b'
