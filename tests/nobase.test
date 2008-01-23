@@ -32,14 +32,14 @@ cat > Makefile.am << 'EOF'
 foodir = $(prefix)/foo
 fooexecdir = $(prefix)/foo
 
-foo_HEADERS = sub/base.h
-nobase_foo_HEADERS = sub/nobase.h
+foo_HEADERS = sub/base.h sub/base-gen.h
+nobase_foo_HEADERS = sub/nobase.h sub/nobase-gen.h
 
-dist_foo_DATA = sub/base.dat
-nobase_dist_foo_DATA = sub/nobase.dat
+dist_foo_DATA = sub/base.dat sub/base-gen.dat
+nobase_dist_foo_DATA = sub/nobase.dat sub/nobase-gen.dat
 
-dist_fooexec_SCRIPTS = sub/base.sh
-nobase_dist_fooexec_SCRIPTS = sub/nobase.sh
+dist_fooexec_SCRIPTS = sub/base.sh sub/base-gen.sh
+nobase_dist_fooexec_SCRIPTS = sub/nobase.sh sub/nobase-gen.sh
 
 fooexec_PROGRAMS = sub/base
 nobase_fooexec_PROGRAMS = sub/nobase
@@ -51,15 +51,31 @@ nobase_fooexec_LIBRARIES = sub/libnobase.a
 sub_libbase_a_SOURCES = source.c
 sub_libnobase_a_SOURCES = source.c
 
+generated_files = sub/base-gen.h sub/nobase-gen.h sub/base-gen.dat \
+sub/nobase-gen.dat sub/base-gen.sh sub/nobase-gen.sh
+
+$(generated_files):
+	echo "generated file $@" > $@
+
+CLEANFILES = $(generated_files)
+
 test-install-data: install-data
 	test   -f inst/foo/sub/nobase.h
 	test ! -f inst/foo/nobase.h
+	test   -f inst/foo/sub/nobase-gen.h
+	test ! -f inst/foo/nobase-gen.h
 	test   -f inst/foo/base.h
+	test   -f inst/foo/base-gen.h
 	test   -f inst/foo/sub/nobase.dat
 	test ! -f inst/foo/nobase.dat
+	test   -f inst/foo/sub/nobase-gen.dat
+	test ! -f inst/foo/nobase-gen.dat
 	test   -f inst/foo/base.dat
+	test   -f inst/foo/base-gen.dat
 	test ! -f inst/foo/sub/pnobase.sh
+	test ! -f inst/foo/sub/pnobase-gen.sh
 	test ! -f inst/foo/pbase.sh
+	test ! -f inst/foo/pbase-gen.sh
 	test ! -f inst/foo/sub/pnobase$(EXEEXT)
 	test ! -f inst/foo/pbase$(EXEEXT)
 	test ! -f inst/foo/sub/libnobase.a
@@ -68,7 +84,10 @@ test-install-data: install-data
 test-install-exec: install-exec
 	test   -f inst/foo/sub/pnobase.sh
 	test ! -f inst/foo/pnobase.sh
+	test   -f inst/foo/sub/pnobase-gen.sh
+	test ! -f inst/foo/pnobase-gen.sh
 	test   -f inst/foo/pbase.sh
+	test   -f inst/foo/pbase-gen.sh
 	test   -f inst/foo/sub/pnobase$(EXEEXT)
 	test ! -f inst/foo/pnobase$(EXEEXT)
 	test   -f inst/foo/pbase$(EXEEXT)
