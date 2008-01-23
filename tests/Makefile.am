@@ -389,6 +389,7 @@ mkinst3.test \
 mmodely.test \
 multlib.test \
 nobase.test \
+nobase-libtool.test \
 nodef.test \
 nodef2.test \
 nodep.test \
