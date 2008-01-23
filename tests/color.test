@@ -29,6 +29,14 @@ lgn='[1;32m'
 blu='[1;34m'
 std='[m'
 
+# Check that grep can parse nonprinting characters.
+# BSD 'grep' works from a pipe, but not a seekable file.
+# GNU or BSD 'grep -a' works on files, but is not portable.
+case `echo "$std" | grep .` in
+  $std) ;;
+  *) exit 77 ;;
+esac
+
 cat >>configure.in <<END
 AC_OUTPUT
 END
@@ -66,20 +74,22 @@ $AUTOCONF
 
 test_color ()
 {
-  grep ": pass" stdout | $FGREP "$grn"
-  grep ": fail" stdout | $FGREP "$red"
-  grep ": xfail" stdout | $FGREP "$lgn"
-  grep ": xpass" stdout | $FGREP "$red"
-  grep ": skip" stdout | $FGREP "$blu"
+  # Not a useless use of cat; see above comments about grep.
+  cat stdout | grep ": pass" | $FGREP "$grn"
+  cat stdout | grep ": fail" | $FGREP "$red"
+  cat stdout | grep ": xfail" | $FGREP "$lgn"
+  cat stdout | grep ": xpass" | $FGREP "$red"
+  cat stdout | grep ": skip" | $FGREP "$blu"
 }
 
 test_no_color ()
 {
-  grep ": pass" stdout | $FGREP "$grn" && exit 1
-  grep ": fail" stdout | $FGREP "$red" && exit 1
-  grep ": xfail" stdout | $FGREP "$lgn" && exit 1
-  grep ": xpass" stdout | $FGREP "$red" && exit 1
-  grep ": skip" stdout | $FGREP "$blu" && exit 1
+  # Not a useless use of cat; see above comments about grep.
+  cat stdout | grep ": pass" | $FGREP "$grn" && exit 1
+  cat stdout | grep ": fail" | $FGREP "$red" && exit 1
+  cat stdout | grep ": xfail" | $FGREP "$lgn" && exit 1
+  cat stdout | grep ": xpass" | $FGREP "$red" && exit 1
+  cat stdout | grep ": skip" | $FGREP "$blu" && exit 1
   :
 }
 
