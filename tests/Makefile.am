@@ -545,6 +545,7 @@ subpkg2.test \
 subpkg3.test \
 subst.test \
 subst2.test \
+subst3.test \
 substref.test \
 substre2.test \
 substtarg.test \
