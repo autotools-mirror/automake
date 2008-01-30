@@ -284,6 +284,7 @@ install2.test \
 installdir.test \
 instsh.test \
 instsh2.test \
+instsh3.test \
 instdat.test \
 instdat2.test \
 instexec.test \
