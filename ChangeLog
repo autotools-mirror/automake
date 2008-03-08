@@ -1,5 +1,37 @@
 2008-03-08  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
 
+	Use `install' with multiple files at once for some primaries.
+	With nobase targets, at most 50 files are installed at once,
+	to avoid quadratic string concatenation and line length limits.
+	This isn't yet done with base targets.  One hope is that there,
+	the typical file name length is lower.  If this turns out to be
+	a problem, it should be revisited.
+
+	* lib/am/inst-vars.am (am__nobase_list): New helper macro for
+	installation of multiple nobase files at once: sorts and lists
+	files keyed by their target directory.
+	* lib/am/data.am (%DIR%%PRIMARY%_INSTALL): No need to set it to
+	$(install_sh_DATA) any more, not even for nobase targets.
+	(install-%DIR%%PRIMARY%): Split base and nobase cases.
+	Rewrite to pass lists of files which all go in the same
+	directory to `install'.  In the nobase case, make use of
+	$(am__nobase_list) and $(MKDIR_P) each directory before
+	populating it.  Take care of files in source and build trees,
+	and avoid creating directories where no files are to be
+	installed.
+	* lib/am/libs.am (%DIR%LIBRARIES_INSTALL): Likewise.
+	(install-%DIR%LIBRARIES): Likewise.
+	* lib/am/python.am (%DIR%PYTHON_INSTALL): Likewise.
+	(install-%DIR%PYTHON): Likewise.  Also take care to keep note of
+	a list for byte compilation after installation.
+	* lib/am/texinfos.am (install-dvi-am, install-html-am)
+	(install-info-am, install-pdf-am, install-ps-am): Use file lists
+	to install multiple files at once.
+	* NEWS: Update.
+	Suggested by Akim Demaille.
+
+2008-03-08  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
 	Require unreleased Autoconf for fixed AC_PROG_INSTALL.
 	* m4/init.m4 (AM_INIT_AUTOMAKE): Bump AC_PREREQ to 2.61-341,
 	regenerate files.

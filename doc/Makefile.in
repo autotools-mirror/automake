@@ -72,6 +72,13 @@ am__vpath_adj = case $$p in \
     *) f=$$p;; \
   esac;
 am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
+am__nobase_list = \
+  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`; \
+  for p in $$list; do echo "$$p $$p"; done | \
+  sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
+  $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \
+    if (++n[$$2] == 50) { print $$2, files[$$2]; n[$$2] = 0; files[$$2] = "" } } \
+    END { for (dir in files) print dir " " files[dir] }'
 dist_docDATA_INSTALL = $(INSTALL_DATA)
 DATA = $(dist_doc_DATA) $(dist_noinst_DATA)
 ETAGS = etags
@@ -387,12 +394,13 @@ maintainer-clean-aminfo:
 install-dist_docDATA: $(dist_doc_DATA)
 	@$(NORMAL_INSTALL)
 	test -z "$(docdir)" || $(MKDIR_P) "$(DESTDIR)$(docdir)"
-	@list='$(dist_doc_DATA)'; for p in $$list; do \
+	@list='$(dist_doc_DATA)'; list2=; for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  $(am__strip_dir) \
-	  echo " $(dist_docDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(docdir)/$$f'"; \
-	  $(dist_docDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(docdir)/$$f"; \
-	done
+	  list2="$$list2 $$d$$p"; \
+	done; \
+	test -z "$$list2" || { \
+	  echo " $(dist_docDATA_INSTALL) $$list2 '$(DESTDIR)$(docdir)'"; \
+	  $(dist_docDATA_INSTALL) $$list2 "$(DESTDIR)$(docdir)"; }
 
 uninstall-dist_docDATA:
 	@$(NORMAL_UNINSTALL)
@@ -541,12 +549,13 @@ install-dvi: install-dvi-am
 install-dvi-am: $(DVIS)
 	@$(NORMAL_INSTALL)
 	test -z "$(dvidir)" || $(MKDIR_P) "$(DESTDIR)$(dvidir)"
-	@list='$(DVIS)'; for p in $$list; do \
+	@list='$(DVIS)'; list2=; for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  $(am__strip_dir) \
-	  echo " $(INSTALL_DATA) '$$d$$p' '$(DESTDIR)$(dvidir)/$$f'"; \
-	  $(INSTALL_DATA) "$$d$$p" "$(DESTDIR)$(dvidir)/$$f"; \
-	done
+	  list2="$$list2 $$d$$p"; \
+	done; \
+	test -z "$$list2" || { \
+	  echo " $(INSTALL_DATA) $$list2 '$(DESTDIR)$(dvidir)'"; \
+	  $(INSTALL_DATA) $$list2 "$(DESTDIR)$(dvidir)"; }
 install-exec-am:
 
 install-html: install-html-am
@@ -554,7 +563,7 @@ install-html: install-html-am
 install-html-am: $(HTMLS)
 	@$(NORMAL_INSTALL)
 	test -z "$(htmldir)" || $(MKDIR_P) "$(DESTDIR)$(htmldir)"
-	@list='$(HTMLS)'; for p in $$list; do \
+	@list='$(HTMLS)'; list2=; for p in $$list; do \
 	  if test -f "$$p" || test -d "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  $(am__strip_dir) \
 	  if test -d "$$d$$p"; then \
@@ -563,17 +572,19 @@ install-html-am: $(HTMLS)
 	    echo " $(INSTALL_DATA) '$$d$$p'/* '$(DESTDIR)$(htmldir)/$$f'"; \
 	    $(INSTALL_DATA) "$$d$$p"/* "$(DESTDIR)$(htmldir)/$$f"; \
 	  else \
-	    echo " $(INSTALL_DATA) '$$d$$p' '$(DESTDIR)$(htmldir)/$$f'"; \
-	    $(INSTALL_DATA) "$$d$$p" "$(DESTDIR)$(htmldir)/$$f"; \
+	    list2="$$list2 $$d$$p"; \
 	  fi; \
-	done
+	done; \
+	test -z "$$list2" || { \
+	    echo " $(INSTALL_DATA) $$list2 '$(DESTDIR)$(htmldir)'"; \
+	    $(INSTALL_DATA) $$list2 "$(DESTDIR)$(htmldir)"; }
 install-info: install-info-am
 
 install-info-am: $(INFO_DEPS)
 	@$(NORMAL_INSTALL)
 	test -z "$(infodir)" || $(MKDIR_P) "$(DESTDIR)$(infodir)"
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
-	list='$(INFO_DEPS)'; \
+	list='$(INFO_DEPS)'; list2=; \
 	for file in $$list; do \
 	  case $$file in \
 	    $(srcdir)/*) file=`echo "$$file" | sed "s|^$$srcdirstrip/||"`;; \
@@ -583,12 +594,13 @@ install-info-am: $(INFO_DEPS)
 	  for ifile in $$d/$$file $$d/$$file-[0-9] $$d/$$file-[0-9][0-9] \
                        $$d/$$file_i[0-9] $$d/$$file_i[0-9][0-9] ; do \
 	    if test -f $$ifile; then \
-	      relfile=`echo "$$ifile" | sed 's|^.*/||'`; \
-	      echo " $(INSTALL_DATA) '$$ifile' '$(DESTDIR)$(infodir)/$$relfile'"; \
-	      $(INSTALL_DATA) "$$ifile" "$(DESTDIR)$(infodir)/$$relfile"; \
+	      list2="$$list2 $$ifile"; \
 	    else : ; fi; \
 	  done; \
-	done
+	done; \
+	test -z "$$list2" || { \
+	  echo " $(INSTALL_DATA) $$list2 '$(DESTDIR)$(infodir)'"; \
+	  $(INSTALL_DATA) $$list2 "$(DESTDIR)$(infodir)"; }
 	@$(POST_INSTALL)
 	@if (install-info --version && \
 	     install-info --version 2>&1 | sed 1q | grep -i -v debian) >/dev/null 2>&1; then \
@@ -606,23 +618,25 @@ install-pdf: install-pdf-am
 install-pdf-am: $(PDFS)
 	@$(NORMAL_INSTALL)
 	test -z "$(pdfdir)" || $(MKDIR_P) "$(DESTDIR)$(pdfdir)"
-	@list='$(PDFS)'; for p in $$list; do \
+	@list='$(PDFS)'; list2=; for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  $(am__strip_dir) \
-	  echo " $(INSTALL_DATA) '$$d$$p' '$(DESTDIR)$(pdfdir)/$$f'"; \
-	  $(INSTALL_DATA) "$$d$$p" "$(DESTDIR)$(pdfdir)/$$f"; \
-	done
+	  list2="$$list2 $$d$$p"; \
+	done; \
+	test -z "$$list2" || { \
+	  echo " $(INSTALL_DATA) $$list2 '$(DESTDIR)$(pdfdir)'"; \
+	  $(INSTALL_DATA) $$list2 "$(DESTDIR)$(pdfdir)"; }
 install-ps: install-ps-am
 
 install-ps-am: $(PSS)
 	@$(NORMAL_INSTALL)
 	test -z "$(psdir)" || $(MKDIR_P) "$(DESTDIR)$(psdir)"
-	@list='$(PSS)'; for p in $$list; do \
+	@list='$(PSS)'; list2=; for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  $(am__strip_dir) \
-	  echo " $(INSTALL_DATA) '$$d$$p' '$(DESTDIR)$(psdir)/$$f'"; \
-	  $(INSTALL_DATA) "$$d$$p" "$(DESTDIR)$(psdir)/$$f"; \
-	done
+	  list2="$$list2 $$d$$p"; \
+	done; \
+	test -z "$$list2" || { \
+	  echo " $(INSTALL_DATA) $$list2 '$(DESTDIR)$(psdir)'"; \
+	  $(INSTALL_DATA) $$list2 "$(DESTDIR)$(psdir)"; }
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am

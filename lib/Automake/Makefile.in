@@ -63,6 +63,13 @@ am__vpath_adj = case $$p in \
     *) f=$$p;; \
   esac;
 am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
+am__nobase_list = \
+  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`; \
+  for p in $$list; do echo "$$p $$p"; done | \
+  sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
+  $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \
+    if (++n[$$2] == 50) { print $$2, files[$$2]; n[$$2] = 0; files[$$2] = "" } } \
+    END { for (dir in files) print dir " " files[dir] }'
 am__installdirs = "$(DESTDIR)$(perllibdir)" "$(DESTDIR)$(perllibdir)"
 dist_perllibDATA_INSTALL = $(INSTALL_DATA)
 nodist_perllibDATA_INSTALL = $(INSTALL_DATA)
@@ -256,12 +263,13 @@ $(am__aclocal_m4_deps):
 install-dist_perllibDATA: $(dist_perllib_DATA)
 	@$(NORMAL_INSTALL)
 	test -z "$(perllibdir)" || $(MKDIR_P) "$(DESTDIR)$(perllibdir)"
-	@list='$(dist_perllib_DATA)'; for p in $$list; do \
+	@list='$(dist_perllib_DATA)'; list2=; for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  $(am__strip_dir) \
-	  echo " $(dist_perllibDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(perllibdir)/$$f'"; \
-	  $(dist_perllibDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(perllibdir)/$$f"; \
-	done
+	  list2="$$list2 $$d$$p"; \
+	done; \
+	test -z "$$list2" || { \
+	  echo " $(dist_perllibDATA_INSTALL) $$list2 '$(DESTDIR)$(perllibdir)'"; \
+	  $(dist_perllibDATA_INSTALL) $$list2 "$(DESTDIR)$(perllibdir)"; }
 
 uninstall-dist_perllibDATA:
 	@$(NORMAL_UNINSTALL)
@@ -273,12 +281,13 @@ uninstall-dist_perllibDATA:
 install-nodist_perllibDATA: $(nodist_perllib_DATA)
 	@$(NORMAL_INSTALL)
 	test -z "$(perllibdir)" || $(MKDIR_P) "$(DESTDIR)$(perllibdir)"
-	@list='$(nodist_perllib_DATA)'; for p in $$list; do \
+	@list='$(nodist_perllib_DATA)'; list2=; for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  $(am__strip_dir) \
-	  echo " $(nodist_perllibDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(perllibdir)/$$f'"; \
-	  $(nodist_perllibDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(perllibdir)/$$f"; \
-	done
+	  list2="$$list2 $$d$$p"; \
+	done; \
+	test -z "$$list2" || { \
+	  echo " $(nodist_perllibDATA_INSTALL) $$list2 '$(DESTDIR)$(perllibdir)'"; \
+	  $(nodist_perllibDATA_INSTALL) $$list2 "$(DESTDIR)$(perllibdir)"; }
 
 uninstall-nodist_perllibDATA:
 	@$(NORMAL_UNINSTALL)

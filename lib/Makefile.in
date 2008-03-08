@@ -66,6 +66,13 @@ am__vpath_adj = case $$p in \
     *) f=$$p;; \
   esac;
 am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
+am__nobase_list = \
+  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`; \
+  for p in $$list; do echo "$$p $$p"; done | \
+  sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
+  $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \
+    if (++n[$$2] == 50) { print $$2, files[$$2]; n[$$2] = 0; files[$$2] = "" } } \
+    END { for (dir in files) print dir " " files[dir] }'
 am__installdirs = "$(DESTDIR)$(pkgvdatadir)" "$(DESTDIR)$(scriptdir)"
 dist_pkgvdataDATA_INSTALL = $(INSTALL_DATA)
 dist_scriptDATA_INSTALL = $(INSTALL_DATA)
@@ -232,12 +239,13 @@ $(am__aclocal_m4_deps):
 install-dist_pkgvdataDATA: $(dist_pkgvdata_DATA)
 	@$(NORMAL_INSTALL)
 	test -z "$(pkgvdatadir)" || $(MKDIR_P) "$(DESTDIR)$(pkgvdatadir)"
-	@list='$(dist_pkgvdata_DATA)'; for p in $$list; do \
+	@list='$(dist_pkgvdata_DATA)'; list2=; for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  $(am__strip_dir) \
-	  echo " $(dist_pkgvdataDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(pkgvdatadir)/$$f'"; \
-	  $(dist_pkgvdataDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(pkgvdatadir)/$$f"; \
-	done
+	  list2="$$list2 $$d$$p"; \
+	done; \
+	test -z "$$list2" || { \
+	  echo " $(dist_pkgvdataDATA_INSTALL) $$list2 '$(DESTDIR)$(pkgvdatadir)'"; \
+	  $(dist_pkgvdataDATA_INSTALL) $$list2 "$(DESTDIR)$(pkgvdatadir)"; }
 
 uninstall-dist_pkgvdataDATA:
 	@$(NORMAL_UNINSTALL)
@@ -249,12 +257,13 @@ uninstall-dist_pkgvdataDATA:
 install-dist_scriptDATA: $(dist_script_DATA)
 	@$(NORMAL_INSTALL)
 	test -z "$(scriptdir)" || $(MKDIR_P) "$(DESTDIR)$(scriptdir)"
-	@list='$(dist_script_DATA)'; for p in $$list; do \
+	@list='$(dist_script_DATA)'; list2=; for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  $(am__strip_dir) \
-	  echo " $(dist_scriptDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(scriptdir)/$$f'"; \
-	  $(dist_scriptDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(scriptdir)/$$f"; \
-	done
+	  list2="$$list2 $$d$$p"; \
+	done; \
+	test -z "$$list2" || { \
+	  echo " $(dist_scriptDATA_INSTALL) $$list2 '$(DESTDIR)$(scriptdir)'"; \
+	  $(dist_scriptDATA_INSTALL) $$list2 "$(DESTDIR)$(scriptdir)"; }
 
 uninstall-dist_scriptDATA:
 	@$(NORMAL_UNINSTALL)

@@ -1,6 +1,6 @@
 ## automake - create Makefile.in from Makefile.am
-## Copyright (C) 1994, 1995, 1996, 1998, 1999, 2001, 2002, 2003, 2004, 2006, 2007
-## Free Software Foundation, Inc.
+## Copyright (C) 1994, 1995, 1996, 1998, 1999, 2001, 2002, 2003, 2004, 2006,
+## 2007, 2008  Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -25,23 +25,37 @@ endif %?INSTALL%
 
 if %?INSTALL%
 am__installdirs += "$(DESTDIR)$(%NDIR%dir)"
-%DIR%LIBRARIES_INSTALL = %BASE?$(INSTALL_DATA):$(install_sh_DATA)%
+%DIR%LIBRARIES_INSTALL = $(INSTALL_DATA)
 .PHONY install-%EXEC?exec:data%-am: install-%DIR%LIBRARIES
 install-%DIR%LIBRARIES: $(%DIR%_LIBRARIES)
 	@$(NORMAL_INSTALL)
 	test -z "$(%NDIR%dir)" || $(MKDIR_P) "$(DESTDIR)$(%NDIR%dir)"
+if %?BASE%
 ## Funny invocation because Makefile variable can be empty, leading to
 ## a syntax error in sh.
-	@list='$(%DIR%_LIBRARIES)'; for p in $$list; do \
+	@list='$(%DIR%_LIBRARIES)'; list2=; for p in $$list; do \
 	  if test -f $$p; then \
-## Compute basename of source file.  Unless this is a nobase_ target, we
-## want to install 'python/foo.py' as '$(DESTDIR)$(%NDIR%dir)/foo.yo',
-## not '$(DESTDIR)$(%NDIR%dir)/python/foo.yo'.
-	    %BASE?$(am__strip_dir):f=$$p;% \
-	    echo " $(%DIR%LIBRARIES_INSTALL) '$$p' '$(DESTDIR)$(%NDIR%dir)/$$f'"; \
-	    $(%DIR%LIBRARIES_INSTALL) "$$p" "$(DESTDIR)$(%NDIR%dir)/$$f"; \
+	    list2="$$list2 $$p"; \
 	  else :; fi; \
+	done; \
+	test -z "$$list2" || { \
+	  echo " $(%DIR%LIBRARIES_INSTALL) $$list2 '$(DESTDIR)$(%NDIR%dir)'"; \
+	  $(%DIR%LIBRARIES_INSTALL) $$list2 "$(DESTDIR)$(%NDIR%dir)"; }
+else !%?BASE%
+## Funny invocation because Makefile variable can be empty, leading to
+## a syntax error in sh.
+	@list='$(%DIR%_LIBRARIES)'; $(am__nobase_list) | \
+	while read dir files; do \
+	  xfiles=; for p in $$files; do \
+	    if test -f "$$p"; then xfiles="$$xfiles $$p"; else :; fi; done; \
+	  test -z "$$xfiles" || { \
+	    test "x$$dir" = x. || { \
+	      echo "$(MKDIR_P) '$(DESTDIR)$(%NDIR%dir)/$$dir'"; \
+	      $(MKDIR_P) "$(DESTDIR)$(%NDIR%dir)/$$dir"; }; \
+	    echo " $(%DIR%%PRIMARY%_INSTALL) $$xfiles '$(DESTDIR)$(%NDIR%dir)/$$dir'"; \
+	    $(%DIR%%PRIMARY%_INSTALL) $$xfiles "$(DESTDIR)$(%NDIR%dir)/$$dir"; }; \
 	done
+endif !%?BASE%
 ## We do two loops here so that $(POST_INSTALL) can be empty.  If we
 ## merge the two loops, we get a syntax error from sh.  Anyway, having
 ## $(POST_INSTALL) in the middle of the loop essentially renders it
