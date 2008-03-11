@@ -3371,42 +3371,42 @@ sub handle_man_pages
   my (%sections, %vlist);
   # We handle nodist_ for uniformity.  man pages aren't distributed
   # by default so it isn't actually very important.
-  foreach my $pfx ('', 'dist_', 'nodist_')
-    {
-      # Add more sections as needed.
-      foreach my $section ('0'..'9', 'n', 'l')
+      foreach my $pfx ('', 'dist_', 'nodist_')
 	{
-	  my $varname = $pfx . 'man' . $section . '_MANS';
-	  if (var ($varname))
+	  # Add more sections as needed.
+	  foreach my $section ('0'..'9', 'n', 'l')
 	    {
-	      $sections{$section} = 1;
+	      my $varname = $pfx . 'man' . $section . '_MANS';
+	      if (var ($varname))
+		{
+		  $sections{$section} = 1;
+		  $varname = '$(' . $varname . ')';
+		  $vlist{$varname} = 1;
+
+		  &push_dist_common ($varname)
+		    if $pfx eq 'dist_';
+		}
+	    }
+
+	  my $varname = $pfx . 'man_MANS';
+	  my $var = var ($varname);
+	  if ($var)
+	    {
+	      foreach ($var->value_as_list_recursive)
+		{
+		  # A page like `foo.1c' goes into man1dir.
+		  if (/\.([0-9a-z])([a-z]*)$/)
+		    {
+		      $sections{$1} = 1;
+		    }
+		}
+
 	      $varname = '$(' . $varname . ')';
 	      $vlist{$varname} = 1;
-
 	      &push_dist_common ($varname)
 		if $pfx eq 'dist_';
 	    }
 	}
-
-      my $varname = $pfx . 'man_MANS';
-      my $var = var ($varname);
-      if ($var)
-	{
-	  foreach ($var->value_as_list_recursive)
-	    {
-	      # A page like `foo.1c' goes into man1dir.
-	      if (/\.([0-9a-z])([a-z]*)$/)
-		{
-		  $sections{$1} = 1;
-		}
-	    }
-
-	  $varname = '$(' . $varname . ')';
-	  $vlist{$varname} = 1;
-	  &push_dist_common ($varname)
-	    if $pfx eq 'dist_';
-	}
-    }
 
   return unless %sections;
 
