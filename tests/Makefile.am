@@ -406,6 +406,7 @@ noinst.test \
 noinstdir.test \
 nolink.test \
 nostdinc.test \
+notrans.test \
 number.test \
 objc.test \
 objc2.test \

@@ -1,5 +1,6 @@
 ## automake - create Makefile.in from Makefile.am
-## Copyright (C) 1998, 2001, 2003, 2004, 2006, 2008 Free Software Foundation, Inc.
+## Copyright (C) 1998, 2001, 2003, 2004, 2006, 2008 Free Software
+## Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -27,19 +28,50 @@ man%SECTION%dir = $(mandir)/man%SECTION%
 ?INSTALL-MAN?install-data-am: install-man
 ?INSTALL-MAN?am__installdirs += "$(DESTDIR)$(man%SECTION%dir)"
 .PHONY install-man: install-man%SECTION%
-install-man%SECTION%: $(man%SECTION%_MANS) $(man_MANS)
+install-man%SECTION%: %DEPS%
 	@$(NORMAL_INSTALL)
 	test -z "$(man%SECTION%dir)" || $(MKDIR_P) "$(DESTDIR)$(man%SECTION%dir)"
-	@list='$(man%SECTION%_MANS) $(dist_man%SECTION%_MANS) $(nodist_man%SECTION%_MANS)'; \
+if %?NOTRANS_MANS%
+## Handle MANS with notrans_ prefix
+	@list='%NOTRANS_SECT_LIST%'; \
+## Extract all items from notrans_man_MANS that should go in this section.
+## This must be done dynamically to support conditionals.
+?HAVE_NOTRANS?	l2='%NOTRANS_LIST%'; \
+?HAVE_NOTRANS?	for i in $$l2; do \
+?HAVE_NOTRANS?	  case "$$i" in \
+## Have to accept files like `foo.1c'.
+?HAVE_NOTRANS?	    *.%SECTION%*) list="$$list $$i" ;; \
+?HAVE_NOTRANS?	  esac; \
+?HAVE_NOTRANS?	done; \
+	for i in $$list; do \
+## Find the file.
+	  if test -f $$i; then file=$$i; \
+	  else file=$(srcdir)/$$i; fi; \
+## Change the extension if needed.
+	  ext=`echo $$i | sed -e 's/^.*\\.//'`; \
+	  case "$$ext" in \
+	    %SECTION%*) ;; \
+	    *) ext='%SECTION%' ;; \
+	  esac; \
+## Extract basename of man page and append extension.
+	  inst=`echo $$i | sed -e 's/\\.[0-9a-z]*$$//'`; \
+	  inst=`echo $$inst | sed -e 's/^.*\///'`.$$ext; \
+	  echo " $(INSTALL_DATA) '$$file' '$(DESTDIR)$(man%SECTION%dir)/$$inst'"; \
+	  $(INSTALL_DATA) "$$file" "$(DESTDIR)$(man%SECTION%dir)/$$inst"; \
+	done
+endif %?NOTRANS_MANS%
+if %?TRANS_MANS%
+## Handle MANS without notrans_ prefix
+	@list='%TRANS_SECT_LIST%'; \
 ## Extract all items from man_MANS that should go in this section.
 ## This must be done dynamically to support conditionals.
-	l2='$(man_MANS) $(dist_man_MANS) $(nodist_man_MANS)'; \
-	for i in $$l2; do \
-	  case "$$i" in \
+?HAVE_TRANS?	l2='%TRANS_LIST%'; \
+?HAVE_TRANS?	for i in $$l2; do \
+?HAVE_TRANS?	  case "$$i" in \
 ## Have to accept files like `foo.1c'.
-	    *.%SECTION%*) list="$$list $$i" ;; \
-	  esac; \
-	done; \
+?HAVE_TRANS?	    *.%SECTION%*) list="$$list $$i" ;; \
+?HAVE_TRANS?	  esac; \
+?HAVE_TRANS?	done; \
 	for i in $$list; do \
 ## Find the file.
 	  if test -f $$i; then file=$$i; \
@@ -58,6 +90,7 @@ install-man%SECTION%: $(man%SECTION%_MANS) $(man_MANS)
 	  echo " $(INSTALL_DATA) '$$file' '$(DESTDIR)$(man%SECTION%dir)/$$inst'"; \
 	  $(INSTALL_DATA) "$$file" "$(DESTDIR)$(man%SECTION%dir)/$$inst"; \
 	done
+endif %?TRANS_MANS%
 
 
 ## -------------- ##
@@ -70,16 +103,44 @@ install-man%SECTION%: $(man%SECTION%_MANS) $(man_MANS)
 .PHONY uninstall-man: uninstall-man%SECTION%
 uninstall-man%SECTION%:
 	@$(NORMAL_UNINSTALL)
-	@list='$(man%SECTION%_MANS) $(dist_man%SECTION%_MANS) $(nodist_man%SECTION%_MANS)'; \
+if %?NOTRANS_MANS%
+## Handle MANS with notrans_ prefix
+	@list='%NOTRANS_SECT_LIST%'; \
+## Extract all items from notrans_man_MANS that should go in this section.
+## This must be done dynamically to support conditionals.
+?HAVE_NOTRANS?	l2='%NOTRANS_LIST%'; \
+?HAVE_NOTRANS?	for i in $$l2; do \
+?HAVE_NOTRANS?	  case "$$i" in \
+## Have to accept files like `foo.1c'.
+?HAVE_NOTRANS?	    *.%SECTION%*) list="$$list $$i" ;; \
+?HAVE_NOTRANS?	  esac; \
+?HAVE_NOTRANS?	done; \
+	for i in $$list; do \
+## Change the extension if needed.
+	  ext=`echo $$i | sed -e 's/^.*\\.//'`; \
+	  case "$$ext" in \
+	    %SECTION%*) ;; \
+	    *) ext='%SECTION%' ;; \
+	  esac; \
+## Extract basename of man page and append extension.
+	  inst=`echo $$i | sed -e 's/\\.[0-9a-z]*$$//'`; \
+	  inst=`echo $$inst | sed -e 's/^.*\///'`.$$ext; \
+	  echo " rm -f '$(DESTDIR)$(man%SECTION%dir)/$$inst'"; \
+	  rm -f "$(DESTDIR)$(man%SECTION%dir)/$$inst"; \
+	done
+endif %?NOTRANS_MANS%
+if %?TRANS_MANS%
+## Handle MANS without notrans_ prefix
+	@list='%TRANS_SECT_LIST%'; \
 ## Extract all items from man_MANS that should go in this section.
 ## This must be done dynamically to support conditionals.
-	l2='$(man_MANS) $(dist_man_MANS) $(nodist_man_MANS)'; \
-	for i in $$l2; do \
-	  case "$$i" in \
+?HAVE_TRANS?	l2='%TRANS_LIST%'; \
+?HAVE_TRANS?	for i in $$l2; do \
+?HAVE_TRANS?	  case "$$i" in \
 ## Have to accept files like `foo.1c'.
-	    *.%SECTION%*) list="$$list $$i" ;; \
-	  esac; \
-	done; \
+?HAVE_TRANS?	    *.%SECTION%*) list="$$list $$i" ;; \
+?HAVE_TRANS?	  esac; \
+?HAVE_TRANS?	done; \
 	for i in $$list; do \
 ## Change the extension if needed.
 	  ext=`echo $$i | sed -e 's/^.*\\.//'`; \
@@ -95,3 +156,4 @@ uninstall-man%SECTION%:
 	  echo " rm -f '$(DESTDIR)$(man%SECTION%dir)/$$inst'"; \
 	  rm -f "$(DESTDIR)$(man%SECTION%dir)/$$inst"; \
 	done
+endif %?TRANS_MANS%

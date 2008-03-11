@@ -3368,27 +3368,39 @@ sub handle_man_pages
   # Find all the sections in use.  We do this by first looking for
   # "standard" sections, and then looking for any additional
   # sections used in man_MANS.
-  my (%sections, %vlist);
+  my (%sections, %notrans_sections, %trans_sections,
+      %notrans_vars, %trans_vars, %notrans_sect_vars, %trans_sect_vars);
   # We handle nodist_ for uniformity.  man pages aren't distributed
   # by default so it isn't actually very important.
+  foreach my $npfx ('', 'notrans_')
+    {
       foreach my $pfx ('', 'dist_', 'nodist_')
 	{
 	  # Add more sections as needed.
 	  foreach my $section ('0'..'9', 'n', 'l')
 	    {
-	      my $varname = $pfx . 'man' . $section . '_MANS';
+	      my $varname = $npfx . $pfx . 'man' . $section . '_MANS';
 	      if (var ($varname))
 		{
 		  $sections{$section} = 1;
 		  $varname = '$(' . $varname . ')';
-		  $vlist{$varname} = 1;
+		  if ($npfx eq 'notrans_')
+		    {
+		      $notrans_sections{$section} = 1;
+		      $notrans_sect_vars{$varname} = 1;
+		    }
+		  else
+		    {
+		      $trans_sections{$section} = 1;
+		      $trans_sect_vars{$varname} = 1;
+		    }
 
 		  &push_dist_common ($varname)
 		    if $pfx eq 'dist_';
 		}
 	    }
 
-	  my $varname = $pfx . 'man_MANS';
+	  my $varname = $npfx . $pfx . 'man_MANS';
 	  my $var = var ($varname);
 	  if ($var)
 	    {
@@ -3398,28 +3410,87 @@ sub handle_man_pages
 		  if (/\.([0-9a-z])([a-z]*)$/)
 		    {
 		      $sections{$1} = 1;
+		      if ($npfx eq 'notrans_')
+			{
+			  $notrans_sections{$1} = 1;
+			}
+		      else
+			{
+			  $trans_sections{$1} = 1;
+			}
 		    }
 		}
 
 	      $varname = '$(' . $varname . ')';
-	      $vlist{$varname} = 1;
+	      if ($npfx eq 'notrans_')
+		{
+		  $notrans_vars{$varname} = 1;
+		}
+	      else
+		{
+		  $trans_vars{$varname} = 1;
+		}
 	      &push_dist_common ($varname)
 		if $pfx eq 'dist_';
 	    }
 	}
+    }
 
   return unless %sections;
+
+  my @unsorted_deps;
+
+  # Build section independent variables.
+  my $have_notrans = %notrans_vars;
+  my @notrans_list = sort keys %notrans_vars;
+  my $have_trans = %trans_vars;
+  my @trans_list = sort keys %trans_vars;
 
   # Now for each section, generate an install and uninstall rule.
   # Sort sections so output is deterministic.
   foreach my $section (sort keys %sections)
     {
+      # Build section dependent variables.
+      my $notrans_mans = $have_notrans || exists $notrans_sections{$section};
+      my $trans_mans = $have_trans || exists $trans_sections{$section};
+      my (%notrans_this_sect, %trans_this_sect);
+      my $expr = 'man' . $section . '_MANS';
+      foreach my $varname (keys %notrans_sect_vars)
+	{
+	  if ($varname =~ /$expr/)
+	    {
+	      $notrans_this_sect{$varname} = 1;
+	    }
+	}
+      foreach my $varname (keys %trans_sect_vars)
+	{
+	  if ($varname =~ /$expr/)
+	    {
+	      $trans_this_sect{$varname} = 1;
+	    }
+	}
+      my @notrans_sect_list = sort keys %notrans_this_sect;
+      my @trans_sect_list = sort keys %trans_this_sect;
+      @unsorted_deps = (keys %notrans_vars, keys %trans_vars,
+                        keys %notrans_this_sect, keys %trans_this_sect);
+      my @deps = sort @unsorted_deps;
       $output_rules .= &file_contents ('mans',
 				       new Automake::Location,
-				       SECTION => $section);
+				       SECTION           => $section,
+				       DEPS              => "@deps",
+				       NOTRANS_MANS      => $notrans_mans,
+				       NOTRANS_SECT_LIST => "@notrans_sect_list",
+				       HAVE_NOTRANS      => $have_notrans,
+				       NOTRANS_LIST      => "@notrans_list",
+				       TRANS_MANS        => $trans_mans,
+				       TRANS_SECT_LIST   => "@trans_sect_list",
+				       HAVE_TRANS        => $have_trans,
+				       TRANS_LIST        => "@trans_list");
     }
 
-  my @mans = sort keys %vlist;
+  @unsorted_deps  = (keys %notrans_vars, keys %trans_vars,
+                     keys %notrans_sect_vars, keys %trans_sect_vars);
+  my @mans = sort @unsorted_deps;
   $output_vars .= file_contents ('mans-vars',
 				 new Automake::Location,
 				 MANS => "@mans");
