@@ -361,6 +361,7 @@ path-check: distdir
 ## Program to use to fetch files.
 WGET = wget
 WGET_SV_CVS = $(WGET) http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~/
+WGET_SV_GIT_CF = $(WGET) 'http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;hb=HEAD;f='
 WGET_SV_GIT_AC = $(WGET) 'http://git.savannah.gnu.org/gitweb/?p=autoconf.git;a=blob_plain;hb=HEAD;f='
 WGET_SV_GIT_GL = $(WGET) 'http://git.savannah.gnu.org/gitweb/?p=gnulib.git;a=blob_plain;hb=HEAD;f='
 WGET_GCC = $(WGET) 'http://gcc.gnu.org/viewcvs/*checkout*/trunk/'
@@ -381,8 +382,8 @@ fetch:
 	mkdir Fetchdir
 ## If a get fails then that is a problem.
 	(cd Fetchdir && \
-	$(WGET_SV_CVS)config/config/config.guess -O config.guess && \
-	$(WGET_SV_CVS)config/config/config.sub -O config.sub && \
+	$(WGET_SV_GIT_CF)config.guess -O config.guess && \
+	$(WGET_SV_GIT_CF)config.sub -O config.sub && \
 	$(WGET_SV_CVS)texinfo/texinfo/doc/texinfo.tex -O texinfo.tex && \
 	$(WGET_SV_GIT_GL)doc/INSTALL -O INSTALL && \
 	$(WGET_GCC)config-ml.in -O config-ml.in && \
