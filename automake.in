@@ -326,6 +326,8 @@ my @other_input_files = ();
 # Where each AC_CONFIG_FILES/AC_OUTPUT/AC_CONFIG_LINK/AC_CONFIG_HEADER appears.
 # The keys are the files created by these macros.
 my %ac_config_files_location = ();
+# The condition under which AC_CONFIG_FOOS appears.
+my %ac_config_files_condition = ();
 
 # Directory to search for configure-required files.  This
 # will be computed by &locate_aux_dir and can be set using
@@ -4196,10 +4198,13 @@ sub handle_configure ($$$@)
       # Cannot output rules for shell variables.
       next if (substitute_ac_subst_variables $local) =~ /\$/;
 
-      $output_rules .= ($local . ': '
+      my $condstr = '';
+      $condstr = $ac_config_files_condition{$lfile}->subst_string
+        if ($ac_config_files_condition{$lfile});
+      $output_rules .= ($condstr . $local . ': '
 			. '$(top_builddir)/config.status '
 			. "@rewritten_inputs\n"
-			. "\t"
+			. $condstr . "\t"
 			. 'cd $(top_builddir) && '
 			. '$(SHELL) ./config.status '
 			. ($relative_dir eq '.' ? '' : '$(subdir)/')
@@ -4844,6 +4849,9 @@ sub scan_autoconf_config_files ($$)
 	  push (@other_input_files, $_);
 	}
       $ac_config_files_location{$local} = $where;
+      $ac_config_files_condition{$local} =
+        new Automake::Condition (@cond_stack)
+          if (@cond_stack);
     }
 }
 
@@ -4881,6 +4889,9 @@ sub scan_autoconf_traces ($)
 		AM_MAINTAINER_MODE => 0,
 		AM_PROG_CC_C_O => 0,
 		_AM_SUBST_NOTMAKE => 1,
+		_AM_COND_IF => 1,
+		_AM_COND_ELSE => 1,
+		_AM_COND_ENDIF => 1,
 		LT_SUPPORTED_TAG => 1,
 		_LT_AC_TAGCONFIG => 0,
 		m4_include => 1,
@@ -4893,17 +4904,20 @@ sub scan_autoconf_traces ($)
   # Use a separator unlikely to be used, not `:', the default, which
   # has a precise meaning for AC_CONFIG_FILES and so on.
   $traces .= join (' ',
-		   map { "--trace=$_" . ':\$f:\$l::\$n::\${::}%' }
+		   map { "--trace=$_" . ':\$f:\$l::\$d::\$n::\${::}%' }
 		   (keys %traced));
 
   my $tracefh = new Automake::XFile ("$traces $filename |");
   verb "reading $traces";
 
+  @cond_stack = ();
+  my $where;
+
   while ($_ = $tracefh->getline)
     {
       chomp;
-      my ($here, @args) = split (/::/);
-      my $where = new Automake::Location $here;
+      my ($here, $depth, @args) = split (/::/);
+      $where = new Automake::Location $here;
       my $macro = $args[0];
 
       prog_error ("unrequested trace `$macro'")
@@ -5067,6 +5081,24 @@ sub scan_autoconf_traces ($)
 	{
 	  $seen_cc_c_o = $where;
 	}
+      elsif ($macro eq '_AM_COND_IF')
+        {
+	  cond_stack_if ('', $args[1], $where);
+	  error ($where, "missing m4 quoting, macro depth $depth")
+	    if ($depth != 1);
+	}
+      elsif ($macro eq '_AM_COND_ELSE')
+        {
+	  cond_stack_else ('!', $args[1], $where);
+	  error ($where, "missing m4 quoting, macro depth $depth")
+	    if ($depth != 1);
+	}
+      elsif ($macro eq '_AM_COND_ENDIF')
+        {
+	  cond_stack_endif (undef, undef, $where);
+	  error ($where, "missing m4 quoting, macro depth $depth")
+	    if ($depth != 1);
+	}
       elsif ($macro eq '_AM_SUBST_NOTMAKE')
 	{
 	  $ignored_configure_vars{$args[1]} = $where;
@@ -5111,6 +5143,9 @@ sub scan_autoconf_traces ($)
 	    }
 	}
     }
+
+  error ($where, "condition stack not properly closed")
+    if (@cond_stack);
 
   $tracefh->close;
 }

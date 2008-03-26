@@ -2662,6 +2662,10 @@ to check whether @file{Makefile.am} exists.  (In the very hairy case
 that your setup requires such use of variables, you will have to tell
 Automake which @file{Makefile.in}s to generate on the command-line.)
 
+It is possible to let @command{automake} emit conditional rules for
+@code{AC_CONFIG_FILES} with the help of @code{AM_COND_IF}
+(@pxref{Optional}).
+
 To summarize:
 @itemize @bullet
 @item
@@ -2838,6 +2842,15 @@ you can use these variables in any @file{Makefile.am} if
 @item AM_C_PROTOTYPES
 This is required when using the obsolete de-ANSI-fication feature; see
 @ref{ANSI}.
+
+@item AM_CONDITIONAL
+This introduces an Automake conditional (@pxref{Conditionals}).
+
+@item AM_COND_IF
+This macro allows @code{automake} to detect subsequent access within
+@file{configure.ac} to a conditional previously introduced with
+@code{AM_CONDITIONAL}, thus enabling conditional @code{AC_CONFIG_FILES}
+(@pxref{Conditionals}).
 
 @item AM_GNU_GETTEXT
 This macro is required for packages that use GNU gettext
@@ -8940,6 +8953,32 @@ Unbalanced conditions are errors.
 The @code{else} branch of the above two examples could be omitted,
 since assigning the empty string to an otherwise undefined variable
 makes no difference.
+
+@acindex AM_COND_IF
+In order to allow access to the condition registered by
+@code{AM_CONDITIONAL} inside @file{configure.ac}, and to allow
+conditional @code{AC_CONFIG_FILES}, @code{AM_COND_IF} may be used:
+
+@defmac AM_COND_IF (@var{conditional}, @ovar{if-true}, @ovar{if-false})
+If @var{conditional} is fulfilled, execute @var{if-true}, otherwise
+execute @var{if-false}.  If either branch contains @code{AC_CONFIG_FILES},
+it will cause @command{automake} to output the rules for the respective
+files only for the given condition.
+@end defmac
+
+@code{AM_COND_IF} macros may be nested when m4 quotation is used
+properly (@pxref{M4 Quotation, ,, autoconf, The Autoconf Manual}).
+
+@cindex Example conditional @code{AC_CONFIG_FILES}
+@cindex @code{AC_CONFIG_FILES}, conditional
+
+Here is an example of how to define a conditional config file:
+
+@example
+AM_CONDITIONAL([SHELL_WRAPPER], [test "x$with_wrapper" = xtrue])
+AM_COND_IF([SHELL_WRAPPER],
+	   [AC_CONFIG_FILES([wrapper:wrapper.in])])
+@end example
 
 @unnumberedsec Portability
 

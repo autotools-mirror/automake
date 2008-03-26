@@ -157,6 +157,11 @@ cond35.test \
 cond36.test \
 cond37.test \
 cond38.test \
+cond39.test \
+cond40.test \
+cond41.test \
+cond42.test \
+cond43.test \
 condd.test \
 condhook.test \
 condinc.test \
