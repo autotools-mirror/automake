@@ -389,6 +389,7 @@ missing2.test \
 missing3.test \
 missing4.test \
 missing5.test \
+missing6.test \
 mkinstall.test \
 mkinst2.test \
 mkinst3.test \

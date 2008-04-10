@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2006, 2007, 2008  Free Software Foundation, Inc.
+# Copyright (C) 2008  Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,36 +14,38 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# See how well the rebuild rule handles an aclocal.m4 that was
-# generated for another version of autoconf.
+# Make sure autoconf version checks in aclocal.m4 are robust.
 
 . ./defs || exit 1
 
 set -e
 
-echo AC_OUTPUT >>configure.in
+{
+  echo 'm4_define([AC_AUTOCONF_VERSION], [9999a])'
+  echo 'm4_define([b], [oops])'
+  cat configure.in
+  echo AC_OUTPUT
+} >configure.ac
+rm configure.in
 
 touch Makefile.am
 
 $ACLOCAL
-$AUTOCONF
+$AUTOCONF 2>stderr
+grep 'You have another version of autoconf' stderr
+grep 'aclocal.m4:.*this file was generated for' stderr
 $AUTOMAKE
 ./configure
 $MAKE
 
-sed '1,20 s/m4_defn(\[AC_AUTOCONF_VERSION\]),/9999,/' < aclocal.m4 > aclocal.tmp
-cmp aclocal.m4 aclocal.tmp && exit 1
+sed 's/\[b\]/[a]/' < configure.ac > configure.tmp
+cmp configure.ac configure.tmp && exit 1
 
-mv aclocal.tmp aclocal.m4
+mv configure.tmp configure.ac
 
 $MAKE 2>stderr
 cat stderr
 grep 'You have another version of autoconf' stderr
-grep -c 'aclocal.m4:.*this file was generated for' stderr
-
-$MAKE 2>stderr
-cat stderr
-grep 'You have another version of autoconf' stderr && exit 1
-grep 'aclocal.m4:.*this file was generated for' stderr && exit 1
+grep 'aclocal.m4:.*this file was generated for autoconf 9999a' stderr
 
 :
