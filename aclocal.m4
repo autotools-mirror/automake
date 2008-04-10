@@ -13,7 +13,7 @@
 
 m4_ifndef([AC_AUTOCONF_VERSION],
   [m4_copy([m4_PACKAGE_VERSION], [AC_AUTOCONF_VERSION])])dnl
-m4_if(AC_AUTOCONF_VERSION, [2.61],,
+m4_if(m4_defn([AC_AUTOCONF_VERSION]), [2.61],,
 [m4_warning([this file was generated for autoconf 2.61.
 You have another version of autoconf.  It may work, but is not guaranteed to.
 If you have problems, you may need to regenerate the build system entirely.
