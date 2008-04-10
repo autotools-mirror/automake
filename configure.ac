@@ -16,8 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-dnl Require Autoconf 2.60 for AC_REQUIRE_AUX_FILE.
-AC_PREREQ(2.60)
 AC_INIT([GNU Automake], [1.10a], [bug-automake@gnu.org])
 
 AC_CONFIG_SRCDIR(automake.in)
@@ -100,7 +98,7 @@ fi
 
 AC_CACHE_CHECK([whether autoconf is recent enough], [am_cv_autoconf_version],
 [mkdir conftest
-echo 'AC''_PREREQ(2.61a-341)' > conftest/conftest.ac
+echo 'AC''_PREREQ([[2.62]])' > conftest/conftest.ac
 if AM_RUN_LOG([cd conftest && eval $am_AUTOCONF -o /dev/null conftest.ac]);
 then
   am_cv_autoconf_version=yes

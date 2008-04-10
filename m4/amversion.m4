@@ -1,6 +1,6 @@
 ##                                                          -*- Autoconf -*-
 ## Generated from amversion.in; do not edit by hand.
-# Copyright (C) 2002, 2003, 2005, 2006, 2007  Free Software Foundation, Inc.
+# Copyright (C) 2002, 2003, 2005, 2006, 2007, 2008  Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -34,4 +34,4 @@ AC_DEFUN([AM_SET_CURRENT_AUTOMAKE_VERSION],
 [AM_AUTOMAKE_VERSION([1.10a])dnl
 m4_ifndef([AC_AUTOCONF_VERSION],
   [m4_copy([m4_PACKAGE_VERSION], [AC_AUTOCONF_VERSION])])dnl
-_AM_AUTOCONF_VERSION(AC_AUTOCONF_VERSION)])
+_AM_AUTOCONF_VERSION(m4_defn([AC_AUTOCONF_VERSION]))])
