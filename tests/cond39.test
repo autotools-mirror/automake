@@ -23,24 +23,44 @@
 . ./defs
 set -e
 
+mkdir sub
+
 cat >>configure.in <<'END'
 AC_PROG_CC
 AM_CONDITIONAL([COND], [test "$COND" = true])
 AM_COND_IF([COND], [],
-	   [AC_CONFIG_FILES([prog], [chmod 755 prog])])
+	   [AC_CONFIG_FILES([prog1], [chmod 755 prog1])
+	    AC_CONFIG_FILES([sub/prog2], [chmod 755 sub/prog2])])
+AC_CONFIG_FILES([sub/Makefile])
 AC_OUTPUT
 END
 
 cat >Makefile.am <<'END'
+SUBDIRS = sub
 if COND
-bin_PROGRAMS = prog
-prog_SOURCES = prog.c
+bin_PROGRAMS = prog1
+prog1_SOURCES = prog.c
 else
-# FIXME: the next line is still needed to get automake to output the
-# bin_PROGRAMS above in the right condition only.
-prog:
-bin_SCRIPTS = prog
-CLEANFILES = prog
+bin_SCRIPTS = prog1
+CLEANFILES = prog1
+endif
+
+sure-exist:
+	test -f prog1 || test -f prog1$(EXEEXT)
+	test -f sub/prog2 || test -f sub/prog2$(EXEEXT)
+
+sure-not-exist:
+	test ! -f prog1 && test ! -f prog1$(EXEEXT)
+	test ! -f sub/prog2 && test ! -f sub/prog2$(EXEEXT)
+END
+
+cat >sub/Makefile.am <<'END'
+if COND
+bin_PROGRAMS = prog2
+prog2_SOURCES = prog.c
+else
+bin_SCRIPTS = prog2
+CLEANFILES = prog2
 endif
 END
 
@@ -48,11 +68,14 @@ cat >prog.c <<'END'
 int main () { return 42; }
 END
 
-cat >prog.in <<'END'
+cat >prog1.in <<'END'
 #! /bin/sh
 bindir='@bindir@'
 echo "hi, this is $0, and bindir is $bindir"
 END
+
+cp prog.c sub
+cp prog1.in sub/prog2.in
 
 $ACLOCAL
 $AUTOCONF
@@ -62,17 +85,25 @@ $AUTOMAKE --add-missing
 $MAKE 2>stderr
 cat stderr
 grep 'overriding commands' stderr && exit 1
-./prog && exit 1
+$MAKE sure-exist
+./prog1 && exit 1
+./sub/prog2 && exit 1
 $MAKE clean
+$MAKE sure-not-exist
 $MAKE
-./prog && exit 1
+$MAKE sure-exist
+./prog1 && exit 1
+./sub/prog2 && exit 1
 $MAKE distclean
 
 ./configure COND=false
 $MAKE 2>stderr
 cat stderr
 grep 'overriding commands' stderr && exit 1
-./prog
+./prog1
+./sub/prog2
 $MAKE clean
+$MAKE sure-not-exist
 $MAKE
-./prog
+./prog1
+./sub/prog2

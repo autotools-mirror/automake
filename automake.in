@@ -4201,8 +4201,13 @@ sub handle_configure ($$$@)
       next if (substitute_ac_subst_variables $local) =~ /\$/;
 
       my $condstr = '';
-      $condstr = $ac_config_files_condition{$lfile}->subst_string
-        if ($ac_config_files_condition{$lfile});
+      my $cond = $ac_config_files_condition{$lfile};
+      if (defined $cond)
+        {
+	  $condstr = $cond->subst_string;
+	  Automake::Rule::define ($local, $configure_ac, RULE_AUTOMAKE, $cond,
+				  $ac_config_files_location{$file});
+        }
       $output_rules .= ($condstr . $local . ': '
 			. '$(top_builddir)/config.status '
 			. "@rewritten_inputs\n"
