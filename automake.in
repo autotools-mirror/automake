@@ -3936,7 +3936,7 @@ sub prepend_srcdir (@)
 # Compute a list of dependencies appropriate for the rebuild
 # rule of
 #   AC_CONFIG_FILES($OUTPUT:$INPUT[0]:$INPUTS[1]:...)
-# Also distribute $INPUTs which are not build by another AC_CONFIG_FILES.
+# Also distribute $INPUTs which are not built by another AC_CONFIG_FOOS.
 sub rewrite_inputs_into_dependencies ($@)
 {
   my ($file, @inputs) = @_;
@@ -3947,7 +3947,7 @@ sub rewrite_inputs_into_dependencies ($@)
       # We cannot create dependencies on shell variables.
       next if (substitute_ac_subst_variables $i) =~ /\$/;
 
-      if (exists $ac_config_files_location{$i})
+      if (exists $ac_config_files_location{$i} && $i ne $file)
 	{
 	  my $di = dirname $i;
 	  if ($di eq $relative_dir)
@@ -4152,6 +4152,8 @@ sub handle_configure ($$$@)
   # Now look for other files in this directory which must be remade
   # by config.status, and generate rules for them.
   my @actual_other_files = ();
+  # These get cleaned only in a VPATH build.
+  my @actual_other_vpath_files = ();
   foreach my $lfile (@other_input_files)
     {
       my $file;
@@ -4242,7 +4244,14 @@ sub handle_configure ($$$@)
 		  $local = undef;
 		}
 	    }
-	  push @actual_other_files, $local if $local;
+	  if ($file ne $link)
+	    {
+	      push @actual_other_files, $local if $local;
+	    }
+	  else
+	    {
+	      push @actual_other_vpath_files, $local if $local;
+	    }
 	}
 
       # Do not process sources that contain shell variables.
@@ -4267,6 +4276,8 @@ sub handle_configure ($$$@)
   # These files get removed by "make distclean".
   define_pretty_variable ('CONFIG_CLEAN_FILES', TRUE, INTERNAL,
 			  @actual_other_files);
+  define_pretty_variable ('CONFIG_CLEAN_VPATH_FILES', TRUE, INTERNAL,
+			  @actual_other_vpath_files);
 }
 
 # Handle C headers.

@@ -181,6 +181,7 @@ confincl.test \
 conflnk.test \
 conflnk2.test \
 conflnk3.test \
+conflnk4.test \
 confsub.test \
 confvar.test \
 confvar2.test \
