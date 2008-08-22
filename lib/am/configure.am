@@ -1,5 +1,5 @@
 ## automake - create Makefile.in from Makefile.am
-## Copyright (C) 2001, 2002, 2003, 2004, 2006, 2007  Free Software
+## Copyright (C) 2001, 2002, 2003, 2004, 2006, 2007, 2008  Free Software
 ## Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
@@ -41,8 +41,13 @@ endif %?TOPDIR_P%
 	    *$$dep*) \
 ?TOPDIR_P?	      echo ' cd $(srcdir) && $(AUTOMAKE) --%STRICTNESS% %USE-DEPS%'; \
 ?TOPDIR_P?	      cd $(srcdir) && $(AUTOMAKE) --%STRICTNESS% %USE-DEPS% \
-?!TOPDIR_P?	      cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh \
-		&& exit 0; \
+?TOPDIR_P?		&& exit 0; \
+?!TOPDIR_P?	      ( cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh ) \
+## If on the other hand, subdir/Makefile.in has been removed, then toplevel
+## am--refresh will not be aware of any need to run.  We still invoke it
+## due to $? listing all prerequisites.  Fix up for it by running the rebuild
+## rule for this file only, below.
+?!TOPDIR_P?	        && { if test -f $@; then exit 0; else break; fi; }; \
 	      exit 1;; \
 	  esac; \
 	done; \
