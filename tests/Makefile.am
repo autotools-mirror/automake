@@ -477,6 +477,8 @@ remake2.test \
 remake3.test \
 remake4.test \
 remake5.test \
+remake6.test \
+remake7.test \
 regex.test \
 req.test \
 reqd.test \
