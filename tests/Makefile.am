@@ -394,6 +394,7 @@ missing6.test \
 mkinstall.test \
 mkinst2.test \
 mkinst3.test \
+mmode.test \
 mmodely.test \
 multlib.test \
 nobase.test \
