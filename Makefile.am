@@ -164,7 +164,21 @@ maintainer-check: automake aclocal
 ## Look for cd within backquotes
 	@if grep -n '^[^#]*` *cd ' $(srcdir)/automake.in \
 	      $(srcdir)/lib/am/*.am; then \
-	  echo "Consider using $$$$(am__cd) in the line above." 1>&2; \
+	  echo "Consider using \$$(am__cd) in the lines above." 1>&2; \
+	  exit 1; \
+	fi
+## Look for cd to a relative directory (may be influenced by CDPATH).
+## Skip some known directories that are OK.
+	@if grep -n '^[^#]*cd ' $(srcdir)/automake.in \
+	      $(srcdir)/lib/am/*.am | \
+	      grep -v 'echo.*cd ' | \
+	      grep -v 'am__cd =' | \
+	      grep -v '^[^#]*cd [./]' | \
+	      grep -v '^[^#]*cd \$$(top_builddir)' | \
+	      grep -v '^[^#]*cd "\$$\$$am__cwd' | \
+	      grep -v '^[^#]*cd \$$(abs' | \
+	      grep -v '^[^#]*cd "\$$(DESTDIR)'; then \
+	  echo "Consider using \$$(am__cd) in the lines above." 1>&2; \
 	  exit 1; \
 	fi
 ## Using @_ in a scalar context is most probably a programming error.

@@ -239,13 +239,13 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
 	      echo ' cd $(srcdir) && $(AUTOMAKE) --gnu '; \
-	      cd $(srcdir) && $(AUTOMAKE) --gnu  \
+	      $(am__cd) $(srcdir) && $(AUTOMAKE) --gnu  \
 		&& exit 0; \
 	      exit 1;; \
 	  esac; \
 	done; \
 	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  Makefile'; \
-	cd $(top_srcdir) && \
+	$(am__cd) $(top_srcdir) && \
 	  $(AUTOMAKE) --gnu  Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
@@ -262,9 +262,9 @@ $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENC
 	$(SHELL) ./config.status --recheck
 
 $(top_srcdir)/configure:  $(am__configure_deps)
-	cd $(srcdir) && $(AUTOCONF)
+	$(am__cd) $(srcdir) && $(AUTOCONF)
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
-	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
+	$(am__cd) $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
 $(am__aclocal_m4_deps):
 install-binSCRIPTS: $(bin_SCRIPTS)
 	@$(NORMAL_INSTALL)
@@ -310,7 +310,7 @@ $(RECURSIVE_TARGETS):
 	  else \
 	    local_target="$$target"; \
 	  fi; \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
+	  ($(am__cd) $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
 	  || eval $$failcom; \
 	done; \
 	if test "$$dot_seen" = "no"; then \
@@ -344,16 +344,16 @@ $(RECURSIVE_CLEAN_TARGETS):
 	  else \
 	    local_target="$$target"; \
 	  fi; \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
+	  ($(am__cd) $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
 	  || eval $$failcom; \
 	done && test -z "$$fail"
 tags-recursive:
 	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) tags); \
+	  test "$$subdir" = . || ($(am__cd) $$subdir && $(MAKE) $(AM_MAKEFLAGS) tags); \
 	done
 ctags-recursive:
 	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) ctags); \
+	  test "$$subdir" = . || ($(am__cd) $$subdir && $(MAKE) $(AM_MAKEFLAGS) ctags); \
 	done
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -415,7 +415,7 @@ CTAGS: ctags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 
 GTAGS:
 	here=`$(am__cd) $(top_builddir) && pwd` \
-	  && cd $(top_srcdir) \
+	  && $(am__cd) $(top_srcdir) \
 	  && gtags -i $(GTAGS_ARGS) "$$here"
 
 distclean-tags:
@@ -460,7 +460,7 @@ distdir: $(DISTFILES)
 	    dir1=$$subdir; dir2="$(top_distdir)"; \
 	    $(am__relativize); \
 	    new_top_distdir=$$reldir; \
-	    (cd $$subdir && \
+	    ($(am__cd) $$subdir && \
 	      $(MAKE) $(AM_MAKEFLAGS) \
 	        top_distdir="$$new_top_distdir" \
 	        distdir="$$new_distdir" \
@@ -536,7 +536,7 @@ distcheck: dist
 	chmod a-w $(distdir)
 	dc_install_base=`$(am__cd) $(distdir)/_inst && pwd | sed -e 's,^[^:\\/]:[\\/],/,'` \
 	  && dc_destdir="$${TMPDIR-/tmp}/am-dc-$$$$/" \
-	  && cd $(distdir)/_build \
+	  && $(am__cd) $(distdir)/_build \
 	  && ../configure --srcdir=.. --prefix="$$dc_install_base" \
 	    $(DISTCHECK_CONFIGURE_FLAGS) \
 	  && $(MAKE) $(AM_MAKEFLAGS) \
@@ -564,7 +564,7 @@ distcheck: dist
 	  list='$(DIST_ARCHIVES)'; for i in $$list; do echo $$i; done) | \
 	  sed -e 1h -e 1s/./=/g -e 1p -e 1x -e '$$p' -e '$$x'
 distuninstallcheck:
-	@cd '$(distuninstallcheck_dir)' \
+	@$(am__cd) '$(distuninstallcheck_dir)' \
 	&& test `$(distuninstallcheck_listfiles) | wc -l` -le 1 \
 	   || { echo "ERROR: files left after uninstall:" ; \
 	        if test -n "$(DESTDIR)"; then \
@@ -775,7 +775,19 @@ maintainer-check: automake aclocal
 	fi
 	@if grep -n '^[^#]*` *cd ' $(srcdir)/automake.in \
 	      $(srcdir)/lib/am/*.am; then \
-	  echo "Consider using $$$$(am__cd) in the line above." 1>&2; \
+	  echo "Consider using \$$(am__cd) in the lines above." 1>&2; \
+	  exit 1; \
+	fi
+	@if grep -n '^[^#]*cd ' $(srcdir)/automake.in \
+	      $(srcdir)/lib/am/*.am | \
+	      grep -v 'echo.*cd ' | \
+	      grep -v 'am__cd =' | \
+	      grep -v '^[^#]*cd [./]' | \
+	      grep -v '^[^#]*cd \$$(top_builddir)' | \
+	      grep -v '^[^#]*cd "\$$\$$am__cwd' | \
+	      grep -v '^[^#]*cd \$$(abs' | \
+	      grep -v '^[^#]*cd "\$$(DESTDIR)'; then \
+	  echo "Consider using \$$(am__cd) in the lines above." 1>&2; \
 	  exit 1; \
 	fi
 	@if grep -Hn '[^@_A-Za-z0-9][_A-Za-z0-9]*[^) ] *= *@_' $(srcdir)/automake.in; then \
