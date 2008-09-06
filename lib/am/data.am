@@ -33,17 +33,17 @@ install-%DIR%%PRIMARY%: $(%DIR%_%PRIMARY%)
 if %?BASE%
 ## Funny invocation because Makefile variable can be empty, leading to
 ## a syntax error in sh.
-	@list='$(%DIR%_%PRIMARY%)'; list2=; for p in $$list; do \
+	@list='$(%DIR%_%PRIMARY%)'; for p in $$list; do \
 ## A file can be in the source directory or the build directory.
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 ## If the _%PRIMARY% variable has an entry like foo/bar, install it as
 ## $(destdir)/bar, not $(destdir)/foo/bar.  The user can make a
 ## new dir variable or use a nobase_ target for the latter case.
-	  list2="$$list2 $$d$$p"; \
-	done; \
-	test -z "$$list2" || { \
-	  echo " $(%DIR%%PRIMARY%_INSTALL) $$list2 '$(DESTDIR)$(%NDIR%dir)'"; \
-	  $(%DIR%%PRIMARY%_INSTALL) $$list2 "$(DESTDIR)$(%NDIR%dir)"; }
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(%DIR%%PRIMARY%_INSTALL) $$files '$(DESTDIR)$(%NDIR%dir)'"; \
+	  $(%DIR%%PRIMARY%_INSTALL) $$files "$(DESTDIR)$(%NDIR%dir)"; done
 else !%?BASE%
 	@list='$(%DIR%_%PRIMARY%)'; $(am__nobase_list) | \
 	while read dir files; do \

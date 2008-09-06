@@ -57,7 +57,7 @@ am__vpath_adj = case $$p in \
     *) f=$$p;; \
   esac;
 am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
-am__install_max = 50
+am__install_max = 40
 am__nobase_list = \
   srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`; \
   for p in $$list; do echo "$$p $$p"; done | \
@@ -66,6 +66,9 @@ am__nobase_list = \
     if (++n[$$2] == $(am__install_max)) \
       { print $$2, files[$$2]; n[$$2] = 0; files[$$2] = "" } } \
     END { for (dir in files) print dir " " files[dir] }'
+am__base_list = \
+  sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
+  sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
 am__installdirs = "$(DESTDIR)$(amdir)"
 dist_amDATA_INSTALL = $(INSTALL_DATA)
 DATA = $(dist_am_DATA)
@@ -233,13 +236,13 @@ $(am__aclocal_m4_deps):
 install-dist_amDATA: $(dist_am_DATA)
 	@$(NORMAL_INSTALL)
 	test -z "$(amdir)" || $(MKDIR_P) "$(DESTDIR)$(amdir)"
-	@list='$(dist_am_DATA)'; list2=; for p in $$list; do \
+	@list='$(dist_am_DATA)'; for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  list2="$$list2 $$d$$p"; \
-	done; \
-	test -z "$$list2" || { \
-	  echo " $(dist_amDATA_INSTALL) $$list2 '$(DESTDIR)$(amdir)'"; \
-	  $(dist_amDATA_INSTALL) $$list2 "$(DESTDIR)$(amdir)"; }
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(dist_amDATA_INSTALL) $$files '$(DESTDIR)$(amdir)'"; \
+	  $(dist_amDATA_INSTALL) $$files "$(DESTDIR)$(amdir)"; done
 
 uninstall-dist_amDATA:
 	@$(NORMAL_UNINSTALL)
