@@ -228,8 +228,28 @@ maintainer-check: automake aclocal
 	  echo 'Do not run "automake" in the above tests.  Use "$$AUTOMAKE" instead.' 1>&2;  \
 	  exit 1; \
 	fi
+## Tests should only use END and EOF for here documents
+## (so that the next test is effective).
+	@if grep '<<' $(srcdir)/tests/*.test | grep -v 'END' | grep -v 'EOF'; then \
+	  echo 'Use here documents with "END" and "EOF" only, for greppability.' 1>&2; \
+	  exit 1; \
+	fi
+## Tests should never call exit directly, but use Exit.
+## This is so that the exit status is transported correctly across the 0 trap.
+## Ignore comments, and ignore one perl line in ext2.test.
+	@found=false; for file in $(srcdir)/tests/*.test; do \
+	  res=`sed -n '/^#/d; /^\$$PERL/d; /<<.*END/,/^END/{b;}; /<<.*EOF/,/^EOF/{b;}; /exit [$$0-9]/p' $$file`; \
+	  if test -n "$$res"; then \
+	    echo "$$file:$$res"; \
+	    found=true; \
+	  fi; \
+	done; \
+	if $$found; then \
+	  echo 'Do not call plain "exit", use "Exit" instead, in above tests.' 1>&2; \
+	  exit 1; \
+	fi
 ## Use AUTOMAKE_fails when appropriate
-	@if grep -v '^#' $(srcdir)/tests/*.test | grep '\$$AUTOMAKE.*&&.*exit'; then \
+	@if grep -v '^#' $(srcdir)/tests/*.test | grep '\$$AUTOMAKE.*&&.*[eE]xit'; then \
 	  echo 'Use AUTOMAKE_fails + grep to catch automake failures in the above tests.' 1>&2;  \
 	  exit 1; \
 	fi

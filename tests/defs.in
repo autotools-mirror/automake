@@ -231,6 +231,18 @@ case "$srcdir" in
     ;;
 esac
 
+# We use a trap below for cleanup.  This requires us to go through
+# hoops to get the right exit status transported through the signal.
+# So use `Exit STATUS' instead of `exit STATUS' inside of the tests.
+# Turn off errexit here so that we don't trip the bug with OSF1/Tru64
+# sh inside this function.
+Exit ()
+{
+  set +e
+  (exit $1)
+  exit $1
+}
+
 curdir=`pwd`
 testSubDir=$me.dir
 chmod -R u+rwx $testSubDir > /dev/null 2>&1
@@ -250,13 +262,13 @@ trap 'exit_status=$?
   exit $exit_status
 ' 0
 for signal in 1 2 13 15; do
-  trap 'signal='$signal'; { (exit 1); exit 1; }' $signal
+  trap 'signal='$signal'; { Exit 1; }' $signal
 done
 signal=0
 
 # Copy in some files we need.
 for file in install-sh missing depcomp; do
-   cp "$srcdir/../lib/$file" "$testSubDir/$file" || exit 1
+   cp "$srcdir/../lib/$file" "$testSubDir/$file" || Exit 1
 done
 
 cd ./$testSubDir
@@ -313,14 +325,14 @@ case $required in
        fi
     done
     case $required in
-      *libtool* ) test $libtool_found = yes || exit 77 ;;
-      *gettext* ) test $gettext_found = yes || exit 77 ;;
+      *libtool* ) test $libtool_found = yes || Exit 77 ;;
+      *gettext* ) test $gettext_found = yes || Exit 77 ;;
     esac
     # Libtool cannot cope with spaces in the build tree.  Our testsuite setup
     # cannot cope with spaces in the source tree name for Libtool and gettext
     # tests.
     case $srcdir,`pwd` in
-      *\ * | *\	*) exit 77 ;;
+      *\ * | *\	*) Exit 77 ;;
     esac
     ACLOCAL="$ACLOCAL -Wno-syntax -I $srcdir/../m4 $extra_includes -I $aclocaldir"
     ;;
@@ -372,7 +384,7 @@ AUTOMAKE_run ()
   $AUTOMAKE ${1+"$@"} >stdout 2>stderr || exitcode=$?
   cat stderr
   cat stdout
-  test $exitcode = $expected_exitcode || exit 1
+  test $exitcode = $expected_exitcode || Exit 1
 }
 
 # AUTOMAKE_fails [options...]
