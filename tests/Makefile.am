@@ -306,6 +306,8 @@ instexec.test \
 insthook.test \
 instman.test \
 instman2.test \
+instmany.test \
+instmany-python.test \
 instspc.test \
 interp.test \
 interp2.test \
