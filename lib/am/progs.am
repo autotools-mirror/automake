@@ -21,37 +21,61 @@
 
 if %?INSTALL%
 am__installdirs += "$(DESTDIR)$(%NDIR%dir)"
-%DIR%PROGRAMS_INSTALL = %BASE?$(INSTALL_PROGRAM):$(install_sh_PROGRAM)%
+%DIR%PROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 .PHONY install-%EXEC?exec:data%-am: install-%DIR%PROGRAMS
 install-%DIR%PROGRAMS: $(%DIR%_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	test -z "$(%NDIR%dir)" || $(MKDIR_P) "$(DESTDIR)$(%NDIR%dir)"
 ## Funny invocation because Makefile variable can be empty, leading to
 ## a syntax error in sh.
-	@list='$(%DIR%_PROGRAMS)'; for p in $$list; do \
+	@list='$(%DIR%_PROGRAMS)'; \
+	for p in $$list; do echo "$$p $$p"; done | \
 ## On Cygwin with libtool test won't see `foo.exe' but instead `foo'.
 ## So we check for both.
-	  p1=`echo $$p|sed 's/$(EXEEXT)$$//'`; \
+	sed 's/$(EXEEXT)$$//' | \
+	while read p p1; do \
 	  if test -f $$p \
 ?LIBTOOL?	     || test -f $$p1 \
-	  ; then \
-## Compute basename of source file.  Unless this is a nobase_ target, we
-## want to install 'python/foo.py' as '$(DESTDIR)$(%NDIR%dir)/foo.yo',
-## not '$(DESTDIR)$(%NDIR%dir)/python/foo.yo'.
-## However in all cases $(transform) applies only to the basename,
-## so we have to strip the directory part.
-	    f=`echo "$$p1" | sed 's,^.*/,,;$(transform);s/$$/$(EXEEXT)/'`; \
-## Prepend the directory part if nobase_ is used.
-?!BASE?	    f=`echo "$$p1" | sed 's|[^/]*$$||'`"$$f"; \
+	  ; then echo "$$p"; echo "$$p"; else :; fi; \
+	done | \
+## We now have a list of sourcefile pairs, separated by newline.
+## Turn that into "sourcefile source_base target_dir xformed_target_base",
+## with newlines being turned into spaces in a second step.
+	sed -e 'p;s,.*/,,;n;h' \
+?BASE?	    -e 's|.*|.|' \
+?!BASE?	    -e 's|[^/]*$$||; s|^$$|.|' \
+	    -e 'p;x;s,.*/,,;s/$(EXEEXT)$$//;$(transform);s/$$/$(EXEEXT)/' | \
+	sed 'N;N;N;s,\n, ,g' | \
 ## Note that we explicitly set the libtool mode.  This avoids any
 ## lossage if the install program doesn't have a name that libtool
 ## expects.
-?LIBTOOL?	   echo " $(INSTALL_PROGRAM_ENV) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(%DIR%PROGRAMS_INSTALL) '$$p' '$(DESTDIR)$(%NDIR%dir)/$$f'"; \
-?LIBTOOL?	   $(INSTALL_PROGRAM_ENV) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(%DIR%PROGRAMS_INSTALL) "$$p" "$(DESTDIR)$(%NDIR%dir)/$$f" || exit $$?; \
-?!LIBTOOL?	   echo " $(INSTALL_PROGRAM_ENV) $(%DIR%PROGRAMS_INSTALL) '$$p' '$(DESTDIR)$(%NDIR%dir)/$$f'"; \
-?!LIBTOOL?	   $(INSTALL_PROGRAM_ENV) $(%DIR%PROGRAMS_INSTALL) "$$p" "$(DESTDIR)$(%NDIR%dir)/$$f" || exit $$?; \
-	  else :; fi; \
-	done
+?LIBTOOL?	while read p pbase dir f; do \
+?LIBTOOL??!BASE?	  if test "$$dir" != .; then f=$$dir/$$f; \
+?LIBTOOL??!BASE?	    echo " $(MKDIR_P) '$(DESTDIR)$(%NDIR%dir)/$$dir'"; \
+?LIBTOOL??!BASE?	    $(MKDIR_P) "$(DESTDIR)$(%NDIR%dir)/$$dir" || exit $$?; \
+?LIBTOOL??!BASE?	  else :; fi; \
+?LIBTOOL?	  echo " $(INSTALL_PROGRAM_ENV) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(%DIR%PROGRAMS_INSTALL) '$$p' '$(DESTDIR)$(%NDIR%dir)/$$f'"; \
+?LIBTOOL?	  $(INSTALL_PROGRAM_ENV) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(%DIR%PROGRAMS_INSTALL) "$$p" "$(DESTDIR)$(%NDIR%dir)/$$f" || exit $$?; \
+?LIBTOOL?	done
+## The following awk script turns that into one line containing directories
+## and then lines of `target_name_or_directory sources...'.
+?!LIBTOOL?	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = "" } { \
+?!LIBTOOL?	  if ($$2 == $$4) tgt = $$3; else tgt = $$3 "/" $$4; \
+?!LIBTOOL?	  files[tgt] = files[tgt] " " $$1; dirs[$$3] = 1 } \
+?!LIBTOOL?	  END { d=""; for (dir in dirs) d = d " " dir; print d; \
+?!LIBTOOL?	        for (dir in files) print dir, files[dir] }' | { \
+?!LIBTOOL?	read dirs; \
+?!LIBTOOL??!BASE?	for dir in $$dirs; do test . = $$dir || { \
+?!LIBTOOL??!BASE?	  echo " $(MKDIR_P) '$(DESTDIR)$(%NDIR%dir)/$$dir'"; \
+?!LIBTOOL??!BASE?	  $(MKDIR_P) "$(DESTDIR)$(%NDIR%dir)/$$dir" || exit $$?; \
+?!LIBTOOL??!BASE?	}; done; \
+?!LIBTOOL?	while read dir files; do \
+?!LIBTOOL?	  if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
+?!LIBTOOL?	  test -z "$$files" || { \
+?!LIBTOOL?	    echo " $(INSTALL_PROGRAM_ENV) $(%DIR%PROGRAMS_INSTALL) $$files '$(DESTDIR)$(%NDIR%dir)$$dir'"; \
+?!LIBTOOL?	    $(INSTALL_PROGRAM_ENV) $(%DIR%PROGRAMS_INSTALL) $$files "$(DESTDIR)$(%NDIR%dir)$$dir" || exit $$?; \
+?!LIBTOOL?	  }; \
+?!LIBTOOL?	done; }
 endif %?INSTALL%
 
 
