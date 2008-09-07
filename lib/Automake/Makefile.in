@@ -65,14 +65,17 @@ am__vpath_adj = case $$p in \
   esac;
 am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
 am__install_max = 40
-am__nobase_list = \
-  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`; \
+am__nobase_strip_setup = \
+  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`
+am__nobase_strip = \
+  for p in $$list; do echo "$$p"; done | sed -e "s|$$srcdirstrip/||"
+am__nobase_list = $(am__nobase_strip_setup); \
   for p in $$list; do echo "$$p $$p"; done | \
   sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
   $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \
     if (++n[$$2] == $(am__install_max)) \
       { print $$2, files[$$2]; n[$$2] = 0; files[$$2] = "" } } \
-    END { for (dir in files) print dir " " files[dir] }'
+    END { for (dir in files) print dir, files[dir] }'
 am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
@@ -280,11 +283,11 @@ install-dist_perllibDATA: $(dist_perllib_DATA)
 
 uninstall-dist_perllibDATA:
 	@$(NORMAL_UNINSTALL)
-	@list='$(dist_perllib_DATA)'; for p in $$list; do \
-	  $(am__strip_dir) \
-	  echo " rm -f '$(DESTDIR)$(perllibdir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(perllibdir)/$$f"; \
-	done
+	@list='$(dist_perllib_DATA)'; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	test -n "$$files" || exit 0; \
+	echo " ( cd '$(DESTDIR)$(perllibdir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(perllibdir)" && rm -f $$files
 install-nodist_perllibDATA: $(nodist_perllib_DATA)
 	@$(NORMAL_INSTALL)
 	test -z "$(perllibdir)" || $(MKDIR_P) "$(DESTDIR)$(perllibdir)"
@@ -299,11 +302,11 @@ install-nodist_perllibDATA: $(nodist_perllib_DATA)
 
 uninstall-nodist_perllibDATA:
 	@$(NORMAL_UNINSTALL)
-	@list='$(nodist_perllib_DATA)'; for p in $$list; do \
-	  $(am__strip_dir) \
-	  echo " rm -f '$(DESTDIR)$(perllibdir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(perllibdir)/$$f"; \
-	done
+	@list='$(nodist_perllib_DATA)'; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	test -n "$$files" || exit 0; \
+	echo " ( cd '$(DESTDIR)$(perllibdir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(perllibdir)" && rm -f $$files
 
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run `make' without going through this Makefile.

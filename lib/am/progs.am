@@ -63,14 +63,17 @@ if %?INSTALL%
 .PHONY uninstall-am: uninstall-%DIR%PROGRAMS
 uninstall-%DIR%PROGRAMS:
 	@$(NORMAL_UNINSTALL)
-	@list='$(%DIR%_PROGRAMS)'; for p in $$list; do \
-## Remove any leading directory before applying $(transform).
-	  f=`echo "$$p" | sed 's,^.*/,,;s/$(EXEEXT)$$//;$(transform);s/$$/$(EXEEXT)/'`; \
-## Prepend the directory part if nobase_ is used.
-?!BASE?	  f=`echo "$$p" | sed 's|[^/]*$$||'`"$$f"; \
-	  echo " rm -f '$(DESTDIR)$(%NDIR%dir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(%NDIR%dir)/$$f"; \
-	done
+	@list='$(%DIR%_PROGRAMS)'; \
+	files=`for p in $$list; do echo "$$p"; done | \
+## Remove any leading directory before applying $(transform),
+## but keep the directory part in the hold buffer, in order to
+## reapply it again afterwards in the nobase case.  Append $(EXEEXT).
+	  sed 'h;s,^.*/,,;s/$(EXEEXT)$$//;$(transform);s/$$/$(EXEEXT)/; \
+?!BASE?	       x;s,[^/]*$$,,;G;s,\n,,; \
+	       '`; \
+	test -n "$$list" || exit 0; \
+	echo " ( cd '$(DESTDIR)$(%NDIR%dir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(%NDIR%dir)" && rm -f $$files
 endif %?INSTALL%
 
 

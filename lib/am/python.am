@@ -95,15 +95,20 @@ if %?INSTALL%
 .PHONY uninstall-am: uninstall-%DIR%PYTHON
 uninstall-%DIR%PYTHON:
 	@$(NORMAL_UNINSTALL)
-?!BASE?	@$(am__vpath_adj_setup) \
-	%BASE?@%list='$(%DIR%_PYTHON)'; dlist=''; for p in $$list; do\
-	  %BASE?$(am__strip_dir):$(am__vpath_adj)% \
-	  rm -f "$(DESTDIR)$(%NDIR%dir)/$$f"; \
+	@list='$(%DIR%_PYTHON)'; \
+?BASE?	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+?!BASE?	$(am__nobase_strip_setup); files=`$(am__nobase_strip)`; \
+	test -n "$$files" || exit 0; \
+	filesc=`echo "$$files" | sed 's|$$|c|'`; \
+	fileso=`echo "$$files" | sed 's|$$|o|'`; \
+	echo " ( cd '$(DESTDIR)$(%NDIR%dir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(%NDIR%dir)" && rm -f $$files || exit $$?; \
 ## This is to remove the .pyc and .pyo byte compiled versions (a bit
 ## of a hack).
-	  rm -f "$(DESTDIR)$(%NDIR%dir)/$${f}c"; \
-	  rm -f "$(DESTDIR)$(%NDIR%dir)/$${f}o"; \
-	done
+	echo " ( cd '$(DESTDIR)$(%NDIR%dir)' && rm -f" $$filesc ")"; \
+	cd "$(DESTDIR)$(%NDIR%dir)" && rm -f $$filesc || exit $$?; \
+	echo " ( cd '$(DESTDIR)$(%NDIR%dir)' && rm -f" $$fileso ")"; \
+	cd "$(DESTDIR)$(%NDIR%dir)" && rm -f $$fileso
 endif %?INSTALL%
 
 

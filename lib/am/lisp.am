@@ -115,14 +115,16 @@ if %?INSTALL%
 uninstall-%DIR%LISP:
 	@$(NORMAL_UNINSTALL)
 ## Do not uninstall anything if EMACS was not found.
-	@if test "$(EMACS)" != no; then \
-?!BASE?	  $(am__vpath_adj_setup) \
-	  list='$(%DIR%_LISP)'; for p in $$list; do \
-	    %BASE?$(am__strip_dir):$(am__vpath_adj)% \
-	    echo " rm -f '$(DESTDIR)$(%NDIR%dir)/$$f' '$(DESTDIR)$(%NDIR%dir)/$${f}c'"; \
-	    rm -f "$(DESTDIR)$(%NDIR%dir)/$$f" "$(DESTDIR)$(%NDIR%dir)/$${f}c"; \
-	  done; \
-	else : ; fi
+	@test "$(EMACS)" != no || exit 0; \
+	list='$(%DIR%_LISP)'; \
+?BASE?	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+?!BASE?	$(am__nobase_strip_setup); files=`$(am__nobase_strip)`; \
+	test -n "$$files" || exit 0; \
+	filesc=`echo "$$files" | sed 's|$$|c|'`; \
+	echo " ( cd '$(DESTDIR)$(%NDIR%dir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(%NDIR%dir)" && rm -f $$files || exit $$?; \
+	echo " ( cd '$(DESTDIR)$(%NDIR%dir)' && rm -f" $$filesc ")"; \
+	cd "$(DESTDIR)$(%NDIR%dir)" && rm -f $$filesc
 endif %?INSTALL%
 
 
