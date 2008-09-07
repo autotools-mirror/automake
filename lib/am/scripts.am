@@ -16,9 +16,7 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 if %?INSTALL%
-if ! %?BASE%
 include inst-vars.am
-endif ! %?BASE%
 endif %?INSTALL%
 
 ## ------------ ##
@@ -28,31 +26,48 @@ endif %?INSTALL%
 if %?INSTALL%
 ## if doesn't work properly for Automake variables yet.
 am__installdirs += "$(DESTDIR)$(%NDIR%dir)"
-%DIR%SCRIPT_INSTALL = %BASE?$(INSTALL_SCRIPT):$(install_sh_SCRIPT)%
+%DIR%SCRIPT_INSTALL = $(INSTALL_SCRIPT)
 .PHONY install-%EXEC?exec:data%-am: install-%DIR%SCRIPTS
 install-%DIR%SCRIPTS: $(%DIR%_SCRIPTS)
 	@$(NORMAL_INSTALL)
 	test -z "$(%NDIR%dir)" || $(MKDIR_P) "$(DESTDIR)$(%NDIR%dir)"
-?!BASE?	@$(am__vpath_adj_setup) \
 ## Funny invocation because Makefile variable can be empty, leading to
 ## a syntax error in sh.
-	%BASE?@%list='$(%DIR%_SCRIPTS)'; for p in $$list; do \
-?!BASE?	  $(am__vpath_adj) p=$$f; \
+	@list='$(%DIR%_SCRIPTS)'; \
+?!BASE?	$(am__nobase_strip_setup); \
+	for p in $$list; do \
 ## A file can be in the source directory or the build directory.
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  if test -f $$d$$p; then \
-## If the _SCRIPTS variable has an entry like foo/bar, install it as
-## $(destdir)/bar, not $(destdir)/foo/bar.  The user can make a
-## new dir variable or use a nobase_ target for the latter case.
-## However in all cases $(transform) applies only to the basename,
-## so we have to strip the directory part.
-	    f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
-## Prepend the directory part if nobase_ is used.
-?!BASE?	    f=`echo "$$p" | sed 's|[^/]*$$||'`"$$f"; \
-	    echo " $(%DIR%SCRIPT_INSTALL) '$$d$$p' '$(DESTDIR)$(%NDIR%dir)/$$f'"; \
-	    $(%DIR%SCRIPT_INSTALL) "$$d$$p" "$(DESTDIR)$(%NDIR%dir)/$$f" || exit $$?; \
-	  else :; fi; \
-	done
+## A script may or may not exist.
+	  if test -f "$$d$$p"; then echo "$$d$$p"; echo "$$p"; else :; fi; \
+	done | \
+## We now have a list of "sourcefile newline (nobase-)target" pairs.
+## Turn that into "sourcefile source_base target_dir xformed_target_base",
+## with newlines being turned into spaces in a second step.
+	sed -e 'p;s,.*/,,;n' \
+?BASE?	    -e 'h;s|.*|.|' \
+?!BASE?	    -e "s|$$srcdirstrip/||" -e 'h;s|[^/]*$$||; s|^$$|.|' \
+	    -e 'p;x;s,.*/,,;$(transform)' | sed 'N;N;N;s,\n, ,g' | \
+	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = ""; list[""] = "" } { \
+	  if ($$2 == $$4) tgt = $$3; else tgt = $$3 "/" $$4; \
+	  files[tgt] = files[tgt] " " $$1; dirs[$$3] = 1; \
+	  if (++n[tgt] == $(am__install_max)) \
+	    { list[++lno] = tgt " " files[tgt]; n[tgt] = 0; files[tgt] = "" } } \
+	  END { d = ""; for (dir in dirs) d = d " " dir; print d; \
+		for (l in list) print list[l]; \
+	        for (dir in files) print dir, files[dir] }' | { \
+	read dirs; \
+?!BASE?	for dir in $$dirs; do test . = $$dir || { \
+?!BASE?	  echo " $(MKDIR_P) '$(DESTDIR)$(%NDIR%dir)/$$dir'"; \
+?!BASE?	  $(MKDIR_P) "$(DESTDIR)$(%NDIR%dir)/$$dir" || exit $$?; \
+?!BASE?	}; done; \
+	while read dir files; do \
+	  if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
+	  test -z "$$files" || { \
+	    echo " $(%DIR%SCRIPT_INSTALL) $$files '$(DESTDIR)$(%NDIR%dir)$$dir'"; \
+	    $(%DIR%SCRIPT_INSTALL) $$files "$(DESTDIR)$(%NDIR%dir)$$dir" || exit $$?; \
+	  }; \
+	done; }
 endif %?INSTALL%
 
 
@@ -64,16 +79,15 @@ if %?INSTALL%
 .PHONY uninstall-am: uninstall-%DIR%SCRIPTS
 uninstall-%DIR%SCRIPTS:
 	@$(NORMAL_UNINSTALL)
-?!BASE?	@$(am__vpath_adj_setup) \
-	%BASE?@%list='$(%DIR%_SCRIPTS)'; for p in $$list; do \
-?!BASE?	  $(am__vpath_adj) p=$$f; \
-## Remove any leading directory before applying $(transform).
-	  f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
-## Prepend the directory part if nobase_ is used.
-?!BASE?	  f=`echo "$$p" | sed 's|[^/]*$$||'`"$$f"; \
-	  echo " rm -f '$(DESTDIR)$(%NDIR%dir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(%NDIR%dir)/$$f"; \
-	done
+	@list='$(%DIR%_SCRIPTS)'; \
+?BASE?	files=`for p in $$list; do echo "$$p"; done | \
+?BASE?	       sed -e 's,.*/,,;$(transform)'`; \
+?!BASE?	$(am__nobase_strip_setup); \
+?!BASE?	files=`$(am__nobase_strip) \
+?!BASE?	       -e 'h;s,.*/,,;$(transform);x;s|[^/]*$$||;G;s,\n,,'`; \
+	test -n "$$list" || exit 0; \
+	echo " ( cd '$(DESTDIR)$(%NDIR%dir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(%NDIR%dir)" && rm -f $$files
 endif %?INSTALL%
 
 
