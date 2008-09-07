@@ -303,6 +303,10 @@ instsh3.test \
 instdat.test \
 instdat2.test \
 instexec.test \
+instfail.test \
+instfail-info.test \
+instfail-java.test \
+instfail-libtool.test \
 insthook.test \
 instman.test \
 instman2.test \
