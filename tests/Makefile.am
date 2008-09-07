@@ -311,6 +311,7 @@ insthook.test \
 instman.test \
 instman2.test \
 instmany.test \
+instmany-mans.test \
 instmany-python.test \
 instspc.test \
 interp.test \
