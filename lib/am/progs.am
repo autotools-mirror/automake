@@ -46,36 +46,30 @@ install-%DIR%PROGRAMS: $(%DIR%_PROGRAMS)
 ?!BASE?	    -e 's|[^/]*$$||; s|^$$|.|' \
 	    -e 'p;x;s,.*/,,;s/$(EXEEXT)$$//;$(transform);s/$$/$(EXEEXT)/' | \
 	sed 'N;N;N;s,\n, ,g' | \
+## The following awk script turns that into one line containing directories
+## and then lines of `target_name_or_directory sources...'.
+	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = "" } { \
+	  if ($$2 == $$4) tgt = $$3; else tgt = $$3 "/" $$4; \
+	  files[tgt] = files[tgt] " " $$1; dirs[$$3] = 1 } \
+	  END { d=""; for (dir in dirs) d = d " " dir; print d; \
+	        for (dir in files) print dir, files[dir] }' | { \
+	read dirs; \
+?!BASE?	for dir in $$dirs; do test . = $$dir || { \
+?!BASE?	  echo " $(MKDIR_P) '$(DESTDIR)$(%NDIR%dir)/$$dir'"; \
+?!BASE?	  $(MKDIR_P) "$(DESTDIR)$(%NDIR%dir)/$$dir" || exit $$?; \
+?!BASE?	}; done; \
+	while read dir files; do \
+	  if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
+	  test -z "$$files" || { \
+?!LIBTOOL?	    echo " $(INSTALL_PROGRAM_ENV) $(%DIR%PROGRAMS_INSTALL) $$files '$(DESTDIR)$(%NDIR%dir)$$dir'"; \
+?!LIBTOOL?	    $(INSTALL_PROGRAM_ENV) $(%DIR%PROGRAMS_INSTALL) $$files "$(DESTDIR)$(%NDIR%dir)$$dir" || exit $$?; \
 ## Note that we explicitly set the libtool mode.  This avoids any
 ## lossage if the install program doesn't have a name that libtool
 ## expects.
-?LIBTOOL?	while read p pbase dir f; do \
-?LIBTOOL??!BASE?	  if test "$$dir" != .; then f=$$dir/$$f; \
-?LIBTOOL??!BASE?	    echo " $(MKDIR_P) '$(DESTDIR)$(%NDIR%dir)/$$dir'"; \
-?LIBTOOL??!BASE?	    $(MKDIR_P) "$(DESTDIR)$(%NDIR%dir)/$$dir" || exit $$?; \
-?LIBTOOL??!BASE?	  else :; fi; \
-?LIBTOOL?	  echo " $(INSTALL_PROGRAM_ENV) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(%DIR%PROGRAMS_INSTALL) '$$p' '$(DESTDIR)$(%NDIR%dir)/$$f'"; \
-?LIBTOOL?	  $(INSTALL_PROGRAM_ENV) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(%DIR%PROGRAMS_INSTALL) "$$p" "$(DESTDIR)$(%NDIR%dir)/$$f" || exit $$?; \
-?LIBTOOL?	done
-## The following awk script turns that into one line containing directories
-## and then lines of `target_name_or_directory sources...'.
-?!LIBTOOL?	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = "" } { \
-?!LIBTOOL?	  if ($$2 == $$4) tgt = $$3; else tgt = $$3 "/" $$4; \
-?!LIBTOOL?	  files[tgt] = files[tgt] " " $$1; dirs[$$3] = 1 } \
-?!LIBTOOL?	  END { d=""; for (dir in dirs) d = d " " dir; print d; \
-?!LIBTOOL?	        for (dir in files) print dir, files[dir] }' | { \
-?!LIBTOOL?	read dirs; \
-?!LIBTOOL??!BASE?	for dir in $$dirs; do test . = $$dir || { \
-?!LIBTOOL??!BASE?	  echo " $(MKDIR_P) '$(DESTDIR)$(%NDIR%dir)/$$dir'"; \
-?!LIBTOOL??!BASE?	  $(MKDIR_P) "$(DESTDIR)$(%NDIR%dir)/$$dir" || exit $$?; \
-?!LIBTOOL??!BASE?	}; done; \
-?!LIBTOOL?	while read dir files; do \
-?!LIBTOOL?	  if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
-?!LIBTOOL?	  test -z "$$files" || { \
-?!LIBTOOL?	    echo " $(INSTALL_PROGRAM_ENV) $(%DIR%PROGRAMS_INSTALL) $$files '$(DESTDIR)$(%NDIR%dir)$$dir'"; \
-?!LIBTOOL?	    $(INSTALL_PROGRAM_ENV) $(%DIR%PROGRAMS_INSTALL) $$files "$(DESTDIR)$(%NDIR%dir)$$dir" || exit $$?; \
-?!LIBTOOL?	  }; \
-?!LIBTOOL?	done; }
+?LIBTOOL?	  echo " $(INSTALL_PROGRAM_ENV) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(%DIR%PROGRAMS_INSTALL) $$files '$(DESTDIR)$(%NDIR%dir)$$dir'"; \
+?LIBTOOL?	  $(INSTALL_PROGRAM_ENV) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(%DIR%PROGRAMS_INSTALL) $$files "$(DESTDIR)$(%NDIR%dir)$$dir" || exit $$?; \
+	  }; \
+	done; }
 endif %?INSTALL%
 
 

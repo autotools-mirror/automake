@@ -25,29 +25,50 @@ endif %?INSTALL%
 
 if %?INSTALL%
 am__installdirs += "$(DESTDIR)$(%NDIR%dir)"
-%DIR%LTLIBRARIES_INSTALL = %BASE?$(INSTALL):$(install_sh) -c%
+%DIR%LTLIBRARIES_INSTALL = $(INSTALL)
 .PHONY install-%EXEC?exec:data%-am: install-%DIR%LTLIBRARIES
 install-%DIR%LTLIBRARIES: $(%DIR%_LTLIBRARIES)
 	@$(NORMAL_INSTALL)
 	test -z "$(%NDIR%dir)" || $(MKDIR_P) "$(DESTDIR)$(%NDIR%dir)"
+if %?BASE%
 ## Funny invocation because Makefile variable can be empty, leading to
 ## a syntax error in sh.
-	@list='$(%DIR%_LTLIBRARIES)'; for p in $$list; do \
+	@list='$(%DIR%_LTLIBRARIES)'; list2=; for p in $$list; do \
 	  if test -f $$p; then \
-## Compute basename of source file.  Unless this is a nobase_ target, we
-## want to install 'python/foo.py' as '$(DESTDIR)$(%NDIR%dir)/foo.yo',
-## not '$(DESTDIR)$(%NDIR%dir)/python/foo.yo'.
-	    %BASE?$(am__strip_dir):f=$$p;% \
+	    list2="$$list2 $$p"; \
+	  else :; fi; \
+	done; \
+	test -z "$$list2" || { \
 ## Note that we explicitly set the libtool mode.  This avoids any lossage
 ## if the program doesn't have a name that libtool expects.
 ## Use INSTALL and not INSTALL_DATA because libtool knows the right
 ## permissions to use.
-?LIBTOOL?	    echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(%DIR%LTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) '$$p' '$(DESTDIR)$(%NDIR%dir)/$$f'"; \
-?LIBTOOL?	    $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(%DIR%LTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) "$$p" "$(DESTDIR)$(%NDIR%dir)/$$f" || exit $$?; \
-?!LIBTOOL?	    echo " $(%DIR%LTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) '$$p' '$(DESTDIR)$(%NDIR%dir)/$$f'"; \
-?!LIBTOOL?	    $(%DIR%LTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) "$$p" "$(DESTDIR)$(%NDIR%dir)/$$f" || exit $$?; \
-	  else :; fi; \
+?LIBTOOL?	  echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(%DIR%LTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) $$list2 '$(DESTDIR)$(%NDIR%dir)'"; \
+?LIBTOOL?	  $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(%DIR%LTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) $$list2 "$(DESTDIR)$(%NDIR%dir)"; \
+?!LIBTOOL?	  echo " $(%DIR%LTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) $$list '$(DESTDIR)$(%NDIR%dir)'"; \
+?!LIBTOOL?	  $(%DIR%LTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) $$list "$(DESTDIR)$(%NDIR%dir)"; \
+	}
+else !%?BASE%
+	@list='$(%DIR%_LTLIBRARIES)'; $(am__nobase_list) | \
+	while read dir files; do \
+	  xfiles=; for p in $$files; do \
+	    if test -f "$$p"; then xfiles="$$xfiles $$p"; else :; fi; done; \
+	  test -z "$$xfiles" || { \
+	    test "x$$dir" = x. || { \
+	      echo "$(MKDIR_P) '$(DESTDIR)$(%NDIR%dir)/$$dir'"; \
+	      $(MKDIR_P) "$(DESTDIR)$(%NDIR%dir)/$$dir"; }; \
+
+## Note that we explicitly set the libtool mode.  This avoids any lossage
+## if the program doesn't have a name that libtool expects.
+## Use INSTALL and not INSTALL_DATA because libtool knows the right
+## permissions to use.
+?LIBTOOL?	    echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(%DIR%LTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) $$xfiles '$(DESTDIR)$(%NDIR%dir)/$$dir'"; \
+?LIBTOOL?	    $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(%DIR%LTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) $$xfiles "$(DESTDIR)$(%NDIR%dir)/$$dir" || exit $$?; \
+?!LIBTOOL?	    echo " $(%DIR%LTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) $$xfiles '$(DESTDIR)$(%NDIR%dir)/$$dir'"; \
+?!LIBTOOL?	    $(%DIR%LTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) $$xfiles "$(DESTDIR)$(%NDIR%dir)/$$dir" || exit $$?; \
+	  }; \
 	done
+endif !%?BASE%
 endif %?INSTALL%
 
 
