@@ -47,29 +47,31 @@ install-%DIR%PROGRAMS: $(%DIR%_PROGRAMS)
 	    -e 'p;x;s,.*/,,;s/$(EXEEXT)$$//;$(transform);s/$$/$(EXEEXT)/' | \
 	sed 'N;N;N;s,\n, ,g' | \
 ## The following awk script turns that into one line containing directories
-## and then lines of `target_name_or_directory sources...'.
-	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = "" } { \
-	  if ($$2 == $$4) tgt = $$3; else tgt = $$3 "/" $$4; \
-	  files[tgt] = files[tgt] " " $$1; dirs[$$3] = 1 } \
-	  END { d=""; for (dir in dirs) d = d " " dir; print d; \
-	        for (dir in files) print dir, files[dir] }' | { \
-	read dirs; \
-?!BASE?	for dir in $$dirs; do test . = $$dir || { \
-?!BASE?	  echo " $(MKDIR_P) '$(DESTDIR)$(%NDIR%dir)/$$dir'"; \
-?!BASE?	  $(MKDIR_P) "$(DESTDIR)$(%NDIR%dir)/$$dir" || exit $$?; \
-?!BASE?	}; done; \
-	while read dir files; do \
-	  if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
-	  test -z "$$files" || { \
-?!LIBTOOL?	    echo " $(INSTALL_PROGRAM_ENV) $(%DIR%PROGRAMS_INSTALL) $$files '$(DESTDIR)$(%NDIR%dir)$$dir'"; \
-?!LIBTOOL?	    $(INSTALL_PROGRAM_ENV) $(%DIR%PROGRAMS_INSTALL) $$files "$(DESTDIR)$(%NDIR%dir)$$dir" || exit $$?; \
+## and then lines of 'type target_name_or_directory sources...', with type
+## 'd' designating directories, and 'f' files.
+	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = 1 } \
+	  { d=$$3; if (dirs[d] != 1) { print "d", d; dirs[d] = 1 } \
+	    if ($$2 == $$4) files[d] = files[d] " " $$1; \
+	    else { print "f", $$3 "/" $$4, $$1; } } \
+	  END { for (d in files) print "f", d, files[d] }' | \
+	while read type dir files; do \
+?!BASE?	  case $$type in \
+?!BASE?	  d) echo " $(MKDIR_P) '$(DESTDIR)$(%NDIR%dir)/$$dir'"; \
+?!BASE?	     $(MKDIR_P) "$(DESTDIR)$(%NDIR%dir)/$$dir" || exit $$?;; \
+?!BASE?	  f) \
+	    if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
+	    test -z "$$files" || { \
+?!LIBTOOL?	      echo " $(INSTALL_PROGRAM_ENV) $(%DIR%PROGRAMS_INSTALL) $$files '$(DESTDIR)$(%NDIR%dir)$$dir'"; \
+?!LIBTOOL?	      $(INSTALL_PROGRAM_ENV) $(%DIR%PROGRAMS_INSTALL) $$files "$(DESTDIR)$(%NDIR%dir)$$dir" || exit $$?; \
 ## Note that we explicitly set the libtool mode.  This avoids any
 ## lossage if the install program doesn't have a name that libtool
 ## expects.
-?LIBTOOL?	  echo " $(INSTALL_PROGRAM_ENV) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(%DIR%PROGRAMS_INSTALL) $$files '$(DESTDIR)$(%NDIR%dir)$$dir'"; \
-?LIBTOOL?	  $(INSTALL_PROGRAM_ENV) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(%DIR%PROGRAMS_INSTALL) $$files "$(DESTDIR)$(%NDIR%dir)$$dir" || exit $$?; \
-	  }; \
-	done; }
+?LIBTOOL?	    echo " $(INSTALL_PROGRAM_ENV) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(%DIR%PROGRAMS_INSTALL) $$files '$(DESTDIR)$(%NDIR%dir)$$dir'"; \
+?LIBTOOL?	    $(INSTALL_PROGRAM_ENV) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(%DIR%PROGRAMS_INSTALL) $$files "$(DESTDIR)$(%NDIR%dir)$$dir" || exit $$?; \
+	    } \
+?!BASE?	  ;; esac \
+	; done
+
 endif %?INSTALL%
 
 

@@ -618,6 +618,7 @@ txinfo29.test \
 txinfo30.test \
 txinfo31.test \
 transform.test \
+transform2.test \
 unused.test \
 upc.test \
 upc2.test \

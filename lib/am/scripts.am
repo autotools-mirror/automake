@@ -48,26 +48,25 @@ install-%DIR%SCRIPTS: $(%DIR%_SCRIPTS)
 ?BASE?	    -e 'h;s|.*|.|' \
 ?!BASE?	    -e "s|$$srcdirstrip/||" -e 'h;s|[^/]*$$||; s|^$$|.|' \
 	    -e 'p;x;s,.*/,,;$(transform)' | sed 'N;N;N;s,\n, ,g' | \
-	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = ""; list[""] = "" } { \
-	  if ($$2 == $$4) tgt = $$3; else tgt = $$3 "/" $$4; \
-	  files[tgt] = files[tgt] " " $$1; dirs[$$3] = 1; \
-	  if (++n[tgt] == $(am__install_max)) \
-	    { list[++lno] = tgt " " files[tgt]; n[tgt] = 0; files[tgt] = "" } } \
-	  END { d = ""; for (dir in dirs) d = d " " dir; print d; \
-		for (l in list) print list[l]; \
-	        for (dir in files) print dir, files[dir] }' | { \
-	read dirs; \
-?!BASE?	for dir in $$dirs; do test . = $$dir || { \
-?!BASE?	  echo " $(MKDIR_P) '$(DESTDIR)$(%NDIR%dir)/$$dir'"; \
-?!BASE?	  $(MKDIR_P) "$(DESTDIR)$(%NDIR%dir)/$$dir" || exit $$?; \
-?!BASE?	}; done; \
-	while read dir files; do \
-	  if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
-	  test -z "$$files" || { \
-	    echo " $(%DIR%SCRIPT_INSTALL) $$files '$(DESTDIR)$(%NDIR%dir)$$dir'"; \
-	    $(%DIR%SCRIPT_INSTALL) $$files "$(DESTDIR)$(%NDIR%dir)$$dir" || exit $$?; \
-	  }; \
-	done; }
+	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = 1; } \
+	  { d=$$3; if (dirs[d] != 1) { print "d", d; dirs[d] = 1 } \
+	    if ($$2 == $$4) { files[d] = files[d] " " $$1; \
+	      if (++n[d] == $(am__install_max)) { \
+		print "f", d, files[d]; n[d] = 0; files[d] = "" } } \
+	    else { print "f", d "/" $$4, $$1 } } \
+	  END { for (d in files) print "f", d, files[d] }' | \
+	while read type dir files; do \
+?!BASE?	  case $$type in \
+?!BASE?	  d) echo " $(MKDIR_P) '$(DESTDIR)$(%NDIR%dir)/$$dir'"; \
+?!BASE?	     $(MKDIR_P) "$(DESTDIR)$(%NDIR%dir)/$$dir" || exit $$?;; \
+?!BASE?	  f) \
+	     if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
+	     test -z "$$files" || { \
+	       echo " $(%DIR%SCRIPT_INSTALL) $$files '$(DESTDIR)$(%NDIR%dir)$$dir'"; \
+	       $(%DIR%SCRIPT_INSTALL) $$files "$(DESTDIR)$(%NDIR%dir)$$dir" || exit $$?; \
+	     } \
+?!BASE?	  ;; esac \
+	; done
 endif %?INSTALL%
 
 
