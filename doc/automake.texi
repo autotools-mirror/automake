@@ -161,6 +161,7 @@ General ideas
 * Strictness::                  Standards conformance checking
 * Uniform::                     The Uniform Naming Scheme
 * Canonicalization::            How derived variables are named
+* Length limitations::          Staying below the command line length limit
 * User Variables::              Variables reserved for the user
 * Auxiliary Programs::          Programs automake might require
 
@@ -1688,6 +1689,7 @@ understand how Automake works.
 * Strictness::                  Standards conformance checking
 * Uniform::                     The Uniform Naming Scheme
 * Canonicalization::            How derived variables are named
+* Length limitations::          Staying below the command line length limit
 * User Variables::              Variables reserved for the user
 * Auxiliary Programs::          Programs automake might require
 @end menu
@@ -1976,6 +1978,65 @@ aspects of @command{automake}'s behavior.  The currently defined prefixes
 are @samp{dist_}, @samp{nodist_}, @samp{nobase_}, and @samp{notrans_}.
 These prefixes are explained later (@pxref{Program and Library Variables})
 (@pxref{Man pages}).
+
+
+@node Length limitations
+@section Staying below the command line length limit
+
+@cindex command line length limit
+@cindex ARG_MAX
+
+Traditionally, most unix-like systems have a length limitation for the
+command line arguments and environment contents when creating new
+processes (see for example
+@uref{http://www.in-ulm.de/@/~mascheck/@/various/@/argmax/} for an
+overview on this issue),
+which of course also applies to commands spawned by @command{make}.
+POSIX requires this limit to be at least 4096 bytes, and most modern
+systems have quite high limits, if at all.
+
+In order to create portable Makefiles that do not trip over these
+limits, it is necessary to keep the length of file lists bounded.
+Unfortunately, it is not possible to do so fully transparently within
+Automake, so your help may be needed.  Typically, you can split long
+file lists manually and use different installation directory names for
+each list.  For example,
+
+@example
+data_DATA = file1 @dots{} file@var{N} file@var{N+1} @dots{} file@var{2N}
+@end example
+
+@noindent
+may also be written as
+
+@example
+data_DATA = file1 @dots{} file@var{N}
+data2dir = $(datadir)
+data2_DATA = file@var{N+1} @dots{} file@var{2N}
+@end example
+
+@noindent
+and will cause Automake to treat the two lists separately during
+@code{make install}.  See @ref{Install} for choosing directory names
+that will keep the ordering of the two parts of installation
+(@pxref{Two-Part Install}).  Note that @code{make dist} may still
+only work on a host with a higher length limit in this example.
+
+Automake itself employs a couple of strategies to avoid long command
+lines.  For example, when @samp{$@{srcdir@}/} is prepended to file
+names, as can happen with above @code{$(data_DATA)} lists, it limits
+the amount of arguments passed to external commands.
+
+Unfortunately, some system's @command{make} commands may prepend
+@code{VPATH} prefixes like @samp{$@{srcdir@}/} to file names from the
+source tree automatically (@pxref{Automatic Rule Rewriting, , Automatic
+Rule Rewriting, autoconf, The Autoconf Manual}).  In this case, the user
+may have to switch to use GNU Make, or refrain from using VPATH builds,
+in order to stay below the length limit.
+
+For libraries and programs built from many sources, convenience archives
+may be used as intermediates in order to limit the object list length
+(@pxref{Libtool Convenience Libraries}).
 
 
 @node Canonicalization
@@ -4241,7 +4302,7 @@ nobase_dist_pkgdata_DATA = images/vortex.pgm sounds/whirl.ogg
 @end example
 
 Finally, note that a variable using the @samp{nobase_} prefix can
-always be replaced by several variables, one for each destination
+often be replaced by several variables, one for each destination
 directory (@pxref{Uniform}).  For instance, the last example could be
 rewritten as follows:
 
@@ -4255,6 +4316,10 @@ dist_sounds_DATA = sounds/whirl.ogg
 @noindent
 This latter syntax makes it possible to change one destination
 directory without changing the layout of the source tree.
+
+Currently, @samp{nobase_*_LTLIBRARIES} are the only exception to this
+rule, in that there is no particular installation order guarantee for
+an otherwise equivalent set of variables without @samp{nobase_} prefix.
 
 @node Subpackages
 @section Nesting Packages
@@ -7743,6 +7808,18 @@ nobase_include_HEADERS = stdio.h sys/types.h
 
 Will install @file{stdio.h} in @samp{$(includedir)} and @file{types.h}
 in @samp{$(includedir)/sys}.
+
+For most file types, Automake will install multiple files at once, while
+avoiding command line length issues (@pxref{Length limitations}).  Since
+some @command{install} programs will not install the same file twice in
+one invocation, you may need to ensure that file lists are unique within
+one variable such as @samp{nobase_include_HEADERS} above.
+
+You should not rely on the order in which files listed in one variable
+are installed.  Likewise, to cater for parallel make, you should not
+rely on any particular file installation order even among different
+file types (library dependencies are an exception here).
+
 
 @section The two parts of install
 
