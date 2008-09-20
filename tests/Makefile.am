@@ -376,6 +376,7 @@ ltcond.test \
 ltcond2.test \
 ltconv.test \
 ltdeps.test \
+ltinstloc.test \
 ltlibobjs.test \
 ltlibsrc.test \
 lzma.test \

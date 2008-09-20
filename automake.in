@@ -2626,13 +2626,20 @@ sub handle_ltlibraries
     }
 
   my %instdirs = ();
+  my %instsubdirs = ();
   my %instconds = ();
   my %liblocations = ();	# Location (in Makefile.am) of each library.
 
   foreach my $key (@prefix)
     {
       # Get the installation directory of each library.
-      (my $dir = $key) =~ s/^nobase_//;
+      my $dir = $key;
+      my $strip_subdir = 1;
+      if ($dir =~ /^nobase_/)
+        {
+	  $dir =~ s/^nobase_//;
+	  $strip_subdir = 0;
+	}
       my $var = rvar ($key . '_LTLIBRARIES');
 
       # We reject libraries which are installed in several places
@@ -2644,6 +2651,9 @@ sub handle_ltlibraries
 	   my ($var, $val, $cond, $full_cond) = @_;
 	   my $hcond = $full_cond->human;
 	   my $where = $var->rdef ($cond)->location;
+	   my $ldir = '';
+	   $ldir = '/' . dirname ($val)
+	     if (!$strip_subdir);
 	   # A library cannot be installed in different directory
 	   # in overlapping conditions.
 	   if (exists $instconds{$val})
@@ -2654,8 +2664,7 @@ sub handle_ltlibraries
 	       if ($msg)
 		 {
 		   error ($where, $msg, partial => 1);
-
-		   my $dirtxt = "installed in `$dir'";
+		   my $dirtxt = "installed " . ($strip_subdir ? "in" : "below") . " `$dir'";
 		   $dirtxt = "built for `$dir'"
 		     if $dir eq 'EXTRA' || $dir eq 'noinst' || $dir eq 'check';
 		   my $dircond =
@@ -2686,6 +2695,7 @@ sub handle_ltlibraries
 	       $instconds{$val} = new Automake::DisjConditions;
 	     }
 	   $instdirs{$val}{$full_cond} = $dir;
+	   $instsubdirs{$val}{$full_cond} = $ldir;
 	   $liblocations{$val}{$full_cond} = $where;
 	   $instconds{$val} = $instconds{$val}->merge ($full_cond);
 	 },
@@ -2789,6 +2799,8 @@ sub handle_ltlibraries
 	  else
 	    {
 	      $val = ('-rpath $(' . $instdirs{$onelib}{$rcond} . 'dir)');
+	      $val .= $instsubdirs{$onelib}{$rcond}
+	        if defined $instsubdirs{$onelib}{$rcond};
 	    }
 	  if ($rcond->true)
 	    {

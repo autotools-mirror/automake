@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002, 2007  Free Software Foundation, Inc.
+# Copyright (C) 2002, 2007, 2008  Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -48,12 +48,19 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --copy --add-missing
 ./configure --prefix "`pwd`/inst"
-$MAKE
+$MAKE >stdout
+cat stdout
+
+grep 'liba.la .*-rpath .*lib' stdout
+grep 'liba.la .*-rpath .*lib/subdir' stdout && Exit 1
+grep 'libb.la .*-rpath .*lib/subdir' stdout
 
 test -f subdir/liba.la
 test -f subdir/libb.la
 
-$MAKE install
+$MAKE install 2>stderr
+cat stderr >&2
+grep 'remember.*--finish' stderr && Exit 1
 
 test -f inst/lib/liba.la
 test -f inst/lib/subdir/libb.la
