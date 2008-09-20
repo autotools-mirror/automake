@@ -33,7 +33,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 subdir = doc
-DIST_COMMON = $(automake_TEXINFOS) $(dist_doc_DATA) \
+DIST_COMMON = $(automake_TEXINFOS) $(dist_doc_DATA) $(dist_man1_MANS) \
 	$(dist_noinst_DATA) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/stamp-vti \
 	$(srcdir)/version.texi
@@ -66,7 +66,8 @@ TEXI2PDF = $(TEXI2DVI) --pdf --batch
 MAKEINFOHTML = $(MAKEINFO) --html
 AM_MAKEINFOHTMLFLAGS = $(AM_MAKEINFOFLAGS)
 DVIPS = dvips
-am__installdirs = "$(DESTDIR)$(infodir)" "$(DESTDIR)$(docdir)"
+am__installdirs = "$(DESTDIR)$(infodir)" "$(DESTDIR)$(man1dir)" \
+	"$(DESTDIR)$(docdir)"
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -88,6 +89,9 @@ am__nobase_list = $(am__nobase_strip_setup); \
 am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
+man1dir = $(mandir)/man1
+NROFF = nroff
+MANS = $(dist_man1_MANS)
 dist_docDATA_INSTALL = $(INSTALL_DATA)
 DATA = $(dist_doc_DATA) $(dist_noinst_DATA)
 ETAGS = etags
@@ -108,6 +112,7 @@ ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 FGREP = @FGREP@
 GREP = @GREP@
+HELP2MAN = @HELP2MAN@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -180,6 +185,17 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 info_TEXINFOS = automake.texi
 automake_TEXINFOS = fdl.texi
+dist_man1_MANS = \
+  $(srcdir)/aclocal.1 \
+  $(srcdir)/automake.1 \
+  $(srcdir)/aclocal-$(APIVERSION).1 \
+  $(srcdir)/automake-$(APIVERSION).1
+
+MAINTAINERCLEANFILES = $(dist_man1_MANS)
+update_mans = \
+  PATH=..$(PATH_SEPARATOR)$$PATH; export PATH; \
+  $(HELP2MAN) --output=$@
+
 
 # The following requires a fixed version of the Emacs 19.30 etags.
 ETAGS_ARGS = --lang=none \
@@ -400,6 +416,40 @@ maintainer-clean-aminfo:
 	  echo " rm -f $$i $$i-[0-9] $$i-[0-9][0-9] $$i_i[0-9] $$i_i[0-9][0-9]"; \
 	  rm -f $$i $$i-[0-9] $$i-[0-9][0-9] $$i_i[0-9] $$i_i[0-9][0-9]; \
 	done
+install-man1: $(dist_man1_MANS)
+	@$(NORMAL_INSTALL)
+	test -z "$(man1dir)" || $(MKDIR_P) "$(DESTDIR)$(man1dir)"
+	@list='$(dist_man1_MANS)'; \
+	{ for i in $$list; do echo "$$i"; done; \
+	} | while read p; do \
+	  if test -f $$p; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; echo "$$p"; \
+	done | \
+	sed -e 'n;s,.*/,,;p;h;s,.*\.,,;s,^[^1][0-9a-z]*$$,1,;x' \
+	      -e 's,\.[0-9a-z]*$$,,;$(transform);G;s,\n,.,' | \
+	sed 'N;N;s,\n, ,g' | { \
+	list=; while read file base inst; do \
+	  if test "$$base" = "$$inst"; then list="$$list $$file"; else \
+	    echo " $(INSTALL_DATA) '$$file' '$(DESTDIR)$(man1dir)/$$inst'"; \
+	    $(INSTALL_DATA) "$$file" "$(DESTDIR)$(man1dir)/$$inst" || exit $$?; \
+	  fi; \
+	done; \
+	for i in $$list; do echo "$$i"; done | $(am__base_list) | \
+	while read files; do \
+	  test -z "$$files" || { \
+	    echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(man1dir)'"; \
+	    $(INSTALL_DATA) $$files "$(DESTDIR)$(man1dir)" || exit $$?; }; \
+	done; }
+
+uninstall-man1:
+	@$(NORMAL_UNINSTALL)
+	@list='$(dist_man1_MANS)'; \
+	files=`{ for i in $$list; do echo "$$i"; done; \
+	} | sed -e 's,.*/,,;h;s,.*\.,,;s,^[^1][0-9a-z]*$$,1,;x' \
+	      -e 's,\.[0-9a-z]*$$,,;$(transform);G;s,\n,.,'`; \
+	test -n "$$files" || exit 0; \
+	echo " ( cd '$(DESTDIR)$(man1dir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(man1dir)" && rm -f $$files
 install-dist_docDATA: $(dist_doc_DATA)
 	@$(NORMAL_INSTALL)
 	test -z "$(docdir)" || $(MKDIR_P) "$(DESTDIR)$(docdir)"
@@ -503,9 +553,9 @@ distdir: $(DISTFILES)
 	  dist-info
 check-am: all-am
 check: check-am
-all-am: Makefile $(INFO_DEPS) $(DATA)
+all-am: Makefile $(INFO_DEPS) $(MANS) $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(infodir)" "$(DESTDIR)$(docdir)"; do \
+	for dir in "$(DESTDIR)$(infodir)" "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(docdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -533,6 +583,7 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
 clean-am: clean-generic mostlyclean-am
@@ -553,7 +604,7 @@ info: info-am
 
 info-am: $(INFO_DEPS)
 
-install-data-am: install-dist_docDATA install-info-am
+install-data-am: install-dist_docDATA install-info-am install-man
 
 install-dvi: install-dvi-am
 
@@ -625,7 +676,7 @@ install-info-am: $(INFO_DEPS)
 	    install-info --info-dir="$(DESTDIR)$(infodir)" "$(DESTDIR)$(infodir)/$$relfile" || :;\
 	  done; \
 	else : ; fi
-install-man:
+install-man: install-man1
 
 install-pdf: install-pdf-am
 
@@ -671,8 +722,10 @@ ps: ps-am
 ps-am: $(PSS)
 
 uninstall-am: uninstall-dist_docDATA uninstall-dvi-am \
-	uninstall-html-am uninstall-info-am uninstall-pdf-am \
-	uninstall-ps-am
+	uninstall-html-am uninstall-info-am uninstall-man \
+	uninstall-pdf-am uninstall-ps-am
+
+uninstall-man: uninstall-man1
 
 .MAKE: install-am install-strip
 
@@ -682,15 +735,24 @@ uninstall-am: uninstall-dist_docDATA uninstall-dvi-am \
 	install-am install-data install-data-am install-dist_docDATA \
 	install-dvi install-dvi-am install-exec install-exec-am \
 	install-html install-html-am install-info install-info-am \
-	install-man install-pdf install-pdf-am install-ps \
+	install-man install-man1 install-pdf install-pdf-am install-ps \
 	install-ps-am install-strip installcheck installcheck-am \
 	installdirs maintainer-clean maintainer-clean-aminfo \
 	maintainer-clean-generic maintainer-clean-vti mostlyclean \
 	mostlyclean-aminfo mostlyclean-generic mostlyclean-vti pdf \
 	pdf-am ps ps-am tags uninstall uninstall-am \
 	uninstall-dist_docDATA uninstall-dvi-am uninstall-html-am \
-	uninstall-info-am uninstall-pdf-am uninstall-ps-am
+	uninstall-info-am uninstall-man uninstall-man1 \
+	uninstall-pdf-am uninstall-ps-am
 
+$(dist_man1_MANS): $(top_srcdir)/configure.ac
+$(srcdir)/aclocal.1 $(srcdir)/automake.1:
+	f=`echo $@ | sed 's|.*/||; s|\.1$$||; $(transform)'`; \
+	echo ".so man1/$$f-$(APIVERSION).1" > $@
+$(srcdir)/aclocal-$(APIVERSION).1: $(srcdir)/../aclocal.in
+	$(update_mans) aclocal
+$(srcdir)/automake-$(APIVERSION).1: $(srcdir)/../automake.in
+	$(update_mans) automake
 
 # We depend on configure.ac so that we regenerate the tarball
 # whenever the Automake version changes.

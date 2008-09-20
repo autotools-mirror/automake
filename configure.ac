@@ -63,6 +63,9 @@ installed, select the one Automake should use using
 # The test suite will skip some tests if tex is absent.
 AC_CHECK_PROG([TEX], [tex], [tex])
 
+# Generate man pages.
+AM_MISSING_PROG([HELP2MAN], [help2man])
+
 # Test for Autoconf.  We run Autoconf in a subdirectory to ease
 # deletion of any files created (such as those added to
 # autom4te.cache).  We used to perform only the last of the three
