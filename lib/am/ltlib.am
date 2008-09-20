@@ -49,23 +49,26 @@ if %?BASE%
 ?!LIBTOOL?	  $(%DIR%LTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) $$list "$(DESTDIR)$(%NDIR%dir)"; \
 	}
 else !%?BASE%
-	@list='$(%DIR%_LTLIBRARIES)'; $(am__nobase_list) | \
+	@list='$(%DIR%_LTLIBRARIES)'; for p in $$list; do \
+	  if test -f "$$p"; then echo "$$p $$p"; else :; fi; done | \
+	sed '/ .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
+	$(AWK) 'BEGIN { cur = "." } \
+	  { if ($$2 == cur) { files = files " " $$1 } \
+	    else { print cur, files; files = $$1; cur = $$2 } } \
+	  END { print cur, files }' | \
 	while read dir files; do \
-	  xfiles=; for p in $$files; do \
-	    if test -f "$$p"; then xfiles="$$xfiles $$p"; else :; fi; done; \
-	  test -z "$$xfiles" || { \
+	  test -z "$$files" || { \
 	    test "x$$dir" = x. || { \
 	      echo "$(MKDIR_P) '$(DESTDIR)$(%NDIR%dir)/$$dir'"; \
 	      $(MKDIR_P) "$(DESTDIR)$(%NDIR%dir)/$$dir"; }; \
-
 ## Note that we explicitly set the libtool mode.  This avoids any lossage
 ## if the program doesn't have a name that libtool expects.
 ## Use INSTALL and not INSTALL_DATA because libtool knows the right
 ## permissions to use.
-?LIBTOOL?	    echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(%DIR%LTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) $$xfiles '$(DESTDIR)$(%NDIR%dir)/$$dir'"; \
-?LIBTOOL?	    $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(%DIR%LTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) $$xfiles "$(DESTDIR)$(%NDIR%dir)/$$dir" || exit $$?; \
-?!LIBTOOL?	    echo " $(%DIR%LTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) $$xfiles '$(DESTDIR)$(%NDIR%dir)/$$dir'"; \
-?!LIBTOOL?	    $(%DIR%LTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) $$xfiles "$(DESTDIR)$(%NDIR%dir)/$$dir" || exit $$?; \
+?LIBTOOL?	    echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(%DIR%LTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) $$files '$(DESTDIR)$(%NDIR%dir)/$$dir'"; \
+?LIBTOOL?	    $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(%DIR%LTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) $$files "$(DESTDIR)$(%NDIR%dir)/$$dir" || exit $$?; \
+?!LIBTOOL?	    echo " $(%DIR%LTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) $$files '$(DESTDIR)$(%NDIR%dir)/$$dir'"; \
+?!LIBTOOL?	    $(%DIR%LTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) $$files "$(DESTDIR)$(%NDIR%dir)/$$dir" || exit $$?; \
 	  }; \
 	done
 endif !%?BASE%

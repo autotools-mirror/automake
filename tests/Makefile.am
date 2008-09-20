@@ -379,6 +379,7 @@ ltdeps.test \
 ltinstloc.test \
 ltlibobjs.test \
 ltlibsrc.test \
+ltorder.test \
 lzma.test \
 maintclean.test \
 make.test \
