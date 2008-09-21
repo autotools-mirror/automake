@@ -27,16 +27,17 @@ dist_man1_MANS = \
   $(srcdir)/automake-$(APIVERSION).1
 MAINTAINERCLEANFILES = $(dist_man1_MANS)
 update_mans = \
-  PATH=..$(PATH_SEPARATOR)$$PATH; export PATH; \
+  PATH="`pwd`/../tests$(PATH_SEPARATOR)$$PATH" && \
+  export PATH && \
   $(HELP2MAN) --output=$@
 $(dist_man1_MANS): $(top_srcdir)/configure.ac
 $(srcdir)/aclocal.1 $(srcdir)/automake.1:
 	f=`echo $@ | sed 's|.*/||; s|\.1$$||; $(transform)'`; \
 	echo ".so man1/$$f-$(APIVERSION).1" > $@
 $(srcdir)/aclocal-$(APIVERSION).1: $(srcdir)/../aclocal.in
-	$(update_mans) aclocal
+	$(update_mans) aclocal-$(APIVERSION)
 $(srcdir)/automake-$(APIVERSION).1: $(srcdir)/../automake.in
-	$(update_mans) automake
+	$(update_mans) automake-$(APIVERSION)
 
 # The following requires a fixed version of the Emacs 19.30 etags.
 ETAGS_ARGS = --lang=none \
