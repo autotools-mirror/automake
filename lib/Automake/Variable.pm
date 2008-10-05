@@ -1,4 +1,4 @@
-# Copyright (C) 2003, 2004, 2005, 2006  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2004, 2005, 2006, 2008  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -1269,7 +1269,7 @@ following arguments:
                    during recursion
 
 If C<inner_expand> is set, variable references occurring in filename
-(as in C<$(BASE).ext>) are expansed before the filename is passed to
+(as in C<$(BASE).ext>) are expanded before the filename is passed to
 C<&fun_item>.
 
 If C<skip_ac_subst> is set, Autoconf @substitutions@ will be skipped,

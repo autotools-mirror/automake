@@ -1,4 +1,5 @@
-# Copyright (C) 1997, 2001, 2002, 2003, 2006  Free Software Foundation, Inc.
+# Copyright (C) 1997, 2001, 2002, 2003, 2006, 2008  Free Software
+# Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -274,7 +275,7 @@ sub conds ($ )
   return sort @conds;
 }
 
-# Undocumented, shouldn't be needed out of this class.
+# Undocumented, shouldn't be needed outside of this class.
 sub has ($$)
 {
   my ($self, $cond) = @_;

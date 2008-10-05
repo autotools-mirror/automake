@@ -112,7 +112,7 @@ follows.
 
   (COND1 and COND2) or ((not COND3) and COND4)
 
-That's indeed the condition into which C<VAR> has a value.
+That's indeed the condition in which C<VAR> has a value.
 
 Like C<Condition> objects, a C<DisjConditions> object is unique
 with respect to its conditions.  Two C<DisjConditions> objects created
@@ -178,7 +178,7 @@ sub new ($;@)
   # Else, create a new DisjConditions.
 
   # Store conditions as keys AND as values, because blessed
-  # objects are converted to string when used as keys (so
+  # objects are converted to strings when used as keys (so
   # at least we still have the value when we need to call
   # a method).
   my %h = map {$_ => $_} @filtered_conds;
