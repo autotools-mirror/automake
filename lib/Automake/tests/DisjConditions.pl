@@ -1,4 +1,4 @@
-# Copyright (C) 2001, 2002, 2003  Free Software Foundation, Inc.
+# Copyright (C) 2001, 2002, 2003, 2008  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -235,7 +235,7 @@ sub test_simplify ()
 	  return 1;
 	}
 
-      # Also exercize invert() while we are at it.
+      # Also exercise invert() while we are at it.
 
       my $inv1 = $set->invert->simplify;
       my $inv2 = $sim->invert->simplify;
