@@ -1,12 +1,12 @@
 ##                                                          -*- Autoconf -*-
-# Copyright (C) 1999, 2000, 2001, 2003, 2004, 2005
+# Copyright (C) 1999, 2000, 2001, 2003, 2004, 2005, 2008
 # Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 5
+# serial 6
 
 # AM_PROG_CC_C_O
 # --------------
@@ -18,8 +18,9 @@ AC_REQUIRE_AUX_FILE([compile])dnl
 # FIXME: we rely on the cache variable name because
 # there is no other way.
 set dummy $CC
-ac_cc=`echo $[2] | sed ['s/[^a-zA-Z0-9_]/_/g;s/^[0-9]/_/']`
-if eval "test \"`echo '$ac_cv_prog_cc_'${ac_cc}_c_o`\" != yes"; then
+am_cc=`echo $[2] | sed ['s/[^a-zA-Z0-9_]/_/g;s/^[0-9]/_/']`
+eval am_t=\$ac_cv_prog_cc_${am_cc}_c_o
+if test "$am_t" != yes; then
    # Losing compiler, so override with the script.
    # FIXME: It is wrong to rewrite CC.
    # But if we don't then we get into trouble of one sort or another.
