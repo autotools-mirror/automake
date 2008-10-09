@@ -627,6 +627,7 @@ unused.test \
 upc.test \
 upc2.test \
 upc3.test \
+vala.test \
 vars.test \
 vars3.test \
 vartar.test \
