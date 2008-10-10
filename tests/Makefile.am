@@ -631,6 +631,7 @@ vala.test \
 vala1.test \
 vala2.test \
 vala3.test \
+vala4.test \
 vars.test \
 vars3.test \
 vartar.test \
