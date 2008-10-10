@@ -18,7 +18,8 @@
 # the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301, USA.
 
-# Test to make sure intermediate .c files are built from vala source.
+# Test to make sure intermediate .c files are built from vala sources
+# in non-recursive automake mode.
 
 required="libtool"
 . ./defs || exit 1
@@ -33,12 +34,11 @@ AC_OUTPUT
 END
 
 cat > 'Makefile.am' <<'END'
-bin_PROGRAMS = zardoz
-zardoz_SOURCES = zardoz.vala
-zardoz_VALAFLAGS = --debug
+bin_PROGRAMS = src/zardoz
+src_zardoz_SOURCES = src/zardoz.vala
 
-lib_LTLIBRARIES = libzardoz.la
-libzardoz_la_SOURCES = zardoz-foo.vala zardoz-bar.vala
+lib_LTLIBRARIES = src/libzardoz.la
+src_libzardoz_la_SOURCES = src/zardoz-foo.vala src/zardoz-bar.vala
 END
 
 : > ltmain.sh
@@ -48,14 +48,14 @@ END
 $ACLOCAL
 $AUTOMAKE -a
 
-grep -w -- 'VALAC'			'Makefile.in'
-grep -w -- 'am_zardoz_OBJECTS'		'Makefile.in'
-grep -w -- 'am_libzardoz_la_OBJECTS'	'Makefile.in'
-grep -w -- 'zardoz_vala.stamp'		'Makefile.in'
-grep -w -- 'libzardoz_la_vala.stamp'	'Makefile.in'
-grep -w -- '--library=libzardoz'	'Makefile.in'
-grep -w -- 'zardoz\.c' 			'Makefile.in'
-grep -w -- 'zardoz\.h' 			'Makefile.in'
-grep -w -- 'zardoz-foo\.c' 		'Makefile.in'
-grep -w -- 'zardoz-foo\.h' 		'Makefile.in'
+grep -w -- 'VALAC'				'Makefile.in'
+grep -w -- 'src_zardoz_OBJECTS'			'Makefile.in'
+grep -w -- 'src_libzardoz_la_OBJECTS'		'Makefile.in'
+grep -w -- 'src_zardoz_vala.stamp'		'Makefile.in'
+grep -w -- 'src_libzardoz_la_vala.stamp'	'Makefile.in'
+grep -w -- '--library=libzardoz'		'Makefile.in'
+grep -w -- 'zardoz\.c' 				'Makefile.in'
+grep -w -- 'zardoz\.h' 				'Makefile.in'
+grep -w -- 'src/zardoz-foo\.c' 			'Makefile.in'
+grep -w -- 'src/zardoz-foo\.h' 			'Makefile.in'
 

@@ -111,7 +111,7 @@ sub finish ($)
   my ($self) = @_;
   if (defined $self->_finish)
     {
-      &{$self->_finish} ();
+      &{$self->_finish} (@_);
     }
 }
 
@@ -2553,8 +2553,6 @@ sub handle_libraries
     {
       my ($where, $onelib) = @$pair;
 
-      $known_libraries{$onelib} = $where;
-
       my $seen_libobjs = 0;
       # Check that the library fits the standard naming convention.
       my $bn = basename ($onelib);
@@ -2567,6 +2565,8 @@ sub handle_libraries
 	       "`$onelib' is not a standard library name\n"
 	       . "did you mean `$suggestion'?")
 	}
+
+      ($known_libraries{$onelib} = $bn) =~ s/\.a$//;
 
       $where->push_context ("while processing library `$onelib'");
       $where->set (INTERNAL->get);
@@ -2730,8 +2730,6 @@ sub handle_ltlibraries
     {
       my ($where, $onelib) = @$pair;
 
-      $known_libraries{$onelib} = $where;
-
       my $seen_libobjs = 0;
       my $obj = get_object_extension '.lo';
 
@@ -2770,6 +2768,8 @@ sub handle_ltlibraries
 	       "`$onelib' is not a standard libtool $type name\n"
 	       . "did you mean `$suggestion'?")
 	}
+
+      ($known_libraries{$onelib} = $bn) =~ s/\.la$//;
 
       $where->push_context ("while processing Libtool library `$onelib'");
       $where->set (INTERNAL->get);
@@ -5470,9 +5470,8 @@ sub lang_vala_rewrite
 {
     my ($directory, $base, $ext) = @_;
 
-    my $r = &lang_sub_obj;
     (my $newext = $ext) =~ s/vala$/c/;
-    return ($r, $newext);
+    return (LANG_SUBDIR, $newext);
 }
 
 # Rewrite a single yacc file.
@@ -5633,28 +5632,66 @@ sub lang_c_finish
     }
 }
 
+sub lang_vala_finish_target ($$$)
+{
+  my ($self, $name, $pkgname) = @_;
+
+  my $derived = canonicalize ($name);
+  my $varname = $derived . '_SOURCES';
+  my $var = var ($varname);
+
+  if ($var)
+    {
+      foreach my $file ($var->value_as_list_recursive)
+        {
+          $output_rules .= "$file: ${derived}_vala.stamp\n"
+            if ($file =~ s/(.*)\.vala$/$1.c $1.h/);
+        }
+    }
+
+  my $compile = $self->compile;
+
+  if (defined ($pkgname))
+    {
+      $varname = $derived . '_PKGNAME';
+      $var = var ($varname);
+
+      $pkgname = $var->variable_value if $var;
+      $compile =~s/\$\(AM_VALAFLAGS\)/--library=$pkgname $&/;
+    }
+
+  # Rewrite each occurrence of `AM_$flag' in the compile
+  # rule into `${derived}_$flag' if it exists.
+  for my $flag (@{$self->flags})
+    {
+      my $val = "${derived}_$flag";
+      $compile =~ s/\(AM_$flag\)/\($val\)/
+        if set_seen ($val);
+    }
+
+  my $dirname = dirname ($name);
+
+  $compile .= " -d $dirname" if $dirname ne '.';
+
+  $output_rules .=
+    "${derived}_vala.stamp: \$(${derived}_SOURCES)\n".
+    "\t${compile} \$^ && touch \$@\n";
+}
+
 # This is a vala helper which is called after all source file
 # processing is done.
 sub lang_vala_finish
 {
-  foreach my $name (keys %known_programs, keys %known_libraries)
+  my ($self) = @_;
+
+  foreach my $prog (keys %known_programs)
     {
-      my $xname = canonicalize ($name);
-      my $varname = $xname . '_SOURCES';
-      my $var = var ($varname);
+      lang_vala_finish_target ($self, $prog, 0);
+    }
 
-      if ($var)
-        {
-          foreach my $file ($var->value_as_list_recursive)
-            {
-              $output_rules .= "$file: ${xname}_vala.stamp\n"
-                if ($file =~ s/(.*)\.vala$/$1.c $1.h/);
-            }
-	}
-
-      $output_rules .=
-        "${xname}_vala.stamp: \$(${xname}_SOURCES)\n".
-        "\t\$(VALACOMPILE) \$^ && touch \$@\n";
+  while (my ($name, $pkgname) = each %known_libraries)
+    {
+      lang_vala_finish_target ($self, $name, $pkgname);
     }
 }
 

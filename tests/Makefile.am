@@ -628,6 +628,9 @@ upc.test \
 upc2.test \
 upc3.test \
 vala.test \
+vala1.test \
+vala2.test \
+vala3.test \
 vars.test \
 vars3.test \
 vartar.test \

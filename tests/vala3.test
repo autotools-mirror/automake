@@ -18,44 +18,50 @@
 # the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301, USA.
 
-# Test to make sure intermediate .c files are built from vala source.
+# Test to make sure compiling Vala code really works.
 
-required="libtool"
+required="libtool libtoolize pkg-config valac gcc"
 . ./defs || exit 1
 
 set -e
 
+mkdir src
+
 cat >> 'configure.in' << 'END'
 AC_PROG_CC
+AM_PROG_CC_C_O
 AC_PROG_LIBTOOL
+
 AM_PROG_VALAC
+
+PKG_CHECK_MODULES(GOBJECT,gobject-2.0 >= 2.10)
+
 AC_OUTPUT
 END
 
 cat > 'Makefile.am' <<'END'
-bin_PROGRAMS = zardoz
-zardoz_SOURCES = zardoz.vala
-zardoz_VALAFLAGS = --debug
-
-lib_LTLIBRARIES = libzardoz.la
-libzardoz_la_SOURCES = zardoz-foo.vala zardoz-bar.vala
+bin_PROGRAMS = src/zardoz
+src_zardoz_CFLAGS = $(GOBJECT_CFLAGS)
+src_zardoz_LDADD = $(GOBJECT_LIBS)
+src_zardoz_SOURCES = src/zardoz.vala
 END
 
-: > ltmain.sh
-: > config.sub
-: > config.guess
+cat > 'src/zardoz.vala' <<'END'
+using GLib;
+
+public class Zardoz {
+  public static void main () {
+    stdout.printf ("Zardoz!\n");
+  }
+}
+END
+
+libtoolize
 
 $ACLOCAL
+$AUTOCONF
 $AUTOMAKE -a
 
-grep -w -- 'VALAC'			'Makefile.in'
-grep -w -- 'am_zardoz_OBJECTS'		'Makefile.in'
-grep -w -- 'am_libzardoz_la_OBJECTS'	'Makefile.in'
-grep -w -- 'zardoz_vala.stamp'		'Makefile.in'
-grep -w -- 'libzardoz_la_vala.stamp'	'Makefile.in'
-grep -w -- '--library=libzardoz'	'Makefile.in'
-grep -w -- 'zardoz\.c' 			'Makefile.in'
-grep -w -- 'zardoz\.h' 			'Makefile.in'
-grep -w -- 'zardoz-foo\.c' 		'Makefile.in'
-grep -w -- 'zardoz-foo\.h' 		'Makefile.in'
+./configure
+make
 

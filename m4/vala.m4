@@ -14,9 +14,9 @@
 #
 # Author: Mathias Hasselmann <mathias.hasselmann@gmx.de>
 #
-# AC_PROG_VALAC([MINIMUM-VERSION])
+# AM_PROG_VALAC([MINIMUM-VERSION])
 # --------------------------------------------------------------------------
-AC_DEFUN([AC_PROG_VALAC],[
+AC_DEFUN([AM_PROG_VALAC],[
   AC_PATH_PROG([VALAC], [valac], [])
   AC_SUBST(VALAC)
 
