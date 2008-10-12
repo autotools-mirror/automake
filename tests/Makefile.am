@@ -91,6 +91,7 @@ check6.test \
 check7.test \
 check8.test \
 check9.test \
+check10.test \
 checkall.test \
 clean.test \
 clean2.test \
