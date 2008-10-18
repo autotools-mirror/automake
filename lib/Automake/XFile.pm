@@ -1,4 +1,5 @@
-# Copyright (C) 2001, 2003, 2004, 2006 Free Software Foundation, Inc.
+# Copyright (C) 2001, 2003, 2004, 2006, 2008 Free Software Foundation,
+# Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -64,7 +65,7 @@ Automake::XFile - supply object methods for filehandles with error handling
 =head1 DESCRIPTION
 
 C<Automake::XFile> inherits from C<IO::File>.  It provides the method
-C<name> returning the file name.  It provides dying version of the
+C<name> returning the file name.  It provides dying versions of the
 methods C<close>, C<lock> (corresponding to C<flock>), C<new>,
 C<open>, C<seek>, and C<truncate>.  It also overrides the C<getline>
 and C<getlines> methods to translate C<\r\n> to C<\n>.

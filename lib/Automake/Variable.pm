@@ -73,7 +73,7 @@ Automake::Variable - support for variable definitions
   # $var->conditions->conds is a list of Automake::Condition.)
   my @conds = $var->conditions->conds
 
-  # Accessing to the definition in Condition $cond.
+  # Access to the definition in Condition $cond.
   # $def is an Automake::VarDef.
   my $def = $var->def ($cond);
   if ($def)
