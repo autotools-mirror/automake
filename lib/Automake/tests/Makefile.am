@@ -1,6 +1,6 @@
 ## Process this file with automake to create Makefile.in
 
-## Copyright (C) 2002, 2003  Free Software Foundation, Inc.
+## Copyright (C) 2002, 2003, 2008  Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -18,7 +18,9 @@
 TESTS_ENVIRONMENT = $(PERL) -Mstrict -I $(top_srcdir)/lib -w
 TESTS = \
 Condition.pl \
+Condition-t.pl \
 DisjConditions.pl \
+DisjConditions-t.pl \
 Version.pl \
 Wrap.pl
 

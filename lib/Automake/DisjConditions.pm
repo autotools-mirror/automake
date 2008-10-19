@@ -192,6 +192,26 @@ sub new ($;@)
   return $self;
 }
 
+
+=item C<CLONE>
+
+Internal special subroutine to fix up the self hashes in
+C<%_disjcondition_singletons> upon thread creation.  C<CLONE> is invoked
+automatically with ithreads from Perl 5.7.2 or later, so if you use this
+module with earlier versions of Perl, it is not thread-safe.
+
+=cut
+
+sub CLONE
+{
+  foreach my $self (values %_disjcondition_singletons)
+    {
+      my %h = map { $_ => $_ } @{$self->{'conds'}};
+      $self->{'hash'} = \%h;
+    }
+}
+
+
 =item C<@conds = $set-E<gt>conds>
 
 Return the list of C<Condition> objects involved in C<$set>.
