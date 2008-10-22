@@ -525,7 +525,7 @@ both print
 =cut
 
 
-use vars qw (@backlog %buffering @chain);
+use vars qw (@backlog %buffering);
 
 # See buffer_messages() and flush_messages() below.
 %buffering = ();	# The map of channel types to buffer.
