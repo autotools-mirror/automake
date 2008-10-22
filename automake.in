@@ -479,13 +479,13 @@ my $topsrcdir;
 # configure's dependencies).
 my $output_deps_greatest_timestamp;
 
-# These two variables are used when generating each Makefile.in.
+# These variables are used when generating each Makefile.in.
 # They hold the Makefile.in until it is ready to be printed.
-my $output_rules;
 my $output_vars;
-my $output_trailer;
 my $output_all;
 my $output_header;
+my $output_rules;
+my $output_trailer;
 
 # This is the conditional stack, updated on if/else/endif, and
 # used to build Condition objects.
@@ -552,9 +552,6 @@ my %known_programs;
 # trailing `/'.
 my %de_ansi_files;
 
-# This is the name of the redirect `all' target to use.
-my $all_target;
-
 # This keeps track of which extensions we've seen (that we care
 # about).
 my %extension_seen;
@@ -584,6 +581,13 @@ my $get_object_extension_was_run;
 
 # Record each file processed by make_paragraphs.
 my %transformed_files;
+
+
+################################################################
+
+## ---------------------------------------------- ##
+## Variables not reset by &initialize_per_input.  ##
+## ---------------------------------------------- ##
 
 # Cache each file processed by make_paragraphs.
 # (This is different from %transformed_files because
@@ -625,19 +629,20 @@ sub initialize_per_input ()
 {
     reset_local_duplicates ();
 
-    $am_file_name = '';
-    $am_relative_dir = '';
+    $am_file_name = undef;
+    $am_relative_dir = undef;
 
-    $in_file_name = '';
-    $relative_dir = '';
+    $in_file_name = undef;
+    $relative_dir = undef;
+    $topsrcdir = undef;
 
     $output_deps_greatest_timestamp = 0;
 
-    $output_rules = '';
     $output_vars = '';
-    $output_trailer = '';
     $output_all = '';
     $output_header = '';
+    $output_rules = '';
+    $output_trailer = '';
 
     Automake::Options::reset;
     Automake::Variable::reset;
@@ -652,6 +657,10 @@ sub initialize_per_input ()
     @check_tests = ();
 
     %clean_files = ();
+    %compile_clean_files = ();
+
+    # We always include `.'.  This isn't strictly correct.
+    %libtool_clean_directories = ('.' => 1);
 
     @sources = ();
     @dist_sources = ();
@@ -669,8 +678,6 @@ sub initialize_per_input ()
 
     %de_ansi_files = ();
 
-    $all_target = '';
-
     %extension_seen = ();
 
     %language_scratch = ();
@@ -682,11 +689,6 @@ sub initialize_per_input ()
     $need_link = 0;
 
     $get_object_extension_was_run = 0;
-
-    %compile_clean_files = ();
-
-    # We always include `.'.  This isn't strictly correct.
-    %libtool_clean_directories = ('.' => 1);
 
     %transformed_files = ();
 }
