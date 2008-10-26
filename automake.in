@@ -280,6 +280,9 @@ use constant INTERNAL => new Automake::Location;
 # Serialization keys for message queues.
 use constant {
   QUEUE_MESSAGE   => "msg",
+  QUEUE_CONF_FILE => "conf file",
+  QUEUE_LOCATION  => "location",
+  QUEUE_STRING    => "string"
 };
 
 
@@ -7475,13 +7478,80 @@ sub require_libsource_with_macro ($$$@)
       }
 }
 
+# Queue to push require_conf_file requirements to.
+my $required_conf_file_queue;
+
+# &queue_required_conf_file ($QUEUE, $KEY, $DIR, $WHERE, $MYSTRICT, @FILES)
+# -------------------------------------------------------------------------
+sub queue_required_conf_file ($$$$@)
+{
+    my ($queue, $key, $dir, $where, $mystrict, @files) = @_;
+    my @serial_loc;
+    if (ref $where)
+      {
+        @serial_loc = (QUEUE_LOCATION, $where->serialize ());
+      }
+    else
+      {
+        @serial_loc = (QUEUE_STRING, $where);
+      }
+    $queue->enqueue ($key, $dir, @serial_loc, $mystrict, 0 + @files, @files);
+}
+
+# &require_queued_conf_file ($QUEUE)
+# ----------------------------------
+sub require_queued_conf_file ($)
+{
+    my ($queue) = @_;
+    my $where;
+    my $dir = $queue->dequeue ();
+    my $loc_key = $queue->dequeue ();
+    if ($loc_key eq QUEUE_LOCATION)
+      {
+	$where = Automake::Location::deserialize ($queue);
+      }
+    elsif ($loc_key eq QUEUE_STRING)
+      {
+	$where = $queue->dequeue ();
+      }
+    else
+      {
+	prog_error "unexpected key $loc_key";
+      }
+    my $mystrict = $queue->dequeue ();
+    my $nfiles = $queue->dequeue ();
+    my @files;
+    push @files, $queue->dequeue ()
+      foreach (1 .. $nfiles);
+
+    # Dequeuing happens outside of per-makefile context, so we have to
+    # set the variables used by require_file_internal and the functions
+    # it calls.  Gross!
+    $relative_dir = $dir;
+    require_file_internal ($where, $mystrict, $config_aux_dir, @files);
+}
+
 # &require_conf_file ($WHERE, $MYSTRICT, @FILES)
 # ----------------------------------------------
-# Looks in configuration path, as specified by AC_CONFIG_AUX_DIR.
+# Looks in configuration path, as specified by AC_CONFIG_AUX_DIR;
+# worker threads may queue up the action to be serialized by the master.
+#
+# FIXME: this seriously relies on the semantics of require_file_internal
+# and maybe_push_required_file, in that we exploit the fact that only the
+# contents of the last handled output file may be impacted (which in turn
+# is dealt with by the master thread).
 sub require_conf_file ($$@)
 {
     my ($where, $mystrict, @files) = @_;
-    require_file_internal ($where, $mystrict, $config_aux_dir, @files);
+    if (defined $required_conf_file_queue)
+      {
+	queue_required_conf_file ($required_conf_file_queue, QUEUE_CONF_FILE,
+				  $relative_dir, $where, $mystrict, @files);
+      }
+    else
+      {
+	require_file_internal ($where, $mystrict, $config_aux_dir, @files);
+      }
 }
 
 
@@ -8051,11 +8121,6 @@ sub get_number_of_threads
     {
       $nthreads = $max_threads;
     }
-
-  # We cannot deal with --add-missing (yet).
-  $nthreads = 0
-    if ($add_missing);
-
   return $nthreads;
 }
 
@@ -8066,6 +8131,7 @@ sub get_number_of_threads
 # worker threads push back everything that needs serialization:
 # * warning and (normal) error messages, for stable stderr output
 #   order and content (avoiding duplicates, for example),
+# * races when installing aux files (and respective messages),
 # * races when collecting aux files for distribution.
 #
 # The latter requires that the makefile that deals with the aux dir
@@ -8101,9 +8167,11 @@ sub handle_makefiles_threaded ($)
 	      verb "handling $file";
 	      my $queue = $msg_queues{$file};
 	      setup_channel_queue ($queue, QUEUE_MESSAGE);
+	      $required_conf_file_queue = $queue;
 	      handle_makefile ($file);
 	      $queue->enqueue (undef);
 	      setup_channel_queue (undef, undef);
+	      $required_conf_file_queue = undef;
 	    }
 	  return $exit_code;
 	});
@@ -8124,6 +8192,10 @@ sub handle_makefiles_threaded ($)
 	  if ($key eq QUEUE_MESSAGE)
 	    {
 	      pop_channel_queue ($queue);
+	    }
+	  elsif ($key eq QUEUE_CONF_FILE)
+	    {
+	      require_queued_conf_file ($queue);
 	    }
 	  else
 	    {
