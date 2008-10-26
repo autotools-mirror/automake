@@ -449,6 +449,7 @@ output12.test \
 output13.test \
 output-order.test \
 overrid.test \
+parallel-am.test \
 parse.test \
 percent.test \
 percent2.test \

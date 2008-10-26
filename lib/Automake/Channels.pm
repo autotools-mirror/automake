@@ -1,4 +1,4 @@
-# Copyright (C) 2002, 2004, 2006 Free Software Foundation, Inc.
+# Copyright (C) 2002, 2004, 2006, 2008 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -566,7 +566,12 @@ sub msg ($$;$%)
 
       # Die on fatal messages.
       confess if $opts{'backtrace'};
-      exit $exit_code if $opts{'type'} eq 'fatal';
+      if ($opts{'type'} eq 'fatal')
+        {
+	  # flush messages explicitly here, needed in worker threads.
+	  STDERR->flush;
+	  exit $exit_code;
+	}
     }
 }
 

@@ -15,7 +15,7 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-TESTS_ENVIRONMENT = $(PERL) -Mstrict -I $(top_srcdir)/lib -w
+TESTS_ENVIRONMENT = $(PERL) -Mstrict -I ../.. -I $(top_srcdir)/lib -w
 TESTS = \
 Condition.pl \
 Condition-t.pl \

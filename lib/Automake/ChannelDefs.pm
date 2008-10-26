@@ -15,6 +15,11 @@
 
 package Automake::ChannelDefs;
 
+use Automake::Config;
+if ($perl_threads)
+  {
+    use threads;
+  }
 use Automake::Channels;
 
 =head1 NAME
@@ -227,6 +232,8 @@ C<--verbose> messages.
 sub verb ($;%)
 {
   my ($msg, %opts) = @_;
+  $msg = "thread " . threads->tid . ": " . $msg
+    if $perl_threads;
   msg 'verb', '', $msg, %opts;
 }
 

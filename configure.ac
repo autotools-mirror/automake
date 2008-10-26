@@ -60,6 +60,30 @@ installed, select the one Automake should use using
   ./configure PERL=/path/to/perl])
 }
 
+# We require ithreads support, and version 5.7.2 for CLONE.
+AC_CACHE_CHECK([whether $PERL supports ithreads], [am_cv_prog_PERL_ithreads],
+[if $PERL -e '
+    require 5.007_002;
+    use Config;
+    if ($Config{useithreads})
+      {
+	use threads;
+	use Thread::Queue;
+	exit 0;
+      }
+    exit 1;' >&AS_MESSAGE_LOG_FD 2>&1
+then
+  am_cv_prog_PERL_ithreads=yes
+else
+  am_cv_prog_PERL_ithreads=no
+fi])
+if test $am_cv_prog_PERL_ithreads = yes; then
+  PERL_THREADS=1;
+else
+  PERL_THREADS=0;
+fi
+AC_SUBST([PERL_THREADS])
+
 # The test suite will skip some tests if tex is absent.
 AC_CHECK_PROG([TEX], [tex], [tex])
 

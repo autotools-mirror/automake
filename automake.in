@@ -128,6 +128,11 @@ package Automake;
 
 use strict;
 use Automake::Config;
+if ($perl_threads)
+  {
+    use threads;
+    use Thread::Queue;
+  }
 use Automake::General;
 use Automake::XFile;
 use Automake::Channels;
@@ -7984,6 +7989,123 @@ sub parse_arguments ()
     if $errspec && ! @input_files;
 }
 
+
+# handle_makefile ($MAKEFILE_IN)
+# ------------------------------
+# Deal with $MAKEFILE_IN.
+sub handle_makefile ($)
+{
+  my ($file) =  @_;
+  ($am_file = $file) =~ s/\.in$//;
+  if (! -f ($am_file . '.am'))
+    {
+      error "`$am_file.am' does not exist";
+    }
+  else
+    {
+      # Any warning setting now local to this Makefile.am.
+      dup_channel_setup;
+
+      generate_makefile ($am_file . '.am', $file);
+
+      # Back out any warning setting.
+      drop_channel_setup;
+    }
+}
+
+# handle_makefiles_serial ()
+# --------------------------
+# Deal with all makefiles, without threads.
+sub handle_makefiles_serial ()
+{
+  foreach my $file (@input_files)
+    {
+      handle_makefile ($file);
+    }
+}
+
+# get_number_of_threads ()
+# ------------------------
+# Logic for deciding how many worker threads to use.
+sub get_number_of_threads
+{
+  my $nthreads = $ENV{'AUTOMAKE_JOBS'} || 0;
+
+  $nthreads = 0
+    unless $nthreads =~ /^[0-9]+$/;
+
+  # It doesn't make sense to use more threads than makefiles,
+  my $max_threads = @input_files;
+
+  # but a single worker thread is helpful for exposing bugs.
+  if ($automake_will_process_aux_dir && $max_threads > 1)
+    {
+      $max_threads--;
+    }
+  if ($nthreads > $max_threads)
+    {
+      $nthreads = $max_threads;
+    }
+
+  # We cannot deal with --add-missing (yet).
+  $nthreads = 0
+    if ($add_missing);
+
+  return $nthreads;
+}
+
+# handle_makefiles_threaded ($NTHREADS)
+# -------------------------------------
+# Deal with all makefiles, using threads.  The general strategy is to
+# spawn NTHREADS worker threads, and dispatch makefiles to them.
+sub handle_makefiles_threaded ($)
+{
+  my ($nthreads) = @_;
+
+  my @queued_input_files = @input_files;
+  my $last_input_file = undef;
+  if ($automake_will_process_aux_dir)
+    {
+      $last_input_file = pop @queued_input_files;
+    }
+
+  # The file queue distributes all makefiles.
+  my $file_queue = Thread::Queue->new;
+
+  verb "spawning $nthreads worker threads";
+  my @threads = (1 .. $nthreads);
+  foreach my $t (@threads)
+    {
+      $t = threads->new (sub
+	{
+	  while (my $file = $file_queue->dequeue)
+	    {
+	      verb "handling $file";
+	      handle_makefile ($file);
+	    }
+	  return $exit_code;
+	});
+    }
+
+  # Queue all normal makefiles.
+  verb "queuing " . @queued_input_files . " input files";
+  $file_queue->enqueue (@queued_input_files, (undef) x @threads);
+
+  foreach my $t (@threads)
+    {
+      my @exit_thread = $t->join;
+      $exit_code = $exit_thread[0]
+	if ($exit_thread[0] > $exit_code);
+    }
+
+  # The master processes the last file.
+  if ($automake_will_process_aux_dir)
+    {
+      verb "processing last input file";
+      handle_makefile ($last_input_file);
+    }
+}
+
 ################################################################
 
 # Parse the WARNINGS environment variable.
@@ -8005,24 +8127,15 @@ if (! @input_files)
     fatal ("no `Makefile.am' found for any configure output$msg");
   }
 
-# Now do all the work on each file.
-foreach my $file (@input_files)
+my $nthreads = get_number_of_threads ();
+
+if ($perl_threads && $nthreads >= 1)
   {
-    ($am_file = $file) =~ s/\.in$//;
-    if (! -f ($am_file . '.am'))
-      {
-	error "`$am_file.am' does not exist";
-      }
-    else
-      {
-	# Any warning setting now local to this Makefile.am.
-	dup_channel_setup;
-
-	generate_makefile ($am_file . '.am', $file);
-
-	# Back out any warning setting.
-	drop_channel_setup;
-      }
+    handle_makefiles_threaded ($nthreads);
+  }
+else
+  {
+    handle_makefiles_serial ();
   }
 
 exit $exit_code;

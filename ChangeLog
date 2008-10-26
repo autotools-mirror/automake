@@ -1,5 +1,39 @@
 2008-10-26  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
 
+	Parallel automake execution: AUTOMAKE_JOBS.
+	* lib/Automake/Config.in (perl_threads): New global.
+	* automake.in: Use it.  If the perl supports interpreter-based
+	threading, then use `threads' and `Thread::Queue'.
+	(handle_makefile, handle_makefiles_serial): New functions,
+	factored out from main.
+	(get_number_of_threads): New function, compute number of threads
+	to use, based on environment variable `AUTOMAKE_JOBS' and number
+	of independent makefiles.
+	(handle_makefiles_threaded): New function.  Spawn threads, use
+	thread queue to distribute handling the different makefiles.
+	Collect $exit_code values from threads.
+	(main): Use new functions.
+	* aclocal.in: No threads here.
+	* configure.ac: Substitute PERL_THREADS; enabled with perl >=
+	5.7.2 and when ithreads are available.
+	* bootstrap (dosubst): Likewise.
+	* Makefile.am (do_subst): Likewise.
+	* lib/Automake/Makefile.am (do_subst): Likewise.
+	* lib/Automake/ChannelDefs.pm: Use `Automake::Config' and
+	`threads'.
+	(verb): Prepend thread ID (tid) to verbose messages.
+	* lib/Automake/Channels.pm (msg): Before exiting, flush stderr,
+	needed for worker threads.
+	* lib/Automake/tests/Makefile.am (TESTS_ENVIRONMENT): Also
+	include the build tree path, so Config.pm is found.
+	* tests/parallel-am.test: New test.
+	* tests/Makefile.am: Update.
+	* doc/automake.texi (Invoking Automake): Document AUTOMAKE_JOBS.
+	* NEWS, THANKS: Update.
+	Report about long execution times by Joakim Tjernlund and others.
+
+2008-10-26  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
 	Minor file checking optimization: set_dir_cache_file.
 	* lib/Automake/FileUtils.pm (set_dir_cache_file): New function.
 	* automake.in (require_file_internal): Instead of resetting the
