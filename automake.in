@@ -276,6 +276,11 @@ use constant COMPILE_ORDINARY => 2;
 # We can't always associate a location to a variable or a rule,
 # when it's defined by Automake.  We use INTERNAL in this case.
 use constant INTERNAL => new Automake::Location;
+
+# Serialization keys for message queues.
+use constant {
+  QUEUE_MESSAGE   => "msg",
+};
 
 
 ## ---------------------------------- ##
@@ -8057,7 +8062,14 @@ sub get_number_of_threads
 # handle_makefiles_threaded ($NTHREADS)
 # -------------------------------------
 # Deal with all makefiles, using threads.  The general strategy is to
-# spawn NTHREADS worker threads, and dispatch makefiles to them.
+# spawn NTHREADS worker threads, dispatch makefiles to them, and let the
+# worker threads push back everything that needs serialization:
+# * warning and (normal) error messages, for stable stderr output
+#   order and content (avoiding duplicates, for example),
+# * races when collecting aux files for distribution.
+#
+# The latter requires that the makefile that deals with the aux dir
+# files be handled last, done by the master thread.
 sub handle_makefiles_threaded ($)
 {
   my ($nthreads) = @_;
@@ -8069,8 +8081,14 @@ sub handle_makefiles_threaded ($)
       $last_input_file = pop @queued_input_files;
     }
 
-  # The file queue distributes all makefiles.
+  # The file queue distributes all makefiles, the message queues
+  # collect all serializations needed for respective files.
   my $file_queue = Thread::Queue->new;
+  my %msg_queues;
+  foreach my $file (@queued_input_files)
+    {
+      $msg_queues{$file} = Thread::Queue->new;
+    }
 
   verb "spawning $nthreads worker threads";
   my @threads = (1 .. $nthreads);
@@ -8081,7 +8099,11 @@ sub handle_makefiles_threaded ($)
 	  while (my $file = $file_queue->dequeue)
 	    {
 	      verb "handling $file";
+	      my $queue = $msg_queues{$file};
+	      setup_channel_queue ($queue, QUEUE_MESSAGE);
 	      handle_makefile ($file);
+	      $queue->enqueue (undef);
+	      setup_channel_queue (undef, undef);
 	    }
 	  return $exit_code;
 	});
@@ -8090,6 +8112,25 @@ sub handle_makefiles_threaded ($)
   # Queue all normal makefiles.
   verb "queuing " . @queued_input_files . " input files";
   $file_queue->enqueue (@queued_input_files, (undef) x @threads);
+
+  # Collect and process serializations.
+  foreach my $file (@queued_input_files)
+    {
+      verb "dequeuing messages for " . $file;
+      reset_local_duplicates ();
+      my $queue = $msg_queues{$file};
+      while (my $key = $queue->dequeue)
+	{
+	  if ($key eq QUEUE_MESSAGE)
+	    {
+	      pop_channel_queue ($queue);
+	    }
+	  else
+	    {
+	      prog_error "unexpected key $key";
+	    }
+	}
+    }
 
   foreach my $t (@threads)
     {

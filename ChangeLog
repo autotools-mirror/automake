@@ -1,5 +1,32 @@
 2008-10-26  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
 
+	Parallel automake: ordered output messages.
+	* lib/Automake/Channels.pm (%_default_options): New options
+	`ordered' default enabled, `queue', default zero (no queue),
+	`queue_key' default undefined.
+	(_merge_options): Ensure `ordered' channels cannot have fatal
+	messages or backtrace output.
+	(_enqueue, _dequeue): New functions, to push messages onto a
+	Thread::Queue, and output messages from such a queue, suitably
+	weeded for duplicates in the same manner as _print_message.
+	(_print_message): If the channel is ordered and has an
+	associated queue, then enqueue messages instead of printing
+	them.
+	(setup_channel_queue, pop_channel_queue): New functions,
+	to set a Thread::Queue for channels, and to flush a queue.
+	* lib/Automake/ChannelDefs.pm: Unset channel option `ordered'
+	for fatal, automake, and verb channels.
+	* automake.in (QUEUE_MESSAGE): New global constant, used as
+	serialization key.
+	(handle_makefiles_threaded): Create message queues for each
+	input file; workers queue messages, and the master outputs them
+	ordered, using the new Channels.pm functions.
+	* tests/parallel-am.test: Also check for ordered output (in the
+	absence of --add-missing races).
+	* tests/parallel-am2.test: New test; check for ordered output of
+	warning and (regular) error messages.
+	* tests/Makefile.am: Adjust.
+
 	Parallel automake execution: AUTOMAKE_JOBS.
 	* lib/Automake/Config.in (perl_threads): New global.
 	* automake.in: Use it.  If the perl supports interpreter-based

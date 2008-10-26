@@ -134,7 +134,7 @@ Informative messages.
 # Do not forget to update &usage and the manual
 # if you add or change a warning channel.
 
-register_channel 'fatal', type => 'fatal', uniq_part => UP_NONE;
+register_channel 'fatal', type => 'fatal', uniq_part => UP_NONE, ordered => 0;
 register_channel 'error', type => 'error';
 register_channel 'error-gnu', type => 'error';
 register_channel 'error-gnu/warn', type => 'error';
@@ -144,7 +144,7 @@ register_channel 'automake', type => 'fatal', backtrace => 1,
 	     "## Internal Error ##\n" .
 	     "####################\n"),
   footer => "\nPlease contact <bug-automake\@gnu.org>.",
-  uniq_part => UP_NONE;
+  uniq_part => UP_NONE, ordered => 0;
 
 register_channel 'gnu', type => 'warning';
 register_channel 'obsolete', type => 'warning', silent => 1;
@@ -153,7 +153,8 @@ register_channel 'portability', type => 'warning', silent => 1;
 register_channel 'syntax', type => 'warning';
 register_channel 'unsupported', type => 'warning';
 
-register_channel 'verb', type => 'debug', silent => 1, uniq_part => UP_NONE;
+register_channel 'verb', type => 'debug', silent => 1, uniq_part => UP_NONE,
+  ordered => 0;
 register_channel 'note', type => 'debug', silent => 0;
 
 =head2 FUNCTIONS

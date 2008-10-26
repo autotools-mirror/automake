@@ -33,7 +33,7 @@
 # 5) fatal error and debug messages could be identical.  This is not
 #    intended, though.
 #
-# This test checks (0).
+# This test checks (0), (1), and (2).  See sister tests for further coverage.
 
 . ./defs || Exit 1
 
@@ -71,9 +71,17 @@ mkdir build-aux
 
 $ACLOCAL
 
+# This test may have to be run several times in order to expose the
+# race that, when the last Makefile.in (the toplevel one) is created
+# before the other ones have finished, not all auxiliary files may
+# be installed yet, thus some may not be distributed.
+#
+# Further, automake output should be stable.
+
 # Generate expected output using the non-threaded code.
 unset AUTOMAKE_JOBS
 AUTOMAKE_run 0 --add-missing
+mv stderr expected
 makefile_ins=`find . -name Makefile.in`
 for file in $makefile_ins; do
   mv $file $file.exp
@@ -83,7 +91,9 @@ AUTOMAKE_JOBS=5
 export AUTOMAKE_JOBS
 
 for run in 1 2 3 4 5 6 7; do
-  AUTOMAKE_run 0
+  rm -f build-aux/* sub*/Makefile.in
+  AUTOMAKE_run 0 --add-missing
+  diff stderr expected
   for file in $makefile_ins; do
     diff $file $file.exp
   done
