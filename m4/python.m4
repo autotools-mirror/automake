@@ -3,7 +3,7 @@
 ## From Andrew Dalke
 ## Updated by James Henstridge
 ## ------------------------
-# Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005
+# Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2008
 # Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
@@ -34,13 +34,11 @@
 # numbers and dots only.
 AC_DEFUN([AM_PATH_PYTHON],
  [
-  dnl Find a Python interpreter.  Python versions prior to 1.5 are not
-  dnl supported because the default installation locations changed from
-  dnl $prefix/lib/site-python in 1.4 to $prefix/lib/python1.5/site-packages
-  dnl in 1.5.
+  dnl Find a Python interpreter.  Python versions prior to 2.0 are not
+  dnl supported. (2.0 was released on October 16, 2000).
   m4_define_default([_AM_PYTHON_INTERPRETER_LIST],
-                    [python python2 python2.5 python2.4 python2.3 python2.2 dnl
-python2.1 python2.0 python1.6 python1.5])
+                    [python python2 python3 python3.0 python2.5 python2.4 python2.3 python2.2 dnl
+python2.1 python2.0])
 
   m4_if([$1],[],[
     dnl No version check is needed.
@@ -87,7 +85,7 @@ python2.1 python2.0 python1.6 python1.5])
   dnl library.
 
   AC_CACHE_CHECK([for $am_display_PYTHON version], [am_cv_python_version],
-    [am_cv_python_version=`$PYTHON -c "import sys; print sys.version[[:3]]"`])
+    [am_cv_python_version=`$PYTHON -c "import sys; sys.stdout.write(sys.version[[:3]])"`])
   AC_SUBST([PYTHON_VERSION], [$am_cv_python_version])
 
   dnl Use the values of $prefix and $exec_prefix for the corresponding
@@ -102,7 +100,7 @@ python2.1 python2.0 python1.6 python1.5])
   dnl to know which OS platform Python thinks this is.
 
   AC_CACHE_CHECK([for $am_display_PYTHON platform], [am_cv_python_platform],
-    [am_cv_python_platform=`$PYTHON -c "import sys; print sys.platform"`])
+    [am_cv_python_platform=`$PYTHON -c "import sys; sys.stdout.write(sys.platform)"`])
   AC_SUBST([PYTHON_PLATFORM], [$am_cv_python_platform])
 
 
@@ -155,14 +153,15 @@ python2.1 python2.0 python1.6 python1.5])
 # Run ACTION-IF-FALSE otherwise.
 # This test uses sys.hexversion instead of the string equivalent (first
 # word of sys.version), in order to cope with versions such as 2.2c1.
-# hexversion has been introduced in Python 1.5.2; it's probably not
-# worth to support older versions (1.5.1 was released on October 31, 1998).
+# This supports Python 2.0 or higher. (2.0 was released on October 16, 2000).
 AC_DEFUN([AM_PYTHON_CHECK_VERSION],
- [prog="import sys, string
+ [prog="import sys
 # split strings by '.' and convert to numeric.  Append some zeros
 # because we need at least 4 digits for the hex conversion.
-minver = map(int, string.split('$2', '.')) + [[0, 0, 0]]
+# map returns an iterator in Python 3.0 and a list in 2.x
+minver = list(map(int, '$2'.split('.'))) + [[0, 0, 0]]
 minverhex = 0
-for i in xrange(0, 4): minverhex = (minverhex << 8) + minver[[i]]
+# xrange is not present in Python 3.0 and range returns an iterator
+for i in list(range(0, 4)): minverhex = (minverhex << 8) + minver[[i]]
 sys.exit(sys.hexversion < minverhex)"
   AS_IF([AM_RUN_LOG([$1 -c "$prog"])], [$3], [$4])])
