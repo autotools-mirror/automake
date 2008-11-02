@@ -2058,10 +2058,16 @@ sub handle_source_transform ($$$$%)
     if (scalar @keys == 0)
     {
 	# The default source for libfoo.la is libfoo.c, but for
-	# backward compatibility we first look at libfoo_la.c
+	# backward compatibility we first look at libfoo_la.c,
+	# if no default source suffix is given.
 	my $old_default_source = "$one_file.c";
-	(my $default_source = $unxformed) =~ s,(\.[^./\\]*)?$,.c,;
+	my $ext_var = var ('AM_DEFAULT_SOURCE_EXT');
+	my $default_source_ext = $ext_var ? variable_value ($ext_var) : '.c';
+	msg_var ('unsupported', $ext_var, $ext_var->name . " can assume at most one value")
+	  if $default_source_ext =~ /[\t ]/;
+	(my $default_source = $unxformed) =~ s,(\.[^./\\]*)?$,$default_source_ext,;
 	if ($old_default_source ne $default_source
+	    && !$default_source_ext
 	    && (rule $old_default_source
 		|| rule '$(srcdir)/' . $old_default_source
 		|| rule '${srcdir}/' . $old_default_source
