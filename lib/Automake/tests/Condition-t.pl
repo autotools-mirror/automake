@@ -20,7 +20,8 @@ BEGIN {
   if (eval { require 5.007_002; }	# for CLONE support
       && $Config{useithreads})
     {
-      use threads;
+      require threads;
+      import threads;
     }
   else
     {

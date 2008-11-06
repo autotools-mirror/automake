@@ -16,10 +16,14 @@
 package Automake::ChannelDefs;
 
 use Automake::Config;
-if ($perl_threads)
-  {
-    use threads;
-  }
+BEGIN
+{
+  if ($perl_threads)
+    {
+      require threads;
+      import threads;
+    }
+}
 use Automake::Channels;
 
 =head1 NAME

@@ -67,8 +67,10 @@ AC_CACHE_CHECK([whether $PERL supports ithreads], [am_cv_prog_PERL_ithreads],
     use Config;
     if ($Config{useithreads})
       {
-	use threads;
-	use Thread::Queue;
+	require threads;
+	import threads;
+	require Thread::Queue;
+	import Thread::Queue;
 	exit 0;
       }
     exit 1;' >&AS_MESSAGE_LOG_FD 2>&1
