@@ -42,7 +42,7 @@ AM_INIT_AUTOMAKE([1.8a dist-bzip2 filename-length-max=99])
 # * Prereleases on the trunk are all incompatible -- 1.5b and 1.5c
 #   aren't the same.
 APIVERSION=`echo "$VERSION" | sed -e 's/^\([[0-9]]*\.[[0-9]]*[[a-z]]*\).*$/\1/'`
-AC_SUBST(APIVERSION)
+AC_SUBST([APIVERSION])
 
 # A versioned directory, defined here for convenience.
 AC_SUBST([pkgvdatadir], ["\${datadir}/$PACKAGE-$APIVERSION"])
