@@ -654,6 +654,7 @@ werror.test \
 werror2.test \
 whoami.test \
 xsource.test \
+xz.test \
 yacc.test \
 yacc2.test \
 yacc3.test \
