@@ -7,14 +7,6 @@
 
 @include version.texi
 
-@c @ovar(ARG, DEFAULT)
-@c -------------------
-@c The ARG is an optional argument.  To be used for macro arguments in
-@c their documentation (@defmac).
-@macro ovar{varname}
-@r{[}@var{\varname\}@r{]}
-@end macro
-
 @copying
 
 This manual is for @acronym{GNU} Automake (version @value{VERSION},
@@ -1042,8 +1034,7 @@ options.
 @cindex Programs, renaming during installation
 
 The GNU Build System provides means to automatically rename
-executables and manpages before they are installed (@pxref{Man pages}).
-This is especially convenient
+executables before they are installed.  This is especially convenient
 when installing a GNU package on a system that already has a
 proprietary implementation you do not want to overwrite.  For instance,
 you may want to install GNU @command{tar} as @command{gtar} so you can
@@ -1513,7 +1504,7 @@ AC_OUTPUT
 @end example
 
 This file is read by both @command{autoconf} (to create
-@file{configure}) and @command{automake} (to create the various
+@file{configure.ac}) and @command{automake} (to create the various
 @file{Makefile.in}s).  It contains a series of M4 macros that will be
 expanded as shell code to finally form the @file{configure} script.
 We will not elaborate on the syntax of this file, because the Autoconf
@@ -1869,15 +1860,13 @@ the @dfn{primary}.  For instance, the primary @code{PROGRAMS} holds a
 list of programs that are to be compiled and linked.
 @vindex PROGRAMS
 
-@cindex @code{pkgdatadir}, defined
-@cindex @code{pkgincludedir}, defined
 @cindex @code{pkglibdir}, defined
-@cindex @code{pkglibexecdir}, defined
+@cindex @code{pkgincludedir}, defined
+@cindex @code{pkgdatadir}, defined
 
-@vindex pkgdatadir
-@vindex pkgincludedir
 @vindex pkglibdir
-@vindex pkglibexecdir
+@vindex pkgincludedir
+@vindex pkgdatadir
 
 @cindex @code{PACKAGE}, directory
 A different set of names is used to decide where the built objects
@@ -1885,9 +1874,9 @@ should be installed.  These names are prefixes to the primary, and they
 indicate which standard directory should be used as the installation
 directory.  The standard directory names are given in the GNU standards
 (@pxref{Directory Variables, , , standards, The GNU Coding Standards}).
-Automake extends this list with @code{pkgdatadir}, @code{pkgincludedir},
-@code{pkglibdir}, and @code{pkglibexecdir}; these are the same as the
-non-@samp{pkg} versions, but with @samp{$(PACKAGE)} appended.  For instance,
+Automake extends this list with @code{pkglibdir}, @code{pkgincludedir},
+and @code{pkgdatadir}; these are the same as the non-@samp{pkg}
+versions, but with @samp{$(PACKAGE)} appended.  For instance,
 @code{pkglibdir} is defined as @samp{$(libdir)/$(PACKAGE)}.
 
 @cindex @code{EXTRA_}, prepending
@@ -1973,9 +1962,8 @@ The current primary names are @samp{PROGRAMS}, @samp{LIBRARIES},
 
 Some primaries also allow additional prefixes that control other
 aspects of @command{automake}'s behavior.  The currently defined prefixes
-are @samp{dist_}, @samp{nodist_}, @samp{nobase_}, and @samp{notrans_}.
-These prefixes are explained later (@pxref{Program and Library Variables})
-(@pxref{Man pages}).
+are @samp{dist_}, @samp{nodist_}, and @samp{nobase_}.  These prefixes
+are explained later (@pxref{Program and Library Variables}).
 
 
 @node Canonicalization
@@ -2666,10 +2654,6 @@ to check whether @file{Makefile.am} exists.  (In the very hairy case
 that your setup requires such use of variables, you will have to tell
 Automake which @file{Makefile.in}s to generate on the command-line.)
 
-It is possible to let @command{automake} emit conditional rules for
-@code{AC_CONFIG_FILES} with the help of @code{AM_COND_IF}
-(@pxref{Optional}).
-
 To summarize:
 @itemize @bullet
 @item
@@ -2796,11 +2780,6 @@ This is required for programs and shared libraries that are a mixture of
 languages that include Fortran 77 (@pxref{Mixing Fortran 77 With C and
 C++}).  @xref{Macros, , Autoconf macros supplied with Automake}.
 
-@item AC_FC_SRCEXT
-Automake will add the flags computed by @code{AC_FC_SRCEXT} to compilation
-of files with the respective source extension (@pxref{Fortran Compiler, ,
-Fortran Compiler Characteristics, autoconf, The Autoconf Manual}).
-
 @item AC_PROG_FC
 This is required if any Fortran 90/95 source is included.  This macro is
 distributed with Autoconf version 2.58 and later.  @xref{Particular
@@ -2848,15 +2827,6 @@ if @code{AC_PATH_XTRA} is called.
 @item AM_C_PROTOTYPES
 This is required when using the obsolete de-ANSI-fication feature; see
 @ref{ANSI}.
-
-@item AM_CONDITIONAL
-This introduces an Automake conditional (@pxref{Conditionals}).
-
-@item AM_COND_IF
-This macro allows @code{automake} to detect subsequent access within
-@file{configure.ac} to a conditional previously introduced with
-@code{AM_CONDITIONAL}, thus enabling conditional @code{AC_CONFIG_FILES}
-(@pxref{Conditionals}).
 
 @item AM_GNU_GETTEXT
 This macro is required for packages that use GNU gettext
@@ -4425,9 +4395,9 @@ programs.  Most of the comments about these also apply to libraries
 In a directory containing source that gets built into a program (as
 opposed to a library or a script), the @code{PROGRAMS} primary is used.
 Programs can be installed in @code{bindir}, @code{sbindir},
-@code{libexecdir}, @code{pkglibdir}, @code{pkglibexecdir}, or not at all
-(@code{noinst_}).  They can also be built only for @samp{make check}, in
-which case the prefix is @samp{check_}.
+@code{libexecdir}, @code{pkglibdir}, or not at all (@code{noinst_}).
+They can also be built only for @samp{make check}, in which case the
+prefix is @samp{check_}.
 
 For instance:
 
@@ -6338,7 +6308,7 @@ trick with @code{nodist_EXTRA_@dots{}_SOURCES}.
 @cindex Fortran 9x support
 @cindex Support for Fortran 9x
 
-Automake includes support for Fortran 9x.
+Automake includes full support for Fortran 9x.
 
 Any package including Fortran 9x code must define the output variable
 @code{FC} in @file{configure.ac}; the simplest way to do this is to use
@@ -6377,24 +6347,14 @@ library.
 @comment  node-name,  next,  previous,  up
 @subsection Compiling Fortran 9x Files
 
-@file{@var{N}.o} is made automatically from @file{@var{N}.f90},
-@file{@var{N}.f95}, @file{@var{N}.f03}, or @file{@var{N}.f08}
+@file{N.o} is made automatically from @file{N.f90} or @file{N.f95}
 by running the Fortran 9x compiler.  The precise command used
 is as follows:
 
 @table @file
 
-@item .f90
-@code{$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c $(FCFLAGS_f90) $<}
-
-@item .f95
-@code{$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c $(FCFLAGS_f95) $<}
-
-@item .f03
-@code{$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c $(FCFLAGS_f03) $<}
-
-@item .f08
-@code{$(FC) $(AM_FCFLAGS) $(FCFLAGS) -c $(FCFLAGS_f08) $<}
+@item .f9x
+@code{$(FC) -c $(AM_FCFLAGS) $(FCFLAGS)}
 
 @end table
 
@@ -7301,7 +7261,7 @@ files in your @file{Makefile.am}, depending where you want your files
 installed (see the definitions of @code{pythondir} and
 @code{pkgpythondir} below).
 
-@defmac AM_PATH_PYTHON (@ovar{VERSION}, @ovar{ACTION-IF-FOUND}, @ovar{ACTION-IF-NOT-FOUND})
+@defmac AM_PATH_PYTHON ([@var{VERSION}], [@var{ACTION-IF-FOUND}], [@var{ACTION-IF-NOT-FOUND}])
 
 Search for a Python interpreter on the system.  This macro takes three
 optional arguments.  The first argument, if present, is the minimum
@@ -7680,32 +7640,6 @@ dist_man_MANS = cpio.1 mt.1
 The @code{nobase_} prefix is meaningless for man pages and is
 disallowed.
 
-@vindex notrans_
-@cindex @code{notrans_} prefix
-@cindex Man page renaming, avoiding
-@cindex Avoiding man page renaming
-
-Executables and manpages may be renamed upon installation
-(@pxref{Renaming}).  For manpages this can be avoided by use of the
-@code{notrans_} prefix.  For instance, suppose an executable @samp{foo}
-allowing to access a library function @samp{foo} from the command line.
-The way to avoid renaming of the @file{foo.3} manpage is:
-
-@example
-man_MANS = foo.1
-notrans_man_MANS = foo.3
-@end example
-
-@cindex @code{notrans_} and @code{dist_} or @code{nodist_}
-@cindex @code{dist_} and @code{notrans_}
-@cindex @code{nodist_} and @code{notrans_}
-
-@samp{notrans_} must be specified first when used in conjunction with
-either @samp{dist_} or @samp{nodist_} (@pxref{Dist}).  For instance:
-
-@example
-notrans_dist_man3_MANS = bar.3
-@end example
 
 @node Install
 @chapter What Gets Installed
@@ -8191,26 +8125,12 @@ work when building in a separate directory (@pxref{Build Directories,
 , Build Directories , autoconf, The Autoconf Manual}), and in
 particular for the @code{distcheck} rule (@pxref{Dist}).
 
-For each of the @code{TESTS}, the result of execution is printed along
-with the test name, where @code{PASS} denotes a successful test,
-@code{FAIL} denotes a failed test, @code{XFAIL} an expected failure,
-@code{XPASS} an unexpected pass for a test that is supposed to fail,
-and @code{SKIP} denotes a skipped test.
-
 @cindex Exit status 77, special interpretation
 
 The number of failures will be printed at the end of the run.  If a
 given test program exits with a status of 77, then its result is ignored
 in the final count.  This feature allows non-portable tests to be
 ignored in environments where they don't make sense.
-
-@vindex AM_COLOR_TESTS
-If the Automake option @code{color-tests} is used (@pxref{Options})
-and standard output is connected to a capable terminal, then the test
-results and the summary are colored appropriately.  The user can disable
-colored output by setting the @command{make} variable
-@samp{AM_COLOR_TESTS=no}, or force colored output even without a connecting
-terminal with @samp{AM_COLOR_TESTS=always}.
 
 @vindex TESTS
 @vindex TESTS_ENVIRONMENT
@@ -8442,12 +8362,6 @@ currently does not check this).
 @opindex check-news
 Cause @samp{make dist} to fail unless the current version number appears
 in the first few lines of the @file{NEWS} file.
-
-@item @option{color-tests}
-@cindex Option, @option{color-tests}
-@opindex color-tests
-Cause output of the simple test suite (@pxref{Tests}) to be
-colorized on capable terminals.
 
 @item @option{dejagnu}
 @cindex Option, @option{dejagnu}
@@ -8960,32 +8874,6 @@ Unbalanced conditions are errors.
 The @code{else} branch of the above two examples could be omitted,
 since assigning the empty string to an otherwise undefined variable
 makes no difference.
-
-@acindex AM_COND_IF
-In order to allow access to the condition registered by
-@code{AM_CONDITIONAL} inside @file{configure.ac}, and to allow
-conditional @code{AC_CONFIG_FILES}, @code{AM_COND_IF} may be used:
-
-@defmac AM_COND_IF (@var{conditional}, @ovar{if-true}, @ovar{if-false})
-If @var{conditional} is fulfilled, execute @var{if-true}, otherwise
-execute @var{if-false}.  If either branch contains @code{AC_CONFIG_FILES},
-it will cause @command{automake} to output the rules for the respective
-files only for the given condition.
-@end defmac
-
-@code{AM_COND_IF} macros may be nested when m4 quotation is used
-properly (@pxref{M4 Quotation, ,, autoconf, The Autoconf Manual}).
-
-@cindex Example conditional @code{AC_CONFIG_FILES}
-@cindex @code{AC_CONFIG_FILES}, conditional
-
-Here is an example of how to define a conditional config file:
-
-@example
-AM_CONDITIONAL([SHELL_WRAPPER], [test "x$with_wrapper" = xtrue])
-AM_COND_IF([SHELL_WRAPPER],
-           [AC_CONFIG_FILES([wrapper:wrapper.in])])
-@end example
 
 @unnumberedsec Portability
 
