@@ -522,6 +522,7 @@ req.test \
 reqd.test \
 reqd2.test \
 rulepat.test \
+sanity.test \
 scripts.test \
 seenc.test \
 sinclude.test \

@@ -25,8 +25,9 @@ AC_CANONICAL_BUILD
 
 # Save the AUTOCONF setting before AM_INIT_AUTOMAKE overrides it; this
 # way we can run Autoconf tests from configure (or from the test
-# suite) without being bothered by `missing'.
+# suite) without being bothered by `missing'.  Likewise for autoheader.
 AC_SUBST([am_AUTOCONF], ["${AUTOCONF-autoconf}"])
+AC_SUBST([am_AUTOHEADER], ["${AUTOHEADER-autoheader}"])
 
 AM_INIT_AUTOMAKE([1.10a dist-bzip2 filename-length-max=99 color-tests])
 
