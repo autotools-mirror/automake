@@ -228,6 +228,7 @@ dirforbid.test \
 dirlist.test \
 dirlist2.test \
 discover.test \
+distcleancheck.test \
 distcom2.test \
 distcom3.test \
 distcom4.test \
