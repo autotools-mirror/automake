@@ -223,6 +223,7 @@ depend2.test \
 depend3.test \
 depend4.test \
 depend5.test \
+depend6.test \
 destdir.test \
 dirforbid.test \
 dirlist.test \
