@@ -371,6 +371,7 @@ makevars.test \
 man.test \
 man2.test \
 man3.test \
+man4.test \
 mclean.test \
 mdate.test \
 mdate2.test \

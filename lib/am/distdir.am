@@ -47,6 +47,32 @@ if  %?CK-NEWS%
 endif  %?CK-NEWS%
 endif %?TOPDIR_P%
 ##
+## `missing help2man' may have created some bogus man pages.  Ensure they
+## are not distributed.
+##
+if %?INSTALL-MAN%
+if %?HAVE-MANS%
+	@list='$(MANS)'; if test -n "$$list"; then \
+	  list=`for p in $$list; do \
+	    if test -f $$p; then d=; else d="$(srcdir)/"; fi; \
+## Note that we check existing man pages here only.  If there are man pages
+## which are not distributed, and may be generated only conditionally, then
+## we should not error out because of them.  This could be refined to take
+## into account only dist_*_MANS, but then we'd be missing out on those
+## the user distributes with EXTRA_DIST.
+	    if test -f "$$d$$p"; then echo "$$d$$p"; else :; fi; done`; \
+	  if test -n "$$list" && \
+	    grep 'ab help2man is required to generate this page' $$list >/dev/null; then \
+	    echo "error: found man pages containing the \`missing help2man' replacement text:" >&2; \
+	    grep -l 'ab help2man is required to generate this page' $$list | sed 's/^/         /' >&2; \
+	    echo "       to fix them, install help2man, remove and regenerate the man pages;" >&2; \
+	    echo "       typically \`make maintainer-clean' will remove them" >&2; \
+	    exit 1; \
+	  else :; fi; \
+	else :; fi
+endif %?HAVE-MANS%
+endif %?INSTALL-MAN%
+##
 ## Only for the top dir.
 ##
 if %?TOPDIR_P%
