@@ -115,6 +115,7 @@ comment8.test \
 comment9.test \
 commen10.test \
 compile.test \
+compile2.test \
 compile_f90_c_cxx.test \
 compile_f_c_cxx.test \
 cond.test \
