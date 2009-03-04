@@ -1,7 +1,7 @@
 #!/bin/sh
 # Sign files and upload them.
 
-scriptversion=2009-03-04.20
+scriptversion=2009-03-04.21
 
 # Copyright (C) 2004, 2005, 2006, 2007, 2008, 2009  Free Software Foundation
 #
@@ -23,8 +23,9 @@ scriptversion=2009-03-04.20
 set -e
 
 GPG='gpg --batch --no-tty'
+conffile=.gnupload
 to=
-dry_run=
+dry_run=false
 symlink_files=
 delete_files=
 delete_symlinks=
@@ -47,11 +48,11 @@ Options:
   --to DEST                specify one destination for FILES
                            (multiple --to options are allowed)
   --user NAME              sign with key NAME
-  --symlink-regex[=SED-EXPR]  use SED-EXPR to create symbolic links
+  --symlink-regex[=EXPR]   use sed script EXPR to compute symbolic link names
   --dry-run                do nothing, show what would have been done
   --version                output version information and exit
 
-If --symlink-re is given without SED-EXPR, then the link target name
+If --symlink-regex is given without EXPR, then the link target name
 is created by replacing the version information with \`-latest', e.g.:
 
   foo-1.3.4.tar.gz -> foo-latest.tar.gz
@@ -66,9 +67,10 @@ Recognized destinations are:
                            build directive files and upload files by SFTP
   [user@]host:DIRECTORY    upload files with scp
 
-If the file .gnupload exists in the current working directory, its contents
-are prepended to the actual command line options.  Use this to keep your
-defaults.  Comments (#) and empty lines in .gnupload are allowed.
+Options and commands are applied in order.  If the file $conffile exists
+in the current working directory, its contents are prepended to the
+actual command line options.  Use this to keep your defaults.  Comments
+(#) and empty lines in $conffile are allowed.
 
 Examples:
 1. Upload automake-1.8.2b.tar.gz and automake-1.8.2b.tar.bz2 to two sites:
@@ -79,7 +81,7 @@ Examples:
 2. Same as above, but also create symbolic links to automake-latest.tar.*:
   gnupload --to sources.redhat.com:~ftp/pub/automake \\
            --to alpha.gnu.org:automake \\
-	   --symlink-regex \\
+           --symlink-regex \\
            automake-1.8.2b.tar.gz automake-1.8.2b.tar.bz2
 
 3. Symlink automake-1.8.2b.tar.gz to automake-latest.tar.gz and
@@ -87,26 +89,27 @@ automake-1.8.2b.tar.bz2 to automake-latest.tar.bz2 on both sites:
 
   gnupload --to sources.redhat.com:~ftp/pub/automake \\
            --to alpha.gnu.org:automake \\
-	   --symlink automake-1.8.2b.tar.gz automake-latest.tar.gz \\
-	             automake-1.8.2b.tar.bz2 automake-latest.tar.bz2
+           --symlink automake-1.8.2b.tar.gz automake-latest.tar.gz \\
+                     automake-1.8.2b.tar.bz2 automake-latest.tar.bz2
 
 4. Delete automake-1.8.2a.tar.gz and .bz2, remove symlink
 automake-latest.tar.gz and upload automake-1.8.2b.tar.gz:
 
   gnupload --to sources.redhat.com:~ftp/pub/automake \\
            --to alpha.gnu.org:automake \\
-	   --delete automake-1.8.2a.tar.gz automake-1.8.2a.tar.bz2 \\
-	   --rmsymlink automake-latest.tar.gz \\
-	   -- \\
+           --delete automake-1.8.2a.tar.gz automake-1.8.2a.tar.bz2 \\
+           --rmsymlink automake-latest.tar.gz \\
+           -- \\
            automake-1.8.2b.tar.gz automake-1.8.2b.tar.bz2
 
 Report bugs to <bug-automake@gnu.org>.
 Send patches to <automake-patches@gnu.org>."
 
 # Read local configuration file
-if test -r .gnupload; then
-  echo "$0: Reading configuration file .gnupload"
-  eval set -- "`sed 's/#.*$//;/^$/d' .gnupload | tr '\012\015' ' '` $@"
+if test -r "$conffile"; then
+  echo "$0: Reading configuration file $conffile"
+  eval set x "`sed 's/#.*$//;/^$/d' \"$conffile\" | tr '\012\015' '  '` \"\$@\""
+  shift
 fi
 
 while test -n "$1"; do
@@ -123,7 +126,7 @@ while test -n "$1"; do
             exit 1
           else
             to="$to $2"
-            shift 2
+            shift
           fi
           ;;
         --user)
@@ -132,41 +135,35 @@ while test -n "$1"; do
             exit 1
           else
             GPG="$GPG --local-user $2"
-            shift 2
+            shift
           fi
           ;;
-	--delete)
+        --delete)
           collect_var=delete_files
-          shift
           ;;
-	--rmsymlink)
-	  collect_var=delete_symlinks
-	  shift
-	  ;;
+        --rmsymlink)
+          collect_var=delete_symlinks
+          ;;
         --symlink-regex=*)
           symlink_expr=`expr "$1" : '[^=]*=\(.*\)'`
-          shift
           ;;
         --symlink-regex)
           symlink_expr='s|-[0-9][0-9\.]*\(-[0-9][0-9]*\)\{0,1\}\.|-latest.|'
-          shift
           ;;
         --symlink)
           collect_var=symlink_files
-          shift
           ;;
         --dry-run|-n)
-          dry_run=1
-          shift
+          dry_run=:
           ;;
         --version)
           echo "gnupload $scriptversion"
           exit $?
           ;;
-	--)
-	  shift
-	  break
-	  ;;
+        --)
+          shift
+          break
+          ;;
         -*)
           echo "$0: Unknown option \`$1', try \`$0 --help'" 1>&2
           exit 1
@@ -176,11 +173,11 @@ while test -n "$1"; do
   *)  if test -z "$collect_var"; then
         break
       else
-        eval $collect_var=\"\$$collect_var \"$1\"\"
-	shift
+        eval "$collect_var=\"\$$collect_var $1\""
       fi
       ;;
   esac
+  shift
 done
 
 dprint()
@@ -188,7 +185,7 @@ dprint()
   echo "Running $*..."
 }
 
-if test -n "$dry_run"; then
+if $dry_run; then
   dbg=dprint
 fi
 
@@ -223,7 +220,7 @@ else
       if test -z "$linkname"; then
         echo "$0: symlink expression produces empty results" >&2
         exit 1
-      elif test $linkname = $file; then
+      elif test "$linkname" = $file; then
         echo "$0: symlink expression does not alter file name" >&2
         exit 1
       fi
@@ -251,13 +248,15 @@ if test $# -ne 0; then
   do
     echo "Signing $file..."
     rm -f $file.sig
-    echo $passphrase | $GPG --passphrase-fd 0 -ba -o $file.sig $file
+    echo "$passphrase" | $dbg $GPG --passphrase-fd 0 -ba -o $file.sig $file
   done
 fi
 
+
 # mkdirective DESTDIR BASE FILE STMT
 # Arguments: See upload, below
-mkdirective() {
+mkdirective ()
+{
   stmt="$4"
   if test -n "$3"; then
     stmt="
@@ -269,14 +268,15 @@ version: 1.1
 directory: $1
 comment: gnupload v. $scriptversion$stmt
 EOF
-  if test -n "$dry_run"; then
+  if $dry_run; then
     echo "File ${2}.directive:"
     cat ${2}.directive
     echo "File ${2}.directive:" | sed 's/./-/g'
   fi
 }
 
-mksymlink() {
+mksymlink ()
+{
   while test $# -ne 0
   do
     echo "symlink: $1 $2"
@@ -293,7 +293,8 @@ mksymlink() {
 #  FILE     Name of the file to distribute (may be empty);
 #  STMT     Additional statements for the directive file;
 #  FILES    List of files to upload.
-upload() {
+upload ()
+{
   dest=$1
   destdir=$2
   base=$3
@@ -305,12 +306,12 @@ upload() {
   case $dest in
     alpha.gnu.org:*)
       mkdirective "$destdir" "$base" "$file" "$stmt"
-      echo "$passphrase" | $GPG --passphrase-fd 0 --clearsign $base.directive
+      echo "$passphrase" | $dbg $GPG --passphrase-fd 0 --clearsign $base.directive
       $dbg ncftpput ftp-upload.gnu.org /incoming/alpha $files $base.directive.asc
       ;;
     ftp.gnu.org:*)
       mkdirective "$destdir" "$base" "$file" "$stmt"
-      echo "$passphrase" | $GPG --passphrase-fd 0 --clearsign $base.directive
+      echo "$passphrase" | $dbg $GPG --passphrase-fd 0 --clearsign $base.directive
       $dbg ncftpput ftp-upload.gnu.org /incoming/ftp $files $base.directive.asc
       ;;
     savannah.gnu.org:*)
@@ -326,17 +327,20 @@ upload() {
       $dbg ncftpput savannah.nongnu.org /incoming/savannah/$destdir $files
       ;;
     download.gnu.org.ua:alpha/*|download.gnu.org.ua:ftp/*)
-      mkdirective "${destdir#*/}" "$base" "$file" "$stmt"
-      echo "$passphrase" | $GPG --passphrase-fd 0 --clearsign $base.directive
+      destdir_p1=`echo "$destdir" | sed 's,^[^/]*/,,'`
+      destdir_topdir=`echo "$destdir" | sed 's,/.*,,'`
+      mkdirective "$destdir_p1" "$base" "$file" "$stmt"
+      echo "$passphrase" | $dbg $GPG --passphrase-fd 0 --clearsign $base.directive
       for f in $files $base.directive.asc
       do
         echo put $f
-      done | $dbg sftp -b - puszcza.gnu.org.ua:/incoming/${destdir%%/*}
+      done | $dbg sftp -b - puszcza.gnu.org.ua:/incoming/$destdir_topdir
       ;;
     /*)
+      dest_host=`echo "$dest" | sed 's,:.*,,'`
       mkdirective "$destdir" "$base" "$file" "$stmt"
-      echo "$passphrase" | $GPG --passphrase-fd 0 --clearsign $base.directive
-      $dbg cp $files $base.directive.asc ${dest%%:*}
+      echo "$passphrase" | $dbg $GPG --passphrase-fd 0 --clearsign $base.directive
+      $dbg cp $files $base.directive.asc $dest_host
       ;;
     *)
       if test -z "$files"; then
@@ -394,6 +398,8 @@ symlink: $file.sig $linkname.sig"
     upload "$dest" "$destdir" "$file" "$file" "$stmt" "$files"
   done
 done
+
+exit 0
 
 # Local variables:
 # eval: (add-hook 'write-file-hooks 'time-stamp)
