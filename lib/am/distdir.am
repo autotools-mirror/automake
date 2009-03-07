@@ -220,12 +220,18 @@ endif %?TOPDIR_P%
 ## directory, then we use `distdir' instead of `top_distdir'; this lets
 ## us work correctly with an enclosing package.
 ##
+## Split the loop for the directory creation and the one for recursion,
+## so that with GNU make -n, only the latter is executed.
 if %?SUBDIRS%
 	@list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
 	  if test "$$subdir" = .; then :; else \
 	    test -d "$(distdir)/$$subdir" \
 	    || $(MKDIR_P) "$(distdir)/$$subdir" \
 	    || exit 1; \
+	  fi; \
+	done
+	@list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
+	  if test "$$subdir" = .; then :; else \
 	    dir1=$$subdir; dir2="$(distdir)/$$subdir"; \
 	    $(am__relativize); \
 	    new_distdir=$$reldir; \
@@ -418,6 +424,12 @@ distcheck: dist
 	mkdir $(distdir)/_inst
 ## Undo the write access.
 	chmod a-w $(distdir)
+## With GNU make, the following command will be executed even with `make -n',
+## due to the presence of `$(MAKE)'.  That is normally all well (and `$(MAKE)'
+## is necessary for things like parallel distcheck), but here we don't want
+## execution.  To avoid MAKEFLAGS parsing hassles, use a witness file that a
+## non-`-n' run would have just created.
+	test -d $(distdir)/_build || exit 0; \
 ## Compute the absolute path of `_inst'.  Strip any leading DOS drive
 ## to allow DESTDIR installations.  Otherwise "$(DESTDIR)$(prefix)" would
 ## expand to "c:/temp/am-dc-5668/c:/src/package/package-1.0/_inst".

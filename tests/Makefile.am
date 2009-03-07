@@ -393,6 +393,8 @@ lzma.test \
 maintclean.test \
 make.test \
 makej.test \
+maken.test \
+maken2.test \
 makevars.test \
 man.test \
 man2.test \
