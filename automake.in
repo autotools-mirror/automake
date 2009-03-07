@@ -3571,6 +3571,7 @@ sub handle_tags
 			  . "\tdone\n");
 	push (@tag_deps, 'tags-recursive');
 	&depend ('.PHONY', 'tags-recursive');
+	&depend ('.MAKE', 'tags-recursive');
 
 	$output_rules .= ("ctags-recursive:\n"
 			  . "\tlist=\'\$(SUBDIRS)\'; for subdir in \$\$list; do \\\n"
@@ -3581,6 +3582,7 @@ sub handle_tags
 			  . "\tdone\n");
 	push (@ctag_deps, 'ctags-recursive');
 	&depend ('.PHONY', 'ctags-recursive');
+	&depend ('.MAKE', 'ctags-recursive');
     }
 
     if (&saw_sources_p (1)
@@ -4503,6 +4505,7 @@ sub handle_all ($)
 			. '$(MAKE) $(AM_MAKEFLAGS) '
 			. (var ('SUBDIRS') ? 'all-recursive' : 'all-am')
 			. "\n\n");
+        depend ('.MAKE', 'all');
       }
     else
       {
@@ -4533,13 +4536,19 @@ sub do_check_merge_target ()
       # `all', to ensure all the primary targets are built.  Then it
       # must build the local check rules.
       $output_rules .= "check-am: all-am\n";
-      pretty_print_rule ("\t\$(MAKE) \$(AM_MAKEFLAGS)", "\t  ",
-			 @check)
-	if @check;
+      if (@check)
+        {
+	  pretty_print_rule ("\t\$(MAKE) \$(AM_MAKEFLAGS)", "\t  ",
+			     @check);
+	  depend ('.MAKE', 'check-am');
+	}
     }
-  pretty_print_rule ("\t\$(MAKE) \$(AM_MAKEFLAGS)", "\t  ",
-		     @check_tests)
-    if @check_tests;
+  if (@check_tests)
+    {
+      pretty_print_rule ("\t\$(MAKE) \$(AM_MAKEFLAGS)", "\t  ",
+			 @check_tests);
+      depend ('.MAKE', 'check-am');
+    }
 
   depend '.PHONY', 'check', 'check-am';
   # Handle recursion.  We have to honor BUILT_SOURCES like for `all:'.
@@ -4549,6 +4558,8 @@ sub do_check_merge_target ()
 		       : '')
 		    . (var ('SUBDIRS') ? 'check-recursive' : 'check-am')
 		    . "\n");
+  depend ('.MAKE', 'check')
+    if var ('BUILT_SOURCES');
 }
 
 # handle_clean ($MAKEFILE)
