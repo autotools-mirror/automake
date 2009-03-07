@@ -398,6 +398,7 @@ man.test \
 man2.test \
 man3.test \
 man4.test \
+man5.test \
 mclean.test \
 mdate.test \
 mdate2.test \
