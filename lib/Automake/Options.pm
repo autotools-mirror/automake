@@ -1,4 +1,4 @@
-# Copyright (C) 2003, 2004, 2006, 2007, 2008  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2004, 2006, 2007, 2008, 2009  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -309,6 +309,10 @@ sub _process_option_list (\%$@)
 	      msg 'unsupported', $where, "unknown warning category `$cat'"
 		if switch_warning $cat;
 	    }
+	}
+      elsif ($_ eq 'silent')
+        {
+	  switch_warning ('no-portability-recursive');
 	}
       else
 	{
