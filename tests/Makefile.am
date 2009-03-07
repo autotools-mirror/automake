@@ -540,6 +540,7 @@ silent2.test \
 silent3.test \
 silent4.test \
 silent5.test \
+silent6.test \
 sinclude.test \
 srcsub.test \
 srcsub2.test \
