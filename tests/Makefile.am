@@ -1,11 +1,26 @@
 ## Process this file with automake to create Makefile.in
 AUTOMAKE_OPTIONS = parallel-tests
 
-XFAIL_TESTS = 					\
+XFAIL_TESTS =					\
 all.test					\
 auxdir2.test					\
 cond17.test					\
 txinfo5.test
+
+include $(srcdir)/parallel-tests.am
+
+$(srcdir)/parallel-tests.am: gen-parallel-tests Makefile.am
+	(cd $(srcdir) && $(SHELL) ./gen-parallel-tests) >$@
+
+$(parallel_tests): $(parallel_tests:-p.test=.test) Makefile.am
+	input=`echo $@ | sed 's,.*/,,; s,-p.test$$,.test,'`; \
+	sed 's,^\. \./defs,. ./defs-p,' < $(srcdir)/$$input > $@
+	chmod a+rx $@
+
+MAINTAINERCLEANFILES = $(parallel_tests)
+
+defs-p: defs Makefile.am
+	sed 's,^AM_INIT_AUTOMAKE$$,&([parallel-tests]),' < defs >$@
 
 TESTS =	\
 aclibobj.test \
@@ -98,6 +113,7 @@ check7.test \
 check8.test \
 check9.test \
 check10.test \
+check11.test \
 checkall.test \
 clean.test \
 clean2.test \
@@ -676,15 +692,16 @@ yacc6.test \
 yacc7.test \
 yacc8.test \
 yaccpp.test \
-yaccvpath.test
+yaccvpath.test \
+$(parallel_tests)
 
-EXTRA_DIST = ChangeLog-old $(TESTS)
+EXTRA_DIST = ChangeLog-old gen-parallel-tests $(TESTS)
 
 # Each test case depends on defs, aclocal, and automake.
-check_SCRIPTS = defs aclocal-$(APIVERSION) automake-$(APIVERSION)
+check_SCRIPTS = defs defs-p aclocal-$(APIVERSION) automake-$(APIVERSION) $(parallel_tests)
 
 clean-local: check-clean-local
 
 check-clean-local:
 	-chmod -R u+rwx *.dir
-	-rm -rf *.dir
+	-rm -rf defs-p *.dir

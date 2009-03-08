@@ -32,9 +32,10 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
-subdir = tests
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/aclocal.in $(srcdir)/automake.in $(srcdir)/defs.in
+	$(srcdir)/aclocal.in $(srcdir)/automake.in $(srcdir)/defs.in \
+	$(srcdir)/parallel-tests.am
+subdir = tests
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/amversion.m4 \
 	$(top_srcdir)/m4/auxdir.m4 $(top_srcdir)/m4/init.m4 \
@@ -223,6 +224,29 @@ auxdir2.test					\
 cond17.test					\
 txinfo5.test
 
+parallel_tests = \
+check-p.test \
+check10-p.test \
+check11-p.test \
+check2-p.test \
+check3-p.test \
+check4-p.test \
+check5-p.test \
+check6-p.test \
+check7-p.test \
+check8-p.test \
+check9-p.test \
+color-p.test \
+comment9-p.test \
+dejagnu-p.test \
+exeext4-p.test \
+maken3-p.test \
+maken4-p.test \
+pr401-p.test \
+pr401b-p.test \
+pr401c-p.test
+
+MAINTAINERCLEANFILES = $(parallel_tests)
 TESTS = \
 aclibobj.test \
 aclocal.test \
@@ -314,6 +338,7 @@ check7.test \
 check8.test \
 check9.test \
 check10.test \
+check11.test \
 checkall.test \
 clean.test \
 clean2.test \
@@ -892,17 +917,18 @@ yacc6.test \
 yacc7.test \
 yacc8.test \
 yaccpp.test \
-yaccvpath.test
+yaccvpath.test \
+$(parallel_tests)
 
-EXTRA_DIST = ChangeLog-old $(TESTS)
+EXTRA_DIST = ChangeLog-old gen-parallel-tests $(TESTS)
 
 # Each test case depends on defs, aclocal, and automake.
-check_SCRIPTS = defs aclocal-$(APIVERSION) automake-$(APIVERSION)
+check_SCRIPTS = defs defs-p aclocal-$(APIVERSION) automake-$(APIVERSION) $(parallel_tests)
 all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .html .log .test
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
+$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/parallel-tests.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -1148,6 +1174,7 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
 clean-am: clean-generic clean-local mostlyclean-am
@@ -1228,11 +1255,22 @@ uninstall-am:
 	pdf-am ps ps-am uninstall uninstall-am
 
 
+$(srcdir)/parallel-tests.am: gen-parallel-tests Makefile.am
+	(cd $(srcdir) && $(SHELL) ./gen-parallel-tests) >$@
+
+$(parallel_tests): $(parallel_tests:-p.test=.test) Makefile.am
+	input=`echo $@ | sed 's,.*/,,; s,-p.test$$,.test,'`; \
+	sed 's,^\. \./defs,. ./defs-p,' < $(srcdir)/$$input > $@
+	chmod a+rx $@
+
+defs-p: defs Makefile.am
+	sed 's,^AM_INIT_AUTOMAKE$$,&([parallel-tests]),' < defs >$@
+
 clean-local: check-clean-local
 
 check-clean-local:
 	-chmod -R u+rwx *.dir
-	-rm -rf *.dir
+	-rm -rf defs-p *.dir
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
