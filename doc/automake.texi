@@ -8294,7 +8294,8 @@ default, only the @code{dist-gzip} target is hooked to @code{dist}.
 @cindex @code{make check}
 @trindex check
 
-Automake supports two forms of test suites.
+Automake supports three forms of test suites, the first two of which
+are very similar.
 
 @section Simple Tests
 
@@ -8330,7 +8331,7 @@ terminal with @samp{AM_COLOR_TESTS=always}.
 @vindex TESTS
 @vindex TESTS_ENVIRONMENT
 The variable @code{TESTS_ENVIRONMENT} can be used to set environment
-variables for the test run; the environment variable @code{srcdir} is
+variables for the test run; the environment variable @env{srcdir} is
 set in the rule.  If all your test programs are scripts, you can also
 set @code{TESTS_ENVIRONMENT} to an invocation of the shell (e.g.
 @samp{$(SHELL) -x} can be useful for debugging the tests), or any other
@@ -8366,6 +8367,115 @@ that @code{check_PROGRAMS} are @emph{not} automatically added to
 @code{TESTS} because @code{check_PROGRAMS} usually lists programs used
 by the tests, not the tests themselves.  Of course you can set
 @code{TESTS = $(check_PROGRAMS)} if all your programs are test cases.
+
+
+@section Simple tests using @samp{parallel-tests}
+@cindex @option{parallel-tests}, Using
+The option @option{parallel-tests} (@pxref{Options}) enables a test
+suite driver that is mostly compatible to the simple test driver
+described above, but provides a few more features and slightly different
+semantics.  It features concurrent execution of tests with @code{make -j},
+allows to specify inter-test dependencies, lazy reruns of tests that
+have not completed in a prior run, summary and verbose output in
+@samp{RST} (reStructuredText) and @samp{HTML} format, and hard errors
+for exceptional failures.  Similar to the simple test driver,
+@code{TESTS_ENVIRONMENT}, @code{AM_COLOR_TESTS}, @code{XFAIL_TESTS}, and
+the @code{check_*} variables are honored, and the environment variable
+@env{srcdir} is set during test execution.
+
+@vindex TEST_SUITE_LOG
+@vindex TEST_LOGS
+The driver operates by defining a set of @command{make} rules to create
+a summary log file, @code{TEST_SUITE_LOG}, which defaults to
+@file{test-suite.log} and requires a @file{.log} suffix.  This file
+depends upon log files created for each single test program listed in
+@code{TESTS}, which in turn contain all output produced by the
+corresponding tests.
+
+@vindex TEST_EXTENSIONS
+Each log file is created when the corresponding test has completed.
+The set of log files is listed in the read-only variable
+@code{TEST_LOGS}, and defaults to @code{TESTS}, with the executable
+extension if any (@pxref{EXEEXT}), as well as any suffix listed in
+@code{TEST_EXTENSIONS} removed, and @file{.log} appended.
+@code{TEST_EXTENSIONS} defaults to @file{.test}.  Results are undefined
+if a test file name ends in several concatenated suffixes.
+
+@vindex VERBOSE
+As with the simple driver above, by default one status line is printed
+per completed test, and a short summary after the suite has completed.
+However, standard output and standard error of the test are redirected
+to a per-test log file, so that parallel execution does not produce
+intermingled output.  The output from failed tests is collected in the
+@file{test-suite.log} file.  If the variable @samp{VERBOSE} is set, this
+file is output after the summary.  For best results, the tests should be
+verbose by default now.
+
+@trindex mostlyclean
+@trindex check-html
+@vindex RST2HTML
+@vindex TEST_SUITE_HTML
+With @code{make check-html}, the log files may be converted from RST
+(reStructuredText, see @uref{http://docutils.sourceforge.net/@/rst.html})
+to HTML using @samp{RST2HTML}, which defaults to @command{rst2html} or
+@command{rst2html.py}.  The variable @samp{TEST_SUITE_HTML} contains the
+set of converted log files.  The log and HTML files are removed upon
+@code{make mostlyclean}.
+
+@vindex DISABLE_HARD_ERRORS
+@cindex Exit status 99, special interpretation
+@cindex hard error
+Even in the presence of expected failures (see @code{XFAIL_TESTS}, there
+may be conditions under which a test outcome needs attention.  For
+example, with test-driven development, you may write tests for features
+that you have not implemented yet, and thus mark these tests as expected
+to fail.  However, you may still be interested in exceptional conditions,
+for example, tests that fail due to a segmentation violation or another
+error that is independent of the feature awaiting implementation.
+Tests can exit with an exit status of 99 to signal such a @emph{hard
+error}.  Unless the variable @code{DISABLE_HARD_ERRORS} is set to a
+nonempty value, such tests will be counted as failed.
+
+@vindex LAZY_TEST_SUITE
+By default, all tests listed in @code{TESTS} are run upon @code{make
+check}.  When @code{LAZY_TEST_SUITE} is nonempty, then log files of
+a previous run are not removed before starting the test suite, so only
+tests that have not yet been completed are run, as well as tests that
+have been modified after the previous run.
+
+In order to guarantee an ordering between tests even with @code{make
+-j@var{N}}, dependencies between the corresponding log files may be
+specified through usual @command{make} dependencies.  For example, the
+following snippet lets the test named @file{foo-execute.test} depend
+upon completion of the test @file{foo-compile.test}:
+
+@example
+TESTS = foo-compile.test foo-execute.test
+foo-execute.log: foo-compile.log
+@end example
+
+@noindent
+Please note that this ordering ignores the @emph{results} of required
+tests, thus the test @file{foo-execute.test} is run even if the test
+@file{foo-compile.test} failed or was skipped beforehand.
+
+@cindex Unit tests
+The combination of lazy test execution and correct dependencies between
+tests and their sources may be exploited for efficient unit testing
+during development.  To further speed up the edit-compile-test cycle, it
+may even be useful to specify compiled programs in @code{EXTRA_PROGRAMS}
+instead of with @code{check_PROGRAMS}, as the former allows intertwined
+compilation and test execution (but note that @code{EXTRA_PROGRAMS} are
+not cleaned automatically, @pxref{Uniform}).
+
+The variables @code{TESTS} and @code{XFAIL_TESTS} may contain
+conditional parts as well as configure substitutions.  In the latter
+case, however, certain restrictions apply: substituted test names
+must end with a nonempty test suffix like @file{.test}, so that one of
+the inference rules generated by @command{automake} can apply.  For
+literal test names, @command{automake} can generate per-target rules
+to avoid this limitation.
+
 
 @section DejaGnu Tests
 
@@ -8680,6 +8790,12 @@ are ordinarily automatically provided by Automake.
 @opindex no-texinfo.tex
 Don't require @file{texinfo.tex}, even if there are texinfo files in
 this directory.
+
+@item @option{parallel-tests}
+@cindex Option, @option{parallel-tests}
+@opindex parallel-tests
+Enable test suite driver for @code{TESTS} that can run tests in parallel
+(@pxref{Tests}, for more information).
 
 @item @option{readme-alpha}
 @cindex Option, @option{readme-alpha}
