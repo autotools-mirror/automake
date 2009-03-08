@@ -480,6 +480,11 @@ overrid.test \
 parallel-am.test \
 parallel-am2.test \
 parallel-am3.test \
+parallel-tests.test \
+parallel-tests2.test \
+parallel-tests3.test \
+parallel-tests4.test \
+parallel-tests5.test \
 parse.test \
 percent.test \
 percent2.test \

@@ -1,0 +1,59 @@
+#! /bin/sh
+# Copyright (C) 2009  Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check parallel-tests features:
+# - check-html
+
+required=rst2html
+. ./defs-p || Exit 1
+
+set -e
+
+cat >> configure.in << 'END'
+AC_OUTPUT
+END
+
+cat > Makefile.am << 'END'
+TEST_SUITE_LOG = mylog.log
+TESTS = foo.test bar.test baz.test
+END
+
+cat >>foo.test <<'END'
+#! /bin/sh
+echo "this is $0"
+exit 0
+END
+cat >>bar.test <<'END'
+#! /bin/sh
+echo "this is $0"
+exit 99
+END
+cat >>baz.test <<'END'
+#! /bin/sh
+echo "this is $0"
+exit 1
+END
+chmod a+x foo.test bar.test baz.test
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE -a
+
+./configure
+$MAKE check-html >stdout && { cat stdout; Exit 1; }
+cat stdout
+test -f mylog.html
+:
