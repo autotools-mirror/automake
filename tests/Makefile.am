@@ -1,4 +1,5 @@
 ## Process this file with automake to create Makefile.in
+AUTOMAKE_OPTIONS = parallel-tests
 
 XFAIL_TESTS = 					\
 all.test					\
@@ -682,7 +683,7 @@ EXTRA_DIST = ChangeLog-old $(TESTS)
 # Each test case depends on defs, aclocal, and automake.
 check_SCRIPTS = defs aclocal-$(APIVERSION) automake-$(APIVERSION)
 
-distclean-local: check-clean-local
+clean-local: check-clean-local
 
 check-clean-local:
 	-chmod -R u+rwx *.dir
