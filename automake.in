@@ -1115,12 +1115,40 @@ sub backname ($)
 
 # verbose_var (NAME)
 # ------------------
-# The naming policy for the variables used to implement `silent'.
+# The public variable stem used to implement `silent'.
 sub verbose_var ($)
+{
+    my ($name) = @_;
+    return 'AM_V_' . $name;
+}
+
+# verbose_private_var (NAME)
+# --------------------------
+# The naming policy for the private variables used to implement `silent'.
+sub verbose_private_var ($)
 {
     my ($name) = @_;
     return 'am__v_' . $name;
 }
+
+# define_verbose_var (NAME, VAL)
+# ------------------------------
+# For `silent' mode, setup VAR and dispatcher, to expand to VAL if silent.
+sub define_verbose_var ($$)
+{
+    my ($name, $val) = @_;
+    my $var = verbose_var ($name);
+    my $pvar = verbose_private_var ($name);
+    if (option 'silent')
+      {
+	# Using `$V' instead of `$(V)' breaks IRIX make.
+	define_variable ($var, '$(' . $pvar . '_$(V))', INTERNAL);
+	define_variable ($pvar . '_', $val, INTERNAL);
+	define_variable ($pvar . '_0', $val, INTERNAL);
+      }
+}
+
+# Above should not be needed in the general automake code.
 
 # verbose_flag (NAME)
 # -------------------
@@ -1133,16 +1161,6 @@ sub verbose_flag ($)
     return '';
 }
 
-# verbose_dispatch (VAR)
-# ----------------------
-# Recursive variable dispatch string.
-sub verbose_dispatch ($)
-{
-    my ($var) = @_;
-    # Using `$V' instead of `$(V)' breaks IRIX make.
-    return '$(' . $var . '_$(V))';
-}
-
 # silent_flag
 # -----------
 # Contents of %SILENT%: variable to expand to `@' when silent.
@@ -1151,40 +1169,16 @@ sub silent_flag ()
     return verbose_flag ('at');
 }
 
-# define_verbose_var (VAR, VAL)
-# -----------------------------
-# For `silent' mode, setup VAR and dispatcher, to expand to VAL if silent.
-sub define_verbose_var ($$)
-{
-    my ($var, $val) = @_;
-    if (option 'silent')
-      {
-	define_variable ($var, verbose_dispatch ($var), INTERNAL);
-	define_variable ($var . '_', $val, INTERNAL);
-	define_variable ($var . '_0', $val, INTERNAL);
-      }
-}
-
 # define_verbose_tagvar (NAME)
 # ----------------------------
 # Engage the needed `silent' machinery for tag NAME.
 sub define_verbose_tagvar ($)
 {
     my ($name) = @_;
-    my $var = verbose_var ($name);
-    if (option 'silent' && !vardef ($var, TRUE))
+    if (option 'silent')
       {
-	Automake::Variable::define ($var, VAR_AUTOMAKE, '', TRUE,
-				    verbose_dispatch ($var),
-				    '', INTERNAL, VAR_ASIS);
-	Automake::Variable::define ($var . '_' , VAR_AUTOMAKE, '', TRUE,
-				    '$(' . $var . '_0)',
-				    '', INTERNAL, VAR_ASIS);
-	Automake::Variable::define ($var . '_0', VAR_AUTOMAKE, '', TRUE,
-				    '@echo "  '. $name . ' ' x (6 - length ($name)) . '" $@;',
-				    '', INTERNAL, VAR_ASIS);
-	my $silent = verbose_var ('at');
-	define_verbose_var ($silent, '@');
+	define_verbose_var ($name, '@echo "  '. $name . ' ' x (6 - length ($name)) . '" $@;');
+	define_verbose_var ('at', '@');
       }
 }
 
@@ -1193,10 +1187,8 @@ sub define_verbose_tagvar ($)
 # Engage the needed `silent' machinery for `libtool --silent'.
 sub define_verbose_libtool ()
 {
-    my $var = verbose_var ('lt');
-    my $flag = verbose_flag ('lt');
-    define_verbose_var ($var, '--silent');
-    return $flag;
+    define_verbose_var ('lt', '--silent');
+    return verbose_flag ('lt');
 }
 
 
