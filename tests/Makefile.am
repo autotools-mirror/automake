@@ -241,6 +241,7 @@ distdir.test \
 distname.test \
 dollar.test \
 dollarvar.test \
+dollarvar2.test \
 double.test \
 dup2.test \
 else.test \

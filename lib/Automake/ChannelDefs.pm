@@ -281,6 +281,8 @@ sub switch_warning ($)
   elsif (channel_type ($cat) eq 'warning')
     {
       setup_channel $cat, silent => $has_no;
+      setup_channel 'portability-recursive', silent => $has_no
+        if $cat eq 'portability';
     }
   else
     {
