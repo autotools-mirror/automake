@@ -145,7 +145,7 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	results=`for f in $$list; do					\
 		   read line < $$f && echo "$$line" || echo FAIL;	\
 		 done`;							\
-	all=`echo "$$results" | wc -l | sed -e 's/^[	 ]*//'`;	\
+	all=`echo "$$results" | sed '/^$$/d' | wc -l | sed -e 's/^[	 ]*//'`; \
 	fail=`echo "$$results" | grep -c '^FAIL'`;			\
 	pass=`echo "$$results" | grep -c '^PASS'`;			\
 	skip=`echo "$$results" | grep -c '^SKIP'`;			\
@@ -223,7 +223,10 @@ check-TESTS:
 	    && test -n "$(TEST_SUITE_LOG)$(TEST_LOGS)"; then 		\
 	  rm -f $(TEST_SUITE_LOG) $(TEST_LOGS);	\
 	fi
-	@$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG)
+	@set_logs=; if test "X$(TEST_LOGS)" = X.log; then		\
+	  set_logs=TEST_LOGS=;						\
+	fi;								\
+	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG) $$set_logs
 .MAKE: check-TESTS
 
 
