@@ -266,6 +266,7 @@ extra5.test \
 extra6.test \
 extra7.test \
 f90only.test \
+flavor.test \
 flibs.test \
 fn99.test \
 fn99subdir.test \
