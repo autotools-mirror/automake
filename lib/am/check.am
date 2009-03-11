@@ -184,23 +184,26 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	    msg="$$msg($$skip tests were not run).  ";			\
 	  fi;								\
 	fi;								\
+	{								\
+	  echo "$(PACKAGE_STRING): $(subdir)/$(TEST_SUITE_LOG)" |	\
+	    $(am__rst_title);						\
+	  echo "$$msg";							\
+	  echo;								\
+	  echo ".. contents:: :depth: 2";				\
+	  echo;								\
+	  for f in $$list; do						\
+	    read line < $$f;						\
+	    case $$line in						\
+	      SKIP:*|PASS:*|XFAIL:*);;					\
+	      *) echo; cat $$f;;					\
+	    esac;							\
+	  done;								\
+	} >$(TEST_SUITE_LOG).tmp;					\
+	mv $(TEST_SUITE_LOG).tmp $(TEST_SUITE_LOG);			\
+	if test -n '$(LAZY_TEST_SUITE)'; then				\
+	  msg="$${msg}(tests were rerun lazily).  ";			\
+	fi;								\
 	if test "$$failures" -ne 0; then				\
-	  {								\
-	    echo "$(PACKAGE_STRING): $(subdir)/$(TEST_SUITE_LOG)" |	\
-	      $(am__rst_title);						\
-	    echo "$$msg";						\
-	    echo;							\
-	    echo ".. contents:: :depth: 2";				\
-	    echo;							\
-	    for f in $$list; do						\
-	      read line < $$f;						\
-	      case $$line in						\
-	        SKIP:*|PASS:*|XFAIL:*);;				\
-	        *) echo; cat $$f;;					\
-	      esac;							\
-	    done;							\
-	  } >$(TEST_SUITE_LOG).tmp;					\
-	  mv $(TEST_SUITE_LOG).tmp $(TEST_SUITE_LOG);			\
 	  msg="$${msg}See $(subdir)/$(TEST_SUITE_LOG).  ";		\
 	  if test -n "$(PACKAGE_BUGREPORT)"; then			\
 	    msg="$${msg}Please report to $(PACKAGE_BUGREPORT).  ";	\
@@ -219,10 +222,20 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 
 # Run all the tests.
 check-TESTS:
-	@if test -z '$(LAZY_TEST_SUITE)'				\
-	    && test -n "$(TEST_SUITE_LOG)$(TEST_LOGS)"; then 		\
-	  rm -f $(TEST_SUITE_LOG) $(TEST_LOGS);	\
+## Expand $(TEST_LOGS) only once, to avoid exceeding line length limits.
+	@list='$(TEST_LOGS)'; if test -z '$(LAZY_TEST_SUITE)'		\
+	  && test -n "$$list"; then					\
+	  rm -f $$list;							\
 	fi
+## We always have to remove TEST_SUITE_LOG, to ensure its rule is run
+## in any case even in lazy mode: otherwise, if no test needs rerunning,
+## or a prior run plus reruns all happen within the same timestamp
+## (can happen with a prior `make TESTS=<subset>'),
+## then we get no log output.
+## OTOH, this means that, in the rule for `$(TEST_SUITE_LOG)', we
+## cannot use `$?' to compute the set of lazily rerun tests, lest
+## we rely on .PHONY to work portably.
+	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
 	@set_logs=; if test "X$(TEST_LOGS)" = X.log; then		\
 	  set_logs=TEST_LOGS=;						\
 	fi;								\

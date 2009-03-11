@@ -20,6 +20,7 @@
 # - TEST_SUITE_LOG
 # - dependencies between tests
 # - DISABLE_HARD_ERRORS
+# - LAZY_TEST_SUITE
 
 . ./defs-p || Exit 1
 
@@ -100,6 +101,30 @@ test -f baz.log
 test -f bar.log
 test ! -f foo.log
 test -f mylog.log
+
+# Upon a lazy rerun, foo.test should be run, but the others shouldn't.
+# Note that the lazy rerun still exits with a failure, due to the previous
+# test failures.
+# Note that the previous test and this one taken together expose the timing
+# issue that requires the check-TESTS rule to always remove TEST_SUITE_LOG
+# before running the tests lazily.
+env LAZY_TEST_SUITE=yes $MAKE -e check > stdout && { cat stdout; Exit 1; }
+cat stdout
+test -f foo.log
+grep foo.test stdout
+grep bar.test stdout && Exit 1
+grep baz.test stdout && Exit 1
+grep '2.*tests.*failed' stdout
+grep 'lazily' stdout
+
+# Now, explicitly retry with all test logs already updated, and ensure
+# that the summary is still displayed.
+env LAZY_TEST_SUITE=yes $MAKE -e check > stdout && { cat stdout; Exit 1; }
+cat stdout
+grep foo.test stdout && Exit 1
+grep bar.test stdout && Exit 1
+grep baz.test stdout && Exit 1
+grep '2.*tests.*failed' stdout
 
 # Test VERBOSE.
 env VERBOSE=yes $MAKE -e check > stdout && { cat stdout; Exit 1; }
