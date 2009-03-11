@@ -4801,6 +4801,7 @@ sub handle_tests
 						GENERIC => 0,
 						OBJ => $obj,
 						SOURCE => $val,
+						COMPILE => '',
 						EXT => '');
 	        return $obj;
 	      });
@@ -4825,12 +4826,21 @@ sub handle_tests
 	      $post = '.log';
 	      $prev = $cur;
 	      $nhelper++;
-	      $output_rules .= file_contents ('check2', new Automake::Location,
-					      GENERIC => 1,
-					      OBJ => '',
-					      SOURCE => '$<',
-					      EXT => $test_suffix)
-		if $test_suffix ne $at_exeext && $test_suffix ne '';
+	      if ($test_suffix ne $at_exeext && $test_suffix ne '')
+	        {
+		  (my $ext = $test_suffix) =~ s/^\.//;
+		  $ext = uc $ext;
+		  my $compile = $ext . '_LOG_COMPILE';
+		  define_variable ($compile,
+				   '$(' . $ext . '_LOG_COMPILER) $(AM_' .  $ext . '_LOG_FLAGS)'
+				   . ' $(' . $ext . '_LOG_FLAGS)', INTERNAL);
+		  $output_rules .= file_contents ('check2', new Automake::Location,
+						  GENERIC => 1,
+						  OBJ => '',
+						  SOURCE => '$<',
+						  COMPILE => '$(' . $compile . ')' ,
+						  EXT => $test_suffix);
+	        }
 	    }
 
 	  define_variable ('TEST_LOGS_TMP', '$(TEST_LOGS:.log=.log-t)', INTERNAL);

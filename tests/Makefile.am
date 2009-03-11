@@ -1,5 +1,4 @@
 ## Process this file with automake to create Makefile.in
-AUTOMAKE_OPTIONS = parallel-tests
 
 XFAIL_TESTS =					\
 all.test					\
@@ -486,6 +485,7 @@ parallel-tests3.test \
 parallel-tests4.test \
 parallel-tests5.test \
 parallel-tests6.test \
+parallel-tests7.test \
 parse.test \
 percent.test \
 percent2.test \
