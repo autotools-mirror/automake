@@ -30,7 +30,7 @@ EOF
 
 cat > Makefile.am <<'EOF'
 if SILENT
-my_verbose = $(my_verbose_$V)
+my_verbose = $(my_verbose_$(V))
 my_verbose_ = $(my_verbose_0)
 my_verbose_0 = @echo GEN $@;
 endif
@@ -46,8 +46,7 @@ EOF
 : >foo.in
 
 $ACLOCAL
-# FIXME: it should not be necessary to disable Wportability here.
-$AUTOMAKE --add-missing -Wno-portability --silent-rules
+$AUTOMAKE --add-missing --silent-rules
 $AUTOCONF
 
 ./configure silent_rules=yes
@@ -69,5 +68,31 @@ $MAKE >stdout || { cat stdout; Exit 1; }
 cat stdout
 grep 'GEN foo' stdout && Exit 1
 grep 'cp ' stdout
+
+$MAKE distclean
+
+# Things should also work with -Wall in AM_INIT_AUTOMAKE.
+cat > configure.in <<'END'
+AC_INIT([silent6], [1.0])
+AM_INIT_AUTOMAKE([-Wall])
+AM_CONDITIONAL([SILENT], [:])
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
+END
+
+$ACLOCAL
+AUTOMAKE_fails --force
+$AUTOMAKE --force -Wno-error
+grep ' --silent-rules' Makefile.in && Exit 1
+$AUTOMAKE --force --silent-rules
+grep ' --silent-rules' Makefile.in
+$AUTOMAKE --force -Wno-all -Wportability --silent-rules
+grep ' --silent-rules' Makefile.in
+
+echo 'AUTOMAKE_OPTIONS = silent' >> Makefile.am
+$AUTOMAKE --force
+grep 'AM_V_GEN' Makefile.in
+$AUTOMAKE --force -Wno-all -Wportability
+grep 'AM_V_GEN' Makefile.in
 
 :

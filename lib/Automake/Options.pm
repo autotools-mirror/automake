@@ -267,6 +267,7 @@ sub _process_option_list (\%$@)
 	     || $_ eq 'no-exeext' || $_ eq 'no-define'
 	     || $_ eq 'std-options'
 	     || $_ eq 'color-tests'
+	     || $_ eq 'silent'
 	     || $_ eq 'cygnus' || $_ eq 'no-dependencies')
 	{
 	  # Explicitly recognize these.
@@ -309,10 +310,6 @@ sub _process_option_list (\%$@)
 	      msg 'unsupported', $where, "unknown warning category `$cat'"
 		if switch_warning $cat;
 	    }
-	}
-      elsif ($_ eq 'silent')
-        {
-	  switch_warning ('no-portability-recursive');
 	}
       else
 	{
