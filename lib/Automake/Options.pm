@@ -267,7 +267,7 @@ sub _process_option_list (\%$@)
 	     || $_ eq 'no-exeext' || $_ eq 'no-define'
 	     || $_ eq 'std-options'
 	     || $_ eq 'color-tests'
-	     || $_ eq 'silent'
+	     || $_ eq 'silent-rules'
 	     || $_ eq 'cygnus' || $_ eq 'no-dependencies')
 	{
 	  # Explicitly recognize these.

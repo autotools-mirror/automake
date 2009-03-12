@@ -1111,11 +1111,11 @@ sub backname ($)
 
 ################################################################
 
-# Silent mode handling functions.
+# `silent-rules' mode handling functions.
 
 # verbose_var (NAME)
 # ------------------
-# The public variable stem used to implement `silent'.
+# The public variable stem used to implement `silent-rules'.
 sub verbose_var ($)
 {
     my ($name) = @_;
@@ -1124,7 +1124,7 @@ sub verbose_var ($)
 
 # verbose_private_var (NAME)
 # --------------------------
-# The naming policy for the private variables used to implement `silent'.
+# The naming policy for the private variables for `silent-rules'.
 sub verbose_private_var ($)
 {
     my ($name) = @_;
@@ -1133,13 +1133,13 @@ sub verbose_private_var ($)
 
 # define_verbose_var (NAME, VAL)
 # ------------------------------
-# For `silent' mode, setup VAR and dispatcher, to expand to VAL if silent.
+# For `silent-rules' mode, setup VAR and dispatcher, to expand to VAL if silent.
 sub define_verbose_var ($$)
 {
     my ($name, $val) = @_;
     my $var = verbose_var ($name);
     my $pvar = verbose_private_var ($name);
-    if (option 'silent')
+    if (option 'silent-rules')
       {
 	# Using `$V' instead of `$(V)' breaks IRIX make.
 	define_variable ($var, '$(' . $pvar . '_$(V))', INTERNAL);
@@ -1157,7 +1157,7 @@ sub verbose_flag ($)
 {
     my ($name) = @_;
     return '$(' . verbose_var ($name) . ')'
-      if (option 'silent');
+      if (option 'silent-rules');
     return '';
 }
 
@@ -1171,11 +1171,11 @@ sub silent_flag ()
 
 # define_verbose_tagvar (NAME)
 # ----------------------------
-# Engage the needed `silent' machinery for tag NAME.
+# Engage the needed `silent-rules' machinery for tag NAME.
 sub define_verbose_tagvar ($)
 {
     my ($name) = @_;
-    if (option 'silent')
+    if (option 'silent-rules')
       {
 	define_verbose_var ($name, '@echo "  '. $name . ' ' x (6 - length ($name)) . '" $@;');
 	define_verbose_var ('at', '@');
@@ -1184,7 +1184,7 @@ sub define_verbose_tagvar ($)
 
 # define_verbose_libtool
 # ----------------------
-# Engage the needed `silent' machinery for `libtool --silent'.
+# Engage the needed `silent-rules' machinery for `libtool --silent'.
 sub define_verbose_libtool ()
 {
     define_verbose_var ('lt', '--silent');
@@ -1216,7 +1216,7 @@ sub handle_options
 
   # Override portability-recursive warning.
   switch_warning ('no-portability-recursive')
-    if option 'silent';
+    if option 'silent-rules';
 
   if ($strictness == GNITS)
     {
@@ -1654,7 +1654,7 @@ sub handle_languages
 	define_linker_variable ($languages{'c'});
       }
 
-    # Always provide the user with `AM_V_GEN' for `silent' mode.
+    # Always provide the user with `AM_V_GEN' for `silent-rules' mode.
     define_verbose_tagvar ('GEN');
 }
 
@@ -4180,7 +4180,7 @@ sub handle_configure ($$$@)
 
   my $automake_options = '--' . (global_option 'cygnus' ? 'cygnus' : $strictness_name)
 			 . (global_option 'no-dependencies' ? ' --ignore-deps' : '')
-			 . (global_option 'silent' ? ' --silent-rules' : '');
+			 . (global_option 'silent-rules' ? ' --silent-rules' : '');
 
   $output_rules .= file_contents
     ('configure',
@@ -8148,7 +8148,8 @@ sub parse_arguments ()
      'o|output-dir=s'	=> \$output_directory,
      'a|add-missing'	=> \$add_missing,
      'c|copy'		=> \$copy_missing,
-     'silent-rules'	=> sub { set_global_option ('silent', $cli_where); },
+     'silent-rules'	=> sub { set_global_option ('silent-rules',
+						    $cli_where); },
      'v|verbose'	=> sub { setup_channel 'verb', silent => 0; },
      'W|warnings=s'     => \&parse_warnings,
      # These long options (--Werror and --Wno-error) for backward
