@@ -1,3 +1,149 @@
+2009-03-12  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	Rename `silent' mode to `silent-rules' mode.
+	* automake.in (define_verbose_var, verbose_flag)
+	(define_verbose_tagvar, handle_options, handle_languages)
+	(handle_configure, parse_arguments): Rename the `silent' option
+	to `silent-rules', so it coincides with the `--silent-rules'
+	command line option; adjust all code and comments.
+	* lib/Automake/Options.pm (_process_option_list): Likewise.
+	* doc/automake.texi (Invoking Automake, Libtool Flags, Options):
+	Likewise.
+	* NEWS: Adjust.
+	* tests/dollarvar.test, tests/silent.test, tests/silent2.test,
+	tests/silent3.test, tests/silent4.test, tests/silent5.test,
+	tests/silent6.test, tests/silent7.test: Likewise.
+	Suggestion by Jan Engelhardt.
+
+2009-03-11  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	`silent' mode unconditionally overrides portability-recursive.
+	* automake.in (parse_arguments): Don't handle a global `silent'
+	option here; instead, ...
+	(handle_options): ... handle the "normal" `silent' option here.
+	Override `portability-recursive' here, at the last point we deal
+	with options, instead ...
+	* lib/Automake/Options.pm (_process_option_list): ... of here.
+	* tests/silent6.test: Replace unportable make snippet, remove
+	FIXME note, add more test cases of options passed in the various
+	locations.
+
+	Drop extra line from compile rules when `silent' is not used.
+	* lib/am/depend2.am [!%FASTDEP%]: Only use the `%VERBOSE%
+	@AM_BACKSLASH@' extra line if ?VERBOSE?.
+	Report by Ralf Corsepius.
+
+2009-03-10  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	Keep `--silent-rules' across triggered automake reruns.
+	* automake.in (usage): Reformat to be a bit clearer.
+	(handle_configure): Remove substitutions %STRICTNESS% and
+	%USE-DEPS% in favor of a new substitution %AUTOMAKE-OPTIONS%
+	that carries over all needed flags.
+	* lib/am/configure.am (%MAKEFILE-IN%): Adjust rule.
+	* tests/flavor.test: New test, to ensure --$flavor (gnu,
+	gnits, foreign, cygnus), --ignore-deps, and --silent-rules are
+	preserved across automake reruns.
+	* tests/Makefile.am: Update.
+
+2009-03-09  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	Provide variables for silencing of user rules.
+	* automake.in (handle_languages): Always define `AM_V_GEN' and
+	`AM_V_at'.
+	* doc/automake.texi (Options): Document these flags.
+	* tests/silent7.test: New test.
+	* tests/Makefile.am: Update.
+
+	Redo variable naming for `silent' machinery.
+	The public variables are named `AM_V_' plus the compiler
+	short-hand now, e.g.: AM_V_CC, AM_V_CXXLD, AM_V_GEN.  The
+	dispatch variables are internal details and begin with
+	`am__v_'.
+	* automake.in (verbose_var): Update comment.
+	(verbose_private_var): New function.  Order functions so that
+	ones not needed outside this section are listed first.
+	(verbose_dispatch): Remove, no need to factor this.
+	(define_verbose_var, define_verbose_libtool): Use
+	verbose_private_var.
+	(define_verbose_tagvar): Likewise; and simplify.
+	Report by Jan Engelhardt.
+
+	Let -Wportability turn on/off the portability-recursive channel.
+	* lib/Automake/ChannelDefs.pm (switch_warning): switch
+	`portability-recursive' channel as well if changing the
+	`portability' channel.
+	* tests/dollarvar2.test: New test.
+	* tests/Makefile.am: Update.
+
+2009-03-07  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	New automake command line option `--silent-rules'.
+	* automake.in (parse_arguments): Accept `--silent-rules; let it
+	override command line warning settings.
+	(usage): Document it.
+	* doc/automake.texi (Invoking Automake): Document it.
+	* NEWS: Update.
+	* tests/dollarvar.test: Also test `--silent-rules'.
+	* tests/pr300-ltlib.test: Use `$MAKE V=1' to enable verbose
+	output, which is matched later in the test.
+	* tests/silent6.test: New test.
+	* tests/Makefile.am: Update.
+
+	Documentation and tests for the `silent' option.
+	* NEWS: Update.
+	* doc/automake.texi (Invoking Automake): `silent' turns off some
+	portability warnings.
+	(Libtool Flags): `silent' silences libtool.
+	(Options): Document the `silent' flag.
+	* tests/dollarvar.test, tests/silent.test, tests/silent2.test,
+	tests/silent3.test, tests/silent4.test, tests/silent5.test: New
+	tests.
+	* tests/Makefile.am: Update.
+	* Makefile.am (maintainer-check): Ignore `DESTDIR' and `V' when
+	checking for make variables that should not be overridden from
+	the command line.
+
+2009-03-07  Jan Engelhardt  <jengelh@medozas.de>
+	    Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	Implement `silent' build rules.
+	* automake.in (ccer): New field in the language structure.
+	Initialize it for all registered languages.
+	(verbose_var, verbose_flag, verbose_dispatch)
+	(silent_flag, define_verbose_var, define_verbose_tagvar)
+	(define_verbose_libtool): New functions.
+	(handle_languages, handle_programs, handle_libraries)
+	(handle_ltlibraries, handle_configure)
+	(define_compiler_variable, define_linker_variable)
+	(define_per_target_linker_variable): Use them where appropriate
+	to define variables to implement the silent output machinery.
+	* lib/Automake/Options.pm (_process_option_list): Accept
+	`silent', turning off `portability-recursive'.
+	* lib/am/depend2.am: Add %VERBOSE% and %SILENT% prefixes where
+	appropriate.
+	* lib/am/lex.am: Likewise.
+	* lib/am/library.am: Likewise.
+	* lib/am/ltlibrary.am: Likewise.
+	* lib/am/program.am: Likewise.
+	* lib/am/yacc.am: Likewise.
+	* m4/init.m4 (AM_INIT_AUTOMAKE): Substitute, but do not define,
+	AM_BACKSLASH.
+	* tests/defs.in: Unset `V', to avoid influencing inner tests.
+
+2009-03-07  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	New channel `portability-recursive'.
+	Add new channel for portability warnings about recursive make
+	variable expansions `$(var1$(var2))'.  Enable it alongside
+	`-Wportability'.
+	* lib/Automake/ChannelDefs.pm (Automake::ChannelDefs): Register
+	channel `portability-recursive'.
+	* lib/Automake/Variable.pm (_VARIABLE_CHARACTERS)
+	(_VARIABLE_RECURSIVE_PATTERN): New variables.
+	(check_variable_expansions): Diagnose recursive variable
+	expansions through the new channel.
+
 2009-03-14  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
 
 	* NEWS: Update.

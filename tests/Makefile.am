@@ -240,6 +240,8 @@ distcom7.test \
 distdir.test \
 distname.test \
 dollar.test \
+dollarvar.test \
+dollarvar2.test \
 double.test \
 dup2.test \
 else.test \
@@ -264,6 +266,7 @@ extra5.test \
 extra6.test \
 extra7.test \
 f90only.test \
+flavor.test \
 flibs.test \
 fn99.test \
 fn99subdir.test \
@@ -534,6 +537,13 @@ rulepat.test \
 sanity.test \
 scripts.test \
 seenc.test \
+silent.test \
+silent2.test \
+silent3.test \
+silent4.test \
+silent5.test \
+silent6.test \
+silent7.test \
 sinclude.test \
 srcsub.test \
 srcsub2.test \

@@ -2515,6 +2515,10 @@ Ordinarily each @file{Makefile.in} is created in the directory of the
 corresponding @file{Makefile.am}.  This option is deprecated and will be
 removed in a future release.
 
+@item --silent-rules
+@opindex --silent-rules
+Enable the @option{silent-rules} option globally (@pxref{Options}).
+
 @item -v
 @itemx --verbose
 @opindex -v
@@ -2562,6 +2566,8 @@ variables.
 The categories output by default are @samp{syntax} and
 @samp{unsupported}.  Additionally, @samp{gnu} and @samp{portability}
 are enabled in @option{--gnu} and @option{--gnits} strictness.
+On the other hand, the @option{silent-rules} options (@pxref{Options})
+turns off portability warnings about recursive variable expansions.
 
 @vindex WARNINGS
 The environment variable @env{WARNINGS} can contain a comma separated
@@ -5261,7 +5267,9 @@ setting.
 The libtool rules also use a @code{LIBTOOLFLAGS} variable that should
 not be set in @file{Makefile.am}: this is a user variable (@pxref{Flag
 Variables Ordering}.  It allows users to run @samp{make
-LIBTOOLFLAGS=--silent}, for instance.
+LIBTOOLFLAGS=--silent}, for instance.  Note that the verbosity of
+@command{libtool} can also be influenced with the Automake
+@option{silent-rules} option (@pxref{Options}).
 
 
 @node LTLIBOBJS, Libtool Issues, Libtool Flags, A Shared Library
@@ -8692,6 +8700,46 @@ element is a number; the final period and number should be left off for
 non-alpha releases.  The second form is
 @samp{@var{MAJOR}.@var{MINOR}@var{ALPHA}}, where @var{ALPHA} is a
 letter; it should be omitted for non-alpha releases.
+
+@item @option{silent-rules}
+@cindex Option, @option{silent-rules}
+@opindex silent-rules
+Enable silent build rules.  This will cause many build rules to output a
+status line of the form
+
+@example
+  GEN @var{output-file}
+@end example
+
+@noindent
+instead of printing the command that will be executed to update
+@var{output-file}.  It will also silence @command{libtool} output.
+
+@vindex @code{V}
+The verbosity can be influenced at @command{make} run time by setting the
+variable @code{V}: @samp{make V=0} is equivalent to @code{V} being unset,
+while @samp{make V=1} will produce verbose output.
+
+For portability to different @command{make} implementations, package authors
+are advised to not set the variable @code{V} inside the @file{Makefile.am}
+file, to allow the user to override the value for subdirectories as well.
+
+The current implementation of this feature relies on a non-POSIX, but in
+practice rather widely supported @file{Makefile} construct of nested
+variable expansion @samp{$(@var{var1}$(V))}.  Do not use the
+@option{silent-rules} option if your package needs to build with
+@command{make} implementations that do not support it.  The
+@option{silent-rules} option turns off warnings about recursive variable
+expansion, which are in turn enabled by @option{-Wportability}
+(@pxref{Invoking Automake}).
+
+@vindex @code{AM_V_GEN}
+@vindex @code{AM_V_at}
+To extend the silent mode to your own rules, you can use the predefined
+variable @code{AM_V_GEN} as a prefix to commands that should output a
+status line in silent mode, and @code{AM_V_at} as a prefix to commands
+that should not output anything in silent mode.  With @code{V=1}, these
+variables will expand to empty strings.
 
 @item @option{std-options}
 @cindex Options, @option{std-options}

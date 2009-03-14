@@ -1,4 +1,4 @@
-# Copyright (C) 2002, 2003, 2006, 2008 Free Software Foundation, Inc.
+# Copyright (C) 2002, 2003, 2006, 2008, 2009 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -154,6 +154,7 @@ register_channel 'gnu', type => 'warning';
 register_channel 'obsolete', type => 'warning', silent => 1;
 register_channel 'override', type => 'warning', silent => 1;
 register_channel 'portability', type => 'warning', silent => 1;
+register_channel 'portability-recursive', type => 'warning', silent => 1;
 register_channel 'syntax', type => 'warning';
 register_channel 'unsupported', type => 'warning';
 
@@ -280,6 +281,8 @@ sub switch_warning ($)
   elsif (channel_type ($cat) eq 'warning')
     {
       setup_channel $cat, silent => $has_no;
+      setup_channel 'portability-recursive', silent => $has_no
+        if $cat eq 'portability';
     }
   else
     {
