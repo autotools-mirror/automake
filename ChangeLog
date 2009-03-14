@@ -1,3 +1,121 @@
+2009-03-11  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	Fix LAZY_TEST_SUITE handling and $(TEST_SUITE_LOG) recreation.
+	* lib/am/check.am (check-TESTS): Expand `$(TEST_LOGS)' only once
+	in the rule command, for systems with low command line limits.
+	Remove $(TEST_SUITE_LOG) even in LAZY_TEST_SUITE mode.
+	($(TEST_SUITE_LOG)): Always recreate $(TEST_SUITE_LOG).  Mention
+	lazy mode in the summary output.
+	* tests/parallel-tests.test: Test LAZY_TEST_SUITE semantics.
+
+2009-03-10  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	Fix parallel-tests with empty $(TESTS) for BSD make.
+	* lib/am/check.am [PARALLEL_TESTS] ($(TEST_SUITE_LOG)): Ignore
+	empty line stemming from empty $(TEST_LOGS), to avoid counting
+	zero tests as one.
+	(check-TESTS): If `$(TESTS)' is empty, override TEST_LOGS to be
+	empty, rather than `.log', for BSD make.
+	* tests/parallel-tests6.test: New test.
+	* tests/Makefile.am: Update.
+
+	Mark check-html and check-TESTS as recursive for BSD make.
+	* lib/am/check.am [PARALLEL_TESTS] (.MAKE): Add check-TESTS
+	and check-html prerequisites.
+
+	Match XFAIL_TESTS correctly with Solaris make.
+	* lib/am/check.am [PARALLEL_TESTS]: VPATH rewriting may have
+	changed test names, so srcdir needs to be taken into account
+	explicitly when checking against the list of tests expected
+	to fail.  Fixes spurious FAILures from XFAIL_TESTS.
+
+	Use append mode to capture parallel test output.
+	* tests/lisp8.test: Use append mode for output from `make -j',
+	to avoid dropped lines.
+	* tests/parallel-tests3.test: Likewise.
+
+	parallel-tests: Fix summary output.
+	* lib/am/check.am (am__text_box): Fix unportable sed script,
+	replacing `\n' in the right hand side of an `s' command with
+	a literal newline.  Kudos to Bruno Haible for the newline idea.
+	* tests/parallel-tests.test: Update test to expose this.
+
+2009-03-08  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	Overhaul of tests/README.
+	* tests/README: General overhaul.  Mention parallel test suite
+	execution, the test-suite.log file; document `Exit' vs. `exit',
+	`defs' vs. `defs-p', the naming of `parallel-tests' tests.
+	* README: Simplify, point to tests/README.
+
+	Documentation for the parallel-tests driver.
+	* doc/automake.texi (Tests, Options): Document the `parallel-tests'
+	option, including new features of the test driver.
+	* NEWS: Update.
+
+	New tests for `parallel-tests'.
+	* tests/parallel-tests.test: New file, to expose a bunch of
+	features of `parallel-tests': VERBOSE, clean, TEST_SUITE_LOG,
+	test dependencies, DISABLE_HARD_ERRORS.
+	* tests/parallel-tests2.test: New file, test check-html.
+	* tests/parallel-tests3.test: New file, test concurrency.
+	* tests/parallel-tests4.test: New file, test suffix rules.
+	* tests/parallel-tests5.test: New file, demonstrate compile/test
+	concurrency.
+	* tests/defs.in: Add a `required' check for rst2html.
+	* tests/Makefile.am: Update.
+
+	parallel-tests: Ensure backward-compatible semantics.
+	For each test in Automake's test suite that uses TESTS, generate
+	an identical one that uses the `parallel-tests' option, for
+	coverage of backward-compatible functionality.
+	* tests/gen-parallel-tests: New file, generates distributed
+	Makefile.am snippet tests/parallel-tests.am to list all tests
+	that use the TESTS interface but not yet the `parallel-tests'
+	option, with names mangled to use suffix `-p.test', in ...
+	(parallel_tests): ... this new make macro.
+	* tests/Makefile.am ($(srcdir)/parallel-tests.am)
+	($(parallel_tests), defs-p): New rules.
+	(TESTS): Add check11.test and $(parallel_tests).
+	(check_SCRIPTS): Add defs-p, $(parallel_tests).
+	(check-clean-local): Remove `defs-p'.
+	(EXTRA_DIST): Distribute gen-parallel-tests.
+	(MAINTAINERCLEANFILES): New variable, remove $(parallel_tests).
+	* bootstrap: Generate parallel-tests.am.
+	* tests/check8.test: Check for circular dependencies in rules.
+	* tests/check11.test: New test, check that SKIPs are not counted
+	as passed tests.
+	* tests/defs.in: Unset DISABLE_HARD_ERRORS, LAZY_TEST_SUITE,
+	VERBOSE, so the tests are not influenced by the way our test
+	suite is invoked.
+
+2009-03-08  Akim Demaille  <akim@lrde.epita.fr>
+	    Jim Meyering  <jim@meyering.net>
+	    Benoit Sigoure  <tsuna@lrde.epita.fr>
+	    Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	Parallel test execution: new option `parallel-tests'.
+	* automake.in (handle_tests): Set new conditional PARALLEL_TESTS
+	when reading check.am.  Handle option `parallel-tests' and all
+	its new semantics.  Define macros TEST_SUFFIXES, TEST_SUITE_LOG,
+	TEST_SUITE_HTML, TEST_LOGS, TEST_LOGS_TMP, suffix rules if
+	applicable, and per-target rules for other tests.  Add all log
+	files to %clean_files at the `MOSTLY_CLEAN' level.
+	* lib/Automake/Options.pm (_process_option_list): Accept
+	`parallel-tests'.
+	* lib/am/check.am [!PARALLEL_TESTS] (check-TESTS): Move existing
+	testsuite driver under this new conditional.
+	[PARALLEL_TESTS]
+	(am__rst_title, am__rst_section, am__text_box am__sh_e_setup)
+	(am__check_pre, am__check_post): New internal macros.
+	($(TEST_SUITE_LOG), check-TESTS, .log.html, check-html): New
+	rules.
+	* lib/am/check2.am: New file.
+	* lib/am/Makefile.am (dist_am_DATA): Add check2.am.
+	* tests/Makefile.am (AUTOMAKE_OPTIONS): Use `parallel-tests'.
+	(clean-local): Renamed from distclean-local.
+	* tests/defs.in: Drop VERBOSE handling, not needed here any more.
+
 2009-03-12  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
 
 	Rename `silent' mode to `silent-rules' mode.

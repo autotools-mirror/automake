@@ -4879,13 +4879,95 @@ sub handle_tests
     {
       push (@check_tests, 'check-TESTS');
       $output_rules .= &file_contents ('check', new Automake::Location,
-				       COLOR => !! option 'color-tests');
+				       COLOR => !! option 'color-tests',
+				       PARALLEL_TESTS => !! option 'parallel-tests');
 
       # Tests that are known programs should have $(EXEEXT) appended.
       # For matching purposes, we need to adjust XFAIL_TESTS as well.
       append_exeext { exists $known_programs{$_[0]} } 'TESTS';
       append_exeext { exists $known_programs{$_[0]} } 'XFAIL_TESTS'
 	if (var ('XFAIL_TESTS'));
+
+      if (option 'parallel-tests')
+        {
+	  define_variable ('TEST_SUITE_LOG', 'test-suite.log', INTERNAL);
+	  define_variable ('TEST_SUITE_HTML', '$(TEST_SUITE_LOG:.log=.html)', INTERNAL);
+	  my $suff = '.test';
+	  my $at_exeext = '';
+	  if (exists $configure_vars{'EXEEXT'})
+	    {
+	      $at_exeext = subst ('EXEEXT');
+	      $suff = $at_exeext  . ' ' . $suff;
+	    }
+	  define_variable ('TEST_EXTENSIONS', $suff, INTERNAL);
+	  # FIXME: this mishandles conditions.
+	  my @test_suffixes = (var 'TEST_EXTENSIONS')->value_as_list_recursive;
+	  if (exists $configure_vars{'EXEEXT'})
+	    {
+	      unshift (@test_suffixes, $at_exeext)
+	        unless $test_suffixes[0] eq $at_exeext;
+	    }
+	  unshift (@test_suffixes, '');
+
+	  transform_variable_recursively
+	    ('TESTS', 'TEST_LOGS', 'am__testlogs', 1, INTERNAL,
+	      sub {
+	        my ($subvar, $val, $cond, $full_cond) = @_;
+		my $obj = $val;
+		return $obj
+		  if $val =~ /^\@.*\@$/;
+		$obj =~ s/\$\(EXEEXT\)$//o;
+		foreach my $test_suffix (@test_suffixes)
+		  {
+		    next
+		      if $test_suffix eq $at_exeext || $test_suffix eq '';
+		    return substr ($obj, 0, length ($obj) - length ($test_suffix)) . '.log'
+		      if substr ($obj, - length ($test_suffix)) eq $test_suffix;
+		  }
+		$obj .= '.log';
+		$output_rules .= file_contents ('check2', new Automake::Location,
+						GENERIC => 0,
+						OBJ => $obj,
+						SOURCE => $val,
+						EXT => '');
+	        return $obj;
+	      });
+
+	  my $nhelper=1;
+	  my $prev = 'TESTS';
+	  my $post = '';
+	  my $last_suffix = $test_suffixes[$#test_suffixes];
+	  my $cur = '';
+	  foreach my $test_suffix (@test_suffixes)
+	    {
+	      if ($test_suffix eq $last_suffix)
+	        {
+		  $cur = 'TEST_LOGS';
+		}
+	      else
+	        {
+		  $cur = 'am__test_logs' . $nhelper;
+		}
+	      define_variable ($cur,
+		'$(' . $prev . ':' . $test_suffix . $post . '=.log)', INTERNAL);
+	      $post = '.log';
+	      $prev = $cur;
+	      $nhelper++;
+	      $output_rules .= file_contents ('check2', new Automake::Location,
+					      GENERIC => 1,
+					      OBJ => '',
+					      SOURCE => '$<',
+					      EXT => $test_suffix)
+		if $test_suffix ne $at_exeext && $test_suffix ne '';
+	    }
+
+	  define_variable ('TEST_LOGS_TMP', '$(TEST_LOGS:.log=.log-t)', INTERNAL);
+
+	  $clean_files{'$(TEST_LOGS_TMP)'} = MOSTLY_CLEAN;
+	  $clean_files{'$(TEST_LOGS)'} = MOSTLY_CLEAN;
+	  $clean_files{'$(TEST_SUITE_LOG)'} = MOSTLY_CLEAN;
+	  $clean_files{'$(TEST_SUITE_HTML)'} = MOSTLY_CLEAN;
+	}
     }
 }
 

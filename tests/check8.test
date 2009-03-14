@@ -67,14 +67,20 @@ $AUTOMAKE -a
 unset TESTS || :
 
 ./configure
-AM_COLOR_TESTS=always $MAKE -e check >stdout && { cat stdout; Exit 1; }
+AM_COLOR_TESTS=always $MAKE -e check >stdout 2>stderr &&
+  { cat stdout; cat stderr >&2; Exit 1; }
 cat stdout
+cat stderr >&2
 grep 'XPASS.* foo$' stdout
 grep '^[^X]*PASS.* sub/foo$' stdout
 grep '^[^X]*PASS.* bar$' stdout
 grep '^[^X]*PASS.* sub/bar$' stdout
 grep '^[^X]*FAIL.* baz$' stdout
 grep 'XFAIL.* sub/baz$' stdout
+# parallel-tests should not add circular dependencies.
+# Look for known warnings from a couple of `make' implementations.
+grep -i 'circular.*dependency' stderr && Exit 1
+grep -i 'graph cycles' stderr && Exit 1
 
 $MAKE distclean
 
