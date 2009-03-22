@@ -75,13 +75,15 @@ am__rst_title   = sed 's/.*/   &   /;h;s/./=/g;p;x;p;g;p;s/.*//'
 am__rst_section = sed 'p;s/./=/g;p;g'
 
 # Put stdin (possibly several lines separated by ".  ") in a box.
-am__text_box = { nlinit=`echo 'nl="'; echo '"'`; eval "$$nlinit"; \
-  sed "s/\\.  /\\$$nl/g"; } | sed '/^$$/d' |			\
-$(AWK) '{ if (final) final = final "\n" $$0; else final = $$0; }\
-max < length($$0) { max = length($$0); }			\
-END {								\
-  for (i = 0; i < max; ++i) line = line "=";			\
-  print line; print final; print line;				\
+am__text_box = $(AWK) '{				\
+  n = split($$0, lines, "\\.  "); max = 0;		\
+  for (i = 1; i <= n; ++i)				\
+    if (max < length(lines[i]))				\
+      max = length(lines[i]);				\
+  for (i = 0; i < max; ++i) line = line "=";		\
+  print line;						\
+  for (i = 1; i <= n; ++i) if (lines[i]) print lines[i];\
+  print line;						\
 }'
 
 # Solaris 10 'make', and several other traditional 'make' implementations,
