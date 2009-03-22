@@ -202,10 +202,16 @@ endif %?TOPDIR_P%
 ## directory exists only in $(srcdir), because some vendor Make (such
 ## as Tru64) will magically create an empty directory in `.'
 	    dir=`echo "/$$file" | sed -e 's,/[^/]*$$,,'`; \
-	    if test -d $(srcdir)/$$file && test $$d != $(srcdir); then \
-	      cp -pR $(srcdir)/$$file "$(distdir)$$dir" || exit 1; \
+## If the destination directory already exists, it may contain read-only
+## files, e.g., during `make distcheck'.
+	    if test -d "$(distdir)/$$file"; then \
+	      find "$(distdir)/$$file" -type d ! -perm -700 -exec chmod u+rwx {} \;; \
 	    fi; \
-	    cp -pR $$d/$$file "$(distdir)$$dir" || exit 1; \
+	    if test -d $(srcdir)/$$file && test $$d != $(srcdir); then \
+	      cp -fpR $(srcdir)/$$file "$(distdir)$$dir" || exit 1; \
+	      find "$(distdir)/$$file" -type d ! -perm -700 -exec chmod u+rwx {} \;; \
+	    fi; \
+	    cp -fpR $$d/$$file "$(distdir)$$dir" || exit 1; \
 	  else \
 ## Test for file existence because sometimes a file gets included in
 ## DISTFILES twice.  For example this happens when a single source
