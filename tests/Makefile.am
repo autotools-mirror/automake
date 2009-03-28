@@ -309,6 +309,7 @@ instsh2.test \
 instsh3.test \
 instdat.test \
 instdat2.test \
+instdir.test \
 instexec.test \
 instfail.test \
 instfail-info.test \
