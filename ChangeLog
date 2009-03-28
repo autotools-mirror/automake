@@ -1,3 +1,124 @@
+2009-03-29  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	Rewrite maintainer-check in separate tests, parallelizable.
+	* Makefile.am (sc_diff_automake_in_automake, sc_perl_syntax)
+	(sc_no_brace_variable_expansions, sc_rm_minus_f)
+	(sc_no_for_variable_in_macro, sc_mkinstalldirs)
+	(sc_pre_normal_post_install_uninstall, sc_perl_no_undef)
+	(sc_perl_no_split_regex_space, sc_cd_in_backquotes)
+	(sc_cd_relative_dir, sc_perl_at_uscore_in_scalar_context)
+	(sc_perl_local_no_parens, sc_perl_local)
+	(sc_AMDEP_TRUE_in_automake_in, sc_tests_make_without_am_makeflags)
+	(sc_tests_plain_make, sc_tests_plain_autoconf)
+	(sc_tests_plain_autoupdate, sc_tests_plain_automake)
+	(sc_tests_here_document_format, sc_tests_Exit_not_exit)
+	(sc_tests_automake_fails, sc_tests_plain_aclocal)
+	(sc_tests_plain_perl, sc_tests_required_after_defs)
+	(sc_tests_overriding_macros_on_cmdline, sc_tests_plain_sleep)
+	(sc_tests_plain_egrep_fgrep, sc_mkdir_p, sc_perl_at_substs)
+	(sc_unquoted_DESTDIR, sc_tabs_in_texi, sc_at_in_texi): New rules,
+	all phony, all listed in ...
+	(syntax_check_rules): ... this new variable and split out from ...
+	(maintainer-check): ... this rule.  Depend on $(syntax_check_rules).
+
+	* Makefile.am (maintainer-check): Do not complain if DESTDIR is
+	passed as argument to `make'.
+
+	* doc/automake.texi (Cross-Compilation): Fix underfull hbox.
+
+	Sync auxiliary files from upstream.
+	* INSTALL, lib/INSTALL, lib/config.guess, lib/config.sub,
+	lib/texinfo.tex: Sync from upstream.
+
+2009-03-28  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	manual: minor cleanups.
+	* doc/automake.texi (Yacc and Lex): Adjust spacing in example.
+	(Mixing Fortran 77 With C and C++): Drop unneeded @page breaks.
+
+	Sane (un)install for empty directory variables.
+	This patch fixes all install and uninstall rules to behave
+	sanely when $(wheredir) is the empty string, but $(where_HOW) is
+	nonempty, for all kinds of values of `where' and `HOW'.
+	* lib/am/data.am (install-%DIR%%PRIMARY%, uninstall-%DIR%%PRIMARY%):
+	Do not touch the install tree if the corresponding directory variable
+	$(%NDIR%dir) is empty.
+	* lib/am/java.am (install-%DIR%JAVA, uninstall-%DIR%JAVA): Likewise.
+	* lib/am/libs.am (install-%DIR%LIBRARIES, uninstall-%DIR%LIBRARIES):
+	Likewise.
+	* lib/am/lisp.am (install-%DIR%LISP, uninstall-%DIR%LISP): Likewise.
+	* lib/am/ltlib.am (install-%DIR%LTLIBRARIES, uninstall-%DIR%LTLIBRARIES):
+	Likewise.
+	* lib/am/mans.am (install-man%SECTION%, uninstall-man%SECTION%):
+	Likewise.
+	* lib/am/progs.am (install-%DIR%PROGRAMS, uninstall-%DIR%PROGRAMS):
+	Likewise.
+	* lib/am/python.am (install-%DIR%PYTHON, uninstall-%DIR%PYTHON):
+	Likewise.
+	* lib/am/scripts.am (install-%DIR%SCRIPTS, uninstall-%DIR%SCRIPTS):
+	Likewise.
+	* lib/am/texinfos.am (install-dvi-am, install-html-am, install-pdf-am)
+	(install-ps-am, uninstall-dvi-am, uninstall-html-am, uninstall-pdf-am)
+	(uninstall-ps-am): Likewise.
+	* tests/instdir2.test, tests/instdir-java.test,
+	tests/instdir-lisp.test, tests/instdir-ltlib.test,
+	tests/instdir-prog.test, tests/instdir-python.test,
+	tests/instdir-texi.test: New tests.
+	* tests/Makefile.am: Update.
+	* NEWS: Update.
+	Suggestion by Akim Demaille.
+
+	Ensure that empty directory variables work with empty content variables.
+	This test ensures that, if both $(wheredir) and $(where_HOW) are
+	the empty string, then the `install' and `uninstall' rules behave
+	sanely, for several directory variables `wheredir' and several
+	primaries `HOW'.
+	* tests/instdir.test: New test.
+	* tests/Makefile.am: Update.
+
+2009-03-23  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	Use --tag=FC with libtool also for .f90 files.
+	* automake.in: Set 'libtool_tag' for language `fc'.
+	* tests/fort5.test: Grep for the tag.
+	* THANKS: Update.
+	Report by John R. Cary.
+
+2009-03-22  Peter Breitenlohner  <peb@mppmu.mpg.de>
+	    Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	For PR automake/533:
+	DISTFILES containing a directory and files in that directory.
+	When the source tree contains non-writable files or directories
+	(as happens during distcheck), and directories or entries
+	thereof are listed multiple times in variables to be
+	distributed, then the corresponding directories below $(distdir)
+	need to be made writable recursively.  Since file modes should
+	not change, they need to be copied recursively using `cp -f'.
+	* lib/am/distdir.am: Handle this situation.
+	* tests/distdir.test: Extend test to those cases.
+	* NEWS: Update.
+	Report by Peter Breitenlohner.
+
+2009-03-22  Jim Meyering  <meyering@redhat.com>
+
+	Fix a documentation typo.
+	* doc/automake.texi (Headers): Clarify the note telling when it's
+	better not to use noinst_HEADERS.
+
+2009-03-22  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	Define AM_RECURSIVE_TARGETS, for gnulib's GNUmakefile.
+	This new macro lists all public targets which invoke `make'
+	recursively, or depend on targets which do so.  It allows to
+	prevent parallelism selectively, when multiple targets are
+	passed on the `make' command line.
+	* lib/am/distdir.am [%?SUBDIRS%] (AM_RECURSIVE_TARGETS): New
+	macro.
+	* lib/am/subdirs.am (AM_RECURSIVE_TARGETS): Likewise.
+	* lib/am/tags.am [%?SUBDIRS%] (AM_RECURSIVE_TARGETS):
+	Likewise.
+
 2009-03-11  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
 
 	Fix LAZY_TEST_SUITE handling and $(TEST_SUITE_LOG) recreation.

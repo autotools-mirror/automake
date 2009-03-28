@@ -329,6 +329,14 @@ instsh2.test \
 instsh3.test \
 instdat.test \
 instdat2.test \
+instdir.test \
+instdir2.test \
+instdir-java.test \
+instdir-lisp.test \
+instdir-ltlib.test \
+instdir-prog.test \
+instdir-python.test \
+instdir-texi.test \
 instexec.test \
 instfail.test \
 instfail-info.test \

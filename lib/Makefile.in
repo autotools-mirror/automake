@@ -87,6 +87,9 @@ am__installdirs = "$(DESTDIR)$(pkgvdatadir)" "$(DESTDIR)$(scriptdir)"
 DATA = $(dist_pkgvdata_DATA) $(dist_script_DATA)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
+AM_RECURSIVE_TARGETS = $(RECURSIVE_TARGETS:-recursive=) \
+	$(RECURSIVE_CLEAN_TARGETS:-recursive=) tags TAGS ctags CTAGS \
+	distdir
 ETAGS = etags
 CTAGS = ctags
 DIST_SUBDIRS = $(SUBDIRS)
@@ -250,7 +253,8 @@ $(am__aclocal_m4_deps):
 install-dist_pkgvdataDATA: $(dist_pkgvdata_DATA)
 	@$(NORMAL_INSTALL)
 	test -z "$(pkgvdatadir)" || $(MKDIR_P) "$(DESTDIR)$(pkgvdatadir)"
-	@list='$(dist_pkgvdata_DATA)'; for p in $$list; do \
+	@list='$(dist_pkgvdata_DATA)'; test -n "$(pkgvdatadir)" || list=; \
+	for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  echo "$$d$$p"; \
 	done | $(am__base_list) | \
@@ -261,7 +265,7 @@ install-dist_pkgvdataDATA: $(dist_pkgvdata_DATA)
 
 uninstall-dist_pkgvdataDATA:
 	@$(NORMAL_UNINSTALL)
-	@list='$(dist_pkgvdata_DATA)'; \
+	@list='$(dist_pkgvdata_DATA)'; test -n "$(pkgvdatadir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	test -n "$$files" || exit 0; \
 	echo " ( cd '$(DESTDIR)$(pkgvdatadir)' && rm -f" $$files ")"; \
@@ -269,7 +273,8 @@ uninstall-dist_pkgvdataDATA:
 install-dist_scriptDATA: $(dist_script_DATA)
 	@$(NORMAL_INSTALL)
 	test -z "$(scriptdir)" || $(MKDIR_P) "$(DESTDIR)$(scriptdir)"
-	@list='$(dist_script_DATA)'; for p in $$list; do \
+	@list='$(dist_script_DATA)'; test -n "$(scriptdir)" || list=; \
+	for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  echo "$$d$$p"; \
 	done | $(am__base_list) | \
@@ -280,7 +285,7 @@ install-dist_scriptDATA: $(dist_script_DATA)
 
 uninstall-dist_scriptDATA:
 	@$(NORMAL_UNINSTALL)
-	@list='$(dist_script_DATA)'; \
+	@list='$(dist_script_DATA)'; test -n "$(scriptdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	test -n "$$files" || exit 0; \
 	echo " ( cd '$(DESTDIR)$(scriptdir)' && rm -f" $$files ")"; \
@@ -437,10 +442,14 @@ distdir: $(DISTFILES)
 	  if test -f $$file || test -d $$file; then d=.; else d=$(srcdir); fi; \
 	  if test -d $$d/$$file; then \
 	    dir=`echo "/$$file" | sed -e 's,/[^/]*$$,,'`; \
-	    if test -d $(srcdir)/$$file && test $$d != $(srcdir); then \
-	      cp -pR $(srcdir)/$$file "$(distdir)$$dir" || exit 1; \
+	    if test -d "$(distdir)/$$file"; then \
+	      find "$(distdir)/$$file" -type d ! -perm -700 -exec chmod u+rwx {} \;; \
 	    fi; \
-	    cp -pR $$d/$$file "$(distdir)$$dir" || exit 1; \
+	    if test -d $(srcdir)/$$file && test $$d != $(srcdir); then \
+	      cp -fpR $(srcdir)/$$file "$(distdir)$$dir" || exit 1; \
+	      find "$(distdir)/$$file" -type d ! -perm -700 -exec chmod u+rwx {} \;; \
+	    fi; \
+	    cp -fpR $$d/$$file "$(distdir)$$dir" || exit 1; \
 	  else \
 	    test -f "$(distdir)/$$file" \
 	    || cp -p $$d/$$file "$(distdir)/$$file" \

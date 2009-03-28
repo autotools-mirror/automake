@@ -239,7 +239,8 @@ $(am__aclocal_m4_deps):
 install-dist_m4dataDATA: $(dist_m4data_DATA)
 	@$(NORMAL_INSTALL)
 	test -z "$(m4datadir)" || $(MKDIR_P) "$(DESTDIR)$(m4datadir)"
-	@list='$(dist_m4data_DATA)'; for p in $$list; do \
+	@list='$(dist_m4data_DATA)'; test -n "$(m4datadir)" || list=; \
+	for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  echo "$$d$$p"; \
 	done | $(am__base_list) | \
@@ -250,7 +251,7 @@ install-dist_m4dataDATA: $(dist_m4data_DATA)
 
 uninstall-dist_m4dataDATA:
 	@$(NORMAL_UNINSTALL)
-	@list='$(dist_m4data_DATA)'; \
+	@list='$(dist_m4data_DATA)'; test -n "$(m4datadir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	test -n "$$files" || exit 0; \
 	echo " ( cd '$(DESTDIR)$(m4datadir)' && rm -f" $$files ")"; \
@@ -278,10 +279,14 @@ distdir: $(DISTFILES)
 	  if test -f $$file || test -d $$file; then d=.; else d=$(srcdir); fi; \
 	  if test -d $$d/$$file; then \
 	    dir=`echo "/$$file" | sed -e 's,/[^/]*$$,,'`; \
-	    if test -d $(srcdir)/$$file && test $$d != $(srcdir); then \
-	      cp -pR $(srcdir)/$$file "$(distdir)$$dir" || exit 1; \
+	    if test -d "$(distdir)/$$file"; then \
+	      find "$(distdir)/$$file" -type d ! -perm -700 -exec chmod u+rwx {} \;; \
 	    fi; \
-	    cp -pR $$d/$$file "$(distdir)$$dir" || exit 1; \
+	    if test -d $(srcdir)/$$file && test $$d != $(srcdir); then \
+	      cp -fpR $(srcdir)/$$file "$(distdir)$$dir" || exit 1; \
+	      find "$(distdir)/$$file" -type d ! -perm -700 -exec chmod u+rwx {} \;; \
+	    fi; \
+	    cp -fpR $$d/$$file "$(distdir)$$dir" || exit 1; \
 	  else \
 	    test -f "$(distdir)/$$file" \
 	    || cp -p $$d/$$file "$(distdir)/$$file" \

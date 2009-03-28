@@ -64,6 +64,10 @@ am__relativize = \
 endif %?SUBDIRS%
 
 .PHONY: distdir
+if %?SUBDIRS%
+AM_RECURSIVE_TARGETS += distdir
+endif %?SUBDIRS%
+
 distdir: $(DISTFILES)
 ##
 ## For Gnits users, this is pretty handy.  Look at 15 lines
@@ -198,10 +202,16 @@ endif %?TOPDIR_P%
 ## directory exists only in $(srcdir), because some vendor Make (such
 ## as Tru64) will magically create an empty directory in `.'
 	    dir=`echo "/$$file" | sed -e 's,/[^/]*$$,,'`; \
-	    if test -d $(srcdir)/$$file && test $$d != $(srcdir); then \
-	      cp -pR $(srcdir)/$$file "$(distdir)$$dir" || exit 1; \
+## If the destination directory already exists, it may contain read-only
+## files, e.g., during `make distcheck'.
+	    if test -d "$(distdir)/$$file"; then \
+	      find "$(distdir)/$$file" -type d ! -perm -700 -exec chmod u+rwx {} \;; \
 	    fi; \
-	    cp -pR $$d/$$file "$(distdir)$$dir" || exit 1; \
+	    if test -d $(srcdir)/$$file && test $$d != $(srcdir); then \
+	      cp -fpR $(srcdir)/$$file "$(distdir)$$dir" || exit 1; \
+	      find "$(distdir)/$$file" -type d ! -perm -700 -exec chmod u+rwx {} \;; \
+	    fi; \
+	    cp -fpR $$d/$$file "$(distdir)$$dir" || exit 1; \
 	  else \
 ## Test for file existence because sometimes a file gets included in
 ## DISTFILES twice.  For example this happens when a single source
@@ -375,6 +385,10 @@ endif %?TOPDIR_P%
 if %?TOPDIR_P%
 
 .PHONY: dist dist-all
+if %?SUBDIRS%
+AM_RECURSIVE_TARGETS += dist dist-all
+endif %?SUBDIRS%
+
 dist dist-all: distdir
 ?GZIP?	tardir=$(distdir) && $(am__tar) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
 ?BZIP2?	tardir=$(distdir) && $(am__tar) | bzip2 -9 -c >$(distdir).tar.bz2
@@ -395,6 +409,10 @@ endif %?TOPDIR_P%
 
 
 if %?TOPDIR_P%
+if %?SUBDIRS%
+AM_RECURSIVE_TARGETS += distcheck
+endif %?SUBDIRS%
+
 # This target untars the dist file and tries a VPATH configuration.  Then
 # it guarantees that the distribution is self-contained by making another
 # tarfile.

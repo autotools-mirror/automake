@@ -1,5 +1,6 @@
 #! /bin/sh
-# Copyright (C) 1996, 2001, 2002, 2003, 2006, 2007  Free Software Foundation, Inc.
+# Copyright (C) 1996, 2001, 2002, 2003, 2006, 2007, 2009  Free Software
+# Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +19,8 @@
 # sure *srcdir is properly handled.  Note that using `./', as in
 #   EXTRA_DIST = ./joe
 # does not work portably: it fails with HP-UX and Tru64 make.
+# Also test DISTFILES containing a directory and a file in it,
+# and repeated directories.
 
 . ./defs || Exit 1
 
@@ -26,20 +29,36 @@ set -e
 echo AC_OUTPUT >>configure.in
 
 cat > Makefile.am << 'END'
-EXTRA_DIST = foo/bar joe $(top_srcdir)/woo/doo $(srcdir)/dada
+include_HEADERS = some/file another/sub/subsub/file2 yet/another/file3
+EXTRA_DIST = foo/bar joe $(top_srcdir)/woo/doo $(srcdir)/dada \
+	     some another/sub yet \
+	     some another/sub yet
+
+
+all-local:
+	$(MKDIR_P) another/sub/subsub
+	touch another/sub/subsub/file2
+
+CLEANFILES = another/sub/subsub/file2
+
 check-local:
 	test -f $(srcdir)/foo/bar
 	test -f $(srcdir)/woo/doo
 	test -f $(srcdir)/joe
 	test -f $(srcdir)/dada
+	test -f $(srcdir)/some/file
+	test -f $(srcdir)/another/sub/subsub/file2 \
+	|| test -f /another/sub/subsub/file2
+	test -f $(srcdir)/yet/another/file3
 END
 
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 
-mkdir foo woo
-touch foo/bar joe woo/doo dada
+mkdir foo woo some another another/sub another/sub/subsub yet yet/another
+touch foo/bar joe woo/doo dada some/file another/sub/subsub/file2
+touch yet/another/file3
 
 mkdir build
 cd build

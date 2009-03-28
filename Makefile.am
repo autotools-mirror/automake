@@ -106,70 +106,130 @@ dist-hook:
 
 # Some simple checks, and then ordinary check.  These are only really
 # guaranteed to work on my machine.
-maintainer-check: automake aclocal
+syntax_check_rules = \
+sc_diff_automake_in_automake \
+sc_perl_syntax \
+sc_no_brace_variable_expansions \
+sc_rm_minus_f \
+sc_no_for_variable_in_macro \
+sc_mkinstalldirs \
+sc_pre_normal_post_install_uninstall \
+sc_perl_no_undef \
+sc_perl_no_split_regex_space \
+sc_cd_in_backquotes \
+sc_cd_relative_dir \
+sc_perl_at_uscore_in_scalar_context \
+sc_perl_local_no_parens \
+sc_perl_local \
+sc_AMDEP_TRUE_in_automake_in \
+sc_tests_make_without_am_makeflags \
+sc_tests_plain_make \
+sc_tests_plain_autoconf \
+sc_tests_plain_autoupdate \
+sc_tests_plain_automake \
+sc_tests_here_document_format \
+sc_tests_Exit_not_exit \
+sc_tests_automake_fails \
+sc_tests_plain_aclocal \
+sc_tests_plain_perl \
+sc_tests_required_after_defs \
+sc_tests_overriding_macros_on_cmdline \
+sc_tests_plain_sleep \
+sc_tests_plain_egrep_fgrep \
+sc_mkdir_p \
+sc_perl_at_substs \
+sc_unquoted_DESTDIR \
+sc_tabs_in_texi \
+sc_at_in_texi
+
+.PHONY: $(syntax_check_rules)
+$(syntax_check_rules): automake aclocal
+maintainer-check: $(syntax_check_rules)
+
 ## This check avoids accidental configure substitutions in the source.
 ## There are exactly 6 lines that should be modified.  This works out
 ## to 22 lines of diffs.
+sc_diff_automake_in_automake:
 	@if test `diff $(srcdir)/automake.in automake | wc -l` -ne 22; then \
 	  echo "found too many diffs between automake.in and automake"; 1>&2; \
 	  diff -c $(srcdir)/automake.in automake; \
 	  exit 1; \
 	fi
+
 ## Syntax check with default Perl (on my machine, Perl 5).
+sc_perl_syntax:
 	perllibdir="./lib$(PATH_SEPARATOR)$(srcdir)/lib" $(PERL) -c -w automake
 	perllibdir="./lib$(PATH_SEPARATOR)$(srcdir)/lib" $(PERL) -c -w aclocal
+
 ## expect no instances of '${...}'.  However, $${...} is ok, since that
 ## is a shell construct, not a Makefile construct.
+sc_no_brace_variable_expansions:
 	@if grep -F '$${' $(srcdir)/lib/am/[a-z]*.am | \
 	       grep -F -v '$$$$'; then \
 	  echo "Found too many uses of '\$${' in the lines above." 1>&2; \
 	  exit 1;				\
 	else :; fi
+
 ## Make sure `rm' is called with `-f'.
+sc_rm_minus_f:
 	@if grep -v '^#' $(srcdir)/lib/am/[a-z]*.am $(srcdir)/tests/*.test | \
 	    grep -E '\<rm ([^-]|\-[^f ]*\>)'; then \
 	  echo "Suspicious 'rm' invocation." 1>&2; \
 	  exit 1;				\
 	else :; fi
+
 ## Never use something like `for file in $(FILES)', this doesn't work
 ## if FILES is empty or if it contains shell meta characters (e.g. $ is
 ## commonly used in Java filenames).
+sc_no_for_variable_in_macro:
 	@if grep 'for .* in \$$(' $(srcdir)/lib/am/[a-z]*.am; then \
 	  echo 'Use "list=$$(mumble); for var in $$$$list".' 1>&2 ; \
 	  exit 1; \
 	else :; fi
+
 ## Make sure all invocations of mkinstalldirs are correct.
+sc_mkinstalldirs:
 	@if grep -n 'mkinstalldirs' $(srcdir)/lib/am/[a-z]*.am | \
 	      grep -F -v '$$(mkinstalldirs)'; then \
 	  echo "Found incorrect use of mkinstalldirs in the lines above" 1>&2; \
 	  exit 1; \
 	else :; fi
+
 ## Make sure all calls to PRE/NORMAL/POST_INSTALL/UNINSTALL
+sc_pre_normal_post_install_uninstall:
 	@if grep -E -n '\((PRE|NORMAL|POST)_(|UN)INSTALL\)' \
                  $(srcdir)/lib/am/[a-z]*.am | \
 	      grep -v ':##' | grep -v ':	@\$$('; then \
 	  echo "Found incorrect use of PRE/NORMAL/POST_INSTALL/UNINSTALL in the lines above" 1>&2; \
 	  exit 1; \
 	else :; fi
+
 ## We never want to use "undef", only "delete", but for $/.
+sc_perl_no_undef:
 	@if grep -n -w 'undef ' $(srcdir)/automake.in | \
 	      grep -F -v 'undef $$/'; then \
 	  echo "Found undef in automake.in; use delete instead" 1>&2; \
 	  exit 1; \
 	fi
+
 ## We never want split (/ /,...), only split (' ', ...).
+sc_perl_no_split_regex_space:
 	@if grep -n 'split (/ /' $(srcdir)/automake.in; then \
 	  echo "Found bad split in the lines above." 1>&2; \
 	  exit 1; \
 	fi
+
 ## Look for cd within backquotes
+sc_cd_in_backquotes:
 	@if grep -n '^[^#]*` *cd ' $(srcdir)/automake.in \
 	      $(srcdir)/lib/am/*.am; then \
 	  echo "Consider using \$$(am__cd) in the lines above." 1>&2; \
 	  exit 1; \
 	fi
+
 ## Look for cd to a relative directory (may be influenced by CDPATH).
 ## Skip some known directories that are OK.
+sc_cd_relative_dir:
 	@if grep -n '^[^#]*cd ' $(srcdir)/automake.in \
 	      $(srcdir)/lib/am/*.am | \
 	      grep -v 'echo.*cd ' | \
@@ -182,62 +242,84 @@ maintainer-check: automake aclocal
 	  echo "Consider using \$$(am__cd) in the lines above." 1>&2; \
 	  exit 1; \
 	fi
+
 ## Using @_ in a scalar context is most probably a programming error.
+sc_perl_at_uscore_in_scalar_context:
 	@if grep -Hn '[^@_A-Za-z0-9][_A-Za-z0-9]*[^) ] *= *@_' $(srcdir)/automake.in; then \
 	  echo "Using @_ in a scalar context in the lines above." 1>&2; \
 	  exit 1; \
 	fi
+
 ## Forbid using parens with `local' to ease counting.
+sc_perl_local_no_parens:
 	@if grep '^[ \t]*local *(' $(srcdir)/automake.in; then \
 	  echo "Don't use \`local' with parens: use several \`local' above." >&2; \
 	  exit 1; \
 	fi
+
 ## Allow only `local $_' in Automake.
+sc_perl_local:
 	@if grep -v '^[ \t]*local \$$_;' $(srcdir)/automake.in | \
 	        grep '^[ \t]*local [^*]'; then \
 	  echo "Please avoid \`local'." 1>&2; \
 	  exit 1; \
 	fi
+
 ## Don't let AMDEP_TRUE substitution appear in automake.in.
+sc_AMDEP_TRUE_in_automake_in:
 	@if grep '@AMDEP''_TRUE@' $(srcdir)/automake.in; then \
 	  echo "Don't put AMDEP_TRUE substitution in automake.in" 1>&2; \
 	  exit 1; \
 	fi
+
 ## Tests should never call make directly.
+sc_tests_make_without_am_makeflags:
 	@if grep '^[^#].*(MAKE) ' $(srcdir)/lib/am/*.am $(srcdir)/automake.in |\
 		grep -v 'AM_MAKEFLAGS'; then \
 	  echo 'Use $$(MAKE) $$(AM_MAKEFLAGS).' 1>&2; \
 	  exit 1; \
 	fi
+
 ## Tests should never call make directly.
+sc_tests_plain_make:
 	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*make'; then \
 	  echo 'Do not run "make" in the above tests.  Use "$$MAKE" instead.' 1>&2; \
 	  exit 1; \
 	fi
+
 ## Tests should never call autoconf directly.
+sc_tests_plain_autoconf:
 	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*autoconf'; then \
 	  echo 'Do not run "autoconf" in the above tests.  Use "$$AUTOCONF" instead.' 1>&2; \
 	  exit 1; \
 	fi
+
 ## Tests should never call autoupdate directly.
+sc_tests_plain_autoupdate:
 	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*autoupdate'; then \
 	  echo 'Do not run "autoupdate" in the above tests.  Use "$$AUTOUPDATE" instead.' 1>&2; \
 	  exit 1; \
 	fi
+
 ## Tests should never call automake directly.
+sc_tests_plain_automake:
 	@if grep -v '^#' $(srcdir)/tests/*.test | grep -E ':[	]*automake([^:]|$$)'; then \
 	  echo 'Do not run "automake" in the above tests.  Use "$$AUTOMAKE" instead.' 1>&2;  \
 	  exit 1; \
 	fi
+
 ## Tests should only use END and EOF for here documents
 ## (so that the next test is effective).
+sc_tests_here_document_format:
 	@if grep '<<' $(srcdir)/tests/*.test | grep -v 'END' | grep -v 'EOF'; then \
 	  echo 'Use here documents with "END" and "EOF" only, for greppability.' 1>&2; \
 	  exit 1; \
 	fi
+
 ## Tests should never call exit directly, but use Exit.
 ## This is so that the exit status is transported correctly across the 0 trap.
 ## Ignore comments, and ignore one perl line in ext2.test.
+sc_tests_Exit_not_exit:
 	@found=false; for file in $(srcdir)/tests/*.test; do \
 	  res=`sed -n '/^#/d; /^\$$PERL/d; /<<.*END/,/^END/{b;}; /<<.*EOF/,/^EOF/{b;}; /exit [$$0-9]/p' $$file`; \
 	  if test -n "$$res"; then \
@@ -249,32 +331,42 @@ maintainer-check: automake aclocal
 	  echo 'Do not call plain "exit", use "Exit" instead, in above tests.' 1>&2; \
 	  exit 1; \
 	fi
+
 ## Use AUTOMAKE_fails when appropriate
+sc_tests_automake_fails:
 	@if grep -v '^#' $(srcdir)/tests/*.test | grep '\$$AUTOMAKE.*&&.*[eE]xit'; then \
 	  echo 'Use AUTOMAKE_fails + grep to catch automake failures in the above tests.' 1>&2;  \
 	  exit 1; \
 	fi
+
 ## Tests should never call aclocal directly.
+sc_tests_plain_aclocal:
 	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*aclocal'; then \
 	  echo 'Do not run "aclocal" in the above tests.  Use "$$ACLOCAL" instead.' 1>&2;  \
 	  exit 1; \
 	fi
+
 ## Tests should never call perl directly.
+sc_tests_plain_perl:
 	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*perl'; then \
 	  echo 'Do not run "perl" in the above tests.  Use "$$PERL" instead.' 1>&2; \
 	  exit 1; \
 	fi
+
 ## Setting `required' after sourcing `./defs' is a bug.
+sc_tests_required_after_defs:
 	@for file in $(srcdir)/tests/*.test; do \
 	  if out=`sed -n '/defs/,$${/required=/p;}' $$file`; test -n "$$out"; then \
 	    echo 'Do not set "required" after sourcing "defs" in '"$$file: $$out" 1>&2; \
 	    exit 1; \
 	  fi; \
 	done
+
 ## Overriding a Makefile macro on the command line is not portable when
 ## recursive targets are used.  Better use an envvar.  SHELL is an exception,
 ## POSIX says it can't come from the environment.  V and DESTDIRS are exceptions,
-## too, as package authors are urged not to intitialize this anywhere.
+## too, as package authors are urged not to initialize them anywhere.
+sc_tests_overriding_macros_on_cmdline:
 	@if grep -E '\$$MAKE .*(SHELL=.*=|=.*SHELL=)' $(srcdir)/tests/*.test; then \
 	  echo 'Rewrite "$$MAKE foo=bar SHELL=$$SHELL" as "foo=bar $$MAKE -e SHELL=$$SHELL"' 1>&2; \
 	  echo ' in the above lines, it is more portable.' 1>&2; \
@@ -291,14 +383,18 @@ maintainer-check: automake aclocal
 	  echo 'the above lines.' 1>&2; \
 	  exit 1; \
 	fi
+
 ## Never use `sleep 1' to create files with different timestamps.
 ## Use `$sleep' instead.  Some filesystems (e.g., Windows') have only
 ## a 2sec resolution.
+sc_tests_plain_sleep:
 	@if grep -E '\bsleep +[12345]\b' $(srcdir)/tests/*.test; then \
 	  echo 'Do not use "sleep x" in the above tests.  Use "$$sleep" instead.' 1>&2; \
 	  exit 1; \
 	fi
+
 ## fgrep and egrep are not required by POSIX.
+sc_tests_plain_egrep_fgrep:
 	@if grep -E '\b[ef]grep\b' $(srcdir)/tests/*.test ; then \
 	  echo 'Do not use egrep or fgrep in test cases.  Use $$FGREP or $$EGREP.' 1>&2; \
 	  exit 1; \
@@ -307,13 +403,17 @@ maintainer-check: automake aclocal
 	  echo 'Do not use egrep or fgrep in the above files, they are not portable.' 1>&2; \
 	  exit 1; \
 	fi
+
+sc_mkdir_p:
 	@if grep 'mkdir_p' $(srcdir)/automake.in \
 	      $(srcdir)/lib/am/*.am $(srcdir)/tests/*.test; then \
 	  echo 'Do not use mkdir_p in the above files, use MKDIR_P.' 1>&2; \
 	  exit 1; \
 	fi
+
 ## Try to make sure all @...@ substitutions are covered by our
 ## substitution rule.
+sc_perl_at_substs:
 	@if test `grep -E '^[^#]*@[A-Za-z_0-9]+@' aclocal | wc -l` -ne 0; then \
 	  echo "Unresolved @...@ substitution in aclocal" 1>&2; \
 	  exit 1; \
@@ -321,15 +421,21 @@ maintainer-check: automake aclocal
 	@if test `grep -E '^[^#]*@[A-Za-z_0-9]+@' automake | wc -l` -ne 0; then \
 	  echo "Unresolved @...@ substitution in automake" 1>&2; \
 	  exit 1; \
-	fi; \
-	if grep -E "[^\'\"]\\\$$\(DESTDIR" $(srcdir)/lib/am/*.am; then \
+	fi
+
+sc_unquoted_DESTDIR:
+	@if grep -E "[^\'\"]\\\$$\(DESTDIR" $(srcdir)/lib/am/*.am; then \
 	  echo 'Suspicious unquoted DESTDIR uses.' 1>&2 ; \
 	  exit 1; \
 	fi
+
+sc_tabs_in_texi:
 	@if grep '	' $(srcdir)/doc/automake.texi; then \
 	  echo 'Do not use tabs in the manual.' 1>&2; \
 	  exit 1; \
 	fi
+
+sc_at_in_texi:
 	@if grep -E '([^@]|^)@([	 ][^@]|$$)' $(srcdir)/doc/automake.texi; \
 	then \
 	  echo 'Unescaped @.' 1>&2; \
