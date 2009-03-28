@@ -240,13 +240,15 @@ maintainer-check: automake aclocal
 	done
 ## Overriding a Makefile macro on the command line is not portable when
 ## recursive targets are used.  Better use an envvar.  SHELL is an exception,
-## POSIX says it can't come from the environment.
+## POSIX says it can't come from the environment.  DESTDIRS is an exception,
+## too, as package authors are urged not to intitialize this anywhere.
 	@if grep -E '\$$MAKE .*(SHELL=.*=|=.*SHELL=)' $(srcdir)/tests/*.test; then \
 	  echo 'Rewrite "$$MAKE foo=bar SHELL=$$SHELL" as "foo=bar $$MAKE -e SHELL=$$SHELL"' 1>&2; \
 	  echo ' in the above lines, it is more portable.' 1>&2; \
 	  exit 1; \
 	fi
-	@if grep -v SHELL $(srcdir)/tests/*.test | grep '\$$MAKE .*=' ; then \
+	@if sed 's/DESTDIR=[^ ]*//; s/SHELL=[^ ]*//' $(srcdir)/tests/*.test | \
+	  grep '\$$MAKE .*=' ; then \
 	  echo 'Rewrite "$$MAKE foo=bar" as "foo=bar $$MAKE -e" in the above lines,' 1>&2; \
 	  echo 'it is more portable.' 1>&2; \
 	  exit 1; \
