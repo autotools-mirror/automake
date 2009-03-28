@@ -20,7 +20,7 @@
 # - TEST_SUITE_LOG
 # - dependencies between tests
 # - DISABLE_HARD_ERRORS
-# - LAZY_TEST_SUITE
+# - RECHECK_LOGS
 
 . ./defs-p || Exit 1
 
@@ -108,20 +108,27 @@ test -f mylog.log
 # Note that the previous test and this one taken together expose the timing
 # issue that requires the check-TESTS rule to always remove TEST_SUITE_LOG
 # before running the tests lazily.
-env LAZY_TEST_SUITE=yes $MAKE -e check > stdout && { cat stdout; Exit 1; }
+env RECHECK_LOGS= $MAKE -e check > stdout && { cat stdout; Exit 1; }
 cat stdout
 test -f foo.log
 grep foo.test stdout
 grep bar.test stdout && Exit 1
 grep baz.test stdout && Exit 1
 grep '2.*tests.*failed' stdout
-grep 'lazily' stdout
 
 # Now, explicitly retry with all test logs already updated, and ensure
 # that the summary is still displayed.
-env LAZY_TEST_SUITE=yes $MAKE -e check > stdout && { cat stdout; Exit 1; }
+env RECHECK_LOGS= $MAKE -e check > stdout && { cat stdout; Exit 1; }
 cat stdout
 grep foo.test stdout && Exit 1
+grep bar.test stdout && Exit 1
+grep baz.test stdout && Exit 1
+grep '2.*tests.*failed' stdout
+
+# Lazily rerunning only foo should only rerun this one test.
+env RECHECK_LOGS=foo.log $MAKE -e check > stdout && { cat stdout; Exit 1; }
+cat stdout
+grep foo.test stdout
 grep bar.test stdout && Exit 1
 grep baz.test stdout && Exit 1
 grep '2.*tests.*failed' stdout

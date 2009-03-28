@@ -123,6 +123,7 @@ elif test -f "$$f"; then dir=;				\
 else dir="$(srcdir)/"; fi;				\
 tst=$$dir$$f; log='$@'; __SAVED_TERM=$$TERM;		\
 $(TESTS_ENVIRONMENT)
+RECHECK_LOGS = $(TEST_LOGS)
 TEST_SUITE_LOG = test-suite.log
 TEST_SUITE_HTML = $(TEST_SUITE_LOG:.log=.html)
 am__test_logs1 = $(TESTS:=.log)
@@ -362,9 +363,6 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	  done;								\
 	} >$(TEST_SUITE_LOG).tmp;					\
 	mv $(TEST_SUITE_LOG).tmp $(TEST_SUITE_LOG);			\
-	if test -n '$(LAZY_TEST_SUITE)'; then				\
-	  msg="$${msg}(tests were rerun lazily).  ";			\
-	fi;								\
 	if test "$$failures" -ne 0; then				\
 	  msg="$${msg}See $(subdir)/$(TEST_SUITE_LOG).  ";		\
 	  if test -n "$(PACKAGE_BUGREPORT)"; then			\
@@ -384,15 +382,23 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 
 # Run all the tests.
 check-TESTS:
-	@list='$(TEST_LOGS)'; if test -z '$(LAZY_TEST_SUITE)'		\
-	  && test -n "$$list"; then					\
-	  rm -f $$list;							\
-	fi
+	@list='$(RECHECK_LOGS)'; test -z "$$list" || rm -f $$list
 	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
 	@set_logs=; if test "X$(TEST_LOGS)" = X.log; then		\
 	  set_logs=TEST_LOGS=;						\
 	fi;								\
 	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG) $$set_logs
+recheck-TESTS:
+	@list='$(TEST_LOGS)';						\
+	logs=`for f in $$list; do					\
+		if read line < $$f; then				\
+		  case $$line in FAIL*|XPASS*) echo $$f;; esac;		\
+		else echo $$f; fi;					\
+	      done | tr '\012\015' '  '`;				\
+	$(MAKE) $(AM_MAKEFLAGS) check-TESTS RECHECK_LOGS="$$logs"
+
+recheck-am: recheck-TESTS
+recheck: recheck-am
 
 .log.html:
 	@list='$(RST2HTML) $$RST2HTML rst2html rst2html.py';		\
@@ -545,7 +551,7 @@ ps-am:
 
 uninstall-am:
 
-.MAKE: check-am check-html install-am install-strip
+.MAKE: check-am check-html install-am install-strip recheck-am
 
 .PHONY: all all-am check check-TESTS check-am check-html clean \
 	clean-generic distclean distclean-generic distdir dvi dvi-am \
@@ -556,7 +562,8 @@ uninstall-am:
 	install-ps install-ps-am install-strip installcheck \
 	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-generic pdf \
-	pdf-am ps ps-am uninstall uninstall-am
+	pdf-am ps ps-am recheck recheck-TESTS recheck-am uninstall \
+	uninstall-am
 
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

@@ -52,7 +52,7 @@ include inst-vars.am
 ## It provides special support for "unit tests", that is to say,
 ## tests that (once run) no longer need to be re-compiled and
 ## re-run at each "make check", unless their sources changed.  To
-## enable unit-test supports, define LAZY_TEST_SUITE.  In such a
+## enable unit-test supports, set RECHECK_LOGS to empty.  In such a
 ## setting, that heavily relies on correct dependencies, its users may
 ## prefer to define EXTRA_PROGRAMS instead of check_PROGRAMS, because
 ## it allows intertwined compilation and execution of the tests.
@@ -202,9 +202,6 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	  done;								\
 	} >$(TEST_SUITE_LOG).tmp;					\
 	mv $(TEST_SUITE_LOG).tmp $(TEST_SUITE_LOG);			\
-	if test -n '$(LAZY_TEST_SUITE)'; then				\
-	  msg="$${msg}(tests were rerun lazily).  ";			\
-	fi;								\
 	if test "$$failures" -ne 0; then				\
 	  msg="$${msg}See $(subdir)/$(TEST_SUITE_LOG).  ";		\
 	  if test -n "$(PACKAGE_BUGREPORT)"; then			\
@@ -222,13 +219,12 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	test x"$$VERBOSE" = x || $$exit || cat $(TEST_SUITE_LOG);	\
 	$$exit
 
+RECHECK_LOGS = $(TEST_LOGS)
+
 # Run all the tests.
 check-TESTS:
-## Expand $(TEST_LOGS) only once, to avoid exceeding line length limits.
-	@list='$(TEST_LOGS)'; if test -z '$(LAZY_TEST_SUITE)'		\
-	  && test -n "$$list"; then					\
-	  rm -f $$list;							\
-	fi
+## Expand $(RECHECK_LOGS) only once, to avoid exceeding line length limits.
+	@list='$(RECHECK_LOGS)'; test -z "$$list" || rm -f $$list
 ## We always have to remove TEST_SUITE_LOG, to ensure its rule is run
 ## in any case even in lazy mode: otherwise, if no test needs rerunning,
 ## or a prior run plus reruns all happen within the same timestamp
@@ -243,6 +239,21 @@ check-TESTS:
 	fi;								\
 	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG) $$set_logs
 
+## Rerun all FAILed or XPASSed tests (as well as all whose logs are out
+## of date or do not exist).
+recheck-TESTS:
+	@list='$(TEST_LOGS)';						\
+	logs=`for f in $$list; do					\
+		if read line < $$f; then				\
+		  case $$line in FAIL*|XPASS*) echo $$f;; esac;		\
+		else echo $$f; fi;					\
+	      done | tr '\012\015' '  '`;				\
+	$(MAKE) $(AM_MAKEFLAGS) check-TESTS RECHECK_LOGS="$$logs"
+
+recheck-am: recheck-TESTS
+recheck: recheck-am
+.PHONY: recheck recheck-am recheck-TESTS
+.MAKE: recheck-am
 
 ## -------------- ##
 ## Produce HTML.  ##
