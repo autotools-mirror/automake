@@ -92,13 +92,15 @@ am__base_list = \
 am__rst_title = sed 's/.*/   &   /;h;s/./=/g;p;x;p;g;p;s/.*//'
 am__rst_section = sed 'p;s/./=/g;p;g'
 # Put stdin (possibly several lines separated by ".  ") in a box.
-am__text_box = { nlinit=`echo 'nl="'; echo '"'`; eval "$$nlinit"; \
-  sed "s/\\.  /\\$$nl/g"; } | sed '/^$$/d' |			\
-$(AWK) '{ if (final) final = final "\n" $$0; else final = $$0; }\
-max < length($$0) { max = length($$0); }			\
-END {								\
-  for (i = 0; i < max; ++i) line = line "=";			\
-  print line; print final; print line;				\
+am__text_box = $(AWK) '{				\
+  n = split($$0, lines, "\\.  "); max = 0;		\
+  for (i = 1; i <= n; ++i)				\
+    if (max < length(lines[i]))				\
+      max = length(lines[i]);				\
+  for (i = 0; i < max; ++i) line = line "=";		\
+  print line;						\
+  for (i = 1; i <= n; ++i) if (lines[i]) print lines[i];\
+  print line;						\
 }'
 # Solaris 10 'make', and several other traditional 'make' implementations,
 # pass "-e" to $(SHELL).  This contradicts POSIX.  Work around the problem
@@ -123,11 +125,14 @@ elif test -f "$$f"; then dir=;				\
 else dir="$(srcdir)/"; fi;				\
 tst=$$dir$$f; log='$@'; __SAVED_TERM=$$TERM;		\
 $(TESTS_ENVIRONMENT)
+RECHECK_LOGS = $(TEST_LOGS)
 TEST_SUITE_LOG = test-suite.log
 TEST_SUITE_HTML = $(TEST_SUITE_LOG:.log=.html)
 TEST_EXTENSIONS = .test
 am__test_logs1 = $(TESTS:=.log)
 TEST_LOGS = $(am__test_logs1:.test.log=.log)
+TEST_LOG_COMPILE = $(TEST_LOG_COMPILER) $(AM_TEST_LOG_FLAGS) \
+	$(TEST_LOG_FLAGS)
 TEST_LOGS_TMP = $(TEST_LOGS:.log=.log-t)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
@@ -218,7 +223,6 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AUTOMAKE_OPTIONS = parallel-tests
 XFAIL_TESTS = \
 all.test					\
 auxdir2.test					\
@@ -723,6 +727,9 @@ parallel-tests3.test \
 parallel-tests4.test \
 parallel-tests5.test \
 parallel-tests6.test \
+parallel-tests7.test \
+parallel-tests8.test \
+parallel-tests9.test \
 parse.test \
 percent.test \
 percent2.test \
@@ -1081,15 +1088,12 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	  for f in $$list; do						\
 	    read line < $$f;						\
 	    case $$line in						\
-	      SKIP:*|PASS:*|XFAIL:*);;					\
+	      PASS:*|XFAIL:*);;						\
 	      *) echo; cat $$f;;					\
 	    esac;							\
 	  done;								\
 	} >$(TEST_SUITE_LOG).tmp;					\
 	mv $(TEST_SUITE_LOG).tmp $(TEST_SUITE_LOG);			\
-	if test -n '$(LAZY_TEST_SUITE)'; then				\
-	  msg="$${msg}(tests were rerun lazily).  ";			\
-	fi;								\
 	if test "$$failures" -ne 0; then				\
 	  msg="$${msg}See $(subdir)/$(TEST_SUITE_LOG).  ";		\
 	  if test -n "$(PACKAGE_BUGREPORT)"; then			\
@@ -1109,15 +1113,23 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 
 # Run all the tests.
 check-TESTS:
-	@list='$(TEST_LOGS)'; if test -z '$(LAZY_TEST_SUITE)'		\
-	  && test -n "$$list"; then					\
-	  rm -f $$list;							\
-	fi
+	@list='$(RECHECK_LOGS)'; test -z "$$list" || rm -f $$list
 	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
 	@set_logs=; if test "X$(TEST_LOGS)" = X.log; then		\
 	  set_logs=TEST_LOGS=;						\
 	fi;								\
 	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG) $$set_logs
+recheck-TESTS:
+	@list='$(TEST_LOGS)';						\
+	logs=`for f in $$list; do					\
+		if read line < $$f; then				\
+		  case $$line in FAIL*|XPASS*) echo $$f;; esac;		\
+		else echo $$f; fi;					\
+	      done | tr '\012\015' '  '`;				\
+	$(MAKE) $(AM_MAKEFLAGS) check-TESTS RECHECK_LOGS="$$logs"
+
+recheck-am: recheck-TESTS
+recheck: recheck-am
 
 .log.html:
 	@list='$(RST2HTML) $$RST2HTML rst2html rst2html.py';		\
@@ -1135,14 +1147,15 @@ check-TESTS:
 
 # Be sure to run check-TESTS first, and then to convert the result.
 # Beware of concurrent executions.  And expect check-TESTS to fail.
-check-html:
-	@if $(MAKE) $(AM_MAKEFLAGS) check-TESTS; then :; else	\
-	  rv=$$?;						\
-	  $(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_HTML);		\
-	  exit $$rv;						\
-	fi
+check-html recheck-html:
+	@target=`echo $@ | sed 's/-html$$//'`;			\
+	if $(MAKE) $(AM_MAKEFLAGS) $$target-TESTS; then		\
+	  rv=0; else rv=$$?;					\
+	fi;							\
+	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_HTML) || exit 4;	\
+	exit $$rv
 .test.log:
-	@p='$<'; $(am__check_pre) "$$tst" $(am__check_post)
+	@p='$<'; $(am__check_pre) $(TEST_LOG_COMPILE) "$$tst" $(am__check_post)
 
 distdir: $(DISTFILES)
 	@srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
@@ -1276,7 +1289,8 @@ ps-am:
 
 uninstall-am:
 
-.MAKE: check-TESTS check-am check-html install-am install-strip
+.MAKE: check-am check-html install-am install-strip recheck-am \
+	recheck-html
 
 .PHONY: all all-am check check-TESTS check-am check-html clean \
 	clean-generic clean-local distclean distclean-generic distdir \
@@ -1287,7 +1301,8 @@ uninstall-am:
 	install-pdf-am install-ps install-ps-am install-strip \
 	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-generic pdf \
-	pdf-am ps ps-am uninstall uninstall-am
+	pdf-am ps ps-am recheck recheck-TESTS recheck-am recheck-html \
+	uninstall uninstall-am
 
 
 $(srcdir)/parallel-tests.am: gen-parallel-tests Makefile.am

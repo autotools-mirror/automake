@@ -15,10 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Check parallel-tests features:
-# - check-html
-# - recheck-html
+# - recheck
 
-required=rst2html
 . ./defs-p || Exit 1
 
 set -e
@@ -54,19 +52,19 @@ $AUTOCONF
 $AUTOMAKE -a
 
 ./configure
-$MAKE check-html >stdout && { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; Exit 1; }
 cat stdout
-test -f mylog.html
 
-# Always create the HTML output, even if there were no failures.
-rm -f mylog.html
-env TESTS=foo.test $MAKE -e check-html >stdout || { cat stdout; Exit 1; }
+$MAKE recheck >stdout && { cat stdout; Exit 1; }
 cat stdout
-test -f mylog.html
+grep foo.test stdout && Exit 1
+grep bar.test stdout || Exit 1
+grep baz.test stdout || Exit 1
 
-# Create HTML output also with recheck-html
-rm -f mylog.html
-env TESTS=foo.test $MAKE -e recheck-html >stdout || { cat stdout; Exit 1; }
+# If we cannot read the log file, then redo it as well.
+chmod a-r foo.log
+$MAKE recheck >stdout && { cat stdout; Exit 1; }
 cat stdout
-test -f mylog.html
+grep foo.test stdout || Exit 1
+
 :

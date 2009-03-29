@@ -8376,6 +8376,7 @@ by the tests, not the tests themselves.  Of course you can set
 
 @section Simple tests using @samp{parallel-tests}
 @cindex @option{parallel-tests}, Using
+
 The option @option{parallel-tests} (@pxref{Options}) enables a test
 suite driver that is mostly compatible to the simple test driver
 described above, but provides a few more features and slightly different
@@ -8388,8 +8389,11 @@ for exceptional failures.  Similar to the simple test driver,
 the @code{check_*} variables are honored, and the environment variable
 @env{srcdir} is set during test execution.
 
+This test driver is still experimental and may undergo changes in order
+to satisfy additional portability requirements.
+
 @vindex TEST_SUITE_LOG
-@vindex TEST_LOGS
+@vindex TESTS
 The driver operates by defining a set of @command{make} rules to create
 a summary log file, @code{TEST_SUITE_LOG}, which defaults to
 @file{test-suite.log} and requires a @file{.log} suffix.  This file
@@ -8398,6 +8402,7 @@ depends upon log files created for each single test program listed in
 corresponding tests.
 
 @vindex TEST_EXTENSIONS
+@vindex TEST_LOGS
 Each log file is created when the corresponding test has completed.
 The set of log files is listed in the read-only variable
 @code{TEST_LOGS}, and defaults to @code{TESTS}, with the executable
@@ -8405,6 +8410,34 @@ extension if any (@pxref{EXEEXT}), as well as any suffix listed in
 @code{TEST_EXTENSIONS} removed, and @file{.log} appended.
 @code{TEST_EXTENSIONS} defaults to @file{.test}.  Results are undefined
 if a test file name ends in several concatenated suffixes.
+
+@vindex _LOG_COMPILER
+@vindex _LOG_FLAGS
+@vindex @var{EXT}_LOG_COMPILE
+@vindex @var{EXT}_LOG_COMPILER
+@vindex @var{EXT}_LOG_FLAGS
+@vindex AM_@var{EXT}_LOG_FLAGS
+For tests that match an extension @code{.@var{ext}} listed in
+@code{TEST_EXTENSIONS}, you can provide a test driver using the variable
+@code{@var{ext}_LOG_COMPILER} (note the upper-case extension) and pass
+options in @code{AM_@var{ext}_LOG_FLAGS} and allow the user to pass
+options in @code{@var{ext}_LOG_FLAGS}.  It will cause all tests with
+this extension to be called with this driver.  For example,
+
+@example
+TESTS = foo.pl bar.py
+TEST_EXTENSIONS = .pl .py
+PL_LOG_COMPILER = $(PERL)
+PL_LOG_FLAGS = -w
+PY_LOG_COMPILER = $(PYTHON)
+PY_LOG_FLAGS = -v
+@end example
+
+@noindent
+will invoke @samp{$(PERL) -w foo.pl} and @samp{$(PYTHON) -v bar.py} to
+produce @file{foo.log} and @file{bar.log}, respectively.  The
+@samp{TESTS_ENVIRONMENT} variable is still expanded before the driver,
+but should be reserved for the user.
 
 @vindex VERBOSE
 As with the simple driver above, by default one status line is printed
@@ -8441,12 +8474,55 @@ Tests can exit with an exit status of 99 to signal such a @emph{hard
 error}.  Unless the variable @code{DISABLE_HARD_ERRORS} is set to a
 nonempty value, such tests will be counted as failed.
 
-@vindex LAZY_TEST_SUITE
-By default, all tests listed in @code{TESTS} are run upon @code{make
-check}.  When @code{LAZY_TEST_SUITE} is nonempty, then log files of
-a previous run are not removed before starting the test suite, so only
-tests that have not yet been completed are run, as well as tests that
-have been modified after the previous run.
+By default, the test suite driver will run all tests, but there are
+several ways to limit the set of tests that are run:
+
+@itemize @bullet
+@item
+You can set the @code{TESTS} variable, similarly to how you can with
+the simple test driver from the previous section.  For example, you can
+use a command like this to run only a subset of the tests:
+
+@example
+env TESTS="foo.test bar.test" make -e check
+@end example
+
+@item
+You can set the @code{TEST_LOGS} variable.  By default, this variable is
+computed at @command{make} run time from the value of @code{TESTS} as
+described above.  For example, you can use the following:
+
+@example
+set x subset*.log; shift
+env TEST_LOGS="foo.log $*" make -e check
+@end example
+
+@item
+@vindex RECHECK_LOGS
+@cindex lazy test execution
+By default, the test driver removes all old per-test log files before it
+starts running tests to regenerate them.  The variable
+@code{RECHECK_LOGS} contains the set of log files which are removed.
+@code{RECHECK_LOGS} defaults to @code{TEST_LOGS}, which means all tests
+need to be rechecked.  By overriding this variable, you can choose which
+tests need to be reconsidered.  For example, you can lazily rerun only
+those tests which are outdated, i.e., older than their prerequisite test
+files, by setting this variable to the empty value:
+
+@example
+env RECHECK_LOGS= make -e check
+@end example
+
+@item
+@trindex recheck
+@trindex recheck-html
+You can ensure that all tests are rerun which have failed or passed
+unexpectedly, by running @code{make recheck} in the test directory.
+This convenience target will set @code{RECHECK_LOGS} appropriately
+before invoking the main test driver.  The @code{recheck-html} target
+does the same as @code{recheck} but again converts the resulting log
+file in HTML format, like the @code{check-html} target.
+@end itemize
 
 In order to guarantee an ordering between tests even with @code{make
 -j@var{N}}, dependencies between the corresponding log files may be
@@ -8480,6 +8556,17 @@ must end with a nonempty test suffix like @file{.test}, so that one of
 the inference rules generated by @command{automake} can apply.  For
 literal test names, @command{automake} can generate per-target rules
 to avoid this limitation.
+
+Please note that it is currently not possible to use @code{$(srcdir)/}
+or @code{$(top_srcdir)/} in the @code{TESTS} variable.  This technical
+limitation is necessary to avoid generating test logs in the source tree
+and has the unfortunate consequence thast it is not possible to specify
+distributed tests that are themselves generated by means of explicit
+rules, in a way that is portable to all @command{make} implementations
+(@pxref{Make Target Lookup,,, autoconf, The Autoconf Manual}, the
+semantics of FreeBSD and OpenBSD @command{make} conflict with this).
+In case of doubt you may want to require to use GNU @command{make},
+or work around the issue with inference rules to generate the tests.
 
 
 @section DejaGnu Tests

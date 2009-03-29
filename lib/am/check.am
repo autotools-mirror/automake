@@ -52,7 +52,7 @@ include inst-vars.am
 ## It provides special support for "unit tests", that is to say,
 ## tests that (once run) no longer need to be re-compiled and
 ## re-run at each "make check", unless their sources changed.  To
-## enable unit-test supports, define LAZY_TEST_SUITE.  In such a
+## enable unit-test supports, set RECHECK_LOGS to empty.  In such a
 ## setting, that heavily relies on correct dependencies, its users may
 ## prefer to define EXTRA_PROGRAMS instead of check_PROGRAMS, because
 ## it allows intertwined compilation and execution of the tests.
@@ -75,13 +75,15 @@ am__rst_title   = sed 's/.*/   &   /;h;s/./=/g;p;x;p;g;p;s/.*//'
 am__rst_section = sed 'p;s/./=/g;p;g'
 
 # Put stdin (possibly several lines separated by ".  ") in a box.
-am__text_box = { nlinit=`echo 'nl="'; echo '"'`; eval "$$nlinit"; \
-  sed "s/\\.  /\\$$nl/g"; } | sed '/^$$/d' |			\
-$(AWK) '{ if (final) final = final "\n" $$0; else final = $$0; }\
-max < length($$0) { max = length($$0); }			\
-END {								\
-  for (i = 0; i < max; ++i) line = line "=";			\
-  print line; print final; print line;				\
+am__text_box = $(AWK) '{				\
+  n = split($$0, lines, "\\.  "); max = 0;		\
+  for (i = 1; i <= n; ++i)				\
+    if (max < length(lines[i]))				\
+      max = length(lines[i]);				\
+  for (i = 0; i < max; ++i) line = line "=";		\
+  print line;						\
+  for (i = 1; i <= n; ++i) if (lines[i]) print lines[i];\
+  print line;						\
 }'
 
 # Solaris 10 'make', and several other traditional 'make' implementations,
@@ -194,15 +196,12 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	  for f in $$list; do						\
 	    read line < $$f;						\
 	    case $$line in						\
-	      SKIP:*|PASS:*|XFAIL:*);;					\
+	      PASS:*|XFAIL:*);;						\
 	      *) echo; cat $$f;;					\
 	    esac;							\
 	  done;								\
 	} >$(TEST_SUITE_LOG).tmp;					\
 	mv $(TEST_SUITE_LOG).tmp $(TEST_SUITE_LOG);			\
-	if test -n '$(LAZY_TEST_SUITE)'; then				\
-	  msg="$${msg}(tests were rerun lazily).  ";			\
-	fi;								\
 	if test "$$failures" -ne 0; then				\
 	  msg="$${msg}See $(subdir)/$(TEST_SUITE_LOG).  ";		\
 	  if test -n "$(PACKAGE_BUGREPORT)"; then			\
@@ -220,13 +219,12 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	test x"$$VERBOSE" = x || $$exit || cat $(TEST_SUITE_LOG);	\
 	$$exit
 
+RECHECK_LOGS = $(TEST_LOGS)
+
 # Run all the tests.
 check-TESTS:
-## Expand $(TEST_LOGS) only once, to avoid exceeding line length limits.
-	@list='$(TEST_LOGS)'; if test -z '$(LAZY_TEST_SUITE)'		\
-	  && test -n "$$list"; then					\
-	  rm -f $$list;							\
-	fi
+## Expand $(RECHECK_LOGS) only once, to avoid exceeding line length limits.
+	@list='$(RECHECK_LOGS)'; test -z "$$list" || rm -f $$list
 ## We always have to remove TEST_SUITE_LOG, to ensure its rule is run
 ## in any case even in lazy mode: otherwise, if no test needs rerunning,
 ## or a prior run plus reruns all happen within the same timestamp
@@ -240,8 +238,22 @@ check-TESTS:
 	  set_logs=TEST_LOGS=;						\
 	fi;								\
 	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG) $$set_logs
-.MAKE: check-TESTS
 
+## Rerun all FAILed or XPASSed tests (as well as all whose logs are out
+## of date or do not exist).
+recheck-TESTS:
+	@list='$(TEST_LOGS)';						\
+	logs=`for f in $$list; do					\
+		if read line < $$f; then				\
+		  case $$line in FAIL*|XPASS*) echo $$f;; esac;		\
+		else echo $$f; fi;					\
+	      done | tr '\012\015' '  '`;				\
+	$(MAKE) $(AM_MAKEFLAGS) check-TESTS RECHECK_LOGS="$$logs"
+
+recheck-am: recheck-TESTS
+recheck: recheck-am
+.PHONY: recheck recheck-am recheck-TESTS
+.MAKE: recheck-am
 
 ## -------------- ##
 ## Produce HTML.  ##
@@ -263,14 +275,15 @@ check-TESTS:
 
 # Be sure to run check-TESTS first, and then to convert the result.
 # Beware of concurrent executions.  And expect check-TESTS to fail.
-check-html:
-	@if $(MAKE) $(AM_MAKEFLAGS) check-TESTS; then :; else	\
-	  rv=$$?;						\
-	  $(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_HTML);		\
-	  exit $$rv;						\
-	fi
-.PHONY: check-html
-.MAKE: check-html
+check-html recheck-html:
+	@target=`echo $@ | sed 's/-html$$//'`;			\
+	if $(MAKE) $(AM_MAKEFLAGS) $$target-TESTS; then		\
+	  rv=0; else rv=$$?;					\
+	fi;							\
+	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_HTML) || exit 4;	\
+	exit $$rv
+.PHONY: check-html recheck-html
+.MAKE: check-html recheck-html
 
 else !%?PARALLEL_TESTS%
 
