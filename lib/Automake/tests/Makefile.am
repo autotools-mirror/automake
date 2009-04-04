@@ -16,7 +16,7 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 PL_LOG_COMPILER = $(PERL)
-PL_LOG_FLAGS = -Mstrict -I ../.. -I $(top_srcdir)/lib -w
+AM_PL_LOG_FLAGS = -Mstrict -I ../.. -I $(top_srcdir)/lib -w
 TEST_EXTENSIONS = .pl
 
 TESTS = \
