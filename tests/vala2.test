@@ -1,6 +1,6 @@
 #! /bin/sh
-# Copyright (C) 1996, 2001, 2002, 2006, 2008  Free Software Foundation,
-# Inc.
+# Copyright (C) 1996, 2001, 2002, 2006, 2008, 2009
+# Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -19,36 +19,59 @@
 # the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301, USA.
 
-# Test to make foo_PKGNAME variables are considered.
+# Test to make sure compiling Vala code really works with recursive make.
 
-required="libtool"
+required="libtool libtoolize pkg-config valac gcc"
 . ./defs || Exit 1
 
 set -e
 
+mkdir src
+
 cat >> 'configure.in' << 'END'
 AC_PROG_CC
+AM_PROG_CC_C_O
 AC_PROG_LIBTOOL
 AM_PROG_VALAC
+PKG_CHECK_MODULES([GOBJECT],[gobject-2.0 >= 2.10])
+AC_CONFIG_FILES([src/Makefile])
 AC_OUTPUT
 END
 
 cat > 'Makefile.am' <<'END'
-lib_LTLIBRARIES = src/libzardoz.la
-src_libzardoz_la_SOURCES = src/zardoz-foo.vala src/zardoz-bar.vala
-src_libzardoz_la_PKGNAME = zardoz+-3.0
+SUBDIRS = src
 END
 
-: > ltmain.sh
-: > config.sub
-: > config.guess
+cat > 'src/Makefile.am' <<'END'
+bin_PROGRAMS = zardoz
+zardoz_CFLAGS = $(GOBJECT_CFLAGS)
+zardoz_LDADD = $(GOBJECT_LIBS)
+zardoz_SOURCES = zardoz.vala
+END
+
+cat > 'src/zardoz.vala' <<'END'
+using GLib;
+
+public class Zardoz {
+  public static void main () {
+    stdout.printf ("Zardoz!\n");
+  }
+}
+END
+
+libtoolize
 
 $ACLOCAL
+$AUTOCONF
 $AUTOMAKE -a
 
-grep 'VALAC' Makefile.in
-grep 'src_libzardoz_la_OBJECTS' Makefile.in
-grep 'src_libzardoz_la_vala.stamp' Makefile.in
-grep ' --library=zardoz+-3.0' Makefile.in
-grep 'src/zardoz-foo\.c' Makefile.in
-grep 'src/zardoz-foo\.h' Makefile.in
+./configure
+$MAKE
+$MAKE distcheck
+$MAKE distclean
+mkdir build
+cd build
+../configure
+$MAKE
+$MAKE distcheck
+

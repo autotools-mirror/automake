@@ -817,11 +817,11 @@ register_language ('name' => 'vala',
 		   'config_vars' => ['VALAC'],
 		   'flags' => ['VALAFLAGS'],
 		   'compile' => '$(VALAC) $(AM_VALAFLAGS) $(VALAFLAGS)',
+		   'ccer' => 'VALAC',
 		   'compiler' => 'VALACOMPILE',
 		   'extensions' => ['.vala'],
-		   'output_extensions' => sub { (my $ext1 = $_[0]) =~ s/vala$/c/;
-						(my $ext2 = $_[0]) =~ s/vala$/h/;
-						return ($ext1, $ext2) },
+		   'output_extensions' => sub { (my $ext = $_[0]) =~ s/vala$/c/;
+						return ($ext,) },
 		   'rule_file' => 'vala',
 		   '_finish' => \&lang_vala_finish,
 		   '_target_hook' => \&lang_vala_target_hook,
@@ -5907,9 +5907,9 @@ sub lang_c_finish
     }
 }
 
-sub lang_vala_finish_target ($$$)
+sub lang_vala_finish_target ($$)
 {
-  my ($self, $name, $pkgname) = @_;
+  my ($self, $name) = @_;
 
   my $derived = canonicalize ($name);
   my $varname = $derived . '_SOURCES';
@@ -5919,21 +5919,16 @@ sub lang_vala_finish_target ($$$)
     {
       foreach my $file ($var->value_as_list_recursive)
         {
-          $output_rules .= "$file: ${derived}_vala.stamp\n"
-            if ($file =~ s/(.*)\.vala$/$1.c $1.h/);
+          $output_rules .= "$file: ${derived}_vala.stamp\n".
+            "\t\@if test -f \$@; then :; else \\\n".
+            "\t  rm -f ${derived}_vala.stamp; \\\n".
+            "\t  \$(MAKE) \$(AM_MAKEFLAGS) ${derived}_vala.stamp; \\\n".
+            "\tfi\n"
+            if $file =~ s/(.*)\.vala$/$1.c/;
         }
     }
 
   my $compile = $self->compile;
-
-  if (defined ($pkgname))
-    {
-      $varname = $derived . '_PKGNAME';
-      $var = var ($varname);
-
-      $pkgname = $var->variable_value if $var;
-      $compile =~s/\$\(AM_VALAFLAGS\)/--library=$pkgname $&/;
-    }
 
   # Rewrite each occurrence of `AM_$flag' in the compile
   # rule into `${derived}_$flag' if it exists.
@@ -5946,42 +5941,47 @@ sub lang_vala_finish_target ($$$)
 
   my $dirname = dirname ($name);
 
-  $compile .= " -d $dirname" if $dirname ne '.';
+  # Only generate C code, do not run C compiler
+  $compile .= " -C";
+
+  my $verbose = verbose_flag ('VALAC');
+  my $silent = silent_flag ();
 
   $output_rules .=
     "${derived}_vala.stamp: \$(${derived}_SOURCES)\n".
-    "\t${compile} \$^ && touch \$@\n";
+    "\t${verbose}${compile} \$(${derived}_SOURCES)\n".
+    "\t${silent}touch \$@\n";
+
+  push_dist_common ("${derived}_vala.stamp");
+
+  $clean_files{"${derived}_vala.stamp"} = MAINTAINER_CLEAN;
 }
 
-# This is a vala helper which is called after all source file
-# processing is done.
+# Add output ruless to invoke valac and create stamp file as a witness
+# to handle multiple outputs. This function is called after all source
+# file processing is done.
 sub lang_vala_finish
 {
   my ($self) = @_;
 
   foreach my $prog (keys %known_programs)
     {
-      lang_vala_finish_target ($self, $prog, 0);
+      lang_vala_finish_target ($self, $prog);
     }
 
-  while (my ($name, $pkgname) = each %known_libraries)
+  while (my ($name) = each %known_libraries)
     {
-      lang_vala_finish_target ($self, $name, $pkgname);
+      lang_vala_finish_target ($self, $name);
     }
 }
 
-# This is a vala helper which is called whenever we have decided to
-# compile a vala file.
+# The built .c files should be cleaned only on maintainer-clean
+# as the .c files are distributed. This function is called for each
+# .vala source file.
 sub lang_vala_target_hook
 {
   my ($self, $aggregate, $output, $input, %transform) = @_;
 
-  (my $output_base = $output) =~ s/$KNOWN_EXTENSIONS_PATTERN$//;
-  my $header = $output_base . '.h';
-
-  &push_dist_common ($header);
-
-  $clean_files{$header} = MAINTAINER_CLEAN;
   $clean_files{$output} = MAINTAINER_CLEAN;
 }
 
