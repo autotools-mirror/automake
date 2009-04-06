@@ -126,7 +126,7 @@ else dir="$(srcdir)/"; fi;				\
 tst=$$dir$$f; log='$@'; __SAVED_TERM=$$TERM;		\
 $(TESTS_ENVIRONMENT)
 RECHECK_LOGS = $(TEST_LOGS)
-AM_RECURSIVE_TARGETS = check recheck check-html recheck-html
+AM_RECURSIVE_TARGETS = check check-html recheck recheck-html
 TEST_SUITE_LOG = test-suite.log
 TEST_SUITE_HTML = $(TEST_SUITE_LOG:.log=.html)
 TEST_EXTENSIONS = .test
@@ -1120,17 +1120,6 @@ check-TESTS:
 	  set_logs=TEST_LOGS=;						\
 	fi;								\
 	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG) $$set_logs
-recheck-TESTS:
-	@list='$(TEST_LOGS)';						\
-	logs=`for f in $$list; do					\
-		if read line < $$f; then				\
-		  case $$line in FAIL*|XPASS*) echo $$f;; esac;		\
-		else echo $$f; fi;					\
-	      done | tr '\012\015' '  '`;				\
-	$(MAKE) $(AM_MAKEFLAGS) check-TESTS RECHECK_LOGS="$$logs"
-
-recheck-am: recheck-TESTS
-recheck: recheck-am
 
 .log.html:
 	@list='$(RST2HTML) $$RST2HTML rst2html rst2html.py';		\
@@ -1146,15 +1135,31 @@ recheck: recheck-am
 	$$R2H $< >$@.tmp
 	@mv $@.tmp $@
 
-# Be sure to run check-TESTS first, and then to convert the result.
-# Beware of concurrent executions.  And expect check-TESTS to fail.
-check-html recheck-html:
-	@target=`echo $@ | sed 's/-html$$//'`;			\
-	if $(MAKE) $(AM_MAKEFLAGS) $$target-TESTS; then		\
+# Be sure to run check first, and then to convert the result.
+# Beware of concurrent executions.  Run "check" not "check-TESTS", as
+# check-SCRIPTS and other dependencies are rebuilt by the former only.
+# And expect check to fail.
+check-html:
+	@if $(MAKE) $(AM_MAKEFLAGS) check; then			\
 	  rv=0; else rv=$$?;					\
 	fi;							\
 	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_HTML) || exit 4;	\
 	exit $$rv
+recheck recheck-html:
+	@target=`echo $@ | sed 's,^re,,'`;				\
+	list='$(TEST_LOGS)';						\
+	if test -f $(TEST_SUITE_LOG); then				\
+	  list=`for f in $$list; do					\
+		  test -f $$f || continue;				\
+		  if read line < $$f; then				\
+		    case $$line in FAIL*|XPASS*) echo $$f;; esac;	\
+		  else echo $$f; fi;					\
+		done | tr '\012\015' '  '`;				\
+	  args=TEST_LOGS=$$list;					\
+	  $(MAKE) $(AM_MAKEFLAGS) $$target TEST_LOGS="$$list";		\
+	else								\
+	  $(MAKE) $(AM_MAKEFLAGS) $$target;				\
+	fi
 .test.log:
 	@p='$<'; $(am__check_pre) $(TEST_LOG_COMPILE) "$$tst" $(am__check_post)
 
@@ -1290,7 +1295,7 @@ ps-am:
 
 uninstall-am:
 
-.MAKE: check-am check-html install-am install-strip recheck-am \
+.MAKE: check-am check-html install-am install-strip recheck \
 	recheck-html
 
 .PHONY: all all-am check check-TESTS check-am check-html clean \
@@ -1302,8 +1307,7 @@ uninstall-am:
 	install-pdf-am install-ps install-ps-am install-strip \
 	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-generic pdf \
-	pdf-am ps ps-am recheck recheck-TESTS recheck-am recheck-html \
-	uninstall uninstall-am
+	pdf-am ps ps-am recheck recheck-html uninstall uninstall-am
 
 
 $(srcdir)/parallel-tests.am: gen-parallel-tests Makefile.am

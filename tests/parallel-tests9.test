@@ -28,11 +28,16 @@ END
 cat > Makefile.am << 'END'
 TEST_SUITE_LOG = mylog.log
 TESTS = foo.test bar.test baz.test
+check_SCRIPTS = bla
+CLEANFILES = bla
+bla:
+	echo bla > $@
 END
 
 cat >>foo.test <<'END'
 #! /bin/sh
 echo "this is $0"
+test -f bla || exit 1
 exit 0
 END
 cat >>bar.test <<'END'
@@ -67,4 +72,13 @@ $MAKE recheck >stdout && { cat stdout; Exit 1; }
 cat stdout
 grep foo.test stdout || Exit 1
 
+# Ensure that recheck builds check_SCRIPTS, and that
+# recheck reruns all tests if check has not been run.
+$MAKE clean
+$MAKE recheck && Exit 1
+test -f bla
+test -f foo.log
+test -f bar.log
+test -f baz.log
+test -f mylog.log
 :

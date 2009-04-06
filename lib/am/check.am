@@ -239,23 +239,7 @@ check-TESTS:
 	fi;								\
 	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG) $$set_logs
 
-## Rerun all FAILed or XPASSed tests (as well as all whose logs are out
-## of date or do not exist).
-recheck-TESTS:
-	@list='$(TEST_LOGS)';						\
-	logs=`for f in $$list; do					\
-		if read line < $$f; then				\
-		  case $$line in FAIL*|XPASS*) echo $$f;; esac;		\
-		else echo $$f; fi;					\
-	      done | tr '\012\015' '  '`;				\
-	$(MAKE) $(AM_MAKEFLAGS) check-TESTS RECHECK_LOGS="$$logs"
-
-recheck-am: recheck-TESTS
-recheck: recheck-am
-.PHONY: recheck recheck-am recheck-TESTS
-.MAKE: recheck-am
-
-AM_RECURSIVE_TARGETS += check recheck
+AM_RECURSIVE_TARGETS += check
 
 ## -------------- ##
 ## Produce HTML.  ##
@@ -275,19 +259,49 @@ AM_RECURSIVE_TARGETS += check recheck
 	$$R2H $< >$@.tmp
 	@mv $@.tmp $@
 
-# Be sure to run check-TESTS first, and then to convert the result.
-# Beware of concurrent executions.  And expect check-TESTS to fail.
-check-html recheck-html:
-	@target=`echo $@ | sed 's/-html$$//'`;			\
-	if $(MAKE) $(AM_MAKEFLAGS) $$target-TESTS; then		\
+# Be sure to run check first, and then to convert the result.
+# Beware of concurrent executions.  Run "check" not "check-TESTS", as
+# check-SCRIPTS and other dependencies are rebuilt by the former only.
+# And expect check to fail.
+check-html:
+	@if $(MAKE) $(AM_MAKEFLAGS) check; then			\
 	  rv=0; else rv=$$?;					\
 	fi;							\
 	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_HTML) || exit 4;	\
 	exit $$rv
-.PHONY: check-html recheck-html
-.MAKE: check-html recheck-html
 
-AM_RECURSIVE_TARGETS += check-html recheck-html
+.PHONY: check-html
+.MAKE: check-html
+
+AM_RECURSIVE_TARGETS += check-html
+
+## -------------------- ##
+## Rechecking failures. ##
+## -------------------- ##
+
+## Rerun all FAILed or XPASSed tests (as well as all whose logs are out
+## of date or do not exist).
+recheck recheck-html:
+	@target=`echo $@ | sed 's,^re,,'`;				\
+	list='$(TEST_LOGS)';						\
+## If the test suite has not been run yet, then run it in full
+	if test -f $(TEST_SUITE_LOG); then				\
+	  list=`for f in $$list; do					\
+		  test -f $$f || continue;				\
+		  if read line < $$f; then				\
+		    case $$line in FAIL*|XPASS*) echo $$f;; esac;	\
+		  else echo $$f; fi;					\
+		done | tr '\012\015' '  '`;				\
+	  args=TEST_LOGS=$$list;					\
+	  $(MAKE) $(AM_MAKEFLAGS) $$target TEST_LOGS="$$list";		\
+	else								\
+	  $(MAKE) $(AM_MAKEFLAGS) $$target;				\
+	fi
+
+.PHONY: recheck recheck-html
+.MAKE: recheck recheck-html
+
+AM_RECURSIVE_TARGETS += recheck recheck-html
 
 else !%?PARALLEL_TESTS%
 
