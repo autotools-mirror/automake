@@ -684,6 +684,7 @@ txinfo29.test \
 txinfo30.test \
 txinfo31.test \
 txinfo32.test \
+txinfo33.test \
 transform.test \
 transform2.test \
 unused.test \

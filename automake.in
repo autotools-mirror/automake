@@ -3224,7 +3224,7 @@ sub output_texinfo_build_rules ($$$@)
 }
 
 
-# $TEXICLEANS
+# ($MOSTLYCLEAN, $TEXICLEAN, $MAINTCLEAN)
 # handle_texinfo_helper ($info_texinfos)
 # --------------------------------------
 # Handle all Texinfo source; helper for handle_texinfo.
@@ -3234,7 +3234,7 @@ sub handle_texinfo_helper ($)
   my (@infobase, @info_deps_list, @texi_deps);
   my %versions;
   my $done = 0;
-  my @texi_cleans;
+  my (@mostly_cleans, @texi_cleans, @maint_cleans) = ('', '', '');
 
   # Build a regex matching user-cleaned files.
   my $d = var 'DISTCLEANFILES';
@@ -3265,7 +3265,7 @@ sub handle_texinfo_helper ($)
       my ($out_file, $vtexi, @clean_files) =
 	scan_texinfo_file ("$relative_dir/$texi")
 	or next;
-      push (@texi_cleans, @clean_files);
+      push (@mostly_cleans, @clean_files);
 
       # If the Texinfo source is in a subdirectory, create the
       # resulting info in this subdirectory.  If it is in the current
@@ -3508,7 +3508,9 @@ sub handle_texinfo_helper ($)
 	}
     }
 
-  return makefile_wrap ("", "\t  ", @texi_cleans);
+  return (makefile_wrap ("", "\t  ", @mostly_cleans),
+	  makefile_wrap ("", "\t  ", @texi_cleans),
+	  makefile_wrap ("", "\t  ", @maint_cleans));
 }
 
 
@@ -3522,14 +3524,20 @@ sub handle_texinfo ()
   reject_var 'html_TEXINFOS', "HTML generation not yet supported";
 
   my $info_texinfos = var ('info_TEXINFOS');
-  my $texiclean = "";
+  my ($mostlyclean, $clean, $maintclean) = ('', '', '');
   if ($info_texinfos)
     {
-      $texiclean = handle_texinfo_helper ($info_texinfos);
+      ($mostlyclean, $clean, $maintclean) = handle_texinfo_helper ($info_texinfos);
+      chomp $mostlyclean;
+      chomp $clean;
+      chomp $maintclean;
     }
+
   $output_rules .=  file_contents ('texinfos',
 				   new Automake::Location,
-				   TEXICLEAN     => $texiclean,
+				   MOSTLYCLEAN   => $mostlyclean,
+				   TEXICLEAN     => $clean,
+				   MAINTCLEAN    => $maintclean,
 				   'LOCAL-TEXIS' => !!$info_texinfos);
 }
 
