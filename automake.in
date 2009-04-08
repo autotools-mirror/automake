@@ -4912,7 +4912,8 @@ sub handle_tests
 	  define_variable ('TEST_SUITE_HTML', '$(TEST_SUITE_LOG:.log=.html)', INTERNAL);
 	  my $suff = '.test';
 	  my $at_exeext = '';
-	  if (exists $configure_vars{'EXEEXT'})
+	  my $handle_exeext = exists $configure_vars{'EXEEXT'};
+	  if ($handle_exeext)
 	    {
 	      $at_exeext = subst ('EXEEXT');
 	      $suff = $at_exeext  . ' ' . $suff;
@@ -4920,7 +4921,7 @@ sub handle_tests
 	  define_variable ('TEST_EXTENSIONS', $suff, INTERNAL);
 	  # FIXME: this mishandles conditions.
 	  my @test_suffixes = (var 'TEST_EXTENSIONS')->value_as_list_recursive;
-	  if (exists $configure_vars{'EXEEXT'})
+	  if ($handle_exeext)
 	    {
 	      unshift (@test_suffixes, $at_exeext)
 	        unless $test_suffixes[0] eq $at_exeext;
@@ -4958,7 +4959,8 @@ sub handle_tests
 						OBJ => $obj,
 						SOURCE => $val,
 						COMPILE =>'$(' . $compile . ')',
-						EXT => '');
+						EXT => '',
+						am__EXEEXT => 'FALSE');
 	        return $obj;
 	      });
 
@@ -4990,12 +4992,14 @@ sub handle_tests
 		  define_variable ($compile,
 				   '$(' . $ext . '_LOG_COMPILER) $(AM_' .  $ext . '_LOG_FLAGS)'
 				   . ' $(' . $ext . '_LOG_FLAGS)', INTERNAL);
+		  my $am_exeext = $handle_exeext ? 'am__EXEEXT' : 'FALSE';
 		  $output_rules .= file_contents ('check2', new Automake::Location,
 						  GENERIC => 1,
 						  OBJ => '',
 						  SOURCE => '$<',
 						  COMPILE => '$(' . $compile . ')',
-						  EXT => $test_suffix);
+						  EXT => $test_suffix,
+						  am__EXEEXT => $am_exeext);
 	        }
 	    }
 
