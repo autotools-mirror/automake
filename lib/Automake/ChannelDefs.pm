@@ -310,7 +310,7 @@ Parse the argument of C<--warning=CATEGORY> or C<-WCATEGORY>.
 
 C<$OPTIONS> is C<"--warning"> or C<"-W">, C<$ARGUMENT> is C<CATEGORY>.
 
-This is meant to be used as a argument to C<Getopt>.
+This is meant to be used as an argument to C<Getopt>.
 
 =cut
 
