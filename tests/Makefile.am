@@ -263,6 +263,7 @@ extra4.test \
 extra5.test \
 extra6.test \
 extra7.test \
+extra8.test \
 f90only.test \
 flibs.test \
 fn99.test \

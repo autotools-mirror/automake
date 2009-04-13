@@ -2471,11 +2471,6 @@ sub handle_programs
       my $seen_libobjs = 0;
       my $obj = get_object_extension '.$(OBJEXT)';
 
-      # Strip any $(EXEEXT) suffix the user might have added, or this
-      # will confuse &handle_source_transform and &check_canonical_spelling.
-      # We'll add $(EXEEXT) back later anyway.
-      $one_file =~ s/\$\(EXEEXT\)$//;
-
       $known_programs{$one_file} = $where;
 
       # Canonicalize names and check for misspellings.
@@ -7144,6 +7139,14 @@ sub am_install_var
 	    }
 	  else
 	    {
+	      # Strip any $(EXEEXT) suffix the user might have added, or this
+	      # will confuse &handle_source_transform and &check_canonical_spelling.
+	      # We'll add $(EXEEXT) back later anyway.
+	      # Do it here rather than in handle_programs so the uniquifying at the
+	      # end of this function works.
+	      ${$locvals}[1] =~ s/\$\(EXEEXT\)$//
+	        if $primary eq 'PROGRAMS';
+
 	      push (@result, $locvals);
 	    }
 	}
