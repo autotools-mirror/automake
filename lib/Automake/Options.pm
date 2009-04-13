@@ -265,7 +265,7 @@ sub _process_option_list (\%$@)
 	     || $_ eq 'readme-alpha' || $_ eq 'check-news'
 	     || $_ eq 'subdir-objects' || $_ eq 'nostdinc'
 	     || $_ eq 'no-exeext' || $_ eq 'no-define'
-	     || $_ eq 'std-options' || $_ eq 'silent-rules'
+	     || $_ eq 'std-options'
 	     || $_ eq 'color-tests' || $_ eq 'parallel-tests'
 	     || $_ eq 'cygnus' || $_ eq 'no-dependencies')
 	{
@@ -275,6 +275,12 @@ sub _process_option_list (\%$@)
 	{
 	  delete $options->{$_};
 	  $options->{'filename-length-max'} = [$_, $1];
+	}
+      elsif ($_ eq  'silent-rules')
+        {
+	  error ($where,
+	         "option `$_' must be an argument of AM_INIT_AUTOMAKE")
+	    if $where->get !~ /^configure\./;
 	}
       elsif ($_ eq 'tar-v7' || $_ eq 'tar-ustar' || $_ eq 'tar-pax')
 	{

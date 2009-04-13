@@ -2559,10 +2559,6 @@ Ordinarily each @file{Makefile.in} is created in the directory of the
 corresponding @file{Makefile.am}.  This option is deprecated and will be
 removed in a future release.
 
-@item --silent-rules
-@opindex --silent-rules
-Enable the @option{silent-rules} option globally (@pxref{Options}).
-
 @item -v
 @itemx --verbose
 @opindex -v
@@ -3888,6 +3884,10 @@ Find a compiler for Unified Parallel C and define the @code{UPC}
 variable.  The default @var{compiler-search-list} is @samp{upcc upc}.
 This macro will abort @command{configure} if no Unified Parallel C
 compiler is found.
+
+@item AM_SILENT_RULES
+@acindex AM_SILENT_RULES
+Enable the machinery for less verbose build output (@pxref{Options}).
 
 @item AM_WITH_DMALLOC
 @acindex AM_WITH_DMALLOC
@@ -9022,8 +9022,8 @@ letter; it should be omitted for non-alpha releases.
 @item @option{silent-rules}
 @cindex Option, @option{silent-rules}
 @opindex silent-rules
-Enable silent build rules.  This will cause many build rules to output a
-status line of the form
+Enable less verbose build rules.  This can be used to let build rules
+output a status line of the form
 
 @example
   GEN @var{output-file}
@@ -9031,12 +9031,38 @@ status line of the form
 
 @noindent
 instead of printing the command that will be executed to update
-@var{output-file}.  It will also silence @command{libtool} output.
+@var{output-file}.  It can also silence @command{libtool} output.
 
+To enable less verbose build rules, both the developer and the user
+of the package have to take a number of steps.  The developer needs
+to do either of the following:
+
+@itemize @bullet
+@item
+Add the @option{silent-rules} option as argument to @code{AM_INIT_AUTOMAKE}.
+@item
+Call the @code{AM_SILENT_RULES} macro from within the @file{configure.ac}
+file.
+@end itemize
+
+@cindex default verbosity for silent-rules
+If the developer has done either of the above, then the user of the
+package may influence the verbosity at @command{configure} run time as
+well as at @command{make} run time:
+
+@itemize @bullet
+@item
+@opindex --enable-silent-rules
+@opindex --disable-silent-rules
+Passing @option{--enable-silent-rules} to @command{configure} will cause
+build rules to be less verbose; the option @option{--disable-silent-rules}
+is the default and will cause normal verbose output.
+@item
 @vindex @code{V}
-The verbosity can be influenced at @command{make} run time by setting the
-variable @code{V}: @samp{make V=0} is equivalent to @code{V} being unset,
-while @samp{make V=1} will produce verbose output.
+At @command{make} run time, the default chosen at @command{configure}
+time may be overridden: @code{make V=1} will produce verbose output,
+@code{make V=0} less verbose output.
+@end itemize
 
 For portability to different @command{make} implementations, package authors
 are advised to not set the variable @code{V} inside the @file{Makefile.am}
@@ -9053,11 +9079,31 @@ expansion, which are in turn enabled by @option{-Wportability}
 
 @vindex @code{AM_V_GEN}
 @vindex @code{AM_V_at}
-To extend the silent mode to your own rules, you can use the predefined
-variable @code{AM_V_GEN} as a prefix to commands that should output a
-status line in silent mode, and @code{AM_V_at} as a prefix to commands
-that should not output anything in silent mode.  With @code{V=1}, these
-variables will expand to empty strings.
+@vindex @code{AM_DEFAULT_VERBOSITY}
+To extend the silent mode to your own rules, you have two choices:
+
+@itemize @bullet
+@item
+You can use the predefined variable @code{AM_V_GEN} as a prefix to
+commands that should output a status line in silent mode, and
+@code{AM_V_at} as a prefix to commands that should not output anything
+in silent mode.  When output is to be verbose, both of these variables
+will expand to the empty string.
+@item
+You can add your own variables, so strings of your own choice are shown.
+The following snippet shows how you would define your own equivalent of
+@code{AM_V_GEN}:
+
+@example
+pkg_verbose = $(pkg_verbose_$(V))
+pkg_verbose_ = $(pkg_verbose_$(AM_DEFAULT_VERBOSITY))
+pkg_verbose_0 = @@echo GEN $@@;
+
+foo: foo.in
+        $(pkg_verbose)cp $(srcdir)/foo.in $@@
+@end example
+@end itemize
+
 
 @item @option{std-options}
 @cindex Options, @option{std-options}

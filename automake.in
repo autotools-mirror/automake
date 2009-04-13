@@ -1144,7 +1144,7 @@ sub define_verbose_var ($$)
       {
 	# Using `$V' instead of `$(V)' breaks IRIX make.
 	define_variable ($var, '$(' . $pvar . '_$(V))', INTERNAL);
-	define_variable ($pvar . '_', $val, INTERNAL);
+	define_variable ($pvar . '_', '$(' . $pvar . '_$(AM_DEFAULT_VERBOSITY))', INTERNAL);
 	define_variable ($pvar . '_0', $val, INTERNAL);
       }
 }
@@ -4197,8 +4197,7 @@ sub handle_configure ($$$@)
 			  @configuredeps);
 
   my $automake_options = '--' . (global_option 'cygnus' ? 'cygnus' : $strictness_name)
-			 . (global_option 'no-dependencies' ? ' --ignore-deps' : '')
-			 . (global_option 'silent-rules' ? ' --silent-rules' : '');
+			 . (global_option 'no-dependencies' ? ' --ignore-deps' : '');
 
   $output_rules .= file_contents
     ('configure',
@@ -5212,6 +5211,7 @@ sub scan_autoconf_traces ($)
 		AM_INIT_AUTOMAKE => 0,
 		AM_MAINTAINER_MODE => 0,
 		AM_PROG_CC_C_O => 0,
+		AM_SILENT_RULES => 0,
 		_AM_SUBST_NOTMAKE => 1,
 		_AM_COND_IF => 1,
 		_AM_COND_ELSE => 1,
@@ -5404,6 +5404,10 @@ sub scan_autoconf_traces ($)
       elsif ($macro eq 'AM_PROG_CC_C_O')
 	{
 	  $seen_cc_c_o = $where;
+	}
+      elsif ($macro eq 'AM_SILENT_RULES')
+        {
+	  set_global_option ('silent-rules', $where);
 	}
       elsif ($macro eq '_AM_COND_IF')
         {
@@ -8158,9 +8162,6 @@ Dependency tracking:
   -i, --ignore-deps      disable dependency tracking code
       --include-deps     enable dependency tracking code
 
-Verbosity of generated rules:
-      --silent-rules     enable silent build rules
-
 Flavors:
       --cygnus           assume program is part of Cygnus-style tree
       --foreign          set strictness to foreign
@@ -8272,8 +8273,6 @@ sub parse_arguments ()
      'o|output-dir=s'	=> \$output_directory,
      'a|add-missing'	=> \$add_missing,
      'c|copy'		=> \$copy_missing,
-     'silent-rules'	=> sub { set_global_option ('silent-rules',
-						    $cli_where); },
      'v|verbose'	=> sub { setup_channel 'verb', silent => 0; },
      'W|warnings=s'     => \&parse_warnings,
      # These long options (--Werror and --Wno-error) for backward

@@ -21,19 +21,14 @@
 set -e
 
 cat >>configure.in <<'EOF'
-# Layering violation: this conditional should be decided
-# by the package author, not the user.  We just do it here
-# for testing convenience.
-AM_CONDITIONAL([SILENT], [test "$silent_rules" = yes])
+AM_SILENT_RULES
 AC_OUTPUT
 EOF
 
 cat > Makefile.am <<'EOF'
-if SILENT
 my_verbose = $(my_verbose_$(V))
-my_verbose_ = $(my_verbose_0)
+my_verbose_ = $(my_verbose_$(AM_DEFAULT_VERBOSITY))
 my_verbose_0 = @echo GEN $@;
-endif
 
 all-local: foo
 
@@ -46,10 +41,10 @@ EOF
 : >foo.in
 
 $ACLOCAL
-$AUTOMAKE --add-missing --silent-rules
+$AUTOMAKE --add-missing
 $AUTOCONF
 
-./configure silent_rules=yes
+./configure --enable-silent-rules
 $MAKE >stdout || { cat stdout; Exit 1; }
 cat stdout
 grep 'GEN foo' stdout
@@ -63,7 +58,7 @@ grep 'cp ' stdout
 
 $MAKE distclean
 
-./configure silent_rules=no
+./configure --disable-silent-rules
 $MAKE >stdout || { cat stdout; Exit 1; }
 cat stdout
 grep 'GEN foo' stdout && Exit 1
@@ -71,26 +66,36 @@ grep 'cp ' stdout
 
 $MAKE distclean
 
+$sleep
 # Things should also work with -Wall in AM_INIT_AUTOMAKE.
 cat > configure.in <<'END'
 AC_INIT([silent6], [1.0])
 AM_INIT_AUTOMAKE([-Wall])
-AM_CONDITIONAL([SILENT], [:])
 AC_CONFIG_FILES([Makefile])
-AC_OUTPUT
 END
 
 $ACLOCAL
-AUTOMAKE_fails --force
-$AUTOMAKE --force -Wno-error
-grep ' --silent-rules' Makefile.in && Exit 1
-$AUTOMAKE --force --silent-rules
-grep ' --silent-rules' Makefile.in
-$AUTOMAKE --force -Wno-all -Wportability --silent-rules
-grep ' --silent-rules' Makefile.in
+AUTOMAKE_fails
+$AUTOMAKE -Wno-error
 
-echo 'AUTOMAKE_OPTIONS = silent-rules' >> Makefile.am
-$AUTOMAKE --force
+# AM_SILENT_RULES should turn off the warning
+$sleep
+echo 'AM_SILENT_RULES' >> configure.in
+$ACLOCAL
+$AUTOMAKE
+grep 'AM_V_GEN' Makefile.in
+$AUTOMAKE --force -Wno-all -Wportability
+grep 'AM_V_GEN' Makefile.in
+
+# The `silent-rules' option to AM_INIT_AUTOMAKE should work likewise.
+$sleep
+cat > configure.in <<'END'
+AC_INIT([silent6], [1.0])
+AM_INIT_AUTOMAKE([silent-rules])
+AC_CONFIG_FILES([Makefile])
+END
+$ACLOCAL
+$AUTOMAKE
 grep 'AM_V_GEN' Makefile.in
 $AUTOMAKE --force -Wno-all -Wportability
 grep 'AM_V_GEN' Makefile.in

@@ -21,6 +21,7 @@
 set -e
 
 cat >>configure.in <<'EOF'
+AM_SILENT_RULES
 AC_OUTPUT
 EOF
 
@@ -42,20 +43,39 @@ $ACLOCAL
 $AUTOMAKE --add-missing
 $AUTOCONF
 
-./configure
+./configure --disable-silent-rules
 $MAKE >stdout || { cat stdout; Exit 1; }
 cat stdout
 grep 'GEN.*foo' stdout && Exit 1
 grep 'cp ' stdout
 grep 'echo ' stdout
 
+$MAKE clean
+$MAKE V=1 >stdout || { cat stdout; Exit 1; }
+cat stdout
+grep 'GEN.*foo' stdout && Exit 1
+grep 'cp ' stdout
+grep 'echo ' stdout
+
+$MAKE clean
+$MAKE V=0 >stdout || { cat stdout; Exit 1; }
+cat stdout
+grep 'GEN.*foo' stdout
+grep 'cp ' stdout && Exit 1
+grep 'echo ' stdout && Exit 1
+
+
 $MAKE distclean
 
-echo 'AUTOMAKE_OPTIONS = silent-rules' >> Makefile.am
-$AUTOMAKE
-
-./configure
+./configure --enable-silent-rules
 $MAKE >stdout || { cat stdout; Exit 1; }
+cat stdout
+grep 'GEN.*foo' stdout
+grep 'cp ' stdout && Exit 1
+grep 'echo ' stdout && Exit 1
+
+$MAKE clean
+$MAKE V=0 >stdout || { cat stdout; Exit 1; }
 cat stdout
 grep 'GEN.*foo' stdout
 grep 'cp ' stdout && Exit 1
@@ -67,5 +87,9 @@ cat stdout
 grep 'GEN.*foo' stdout && Exit 1
 grep 'cp ' stdout
 grep 'echo ' stdout
+
+# Ensure that setting `silent-rules' in a Makefile.am produces an error.
+echo 'AUTOMAKE_OPTIONS = silent-rules' >> Makefile.am
+AUTOMAKE_fails --force
 
 :
