@@ -19,9 +19,6 @@
 
 # This test has a few sister tests, for java, info, libtool.
 
-
-# non-root should catch 'chmod a-r'-challenged file systems.
-required=non-root
 . ./defs || Exit 1
 
 set -e
@@ -70,6 +67,14 @@ $MAKE
 $MAKE install
 $MAKE uninstall
 
+for file in lib1.a libn1.a
+do
+  chmod a-r $file
+  test ! -r $file || Exit 77
+  $MAKE install-exec && Exit 1
+  chmod u+r $file
+done
+
 $MAKE unreadable-prog
 $MAKE install-exec && Exit 1
 $MAKE readable-prog
@@ -77,13 +82,6 @@ $MAKE readable-prog
 $MAKE unreadable-progn
 $MAKE install-exec && Exit 1
 $MAKE readable-progn
-
-for file in lib1.a libn1.a
-do
-  chmod a-r $file
-  $MAKE install-exec && Exit 1
-  chmod u+r $file
-done
 
 if grep "^EMACS = no" Makefile; then :; else
   for file in lisp1.el lisp1.elc
