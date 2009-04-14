@@ -20,6 +20,11 @@
 required=GNUmake
 . ./defs-p || Exit 1
 
+# This test does not work well if $MAKE contains -j.
+case $MAKE in
+*\ -j*) Exit 77 ;;
+esac
+
 set -e
 
 cat >> configure.in << 'END'
@@ -69,4 +74,11 @@ cd ..
 kill $!
 cat parallel/stdout
 test `grep -c PASS parallel/stdout` -eq 8
+
+# Wait long enough so that there are no open files any more
+# when the post-test cleanup runs.
+$sleep
+$sleep
+$sleep
+$sleep
 :
