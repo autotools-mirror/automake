@@ -6,7 +6,7 @@
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 3
+# serial 4
 
 # Check whether the Vala compiler exists in `PATH'. If it is found, the
 # variable VALAC is set. Optionally a minimum release number of the
@@ -20,7 +20,7 @@ AC_DEFUN([AM_PROG_VALAC],
    [AC_MSG_WARN([No Vala compiler found.  You will not be able to compile .vala source files.])],
    [AS_IF([test -n "$1"],
       [AC_MSG_CHECKING([$VALAC is at least version $1])
-       am__vala_version=`$VALAC --version`
+       am__vala_version=`$VALAC --version | sed 's/Vala  *//'`
        AS_VERSION_COMPARE([$1], ["$am__vala_version"],
          [AC_MSG_RESULT([yes])],
          [AC_MSG_RESULT([yes])],
