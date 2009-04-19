@@ -64,6 +64,10 @@ am__relativize = \
 endif %?SUBDIRS%
 
 .PHONY: distdir
+if %?SUBDIRS%
+AM_RECURSIVE_TARGETS += distdir
+endif %?SUBDIRS%
+
 distdir: $(DISTFILES)
 ##
 ## For Gnits users, this is pretty handy.  Look at 15 lines
@@ -79,6 +83,32 @@ if  %?CK-NEWS%
 	esac
 endif  %?CK-NEWS%
 endif %?TOPDIR_P%
+##
+## `missing help2man' may have created some bogus man pages.  Ensure they
+## are not distributed.
+##
+if %?INSTALL-MAN%
+if %?HAVE-MANS%
+	@list='$(MANS)'; if test -n "$$list"; then \
+	  list=`for p in $$list; do \
+	    if test -f $$p; then d=; else d="$(srcdir)/"; fi; \
+## Note that we check existing man pages here only.  If there are man pages
+## which are not distributed, and may be generated only conditionally, then
+## we should not error out because of them.  This could be refined to take
+## into account only dist_*_MANS, but then we'd be missing out on those
+## the user distributes with EXTRA_DIST.
+	    if test -f "$$d$$p"; then echo "$$d$$p"; else :; fi; done`; \
+	  if test -n "$$list" && \
+	    grep 'ab help2man is required to generate this page' $$list >/dev/null; then \
+	    echo "error: found man pages containing the \`missing help2man' replacement text:" >&2; \
+	    grep -l 'ab help2man is required to generate this page' $$list | sed 's/^/         /' >&2; \
+	    echo "       to fix them, install help2man, remove and regenerate the man pages;" >&2; \
+	    echo "       typically \`make maintainer-clean' will remove them" >&2; \
+	    exit 1; \
+	  else :; fi; \
+	else :; fi
+endif %?HAVE-MANS%
+endif %?INSTALL-MAN%
 ##
 ## Only for the top dir.
 ##
@@ -172,10 +202,16 @@ endif %?TOPDIR_P%
 ## directory exists only in $(srcdir), because some vendor Make (such
 ## as Tru64) will magically create an empty directory in `.'
 	    dir=`echo "/$$file" | sed -e 's,/[^/]*$$,,'`; \
-	    if test -d $(srcdir)/$$file && test $$d != $(srcdir); then \
-	      cp -pR $(srcdir)/$$file "$(distdir)$$dir" || exit 1; \
+## If the destination directory already exists, it may contain read-only
+## files, e.g., during `make distcheck'.
+	    if test -d "$(distdir)/$$file"; then \
+	      find "$(distdir)/$$file" -type d ! -perm -700 -exec chmod u+rwx {} \;; \
 	    fi; \
-	    cp -pR $$d/$$file "$(distdir)$$dir" || exit 1; \
+	    if test -d $(srcdir)/$$file && test $$d != $(srcdir); then \
+	      cp -fpR $(srcdir)/$$file "$(distdir)$$dir" || exit 1; \
+	      find "$(distdir)/$$file" -type d ! -perm -700 -exec chmod u+rwx {} \;; \
+	    fi; \
+	    cp -fpR $$d/$$file "$(distdir)$$dir" || exit 1; \
 	  else \
 ## Test for file existence because sometimes a file gets included in
 ## DISTFILES twice.  For example this happens when a single source
@@ -194,18 +230,26 @@ endif %?TOPDIR_P%
 ## directory, then we use `distdir' instead of `top_distdir'; this lets
 ## us work correctly with an enclosing package.
 ##
+## Split the loop for the directory creation and the one for recursion,
+## so that with GNU make -n, only the latter is executed.
 if %?SUBDIRS%
-	list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
+	@list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
 	  if test "$$subdir" = .; then :; else \
 	    test -d "$(distdir)/$$subdir" \
 	    || $(MKDIR_P) "$(distdir)/$$subdir" \
 	    || exit 1; \
+	  fi; \
+	done
+	@list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
+	  if test "$$subdir" = .; then :; else \
 	    dir1=$$subdir; dir2="$(distdir)/$$subdir"; \
 	    $(am__relativize); \
 	    new_distdir=$$reldir; \
 	    dir1=$$subdir; dir2="$(top_distdir)"; \
 	    $(am__relativize); \
 	    new_top_distdir=$$reldir; \
+	    echo " (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) top_distdir="$$new_top_distdir" distdir="$$new_distdir" \\"; \
+	    echo "     am__remove_distdir=: am__skip_length_check=: distdir)"; \
 	    ($(am__cd) $$subdir && \
 	      $(MAKE) $(AM_MAKEFLAGS) \
 	        top_distdir="$$new_top_distdir" \
@@ -302,6 +346,12 @@ dist-lzma: distdir
 	tardir=$(distdir) && $(am__tar) | lzma -9 -c >$(distdir).tar.lzma
 	$(am__remove_distdir)
 
+?XZ?DIST_ARCHIVES += $(distdir).tar.xz
+.PHONY: dist-xz
+dist-xz: distdir
+	tardir=$(distdir) && $(am__tar) | xz -c >$(distdir).tar.xz
+	$(am__remove_distdir)
+
 ?COMPRESS?DIST_ARCHIVES += $(distdir).tar.Z
 .PHONY: dist-tarZ
 dist-tarZ: distdir
@@ -335,10 +385,15 @@ endif %?TOPDIR_P%
 if %?TOPDIR_P%
 
 .PHONY: dist dist-all
+if %?SUBDIRS%
+AM_RECURSIVE_TARGETS += dist dist-all
+endif %?SUBDIRS%
+
 dist dist-all: distdir
 ?GZIP?	tardir=$(distdir) && $(am__tar) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
 ?BZIP2?	tardir=$(distdir) && $(am__tar) | bzip2 -9 -c >$(distdir).tar.bz2
 ?LZMA?	tardir=$(distdir) && $(am__tar) | lzma -9 -c >$(distdir).tar.lzma
+?XZ?	tardir=$(distdir) && $(am__tar) | xz -c >$(distdir).tar.xz
 ?COMPRESS?	tardir=$(distdir) && $(am__tar) | compress -c >$(distdir).tar.Z
 ?SHAR?	shar $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).shar.gz
 ?ZIP?	-rm -f $(distdir).zip
@@ -354,6 +409,10 @@ endif %?TOPDIR_P%
 
 
 if %?TOPDIR_P%
+if %?SUBDIRS%
+AM_RECURSIVE_TARGETS += distcheck
+endif %?SUBDIRS%
+
 # This target untars the dist file and tries a VPATH configuration.  Then
 # it guarantees that the distribution is self-contained by making another
 # tarfile.
@@ -366,6 +425,8 @@ distcheck: dist
 	  bunzip2 -c $(distdir).tar.bz2 | $(am__untar) ;;\
 	*.tar.lzma*) \
 	  unlzma -c $(distdir).tar.lzma | $(am__untar) ;;\
+	*.tar.xz*) \
+	  xz -dc $(distdir).tar.xz | $(am__untar) ;;\
 	*.tar.Z*) \
 	  uncompress -c $(distdir).tar.Z | $(am__untar) ;;\
 	*.shar.gz*) \
@@ -381,11 +442,17 @@ distcheck: dist
 	mkdir $(distdir)/_inst
 ## Undo the write access.
 	chmod a-w $(distdir)
+## With GNU make, the following command will be executed even with `make -n',
+## due to the presence of `$(MAKE)'.  That is normally all well (and `$(MAKE)'
+## is necessary for things like parallel distcheck), but here we don't want
+## execution.  To avoid MAKEFLAGS parsing hassles, use a witness file that a
+## non-`-n' run would have just created.
+	test -d $(distdir)/_build || exit 0; \
 ## Compute the absolute path of `_inst'.  Strip any leading DOS drive
 ## to allow DESTDIR installations.  Otherwise "$(DESTDIR)$(prefix)" would
 ## expand to "c:/temp/am-dc-5668/c:/src/package/package-1.0/_inst".
 	dc_install_base=`$(am__cd) $(distdir)/_inst && pwd | sed -e 's,^[^:\\/]:[\\/],/,'` \
-## We will attemp a DESTDIR install in $dc_destdir.  We don't
+## We will attempt a DESTDIR install in $dc_destdir.  We don't
 ## create this directory under $dc_install_base, because it would
 ## create very long directory names.
 	  && dc_destdir="$${TMPDIR-/tmp}/am-dc-$$$$/" \

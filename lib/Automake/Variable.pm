@@ -1,4 +1,4 @@
-# Copyright (C) 2003, 2004, 2005, 2006, 2008  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2004, 2005, 2006, 2008, 2009  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -71,7 +71,7 @@ Automake::Variable - support for variable definitions
   # $var->conditions->conds is a list of Automake::Condition.)
   my @conds = $var->conditions->conds
 
-  # Accessing to the definition in Condition $cond.
+  # Access to the definition in Condition $cond.
   # $def is an Automake::VarDef.
   my $def = $var->def ($cond);
   if ($def)
@@ -128,7 +128,10 @@ non-object).
 
 =cut
 
-my $_VARIABLE_PATTERN = '^[.A-Za-z0-9_@]+' . "\$";
+my $_VARIABLE_CHARACTERS = '[.A-Za-z0-9_@]+';
+my $_VARIABLE_PATTERN = '^' . $_VARIABLE_CHARACTERS . "\$";
+my $_VARIABLE_RECURSIVE_PATTERN =
+    '^([.A-Za-z0-9_@]|\$[({]' . $_VARIABLE_CHARACTERS . '[})]?)+' . "\$";
 
 # The order in which variables should be output.  (May contain
 # duplicates -- only the first occurrence matters.)
@@ -771,8 +774,17 @@ sub check_variable_expansions ($$)
 	  # Mention this in the diagnostic.
 	  my $gnuext = "";
 	  $gnuext = "\n(probably a GNU make extension)" if $var =~ / /;
-	  msg ('portability', $where,
-	       "$var: non-POSIX variable name$gnuext");
+	  # Accept recursive variable expansions if so desired
+	  # (we hope they are rather portable in practice).
+	  if ($var =~ /$_VARIABLE_RECURSIVE_PATTERN/o)
+	    {
+	      msg ('portability-recursive', $where,
+		   "$var: non-POSIX recursive variable expansion$gnuext");
+	    }
+	  else
+	    {
+	      msg ('portability', $where, "$var: non-POSIX variable name$gnuext");
+	    }
 	}
     }
 }

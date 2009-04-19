@@ -1,10 +1,25 @@
 ## Process this file with automake to create Makefile.in
 
-XFAIL_TESTS = 					\
+XFAIL_TESTS =					\
 all.test					\
 auxdir2.test					\
 cond17.test					\
 txinfo5.test
+
+include $(srcdir)/parallel-tests.am
+
+$(srcdir)/parallel-tests.am: gen-parallel-tests Makefile.am
+	(cd $(srcdir) && $(SHELL) ./gen-parallel-tests) >$@
+
+$(parallel_tests): $(parallel_tests:-p.test=.test) Makefile.am
+	input=`echo $@ | sed 's,.*/,,; s,-p.test$$,.test,'`; \
+	sed 's,^\. \./defs,. ./defs-p,' < $(srcdir)/$$input > $@
+	chmod a+rx $@
+
+MAINTAINERCLEANFILES = $(parallel_tests)
+
+defs-p: defs Makefile.am
+	sed 's,^AM_INIT_AUTOMAKE$$,&([parallel-tests]),' < defs >$@
 
 TESTS =	\
 aclibobj.test \
@@ -96,6 +111,8 @@ check6.test \
 check7.test \
 check8.test \
 check9.test \
+check10.test \
+check11.test \
 checkall.test \
 clean.test \
 clean2.test \
@@ -120,6 +137,7 @@ comment8.test \
 comment9.test \
 commen10.test \
 compile.test \
+compile2.test \
 compile_f90_c_cxx.test \
 compile_f_c_cxx.test \
 cond.test \
@@ -221,11 +239,14 @@ depend.test \
 depend2.test \
 depend3.test \
 depend4.test \
+depend5.test \
+depend6.test \
 destdir.test \
 dirforbid.test \
 dirlist.test \
 dirlist2.test \
 discover.test \
+distcleancheck.test \
 distcom2.test \
 distcom3.test \
 distcom4.test \
@@ -235,6 +256,8 @@ distcom7.test \
 distdir.test \
 distname.test \
 dollar.test \
+dollarvar.test \
+dollarvar2.test \
 double.test \
 dup2.test \
 else.test \
@@ -259,6 +282,7 @@ extra5.test \
 extra6.test \
 extra7.test \
 f90only.test \
+flavor.test \
 flibs.test \
 fn99.test \
 fn99subdir.test \
@@ -304,6 +328,14 @@ instsh2.test \
 instsh3.test \
 instdat.test \
 instdat2.test \
+instdir.test \
+instdir2.test \
+instdir-java.test \
+instdir-lisp.test \
+instdir-ltlib.test \
+instdir-prog.test \
+instdir-python.test \
+instdir-texi.test \
 instexec.test \
 instfail.test \
 instfail-info.test \
@@ -355,7 +387,9 @@ libtool7.test \
 libtool8.test \
 libtool9.test \
 libtoo10.test \
+libtoo11.test \
 license.test \
+license2.test \
 link_c_cxx.test	\
 link_dist.test \
 link_f90_only.test \
@@ -386,10 +420,16 @@ lzma.test \
 maintclean.test \
 make.test \
 makej.test \
+maken.test \
+maken2.test \
+maken3.test \
+maken4.test \
 makevars.test \
 man.test \
 man2.test \
 man3.test \
+man4.test \
+man5.test \
 mclean.test \
 mdate.test \
 mdate2.test \
@@ -447,6 +487,18 @@ output12.test \
 output13.test \
 output-order.test \
 overrid.test \
+parallel-am.test \
+parallel-am2.test \
+parallel-am3.test \
+parallel-tests.test \
+parallel-tests2.test \
+parallel-tests3.test \
+parallel-tests4.test \
+parallel-tests5.test \
+parallel-tests6.test \
+parallel-tests7.test \
+parallel-tests8.test \
+parallel-tests9.test \
 parse.test \
 percent.test \
 percent2.test \
@@ -515,8 +567,16 @@ req.test \
 reqd.test \
 reqd2.test \
 rulepat.test \
+sanity.test \
 scripts.test \
 seenc.test \
+silent.test \
+silent2.test \
+silent3.test \
+silent4.test \
+silent5.test \
+silent6.test \
+silent7.test \
 sinclude.test \
 srcsub.test \
 srcsub2.test \
@@ -528,6 +588,7 @@ specflg6.test	\
 specflg7.test	\
 specflg8.test	\
 specflg9.test	\
+specflg10.test	\
 spell.test \
 spell2.test \
 spell3.test \
@@ -568,6 +629,7 @@ subpkg3.test \
 subst.test \
 subst2.test \
 subst3.test \
+subst4.test \
 substref.test \
 substre2.test \
 substtarg.test \
@@ -621,6 +683,7 @@ txinfo28.test \
 txinfo29.test \
 txinfo30.test \
 txinfo31.test \
+txinfo32.test \
 transform.test \
 transform2.test \
 unused.test \
@@ -650,6 +713,7 @@ werror.test \
 werror2.test \
 whoami.test \
 xsource.test \
+xz.test \
 yacc.test \
 yacc2.test \
 yacc3.test \
@@ -659,15 +723,16 @@ yacc6.test \
 yacc7.test \
 yacc8.test \
 yaccpp.test \
-yaccvpath.test
+yaccvpath.test \
+$(parallel_tests)
 
-EXTRA_DIST = ChangeLog-old $(TESTS)
+EXTRA_DIST = ChangeLog-old gen-parallel-tests $(TESTS)
 
 # Each test case depends on defs, aclocal, and automake.
-check_SCRIPTS = defs aclocal-$(APIVERSION) automake-$(APIVERSION)
+check_SCRIPTS = defs defs-p aclocal-$(APIVERSION) automake-$(APIVERSION) $(parallel_tests)
 
-distclean-local: check-clean-local
+clean-local: check-clean-local
 
 check-clean-local:
 	-chmod -R u+rwx *.dir
-	-rm -rf *.dir
+	-rm -rf defs-p *.dir

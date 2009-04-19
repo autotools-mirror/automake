@@ -2,7 +2,7 @@
 # @configure_input@
 #
 # Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-# 2005, 2006, 2007  Free Software Foundation, Inc.
+# 2005, 2006, 2007, 2008, 2009  Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,9 +40,7 @@ test -f ./defs || {
    exit 1
 }
 
-# If srcdir is not set, then we are not running from `make check', be verbose.
 if test -z "$srcdir"; then
-   VERBOSE=x
    # compute $srcdir.
    srcdir=`echo "$0" | sed -e 's,/[^\\/]*$,,'`
    test "$srcdir" = $0 && srcdir=.
@@ -56,12 +54,6 @@ test -f "$srcdir/defs.in" || {
 
 me=`echo "$0" | sed -e 's,.*[\\/],,;s/\.test$//'`
 
-# See how redirections should work.  User can set VERBOSE to see all
-# output.
-test -z "$VERBOSE" && {
-   exec > /dev/null 2>&1
-}
-
 # Make sure we override the user shell.
 SHELL='@SHELL@'
 export SHELL
@@ -69,7 +61,7 @@ export SHELL
 test -z "$PERL" && PERL='@PERL@'
 test -z "$MAKE" && MAKE=make
 test -z "$AUTOCONF" && AUTOCONF="@am_AUTOCONF@"
-test -z "$AUTOHEADER" && AUTOHEADER="@AUTOHEADER@"
+test -z "$AUTOHEADER" && AUTOHEADER="@am_AUTOHEADER@"
 test -z "$AUTOUPDATE" && AUTOUPDATE=autoupdate
 test -z "$MISSING" && MISSING=`pwd`/../lib/missing
 # Use -Werror because this also turns some Perl warnings into error.
@@ -152,7 +144,7 @@ do
       CC=icc
       export CC
       # There is no way to ask *only* the compiler's version.
-      # This tool always want to do something (by default
+      # This tool always wants to do something (by default
       # it will try link *nothing* and complain it cannot find
       # main(); funny).  Use -help so it does not try linking anything.
       echo "$me: running $CC -V -help"
@@ -193,6 +185,16 @@ do
       create_status=$?
       rm -rf $ro_dir_temp
       test $create_status = 0 && exit 77
+      ;;
+    rst2html)
+      # Try the variants that are tried in check.am.
+      while :; do
+	for r2h in $RST2HTML rst2html rst2html.py; do
+	  echo "$me: running $r2h --version"
+	  $r2h --version && break 2
+	done
+	exit 77
+      done
       ;;
     runtest)
       # DejaGnu's runtest program. We rely on being able to specify
@@ -292,6 +294,15 @@ unset MFLAGS
 unset MAKEFLAGS
 unset MAKELEVEL
 unset DESTDIR
+# Unset verbosity flag.
+unset V
+# Also unset variables that control our test driver.  While not
+# conceptually independent, they cause some changed semantics we
+# need to control (and test for) in some of the tests to ensure
+# backward-compatible behavior.
+unset DISABLE_HARD_ERRORS
+unset RECHECK_LOGS
+unset VERBOSE
 
 echo "=== Running test $0"
 
@@ -309,8 +320,8 @@ case $required in
     if test -f $aclocaldir/dirlist; then
        extra_includes=`
        <$aclocaldir/dirlist \
-       sed -ne 's/#.*//;s/[	 ][	 ]*$//g;s/..*/ -I &/p' |
-	 tr -d '\n'`
+       sed  's/#.*//;s/[	 ][	 ]*$//g' \
+       | while read dir; do test ! -d "$dir" || echo "-I $dir"; done`
     else :; fi
 
     libtool_found=no
@@ -382,7 +393,7 @@ AUTOMAKE_run ()
   shift
   exitcode=0
   $AUTOMAKE ${1+"$@"} >stdout 2>stderr || exitcode=$?
-  cat stderr
+  cat stderr >&2
   cat stdout
   test $exitcode = $expected_exitcode || Exit 1
 }
@@ -396,10 +407,7 @@ AUTOMAKE_fails ()
   AUTOMAKE_run 1 ${1+"$@"}
 }
 
-# Turn on shell traces when VERBOSE is set.
-if test -n "$VERBOSE"; then
-  set -x
-else
-  :
-fi
+# Turn on shell traces.
+set -x
+
 pwd

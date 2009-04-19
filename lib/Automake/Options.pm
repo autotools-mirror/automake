@@ -1,4 +1,4 @@
-# Copyright (C) 2003, 2004, 2006, 2007  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2004, 2006, 2007, 2008, 2009  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -259,14 +259,14 @@ sub _process_option_list (\%$@)
       elsif ($_ eq 'no-installman' || $_ eq 'no-installinfo'
 	     || $_ eq 'dist-shar' || $_ eq 'dist-zip'
 	     || $_ eq 'dist-tarZ' || $_ eq 'dist-bzip2'
-	     || $_ eq 'dist-lzma'
+	     || $_ eq 'dist-lzma' || $_ eq 'dist-xz'
 	     || $_ eq 'no-dist-gzip' || $_ eq 'no-dist'
 	     || $_ eq 'dejagnu' || $_ eq 'no-texinfo.tex'
 	     || $_ eq 'readme-alpha' || $_ eq 'check-news'
 	     || $_ eq 'subdir-objects' || $_ eq 'nostdinc'
 	     || $_ eq 'no-exeext' || $_ eq 'no-define'
-	     || $_ eq 'std-options'
-	     || $_ eq 'color-tests'
+	     || $_ eq 'std-options' || $_ eq 'silent-rules'
+	     || $_ eq 'color-tests' || $_ eq 'parallel-tests'
 	     || $_ eq 'cygnus' || $_ eq 'no-dependencies')
 	{
 	  # Explicitly recognize these.

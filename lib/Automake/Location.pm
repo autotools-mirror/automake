@@ -1,4 +1,4 @@
-# Copyright (C) 2002, 2003  Free Software Foundation, Inc.
+# Copyright (C) 2002, 2003, 2008  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -56,6 +56,13 @@ Automake::Location - a class for location tracking, with a stack of contexts
   # Clone a Location.  Use this when storing the state of a location
   # that would otherwise be modified.
   my $where_copy = $where->clone;
+
+  # Serialize a Location object (for passing through a thread queue,
+  # for example)
+  my @array = $where->serialize ();
+
+  # De-serialize: recreate a Location object from a queue.
+  my $where = new Automake::Location::deserialize ($queue);
 
 =head1 DESCRIPTION
 
@@ -143,6 +150,33 @@ sub dump ($)
       $res .= ": $pair->[1]\n";
     }
   return $res;
+}
+
+sub serialize ($)
+{
+  my ($self) = @_;
+  my @serial = ();
+  push @serial, $self->get;
+  my @contexts = $self->get_contexts;
+  for my $pair (@contexts)
+    {
+      push @serial, @{$pair};
+    }
+  push @serial, undef;
+  return @serial;
+}
+
+sub deserialize ($)
+{
+  my ($queue) = @_;
+  my $position = $queue->dequeue ();
+  my $self = new Automake::Location $position;
+  while (my $position = $queue->dequeue ())
+    {
+      my $context = $queue->dequeue ();
+      push @{$self->{'contexts'}}, [$position, $context];
+    }
+  return $self;
 }
 
 =head1 SEE ALSO

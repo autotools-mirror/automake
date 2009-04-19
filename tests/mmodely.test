@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2004, 2006, 2007  Free Software Foundation, Inc.
+# Copyright (C) 2004, 2006, 2007, 2009  Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,18 +39,26 @@ zardoz_SOURCES = zardoz.y joe.l
 LDADD = @LEXLIB@
 END
 
-# The point of this test is that it is not dependant on a working lex or yacc.
+# The point of this test is that it is not dependent on a working lex or yacc.
 cat > joe.c <<EOF
 int joe (int arg)
 {
     return arg * 2;
 }
 EOF
+# On systems which link in libraries non-lazily and whose linkers
+# complain about unresolved symbols by default, such as Solaris, an
+# yylex function needs to be defined to avoid an error due to an
+# unresolved symbol.
 cat > zardoz.c <<EOF
 int joe (int arg);
+int yylex (void)
+{
+    return 0;
+}
 int main (int argc, char **argv)
 {
-    exit (joe (argc));
+    return joe (argc);
 }
 EOF
 

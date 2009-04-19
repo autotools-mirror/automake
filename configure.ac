@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.
 
 # Copyright (C) 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003,
-# 2004, 2006, 2007, 2008  Free Software Foundation, Inc.
+# 2004, 2006, 2007, 2008, 2009  Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-AC_INIT([GNU Automake], [1.10a], [bug-automake@gnu.org])
+AC_INIT([GNU Automake], [1.10c], [bug-automake@gnu.org])
 
 AC_CONFIG_SRCDIR(automake.in)
 AC_CONFIG_AUX_DIR(lib)
@@ -25,10 +25,11 @@ AC_CANONICAL_BUILD
 
 # Save the AUTOCONF setting before AM_INIT_AUTOMAKE overrides it; this
 # way we can run Autoconf tests from configure (or from the test
-# suite) without being bothered by `missing'.
+# suite) without being bothered by `missing'.  Likewise for autoheader.
 AC_SUBST([am_AUTOCONF], ["${AUTOCONF-autoconf}"])
+AC_SUBST([am_AUTOHEADER], ["${AUTOHEADER-autoheader}"])
 
-AM_INIT_AUTOMAKE([1.10a dist-bzip2 filename-length-max=99 color-tests])
+AM_INIT_AUTOMAKE([1.10a dist-bzip2 filename-length-max=99 color-tests parallel-tests])
 
 # The API version is the base version.  We must guarantee
 # compatibility for all releases with the same API version.
@@ -38,7 +39,7 @@ AM_INIT_AUTOMAKE([1.10a dist-bzip2 filename-length-max=99 color-tests])
 # * Prereleases on the trunk are all incompatible -- 1.5b and 1.5c
 #   aren't the same.
 APIVERSION=`echo "$VERSION" | sed -e 's/^\([[0-9]]*\.[[0-9]]*[[a-z]]*\).*$/\1/'`
-AC_SUBST(APIVERSION)
+AC_SUBST([APIVERSION])
 
 # A versioned directory, defined here for convenience.
 AC_SUBST([pkgvdatadir], ["\${datadir}/$PACKAGE-$APIVERSION"])
@@ -59,6 +60,32 @@ is recommended.  If you have several perl versions
 installed, select the one Automake should use using
   ./configure PERL=/path/to/perl])
 }
+
+# We require ithreads support, and version 5.7.2 for CLONE.
+AC_CACHE_CHECK([whether $PERL supports ithreads], [am_cv_prog_PERL_ithreads],
+[if $PERL -e '
+    require 5.007_002;
+    use Config;
+    if ($Config{useithreads})
+      {
+	require threads;
+	import threads;
+	require Thread::Queue;
+	import Thread::Queue;
+	exit 0;
+      }
+    exit 1;' >&AS_MESSAGE_LOG_FD 2>&1
+then
+  am_cv_prog_PERL_ithreads=yes
+else
+  am_cv_prog_PERL_ithreads=no
+fi])
+if test $am_cv_prog_PERL_ithreads = yes; then
+  PERL_THREADS=1;
+else
+  PERL_THREADS=0;
+fi
+AC_SUBST([PERL_THREADS])
 
 # The test suite will skip some tests if tex is absent.
 AC_CHECK_PROG([TEX], [tex], [tex])

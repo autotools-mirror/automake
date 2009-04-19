@@ -1,4 +1,25 @@
-New in 1.10a:
+New in 1.10c:
+
+* Languages changes:
+
+  - Vala source files are recognized now.
+
+* Miscellaneous Changes:
+
+  - In 1.10b, the `parallel-tests' driver introduced per-extension test
+    driver variables `<EXT>_LOG_COMPILER', defined as
+
+      $(<EXT>_LOG_COMPILE) $(AM_<EXT>_LOG_FLAGS) $(<EXT>_LOG_FLAGS)
+
+    for extensions `.ext' registered in `TEST_EXTENSIONS'.  Now, for tests
+    without a known extension, add `LOG_COMPILER', defined as
+
+      $(LOG_COMPILE) $(AM_LOG_FLAGS) $(LOG_FLAGS)
+
+    to the rules.
+
+
+New in 1.10b:
 
 * Version requirements:
 
@@ -10,10 +31,21 @@ New in 1.10a:
     (and new in Automake 1.10) is degraded to a warning.  This helps
     in the common case where the Autoconf versions used are compatible.
 
-* Change to Libtool support:
+* Changes to automake:
+
+  - The automake program can run multiple threads for creating most
+    Makefile.in files concurrently, if at least Perl 5.7.2 is available
+    with interpreter-based threads enabled.  Set the environment variable
+    AUTOMAKE_JOBS to the maximum number of threads to use, in order to
+    enable this experimental feature.
+
+* Changes to Libtool support:
 
   - Libtool generic flags are now passed to the install and uninstall
     modes as well.
+
+  - distcheck works with Libtool 2.x even when LT_OUTPUT is used, as
+    config.lt is removed correctly now.
 
 * Languages changes:
 
@@ -25,7 +57,11 @@ New in 1.10a:
 
   - Files with extension .sx are also treated as preprocessed assembler.
 
-  - Vala source files are recognized now.
+  - Python 3.0 is supported now, Python releases prior to 2.0 are no
+    longer supported.
+
+  - The default source file extension (.c) can be overridden with
+    AM_DEFAULT_SOURCE_EXT now.
 
 * Miscellaneous changes:
 
@@ -38,19 +74,27 @@ New in 1.10a:
       cvs -d :pserver:anonymous@pserver.git.sv.gnu.org:/automake.git \
           checkout -d automake HEAD
 
-  - "make dist" can now create lzma-compressed tarballs.
+  - "make dist" can now create xz-compressed tarballs,
+    as well as (deprecated?) lzma-compressed tarballs.
 
   - Automake is licensed under GPLv3+.  `automake --add-missing' will
     by default install the GPLv3 file as COPYING if it is missing.
-    Note that Automake will never overwrite an existing COPYING file,
-    even when the `--force-missing' option is used.
+    It will also warn that the license file should be added to source
+    control.  Note that Automake will never overwrite an existing COPYING
+    file, even when the `--force-missing' option is used.
 
-  - Automake ships and install man pages for automake and aclocal now.
+  - The manual is now distributed under the terms of the GNU FDL 1.3.
+
+  - Automake ships and installs man pages for automake and aclocal now.
 
   - New shorthand `$(pkglibexecdir)' for `$(libexecdir)/@PACKAGE@'.
 
   - install-sh supports -C, which does not update the installed file
     (and its time stamps) if the contents did not change.
+
+  - The `gnupload' script has been revamped.
+
+  - The `depcomp' and `compile' scripts now work with MSVC under MSYS.
 
   - The targets `install' and `uninstall' are more efficient now, in that
     for example multiple files from one Automake variable such as
@@ -60,8 +104,12 @@ New in 1.10a:
     Both install and uninstall may sometimes enter (`cd' into) the target
     installation directory now, when no build-local scripts are used.
 
-    For builtin rules, `make install' now fails reliably if installation
-    of a file failed.
+    Both install and uninstall do not fail anymore but do nothing if an
+    installation directory variable like `bindir' is set to the empty string.
+
+    For built-in rules, `make install' now fails reliably if installation
+    of a file failed.  Conversely, `make uninstall' even succeeds when
+    issued multiple times.
 
     These changes may need some adjustments from users:  For example,
     some `install' programs refuse to install multiple copies of the
@@ -89,6 +137,19 @@ New in 1.10a:
 
   - The `color-tests' option causes colored test result output on terminals.
 
+  - The `parallel-tests' option enables a new test driver that allows for
+    parallel test execution, inter-test dependencies, lazy test execution
+    for unit-testing, and formatted result output as RST (reStructuredText)
+    and HTML.  Enabling this option may require some changes to your test
+    suite setup; see the manual for details.
+
+  - The `silent-rules' option enables Linux kernel-style silent build output.
+    This option requires the widely supported but non-POSIX `make' feature
+    of recursive variable expansion, so do not use it if your package needs
+    to build with `make' implementations that do not support it.
+    Besides the normal option setting methods, it can also be enabled
+    globally by the new automake option `--silent-rules'.
+
   - New prefix `notrans_' for manpages which should not be transformed
     by --program-transform.
 
@@ -102,7 +163,21 @@ New in 1.10a:
   - AM_MAINTAINER_MODE now allows for an optional argument specifying
     the default setting.
 
-Bugs fixed in 1.10a:
+  - AM_SUBST_NOTMAKE may prevent substitution of AC_SUBSTed variables,
+    useful especially for multi-line values.
+
+  - Automake's early configure-time sanity check now diagnoses an
+    unsafe absolute source directory name and makes configure fail.
+
+  - The Automake macros and rules cope better with whitespace in the
+    current directory name, as long as the relative path to `configure'
+    does not contain whitespace.  To this end, the values of `$(MISSING)'
+    and `$(install_sh)' may contain suitable quoting, and their expansion
+    might need `eval'uation if used outside of a makefile.  These
+    undocumented variables may be used in several documented macros such
+    as $(AUTOCONF) or $(MAKEINFO).
+
+Bugs fixed in 1.10b:
 
 * Long standing bugs:
 
@@ -113,6 +188,40 @@ Bugs fixed in 1.10a:
 
   - For nobase_*_LTLIBRARIES with nonempty directory components, the
     correct `-rpath' argument is used now.
+
+  - `config.status --file=Makefile depfiles' now also works with the
+    extra quoting used internally by Autoconf 2.62 and newer
+    (it used to work only without the `--file=' bit).
+
+  - The `missing' script works better with versioned tool names.
+
+  - Semantics for `missing help2man' have been revamped:
+
+    Previously, if `help2man' was not present, `missing help2man' would have
+    the following semantics: if some man page was out of date but present, then
+    a warning would be printed, but the exit status was 0.  If the man page was
+    not present at all, then `missing' would create a replacement man page
+    containing an error message, and exit with a status of 2.  This does not play
+    well with `make': the next run will see this particular man page as being up
+    to date, and will only error out on the next generated man page, if any;
+    repeat until all pages are done.  This was not desirable.
+
+    These are the new semantics: if some man page is not present, and help2man
+    is not either, then `missing' will warn and generate the replacement page
+    containing the error message, but exit successfully.  However, `make dist'
+    will ensure that no such bogus man pages are packaged into a tarball.
+
+  - Targets provided by automake behave better with `make -n', in that they
+    take care not to create files.
+
+  - `config.status Makefile... depfiles' works fine again in the presence of
+    disabled dependency tracking.
+
+  - The default no-op recursive rules for these targets also work with BSD make
+    now: html, install-html, install-dvi, install-pdf, install-pdf, install-info.
+
+  - `make distcheck' works also when both a directory and some file below it
+    have been added to a distribution variable, such as EXTRA_DIST or *_SOURCES.
 
 * Bugs introduced by 1.10:
 
