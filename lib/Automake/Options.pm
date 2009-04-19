@@ -1,4 +1,4 @@
-# Copyright (C) 2003, 2004, 2006, 2007, 2008  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2004, 2006, 2007, 2008, 2009  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -266,7 +266,7 @@ sub _process_option_list (\%$@)
 	     || $_ eq 'subdir-objects' || $_ eq 'nostdinc'
 	     || $_ eq 'no-exeext' || $_ eq 'no-define'
 	     || $_ eq 'std-options'
-	     || $_ eq 'color-tests'
+	     || $_ eq 'color-tests' || $_ eq 'parallel-tests'
 	     || $_ eq 'cygnus' || $_ eq 'no-dependencies')
 	{
 	  # Explicitly recognize these.
@@ -275,6 +275,12 @@ sub _process_option_list (\%$@)
 	{
 	  delete $options->{$_};
 	  $options->{'filename-length-max'} = [$_, $1];
+	}
+      elsif ($_ eq  'silent-rules')
+        {
+	  error ($where,
+	         "option `$_' must be an argument of AM_INIT_AUTOMAKE")
+	    if $where->get !~ /^configure\./;
 	}
       elsif ($_ eq 'tar-v7' || $_ eq 'tar-ustar' || $_ eq 'tar-pax')
 	{

@@ -1,10 +1,26 @@
 ## Process this file with automake to create Makefile.in
 
-XFAIL_TESTS = 					\
+XFAIL_TESTS =					\
 all.test					\
 auxdir2.test					\
 cond17.test					\
-txinfo5.test
+txinfo5.test					\
+vala5.test
+
+include $(srcdir)/parallel-tests.am
+
+$(srcdir)/parallel-tests.am: gen-parallel-tests Makefile.am
+	(cd $(srcdir) && $(SHELL) ./gen-parallel-tests) >$@
+
+$(parallel_tests): $(parallel_tests:-p.test=.test) Makefile.am
+	input=`echo $@ | sed 's,.*/,,; s,-p.test$$,.test,'`; \
+	sed 's,^\. \./defs,. ./defs-p,' < $(srcdir)/$$input > $@
+	chmod a+rx $@
+
+MAINTAINERCLEANFILES = $(parallel_tests)
+
+defs-p: defs Makefile.am
+	sed 's,^AM_INIT_AUTOMAKE$$,&([parallel-tests]),' < defs >$@
 
 TESTS =	\
 aclibobj.test \
@@ -97,6 +113,7 @@ check7.test \
 check8.test \
 check9.test \
 check10.test \
+check11.test \
 checkall.test \
 clean.test \
 clean2.test \
@@ -240,6 +257,8 @@ distcom7.test \
 distdir.test \
 distname.test \
 dollar.test \
+dollarvar.test \
+dollarvar2.test \
 double.test \
 dup2.test \
 else.test \
@@ -265,6 +284,7 @@ extra6.test \
 extra7.test \
 extra8.test \
 f90only.test \
+flavor.test \
 flibs.test \
 fn99.test \
 fn99subdir.test \
@@ -472,6 +492,15 @@ overrid.test \
 parallel-am.test \
 parallel-am2.test \
 parallel-am3.test \
+parallel-tests.test \
+parallel-tests2.test \
+parallel-tests3.test \
+parallel-tests4.test \
+parallel-tests5.test \
+parallel-tests6.test \
+parallel-tests7.test \
+parallel-tests8.test \
+parallel-tests9.test \
 parse.test \
 percent.test \
 percent2.test \
@@ -543,6 +572,13 @@ rulepat.test \
 sanity.test \
 scripts.test \
 seenc.test \
+silent.test \
+silent2.test \
+silent3.test \
+silent4.test \
+silent5.test \
+silent6.test \
+silent7.test \
 sinclude.test \
 srcsub.test \
 srcsub2.test \
@@ -611,6 +647,7 @@ suffix9.test \
 suffix10.test \
 suffix11.test \
 suffix12.test \
+suffix13.test \
 symlink.test \
 symlink2.test \
 symlink3.test \
@@ -650,12 +687,19 @@ txinfo29.test \
 txinfo30.test \
 txinfo31.test \
 txinfo32.test \
+txinfo33.test \
 transform.test \
 transform2.test \
 unused.test \
 upc.test \
 upc2.test \
 upc3.test \
+vala.test \
+vala1.test \
+vala2.test \
+vala3.test \
+vala4.test \
+vala5.test \
 vars.test \
 vars3.test \
 vartar.test \
@@ -684,15 +728,16 @@ yacc6.test \
 yacc7.test \
 yacc8.test \
 yaccpp.test \
-yaccvpath.test
+yaccvpath.test \
+$(parallel_tests)
 
-EXTRA_DIST = ChangeLog-old $(TESTS)
+EXTRA_DIST = ChangeLog-old gen-parallel-tests $(TESTS)
 
 # Each test case depends on defs, aclocal, and automake.
-check_SCRIPTS = defs aclocal-$(APIVERSION) automake-$(APIVERSION)
+check_SCRIPTS = defs defs-p aclocal-$(APIVERSION) automake-$(APIVERSION)
 
-distclean-local: check-clean-local
+clean-local: check-clean-local
 
 check-clean-local:
 	-chmod -R u+rwx *.dir
-	-rm -rf *.dir
+	-rm -rf defs-p *.dir

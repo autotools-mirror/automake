@@ -3,7 +3,7 @@
 ## Makefile for Automake.
 
 ## Copyright (C) 1995, 1996, 1997, 1998, 1999, 2001, 2002, 2003, 2004,
-## 2005, 2006, 2007, 2008  Free Software Foundation, Inc.
+## 2005, 2006, 2007, 2008, 2009  Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -364,16 +364,16 @@ sc_tests_required_after_defs:
 
 ## Overriding a Makefile macro on the command line is not portable when
 ## recursive targets are used.  Better use an envvar.  SHELL is an exception,
-## POSIX says it can't come from the environment.  DESTDIRS is an exception,
-## too, as package authors are urged not to intitialize this anywhere.
+## POSIX says it can't come from the environment.  V and DESTDIRS are exceptions,
+## too, as package authors are urged not to initialize them anywhere.
 sc_tests_overriding_macros_on_cmdline:
 	@if grep -E '\$$MAKE .*(SHELL=.*=|=.*SHELL=)' $(srcdir)/tests/*.test; then \
 	  echo 'Rewrite "$$MAKE foo=bar SHELL=$$SHELL" as "foo=bar $$MAKE -e SHELL=$$SHELL"' 1>&2; \
 	  echo ' in the above lines, it is more portable.' 1>&2; \
 	  exit 1; \
 	fi
-	@if sed 's/DESTDIR=[^ ]*//; s/SHELL=[^ ]*//' $(srcdir)/tests/*.test | \
-	  grep '\$$MAKE .*=' ; then \
+	@if sed 's/DESTDIR=[^ ]*//; s/SHELL=[^ ]*//; s/V=[^ ]*//' $(srcdir)/tests/*.test | \
+	    grep '\$$MAKE .*=' ; then \
 	  echo 'Rewrite "$$MAKE foo=bar" as "foo=bar $$MAKE -e" in the above lines,' 1>&2; \
 	  echo 'it is more portable.' 1>&2; \
 	  exit 1; \

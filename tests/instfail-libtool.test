@@ -19,9 +19,7 @@
 
 # This is the libtool sister test of instfail.test
 
-
-# non-root should catch 'chmod a-r'-challenged file systems.
-required='non-root libtool libtoolize'
+required='libtool libtoolize'
 . ./defs || Exit 1
 
 set -e
@@ -65,6 +63,14 @@ $MAKE
 $MAKE install
 $MAKE uninstall
 
+for file in liblt1.la libltn1.la
+do
+  chmod a-r $file
+  test ! -r $file || Exit 77
+  $MAKE install-exec && Exit 1
+  chmod u+r $file
+done
+
 $MAKE unreadable-prog
 $MAKE install-exec && Exit 1
 $MAKE readable-prog
@@ -72,12 +78,5 @@ $MAKE readable-prog
 $MAKE unreadable-progn
 $MAKE install-exec && Exit 1
 $MAKE readable-progn
-
-for file in liblt1.la libltn1.la
-do
-  chmod a-r $file
-  $MAKE install-exec && Exit 1
-  chmod u+r $file
-done
 
 :

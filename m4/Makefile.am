@@ -3,7 +3,7 @@
 ## Makefile for Automake m4.
 
 ## Copyright (C) 1996, 1997, 1998, 1999, 2001, 2002, 2003, 2004, 2006,
-## 2008 Free Software Foundation, Inc.
+## 2008, 2009 Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -52,10 +52,12 @@ python.m4 \
 regex.m4 \
 runlog.m4 \
 sanity.m4 \
+silent.m4 \
 strip.m4 \
 substnot.m4 \
 tar.m4 \
-upc.m4
+upc.m4 \
+vala.m4
 
 EXTRA_DIST = dirlist amversion.in
 
