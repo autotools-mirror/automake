@@ -56,7 +56,8 @@ silent.m4 \
 strip.m4 \
 substnot.m4 \
 tar.m4 \
-upc.m4
+upc.m4 \
+vala.m4
 
 EXTRA_DIST = dirlist amversion.in
 

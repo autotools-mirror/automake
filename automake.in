@@ -115,7 +115,7 @@ sub finish ($)
   my ($self) = @_;
   if (defined $self->_finish)
     {
-      &{$self->_finish} ();
+      &{$self->_finish} (@_);
     }
 }
 
@@ -572,6 +572,7 @@ my @dist_targets;
 # Keep track of all programs declared in this Makefile, without
 # $(EXEEXT).  @substitutions@ are not listed.
 my %known_programs;
+my %known_libraries;
 
 # Keys in this hash are the basenames of files which must depend on
 # ansi2knr.  Values are either the empty string, or the directory in
@@ -702,6 +703,7 @@ sub initialize_per_input ()
     @dist_targets = ();
 
     %known_programs = ();
+    %known_libraries= ();
 
     %de_ansi_files = ();
 
@@ -808,6 +810,22 @@ register_language ('name' => 'header',
 		   'output_extensions' => sub { return () },
 		   # Nothing to do.
 		   '_finish' => sub { });
+
+# Vala
+register_language ('name' => 'vala',
+		   'Name' => 'Vala',
+		   'config_vars' => ['VALAC'],
+		   'flags' => ['VALAFLAGS'],
+		   'compile' => '$(VALAC) $(AM_VALAFLAGS) $(VALAFLAGS)',
+		   'ccer' => 'VALAC',
+		   'compiler' => 'VALACOMPILE',
+		   'extensions' => ['.vala'],
+		   'output_extensions' => sub { (my $ext = $_[0]) =~ s/vala$/c/;
+						return ($ext,) },
+		   'rule_file' => 'vala',
+		   '_finish' => \&lang_vala_finish,
+		   '_target_hook' => \&lang_vala_target_hook,
+		   'nodist_specific' => 1);
 
 # Yacc (C & C++).
 register_language ('name' => 'yacc',
@@ -2711,6 +2729,8 @@ sub handle_libraries
 	       . "did you mean `$suggestion'?")
 	}
 
+      ($known_libraries{$onelib} = $bn) =~ s/\.a$//;
+
       $where->push_context ("while processing library `$onelib'");
       $where->set (INTERNAL->get);
 
@@ -2915,6 +2935,8 @@ sub handle_ltlibraries
 	       "`$onelib' is not a standard libtool $type name\n"
 	       . "did you mean `$suggestion'?")
 	}
+
+      ($known_libraries{$onelib} = $bn) =~ s/\.la$//;
 
       $where->push_context ("while processing Libtool library `$onelib'");
       $where->set (INTERNAL->get);
@@ -5743,6 +5765,15 @@ sub lang_header_rewrite
     return LANG_IGNORE;
 }
 
+# Rewrite a single Vala source file.
+sub lang_vala_rewrite
+{
+    my ($directory, $base, $ext) = @_;
+
+    (my $newext = $ext) =~ s/vala$/c/;
+    return (LANG_SUBDIR, $newext);
+}
+
 # Rewrite a single yacc file.
 sub lang_yacc_rewrite
 {
@@ -5899,6 +5930,84 @@ sub lang_c_finish
 	# Use a sneaky little hack to make it print nicely.
 	&pretty_print_rule ('', '', @objects, ':', '$(ANSI2KNR)');
     }
+}
+
+sub lang_vala_finish_target ($$)
+{
+  my ($self, $name) = @_;
+
+  my $derived = canonicalize ($name);
+  my $varname = $derived . '_SOURCES';
+  my $var = var ($varname);
+
+  if ($var)
+    {
+      foreach my $file ($var->value_as_list_recursive)
+        {
+          $output_rules .= "$file: ${derived}_vala.stamp\n".
+            "\t\@if test -f \$@; then :; else \\\n".
+            "\t  rm -f ${derived}_vala.stamp; \\\n".
+            "\t  \$(MAKE) \$(AM_MAKEFLAGS) ${derived}_vala.stamp; \\\n".
+            "\tfi\n"
+            if $file =~ s/(.*)\.vala$/$1.c/;
+        }
+    }
+
+  my $compile = $self->compile;
+
+  # Rewrite each occurrence of `AM_$flag' in the compile
+  # rule into `${derived}_$flag' if it exists.
+  for my $flag (@{$self->flags})
+    {
+      my $val = "${derived}_$flag";
+      $compile =~ s/\(AM_$flag\)/\($val\)/
+        if set_seen ($val);
+    }
+
+  my $dirname = dirname ($name);
+
+  # Only generate C code, do not run C compiler
+  $compile .= " -C";
+
+  my $verbose = verbose_flag ('VALAC');
+  my $silent = silent_flag ();
+
+  $output_rules .=
+    "${derived}_vala.stamp: \$(${derived}_SOURCES)\n".
+    "\t${verbose}${compile} \$(${derived}_SOURCES)\n".
+    "\t${silent}touch \$@\n";
+
+  push_dist_common ("${derived}_vala.stamp");
+
+  $clean_files{"${derived}_vala.stamp"} = MAINTAINER_CLEAN;
+}
+
+# Add output rules to invoke valac and create stamp file as a witness
+# to handle multiple outputs. This function is called after all source
+# file processing is done.
+sub lang_vala_finish
+{
+  my ($self) = @_;
+
+  foreach my $prog (keys %known_programs)
+    {
+      lang_vala_finish_target ($self, $prog);
+    }
+
+  while (my ($name) = each %known_libraries)
+    {
+      lang_vala_finish_target ($self, $name);
+    }
+}
+
+# The built .c files should be cleaned only on maintainer-clean
+# as the .c files are distributed. This function is called for each
+# .vala source file.
+sub lang_vala_target_hook
+{
+  my ($self, $aggregate, $output, $input, %transform) = @_;
+
+  $clean_files{$output} = MAINTAINER_CLEAN;
 }
 
 # This is a yacc helper which is called whenever we have decided to

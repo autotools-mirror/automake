@@ -60,4 +60,5 @@ tags.am \
 texi-vers.am \
 texibuild.am \
 texinfos.am \
+vala.am \
 yacc.am
