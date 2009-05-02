@@ -737,8 +737,8 @@ EXTRA_DIST = ChangeLog-old gen-parallel-tests $(TESTS)
 # Each test case depends on defs, aclocal, and automake.
 check_SCRIPTS = defs defs-p aclocal-$(APIVERSION) automake-$(APIVERSION)
 
-clean-local: check-clean-local
-
-check-clean-local:
+clean-local: clean-local-check
+.PHONY: clean-local-check
+clean-local-check:
 	-chmod -R u+rwx *.dir
 	-rm -rf defs-p *.dir
