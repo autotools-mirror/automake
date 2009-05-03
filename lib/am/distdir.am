@@ -249,7 +249,7 @@ if %?SUBDIRS%
 	    $(am__relativize); \
 	    new_top_distdir=$$reldir; \
 	    echo " (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) top_distdir="$$new_top_distdir" distdir="$$new_distdir" \\"; \
-	    echo "     am__remove_distdir=: am__skip_length_check=: distdir)"; \
+	    echo "     am__remove_distdir=: am__skip_length_check=: am__skip_mode_fix=: distdir)"; \
 	    ($(am__cd) $$subdir && \
 	      $(MAKE) $(AM_MAKEFLAGS) \
 	        top_distdir="$$new_top_distdir" \
@@ -260,6 +260,8 @@ if %?SUBDIRS%
 		am__remove_distdir=: \
 ## Disable filename length check:
 		am__skip_length_check=: \
+## No need to fix modes more than once:
+		am__skip_mode_fix=: \
 	        distdir) \
 	      || exit 1; \
 	  fi; \
@@ -293,8 +295,13 @@ endif %?DIST-TARGETS%
 ## We use $(install_sh) because that is a known-portable way to modify
 ## the file in place in the source tree.
 ##
+## If we are being invoked recursively, then there is no need to walk
+## the whole subtree again.  This is a complexity reduction for a deep
+## hierarchy of subpackages.
+##
 if %?TOPDIR_P%
-	-find "$(distdir)" -type d ! -perm -777 -exec chmod a+rwx {} \; -o \
+	-test -n "$(am__skip_mode_fix)" \
+	|| find "$(distdir)" -type d ! -perm -777 -exec chmod a+rwx {} \; -o \
 	  ! -type d ! -perm -444 -links 1 -exec chmod a+r {} \; -o \
 	  ! -type d ! -perm -400 -exec chmod a+r {} \; -o \
 	  ! -type d ! -perm -444 -exec $(install_sh) -c -m a+r {} {} \; \

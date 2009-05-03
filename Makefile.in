@@ -552,13 +552,14 @@ distdir: $(DISTFILES)
 	    $(am__relativize); \
 	    new_top_distdir=$$reldir; \
 	    echo " (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) top_distdir="$$new_top_distdir" distdir="$$new_distdir" \\"; \
-	    echo "     am__remove_distdir=: am__skip_length_check=: distdir)"; \
+	    echo "     am__remove_distdir=: am__skip_length_check=: am__skip_mode_fix=: distdir)"; \
 	    ($(am__cd) $$subdir && \
 	      $(MAKE) $(AM_MAKEFLAGS) \
 	        top_distdir="$$new_top_distdir" \
 	        distdir="$$new_distdir" \
 		am__remove_distdir=: \
 		am__skip_length_check=: \
+		am__skip_mode_fix=: \
 	        distdir) \
 	      || exit 1; \
 	  fi; \
@@ -566,7 +567,8 @@ distdir: $(DISTFILES)
 	$(MAKE) $(AM_MAKEFLAGS) \
 	  top_distdir="$(top_distdir)" distdir="$(distdir)" \
 	  dist-hook
-	-find "$(distdir)" -type d ! -perm -777 -exec chmod a+rwx {} \; -o \
+	-test -n "$(am__skip_mode_fix)" \
+	|| find "$(distdir)" -type d ! -perm -777 -exec chmod a+rwx {} \; -o \
 	  ! -type d ! -perm -444 -links 1 -exec chmod a+r {} \; -o \
 	  ! -type d ! -perm -400 -exec chmod a+r {} \; -o \
 	  ! -type d ! -perm -444 -exec $(install_sh) -c -m a+r {} {} \; \
