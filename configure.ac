@@ -171,6 +171,23 @@ AC_SUBST([MODIFICATION_DELAY])
 AC_PROG_EGREP
 AC_PROG_FGREP
 
+AC_CACHE_CHECK([whether /bin/sh has working 'set -e' with exit trap],
+[am_cv_sh_errexit_works],
+[if /bin/sh -ec "trap 'exit \$?' 0; (exit 77); exit 77"; test $? = 77
+then
+  am_cv_sh_errexit_works=yes
+else
+  am_cv_sh_errexit_works=no
+fi
+])
+if test $am_cv_sh_errexit_works = no; then
+  AC_MSG_WARN([`${MAKE-make} check' will leave leftover directories tests/*.dir])
+  AC_MSG_WARN([you can clean them up manually using `${MAKE-make} clean' or])
+  AC_MSG_WARN([`cd tests && ${MAKE-make} clean-local-check'])
+  dnl restore font-lock: `
+fi
+AC_SUBST([sh_errexit_works], [$am_cv_sh_errexit_works])
+
 AC_CONFIG_FILES([
   Makefile
   doc/Makefile
