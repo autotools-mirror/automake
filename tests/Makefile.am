@@ -640,5 +640,7 @@ EXTRA_DIST = ChangeLog-old $(TESTS)
 # Each test case depends on defs, aclocal, and automake.
 check_SCRIPTS = defs aclocal-$(APIVERSION) automake-$(APIVERSION)
 
-distclean-local:
+distclean-local: distclean-local-check
+.PHONY: distclean-local-check
+distclean-local-check:
 	-rm -rf testSubDir
