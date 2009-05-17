@@ -4,8 +4,7 @@ XFAIL_TESTS =					\
 all.test					\
 auxdir2.test					\
 cond17.test					\
-txinfo5.test					\
-vala5.test
+txinfo5.test
 
 include $(srcdir)/parallel-tests.am
 

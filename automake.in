@@ -815,7 +815,7 @@ register_language ('name' => 'header',
 register_language ('name' => 'vala',
 		   'Name' => 'Vala',
 		   'config_vars' => ['VALAC'],
-		   'flags' => ['VALAFLAGS'],
+		   'flags' => [],
 		   'compile' => '$(VALAC) $(AM_VALAFLAGS) $(VALAFLAGS)',
 		   'ccer' => 'VALAC',
 		   'compiler' => 'VALACOMPILE',
@@ -5953,14 +5953,15 @@ sub lang_vala_finish_target ($$)
 
   my $compile = $self->compile;
 
-  # Rewrite each occurrence of `AM_$flag' in the compile
-  # rule into `${derived}_$flag' if it exists.
-  for my $flag (@{$self->flags})
-    {
-      my $val = "${derived}_$flag";
-      $compile =~ s/\(AM_$flag\)/\($val\)/
-        if set_seen ($val);
-    }
+  # Rewrite each occurrence of `AM_VALAFLAGS' in the compile
+  # rule into `${derived}_VALAFLAGS' if it exists.
+  my $val = "${derived}_VALAFLAGS";
+  $compile =~ s/\(AM_VALAFLAGS\)/\($val\)/
+    if set_seen ($val);
+
+  # VALAFLAGS is a user variable (per GNU Standards),
+  # it should not be overridden in the Makefile...
+  check_user_variables ['VALAFLAGS'];
 
   my $dirname = dirname ($name);
 
