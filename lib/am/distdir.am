@@ -464,6 +464,9 @@ distcheck: dist
 ## create very long directory names.
 	  && dc_destdir="$${TMPDIR-/tmp}/am-dc-$$$$/" \
 ?DISTCHECK-HOOK?	  && $(MAKE) $(AM_MAKEFLAGS) distcheck-hook \
+## Parallel BSD make may not start a new shell for each command in a recipe,
+## so be sure to `cd' back to the original directory after this.
+	  && am__cwd=`pwd` \
 	  && $(am__cd) $(distdir)/_build \
 	  && ../configure --srcdir=.. --prefix="$$dc_install_base" \
 ?GETTEXT?	    --with-included-gettext \
@@ -501,7 +504,10 @@ distcheck: dist
 	  && $(MAKE) $(AM_MAKEFLAGS) dist \
 ## Make sure to remove the dists we created in the test build directory.
 	  && rm -rf $(DIST_ARCHIVES) \
-	  && $(MAKE) $(AM_MAKEFLAGS) distcleancheck
+	  && $(MAKE) $(AM_MAKEFLAGS) distcleancheck \
+## Cater to parallel BSD make (see above).
+	  && cd "$$am__cwd" \
+	  || exit 1
 	$(am__remove_distdir)
 	@(echo "$(distdir) archives ready for distribution: "; \
 	  list='$(DIST_ARCHIVES)'; for i in $$list; do echo $$i; done) | \

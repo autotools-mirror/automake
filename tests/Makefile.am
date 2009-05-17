@@ -422,6 +422,7 @@ lzma.test \
 maintclean.test \
 make.test \
 makej.test \
+makej2.test \
 maken.test \
 maken2.test \
 maken3.test \
