@@ -279,13 +279,15 @@ sub _process_option_list (\%$@)
       elsif ($_ eq  'silent-rules')
         {
 	  error ($where,
-	         "option `$_' must be an argument of AM_INIT_AUTOMAKE")
+		 "option `$_' can only be used as argument to AM_INIT_AUTOMAKE\n"
+		 . "but not in AUTOMAKE_OPTIONS makefile statements")
 	    if $where->get !~ /^configure\./;
 	}
       elsif ($_ eq 'tar-v7' || $_ eq 'tar-ustar' || $_ eq 'tar-pax')
 	{
 	  error ($where,
-		 "option `$_' must be an argument of AM_INIT_AUTOMAKE")
+		 "option `$_' can only be used as argument to AM_INIT_AUTOMAKE\n"
+		 . "but not in AUTOMAKE_OPTIONS makefile statements")
 	    if $where->get !~ /^configure\./;
 	  for my $opt ('tar-v7', 'tar-ustar', 'tar-pax')
 	    {
