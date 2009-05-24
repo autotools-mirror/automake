@@ -247,18 +247,22 @@ Exit ()
 
 curdir=`pwd`
 testSubDir=$me.dir
-chmod -R u+rwx $testSubDir > /dev/null 2>&1
-rm -rf $testSubDir > /dev/null 2>&1
+test ! -d $testSubDir || {
+  find $testSubDir -type d ! -perm -200 -exec chmod u+w {} ";"
+  rm -rf $testSubDir
+}
 mkdir $testSubDir
 
 sh_errexit_works=@sh_errexit_works@
 if test "$sh_errexit_works" = yes; then
   trap 'exit_status=$?
+    set +e
     cd "$curdir"
     case $exit_status,$keep_testdirs in
     0,)
-      chmod -R a+rwx $testSubDir > /dev/null 2>&1
-      rm -rf "$testSubDir" ;;
+      find $testSubDir -type d ! -perm -200 -exec chmod u+w {} ";"
+      rm -rf $testSubDir
+      ;;
     esac
     test "$signal" != 0 &&
       echo "$as_me: caught signal $signal"
@@ -296,9 +300,14 @@ END
 unset MFLAGS
 unset MAKEFLAGS
 unset MAKELEVEL
-unset DESTDIR
 # Unset verbosity flag.
 unset V
+# Also unset variables that will let `make -e install' divert
+# files into unwanted directories.
+unset DESTDIR
+unset prefix exec_prefix bindir datarootdir datadir docdir dvidir
+unset htmldir includedir infodir libdir libexecdir localedir mandir
+unset oldincludedir pdfdir psdir sbindir sharedstatedir sysconfdir
 # Also unset variables that control our test driver.  While not
 # conceptually independent, they cause some changed semantics we
 # need to control (and test for) in some of the tests to ensure
