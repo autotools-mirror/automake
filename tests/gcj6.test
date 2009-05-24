@@ -14,31 +14,40 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check parallel-tests features:
-# - empty TESTS
-# BSD make will expand `$(TESTS:=.log)' to `.log' unless overridden.
-# See parallel-tests10.test for a similar issue.
+# AM_PROG_GCJ should cause OBJEXT and EXEEXT to be set.
 
-. ./defs-p || Exit 1
+required='gcj'
+. ./defs || Exit 1
+
 set -e
 
 cat >> configure.in << 'END'
+AM_PROG_GCJ
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-TESTS =
+noinst_PROGRAMS = test
+test_SOURCES = Test.java
+test_LDFLAGS = --main=Test
+END
+
+cat >Test.java << 'END'
+public class Test {
+    public static void main(String[] argv) {
+        System.out.println("Hello, automake!");
+    }
+}
 END
 
 $ACLOCAL
+$AUTOMAKE
 $AUTOCONF
-$AUTOMAKE -a
-
-unset TESTS || :
-
 ./configure
-$MAKE check >stdout || { cat stdout; Exit 1; }
-cat stdout
-grep '0 tests' stdout
 
-Exit 0
+# These fail without e.g., AC_PROG_CC.
+$MAKE
+grep "OBJEXT = " Makefile
+grep "EXEEXT = " Makefile
+
+:

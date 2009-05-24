@@ -4,6 +4,7 @@ XFAIL_TESTS =					\
 all.test					\
 auxdir2.test					\
 cond17.test					\
+gcj6.test					\
 txinfo5.test
 
 include $(srcdir)/parallel-tests.am
@@ -303,6 +304,7 @@ gcj2.test \
 gcj3.test \
 gcj4.test \
 gcj5.test \
+gcj6.test \
 getopt.test \
 gettext.test \
 gettext2.test \
@@ -502,6 +504,7 @@ parallel-tests6.test \
 parallel-tests7.test \
 parallel-tests8.test \
 parallel-tests9.test \
+parallel-tests10.test \
 parse.test \
 percent.test \
 percent2.test \
