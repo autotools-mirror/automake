@@ -15,9 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Check parallel-tests features:
-# - empty TESTS
-# BSD make will expand `$(TESTS:=.log)' to `.log' unless overridden.
-# See parallel-tests10.test for a similar issue.
+# - trailing whitespace in TESTS
+# GNU make 3.80 may expand trailing white space to `.log'.
 
 . ./defs-p || Exit 1
 set -e
@@ -27,18 +26,22 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-TESTS =
+TESTS = foo $(BAR)
+BAR =
 END
+
+cat >foo <<'END'
+#! /bin/sh
+exit 0
+END
+
+chmod +x ./foo
 
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-unset TESTS || :
-
 ./configure
-$MAKE check >stdout || { cat stdout; Exit 1; }
-cat stdout
-grep '0 tests' stdout
+$MAKE check
 
 Exit 0

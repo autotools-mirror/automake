@@ -502,6 +502,7 @@ parallel-tests6.test \
 parallel-tests7.test \
 parallel-tests8.test \
 parallel-tests9.test \
+parallel-tests10.test \
 parse.test \
 percent.test \
 percent2.test \
