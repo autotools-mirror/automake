@@ -1199,9 +1199,23 @@ sub define_verbose_tagvar ($)
     my ($name) = @_;
     if (option 'silent-rules')
       {
-	define_verbose_var ($name, '@echo "  '. $name . ' ' x (6 - length ($name)) . '" $@;');
+	define_verbose_var ($name, '@echo "  '. $name . ' ' x (8 - length ($name)) . '" $@;');
 	define_verbose_var ('at', '@');
       }
+}
+
+# define_verbose_texinfo
+# ----------------------
+# Engage the needed `silent-rules' machinery for assorted texinfo commands.
+sub define_verbose_texinfo ()
+{
+  my @tagvars = ('DVIPS', 'MAKEINFO', 'INFOHTML', 'TEXI2DVI', 'TEXI2PDF');
+  foreach my $tag (@tagvars)
+    {
+      define_verbose_tagvar($tag);
+    }
+  define_verbose_var('texinfo', '-q');
+  define_verbose_var('texidevnull', '> /dev/null');
 }
 
 # define_verbose_libtool
@@ -3233,6 +3247,9 @@ sub output_texinfo_build_rules ($$$@)
 
   $output_rules .= file_contents ('texibuild',
 				  new Automake::Location,
+                                  AM_V_MAKEINFO    => verbose_flag('MAKEINFO'),
+                                  AM_V_TEXI2DVI    => verbose_flag('TEXI2DVI'),
+                                  AM_V_TEXI2PDF    => verbose_flag('TEXI2PDF'),
 				  DEPS             => "@deps",
 				  DEST_PREFIX      => $dpfx,
 				  DEST_INFO_PREFIX => $dipfx,
@@ -3242,12 +3259,15 @@ sub output_texinfo_build_rules ($$$@)
 				  GENERIC_INFO     => $generic_info,
 				  INSRC		   => $insrc,
 				  MAKEINFOFLAGS    => $makeinfoflags,
+                                  SILENT           => silent_flag(),
 				  SOURCE           => ($generic
 						       ? '$<' : $source),
 				  SOURCE_INFO      => ($generic_info
 						       ? '$<' : $source),
 				  SOURCE_REAL      => $source,
 				  SOURCE_SUFFIX    => $ssfx,
+                                  TEXIQUIET        => verbose_flag('texinfo'),
+                                  TEXIDEVNULL      => verbose_flag('texidevnull'),
 				  );
   return ($dirstamp, "$dpfx.dvi", "$dpfx.pdf", "$dpfx.ps", "$dpfx.html");
 }
@@ -3556,6 +3576,7 @@ sub handle_texinfo ()
   my ($mostlyclean, $clean, $maintclean) = ('', '', '');
   if ($info_texinfos)
     {
+      define_verbose_texinfo;
       ($mostlyclean, $clean, $maintclean) = handle_texinfo_helper ($info_texinfos);
       chomp $mostlyclean;
       chomp $clean;
@@ -3564,10 +3585,12 @@ sub handle_texinfo ()
 
   $output_rules .=  file_contents ('texinfos',
 				   new Automake::Location,
+                                   AM_V_DVIPS    => verbose_flag('DVIPS'),
 				   MOSTLYCLEAN   => $mostlyclean,
 				   TEXICLEAN     => $clean,
 				   MAINTCLEAN    => $maintclean,
-				   'LOCAL-TEXIS' => !!$info_texinfos);
+				   'LOCAL-TEXIS' => !!$info_texinfos,
+                                   TEXIQUIET     => verbose_flag('texinfo'));
 }
 
 

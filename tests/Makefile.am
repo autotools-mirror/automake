@@ -583,6 +583,7 @@ silent4.test \
 silent5.test \
 silent6.test \
 silent7.test \
+silent8.test \
 sinclude.test \
 srcsub.test \
 srcsub2.test \
