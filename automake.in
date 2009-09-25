@@ -3724,6 +3724,7 @@ sub handle_tags
 {
     my @tag_deps = ();
     my @ctag_deps = ();
+    my @cscope_deps = ();
     if (var ('SUBDIRS'))
     {
 	$output_rules .= ("tags-recursive:\n"
@@ -3747,6 +3748,17 @@ sub handle_tags
 	push (@ctag_deps, 'ctags-recursive');
 	&depend ('.PHONY', 'ctags-recursive');
 	&depend ('.MAKE', 'ctags-recursive');
+
+	$output_rules .= ("cscopelist-recursive:\n"
+			  . "\tlist=\'\$(SUBDIRS)\'; for subdir in \$\$list; do \\\n"
+			  # Never fail here if a subdir fails; it
+			  # isn't important.
+			  . "\t  test \"\$\$subdir\" = . || (cd \$\$subdir"
+			  . " && \$(MAKE) \$(AM_MAKEFLAGS) cscopelist); \\\n"
+			  . "\tdone\n");
+	push (@cscope_deps, 'cscopelist-recursive');
+	&depend ('.PHONY', 'cscopelist-recursive');
+	&depend ('.MAKE', 'cscopelist-recursive');
     }
 
     if (&saw_sources_p (1)
@@ -3769,7 +3781,8 @@ sub handle_tags
 					 new Automake::Location,
 					 CONFIG    => "@config",
 					 TAGSDIRS  => "@tag_deps",
-					 CTAGSDIRS => "@ctag_deps");
+					 CTAGSDIRS => "@ctag_deps",
+					 CSCOPEDIRS => "@cscope_deps");
 
 	set_seen 'TAGS_DEPENDENCIES';
     }
@@ -3784,8 +3797,9 @@ sub handle_tags
 	# Otherwise, it would be possible for a top-level "make TAGS"
 	# to fail because some subdirectory failed.
 	$output_rules .= "tags: TAGS\nTAGS:\n\n";
-	# Ditto ctags.
+	# Ditto ctags and cscope.
 	$output_rules .= "ctags: CTAGS\nCTAGS:\n\n";
+	$output_rules .= "cscopelist:\n\n";
     }
 }
 

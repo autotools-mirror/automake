@@ -134,6 +134,39 @@ GTAGS:
 	  && gtags -i $(GTAGS_ARGS) "$$here"
 
 
+## ------- ##
+## cscope  ##
+## ------- ##
+
+if %?TOPDIR_P%
+
+CSCOPE = cscope
+.PHONY: cscope cscopeclean
+AM_RECURSIVE_TARGETS += cscope
+
+cscope: cscopeclean cscope.files
+	$(CSCOPE) -b -q $(CSCOPEFLAGS) $(AM_CSCOPEFLAGS) \
+	  -i cscope.files $(CSCOPE_ARGS)
+
+cscopeclean:
+	-rm -f cscope.files
+
+cscope.files: %CSCOPEDIRS% cscopelist
+
+endif %?TOPDIR_P%
+
+.PHONY: cscopelist
+cscopelist: %CSCOPEDIRS% $(HEADERS) $(SOURCES) $(LISP)
+	list='$(SOURCES) $(HEADERS) $(LISP)'; \
+	for i in $$list; do \
+	  if test -f "$$i"; \
+	    then echo \"$(subdir)/$$i\"; \
+	  else \
+	    echo \"$(abs_srcdir)/$$i\"; \
+	  fi; \
+	done >> $(top_builddir)/cscope.files
+
+
 ## ---------- ##
 ## Cleaning.  ##
 ## ---------- ##
@@ -141,4 +174,5 @@ GTAGS:
 .PHONY distclean-am: distclean-tags
 
 distclean-tags:
-	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
+	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags cscope.out cscope.in.out \
+	cscope.po.out cscope.files
