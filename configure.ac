@@ -29,7 +29,8 @@ AC_CANONICAL_BUILD
 AC_SUBST([am_AUTOCONF], ["${AUTOCONF-autoconf}"])
 AC_SUBST([am_AUTOHEADER], ["${AUTOHEADER-autoheader}"])
 
-AM_INIT_AUTOMAKE([1.10a dist-bzip2 filename-length-max=99 color-tests parallel-tests])
+AM_INIT_AUTOMAKE([1.10a dist-bzip2 filename-length-max=99 color-tests
+		  parallel-tests silent-rules])
 
 # The API version is the base version.  We must guarantee
 # compatibility for all releases with the same API version.

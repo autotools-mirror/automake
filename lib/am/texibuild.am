@@ -32,7 +32,7 @@
 ##    to fail, the info files are not removed.  (They are needed by the
 ##    developer while he writes documentation.)
 ## *.iNN files are used on DJGPP.  See the comments in install-info-am
-	restore=: && backupdir="$(am__leading_dot)am$$$$" && \
+	%AM_V_MAKEINFO%restore=: && backupdir="$(am__leading_dot)am$$$$" && \
 ?INSRC?	am__cwd=`pwd` && $(am__cd) $(srcdir) && \
 	rm -rf $$backupdir && mkdir $$backupdir && \
 ## If makeinfo is not installed we must not backup the files so
@@ -62,23 +62,27 @@ INFO_DEPS += %DEST_INFO_PREFIX%%DEST_SUFFIX%
 
 ?GENERIC?%SOURCE_SUFFIX%.dvi:
 ?!GENERIC?%DEST_PREFIX%.dvi: %SOURCE% %DEPS% %DIRSTAMP%
-	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
+	%AM_V_TEXI2DVI%TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
 ## Must set MAKEINFO like this so that version.texi will be found even
 ## if it is in srcdir (-I $(srcdir) is set in %MAKEINFOFLAGS%).
 	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) %MAKEINFOFLAGS%' \
 ## Do not use `-o' unless necessary: it is only supported since Texinfo 4.1.
-?GENERIC?	$(TEXI2DVI) %SOURCE%
-?!GENERIC?	$(TEXI2DVI) -o $@ `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%
+## texi2dvi doesn't silence everything with -q, redirect to /dev/null instead.
+## We still want -q (%TEXIQUIET%) because it turns on batch mode.
+?GENERIC?	$(TEXI2DVI) %TEXIQUIET% %SOURCE% %TEXIDEVNULL%
+?!GENERIC?	$(TEXI2DVI) %TEXIQUIET% -o $@ `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE% %TEXIDEVNULL%
 
 ?GENERIC?%SOURCE_SUFFIX%.pdf:
 ?!GENERIC?%DEST_PREFIX%.pdf: %SOURCE% %DEPS% %DIRSTAMP%
-	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
+	%AM_V_TEXI2PDF%TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
 ## Must set MAKEINFO like this so that version.texi will be found even
 ## if it is in srcdir (-I $(srcdir) is set in %MAKEINFOFLAGS%).
 	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) %MAKEINFOFLAGS%' \
 ## Do not use `-o' unless necessary: it is only supported since Texinfo 4.1.
-?GENERIC?	$(TEXI2PDF) %SOURCE%
-?!GENERIC?	$(TEXI2PDF) -o $@ `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%
+## texi2pdf doesn't silence everything with -q, redirect to /dev/null instead.
+## We still want -q (%TEXIQUIET%) because it turns on batch mode.
+?GENERIC?	$(TEXI2PDF) %TEXIQUIET% %SOURCE% %TEXIDEVNULL%
+?!GENERIC?	$(TEXI2PDF) %TEXIQUIET% -o $@ `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE% %TEXIDEVNULL%
 
 ?GENERIC?%SOURCE_SUFFIX%.html:
 ?!GENERIC?%DEST_PREFIX%.html: %SOURCE% %DEPS% %DIRSTAMP%
@@ -88,8 +92,8 @@ INFO_DEPS += %DEST_INFO_PREFIX%%DEST_SUFFIX%
 ## in the manual change, it may leave unused pages.  Our fix
 ## is to build under a temporary name, and replace the target on
 ## success.
-	rm -rf $(@:.html=.htp)
-	if $(MAKEINFOHTML) $(AM_MAKEINFOHTMLFLAGS) $(MAKEINFOFLAGS) %MAKEINFOFLAGS% \
+	%AM_V_MAKEINFO%rm -rf $(@:.html=.htp)
+	%SILENT%if $(MAKEINFOHTML) $(AM_MAKEINFOHTMLFLAGS) $(MAKEINFOFLAGS) %MAKEINFOFLAGS% \
 ?GENERIC?	 -o $(@:.html=.htp) %SOURCE%; \
 ?!GENERIC?	 -o $(@:.html=.htp) `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%; \
 	then \

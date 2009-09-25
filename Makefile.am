@@ -82,17 +82,17 @@ do_subst = sed \
 automake: automake.in
 aclocal: aclocal.in
 automake aclocal: Makefile
-	rm -f $@ $@.tmp
-	$(do_subst) $(srcdir)/$@.in >$@.tmp
-	chmod +x $@.tmp
-	chmod a-w $@.tmp
-	mv -f $@.tmp $@
+	$(AM_V_GEN)rm -f $@ $@.tmp
+	$(AM_V_at)$(do_subst) $(srcdir)/$@.in >$@.tmp
+	$(AM_V_at)chmod +x $@.tmp
+	$(AM_V_at)chmod a-w $@.tmp
+	$(AM_V_at)mv -f $@.tmp $@
 
 ## The master location for INSTALL is lib/INSTALL.
 ## This is where `make fetch' will install new versions.
 ## Make sure we also update this copy.
 INSTALL: lib/INSTALL
-	cp $(srcdir)/lib/INSTALL $@
+	$(AM_V_GEN)cp $(srcdir)/lib/INSTALL $@
 
 ################################################################
 ##

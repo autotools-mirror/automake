@@ -10,17 +10,17 @@ txinfo5.test
 include $(srcdir)/parallel-tests.am
 
 $(srcdir)/parallel-tests.am: gen-parallel-tests Makefile.am
-	(cd $(srcdir) && $(SHELL) ./gen-parallel-tests) >$@
+	$(AM_V_GEN)(cd $(srcdir) && $(SHELL) ./gen-parallel-tests) >$@
 
 $(parallel_tests): $(parallel_tests:-p.test=.test) Makefile.am
-	input=`echo $@ | sed 's,.*/,,; s,-p.test$$,.test,'`; \
+	$(AM_V_GEN)input=`echo $@ | sed 's,.*/,,; s,-p.test$$,.test,'`; \
 	sed 's,^\. \./defs,. ./defs-p,' < $(srcdir)/$$input > $@
-	chmod a+rx $@
+	$(AM_V_at)chmod a+rx $@
 
 MAINTAINERCLEANFILES = $(parallel_tests)
 
 defs-p: defs Makefile.am
-	sed 's,^AM_INIT_AUTOMAKE$$,&([parallel-tests]),' < defs >$@
+	$(AM_V_GEN)sed 's,^AM_INIT_AUTOMAKE$$,&([parallel-tests]),' < defs >$@
 
 TESTS =	\
 aclibobj.test \
@@ -583,6 +583,7 @@ silent4.test \
 silent5.test \
 silent6.test \
 silent7.test \
+silent8.test \
 sinclude.test \
 srcsub.test \
 srcsub2.test \
