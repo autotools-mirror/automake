@@ -141,28 +141,32 @@ GTAGS:
 if %?TOPDIR_P%
 
 CSCOPE = cscope
-.PHONY: cscope cscopeclean
+.PHONY: cscope clean-cscope
 AM_RECURSIVE_TARGETS += cscope
 
-cscope: cscopeclean cscope.files
-	$(CSCOPE) -b -q $(CSCOPEFLAGS) $(AM_CSCOPEFLAGS) \
-	  -i cscope.files $(CSCOPE_ARGS)
+cscope: cscope.files
+	test ! -s cscope.files \
+	  || $(CSCOPE) -b -q $(AM_CSCOPEFLAGS) $(CSCOPEFLAGS) -i cscope.files $(CSCOPE_ARGS)
 
-cscopeclean:
+clean-cscope:
 	-rm -f cscope.files
 
-cscope.files: %CSCOPEDIRS% cscopelist
+cscope.files: clean-cscope %CSCOPEDIRS% cscopelist
 
 endif %?TOPDIR_P%
 
 .PHONY: cscopelist
 cscopelist: %CSCOPEDIRS% $(HEADERS) $(SOURCES) $(LISP)
 	list='$(SOURCES) $(HEADERS) $(LISP)'; \
+	case "$(srcdir)" in \
+	  [\\/]* | ?:[\\/]*) sdir="$(srcdir)" ;; \
+	  *) sdir=$(subdir)/$(srcdir) ;; \
+	esac; \
 	for i in $$list; do \
-	  if test -f "$$i"; \
-	    then echo \"$(subdir)/$$i\"; \
+	  if test -f "$$i"; then \
+	    echo "$(subdir)/$$i"; \
 	  else \
-	    echo \"$(abs_srcdir)/$$i\"; \
+	    echo "$$sdir/$$i"; \
 	  fi; \
 	done >> $(top_builddir)/cscope.files
 
@@ -174,5 +178,7 @@ cscopelist: %CSCOPEDIRS% $(HEADERS) $(SOURCES) $(LISP)
 .PHONY distclean-am: distclean-tags
 
 distclean-tags:
-	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags cscope.out cscope.in.out \
-	cscope.po.out cscope.files
+	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
+if %?TOPDIR_P%
+	-rm -f cscope.out cscope.in.out cscope.po.out cscope.files
+endif %?TOPDIR_P%

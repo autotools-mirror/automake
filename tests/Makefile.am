@@ -208,6 +208,9 @@ confsub.test \
 confvar.test \
 confvar2.test \
 copy.test \
+cscope.test \
+cscope2.test \
+cscope3.test \
 ctarget1.test \
 cxx.test \
 cxx2.test \

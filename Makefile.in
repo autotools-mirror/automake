@@ -442,7 +442,7 @@ ctags-recursive:
 	done
 cscopelist-recursive:
 	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) cscopelist); \
+	  test "$$subdir" = . || ($(am__cd) $$subdir && $(MAKE) $(AM_MAKEFLAGS) cscopelist); \
 	done
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -507,28 +507,32 @@ GTAGS:
 	  && $(am__cd) $(top_srcdir) \
 	  && gtags -i $(GTAGS_ARGS) "$$here"
 
-cscope: cscopeclean cscope.files
-	$(CSCOPE) -b -q $(CSCOPEFLAGS) $(AM_CSCOPEFLAGS) \
-	  -i cscope.files $(CSCOPE_ARGS)
+cscope: cscope.files
+	test ! -s cscope.files \
+	  || $(CSCOPE) -b -q $(AM_CSCOPEFLAGS) $(CSCOPEFLAGS) -i cscope.files $(CSCOPE_ARGS)
 
-cscopeclean:
+clean-cscope:
 	-rm -f cscope.files
 
-cscope.files: cscopelist-recursive cscopelist
+cscope.files: clean-cscope cscopelist-recursive cscopelist
 
 cscopelist: cscopelist-recursive $(HEADERS) $(SOURCES) $(LISP)
 	list='$(SOURCES) $(HEADERS) $(LISP)'; \
+	case "$(srcdir)" in \
+	  [\\/]* | ?:[\\/]*) sdir="$(srcdir)" ;; \
+	  *) sdir=$(subdir)/$(srcdir) ;; \
+	esac; \
 	for i in $$list; do \
-	  if test -f "$$i"; \
-	    then echo \"$(subdir)/$$i\"; \
+	  if test -f "$$i"; then \
+	    echo "$(subdir)/$$i"; \
 	  else \
-	    echo \"$(abs_srcdir)/$$i\"; \
+	    echo "$$sdir/$$i"; \
 	  fi; \
 	done >> $(top_builddir)/cscope.files
 
 distclean-tags:
-	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags cscope.out cscope.in.out \
-	cscope.po.out cscope.files
+	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
+	-rm -f cscope.out cscope.in.out cscope.po.out cscope.files
 
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
@@ -822,8 +826,8 @@ uninstall-am: uninstall-binSCRIPTS
 	install-exec-am install-strip tags-recursive uninstall-am
 
 .PHONY: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) CTAGS GTAGS \
-	all all-am am--refresh check check-am clean clean-generic \
-	cscope cscopeclean cscopelist cscopelist-recursive ctags \
+	all all-am am--refresh check check-am clean clean-cscope \
+	clean-generic cscope cscopelist cscopelist-recursive ctags \
 	ctags-recursive dist dist-all dist-bzip2 dist-gzip dist-hook \
 	dist-lzma dist-shar dist-tarZ dist-xz dist-zip distcheck \
 	distclean distclean-generic distclean-tags distcleancheck \

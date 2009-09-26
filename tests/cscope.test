@@ -1,0 +1,108 @@
+#! /bin/sh
+# Copyright (C) 2009  Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Test cscope functionality.
+
+required=
+. ./defs || Exit 1
+
+set -e
+
+cat >> configure.in << 'END'
+AC_CONFIG_FILES([sub/Makefile])
+AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_FC
+AM_PROG_GCJ
+AM_PATH_LISPDIR
+AC_OUTPUT
+END
+
+mkdir sub sub/subsub
+
+cat >Makefile.am <<'END'
+SUBDIRS = sub
+bin_PROGRAMS = foo
+foo_SOURCES = foo.c bar.cpp baz.f90
+lisp_LISP = foo.el
+EXTRA_DIST = foo.el
+END
+
+cat >sub/Makefile.am <<'END'
+bin_PROGRAMS = bar
+bar_SOURCES = subsub/dist.c
+nodist_bar_SOURCES = subsub/gen.c
+subsub/gen.c:
+	$(MKDIR_P) subsub
+	echo 'int generated_subsub () { return 0; }' > $@
+CLEANFILES = subsub/gen.c
+END
+
+echo 'int foo_func () { return 0; }' > foo.c
+echo 'int main () { return 0; }' > bar.cpp
+cat > baz.f90 <<'END'
+      subroutine baz
+      end
+END
+: >foo.el
+echo 'int main () { return 0; }' > sub/subsub/dist.c
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE --add-missing
+
+mkdir build
+cd build
+../configure || Exit 77
+
+$MAKE -n cscope
+
+: ${CSCOPE=cscope}
+( $CSCOPE --version ) >/dev/null 2>&1 || Exit 77
+
+$MAKE cscope 2>stderr
+cat stderr >&2
+grep 'cannot find file' stderr && Exit 1
+
+test -f cscope.files
+$FGREP foo.c cscope.files
+$FGREP bar.cpp cscope.files
+$FGREP sub/subsub/dist.c cscope.files
+$FGREP sub/subsub/gen.c cscope.files
+
+cp cscope.files cscope.files1
+$MAKE cscope
+diff cscope.files cscope.files1
+
+$MAKE distclean
+test ! -f cscope.files
+test ! -f cscope.out
+test ! -f cscope.in.out
+test ! -f cscope.po.out
+
+
+`pwd`/../configure || Exit 77
+
+$MAKE cscope 2>stderr
+cat stderr >&2
+grep 'cannot find file' stderr && Exit 1
+$MAKE distclean
+
+cd ..
+./configure
+$MAKE distcheck
+
+:

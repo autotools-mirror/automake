@@ -389,7 +389,7 @@ ctags-recursive:
 	done
 cscopelist-recursive:
 	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) cscopelist); \
+	  test "$$subdir" = . || ($(am__cd) $$subdir && $(MAKE) $(AM_MAKEFLAGS) cscopelist); \
 	done
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -456,17 +456,20 @@ GTAGS:
 
 cscopelist: cscopelist-recursive $(HEADERS) $(SOURCES) $(LISP)
 	list='$(SOURCES) $(HEADERS) $(LISP)'; \
+	case "$(srcdir)" in \
+	  [\\/]* | ?:[\\/]*) sdir="$(srcdir)" ;; \
+	  *) sdir=$(subdir)/$(srcdir) ;; \
+	esac; \
 	for i in $$list; do \
-	  if test -f "$$i"; \
-	    then echo \"$(subdir)/$$i\"; \
+	  if test -f "$$i"; then \
+	    echo "$(subdir)/$$i"; \
 	  else \
-	    echo \"$(abs_srcdir)/$$i\"; \
+	    echo "$$sdir/$$i"; \
 	  fi; \
 	done >> $(top_builddir)/cscope.files
 
 distclean-tags:
-	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags cscope.out cscope.in.out \
-	cscope.po.out cscope.files
+	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
 	@srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
