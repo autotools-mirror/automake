@@ -745,5 +745,11 @@ check_SCRIPTS = defs defs-p aclocal-$(APIVERSION) automake-$(APIVERSION)
 clean-local: clean-local-check
 .PHONY: clean-local-check
 clean-local-check:
-	-chmod -R u+rwx *.dir
-	-rm -rf defs-p *.dir
+	-set x *.dir; shift; \
+	 if test "$$#,$$1" = "1,*.dir"; then \
+	   : there is no test directory to clean; \
+	 else \
+	   find "$$@" -type d '!' -perm -200 -exec chmod u+w {} ';'; \
+	   rm -rf "$$@"; \
+	 fi;
+	-rm -f defs-p
