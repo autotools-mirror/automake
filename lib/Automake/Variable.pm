@@ -466,8 +466,9 @@ sub _check_ambiguous_condition ($$$)
   my $var = $self->name;
   my ($message, $ambig_cond) = $self->conditions->ambiguous_p ($var, $cond);
 
-  # We allow silent variables to be overridden silently.
-  my $def = $self->def ($cond);
+  # We allow silent variables to be overridden silently,
+  # by either silent or non-silent variables.
+  my $def = $self->def ($ambig_cond);
   if ($message && !($def && $def->pretty == VAR_SILENT))
     {
       msg 'syntax', $where, "$message ...", partial => 1;

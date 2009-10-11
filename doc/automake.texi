@@ -5612,13 +5612,19 @@ You can override the linker on a per-program basis.  By default the
 linker is chosen according to the languages used by the program.  For
 instance, a program that includes C++ source code would use the C++
 compiler to link.  The @code{_LINK} variable must hold the name of a
-command that can be passed all the @file{.o} file names as arguments.
-Note that the name of the underlying program is @emph{not} passed to
-@code{_LINK}; typically one uses @samp{$@@}:
+command that can be passed all the @file{.o} file names and libraries
+to link against as arguments.  Note that the name of the underlying
+program is @emph{not} passed to @code{_LINK}; typically one uses
+@samp{$@@}:
 
 @example
 maude_LINK = $(CCLD) -magic -o $@@
 @end example
+
+If a @code{_LINK} variable is not supplied, it may still be generated
+and used by Automake due to the use of per-target link flags such as
+@code{_CFLAGS}, @code{_LDFLAGS} or @code{_LIBTOOLFLAGS}, in cases where
+they apply.
 
 @item maude_CCASFLAGS
 @itemx maude_CFLAGS
@@ -5981,7 +5987,9 @@ preference to the per-executable (or per-library) @code{_LDFLAGS}.
 This is the command used to actually link a C program.  It already
 includes @samp{-o $@@} and the usual variable references (for instance,
 @code{CFLAGS}); it takes as ``arguments'' the names of the object files
-and libraries to link in.
+and libraries to link in.  This variable is not used when the linker is
+overridden with a per-target @code{_LINK} variable or per-target flags
+cause Automake to define such a @code{_LINK} variable.
 @end vtable
 
 
@@ -6495,6 +6503,10 @@ Sometimes this is inconvenient because you are linking against a
 library written in another language and would like to set the linker
 more appropriately.  @xref{Libtool Convenience Libraries}, for a
 trick with @code{nodist_EXTRA_@dots{}_SOURCES}.
+
+A per-target @code{_LINK} variable will override the above selection.
+Per-target link flags will cause Automake to write a per-target
+@code{_LINK} variable according to the language chosen as above.
 
 
 @node Fortran 9x Support
