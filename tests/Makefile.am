@@ -185,6 +185,8 @@ cond40.test \
 cond41.test \
 cond42.test \
 cond43.test \
+cond44.test \
+cond45.test \
 condd.test \
 condhook.test \
 condinc.test \
