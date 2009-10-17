@@ -121,6 +121,41 @@ recheck:
 dist-hook:
 	cd $(distdir)/tests && chmod a+rx *.test
 
+
+# Perl coverage statistics.
+PERL_COVERAGE_DB = $(abs_top_builddir)/cover_db
+PERL_COVERAGE_FLAGS = -MDevel::Cover=-db,$(PERL_COVERAGE_DB),-silent,on,-summary,off
+PERL_COVER = cover
+
+check-coverage-run recheck-coverage-run: all
+	$(mkinstalldirs) $(PERL_COVERAGE_DB)
+	PERL5OPT="$$PERL5OPT $(PERL_COVERAGE_FLAGS)"; export PERL5OPT; \
+	WANT_NO_THREADS=yes; export WANT_NO_THREADS; unset AUTOMAKE_JOBS; \
+	$(MAKE) $(AM_MAKEFLAGS) `echo $@ | sed 's/-coverage-run//'`
+
+check-coverage-report:
+	@if test ! -d "$(PERL_COVERAGE_DB)"; then \
+	  echo "No coverage database found in \`$(PERL_COVERAGE_DB)'." >&2; \
+	  echo "Please run \`make check-coverage' first" >&2; \
+	  exit 1; \
+	fi
+	$(PERL_COVER) $(PERL_COVER_FLAGS) "$(PERL_COVERAGE_DB)"
+
+# We don't use direct dependencies here because we'd like to be able
+# to invoke the report even after interrupted check-coverage.
+check-coverage: check-coverage-run
+	$(MAKE) $(AM_MAKEFLAGS) check-coverage-report
+
+recheck-coverage: recheck-coverage-run
+	$(MAKE) $(AM_MAKEFLAGS) check-coverage-report
+
+clean-coverage:
+	rm -rf "$(PERL_COVERAGE_DB)"
+clean-local: clean-coverage
+
+.PHONY: check-coverage recheck-coverage check-coverage-run \
+	recheck-coverage-run check-coverage-report clean-coverage
+
 # Some simple checks, and then ordinary check.  These are only really
 # guaranteed to work on my machine.
 syntax_check_rules = \
