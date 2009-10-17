@@ -94,6 +94,23 @@ automake aclocal: Makefile
 INSTALL: lib/INSTALL
 	cp $(srcdir)/lib/INSTALL $@
 
+## recheck: convenience proxy target for the test suites.
+TEST_SUBDIRS = lib/Automake/tests tests
+
+.PHONY: recheck
+recheck:
+	@failcom='exit 1'; \
+	for f in x $$MAKEFLAGS; do \
+	  case $$f in \
+	    *=* | --[!k]*);; \
+	    *k*) failcom='fail=yes';; \
+	  esac; \
+	done; \
+	for subdir in $(TEST_SUBDIRS); do \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $@) || eval $$failcom; \
+	done; \
+	test -z "$$fail"
+
 ################################################################
 ##
 ## Everything past here is useful to the maintainer, but probably not

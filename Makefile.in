@@ -245,6 +245,7 @@ do_subst = sed \
   -e 's,[@]configure_input[@],Generated from $@.in; do not edit by hand.,g' \
   -e 's,[@]datadir[@],$(datadir),g'
 
+TEST_SUBDIRS = lib/Automake/tests tests
 
 # Some simple checks, and then ordinary check.  These are only really
 # guaranteed to work on my machine.
@@ -842,6 +843,20 @@ automake aclocal: Makefile
 
 INSTALL: lib/INSTALL
 	cp $(srcdir)/lib/INSTALL $@
+
+.PHONY: recheck
+recheck:
+	@failcom='exit 1'; \
+	for f in x $$MAKEFLAGS; do \
+	  case $$f in \
+	    *=* | --[!k]*);; \
+	    *k*) failcom='fail=yes';; \
+	  esac; \
+	done; \
+	for subdir in $(TEST_SUBDIRS); do \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $@) || eval $$failcom; \
+	done; \
+	test -z "$$fail"
 
 ################################################################
 
