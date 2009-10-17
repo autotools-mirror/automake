@@ -26,7 +26,7 @@ am__remove_distdir = \
   { test ! -d "$(distdir)" \
     || { find "$(distdir)" -type d ! -perm -200 -exec chmod u+w {} ';' \
          && rm -fr "$(distdir)"; }; }
-
+am__post_remove_distdir = $(am__remove_distdir)
 endif %?TOPDIR_P%
 
 if %?SUBDIRS%
@@ -331,6 +331,10 @@ endif %?TOPDIR_P%
 ## with tar 1.11.2).  We do not do anything specific w.r.t. this
 ## incompatibility since packages where empty directories need to be
 ## present in the archive are really unusual.
+##
+## We order DIST_TARGETS by expected duration of the compressors,
+## slowest first, for better parallelism in `make dist'.  Do not
+## reorder DIST_ARCHIVES, users may expect gzip to be first.
 
 if %?TOPDIR_P%
 
@@ -339,44 +343,52 @@ GZIP_ENV = --best
 .PHONY: dist-gzip
 dist-gzip: distdir
 	tardir=$(distdir) && $(am__tar) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
-	$(am__remove_distdir)
+	$(am__post_remove_distdir)
 
 ?BZIP2?DIST_ARCHIVES += $(distdir).tar.bz2
 .PHONY: dist-bzip2
 dist-bzip2: distdir
 	tardir=$(distdir) && $(am__tar) | bzip2 -9 -c >$(distdir).tar.bz2
-	$(am__remove_distdir)
+	$(am__post_remove_distdir)
 
 ?LZMA?DIST_ARCHIVES += $(distdir).tar.lzma
 .PHONY: dist-lzma
 dist-lzma: distdir
 	tardir=$(distdir) && $(am__tar) | lzma -9 -c >$(distdir).tar.lzma
-	$(am__remove_distdir)
+	$(am__post_remove_distdir)
 
 ?XZ?DIST_ARCHIVES += $(distdir).tar.xz
 .PHONY: dist-xz
 dist-xz: distdir
 	tardir=$(distdir) && $(am__tar) | xz -c >$(distdir).tar.xz
-	$(am__remove_distdir)
+	$(am__post_remove_distdir)
 
 ?COMPRESS?DIST_ARCHIVES += $(distdir).tar.Z
 .PHONY: dist-tarZ
 dist-tarZ: distdir
 	tardir=$(distdir) && $(am__tar) | compress -c >$(distdir).tar.Z
-	$(am__remove_distdir)
+	$(am__post_remove_distdir)
 
 ?SHAR?DIST_ARCHIVES += $(distdir).shar.gz
 .PHONY: dist-shar
 dist-shar: distdir
 	shar $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).shar.gz
-	$(am__remove_distdir)
+	$(am__post_remove_distdir)
 
 ?ZIP?DIST_ARCHIVES += $(distdir).zip
 .PHONY: dist-zip
 dist-zip: distdir
 	-rm -f $(distdir).zip
 	zip -rq $(distdir).zip $(distdir)
-	$(am__remove_distdir)
+	$(am__post_remove_distdir)
+
+?LZMA?DIST_TARGETS += dist-lzma
+?XZ?DIST_TARGETS += dist-xz
+?SHAR?DIST_TARGETS += dist-shar
+?BZIP2?DIST_TARGETS += dist-bzip2
+?GZIP?DIST_TARGETS += dist-gzip
+?ZIP?DIST_TARGETS += dist-zip
+?COMPRESS?DIST_TARGETS += dist-tarZ
 
 endif %?TOPDIR_P%
 
@@ -396,16 +408,9 @@ if %?SUBDIRS%
 AM_RECURSIVE_TARGETS += dist dist-all
 endif %?SUBDIRS%
 
-dist dist-all: distdir
-?GZIP?	tardir=$(distdir) && $(am__tar) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
-?BZIP2?	tardir=$(distdir) && $(am__tar) | bzip2 -9 -c >$(distdir).tar.bz2
-?LZMA?	tardir=$(distdir) && $(am__tar) | lzma -9 -c >$(distdir).tar.lzma
-?XZ?	tardir=$(distdir) && $(am__tar) | xz -c >$(distdir).tar.xz
-?COMPRESS?	tardir=$(distdir) && $(am__tar) | compress -c >$(distdir).tar.Z
-?SHAR?	shar $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).shar.gz
-?ZIP?	-rm -f $(distdir).zip
-?ZIP?	zip -rq $(distdir).zip $(distdir)
-	$(am__remove_distdir)
+dist dist-all:
+	$(MAKE) $(AM_MAKEFLAGS) $(DIST_TARGETS) am__post_remove_distdir='@:'
+	$(am__post_remove_distdir)
 
 endif %?TOPDIR_P%
 
@@ -508,7 +513,7 @@ distcheck: dist
 ## Cater to parallel BSD make (see above).
 	  && cd "$$am__cwd" \
 	  || exit 1
-	$(am__remove_distdir)
+	$(am__post_remove_distdir)
 	@(echo "$(distdir) archives ready for distribution: "; \
 	  list='$(DIST_ARCHIVES)'; for i in $$list; do echo $$i; done) | \
 	  sed -e 1h -e 1s/./=/g -e 1p -e 1x -e '$$p' -e '$$x'
