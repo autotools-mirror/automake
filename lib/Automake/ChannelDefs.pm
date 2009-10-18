@@ -1,4 +1,5 @@
-# Copyright (C) 2002, 2003, 2006, 2008, 2009 Free Software Foundation, Inc.
+# Copyright (C) 2002, 2003, 2006, 2008, 2009 Free Software Foundation,
+# Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,7 +44,7 @@ Automake::ChannelDefs - channel definitions for Automake and helper functions
   verb ($MESSAGE, [%OPTIONS]);
   switch_warning ($CATEGORY);
   parse_WARNINGS ();
-  parse_warning ($OPTION, $ARGUMENT);
+  parse_warnings ($OPTION, $ARGUMENT);
   Automake::ChannelDefs::set_strictness ($STRICTNESS_NAME);
 
 =head1 DESCRIPTION
@@ -307,7 +308,7 @@ sub parse_WARNINGS ()
     }
 }
 
-=item C<parse_warning ($OPTION, $ARGUMENT)>
+=item C<parse_warnings ($OPTION, $ARGUMENT)>
 
 Parse the argument of C<--warning=CATEGORY> or C<-WCATEGORY>.
 

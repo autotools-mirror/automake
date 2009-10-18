@@ -1,4 +1,4 @@
-# Copyright (C) 2003, 2005, 2006  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2005, 2006, 2009  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -49,6 +49,20 @@ Automake::Configure_ac - Locate configure.ac or configure.in.
   my $file_name = find_configure_ac ($dir);
   my $file_name = require_configure_ac ($dir);
 
+=over 4
+
+=back
+
+=head2 Functions
+
+=over 4
+
+=item C<$configure_ac = find_configure_ac ([$directory])>
+
+Find a F<configure.ac> or F<configure.in> file in C<$directory>,
+defaulting to the current directory.  Complain if both files are present.
+Return the name of the file found, or the former if neither is present.
+
 =cut
 
 sub find_configure_ac (;@)
@@ -77,6 +91,12 @@ sub find_configure_ac (;@)
   return $configure_ac;
 }
 
+
+=item C<$configure_ac = require_configure_ac ([$directory])>
+
+Like C<find_configure_ac>, but fail if neither is present.
+
+=cut
 
 sub require_configure_ac (;$)
 {

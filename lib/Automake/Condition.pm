@@ -1,4 +1,4 @@
-# Copyright (C) 1997, 2001, 2002, 2003, 2006, 2008  Free Software
+# Copyright (C) 1997, 2001, 2002, 2003, 2006, 2008, 2009  Free Software
 # Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
@@ -250,7 +250,7 @@ except those of C<$minuscond>.  This is the opposite of C<merge>.
 sub strip ($$)
 {
   my ($self, $minus) = @_;
-  my @res = grep { not $minus->has ($_) } $self->conds;
+  my @res = grep { not $minus->_has ($_) } $self->conds;
   return new Automake::Condition @res;
 }
 
@@ -274,7 +274,7 @@ sub conds ($ )
 }
 
 # Undocumented, shouldn't be needed outside of this class.
-sub has ($$)
+sub _has ($$)
 {
   my ($self, $cond) = @_;
   return exists $self->{'hash'}{$cond};
@@ -289,7 +289,7 @@ Return 1 iff this condition is always false.
 sub false ($ )
 {
   my ($self) = @_;
-  return $self->has ('FALSE');
+  return $self->_has ('FALSE');
 }
 
 =item C<$cond-E<gt>true>
@@ -426,7 +426,7 @@ sub true_when ($$)
   # exists in $WHEN.
   foreach my $cond ($self->conds)
     {
-      return 0 unless $when->has ($cond);
+      return 0 unless $when->_has ($cond);
     }
   return 1;
 }
@@ -517,6 +517,8 @@ sub multiply ($@)
 
   return (values %res);
 }
+
+=back
 
 =head2 Other helper functions
 
@@ -614,6 +616,8 @@ sub conditional_negate ($)
 
   return $cond;
 }
+
+=back
 
 =head1 SEE ALSO
 

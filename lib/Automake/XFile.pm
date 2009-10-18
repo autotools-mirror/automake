@@ -68,18 +68,6 @@ methods C<close>, C<lock> (corresponding to C<flock>), C<new>,
 C<open>, C<seek>, and C<truncate>.  It also overrides the C<getline>
 and C<getlines> methods to translate C<\r\n> to C<\n>.
 
-=head1 SEE ALSO
-
-L<perlfunc>,
-L<perlop/"I/O Operators">,
-L<IO::File>
-L<IO::Handle>
-L<IO::Seekable>
-
-=head1 HISTORY
-
-Derived from IO::File.pm by Akim Demaille E<lt>F<akim@freefriends.org>E<gt>.
-
 =cut
 
 require 5.000;
@@ -113,9 +101,16 @@ eval {
 # Used in croak error messages.
 my $me = basename ($0);
 
-################################################
-## Constructor
-##
+=head2 Methods
+
+=over
+
+=item C<$fh = new Automake::XFile ([$expr, ...]>
+
+Constructor a new XFile object.  Additional arguments
+are passed to C<open>, if any.
+
+=cut
 
 sub new
 {
@@ -129,9 +124,12 @@ sub new
   $fh;
 }
 
-################################################
-## Open
-##
+=item C<$fh-E<gt>open ([$file, ...])>
+
+Open a file, passing C<$file> and further arguments to C<IO::File::open>.
+Die if opening fails.  Store the name of the file.  Use binmode for writing.
+
+=cut
 
 sub open
 {
@@ -156,9 +154,11 @@ sub open
   binmode $fh if $file =~ /^\s*>/;
 }
 
-################################################
-## Close
-##
+=item C<$fh-E<gt>close>
+
+Close the file, handling errors.
+
+=cut
 
 sub close
 {
@@ -172,9 +172,12 @@ sub close
     }
 }
 
-################################################
-## Getline
-##
+=item C<$line = $fh-E<gt>getline>
+
+Read and return a line from the file.  Ensure C<\r\n> is translated to
+C<\n> on input files.
+
+=cut
 
 # Some Win32/perl installations fail to translate \r\n to \n on input
 # so we do that here.
@@ -187,9 +190,11 @@ sub getline
   return $_;
 }
 
-################################################
-## Getlines
-##
+=item C<@lines = $fh-E<gt>getlines>
+
+Slurp lines from the files.
+
+=cut
 
 sub getlines
 {
@@ -199,9 +204,11 @@ sub getlines
   return @res;
 }
 
-################################################
-## Name
-##
+=item C<$name = $fh-E<gt>name>
+
+Return the name of the file.
+
+=cut
 
 sub name
 {
@@ -209,9 +216,13 @@ sub name
   return ${*$fh}{'autom4te_xfile_file'};
 }
 
-################################################
-## Lock
-##
+=item C<$fh-E<gt>lock>
+
+Lock the file using C<flock>.  If locking fails for reasons other than
+C<flock> being unsupported, then error out if C<$ENV{'MAKEFLAGS'}> indicates
+that we are spawned from a parallel C<make>.
+
+=cut
 
 sub lock
 {
@@ -243,9 +254,11 @@ sub lock
     }
 }
 
-################################################
-## Seek
-##
+=item C<$fh-E<gt>seek ($position, [$whence])>
+
+Seek file to C<$position>.  Die if seeking fails.
+
+=cut
 
 sub seek
 {
@@ -258,9 +271,11 @@ sub seek
     }
 }
 
-################################################
-## Truncate
-##
+=item C<$fh-E<gt>truncate ($len)>
+
+Truncate the file to length C<$len>.  Die on failure.
+
+=cut
 
 sub truncate
 {
@@ -271,6 +286,22 @@ sub truncate
       fatal "cannot truncate $file at $len: $!";
     }
 }
+
+=back
+
+=head1 SEE ALSO
+
+L<perlfunc>,
+L<perlop/"I/O Operators">,
+L<IO::File>
+L<IO::Handle>
+L<IO::Seekable>
+
+=head1 HISTORY
+
+Derived from IO::File.pm by Akim Demaille E<lt>F<akim@freefriends.org>E<gt>.
+
+=cut
 
 1;
 

@@ -1,4 +1,4 @@
-# Copyright (C) 2002, 2003, 2008  Free Software Foundation, Inc.
+# Copyright (C) 2002, 2003, 2008, 2009  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ Automake::Location - a class for location tracking, with a stack of contexts
       ...
     }
 
-  # Pop a context, and reset the location from the previous context.
+  # Pop a context, and reset the location to the previous context.
   $where->pop_context;
 
   # Clone a Location.  Use this when storing the state of a location
@@ -84,6 +84,16 @@ You can pass a C<Location> to C<Automake::Channels::msg>.
 
 =cut
 
+=head2 Methods
+
+=over
+
+=item C<$where = new Automake::Location ([$position])>
+
+Create and return a new Location object.
+
+=cut
+
 sub new ($;$)
 {
   my ($class, $position) = @_;
@@ -95,11 +105,23 @@ sub new ($;$)
   return $self;
 }
 
+=item C<$location-E<gt>set ($position)>
+
+Change the location to be C<$position>.
+
+=cut
+
 sub set ($$)
 {
   my ($self, $position) = @_;
   $self->{'position'} = $position;
 }
+
+=item C<$location-E<gt>get>
+
+Get the location (without context).
+
+=cut
 
 sub get ($)
 {
@@ -107,12 +129,24 @@ sub get ($)
   return $self->{'position'};
 }
 
+=item C<$location-E<gt>push_context ($context)>
+
+Push a context to the location.
+
+=cut
+
 sub push_context ($$)
 {
   my ($self, $context) = @_;
   push @{$self->{'contexts'}}, [$self->get, $context];
   $self->set (undef);
 }
+
+=item C<$where = $location-E<gt>pop_context ($context)>
+
+Pop a context, and reset the location to the previous context.
+
+=cut
 
 sub pop_context ($)
 {
@@ -122,11 +156,24 @@ sub pop_context ($)
   return @{$pair};
 }
 
+=item C<@contexts = $location-E<gt>get_contexts>
+
+Return the array of contexts.
+
+=cut
+
 sub get_contexts ($)
 {
   my ($self) = @_;
   return @{$self->{'contexts'}};
 }
+
+=item C<$location = $location-E<gt>clone>
+
+Clone a Location.  Use this when storing the state of a location
+that would otherwise be modified.
+
+=cut
 
 sub clone ($)
 {
@@ -140,6 +187,12 @@ sub clone ($)
   return $other;
 }
 
+=item C<$res = $location-E<gt>dump>
+
+Print the location and the stack of context (for debugging).
+
+=cut
+
 sub dump ($)
 {
   my ($self) = @_;
@@ -151,6 +204,13 @@ sub dump ($)
     }
   return $res;
 }
+
+=item C<@array = $location-E<gt>serialize>
+
+Serialize a Location object (for passing through a thread queue,
+for example).
+
+=cut
 
 sub serialize ($)
 {
@@ -166,6 +226,12 @@ sub serialize ($)
   return @serial;
 }
 
+=item C<new Automake::Location::deserialize ($queue)>
+
+De-serialize: recreate a Location object from a queue.
+
+=cut
+
 sub deserialize ($)
 {
   my ($queue) = @_;
@@ -178,6 +244,8 @@ sub deserialize ($)
     }
   return $self;
 }
+
+=back
 
 =head1 SEE ALSO
 
