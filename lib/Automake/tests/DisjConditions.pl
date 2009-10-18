@@ -1,4 +1,5 @@
-# Copyright (C) 2001, 2002, 2003, 2008  Free Software Foundation, Inc.
+# Copyright (C) 2001, 2002, 2003, 2008, 2009  Free Software Foundation,
+# Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -20,15 +21,38 @@ use Automake::DisjConditions;
 
 sub test_basics ()
 {
+  my $true = new Automake::DisjConditions TRUE;
+  my $false = new Automake::DisjConditions FALSE;
   my $cond = new Automake::Condition "COND1_TRUE", "COND2_FALSE";
   my $other = new Automake::Condition "COND3_FALSE";
+  my $another = new Automake::Condition "COND3_TRUE", "COND4_FALSE";
   my $set1 = new Automake::DisjConditions $cond, $other;
   my $set2 = new Automake::DisjConditions $other, $cond;
+  my $set3 = new Automake::DisjConditions FALSE, $another;
   return 1 unless $set1 == $set2;
   return 1 if $set1->false;
   return 1 if $set1->true;
   return 1 unless (new Automake::DisjConditions)->false;
   return 1 if (new Automake::DisjConditions)->true;
+  return 1 unless $true->human eq 'TRUE';
+  return 1 unless $false->human eq 'FALSE';
+  return 1 unless $set1->human eq "(COND1 and !COND2) or (!COND3)";
+  return 1 unless $set2->human eq "(COND1 and !COND2) or (!COND3)";
+  my $one_cond_human = $set1->one_cond->human;
+  return 1 unless $one_cond_human eq "!COND3"
+                  || $one_cond_human eq "COND1 and !COND2";
+  return 1 unless $set1->string eq "COND1_TRUE COND2_FALSE | COND3_FALSE";
+
+  my $merged1 = $set1->merge ($set2);
+  my $merged2 = $set1->merge ($cond);
+  my $mult1 = $set1->multiply ($set3);
+  my $mult2 = $set1->multiply ($another);
+  return 1 unless $merged1->simplify->string eq "COND1_TRUE COND2_FALSE | COND3_FALSE";
+  return 1 unless $merged2->simplify->string eq "COND1_TRUE COND2_FALSE | COND3_FALSE";
+  return 1 unless $mult1->string eq "COND1_TRUE COND2_FALSE COND3_TRUE COND4_FALSE";
+  return 1 unless $mult1 == $mult2;
+
+  return 0;
 }
 
 sub build_set (@)
