@@ -469,7 +469,7 @@ sub _check_ambiguous_condition ($$$)
   # We allow silent variables to be overridden silently,
   # by either silent or non-silent variables.
   my $def = $self->def ($ambig_cond);
-  if ($message && !($def && $def->pretty == VAR_SILENT))
+  if ($message && $def->pretty != VAR_SILENT)
     {
       msg 'syntax', $where, "$message ...", partial => 1;
       msg_var ('syntax', $var, "... `$var' previously defined here");
