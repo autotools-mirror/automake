@@ -1,4 +1,4 @@
-# Copyright (C) 2002, 2003  Free Software Foundation, Inc.
+# Copyright (C) 2002, 2003, 2009  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -42,6 +42,29 @@ sub test_version_compare
     print "compare (\"$left\", \"$right\") = $res! (not $result?)\n";
     $failed = 1;
   }
+
+  my $check_expected = ($result == 0 || $result == 1) ? 0 : 1;
+  # Exception for 'foo' fork.
+  $check_expected = 1
+    if ($right =~ /foo/ && !($left =~ /foo/));
+
+  my $check = Automake::Version::check ($left, $right);
+  if ($check != $check_expected)
+  {
+    print "check (\"$left\", \"$right\") = $check! (not $check_expected?)\n";
+    $failed = 1;
+  }
+}
+
+sub test_bad_versions
+{
+  my ($ver) = @_;
+  my @version = Automake::Version::split ($ver);
+  if ($#version != -1)
+  {
+    print "shouldn't grok \"$ver\"\n";
+    $failed = 1;
+  }
 }
 
 my @tests = (
@@ -69,15 +92,24 @@ my @tests = (
   ['1.5a', '1.5.1f', 1],
   ['1.5', '1.5.1a', -1],
   ['1.5.1a', '1.5.1f', -1],
+  ['1.5.1f', '1.5.1a', 1],
+  ['1.5.1f', '1.5.1f', 0],
 # special exceptions
   ['1.6-p5a', '1.6.5a', 0],
   ['1.6', '1.6-p5a', -1],
   ['1.6-p4b', '1.6-p5a', -1],
   ['1.6-p4b', '1.6-foo', 1],
-  ['1.6-p4b', '1.6a-foo', -1]
+  ['1.6-p4b', '1.6a-foo', -1],
+  ['1.6-p5', '1.6.5', 0],
+  ['1.6a-foo', '1.6a-foo', 0],
+);
+
+my @bad_versions = (
+  '', 'a', '1', '1a', '1.2.3.4', '-1.2'
 );
 
 test_version_compare (@{$_}) foreach @tests;
+test_bad_versions ($_) foreach @bad_versions;
 
 exit $failed;
 

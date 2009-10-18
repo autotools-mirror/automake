@@ -25,6 +25,12 @@ Condition-t.pl \
 DisjConditions.pl \
 DisjConditions-t.pl \
 Version.pl \
+Version2.pl \
+Version3.pl \
 Wrap.pl
+
+XFAIL_TESTS = \
+Version2.pl \
+Version3.pl
 
 EXTRA_DIST = $(TESTS)
