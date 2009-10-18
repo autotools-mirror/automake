@@ -180,18 +180,21 @@ sub new ($;@)
   };
   bless $self, $class;
 
+  for my $cond (@conds)
+    {
+      # Catch some common programming errors:
+      # - A Condition passed to new
+      confess "`$cond' is a reference, expected a string" if ref $cond;
+      # - A Condition passed as a string to new
+      confess "`$cond' does not look like a condition" if $cond =~ /::/;
+    }
+
   # Accept strings like "FOO BAR" as shorthand for ("FOO", "BAR").
   @conds = map { split (' ', $_) } @conds;
 
   for my $cond (@conds)
     {
       next if $cond eq 'TRUE';
-
-      # Catch some common programming errors:
-      # - A Condition passed to new
-      confess "`$cond' is a reference, expected a string" if ref $cond;
-      # - A Condition passed as a string to new
-      confess "`$cond' does not look like a condition" if $cond =~ /::/;
 
       # Detect cases when @conds can be simplified to FALSE.
       if (($cond eq 'FALSE' && $#conds > 0)

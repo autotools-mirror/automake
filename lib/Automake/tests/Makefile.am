@@ -22,6 +22,8 @@ TEST_EXTENSIONS = .pl
 TESTS = \
 Condition.pl \
 Condition-t.pl \
+Cond2.pl \
+Cond3.pl \
 DisjConditions.pl \
 DisjConditions-t.pl \
 Version.pl \
@@ -30,6 +32,8 @@ Version3.pl \
 Wrap.pl
 
 XFAIL_TESTS = \
+Cond2.pl \
+Cond3.pl \
 Version2.pl \
 Version3.pl
 
