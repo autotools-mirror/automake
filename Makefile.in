@@ -255,6 +255,12 @@ do_subst = sed \
   -e 's,[@]configure_input[@],Generated from $@.in; do not edit by hand.,g' \
   -e 's,[@]datadir[@],$(datadir),g'
 
+TEST_SUBDIRS = lib/Automake/tests tests
+
+# Perl coverage statistics.
+PERL_COVERAGE_DB = $(abs_top_builddir)/cover_db
+PERL_COVERAGE_FLAGS = -MDevel::Cover=-db,$(PERL_COVERAGE_DB),-silent,on,-summary,off
+PERL_COVER = cover
 
 # Some simple checks, and then ordinary check.  These are only really
 # guaranteed to work on my machine.
@@ -760,7 +766,7 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-recursive
 
-clean-am: clean-generic mostlyclean-am
+clean-am: clean-generic clean-local mostlyclean-am
 
 distclean: distclean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
@@ -835,20 +841,21 @@ uninstall-am: uninstall-binSCRIPTS
 
 .PHONY: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) CTAGS GTAGS \
 	all all-am am--refresh check check-am clean clean-cscope \
-	clean-generic cscope cscopelist cscopelist-recursive ctags \
-	ctags-recursive dist dist-all dist-bzip2 dist-gzip dist-hook \
-	dist-lzma dist-shar dist-tarZ dist-xz dist-zip distcheck \
-	distclean distclean-generic distclean-tags distcleancheck \
-	distdir distuninstallcheck dvi dvi-am html html-am info \
-	info-am install install-am install-binSCRIPTS install-data \
-	install-data-am install-dvi install-dvi-am install-exec \
-	install-exec-am install-exec-hook install-html install-html-am \
-	install-info install-info-am install-man install-pdf \
-	install-pdf-am install-ps install-ps-am install-strip \
-	installcheck installcheck-am installdirs installdirs-am \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-generic pdf pdf-am ps ps-am tags tags-recursive \
-	uninstall uninstall-am uninstall-binSCRIPTS uninstall-hook
+	clean-generic clean-local cscope cscopelist \
+	cscopelist-recursive ctags ctags-recursive dist dist-all \
+	dist-bzip2 dist-gzip dist-hook dist-lzma dist-shar dist-tarZ \
+	dist-xz dist-zip distcheck distclean distclean-generic \
+	distclean-tags distcleancheck distdir distuninstallcheck dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-binSCRIPTS install-data install-data-am install-dvi \
+	install-dvi-am install-exec install-exec-am install-exec-hook \
+	install-html install-html-am install-info install-info-am \
+	install-man install-pdf install-pdf-am install-ps \
+	install-ps-am install-strip installcheck installcheck-am \
+	installdirs installdirs-am maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-generic pdf \
+	pdf-am ps ps-am tags tags-recursive uninstall uninstall-am \
+	uninstall-binSCRIPTS uninstall-hook
 
 
 install-exec-hook:
@@ -880,11 +887,54 @@ automake aclocal: Makefile
 INSTALL: lib/INSTALL
 	$(AM_V_GEN)cp $(srcdir)/lib/INSTALL $@
 
+.PHONY: recheck
+recheck:
+	@failcom='exit 1'; \
+	for f in x $$MAKEFLAGS; do \
+	  case $$f in \
+	    *=* | --[!k]*);; \
+	    *k*) failcom='fail=yes';; \
+	  esac; \
+	done; \
+	for subdir in $(TEST_SUBDIRS); do \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $@) || eval $$failcom; \
+	done; \
+	test -z "$$fail"
+
 ################################################################
 
 # Ensure tests are world-executable
 dist-hook:
 	cd $(distdir)/tests && chmod a+rx *.test
+
+check-coverage-run recheck-coverage-run: all
+	$(mkinstalldirs) $(PERL_COVERAGE_DB)
+	PERL5OPT="$$PERL5OPT $(PERL_COVERAGE_FLAGS)"; export PERL5OPT; \
+	WANT_NO_THREADS=yes; export WANT_NO_THREADS; unset AUTOMAKE_JOBS; \
+	$(MAKE) $(AM_MAKEFLAGS) `echo $@ | sed 's/-coverage-run//'`
+
+check-coverage-report:
+	@if test ! -d "$(PERL_COVERAGE_DB)"; then \
+	  echo "No coverage database found in \`$(PERL_COVERAGE_DB)'." >&2; \
+	  echo "Please run \`make check-coverage' first" >&2; \
+	  exit 1; \
+	fi
+	$(PERL_COVER) $(PERL_COVER_FLAGS) "$(PERL_COVERAGE_DB)"
+
+# We don't use direct dependencies here because we'd like to be able
+# to invoke the report even after interrupted check-coverage.
+check-coverage: check-coverage-run
+	$(MAKE) $(AM_MAKEFLAGS) check-coverage-report
+
+recheck-coverage: recheck-coverage-run
+	$(MAKE) $(AM_MAKEFLAGS) check-coverage-report
+
+clean-coverage:
+	rm -rf "$(PERL_COVERAGE_DB)"
+clean-local: clean-coverage
+
+.PHONY: check-coverage recheck-coverage check-coverage-run \
+	recheck-coverage-run check-coverage-report clean-coverage
 
 .PHONY: $(syntax_check_rules)
 $(syntax_check_rules): automake aclocal

@@ -1,4 +1,5 @@
-# Copyright (C) 2001, 2002, 2003, 2008  Free Software Foundation, Inc.
+# Copyright (C) 2001, 2002, 2003, 2008, 2009  Free Software Foundation,
+# Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -18,7 +19,8 @@
 BEGIN {
   use Config;
   if (eval { require 5.007_002; }	# for CLONE support
-      && $Config{useithreads})
+      && $Config{useithreads}
+      && !$ENV{WANT_NO_THREADS})
     {
       require threads;
       import threads;
