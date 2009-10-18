@@ -1,4 +1,4 @@
-# Copyright (C) 1997, 2001, 2002, 2003, 2006, 2008  Free Software
+# Copyright (C) 1997, 2001, 2002, 2003, 2006, 2008, 2009  Free Software
 # Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
@@ -180,18 +180,21 @@ sub new ($;@)
   };
   bless $self, $class;
 
+  for my $cond (@conds)
+    {
+      # Catch some common programming errors:
+      # - A Condition passed to new
+      confess "`$cond' is a reference, expected a string" if ref $cond;
+      # - A Condition passed as a string to new
+      confess "`$cond' does not look like a condition" if $cond =~ /::/;
+    }
+
   # Accept strings like "FOO BAR" as shorthand for ("FOO", "BAR").
   @conds = map { split (' ', $_) } @conds;
 
   for my $cond (@conds)
     {
       next if $cond eq 'TRUE';
-
-      # Catch some common programming errors:
-      # - A Condition passed to new
-      confess "`$cond' is a reference, expected a string" if ref $cond;
-      # - A Condition passed as a string to new
-      confess "`$cond' does not look like a condition" if $cond =~ /::/;
 
       # Detect cases when @conds can be simplified to FALSE.
       if (($cond eq 'FALSE' && $#conds > 0)
@@ -250,7 +253,7 @@ except those of C<$minuscond>.  This is the opposite of C<merge>.
 sub strip ($$)
 {
   my ($self, $minus) = @_;
-  my @res = grep { not $minus->has ($_) } $self->conds;
+  my @res = grep { not $minus->_has ($_) } $self->conds;
   return new Automake::Condition @res;
 }
 
@@ -274,7 +277,7 @@ sub conds ($ )
 }
 
 # Undocumented, shouldn't be needed outside of this class.
-sub has ($$)
+sub _has ($$)
 {
   my ($self, $cond) = @_;
   return exists $self->{'hash'}{$cond};
@@ -289,7 +292,7 @@ Return 1 iff this condition is always false.
 sub false ($ )
 {
   my ($self) = @_;
-  return $self->has ('FALSE');
+  return $self->_has ('FALSE');
 }
 
 =item C<$cond-E<gt>true>
@@ -426,7 +429,7 @@ sub true_when ($$)
   # exists in $WHEN.
   foreach my $cond ($self->conds)
     {
-      return 0 unless $when->has ($cond);
+      return 0 unless $when->_has ($cond);
     }
   return 1;
 }
@@ -517,6 +520,8 @@ sub multiply ($@)
 
   return (values %res);
 }
+
+=back
 
 =head2 Other helper functions
 
@@ -614,6 +619,8 @@ sub conditional_negate ($)
 
   return $cond;
 }
+
+=back
 
 =head1 SEE ALSO
 

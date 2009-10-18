@@ -1,4 +1,4 @@
-# Copyright (C) 2001, 2002, 2003  Free Software Foundation, Inc.
+# Copyright (C) 2001, 2002, 2003, 2009  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -19,15 +19,15 @@ use Automake::Condition qw/TRUE FALSE/;
 
 sub test_basics ()
 {
-  my @tests = (# [[Conditions], is_true?, is_false?, string, subst-string]
-	       [[], 1, 0, 'TRUE', ''],
-	       [['TRUE'], 1, 0, 'TRUE', ''],
-	       [['FALSE'], 0, 1, 'FALSE', '#'],
-	       [['A_TRUE'], 0, 0, 'A_TRUE', '@A_TRUE@'],
+  my @tests = (# [[Conditions], is_true?, is_false?, string, subst-string, human]
+	       [[], 1, 0, 'TRUE', '', 'TRUE'],
+	       [['TRUE'], 1, 0, 'TRUE', '', 'TRUE'],
+	       [['FALSE'], 0, 1, 'FALSE', '#', 'FALSE'],
+	       [['A_TRUE'], 0, 0, 'A_TRUE', '@A_TRUE@', 'A'],
 	       [['A_TRUE', 'B_FALSE'],
-		0, 0, 'A_TRUE B_FALSE', '@A_TRUE@@B_FALSE@'],
-	       [['B_TRUE', 'FALSE'], 0, 1, 'FALSE', '#'],
-	       [['B_TRUE', 'B_FALSE'], 0, 1, 'FALSE', '#']);
+		0, 0, 'A_TRUE B_FALSE', '@A_TRUE@@B_FALSE@', 'A and !B'],
+	       [['B_TRUE', 'FALSE'], 0, 1, 'FALSE', '#', 'FALSE'],
+	       [['B_TRUE', 'B_FALSE'], 0, 1, 'FALSE', '#', 'FALSE']);
 
   for (@tests)
     {
@@ -38,6 +38,7 @@ sub test_basics ()
       return 1 if $_->[2] != ($a == FALSE);
       return 1 if $_->[3] ne $a->string;
       return 1 if $_->[4] ne $a->subst_string;
+      return 1 if $_->[5] ne $a->human;
     }
   return 0;
 }
@@ -240,7 +241,25 @@ sub test_reduce_or ()
   return $failed;
 }
 
-exit (test_basics || test_true_when || test_reduce_and || test_reduce_or);
+sub test_merge ()
+{
+  my $cond = new Automake::Condition "COND1_TRUE", "COND2_FALSE";
+  my $other = new Automake::Condition "COND3_FALSE";
+  my $both = $cond->merge ($other);
+  my $both2 = $cond->merge_conds ("COND3_FALSE");
+  $cond = $both->strip ($other);
+  my @conds = $cond->conds;
+  return 1 if $both->string ne "COND1_TRUE COND2_FALSE COND3_FALSE";
+  return 1 if $cond->string ne "COND1_TRUE COND2_FALSE";
+  return 1 if $both != $both2;
+  return 0;
+}
+
+exit (test_basics
+      || test_true_when
+      || test_reduce_and
+      || test_reduce_or
+      || test_merge);
 
 ### Setup "GNU" style for perl-mode and cperl-mode.
 ## Local Variables:

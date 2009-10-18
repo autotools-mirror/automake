@@ -1,4 +1,4 @@
-# Copyright (C) 2003  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2009  Free Software Foundation, Inc.
 #
 # This file is part of GNU Automake.
 #
@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use Automake::Wrap 'wrap';
+use Automake::Wrap qw/wrap makefile_wrap/;
 
 my $failed = 0;
 
@@ -24,6 +24,18 @@ sub test_wrap
   my ($in, $exp_out) = @_;
 
   my $out = &wrap (@$in);
+  if ($out ne $exp_out)
+    {
+      print STDERR "For: @$in\nGot:\n$out\nInstead of:\n$exp_out\n---\n";
+      ++$failed;
+    }
+}
+
+sub test_makefile_wrap
+{
+  my ($in, $exp_out) = @_;
+
+  my $out = &makefile_wrap (@$in);
   if ($out ne $exp_out)
     {
       print STDERR "For: @$in\nGot:\n$out\nInstead of:\n$exp_out\n---\n";
@@ -55,10 +67,32 @@ big continuation:diag3
 "big header: END
 cont: word1 END
 cont: word2
+"],
+  [["big header:", "", " END", 16, "w1", "w2 ", "w3"],
+"big header: END
+w1 w2 w3
 "]);
 
+my @makefile_tests = (
+  [["target:"],
+"target:
+"],
+  [["target:", "\t"],
+"target:
+"],
+  [["target:", "\t", "prereq1", "prereq2"],
+"target: prereq1 prereq2
+"],
+  [["target: ", "\t", "this is a long list of prerequisites ending in space",
+    "so that there is no need for another space before the backslash",
+    "unlike in the second line"],
+"target: this is a long list of prerequisites ending in space \\
+\tso that there is no need for another space before the backslash \\
+\tunlike in the second line
+"]);
 
 test_wrap (@{$_}) foreach @tests;
+test_makefile_wrap (@{$_}) foreach @makefile_tests;
 
 exit $failed;
 
