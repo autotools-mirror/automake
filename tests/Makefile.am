@@ -282,6 +282,7 @@ exeext4.test \
 exsource.test \
 ext.test \
 ext2.test \
+ext3.test \
 extra.test \
 extra3.test \
 extra4.test \
