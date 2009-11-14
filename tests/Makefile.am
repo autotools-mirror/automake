@@ -95,6 +95,7 @@ badline.test \
 badprog.test \
 block.test \
 bsource.test \
+candist.test \
 canon.test \
 canon2.test \
 canon3.test \
