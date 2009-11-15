@@ -95,6 +95,7 @@ badline.test \
 badprog.test \
 block.test \
 bsource.test \
+candist.test \
 canon.test \
 canon2.test \
 canon3.test \
@@ -187,6 +188,7 @@ cond42.test \
 cond43.test \
 cond44.test \
 cond45.test \
+cond46.test \
 condd.test \
 condhook.test \
 condinc.test \
@@ -283,6 +285,7 @@ exeext4.test \
 exsource.test \
 ext.test \
 ext2.test \
+ext3.test \
 extra.test \
 extra3.test \
 extra4.test \
@@ -290,6 +293,7 @@ extra5.test \
 extra6.test \
 extra7.test \
 extra8.test \
+extra9.test \
 f90only.test \
 flavor.test \
 flibs.test \
@@ -407,6 +411,7 @@ link_fc.test \
 link_fccxx.test \
 link_fcxx.test	\
 link_f_only.test \
+link_override.test \
 lisp2.test \
 lisp3.test \
 lisp4.test \
@@ -645,6 +650,7 @@ subst.test \
 subst2.test \
 subst3.test \
 subst4.test \
+subst5.test \
 substref.test \
 substre2.test \
 substtarg.test \

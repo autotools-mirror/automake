@@ -1,0 +1,46 @@
+#!/bin/sh
+# Copyright (C) 2009  Free Software Foundation, Inc.
+#
+# This file is part of GNU Automake.
+#
+# GNU Automake is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# GNU Automake is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Automake; see the file COPYING.  If not, write to
+# the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+# Boston, MA 02110-1301, USA.
+
+# Ensure we warn about substitutions in bin_PROGRAMS if EXTRA_PROGRAMS
+# are missing; but only if the former is not AC_SUBSTed itself
+# (lib_LIBRARIES is in the same boat here).
+
+. ./defs || Exit 1
+
+set -e
+
+cat >>configure.in <<'END'
+AC_PROG_CC
+AC_PROG_RANLIB
+AC_SUBST([lib_LIBRARIES])
+AC_SUBST([bins])
+AC_OUTPUT
+END
+
+cat >Makefile.am <<'END'
+bin_PROGRAMS = @bins@
+END
+
+$ACLOCAL
+AUTOMAKE_fails
+grep 'bin_PROGRAMS.*contains configure substitution' stderr
+grep 'lib_LIBRARIES.*contains configure substitution' stderr && Exit 1
+
+Exit 0
