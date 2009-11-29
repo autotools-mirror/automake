@@ -57,7 +57,7 @@ sub tab_length($)
 {
   my ($txt) = @_;
   my $len = length ($txt);
-  $len += 7 * ($txt =~ tr/\t/\t/d);
+  $len += 7 * ($txt =~ tr/\t/\t/);
   return $len;
 }
 
