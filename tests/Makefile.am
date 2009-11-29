@@ -617,6 +617,7 @@ subdir6.test \
 subdir7.test \
 subdir8.test \
 subdir9.test \
+subdir10.test \
 subdirbuiltsources.test \
 subcond.test \
 subcond2.test \
