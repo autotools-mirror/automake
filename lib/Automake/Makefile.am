@@ -64,7 +64,6 @@ do_subst = in=`echo $@ | sed 's/\.[^.]*$$//'`; sed \
 Config.pm: Config.in Makefile
 	$(AM_V_GEN)rm -f Config.tmp Config.pm
 	$(AM_V_at)$(do_subst) $(srcdir)/Config.in >Config.tmp
-	$(AM_V_at)chmod +x Config.tmp
 	$(AM_V_at)chmod a-w Config.tmp
 	$(AM_V_at)mv -f Config.tmp Config.pm
 
