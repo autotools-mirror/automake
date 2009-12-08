@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-AC_INIT([GNU Automake], [1.11.1], [bug-automake@gnu.org])
+AC_INIT([GNU Automake], [1.11.1a], [bug-automake@gnu.org])
 
 AC_CONFIG_SRCDIR(automake.in)
 AC_CONFIG_AUX_DIR(lib)
