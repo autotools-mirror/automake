@@ -152,7 +152,7 @@ maintainer-check: $(syntax_check_rules)
 ## to 22 lines of diffs.
 sc_diff_automake_in_automake:
 	@if test `diff $(srcdir)/automake.in automake | wc -l` -ne 22; then \
-	  echo "found too many diffs between automake.in and automake"; 1>&2; \
+	  echo "found too many diffs between automake.in and automake" 1>&2; \
 	  diff -c $(srcdir)/automake.in automake; \
 	  exit 1; \
 	fi
