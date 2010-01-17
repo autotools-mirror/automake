@@ -17,7 +17,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 XFAIL_TESTS =					\
-acoutbs2.test					\
 all.test					\
 auxdir2.test					\
 cond17.test					\
