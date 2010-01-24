@@ -1183,6 +1183,14 @@ sub verbose_flag ($)
     return '';
 }
 
+sub verbose_nodep_flag ($)
+{
+    my ($name) = @_;
+    return '$(' . verbose_var ($name) . subst ('am__nodep') . ')'
+      if (option 'silent-rules');
+    return '';
+}
+
 # silent_flag
 # -----------
 # Contents of %SILENT%: variable to expand to `@' when silent.
@@ -1394,6 +1402,8 @@ sub handle_languages
 	  ? ('FALSE', 'FALSE') : ('AMDEP', "am__fastdep$fpfx");
 
 	my $verbose = verbose_flag ($lang->ccer || 'GEN');
+	my $verbose_nodep = ($AMDEP eq 'FALSE')
+	  ? $verbose : verbose_nodep_flag ($lang->ccer || 'GEN');
 	my $silent = silent_flag ();
 
 	my %transform = ('EXT'     => $ext,
@@ -1408,6 +1418,7 @@ sub handle_languages
 			 'DERIVED-EXT' => 'BUG',
 			 DIST_SOURCE   => 1,
 			 VERBOSE   => $verbose,
+			 'VERBOSE-NODEP' => $verbose_nodep,
 			 SILENT    => $silent,
 			);
 
@@ -1630,6 +1641,7 @@ sub handle_languages
 			     LTOBJ     => "$obj.lo",
 
 			     VERBOSE   => $verbose,
+			     'VERBOSE-NODEP'  => $verbose_nodep,
 			     SILENT    => $silent,
 			     COMPILE   => $obj_compile,
 			     LTCOMPILE => $obj_ltcompile,
