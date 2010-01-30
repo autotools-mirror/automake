@@ -50,7 +50,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(srcdir)/aclocal.in $(srcdir)/automake.in $(srcdir)/defs.in \
-	$(srcdir)/parallel-tests.am
+	$(srcdir)/parallel-tests.am $(top_srcdir)/CheckListOfTests.am
 subdir = tests
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/amversion.m4 \
@@ -1117,6 +1117,9 @@ yflags2.test \
 $(parallel_tests)
 
 EXTRA_DIST = ChangeLog-old gen-parallel-tests $(TESTS)
+am__tmk = tests-in-makefile-list.tmp
+am__tfs = tests-on-filesystem-list.tmp
+am__tdf = diff-in-tests-lists.tmp
 
 # Each test case depends on defs, aclocal, and automake.
 check_SCRIPTS = defs aclocal-$(APIVERSION) automake-$(APIVERSION)
@@ -1124,7 +1127,7 @@ all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .html .log .test
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/parallel-tests.am $(am__configure_deps)
+$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/parallel-tests.am $(top_srcdir)/CheckListOfTests.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -1454,6 +1457,51 @@ $(parallel_tests): $(parallel_tests:-p.test=.test) Makefile.am
 	sed 's|^\. \./defs.*|parallel_tests=yes; &|' \
 	  < $(srcdir)/$$input >$@
 	chmod a+rx $@
+
+.PHONY: maintainer-check-list-of-tests
+maintainer-check-list-of-tests:
+	 @if diff -u /dev/null /dev/null >/dev/null 2>&1; then \
+	   diff='diff -u'; \
+	 else \
+	   diff='diff'; \
+	 fi; \
+	 set X $(checked_test_extensions); shift; \
+	 if test $$# -eq 0; then \
+	   set X $(TEST_EXTENSIONS); shift; \
+	 fi; \
+	 if test $$# -eq 0; then \
+	   echo '$@: internal error: $$(checked_test_extensions) and' \
+	        '$$(TEST_EXTENSIONS) are both undefined or empty' >&2; \
+	   exit 255; \
+	 fi; \
+	 lst='$(expected_list_of_tests)'; \
+	 test -n "$$lst" || lst='$(TESTS)'; \
+	 for t in $$lst; do \
+	   echo "$$t"; \
+	 done | sort >$(am__tmk); \
+	 for ext in $$*; do \
+	   ls *$$ext 2>/dev/null; \
+	   if test $(srcdir) != $(builddir); then \
+	     (cd $(srcdir) && ls *$$ext 2>/dev/null); \
+	   fi; \
+	 done | sort | uniq >$(am__tfs); \
+	 if $$diff $(am__tmk) $(am__tfs) >$(am__tdf); then \
+	    result=0; \
+	 else \
+	    echo '$@: list of tests in Makefile an on filesystem differ' >&2; \
+	    echo "+ $$diff in-makefile on-filesystem" >&2; \
+	    cat $(am__tdf) >&2; \
+	    result=1; \
+	 fi; \
+	 rm -f $(am__tmk) $(am__tfs) $(am__tdf); \
+	 exit $$result;
+
+.PHONY: clean-maintcheck-testslist-tmp
+clean-local: clean-maintcheck-testslist-tmp
+clean-maintcheck-testslist-tmp:
+	rm -f $(am__tmk) $(am__tfs) $(am__tdf)
+
+maintainer-check-list-of-tests: $(parallel_tests)
 
 clean-local: clean-local-check
 .PHONY: clean-local-check

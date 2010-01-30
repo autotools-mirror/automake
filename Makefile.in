@@ -236,6 +236,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = lib . doc m4 tests
+TEST_SUBDIRS = tests lib/Automake/tests
 bin_SCRIPTS = automake aclocal
 CLEANFILES = $(bin_SCRIPTS)
 AUTOMAKESOURCES = automake.in aclocal.in
@@ -928,7 +929,22 @@ dist-hook:
 
 .PHONY: $(syntax_check_rules)
 $(syntax_check_rules): automake aclocal
-maintainer-check: $(syntax_check_rules)
+
+.PHONY: maintainer-check-list-of-tests
+maintainer-check-list-of-tests:
+	@failcom='exit 1'; \
+	for f in x $$MAKEFLAGS; do \
+	  case $$f in \
+	    *=* | --[!k]*);; \
+	    *k*) failcom='fail=yes';; \
+	  esac; \
+	done; \
+	for subdir in $(TEST_SUBDIRS); do \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $@) || eval $$failcom; \
+	done; \
+	test -z "$$fail"
+
+maintainer-check: $(syntax_check_rules) maintainer-check-list-of-tests
 sc_test_names:
 	@m4_builtin_rx=`echo $(m4_builtins) | sed 's/ /|/g'`; \
 	 m4_macro_rx="\\<($$m4_builtin_rx)\\>|\\<_?(A[CUMHS]|m4)_"; \

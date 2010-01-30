@@ -15,7 +15,8 @@
 
 @SET_MAKE@
 
-# Copyright (C) 2002, 2003, 2008, 2009  Free Software Foundation, Inc.
+# Copyright (C) 2002, 2003, 2008, 2009, 2010 Free Software Foundation,
+# Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,8 +48,9 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
+	$(top_srcdir)/CheckListOfTests.am
 subdir = lib/Automake/tests
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/amversion.m4 \
 	$(top_srcdir)/m4/auxdir.m4 $(top_srcdir)/m4/init.m4 \
@@ -279,11 +281,14 @@ Version.pl \
 Wrap.pl
 
 EXTRA_DIST = $(TESTS)
+am__tmk = tests-in-makefile-list.tmp
+am__tfs = tests-on-filesystem-list.tmp
+am__tdf = diff-in-tests-lists.tmp
 all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .html .log .pl
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
+$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(top_srcdir)/CheckListOfTests.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -518,7 +523,7 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic mostlyclean-am
+clean-am: clean-generic clean-local mostlyclean-am
 
 distclean: distclean-am
 	-rm -f Makefile
@@ -586,16 +591,59 @@ uninstall-am:
 	recheck-html
 
 .PHONY: all all-am check check-TESTS check-am check-html clean \
-	clean-generic distclean distclean-generic distdir dvi dvi-am \
-	html html-am info info-am install install-am install-data \
-	install-data-am install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am install-info \
-	install-info-am install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
+	clean-generic clean-local distclean distclean-generic distdir \
+	dvi dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-man install-pdf \
+	install-pdf-am install-ps install-ps-am install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-generic pdf \
 	pdf-am ps ps-am recheck recheck-html uninstall uninstall-am
 
+
+.PHONY: maintainer-check-list-of-tests
+maintainer-check-list-of-tests:
+	 @if diff -u /dev/null /dev/null >/dev/null 2>&1; then \
+	   diff='diff -u'; \
+	 else \
+	   diff='diff'; \
+	 fi; \
+	 set X $(checked_test_extensions); shift; \
+	 if test $$# -eq 0; then \
+	   set X $(TEST_EXTENSIONS); shift; \
+	 fi; \
+	 if test $$# -eq 0; then \
+	   echo '$@: internal error: $$(checked_test_extensions) and' \
+	        '$$(TEST_EXTENSIONS) are both undefined or empty' >&2; \
+	   exit 255; \
+	 fi; \
+	 lst='$(expected_list_of_tests)'; \
+	 test -n "$$lst" || lst='$(TESTS)'; \
+	 for t in $$lst; do \
+	   echo "$$t"; \
+	 done | sort >$(am__tmk); \
+	 for ext in $$*; do \
+	   ls *$$ext 2>/dev/null; \
+	   if test $(srcdir) != $(builddir); then \
+	     (cd $(srcdir) && ls *$$ext 2>/dev/null); \
+	   fi; \
+	 done | sort | uniq >$(am__tfs); \
+	 if $$diff $(am__tmk) $(am__tfs) >$(am__tdf); then \
+	    result=0; \
+	 else \
+	    echo '$@: list of tests in Makefile an on filesystem differ' >&2; \
+	    echo "+ $$diff in-makefile on-filesystem" >&2; \
+	    cat $(am__tdf) >&2; \
+	    result=1; \
+	 fi; \
+	 rm -f $(am__tmk) $(am__tfs) $(am__tdf); \
+	 exit $$result;
+
+.PHONY: clean-maintcheck-testslist-tmp
+clean-local: clean-maintcheck-testslist-tmp
+clean-maintcheck-testslist-tmp:
+	rm -f $(am__tmk) $(am__tfs) $(am__tdf)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

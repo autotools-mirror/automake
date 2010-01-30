@@ -24,6 +24,8 @@
 ## run aclocal and automake.
 SUBDIRS = lib . doc m4 tests
 
+TEST_SUBDIRS = tests lib/Automake/tests
+
 bin_SCRIPTS = automake aclocal
 
 CLEANFILES = $(bin_SCRIPTS)
@@ -150,7 +152,24 @@ sc_at_in_texi
 
 .PHONY: $(syntax_check_rules)
 $(syntax_check_rules): automake aclocal
-maintainer-check: $(syntax_check_rules)
+
+## Check that the list of tests given in the Makefile is equal to the
+## list of all test scripts in the Automake testsuite.
+.PHONY: maintainer-check-list-of-tests
+maintainer-check-list-of-tests:
+	@failcom='exit 1'; \
+	for f in x $$MAKEFLAGS; do \
+	  case $$f in \
+	    *=* | --[!k]*);; \
+	    *k*) failcom='fail=yes';; \
+	  esac; \
+	done; \
+	for subdir in $(TEST_SUBDIRS); do \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $@) || eval $$failcom; \
+	done; \
+	test -z "$$fail"
+
+maintainer-check: $(syntax_check_rules) maintainer-check-list-of-tests
 
 ## Look for test whose names can cause spurious failures when used as
 ## first argument to AC_INIT (chiefly because they might contain an

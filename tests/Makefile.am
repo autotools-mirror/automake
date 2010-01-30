@@ -847,6 +847,9 @@ $(parallel_tests)
 
 EXTRA_DIST = ChangeLog-old gen-parallel-tests $(TESTS)
 
+include $(top_srcdir)/CheckListOfTests.am
+maintainer-check-list-of-tests: $(parallel_tests)
+
 # Each test case depends on defs, aclocal, and automake.
 check_SCRIPTS = defs aclocal-$(APIVERSION) automake-$(APIVERSION)
 
