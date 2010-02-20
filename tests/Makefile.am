@@ -306,6 +306,9 @@ extra5.test \
 extra6.test \
 extra7.test \
 extra8.test \
+extra10.test \
+extra11.test \
+extra12.test \
 f90only.test \
 flavor.test \
 flibs.test \
