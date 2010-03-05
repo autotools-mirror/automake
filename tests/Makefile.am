@@ -30,13 +30,11 @@ $(srcdir)/parallel-tests.am: gen-parallel-tests Makefile.am
 
 $(parallel_tests): $(parallel_tests:-p.test=.test) Makefile.am
 	$(AM_V_GEN)input=`echo $@ | sed 's,.*/,,; s,-p.test$$,.test,'`; \
-	sed 's,^\. \./defs,. ./defs-p,' < $(srcdir)/$$input > $@
+	sed 's|^\. \./defs.*|parallel_tests=yes; &|' \
+	  < $(srcdir)/$$input >$@
 	$(AM_V_at)chmod a+rx $@
 
 MAINTAINERCLEANFILES = $(parallel_tests)
-
-defs-p: defs Makefile.am
-	$(AM_V_GEN)sed 's,^AM_INIT_AUTOMAKE$$,&([parallel-tests]),' < defs >$@
 
 TESTS =	\
 aclibobj.test \
@@ -777,7 +775,7 @@ $(parallel_tests)
 EXTRA_DIST = ChangeLog-old gen-parallel-tests $(TESTS)
 
 # Each test case depends on defs, aclocal, and automake.
-check_SCRIPTS = defs defs-p aclocal-$(APIVERSION) automake-$(APIVERSION)
+check_SCRIPTS = defs aclocal-$(APIVERSION) automake-$(APIVERSION)
 
 clean-local: clean-local-check
 .PHONY: clean-local-check
@@ -789,4 +787,3 @@ clean-local-check:
 	   find "$$@" -type d '!' -perm -200 -exec chmod u+w {} ';'; \
 	   rm -rf "$$@"; \
 	 fi;
-	-rm -f defs-p
