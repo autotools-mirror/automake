@@ -1,4 +1,5 @@
-# Copyright (C) 2003, 2004, 2005, 2006, 2008, 2009  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2004, 2005, 2006, 2008, 2009, 2010 Free Software
+# Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -1515,7 +1516,7 @@ sub _hash_values (@)
 }
 # ($VARNAME, $GENERATED)
 # _gen_varname ($BASE, @DEFINITIONS)
-# ---------------------------------
+# ----------------------------------
 # Return a variable name starting with $BASE, that will be
 # used to store definitions @DEFINITIONS.
 # @DEFINITIONS is a list of pair [$COND, @OBJECTS].

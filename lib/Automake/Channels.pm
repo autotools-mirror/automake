@@ -1,4 +1,5 @@
-# Copyright (C) 2002, 2004, 2006, 2008 Free Software Foundation, Inc.
+# Copyright (C) 2002, 2004, 2006, 2008, 2010 Free Software Foundation,
+# Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -427,7 +428,7 @@ sub _format_message ($$%)
 }
 
 # _enqueue ($QUEUE, $KEY, $UNIQ_SCOPE, $TO_FILTER, $MSG, $FILE)
-# ------------------------------------------------------------
+# -------------------------------------------------------------
 # Push message on a queue, to be processed by another thread.
 sub _enqueue ($$$$$$)
 {
