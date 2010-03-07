@@ -28,11 +28,15 @@ include $(srcdir)/parallel-tests.am
 $(srcdir)/parallel-tests.am: gen-parallel-tests Makefile.am
 	$(AM_V_GEN)(cd $(srcdir) && $(SHELL) ./gen-parallel-tests) >$@
 
-$(parallel_tests): $(parallel_tests:-p.test=.test) Makefile.am
+$(parallel_tests): Makefile.am
+	$(AM_V_at)rm -f $@ $@-t
 	$(AM_V_GEN)input=`echo $@ | sed 's,.*/,,; s,-p.test$$,.test,'`; \
-	sed 's|^\. \./defs.*|parallel_tests=yes; &|' \
-	  < $(srcdir)/$$input >$@
-	$(AM_V_at)chmod a+rx $@
+	{ echo '#!/bin/sh'; \
+	  echo '# DO NOT EDIT! GENERATED AUTOMATICALLY!'; \
+	  echo 'parallel_tests=yes'; \
+	  echo ". '$(srcdir)/$$input'"; \
+	} > $@-t
+	$(AM_V_at)chmod a+rx $@-t && mv -f $@-t $@
 
 MAINTAINERCLEANFILES = $(parallel_tests)
 
