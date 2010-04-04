@@ -482,9 +482,10 @@ path-check: distdir
 ## FIXME there's got to be a better way!  pathchk should take the list
 ## of files on stdin, at least.
 	  find . -print | xargs pathchk -p); \
-	  status=$$?; \
-	  chmod -R a+w $(distdir) > /dev/null 2>&1; rm -rf $(distdir); \
-	  exit $$status
+	  estatus=$$?; \
+	  find $(distdir) -type d '!' -perm -200 -exec chmod u+w {} ';'; \
+	  rm -rf $(distdir); \
+	  exit $$estatus
 
 ## Program to use to fetch files.
 WGET = wget
