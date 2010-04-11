@@ -164,7 +164,7 @@ functions.  The possible keys, with their default value are:
 The type of the channel.  One of C<'debug'>, C<'warning'>, C<'error'>, or
 C<'fatal'>.  Fatal messages abort the program when they are output.
 Error messages update the exit status.  Debug and warning messages are
-harmless, except that warnings can be treated as errors of
+harmless, except that warnings are treated as errors if
 C<$warnings_are_errors> is set.
 
 =item C<exit_code =E<gt> 1>
@@ -513,6 +513,9 @@ sub _print_message ($$%)
       $msg = $partial . $msg;
       $partial = '';
     }
+
+  msg ('note', '', 'warnings are treated as errors', uniq_scope => US_GLOBAL)
+    if ($opts{'type'} eq 'warning' && $warnings_are_errors);
 
   # Check for duplicate message if requested.
   my $to_filter;
