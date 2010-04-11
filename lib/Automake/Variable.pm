@@ -996,10 +996,10 @@ sub define ($$$$$$$$)
 	  if (! $undef_cond->false)
 	    {
 	      error ($where,
-		     "Cannot apply `+=' because `$var' is not defined "
+		     "cannot apply `+=' because `$var' is not defined "
 		     . "in\nthe following conditions:\n  "
 		     . join ("\n  ", map { $_->human } $undef_cond->conds)
-		     . "\nEither define `$var' in these conditions,"
+		     . "\neither define `$var' in these conditions,"
 		     . " or use\n`+=' in the same conditions as"
 		     . " the definitions.");
 	    }
