@@ -204,10 +204,14 @@ C<US_LOCAL>, and C<US_GLOBAL> constants above.
 =item C<header =E<gt> ''>
 
 A string to prepend to each message emitted through this channel.
+With partial messages, only the first part will have C<header>
+prepended.
 
 =item C<footer =E<gt> ''>
 
 A string to append to each message emitted through this channel.
+With partial messages, only the final part will have C<footer>
+appended.
 
 =item C<backtrace =E<gt> 0>
 
@@ -399,20 +403,24 @@ sub _format_sub_message ($$)
   return $leader . join ("\n" . $leader, split ("\n", $message)) . "\n";
 }
 
+# Store partial messages here. (See the 'partial' option.)
+use vars qw ($partial);
+$partial = '';
+
 # _format_message ($LOCATION, $MESSAGE, %OPTIONS)
 # -----------------------------------------------
 # Format the message.  Return a string ready to print.
 sub _format_message ($$%)
 {
   my ($location, $message, %opts) = @_;
-  my $msg = '';
+  my $msg = ($partial eq '' ? $opts{'header'} : '') . $message
+	    . ($opts{'partial'} ? '' : $opts{'footer'});
   if (ref $location)
     {
       # If $LOCATION is a reference, assume it's an instance of the
       # Automake::Location class and display contexts.
       my $loc = $location->get || $me;
-      $msg = _format_sub_message ("$loc: ", $opts{'header'}
-				  . $message . $opts{'footer'});
+      $msg = _format_sub_message ("$loc: ", $msg);
       for my $pair ($location->get_contexts)
 	{
 	  $msg .= _format_sub_message ($pair->[0] . ":   ", $pair->[1]);
@@ -421,8 +429,7 @@ sub _format_message ($$%)
   else
     {
       $location ||= $me;
-      $msg = _format_sub_message ("$location: ", $opts{'header'}
-				  . $message . $opts{'footer'});
+      $msg = _format_sub_message ("$location: ", $msg);
     }
   return $msg;
 }
@@ -483,10 +490,6 @@ sub _dequeue ($)
   return 1;
 }
 
-
-# Store partial messages here. (See the 'partial' option.)
-use vars qw ($partial);
-$partial = '';
 
 # _print_message ($LOCATION, $MESSAGE, %OPTIONS)
 # ----------------------------------------------

@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002, 2003  Free Software Foundation, Inc.
+# Copyright (C) 2002, 2003, 2010  Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,29 +45,34 @@ VAR = 1 \
 END
 
 $ACLOCAL
-AUTOMAKE_fails
+AUTOMAKE_fails -Wno-error
 
 # Smash the useless difference of lib file locations.
 sed 's,^.*lib/am/\([a-z]*\.am\),\1,' stderr >observed
 cat >expected <<\EOF
-Makefile.am:12: VAR multiply defined in condition TRUE ...
+Makefile.am:12: warning: VAR multiply defined in condition TRUE ...
 Makefile.am:8: ... `VAR' previously defined here
-automake: libfoo_a_OBJECTS should not be defined
+automake: error: libfoo_a_OBJECTS should not be defined
 Makefile.am:3:   while processing library `libfoo.a'
-automake: use `libfoo_a_LDADD', not `libfoo_a_LIBADD'
+automake: error: use `libfoo_a_LDADD', not `libfoo_a_LIBADD'
 Makefile.am:3:   while processing library `libfoo.a'
-library.am: deprecated feature: target `libfoo.a' overrides `libfoo.a$(EXEEXT)'
+library.am: warning: deprecated feature: target `libfoo.a' overrides `libfoo.a$(EXEEXT)'
 library.am: change your target to read `libfoo.a$(EXEEXT)'
 Makefile.am:3:   while processing library `libfoo.a'
 program.am: target `libfoo.a$(EXEEXT)' was defined here
 Makefile.am:1:   while processing program `libfoo.a'
-program.am: redefinition of `libfoo.a$(EXEEXT)'...
+program.am: warning: redefinition of `libfoo.a$(EXEEXT)'...
 Makefile.am:1:   while processing program `libfoo.a'
 library.am: ... `libfoo.a' previously defined here
 Makefile.am:3:   while processing library `libfoo.a'
-tags.am: redefinition of `ctags'...
+tags.am: warning: redefinition of `ctags'...
 program.am: ... `ctags$(EXEEXT)' previously defined here
 Makefile.am:6:   while processing program `ctags'
 EOF
 
 diff expected observed || Exit 1
+
+AUTOMAKE_fails -Werror
+sed 's,^.*lib/am/\([a-z]*\.am\),\1,' stderr >observed
+diff expected observed || Exit 1
+:

@@ -163,6 +163,10 @@ register_channel 'verb', type => 'debug', silent => 1, uniq_part => UP_NONE,
   ordered => 0;
 register_channel 'note', type => 'debug', silent => 0;
 
+setup_channel_type 'warning', header => 'warning: ';
+setup_channel_type 'error', header => 'error: ';
+setup_channel_type 'fatal', header => 'error: ';
+
 =head2 FUNCTIONS
 
 =over 4
@@ -380,6 +384,8 @@ L<Automake::Channels>
 Written by Alexandre Duret-Lutz E<lt>F<adl@gnu.org>E<gt>.
 
 =cut
+
+1;
 
 ### Setup "GNU" style for perl-mode and cperl-mode.
 ## Local Variables:
