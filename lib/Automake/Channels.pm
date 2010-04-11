@@ -710,8 +710,9 @@ entry, while C<drop_channel_setup ()> just deletes it.
 
 =cut
 
-use vars qw (@_saved_channels);
+use vars qw (@_saved_channels @_saved_werrors);
 @_saved_channels = ();
+@_saved_werrors = ();
 
 sub dup_channel_setup ()
 {
@@ -721,12 +722,14 @@ sub dup_channel_setup ()
       $channels_copy{$k1} = {%{$channels{$k1}}};
     }
   push @_saved_channels, \%channels_copy;
+  push @_saved_werrors, $warnings_are_errors;
 }
 
 sub drop_channel_setup ()
 {
   my $saved = pop @_saved_channels;
   %channels = %$saved;
+  $warnings_are_errors = pop @_saved_werrors;
 }
 
 =item C<buffer_messages (@types)>, C<flush_messages ()>
