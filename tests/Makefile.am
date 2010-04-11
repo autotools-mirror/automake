@@ -746,6 +746,7 @@ vtexi2.test \
 warnopts.test \
 werror.test \
 werror2.test \
+werror3.test \
 whoami.test \
 xsource.test \
 xz.test \
