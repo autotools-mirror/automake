@@ -1,4 +1,5 @@
-# Copyright (C) 2003, 2004, 2006, 2007  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2004, 2006, 2007, 2010  Free Software Foundation,
+# Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -615,7 +616,8 @@ sub define ($$$$$)
 	  msg ('obsolete', $tdef->location,
 	       "deprecated feature: target `$noexe' overrides "
 	       . "`$noexe\$(EXEEXT)'\n"
-	       . "change your target to read `$noexe\$(EXEEXT)'");
+	       . "change your target to read `$noexe\$(EXEEXT)'",
+	       partial => 1);
 	  msg ('obsolete', $where, "target `$target' was defined here");
 	}
       # Don't `return ()' now, as this might hide target clashes
