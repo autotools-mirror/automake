@@ -190,6 +190,7 @@ sc_tests_required_after_defs \
 sc_tests_overriding_macros_on_cmdline \
 sc_tests_plain_sleep \
 sc_tests_plain_egrep_fgrep \
+sc_tests_logs_duplicate_prefixes \
 sc_mkdir_p \
 sc_perl_at_substs \
 sc_unquoted_DESTDIR \
@@ -455,6 +456,24 @@ sc_tests_plain_egrep_fgrep:
 	fi
 	@if grep -E '\b[ef]grep\b' $(srcdir)/lib/am/*.am $(srcdir)/m4/*.m4; then \
 	  echo 'Do not use egrep or fgrep in the above files, they are not portable.' 1>&2; \
+	  exit 1; \
+	fi
+
+## Rule to ensure that the testsuite has been run before.  We don't depend on `check'
+## here, because that would be very wasteful in the common case.  We could run
+## `make check RECHECK_LOGS=' and avoid toplevel races with AM_RECURSIVE_TARGETS.
+sc_ensure_testsuite_has_run:
+	@if test ! -f tests/test-suite.log; then \
+	  echo "Run \`make check' before \`maintainer-check'" >&2; \
+	  exit 1; \
+	fi
+.PHONY: sc_ensure_testsuite_has_run
+
+## Ensure our warning and error messages do not contain duplicate 'warning:' prefixes.
+## This test actually depends on the testsuite having been run before; but it would be
+sc_tests_logs_duplicate_prefixes: sc_ensure_testsuite_has_run
+	@if grep -E '(warning|error):.*(warning|error):' tests/*.log; then \
+	  echo 'Duplicate warning/error message prefixes seen in above tests.' >&2; \
 	  exit 1; \
 	fi
 
