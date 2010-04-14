@@ -144,6 +144,7 @@ colon5.test \
 colon6.test \
 colon7.test \
 color.test \
+color2.test \
 comment.test \
 comment2.test \
 comment3.test \

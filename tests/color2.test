@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test Automake TESTS color output, by forcing it.
-# Keep this in sync with the sister test `color2.test'.
+# Test Automake TESTS color output, using the expect(1) program.
+# Keep this in sync with the sister test `color.test'.
 
 . ./defs || Exit 1
 
@@ -37,6 +37,19 @@ case `echo "$std" | grep .` in
   $std) ;;
   *) echo "$me: grep can't parse nonprinting characters" >&2; Exit 77;;
 esac
+
+# Check that we have a working expect program.
+cat >expect-check <<'END'
+#! /usr/bin/expect -f
+spawn $env(THE_SYSTEM_SHELL) -c :
+expect eof
+END
+THE_SYSTEM_SHELL=/bin/sh expect -f expect-check || {
+    echo "$me: failed to find a working expect program" >&2
+    Exit 77
+}
+
+# Do the tests.
 
 cat >>configure.in <<END
 AC_OUTPUT
@@ -94,6 +107,18 @@ test_no_color ()
   :
 }
 
-AM_COLOR_TESTS=always $MAKE -e check >stdout && { cat stdout; Exit 1; }
+cat >expect-make <<'END'
+#! /usr/bin/expect -f
+spawn $env(MAKE) -e check
+expect eof
+END
+
+MAKE=$MAKE expect -f expect-make >stdout \
+  || { cat stdout; Exit 1; }
 cat stdout
 test_color
+
+AM_COLOR_TESTS=no MAKE=$MAKE expect -f expect-make >stdout \
+  || { cat stdout; Exit 1; }
+cat stdout
+test_no_color
