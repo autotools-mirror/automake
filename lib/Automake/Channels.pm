@@ -171,7 +171,7 @@ C<$warnings_are_errors> is set.
 
 The value to update C<$exit_code> with when a fatal or error message
 is emitted.  C<$exit_code> is also updated for warnings output
-when @<$warnings_are_errors> is set.
+when C<$warnings_are_errors> is set.
 
 =item C<file =E<gt> \*STDERR>
 
