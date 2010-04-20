@@ -211,6 +211,7 @@ condinc2.test \
 condlib.test \
 condman.test \
 condman2.test \
+configure.test \
 conf2.test \
 confdeps.test \
 conff.test \

@@ -193,7 +193,7 @@ my %_ac_macro_for_var =
    );
 
 # The name of the configure.ac file.
-my $configure_ac = find_configure_ac;
+my $configure_ac;
 
 # Variables that can be overridden without complaint from -Woverride
 my %_silent_variable_override =
@@ -1131,6 +1131,9 @@ sub require_variables ($$$@)
   my ($where, $reason, $cond, @vars) = @_;
   my $res = 0;
   $reason .= ' but ' unless $reason eq '';
+
+  $configure_ac = find_configure_ac
+    unless defined $configure_ac;
 
  VARIABLE:
   foreach my $var (@vars)
