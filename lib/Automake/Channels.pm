@@ -680,7 +680,7 @@ Override the options of C<$channel> with those specified by C<%options>.
 sub setup_channel ($%)
 {
   my ($name, %opts) = @_;
-  confess "channel $name doesn't exist" unless exists $channels{$name};
+  confess "unknown channel $name" unless exists $channels{$name};
   _merge_options %{$channels{$name}}, %opts;
 }
 

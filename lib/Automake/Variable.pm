@@ -884,7 +884,7 @@ sub define ($$$$$$$$)
 		 . $def->type . "=' here ...", partial => 1);
 	  error ($where, "... and is now set with `$type=' here.");
 	  prog_error ("Automake variable assignments should be consistently\n"
-		      . "defined with the same sign.");
+		      . "defined with the same sign");
 	}
 
       # If Automake tries to override a value specified by the user,
@@ -1078,7 +1078,7 @@ For debugging.
 
 sub variables_dump ()
 {
-  my $text = "All variables:\n{\n";
+  my $text = "all variables:\n{\n";
   foreach my $var (sort { $a->name cmp $b->name } variables)
     {
       $text .= $var->dump;

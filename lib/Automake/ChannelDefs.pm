@@ -369,7 +369,7 @@ sub set_strictness ($)
     }
   else
     {
-      prog_error "level `$name' not recognized\n";
+      prog_error "level `$name' not recognized";
     }
 }
 

@@ -1,5 +1,4 @@
-# Copyright (C) 2003, 2004, 2006, 2007, 2010  Free Software Foundation,
-# Inc.
+# Copyright (C) 2003, 2004, 2006, 2007, 2010  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -727,7 +726,7 @@ sub define ($$$$$)
 	    }
 	}
       # Never reached.
-      prog_error ("Unreachable place reached.");
+      prog_error ("unreachable place reached");
     }
 
   # Conditions for which the rule should be defined.
@@ -819,7 +818,7 @@ sub define ($$$$$)
   # definitions of multiple inference rules.  It's also
   # disallowed to mix plain targets with inference rules.
   msg ('portability', $where,
-       "Inference rules can have only one target before the colon (POSIX).")
+       "inference rules can have only one target before the colon (POSIX)")
     if $inference_rule_count > 0 && $target_count > 1;
 
   return @conds;
