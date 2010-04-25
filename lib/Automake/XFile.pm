@@ -98,9 +98,6 @@ eval {
   push (@EXPORT, @O);
 };
 
-# Used in croak error messages.
-my $me = basename ($0);
-
 =head2 Methods
 
 =over
@@ -267,7 +264,7 @@ sub seek
   if (!seek ($fh, $_[0], $_[1]))
     {
       my $file = $fh->name;
-      fatal "$me: cannot rewind $file with @_: $!";
+      fatal "cannot rewind $file with @_: $!";
     }
 }
 
