@@ -881,7 +881,7 @@ sub define ($$$$$$$$)
 	{
 	  error ($def->location,
 		 "Automake variable `$var' was set with `"
-		 . $def->type . "=' here...", partial => 1);
+		 . $def->type . "=' here ...", partial => 1);
 	  error ($where, "... and is now set with `$type=' here.");
 	  prog_error ("Automake variable assignments should be consistently\n"
 		      . "defined with the same sign.");
@@ -896,7 +896,7 @@ sub define ($$$$$$$$)
 	      my $condmsg = ($cond == TRUE
 			     ? '' : (" in condition `" . $cond->human . "'"));
 	      msg_cond_var ('override', $cond, $var,
-			    "user variable `$var' defined here$condmsg...",
+			    "user variable `$var' defined here$condmsg ...",
 			    partial => 1);
 	      msg ('override', $where,
 		   "... overrides Automake variable `$var' defined here");

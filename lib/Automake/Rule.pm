@@ -659,7 +659,7 @@ sub define ($$$$$)
 		  ## is legitimate. (This is phony.test.)
 
 		  # msg ('syntax', $where,
-		  #      "redefinition of `$target'$condmsg...", partial => 1);
+		  #      "redefinition of `$target'$condmsg ...", partial => 1);
 		  # msg_cond_rule ('syntax', $cond, $target,
 		  #		   "... `$target' previously defined here");
 		}
@@ -695,7 +695,7 @@ sub define ($$$$$)
 
 	      msg_cond_rule ('override', $cond, $target,
 			     "user target `$target' defined here"
-			     . "$condmsg...", partial => 1);
+			     . "$condmsg ...", partial => 1);
 	      msg ('override', $where,
 		   "... overrides Automake target `$oldname' defined here",
 		   partial => $hint);
@@ -719,7 +719,7 @@ sub define ($$$$$)
 	      my $oldsource = $tdef->source;
 	      return () if $source eq $oldsource && $target eq $oldname;
 
-	      msg ('syntax', $where, "redefinition of `$target'$condmsg...",
+	      msg ('syntax', $where, "redefinition of `$target'$condmsg ...",
 		   partial => 1);
 	      msg_cond_rule ('syntax', $cond, $target,
 			     "... `$oldname' previously defined here");
