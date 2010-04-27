@@ -610,6 +610,7 @@ silent5.test \
 silent6.test \
 silent7.test \
 silent9.test \
+silentlex.test \
 sinclude.test \
 srcsub.test \
 srcsub2.test \
