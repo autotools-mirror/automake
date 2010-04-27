@@ -610,6 +610,7 @@ silent5.test \
 silent6.test \
 silent7.test \
 silent9.test \
+silentcxx.test \
 silentlex.test \
 silentyacc.test \
 sinclude.test \
