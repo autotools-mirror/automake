@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2003, 2004  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2004, 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,22 +21,17 @@
 
 set -e
 
-# Skip platforms where `test -e' does not work.  (Note that Changing
-# all `test -e' into `test -h' will not work when AC_CONFIG_LINKS
-# copies or hardlinks files.)
-(test -e configure.in) >/dev/null 2>&1 || Exit 77
-
 cat > Makefile.am << 'END'
 SUBDIRS = sdir
 test: distdir
-	test ! -e $(distdir)/sdir/dest3
-	test ! -e $(distdir)/sdir/dest2
-	test ! -e $(distdir)/dest3
-	test ! -e $(distdir)/dest2
+	test ! -r $(distdir)/sdir/dest3
+	test ! -r $(distdir)/sdir/dest2
+	test ! -r $(distdir)/dest3
+	test ! -r $(distdir)/dest2
 	test -f $(distdir)/src2
 ## src3 cannot be distributed, Automake knows nothing about it
-	test ! -e $(distdir)/sdir/src3
-	test ! -e $(distdir)/src3
+	test ! -r $(distdir)/sdir/src3
+	test ! -r $(distdir)/src3
 END
 
 : > src
@@ -69,20 +64,20 @@ grep my_src_dir Makefile.in && Exit 1
 grep my_dest Makefile.in && Exit 1
 
 ./configure
-test -e sdir/dest2
-test -e sdir/dest3
-test -e dest
-test -e dest4
-test -e dest5
+test -r sdir/dest2
+test -r sdir/dest3
+test -r dest
+test -r dest4
+test -r dest5
 $MAKE test
 
 $MAKE distclean
-test ! -e sdir/dest2
-test ! -e sdir/dest3
-test -e dest  # Should still exist, Automake knows nothing about it.
-test -e dest5 # ditto
+test ! -r sdir/dest2
+test ! -r sdir/dest3
+test -r dest  # Should still exist, Automake knows nothing about it.
+test -r dest5 # ditto
 rm -f dest dest5
-test ! -e dest4
+test ! -r dest4
 
 ## Cannot do the following, because at the time of writing Autoconf
 ## (2.59) does not support AC_CONFIG_LINKS source in the build tree.
