@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 2001, 2002, 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,11 +20,12 @@
 required=gcc
 . ./defs || Exit 1
 
-cat > configure.in << 'END'
-AC_INIT(subdir/foo.c)
-AM_INIT_AUTOMAKE(nonesuch, nonesuch)
+set -e
+
+cat >> configure.in << 'END'
+AC_CONFIG_FILES([subdir/Makefile])
 AC_PROG_CC
-AC_OUTPUT(Makefile subdir/Makefile)
+AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
@@ -45,8 +46,8 @@ END
 CFLAGS=
 export CFLAGS
 
-$ACLOCAL || Exit 1
-$AUTOMAKE --add-missing || Exit 1
-$AUTOCONF || Exit 1
+$ACLOCAL
+$AUTOMAKE --add-missing
+$AUTOCONF
 ./configure CC='gcc' 2>error.log
 test -z "`cat error.log`"
