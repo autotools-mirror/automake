@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2004  Free Software Foundation, Inc.
+# Copyright (C) 1996, 2001, 2002, 2003, 2004, 2007  Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,20 +14,37 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure we diagnose misplaced AC_CONFIG_AUX_DIR.
+# Test to make sure AC_CONFIG_AUX_DIR works correctly.
+# This test tries without an explicit call to AC_CONFIG_AUX_DIR;
+# the config auxdir should be implicitly defined to `.' since
+# the install-sh, mkinstalldirs, etc., scripts are in the top-level
+# directory.
+# Keep this in sync with sister tests auxdir6.test and auxdir7.test.
 
 . ./defs || Exit 1
 
 set -e
 
 cat >> configure.in << 'END'
-AC_CONFIG_AUX_DIR([.]) dnl this will appear after AM_INIT_AUTOMAKE
+AC_CONFIG_FILES([subdir/Makefile])
 END
 
-: > Makefile.am
+mkdir subdir
+
+cat > Makefile.am << 'END'
+pkgdata_DATA =
+END
+
+cp Makefile.am subdir/Makefile.am
+
+: > mkinstalldirs
+: > install-sh
+: > missing
 
 $ACLOCAL
-AUTOMAKE_fails
-grep 'AC_CONFIG_AUX_DIR.*AM_INIT_AUTOMAKE' stderr
+$AUTOMAKE
+
+$FGREP '$(top_srcdir)/mkinstalldirs' Makefile.in
+$FGREP '$(top_srcdir)/mkinstalldirs' subdir/Makefile.in
 
 :
