@@ -795,7 +795,7 @@ $(parallel_tests)
 EXTRA_DIST = ChangeLog-old gen-parallel-tests $(TESTS)
 
 # Each test case depends on defs, aclocal, and automake.
-check_SCRIPTS = defs aclocal-$(APIVERSION) automake-$(APIVERSION)
+$(TEST_LOGS): defs aclocal-$(APIVERSION) automake-$(APIVERSION)
 
 clean-local: clean-local-check
 .PHONY: clean-local-check
