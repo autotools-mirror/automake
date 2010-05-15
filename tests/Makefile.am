@@ -278,6 +278,7 @@ distcom6.test \
 distcom7.test \
 distdir.test \
 distlinks.test \
+distlinksbrk.test \
 distname.test \
 dollar.test \
 dollarvar.test \
