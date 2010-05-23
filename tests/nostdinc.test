@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1999, 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 1999, 2001, 2002, 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,8 +18,11 @@
 
 . ./defs || Exit 1
 
+set -e
+
 cat >> configure.in << 'END'
 AC_PROG_CC
+AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
@@ -28,8 +31,23 @@ bin_PROGRAMS = foo
 foo_SOURCES = foo.c
 END
 
-$ACLOCAL || Exit 1
-$AUTOMAKE || Exit 1
+$ACLOCAL
+$AUTOMAKE
 
-$FGREP -e '-I.' Makefile.in && Exit 1
+grep '.*-I *\.' Makefile.in && Exit 1
+
+# We'll test the fully-processed Makefile too.
+$AUTOCONF
+
+# Test with $builddir != $srcdir
+mkdir build
+cd build
+../configure
+$EGREP '.*-I *(\.|\$.srcdir.)' Makefile && Exit 1
+
+# Test with $builddir = $srcdir
+cd ..
+./configure
+$EGREP '.*-I *(\.|\$.srcdir.)' Makefile && Exit 1
+
 Exit 0
