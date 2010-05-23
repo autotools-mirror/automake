@@ -376,7 +376,8 @@ sc_tests_here_document_format:
 ## Ignore comments, and ignore one perl line in ext2.test.
 sc_tests_Exit_not_exit:
 	@found=false; for file in $(srcdir)/tests/*.test; do \
-	  res=`sed -n '/^#/d; /^\$$PERL/d; /<<.*END/,/^END/{b;}; /<<.*EOF/,/^EOF/{b;}; /exit [$$0-9]/p' $$file`; \
+	  res=`sed -n -e '/^#/d; /^\$$PERL/d' -e '/<<.*END/,/^END/b' \
+		      -e '/<<.*EOF/,/^EOF/b' -e '/exit [$$0-9]/p' $$file`; \
 	  if test -n "$$res"; then \
 	    echo "$$file:$$res"; \
 	    found=true; \
