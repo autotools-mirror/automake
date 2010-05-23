@@ -471,7 +471,7 @@ sc_ensure_testsuite_has_run:
 .PHONY: sc_ensure_testsuite_has_run
 
 ## Ensure our warning and error messages do not contain duplicate 'warning:' prefixes.
-## This test actually depends on the testsuite having been run before; but it would be
+## This test actually depends on the testsuite having been run before.
 sc_tests_logs_duplicate_prefixes: sc_ensure_testsuite_has_run
 	@if grep -E '(warning|error):.*(warning|error):' tests/*.log; then \
 	  echo 'Duplicate warning/error message prefixes seen in above tests.' >&2; \
