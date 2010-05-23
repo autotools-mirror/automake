@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.
 
 # Copyright (C) 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003,
-# 2004, 2006, 2007, 2008, 2009  Free Software Foundation, Inc.
+# 2004, 2006, 2007, 2008, 2009, 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -100,6 +100,7 @@ AM_MISSING_PROG([HELP2MAN], [help2man])
 # following tests, but some users were unable to figure out that their
 # installation was broken since --version appeared to work.
 
+required_autoconf_version=2.62
 AC_CACHE_CHECK([whether autoconf is installed], [am_cv_autoconf_installed],
 [if AM_RUN_LOG([eval $am_AUTOCONF --version]);
 then
@@ -108,7 +109,7 @@ else
   am_cv_autoconf_installed=no
 fi])
 if test "$am_cv_autoconf_installed" = no; then
-  AC_MSG_ERROR([Autoconf 2.60 or better is required.
+  AC_MSG_ERROR([Autoconf $required_autoconf_version or better is required.
     Please make sure it is installed and in your PATH.])
 fi
 
@@ -129,7 +130,8 @@ fi
 
 AC_CACHE_CHECK([whether autoconf is recent enough], [am_cv_autoconf_version],
 [mkdir conftest
-echo 'AC''_PREREQ([[2.62]])' > conftest/conftest.ac
+dnl Creative quoting required to avoid spurious expansion of AC_PREREQ macro
+echo 'AC'"_PREREQ([[$required_autoconf_version]])" > conftest/conftest.ac
 if AM_RUN_LOG([cd conftest && eval $am_AUTOCONF -o /dev/null conftest.ac]);
 then
   am_cv_autoconf_version=yes
@@ -138,7 +140,7 @@ else
 fi
 rm -rf conftest])
 if test "$am_cv_autoconf_version" = no; then
-  AC_MSG_ERROR([Autoconf 2.61a-341 or better is required.])
+  AC_MSG_ERROR([Autoconf $required_autoconf_version or better is required.])
 fi
 
 # Test for ln.  We need use it to install the versioned binaries.
