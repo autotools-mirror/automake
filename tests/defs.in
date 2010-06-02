@@ -20,6 +20,11 @@
 # Defines for Automake testing environment.
 # Tom Tromey <tromey@cygnus.com>
 
+
+## --------------------------------------------------------------------- ##
+##  Shell and environment sanitizing (plus some early initializations).  ##
+## --------------------------------------------------------------------- ##
+
 # Absolutely necessary variable(s).
 testsrcdir='@abs_srcdir@'
 top_testsrcdir='@abs_top_srcdir@'
@@ -44,26 +49,20 @@ else
   case `(set -o) 2>/dev/null` in *posix*) set -o posix;; esac
 fi
 
-# Ensure we are running from the right directory.
-test -f ./defs || {
-   echo "defs: not found in current directory" 1>&2
-   exit 1
-}
-
-# Ensure $testsrcdir is set correctly.
-test -f "$testsrcdir/defs.in" || {
-   echo "$testsrcdir/defs.in not found, check \$testsrcdir" 1>&2
-   exit 1
-}
+echo "=== Running test $0"
 
 me=`echo "$0" | sed -e 's,.*[\\/],,;s/\.test$//'`
+
+
+## ----------------------------------------------------------- ##
+##  Initialization: AC_SUBST'ed and/or environment variables.  ##
+## ----------------------------------------------------------- ##
 
 APIVERSION='@APIVERSION@'
 PATH_SEPARATOR='@PATH_SEPARATOR@'
 
 # Make sure we override the user shell.
-SHELL='@SHELL@'
-export SHELL
+SHELL='@SHELL@'; export SHELL
 # User can override various tools used.
 test -z "$PERL" && PERL='@PERL@'
 test -z "$MAKE" && MAKE=make
@@ -75,8 +74,7 @@ test -z "$MISSING" && MISSING=$top_testsrcdir/lib/missing
 # (Tests for which this is inappropriate should use -Wno-error.)
 test -z "$ACLOCAL" && ACLOCAL="aclocal-$APIVERSION -Werror"
 # Extra flags to pass to aclocal before all other flags added by this script.
-ACLOCAL_TESTSUITE_FLAGS=
-export ACLOCAL_TESTSUITE_FLAGS
+ACLOCAL_TESTSUITE_FLAGS=''; export ACLOCAL_TESTSUITE_FLAGS
 
 # See how Automake should be run.  We put --foreign as the default
 # strictness to avoid having to create lots and lots of files.  A test
@@ -86,11 +84,130 @@ export ACLOCAL_TESTSUITE_FLAGS
 # should use -Wnone or/and -Wno-error
 test -z "$AUTOMAKE" && AUTOMAKE="automake-$APIVERSION --foreign -Werror -Wall"
 
-PATH="`pwd`$PATH_SEPARATOR$PATH"
+# POSIX no longer requires 'egrep' and 'fgrep',
+# but some hosts lack 'grep -E' and 'grep -F'.
+EGREP='@EGREP@'
+FGREP='@FGREP@'
+
+# The amount we should wait after modifying files depends on the platform.
+# For instance, Windows '95, '98 and ME have 2-second granularity
+# and can be up to 3 seconds in the future w.r.t. the system clock.
+sleep='sleep @MODIFICATION_DELAY@'
+
+# An old timestamp that can be given to a file, in "touch -t" format.
+# The time stamp should be portable to all file systems of interest.
+# Just for fun, choose the exact time of the announcement of the GNU project
+# in UTC; see <http://www.gnu.org/gnu/initial-announcement.html>.
+old_timestamp=198309271735.59
+
+# Absolute path of the testsuite buildir.
+curdir=`pwd`
+
+# Make our wrapper scripts accessible by default.
+PATH="`pwd`$PATH_SEPARATOR$PATH"; export PATH
+
+
+## -------------------------------------------------------- ##
+##  Initialization: sanity checks and environment cleanup.  ##
+## -------------------------------------------------------- ##
+
+# Ensure we are running from the right directory.
+test -f ./defs || {
+   echo "./defs: not found in current directory" >&2
+   exit 1
+}
+
+# Ensure $testsrcdir is set correctly.
+test -f "$testsrcdir/defs.in" || {
+   echo "$testsrcdir/defs.in not found, check \$testsrcdir" >&2
+   exit 1
+}
+
+# Unset some MAKE... variables that may cause $MAKE to act like a
+# recursively invoked sub-make.  Any $MAKE invocation in a test is
+# conceptually an independent invocation, not part of the main
+# 'automake' build.
+unset MFLAGS MAKEFLAGS AM_MAKEFLAGS MAKELEVEL __MKLVL__ MAKE_JOBS_FIFO
+# Unset verbosity flag.
+unset V
+# Also unset variables that will let `make -e install' divert
+# files into unwanted directories.
+unset DESTDIR
+unset prefix exec_prefix bindir datarootdir datadir docdir dvidir
+unset htmldir includedir infodir libdir libexecdir localedir mandir
+unset oldincludedir pdfdir psdir sbindir sharedstatedir sysconfdir
+# The tests call `make -e' but we do not want $srcdir from the environment
+# to override the definition from the Makefile.
+unset srcdir
+# Also unset variables that control our test driver.  While not
+# conceptually independent, they cause some changed semantics we
+# need to control (and test for) in some of the tests to ensure
+# backward-compatible behavior.
+unset DISABLE_HARD_ERRORS
+unset TESTS
+unset TEST_LOG_COMPILER
+unset TEST_LOGS
+unset RECHECK_LOGS
+unset VERBOSE
+
+
+## ---------------------------- ##
+##  Auxiliary shell functions.  ##
+## ---------------------------- ##
+
+# We use a trap below for cleanup.  This requires us to go through
+# hoops to get the right exit status transported through the signal.
+# So use `Exit STATUS' instead of `exit STATUS' inside of the tests.
+# Turn off errexit here so that we don't trip the bug with OSF1/Tru64
+# sh inside this function.
+Exit ()
+{
+  set +e
+  (exit $1)
+  exit $1
+}
+
+# is_newest FILE FILES
+# --------------------
+# Return false if any file in FILES is newer than FILE.
+# Resolve ties in favor of FILE.
+is_newest ()
+{
+  is_newest_files=`find "$@" -newer "$1"`
+  test -z "$is_newest_files"
+}
+
+# AUTOMAKE_run status [options...]
+# --------------------------------
+# Run Automake with OPTIONS, and fail if automake
+# does not exit with STATUS.
+AUTOMAKE_run ()
+{
+  expected_exitcode=$1
+  shift
+  exitcode=0
+  $AUTOMAKE ${1+"$@"} >stdout 2>stderr || exitcode=$?
+  cat stderr >&2
+  cat stdout
+  test $exitcode = $expected_exitcode || Exit 1
+}
+
+# AUTOMAKE_fails [options...]
+# ---------------------------
+# Run Automake with OPTIONS, and fail if automake
+# does not exit with STATUS.
+AUTOMAKE_fails ()
+{
+  AUTOMAKE_run 1 ${1+"$@"}
+}
+
+
+## ----------------------------------------------------------- ##
+##  Checks for required tools, and additional setups (if any)  ##
+##  required by them.                                          ##
+## ----------------------------------------------------------- ##
+
 echo "$PATH"
-# Some shells forget to export modified environment variables.
-# (See note about `export' in the Autoconf manual.)
-export PATH
 
 for tool in : $required
 do
@@ -238,99 +355,6 @@ do
   esac
 done
 
-# We use a trap below for cleanup.  This requires us to go through
-# hoops to get the right exit status transported through the signal.
-# So use `Exit STATUS' instead of `exit STATUS' inside of the tests.
-# Turn off errexit here so that we don't trip the bug with OSF1/Tru64
-# sh inside this function.
-Exit ()
-{
-  set +e
-  (exit $1)
-  exit $1
-}
-
-curdir=`pwd`
-testSubDir=$me.dir
-test ! -d $testSubDir || {
-  find $testSubDir -type d ! -perm -200 -exec chmod u+w {} ";"
-  rm -rf $testSubDir
-}
-mkdir $testSubDir
-
-sh_errexit_works=@sh_errexit_works@
-if test "$sh_errexit_works" = yes; then
-  trap 'exit_status=$?
-    set +e
-    cd "$curdir"
-    case $exit_status,$keep_testdirs in
-    0,)
-      find $testSubDir -type d ! -perm -200 -exec chmod u+w {} ";"
-      rm -rf $testSubDir
-      ;;
-    esac
-    test "$signal" != 0 &&
-      echo "$me: caught signal $signal"
-    echo "$me: exit $exit_status"
-    exit $exit_status
-  ' 0
-  for signal in 1 2 13 15; do
-    trap 'signal='$signal'; { Exit 1; }' $signal
-  done
-fi
-signal=0
-
-# Copy in some files we need.
-for file in install-sh missing depcomp; do
-   cp "$top_testsrcdir/lib/$file" "$testSubDir/$file" || Exit 1
-done
-
-cd ./$testSubDir
-
-# Build appropriate environment in test directory.  Eg create
-# configure.in, touch all necessary files, etc.
-# Don't use AC_OUTPUT, but AC_CONFIG_FILES so that appending
-# still produces a valid configure.ac.  But then, tests running
-# config.status really need to append AC_OUTPUT.
-{
-  echo "AC_INIT([$me], [1.0])"
-  if test x"$parallel_tests" = x"yes"; then
-    echo "AM_INIT_AUTOMAKE([parallel-tests])"
-  else
-    echo "AM_INIT_AUTOMAKE"
-  fi
-  echo "AC_CONFIG_FILES([Makefile])"
-} >configure.in
-
-# Unset some MAKE... variables that may cause $MAKE to act like a
-# recursively invoked sub-make.  Any $MAKE invocation in a test is
-# conceptually an independent invocation, not part of the main
-# 'automake' build.
-unset MFLAGS MAKEFLAGS AM_MAKEFLAGS MAKELEVEL __MKLVL__ MAKE_JOBS_FIFO
-# Unset verbosity flag.
-unset V
-# Also unset variables that will let `make -e install' divert
-# files into unwanted directories.
-unset DESTDIR
-unset prefix exec_prefix bindir datarootdir datadir docdir dvidir
-unset htmldir includedir infodir libdir libexecdir localedir mandir
-unset oldincludedir pdfdir psdir sbindir sharedstatedir sysconfdir
-# The tests call `make -e' but we do not want $srcdir from the environment
-# to override the definition from the Makefile.
-unset srcdir
-# Also unset variables that control our test driver.  While not
-# conceptually independent, they cause some changed semantics we
-# need to control (and test for) in some of the tests to ensure
-# backward-compatible behavior.
-unset DISABLE_HARD_ERRORS
-unset TESTS
-unset TEST_LOG_COMPILER
-unset TEST_LOGS
-unset RECHECK_LOGS
-unset VERBOSE
-
-echo "=== Running test $0"
-
 # We might need extra macros, e.g., from Libtool or Gettext.
 # Find them on the system.
 # Use `-I $top_testsrcdir/m4' in addition to `--acdir=$top_testsrcdir/m4',
@@ -374,56 +398,71 @@ case " $required " in
     ;;
 esac
 
-# POSIX no longer requires 'egrep' and 'fgrep',
-# but some hosts lack 'grep -E' and 'grep -F'.
-EGREP='@EGREP@'
-FGREP='@FGREP@'
 
-# The amount we should wait after modifying files depends on the platform.
-# For instance, Windows '95, '98 and ME have 2-second granularity
-# and can be up to 3 seconds in the future w.r.t. the system clock.
-sleep='sleep @MODIFICATION_DELAY@'
+## ---------------------------------------------------------------- ##
+##  Create and set up of the temporary directory used by the test.  ##
+##  Set up of the exit trap for cleanup of said directory.          ##
+## ---------------------------------------------------------------- ##
 
-# An old timestamp that can be given to a file, in "touch -t" format.
-# The time stamp should be portable to all file systems of interest.
-# Just for fun, choose the exact time of the announcement of the GNU project
-# in UTC; see <http://www.gnu.org/gnu/initial-announcement.html>.
-old_timestamp=198309271735.59
+# The subdirectory where the current test script will run and write its
+# temporary/data files.  This will be created shortly, and will be removed
+# by the cleanup trap below if the test passes.  If the test doesn't pass,
+# this directory will be kept, to facilitate debugging.
+testSubDir=$me.dir
 
-# is_newest FILE FILES
-# --------------------
-# Return false if any file in FILES is newer than FILE.
-# Resolve ties in favor of FILE.
-is_newest ()
-{
-  is_newest_files=`find "$@" -newer "$1"`
-  test -z "$is_newest_files"
+test ! -d $testSubDir || {
+  find $testSubDir -type d ! -perm -200 -exec chmod u+w {} ";"
+  rm -rf $testSubDir
 }
+mkdir $testSubDir
 
+cd ./$testSubDir
 
-# AUTOMAKE_run status [options...]
-# --------------------------------
-# Run Automake with OPTIONS, and fail if automake
-# does not exit with STATUS.
-AUTOMAKE_run ()
+sh_errexit_works=@sh_errexit_works@
+if test "$sh_errexit_works" = yes; then
+  trap 'exit_status=$?
+    set +e
+    cd "$curdir"
+    case $exit_status,$keep_testdirs in
+    0,)
+      find $testSubDir -type d ! -perm -200 -exec chmod u+w {} ";"
+      rm -rf $testSubDir
+      ;;
+    esac
+    test "$signal" != 0 && echo "$me: caught signal $signal"
+    echo "$me: exit $exit_status"
+    exit $exit_status
+  ' 0
+  for signal in 1 2 13 15; do
+    trap 'signal='$signal'; { Exit 1; }' $signal
+  done
+  signal=0
+fi
+
+# Copy in some files we need.
+for file in install-sh missing depcomp; do
+   cp "$top_testsrcdir/lib/$file" . || Exit 1
+done
+
+# Build appropriate environment in test directory.  Eg create
+# configure.in, touch all necessary files, etc.
+# Don't use AC_OUTPUT, but AC_CONFIG_FILES so that appending
+# still produces a valid configure.ac.  But then, tests running
+# config.status really need to append AC_OUTPUT.
 {
-  expected_exitcode=$1
-  shift
-  exitcode=0
-  $AUTOMAKE ${1+"$@"} >stdout 2>stderr || exitcode=$?
-  cat stderr >&2
-  cat stdout
-  test $exitcode = $expected_exitcode || Exit 1
-}
+  echo "AC_INIT([$me], [1.0])"
+  if test x"$parallel_tests" = x"yes"; then
+    echo "AM_INIT_AUTOMAKE([parallel-tests])"
+  else
+    echo "AM_INIT_AUTOMAKE"
+  fi
+  echo "AC_CONFIG_FILES([Makefile])"
+} >configure.in
 
-# AUTOMAKE_fails [options...]
-# ---------------------------
-# Run Automake with OPTIONS, and fail if automake
-# does not exit with STATUS.
-AUTOMAKE_fails ()
-{
-  AUTOMAKE_run 1 ${1+"$@"}
-}
+
+## ---------------- ##
+##  Ready to go...  ##
+## ---------------- ##
 
 # Turn on shell traces.
 set -x
