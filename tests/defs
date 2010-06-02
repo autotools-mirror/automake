@@ -241,18 +241,20 @@ do
     bzip2)
       # Do not use --version, bzip2 still tries to compress stdin.
       echo "$me: running bzip2 --help"
-      bzip2 --help || exit 77
+      bzip2 --help \
+        || skip_ "required program \`bzip2' not available"
       ;;
     cl)
       CC=cl
       export CC
       echo "$me: running $CC -?"
-      $CC -? || exit 77
+      $CC -? || skip_ "Microsoft C compiler \`$CC' not available"
       ;;
     cscope)
       # Sun cscope is interactive without redirection.
       echo "$me: running cscope --version </dev/null"
-      cscope --version </dev/null || exit 77
+      cscope --version </dev/null \
+        || skip_ "required program \`cscope' not available"
       ;;
     etags)
       # Exuberant Ctags will create a TAGS file even
@@ -260,11 +262,12 @@ do
       # does not have such problem.)  Use -o /dev/null
       # to make sure we do not pollute the tests/ directory.
       echo "$me: running etags --version -o /dev/null"
-      etags --version -o /dev/null || exit 77
+      etags --version -o /dev/null \
+        || skip_ "required program \`etags' not available"
       ;;
     GNUmake)
       echo "$me: determine if $MAKE is GNU make"
-      using_gmake || exit 77
+      using_gmake || skip_ "this test requires GNU make"
       ;;
     gcc)
       # When gcc is required, export `CC=gcc' so that ./configure
@@ -274,25 +277,25 @@ do
       CC=gcc
       export CC
       echo "$me: running $CC --version"
-      $CC --version || exit 77
+      $CC --version || skip_ "GNU C compiler not available"
       echo "$me: running $CC -v"
-      $CC -v || exit 77
+      $CC -v || skip_ "botched installation for GNU C compiler"
       ;;
     gcj)
       GCJ=gcj
       export GCJ
       echo "$me: running $GCJ --version"
-      $GCJ --version || exit 77
+      $GCJ --version || skip_ "GNU Java compiler not available"
       echo "$me: running $GCJ -v"
-      $GCJ -v || exit 77
+      $GCJ -v || skip_ "botched installation for GNU Java compiler"
       ;;
     g++)
       CXX=g++
       export CXX
       echo "$me: running $CXX --version"
-      $CXX --version || exit 77
+      $CXX --version || skip_ "GNU C++ compiler not available"
       echo "$me: running $CXX -v"
-      $CXX -v || exit 77
+      $CXX -v || skip_ "botched installation for GNU C++ compiler"
       ;;
     icc)
       CC=icc
@@ -302,7 +305,7 @@ do
       # it will try link *nothing* and complain it cannot find
       # main(); funny).  Use -help so it does not try linking anything.
       echo "$me: running $CC -V -help"
-      $CC -V -help || exit 77
+      $CC -V -help || skip_ "Intel C compiler \`$CC' not available"
       ;;
     javac)
       # The Java compiler from JDK 1.5 (and presumably earlier versions)
@@ -310,16 +313,19 @@ do
       # telling that source files are missing.  Adding also the `-help'
       # option seems to solve the problem.
       echo "$me: running javac -version -help"
-      javac -version -help || exit 77
+      javac -version -help || skip_ "Sun Java compiler not available"
       ;;
     makedepend)
       echo "$me: running makedepend -f-"
-      makedepend -f- || exit 77
+      makedepend -f- \
+        || skip_ "required program \`makedepend' not available"
       ;;
     makeinfo-html)
-      # Make sure makeinfo understands --html.
+      # Make sure we have makeinfo, and it understands `--html'.
       echo "$me: running makeinfo --html --version"
-      makeinfo --html --version || exit 77
+      makeinfo --html --version \
+        || skip_ "cannot find a makeinfo program that groks the" \
+                 "\`--html' option"
       ;;
     non-root)
       # Skip this test case if the user is root.
@@ -331,21 +337,19 @@ do
       overwrite_status=$?
       rm -f $priv_check_temp
       if test $overwrite_status -eq 0; then
-        echo "$me: cannot drop file write permissions" >&2
-        exit 77
+        skip_ "cannot drop file write permissions"
       fi
       unset priv_check_temp overwrite_status
       ;;
     perl-threads)
       if test "$WANT_NO_THREADS" = "yes"; then
-        echo "$me: skip with Devel::Cover: cannot cope with threads" >&2
-        exit 77
+        skip_ "Devel::Cover cannot cope with threads"
       fi
       ;;
     python)
       # Python doesn't support --version, it has -V
       echo "$me: running python -V"
-      python -V || exit 77
+      python -V || skip_ "python interpreter not available"
       ;;
     ro-dir)
       # Skip this test case if read-only directories aren't supported
@@ -357,8 +361,7 @@ do
       create_status=$?
       rm -rf $ro_dir_temp
       if test $create_status -eq 0; then
-        echo "$me: cannot drop directory write permissions" >&2
-        exit 77
+        skip_ "cannot drop directory write permissions"
       fi
       unset ro_dir_temp create_status
       ;;
@@ -369,8 +372,7 @@ do
           echo "$me: running $r2h --version"
           $r2h --version && break 2
         done
-        echo "$me: no proper rst2html program found" >&2
-        exit 77
+        skip_ "no proper rst2html program found"
       done
       unset r2h
       ;;
@@ -379,20 +381,21 @@ do
       # the program on the runtest command-line. This requires
       # DejaGnu 1.4.3 or later.
       echo "$me: running runtest SOMEPROGRAM=someprogram --version"
-      runtest SOMEPROGRAM=someprogram --version || exit 77
+      runtest SOMEPROGRAM=someprogram --version \
+        || skip_ "DejaGnu is not available"
       ;;
     tex)
       # No all versions of Tex support `--version', so we use
       # a configure check.
       if test -z "$TEX"; then
-        echo "$me: TeX is required, but it wasn't found by configure" >&2
-        exit 77
+        skip_ "TeX is required, but it wasn't found by configure"
       fi
       ;;
     texi2dvi-o)
       # Texi2dvi supports `-o' since Texinfo 4.1.
       echo "$me: running texi2dvi -o /dev/null --version"
-      texi2dvi -o /dev/null --version || exit 77
+      texi2dvi -o /dev/null --version \
+        || skip_ "required program \`texi2dvi' not available"
       ;;
     xsi-shell)
       # Try some XSI features.
@@ -402,14 +405,14 @@ do
 	test "${_am_dummy##*/},${_am_dummy%/*},${_am_dummy#??}"${_am_dummy%"$_am_dummy"}, \
 		= c,a/b,b/c, \
 	&& eval 'test $(( 1 + 1 )) -eq 2 \
-	&& test "${#_am_dummy}" -eq 5' ) || exit 77
+	&& test "${#_am_dummy}" -eq 5' ) \
+          || skip_ "the shell lacks some required XSI features"
       ;;
     yacc)
       if test x"$YACC" = x"no"; then
         # The user has explicitly told he doesn't want a yacc program
         # to be used.
-        echo "$me: \$YACC is \"no\", skipping test" >&2
-        exit 77
+        skip_ "$me: \$YACC is \"no\", skipping test"
       elif test -z "$YACC"; then
         # The user hasn't explicitly specified any yacc program in the
         # environment, so we try to use bison, skipping the test if it's
@@ -417,7 +420,7 @@ do
         YACC='bison -y'
         export YACC
         echo "$me: running bison --version"
-        bison --version || exit 77
+        bison --version || skip_ "required program \`bison' not available"
       fi
       ;;
     *)
@@ -426,7 +429,7 @@ do
       # It is not likely but possible that $tool is a special builtin,
       # in which case the shell is allowed to exit after an error.
       # So, please leave the subshell here.
-      ( $tool --version ) || exit 77
+      ($tool --version) || skip_ "required program \`$tool' not available"
       ;;
   esac
 done
@@ -438,10 +441,8 @@ case $testbuilddir in
   *\ *|*\	*)
     case " $required " in
       *' libtool '* | *' libtoolize '* )
-        echo "$me: libtool/libtoolized cannot cope correctly" >&2
-        echo "$me: with spaces in the build tree" >&2
-        exit 77
-        ;;
+        skip_ "libtool and libtoolize cannot cope correctly" \
+              "with spaces in the build tree";;
     esac
     ;;
 esac
@@ -454,10 +455,8 @@ case $testsrcdir in
   *\ * |*\	*)
     case " $required " in
       *' libtool '* | *' libtoolize '* | *' gettext '* )
-        echo "$me: our testsuite setup cannot cope correctly with spaces" >&2
-        echo "$me: in the source tree for libtool/gettext tests" >&2
-        exit 77
-        ;;
+        skip_ "our testsuite setup cannot cope with spaces in the" \
+              "source tree name for libtool/gettext tests.";;
    esac
    ;;
 esac
@@ -494,16 +493,14 @@ case " $required " in
     case " $required " in
       *' libtool '*|*' libtoolize '*)
         if test $libtool_found != yes; then
-          echo "$me: libtool/libtoolize is required, but libtool.m4 wasn't" >&2
-          echo "$me: found in directories $aclocaldir $extra_includes" >&2
-          exit 77
+          skip_ "libtool is required, but libtool.m4 wasn't found in" \
+                "directories $aclocaldir $extra_includes"
         fi
         ;;
       *' gettext '*)
         if test $gettext_found != yes; then
-          echo "$me: gettext is required, but gettext.m4 wasn't found" >&2
-          echo "$me: in directories $aclocaldir $extra_includes" >&2
-          exit 77
+          skip_ "gettext is required, but gettext.m4 wasn't found in" \
+                "directories $aclocaldir $extra_includes"
         fi
         ;;
     esac
