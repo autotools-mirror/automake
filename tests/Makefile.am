@@ -34,7 +34,10 @@ $(parallel_tests): Makefile.am
 	{ echo '#!/bin/sh'; \
 	  echo '# DO NOT EDIT! GENERATED AUTOMATICALLY!'; \
 	  echo 'parallel_tests=yes'; \
-	  echo ". '$(srcdir)/$$input'"; \
+	  echo '. ./defs || Exit 1'; \
+	  echo '# So that the sourced test can re-exec ./defs safely.'; \
+	  echo 'cd "$$curdir" || Exit 1'; \
+	  echo ". \"\$$testsrcdir/$$input\""; \
 	} > $@-t
 	$(AM_V_at)chmod a+rx $@-t && mv -f $@-t $@
 
