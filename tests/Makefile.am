@@ -624,6 +624,11 @@ silent6.test \
 silent7.test \
 silent8.test \
 silent9.test \
+silentcxx.test \
+silentf77.test \
+silentf90.test \
+silentlex.test \
+silentyacc.test \
 sinclude.test \
 srcsub.test \
 srcsub2.test \
