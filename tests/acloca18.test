@@ -25,7 +25,7 @@ AM_MACRO1
 AM_MACRO2
 END
 
-mkdir 1 2 3 4
+mkdir 1 2 3 4 5 6
 
 cat >1/m1.m4 <<EOF
 #serial 1.8.1230.9
@@ -53,6 +53,17 @@ cat >4/mumble.m4 <<EOF
 AC_DEFUN([AM_MACRO1], [echo macro14 >> foo])
 EOF
 
+cat >5/ill-formed.m4 <<EOF
+#serial bla
+#serial .2
+#serial
+AC_DEFUN([AM_MACRO1], [echo macro15 >> foo])
+EOF
+
+cat >6/after-def.m4 <<EOF
+AC_DEFUN([AM_MACRO1], [echo macro16 >> foo])
+#serial 1
+EOF
 
 ACLOCAL_TESTSUITE_FLAGS='-I 1 -I 2 -I 3 -I 4'
 
@@ -112,3 +123,9 @@ cat output
 grep '#serial 456' output
 test ! -f 4/m1.m4
 grep 'installing.*4/m1.m4' stderr
+
+$ACLOCAL -I 5 2>stderr && { cat stderr >&2; Exit 1; }
+test `grep -c 'ill-formed serial' stderr` -eq 3
+
+$ACLOCAL -I 6 2>stderr && { cat stderr >&2; Exit 1; }
+grep 'serial.*before any macro definition' stderr
