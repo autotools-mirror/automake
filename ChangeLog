@@ -1,3 +1,42 @@
+2010-11-03  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	Overhauled and modularized tests in `instspc.test'.
+	The test `instspc.test' was way too big and fragile.  Its running
+	time was very long.  It also produced a log that was nearly
+	unreadable due to its length, making it very difficult to find
+	out the reason for failures.
+	Also, it was too much monolithic, with a single (maybe spurious)
+	failure in a corner case causing the whole test to fail (even if
+	everything worked as expected in the other 99% of cases).
+	The present change should solve these problems, by separating
+	`instspc.test' into many smaller, self-contained, auto-generated
+	tests.
+	* tests/instspc.test: Removed.
+	* tests/instspc-tests.sh: New script, fulfilling a double role:
+	1. it generates a Makefile.am snippet `tests/instspc-tests.am',
+	containing the definition of a list of new tests which will take
+	over the older `instspc.test', and
+	2. it is sourced by said generated tests with proper parameters
+	pre-set, to run the "meat" of the checks.
+	This apparent abuse is indeed required because the test generation
+	code and test execution code are inevitably intertwined.
+	* tests/Makefile.am ($(srcdir)/instspc-tests.am): Include this
+	snippet, which (among the other things) defines ...
+	(instspc_tests): ... this new macro, containing the list of the
+	newly generated `instspc*.test' tests, and ...
+	(instspc_xfail_tests): ... this new macro, containing the list
+	of the `instspc*.test' tests expected to fail.
+	($(instspc_tests)): New rule, generates the `instspc*.test' tests.
+	($(instspc_tests:.test=.log)): New rule, registers the dependency
+	of all `instspc*.test' tests on the `instspc-tests.sh' script.
+	(TESTS): Add `$(instspc_tests)', remove `instspc.test'.
+	(XFAIL_TESTS): Add `$(xfail_instspc_tests)'.
+	(EXTRA_DIST): Distribute instspc-tests.sh.
+	(MAINTAINERCLEANFILES): Added $(instspc_tests).
+	Other minor cosmetic changes.
+	* bootstrap: Generate instspc-tests.am.
+	* tests/.gitignore: Updated.
+
 2010-11-01  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
 
 	Add FAQ entry for bug reporting instructions.

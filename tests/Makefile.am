@@ -16,12 +16,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+MAINTAINERCLEANFILES =
+EXTRA_DIST = ChangeLog-old
+
 XFAIL_TESTS = \
 all.test \
 auxdir2.test \
 cond17.test \
 gcj6.test \
 txinfo5.test
+
 
 include $(srcdir)/parallel-tests.am
 
@@ -51,7 +55,44 @@ $(parallel_tests): Makefile.am
 	} > $@-t
 	$(AM_V_at)chmod a+rx $@-t && mv -f $@-t $@
 
-MAINTAINERCLEANFILES = $(parallel_tests)
+MAINTAINERCLEANFILES += $(parallel_tests)
+EXTRA_DIST += gen-parallel-tests
+
+
+include $(srcdir)/instspc-tests.am
+
+$(srcdir)/instspc-tests.am: instspc-tests.sh Makefile.am
+	$(AM_V_GEN)($(am__cd) $(srcdir) \
+	  && $(SHELL) ./instspc-tests.sh --generate-makefile) >$@
+
+$(instspc_tests): Makefile.am
+	$(AM_V_at)rm -f $@ $@-t
+	$(AM_V_GEN) :; \
+	  base=`expr 'x/$@' : 'x.*/instspc-\(.*\)\.test$$'`; \
+	  name=`expr x"$$base" : x'\(.*\)-'`; \
+	  action=`expr x"$$base" : x'.*-\(.*\)'`; \
+	  { \
+	    echo '#!/bin/sh'; \
+	    echo '# DO NOT EDIT!  GENERATED AUTOMATICALLY!'; \
+	    echo; \
+	    echo '# Ensure proper definition of $$srcdir.'; \
+	    echo 'am_skip_defs=yes'; \
+	    echo '. ./defs || exit 99'; \
+	    echo 'test -n "$$srcdir" || exit 99 # sanity check'; \
+	    echo; \
+	    echo "instspc_test_name='$$name'"; \
+	    echo "instspc_action='test-$$action'"; \
+	    echo ". \$$srcdir/instspc-tests.sh"; \
+	  } > $@-t
+	$(AM_V_at)chmod a+rx $@-t && mv -f $@-t $@
+
+# All instspc*.test tests work by sourcing the instspc-tests.sh script.
+$(instspc_tests:.test=.log): instspc-tests.sh
+
+MAINTAINERCLEANFILES += $(instspc_tests)
+EXTRA_DIST += instspc-tests.sh
+XFAIL_TESTS += $(instspc_xfail_tests)
+
 
 TESTS = \
 aclibobj.test \
@@ -429,7 +470,7 @@ instman2.test \
 instmany.test \
 instmany-mans.test \
 instmany-python.test \
-instspc.test \
+$(instspc_tests) \
 interp.test \
 interp2.test \
 java.test \
@@ -835,7 +876,8 @@ yflags.test \
 yflags2.test \
 $(parallel_tests)
 
-EXTRA_DIST = ChangeLog-old gen-parallel-tests $(TESTS)
+EXTRA_DIST += $(TESTS)
+
 
 # Each test case depends on defs, aclocal, and automake.
 $(TEST_LOGS): defs aclocal-$(APIVERSION) automake-$(APIVERSION)
