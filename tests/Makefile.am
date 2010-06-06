@@ -518,6 +518,7 @@ number.test \
 objc.test \
 objc2.test \
 obsolete.test \
+oldvars.test \
 order.test \
 outdir.test \
 output.test \
