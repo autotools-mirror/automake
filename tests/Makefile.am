@@ -66,6 +66,7 @@ acloca19.test \
 acloca20.test \
 acloca21.test \
 acloca22.test \
+acloca23.test \
 acoutnoq.test \
 acoutpt.test \
 acoutpt2.test \
@@ -517,6 +518,7 @@ number.test \
 objc.test \
 objc2.test \
 obsolete.test \
+oldvars.test \
 order.test \
 outdir.test \
 output.test \
@@ -709,6 +711,7 @@ symlink2.test \
 symlink3.test \
 syntax.test \
 tags.test \
+tags2.test \
 tagsub.test \
 tar.test \
 tar2.test \
