@@ -711,6 +711,7 @@ symlink2.test \
 symlink3.test \
 syntax.test \
 tags.test \
+tags2.test \
 tagsub.test \
 tar.test \
 tar2.test \
