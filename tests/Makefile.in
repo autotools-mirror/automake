@@ -1392,12 +1392,20 @@ $(parallel_tests): Makefile.am
 	$(AM_V_at)rm -f $@ $@-t
 	$(AM_V_GEN)input=`echo $@ | sed 's,.*/,,; s,-p.test$$,.test,'`; \
 	{ echo '#!/bin/sh'; \
-	  echo '# DO NOT EDIT! GENERATED AUTOMATICALLY!'; \
+	  echo '# DO NOT EDIT!  GENERATED AUTOMATICALLY!'; \
+	  echo; \
+	  echo '# Ensure proper definition of $$srcdir.'; \
+	  echo 'am_skip_defs=yes'; \
+	  echo '. ./defs || exit 99'; \
+	  echo 'test -n "$$srcdir" || exit 99 # sanity check'; \
+	  echo; \
+	  echo "# Run the test with Automake's parallel-tests driver enabled."; \
 	  echo 'parallel_tests=yes'; \
-	  echo '. ./defs || Exit 1'; \
-	  echo '# So that the sourced test can re-exec ./defs safely.'; \
-	  echo 'cd "$$curdir" || Exit 1'; \
-	  echo ". \"\$$testsrcdir/$$input\""; \
+	  echo "if test -f \"./$$input\"; then"; \
+	  echo "  . \"./$$input\""; \
+	  echo 'else'; \
+	  echo "  . \"\$$srcdir/$$input\""; \
+	  echo 'fi'; \
 	} > $@-t
 	$(AM_V_at)chmod a+rx $@-t && mv -f $@-t $@
 
