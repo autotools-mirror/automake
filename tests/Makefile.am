@@ -21,7 +21,11 @@ all.test					\
 auxdir2.test					\
 cond17.test					\
 gcj6.test					\
-txinfo5.test
+txinfo5.test					\
+lflags.test					\
+lflags2.test					\
+yflags.test					\
+yflags2.test
 
 include $(srcdir)/parallel-tests.am
 
@@ -394,6 +398,8 @@ lex2.test \
 lex3.test \
 lex4.test \
 lex5.test \
+lflags.test \
+lflags2.test \
 libexec.test \
 libobj2.test \
 libobj3.test \
@@ -769,6 +775,8 @@ yacc7.test \
 yacc8.test \
 yaccpp.test \
 yaccvpath.test \
+yflags.test \
+yflags2.test \
 $(parallel_tests)
 
 EXTRA_DIST = ChangeLog-old gen-parallel-tests $(TESTS)
