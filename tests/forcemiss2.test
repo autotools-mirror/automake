@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2000, 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 2000, 2001, 2002, 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,20 +14,32 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure that `automake --force-missing' works.
+# Test to make sure that `automake --force-missing' works, even with
+# symlinked files.
 
 . ./defs || Exit 1
 
-rm -f install-sh
-rm -f mkinstalldirs
+set -e
 
-echo zot > zot
-echo zot > mkinstalldirs
+rm -f install-sh
+
+echo zot > foo
+cp foo foo2
+
+ln -s foo2 install-sh || {
+  echo "$me: cannot create symlinks to files" >&2
+  Exit 77
+}
 
 : > Makefile.am
 
-$ACLOCAL || Exit 1
-$AUTOMAKE --add-missing --force-missing || Exit 1
+$ACLOCAL
+ls -l install-sh
+$AUTOMAKE --add-missing --force-missing
+ls -l install-sh
 
-grep zot mkinstalldirs && Exit 1
-Exit 0
+test -f install-sh
+grep zot install-sh && Exit 1
+diff foo foo2
+
+:
