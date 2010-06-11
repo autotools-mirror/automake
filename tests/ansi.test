@@ -1,6 +1,6 @@
 #! /bin/sh
-# Copyright (C) 1996, 1997, 1998, 2000, 2001, 2002, 2003
-# Free Software Foundation, Inc.
+# Copyright (C) 1996, 1997, 1998, 2000, 2001, 2002, 2003, 2010 Free
+# Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,21 +20,36 @@
 
 . ./defs || Exit 1
 
+set -e
+
 cat > Makefile.am << 'END'
 AUTOMAKE_OPTIONS = ansi2knr
-magic:
-	@echo $(DISTFILES)
+.PHONY: test1 test2
+test1:
+	echo ' $(DISTFILES) ' | grep ' ansi2knr\.c '
+	echo ' $(DISTFILES) ' | grep ' ansi2knr\.1 '
+test2: distdir
+	test -f $(distdir)/ansi2knr.c
+	test -f $(distdir)/ansi2knr.1
 END
 
 cat >> configure.in << 'END'
 AM_C_PROTOTYPES
+AC_OUTPUT
 END
 
 : > ansi2knr.c
 : > ansi2knr.1
 
-$ACLOCAL || Exit 1
-$AUTOMAKE || Exit 1
+$ACLOCAL
+$AUTOMAKE
 
 $FGREP -v @SET_MAKE@ Makefile.in > Makefile.sed
-$MAKE -s -f Makefile.sed SHELL=$SHELL magic | grep 'ansi2knr\.c'
+$MAKE -f Makefile.sed SHELL=$SHELL test1
+
+$AUTOCONF
+./configure
+$MAKE test1
+$MAKE test2
+
+:

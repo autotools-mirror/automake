@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1998, 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 1998, 2001, 2002, 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,13 +19,13 @@
 required='GNUmake gcc'
 . ./defs || Exit 1
 
-cat > configure.in << 'END'
-AC_INIT(Makefile.am)
-AM_INIT_AUTOMAKE(foo,0.0)
+set -e
+
+cat >> configure.in << 'END'
 AC_PROG_CC
-AM_CONDITIONAL(ONE, test "x$CONDITION1" = "xtrue")
-AM_CONDITIONAL(TWO, test "x$CONDITION2" = "xtrue")
-AC_OUTPUT(Makefile)
+AM_CONDITIONAL([ONE], [test "x$CONDITION1" = "xtrue"])
+AM_CONDITIONAL([TWO], [test "x$CONDITION2" = "xtrue"])
+AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
@@ -45,33 +45,35 @@ echo-objects:
 	@echo $(targ_OBJECTS)
 END
 
-$ACLOCAL || Exit 1
-$AUTOMAKE || Exit 1
+$ACLOCAL
+$AUTOMAKE
 
 # We should not output useless definitions.
-test "`grep '^@TWO_FALSE@' Makefile.in | wc -l`" -eq 0 || Exit 1
+test "`grep '^@TWO_FALSE@' Makefile.in | wc -l`" -eq 0
 
-$AUTOCONF || Exit 1
+$AUTOCONF
 
 # Ignore user CFLAGS.
 CFLAGS=
 export CFLAGS
 
-CONDITION1=true CONDITION2=true ./configure || Exit 1
+CONDITION1=true CONDITION2=true ./configure
 msgtt=`$MAKE --no-print-directory echo-objects`
-CONDITION1=true CONDITION2=false ./configure || Exit 1
+CONDITION1=true CONDITION2=false ./configure
 msgtf=`$MAKE --no-print-directory echo-objects`
-CONDITION1=false CONDITION2=true ./configure || Exit 1
+CONDITION1=false CONDITION2=true ./configure
 msgft=`$MAKE --no-print-directory echo-objects`
-CONDITION1=false CONDITION2=false ./configure || Exit 1
+CONDITION1=false CONDITION2=false ./configure
 msgff=`$MAKE --no-print-directory echo-objects`
 
-echo $msgtt
-echo $msgtf
-echo $msgft
-echo $msgff
+: msgtt = $msgtt
+: msgtf = $msgtf
+: msgft = $msgft
+: msgff = $msgff
 
-test "$msgtt" = "main.o one.o two.o" || Exit 1
-test "$msgtf" = "main.o one.o" || Exit 1
-test "$msgft" = "main.o two.o" || Exit 1
-test "$msgff" = "main.o" || Exit 1
+test x"$msgtt" = x"main.o one.o two.o"
+test x"$msgtf" = x"main.o one.o"
+test x"$msgft" = x"main.o two.o"
+test x"$msgff" = x"main.o"
+
+:
