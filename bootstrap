@@ -2,9 +2,9 @@
 
 # This script helps bootstrap automake, when checked out from git.
 #
-# Copyright (C) 2002, 2003, 2004, 2007, 2008  Free Software Foundation,
-# Inc.
-# written by Pavel Roskin <proski@gnu.org> September 2002
+# Copyright (C) 2002, 2003, 2004, 2007, 2008, 2010 Free Software
+# Foundation, Inc.
+# Originally written by Pavel Roskin <proski@gnu.org> September 2002.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,40 +19,42 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Find the path separator
-echo "#! /bin/sh" >boot$$.sh
-echo  "exit 0"   >>boot$$.sh
-chmod +x boot$$.sh
-if (PATH="/nonexistent;."; boot$$.sh) >/dev/null 2>&1; then
-  PATH_SEPARATOR=';'
-else
+# Find the path separator.
+# (Snippet copied from configure's initialization in Autoconf 2.65)
+if test "${PATH_SEPARATOR+set}" != set; then
   PATH_SEPARATOR=:
+  (PATH='/bin;/bin'; FPATH=$PATH; sh -c :) >/dev/null 2>&1 && {
+    (PATH='/bin:/bin'; FPATH=$PATH; sh -c :) >/dev/null 2>&1 ||
+      PATH_SEPARATOR=';'
+  }
 fi
-rm -f boot$$.sh
 
-# Don't ignore failures
+# Don't ignore failures.
 set -e
+
+# Set program basename.
+me=`echo "$0" | sed 's,^.*/,,'`
 
 # Find perl.  Code based on Autoconf, but without non-POSIX support.
 if test -z "$PERL"; then
-	save_IFS=$IFS
-	IFS=$PATH_SEPARATOR
-	for dir in $PATH; do
-		IFS=$save_IFS
-		test -z "$dir" && dir=.
-		if test -x "$dir/perl" && test ! -d "$dir/perl"; then
-			PERL="$dir/perl"
-			break
-		fi
-	done
+  save_IFS=$IFS
+  IFS=$PATH_SEPARATOR
+  for dir in $PATH; do
+    IFS=$save_IFS
+    test -z "$dir" && dir=.
+    if test -x "$dir/perl" && test ! -d "$dir/perl"; then
+      PERL="$dir/perl"
+      break
+    fi
+  done
 fi
 
 if test -z "$PERL"; then
-	echo "Cannot find perl" >&2
-	exit 1
+  echo "$me: cannot find perl" >&2
+  exit 1
 fi
 
-# Variables to substitute
+# Variables to substitute.
 VERSION=`sed -ne '/AC_INIT/s/^[^[]*\[[^[]*\[\([^]]*\)\].*$/\1/p' configure.ac`
 PACKAGE=automake
 datadir=.
@@ -62,35 +64,35 @@ PERL_THREADS=0
 # uses bash, not COMMAND.COM which doesn't quote arguments properly.
 # It's not used otherwise.
 if test -n "$DJDIR"; then
-    BOOTSTRAP_SHELL=/dev/env/DJDIR/bin/bash.exe
+  BOOTSTRAP_SHELL=/dev/env/DJDIR/bin/bash.exe
 else
-    BOOTSTRAP_SHELL=/bin/sh
+  BOOTSTRAP_SHELL=/bin/sh
 fi
 
-# Read the rule for calculating APIVERSION and execute it
+# Read the rule for calculating APIVERSION and execute it.
 apiver_cmd=`sed -ne 's/\[\[/[/g;s/\]\]/]/g;/^APIVERSION=/p' configure.ac`
 eval $apiver_cmd
 
-# Sanity checks
+# Sanity checks.
 if test -z "$VERSION"; then
-	echo "Cannot find VERSION" >&2
-	exit 1
+  echo "$me: cannot find VERSION" >&2
+  exit 1
 fi
 
 if test -z "$APIVERSION"; then
-	echo "Cannot find VERSION" >&2
-	exit 1
+  echo "$me: cannot find VERSION" >&2
+  exit 1
 fi
 
-# Make a dummy versioned directory for aclocal
+# Make a dummy versioned directory for aclocal.
 rm -rf aclocal-$APIVERSION
 mkdir aclocal-$APIVERSION
 if test -d automake-$APIVERSION; then
-	find automake-$APIVERSION -exec chmod u+wx '{}' ';'
+  find automake-$APIVERSION -exec chmod u+wx '{}' ';'
 fi
 rm -rf automake-$APIVERSION
-# Can't use `ln -s lib automake-$APIVERSION',
-# that would create a lib.exe stub under DJGPP 2.03.
+# Can't use `ln -s lib automake-$APIVERSION', that would create a
+# lib.exe stub under DJGPP 2.03.
 mkdir automake-$APIVERSION
 cp -rf lib/* automake-$APIVERSION
 
@@ -111,17 +113,17 @@ dosubst ()
 }
 
 
-# Create temporary replacement for lib/Automake/Config.pm
+# Create temporary replacement for lib/Automake/Config.pm.
 dosubst automake-$APIVERSION/Automake/Config.in \
-	automake-$APIVERSION/Automake/Config.pm
+        automake-$APIVERSION/Automake/Config.pm
 
-# Create temporary replacement for aclocal
+# Create temporary replacement for aclocal.
 dosubst aclocal.in aclocal.tmp
 
-# Overwrite amversion.m4
+# Overwrite amversion.m4.
 dosubst m4/amversion.in m4/amversion.m4
 
-# Create temporary replacement for automake
+# Create temporary replacement for automake.
 dosubst automake.in automake.tmp
 
 # Create tests/parallel-tests.am.
@@ -134,7 +136,7 @@ $PERL ./aclocal.tmp -I m4
 autoconf
 $PERL ./automake.tmp
 
-# Remove temporary files and directories
+# Remove temporary files and directories.
 rm -rf aclocal-$APIVERSION automake-$APIVERSION
 rm -f aclocal.tmp automake.tmp
 rm -f lib/Automake/Config.pm
