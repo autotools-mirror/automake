@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002  Free Software Foundation, Inc.
+# Copyright (C) 2002, 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,11 +21,11 @@
 
 set -e
 
-cat >>configure.in <<EOF
-AM_CONDITIONAL(A, true)
-AM_CONDITIONAL(B, false)
+cat >>configure.in << 'END'
+AM_CONDITIONAL([A], [true])
+AM_CONDITIONAL([B], [false])
 AC_OUTPUT
-EOF
+END
 
 cat > Makefile.am << 'END'
 foo =  0.h
@@ -40,6 +40,7 @@ foo += b0.h \
   b1.h
 endif
 
+.PHONY: print
 print:
 	@echo BEG: $(foo) :END
 END
@@ -47,7 +48,10 @@ END
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
+
 ./configure
-$MAKE print >stdout
+$MAKE print >stdout || { cat stdout; Exit 1; }
 cat stdout
-grep 'BEG: 0.h a0.h a1.h a2.h a3.h :END' stdout
+$FGREP 'BEG: 0.h a0.h a1.h a2.h a3.h :END' stdout
+
+:

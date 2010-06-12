@@ -340,6 +340,8 @@ fn99.test \
 fn99subdir.test \
 fnoc.test \
 fo.test	\
+forcemiss.test \
+forcemiss2.test \
 fort1.test \
 fort2.test \
 fort4.test \
@@ -716,7 +718,6 @@ suffix12.test \
 suffix13.test \
 symlink.test \
 symlink2.test \
-symlink3.test \
 syntax.test \
 tags.test \
 tags2.test \

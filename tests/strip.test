@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002, 2007  Free Software Foundation, Inc.
+# Copyright (C) 2002, 2007, 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,12 +18,10 @@
 
 . ./defs || Exit 1
 
-cat > configure.in << 'END'
-AC_INIT(foo, 0.1, dev@null)
-AM_INIT_AUTOMAKE($PACKAGE, $VERSION)
+set -e
+
+cat >> configure.in << 'END'
 AC_PROG_CC
-AM_CONDITIONAL(FOOTEST, false)
-AC_CONFIG_FILES(Makefile)
 AC_OUTPUT
 END
 
@@ -38,13 +36,16 @@ END
 
 chmod +x foo
 
-set -e
-
 mkdir install
 
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
-./configure "--prefix=`cd install && pwd`"
+
+prefix=`cd install && pwd` || Exit 1
+./configure --prefix="$prefix"
 $MAKE
 $MAKE install-strip
+diff foo "$prefix"/bin/foo
+
+:
