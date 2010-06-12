@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1999, 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 1999, 2001, 2002, 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,11 @@
 
 . ./defs || Exit 1
 
-echo 'AC_SUBST(ZZZ)' >> configure.in
+set -e
+
+cat >> configure.in << 'END'
+AC_SUBST([ZZZ])
+END
 
 # If you do this in a real Makefile.am, I will kill you.
 cat > Makefile.am << 'END'
@@ -26,9 +30,11 @@ mandir += foo
 zq = zzz
 END
 
-$ACLOCAL || Exit 1
-$AUTOMAKE || Exit 1
-$FGREP '@mandir@ foo' Makefile.in || Exit 1
+$ACLOCAL
+$AUTOMAKE
+$FGREP '@mandir@ foo' Makefile.in
 
 num=`grep '^mandir =' Makefile.in | wc -l`
 test $num -eq 1
+
+:
