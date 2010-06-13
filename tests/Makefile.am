@@ -53,7 +53,7 @@ $(parallel_tests): Makefile.am
 
 MAINTAINERCLEANFILES = $(parallel_tests)
 
-TESTS =	\
+TESTS = \
 aclibobj.test \
 aclocal.test \
 aclocal3.test \
@@ -341,7 +341,7 @@ flibs.test \
 fn99.test \
 fn99subdir.test \
 fnoc.test \
-fo.test	\
+fo.test \
 forcemiss.test \
 forcemiss2.test \
 fort1.test \
@@ -447,12 +447,12 @@ libtoo10.test \
 libtoo11.test \
 license.test \
 license2.test \
-link_c_cxx.test	\
+link_c_cxx.test \
 link_dist.test \
 link_f90_only.test \
 link_fc.test \
 link_fccxx.test \
-link_fcxx.test	\
+link_fcxx.test \
 link_f_only.test \
 link_override.test \
 lisp2.test \
@@ -651,13 +651,13 @@ srcsub.test \
 srcsub2.test \
 space.test \
 specflg.test \
-specflg2.test	\
-specflg3.test	\
-specflg6.test	\
-specflg7.test	\
-specflg8.test	\
-specflg9.test	\
-specflg10.test	\
+specflg2.test \
+specflg3.test \
+specflg6.test \
+specflg7.test \
+specflg8.test \
+specflg9.test \
+specflg10.test \
 spell.test \
 spell2.test \
 spell3.test \
