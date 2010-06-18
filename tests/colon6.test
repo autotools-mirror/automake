@@ -21,16 +21,33 @@
 
 set -e
 
-cat > configure.in << 'END'
-AC_INIT
-AM_INIT_AUTOMAKE(nonesuch, nonesuch)
-AC_OUTPUT(demo/Makefile demo/version.good:demo/version.gin)
+cat > configure.in <<END
+AC_INIT([$me], [1.0])
+AM_INIT_AUTOMAKE
+AC_CONFIG_FILES([demo/Makefile demo/version.good:demo/version.gin])
+AC_OUTPUT
 END
 
 mkdir demo
 
-: > demo/Makefile.am
 : > demo/version.gin
+
+cat > demo/Makefile.am <<'END'
+.PHONY: test
+test:
+	case ' $(DIST_COMMON) ' in \
+	  *' $(srcdir)/version.gin '*) exit 0;; \
+	  *) exit 1;; \
+	esac
+END
 
 $ACLOCAL
 $AUTOMAKE
+
+$EGREP 'Makefile:.*(demo|version)' demo/Makefile.in && Exit 1
+grep 'version\.good:.*version\.gin' demo/Makefile.in
+
+sed '/@SET_MAKE@/d' <demo/Makefile.in >Makefile.sed
+$MAKE -f Makefile.sed SHELL=$SHELL test
+
+:
