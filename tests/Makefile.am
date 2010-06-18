@@ -104,6 +104,12 @@ auxdir.test \
 auxdir2.test \
 auxdir3.test \
 auxdir4.test \
+backcompat.test \
+backcompat2.test \
+backcompat3.test \
+backcompat4.test \
+backcompat5.test \
+backcompat6.test \
 backsl.test \
 backsl2.test \
 backsl3.test \
