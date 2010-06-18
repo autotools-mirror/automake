@@ -1,5 +1,6 @@
 #! /bin/sh
-# Copyright (C) 1999, 2000, 2001, 2002, 2006  Free Software Foundation, Inc.
+# Copyright (C) 1999, 2000, 2001, 2002, 2006, 2010 Free Software
+# Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,11 +20,10 @@
 
 . ./defs || Exit 1
 
-cat > configure.in << 'END'
-AC_INIT
-AM_INIT_AUTOMAKE(nonesuch, nonesuch)
-AM_CONFIG_HEADER(include/config.h)
-AC_OUTPUT(Makefile include/Makefile)
+set -e
+
+cat >> configure.in << 'END'
+AM_CONFIG_HEADER([include/config.h])
 END
 
 : > Makefile.am
@@ -33,24 +33,26 @@ mkdir include
 : > include/Makefile.am
 : > include/config.h.in
 
-$ACLOCAL || Exit 1
-$AUTOMAKE || Exit 1
+$ACLOCAL
+$AUTOMAKE
 
-(sed -n -e '/^DIST_COMMON =.*\\$/ {
-   :loop
-   p
-   n
-   t clear
-   :clear
-   s/\\$/\\/
-   t loop
-   p
-   n
-   }' -e '/^DIST_COMMON =/ p' Makefile.in | grep acconfig.h) || Exit 1
+perl -ne '
+if (s/^DIST_COMMON *=//)
+{
+  $_ .= <> while (s/\\$//);
+  $_ = " $_ ";
+  s/\s+/ /g;
+  print "$_\n";
+  exit 0;
+}' Makefile.in > dc.txt
+cat dc.txt # might be useful for debugging.
+$FGREP ' acconfig.h ' dc.txt
 
 # Make sure re-running automake in a different way generates same
 # Makefile.in.
-mv Makefile.in save
-$ACLOCAL || Exit 1
-$AUTOMAKE Makefile || Exit 1
-cmp Makefile.in save
+mv Makefile.in Makefile.sav
+$ACLOCAL
+$AUTOMAKE Makefile
+diff Makefile.sav Makefile.in
+
+:
