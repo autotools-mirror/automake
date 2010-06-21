@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 2001, 2002, 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,38 +19,57 @@
 
 . ./defs || Exit 1
 
+set -e
+
 rm -f configure.in
 
 mkdir config
 for i in *; do
-   if test $i != "config"; then
-      mv $i config
+   if test "$i" != "config"; then
+      mv -f "$i" config
    fi
 done
 
-cat > configure.in << 'END'
-AC_INIT(subdir/foo.c)
-AC_CONFIG_AUX_DIR(config)
-AM_INIT_AUTOMAKE(nonesuch, nonesuch)
+cat > configure.in << END
+AC_INIT([$me], [1.0])
+AC_CONFIG_AUX_DIR([config])
+AM_INIT_AUTOMAKE
 AC_PROG_CC
-AC_OUTPUT(subdir/Makefile Makefile)
+AC_CONFIG_FILES([subdir/Makefile Makefile])
+AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
 SUBDIRS = subdir
+check-local: test1 test2
+.PHONY: test1 test2
+test1:
+	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]config/depcomp '
+test2: distdir
+	ls -l $(distdir)/*
+	test -f $(distdir)/config/depcomp
 END
 
 mkdir subdir
-: > subdir/foo.c
+cat > subdir/foo.c << 'END'
+int main(void)
+{
+  return 0;
+}
+END
 
 cat > subdir/Makefile.am << 'END'
 bin_PROGRAMS = foo
 foo_SOURCES = foo.c
 END
 
-set -e
-
 $ACLOCAL
-$AUTOMAKE --add-missing
 $AUTOCONF
-grep config/depcomp Makefile.in
+$AUTOMAKE --add-missing
+
+./configure
+
+$MAKE check
+$MAKE distcheck
+
+:

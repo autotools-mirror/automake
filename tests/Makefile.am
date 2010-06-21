@@ -161,6 +161,7 @@ compile.test \
 compile2.test \
 compile_f90_c_cxx.test \
 compile_f_c_cxx.test \
+cond-basic.test \
 cond.test \
 cond2.test \
 cond3.test \
@@ -233,7 +234,6 @@ confsub.test \
 confvar.test \
 confvar2.test \
 copy.test \
-ctarget1.test \
 cxx.test \
 cxx2.test \
 cxxansi.test \
