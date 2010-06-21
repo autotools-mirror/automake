@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2006, 2007  Free Software Foundation, Inc.
+# Copyright (C) 2006, 2007, 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ cat >> configure.in << 'END'
 AC_PROG_CC
 AM_PROG_CC_C_O
 AM_PROG_LIBTOOL
-AC_CONFIG_FILES(sub2/Makefile)
+AC_CONFIG_FILES([sub2/Makefile])
 AC_OUTPUT
 END
 
@@ -88,8 +88,9 @@ $AUTOCONF
 $AUTOMAKE -a
 
 for staticshared in --disable-shared "" --disable-static; do
+
   ./configure --enable-dependency-tracking $staticshared
-  $MAKE 
+  $MAKE
 
   # check that dependency tracking works
   if grep 'depmode=none' Makefile; then :
@@ -97,7 +98,11 @@ for staticshared in --disable-shared "" --disable-static; do
     cd sub2
     $sleep
     echo 'choke me' > sub3/ba3.h
-    if $MAKE; then Exit 1; fi
+    # Do not use `$MAKE && Exit 1' here, since even relatively-recent
+    # versions of the BSD shell wrongly exit when the `errexit' shell
+    # flag is active if a command within "&&" fails inside a compound
+    # statement.
+    if $MAKE; then Exit 1; else :; fi
     cd ..
   fi
 
@@ -106,4 +111,7 @@ for staticshared in --disable-shared "" --disable-static; do
   test ! -f sub2/sub3/ba3.d
 
   echo 'extern int x;' > sub2/sub3/ba3.h
+
 done
+
+:
