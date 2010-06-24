@@ -278,6 +278,7 @@ distcom6.test \
 distcom7.test \
 distdir.test \
 distlinks.test \
+distlinksbrk.test \
 distname.test \
 dollar.test \
 dollarvar.test \
@@ -394,6 +395,8 @@ lex2.test \
 lex3.test \
 lex4.test \
 lex5.test \
+lflags.test \
+lflags2.test \
 libexec.test \
 libobj2.test \
 libobj3.test \
@@ -769,6 +772,8 @@ yacc7.test \
 yacc8.test \
 yaccpp.test \
 yaccvpath.test \
+yflags.test \
+yflags2.test \
 $(parallel_tests)
 
 EXTRA_DIST = ChangeLog-old gen-parallel-tests $(TESTS)
