@@ -1,0 +1,78 @@
+#! /bin/sh
+# Copyright (C) 2010 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check that distributed broken symlinks cause `make dist' to fail, and
+# to do so with (mostly) meaningful diagnostic.
+
+. ./defs || Exit 1
+
+set -e
+
+# We need, for our broken symlinks, names that make it hard to get false
+# positives when grepping make output to look for them.
+lnk_base=BrknSymlnk
+lnk1=${lnk_base}__001
+lnk2=${lnk_base}__002
+lnka=${lnk_base}__aaa
+lnkb=${lnk_base}__bbb
+
+ln -s nonesuch $lnk1 || {
+  echo "$me: cannot create broken symlinks" >&2
+  Exit 77
+}
+
+ln -s "`pwd`/nonesuch" $lnk2
+
+ln -s $lnk1 $lnka
+ln -s $lnka $lnkb
+
+# Sanity checks.  Use `test -r', since Solaris Sh doesn't grok `test -e'.
+test ! -r $lnk1
+test ! -r $lnk2
+test ! -r $lnka
+test ! -r $lnkb
+test -h $lnk1
+test -h $lnk2
+test -h $lnka
+test -h $lnkb
+
+cat >>configure.in <<END
+AC_OUTPUT
+END
+
+cat > Makefile.am <<END
+EXTRA_DIST = $lnk1 $lnk2 $lnka $lnkb
+END
+
+ls -l
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
+./configure
+
+# Distribution must fail.
+$MAKE distdir && Exit 1
+
+# Names of distributed broken symlinks should be reported in make output.
+$MAKE -k distdir >out 2>&1 || : # don't trust the exit status of make -k
+cat out
+$FGREP $lnk1 out
+$FGREP $lnk2 out
+$FGREP $lnka out
+$FGREP $lnkb out
+
+:
