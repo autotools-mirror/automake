@@ -70,6 +70,8 @@ uninstall-hook:
 do_subst = sed \
   -e 's,[@]APIVERSION[@],$(APIVERSION),g' \
   -e 's,[@]PACKAGE[@],$(PACKAGE),g' \
+  -e 's,[@]PACKAGE_BUGREPORT[@],$(PACKAGE_BUGREPORT),g' \
+  -e 's,[@]PACKAGE_URL[@],$(PACKAGE_URL),g' \
   -e 's,[@]PATH_SEPARATOR[@],$(PATH_SEPARATOR),g' \
   -e 's,[@]PERL[@],$(PERL),g' \
   -e 's,[@]PERL_THREADS[@],$(PERL_THREADS),g' \
@@ -202,10 +204,10 @@ $(syntax_check_rules): automake aclocal
 maintainer-check: $(syntax_check_rules)
 
 ## This check avoids accidental configure substitutions in the source.
-## There are exactly 6 lines that should be modified.  This works out
-## to 22 lines of diffs.
+## There are exactly 8 lines that should be modified.  This works out
+## to 28 lines of diffs.
 sc_diff_automake_in_automake:
-	@if test `diff $(srcdir)/automake.in automake | wc -l` -ne 22; then \
+	@if test `diff $(srcdir)/automake.in automake | wc -l` -ne 28; then \
 	  echo "found too many diffs between automake.in and automake" 1>&2; \
 	  diff -c $(srcdir)/automake.in automake; \
 	  exit 1; \
