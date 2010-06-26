@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2000, 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 2000, 2001, 2002, 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +20,8 @@
 required=gcc
 . ./defs || Exit 1
 
+set -e
+
 subdirs="foo bar"
 
 for i in $subdirs; do
@@ -37,7 +39,7 @@ echo "SUBDIRS = $subdirs" > Makefile.am
 cat >configure.in <<EOF
 AC_INIT(`echo $subdirs | sed 's|\([a-z][a-z]*\).*|\1/\1.c|'`)
 AC_CONFIG_AUX_DIR(.)
-AM_INIT_AUTOMAKE(test_am, 1.0)
+AM_INIT_AUTOMAKE($me, 1.0)
 AC_PROG_CC
 AC_OUTPUT(Makefile `echo $subdirs | sed 's|\([a-z][a-z]*\)|\1/Makefile|g'`)
 EOF
@@ -46,15 +48,11 @@ EOF
 CFLAGS=
 export CFLAGS
 
-touch README NEWS AUTHORS ChangeLog
-
 mkdir build
 
-# We use gcc and not gcc -traditional as the latter fails on some
-# Linux boxes (Red Hat 5.1 in particular).
-$ACLOCAL \
-   && $AUTOCONF \
-   && $AUTOMAKE -a || Exit 1
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE -a
 
 # Regression test for bug where `.c.o:' is followed by blank line.
 (while read line; do
@@ -62,11 +60,15 @@ $ACLOCAL \
        read next
        if test -z "$next"; then
 	  Exit 1
+       else
+          : # for shells with broken 'set -e'
        fi
        break
     fi
  done) < foo/Makefile.in || Exit 1
 
-cd build \
-   && ../configure \
-   && $MAKE distcheck || Exit 1
+cd build
+../configure
+$MAKE distcheck
+
+:

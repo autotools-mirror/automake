@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002  Free Software Foundation, Inc.
+# Copyright (C) 2002, 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,6 +26,8 @@
 required=gcc
 . ./defs || Exit 1
 
+set -e
+
 mkdir foo
 
 cat >foo/main.c <<'EOF'
@@ -38,30 +40,24 @@ bin_PROGRAMS = bar
 bar_SOURCES = foo/main.c
 EOF
 
-cat >configure.in <<'EOF'
-AC_INIT(foo/main.c)
-AC_CONFIG_AUX_DIR(.)
-AM_INIT_AUTOMAKE(test_am, 1.0)
+cat >>configure.in <<'EOF'
 AC_PROG_CC
 AM_PROG_CC_C_O
-AC_OUTPUT(Makefile)
+AC_OUTPUT
 EOF
 
-touch README NEWS AUTHORS ChangeLog
-
 mkdir build
-
-set -e
 
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
 cd build
-CC='gcc' ../configure
-$MAKE
+../configure
 
+$MAKE
 test -d foo/.deps
 $MAKE distclean
 test -d foo/.deps && Exit 1
+
 :

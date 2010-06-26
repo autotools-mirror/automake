@@ -26,12 +26,11 @@
 
 . ./defs || Exit 1
 
-cat > configure.in << 'END'
-AC_INIT(foo, 0.1, dev@null)
-AM_INIT_AUTOMAKE($PACKAGE, $VERSION)
+set -e
+
+cat >> configure.in << 'END'
 AC_PROG_CC
-AM_CONDITIONAL(FOOTEST, false)
-AC_CONFIG_FILES(Makefile)
+AM_CONDITIONAL([FOOTEST], [false])
 AC_OUTPUT
 END
 
@@ -45,8 +44,10 @@ endif
 bin_PROGRAMS = foo
 END
 
-$ACLOCAL || Exit 1
-$AUTOMAKE || Exit 1
+$ACLOCAL
+$AUTOMAKE
 
-grep '@foo_DEPENDENCIES = zardoz' Makefile.in || Exit 1
-grep '@foo_DEPENDENCIES = maude' Makefile.in || Exit 1
+grep '^@FOOTEST_TRUE@foo_DEPENDENCIES *= *zardoz$' Makefile.in
+grep '^@FOOTEST_FALSE@foo_DEPENDENCIES *= *maude$' Makefile.in
+
+:
