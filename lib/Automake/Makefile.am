@@ -1,7 +1,7 @@
 ## Process this file with automake to create Makefile.in
 
-# Copyright (C) 2001, 2002, 2003, 2004, 2008, 2009  Free Software Foundation,
-# Inc.
+# Copyright (C) 2001, 2002, 2003, 2004, 2008, 2009, 2010 Free Software
+# Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -52,6 +52,7 @@ CLEANFILES = $(nodist_perllib_DATA)
 do_subst = in=`echo $@ | sed 's/\.[^.]*$$//'`; sed \
   -e 's,[@]APIVERSION[@],$(APIVERSION),g' \
   -e 's,[@]PACKAGE[@],$(PACKAGE),g' \
+  -e 's,[@]PACKAGE_BUGREPORT[@],$(PACKAGE_BUGREPORT),g' \
   -e 's,[@]PERL[@],$(PERL),g' \
   -e 's,[@]PERL_THREADS[@],$(PERL_THREADS),g' \
   -e 's,[@]SHELL[@],$(SHELL),g' \
