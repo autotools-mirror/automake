@@ -19,13 +19,13 @@
 required='libtoolize g++'
 . ./defs || Exit 1
 
-cat > configure.in << 'END'
-AC_INIT(x, 0, x)
-AM_INIT_AUTOMAKE([subdir-objects])
+set -e
 
+cat > configure.in << END
+AC_INIT([$me], [1.0])
+AM_INIT_AUTOMAKE([subdir-objects])
 AC_PROG_CXX
 AM_PROG_LIBTOOL
-
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 END
@@ -33,7 +33,7 @@ END
 cat > Makefile.am << 'END'
 noinst_LTLIBRARIES = libfoo.la
 libfoo_la_SOURCES = src/foo.cc .//src/bar.cc  # the `.//' is meant.
-
+.PHONY: print
 print:
 	@echo BEG1: "$(LTCXXCOMPILE)" :1END
 	@echo BEG2: "$(CXXLINK)" :2END
@@ -55,7 +55,6 @@ int doit2 (void)
 }
 END
 
-set -e
 
 libtoolize --force
 $ACLOCAL
@@ -65,17 +64,19 @@ $AUTOMAKE -a
 # Skip this test on configure errors (e.g., broken C++ compilers).
 ./configure || Exit 77
 
-# opportunistically check that --tag=CXX is used when supported
-if test -n "`./libtool --help | grep tag=TAG`"; then
-  $MAKE print >stdout
+# Opportunistically check that --tag=CXX is used when supported.
+if ./libtool --help | grep tag=TAG; then
+  $MAKE print >stdout || { cat stdout; Exit 1; }
   cat stdout
   grep 'BEG1: .*--tag=CXX.*--mode=compile.* :1END' stdout
   grep 'BEG2: .*--tag=CXX.*--mode=link.* :2END' stdout
 fi
 
 $MAKE
-$MAKE distcheck 2>&1 | tee out
+$MAKE distcheck >output 2>&1 || { cat output; Exit 1; }
+cat output
 # GNU Make used to complain that the Makefile contained two rules
 # for `src/.dirstamp' and `.//src/.dirstamp'.
-grep 'overriding commands' out && Exit 1
+grep 'overriding commands' output && Exit 1
+
 :
