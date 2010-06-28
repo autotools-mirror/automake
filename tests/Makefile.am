@@ -118,6 +118,9 @@ canon2.test \
 canon3.test \
 canon4.test \
 canon5.test \
+canon6.test \
+canon7.test \
+canon8.test \
 canon-name.test \
 ccnoco.test \
 ccnoco2.test \

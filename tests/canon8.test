@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1999, 2001, 2002, 2003, 2010 Free Software Foundation,
+# Copyright (C) 1996, 1997, 2001, 2002, 2010 Free Software Foundation,
 # Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure that we allow variable names starting in
-# non-letters.  Whatever that might mean.
+# Check that canonicalization does not transliterate the `@' charactrer.
 
 . ./defs || Exit 1
 
@@ -26,36 +25,16 @@ cat >> configure.in << 'END'
 AC_PROG_CC
 END
 
+cat > Makefile.am << 'END'
+bin_PROGRAMS = foob@rquux
+END
+
 $ACLOCAL
-
-cat > Makefile.am << 'END'
-bin_PROGRAMS = 123test
-123test_SOURCES = 123.c
-END
-
 $AUTOMAKE
 
-cat > Makefile.am << 'END'
-bin_PROGRAMS = _foo
-_foo_SOURCES = foo.c
-END
-
-$AUTOMAKE
-
-cat > Makefile.am << 'END'
-bin_PROGRAMS = ,foo
-,foo_SOURCES = foo.c
-END
-
-AUTOMAKE_fails
-grep 'Makefile\.am:2:.* bad .*variable.*,foo_SOURCES' stderr
-grep 'Makefile\.am:2:.* use .*_foo_SOURCES' stderr
-
-cat > Makefile.am << 'END'
-bin_PROGRAMS = ,foo
-_foo_SOURCES = foo.c
-END
-
-$AUTOMAKE -Wno-portability
+# The first grep is here mostly for debugging.
+grep foob.rquux Makefile.in
+grep foob@rquux Makefile.in
+grep 'foob[^@]rquux' Makefile.in && Exit 1
 
 :
