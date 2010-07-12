@@ -42,9 +42,6 @@ $(srcdir)/foo.1:
 	$(HELP2MAN) --output=$@ $(srcdir)/foo
 bar.1:
 	$(HELP2MAN) --output=$(srcdir)/bar.1 $(srcdir)/bar
-
-## It is a bug that we need to list $(srcdir)/bar.1 explicitly here.
-MAINTAINERCLEANFILES = $(dist_man_MANS) $(srcdir)/bar.1
 END
 
 cat >>configure.in <<'END'
@@ -62,26 +59,38 @@ while test $# -gt 0; do
   shift
 done
 END
-
 cp foo bar
+chmod +x foo bar
 
-cat > help2man <<'END'
+mkdir bin
+cat > bin/help2man <<'END'
 #! /bin/sh
 # fake help2man script that lets `missing' think it is not installed
 exit 127
 END
+chmod +x bin/help2man
+PATH=`pwd`/bin$PATH_SEPARATOR$PATH
 
-chmod +x foo bar help2man
-save_PATH=$PATH
-PATH=`pwd`$PATH_SEPARATOR$PATH
+grep_error_messages()
+{
+  grep ' man pages contain.*missing help2man.* replacement text' stderr \
+   && grep 'install help2man' stderr \
+   && grep 'regenerate the man pages' stderr \
+   || Exit 1
+}
 
 $ACLOCAL
 $AUTOMAKE
 $AUTOCONF
+
 ./configure
 $MAKE
-$MAKE dist && Exit 1
-$MAKE distcheck && Exit 1
+$MAKE dist 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+grep_error_messages
+$MAKE distcheck 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+grep_error_messages
 $MAKE distclean
 
 mkdir build
@@ -90,20 +99,9 @@ cd build
 $MAKE
 $MAKE dist 2>stderr && { cat stderr >&2; Exit 1; }
 cat stderr >&2
-grep 'install help2man' stderr
+grep_error_messages
 $MAKE distcheck 2>stderr && { cat stderr >&2; Exit 1; }
 cat stderr >&2
-grep 'install help2man' stderr
+grep_error_messages
 
-rm -f ../help2man
-PATH=$save_PATH
-export PATH
-
-# If help2man is installed, then ensure that the recommendation works.
-if (help2man --version) >/dev/null 2>&1; then
-  $MAKE maintainer-clean
-  ../configure
-  $MAKE
-  $MAKE distcheck
-fi
 :
