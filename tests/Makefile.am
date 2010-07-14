@@ -207,11 +207,13 @@ cond44.test \
 cond45.test \
 condd.test \
 condhook.test \
+condhook2.test \
 condinc.test \
 condinc2.test \
 condlib.test \
 condman.test \
 condman2.test \
+condman3.test \
 configure.test \
 confdeps.test \
 conff.test \
