@@ -69,6 +69,7 @@ acsilent.test \
 acsubst.test \
 acsubst2.test \
 all.test \
+all2.test \
 alloca.test \
 alloca2.test \
 alpha.test \
