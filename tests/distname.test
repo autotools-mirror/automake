@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001, 2002, 2004  Free Software Foundation, Inc.
+# Copyright (C) 2001, 2002, 2004, 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,12 +19,12 @@
 
 . ./defs || Exit 1
 
-cat > configure.in << 'END'
-AC_INIT(a.c)
-AM_INIT_AUTOMAKE(nonesuch, 0.23)
+set -e
+
+cat >> configure.in << 'END'
+AC_CONFIG_SRCDIR([a.c])
 AC_PROG_CC
-AM_PROG_CC_C_O
-AC_OUTPUT(Makefile)
+AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
@@ -34,14 +34,15 @@ END
 
 : > a.c
 
-set -e
-
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --include-deps --copy --add-missing
 ./configure
 $MAKE dist
 
-gunzip nonesuch-0.23.tar.gz
-(tar tf nonesuch-0.23.tar | $FGREP './nonesuch-0.23/a.c') && Exit 1
-Exit 0
+gzip -d $me-1.0.tar.gz
+tar tf $me-1.0.tar > stdout || { cat stdout; Exit 1; }
+cat stdout
+$FGREP ./$me-1.0/a.c stdout && Exit 1
+
+:
