@@ -1,12 +1,12 @@
 # AM_COND_IF                                            -*- Autoconf -*-
 
-# Copyright (C) 2008 Free Software Foundation, Inc.
+# Copyright (C) 2008, 2010 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 1
+# serial 2
 
 # _AM_COND_IF
 # _AM_COND_ELSE
@@ -27,8 +27,8 @@ AC_DEFUN([AM_COND_IF],
 [m4_ifndef([_AM_COND_VALUE_$1],
 	   [m4_fatal([$0: no such condition "$1"])])dnl
 _AM_COND_IF([$1])dnl
-if _AM_COND_VALUE_$1; then
-  m4_default([$2], [:])
+if _AM_COND_VALUE_$1; then :
+  m4_n([$2])[]dnl
 m4_ifval([$3],
 [_AM_COND_ELSE([$1])dnl
 else
