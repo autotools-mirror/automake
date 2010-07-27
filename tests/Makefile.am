@@ -378,6 +378,7 @@ include.test \
 include2.test \
 info.test \
 init.test \
+init2.test \
 insh2.test \
 install2.test \
 installdir.test \
