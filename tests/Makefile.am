@@ -88,6 +88,7 @@ ansi7.test \
 ansi8.test \
 ansi9.test \
 ansi10.test \
+ar-lib.test \
 ar.test \
 ar2.test \
 asm.test \
