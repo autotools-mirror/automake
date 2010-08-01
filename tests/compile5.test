@@ -1,0 +1,81 @@
+#! /bin/sh
+# Copyright (C) 2010 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Make sure the file name translation in the `compile' script works
+# correctly
+
+. ./defs || Exit 1
+
+set -e
+
+cp "$testsrcdir/../lib/compile" .
+
+# Use a dummy cl, since cl isn't readily available on all systems
+cat >cl <<'END'
+#! /bin/sh
+echo "$@"
+END
+
+chmod +x ./cl
+
+cat >>configure.in << 'END'
+AC_CANONICAL_HOST
+AC_CONFIG_FILES([check_host], [chmod +x check_host])
+AC_OUTPUT
+END
+
+: >Makefile.am
+
+cat >check_host.in << 'END'
+#! /bin/sh
+case @host_os@ in
+  mingw*)
+    ;;
+  *)
+    exit 77
+    ;;
+esac
+case @build_os@ in
+  mingw* | cygwin*)
+    ;;
+  *)
+    winepath -w / || exit 77
+    ;;
+esac
+END
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE -a
+./configure
+./check_host
+
+pwd=`pwd`
+
+# Check if "compile cl" transforms absolute file names to
+# host format (e.g /somewhere -> c:/msys/1.0/somewhere).
+
+res=`./compile ./cl -L"$pwd" | sed -e 's/-link -LIBPATH://'`
+
+case $res in
+  ?:[\\/]*)
+    ;;
+  *)
+    Exit 1
+    ;;
+esac
+
+:
