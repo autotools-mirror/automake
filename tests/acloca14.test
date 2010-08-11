@@ -29,6 +29,7 @@ END
 
 echo 'm4_include([a.m4])' > acinclude.m4
 echo 'm4_include([b.m4])' > a.m4
+
 cat >b.m4 <<EOF
 m4_include([c.m4])
 AC_DEFUN([AM_PROG_LIBTOOL],
@@ -38,6 +39,7 @@ AC_REQUIRE([SOMETHING_ELSE])dnl
 
 AC_DEFUN([SOMETHING])
 EOF
+
 echo 'm4_include([d.m4])' > c.m4
 echo 'AC_DEFUN([SOMETHING_ELSE])' >d.m4
 
@@ -88,26 +90,32 @@ $sleep
 cat >>c.m4 <<\EOF
 AC_DEFUN([FOO], [ANOTHER_MACRO])
 EOF
+
 $MAKE
+
 # Because c.m4 has changed, aclocal.m4 must have been rebuilt.
 test `ls -1t aclocal.m4 stamp | sed 1q` = aclocal.m4
 # However, since FOO is not used, f.m4 should not be included
 # and the contents of aclocal.m4 should remain the same
-cmp aclocal.m4 stamp
-
+diff aclocal.m4 stamp
 
 # If FOO where to be used, that would be another story, of course.
 cat >>configure.in <<EOF
 FOO
 EOF
+
 cp aclocal.m4 stamp
 $sleep
+
 $MAKE
-grep 'defs/f.m4' aclocal.m4
+
+$FGREP defs/f.m4 aclocal.m4
 $MAKE testdist2
 
 # Make sure aclocal diagnose missing included files with correct `file:line:'.
 rm -f b.m4
 $ACLOCAL 2>stderr && { cat stderr >&2; Exit 1; }
 cat stderr >&2
-grep 'a.m4:1:.*b.m4.*does not exist' stderr
+grep 'a\.m4:1: .*b\.m4.*does not exist' stderr
+
+:

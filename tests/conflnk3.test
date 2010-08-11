@@ -23,6 +23,7 @@ set -e
 
 cat > Makefile.am << 'END'
 SUBDIRS = sdir
+.PHONY: test
 test: distdir
 	test ! -r $(distdir)/sdir/dest3
 	test ! -r $(distdir)/sdir/dest2
@@ -41,16 +42,16 @@ mkdir sdir
 : > sdir/src3
 
 cat >>configure.in << 'EOF'
-AC_CONFIG_FILES(sdir/Makefile)
+AC_CONFIG_FILES([sdir/Makefile])
 my_src_dir=sdir
 my_dest=dest
-AC_CONFIG_LINKS(sdir/dest2:src2 sdir/dest3:$my_src_dir/src3)
-AC_CONFIG_LINKS($my_dest:src)
+AC_CONFIG_LINKS([sdir/dest2:src2 sdir/dest3:$my_src_dir/src3])
+AC_CONFIG_LINKS([$my_dest:src])
 # the following is a link whose source is itself a link
-AC_CONFIG_LINKS(dest4:sdir/dest2)
+AC_CONFIG_LINKS([dest4:sdir/dest2])
 # Some package prefer to compute links.
 cmplink='dest5:src';
-AC_CONFIG_LINKS($cmplink)
+AC_CONFIG_LINKS([$cmplink])
 AC_OUTPUT
 EOF
 
@@ -79,9 +80,9 @@ test -r dest5 # ditto
 rm -f dest dest5
 test ! -r dest4
 
-## Cannot do the following, because at the time of writing Autoconf
-## (2.59) does not support AC_CONFIG_LINKS source in the build tree.
-# mkdir build
-# cd build
-# ../configure
-# $MAKE test
+mkdir build
+cd build
+../configure
+$MAKE test
+
+:

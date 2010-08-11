@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1999, 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 1999, 2001, 2002, 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,29 +15,49 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test for bug in PR 9.
+# "make dist" incorrect when AC_CONFIG_AUX_DIR is present.
+#
+# == Report ==
+# When AC_CONFIG_AUX_DIR is set (in my case to `support'), make dist
+# no longer automatically includes config.guess, config.sub, install-sh,
+# ltconfig, ltmain.sh, mdate-sh, missing, and mkinstalldirs.  In fact,
+# the entire `support/' directory is omitted.
 
 required=gzip
 . ./defs || Exit 1
 
-cat > configure.in << 'END'
-AC_INIT(Makefile.am)
-AC_CONFIG_AUX_DIR(support)
-AM_INIT_AUTOMAKE(pr9, 0)
-AC_OUTPUT(Makefile)
+set -e
+
+cat > configure.in << END
+AC_INIT([$me], [1.0])
+AC_CONFIG_AUX_DIR([support])
+AM_INIT_AUTOMAKE
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
 END
 
 : > Makefile.am
 
 mkdir support
 
-$ACLOCAL || Exit 1
+$ACLOCAL
 
-$AUTOCONF || Exit 1
-$AUTOMAKE -a -c || Exit 1
-./configure || Exit 1
-$MAKE || Exit 1
-$MAKE distcheck || Exit 1
+$AUTOCONF
+$AUTOMAKE -a -c
+./configure
+$MAKE
+$MAKE distcheck
 
-gunzip pr9-0.tar.gz || Exit 1
+distdir=$me-1.0
 
-tar tf pr9-0.tar | $FGREP support
+gzip -d $distdir.tar.gz
+
+tar tf $distdir.tar | $FGREP support
+
+tar xf $distdir.tar
+ls -l . $distdir # for debugging
+test -d $distdir/support
+ls -l $distdir/support # for debugging
+test -f $distdir/support/install-sh
+
+:
