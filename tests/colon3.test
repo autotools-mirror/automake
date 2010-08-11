@@ -1,6 +1,6 @@
 #! /bin/sh
-# Copyright (C) 1996, 1998, 2000, 2001, 2002, 2003
-#   Free Software Foundation, Inc.
+# Copyright (C) 1996, 1998, 2000, 2001, 2002, 2003, 2010 Free Software
+# Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,10 +22,11 @@
 
 set -e
 
-cat > configure.in << 'END'
-AC_INIT
-AM_INIT_AUTOMAKE(nonesuch, nonesuch)
-AC_OUTPUT(Makefile:zardoz.in:two.in:three.in)
+cat > configure.in <<END
+AC_INIT([$me], [1.0])
+AM_INIT_AUTOMAKE
+AC_CONFIG_FILES([Makefile:zardoz.in:two.in:three.in])
+AC_OUTPUT
 END
 
 : > zardoz.am
@@ -35,21 +36,26 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-# We actually check several things here.
 # Automake should have created zardoz.in.
 test -f zardoz.in
 
 # The generated file should refer to zardoz.in and zardoz.am, but
 # never just "zardoz".
-echo Grep1
-grep zardoz zardoz.in | $FGREP -v 'zardoz.in' | $FGREP -v 'zardoz.am' > O || :
-# We cat the output file so we see in when verbose.
-cat O
-test -z "`cat O`"
+sed -e 's|zardoz\.am|zrdz.am|g' \
+    -e 's|zardoz\.in|zrdz.in|g' \
+  <zardoz.in | $FGREP 'zardoz' && Exit 1
 
+# FIXME: Do something like this after planned enahncements to tests/defs.
+# FIXME: Or even do proper functional testing.
+## Also, Makefile should depend on two.in and three.in.
+# extract_makefile_deps Makefile zardoz.in > deps
+#$FGREP ' $(srcdir)/two.in ' deps
+#$FGREP ' $(srcdir)/three.in ' deps
+#
+# FIXME: for the moment, we content ourselves with these inferior tests.
 # Makefile should depend on two.in.
-echo Grep2
 grep '^Makefile:.* \$(srcdir)/two.in' zardoz.in
 # Likewise three.in.
-echo Grep3
 grep '^Makefile:.* \$(srcdir)/three.in' zardoz.in
+
+:

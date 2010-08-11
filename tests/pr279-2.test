@@ -15,15 +15,22 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Another test related to PR 279.
+# Multiple DEPENDENCIES on conditionals.
+# Please keep this in sync with sister test pr279.test.
+#
+# == Report ==
+# When defining xxx_LDADD and xxx_DEPENDENCIES variables where the
+# xxx_LDADD one contains values set in conditionals, automake will
+# fail with messages like:
+#       foo_DEPENDENCIES was already defined in condition TRUE, ...
 
 . ./defs || Exit 1
 
-cat > configure.in << 'END'
-AC_INIT(foo, 0.1, dev@null)
-AM_INIT_AUTOMAKE($PACKAGE, $VERSION)
+set -e
+
+cat >> configure.in << 'END'
 AC_PROG_CC
-AM_CONDITIONAL(FOOTEST, false)
-AC_CONFIG_FILES(Makefile)
+AM_CONDITIONAL([FOOTEST], [false])
 AC_OUTPUT
 END
 
@@ -37,8 +44,10 @@ endif
 bin_PROGRAMS = foo
 END
 
-$ACLOCAL || Exit 1
-$AUTOMAKE || Exit 1
+$ACLOCAL
+$AUTOMAKE
 
-grep '@foo_DEPENDENCIES = zardoz' Makefile.in || Exit 1
-grep '@foo_DEPENDENCIES = maude' Makefile.in || Exit 1
+grep '^@FOOTEST_TRUE@foo_DEPENDENCIES *= *zardoz$' Makefile.in
+grep '^@FOOTEST_FALSE@foo_DEPENDENCIES *= *maude$' Makefile.in
+
+:
