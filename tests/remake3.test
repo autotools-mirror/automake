@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 2001, 2002, 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,14 +14,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Make sure remaking rules work when there is no subdir Makefile.
+# Weak "grepping" test trying to ensure that remake rules work for files
+# in a subdirectory even when there is no Makefile for that subdirectory.
+# See also sister functional test `remake3a.test'.
 
 . ./defs || Exit 1
 
-cat > configure.in << 'END'
-AC_INIT
-AM_INIT_AUTOMAKE(nonesuch, nonesuch)
-AC_OUTPUT(Makefile sub/foo)
+set -e
+
+cat >> configure.in << 'END'
+AC_CONFIG_FILES([sub/foo])
+AC_OUTPUT
 END
 
 : > Makefile.am
@@ -29,7 +32,9 @@ END
 mkdir sub
 : > sub/foo.in
 
-$ACLOCAL || Exit 1
-$AUTOMAKE || Exit 1
+$ACLOCAL
+$AUTOMAKE
 
 grep '^sub/foo' Makefile.in
+
+:
