@@ -106,6 +106,7 @@ section entitled ``GNU Free Documentation License.''
 * Directories::                 Declaring subdirectories
 * Programs::                    Building programs and libraries
 * Other Objects::               Other derived objects
+* Internationalization::        Declaring translatable message catalogs
 * Other GNU Tools::             Other GNU Tools
 * Documentation::               Building documentation
 * Install::                     What gets installed
@@ -277,6 +278,32 @@ Other Derived Objects
 Built Sources
 
 * Built Sources Example::       Several ways to handle built sources.
+
+Internationalization
+
+* POT Files::                   Declaring a POT file
+* Parametrizing xgettext::      Declaring how a POT file gets created
+* Message catalog translations::Declaring the translations
+* Message catalog installation::Declaring how message catalogs get installed
+* Other POT files details::     Rarely used settings for POT files
+
+Parametrizing xgettext
+
+* A POT file's _SOURCES::            Declaring the source files.
+* A POT file's _COPYRIGHT_HOLDER::   The message catalogs' copyright holder
+* A POT file's _MSGID_BUGS_ADDRESS:: Allowing translators to report bugs
+* Additional xgettext options::      Fine tuning of xgettext
+* Multiple xgettext invocations::    Advanced uses of xgettext
+
+Message catalog installation
+
+* A POT file's _CATALOGFORMAT::      Formats of compiled message catalogs
+* A POT file's _LOCALE_CATEGORIES::  Using different locale categories
+
+Other POT files details
+
+* A POT file's _USE_MSGCTXT::        Declaring whether msgctxt is used
+* A POT file's _MSGMERGE_OPTIONS::   Specifying options for msgmerge
 
 Other GNU Tools
 
@@ -3866,6 +3893,19 @@ environment, or use the @option{--with-lispdir} option to
 @command{configure} to explicitly set the correct path (if you're sure
 you have an @command{emacs} that supports Emacs Lisp).
 
+@item AM_POT_TOOLS
+@acindex AM_POT_TOOLS
+
+The @code{AM_POT_TOOLS} macro performs tests for the @code{POTS} primary.
+See @pxref{Programming Languages, , Programming Languages, gettext,
+GNU gettext tools} for a list of programming languages that support
+localization through PO files.
+
+The @code{AM_POT_TOOLS} macro determines whether internationalization
+should be used.  If so, it sets the @code{USE_NLS} variable to @samp{yes},
+otherwise to @samp{no}.  It also determines the right values for Makefile
+variables used by the Makefile rules for the POT and PO files.
+
 @item AM_PROG_AS
 @acindex AM_PROG_AS
 @vindex CCAS
@@ -4034,6 +4074,11 @@ required, and there should be no need to invoke them manually.
 This macro is used to discover how the user's @command{make} handles
 @code{include} statements.  This macro is automatically invoked when
 needed; there should be no need to invoke it manually.
+
+@item AM_NLS
+This macro determines whether internationalization should be used.  If
+so, it sets the @code{USE_NLS} variable to @samp{yes}, otherwise to
+@samp{no}.
 
 @item AM_PROG_INSTALL_STRIP
 This is used to find a version of @code{install} that can be used to
@@ -7355,6 +7400,421 @@ an Automake rule by mistake.
 
 Building files from @file{./configure} is not always possible, neither
 is converting @file{.h} files into @file{.c} files.
+
+
+@node Internationalization
+@chapter Internationalization
+
+An internationalized program is a program that can communicate with the
+user in his native language, provided that some translation work has been
+done.  An internationalized program can be localized to a certain
+language by translating the messages by which the program communicates
+with the user.  These message are grouped in files called ``message
+catalogs''.
+
+The process of localization consists of three steps:
+
+@enumerate
+@item
+The developers send a file with English messages and (optionally)
+some translation hints for the translators.
+@item
+The translators translate these files to their respective language.
+@item
+The translators send back the translated message catalogs, and the
+developers integrate them in the package.
+@end enumerate
+
+Automake supports the message catalog format of GNU Gettext
+(@pxref{Top, , Introduction, gettext, GNU gettext tools}).  When the GNU
+Gettext tools are in use:
+
+@itemize
+@item
+The file that contains the English messages and translation hints is
+called a POT file (Portable Object Template) and usually named
+@code{@var{domain}.pot}.  The @var{domain} is a identifier for the
+translation domain.  Different packages must use different @var{domain}s.
+Therefore, usually, the @var{domain} is the same as the package name.
+
+@item
+The file that contains the translation produced by a translation team
+is called a PO file (Portable Object) and usually named
+@code{@var{domain}-@var{ll}.po} or
+@code{@var{domain}-@var{ll}_@var{CC}.po}.  Here @var{ll} is the
+language code identifier according to ISO 639, and the optional @var{CC}
+is the country code identifier according to ISO 3166.  The optional
+@var{CC} is only needed to distinguish different dialects of the same
+language, such as @code{pt_BR} (Brazilian Portuguese), which is slightly
+different from @code{pt} (Portuguese).
+@end itemize
+
+@menu
+* POT Files::                   Declaring a POT file
+* Parametrizing xgettext::      Declaring how a POT file gets created
+* Message catalog translations::Declaring the translations
+* Message catalog installation::Declaring how message catalogs get installed
+* Other POT files details::     Rarely used settings for POT files
+@end menu
+
+@node POT Files
+@section POT Files
+
+In Automake, a message catalog template (POT file) is a primary.  The
+Makefile rules generated by Automake also handle all the PO files that
+belong to the POT file.
+
+For execution, the PO files get compiled to ``compiled message
+catalogs''.  These a usally @code{.mo} files (MO = Machine Object).
+They get installed in an appropriate subdirectory of @code{$(localedir)}.
+
+The declaration of an installable message catalog domain therefore looks
+like this:
+
+@smallexample
+locale_POTS = po/maude.pot
+@end smallexample
+
+This declaration causes Automake to emit Makefile rules that create
+the @file{po/maude.pot} file from some of the sources, and that manage
+translated message catalogs @file{po/maude-@var{ll}_@var{CC}.po} in the
+same directory.
+
+@acindex AM_POT_TOOLS
+When you use the @code{POTS} primary, you need to invoke
+@code{AM_POT_TOOLS} directly or indirectly from @file{configure.ac}.
+
+@node Parametrizing xgettext
+@section Parametrizing xgettext
+
+The POT file gets created through an invocation of the @code{xgettext}
+program
+(@pxref{xgettext Invocation, , xgettext, gettext, GNU gettext tools}).
+
+@menu
+* A POT file's _SOURCES::            Declaring the source files.
+* A POT file's _COPYRIGHT_HOLDER::   The message catalogs' copyright holder
+* A POT file's _MSGID_BUGS_ADDRESS:: Allowing translators to report bugs
+* Additional xgettext options::      Fine tuning of xgettext
+* Multiple xgettext invocations::    Advanced uses of xgettext
+@end menu
+
+@node A POT file's _SOURCES
+@subsection A POT file's _SOURCES
+
+@code{xgettext} scans a set of source files.  The default set of sources
+is the union of all _SOURCES variables in the same @code{Makefile.am},
+except for @code{BUILT_SOURCES}.  You can also specify the set of sources
+explicitly, through a _SOURCES variable and optionally a
+_SOURCES_EXCLUDE variable.  Both variables may include wildcards.
+
+This example lists the source files explicitly:
+
+@smallexample
+locale_POTS = po/maude.pot
+po_maude_pot_SOURCES = src/maude.c src/util.c
+@end smallexample
+
+This example uses wildcards.  @code{**} stands for recursion across all
+subdirectories.  But note that only files known to Automake will be
+selected.  If you have other, unrelated files in the file system, they
+will not be selected, even if they match the wildcard.
+
+@smallexample
+locale_POTS = po/maude.pot
+po_maude_pot_SOURCES = src/**/*.c
+po_maude_pot_SOURCES_EXCLUDE = src/version.c
+@end smallexample
+
+When a C file is automatically generated by a tool, like @code{flex} or
+@code{bison}, that doesn't introduce translatable strings by itself,
+it is recommended to list in _SOURCES the real source file (ending in
+@file{.l} in the case of @code{flex}, or in @file{.y} in the case of
+@code{bison}), not the generated C file.
+
+@node A POT file's _COPYRIGHT_HOLDER
+@subsection A POT file's _COPYRIGHT_HOLDER
+
+Every POT file needs to carry a copyright notice designating the
+copyright holder, so that the translators know for whom they are doing
+the translation.  The copyright holder is declared like this:
+
+@smallexample
+locale_POTS = po/maude.pot
+po_maude_pot_COPYRIGHT_HOLDER = Yoyodyne, Inc.
+@end smallexample
+
+The value of this variable is the copyright holder that gets inserted
+into the header of the POT file.  Set this to the copyright holder of the
+surrounding package.  (Note that the msgid strings, extracted from the
+package's sources,  belong to the copyright holder of the package.)
+Translators are expected to transfer the copyright for their translations
+to this person or entity, or to disclaim their copyright.  The empty
+string stands for the public domain; in this case the translators are
+expected to disclaim their copyright.
+
+@node A POT file's _MSGID_BUGS_ADDRESS
+@subsection A POT file's _MSGID_BUGS_ADDRESS
+
+It is important that translators can report problems that they find
+in the English messages to be translated.  A bug reporting address can
+be declared like this:
+
+@smallexample
+locale_POTS = po/maude.pot
+po_maude_pot_MSGID_BUGS_ADDRESS = bug-maude@@yoyodyne.com
+@end smallexample
+
+The value of this variable is the email address or URL to which the
+translators shall report bugs in the untranslated strings:
+
+@itemize
+@item
+Strings which are not entire sentences, see the maintainer guidelines in
+the GNU gettext documentation,
+@xref{Preparing Strings, , Preparing Translatable Strings, gettext,
+GNU gettext tools}.
+@item
+Strings which use unclear terms or require additional context to be
+understood.
+@item
+Strings which make invalid assumptions about notation of date, time or
+money.
+@item
+Pluralisation problems.
+@item
+Incorrect English spelling.
+@item
+Incorrect formatting.
+@end itemize
+
+It can be your email address, or a mailing list address where translators
+can write to without being subscribed, or the URL of a web page through
+which the translators can contact you.
+
+You don't need to specify the bug reporting address here if you have
+already done so through the third argument of @code{AC_INIT}, see
+@xref{Initializing configure, , Initializing @code{configure}, autoconf,
+The Autoconf Manual}.
+
+@node Additional xgettext options
+@subsection Additional @code{xgettext} options
+
+Additional command-line options for the @code{xgettext} invocation can be
+specified through the _XGETTEXT_OPTIONS variable.  For example:
+
+@smallexample
+locale_POTS = po/maude.pot
+po_maude_pot_XGETTEXT_OPTIONS = \
+  --keyword=_ --flag=_:1:pass-c-format \
+  --keyword=N_ --flag=N_:1:pass-c-format
+@end smallexample
+
+@acindex AM_XGETTEXT_OPTION
+Additional command-line options for the @code{xgettext} invocation can
+also be specified in @file{configure.ac} or in Autoconf macros, through
+the @code{AM_XGETTEXT_OPTION} macro.
+
+@defmac AM_XGETTEXT_OPTION (@var{option})
+
+The @code{AM_XGETTEXT_OPTION} macro registers a command-line option to be
+used in the invocations of @code{xgettext} for POT files.
+
+For example, if you have a source file that defines a function
+@samp{error_at_line} whose fifth argument is a format string, you can use
+@smallexample
+AM_XGETTEXT_OPTION([--flag=error_at_line:5:c-format])
+@end smallexample
+@noindent
+to instruct @code{xgettext} to mark all translatable strings in
+@samp{gettext} invocations that occur as fifth argument to this function
+as @samp{c-format}.
+
+See @pxref{xgettext Invocation, , xgettext, gettext, GNU gettext tools}
+for the list of options that @code{xgettext} accepts.
+@end defmac
+
+@node Multiple xgettext invocations
+@subsection Multiple @code{xgettext} invocations
+
+If you need to construct a POT file from multiple @code{xgettext}
+invocations, for example because your package has source code in
+different programming languages and you need different options for
+each language, the easiest way to achieve this is through intermediate
+POT files that get combined into the final POT file:
+
+@smallexample
+locale_POTS = maude.pot
+noinst_POTS = maude1.pot maude2.pot
+maude_pot_SOURCES = maude1.pot maude2.pot
+maude1_pot_SOURCES = maude.c
+maude2_pot_SOURCES = maude.lisp
+@end smallexample
+
+@node Message catalog translations
+@section Message catalog translations
+
+In the simplest case, you (the developer) receive translations through a
+translation project, such as the Translation Project
+@url{http://translationproject.org/}, the KDE localization project
+@url{http://i18n.kde.org/}, or the GNOME localization project
+@url{http://l10n.gnome.org/}, and include them in your release tarball.
+In this case, you should declare the set of translations in a _LINGUAS
+variable, like this:
+
+@smallexample
+locale_POTS = po/maude.pot
+po_maude_pot_LINGUAS = de fr de_AT nl
+@end smallexample
+
+This variable should contain the list of languages for which a
+translation is present, using the notation @var{ll} or @var{ll}_@var{CC}.
+
+Alternatively, you can also have the translation downloaded from a
+translation project when the package is built.  This has the advantage
+that translations that were complete after the package was released can
+be included.  It has two drawbacks, however:
+
+@itemize
+@item
+No translations can be installed if the build machine does not have a
+connection to the Internet.
+@item
+No translations can be installed if the GNU gettext tools are not
+installed on the build machine.
+@end itemize
+
+To enable this mechanism, specify a _TP_URL variable or a _TP_RSYNC_URI
+variable, or both.  Example:
+
+@smallexample
+locale_POTS = po/maude.pot
+po_maude_pot_TP_URL = http://translationproject.org/latest/
+po_maude_pot_TP_RSYNC_URI = translationproject.org::tp/latest/
+@end smallexample
+
+Currently, only the Translation Project is supported in this way.
+
+@node Message catalog installation
+@section Message catalog installation
+
+Normally, when you want translated message catalogs to be installed, you
+specify the POT file in the @code{locale_POTS} variable.  If you don't
+want them installed (for example, if they are part of a test suite only),
+you specify the POT file in the @code{noinst_POTS} variable.
+
+@menu
+* A POT file's _CATALOGFORMAT::      Formats of compiled message catalogs
+* A POT file's _LOCALE_CATEGORIES::  Using different locale categories
+@end menu
+
+@node A POT file's _CATALOGFORMAT
+@subsection A POT file's _CATALOGFORMAT
+
+Before installation or distribution, message catalogs need to be compiled
+to ``compiled message catalogs''.  The format of these compiled message
+catalogs depends on the programming language or base runtime libraries
+that your package is using.  Several formats are supported:
+
+@table @code
+@item mo
+This is the GNU @code{.mo} format.  It is used for C, C++, and many other
+programming languages.
+@item qm
+This is the message catalog format of the Qt library
+@url{http://qt.nokia.com/}.
+@item properties
+This is the Java @code{.properties} format.  For details, see
+@xref{Java, , Java, gettext, GNU gettext tools}.
+@item class
+This is the Java @code{.class} format.  For details, see
+@xref{Java, , Java, gettext, GNU gettext tools}.
+@item resources.dll
+This is the message catalog format of C#.
+@item msg
+This is the message catalog format of Tcl.
+@end table
+
+For example:
+
+@smallexample
+locale_POTS = po/maude.pot
+po_maude_pot_CATALOGFORMAT = msg
+@end smallexample
+
+If you don't specify this variable, the default is @code{mo}.
+
+@node A POT file's _LOCALE_CATEGORIES
+@subsection A POT file's _LOCALE_CATEGORIES
+
+A locale consists of multiple functional areas called ``locale
+categories''.  The locale category for message output is called
+@code{LC_MESSAGES}, the locale category for date and time formatting is
+called @code{LC_TIME}, and so on.
+(@pxref{Aspects, , Aspects in Native Language Support, gettext,
+GNU gettext tools}).  Message catalogs are usually used only with
+the @code{LC_MESSAGES} locale category, but they can rarely also
+be useful in other categories.  This set of categories can be specified
+through the _LOCALE_CATEGORIES variable.  For example, GNU coreutils uses
+its message catalogs for the @code{LC_MESSAGES} and @code{LC_TIME}
+locale categories:
+
+@smallexample
+po_coreutils_pot_LOCALE_CATEGORIES = LC_MESSAGES LC_TIME
+@end smallexample
+
+This variable allows a coreutils program, when run in an environment
+where the @code{LC_TIME} locale category is bound to a different locale
+than the @code{LC_MESSAGE} locale category, to properly obey the
+@code{LC_TIME} setting.
+
+If not specified, this variable defaults to @code{LC_MESSAGES} only.
+
+@node Other POT files details
+@section Other POT files details
+
+There are two more variables associated with a POT file.
+
+@menu
+* A POT file's _USE_MSGCTXT::        Declaring whether msgctxt is used
+* A POT file's _MSGMERGE_OPTIONS::   Specifying options for msgmerge
+@end menu
+
+@node A POT file's _USE_MSGCTXT
+@subsection A POT file's _USE_MSGCTXT
+
+@smallexample
+locale_POTS = po/maude.pot
+po_maude_pot_USE_MSGCTXT = no
+@end smallexample
+
+This tells whether the POT file contains messages with an @code{msgctxt}
+context.  Possible values are ``yes'' and ``no''.  Set this to yes if the
+package uses functions taking also a message context, like the
+@code{pgettext} function, or if in _XGETTEXT_OPTIONS you define keywords
+with a context argument.  If set to yes, GNU gettext tools older than
+gettext 0.15 will not be considered.  The default is @code{yes}.
+
+@node A POT file's _MSGMERGE_OPTIONS
+@subsection A POT file's _MSGMERGE_OPTIONS
+
+@smallexample
+locale_POTS = po/maude.pot
+po_maude_pot_MSGMERGE_OPTIONS =
+@end smallexample
+
+These options get passed to @code{msgmerge}.
+Useful options are in particular:
+
+@table @code
+@item --previous
+to keep previous msgids of translated messages,
+@item --quiet
+to reduce the verbosity.
+@end table
+
+If this variable contains @code{--previous}, GNU gettext tools older than
+gettext 0.16 will not be considered.  The default is @code{--previous}.
 
 
 @node Other GNU Tools
