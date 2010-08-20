@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2000, 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 2000, 2001, 2002, 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,11 +15,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test for PR 68.
+#
+# == Report ==
+#  If an autoconf substitution variable of the form "*_HEADERS" --
+#  for example "MY_HEADERS" -- is used in an "include_" variable
+#  in conjunction with EXTRA_HEADERS, $(MY_HEADERS) gets included
+#  in the HEADERS variable for *all* generated Makefile.ins in the
+#  project.
 
 . ./defs || Exit 1
 
+set -e
+
 cat >> configure.in << 'END'
-AC_SUBST(MY_HEADERS)
+AC_SUBST([MY_HEADERS])
 AC_PROG_CC
 END
 
@@ -31,8 +40,8 @@ END
 : > joe.c
 : > qq.h
 
-$ACLOCAL || Exit 1
-$AUTOMAKE || Exit 1
+$ACLOCAL
+$AUTOMAKE
 
 grep '[^@]MY_HEADERS' Makefile.in && Exit 1
 Exit 0
