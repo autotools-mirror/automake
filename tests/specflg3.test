@@ -19,12 +19,12 @@
 
 . ./defs || Exit 1
 
-cat > configure.in << 'END'
-AC_INIT
-AM_INIT_AUTOMAKE(test, 0.1)
+set -e
+
+cat >> configure.in << 'END'
 AC_PROG_CC
 AM_PROG_CC_C_O
-AC_OUTPUT(Makefile)
+AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
@@ -35,14 +35,12 @@ END
 
 : > compile
 
-$ACLOCAL || Exit 1
-$AUTOMAKE || Exit 1
+$ACLOCAL
+$AUTOMAKE
 
-$FGREP -e '-o foo-foo' Makefile.in || Exit 1
+$FGREP ' -o foo-foo' Makefile.in
+$FGREP 'foo.o.o' Makefile.in && Exit 1
+$FGREP 'foo.$(OBJEXT).$(OBJEXT)' Makefile.in && Exit 1
+$FGREP '$(foo_CFLAGS)' Makefile.in
 
-$FGREP 'foo.o.o' Makefile.in                       && Exit 1
-$FGREP 'foo.$(OBJEXT).$(OBJEXT)' Makefile.in       && Exit 1
-
-$FGREP '$(foo_CFLAGS)' Makefile.in || Exit 1
-
-Exit 0
+:
