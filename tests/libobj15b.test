@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002, 2008  Free Software Foundation, Inc.
+# Copyright (C) 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,26 +14,30 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# AC_LIBOBJ must allow [] around its argument.
+# Nonexistent source for AC_LIBSOURCE should cause Automake to fail.
 
 . ./defs || Exit 1
 
-cat > configure.in << 'END'
-AC_INIT
-AM_INIT_AUTOMAKE(nonesuch, nonesuch)
+set -e
+
+cat >> configure.in << 'END'
 AC_PROG_CC
 AC_PROG_RANLIB
-AC_LIBOBJ([mountlist])
-AC_OUTPUT(Makefile)
+AC_LIBSOURCE([foobar.c])
+# FIXME: without a call to AC_OUTPUT, Automake does not fail when file(s)
+#        specified in AC_LIBSOURCE call(s) do not exist.  Should we fix
+#        this limitation?  Or is the current behaviour good enough?
+AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
 noinst_LIBRARIES = libtu.a
 libtu_a_SOURCES =
-libtu_a_LIBADD = @LIBOBJS@
+libtu_a_LIBADD = $(LIBOBJS)
 END
 
-: > mountlist.c
+$ACLOCAL
+AUTOMAKE_fails
+grep 'configure\.in:.*required file.*foobar\.c.*' stderr
 
-$ACLOCAL || Exit 1
-$AUTOMAKE || Exit 1
+:

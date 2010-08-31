@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001, 2002, 2003, 2008  Free Software Foundation, Inc.
+# Copyright (C) 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,36 +14,44 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Make sure AC_LIBOBJ and friends work.
+# Test error reporting for AC_CONFIG_LIBOBJ_DIR.
+# See also sister tests `libobj20a.test' and `libobj20c.test' .
 
 . ./defs || Exit 1
 
+set -e
+
 cat >> configure.in << 'END'
+AC_CONFIG_LIBOBJ_DIR([libobj-dir])
 AC_PROG_CC
 AC_PROG_RANLIB
+AC_LIBSOURCE([foobar.c])
+# FIXME: without a call to AC_OUTPUT, Automake does not fail when file(s)
+#        specified in AC_LIBSOURCE call(s) do not exist.  Should we fix
+#        this limitation?  Or is the current behaviour good enough?
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+AUTOMAKE_OPTIONS = subdir-objects
 noinst_LIBRARIES = libtu.a
 libtu_a_SOURCES =
-libtu_a_LIBADD = @LIBOBJS@
+libtu_a_LIBADD = $(LIBOBJS)
 END
-
-: > maude.c
-: > liver.c
 
 $ACLOCAL
 
-set -e
+AUTOMAKE_fails
+grep 'configure\.in:.*required directory.*libobj-dir' stderr
 
-cp configure.in X
-echo 'AC_LIBSOURCE(maude.c)' >> configure.in
-$AUTOMAKE
+mkdir libobj-dir
+: > foobar.c # oops, it should be in libobj-dir...
+AUTOMAKE_fails
+grep 'configure\.in:.*required file.*libobj-dir/foobar.c.*' stderr
 
-# Avoid timestamp-related differences.
-rm -rf autom4te.cache
+rm -f foobar.c
 
-cp X configure.in
-echo 'AC_LIBSOURCES([maude.c, liver.c])' >> configure.in
-$AUTOMAKE
+: > libobj-dir/foobar.c
+$AUTOMAKE # now we should succeed
+
+:

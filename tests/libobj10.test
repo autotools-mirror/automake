@@ -1,5 +1,6 @@
 #! /bin/sh
-# Copyright (C) 1999, 2000, 2001, 2002, 2003  Free Software Foundation, Inc.
+# Copyright (C) 1999, 2000, 2001, 2002, 2003, 2010 Free Software
+# Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,13 +31,22 @@ END
 
 cat > Makefile.am << 'END'
 noinst_LIBRARIES = libfoo.a
-libfoo_a_LIBADD = @LIBOBJS@
+libfoo_a_SOURCES =
+libfoo_a_LIBADD = $(LIBOBJS)
+BUILT_SOURCES = foo.c
+CLEANFILES = foo.c
+foo.c:
+	echo 'extern int dummy;' > $@
 END
 
 $ACLOCAL
-AUTOMAKE_fails
-grep 'Makefile.am:2:.*foo\.c' stderr
-
-echo 'BUILT_SOURCES = foo.c' >> Makefile.am
-
+$AUTOCONF
 $AUTOMAKE
+
+./configure
+
+$MAKE
+ar t libfoo.a # for debugging
+$MAKE distcheck
+
+:

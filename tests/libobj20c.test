@@ -1,6 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1996, 1997, 2001, 2002, 2003, 2010 Free Software
-# Foundation, Inc.
+# Copyright (C) 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,25 +14,40 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Make sure we complain if @LIBOBJS@ is used without being set in
-# configure.in.
+# Test error reporting for AC_CONFIG_LIBOBJ_DIR.
+# See also sister tests `libobj20a.test' and `libobj20b.test' .
 
 . ./defs || Exit 1
 
 set -e
 
 cat >> configure.in << 'END'
+AC_CONFIG_LIBOBJ_DIR([libobj-dir])
+AC_PROG_CC
 AC_PROG_RANLIB
+AC_LIBOBJ([foobar])
 END
 
 cat > Makefile.am << 'END'
+AUTOMAKE_OPTIONS = subdir-objects ## required for our setup to work
 noinst_LIBRARIES = libtu.a
 libtu_a_SOURCES =
-libtu_a_LIBADD = @LIBOBJS@
+libtu_a_LIBADD = $(LIBOBJS)
 END
 
 $ACLOCAL
+
 AUTOMAKE_fails
-grep 'Makefile\.am:3:.*LIBOBJS' stderr
+grep 'configure\.in:.*required directory.*\./libobj-dir' stderr
+
+mkdir libobj-dir
+: > foobar.c # oops, it should be in libobj-dir!
+AUTOMAKE_fails
+grep 'configure\.in:.*required file.*libobj-dir/foobar.c.*' stderr
+
+rm -f foobar.c
+
+: > libobj-dir/foobar.c
+$AUTOMAKE # now we should succeed
 
 :

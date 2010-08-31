@@ -1,5 +1,6 @@
 #! /bin/sh
-# Copyright (C) 1997, 1998, 2000, 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 1997, 1998, 2000, 2001, 2002, 2010 Free Software
+# Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,33 +19,55 @@
 
 . ./defs || Exit 1
 
-cat > configure.in << 'END'
-AC_INIT
-AM_INIT_AUTOMAKE(nonesuch, nonesuch)
+set -e
+
+cat >> configure.in << 'END'
 AC_PROG_CC
 AC_PROG_RANLIB
-AC_REPLACE_FUNCS(basename dirname strsignal)
-AC_OUTPUT(Makefile)
+# `am__dummy_function' is there to ensure that at least one function is
+# replaced, to avoid creating an empty archive which can cause problems
+# with e.g. Solaris ar.
+AC_REPLACE_FUNCS([basename dirname am__dummy_function])
+AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
 noinst_LIBRARIES = libtu.a
 libtu_a_SOURCES =
 libtu_a_LIBADD = @LIBOBJS@
+check-local: test1 test2 test3
+.PHONY: test1 test2 test3
+test1: all
+	$(AR) tv libtu.a
+test2:
+	@echo DIST_COMMON = $(DIST_COMMON)
+	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]basename\.c '
+	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]dirname\.c '
+	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]am__dummy_function\.c '
+test3: distdir
+	test -f $(distdir)/basename.c
+	test -f $(distdir)/dirname.c
+	test -f $(distdir)/am__dummy_function.c
 END
 
-: > basename.c
-: > dirname.c
-: > strsignal.c
+cat > basename.c <<'END'
+extern int dummy1;
+END
+cat > dirname.c <<'END'
+extern int dummy2;
+END
+cat > am__dummy_function.c <<'END'
+extern int dummy3;
+END
 
-$ACLOCAL || Exit 1
-$AUTOMAKE || Exit 1
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
 
-sed -n -e ': again
-  /^DIST_COMMON.*[^\]$/ p
-  /^DIST_COMMON/ {
-     s/^DIST_COMMON//p
-     n
-     s/^/DIST_COMMON/
-     b again
-  }' < Makefile.in | $FGREP dirname.c
+./configure
+
+$MAKE
+$MAKE check
+$MAKE distcheck
+
+:

@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002, 2003  Free Software Foundation, Inc.
+# Copyright (C) 2002, 2003, 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,11 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 # Test if a file can be mentioned in LIBOBJS and explicitly.
 # (See libobj13.test for the LTLIBRARIES check.)
 
 . ./defs || Exit 1
+
 set -e
 
 cat >> configure.in << 'END'
@@ -48,22 +48,30 @@ END
 : > bar.c
 
 $ACLOCAL
-$AUTOMAKE
 
 # This however should be diagnosed, since foo.c and bar.c are in @LIBOBJS@.
-echo 'libfoo_a_SOURCES += foo.c' >> Makefile.am
-echo 'p1_SOURCES += bar.c' >> Makefile.am
+cat >> Makefile.am << 'END'
+libfoo_a_SOURCES += foo.c
+p1_SOURCES += bar.c
+END
+
 AUTOMAKE_fails
-$FGREP foo.c stderr
-$FGREP bar.c stderr
+grep 'foo\.c.*explicitly mentioned' stderr
+grep 'bar\.c.*explicitly mentioned' stderr
 
 # Global `LDADD' can also come into play.
 cat > Makefile.am << 'END'
 noinst_PROGRAMS = a b
 LDADD = @LIBOBJS@
 END
+
 $AUTOMAKE
 grep 'a_DEPENDENCIES.*LIBOBJS' Makefile.in
-echo 'a_SOURCES = foo.c' >> Makefile.am
+
+cat >> Makefile.am << 'END'
+a_SOURCES = foo.c
+END
 AUTOMAKE_fails
-$FGREP foo.c stderr
+grep 'foo\.c.*explicitly mentioned' stderr
+
+:

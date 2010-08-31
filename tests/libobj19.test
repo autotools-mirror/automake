@@ -1,6 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1996, 1997, 2001, 2002, 2003, 2010 Free Software
-# Foundation, Inc.
+# Copyright (C) 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,25 +14,49 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Make sure we complain if @LIBOBJS@ is used without being set in
-# configure.in.
+# Test support for AC_CONFIG_LIBOBJ_DIR.
 
 . ./defs || Exit 1
 
 set -e
 
 cat >> configure.in << 'END'
+AC_CONFIG_LIBOBJ_DIR([libobj-dir])
+AC_PROG_CC
 AC_PROG_RANLIB
+AC_LIBOBJ([foobar])
+AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+AUTOMAKE_OPTIONS = subdir-objects ## required for our setup to work
 noinst_LIBRARIES = libtu.a
 libtu_a_SOURCES =
-libtu_a_LIBADD = @LIBOBJS@
+libtu_a_LIBADD = $(LIBOBJS)
+check-local: distdir
+	ls -l $(srcdir)/* $(builddir)/* $(distdir)/*
+	test -f libtu.a
+	test ! -r $(srcdir)/foobar.c
+	test -f $(srcdir)/libobj-dir/foobar.c
+	test ! -r $(distdir)/foobar.c
+	test -f $(distdir)/libobj-dir/foobar.c
+	$(AR) t libtu.a
+	$(AR) t libtu.a | grep foobar
+END
+
+mkdir libobj-dir
+cat > libobj-dir/foobar.c << 'END'
+extern int dummy;
 END
 
 $ACLOCAL
-AUTOMAKE_fails
-grep 'Makefile\.am:3:.*LIBOBJS' stderr
+$AUTOCONF
+$AUTOMAKE
+
+./configure
+
+$MAKE
+$MAKE check
+$MAKE distcheck
 
 :
