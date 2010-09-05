@@ -1,0 +1,49 @@
+#! /bin/sh
+# Copyright (C) 2010 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check that when the POTS primary is used, the _SOURCES variable must be
+# defined, otherwise a warning occurs.
+
+. ./defs || Exit 1
+
+set -e
+
+cat > Makefile.am << 'END'
+locale_POTS = posub/foo-bar.pot
+END
+
+cat >> configure.in << 'END'
+AM_POT_TOOLS
+AC_OUTPUT
+END
+
+$ACLOCAL
+
+# Check that there is a warning about the missing _SOURCES variable.
+
+AUTOMAKE_fails -Werror
+grep 'posub_foo_bar_pot_SOURCES' stderr
+
+AUTOMAKE_run 0 -Wno-error
+grep 'posub_foo_bar_pot_SOURCES' stderr
+
+cat >> Makefile.am << 'END'
+posub_foo_bar_pot_SOURCES =
+END
+
+# Check that there is no warning any more.
+
+AUTOMAKE_run 0 -Werror

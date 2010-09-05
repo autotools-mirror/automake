@@ -1,0 +1,82 @@
+#! /bin/sh
+# Copyright (C) 2010 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check the download of translations from the Translation Project.
+
+required='gzip'
+. ./defs || Exit 1
+
+set -e
+
+cat > Makefile.am << 'END'
+locale_POTS = clisp.pot
+posub_foo_bar_pot_SOURCES = spvw.c
+clisp_pot_TP_URL = http://translationproject.org/latest/
+EXTRA_DIST = spvw.c
+END
+
+cat >> configure.in << 'END'
+AM_POT_TOOLS
+AC_OUTPUT
+END
+
+cat > spvw.c << 'END'
+#include <stdio.h>
+#include "gettext.h"
+int main ()
+{
+  puts (gettext ("*** - Program stack overflow. RESET"));
+  return 0;
+}
+END
+
+$ACLOCAL
+$AUTOMAKE -a
+$AUTOCONF
+
+for builddir in . sub; do
+  if test $builddir = '.'; then
+    sourcedir='.'
+  else
+    sourcedir='..'
+    mkdir $builddir
+  fi
+  instdir="`pwd`/instdir"
+  cd $builddir
+  LINGUAS="de" $sourcedir/configure --prefix="$instdir"
+  make
+
+  # Check that after "make install", a German translation has been installed.
+  make install
+  test -f "$instdir"/share/locale/de/LC_MESSAGES/clisp.mo
+
+  # Check that after "make dist", the tarball does not include the German
+  # translation.
+  make dist
+  gzip -d -c < pot-download1-1.0.tar.gz | tar tf - > filelist
+  if grep '^pot-download1-1\.0/clisp-de\.po$' filelist >/dev/null; then
+    exit 1
+  fi
+  rm -f filelist
+
+  # Sanity check.
+  make distcheck
+
+  # Clean up.
+  make distclean
+  rm -rf "$instdir"
+  cd $sourcedir
+done

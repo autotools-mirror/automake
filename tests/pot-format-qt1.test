@@ -1,0 +1,244 @@
+#! /bin/sh
+# Copyright (C) 2010 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check the creation of compiled message catalogs in Qt format.
+
+. ./defs || Exit 1
+
+set -e
+
+cat > Makefile.am << 'END'
+pkglocaledir = $(pkgdatadir)/locale
+pkglocale_POTS = posub/foo-bar.pot
+posub_foo_bar_pot_SOURCES = src/main.cc
+posub_foo_bar_pot_XGETTEXT_OPTIONS = \
+  --qt \
+  --keyword=translate:2 \
+    --flag=translate:2:pass-c-format \
+    --flag=translate:2:pass-qt-format \
+  --keyword=_ \
+    --flag=_:1:pass-c-format \
+    --flag=_:1:pass-qt-format
+posub_foo_bar_pot_LINGUAS = de fr
+posub_foo_bar_pot_CATALOGFORMAT = qm
+AM_CPPFLAGS = -DPKGLOCALEDIR=\"$(pkglocaledir)\"
+EXTRA_DIST = src/main.cc
+END
+
+cat >> configure.in << 'END'
+AM_POT_TOOLS
+AC_OUTPUT
+END
+
+mkdir src
+cat > src/main.cc << 'END'
+#include <qapplication.h>
+#include <qmainwindow.h>
+#include <qlabel.h>
+#include <qstring.h>
+#include <qvbox.h>
+#include <qtextcodec.h>
+
+int
+main (int argc, char *argv[])
+{
+  QApplication application (argc, argv);
+  QTranslator *translator = new QTranslator (NULL);
+  translator->load (QString ("foo-bar") + "_" + QTextCodec::locale(),
+                    PKGLOCALEDIR);
+  application.installTranslator (translator);
+#define _(string) application.translate ("", string)
+  QMainWindow *window = new QMainWindow ();
+  window->setCaption ("Hello example");
+  QVBox *panel = new QVBox (window);
+  panel->setSpacing (2);
+  QLabel *label1 = new QLabel (_("Hello, world!"), panel);
+  panel->resize (panel->sizeHint ());
+  window->resize (panel->frameSize ());
+  application.setMainWidget (window);
+  window->show ();
+  return application.exec ();
+}
+END
+
+$ACLOCAL
+$AUTOMAKE -a
+$AUTOCONF
+
+# .po files for _LINGUAS.
+mkdir posub
+cat > posub/foo-bar-de.po << 'END'
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Hello, world!"
+msgstr "Hallo Welt!"
+END
+cat > posub/foo-bar-fr.po << 'END'
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Hello, world!"
+msgstr "Salut, le monde!"
+END
+
+# A .po file not listed among _LINGUAS, and a junk .qm file.
+cat > posub/foo-bar-es.po << 'END'
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Hello, world!"
+msgstr "Adiós, mundo!"
+END
+cat > posub/foo-bar-es.qm << 'END'
+junk
+END
+
+cat > expected << 'END'
+# SOME DESCRIPTIVE TITLE.
+# This file is put in the public domain.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: pot-format-qt1 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/main.cc:21
+msgid "Hello, world!"
+msgstr ""
+END
+
+for builddir in . sub; do
+  for config_options in '' 'LINGUAS="es de"'; do
+    if test $builddir = '.'; then
+      sourcedir='.'
+    else
+      sourcedir='..'
+      mkdir $builddir
+    fi
+    instdir="`pwd`/instdir"
+    cd $builddir
+    env $config_options $sourcedir/configure --prefix="$instdir"
+    make
+
+    # Check that "make install" creates the expected .pot file, .po files
+    # and .qm files.
+    # (They are created under $sourcedir, because the files are distributed.
+    # Cf. the GNU standards, node "Makefile Basics".)
+
+    make install
+
+    test -f $sourcedir/posub/foo-bar.pot
+    test $builddir = '.' || test ! -f posub/foo-bar.pot
+    cat $sourcedir/posub/foo-bar.pot | grep -v 'POT-Creation-Date' | LC_ALL=C tr -d '\r' > actual
+    diff actual $sourcedir/expected
+    rm -f actual
+
+    test -f $sourcedir/posub/foo-bar-de.po
+    test -f $sourcedir/posub/foo-bar-de.qm
+    test -f $sourcedir/posub/foo-bar-fr.po
+    test -f $sourcedir/posub/foo-bar-fr.qm
+    test ! -f $sourcedir/posub/foo-bar-de.mo
+    test ! -f $sourcedir/posub/foo-bar-fr.mo
+
+    if test -z "$config_options"; then
+      # Check that "make install" installed de,po and fr.po but not es.po.
+      test -f "$instdir"/share/pot-format-qt1/locale/foo-bar_de.qm
+      test -f "$instdir"/share/pot-format-qt1/locale/foo-bar_fr.qm
+      test ! -f "$instdir"/share/pot-format-qt1/locale/foo-bar_es.qm
+    else
+      # Check that "make install" installed de.po but not fr.po nor es.po.
+      test -f "$instdir"/share/pot-format-qt1/locale/foo-bar_de.qm
+      test ! -f "$instdir"/share/pot-format-qt1/locale/foo-bar_fr.qm
+      test ! -f "$instdir"/share/pot-format-qt1/locale/foo-bar_es.qm
+    fi
+    test ! -f "$instdir"/share/locale/de/LC_MESSAGES/foo-bar.qm
+    test ! -f "$instdir"/share/locale/fr/LC_MESSAGES/foo-bar.qm
+    test ! -f "$instdir"/share/locale/es/LC_MESSAGES/foo-bar.qm
+    test ! -f "$instdir"/share/locale/de/LC_MESSAGES/foo-bar.mo
+    test ! -f "$instdir"/share/locale/fr/LC_MESSAGES/foo-bar.mo
+    test ! -f "$instdir"/share/locale/es/LC_MESSAGES/foo-bar.mo
+
+    # Check that "make dist" creates the expected .pot file.
+
+    rm -f $sourcedir/posub/foo-bar.pot
+
+    make dist
+
+    test -f $sourcedir/posub/foo-bar.pot
+    test $builddir = '.' || test ! -f posub/foo-bar.pot
+    cat $sourcedir/posub/foo-bar.pot | grep -v 'POT-Creation-Date' | LC_ALL=C tr -d '\r' > actual
+    diff actual $sourcedir/expected
+    rm -f actual
+
+    test -f $sourcedir/posub/foo-bar-de.po
+    test -f $sourcedir/posub/foo-bar-de.qm
+    test -f $sourcedir/posub/foo-bar-fr.po
+    test -f $sourcedir/posub/foo-bar-fr.qm
+    test ! -f $sourcedir/posub/foo-bar-de.mo
+    test ! -f $sourcedir/posub/foo-bar-fr.mo
+
+    # Check that the tarball contains posub/foo-bar-{de,fr}.{po,qm} but not
+    # the others, regardless whether LINGUAS was specified or not.
+    gzip -d -c < pot-format-qt1-1.0.tar.gz | tar tf - > filelist
+    grep '^pot-format-qt1-1\.0/posub/foo-bar-de\.po$' filelist >/dev/null
+    grep '^pot-format-qt1-1\.0/posub/foo-bar-de\.qm$' filelist >/dev/null
+    grep '^pot-format-qt1-1\.0/posub/foo-bar-fr\.po$' filelist >/dev/null
+    grep '^pot-format-qt1-1\.0/posub/foo-bar-fr\.qm$' filelist >/dev/null
+    if grep '^pot-format-qt1-1\.0/posub/foo-bar-es\.po$' filelist >/dev/null; then
+      exit 1
+    fi
+    if grep '^pot-format-qt1-1\.0/posub/foo-bar-es\.qm$' filelist >/dev/null; then
+      exit 1
+    fi
+    if grep '^pot-format-qt1-1\.0/posub/foo-bar-de\.mo$' filelist >/dev/null; then
+      exit 1
+    fi
+    if grep '^pot-format-qt1-1\.0/posub/foo-bar-fr\.mo$' filelist >/dev/null; then
+      exit 1
+    fi
+    if grep '^pot-format-qt1-1\.0/posub/foo-bar-es\.mo$' filelist >/dev/null; then
+      exit 1
+    fi
+    rm -f filelist
+
+    # Sanity check.
+    make distcheck
+
+    # Clean up.
+    make distclean
+    rm -rf "$instdir"
+    cd $sourcedir
+  done
+done

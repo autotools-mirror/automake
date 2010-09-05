@@ -1,0 +1,106 @@
+#! /bin/sh
+# Copyright (C) 2010 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check that additional xgettext options can be specified through the
+# _XGETTEXT_OPTIONS variable.
+
+. ./defs || Exit 1
+
+set -e
+
+cat > Makefile.am << 'END'
+locale_POTS = posub/foo-bar.pot
+posub_foo_bar_pot_SOURCES = src/main.c
+posub_foo_bar_pot_XGETTEXT_OPTIONS = --keyword=_ --flag=_:1:pass-c-format
+EXTRA_DIST = src/main.c
+END
+
+cat >> configure.in << 'END'
+AM_POT_TOOLS
+AC_OUTPUT
+END
+
+mkdir src
+cat > src/main.c << 'END'
+#include <stdio.h>
+#include "gettext.h"
+int main ()
+{
+  printf (_ ("Hello, world.\n"));
+  return 0;
+}
+END
+
+$ACLOCAL
+$AUTOMAKE -a
+$AUTOCONF
+
+cat > expected << 'END'
+# SOME DESCRIPTIVE TITLE.
+# This file is put in the public domain.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: pot-xgettext1 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/main.c:5
+#, c-format
+msgid "Hello, world.\n"
+msgstr ""
+END
+
+for builddir in . sub; do
+  if test $builddir = '.'; then
+    sourcedir='.'
+  else
+    sourcedir='..'
+    mkdir $builddir
+  fi
+  instdir="`pwd`/instdir"
+  cd $builddir
+  $sourcedir/configure --prefix="$instdir"
+  make
+
+  # Check that "make dist" creates the expected .pot file.
+  # (It is created under $sourcedir, because the .pot file is distributed.
+  # Cf. the GNU standards, node "Makefile Basics".)
+
+  make dist
+
+  test -f $sourcedir/posub/foo-bar.pot
+  test $builddir = '.' || test ! -f posub/foo-bar.pot
+  cat $sourcedir/posub/foo-bar.pot | grep -v 'POT-Creation-Date' | LC_ALL=C tr -d '\r' > actual
+  diff actual $sourcedir/expected
+  rm -f actual
+
+  # Sanity check.
+  make distcheck
+
+  # Clean up.
+  make distclean
+  rm -rf "$instdir"
+  cd $sourcedir
+done

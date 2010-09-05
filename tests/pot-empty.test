@@ -1,0 +1,81 @@
+#! /bin/sh
+# Copyright (C) 2010 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check that when the package contains no internationalized strings,
+# no POT file is created (because it would unnecessarily disturb the
+# translators to ask them to translate an empty file).
+
+. ./defs || Exit 1
+
+set -e
+
+cat > Makefile.am << 'END'
+locale_POTS = posub/foo-bar.pot
+posub_foo_bar_pot_SOURCES = src/main.c
+EXTRA_DIST = src/main.c
+END
+
+cat >> configure.in << 'END'
+AM_POT_TOOLS
+AC_OUTPUT
+END
+
+mkdir src
+cat > src/main.c << 'END'
+#include <stdio.h>
+int main ()
+{
+  printf ("Hello, world.\n");
+  return 0;
+}
+END
+
+$ACLOCAL
+$AUTOMAKE -a
+$AUTOCONF
+
+for builddir in . sub; do
+  if test $builddir = '.'; then
+    sourcedir='.'
+  else
+    sourcedir='..'
+    mkdir $builddir
+  fi
+  instdir="`pwd`/instdir"
+  cd $builddir
+  $sourcedir/configure --prefix="$instdir"
+  make
+  make dist
+
+  # Check that no .pot file was created.
+  test ! -f posub/foo-bar.pot
+
+  make install
+
+  # Check that still, no .pot file was created.
+  test ! -f posub/foo-bar.pot
+
+  # Check that no .mo file was installed, not even its directory was created.
+  test ! -d "$instdir"/share/locale/de/LC_MESSAGES
+
+  # Sanity check.
+  make distcheck
+
+  # Clean up.
+  make distclean
+  rm -rf "$instdir"
+  cd $sourcedir
+done

@@ -1,0 +1,52 @@
+#! /bin/sh
+# Copyright (C) 2010 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check that when the AM_POT_TOOLS macro is used, the --enable-nls and
+# --disable-nls options determine the value of USE_NLS, and
+# --help advertises --disable-nls.
+
+. ./defs || Exit 1
+
+set -e
+
+cat > Makefile.am << 'END'
+check-USE_NLS-yes:
+	test "@USE_NLS@" = yes
+check-USE_NLS-no:
+	test "@USE_NLS@" = no
+END
+
+cat >> configure.in << 'END'
+AM_POT_TOOLS
+AC_OUTPUT
+END
+
+$ACLOCAL
+$AUTOMAKE -a
+$AUTOCONF
+
+# Check that the --help output advertises --disable-nls.
+./configure --help | grep ' --disable-nls ' >/dev/null
+
+# Check that --enable-nls causes USE_NLS to be yes.
+./configure --enable-nls
+make check-USE_NLS-yes
+
+make distclean
+
+# Check that --disable-nls causes USE_NLS to be no.
+./configure --disable-nls
+make check-USE_NLS-no

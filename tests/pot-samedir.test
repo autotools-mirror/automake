@@ -1,0 +1,233 @@
+#! /bin/sh
+# Copyright (C) 2010 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check that different .pot files in the same directory don't collide.
+
+required='gzip'
+. ./defs || Exit 1
+
+set -e
+
+cat > Makefile.am << 'END'
+locale_POTS = posub/foo-bar.pot posub/foo-baz.pot
+posub_foo_bar_pot_SOURCES = src/main.c
+posub_foo_bar_pot_LINGUAS = de fr
+posub_foo_baz_pot_SOURCES = src/util.c
+posub_foo_baz_pot_LINGUAS = de it
+EXTRA_DIST = src/main.c src/util.c
+END
+
+cat >> configure.in << 'END'
+AM_POT_TOOLS
+AC_OUTPUT
+END
+
+mkdir src
+cat > src/main.c << 'END'
+#include <stdio.h>
+int main ()
+{
+  printf (gettext ("Hello, world.\n"));
+  return 0;
+}
+END
+cat > src/util.c << 'END'
+#include <stdio.h>
+void usage ()
+{
+  puts (gettext ("See the documentation for details."));
+}
+END
+
+$ACLOCAL
+$AUTOMAKE -a
+$AUTOCONF
+
+# .po files for _LINGUAS.
+mkdir posub
+cat > posub/foo-bar-de.po << 'END'
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#, c-format
+msgid "Hello, world.\n"
+msgstr "Hallo, Welt.\n"
+END
+cat > posub/foo-bar-fr.po << 'END'
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#, c-format
+msgid "Hello, world.\n"
+msgstr "Salut, le monde.\n"
+END
+cat > posub/foo-baz-de.po << 'END'
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "See the documentation for details."
+msgstr "Details entnehmen Sie der Dokumentation."
+END
+cat > posub/foo-baz-it.po << 'END'
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "See the documentation for details."
+msgstr "Consultare la documentazione per i dettagli."
+END
+
+cat > expected1 << 'END'
+# SOME DESCRIPTIVE TITLE.
+# This file is put in the public domain.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: pot-samedir 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/main.c:4
+#, c-format
+msgid "Hello, world.\n"
+msgstr ""
+END
+
+cat > expected2 << 'END'
+# SOME DESCRIPTIVE TITLE.
+# This file is put in the public domain.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: pot-samedir 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/util.c:4
+msgid "See the documentation for details."
+msgstr ""
+END
+
+for builddir in . sub; do
+  if test $builddir = '.'; then
+    sourcedir='.'
+  else
+    sourcedir='..'
+    mkdir $builddir
+  fi
+  instdir="`pwd`/instdir"
+  cd $builddir
+  $sourcedir/configure --prefix="$instdir"
+  make
+
+  # Check that "make install" creates the expected .pot files and .mo files.
+  # (They are created under $sourcedir, because the files are distributed.
+  # Cf. the GNU standards, node "Makefile Basics".)
+
+  make install
+
+  test -f $sourcedir/posub/foo-bar.pot
+  test $builddir = '.' || test ! -f posub/foo-bar.pot
+  cat $sourcedir/posub/foo-bar.pot | grep -v 'POT-Creation-Date' | LC_ALL=C tr -d '\r' > actual
+  diff actual $sourcedir/expected1
+  rm -f actual
+
+  test -f $sourcedir/posub/foo-baz.pot
+  test $builddir = '.' || test ! -f posub/foo-baz.pot
+  cat $sourcedir/posub/foo-baz.pot | grep -v 'POT-Creation-Date' | LC_ALL=C tr -d '\r' > actual
+  diff actual $sourcedir/expected2
+  rm -f actual
+
+  test -f $sourcedir/posub/foo-bar-de.mo
+  test -f $sourcedir/posub/foo-bar-fr.mo
+  test -f $sourcedir/posub/foo-baz-de.mo
+  test -f $sourcedir/posub/foo-baz-it.mo
+
+  # Check that "make install" installed the .mo files for the specified
+  # languages.
+  test -f "$instdir"/share/locale/de/LC_MESSAGES/foo-bar.mo
+  test -f "$instdir"/share/locale/fr/LC_MESSAGES/foo-bar.mo
+  test ! -f "$instdir"/share/locale/it/LC_MESSAGES/foo-bar.mo
+  test -f "$instdir"/share/locale/de/LC_MESSAGES/foo-baz.mo
+  test -f "$instdir"/share/locale/it/LC_MESSAGES/foo-baz.mo
+  test ! -f "$instdir"/share/locale/fr/LC_MESSAGES/foo-baz.mo
+  # Check that the two .mo files for the same language are different.
+  if cmp "$instdir"/share/locale/de/LC_MESSAGES/foo-bar.mo "$instdir"/share/locale/de/LC_MESSAGES/foo-baz.mo >/dev/null; then
+    exit 1
+  fi
+
+  make dist
+
+  # Check that the tarball contains the .po files and .mo files for the
+  # specified languages, but not more.
+  gzip -d -c < pot-samedir-1.0.tar.gz | tar tf - > filelist
+  grep '^pot-samedir-1\.0/posub/foo-bar-de\.po$' filelist >/dev/null
+  grep '^pot-samedir-1\.0/posub/foo-bar-de\.mo$' filelist >/dev/null
+  grep '^pot-samedir-1\.0/posub/foo-bar-fr\.po$' filelist >/dev/null
+  grep '^pot-samedir-1\.0/posub/foo-bar-fr\.mo$' filelist >/dev/null
+  if grep '^pot-samedir-1\.0/posub/foo-bar-it\.po$' filelist >/dev/null; then
+    exit 1
+  fi
+  if grep '^pot-samedir-1\.0/posub/foo-bar-it\.mo$' filelist >/dev/null; then
+    exit 1
+  fi
+  grep '^pot-samedir-1\.0/posub/foo-baz-de\.po$' filelist >/dev/null
+  grep '^pot-samedir-1\.0/posub/foo-baz-de\.mo$' filelist >/dev/null
+  grep '^pot-samedir-1\.0/posub/foo-baz-it\.po$' filelist >/dev/null
+  grep '^pot-samedir-1\.0/posub/foo-baz-it\.mo$' filelist >/dev/null
+  if grep '^pot-samedir-1\.0/posub/foo-baz-fr\.po$' filelist >/dev/null; then
+    exit 1
+  fi
+  if grep '^pot-samedir-1\.0/posub/foo-baz-fr\.mo$' filelist >/dev/null; then
+    exit 1
+  fi
+  rm -f filelist
+
+  # Sanity check.
+  make distcheck
+
+  # Clean up.
+  make distclean
+  rm -rf "$instdir"
+  cd $sourcedir
+done

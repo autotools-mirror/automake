@@ -1,0 +1,145 @@
+#! /bin/sh
+# Copyright (C) 2010 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check that the rule for creating the .pot file can be overridden.
+# FIXME: Should "make install" really update the PO files and MO files?
+#        Current po/Makefile.in.in does not do it.
+
+. ./defs || Exit 1
+
+set -e
+
+cat > Makefile.am << 'END'
+locale_POTS = posub/foo-bar.pot
+posub_foo_bar_pot_SOURCES = src/main.c src/util.c
+EXTRA_DIST = src/main.c src/util.c
+
+# A user-written rule that creates the POT file without xgettext.
+$(srcdir)/posub/foo-bar.pot : $(posub_foo_bar_pot_SOURCES)
+	{ echo 'msgid ""'; \
+	  echo 'msgstr "MIME-Version: 1.0\n"'; \
+	  echo '       "Content-Type: text/plain; charset=CHARSET\n"'; \
+	  echo '       "Content-Transfer-Encoding: 8bit\n"'; \
+	  echo; \
+	  for file in $(posub_foo_bar_pot_SOURCES); do \
+	    sed -n -e 's/.*gettext *(\(".*"\)).*/msgid \1 msgstr ""/p' < $$file; \
+	  done; \
+	} > $(srcdir)/posub/foo-bar.pot-t
+	mv $(srcdir)/posub/foo-bar.pot-t $(srcdir)/posub/foo-bar.pot
+END
+
+cat >> configure.in << 'END'
+AM_POT_TOOLS
+AC_OUTPUT
+END
+
+mkdir src
+cat > src/util.c << 'END'
+#include <stdio.h>
+void usage ()
+{
+  puts (gettext ("See the documentation for details."));
+}
+END
+
+$ACLOCAL
+$AUTOMAKE -a
+$AUTOCONF
+
+cat > expected << 'END'
+msgid ""
+msgstr "MIME-Version: 1.0\n"
+       "Content-Type: text/plain; charset=CHARSET\n"
+       "Content-Transfer-Encoding: 8bit\n"
+
+msgid "Hello, world.\n" msgstr ""
+msgid "See the documentation for details." msgstr ""
+END
+
+for builddir in . sub; do
+  if test $builddir = '.'; then
+    sourcedir='.'
+  else
+    sourcedir='..'
+    mkdir $builddir
+  fi
+  instdir="`pwd`/instdir"
+  cd $builddir
+  $sourcedir/configure --prefix="$instdir"
+  make
+
+  cat > $sourcedir/src/main.c << 'END'
+#include <stdio.h>
+int main ()
+{
+  printf (gettext ("Hello, world.\n"));
+  return 0;
+}
+END
+
+  # Check that "make dist" creates the expected .pot file.
+  # (It is created under $sourcedir, because the .pot file is distributed.
+  # Cf. the GNU standards, node "Makefile Basics".)
+
+  make dist
+
+  test -f $sourcedir/posub/foo-bar.pot
+  test $builddir = '.' || test ! -f posub/foo-bar.pot
+  diff $sourcedir/posub/foo-bar.pot $sourcedir/expected
+
+  rm -f $sourcedir/posub/foo-bar.pot
+
+  # Check that "make install" creates the expected .pot file.
+
+  make install
+
+  test -f $sourcedir/posub/foo-bar.pot
+  test $builddir = '.' || test ! -f posub/foo-bar.pot
+  diff $sourcedir/posub/foo-bar.pot $sourcedir/expected
+
+  # Try modifying a source file.
+  cat > $sourcedir/src/main.c << 'END'
+#include <stdio.h>
+int main ()
+{
+  printf (gettext ("Hello, great world!\n"));
+  return 0;
+}
+END
+
+  # Check that "make" does not rebuild the POT file.
+  cp -p $sourcedir/posub/foo-bar.pot $sourcedir/posub/foo-bar.potbak
+  make
+  diff $sourcedir/posub/foo-bar.potbak $sourcedir/posub/foo-bar.pot
+
+  # Check that "make dist" updates the POT file.
+  make dist
+  cat $sourcedir/posub/foo-bar.pot | grep great >/dev/null
+
+  # Check that "make install" updates the POT file.
+  cp -p $sourcedir/posub/foo-bar.potbak $sourcedir/posub/foo-bar.pot
+  make install
+  cat $sourcedir/posub/foo-bar.pot | grep great >/dev/null
+
+  # Sanity check.
+  make distcheck
+
+  # Clean up.
+  rm -f $sourcedir/posub/foo-bar.potbak
+  make distclean
+  rm -rf "$instdir"
+  cd $sourcedir
+done
