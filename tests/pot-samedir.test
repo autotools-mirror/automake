@@ -147,6 +147,8 @@ msgid "See the documentation for details."
 msgstr ""
 END
 
+distdir=$me-1.0
+
 for builddir in . sub; do
   if test $builddir = '.'; then
     sourcedir='.'
@@ -194,24 +196,23 @@ for builddir in . sub; do
   cmp "$instdir"/share/locale/de/LC_MESSAGES/foo-bar.mo \
       "$instdir"/share/locale/de/LC_MESSAGES/foo-baz.mo && Exit 1
 
-  $MAKE dist
+  $MAKE distdir
 
   # Check that the tarball contains the .po files and .mo files for the
   # specified languages, but not more.
-  gzip -d -c < pot-samedir-1.0.tar.gz | tar tf - > filelist
-  grep '^pot-samedir-1\.0/posub/foo-bar-de\.po$' filelist
-  grep '^pot-samedir-1\.0/posub/foo-bar-de\.mo$' filelist
-  grep '^pot-samedir-1\.0/posub/foo-bar-fr\.po$' filelist
-  grep '^pot-samedir-1\.0/posub/foo-bar-fr\.mo$' filelist
-  grep '^pot-samedir-1\.0/posub/foo-bar-it\.po$' filelist && Exit 1
-  grep '^pot-samedir-1\.0/posub/foo-bar-it\.mo$' filelist && Exit 1
-  grep '^pot-samedir-1\.0/posub/foo-baz-de\.po$' filelist
-  grep '^pot-samedir-1\.0/posub/foo-baz-de\.mo$' filelist
-  grep '^pot-samedir-1\.0/posub/foo-baz-it\.po$' filelist
-  grep '^pot-samedir-1\.0/posub/foo-baz-it\.mo$' filelist
-  grep '^pot-samedir-1\.0/posub/foo-baz-fr\.po$' filelist && Exit 1
-  grep '^pot-samedir-1\.0/posub/foo-baz-fr\.mo$' filelist && Exit 1
-  rm -f filelist
+  test -d $distdir # sanity check
+  test -f $distdir/posub/foo-bar-de.po
+  test -f $distdir/posub/foo-bar-de.mo
+  test -f $distdir/posub/foo-bar-fr.po
+  test -f $distdir/posub/foo-bar-fr.mo
+  test -f $distdir/posub/foo-baz-de.po
+  test -f $distdir/posub/foo-baz-de.mo
+  test -f $distdir/posub/foo-baz-it.po
+  test -f $distdir/posub/foo-baz-it.mo
+  test ! -r $distdir/posub/foo-bar-it.po
+  test ! -r $distdir/posub/foo-bar-it.mo
+  test ! -r $distdir/posub/foo-baz-fr.po
+  test ! -r $distdir/posub/foo-baz-fr.mo
 
   # Sanity check.
   $MAKE distcheck

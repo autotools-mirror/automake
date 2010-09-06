@@ -117,6 +117,8 @@ msgid "See the documentation for details."
 msgstr ""
 END
 
+distdir=$me-1.0
+
 for builddir in . sub; do
   for config_options in '' 'LINGUAS="es de"'; do
     if test $builddir = '.'; then
@@ -153,12 +155,12 @@ END
     test ! -f "$instdir"/share/locale/fr/LC_MESSAGES/foo-bar.mo
     test ! -f "$instdir"/share/locale/es/LC_MESSAGES/foo-bar.mo
 
-    # Check that "make dist" creates the expected .pot file, .po files
+    # Check that "make distdir" creates the expected .pot file, .po files
     # and .mo files.
     # (They are created under $sourcedir, because the files are distributed.
     # Cf. the GNU standards, node "Makefile Basics".)
 
-    $MAKE dist
+    $MAKE distdir
 
     test -f $sourcedir/posub/foo-bar.pot
     test $builddir = '.' || test ! -f posub/foo-bar.pot
@@ -173,14 +175,13 @@ END
 
     # Check that the tarball contains posub/foo-bar-{de,fr}.{po,mo} but not
     # the others, regardless whether LINGUAS was specified or not.
-    gzip -d -c < pot-noinst-1.0.tar.gz | tar tf - > filelist
-    grep '^pot-noinst-1\.0/posub/foo-bar-de\.po$' filelist
-    grep '^pot-noinst-1\.0/posub/foo-bar-de\.mo$' filelist
-    grep '^pot-noinst-1\.0/posub/foo-bar-fr\.po$' filelist
-    grep '^pot-noinst-1\.0/posub/foo-bar-fr\.mo$' filelist
-    grep '^pot-noinst-1\.0/posub/foo-bar-es\.po$' filelist && Exit 1
-    grep '^pot-noinst-1\.0/posub/foo-bar-es\.mo$' filelist && Exit 1
-    rm -f filelist
+    test -d $distdir # sanity check
+    test -f $distdir/posub/foo-bar-de.po
+    test -f $distdir/posub/foo-bar-de.mo
+    test -f $distdir/posub/foo-bar-fr.po
+    test -f $distdir/posub/foo-bar-fr.mo
+    test ! -r $distdir/posub/foo-bar-es.po
+    test ! -r $distdir/posub/foo-bar-es.mo
 
     # Try modifying a source file.
     cat > $sourcedir/src/main.c << 'END'
@@ -221,10 +222,10 @@ END
     cmp $sourcedir/posub/foo-bar-es.pobak $sourcedir/posub/foo-bar-es.po
     cmp $sourcedir/posub/foo-bar-es.mobak $sourcedir/posub/foo-bar-es.mo
 
-    # Check that "make dist" updates the POT file, the PO files, and the
+    # Check that "make distdir" updates the POT file, the PO files, and the
     # MO files listed in the _LINGUAS variable, regardless whether LINGUAS
     # was specified or not.
-    $MAKE dist
+    $MAKE distdir
     grep great $sourcedir/posub/foo-bar.pot
     # NOTE: This is *not* a useless use of cat.  The *.po files can contain
     # non-ASCII characters, which might cause problems with some `grep'

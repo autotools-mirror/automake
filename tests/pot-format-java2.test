@@ -114,6 +114,8 @@ msgid "Hello, world!"
 msgstr ""
 END
 
+distdir=$me-1.0
+
 for builddir in . sub; do
   for config_options in '' 'LINGUAS="es de"'; do
     if test $builddir = '.'; then
@@ -167,11 +169,11 @@ for builddir in . sub; do
     test ! -f "$instdir"/share/locale/fr/LC_MESSAGES/foo-bar.mo
     test ! -f "$instdir"/share/locale/es/LC_MESSAGES/foo-bar.mo
 
-    # Check that "make dist" creates the expected .pot file.
+    # Check that "make distdir" creates the expected .pot file.
 
     rm -f $sourcedir/posub/foo-bar.pot
 
-    $MAKE dist
+    $MAKE distdir
 
     test -f $sourcedir/posub/foo-bar.pot
     test $builddir = '.' || test ! -f posub/foo-bar.pot
@@ -190,17 +192,16 @@ for builddir in . sub; do
 
     # Check that the tarball contains posub/foo-bar-{de,fr}.{po,class} but not
     # the others, regardless whether LINGUAS was specified or not.
-    gzip -d -c < pot-format-java2-1.0.tar.gz | tar tf - > filelist
-    grep '^pot-format-java2-1\.0/posub/foo-bar-de\.po$' filelist
-    grep '^pot-format-java2-1\.0/posub/foo-bar_de\.class$' filelist
-    grep '^pot-format-java2-1\.0/posub/foo-bar-fr\.po$' filelist
-    grep '^pot-format-java2-1\.0/posub/foo-bar_fr\.class$' filelist
-    grep '^pot-format-java2-1\.0/posub/foo-bar-es\.po$' filelist && Exit 1
-    grep '^pot-format-java2-1\.0/posub/foo-bar_es\.class$' filelist && Exit 1
-    grep '^pot-format-java2-1\.0/posub/foo-bar-de\.mo$' filelist && Exit 1
-    grep '^pot-format-java2-1\.0/posub/foo-bar-fr\.mo$' filelist && Exit 1
-    grep '^pot-format-java2-1\.0/posub/foo-bar-es\.mo$' filelist && Exit 1
-    rm -f filelist
+    test -d $distdir # sanity check
+    test -f $distdir/posub/foo-bar-de.po
+    test -f $distdir/posub/foo-bar_de.class
+    test -f $distdir/posub/foo-bar-fr.po
+    test -f $distdir/posub/foo-bar_fr.class
+    test ! -r $distdir/posub/foo-bar-es.po
+    test ! -r $distdir/posub/foo-bar_es.class
+    test ! -r $distdir/posub/foo-bar-de.mo
+    test ! -r $distdir/posub/foo-bar-fr.mo
+    test ! -r $distdir/posub/foo-bar-es.mo
 
     # Sanity check.
     $MAKE distcheck
