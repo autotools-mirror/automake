@@ -16,7 +16,6 @@
 
 # Check the creation of compiled message catalogs in Tcl format.
 
-required='gzip'
 . ./defs || Exit 1
 
 set -e
@@ -121,18 +120,18 @@ for builddir in . sub; do
     instdir="`pwd`/instdir"
     cd $builddir
     env $config_options $sourcedir/configure --prefix="$instdir"
-    make
+    $MAKE
 
     # Check that "make install" creates the expected .pot file, .po files
     # and .msg files.
     # (They are created under $sourcedir, because the files are distributed.
     # Cf. the GNU standards, node "Makefile Basics".)
 
-    make install
+    $MAKE install
 
     test -f $sourcedir/posub/foo-bar.pot
     test $builddir = '.' || test ! -f posub/foo-bar.pot
-    cat $sourcedir/posub/foo-bar.pot | grep -v 'POT-Creation-Date' | LC_ALL=C tr -d '\r' > actual
+    grep -v 'POT-Creation-Date' $sourcedir/posub/foo-bar.pot | LC_ALL=C tr -d '\r' > actual
     diff actual $sourcedir/expected
     rm -f actual
 
@@ -167,11 +166,11 @@ for builddir in . sub; do
 
     rm -f $sourcedir/posub/foo-bar.pot
 
-    make dist
+    $MAKE dist
 
     test -f $sourcedir/posub/foo-bar.pot
     test $builddir = '.' || test ! -f posub/foo-bar.pot
-    cat $sourcedir/posub/foo-bar.pot | grep -v 'POT-Creation-Date' | LC_ALL=C tr -d '\r' > actual
+    grep -v 'POT-Creation-Date' $sourcedir/posub/foo-bar.pot | LC_ALL=C tr -d '\r' > actual
     diff actual $sourcedir/expected
     rm -f actual
 
@@ -187,33 +186,25 @@ for builddir in . sub; do
     # Check that the tarball contains posub/foo-bar-{de,fr}.{po,msg} but not
     # the others, regardless whether LINGUAS was specified or not.
     gzip -d -c < pot-format-tcl1-1.0.tar.gz | tar tf - > filelist
-    grep '^pot-format-tcl1-1\.0/posub/foo-bar-de\.po$' filelist >/dev/null
-    grep '^pot-format-tcl1-1\.0/posub/foo-bar/de\.msg$' filelist >/dev/null
-    grep '^pot-format-tcl1-1\.0/posub/foo-bar-fr_CA\.po$' filelist >/dev/null
-    grep '^pot-format-tcl1-1\.0/posub/foo-bar/fr_ca\.msg$' filelist >/dev/null
-    if grep '^pot-format-tcl1-1\.0/posub/foo-bar-es\.po$' filelist >/dev/null; then
-      exit 1
-    fi
-    if grep '^pot-format-tcl1-1\.0/posub/foo-bar/es\.msg$' filelist >/dev/null; then
-      exit 1
-    fi
-    if grep '^pot-format-tcl1-1\.0/posub/foo-bar-de\.mo$' filelist >/dev/null; then
-      exit 1
-    fi
-    if grep '^pot-format-tcl1-1\.0/posub/foo-bar-fr_CA\.mo$' filelist >/dev/null; then
-      exit 1
-    fi
-    if grep '^pot-format-tcl1-1\.0/posub/foo-bar-es\.mo$' filelist >/dev/null; then
-      exit 1
-    fi
+    grep '^pot-format-tcl1-1\.0/posub/foo-bar-de\.po$' filelist
+    grep '^pot-format-tcl1-1\.0/posub/foo-bar/de\.msg$' filelist
+    grep '^pot-format-tcl1-1\.0/posub/foo-bar-fr_CA\.po$' filelist
+    grep '^pot-format-tcl1-1\.0/posub/foo-bar/fr_ca\.msg$' filelist
+    grep '^pot-format-tcl1-1\.0/posub/foo-bar-es\.po$' filelist && Exit 1
+    grep '^pot-format-tcl1-1\.0/posub/foo-bar/es\.msg$' filelist && Exit 1
+    grep '^pot-format-tcl1-1\.0/posub/foo-bar-de\.mo$' filelist && Exit 1
+    grep '^pot-format-tcl1-1\.0/posub/foo-bar-fr_CA\.mo$' filelist && Exit 1
+    grep '^pot-format-tcl1-1\.0/posub/foo-bar-es\.mo$' filelist && Exit 1
     rm -f filelist
 
     # Sanity check.
-    make distcheck
+    $MAKE distcheck
 
     # Clean up.
-    make distclean
+    $MAKE distclean
     rm -rf "$instdir"
     cd $sourcedir
   done
 done
+
+:

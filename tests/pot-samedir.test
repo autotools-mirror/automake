@@ -16,7 +16,6 @@
 
 # Check that different .pot files in the same directory don't collide.
 
-required='gzip'
 . ./defs || Exit 1
 
 set -e
@@ -158,23 +157,23 @@ for builddir in . sub; do
   instdir="`pwd`/instdir"
   cd $builddir
   $sourcedir/configure --prefix="$instdir"
-  make
+  $MAKE
 
   # Check that "make install" creates the expected .pot files and .mo files.
   # (They are created under $sourcedir, because the files are distributed.
   # Cf. the GNU standards, node "Makefile Basics".)
 
-  make install
+  $MAKE install
 
   test -f $sourcedir/posub/foo-bar.pot
   test $builddir = '.' || test ! -f posub/foo-bar.pot
-  cat $sourcedir/posub/foo-bar.pot | grep -v 'POT-Creation-Date' | LC_ALL=C tr -d '\r' > actual
+  grep -v 'POT-Creation-Date' $sourcedir/posub/foo-bar.pot | LC_ALL=C tr -d '\r' > actual
   diff actual $sourcedir/expected1
   rm -f actual
 
   test -f $sourcedir/posub/foo-baz.pot
   test $builddir = '.' || test ! -f posub/foo-baz.pot
-  cat $sourcedir/posub/foo-baz.pot | grep -v 'POT-Creation-Date' | LC_ALL=C tr -d '\r' > actual
+  grep -v 'POT-Creation-Date' $sourcedir/posub/foo-baz.pot | LC_ALL=C tr -d '\r' > actual
   diff actual $sourcedir/expected2
   rm -f actual
 
@@ -192,42 +191,35 @@ for builddir in . sub; do
   test -f "$instdir"/share/locale/it/LC_MESSAGES/foo-baz.mo
   test ! -f "$instdir"/share/locale/fr/LC_MESSAGES/foo-baz.mo
   # Check that the two .mo files for the same language are different.
-  if cmp "$instdir"/share/locale/de/LC_MESSAGES/foo-bar.mo "$instdir"/share/locale/de/LC_MESSAGES/foo-baz.mo >/dev/null; then
-    exit 1
-  fi
+  cmp "$instdir"/share/locale/de/LC_MESSAGES/foo-bar.mo \
+      "$instdir"/share/locale/de/LC_MESSAGES/foo-baz.mo && Exit 1
 
-  make dist
+  $MAKE dist
 
   # Check that the tarball contains the .po files and .mo files for the
   # specified languages, but not more.
   gzip -d -c < pot-samedir-1.0.tar.gz | tar tf - > filelist
-  grep '^pot-samedir-1\.0/posub/foo-bar-de\.po$' filelist >/dev/null
-  grep '^pot-samedir-1\.0/posub/foo-bar-de\.mo$' filelist >/dev/null
-  grep '^pot-samedir-1\.0/posub/foo-bar-fr\.po$' filelist >/dev/null
-  grep '^pot-samedir-1\.0/posub/foo-bar-fr\.mo$' filelist >/dev/null
-  if grep '^pot-samedir-1\.0/posub/foo-bar-it\.po$' filelist >/dev/null; then
-    exit 1
-  fi
-  if grep '^pot-samedir-1\.0/posub/foo-bar-it\.mo$' filelist >/dev/null; then
-    exit 1
-  fi
-  grep '^pot-samedir-1\.0/posub/foo-baz-de\.po$' filelist >/dev/null
-  grep '^pot-samedir-1\.0/posub/foo-baz-de\.mo$' filelist >/dev/null
-  grep '^pot-samedir-1\.0/posub/foo-baz-it\.po$' filelist >/dev/null
-  grep '^pot-samedir-1\.0/posub/foo-baz-it\.mo$' filelist >/dev/null
-  if grep '^pot-samedir-1\.0/posub/foo-baz-fr\.po$' filelist >/dev/null; then
-    exit 1
-  fi
-  if grep '^pot-samedir-1\.0/posub/foo-baz-fr\.mo$' filelist >/dev/null; then
-    exit 1
-  fi
+  grep '^pot-samedir-1\.0/posub/foo-bar-de\.po$' filelist
+  grep '^pot-samedir-1\.0/posub/foo-bar-de\.mo$' filelist
+  grep '^pot-samedir-1\.0/posub/foo-bar-fr\.po$' filelist
+  grep '^pot-samedir-1\.0/posub/foo-bar-fr\.mo$' filelist
+  grep '^pot-samedir-1\.0/posub/foo-bar-it\.po$' filelist && Exit 1
+  grep '^pot-samedir-1\.0/posub/foo-bar-it\.mo$' filelist && Exit 1
+  grep '^pot-samedir-1\.0/posub/foo-baz-de\.po$' filelist
+  grep '^pot-samedir-1\.0/posub/foo-baz-de\.mo$' filelist
+  grep '^pot-samedir-1\.0/posub/foo-baz-it\.po$' filelist
+  grep '^pot-samedir-1\.0/posub/foo-baz-it\.mo$' filelist
+  grep '^pot-samedir-1\.0/posub/foo-baz-fr\.po$' filelist && Exit 1
+  grep '^pot-samedir-1\.0/posub/foo-baz-fr\.mo$' filelist && Exit 1
   rm -f filelist
 
   # Sanity check.
-  make distcheck
+  $MAKE distcheck
 
   # Clean up.
-  make distclean
+  $MAKE distclean
   rm -rf "$instdir"
   cd $sourcedir
 done
+
+:

@@ -22,7 +22,6 @@
 # FIXME: Should "make install" really update the PO files and MO files?
 #        Current po/Makefile.in.in does not do it.
 
-required='gzip'
 . ./defs || Exit 1
 
 set -e
@@ -132,7 +131,7 @@ for builddir in . sub; do
     instdir="`pwd`/instdir"
     cd $builddir
     env $config_options $sourcedir/configure --prefix="$instdir"
-    make
+    $MAKE
 
     cat > $sourcedir/src/main.c << 'END'
 #include <stdio.h>
@@ -148,11 +147,11 @@ END
     # (They are created under $sourcedir, because the files are distributed.
     # Cf. the GNU standards, node "Makefile Basics".)
 
-    make install
+    $MAKE install
 
     test -f $sourcedir/posub/foo-bar.pot
     test $builddir = '.' || test ! -f posub/foo-bar.pot
-    cat $sourcedir/posub/foo-bar.pot | grep -v 'POT-Creation-Date' | LC_ALL=C tr -d '\r' > actual
+    grep -v 'POT-Creation-Date' $sourcedir/posub/foo-bar.pot | LC_ALL=C tr -d '\r' > actual
     diff actual $sourcedir/expected
     rm -f actual
 
@@ -177,11 +176,11 @@ END
 
     rm -f $sourcedir/posub/foo-bar.pot
 
-    make dist
+    $MAKE dist
 
     test -f $sourcedir/posub/foo-bar.pot
     test $builddir = '.' || test ! -f posub/foo-bar.pot
-    cat $sourcedir/posub/foo-bar.pot | grep -v 'POT-Creation-Date' | LC_ALL=C tr -d '\r' > actual
+    grep -v 'POT-Creation-Date' $sourcedir/posub/foo-bar.pot | LC_ALL=C tr -d '\r' > actual
     diff actual $sourcedir/expected
     rm -f actual
 
@@ -193,16 +192,12 @@ END
     # Check that the tarball contains posub/foo-bar-{de,fr}.{po,mo} but not
     # the others, regardless whether LINGUAS was specified or not.
     gzip -d -c < pot-linguas-1.0.tar.gz | tar tf - > filelist
-    grep '^pot-linguas-1\.0/posub/foo-bar-de\.po$' filelist >/dev/null
-    grep '^pot-linguas-1\.0/posub/foo-bar-de\.mo$' filelist >/dev/null
-    grep '^pot-linguas-1\.0/posub/foo-bar-fr\.po$' filelist >/dev/null
-    grep '^pot-linguas-1\.0/posub/foo-bar-fr\.mo$' filelist >/dev/null
-    if grep '^pot-linguas-1\.0/posub/foo-bar-es\.po$' filelist >/dev/null; then
-      exit 1
-    fi
-    if grep '^pot-linguas-1\.0/posub/foo-bar-es\.mo$' filelist >/dev/null; then
-      exit 1
-    fi
+    grep '^pot-linguas-1\.0/posub/foo-bar-de\.po$' filelist
+    grep '^pot-linguas-1\.0/posub/foo-bar-de\.mo$' filelist
+    grep '^pot-linguas-1\.0/posub/foo-bar-fr\.po$' filelist
+    grep '^pot-linguas-1\.0/posub/foo-bar-fr\.mo$' filelist
+    grep '^pot-linguas-1\.0/posub/foo-bar-es\.po$' filelist && Exit 1
+    grep '^pot-linguas-1\.0/posub/foo-bar-es\.mo$' filelist && Exit 1
     rm -f filelist
 
     # Try modifying a source file.
@@ -224,30 +219,31 @@ END
     cp -p $sourcedir/posub/foo-bar-fr.mo $sourcedir/posub/foo-bar-fr.mobak
     cp -p $sourcedir/posub/foo-bar-es.po $sourcedir/posub/foo-bar-es.pobak
     cp -p $sourcedir/posub/foo-bar-es.mo $sourcedir/posub/foo-bar-es.mobak
-    make
+    $MAKE
     diff $sourcedir/posub/foo-bar.potbak $sourcedir/posub/foo-bar.pot
-    cmp $sourcedir/posub/foo-bar-de.pobak $sourcedir/posub/foo-bar-de.po >/dev/null
-    cmp $sourcedir/posub/foo-bar-de.mobak $sourcedir/posub/foo-bar-de.mo >/dev/null
-    cmp $sourcedir/posub/foo-bar-fr.pobak $sourcedir/posub/foo-bar-fr.po >/dev/null
-    cmp $sourcedir/posub/foo-bar-fr.mobak $sourcedir/posub/foo-bar-fr.mo >/dev/null
-    cmp $sourcedir/posub/foo-bar-es.pobak $sourcedir/posub/foo-bar-es.po >/dev/null
-    cmp $sourcedir/posub/foo-bar-es.mobak $sourcedir/posub/foo-bar-es.mo >/dev/null
+    cmp $sourcedir/posub/foo-bar-de.pobak $sourcedir/posub/foo-bar-de.po
+    cmp $sourcedir/posub/foo-bar-de.mobak $sourcedir/posub/foo-bar-de.mo
+    cmp $sourcedir/posub/foo-bar-fr.pobak $sourcedir/posub/foo-bar-fr.po
+    cmp $sourcedir/posub/foo-bar-fr.mobak $sourcedir/posub/foo-bar-fr.mo
+    cmp $sourcedir/posub/foo-bar-es.pobak $sourcedir/posub/foo-bar-es.po
+    cmp $sourcedir/posub/foo-bar-es.mobak $sourcedir/posub/foo-bar-es.mo
 
     # Check that "make install" updates the POT file, the PO files, and the
     # MO files listed in the _LINGUAS variable, regardless whether LINGUAS
     # was specified or not.
-    make install
-    cat $sourcedir/posub/foo-bar.pot | grep great >/dev/null
-    cat $sourcedir/posub/foo-bar-de.po | grep great >/dev/null
-    if cmp $sourcedir/posub/foo-bar-de.mobak $sourcedir/posub/foo-bar-de.mo >/dev/null; then
-      exit 1
-    fi
-    cat $sourcedir/posub/foo-bar-fr.po | grep great >/dev/null
-    if cmp $sourcedir/posub/foo-bar-fr.mobak $sourcedir/posub/foo-bar-fr.mo >/dev/null; then
-      exit 1
-    fi
-    cmp $sourcedir/posub/foo-bar-es.pobak $sourcedir/posub/foo-bar-es.po >/dev/null
-    cmp $sourcedir/posub/foo-bar-es.mobak $sourcedir/posub/foo-bar-es.mo >/dev/null
+    $MAKE install
+    grep great $sourcedir/posub/foo-bar.pot
+    # NOTE: This is *not* a useless use of cat.  The *.po files can contain
+    # non-ASCII characters, which might cause problems with some `grep'
+    # programs.  BSD `grep' works from a pipe, but not a seekable file.
+    # GNU or BSD `grep -a' works on files, but is not portable.
+    cat $sourcedir/posub/foo-bar-de.po | grep great
+    cmp $sourcedir/posub/foo-bar-de.mobak $sourcedir/posub/foo-bar-de.mo && Exit 1
+    # NOTE: This is *not* a useless use of cat.  See comments above.
+    cat $sourcedir/posub/foo-bar-fr.po | grep great
+    cmp $sourcedir/posub/foo-bar-fr.mobak $sourcedir/posub/foo-bar-fr.mo && Exit 1
+    cmp $sourcedir/posub/foo-bar-es.pobak $sourcedir/posub/foo-bar-es.po
+    cmp $sourcedir/posub/foo-bar-es.mobak $sourcedir/posub/foo-bar-es.mo
 
     # Check that "make dist" updates the POT file, the PO files, and the
     # MO files listed in the _LINGUAS variable, regardless whether LINGUAS
@@ -257,30 +253,31 @@ END
     cp -p $sourcedir/posub/foo-bar-de.mobak $sourcedir/posub/foo-bar-de.mo
     cp -p $sourcedir/posub/foo-bar-fr.pobak $sourcedir/posub/foo-bar-fr.po
     cp -p $sourcedir/posub/foo-bar-fr.mobak $sourcedir/posub/foo-bar-fr.mo
-    make dist
-    cat $sourcedir/posub/foo-bar.pot | grep great >/dev/null
-    cat $sourcedir/posub/foo-bar-de.po | grep great >/dev/null
-    if cmp $sourcedir/posub/foo-bar-de.mobak $sourcedir/posub/foo-bar-de.mo >/dev/null; then
-      exit 1
-    fi
-    cat $sourcedir/posub/foo-bar-fr.po | grep great >/dev/null
-    if cmp $sourcedir/posub/foo-bar-fr.mobak $sourcedir/posub/foo-bar-fr.mo >/dev/null; then
-      exit 1
-    fi
-    cmp $sourcedir/posub/foo-bar-es.pobak $sourcedir/posub/foo-bar-es.po >/dev/null
-    cmp $sourcedir/posub/foo-bar-es.mobak $sourcedir/posub/foo-bar-es.mo >/dev/null
+    $MAKE dist
+    grep great $sourcedir/posub/foo-bar.pot
+    # NOTE: This is *not* a useless use of cat.  See comments above.
+    cat $sourcedir/posub/foo-bar-de.po | grep great
+    cmp $sourcedir/posub/foo-bar-de.mobak $sourcedir/posub/foo-bar-de.mo && Exit 1
+    # NOTE: This is *not* a useless use of cat.  See comments above.
+    cat $sourcedir/posub/foo-bar-fr.po | grep great
+    cmp $sourcedir/posub/foo-bar-fr.mobak $sourcedir/posub/foo-bar-fr.mo && Exit 1
+    cmp $sourcedir/posub/foo-bar-es.pobak $sourcedir/posub/foo-bar-es.po
+    cmp $sourcedir/posub/foo-bar-es.mobak $sourcedir/posub/foo-bar-es.mo
 
     # Check that the updated PO files contain 'previous msgid' fields.
-    cat $sourcedir/posub/foo-bar-de.po | grep '^#| msgid "Hello, world\.\\n"$' >/dev/null
-    cat $sourcedir/posub/foo-bar-fr.po | grep '^#| msgid "Hello, world\.\\n"$' >/dev/null
+    # NOTE: This is *not* a useless use of cat.  See comments above.
+    cat $sourcedir/posub/foo-bar-de.po | grep '^#| msgid "Hello, world\.\\n"$'
+    cat $sourcedir/posub/foo-bar-fr.po | grep '^#| msgid "Hello, world\.\\n"$'
 
     # Sanity check.
-    make distcheck
+    $MAKE distcheck
 
     # Clean up.
-    rm -f $sourcedir/posub/foo-bar.potbak $sourcedir/posub/*.pobak $sourcedir/posub/*.mobak
-    make distclean
+    rm -f $sourcedir/posub/foo-bar.potbak $sourcedir/posub/*.[mp]obak
+    $MAKE distclean
     rm -rf "$instdir"
     cd $sourcedir
   done
 done
+
+:
