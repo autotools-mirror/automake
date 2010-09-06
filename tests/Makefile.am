@@ -21,7 +21,31 @@ all.test					\
 auxdir2.test					\
 cond17.test					\
 gcj6.test					\
-txinfo5.test
+txinfo5.test					\
+pot-copyright.test \
+pot-download1.test \
+pot-empty.test \
+pot-enable1.test \
+pot-enable2.test \
+pot-format-csharp1.test \
+pot-format-java1.test \
+pot-format-java2.test \
+pot-format-qt1.test \
+pot-format-tcl1.test \
+pot-linguas.test \
+pot-macro-warn.test \
+pot-msgidbugs.test \
+pot-no-linguas.test \
+pot-noinst.test \
+pot-override1.test \
+pot-samedir.test \
+pot-topsrcdir.test \
+pot-warn1.test \
+pot-warn2.test \
+pot-xgettext1.test \
+pot-xgettext2.test \
+pot-xgettext3.test \
+pot-xgettext4.test
 
 include $(srcdir)/parallel-tests.am
 
@@ -585,6 +609,30 @@ pluseq7.test \
 pluseq8.test \
 pluseq9.test \
 pluseq10.test \
+pot-copyright.test \
+pot-download1.test \
+pot-empty.test \
+pot-enable1.test \
+pot-enable2.test \
+pot-format-csharp1.test \
+pot-format-java1.test \
+pot-format-java2.test \
+pot-format-qt1.test \
+pot-format-tcl1.test \
+pot-linguas.test \
+pot-macro-warn.test \
+pot-msgidbugs.test \
+pot-no-linguas.test \
+pot-noinst.test \
+pot-override1.test \
+pot-samedir.test \
+pot-topsrcdir.test \
+pot-warn1.test \
+pot-warn2.test \
+pot-xgettext1.test \
+pot-xgettext2.test \
+pot-xgettext3.test \
+pot-xgettext4.test \
 postproc.test \
 ppf77.test \
 pr2.test \
