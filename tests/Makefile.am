@@ -16,11 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-XFAIL_TESTS =					\
-all.test					\
-auxdir2.test					\
-cond17.test					\
-gcj6.test					\
+XFAIL_TESTS = \
+all.test \
+auxdir2.test \
+cond17.test \
+gcj6.test \
 txinfo5.test
 
 include $(srcdir)/parallel-tests.am
