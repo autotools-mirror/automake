@@ -247,6 +247,7 @@ confh4.test \
 confh5.test \
 confh6.test \
 confh7.test \
+confh8.test \
 confincl.test \
 conflnk.test \
 conflnk2.test \
