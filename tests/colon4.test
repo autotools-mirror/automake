@@ -15,8 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Make sure ":" works with files automake generates.
-# This test is for multiple ":"s.
+# Make sure multiple ":"s in AC_CONFIG_FILES do not generate broken
+# rebuild rules.
 # Test from Maciej W. Rozycki.
 
 . ./defs || Exit 1
@@ -24,7 +24,7 @@
 set -e
 
 cat >> configure.in <<END
-AC_CONFIG_FILES([zardoz:two:three])
+AC_CONFIG_FILES([zardoz:one:two:three])
 AC_OUTPUT
 END
 
@@ -36,6 +36,7 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-# The rule should regenerate the file "zardoz".
-grep '^zardoz:one:two' Makefile.in && Exit 1
+# The rule should regenerate the file "zardoz", not a meaningless
+# file "'zardoz:one:two".
+$FGREP 'zardoz:one:two' Makefile.in && Exit 1
 Exit 0
