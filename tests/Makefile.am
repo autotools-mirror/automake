@@ -26,7 +26,7 @@ txinfo5.test
 include $(srcdir)/parallel-tests.am
 
 $(srcdir)/parallel-tests.am: gen-parallel-tests Makefile.am
-	$(AM_V_GEN)(cd $(srcdir) && $(SHELL) ./gen-parallel-tests) >$@
+	$(AM_V_GEN)($(am__cd) $(srcdir) && $(SHELL) ./gen-parallel-tests) >$@
 
 $(parallel_tests): Makefile.am
 	$(AM_V_at)rm -f $@ $@-t

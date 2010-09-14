@@ -111,7 +111,8 @@ recheck:
 	  esac; \
 	done; \
 	for subdir in $(TEST_SUBDIRS); do \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $@) || eval $$failcom; \
+	  ($(am__cd) $$subdir && $(MAKE) $(AM_MAKEFLAGS) $@) \
+	    || eval $$failcom; \
 	done; \
 	test -z "$$fail"
 
@@ -123,7 +124,7 @@ recheck:
 
 # Ensure tests are world-executable
 dist-hook:
-	cd $(distdir)/tests && chmod a+rx *.test
+	$(am__cd) $(distdir)/tests && chmod a+rx *.test
 
 
 # Perl coverage statistics.
@@ -530,7 +531,7 @@ git-dist: maintainer-check
 ## Finally, if anything was successful, commit the last changes and tag
 ## the release in the repository.  We don't use RCS keywords so it's OK
 ## to distribute the files before they were committed.
-	cd $(srcdir) && git commit -a -s && \
+	$(am__cd) $(srcdir) && git commit -a -s && \
 	   git tag -s "v$(VERSION)" -m "Release $(VERSION)"
 
 git-release: git-dist
@@ -552,7 +553,7 @@ git-diff:
 
 ## Check our path lengths.
 path-check: distdir
-	(cd $(distdir) && \
+	($(am__cd) $(distdir) && \
 ## FIXME there's got to be a better way!  pathchk should take the list
 ## of files on stdin, at least.
 	  find . -print | xargs pathchk -p); \
@@ -584,7 +585,7 @@ fetch:
 	rm -rf Fetchdir > /dev/null 2>&1
 	mkdir Fetchdir
 ## If a get fails then that is a problem.
-	(cd Fetchdir && \
+	($(am__cd) Fetchdir && \
 	$(WGET_SV_GIT_CF)config.guess -O config.guess && \
 	$(WGET_SV_GIT_CF)config.sub -O config.sub && \
 	$(WGET_SV_CVS)texinfo/texinfo/doc/texinfo.tex -O texinfo.tex && \
@@ -621,7 +622,7 @@ release-stats: ps
 	aml=`cat $$dot_am_files | wc -l` && \
 	m4f=`ls -1 $(srcdir)/m4/*.m4 | wc -l` && \
 	m4l=`cat $(srcdir)/m4/*.m4 | wc -l` && \
-	doc_text=`cd doc && LC_ALL=C pstops 0 automake.ps unused.ps 2>&1` && \
+	doc_text=`$(am__cd) doc && LC_ALL=C pstops 0 automake.ps unused.ps 2>&1` && \
 	echo "$$doc_text" && \
 	rm -f doc/unused.ps && \
 	doc=`echo "$$doc_text" | sed -n 's/.*Wrote \([1-9][0-9]*\) pages.*/\1/p'` && \

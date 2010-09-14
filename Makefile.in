@@ -925,7 +925,8 @@ recheck:
 	  esac; \
 	done; \
 	for subdir in $(TEST_SUBDIRS); do \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $@) || eval $$failcom; \
+	  ($(am__cd) $$subdir && $(MAKE) $(AM_MAKEFLAGS) $@) \
+	    || eval $$failcom; \
 	done; \
 	test -z "$$fail"
 
@@ -933,7 +934,7 @@ recheck:
 
 # Ensure tests are world-executable
 dist-hook:
-	cd $(distdir)/tests && chmod a+rx *.test
+	$(am__cd) $(distdir)/tests && chmod a+rx *.test
 
 check-coverage-run recheck-coverage-run: all
 	$(mkinstalldirs) $(PERL_COVERAGE_DB)
@@ -1239,7 +1240,7 @@ git-dist: maintainer-check
 	  exit 1;				\
 	fi
 	$(MAKE) $(AM_MAKEFLAGS) distcheck
-	cd $(srcdir) && git commit -a -s && \
+	$(am__cd) $(srcdir) && git commit -a -s && \
 	   git tag -s "v$(VERSION)" -m "Release $(VERSION)"
 
 git-release: git-dist
@@ -1260,7 +1261,7 @@ git-diff:
 	    > $(PACKAGE)-$$prevno-$(VERSION).diff
 
 path-check: distdir
-	(cd $(distdir) && \
+	($(am__cd) $(distdir) && \
 	  find . -print | xargs pathchk -p); \
 	  estatus=$$?; \
 	  find $(distdir) -type d '!' -perm -200 -exec chmod u+w {} ';'; \
@@ -1270,7 +1271,7 @@ path-check: distdir
 fetch:
 	rm -rf Fetchdir > /dev/null 2>&1
 	mkdir Fetchdir
-	(cd Fetchdir && \
+	($(am__cd) Fetchdir && \
 	$(WGET_SV_GIT_CF)config.guess -O config.guess && \
 	$(WGET_SV_GIT_CF)config.sub -O config.sub && \
 	$(WGET_SV_CVS)texinfo/texinfo/doc/texinfo.tex -O texinfo.tex && \
@@ -1302,7 +1303,7 @@ release-stats: ps
 	aml=`cat $$dot_am_files | wc -l` && \
 	m4f=`ls -1 $(srcdir)/m4/*.m4 | wc -l` && \
 	m4l=`cat $(srcdir)/m4/*.m4 | wc -l` && \
-	doc_text=`cd doc && LC_ALL=C pstops 0 automake.ps unused.ps 2>&1` && \
+	doc_text=`$(am__cd) doc && LC_ALL=C pstops 0 automake.ps unused.ps 2>&1` && \
 	echo "$$doc_text" && \
 	rm -f doc/unused.ps && \
 	doc=`echo "$$doc_text" | sed -n 's/.*Wrote \([1-9][0-9]*\) pages.*/\1/p'` && \
