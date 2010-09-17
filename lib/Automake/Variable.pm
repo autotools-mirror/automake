@@ -354,7 +354,7 @@ sub reset ()
 =item C<var ($varname)>
 
 Return the C<Automake::Variable> object for the variable
-named C<$varname> if defined.   Return 0 otherwise.
+named C<$varname> if defined.  Return 0 otherwise.
 
 =cut
 

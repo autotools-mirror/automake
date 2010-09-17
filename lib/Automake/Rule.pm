@@ -1,4 +1,4 @@
-# Copyright (C) 2003, 2004, 2006, 2007  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2004, 2006, 2007, 2010  Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -488,7 +488,7 @@ sub suffixes ()
 =item C<rule ($rulename)>
 
 Return the C<Automake::Rule> object for the rule
-named C<$rulename> if defined.   Return 0 otherwise.
+named C<$rulename> if defined.  Return 0 otherwise.
 
 =cut
 
