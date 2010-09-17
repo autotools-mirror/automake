@@ -377,6 +377,16 @@ gnits2.test \
 gnits3.test \
 header.test \
 help.test \
+help-depend.test \
+help-depend2.test \
+help-dmalloc.test \
+help-init.test \
+help-lispdir.test \
+help-maintainer.test \
+help-multilib.test \
+help-regex.test \
+help-silent.test \
+help-upc.test \
 hfs.test \
 hosts.test \
 implicit.test \
