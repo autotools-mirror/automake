@@ -348,6 +348,9 @@ gnits2.test \
 gnits3.test \
 header.test \
 help.test \
+help2.test \
+help3.test \
+help4.test \
 help-depend.test \
 help-depend2.test \
 help-dmalloc.test \
