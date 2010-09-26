@@ -193,6 +193,7 @@ sc_tests_required_after_defs \
 sc_tests_overriding_macros_on_cmdline \
 sc_tests_plain_sleep \
 sc_tests_plain_egrep_fgrep \
+sc_tests_PATH_SEPARATOR \
 sc_tests_logs_duplicate_prefixes \
 sc_mkdir_p \
 sc_perl_at_substs \
@@ -478,6 +479,13 @@ sc_ensure_testsuite_has_run:
 sc_tests_logs_duplicate_prefixes: sc_ensure_testsuite_has_run
 	@if grep -E '(warning|error):.*(warning|error):' tests/*.log; then \
 	  echo 'Duplicate warning/error message prefixes seen in above tests.' >&2; \
+	  exit 1; \
+	fi
+
+## Using `:' as a PATH separator is not portable.
+sc_tests_PATH_SEPARATOR:
+	@if grep -E '\bPATH=.*:.*' $(srcdir)/tests/*.test ; then \
+	  echo "Use \`$$PATH_SEPARATOR', not \`:', in PATH definitions above." 1>&2; \
 	  exit 1; \
 	fi
 
