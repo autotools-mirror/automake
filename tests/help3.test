@@ -24,6 +24,10 @@ set -e
 mkdir cleandir
 cd cleandir
 
+# Honour user overrides for $ACLOCAL and $AUTOMAKE.
+ACLOCAL=`echo " $ACLOCAL " | sed 's/ -W[^ ]* / /g'`
+AUTOMAKE=`echo " $AUTOMAKE " | sed 's/ -W[^ ]* / /g'`
+
 cat > configure.in <<END
 AC_INIT([$me], [1.0])
 AC_CONFIG_AUX_DIR([.]) dnl prevent automake from looking into '..'
@@ -36,22 +40,22 @@ cat > Makefile.am <<END
 pkgdata_DATA =
 END
 
-aclocal-$APIVERSION --force --help --output=foo.m4
+$ACLOCAL --force --help --output=foo.m4
 test ! -r foo.m4
-aclocal-$APIVERSION --output=foo.m4 --version --force
+$ACLOCAL --output=foo.m4 --version --force
 test ! -r foo.m4
 # Sanity check.
-aclocal-$APIVERSION --output=foo.m4 --force
+$ACLOCAL --output=foo.m4 --force
 test -f foo.m4
 
 mv -f foo.m4 aclocal.m4 # automake will need aclocal.m4
 
-automake-$APIVERSION --add-missing --help --copy
+$AUTOMAKE --add-missing --help --copy
 test ! -r install-sh
-automake-$APIVERSION --copy --version --add-mising
+$AUTOMAKE --copy --version --add-mising
 test ! -r install-sh
 # Sanity check.
-automake-$APIVERSION --add-missing --copy
+$AUTOMAKE --add-missing --copy
 test -f install-sh
 
 :
