@@ -800,6 +800,8 @@ vala5.test \
 vars.test \
 vars3.test \
 vartar.test \
+vartypos.test \
+vartypo2.test \
 version.test \
 version2.test \
 version3.test \
