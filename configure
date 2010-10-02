@@ -1875,14 +1875,14 @@ esac
 # (eg FreeBSD returns the mod time of the symlink's containing
 # directory).
 if (
+   am_has_slept=no
    for am_try in 1 2; do
-     echo timestamp > conftest.file
+     echo "timestamp, slept: $am_has_slept" > conftest.file
      set X `ls -Lt "$srcdir/configure" conftest.file 2> /dev/null`
      if test "$*" = "X"; then
 	# -L didn't work.
 	set X `ls -t "$srcdir/configure" conftest.file`
      fi
-     rm -f conftest.file
      if test "$*" != "X $srcdir/configure conftest.file" \
 	&& test "$*" != "X conftest.file $srcdir/configure"; then
 
@@ -1898,6 +1898,7 @@ if (
      fi
      # Just in case.
      sleep 1
+     am_has_slept=yes
    done
    test "$2" = conftest.file
    )
@@ -1910,6 +1911,16 @@ Check your system clock" "$LINENO" 5
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
+# If we didn't sleep, we still need to ensure time stamps of config.status and
+# generated files are strictly newer.
+am_sleep_pid=
+if grep 'slept: no' conftest.file >/dev/null 2>&1; then
+  ( sleep 1 ) &
+  am_sleep_pid=$!
+
+fi
+rm -f conftest.file
+
 test "$program_prefix" != NONE &&
   program_transform_name="s&^&$program_prefix&;$program_transform_name"
 # Use a double $ so make ignores it.
@@ -2868,6 +2879,13 @@ LIBOBJS=$ac_libobjs
 LTLIBOBJS=$ac_ltlibobjs
 
 
+if test -n "$am_sleep_pid"; then
+       { $as_echo "$as_me:${as_lineno-$LINENO}: checking that generated files are newer than configure" >&5
+$as_echo_n "checking that generated files are newer than configure... " >&6; }
+       wait $am_sleep_pid
+       { $as_echo "$as_me:${as_lineno-$LINENO}: result: done" >&5
+$as_echo "done" >&6; }
+     fi
 
 
 : ${CONFIG_STATUS=./config.status}
