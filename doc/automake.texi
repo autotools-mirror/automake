@@ -11372,11 +11372,15 @@ data.h data.w data.x: data.c
         fi
 @end example
 
-However there are now two minor problems in this setup.  One is related
+However there are now three minor problems in this setup.  One is related
 to the timestamp ordering of @file{data.h}, @file{data.w},
-@file{data.x}, and @file{data.c}.  The other one is a race condition
+@file{data.x}, and @file{data.c}.  Another one is a race condition
 if a parallel @command{make} attempts to run multiple instances of the
-recover block at once.
+recover block at once.  Finally, the recursive rule breaks @samp{make -n}
+when run with GNU @command{make} (as well as some other @command{make}
+implementations), as it may remove @file{data.h} even when it should not
+(@pxref{MAKE Variable, , How the @code{MAKE} Variable Works, make,
+The GNU Make Manual}).
 
 Let us deal with the first problem.  @command{foo} outputs four files,
 but we do not know in which order these files are created.  Suppose
@@ -11484,8 +11488,8 @@ elc-stamp: $(ELFILES)
         @@mv -f elc-temp $@@
 
 $(ELCFILES): elc-stamp
-## Recover from the removal of $@@
         @@if test -f $@@; then :; else \
+## Recover from the removal of $@@
           trap 'rm -rf elc-lock elc-stamp' 1 2 13 15; \
           if mkdir elc-lock 2>/dev/null; then \
 ## This code is being executed by the first process.
@@ -11498,10 +11502,58 @@ $(ELCFILES): elc-stamp
             while test -d elc-lock; do sleep 1; done; \
 ## Succeed if and only if the first process succeeded.
             test -f elc-stamp; exit $$?; \
+@c $$
           fi; \
         fi
 @end example
+
+These solutions all still suffer from the third problem, namely that
+they break the promise that @samp{make -n} should not cause any actual
+changes to the tree.  For those solutions that do not create lock files,
+it is possible to split the recover rules into two separate recipe
+commands, one of which does all work but the recursion, and the
+other invokes the recursive @samp{$(MAKE)}.  The solutions involving
+locking could act upon the contents of the @samp{MAKEFLAGS} variable,
+but parsing that portably is not easy (@pxref{The Make Macro MAKEFLAGS,,,
+autoconf, The Autoconf Manual}).  Here is an example:
+
+@example
+ELFILES = one.el two.el three.el @dots{}
+ELCFILES = $(ELFILES:=c)
+
+elc-stamp: $(ELFILES)
+        @@rm -f elc-temp
+        @@touch elc-temp
+        $(elisp_comp) $(ELFILES)
+        @@mv -f elc-temp $@@
+
+$(ELCFILES): elc-stamp
+## Recover from the removal of $@@
+        @@dry=; for f in x $$MAKEFLAGS; do \
+          case $$f in \
+            *=*|--*);; \
+            *n*) dry=:;; \
+          esac; \
+        done; \
+        if test -f $@@; then :; else \
+          $$dry trap 'rm -rf elc-lock elc-stamp' 1 2 13 15; \
+          if $$dry mkdir elc-lock 2>/dev/null; then \
+## This code is being executed by the first process.
+            $$dry rm -f elc-stamp; \
+            $(MAKE) $(AM_MAKEFLAGS) elc-stamp; \
+            $$dry rmdir elc-lock; \
+          else \
+## This code is being executed by the follower processes.
+## Wait until the first process is done.
+            while test -d elc-lock && test -z "$$dry"; do \
 @c $$
+              sleep 1; \
+            done; \
+## Succeed if and only if the first process succeeded.
+            $$dry test -f elc-stamp; exit $$?; \
+          fi; \
+        fi
+@end example
 
 For completeness it should be noted that GNU @command{make} is able to
 express rules with multiple output files using pattern rules
