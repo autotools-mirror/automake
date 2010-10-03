@@ -195,6 +195,7 @@ sc_tests_plain_sleep \
 sc_tests_plain_egrep_fgrep \
 sc_tests_PATH_SEPARATOR \
 sc_tests_logs_duplicate_prefixes \
+sc_tests_makefile_variable_order \
 sc_mkdir_p \
 sc_perl_at_substs \
 sc_unquoted_DESTDIR \
@@ -467,9 +468,10 @@ sc_tests_plain_egrep_fgrep:
 ## Rule to ensure that the testsuite has been run before.  We don't depend on `check'
 ## here, because that would be very wasteful in the common case.  We could run
 ## `make check RECHECK_LOGS=' and avoid toplevel races with AM_RECURSIVE_TARGETS.
+## Suggest keeping test directories around for greppability of the Makefile.in files.
 sc_ensure_testsuite_has_run:
 	@if test ! -f tests/test-suite.log; then \
-	  echo "Run \`make check' before \`maintainer-check'" >&2; \
+	  echo "Run \`env keep_testdirs=yes make check' before \`maintainer-check'" >&2; \
 	  exit 1; \
 	fi
 .PHONY: sc_ensure_testsuite_has_run
@@ -481,6 +483,24 @@ sc_tests_logs_duplicate_prefixes: sc_ensure_testsuite_has_run
 	  echo 'Duplicate warning/error message prefixes seen in above tests.' >&2; \
 	  exit 1; \
 	fi
+
+## Ensure variables are listed before rules in Makefile.in files we generate.
+sc_tests_makefile_variable_order: sc_ensure_testsuite_has_run
+	@for file in `find tests -name Makefile.in -print`; do \
+	  latevars=`sed -n \
+	    -e :x -e 's/#.*//' \
+	    -e '/\\\\$$/{' -e N -e 'b x' -e '}' \
+## Literal TAB.
+	    -e '1,/^	/d' \
+## Allow @ so we match conditionals.
+	    -e '/^ *[a-zA-Z_@]\{1,\} *=/p' $$file`; \
+	  if test -n "$$latevars"; then \
+	    echo 'Ensure variables are expanded before rules' >&2; \
+	    echo "Variables are expanded too late in $$file:" >&2; \
+	    echo "$$latevars" | sed 's/^/  /' >&2; \
+	    exit 1; \
+	  fi; \
+	done
 
 ## Using `:' as a PATH separator is not portable.
 sc_tests_PATH_SEPARATOR:
