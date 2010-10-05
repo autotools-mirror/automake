@@ -3605,32 +3605,19 @@ henceforth be visible to @command{autoconf}.  However if it contains
 numerous macros, it will rapidly become difficult to maintain, and it
 will be almost impossible to share macros between packages.
 
-@vindex ACLOCAL_AMFLAGS
 The second possibility, which we do recommend, is to write each macro
-in its own file and gather all of these files in a directory.  This
-directory is usually called @file{m4/}.  To build @file{aclocal.m4},
-one should therefore instruct @command{aclocal} to scan @file{m4/}.
-From the command line, this is done with @samp{aclocal -I m4}.  The
-top-level @file{Makefile.am} should also be updated to define
+in its own file and gather all these files in a directory.  This
+directory is usually called @file{m4/}.  Then it's enough to update
+@file{configure.ac} by adding a proper call to @code{AC_CONFIG_MACRO_DIR}:
 
 @example
-ACLOCAL_AMFLAGS = -I m4
+AC_CONFIG_MACRO_DIR([m4])
 @end example
 
-@code{ACLOCAL_AMFLAGS} contains options to pass to @command{aclocal}
-when @file{aclocal.m4} is to be rebuilt by @command{make}.  This line is
-also used by @command{autoreconf} (@pxref{autoreconf Invocation, ,
-Using @command{autoreconf} to Update @file{configure} Scripts,
-autoconf, The Autoconf Manual}) to run @command{aclocal} with suitable
-options, or by @command{autopoint} (@pxref{autopoint Invocation, ,
-Invoking the @command{autopoint} Program, gettext, GNU gettext tools})
-and @command{gettextize} (@pxref{gettextize Invocation, , Invoking the
-@command{gettextize} Program, gettext, GNU gettext tools}) to locate
-the place where Gettext's macros should be installed.  So even if you
-do not really care about the rebuild rules, you should define
-@code{ACLOCAL_AMFLAGS}.
+@command{aclocal} will then take care of automatically adding @file{m4/}
+to its search path for m4 files.
 
-When @samp{aclocal -I m4} is run, it will build an @file{aclocal.m4}
+When @samp{aclocal} is run, it will build an @file{aclocal.m4}
 that @code{m4_include}s any file from @file{m4/} that defines a
 required macro.  Macros not found locally will still be searched in
 system-wide directories, as explained in @ref{Macro Search Path}.
@@ -3659,19 +3646,14 @@ this requirement will hinder development.  An easy solution is to copy
 such third-party macros in your local @file{m4/} directory so they get
 distributed.
 
-Since Automake 1.10, @command{aclocal} offers an option to copy these
-system-wide third-party macros in your local macro directory, solving
-the above problem.  Simply use:
+Since Automake 1.10, @command{aclocal} offers the option @code{--install}
+to copy these system-wide third-party macros in your local macro directory,
+helping to solve the above problem.
 
-@example
-ACLOCAL_AMFLAGS = -I m4 --install
-@end example
-
-@noindent
 With this setup, system-wide macros will be copied to @file{m4/}
-the first time you run @command{autoreconf}.  Then the locally
-installed macros will have precedence over the system-wide installed
-macros each time @command{aclocal} is run again.
+the first time you run @command{aclocal}.  Then the locally installed
+macros will have precedence over the system-wide installed macros
+each time @command{aclocal} is run again.
 
 One reason why you should keep @option{--install} in the flags even
 after the first run is that when you later edit @file{configure.ac}
@@ -3752,16 +3734,14 @@ MyPackage uses an @file{m4/} directory to store local macros as
 explained in @ref{Local Macros}, and has
 
 @example
-ACLOCAL_AMFLAGS = -I m4 --install
+AC_CONFIG_MACRO_DIR([m4])
 @end example
 
 @noindent
-in its top-level @file{Makefile.am}.
+in its @file{configure.ac}.
 
 Initially the @file{m4/} directory is empty.  The first time we run
-@command{autoreconf}, it will fetch the options to pass to
-@command{aclocal} in @file{Makefile.am}, and run @samp{aclocal -I m4
---install}.  @command{aclocal} will notice that
+@command{aclocal --install}, it will notice that
 
 @itemize @bullet
 @item
@@ -3779,9 +3759,8 @@ and @command{aclocal} was given the @option{--install} option, it will
 copy this file in @file{m4/thirdparty.m4}, and output an
 @file{aclocal.m4} that contains @samp{m4_include([m4/thirdparty.m4])}.
 
-The next time @samp{aclocal -I m4 --install} is run (either via
-@command{autoreconf}, by hand, or from the @file{Makefile} rebuild
-rules) something different happens.  @command{aclocal} notices that
+The next time @samp{aclocal --install} is run, something different
+happens.  @command{aclocal} notices that
 
 @itemize @bullet
 @item
@@ -3807,8 +3786,8 @@ the system-wide file in case of equal serial numbers.
 
 Now suppose the system-wide third-party macro is changed.  This can
 happen if the package installing this macro is updated.  Let's suppose
-the new macro has serial number 2.  The next time @samp{aclocal -I m4
---install} is run the situation is the following:
+the new macro has serial number 2.  The next time @samp{aclocal --install}
+is run the situation is the following:
 
 @itemize @bullet
 @item
@@ -3834,16 +3813,16 @@ macro in @file{m4/thirdparty.m4}, in this case overriding the old
 version.  MyPackage just had its macro updated as a side effect of
 running @command{aclocal}.
 
-If you are leery of letting @command{aclocal} update your local macro,
-you can run @samp{aclocal -I m4 --diff} to review the changes
-@samp{aclocal -I m4 --install} would perform on these macros.
+If you are leery of letting @command{aclocal} update your local
+macro, you can run @samp{aclocal --diff} to review the changes
+@samp{aclocal --install} would perform on these macros.
 
 Finally, note that the @option{--force} option of @command{aclocal} has
 absolutely no effect on the files installed by @option{--install}.  For
 instance, if you have modified your local macros, do not expect
 @option{--install --force} to replace the local macros by their
 system-wide versions.  If you want to do so, simply erase the local
-macros you want to revert, and run @samp{aclocal -I m4 --install}.
+macros you want to revert, and run @samp{aclocal --install}.
 
 
 @node Future of aclocal
@@ -9825,15 +9804,6 @@ Automake generates rules to automatically rebuild @file{Makefile}s,
 If you are using @code{AM_MAINTAINER_MODE} in @file{configure.ac}, then
 these automatic rebuilding rules are only enabled in maintainer mode.
 
-@vindex ACLOCAL_AMFLAGS
-Sometimes you need to run @command{aclocal} with an argument like
-@option{-I} to tell it where to find @file{.m4} files.  Since
-sometimes @command{make} will automatically run @command{aclocal}, you
-need a way to specify these arguments.  You can do this by defining
-@code{ACLOCAL_AMFLAGS}; this holds arguments that are passed verbatim
-to @command{aclocal}.  This variable is only useful in the top-level
-@file{Makefile.am}.
-
 @vindex CONFIG_STATUS_DEPENDENCIES
 @vindex CONFIGURE_DEPENDENCIES
 @cindex @file{version.sh}, example
@@ -12284,11 +12254,6 @@ To some extent, even @code{AM_MAKEFLAGS} (@pxref{Subdirectories})
 obeys this naming scheme.  The slight difference is that
 @code{MAKEFLAGS} is passed to sub-@command{make}s implicitly by
 @command{make} itself.
-
-However you should not think that all variables ending with @code{FLAGS}
-follow this convention.  For instance, @code{ACLOCAL_AMFLAGS} (see
-@ref{Rebuilding} and @ref{Local Macros}) is a variable that is only
-useful to the maintainer and has no user counterpart.
 
 @code{ARFLAGS} (@pxref{A Library}) is usually defined by Automake and
 has neither @code{AM_} nor per-target cousin.

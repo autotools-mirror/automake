@@ -1,0 +1,161 @@
+#! /bin/sh
+# Copyright (C) 2012 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Several tests on the use of the m4 macro AC_CONFIG_MACRO_DIR with
+# aclocal.
+
+am_create_testdir=empty
+. ./defs || exit 1
+
+plan_ later
+
+ocwd=$(pwd) || fatal_ "getting current working directory"
+ACLOCAL_PATH=; unset ACLOCAL_PATH
+
+#
+# General utility functions and variables.
+#
+# TODO: These should maybe be refactored, generalized and
+#       moved into 't/ax/tap-functions.sh' ...
+#
+
+tcount=0
+r=invalid
+description=''
+directive=''
+
+test_begin ()
+{
+  if test -n "$description"; then
+    fatal_ "'test_begin' called, but another test seems active already"
+  else
+    r=ok
+    description=$1
+    echo "$description" > README.txt
+    shift
+  fi
+  tcount=$(($tcount + 1)) && test $tcount -gt 0 \
+    || fatal_ "failed to bump the test count"
+  mkdir $tcount.d
+  cd $tcount.d
+}
+
+test_end ()
+{
+  if test -z "$description"; then
+    fatal_ "'test_end' called, but no test seems active"
+  else
+    cd "$ocwd" || fatal_ "cannot chdir back to top-level directory"
+    result_ "$r" -D "$directive" -- "$description"
+    # Don't leave directories for successful subtests hanging around.
+    if test -z "$directive" && test "$r" = ok; then
+      rm -rf "$tcount.d" || fatal_ "removing subdir $tcount.d"
+    fi
+    r=invalid directive= description=
+  fi
+}
+
+test_todo () { directive=TODO; }
+
+#---------------------------------------------------------------------------
+
+test_begin "AC_CONFIG_MACRO_DIR is honored"
+
+cat > configure.ac <<'END'
+AC_INIT([md], [10.0])
+AC_CONFIG_MACRO_DIR([macro-dir])
+MY_FOO
+END
+
+mkdir macro-dir
+echo 'AC_DEFUN([MY_FOO], [::my::foo::])' > macro-dir/foo.m4
+
+$ACLOCAL \
+  && $FGREP 'm4_include([macro-dir/foo.m4])' aclocal.m4 \
+  && $AUTOCONF \
+  && not $FGREP 'MY_FOO' configure \
+  && $FGREP '::my::foo::' configure \
+  || r='not ok'
+
+test_end
+
+#---------------------------------------------------------------------------
+
+test_begin "AC_CONFIG_MACRO_DIR([foo]) interaction with --install"
+
+cat > configure.ac << 'END'
+AC_INIT([inst], [1.0])
+AC_CONFIG_MACRO_DIR([the-dir])
+THE_MACRO
+END
+
+mkdir sys-dir the-dir
+echo 'AC_DEFUN([THE_MACRO], [:])' > sys-dir/my.m4
+
+test ! -r the-dir/my.m4 \
+  && $ACLOCAL --install --system-acdir ./sys-dir \
+  && diff sys-dir/my.m4 the-dir/my.m4 \
+  || r='not ok'
+
+test_end
+
+#---------------------------------------------------------------------------
+
+test_begin "'-I' option wins over AC_CONFIG_MACRO_DIR"
+
+cat > configure.ac <<'END'
+AC_INIT([md], [4.6])
+AC_CONFIG_MACRO_DIR([dir1])
+MY_FOO
+END
+
+mkdir dir1 dir2
+echo 'AC_DEFUN([MY_FOO], [::ko::ko::])' > dir1/1.m4
+echo 'AC_DEFUN([MY_FOO], [::ok::ok::])' > dir2/2.m4
+
+$ACLOCAL -I dir2 \
+  && $FGREP 'm4_include([dir2/2.m4])' aclocal.m4 \
+  && not $FGREP 'm4_include([dir1/1.m4])' aclocal.m4 \
+  && $AUTOCONF \
+  && not $FGREP '::ko::ko::' configure \
+  && $FGREP '::ok::ok::' configure \
+  || r='not ok'
+
+test_end
+
+#---------------------------------------------------------------------------
+
+test_begin "AC_CONFIG_MACRO_DIR([foo]) can create directory 'foo'"
+
+cat > configure.ac << 'END'
+AC_INIT([x], [1.0])
+AC_CONFIG_MACRO_DIR([foo])
+MY_MACRO
+END
+
+mkdir acdir
+echo 'AC_DEFUN([MY_MACRO], [:])' > acdir/bar.m4
+
+test ! -d foo \
+  && $ACLOCAL --install --system-acdir ./acdir \
+  && diff acdir/bar.m4 foo/bar.m4 \
+  || r='not ok'
+
+test_end
+
+#---------------------------------------------------------------------------
+
+:

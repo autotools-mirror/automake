@@ -29,6 +29,7 @@ AC_DEFUN([FOO],[
 EOF
 
 cat >>configure.ac <<'END'
+AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SUBDIRS([lib])
 FOO
 END
@@ -46,8 +47,6 @@ distdir = subpack-1
 dist-hook:
 	test -f $(distdir)/LDADD.c
 	test -f $(top_distdir)/LDADD.c
-
-ACLOCAL_AMFLAGS = -I m4
 EOF
 
 cat >LDADD.c <<'EOF'
@@ -64,6 +63,7 @@ mkdir lib/src
 cat >lib/configure.ac <<'EOF'
 AC_INIT([lib], [2.3])
 AM_INIT_AUTOMAKE
+AC_CONFIG_MACRO_DIR([../m4])
 AM_PROG_AR
 AC_PROG_RANLIB
 AC_CONFIG_HEADERS([config.h:config.hin])
@@ -80,8 +80,6 @@ dist-hook:
 	test -f $(top_distdir)/LDADD.c
 	test -f $(distdir)/src/x.c
 	test ! -f $(top_distdir)/src/x.c
-
-ACLOCAL_AMFLAGS = -I ../m4
 EOF
 
 cat >lib/src/x.c <<'EOF'
@@ -92,12 +90,12 @@ int lib (void)
 }
 EOF
 
-$ACLOCAL -I m4
+$ACLOCAL
 $AUTOCONF
 $AUTOMAKE -Wno-override
 
 cd lib
-$ACLOCAL -I ../m4
+$ACLOCAL
 $FGREP 'm4_include([../m4/foo.m4])' aclocal.m4
 $AUTOCONF
 $AUTOHEADER

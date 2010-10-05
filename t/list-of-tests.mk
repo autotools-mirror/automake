@@ -88,6 +88,7 @@ t/acloca11.sh \
 t/acloca12.sh \
 t/acloca13.sh \
 t/acloca14.sh \
+t/acloca14b.sh \
 t/acloca15.sh \
 t/acloca16.sh \
 t/acloca17.sh \
@@ -96,9 +97,12 @@ t/acloca19.sh \
 t/acloca20.sh \
 t/acloca21.sh \
 t/acloca22.sh \
+t/acloca22b.sh \
 t/acloca23.sh \
 t/aclocal-acdir.sh \
 t/aclocal-install-absdir.sh \
+t/aclocal-macrodir.tap \
+t/aclocal-amflags.sh \
 t/aclocal-print-acdir.sh \
 t/aclocal-path.sh \
 t/aclocal-path-install.sh \
@@ -929,6 +933,7 @@ t/remake-deleted-am-subdir.sh \
 t/remake-deleted-am.sh \
 t/remake-renamed-am.sh \
 t/remake-aclocal-version-mismatch.sh \
+t/remake-macrodir.sh \
 t/pr8365-remake-timing.sh \
 t/req.sh \
 t/reqd.sh \

@@ -28,6 +28,7 @@ AC_DEFUN([FOO],[
 EOF
 
 cat >>configure.ac <<'END'
+AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SUBDIRS([sub])
 AC_OUTPUT
 END
@@ -43,20 +44,21 @@ mkdir sub
 cat >sub/configure.ac <<'EOF'
 AC_INIT([sub], [2.3])
 AM_INIT_AUTOMAKE
+AC_CONFIG_MACRO_DIR([../m4])
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([script])
 FOO
 EOF
 
 : >sub/script.in
-echo ACLOCAL_AMFLAGS = -I ../m4 > sub/Makefile.am
+: >sub/Makefile.am
 
-$ACLOCAL -I m4
+$ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 
 cd sub
-$ACLOCAL -I ../m4
+$ACLOCAL
 $FGREP 'm4_include([../m4/foo.m4])' aclocal.m4
 $AUTOCONF
 $AUTOMAKE -Wno-override
@@ -64,3 +66,5 @@ cd ..
 
 ./configure
 $MAKE distcheck
+
+:

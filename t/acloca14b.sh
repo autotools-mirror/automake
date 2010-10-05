@@ -20,7 +20,6 @@
 . ./defs || exit 1
 
 cat >> configure.ac << 'END'
-AC_CONFIG_MACRO_DIR([defs])
 AM_PROG_LIBTOOL
 AC_OUTPUT
 END
@@ -46,6 +45,7 @@ echo 'AC_DEFUN([SOMETHING_ELSE])' >defs/e.m4
 echo 'AC_DEFUN([ANOTHER_MACRO])' >defs/f.m4
 
 cat >>Makefile.am<<\EOF
+ACLOCAL_AMFLAGS = -I defs
 testdist1: distdir
 	test -f $(distdir)/acinclude.m4
 	test -f $(distdir)/a.m4
