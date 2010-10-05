@@ -284,6 +284,7 @@ distdir.test \
 distlinks.test \
 distlinksbrk.test \
 distname.test \
+dmalloc.test \
 dollar.test \
 dollarvar.test \
 dollarvar2.test \

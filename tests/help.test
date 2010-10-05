@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Make sure --help and --version work, even when no configure.ac
-# is in the current directory.
+# Make sure --help and --version work, even when no configure.ac nor
+# configure.in is in the current directory.
 
 . ./defs || Exit 1
 
@@ -25,19 +25,22 @@ set -e
 mkdir emptydir
 cd emptydir
 
-aclocal-$APIVERSION --version
-aclocal-$APIVERSION --help
-automake-$APIVERSION --version
-automake-$APIVERSION --help
+# Honour user overrides for $ACLOCAL and $AUTOMAKE.
+ACLOCAL=`echo " $ACLOCAL " | sed 's/ -W[^ ]*/ /g'`
+AUTOMAKE=`echo " $AUTOMAKE " | sed 's/ -W[^ ]*/ /g'`
+
+$ACLOCAL --version
+$ACLOCAL --help
+$AUTOMAKE --version
+$AUTOMAKE --help
 
 # Sanity checks: aclocal and automake cannot work without configure.ac
 # or configure.in.
-aclocal-$APIVERSION 2>stderr && { cat stderr >&2; Exit 1; }
+$ACLOCAL 2>stderr && { cat stderr >&2; Exit 1; }
 cat stderr >&2
 $FGREP configure.ac stderr
 $FGREP configure.in stderr
-automake-$APIVERSION 2>stderr && { cat stderr >&2; Exit 1; }
-cat stderr >&2
+AUTOMAKE_fails
 $FGREP configure.ac stderr
 $FGREP configure.in stderr
 
