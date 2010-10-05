@@ -20,8 +20,6 @@
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
-AM_CONDITIONAL(ONE, true)
-AM_CONDITIONAL(TWO, false)
 END
 
 cat > Makefile.am << 'END'

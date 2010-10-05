@@ -27,3 +27,5 @@ END
 
 $ACLOCAL
 $AUTOMAKE
+
+:
