@@ -15,32 +15,51 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test to make sure Automake supports implicit rules with dot-less
-# extensions.  Also make sure that `.o' is handled like `.$(OBJEXT)'.
+# extensions.  Also make sure that `.o' and `.obj' are handled like
+# `.$(OBJEXT)'.  See also related "semantic" tests suffix6b.test
+# and suffix6c.test.
 
 . ./defs || Exit 1
 
 set -e
 
 cat > Makefile.am << 'END'
-SUFFIXES = a b .$(OBJEXT) c .o
+SUFFIXES = a b .$(OBJEXT) c .o .obj
 bin_PROGRAMS = foo
-foo_SOURCES = fooa fuc
+foo_SOURCES = fooa barc bazc
 ab:
-        cp $< $@
+	dummy action 1
 b.$(OBJEXT):
-	cp $< $@
+	dummy action 2
 c.o:
-	cp $< $@
+	dummy action C
+c.obj:
+	dummy action C
 END
 
 $ACLOCAL
 $AUTOMAKE
 
+sed -n -e '/foo_OBJECTS *=.*\\$/ {
+  :loop
+  p
+  n
+  t clear
+  :clear
+  s/\\$/\\/
+  t loop
+  p
+  n
+}' -e 's/$/ /' -e 's/^.*foo_OBJECTS *= */ /p' Makefile.in > foo-objects
+cat foo-objects
+
 # Automake must figure that fooa translates to foo.$(OBJEXT) and
 # foo.$(OBJEXT) using the following rules:
 #  fooa --[ab]--> foob --[b.$(OBJEXT)]--> foo.$(OBJEXT)
-grep '_OBJECTS.* foo\.\$(OBJEXT)' Makefile.in
-#  fuc --[c.o]--> fu.$(OBJEXT)  ## This is really meant !
-grep '_OBJECTS.* fu\.\$(OBJEXT)' Makefile.in
+$FGREP ' foo.$(OBJEXT) ' foo-objects
+#  barc --[c.o]--> bar.$(OBJEXT)    ## This is really meant !
+$FGREP ' bar.$(OBJEXT) ' foo-objects
+#  bazc --[c.obj]--> baz.$(OBJEXT)  ## This is really meant !
+$FGREP ' baz.$(OBJEXT) ' foo-objects
 
 :

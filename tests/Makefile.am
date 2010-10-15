@@ -715,6 +715,8 @@ suffix3.test \
 suffix4.test \
 suffix5.test \
 suffix6.test \
+suffix6b.test \
+suffix6c.test \
 suffix7.test \
 suffix8.test \
 suffix9.test \

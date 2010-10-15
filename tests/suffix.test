@@ -14,7 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Make sure a suffix rule for C compilation is produced.
+# Make sure proper suffix rules for C compilation are produced, and
+# only once.
+# See also related test `suffix2.test'.
 
 . ./defs || Exit 1
 
@@ -22,18 +24,24 @@ set -e
 
 cat >> configure.in << 'END'
 AC_PROG_CC
+AC_PROG_RANLIB
 END
 
 cat > Makefile.am << 'END'
 noinst_PROGRAMS = foo
+noinst_LIBRARIES = libbar.a
 END
 
 $ACLOCAL
 
 $AUTOMAKE -i
-grep '^\.c\.o' Makefile.in
+grep '^ *\.c' Makefile.in # for debugging
+test `grep -c '^\.c\.o:' Makefile.in` -eq 1
+test `grep -c '^\.c\.obj:' Makefile.in` -eq 1
 
 $AUTOMAKE
-grep '^\.c\.o' Makefile.in
+grep '^ *\.c' Makefile.in # for debugging
+test `grep -c '^\.c\.o:' Makefile.in` -eq 1
+test `grep -c '^\.c\.obj:' Makefile.in` -eq 1
 
 :

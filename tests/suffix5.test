@@ -24,23 +24,41 @@ required=libtool
 set -e
 
 cat >> configure.in << 'END'
+AC_SUBST([LINK], [:])
 AC_PROG_LIBTOOL
+AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
 .k.lo:
-	echo $< > $@
+## account for VPATH issues on weaker make implementations
+	(echo $< && cat `test -f $< || echo $(srcdir)/`$<) > $@
 
 noinst_LTLIBRARIES = libfoo.la
 libfoo_la_SOURCES = foo.k
+
+.PHONY: test
+test: all
+	grep '^=GREP=ME=$$' foo.lo
+## weaker regex to account for VPATH issues
+	grep 'foo\.k$$' foo.lo
+check-local: test
 END
 
 : > ltmain.sh
-: > config.guess
-: > config.sub
+
+cp "$testsrcdir/../lib/config.guess" "$testsrcdir/../lib/config.sub" .
 
 $ACLOCAL
 $AUTOMAKE
 grep '_OBJECTS.*foo\.lo' Makefile.in
+
+$AUTOCONF
+./configure
+
+echo '=GREP=ME=' > foo.k
+
+$MAKE test
+$MAKE distcheck
 
 :
