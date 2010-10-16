@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2003  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,30 +22,27 @@ required=runtest
 
 set -e
 
-# Get the package name from configure.in.
-package=`$FGREP AC_INIT configure.in | sed -e 's:^[^[]*\[\([^]]*\)\].*$:\1:'`
+package=$me
 
 cat > $package << 'END'
 #! /bin/sh
 echo "Ah, we have been expecting you, Mr. Blond."
 END
-
 chmod +x $package
 
-echo AC_OUTPUT >> configure.in
+cat >> configure.in << 'END'
+AC_OUTPUT
+END
 
 cat > Makefile.am << END
 AUTOMAKE_OPTIONS = dejagnu
-
 EXTRA_DIST = $package $package.test/$package.exp
+AM_RUNTESTFLAGS = PACKAGE=\$(srcdir)/$package
 END
 
-echo "AM_RUNTESTFLAGS = PACKAGE=\$(srcdir)/$package" >> Makefile.am
-
 mkdir $package.test
-
 cat > $package.test/$package.exp << 'END'
-set test "test"
+set test "a_dejagnu_test"
 spawn $PACKAGE
 expect {
     "Ah, we have been expecting you, Mr. Blond." { pass "$test" }
@@ -64,3 +61,5 @@ test -f $package.log
 test -f $package.sum
 
 $MAKE distcheck
+
+:

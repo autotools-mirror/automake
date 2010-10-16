@@ -133,6 +133,7 @@ check8.test \
 check9.test \
 check10.test \
 check11.test \
+check12.test \
 checkall.test \
 clean.test \
 clean2.test \
