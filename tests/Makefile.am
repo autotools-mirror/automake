@@ -38,10 +38,10 @@ $(parallel_tests): Makefile.am
 	{ echo '#!/bin/sh'; \
 	  echo '# DO NOT EDIT!  GENERATED AUTOMATICALLY!'; \
 	  echo; \
-	  echo '# Ensure proper definition of $$srcdir.'; \
+	  echo '# Ensure proper definition of $$testsrcdir.'; \
 	  echo 'am_skip_defs=yes'; \
 	  echo '. ./defs || exit 99'; \
-	  echo 'test -n "$$srcdir" || exit 99 # sanity check'; \
+	  echo 'test -n "$$testsrcdir" || exit 99 # sanity check'; \
 	  echo; \
 	  echo "# Run the test with Automake's parallel-tests driver enabled."; \
 	  echo 'parallel_tests=yes'; \
@@ -50,7 +50,7 @@ $(parallel_tests): Makefile.am
 	  echo "if test -f \"./$$input\"; then"; \
 	  echo "  . \"./$$input\""; \
 	  echo 'else'; \
-	  echo "  . \"\$$srcdir/$$input\""; \
+	  echo "  . \"\$$testsrcdir/$$input\""; \
 	  echo 'fi'; \
 	} > $@-t
 	$(AM_V_at)chmod a+rx $@-t && mv -f $@-t $@
