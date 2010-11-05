@@ -1,0 +1,98 @@
+# -*- shell-script -*-
+# @configure_input@
+#
+# Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
+# 2005, 2006, 2007, 2008, 2009, 2010 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Defines and minimal setup for Automake testing environment.
+# IMPORTANT: Multiple inclusions of this file should be idempotent!
+
+# Be more Bourne compatible.
+# (Snippet copied from configure's initialization in Autoconf 2.64)
+DUALCASE=1; export DUALCASE # for MKS sh
+if test -n "${ZSH_VERSION+set}" && (emulate sh) >/dev/null 2>&1; then
+  emulate sh
+  NULLCMD=:
+  # Pre-4.2 versions of Zsh do word splitting on ${1+"$@"}, which
+  # is contrary to our usage.  Disable this feature.
+  alias -g '${1+"$@"}'='"$@"'
+  setopt NO_GLOB_SUBST
+else
+  case `(set -o) 2>/dev/null` in *posix*) set -o posix;; esac
+fi
+
+testsrcdir='@abs_srcdir@'
+top_testsrcdir='@abs_top_srcdir@'
+testbuilddir='@abs_builddir@'
+testprefix='@prefix@'
+
+APIVERSION='@APIVERSION@'
+PATH_SEPARATOR='@PATH_SEPARATOR@'
+
+# Make sure we override the user shell.
+SHELL='@SHELL@'; export SHELL
+# User can override various tools used.
+test -z "$PERL" && PERL='@PERL@'
+test -z "$MAKE" && MAKE=make
+test -z "$AUTOCONF" && AUTOCONF="@am_AUTOCONF@"
+test -z "$AUTOHEADER" && AUTOHEADER="@am_AUTOHEADER@"
+test -z "$AUTOUPDATE" && AUTOUPDATE=autoupdate
+test -z "$MISSING" && MISSING=$top_testsrcdir/lib/missing
+# Use -Werror because this also turns some Perl warnings into error.
+# (Tests for which this is inappropriate should use -Wno-error.)
+test -z "$ACLOCAL" && ACLOCAL="aclocal-$APIVERSION -Werror"
+# Extra flags to pass to aclocal before all other flags added by this script.
+ACLOCAL_TESTSUITE_FLAGS=''; export ACLOCAL_TESTSUITE_FLAGS
+
+# See how Automake should be run.  We put --foreign as the default
+# strictness to avoid having to create lots and lots of files.  A test
+# can override this by specifying a different strictness.  Use -Wall
+# -Werror by default.  Tests for which this is inappropriate
+# (e.g. when testing that a warning is enabled by a specific switch)
+# should use -Wnone or/and -Wno-error
+test -z "$AUTOMAKE" && AUTOMAKE="automake-$APIVERSION --foreign -Werror -Wall"
+
+# POSIX no longer requires 'egrep' and 'fgrep',
+# but some hosts lack 'grep -E' and 'grep -F'.
+EGREP='@EGREP@'
+FGREP='@FGREP@'
+
+# No all versions of Tex support `--version', so we use a configure
+# check to decide if tex is available.  This decision is embodied in
+# this variable.
+TEX='@TEX@'
+
+# Whether /bin/sh has working 'set -e' with exit trap.
+sh_errexit_works='@sh_errexit_works@'
+
+# The amount we should wait after modifying files depends on the platform.
+# For instance, Windows '95, '98 and ME have 2-second granularity
+# and can be up to 3 seconds in the future w.r.t. the system clock.
+sleep='sleep @MODIFICATION_DELAY@'
+
+# An old timestamp that can be given to a file, in "touch -t" format.
+# The time stamp should be portable to all file systems of interest.
+# Just for fun, choose the exact time of the announcement of the GNU project
+# in UTC; see <http://www.gnu.org/gnu/initial-announcement.html>.
+old_timestamp=198309271735.59
+
+# Make our wrapper scripts accessible by default.  And avoid to uselessly
+# extend $PATH multiple times if this file is sourced multiple times.
+case $PATH in
+  "$testbuilddir$PATH_SEPARATOR"*) ;;
+  *) PATH="$testbuilddir$PATH_SEPARATOR$PATH";;
+esac
+export PATH

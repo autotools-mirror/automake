@@ -39,8 +39,7 @@ $(parallel_tests): Makefile.am
 	  echo '# DO NOT EDIT!  GENERATED AUTOMATICALLY!'; \
 	  echo; \
 	  echo '# Ensure proper definition of $$testsrcdir.'; \
-	  echo 'am_skip_defs=yes'; \
-	  echo '. ./defs || exit 99'; \
+	  echo '. ./defs-static || exit 99'; \
 	  echo 'test -n "$$testsrcdir" || exit 99 # sanity check'; \
 	  echo; \
 	  echo "# Run the test with Automake's parallel-tests driver enabled."; \
@@ -76,8 +75,7 @@ $(instspc_tests): Makefile.am
 	    echo '# DO NOT EDIT!  GENERATED AUTOMATICALLY!'; \
 	    echo; \
 	    echo '# Ensure proper definition of $$testsrcdir.'; \
-	    echo 'am_skip_defs=yes'; \
-	    echo '. ./defs || exit 99'; \
+	    echo '. ./defs-static || exit 99'; \
 	    echo 'test -n "$$testsrcdir" || exit 99 # sanity check'; \
 	    echo; \
 	    echo "instspc_test_name='$$name'"; \

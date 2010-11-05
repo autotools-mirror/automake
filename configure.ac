@@ -203,8 +203,9 @@ AC_CONFIG_FILES([
   lib/am/Makefile
   m4/Makefile
   tests/Makefile
-  tests/defs
+  tests/defs-static
 ])
+AC_CONFIG_LINKS([tests/defs:tests/defs])
 AC_CONFIG_FILES([tests/aclocal-${APIVERSION}:tests/aclocal.in],
                 [chmod +x tests/aclocal-${APIVERSION}],
 	        [APIVERSION=$APIVERSION])
