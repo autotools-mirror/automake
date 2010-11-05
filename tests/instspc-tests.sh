@@ -21,18 +21,21 @@
 # Original report from James Amundson about file names with spaces.
 # Other characters added by Paul Eggert.
 #
-# This script fulfills a double role:
+# This script fulfills a threefold role:
 #   1. It generates a Makefile.am snippet, containing the definition
 #      of proper lists of tests.
-#   2. It is sourced by said generated tests with proper parameters
+#   2. It sets up a directory containing some common data files and
+#      autotools-generated files used by said generated tests (this
+#      is done for speed reasons only).
+#   3. It is sourced by said generated tests with proper parameters
 #      pre-set, to run the "meat" of the checks.
-# This setup might seem tricky and over-engineered abuse, but past
+# This setup might seem a tricky and over-engineered abuse, but past
 # (painful) experiences showed that it is indeed required, because
 # the test generation code and test execution code tend to be
 # inextricably coupled and intertwined.
 #
 
-# Be more Bourne compatible (snippet copied from `tests/defs.in').
+# Be more Bourne compatible (snippet copied from `tests/defs').
 DUALCASE=1; export DUALCASE # for MKS sh
 if test -n "${ZSH_VERSION+set}" && (emulate sh) >/dev/null 2>&1; then
   emulate sh
@@ -58,20 +61,22 @@ if test x"$instspc_action" = x; then
 elif test $# -gt 0; then
   echo "$0: action specified and command line arguments used" >&2
   exit 99
-elif test x"$instspc_action" = x"generate-makefile"; then
-  :
-else
-  case $instspc_action in
-    test-build|test-install)
-      if test x"$instspc_test_name" = x; then
-        echo "$0: test name undefined for action '$instspc_action'" >&2
-        exit 99
-      fi;;
-    *)
-      echo "$0: invalid action: '$instspc_action'"
-      exit 99;;
-  esac
 fi
+
+case $instspc_action in
+  generate-makefile|generate-data)
+    ;;
+  test-build|test-install)
+    if test x"$instspc_test_name" = x; then
+      echo "$0: test name undefined for action '$instspc_action'" >&2
+      exit 99
+    fi
+    ;;
+  *)
+    echo "$0: invalid action: '$instspc_action'"
+    exit 99
+    ;;
+esac
 
 # Helper subroutine for test data definition.
 # Usage: define_problematic_string NAME STRING
@@ -92,6 +97,91 @@ define_problematic_string ()
   case " $* " in *' fail-install '*|*' install-fail '*)
     instspc_xfail_installs_list="$instspc_xfail_installs_list $tst";;
   esac
+}
+
+# Helper subroutines for creation of input data files.
+
+unindent ()
+{
+  sed 's/^ *//' # we don't strip leading tabs -- this is deliberate!
+}
+
+create_input_data ()
+{
+  mkdir sub
+
+  unindent > configure.in << 'EOF'
+    AC_INIT([instspc], [1.0])
+    AM_INIT_AUTOMAKE
+    AC_CONFIG_FILES([Makefile])
+    AC_PROG_CC
+    AC_PROG_RANLIB
+    AC_OUTPUT
+EOF
+
+  : > sub/base.h
+  : > sub/nobase.h
+  : > sub/base.dat
+  : > sub/nobase.dat
+  : > sub/base.sh
+  : > sub/nobase.sh
+
+  unindent > source.c << 'EOF'
+    int
+    main (int argc, char **argv)
+    {
+      return 0;
+    }
+EOF
+  cp source.c source2.c
+
+  unindent > Makefile.am << 'EOF'
+    foodir = $(prefix)/foo
+    fooexecdir = $(prefix)/foo
+
+    foo_HEADERS = sub/base.h
+    nobase_foo_HEADERS = sub/nobase.h
+
+    dist_foo_DATA = sub/base.dat
+    nobase_dist_foo_DATA = sub/nobase.dat
+
+    dist_fooexec_SCRIPTS = sub/base.sh
+    nobase_dist_fooexec_SCRIPTS = sub/nobase.sh
+
+    fooexec_PROGRAMS = sub/base
+    nobase_fooexec_PROGRAMS = sub/nobase
+    sub_base_SOURCES = source.c
+    sub_nobase_SOURCES = source.c
+
+    fooexec_LIBRARIES = sub/libbase.a
+    nobase_fooexec_LIBRARIES = sub/libnobase.a
+    sub_libbase_a_SOURCES = source.c
+    sub_libnobase_a_SOURCES = source.c
+
+    .PHONY: test-install-sep
+    test-install-sep: install
+	test   -f '$(DESTDIR)/$(file)-prefix/foo/sub/nobase.h'
+	test ! -f '$(DESTDIR)/$(file)-prefix/foo/nobase.h'
+	test   -f '$(DESTDIR)/$(file)-prefix/foo/base.h'
+	test   -f '$(DESTDIR)/$(file)-prefix/foo/sub/nobase.dat'
+	test ! -f '$(DESTDIR)/$(file)-prefix/foo/nobase.dat'
+	test   -f '$(DESTDIR)/$(file)-prefix/foo/base.dat'
+	test   -f '$(DESTDIR)/$(file)-prefix/foo/sub/nobase.sh'
+	test ! -f '$(DESTDIR)/$(file)-prefix/foo/nobase.sh'
+	test   -f '$(DESTDIR)/$(file)-prefix/foo/base.sh'
+	test   -f '$(DESTDIR)/$(file)-prefix/foo/sub/nobase$(EXEEXT)'
+	test ! -f '$(DESTDIR)/$(file)-prefix/foo/nobase$(EXEEXT)'
+	test   -f '$(DESTDIR)/$(file)-prefix/foo/base$(EXEEXT)'
+	test   -f '$(DESTDIR)/$(file)-prefix/foo/sub/libnobase.a'
+	test ! -f '$(DESTDIR)/$(file)-prefix/foo/libnobase.a'
+	test   -f '$(DESTDIR)/$(file)-prefix/foo/libbase.a'
+EOF
+
+  $ACLOCAL
+  $AUTOCONF
+  $AUTOMAKE -a
+
+  : > success
 }
 
 # Be sure to avoid interferences from the environment.
@@ -189,14 +279,30 @@ if test x"$instspc_action" = x"generate-makefile"; then
   exit 0
 fi
 
-###  If we are still here, we have to run a test ...
-
-# We'll need the full setup provided by `tests/defs'.  Temporarly disable
+# We'll need the full setup provided by `tests/defs'.  Temporarily disable
 # the errexit flag, since the setup code might not be prepared to deal
 # with it.
 set +e
 . ./defs || Exit 99
 set -e
+
+# The directory set up by the `generate-data' action should contain all
+# the files we need.  So remove the other files created by ./defs.  And
+# check we really are in a temporary `*.dir' directory in the build tree,
+# since the last thing we want is to remove some random user files!
+test -f ../defs-static && test -f ../defs || Exit 99
+case `pwd` in *.dir);; *) Exit 99;; esac
+rm -f *
+
+if test x"$instspc_action" = x"generate-data"; then
+  # We must *not* remove the test directory, since its contents must be
+  # used by following dependent tests.
+  keep_testdirs=yes
+  create_input_data
+  Exit 0
+fi
+
+###  If we are still here, we have to run a test ...
 
 eval "instspc_test_string=\${instspc__$instspc_test_name}" || Exit 99
 if test x"$instspc_test_string" = x; then
@@ -204,87 +310,23 @@ if test x"$instspc_test_string" = x; then
   Exit 99
 fi
 
+test -f ../instspc-data.dir/success || {
+  echo "$me: setup by instspc-data.test failed" >&2
+  Exit 99
+}
+
 # Skip if this system doesn't support these characters in file names.
 mkdir "./$instspc_test_string" || Exit 77
 
-mkdir sub sub1
-
-cat >> configure.in << 'EOF'
-AC_PROG_CC
-AC_PROG_RANLIB
-AC_OUTPUT
-EOF
-
-: > sub/base.h
-: > sub/nobase.h
-: > sub/base.dat
-: > sub/nobase.dat
-: > sub/base.sh
-: > sub/nobase.sh
-
-cat > source.c << 'EOF'
-int
-main (int argc, char **argv)
-{
-  return 0;
-}
-EOF
-cp source.c source2.c
-
-cat > Makefile.am << 'EOF'
-foodir = $(prefix)/foo
-fooexecdir = $(prefix)/foo
-
-foo_HEADERS = sub/base.h
-nobase_foo_HEADERS = sub/nobase.h
-
-dist_foo_DATA = sub/base.dat
-nobase_dist_foo_DATA = sub/nobase.dat
-
-dist_fooexec_SCRIPTS = sub/base.sh
-nobase_dist_fooexec_SCRIPTS = sub/nobase.sh
-
-fooexec_PROGRAMS = sub/base
-nobase_fooexec_PROGRAMS = sub/nobase
-sub_base_SOURCES = source.c
-sub_nobase_SOURCES = source.c
-
-fooexec_LIBRARIES = sub/libbase.a
-nobase_fooexec_LIBRARIES = sub/libnobase.a
-sub_libbase_a_SOURCES = source.c
-sub_libnobase_a_SOURCES = source.c
-
-.PHONY: test-install-sep
-test-install-sep: install
-	test   -f '$(DESTDIR)/$(file)-prefix/foo/sub/nobase.h'
-	test ! -f '$(DESTDIR)/$(file)-prefix/foo/nobase.h'
-	test   -f '$(DESTDIR)/$(file)-prefix/foo/base.h'
-	test   -f '$(DESTDIR)/$(file)-prefix/foo/sub/nobase.dat'
-	test ! -f '$(DESTDIR)/$(file)-prefix/foo/nobase.dat'
-	test   -f '$(DESTDIR)/$(file)-prefix/foo/base.dat'
-	test   -f '$(DESTDIR)/$(file)-prefix/foo/sub/nobase.sh'
-	test ! -f '$(DESTDIR)/$(file)-prefix/foo/nobase.sh'
-	test   -f '$(DESTDIR)/$(file)-prefix/foo/base.sh'
-	test   -f '$(DESTDIR)/$(file)-prefix/foo/sub/nobase$(EXEEXT)'
-	test ! -f '$(DESTDIR)/$(file)-prefix/foo/nobase$(EXEEXT)'
-	test   -f '$(DESTDIR)/$(file)-prefix/foo/base$(EXEEXT)'
-	test   -f '$(DESTDIR)/$(file)-prefix/foo/sub/libnobase.a'
-	test ! -f '$(DESTDIR)/$(file)-prefix/foo/libnobase.a'
-	test   -f '$(DESTDIR)/$(file)-prefix/foo/libbase.a'
-EOF
-
-$ACLOCAL
-$AUTOCONF
-$AUTOMAKE -a
-
 case $instspc_action in
   test-build)
-    build=$instspc_test_string
-    dest=`pwd`/sub1
+    dest=`pwd`/_dest
+    relbuilddir=../..
+    cd "./$instspc_test_string"
     ;;
   test-install)
-    build=sub1
     dest=`pwd`/$instspc_test_string
+    relbuilddir=..
     ;;
   *)
     echo "$me: internal error: invalid action '$instspc_action'"
@@ -292,9 +334,8 @@ case $instspc_action in
     ;;
 esac
 
-cd "./$build"
-
-../configure --prefix "/$instspc_test_string-prefix"
+$relbuilddir/instspc-data.dir/configure \
+  --prefix "/$instspc_test_string-prefix"
 $MAKE
 # Some make implementations eliminate leading and trailing whitespace
 # from macros passed on the command line, and some eliminate leading
