@@ -314,7 +314,9 @@ sc_tests_required_after_defs \
 sc_tests_overriding_macros_on_cmdline \
 sc_tests_plain_sleep \
 sc_tests_plain_egrep_fgrep \
+sc_tests_PATH_SEPARATOR \
 sc_tests_logs_duplicate_prefixes \
+sc_tests_makefile_variable_order \
 sc_mkdir_p \
 sc_perl_at_substs \
 sc_unquoted_DESTDIR \
@@ -649,7 +651,7 @@ dist-gzip: distdir
 	tardir=$(distdir) && $(am__tar) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
 	$(am__post_remove_distdir)
 dist-bzip2: distdir
-	tardir=$(distdir) && $(am__tar) | bzip2 -9 -c >$(distdir).tar.bz2
+	tardir=$(distdir) && $(am__tar) | BZIP2=$${BZIP2--9} bzip2 -c >$(distdir).tar.bz2
 	$(am__post_remove_distdir)
 
 dist-lzip: distdir
@@ -661,7 +663,7 @@ dist-lzma: distdir
 	$(am__post_remove_distdir)
 
 dist-xz: distdir
-	tardir=$(distdir) && $(am__tar) | xz -9 -c >$(distdir).tar.xz
+	tardir=$(distdir) && $(am__tar) | XZ_OPT=$${XZ_OPT--9} xz -c >$(distdir).tar.xz
 	$(am__post_remove_distdir)
 
 dist-tarZ: distdir
@@ -925,7 +927,8 @@ recheck:
 	  esac; \
 	done; \
 	for subdir in $(TEST_SUBDIRS); do \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $@) || eval $$failcom; \
+	  ($(am__cd) $$subdir && $(MAKE) $(AM_MAKEFLAGS) $@) \
+	    || eval $$failcom; \
 	done; \
 	test -z "$$fail"
 
@@ -933,7 +936,7 @@ recheck:
 
 # Ensure tests are world-executable
 dist-hook:
-	cd $(distdir)/tests && chmod a+rx *.test
+	$(am__cd) $(distdir)/tests && chmod a+rx *.test
 
 check-coverage-run recheck-coverage-run: all
 	$(mkinstalldirs) $(PERL_COVERAGE_DB)
@@ -1186,7 +1189,7 @@ sc_tests_plain_egrep_fgrep:
 
 sc_ensure_testsuite_has_run:
 	@if test ! -f tests/test-suite.log; then \
-	  echo "Run \`make check' before \`maintainer-check'" >&2; \
+	  echo "Run \`env keep_testdirs=yes make check' before \`maintainer-check'" >&2; \
 	  exit 1; \
 	fi
 .PHONY: sc_ensure_testsuite_has_run
@@ -1194,6 +1197,27 @@ sc_ensure_testsuite_has_run:
 sc_tests_logs_duplicate_prefixes: sc_ensure_testsuite_has_run
 	@if grep -E '(warning|error):.*(warning|error):' tests/*.log; then \
 	  echo 'Duplicate warning/error message prefixes seen in above tests.' >&2; \
+	  exit 1; \
+	fi
+
+sc_tests_makefile_variable_order: sc_ensure_testsuite_has_run
+	@for file in `find tests -name Makefile.in -print`; do \
+	  latevars=`sed -n \
+	    -e :x -e 's/#.*//' \
+	    -e '/\\\\$$/{' -e N -e 'b x' -e '}' \
+	    -e '1,/^	/d' \
+	    -e '/^ *[a-zA-Z_@]\{1,\} *=/p' $$file`; \
+	  if test -n "$$latevars"; then \
+	    echo 'Ensure variables are expanded before rules' >&2; \
+	    echo "Variables are expanded too late in $$file:" >&2; \
+	    echo "$$latevars" | sed 's/^/  /' >&2; \
+	    exit 1; \
+	  fi; \
+	done
+
+sc_tests_PATH_SEPARATOR:
+	@if grep -E '\bPATH=.*:.*' $(srcdir)/tests/*.test ; then \
+	  echo "Use \`$$PATH_SEPARATOR', not \`:', in PATH definitions above." 1>&2; \
 	  exit 1; \
 	fi
 
@@ -1239,7 +1263,7 @@ git-dist: maintainer-check
 	  exit 1;				\
 	fi
 	$(MAKE) $(AM_MAKEFLAGS) distcheck
-	cd $(srcdir) && git commit -a -s && \
+	$(am__cd) $(srcdir) && git commit -a -s && \
 	   git tag -s "v$(VERSION)" -m "Release $(VERSION)"
 
 git-release: git-dist
@@ -1260,7 +1284,7 @@ git-diff:
 	    > $(PACKAGE)-$$prevno-$(VERSION).diff
 
 path-check: distdir
-	(cd $(distdir) && \
+	($(am__cd) $(distdir) && \
 	  find . -print | xargs pathchk -p); \
 	  estatus=$$?; \
 	  find $(distdir) -type d '!' -perm -200 -exec chmod u+w {} ';'; \
@@ -1270,7 +1294,7 @@ path-check: distdir
 fetch:
 	rm -rf Fetchdir > /dev/null 2>&1
 	mkdir Fetchdir
-	(cd Fetchdir && \
+	($(am__cd) Fetchdir && \
 	$(WGET_SV_GIT_CF)config.guess -O config.guess && \
 	$(WGET_SV_GIT_CF)config.sub -O config.sub && \
 	$(WGET_SV_CVS)texinfo/texinfo/doc/texinfo.tex -O texinfo.tex && \
@@ -1302,7 +1326,7 @@ release-stats: ps
 	aml=`cat $$dot_am_files | wc -l` && \
 	m4f=`ls -1 $(srcdir)/m4/*.m4 | wc -l` && \
 	m4l=`cat $(srcdir)/m4/*.m4 | wc -l` && \
-	doc_text=`cd doc && LC_ALL=C pstops 0 automake.ps unused.ps 2>&1` && \
+	doc_text=`$(am__cd) doc && LC_ALL=C pstops 0 automake.ps unused.ps 2>&1` && \
 	echo "$$doc_text" && \
 	rm -f doc/unused.ps && \
 	doc=`echo "$$doc_text" | sed -n 's/.*Wrote \([1-9][0-9]*\) pages.*/\1/p'` && \

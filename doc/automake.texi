@@ -343,6 +343,7 @@ Frequently Asked Questions about Automake
 * Multiple Outputs::            Writing rules for tools with many output files
 * Hard-Coded Install Paths::    Installing to hard-coded locations
 * Debugging Make Rules::        Strategies when things don't work as expected
+* Reporting Bugs::              Feedback on bugs and feature requests
 
 History of Automake
 
@@ -424,8 +425,7 @@ to be built.
 @cindex Reporting bugs
 @cindex E-mail, bug reports
 
-Mail suggestions and bug reports for Automake to
-@email{@value{PACKAGE_BUGREPORT}}.
+For more information on bug reports, @xref{Reporting Bugs}.
 
 @node Autotools Introduction
 @chapter An Introduction to the Autotools
@@ -1759,12 +1759,12 @@ for instance, a @code{bin_PROGRAMS} variable definition will cause rules
 for compiling and linking programs to be generated.
 
 @cindex Non-standard targets
-@cindex @code{cvs-dist}, non-standard example
-@trindex cvs-dist
+@cindex @code{git-dist}, non-standard example
 @trindex git-dist
 
 The variable definitions and rules in the @file{Makefile.am} are
-copied verbatim into the generated file.  This allows you to add
+copied mostly verbatim into the generated file, with all variable
+definitions preceding all rules.  This allows you to add almost
 arbitrary code into the generated @file{Makefile.in}.  For instance,
 the Automake distribution includes a non-standard rule for the
 @code{git-dist} target, which the Automake maintainer uses to make
@@ -4699,11 +4699,12 @@ this purpose.
 
 @cindex @code{_DEPENDENCIES}, defined
 @vindex maude_DEPENDENCIES
+@vindex EXTRA_maude_DEPENDENCIES
 It is also occasionally useful to have a program depend on some other
 target that is not actually part of that program.  This can be done
-using the @code{@var{prog}_DEPENDENCIES} variable.  Each program
-depends on the contents of such a variable, but no further
-interpretation is done.
+using either the @code{@var{prog}_DEPENDENCIES} or the
+@code{EXTRA_@var{prog}_DEPENDENCIES} variable.  Each program depends on
+the contents both variables, but no further interpretation is done.
 
 Since these dependencies are associated to the link rule used to
 create the programs they should normally list files used by the link
@@ -4725,6 +4726,10 @@ generated.
 
 @ref{Conditional Sources} shows a situation where @code{_DEPENDENCIES}
 may be used.
+
+The @code{EXTRA_@var{prog}_DEPENDENCIES} may be useful for cases where
+you merely want to augment the @command{automake}-generated
+@code{@var{prog}_DEPENDENCIES} rather than replacing it.
 
 @cindex @code{LDADD} and @option{-l}
 @cindex @option{-l} and @code{LDADD}
@@ -5593,6 +5598,7 @@ option, so they should not be mode-specific options (those belong to
 the compiler or linker flags).  @xref{Libtool Flags}.
 
 @item maude_DEPENDENCIES
+@itemx EXTRA_maude_DEPENDENCIES
 It is also occasionally useful to have a target (program or library)
 depend on some other file that is not actually part of that target.
 This can be done using the @code{_DEPENDENCIES} variable.  Each
@@ -5622,6 +5628,10 @@ cause an invalid value for @code{_DEPENDENCIES} to be generated.
 compilation using an @code{AC_SUBST} variable that contains a list of
 objects.  @xref{Conditional Sources}, and @ref{Conditional Libtool
 Sources}.
+
+The @code{EXTRA_*_DEPENDENCIES} variable may be useful for cases where
+you merely want to augment the @command{automake}-generated
+@code{_DEPENDENCIES} variable rather than replacing it.
 
 @item maude_LINK
 You can override the linker on a per-program basis.  By default the
@@ -5833,9 +5843,10 @@ However there is no need to list the corresponding sources in
 automatically adds @samp{$(LIBOBJS)} and @samp{$(ALLOCA)} to the
 dependencies, and it will discover the list of corresponding source
 files automatically (by tracing the invocations of the
-@code{AC_LIBSOURCE} Autoconf macros).  However, if you have already
-defined @samp{*_DEPENDENCIES} explicitly for an unrelated reason, then
-you have to add these variables manually.
+@code{AC_LIBSOURCE} Autoconf macros).  If you have already defined
+@samp{*_DEPENDENCIES} explicitly for an unrelated reason, then you
+either need to add these variables manually, or use
+@samp{EXTRA_*_DEPENDENCIES} instead of @samp{*_DEPENDENCIES}.
 
 These variables are usually used to build a portability library that
 is linked with all the programs of the project.  We now review a
@@ -8255,8 +8266,8 @@ subdirectories in @code{EXTRA_DIST}.
 You can also mention a directory in @code{EXTRA_DIST}; in this case the
 entire directory will be recursively copied into the distribution.
 Please note that this will also copy @emph{everything} in the directory,
-including CVS/RCS version control files.  We recommend against using
-this feature.
+including, e.g., Subversion's @file{.svn} private directories or CVS/RCS
+version control files.  We recommend against using this feature.
 
 @vindex SUBDIRS
 @vindex DIST_SUBDIRS
@@ -8317,7 +8328,7 @@ recursively included by specifying a directory in EXTRA_DIST:
 EXTRA_DIST = doc
 
 dist-hook:
-        rm -rf `find $(distdir)/doc -name CVS`
+        rm -rf `find $(distdir)/doc -type d -name .svn`
 @end example
 
 @vindex distdir
@@ -8447,9 +8458,13 @@ Automake generates rules to provide archives of the project for
 distributions in various formats.  Their targets are:
 
 @table @asis
+@vindex BZIP2
 @item @code{dist-bzip2}
 Generate a bzip2 tar archive of the distribution.  bzip2 archives are
 frequently smaller than gzipped archives.
+By default, this rule makes @samp{bzip2} use a compression option of @option{-9}.
+To make it use a different one, set the @env{BZIP2} environment variable.
+For example, @samp{make dist-bzip2 BZIP2=-7}.
 @trindex dist-bzip2
 
 @item @code{dist-gzip}
@@ -8472,10 +8487,15 @@ instead.
 Generate a shar archive of the distribution.
 @trindex dist-shar
 
+@vindex XZ_OPT
 @item @code{dist-xz}
 Generate an @samp{xz} tar archive of the distribution.  @command{xz}
 archives are frequently smaller than @command{bzip2}-compressed archives.
 The @samp{xz} format displaces the obsolete @samp{lzma} format.
+By default, this rule makes @samp{xz} use a compression option of @option{-9}.
+To make it use a different one, set the @env{XZ_OPT} environment variable.
+For example, run this command to use the default compression ratio, but
+with a progress indicator: @samp{make dist-xz XZ_OPT=-7e}.
 @trindex dist-xz
 
 @item @code{dist-zip}
@@ -10379,6 +10399,7 @@ lists.
 * Multiple Outputs::            Writing rules for tools with many output files
 * Hard-Coded Install Paths::    Installing to hard-coded locations
 * Debugging Make Rules::        Strategies when things don't work as expected
+* Reporting Bugs::              Feedback on bugs and feature requests
 @end menu
 
 @node CVS
@@ -10563,9 +10584,10 @@ Besides the warning, when a tool is missing, @command{missing} will
 attempt to fix timestamps in a way that allows the build to continue.
 For instance, @command{missing} will touch @file{configure} if
 @command{autoconf} is not installed.  When all distributed files are
-kept under CVS, this feature of @command{missing} allows a user
-@emph{with no maintainer tools} to build a package off CVS, bypassing
-any timestamp inconsistency implied by @samp{cvs update}.
+kept under version control, this feature of @command{missing} allows a
+user @emph{with no maintainer tools} to build a package off its version
+control repository, bypassing any timestamp inconsistency (implied by
+e.g.@: @samp{cvs update} or @samp{git clone}).
 
 If the required tool is installed, @command{missing} will run it and
 won't attempt to continue after failures.  This is correct during
@@ -10620,9 +10642,9 @@ swayed by Fran@,{c}ois's arguments, and got rid of
 @code{AM_MAINTAINER_MODE} in all of his packages.
 
 Still many people continue to use @code{AM_MAINTAINER_MODE}, because
-it helps them working on projects where all files are kept under CVS,
-and because @command{missing} isn't enough if you have the wrong
-version of the tools.
+it helps them working on projects where all files are kept under version
+control, and because @command{missing} isn't enough if you have the
+wrong version of the tools.
 
 
 @node Wildcards
@@ -11398,11 +11420,15 @@ data.h data.w data.x: data.c
         fi
 @end example
 
-However there are now two minor problems in this setup.  One is related
+However there are now three minor problems in this setup.  One is related
 to the timestamp ordering of @file{data.h}, @file{data.w},
-@file{data.x}, and @file{data.c}.  The other one is a race condition
+@file{data.x}, and @file{data.c}.  Another one is a race condition
 if a parallel @command{make} attempts to run multiple instances of the
-recover block at once.
+recover block at once.  Finally, the recursive rule breaks @samp{make -n}
+when run with GNU @command{make} (as well as some other @command{make}
+implementations), as it may remove @file{data.h} even when it should not
+(@pxref{MAKE Variable, , How the @code{MAKE} Variable Works, make,
+The GNU Make Manual}).
 
 Let us deal with the first problem.  @command{foo} outputs four files,
 but we do not know in which order these files are created.  Suppose
@@ -11510,8 +11536,8 @@ elc-stamp: $(ELFILES)
         @@mv -f elc-temp $@@
 
 $(ELCFILES): elc-stamp
-## Recover from the removal of $@@
         @@if test -f $@@; then :; else \
+## Recover from the removal of $@@
           trap 'rm -rf elc-lock elc-stamp' 1 2 13 15; \
           if mkdir elc-lock 2>/dev/null; then \
 ## This code is being executed by the first process.
@@ -11524,10 +11550,58 @@ $(ELCFILES): elc-stamp
             while test -d elc-lock; do sleep 1; done; \
 ## Succeed if and only if the first process succeeded.
             test -f elc-stamp; exit $$?; \
+@c $$
           fi; \
         fi
 @end example
+
+These solutions all still suffer from the third problem, namely that
+they break the promise that @samp{make -n} should not cause any actual
+changes to the tree.  For those solutions that do not create lock files,
+it is possible to split the recover rules into two separate recipe
+commands, one of which does all work but the recursion, and the
+other invokes the recursive @samp{$(MAKE)}.  The solutions involving
+locking could act upon the contents of the @samp{MAKEFLAGS} variable,
+but parsing that portably is not easy (@pxref{The Make Macro MAKEFLAGS,,,
+autoconf, The Autoconf Manual}).  Here is an example:
+
+@example
+ELFILES = one.el two.el three.el @dots{}
+ELCFILES = $(ELFILES:=c)
+
+elc-stamp: $(ELFILES)
+        @@rm -f elc-temp
+        @@touch elc-temp
+        $(elisp_comp) $(ELFILES)
+        @@mv -f elc-temp $@@
+
+$(ELCFILES): elc-stamp
+## Recover from the removal of $@@
+        @@dry=; for f in x $$MAKEFLAGS; do \
+          case $$f in \
+            *=*|--*);; \
+            *n*) dry=:;; \
+          esac; \
+        done; \
+        if test -f $@@; then :; else \
+          $$dry trap 'rm -rf elc-lock elc-stamp' 1 2 13 15; \
+          if $$dry mkdir elc-lock 2>/dev/null; then \
+## This code is being executed by the first process.
+            $$dry rm -f elc-stamp; \
+            $(MAKE) $(AM_MAKEFLAGS) elc-stamp; \
+            $$dry rmdir elc-lock; \
+          else \
+## This code is being executed by the follower processes.
+## Wait until the first process is done.
+            while test -d elc-lock && test -z "$$dry"; do \
 @c $$
+              sleep 1; \
+            done; \
+## Succeed if and only if the first process succeeded.
+            $$dry test -f elc-stamp; exit $$?; \
+          fi; \
+        fi
+@end example
 
 For completeness it should be noted that GNU @command{make} is able to
 express rules with multiple output files using pattern rules
@@ -11716,6 +11790,45 @@ complex GNU @command{make}-specific Makefiles and allows to trace
 execution, examine variables, and call rules interactively, much like
 a debugger.
 @end itemize
+
+
+@node Reporting Bugs
+@section Reporting Bugs
+
+Most nontrivial software has bugs.  Automake is no exception.  Although
+we cannot promise we can or will fix a bug, and we might not even agree
+that it is a bug, we want to hear about problems you encounter. Often we
+agree they are bugs and want to fix them.
+
+To make it possible for us to fix a bug, please report it. In order to
+do so effectively, it helps to know when and how to do it.
+
+Before reporting a bug, it is a good idea to see if it is already known.
+You can look at the @uref{http://debbugs.gnu.org/, GNU Bug Tracker}
+and the @uref{http://lists.gnu.org/@/archive/@/html/@/bug-automake/,
+bug-automake mailing list archives} for previous bug reports.  We
+previously used a
+@uref{http://sourceware.org/@/cgi-bin/@/gnatsweb.pl?database=automake,
+Gnats database} for bug tracking, so some bugs might have been reported
+there already.  Please do not use it for new bug reports, however.
+
+If the bug is not already known, it should be reported.  It is very
+important to report bugs in a way that is useful and efficient.  For
+this, please familiarize yourself with
+@uref{http://www.chiark.greenend.org.uk/@/~sgtatham/@/bugs.html, How to
+Report Bugs Effectively} and
+@uref{http://catb.org/@/~esr/@/faqs/@/smart-questions.html, How to Ask
+Questions the Smart Way}.  This helps you and developers to save time
+which can then be spent on fixing more bugs and implementing more
+features.
+
+For a bug report, a feature request or other suggestions, please send
+email to @email{@value{PACKAGE_BUGREPORT}}.  This will then open a new
+bug in the @uref{http://debbugs.gnu.org/@/automake, bug tracker}.  Be
+sure to include the versions of Autoconf and Automake that you use.
+Ideally, post a minimal @file{Makefile.am} and @file{configure.ac} that
+reproduces the problem you encounter.  If you have encountered test
+suite failures, please attach the @file{tests/test-suite.log} file.
 
 
 @node History

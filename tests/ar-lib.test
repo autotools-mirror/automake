@@ -22,13 +22,15 @@ set -e
 
 cp "$top_testsrcdir/lib/ar-lib" .
 
-# Use a dummy lib, since lib isn't readily available on all systems
+# Use a dummy lib, since lib isn't readily available on all systems.
 cat >lib <<'END'
 #! /bin/sh
-if test x"$2" = x-LIST -a $3 = fake.lib; then
+if test x"$2" = x-LIST && test x"$3" = xfake.lib; then
   echo fake.obj
+elif test x"$2" = x-LIST && test x"$3" = xfake2.lib; then
+  printf "%s\n" "dir\\fake2.obj"
 else
-  echo "lib $@"
+  printf "%s\n" "lib $*"
 fi
 END
 
@@ -76,5 +78,10 @@ test x"$opts" = x"lib -NOLOGO -EXTRACT:foo.obj foo.lib"
 # Check if ar-lib passes -lib and -LTCG through to the wrappee
 opts=`./ar-lib ./lib -lib -LTCG x foo.lib foo.obj`
 test x"$opts" = x"lib -lib -LTCG -NOLOGO -EXTRACT:foo.obj foo.lib"
+
+# Check if ar-lib can extract backslashed members
+touch fake2.lib
+opts=`./ar-lib ./lib x fake2.lib`
+test x"$opts" = x"lib -NOLOGO -EXTRACT:dir\\fake2.obj fake2.lib"
 
 :

@@ -24,29 +24,36 @@ set -e
 
 cat >> configure.in << 'END'
 AM_CONFIG_HEADER([include/config.h])
+AC_OUTPUT
 END
 
-: > Makefile.am
-: > acconfig.h
+cat > Makefile.am << 'END'
+.PHONY: test1 test2
+test1:
+	@echo DIST_COMMON = $(DIST_COMMON) ## for debugging
+	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]acconfig\.h '
+test2: distdir
+	ls -l $(distdir)/* ## for debugging
+	test -f $(distdir)/acconfig.h
+check-local: test1 test2
+END
 
 mkdir include
-: > include/Makefile.am
 : > include/config.h.in
+: > acconfig.h
+
+# The test used to fail if `include/Makefile.am' was created (!)
+: > include/Makefile.am
 
 $ACLOCAL
+$AUTOCONF
 $AUTOMAKE
 
-perl -ne '
-if (s/^DIST_COMMON *=//)
-{
-  $_ .= <> while (s/\\$//);
-  $_ = " $_ ";
-  s/\s+/ /g;
-  print "$_\n";
-  exit 0;
-}' Makefile.in > dc.txt
-cat dc.txt # might be useful for debugging.
-$FGREP ' acconfig.h ' dc.txt
+./configure
+
+$MAKE test1
+$MAKE test2
+$MAKE distcheck
 
 # Make sure re-running automake in a different way generates same
 # Makefile.in.

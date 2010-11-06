@@ -50,7 +50,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(srcdir)/aclocal.in $(srcdir)/automake.in $(srcdir)/defs.in \
-	$(srcdir)/parallel-tests.am
+	$(srcdir)/instspc-tests.am $(srcdir)/parallel-tests.am
 subdir = tests
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/amversion.m4 \
@@ -125,7 +125,7 @@ am__text_box = $(AWK) '{				\
   print line;						\
 }'
 # Solaris 10 'make', and several other traditional 'make' implementations,
-# pass "-e" to $(SHELL).  This contradicts POSIX.  Work around the problem
+# pass "-e" to $(SHELL), and POSIX 2008 even requires this.  Work around it
 # by disabling -e (using the XSI extension "set +e") if it's set.
 am__sh_e_setup = case $$- in *e*) set +e;; esac
 # To be inserted before the command running the test.  Creates the
@@ -148,6 +148,35 @@ elif test -f "$$f"; then dir=;				\
 else dir="$(srcdir)/"; fi;				\
 tst=$$dir$$f; log='$@'; __SAVED_TERM=$$TERM;		\
 $(TESTS_ENVIRONMENT)
+# To be appended to the command running the test.  Handle the stdout
+# and stderr redirection, and catch the exit status.
+am__check_post = \
+>$@-t 2>&1;						\
+estatus=$$?;						\
+if test -n '$(DISABLE_HARD_ERRORS)'			\
+   && test $$estatus -eq 99; then			\
+  estatus=1;						\
+fi;							\
+TERM=$$__SAVED_TERM; export TERM;			\
+$(am__tty_colors);					\
+xfailed=PASS;						\
+case " $(XFAIL_TESTS) " in				\
+  *[\ \	]$$f[\ \	]* | *[\ \	]$$dir$$f[\ \	]*) \
+    xfailed=XFAIL;;					\
+esac;							\
+case $$estatus.$$xfailed in				\
+    0.XFAIL) col=$$red; res=XPASS;;			\
+    0.*)     col=$$grn; res=PASS ;;			\
+    77.*)    col=$$blu; res=SKIP ;;			\
+    99.*)    col=$$red; res=FAIL ;;			\
+    *.XFAIL) col=$$lgn; res=XFAIL;;			\
+    *.*)     col=$$red; res=FAIL ;;			\
+esac;							\
+echo "$${col}$$res$${std}: $$f";			\
+echo "$$res: $$f (exit: $$estatus)" |			\
+  $(am__rst_section) >$@;				\
+cat $@-t >>$@;						\
+rm -f $@-t
 RECHECK_LOGS = $(TEST_LOGS)
 AM_RECURSIVE_TARGETS = check check-html recheck recheck-html
 TEST_SUITE_LOG = test-suite.log
@@ -250,20 +279,79 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-XFAIL_TESTS = \
-all.test					\
-auxdir2.test					\
-cond17.test					\
-gcj6.test					\
-txinfo5.test
-
-parallel_tests = check-p.test check10-p.test check11-p.test \
-	check2-p.test check3-p.test check4-p.test check5-p.test \
-	check6-p.test check7-p.test check8-p.test check9-p.test \
-	color-p.test color2-p.test comment9-p.test dejagnu-p.test \
-	exeext4-p.test maken3-p.test maken4-p.test pr401-p.test \
-	pr401b-p.test pr401c-p.test
-MAINTAINERCLEANFILES = $(parallel_tests)
+MAINTAINERCLEANFILES = $(parallel_tests) $(instspc_tests)
+EXTRA_DIST = ChangeLog-old gen-parallel-tests instspc-tests.sh \
+	$(TESTS)
+XFAIL_TESTS = all.test auxdir2.test cond17.test gcj6.test txinfo5.test \
+	$(instspc_xfail_tests)
+parallel_tests = backcompat5-p.test check-p.test check10-p.test \
+	check11-p.test check2-p.test check3-p.test check4-p.test \
+	check5-p.test check6-p.test check7-p.test check8-p.test \
+	check9-p.test color-p.test color2-p.test comment9-p.test \
+	dejagnu-p.test exeext4-p.test maken3-p.test maken4-p.test \
+	pr401-p.test pr401b-p.test pr401c-p.test
+instspc_tests = instspc-squote-build.test instspc-squote-install.test \
+	instspc-dquote-build.test instspc-dquote-install.test \
+	instspc-bquote-build.test instspc-bquote-install.test \
+	instspc-sharp-build.test instspc-sharp-install.test \
+	instspc-dollar-build.test instspc-dollar-install.test \
+	instspc-bang-build.test instspc-bang-install.test \
+	instspc-bslash-build.test instspc-bslash-install.test \
+	instspc-ampersand-build.test instspc-ampersand-install.test \
+	instspc-percent-build.test instspc-percent-install.test \
+	instspc-leftpar-build.test instspc-leftpar-install.test \
+	instspc-rightpar-build.test instspc-rightpar-install.test \
+	instspc-pipe-build.test instspc-pipe-install.test \
+	instspc-caret-build.test instspc-caret-install.test \
+	instspc-tilde-build.test instspc-tilde-install.test \
+	instspc-qmark-build.test instspc-qmark-install.test \
+	instspc-star-build.test instspc-star-install.test \
+	instspc-plus-build.test instspc-plus-install.test \
+	instspc-minus-build.test instspc-minus-install.test \
+	instspc-comma-build.test instspc-comma-install.test \
+	instspc-colon-build.test instspc-colon-install.test \
+	instspc-semicol-build.test instspc-semicol-install.test \
+	instspc-equal-build.test instspc-equal-install.test \
+	instspc-less-build.test instspc-less-install.test \
+	instspc-more-build.test instspc-more-install.test \
+	instspc-at-build.test instspc-at-install.test \
+	instspc-lqbrack-build.test instspc-lqbrack-install.test \
+	instspc-rqbrack-build.test instspc-rqbrack-install.test \
+	instspc-lcbrack-build.test instspc-lcbrack-install.test \
+	instspc-rcbrack-build.test instspc-rcbrack-install.test \
+	instspc-space-build.test instspc-space-install.test \
+	instspc-tab-build.test instspc-tab-install.test \
+	instspc-linefeed-build.test instspc-linefeed-install.test \
+	instspc-backspace-build.test instspc-backspace-install.test \
+	instspc-formfeed-build.test instspc-formfeed-install.test \
+	instspc-carriageret-build.test \
+	instspc-carriageret-install.test \
+	instspc-quadrigraph0-build.test \
+	instspc-quadrigraph0-install.test \
+	instspc-quadrigraph1-build.test \
+	instspc-quadrigraph1-install.test \
+	instspc-quadrigraph2-build.test \
+	instspc-quadrigraph2-install.test \
+	instspc-quadrigraph3-build.test \
+	instspc-quadrigraph3-install.test \
+	instspc-quadrigraph4-build.test \
+	instspc-quadrigraph4-install.test instspc-a_b-build.test \
+	instspc-a_b-install.test instspc-a__b-build.test \
+	instspc-a__b-install.test instspc-a_lf_b-build.test \
+	instspc-a_lf_b-install.test instspc-dotdotdot-build.test \
+	instspc-dotdotdot-install.test instspc-dosdrive-build.test \
+	instspc-dosdrive-install.test instspc-miscglob1-build.test \
+	instspc-miscglob1-install.test instspc-miscglob2-build.test \
+	instspc-miscglob2-install.test
+instspc_xfail_tests = instspc-squote-build.test \
+	instspc-dquote-build.test instspc-bquote-build.test \
+	instspc-sharp-build.test instspc-dollar-build.test \
+	instspc-bslash-build.test instspc-ampersand-build.test \
+	instspc-linefeed-build.test instspc-quadrigraph0-build.test \
+	instspc-a_lf_b-build.test instspc-squote-install.test \
+	instspc-dquote-install.test instspc-bquote-install.test \
+	instspc-sharp-install.test instspc-dollar-install.test \
+	instspc-linefeed-install.test instspc-a_lf_b-install.test
 TESTS = \
 aclibobj.test \
 aclocal.test \
@@ -328,11 +416,18 @@ autohdr.test \
 autohdr2.test \
 autohdr3.test \
 autohdr4.test \
+autohdrdry.test \
 automake.test \
 auxdir.test \
 auxdir2.test \
 auxdir3.test \
 auxdir4.test \
+backcompat.test \
+backcompat2.test \
+backcompat3.test \
+backcompat4.test \
+backcompat5.test \
+backcompat6.test \
 backsl.test \
 backsl2.test \
 backsl3.test \
@@ -393,6 +488,7 @@ compile2.test \
 compile3.test \
 compile4.test \
 compile5.test \
+compile6.test \
 compile_f90_c_cxx.test \
 compile_f_c_cxx.test \
 cond.test \
@@ -458,6 +554,7 @@ confh4.test \
 confh5.test \
 confh6.test \
 confh7.test \
+confh8.test \
 confincl.test \
 conflnk.test \
 conflnk2.test \
@@ -521,6 +618,7 @@ distdir.test \
 distlinks.test \
 distlinksbrk.test \
 distname.test \
+dmalloc.test \
 dollar.test \
 dollarvar.test \
 dollarvar2.test \
@@ -554,6 +652,8 @@ extra9.test \
 extra10.test \
 extra11.test \
 extra12.test \
+extradep.test \
+extradep2.test \
 f90only.test \
 flavor.test \
 flibs.test \
@@ -587,6 +687,19 @@ gnits2.test \
 gnits3.test \
 header.test \
 help.test \
+help2.test \
+help3.test \
+help4.test \
+help-depend.test \
+help-depend2.test \
+help-dmalloc.test \
+help-init.test \
+help-lispdir.test \
+help-maintainer.test \
+help-multilib.test \
+help-regex.test \
+help-silent.test \
+help-upc.test \
 hfs.test \
 hosts.test \
 implicit.test \
@@ -622,7 +735,7 @@ instman2.test \
 instmany.test \
 instmany-mans.test \
 instmany-python.test \
-instspc.test \
+$(instspc_tests) \
 interp.test \
 interp2.test \
 java.test \
@@ -682,6 +795,7 @@ lisp5.test \
 lisp6.test \
 lisp7.test \
 lisp8.test \
+lispdry.test \
 listval.test \
 location.test \
 longline.test \
@@ -994,6 +1108,8 @@ vala5.test \
 vars.test \
 vars3.test \
 vartar.test \
+vartypos.test \
+vartypo2.test \
 version.test \
 version2.test \
 version3.test \
@@ -1020,18 +1136,18 @@ yacc5.test \
 yacc6.test \
 yacc7.test \
 yacc8.test \
+yaccdry.test \
 yaccpp.test \
 yaccvpath.test \
 yflags.test \
 yflags2.test \
 $(parallel_tests)
 
-EXTRA_DIST = ChangeLog-old gen-parallel-tests $(TESTS)
 all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .html .log .test
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/parallel-tests.am $(am__configure_deps)
+$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/parallel-tests.am $(srcdir)/instspc-tests.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -1075,36 +1191,6 @@ CTAGS:
 
 cscope cscopelist:
 
-
-# To be appended to the command running the test.  Handle the stdout
-# and stderr redirection, and catch the exit status.
-am__check_post =					\
->$@-t 2>&1;						\
-estatus=$$?;						\
-if test -n '$(DISABLE_HARD_ERRORS)'			\
-   && test $$estatus -eq 99; then			\
-  estatus=1;						\
-fi;							\
-TERM=$$__SAVED_TERM; export TERM;			\
-$(am__tty_colors);					\
-xfailed=PASS;						\
-case " $(XFAIL_TESTS) " in				\
-  *[\ \	]$$f[\ \	]* | *[\ \	]$$dir$$f[\ \	]*) \
-    xfailed=XFAIL;;					\
-esac;							\
-case $$estatus:$$xfailed in				\
-    0:XFAIL) col=$$red; res=XPASS;;			\
-    0:*)     col=$$grn; res=PASS ;;			\
-    77:*)    col=$$blu; res=SKIP ;;			\
-    99:*)    col=$$red; res=FAIL ;;			\
-    *:XFAIL) col=$$lgn; res=XFAIL;;			\
-    *:*)     col=$$red; res=FAIL ;;			\
-esac;							\
-echo "$${col}$$res$${std}: $$f";			\
-echo "$$res: $$f (exit: $$estatus)" |			\
-  $(am__rst_section) >$@;				\
-cat $@-t >>$@;						\
-rm -f $@-t
 
 $(TEST_SUITE_LOG): $(TEST_LOGS)
 	@$(am__sh_e_setup);						\
@@ -1377,6 +1463,7 @@ uninstall-am:
 	maintainer-clean-generic mostlyclean mostlyclean-generic pdf \
 	pdf-am ps ps-am recheck recheck-html uninstall uninstall-am
 
+backcompat5-p.log: backcompat5.test
 check-p.log: check.test
 check10-p.log: check10.test
 check11-p.log: check11.test
@@ -1400,7 +1487,7 @@ pr401b-p.log: pr401b.test
 pr401c-p.log: pr401c.test
 
 $(srcdir)/parallel-tests.am: gen-parallel-tests Makefile.am
-	$(AM_V_GEN)(cd $(srcdir) && $(SHELL) ./gen-parallel-tests) >$@
+	$(AM_V_GEN)($(am__cd) $(srcdir) && $(SHELL) ./gen-parallel-tests) >$@
 
 $(parallel_tests): Makefile.am
 	$(AM_V_at)rm -f $@ $@-t
@@ -1424,6 +1511,34 @@ $(parallel_tests): Makefile.am
 	  echo 'fi'; \
 	} > $@-t
 	$(AM_V_at)chmod a+rx $@-t && mv -f $@-t $@
+
+$(srcdir)/instspc-tests.am: instspc-tests.sh Makefile.am
+	$(AM_V_GEN)($(am__cd) $(srcdir) \
+	  && $(SHELL) ./instspc-tests.sh --generate-makefile) >$@
+
+$(instspc_tests): Makefile.am
+	$(AM_V_at)rm -f $@ $@-t
+	$(AM_V_GEN) :; \
+	  base=`expr 'x/$@' : 'x.*/instspc-\(.*\)\.test$$'`; \
+	  name=`expr x"$$base" : x'\(.*\)-'`; \
+	  action=`expr x"$$base" : x'.*-\(.*\)'`; \
+	  { \
+	    echo '#!/bin/sh'; \
+	    echo '# DO NOT EDIT!  GENERATED AUTOMATICALLY!'; \
+	    echo; \
+	    echo '# Ensure proper definition of $$testsrcdir.'; \
+	    echo 'am_skip_defs=yes'; \
+	    echo '. ./defs || exit 99'; \
+	    echo 'test -n "$$testsrcdir" || exit 99 # sanity check'; \
+	    echo; \
+	    echo "instspc_test_name='$$name'"; \
+	    echo "instspc_action='test-$$action'"; \
+	    echo ". \$$testsrcdir/instspc-tests.sh"; \
+	  } > $@-t
+	$(AM_V_at)chmod a+rx $@-t && mv -f $@-t $@
+
+# All instspc*.test tests work by sourcing the instspc-tests.sh script.
+$(instspc_tests:.test=.log): instspc-tests.sh
 
 # Each test case depends on defs, aclocal, and automake.
 $(TEST_LOGS): defs aclocal-$(APIVERSION) automake-$(APIVERSION)

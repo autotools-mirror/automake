@@ -488,7 +488,7 @@ sub suffixes ()
 =item C<rule ($rulename)>
 
 Return the C<Automake::Rule> object for the rule
-named C<$rulename> if defined.   Return 0 otherwise.
+named C<$rulename> if defined.  Return 0 otherwise.
 
 =cut
 

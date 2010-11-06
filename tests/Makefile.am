@@ -16,17 +16,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-XFAIL_TESTS =					\
-all.test					\
-auxdir2.test					\
-cond17.test					\
-gcj6.test					\
+MAINTAINERCLEANFILES =
+EXTRA_DIST = ChangeLog-old
+
+XFAIL_TESTS = \
+all.test \
+auxdir2.test \
+cond17.test \
+gcj6.test \
 txinfo5.test
+
 
 include $(srcdir)/parallel-tests.am
 
 $(srcdir)/parallel-tests.am: gen-parallel-tests Makefile.am
-	$(AM_V_GEN)(cd $(srcdir) && $(SHELL) ./gen-parallel-tests) >$@
+	$(AM_V_GEN)($(am__cd) $(srcdir) && $(SHELL) ./gen-parallel-tests) >$@
 
 $(parallel_tests): Makefile.am
 	$(AM_V_at)rm -f $@ $@-t
@@ -51,7 +55,44 @@ $(parallel_tests): Makefile.am
 	} > $@-t
 	$(AM_V_at)chmod a+rx $@-t && mv -f $@-t $@
 
-MAINTAINERCLEANFILES = $(parallel_tests)
+MAINTAINERCLEANFILES += $(parallel_tests)
+EXTRA_DIST += gen-parallel-tests
+
+
+include $(srcdir)/instspc-tests.am
+
+$(srcdir)/instspc-tests.am: instspc-tests.sh Makefile.am
+	$(AM_V_GEN)($(am__cd) $(srcdir) \
+	  && $(SHELL) ./instspc-tests.sh --generate-makefile) >$@
+
+$(instspc_tests): Makefile.am
+	$(AM_V_at)rm -f $@ $@-t
+	$(AM_V_GEN) :; \
+	  base=`expr 'x/$@' : 'x.*/instspc-\(.*\)\.test$$'`; \
+	  name=`expr x"$$base" : x'\(.*\)-'`; \
+	  action=`expr x"$$base" : x'.*-\(.*\)'`; \
+	  { \
+	    echo '#!/bin/sh'; \
+	    echo '# DO NOT EDIT!  GENERATED AUTOMATICALLY!'; \
+	    echo; \
+	    echo '# Ensure proper definition of $$testsrcdir.'; \
+	    echo 'am_skip_defs=yes'; \
+	    echo '. ./defs || exit 99'; \
+	    echo 'test -n "$$testsrcdir" || exit 99 # sanity check'; \
+	    echo; \
+	    echo "instspc_test_name='$$name'"; \
+	    echo "instspc_action='test-$$action'"; \
+	    echo ". \$$testsrcdir/instspc-tests.sh"; \
+	  } > $@-t
+	$(AM_V_at)chmod a+rx $@-t && mv -f $@-t $@
+
+# All instspc*.test tests work by sourcing the instspc-tests.sh script.
+$(instspc_tests:.test=.log): instspc-tests.sh
+
+MAINTAINERCLEANFILES += $(instspc_tests)
+EXTRA_DIST += instspc-tests.sh
+XFAIL_TESTS += $(instspc_xfail_tests)
+
 
 TESTS = \
 aclibobj.test \
@@ -117,11 +158,18 @@ autohdr.test \
 autohdr2.test \
 autohdr3.test \
 autohdr4.test \
+autohdrdry.test \
 automake.test \
 auxdir.test \
 auxdir2.test \
 auxdir3.test \
 auxdir4.test \
+backcompat.test \
+backcompat2.test \
+backcompat3.test \
+backcompat4.test \
+backcompat5.test \
+backcompat6.test \
 backsl.test \
 backsl2.test \
 backsl3.test \
@@ -182,6 +230,7 @@ compile2.test \
 compile3.test \
 compile4.test \
 compile5.test \
+compile6.test \
 compile_f90_c_cxx.test \
 compile_f_c_cxx.test \
 cond.test \
@@ -247,6 +296,7 @@ confh4.test \
 confh5.test \
 confh6.test \
 confh7.test \
+confh8.test \
 confincl.test \
 conflnk.test \
 conflnk2.test \
@@ -310,6 +360,7 @@ distdir.test \
 distlinks.test \
 distlinksbrk.test \
 distname.test \
+dmalloc.test \
 dollar.test \
 dollarvar.test \
 dollarvar2.test \
@@ -343,6 +394,8 @@ extra9.test \
 extra10.test \
 extra11.test \
 extra12.test \
+extradep.test \
+extradep2.test \
 f90only.test \
 flavor.test \
 flibs.test \
@@ -376,6 +429,19 @@ gnits2.test \
 gnits3.test \
 header.test \
 help.test \
+help2.test \
+help3.test \
+help4.test \
+help-depend.test \
+help-depend2.test \
+help-dmalloc.test \
+help-init.test \
+help-lispdir.test \
+help-maintainer.test \
+help-multilib.test \
+help-regex.test \
+help-silent.test \
+help-upc.test \
 hfs.test \
 hosts.test \
 implicit.test \
@@ -411,7 +477,7 @@ instman2.test \
 instmany.test \
 instmany-mans.test \
 instmany-python.test \
-instspc.test \
+$(instspc_tests) \
 interp.test \
 interp2.test \
 java.test \
@@ -471,6 +537,7 @@ lisp5.test \
 lisp6.test \
 lisp7.test \
 lisp8.test \
+lispdry.test \
 listval.test \
 location.test \
 longline.test \
@@ -783,6 +850,8 @@ vala5.test \
 vars.test \
 vars3.test \
 vartar.test \
+vartypos.test \
+vartypo2.test \
 version.test \
 version2.test \
 version3.test \
@@ -809,13 +878,15 @@ yacc5.test \
 yacc6.test \
 yacc7.test \
 yacc8.test \
+yaccdry.test \
 yaccpp.test \
 yaccvpath.test \
 yflags.test \
 yflags2.test \
 $(parallel_tests)
 
-EXTRA_DIST = ChangeLog-old gen-parallel-tests $(TESTS)
+EXTRA_DIST += $(TESTS)
+
 
 # Each test case depends on defs, aclocal, and automake.
 $(TEST_LOGS): defs aclocal-$(APIVERSION) automake-$(APIVERSION)

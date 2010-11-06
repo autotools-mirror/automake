@@ -1,3 +1,453 @@
+2010-11-06  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	New tests on obsoleted usages of automake/autoconf macros (such
+	as AC_INIT, AM_INIT_AUTOMAKE and AC_OUTPUT).
+	* tests/backcompat.test: New test script.
+	* tests/backcompat2.test: Likewise.
+	* tests/backcompat3.test: Likewise.
+	* tests/backcompat4.test: Likewise.
+	* tests/backcompat5.test: Likewise.
+	* tests/backcompat6.test: Likewise.
+	* tests/init.test: Extended and improved, esp. by trying more
+	combinations of calls to AC_INIT and AM_INIT_AUTOMAKE with few
+	arguments.
+	* tests/Makefile.am (TESTS): Updated.
+
+2010-11-06  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	Fix bug in rules for creating vala vapi/header files.
+	* automake.in (lang_vala_finish_target): Add forgotten "fi" in an
+	if control structure in a generated make rules.  Bug introduced
+	by previous commit `v1.11-221-gd7c1679', and revealed by failure
+	of test `vala2.test'.
+
+2010-11-01  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	Fix and document rules to not touch the tree with `make -n'.
+	* doc/automake.texi (Multiple Outputs): Document the problem of
+	modifications during dry-run execution, propose solution.
+	* NEWS: Update.
+	* automake.in (lang_vala_finish_target): Split recipe so the
+	stamp file is not removed with GNU `make -n'.
+	(lang_yacc_target_hook): Separate removal of parser output file
+	and header remaking.
+	* lib/am/lisp.am ($(am__ELCFILES)): Determine whether -n was
+	passed to make, take care not to remove any files in that case.
+	* lib/am/remake-hdr.am (%CONFIG_H%): Separate removal of
+	%STAMP% file from induced remaking of config header.
+	* tests/autohdrdry.test, tests/lispdry.test, tests/yaccdry.test:
+	New tests.
+	* tests/Makefile.am (TESTS): Update.
+
+2010-11-05  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	Fix potential bug in generated tests `instpc-*.test'.
+	This bug is due to the changes introduced by the recently-merged
+	"tests-init" branch.  In that branch, `tests/defs' didn't define
+	anymore `$srcdir', instead defininig directly `$testsrcdir'; but
+	the generated tests were using `$srcdir', hence the bug.
+	Luckily, since the Automake parallel test driver automatically
+	exports `srcdir' to a proper value, that prevented the bug from
+	manifesting itself.
+	* tests/Makefile.am ($(instspc_tests)): In the generated test
+	scripts, use `$testsrcdir', not `$srcdir'.
+
+2010-11-03  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	Overhauled and modularized tests in `instspc.test'.
+	The test `instspc.test' was way too big and fragile.  Its running
+	time was very long.  It also produced a log that was nearly
+	unreadable due to its length, making it very difficult to find
+	out the reason for failures.
+	Also, it was too much monolithic, with a single (maybe spurious)
+	failure in a corner case causing the whole test to fail (even if
+	everything worked as expected in the other 99% of cases).
+	The present change should solve these problems, by separating
+	`instspc.test' into many smaller, self-contained, auto-generated
+	tests.
+	* tests/instspc.test: Removed.
+	* tests/instspc-tests.sh: New script, fulfilling a double role:
+	1. it generates a Makefile.am snippet `tests/instspc-tests.am',
+	containing the definition of a list of new tests which will take
+	over the older `instspc.test', and
+	2. it is sourced by said generated tests with proper parameters
+	pre-set, to run the "meat" of the checks.
+	This apparent abuse is indeed required because the test generation
+	code and test execution code are inevitably intertwined.
+	* tests/Makefile.am ($(srcdir)/instspc-tests.am): Include this
+	snippet, which (among the other things) defines ...
+	(instspc_tests): ... this new macro, containing the list of the
+	newly generated `instspc*.test' tests, and ...
+	(instspc_xfail_tests): ... this new macro, containing the list
+	of the `instspc*.test' tests expected to fail.
+	($(instspc_tests)): New rule, generates the `instspc*.test' tests.
+	($(instspc_tests:.test=.log)): New rule, registers the dependency
+	of all `instspc*.test' tests on the `instspc-tests.sh' script.
+	(TESTS): Add `$(instspc_tests)', remove `instspc.test'.
+	(XFAIL_TESTS): Add `$(xfail_instspc_tests)'.
+	(EXTRA_DIST): Distribute instspc-tests.sh.
+	(MAINTAINERCLEANFILES): Added $(instspc_tests).
+	Other minor cosmetic changes.
+	* bootstrap: Generate instspc-tests.am.
+	* tests/.gitignore: Updated.
+
+2010-11-01  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	Add FAQ entry for bug reporting instructions.
+	* doc/automake.texi (Reporting Bugs): New section.
+	(Introduction): Refer to it.
+
+2010-10-07  Peter Rosin  <peda@lysator.liu.se>
+
+	depcomp: add new one-pass depmode for MSVC 7 and later.
+	* lib/depcomp: Add new depmodes 'msvc7' and 'msvc7msys' which
+	make use of the -showIncludes option added in MSVC 7.
+	* m4/depend.m4 (_AM_DEPENDENCIES): Handle the new depmodes
+	similarly to 'msvisualcpp' and 'msvcmsys' as MSVC does not
+	support the -o option.
+
+2010-10-05  Jim Meyering  <meyering@redhat.com>
+
+	dist-xz, dist-bzip2: don't hard-code -9: honor envvar settings
+	* lib/am/distdir.am (dist-xz): Do not hard-code xz's -9: that
+	made it impossible to override.  Instead, use its XZ_OPT envvar,
+	defaulting to -9 if not defined.  Thus no change in behavior
+	when XZ_OPT is not set, and now, this rule honors the setting
+	of that envvar when it is set.  Suggested by Lasse Collin.
+	(dist-bzip2): Likewise for it's corresponding envvar: BZIP2.
+	* NEWS (Miscellaneous changes): Mention it.
+	* doc/automake.texi (The Types of Distributions): Describe the
+	newly enabled environment variables.
+
+2010-10-04  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	Add support for newer python versions.
+	* m4/python.m4 (AM_PATH_PYTHON): Add python2.7 and python3.2 to
+	_AM_PYTHON_INTERPRETER_LIST.  Since we are at it, break a long
+	line and fix indentation.
+	* THANKS: Updated.
+	From a report by Thomas Klausner.
+
+	Add test for `AM_WITH_DMALLOC' macro.
+	* tests/dmalloc.test: New test.
+	* tests/Makefile.am (TESTS): Update.
+
+	Fix nits and bugs in tests `help*.test'.
+	* tests/help4.test: Fix broken sed commands used to strip `-W...'
+	flags away from "$AUTOMAKE" and "$ACLOCAL".
+	* tests/help3.test: Likewise, and fix a botched comment.
+	* tests/help.test: Likewise.  Also, use "AUTOMAKE_fails ..."
+	instead of "$AUTOMAKE ... && Exit 1", for consistency and to
+	please maintainet-check.
+	* tests/help2.test: Likewise.
+
+2010-10-03  Stefano Lattarini  <stefano.lattarini@gmail.com>
+	    Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	Improve tests `help*.test' (also fixes maintcheck failures).
+	* tests/help.test: To run automake, use `$AUTOMAKE' with all `-W'
+	flags stripped away rather than hard-coded `automake-$APIVERSION',
+	to better honour user-overrides.  Similarly for aclocal.
+	* tests/help2.test: Likewise.
+	* tests/help3.test: Likewise.
+	* tests/help4.test: Likewise.
+
+2010-10-03  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	tests: fix ar-lib.test for echo that interprets backslashes.
+	* tests/ar-lib.test: Use printf instead of echo.  Avoid test -a.
+	More robust quoting.
+
+2010-10-03  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	maintainer-check coverage for variables before rules.
+	* Makefile.am (sc_ensure_testsuite_has_run): Suggest keeping
+	around the test directories.
+	(sc_tests_makefile_variable_order): New rule with a heuristic to
+	catch ordering violations.
+
+	Document and fix expansion of variables before rules.
+	* doc/automake.texi (General Operation): Document that variables
+	are expanded before rules.
+	* lib/am/check.am (am__check_post): Reword a bit so it does not
+	get matched as a rule.
+	Suggestion by Ben Pfaff.
+
+2010-10-02  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	Coverage and minor fixes for variable typo detection.
+	* automake.in (check_typos): Remove `EXTRA_' prefix when
+	computing canonical name.
+	* tests/vartypo2.test, tests/vartypos.test: New tests.
+	* tests/Makefile.am (TESTS): Update.
+
+	Implement EXTRA_maude_DEPENDENCIES for programs and libraries.
+	* automake.in (handle_programs, handle_libraries)
+	(handle_ltlibraries): Mark EXTRA_*_DEPENDENCIES as recognized.
+	* doc/automake.texi (Linking, Program and Library Variables)
+	(LIBOBJS): Document EXTRA_*_DEPENDENCIES.
+	* lib/am/library.am (%LIBRARY%): Also depend on
+	$(EXTRA_%XLIBRARY%_DEPENDENCIES).
+	* lib/am/ltlibrary.am (%LTLIBRARY%): Also depend on
+	(%XLTLIBRARY%_DEPENDENCIES).
+	* lib/am/program.am (%PROGRAM%%EXEEXT%): Also depend on
+	$(EXTRA_%XPROGRAM%_DEPENDENCIES).
+	* tests/extradep.test, tests/extradep2.test: New tests.
+	* tests/Makefile.am (TESTS): Update.
+	* NEWS: Update.
+	Suggested by Eric Blake.
+
+	tests: avoid running into timing issues due to sanity change.
+	* tests/acloca10.test, tests/acloca18.test, tests/aclocal9.test:
+	Insert strategic sleep before aclocal reruns, to ensure files
+	are newer.
+	* tests/python11.test: Use --force for repeated autotools runs.
+	Reports from the NixOS Hydra build daemon via Ludovic Courtès.
+
+	Fix timestamp issues by ensuring configure takes at least a second.
+	* m4/sanity.m4 (AM_SANITY_CHECK): If we didn't sleep here,
+	start a sleep in the background and wait for it to finish
+	before creating config.status, hopefully fixing all spurious
+	testsuite failures involving botched time stamps.
+	* NEWS: Update.
+	Reports by Ludovic Courtès, Peter Breitenlohner, and others.
+
+2010-10-02  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	Revert "parallel-tests: avoid command-line length limit issue."
+	This reverts commit 24e3b4ee2f8cb9f72dd94a05a893f3d4e88b7835,
+	because it re-opened the bug fixed by v1.11-10-g218e678.
+
+	2010-09-07  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	parallel-tests: avoid command-line length limit issue.
+	* automake.in (handle_tests): New argument $makefile, new
+	substitution %MAKEFILE%.
+	(generate_makefile): Adjust.
+	* lib/am/check.am [%?PARALLEL_TESTS%] (check-TESTS): Pass
+	sanitized TEST_LOGS value as makefile snippet on standard
+	input to $(MAKE), to avoid exceeding the command line limit on
+	w32 (MSYS).
+	* NEWS: Update.
+	Report by Bob Friesenhahn.
+
+2010-09-26  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	Extend tests on `--help' and `--version' options.
+	* tests/help.test: Create a new empty directory and chdir into
+	it, rather than removing already present files.  Run the aclocal
+	and automake wrapper scripts directly, instead of relying on
+	$AUTOMAKE and $ACLOCAL.  Be sure to correctly match literal dots
+	in aclocal's and automake's stderr.  Add a trailing `:' command.
+	* tests/help2.test: New test, checking that options `--help' and
+	`--version' works in directories with broken `configure.in'.
+	* tests/help3.test: New test, checking that options `--help' and
+	`--version' take precedence on the other options.
+	* tests/help4.test: New test, checking that the first among the
+	`--help' and `--version' options to be specified on the command
+	line wins.
+	* tests/Makefile.am (TESTS): Updated.
+
+2010-09-25  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	Testsuite: Use `$PATH_SEPARATOR', not `:', when extending PATH.
+	* tests/compile2.test: Do no uselessly (implicitly) repeat the
+	computation of PATH_SEPARATOR again.
+	* tests/instmany-mans.test: Use `$PATH_SEPARATOR', not `:', when
+	extending/redefining PATH.
+	* tests/instmany-python.test: Likewise.
+	* tests/instmany.test: Likewise.
+	* tests/man4.test: Likewise.
+	* tests/mkinst3.test: Likewise.
+	* tests/mmodely.test: Likewise.
+	* tests/multlib.test: Likewise.
+	* tests/txinfo30.test: Likewise.
+	* tests/README (Section "Writing test cases" subsection "Do"):
+	Updated.
+	* Makefile.am (sc_tests_PATH_SEPARATOR): New maintainer check.
+	(syntax_check_rules): Updated.
+
+	Testsuite: new variables `$PATH_SEPARATOR' and `$APIVERSION'.
+	* tests/defs.in ($APIVERSION):  New AC_SUBST'd variable.
+	($ACLOCAL, $AUTOMAKE): Use it.
+	($PATH_SEPARATOR):  New AC_SUBST'd variables.
+	($PATH): Use it.
+
+2010-09-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	Manual: be more agnostic w.r.t. version control system used.
+	* doc/automake.texi (Basics of Distribution): Also refer to `.svn'
+	directories as a type of probably-unwanted files that are copied
+	regardless when adding directories to EXTRA_DIST.
+	(The dist Hook): Show a dist-hook example which removes Subversion
+	`.svn' private directories from distdir, rather than CVS private
+	directories.
+	(missing and AM_MAINTAINER_MODE): Try to be more agnostic w.r.t.
+	the version control system used.
+
+	Manual: index refer to target "git-dist", not "cvs-dist".
+	* doc/automake.texi (General Operation): Index the non-standard
+	example about "git-dist" under the "git-dist" label, not under
+	the "cvs-dist" one.
+
+	Perl modules: remove references to "Automake CVS repository".
+	* lib/Automake/Channels.pm: Update comments to refer to "Automke's
+	git repository" rather than to "Automake's CVS repository".
+	* lib/Automake/Configure_ac.pm: Likewise.
+	* lib/Automake/FileUtils.pm: Likewise.
+	* lib/Automake/Struct.pm: Likewise.
+	* lib/Automake/XFile.pm: Likewise.
+	* lib/Automake/Version.pm (=head1 DESCRIPTION): Refer to "git
+	branches" rather than "CVS branches".
+
+	Remove obsolete .cvsignore files.
+	* .cvsignore, doc/.cvsignore, lib/.cvsignore, lib/am/.cvsignore,
+	lib/Automake/.cvsignore, lib/Automake/tests/.cvsignore,
+	m4/.cvsignore, tests/.cvsignore: Files deleted.  Even when using
+	savannah's CVS readonly mirror there's no way to commit back to
+	the real repository, so this files are not worth maintaining or
+	keeping around.
+
+2010-09-21  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	* m4/dmalloc.m4: Bump serial number and copyright years.
+
+2010-09-20  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	Fix broken link in `AM_WITH_DMALLOC' help screen.
+	* m4/dmalloc.m4 (AM_WITH_DMALLOC): Refer only to the dmalloc site
+	`http://www.dmalloc.com', not to the dmalloc tarball there (which
+	seems to have been removed, substituted by multiple release
+	tarballs now).
+
+2010-09-21  Peter Rosin  <peda@lysator.liu.se>
+
+	compile: implement library search to support MSVC static linking
+	* lib/compile (func_cl_wrapper): Implement library search and
+	-static option so that the user can select whether to prefer
+	dll import libraries or static libraries.  This enables MSVC to
+	link against dlls generated by libtool without requiring libtool
+	or workarounds such as -lfoo.dll etc.  Makes the tests/static.at
+	test case in libtool pass.
+	* tests/compile3.test: Don't trip up if there happens to exist
+	a "foo" library in the library search path.
+	* tests/compile6.test: New test, verifying the library search.
+	* tests/Makefile.am (TESTS): Update.
+
+2010-09-17  Eric Blake  <eblake@redhat.com>
+
+	Avoid triple-space after period.
+	* automake.in (handle_single_transform): Avoid 3 spaces at
+	sentence end.
+	* ChangeLog.03: Likewise.
+	* lib/Automake/ChannelDefs.pm: Likewise.
+	* lib/Automake/Channels.pm (_print_message): Likewise.
+	* lib/Automake/Rule.pm (rule): Likewise.
+	* lib/Automake/Variable.pm (var): Likewise.
+	* lib/am/distdir.am: Likewise.
+	* tests/insthook.test: Likewise.
+
+2010-09-15  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	Test automake-generated portions of configure help screen.
+	* tests/help-depend.test: New test.
+	* tests/help-depend2.test: Likewise.
+	* tests/help-dmalloc.test: Likewise.
+	* tests/help-init.test: Likewise.
+	* tests/help-lispdir.test: Likewise.
+	* tests/help-maintainer.test: Likewise.
+	* tests/help-multilib.test: Likewise.
+	* tests/help-regex.test: Likewise.
+	* tests/help-silent.test: Likewise.
+	* tests/help-upc.test: Likewise.
+	* tests/mmode.test: Remove tests on `configure --help' output,
+	they are supersed by tests in `help-maintainer.test'.
+	* tests/Makefile.am (TESTS): Update.
+
+2010-09-14  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	* tests/README: Don't put GCS mandated tools in $required.
+
+2010-09-13  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* HACKING: Hint at old commits with `git describe' output.
+
+2010-09-14  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	Prefer `$(am__cd)' to plain `cd' in our Makefiles.
+	* Makefile.am (recheck, dist-hook, git-dist, path-check, fetch)
+	(release-stats): Use `$(am__cd)' rather than plain `cd'.
+	* tests/Makefile.am ($(srcdir)/parallel-tests.am): Likewise.
+
+2010-09-12  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	Fix regression in test `colon4.test'.
+	* tests/colon4.test: Fix botched editing to `configure.in'
+	that made the test useless.  Since we are at it, improve
+	comments and make grepping of generated Makefile.in slighty
+	stricter.
+	Regression introduced by change "Modernize, improve and/or
+	extend tests `colon*.test" (Stefano Lattarini, 2010-08-08).
+
+2010-09-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	Do not require "gzip" explicitly in tests.
+	The gzip utility is simply expected to be present on any decent
+	target system for Automake.  So it's pointless to put it in
+	$required.
+	* tests/install2.test ($required): Do not require "gzip".
+	* tests/lex3.test: Likewise.
+	* tests/pr9.test: Likewise.
+	From a suggestion by Ralf Wildenhues.
+
+2010-09-09  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	Use AS_HELP_STRING in AM_SILENT_RULES.
+	* m4/silent.m4 (AM_SILENT_RULES): Use `AS_HELP_STRING' to format
+	help message regarding configure options `--enable-silent-rules'
+	and `--disable-silent-rules'.  Also throw in a couple of cosmetic
+	changes in the related `case' statement (indentation, balancing
+	of parentheses).
+	* THANKS: Update.
+	From a report by Jeff A. Daily.
+
+2010-09-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	Make some `confh*.test' tests more "semantic" (plus tweakings).
+	* tests/confh.test: Run "autoconf", "configure" and "make check",
+	instead of munging/grepping the generated `Makefile.in'.
+	* tests/confh4.test: Relax the grepping of Makefile.in w.r.t.
+	white spaces.  Do not create usless dummy source file `foo.c'
+	and useless dummy header file `acconfig.h'.
+	(configure.in): Remove superfluous call to `AC_OUTPUT'.
+	* tests/confh6.test: Add trailing `:' command.
+	* tests/confh7.test: In comments, add reference to ...
+	* tests/confh8.test: ... this new test, "semantic" sister
+	of `confh7.test'.
+	* tests/Makefile.am (TESTS): Updated.
+	Prompted by a report from Ralf Wildenhues.
+
+2010-09-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	Remove useless whitespace padding in XFAIL_TESTS definition.
+	* tests/Makefile.am (XFAIL_TESTS): Remove whitespace padding.
+
+2010-09-07  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	parallel-tests: avoid command-line length limit issue.
+	* automake.in (handle_tests): New argument $makefile, new
+	substitution %MAKEFILE%.
+	(generate_makefile): Adjust.
+	* lib/am/check.am [%?PARALLEL_TESTS%] (check-TESTS): Pass
+	sanitized TEST_LOGS value as makefile snippet on standard
+	input to $(MAKE), to avoid exceeding the command line limit on
+	w32 (MSYS).
+	* NEWS: Update.
+	Report by Bob Friesenhahn.
+
+	Posix 2008 requires make to set errexit.
+	* lib/am/check.am: Update comment.
+
 2010-09-06  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
 	Tests defs: remove variable $testaclocaldir.
@@ -40,12 +490,28 @@
 	* tests/defs.in: Stricter (and more correct) detection of wheter
 	libtool, libtoolize and/or gettext are in $required.
 
+
+2010-08-27  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	Fix bug in test missing6.test.
+	* tests/missing6.test: Fix the hack used to edit `configure.in',
+	to avoid producing a configure script that breaks with shells
+	that do not support $LINENO.  Also throw in a couple of cosmetic
+	changes.
+
+2010-09-02  Peter Rosin  <peda@lysator.liu.se>
+
+	Make ar-lib support backslashed files in archives.
+	* lib/ar-lib: If an archive member contains a backslash, make sure
+	it is escaped when the archive member is extracted.
+	* tests/ar-lib.test: Test the above.
+
 2010-08-31  Peter Rosin  <peda@lysator.liu.se>
 
 	Do file name conversion for object files in the compile wrapper.
 	* lib/compile (func_cl_wrapper): Do file name conversion for object
 	files (i.e. extensions .obj, .OBJ, .o and .O) if needed.
-	* lib/compile4.test: Test the above.
+	* tests/compile4.test: Test the above.
 
 2010-08-21  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
 
@@ -104,7 +570,7 @@
 	file extension as C++, unless it's given a hint. So hint about
 	.cc, .CC, .cxx, .CXX, c++ and C++. Also do path conversion on
 	.c, .cpp, .CPP, .lib, .LIB and .Lib files.
-	* lib/compile3.test: Test the C++ hinting.
+	* tests/compile3.test: Test the C++ hinting.
 
 2010-08-12  Peter Rosin  <peda@lysator.liu.se>
 
