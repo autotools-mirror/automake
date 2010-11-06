@@ -570,6 +570,7 @@ pluseq7.test \
 pluseq8.test \
 pluseq9.test \
 pluseq10.test \
+pluseq11.test \
 postproc.test \
 ppf77.test \
 pr2.test \
