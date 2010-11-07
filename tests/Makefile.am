@@ -233,6 +233,7 @@ compile5.test \
 compile6.test \
 compile_f90_c_cxx.test \
 compile_f_c_cxx.test \
+cond-basic.test \
 cond.test \
 cond2.test \
 cond3.test \
@@ -309,7 +310,6 @@ copy.test \
 cscope.test \
 cscope2.test \
 cscope3.test \
-ctarget1.test \
 cxx.test \
 cxx2.test \
 cxxansi.test \
