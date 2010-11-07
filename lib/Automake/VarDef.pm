@@ -185,17 +185,8 @@ sub append ($$$)
   # Furthermore keeping `#' would not be portable if the variable is
   # output on multiple lines.
   $val =~ s/ ?#.*//;
-
-  if (chomp $val)
-    {
-      # Insert a backslash before a trailing newline.
-      $val .= "\\\n";
-    }
-  elsif ($val)
-    {
-      # Insert a separator.
-      $val .= ' ';
-    }
+  # Insert a separator, if required.
+  $val .= ' ' if $val;
   $self->{'value'} = $val . $value;
   # Turn ASIS appended variables into PRETTY variables.  This is to
   # cope with `make' implementation that cannot read very long lines.
