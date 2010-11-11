@@ -192,6 +192,7 @@ do
       export GCJ
       echo "$me: running $GCJ --version"
       ( $GCJ --version ) || exit 77
+      echo "$me: running $GCJ -v"
       ( $GCJ -v ) || exit 77
       ;;
     g++)
@@ -228,11 +229,16 @@ do
       (echo foo >> $priv_check_temp) >/dev/null 2>&1
       overwrite_status=$?
       rm -f $priv_check_temp
-      test $overwrite_status = 0 && exit 77
+      if test $overwrite_status -eq 0; then
+        echo "$me: cannot drop file write permissions" >&2
+        exit 77
+      fi
       ;;
     perl-threads)
-      # Skip with Devel::Cover: it cannot cope with threads.
-      test "$WANT_NO_THREADS" = yes && exit 77
+      if test "$WANT_NO_THREADS" = "yes"; then
+        echo "$me: skip with Devel::Cover: cannot cope with threads" >&2
+        exit 77
+      fi
       ;;
     python)
       # Python doesn't support --version, it has -V
@@ -248,7 +254,10 @@ do
       (: > $ro_dir_temp/probe) >/dev/null 2>/dev/null
       create_status=$?
       rm -rf $ro_dir_temp
-      test $create_status = 0 && exit 77
+      if test $create_status -eq 0; then
+        echo "$me: cannot drop directory write permissions" >&2
+        exit 77
+      fi
       ;;
     rst2html)
       # Try the variants that are tried in check.am.
@@ -257,6 +266,7 @@ do
           echo "$me: running $r2h --version"
           $r2h --version && break 2
         done
+        echo "$me: no proper rst2html program found" >&2
         exit 77
       done
       ;;
@@ -264,13 +274,16 @@ do
       # DejaGnu's runtest program. We rely on being able to specify
       # the program on the runtest command-line. This requires
       # DejaGnu 1.4.3 or later.
-      echo "$me: running runtest --version"
+      echo "$me: running runtest SOMEPROGRAM=someprogram --version"
       (runtest SOMEPROGRAM=someprogram --version) || exit 77
       ;;
     tex)
       # No all versions of Tex support `--version', so we use
       # a configure check.
-      test -n "$TEX" || exit 77
+      if test -z "$TEX"; then
+        echo "$me: TeX is required, but it wasn't found by configure" >&2
+        exit 77
+      fi
       ;;
     texi2dvi-o)
       # Texi2dvi supports `-o' since Texinfo 4.1.
@@ -284,6 +297,37 @@ do
       ;;
   esac
 done
+
+# Using just `$testbuilddir' for the check here is ok, since the
+# further temporary subdirectory where the test will be run is
+# ensured not to contain any whitespace character.
+case $testbuilddir in
+  *\ *|*\	*)
+    case " $required " in
+      *' libtool '* | *' libtoolize '* )
+        echo "$me: libtool/libtoolized cannot cope correctly" >&2
+        echo "$me: with spaces in the build tree" >&2
+        exit 77
+        ;;
+    esac
+    ;;
+esac
+
+# This test is necessary, although Automake's configure script bails out
+# when $srcdir contains spaces.  This is because $testsrcdir is in not
+# configure-time $srcdir, but is instead configure-time $abs_srcdir, and
+# that is allowed to contain spaces.
+case $testsrcdir in
+  *\ * |*\	*)
+    case " $required " in
+      *' libtool '* | *' libtoolize '* | *' gettext '* )
+        echo "$me: our testsuite setup cannot cope correctly with spaces" >&2
+        echo "$me: in the source tree for libtool/gettext tests" >&2
+        exit 77
+        ;;
+   esac
+   ;;
+esac
 
 # We might need extra macros, e.g., from Libtool or Gettext.
 # Find them on the system.
@@ -315,16 +359,20 @@ case " $required " in
       fi
     done
     case " $required " in
-      *' libtool '* | *' libtoolize '* ) test $libtool_found = yes || exit 77;;
-      *' gettext '* ) test $gettext_found = yes || exit 77;;
-    esac
-    # Libtool cannot cope with spaces in the build tree.  Our testsuite setup
-    # cannot cope with spaces in the source tree name for Libtool and gettext
-    # tests.  Using just `$testbuilddir' for the check here is ok, since the
-    # further temporary subdirectory where the test will be run is ensured not
-    # to contain any space.
-    case $testsrcdir,$testbuilddir in
-      *\ * | *\	*) exit 77;;
+      *' libtool '*|*' libtoolize '*)
+        if test $libtool_found != yes; then
+          echo "$me: libtool/libtoolize is required, but libtool.m4 wasn't" >&2
+          echo "$me: found in directories $aclocaldir $extra_includes" >&2
+          exit 77
+        fi
+        ;;
+      *' gettext '*)
+        if test $gettext_found != yes; then
+          echo "$me: gettext is required, but gettext.m4 wasn't found" >&2
+          echo "$me: in directories $aclocaldir $extra_includes" >&2
+          exit 77
+        fi
+        ;;
     esac
     ACLOCAL="$ACLOCAL -Wno-syntax -I $top_testsrcdir/m4 $extra_includes -I $aclocaldir"
     ;;
