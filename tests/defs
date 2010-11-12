@@ -1,0 +1,449 @@
+# -*- shell-script -*-
+#
+# Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
+# 2005, 2006, 2007, 2008, 2009, 2010 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+## -------------------------------------------------------- ##
+##  Source static setup and definitions for the testsuite.  ##
+## -------------------------------------------------------- ##
+
+# Ensure we are running from the right directory.
+test -f ./defs-static || {
+   echo "$0: ./defs-static: not found in current directory" >&2
+   exit 1
+}
+
+# Source the shell sanitization and variables' definitions.
+. ./defs-static || exit 99
+
+# The name of the current test (without the `.test' suffix.)
+me=`echo "$0" | sed -e 's,.*[\\/],,;s/\.test$//'`
+
+
+## ---------------------------------------- ##
+##  Sanity checks and environment cleanup.  ##
+## ---------------------------------------- ##
+
+# Ensure $testsrcdir is set correctly.
+test -f "$testsrcdir/defs-static.in" || {
+   echo "$me: $testsrcdir/defs-static.in not found, check \$testsrcdir" >&2
+   exit 1
+}
+
+# Ensure $testbuilddir is set correctly.
+test -f "$testbuilddir/defs-static" || {
+   echo "$me: $testbuilddir/defs-static not found, check \$testbuilddir" >&2
+   exit 1
+}
+
+# Unset some MAKE... variables that may cause $MAKE to act like a
+# recursively invoked sub-make.  Any $MAKE invocation in a test is
+# conceptually an independent invocation, not part of the main
+# 'automake' build.
+unset MFLAGS MAKEFLAGS AM_MAKEFLAGS MAKELEVEL __MKLVL__ MAKE_JOBS_FIFO
+# Unset verbosity flag.
+unset V
+# Also unset variables that will let `make -e install' divert
+# files into unwanted directories.
+unset DESTDIR
+unset prefix exec_prefix bindir datarootdir datadir docdir dvidir
+unset htmldir includedir infodir libdir libexecdir localedir mandir
+unset oldincludedir pdfdir psdir sbindir sharedstatedir sysconfdir
+# The tests call `make -e' but we do not want $srcdir from the environment
+# to override the definition from the Makefile.
+unset srcdir
+# Also unset variables that control our test driver.  While not
+# conceptually independent, they cause some changed semantics we
+# need to control (and test for) in some of the tests to ensure
+# backward-compatible behavior.
+unset DISABLE_HARD_ERRORS
+unset TESTS
+unset TEST_LOG_COMPILER
+unset TEST_LOGS
+unset RECHECK_LOGS
+unset VERBOSE
+
+
+## ---------------------------- ##
+##  Auxiliary shell functions.  ##
+## ---------------------------- ##
+
+# We use a trap below for cleanup.  This requires us to go through
+# hoops to get the right exit status transported through the signal.
+# So use `Exit STATUS' instead of `exit STATUS' inside of the tests.
+# Turn off errexit here so that we don't trip the bug with OSF1/Tru64
+# sh inside this function.
+Exit ()
+{
+  set +e
+  (exit $1)
+  exit $1
+}
+
+# is_newest FILE FILES
+# --------------------
+# Return false if any file in FILES is newer than FILE.
+# Resolve ties in favor of FILE.
+is_newest ()
+{
+  is_newest_files=`find "$@" -newer "$1"`
+  test -z "$is_newest_files"
+}
+
+# AUTOMAKE_run status [options...]
+# --------------------------------
+# Run Automake with OPTIONS, and fail if automake
+# does not exit with STATUS.
+AUTOMAKE_run ()
+{
+  expected_exitcode=$1
+  shift
+  exitcode=0
+  $AUTOMAKE ${1+"$@"} >stdout 2>stderr || exitcode=$?
+  cat stderr >&2
+  cat stdout
+  test $exitcode = $expected_exitcode || Exit 1
+}
+
+# AUTOMAKE_fails [options...]
+# ---------------------------
+# Run Automake with OPTIONS, and fail if automake
+# does not exit with STATUS.
+AUTOMAKE_fails ()
+{
+  AUTOMAKE_run 1 ${1+"$@"}
+}
+
+
+## ----------------------------------------------------------- ##
+##  Checks for required tools, and additional setups (if any)  ##
+##  required by them.                                          ##
+## ----------------------------------------------------------- ##
+
+# Print it here, so that the user will see it also if the test
+# will be skipped due to some tool missing in $PATH itslef.
+echo "$PATH"
+
+# Look for (and maybe set up) required tools and/or system features; skip
+# the current test if they are not found.
+for tool in : $required
+do
+  # Check that each required tool is present.
+  case $tool in
+    :) ;;
+    bison)
+      # Since bison is required, we pick YACC for ./configure.
+      YACC='bison -y'
+      export YACC
+      echo "$me: running bison --version"
+      ( bison --version ) || exit 77
+      ;;
+    bzip2)
+      # Do not use --version, bzip2 still tries to compress stdin.
+      echo "$me: running bzip2 --help"
+      ( bzip2 --help ) || exit 77
+      ;;
+    cl)
+      CC=cl
+      export CC
+      echo "$me: running $CC -?"
+      ( $CC -? ) || exit 77
+      ;;
+    etags)
+      # Exuberant Ctags will create a TAGS file even
+      # when asked for --help or --version.  (Emacs's etags
+      # does not have such problem.)  Use -o /dev/null
+      # to make sure we do not pollute the tests/ directory.
+      echo "$me: running etags --version -o /dev/null"
+      ( etags --version -o /dev/null ) || exit 77
+      ;;
+    GNUmake)
+      # Use --version AND -v, because SGI Make doesn't fail on --version.
+      # Also grep for GNU because newer versions of FreeBSD make do
+      # not complain about `--version' (they seem to silently ignore it).
+      echo "$me: running $MAKE --version -v | grep GNU"
+      ( $MAKE --version -v | grep GNU ) || exit 77
+      ;;
+    gcc)
+      # When gcc is required, export `CC=gcc' so that ./configure
+      # always use it.  This is important only when the user
+      # has defined CC in his environment, otherwise ./configure will
+      # prefer gcc to other compilers.
+      CC=gcc
+      export CC
+      echo "$me: running $CC --version"
+      ( $CC --version ) || exit 77
+      ;;
+    gcj)
+      GCJ=gcj
+      export GCJ
+      echo "$me: running $GCJ --version"
+      ( $GCJ --version ) || exit 77
+      echo "$me: running $GCJ -v"
+      ( $GCJ -v ) || exit 77
+      ;;
+    g++)
+      CXX=g++
+      export CXX
+      echo "$me: running $CXX --version"
+      ( $CXX --version ) || exit 77
+      ;;
+    icc)
+      CC=icc
+      export CC
+      # There is no way to ask *only* the compiler's version.
+      # This tool always wants to do something (by default
+      # it will try link *nothing* and complain it cannot find
+      # main(); funny).  Use -help so it does not try linking anything.
+      echo "$me: running $CC -V -help"
+      ( $CC -V -help ) || exit 77
+      ;;
+    makedepend)
+      echo "$me: running makedepend -f-"
+      ( makedepend -f- ) || exit 77
+      ;;
+    makeinfo-html)
+      # Make sure makeinfo understands --html.
+      echo "$me: running makeinfo --html --version"
+      ( makeinfo --html --version ) || exit 77
+      ;;
+    non-root)
+      # Skip this test case if the user is root.
+      # We try to append to a read-only file to detect this.
+      priv_check_temp=priv-check.$$
+      touch $priv_check_temp || exit 1
+      chmod a-w $priv_check_temp || exit 1
+      (echo foo >> $priv_check_temp) >/dev/null 2>&1
+      overwrite_status=$?
+      rm -f $priv_check_temp
+      if test $overwrite_status -eq 0; then
+        echo "$me: cannot drop file write permissions" >&2
+        exit 77
+      fi
+      ;;
+    perl-threads)
+      if test "$WANT_NO_THREADS" = "yes"; then
+        echo "$me: skip with Devel::Cover: cannot cope with threads" >&2
+        exit 77
+      fi
+      ;;
+    python)
+      # Python doesn't support --version, it has -V
+      echo "$me: running python -V"
+      ( python -V ) || exit 77
+      ;;
+    ro-dir)
+      # Skip this test case if read-only directories aren't supported
+      # (e.g., under DOS.)
+      ro_dir_temp=ro_dir.$$
+      mkdir $ro_dir_temp || exit 1
+      chmod a-w $ro_dir_temp || exit 1
+      (: > $ro_dir_temp/probe) >/dev/null 2>/dev/null
+      create_status=$?
+      rm -rf $ro_dir_temp
+      if test $create_status -eq 0; then
+        echo "$me: cannot drop directory write permissions" >&2
+        exit 77
+      fi
+      ;;
+    rst2html)
+      # Try the variants that are tried in check.am.
+      while :; do
+        for r2h in $RST2HTML rst2html rst2html.py; do
+          echo "$me: running $r2h --version"
+          $r2h --version && break 2
+        done
+        echo "$me: no proper rst2html program found" >&2
+        exit 77
+      done
+      ;;
+    runtest)
+      # DejaGnu's runtest program. We rely on being able to specify
+      # the program on the runtest command-line. This requires
+      # DejaGnu 1.4.3 or later.
+      echo "$me: running runtest SOMEPROGRAM=someprogram --version"
+      (runtest SOMEPROGRAM=someprogram --version) || exit 77
+      ;;
+    tex)
+      # No all versions of Tex support `--version', so we use
+      # a configure check.
+      if test -z "$TEX"; then
+        echo "$me: TeX is required, but it wasn't found by configure" >&2
+        exit 77
+      fi
+      ;;
+    texi2dvi-o)
+      # Texi2dvi supports `-o' since Texinfo 4.1.
+      echo "$me: running texi2dvi -o /dev/null --version"
+      ( texi2dvi -o /dev/null --version ) || exit 77
+      ;;
+    *)
+      # Generic case: the tool must support --version.
+      echo "$me: running $tool --version"
+      ( $tool --version ) || exit 77
+      ;;
+  esac
+done
+
+# Using just `$testbuilddir' for the check here is ok, since the
+# further temporary subdirectory where the test will be run is
+# ensured not to contain any whitespace character.
+case $testbuilddir in
+  *\ *|*\	*)
+    case " $required " in
+      *' libtool '* | *' libtoolize '* )
+        echo "$me: libtool/libtoolized cannot cope correctly" >&2
+        echo "$me: with spaces in the build tree" >&2
+        exit 77
+        ;;
+    esac
+    ;;
+esac
+
+# This test is necessary, although Automake's configure script bails out
+# when $srcdir contains spaces.  This is because $testsrcdir is in not
+# configure-time $srcdir, but is instead configure-time $abs_srcdir, and
+# that is allowed to contain spaces.
+case $testsrcdir in
+  *\ * |*\	*)
+    case " $required " in
+      *' libtool '* | *' libtoolize '* | *' gettext '* )
+        echo "$me: our testsuite setup cannot cope correctly with spaces" >&2
+        echo "$me: in the source tree for libtool/gettext tests" >&2
+        exit 77
+        ;;
+   esac
+   ;;
+esac
+
+# We might need extra macros, e.g., from Libtool or Gettext.
+# Find them on the system.
+# Use `-I $top_testsrcdir/m4' in addition to `--acdir=$top_testsrcdir/m4',
+# because the other `-I' directories added for libtool and gettext might
+# contain files from an old version of Automake that we don't want to use.
+# Use `-Wno-syntax' because we do not want our test suite to fail because
+# some third-party .m4 file is underquoted.
+case " $required " in
+  *' libtool '* | *' libtoolize '* | *' gettext '* )
+    aclocaldir=$testprefix/share/aclocal
+    extra_includes=""
+    if test -f $aclocaldir/dirlist; then
+       extra_includes=`
+       <$aclocaldir/dirlist \
+       sed  's/#.*//;s/[	 ][	 ]*$//g' \
+       | while read dir; do test ! -d "$dir" || echo "-I $dir"; done`
+    else :; fi
+
+    libtool_found=no
+    gettext_found=no
+    for d in $extra_includes $aclocaldir ; do
+      test "x$d" != x-I || continue
+      if test -f "$d/libtool.m4"; then
+        libtool_found=yes
+      fi
+      if test -f "$d/gettext.m4"; then
+        gettext_found=yes
+      fi
+    done
+    case " $required " in
+      *' libtool '*|*' libtoolize '*)
+        if test $libtool_found != yes; then
+          echo "$me: libtool/libtoolize is required, but libtool.m4 wasn't" >&2
+          echo "$me: found in directories $aclocaldir $extra_includes" >&2
+          exit 77
+        fi
+        ;;
+      *' gettext '*)
+        if test $gettext_found != yes; then
+          echo "$me: gettext is required, but gettext.m4 wasn't found" >&2
+          echo "$me: in directories $aclocaldir $extra_includes" >&2
+          exit 77
+        fi
+        ;;
+    esac
+    ACLOCAL="$ACLOCAL -Wno-syntax -I $top_testsrcdir/m4 $extra_includes -I $aclocaldir"
+    ;;
+esac
+
+
+## ---------------------------------------------------------------- ##
+##  Create and set up of the temporary directory used by the test.  ##
+##  Set up of the exit trap for cleanup of said directory.          ##
+## ---------------------------------------------------------------- ##
+
+# The subdirectory where the current test script will run and write its
+# temporary/data files.  This will be created shortly, and will be removed
+# by the cleanup trap below if the test passes.  If the test doesn't pass,
+# this directory will be kept, to facilitate debugging.
+testSubDir=$me.dir
+
+test ! -d $testSubDir || {
+  find $testSubDir -type d ! -perm -200 -exec chmod u+w {} ";"
+  rm -rf $testSubDir
+}
+mkdir $testSubDir
+
+cd ./$testSubDir
+
+if test "$sh_errexit_works" = yes; then
+  trap 'exit_status=$?
+    set +e
+    cd "$testbuilddir"
+    case $exit_status,$keep_testdirs in
+    0,)
+      find $testSubDir -type d ! -perm -200 -exec chmod u+w {} ";"
+      rm -rf $testSubDir
+      ;;
+    esac
+    test "$signal" != 0 && echo "$me: caught signal $signal"
+    echo "$me: exit $exit_status"
+    exit $exit_status
+  ' 0
+  for signal in 1 2 13 15; do
+    trap 'signal='$signal'; { Exit 1; }' $signal
+  done
+  signal=0
+fi
+
+# Copy in some files we need.
+for file in install-sh missing depcomp; do
+   cp "$top_testsrcdir/lib/$file" . || Exit 1
+done
+
+# Build appropriate environment in test directory.  Eg create
+# configure.in, touch all necessary files, etc.
+# Don't use AC_OUTPUT, but AC_CONFIG_FILES so that appending
+# still produces a valid configure.ac.  But then, tests running
+# config.status really need to append AC_OUTPUT.
+{
+  echo "AC_INIT([$me], [1.0])"
+  if test x"$parallel_tests" = x"yes"; then
+    echo "AM_INIT_AUTOMAKE([parallel-tests])"
+  else
+    echo "AM_INIT_AUTOMAKE"
+  fi
+  echo "AC_CONFIG_FILES([Makefile])"
+} >configure.in
+
+
+## ---------------- ##
+##  Ready to go...  ##
+## ---------------- ##
+
+# Turn on shell traces.
+set -x
+
+pwd
