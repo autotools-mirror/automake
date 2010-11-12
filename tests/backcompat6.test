@@ -53,19 +53,15 @@ END
 cat >> Makefile.am <<'END'
 bin_PROGRAMS = foo
 foo_SOURCES = quux.c
-DISTCLEANFILES = *.tmp
 check-local:
-	rm -f exp got
-	echo 'PACKAGE = nonesuch-zardoz' > exp.tmp
-	echo 'VERSION = nonesuch-0.1' >> exp.tmp
-	echo 'PACKAGE = $(PACKAGE)' > got1.tmp
-	echo 'VERSION = $(VERSION)' >> got1.tmp
-	./foo > got2.tmp
-	cat exp.tmp
-	cat got1.tmp
-	cat got2.tmp
-	diff exp.tmp got1.tmp
-	diff exp.tmp got2.tmp
+	test x'$(PACKAGE)' = x'nonesuch-zardoz'
+	test x'$(VERSION)' = x'nonesuch-0.1'
+	./foo # for debugging
+	## Do not anchor the regexps w.r.t. the end of line, because on
+	## MinGW/MSYS, grep may assume LF line endings only, while our
+	## `foo' program may generate CRLF line endings.
+	./foo | grep '^PACKAGE = nonesuch-zardoz!'
+	./foo | echo '^VERSION = nonesuch-0\.1!'
 END
 
 cat > quux.c <<'END'
@@ -73,7 +69,7 @@ cat > quux.c <<'END'
 #include <stdio.h>
 int main (void)
 {
-  printf("PACKAGE = %s\nVERSION = %s\n", PACKAGE, VERSION);
+  printf("PACKAGE = %s!\nVERSION = %s!\n", PACKAGE, VERSION);
   return 0;
 }
 END
