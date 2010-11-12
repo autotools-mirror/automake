@@ -1,6 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1996, 1997, 1998, 2001, 2002, 2010 Free Software
-# Foundation, Inc.
+# Copyright (C) 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure `dist' prefix works with man pages.
+# Check for a bug in distcheck w.r.t. generated manpages.
 
 . ./defs || Exit 1
 
@@ -23,14 +22,37 @@ set -e
 
 cat > Makefile.am << 'END'
 dist_man_MANS = foo.1
-nodist_man1_MANS = bar.man
+foo.1:
+	rm -f $(srcdir)/$@  # fails if $(srcdir) is unwritable
+	: > $(srcdir)/$@
 END
 
-: > foo.1
-: > bar.man
+cat >> configure.in <<'END'
+AC_OUTPUT
+END
 
 $ACLOCAL
 $AUTOMAKE
-grep '^MANS *=' Makefile.in
+$AUTOCONF
+
+mkdir build
+cd build
+../configure
+
+$MAKE
+test -f ../foo.1
+$MAKE distdir
+test -f $me-1.0/foo.1
+$MAKE distcheck
+
+cd ..
+rm -f foo.1
+./configure
+
+$MAKE
+test -f foo.1
+$MAKE distdir
+test -f $me-1.0/foo.1
+$MAKE distcheck
 
 :
