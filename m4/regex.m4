@@ -1,17 +1,20 @@
 ## --------------------------------- ##                     -*- Autoconf -*-
 ## Check if --with-regex was given.  ##
 ## --------------------------------- ##
-# Copyright (C) 1996, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005
-# Free Software Foundation, Inc.
+# Copyright (C) 1996, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,
+# 2010 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 7
+# serial 8
 
 # AM_WITH_REGEX
 # -------------
+#
+# THIS MACRO IS OBSOLETE now, since rx doesn't seem to be maintained,
+# while regex is.  This macro should be removed on 2013-01-01.
 #
 # The idea is to distribute rx.[hc] and regex.[hc] together, for a
 # while.  The WITH_REGEX symbol is used to decide which of regex.h or
@@ -23,10 +26,9 @@
 # package will use the system's rx which, on Linux at least, will
 # result in a smaller executable file.
 #
-# FIXME: This macro seems quite obsolete now since rx doesn't seem to
-# be maintained, while regex is.
 AC_DEFUN([AM_WITH_REGEX],
 [AC_PREREQ(2.50)dnl
+m4_warn([obsolete], [$0 is obsolete, since `rx' is unmantained now])dnl
 AC_LIBSOURCES([rx.h, rx.c, regex.c, regex.h])dnl
 AC_MSG_CHECKING([which of GNU rx or gawk's regex is wanted])
 AC_ARG_WITH([regex],

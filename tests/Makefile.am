@@ -701,6 +701,7 @@ remake5.test \
 remake6.test \
 remake7.test \
 regex.test \
+regex-obsolete.test \
 req.test \
 reqd.test \
 reqd2.test \
