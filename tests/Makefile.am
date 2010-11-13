@@ -737,6 +737,7 @@ remake-deleted-am-subdir.test \
 remake-renamed-am.test \
 pr8365-remake-timing.test \
 regex.test \
+regex-obsolete.test \
 req.test \
 reqd.test \
 reqd2.test \
