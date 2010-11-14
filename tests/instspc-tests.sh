@@ -133,7 +133,6 @@ EOF
       return 0;
     }
 EOF
-  cp source.c source2.c
 
   unindent > Makefile.am << 'EOF'
     foodir = $(prefix)/foo
