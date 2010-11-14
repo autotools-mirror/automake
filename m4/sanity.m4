@@ -73,12 +73,12 @@ am_sleep_pid=
 if grep 'slept: no' conftest.file >/dev/null 2>&1; then
   ( sleep 1 ) &
   am_sleep_pid=$!
-  AC_CONFIG_COMMANDS_PRE(
-    [if test -n "$am_sleep_pid"; then
-       AC_MSG_CHECKING([that generated files are newer than configure])
-       wait $am_sleep_pid
-       AC_MSG_RESULT([done])
-     fi])
 fi
+AC_CONFIG_COMMANDS_PRE(
+  [AC_MSG_CHECKING([that generated files are newer than configure])
+   if test -n "$am_sleep_pid"; then
+     wait $am_sleep_pid
+   fi
+   AC_MSG_RESULT([done])])
 rm -f conftest.file
 ])
