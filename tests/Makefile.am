@@ -745,6 +745,8 @@ stamph2.test \
 stdlib.test \
 stdlib2.test \
 strip.test \
+strip2.test \
+strip3.test \
 subdir.test \
 subdir2.test \
 subdir3.test \
