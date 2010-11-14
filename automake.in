@@ -5954,11 +5954,11 @@ sub lang_vala_finish_target ($$)
     {
       foreach my $file ($var->value_as_list_recursive)
         {
-          $output_rules .= "\$(srcdir)/$file: \$(srcdir)/${derived}_vala.stamp\n".
-            "\t\@if test -f \$@; then :; else \\\n".
-            "\t  rm -f \$(srcdir)/${derived}_vala.stamp; \\\n".
-            "\t  \$(am__cd) \$(srcdir) && \$(MAKE) \$(AM_MAKEFLAGS) ${derived}_vala.stamp; \\\n".
-            "\tfi\n"
+          $output_rules .= "\$(srcdir)/$file: \$(srcdir)/${derived}_vala.stamp\n"
+            . "\t\@if test -f \$@; then :; else rm -f \$(srcdir)/${derived}_vala.stamp; fi\n"
+            . "\t\@if test -f \$@; then :; else \\\n"
+            . "\t  \$(am__cd) \$(srcdir) && \$(MAKE) \$(AM_MAKEFLAGS) ${derived}_vala.stamp; \\\n"
+	    . "\tfi\n"
             if $file =~ s/(.*)\.vala$/$1.c/;
         }
     }
@@ -5974,11 +5974,11 @@ sub lang_vala_finish_target ($$)
 	                          '--vapi', '--internal-vapi', '--gir')))
 	    {
 	      my $headerfile = $flag;
-	      $output_rules .= "\$(srcdir)/$headerfile: \$(srcdir)/${derived}_vala.stamp\n".
-		"\t\@if test -f \$@; then :; else \\\n".
-		"\t  rm -f \$(srcdir)/${derived}_vala.stamp; \\\n".
-		"\t  \$(am__cd) \$(srcdir) && \$(MAKE) \$(AM_MAKEFLAGS) ${derived}_vala.stamp; \\\n".
-		"\tfi\n";
+	      $output_rules .= "\$(srcdir)/$headerfile: \$(srcdir)/${derived}_vala.stamp\n"
+		. "\t\@if test -f \$@; then :; else rm -f \$(srcdir)/${derived}_vala.stamp; fi\n"
+		. "\t\@if test -f \$@; then :; else \\\n"
+		. "\t  \$(am__cd) \$(srcdir) && \$(MAKE) \$(AM_MAKEFLAGS) ${derived}_vala.stamp; \\\n"
+		. "\tfi\n";
 
 	      # valac is not used when building from dist tarballs
 	      # distribute the generated files
@@ -6073,10 +6073,8 @@ sub lang_yacc_target_hook
 	    $output_rules .=
 	      "$condstr${header}: $output\n"
 	      # Recover from removal of $header
-	      . "$condstr\t\@if test ! -f \$@; then \\\n"
-	      . "$condstr\t  rm -f $output; \\\n"
-	      . "$condstr\t  \$(MAKE) \$(AM_MAKEFLAGS) $output; \\\n"
-	      . "$condstr\telse :; fi\n";
+	      . "$condstr\t\@if test ! -f \$@; then rm -f $output; else :; fi\n"
+	      . "$condstr\t\@if test ! -f \$@; then \$(MAKE) \$(AM_MAKEFLAGS) $output; else :; fi\n";
 	  }
 	# Distribute the generated file, unless its .y source was
 	# listed in a nodist_ variable.  (&handle_source_transform

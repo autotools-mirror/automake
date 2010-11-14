@@ -98,6 +98,7 @@ autohdr.test \
 autohdr2.test \
 autohdr3.test \
 autohdr4.test \
+autohdrdry.test \
 automake.test \
 auxdir.test \
 auxdir2.test \
@@ -456,6 +457,7 @@ lisp5.test \
 lisp6.test \
 lisp7.test \
 lisp8.test \
+lispdry.test \
 listval.test \
 location.test \
 longline.test \
@@ -568,6 +570,7 @@ pluseq7.test \
 pluseq8.test \
 pluseq9.test \
 pluseq10.test \
+pluseq11.test \
 postproc.test \
 ppf77.test \
 pr2.test \
@@ -660,6 +663,8 @@ stamph2.test \
 stdlib.test \
 stdlib2.test \
 strip.test \
+strip2.test \
+strip3.test \
 subdir.test \
 subdir2.test \
 subdir3.test \
@@ -788,6 +793,7 @@ yacc5.test \
 yacc6.test \
 yacc7.test \
 yacc8.test \
+yaccdry.test \
 yaccpp.test \
 yaccvpath.test \
 yflags.test \
