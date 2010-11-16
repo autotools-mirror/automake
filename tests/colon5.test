@@ -31,21 +31,44 @@ END
 : > Makefile.dep
 
 cat > Makefile.am <<'END'
-.PHONY: test
-test:
-	case ' $(DIST_COMMON) ' in \
-	  *' $(srcdir)/Makefile.dep '*|*' Makefile.dep '*) exit 0;; \
-	  *) exit 1;; \
-	esac
+.PHONY: test-fs-layout test-grep test-distcommon test-distdir
+check-local: test-fs-layout test-grep test-distcommon test-distdir
+test-fs-layout:
+	test x'$(srcdir)' = '.' || test ! -r Makefile.dep
+test-grep:
+## The use of $(empty) prevents spurious matches.
+	grep '=GrEp$(empty)Me_am=' $(srcdir)/Makefile.in
+	grep '=GrEp$(empty)Me_dep=' $(srcdir)/Makefile.dep
+	grep '=GrEp$(empty)Me_am=' Makefile
+	grep '=GrEp$(empty)Me_dep=' Makefile
+test-distcommon:
+	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]Makefile.dep '
+test-distdir: distdir
+	test -f $(distdir)/Makefile.dep
 END
 
 $ACLOCAL
+$AUTOCONF
 $AUTOMAKE
 
-grep 'Makefile:Makefile\.in' Makefile.in
-grep '^Makefile:.* \$(srcdir)/Makefile\.dep' Makefile.in
+./configure
 
-sed -e '/@SET_MAKE@/d' -e "s!@SHELL@!$SHELL!g" <Makefile.in >Makefile.sed
-$MAKE -f Makefile.sed SHELL=$SHELL test
+grep '=GrEpMe_am=' Makefile && Exit 1   # sanity check
+grep '=GrEpMe_dep=' Makefile && Exit 1  # likewise
+
+$MAKE test-distcommon
+$MAKE test-distdir
+
+$sleep
+
+echo '# =GrEpMe_am=' >> Makefile.am
+echo '# =GrEpMe_dep=' >> Makefile.dep
+
+$MAKE Makefile # for non-GNU make
+$MAKE test-grep
+$MAKE test-distcommon
+$MAKE test-distdir
+
+$MAKE distcheck
 
 :
