@@ -330,10 +330,6 @@ my @config_headers = ();
 # Names used in AC_CONFIG_LINKS call.
 my @config_links = ();
 
-# Directory where output files go.  Actually, output files are
-# relative to this directory.
-my $output_directory = '.';
-
 # List of Makefile.am's to process, and their corresponding outputs.
 my @input_files = ();
 my %output_files = ();
@@ -8280,18 +8276,13 @@ sub generate_makefile ($$)
 
   check_typos;
 
-  my ($out_file) = $output_directory . '/' . $makefile_in;
-
   if ($exit_code != 0)
     {
-      verb "not writing $out_file because of earlier errors";
+      verb "not writing $makefile_in because of earlier errors";
       return;
     }
 
-  if (! -d ($output_directory . '/' . $am_relative_dir))
-    {
-      mkdir ($output_directory . '/' . $am_relative_dir, 0755);
-    }
+  mkdir ($am_relative_dir, 0755) if ! -d $am_relative_dir;
 
   # We make sure that `all:' is the first target.
   my $output =
@@ -8310,25 +8301,25 @@ sub generate_makefile ($$)
   #  * other dependencies, specific to the Makefile.am being processed
   #    (such as the Makefile.am itself, or any Makefile fragment
   #    it includes).
-  my $timestamp = mtime $out_file;
+  my $timestamp = mtime $makefile_in;
   if (! $force_generation
       && $configure_deps_greatest_timestamp < $timestamp
       && $output_deps_greatest_timestamp < $timestamp
-      && $output eq contents ($out_file))
+      && $output eq contents ($makefile_in))
     {
-      verb "$out_file unchanged";
+      verb "$makefile_in unchanged";
       # No need to update.
       return;
     }
 
-  if (-e $out_file)
+  if (-e $makefile_in)
     {
-      unlink ($out_file)
-	or fatal "cannot remove $out_file: $!";
+      unlink ($makefile_in)
+	or fatal "cannot remove $makefile_in: $!";
     }
 
-  my $gm_file = new Automake::XFile "> $out_file";
-  verb "creating $out_file";
+  my $gm_file = new Automake::XFile "> $makefile_in";
+  verb "creating $makefile_in";
   print $gm_file $output;
 }
 
