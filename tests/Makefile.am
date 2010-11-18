@@ -583,6 +583,7 @@ mkinst3.test \
 mmode.test \
 mmodely.test \
 multlib.test \
+no-outdir-option.test \
 nobase.test \
 nobase-libtool.test \
 nobase-python.test \
@@ -607,7 +608,6 @@ objc2.test \
 obsolete.test \
 oldvars.test \
 order.test \
-outdir.test \
 output.test \
 output2.test \
 output3.test \
