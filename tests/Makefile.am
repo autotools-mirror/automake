@@ -705,6 +705,7 @@ regex-obsolete.test \
 req.test \
 reqd.test \
 reqd2.test \
+repeated-options.test \
 rulepat.test \
 sanity.test \
 scripts.test \
