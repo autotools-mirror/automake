@@ -21,6 +21,7 @@ all.test \
 auxdir2.test \
 cond17.test \
 gcj6.test \
+override-conditional-2.test \
 txinfo5.test
 
 include $(srcdir)/parallel-tests.am
@@ -542,7 +543,10 @@ output11.test \
 output12.test \
 output13.test \
 output-order.test \
-overrid.test \
+override-conditional-1.test \
+override-conditional-2.test \
+override-html.test \
+override-suggest-local.test \
 parallel-am.test \
 parallel-am2.test \
 parallel-am3.test \

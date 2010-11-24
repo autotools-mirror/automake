@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2003, 2004, 2006  Free Software Foundation, Inc.
+# Copyright (C) 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,10 +21,6 @@
 
 set -e
 
-cat >> configure.in << 'END'
-AM_CONDITIONAL([COND], [:])
-END
-
 cat > Makefile.am << 'END'
 install:
 	:
@@ -34,11 +30,6 @@ html:
 	:
 clean-am:
 	:
-
-if COND
-ps: mine
-	:
-endif
 END
 
 $ACLOCAL
@@ -51,17 +42,4 @@ grep ':.*html-local' stderr
 grep ':.*clean-am-local' stderr && Exit 1
 grep ':.*clean-local' stderr
 
-# Conditional overrides ought to be diagnosed, but it can't be done yet.
-# See the FIXME in Automake::Rule::define.  Once this is fixed, the grep below
-# will fail.  If you see the failure, it means you fixed Automake.  Well done!
-# Just strip out the next '&& Exit 1' and this comment.
-grep ':.*overrides.*ps' stderr && Exit 1
-
-# Test for another issue.  Overriding html: should cause only one
-# html: rule to be output.
-test `grep '^html:' Makefile.in | wc -l` = 1
-
-# ps: should be output in two conditions
-test `grep '[^-]ps:' Makefile.in | wc -l` = 2
-grep '@COND_TRUE@ps: mine' Makefile.in
-grep '@COND_FALSE@ps: ps-am' Makefile.in
+:
