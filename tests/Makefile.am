@@ -138,6 +138,7 @@ clean.test \
 clean2.test \
 colneq.test \
 colneq2.test \
+colneq3.test \
 colon.test \
 colon2.test \
 colon3.test \

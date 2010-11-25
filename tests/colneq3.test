@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1996, 2001, 2002, 2010 Free Software Foundation, Inc.
+# Copyright (C) 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,8 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test that := in var substitutions works.
+# Test that := definitions work as expected at make time.
 
+required=GNUmake
 . ./defs || Exit 1
 
 set -e
@@ -25,16 +26,19 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-t = a b c
-EXTRA_DIST = $(t:=.test)
+BAR := $(FOO)
+BAZ = $(FOO)
+FOO := foo
 .PHONY: test
 test:
-	test x'$(EXTRA_DIST)' = x'a.test b.test c.test'
+	test x'$(FOO)' = x'foo'
+	test x'$(BAZ)' = x'foo'
+	test x'$(BAR)' = x
 END
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE
+$AUTOMAKE -Wno-portability
 
 ./configure
 $MAKE test
