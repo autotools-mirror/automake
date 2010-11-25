@@ -714,7 +714,6 @@ silent.test \
 silent2.test \
 silent3.test \
 silent4.test \
-silent5.test \
 silent6.test \
 silent7.test \
 silent8.test \
@@ -722,8 +721,12 @@ silent9.test \
 silentcxx.test \
 silentf77.test \
 silentf90.test \
-silentlex.test \
-silentyacc.test \
+silent-many-gcc.test \
+silent-many-generic.test \
+silent-lex-gcc.test \
+silent-lex-generic.test \
+silent-yacc-gcc.test \
+silent-yacc-generic.test \
 sinclude.test \
 srcsub.test \
 srcsub2.test \
