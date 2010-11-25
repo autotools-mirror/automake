@@ -14,9 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check silent-rules mode for Yacc.
+# Check silent-rules mode for Lex, forcing gcc depmode.
+# Keep this in sync with sister test `silent-lex-generic.test'.
 
-required='bison'
+required='flex gcc'
 . ./defs || Exit 1
 
 set -e
@@ -26,7 +27,7 @@ mkdir sub
 cat >>configure.in <<'EOF'
 AM_SILENT_RULES
 AM_PROG_CC_C_O
-AC_PROG_YACC
+AC_PROG_LEX
 AC_CONFIG_FILES([sub/Makefile])
 AC_OUTPUT
 EOF
@@ -34,42 +35,40 @@ EOF
 cat > Makefile.am <<'EOF'
 # Need generic and non-generic rules.
 bin_PROGRAMS = foo1 foo2
-foo1_SOURCES = foo.y
+foo1_SOURCES = foo.l
 foo2_SOURCES = $(foo1_SOURCES)
-foo2_CFLAGS = $(AM_CPPFLAGS)
+foo2_CFLAGS = $(AM_CFLAGS)
 SUBDIRS = sub
+LDADD = $(LEXLIB)
 EOF
 
 cat > sub/Makefile.am <<'EOF'
 AUTOMAKE_OPTIONS = subdir-objects
 # Need generic and non-generic rules.
 bin_PROGRAMS = bar1 bar2
-bar1_SOURCES = bar.y
+bar1_SOURCES = bar.l
 bar2_SOURCES = $(bar1_SOURCES)
-bar2_CFLAGS = $(AM_CPPFLAGS)
+bar2_CFLAGS = $(AM_CFLAGS)
+LDADD = $(LEXLIB)
 EOF
 
-cat > foo.y <<'EOF'
-%{
-void yyerror (char *s) {}
-int yylex (void) {return 0;}
-int main(void) {return 0;}
-%}
-%token EOF
+cat > foo.l <<'EOF'
 %%
-fubar : 'f' 'o' 'o' 'b' 'a' 'r' EOF {};
+"END"   return EOF;
+.
+%%
 EOF
-cp foo.y sub/bar.y
+cp foo.l sub/bar.l
 
 $ACLOCAL
 $AUTOMAKE --add-missing
 $AUTOCONF
 
-# configure once for fastdep, once for non-fastdep, once for nodep
+# Force gcc ("fast") depmode.
+# This apparently useless "for" loop is here to simplify the syncing
+# with sister test `silent-lex-gcc.test'.
 for config_args in \
-  '' \
-  am_cv_CC_dependencies_compiler_type=gcc \
-  --disable-dependency-tracking
+  am_cv_CC_dependencies_compiler_type=gcc
 do
   ./configure $config_args --enable-silent-rules
 
@@ -79,8 +78,8 @@ do
   $EGREP ' (-c|-o)' stdout && Exit 1
   $EGREP '(mv|ylwrap) ' stdout && Exit 1
 
-  grep 'YACC .*foo\.' stdout
-  grep 'YACC .*bar\.' stdout
+  grep 'LEX .*foo\.' stdout
+  grep 'LEX .*bar\.' stdout
   grep ' CC .*foo\.' stdout
   grep ' CC .*bar\.' stdout
   grep 'CCLD .*foo1' stdout
@@ -99,7 +98,7 @@ do
   $EGREP ' (-c|-o)' stdout && Exit 1
   $EGREP '(mv|ylwrap) ' stdout && Exit 1
 
-  # Don't look for YACC, as probably yacc hasn't been re-run.
+  # Don't look for LEX, as probably lex hasn't been re-run.
   grep ' CC .*foo\.' stdout
   grep ' CC .*bar\.' stdout
   grep 'CCLD .*foo1' stdout
@@ -109,7 +108,7 @@ do
 
   # Ensure a truly clean rebuild.
   $MAKE clean
-  rm -f foo.[ch] sub/bar.[ch]
+  rm -f foo.c sub/bar.c
 
   $MAKE V=1 >stdout || { cat stdout; Exit 1; }
   cat stdout
@@ -118,7 +117,7 @@ do
   grep ' -o ' stdout
   grep 'ylwrap ' stdout
 
-  $EGREP '(YACC|CC|CCLD) ' stdout && Exit 1
+  $EGREP '(LEX|CC|CCLD) ' stdout && Exit 1
 
   # Cleaning and then rebuilding with the same V flag (and without
   # removing the generated sources in between) shouldn't trigger a
@@ -132,12 +131,12 @@ do
   grep ' -c ' stdout
   grep ' -o ' stdout
 
-  $EGREP '(YACC|CC|CCLD) ' stdout && Exit 1
+  $EGREP '(LEX|CC|CCLD) ' stdout && Exit 1
 
   # Ensure a truly clean reconfiguration/rebuild.
   $MAKE clean
   $MAKE maintainer-clean
-  rm -f foo.[ch] sub/bar.[ch]
+  rm -f foo.c sub/bar.c
 
 done
 
