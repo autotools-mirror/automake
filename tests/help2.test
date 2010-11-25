@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Make sure --help and --version work, even when the current directory
-# contains a broken configure.in.
+# contains a broken configure.in and a broken acinclude.m4.
 . ./defs || Exit 1
 
 set -e
@@ -29,9 +29,19 @@ ACLOCAL=`echo " $ACLOCAL " | sed 's/ -W[^ ]*/ /g'`
 AUTOMAKE=`echo " $AUTOMAKE " | sed 's/ -W[^ ]*/ /g'`
 
 echo '[' > configure.in
+echo '[' > acinclude.m4
 
 $AUTOMAKE --version
 $AUTOMAKE --help
+$ACLOCAL --version
+$ACLOCAL --help
+
+# Sanity check: aclocal cannot work with broken acinclude.m4.
+$ACLOCAL 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+$FGREP acinclude.m4 stderr
+
+rm -f acinclude.m4
 
 # Sanity checks: aclocal and automake cannot work with broken configure.in.
 $ACLOCAL 2>stderr && { cat stderr >&2; Exit 1; }
