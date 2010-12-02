@@ -23,6 +23,8 @@ set x ${AUTOUPDATE-autoupdate}
 required=$2
 . ./defs || Exit 1
 
+set -e
+
 cat > configure.in << 'END'
 AC_INIT
 END
@@ -30,22 +32,29 @@ END
 $PERL -ne '/AU_DEFUN\(\[(\w+)\]/ && print "$1\n"' \
     "$top_testsrcdir/m4/obsolete.m4" >> obs
 cat obs >> configure.in
-$PERL -ne 'chomp; print "grep $_ stderr || Exit 1\n"; ' obs > obs.1
+$PERL -ne 'chomp; print "grep $_ output || Exit 1\n"; ' obs > obs.1
 $PERL -ne 'chomp; print "grep $_ configure.in && Exit 1\n"; ' obs > obs.2
+echo : >> obs.1 # since it will be sourced, it must and with a success
+echo : >> obs.2 # ditto
+
+cat configure.in # for debugging
+cat obs.1        # ditto
+cat obs.2        # ditto
 
 # Sanity check.  Make sure we have added something to configure.in.
-test `cat configure.in | wc -l` -gt 1 || Exit 1
+test `wc -l <configure.in` -gt 1
 
-$ACLOCAL || Exit 1
+$ACLOCAL
 
 # Expect Autoconf to complain about each of the macros in obs.
-$AUTOCONF -Wobsolete >stderr 2>&1
+$AUTOCONF -Wobsolete >output 2>&1 || { cat output; Exit 1; }
+cat output
 . ./obs.1
 # Make sure Autoupdate remove each of these macros.
-$AUTOUPDATE || Exit 1
+$AUTOUPDATE
 . ./obs.2
 
 # Autoconf should be able to grok the updated configure.in.
-$AUTOCONF || Exit 1
+$AUTOCONF
 
-Exit 0
+:
