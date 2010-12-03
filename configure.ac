@@ -179,9 +179,9 @@ AC_SUBST([MODIFICATION_DELAY])
 AC_PROG_EGREP
 AC_PROG_FGREP
 
-AC_CACHE_CHECK([whether /bin/sh has working 'set -e' with exit trap],
+AC_CACHE_CHECK([whether $SHELL has working 'set -e' with exit trap],
 [am_cv_sh_errexit_works],
-[if /bin/sh -ec "trap 'exit \$?' 0; (exit 77); exit 77"; test $? = 77
+[if $SHELL -ec "trap 'exit \$?' 0; (exit 77); exit 77"; test $? = 77
 then
   am_cv_sh_errexit_works=yes
 else

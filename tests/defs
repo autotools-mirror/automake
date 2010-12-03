@@ -17,6 +17,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+# IMPORTANT NOTE: This file should execute correctly with any system's
+# /bin/sh shell, and not only with configure-time detected $CONFIG_SHELL,
+# until differently and explicitly specified.
+
+
 ## -------------------------------------------------------- ##
 ##  Source static setup and definitions for the testsuite.  ##
 ## -------------------------------------------------------- ##
@@ -42,9 +48,9 @@ if test -z "$me"; then
     || { echo "$argv0: failed to define \$me" >&2; exit 99; }
 fi
 
-## ---------------------------------------- ##
-##  Sanity checks and environment cleanup.  ##
-## ---------------------------------------- ##
+## ---------------------- ##
+##  Early sanity checks.  ##
+## ---------------------- ##
 
 # A single whitespace character.
 sp=' '
@@ -69,6 +75,48 @@ test -f "$testbuilddir/defs-static" || {
    echo "$me: $testbuilddir/defs-static not found, check \$testbuilddir" >&2
    exit 99
 }
+
+# Ensure we can find ourselves.
+test -f "$0" || {
+   echo "$me: unable to find myself: $0" >&2
+   exit 1
+}
+
+
+## ------------------------------------ ##
+##  Ensure we run with a proper shell.  ##
+## ------------------------------------ ##
+
+# Make sure we run with the shell detected at configure time (unless
+# the user forbids it).
+case ${AM_TESTS_REEXEC-yes} in
+  n|no|false|0)
+    ;;
+  *)
+    AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC
+    # Cannot simply do `opts=$-', since the content of $- is not
+    # portable among different shells.  So try to propagate only
+    # the portable and interesting options.
+    case $- in
+      *x*v*|*v*x) opts=-vx;;
+      *v*) opts=-v;;
+      *x*) opts=-x;;
+      *) opts=;;
+    esac
+    echo $me: exec $SHELL $opts "$0" "$*"
+    exec $SHELL $opts "$0" ${1+"$@"}
+    echo "$me: failed to re-execute with $SHELL" >&2
+    exit 99
+    ;;
+esac
+
+# NOTE: From this point on, we can assume this file is being executed
+# by the configure-time detected $CONFIG_SHELL.
+
+
+## ---------------------- ##
+##  Environment cleanup.  ##
+## ---------------------- ##
 
 # Unset some MAKE... variables that may cause $MAKE to act like a
 # recursively invoked sub-make.  Any $MAKE invocation in a test is

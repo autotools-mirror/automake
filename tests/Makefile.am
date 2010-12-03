@@ -20,6 +20,8 @@ MAINTAINERCLEANFILES =
 EXTRA_DIST = ChangeLog-old
 
 TEST_EXTENSIONS = .test
+# Run the tests with the shell detected at configure time.
+TEST_LOG_COMPILER = $(SHELL)
 
 XFAIL_TESTS = \
 all.test \
@@ -109,12 +111,17 @@ $(depmod_tests):
 # test scripts, but not from the environment.
 # We want warning messages and explanations for skipped tests to go to
 # the console if possible, so set up `stderr_fileno_' properly.
+# The `AM_TESTS_REEXEC=no' setting tells the tests not to needlessly
+# re-execute themselves with the shell detected at configure time, since
+# we are already running them under it explicitly in our setup (see e.g.
+# the definition of TEST_LOG_COMPILER above).
 AM_TESTS_ENVIRONMENT = \
   test x"$$me" = x || unset me; \
   test x"$$required" = x || unset required; \
   test x"$$parallel_tests" = x || unset parallel_tests; \
   test x"$$original_AUTOMAKE" = x || unset original_AUTOMAKE; \
   test x"$$original_ACLOCAL" = x || unset original_ACLOCAL; \
+  AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC; \
   exec 9>&2; stderr_fileno_=9; export stderr_fileno_;
 
 TESTS = \

@@ -61,10 +61,10 @@ Interpretation
 Getting details from failures
 -----------------------------
 
-  Each test is a shell script, and by default is run by /bin/sh.
-  In a non-VPATH build you can run them directly, they will be verbose.
-  By default, verbose output of a test foo.test is retained in the log
-  file foo.log.  A summary log is created in the file test-suite.log.
+  Each test is a shell script.  In a non-VPATH build you can run the
+  tests directly, they will be verbose.  By default, verbose output of
+  a test foo.test is retained in the log file foo.log.  A summary log
+  is created in the file test-suite.log.
 
   You can limit the set of files using the TESTS variable, and enable
   detailed test output at the end of the test run with the VERBOSE
@@ -75,6 +75,20 @@ Getting details from failures
 
 Supported shells
 ----------------
+
+  By default, the tests are run by the $SHELL detected at configure
+  time.  They also take care to re-execute themselves with that shell,
+  unless told not to.  So, to run the tests with a different shell, say
+  `/path/to/another/sh', the user must use:
+
+    AM_TESTS_REEXEC=no /path/to/another/sh ./foo.test
+
+  to run a test directly, and:
+
+    make check TEST_LOG_COMPILER=/path/to/sh            (GNU make)
+    TEST_LOG_COMPILER=/path/to/sh make -e check         (non-GNU make)
+
+  to run the test(s) through the makefile test driver.
 
   The test scripts are written with portability in mind, so that they
   should run with any decent Bourne-compatible shell.
@@ -87,7 +101,7 @@ Supported shells
   version of Zsh is used.  Thus, if you want to run a test script, say
   foo.test, with Zsh 4.2, you *can't* simply do `zsh foo.test', but
   you *must* resort to:
-    zsh -o no_function_argzero foo.test
+    AM_TESTS_REEXEC=no zsh -o no_function_argzero foo.test
 
   Note that this problem does not occur if Zsh is executed through
   a symlink with a basename of `sh', since in that case Zsh starts
