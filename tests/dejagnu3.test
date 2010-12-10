@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2003  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,15 +28,14 @@ END
 
 chmod +x hammer
 
-echo AC_OUTPUT >> configure.in
+cat >> configure.in << 'END'
+AC_OUTPUT
+END
 
 cat > Makefile.am << 'END'
 AUTOMAKE_OPTIONS = dejagnu
-
 DEJATOOL = hammer
-
 AM_RUNTESTFLAGS = HAMMER=$(srcdir)/hammer
-
 EXTRA_DIST = hammer hammer.test/hammer.exp
 END
 
@@ -65,5 +64,9 @@ $MAKE distcheck
 
 # Ensure that the envvar RUNTESTFLAGS is used.
 # Report from Mark Mitchell.
-RUNTESTFLAGS=--unknown-option $MAKE check && Exit 1
-Exit 0
+RUNTESTFLAGS=--unknown-runtest-option $MAKE check >output 2>&1 \
+  && { cat output; Exit 1; }
+cat output
+$FGREP 'unknown-runtest-option' output
+
+:
