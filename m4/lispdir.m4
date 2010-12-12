@@ -10,7 +10,7 @@
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 10
+# serial 11
 
 # AM_PATH_LISPDIR
 # ---------------
@@ -23,7 +23,8 @@ AC_DEFUN([AM_PATH_LISPDIR],
  AC_ARG_VAR([EMACS], [the Emacs editor command])
  AC_ARG_VAR([EMACSLOADPATH], [the Emacs library search path])
  AC_ARG_WITH([lispdir],
- [  --with-lispdir          override the default lisp directory],
+ [AS_HELP_STRING([--with-lispdir],
+                 [override the default lisp directory])],
  [ lispdir="$withval"
    AC_MSG_CHECKING([where .elc files should go])
    AC_MSG_RESULT([$lispdir])],

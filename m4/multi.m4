@@ -6,15 +6,17 @@
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 6
+# serial 7
 
 # AM_ENABLE_MULTILIB([MAKEFILE], [REL-TO-TOP-SRCDIR])
 # ---------------------------------------------------
 # Add --enable-multilib to configure.
 AC_DEFUN([AM_ENABLE_MULTILIB],
 [# Default to --enable-multilib
-AC_ARG_ENABLE(multilib,
-[  --enable-multilib       build many library versions (default)],
+AC_ARG_ENABLE([multilib],
+[AS_HELP_STRING(
+   [--enable-multilib],
+   [build many library versions (default)])],
 [case "$enableval" in
   yes) multilib=yes ;;
   no)  multilib=no ;;
