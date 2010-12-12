@@ -1,6 +1,6 @@
 #! /bin/sh
-# Copyright (C) 1996, 1997, 1999, 2000, 2001, 2002
-# Free Software Foundation, Inc.
+# Copyright (C) 1996, 1997, 1999, 2000, 2001, 2002, 2010 Free Software
+# Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,13 +20,25 @@
 
 . ./defs || Exit 1
 
-cat > configure.in << 'END'
-AC_INIT
-AM_INIT_AUTOMAKE(nonesuch, nonesuch)
+set -e
+
+cat >> configure.in << 'END'
+AC_CONFIG_FILES([subdir/Makefile])
 AC_PROG_CC
 AC_PROG_RANLIB
 AC_LIBOBJ([fsusage])
-AC_OUTPUT(subdir/Makefile)
+AC_OUTPUT
+END
+
+cat > Makefile.am << 'END'
+SUBDIRS = subdir
+check-local: distdir
+	ls -l $(srcdir) $(srcdir)/subdir
+	ls -l $(distdir) $(distdir)/subdir
+	ls -l $(builddir) $(builddir)/subdir
+	test -f $(srcdir)/subdir/fsusage.c
+	test -f $(distdir)/subdir/fsusage.c
+	$(AR) tv $(builddir)/subdir/libtu.a
 END
 
 mkdir subdir
@@ -37,9 +49,20 @@ libtu_a_SOURCES =
 libtu_a_LIBADD = @LIBOBJS@
 END
 
-: > subdir/fsusage.c
+cat > subdir/fsusage.c << 'END'
+extern int dummy;
+END
 
-$ACLOCAL || Exit 1
-$AUTOMAKE || Exit 1
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
 
-grep 'fsusage\.c' subdir/Makefile.in
+# Older grepping check, kept "just to be sure".
+$FGREP 'fsusage.c' subdir/Makefile.in
+
+./configure
+
+$MAKE check
+$MAKE distcheck
+
+:

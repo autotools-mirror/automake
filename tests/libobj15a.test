@@ -1,5 +1,5 @@
-#!/bin/sh
-# Copyright (C) 2004  Free Software Foundation, Inc.
+#! /bin/sh
+# Copyright (C) 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,34 +14,26 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Regression test for an internal error when @LIBOBJS@ is used in
-# a variable that is not defined in the same conditions as the _LDADD
-# that uses it.
-# Report from Bill Davidson
+# Nonexistent sources for AC_LIBOBJ should cause an Automake failure.
 
-required=gcc
 . ./defs || Exit 1
 
 set -e
 
-cat >>configure.in <<'EOF'
+cat >> configure.in << 'END'
 AC_PROG_CC
-AC_LIBSOURCE([bar.c])
-AM_CONDITIONAL([CASE], [:])
-AC_OUTPUT
-EOF
+AC_PROG_RANLIB
+AC_LIBOBJ([foobar])
+END
 
-: >bar.c
-
-cat >>Makefile.am <<'EOF'
-COMMON_LIBS = @LIBOBJS@
-bin_PROGRAMS = foo
-if ! CASE
-foo_LDADD = $(COMMON_LIBS)
-endif
-EOF
+cat > Makefile.am << 'END'
+noinst_LIBRARIES = libtu.a
+libtu_a_SOURCES =
+libtu_a_LIBADD = $(LIBOBJS)
+END
 
 $ACLOCAL
-$AUTOMAKE
+AUTOMAKE_fails
+grep 'configure\.in:.*required file.*foobar\.c.*' stderr
 
 :

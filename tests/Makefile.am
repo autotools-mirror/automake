@@ -94,7 +94,6 @@ XFAIL_TESTS += $(instspc_xfail_tests)
 
 
 TESTS = \
-aclibobj.test \
 aclocal.test \
 aclocal3.test \
 aclocal4.test \
@@ -496,6 +495,7 @@ lex5.test \
 lflags.test \
 lflags2.test \
 libexec.test \
+libobj-basic.test \
 libobj2.test \
 libobj3.test \
 libobj4.test \
@@ -503,10 +503,20 @@ libobj5.test \
 libobj7.test \
 libobj8.test \
 libobj10.test \
-libobj11.test \
 libobj12.test \
 libobj13.test \
 libobj14.test \
+libobj15a.test \
+libobj15b.test \
+libobj15c.test \
+libobj16a.test \
+libobj16b.test \
+libobj17.test \
+libobj18.test \
+libobj19.test \
+libobj20a.test \
+libobj20b.test \
+libobj20c.test \
 library.test \
 library2.test \
 library3.test \
