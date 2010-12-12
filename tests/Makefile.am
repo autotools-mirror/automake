@@ -657,6 +657,15 @@ pluseq8.test \
 pluseq9.test \
 pluseq10.test \
 pluseq11.test \
+posixsubst-data.test \
+posixsubst-extradist.test \
+posixsubst-ldadd.test \
+posixsubst-libraries.test \
+posixsubst-ltlibraries.test \
+posixsubst-programs.test \
+posixsubst-scripts.test \
+posixsubst-sources.test \
+posixsubst-tests.test \
 postproc.test \
 ppf77.test \
 pr2.test \

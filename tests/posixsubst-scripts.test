@@ -1,0 +1,89 @@
+#! /bin/sh
+# Copyright (C) 2010 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Test that POSIX variable expansion `$(var:str=rpl)' works when used
+# with the SCRIPTS primary.
+
+. ./defs || Exit 1
+
+set -e
+
+cat >> configure.in << 'END'
+AC_OUTPUT
+END
+
+cat > Makefile.am << 'END'
+t1 = foo1 foo2
+t2 = bar1x bar2
+t3 = quu-baz
+
+bar1 bar2 quux.pl:
+	: > $@
+CLEANFILES = bar1 bar2 quux.pl
+
+# Try also with `:=', to ensure the parser is not unduly confused
+# into thinking that it's an unportable assignement operator.
+dist_sbin_SCRIPTS = $(t1:=.sh)
+libexec_SCRIPTS = $(t2:x=)
+nodist_bin_SCRIPTS = $(t3:-baz=x.pl)
+
+check-local: test1 test2
+.PHONY: test1 test2
+test1:
+	ls -l
+	test -f bar1
+	test -f bar2
+	test -f quux.pl
+test2: distdir
+	ls -l $(distdir)
+	## the scripts foo1.sh and foo2.sh should be distributed
+	test -f $(distdir)/foo1.sh
+	test -f $(distdir)/foo2.sh
+	## the scripts bar1, bar2 and quux.pl shouldn't be distributed
+	test ! -r $(distdir)/bar1
+	test ! -r $(distdir)/bar2
+	test ! -r $(distdir)/quux.pl
+
+installcheck-local:
+	ls -l $(prefix)/libexec $(prefix)/bin $(prefix)/sbin
+	test -f $(prefix)/sbin/foo1.sh
+	test -x $(prefix)/sbin/foo1.sh
+	test -f $(prefix)/sbin/foo2.sh
+	test -x $(prefix)/sbin/foo2.sh
+	test -f $(prefix)/libexec/bar1
+	test -x $(prefix)/libexec/bar1
+	test -f $(prefix)/libexec/bar2
+	test -x $(prefix)/libexec/bar2
+	test -f $(prefix)/bin/quux.pl
+	test -x $(prefix)/bin/quux.pl
+END
+
+: > foo1.sh
+: > foo2.sh
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
+
+cwd=`pwd` || Exit 1
+./configure --prefix="$cwd/_inst"
+$MAKE
+$MAKE test1 test2
+$MAKE install
+$MAKE installcheck
+$MAKE distcheck
+
+:
