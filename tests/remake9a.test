@@ -1,0 +1,106 @@
+#! /bin/sh
+# Copyright (C) 2010 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Test remake rules when configure.in or its prerequisites change.
+# Keep in sync with the other sister tests `remake9*.test'.
+
+required=GNUmake
+. ./defs || Exit 1
+
+set -e
+
+magic1=::MagicStringOne::
+magic2=__MagicStringTwo__
+
+cat >> configure.in <<END
+FINGERPRINT=BadBadBad
+AC_SUBST([FINGERPRINT])
+AC_CONFIG_FILES([foo.sh:foo.in], [chmod a+x foo.sh])
+AC_OUTPUT
+END
+
+cat > Makefile.am <<'END'
+nil:
+.PHONY: nil
+
+$(srcdir)/configure.in: $(srcdir)/tweak-configure-in
+	$(SHELL) $(srcdir)/tweak-configure-in <$@ >$@-t
+	mv -f $@-t $@
+EXTRA_DIST = $(srcdir)/tweak-configure-in
+
+# Used by "make distcheck" later.
+check-local:
+	test x'$(FINGERPRINT)' = x'DummyValue'
+	test x"`./foo.sh`" = x"DummyValue"
+END
+
+cat > foo.in <<END
+#!/bin/sh
+echo '@FINGERPRINT@'
+END
+
+echo cat > tweak-configure-in # no-op by default
+
+$sleep # so that generated autotools files will be newer than prerequisites
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
+
+for vpath in : false; do
+
+  if $vpath; then
+    mkdir build
+    cd build
+    srcdir=..
+  else
+    srcdir=.
+  fi
+
+  $srcdir/configure
+  $MAKE # should be no-op
+
+  $sleep
+  sed "s/^\\(FINGERPRINT\\)=.*/\\1=$magic1/" $srcdir/configure.in >t
+  mv -f t $srcdir/configure.in
+  $MAKE nil
+  $FGREP FINGERPRINT Makefile # for debugging
+  $FGREP $magic1 Makefile
+  test x"`./foo.sh`" = x"$magic1"
+
+  $sleep
+  echo 'sed "s/^\\(FINGERPRINT\\)=.*/\\1='$magic2'/"' \
+    > $srcdir/tweak-configure-in
+  $MAKE nil
+  $FGREP FINGERPRINT Makefile # for debugging
+  $FGREP $magic1 Makefile && Exit 1
+  $FGREP $magic2 Makefile
+  test x"`./foo.sh`" = x"$magic2"
+
+  $sleep
+  echo cat > $srcdir/tweak-configure-in # no-op again
+  sed "s/^\\(FINGERPRINT\\)=.*/\\1=DummyValue/" $srcdir/configure.in >t
+  mv -f t $srcdir/configure.in
+  $MAKE distcheck
+  $FGREP $magic1 Makefile && Exit 1 # sanity check
+  $FGREP $magic2 Makefile && Exit 1 # likewise
+
+  $MAKE distclean
+
+  cd $srcdir
+
+done
+
+:

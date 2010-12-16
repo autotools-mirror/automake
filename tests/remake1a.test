@@ -1,6 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1996, 1997, 2000, 2001, 2002, 2010 Free Software
-# Foundation, Inc.
+# Copyright (C) 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,11 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Weak "grepping" test trying to ensure that remaking rules in subdir
-# are correct even when there is no upper-level Makefile.
-# TODO: we should really add also functional tests for this!
+# Make sure remaking rules in subdir are correctly generated.
+# See also sister "grepping" test `remake.test'.
 
 . ./defs || Exit 1
+
+fingerprint='=/FiNgErPrInT/='
 
 set -e
 
@@ -34,8 +34,24 @@ mkdir sub
 : > sub/Makefile.am
 
 $ACLOCAL
+$AUTOCONF
 $AUTOMAKE
 
-grep '\$(AUTOMAKE).*sub/Makefile' sub/Makefile.in
+./configure
+
+# Rebuild rules should work even if there is no top-level
+# makefiles, if we are careful enough to trigger them only
+# in proper subdirs
+$sleep
+echo "# $fingerprint" > sub/Makefile.am
+cd sub
+$MAKE Makefile
+cd ..
+# Check that no spurious Makefile has been created in the
+# top-level directory.
+test ! -r Makefile
+# Check that the Makefile in the subdirectory has been properly
+# updated.
+$FGREP "$fingerprint" sub/Makefile
 
 :
