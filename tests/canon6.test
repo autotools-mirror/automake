@@ -1,6 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1999, 2001, 2002, 2003, 2010 Free Software Foundation,
-# Inc.
+# Copyright (C) 1996, 2001, 2002, 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,47 +14,29 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure that we allow variable names starting in
-# non-letters.  Whatever that might mean.
+# Test to make sure name canonicalization happens for libtool libraries.
+# Keep this in sync with sister test `canon4.test'.
 
+required='libtoolize'
 . ./defs || Exit 1
 
 set -e
 
 cat >> configure.in << 'END'
 AC_PROG_CC
+AC_PROG_LIBTOOL
 END
+
+cat > Makefile.am << 'END'
+noinst_LTLIBRARIES = libx-y.la
+libx_y_la_SOURCES = xy.c
+END
+
+: > ltmain.sh
 
 $ACLOCAL
+$AUTOMAKE -a
 
-cat > Makefile.am << 'END'
-bin_PROGRAMS = 123test
-123test_SOURCES = 123.c
-END
-
-$AUTOMAKE
-
-cat > Makefile.am << 'END'
-bin_PROGRAMS = _foo
-_foo_SOURCES = foo.c
-END
-
-$AUTOMAKE
-
-cat > Makefile.am << 'END'
-bin_PROGRAMS = ,foo
-,foo_SOURCES = foo.c
-END
-
-AUTOMAKE_fails
-grep 'Makefile\.am:2:.* bad .*variable.*,foo_SOURCES' stderr
-grep 'Makefile\.am:2:.* use .*_foo_SOURCES' stderr
-
-cat > Makefile.am << 'END'
-bin_PROGRAMS = ,foo
-_foo_SOURCES = foo.c
-END
-
-$AUTOMAKE -Wno-portability
+grep '^ *libx-y.*=' Makefile.in && Exit 1
 
 :
