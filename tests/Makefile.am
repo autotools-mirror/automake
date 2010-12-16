@@ -297,7 +297,6 @@ depend4.test \
 depend5.test \
 depend6.test \
 destdir.test \
-dirforbid.test \
 dirlist.test \
 dirlist2.test \
 discover.test \
@@ -632,6 +631,10 @@ prefix.test \
 primary.test \
 primary2.test \
 primary3.test \
+primary-prefix-invalid-couples.test \
+primary-prefix-valid-couples.test \
+primary-prefix-couples-force-valid.test \
+primary-prefix-couples-documented-valid.test \
 proginst.test \
 python.test \
 python2.test \
