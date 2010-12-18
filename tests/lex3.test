@@ -15,27 +15,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# Basic semantic checks on Lex support.
 # Test associated with PR 19.
 # From Matthew D. Langston.
 
 required='gcc flex GNUmake'
 . ./defs || Exit 1
 
+set -e
+
 # Ignore user CFLAGS.
 CFLAGS=
 export CFLAGS
 
-cat > configure.in << 'END'
-AC_INIT
-dnl Prevent automake from looking in .. and ../..
-AC_CONFIG_AUX_DIR(.)
-AM_INIT_AUTOMAKE(am_lex_bug, 0.1.1)
+distdir=$me-1.0
 
-dnl Checks for programs.
+cat >> configure.in << 'END'
 AC_PROG_CC
 AM_PROG_LEX
-AC_PROG_YACC
-AC_OUTPUT(Makefile)
+AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
@@ -46,38 +44,46 @@ END
 
 cat > foo.l << 'END'
 %%
-"END"   return EOF;
+"GOOD"   return EOF;
 .
 %%
 int
 main ()
 {
-  while (yylex () != EOF)
-    ;
-
-  return 0;
+  /* We don't use a 'while' loop here (like a real lexer would do)
+     to avoid possible hangs. */
+  if (yylex () == EOF)
+    return 0;
+  else
+    return 1;
 }
 END
-
-set -e
 
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
-./configure
-$MAKE
-echo 'This is the END' | ./foo
-$MAKE distcheck
 
-# foo.c must be shipped.
-gunzip am_lex_bug-0.1.1.tar.gz
-tar tf am_lex_bug-0.1.1.tar | $FGREP foo.c
+./configure
+
+# Program should build and run.
+$MAKE
+echo GOOD | ./foo
+echo BAD | ./foo && Exit 1
+
+# The generated file `foo.c' must be shipped.
+$MAKE distdir
+test -f $distdir/foo.c
+
+# Sanity check on distribution.
+$MAKE distcheck
 
 # While we are at it, make sure that foo.c is erased by
 # maintainer-clean, and not by distclean.
 test -f foo.c
 $MAKE distclean
 test -f foo.c
-./configure
+./configure # we must re-create `Makefile'
 $MAKE maintainer-clean
 test ! -f foo.c
+
+:

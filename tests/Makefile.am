@@ -500,6 +500,8 @@ lex2.test \
 lex3.test \
 lex4.test \
 lex5.test \
+lexcpp.test \
+lexvpath.test \
 lflags.test \
 lflags2.test \
 libexec.test \
@@ -922,6 +924,7 @@ werror4.test \
 whoami.test \
 xsource.test \
 xz.test \
+yacc-basic.test \
 yacc.test \
 yacc2.test \
 yacc3.test \
