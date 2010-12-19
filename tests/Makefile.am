@@ -1,7 +1,7 @@
 ## Process this file with automake to create Makefile.in
 
 # Copyright (C) 1996, 1997, 1998, 1999, 2001, 2002, 2003, 2004, 2005,
-# 2006, 2007, 2008, 2009, 2010  Free Software Foundation, Inc.
+# 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -813,6 +813,8 @@ stdinc.test \
 stamph2.test \
 stdlib.test \
 stdlib2.test \
+strictness-override.test \
+strictness-precedence.test \
 strip.test \
 strip2.test \
 strip3.test \
@@ -942,6 +944,8 @@ vtexi.test \
 vtexi2.test \
 vtexi3.test \
 vtexi4.test \
+warnings-override.test \
+warnings-precedence.test \
 warnopts.test \
 werror.test \
 werror2.test \
