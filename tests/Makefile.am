@@ -134,6 +134,8 @@ alpha2.test \
 amassign.test \
 ammissing.test \
 amopt.test \
+amopts-location.test \
+amopts-variable-expansion.test \
 amsubst.test \
 ansi.test \
 ansi2.test \
