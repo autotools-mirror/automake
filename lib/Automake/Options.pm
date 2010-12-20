@@ -222,12 +222,14 @@ sub unset_global_option ($)
 }
 
 
-=item C<process_option_list ($where, @options)>
+=item C<process_option_list (@list)>
 
-=item C<process_global_option_list ($where, @options)>
+=item C<process_global_option_list (@list)>
 
-Process Automake's option lists.  C<@options> should be a list of
-words, as they occur in C<AUTOMAKE_OPTIONS> or C<AM_INIT_AUTOMAKE>.
+Process Automake's option lists.  C<@list> should be a list of hash
+references with keys C<option> and C<where>, where C<option> is an
+option as they occur in C<AUTOMAKE_OPTIONS> or C<AM_INIT_AUTOMAKE>,
+and C<where> is the location where that option occurred.
 
 These functions should be called at most once for each set of options
 having the same precedence; i.e., do not call it twice for two options
@@ -238,18 +240,21 @@ Return 1 on error, 0 otherwise.
 =cut
 
 # $BOOL
-# _process_option_list (\%OPTIONS, $WHERE, @OPTIONS)
-# --------------------------------------------------
-# Process a list of options.  Return 1 on error, 0 otherwise.
-# \%OPTIONS is the hash to fill with options data, $WHERE is
-# the location where @OPTIONS occurred.
-sub _process_option_list (\%$@)
+# _process_option_list (\%OPTIONS, @LIST)
+# ------------------------------------------
+# Process a list of options.  \%OPTIONS is the hash to fill with options
+# data.  @LIST is a list of options as get passed to public subroutines
+# process_option_list() and process_global_option_list() (see POD
+# documentation above).
+sub _process_option_list (\%@)
 {
-  my ($options, $where, @list) = @_;
+  my ($options, @list) = @_;
   my @warnings = ();
 
-  foreach (@list)
+  foreach my $h (@list)
     {
+      my $_ = $h->{'option'};
+      my $where = $h->{'where'};
       $options->{$_} = $where;
       if ($_ eq 'gnits' || $_ eq 'gnu' || $_ eq 'foreign')
 	{
@@ -318,7 +323,8 @@ sub _process_option_list (\%$@)
 	}
       elsif (/^(?:--warnings=|-W)(.*)$/)
 	{
-	  push @warnings, split (',', $1);
+	  my @w = map { { cat => $_, loc => $where} } split (',', $1);
+	  push @warnings, @w;
 	}
       else
 	{
@@ -330,24 +336,23 @@ sub _process_option_list (\%$@)
   # We process warnings here, so that any explicitly-given warning setting
   # will take precedence over warning settings defined implicitly by the
   # strictness.
-  foreach my $cat (@warnings)
+  foreach my $w (@warnings)
     {
-      msg 'unsupported', $where, "unknown warning category `$cat'"
-	if switch_warning $cat;
+      msg 'unsupported', $w->{'loc'},
+          "unknown warning category `$w->{'cat'}'"
+	if switch_warning $w->{cat};
     }
   return 0;
 }
 
-sub process_option_list ($@)
+sub process_option_list (@)
 {
-  my ($where, @list) = @_;
-  return _process_option_list (%_options, $where, @list);
+  return _process_option_list (%_options, @_);
 }
 
-sub process_global_option_list ($@)
+sub process_global_option_list (@)
 {
-  my ($where, @list) = @_;
-  return _process_option_list (%_global_options, $where, @list);
+  return _process_option_list (%_global_options, @_);
 }
 
 =item C<set_strictness ($name)>

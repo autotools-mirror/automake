@@ -1247,8 +1247,9 @@ sub handle_options
       foreach my $locvals ($var->value_as_list_recursive (cond_filter => TRUE,
 							  location => 1))
 	{
-	  my ($loc, $value) = @$locvals;
-	  return 1 if (process_option_list ($loc, $value))
+	  my ($where, $value) = @$locvals;
+	  return 1 if process_option_list ({ option => $value,
+                                              where => $where});
 	}
     }
 
@@ -5469,9 +5470,9 @@ sub scan_autoconf_traces ($)
 	    }
 	  elsif (defined $args[1])
 	    {
-	      exit $exit_code
-		if (process_global_option_list ($where,
-						split (' ', $args[1])));
+	      my @opts = split (' ', $args[1]);
+	      @opts = map { { option => $_, where => $where } } @opts;
+	      exit $exit_code if process_global_option_list (@opts);
 	    }
 	}
       elsif ($macro eq 'AM_MAINTAINER_MODE')
