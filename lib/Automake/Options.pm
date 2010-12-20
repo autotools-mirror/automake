@@ -76,6 +76,12 @@ F<Makefile.am>s.
 use vars '%_options';		# From AUTOMAKE_OPTIONS
 use vars '%_global_options';	# from AM_INIT_AUTOMAKE or the command line.
 
+# Whether process_option_list has already been called for the current
+# Makefile.am.
+use vars '$_options_processed';
+# Whether process_global_option_list has already been called.
+use vars '$_global_options_processed';
+
 =head2 Constants
 
 =over 4
@@ -135,6 +141,7 @@ previous F<Makefile.am>.
 
 sub reset ()
 {
+  $_options_processed = 0;
   %_options = %_global_options;
   # The first time we are run,
   # remember the current setting as the default.
@@ -347,12 +354,18 @@ sub _process_option_list (\%@)
 
 sub process_option_list (@)
 {
+  prog_error "local options already processed"
+    if $_options_processed;
   return _process_option_list (%_options, @_);
+  $_options_processed = 1;
 }
 
 sub process_global_option_list (@)
 {
+  prog_error "global options already processed"
+    if $_global_options_processed;
   return _process_option_list (%_global_options, @_);
+  $_global_options_processed = 1;
 }
 
 =item C<set_strictness ($name)>
