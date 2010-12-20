@@ -229,6 +229,10 @@ sub unset_global_option ($)
 Process Automake's option lists.  C<@options> should be a list of
 words, as they occur in C<AUTOMAKE_OPTIONS> or C<AM_INIT_AUTOMAKE>.
 
+These functions should be called at most once for each set of options
+having the same precedence; i.e., do not call it twice for two options
+from C<AM_INIT_AUTOMAKE>.
+
 Return 1 on error, 0 otherwise.
 
 =cut
@@ -242,6 +246,7 @@ Return 1 on error, 0 otherwise.
 sub _process_option_list (\%$@)
 {
   my ($options, $where, @list) = @_;
+  my @warnings = ();
 
   foreach (@list)
     {
@@ -313,11 +318,7 @@ sub _process_option_list (\%$@)
 	}
       elsif (/^(?:--warnings=|-W)(.*)$/)
 	{
-	  foreach my $cat (split (',', $1))
-	    {
-	      msg 'unsupported', $where, "unknown warning category `$cat'"
-		if switch_warning $cat;
-	    }
+	  push @warnings, split (',', $1);
 	}
       else
 	{
@@ -325,6 +326,14 @@ sub _process_option_list (\%$@)
 		 uniq_scope => US_GLOBAL);
 	  return 1;
 	}
+    }
+  # We process warnings here, so that any explicitly-given warning setting
+  # will take precedence over warning settings defined implicitly by the
+  # strictness.
+  foreach my $cat (@warnings)
+    {
+      msg 'unsupported', $where, "unknown warning category `$cat'"
+	if switch_warning $cat;
     }
   return 0;
 }

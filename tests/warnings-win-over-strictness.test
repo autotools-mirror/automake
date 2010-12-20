@@ -35,6 +35,15 @@ ko ()
   test `wc -l <stderr` -eq 1
 }
 
+set_am_opts()
+{
+  set +x
+  sed -e "s|^\\(AM_INIT_AUTOMAKE\\).*|\\1([$1])|" <$2 >$2-t
+  mv -f $2-t $2
+  set -x
+  cat $2
+}
+
 # Files required in gnu strictness.
 touch README INSTALL NEWS AUTHORS ChangeLog COPYING
 
@@ -48,5 +57,18 @@ ko --foreign -Wportability
 ko -Wportability --foreign
 ok --gnu -Wno-portability
 ok -Wno-portability --gnu
+
+rm -rf autom4te*.cache
+set_am_opts 'foreign -Wportability' configure.in
+ko
+rm -rf autom4te*.cache
+set_am_opts '-Wportability foreign' configure.in
+ko
+rm -rf autom4te*.cache
+set_am_opts 'gnu -Wno-portability' configure.in
+ok
+rm -rf autom4te*.cache
+set_am_opts '-Wno-portability gnu' configure.in
+ok
 
 :
