@@ -8467,26 +8467,26 @@ EOF
 # Parse command line.
 sub parse_arguments ()
 {
-  # Start off as gnu.
-  set_strictness ('gnu');
+  my $strict = 'gnu';
+  my $cygnus = 0;
+  my $ignore_deps = 0;
+  my @warnings = ();
 
-  my $cli_where = new Automake::Location;
   my %cli_options =
     (
      'libdir=s'	=> \$libdir,
-     'gnu'		=> sub { set_strictness ('gnu'); },
-     'gnits'		=> sub { set_strictness ('gnits'); },
-     'cygnus'	        => sub { set_global_option ('cygnus', $cli_where); },
-     'foreign'          => sub { set_strictness ('foreign'); },
-     'include-deps'	=> sub { unset_global_option ('no-dependencies'); },
-     'i|ignore-deps'	=> sub { set_global_option ('no-dependencies',
-						    $cli_where); },
+     'gnu'		=> sub { $strict = 'gnu'; },
+     'gnits'		=> sub { $strict = 'gnits'; },
+     'foreign'		=> sub { $strict = 'foreign'; },
+     'cygnus'		=> \$cygnus,
+     'include-deps'	=> sub { $ignore_deps = 0; },
+     'i|ignore-deps'	=> sub { $ignore_deps = 1; },
      'no-force'	=> sub { $force_generation = 0; },
      'f|force-missing'  => \$force_missing,
      'a|add-missing'	=> \$add_missing,
      'c|copy'		=> \$copy_missing,
      'v|verbose'	=> sub { setup_channel 'verb', silent => 0; },
-     'W|warnings=s'     => \&parse_warnings,
+     'W|warnings=s'     => \@warnings,
      );
   use Getopt::Long;
   Getopt::Long::config ("bundling", "pass_through");
@@ -8514,6 +8514,15 @@ sub parse_arguments ()
   # that ambiguous abbreviation are diagnosed.
   Getopt::Long::GetOptions %cli_options, 'version' => sub {}, 'help' => sub {}
     or exit 1;
+
+  set_strictness ($strict);
+  my $cli_where = new Automake::Location;
+  set_global_option ('cygnus', $cli_where) if $cygnus;
+  set_global_option ('no-dependencies', $cli_where) if $ignore_deps;
+  for my $warning (@warnings)
+    {
+      &parse_warnings ('-W', $warning);
+    }
 
   return unless @ARGV;
 

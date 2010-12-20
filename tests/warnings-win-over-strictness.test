@@ -1,0 +1,52 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check that, on the command line, explicitly-defined warnings take
+# precedence over implicit strictness-implied warnings.
+
+. ./defs || Exit 1
+
+# We want complete control over automake options.
+AUTOMAKE=$original_AUTOMAKE
+
+ok ()
+{
+  AUTOMAKE_run 0 $*
+  test ! -s stderr
+}
+
+ko ()
+{
+  AUTOMAKE_run 0 $*
+  grep '^Makefile\.am:.*:=.*not portable' stderr
+  test `wc -l <stderr` -eq 1
+}
+
+# Files required in gnu strictness.
+touch README INSTALL NEWS AUTHORS ChangeLog COPYING
+
+cat > Makefile.am <<END
+FOO := bar
+END
+
+$ACLOCAL
+
+ko --foreign -Wportability
+ko -Wportability --foreign
+ok --gnu -Wno-portability
+ok -Wno-portability --gnu
+
+:
