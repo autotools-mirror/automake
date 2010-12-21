@@ -326,6 +326,12 @@ cxxlibobj.test \
 cxxlink.test \
 cxxnoc.test \
 cxxo.test \
+cygnus-check-without-all.test \
+cygnus-dependency-tracking.test \
+cygnus-imply-foreign.test \
+cygnus-no-dist.test \
+cygnus-no-installinfo.test \
+cygnus-requires-maintainer-mode.test \
 cygwin32.test \
 dash.test \
 defun.test \
