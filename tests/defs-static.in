@@ -21,7 +21,7 @@
 # IMPORTANT: Multiple inclusions of this file should be idempotent!
 
 # Be more Bourne compatible.
-# (Snippet copied from configure's initialization in Autoconf 2.64)
+# (Snippet inspired to configure's initialization in Autoconf 2.64)
 DUALCASE=1; export DUALCASE # for MKS sh
 if test -n "${ZSH_VERSION+set}" && (emulate sh) >/dev/null 2>&1; then
   emulate sh
@@ -30,7 +30,33 @@ if test -n "${ZSH_VERSION+set}" && (emulate sh) >/dev/null 2>&1; then
   # is contrary to our usage.  Disable this feature.
   alias -g '${1+"$@"}'='"$@"'
   setopt NO_GLOB_SUBST
+  # If Zsh is not started directly in Bourne-compatibility mode, it has
+  # some incompatibilities in the handling of `$0' that conflict with
+  # our usage: i.e., `$0' inside a file sourced with the `.' builtin is
+  # temporarily set to the name of the sourced file.
+  # Work around this when possible, otherwise abort the script.
+  # Note that a bug in some versions of Zsh prevents us from resetting $0
+  # in a sourced script, so the use of $argv0.  For more info see:
+  #  <http://www.zsh.org/mla/workers/2009/msg01140.html>
+  # Note: the apparently useless 'eval' below are needed by at least
+  # dash 0.5.2, to prevent it from bailing out with an error like
+  # "Syntax error: Bad substitution"
+  if eval '[[ "$0" = *."test" ]]'; then
+    # Good, FUNCTION_ARGZERO option was already off when this file was
+    # sourced.  Thus we've nothing to do.
+    argv0=$0
+  elif eval 'test -n "${functrace[-1]}"'; then
+    # FUNCTION_ARGZERO option was on, but we have a easy workaround.
+    eval 'argv0=${functrace[-1]%:*}'
+  else
+    # Give up.
+    echo "$0: cannot determine the path of running test script" >&2
+    echo "$0: test was running with Zsh version $ZSH_VERSION" >&2
+    echo "$0: did you enable the NO_FUNCTION_ARGZERO option?" >&2
+    exit 99
+  fi
 else
+  argv0=$0
   case `(set -o) 2>/dev/null` in *posix*) set -o posix;; esac
 fi
 
@@ -51,8 +77,16 @@ test -z "$AUTOCONF" && AUTOCONF="@am_AUTOCONF@"
 test -z "$AUTOHEADER" && AUTOHEADER="@am_AUTOHEADER@"
 test -z "$AUTOUPDATE" && AUTOUPDATE=autoupdate
 test -z "$MISSING" && MISSING=$top_testsrcdir/lib/missing
+
 # Use -Werror because this also turns some Perl warnings into error.
-# (Tests for which this is inappropriate should use -Wno-error.)
+# Tests for which this is inappropriate should use -Wno-error.
+# Tests who want complete control over aclocal command-line options
+# should use $original_ACLOCAL.
+# Note: the first `test -z' conditional below is to ensure defs-static
+# really remains idempotent.
+if test -z "$original_ACLOCAL"; then
+  original_ACLOCAL=${ACLOCAL-"aclocal-$APIVERSION"}
+fi
 test -z "$ACLOCAL" && ACLOCAL="aclocal-$APIVERSION -Werror"
 # Extra flags to pass to aclocal before all other flags added by this script.
 ACLOCAL_TESTSUITE_FLAGS=''; export ACLOCAL_TESTSUITE_FLAGS
@@ -60,9 +94,15 @@ ACLOCAL_TESTSUITE_FLAGS=''; export ACLOCAL_TESTSUITE_FLAGS
 # See how Automake should be run.  We put --foreign as the default
 # strictness to avoid having to create lots and lots of files.  A test
 # can override this by specifying a different strictness.  Use -Wall
-# -Werror by default.  Tests for which this is inappropriate
-# (e.g. when testing that a warning is enabled by a specific switch)
-# should use -Wnone or/and -Wno-error
+# -Werror by default.  Tests for which this is inappropriate (e.g. when
+# testing that a warning is enabled by a specific switch) should use
+# -Wnone or/and -Wno-error.  Tests who want complete control over
+# automake command-line options should use $original_AUTOMAKE.
+# Note: the first `test -z' conditional below is to ensure defs-static
+# really remains idempotent.
+if test -z "$original_AUTOMAKE"; then
+  original_AUTOMAKE=${AUTOMAKE-"automake-$APIVERSION"}
+fi
 test -z "$AUTOMAKE" && AUTOMAKE="automake-$APIVERSION --foreign -Werror -Wall"
 
 # POSIX no longer requires 'egrep' and 'fgrep',
