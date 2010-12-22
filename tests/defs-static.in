@@ -51,8 +51,16 @@ test -z "$AUTOCONF" && AUTOCONF="@am_AUTOCONF@"
 test -z "$AUTOHEADER" && AUTOHEADER="@am_AUTOHEADER@"
 test -z "$AUTOUPDATE" && AUTOUPDATE=autoupdate
 test -z "$MISSING" && MISSING=$top_testsrcdir/lib/missing
+
 # Use -Werror because this also turns some Perl warnings into error.
-# (Tests for which this is inappropriate should use -Wno-error.)
+# Tests for which this is inappropriate should use -Wno-error.
+# Tests who want complete control over aclocal command-line options
+# should use $original_ACLOCAL.
+# Note: the first `test -z' conditional below is to ensure defs-static
+# really remains idempotent.
+if test -z "$original_ACLOCAL"; then
+  original_ACLOCAL=${ACLOCAL-"aclocal-$APIVERSION"}
+fi
 test -z "$ACLOCAL" && ACLOCAL="aclocal-$APIVERSION -Werror"
 # Extra flags to pass to aclocal before all other flags added by this script.
 ACLOCAL_TESTSUITE_FLAGS=''; export ACLOCAL_TESTSUITE_FLAGS
@@ -60,9 +68,15 @@ ACLOCAL_TESTSUITE_FLAGS=''; export ACLOCAL_TESTSUITE_FLAGS
 # See how Automake should be run.  We put --foreign as the default
 # strictness to avoid having to create lots and lots of files.  A test
 # can override this by specifying a different strictness.  Use -Wall
-# -Werror by default.  Tests for which this is inappropriate
-# (e.g. when testing that a warning is enabled by a specific switch)
-# should use -Wnone or/and -Wno-error
+# -Werror by default.  Tests for which this is inappropriate (e.g. when
+# testing that a warning is enabled by a specific switch) should use
+# -Wnone or/and -Wno-error.  Tests who want complete control over
+# automake command-line options should use $original_AUTOMAKE.
+# Note: the first `test -z' conditional below is to ensure defs-static
+# really remains idempotent.
+if test -z "$original_AUTOMAKE"; then
+  original_AUTOMAKE=${AUTOMAKE-"automake-$APIVERSION"}
+fi
 test -z "$AUTOMAKE" && AUTOMAKE="automake-$APIVERSION --foreign -Werror -Wall"
 
 # POSIX no longer requires 'egrep' and 'fgrep',
