@@ -14,10 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure Automake supports multiple derivations for the same suffix.
-# PR/37
+# Test to make sure Automake supports multiple derivations for the
+# same suffix.
+# From PR/37.
 
-required='gcc libtoolize'
+required=libtoolize
 . ./defs || Exit 1
 
 set -e
@@ -28,41 +29,48 @@ AC_OUTPUT
 END
 
 cat >Makefile.am << 'END'
+# $(LINK) is not defined automatically by Automake, since the *_SOURCES
+# variables don't contain any known extension (.c, .cc, .f ...),
+# So we need this hack.
+LINK = :
+
 bin_PROGRAMS = foo
 lib_LTLIBRARIES = libfoo.la
 
 foo_SOURCES = foo.x_
 libfoo_la_SOURCES = bar.x_
 
+# The elaborate cp commands below account for VPATH issues on
+# weaker make implementations (e.g. IRIX 6.5).
 .x_.y_:
-	cp $< $@
-
+	cp `test -f $< || echo $(srcdir)/`$< $@
 .y_.o:
-	cp $< $@
-
+	cp `test -f $< || echo $(srcdir)/`$< $@
 .y_.z_:
-	cp $< $@
-
+	cp `test -f $< || echo $(srcdir)/`$< $@
 .z_.lo:
-	cp $< $@
+	cp `test -f $< || echo $(srcdir)/`$< $@
 
-# Add explicit dependencies to help make implementations that
-# don't otherwise chain implicit rules (e.g., Sun make).
-foo.$(OBJEXT): foo.y_
-bar.lo: bar.z_
-bar.z_: bar.y_
+# Some make implementations don't remove intermediate files
+# automatically, thus causing "make distcheck" to fail if
+# this is not added.
+MOSTLYCLEANFILES = *.y_ *.z_
 
-print:
-	@echo BEGIN: $(foo_OBJECTS) :END
-	@echo BEGIN: $(libfoo_la_OBJECTS) :END
-
-test: $(foo_OBJECTS) $(libfoo_la_OBJECTS)
+.PHONY: test0 test1 test2
+test0:
+	echo $(foo_OBJECTS) | grep '^foo\.foo$$'
+	echo $(libfoo_la_OBJECTS) | grep '^bar\.lo$$'
+test1:
+	echo $(foo_OBJECTS) | grep '^foo\.$(OBJEXT)$$'
+	echo $(libfoo_la_OBJECTS) | grep '^bar\.lo$$'
+test2: $(foo_OBJECTS) $(libfoo_la_OBJECTS)
 	test -f foo.$(OBJEXT)
 	test -f bar.lo
+check-local: test1 test2
 END
 
-echo 'int main() { return 0; }' > foo.x_
-cp foo.x_ bar.x_
+echo 'int main(void) { return 0; }' > foo.x_
+echo 'int bar(void) { return 0; }' > bar.x_
 
 libtoolize
 $ACLOCAL
@@ -71,11 +79,10 @@ $AUTOMAKE -a
 
 ./configure
 
-OBJEXT=foo $MAKE -e print >stdout || { cat stdout; Exit 1; }
-cat stdout
-$FGREP 'BEGIN: foo.foo :END' stdout
-$FGREP 'BEGIN: bar.lo :END' stdout
-
-$MAKE test
+OBJEXT=foo $MAKE -e test0
+$MAKE test1
+$MAKE test2
+$MAKE all
+$MAKE distcheck
 
 :

@@ -31,14 +31,17 @@ AUTOMAKE_OPTIONS = subdir-objects
 SUFFIXES = .baz .o
 # we fake here:
 .baz.o:
-	cp $< $@
+	## account for VPATH issues on weaker make implementations
+	cp `test -f $< || echo $(srcdir)/`$< $@
 
 bin_PROGRAMS = foo
 foo_SOURCES = foo.c sub/bar.baz
 
-.PHONY: print
-print:
-	@echo BEGIN: $(foo_OBJECTS) :END
+.PHONY: test-fake test-real
+test-fake:
+	echo $(foo_OBJECTS) | grep '^foo\.quux sub/bar\.quux$$'
+test-real:
+	echo $(foo_OBJECTS) | grep '^foo\.$(OBJEXT) sub/bar\.$(OBJEXT)$$'
 END
 
 mkdir sub
@@ -48,9 +51,10 @@ mkdir sub
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
+
 ./configure
-OBJEXT=OBJ $MAKE -e print >stdout || { cat stdout; Exit 1; }
-cat stdout
-$FGREP 'BEGIN: foo.OBJ sub/bar.OBJ :END' stdout
+
+OBJEXT=quux $MAKE -e test-fake
+$MAKE test-real
 
 :

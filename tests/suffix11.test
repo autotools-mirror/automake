@@ -32,17 +32,29 @@ bin_PROGRAMS = foo bar baz
 foo_SOURCES = foo.x_
 bar_SOURCES = bar.y-z
 baz_SOURCES = baz1.x_ baz2.y-z
-.y-z.c .x_.c:
-	cp $< $@
-  .z_.c   .w_.x_ :
-	cp $< $@
 
-.PHONY: print
-print:
-	@echo BEGIN: $(foo_OBJECTS) :END
-	@echo BEGIN: $(bar_OBJECTS) :END
-	@echo BEGIN: $(baz_OBJECTS) :END
+.y-z.c .x_.c:
+## account for VPATH issues on weaker make implementations (e.g. IRIX 6.5)
+	sed 's/INTEGER/int/g' `test -f $< || echo $(srcdir)/`$< >$@
+
+CLEANFILES = foo.c bar.c baz1.c baz2.c
+
+.PHONY: test-real test-fake
+test-fake:
+	echo $(foo_OBJECTS) | grep '^foo\.foo$$'
+	echo $(bar_OBJECTS) | grep '^bar\.foo$$'
+	echo $(baz_OBJECTS) | grep '^baz1\.foo baz2\.foo$$'
+test-real:
+	echo $(foo_OBJECTS) | grep '^foo\.$(OBJEXT)$$'
+	echo $(bar_OBJECTS) | grep '^bar\.$(OBJEXT)$$'
+	echo $(baz_OBJECTS) | grep '^baz1\.$(OBJEXT) baz2\.$(OBJEXT)$$'
+check-local: test-real
 END
+
+echo 'INTEGER main(void) { return 0; }' > foo.x_
+echo 'INTEGER main(void) { return 0; }' > bar.y-z
+echo 'INTEGER main(void) { INTEGER baz(void); return baz(); }' > baz1.x_
+echo 'INTEGER baz(void) { return 0; }' > baz2.y-z
 
 $ACLOCAL
 $AUTOCONF
@@ -56,10 +68,9 @@ $AUTOMAKE -a -Wno-portability
 
 ./configure
 
-OBJEXT=foo $MAKE -e print >stdout || { cat stdout; Exit 1; }
-cat stdout
-$FGREP 'BEGIN: foo.foo :END' stdout
-$FGREP 'BEGIN: bar.foo :END' stdout
-$FGREP 'BEGIN: baz1.foo baz2.foo :END' stdout
+OBJEXT=foo $MAKE -e test-fake
+$MAKE test-real
+$MAKE
+$MAKE distcheck
 
 :

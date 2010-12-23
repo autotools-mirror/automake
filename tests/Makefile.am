@@ -351,6 +351,8 @@ depcomp4.test \
 depcomp5.test \
 depcomp6.test \
 depcomp7.test \
+depcomp8a.test \
+depcomp8b.test \
 depdist.test \
 depend.test \
 depend2.test \
@@ -829,6 +831,9 @@ subobj7.test \
 subobj8.test \
 subobj9.test \
 subobj10.test \
+subobj11a.test \
+subobj11b.test \
+subobj11c.test \
 subobjname.test \
 subpkg.test \
 subpkg2.test \
@@ -848,6 +853,8 @@ suffix3.test \
 suffix4.test \
 suffix5.test \
 suffix6.test \
+suffix6b.test \
+suffix6c.test \
 suffix7.test \
 suffix8.test \
 suffix9.test \

@@ -22,24 +22,55 @@ set -e
 
 cat >> configure.in << 'END'
 AC_PROG_CXX
+AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
 SUFFIXES = .zoo
 .zoo.cc:
-	convert-zoo whatever
+	sed 's/INTEGER/int/g' `test -f $< || echo $(srcdir)/`$< >$@
 bin_PROGRAMS = foo
 foo_SOURCES = foo.zoo
+# This is required by "make distcheck".  The useless indirection is
+# reequired to avoid false positives by the grepping checks below.
+FOO = foo
+CLEANFILES = $(FOO).cc
 END
 
 $ACLOCAL
 $AUTOMAKE
 
 # The foo.cc intermediate step is implicit, it's a mistake if
-# Automake requires this file somewhere.
-$FGREP foo.cc Makefile.in && Exit 1
+# Automake requires this file somewhere.  Also, Automake should
+# not require the file `foo.c' anywhere.
+$FGREP foo.c Makefile.in && Exit 1
 # However Automake must figure that foo.zoo is eventually
 # transformed into foo.o, and use this latter file (to link foo).
 $FGREP 'foo.$(OBJEXT)' Makefile.in
+
+$AUTOCONF
+./configure
+
+# This is deliberately valid C++, but invalid C.
+cat > foo.zoo <<'END'
+#include <iostream>
+using namespace std;
+INTEGER main(void)
+{
+  return 0;
+}
+END
+
+$MAKE
+# FIXME: should we check that intermediate file `foo.cc' has
+# been removed?  Or is this requiring too much from the make
+# implementation?
+
+# Intermediate files should not be distributed.
+$MAKE distdir
+test ! -r $me-1.0/foo.cc
+
+# Check the distribution.
+$MAKE distcheck
 
 :

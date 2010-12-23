@@ -15,7 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure .c.o rule is only included once.
+# Make sure proper suffix rules for C compilation are produced,
+# and only once, even for libtool libraries.
+# See also related test `suffix.test'.
 required=libtoolize
 
 . ./defs || Exit 1
@@ -28,7 +30,6 @@ AC_PROG_LIBTOOL
 END
 
 cat > Makefile.am << 'END'
-AUTOMAKE_OPTIONS = no-dependencies
 lib_LTLIBRARIES = libltdl.la
 libltdl_la_SOURCES = ltdl.c ltdl.h
 END
@@ -41,8 +42,14 @@ END
 : > config.sub
 
 $ACLOCAL
-$AUTOMAKE -a
 
+$AUTOMAKE -i
+grep '^ *\.c' Makefile.in # for debugging
+test `grep -c '^\.c\.o:' Makefile.in` -eq 1
+test `grep -c '^\.c\.obj:' Makefile.in` -eq 1
+
+$AUTOMAKE
+grep '^ *\.c' Makefile.in # for debugging
 test `grep -c '^\.c\.o:' Makefile.in` -eq 1
 test `grep -c '^\.c\.obj:' Makefile.in` -eq 1
 
