@@ -1,5 +1,6 @@
 #! /bin/sh
-# Copyright (C) 1996, 1997, 2001, 2002, 2003  Free Software Foundation, Inc.
+# Copyright (C) 1996, 1997, 2001, 2002, 2003, 2011 Free Software
+# Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,24 +22,27 @@
 
 set -e
 
-echo AC_OUTPUT >> configure.in
+cat >> configure.in << 'END'
+AC_OUTPUT
+END
 
 cat > Makefile.am << 'END'
 info_TEXINFOS = textutils.texi
-magic:
-	@echo $(DISTFILES)
+.PHONY: test
+test:
+	@echo DISTFILES = $(DISTFILES)
+	case '$(DISTFILES)' in *'~'*) exit 1;; *) exit 0;; esac
 END
 
 : > texinfo.tex
 echo '@setfilename textutils.info' > textutils.texi
 : > textutils.info~
 
-
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
+
 ./configure
-$MAKE magic >stdout
-cat stdout
-grep '~' stdout && Exit 1
-Exit 0
+$MAKE test
+
+:
