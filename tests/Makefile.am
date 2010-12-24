@@ -953,6 +953,7 @@ warnings-strictness-interactions.test \
 warnings-unknown.test \
 warnopts.test \
 warnings-win-over-strictness.test \
+warning-groups-win-over-strictness.test \
 werror.test \
 werror2.test \
 werror3.test \
