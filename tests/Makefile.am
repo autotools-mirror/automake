@@ -19,6 +19,8 @@
 XFAIL_TESTS = \
 all.test \
 auxdir2.test \
+yacc-bison-skeleton-cxx.test \
+yacc-bison-skeleton.test \
 cond17.test \
 gcj6.test \
 pr8365-remake-timing.test \
@@ -835,6 +837,8 @@ yacc6.test \
 yacc7.test \
 yacc8.test \
 yaccdry.test \
+yacc-bison-skeleton-cxx.test \
+yacc-bison-skeleton.test \
 yacc-deleted-headers.test \
 yacc-dist-nobuild.test \
 yacc-dist-nobuild-subdir.test \
