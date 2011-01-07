@@ -1986,7 +1986,8 @@ variable names; thus one writes @samp{bin_PROGRAMS} and not
 @samp{bindir_PROGRAMS}.
 
 Not every sort of object can be installed in every directory.  Automake
-will flag those attempts it finds in error.
+will flag those attempts it finds in error (but see below how to override
+the check if you really need to).
 Automake will also diagnose obvious misspellings in directory names.
 
 @cindex Extending list of installation directories
@@ -2007,6 +2008,33 @@ For instance, the following snippet will install @file{file.xml} into
 xmldir = $(datadir)/xml
 xml_DATA = file.xml
 @end example
+
+This feature can also be used to override the sanity checks Automake
+performs to diagnose suspicious directory/primary couples (in the
+unlikely case these checks are undesirable, and you really know what
+you're doing).  For example, Automake would error out on this input:
+
+@example
+# Forbidden directory combinations, automake will error out on this.
+pkglib_PROGRAMS = foo
+doc_LIBRARIES = libquux.a
+@end example
+
+@noindent
+but it will succeed with this:
+
+@example
+# Work around forbidden directory combinations.  Do not use this
+# without a very good reason!
+my_execbindir = $(pkglibdir)
+my_doclibdir = $(docdir)
+my_execbin_PROGRAMS = foo
+my_doclib_LIBRARIES = libquux.a
+@end example
+
+The @samp{exec} substring of the @samp{my_execbindir} variable lets
+the files be installed at the right time (@pxref{The Two Parts of
+Install}).
 
 @cindex @samp{noinst_} primary prefix, definition
 @vindex noinst_
