@@ -21,7 +21,6 @@ all.test \
 auxdir2.test \
 cond17.test \
 gcj6.test \
-yflags-var-expand.test \
 txinfo5.test
 
 include $(srcdir)/parallel-tests.am
