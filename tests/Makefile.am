@@ -21,6 +21,7 @@ all.test \
 auxdir2.test \
 cond17.test \
 gcj6.test \
+yflags-var-expand.test \
 txinfo5.test
 
 include $(srcdir)/parallel-tests.am
@@ -813,6 +814,11 @@ yaccvpath.test \
 yacc-d-vpath.test \
 yflags.test \
 yflags2.test \
+yflags-cmdline-override.test \
+yflags-conditional.test \
+yflags-d-false-positives.test \
+yflags-force-override.test \
+yflags-var-expand.test \
 $(parallel_tests)
 
 EXTRA_DIST = ChangeLog-old gen-parallel-tests $(TESTS)
