@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001, 2002, 2003  Free Software Foundation, Inc.
+# Copyright (C) 2001, 2002, 2003, 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,23 +15,24 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # This test checks that dependent files are updated before including
-# in the distribution. `parse.c' depends on `parce.y'. The later is
+# in the distribution. `parse.c' depends on `parse.y'. The later is
 # updated so that `parse.c' should be rebuild. Then we are running
 # `make' and `make distdir' and check whether the version of `parse.c'
 # to be distributed is up to date.
 
+# Please keep this in sync with sister test `lexvapth.test'.
+
 required='gcc bison'
 . ./defs || Exit 1
 
-cat > configure.in << 'END'
-AC_INIT
-AC_CONFIG_AUX_DIR([.])
-AM_INIT_AUTOMAKE(foo, 0.1)
-PACKAGE=foo
-VERSION=0.1
+set -e
+
+distdir=$me-1.0
+
+cat >> configure.in << 'END'
 AC_PROG_CC
 AC_PROG_YACC
-AC_OUTPUT(Makefile)
+AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
@@ -52,8 +53,6 @@ END
 cat > foo.c << 'END'
 int main () { return 0; }
 END
-
-set -e
 
 $ACLOCAL
 $AUTOCONF
@@ -82,7 +81,7 @@ END
 
 $MAKE
 $MAKE distdir
-grep fubar foo-0.1/parse.c
+$FGREP fubar $distdir/parse.c
 
 #
 # Now check to make sure that `make dist' will rebuild the parser.
@@ -103,4 +102,6 @@ maude : 'm' 'a' 'u' 'd' 'e' {};
 END
 
 $MAKE distdir
-grep maude foo-0.1/parse.c
+$FGREP maude $distdir/parse.c
+
+:

@@ -1,6 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1996, 2001, 2002, 2006, 2010 Free Software Foundation,
-# Inc.
+# Copyright (C) 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,26 +14,33 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure intermediate .c file is built from yacc source.
-# Bug from Thomas Morgan.
+# Test to make sure Lex + C++ is supported.
+# Please keep this is sync with sister test yaccpp.test.
 
 . ./defs || Exit 1
 
 set -e
 
 cat >> configure.in << 'END'
-AC_PROG_CC
-AC_PROG_YACC
+AC_PROG_CXX
+AC_PROG_LEX
 END
 
-cat > Makefile.am <<'END'
-bin_PROGRAMS = zardoz
-zardoz_SOURCES = zardoz.y
+cat > Makefile.am << 'END'
+bin_PROGRAMS = foo bar baz qux
+foo_SOURCES = foo.l++
+bar_SOURCES = bar.lpp
+baz_SOURCES = baz.ll
+qux_SOURCES = qux.lxx
 END
 
 $ACLOCAL
 $AUTOMAKE -a
 
-$FGREP 'zardoz.c' Makefile.in
+sed -e 's/^/ /' -e 's/$/ /' Makefile.in >mk
+$FGREP ' foo.c++ ' mk
+$FGREP ' bar.cpp ' mk
+$FGREP ' baz.cc '  mk
+$FGREP ' qux.cxx ' mk
 
 :
