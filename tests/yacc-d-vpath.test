@@ -1,6 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001, 2002, 2003, 2010, 2011 Free Software Foundation,
-# Inc.
+# Copyright (C) 2011 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,12 +15,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # This test checks that dependent files are updated before including
-# in the distribution. `parse.c' depends on `parse.y'. The later is
-# updated so that `parse.c' should be rebuild. Then we are running
+# in the distribution. `parse.c' depends on `parse.y'.  The latter is
+# updated so that `parse.c' should be rebuilt.  Then we are running
 # `make' and `make distdir' and check whether the version of `parse.c'
 # to be distributed is up to date.
 
-# Please keep this in sync with sister test `yacc-d-vpath.test'.
+# Please keep this in sync with sister test `yaccvpath.test'.
 
 required=bison
 . ./defs || Exit 1
@@ -39,6 +38,7 @@ END
 cat > Makefile.am << 'END'
 bin_PROGRAMS = foo
 foo_SOURCES = parse.y foo.c
+AM_YFLAGS = -d
 END
 
 # Original parser, with `foobar'
@@ -47,11 +47,13 @@ cat > parse.y << 'END'
 int yylex () {return 0;}
 void yyerror (char *s) {}
 %}
+%token FOOBAR
 %%
 foobar : 'f' 'o' 'o' 'b' 'a' 'r' {};
 END
 
 cat > foo.c << 'END'
+#include "parse.h"
 int main () { return 0; }
 END
 
@@ -59,8 +61,12 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-$YACC parse.y
+$YACC -d parse.y
 mv y.tab.c parse.c
+mv y.tab.h parse.h
+# Sanity checks.
+grep foobar parse.c
+grep FOOBAR parse.h
 
 mkdir sub
 cd sub
@@ -74,13 +80,15 @@ cat > ../parse.y << 'END'
 int yylex () {return 0;}
 void yyerror (char *s) {}
 %}
+%token FUBAR
 %%
-fubar : 'f' 'o' 'o' 'b' 'a' 'r' {};
+fubar : 'f' 'u' 'b' 'a' 'r' {};
 END
 
 $MAKE
 $MAKE distdir
 $FGREP fubar $distdir/parse.c
+$FGREP FUBAR $distdir/parse.h
 
 # Now check to make sure that `make dist' will rebuild the parser.
 
@@ -92,11 +100,13 @@ cat > ../parse.y << 'END'
 int yylex () {return 0;}
 void yyerror (char *s) {}
 %}
+%token MAUDE
 %%
 maude : 'm' 'a' 'u' 'd' 'e' {};
 END
 
 $MAKE distdir
 $FGREP maude $distdir/parse.c
+$FGREP MAUDE $distdir/parse.h
 
 :

@@ -208,8 +208,6 @@ my $INCLUDE_PATTERN = ('^include\s+'
 		       . '|(\$\(srcdir\)/' . $PATH_PATTERN . ')'
 		       . '|([^/\$]' . $PATH_PATTERN . '))\s*(#.*)?' . "\$");
 
-# Match `-d' as a command-line argument in a string.
-my $DASH_D_PATTERN = "(^|\\s)-d(\\s|\$)";
 # Directories installed during 'install-exec' phase.
 my $EXEC_DIR_PATTERN =
   '^(?:bin|sbin|libexec|sysconf|localstate|lib|pkglib|.*exec.*)' . "\$";
@@ -6100,11 +6098,14 @@ sub lang_yacc_target_hook
 {
     my ($self, $aggregate, $output, $input, %transform) = @_;
 
-    my $flag = $aggregate . "_YFLAGS";
-    my $flagvar = var $flag;
-    my $YFLAGSvar = var 'YFLAGS';
-    if (($flagvar && $flagvar->variable_value =~ /$DASH_D_PATTERN/o)
-	|| ($YFLAGSvar && $YFLAGSvar->variable_value =~ /$DASH_D_PATTERN/o))
+    my $flagvar = var ($aggregate . "_YFLAGS");
+    my $YFLAGSvar = var ('YFLAGS');
+    # We cannot work reliably with conditionally-defined YFLAGS.
+    $flagvar->check_defined_unconditionally if $flagvar;
+    $YFLAGSvar->check_defined_unconditionally if $YFLAGSvar;
+    my @flags = $flagvar ? $flagvar->value_as_list_recursive : ();
+    my @YFLAGS = $YFLAGSvar ? $YFLAGSvar->value_as_list_recursive : ();
+    if (grep (/^-d$/, @flags) || grep (/^-d$/, @YFLAGS))
     {
 	(my $output_base = $output) =~ s/$KNOWN_EXTENSIONS_PATTERN$//;
 	my $header = $output_base . '.h';

@@ -1,6 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1999, 2001, 2002, 2006, 2010 Free Software Foundation,
-# Inc.
+# Copyright (C) 2011 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,38 +14,30 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Ensure that generated .h file is distributed iff we have -d in
-# (AM_)?YFLAGS.
+# Check for false positives in automake recognition of `-d' in YFLAGS.
 
 . ./defs || Exit 1
 
 set -e
 
-cat >> configure.in << 'END'
+cat >> configure.in <<'END'
 AC_PROG_CC
 AC_PROG_YACC
 END
 
+$ACLOCAL
+
 cat > Makefile.am <<'END'
-AUTOMAKE_OPTIONS = no-dependencies
-bin_PROGRAMS = zardoz
+bin_PROGRAMS = zardoz foobar
 zardoz_SOURCES = zardoz.y
+foobar_SOURCES = foobar.y
+# All the "almost -d" substrings ("- d", "-dd", etc.) are meant.
+AM_YFLAGS = -xd --d - d --output=d
+foobar_YFLAGS = - d $(foovar)-d -dd
 END
 
-$ACLOCAL
 $AUTOMAKE -a
-
-# It should not be disted here
-$FGREP 'zardoz.h' Makefile.in && Exit 1
-
-cp Makefile.am Makefile.sav
-# Test all available flags to make sure header is distributed with
-# `-d'.
-for flag in YFLAGS AM_YFLAGS zardoz_YFLAGS; do
-   cp Makefile.sav Makefile.am
-   echo "$flag = -d" >> Makefile.am
-   $AUTOMAKE -Wno-gnu
-   $FGREP 'zardoz.h' Makefile.in
-done
+$EGREP '(foobar|zardoz)\.h.*:' Makefile.in && Exit 1
+$EGREP '(foobar|zardoz)\.h' Makefile.in | $FGREP -v '$(YLWRAP) ' && Exit 1
 
 :

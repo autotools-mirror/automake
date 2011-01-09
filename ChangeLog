@@ -1,3 +1,100 @@
+2011-01-08   Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	yacc: support variable expansions in *YFLAGS definition.
+	This change fixes automake bug#7800.
+	* automake.in (lang_yacc_target_hook): Use 'value_as_list_recursive'
+	instead of 'variable_value' to get the value of *YFLAGS variables.
+	Related changes.
+	($DASH_D_PATTERN): Removed.
+	* tests/Makefile.am (XFAIL_TESTS): Remove yflags-var-expand.test.
+	* tests/yacc-clean.test: Remove workaround for now-fixed bug.
+	* NEWS: Update.
+
+2011-01-08   Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	yacc: more tests on *YFLAGS support
+	* tests/yflags-var-expand.test: New test, still xfailing.  It
+	exposes automake bug#7800 -- "automake fails to honor `-d' in
+	AM_YFLAGS when variable expansions are involved".
+	* tests/yflags-d-false-positive.test: New test, checking that
+	automake do not spuriously see `-d' in *YFLAGS when that isn't
+	really there.
+	* tests/yflags-force-override.test: New test, checking that
+	automake can cope with definition of the YFLAGS variable in
+	Makefile.am (even if that is an extremely bad practice, as that
+	variable is user-reserved).
+	* tests/yflags-cmdline-override.test: New test, checking that
+	automake can cope with user-redefinition of YFLAGS at configure
+	time and/or at make time.
+	* tests/yflags-conditional.test: New test, checks that automake
+	warns on conditionally-defined *YFLAGS variables.
+	* tests/Makefile.am (TESTS, XFAIL_TESTS): Update.
+
+2011-01-08   Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	yacc: extend and improve tests
+	* tests/yacc-basic.test: Also check that the intermediate C file
+	is mentioned in the generated Makefile.in, and that it is created
+	by the first make invocation.
+	* tests/yacc3.test: Test removed, superseded by ...
+	* tests/yacc-d-basic.test: ... this new test.
+	* tests/yacc2.test: Add reference to that new test in the heading
+	comments.
+	* tests/yacc-d-vpath.test: New test.
+	* tests/yaccvpath.test: Updated heading comments.  Do not require
+	gcc anymore, as any working C compiler should be enough.  Remove
+	redundant comments.
+	* tests/yacc-nodist.test: New test.
+	* tests/yacc-dist-nobuild.test: New test.
+	* tests/Makefile.am (TESTS): Update.
+
+2010-12-13  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	Extend, fix and improve tests on Lex and Yacc support.
+	* tests/lexcpp.test: New test script, on support for Lex + C++.
+	* tests/lexvpath.test: New test script, test build and rebuild
+	rules for lexers in VPATH setup.
+	* tests/yacc-basic.test: New test script, run simple "semantic"
+	checks on basic Yacc support (similarly to what lex3.test does
+	for Lex support).
+	* tests/lex.test: Don't create useless dummy source file joe.l.
+	Remove extra blank lines.
+	* tests/lex4.test: Add trailing `:' command.  Do not create dummy
+	useless lex source file.
+	* tests/lex2.test: Likewise.  Call automake with the `-a' option,
+	so that it doesn't fail for the absence of `ylwrap' script.  Make
+	grepping of automake stderr stricter.
+	* tests/yacc7.test: Add trailing `:' command.  Enable `errexit'
+	shell flag earlier (just after having sourced ./defs).
+	* tests/yacc4.test: Likewise.  Also ...
+	(configure.in): Use pre-populated skeleton set up by ./defs,
+	instead of writing one from scratch.
+	Other minor cosmetic changes.
+	* tests/yacc5.test: Likewise.
+	* tests/yaccvpath.test: Likewise. Also ...
+	($distdir): New variable.
+	Use it throughout.
+	* tests/lex5.test: Likewise.
+	* tests/lex3.test: Likewise.  Check the distdir, rather than
+	grepping the distribution tarball.  Extend the test on the
+	created binary, and be sure to avoid hangs.  Add some comments.
+	* tests/yacc.test: Use stricter grepping.  Add trailing `:'.
+	* tests/yacc6.test: Likewise.
+	* tests/yacc3.test: Likewise.  Do not create the unused file
+	`Makefile.sed'.  Remove useless rules from Makefile.am.  Other
+	minor cosmetic changes.
+	* tests/yacc2.test: Make grepping of generated `Makefile.in' and
+	of automake error messages stricter.  Do not redirect output of
+	grep to /dev/null.  Move call to aclocal earlier.  Reduce the
+	number of empty blank lines.  Fix a typo in comments.
+	* tests/yacc8.test: Fixed bugs that reduced the completeness of
+	the tests.  Added trailing `:' command.
+	(configure.in): Use pre-populated skeleton set up by ./defs,
+	instead of writing one from scratch.
+	* tests/yaccpp.test: Test also extensions `.y++', `.ypp', and
+	`.yxx', rather than only `.yy'.
+	* tests/Makefile.am (TESTS): Update.
+
 2011-01-09   Stefano Lattarini  <stefano.lattarini@gmail.com>
 
 	cosmetics: remove trailing whitespaces
@@ -334,53 +431,6 @@
 	Tests defs: requirement 'xsi-shell' must be synced with libtool.
 	* tests/defs (xsi-shell): Add comment telling to keep the
 	XSI-conformance checks in sync with libtool.
-
-2010-12-13  Stefano Lattarini  <stefano.lattarini@gmail.com>
-
-	Extend, fix and improve tests on Lex and Yacc support.
-	* tests/lexcpp.test: New test script, on support for Lex + C++.
-	* tests/lexvpath.test: New test script, test build and rebuild
-	rules for lexers in VPATH setup.
-	* tests/yacc-basic.test: New test script, run simple "semantic"
-	checks on basic Yacc support (similarly to what lex3.test does
-	for Lex support).
-	* tests/lex.test: Don't create useless dummy source file joe.l.
-	Remove extra blank lines.
-	* tests/lex4.test: Add trailing `:' command.  Do not create dummy
-	useless lex source file.
-	* tests/lex2.test: Likewise.  Call automake with the `-a' option,
-	so that it doesn't fail for the absence of `ylwrap' script.  Make
-	grepping of automake stderr stricter.
-	* tests/yacc7.test: Add trailing `:' command.  Enable `errexit'
-	shell flag earlier (just after having sourced ./defs).
-	* tests/yacc4.test: Likewise.  Also ...
-	(configure.in): Use pre-populated skeleton set up by ./defs,
-	instead of writing one from scratch.
-	Other minor cosmetic changes.
-	* tests/yacc5.test: Likewise.
-	* tests/yaccvpath.test: Likewise. Also ...
-	($distdir): New variable.
-	Use it throughout.
-	* tests/lex5.test: Likewise.
-	* tests/lex3.test: Likewise.  Check the distdir, rather than
-	grepping the distribution tarball.  Extend the test on the
-	created binary, and be sure to avoid hangs.  Add some comments.
-	* tests/yacc.test: Use stricter grepping.  Add trailing `:'.
-	* tests/yacc6.test: Likewise.
-	* tests/yacc3.test: Likewise.  Do not create the unused file
-	`Makefile.sed'.  Remove useless rules from Makefile.am.  Other
-	minor cosmetic changes.
-	* tests/yacc2.test: Make grepping of generated `Makefile.in' and
-	of automake error messages stricter.  Do not redirect output of
-	grep to /dev/null.  Move call to aclocal earlier.  Reduce the
-	number of empty blank lines.  Fix a typo in comments.
-	* tests/yacc8.test: Fixed bugs that reduced the completeness of
-	the tests.  Added trailing `:' command.
-	(configure.in): Use pre-populated skeleton set up by ./defs,
-	instead of writing one from scratch.
-	* tests/yaccpp.test: Test also extensions `.y++', `.ypp', and
-	`.yxx', rather than only `.yy'.
-	* tests/Makefile.am (TESTS): Update.
 
 2010-12-17  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
