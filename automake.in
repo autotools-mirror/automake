@@ -6061,15 +6061,29 @@ sub lang_yacc_target_hook
 {
     my ($self, $aggregate, $output, $input, %transform) = @_;
 
-    my $flagvar = var ($aggregate . "_YFLAGS");
-    my $YFLAGSvar = var ('YFLAGS');
-    # We cannot work reliably with conditionally-defined YFLAGS.
-    $flagvar->check_defined_unconditionally if $flagvar;
-    $YFLAGSvar->check_defined_unconditionally if $YFLAGSvar;
-    my @flags = $flagvar ? $flagvar->value_as_list_recursive : ();
-    my @YFLAGS = $YFLAGSvar ? $YFLAGSvar->value_as_list_recursive : ();
-    if (grep (/^-d$/, @flags) || grep (/^-d$/, @YFLAGS))
-    {
+    # If some relevant *YFLAGS variable contains the `-d' flag, we'll
+    # have to to generate special code.
+    my $yflags_contains_minus_d = 0;
+
+    foreach my $pfx ("", "${aggregate}_")
+      {
+	my $yflagsvar = var ("${pfx}YFLAGS");
+	next unless $yflagsvar;
+	# We cannot work reliably with conditionally-defined YFLAGS.
+	if ($yflagsvar->has_conditional_contents)
+	  {
+	    msg_var ('unsupported', $yflagsvar,
+	             "`${pfx}YFLAGS' cannot have conditional contents");
+	  }
+	else
+	  {
+	    $yflags_contains_minus_d = 1
+	      if grep (/^-d$/, $yflagsvar->value_as_list_recursive);
+	  }
+      }
+
+    if ($yflags_contains_minus_d)
+      {
 	(my $output_base = $output) =~ s/$KNOWN_EXTENSIONS_PATTERN$//;
 	my $header = $output_base . '.h';
 
@@ -6098,7 +6112,7 @@ sub lang_yacc_target_hook
 	# then we want to remove them with "make clean"; otherwise,
 	# "make distcheck" will fail.
 	$clean_files{$header} = $transform{'DIST_SOURCE'} ? MAINTAINER_CLEAN : CLEAN;
-    }
+      }
     # See the comment above for $HEADER.
     $clean_files{$output} = $transform{'DIST_SOURCE'} ? MAINTAINER_CLEAN : CLEAN;
 }
