@@ -879,6 +879,7 @@ txinfo2.test \
 txinfo3.test \
 txinfo4.test \
 txinfo5.test \
+txinfo5b.test \
 txinfo6.test \
 txinfo7.test \
 txinfo8.test \

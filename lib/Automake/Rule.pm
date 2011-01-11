@@ -307,7 +307,7 @@ sub register_action ($$)
 
 =item C<Automake::Rule::reset>
 
-The I<forget all> function.  Clears all know rules and resets some
+The I<forget all> function.  Clears all known rules and resets some
 other internal data.
 
 =cut
