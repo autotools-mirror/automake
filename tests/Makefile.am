@@ -959,6 +959,7 @@ yflags-cmdline-override.test \
 yflags-conditional.test \
 yflags-d-false-positives.test \
 yflags-force-override.test \
+yflags-force-conditional.test \
 yflags-var-expand.test \
 $(parallel_tests)
 
