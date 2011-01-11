@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2004  Free Software Foundation, Inc.
+# Copyright (C) 2004, 2011 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ echo '@setfilename baz.info' > bar.texi
 
 $ACLOCAL
 AUTOMAKE_fails --add-missing
-grep '^Makefile.am:1:.*user variable.*INFO_DEPS' stderr
+grep '^Makefile\.am:1:.*user variable.*INFO_DEPS' stderr
 grep 'overrides Automake variable.*INFO_DEPS' stderr
 
 $AUTOMAKE -Wno-override
@@ -38,19 +38,20 @@ $AUTOMAKE -Wno-override
 # There is only one definition of INFO_DEPS
 test 1 = `grep '^INFO_DEPS.*=' Makefile.in | wc -l`
 # and it is the right one.
-grep '^INFO_DEPS = foo.info$' Makefile.in
-
+grep '^INFO_DEPS *= *foo.info *$' Makefile.in
 
 # Likewise with AC_SUBST.
 
 cat > Makefile.am << 'END'
 info_TEXINFOS = bar.texi
 END
-echo 'AC_SUBST([INFO_DEPS])' >>configure.in
+cat >> configure.in << 'END'
+AC_SUBST([INFO_DEPS])
+END
 rm -rf autom4te.cache # Make sure autoconf sees the configure.in update.
 AUTOMAKE_fails
 
-grep '^configure.in:4:.*user variable.*INFO_DEPS' stderr
+grep '^configure\.in:4:.*user variable.*INFO_DEPS' stderr
 grep 'overrides Automake variable.*INFO_DEPS' stderr
 
 $AUTOMAKE -Wno-override
@@ -58,4 +59,6 @@ $AUTOMAKE -Wno-override
 # There is only one definition of INFO_DEPS
 test 1 = `grep '^INFO_DEPS.*=' Makefile.in | wc -l`
 # and it is the right one.
-grep '^INFO_DEPS = @INFO_DEPS@$' Makefile.in
+grep '^INFO_DEPS *= *@INFO_DEPS@ *$' Makefile.in
+
+:
