@@ -233,6 +233,7 @@ comment8.test \
 comment9.test \
 commen10.test \
 commen11.test \
+comments-in-var-defn.test \
 compile.test \
 compile2.test \
 compile3.test \
@@ -929,6 +930,8 @@ version8.test \
 vpath.test \
 vtexi.test \
 vtexi2.test \
+vtexi3.test \
+vtexi4.test \
 warnopts.test \
 werror.test \
 werror2.test \
