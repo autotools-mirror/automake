@@ -385,7 +385,7 @@ sub reset()
 
 =item C<register_suffix_rule ($where, $src, $dest)>
 
-Register a suffix rules defined on C<$where> that transforms
+Register a suffix rule defined on C<$where> that transforms
 files ending in C<$src> into files ending in C<$dest>.
 
 This upgrades the C<$suffix_rules> variables.
