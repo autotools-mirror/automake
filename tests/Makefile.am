@@ -903,6 +903,7 @@ txinfo30.test \
 txinfo31.test \
 txinfo32.test \
 txinfo33.test \
+txinfo-unrecognized-extension.test \
 transform.test \
 transform2.test \
 unused.test \
