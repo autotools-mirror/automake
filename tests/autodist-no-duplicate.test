@@ -21,19 +21,32 @@
 
 set -e
 
+re='Files .*automatically distributed.*if found'
+
 # The automake manual states that the list of automatically-distributed
 # files should be given by `automake --help'.
-list=`$AUTOMAKE --help \
-        | sed -n '/^Files .*automatically distributed.*if found/,/^ *$/p' \
+
+list1=`$AUTOMAKE --help \
+        | sed -n "/^$re.*always/,/^ *$/p" \
         | sed 1d`
-list=`echo $list`
-test -n "$list"
+list1=`echo $list1`
 
-for f in $list; do echo $f; done | sort > files.lst
-uniq files.lst > files.uniq
+list2=`$AUTOMAKE --help \
+        | sed -n "/^$re.*under certain conditions/,/^ *$/p" \
+        | sed 1d`
+list2=`echo $list2`
 
-cat files.lst
-cat files.uniq
-diff files.lst files.uniq
+test -n "$list1"
+test -n "$list2"
 
-:
+st=0
+for i in 1 2; do
+  eval list=\${list$i}
+  for f in $list; do echo $f; done | sort > files$i.lst
+  uniq files$i.lst > files$i.uniq
+  cat files$i.lst
+  cat files$i.uniq
+  diff files$i.lst files$i.uniq || st=1
+done
+
+Exit $st
