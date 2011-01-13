@@ -947,6 +947,8 @@ vtexi3.test \
 vtexi4.test \
 warnings-override.test \
 warnings-precedence.test \
+warnings-strictness-interactions.test \
+warnings-unknown.test \
 warnopts.test \
 werror.test \
 werror2.test \
