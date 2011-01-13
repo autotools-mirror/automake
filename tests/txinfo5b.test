@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1996, 1997, 2001, 2002, 2011 Free Software Foundation,
+# Copyright (C) 1998, 2001, 2002, 2008, 2011 Free Software Foundation,
 # Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -15,31 +15,30 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test for bug reported by Glenn Amerine:
-#   When automake sees version.texi is being included by a texi file,
-#   version.texi gets listed as a dependency for the .info file but
-#   not the .dvi file.
+# Test to make sure that texinfo.tex is not required by --cygnus.
+# See also sister test txinfo5.test.
+# Report from Ian Taylor.
 
 . ./defs || Exit 1
 
 set -e
 
+cat >> configure.in << 'END'
+AM_MAINTAINER_MODE
+END
+
 cat > Makefile.am << 'END'
-info_TEXINFOS = zardoz.texi
+# Disable `override' warning to work around an unrelated
+# texi+cygnus bug.
+AUTOMAKE_OPTIONS = -Wno-override
+info_TEXINFOS = ian.texi
 END
 
-cat > zardoz.texi << 'END'
-@setfilename zardoz
-@include version.texi
-END
-
-# Required when using Texinfo.
-: > mdate-sh
-: > texinfo.tex
+echo '@setfilename ian.info' > ian.texi
 
 $ACLOCAL
-$AUTOMAKE
-
-grep '^zardoz\.dvi:.*[ /]version.texi' Makefile.in
+$AUTOMAKE --cygnus
+$AUTOMAKE -a --cygnus
+test ! -f texinfo.tex
 
 :

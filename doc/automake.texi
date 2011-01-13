@@ -157,7 +157,8 @@ Use Cases for the GNU Build System
 A Small Hello World
 
 * Creating amhello::            Create @file{amhello-1.0.tar.gz} from scratch
-* amhello Explained::           @file{configure.ac} and @file{Makefile.am} explained
+* amhello's configure.ac Setup Explained::
+* amhello's Makefile.am Setup Explained::
 
 General ideas
 
@@ -1392,9 +1393,11 @@ instantiate the GNU Build System, while the second explains the
 meaning of the @file{configure.ac} and @file{Makefile.am} files read
 by the Autotools.
 
+@anchor{amhello Explained}
 @menu
 * Creating amhello::            Create @file{amhello-1.0.tar.gz} from scratch
-* amhello Explained::           @file{configure.ac} and @file{Makefile.am} explained
+* amhello's configure.ac Setup Explained::
+* amhello's Makefile.am Setup Explained::
 @end menu
 
 @node Creating amhello
@@ -1555,8 +1558,10 @@ creating @file{configure} from @file{configure.ac}, while
 direct you to the right manual when seeking answers.
 
 
-@node amhello Explained
-@subsection @file{amhello-1.0} Explained
+@node amhello's configure.ac Setup Explained
+@subsection @code{amhello}'s @file{configure.ac} Setup Explained
+
+@cindex @file{configure.ac}, Hello World
 
 Let us begin with the contents of @file{configure.ac}.
 
@@ -1664,6 +1669,10 @@ your package may need (@pxref{autoscan Invocation, , Using
 @command{autoscan} to Create @file{configure.ac}, autoconf, The
 Autoconf Manual}).
 
+
+@node amhello's Makefile.am Setup Explained
+@subsection @code{amhello}'s @file{Makefile.am} Setup Explained
+
 @cindex @file{Makefile.am}, Hello World
 
 We now turn to @file{src/Makefile.am}.  This file contains
@@ -1735,6 +1744,11 @@ necessary: @command{automake} automatically distributes any
 automatically distributed is presented by @code{automake --help}).
 The only important effect of this second line is therefore to install
 @file{README} during @code{make install}.
+
+One thing not covered in this example is accessing the installation
+directory values (@pxref{Standard Directory Variables}) from your
+program code, that is, converting them into defined macros.  For this,
+@pxref{Defining Directories,,, autoconf, The Autoconf Manual}.
 
 
 @node Generalities
@@ -1986,7 +2000,8 @@ variable names; thus one writes @samp{bin_PROGRAMS} and not
 @samp{bindir_PROGRAMS}.
 
 Not every sort of object can be installed in every directory.  Automake
-will flag those attempts it finds in error.
+will flag those attempts it finds in error (but see below how to override
+the check if you really need to).
 Automake will also diagnose obvious misspellings in directory names.
 
 @cindex Extending list of installation directories
@@ -2007,6 +2022,33 @@ For instance, the following snippet will install @file{file.xml} into
 xmldir = $(datadir)/xml
 xml_DATA = file.xml
 @end example
+
+This feature can also be used to override the sanity checks Automake
+performs to diagnose suspicious directory/primary couples (in the
+unlikely case these checks are undesirable, and you really know what
+you're doing).  For example, Automake would error out on this input:
+
+@example
+# Forbidden directory combinations, automake will error out on this.
+pkglib_PROGRAMS = foo
+doc_LIBRARIES = libquux.a
+@end example
+
+@noindent
+but it will succeed with this:
+
+@example
+# Work around forbidden directory combinations.  Do not use this
+# without a very good reason!
+my_execbindir = $(pkglibdir)
+my_doclibdir = $(docdir)
+my_execbin_PROGRAMS = foo
+my_doclib_LIBRARIES = libquux.a
+@end example
+
+The @samp{exec} substring of the @samp{my_execbindir} variable lets
+the files be installed at the right time (@pxref{The Two Parts of
+Install}).
 
 @cindex @samp{noinst_} primary prefix, definition
 @vindex noinst_
@@ -2877,7 +2919,7 @@ Automake will generate rules to rebuild these headers.  Older versions
 of Automake required the use of @code{AM_CONFIG_HEADER}
 (@pxref{Macros}); this is no longer the case.
 
-As for @code{AC_CONFIG_FILES} (@pxref{Requirements}), parts of the
+As with @code{AC_CONFIG_FILES} (@pxref{Requirements}), parts of the
 specification using shell variables will be ignored as far as
 cleaning, distributing, and rebuilding is concerned.
 
@@ -6050,7 +6092,12 @@ intended for the @file{Makefile.am} author.
 @code{AM_YFLAGS} is usually used to pass the @option{-d} option to
 @command{yacc}.  Automake knows what this means and will automatically
 adjust its rules to update and distribute the header file built by
-@samp{yacc -d}.  What Automake cannot guess, though, is where this
+@samp{yacc -d}@footnote{Please note that @command{automake} recognizes
+@option{-d} in @code{AM_YFLAGS} only if it is not clustered with other
+options; for example, it won't be recognized if @code{AM_YFLAGS} is
+@option{-dt}, but it will be if @code{AM_YFLAGS} is @option{-d -t} or
+@option{-d -t}}.
+What Automake cannot guess, though, is where this
 header will be used: it is up to you to ensure the header gets built
 before it is first used.  Typically this is necessary in order for
 dependency tracking to work when the header is included by another

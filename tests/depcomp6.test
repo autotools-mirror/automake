@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2006, 2010 Free Software Foundation, Inc.
+# Copyright (C) 2006, 2010, 2011 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ cat >foo.c <<'END'
 #include "foo.h"
 #include "sub2/baz.h"
 #include <stdlib.h>
-int main() { printf("foo"); return bar() + baz(); }
+int main (void) { printf ("foo"); return bar () + baz (); }
 END
 
 cat >foo.h <<'END'
@@ -57,28 +57,28 @@ END
 
 cat >sub/bar.c <<'END'
 #include "sub/bar.h"
-int bar() { return 0; }
+int bar (void) { return 0; }
 END
 
 touch sub2/sub3/ba3.h
 
 cat >sub/bar.h <<'END'
 #include <stdio.h>
-extern int bar();
+extern int bar (void);
 END
 
 cat >sub2/baz.c <<'END'
 #include "baz.h"
-int baz() { return 0; }
+int baz (void) { return 0; }
 END
 
 cat >sub2/baz.h <<'END'
-extern int baz();
+extern int baz (void);
 END
 
 cat >sub2/sub3/ba3.c <<'END'
 #include "ba3.h"
-int ba3() { return 0; }
+int ba3 (void) { return 0; }
 END
 
 $ACLOCAL
@@ -88,17 +88,24 @@ $AUTOMAKE -a
 ./configure --enable-dependency-tracking
 $MAKE
 
-# check that dependency tracking works
-if grep 'depmode=none' Makefile; then :
-else
-  cd sub2
-  $sleep
-  echo 'choke me' > sub3/ba3.h
-  # Do not use `$MAKE && Exit 1' here, since even relatively-recent
-  # versions of the BSD shell wrongly exit when the `errexit' shell
-  # flag is active if a command within "&&" fails inside a compound
-  # statement.
-  if $MAKE; then Exit 1; else :; fi
+# Check that dependency tracking works.
+if grep 'depmode=none' Makefile; then
+  Exit 77
 fi
+
+cd sub2
+$sleep
+echo 'choke me' > sub3/ba3.h
+# Do not use `$MAKE && Exit 1' here, since even relatively-recent
+# versions of the BSD shell wrongly exit when the `errexit' shell
+# flag is active if a command within "&&" fails inside a compound
+# statement.
+if $MAKE; then Exit 1; else :; fi
+
+# Ensure the deleted header bug is fixed.
+rm -f sub3/ba3.h
+sed 1d sub3/ba3.c >sub3/ba3.t
+mv -f sub3/ba3.t sub3/ba3.c
+$MAKE
 
 :

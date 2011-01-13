@@ -94,6 +94,14 @@ ar2.test \
 asm.test \
 asm2.test \
 asm3.test \
+autodist.test \
+autodist-subdir.test \
+autodist-acconfig.test \
+autodist-acconfig-no-subdir.test \
+autodist-aclocal-m4.test \
+autodist-config-headers.test \
+autodist-configure-no-subdir.test \
+autodist-stamp-vti.test \
 autohdr.test \
 autohdr2.test \
 autohdr3.test \
@@ -158,6 +166,7 @@ comment8.test \
 comment9.test \
 commen10.test \
 commen11.test \
+comments-in-var-defn.test \
 compile.test \
 compile2.test \
 compile_f90_c_cxx.test \
@@ -737,6 +746,7 @@ txinfo2.test \
 txinfo3.test \
 txinfo4.test \
 txinfo5.test \
+txinfo5b.test \
 txinfo6.test \
 txinfo7.test \
 txinfo8.test \
@@ -786,6 +796,8 @@ version8.test \
 vpath.test \
 vtexi.test \
 vtexi2.test \
+vtexi3.test \
+vtexi4.test \
 warnopts.test \
 werror.test \
 werror2.test \
