@@ -320,6 +320,11 @@ Support for test suites
 * DejaGnu Tests::               Interfacing with the external testing framework
 * Install Tests::               Running tests on installed packages
 
+Changing Automake's Behavior
+
+* Options generalities::        Semantics of Automake option
+* List of Automake options::    A comprehensive list of Automake options
+
 Miscellaneous Rules
 
 * Tags::                        Interfacing to cscope, etags and mkid
@@ -1899,7 +1904,9 @@ The valid strictness levels are:
 Automake will check for only those things that are absolutely
 required for proper operations.  For instance, whereas GNU standards
 dictate the existence of a @file{NEWS} file, it will not be required in
-this mode.  The name comes from the fact that Automake is intended to be
+this mode.  This strictness will also turn off some warnings by default
+(among them, portability warnings).
+The name comes from the fact that Automake is intended to be
 used for GNU programs; these relaxed rules are not the standard mode of
 operation.
 
@@ -9023,8 +9030,16 @@ will now be rerun each time the version number is bumped, when only
 @node Options
 @chapter Changing Automake's Behavior
 
+@menu
+* Options generalities::        Semantics of Automake option
+* List of Automake options::    A comprehensive list of Automake options
+@end menu
+
+@node Options generalities
+@section Options generalities
+
 Various features of Automake can be controlled by options.  Except where
-noted otherwise, options can be specified in one of several ways: Most
+noted otherwise, options can be specified in one of several ways.  Most
 options can be applied on a per-@file{Makefile} basis when listed in a
 special @file{Makefile} variable named @code{AUTOMAKE_OPTIONS}.  Some
 of these options only make sense when specified in the toplevel
@@ -9034,7 +9049,43 @@ of these options only make sense when specified in the toplevel
 require changes to the @command{configure} script can only be specified
 there.  These are annotated below.
 
-Currently understood options are:
+As a general rule, options specified in @code{AUTOMAKE_OPTIONS} take
+precedence over those specified in @code{AM_INIT_AUTOMAKE}, which in
+turn take precedence over those specified on the command line.
+
+Also, some care must be taken about the interactions among strictness
+level and warning categories.  As a general rule, strictness-implied
+warnings are overridden by those specified by explicit options.  For
+example, even if @samp{portability} warnings are disabled by default
+in @option{foreign} strictness, an usage like this will end up enabling
+them:
+
+@example
+AUTOMAKE_OPTIONS = -Wportability foreign
+@end example
+
+However, a strictness level specified in a higher-priority context
+will override all the explicit warnings specified in a lower-priority
+context.  For example, if @file{configure.ac} contains:
+
+@example
+AM_INIT_AUTOMAKE([-Wportability])
+@end example
+
+@noindent
+and @file{Makefile.am} contains:
+
+@example
+AUTOMAKE_OPTIONS = foreign
+@end example
+
+@noindent
+then @samp{portability} warnings will be @emph{disabled} in
+@file{Makefile.am}.
+
+@node List of Automake options
+@section List of Automake options
+
 @vindex AUTOMAKE_OPTIONS
 
 @table @asis
