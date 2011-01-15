@@ -18,6 +18,9 @@
 
 . ./defs || Exit 1
 
+# We need (almost) complete control over automake options.
+AUTOMAKE="$original_AUTOMAKE -Werror"
+
 cat >> configure.in << 'END'
 AC_PROG_CC
 AC_OUTPUT
@@ -38,12 +41,14 @@ END
 
 $ACLOCAL
 # Don't warn in foreign mode
-$AUTOMAKE -Wnone --add-missing --foreign
+$AUTOMAKE --add-missing --foreign
 # Warn in gnu mode
-AUTOMAKE_fails -Wnone --add-missing --gnu
-grep 'Makefile.am:1:.*CFLAGS' stderr
-grep 'Makefile.am:2:.*LDFLAGS' stderr
+AUTOMAKE_fails --add-missing --gnu
+grep '^Makefile\.am:1:.*CFLAGS' stderr
+grep '^Makefile\.am:2:.*LDFLAGS' stderr
 # No reason to warn about CXXFLAGS since it's not used.
 grep CXXFLAGS stderr && Exit 1
 # Don't warn if -Wno-gnu.
-$AUTOMAKE -Wnone --gnu -Wno-gnu
+$AUTOMAKE --gnu -Wno-gnu
+
+:

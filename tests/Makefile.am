@@ -1,7 +1,7 @@
 ## Process this file with automake to create Makefile.in
 
 # Copyright (C) 1996, 1997, 1998, 1999, 2001, 2002, 2003, 2004, 2005,
-# 2006, 2007, 2008, 2009, 2010  Free Software Foundation, Inc.
+# 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -134,6 +134,8 @@ alpha2.test \
 amassign.test \
 ammissing.test \
 amopt.test \
+amopts-location.test \
+amopts-variable-expansion.test \
 amsubst.test \
 ansi.test \
 ansi2.test \
@@ -792,6 +794,7 @@ silent-lex-gcc.test \
 silent-lex-generic.test \
 silent-yacc-gcc.test \
 silent-yacc-generic.test \
+silent-nowarn.test \
 sinclude.test \
 srcsub.test \
 srcsub2.test \
@@ -813,6 +816,8 @@ stdinc.test \
 stamph2.test \
 stdlib.test \
 stdlib2.test \
+strictness-override.test \
+strictness-precedence.test \
 strip.test \
 strip2.test \
 strip3.test \
@@ -942,7 +947,13 @@ vtexi.test \
 vtexi2.test \
 vtexi3.test \
 vtexi4.test \
+warnings-override.test \
+warnings-precedence.test \
+warnings-strictness-interactions.test \
+warnings-unknown.test \
 warnopts.test \
+warnings-win-over-strictness.test \
+warning-groups-win-over-strictness.test \
 werror.test \
 werror2.test \
 werror3.test \
