@@ -1,13 +1,13 @@
 # Check to make sure that the build environment is sane.    -*- Autoconf -*-
 
-# Copyright (C) 1996, 1997, 2000, 2001, 2003, 2005, 2008, 2009, 2010
-# Free Software Foundation, Inc.
+# Copyright (C) 1996, 1997, 2000, 2001, 2003, 2005, 2008, 2009, 2010,
+# 2011 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 7
+# serial 8
 
 # AM_SANITY_CHECK
 # ---------------
@@ -77,7 +77,8 @@ fi
 AC_CONFIG_COMMANDS_PRE(
   [AC_MSG_CHECKING([that generated files are newer than configure])
    if test -n "$am_sleep_pid"; then
-     wait $am_sleep_pid
+     # Hide warnings about reused PIDs.
+     wait $am_sleep_pid 2>/dev/null
    fi
    AC_MSG_RESULT([done])])
 rm -f conftest.file
