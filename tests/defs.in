@@ -122,6 +122,32 @@ echo "$PATH"
 # (See note about `export' in the Autoconf manual.)
 export PATH
 
+# We use a trap below for cleanup.  This requires us to go through
+# hoops to get the right exit status transported through the signal.
+# So use `Exit STATUS' instead of `exit STATUS' inside of the tests.
+# Turn off errexit here so that we don't trip the bug with OSF1/Tru64
+# sh inside this function.
+Exit ()
+{
+  set +e
+  (exit $1)
+  exit $1
+}
+
+# Print warnings (e.g., about skipped and failed tests) to this file
+# number.  Override by putting, say:
+#   stderr_fileno_=9; export stderr_fileno_; exec 9>&2;
+# in the definition of AM_TESTS_ENVIRONMENT.
+# This is useful when using automake's parallel tests mode, to print the
+# reason for skip/failure to console, rather than to the *.log files.
+: ${stderr_fileno_=2}
+
+# Copied from Gnulib's `tests/init.sh'.
+warn_ () { echo "$@" 1>&$stderr_fileno_; }
+fail_ () { warn_ "$me: failed test: $@"; Exit 1; }
+skip_ () { warn_ "$me: skipped test: $@"; Exit 77; }
+framework_failure_ () { warn_ "$me: set-up failure: $@"; Exit 99; }
+
 for tool in : $required
 do
   # Check that each required tool is present.
@@ -277,18 +303,6 @@ case "$srcdir" in
     srcdir=`CDPATH=: && cd "$srcdir" && pwd`
     ;;
 esac
-
-# We use a trap below for cleanup.  This requires us to go through
-# hoops to get the right exit status transported through the signal.
-# So use `Exit STATUS' instead of `exit STATUS' inside of the tests.
-# Turn off errexit here so that we don't trip the bug with OSF1/Tru64
-# sh inside this function.
-Exit ()
-{
-  set +e
-  (exit $1)
-  exit $1
-}
 
 curdir=`pwd`
 testSubDir=$me.dir
