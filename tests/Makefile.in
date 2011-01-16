@@ -944,6 +944,7 @@ parallel-tests7.test \
 parallel-tests8.test \
 parallel-tests9.test \
 parallel-tests10.test \
+parallel-tests-unreadable-log.test \
 parse.test \
 percent.test \
 percent2.test \
@@ -1303,7 +1304,8 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	@$(am__sh_e_setup);						\
 	list='$(TEST_LOGS)';						\
 	results=`for f in $$list; do					\
-		   read line < $$f && echo "$$line" || echo FAIL;	\
+		   test -r $$f && read line < $$f && echo "$$line"	\
+		     || echo FAIL;					\
 		 done`;							\
 	all=`echo "$$results" | sed '/^$$/d' | wc -l | sed -e 's/^[	 ]*//'`; \
 	fail=`echo "$$results" | grep -c '^FAIL'`;			\
@@ -1352,7 +1354,7 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	  echo ".. contents:: :depth: 2";				\
 	  echo;								\
 	  for f in $$list; do						\
-	    read line < $$f;						\
+	    test -r $$f && read line < $$f || line=;			\
 	    case $$line in						\
 	      PASS:*|XFAIL:*);;						\
 	      *) echo; cat $$f;;					\
@@ -1416,7 +1418,7 @@ recheck recheck-html:
 	list='$(TEST_LOGS)';						\
 	list=`for f in $$list; do					\
 	        test -f $$f || continue;				\
-	        if read line < $$f; then				\
+	        if test -r $$f && read line < $$f; then			\
 	          case $$line in FAIL*|XPASS*) echo $$f;; esac;		\
 	        else echo $$f; fi;					\
 	      done | tr '\012\015' '  '`;				\
