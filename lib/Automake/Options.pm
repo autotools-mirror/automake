@@ -260,7 +260,7 @@ sub _process_option_list (\%@)
 
   foreach my $h (@list)
     {
-      my $_ = $h->{'option'};
+      local $_ = $h->{'option'};
       my $where = $h->{'where'};
       $options->{$_} = $where;
       if ($_ eq 'gnits' || $_ eq 'gnu' || $_ eq 'foreign')
