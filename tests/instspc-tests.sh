@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2010 Free Software Foundation, Inc.
+# Copyright (C) 2010, 2011 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -191,12 +191,8 @@ fi
 
 ###  If we are still here, we have to run a test ...
 
-# We'll need the full setup provided by `tests/defs'.  Temporarly disable
-# the errexit flag, since the setup code might not be prepared to deal
-# with it.
-set +e
+# We'll need the full setup provided by `tests/defs'.
 . ./defs || Exit 99
-set -e
 
 eval "instspc_test_string=\${instspc__$instspc_test_name}" || Exit 99
 if test x"$instspc_test_string" = x; then
@@ -296,6 +292,8 @@ cd "./$build"
 
 ../configure --prefix "/$instspc_test_string-prefix"
 $MAKE
-DESTDIR="$dest" file="$instspc_test_string" $MAKE -e test-install-sep
+# Tru64 sh -e needs '|| Exit' in order to work correctly.
+DESTDIR="$dest" file="$instspc_test_string" $MAKE -e test-install-sep \
+  || Exit 1
 
 :
