@@ -1,5 +1,6 @@
 #! /bin/sh
-# Copyright (C) 2002, 2004, 2006, 2008  Free Software Foundation, Inc.
+# Copyright (C) 2002, 2004, 2006, 2008, 2011 Free Software Foundation,
+# Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -77,9 +78,40 @@ test -f d3/y
 ./install-sh -T x d3 && Exit 1
 ./install-sh -T x d4// && Exit 1
 
-# Ensure that install-sh works with names that include spaces
+# Ensure that install-sh works with names that include spaces.
 touch 'a  b'
 mkdir 'x  y'
 ./install-sh 'a  b' 'x  y'
 test -f x\ \ y/a\ \ b
 test -f 'a  b'
+
+# Ensure we do not run into `test' operator precedence bugs with Tru64 sh.
+for c in = '(' ')' '!'; do
+  ./install-sh $c 2>stderr && { cat stderr >&2; Exit 1; }
+  cat stderr >&2
+  grep 'test: ' stderr && Exit 1
+  # Skip tests if the file system is not capable.
+  mkdir ./$c || continue
+  rmdir ./$c
+  ./install-sh -d $c/$c/$c
+  rm -rf ./$c
+  ./install-sh -d $c d5/$c/$c
+  test -d ./$c
+  test -d d5/$c/$c
+  ./install-sh x $c
+  test -f ./$c/x
+  rm -f ./$c/x
+  ./install-sh -t $c x
+  test -f ./$c/x
+  rm -rf ./$c
+  ( : > ./$c ) || continue
+  ./install-sh $c x d5/$c/$c
+  test -f d5/$c/$c/x
+  test -f d5/$c/$c/$c
+  rm -f d5/$c/$c/?
+  ./install-sh -t d5/$c/$c $c x
+  test -f d5/$c/$c/x
+  test -f d5/$c/$c/$c
+done
+
+:
