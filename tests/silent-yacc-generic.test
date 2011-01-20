@@ -37,6 +37,7 @@ cat > Makefile.am <<'EOF'
 bin_PROGRAMS = foo1 foo2
 foo1_SOURCES = foo.y
 foo2_SOURCES = $(foo1_SOURCES)
+foo2_YFLAGS = -v
 foo2_CFLAGS = $(AM_CPPFLAGS)
 SUBDIRS = sub
 EOF
@@ -47,6 +48,7 @@ AUTOMAKE_OPTIONS = subdir-objects
 bin_PROGRAMS = bar1 bar2
 bar1_SOURCES = bar.y
 bar2_SOURCES = $(bar1_SOURCES)
+bar2_YFLAGS = -v
 bar2_CFLAGS = $(AM_CPPFLAGS)
 EOF
 
@@ -65,6 +67,10 @@ cp foo.y sub/bar.y
 $ACLOCAL
 $AUTOMAKE --add-missing
 $AUTOCONF
+
+# Ensure per-target rules are used, to ensure their coverage below.
+$FGREP 'foo2-foo.c' Makefile.in
+$FGREP 'bar2-bar.c' sub/Makefile.in
 
 # Force dependency tracking explicitly, so that slow dependency
 # extractors are not rejected.  Try also with dependency tracking
@@ -110,7 +116,7 @@ do
 
   # Ensure a truly clean rebuild.
   $MAKE clean
-  rm -f foo.[ch] sub/bar.[ch]
+  rm -f *foo.[ch] sub/*bar.[ch]
 
   $MAKE V=1 >stdout || { cat stdout; Exit 1; }
   cat stdout
@@ -138,7 +144,6 @@ do
   # Ensure a truly clean reconfiguration/rebuild.
   $MAKE clean
   $MAKE maintainer-clean
-  rm -f foo.[ch] sub/bar.[ch]
 
 done
 

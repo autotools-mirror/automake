@@ -648,6 +648,7 @@ silent-lex-gcc.test \
 silent-lex-generic.test \
 silent-yacc-gcc.test \
 silent-yacc-generic.test \
+silent-yacc-headers.test \
 sinclude.test \
 srcsub.test \
 srcsub2.test \

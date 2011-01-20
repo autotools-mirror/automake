@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (C) 2010 Free Software Foundation, Inc.
+# Copyright (C) 2010, 2011 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@ cat > Makefile.am <<'EOF'
 bin_PROGRAMS = foo1 foo2
 foo1_SOURCES = foo.l
 foo2_SOURCES = $(foo1_SOURCES)
+foo2_LFLAGS = -n
 foo2_CFLAGS = $(AM_CFLAGS)
 SUBDIRS = sub
 LDADD = $(LEXLIB)
@@ -48,6 +49,7 @@ AUTOMAKE_OPTIONS = subdir-objects
 bin_PROGRAMS = bar1 bar2
 bar1_SOURCES = bar.l
 bar2_SOURCES = $(bar1_SOURCES)
+bar2_LFLAGS = -n
 bar2_CFLAGS = $(AM_CFLAGS)
 LDADD = $(LEXLIB)
 EOF
@@ -63,6 +65,10 @@ cp foo.l sub/bar.l
 $ACLOCAL
 $AUTOMAKE --add-missing
 $AUTOCONF
+
+# Ensure per-target rules are used, to ensure their coverage below.
+$FGREP 'foo2-foo.c' Makefile.in
+$FGREP 'bar2-bar.c' sub/Makefile.in
 
 # Force gcc ("fast") depmode.
 # This apparently useless "for" loop is here to simplify the syncing
@@ -108,7 +114,7 @@ do
 
   # Ensure a truly clean rebuild.
   $MAKE clean
-  rm -f foo.c sub/bar.c
+  rm -f *foo.c sub/*bar.c
 
   $MAKE V=1 >stdout || { cat stdout; Exit 1; }
   cat stdout
@@ -136,7 +142,6 @@ do
   # Ensure a truly clean reconfiguration/rebuild.
   $MAKE clean
   $MAKE maintainer-clean
-  rm -f foo.c sub/bar.c
 
 done
 
