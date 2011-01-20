@@ -191,8 +191,12 @@ fi
 
 ###  If we are still here, we have to run a test ...
 
-# We'll need the full setup provided by `tests/defs'.
+# We'll need the full setup provided by `tests/defs'.  Temporarly disable
+# the errexit flag, since the setup code might not be prepared to deal
+# with it.
+set +e
 . ./defs || Exit 99
+set -e
 
 eval "instspc_test_string=\${instspc__$instspc_test_name}" || Exit 99
 if test x"$instspc_test_string" = x; then
