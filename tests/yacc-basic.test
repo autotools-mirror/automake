@@ -30,8 +30,10 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-bin_PROGRAMS = foo
+bin_PROGRAMS = foo bar
 foo_SOURCES = parse.y foo.c
+bar_SOURCES = $(foo_SOURCES)
+bar_YFLAGS = -v
 
 .PHONY: echo-distcom
 echo-distcom:
@@ -59,30 +61,49 @@ $AUTOMAKE -a
 
 ./configure
 $MAKE
-# The `parse.c' file must be created and not removed (i.e., not treated
-# like an "intermediate file" in the GNU make sense).
+ls -l
+# The Yacc-derived C sources must be created, and not removed once
+# compiled (i.e., not treated like "intermediate files" in the GNU
+# make sense).
 test -f parse.c
+test -f bar-parse.c
+# Check that per-object flags are honored.
+test -f bar-parse.output
 
 echo a | ./foo
 echo b | ./foo && Exit 1
 
-# The generated file `parse.c' must be shipped.
+echo a | ./bar
+echo b | ./bar && Exit 1
+
+# The Yacc-derived C sources must be shipped.
 $MAKE echo-distcom
-$MAKE -s echo-distcom | grep '[ /]parse.c '
+$MAKE -s echo-distcom | grep '[ /]parse\.c '
+$MAKE -s echo-distcom | grep '[ /]bar-parse\.c '
 $MAKE distdir
 ls -l $distdir
 test -f $distdir/parse.c
+test -f $distdir/bar-parse.c
 
 # Sanity check on distribution.
+# Note that, for this to succeed, bar-parse.output must either not
+# be distributed, or properly cleaned by automake-generated rules.
+# We don't want to set the exact semantics yet, but want to ensure
+# they are are consistent.
 $MAKE distcheck
 
-# While we are at it, make sure that parse.c is erased by
+# Make sure that the Yacc-derived C sources are erased by
 # maintainer-clean, and not by distclean.
 test -f parse.c
+test -f bar-parse.c
 $MAKE distclean
+ls -l
 test -f parse.c
+test -f bar-parse.c
 ./configure # we must re-create `Makefile'
 $MAKE maintainer-clean
+ls -l
 test ! -f parse.c
+test ! -f bar-parse.c
 
 :
