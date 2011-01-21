@@ -6084,12 +6084,26 @@ sub lang_yacc_target_hook
 
     if ($yflags_contains_minus_d)
       {
-	(my $output_base = $output) =~ s/$KNOWN_EXTENSIONS_PATTERN$//;
-	my $header = $output_base . '.h';
-
 	# Found a `-d' that applies to the compilation of this file.
 	# Add a dependency for the generated header file, and arrange
 	# for that file to be included in the distribution.
+
+	# The extension of the output file (e.g., `.c' or `.cxx').
+	# We'll need it to compute the name of the generated header file.
+	(my $output_ext = basename ($output)) =~ s/.*(\.[^.]+)$/$1/;
+
+	# We know that a yacc input should be turned into either a C or
+	# C++ output file.  We depend on this fact (here and in yacc.am),
+	# so check that it really holds.
+	my $lang = $languages{$extension_map{$output_ext}};
+	prog_error "invalid output name `$output' for yacc file `$input'"
+	  if (!$lang || ($lang->name ne 'c' && $lang->name ne 'cxx'));
+
+	(my $header_ext = $output_ext) =~ s/c/h/g;
+        # Quote $output_ext in the regexp, so that dots in it are taken
+        # as literal dots, not as metacharacters.
+	(my $header = $output) =~ s/\Q$output_ext\E$/$header_ext/;
+
 	foreach my $cond (Automake::Rule::define (${header}, 'internal',
 						  RULE_AUTOMAKE, TRUE,
 						  INTERNAL))

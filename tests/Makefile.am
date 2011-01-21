@@ -796,6 +796,8 @@ xsource.test \
 xz.test \
 yacc-basic.test \
 yacc-d-basic.test \
+yacc-cxx.test \
+yacc-d-cxx.test \
 yacc-clean.test \
 yacc.test \
 yacc2.test \
@@ -811,6 +813,7 @@ yacc-nodist.test \
 yaccpp.test \
 yaccvpath.test \
 yacc-d-vpath.test \
+yacc-weirdnames.test \
 yflags.test \
 yflags2.test \
 yflags-cmdline-override.test \
