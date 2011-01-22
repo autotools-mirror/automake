@@ -1,7 +1,8 @@
 # Process this file with autoconf to produce a configure script.
 
 # Copyright (C) 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003,
-# 2004, 2006, 2007, 2008, 2009, 2010 Free Software Foundation, Inc.
+# 2004, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation,
+# Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -92,6 +93,15 @@ AC_SUBST([PERL_THREADS])
 
 # The test suite will skip some tests if tex is absent.
 AC_CHECK_PROG([TEX], [tex], [tex])
+
+# The test suite will skip some tests if no yacc program is available.
+# We don't use AC_PROG_YACC because:
+#  1. we don't want bison to be preferred to system yacc;
+#  2. we don't want $YACC to be defined to 'yacc' by default;
+#  3. we prefer not to have the YFLAGS variable to be AC_SUBST'd,
+#  4. we prefer that the YACC variable is not reported in the
+#     configure help screen.
+AC_CHECK_PROGS([YACC], [yacc byacc 'bison -y'], [false])
 
 # Generate man pages.
 AM_MISSING_PROG([HELP2MAN], [help2man])
