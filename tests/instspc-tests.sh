@@ -296,8 +296,12 @@ cd "./$build"
 
 ../configure --prefix "/$instspc_test_string-prefix"
 $MAKE
+# Some make implementations eliminate leading and trailing whitespace
+# from macros passed on the command line, and some eliminate leading
+# whitespace from macros set from environment variables, so prepend
+# './' and use the latter here.
 # Tru64 sh -e needs '|| Exit' in order to work correctly.
-DESTDIR="$dest" file="$instspc_test_string" $MAKE -e test-install-sep \
+DESTDIR="$dest" file="./$instspc_test_string" $MAKE -e test-install-sep \
   || Exit 1
 
 :
