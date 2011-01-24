@@ -808,6 +808,7 @@ specflg7.test \
 specflg8.test \
 specflg9.test \
 specflg10.test \
+specflg-dummy.test \
 spell.test \
 spell2.test \
 spell3.test \
