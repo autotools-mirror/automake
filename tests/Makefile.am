@@ -141,6 +141,9 @@ check8.test \
 check9.test \
 check10.test \
 check11.test \
+check-exported-srcdir.test \
+check-tests-in-builddir.test \
+check-tests_environment.test \
 checkall.test \
 clean.test \
 clean2.test \
@@ -568,6 +571,7 @@ parallel-tests8.test \
 parallel-tests9.test \
 parallel-tests10.test \
 parallel-tests-unreadable-log.test \
+parallel-tests-subdir.test \
 parse.test \
 percent.test \
 percent2.test \
