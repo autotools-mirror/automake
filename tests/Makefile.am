@@ -1,7 +1,7 @@
 ## Process this file with automake to create Makefile.in
 
 # Copyright (C) 1996, 1997, 1998, 1999, 2001, 2002, 2003, 2004, 2005,
-# 2006, 2007, 2008, 2009, 2010  Free Software Foundation, Inc.
+# 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -668,6 +668,7 @@ specflg7.test \
 specflg8.test \
 specflg9.test \
 specflg10.test \
+specflg-dummy.test \
 spell.test \
 spell2.test \
 spell3.test \
