@@ -644,10 +644,8 @@ silentf77.test \
 silentf90.test \
 silent-many-gcc.test \
 silent-many-generic.test \
-silent-lex-gcc.test \
-silent-lex-generic.test \
-silent-yacc-gcc.test \
-silent-yacc-generic.test \
+silent-lex.test \
+silent-yacc.test \
 silent-yacc-headers.test \
 sinclude.test \
 srcsub.test \
