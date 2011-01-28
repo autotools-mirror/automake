@@ -805,6 +805,7 @@ yacc6.test \
 yacc7.test \
 yacc8.test \
 yaccdry.test \
+yacc-deleted-headers.test \
 yacc-dist-nobuild.test \
 yacc-nodist.test \
 yaccpp.test \
