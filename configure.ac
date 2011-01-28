@@ -94,14 +94,19 @@ AC_SUBST([PERL_THREADS])
 # The test suite will skip some tests if tex is absent.
 AC_CHECK_PROG([TEX], [tex], [tex])
 
-# The test suite will skip some tests if no yacc program is available.
-# We don't use AC_PROG_YACC because:
-#  1. we don't want bison to be preferred to system yacc;
-#  2. we don't want $YACC to be defined to 'yacc' by default;
-#  3. we prefer not to have the YFLAGS variable to be AC_SUBST'd,
-#  4. we prefer that the YACC variable is not reported in the
+# The test suite will skip some tests if no lex or yacc program is
+# available.
+# We don't use AC_PROG_LEX nor AC_PROG_YACC here because:
+#  1. we don't want flex (resp. bison) to be preferred to system lex
+#     (resp. system yacc);
+#  2. we don't want $LEX (resp. $YACC) to be defined to ':' (resp. 'yacc')
+#     by default;
+#  3. we prefer not to have the variables YFLAGS, LEX_OUTPUT_ROOT and
+#     LEXLIB to be calculated and/or AC_SUBST'd;
+#  4. we prefer that the YACC and LEX variables are not reported in the
 #     configure help screen.
 AC_CHECK_PROGS([YACC], [yacc byacc 'bison -y'], [false])
+AC_CHECK_PROGS([LEX], [lex flex], [false])
 
 # Generate man pages.
 AM_MISSING_PROG([HELP2MAN], [help2man])
