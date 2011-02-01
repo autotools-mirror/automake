@@ -620,6 +620,7 @@ python2.test \
 python3.test \
 python4.test \
 python5.test \
+python5b.test \
 python6.test \
 python7.test \
 python8.test \
@@ -627,6 +628,9 @@ python9.test \
 python10.test \
 python11.test \
 python12.test \
+python-dist.test \
+python-vars.test \
+python-virtualenv.test \
 recurs.test \
 recurs2.test \
 remake.test \

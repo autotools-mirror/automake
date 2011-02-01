@@ -1,0 +1,93 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check that AM_PATH_PYTHON correctly sets all the output variables
+# advertised in the manual.
+
+required=python
+. ./defs || Exit 1
+
+set -e
+
+PYTHON=python
+
+# Update these if the documentation changes.
+PYTHON_VERSION=`$PYTHON -c 'import sys; print(sys.version[:3])'` || Exit 1
+PYTHON_PLATFORM=`$PYTHON -c 'import sys; print(sys.platform)'` || Exit 1
+PYTHON_EXEC_PREFIX='${exec_prefix}'
+PYTHON_PREFIX='${prefix}'
+pythondir="\${prefix}/lib/python$PYTHON_VERSION/site-packages"
+pyexecdir="\${exec_prefix}/lib/python$PYTHON_VERSION/site-packages"
+pkgpythondir="\${pythondir}/$me"
+pkgpyexecdir="\${pyexecdir}/$me"
+
+pyvars='PYTHON_VERSION PYTHON_PLATFORM PYTHON_PREFIX PYTHON_EXEC_PREFIX
+        pythondir pyexecdir pkgpythondir pkgpyexecdir'
+
+cat >> configure.in << 'END'
+AC_CONFIG_FILES([vars-got])
+AM_PATH_PYTHON
+AC_OUTPUT
+END
+
+cat > my.py << 'END'
+def my():
+    return 1
+END
+
+cat > Makefile.am << 'END'
+
+python_PYTHON = my.py
+
+EXTRA_DIST = vars-exp
+
+check-local: test-in test-am
+.PHONY: test-in test-am
+
+test-in:
+	cat $(srcdir)/vars-exp
+	cat $(builddir)/vars-got
+	diff $(srcdir)/vars-exp $(builddir)/vars-got
+END
+
+echo > vars-exp
+echo > vars-got.in
+echo test-am: >> Makefile.am
+
+for var in $pyvars; do
+  eval val=\$$var
+  (echo "### $var ###" && echo "$val" && echo) >> vars-exp
+  (echo "### $var ###" && echo "@$var@" && echo) >> vars-got.in
+  echo "${tab}test x'\$($var)' = x'$val'" >> Makefile.am
+done
+
+cat Makefile.am
+cat vars-got.in
+
+$ACLOCAL
+$AUTOMAKE --add-missing
+
+for var in $pyvars; do
+  grep "^$var *=" Makefile.in
+done
+
+$AUTOCONF
+./configure PYTHON="$PYTHON"
+
+$MAKE test-in test-am
+$MAKE distcheck
+
+:

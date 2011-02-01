@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2003, 2010 Free Software Foundation, Inc.
+# Copyright (C) 2003, 2010, 2011 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,15 +15,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test ACTION-IF-TRUE in AM_PATH_PYTHON.
-# Same as python8.test, but requiring a version.
+# Similar to python8.test, but requiring a version.
 
 required=python
 . ./defs || Exit 1
 
 set -e
 
-cat >>configure.in <<EOF
-AM_PATH_PYTHON(0.0, [echo 'GREP ME' >&2])
+cat >>configure.in <<'EOF'
+# $PYTHON is supposed to be properly set in ACTION-IF-TRUE.
+AM_PATH_PYTHON([0.0], [$PYTHON -c 'print("%u:%u" % (1-1, 2**0))' > py.out])
 AC_OUTPUT
 EOF
 
@@ -33,8 +34,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
 
-./configure 2>stderr || { cat stderr >&2; Exit 1; }
-cat stderr >&2
-grep 'GREP ME' stderr
+./configure
+test x"`cat py.out`" = x0:1
 
 :

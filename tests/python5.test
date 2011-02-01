@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2003, 2008  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2008, 2011 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ set -e
 
 cat >>configure.in <<EOF
 # Hopefully the Python team will never release such a version.
-AM_PATH_PYTHON(9999.9)
+AM_PATH_PYTHON([9999.9])
 AC_OUTPUT
 EOF
 
@@ -34,6 +34,14 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
 
-./configure 2>stderr && { cat stderr >&2; Exit 1; }
+./configure >stdout 2>stderr && { 
+  cat stdout
+  cat stderr >&2
+  Exit 1
+}
+cat stdout
 cat stderr >&2
+$EGREP 'checking for a Python interpreter with version >= 9999\.9\.\.\. no(ne)? *$' stdout
 grep 'no suitable Python interpreter found' stderr
+
+:
