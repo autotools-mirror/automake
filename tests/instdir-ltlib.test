@@ -14,7 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# If $(libdir) is the empty string, then nothing should be installed there.
+# If $(libdir) or $(pyexecdir) is the empty string, then nothing should
+# be installed there.
 # This test exercises the libtool code paths.
 
 required=libtoolize
@@ -24,6 +25,7 @@ cat >>configure.in <<'END'
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_LIBTOOL
+AM_PATH_PYTHON
 AC_OUTPUT
 END
 
@@ -35,6 +37,8 @@ bin_PROGRAMS = p
 nobase_bin_PROGRAMS = np sub/np
 lib_LTIBRARIES = libfoo.la
 nobase_lib_LTLIBRARIES = libnfoo.la sub/libnfoo.la
+pyexec_LTIBRARIES = libpy.la
+nobase_pyexec_LTLIBRARIES = libnpy.la sub/libnpy.la
 END
 
 cat >p.c <<'END'
@@ -45,6 +49,9 @@ cp p.c sub/np.c
 cp p.c libfoo.c
 cp p.c libnfoo.c
 cp p.c sub/libnfoo.c
+cp p.c libpy.c
+cp p.c libnpy.c
+cp p.c sub/libnpy.c
 
 libtoolize
 $ACLOCAL
@@ -55,11 +62,13 @@ instdir=`pwd`/inst
 destdir=`pwd`/dest
 mkdir build
 cd build
-../configure --prefix="$instdir"
+../configure --prefix="$instdir" PYTHON="echo" \
+             am_cv_python_pythondir="$instdir/python" \
+             am_cv_python_pyexecdir="$instdir/pyexec"
 $MAKE
 
-bindir= libdir=
-export bindir libdir
+bindir= libdir= pyexecdir=
+export bindir libdir pyexecdir
 $MAKE -e install
 test ! -d "$instdir"
 $MAKE -e install DESTDIR="$destdir"
@@ -67,6 +76,9 @@ test ! -d "$instdir"
 test ! -d "$destdir"
 $MAKE -e uninstall > stdout || { cat stdout; Exit 1; }
 cat stdout
-grep 'rm -f' stdout && Exit 1
-$MAKE -e uninstall DESTDIR="$destdir"
+grep 'rm ' stdout && Exit 1
+$MAKE -e uninstall DESTDIR="$destdir" > stdout || { cat stdout; Exit 1; }
+cat stdout
+grep 'rm ' stdout && Exit 1
+
 :

@@ -217,6 +217,9 @@ check9.test \
 check10.test \
 check11.test \
 check12.test \
+check-exported-srcdir.test \
+check-tests-in-builddir.test \
+check-tests_environment.test \
 checkall.test \
 clean.test \
 clean2.test \
@@ -682,6 +685,7 @@ parallel-tests8.test \
 parallel-tests9.test \
 parallel-tests10.test \
 parallel-tests-unreadable-log.test \
+parallel-tests-subdir.test \
 parse.test \
 percent.test \
 percent2.test \
@@ -739,6 +743,7 @@ python2.test \
 python3.test \
 python4.test \
 python5.test \
+python5b.test \
 python6.test \
 python7.test \
 python8.test \
@@ -746,6 +751,9 @@ python9.test \
 python10.test \
 python11.test \
 python12.test \
+python-dist.test \
+python-vars.test \
+python-virtualenv.test \
 recurs.test \
 recurs2.test \
 remake.test \

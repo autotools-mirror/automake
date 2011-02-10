@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2003, 2010, 2011 Free Software Foundation, Inc.
+# Copyright (C) 2003, 2008, 2011 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,16 +15,26 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test detection of missing Python.
-# Same as python6.test, but requiring a version.
+# Same as python5.test, but with the user forcing the python to use.
 
-# Python is not required for this test.
+required=python
 . ./defs || Exit 1
 
-cat >>configure.in <<\EOF
+set -e
+
+cat >>configure.in << 'END'
 # Hopefully the Python team will never release such a version.
-AM_PATH_PYTHON([9999.9], [], [echo "$PYTHON" > py])
+AM_PATH_PYTHON([9999.9])
 AC_OUTPUT
-EOF
+END
+
+mkdir bin
+cat > bin/my-python << 'END'
+#! /bin/sh
+exec python ${1+"$@"}
+END
+chmod a+x bin/my-python
+PATH=`pwd`/bin:$PATH_SEPARATOR$PATH
 
 : > Makefile.am
 
@@ -32,7 +42,14 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
 
-./configure
-test x"`cat py`" = x:
+./configure PYTHON=my-python >stdout 2>stderr && {
+  cat stdout
+  cat stderr >&2
+  Exit 1
+}
+cat stdout
+cat stderr >&2
+grep 'whether my-python version is >= 9999\.9\.\.\. no *$' stdout
+grep '[Pp]ython interpreter is too old' stderr
 
 :

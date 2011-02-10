@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001, 2002, 2011 Free Software Foundation, Inc.
+# Copyright (C) 2011 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,23 +14,34 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure py_compile is defined.
+# "Simple Tests" testsuite driver: check TESTS_ENVIRONMENT support.
 
 . ./defs || Exit 1
 
-echo 'AM_PATH_PYTHON' >> configure.in
+set -e
 
-cat > Makefile.am << 'END'
-python_PYTHON = foo.py
+cat >> configure.in << 'END'
+AC_OUTPUT
 END
 
+cat > Makefile.am << 'END'
+TESTS = foo.test
+EXTRA_DIST = $(TESTS)
+END
+
+cat > foo.test << 'END'
+#! /bin/sh
+test x"$FOO" = x"ok"
+END
+chmod a+x foo.test
+
 $ACLOCAL
-
-AUTOMAKE_fails
-grep '^Makefile\.am:1:.* required file.*py-compile' stderr
-
+$AUTOCONF
 $AUTOMAKE -a
-grep '^py_compile *=' Makefile.in
-test -f py-compile
+
+./configure
+
+FOO=bad TESTS_ENVIRONMENT='FOO=ok'  $MAKE check
+FOO=ok  TESTS_ENVIRONMENT='FOO=bad' $MAKE check && Exit 1
 
 :

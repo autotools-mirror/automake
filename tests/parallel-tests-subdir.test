@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001, 2002, 2011 Free Software Foundation, Inc.
+# Copyright (C) 2011 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,23 +14,38 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure py_compile is defined.
+# Check that the parallel-tests driver creates parent directories for
+# the log files when needed.
 
+parallel_tests=yes
 . ./defs || Exit 1
 
-echo 'AM_PATH_PYTHON' >> configure.in
+set -e
 
-cat > Makefile.am << 'END'
-python_PYTHON = foo.py
+cat >> configure.in << 'END'
+AC_OUTPUT
 END
 
+cat > Makefile.am << 'END'
+TESTS = dir1/foo.test dir2/dir3/foo.test
+TEST_LOG_COMPILER = sh
+END
+
+mkdir dir1 dir2 dir2/dir3
+echo : > dir1/foo.test
+echo : > dir2/dir3/foo.test
+
 $ACLOCAL
-
-AUTOMAKE_fails
-grep '^Makefile\.am:1:.* required file.*py-compile' stderr
-
+$AUTOCONF
 $AUTOMAKE -a
-grep '^py_compile *=' Makefile.in
-test -f py-compile
+
+mkdir build
+cd build
+../configure
+$MAKE check
+find . # For debugging.
+test -f test-suite.log
+test -f dir1/foo.log
+test -f dir2/dir3/foo.log
 
 :
