@@ -472,6 +472,7 @@ help-init.test \
 help-lispdir.test \
 help-maintainer.test \
 help-multilib.test \
+help-python.test \
 help-regex.test \
 help-silent.test \
 help-upc.test \
