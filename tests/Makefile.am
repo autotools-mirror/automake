@@ -110,7 +110,13 @@ AM_TESTS_ENVIRONMENT = \
   test x"$$original_ACLOCAL" = x || unset original_ACLOCAL; \
   exec 9>&2; stderr_fileno_=9; export stderr_fileno_;
 
-TESTS = \
+TESTS = $(handwritten_tests) $(generated_tests)
+
+EXTRA_DIST += $(handwritten_tests) $(generated_tests)
+
+generated_tests = $(parallel_tests) $(instspc_tests)
+
+handwritten_tests = \
 aclocal.test \
 aclocal3.test \
 aclocal4.test \
@@ -529,7 +535,6 @@ instmany.test \
 instmany-mans.test \
 instmany-python.test \
 instspc-data.test \
-$(instspc_tests) \
 interp.test \
 interp2.test \
 java.test \
@@ -1043,11 +1048,7 @@ yflags-conditional.test \
 yflags-d-false-positives.test \
 yflags-force-override.test \
 yflags-force-conditional.test \
-yflags-var-expand.test \
-$(parallel_tests)
-
-EXTRA_DIST += $(TESTS)
-
+yflags-var-expand.test
 
 # Each test case depends on defs, aclocal, and automake.
 $(TEST_LOGS): defs aclocal-$(APIVERSION) automake-$(APIVERSION)
