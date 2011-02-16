@@ -15,24 +15,19 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #
-# Driver script to generate and run tests checking that building from,
-# or installing to, directories with shell metacharacters succeed.
+# Driver script to run tests checking that building from, or installing
+# to, directories with shell metacharacters succeed.
 #
 # Original report from James Amundson about file names with spaces.
 # Other characters added by Paul Eggert.
 #
 # This script fulfills a threefold role:
-#   1. It generates a Makefile.am snippet, containing the definition
-#      of proper lists of tests.
-#   2. It sets up a directory containing some common data files and
-#      autotools-generated files used by said generated tests (this
-#      is done for speed reasons only).
-#   3. It is sourced by said generated tests with proper parameters
-#      pre-set, to run the "meat" of the checks.
-# This setup might seem a tricky and over-engineered abuse, but past
-# (painful) experiences showed that it is indeed required, because
-# the test generation code and test execution code tend to be
-# inextricably coupled and intertwined.
+#   1. It is called to generate a Makefile.am snippet, containing the
+#      definition of proper lists of tests.
+#   2. It is called to set up a directory containing some common data
+#      files and autotools-generated files used by the aforementioned
+#      tests (this is done for speed reasons only).
+#   3. It is called to properly run those tests, one at a time.
 #
 
 # Be more Bourne compatible (snippet copied from `tests/defs').
@@ -50,30 +45,26 @@ fi
 
 set -e
 
-# Sanity and usage checks.
-if test x"$instspc_action" = x; then
-  if test "$#,$1" = "1,--generate-makefile"; then
-    instspc_action=generate-makefile
-  else
-    echo "$0: empty action and no proper command line" >&2
-    exit 99
-  fi
-elif test $# -gt 0; then
-  echo "$0: action specified and command line arguments used" >&2
-  exit 99
-fi
+case $# in
+  0) echo "$0: missing argument" >&2; exit 99;;
+  1) ;;
+  *) echo "$0: too many arguments" >&2; exit 99;;
+esac
 
-case $instspc_action in
-  generate-makefile|generate-data)
+case $1 in
+  --generate-makefile|--generate-data)
+    instspc_action=`expr x"$1" : x'--\(.*\)'`
     ;;
-  test-build|test-install)
-    if test x"$instspc_test_name" = x; then
-      echo "$0: test name undefined for action '$instspc_action'" >&2
-      exit 99
-    fi
+  build-*.instspc|*/build-*.instspc)
+    instspc_action=test-build
+    instspc_test_name=`expr /"$1" : '.*/build-\(.*\)\.instspc'`
+    ;;
+  install-*.instspc|*/install-*.instspc)
+    instspc_action=test-install
+    instspc_test_name=`expr /"$1" : '.*/install-\(.*\)\.instspc'`
     ;;
   *)
-    echo "$0: invalid action: '$instspc_action'"
+    echo "$0: invalid argument '$1'" >&2
     exit 99
     ;;
 esac
@@ -261,21 +252,27 @@ if test x"$instspc_action" = x"generate-makefile"; then
   echo 'instspc_tests ='
   echo 'instspc_xfail_tests ='
   for test_name in $instspc_names_list; do
-    echo "instspc_tests += instspc-$test_name-build.test"
-    echo "instspc_tests += instspc-$test_name-install.test"
+    echo "instspc_tests += build-$test_name.instspc"
+    echo "instspc_tests += install-$test_name.instspc"
   done
   for test_name in $instspc_xfail_builds_list; do
-    echo "instspc_xfail_tests += instspc-$test_name-build.test"
+    echo "instspc_xfail_tests += build-$test_name.instspc"
   done
   for test_name in $instspc_xfail_installs_list; do
-    echo "instspc_xfail_tests += instspc-$test_name-install.test"
+    echo "instspc_xfail_tests += install-$test_name.instspc"
   done
   exit 0
 fi
 
 # We'll need the full setup provided by `tests/defs'.  Temporarily disable
 # the errexit flag, since the setup code might not be prepared to deal
-# with it.
+# with it.  Also pre-set `$me' for `tests/defs', so that different calls
+# to `instspc-tests.sh' won't try to use the same temporary directory.
+if test x"$instspc_action" = x"generate-data"; then
+  me=instspc-data
+else
+  me=$instspc_action-$instspc_test_name
+fi
 set +e
 . ./defs || Exit 99
 set -e
