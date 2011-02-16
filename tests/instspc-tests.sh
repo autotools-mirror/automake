@@ -101,11 +101,6 @@ define_problematic_string ()
 
 # Helper subroutines for creation of input data files.
 
-unindent ()
-{
-  sed 's/^ *//' # we don't strip leading tabs -- this is deliberate!
-}
-
 create_input_data ()
 {
   mkdir sub
