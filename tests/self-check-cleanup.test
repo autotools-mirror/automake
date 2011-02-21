@@ -1,0 +1,129 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Sanity check for the automake testsuite.
+# Check creation/removal of temporary test working directory by `./defs'.
+
+. ./defs || Exit 1
+
+if test x"$sh_errexit_works" != x"yes"; then
+  echo "$me: the shell can't have a working exit trap with 'set -e'" >&2
+  Exit 77
+fi
+
+# We still need a little hack to make ./defs work outside automake's
+# tree `tests' subdirectory.  Not a big deal.
+sed "s|^testbuilddir=.*|testbuilddir='`pwd`'|" ../defs-static >defs-static
+cp ../defs .
+
+have_symlinks=false
+ln -s defs foo && have_symlinks=:
+export have_symlinks # Is used also by spawned shells.
+
+dir=dummy.dir
+
+# Check that pre-test cleanup works also with directories with
+# "null" permissions, and containing broken symlinks.
+mkdir $dir $dir/sub
+cd $dir
+touch file sub/file
+if $have_symlinks; then
+  ln -s file symlink
+  ln -s none brokenlink
+fi
+cd ..
+chmod 000 $dir/sub/* $dir/file $dir/symlink
+chmod 000 $dir/sub $dir
+$SHELL -c  '. ./defs' dummy.test
+test ! -f $dir
+test ! -d $dir
+test ! -r $dir
+
+# Check that post-test cleanup works also with directories with
+# "null" permissions, and containing broken symlinks.
+$SHELL -c '
+  . ./defs || Exit 1
+  set -e
+  mkdir dir dir/sub
+  cd dir
+  touch file sub/file
+  if $have_symlinks; then
+    ln -s file symlink
+    ln -s none brokenlink
+  fi
+  cd ..
+  chmod 000 dir/sub/* dir/file dir/symlink
+  chmod 000 dir/sub dir
+' dummy.test
+test ! -f $dir
+test ! -d $dir
+test ! -r $dir
+
+# Check that pre-test cleanup does not unduly change the permissions of
+# files to which symlinks in the temporary test directory point to.
+if $have_symlinks; then
+
+  mkdir dir
+  chmod 000 dir
+  : > file
+  chmod 000 file
+
+  mkdir $dir
+  cd $dir
+  ln -s ../dir ../file .
+  cd ..
+  $SHELL -c '. ./defs' dummy.test
+  ls -l # For debugging.
+  ls -l file | grep "^---------- .*file"
+  ls -ld dir | grep "^d--------- .*dir"
+
+  $SHELL -c '
+    ocwd=`pwd` || exit 1
+    . ./defs || Exit 1
+    ln -s "$ocwd/dir" "$ocwd/file" .
+  ' dummy.test
+  ls -l # For debugging.
+  ls -l file | grep "^---------- .*file"
+  ls -ld dir | grep "^d--------- .*dir"
+
+  rmdir dir
+  rm -f file
+
+fi # $have_symlinks
+
+# Check that the cleanup trap does not remove the temporary
+# test directory in case of test failure, skip, hard-error,
+# or when receiving a signal.
+for bailout_command in \
+  'Exit 1' \
+  'Exit 2' \
+  'Exit 10' \
+  'Exit 77' \
+  'Exit 99' \
+  'Exit 126' \
+  'Exit 127' \
+  'Exit 255' \
+  'kill -1 $$' \
+  'kill -2 $$' \
+  'kill -9 $$' \
+  'kill -13 $$' \
+  'kill -15 $$' \
+; do
+  $SHELL -c  ". ./defs; : > foo; $bailout_command" dummy.test && Exit 1
+  test -f dummy.dir/foo
+done
+
+:

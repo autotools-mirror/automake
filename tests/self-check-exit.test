@@ -1,0 +1,80 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Sanity check for the automake testsuite.
+# Check that. in case of failing commands, the correct exit status is
+# passed to the exit trap installed by the `./defs' script.
+# Also check that the `errexit' shell flag is active.
+
+. ./defs-static || exit 99
+
+for st in 1 2 3 4 5 77 99 126 127 128 129 130 255; do
+
+  echo "* Try: Exit $st"
+  $SHELL -c  ". ./defs; Exit $st; :"
+  rc=$?
+  echo "* rc=$rc"
+  echo
+  test $rc -eq $st || exit 1
+
+  echo "* Try: sh -c 'exit $st'"
+  $SHELL -c  ". ./defs; sh -c 'exit $st'; :"
+  rc=$?
+  echo "* rc=$rc"
+  echo
+  test $rc -eq $st || exit 1
+
+done
+
+echo "* Try: non-existent-program"
+$SHELL -c  ". ./defs; non-existent-program; :"
+rc=$?
+echo "* rc=$rc"
+echo
+test $rc -eq 127 || exit 1
+
+for sig in 1 2 13 15; do
+
+  echo "* Try: kill -$sig \$\$"
+  if test $sig -eq 2; then
+    # Some Korn shells might otherwise get a spurious SIGINT
+    # signal when one is sent to the child $SHELL.
+    trap : 2
+  fi
+  $SHELL -c  ". ./defs; kill -$sig \$\$; :"
+  rc=$?
+  if test $sig -eq 2; then
+    # Reset default SIGINT handler as portably as possible.
+    trap 2 || trap - 2
+  fi
+  echo "* rc=$rc"
+  echo
+  if test x"$sh_errexit_works" = x"yes"; then
+    # The exit trap should turn into an hard errors any failure
+    # caused by signals.
+    test $rc -eq 99 || exit 1
+  else
+    # The exit trap is not installed, so that the shell should exit
+    # with status 128+n when receiving signal number n.  But don't
+    # be too strict in the check, as POSIX only says that "The exit
+    # status of a command that terminated because it received a
+    # signal shall be reported as greater than 128".
+    test $rc -gt 128 || exit 1
+  fi
+
+done
+
+:
