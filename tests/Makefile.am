@@ -1015,6 +1015,6 @@ clean-local-check:
 	 if test "$$#,$$1" = "1,*.dir"; then \
 	   : there is no test directory to clean; \
 	 else \
-	   find "$$@" -type d '!' -perm -200 -exec chmod u+w {} ';'; \
+	   find "$$@" -type d ! -perm -700 -exec chmod u+rwx {} ';'; \
 	   rm -rf "$$@"; \
 	 fi;
