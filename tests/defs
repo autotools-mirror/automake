@@ -146,6 +146,21 @@ AUTOMAKE_fails ()
   AUTOMAKE_run 1 ${1+"$@"}
 }
 
+commented_sed_unindent_prog='
+  /^$/b                    # Nothing to do for empty lines.
+  x                        # Get x<indent> into pattern space.
+  /^$/{                    # No prior x<indent>, go prepare it.
+    g                      # Copy this 1st non-blank line into pattern space.
+    s/^\(['"$tab"' ]*\).*/x\1/   # Prepare x<indent> in pattern space.
+  }                        # Now: x<indent> in pattern and <line> in hold.
+  G                        # Build x<indent>\n<line> in pattern space, and
+  h                        # duplicate it into hold space.
+  s/\n.*$//                # Restore x<indent> in pattern space, and
+  x                        # exchange with the above duplicate in hold space.
+  s/^x\(.*\)\n\1//         # Remove leading <indent> from <line>.
+  s/^x.*\n//               # Restore <line> when there is no leading <indent>.
+'
+
 # unindent [input files...]
 # -------------------------
 # Remove the "proper" amount of leading whitespace from the given files,
@@ -154,14 +169,10 @@ AUTOMAKE_fails ()
 # files.  If no input file is specified, standard input is implied.
 unindent ()
 {
-  cat ${1+"$@"} > deindent.tmp
-  indentation=`sed <deindent.tmp -n "
-    /[^ $tab].*$/{
-      s///p
-      q
-  }"`
-  sed "s/^$indentation//" deindent.tmp
-  rm -f deindent.tmp
+  if test x"$sed_unindent_prog" = x; then
+    sed_unindent_prog=`echo "$commented_sed_unindent_prog" | sed -e "s/  *# .*//"`
+  fi
+  sed "$sed_unindent_prog" ${1+"$@"}
 }
 
 
