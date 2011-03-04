@@ -249,7 +249,7 @@ comment8.test \
 comment9.test \
 commen10.test \
 commen11.test \
-comments-in-var-defn.test \
+comments-in-var-def.test \
 compile.test \
 compile2.test \
 compile3.test \
