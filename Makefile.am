@@ -111,6 +111,7 @@ dist-hook:
 # Some simple checks, and then ordinary check.  These are only really
 # guaranteed to work on my machine.
 syntax_check_rules = \
+sc_test_names \
 sc_diff_automake_in_automake \
 sc_perl_syntax \
 sc_no_brace_variable_expansions \
@@ -150,6 +151,66 @@ sc_at_in_texi
 .PHONY: $(syntax_check_rules)
 $(syntax_check_rules): automake aclocal
 maintainer-check: $(syntax_check_rules)
+
+## Look for test whose names can cause spurious failures when used as
+## first argument to AC_INIT (chiefly because they might contain an
+## m4/m4sugar builtin or macro name).
+m4_builtins = \
+  __gnu__ \
+  __unix__ \
+  bpatsubst \
+  bregexp \
+  builtin \
+  changecom \
+  changequote \
+  changeword \
+  debugfile \
+  debugmode \
+  decr \
+  define \
+  defn \
+  divert \
+  divnum \
+  dnl \
+  dumpdef \
+  errprint \
+  esyscmd \
+  eval \
+  format \
+  ifdef \
+  ifelse \
+  include \
+  incr \
+  index \
+  indir \
+  len \
+  m4exit \
+  m4wrap \
+  maketemp \
+  mkstemp \
+  patsubst \
+  popdef \
+  pushdef \
+  regexp \
+  shift \
+  sinclude \
+  substr \
+  symbols \
+  syscmd \
+  sysval \
+  traceoff \
+  traceon \
+  translit \
+  undefine \
+  undivert
+sc_test_names:
+	@m4_builtin_rx=`echo $(m4_builtins) | sed 's/ /|/g'`; \
+	 m4_macro_rx="\\<($$m4_builtin_rx)\\>|\\<_?(A[CUMHS]|m4)_"; \
+	 if ls tests/*.test | LC_ALL=C grep -E "$$m4_macro_rx"; then \
+	   echo "the names of the tests above can be problematic" 1>&2; \
+	   echo "Avoid test names that contain names of m4 macros" 1>&2; \
+	   exit 1; \
+	 fi
 
 ## This check avoids accidental configure substitutions in the source.
 ## There are exactly 8 lines that should be modified.  This works out

@@ -288,6 +288,7 @@ dirforbid.test \
 dirlist.test \
 dirlist2.test \
 discover.test \
+dist-included-parent-dir.test \
 distcleancheck.test \
 distcom2.test \
 distcom3.test \
@@ -362,6 +363,7 @@ gnuwarn2.test \
 gnits.test \
 gnits2.test \
 gnits3.test \
+hdr-vars-defined-once.test \
 header.test \
 help.test \
 help2.test \
@@ -381,8 +383,6 @@ help-upc.test \
 hfs.test \
 hosts.test \
 implicit.test \
-include.test \
-include2.test \
 info.test \
 init.test \
 init2.test \
@@ -487,6 +487,7 @@ ltlibobjs.test \
 ltlibsrc.test \
 ltorder.test \
 lzma.test \
+m4-inclusion.test \
 maintclean.test \
 make.test \
 makej.test \
@@ -662,7 +663,6 @@ silent-lex-gcc.test \
 silent-lex-generic.test \
 silent-yacc-gcc.test \
 silent-yacc-generic.test \
-sinclude.test \
 srcsub.test \
 srcsub2.test \
 space.test \
