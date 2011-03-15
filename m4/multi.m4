@@ -1,12 +1,12 @@
 ##                                                          -*- Autoconf -*-
-# Copyright (C) 1998, 1999, 2000, 2001, 2003, 2004, 2005, 2006
+# Copyright (C) 1998, 1999, 2000, 2001, 2003, 2004, 2005, 2006, 2011
 # Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 7
+# serial 8
 
 # AM_ENABLE_MULTILIB([MAKEFILE], [REL-TO-TOP-SRCDIR])
 # ---------------------------------------------------
@@ -37,7 +37,7 @@ if test "$srcdir" = "."; then
 else
   multi_basedir="$srcdir/$2"
 fi
-AC_SUBST(multi_basedir)
+AC_SUBST([multi_basedir])
 
 # Even if the default multilib is not a cross compilation,
 # it may be that some of the other multilibs are.
