@@ -141,6 +141,9 @@ check8.test \
 check9.test \
 check10.test \
 check11.test \
+check-exported-srcdir.test \
+check-tests-in-builddir.test \
+check-tests_environment.test \
 checkall.test \
 clean.test \
 clean2.test \
@@ -166,7 +169,7 @@ comment8.test \
 comment9.test \
 commen10.test \
 commen11.test \
-comments-in-var-defn.test \
+comments-in-var-def.test \
 compile.test \
 compile2.test \
 compile_f90_c_cxx.test \
@@ -285,6 +288,7 @@ dirforbid.test \
 dirlist.test \
 dirlist2.test \
 discover.test \
+dist-included-parent-dir.test \
 distcleancheck.test \
 distcom2.test \
 distcom3.test \
@@ -359,6 +363,7 @@ gnuwarn2.test \
 gnits.test \
 gnits2.test \
 gnits3.test \
+hdr-vars-defined-once.test \
 header.test \
 help.test \
 help2.test \
@@ -371,14 +376,13 @@ help-init.test \
 help-lispdir.test \
 help-maintainer.test \
 help-multilib.test \
+help-python.test \
 help-regex.test \
 help-silent.test \
 help-upc.test \
 hfs.test \
 hosts.test \
 implicit.test \
-include.test \
-include2.test \
 info.test \
 init.test \
 init2.test \
@@ -477,11 +481,13 @@ ltcond.test \
 ltcond2.test \
 ltconv.test \
 ltdeps.test \
+ltinit.test \
 ltinstloc.test \
 ltlibobjs.test \
 ltlibsrc.test \
 ltorder.test \
 lzma.test \
+m4-inclusion.test \
 maintclean.test \
 make.test \
 makej.test \
@@ -568,6 +574,7 @@ parallel-tests8.test \
 parallel-tests9.test \
 parallel-tests10.test \
 parallel-tests-unreadable-log.test \
+parallel-tests-subdir.test \
 parse.test \
 percent.test \
 percent2.test \
@@ -656,7 +663,6 @@ silent-lex-gcc.test \
 silent-lex-generic.test \
 silent-yacc-gcc.test \
 silent-yacc-generic.test \
-sinclude.test \
 srcsub.test \
 srcsub2.test \
 space.test \
@@ -834,6 +840,6 @@ clean-local-check:
 	 if test "$$#,$$1" = "1,*.dir"; then \
 	   : there is no test directory to clean; \
 	 else \
-	   find "$$@" -type d '!' -perm -200 -exec chmod u+w {} ';'; \
+	   find "$$@" -type d ! -perm -700 -exec chmod u+rwx {} ';'; \
 	   rm -rf "$$@"; \
 	 fi;

@@ -1,3 +1,161 @@
+2011-03-21  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	tests: fix unindent to use printf not echo for script.
+	* tests/defs.in: Use printf rather than echo, as the latter may
+	interpret the backslashes in the sed script.  Fixes test
+	failures with dash as /bin/sh.
+
+2011-03-17  Stefano Lattarini  <stefano.lattarini@gmail.com>
+	    Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	maintcheck: look for problematic names of testcases
+	The configure.in stub created by default by `tests/defs' obtains
+	the first argument of AC_INIT from the test name, and this can
+	cause some supported autoconf versions to fail with a spurious
+	error if that test name contains the name of an m4 or m4sugar
+	builtin or macro (e.g., `defn' or `m4_undefine').
+	See for example the bug fixed by commit v1.11-287-g1325a8a.
+	This change add a maintainer check that warns about test names
+	which are possibly problematic in this regard.
+	* Makefile.am (sc_test_names): New maintainer-check target.
+	(syntax_check_rules): Add it.
+	(m4_builtins): New helper variable.
+	(TESTS): Updated according to the following renamings.
+	* tests/include.test: Renamed ...
+	* tests/hdr-vars-defined-once.test: ... to this.
+	* tests/sinclude.test: Renamed ...
+	* tests/m4-inclusion.test: ... to this, and simplified
+	accordingly.
+	* tests/include2.test: Renamed ...
+	* tests/dist-included-parent-dir.test: ... to this, for
+	consistency.
+
+2011-03-04  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix bug in alloca*.test
+	* tests/alloca.test: Make grepping of automake stderr stricter,
+	add a trailing `:' command; also, add AC_PROG_CC to configure.in,
+	and create a dummy alloca.c file, to ensure that we fail for the
+	proper reason.
+	* tests/alloca2.test: Likewise.  Also, look for LT_INIT, not
+	AC_PROG_LIBTOOL, in the error message (bug introduced with commit
+	v1.11-315-gd51e7b7 "libtool: suggest LT_INIT if LTLIBRARIES
+	primary is used").
+	From a report by Patrick Welche.
+
+2011-03-04  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix bug (comments-in-var-defn.test + autoconf 2.62)
+	* tests/comments-in-var-defn.test: The configure.in stub created
+	by default, which has the AC_INIT first argument obtained by the
+	test name, causes autoconf 2.62 to fail with a spurious error
+	message like: "configure.in:1: error: defn: undefined macro:".
+	Thus, to prevent this, the test is renamed to ...
+	* tests/comments-in-var-def.test: ... this.
+	* tests/Makefile.am (TESTS): Updated.
+
+2011-03-04  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	cosmetics: convert encoding from ISO-8859 to UTF-8
+	* ChangeLog.03: Convert encoding to UTF-8.
+	* ChangeLog.96: Likewise.
+	* ChangeLog.98: Likewise.
+	* NEWS: Likewise.
+	* TODO: Likewise.
+
+2011-03-01  Peter Rosin  <peda@lysator.liu.se>
+
+	test defs: unindent without temporary file
+	* tests/defs.in (commented_sed_unindent_prog): Commented Sed program
+	that strips the "proper" amount of leading whitespace.
+	(unindent): Lazily strip comments from the above program and use it
+	to unindent without using a temporary file.
+
+2011-02-26  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	libtool: suggest LT_INIT if LTLIBRARIES primary is used
+	When the LTLIBRARIES primary was used, but $(LIBTOOL) wasn't
+	defined, automake suggested to add a call to AC_PROG_LIBTOOL
+	in configure.ac.  But that macro is deprecated since Libtool
+	version 1.9b (2004-08-29), in favor of the newer LT_INIT.  So
+	suggest the use of this latter macro instead.
+	* lib/Automake/Variable.pm (%_am_macro_for_var): Pair 'LIBTOOL'
+	with 'LT_INIT', not with 'AC_PROG_LIBTOOL'.
+	* libtool4.test: Adjust and extend.  Also, add a call to macro
+	AC_PROG_CC in configure.in, to help ensuring that automake does
+	not fail for the wrong reasons.
+	* ltinit.test: New test, ensure that automake's libtool support
+	works with LT_INIT-based interface.
+	Thanks to Jack Kelly for the suggestion.
+
+2011-02-20  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: tempdirs with restrictive permissions are cleaned correctly
+	Before this change, the removal of a temporary test directory
+	containing subdirectories with restrictive permissions (such as
+	'r--r--r--') could fail.
+	* tests/defs: Ensure that all the subdirectories of a temporary
+	test directory have the 'read', 'write' and 'execute' bits set,
+	before trying to remove it with `rm -rf'.
+	* tests/Makefile.am (clean-local-check): Likewise.
+
+2011-02-16  Stefano Lattarini  <stefano.lattarini@gmail.com>
+	    Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	test defs: add subroutine for input unindenting
+	* tests/defs.in (unindent): New subroutine.
+
+2011-02-15  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	python: report the 'PYTHON' influential environment variable
+	* m4/python.m4 (AM_PATH_PYTHON): Call AC_ARG_VAR on PYTHON.
+	* doc/automake.texi (Python): Update and extend.
+	* tests/help-python.test: New test.
+	* tests/Makefile.am (TESTS): Update.
+	* THANKS (Jack Kelly): Update e-mail address.
+	Suggestion by Jack Kelly.
+
+2011-02-10  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests defs: clear TESTS_ENVIRONMENT variable
+	* tests/defs.in (TESTS_ENVIRONMENT): Unset it, so that values
+	from environment won't interfere with the testcases.
+	Suggestion by Ralf Wildenhues.
+
+2011-02-06  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: tweak few tests on simple and parallel test drivers
+	* tests/check-exported-srcdir.test: Improve heading comments.
+	* tests/check-tests-in-builddir.test: Likewise.  Also, unset the
+	`FOO_EXIT_STATUS' variable, so that any pre-existing value in the
+	environment won't risk to interfere with the test.
+	Suggestions by Ralf Wildenhues.
+
+2011-02-01  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	coverage: more tests on simple and parallel test drivers
+	* tests/parallel-tests-subdir.test: New test.
+	* tests/check-exported-srcdir.test: Likewise.
+	* tests/check-tests-in-builddir.test: Likewise.
+	* tests/check-tests_environment.test: Likewise.
+	* tests/Makefile.am (TESTS): Update.
+
+2011-01-29  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix spurious failures in lflags*.test
+	* tests/lflags.test: Remove 'LEX' from the environment, so
+	that it won't be erroneously picked up by `make -e'.
+	* tests/lflags2.test: Likewise.
+
+2011-01-24  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	docs: color-tests issues with parallel make
+	* doc/automake.texi (Simple Tests): Document that automatic
+	recognition of a capable terminal attached to stdout can fail
+	with some make implementation when running in parallel mode,
+	thus causing colored test output not to be automatically
+	activated when it should.
+
 2011-01-23  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
 
 	tests: avoid instspc.test failures due to make's whitespace trimming
