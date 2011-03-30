@@ -21,6 +21,7 @@ all.test \
 auxdir2.test \
 cond17.test \
 gcj6.test \
+pr8365-remake-timing.test \
 txinfo5.test
 
 include $(srcdir)/parallel-tests.am
@@ -641,6 +642,7 @@ remake4.test \
 remake5.test \
 remake6.test \
 remake7.test \
+pr8365-remake-timing.test \
 regex.test \
 req.test \
 reqd.test \
