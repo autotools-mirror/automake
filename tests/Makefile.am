@@ -489,6 +489,7 @@ ltorder.test \
 lzma.test \
 m4-inclusion.test \
 maintclean.test \
+maintclean-vpath.test \
 make.test \
 makej.test \
 makej2.test \
