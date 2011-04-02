@@ -25,6 +25,7 @@ auxdir2.test \
 cond17.test \
 gcj6.test \
 override-conditional-2.test \
+pr8365-remake-timing.test \
 txinfo5.test
 
 
@@ -530,6 +531,7 @@ lex4.test \
 lex5.test \
 lexcpp.test \
 lexvpath.test \
+lex-subobj-nodep.test \
 lflags.test \
 lflags2.test \
 libexec.test \
@@ -604,6 +606,7 @@ lzip.test \
 lzma.test \
 m4-inclusion.test \
 maintclean.test \
+maintclean-vpath.test \
 make.test \
 makej.test \
 makej2.test \
@@ -784,6 +787,7 @@ remake10b.test \
 remake10c.test \
 remake11.test \
 remake12.test \
+pr8365-remake-timing.test \
 regex.test \
 regex-obsolete.test \
 req.test \

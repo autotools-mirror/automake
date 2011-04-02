@@ -1,6 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001, 2002, 2003, 2010, 2011 Free Software Foundation,
-# Inc.
+# Copyright (C) 2011 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,10 +15,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Make sure distclean and maintainer-clean erase the right files.
-# This test is for in-tree builds; see sister test `maintclean-vpath.test'
-# for VPATH builds.
+# This test is for VPATH builds; see sister test `maintclean-vpath.test'
+# for in-tree builds.
 
 . ./defs || Exit 1
+
+set -e
 
 cat >> configure.in << 'END'
 AC_CONFIG_FILES([bar sub/Makefile])
@@ -51,12 +52,18 @@ $AUTOMAKE
 
 # Users can disable autom4te.cache.
 if test -d autom4te.cache; then
-  test_cache='test -d autom4te.cache'
+  test_cache='test -d ../autom4te.cache'
 else
   test_cache=:
 fi
 
-./configure
+mkdir build
+
+chmod a-w . sub
+
+cd build
+
+../configure
 test -f bar
 
 $MAKE
@@ -71,10 +78,10 @@ test ! -f sub/Makefile
 test ! -f config.status
 test -f foo.c
 test -f sub/zap
-test -f sub/zap.sh
+test -f ../sub/zap.sh
 $test_cache
 
-./configure
+../configure
 test -f bar
 
 $MAKE foo.c
@@ -84,14 +91,16 @@ $MAKE zap
 test -f zap
 cd ..
 
+chmod u+w ..
+
 $MAKE maintainer-clean
-test -f sub/zap.sh
+test -f ../sub/zap.sh
 test ! -f bar
 test ! -f foo.c
 test ! -f sub/zap
 test ! -f Makefile
 test ! -f sub/Makefile
 test ! -f config.status
-test ! -d autom4te.cache
+test ! -d ../autom4te.cache
 
 :

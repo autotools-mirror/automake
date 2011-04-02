@@ -14,52 +14,60 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that the testsuite driver (either with or without the
-# parallel-tests option enabled) exports the `srcdir' value in the
-# environment of the tests.  This is documented in the manual.
+# Ensure subdirs for subdir scanners are generated when subdir-objects
+# are used, even when dependency tracking is disabled.
 
+required=flex
 . ./defs || Exit 1
 
 set -e
 
-show_info ()
-{
-  if test x"$parallel_tests" = x"yes"; then
-     cat foo.log
-     cat test-suite.log
-  else
-     :
-  fi
-}
-
-mkdir SrcDir
-mv [!S]* SrcDir
-mkdir BuildDir
-cd SrcDir
-
-cat >> configure.in << 'END'
+cat >>configure.in <<\END
+AC_PROG_CC
+AM_PROG_CC_C_O
+AC_PROG_LEX
 AC_OUTPUT
 END
 
-cat > Makefile.am << 'END'
-TESTS = foo.test
+cat >Makefile.am <<\END
+AUTOMAKE_OPTIONS = subdir-objects
+bin_PROGRAMS = p1 p2
+p1_SOURCES = sub1/s1.l
+p2_SOURCES = sub2/s2.l
+p2_CPPFLAGS = -DWHATEVER
 END
 
-cat > foo.test <<'END'
-#!/bin/sh
-echo "foo.test: srcdir='$srcdir'"
-test x"$srcdir" = x"../SrcDir"
+mkdir sub1 sub2
+
+cat >sub1/s1.l <<\END
+%%
+"END"   return EOF;
+.
+%%
+int main (void)
+{
+  while (yylex () != EOF)
+    ;
+  return 0;
+}
+
+int yywrap(void)
+{
+  return 0;
+}
 END
-chmod a+x foo.test
+
+cp sub1/s1.l sub2/s2.l
 
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
-
-cd ../BuildDir
-../SrcDir/configure
-
-$MAKE check || { show_info; Exit 1; }
-show_info
+mkdir build
+cd build
+../configure --disable-dependency-tracking
+$MAKE sub1/s1.c
+$MAKE sub2/s2.c
+rm -rf sub1 sub2
+$MAKE
 
 :
