@@ -428,6 +428,7 @@ lex2.test \
 lex3.test \
 lex4.test \
 lex5.test \
+lex-subobj-nodep.test \
 lflags.test \
 lflags2.test \
 libexec.test \
