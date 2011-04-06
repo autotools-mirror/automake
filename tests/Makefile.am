@@ -421,6 +421,7 @@ interp2.test \
 java.test \
 java2.test \
 java3.test \
+java-check.test \
 javaprim.test \
 javasubst.test \
 ldadd.test \
