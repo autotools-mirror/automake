@@ -790,6 +790,14 @@ remake10b.test \
 remake10c.test \
 remake11.test \
 remake12.test \
+remake-gnulib-add-acsubst.test \
+remake-gnulib-add-header.test \
+remake-gnulib-remove-header.test \
+remake-moved-m4-file.test \
+remake-deleted-m4-file.test \
+remake-renamed-m4-file.test \
+remake-renamed-m4-macro-and-file.test \
+remake-renamed-m4-macro.test \
 pr8365-remake-timing.test \
 regex.test \
 regex-obsolete.test \
