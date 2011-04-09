@@ -21,6 +21,7 @@ all.test \
 auxdir2.test \
 cond17.test \
 gcj6.test \
+pr8365-remake-timing.test \
 txinfo5.test
 
 include $(srcdir)/parallel-tests.am
@@ -276,6 +277,7 @@ depcomp6.test \
 depcomp7.test \
 depcomp8a.test \
 depcomp8b.test \
+depcomp9.test \
 depdist.test \
 depend.test \
 depend2.test \
@@ -428,6 +430,7 @@ lex2.test \
 lex3.test \
 lex4.test \
 lex5.test \
+lex-subobj-nodep.test \
 lflags.test \
 lflags2.test \
 libexec.test \
@@ -489,6 +492,7 @@ ltorder.test \
 lzma.test \
 m4-inclusion.test \
 maintclean.test \
+maintclean-vpath.test \
 make.test \
 makej.test \
 makej2.test \
@@ -639,6 +643,7 @@ remake4.test \
 remake5.test \
 remake6.test \
 remake7.test \
+pr8365-remake-timing.test \
 regex.test \
 req.test \
 reqd.test \
