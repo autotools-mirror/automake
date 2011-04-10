@@ -813,6 +813,7 @@ yacc-nodist.test \
 yaccpp.test \
 yaccvpath.test \
 yacc-d-vpath.test \
+yacc-mix-c-cxx.test \
 yacc-weirdnames.test \
 yflags.test \
 yflags2.test \
