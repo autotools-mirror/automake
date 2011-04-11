@@ -1,4 +1,5 @@
-# Copyright (C) 2003, 2004, 2006, 2007, 2010  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2004, 2006, 2007, 2010, 2011 Free Software
+# Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -126,7 +127,7 @@ use vars '%actions';
 
 =item <$suffix_rules>
 
-This maps the source extension for all suffix rule seen to
+This maps the source extension for all suffix rules seen to
 a C<hash> whose keys are the possible output extensions.
 
 Note that this is transitively closed by construction:
@@ -258,7 +259,7 @@ sub reject_rule ($$)
 =item C<accept_extensions (@exts)>
 
 Update C<$KNOWN_EXTENSIONS_PATTERN> to recognize the extensions
-listed C<@exts>.  Extensions should contain a dot if needed.
+listed in C<@exts>.  Extensions should contain a dot if needed.
 
 =cut
 
@@ -306,7 +307,7 @@ sub register_action ($$)
 
 =item C<Automake::Rule::reset>
 
-The I<forget all> function.  Clears all know rules and reset some
+The I<forget all> function.  Clears all known rules and resets some
 other internal data.
 
 =cut
@@ -374,7 +375,7 @@ sub reset()
      # Tarballing.
      'dist-all'             => [],
 
-     # Phoning.
+     # Phonying.
      '.PHONY'               => [],
      # Recursive install targets (so `make -n install' works for BSD Make).
      '.MAKE'		    => [],
@@ -384,7 +385,7 @@ sub reset()
 
 =item C<register_suffix_rule ($where, $src, $dest)>
 
-Register a suffix rules defined on C<$where> that transform
+Register a suffix rule defined on C<$where> that transforms
 files ending in C<$src> into files ending in C<$dest>.
 
 This upgrades the C<$suffix_rules> variables.
@@ -406,11 +407,11 @@ sub register_suffix_rule ($$$)
   # CANNOT rewrite the target (i.e., automagically replace `.o'
   # and `.obj' by `.$(OBJEXT)' in the output), or warn the user
   # that (s)he'd better use `.$(OBJEXT)', because Automake itself
-  # output suffix rules for `.o' or `.obj'...
+  # output suffix rules for `.o' or `.obj' ...
   $dest = '.$(OBJEXT)' if ($dest eq '.o' || $dest eq '.obj');
 
   # Reading the comments near the declaration of $suffix_rules might
-  # help to understand the update of $suffix_rules that follows...
+  # help to understand the update of $suffix_rules that follows ...
 
   # Register $dest as a possible destination from $src.
   # We might have the create the \hash.
@@ -788,7 +789,7 @@ sub define ($$$$$)
     }
 
   # We honor inference rules with multiple targets because many
-  # make support this and people use it.  However this is disallowed
+  # makes support this and people use it.  However this is disallowed
   # by POSIX.  We'll print a warning later.
   my $target_count = 0;
   my $inference_rule_count = 0;

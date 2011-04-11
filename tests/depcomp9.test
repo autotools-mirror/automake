@@ -1,0 +1,92 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# makedepend should work in VPATH mode.
+
+# Here's the bug: makedepend will prefix VPATH to the object file name,
+# thus the second make will invoke depcomp with object='../../src/foo.o',
+# causing errors such as:
+# touch: cannot touch `../../src/.deps/foo.TPo': No such file or directory
+# makedepend: error:  cannot open "../../src/.deps/foo.TPo"
+# ../../depcomp: line 560: ../../src/.deps/foo.TPo: No such file or directory
+
+# We include subfoo only to be sure that we don't remove too much
+# from the object file name.
+
+required='makedepend'
+. ./defs || Exit 1
+
+mkdir src src/sub build
+
+cat >> configure.in << 'END'
+AC_PROG_CC
+AM_PROG_CC_C_O
+AC_CONFIG_FILES([src/Makefile])
+AC_OUTPUT
+END
+
+cat > Makefile.am << 'END'
+SUBDIRS = src
+END
+
+cat > src/Makefile.am << 'END'
+AUTOMAKE_OPTIONS = subdir-objects
+bin_PROGRAMS = foo
+foo_SOURCES = foo.c foo.h sub/subfoo.c
+END
+
+cat > src/foo.h <<EOF
+extern int subfoo (void);
+EOF
+
+cat >src/foo.c <<EOF
+#include "foo.h"
+int main (void)
+{
+  return subfoo ();
+}
+EOF
+
+cat >src/sub/subfoo.c <<EOF
+#include "foo.h"
+int subfoo (void)
+{
+  return 0;
+}
+EOF
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE -a
+
+cd build
+../configure am_cv_CC_dependencies_compiler_type=makedepend
+
+# Do not error out with the first make, as the forced 'makedepend'
+# depmode might not actually work, but we have overridden the
+# _AM_DEPENDENCIES tests.
+$MAKE || Exit 77
+
+# We must clean and rebuild, as the actual error only happens the second
+# time the objects are built because 'makedepend' has silently messed up
+# the .Po files the first time.
+$MAKE clean
+
+$MAKE >out 2>&1 || { cat out; Exit 1; }
+cat out
+grep 'src/[._]deps' out && Exit 1
+
+:

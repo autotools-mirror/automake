@@ -102,7 +102,7 @@ section entitled ``GNU Free Documentation License.''
 * Generalities::                General ideas
 * Examples::                    Some example packages
 * Invoking Automake::           Creating a Makefile.in
-* configure::                   Scanning configure.ac or configure.in
+* configure::                   Scanning configure.ac, using aclocal
 * Directories::                 Declaring subdirectories
 * Programs::                    Building programs and libraries
 * Other Objects::               Other derived objects
@@ -157,7 +157,8 @@ Use Cases for the GNU Build System
 A Small Hello World
 
 * Creating amhello::            Create @file{amhello-1.0.tar.gz} from scratch
-* amhello Explained::           @file{configure.ac} and @file{Makefile.am} explained
+* amhello's configure.ac Setup Explained::
+* amhello's Makefile.am Setup Explained::
 
 General ideas
 
@@ -174,7 +175,7 @@ Some example packages
 * Complete::                    A simple example, start to finish
 * true::                        Building true and false
 
-Scanning @file{configure.ac}
+Scanning @file{configure.ac}, using @command{aclocal}
 
 * Requirements::                Configuration requirements
 * Optional::                    Other things Automake recognizes
@@ -1392,9 +1393,11 @@ instantiate the GNU Build System, while the second explains the
 meaning of the @file{configure.ac} and @file{Makefile.am} files read
 by the Autotools.
 
+@anchor{amhello Explained}
 @menu
 * Creating amhello::            Create @file{amhello-1.0.tar.gz} from scratch
-* amhello Explained::           @file{configure.ac} and @file{Makefile.am} explained
+* amhello's configure.ac Setup Explained::
+* amhello's Makefile.am Setup Explained::
 @end menu
 
 @node Creating amhello
@@ -1555,8 +1558,10 @@ creating @file{configure} from @file{configure.ac}, while
 direct you to the right manual when seeking answers.
 
 
-@node amhello Explained
-@subsection @file{amhello-1.0} Explained
+@node amhello's configure.ac Setup Explained
+@subsection @code{amhello}'s @file{configure.ac} Setup Explained
+
+@cindex @file{configure.ac}, Hello World
 
 Let us begin with the contents of @file{configure.ac}.
 
@@ -1664,6 +1669,10 @@ your package may need (@pxref{autoscan Invocation, , Using
 @command{autoscan} to Create @file{configure.ac}, autoconf, The
 Autoconf Manual}).
 
+
+@node amhello's Makefile.am Setup Explained
+@subsection @code{amhello}'s @file{Makefile.am} Setup Explained
+
 @cindex @file{Makefile.am}, Hello World
 
 We now turn to @file{src/Makefile.am}.  This file contains
@@ -1735,6 +1744,11 @@ necessary: @command{automake} automatically distributes any
 automatically distributed is presented by @code{automake --help}).
 The only important effect of this second line is therefore to install
 @file{README} during @code{make install}.
+
+One thing not covered in this example is accessing the installation
+directory values (@pxref{Standard Directory Variables}) from your
+program code, that is, converting them into defined macros.  For this,
+@pxref{Defining Directories,,, autoconf, The Autoconf Manual}.
 
 
 @node Generalities
@@ -2677,10 +2691,12 @@ concurrently.  This is an experimental feature.
 
 
 @node configure
-@chapter Scanning @file{configure.ac}
+@chapter Scanning @file{configure.ac}, using @command{aclocal}
 
 @cindex @file{configure.ac}, scanning
 @cindex Scanning @file{configure.ac}
+@cindex Using @command{aclocal}
+@cindex @command{aclocal}, using
 
 Automake scans the package's @file{configure.ac} to determine certain
 information about the package.  Some @command{autoconf} macros are required
@@ -2905,7 +2921,7 @@ Automake will generate rules to rebuild these headers.  Older versions
 of Automake required the use of @code{AM_CONFIG_HEADER}
 (@pxref{Macros}); this is no longer the case.
 
-As for @code{AC_CONFIG_FILES} (@pxref{Requirements}), parts of the
+As with @code{AC_CONFIG_FILES} (@pxref{Requirements}), parts of the
 specification using shell variables will be ignored as far as
 cleaning, distributing, and rebuilding is concerned.
 
@@ -3442,6 +3458,7 @@ not actually needed.  Doing so should alleviate many problems of the
 current implementation, however it requires a stricter style from the
 macro authors.  Hopefully it is easy to revise the existing macros.
 For instance,
+
 @example
 # bad style
 AC_PREREQ(2.57)
@@ -3451,8 +3468,10 @@ AX_FOO
 AX_BAR
 ])
 @end example
+
 @noindent
 should be rewritten as
+
 @example
 AC_DEFUN([AX_FOOBAR],
 [AC_PREREQ([2.57])dnl
@@ -7445,18 +7464,20 @@ installation less nice for everybody else.
 
 There are two ways to avoid byte-compiling.  Historically, we have
 recommended the following construct.
+
 @example
 lisp_LISP = file1.el file2.el
 ELCFILES =
 @end example
+
 @noindent
 @code{ELCFILES} is an internal Automake variable that normally lists
 all @file{.elc} files that must be byte-compiled.  Automake defines
 @code{ELCFILES} automatically from @code{lisp_LISP}.  Emptying this
 variable explicitly prevents byte-compilation.
 
-Since Automake 1.8, we now recommend using @code{lisp_DATA} instead.  As
-in
+Since Automake 1.8, we now recommend using @code{lisp_DATA} instead:
+
 @example
 lisp_DATA = file1.el file2.el
 @end example
@@ -7588,7 +7609,8 @@ files in your @file{Makefile.am}, depending on where you want your files
 installed (see the definitions of @code{pythondir} and
 @code{pkgpythondir} below).
 
-@defmac AM_PATH_PYTHON (@ovar{version}, @ovar{action-if-found}, @ovar{action-if-not-found})
+@defmac AM_PATH_PYTHON (@ovar{version}, @ovar{action-if-found}, @
+  @ovar{action-if-not-found})
 
 Search for a Python interpreter on the system.  This macro takes three
 optional arguments.  The first argument, if present, is the minimum
@@ -7614,6 +7636,9 @@ If Python >= 2.5 was only @emph{optional} to the package,
 AM_PATH_PYTHON([2.5],, [:])
 @end example
 
+If the @env{PYTHON} variable is set when @code{AM_PATH_PYTHON} is
+called, then that will be the only Python interpreter that is tried.
+
 @code{AM_PATH_PYTHON} creates the following output variables based on
 the Python installation found during configuration.
 @end defmac
@@ -7629,8 +7654,8 @@ to setup a conditional in order to disable the relevant part of a build
 as follows.
 
 @example
-  AM_PATH_PYTHON(,, [:])
-  AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
+AM_PATH_PYTHON(,, [:])
+AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
 @end example
 
 @item PYTHON_VERSION
@@ -8574,6 +8599,12 @@ colored output by setting the @command{make} variable
 @samp{AM_COLOR_TESTS=no}, or force colored output even without a connecting
 terminal with @samp{AM_COLOR_TESTS=always}.
 
+Note that the semantics of some @command{make} implementations when used
+in parallel mode (@pxref{Parallel make,,, autoconf, The Autoconf Manual})
+can cause the automatic detection of a connection to a capable terminal
+to fail.  In that case, you can still resort to the use of
+@samp{AM_COLOR_TESTS=always}.
+
 @vindex TESTS
 @vindex TESTS_ENVIRONMENT
 The variable @code{TESTS_ENVIRONMENT} can be used to set environment
@@ -8581,12 +8612,18 @@ variables for the test run; the environment variable @env{srcdir} is
 set in the rule.  If all your test programs are scripts, you can also
 set @code{TESTS_ENVIRONMENT} to an invocation of the shell (e.g.
 @samp{$(SHELL) -x} can be useful for debugging the tests), or any other
-interpreter.  For instance the following setup is used by the Automake
-package to run four tests in Perl.
+interpreter.  For instance, the following setup may be used to run tests
+with Perl:
+
 @example
-TESTS_ENVIRONMENT = $(PERL) -Mstrict -I $(top_srcdir)/lib -w
-TESTS = Condition.pl DisjConditions.pl Version.pl Wrap.pl
+TESTS_ENVIRONMENT = $(PERL) -Mstrict -w
+TESTS = foo.pl bar.pl baz.pl
 @end example
+
+Note that the @option{parallel-tests} driver provides a more elegant
+way to achieve the same effect, freeing the @code{TESTS_ENVIRONMENT}
+variable for the user to override (@pxref{Simple Tests using
+parallel-tests}).
 
 
 @cindex Tests, expected failure
@@ -8915,9 +8952,11 @@ output in all them), so it is safer and easier to @code{AC_SUBST} them
 from @file{configure.ac}.  For instance, the following statement will
 cause @file{configure} to be rerun each time @file{version.sh} is
 changed.
+
 @example
 AC_SUBST([CONFIG_STATUS_DEPENDENCIES], ['$(top_srcdir)/version.sh'])
 @end example
+
 @noindent
 Note the @samp{$(top_srcdir)/} in the file name.  Since this variable
 is to be used in all @file{Makefile}s, its value must be sensible at
@@ -8943,12 +8982,14 @@ Speaking of @file{version.sh} scripts, we recommend against them
 today.  They are mainly used when the version of a package is updated
 automatically by a script (e.g., in daily builds).  Here is what some
 old-style @file{configure.ac}s may look like:
+
 @example
 AC_INIT
 . $srcdir/version.sh
 AM_INIT_AUTOMAKE([name], $VERSION_NUMBER)
 @dots{}
 @end example
+
 @noindent
 Here, @file{version.sh} is a shell fragment that sets
 @code{VERSION_NUMBER}.  The problem with this example is that
@@ -8959,12 +9000,14 @@ to the user), and that it uses the obsolete form of @code{AC_INIT} and
 straightforward, because shell variables are not allowed in
 @code{AC_INIT}'s arguments.  We recommend that @file{version.sh} be
 replaced by an M4 file that is included by @file{configure.ac}:
+
 @example
 m4_include([version.m4])
 AC_INIT([name], VERSION_NUMBER)
 AM_INIT_AUTOMAKE
 @dots{}
 @end example
+
 @noindent
 Here @file{version.m4} could contain something like
 @samp{m4_define([VERSION_NUMBER], [1.2])}.  The advantage of this
@@ -10290,12 +10333,14 @@ older releases will not be used.  For instance, use this in your
 @example
   AM_INIT_AUTOMAKE([1.6.1])    dnl Require Automake 1.6.1 or better.
 @end example
+
 @noindent
 or, in a particular @file{Makefile.am}:
 
 @example
   AUTOMAKE_OPTIONS = 1.6.1   # Require Automake 1.6.1 or better.
 @end example
+
 @noindent
 Automake will print an error message if its version is
 older than the requested version.
@@ -11182,6 +11227,7 @@ true_CPPFLAGS = -DEXIT_CODE=0
 false_SOURCES = generic.c
 false_CPPFLAGS = -DEXIT_CODE=1
 @end example
+
 @noindent
 Obviously the two programs are built from the same source, but it
 would be bad if they shared the same object, because @file{generic.o}
@@ -11351,6 +11397,7 @@ data.c: data.foo
 data.h: data.foo data.c
         foo data.foo
 @end example
+
 @noindent
 therefore a parallel @command{make} will have to serialize the builds
 of @file{data.c} and @file{data.h}, and will detect that the second is

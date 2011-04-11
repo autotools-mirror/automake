@@ -2,7 +2,7 @@
 # @configure_input@
 #
 # Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-# 2005, 2006, 2007, 2008, 2009  Free Software Foundation, Inc.
+# 2005, 2006, 2007, 2008, 2009, 2011 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,6 +33,18 @@ if test -n "${ZSH_VERSION+set}" && (emulate sh) >/dev/null 2>&1; then
 else
   case `(set -o) 2>/dev/null` in *posix*) set -o posix;; esac
 fi
+
+# A single whitespace character.
+sp=' '
+# A tabulation character.
+tab='	'
+# A newline character.
+nl='
+'
+
+# As autoconf-generated configure scripts do, ensure that IFS
+# is defined initially, so that saving and restoring $IFS works.
+IFS=$sp$tab$nl
 
 # Ensure we are running from the right directory.
 test -f ./defs || {
@@ -148,6 +160,14 @@ do
       echo "$me: running $CC -V -help"
       ( $CC -V -help ) || exit 77
       ;;
+    javac)
+      # The Java compiler from JDK 1.5 (and presumably earlier versions)
+      # cannot handle the `-version' option by itself: it bails out
+      # telling that source files are missing.  Adding also the `-help'
+      # option seems to solve the problem.
+      echo "$me: running javac -version -help"
+      javac -version -help || exit 77
+      ;;
     makedepend)
       echo "$me: running makedepend -f-"
       ( makedepend -f- ) || exit 77
@@ -262,7 +282,7 @@ Exit ()
 curdir=`pwd`
 testSubDir=$me.dir
 test ! -d $testSubDir || {
-  find $testSubDir -type d ! -perm -200 -exec chmod u+w {} ";"
+  find $testSubDir -type d ! -perm -700 -exec chmod u+rwx {} ";"
   rm -rf $testSubDir
 }
 mkdir $testSubDir
@@ -274,7 +294,7 @@ if test "$sh_errexit_works" = yes; then
     cd "$curdir"
     case $exit_status,$keep_testdirs in
     0,)
-      find $testSubDir -type d ! -perm -200 -exec chmod u+w {} ";"
+      find $testSubDir -type d ! -perm -700 -exec chmod u+rwx {} ";"
       rm -rf $testSubDir
       ;;
     esac
@@ -328,6 +348,7 @@ unset oldincludedir pdfdir psdir sbindir sharedstatedir sysconfdir
 # conceptually independent, they cause some changed semantics we
 # need to control (and test for) in some of the tests to ensure
 # backward-compatible behavior.
+unset TESTS_ENVIRONMENT
 unset DISABLE_HARD_ERRORS
 unset TESTS
 unset TEST_LOG_COMPILER
@@ -436,6 +457,35 @@ AUTOMAKE_run ()
 AUTOMAKE_fails ()
 {
   AUTOMAKE_run 1 ${1+"$@"}
+}
+
+commented_sed_unindent_prog='
+  /^$/b                    # Nothing to do for empty lines.
+  x                        # Get x<indent> into pattern space.
+  /^$/{                    # No prior x<indent>, go prepare it.
+    g                      # Copy this 1st non-blank line into pattern space.
+    s/^\(['"$tab"' ]*\).*/x\1/   # Prepare x<indent> in pattern space.
+  }                        # Now: x<indent> in pattern and <line> in hold.
+  G                        # Build x<indent>\n<line> in pattern space, and
+  h                        # duplicate it into hold space.
+  s/\n.*$//                # Restore x<indent> in pattern space, and
+  x                        # exchange with the above duplicate in hold space.
+  s/^x\(.*\)\n\1//         # Remove leading <indent> from <line>.
+  s/^x.*\n//               # Restore <line> when there is no leading <indent>.
+'
+
+# unindent [input files...]
+# -------------------------
+# Remove the "proper" amount of leading whitespace from the given files,
+# and output the result on stdout.  That amount is determined by looking
+# at the leading whitespace of the first non-blank line in the input
+# files.  If no input file is specified, standard input is implied.
+unindent ()
+{
+  if test x"$sed_unindent_prog" = x; then
+    sed_unindent_prog=`printf '%s\n' "$commented_sed_unindent_prog" | sed -e "s/  *# .*//"`
+  fi
+  sed "$sed_unindent_prog" ${1+"$@"}
 }
 
 # Turn on shell traces.

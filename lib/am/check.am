@@ -1,6 +1,6 @@
 ## automake - create Makefile.in from Makefile.am
-## Copyright (C) 2001, 2003, 2006, 2007, 2008, 2009, 2010 Free Software
-## Foundation, Inc.
+## Copyright (C) 2001, 2003, 2006, 2007, 2008, 2009, 2010, 2011 Free
+## Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -146,7 +146,8 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	@$(am__sh_e_setup);						\
 	list='$(TEST_LOGS)';						\
 	results=`for f in $$list; do					\
-		   read line < $$f && echo "$$line" || echo FAIL;	\
+		   test -r $$f && read line < $$f && echo "$$line"	\
+		     || echo FAIL;					\
 		 done`;							\
 	all=`echo "$$results" | sed '/^$$/d' | wc -l | sed -e 's/^[	 ]*//'`; \
 	fail=`echo "$$results" | grep -c '^FAIL'`;			\
@@ -195,7 +196,7 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	  echo ".. contents:: :depth: 2";				\
 	  echo;								\
 	  for f in $$list; do						\
-	    read line < $$f;						\
+	    test -r $$f && read line < $$f || line=;			\
 	    case $$line in						\
 	      PASS:*|XFAIL:*);;						\
 	      *) echo; cat $$f;;					\
@@ -234,6 +235,10 @@ check-TESTS:
 ## OTOH, this means that, in the rule for `$(TEST_SUITE_LOG)', we
 ## cannot use `$?' to compute the set of lazily rerun tests, lest
 ## we rely on .PHONY to work portably.
+##
+## Trailing whitespace in `TESTS = foo.test $(empty)' causes GNU make
+## 3.80 to erroneously expand $(TESTS_LOGS) to `foo.log .log'.
+## Work around this bug.
 	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
 	@list='$(TEST_LOGS)';						\
 	list=`for f in $$list; do					\
@@ -287,7 +292,7 @@ recheck recheck-html:
 	list='$(TEST_LOGS)';						\
 	list=`for f in $$list; do					\
 	        test -f $$f || continue;				\
-	        if read line < $$f; then				\
+	        if test -r $$f && read line < $$f; then			\
 	          case $$line in FAIL*|XPASS*) echo $$f;; esac;		\
 	        else echo $$f; fi;					\
 	      done | tr '\012\015' '  '`;				\

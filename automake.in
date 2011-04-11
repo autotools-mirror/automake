@@ -1367,7 +1367,7 @@ sub handle_languages
 
     my %done;
 
-    # Is the c linker needed?
+    # Is the C linker needed?
     my $needs_c = 0;
     foreach my $ext (sort keys %extension_seen)
     {
@@ -2051,6 +2051,15 @@ sub handle_single_transform ($$$$$%)
 	    # derived from is not.
 	    &push_dist_common ($object)
 	      unless ($topparent =~ /^(?:nobase_)?nodist_/);
+
+	    # If resulting derived source is in a subdir, we need to make
+	    # sure the subdir exists at build time.
+	    if ($object =~ /\//)
+	      {
+		my $dirstamp = require_build_directory_maybe ($object);
+		depend ($object, $dirstamp)
+		  if ($dirstamp);
+	      }
 	    next;
 	  }
 
@@ -2333,7 +2342,7 @@ sub handle_lib_objects
 	   if ($val !~ /^-[lL]/ &&
 	       # Skip -dlopen and -dlpreopen; these are explicitly allowed
 	       # for Libtool libraries or programs.  (Actually we are a bit
-	       # laxe here since this code also applies to non-libtool
+	       # lax here since this code also applies to non-libtool
 	       # libraries or programs, for which -dlopen and -dlopreopen
 	       # are pure nonsense.  Diagnosing this doesn't seem very
 	       # important: the developer will quickly get complaints from
@@ -2574,7 +2583,8 @@ sub handle_compile ()
 	    require_file ($ansi2knr_where, FOREIGN,
 			  'ansi2knr.c', 'ansi2knr.1');
 
-	    # ansi2knr needs to be built before subdirs, so unshift it.
+	    # ansi2knr needs to be built before subdirs, so unshift it
+	    # rather then pushing it.
 	    unshift (@all, '$(ANSI2KNR)');
 	  }
 	else
@@ -3186,7 +3196,7 @@ sub scan_texinfo_file ($)
 # ------------------------------------------------------------------
 # SOURCE - the source Texinfo file
 # DEST - the destination Info file
-# INSRC - wether DEST should be built in the source tree
+# INSRC - whether DEST should be built in the source tree
 # DEPENDENCIES - known dependencies
 sub output_texinfo_build_rules ($$$@)
 {
@@ -4167,7 +4177,7 @@ sub prepend_srcdir (@)
 # Compute a list of dependencies appropriate for the rebuild
 # rule of
 #   AC_CONFIG_FILES($OUTPUT:$INPUT[0]:$INPUTS[1]:...)
-# Also distribute $INPUTs which are not built by another AC_CONFIG_FOOS.
+# Also distribute $INPUTs which are not built by another AC_CONFIG_FOOs.
 sub rewrite_inputs_into_dependencies ($@)
 {
   my ($file, @inputs) = @_;
@@ -5109,8 +5119,14 @@ sub handle_java
 	$dir = $curs;
       }
 
-
-    push (@all, 'class' . $dir . '.stamp');
+    if ($dir eq 'check')
+      {
+        push (@check, "class$dir.stamp");
+      }
+    else
+      {
+        push (@all, "class$dir.stamp");
+      }
 }
 
 

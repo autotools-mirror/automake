@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001, 2002, 2003  Free Software Foundation, Inc.
+# Copyright (C) 2001, 2002, 2003, 2011 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,27 +15,36 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Make sure distclean and maintainer-clean erase the right files.
+# This test is for in-tree builds; see sister test `maintclean-vpath.test'
+# for VPATH builds.
 
 . ./defs || Exit 1
 
 set -e
 
 cat >> configure.in << 'END'
-AC_CONFIG_FILES(bar)
+AC_CONFIG_FILES([bar sub/Makefile])
 AC_OUTPUT
 END
 
 cat > Makefile.am <<'END'
+SUBDIRS = sub
 noinst_DATA = foo.c
-
 foo.c:
 	touch foo.c
-
 MAINTAINERCLEANFILES = foo.c
-
 END
 
-touch bar.in
+mkdir sub
+cat > sub/Makefile.am <<'END'
+noinst_SCRIPTS = zap
+zap: zap.sh
+	cp $(srcdir)/zap.sh $@ && chmod a+x $@
+MAINTAINERCLEANFILES = zap
+END
+
+: > bar.in
+: > sub/zap.sh
 
 $ACLOCAL
 $AUTOCONF
@@ -48,18 +57,22 @@ else
   test_cache=:
 fi
 
-# Since we don't require Yacc, make sure it's not used.
-./configure YACC=false
+./configure
 test -f bar
 
 $MAKE
 test -f foo.c
+test -f sub/zap
+$test_cache
 
 $MAKE distclean
 test ! -f bar
 test ! -f Makefile
+test ! -f sub/Makefile
 test ! -f config.status
 test -f foo.c
+test -f sub/zap
+test -f sub/zap.sh
 $test_cache
 
 ./configure
@@ -67,10 +80,19 @@ test -f bar
 
 $MAKE foo.c
 test -f foo.c
+cd sub
+$MAKE zap
+test -f zap
+cd ..
 
 $MAKE maintainer-clean
+test -f sub/zap.sh
 test ! -f bar
 test ! -f foo.c
+test ! -f sub/zap
 test ! -f Makefile
+test ! -f sub/Makefile
 test ! -f config.status
 test ! -d autom4te.cache
+
+:

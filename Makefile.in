@@ -269,6 +269,7 @@ do_subst = sed \
 # Some simple checks, and then ordinary check.  These are only really
 # guaranteed to work on my machine.
 syntax_check_rules = \
+sc_test_names \
 sc_diff_automake_in_automake \
 sc_perl_syntax \
 sc_no_brace_variable_expansions \
@@ -304,6 +305,55 @@ sc_perl_at_substs \
 sc_unquoted_DESTDIR \
 sc_tabs_in_texi \
 sc_at_in_texi
+
+m4_builtins = \
+  __gnu__ \
+  __unix__ \
+  bpatsubst \
+  bregexp \
+  builtin \
+  changecom \
+  changequote \
+  changeword \
+  debugfile \
+  debugmode \
+  decr \
+  define \
+  defn \
+  divert \
+  divnum \
+  dnl \
+  dumpdef \
+  errprint \
+  esyscmd \
+  eval \
+  format \
+  ifdef \
+  ifelse \
+  include \
+  incr \
+  index \
+  indir \
+  len \
+  m4exit \
+  m4wrap \
+  maketemp \
+  mkstemp \
+  patsubst \
+  popdef \
+  pushdef \
+  regexp \
+  shift \
+  sinclude \
+  substr \
+  symbols \
+  syscmd \
+  sysval \
+  traceoff \
+  traceon \
+  translit \
+  undefine \
+  undivert
 
 WGET = wget
 WGET_SV_CVS = $(WGET) http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~/
@@ -879,6 +929,14 @@ dist-hook:
 .PHONY: $(syntax_check_rules)
 $(syntax_check_rules): automake aclocal
 maintainer-check: $(syntax_check_rules)
+sc_test_names:
+	@m4_builtin_rx=`echo $(m4_builtins) | sed 's/ /|/g'`; \
+	 m4_macro_rx="\\<($$m4_builtin_rx)\\>|\\<_?(A[CUMHS]|m4)_"; \
+	 if ls tests/*.test | LC_ALL=C grep -E "$$m4_macro_rx"; then \
+	   echo "the names of the tests above can be problematic" 1>&2; \
+	   echo "Avoid test names that contain names of m4 macros" 1>&2; \
+	   exit 1; \
+	 fi
 
 sc_diff_automake_in_automake:
 	@if test `diff $(srcdir)/automake.in automake | wc -l` -ne 28; then \
