@@ -830,10 +830,13 @@ yacc.test \
 yacc2.test \
 yacc4.test \
 yacc5.test \
-yacc6.test \
 yacc7.test \
 yacc8.test \
 yaccdry.test \
+yacc-auxdir.test \
+yacc-line.test \
+yacc-depend.test \
+yacc-depend2.test \
 yacc-deleted-headers.test \
 yacc-dist-nobuild.test \
 yacc-nodist.test \
