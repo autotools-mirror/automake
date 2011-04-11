@@ -16,12 +16,15 @@
 
 # hp depmode should work with GNU make in VPATH mode (bug similar to
 # depcomp9.test).
+# For automake bug#8473.
 
 # Here's the bug: hp depmode will prefix VPATH to the object file name,
 # thus the second gmake will invoke depcomp with object='../../src/foo.o',
-# causing errors such as:
-#   cpp: "", line 0: error 4066: Cannot create "../../gllib/.deps/nonblocking.TPo" file for "-M../../gllib/.deps/nonblocking.TPo" option. (No such file or dir
-+ectory[errno=2])
+# causing errors such as (broken on multiple lines for clarity):
+#   cpp: "", line 0: error 4066: Cannot create
+#        "../../gllib/.deps/nonblocking.TPo" file for
+#        "-M../../gllib/.deps/nonblocking.TPo" option.
+#        (No such file or directory[errno=2])
 
 required=GNUmake
 . ./defs || Exit 1
@@ -71,7 +74,13 @@ $AUTOMAKE -a
 
 cd build
 ../configure am_cv_CC_dependencies_compiler_type=hp
+# Do not error out with the first make, as the forced 'hp' depmode might
+# not actually work, but we have overridden the _AM_DEPENDENCIES tests.
 $MAKE || Exit 77
+
+# We must clean and rebuild, as the actual error only happens the second
+# time the objects are built because 'depcomp' has silently messed up the
+# .Po files the first time.
 $MAKE clean
 
 $MAKE >out 2>&1 || { cat out; Exit 1; }
