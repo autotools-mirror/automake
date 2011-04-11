@@ -372,6 +372,7 @@ depcomp7.test \
 depcomp8a.test \
 depcomp8b.test \
 depcomp9.test \
+depcomp10.test \
 depdist.test \
 depend.test \
 depend2.test \
