@@ -64,27 +64,29 @@ AC_CONFIG_FILES([foo/Makefile bar/Makefile baz/Makefile qux/Makefile])
 AC_OUTPUT
 END
 
-cat > Makefile.am <<'END'
-SUBDIRS = foo bar baz qux
-END
-
 mkdir foo bar baz qux baz/sub
 
 # These makefiles will be extended later.
-cat > foo/Makefile.am <<'END'
+cat > Makefile.am <<'END'
 .PHONY: echo-distcom
 echo-distcom:
 	@echo ' ' $(DIST_COMMON) ' '
 END
-cp foo/Makefile.am bar/Makefile.am
-cp foo/Makefile.am baz/Makefile.am
-cp foo/Makefile.am qux/Makefile.am
+cp Makefile.am foo/Makefile.am
+cp Makefile.am bar/Makefile.am
+cp Makefile.am baz/Makefile.am
+cp Makefile.am qux/Makefile.am
+
+cat >> Makefile.am <<'END'
+SUBDIRS = foo bar baz qux
+END
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE Makefile
 
 cp $testsrcdir/../lib/ylwrap .
+
+$AUTOMAKE Makefile
 
 # Try with -d in $(YFLAGS) (don't do this in real life!).
 cat >> foo/Makefile.am <<END
@@ -155,6 +157,10 @@ test -f baz/sub/parse.h++
 test -f qux/maude-parse.cxx
 test -f qux/maude-parse.hxx
 
+# The ylwrap script must be shipped.
+$MAKE echo-distcom
+$MAKE -s echo-distcom | grep '[ /]ylwrap '
+
 # The generated C++ source and header files must be shipped.
 cd foo
 $MAKE echo-distcom
@@ -180,6 +186,7 @@ cd ..
 $MAKE distdir
 find $distdir # For debugging.
 
+test -f $distdir/ylwrap
 test -f $distdir/foo/parse.cc
 test -f $distdir/foo/parse.hh
 test -f $distdir/bar/parse.cpp
