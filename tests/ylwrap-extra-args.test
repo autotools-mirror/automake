@@ -1,0 +1,53 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Test that one can pass arguments to the program run by ylwrap.
+
+. ./defs || Exit 1
+
+set -e
+
+cp "$testsrcdir"/../lib/ylwrap .
+
+mkdir bin
+cat > bin/fake-yacc <<'END'
+#!/bin/sh
+echo " $* " > y.tab.c
+END
+cat > bin/fake-lex <<'END'
+#!/bin/sh
+echo " $* " > lex.yy.c
+END
+chmod a+x bin/fake-yacc bin/fake-lex
+PATH=`pwd`/bin$PATH_SEPARATOR$PATH; export PATH
+
+manyargs='0 1 2 3 4 5 6 7 8 9 @ : foo bar zardoz asd-asd-asd-asd-asd-asd'
+
+mkdir yacc
+cd yacc
+$SHELL -x ../ylwrap --yacc .y foo.y foo.c fake-yacc GrepMe
+cat foo.c
+$FGREP " GrepMe " foo.c
+cd ..
+
+mkdir lex
+cd lex
+$SHELL -x ../ylwrap --lex lex.yy bar.l bar.c fake-lex $manyargs
+cat bar.c
+$FGREP " $manyargs " bar.c
+cd ..
+
+:

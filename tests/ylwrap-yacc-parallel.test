@@ -1,0 +1,72 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check that ylwrap can handle multiple instances of yacc running
+# in parallel.
+# Keep this in sync with sister test `ylwrap-lex-parallel.test'.
+
+. ./defs || Exit 1
+
+set -e
+
+cp "$testsrcdir"/../lib/ylwrap .
+
+mkdir bin
+cat > bin/fake-yacc <<'END'
+#!/bin/sh -e
+
+printf 'c:%s-' "$1" > y.tab.c
+sleep $time
+printf '%s\n' "$1" >> y.tab.c
+chmod a-w y.tab.c
+
+printf 'h:%s-' "$1" > y.tab.h
+sleep $time
+printf '%s\n' "$1" >> y.tab.h
+chmod a-w y.tab.h
+END
+chmod a+x bin/fake-yacc
+PATH=`pwd`/bin:$PATH; export PATH
+
+args='a b foo zardoz bar x'
+
+# The possible errors are time-dependent race conditions, so try a few
+# times in order to to maximize the possibility of hitting such races (if
+# they exist).
+for try in 1 2 3 4; do
+    mkdir $try
+    cd $try
+    for arg in $args; do \
+      time=`printf %s $arg | wc -c`; export time
+      $SHELL ../ylwrap --yacc .y $arg.y $arg.c fake-yacc $arg \
+        >stdout.$arg 2>stderr.$arg &
+      unset time
+    done
+    wait
+    for arg in $args; do
+      cat $arg.c
+      cat $arg.h
+      cat stdout.$arg
+      cat stderr.$arg >&2
+      test "`cat $arg.c`" = "c:$arg-$arg"
+      test "`cat $arg.h`" = "h:$arg-$arg"
+      test "`cat stdout.$arg`" = "updating $arg.h"
+      test ! -s stderr.$arg
+    done
+    cd ..
+done
+
+:

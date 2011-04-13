@@ -1,0 +1,95 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Test how ylwrap adjusts "#line" directives.
+
+required='lex yacc'
+. ./defs || Exit 1
+
+set -e
+
+cat >> configure.in << 'END'
+AC_PROG_CC
+AC_PROG_YACC
+AC_PROG_LEX
+AC_OUTPUT
+END
+
+cat > Makefile.am << 'END'
+noinst_PROGRAMS = maude
+maude_SOURCES = main.c foobar.l zardoz.y
+AM_YFLAGS = -d
+BUILT_SOURCES = zardoz.h
+LDADD = @LEXLIB@
+## Avoid spurious faulures with Solaris make.
+foobar.@OBJEXT@: foobar.c
+zardoz.@OBJEXT@: zardoz.c
+END
+
+cat > foobar.l << 'END'
+%%
+"END" return EOF;
+.
+%%
+END
+
+cat > zardoz.y << 'END'
+%{
+int yylex ();
+void yyerror (char *s) { return; }
+%}
+%token TOKEN
+%%
+x : 'x' {};
+END
+
+cat > main.c << 'END'
+#include "zardoz.h"
+int main (void)
+{
+  return yyparse ();
+}
+END
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE -a
+
+for vpath in : false; do
+  if $vpath; then
+    srcdir=..
+    mkdir build
+    cd build
+  else
+    srcdir=.
+  fi
+  $srcdir/configure
+  $MAKE
+  # Sanity check.
+  test -f foobar.c
+  test -f zardoz.c
+  test -f zardoz.h
+  # For debugging.
+  grep '#.*line' foobar.c zardoz.c zardoz.h
+  # Do checks.
+  ws="[$sp$tab]"
+  $EGREP '#.*(y\.tab|lex\.yy)' foobar.c zardoz.c zardoz.h && Exit 1
+  grep "^$ws*#.*line$ws.*foobar\\.l" foobar.c
+  grep "^$ws*#.*line$ws.*zardoz\\.y" zardoz.c
+  cd $srcdir
+done
+
+:

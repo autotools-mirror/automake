@@ -1,0 +1,59 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Test that ylwrap behaves well on DOS, where yacc/bison produces file
+# named y_tab.c and y_tab.j instead of y.tab.h and y.tab.c.
+
+. ./defs || Exit 1
+
+set -e
+
+cp "$testsrcdir"/../lib/ylwrap .
+
+mkdir bin
+cat > bin/dos-yacc <<'END'
+#!/bin/sh -e
+echo 'C source' > y_tab.c
+case $1 in -*d*) echo 'C header' > y_tab.h;; esac
+case $1 in -*v*) echo stats > y.output;; esac
+END
+chmod a+x bin/dos-yacc
+
+PATH=`pwd`/bin$PATH_SEPARATOR$PATH; export PATH
+
+for opts in '' d v vd; do
+    dir=foo${opts}.dir
+    mkdir $dir
+    cd $dir
+    $SHELL -x ../ylwrap --yacc .y bar.y bar.c dos-yacc -$opts
+    ls -l # For debugging.
+    ls y[._]* && Exit 1
+    cat bar.c
+    test "`cat bar.c`" = 'C source'
+    case $opts in
+      *d*)
+        cat bar.h
+        test "`cat bar.h`" = 'C header';;
+    esac
+    case $opts in
+      *v*)
+        cat bar.output
+        test "`cat bar.output`" = stats;;
+    esac
+    cd ..
+done
+
+:

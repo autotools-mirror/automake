@@ -1,0 +1,135 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check that ylwrap can rename output files to names that are unrelated
+# to the name of input files.  Also check for unusual or "pathological"
+# output names.
+
+. ./defs || Exit 1
+
+set -e
+
+cp "$testsrcdir"/../lib/ylwrap .
+
+mkdir bin
+cat > bin/fake-yacc <<'END'
+#!/bin/sh -e
+: > y.tab.c
+case " $* " in *" -d "*) : > y.tab.h  ;; *) : ;; esac
+case " $* " in *" -v "*) : > y.output ;; *) : ;; esac
+END
+cat > bin/fake-lex <<'END'
+#!/bin/sh -e
+echo "$*" > lex.yy.c
+END
+chmod a+x bin/fake-yacc bin/fake-lex
+PATH=`pwd`/bin$PATH_SEPARATOR$PATH; export PATH
+
+mkdir yacc
+cd yacc
+$SHELL -x ../ylwrap --yacc .y foo.y zardoz.c fake-yacc
+ls -l
+test   -f zardoz.c
+test ! -f zardoz.h
+test ! -f foo.c
+test ! -f y.tab.c
+cd ..
+
+mkdir yacc-d-subdir
+cd yacc-d-subdir
+mkdir quux
+$SHELL -x ../ylwrap --yacc .y foo.y quux/zardoz.c fake-yacc -d
+ls -l . quux
+test   -f quux/zardoz.c
+test   -f quux/zardoz.h
+test ! -f zardoz.c
+test ! -f zardoz.h
+test ! -f quux/foo.c
+test ! -f quux/foo.h
+test ! -f quux/y.tab.c
+test ! -f quux/y.tab.h
+test ! -f foo.c
+test ! -f foo.h
+test ! -f y.tab.c
+test ! -f y.tab.h
+cd ..
+
+mkdir yacc-cxx
+cd yacc-cxx
+$SHELL -x ../ylwrap --yacc .yxx foo.yxx f-o--o-.cxx fake-yacc
+ls -l
+test   -f f-o--o-.cxx
+test ! -f foo.c
+test ! -f foo.cxx
+test ! -f y.tab.c
+cd ..
+
+mkdir yacc-cxx-d
+cd yacc-cxx-d
+$SHELL -x ../ylwrap --yacc .y++ foo.y++ .quux..c++ fake-yacc -d
+ls -l
+test   -f .quux..c++
+test   -f .quux..h++
+test ! -f foo.c
+test ! -f foo.c++
+test ! -f foo.h
+test ! -f foo.h++
+test ! -f y.tab.c
+test ! -f y.tab.h
+cd ..
+
+mkdir yacc-cxx-d-v
+cd yacc-cxx-d-v
+$SHELL -x ../ylwrap --yacc .yy foo.yy y.tab.cc fake-yacc -d -v
+ls -l
+test   -f y.tab.cc
+test   -f y.tab.hh
+test   -f y.tab.output
+test ! -f foo.cc
+test ! -f foo.hh
+test ! -f foo.c
+test ! -f foo.h
+test ! -f y.tab.c
+test ! -f y.tab.h
+test ! -f y.output
+cd ..
+
+mkdir lex
+cd lex
+$SHELL -x ../ylwrap --lex lex.yy bar.l c.c fake-lex
+test   -f c.c
+test ! -f bar.c
+test ! -f lex.yy.c
+cd ..
+
+mkdir lex-cxx-1
+cd lex-cxx-1
+$SHELL -x ../ylwrap --lex lex.yy bar.ll cxx.cc fake-lex
+test   -f cxx.cc
+test ! -f bar.c
+test ! -f bar.cc
+test ! -f lex.yy.c
+cd ..
+
+mkdir lex-cxx-2
+cd lex-cxx-2
+$SHELL -x ../ylwrap --lex lex.yy bar.lpp y.cpp fake-lex
+test   -f y.cpp
+test ! -f bar.c
+test ! -f bar.cpp
+test ! -f lex.yy.c
+
+:

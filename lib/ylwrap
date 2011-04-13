@@ -1,12 +1,12 @@
 #! /bin/sh
 # ylwrap - wrapper for lex/yacc invocations.
 
-scriptversion=2010-02-06.18; # UTC
+scriptversion=2011-05-05.09; # UTC
 
 # Copyright (C) 1996, 1997, 1998, 1999, 2001, 2002, 2003, 2004, 2005,
-# 2007, 2009, 2010 Free Software Foundation, Inc.
+# 2007, 2009, 2010, 2011 Free Software Foundation, Inc.
 #
-# Written by Tom Tromey <tromey@cygnus.com>.
+# Originally written by Tom Tromey <tromey@cygnus.com>.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,28 +30,30 @@ scriptversion=2010-02-06.18; # UTC
 # bugs to <bug-automake@gnu.org> or send patches to
 # <automake-patches@gnu.org>.
 
+usage_error ()
+{
+    echo "$0: $*" >&2
+    echo "Try \`$0 --help' for more information." >&2
+    exit 2
+}
+
+test $# -gt 0 || usage_error "missing argument"
+
 case "$1" in
-  '')
-    echo "$0: No files given.  Try \`$0 --help' for more information." 1>&2
-    exit 1
-    ;;
   --basedir)
     basedir=$2
     shift 2
     ;;
   -h|--h*)
     cat <<\EOF
-Usage: ylwrap [--help|--version] INPUT [OUTPUT DESIRED]... -- PROGRAM [ARGS]...
+ylwrap: Wrapper for lex/yacc invocations, renaming files as desired.
 
-Wrapper for lex/yacc invocations, renaming files as desired.
-
-  INPUT is the input file
-  OUTPUT is one file PROG generates
-  DESIRED is the file we actually want instead of OUTPUT
-  PROGRAM is program to run
-  ARGS are passed to PROG
-
-Any number of OUTPUT,DESIRED pairs may be used.
+Usage:
+  ylwrap {--help|--version}
+or:
+  ylwrap --yacc YACC-EXTENSION INPUT [--] PROGRAM [ARGS]...
+or:
+  ylwrap --lex LEX-OUTPUT-ROOT INPUT OUTPUT [--] PROGRAM [ARGS]...
 
 Report bugs to <bug-automake@gnu.org>.
 EOF
@@ -61,12 +63,70 @@ EOF
     echo "ylwrap $scriptversion"
     exit $?
     ;;
+  --yacc)
+    wrapped=yacc
+    shift
+    case $# in
+      0) usage_error "missing yacc extension";;
+      1) usage_error "missing input file";;
+      2) usage_error "missing output file";;
+    esac
+    y_ext=`expr x"$1" : x'\.\(.*\)'`
+    input=$2
+    output=$3
+    shift 3
+    ;;
+  --lex)
+    wrapped=lex
+    shift
+    case $# in
+      0) usage_error "missing lex output root";;
+      1) usage_error "missing input file";;
+      2) usage_error "missing output file";;
+    esac
+    lex_output_root=$1
+    input=$2
+    output=$3
+    shift 3
+    ;;
+  -*)
+    usage_error "invalid option '$1'"
+    ;;
+  *)
+    break
+    ;;
 esac
 
+case $wrapped in
+  yacc)
+    c_ext=`echo $y_ext | tr 'y' 'c'`
+    h_ext=`echo $y_ext | tr 'y' 'h'`
+    output_stem=`echo "$output" | sed "s/\\\\.$c_ext$//"`
+    pairlist="
+      y.tab.c  $output_stem.$c_ext
+      y.tab.h  $output_stem.$h_ext
+      y.output $output_stem.output"
+    ;;
+  lex)
+    pairlist="$lex_output_root.c $output"
+    ;;
+  '')
+    usage_error "no operation mode specified"
+    ;;
+  *)
+    exit 255 # not reached
+    ;;
+esac
 
-# The input.
-input="$1"
+if test x"$1" = x"--"; then
+  shift
+fi
+
+# The program to run.
+test $# -gt 0 || usage_error "missing program to run"
+prog="$1"
 shift
+
 case "$input" in
   [\\/]* | ?:[\\/]*)
     # Absolute path; do nothing.
@@ -77,19 +137,6 @@ case "$input" in
     ;;
 esac
 
-pairlist=
-while test "$#" -ne 0; do
-  if test "$1" = "--"; then
-    shift
-    break
-  fi
-  pairlist="$pairlist $1"
-  shift
-done
-
-# The program to run.
-prog="$1"
-shift
 # Make any relative path in $prog absolute.
 case "$prog" in
   [\\/]* | ?:[\\/]*) ;;
@@ -100,6 +147,8 @@ esac
 # other machines.  But that might take us over the 14-char limit.
 dirname=ylwrap$$
 do_exit="cd '`pwd`' && rm -rf $dirname > /dev/null 2>&1;"' (exit $ret); exit $ret'
+# The only signals which are portably trappable are 1 (SIGHUP),
+# 2 (SIGINT), 13 (SIGPIPE) and 15 (SIGTERM).
 trap "ret=129; $do_exit" 1
 trap "ret=130; $do_exit" 2
 trap "ret=141; $do_exit" 13
@@ -115,15 +164,18 @@ esac
 ret=$?
 
 if test $ret -eq 0; then
+
   set X $pairlist
   shift
-  first=yes
-  # Since DOS filename conventions don't allow two dots,
-  # the DOS version of Bison writes out y_tab.c instead of y.tab.c
-  # and y_tab.h instead of y.tab.h. Test to see if this is the case.
-  y_tab_nodot="no"
-  if test -f y_tab.c || test -f y_tab.h; then
-    y_tab_nodot="yes"
+
+  if test $wrapped = yacc; then
+    # Since DOS filename conventions don't allow two dots,
+    # the DOS version of Bison writes out y_tab.c instead of y.tab.c
+    # and y_tab.h instead of y.tab.h. Test to see if this is the case.
+    y_tab_nodot="no"
+    if test -f y_tab.c || test -f y_tab.h; then
+      y_tab_nodot="yes"
+    fi
   fi
 
   # The directory holding the input.
@@ -134,15 +186,11 @@ if test $ret -eq 0; then
 
   while test "$#" -ne 0; do
     from="$1"
-    # Handle y_tab.c and y_tab.h output by DOS
-    if test $y_tab_nodot = "yes"; then
-      if test $from = "y.tab.c"; then
-    	from="y_tab.c"
-      else
-    	if test $from = "y.tab.h"; then
-    	  from="y_tab.h"
-    	fi
-      fi
+    ofrom="$from"
+    if test $wrapped = "yacc" && test $y_tab_nodot = "yes"; then
+      # Handle y_tab.c and y_tab.h output by DOS
+      test $from = "y.tab.c" && from="y_tab.c"
+      test $from = "y.tab.h" && from="y_tab.h"
     fi
     if test -f "$from"; then
       # If $2 is an absolute path name, then just use that,
@@ -158,7 +206,7 @@ if test $ret -eq 0; then
       # because it is the destination of the .y.c rule in the
       # Makefile.  Divert the output of all other files to a temporary
       # file so we can compare them to existing versions.
-      if test $first = no; then
+      if test $wrapped = yacc && test $ofrom = "y.tab.h"; then
 	realtarget="$target"
 	target="tmp-`echo $target | sed s/.*[\\/]//g`"
       fi
@@ -183,7 +231,7 @@ if test $ret -eq 0; then
           -e "s,$FROM,$TARGET," "$from" >"$target" || ret=$?
 
       # Check whether header files must be updated.
-      if test $first = no; then
+      if test $wrapped = "yacc" && test $ofrom = "y.tab.h"; then
 	if test -f "$realtarget" && cmp -s "$realtarget" "$target"; then
 	  echo "$2" is unchanged
 	  rm -f "$target"
@@ -192,21 +240,18 @@ if test $ret -eq 0; then
           mv -f "$target" "$realtarget"
         fi
       fi
-    else
-      # A missing file is only an error for the first file.  This
-      # is a blatant hack to let us support using "yacc -d".  If -d
-      # is not specified, we don't want an error when the header
-      # file is "missing".
-      if test $first = yes; then
-        ret=1
-      fi
+    else # ! -f $from
+      # When using yacc, if the `-d' option is not used, we don't want an
+      # error when the header file is "missing".  Similarly, if `-v' is not
+      # used, we don't want an error when the `y.output' file is "missing".
+      case $wrapped:$ofrom in
+        yacc:y.tab.h|yacc:y.output) ;;
+        *) ret=1;;
+      esac
     fi
     shift
     shift
-    first=no
   done
-else
-  ret=$?
 fi
 
 # Remove the directory.

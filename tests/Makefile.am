@@ -868,6 +868,16 @@ yflags-d-false-positives.test \
 yflags-force-override.test \
 yflags-force-conditional.test \
 yflags-var-expand.test \
+yacclex-line.test \
+ylwrap-extra-args.test \
+ylwrap-fail.test \
+ylwrap-lex-parallel.test \
+ylwrap-output-rename.test \
+ylwrap-path-handling.test \
+ylwrap-signals.test \
+ylwrap-yacc-dos.test \
+ylwrap-yacc-ext.test \
+ylwrap-yacc-parallel.test \
 $(parallel_tests)
 
 EXTRA_DIST = ChangeLog-old gen-parallel-tests $(TESTS)

@@ -1,0 +1,68 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check how ylwrap trap signals.
+
+. ./defs || Exit 1
+
+set -e
+
+test `ps -o pid $$ | sed 1d` -eq $$ || skip_ "requires POSIX 'ps' program"
+
+cp "$testsrcdir"/../lib/ylwrap .
+
+mkdir bin
+# This is hacky and ugly, but will avoid pain with background
+# processes and related synchronization issues.
+cat > bin/parricide <<'END'
+#!/bin/sh
+signum=$1
+# We expect ylwrap to clean up these.
+touch y.tab.c y.tab.h lex.yy.c || exit 1
+touch random-file .hidden-file || exit 1
+mkdir random-dir .hidden-dir || exit 1
+pwd
+ls -l
+ppid=`ps -o ppid $$ | sed 1d` && test -n "$$ppid" || exit 1
+ps $ppid $$ || : For debugging.
+kill -$signum $ppid || exit 1
+END
+chmod a+x bin/parricide
+PATH=`pwd`/bin$PATH_SEPARATOR$PATH; export PATH
+
+do_check ()
+{
+  signum=$1; shift
+  ret=0
+  $SHELL -x ../ylwrap $* parricide $signum || ret=$?
+  # Return a proper exit status.
+  test $ret -eq `expr 128 + $signum`
+  # Do not leave temporary files/directories lying around.
+  ls -a | $EGREP -v '^\.\.?$' && { ls -l; Exit 1; }
+  :
+}
+
+mkdir work
+cd work
+
+# The only signals which are portably trappable are 1 (SIGHUP),
+# 2 (SIGINT), 13 (SIGPIPE) and 15 (SIGTERM).
+do_check 1 --yacc .y foo.y foo.c
+do_check 2 --lex .l foo.l foo.c
+do_check 13 --yacc .yy foo.yy foo.cc
+do_check 15 --yacc lex.yy.c foo.l++ foo.c++
+
+:

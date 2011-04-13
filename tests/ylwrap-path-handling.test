@@ -1,0 +1,91 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check how ylwrap handle relative and absolute paths/names for input
+# file, output file, and program to run.
+
+. ./defs || Exit 1
+
+set -e
+
+cp "$testsrcdir"/../lib/ylwrap .
+
+cat > fake-yacc <<'END'
+#!/bin/sh -e
+cp "$1" y.tab.c
+cp "$1" y.tab.h
+cp "$1" y.output
+END
+cat > fake-lex <<'END'
+#!/bin/sh -e
+cp "$1" lex.yy.c
+END
+chmod a+x fake-yacc fake-lex
+
+ocwd=`pwd` || Exit 99
+
+mkdir 1
+cd 1
+echo 'blah 1' > foo.y
+$SHELL -x ../ylwrap --yacc .y "$ocwd"/1/foo.y ../1/foo.c ../fake-yacc
+ls -l
+cmp foo.y foo.c
+cmp foo.y foo.h
+cmp foo.y foo.output
+cd ..
+
+mkdir 2
+cd 2
+echo 'blah 2' > foo.yy
+cp ../fake-yacc .
+$SHELL -x ../ylwrap --yacc .yy ./foo.yy "$ocwd"/2/foo.cc -- ./fake-yacc
+ls -l
+cmp foo.yy foo.cc
+cmp foo.yy foo.hh
+cmp foo.yy foo.output
+cd ..
+
+mkdir 3
+cd 3
+mkdir sub1 sub2
+echo 'blah 3' > sub1/foo.yxx
+cp ../fake-yacc .
+$SHELL -x ../ylwrap --yacc .yxx sub1/foo.yxx sub2/foo.cxx -- ../3/fake-yacc
+ls -l
+cmp sub1/foo.yxx sub2/foo.cxx
+cmp sub1/foo.yxx sub2/foo.hxx
+cmp sub1/foo.yxx sub2/foo.output
+cd ..
+
+mkdir 4
+cd 4
+echo 'blah 4' > foo.l
+$SHELL -x ../ylwrap --lex lex.yy ../4/foo.l ./foo.c "$ocwd"/fake-lex
+ls -l
+cmp foo.l foo.c
+cd ..
+
+mkdir 5
+cd 5
+echo 'blah 5' > foo.l++
+mkdir sub
+cp ../fake-lex sub
+$SHELL -x ../ylwrap --lex lex.yy foo.l++ foo.c++ -- sub/fake-lex
+ls -l
+cmp foo.l++ foo.c++
+cd ..
+
+:

@@ -1,0 +1,141 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check how ylwrap handles runtime failures and/or incorrect usages.
+
+. ./defs || Exit 1
+
+set -e
+
+cp "$testsrcdir"/../lib/ylwrap .
+
+#
+# Check usage errors.
+#
+
+$SHELL ./ylwrap 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+grep 'ylwrap:.*missing argument' stderr
+grep 'Try.*ylwrap --help' stderr
+
+$SHELL ./ylwrap foo 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+grep 'ylwrap:.*no operation mode specified' stderr
+grep 'Try.*ylwrap --help' stderr
+
+for opt in -x --foo -df --bar=qux -- -; do
+  $SHELL ./ylwrap $opt 2>stderr && { cat stderr >&2; Exit 1; }
+  cat stderr >&2
+  grep "ylwrap:.*invalid option.*$opt" stderr
+  grep 'Try.*ylwrap --help' stderr
+done
+
+$SHELL ./ylwrap --yacc 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+grep 'ylwrap:.*missing yacc extension' stderr
+grep 'Try.*ylwrap --help' stderr
+
+$SHELL ./ylwrap --lex 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+grep 'ylwrap:.*missing lex output root' stderr
+grep 'Try.*ylwrap --help' stderr
+
+$SHELL ./ylwrap --yacc .y 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+grep 'ylwrap:.*missing input file' stderr
+grep 'Try.*ylwrap --help' stderr
+
+$SHELL ./ylwrap 2>stderr --lex foo.yy && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+grep 'ylwrap:.*missing input file' stderr
+grep 'Try.*ylwrap --help' stderr
+
+$SHELL ./ylwrap 2>stderr --lex foo.yy bar.l && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+grep 'ylwrap:.*missing output file' stderr
+grep 'Try.*ylwrap --help' stderr
+
+for preamble in '--yacc .y foo.y foo.c' '--lex lex.yy bar.l bar.c'; do
+  for separator in '' '--'; do
+    $SHELL ./ylwrap $preamble $separator 2>stderr \
+      && { cat stderr >&2; Exit 1; }
+    cat stderr >&2
+    grep 'ylwrap:.*missing program to run' stderr
+    grep 'Try.*ylwrap --help' stderr
+  done
+done
+
+#
+# Now check runtime failures.
+#
+
+# Check that temporary files/directories are not left lying around.
+check_emptydir ()
+{
+  ls -a ${1-.} | $EGREP -v '^\.\.?$' && { ls -l; Exit 1; }
+  :
+}
+
+mkdir bin
+cat > bin/fail.sh <<'END'
+echo o:FAIL
+echo e:FAIL >&2
+: > bad-file
+(exit 1); exit 1
+END
+cat > bin/exit13.sh <<'END'
+#!/bin/sh
+: > bad-file
+(exit 13); exit 13
+END
+chmod a+x bin/fail.sh bin/exit13.sh
+PATH=`pwd`/bin$PATH_SEPARATOR$PATH; export PATH
+
+mkdir foo
+cd foo
+$SHELL ../ylwrap --yacc .y foo.y foo.c -- fail.sh >../stdout 2>../stderr \
+  && { cat ../stdout; cat ../stderr >&2; Exit 1; }
+cat ../stdout
+cat ../stderr >&2
+check_emptydir
+# ylwrap should pass messages through.
+grep '^o:FAIL$' ../stdout
+grep '^e:FAIL$' ../stderr
+cd ..
+
+mkdir bar
+cd bar
+if $SHELL -x ../ylwrap --lex x.yy foo.l foo.c -- exit13.sh; then
+  Exit 1
+else
+  # Return the same failure of the invoked program.
+  test $? -eq 13 || Exit 1
+fi
+check_emptydir
+cd ..
+
+mkdir baz
+cd baz
+if $SHELL -x ../ylwrap --yacc .yxx foo.yxx foo.cxx -- _NoSuchCommand_; then
+  Exit 1
+else
+  # If ylwrap fails to found the given program, it must exit with 127.
+  test $? -eq 127 || Exit 1
+fi
+check_emptydir
+cd ..
+
+:

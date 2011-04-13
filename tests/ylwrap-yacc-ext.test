@@ -1,0 +1,54 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Test ylwrap when used as a yacc wrapper for Yacc files with different
+# extensions (.yy, .y++, .yxx, ypp).
+
+. ./defs || Exit 1
+
+set -e
+
+cp "$testsrcdir"/../lib/ylwrap .
+
+mkdir bin
+cat > bin/fake-yacc <<'END'
+#!/bin/sh -e
+: > y.tab.c
+case $1 in -*d*) : > y.tab.h;; esac
+case $1 in -*v*) : > y.output;; esac
+END
+chmod a+x bin/fake-yacc
+PATH=`pwd`/bin:$PATH; export PATH
+
+for mold in _ __ _++ _xx _pp; do
+  for opts in '' d v vd; do
+    dir=${mold}-${opts}.dir
+    mkdir $dir
+    cd $dir
+    y=`echo $mold | sed 's/_/y/g'`
+    c=`echo $mold | sed 's/_/c/g'`
+    h=`echo $mold | sed 's/_/h/g'`
+    $SHELL -x ../ylwrap --yacc .$y x.$y x.$c fake-yacc -$opts
+    ls -l # For debugging.
+    ls y.* && Exit 1
+    test -f x.$c
+    case $opts in *d*) test -f x.$h;; *) :;; esac
+    case $opts in *v*) test -f x.output;; *) :;; esac
+    cd ..
+  done
+done
+
+:
