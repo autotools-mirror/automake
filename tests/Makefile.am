@@ -869,11 +869,14 @@ yflags-force-override.test \
 yflags-force-conditional.test \
 yflags-var-expand.test \
 yacclex-line.test \
+ylwrap-chdir-back-fail.test \
+ylwrap-cleanup-fail.test \
 ylwrap-extra-args.test \
 ylwrap-fail.test \
 ylwrap-lex-parallel.test \
 ylwrap-output-rename.test \
 ylwrap-path-handling.test \
+ylwrap-pwd-fail.test \
 ylwrap-signals.test \
 ylwrap-yacc-dos.test \
 ylwrap-yacc-ext.test \

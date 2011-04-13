@@ -1,7 +1,7 @@
 #! /bin/sh
 # ylwrap - wrapper for lex/yacc invocations.
 
-scriptversion=2011-05-05.09; # UTC
+scriptversion=2011-05-05.10; # UTC
 
 # Copyright (C) 1996, 1997, 1998, 1999, 2001, 2002, 2003, 2004, 2005,
 # 2007, 2009, 2010, 2011 Free Software Foundation, Inc.
@@ -35,6 +35,42 @@ usage_error ()
     echo "$0: $*" >&2
     echo "Try \`$0 --help' for more information." >&2
     exit 2
+}
+
+# Escape (most) sed metacharacters in the given string, so that it can
+# be used as a literal string in a sed match or substitute command.
+quote_for_sed ()
+{
+  printf '%s\n' "$1" | sed -e 's/[].[^$\\*|]/\\&/g'
+}
+
+# For system that lacks a dirname command, we simulate it with sed.
+dirname_ ()
+{
+  dirname "$1" 2>/dev/null \
+    || printf '%s\n' "$1" | sed -e 's,\([\\/]\)[^\\/]*$,\1,'
+}
+
+# Since DOS filename conventions don't allow two dots, the DOS version
+# of Bison writes out y_tab.c instead of y.tab.c and y_tab.h instead
+# of y.tab.h.  Test to see if this is the case.
+# This function might set the global variable `$y_tab_nodot' (meant for
+# internal use only), and modify the global variable `$from'.
+dos_fix_yacc_filenames ()
+{
+  test $wrapped = yacc || return 0
+  if test -z "$y_tab_nodot"; then
+    if test -f y_tab.c || test -f y_tab.h; then
+      y_tab_nodot=yes
+    else
+      y_tab_nodot=no
+    fi
+  fi
+  if test $y_tab_nodot = yes; then
+    # Handle y_tab.c and y_tab.h output by DOS
+    test $from = y.tab.c && from=y_tab.c
+    test $from = y.tab.h && from=y_tab.h
+  fi
 }
 
 test $# -gt 0 || usage_error "missing argument"
@@ -122,31 +158,30 @@ if test x"$1" = x"--"; then
   shift
 fi
 
-# The program to run.
 test $# -gt 0 || usage_error "missing program to run"
 prog="$1"
 shift
 
-case "$input" in
-  [\\/]* | ?:[\\/]*)
-    # Absolute path; do nothing.
-    ;;
-  *)
-    # Relative path.  Make it absolute.
-    input="`pwd`/$input"
-    ;;
+ocwd=`pwd` || exit 1
+
+# We are going to run yacc from another directory, so make relative
+# paths in $prog and $input absolute as fit.
+case $prog in
+  [\\/]* | ?:[\\/]*) ;;
+  # If $prog does not contain any component directory, it will be
+  # looked up in $PATH, so don't modify it.
+  *[\\/]*) prog=$ocwd/$prog ;;
 esac
 
-# Make any relative path in $prog absolute.
-case "$prog" in
+case $input in
   [\\/]* | ?:[\\/]*) ;;
-  *[\\/]*) prog="`pwd`/$prog" ;;
+  *) input=$ocwd/$input ;;
 esac
 
 # FIXME: add hostname here for parallel makes that run commands on
 # other machines.  But that might take us over the 14-char limit.
 dirname=ylwrap$$
-do_exit="cd '`pwd`' && rm -rf $dirname > /dev/null 2>&1;"' (exit $ret); exit $ret'
+do_exit="cd '$ocwd' && rm -rf $dirname; (exit \$ret); exit \$ret"
 # The only signals which are portably trappable are 1 (SIGHUP),
 # 2 (SIGINT), 13 (SIGPIPE) and 15 (SIGTERM).
 trap "ret=129; $do_exit" 1
@@ -154,8 +189,7 @@ trap "ret=130; $do_exit" 2
 trap "ret=141; $do_exit" 13
 trap "ret=143; $do_exit" 15
 mkdir $dirname || exit 1
-
-cd $dirname
+cd $dirname || exit 1
 
 case $# in
   0) "$prog" "$input" ;;
@@ -168,36 +202,21 @@ if test $ret -eq 0; then
   set X $pairlist
   shift
 
-  if test $wrapped = yacc; then
-    # Since DOS filename conventions don't allow two dots,
-    # the DOS version of Bison writes out y_tab.c instead of y.tab.c
-    # and y_tab.h instead of y.tab.h. Test to see if this is the case.
-    y_tab_nodot="no"
-    if test -f y_tab.c || test -f y_tab.h; then
-      y_tab_nodot="yes"
-    fi
-  fi
-
   # The directory holding the input.
-  input_dir=`echo "$input" | sed -e 's,\([\\/]\)[^\\/]*$,\1,'`
-  # Quote $INPUT_DIR so we can use it in a regexp.
-  # FIXME: really we should care about more than `.' and `\'.
-  input_rx=`echo "$input_dir" | sed 's,\\\\,\\\\\\\\,g;s,\\.,\\\\.,g'`
+  input_dir=`dirname_ "$input"`
+  # Quote $input_dir so we can use it in a regexp.
+  input_rx=`quote_for_sed "$input_dir"`
 
-  while test "$#" -ne 0; do
-    from="$1"
-    ofrom="$from"
-    if test $wrapped = "yacc" && test $y_tab_nodot = "yes"; then
-      # Handle y_tab.c and y_tab.h output by DOS
-      test $from = "y.tab.c" && from="y_tab.c"
-      test $from = "y.tab.h" && from="y_tab.h"
-    fi
+  while test $# -ne 0; do
+    from=$1
+    ofrom=$from
+    dos_fix_yacc_filenames
     if test -f "$from"; then
       # If $2 is an absolute path name, then just use that,
       # otherwise prepend `../'.
-      case "$2" in
-    	[\\/]* | ?:[\\/]*) target="$2";;
-    	*) target="../$2";;
+      case $2 in
+        [\\/]* | ?:[\\/]*) target=$2;;
+        *) target=../$2;;
       esac
 
       # We do not want to overwrite a header file if it hasn't
@@ -206,9 +225,9 @@ if test $ret -eq 0; then
       # because it is the destination of the .y.c rule in the
       # Makefile.  Divert the output of all other files to a temporary
       # file so we can compare them to existing versions.
-      if test $wrapped = yacc && test $ofrom = "y.tab.h"; then
-	realtarget="$target"
-	target="tmp-`echo $target | sed s/.*[\\/]//g`"
+      if test $wrapped = yacc && test $ofrom = y.tab.h; then
+        realtarget=$target
+        target=header.tmp
       fi
       # Edit out `#line' or `#' directives.
       #
@@ -231,11 +250,11 @@ if test $ret -eq 0; then
           -e "s,$FROM,$TARGET," "$from" >"$target" || ret=$?
 
       # Check whether header files must be updated.
-      if test $wrapped = "yacc" && test $ofrom = "y.tab.h"; then
-	if test -f "$realtarget" && cmp -s "$realtarget" "$target"; then
-	  echo "$2" is unchanged
-	  rm -f "$target"
-	else
+      if test $wrapped = yacc && test $ofrom = y.tab.h; then
+       if test -f "$realtarget" && cmp -s "$realtarget" "$target"; then
+         echo "$2" is unchanged
+         rm -f "$target"
+       else
           echo updating "$2"
           mv -f "$target" "$realtarget"
         fi
@@ -254,9 +273,8 @@ if test $ret -eq 0; then
   done
 fi
 
-# Remove the directory.
-cd ..
-rm -rf $dirname
+# Remove the temporary directory.
+cd "$ocwd" && rm -rf $dirname
 
 exit $ret
 

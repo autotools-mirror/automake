@@ -1,0 +1,47 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check that ylwrap gives warning messages when the cleanup fails.
+
+required=ro-dir
+. ./defs || Exit 1
+
+set -e
+
+cp "$testsrcdir"/../lib/ylwrap .
+
+ocwd=`pwd`
+
+cat > fake-yacc <<'END'
+#!/bin/sh
+set -e
+echo zardoz > y.tab.c
+chmod a-w .
+END
+chmod a+x fake-yacc
+
+# ylwrap should return a successful exit status ...
+$SHELL ylwrap --yacc .y foo.y foo.c ./fake-yacc 2>stderr \
+  || { cat stderr >&2; Exit 1; }
+cat stderr >&2
+# ... but also give warnings ...
+grep "rm: .*ylwrap[0-9]" stderr
+# ... but still correctly move/copy the generated C source file
+# into its final location.
+cat foo.c
+test `cat foo.c` = zardoz
+
+:
