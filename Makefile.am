@@ -566,7 +566,7 @@ sc_tests_makefile_variable_order: sc_ensure_testsuite_has_run
 ## Using `:' as a PATH separator is not portable.
 sc_tests_PATH_SEPARATOR:
 	@if grep -E '\bPATH=.*:.*' $(srcdir)/tests/*.test ; then \
-	  echo "Use \`$$PATH_SEPARATOR', not \`:', in PATH definitions above." 1>&2; \
+	  echo "Use \`\$$PATH_SEPARATOR', not \`:', in PATH definitions above." 1>&2; \
 	  exit 1; \
 	fi
 
