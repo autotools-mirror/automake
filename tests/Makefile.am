@@ -26,6 +26,7 @@ cond17.test \
 gcj6.test \
 override-conditional-2.test \
 pr8365-remake-timing.test \
+yacc-dist-nobuild-subdir.test \
 txinfo5.test
 
 
@@ -1018,6 +1019,7 @@ yacc-nodist.test \
 yaccpp.test \
 yaccvpath.test \
 yacc-d-vpath.test \
+yacc-dist-nobuild-subdir.test \
 yflags.test \
 yflags2.test \
 yflags-cmdline-override.test \
