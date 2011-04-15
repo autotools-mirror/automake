@@ -413,7 +413,7 @@ sc_tests_plain_egrep_fgrep:
 ## Using `:' as a PATH separator is not portable.
 sc_tests_PATH_SEPARATOR:
 	@if grep -E '\bPATH=.*:.*' $(srcdir)/tests/*.test ; then \
-	  echo "Use \`$$PATH_SEPARATOR', not \`:', in PATH definitions above." 1>&2; \
+	  echo "Use \`\$$PATH_SEPARATOR', not \`:', in PATH definitions above." 1>&2; \
 	  exit 1; \
 	fi
 
