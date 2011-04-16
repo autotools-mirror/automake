@@ -22,6 +22,7 @@ auxdir2.test \
 cond17.test \
 gcj6.test \
 pr8365-remake-timing.test \
+yacc-dist-nobuild-subdir.test \
 txinfo5.test
 
 include $(srcdir)/parallel-tests.am
@@ -831,6 +832,7 @@ yacc8.test \
 yaccdry.test \
 yaccpp.test \
 yaccvpath.test \
+yacc-dist-nobuild-subdir.test \
 yflags.test \
 yflags2.test \
 $(parallel_tests)
