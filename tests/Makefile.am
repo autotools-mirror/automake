@@ -704,6 +704,8 @@ parallel-tests10.test \
 parallel-tests-am_tests_setup.test \
 parallel-tests-unreadable-log.test \
 parallel-tests-subdir.test \
+parallel-tests-interrupt.test \
+parallel-tests-reset-term.test \
 parse.test \
 percent.test \
 percent2.test \
