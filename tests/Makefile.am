@@ -38,7 +38,12 @@ $(parallel_tests): $(parallel_tests:-p.test=.test) Makefile.am
 
 MAINTAINERCLEANFILES = $(parallel_tests)
 
+# The testsuite variable `$me' should be overridable from the
+# test scripts, but not from the environment.
+TESTS_ENVIRONMENT = test x"$$me" = x || unset me;
+
 TESTS = \
+self-check-me-in-env.test \
 aclibobj.test \
 aclocal.test \
 aclocal3.test \
