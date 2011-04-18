@@ -424,6 +424,8 @@ java3.test \
 java-check.test \
 javaprim.test \
 javasubst.test \
+java-extra.test \
+java-noinst.test \
 ldadd.test \
 ldflags.test \
 lex.test \
