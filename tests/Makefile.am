@@ -422,10 +422,15 @@ java.test \
 java2.test \
 java3.test \
 java-check.test \
+java-clean.test \
 javaprim.test \
 javasubst.test \
 java-extra.test \
 java-noinst.test \
+java-compile-install.test \
+java-sources.test \
+java-no-duplicate.test \
+java-mix-dist-nodist.test \
 ldadd.test \
 ldflags.test \
 lex.test \
