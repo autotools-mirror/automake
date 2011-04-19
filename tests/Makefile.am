@@ -100,7 +100,7 @@ XFAIL_TESTS += $(instspc_xfail_tests)
 
 # The testsuite variable `$me' should be overridable from the
 # test scripts, but not from the environment.
-TESTS_ENVIRONMENT = test x"$$me" = x || unset me;
+AM_TESTS_ENVIRONMENT = test x"$$me" = x || unset me;
 
 TESTS = \
 aclocal.test \
