@@ -73,6 +73,16 @@ test -f "$testbuilddir/defs-static" || {
    exit 99
 }
 
+# Check that the environment is properly sanitized.
+for var in required parallel_tests; do
+  if env | grep "^$var=" >/dev/null; then
+    echo "$me: variable \`$var' is set in the environment:" \
+         "this is unsafe" >&2
+    exit 99
+  fi
+done
+unset var
+
 # Unset some MAKE... variables that may cause $MAKE to act like a
 # recursively invoked sub-make.  Any $MAKE invocation in a test is
 # conceptually an independent invocation, not part of the main
@@ -208,6 +218,7 @@ unindent ()
   fi
   sed "$sed_unindent_prog" ${1+"$@"}
 }
+sed_unindent_prog="" # Avoid interferences from the environment.
 
 
 ## ----------------------------------------------------------- ##

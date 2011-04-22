@@ -98,9 +98,12 @@ EXTRA_DIST += instspc-tests.sh
 XFAIL_TESTS += $(instspc_xfail_tests)
 
 
-# The testsuite variable `$me' should be overridable from the
+# Some testsuite-influential variables should be overridable from the
 # test scripts, but not from the environment.
-AM_TESTS_ENVIRONMENT = test x"$$me" = x || unset me;
+AM_TESTS_ENVIRONMENT = \
+  test x"$$me" = x || unset me; \
+  test x"$$required" = x || unset required; \
+  test x"$$parallel_tests" = x || unset parallel_tests;
 
 TESTS = \
 aclocal.test \
@@ -818,10 +821,10 @@ repeated-options.test \
 rulepat.test \
 self-check-cleanup.test \
 self-check-dir.test \
+self-check-env-sanitize.test \
 self-check-exit.test \
 self-check-is_newest.test \
 self-check-me.test \
-self-check-me-in-env.test \
 self-check-sanity.test \
 self-check-unindent.test \
 sanity.test \
