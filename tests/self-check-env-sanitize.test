@@ -16,13 +16,15 @@
 
 # Sanity check for the automake testsuite.
 # Make sure that the testsuite initialization code complains when
-# $me is set in the environment.
+# some testsuite-influential variables are set in the environment.
 
 set -x
 
 exec 5>&1
-env me=foo /bin/sh -c '. ./defs' foo.test && exit 1
-env me=foo /bin/sh -c '. ./defs' foo.test 2>&1 1>&5 \
-  | grep "variable \`me' is set in the environment.*unsafe" || exit 1
+for var in me parallel_tests required; do
+  env "$var=foo" /bin/sh -c '. ./defs' foo.test && exit 1
+  env "$var=foo" /bin/sh -c '. ./defs' foo.test 2>&1 1>&5 \
+    | grep "variable \`$var' is set in the environment.*unsafe" || exit 1
+done
 
 :

@@ -74,6 +74,16 @@ elif env | grep '^me=' >/dev/null; then
   exit 99
 fi
 
+# Check that the environment is properly sanitized.
+for var in required parallel_tests; do
+  if env | grep "^$var=" >/dev/null; then
+    echo "$me: variable \`$var' is set in the environment:" \
+         "this is unsafe" >&2
+    exit 99
+  fi
+done
+unset var
+
 # This might be used in testcases checking distribution-related features.
 # Test scripts are free to override this if they need to.
 distdir=$me-1.0
@@ -488,6 +498,7 @@ unindent ()
   fi
   sed "$sed_unindent_prog" ${1+"$@"}
 }
+sed_unindent_prog="" # Avoid interferences from the environment.
 
 # Turn on shell traces.
 set -x
