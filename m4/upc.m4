@@ -1,10 +1,12 @@
 # Find a compiler for Unified Parallel C.	            -*- Autoconf -*-
 
-# Copyright (C) 2006  Free Software Foundation, Inc.
+# Copyright (C) 2006, 2011 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
+
+# serial 1
 
 AC_DEFUN([AM_PROG_UPC],
 [dnl We need OBJEXT and EXEEXT, but Autoconf doesn't offer any public

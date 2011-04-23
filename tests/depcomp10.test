@@ -14,19 +14,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# makedepend should work in VPATH mode.
+# hp depmode should work with GNU make in VPATH mode (bug similar to
+# depcomp9.test).
+# For automake bug#8473.
 
-# Here's the bug: makedepend will prefix VPATH to the object file name,
-# thus the second make will invoke depcomp with object='../../src/foo.o',
-# causing errors such as:
-# touch: cannot touch `../../src/.deps/foo.TPo': No such file or directory
-# makedepend: error:  cannot open "../../src/.deps/foo.TPo"
-# ../../depcomp: line 560: ../../src/.deps/foo.TPo: No such file or directory
+# Here's the bug: hp depmode will prefix VPATH to the object file name,
+# thus the second gmake will invoke depcomp with object='../../src/foo.o',
+# causing errors such as (broken on multiple lines for clarity):
+#   cpp: "", line 0: error 4066: Cannot create
+#        "../../gllib/.deps/nonblocking.TPo" file for
+#        "-M../../gllib/.deps/nonblocking.TPo" option.
+#        (No such file or directory[errno=2])
 
-# We include subfoo only to be sure that we don't remove too much
-# from the object file name.
-
-required='makedepend'
+required=GNUmake
 . ./defs || Exit 1
 
 mkdir src src/sub build
@@ -73,16 +73,14 @@ $AUTOCONF
 $AUTOMAKE -a
 
 cd build
-../configure am_cv_CC_dependencies_compiler_type=makedepend
-
-# Do not error out with the first make, as the forced 'makedepend'
-# depmode might not actually work, but we have overridden the
-# _AM_DEPENDENCIES tests.
+../configure am_cv_CC_dependencies_compiler_type=hp
+# Do not error out with the first make, as the forced 'hp' depmode might
+# not actually work, but we have overridden the _AM_DEPENDENCIES tests.
 $MAKE || Exit 77
 
 # We must clean and rebuild, as the actual error only happens the second
-# time the objects are built because 'makedepend' has silently messed up
-# the .Po files the first time.
+# time the objects are built because 'depcomp' has silently messed up the
+# .Po files the first time.
 $MAKE clean
 
 $MAKE >out 2>&1 || { cat out; Exit 1; }

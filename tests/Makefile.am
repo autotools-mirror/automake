@@ -22,6 +22,7 @@ auxdir2.test \
 cond17.test \
 gcj6.test \
 pr8365-remake-timing.test \
+yacc-dist-nobuild-subdir.test \
 txinfo5.test
 
 include $(srcdir)/parallel-tests.am
@@ -37,7 +38,15 @@ $(parallel_tests): $(parallel_tests:-p.test=.test) Makefile.am
 
 MAINTAINERCLEANFILES = $(parallel_tests)
 
+# Some testsuite-influential variables should be overridable from the
+# test scripts, but not from the environment.
+TESTS_ENVIRONMENT = \
+  test x"$$me" = x || unset me; \
+  test x"$$required" = x || unset required; \
+  test x"$$parallel_tests" = x || unset parallel_tests;
+
 TESTS = \
+self-check-env-sanitize.test \
 aclibobj.test \
 aclocal.test \
 aclocal3.test \
@@ -278,6 +287,7 @@ depcomp7.test \
 depcomp8a.test \
 depcomp8b.test \
 depcomp9.test \
+depcomp10.test \
 depdist.test \
 depend.test \
 depend2.test \
@@ -837,6 +847,7 @@ yacc8.test \
 yaccdry.test \
 yaccpp.test \
 yaccvpath.test \
+yacc-dist-nobuild-subdir.test \
 yflags.test \
 yflags2.test \
 $(parallel_tests)
