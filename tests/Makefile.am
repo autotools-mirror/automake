@@ -440,6 +440,8 @@ java-extra.test \
 java-noinst.test \
 java-nobase.test \
 java-compile-install.test \
+java-compile-run-flat.test \
+java-compile-run-nested.test \
 java-sources.test \
 java-no-duplicate.test \
 java-mix.test \
