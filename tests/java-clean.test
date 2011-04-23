@@ -27,14 +27,21 @@ END
 
 cat > Makefile.am << 'END'
 javadir = $(datadir)/java
+
 java_JAVA = Class.java
 dist_java_JAVA = ClassDist.java
-nodist_java_JAVA = ClassNoDist.java
+nodist_java_JAVA = ClassNodist.java
+
+nobase_java_JAVA = ClassNobase.java
+nobase_dist_java_JAVA = ClassNobaseDist.java
+nobase_nodist_java_JAVA = ClassNobaseNodist.java
 END
 
-echo 'class Class {}' > Class.java
-echo 'class ClassDist {}' > ClassDist.java
-echo 'class ClassNoDist {}' > ClassNoDist.java
+for base in '' Nobase; do
+  for dist in '' Dist Nodist; do
+    echo "class Class$base$dist {}" > Class$base$dist.java
+  done
+done
 
 $ACLOCAL
 $AUTOCONF
@@ -44,14 +51,18 @@ $AUTOMAKE
 $MAKE
 ls -l
 test -f classjava.stamp
-test -f Class.class
-test -f ClassDist.class
-test -f ClassNoDist.class
+for base in '' Nobase; do
+  for dist in '' Dist Nodist; do
+    test -f Class$base$dist.class
+  done
+done
 $MAKE clean
 find . -name '*.class' -o -name '*.stamp' | grep . && Exit 1
 # We should not remove unrelated stamp files.
 echo timestamp > classjava2.stamp
+echo timestamp > classdist_java.stamp
 $MAKE clean
 test -f classjava2.stamp
+test -f classdist_java.stamp
 
 :

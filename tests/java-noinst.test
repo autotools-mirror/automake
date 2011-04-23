@@ -14,7 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Make sure that noinst_JAVA causes generated *.class files not to be installed.
+# Make sure that noinst_JAVA causes generated *.class files not to
+# be installed.
 
 . ./defs || Exit 1
 
@@ -26,28 +27,32 @@ AC_CHECK_PROG([HAS_JAVAC], [javac], [:], [exit])
 AC_OUTPUT
 END
 
-cat > Foo.java <<'END'
-class Foo { }
+cat > Makefile.am <<'END'
+noinst_JAVA = 1.java
+dist_noinst_JAVA = 2.java
+nodist_noinst_JAVA = 3.java
+nobase_noinst_JAVA = 4.java
+nobase_dist_noinst_JAVA = 5.java
+nobase_nodist_noinst_JAVA = 6.java
 END
 
-$ACLOCAL
-$AUTOCONF
+for i in 1 2 3 4 5 6; do
+  echo "class Class$i {}" > $i.java
+done
 
-: > Makefile.in # Will be updated later.
+$ACLOCAL
+$AUTOMAKE
+$AUTOCONF
 
 ./configure --prefix="`pwd`/_inst"
 
-# We need this hacky loop because multiple uses of the JAVA primary
-# in the same Makefile.am are not allowed.
-
-for prefix in '' nodist_ dist_; do
-  echo "${prefix}noinst_JAVA = Foo.java" > Makefile.am
-  $AUTOMAKE
-  ./config.status Makefile
-  $MAKE
-  test -f Foo.class
-  $MAKE install
-  test ! -d _inst
+$MAKE
+ls -l
+for i in 1 2 3 4 5 6; do
+  test -f Class$i.class
 done
+
+$MAKE install
+test -d _inst && { ls -l _inst; Exit 1; }
 
 :
