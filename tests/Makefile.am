@@ -47,6 +47,7 @@ TESTS_ENVIRONMENT = \
 
 TESTS = \
 self-check-env-sanitize.test \
+self-check-report.test \
 aclibobj.test \
 aclocal.test \
 aclocal3.test \
