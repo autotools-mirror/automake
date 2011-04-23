@@ -824,6 +824,7 @@ self-check-env-sanitize.test \
 self-check-exit.test \
 self-check-is_newest.test \
 self-check-me.test \
+self-check-report.test \
 self-check-sanity.test \
 self-check-unindent.test \
 sanity.test \

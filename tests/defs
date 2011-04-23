@@ -128,6 +128,20 @@ Exit ()
   exit $1
 }
 
+# Print warnings (e.g., about skipped and failed tests) to this file
+# number.  Override by putting, say:
+#   stderr_fileno_=9; export stderr_fileno_; exec 9>&2;
+# in the definition of AM_TESTS_ENVIRONMENT.
+# This is useful when using automake's parallel tests mode, to print the
+# reason for skip/failure to console, rather than to the *.log files.
+: ${stderr_fileno_=2}
+
+# Copied from Gnulib's `tests/init.sh'.
+warn_ () { echo "$@" 1>&$stderr_fileno_; }
+fail_ () { warn_ "$me: failed test: $@"; Exit 1; }
+skip_ () { warn_ "$me: skipped test: $@"; Exit 77; }
+framework_failure_ () { warn_ "$me: set-up failure: $@"; Exit 99; }
+
 # is_newest FILE FILES
 # --------------------
 # Return false if any file in FILES is newer than FILE.
