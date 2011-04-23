@@ -443,6 +443,7 @@ java-compile-install.test \
 java-sources.test \
 java-no-duplicate.test \
 java-mix.test \
+java-uninstall.test \
 ldadd.test \
 ldflags.test \
 lex.test \
