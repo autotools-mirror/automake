@@ -14,18 +14,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure redefining JAVAC works.
+# Test to make sure redefining JAVAC with AC_SUBST works.
 
 . ./defs || Exit 1
 
-echo 'AC_SUBST(JAVAC)' >> configure.in
+set -e
+
+cat >> configure.in << 'END'
+AC_SUBST([JAVAC])
+END
 
 cat > Makefile.am << 'END'
 javadir = $(datadir)/java
 java_JAVA = a.java b.java c.java
 END
 
-$ACLOCAL || Exit 1
-$AUTOMAKE || Exit 1
+$ACLOCAL
+$AUTOMAKE
 
-grep 'JAVAC.*@JAVAC@' Makefile.in
+grep -i java Makefile.in # For debugging.
+grep '^JAVAC = *@JAVAC@ *$' Makefile.in
+
+:
