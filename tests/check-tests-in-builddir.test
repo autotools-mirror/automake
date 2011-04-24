@@ -53,16 +53,27 @@ chmod a+x bar.test
 
 $MAKE check >out 2>&1 || { cat out; Exit1; }
 cat out
-grep '\.\./foo' out && Exit 1
-grep '^PASS: foo.test *$' out
+# The simple-tests driver does not strip VPATH components from
+# the name of the test, but the parallel-tests driver should.
+if test x"$parallel_tests" = x"yes"; then
+  grep '\.\./foo' out && Exit 1
+  grep '^PASS: foo.test *$' out
+else
+  grep '^PASS: .*foo.test *$' out
+fi
 grep '^PASS: bar.test *$' out
 
 rm -f test-suite.log foo.log bar.log
 
 FOO_EXIT_STATUS=1 $MAKE check >out 2>&1 && { cat out; Exit1; }
 cat out
-grep '\.\./foo' out && Exit 1
-grep '^FAIL: foo.test *$' out
+# See comments above.
+if test x"$parallel_tests" = x"yes"; then
+  grep '\.\./foo' out && Exit 1
+  grep '^FAIL: foo.test *$' out
+else
+  grep '^FAIL: .*foo.test *$' out
+fi
 grep '^PASS: bar.test *$' out
 
 rm -f test-suite.log foo.log bar.log
