@@ -446,6 +446,7 @@ java-sources.test \
 java-no-duplicate.test \
 java-mix.test \
 java-uninstall.test \
+java-rebuild.test \
 ldadd.test \
 ldflags.test \
 lex.test \
