@@ -436,6 +436,7 @@ java-check.test \
 java-clean.test \
 javaprim.test \
 javasubst.test \
+javaflags.test \
 java-extra.test \
 java-noinst.test \
 java-nobase.test \
