@@ -63,6 +63,18 @@ else
   case `(set -o) 2>/dev/null || :` in *posix*) set -o posix;; esac
 fi
 
+# Check that the environment is properly sanitized.
+# Having variables exported to the empty string is OK, since our code
+# treats such variables as if they were unset.
+for var in me required parallel_tests original_AUTOMAKE original_ACLOCAL; do
+  if eval "test x\"\$$var\" != x" && env | grep "^$var=" >/dev/null; then
+    echo "$argv0: variable \`$var' is set in the environment:" \
+         "this is unsafe" >&2
+    exit 99
+  fi
+done
+unset var
+
 testsrcdir='@abs_srcdir@'
 top_testsrcdir='@abs_top_srcdir@'
 testbuilddir='@abs_builddir@'

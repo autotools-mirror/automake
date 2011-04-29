@@ -103,7 +103,9 @@ XFAIL_TESTS += $(instspc_xfail_tests)
 AM_TESTS_ENVIRONMENT = \
   test x"$$me" = x || unset me; \
   test x"$$required" = x || unset required; \
-  test x"$$parallel_tests" = x || unset parallel_tests;
+  test x"$$parallel_tests" = x || unset parallel_tests; \
+  test x"$$original_AUTOMAKE" = x || unset original_AUTOMAKE; \
+  test x"$$original_ACLOCAL" = x || unset original_ACLOCAL;
 
 TESTS = \
 aclocal.test \
