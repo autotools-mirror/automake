@@ -17,11 +17,16 @@
 # Test remake rules when aclocal.m4 or its prerequisites change.
 # Keep in sync with the other sister tests `remake9*.test'.
 
-required=GNUmake
 . ./defs || Exit 1
 
 magic1=::MagicStringOne::
 magic2=__MagicStringTwo__
+
+if using_gmake; then
+  remake_() { $MAKE nil; }
+else
+  remake_() { $MAKE Makefile && $MAKE foo.sh; }
+fi
 
 cat >> configure.in <<END
 FINGERPRINT='my_fingerprint'
@@ -77,7 +82,7 @@ for vpath in : false; do
 
   $sleep
   echo "AC_DEFUN([my_fingerprint], [$magic1])dnl %%%" >> $srcdir/aclocal.m4
-  $MAKE nil
+  remake_
   $FGREP FINGERPRINT Makefile # for debugging
   $FGREP $magic1 Makefile
   test x"`./foo.sh`" = x"$magic1"
@@ -85,7 +90,7 @@ for vpath in : false; do
   $sleep
   echo "sed 's/.*dnl *%%%.*/AC_DEFUN([my_fingerprint], [$magic2])/'" \
     > $srcdir/tweak-aclocal-m4
-  $MAKE nil
+  remake_
   $FGREP FINGERPRINT Makefile # for debugging
   $FGREP $magic1 Makefile && Exit 1
   $FGREP $magic2 Makefile
@@ -94,6 +99,7 @@ for vpath in : false; do
   $sleep
   echo cat > $srcdir/tweak-aclocal-m4 # no-op again
   echo 'AC_DEFUN([my_fingerprint], [DummyValue])' >> $srcdir/aclocal.m4
+  using_gmake || remake_
   $MAKE distcheck
   $FGREP $magic1 Makefile && Exit 1 # sanity check
   $FGREP $magic2 Makefile && Exit 1 # likewise

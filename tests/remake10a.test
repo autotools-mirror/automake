@@ -18,12 +18,17 @@
 # configure.ac.
 # Keep in sync with sister tests `remake10b.test' and `remake10c.test'.
 
-required=GNUmake
 . ./defs || Exit 1
 
 magic1=::MagicStringOne::
 magic2=__MagicStringTwo__
 magic3=%%MagicStringThree%%
+
+if using_gmake; then
+  remake="$MAKE nil"
+else
+  remake="$MAKE Makefile"
+fi
 
 cat >> configure.in <<END
 m4_include([foo.m4])
@@ -63,13 +68,13 @@ for vpath in : false; do
 
   $sleep
   echo "m4_define([my_fingerprint], [$magic1])" > $top_srcdir/foo.m4
-  $MAKE nil
+  $remake
   $FGREP FINGERPRINT Makefile # for debugging
   $FGREP $magic1 Makefile
 
   $sleep
   echo "m4_define([my_fingerprint], [$magic2])" > $top_srcdir/foo.m4
-  $MAKE nil
+  $remake
   $FGREP FINGERPRINT Makefile # for debugging
   $FGREP $magic1 Makefile && Exit 1
   $FGREP $magic2 Makefile
@@ -77,7 +82,7 @@ for vpath in : false; do
   $sleep
   echo "m4_include([bar.m4])" > $top_srcdir/foo.m4
   echo "m4_define([my_fingerprint], [$magic3])" > $top_srcdir/bar.m4
-  $MAKE nil
+  $remake
   $FGREP FINGERPRINT Makefile # for debugging
   $FGREP $magic1 Makefile && Exit 1
   $FGREP $magic2 Makefile && Exit 1
@@ -85,13 +90,14 @@ for vpath in : false; do
 
   $sleep
   echo "m4_define([my_fingerprint], [$magic1])" > $top_srcdir/bar.m4
-  $MAKE nil
+  $remake
   $FGREP $magic2 Makefile && Exit 1
   $FGREP $magic3 Makefile && Exit 1
   $FGREP $magic1 Makefile
 
   $sleep
   echo "m4_define([my_fingerprint], [DummyValue])" > $top_srcdir/foo.m4
+  using_gmake || $remake
   $MAKE distcheck
   $FGREP $magic1 Makefile && Exit 1 # sanity check
   $FGREP $magic2 Makefile && Exit 1 # likewise
