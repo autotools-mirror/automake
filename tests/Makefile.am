@@ -822,6 +822,8 @@ remake10b.test \
 remake10c.test \
 remake11.test \
 remake12.test \
+remake-all-1.test \
+remake-all-2.test \
 remake-gnulib-add-acsubst.test \
 remake-gnulib-add-header.test \
 remake-gnulib-remove-header.test \
