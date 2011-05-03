@@ -653,6 +653,9 @@ man2.test \
 man3.test \
 man4.test \
 man5.test \
+man6.test \
+man7.test \
+man8.test \
 mdate.test \
 mdate2.test \
 mdate3.test \
