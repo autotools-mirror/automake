@@ -17,7 +17,7 @@
 # Make sure we allow Libtool's -dlopen/-dlpreopen
 # Also check basic support for AM_LIBTOOLFLAGS/LIBTOOLFLAGS
 
-required='libtoolize gcc'
+required=libtoolize
 . ./defs || Exit 1
 
 cat >> configure.in << 'END'
@@ -42,6 +42,7 @@ bin_PROGRAMS = prg
 prg_SOURCES = prg.c
 prg_LDADD = -dlopen libmod1.la -dlpreopen mod2.la
 
+.PHONY: print
 print:
 	@echo 1BEG: $(prg_DEPENDENCIES) :END1
 	@echo 2BEG: $(libmod1_la_DEPENDENCIES) :END2
@@ -51,24 +52,21 @@ END
 mkdir sub liba
 
 cat > sub/mod1.c << 'END'
-int
-mod1 ()
+int mod1 (void)
 {
    return 1;
 }
 END
 
 cat > mod2.c << 'END'
-int
-mod2 ()
+int mod2 (void)
 {
    return 2;
 }
 END
 
 cat > prg.c << 'END'
-int
-main ()
+int main (void)
 {
    return 0;
 }
@@ -96,3 +94,5 @@ grep 'silent.*silent.*libmod1' output
 env LIBTOOLFLAGS=--silent $MAKE uninstall >output 2>&1
 cat output
 grep 'silent.*silent.*libmod1' output
+
+:

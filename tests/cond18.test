@@ -17,16 +17,14 @@
 # Regression test for substitution references to conditional variables.
 # Report from Richard Boulton
 
-required='GNUmake gcc'
+required=GNUmake
 . ./defs || Exit 1
 
-cat > configure.in << 'END'
-AC_INIT(Makefile.am)
-AM_INIT_AUTOMAKE(hello,0.23)
+cat >> configure.in << 'END'
 AC_PROG_CC
-AM_CONDITIONAL(COND1, true)
-AM_CONDITIONAL(COND2, true)
-AC_OUTPUT(Makefile)
+AM_CONDITIONAL([COND1], [true])
+AM_CONDITIONAL([COND2], [true])
+AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
@@ -53,10 +51,6 @@ echorule:
 bin_PROGRAMS = helldl
 END
 
-# Ignore user CFLAGS.
-CFLAGS=
-export CFLAGS
-
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
@@ -64,5 +58,6 @@ $AUTOMAKE -a
 ./configure
 
 val=`$MAKE --no-print-directory echorule`;
-echo $val
 test "x$val" = "xdlmain.c foo.c dlmain.o foo.o"
+
+:

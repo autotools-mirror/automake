@@ -16,14 +16,14 @@
 
 # Test for bug in conditionals.
 
-required='libtoolize gcc'
+required=libtoolize
 . ./defs || Exit 1
 
 cat >> configure.in << 'END'
 AC_PROG_CC
 AC_PROG_LIBTOOL
 AC_SUBST([HELLO_SYSTEM], [hello-generic.lo])
-AM_CONDITIONAL([LINUX], true)
+AM_CONDITIONAL([LINUX], [true])
 AC_OUTPUT
 END
 
@@ -54,17 +54,36 @@ check-local:
 	: > check-ok
 END
 
-echo 'char* str() { return "hello-linux"; }' >hello-linux.c
-echo 'char* str() { return "hello-generic"; }' >hello-generic.c
-cat >hello-common.c <<'END'
+cat > hello-linux.c <<'END'
+const char* str (void)
+{
+  return "hello-linux";
+}
+END
+
+cat > hello-generic.c <<'END'
+const char* str (void)
+{
+  return "hello-generic";
+}
+END
+
+cat > hello-common.c <<'END'
 #include <stdio.h>
-char* str();
-void print()
+const char* str (void);
+void print (void)
 {
   puts (str ());
 }
 END
-echo 'int main() { print(); return 0; }' >main.c
+
+cat > main.c <<'END'
+int main (void)
+{
+  print();
+  return 0;
+}
+END
 
 libtoolize
 $ACLOCAL
@@ -73,3 +92,5 @@ $AUTOMAKE --add-missing
 ./configure
 $MAKE check
 test -f check-ok
+
+:

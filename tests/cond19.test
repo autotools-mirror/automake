@@ -17,16 +17,14 @@
 # Regression test for substitution references to conditional variables.
 # Report from Richard Boulton
 
-required='GNUmake gcc'
+required=GNUmake
 . ./defs || Exit 1
 
-cat > configure.in << 'END'
-AC_INIT(Makefile.am)
-AM_INIT_AUTOMAKE(hello,0.23)
+cat >> configure.in << 'END'
 AC_PROG_CC
-AM_CONDITIONAL(COND1, test "x$CONDITION1" = "xtrue")
-AM_CONDITIONAL(COND2, test "x$CONDITION2" = "xtrue")
-AC_OUTPUT(Makefile)
+AM_CONDITIONAL([COND1], [test "x$CONDITION1" = "xtrue"])
+AM_CONDITIONAL([COND2], [test "x$CONDITION2" = "xtrue"])
+AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
@@ -55,10 +53,6 @@ echorule:
 bin_PROGRAMS = helldl
 END
 
-# Ignore user CFLAGS.
-CFLAGS=
-export CFLAGS
-
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
@@ -72,11 +66,9 @@ valc=`$MAKE --no-print-directory echorule`;
 CONDITION1=false CONDITION2=false ./configure
 vald=`$MAKE --no-print-directory echorule`;
 
-echo $vala
-echo $valb
-echo $valc
-echo $vald
-test "x$vala" = "xdlmaina1.c dlmainb2.c dlmaina1.o dlmainb2.o" || Exit 1
-test "x$valb" = "xdlmainb1.c dlmaina2.c dlmainb1.o dlmaina2.o" || Exit 1
-test "x$valc" = "xdlmaina1.c dlmainb2.c dlmaina1.o dlmainb2.o" || Exit 1
-test "x$vald" = "xdlmainb1.c dlmaina2.c dlmainb1.o dlmaina2.o" || Exit 1
+test "x$vala" = "xdlmaina1.c dlmainb2.c dlmaina1.o dlmainb2.o"
+test "x$valb" = "xdlmainb1.c dlmaina2.c dlmainb1.o dlmaina2.o"
+test "x$valc" = "xdlmaina1.c dlmainb2.c dlmaina1.o dlmainb2.o"
+test "x$vald" = "xdlmainb1.c dlmaina2.c dlmainb1.o dlmaina2.o"
+
+:
