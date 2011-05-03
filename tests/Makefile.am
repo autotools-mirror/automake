@@ -1062,6 +1062,13 @@ yflags-force-override.test \
 yflags-force-conditional.test \
 yflags-var-expand.test
 
+
+## Checking the test of tests.
+checked_test_extensions = .test
+expected_list_of_tests = $(handwritten_tests) $(generated_tests)
+include $(top_srcdir)/CheckListOfTests.am
+maintainer-check-list-of-tests: $(expected_list_of_tests)
+
 # Each test case depends on defs, aclocal, and automake.
 $(TEST_LOGS): defs aclocal-$(APIVERSION) automake-$(APIVERSION)
 
