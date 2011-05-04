@@ -64,7 +64,25 @@ test -f "$srcdir/defs.in" || {
    exit 1
 }
 
-me=`echo "$0" | sed -e 's,.*[\\/],,;s/\.test$//'`
+# The name of the current test (without the `.test' suffix).
+# Test scripts can override it if they need to (but this should
+# be done carefully, and *before* including ./defs).
+if test -z "$me"; then
+  me=`echo "$0" | sed -e 's,.*[\\/],,;s/\.test$//'`
+elif env | grep '^me=' >/dev/null; then
+  echo "$0: variable \`me' is set in the environment: this is unsafe" >&2
+  exit 99
+fi
+
+# Check that the environment is properly sanitized.
+for var in required parallel_tests; do
+  if env | grep "^$var=" >/dev/null; then
+    echo "$me: variable \`$var' is set in the environment:" \
+         "this is unsafe" >&2
+    exit 99
+  fi
+done
+unset var
 
 # This might be used in testcases checking distribution-related features.
 # Test scripts are free to override this if they need to.
@@ -106,11 +124,40 @@ echo "$PATH"
 # (See note about `export' in the Autoconf manual.)
 export PATH
 
+# We use a trap below for cleanup.  This requires us to go through
+# hoops to get the right exit status transported through the signal.
+# So use `Exit STATUS' instead of `exit STATUS' inside of the tests.
+# Turn off errexit here so that we don't trip the bug with OSF1/Tru64
+# sh inside this function.
+Exit ()
+{
+  set +e
+  (exit $1)
+  exit $1
+}
+
+# Print warnings (e.g., about skipped and failed tests) to this file
+# number.  Override by putting, say:
+#   stderr_fileno_=9; export stderr_fileno_; exec 9>&2;
+# in the definition of AM_TESTS_ENVIRONMENT.
+# This is useful when using automake's parallel tests mode, to print the
+# reason for skip/failure to console, rather than to the *.log files.
+: ${stderr_fileno_=2}
+
+# Copied from Gnulib's `tests/init.sh'.
+warn_ () { echo "$@" 1>&$stderr_fileno_; }
+fail_ () { warn_ "$me: failed test: $@"; Exit 1; }
+skip_ () { warn_ "$me: skipped test: $@"; Exit 77; }
+framework_failure_ () { warn_ "$me: set-up failure: $@"; Exit 99; }
+
 for tool in : $required
 do
   # Check that each required tool is present.
   case $tool in
     :) ;;
+    cc|c++|fortran|fortran77)
+      echo "$me: dummy requirement '$tool', no check done"
+      ;;
     bzip2)
       # Do not use --version, bzip2 still tries to compress stdin.
       echo "$me: running bzip2 --help"
@@ -270,18 +317,6 @@ case "$srcdir" in
     srcdir=`CDPATH=: && cd "$srcdir" && pwd`
     ;;
 esac
-
-# We use a trap below for cleanup.  This requires us to go through
-# hoops to get the right exit status transported through the signal.
-# So use `Exit STATUS' instead of `exit STATUS' inside of the tests.
-# Turn off errexit here so that we don't trip the bug with OSF1/Tru64
-# sh inside this function.
-Exit ()
-{
-  set +e
-  (exit $1)
-  exit $1
-}
 
 curdir=`pwd`
 testSubDir=$me.dir
@@ -491,6 +526,7 @@ unindent ()
   fi
   sed "$sed_unindent_prog" ${1+"$@"}
 }
+sed_unindent_prog="" # Avoid interferences from the environment.
 
 # Turn on shell traces.
 set -x
