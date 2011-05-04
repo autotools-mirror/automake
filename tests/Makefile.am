@@ -48,6 +48,7 @@ TESTS_ENVIRONMENT = \
 
 TESTS = \
 self-check-env-sanitize.test \
+self-check-report.test \
 aclibobj.test \
 aclocal.test \
 aclocal3.test \
@@ -531,7 +532,6 @@ man2.test \
 man3.test \
 man4.test \
 man5.test \
-mclean.test \
 mdate.test \
 mdate2.test \
 mdate3.test \
