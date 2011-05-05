@@ -68,7 +68,7 @@ dos_fix_yacc_filenames ()
 {
   test $wrapped = yacc || return 0
   if test -z "$y_tab_nodot"; then
-    if test -f y_tab.c || test -f y_tab.h; then
+    if test -f $dirname/y_tab.c || test -f $dirname/y_tab.h; then
       y_tab_nodot=yes
     else
       y_tab_nodot=no
@@ -86,8 +86,9 @@ handle_renaming ()
 {
     from=$1
     ofrom=$from
+    target=$2
     dos_fix_yacc_filenames
-    if test ! -f $from; then
+    if test ! -f $dirname/$from; then
       # When using yacc, if the `-d' option is not used, we don't want an
       # error when the header file is "missing".  Similarly, if `-v' is not
       # used, we don't want an error when the `y.output' file is "missing".
@@ -100,13 +101,6 @@ handle_renaming ()
       esac
       return
     fi
-
-    # If $2 is an absolute path name, then just use that,
-    # otherwise prepend `../'.
-    case $2 in
-      [\\/]* | ?:[\\/]*) target=$2;;
-      *) target=../$2;;
-    esac
 
     # We do not want to overwrite a header file if it hasn't
     # changed.  This avoid useless recompilations.  However the
@@ -134,18 +128,18 @@ handle_renaming ()
     # Solaris yacc seems not to generate such include guards either.
     # So, how much is this code still relevant today?
     FROM=`tr_cpp "$from"`
-    TARGET=`tr_cpp "$2"`
+    TARGET=`tr_cpp "$target"`
 
-    sed -e "/^#/!b" -e "s,$input_rx,," -e "s,$from,$2," \
-        -e "s,$FROM,$TARGET," "$from" >"$target" || ret=$?
+    sed -e "/^#/!b" -e "s,$input_rx,," -e "s,$from,$target," \
+        -e "s,$FROM,$TARGET," $dirname/"$from" >"$target" || ret=$?
 
     # Check whether header files must be updated.
     if test $wrapped = yacc && test $ofrom = y.tab.h; then
      if test -f "$realtarget" && cmp -s "$realtarget" "$target"; then
-       echo "$2" is unchanged
+       echo "$realtarget is unchanged"
        rm -f "$target"
      else
-        echo updating "$2"
+        echo "updating $realtarget"
         mv -f "$target" "$realtarget"
       fi
     fi
@@ -244,13 +238,14 @@ trap "ret=130; $do_exit" 2
 trap "ret=141; $do_exit" 13
 trap "ret=143; $do_exit" 15
 mkdir $dirname || exit 1
-cd $dirname || exit 1
 
+cd $dirname || exit 1
 case $# in
   0) "$prog" "$input" ;;
   *) "$prog" "$@" "$input" ;;
 esac
 ret=$?
+cd "$ocwd" || exit 1
 
 test $ret -eq 0 || eval "$do_exit"
 
