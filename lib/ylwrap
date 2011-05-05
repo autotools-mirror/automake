@@ -207,26 +207,7 @@ EOF
     ;;
 esac
 
-case $wrapped in
-  yacc)
-    c_ext=`echo $y_ext | tr 'y' 'c'`
-    h_ext=`echo $y_ext | tr 'y' 'h'`
-    output_stem=`echo "$output" | sed "s/\\\\.$c_ext$//"`
-    pairlist="
-      y.tab.c  $output_stem.$c_ext
-      y.tab.h  $output_stem.$h_ext
-      y.output $output_stem.output"
-    ;;
-  lex)
-    pairlist="$lex_output_root.c $output"
-    ;;
-  '')
-    usage_error "no operation mode specified"
-    ;;
-  *)
-    exit 255 # not reached
-    ;;
-esac
+test -n "$wrapped" || usage_error "no operation mode specified"
 
 if test x"$1" = x"--"; then
   shift
@@ -273,19 +254,27 @@ ret=$?
 
 test $ret -eq 0 || eval "$do_exit"
 
-set X $pairlist
-shift
-
 # The directory holding the input.
 input_dir=`dirname_ "$input"`
 # Quote $input_dir so we can use it in a regexp.
 input_rx=`quote_for_sed "$input_dir"`
 
-while test $# -ne 0; do
-  handle_renaming "$1" "$2"
-  shift
-  shift
-done
+case $wrapped in
+  yacc)
+    c_ext=`echo $y_ext | tr 'y' 'c'`
+    h_ext=`echo $y_ext | tr 'y' 'h'`
+    output_stem=`echo "$output" | sed "s/\\\\.$c_ext$//"`
+    handle_renaming y.tab.c  $output_stem.$c_ext
+    handle_renaming y.tab.h  $output_stem.$h_ext
+    handle_renaming y.output $output_stem.output
+    ;;
+  lex)
+    handle_renaming $lex_output_root.c $output
+    ;;
+  *)
+    exit 255 # Not reached.
+    ;;
+esac
 
 eval "$do_exit"
 
