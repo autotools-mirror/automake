@@ -1,0 +1,77 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check how ylwrap handles incorrect usages.
+
+. ./defs || Exit 1
+
+set -e
+
+cp "$testsrcdir"/../lib/ylwrap .
+
+$SHELL ./ylwrap 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+grep 'ylwrap:.*missing argument' stderr
+grep 'Try.*ylwrap --help' stderr
+
+$SHELL ./ylwrap foo 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+grep 'ylwrap:.*no operation mode specified' stderr
+grep 'Try.*ylwrap --help' stderr
+
+for opt in -x --foo -df --bar=qux -- -; do
+  $SHELL ./ylwrap $opt 2>stderr && { cat stderr >&2; Exit 1; }
+  cat stderr >&2
+  grep "ylwrap:.*invalid option.*$opt" stderr
+  grep 'Try.*ylwrap --help' stderr
+done
+
+$SHELL ./ylwrap --yacc 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+grep 'ylwrap:.*missing yacc extension' stderr
+grep 'Try.*ylwrap --help' stderr
+
+$SHELL ./ylwrap --lex 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+grep 'ylwrap:.*missing lex output root' stderr
+grep 'Try.*ylwrap --help' stderr
+
+$SHELL ./ylwrap --yacc .y 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+grep 'ylwrap:.*missing input file' stderr
+grep 'Try.*ylwrap --help' stderr
+
+$SHELL ./ylwrap 2>stderr --lex foo.yy && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+grep 'ylwrap:.*missing input file' stderr
+grep 'Try.*ylwrap --help' stderr
+
+$SHELL ./ylwrap 2>stderr --lex foo.yy bar.l && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+grep 'ylwrap:.*missing output file' stderr
+grep 'Try.*ylwrap --help' stderr
+
+for preamble in '--yacc .y foo.y foo.c' '--lex lex.yy bar.l bar.c'; do
+  for separator in '' '--'; do
+    $SHELL ./ylwrap $preamble $separator 2>stderr \
+      && { cat stderr >&2; Exit 1; }
+    cat stderr >&2
+    grep 'ylwrap:.*missing program to run' stderr
+    grep 'Try.*ylwrap --help' stderr
+  done
+done
+
+:

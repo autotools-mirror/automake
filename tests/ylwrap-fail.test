@@ -14,73 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check how ylwrap handles runtime failures and/or incorrect usages.
+# Check how ylwrap handles runtime failures.
 
 . ./defs || Exit 1
 
 set -e
 
 cp "$testsrcdir"/../lib/ylwrap .
-
-#
-# Check usage errors.
-#
-
-$SHELL ./ylwrap 2>stderr && { cat stderr >&2; Exit 1; }
-cat stderr >&2
-grep 'ylwrap:.*missing argument' stderr
-grep 'Try.*ylwrap --help' stderr
-
-$SHELL ./ylwrap foo 2>stderr && { cat stderr >&2; Exit 1; }
-cat stderr >&2
-grep 'ylwrap:.*no operation mode specified' stderr
-grep 'Try.*ylwrap --help' stderr
-
-for opt in -x --foo -df --bar=qux -- -; do
-  $SHELL ./ylwrap $opt 2>stderr && { cat stderr >&2; Exit 1; }
-  cat stderr >&2
-  grep "ylwrap:.*invalid option.*$opt" stderr
-  grep 'Try.*ylwrap --help' stderr
-done
-
-$SHELL ./ylwrap --yacc 2>stderr && { cat stderr >&2; Exit 1; }
-cat stderr >&2
-grep 'ylwrap:.*missing yacc extension' stderr
-grep 'Try.*ylwrap --help' stderr
-
-$SHELL ./ylwrap --lex 2>stderr && { cat stderr >&2; Exit 1; }
-cat stderr >&2
-grep 'ylwrap:.*missing lex output root' stderr
-grep 'Try.*ylwrap --help' stderr
-
-$SHELL ./ylwrap --yacc .y 2>stderr && { cat stderr >&2; Exit 1; }
-cat stderr >&2
-grep 'ylwrap:.*missing input file' stderr
-grep 'Try.*ylwrap --help' stderr
-
-$SHELL ./ylwrap 2>stderr --lex foo.yy && { cat stderr >&2; Exit 1; }
-cat stderr >&2
-grep 'ylwrap:.*missing input file' stderr
-grep 'Try.*ylwrap --help' stderr
-
-$SHELL ./ylwrap 2>stderr --lex foo.yy bar.l && { cat stderr >&2; Exit 1; }
-cat stderr >&2
-grep 'ylwrap:.*missing output file' stderr
-grep 'Try.*ylwrap --help' stderr
-
-for preamble in '--yacc .y foo.y foo.c' '--lex lex.yy bar.l bar.c'; do
-  for separator in '' '--'; do
-    $SHELL ./ylwrap $preamble $separator 2>stderr \
-      && { cat stderr >&2; Exit 1; }
-    cat stderr >&2
-    grep 'ylwrap:.*missing program to run' stderr
-    grep 'Try.*ylwrap --help' stderr
-  done
-done
-
-#
-# Now check runtime failures.
-#
 
 # Check that temporary files/directories are not left lying around.
 check_emptydir ()
@@ -135,6 +75,25 @@ else
   # If ylwrap fails to found the given program, it must exit with 127.
   test $? -eq 127 || Exit 1
 fi
+check_emptydir
+cd ..
+
+# And what about programs that doesn't fail but doesn't produce expected
+# output files either?
+
+mkdir dummy1
+cd dummy1
+$SHELL ../ylwrap --yacc .y foo.y foo.c -- true 2>../stderr \
+  && { cat ../stderr >&2; Exit 1; }
+cat ../stderr >&2
+check_emptydir
+cd ..
+
+mkdir dummy2
+cd dummy2
+$SHELL ../ylwrap --lex lex.yy foo.l foo.c -- true 2>../stderr \
+  && { cat ../stderr >&2; Exit 1; }
+cat ../stderr >&2
 check_emptydir
 cd ..
 
