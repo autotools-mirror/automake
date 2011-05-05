@@ -87,56 +87,7 @@ handle_renaming ()
     from=$1
     ofrom=$from
     dos_fix_yacc_filenames
-    if test -f "$from"; then
-      # If $2 is an absolute path name, then just use that,
-      # otherwise prepend `../'.
-      case $2 in
-        [\\/]* | ?:[\\/]*) target=$2;;
-        *) target=../$2;;
-      esac
-
-      # We do not want to overwrite a header file if it hasn't
-      # changed.  This avoid useless recompilations.  However the
-      # parser itself (the first file) should always be updated,
-      # because it is the destination of the .y.c rule in the
-      # Makefile.  Divert the output of all other files to a temporary
-      # file so we can compare them to existing versions.
-      if test $wrapped = yacc && test $ofrom = y.tab.h; then
-        realtarget=$target
-        target=header.tmp
-      fi
-      # Edit out `#line' or `#' directives.
-      #
-      # We don't want the resulting debug information to point at
-      # an absolute srcdir; it is better for it to just mention the
-      # .y file with no path.
-      #
-      # We want to use the real output file name, not yy.lex.c for
-      # instance.
-      #
-      # We want the include guards to be adjusted too.
-      # TODO: This include guards seems not to be generated anymore
-      # by newer bison versions (at least starting from 1.875; they
-      # were still generated in version 1.75, though).  Also, BSD and
-      # Solaris yacc seems not to generate such include guards either.
-      # So, how much is this code still relevant today?
-      FROM=`tr_cpp "$from"`
-      TARGET=`tr_cpp "$2"`
-
-      sed -e "/^#/!b" -e "s,$input_rx,," -e "s,$from,$2," \
-          -e "s,$FROM,$TARGET," "$from" >"$target" || ret=$?
-
-      # Check whether header files must be updated.
-      if test $wrapped = yacc && test $ofrom = y.tab.h; then
-       if test -f "$realtarget" && cmp -s "$realtarget" "$target"; then
-         echo "$2" is unchanged
-         rm -f "$target"
-       else
-          echo updating "$2"
-          mv -f "$target" "$realtarget"
-        fi
-      fi
-    else # ! -f $from
+    if test ! -f $from; then
       # When using yacc, if the `-d' option is not used, we don't want an
       # error when the header file is "missing".  Similarly, if `-v' is not
       # used, we don't want an error when the `y.output' file is "missing".
@@ -147,6 +98,56 @@ handle_renaming ()
           ret=1
           ;;
       esac
+      return
+    fi
+
+    # If $2 is an absolute path name, then just use that,
+    # otherwise prepend `../'.
+    case $2 in
+      [\\/]* | ?:[\\/]*) target=$2;;
+      *) target=../$2;;
+    esac
+
+    # We do not want to overwrite a header file if it hasn't
+    # changed.  This avoid useless recompilations.  However the
+    # parser itself (the first file) should always be updated,
+    # because it is the destination of the .y.c rule in the
+    # Makefile.  Divert the output of all other files to a temporary
+    # file so we can compare them to existing versions.
+    if test $wrapped = yacc && test $ofrom = y.tab.h; then
+      realtarget=$target
+      target=header.tmp
+    fi
+    # Edit out `#line' or `#' directives.
+    #
+    # We don't want the resulting debug information to point at
+    # an absolute srcdir; it is better for it to just mention the
+    # .y file with no path.
+    #
+    # We want to use the real output file name, not yy.lex.c for
+    # instance.
+    #
+    # We want the include guards to be adjusted too.
+    # TODO: This include guards seems not to be generated anymore
+    # by newer bison versions (at least starting from 1.875; they
+    # were still generated in version 1.75, though).  Also, BSD and
+    # Solaris yacc seems not to generate such include guards either.
+    # So, how much is this code still relevant today?
+    FROM=`tr_cpp "$from"`
+    TARGET=`tr_cpp "$2"`
+
+    sed -e "/^#/!b" -e "s,$input_rx,," -e "s,$from,$2," \
+        -e "s,$FROM,$TARGET," "$from" >"$target" || ret=$?
+
+    # Check whether header files must be updated.
+    if test $wrapped = yacc && test $ofrom = y.tab.h; then
+     if test -f "$realtarget" && cmp -s "$realtarget" "$target"; then
+       echo "$2" is unchanged
+       rm -f "$target"
+     else
+        echo updating "$2"
+        mv -f "$target" "$realtarget"
+      fi
     fi
 }
 
