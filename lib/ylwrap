@@ -271,27 +271,23 @@ case $# in
 esac
 ret=$?
 
-if test $ret -eq 0; then
+test $ret -eq 0 || eval "$do_exit"
 
-  set X $pairlist
+set X $pairlist
+shift
+
+# The directory holding the input.
+input_dir=`dirname_ "$input"`
+# Quote $input_dir so we can use it in a regexp.
+input_rx=`quote_for_sed "$input_dir"`
+
+while test $# -ne 0; do
+  handle_renaming "$1" "$2"
   shift
+  shift
+done
 
-  # The directory holding the input.
-  input_dir=`dirname_ "$input"`
-  # Quote $input_dir so we can use it in a regexp.
-  input_rx=`quote_for_sed "$input_dir"`
-
-  while test $# -ne 0; do
-    handle_renaming "$1" "$2"
-    shift
-    shift
-  done
-fi
-
-# Remove the temporary directory.
-cd "$ocwd" && rm -rf $dirname
-
-exit $ret
+eval "$do_exit"
 
 # Local Variables:
 # mode: shell-script
