@@ -1,7 +1,7 @@
 #! /bin/sh
 # ylwrap - wrapper for lex/yacc invocations.
 
-scriptversion=2011-05-05.10; # UTC
+scriptversion=2011-05-05.12; # UTC
 
 # Copyright (C) 1996, 1997, 1998, 1999, 2001, 2002, 2003, 2004, 2005,
 # 2007, 2009, 2010, 2011 Free Software Foundation, Inc.
@@ -49,6 +49,14 @@ dirname_ ()
 {
   dirname "$1" 2>/dev/null \
     || printf '%s\n' "$1" | sed -e 's,\([\\/]\)[^\\/]*$,\1,'
+}
+
+# Turn the given string into a suitable C preprocessor symbol.
+tr_cpp ()
+{
+  printf '%s\n' "$1" \
+    | sed -e 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/' \
+          -e 's/[^ABCDEFGHIJKLMNOPQRSTUVWXYZ]/_/g'
 }
 
 # Since DOS filename conventions don't allow two dots, the DOS version
@@ -235,12 +243,13 @@ if test $ret -eq 0; then
       # instance.
       #
       # We want the include guards to be adjusted too.
-      FROM=`echo "$from" | sed \
-            -e 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/'\
-            -e 's/[^ABCDEFGHIJKLMNOPQRSTUVWXYZ]/_/g'`
-      TARGET=`echo "$2" | sed \
-            -e 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/'\
-            -e 's/[^ABCDEFGHIJKLMNOPQRSTUVWXYZ]/_/g'`
+      # TODO: This include guards seems not to be generated anymore
+      # by newer bison versions (at least starting from 1.875; they
+      # were still generated in version 1.75, though).  Also, BSD and
+      # Solaris yacc seems not to generate such include guards either.
+      # So, how much is this code still relevant today?
+      FROM=`tr_cpp "$from"`
+      TARGET=`tr_cpp "$2"`
 
       sed -e "/^#/!b" -e "s,$input_rx,," -e "s,$from,$2," \
           -e "s,$FROM,$TARGET," "$from" >"$target" || ret=$?
