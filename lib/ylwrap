@@ -81,29 +81,11 @@ handle_renaming ()
     from=$1
     target=$2
     if test ! -f $dirname/$from; then
-      # When using yacc, if the `-d' option is not used, we don't want an
-      # error when the header file is "missing".  Similarly, if `-v' is not
-      # used, we don't want an error when the `y.output' file is "missing".
-      case $wrapped:$from in
-        yacc:$y_tab_h|yacc:$y_output) ;;
-        *)
-          echo "ylwrap: expected file \`$from' not found" >&2
-          ret=1
-          ;;
-      esac
+      echo "ylwrap: expected file \`$from' not found" >&2
+      ret=1
       return
     fi
 
-    # We do not want to overwrite a header file if it hasn't
-    # changed.  This avoid useless recompilations.  However the
-    # parser itself (the first file) should always be updated,
-    # because it is the destination of the .y.c rule in the
-    # Makefile.  Divert the output of all other files to a temporary
-    # file so we can compare them to existing versions.
-    if test $wrapped = yacc && test $from = $y_tab_h; then
-      realtarget=$target
-      target=header.tmp
-    fi
     # Edit out `#line' or `#' directives.
     #
     # We don't want the resulting debug information to point at
@@ -124,17 +106,19 @@ handle_renaming ()
 
     sed -e "/^#/!b" -e "s,$input_rx,," -e "s,$from,$target," \
         -e "s,$FROM,$TARGET," $dirname/"$from" >"$target" || ret=$?
+}
 
-    # Check whether header files must be updated.
-    if test $wrapped = yacc && test $from = $y_tab_h; then
-     if test -f "$realtarget" && cmp -s "$realtarget" "$target"; then
-       echo "$realtarget is unchanged"
-       rm -f "$target"
-     else
-        echo "updating $realtarget"
-        mv -f "$target" "$realtarget"
-      fi
-    fi
+move_if_change ()
+{
+  src=$1
+  dest=$2
+  if test -f "$dest" && cmp -s "$src" "$dest"; then
+    echo "$dest is unchanged"
+    rm -f "$src"
+  else
+    echo "updating $dest"
+    mv -f "$src" "$dest"
+ fi
 }
 
 test $# -gt 0 || usage_error "missing argument"
@@ -252,9 +236,21 @@ case $wrapped in
     c_ext=`echo $y_ext | tr 'y' 'c'`
     h_ext=`echo $y_ext | tr 'y' 'h'`
     output_stem=`echo "$output" | sed "s/\\\\.$c_ext$//"`
-    handle_renaming $y_tab_c  $output_stem.$c_ext
-    handle_renaming $y_tab_h  $output_stem.$h_ext
-    handle_renaming $y_output $output_stem.output
+    # We do not want to overwrite a header file if it hasn't
+    # changed.  This avoid useless recompilations.  However the
+    # parser itself should always be updated, because it is the
+    # destination of the .y.c rule in the Makefile.
+    handle_renaming $y_tab_c $output_stem.$c_ext
+    # If the `-d' option is not used, we don't want an error when the
+    # header file is "missing".  Similarly, if `-v' is not used, we
+    # don't want an error when the `y.output' file is "missing".
+    if test -f $dirname/$y_tab_h; then
+      handle_renaming $y_tab_h $dirname/header.tmp
+      move_if_change $dirname/header.tmp $output_stem.$h_ext
+    fi
+    if test -f $dirname/$y_output; then
+      handle_renaming $y_output $output_stem.output
+    fi
     ;;
   lex)
     handle_renaming $lex_output_root.c $output
