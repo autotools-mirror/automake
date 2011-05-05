@@ -62,38 +62,30 @@ tr_cpp ()
 # Since DOS filename conventions don't allow two dots, the DOS version
 # of Bison writes out y_tab.c instead of y.tab.c and y_tab.h instead
 # of y.tab.h.  Test to see if this is the case.
-# This function might set the global variable `$y_tab_nodot' (meant for
-# internal use only), and modify the global variable `$from'.
 dos_fix_yacc_filenames ()
 {
   test $wrapped = yacc || return 0
-  if test -z "$y_tab_nodot"; then
-    if test -f $dirname/y_tab.c || test -f $dirname/y_tab.h; then
-      y_tab_nodot=yes
-    else
-      y_tab_nodot=no
-    fi
+  if test -f y_tab.c || test -f y_tab.h; then
+    y_tab_c=y_tab.c
+    y_tab_h=y_tab.h
+  else
+    y_tab_c=y.tab.c
+    y_tab_h=y.tab.h
   fi
-  if test $y_tab_nodot = yes; then
-    # Handle y_tab.c and y_tab.h output by DOS
-    test $from = y.tab.c && from=y_tab.c
-    test $from = y.tab.h && from=y_tab.h
-  fi
+  y_output=y.output
 }
 
 # Usage: handle_renaming FROM TARGET
 handle_renaming ()
 {
     from=$1
-    ofrom=$from
     target=$2
-    dos_fix_yacc_filenames
     if test ! -f $dirname/$from; then
       # When using yacc, if the `-d' option is not used, we don't want an
       # error when the header file is "missing".  Similarly, if `-v' is not
       # used, we don't want an error when the `y.output' file is "missing".
-      case $wrapped:$ofrom in
-        yacc:y.tab.h|yacc:y.output) ;;
+      case $wrapped:$from in
+        yacc:$y_tab_h|yacc:$y_output) ;;
         *)
           echo "ylwrap: expected file \`$from' not found" >&2
           ret=1
@@ -108,7 +100,7 @@ handle_renaming ()
     # because it is the destination of the .y.c rule in the
     # Makefile.  Divert the output of all other files to a temporary
     # file so we can compare them to existing versions.
-    if test $wrapped = yacc && test $ofrom = y.tab.h; then
+    if test $wrapped = yacc && test $from = $y_tab_h; then
       realtarget=$target
       target=header.tmp
     fi
@@ -134,7 +126,7 @@ handle_renaming ()
         -e "s,$FROM,$TARGET," $dirname/"$from" >"$target" || ret=$?
 
     # Check whether header files must be updated.
-    if test $wrapped = yacc && test $ofrom = y.tab.h; then
+    if test $wrapped = yacc && test $from = $y_tab_h; then
      if test -f "$realtarget" && cmp -s "$realtarget" "$target"; then
        echo "$realtarget is unchanged"
        rm -f "$target"
@@ -245,6 +237,7 @@ case $# in
   *) "$prog" "$@" "$input" ;;
 esac
 ret=$?
+dos_fix_yacc_filenames
 cd "$ocwd" || exit 1
 
 test $ret -eq 0 || eval "$do_exit"
@@ -259,9 +252,9 @@ case $wrapped in
     c_ext=`echo $y_ext | tr 'y' 'c'`
     h_ext=`echo $y_ext | tr 'y' 'h'`
     output_stem=`echo "$output" | sed "s/\\\\.$c_ext$//"`
-    handle_renaming y.tab.c  $output_stem.$c_ext
-    handle_renaming y.tab.h  $output_stem.$h_ext
-    handle_renaming y.output $output_stem.output
+    handle_renaming $y_tab_c  $output_stem.$c_ext
+    handle_renaming $y_tab_h  $output_stem.$h_ext
+    handle_renaming $y_output $output_stem.output
     ;;
   lex)
     handle_renaming $lex_output_root.c $output
