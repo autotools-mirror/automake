@@ -60,9 +60,12 @@ tr_cpp ()
 }
 
 # Since DOS filename conventions don't allow two dots, the DOS version
-# of Bison writes out y_tab.c instead of y.tab.c and y_tab.h instead
-# of y.tab.h.  Test to see if this is the case.
-dos_fix_yacc_filenames ()
+# of Bison writes out y_tab.c instead of y.tab.c and y_tab.h instead of
+# y.tab.h.  Test to see if this is the case, ans set the default names
+# of the yacc output files accordingly.
+# This subroutine sets the global variables `$y_tab_c', `$y_tab_h' and
+# `$y_output'.
+set_yacc_filenames ()
 {
   test $wrapped = yacc || return 0
   if test -f y_tab.c || test -f y_tab.h; then
@@ -80,7 +83,7 @@ handle_renaming ()
 {
     from=$1
     target=$2
-    if test ! -f $dirname/$from; then
+    if test ! -f $tempdir/$from; then
       echo "ylwrap: expected file \`$from' not found" >&2
       ret=1
       return
@@ -105,7 +108,7 @@ handle_renaming ()
     TARGET=`tr_cpp "$target"`
 
     sed -e "/^#/!b" -e "s,$input_rx,," -e "s,$from,$target," \
-        -e "s,$FROM,$TARGET," $dirname/"$from" >"$target" || ret=$?
+        -e "s,$FROM,$TARGET," $tempdir/"$from" >"$target" || ret=$?
 }
 
 move_if_change ()
@@ -205,23 +208,23 @@ esac
 
 # FIXME: add hostname here for parallel makes that run commands on
 # other machines.  But that might take us over the 14-char limit.
-dirname=ylwrap$$
-do_exit="cd '$ocwd' && rm -rf $dirname; (exit \$ret); exit \$ret"
+tempdir=ylwrap$$
+do_exit="cd '$ocwd' && rm -rf $tempdir; (exit \$ret); exit \$ret"
 # The only signals which are portably trappable are 1 (SIGHUP),
 # 2 (SIGINT), 13 (SIGPIPE) and 15 (SIGTERM).
 trap "ret=129; $do_exit" 1
 trap "ret=130; $do_exit" 2
 trap "ret=141; $do_exit" 13
 trap "ret=143; $do_exit" 15
-mkdir $dirname || exit 1
+mkdir $tempdir || exit 1
 
-cd $dirname || exit 1
+cd $tempdir || exit 1
 case $# in
   0) "$prog" "$input" ;;
   *) "$prog" "$@" "$input" ;;
 esac
 ret=$?
-dos_fix_yacc_filenames
+set_yacc_filenames
 cd "$ocwd" || exit 1
 
 test $ret -eq 0 || eval "$do_exit"
@@ -244,11 +247,11 @@ case $wrapped in
     # If the `-d' option is not used, we don't want an error when the
     # header file is "missing".  Similarly, if `-v' is not used, we
     # don't want an error when the `y.output' file is "missing".
-    if test -f $dirname/$y_tab_h; then
-      handle_renaming $y_tab_h $dirname/header.tmp
-      move_if_change $dirname/header.tmp $output_stem.$h_ext
+    if test -f $tempdir/$y_tab_h; then
+      handle_renaming $y_tab_h $tempdir/header.tmp
+      move_if_change $tempdir/header.tmp $output_stem.$h_ext
     fi
-    if test -f $dirname/$y_output; then
+    if test -f $tempdir/$y_output; then
       handle_renaming $y_output $output_stem.output
     fi
     ;;
