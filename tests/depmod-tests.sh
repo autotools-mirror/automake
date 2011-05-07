@@ -141,7 +141,9 @@ get_depmodes ()
 {
   # Keep this in sync with the contents of depend.m4.
   all_depmodes=`sed -n 's/^#*\([a-zA-Z0-9]*\))$/\1/p' < "$1" \
-    | grep -v '^none$' | tr "$nl" "$sp"` \
+                  | grep -v '^none$'` \
+    && : Turn newlines and tabs into spaces, and strip extra whitespace. \
+    && all_depmodes=`echo $all_depmodes` \
     && test -n "$all_depmodes" || {
       echo "$2: failed to extract list of valid depmodes from '$1'" >&2
       exit 99
