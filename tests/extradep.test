@@ -46,8 +46,10 @@ EXTRA_bar_DEPENDENCIES = $(deps)
 
 EXTRA_DIST = foodep bardep
 
-bar-is-newer-than-libfoo.a:
-	test `ls -1t bar$(EXEEXT) libfoo.a | sed q` = bar$(EXEEXT)
+.PHONY: bar-has-been-updated
+bar-has-been-updated:
+	stat older bar$(EXEEXT) libfoo.a || : For debugging.
+	test `ls -t bar$(EXEEXT) older | sed q` = bar$(EXEEXT)
 END
 
 cat >libfoo.c <<'END'
@@ -94,10 +96,11 @@ $MAKE && Exit 1
 : >bardep
 
 $MAKE
+: > older
 $sleep
 touch libfoo.a
 $MAKE
-$MAKE bar-is-newer-than-libfoo.a
+$MAKE bar-has-been-updated
 
 $MAKE distcheck
 
