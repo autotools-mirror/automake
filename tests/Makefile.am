@@ -235,6 +235,7 @@ check12.test \
 check-exported-srcdir.test \
 check-tests-in-builddir.test \
 check-tests_environment.test \
+check-no-test-driver.test \
 checkall.test \
 clean.test \
 clean2.test \
@@ -722,6 +723,7 @@ parallel-tests-unreadable-log.test \
 parallel-tests-subdir.test \
 parallel-tests-interrupt.test \
 parallel-tests-reset-term.test \
+parallel-test-driver-install.test \
 parse.test \
 percent.test \
 percent2.test \

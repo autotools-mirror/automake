@@ -11,6 +11,47 @@ New in 1.11a:
 
   - New `cscope' target to build a cscope database for the source tree.
 
+* Changes to Automake-generated testsuite harnesses:
+
+  - The parallel-tests driver is now implemented (partly at least) with
+    the help of automake-provided auxiliary scripts (e.g., `test-driver'),
+    instead of relying entirely on code in the generated Makefile.in.
+    This has two noteworthy implications.  The first one is that projects
+    using the `parallel-tests' option should now either run automake with
+    the `--add-missing' option, or manually copy the `test-driver' script
+    into their tree.  The second, and more important, implication is that
+    now, when the `parallel-tests' option is in use, TESTS_ENVIRONMENT can
+    not be used anymore to define a test runner, and the command specified
+    in LOG_COMPILER (and <ext>_LOG_COMPILER) must be a *real* executable
+    program or script.  For example, this is still a valid usage (albeit
+    a little contorted):
+
+      TESTS_ENVIRONMENT = \
+        if test -n '$(STRICT_TESTS)'; then \
+          maybe_errexit='-e'; \
+        else \
+          maybe_errexit=''; \
+        fi;
+      LOG_COMPILER = $(SHELL) $$maybe_errexit
+
+    while this is not anymore:
+
+      TESTS_ENVIRONMENT = \
+        $(SHELL) `test -n '$(STRICT_TESTS_CHECKING)' && echo ' -e'`
+
+    neither is this:
+
+      TESTS_ENVIRONMENT = \
+        run_with_perl_or_shell () \
+        { \
+          if grep -q '^#!.*perl' $$1; then
+            $(PERL) $$1; \
+          else \
+            $(SHELL) $$1; \
+          fi; \
+        }
+      LOG_COMPILER = run_with_per_or_shell
+
 * WARNING: Future backward-incompatibilities!
 
   - The Automake support for automatic de-ANSI-fication will be removed in

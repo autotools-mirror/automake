@@ -75,11 +75,13 @@ DIST_SOURCES =
 # then this fails; a conservative approach.  Of course do not redirect
 # stdout here, just stderr.
 am__tty_colors = \
+am__color_tests=no; \
 red=; grn=; lgn=; blu=; std=; \
 test "X$(AM_COLOR_TESTS)" != Xno \
 && test "X$$TERM" != Xdumb \
 && { test "X$(AM_COLOR_TESTS)" = Xalways || test -t 1 2>/dev/null; } \
 && { \
+  am__color_tests=yes; \
   red='[0;31m'; \
   grn='[0;32m'; \
   lgn='[1;32m'; \
@@ -107,9 +109,8 @@ am__nobase_list = $(am__nobase_strip_setup); \
 am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
-# Restructured Text title and section.
+# Restructured Text title.
 am__rst_title = sed 's/.*/   &   /;h;s/./=/g;p;x;p;g;p;s/.*//'
-am__rst_section = sed 'p;s/./=/g;p;g'
 # Put stdin (possibly several lines separated by ".  ") in a box.
 # Prefix each line by 'col' and terminate each with 'std', for coloring.
 # Multi line coloring is problematic with "less -R", so we really need
@@ -131,60 +132,46 @@ am__text_box = $(AWK) '{			\
 # pass "-e" to $(SHELL), and POSIX 2008 even requires this.  Work around it
 # by disabling -e (using the XSI extension "set +e") if it's set.
 am__sh_e_setup = case $$- in *e*) set +e;; esac
+# Default flags passed to all log compiler wrappers.
+am__test_driver_flags = \
+  --test-name "$$f" \
+  --log-file '$@' \
+  --color-tests "$$am__color_tests" \
+  --enable-hard-errors "$$am__enable_hard_errors" \
+  --expect-failure "$$am__expect_failure"
 # To be inserted before the command running the test.  Creates the
 # directory for the log if needed.  Stores in $dir the directory
 # containing $f, in $tst the test, in $log the log.  Executes the
 # developer- defined test setup AM_TESTS_ENVIRONMENT (if any), and
-# passes TESTS_ENVIRONMENT.  Saves and restores TERM around uses of
-# TESTS_ENVIRONMENT and AM_TESTS_ENVIRONMENT, in case any of them
-# unsets it.
+# passes TESTS_ENVIRONMENT.  Set up options for the wrapper that
+# will run the test scripts (or their associated LOG_COMPILER, if
+# thy have one).
 am__check_pre = \
 $(am__sh_e_setup);					\
 $(am__vpath_adj_setup) $(am__vpath_adj)			\
+$(am__tty_colors);					\
 srcdir=$(srcdir); export srcdir;			\
-rm -f $@-t;						\
-am__trap='rm -f '\''$(abs_builddir)/$@-t'\''; (exit $$st); exit $$st'; \
-trap "st=129; $$am__trap" 1; trap "st=130; $$am__trap" 2;	\
-trap "st=141; $$am__trap" 13; trap "st=143; $$am__trap" 15; \
 am__odir=`echo "./$@" | sed 's|/[^/]*$$||'`;		\
 test "x$$am__odir" = x. || $(MKDIR_P) "$$am__odir" || exit $$?;	\
 if test -f "./$$f"; then dir=./;			\
 elif test -f "$$f"; then dir=;				\
 else dir="$(srcdir)/"; fi;				\
-tst=$$dir$$f; log='$@'; __SAVED_TERM=$$TERM;		\
-$(AM_TESTS_ENVIRONMENT)					\
-$(TESTS_ENVIRONMENT)
-# To be appended to the command running the test.  Handle the stdout
-# and stderr redirection, and catch the exit status.
-am__check_post = \
->$@-t 2>&1;						\
-estatus=$$?;						\
-if test -n '$(DISABLE_HARD_ERRORS)'			\
-   && test $$estatus -eq 99; then			\
-  estatus=1;						\
-fi;							\
-TERM=$$__SAVED_TERM; export TERM;			\
-$(am__tty_colors);					\
-xfailed=PASS;						\
+tst=$$dir$$f; log='$@'; 				\
+if test -n '$(DISABLE_HARD_ERRORS)'; then		\
+  am__enable_hard_errors=no; 				\
+else							\
+  am__enable_hard_errors=yes; 				\
+fi; 							\
 case " $(XFAIL_TESTS) " in				\
   *[\ \	]$$f[\ \	]* | *[\ \	]$$dir$$f[\ \	]*) \
-    xfailed=XFAIL;;					\
-esac;							\
-case $$estatus.$$xfailed in				\
-    0.XFAIL) col=$$red; res=XPASS;;			\
-    0.*)     col=$$grn; res=PASS ;;			\
-    77.*)    col=$$blu; res=SKIP ;;			\
-    99.*)    col=$$red; res=FAIL ;;			\
-    *.XFAIL) col=$$lgn; res=XFAIL;;			\
-    *.*)     col=$$red; res=FAIL ;;			\
-esac;							\
-echo "$${col}$$res$${std}: $$f";			\
-echo "$$res: $$f (exit: $$estatus)" |			\
-  $(am__rst_section) >$@;				\
-cat $@-t >>$@;						\
-rm -f $@-t
+    am__expect_failure=yes;;				\
+  *)							\
+    am__expect_failure=no;;				\
+esac; 							\
+$(AM_TESTS_ENVIRONMENT) $(TESTS_ENVIRONMENT)
 RECHECK_LOGS = $(TEST_LOGS)
 AM_RECURSIVE_TARGETS = check check-html recheck recheck-html
+am__test_driver = $(SHELL) $(top_srcdir)/lib/test-driver
 TEST_SUITE_LOG = test-suite.log
 TEST_SUITE_HTML = $(TEST_SUITE_LOG:.log=.html)
 am__test_logs1 = $(TESTS:=.log)
@@ -479,7 +466,9 @@ recheck recheck-html:
 	list=`echo "$$list" | sed 's/ *$$//'`;				\
 	$(MAKE) $(AM_MAKEFLAGS) $$target AM_MAKEFLAGS='$(AM_MAKEFLAGS) TEST_LOGS="'"$$list"'"'
 .pl.log:
-	@p='$<'; $(am__check_pre) $(PL_LOG_COMPILE) "$$tst" $(am__check_post)
+	@p='$<'; $(am__check_pre) \
+	$(am__test_driver) $(am__test_driver_flags) -- \
+	$(PL_LOG_COMPILE) "$$tst"
 
 distdir: $(DISTFILES)
 	@srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \

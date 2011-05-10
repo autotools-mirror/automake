@@ -4989,8 +4989,13 @@ sub handle_tests
       append_exeext { exists $known_programs{$_[0]} } 'XFAIL_TESTS'
 	if (var ('XFAIL_TESTS'));
 
-      if (option 'parallel-tests')
+      if (my $parallel_tests = option 'parallel-tests')
         {
+          require_conf_file ($parallel_tests->{position}, FOREIGN,
+                             'test-driver');
+          define_variable ('am__test_driver',
+                           "\$(SHELL) $am_config_aux_dir/test-driver",
+                           INTERNAL);
 	  define_variable ('TEST_SUITE_LOG', 'test-suite.log', INTERNAL);
 	  define_variable ('TEST_SUITE_HTML', '$(TEST_SUITE_LOG:.log=.html)', INTERNAL);
 	  my $suff = '.test';
@@ -5041,6 +5046,7 @@ sub handle_tests
 						GENERIC => 0,
 						OBJ => $obj,
 						SOURCE => $val,
+						DRIVER => '$(am__test_driver)',
 						COMPILE =>'$(' . $compile . ')',
 						EXT => '',
 						am__EXEEXT => 'FALSE');
@@ -5080,6 +5086,7 @@ sub handle_tests
 						  GENERIC => 1,
 						  OBJ => '',
 						  SOURCE => '$<',
+						  DRIVER => '$(am__test_driver)',
 						  COMPILE => '$(' . $compile . ')',
 						  EXT => $test_suffix,
 						  am__EXEEXT => $am_exeext);

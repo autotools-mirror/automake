@@ -1,5 +1,70 @@
 2011-06-21  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
+	parallel-tests: add auxiliary script 'test-driver', refactor
+	This refactoring should cause no API of functionality change,
+	and is meant only to simplify the future implementation of TAP
+	and SubUnit testsuite drivers.  More precisely, our roadmap is
+	to move most of the "testsuite driving" features out of the
+	Automake-generated Makefiles, and into external scripts with
+	well-defined interfaces.  This will allow the user to define
+	its own personalized testsuite drivers, and will also offer us
+	a framework upon which to implement our new TAP and SubUnit
+	drivers, all in a very unobtrusive way and retaining an high
+	degree of code reuse and backward-compatibility.
+	* lib/test-driver: New auxiliary script.
+	* lib/Makefile.am (dist_SCRIPT_DATA): Add it.
+	* automake.in (handle_tests): Require the new auxiliary script
+	`test-driver', and define a new internal makefile variable
+	`$(am__test_driver)', used to call it.  Perform new substitution
+	on `DRIVER' when processing the `check2.am' file.
+	* lib/check.am (am__tty_colors): Define new shell variable
+	`$am__color_tests'.
+	(am__rst_section): Removed, its role taken over by the new
+	`test-driver' script.
+	(am__test_driver_flags): New variable, contains the command
+	line options passed to `test-driver'.
+	(am__check_pre): Do not deal with temporary files and exit
+	traps anymore, as the `test-driver' script takes care of that
+	now.  Define shell variable `$am__enable_hard_errors', used by
+	`$(am__test_driver_flags)'.  Reorder so that we don't need to
+	save and restore the value of the `TERM' environment variable
+	anymore.
+	Other related adjustments.
+	(am__check_post): Remove, as its role has been completely taken
+	over by the `test-driver' script.
+	* am/check2.am (?GENERIC?%EXT%$(EXEEXT).log, ?GENERIC?%EXT%.log,
+	?!GENERIC?%OBJ%): Call the test script through the Automake
+	substituted `%DRIVER%', and honor the command-line options
+	in `$(am__test_driver_flags)'.  Do not call the obsoleted
+	`$(am__check_post)' anymore.
+	* doc/automake.texi (Auxiliary Programs): Mention the new
+	`test-driver' script.
+	(Optional): Mention `test-driver' in AC_CONFIG_AUX_DIR.
+	Since we are at it, break the list of auxiliary scripts by
+	placing one per line, to simplify potential future additions
+	of new scripts.
+	* tests/check.test: Adjust.
+	* tests/check2.test : Likewise.
+	* tests/check3.test : Likewise.
+	* tests/check4.test : Likewise.
+	* tests/check10.test: Likewise.
+	* tests/color.test: Likewise.
+	* tests/color2.test: Likewise.
+	* tests/comment9.test: Likewise.
+	* tests/dejagnu.test: Likewise.
+	* tests/exeext4.test: Likewise.
+	* tests/maken3.test: Likewise.
+	* tests/maken4.test: Likewise.
+	* tests/parallel-tests-interrupt.test: Likewise.
+	* tests/posixsubst-tests.test: Likewise.
+	* tests/repeated-options.test: Likewise.
+	* tests/check-no-test-driver.test: New test.
+	* tests/parallel-test-driver-install.test: Likewise.
+	* tests/Makefile.am (TESTS): Update.
+	* NEWS: Update.
+
+2011-06-21  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
 	maintcheck: extend 'sc_tests_plain_*' checks
 	* Makefile.am (sc_tests_plain_autom4te): New check.
 	(sc_tests_plain_autoreconf): Likewise.
