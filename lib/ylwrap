@@ -44,11 +44,11 @@ quote_for_sed ()
   printf '%s\n' "$1" | sed -e 's/[].[^$\\*|]/\\&/g'
 }
 
-# For system that lacks a dirname command, we simulate it with sed.
-dirname_ ()
+# Strip trailing non-directory component (if any) from the given path,
+# preserving trailing `/' characters in the directory components.
+strip_nondir ()
 {
-  dirname "$1" 2>/dev/null \
-    || printf '%s\n' "$1" | sed -e 's,\([\\/]\)[^\\/]*$,\1,'
+  printf '%s\n' "$1" | sed -e 's,\([\\/]\)[^\\/]*$,\1,'
 }
 
 # Turn the given string into a suitable C preprocessor symbol.
@@ -244,7 +244,7 @@ cd "$ocwd" || exit 1
 test $ret -eq 0 || eval "$do_exit"
 
 # The directory holding the input.
-input_dir=`dirname_ "$input"`
+input_dir=`strip_nondir "$input"`
 # Quote $input_dir so we can use it in a regexp.
 input_rx=`quote_for_sed "$input_dir"`
 
