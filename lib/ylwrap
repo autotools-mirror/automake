@@ -78,11 +78,23 @@ set_yacc_filenames ()
   y_output=y.output
 }
 
-# Usage: tempfile_deploy FROM TARGET
+# Usage: tempfile_deploy [--header] FROM TARGET
 tempfile_deploy ()
 {
+  if test x"$1" = x"--header"; then
+    # We do not want to overwrite a header file if it hasn't changed.
+    # This avoid useless recompilations.  However, generated non-header
+    # C/C++ filed should always be updated, because they are the
+    # destination of, e.g., `.y.c' rules in the Makefile.
+    install_target=move_if_change
+    shift
+  else
+    install_target='mv -f'
+  fi
+
   from=$1
   target=$2
+
   if test ! -f $tempdir/$from; then
     echo "ylwrap: expected file \`$from' not found" >&2
     ret=1
@@ -108,7 +120,9 @@ tempfile_deploy ()
   TARGET=`tr_cpp "$target"`
 
   sed -e "/^#/!b" -e "s,$input_rx,," -e "s,$from,$target," \
-      -e "s,$FROM,$TARGET," $tempdir/"$from" >"$target" || ret=$?
+      -e "s,$FROM,$TARGET," $tempdir/"$from" >$tempdir/ylwrap.tmp || ret=$?
+
+  $install_target $tempdir/ylwrap.tmp "$target"
 }
 
 move_if_change ()
@@ -239,17 +253,12 @@ case $wrapped in
     c_ext=`echo $y_ext | tr 'y' 'c'`
     h_ext=`echo $y_ext | tr 'y' 'h'`
     output_stem=`echo "$output" | sed "s/\\\\.$c_ext$//"`
-    # We do not want to overwrite a header file if it hasn't
-    # changed.  This avoid useless recompilations.  However the
-    # parser itself should always be updated, because it is the
-    # destination of the .y.c rule in the Makefile.
     tempfile_deploy $y_tab_c $output_stem.$c_ext
     # If the `-d' option is not used, we don't want an error when the
     # header file is "missing".  Similarly, if `-v' is not used, we
     # don't want an error when the `y.output' file is "missing".
     if test -f $tempdir/$y_tab_h; then
-      tempfile_deploy $y_tab_h $tempdir/header.tmp
-      move_if_change $tempdir/header.tmp $output_stem.$h_ext
+      tempfile_deploy --header $y_tab_h $output_stem.$h_ext
     fi
     if test -f $tempdir/$y_output; then
       tempfile_deploy $y_output $output_stem.output

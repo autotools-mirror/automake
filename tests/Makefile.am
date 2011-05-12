@@ -869,6 +869,7 @@ yflags-force-override.test \
 yflags-force-conditional.test \
 yflags-var-expand.test \
 yacclex-line.test \
+yacclex-cpp-directives.test \
 ylwrap-chdir-back-fail.test \
 ylwrap-cleanup-fail.test \
 ylwrap-extra-args.test \

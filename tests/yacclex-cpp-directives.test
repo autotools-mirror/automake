@@ -1,0 +1,114 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check postprocessing of yacc and lex generated directives "#line",
+# "#include", "#define", etc.
+
+required='lex yacc'
+. ./defs || Exit 1
+
+set -e
+
+cat >> configure.in << 'END'
+AC_PROG_CC
+AC_SUBST([YACC], ['$(abs_top_srcdir)/fake-yacc'])
+AC_SUBST([LEX], ['$(abs_top_srcdir)/fake-lex'])
+AC_SUBST([LEX_OUTPUT_ROOT], [lex.yy])
+AC_SUBST([LEXLIB], [''])
+AC_OUTPUT
+END
+
+cat > fake-yacc <<'END'
+#!/bin/sh -e
+sed 's/^ *//' > y.tab.c <<'EOC'
+  #include "parse.h"
+  #line 2 "y.tab.c"
+  #define Y_TAB_C 0
+  int yfoo (void) { return PARSE_C; };
+EOC
+sed 's/^ *//' > y.tab.h <<'EOH'
+  #line 1 "y.tab.h"
+  #define Y_TAB_H 0
+  extern int yfoo (void);
+EOH
+END
+chmod a+x fake-yacc
+
+cat > fake-lex <<'END'
+#!/bin/sh -e
+sed 's/^ *//' > lex.yy.c <<'EOC'
+  #line 1 "lex.yy.c"
+  #define LEX_YY_C 0
+  int lbar (void) { return LEXER_C; };
+EOC
+END
+
+chmod a+x fake-yacc fake-lex
+
+cat > Makefile.am << 'END'
+bin_PROGRAMS = foo
+foo_SOURCES = parse.y lexer.l foo.c
+BUILT_SOURCES = parse.h
+AM_YFLAGS = -d
+END
+
+: > parse.y
+: > lexer.l
+
+cat > foo.c << 'END'
+#include "parse.h"
+extern int lbar (void);
+int main (void)
+{
+  return PARSE_H + yfoo () + lbar ();
+}
+END
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE -a
+
+debug_info ()
+{
+  ls -l
+  cat parse.c
+  cat parse.h
+  cat lexer.c
+}
+
+for vpath in : false; do
+
+  if $vpath; then
+    mkdir build
+    cd build
+    srcdir=..
+  else
+    srcdir=.
+  fi
+
+  $srcdir/configure
+
+  $MAKE || { debug_info; Exit 1; }
+  debug_info
+  
+  $EGREP '#.*(Y.TAB|YLWRAP)|y\.tab' parse.[ch] && Exit 1
+  $EGREP '#.*(LEX.Y|YLWRAP)|lex\.yy' lexer.c && Exit 1
+
+  cd $srcdir
+
+done
+
+:
