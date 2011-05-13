@@ -445,10 +445,14 @@ lex3.test \
 lex5.test \
 lexcpp.test \
 lexvpath.test \
+lex-clean.test \
+lex-clean-cxx.test \
 lex-depend.test \
 lex-depend-cxx.test \
 lex-depend-grep.test \
 lex-line.test \
+lex-nodist.test \
+lex-pr204.test \
 lex-subobj-nodep.test \
 lflags.test \
 lflags2.test \
@@ -618,7 +622,6 @@ pr2.test \
 pr9.test \
 pr72.test \
 pr87.test \
-pr204.test \
 pr211.test \
 pr220.test \
 pr224.test \
@@ -858,6 +861,7 @@ yacc-deleted-headers.test \
 yacc-dist-nobuild.test \
 yacc-dist-nobuild-subdir.test \
 yacc-nodist.test \
+yacc-pr204.test \
 yaccpp.test \
 yaccvpath.test \
 yacc-d-vpath.test \
