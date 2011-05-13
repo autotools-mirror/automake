@@ -838,6 +838,7 @@ yacc-d-basic.test \
 yacc-cxx.test \
 yacc-d-cxx.test \
 yacc-clean.test \
+yacc-clean-cxx.test \
 yacc.test \
 yacc2.test \
 yacc4.test \
