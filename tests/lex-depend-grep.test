@@ -15,8 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure dependencies work with .ll files.
-# Test synthesized from PR automake/6.
+# Test to make sure dependencies for Lex and C/C++ does not break
+# in obvious ways.  See PR automake/6, and related semantic tests
+# `lex-depend.test' and `lex-depend-cxx.test'.
 
 . ./defs || Exit 1
 
@@ -29,13 +30,20 @@ AM_PROG_LEX
 END
 
 cat > Makefile.am << 'END'
-bin_PROGRAMS = zoo
+bin_PROGRAMS = zoo foo
 zoo_SOURCES = joe.ll
+foo_SOURCES = moe.l
+noinst_PROGRAMS = zardoz
+zardoz_SOURCES = _0.l _1.ll _2.lxx _3.l++ _4.lpp
 END
 
 $ACLOCAL
 $AUTOMAKE -a
 
-$FGREP joe.Po Makefile.in
+$EGREP '([mj]oe|_[01234]|include|\.P)' Makefile.in # For debugging.
+
+for x in joe moe _0 _1 _2 _3 _4; do
+  grep "include.*$x\.Po" Makefile.in
+done
 
 :

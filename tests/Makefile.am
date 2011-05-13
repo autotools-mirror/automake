@@ -442,10 +442,12 @@ ldflags.test \
 lex.test \
 lex2.test \
 lex3.test \
-lex4.test \
 lex5.test \
 lexcpp.test \
 lexvpath.test \
+lex-depend.test \
+lex-depend-cxx.test \
+lex-depend-grep.test \
 lex-line.test \
 lex-subobj-nodep.test \
 lflags.test \
