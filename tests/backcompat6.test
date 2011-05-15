@@ -16,7 +16,7 @@
 
 # Backward-compatibility test: try to build and distribute a package
 # using obsoleted forms of AC_INIT, AM_INIT_AUTOMAKE and AC_OUTPUT.
-# This script can also serve as mild stress-testing for Automke.
+# This script can also serve as mild stress-testing for Automake.
 # See also the similar test `backcompat5.test'.
 
 . ./defs || Exit 1
@@ -36,6 +36,7 @@ three=3
 AC_SUBST(three)
 AC_PROG_CC
 AC_CONFIG_HEADERS(config.h:config.hin)
+AM_CONDITIONAL(CROSS_COMPILING, test "$cross_compiling" = yes)
 AC_OUTPUT(Makefile foo.got:foo1.in:foo2.in:foo3.in)
 END
 
@@ -54,12 +55,14 @@ foo_SOURCES = quux.c
 check-local:
 	test x'$(PACKAGE)' = x'nonesuch-zardoz'
 	test x'$(VERSION)' = x'nonesuch-0.1'
+if ! CROSS_COMPILING
 	./foo
 	## Do not anchor the regexps w.r.t. the end of line, because on
 	## MinGW/MSYS, grep may assume LF line endings only, while our
 	## `foo' program may generate CRLF line endings.
 	./foo | grep '^PACKAGE = nonesuch-zardoz!'
 	./foo | echo '^VERSION = nonesuch-0\.1!'
+endif
 END
 
 cat > quux.c <<'END'

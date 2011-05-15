@@ -1,0 +1,136 @@
+#! /bin/sh
+# Copyright (C) 2009, 2010, 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check parallel-tests features:
+# - per-extension test drivers (xxx_LOG_COMPILER and xxx_LOG_FLAGS),
+#   also with AC_SUBST'd stuff.
+# See also related test 'parallel-tests-ext-driver-prog.test'
+
+parallel_tests=yes
+. ./defs || Exit 1
+
+cat >> configure.in << 'END'
+AC_SUBST([acsubst_driver], [t-driver])
+AC_CONFIG_LINKS([chk-driver:chk-driver])
+AC_OUTPUT
+END
+
+cat > Makefile.am << 'END'
+# Note that automake should not match the '/test' part of 'sub/test'
+# as '.test' suffix.
+TESTS = foo.chk bar.test baz bla.t bli.suff sub/test
+
+TEST_EXTENSIONS = .chk .test .t
+
+CHK_LOG_COMPILER = CHK=ok; export CHK; ./chk-driver
+TEST_LOG_COMPILER = CHK=ok $(SHELL) $(srcdir)/test-driver
+T_LOG_COMPILER = @acsubst_driver@
+LOG_COMPILER = @SHELL@ -x $(srcdir)/noext-driver
+
+CHK_LOG_FLAGS = --chk
+
+AM_TEST_LOG_FLAGS = --am-test
+
+T_LOG_FLAGS = --t
+AM_T_LOG_FLAGS = --am-t
+
+AM_LOG_FLAGS = -a
+LOG_FLAGS = -b
+
+# t-driver is deliberately not distributed; it should be available
+# in PATH also from "make distcheck".
+EXTRA_DIST = $(TESTS) chk-driver test-driver noext-driver
+END
+
+unset CHK || :
+
+mkdir sub
+
+cat > chk-driver <<'END'
+#! /bin/sh
+test x"$1" = x"--chk" || {
+  echo "$0: invalid command line: $*" >&2
+  exit 1
+}
+test x"$CHK" = x"ok" || {
+  echo "$0: bad \$CHK value '$CHK'" >&2
+  exit 1
+}
+shift
+exec "$@"
+exit 127
+END
+sed 's/--chk/--am-test/' chk-driver > test-driver
+
+mkdir bin
+PATH=`pwd`/bin$PATH_SEPARATOR$PATH; export PATH
+
+cat > bin/t-driver <<'END'
+#! /bin/sh
+if test x"$1,$2" != x"--am-t,--t"; then
+  echo "$0: invalid command line: $*" >&2
+  exit 1
+fi
+if test x${CHK+"set"} = x"set"; then
+  echo "$0: $CHK is set in the environment" >&2
+  exit 1
+fi
+shift; shift
+exec "$@"
+exit 127
+END
+sed 's/--am-t,--t/-a,-b/' bin/t-driver > noext-driver
+
+chmod a+x chk-driver chk-driver test-driver bin/t-driver noext-driver
+
+cat >foo.chk << 'END'
+#! /bin/sh
+exit 0
+END
+chmod a+x foo.chk
+cp foo.chk bar.test
+cp foo.chk baz
+cp foo.chk bla.t
+cp foo.chk bli.suff
+cp foo.chk sub/test
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE -a
+
+./configure
+$MAKE check || { cat test-suite.log; Exit 1; }
+ls -l . sub
+cat test-suite.log
+test -f foo.log
+test -f bar.log
+test -f baz.log
+test -f bla.log
+test -f bli.suff.log
+test -f sub/test.log
+
+T_LOG_FLAGS=--bad $MAKE -e check && Exit 1
+cat test-suite.log
+cat bla.log
+# With the above flag overridden, bla.t should fail ...
+$EGREP '(^ *|/)t-driver:.* invalid .*--bad' bla.log
+# ... but no oher test should.
+grep -v '^FAIL: bla\.t ' bla.log | grep 'FAIL:' && Exit 1
+
+# Try also with a VPATH build.
+$MAKE distcheck
+
+:
