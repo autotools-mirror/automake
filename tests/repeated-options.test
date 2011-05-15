@@ -36,14 +36,20 @@ AUTOMAKE_OPTIONS = parallel-tests subdir-objects subdir-objects
 AUTOMAKE_OPTIONS += dist-bzip2 parallel-tests
 TESTS = foo.test
 EXTRA_DIST = $(TESTS)
+TESTS_ENVIRONMENT = EXEEXT='$(EXEEXT)'
 bin_PROGRAMS = sub/foo
+.PHONY: test-build
+test-build:
+	ls -l . sub
+	test -f sub/foo.$(OBJEXT)
+	test -f sub/foo$(EXEEXT)
 END
 
 mkdir sub
 
 cat > foo.test <<'END'
 #!/bin/sh
-test -f sub/foo && test -x sub/foo
+test -f sub/foo$EXEEXT && test -x sub/foo$EXEEXT
 END
 chmod a+x foo.test
 
@@ -64,9 +70,7 @@ $AUTOCONF
 
 ./configure
 $MAKE
-ls -l . sub
-test -f sub/foo.o
-test -f sub/foo
+$MAKE test-build
 $MAKE check
 ls -l
 test -f foo.log
