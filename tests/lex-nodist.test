@@ -14,79 +14,57 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Checks for .c and .h files derived from non-distributed yacc sources.
-# The test 'yacc-pr204.test' does similar check with AM_MAINTAINER_MODE
+# Checks for .c files derived from non-distributed .l sources.
+# The test `lex-pr204.test' does similar check with AM_MAINTAINER_MODE
 # enabled.
-# The tests 'lex-nodist.test' and 'lex-pr204.test' does similar checks
-# for lex-generated .c files.
+# The tests 'yacc-nodist.test' and 'yacc-pr204.test' does similar checks
+# for yacc-generated .c and .h files.
 
-required=yacc
+required=lex
 . ./defs || Exit 1
 
 set -e
 
 cat >> configure.in << 'END'
 AC_PROG_CC
-AC_PROG_YACC
-AC_CONFIG_FILES([sub1/Makefile sub2/Makefile])
+dnl Sister test 'lex-pr204.test' should use 'AC_PROG_LEX' instead.
+AM_PROG_LEX
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-SUBDIRS = sub1 sub2
 .PHONY: test-build test-dist
 test-build: all
-	ls -l . sub1 sub2
-	test -f sub1/parse.y
-	test -f sub1/parse.c
-	test -f sub2/parse.y
-	test -f sub2/parse.c
-	test -f sub2/parse.h
+	ls -l
+	test -f lexer.l
+	test -f lexer.c
 test-dist: distdir
-	ls -l $(distdir) $(distdir)/sub1 $(distdir)/sub2
-	test ! -r $(distdir)/sub1/parse.y
-	test ! -r $(distdir)/sub1/parse.c
-	test ! -r $(distdir)/sub1/parse.h
-	test ! -r $(distdir)/sub2/parse.y
-	test ! -r $(distdir)/sub2/parse.c
-	test ! -r $(distdir)/sub2/parse.h
+	ls -l $(distdir)
+	test ! -r $(distdir)/lexer.l
+	test ! -r $(distdir)/lexer.c
 check-local: test-build test-dist
-END
 
-mkdir sub1 sub2
-
-cat > sub1/Makefile.am << 'END'
-parse.y:
+lexer.l:
 	rm -f $@ $@-t
 	:; { : \
-	  && echo "%{" \
-	  && echo "int yylex () { return 0; }" \
-	  && echo "void yyerror (char *s) {}" \
-	  && echo "%}" \
-	  && echo "%%" \
-	  && echo "maude : 'm' 'a' 'u' 'd' 'e' {}"; \
+	  && echo '%%' \
+	  && echo '"GOOD" return EOF;' \
+	  && echo '.'; \
 	} > $@-t
 	chmod a-w $@-t && mv -f $@-t $@
 
 bin_PROGRAMS = prog
 prog_SOURCES = main.c
-nodist_prog_SOURCES = parse.y
+nodist_prog_SOURCES = lexer.l
+prog_LDADD = $(LEXLIB)
 CLEANFILES = $(nodist_prog_SOURCES)
 END
 
-cat sub1/Makefile.am - > sub2/Makefile.am << 'END'
-AM_YFLAGS = -d
-BUILT_SOURCES = parse.h
-END
-
-cat > sub1/main.c << 'END'
+cat > main.c << 'END'
 int main ()
 {
-  return yyparse ();
+  return yylex ();
 }
-END
-cat - sub1/main.c > sub2/main.c << 'END'
-#include "parse.h"
 END
 
 $ACLOCAL
