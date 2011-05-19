@@ -148,6 +148,23 @@ fail_ () { warn_ "$me: failed test: $@"; Exit 1; }
 skip_ () { warn_ "$me: skipped test: $@"; Exit 77; }
 framework_failure_ () { warn_ "$me: set-up failure: $@"; Exit 99; }
 
+# cross_compiling
+# ---------------
+# Tell whether we are cross-compiling.  This is especially useful to skip
+# tests (or portions of them) that requires a native compiler.
+cross_compiling ()
+{
+  test x"$host_alias" != x
+}
+
+# So that we can force the use of correct gcc, g++ etc., consistently
+# with cross-compilation settings.
+if cross_compiling; then
+  am__tool_prefix="$host_alias-"
+else
+  am__tool_prefix=
+fi
+
 for tool in : $required
 do
   # Check that each required tool is present.
@@ -195,23 +212,47 @@ do
       # always use it.  This is important only when the user
       # has defined CC in his environment, otherwise ./configure will
       # prefer gcc to other compilers.
-      CC=gcc
+      CC=${am__tool_prefix}gcc
       export CC
       echo "$me: running $CC --version"
       ( $CC --version ) || exit 77
       ;;
     gcj)
-      GCJ=gcj
+      GCJ=${am__tool_prefix}gcj
       export GCJ
       echo "$me: running $GCJ --version"
       ( $GCJ --version ) || exit 77
       ( $GCJ -v ) || exit 77
       ;;
     g++)
-      CXX=g++
+      CXX=${am__tool_prefix}g++
       export CXX
       echo "$me: running $CXX --version"
       ( $CXX --version ) || exit 77
+      ;;
+    gfortran)
+      FC=${am__tool_prefix}gfortran
+      export FC
+      echo "$me: running $FC --version"
+      $FC --version || skip_ "GNU Fortran compiler not available"
+      echo "$me: running $FC -v"
+      $FC -v || skip_ "botched installation for GNU Fortran compiler"
+      case " $required " in
+        *\ g77\ *) ;;
+        *) F77=$FC; export F77;;
+      esac
+      ;;
+    g77)
+      F77=${am__tool_prefix}g77
+      export F77
+      echo "$me: running $F77 --version"
+      $F77 --version || skip_ "GNU Fortran 77 compiler not available"
+      echo "$me: running $F77 -v"
+      $F77 -v || skip_ "botched installation for GNU Fortran 77 compiler"
+      case " $required " in
+        *\ gfortran\ *) ;;
+        *) FC=$F77; export FC;;
+      esac
       ;;
     icc)
       CC=icc
@@ -255,6 +296,9 @@ do
       overwrite_status=$?
       rm -f $priv_check_temp
       test $overwrite_status = 0 && exit 77
+      ;;
+    native)
+      cross_compiling && skip_ "doesn't work in cross-compile mode"
       ;;
     python)
       # Python doesn't support --version, it has -V
