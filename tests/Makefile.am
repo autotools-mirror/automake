@@ -724,6 +724,10 @@ parallel-tests-subdir.test \
 parallel-tests-interrupt.test \
 parallel-tests-reset-term.test \
 parallel-test-driver-install.test \
+test-driver-custom-no-extra-driver.test \
+test-driver-custom.test \
+test-driver-custom-xfail-tests.test \
+test-driver-fail.test \
 parse.test \
 percent.test \
 percent2.test \

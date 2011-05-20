@@ -4991,11 +4991,6 @@ sub handle_tests
 
       if (my $parallel_tests = option 'parallel-tests')
         {
-          require_conf_file ($parallel_tests->{position}, FOREIGN,
-                             'test-driver');
-          define_variable ('am__test_driver',
-                           "\$(SHELL) $am_config_aux_dir/test-driver",
-                           INTERNAL);
 	  define_variable ('TEST_SUITE_LOG', 'test-suite.log', INTERNAL);
 	  define_variable ('TEST_SUITE_HTML', '$(TEST_SUITE_LOG:.log=.html)', INTERNAL);
 	  my $suff = '.test';
@@ -5039,6 +5034,20 @@ sub handle_tests
 		      if substr ($obj, - length ($test_suffix)) eq $test_suffix;
 		  }
 		$obj .= '.log';
+                # The "test driver" program, deputed to handle tests protocol used by
+                # test scripts.  By default, it's assumed that no protocol is used,
+                # so we fall back to the old "parallel-tests" behaviour, implemented
+                # by the `test-driver' auxiliary script.
+                if (! var 'LOG_DRIVER')
+                  {
+                    require_conf_file ($parallel_tests->{position}, FOREIGN,
+                                       'test-driver');
+                    define_variable ('LOG_DRIVER',
+                                     "\$(SHELL) $am_config_aux_dir/test-driver",
+                                     INTERNAL);
+                  }
+		my $driver = '$(LOG_DRIVER)';
+		my $driver_flags = '$(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS)';
 		my $compile = 'LOG_COMPILE';
 		define_variable ($compile,
 				 '$(LOG_COMPILER) $(AM_LOG_FLAGS) $(LOG_FLAGS)', INTERNAL);
@@ -5046,7 +5055,8 @@ sub handle_tests
 						GENERIC => 0,
 						OBJ => $obj,
 						SOURCE => $val,
-						DRIVER => '$(am__test_driver)',
+						DRIVER => $driver,
+						DRIVER_FLAGS => $driver_flags,
 						COMPILE =>'$(' . $compile . ')',
 						EXT => '',
 						am__EXEEXT => 'FALSE');
@@ -5077,6 +5087,18 @@ sub handle_tests
 	        {
 		  (my $ext = $test_suffix) =~ s/^\.//;
 		  $ext = uc $ext;
+                  # See comments about definition of LOG_DRIVER, above.
+                  if (! var "${ext}_LOG_DRIVER")
+                  {
+                    require_conf_file ($parallel_tests->{position}, FOREIGN,
+                                       'test-driver');
+                    define_variable ("${ext}_LOG_DRIVER",
+                                     "\$(SHELL) $am_config_aux_dir/test-driver",
+                                     INTERNAL);
+                  }
+		  my $driver = '$(' . $ext . '_LOG_DRIVER)';
+		  my $driver_flags = '$(AM_' . $ext . '_LOG_DRIVER_FLAGS) ' .
+                                     '$(' . $ext . '_LOG_DRIVER_FLAGS)';
 		  my $compile = $ext . '_LOG_COMPILE';
 		  define_variable ($compile,
 				   '$(' . $ext . '_LOG_COMPILER) $(AM_' .  $ext . '_LOG_FLAGS)'
@@ -5086,16 +5108,19 @@ sub handle_tests
 						  GENERIC => 1,
 						  OBJ => '',
 						  SOURCE => '$<',
-						  DRIVER => '$(am__test_driver)',
+						  DRIVER => $driver,
+						  DRIVER_FLAGS => $driver_flags,
 						  COMPILE => '$(' . $compile . ')',
 						  EXT => $test_suffix,
 						  am__EXEEXT => $am_exeext);
 	        }
 	    }
 
+	  # FIXME: this is partly out-of-date w.r.t. the rest of the
+          # FIXME: code now ... what is the best fix?
 	  define_variable ('TEST_LOGS_TMP', '$(TEST_LOGS:.log=.log-t)', INTERNAL);
-
 	  $clean_files{'$(TEST_LOGS_TMP)'} = MOSTLY_CLEAN;
+
 	  $clean_files{'$(TEST_LOGS)'} = MOSTLY_CLEAN;
 	  $clean_files{'$(TEST_SUITE_LOG)'} = MOSTLY_CLEAN;
 	  $clean_files{'$(TEST_SUITE_HTML)'} = MOSTLY_CLEAN;
