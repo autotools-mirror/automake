@@ -19,6 +19,14 @@
 # For each test in the TESTS list in this Makefile.am file, that itself
 # tests features of the TESTS automake interface, generate a sibling
 # test that does likewise, but with the option `parallel-tests' enabled.
+# Individual tests can prevent the creation of such a sibling by
+# explicitly setting the `$parallel_tests' variable to either "yes" or
+# "no".  The rationale for this is that if the variable is set to "yes",
+# the test already uses the `parallel-tests' option, so that a sibling
+# would be just a duplicate; while if the variable is set to "no", the
+# test doesn't support, or is not meant to run with, the `parallel-tests'
+# option, and forcing it to do so in the sibling would likely cause a
+# spurious failure.
 
 set -e
 
@@ -31,8 +39,7 @@ grep -v '.-p\.test' |
 LC_ALL=C sort -u |
 while read tst; do
   if grep '^[^#]*parallel-tests' $tst >/dev/null \
-     || grep "parallel_tests=yes" $tst >/dev/null \
-     || grep "parallel_tests=['\"]yes" $tst >/dev/null
+     || grep "parallel_tests=" $tst >/dev/null
   then :; else echo $tst; fi;
 done |
 {
