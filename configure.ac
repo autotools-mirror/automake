@@ -1,7 +1,8 @@
 # Process this file with autoconf to produce a configure script.
 
 # Copyright (C) 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003,
-# 2004, 2006, 2007, 2008, 2009, 2010 Free Software Foundation, Inc.
+# 2004, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation,
+# Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,6 +25,7 @@ m4_ifndef([AC_PACKAGE_URL],
 AC_CONFIG_SRCDIR(automake.in)
 AC_CONFIG_AUX_DIR(lib)
 
+AC_CANONICAL_HOST
 AC_CANONICAL_BUILD
 
 # Save the AUTOCONF setting before AM_INIT_AUTOMAKE overrides it; this
