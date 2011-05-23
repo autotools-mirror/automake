@@ -1,5 +1,33 @@
 2011-05-24  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
+	testsuite: allow user to ask for stricter skip semantics
+	Given how the Automake testsuite is currently structured, if a
+	command in a test script fails with status `77', the global test
+	outcome is considered a SKIP, because the value of `77' for `$?'
+	is passed to the exit trap.  Indeed, this happens in practice, as
+	an autoconf-generated configure script can exit with status `77'
+	if it fails to find, e.g., a required compiler.
+	While this behaviour is quite useful for avoiding spurious test
+	failures in the wild, it can also sometimes prevent the Automake
+	developers to easily see and declare the requirements of their
+	tests.
+	This change introduces a new variable `am_explicit_skips', meant to
+	be user-overridable, and which, when set to a "true" value (i.e.,
+	`yes' or `1'), require a direct call to `Exit 77' in order to make
+	the test outcome be considered a SKIP.
+	* tests/defs.in ($am__test_skipped): New variable, initialized
+	to `no'.
+	(Exit): Set `$am__test_skipped' to `yes' if passed an exit status
+	of 77.
+	(trap '...' 0): When `$am_explicit_skips' is set to a "true" value,
+	reset an exit status of `77' to `78' if $am__test_skipped is not
+	set to `yes'.
+	* tests/self-check-exit.test: Adjust: unset `am_explicit_skips'.
+	* tests/self-check-explicit-skips.test: New test.
+	* tests/Makefile.am (TESTS): Update.
+
+2011-05-24  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
 	testsuite: user can force skipping of compiler-requiring tests
 	* tests/defs (cc, c++, fortran, fortran77): Skip the test if
 	the relevant compiler is disabled by having the corresponding

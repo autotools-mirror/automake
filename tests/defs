@@ -103,6 +103,10 @@ unset VERBOSE
 ##  Auxiliary shell functions.  ##
 ## ---------------------------- ##
 
+# This is used in `Exit' and in the exit trap.  See comments in the latter
+# for more information,
+am__test_skipped=no
+
 # We use a trap below for cleanup.  This requires us to go through
 # hoops to get the right exit status transported through the signal.
 # So use `Exit STATUS' instead of `exit STATUS' inside of the tests.
@@ -111,8 +115,9 @@ unset VERBOSE
 Exit ()
 {
   set +e
-  (exit $1)
-  exit $1
+  # See comments in the exit trap for the reason we do this.
+  test 77 = $1 && am__test_skipped=yes
+  (exit $1); exit $1
 }
 
 # Print warnings (e.g., about skipped and failed tests) to this file
@@ -604,6 +609,19 @@ if test "$sh_errexit_works" = yes; then
   trap 'exit_status=$?
     set +e
     cd "$testbuilddir"
+    # This is to ensure that a test script does give a SKIP outcome just
+    # because a command in it happens to exit with status 77.  This
+    # behaviour, while from time to time useful to developers, is not
+    # meant to be enabled by default, as it could cause spurious failures
+    # in the wild.  Thus it will be enabled only when the variable
+    # "am_explicit_skips" is set to a "true" value.
+    case $am_explicit_skips in
+      [yY]|[yY]es|1)
+        if test $exit_status -eq 77 && test $am__test_skipped != yes; then
+          exit_status=78
+        fi
+        ;;
+    esac
     case $exit_status,$keep_testdirs in
     0,)
       find $testSubDir -type d ! -perm -700 -exec chmod u+rwx {} ";"

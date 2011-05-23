@@ -850,6 +850,7 @@ self-check-cleanup.test \
 self-check-dir.test \
 self-check-env-sanitize.test \
 self-check-exit.test \
+self-check-explicit-skips.test \
 self-check-is_newest.test \
 self-check-me.test \
 self-check-report.test \
