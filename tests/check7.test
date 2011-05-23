@@ -28,20 +28,25 @@ TESTS = $(XFAIL_TESTS)
 XFAIL_TESTS = a b c d
 check_PROGRAMS = a c d
 check_SCRIPTS = b
+EXTRA_DIST = $(check_SCRIPTS)
 
+.PHONY: print-xfail-tests
 print-xfail-tests:
 	@echo BEG: $(XFAIL_TESTS) :END
 END
 
-cat >>b <<'END'
+cat > b <<'END'
 #! /bin/sh
 exit 1
 END
 chmod a+x b
 
-cat >>a.c <<'END'
+cat > a.c <<'END'
 #include <stdlib.h>
-int main() { return EXIT_FAILURE; }
+int main (void)
+{
+  return EXIT_FAILURE;
+}
 END
 
 cp a.c c.c
@@ -53,12 +58,10 @@ $AUTOMAKE -a
 
 ./configure
 $MAKE check
-EXEEXT=.bin $MAKE -e print-xfail-tests >foo
-cat foo
-grep 'BEG: a.bin b c.bin d.bin :END' foo
+EXEEXT=.bin $MAKE -e print-xfail-tests >stdout || {  cat stdout; Exit 1; }
+cat stdout
+$FGREP 'BEG: a.bin b c.bin d.bin :END' stdout
 
-$MAKE distclean
-mkdir build
-cd build
-../configure
-$MAKE check
+$MAKE distcheck
+
+:
