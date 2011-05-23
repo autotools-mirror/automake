@@ -33,7 +33,7 @@ chmod a+x fake-lex
 unset LEX || :
 
 cat >> configure.in <<'END'
-AC_PROG_CXX
+AC_SUBST([CXX], [false])
 # Simulate presence of Lex using our fake-lex script.
 AC_SUBST([LEX], ['$(abs_top_srcdir)'/fake-lex])
 AC_SUBST([LEX_OUTPUT_ROOT], [lex.yy])
@@ -42,6 +42,7 @@ AC_OUTPUT
 END
 
 cat > Makefile.am <<'END'
+AUTOMAKE_OPTIONS = no-dependencies
 bin_PROGRAMS = foo bar
 foo_SOURCES = main.cc foo.ll
 bar_SOURCES = main.cc bar.l++
@@ -55,19 +56,17 @@ $AUTOMAKE -a
 grep '\$(LFLAGS).*\$(bar_LFLAGS)' Makefile.in && Exit 1
 grep '\$(LFLAGS).*\$(AM_LFLAGS)' Makefile.in && Exit 1
 
-echo 'int main(void) { return 0; }' > main.cc
 : > foo.ll
 : > bar.l++
 
 $AUTOCONF
 ./configure
-env LFLAGS=__user_flags__ $MAKE -e
-
-ls -l
+env LFLAGS=__user_flags__ $MAKE -e foo.cc bar-bar.c++
 
 cat foo.cc
-grep '__am_flags__.*__user_flags__' foo.cc
 cat bar-bar.c++
+
+grep '__am_flags__.*__user_flags__' foo.cc
 grep '__bar_flags__.*__user_flags__' bar-bar.c++
 
 :

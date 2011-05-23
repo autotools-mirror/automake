@@ -37,20 +37,21 @@ END
 
 : >Makefile.am
 
+# This will be sourced, nor executed.
 cat >check_host.in << 'END'
-#! /bin/sh
-case @host_os@ in
+case '@host_os@' in
   mingw*)
     ;;
   *)
-    exit 77
+    skip_ "target OS is not MinGW"
     ;;
 esac
 case @build_os@ in
   mingw* | cygwin*)
     ;;
   *)
-    winepath -w / || exit 77
+    winepath -w / \
+      || skip_ "not on MinGW or Cygwin, and winepath not available"
     ;;
 esac
 END
@@ -59,7 +60,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 ./configure
-./check_host
+. ./check_host
 
 pwd=`pwd`
 

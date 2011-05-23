@@ -166,9 +166,12 @@ fi
 # the errexit flag, since the setup code might not be prepared to deal
 # with it.  Also pre-set `$me' for `tests/defs', so that different calls
 # to `depmod-tests.sh' won't try to use the same temporary directory.
+# The actual tests require a C compiler, so require it for them; but do
+# not require it when generating data, as it's not needed then.
 if test x"$action" = x"generate-data"; then
   me=depmod-data
 else
+  required=cc
   me=depcomp-$depmode
 fi
 set +e

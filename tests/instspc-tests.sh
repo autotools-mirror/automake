@@ -268,9 +268,12 @@ fi
 # the errexit flag, since the setup code might not be prepared to deal
 # with it.  Also pre-set `$me' for `tests/defs', so that different calls
 # to `instspc-tests.sh' won't try to use the same temporary directory.
+# The actual tests require a C compiler, so require it for them; but do
+# not require it when generating data, as it's not needed then.
 if test x"$instspc_action" = x"generate-data"; then
   me=instspc-data
 else
+  required=cc
   me=$instspc_action-$instspc_test_name
 fi
 set +e
