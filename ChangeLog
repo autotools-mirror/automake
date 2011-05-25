@@ -1,5 +1,44 @@
 2011-05-25  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
+	lex tests: avoid spurious failures when LEXLIB isn't found
+	The AC_PROG_LEX Autoconf macro does not diagnose a failure to find
+	the "lex library" expected to provide a `yywrap' function (function
+	which is required to link most lex-generated programs).  On the
+	contrary, when all the link attempts (i.e., with `-ll' and `-lfl')
+	fail, configure declares that no lex library is needed, and simply
+	proceeds with the configuration process -- only for the build to
+	possibly fail later, at make time.
+	This behaviour might be (partly) intended; the Autoconf manual
+	reads:
+	 ``You are encouraged to use Flex in your sources, since it is
+	   both more pleasant to use than plain Lex and the C source
+	   it produces is portable.  In order to ensure portability,
+	   however, you must either provide a function `yywrap' or, if
+	   you don't use it (e.g., your scanner has no `#include'-like
+	   feature), simply include a `%noyywrap' statement in the
+	   scanner's source.''
+	This AC_PROG_LEX behaviour is causing some spurious failures of the
+	Automake testsuite in environments which lack a proper library
+	providing `yywrap' (this happens for example in	Linux->MinGW cross
+	compilations).  But at this point is clear that a proper workaround
+	is to simply provide a fall-back implementation of `yywrap' in our
+	lexers.
+	* tests/cond35.test: Provide a dummy `yywrap' function.
+	* tests/lex3.test: Likewise.
+	* tests/lexvpath.test: Likewise.
+	* tests/silent-many-gcc.test: Likewise.
+	* tests/silent-many-generic.test: Likewise.
+	* tests/silent-lex-gcc.test: Likewise, and a dummy `main' too.
+	* tests/silent-lex-generic.test: Likewise.
+	* tests/lex-lib.test: New test.
+	* tests/lex-libobj.test: New test.
+	* tests/lex-nowrap.test: New test.
+	* tests/Makefile.am (TESTS): Update.
+	* THANKS: Update.
+	Thanks to Russ Allbery for the suggestion.
+
+2011-05-25  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
 	testsuite: require C++ compiler explicitly in tests needing it
 	The list of the test scripts which needed a C++ compiler but
 	failed to require it explicitly has been found by running:

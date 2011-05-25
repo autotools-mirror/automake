@@ -15,11 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Basic semantic checks on Lex support.
-# Test associated with PR 19.
-# From Matthew D. Langston.
+# Check Lex support with flex using the `%noyywrap' option.
 
-required='cc flex GNUmake'
+required='cc flex'
 . ./defs || Exit 1
 
 cat >> configure.in << 'END'
@@ -29,17 +27,21 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-LDADD             = @LEXLIB@
-noinst_PROGRAMS   = foo
-foo_SOURCES       = foo.l
+bin_PROGRAMS = foo
+foo_SOURCES = foo.l
+
+.PHONY: test-no-lexlib
+check-local: test-no-lexlib
+test-no-lexlib:
+	test x'$(LEXLIB)' = x'none needed'
 END
 
 cat > foo.l << 'END'
+%option noyywrap
 %%
 "GOOD"   return EOF;
 .
 %%
-
 int main (void)
 {
   /* We don't use a 'while' loop here (like a real lexer would do)
@@ -49,19 +51,13 @@ int main (void)
   else
     return 1;
 }
-
-/* Avoid possible link errors. */
-int yywrap (void)
-{
-  return 0;
-}
 END
 
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-./configure
+./configure LEXLIB="none needed"
 
 # Program should build and run.
 $MAKE
@@ -70,20 +66,7 @@ if cross_compiling; then :; else
   echo BAD | ./foo && Exit 1
 fi
 
-# The generated file `foo.c' must be shipped.
-$MAKE distdir
-test -f $distdir/foo.c
-
 # Sanity check on distribution.
-$MAKE distcheck
-
-# While we are at it, make sure that foo.c is erased by
-# maintainer-clean, and not by distclean.
-test -f foo.c
-$MAKE distclean
-test -f foo.c
-./configure # we must re-create `Makefile'
-$MAKE maintainer-clean
-test ! -f foo.c
+$MAKE distcheck DISTCHECK_CONFIGURE_FLAGS='LEXLIB="none needed"'
 
 :
