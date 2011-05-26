@@ -461,6 +461,7 @@ extra9.test \
 extra10.test \
 extra11.test \
 extra12.test \
+extra-programs-empty.test \
 extradep.test \
 extradep2.test \
 f90only.test \
@@ -792,6 +793,7 @@ primary.test \
 primary2.test \
 primary3.test \
 proginst.test \
+programs-primary-rewritten.test \
 python.test \
 python2.test \
 python3.test \
@@ -939,10 +941,10 @@ subpkg2.test \
 subpkg3.test \
 subpkg4.test \
 subst.test \
-subst2.test \
 subst3.test \
 subst4.test \
 subst5.test \
+subst-no-trailing-empty-line.test \
 substref.test \
 substre2.test \
 substtarg.test \

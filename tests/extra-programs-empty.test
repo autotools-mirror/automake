@@ -14,40 +14,40 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Make sure a multi-line definition cannot be terminated by an empty
-# line (when there are @substitutions@ inside).
+# Test that EXTRA_PROGRAMS doesn't get removed because it is empty.
+# This check hs been introduced in commit `Release-1-9-254-g9d0eaef'
+# into the former test `subst2.test'.
 
-required=cc
 . ./defs || Exit 1
 
 cat >> configure.in << 'END'
+AC_CONFIG_FILES([Makefile2 Makefile3])
+AC_SUBST([prog])
 AC_PROG_CC
-AC_SUBST([ABCDEFGHIJKLMNOPQRSTUVWX])
-AC_SUBST([ABCDEFGHIJKLMNOPQRSTUVWXY])
-AC_SUBST([ABCDEFGHIJKLMNOPQRSTUVWXYZ])
 AC_OUTPUT
 END
 
-cat >Makefile.am <<'END'
-bin_PROGRAMS = x @ABCDEFGHIJKLMNOPQRSTUVWX@ @ABCDEFGHIJKLMNOPQRSTUVWXY@ @ABCDEFGHIJKLMNOPQRSTUVWXYZ@
+cat > Makefile.am <<'END'
 EXTRA_PROGRAMS =
+END
 
-EXEEXT = .bin
+cat > Makefile2.am <<'END'
+bin_PROGRAMS = a @prog@ b
+EXTRA_PROGRAMS =
+END
 
-print-programs:
-	@echo BEG: $(bin_PROGRAMS) :END
+cat > Makefile3.am <<'END'
+empty =
+EXTRA_PROGRAMS = $(empty)
 END
 
 $ACLOCAL
-$AUTOCONF
 $AUTOMAKE
-./configure
-EXEEXT=.bin $MAKE print-programs >foo
-cat foo
-grep 'BEG: x.bin :END' foo
-EXEEXT=.bin am__empty=X $MAKE -e print-programs >foo
-cat foo
-grep 'BEG: x.bin X :END' foo
 
-# Test for another bug, where EXTRA_PROGRAMS was removed because it was empty.
-grep EXTRA_PROGRAMS Makefile.in
+grep '^EXTRA_PROGRAMS = *$' Makefile.in
+grep '^EXTRA_PROGRAMS = *$' Makefile2.in
+# Be laxer here, since EXTRA_PROGRAMS might be internally rewritten
+# by Automake when it contains references to other variables.
+grep '^EXTRA_PROGRAMS =' Makefile3.in
+
+:
