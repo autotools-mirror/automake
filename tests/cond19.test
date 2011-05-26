@@ -17,17 +17,18 @@
 # Regression test for substitution references to conditional variables.
 # Report from Richard Boulton
 
-required='cc GNUmake'
 . ./defs || Exit 1
 
 cat >> configure.in << 'END'
-AC_PROG_CC
+AC_SUBST([CC], [false])
+AC_SUBST([OBJEXT], [o])
 AM_CONDITIONAL([COND1], [test "x$CONDITION1" = "xtrue"])
 AM_CONDITIONAL([COND2], [test "x$CONDITION2" = "xtrue"])
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+bin_PROGRAMS = helldl
 
 var1 = dlmain
 
@@ -47,28 +48,24 @@ endif
 
 helldl_SOURCES = $(var3:.c=1.c) $(var4:.c=2.c)
 
-echorule:
-	@echo $(helldl_SOURCES) $(helldl_OBJECTS)
+got = `echo $(helldl_SOURCES) $(helldl_OBJECTS)`
 
-bin_PROGRAMS = helldl
+.PHONY: test
+test:
+	test x"$(exp)" = x"$(got)"
 END
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE -a
+$AUTOMAKE -a -i
 
 CONDITION1=true CONDITION2=true ./configure
-vala=`$MAKE --no-print-directory echorule`;
+$MAKE test exp='dlmaina1.c dlmainb2.c dlmaina1.o dlmainb2.o'
 CONDITION1=true CONDITION2=false ./configure
-valb=`$MAKE --no-print-directory echorule`;
+$MAKE test exp='dlmainb1.c dlmaina2.c dlmainb1.o dlmaina2.o'
 CONDITION1=false CONDITION2=true ./configure
-valc=`$MAKE --no-print-directory echorule`;
+$MAKE test exp='dlmaina1.c dlmainb2.c dlmaina1.o dlmainb2.o'
 CONDITION1=false CONDITION2=false ./configure
-vald=`$MAKE --no-print-directory echorule`;
-
-test "x$vala" = "xdlmaina1.c dlmainb2.c dlmaina1.o dlmainb2.o"
-test "x$valb" = "xdlmainb1.c dlmaina2.c dlmainb1.o dlmaina2.o"
-test "x$valc" = "xdlmaina1.c dlmainb2.c dlmaina1.o dlmainb2.o"
-test "x$vald" = "xdlmainb1.c dlmaina2.c dlmainb1.o dlmaina2.o"
+$MAKE test exp='dlmainb1.c dlmaina2.c dlmainb1.o dlmaina2.o'
 
 :

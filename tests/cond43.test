@@ -21,6 +21,7 @@
 # Ensure an error with underquoted usage of AM_COND_IF in configure.ac.
 
 . ./defs || Exit 1
+
 cat >>configure.in <<'END'
 AM_CONDITIONAL([COND1], [:])
 AM_CONDITIONAL([COND2], [:])
@@ -29,10 +30,12 @@ AM_COND_IF([COND1],
 )
 AC_OUTPUT
 END
+
 : >Makefile.am
 
 $ACLOCAL
 AUTOMAKE_fails
+$EGREP '^configure\.in:7:.* missing m4 quoting.*macro depth 2( |$)' stderr
 
 sed '/.AM_COND_IF/{
 	s/^/[/
@@ -41,3 +44,5 @@ sed '/.AM_COND_IF/{
 mv -f configure.int configure.in
 rm -rf autom4te*.cache
 $AUTOMAKE
+
+:

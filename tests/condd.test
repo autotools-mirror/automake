@@ -17,21 +17,22 @@
 
 # Test for bug in conditionals.
 
-required=cc
 . ./defs || Exit 1
 
 cat >> configure.in << 'END'
-AC_PROG_CC
 dnl Define a macro with the same name as the conditional to exhibit
 dnl any underquoted bug.
 AC_DEFUN([COND1], ["some'meaningless;characters`])
-AM_CONDITIONAL([COND1], false)
+AM_CONDITIONAL([COND1], [false])
 AC_CONFIG_FILES([foo/Makefile])
 AC_CONFIG_FILES([bar/Makefile])
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+AUTOMAKE_OPTIONS = no-dependencies
+CC = false
+
 SUBDIRS = foo
 if COND1
 SUBDIRS += bar
@@ -46,6 +47,7 @@ else
 hello_SOURCES += hello-generic.c
 endif
 
+.PHONY: test
 test: distdir
 	test -f $(distdir)/foo/Makefile.am
 	test -f $(distdir)/bar/Makefile.am

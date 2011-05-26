@@ -18,11 +18,9 @@
 # references.
 # Report from Richard Boulton
 
-required=cc
 . ./defs || Exit 1
 
 cat >> configure.in << 'END'
-AC_PROG_CC
 AM_CONDITIONAL([COND1], [true])
 AC_OUTPUT
 END
@@ -30,6 +28,9 @@ END
 : > hello.c
 
 cat > Makefile.am << 'END'
+AUTOMAKE_OPTIONS = no-dependencies
+CC = false
+OBJEXT = o
 
 if COND1
 var = foo.c
@@ -40,18 +41,15 @@ endif
 bin_PROGRAMS = hell
 hell_SOURCES = $(var:=)
 
-echorule:
-	@echo $(hell_SOURCES) $(hell_OBJECTS)
-
+.PHONY: test
+test:
+	test "`echo $(hell_SOURCES) $(hell_OBJECTS)`" = "foo.c foo.o"
 END
 
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
-
 ./configure
-
-val=`$MAKE -s echorule`;
-test "x$val" = "xfoo.c foo.o"
+$MAKE test
 
 :

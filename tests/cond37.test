@@ -20,11 +20,11 @@
 . ./defs || Exit 1
 
 cat >>configure.in <<'EOF'
-AM_CONDITIONAL([CASE_A], test -n "$case_A")
+AM_CONDITIONAL([CASE_A], [test -n "$case_A"])
 AC_OUTPUT
 EOF
 
-cat >>Makefile.am <<'EOF'
+cat > Makefile.am <<'EOF'
 if CASE_A
 check-local:
 	@echo GrepMe1
@@ -39,18 +39,18 @@ $AUTOCONF
 $AUTOMAKE
 
 ./configure
-$MAKE check >stdout
+$MAKE check >stdout || { cat stdout; Exit 1; }
 cat stdout
 grep GrepMe1 stdout && Exit 1
-$MAKE install >stdout
+$MAKE install >stdout || { cat stdout; Exit 1; }
 cat stdout
 grep GrepMe2 stdout
 
 ./configure case_A=1
-$MAKE check >stdout
+$MAKE check >stdout || { cat stdout; Exit 1; }
 cat stdout
 grep GrepMe1 stdout
-$MAKE install >stdout
+$MAKE install >stdout || { cat stdout; Exit 1; }
 cat stdout
 grep GrepMe2 stdout && Exit 1
 

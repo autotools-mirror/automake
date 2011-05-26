@@ -342,7 +342,6 @@ condhook2.test \
 condinc.test \
 condinc2.test \
 condlib.test \
-condman.test \
 condman2.test \
 condman3.test \
 configure.test \

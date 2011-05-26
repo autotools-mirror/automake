@@ -16,17 +16,19 @@
 
 # For PR/352: make sure we support bin_PROGRAMS being defined conditionally.
 
-required=cc
 . ./defs || Exit 1
 
 cat >>configure.in <<'EOF'
-AC_PROG_CC
-AM_CONDITIONAL(C1, [test -z "$two"])
-AM_CONDITIONAL(C2, [test -n "$two"])
+AM_CONDITIONAL([C1], [test -z "$two"])
+AM_CONDITIONAL([C2], [test -n "$two"])
 AC_OUTPUT
 EOF
 
-cat >>Makefile.am <<'EOF'
+cat > Makefile.am <<'EOF'
+AUTOMAKE_OPTIONS = no-dependencies
+CC = false
+EXEEXT = .foo
+
 if C1
 bin_PROGRAMS = a
 endif
@@ -34,23 +36,24 @@ if C2
 bin_PROGRAMS = b $(undefined)
 endif
 
-print:
-	@echo 'BEG: $(bin_PROGRAMS) :END'
+.PHONY: test-a test-b
+test-a:
+	test a.foo = $(bin_PROGRAMS)
+test-b:
+	test b.foo = $(bin_PROGRAMS)
 EOF
 
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 
+$FGREP 'a_SOURCES = a.c' Makefile.in
+$FGREP 'b_SOURCES = b.c' Makefile.in
+
 ./configure
-EXEEXT=.foo $MAKE -e print > stdout
-cat stdout
-grep 'BEG: a.foo :END' stdout
+$MAKE test-a
 
 ./configure two=yes
-EXEEXT=.foo $MAKE -e print > stdout
-cat stdout
-grep 'BEG: b.foo :END' stdout
+$MAKE test-b
 
-grep 'a_SOURCES = a.c' Makefile.in
-grep 'b_SOURCES = b.c' Makefile.in
+:

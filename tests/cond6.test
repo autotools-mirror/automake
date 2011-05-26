@@ -19,10 +19,9 @@
 
 . ./defs || Exit 1
 
-echo 'AM_CONDITIONAL(FOO, true)' >> configure.in
+echo 'AM_CONDITIONAL([FOO], [true])' >> configure.in
 
 cat > Makefile.am << 'END'
-
 if FOO
 
 helpdir = $(prefix)/Help
@@ -36,7 +35,37 @@ helpdir = $(prefix)/help
 help_DATA = foo
 
 endif
+
+a b c d e f g h:
+	touch $@
+
+.PHONY: print-data
+print-data:
+	echo BEG: $(help_DATA) :END
 END
 
+
+# Older versions of this test checked that automake could process the above
+# Makefile.am even with no AC_OUTPUT in configure.  So continue to do this
+# check, for completeness.
 $ACLOCAL
 $AUTOMAKE
+
+rm -rf autom4te*.cache
+
+echo AC_OUTPUT >> configure.in
+$AUTOCONF
+$AUTOMAKE Makefile
+
+./configure --prefix="`pwd`/_inst"
+
+$MAKE print-data >stdout || { cat stdout; Exit 1; }
+cat stdout
+grep '^BEG: a b c d e f g h :END$' stdout
+
+$MAKE install
+for x in a b c d e f g h; do 
+  test -f _inst/Help/$x
+done
+
+:
