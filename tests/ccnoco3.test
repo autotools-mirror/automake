@@ -23,6 +23,7 @@ required=gcc
 cat >> configure.in << 'END'
 AC_PROG_CC
 AM_PROG_CC_C_O
+$CC --version; $CC -v; # For debugging.
 AC_OUTPUT
 END
 
@@ -43,16 +44,17 @@ int main ()
 }
 END
 
-cat > Mycomp << 'END'
+cat > Mycomp << END
 #!/bin/sh
 
-case " "$* in
+case " \$* " in
  *\ -c*\ -o* | *\ -o*\ -c*)
     exit 1
     ;;
 esac
 
-exec gcc "$@"
+# Use '$CC', not 'gcc', to honour the compiler chosen by 'tests/defs'.
+exec $CC "\$@"
 END
 
 chmod +x Mycomp
@@ -77,4 +79,4 @@ $MAKE 2>stderr || { cat stderr >&2; Exit 1; }
 cat stderr >&2
 grep 'mv.*the same file' stderr && Exit 1
 
-Exit 0
+:
