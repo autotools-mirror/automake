@@ -1049,8 +1049,8 @@ $(parallel_tests)
 EXTRA_DIST += $(TESTS)
 
 
-# Each test case depends on defs, aclocal, and automake.
-$(TEST_LOGS): defs aclocal-$(APIVERSION) automake-$(APIVERSION)
+# Dependencies valid for each test case.
+$(TEST_LOGS): defs defs-static aclocal-$(APIVERSION) automake-$(APIVERSION)
 
 clean-local: clean-local-check
 .PHONY: clean-local-check
