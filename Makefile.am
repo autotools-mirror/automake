@@ -78,6 +78,8 @@ do_subst = sed \
   -e 's,[@]PERL[@],$(PERL),g' \
   -e 's,[@]PERL_THREADS[@],$(PERL_THREADS),g' \
   -e 's,[@]SHELL[@],$(SHELL),g' \
+  -e 's,[@]am_AUTOCONF[@],$(am_AUTOCONF),g' \
+  -e 's,[@]am_AUTOM4TE[@],$(am_AUTOM4TE),g' \
   -e 's,[@]VERSION[@],$(VERSION),g' \
   -e 's,[@]configure_input[@],Generated from $@.in; do not edit by hand.,g' \
   -e 's,[@]datadir[@],$(datadir),g'
