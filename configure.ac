@@ -28,9 +28,13 @@ AC_CANONICAL_BUILD
 
 # Save the AUTOCONF setting before AM_INIT_AUTOMAKE overrides it; this
 # way we can run Autoconf tests from configure (or from the test
-# suite) without being bothered by `missing'.  Likewise for autoheader.
+# suite) without being bothered by `missing'.  Likewise for autom4te,
+# autoreconf, autoheader, and autoupdate.
 AC_SUBST([am_AUTOCONF], ["${AUTOCONF-autoconf}"])
+AC_SUBST([am_AUTOM4TE], ["${AUTOM4TE-autom4te}"])
+AC_SUBST([am_AUTORECONF], ["${AUTORECONF-autoreconf}"])
 AC_SUBST([am_AUTOHEADER], ["${AUTOHEADER-autoheader}"])
+AC_SUBST([am_AUTOUPDATE], ["${AUTOUPDATE-autoupdate}"])
 
 AM_INIT_AUTOMAKE([1.10a dist-bzip2 filename-length-max=99 color-tests
 		  parallel-tests silent-rules])

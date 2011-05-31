@@ -1,3 +1,53 @@
+2011-05-29  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	automake, aclocal: honour configure-time AUTOCONF and AUTOM4TE
+	Currently, the Automake's own configure script allow definition
+	of AUTOCONF and AUTOM4TE, expected to point respectively to an
+	autoconf and autom4te programs.  But while these definitions are
+	honoured in the Automake's build systems and test suite, they
+	were *not* honoured in the generated `automake' and `aclocal'
+	scripts.  This behaviour, apart from being wrong in that it does
+	not allow the user enough freedom in choosing his tools, also
+	caused inconsistencies in the test suite, brining to spurious
+	failures.
+	Problem reported by Graham Reitz on the automake list; see thread:
+	<http://lists.gnu.org/archive/html/automake/2011-05/msg00022.html>
+	* automake.in ($traces): Use `@am_AUTOCONF', not simply `autoconf'.
+	* aclocal.in ($traces): Use `@am_AUTOM4TE', not simply `autom4te'.
+	* Makefile.am (do_subst): Substitute also `@am_AUTOCONF' and
+	`@am_AUTOM4TE'.
+	* NEWS: Update.
+	* THANKS: Update.
+
+2011-05-29  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	build: the user can override AUTOM4TE, AUTORECONF and AUTOUPDATE too
+	Our build system allows the user to override AUTOCONF and AUTOHEADER
+	at configure time, and honours these overrides in our testsuite.
+	But it didn't do the same with AUTOM4TE, AUTORECONF and AUTOUPDATE.
+	This change fixes that inconsistency.
+	* configure.ac (am_AUTOM4TE, am_AUTOUPDATE, am_AUTORECONF): New
+	AC_SUBSTitutions.  Update comments.
+	* tests/defs.in ($AUTOUPDATE): Default to `@am_AUTOUPDATE@' now.
+	($AUTOM4TE): New variable, defaulting to `@am_AUTOM4TE@'.
+	($AUTORECONF): New variable, defaulting to `@am_AUTORECONF@'.
+	* doc/Makefile.am ($(srcdir)/amhello-1.0.tar.gz): Update.
+
+2011-05-22  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+	    Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests/README: fix example about `make -e' usage
+	* tests/README (Section "Writing test cases" subsection "Do"): When
+	some variable is never initialized in the Makefile, `-e' is not
+	necessary in order to override it.  DESTDIR is such a variable: we
+	ensure that we do not ever initialize it.  And as such, it is quite
+	portable to use:
+	  $ make DESTDIR=/foo/bar install
+	and in fact, quite widely used.
+	So our example about when `make -e' is required, which references
+	the `DESTDIR' variable, is poorly chosen, if not downright wrong.
+	Rewrite it to use `prefix' as the overridden variable instead.
+
 2011-05-27  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
 	testsuite: each test case depends on `defs-static'
