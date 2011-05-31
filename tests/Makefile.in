@@ -192,10 +192,13 @@ am__test_logs1 = $(TESTS:=.log)
 am__test_logs2 = $(am__test_logs1:.test.log=.log)
 TEST_LOG_COMPILE = $(TEST_LOG_COMPILER) $(AM_TEST_LOG_FLAGS) \
 	$(TEST_LOG_FLAGS)
-am__test_logs3 = $(am__test_logs2:.instspc.log=.log)
+am__test_logs3 = $(am__test_logs2:.ptest.log=.log)
+PTEST_LOG_COMPILE = $(PTEST_LOG_COMPILER) $(AM_PTEST_LOG_FLAGS) \
+	$(PTEST_LOG_FLAGS)
+am__test_logs4 = $(am__test_logs3:.instspc.log=.log)
 INSTSPC_LOG_COMPILE = $(INSTSPC_LOG_COMPILER) $(AM_INSTSPC_LOG_FLAGS) \
 	$(INSTSPC_LOG_FLAGS)
-TEST_LOGS = $(am__test_logs3:.depmod.log=.log)
+TEST_LOGS = $(am__test_logs4:.depmod.log=.log)
 DEPMOD_LOG_COMPILE = $(DEPMOD_LOG_COMPILER) $(AM_DEPMOD_LOG_FLAGS) \
 	$(DEPMOD_LOG_FLAGS)
 TEST_LOGS_TMP = $(TEST_LOGS:.log=.log-t)
@@ -298,24 +301,26 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-MAINTAINERCLEANFILES = $(parallel_tests)
-EXTRA_DIST = ChangeLog-old gen-parallel-tests instspc-tests.sh \
-	depmod-tests.sh $(handwritten_tests) $(generated_tests)
-TEST_EXTENSIONS = .test .instspc .depmod
+MAINTAINERCLEANFILES = 
+EXTRA_DIST = ChangeLog-old gen-parallel-tests parallel-tests.sh \
+	instspc-tests.sh depmod-tests.sh $(handwritten_tests)
+TEST_EXTENSIONS = .test .ptest .instspc .depmod
 # Run the tests with the shell detected at configure time.
 TEST_LOG_COMPILER = $(SHELL)
 XFAIL_TESTS = all.test auxdir2.test cond17.test gcj6.test \
 	override-conditional-2.test pr8365-remake-timing.test \
 	yacc-dist-nobuild-subdir.test txinfo5.test \
 	$(instspc_xfail_tests)
-parallel_tests = backcompat5-p.test check-exported-srcdir-p.test \
-	check-subst-prog-p.test check-subst-p.test \
-	check-tests-in-builddir-p.test check-tests_environment-p.test \
-	check-p.test check10-p.test check11-p.test check12-p.test \
-	check2-p.test check3-p.test check4-p.test check5-p.test \
-	check6-p.test check7-p.test check8-p.test color-p.test \
-	color2-p.test comment9-p.test dejagnu-p.test exeext4-p.test \
-	maken3-p.test maken4-p.test posixsubst-tests-p.test
+parallel_tests = backcompat5-p.ptest check-exported-srcdir-p.ptest \
+	check-subst-prog-p.ptest check-subst-p.ptest \
+	check-tests-in-builddir-p.ptest \
+	check-tests_environment-p.ptest check-p.ptest check10-p.ptest \
+	check11-p.ptest check12-p.ptest check2-p.ptest check3-p.ptest \
+	check4-p.ptest check5-p.ptest check6-p.ptest check7-p.ptest \
+	check8-p.ptest color-p.ptest color2-p.ptest comment9-p.ptest \
+	dejagnu-p.ptest exeext4-p.ptest maken3-p.ptest maken4-p.ptest \
+	posixsubst-tests-p.ptest
+PTEST_LOG_COMPILER = $(SHELL) $(srcdir)/parallel-tests.sh
 instspc_tests = build-squote.instspc install-squote.instspc \
 	build-dquote.instspc install-dquote.instspc \
 	build-bquote.instspc install-bquote.instspc \
@@ -397,11 +402,10 @@ AM_TESTS_ENVIRONMENT = \
 
 TESTS = \
   $(handwritten_tests) \
-  $(generated_tests) \
+  $(parallel_tests) \
   $(depmod_tests) \
   $(instspc_tests)
 
-generated_tests = $(parallel_tests)
 handwritten_tests = \
 aclocal.test \
 aclocal3.test \
@@ -1350,14 +1354,14 @@ yflags-force-conditional.test \
 yflags-var-expand.test
 
 checked_test_extensions = .test
-expected_list_of_tests = $(handwritten_tests) $(generated_tests)
+expected_list_of_tests = $(handwritten_tests)
 am__tmk = tests-in-makefile-list.tmp
 am__tfs = tests-on-filesystem-list.tmp
 am__tdf = diff-in-tests-lists.tmp
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .depmod .html .instspc .log .test
+.SUFFIXES: .depmod .html .instspc .log .ptest .test
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/parallel-tests.am $(srcdir)/instspc-tests.am $(srcdir)/depmod-tests.am $(top_srcdir)/CheckListOfTests.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -1529,6 +1533,8 @@ recheck recheck-html:
 	$(MAKE) $(AM_MAKEFLAGS) $$target AM_MAKEFLAGS='$(AM_MAKEFLAGS) TEST_LOGS="'"$$list"'"'
 .test.log:
 	@p='$<'; $(am__check_pre) $(TEST_LOG_COMPILE) "$$tst" $(am__check_post)
+.ptest.log:
+	@p='$<'; $(am__check_pre) $(PTEST_LOG_COMPILE) "$$tst" $(am__check_post)
 .instspc.log:
 	@p='$<'; $(am__check_pre) $(INSTSPC_LOG_COMPILE) "$$tst" $(am__check_post)
 .depmod.log:
@@ -1713,27 +1719,11 @@ posixsubst-tests-p.log: posixsubst-tests.test
 $(srcdir)/parallel-tests.am: gen-parallel-tests Makefile.am
 	$(AM_V_GEN)($(am__cd) $(srcdir) && $(SHELL) ./gen-parallel-tests) >$@
 
-$(parallel_tests): Makefile.am
-	$(AM_V_at)rm -f $@ $@-t
-	$(AM_V_GEN)input=`echo $@ | sed 's,.*/,,; s,-p.test$$,.test,'`; \
-	{ echo '#!/bin/sh'; \
-	  echo '# DO NOT EDIT!  GENERATED AUTOMATICALLY!'; \
-	  echo; \
-	  echo '# Ensure proper definition of $$testsrcdir.'; \
-	  echo '. ./defs-static || exit 99'; \
-	  echo 'test -n "$$testsrcdir" || exit 99 # sanity check'; \
-	  echo; \
-	  echo "# Run the test with Automake's parallel-tests driver enabled."; \
-	  echo 'parallel_tests=yes'; \
-	  echo "# In the spirit of VPATH, we prefer a test in the build tree"; \
-	  echo "# over one in the source tree."; \
-	  echo "if test -f \"./$$input\"; then"; \
-	  echo "  . \"./$$input\""; \
-	  echo 'else'; \
-	  echo "  . \"\$$testsrcdir/$$input\""; \
-	  echo 'fi'; \
-	} > $@-t
-	$(AM_V_at)chmod a+rx $@-t && mv -f $@-t $@
+# All `*-p.ptest' tests work by sourcing the script `parallel-tests.sh'.
+$(parallel_tests:.ptest=.log): parallel-tests.sh
+# This dummy declaration is required to have make actually produce
+# expected log files from the `.ptest.log' suffix rule.
+$(parallel_tests):
 
 $(srcdir)/instspc-tests.am: instspc-tests.sh Makefile.am
 	$(AM_V_GEN)($(am__cd) $(srcdir) \
@@ -1803,7 +1793,6 @@ maintainer-check-list-of-tests:
 clean-local: clean-maintcheck-testslist-tmp
 clean-maintcheck-testslist-tmp:
 	rm -f $(am__tmk) $(am__tfs) $(am__tdf)
-maintainer-check-list-of-tests: $(expected_list_of_tests)
 
 # Dependencies valid for each test case.
 $(TEST_LOGS): defs defs-static aclocal-$(APIVERSION) automake-$(APIVERSION)

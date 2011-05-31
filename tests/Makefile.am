@@ -38,31 +38,17 @@ include $(srcdir)/parallel-tests.am
 
 $(srcdir)/parallel-tests.am: gen-parallel-tests Makefile.am
 	$(AM_V_GEN)($(am__cd) $(srcdir) && $(SHELL) ./gen-parallel-tests) >$@
-
-$(parallel_tests): Makefile.am
-	$(AM_V_at)rm -f $@ $@-t
-	$(AM_V_GEN)input=`echo $@ | sed 's,.*/,,; s,-p.test$$,.test,'`; \
-	{ echo '#!/bin/sh'; \
-	  echo '# DO NOT EDIT!  GENERATED AUTOMATICALLY!'; \
-	  echo; \
-	  echo '# Ensure proper definition of $$testsrcdir.'; \
-	  echo '. ./defs-static || exit 99'; \
-	  echo 'test -n "$$testsrcdir" || exit 99 # sanity check'; \
-	  echo; \
-	  echo "# Run the test with Automake's parallel-tests driver enabled."; \
-	  echo 'parallel_tests=yes'; \
-	  echo "# In the spirit of VPATH, we prefer a test in the build tree"; \
-	  echo "# over one in the source tree."; \
-	  echo "if test -f \"./$$input\"; then"; \
-	  echo "  . \"./$$input\""; \
-	  echo 'else'; \
-	  echo "  . \"\$$testsrcdir/$$input\""; \
-	  echo 'fi'; \
-	} > $@-t
-	$(AM_V_at)chmod a+rx $@-t && mv -f $@-t $@
-
-MAINTAINERCLEANFILES += $(parallel_tests)
 EXTRA_DIST += gen-parallel-tests
+
+TEST_EXTENSIONS += .ptest
+PTEST_LOG_COMPILER = $(SHELL) $(srcdir)/parallel-tests.sh
+EXTRA_DIST += parallel-tests.sh
+
+# All `*-p.ptest' tests work by sourcing the script `parallel-tests.sh'.
+$(parallel_tests:.ptest=.log): parallel-tests.sh
+# This dummy declaration is required to have make actually produce
+# expected log files from the `.ptest.log' suffix rule.
+$(parallel_tests):
 
 
 include $(srcdir)/instspc-tests.am
@@ -126,13 +112,11 @@ AM_TESTS_ENVIRONMENT = \
 
 TESTS = \
   $(handwritten_tests) \
-  $(generated_tests) \
+  $(parallel_tests) \
   $(depmod_tests) \
   $(instspc_tests)
 
-EXTRA_DIST += $(handwritten_tests) $(generated_tests)
-
-generated_tests = $(parallel_tests)
+EXTRA_DIST += $(handwritten_tests)
 
 handwritten_tests = \
 aclocal.test \
@@ -1084,9 +1068,8 @@ yflags-var-expand.test
 
 ## Checking the test of tests.
 checked_test_extensions = .test
-expected_list_of_tests = $(handwritten_tests) $(generated_tests)
+expected_list_of_tests = $(handwritten_tests)
 include $(top_srcdir)/CheckListOfTests.am
-maintainer-check-list-of-tests: $(expected_list_of_tests)
 
 # Dependencies valid for each test case.
 $(TEST_LOGS): defs defs-static aclocal-$(APIVERSION) automake-$(APIVERSION)
