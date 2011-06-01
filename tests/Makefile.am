@@ -558,6 +558,7 @@ lexcpp.test \
 lexvpath.test \
 lex-subobj-nodep.test \
 lex-lib.test \
+lex-lib-external.test \
 lex-libobj.test \
 lex-noyywrap.test \
 lflags.test \
