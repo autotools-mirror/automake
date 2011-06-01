@@ -1,0 +1,116 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Sanity check for the automake testsuite.
+# Check that automatic re-execution of test script with the
+# configure-time $SHELL.
+
+. ./defs || Exit 1
+
+# This is not optimal, but it's much better than writing wrapper
+# scripts acting as "fake" shells.
+sh -c ': ${.sh.version}' \
+  && skip_ "sh is a Korn Shell"
+ksh -c 'test -n "${.sh.version}"' || \
+  skip_ "ksh is not a fully-fledged Korn Shell"
+
+cwd=`pwd` || Exit 99
+
+cp ../defs .
+unset AM_TESTS_REEXEC || :
+
+#
+# Check how to default, force or prevent a re-execution.
+#
+
+cat > run-with-ksh.test <<'END'
+#!/bin/false
+. ./defs
+# Subshell required to prevent some shells (e.g., older bash) from
+# only complaining on stderr but then exiting with exit status 0.
+(test -n "${.sh.version}" && echo ${.sh.version})
+END
+
+sed -e "s|^testbuilddir=.*|testbuilddir='$cwd'|" \
+    -e 's|^SHELL=.*$|SHELL=ksh; export SHELL|' \
+    < ../defs-static >defs-static
+
+sh -x run-with-ksh.test
+
+AM_TESTS_REEXEC=''    sh run-with-ksh.test
+AM_TESTS_REEXEC=yes   sh run-with-ksh.test
+AM_TESTS_REEXEC=y     sh run-with-ksh.test
+AM_TESTS_REEXEC=true  sh run-with-ksh.test
+AM_TESTS_REEXEC=1     sh run-with-ksh.test
+AM_TESTS_REEXEC=no    sh run-with-ksh.test && Exit 1
+AM_TESTS_REEXEC=n     sh run-with-ksh.test && Exit 1
+AM_TESTS_REEXEC=false sh run-with-ksh.test && Exit 1
+AM_TESTS_REEXEC=0     sh run-with-ksh.test && Exit 1
+
+#
+# Check message about the re-execution.
+#
+
+cat > dummy.test <<'END'
+#!/bin/sh
+. ./defs
+:
+END
+chmod a+x dummy.test
+
+mkdir sub
+cp dummy.test defs sub
+sed -e "s|^testbuilddir=.*|testbuilddir='$cwd'|" \
+    < ../defs-static > defs-static
+sed -e "s|^testbuilddir=.*|testbuilddir='$cwd/sub'|" \
+    < ../defs-static > sub/defs-static
+
+./dummy.test a b | grep "^dummy: exec $SHELL \\./dummy\\.test a b$"
+
+for am_sh in sh ksh; do
+  $am_sh dummy.test a b c \
+    | grep "^dummy: exec $SHELL dummy\\.test a b c$"
+  $am_sh ./dummy.test a b c \
+    | grep "^dummy: exec $SHELL \\./dummy\\.test a b c$"
+  cd sub
+  $am_sh ../dummy.test a b \
+    | grep "dummy: exec $SHELL \\.\\./dummy\\.test a b$"
+  cd ..
+  $am_sh "$cwd/dummy.test" a -b c- \
+    | grep "^dummy: exec $SHELL $cwd/dummy\\.test a -b c-$"
+  $am_sh sub/dummy.test 1 2 3 4 \
+    | grep "^dummy: exec $SHELL sub/dummy\\.test 1 2 3 4$"
+done
+
+#
+# Check that arguments passed to a test script are preserved by a re-exec.
+#
+
+cat > checkargs.test <<'END'
+. ./defs
+test $# -eq 3 && test x"$1" = x'a' && test x"$2" = x && test x"$3" = x"-e"
+END
+
+$SHELL checkargs.test a '' -e
+$SHELL ./checkargs.test a '' -e
+$SHELL "$cwd/checkargs.test" a '' -e
+cd sub
+$SHELL ../checkargs.test a '' -e
+cd ..
+cp checkargs.test sub
+$SHELL sub/checkargs.test a '' -e
+
+:
