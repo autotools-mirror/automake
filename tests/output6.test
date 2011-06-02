@@ -16,13 +16,12 @@
 
 # Check for support for colon separated input files in AC_CONFIG_FILES
 
-required=GNUmake
 . ./defs || Exit 1
 
 cat > configure.in << END
 AC_INIT([$me], [1.0])
 AM_INIT_AUTOMAKE
-AC_CONFIG_FILES(foo:a.in:b.in:c.in:d.in)
+AC_CONFIG_FILES([foo:a.in:b.in:c.in:d.in])
 AC_OUTPUT
 END
 
@@ -43,8 +42,11 @@ cat >c.am <<'EOF'
 c = C
 d = C
 
-print:
-	@echo $a$b$c$d
+.PHONY: test1 test2
+test1:
+	test $(a)$(b)$(c)$(d) = ABCD
+test2:
+	test $(a)$(b)$(c)$(d) = GFCD
 EOF
 
 echo 'd = D' > d.in
@@ -54,7 +56,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 ./configure
-$MAKE -f foo print | grep 'ABCD'
+$MAKE -f foo test1
 
 $sleep
 cat >b.in <<'EOF'
@@ -64,5 +66,7 @@ c = F
 d = F
 EOF
 
-# This involves the rebuild rule, hence it requires GNUmake
-$MAKE -f foo print | grep 'GFCD'
+using_gmake || $MAKE -f foo
+$MAKE -f foo test2
+
+:
