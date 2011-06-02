@@ -3,7 +3,8 @@
 ## Makefile for Automake.
 
 # Copyright (C) 1995, 1996, 1997, 1998, 1999, 2001, 2002, 2003, 2004,
-# 2005, 2006, 2007, 2008, 2009, 2010  Free Software Foundation, Inc.
+# 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation,
+# Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -168,6 +169,7 @@ clean-local: clean-coverage
 syntax_check_rules = \
 sc_test_names \
 sc_diff_automake_in_automake \
+sc_diff_aclocal_in_automake \
 sc_perl_syntax \
 sc_no_brace_variable_expansions \
 sc_rm_minus_f \
@@ -286,13 +288,20 @@ sc_test_names:
 	   exit 1; \
 	 fi
 
-## This check avoids accidental configure substitutions in the source.
-## There are exactly 8 lines that should be modified.  This works out
-## to 28 lines of diffs.
+## These check avoids accidental configure substitutions in the source.
+## There are exactly 9 lines that should be modified from automake.in to
+## automake, and 10 lines that should be modified from aclocal.in to
+## aclocal; these wors out to 32 and 34 lines of diffs, respectively.
 sc_diff_automake_in_automake:
-	@if test `diff $(srcdir)/automake.in automake | wc -l` -ne 28; then \
+	@if test `diff $(srcdir)/automake.in automake | wc -l` -ne 32; then \
 	  echo "found too many diffs between automake.in and automake" 1>&2; \
 	  diff -c $(srcdir)/automake.in automake; \
+	  exit 1; \
+	fi
+sc_diff_aclocal_in_aclocal:
+	@if test `diff $(srcdir)/aclocal.in aclocal | wc -l` -ne 34; then \
+	  echo "found too many diffs between aclocal.in and aclocal" 1>&2; \
+	  diff -c $(srcdir)/aclocal.in aclocal; \
 	  exit 1; \
 	fi
 
@@ -458,9 +467,10 @@ sc_tests_here_document_format:
 
 ## Tests should never call exit directly, but use Exit.
 ## This is so that the exit status is transported correctly across the 0 trap.
-## Ignore comments, and ignore one perl line in ext2.test.
+## Ignore comments, testsuite self tests, and one perl line in ext2.test.
 sc_tests_Exit_not_exit:
 	@found=false; for file in $(srcdir)/tests/*.test; do \
+	  case $$file in */self-check-*.test) continue;; esac; \
 	  res=`sed -n -e '/^#/d; /^\$$PERL/d' -e '/<<.*END/,/^END/b' \
 		      -e '/<<.*EOF/,/^EOF/b' -e '/exit [$$0-9]/p' $$file`; \
 	  if test -n "$$res"; then \
