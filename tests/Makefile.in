@@ -282,7 +282,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 MAINTAINERCLEANFILES = $(parallel_tests) $(instspc_tests)
 EXTRA_DIST = ChangeLog-old gen-parallel-tests instspc-tests.sh \
-	$(TESTS)
+	$(TESTS) trivial-test-driver
 XFAIL_TESTS = all.test auxdir2.test cond17.test gcj6.test \
 	override-conditional-2.test pr8365-remake-timing.test \
 	yacc-dist-nobuild-subdir.test txinfo5.test \
@@ -983,10 +983,16 @@ parallel-tests-unreadable-log.test \
 parallel-tests-subdir.test \
 parallel-tests-interrupt.test \
 parallel-tests-reset-term.test \
+parallel-tests-empty-testlogs.test \
 parallel-test-driver-install.test \
 test-driver-custom-no-extra-driver.test \
 test-driver-custom.test \
 test-driver-custom-xfail-tests.test \
+test-driver-custom-multitest.test \
+test-driver-custom-multitest-recheck.test \
+test-driver-custom-multitest-recheck2.test \
+test-driver-custom-html.test \
+test-driver-custom-no-html.test \
 test-driver-fail.test \
 parse.test \
 percent.test \
@@ -1378,12 +1384,16 @@ cscope cscopelist:
 
 
 $(TEST_SUITE_LOG): $(TEST_LOGS)
-	@$(am__sh_e_setup);						\
-	list='$(TEST_LOGS)';						\
-	results=`for f in $$list; do					\
-		   test -r $$f && read line < $$f && echo "$$line"	\
-		     || echo FAIL;					\
-		 done`;							\
+	@$(am__sh_e_setup); \
+	rst_magic=":test-result:"; \
+	list='$(TEST_LOGS)'; \
+	list2=`for f in $$list; do test ! -r $$f || echo $$f; done`; \
+	results1=`for f in $$list; do test -r $$f || echo FAIL; done`; \
+	results2=''; \
+	if test -n "$$list2"; then \
+	  results2=`sed -n "s/^$$rst_magic[	 ]*//p" $$list2`; \
+	fi; \
+	results=`echo "$$results1" && echo "$$results2"` \
 	all=`echo "$$results" | sed '/^$$/d' | wc -l | sed -e 's/^[	 ]*//'`; \
 	fail=`echo "$$results" | grep -c '^FAIL'`;			\
 	pass=`echo "$$results" | grep -c '^PASS'`;			\
@@ -1734,6 +1744,11 @@ $(instspc_tests): Makefile.am
 # test `instspc-data.test', for reasons of speed.
 instspc-data.log: instspc-tests.sh
 $(instspc_tests:.test=.log): instspc-tests.sh instspc-data.log
+
+test-driver-custom-multitest.log: trivial-test-driver
+test-driver-custom-multitest-recheck.log: trivial-test-driver
+test-driver-custom-multitest-recheck2.log: trivial-test-driver
+test-driver-custom-html.log: trivial-test-driver
 
 # Dependencies valid for each test case.
 $(TEST_LOGS): defs defs-static aclocal-$(APIVERSION) automake-$(APIVERSION)

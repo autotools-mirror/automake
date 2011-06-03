@@ -723,10 +723,16 @@ parallel-tests-unreadable-log.test \
 parallel-tests-subdir.test \
 parallel-tests-interrupt.test \
 parallel-tests-reset-term.test \
+parallel-tests-empty-testlogs.test \
 parallel-test-driver-install.test \
 test-driver-custom-no-extra-driver.test \
 test-driver-custom.test \
 test-driver-custom-xfail-tests.test \
+test-driver-custom-multitest.test \
+test-driver-custom-multitest-recheck.test \
+test-driver-custom-multitest-recheck2.test \
+test-driver-custom-html.test \
+test-driver-custom-no-html.test \
 test-driver-fail.test \
 parse.test \
 percent.test \
@@ -1070,6 +1076,11 @@ $(parallel_tests)
 
 EXTRA_DIST += $(TESTS)
 
+test-driver-custom-multitest.log: trivial-test-driver
+test-driver-custom-multitest-recheck.log: trivial-test-driver
+test-driver-custom-multitest-recheck2.log: trivial-test-driver
+test-driver-custom-html.log: trivial-test-driver
+EXTRA_DIST += trivial-test-driver
 
 # Dependencies valid for each test case.
 $(TEST_LOGS): defs defs-static aclocal-$(APIVERSION) automake-$(APIVERSION)

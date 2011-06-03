@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2009, 2010, 2011 Free Software Foundation, Inc.
+# Copyright (C) 2011 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,20 +14,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check parallel-tests features:
+# Custom test drivers features:
 #  - check-html
 #  - recheck-html
-# Keep this in sync with sister test `test-driver-custom-html.test'.
+# Keep this in sync with sister test `parallel-tests2.test'.
 
 parallel_tests=yes
 required=rst2html
 . ./defs || Exit 1
+
+cp "$testsrcdir"/trivial-test-driver . \
+  || fatal_ "failed to fetch auxiliary script trivial-test-driver"
 
 cat >> configure.in << 'END'
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+TEST_LOG_DRIVER = $(SHELL) ./trivial-test-driver
 TEST_SUITE_LOG = mylog.log
 TESTS = foo.test bar.test baz.test
 check_SCRIPTS = bla
@@ -38,28 +42,28 @@ END
 
 cat > foo.test <<'END'
 #! /bin/sh
-echo "this is $0"
-test -f bla || exit 1
-exit 0
+if test -f bla; the
+  echo "PASS: this is $0"
+else
+  echo "FAIL: this is $0"
+fi
 END
 
 cat > bar.test <<'END'
 #! /bin/sh
-echo "this is $0"
-exit 99
+echo "FAIL: this is $0"
 END
 
 cat > baz.test <<'END'
 #! /bin/sh
-echo "this is $0"
-exit 1
+echo "FAIL: this is $0"
 END
 
 chmod a+x foo.test bar.test baz.test
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE -a
+$AUTOMAKE
 
 ./configure
 

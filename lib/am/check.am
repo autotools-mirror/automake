@@ -139,12 +139,25 @@ esac; 							\
 $(AM_TESTS_ENVIRONMENT) $(TESTS_ENVIRONMENT)
 
 $(TEST_SUITE_LOG): $(TEST_LOGS)
-	@$(am__sh_e_setup);						\
-	list='$(TEST_LOGS)';						\
-	results=`for f in $$list; do					\
-		   test -r $$f && read line < $$f && echo "$$line"	\
-		     || echo FAIL;					\
-		 done`;							\
+	@$(am__sh_e_setup); \
+## The custom reStructuredText field used to register the outcome of
+## a test.  This is for supporting test protocols, such as TAP and
+## SubUnit, where a single test script can run multiple tests, each
+## with its own outcome.
+	rst_magic=":test-result:"; \
+## All test logs.
+	list='$(TEST_LOGS)'; \
+## Readable test logs.
+	list2=`for f in $$list; do test ! -r $$f || echo $$f; done`; \
+## Each unreadable test log counts as a failed test.
+	results1=`for f in $$list; do test -r $$f || echo FAIL; done`; \
+## Extract the outcome of all the testcases from the test logs.
+	results2=''; \
+	if test -n "$$list2"; then \
+	  results2=`sed -n "s/^$$rst_magic[	 ]*//p" $$list2`; \
+	fi; \
+## Prepare the test suite summary.
+	results=`echo "$$results1" && echo "$$results2"` \
 	all=`echo "$$results" | sed '/^$$/d' | wc -l | sed -e 's/^[	 ]*//'`; \
 	fail=`echo "$$results" | grep -c '^FAIL'`;			\
 	pass=`echo "$$results" | grep -c '^PASS'`;			\
@@ -184,6 +197,7 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	    msg="$$msg($$skip tests were not run).  ";			\
 	  fi;								\
 	fi;								\
+## Write "global" testsuite log.
 	{								\
 	  echo "$(PACKAGE_STRING): $(subdir)/$(TEST_SUITE_LOG)" |	\
 	    $(am__rst_title);						\
@@ -191,6 +205,16 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	  echo;								\
 	  echo ".. contents:: :depth: 2";				\
 	  echo;								\
+## Here we assume that the test driver writes a proper summary for the
+## test script on the first line.  Requiring this is not a limitation,
+## but a feature, since this way a custom test driver is allowed to decide
+## what the outcome is in case of conflicting testcase results in a test
+## script.  For example, if a test script reports 8 successful testcases
+## and 2 skipped testcases, some drivers might report that globally as a
+## SKIP, while others as a PASS.
+## FIXME: This should be documented in the automake manual.  The above
+## FIXME: explanation is indeed more appropriate for the manual than for
+## FIXME: comments in code.
 	  for f in $$list; do						\
 	    test -r $$f && read line < $$f || line=;			\
 	    case $$line in						\
@@ -207,6 +231,7 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	  fi;								\
 	fi;								\
 	test x"$$VERBOSE" = x || $$exit || cat $(TEST_SUITE_LOG);	\
+## Emit the test summary on the console, and exit.
 	$(am__tty_colors);						\
 	if $$exit; then							\
 	  col="$$grn";							\
@@ -288,6 +313,10 @@ recheck recheck-html:
 	list=`for f in $$list; do					\
 	        test -f $$f || continue;				\
 	        if test -r $$f && read line < $$f; then			\
+## Here we assume that the test driver writes a proper summary for the
+## test script on the first line.  See the comments in the rules of
+## $(TEST_SUITE_LOG) above for why we consider this acceptable and even
+## advisable.
 	          case $$line in FAIL*|XPASS*) echo $$f;; esac;		\
 	        else echo $$f; fi;					\
 	      done | tr '\012\015' '  '`;				\

@@ -343,12 +343,16 @@ cscope cscopelist:
 
 
 $(TEST_SUITE_LOG): $(TEST_LOGS)
-	@$(am__sh_e_setup);						\
-	list='$(TEST_LOGS)';						\
-	results=`for f in $$list; do					\
-		   test -r $$f && read line < $$f && echo "$$line"	\
-		     || echo FAIL;					\
-		 done`;							\
+	@$(am__sh_e_setup); \
+	rst_magic=":test-result:"; \
+	list='$(TEST_LOGS)'; \
+	list2=`for f in $$list; do test ! -r $$f || echo $$f; done`; \
+	results1=`for f in $$list; do test -r $$f || echo FAIL; done`; \
+	results2=''; \
+	if test -n "$$list2"; then \
+	  results2=`sed -n "s/^$$rst_magic[	 ]*//p" $$list2`; \
+	fi; \
+	results=`echo "$$results1" && echo "$$results2"` \
 	all=`echo "$$results" | sed '/^$$/d' | wc -l | sed -e 's/^[	 ]*//'`; \
 	fail=`echo "$$results" | grep -c '^FAIL'`;			\
 	pass=`echo "$$results" | grep -c '^PASS'`;			\

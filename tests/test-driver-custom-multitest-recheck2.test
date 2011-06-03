@@ -1,0 +1,172 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Custom test drivers: try the "recheck" functionality with test protocols
+# that allow multiple testcases in a single test script.  In particular,
+# check that this still works when we override $(TESTS) and $(TEST_LOGS)
+# at make runtime.
+# See also related tests `test-driver-custom-multitest-recheck.test' and
+# `parallel-tests-recheck-override.test'.
+
+parallel_tests=yes
+. ./defs || Exit 1
+
+cp "$testsrcdir"/trivial-test-driver . \
+  || fatal_ "failed to fetch auxiliary script trivial-test-driver"
+
+cat >> configure.in << 'END'
+AC_OUTPUT
+END
+
+cat > Makefile.am << 'END'
+TEST_LOG_DRIVER = $(SHELL) $(srcdir)/trivial-test-driver
+TESTS = a.test b.test c.test
+END
+
+cat > a.test << 'END'
+#! /bin/sh
+echo PASS: 1
+echo PASS: 2
+: > a.run
+END
+
+cat > b.test << 'END'
+#! /bin/sh
+echo SKIP: b0
+if test -f b.ok; then
+  echo XFAIL: b1
+else
+  echo FAIL: b2
+fi
+: > b.run
+END
+
+cat > c.test << 'END'
+#! /bin/sh
+echo XPASS: xp
+: > c.run
+END
+
+chmod a+x *.test
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
+
+do_count ()
+{
+  pass=ERR fail=ERR xpass=ERR xfail=ERR skip=ERR
+  eval "$@"
+  $EGREP '(PASS|FAIL|XPASS|XFAIL|SKIP)' stdout || : # For debugging.
+  test `grep -c '^PASS:' stdout` -eq $pass
+  test `grep -c '^FAIL:' stdout` -eq $fail
+  test `grep -c '^XPASS:' stdout` -eq $xpass
+  test `grep -c '^XFAIL:' stdout` -eq $xfail
+  test `grep -c '^SKIP:' stdout` -eq $skip
+}
+
+for vpath in : false; do
+  if $vpath; then
+    mkdir build
+    cd build
+    srcdir=..
+  else
+    srcdir=.
+  fi
+
+  $srcdir/configure
+
+  : Run the tests for the first time.
+  $MAKE check >stdout && { cat stdout; Exit 1; }
+  cat stdout
+  # All the test scripts should have run.
+  test -f a.run
+  test -f b.run
+  test -f c.run
+  do_count pass=2 fail=1 xpass=1 xfail=0 skip=1
+
+  rm -f *.run
+
+  : An empty '$(TESTS)' or '$(TEST_LOGS)' means that no test should be run.
+  for var in TESTS TEST_LOGS; do
+    env "$var=" $MAKE -e recheck >stdout || { cat stdout; Exit 1; }
+    cat stdout
+    do_count pass=0 fail=0 xpass=0 xfail=0 skip=0
+    test ! -r a.run
+    test ! -r b.run
+    test ! -r c.run
+  done
+  unset var
+
+  : a.test was sucessfull the first time, no need to re-run it.
+  env TESTS=a.test $MAKE -e recheck >stdout \
+    || { cat stdout; Exit 1; }
+  cat stdout
+  do_count pass=0 fail=0 xpass=0 xfail=0 skip=0
+  test ! -r a.run
+  test ! -r b.run
+  test ! -r c.run
+
+  : b.test failed, it should be re-run.  And make it pass this time.
+  echo OK > b.ok
+  TEST_LOGS=b.log $MAKE -e recheck >stdout \
+    || { cat stdout; Exit 1; }
+  cat stdout
+  test ! -r a.run
+  test -f b.run
+  test ! -r c.run
+  do_count pass=0 fail=0 xpass=0 xfail=1 skip=1
+
+  rm -f *.run
+
+  : No need to re-run a.test or b.test anymore.
+  TEST_LOGS=b.log $MAKE -e recheck >stdout \
+    || { cat stdout; Exit 1; }
+  cat stdout
+  do_count pass=0 fail=0 xpass=0 xfail=0 skip=0
+  test ! -r a.run
+  test ! -r b.run
+  test ! -r c.run
+  TESTS='a.test b.test' $MAKE -e recheck >stdout \
+    || { cat stdout; Exit 1; }
+  cat stdout
+  do_count pass=0 fail=0 xpass=0 xfail=0 skip=0
+  test ! -r a.run
+  test ! -r b.run
+  test ! -r c.run
+
+  # An XPASS should count a failure.
+  env TEST_LOGS='a.log c.log' $MAKE -e recheck >stdout \
+    && { cat stdout; Exit 1; }
+  cat stdout
+  do_count pass=0 fail=0 xpass=1 xfail=0 skip=0
+  test ! -r a.run
+  test ! -r b.run
+  test -f c.run
+  rm -f *.run
+  env TESTS='c.test b.test' $MAKE -e recheck >stdout \
+    && { cat stdout; Exit 1; }
+  cat stdout
+  do_count pass=0 fail=0 xpass=1 xfail=0 skip=0
+  test ! -r a.run
+  test ! -r b.run
+  test -f c.run
+
+  cd $srcdir
+
+done
+
+:
