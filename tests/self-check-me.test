@@ -15,7 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Sanity check for the automake testsuite.
-# Make sure that $me gets automatically defined by `./defs'.
+# Make sure that $me gets automatically defined by `./defs', and that it
+# can be overridden by the test script.
 
 . ./defs-static || exit 1
 
@@ -28,5 +29,17 @@ $SHELL -c '. ./defs && echo me=$me' _foo__bar.test | grep '^me=_foo__bar$'
 $SHELL -c '. ./defs && echo me=$me' 012.test | grep '^me=012$'
 $SHELL -c '. ./defs && echo me=$me' foo.bar | grep '^me=foo\.bar$'
 $SHELL -c '. ./defs && echo me=$me' a.b.c.test | grep '^me=a\.b\.c$'
+
+# Overriding $me after sourcing ./defs-static should work.
+s=`$SHELL -c '. ./defs-static && me=zardoz && . ./defs && echo me=$me' \
+             bad.test` || exit 1
+printf '%s\n' "$s" | grep '^me=zardoz$'
+printf '%s\n' "$s" | grep 'me=bad' && exit 1
+
+# If we override $me, ./defs should not modify it.
+s=`$SHELL -c 'me=foo.test && . ./defs && echo me=$me' \
+             bad.test` || exit 1
+printf '%s\n' "$s" | grep '^me=foo\.test$'
+printf '%s\n' "$s" | grep 'me=bad' && exit 1
 
 :
