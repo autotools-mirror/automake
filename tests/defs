@@ -283,6 +283,23 @@ unindent ()
 }
 sed_unindent_prog="" # Avoid interferences from the environment.
 
+# get_shell_script SCRIPT-NAME
+# -----------------------------
+# Fetch an Automake-provided test script from the `lib/' directory into
+# the current directory, and, if the `$test_prefer_config_shell' variable
+# is set to "yes", modify its shebang line to use $SHELL instead of
+# /bin/sh.
+get_shell_script ()
+{
+  if test x"$test_prefer_config_shell" = x"yes"; then
+    sed "1s|#!.*|#! $SHELL|" "$top_testsrcdir/lib/$1" > "$1"
+    chmod a+x "$1"
+  else
+    cp "$top_testsrcdir/lib/$1" .
+  fi
+  sed 10q "$1" # For debugging.
+}
+
 # require_xsi SHELL
 # -----------------
 # Skip the test if the given shell fails to support common XSI constructs.
@@ -339,7 +356,12 @@ do
     xsi-bin-sh)
       require_xsi "/bin/sh";;
     xsi-lib-shell)
-      require_xsi "/bin/sh";;
+      if test x"$test_prefer_config_shell" = x"yes"; then
+        require_xsi "$SHELL"
+      else
+        require_xsi "/bin/sh"
+      fi
+      ;;
     bzip2)
       # Do not use --version, bzip2 still tries to compress stdin.
       echo "$me: running bzip2 --help"
