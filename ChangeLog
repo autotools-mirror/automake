@@ -1,3 +1,35 @@
+2011-06-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests defs: better requirements for XSI shells
+	This change avoids potential spurious failures with tests using
+	the requirement 'xsi-shell' to mean that they want */bin/sh* (not
+	$SHELL) to be XSI-conforming.  This idiom used to work before
+	commit `v1.11-874-g1321be7' (as back then the test scripts were
+	unconditionally run with /bin/sh), but has become inconsistent
+	now that the test scripts re-execute themselves with configure
+	determined $SHELL.
+	The described spurious failures have already occurred in practice,
+	for examples on Solaris systems which also had GNU Bash installed.
+	From a suggestion by Peter Rosin.  See discussion at:
+	<http://lists.gnu.org/archive/html/automake-patches/2011-06/msg00016.html>
+	* tests/defs (xsi-shell): Now check that $SHELL, rather than the
+	shell currently running the test script, is an XSI shell.
+	(xsi-bin-sh): New requirement, checking that /bin/sh (which can
+	differ from $SHELL) is an XSI shell.
+	(xsi-lib-shell): New requirement, checking that the shell that
+	should be used to test the Automake-provided scripts from `lib/'
+	is an XSI shell.  For the moment, this is just an alias for
+	`xsi-bin-sh'.
+	(require_xsi): New subroutine, used to factor out code common to
+	the requirements above.
+	($xsi_shell_code): New variable, contains shell code supposed to
+	work only with XSI shells.  Used by the new subroutine above.
+	* tests/ar-lib.test ($required): Require 'xsi-lib-shell' instead
+	of 'xsi-shell', since the script we test here is run with /bin/sh,
+	not with $SHELL.
+	* tests/compile3.test: Likewise.
+	* tests/compile6.test: Likewise.
+
 2011-06-02  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
 	self tests: fix another spurious failure
