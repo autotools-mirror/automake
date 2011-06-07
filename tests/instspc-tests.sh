@@ -44,11 +44,15 @@ else
 fi
 
 set -e
+ 
+# We need this early.  It will be overridden when we source ./defs below,
+# which will offer a more proper implementation.
+fatal_ () { echo "$0: $*" >&2; exit 99; }
 
 case $# in
-  0) echo "$0: missing argument" >&2; exit 99;;
+  0) fatal_ "missing argument";;
   1) ;;
-  *) echo "$0: too many arguments" >&2; exit 99;;
+  *) fatal_ "too many arguments";;
 esac
 
 case $1 in
@@ -64,8 +68,7 @@ case $1 in
     instspc_test_name=`expr /"$1" : '.*/install-\(.*\)\.instspc'`
     ;;
   *)
-    echo "$0: invalid argument '$1'" >&2
-    exit 99
+    fatal_ "invalid argument '$1'"
     ;;
 esac
 
@@ -75,7 +78,8 @@ define_problematic_string ()
 {
   tst=$1
   shift
-  eval "instspc__$tst=\$1" || exit 99
+  eval "instspc__$tst=\$1" \
+    || fatal_ "define_problematic_string: bad argument: '$tst'"
   shift
   instspc_names_list="$instspc_names_list $tst"
   # Some of the "problematic" characters cannot be used in the name of
@@ -284,8 +288,9 @@ set -e
 # the files we need.  So remove the other files created by ./defs.  And
 # check we really are in a temporary `*.dir' directory in the build tree,
 # since the last thing we want is to remove some random user files!
-test -f ../defs-static && test -f ../defs || Exit 99
-case `pwd` in *.dir);; *) Exit 99;; esac
+test -f ../defs-static && test -f ../defs \
+  && case `pwd` in *.dir) :;; *) false;; esac \
+  || fatal_ "running from the wrong directory"
 rm -f *
 
 if test x"$instspc_action" = x"generate-data"; then
@@ -298,16 +303,13 @@ fi
 
 ###  If we are still here, we have to run a test ...
 
-eval "instspc_test_string=\${instspc__$instspc_test_name}" || Exit 99
-if test x"$instspc_test_string" = x; then
-  echo "$me: invalid test name: '$instspc_test_name'" >&2
-  Exit 99
-fi
+eval "instspc_test_string=\${instspc__$instspc_test_name}" \
+  && test x"$instspc_test_string" != x \
+  || fatal_ "invalid test name: '$instspc_test_name'"
 
-test -f ../instspc-data.dir/success || {
-  echo "$me: setup by instspc-data.test failed" >&2
-  Exit 99
-}
+if test ! -f ../instspc-data.dir/success; then
+  framework_failure_ "instspc-data.test failure"
+fi
 
 # Skip if this system doesn't support these characters in file names.
 mkdir "./$instspc_test_string" || Exit 77
@@ -323,8 +325,7 @@ case $instspc_action in
     relbuilddir=..
     ;;
   *)
-    echo "$me: internal error: invalid action '$instspc_action'"
-    Exit 99
+    fatal_ "invalid action '$instspc_action'"
     ;;
 esac
 

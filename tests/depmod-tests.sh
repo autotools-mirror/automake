@@ -62,10 +62,14 @@ fi
 
 set -e
 
+# We need this early.  It will be overridden when we source ./defs below,
+# which will offer a more proper implementation.
+fatal_ () { echo "$0: $*" >&2; exit 99; }
+
 case $# in
-  0) echo "$0: missing argument" >&2; exit 99;;
+  0) fatal_ "missing argument";;
   1) ;;
-  *) echo "$0: too many arguments" >&2; exit 99;;
+  *) fatal_ "too many arguments";;
 esac
 
 case $1 in
@@ -77,8 +81,7 @@ case $1 in
     depmode=`expr /"$1" : '.*/depcomp-\(.*\)\.depmod'`
     ;;
   *)
-    echo "$0: invalid argument '$1'" >&2
-    exit 99
+    fatal_ "invalid argument '$1'"
     ;;
 esac
 
@@ -136,7 +139,7 @@ END
   : > success
 }
 
-# Usage: get_depmodes DEPCOMP-FILE PROGRAM-NAME
+# Usage: get_depmodes DEPCOMP-FILE
 get_depmodes ()
 {
   # Keep this in sync with the contents of depend.m4.
@@ -144,10 +147,8 @@ get_depmodes ()
                   | grep -v '^none$'` \
     && : Turn newlines and tabs into spaces, and strip extra whitespace. \
     && all_depmodes=`echo $all_depmodes` \
-    && test -n "$all_depmodes" || {
-      echo "$2: failed to extract list of valid depmodes from '$1'" >&2
-      exit 99
-    }
+    && test -n "$all_depmodes" \
+    || fatal_ "can't extract list of valid depmodes from '$1'"
 }
 
 if test x"$action" = x"generate-makefile"; then
@@ -182,8 +183,9 @@ set -e
 # the files we need.  So remove the other files created by ./defs.  And
 # check we really are in a temporary `*.dir' directory in the build tree,
 # since the last thing we want is to remove some random user files!
-test -f ../defs-static && test -f ../defs || Exit 99
-case `pwd` in *.dir);; *) Exit 99;; esac
+test -f ../defs-static && test -f ../defs \
+  && case `pwd` in *.dir) :;; *) false;; esac \
+  || fatal_ "running from the wrong directory"
 rm -f *
 
 if test x"$action" = x"generate-data"; then
@@ -194,18 +196,17 @@ if test x"$action" = x"generate-data"; then
   Exit 0
 fi
 
-get_depmodes "$top_testsrcdir/lib/depcomp" "$me"
+get_depmodes "$top_testsrcdir/lib/depcomp"
 case " $all_depmodes " in
   *" $depmode "*) ;;
-  *) echo "$me: invalid depmode '$depmode'" >&2; exit 99;;
+  *) fatal_ "invalid depmode '$depmode'";;
 esac
 
 ###  If we are still here, we have to run a test ...
 
-test -f ../depmod-data.dir/success || {
-  echo "$me: setup by depmod-data.test failed" >&2
-  Exit 99
-}
+if test ! -f ../depmod-data.dir/success; then
+  framework_failure_ "depmod-data.test failure"
+fi
 
 ../depmod-data.dir/configure am_cv_CC_dependencies_compiler_type=$depmode
 
