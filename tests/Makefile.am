@@ -150,6 +150,7 @@ acoutbs2.test \
 acsilent.test \
 acsubst.test \
 acsubst2.test \
+add-missing.test \
 all.test \
 all2.test \
 alloca.test \
