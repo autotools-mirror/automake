@@ -283,6 +283,41 @@ unindent ()
 }
 sed_unindent_prog="" # Avoid interferences from the environment.
 
+# get_shell_script SCRIPT-NAME
+# -----------------------------
+# Fetch an Automake-provided test script from the `lib/' directory into
+# the current directory, and, if the `$test_prefer_config_shell' variable
+# is set to "yes", modify its shebang line to use $SHELL instead of
+# /bin/sh.
+get_shell_script ()
+{
+  if test x"$test_prefer_config_shell" = x"yes"; then
+    sed "1s|#!.*|#! $SHELL|" "$top_testsrcdir/lib/$1" > "$1"
+    chmod a+x "$1"
+  else
+    cp "$top_testsrcdir/lib/$1" .
+  fi
+  sed 10q "$1" # For debugging.
+}
+
+# require_xsi SHELL
+# -----------------
+# Skip the test if the given shell fails to support common XSI constructs.
+require_xsi ()
+{
+  test $# -eq 1 || framework_failure_ "require_xsi needs exactly one arg"
+  echo "$me: trying some XSI constructs with $1"
+  $1 -c "$xsi_shell_code" || skip_ "$1 lacks XSI features"
+}
+# Shell code supposed to work only with XSI shells.  Keep this in sync
+# with libtool.m4:_LT_CHECK_SHELL_FEATURES.
+xsi_shell_code='
+  _lt_dummy="a/b/c"
+  test "${_lt_dummy##*/},${_lt_dummy%/*},${_lt_dummy#??}"${_lt_dummy%"$_lt_dummy"}, \
+      = c,a/b,b/c, \
+    && eval '\''test $(( 1 + 1 )) -eq 2 \
+    && test "${#_lt_dummy}" -eq 5'\'
+
 
 ## ----------------------------------------------------------- ##
 ##  Checks for required tools, and additional setups (if any)  ##
@@ -316,6 +351,17 @@ do
       test "$FC"  = false && skip_ "no Fortran compiler available";;
     fortran77)
       test "$F77" = false && skip_ "no Fortran 77 compiler available";;
+    xsi-shell)
+      require_xsi "$SHELL";;
+    xsi-bin-sh)
+      require_xsi "/bin/sh";;
+    xsi-lib-shell)
+      if test x"$test_prefer_config_shell" = x"yes"; then
+        require_xsi "$SHELL"
+      else
+        require_xsi "/bin/sh"
+      fi
+      ;;
     bzip2)
       # Do not use --version, bzip2 still tries to compress stdin.
       echo "$me: running bzip2 --help"
@@ -508,17 +554,6 @@ do
       echo "$me: running texi2dvi -o /dev/null --version"
       texi2dvi -o /dev/null --version \
         || skip_ "required program \`texi2dvi' not available"
-      ;;
-    xsi-shell)
-      # Try some XSI features.
-      # Keep this in sync with libtool.m4:_LT_CHECK_SHELL_FEATURES.
-      echo "$me: trying some XSI constructs"
-      ( _am_dummy="a/b/c"
-	test "${_am_dummy##*/},${_am_dummy%/*},${_am_dummy#??}"${_am_dummy%"$_am_dummy"}, \
-		= c,a/b,b/c, \
-	&& eval 'test $(( 1 + 1 )) -eq 2 \
-	&& test "${#_am_dummy}" -eq 5' ) \
-          || skip_ "the shell lacks some required XSI features"
       ;;
     flex)
       # Since flex is required, we pick LEX for ./configure.

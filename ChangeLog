@@ -1,3 +1,92 @@
+2011-06-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: `lib/' shell scripts transparently tested also with $SHELL
+	With the previous commit, the user could prefer the use of $SHELL
+	over /bin/sh in some tests checking the Automake-provided shell
+	scripts by manually exporting `test_prefer_config_shell' to "yes"
+	in the environment.  With this commit, we ensure that such tests
+	*always* and *transparently* run using both $SHELL and /bin/sh
+	to execute the checked scripts.  The `test_prefer_config_shell'
+	variable becomes an internal detail, and is no more meant to be
+	manually defined or overridden.
+	* tests/defs-static.in: Check that `test_prefer_config_shell' is
+	not exported in the environment.  Error out if this is the case.
+	* tests/config-shell-tests.sh: New file, driver script to run
+	checks on the shell scripts in `lib/' using the $SHELL determined
+	at configure time instead of the default system shell /bin/sh.
+	* Makefile.am (TESTS_EXTENSIONS): Add `.shtst'.
+	(SHTST_LOG_COMPILER): Define, it calls `config-shell-tests.sh'.
+	(config_shell_tests): Define to a list of tests that wraps other
+	`*.test' tests using `config-shell-tests.sh'.
+	($(config_shell_tests)): Dummy dependency declaration required
+	in order to have make actually produce expected log files from
+	the `.shtst.log' suffix rule.
+	(EXTRA_DIST): Distribute `config-shell-tests.sh'.
+	(TESTS): Add `$(config_shell_tests)'.
+	* tests/self-check-env-sanitize.test: Update, by checking that
+	`test_prefer_config_shell' isn't exported in the environment.
+
+2011-06-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: can use also $SHELL to check shell scripts from `lib/'
+	* tests/ar-lib.test: If the variable `$test_prefer_config_shell'
+	is set to "yes", run the script under test with configure-time
+	determined $SHELL, rather than with /bin/sh.
+	The `$test_prefer_config_shell' variable defaults to empty, but
+	can be overridden at runtime by the user, thus allowing more
+	coverage.
+	* tests/compile.test: Likewise.
+	* tests/compile2.test: Likewise.
+	* tests/compile3.test: Likewise.
+	* tests/compile4.test: Likewise.
+	* tests/compile5.test: Likewise.
+	* tests/compile6.test: Likewise.
+	* tests/instsh2.test: Likewise.
+	* tests/instsh3.test: Likewise.
+	* tests/mkinst3.test: Likewise.
+	* tests/missing.test: Likewise.
+	* tests/missing2.test: Likewise.
+	* tests/missing3.test: Likewise.
+	* tests/missing5.test: Likewise.
+	* tests/defs (get_shell_script): New subroutine, factoring out
+	code common to the tests above.
+	(xsi-lib-shell): If `$test_prefer_config_shell' is set to "yes",
+	check that $SHELL, not /bin/sh, supports XSI constructs, as we
+	expect the test will use $SHELL and not /bin/sh to run the
+	script being tested.
+
+2011-06-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests defs: better requirements for XSI shells
+	This change avoids potential spurious failures with tests using
+	the requirement 'xsi-shell' to mean that they want */bin/sh* (not
+	$SHELL) to be XSI-conforming.  This idiom used to work before
+	commit `v1.11-874-g1321be7' (as back then the test scripts were
+	unconditionally run with /bin/sh), but has become inconsistent
+	now that the test scripts re-execute themselves with configure
+	determined $SHELL.
+	The described spurious failures have already occurred in practice,
+	for examples on Solaris systems which also had GNU Bash installed.
+	From a suggestion by Peter Rosin.  See discussion at:
+	<http://lists.gnu.org/archive/html/automake-patches/2011-06/msg00016.html>
+	* tests/defs (xsi-shell): Now check that $SHELL, rather than the
+	shell currently running the test script, is an XSI shell.
+	(xsi-bin-sh): New requirement, checking that /bin/sh (which can
+	differ from $SHELL) is an XSI shell.
+	(xsi-lib-shell): New requirement, checking that the shell that
+	should be used to test the Automake-provided scripts from `lib/'
+	is an XSI shell.  For the moment, this is just an alias for
+	`xsi-bin-sh'.
+	(require_xsi): New subroutine, used to factor out code common to
+	the requirements above.
+	($xsi_shell_code): New variable, contains shell code supposed to
+	work only with XSI shells.  Used by the new subroutine above.
+	* tests/ar-lib.test ($required): Require 'xsi-lib-shell' instead
+	of 'xsi-shell', since the script we test here is run with /bin/sh,
+	not with $SHELL.
+	* tests/compile3.test: Likewise.
+	* tests/compile6.test: Likewise.
+
 2011-06-05  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
 	tests: fix typo-related error in auxdir2.test

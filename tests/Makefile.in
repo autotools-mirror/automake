@@ -198,9 +198,12 @@ PTEST_LOG_COMPILE = $(PTEST_LOG_COMPILER) $(AM_PTEST_LOG_FLAGS) \
 am__test_logs4 = $(am__test_logs3:.instspc.log=.log)
 INSTSPC_LOG_COMPILE = $(INSTSPC_LOG_COMPILER) $(AM_INSTSPC_LOG_FLAGS) \
 	$(INSTSPC_LOG_FLAGS)
-TEST_LOGS = $(am__test_logs4:.depmod.log=.log)
+am__test_logs5 = $(am__test_logs4:.depmod.log=.log)
 DEPMOD_LOG_COMPILE = $(DEPMOD_LOG_COMPILER) $(AM_DEPMOD_LOG_FLAGS) \
 	$(DEPMOD_LOG_FLAGS)
+TEST_LOGS = $(am__test_logs5:.shtst.log=.log)
+SHTST_LOG_COMPILE = $(SHTST_LOG_COMPILER) $(AM_SHTST_LOG_FLAGS) \
+	$(SHTST_LOG_FLAGS)
 TEST_LOGS_TMP = $(TEST_LOGS:.log=.log-t)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
@@ -303,8 +306,9 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 MAINTAINERCLEANFILES = 
 EXTRA_DIST = ChangeLog-old gen-parallel-tests parallel-tests.sh \
-	instspc-tests.sh depmod-tests.sh $(handwritten_tests)
-TEST_EXTENSIONS = .test .ptest .instspc .depmod
+	instspc-tests.sh depmod-tests.sh config-shell-tests.sh \
+	$(handwritten_tests)
+TEST_EXTENSIONS = .test .ptest .instspc .depmod .shtst
 # Run the tests with the shell detected at configure time.
 TEST_LOG_COMPILER = $(SHELL)
 XFAIL_TESTS = all.test auxdir2.test cond17.test gcj6.test \
@@ -382,6 +386,26 @@ depmod_tests = depcomp-gcc3.depmod depcomp-gcc.depmod \
 	depcomp-cpp.depmod depcomp-msvisualcpp.depmod \
 	depcomp-msvcmsys.depmod
 DEPMOD_LOG_COMPILER = $(SHELL) $(srcdir)/depmod-tests.sh
+SHTST_LOG_COMPILER = $(SHELL) $(srcdir)/config-shell-tests.sh
+
+# FIXME: this list might probably be made auto-generated, like
+# $(parallel_tests) is...  But would that worth the hassle?
+config_shell_tests = \
+  ar-lib-w.shtst \
+  compile-w.shtst \
+  compile2-w.shtst \
+  compile3-w.shtst \
+  compile4-w.shtst \
+  compile5-w.shtst \
+  compile6-w.shtst \
+  instsh2-w.shtst \
+  instsh3-w.shtst \
+  mkinst3-w.shtst \
+  missing-w.shtst \
+  missing2-w.shtst \
+  missing3-w.shtst \
+  missing5-w.shtst
+
 
 # Some testsuite-influential variables should be overridable from the
 # test scripts, but not from the environment.
@@ -402,6 +426,7 @@ AM_TESTS_ENVIRONMENT = \
 
 TESTS = \
   $(handwritten_tests) \
+  $(config_shell_tests) \
   $(parallel_tests) \
   $(depmod_tests) \
   $(instspc_tests)
@@ -1367,7 +1392,7 @@ am__tdf = diff-in-tests-lists.tmp
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .depmod .html .instspc .log .ptest .test
+.SUFFIXES: .depmod .html .instspc .log .ptest .shtst .test
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/parallel-tests.am $(srcdir)/instspc-tests.am $(srcdir)/depmod-tests.am $(top_srcdir)/CheckListOfTests.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -1545,6 +1570,8 @@ recheck recheck-html:
 	@p='$<'; $(am__check_pre) $(INSTSPC_LOG_COMPILE) "$$tst" $(am__check_post)
 .depmod.log:
 	@p='$<'; $(am__check_pre) $(DEPMOD_LOG_COMPILE) "$$tst" $(am__check_post)
+.shtst.log:
+	@p='$<'; $(am__check_pre) $(SHTST_LOG_COMPILE) "$$tst" $(am__check_post)
 
 distdir: $(DISTFILES)
 	@srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
@@ -1756,6 +1783,12 @@ $(depmod_tests:.depmod=.log): depmod-tests.sh depmod-data.log
 # This dummy declaration is required to have make actually produce
 # expected log files from the `.depmod.log' suffix rule.
 $(depmod_tests):
+
+# All `*-w.shtst' tests work by sourcing the script `config-shell-tests.sh'.
+$(config_shell_tests:.shtst=.log): config-shell-tests.sh
+# This dummy declaration is required to have make actually produce
+# expected log files from the `.shtst.log' suffix rule.
+$(config_shell_tests):
 
 .PHONY: maintainer-check-list-of-tests
 maintainer-check-list-of-tests:
