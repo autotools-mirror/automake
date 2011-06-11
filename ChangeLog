@@ -1,3 +1,108 @@
+2011-06-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	test defs: new function 'fatal_', for hard errors
+	Before this patch, the only way offered by tests/defs to
+	properly signal a hard error was the `framework_failure_'
+	function.  But the error message issued by that function,
+	as its name would suggest, refers to a set-up failure in the
+	testsuite, while hard errors can obviously also be due to
+	other reasons.  The best way to fix this inconsistency is to
+	introduce a new function with a more general error message.
+	Inspired by a recent similar change to Gnulib's tests/init.sh.
+	* tests/defs.in (fatal_): New function.
+	* tests/README (Section "Writing test cases" subsection "Do"):
+	Suggest the use of `fatal_', not of `framework_failure_', for
+	generic hard errors.  The latter should be reserved for "real"
+	set-up failures.
+
+2011-06-02  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	maintcheck: fix some failures, extend some checks
+	* Makefile.am (sc_diff_automake_in_automake): Update, as we
+	now expect 9 lines, not 8, to be changed from `automake.in'
+	to `automake'.
+	(sc_diff_aclocal_in_aclocal): New maintainer check, similar to
+	the above, and checking that only 10 lines are changed from
+	`aclocal.in' to `aclocal'.
+	(syntax_check_rules): Update.
+	(sc_tests_Exit_not_exit): Exempt self tests `self-check-*.test'
+	from this check, as they can legitimately use the bare `exit'
+	builtin in various places.
+	* doc/automake.texi (Python): Remove stray `@' from the end of
+	a line.  Typo introduced in commit `v1.11-312-g5bf7af6'.
+	* tests/depcomp8a.test: Pass DISTCHECK_CONFIGURE_FLAGS to make
+	from the environment rather than from the command line, to
+	pacify the `sc_tests_overriding_macros_on_cmdline' maintainer
+	check.
+	* tests/depcomp8b.test: Likewise.
+
+2011-05-29  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	remake: behave better with non-GNU make in subdirectories
+	Currently, with every decent make program, it is possible to
+	rebuild out-of-date autotools-generated files with a simple
+	"make Makefile" -- but for this to work reliably with non-GNU
+	make implementations, the command must be issued from the
+	top-level directory.  This patch removes such limitation.
+	* lib/am/configure.am (am--refresh): Depend on `%MAKEFILE%'.
+	* tests/defs.in (using_gmake): New function, backported from the
+	`master' branch (and simplified).
+	* tests/remake-subdir.test: New test.
+	* tests/remake-subdir2.test: Likewise.
+	* tests/remake-subdir-gnu.test: Likewise.
+	* tests/remake-subdir-from-subdir.test: Likewise.
+	* tests/Makefile.am (TESTS): Update.
+
+2011-05-29  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	automake, aclocal: honour configure-time AUTOCONF and AUTOM4TE
+	Currently, the Automake's own configure script allow definition
+	of AUTOCONF and AUTOM4TE, expected to point respectively to an
+	autoconf and autom4te programs.  But while these definitions are
+	honoured in the Automake's build systems and test suite, they
+	were *not* honoured in the generated `automake' and `aclocal'
+	scripts.  This behaviour, apart from being wrong in that it does
+	not allow the user enough freedom in choosing his tools, also
+	caused inconsistencies in the test suite, brining to spurious
+	failures.
+	Problem reported by Graham Reitz on the automake list; see thread:
+	<http://lists.gnu.org/archive/html/automake/2011-05/msg00022.html>
+	* automake.in ($traces): Use `@am_AUTOCONF', not simply `autoconf'.
+	* aclocal.in ($traces): Use `@am_AUTOM4TE', not simply `autom4te'.
+	* Makefile.am (do_subst): Substitute also `@am_AUTOCONF' and
+	`@am_AUTOM4TE'.
+	* NEWS: Update.
+	* THANKS: Update.
+
+2011-05-29  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	build: the user can override AUTOM4TE, AUTORECONF and AUTOUPDATE too
+	Our build system allows the user to override AUTOCONF and AUTOHEADER
+	at configure time, and honours these overrides in our testsuite.
+	But it didn't do the same with AUTOM4TE, AUTORECONF and AUTOUPDATE.
+	This change fixes that inconsistency.
+	* configure.ac (am_AUTOM4TE, am_AUTOUPDATE, am_AUTORECONF): New
+	AC_SUBSTitutions.  Update comments.
+	* tests/defs.in ($AUTOUPDATE): Default to `@am_AUTOUPDATE@' now.
+	($AUTOM4TE): New variable, defaulting to `@am_AUTOM4TE@'.
+	($AUTORECONF): New variable, defaulting to `@am_AUTORECONF@'.
+	* doc/Makefile.am ($(srcdir)/amhello-1.0.tar.gz): Update.
+
+2011-05-22  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+	    Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests/README: fix example about `make -e' usage
+	* tests/README (Section "Writing test cases" subsection "Do"): When
+	some variable is never initialized in the Makefile, `-e' is not
+	necessary in order to override it.  DESTDIR is such a variable: we
+	ensure that we do not ever initialize it.  And as such, it is quite
+	portable to use:
+	  $ make DESTDIR=/foo/bar install
+	and in fact, quite widely used.
+	So our example about when `make -e' is required, which references
+	the `DESTDIR' variable, is poorly chosen, if not downright wrong.
+	Rewrite it to use `prefix' as the overridden variable instead.
+
 2011-05-20  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
 	testsuite: avoid re-running few tests with 'parallel-tests' option

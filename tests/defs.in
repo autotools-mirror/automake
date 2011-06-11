@@ -100,8 +100,10 @@ test -z "$YACC" && YACC='@YACC@'
 test -z "$LEX" && LEX='@LEX@'
 test -z "$MAKE" && MAKE=make
 test -z "$AUTOCONF" && AUTOCONF="@am_AUTOCONF@"
+test -z "$AUTOM4TE" && AUTOM4TE="@am_AUTOM4TE@"
+test -z "$AUTORECONF" && AUTORECONF="@am_AUTORECONF@"
 test -z "$AUTOHEADER" && AUTOHEADER="@am_AUTOHEADER@"
-test -z "$AUTOUPDATE" && AUTOUPDATE=autoupdate
+test -z "$AUTOUPDATE" && AUTOUPDATE="@am_AUTOUPDATE@"
 test -z "$MISSING" && MISSING=`pwd`/../lib/missing
 # Use -Werror because this also turns some Perl warnings into error.
 # (Tests for which this is inappropriate should use -Wno-error.)
@@ -148,6 +150,7 @@ Exit ()
 warn_ () { echo "$@" 1>&$stderr_fileno_; }
 fail_ () { warn_ "$me: failed test: $@"; Exit 1; }
 skip_ () { warn_ "$me: skipped test: $@"; Exit 77; }
+fatal_ () { warn_ "$me: hard error: $@"; Exit 99; }
 framework_failure_ () { warn_ "$me: set-up failure: $@"; Exit 99; }
 
 # cross_compiling
@@ -509,6 +512,16 @@ is_newest ()
   test -z "$is_newest_files"
 }
 
+# using_gmake
+# -----------
+# Return success if $MAKE is GNU make, return failure otherwise.
+using_gmake ()
+{
+  # Use --version AND -v, because SGI Make doesn't fail on --version.
+  # Also grep for GNU because newer versions of FreeBSD make do
+  # not complain about `--version' (they seem to silently ignore it).
+  $MAKE --version -v | grep GNU
+}
 
 # AUTOMAKE_run status [options...]
 # --------------------------------
