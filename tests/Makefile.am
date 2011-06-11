@@ -664,6 +664,10 @@ remake4.test \
 remake5.test \
 remake6.test \
 remake7.test \
+remake-subdir-from-subdir.test \
+remake-subdir-gnu.test \
+remake-subdir.test \
+remake-subdir2.test \
 pr8365-remake-timing.test \
 regex.test \
 req.test \
