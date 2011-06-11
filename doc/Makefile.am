@@ -73,8 +73,14 @@ $(srcdir)/amhello-1.0.tar.gz: $(amhello_sources) $(top_srcdir)/configure.ac
 	PATH="`pwd`/../tests$(PATH_SEPARATOR)$$PATH" && \
 	export PATH && \
 	cd $(srcdir)/amhello && \
-	ACLOCAL=aclocal-$(APIVERSION) AUTOMAKE=automake-$(APIVERSION) \
-	autoreconf -vfi && \
+	ACLOCAL=aclocal-$(APIVERSION) && export ACLOCAL && \
+	AUTOMAKE=automake-$(APIVERSION) && export AUTOMAKE && \
+	AUTOCONF='$(am_AUTOCONF)' && export AUTOCONF && \
+	AUTOM4TE='$(am_AUTOM4TE)' && export AUTOM4TE && \
+	AUTORECONF='$(am_AUTORECONF)' && export AUTORECONF && \
+	AUTOHEADER='$(am_AUTOHEADER)' && export AUTOHEADER && \
+	AUTOUPDATE='$(am_AUTOUPDATE)' && export AUTOUPDATE && \
+	$(am_AUTORECONF) -vfi && \
 	./configure && \
 	$(MAKE) $(AM_MAKEFLAGS) distcheck && \
 	$(MAKE) $(AM_MAKEFLAGS) distclean && \
