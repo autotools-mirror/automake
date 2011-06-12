@@ -1,0 +1,300 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Test that automake complains when required auxiliary files are not
+# found, and that `automake --add-missing' installs the files (and only
+# the files) it's supposed to, and that these files are symlinked by
+# default, but copied if the `--install' option is used.
+
+. ./defs || Exit 1
+
+build_aux=build-aux
+
+# Try to improve readability of displayed diffs.
+if diff -u /dev/null /dev/null; then
+  am_diff='diff -u'
+elif diff -c /dev/null /dev/null; then
+  am_diff='diff -c'
+else
+  am_diff=diff
+fi
+
+cat > configure.stub << END
+AC_INIT([$me], [1.0])
+AC_CONFIG_AUX_DIR([$build_aux])
+AM_INIT_AUTOMAKE
+AC_CONFIG_FILES([Makefile])
+END
+
+# Pre-compute aclocal.m4, in order to save several aclocal invocations.
+cat >> configure.in <<'END'
+AC_PROG_CC
+AC_CANONICAL_BUILD
+AC_CANONICAL_HOST
+AC_CANONICAL_TARGET
+AM_PATH_LISPDIR
+AM_PATH_PYTHON
+END
+$ACLOCAL || framework_failure_ "cannot pre-compute aclocal.m4"
+
+rm -rf install-sh missing depcomp configure.in autom4te*.cache
+mv aclocal.m4 aclocal.stub
+
+cat configure.stub # For debugging.
+cat aclocal.stub   # Likewise.
+
+# This is hacky and ugly and complex, but allow us to organize our tests
+# below in a more "declarative fashion".  All in all, a good trade-off.
+check_ ()
+{
+  set +x # Temporary disable shell traces to remove noise from log files.
+  override=no
+  run_aclocal=no
+  extra_files=
+  while test $# -gt 0; do
+    case $1 in
+      --override) override=yes;;
+      --run-aclocal) run_aclocal=yes;;
+      --extra-file*) extra_files="$with_files $2"; shift;;
+      *) framework_failure_ "check_: invalid argument '$1'";;
+    esac
+    shift
+  done
+  mkdir testdir-generic
+  cd testdir-generic
+  : > Makefile.am
+  if test $override = yes; then
+    : > configure.in
+  else
+    cp ../configure.stub configure.in
+  fi
+  for f in $extra_files; do
+    if test -f ../$f; then
+      cp ../$f .
+    else
+      : > $f
+    fi
+  done
+  # Read description of "test scenario" from standard input.
+  what=
+  line=
+  files='install-sh missing' # These are always installed by automake.
+  while read line; do
+    case $line in
+      '== Makefile.am ==') what=Makefile.am;;
+      '== configure.in ==') what=configure.in;;
+      '== Files ==') what=LIST;;
+      '==.*') framework_failure_ "invalid input line: $line";;
+      ''|'#%'*)
+        : empty line or ad-hoc comment, ignore;;
+      *)
+        if test $what = LIST; then
+          files="$files $line"
+        else
+          printf '%s\n' "$line" >> "$what"
+        fi
+        ;;
+    esac
+  done
+  if test $run_aclocal = yes; then
+    $ACLOCAL
+    echo == aclocal.m4 ==
+    cat aclocal.m4
+  else
+    cp ../aclocal.stub aclocal.m4 
+  fi
+  # For debugging.
+  if test -s Makefile.am; then
+    echo == Makefile.am ==
+    cat Makefile.am
+  fi
+  echo == configure.in ==
+  cat configure.in
+  echo Expected files: $files
+  mkdir "$build_aux"
+  cd ..
+  # End of "test scenario" setup.
+  set -x # Re-enable shell traces.
+  ls -l testdir-generic
+  # Test once with `--copy', once without.
+  for action in link copy; do
+    case $action in
+      link) opts='--add-missing' test_linked='test -h';;
+      copy) opts='-a --copy' test_linked='test ! -h';;
+         *) Exit 99;; # Can't happen.
+    esac
+    cp -R testdir-generic testdir-$action
+    cd testdir-$action
+    # If the required auxiliary files are missing, and automake is
+    # not told to install them, it should complain and error out,
+    # and also give a useful suggestion.
+    $AUTOMAKE 2>stderr && { cat stderr >&2; Exit 1; }
+    cat stderr >&2
+    for f in $files; do 
+      grep "required file ['\`]$build_aux/$f' not found" stderr
+      # Suggest the user to use `--add-missing'.
+      grep ".*--add-missing.* install .*$f" stderr
+    done
+    # No files should be automatically installed by automake if it
+    # is not told to.
+    ls "$build_aux" | grep . && Exit 1
+    $AUTOMAKE $opts 2>stderr || { cat stderr >&2; Exit 1; }
+    cat stderr >&2
+    ls -l . $build_aux
+    # The expected files should get installed correctly (e.g., no
+    # broken symlinks).
+    for f in $files; do
+      test -f $build_aux/$f
+    done
+    # Automake should inform about which files it's installing.
+    for f in $files; do 
+      grep ": installing ['\`]$build_aux/$f'$" stderr
+    done
+    # Only the expected files should be installed.
+    for f in $files; do echo $f; done | sort > files.exp
+    (cd $build_aux && ls) | sort > files.got
+    cat files.exp
+    cat files.got
+    $am_diff files.exp files.got
+    # The files should be copied by `--copy' and symlinked otherwise.
+    for f in $files; do
+      $test_linked $build_aux/$f
+    done
+    # Now that the required auxiliary files have been installed, automake
+    # should not complain anymore even if the `--add-missing' option is
+    # not used.
+    $AUTOMAKE
+    cd ..
+  done
+  rm -rf testdir-*
+}
+
+: %%% install-sh and missing %%%
+check_ <<'END'
+#% 'install-sh' and 'missing' should always get installed.
+END
+
+: %%% depcomp with C %%%
+check_ <<'END'
+== Files ==
+depcomp
+== configure.in ==
+AC_PROG_CC
+== Makefile.am ==
+bin_PROGRAMS = foo
+END
+
+: %%% depcomp with C++ %%%
+check_ <<'END'
+== Files ==
+depcomp
+== configure.in ==
+AC_PROG_CXX
+== Makefile.am ==
+bin_PROGRAMS = foo
+foo_SOURCES = foo.cc
+END
+
+: %%% compile script %%%
+check_ --run-aclocal <<'END'
+== Files ==
+compile
+== configure.in ==
+# Using AM_PROG_CC_C_O in configure.in should be enough.  No need to
+# use AC_PROG_CC too, nor to define xxx_PROGRAMS in Makefile.am.
+AM_PROG_CC_C_O
+END
+
+: %%% config.guess and config.sub %%%
+
+for macro in AC_CANONICAL_BUILD AC_CANONICAL_HOST AC_CANONICAL_TARGET; do
+  check_ <<END
+== Files ==
+config.sub
+config.guess
+== configure.in ==
+$macro
+END
+done
+
+: %%% ylwrap with Lex %%%
+check_ <<'END'
+== Files ==
+ylwrap
+== configure.in ==
+AC_PROG_CC
+AC_PROG_LEX
+== Makefile.am ==
+AUTOMAKE_OPTIONS = no-dependencies
+bin_PROGRAMS = foo
+foo_SOURCES = foo.l
+END
+
+: %%% ylwrap with Yacc %%%
+check_ <<'END'
+== Files ==
+ylwrap
+== configure.in ==
+AC_PROG_CC
+AC_PROG_YACC
+== Makefile.am ==
+AUTOMAKE_OPTIONS = no-dependencies
+bin_PROGRAMS = foo
+foo_SOURCES = foo.y
+END
+
+: %%%  texinfo.tex %%%
+echo '@setfilename foo.info' > foo.texi
+check_ --extra-file foo.texi <<'END'
+== Files ==
+texinfo.tex
+== Makefile.am ==
+info_TEXINFOS = foo.texi
+END
+
+: %%% mdate-sh and texinfo.tex %%%
+echo '@include version.texi' >> foo.texi
+check_ --extra-file foo.texi <<'END'
+== Files ==
+mdate-sh
+texinfo.tex
+== Makefile.am ==
+info_TEXINFOS = foo.texi
+END
+
+rm -f foo.texi
+
+: %%% elisp-compile %%%
+check_ <<'END'
+== Files ==
+elisp-comp
+== configure.in ==
+AM_PATH_LISPDIR
+== Makefile.am ==
+lisp_LISP = foo.el
+END
+
+: %%% py-compile %%%
+check_ <<'END'
+== Files ==
+py-compile
+== configure.in ==
+AM_PATH_PYTHON
+== Makefile.am ==
+python_PYTHON = foo.py
+END
+
+:
