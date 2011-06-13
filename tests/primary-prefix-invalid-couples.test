@@ -26,10 +26,17 @@ set -e
 
 oIFS=$IFS # Saved for later.
 
+: > ltmain.sh
+: > texinfo.tex
+: > elisp-comp
+: > py-compile
+: > config.guess
+: > config.sub
+
 cat >> configure.in <<'END'
 AC_PROG_CC
 AC_PROG_RANLIB
-AC_PROG_LIBTOOL
+AC_SUBST([LIBTOOL], [:]) dnl So that we don't have to require Libtool.
 AM_PROG_GCJ
 AM_PATH_PYTHON
 AM_PATH_LISPDIR
@@ -58,7 +65,7 @@ set +x # Don't be overly verbose.
 
 for prefix in $prefixes; do
   for primary in $primaries; do
-    echo ${prefix}_${primary}
+    echo ${prefix} ${primary}
   done
 done >all.list
 
@@ -120,23 +127,61 @@ for primary in $primaries; do
   done
 done >allow.list
 
-set -x # Restore shell xtraces from now on.
+# `html_TEXINFOS' is not yet supported, and might never be.
+grep -v '^html TEXINFOS$' all.list | awk '{print NR, $0}' > t
+mv -f t all.list
 
+# For debugging.
+echo '=== all.list ==='
 cat all.list
+echo '=== allow.list ==='
 cat allow.list
 
-while read x; do
-  grep "^$x$" allow.list >/dev/null && continue
-  # To get the expected error message more in detail.
-  IFS=_; set $x; IFS=$oIFS
-  test $# -eq 2 || fatal_ "internal error in 'all.list'" # Sanity check.
-  prefix=$1
-  primary=$2
+# Create the Makefile.am.
+while read lineno prefix primary; do
+  test -n "$prefix" && test -n "$primary" && test 0 -lt $lineno \
+    || fatal_ "internal error in 'all.list'"
+  pfx='' ext=''
+  case $primary in
+    LTLIBRARIES) pfx=lib ext=la;;
+    LIBRARIES) pfx=lib ext=a;;
+    MANS) ext=man;;
+    HEADERS) ext=h;;
+    JAVA) ext=java;;
+    PYTHON) ext=py;;
+    LISP) ext=el;;
+    TEXINFOS) ext=texi;;
+  esac
+  test -z "$ext" || ext=.$ext
+  if test $primary = TEXINFOS; then
+    echo @setfilename foo$lineno.info > foo$lineno.texi
+  fi
+  echo ${prefix}_${primary} = ${pfx}foo${lineno}${ext}
+done <all.list >Makefile.am
+
+# For debugging.
+echo '=== Makefile.am ==='
+cat Makefile.am
+
+set -x # Restore shell xtraces from now on.
+
+AUTOMAKE_fails -a
+
+while read lineno prefix primary; do
+  test -n "$prefix" && test -n "$primary" && test 0 -lt $lineno \
+    || fatal_ "internal error in 'all.list'"
+  grep "^${prefix}_${primary}$" allow.list >/dev/null && continue
   errmsg_rx=".*${prefix}dir.* not a legitimate directory .*$primary"
-  # Now do the test for this prefix/primary combination.
-  echo "$x = foo" > Makefile.am
-  AUTOMAKE_fails -a || Exit 1
-  grep "^Makefile\\.am:1:$errmsg_rx" stderr || Exit 1
+  grep "^Makefile\\.am:$lineno: $errmsg_rx" stderr || Exit 1
 done <all.list
+
+# Check that automake really failed only for the expected reason(s).
+grep -v 'dir.* not a legitimate directory' stderr && Exit 1
+
+# Check that the same failures are present without the `--add-missing'
+# option.
+mv stderr stderr.old
+AUTOMAKE_fails
+diff stderr.old stderr
 
 :
