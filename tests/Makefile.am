@@ -110,6 +110,8 @@ config_shell_tests = \
   instsh2-w.shtst \
   instsh3-w.shtst \
   mkinst3-w.shtst \
+  mdate5-w.shtst \
+  mdate6-w.shtst \
   missing-w.shtst \
   missing2-w.shtst \
   missing3-w.shtst \
