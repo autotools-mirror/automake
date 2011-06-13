@@ -1,3 +1,32 @@
+2011-06-14  Stefano Lattarini  <stefano.lattarini@gmail.com>
+	    Jim Meyering  <meyering@redhat.com>
+
+	test defs: fix ksh-related portability bug in warning messages
+	Running "make check" normally prints a diagnostic to the outermost
+	stderr (usually a tty) to explain why a test is skipped, thus
+	giving better and faster feedback to the user.  It used to do
+	so by redirecting file descriptor 9 to stderr (via "exec 9>&2")
+	before invoking the test scripts, which then would write any skip
+	explanation to file descriptor 9 via the `skip_' function defined
+	in `tests/defs'.
+	However, various Korn Shells (at least Solaris 10's /bin/ksh and
+	Debian GNU/Linux's /bin/ksh) and the HP-UX's /bin/sh close open
+	file descriptors > 2 upon an `exec' system call; thus the effects
+	of "exec 9>&2" are cancelled upon fork-and-exec, so we would get
+	a "Bad file number" diagnostic and no skip explanation with those
+	shells.
+	The present change remedies this situation.
+	* tests/Makefile.am (AM_TESTS_ENVIRONMENT): Redirect more portably,
+	via a trailing "9>&2", rather than the prior "exec 9>&2; ...".  Add
+	explanatory comments.
+	* tests/defs (stderr_fileno_): Update the advice in comments.
+	Based on commit v8.12-82-g6b68745 "tests: accommodate HP-UX and
+	ksh-derived shells" in GNU coreutils.
+	Further references, with lots of discussion:
+	 <http://lists.gnu.org/archive/html/bug-autoconf/2011-06/msg00002.html>
+	 <http://thread.gmane.org/gmane.comp.gnu.coreutils.bugs/22488>
+	 <http://debbugs.gnu.org/cgi/bugreport.cgi?bug=8846>
+
 2011-06-13  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
 	tests: don't hard-code test name in txinfo21.test
