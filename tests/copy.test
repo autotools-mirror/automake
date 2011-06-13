@@ -16,16 +16,74 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test to make sure `-c' works.  Report from Andris Pavenis.
+# See also the much more in-depth test `add-missing'.
 
 . ./defs || Exit 1
+
+# First a simple test, where the auxdir is automatically determined
+# by automake.
 
 : > Makefile.am
 rm -f install-sh
 
 $ACLOCAL
 $AUTOMAKE -c -a
+ls -l # For debugging.
 
 test -f install-sh
 test ! -h install-sh
+
+# Let's do a couple of more elaborated tests, this time with the auxdir
+# explicitly defined in configure.in.
+
+mkdir sub
+cd sub
+
+cat > configure.in <<END
+AC_INIT([$me], [1.0])
+AC_CONFIG_AUX_DIR([auxdir])
+AM_INIT_AUTOMAKE
+AC_PROG_CC
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
+END
+
+cat > Makefile.am <<END
+bin_PROGRAMS = foo
+END
+
+$ACLOCAL
+
+# `automake -a' called without `-c' should create symlinks by default,
+# even when there is already a non-symlinked required auxiliary file.
+
+mkdir auxdir
+echo FAKE-DEPCOMP > auxdir/depcomp
+$AUTOMAKE -a
+ls -l auxdir # For debugging.
+test -f auxdir/install-sh
+test -h auxdir/install-sh
+test -f auxdir/depcomp
+test ! -h auxdir/depcomp
+test FAKE-DEPCOMP = `cat auxdir/depcomp`
+
+# `automake -a -c' should not create symlinks, even when there are
+# already symlinked required auxiliary files.
+
+rm -rf auxdir
+mkdir auxdir
+cd auxdir
+ln -s "$top_testsrcdir/lib/missing" "$top_testsrcdir/lib/install-sh" .
+cd ..
+
+$AUTOMAKE -a -c
+ls -l auxdir # For debugging.
+test -f auxdir/install-sh
+test -h auxdir/install-sh
+test -f auxdir/missing
+test -h auxdir/missing
+test -f auxdir/depcomp
+test ! -h auxdir/depcomp
+diff $top_testsrcdir/lib/depcomp auxdir/depcomp
 
 :
