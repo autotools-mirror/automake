@@ -312,6 +312,11 @@ distdir.test \
 distlinks.test \
 distlinksbrk.test \
 distname.test \
+distcheck-configure-flags.test \
+distcheck-configure-flags-am.test \
+distcheck-configure-flags-subpkg.test \
+distcheck-hook.test \
+distcheck-hook2.test \
 dmalloc.test \
 dollar.test \
 dollarvar.test \
