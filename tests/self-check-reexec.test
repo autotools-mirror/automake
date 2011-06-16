@@ -18,47 +18,57 @@
 # Check that automatic re-execution of test script with the
 # configure-time $SHELL.
 
+required=bash
 . ./defs || Exit 1
+
+unset AM_TESTS_REEXEC BASH_VERSION || :
 
 # This is not optimal, but it's much better than writing wrapper
 # scripts acting as "fake" shells.
-sh -c ': ${.sh.version}' \
-  && skip_ "sh is a Korn Shell"
-ksh -c 'test -n "${.sh.version}"' || \
-  skip_ "ksh is not a fully-fledged Korn Shell"
+
+bash -c 'test -n "$BASH_VERSION"' || skip_ "bash shell not found"
+
+for shell in /bin/sh /bin/ksh sh ksh dash pdksh __no_shell__; do
+  test $shell = __no_shell__ && skip_ "can't find any non-bash shell"
+  $shell -c 'test -n "$BASH_VERSION"' && continue
+  break
+done
+echo "shell='$shell'"
 
 cwd=`pwd` || Exit 99
 
 cp ../defs .
-unset AM_TESTS_REEXEC || :
 
 #
 # Check how to default, force or prevent a re-execution.
 #
 
-cat > run-with-ksh.test <<'END'
+cat > run-with-bash.test <<'END'
 #!/bin/false
 . ./defs
-# Subshell required to prevent some shells (e.g., older bash) from
-# only complaining on stderr but then exiting with exit status 0.
-(test -n "${.sh.version}" && echo ${.sh.version})
+# Ensure that the script gets re-executed with bash.  Also ensure that
+# non-standard syntax used after the inclusion of `./defs' doesn't cause
+# non-bash shells to fail.
+# Subshell required to prevent some shells (e.g., Solaris 10 /bin/sh)
+# from only complaining on stderr but then exiting with exit status 0.
+(foo=abac && test xbxc = ${foo//a/x} && test -n "$BASH_VERSION")
 END
 
 sed -e "s|^testbuilddir=.*|testbuilddir='$cwd'|" \
-    -e 's|^SHELL=.*$|SHELL=ksh; export SHELL|' \
+    -e 's|^SHELL=.*$|SHELL=bash; export SHELL|' \
     < ../defs-static >defs-static
 
-sh -x run-with-ksh.test
+$shell -x run-with-bash.test
 
-AM_TESTS_REEXEC=''    sh run-with-ksh.test
-AM_TESTS_REEXEC=yes   sh run-with-ksh.test
-AM_TESTS_REEXEC=y     sh run-with-ksh.test
-AM_TESTS_REEXEC=true  sh run-with-ksh.test
-AM_TESTS_REEXEC=1     sh run-with-ksh.test
-AM_TESTS_REEXEC=no    sh run-with-ksh.test && Exit 1
-AM_TESTS_REEXEC=n     sh run-with-ksh.test && Exit 1
-AM_TESTS_REEXEC=false sh run-with-ksh.test && Exit 1
-AM_TESTS_REEXEC=0     sh run-with-ksh.test && Exit 1
+AM_TESTS_REEXEC=''    $shell run-with-bash.test
+AM_TESTS_REEXEC=yes   $shell run-with-bash.test
+AM_TESTS_REEXEC=y     $shell run-with-bash.test
+AM_TESTS_REEXEC=true  $shell run-with-bash.test
+AM_TESTS_REEXEC=1     $shell run-with-bash.test
+AM_TESTS_REEXEC=no    $shell run-with-bash.test && Exit 1
+AM_TESTS_REEXEC=n     $shell run-with-bash.test && Exit 1
+AM_TESTS_REEXEC=false $shell run-with-bash.test && Exit 1
+AM_TESTS_REEXEC=0     $shell run-with-bash.test && Exit 1
 
 #
 # Check message about the re-execution.
@@ -80,7 +90,7 @@ sed -e "s|^testbuilddir=.*|testbuilddir='$cwd/sub'|" \
 
 ./dummy.test a b | grep "^dummy: exec $SHELL \\./dummy\\.test a b$"
 
-for am_sh in sh ksh; do
+for am_sh in $shell bash; do
   $am_sh dummy.test a b c \
     | grep "^dummy: exec $SHELL dummy\\.test a b c$"
   $am_sh ./dummy.test a b c \
