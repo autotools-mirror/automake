@@ -297,7 +297,6 @@ depend4.test \
 depend5.test \
 depend6.test \
 destdir.test \
-dirforbid.test \
 dirlist.test \
 dirlist2.test \
 discover.test \
@@ -313,6 +312,11 @@ distdir.test \
 distlinks.test \
 distlinksbrk.test \
 distname.test \
+distcheck-configure-flags.test \
+distcheck-configure-flags-am.test \
+distcheck-configure-flags-subpkg.test \
+distcheck-hook.test \
+distcheck-hook2.test \
 dmalloc.test \
 dollar.test \
 dollarvar.test \
@@ -632,6 +636,10 @@ prefix.test \
 primary.test \
 primary2.test \
 primary3.test \
+primary-prefix-invalid-couples.test \
+primary-prefix-valid-couples.test \
+primary-prefix-couples-force-valid.test \
+primary-prefix-couples-documented-valid.test \
 proginst.test \
 py-compile-basic.test \
 py-compile-basic2.test \
@@ -690,6 +698,7 @@ silent-lex-gcc.test \
 silent-lex-generic.test \
 silent-yacc-gcc.test \
 silent-yacc-generic.test \
+silent-configsite.test \
 srcsub.test \
 srcsub2.test \
 space.test \
