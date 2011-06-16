@@ -14,14 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Make sure that Java rules don't attempt to install *.java files when
-# there are none.
+# Make sure that Java rules don't attempt to compile or install
+# *.java files when there are none.
 # Report from Johannes Nicolai (PR/441).
 
 . ./defs || Exit 1
 
 cat >> configure.in << 'END'
-AM_CONDITIONAL([WHO_CARES], false)
+AM_CONDITIONAL([WHO_CARES], [false])
 AC_OUTPUT
 END
 
@@ -30,13 +30,25 @@ if WHO_CARES
 JAVA_FILES = MyClass1.java
 endif
 
-dist_pkgdata_JAVA = $(JAVA_FILES)
+javadir = $(prefix)/java
+java_JAVA = $(JAVA_FILES)
 END
 
-: >MyClass1.java
+cat > MyClass1.java << 'END'
+class MyClass1 { // Deliberately missing right curly bracket.
+END
 
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
-./configure
+
+cwd=`pwd` || Exit 1
+./configure --prefix="$cwd/_inst"
+$MAKE
+$MAKE install
+ls -l . _inst/java # For debugging.
+find . -name '*.class' | grep . && Exit 1
+$MAKE uninstall
 $MAKE distcheck
+
+:
