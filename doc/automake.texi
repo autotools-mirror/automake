@@ -117,6 +117,7 @@ section entitled ``GNU Free Documentation License.''
 * Miscellaneous::               Miscellaneous rules
 * Include::                     Including extra files in an Automake template
 * Conditionals::                Conditionals
+* Silencing Make::              Obtain less verbose output from @command{make}
 * Gnits::                       The effect of @option{--gnu} and @option{--gnits}
 * Cygnus::                      The effect of @option{--cygnus}
 * Not Enough::                  When Automake is not Enough
@@ -330,6 +331,12 @@ Conditionals
 
 * Usage of Conditionals::       Declaring conditional content
 * Limits of Conditionals::      Enclosing complete statements
+
+Silencing Make
+
+* Make verbosity::               Make is verbose by default
+* Tricks For Silencing Make::    Standard and generic ways to silence make
+* Automake silent-rules Option:: How Automake can help in silencing make
 
 When Automake Isn't Enough
 
@@ -8417,11 +8424,14 @@ makes a distribution, then tries to do a @code{VPATH} build
 (@pxref{VPATH Builds}), run the test suite, and finally make another
 tarball to ensure the distribution is self-contained.
 
+@vindex AM_DISTCHECK_CONFIGURE_FLAGS
 @vindex DISTCHECK_CONFIGURE_FLAGS
 Building the package involves running @samp{./configure}.  If you need
 to supply additional flags to @command{configure}, define them in the
-@code{DISTCHECK_CONFIGURE_FLAGS} variable, either in your top-level
-@file{Makefile.am}, or on the command line when invoking @command{make}.
+@code{AM_DISTCHECK_CONFIGURE_FLAGS} variable in your top-level
+@file{Makefile.am}.  The user can still extend or override the flags
+provided there by defining the @code{DISTCHECK_CONFIGURE_FLAGS} variable,
+on the command line when invoking @command{make}.
 
 @trindex distcheck-hook
 If the @code{distcheck-hook} rule is defined in your top-level
@@ -8431,9 +8441,10 @@ is configured and built.  Your @code{distcheck-hook} can do almost
 anything, though as always caution is advised.  Generally this hook is
 used to check for potential distribution errors not caught by the
 standard mechanism.  Note that @code{distcheck-hook} as well as
-@code{DISTCHECK_CONFIGURE_FLAGS} are not honored in a subpackage
-@file{Makefile.am}, but the @code{DISTCHECK_CONFIGURE_FLAGS} are
-passed down to the @command{configure} script of the subpackage.
+@code{AM_DISTCHECK_CONFIGURE_FLAGS} and @code{DISTCHECK_CONFIGURE_FLAGS}
+are not honored in a subpackage @file{Makefile.am}, but the flags from
+@code{AM_DISTCHECK_CONFIGURE_FLAGS} and @code{DISTCHECK_CONFIGURE_FLAGS}
+are passed down to the @command{configure} script of the subpackage.
 
 @trindex distcleancheck
 @vindex DISTCLEANFILES
@@ -9223,90 +9234,18 @@ letter; it should be omitted for non-alpha releases.
 @cindex Option, @option{silent-rules}
 @opindex silent-rules
 Enable less verbose build rules.  This can be used to let build rules
-output a status line of the form
-
+output status lines of the form:
 @example
-  GEN @var{output-file}
+GEN @var{output-file}
+ CC @var{object-file}
 @end example
-
 @noindent
 instead of printing the command that will be executed to update
-@var{output-file}.  It can also silence @command{libtool} output.
+@var{output-file} or to compile @var{object-file}.  It can also
+silence @command{libtool} output.
 
-To enable less verbose build rules, both the developer and the user
-of the package have to take a number of steps.  The developer needs
-to do either of the following:
-
-@itemize @bullet
-@item
-Add the @option{silent-rules} option as argument to @code{AM_INIT_AUTOMAKE}.
-@item
-Call the @code{AM_SILENT_RULES} macro from within the @file{configure.ac}
-file.
-@end itemize
-
-It is not possible to instead specify @option{silent-rules} in a
-@file{Makefile.am} file.
-
-@cindex default verbosity for silent-rules
-If the developer has done either of the above, then the user of the
-package may influence the verbosity at @command{configure} run time as
-well as at @command{make} run time:
-
-@itemize @bullet
-@item
-@opindex --enable-silent-rules
-@opindex --disable-silent-rules
-Passing @option{--enable-silent-rules} to @command{configure} will cause
-build rules to be less verbose; the option @option{--disable-silent-rules}
-is the default and will cause normal verbose output.
-@item
-@vindex @code{V}
-At @command{make} run time, the default chosen at @command{configure}
-time may be overridden: @code{make V=1} will produce verbose output,
-@code{make V=0} less verbose output.
-@end itemize
-
-For portability to different @command{make} implementations, package authors
-are advised to not set the variable @code{V} inside the @file{Makefile.am}
-file, to allow the user to override the value for subdirectories as well.
-
-The current implementation of this feature relies on a non-POSIX, but in
-practice rather widely supported @file{Makefile} construct of nested
-variable expansion @samp{$(@var{var1}$(V))}.  Do not use the
-@option{silent-rules} option if your package needs to build with
-@command{make} implementations that do not support it.  The
-@option{silent-rules} option turns off warnings about recursive variable
-expansion, which are in turn enabled by @option{-Wportability}
-(@pxref{Invoking Automake}).
-
-@vindex @code{AM_V_GEN}
-@vindex @code{AM_V_at}
-@vindex @code{AM_DEFAULT_VERBOSITY}
-To extend the silent mode to your own rules, you have two choices:
-
-@itemize @bullet
-@item
-You can use the predefined variable @code{AM_V_GEN} as a prefix to
-commands that should output a status line in silent mode, and
-@code{AM_V_at} as a prefix to commands that should not output anything
-in silent mode.  When output is to be verbose, both of these variables
-will expand to the empty string.
-@item
-You can add your own variables, so strings of your own choice are shown.
-The following snippet shows how you would define your own equivalent of
-@code{AM_V_GEN}:
-
-@example
-pkg_verbose = $(pkg_verbose_$(V))
-pkg_verbose_ = $(pkg_verbose_$(AM_DEFAULT_VERBOSITY))
-pkg_verbose_0 = @@echo GEN $@@;
-
-foo: foo.in
-        $(pkg_verbose)cp $(srcdir)/foo.in $@@
-@end example
-@end itemize
-
+For more information about how to use, enable, or disable silent
+rules, @pxref{Automake silent-rules Option}.
 
 @item @option{std-options}
 @cindex Options, @option{std-options}
@@ -9780,6 +9719,292 @@ various Automake features in this manual (@pxref{Conditional
 Subdirectories}, @pxref{Conditional Sources}, @pxref{Conditional
 Programs}, @pxref{Conditional Libtool Libraries}, @pxref{Conditional
 Libtool Sources}).
+
+@node Silencing Make
+@chapter Silencing @command{make}
+
+@cindex Silent @command{make}
+@cindex Silencing @command{make}
+@cindex Silent rules
+@cindex Silent @command{make} rules
+
+@menu
+* Make verbosity::               Make is verbose by default
+* Tricks For Silencing Make::    Standard and generic ways to silence make
+* Automake silent-rules Option:: How Automake can help in silencing make
+@end menu
+
+@node Make verbosity
+@section Make is verbose by default
+
+Normally, when executing the set of rules associated with a target,
+@command{make} prints each rule before it is executed.  This behaviour,
+while having been in place for a long time, and being even mandated by
+the POSIX standard, starkly violates the ``silence is golden'' UNIX
+principle@footnote{See also
+@uref{http://catb.org/~esr/writings/taoup/html/ch11s09.html}.}:
+
+@quotation
+When a program has nothing interesting or surprising to say, it should
+say nothing.  Well-behaved Unix programs do their jobs unobtrusively,
+with a minimum of fuss and bother.  Silence is golden.
+@end quotation
+
+In fact, while such verbosity of @command{make} can theoretically be
+useful to track bugs and understand reasons of failures right away, it
+can also hide warning and error messages from @command{make}-invoked
+tools, drowning them in a flood of uninteresting and seldom useful
+messages, and thus allowing them to go easily undetected.
+
+This problem can be very annoying, especially for developers, who usually
+know quite well what's going on behind the scenes, and for whom the
+verbose output from @command{make} ends up being mostly noise that hampers
+the easy detection of potentially important warning messages.
+
+@node Tricks For Silencing Make
+@section Standard and generic ways to silence make
+
+Here we describe some common idioms/tricks to obtain a quieter make
+output, with their relative advantages and drawbacks.  In the next
+section (@ref{Automake silent-rules Option}) we'll see how Automake
+can help in this respect.
+
+@itemize @bullet
+
+@item @command{make -s}
+
+This simply causes @command{make} not to print @emph{any} rule before
+executing it.
+
+The @option{-s} flag is mandated by POSIX, universally supported, and
+its purpose and function are easy to understand.
+
+But it also has its serious limitations too.  First of all, it embodies
+an ``all or nothing'' strategy, i.e., either everything is silenced, or
+nothing is; this lack of granularity can sometimes be a fatal flaw.
+Moreover, when the @option{-s} flag is used, the @command{make} output
+might turn out to be too much terse; in case of errors, the user won't
+be able to easily see what rule or command have caused them, or even,
+in case of tools with poor error reporting, what the errors were!
+
+@item @command{make >/dev/null || make}
+
+Apparently, this perfectly obeys the ``silence is golden'' rule: warnings
+from stderr are passed through, output reporting is done only in case of
+error, and in that case it should provide a verbose-enough report to allow
+an easy determination of the error location and causes.
+
+However, calling @command{make} two times in a row might hide errors
+(especially intermittent ones), or subtly change the expected semantic
+of the @command{make} calls --- things these which can clearly make
+debugging and error assessment very difficult.
+
+@item @command{make --no-print-directory}
+
+This is GNU @command{make} specific.  When called with the
+@option{--no-print-directory} option, GNU @command{make} will disable
+printing of the working directory by invoked sub-@command{make}s (the
+well-known ``@i{Entering/Leaving directory ...}'' messages).  This helps
+to decrease the verbosity of the output, but experience has shown that
+it can also often render debugging considerably harder in projects using
+deeply-nested @command{make} recursion.
+
+As an aside, notice that the @option{--no-print-directory} option is
+automatically activated if the @option{-s} flag is used.
+
+@c TODO: Other tricks?
+@c TODO: Maybe speak about the @code{.SILENT} target?
+@c TODO:  - Pros: More granularity on what to silence.
+@c TODO:  - Cons: No easy way to temporarily override.
+
+@end itemize
+
+@node Automake silent-rules Option
+@section How Automake can help in silencing make
+
+The tricks and idioms for silencing @command{make} described in the
+previous section can be useful from time to time, but we've seen that
+they all have their serious drawbacks and limitations.  That's why
+automake provides support for a more advanced and flexible way of
+obtaining quieter output from @command{make}: the @option{silent-rules}
+mode.
+
+@c TODO: Maybe describe in brief the precedent set by the build system
+@c of the Linux Kernel, from which Automake took inspiration ... Links?
+
+To give the gist of what @option{silent-rules} can do, here is a simple
+comparison between a typical @command{make} output (where silent rules
+are disabled) and one with silent rules enabled:
+
+@example
+% @kbd{cat Makefile.am}
+bin_PROGRAMS = foo
+foo_SOURCES = main.c func.c
+% @kbd{cat main.c}
+int main (void) @{ return func (); @}  /* func used undeclared */
+% @kbd{cat func.c}
+int func (void) @{ int i; return i; @} /* i used uninitialized */
+
+@i{The make output is by default very verbose.  This causes warnings
+from the compiler to be somewhat hidden, and not immediate to spot.}
+% @kbd{make CFLAGS=-Wall}
+gcc -DPACKAGE_NAME=\"foo\" -DPACKAGE_TARNAME=\"foo\" ...
+-DPACKAGE_STRING=\"foo\ 1.0\" -DPACKAGE_BUGREPORT=\"\" ...
+-DPACKAGE=\"foo\" -DVERSION=\"1.0\" -I. -Wall -MT main.o
+-MD -MP -MF .deps/main.Tpo -c -o main.o main.c
+main.c: In function ‘main’:
+main.c:3:3: warning: implicit declaration of function ‘func’
+mv -f .deps/main.Tpo .deps/main.Po
+gcc -DPACKAGE_NAME=\"foo\" -DPACKAGE_TARNAME=\"foo\" ...
+-DPACKAGE_STRING=\"foo\ 1.0\" -DPACKAGE_BUGREPORT=\"\" ...
+-DPACKAGE=\"foo\" -DVERSION=\"1.0\" -I. -Wall -MT func.o
+-MD -MP -MF .deps/func.Tpo -c -o func.o func.c
+func.c: In function ‘func’:
+func.c:4:3: warning: ‘i’ used uninitialized in this function
+mv -f .deps/func.Tpo .deps/func.Po
+gcc -Wall -o foo main.o func.o
+
+@i{Clean up, so that we we can rebuild everything from scratch.}
+% @kbd{make clean}
+test -z "foo" || rm -f foo
+rm -f *.o
+
+@i{Silent rules enabled: the output is minimal but informative.  In
+particular, the warnings from the compiler stick out very clearly.}
+% @kbd{make V=0 CFLAGS=-Wall}
+  CC     main.o
+main.c: In function ‘main’:
+main.c:3:3: warning: implicit declaration of function ‘func’
+  CC     func.o
+func.c: In function ‘func’:
+func.c:4:3: warning: ‘i’ used uninitialized in this function
+  CCLD   foo
+@end example
+
+@cindex silent-rules and libtool
+Also, in projects using @command{libtool}, the use of silent rules can
+automatically enable the @command{libtool}'s @option{--silent} option:
+
+@example
+% @kbd{cat Makefile.am}
+lib_LTLIBRARIES = libx.la
+
+% @kbd{make # Both make and libtool are verbose by default.}
+...
+libtool: compile: gcc -DPACKAGE_NAME=\"foo\" ... -DLT_OBJDIR=\".libs/\"
+  -I. -g -O2 -MT libx.lo -MD -MP -MF .deps/libx.Tpo -c libx.c -fPIC
+  -DPIC -o .libs/libx.o
+mv -f .deps/libx.Tpo .deps/libx.Plo
+/bin/sh ./libtool --tag=CC --mode=link gcc -g -O2 -o libx.la -rpath
+  /usr/local/lib libx.lo
+libtool: link: gcc -shared .libs/libx.o -Wl,-soname -Wl,libx.so.0
+  -o .libs/libx.so.0.0.0
+libtool: link: cd .libs && rm -f libx.so && ln -s libx.so.0.0.0 libx.so
+...
+
+% @kbd{make V=0}
+  CC     libx.lo
+  CCLD   libx.la
+@end example
+
+Let's now see how the @option{silent-rules} mode interfaces with the
+package developer and the package user.
+
+To enable the use of @option{silent-rules} in his package, a developer
+needs to do either of the following:
+
+@itemize @bullet
+@item
+Add the @option{silent-rules} option as argument to @code{AM_INIT_AUTOMAKE}.
+@item
+Call the @code{AM_SILENT_RULES} macro from within the @file{configure.ac}
+file.
+@end itemize
+
+It is not possible to instead specify @option{silent-rules} in a
+@file{Makefile.am} file.
+
+If the developer has done either of the above, then the user of the
+package may influence the verbosity at @command{configure} run time as
+well as at @command{make} run time:
+
+@itemize @bullet
+@item
+@opindex --enable-silent-rules
+@opindex --disable-silent-rules
+Passing @option{--enable-silent-rules} to @command{configure} will cause
+build rules to be less verbose; the option @option{--disable-silent-rules}
+will cause normal verbose output.
+@item
+@vindex @code{V}
+At @command{make} run time, the default chosen at @command{configure}
+time may be overridden: @code{make V=1} will produce verbose output,
+@code{make V=0} less verbose output.
+@end itemize
+
+@cindex default verbosity for silent-rules
+Note that silent rules are @emph{disabled} by default; the user must
+enable them explicitly at either @command{configure} run time or at
+@command{make} run time.  We think that this is a good policy, since
+it provides the casual user with enough information to prepare a good
+bug report in case anything breaks.
+
+Still, notwithstanding the rationales above, a developer who wants to
+make silent rules enabled by default in his own package can do so by
+adding a @samp{yes} argument to the @code{AM_SILENT_RULES} call in
+@file{configure.ac}.  We advise against this approach, though.
+
+Users who prefer to have silent rules enabled by default can edit their
+@file{config.site} file to make the variable @code{enable_silent_rules}
+default to @samp{yes}.  This should still allow disabling silent rules
+at @command{configure} time and at @command{make} time.
+
+@c FIXME: there's really a need to specify this explicitly?
+For portability to different @command{make} implementations, package authors
+are advised to not set the variable @code{V} inside the @file{Makefile.am}
+file, to allow the user to override the value for subdirectories as well.
+
+The current implementation of this feature relies on a non-POSIX, but in
+practice rather widely supported @file{Makefile} construct of nested
+variable expansion @samp{$(@var{var1}$(V))}.  Do not use the
+@option{silent-rules} option if your package needs to build with
+@command{make} implementations that do not support it.  The
+@option{silent-rules} option turns off warnings about recursive variable
+expansion, which are in turn enabled by @option{-Wportability}
+(@pxref{Invoking Automake}).
+
+@vindex @code{AM_V_GEN}
+@vindex @code{AM_V_at}
+@vindex @code{AM_DEFAULT_VERBOSITY}
+To extend the silent mode to your own rules, you have two choices:
+
+@itemize @bullet
+@item
+You can use the predefined variable @code{AM_V_GEN} as a prefix to
+commands that should output a status line in silent mode, and
+@code{AM_V_at} as a prefix to commands that should not output anything
+in silent mode.  When output is to be verbose, both of these variables
+will expand to the empty string.
+@item
+You can add your own variables, so strings of your own choice are shown.
+The following snippet shows how you would define your own equivalent of
+@code{AM_V_GEN}:
+
+@example
+pkg_verbose = $(pkg_verbose_$(V))
+pkg_verbose_ = $(pkg_verbose_$(AM_DEFAULT_VERBOSITY))
+pkg_verbose_0 = @@echo PKG-GEN $@@;
+
+foo: foo.in
+        $(pkg_verbose)cp $(srcdir)/foo.in $@@
+@end example
+
+@end itemize
+
+As a final note, observe that, even when silent rules are enabled,
+the @option{--no-print-directory} option is still required with GNU
+@command{make} if the ``@i{Entering/Leaving directory ...}'' messages
+are to be disabled.
 
 @node Gnits
 @chapter The effect of @option{--gnu} and @option{--gnits}
