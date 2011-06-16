@@ -93,27 +93,15 @@ $(depmod_tests:.depmod=.log): depmod-tests.sh depmod-data.log
 $(depmod_tests):
 
 
+include $(srcdir)/config-shell-tests.am
+
+$(srcdir)/config-shell-tests.am: gen-config-shell-tests Makefile.am
+	$(AM_V_GEN)($(am__cd) $(srcdir) && $(SHELL) ./gen-config-shell-tests) >$@
+EXTRA_DIST += gen-config-shell-tests
+
 TEST_EXTENSIONS += .shtst
 SHTST_LOG_COMPILER = $(SHELL) $(srcdir)/config-shell-tests.sh
 EXTRA_DIST += config-shell-tests.sh
-
-# FIXME: this list might probably be made auto-generated, like
-# $(parallel_tests) is...  But would that worth the hassle?
-config_shell_tests = \
-  ar-lib-w.shtst \
-  compile-w.shtst \
-  compile2-w.shtst \
-  compile3-w.shtst \
-  compile4-w.shtst \
-  compile5-w.shtst \
-  compile6-w.shtst \
-  instsh2-w.shtst \
-  instsh3-w.shtst \
-  mkinst3-w.shtst \
-  missing-w.shtst \
-  missing2-w.shtst \
-  missing3-w.shtst \
-  missing5-w.shtst
 
 # All `*-w.shtst' tests work by sourcing the script `config-shell-tests.sh'.
 $(config_shell_tests:.shtst=.log): config-shell-tests.sh
@@ -134,6 +122,7 @@ AM_TESTS_ENVIRONMENT = \
   test x"$$me" = x || unset me; \
   test x"$$required" = x || unset required; \
   test x"$$parallel_tests" = x || unset parallel_tests; \
+  test x"$$test_prefer_config_shell" || unset test_prefer_config_shell; \
   test x"$$original_AUTOMAKE" = x || unset original_AUTOMAKE; \
   test x"$$original_ACLOCAL" = x || unset original_ACLOCAL; \
   AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC; \

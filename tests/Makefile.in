@@ -50,7 +50,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/aclocal.in $(srcdir)/automake.in $(srcdir)/defs \
+	$(srcdir)/aclocal.in $(srcdir)/automake.in \
+	$(srcdir)/config-shell-tests.am $(srcdir)/defs \
 	$(srcdir)/defs-static.in $(srcdir)/depmod-tests.am \
 	$(srcdir)/instspc-tests.am $(srcdir)/parallel-tests.am \
 	$(top_srcdir)/CheckListOfTests.am
@@ -306,8 +307,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 MAINTAINERCLEANFILES = 
 EXTRA_DIST = ChangeLog-old gen-parallel-tests parallel-tests.sh \
-	instspc-tests.sh depmod-tests.sh config-shell-tests.sh \
-	$(handwritten_tests)
+	instspc-tests.sh depmod-tests.sh gen-config-shell-tests \
+	config-shell-tests.sh $(handwritten_tests)
 TEST_EXTENSIONS = .test .ptest .instspc .depmod .shtst
 # Run the tests with the shell detected at configure time.
 TEST_LOG_COMPILER = $(SHELL)
@@ -386,26 +387,12 @@ depmod_tests = depcomp-gcc3.depmod depcomp-gcc.depmod \
 	depcomp-cpp.depmod depcomp-msvisualcpp.depmod \
 	depcomp-msvcmsys.depmod
 DEPMOD_LOG_COMPILER = $(SHELL) $(srcdir)/depmod-tests.sh
+config_shell_tests = ar-lib-w.shtst compile-w.shtst compile2-w.shtst \
+	compile3-w.shtst compile4-w.shtst compile5-w.shtst \
+	compile6-w.shtst instsh2-w.shtst instsh3-w.shtst \
+	mdate5-w.shtst mdate6-w.shtst missing-w.shtst missing2-w.shtst \
+	missing3-w.shtst missing5-w.shtst mkinst3-w.shtst
 SHTST_LOG_COMPILER = $(SHELL) $(srcdir)/config-shell-tests.sh
-
-# FIXME: this list might probably be made auto-generated, like
-# $(parallel_tests) is...  But would that worth the hassle?
-config_shell_tests = \
-  ar-lib-w.shtst \
-  compile-w.shtst \
-  compile2-w.shtst \
-  compile3-w.shtst \
-  compile4-w.shtst \
-  compile5-w.shtst \
-  compile6-w.shtst \
-  instsh2-w.shtst \
-  instsh3-w.shtst \
-  mkinst3-w.shtst \
-  missing-w.shtst \
-  missing2-w.shtst \
-  missing3-w.shtst \
-  missing5-w.shtst
-
 
 # Some testsuite-influential variables should be overridable from the
 # test scripts, but not from the environment.
@@ -1394,7 +1381,7 @@ all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .depmod .html .instspc .log .ptest .shtst .test
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/parallel-tests.am $(srcdir)/instspc-tests.am $(srcdir)/depmod-tests.am $(top_srcdir)/CheckListOfTests.am $(am__configure_deps)
+$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/parallel-tests.am $(srcdir)/instspc-tests.am $(srcdir)/depmod-tests.am $(srcdir)/config-shell-tests.am $(top_srcdir)/CheckListOfTests.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -1784,6 +1771,25 @@ $(depmod_tests:.depmod=.log): depmod-tests.sh depmod-data.log
 # This dummy declaration is required to have make actually produce
 # expected log files from the `.depmod.log' suffix rule.
 $(depmod_tests):
+ar-lib-w.log: ar-lib.test
+compile-w.log: compile.test
+compile2-w.log: compile2.test
+compile3-w.log: compile3.test
+compile4-w.log: compile4.test
+compile5-w.log: compile5.test
+compile6-w.log: compile6.test
+instsh2-w.log: instsh2.test
+instsh3-w.log: instsh3.test
+mdate5-w.log: mdate5.test
+mdate6-w.log: mdate6.test
+missing-w.log: missing.test
+missing2-w.log: missing2.test
+missing3-w.log: missing3.test
+missing5-w.log: missing5.test
+mkinst3-w.log: mkinst3.test
+
+$(srcdir)/config-shell-tests.am: gen-config-shell-tests Makefile.am
+	$(AM_V_GEN)($(am__cd) $(srcdir) && $(SHELL) ./gen-config-shell-tests) >$@
 
 # All `*-w.shtst' tests work by sourcing the script `config-shell-tests.sh'.
 $(config_shell_tests:.shtst=.log): config-shell-tests.sh
