@@ -108,15 +108,21 @@ am__base_list = \
 am__rst_title = sed 's/.*/   &   /;h;s/./=/g;p;x;p;g;p;s/.*//'
 am__rst_section = sed 'p;s/./=/g;p;g'
 # Put stdin (possibly several lines separated by ".  ") in a box.
-am__text_box = $(AWK) '{				\
-  n = split($$0, lines, "\\.  "); max = 0;		\
-  for (i = 1; i <= n; ++i)				\
-    if (max < length(lines[i]))				\
-      max = length(lines[i]);				\
-  for (i = 0; i < max; ++i) line = line "=";		\
-  print line;						\
-  for (i = 1; i <= n; ++i) if (lines[i]) print lines[i];\
-  print line;						\
+# Prefix each line by 'col' and terminate each with 'std', for coloring.
+# Multi line coloring is problematic with "less -R", so we really need
+# to color each line individually.
+am__text_box = $(AWK) '{			\
+  n = split($$0, lines, "\\.  "); max = 0;	\
+  for (i = 1; i <= n; ++i)			\
+    if (max < length(lines[i]))			\
+      max = length(lines[i]);			\
+  for (i = 0; i < max; ++i)			\
+    line = line "=";				\
+  print col line std;				\
+  for (i = 1; i <= n; ++i)			\
+    if (lines[i])				\
+      print col lines[i] std;			\
+  print col line std;				\
 }'
 # Solaris 10 'make', and several other traditional 'make' implementations,
 # pass "-e" to $(SHELL), and POSIX 2008 even requires this.  Work around it
@@ -1252,12 +1258,11 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	test x"$$VERBOSE" = x || $$exit || cat $(TEST_SUITE_LOG);	\
 	$(am__tty_colors);						\
 	if $$exit; then							\
-	  echo $(ECHO_N) "$$grn$(ECHO_C)";				\
+	  col="$$grn";							\
 	 else								\
-	  echo $(ECHO_N) "$$red$(ECHO_C)";				\
+	  col="$$red";							\
 	fi;								\
-	echo "$$msg" | $(am__text_box);					\
-	echo $(ECHO_N) "$$std$(ECHO_C)";				\
+	echo "$$msg" | $(am__text_box) "col=$$col" "std=$$std";		\
 	$$exit
 
 # Run all the tests.
