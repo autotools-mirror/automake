@@ -33,41 +33,60 @@ cat >> configure.in << 'END'
 AC_OUTPUT
 END
 
+# Use both a shell script and a perl script as tests,
+# for better coverage.
+
 cat >foo.test <<'END'
 #! /bin/sh
+set -e
 echo " " $0: foofoofoo >&8
 echo " " $0: barbarbar >&9
 END
-chmod a+x foo.test
+
+echo "#! $PERL -w" > bar.test
+cat >>bar.test <<'END'
+use warnings FATAL => 'all';
+use strict;
+open(FD8, ">&=8") or die "$!";
+open(FD9, ">&=9") or die "$!";
+print FD8 "  $0: 8888\n";
+print FD9 "  $0: 9999\n";
+END
+
+chmod a+x foo.test bar.test
 
 $ACLOCAL
 $AUTOCONF
 
-# /bin/ksh seems more vulnerable to the issue highlighted in coreutils
+# Korn Shells seem more vulnerable to the issue highlighted in coreutils
 # bug#8846 than other shells are.  In particular, the default Korn Shell
 # on Debian GNU/Linux is affected by the issue.  So let's try to run our
-# test with /bin/ksh too, if that's available.
-if test "$SHELL" != /bin/ksh && test -f /bin/ksh; then
-  bin_ksh=/bin/ksh
-else
-  bin_ksh=:
-fi
+# test with a system Korn Shell too, if that's available.
+bin_ksh=:
+case $SHELL in
+  ksh|*/ksh) ;;
+  *) for d in /bin /usr/bin; do
+       test -f $d/ksh && { bin_ksh=$d/ksh; break; }
+     done;;
+esac
 
 for sh in "$SHELL" "$bin_ksh"; do
   test "$sh" = : && continue
   for pfx in AM_ ''; do
     unindent > Makefile.am <<END
-      TESTS = foo.test
+      TESTS = foo.test bar.test
       ## No trailing semicolon here, *deliberately*.
       ${pfx}TESTS_ENVIRONMENT = 8>&1 9>&8
 END
     $AUTOMAKE -a
     CONFIG_SHELL="$sh" $sh ./configure CONFIG_SHELL="$sh"
-    $MAKE check >stdout || { cat stdout; Exit 1; }
+    VERBOSE=y $MAKE check >stdout || { cat stdout; Exit 1; }
     cat stdout
     grep '[ /]foo\.test: foofoofoo$' stdout
     grep '[ /]foo\.test: barbarbar$' stdout
-    $EGREP '(foofoofoo|barbarbar)' foo.log && Exit 1
+    grep '[ /]bar\.test: 8888$' stdout
+    grep '[ /]bar\.test: 9999$' stdout
+    $EGREP '(foofoofoo|barbarbar|8888|9999)' foo.log && Exit 1
     : # For shells with buggy 'set -e'.
   done
 done
