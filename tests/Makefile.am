@@ -89,6 +89,7 @@ amassign.test \
 ammissing.test \
 amopt.test \
 amsubst.test \
+ansi2knr-deprecation.test \
 ansi.test \
 ansi2.test \
 ansi3.test \
