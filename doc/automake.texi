@@ -232,7 +232,7 @@ Building Programs and Libraries
 * Java Support::                Compiling Java sources
 * Vala Support::                Compiling Vala sources
 * Support for Other Languages::  Compiling other languages
-* ANSI::                        Automatic de-ANSI-fication (obsolete)
+* ANSI::                        Automatic de-ANSI-fication (deprecated, soon to be removed)
 * Dependencies::                Automatic dependency tracking
 * EXEEXT::                      Support for executable extensions
 
@@ -2237,8 +2237,9 @@ it more POSIX-like.
 
 @item ansi2knr.c
 @itemx ansi2knr.1
-These two files are used for de-ANSI-fication support (obsolete
-@pxref{ANSI}).
+These two files are used for de-ANSI-fication support (they are
+deprecated now, and @emph{will be removed} in the next major Automake
+release; @pxref{ANSI}).
 
 @item compile
 This is a wrapper for compilers that do not accept options @option{-c}
@@ -2462,20 +2463,8 @@ false.o: true.c
         $(COMPILE) -DEXIT_CODE=1 -c true.c && mv true.o false.o
 @end example
 
-Also, these explicit rules do not work if the obsolete de-ANSI-fication feature
-is used (@pxref{ANSI}).  Supporting de-ANSI-fication requires a little
-more work:
-
-@example
-true_.o: true_.c false_.o
-        $(COMPILE) -DEXIT_CODE=0 -c true_.c
-
-false_.o: true_.c
-        $(COMPILE) -DEXIT_CODE=1 -c true_.c && mv true_.o false_.o
-@end example
-
 As it turns out, there is also a much easier way to do this same task.
-Some of the above techniques are useful enough that we've kept the
+Some of the above technique is useful enough that we've kept the
 example in the manual.  However if you were to build @code{true} and
 @code{false} in real life, you would probably use per-program
 compilation flags, like so:
@@ -2491,10 +2480,9 @@ true_CPPFLAGS = -DEXIT_CODE=0
 @end example
 
 In this case Automake will cause @file{true.c} to be compiled twice,
-with different flags.  De-ANSI-fication will work automatically.  In
-this instance, the names of the object files would be chosen by
-automake; they would be @file{false-true.o} and @file{true-true.o}.
-(The name of the object files rarely matters.)
+with different flags.  In this instance, the names of the object files
+would be chosen by automake; they would be @file{false-true.o} and
+@file{true-true.o}. (The name of the object files rarely matters.)
 
 
 @node Invoking Automake
@@ -3048,8 +3036,8 @@ this way, e.g., @code{AC_PATH_XTRA} defines @code{X_CFLAGS} and
 if @code{AC_PATH_XTRA} is called.
 
 @item AM_C_PROTOTYPES
-This is required when using the obsolete de-ANSI-fication feature; see
-@ref{ANSI}.
+This is required when using the deprecated de-ANSI-fication feature; see
+@ref{ANSI}.  @emph{It will be removed} in the next major Automake release.
 
 @item AM_CONDITIONAL
 This introduces an Automake conditional (@pxref{Conditionals}).
@@ -4012,8 +4000,10 @@ Autoconf Manual}).
 Check to see if function prototypes are understood by the compiler.  If
 so, define @samp{PROTOTYPES} and set the output variables @code{U} and
 @code{ANSI2KNR} to the empty string.  Otherwise, set @code{U} to
-@samp{_} and @code{ANSI2KNR} to @samp{./ansi2knr}.  Automake uses these
-values to implement the obsolete de-ANSI-fication feature.
+@samp{_} and @code{ANSI2KNR} to @samp{./ansi2knr}.  Automake used these
+values to implement the deprecated de-ANSI-fication feature; however,
+support for @emph{that feature will be removed} in the next major Automake
+release, and then @emph{these macros and variables will go away as well}.
 
 @item AM_CONFIG_HEADER
 @acindex AM_CONFIG_HEADER
@@ -4628,7 +4618,7 @@ to build programs and libraries.
 * Java Support::                Compiling Java sources
 * Vala Support::                Compiling Vala sources
 * Support for Other Languages::  Compiling other languages
-* ANSI::                        Automatic de-ANSI-fication (obsolete)
+* ANSI::                        Automatic de-ANSI-fication (deprecated, soon to be removed)
 * Dependencies::                Automatic dependency tracking
 * EXEEXT::                      Support for executable extensions
 @end menu
@@ -4659,14 +4649,14 @@ programs.  Most of the comments about these also apply to libraries
 @vindex bin_PROGRAMS
 @vindex sbin_PROGRAMS
 @vindex libexec_PROGRAMS
-@vindex pkglib_PROGRAMS
+@vindex pkglibexec_PROGRAMS
 @vindex noinst_PROGRAMS
 @vindex check_PROGRAMS
 
 In a directory containing source that gets built into a program (as
 opposed to a library or a script), the @code{PROGRAMS} primary is used.
 Programs can be installed in @code{bindir}, @code{sbindir},
-@code{libexecdir}, @code{pkglibdir}, @code{pkglibexecdir}, or not at all
+@code{libexecdir}, @code{pkglibexecdir}, or not at all
 (@code{noinst_}).  They can also be built only for @samp{make check}, in
 which case the prefix is @samp{check_}.
 
@@ -6788,13 +6778,14 @@ suffix rule handling (@pxref{Suffixes}).
 
 
 @node ANSI
-@section Automatic de-ANSI-fication
+@section Automatic de-ANSI-fication (deprecated, soon to be removed)
 
 @cindex de-ANSI-fication, defined
 
-The features described in this section are obsolete; you should not
-used any of them in new code, and they may be withdrawn in future
-Automake releases.
+@emph{The features described in this section are deprecated; you must
+not use any of them in new code, and remove their use from older but
+still maintained code: they will be withdrawn in the next major
+Automake release.}
 
 When the C language was standardized in 1989, there was a long
 transition period where package developers needed to worry about
@@ -8461,6 +8452,21 @@ to supply additional flags to @command{configure}, define them in the
 provided there by defining the @code{DISTCHECK_CONFIGURE_FLAGS} variable,
 on the command line when invoking @command{make}.
 
+Still, developers are encouraged to strive to make their code buildable
+without requiring any special configure option; thus, in general, you
+shouldn't define @code{AM_DISTCHECK_CONFIGURE_FLAGS}. However, there
+might be few scenarios in which the use of this variable is justified.
+GNU @command{m4} offers an example.  GNU @command{m4} configures by
+default with its experimental and seldom used "changeword" feature
+disabled; so in its case it is useful to have @command{make distcheck}
+run configure with the @option{--with-changeword} option, to ensure that
+the code for changeword support still compiles correctly.
+GNU @command{m4} also employs the @code{AM_DISTCHECK_CONFIGURE_FLAGS}
+variable to stress-test the use of @option{--program-prefix=g}, since at
+one point the @command{m4} build system had a bug where @command{make
+installcheck} was wrongly assuming it could blindly test "@command{m4}",
+rather than the just-installed "@command{gm4}".
+
 @trindex distcheck-hook
 If the @code{distcheck-hook} rule is defined in your top-level
 @file{Makefile.am}, then it will be invoked by @code{distcheck} after
@@ -9174,11 +9180,15 @@ implies options @option{readme-alpha} and @option{check-news}.
 @itemx @option{@var{path}/ansi2knr}
 @cindex Option, @option{ansi2knr}
 @opindex ansi2knr
-Turn on the obsolete de-ANSI-fication feature.  @xref{ANSI}.  If preceded by a
+Turn on the deprecated de-ANSI-fication feature (@xref{ANSI}).  Note
+that that feature and this option @emph{will be removed} in the next
+major Automake release.
+
+If preceded by a
 path, the generated @file{Makefile.in} will look in the specified
 directory to find the @file{ansi2knr} program.  The path should be a
 relative path to another directory in the same distribution (Automake
-currently does not check this).
+does not check this).
 
 @item @option{check-news}
 @cindex Option, @option{check-news}
