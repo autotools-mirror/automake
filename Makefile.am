@@ -189,6 +189,9 @@ sc_tests_plain_make \
 sc_tests_plain_autoconf \
 sc_tests_plain_autoupdate \
 sc_tests_plain_automake \
+sc_tests_plain_autom4te \
+sc_tests_plain_autoheader \
+sc_tests_plain_autoreconf \
 sc_tests_here_document_format \
 sc_tests_Exit_not_exit \
 sc_tests_automake_fails \
@@ -437,6 +440,27 @@ sc_tests_plain_autoupdate:
 sc_tests_plain_automake:
 	@if grep -v '^#' $(srcdir)/tests/*.test | grep -E ':[	]*automake\>([^:]|$$)'; then \
 	  echo 'Do not run "automake" in the above tests.  Use "$$AUTOMAKE" instead.' 1>&2;  \
+	  exit 1; \
+	fi
+
+## Tests should never call autoheader directly.
+sc_tests_plain_autoheader:
+	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*autoheader\>'; then \
+	  echo 'Do not run "automake" in the above tests.  Use "$$AUTOHEADER" instead.' 1>&2;  \
+	  exit 1; \
+	fi
+
+## Tests should never call autoreconf directly.
+sc_tests_plain_autoreconf:
+	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*autoreconf\>'; then \
+	  echo 'Do not run "automake" in the above tests.  Use "$$AUTORECONF" instead.' 1>&2;  \
+	  exit 1; \
+	fi
+
+## Tests should never call autom4te directly.
+sc_tests_plain_autom4te:
+	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*autom4te\>'; then \
+	  echo 'Do not run "automake" in the above tests.  Use "$$AUTOM4TE" instead.' 1>&2;  \
 	  exit 1; \
 	fi
 
