@@ -960,6 +960,7 @@ tar3.test \
 target-cflags.test \
 targetclash.test \
 tests-environment-fd-redirect.test \
+tests-environment-and-log-compiler.test \
 txinfo.test \
 txinfo2.test \
 txinfo3.test \
