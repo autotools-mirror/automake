@@ -1,0 +1,110 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check that the output of testcases having a global outcome that is not
+# "PASS" or "XFAIL" is copied in the global 'test-suite.log'.
+
+parallel_tests=yes
+. ./defs || Exit 1
+
+cat >> configure.in << 'END'
+AC_OUTPUT
+END
+
+# The :test-result: fields should be irrelevant for the decision
+# of whether a test output is to be copied in the test-suite.log.
+cat > pass.test <<END
+PASS: pass.test
+:test-result: SKIP
+:test-result: FAIL
+:test-result: XFAIL
+:test-result: XPASS
+:test-result: ERROR
+not seen (pass)
+END
+
+cat > xfail.test <<'END'
+XFAIL: xfail.test
+not seen (xfail)
+END
+
+echo SKIP: skip.test > skip.test
+echo FAIL: fail.test > fail.test
+echo XPASS: xpass.test > xpass.test
+echo :test-result: PASS > fake-pass.test
+echo "$tab $tab$tab" > empty.test
+
+cat > Makefile.am << 'END'
+TEST_LOG_DRIVER = ./dummy-driver
+TESTS = pass.test skip.test fail.test xfail.test xpass.test \
+        fake-pass.test empty.test
+END
+
+
+cat > dummy-driver <<'END'
+#!/bin/sh
+set -e
+while test $# -gt 0; do
+  case $1 in
+    --log-file) log_file=$2; shift;;
+    --test-name) test_name=$2; shift;;
+    --expect-failure|--color-tests|--enable-hard-errors) shift;;
+    --) shift; break;;
+     *) echo "$0: invalid option/argument: '$1'" >&2; exit 2;;
+  esac
+  shift
+done
+cp $1 $log_file
+END
+chmod a+x dummy-driver
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
+
+./configure
+
+$MAKE check && { cat test-suite.log; Exit 1; }
+cat test-suite.log
+grep '^SKIP: skip\.test$' test-suite.log
+grep '^FAIL: fail.test$' test-suite.log
+grep '^XPASS: xpass.test$' test-suite.log
+grep '^:test-result: PASS$' test-suite.log
+grep "^$tab $tab$tab$" test-suite.log
+$EGREP 'not seen' test-suite.log && Exit 1
+test `grep -c ':test-result:' test-suite.log` -eq 1
+
+cat > pass.test <<END
+PASS: pass.test
+:test-result: SKIP
+:test-result: XFAIL
+not seen (pass)
+END
+
+cat > xfail.test <<END
+XFAIL: xfail.test
+:test-result: SKIP
+:test-result: PASS
+not seen (xfail)
+END
+
+TESTS='pass.test skip.test xfail.test' $MAKE -e check \
+  || { cat test-suite.log; Exit 1; }
+cat test-suite.log
+grep '^SKIP: skip\.test$' test-suite.log
+$EGREP ':test-result:|not seen' test-suite.log && Exit 1
+
+:

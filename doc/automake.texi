@@ -319,8 +319,22 @@ Support for test suites
 
 * Simple Tests::                Listing programs and scripts in @code{TESTS}
 * Simple Tests using parallel-tests::  More powerful test driver
+* Custom Test Drivers::         Writing and using custom test drivers
 * DejaGnu Tests::               Interfacing with the external testing framework
 * Install Tests::               Running tests on installed packages
+
+Custom Test Drivers
+
+* Overview of Custom Test Drivers Support::
+* Declaring Custom Test Drivers::
+* API for Custom Test Drivers::
+
+API for Custom Test Drivers
+
+* Command-line arguments for test drivers::
+* Log files generation and test results recording::
+* Testsuite progress output::
+* HTML generation from testsuite logs::
 
 Changing Automake's Behavior
 
@@ -8641,6 +8655,7 @@ are very similar.
 @menu
 * Simple Tests::                Listing programs and scripts in @code{TESTS}
 * Simple Tests using parallel-tests::  More powerful test driver
+* Custom Test Drivers::         Writing and using custom test drivers
 * DejaGnu Tests::               Interfacing with the external testing framework
 * Install Tests::               Running tests on installed packages
 @end menu
@@ -8670,7 +8685,9 @@ given test program exits with a status of 77, then its result is ignored
 in the final count.  This feature allows non-portable tests to be
 ignored in environments where they don't make sense.
 
+@anchor{Simple tests and color-tests}
 @vindex AM_COLOR_TESTS
+@cindex Colorized testsuite output
 If the Automake option @code{color-tests} is used (@pxref{Options})
 and standard output is connected to a capable terminal, then the test
 results and the summary are colored appropriately.  The user can disable
@@ -8699,10 +8716,12 @@ TESTS_ENVIRONMENT = $(PERL) -Mstrict -w
 TESTS = foo.pl bar.pl baz.pl
 @end example
 
-Note that the @option{parallel-tests} driver provides a more elegant
-way to achieve the same effect, freeing the @code{TESTS_ENVIRONMENT}
-variable for the user to override (@pxref{Simple Tests using
-parallel-tests}).
+It's important to note that this last use of @code{TESTS_ENVIRONMENT}
+is invalid when the @option{parallel-tests} option is active; however,
+the @option{parallel-tests} driver provides a more elegant way to
+achieve the same effect, with the further benefit of freeing the
+@code{TESTS_ENVIRONMENT} variable for the user
+(@pxref{Simple Tests using parallel-tests}).
 
 
 @cindex Tests, expected failure
@@ -8747,7 +8766,9 @@ for exceptional failures.  Similar to the simple test driver,
 the @code{check_*} variables are honored, and the environment variable
 @env{srcdir} is set during test execution. Also, @code{TESTS_ENVIRONMENT}
 is still honored, but is complemented by a new developer-reserved variable
-@code{AM_TESTS_ENVIRONMENT} (described below).
+@code{AM_TESTS_ENVIRONMENT} (described below), and its allowed uses are
+somewhat restricted (other features of the @option{parallel-tests} driver
+compensate for this, though).
 
 This test driver is still experimental and may undergo changes in order
 to satisfy additional portability requirements.
@@ -8820,26 +8841,45 @@ and @samp{./wrapper-script -d baz} to produce @file{foo.log},
 but should be reserved for the user.
 
 @vindex AM_TESTS_ENVIRONMENT
-The @code{AM_TESTS_ENVIRONMENT} variable can be used to run initialization
-code and set environment variables for the tests' runs.  The user can
-still employ the @code{TESTS_ENVIRONMENT} variable to override settings
-from @code{AM_TESTS_ENVIRONMENT}; for that to work portably, however,
-the contents of a non-empty @code{AM_TESTS_ENVIRONMENT} @emph{must} be
-terminated by a semicolon.  Here is an example of a slightly elaborate
-definition:
+The @code{AM_TESTS_ENVIRONMENT} and @code{TESTS_ENVIRONMENT} variables can
+be used to run initialization code and set environment variables for the
+test scripts.  The former variable is developer-reserved, and can be
+defined in the @file{Makefile.am}, while the latter is reserved for the
+user, which can employ it to extend or override the settings in the
+former; for this to work portably, however, the contents of a non-empty
+@code{AM_TESTS_ENVIRONMENT} @emph{must} be terminated by a semicolon.
 
 @example
 AM_TESTS_ENVIRONMENT = \
 ## Some environment initializations are kept in a separate shell file
-## `tests-env.sh', which can make it easier to also run tests from the
-## command line.
+## `tests-env.sh', which can make it easier to also run tests from
+## the command line.
   . $(srcdir)/tests-env.sh; \
-## On Solaris, prefer more POSIX-compliant versions of the standard tools
-## by default.
+## On Solaris, prefer more POSIX-compliant versions of the standard
+## tools by default.
   if test -d /usr/xpg4/bin; then \
     PATH=/usr/xpg4/bin:$$PATH; export PATH; \
   fi;
 @c $$ restore font-lock
+@end example
+
+It's important to note that, differently from what we've seen for the
+serial testsuite driver (@pxref{Simple Tests using parallel-tests}), the
+@code{AM_TESTS_ENVIRONMENT} and @code{TESTS_ENVIRONMENT} variables
+@emph{cannot} be use to define a custom test driver; the
+@code{LOG_COMPILER} and @code{LOG_FLAGS} (or their extension-specific
+counterparts) should be used instead:
+
+@example
+## This is WRONG!
+AM_TESTS_ENVIRONMENT = PERL5LIB='$(srcdir)/lib' $(PERL) -Mstrict -w
+@end example
+
+@example
+## Do this instead.
+AM_TESTS_ENVIRONMENT = PERL5LIB='$(srcdir)/lib'; export PERL5LIB;
+LOG_COMPILER = $(PERL)
+AM_LOG_FLAGS = -Mstrict -w
 @end example
 
 @trindex mostlyclean
@@ -8984,6 +9024,306 @@ semantics of FreeBSD and OpenBSD @command{make} conflict with this).
 In case of doubt you may want to require to use GNU @command{make},
 or work around the issue with inference rules to generate the tests.
 
+@node Custom Test Drivers
+@section Custom Test Drivers
+
+@menu
+* Overview of Custom Test Drivers Support::
+* Declaring Custom Test Drivers::
+* API for Custom Test Drivers::
+@end menu
+
+@node Overview of Custom Test Drivers Support
+@subsection Overview of Custom Test Drivers Support
+
+Starting form Automake version 1.12, the @option{parallel-tests} harness
+allows the package authors to use third-party custom test drivers, in case
+the
+@c FIXME: this should become "default ones" once we have TAP and Subunit
+default one is inadequate for their purposes.
+@c FIXME: add this once we have TAP and Subunit
+@c "or do not support their testing protocol of choice."
+
+A custom test driver is expected to properly run the test programs
+passed to it, including the command-line arguments passed to it,
+to analyze their execution and outcome, to create the @file{.log}
+files associated to these test runs, and to display the test results
+on the console.  It is responsibility of the author of the test driver
+to ensure that it implements all the above steps meaningfully and
+correctly; Automake isn't and can't be of any help here.  On the other
+hand, the Automake-provided code for testsuite summary generation offers
+support for test drivers allowing several test results per test script,
+if they take care to register such results properly (@pxref{Log files
+generation and test results recording}).
+
+The exact details of how test scripts' results are to be determined and
+analyzed is left to the individual drivers.  Some drivers might only
+consider the test script exit status (this is done for example by the
+default test driver used by the @option{parallel-tests} harness, described
+in the previous section).  Other drivers might implement more complex and
+advanced test protocols, which might require them to parse and interpreter
+the output emitted by the test script they're running (examples of such
+protocols are TAP and SubUnit).
+
+It's very important to note that, even when using custom test drivers,
+most of the @option{parallel-tests} infrastructure described in the
+previous section remains in place; this includes:
+
+@itemize
+@item
+concurrency through the use of  @command{make}'s option @option{-j};
+@item
+per-test @file{.log} files, and generation of a summary @file{.log}
+file from them;
+@item
+@code{recheck} target and lazy reruns of tests;
+@item
+inter-test dependencies;
+@item
+support for @code{check_*} variables (@code{check_PROGRAMS},
+@code{check_LIBRARIES}, ...);
+@item
+use of @code{VERBOSE} environment variable to get verbose output on
+testsuite failures;
+@item
+definition and honoring of @code{TESTS_ENVIRONMENT} and
+@code{AM_TESTS_ENVIRONMENT} variables;
+@item
+definition of generic and extension-specific @code{LOG_COMPILER} and
+@code{LOG_FLAGS} variables.
+@end itemize
+
+@noindent
+On the other hand, the exact semantics of how (and if)
+@option{color-tests}, @code{XFAIL_TESTS}, and hard errors are supported
+and handled is left to the individual test drivers.
+
+@c TODO: We should really add a working example in the doc/ directory,
+@c TODO: and reference if from here.
+
+@node Declaring Custom Test Drivers
+@subsection Declaring Custom Test Drivers
+
+@vindex _LOG_DRIVER
+@vindex _LOG_DRIVER_FLAGS
+@vindex LOG_DRIVER
+@vindex LOG_DRIVER_FLAGS
+@vindex @var{ext}_LOG_DRIVER
+@vindex @var{ext}_LOG_DRIVER_FLAGS
+@vindex AM_@var{ext}_LOG_DRIVER_FLAGS
+@vindex AM_LOG_DRIVER_FLAGS
+Custom testsuite drivers are declared by defining the make variables
+@code{LOG_DRIVER} or @code{@var{ext}_LOG_DRIVER} (where @var{ext} must
+be declared in @code{TEST_EXTENSIONS}).  They must be defined to
+programs or scripts that will be used to drive the execution, logging,
+and outcome report of the tests with corresponding extensions (or of
+those with no registered extension in the case of @code{LOG_DRIVER}).
+Clearly, multiple distinct test drivers can be declared in the same
+@file{Makefile.am}.  Note moreover that the @code{LOG_DRIVER} variables
+are @emph{not} a substitute for the @code{LOG_COMPILER} variables: the
+two sets of variables can, and often do, usefully and legitimately
+coexist.
+
+@c TODO: We should really be able to point to a clarifying example here!
+
+The developer-reserved variable @code{AM_LOG_DRIVER_FLAGS} and the
+user-reserved variable @code{LOG_DRIVER_FLAGS} can be used to define
+flags that will be passed to each invocation of @code{LOG_DRIVER}
+(with the user-defined flags obviously taking precedence over the
+developer-reserved ones).  Similarly, for each extension @var{ext}
+declared in @code{TEST_EXTENSIONS}, flags listed in
+@code{AM_@var{ext}_LOG_DRIVER_FLAGS} and
+@code{@var{ext}_LOG_DRIVER_FLAGS} will be passed to
+invocations of @code{@var{ext}_LOG_DRIVER}.
+
+@node API for Custom Test Drivers
+@subsection API for Custom Test Drivers
+
+Note that @emph{the APIs described here are still somewhat experimental},
+and might undergo changes and tightenings in the future, to accommodate
+for new features or to satisfy additional portability requirements.
+
+The main characteristic of these APIs is that they are designed to share
+as much infrastructure, semantics, and implementation details as possible
+with the @option{parallel-tests} harness and its default driver.  So
+everything said in the previous section should apply here too, unless
+explicitly stated otherwise.
+
+@menu
+* Command-line arguments for test drivers::
+* Log files generation and test results recording::
+* Testsuite progress output::
+* HTML generation from testsuite logs::
+@end menu
+
+@node Command-line arguments for test drivers
+@subsubsection Command-line arguments for test drivers
+
+A custom driver can rely on various command-line options and arguments
+being passed to it automatically by the Automake's @option{parallel-tests}
+harness.  It is @emph{mandatory} that it understands all of them (even
+if the exact interpretation of the associated semantics can legitimately
+change between a test driver and another, and even be a no-op in some
+drivers).
+
+@noindent
+Here is the list of options:
+
+@table @option
+@item --test-name=@var{NAME}
+The name of the test, with VPATH prefix (if any) removed.  This can have a
+suffix and a directory component (as in e.g., @file{sub/foo.test}), and is
+mostly meant to be used in console reports about testsuite advancements and
+results (@pxref{Testsuite progress output}).
+@item --log-file=@var{PATH}
+The log file the test driver must create.  If it has a directory component
+(as in e.g., @file{sub/foo.log}), the Automake harness will ensure that
+such directory exist @emph{before} the test driver is called.
+@item --color-tests=@{yes|no@}
+Whether the console output should be colorized or not (@pxref{Simple
+tests and color-tests}, to learn when this option gets activated and
+when it doesn't).
+@item --expect-failure=@{yes|no@}
+Whether the tested program is expected to fail.
+@item --enable-hard-errors=@{yes|no@}
+Whether ``hard errors'' in the tested program should be treated differently
+from normal failures or not (the default should be @code{yes}).  The exact
+meaning of ``hard error'' is highly dependent from the test protocols or
+conventions in use.
+@item --
+Explicitly terminate the list of options.
+@end table
+
+The first of the remaining arguments passed to the test driver is the
+program to be run, and the other arguments are command-line options
+and arguments for this program.
+
+Note that the exact semantics attached to the @option{--color-tests},
+@option{--expect-failure} and @option{--enable-hard-errors} options are
+left up to the individual test drivers.  Still, having a behaviour
+compatible or at least similar to that provided by the default
+@option{parallel-tests} driver is advised, as that would offer a better
+consistency and a more pleasant user experience.
+
+@node Log files generation and test results recording
+@subsubsection Log files generation and test results recording
+
+The test driver must correctly generate the file specified by the
+@option{--log-file} option (of course even when the tested program
+fails or crashes).  This file is quite free-form, but still it has
+to conform to the following conventions, in order to work with the
+@option{parallel-tests} harness and take advantage of its features.
+
+@itemize @bullet
+@item
+@cindex Global test script result
+@cindex Test result, global
+The @emph{global test result} for the whole test script must be placed
+in the first line of the @file{.log} file.
+@c The following semantics is checked by tests 'test-driver-recheck.test'
+@c and 'test-driver-global-log.test'.  Please keep them in sync whenever
+@c the following is changed.
+If this line does not begin with either @code{PASS:}, @code{XFAIL:} or
+@code{SKIP:}, the test script will be considered failed, and it will be
+re-run by @code{make recheck}.  Also, if this line does not begin with
+either @code{PASS:} or @code{XFAIL:}, the content of the @file{.log} file
+will be copied into the global @file{test-suite.log} (in order to help in
+debugging and bug-report analysis).
+
+@item
+@cindex Single test case result
+@cindex Test result, single
+@cindex @code{:test-result:} reStructuredText field
+@cindex  reStructuredText field, @code{:test-result:}
+One of the main features of the new testsuite harness is the ability to
+support test protocols that allow a single test script to run more
+test cases, @emph{each with its distinct result}.  In order for the
+testsuite summary to be correct in this case, the test driver must
+register @emph{each} such result in the generated @file{.log} file, using
+the @code{:test-result:} reStructuredText field.  Otherwise, only the
+global test result will be considered (as it is the case of the default
+@option{parallel-tests} driver).
+
+@c Keep this in sync with lib/am/check-am:$(TEST_SUITE_LOG).
+The only recognized test results are currently @code{PASS}, @code{XFAIL},
+@code{SKIP}, @code{FAIL} and @code{XPASS}.  These results, when declared
+with @code{:test-result:}, can be optionally followed by text holding
+the name and/or a brief description of the corresponding test; the
+@option{parallel-tests} harness will ignore such extra text when
+generating @file{test-suite.log} and preparing the testsuite summary.
+
+For example, if a @file{.log} file contains the following lines:
+
+@example
+:test-result: PASS server starts
+:test-result: PASS HTTP/1.1 request
+:test-result: FAIL HTTP/1.0 request
+:test-result: SKIP HTTPS request (TLS library wasn't available)
+:test-result: PASS server stops
+@end example
+
+@noindent
+it means that the corresponding test script contributes with five test
+results to the testsuite summary (three of these tests being successful,
+one failed, and one skipped).
+
+@c FIXME: currently, the @code{:test-result:} field is recognized anywhere
+@c in the @file{.log} file; this is possibly prone to generating spurious
+@c results, in case of verbose tests.  We should allow a special
+@c @code{:test-result:} that stops any further parsing (maybe a line
+@c @code{:test-result:END} will do?).
+
+@end itemize
+
+Finally, note that the declaration of the global test result in the first
+line, apart from being needed for backward-compatibility with the default
+@option{parallel-tests} driver, can be useful also for test protocols
+that allow more test results per test script: using it, a custom test
+driver is allowed to decide what the global outcome of the test script
+is in case of conflicting test results within the script.  For example,
+if a test script reports 8 successful test cases and 2 skipped test
+cases, some drivers might report that globally as a SKIP, while others
+as a PASS.
+
+@node Testsuite progress output
+@subsubsection Testsuite progress output
+
+A custom test driver also has the task of displaying, on the standard
+output, the test results as soon as they become available.  Depending on
+the protocol in use, it can also display the reasons for failures and
+skips, and, more generally, any useful diagnostic output (but remember
+that each line on the screen is precious, so that cluttering the screen
+with overly verbose information is bad idea).  The exact format of this
+progress output is left up to the test driver; in fact, a custom test
+driver might @emph{theoretically} even decide not to do any such report,
+leaving it all to the testsuite summary (that would be a very lousy idea,
+of course, and serves only to illustrate the flexibility that is
+granted here).
+
+Remember that consistency is good; so, if possible, try to be consistent
+with the output of the built-in Automake test drivers, providing a similar
+``look & feel''.  In particular, the testsuite progress output should be
+colorized when the @option{--color-tests} is passed to the driver.  On the
+other end, if you are using a known and widespread test protocol with
+well-established implementations, being consistent with those
+implementations' output might be a good idea too.
+
+@c TODO: Give an example, maybe inspired to py.test-style output.
+@c TODO: That is a good idea because it shows a test driver that allows
+@c TODO: for different levels of verbosity in the progress output (could
+@c TODO: be implemented either using a driver cmdline flag, or an
+@c TODO: environment variable, or both).
+
+@node HTML generation from testsuite logs
+@subsubsection HTML generation from testsuite logs
+
+If HTML testsuite output (with @code{check-html}) is to be supported,
+the generated @file{.log} files must contain syntactically valid
+reStructuredText (among the other things, this means that every
+@code{:test-result:} line must be followed by a blank line).  If this
+is not the case, the HTML generation will not work, although all the
+other functionalities of the Automake testsuite harness should remain
+untouched, and continue to work correctly.
 
 @node DejaGnu Tests
 @section DejaGnu Tests
@@ -9240,8 +9580,10 @@ in the first few lines of the @file{NEWS} file.
 @item @option{color-tests}
 @cindex Option, @option{color-tests}
 @opindex color-tests
-Cause output of the simple test suite (@pxref{Simple Tests}) to be
-colorized on capable terminals.
+Cause output of the simple and parallel test suites (see @ref{Simple Tests}
+and @ref{Simple Tests using parallel-tests}) and of properly-written custom
+test drivers (@pxref{Custom Test Drivers}) to be colorized on capable
+terminals.
 
 @item @option{dejagnu}
 @cindex Option, @option{dejagnu}

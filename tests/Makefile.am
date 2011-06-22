@@ -738,6 +738,10 @@ test-driver-custom-multitest-recheck.test \
 test-driver-custom-multitest-recheck2.test \
 test-driver-custom-html.test \
 test-driver-custom-no-html.test \
+test-driver-create-log-dir.test \
+test-driver-global-log.test \
+test-driver-recheck.test \
+test-driver-strip-vpath.test \
 test-driver-fail.test \
 parse.test \
 percent.test \
