@@ -176,6 +176,7 @@ autodist-acconfig-no-subdir.test \
 autodist-aclocal-m4.test \
 autodist-config-headers.test \
 autodist-configure-no-subdir.test \
+autodist-no-duplicate.test \
 autodist-stamp-vti.test \
 autohdr.test \
 autohdr2.test \
