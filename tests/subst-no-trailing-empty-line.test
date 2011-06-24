@@ -23,16 +23,19 @@
 
 . ./defs || Exit 1
 
+# These are deliberately quite long, so that the xxx_PROGRAMS definition
+# in Makefile.am below will be split on multiple lines, with the last
+# line containing only @substituted@ stuff that expands to empty (this is
+# required to expose the bug we are testing).
 v1=ABCDEFGHIJKLMNOPQRSTUVWX
 v2=ABCDEFGHIJKLMNOPQRSTUVWXY
 v3=ABCDEFGHIJKLMNOPQRSTUVWXYZ
-bs='\\' # Literal backslash for grep.
+
+# Literal backslash for use by grep.
+bs='\\'
 
 cat >> configure.in <<END
 AC_SUBST([A], [''])
-# These are deliberately quite long, so that the xxx_PROGRAMS definition
-# in Makefile.am below will be split on multiple lines, with the last
-# line
 AC_SUBST([$v1], [''])
 AC_SUBST([$v2], [''])
 AC_SUBST([$v3], [''])
@@ -61,7 +64,8 @@ END
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
-$EGREP -n 'ABCD|am__empty' Makefile.in # For debugging,
+# For debugging.
+$EGREP -n 'ABCD|am__empty' Makefile.in
 # Sanity check.
 test `$EGREP -c "^[ $tab]*@$v2@ @$v3@[ $tab]*$bs?$" Makefile.in` -eq 2
 
