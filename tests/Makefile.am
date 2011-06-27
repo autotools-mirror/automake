@@ -214,6 +214,7 @@ autodist-acconfig-no-subdir.test \
 autodist-aclocal-m4.test \
 autodist-config-headers.test \
 autodist-configure-no-subdir.test \
+autodist-no-duplicate.test \
 autodist-stamp-vti.test \
 autohdr.test \
 autohdr2.test \
@@ -1009,6 +1010,7 @@ tar3.test \
 target-cflags.test \
 targetclash.test \
 tests-environment-fd-redirect.test \
+tests-environment-and-log-compiler.test \
 txinfo.test \
 txinfo2.test \
 txinfo3.test \
