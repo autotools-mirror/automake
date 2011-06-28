@@ -19,7 +19,6 @@
 # - clean
 # - TEST_SUITE_LOG
 # - dependencies between tests
-# - DISABLE_HARD_ERRORS
 # - TESTS
 # - TEST_LOGS
 # - RECHECK_LOGS
@@ -66,12 +65,13 @@ $AUTOCONF
 $AUTOMAKE -a
 
 ./configure
-# No hard errors: all tests should be run, there should be one failure.
-env DISABLE_HARD_ERRORS=yes $MAKE -e check >stdout && { cat stdout; Exit 1; }
+
+$MAKE check >stdout && { cat stdout; Exit 1; }
 cat stdout
-test `grep -c '^FAIL' stdout` -eq 1
+# There should be two errors: bar.test is a hard error.
+test `grep -c '^FAIL' stdout` -eq 2
 test -f mylog.log
-test `grep -c '^FAIL' mylog.log` -eq 1
+test `grep -c '^FAIL' mylog.log` -eq 2
 test -f baz.log
 test -f bar.log
 test -f foo.log
@@ -87,19 +87,11 @@ test ! -f foo.log
 test ! -f mylog.log
 test -f unrelated.log
 
-$MAKE clean
-$MAKE check >stdout && { cat stdout; Exit 1; }
-cat stdout
-# Now, there should be two errors: bar.test is a hard error.
-test `grep -c '^FAIL' stdout` -eq 2
-test `grep -c '^FAIL' mylog.log` -eq 2
-
 # Check dependencies: baz.test needs to run before bar.test,
 # but foo.test is not needed.
 # Note that this usage has a problem: the summary will only
 # take bar.log into account, because the $(TEST_SUITE_LOG) rule
 # does not "see" baz.log.  Hmm.
-$MAKE clean
 env TESTS='bar.test' $MAKE -e check && Exit 1
 test -f baz.log
 test -f bar.log
