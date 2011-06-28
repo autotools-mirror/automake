@@ -8323,6 +8323,50 @@ sub generate_makefile ($$)
 
 ################################################################
 
+# Helper function for usage().
+sub print_autodist_files (@)
+{
+  my @lcomm = sort (&uniq (@_));
+
+  my @four;
+  format USAGE_FORMAT =
+  @<<<<<<<<<<<<<<<<   @<<<<<<<<<<<<<<<<   @<<<<<<<<<<<<<<<<   @<<<<<<<<<<<<<<<<
+  $four[0],           $four[1],           $four[2],           $four[3]
+.
+  local $~ = "USAGE_FORMAT";
+
+  my $cols = 4;
+  my $rows = int(@lcomm / $cols);
+  my $rest = @lcomm % $cols;
+
+  if ($rest)
+    {
+      $rows++;
+    }
+  else
+    {
+      $rest = $cols;
+    }
+
+  for (my $y = 0; $y < $rows; $y++)
+    {
+      @four = ("", "", "", "");
+      for (my $x = 0; $x < $cols; $x++)
+        {
+          last if $y + 1 == $rows && $x == $rest;
+
+          my $idx = (($x > $rest)
+               ?  ($rows * $rest + ($rows - 1) * ($x - $rest))
+               : ($rows * $x));
+
+          $idx += $y;
+          $four[$x] = $lcomm[$idx];
+        }
+      write;
+    }
+}
+
+
 # Print usage information.
 sub usage ()
 {
@@ -8356,51 +8400,12 @@ Library files:
 ";
     Automake::ChannelDefs::usage;
 
-    my ($last, @lcomm);
-    $last = '';
-    foreach my $iter (sort ((@common_files, @common_sometimes)))
-    {
-	push (@lcomm, $iter) unless $iter eq $last;
-	$last = $iter;
-    }
-
-    my @four;
-    print "\nFiles which are automatically distributed, if found:\n";
-    format USAGE_FORMAT =
-  @<<<<<<<<<<<<<<<<   @<<<<<<<<<<<<<<<<   @<<<<<<<<<<<<<<<<   @<<<<<<<<<<<<<<<<
-  $four[0],           $four[1],           $four[2],           $four[3]
-.
-    $~ = "USAGE_FORMAT";
-
-    my $cols = 4;
-    my $rows = int(@lcomm / $cols);
-    my $rest = @lcomm % $cols;
-
-    if ($rest)
-    {
-	$rows++;
-    }
-    else
-    {
-	$rest = $cols;
-    }
-
-    for (my $y = 0; $y < $rows; $y++)
-    {
-	@four = ("", "", "", "");
-	for (my $x = 0; $x < $cols; $x++)
-	{
-	    last if $y + 1 == $rows && $x == $rest;
-
-	    my $idx = (($x > $rest)
-		       ?  ($rows * $rest + ($rows - 1) * ($x - $rest))
-		       : ($rows * $x));
-
-	    $idx += $y;
-	    $four[$x] = $lcomm[$idx];
-	}
-	write;
-    }
+    print "\nFiles automatically distributed if found " .
+          "(always):\n";
+    print_autodist_files @common_files;
+    print "\nFiles automatically distributed if found " .
+          "(under certain conditions):\n";
+    print_autodist_files @common_sometimes;
 
     print '
 Report bugs to <@PACKAGE_BUGREPORT@>.
