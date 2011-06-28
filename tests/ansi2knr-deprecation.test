@@ -1,0 +1,69 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check that the use of automatic de-ANSI-fication feature is deprecated.
+# That feature will be removed in the next major Automake release.
+
+. ./defs || Exit 1
+
+set -e
+
+warn_rx='automatic de-ANSI-fication.*deprecated'
+
+cat >> configure.in <<'END'
+AC_PROG_CC
+AM_C_PROTOTYPES
+END
+
+$ACLOCAL
+
+$AUTOCONF -Wall -Werror -Wno-obsolete
+$AUTOCONF -Wnone -Wobsolete -Werror 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+grep "^configure\\.in:5:.* AM_C_PROTOTYPES:.*$warn_rx" stderr
+
+sed '/AM_C_PROTOTYPES/d' configure.in > config.stub
+diff configure.in config.stub && fatal_ "failed to edit configure.in"
+rm -f configure.in
+
+cat > Makefile.stub <<'END'
+ANSI2KNR = :
+U =
+END
+
+for opt in ansi2knr lib/ansi2knr; do
+  # ansi2knr option in Makefile.am
+  cp config.stub configure.in
+  cp Makefile.stub Makefile.am
+  echo "AUTOMAKE_OPTIONS = $opt" >> Makefile.am
+  cat Makefile.am # For debugging.
+  $AUTOMAKE -Wno-obsolete
+  AUTOMAKE_fails
+  grep "^Makefile\.am:3:.*$warn_rx" stderr
+  AUTOMAKE_fails -Wnone -Wobsolete
+  grep "^Makefile\.am:3:.*$warn_rx" stderr
+  # ansi2knr option in configure.in
+  cp Makefile.stub Makefile.am
+  sed "s|^\\(AM_INIT_AUTOMAKE\\).*|\1([$opt])|" config.stub > configure.in
+  cat configure.in # For debugging.
+  $AUTOMAKE -Wno-obsolete
+  AUTOMAKE_fails
+  grep "^configure\.in:2:.*$warn_rx" stderr
+  AUTOMAKE_fails -Wnone -Wobsolete
+  grep "^configure\.in:2:.*$warn_rx" stderr
+done
+
+:
