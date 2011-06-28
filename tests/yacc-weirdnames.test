@@ -49,8 +49,29 @@ $AUTOMAKE -a
 $EGREP '(\.[ch]|parse)' Makefile.in # For debugging.
 
 # All expected files should be mentioned in the generated Makefile.in.
-for s in $outputs; do
-  $FGREP $s Makefile.in
-done
+for f in $outputs; do $FGREP $f Makefile.in; done
+
+$AUTOCONF
+# Skip the rest of the test in case of missing Yacc or C/C++ compiler.
+./configure || Exit 77
+
+cat > parse.y.y <<'END'
+%{
+int yylex (void) { return 0; }
+void yyerror (const char *s) { return; }
+%}
+%%
+x : 'x' { };
+%%
+int main (void) { return 0; }
+END
+cp parse.y.y parse.s.f..y
+cp parse.y.y parse..5.y++
+cp parse.y.y parse.yxx.yy
+
+$MAKE || { ls -l; Exit 1; }
+ls -l
+# All expected files should be created.
+for f in $outputs; do test -f $f; done
 
 :

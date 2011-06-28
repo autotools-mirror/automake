@@ -171,10 +171,17 @@ for try in 0 1; do
     Exit 99
   fi
 
+  do_make ()
+  {
+    st=0
+    $run_make $* || st=$?
+    $debug_info
+    test $st -eq 0 || Exit $?
+  }
+
   $srcdir/configure
 
-  $run_make
-  $debug_info
+  do_make
 
   test -f p.c
   test -f p.h
@@ -192,13 +199,11 @@ for try in 0 1; do
 
   # Minimal checks about recovering from header removal.
   rm -f p.h parse.hh parse3.hxx
-  $run_make p.h parse.hh
-  $debug_info
+  do_make p.h parse.hh
   test -f p.h
   test -f parse.hh
   test ! -r parse3.hxx
-  $run_make
-  $debug_info
+  do_make
   test -f parse3.hxx
 
   cd $srcdir

@@ -98,29 +98,37 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
+do_make ()
+{
+  st=0
+  $MAKE $* || st=$?
+  ls -l
+  test $st -eq 0 || Exit $st
+}
+
 ./configure
-$MAKE
+do_make
 
 headers='parse1.h p2-parse2.h parse3.h parse4.h'
 
 # Check that we remake only the necessary headers.
 
 rm -f $headers
-$MAKE parse1.h
+do_make parse1.h
 test -f parse1.h
 test ! -r p2-parse2.h
 test ! -r parse3.h
 test ! -r parse4.h
 
 rm -f $headers
-$MAKE p2-parse2.h
+do_make p2-parse2.h
 test ! -r parse1.h
 test -f p2-parse2.h
 test ! -r parse3.h
 test ! -r parse4.h
 
 rm -f $headers
-$MAKE parse3.h
+do_make parse3.h
 test ! -r parse1.h
 test ! -r p2-parse2.h
 test -f parse3.h
@@ -128,15 +136,15 @@ test ! -r parse4.h
 # Since we declared parse3.h into $(p3_SOURCES), make should be
 # able to rebuild it automatically before remaking `p3'.
 rm -f $headers
-$MAKE clean-p3
+do_make clean-p3
 test ! -f parse3.h # Sanity check.
-$MAKE build-p3
+do_make build-p3
 test -f parse3.h
 
-$MAKE
+do_make
 
 rm -f $headers
-$MAKE parse4.h
+do_make parse4.h
 test ! -r parse1.h
 test ! -r p2-parse2.h
 test ! -r parse3.h
@@ -145,7 +153,7 @@ test -f parse4.h
 # Now remake all the headers together.
 
 rm -f $headers
-$MAKE $headers
+do_make $headers
 test -f parse1.h
 test -f p2-parse2.h
 test -f parse3.h
@@ -154,7 +162,7 @@ test -f parse4.h
 # Most headers should be remade by "make all".
 
 rm -f $headers
-$MAKE all
+do_make all
 test -f parse1.h
 test -f p2-parse2.h
 test -f parse3.h

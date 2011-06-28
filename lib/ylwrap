@@ -1,7 +1,7 @@
 #! /bin/sh
 # ylwrap - wrapper for lex/yacc invocations.
 
-scriptversion=2011-05-05.12; # UTC
+scriptversion=2011-07-01.18; # UTC
 
 # Copyright (C) 1996, 1997, 1998, 1999, 2001, 2002, 2003, 2004, 2005,
 # 2007, 2009, 2010, 2011 Free Software Foundation, Inc.
@@ -148,7 +148,7 @@ ylwrap: Wrapper for lex/yacc invocations, renaming files as desired.
 Usage:
   ylwrap {--help|--version}
 or:
-  ylwrap --yacc YACC-EXTENSION INPUT [--] PROGRAM [ARGS]...
+  ylwrap --yacc INPUT C-OUTPUT [--] PROGRAM [ARGS]...
 or:
   ylwrap --lex LEX-OUTPUT-ROOT INPUT OUTPUT [--] PROGRAM [ARGS]...
 
@@ -164,14 +164,12 @@ EOF
     wrapped=yacc
     shift
     case $# in
-      0) usage_error "missing yacc extension";;
-      1) usage_error "missing input file";;
-      2) usage_error "missing output file";;
+      0) usage_error "missing input file";;
+      1) usage_error "missing output file";;
     esac
-    y_ext=`expr x"$1" : x'\.\(.*\)'`
-    input=$2
-    output=$3
-    shift 3
+    input=$1
+    output=$2
+    shift 2
     ;;
   --lex)
     wrapped=lex
@@ -250,9 +248,9 @@ input_rx=`quote_for_sed "$input_dir"`
 
 case $wrapped in
   yacc)
-    c_ext=`echo $y_ext | tr 'y' 'c'`
-    h_ext=`echo $y_ext | tr 'y' 'h'`
-    output_stem=`echo "$output" | sed "s/\\\\.$c_ext$//"`
+    output_stem=`echo "$output" | sed "s/\\\\.[^.]*$//"`
+    c_ext=`expr ."$output" : ".*\\\\.\\\\([^.]*\\\\)$"`
+    h_ext=`echo $c_ext | tr 'c' 'h'`
     tempfile_deploy $y_tab_c $output_stem.$c_ext
     # If the `-d' option is not used, we don't want an error when the
     # header file is "missing".  Similarly, if `-v' is not used, we

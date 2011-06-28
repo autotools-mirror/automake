@@ -41,12 +41,14 @@ for mold in _ __ _++ _xx _pp; do
     y=`echo $mold | sed 's/_/y/g'`
     c=`echo $mold | sed 's/_/c/g'`
     h=`echo $mold | sed 's/_/h/g'`
-    $SHELL -x ../ylwrap --yacc .$y x.$y x.$c fake-yacc -$opts
-    ls -l # For debugging.
-    ls y.* && Exit 1
-    test -f x.$c
-    case $opts in *d*) test -f x.$h;; *) :;; esac
-    case $opts in *v*) test -f x.output;; *) :;; esac
+    for infile in $x.$y $x.y foo; do
+      $SHELL -x ../ylwrap --yacc $infile x.$c fake-yacc -$opts
+      ls -l # For debugging.
+      ls y.* && Exit 1
+      test -f x.$c
+      case $opts in *d*) test -f x.$h;; *) test ! -f x.$h;; esac
+      case $opts in *v*) test -f x.output;; *) test ! -f x.output;; esac
+    done
     cd ..
   done
 done
