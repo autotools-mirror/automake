@@ -91,6 +91,7 @@ amassign.test \
 ammissing.test \
 amopt.test \
 amsubst.test \
+ansi2knr-deprecation.test \
 ansi.test \
 ansi2.test \
 ansi3.test \
@@ -114,6 +115,7 @@ autodist-acconfig-no-subdir.test \
 autodist-aclocal-m4.test \
 autodist-config-headers.test \
 autodist-configure-no-subdir.test \
+autodist-no-duplicate.test \
 autodist-stamp-vti.test \
 autohdr.test \
 autohdr2.test \
@@ -603,8 +605,12 @@ parallel-tests7.test \
 parallel-tests8.test \
 parallel-tests9.test \
 parallel-tests10.test \
+parallel-tests-harderror.test \
 parallel-tests-unreadable-log.test \
 parallel-tests-subdir.test \
+parallel-tests-log-override-1.test \
+parallel-tests-log-override-2.test \
+parallel-tests-log-override-recheck.test \
 parse.test \
 percent.test \
 percent2.test \
