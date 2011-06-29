@@ -345,13 +345,23 @@ cscope cscopelist:
 $(TEST_SUITE_LOG): $(TEST_LOGS)
 	@$(am__sh_e_setup); \
 	rst_magic=":test-result:"; \
+	nlinit=`echo 'nl="'; echo '"'`; eval "$$nlinit"; unset nlinit; \
 	list='$(TEST_LOGS)'; \
 	list2=`for f in $$list; do test ! -r $$f || echo $$f; done`; \
 	results1=`for f in $$list; do test -r $$f || echo FAIL; done`; \
 	results2=''; \
-	if test -n "$$list2"; then \
-	  results2=`sed -n "s/^$$rst_magic[	 ]*//p" $$list2`; \
-	fi; \
+	exec 5<&0; \
+	for f in $$list2; do \
+	  exec 0<$$f; \
+	  while read line; do \
+	    case $$line in $$rst_magic*);; *) continue;; esac; \
+	    res=`expr "x$$line" : "x$$rst_magic[	 ]*\\\\(.*\\\\)$$"`; \
+	    case $$res in END*) break;; esac; \
+	    results2="$$results2$$nl$$res"; \
+	  done; \
+	  exec 0<&5; \
+	done; \
+	exec 5<&-; \
 	results=`echo "$$results1" && echo "$$results2"` \
 	all=`echo "$$results" | sed '/^$$/d' | wc -l | sed -e 's/^[	 ]*//'`; \
 	fail=`echo "$$results" | grep -c '^FAIL'`;			\

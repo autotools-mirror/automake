@@ -730,6 +730,8 @@ parallel-tests-log-override-2.test \
 parallel-tests-log-override-recheck.test \
 parallel-tests-empty-testlogs.test \
 parallel-test-driver-install.test \
+parallel-tests-no-spurious-summary.test \
+test-driver-end-test-results.test \
 test-driver-custom-no-extra-driver.test \
 test-driver-custom.test \
 test-driver-custom-xfail-tests.test \

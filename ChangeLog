@@ -1,3 +1,39 @@
+2011-07-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	parallel-tests: make parsing of test results safer
+	The new code for parsing the testsuite-generated `.log' files,
+	as introduced in commit `v1.11-872-gc96b881', considers each
+	`:test-result:' field anywhere in a `.log' file as a declaration
+	of a test result, and accounts for it as such in the testsuite
+	summary.  Unfortunately this could easily cause spurious test
+	failures being reported in the testsuite summary.  This happened
+	in practice with the Automake's own testsuite; for example:
+	  $ make check TESTS='check12-p.test'; echo exit: $?
+	  ...
+	  PASS: check12-p.test
+	  =====================================
+	  4 of 5 tests failed
+	  See tests/test-suite.log
+	  Please report to bug-automake@gnu.org
+	  =====================================
+	  make[2]: *** [test-suite.log] Error 1
+	  make: *** [check-am] Error 2
+	  exit: 2
+	This change introduces a new special `:test-result:' "END", that,
+	when seen, prevents the rest of the log file from being parsed.
+	For more information, refer to the thread:
+	<http://lists.gnu.org/archive/html/automake-patches/2011-06/msg00199.html>
+	* lib/am/check.am ($(TEST_SUITE_LOG)): Stop the parsing of a log
+	file as soon as the special ":test-result:END" directive is seen.
+	Related changes and enhancements.
+	* lib/test-driver: Protect the rest of the log after the result
+	lined with a ":test-result:END" directive.
+	* doc/automake.texi (Log files generation and test results
+	recording): Update, and related improvements.
+	* tests/parallel-tests-no-spurious-summary.test: New test.
+	* tests/test-driver-end-test-results.test: Likewise.
+	* tests/Makefile.am (TESTS): Update.
+
 2011-06-29  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
 	docs: document custom test drivers and protocols

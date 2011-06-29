@@ -145,17 +145,40 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 ## SubUnit, where a single test script can run multiple tests, each
 ## with its own outcome.
 	rst_magic=":test-result:"; \
+## The following line will define the `$nl' shell variable to a literal
+## newline.  Idiom taken from the Autoconf manual.
+	nlinit=`echo 'nl="'; echo '"'`; eval "$$nlinit"; unset nlinit; \
 ## All test logs.
 	list='$(TEST_LOGS)'; \
 ## Readable test logs.
 	list2=`for f in $$list; do test ! -r $$f || echo $$f; done`; \
 ## Each unreadable test log counts as a failed test.
 	results1=`for f in $$list; do test -r $$f || echo FAIL; done`; \
-## Extract the outcome of all the testcases from the test logs.
+## Now we're going to extract the outcome of all the testcases from the
+## test logs.
 	results2=''; \
-	if test -n "$$list2"; then \
-	  results2=`sed -n "s/^$$rst_magic[	 ]*//p" $$list2`; \
-	fi; \
+## Can't do the redirections directly in the "for" loop below, otherwise
+## some shells would run the loop body in a subshell.
+	exec 5<&0; \
+	for f in $$list2; do \
+	  exec 0<$$f; \
+	  while read line; do \
+## Ignore lines that do not declare test results.
+	    case $$line in $$rst_magic*);; *) continue;; esac; \
+## The test result declared by this line goes in $res.
+	    res=`expr "x$$line" : "x$$rst_magic[	 ]*\\\\(.*\\\\)$$"`; \
+## A special result of "END" means that the rest of the log is not to be
+## scanned.  Be a little lax in matching such special result, to allow
+## for e.g., trailing whitespace or punctuation.
+	    case $$res in END*) break;; esac; \
+## Otherwise register the result.
+	    results2="$$results2$$nl$$res"; \
+	  done; \
+## Restore original standard input.
+	  exec 0<&5; \
+	done; \
+## We don't need this anymore.
+	exec 5<&-; \
 ## Prepare the test suite summary.
 	results=`echo "$$results1" && echo "$$results2"` \
 	all=`echo "$$results" | sed '/^$$/d' | wc -l | sed -e 's/^[	 ]*//'`; \

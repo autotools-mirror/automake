@@ -9242,7 +9242,9 @@ testsuite summary to be correct in this case, the test driver must
 register @emph{each} such result in the generated @file{.log} file, using
 the @code{:test-result:} reStructuredText field.  Otherwise, only the
 global test result will be considered (as it is the case of the default
-@option{parallel-tests} driver).
+@option{parallel-tests} driver).  Note that such a field will be
+recognized only when used @emph{exactly} at the beginning of a line:
+leading whitespace will not be ignored.
 
 @c Keep this in sync with lib/am/check-am:$(TEST_SUITE_LOG).
 The only recognized test results are currently @code{PASS}, @code{XFAIL},
@@ -9251,8 +9253,15 @@ with @code{:test-result:}, can be optionally followed by text holding
 the name and/or a brief description of the corresponding test; the
 @option{parallel-tests} harness will ignore such extra text when
 generating @file{test-suite.log} and preparing the testsuite summary.
+Also, @code{:test-result:} can be used with a special ``pseudo-result''
+@code{END}, that will instruct the testsuite harness to stop scanning
+the rest of the log file (this feature is used internally by the default
+@option{parallel-tests} driver, and can be useful to avoid spurious
+testsuite results).
 
-For example, if a @file{.log} file contains the following lines:
+Let's see a small example.  If a @file{.log} file contains the following
+lines (exactly in this order, but possibly interleaved with other
+``non-@code{:test-results:}'' lines):
 
 @example
 :test-result: PASS server starts
@@ -9260,12 +9269,14 @@ For example, if a @file{.log} file contains the following lines:
 :test-result: FAIL HTTP/1.0 request
 :test-result: SKIP HTTPS request (TLS library wasn't available)
 :test-result: PASS server stops
+:test-result: END
+:test-result: XPASS (this shouldn't be parsed as a test result)
 @end example
 
 @noindent
-it means that the corresponding test script contributes with five test
-results to the testsuite summary (three of these tests being successful,
-one failed, and one skipped).
+it means that the corresponding test script contributes with @emph{five}
+test results to the testsuite summary (three of these tests being
+successful, one failed, and one skipped).
 
 @c FIXME: currently, the @code{:test-result:} field is recognized anywhere
 @c in the @file{.log} file; this is possibly prone to generating spurious
