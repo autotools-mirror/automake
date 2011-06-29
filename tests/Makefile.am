@@ -176,6 +176,7 @@ autodist-acconfig-no-subdir.test \
 autodist-aclocal-m4.test \
 autodist-config-headers.test \
 autodist-configure-no-subdir.test \
+autodist-no-duplicate.test \
 autodist-stamp-vti.test \
 autohdr.test \
 autohdr2.test \
@@ -723,6 +724,10 @@ parallel-tests-unreadable-log.test \
 parallel-tests-subdir.test \
 parallel-tests-interrupt.test \
 parallel-tests-reset-term.test \
+parallel-tests-harderror.test \
+parallel-tests-log-override-1.test \
+parallel-tests-log-override-2.test \
+parallel-tests-log-override-recheck.test \
 parallel-tests-empty-testlogs.test \
 parallel-test-driver-install.test \
 test-driver-custom-no-extra-driver.test \

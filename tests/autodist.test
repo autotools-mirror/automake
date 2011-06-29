@@ -23,15 +23,13 @@
 
 # Ensure we are run from the right directory.
 # (The last thing we want is to delete some random user files.)
-test -f ../defs-static
+test -f ../defs-static && test -f ../defs || Exit 99
 rm -f *
 
 cat > configure.in <<END
 AC_INIT([$me], [1.0])
 AC_CONFIG_AUX_DIR([.])
 AM_INIT_AUTOMAKE
-## Will avoid useless regeneration of aclocal.m4, configure, etc.
-AM_MAINTAINER_MODE
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 END
@@ -42,33 +40,8 @@ $AUTOCONF
 # The automake manual states that the list of automatically-distributed
 # files should be given by `automake --help'.
 list=`$AUTOMAKE --help \
-        | sed -n '/^Files .*automatically distributed.*if found/,/^ *$/p' \
+        | sed -n '/^Files.*automatically distributed.*if found.*always/,/^ *$/p' \
         | sed 1d`
-list=`for f in $list; do
-        case $f in
-          configure|configure.in|configure.ac)
-            # See test 'autodist-configure-no-subdir.test'.
-            ;;
-          aclocal.m4)
-            # This file should be distributed only when it is a real
-            # dependency for configure.  Anyway, not a check to be
-            # performed in this test.
-            ;;
-          acconfig.h)
-            # Works only when it really exists, not when it is a
-            # target in Makefile.am.
-            ;;
-          stamp-vti)
-            # Works only when using info_TEXINFOS and version.texi.
-            ;;
-          config.h.bot|config.h.top)
-            # Works only when the AC_CONFIG_HADERS macro is used.
-            ;;
-          *)
-            echo $f
-            ;;
-        esac
-      done`
 # Normalize whitespace, just in case.
 list=`echo $list`
 

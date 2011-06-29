@@ -84,7 +84,8 @@ section entitled ``GNU Free Documentation License.''
 @c Put the macros in the function index.
 @syncodeindex ac fn
 
-@c Put everything else into one index (arbitrarily chosen to be the concept index).
+@c Put everything else into one index (arbitrarily chosen to be the
+@c concept index).
 @syncodeindex op cp
 @syncodeindex tr cp
 @syncodeindex cm cp
@@ -3052,8 +3053,9 @@ this way, e.g., @code{AC_PATH_XTRA} defines @code{X_CFLAGS} and
 if @code{AC_PATH_XTRA} is called.
 
 @item AM_C_PROTOTYPES
-This is required when using the deprecated de-ANSI-fication feature; see
-@ref{ANSI}.  @emph{It will be removed} in the next major Automake release.
+This is required when using the deprecated de-ANSI-fication feature;
+@pxref{ANSI}.  @emph{It will be removed} in the next major Automake
+release.
 
 @item AM_CONDITIONAL
 This introduces an Automake conditional (@pxref{Conditionals}).
@@ -5871,8 +5873,8 @@ needs to be avoided: when a target should not be built from sources.
 We already saw such an example in @ref{true}; this happens when all
 the constituents of a target have already been compiled and just need
 to be combined using a @code{_LDADD} variable.  Then it is necessary
-to define an empty @code{_SOURCES} variable, so that @command{automake} does not
-compute a default.
+to define an empty @code{_SOURCES} variable, so that @command{automake}
+does not compute a default.
 
 @example
 bin_PROGRAMS = target
@@ -6855,8 +6857,9 @@ If no directory prefix is given, the files are assumed to be in the
 current directory.
 
 Note that automatic de-ANSI-fication will not work when the package is
-being built for a different host architecture.  That is because @command{automake}
-currently has no way to build @command{ansi2knr} for the build machine.
+being built for a different host architecture.  That is because
+@command{automake} currently has no way to build @command{ansi2knr}
+for the build machine.
 
 @c FIXME: this paragraph might be better moved to an `upgrading' section.
 @cindex @code{LTLIBOBJS} and @code{ansi2knr}
@@ -6950,10 +6953,10 @@ bin_PROGRAMS = liver$(EXEEXT)
 The targets Automake generates are likewise given the @samp{$(EXEEXT)}
 extension.
 
-The variables @code{TESTS} and @code{XFAIL_TESTS} (@pxref{Simple Tests}) are also
-rewritten if they contain filenames that have been declared as programs
-in the same @file{Makefile}.  (This is mostly useful when some programs
-from @code{check_PROGRAMS} are listed in @code{TESTS}.)
+The variables @code{TESTS} and @code{XFAIL_TESTS} (@pxref{Simple Tests})
+are also rewritten if they contain filenames that have been declared as
+programs in the same @file{Makefile}.  (This is mostly useful when some
+programs from @code{check_PROGRAMS} are listed in @code{TESTS}.)
 
 However, Automake cannot apply this rewriting to @command{configure}
 substitutions.  This means that if you are conditionally building a
@@ -8333,14 +8336,19 @@ is run.  The default setting is @option{--best}.
 @cmindex include
 For the most part, the files to distribute are automatically found by
 Automake: all source files are automatically included in a distribution,
-as are all @file{Makefile.am}s and @file{Makefile.in}s.  Automake also
+as are all @file{Makefile.am} and @file{Makefile.in} files.  Automake also
 has a built-in list of commonly used files that are automatically
 included if they are found in the current directory (either physically,
-or as the target of a @file{Makefile.am} rule).  This list is printed by
-@samp{automake --help}.  Also, files that are read by @command{configure}
+or as the target of a @file{Makefile.am} rule); this list is printed by
+@samp{automake --help}.  Note that some files in this list are actually
+distributed only if other certain conditions hold (for example,
+@c The following example is covered by autodist-config-headers.test.
+the @file{config.h.top} and @file{config.h.bot} files are automatically
+distributed only if, e.g., @samp{AC_CONFIG_HEADERS([config.h])} is used
+in @file{configure.ac}).  Also, files that are read by @command{configure}
 (i.e.@: the source files corresponding to the files specified in various
 Autoconf macros such as @code{AC_CONFIG_FILES} and siblings) are
-automatically distributed.  Files included in @file{Makefile.am}s (using
+automatically distributed.  Files included in a @file{Makefile.am} (using
 @code{include}) or in @file{configure.ac} (using @code{m4_include}), and
 helper scripts installed with @samp{automake --add-missing} are also
 distributed.
@@ -8700,10 +8708,10 @@ parallel-tests}).
 @cindex Tests, expected failure
 @cindex Expected test failure
 
+@vindex XFAIL_TESTS
 You may define the variable @code{XFAIL_TESTS} to a list of tests
 (usually a subset of @code{TESTS}) that are expected to fail.  This will
 reverse the result of those tests.
-@vindex XFAIL_TESTS
 
 Automake ensures that each file listed in @code{TESTS} is built before
 any tests are run; you can list both source and derived programs (or
@@ -8815,23 +8823,23 @@ but should be reserved for the user.
 The @code{AM_TESTS_ENVIRONMENT} variable can be used to run initialization
 code and set environment variables for the tests' runs.  The user can
 still employ the @code{TESTS_ENVIRONMENT} variable to override settings
-from @code{AM_TESTS_ENVIRONMENT}.  Note that, for implementation reasons,
-if the @code{AM_TESTS_ENVIRONMENT} variable is set, its contents
-@emph{must} be terminated by a semicolon.
+from @code{AM_TESTS_ENVIRONMENT}; for that to work portably, however,
+the contents of a non-empty @code{AM_TESTS_ENVIRONMENT} @emph{must} be
+terminated by a semicolon.  Here is an example of a slightly elaborate
+definition:
 
 @example
-# The tests below are expected to use the file descriptor passed in
-# the environment variable 'warn_fileno' to print warnings (e.g.,
-# about skipped and failed tests).  If this variable were to be set
-# to `2' (i.e. default stderr), the warnings would be redirected by
-# the automake parallel-tests driver into the .log files.  But the
-# AM_TESTS_ENVIRONMENT definition below will cause the reasons for
-# skip/failure to be printed to the console instead.  The user
-# can still override this by setting TESTS_ENVIRONMENT to e.g.
-# `warn_fileno=2' at make runtime, which will cause the warnings
-# to be sent to the .log files again.
-TESTS = test1.sh test2.sh ...
-AM_TESTS_ENVIRONMENT = exec 9>&2; warn_fileno=9; export warn_fileno;
+AM_TESTS_ENVIRONMENT = \
+## Some environment initializations are kept in a separate shell file
+## `tests-env.sh', which can make it easier to also run tests from the
+## command line.
+  . $(srcdir)/tests-env.sh; \
+## On Solaris, prefer more POSIX-compliant versions of the standard tools
+## by default.
+  if test -d /usr/xpg4/bin; then \
+    PATH=/usr/xpg4/bin:$$PATH; export PATH; \
+  fi;
+@c $$ restore font-lock
 @end example
 
 @trindex mostlyclean
@@ -8872,6 +8880,20 @@ use a command like this to run only a subset of the tests:
 env TESTS="foo.test bar.test" make -e check
 @end example
 
+Note however that the command above will unconditionally overwrite the
+@file{test-suite.log} file, thus clobbering the recorded results
+of any previous testsuite run.  This might be undesirable for packages
+whose testsuite takes long time to execute.  Luckily, this problem can
+easily be avoided by overriding also @code{TEST_SUITE_LOG} at runtime;
+for example,
+
+@example
+env TEST_SUITE_LOG=partial.log TESTS="..." make -e check
+@end example
+
+will write the result of the partial testsuite runs to the
+@file{partial.log}, without touching @file{test-suite.log}.
+
 @item
 You can set the @code{TEST_LOGS} variable.  By default, this variable is
 computed at @command{make} run time from the value of @code{TESTS} as
@@ -8881,6 +8903,9 @@ described above.  For example, you can use the following:
 set x subset*.log; shift
 env TEST_LOGS="foo.log $*" make -e check
 @end example
+
+The comments made above about @code{TEST_SUITE_LOG} overriding applies
+here too.
 
 @item
 @vindex RECHECK_LOGS
@@ -9196,7 +9221,7 @@ implies options @option{readme-alpha} and @option{check-news}.
 @itemx @option{@var{path}/ansi2knr}
 @cindex Option, @option{ansi2knr}
 @opindex ansi2knr
-Turn on the deprecated de-ANSI-fication feature (@xref{ANSI}).  Note
+Turn on the deprecated de-ANSI-fication feature (@pxref{ANSI}).  Note
 that that feature and this option @emph{will be removed} in the next
 major Automake release.
 
