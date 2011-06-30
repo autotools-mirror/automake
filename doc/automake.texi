@@ -8807,23 +8807,23 @@ but should be reserved for the user.
 The @code{AM_TESTS_ENVIRONMENT} variable can be used to run initialization
 code and set environment variables for the tests' runs.  The user can
 still employ the @code{TESTS_ENVIRONMENT} variable to override settings
-from @code{AM_TESTS_ENVIRONMENT}.  Note that, for implementation reasons,
-if the @code{AM_TESTS_ENVIRONMENT} variable is set, its contents
-@emph{must} be terminated by a semicolon.
+from @code{AM_TESTS_ENVIRONMENT}; for that to work portably, however,
+the contents of a non-empty @code{AM_TESTS_ENVIRONMENT} @emph{must} be
+terminated by a semicolon.  Here is an example of a slightly elaborate
+definition:
 
 @example
-# The tests below are expected to use the file descriptor passed in
-# the environment variable 'warn_fileno' to print warnings (e.g.,
-# about skipped and failed tests).  If this variable were to be set
-# to `2' (i.e. default stderr), the warnings would be redirected by
-# the automake parallel-tests driver into the .log files.  But the
-# AM_TESTS_ENVIRONMENT definition below will cause the reasons for
-# skip/failure to be printed to the console instead.  The user
-# can still override this by setting TESTS_ENVIRONMENT to e.g.
-# `warn_fileno=2' at make runtime, which will cause the warnings
-# to be sent to the .log files again.
-TESTS = test1.sh test2.sh ...
-AM_TESTS_ENVIRONMENT = exec 9>&2; warn_fileno=9; export warn_fileno;
+AM_TESTS_ENVIRONMENT = \
+## Some environment initializations are kept in a separate shell file
+## `tests-env.sh', which can make it easier to also run tests from the
+## command line.
+  . $(srcdir)/tests-env.sh; \
+## On Solaris, prefer more POSIX-compliant versions of the standard tools
+## by default.
+  if test -d /usr/xpg4/bin; then \
+    PATH=/usr/xpg4/bin:$$PATH; export PATH; \
+  fi;
+@c $$ restore font-lock
 @end example
 
 @trindex mostlyclean
