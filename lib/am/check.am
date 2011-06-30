@@ -66,7 +66,7 @@ include inst-vars.am
 ## appended.
 ##
 ## In addition to the magic "exit 77 means SKIP" feature (which was
-## imported from automake), there is a magic "exit 99 means FAIL" feature
+## imported from automake), there is a magic "exit 99 means ERROR" feature
 ## which is useful if you need to issue a hard error no matter whether the
 ## test is XFAIL or not.  You can disable this feature by setting the
 ## variable DISABLE_HARD_ERRORS to a nonempty value.
@@ -153,7 +153,7 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 ## Readable test logs.
 	list2=`for f in $$list; do test ! -r $$f || echo $$f; done`; \
 ## Each unreadable test log counts as a failed test.
-	results1=`for f in $$list; do test -r $$f || echo FAIL; done`; \
+	results1=`for f in $$list; do test -r $$f || echo ERROR; done`; \
 ## Now we're going to extract the outcome of all the testcases from the
 ## test logs.
 	results2=''; \
@@ -187,6 +187,10 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	skip=`echo "$$results" | grep -c '^SKIP'`;			\
 	xfail=`echo "$$results" | grep -c '^XFAIL'`;			\
 	xpass=`echo "$$results" | grep -c '^XPASS'`;			\
+	error=`echo "$$results" | grep -c '^ERROR'`;			\
+## FIXME: for the moment, we count errors as failures, otherwise the code
+## that displays the testsuite summary will become too complicated.
+	fail=`expr $$fail + $$error`;					\
 	failures=`expr $$fail + $$xpass`;				\
 	all=`expr $$all - $$skip`;					\
 	if test "$$all" -eq 1; then tests=test; All=;			\

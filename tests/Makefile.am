@@ -731,6 +731,8 @@ parallel-tests-log-override-recheck.test \
 parallel-tests-empty-testlogs.test \
 parallel-test-driver-install.test \
 parallel-tests-no-spurious-summary.test \
+parallel-tests-exit-statuses.test \
+parallel-tests-console-output.test \
 test-driver-end-test-results.test \
 test-driver-custom-no-extra-driver.test \
 test-driver-custom.test \

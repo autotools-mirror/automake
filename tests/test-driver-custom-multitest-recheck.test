@@ -49,7 +49,7 @@ echo PASS:
 if test -f b.ok; then
   echo PASS:
 else
-  echo FAIL:
+  echo ERROR:
 fi
 : > b.run
 END
@@ -97,14 +97,15 @@ do_recheck ()
 
 do_count ()
 {
-  pass=ERR fail=ERR xpass=ERR xfail=ERR skip=ERR
+  pass=ERR fail=ERR xpass=ERR xfail=ERR skip=ERR error=ERR
   eval "$@"
-  $EGREP '(PASS|FAIL|XPASS|XFAIL|SKIP)' stdout || : # For debugging.
+  $EGREP '(PASS|FAIL|XPASS|XFAIL|SKIP|ERROR)' stdout || : # For debugging.
   test `grep -c '^PASS:' stdout` -eq $pass
   test `grep -c '^FAIL:' stdout` -eq $fail
   test `grep -c '^XPASS:' stdout` -eq $xpass
   test `grep -c '^XFAIL:' stdout` -eq $xfail
   test `grep -c '^SKIP:' stdout` -eq $skip
+  test `grep -c '^ERROR:' stdout` -eq $error
 }
 
 for vpath in : false; do
@@ -129,7 +130,7 @@ for vpath in : false; do
   test ! -r c.log
   test ! -r d.run
   test ! -r d.log
-  do_count pass=0 fail=0 xpass=0 xfail=0 skip=0
+  do_count pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
 
   : Run the tests for the first time.
   $MAKE check >stdout && { cat stdout; Exit 1; }
@@ -140,7 +141,7 @@ for vpath in : false; do
   test -f b.run
   test -f c.run
   test -f d.run
-  do_count pass=3 fail=3 xpass=1 xfail=1 skip=1
+  do_count pass=3 fail=2 xpass=1 xfail=1 skip=1 error=1
 
   : Let us make b.test pass.
   echo OK > b.ok
@@ -151,7 +152,7 @@ for vpath in : false; do
   test -f b.run
   test -f c.run
   test -f d.run
-  do_count pass=2 fail=2 xpass=1 xfail=1 skip=1
+  do_count pass=2 fail=2 xpass=1 xfail=1 skip=1 error=0
 
   : Let us make the first part of c.test pass.
   echo OK > c.pass
@@ -160,7 +161,7 @@ for vpath in : false; do
   test ! -r b.run
   test -f c.run
   test -f d.run
-  do_count pass=1 fail=1 xpass=1 xfail=1 skip=1
+  do_count pass=1 fail=1 xpass=1 xfail=1 skip=1 error=0
 
   : Let us make also the second part of c.test pass.
   echo KO > c.xfail
@@ -169,7 +170,7 @@ for vpath in : false; do
   test ! -r b.run
   test -f c.run
   test -f d.run
-  do_count pass=1 fail=1 xpass=0 xfail=2 skip=1
+  do_count pass=1 fail=1 xpass=0 xfail=2 skip=1 error=0
 
   : Nothing changed, so only d.test should be run.
   for i in 1 2; do
@@ -178,7 +179,7 @@ for vpath in : false; do
     test ! -r b.run
     test ! -r c.run
     test -f d.run
-    do_count pass=0 fail=1 xpass=0 xfail=0 skip=1
+    do_count pass=0 fail=1 xpass=0 xfail=0 skip=1 error=0
   done
 
   : Let us make d.test run more testcases, and experience _more_ failures.
@@ -190,14 +191,16 @@ for vpath in : false; do
     echo XPASS: xp
     echo FAIL: f 3
     echo FAIL: f 4
+    echo ERROR: e 1
     echo PASS: p 2
+    echo ERROR: e 2
 END
   do_recheck --fail
   test ! -r a.run
   test ! -r b.run
   test ! -r c.run
   test -f d.run
-  do_count pass=2 fail=4 xpass=1 xfail=0 skip=2
+  do_count pass=2 fail=4 xpass=1 xfail=0 skip=2 error=2
 
   : Let us finally make d.test pass.
   echo : > d.extra
@@ -206,7 +209,7 @@ END
   test ! -r b.run
   test ! -r c.run
   test -f d.run
-  do_count pass=0 fail=0 xpass=0 xfail=0 skip=1
+  do_count pass=0 fail=0 xpass=0 xfail=0 skip=1 error=0
 
   : All tests have been successful or skipped, nothing should be re-run.
   do_recheck --pass
@@ -214,7 +217,7 @@ END
   test ! -r b.run
   test ! -r c.run
   test ! -r d.run
-  do_count pass=0 fail=0 xpass=0 xfail=0 skip=0
+  do_count pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
 
   cd $srcdir
 

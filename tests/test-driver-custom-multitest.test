@@ -40,7 +40,7 @@ TESTS = \
   pass-fail.t \
   pass4-skip.t \
   pass3-skip2-xfail.t \
-  pass-xpass-fail-xfail-skip.t
+  pass-xpass-fail-xfail-skip-error.t
 END
 
 expected_pass=10
@@ -48,6 +48,7 @@ expected_fail=5
 expected_skip=4
 expected_xfail=2
 expected_xpass=1
+expected_error=1
 
 cat > pass.t << 'END'
 echo %% pass %%
@@ -99,13 +100,14 @@ mv || echo "XFAIL: mv cannot read users' mind yet"
 exit 127
 END
 
-cat > pass-xpass-fail-xfail-skip.t << 'END'
+cat > pass-xpass-fail-xfail-skip-error.t << 'END'
 echo PASS:
 echo FAIL:
 echo XFAIL:
 echo XPASS:
 echo SKIP:
-echo %% pass-xpass-fail-xfail-skip %%
+echo ERROR:
+echo %% pass-xpass-fail-xfail-skip-error %%
 END
 
 chmod a+x *.t
@@ -139,25 +141,28 @@ for vpath in : false; do
   cat pass-fail.log
   cat pass4-skip.log
   cat pass3-skip2-xfail.log
-  cat pass-xpass-fail-xfail-skip.log
+  cat pass-xpass-fail-xfail-skip-error.log
   # For debugging.
-  $EGREP '(PASS|FAIL|XPASS|XFAIL|SKIP)' stdout
+  $EGREP '(PASS|FAIL|XPASS|XFAIL|SKIP|ERROR)' stdout
 
   test `grep -c '^PASS:' stdout` -eq $expected_pass
   test `grep -c '^FAIL:' stdout` -eq $expected_fail
   test `grep -c '^XPASS:' stdout` -eq $expected_xpass
   test `grep -c '^XFAIL:' stdout` -eq $expected_xfail
   test `grep -c '^SKIP:' stdout` -eq $expected_skip
+  test `grep -c '^ERROR:' stdout` -eq $expected_error
 
-  grep  '^PASS: pass-xpass-fail-xfail-skip.t\, testcase 1' stdout
-  grep  '^FAIL: pass-xpass-fail-xfail-skip\.t, testcase 2' stdout
-  grep '^XFAIL: pass-xpass-fail-xfail-skip\.t, testcase 3' stdout
-  grep '^XPASS: pass-xpass-fail-xfail-skip\.t, testcase 4' stdout
-  grep  '^SKIP: pass-xpass-fail-xfail-skip\.t, testcase 5' stdout
+  tst=pass-xpass-fail-xfail-skip-error
+  grep  "^PASS: $tst\.t, testcase 1" stdout
+  grep  "^FAIL: $tst\.t, testcase 2" stdout
+  grep "^XFAIL: $tst\.t, testcase 3" stdout
+  grep "^XPASS: $tst\.t, testcase 4" stdout
+  grep  "^SKIP: $tst\.t, testcase 5" stdout
+  grep "^ERROR: $tst\.t, testcase 6" stdout
 
   # Check testsuite summary printed on console.
   sed -e 's/[()]/ /g' -e 's/^/ /' stdout > t
-  grep ' 6 of 18 ' t
+  grep ' 7 of 19 ' t
   grep ' 1 unexpected pass' t
   grep ' 4 test.* not run' t
 
@@ -170,7 +175,7 @@ for vpath in : false; do
   grep '%% fail %%' test-suite.log
   grep '%% fail2 %%' test-suite.log
   grep '%% pass-fail %%' test-suite.log
-  grep '%% pass-xpass-fail-xfail-skip %%' test-suite.log
+  grep '%% pass-xpass-fail-xfail-skip-error %%' test-suite.log
   test `grep -c '%% ' test-suite.log` -eq 4
 
   TESTS='pass.t pass3-skip2-xfail.t' $MAKE -e check >stdout \
@@ -178,11 +183,11 @@ for vpath in : false; do
   cat test-suite.log
   cat stdout
   # For debugging.
-  $EGREP '(PASS|FAIL|XPASS|XFAIL|SKIP)' stdout
+  $EGREP '(PASS|FAIL|XPASS|XFAIL|SKIP|ERROR)' stdout
   test `grep -c '^PASS:' stdout` -eq 4
   test `grep -c '^SKIP:' stdout` -eq 2
   test `grep -c '^XFAIL:' stdout` -eq 1
-  $EGREP '^(FAIL|XPASS)' stdout && Exit 1
+  $EGREP '^(FAIL|XPASS|ERROR)' stdout && Exit 1
 
   cd $srcdir
 

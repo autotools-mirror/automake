@@ -56,7 +56,13 @@ END
 
 cat > c.test << 'END'
 #! /bin/sh
-echo XPASS: xp
+if test -f c.err; then
+  echo ERROR: xxx
+elif test -f c.ok; then
+  echo PASS: ok
+else
+  echo XPASS: xp
+fi
 : > c.run
 END
 
@@ -68,14 +74,15 @@ $AUTOMAKE
 
 do_count ()
 {
-  pass=ERR fail=ERR xpass=ERR xfail=ERR skip=ERR
+  pass=ERR fail=ERR xpass=ERR xfail=ERR skip=ERR error=ERR
   eval "$@"
-  $EGREP '(PASS|FAIL|XPASS|XFAIL|SKIP)' stdout || : # For debugging.
+  $EGREP '(PASS|FAIL|XPASS|XFAIL|SKIP|ERROR)' stdout || : # For debugging.
   test `grep -c '^PASS:' stdout` -eq $pass
   test `grep -c '^FAIL:' stdout` -eq $fail
   test `grep -c '^XPASS:' stdout` -eq $xpass
   test `grep -c '^XFAIL:' stdout` -eq $xfail
   test `grep -c '^SKIP:' stdout` -eq $skip
+  test `grep -c '^ERROR:' stdout` -eq $error
 }
 
 for vpath in : false; do
@@ -96,7 +103,7 @@ for vpath in : false; do
   test -f a.run
   test -f b.run
   test -f c.run
-  do_count pass=2 fail=1 xpass=1 xfail=0 skip=1
+  do_count pass=2 fail=1 xpass=1 xfail=0 skip=1 error=0
 
   rm -f *.run
 
@@ -104,7 +111,7 @@ for vpath in : false; do
   for var in TESTS TEST_LOGS; do
     env "$var=" $MAKE -e recheck >stdout || { cat stdout; Exit 1; }
     cat stdout
-    do_count pass=0 fail=0 xpass=0 xfail=0 skip=0
+    do_count pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
     test ! -r a.run
     test ! -r b.run
     test ! -r c.run
@@ -115,7 +122,7 @@ for vpath in : false; do
   env TESTS=a.test $MAKE -e recheck >stdout \
     || { cat stdout; Exit 1; }
   cat stdout
-  do_count pass=0 fail=0 xpass=0 xfail=0 skip=0
+  do_count pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -r a.run
   test ! -r b.run
   test ! -r c.run
@@ -128,7 +135,7 @@ for vpath in : false; do
   test ! -r a.run
   test -f b.run
   test ! -r c.run
-  do_count pass=0 fail=0 xpass=0 xfail=1 skip=1
+  do_count pass=0 fail=0 xpass=0 xfail=1 skip=1 error=0
 
   rm -f *.run
 
@@ -136,34 +143,53 @@ for vpath in : false; do
   TEST_LOGS=b.log $MAKE -e recheck >stdout \
     || { cat stdout; Exit 1; }
   cat stdout
-  do_count pass=0 fail=0 xpass=0 xfail=0 skip=0
+  do_count pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -r a.run
   test ! -r b.run
   test ! -r c.run
   TESTS='a.test b.test' $MAKE -e recheck >stdout \
     || { cat stdout; Exit 1; }
   cat stdout
-  do_count pass=0 fail=0 xpass=0 xfail=0 skip=0
+  do_count pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -r a.run
   test ! -r b.run
   test ! -r c.run
 
-  # An XPASS should count a failure.
+  : No need to re-run a.test anymore, but c.test should be rerun,
+  : as it contained an XPASS.  And this time, make it fail with
+  : an hard error.
+  : > c.err
   env TEST_LOGS='a.log c.log' $MAKE -e recheck >stdout \
     && { cat stdout; Exit 1; }
   cat stdout
-  do_count pass=0 fail=0 xpass=1 xfail=0 skip=0
+  do_count pass=0 fail=0 xpass=0 xfail=0 skip=0 error=1
   test ! -r a.run
   test ! -r b.run
   test -f c.run
-  rm -f *.run
-  env TESTS='c.test b.test' $MAKE -e recheck >stdout \
-    && { cat stdout; Exit 1; }
+
+  rm -f *.run *.err
+
+  : c.test contained and hard error the last time, so it should be re-run.
+  : This time, make it pass
+  : > c.ok
+  env TESTS='c.test a.test' $MAKE -e recheck >stdout \
+    || { cat stdout; Exit 1; }
   cat stdout
-  do_count pass=0 fail=0 xpass=1 xfail=0 skip=0
+  do_count pass=1 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -r a.run
   test ! -r b.run
   test -f c.run
+
+  rm -f *.run *.err *.ok
+
+  : Nothing should be rerun anymore, as all tests have been eventually
+  : succesful.
+  $MAKE recheck >stdout || { cat stdout; Exit 1; }
+  cat stdout
+  do_count pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
+  test ! -r a.run
+  test ! -r b.run
+  test ! -r c.run
 
   cd $srcdir
 
