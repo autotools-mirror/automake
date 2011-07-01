@@ -15,13 +15,15 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+am__tty_colors_dummy = \
+  mgn= red= grn= lgn= blu= brg= std=; \
+  am__color_tests=no
 if %?COLOR%
 # If stdout is a non-dumb tty, use colors.  If test -t is not supported,
 # then this fails; a conservative approach.  Of course do not redirect
 # stdout here, just stderr.
 am__tty_colors = \
-am__color_tests=no; \
-red=; grn=; lgn=; blu=; std=; \
+$(am__tty_colors_dummy); \
 test "X$(AM_COLOR_TESTS)" != Xno \
 && test "X$$TERM" != Xdumb \
 && { test "X$(AM_COLOR_TESTS)" = Xalways || test -t 1 2>/dev/null; } \
@@ -31,10 +33,12 @@ test "X$(AM_COLOR_TESTS)" != Xno \
   grn='[0;32m'; \
   lgn='[1;32m'; \
   blu='[1;34m'; \
+  mgn='[0;35m'; \
+  brg='[1m'; \
   std='[m'; \
 }
 else !%?COLOR%
-am__tty_colors = red= grn= lgn= blu= std= am__color_tests=no
+am__tty_colors = $(am__tty_colors_dummy)
 endif !%?COLOR%
 
 .PHONY: check-TESTS
@@ -73,24 +77,6 @@ include inst-vars.am
 
 # Restructured Text title.
 am__rst_title = sed 's/.*/   &   /;h;s/./=/g;p;x;p;g;p;s/.*//'
-
-# Put stdin (possibly several lines separated by ".  ") in a box.
-# Prefix each line by 'col' and terminate each with 'std', for coloring.
-# Multi line coloring is problematic with "less -R", so we really need
-# to color each line individually.
-am__text_box = $(AWK) '{			\
-  n = split($$0, lines, "\\.  "); max = 0;	\
-  for (i = 1; i <= n; ++i)			\
-    if (max < length(lines[i]))			\
-      max = length(lines[i]);			\
-  for (i = 0; i < max; ++i)			\
-    line = line "=";				\
-  print col line std;				\
-  for (i = 1; i <= n; ++i)			\
-    if (lines[i])				\
-      print col lines[i] std;			\
-  print col line std;				\
-}'
 
 # Solaris 10 'make', and several other traditional 'make' implementations,
 # pass "-e" to $(SHELL), and POSIX 2008 even requires this.  Work around it
@@ -139,7 +125,7 @@ esac; 							\
 $(AM_TESTS_ENVIRONMENT) $(TESTS_ENVIRONMENT)
 
 $(TEST_SUITE_LOG): $(TEST_LOGS)
-	@$(am__sh_e_setup); \
+	@$(am__sh_e_setup); $(am__tty_colors); \
 ## The custom reStructuredText field used to register the outcome of
 ## a test.  This is for supporting test protocols, such as TAP and
 ## SubUnit, where a single test script can run multiple tests, each
@@ -179,8 +165,8 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	done; \
 ## We don't need this anymore.
 	exec 5<&-; \
-## Prepare the test suite summary.
-	results=`echo "$$results1" && echo "$$results2"` \
+## Prepare data for the test suite summary.
+	results=`echo "$$results1" && echo "$$results2"`; \
 	all=`echo "$$results" | sed '/^$$/d' | wc -l | sed -e 's/^[	 ]*//'`; \
 	fail=`echo "$$results" | grep -c '^FAIL'`;			\
 	pass=`echo "$$results" | grep -c '^PASS'`;			\
@@ -188,47 +174,54 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	xfail=`echo "$$results" | grep -c '^XFAIL'`;			\
 	xpass=`echo "$$results" | grep -c '^XPASS'`;			\
 	error=`echo "$$results" | grep -c '^ERROR'`;			\
-## FIXME: for the moment, we count errors as failures, otherwise the code
-## that displays the testsuite summary will become too complicated.
-	fail=`expr $$fail + $$error`;					\
-	failures=`expr $$fail + $$xpass`;				\
-	all=`expr $$all - $$skip`;					\
-	if test "$$all" -eq 1; then tests=test; All=;			\
-	else tests=tests; All="All "; fi;				\
-	case fail=$$fail:xpass=$$xpass:xfail=$$xfail in			\
-	  fail=0:xpass=0:xfail=0)					\
-	    msg="$$All$$all $$tests passed.  ";				\
-	    exit=true;;							\
-	  fail=0:xpass=0:xfail=*)					\
-	    msg="$$All$$all $$tests behaved as expected";		\
-	    if test "$$xfail" -eq 1; then xfailures=failure;		\
-	    else xfailures=failures; fi;				\
-	    msg="$$msg ($$xfail expected $$xfailures).  ";		\
-	    exit=true;;							\
-	  fail=*:xpass=0:xfail=*)					\
-	    msg="$$fail of $$all $$tests failed.  ";			\
-	    exit=false;;						\
-	  fail=*:xpass=*:xfail=*)					\
-	    msg="$$failures of $$all $$tests did not behave as expected"; \
-	    if test "$$xpass" -eq 1; then xpasses=pass;			\
-	    else xpasses=passes; fi;					\
-	    msg="$$msg ($$xpass unexpected $$xpasses).  ";		\
-	    exit=false;;						\
-	  *)								\
-	    echo >&2 "incorrect case"; exit 4;;				\
-	esac;								\
-	if test "$$skip" -ne 0; then					\
-	  if test "$$skip" -eq 1; then					\
-	    msg="$$msg($$skip test was not run).  ";			\
-	  else								\
-	    msg="$$msg($$skip tests were not run).  ";			\
-	  fi;								\
-	fi;								\
+## Whether the testsuite was successful or not.
+	if test `expr $$fail + $$xpass + $$error` -eq 0; then \
+	  success=true; \
+	else \
+	  success=false; \
+	fi; \
+## Make $br a line of exactly 76 `=' characters, that will be used to
+## enclose the testsuite summary report when displayed on the console.
+	br='==================='; br=$$br$$br$$br$$br; \
+## When writing the test summary to the console, we want to color a line
+## reporting the count of some result *only* if at least one test
+## experienced such a result.  This function is handy in this regard.
+	result_count () \
+	{ \
+	    if test x"$$1" = x"--maybe-color"; then \
+	      maybe_colorize=yes; \
+	    elif test x"$$1" = x"--no-color"; then \
+	      maybe_colorize=no; \
+	    else \
+	      echo "$@: invalid 'result_count' usage" >&2; exit 4; \
+	    fi; \
+	    shift; \
+	    desc=$$1 count=$$2; \
+	    if test $$maybe_colorize = yes && test $$count -gt 0; then \
+	      color_start=$$3 color_end=$$std; \
+	    else \
+	      color_start= color_end=; \
+	    fi; \
+	    echo "$${color_start}# $$desc $$count$${color_end}"; \
+	}; \
+## A shell function that creates the testsuite summary.  We need it
+## because we have to create *two* summaries, one for test-suite.log,
+## and a possibly-colorized one for console output.
+	create_testsuite_report () \
+	{ \
+	  result_count $$1 "TOTAL:" $$all   "$$brg"; \
+	  result_count $$1 "PASS: " $$pass  "$$grn"; \
+	  result_count $$1 "SKIP: " $$skip  "$$blu"; \
+	  result_count $$1 "XFAIL:" $$xfail "$$lgn"; \
+	  result_count $$1 "FAIL: " $$fail  "$$red"; \
+	  result_count $$1 "XPASS:" $$xpass "$$red"; \
+	  result_count $$1 "ERROR:" $$error "$$mgn"; \
+	}; \
 ## Write "global" testsuite log.
 	{								\
 	  echo "$(PACKAGE_STRING): $(subdir)/$(TEST_SUITE_LOG)" |	\
 	    $(am__rst_title);						\
-	  echo "$$msg";							\
+	  create_testsuite_report --no-color;				\
 	  echo;								\
 	  echo ".. contents:: :depth: 2";				\
 	  echo;								\
@@ -243,22 +236,30 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	  done;								\
 	} >$(TEST_SUITE_LOG).tmp;					\
 	mv $(TEST_SUITE_LOG).tmp $(TEST_SUITE_LOG);			\
-	if test "$$failures" -ne 0; then				\
-	  msg="$${msg}See $(subdir)/$(TEST_SUITE_LOG).  ";		\
-	  if test -n "$(PACKAGE_BUGREPORT)"; then			\
-	    msg="$${msg}Please report to $(PACKAGE_BUGREPORT).  ";	\
-	  fi;								\
-	fi;								\
-	test x"$$VERBOSE" = x || $$exit || cat $(TEST_SUITE_LOG);	\
-## Emit the test summary on the console, and exit.
-	$(am__tty_colors);						\
-	if $$exit; then							\
+## Emit the test summary on the console.
+	if $$success; then						\
 	  col="$$grn";							\
 	 else								\
 	  col="$$red";							\
+	  test x"$$VERBOSE" = x || cat $(TEST_SUITE_LOG);		\
 	fi;								\
-	echo "$$msg" | $(am__text_box) "col=$$col" "std=$$std";		\
-	$$exit
+## Multi line coloring is problematic with "less -R", so we really need
+## to color each line individually.
+	echo "$${col}$$br$${std}"; 					\
+	echo "$${col}Testsuite summary for $(PACKAGE_STRING)$${std}";	\
+	echo "$${col}$$br$${std}"; 					\
+## This is expected to go to the console, so it might have to be colorized.
+	create_testsuite_report --maybe-color;				\
+	echo "$$col$$br$$std";						\
+	if $$success; then :; else					\
+	  echo "$${col}See $(subdir)/$(TEST_SUITE_LOG)$${std}";		\
+	  if test -n "$(PACKAGE_BUGREPORT)"; then			\
+	    echo "$${col}Please report to $(PACKAGE_BUGREPORT)$${std}";	\
+	  fi;								\
+	  echo "$$col$$br$$std";					\
+	fi;								\
+## Be sure to exit with the proper exit status.
+	$$success
 
 RECHECK_LOGS = $(TEST_LOGS)
 

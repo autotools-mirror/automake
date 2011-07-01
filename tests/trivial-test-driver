@@ -54,30 +54,37 @@ done
 
 ## Run the test script, get test cases results, display them on console.
 
-tmp_out=$log_file-out.tmp
-tmp_res=$log_file-res.tmp
+tmp_output=$log_file-output.tmp
+tmp_results=$log_file-results.tmp
+tmp_status=$log_file-status.tmp
 
-"$@" 2>&1 | tee $tmp_out | (
+"$@" 2>&1 | tee $tmp_output | (
   i=0 st=0
-  : > $tmp_res
+  exec 5> $tmp_results
+  : > $tmp_status
   while read line; do
+    result=
     case $line in
-      PASS:*|FAIL:*|XPASS:*|XFAIL:*|SKIP:*|ERROR:*)
-        i=`expr $i + 1`
-        result=`LC_ALL=C expr "$line" : '\([A-Z]*\):.*'`
-        case $result in FAIL|XPASS|ERROR) st=1;; esac
-        # Output testcase result to console.
-        echo "$result: $test_name, testcase $i"
-        # Register testcase outcome for the log file.
-        echo ":test-result: $line" >> $tmp_res
-        echo >> $tmp_res
-        ;;
+      PASS:*)  result=PASS  ;;
+      FAIL:*)  result=FAIL  ;;
+      XPASS:*) result=XPASS ;;
+      XFAIL:*) result=XFAIL ;;
+      SKIP:*)  result=SKIP  ;;
+      ERROR:*) result=ERROR ;;
     esac
+    if test -n "$result"; then
+      case $result in FAIL|XPASS|ERROR) st=1;; esac
+      # Output testcase result to console.
+      echo "$result: $test_name"
+      # Register testcase outcome for the log file.
+      echo ":test-result: $line" >&5
+      echo >&5
+    fi
   done
-  exit $st
-)
+  test $st -eq 0 || echo fail > $tmp_status
+) | awk '{ print $0 ", testcase " NR }'
 
-if test $? -eq 0; then
+if test ! -s $tmp_status; then
   global_result=PASS
 else
   global_result=FAIL
@@ -89,13 +96,13 @@ fi
   echo "$global_result: $test_name"
   echo "$global_result: $test_name" | sed 's/./=/g'
   echo
-  cat $tmp_res
+  cat $tmp_results
   echo
   echo --------------------
   echo
-  cat $tmp_out
+  cat $tmp_output
 } > $log_file
-rm -f $tmp_out $tmp_res
+rm -f $tmp_output $tmp_results $tmp_status
 
 ## And we're done.
 

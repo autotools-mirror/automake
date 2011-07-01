@@ -733,6 +733,10 @@ parallel-test-driver-install.test \
 parallel-tests-no-spurious-summary.test \
 parallel-tests-exit-statuses.test \
 parallel-tests-console-output.test \
+testsuite-summary-color.test \
+testsuite-summary-count.test \
+testsuite-summary-count-many.test \
+testsuite-summary-reference-log.test \
 test-driver-end-test-results.test \
 test-driver-custom-no-extra-driver.test \
 test-driver-custom.test \
@@ -1094,6 +1098,14 @@ test-driver-custom-multitest-recheck.log: trivial-test-driver
 test-driver-custom-multitest-recheck2.log: trivial-test-driver
 test-driver-custom-html.log: trivial-test-driver
 EXTRA_DIST += trivial-test-driver
+
+testsuite-summary-color.log testsuite-summary-count.log: \
+  testsuite-summary-checks.sh extract-testsuite-summary
+EXTRA_DIST += testsuite-summary-checks.sh
+EXTRA_DIST += extract-testsuite-summary
+
+testsuite-summary-count-many.log: trivial-test-driver
+testsuite-summary-count-many.log: extract-testsuite-summary
 
 # Dependencies valid for each test case.
 $(TEST_LOGS): defs defs-static aclocal-$(APIVERSION) automake-$(APIVERSION)

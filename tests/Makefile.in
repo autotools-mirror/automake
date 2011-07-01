@@ -76,12 +76,14 @@ am__v_at_ = $(am__v_at_$(AM_DEFAULT_VERBOSITY))
 am__v_at_0 = @
 SOURCES =
 DIST_SOURCES =
+am__tty_colors_dummy = \
+  mgn= red= grn= lgn= blu= brg= std=; \
+  am__color_tests=no
 # If stdout is a non-dumb tty, use colors.  If test -t is not supported,
 # then this fails; a conservative approach.  Of course do not redirect
 # stdout here, just stderr.
 am__tty_colors = \
-am__color_tests=no; \
-red=; grn=; lgn=; blu=; std=; \
+$(am__tty_colors_dummy); \
 test "X$(AM_COLOR_TESTS)" != Xno \
 && test "X$$TERM" != Xdumb \
 && { test "X$(AM_COLOR_TESTS)" = Xalways || test -t 1 2>/dev/null; } \
@@ -91,6 +93,8 @@ test "X$(AM_COLOR_TESTS)" != Xno \
   grn='[0;32m'; \
   lgn='[1;32m'; \
   blu='[1;34m'; \
+  mgn='[0;35m'; \
+  brg='[1m'; \
   std='[m'; \
 }
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
@@ -116,23 +120,6 @@ am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
 # Restructured Text title.
 am__rst_title = sed 's/.*/   &   /;h;s/./=/g;p;x;p;g;p;s/.*//'
-# Put stdin (possibly several lines separated by ".  ") in a box.
-# Prefix each line by 'col' and terminate each with 'std', for coloring.
-# Multi line coloring is problematic with "less -R", so we really need
-# to color each line individually.
-am__text_box = $(AWK) '{			\
-  n = split($$0, lines, "\\.  "); max = 0;	\
-  for (i = 1; i <= n; ++i)			\
-    if (max < length(lines[i]))			\
-      max = length(lines[i]);			\
-  for (i = 0; i < max; ++i)			\
-    line = line "=";				\
-  print col line std;				\
-  for (i = 1; i <= n; ++i)			\
-    if (lines[i])				\
-      print col lines[i] std;			\
-  print col line std;				\
-}'
 # Solaris 10 'make', and several other traditional 'make' implementations,
 # pass "-e" to $(SHELL), and POSIX 2008 even requires this.  Work around it
 # by disabling -e (using the XSI extension "set +e") if it's set.
@@ -282,19 +269,19 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 MAINTAINERCLEANFILES = $(parallel_tests) $(instspc_tests)
 EXTRA_DIST = ChangeLog-old gen-parallel-tests instspc-tests.sh \
-	$(TESTS) trivial-test-driver
+	$(TESTS) trivial-test-driver testsuite-summary-checks.sh \
+	extract-testsuite-summary
 XFAIL_TESTS = all.test auxdir2.test cond17.test gcj6.test \
 	override-conditional-2.test pr8365-remake-timing.test \
 	yacc-dist-nobuild-subdir.test txinfo5.test \
 	$(instspc_xfail_tests)
 parallel_tests = backcompat5-p.test check-exported-srcdir-p.test \
 	check-tests-in-builddir-p.test check-tests_environment-p.test \
-	check-p.test check10-p.test check11-p.test check12-p.test \
-	check2-p.test check3-p.test check4-p.test check5-p.test \
-	check6-p.test check7-p.test check8-p.test check9-p.test \
-	color-p.test color2-p.test comment9-p.test dejagnu-p.test \
-	exeext4-p.test maken3-p.test maken4-p.test \
-	posixsubst-tests-p.test
+	check-p.test check11-p.test check12-p.test check2-p.test \
+	check3-p.test check4-p.test check5-p.test check6-p.test \
+	check7-p.test check8-p.test check9-p.test color-p.test \
+	color2-p.test comment9-p.test dejagnu-p.test exeext4-p.test \
+	maken3-p.test maken4-p.test posixsubst-tests-p.test
 instspc_tests = instspc-squote-build.test instspc-squote-install.test \
 	instspc-dquote-build.test instspc-dquote-install.test \
 	instspc-bquote-build.test instspc-bquote-install.test \
@@ -993,6 +980,10 @@ parallel-test-driver-install.test \
 parallel-tests-no-spurious-summary.test \
 parallel-tests-exit-statuses.test \
 parallel-tests-console-output.test \
+testsuite-summary-color.test \
+testsuite-summary-count.test \
+testsuite-summary-count-many.test \
+testsuite-summary-reference-log.test \
 test-driver-end-test-results.test \
 test-driver-custom-no-extra-driver.test \
 test-driver-custom.test \
@@ -1397,7 +1388,7 @@ cscope cscopelist:
 
 
 $(TEST_SUITE_LOG): $(TEST_LOGS)
-	@$(am__sh_e_setup); \
+	@$(am__sh_e_setup); $(am__tty_colors); \
 	rst_magic=":test-result:"; \
 	nlinit=`echo 'nl="'; echo '"'`; eval "$$nlinit"; unset nlinit; \
 	list='$(TEST_LOGS)'; \
@@ -1416,7 +1407,7 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	  exec 0<&5; \
 	done; \
 	exec 5<&-; \
-	results=`echo "$$results1" && echo "$$results2"` \
+	results=`echo "$$results1" && echo "$$results2"`; \
 	all=`echo "$$results" | sed '/^$$/d' | wc -l | sed -e 's/^[	 ]*//'`; \
 	fail=`echo "$$results" | grep -c '^FAIL'`;			\
 	pass=`echo "$$results" | grep -c '^PASS'`;			\
@@ -1424,44 +1415,44 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	xfail=`echo "$$results" | grep -c '^XFAIL'`;			\
 	xpass=`echo "$$results" | grep -c '^XPASS'`;			\
 	error=`echo "$$results" | grep -c '^ERROR'`;			\
-	fail=`expr $$fail + $$error`;					\
-	failures=`expr $$fail + $$xpass`;				\
-	all=`expr $$all - $$skip`;					\
-	if test "$$all" -eq 1; then tests=test; All=;			\
-	else tests=tests; All="All "; fi;				\
-	case fail=$$fail:xpass=$$xpass:xfail=$$xfail in			\
-	  fail=0:xpass=0:xfail=0)					\
-	    msg="$$All$$all $$tests passed.  ";				\
-	    exit=true;;							\
-	  fail=0:xpass=0:xfail=*)					\
-	    msg="$$All$$all $$tests behaved as expected";		\
-	    if test "$$xfail" -eq 1; then xfailures=failure;		\
-	    else xfailures=failures; fi;				\
-	    msg="$$msg ($$xfail expected $$xfailures).  ";		\
-	    exit=true;;							\
-	  fail=*:xpass=0:xfail=*)					\
-	    msg="$$fail of $$all $$tests failed.  ";			\
-	    exit=false;;						\
-	  fail=*:xpass=*:xfail=*)					\
-	    msg="$$failures of $$all $$tests did not behave as expected"; \
-	    if test "$$xpass" -eq 1; then xpasses=pass;			\
-	    else xpasses=passes; fi;					\
-	    msg="$$msg ($$xpass unexpected $$xpasses).  ";		\
-	    exit=false;;						\
-	  *)								\
-	    echo >&2 "incorrect case"; exit 4;;				\
-	esac;								\
-	if test "$$skip" -ne 0; then					\
-	  if test "$$skip" -eq 1; then					\
-	    msg="$$msg($$skip test was not run).  ";			\
-	  else								\
-	    msg="$$msg($$skip tests were not run).  ";			\
-	  fi;								\
-	fi;								\
+	if test `expr $$fail + $$xpass + $$error` -eq 0; then \
+	  success=true; \
+	else \
+	  success=false; \
+	fi; \
+	br='==================='; br=$$br$$br$$br$$br; \
+	result_count () \
+	{ \
+	    if test x"$$1" = x"--maybe-color"; then \
+	      maybe_colorize=yes; \
+	    elif test x"$$1" = x"--no-color"; then \
+	      maybe_colorize=no; \
+	    else \
+	      echo "$@: invalid 'result_count' usage" >&2; exit 4; \
+	    fi; \
+	    shift; \
+	    desc=$$1 count=$$2; \
+	    if test $$maybe_colorize = yes && test $$count -gt 0; then \
+	      color_start=$$3 color_end=$$std; \
+	    else \
+	      color_start= color_end=; \
+	    fi; \
+	    echo "$${color_start}# $$desc $$count$${color_end}"; \
+	}; \
+	create_testsuite_report () \
+	{ \
+	  result_count $$1 "TOTAL:" $$all   "$$brg"; \
+	  result_count $$1 "PASS: " $$pass  "$$grn"; \
+	  result_count $$1 "SKIP: " $$skip  "$$blu"; \
+	  result_count $$1 "XFAIL:" $$xfail "$$lgn"; \
+	  result_count $$1 "FAIL: " $$fail  "$$red"; \
+	  result_count $$1 "XPASS:" $$xpass "$$red"; \
+	  result_count $$1 "ERROR:" $$error "$$mgn"; \
+	}; \
 	{								\
 	  echo "$(PACKAGE_STRING): $(subdir)/$(TEST_SUITE_LOG)" |	\
 	    $(am__rst_title);						\
-	  echo "$$msg";							\
+	  create_testsuite_report --no-color;				\
 	  echo;								\
 	  echo ".. contents:: :depth: 2";				\
 	  echo;								\
@@ -1474,21 +1465,25 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	  done;								\
 	} >$(TEST_SUITE_LOG).tmp;					\
 	mv $(TEST_SUITE_LOG).tmp $(TEST_SUITE_LOG);			\
-	if test "$$failures" -ne 0; then				\
-	  msg="$${msg}See $(subdir)/$(TEST_SUITE_LOG).  ";		\
-	  if test -n "$(PACKAGE_BUGREPORT)"; then			\
-	    msg="$${msg}Please report to $(PACKAGE_BUGREPORT).  ";	\
-	  fi;								\
-	fi;								\
-	test x"$$VERBOSE" = x || $$exit || cat $(TEST_SUITE_LOG);	\
-	$(am__tty_colors);						\
-	if $$exit; then							\
+	if $$success; then						\
 	  col="$$grn";							\
 	 else								\
 	  col="$$red";							\
+	  test x"$$VERBOSE" = x || cat $(TEST_SUITE_LOG);		\
 	fi;								\
-	echo "$$msg" | $(am__text_box) "col=$$col" "std=$$std";		\
-	$$exit
+	echo "$${col}$$br$${std}"; 					\
+	echo "$${col}Testsuite summary for $(PACKAGE_STRING)$${std}";	\
+	echo "$${col}$$br$${std}"; 					\
+	create_testsuite_report --maybe-color;				\
+	echo "$$col$$br$$std";						\
+	if $$success; then :; else					\
+	  echo "$${col}See $(subdir)/$(TEST_SUITE_LOG)$${std}";		\
+	  if test -n "$(PACKAGE_BUGREPORT)"; then			\
+	    echo "$${col}Please report to $(PACKAGE_BUGREPORT)$${std}";	\
+	  fi;								\
+	  echo "$$col$$br$$std";					\
+	fi;								\
+	$$success
 
 # Run all the tests.
 check-TESTS:
@@ -1695,7 +1690,6 @@ check-exported-srcdir-p.log: check-exported-srcdir.test
 check-tests-in-builddir-p.log: check-tests-in-builddir.test
 check-tests_environment-p.log: check-tests_environment.test
 check-p.log: check.test
-check10-p.log: check10.test
 check11-p.log: check11.test
 check12-p.log: check12.test
 check2-p.log: check2.test
@@ -1774,6 +1768,12 @@ test-driver-custom-multitest.log: trivial-test-driver
 test-driver-custom-multitest-recheck.log: trivial-test-driver
 test-driver-custom-multitest-recheck2.log: trivial-test-driver
 test-driver-custom-html.log: trivial-test-driver
+
+testsuite-summary-color.log testsuite-summary-count.log: \
+  testsuite-summary-checks.sh extract-testsuite-summary
+
+testsuite-summary-count-many.log: trivial-test-driver
+testsuite-summary-count-many.log: extract-testsuite-summary
 
 # Dependencies valid for each test case.
 $(TEST_LOGS): defs defs-static aclocal-$(APIVERSION) automake-$(APIVERSION)

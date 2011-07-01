@@ -78,8 +78,6 @@ test `grep -c '^ERROR:' mylog.log` -eq 1
 test -f baz.log
 test -f bar.log
 test -f foo.log
-# The summary should be formatted correctly.
-grep 'failedn' stdout && Exit 1
 
 # clean should remove all log files (but not more).
 : > unrelated.log
@@ -113,7 +111,9 @@ test -f foo.log
 grep foo.test stdout
 grep bar.test stdout && Exit 1
 grep baz.test stdout && Exit 1
-grep '2.*tests.*failed' stdout
+grep '^# PASS: *1$' stdout
+grep '^# FAIL: *1$' stdout
+grep '^# ERROR: *1$' stdout
 
 # Now, explicitly retry with all test logs already updated, and ensure
 # that the summary is still displayed.
@@ -122,7 +122,9 @@ cat stdout
 grep foo.test stdout && Exit 1
 grep bar.test stdout && Exit 1
 grep baz.test stdout && Exit 1
-grep '2.*tests.*failed' stdout
+grep '^# PASS: *1$' stdout
+grep '^# FAIL: *1$' stdout
+grep '^# ERROR: *1$' stdout
 
 # Lazily rerunning only foo should only rerun this one test.
 env RECHECK_LOGS=foo.log $MAKE -e check > stdout && { cat stdout; Exit 1; }
@@ -130,7 +132,9 @@ cat stdout
 grep foo.test stdout
 grep bar.test stdout && Exit 1
 grep baz.test stdout && Exit 1
-grep '2.*tests.*failed' stdout
+grep '^# PASS: *1$' stdout
+grep '^# FAIL: *1$' stdout
+grep '^# ERROR: *1$' stdout
 
 # Test VERBOSE.
 env VERBOSE=yes $MAKE -e check > stdout && { cat stdout; Exit 1; }
