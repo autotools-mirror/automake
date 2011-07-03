@@ -183,6 +183,9 @@ alloca.test \
 alloca2.test \
 alpha.test \
 alpha2.test \
+amhello-cflags.test \
+amhello-cross-compile.test \
+amhello-binpkg.test \
 amassign.test \
 ammissing.test \
 amopt.test \
@@ -275,6 +278,7 @@ check-subst-prog.test \
 check-exported-srcdir.test \
 check-tests-in-builddir.test \
 check-tests_environment.test \
+tests-environment-backcompat.test \
 checkall.test \
 clean.test \
 clean2.test \
@@ -771,6 +775,7 @@ parallel-tests-log-override-1.test \
 parallel-tests-log-override-2.test \
 parallel-tests-log-override-recheck.test \
 parallel-tests-cmdline-override.test \
+parallel-tests-log-compiler-example.test \
 parse.test \
 percent.test \
 percent2.test \
