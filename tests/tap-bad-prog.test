@@ -1,0 +1,69 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# TAP support:
+#  - missing, unreadable, or not-executable test scripts cause proper
+#    error reports
+
+parallel_tests=yes
+. ./defs || Exit 1
+
+cp "$top_testsrcdir"/lib/tap-driver . \
+  || fatal_ "failed to fetch auxiliary script tap-driver"
+
+cat >> configure.in <<END
+AC_SUBST([PERL], ['$PERL'])
+AC_OUTPUT
+END
+
+cat > Makefile.am << 'END'
+TEST_LOG_DRIVER = $(PERL) $(srcdir)/tap-driver
+TESTS = none.test noread.test noexec.test
+none.test:
+END
+
+cat > noexec.test <<'END'
+#!/bin/sh
+echo 1..1
+ok 1
+END
+
+./noexec.test && skip_ "can't have non-executable files"
+
+cp noexec.test noread.test
+chmod a-r noread
+
+if test -r noread.test || cat noread.test; then
+  skip_ "can't have readonly files"
+fi
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
+
+./configure
+
+$MAKE check >stdout && { cat stdout; Exit 1; }
+cat stdout
+
+# FIXME: maybe better error messages?
+grep '^ERROR: none.test' stdout
+grep '^ERROR: noexec.test' stdout
+grep '^ERROR: noread.test' stdout
+
+count_test_results total=3 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=3
+
+:

@@ -1,0 +1,128 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# TAP support:
+#  - which global test result derives from different test results
+#    mixed in a single script?
+
+parallel_tests=yes
+. ./defs || Exit 1
+
+cp "$top_testsrcdir"/lib/tap-driver . \
+  || fatal_ "failed to fetch auxiliary script tap-driver"
+
+cat >> configure.in <<END
+AC_SUBST([PERL], ['$PERL'])
+AC_OUTPUT
+END
+
+cat > Makefile.am << 'END'
+TEST_LOG_DRIVER = $(PERL) $(srcdir)/tap-driver
+TEST_LOG_COMPILER = cat
+TESTS = \
+  ok.test \
+  skip.test skipall.test \
+  fail.test fail2.test \
+  xpass.test xpass2.test \
+  error.test error2.test \
+  hodgepodge.test hodgepodge-all.test
+END
+
+cat > ok.test <<END
+1..3
+ok 1
+not ok 2 # TODO
+ok 3 # SKIP
+END
+
+cat > skip.test <<'END'
+1..3
+ok 1 # SKIP
+ok 2 # SKIP
+ok 3 # SKIP
+END
+
+cat > skipall.test <<'END'
+1..0 # SKIP
+not ok 1
+END
+
+cat > fail.test <<'END'
+1..1
+not ok 1
+END
+
+(sed '1s/.*/1..4/' ok.test && echo 'not ok 4') > fail2.test
+
+cat > xpass.test <<'END'
+1..1
+ok 1 # TODO
+END
+
+(sed '1s/.*/1..4/' ok.test && echo 'ok 4 # TODO') > xpass2.test
+
+echo 'Bail out!' > error.test
+(cat ok.test && echo 'Bail out!') > error2.test
+
+cat > hodgepodge.test <<'END'
+1..2
+not ok 1
+ok 2 # TODO
+Bail out!
+END
+
+cat > hodgepodge-all.test <<'END'
+1..4
+ok 1
+ok 2 # SKIP
+not ok 2 # TODO
+not ok 3
+ok 4 # TODO
+Bail out!
+END
+
+# TODO: add scripts with TAP errors (multiple plans, out-of-order
+# tests, etc).
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
+
+./configure
+
+$MAKE check >stdout && { cat stdout; Exit 1; }
+cat stdout
+
+for tst in ok skip skipall fail fail2 xpass xpass2 error error2 \
+           hodgepodge hodgepodge-all; do
+  sed -e 2q $tst.log > $tst.res
+done
+
+cat *.res # For debugging.
+
+grep '^PASS:' ok.res
+grep '^SKIP:' skip.res
+grep '^SKIP:' skipall.res
+grep '^FAIL:' fail.res
+grep '^FAIL:' fail2.res
+grep '^FAIL:' xpass.res
+grep '^FAIL:' xpass2.res
+grep '^ERROR:' error.res
+grep '^ERROR:' error2.res
+grep '^ERROR:' hodgepodge.res
+grep '^ERROR:' hodgepodge-all.res
+
+:

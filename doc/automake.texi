@@ -320,6 +320,7 @@ Support for test suites
 * Simple Tests::                Listing programs and scripts in @code{TESTS}
 * Simple Tests using parallel-tests::  More powerful test driver
 * Custom Test Drivers::         Writing and using custom test drivers
+* Using the TAP test protocol:: Integrating test scripts that use the TAP protocol
 * DejaGnu Tests::               Interfacing with the external testing framework
 * Install Tests::               Running tests on installed packages
 
@@ -8656,6 +8657,7 @@ are very similar.
 * Simple Tests::                Listing programs and scripts in @code{TESTS}
 * Simple Tests using parallel-tests::  More powerful test driver
 * Custom Test Drivers::         Writing and using custom test drivers
+* Using the TAP test protocol:: Integrating test scripts that use the TAP protocol
 * DejaGnu Tests::               Interfacing with the external testing framework
 * Install Tests::               Running tests on installed packages
 @end menu
@@ -9037,12 +9039,9 @@ or work around the issue with inference rules to generate the tests.
 @subsection Overview of Custom Test Drivers Support
 
 Starting form Automake version 1.12, the @option{parallel-tests} harness
-allows the package authors to use third-party custom test drivers, in case
-the
-@c FIXME: this should become "default ones" once we have TAP and Subunit
-default one is inadequate for their purposes.
-@c FIXME: add this once we have TAP and Subunit
-@c "or do not support their testing protocol of choice."
+allows the package authors to use third-party custom test drivers, in
+case the default ones are inadequate for their purposes, or do not support
+their testing protocol of choice.
 
 A custom test driver is expected to properly run the test programs
 passed to it, including the command-line arguments passed to it,
@@ -9335,6 +9334,89 @@ reStructuredText (among the other things, this means that every
 is not the case, the HTML generation will not work, although all the
 other functionalities of the Automake testsuite harness should remain
 untouched, and continue to work correctly.
+
+@node Using the TAP test protocol
+@section Using the TAP test protocol
+
+Brief introduction to TAP and its philosophy.
+
+Real-word uses of TAP: testsuite of @command{perl} and of many
+perl modules, and of @command{git}.  Third-party libraries and
+utilities that can generate TAP (tell also to look at links
+below).
+
+@quotation
+A harness must only read TAP output from standard output and not
+from standard error.  Lines written to standard output matching
+@code{/^(not )?ok\b/} must be interpreted as test lines.  All other
+lines must not be considered test output.
+@end quotation
+
+@noindent
+Here are some links to more extensive official or third-party documentation
+and resources:
+@itemize @bullet
+@item
+@uref{http://search.cpan.org/~petdance/Test-Harness/lib/Test/Harness/TAP.pod,
+      @samp{Test::Harness::TAP}},
+the (mostly) official documentation about the TAP format and protocol.
+@item
+@uref{http://search.cpan.org/~andya/Test-Harness/bin/prove,
+      @command{prove}},
+the most famous command-line TAP test driver, included in the distribution
+of @command{perl} and
+@uref{http://search.cpan.org/~andya/Test-Harness/lib/Test/Harness.pm,
+      @samp{Test::Harness}}.
+@item
+The @uref{http://testanything.org/wiki/index.php/Main_Page,TAP wiki}.
+@item
+A ``gentle introduction'' to testing for perl coders:
+@uref{http://search.cpan.org/dist/Test-Simple/lib/Test/Tutorial.pod,
+      @samp{Test::Tutorial}}.
+@item
+@uref{http://search.cpan.org/~mschwern/Test-Simple/lib/Test/Simple.pm,
+      @samp{Test::Simple}}
+and
+@uref{http://search.cpan.org/~mschwern/Test-Simple/lib/Test/More.pm,
+      @samp{Test::More}},
+the standard perl testing libraries, which are based on TAP.
+@item
+@uref{http://www.eyrie.org/~eagle/software/c-tap-harness/,C TAP Harness},
+a C-based project implementing both a TAP producer and a TAP consumer.
+@end itemize
+
+Give example of output from @command{prove} command (when used in
+``verbose'' mode, with option @option{-v}), to which we'd like to
+remain somewhat compatible compatible, while also (and foremost)
+being compatible with the default @option{parallel-tests} driver.
+
+Example of output from out own TAP testsuite driver.  Point out
+similarities with the output from @command{prove --verbose} and
+from the default @option{parallel-tests} driver.
+
+Option @option{--ignore-exit} causes the driver to ignore the exit
+status of the test scripts; by default, the driver will report an
+error if the script exit with status != 0.
+@emph{TODO}: also add a @option{--no-ignore-exit} option, for
+completeness?
+
+By default, TAP diagnostic (i.e., lines beginning with the @samp{#}
+character) are copied only in the @file{.log} file.  The option
+@option{--comments} causes the driver to display them in the testsuite
+progress output too (@emph{TODO}: give example).  The option
+@option{--no-comments} restore the default behaviour.
+
+@noindent
+Differences and incompatibilities with other TAP parsers and drivers:
+@itemize @bullet
+@item
+A @code{Bail out!} directive doesn't stop the whole testsuite, but only
+the test script it occurs into.  This doesn't follows TAP specifications,
+but on the other hand maximize compatibility (and code sharing) with
+the ``hard error'' concept of the default @option{parallel-tests} driver.
+@item
+@emph{TODO}: there's surely something else ...
+@end itemize
 
 @node DejaGnu Tests
 @section DejaGnu Tests

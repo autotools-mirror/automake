@@ -1,0 +1,65 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# TAP support:
+#  - a test script terminated by a signal causes an hard error
+
+parallel_tests=yes
+. ./defs || Exit 1
+
+cp "$top_testsrcdir"/lib/tap-driver . \
+  || fatal_ "failed to fetch auxiliary script tap-driver"
+
+cat >> configure.in <<END
+AC_SUBST([PERL], ['$PERL'])
+AC_OUTPUT
+END
+
+cat > Makefile.am << 'END'
+TEST_LOG_DRIVER = $(PERL) $(srcdir)/tap-driver
+TESTS =
+END
+
+for sig in 1 2 13 15; do
+  unindent > signal-$sig.test <<END
+    #!/bin/sh
+    echo 1..1
+    echo ok 1
+    kill -$sig \$\$
+    echo "Bail out! \$0 not killed?"
+END
+  echo TESTS += signal-$sig.test >> Makefile.am
+done
+
+chmod a+x *.test
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
+
+./configure
+
+for append in '' 'TEST_LOG_DRIVER_FLAGS = --ignore-exit'; do
+  echo "$append" >> Makefile
+  $MAKE check >stdout && { cat stdout; Exit 1; }
+  cat stdout
+  count_test_results total=8 pass=4 fail=0 xpass=0 xfail=0 skip=0 error=4
+  for sig in 1 2 13 15; do
+    grep "^ERROR: signal-$sig\\.test - terminated by signal.*" stdout
+  done
+done
+
+:

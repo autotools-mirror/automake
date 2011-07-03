@@ -1,0 +1,363 @@
+#! /usr/bin/env perl
+# Temporary/experimental TAP test driver for Automake.
+# TODO: should be rewritten portably (e.g., in awk or shell).
+
+# ---------------------------------- #
+#  Imports, static data, and setup.  #
+# ---------------------------------- #
+
+use warnings FATAL => 'all';
+use strict;
+use Getopt::Long ();
+use TAP::Parser;
+
+my $ME = "tap-driver";
+
+my $USAGE = <<'END';
+Usage:
+  tap-driver [--help|--version] --test-name=NAME --log-file=PATH
+             [--expect-failure={yes|no}] [--color-tests={yes|no}]
+             [--enable-hard-errors={yes|no}] [--merge|--no-merge]
+             [--ignore-exit] [--comments|--no-comments] [--] TEST-COMMAND
+The `--test-name' and `--log-file' options are mandatory.
+END
+
+my $HELP = "$ME: TAP-aware test driver for Automake testsuite harness." .
+           "\n" . $USAGE;
+
+my $VERSION = '(experimental version)';
+
+# ------------------- #
+#  Global variables.  #
+# ------------------- #
+
+my $lineno = 0;     # Number of input lines seen so far.
+my $testno = 0;     # Number of test results seen so far.
+my $plan_seen = 0;  # Whether the TAP plan has been seen or not.
+my $parser;         # TAP parser object (will be initialized later).
+
+# ----------------- #
+#  Option parsing.  #
+# ----------------- #
+
+my %cfg = (
+  "color-tests" => 0,
+  "expect-failure" => 0,
+  "enable-hard-errors" => 1,
+  "merge" => 0,
+  "comments" => 0,
+  "ignore-exit" => 0,
+);
+
+my $test_script_name = undef;
+my $log_file = undef;
+
+Getopt::Long::GetOptions (
+    'help' => sub { print $HELP; exit 0; },
+    'version' => sub { print "$ME $VERSION"; exit 0; },
+    'test-name=s' => \$test_script_name,
+    'log-file=s' => \$log_file,
+    'color-tests=s'  => \&bool_opt,
+    'expect-failure=s'  => \&bool_opt,
+    'enable-hard-errors=s' => \&bool_opt,
+    'comments' => sub { $cfg{"comments"} = 1; },
+    'no-comments' => sub { $cfg{"comments"} = 0; },
+    'merge' => sub { $cfg{"merge"} = 1; },
+    'no-merge' => sub { $cfg{"merge"} = 0; },
+    'ignore-exit' => sub { $cfg{"ignore-exit"} = 1; },
+  ) or exit 1;
+
+# -------------- #
+#  Subroutines.  #
+# -------------- #
+
+sub bool_opt ($$)
+{
+  my ($opt, $val) = @_;
+  if ($val =~ /^(?:y|yes)\z/i)
+    {
+      $cfg{$opt} = 1;
+    }
+  elsif ($val =~ /^(?:n|no)\z/i)
+    {
+      $cfg{$opt} = 0;
+    }
+  else
+    {
+      die "invalid argument '$val' for option '$opt'\n";
+    }
+}
+
+TAP_PEEKING :
+{
+  my @tap_lines = ();
+
+  sub get_tap_line ()
+  {
+    @tap_lines > 0 ? pop @tap_lines : $parser->next;
+  }
+
+  sub unget_tap_line ($)
+  {
+    push @tap_lines, @_;
+  }
+
+  sub peek_tap_line ()
+  {
+    my $res = get_tap_line;
+    unget_tap_line ($res);
+    return $res;
+  }
+
+}
+
+TEST_RESULTS :
+{
+  my (@test_results, %test_results);
+
+  sub add_test_result ($)
+  {
+    my $res = shift;
+    push @test_results, $res;
+    $test_results{$res} = 1;
+  }
+
+  sub get_test_results ()
+  {
+    return @test_results;
+  }
+
+  # FIXME: this can certainly be improved ...
+  sub get_global_test_result ()
+  {
+    my @results = keys %test_results;
+    return "ERROR" if exists $test_results{"ERROR"};
+    return "SKIP" if @results == 1 && $results[0] eq "SKIP";
+    return "FAIL" if exists $test_results{"FAIL"};
+    return "FAIL" if exists $test_results{"XPASS"};
+    return "PASS";
+  }
+
+}
+
+sub start (@)
+{
+  # Redirect stderr and stdout to a temporary log file.  Save the
+  # original stdout stream, since we need it to print testsuite
+  # progress output.
+  open OLDOUT, ">&STDOUT" or die "duplicating stdout: $!\n";
+  open TMP, ">$log_file-t" or die "opening $log_file-t: $!\n";
+  open STDOUT, ">&TMP" or die "redirecting stdout: $!\n";
+  open STDERR, ">&TMP" or die "redirecting stderr: $!\n";
+  $parser = TAP::Parser->new ({ exec => \@_, merge => $cfg{merge} });
+  $parser->ignore_exit(1) if $cfg{"ignore-exit"};
+}
+
+sub finish ()
+{
+  open LOG, ">", $log_file or die "opening $log_file: $!\n";
+
+  # We need to declare a global test result in order to have
+  # "make recheck" working.
+  my $global_result = get_global_test_result;
+  my $global_result_line = "$global_result: $test_script_name";
+  print LOG "$global_result_line\n";
+  print LOG "=" x length ($global_result_line) . "\n";
+  print LOG "\n";
+
+  foreach (get_test_results)
+  {
+    print LOG ":test-result: $_\n";
+    # Add extra trailing empty lines to support reStructuredText -> HTML
+    # conversion.
+    print LOG "\n";
+  }
+
+  # So that the output from the test script won't be parsed for test
+  # results (which would potentially expose us to false positives).
+  print LOG ":test-result: END\n";
+  print LOG "\n";
+
+  close TMP or die "closing $log_file-t: $!\n";
+  # FIXME: remove this hack!
+  my $test_output = `cat $log_file-t && rm -f $log_file-t`;
+  print LOG $test_output;
+  close LOG or die "closing $log_file: $!\n";
+
+  exit 0;
+}
+
+sub stringify_test_result ($)
+{
+  my $result = shift;
+  my $PASS = $cfg{"expect-failure"} ? "XPASS": "PASS";
+  my $FAIL = $cfg{"expect-failure"} ? "XFAIL": "FAIL";
+  if ($result->is_unplanned || $result->number != $testno)
+    {
+      return "ERROR";
+    }
+  elsif (!$result->directive)
+    {
+      return $result->is_ok ? $PASS: $FAIL;
+    }
+  elsif ($result->has_todo)
+    {
+      return $result->is_actual_ok ? "XPASS" : "XFAIL";
+    }
+  elsif ($result->has_skip)
+    {
+      return $result->is_ok ? "SKIP" : $FAIL;
+    }
+  die "INTERNAL ERROR"; # NOTREACHED
+}
+
+sub console_output (@)
+{
+  return unless @_ > 0;
+  my $msg = join ("\n", @_) . "\n";
+  print OLDOUT $msg;
+  # Log the result in the log file too, to help debugging (this is
+  # especially true when said result is a TAP error or "Bail out!").
+  print $msg;
+}
+
+sub testuite_error ($)
+{
+  add_test_result "ERROR";
+  console_output "ERROR: $test_script_name - $_[0]";
+}
+
+sub handle_tap_test ($)
+{
+  $testno++;
+  my $test = shift;
+
+  my $test_result = stringify_test_result $test;
+  my $string = "$test_result: $test_script_name " . $test->number;
+  
+  if (my $description = $test->description)
+    {
+      $string .= " $description";
+    }
+  if ($test->is_unplanned)
+    {
+      $string .= " # UNPLANNED";
+    }
+  elsif ($test->number != $testno)
+    {
+      $string .= " # OUT-OF-ORDER (expecting $testno)";
+    }
+  elsif (my $directive = $test->directive)
+    {
+      $string .= " # $directive";
+      if (my $explanation = $test->explanation)
+        {
+          $string .= " $explanation";
+        }
+    }
+  add_test_result $test_result;
+  console_output $string;
+}
+
+sub handle_tap_plan ($)
+{
+  my $plan = shift;
+  testuite_error "multiple test plans" if $plan_seen;
+  $plan_seen = 1;
+  # TAP plan must be either in the first or in the last line.
+  if ($lineno > 1 && peek_tap_line)
+    {
+      testuite_error "test plan in middle of output";
+      return;
+    }
+  # Nothing more to do, unless the plan contains a SKIP directive.
+  return
+    if not defined $plan->directive && length ($plan->directive) > 0;
+  my $string = "SKIP: $test_script_name";
+  if (my $explanation = $plan->explanation)
+    {
+      $string .= " - $explanation";
+    }
+  add_test_result "SKIP";
+  console_output $string;
+  finish;
+}
+
+sub handle_tap_bailout ($)
+{
+  my ($bailout, $msg) = ($_[0], "Bail out!");
+  $msg .= " " . $bailout->explanation if $bailout->explanation;
+  testuite_error $msg;
+  finish;
+}
+
+sub handle_tap_comment ($)
+{
+  return unless $cfg{comments};
+  my $comment = $_[0]->comment;
+  console_output "# $test_script_name: $comment"
+    if length $comment;
+}
+
+sub main (@)
+{
+  start @_;
+
+  while (defined (my $cur = get_tap_line))
+    {
+      # Verbatim copy any input line into the log file.
+      print $cur->raw . "\n";
+      $lineno++;
+      if ($cur->is_plan)
+        {
+          handle_tap_plan ($cur);
+        }
+      elsif ($cur->is_test)
+        {
+          handle_tap_test ($cur);
+        }
+      elsif ($cur->is_comment)
+        {
+          handle_tap_comment ($cur);
+        }
+      elsif ($cur->is_bailout)
+        {
+          handle_tap_bailout ($cur);
+        }
+    }
+  if (!$plan_seen)
+    {
+      testuite_error "missing test plan";
+    }
+  elsif ($parser->tests_planned != $parser->tests_run)
+    {
+      my ($planned, $run) = ($parser->tests_planned, $parser->tests_run);
+      my $bad_amount = $run > $planned ? "many" : "few";
+      testuite_error (sprintf "too %s tests run (expected %d, got %d)",
+                              $bad_amount, $planned, $run);
+    }
+  # TODO: we should probably use $parser->wait here, to catch signals too
+  if ($parser->exit != 0)
+  {
+    my $msg = sprintf "exited with status %d", $parser->exit;
+    if ($cfg{"ignore-exit"})
+      {
+        # Log the exit status of the script anyway, even if it is not
+        # considered to be an error, to help debugging.
+        print "INFO: $test_script_name - $msg\n";
+      }
+    else
+      {
+        testuite_error $msg;;
+      }
+  }
+  finish;
+}
+
+# ----------- #
+#  Main code. #
+# ----------- #
+
+main @ARGV;
+
+# vim: ft=perl ts=4 sw=4 et
