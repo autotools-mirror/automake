@@ -658,6 +658,7 @@ remake-subdir-from-subdir.test \
 remake-subdir-gnu.test \
 remake-subdir.test \
 remake-subdir2.test \
+remake-subdir-long-time.test \
 pr8365-remake-timing.test \
 regex.test \
 req.test \
