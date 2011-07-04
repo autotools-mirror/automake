@@ -68,13 +68,12 @@ $AUTOMAKE -a
 
 $MAKE check >stdout && { cat stdout; Exit 1; }
 cat stdout
-# There should be one failure and one hard error.
-test `grep -c '^FAIL:' stdout` -eq 1
-test `grep -c '^ERROR:' stdout` -eq 1
+count_test_results total=3 pass=1 fail=1 skip=0 xfail=0 xpass=0 error=1
 test -f mylog.log
 cat mylog.log
 test `grep -c '^FAIL:' mylog.log` -eq 1
 test `grep -c '^ERROR:' mylog.log` -eq 1
+$EGREP '^(X?PASS|XFAIL|SKIP)' mylog.log && Exit 1
 test -f baz.log
 test -f bar.log
 test -f foo.log
@@ -93,7 +92,11 @@ test -f unrelated.log
 # Note that this usage has a problem: the summary will only
 # take bar.log into account, because the $(TEST_SUITE_LOG) rule
 # does not "see" baz.log.  Hmm.
-env TESTS='bar.test' $MAKE -e check && Exit 1
+env TESTS='bar.test' $MAKE -e check >stdout && { cat stdout; Exit 1; }
+cat stdout
+grep '^FAIL: baz\.test$' stdout
+grep '^ERROR: bar\.test$' stdout
+
 test -f baz.log
 test -f bar.log
 test ! -f foo.log
@@ -108,7 +111,7 @@ test -f mylog.log
 env RECHECK_LOGS= $MAKE -e check > stdout && { cat stdout; Exit 1; }
 cat stdout
 test -f foo.log
-grep foo.test stdout
+grep '^PASS: foo\.test$' stdout
 grep bar.test stdout && Exit 1
 grep baz.test stdout && Exit 1
 grep '^# PASS: *1$' stdout
