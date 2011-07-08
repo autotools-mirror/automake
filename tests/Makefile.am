@@ -85,6 +85,9 @@ alloca.test \
 alloca2.test \
 alpha.test \
 alpha2.test \
+amhello-cflags.test \
+amhello-cross-compile.test \
+amhello-binpkg.test \
 amassign.test \
 ammissing.test \
 amopt.test \
@@ -157,6 +160,7 @@ check11.test \
 check-exported-srcdir.test \
 check-tests-in-builddir.test \
 check-tests_environment.test \
+tests-environment-backcompat.test \
 checkall.test \
 clean.test \
 clean2.test \
@@ -600,6 +604,7 @@ parallel-tests-subdir.test \
 parallel-tests-log-override-1.test \
 parallel-tests-log-override-2.test \
 parallel-tests-log-override-recheck.test \
+parallel-tests-log-compiler-example.test \
 parse.test \
 percent.test \
 percent2.test \
@@ -679,6 +684,7 @@ remake-subdir-from-subdir.test \
 remake-subdir-gnu.test \
 remake-subdir.test \
 remake-subdir2.test \
+remake-subdir-long-time.test \
 pr8365-remake-timing.test \
 regex.test \
 req.test \
