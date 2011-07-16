@@ -257,6 +257,42 @@ using_gmake ()
 }
 am__using_gmake="" # Avoid interferences from the environment.
 
+# seq_ - print a sequence of numbers
+# ----------------------------------
+# This function simulates GNU seq(1) portably.  Valid usages:
+#  - seq LAST
+#  - seq FIRST LAST
+#  - seq FIRST INCREMENT LAST
+seq_ ()
+{
+  case $# in
+    0) fatal_ "seq_: missing argument";;
+    1) seq_first=1  seq_incr=1  seq_last=$1;;
+    2) seq_first=$1 seq_incr=1  seq_last=$2;;
+    3) seq_first=$1 seq_incr=$2 seq_last=$3;;
+    *) fatal_ "seq_: too many arguments";;
+  esac
+  # Try to avoid forks if possible.
+  case "$BASH_VERSION" in
+    ""|[12].*)
+      : Not bash, or a too old bash version. ;;
+    *)
+      # Use eval to protect dumber shells from parsing errors.
+      eval 'for ((i = seq_first; i <= seq_last; i += seq_incr)); do
+              echo $i
+            done'
+      return 0;;
+  esac
+  # Else, use GNU seq if available.
+  seq "$@" && return 0
+  # Otherwise revert to a slower loop using expr(1).
+  i=$seq_first
+  while test $i -le $seq_last; do
+    echo $i
+    i=`expr $i + $seq_incr`
+  done
+}
+
 commented_sed_unindent_prog='
   /^$/b                    # Nothing to do for empty lines.
   x                        # Get x<indent> into pattern space.

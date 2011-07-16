@@ -903,6 +903,7 @@ self-check-me.test \
 self-check-reexec.test \
 self-check-report.test \
 self-check-sanity.test \
+self-check-seq.test \
 self-check-unindent.test \
 sanity.test \
 scripts.test \
