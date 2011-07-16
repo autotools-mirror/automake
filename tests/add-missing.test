@@ -45,6 +45,7 @@ AC_PROG_CC
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
+AC_CANONICAL_SYSTEM
 AM_PATH_LISPDIR
 AM_PATH_PYTHON
 END
@@ -63,12 +64,12 @@ check_ ()
   set +x # Temporary disable shell traces to remove noise from log files.
   override=no
   run_aclocal=no
-  extra_files=
+  extra_file=
   while test $# -gt 0; do
     case $1 in
       --override) override=yes;;
       --run-aclocal) run_aclocal=yes;;
-      --extra-file*) extra_files="$with_files $2"; shift;;
+      --extra-file) extra_file=$2; shift;;
       *) framework_failure_ "check_: invalid argument '$1'";;
     esac
     shift
@@ -81,13 +82,7 @@ check_ ()
   else
     cp ../configure.stub configure.in
   fi
-  for f in $extra_files; do
-    if test -f ../$f; then
-      cp ../$f .
-    else
-      : > $f
-    fi
-  done
+  test -z "$extra_file" || cp ../"$extra_file" .
   # Read description of "test scenario" from standard input.
   what=
   line=
@@ -97,9 +92,8 @@ check_ ()
       '== Makefile.am ==') what=Makefile.am;;
       '== configure.in ==') what=configure.in;;
       '== Files ==') what=LIST;;
-      '==.*') framework_failure_ "invalid input line: $line";;
-      ''|'#%'*)
-        : empty line or ad-hoc comment, ignore;;
+      '==*') framework_failure_ "invalid input line: $line";;
+      ''|'#%'*) : Empty line or ad-hoc comment, ignore. ;;
       *)
         if test $what = LIST; then
           files="$files $line"
@@ -219,7 +213,8 @@ END
 
 : %%% config.guess and config.sub %%%
 
-for macro in AC_CANONICAL_BUILD AC_CANONICAL_HOST AC_CANONICAL_TARGET; do
+for macro in AC_CANONICAL_BUILD AC_CANONICAL_HOST \
+             AC_CANONICAL_TARGET AC_CANONICAL_SYSTEM; do
   check_ <<END
 == Files ==
 config.sub

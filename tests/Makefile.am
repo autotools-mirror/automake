@@ -541,7 +541,6 @@ help-regex.test \
 help-silent.test \
 help-upc.test \
 hfs.test \
-hosts.test \
 implicit.test \
 info.test \
 init.test \
