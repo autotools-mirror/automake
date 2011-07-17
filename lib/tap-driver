@@ -211,12 +211,13 @@ sub stringify_test_result ($)
   die "INTERNAL ERROR"; # NOTREACHED
 }
 
-sub console_output ($;$)
+sub report ($;$)
 {
   my ($msg, $result, $explanation) = (undef, @_);
   if ($result =~ /^(?:X?(?:PASS|FAIL)|SKIP|ERROR)/)
     {
       $msg = "$result: $test_script_name";
+      add_test_result $result;
     }
   elsif ($result eq "#")
     {
@@ -236,8 +237,7 @@ sub console_output ($;$)
 
 sub testuite_error ($)
 {
-  add_test_result "ERROR";
-  console_output "ERROR", "- $_[0]";
+  report "ERROR", "- $_[0]";
 }
 
 sub handle_tap_test ($)
@@ -268,8 +268,7 @@ sub handle_tap_test ($)
           $string .= " $explanation";
         }
     }
-  add_test_result $test_result;
-  console_output $test_result, $string;
+  report $test_result, $string;
 }
 
 sub handle_tap_plan ($)
@@ -288,8 +287,7 @@ sub handle_tap_plan ($)
     if not defined $plan->directive && length ($plan->directive) > 0;
   my $explanation = $plan->explanation ?
                     "- " . $plan->explanation : undef;
-  add_test_result "SKIP";
-  console_output "SKIP", $explanation;
+  report "SKIP", $explanation;
   finish;
 }
 
@@ -305,7 +303,7 @@ sub handle_tap_comment ($)
 {
   return unless $cfg{comments};
   my $comment = $_[0]->comment;
-  console_output "#", "$comment" if length $comment;
+  report "#", "$comment" if length $comment;
 }
 
 sub main (@)
