@@ -27,6 +27,17 @@ my $HELP = "$ME: TAP-aware test driver for Automake testsuite harness." .
 
 my $VERSION = '(experimental version)';
 
+# Keep this in sync with `lib/am/check.am:$(am__tty_colors)'.
+my %COLOR = (
+  red => "\e[0;31m",
+  grn => "\e[0;32m",
+  lgn => "\e[1;32m",
+  blu => "\e[1;34m",
+  mgn => "\e[0;35m",
+  brg => "\e[1m",
+  std => "\e[m",
+);
+
 # ------------------- #
 #  Global variables.  #
 # ------------------- #
@@ -211,17 +222,46 @@ sub stringify_test_result ($)
   die "INTERNAL ERROR"; # NOTREACHED
 }
 
+sub colored ($$)
+{
+  my ($color_name, $text) = @_;
+  return  $COLOR{$color_name} . $text . $COLOR{'std'};
+}
+
+sub decorate_result ($)
+{
+  my $result = shift;
+  return $result unless $cfg{"color-tests"};
+  my %color_for_result =
+    (
+      "ERROR" => 'mgn',
+      "PASS"  => 'grn',
+      "XPASS" => 'red',
+      "FAIL"  => 'red',
+      "XFAIL" => 'lgn',
+      "SKIP"  => 'blu',
+    );
+  if (my $color = $color_for_result{$result})
+    {
+      return colored ($color, $result);
+    }
+  else
+    {
+      return $result; # Don't colorize unknown stuff.
+    }
+}
+
 sub report ($;$)
 {
   my ($msg, $result, $explanation) = (undef, @_);
   if ($result =~ /^(?:X?(?:PASS|FAIL)|SKIP|ERROR)/)
     {
-      $msg = "$result: $test_script_name";
+      $msg = ": $test_script_name";
       add_test_result $result;
     }
   elsif ($result eq "#")
     {
-      $msg = "# $test_script_name:";
+      $msg = " $test_script_name:";
     }
   else
     {
@@ -229,10 +269,11 @@ sub report ($;$)
     }
   $msg .= " $explanation" if defined $explanation;
   $msg .= "\n";
-  print OLDOUT $msg;
+  # Output on console might be colorized.
+  print OLDOUT decorate_result ($result) . $msg;
   # Log the result in the log file too, to help debugging (this is
   # especially true when said result is a TAP error or "Bail out!").
-  print $msg;
+  print $result . $msg;
 }
 
 sub testuite_error ($)

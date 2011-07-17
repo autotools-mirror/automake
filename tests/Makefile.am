@@ -28,7 +28,6 @@ override-conditional-2.test \
 pr8365-remake-timing.test \
 yacc-dist-nobuild-subdir.test \
 tap-bad-prog.test \
-tap-color.test \
 tap-plan-corner2.test \
 tap-message-0.test \
 tap-signal.test \
