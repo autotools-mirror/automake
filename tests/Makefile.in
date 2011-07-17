@@ -171,12 +171,14 @@ RECHECK_LOGS = $(TEST_LOGS)
 AM_RECURSIVE_TARGETS = check check-html recheck recheck-html
 TEST_SUITE_LOG = test-suite.log
 TEST_SUITE_HTML = $(TEST_SUITE_LOG:.log=.html)
-TEST_EXTENSIONS = .test
 am__test_logs1 = $(TESTS:=.log)
-TEST_LOGS = $(am__test_logs1:.test.log=.log)
+am__test_logs2 = $(am__test_logs1:.test.log=.log)
 TEST_LOG_DRIVER = $(SHELL) $(top_srcdir)/lib/test-driver
 TEST_LOG_COMPILE = $(TEST_LOG_COMPILER) $(AM_TEST_LOG_FLAGS) \
 	$(TEST_LOG_FLAGS)
+TEST_LOGS = $(am__test_logs2:.tap.log=.log)
+TAP_LOG_COMPILE = $(TAP_LOG_COMPILER) $(AM_TAP_LOG_FLAGS) \
+	$(TAP_LOG_FLAGS)
 TEST_LOGS_TMP = $(TEST_LOGS:.log=.log-t)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
@@ -273,9 +275,13 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+TEST_EXTENSIONS = .test .tap
+TAP_LOG_DRIVER = $(PERL) $(top_srcdir)/lib/tap-driver
+TAP_LOG_DRIVER_FLAGS = --merge
 MAINTAINERCLEANFILES = $(parallel_tests) $(instspc_tests)
 EXTRA_DIST = ChangeLog-old gen-parallel-tests instspc-tests.sh \
-	$(TESTS) trivial-test-driver testsuite-summary-checks.sh \
+	$(TESTS) tap-functions.sh plain-functions.sh \
+	trivial-test-driver testsuite-summary-checks.sh \
 	extract-testsuite-summary tap-setup.sh tap-summary-aux.sh
 XFAIL_TESTS = all.test auxdir2.test cond17.test gcj6.test \
 	override-conditional-2.test pr8365-remake-timing.test \
@@ -358,6 +364,7 @@ instspc_xfail_tests = instspc-squote-build.test \
 AM_TESTS_ENVIRONMENT = \
   test x"$$me" = x || unset me; \
   test x"$$required" = x || unset required; \
+  test x"$$use_tap" = x || unset use_tap; \
   test x"$$parallel_tests" = x || unset parallel_tests; \
   test x"$$original_AUTOMAKE" = x || unset original_AUTOMAKE; \
   test x"$$original_ACLOCAL" = x || unset original_ACLOCAL;
@@ -385,12 +392,7 @@ acloca20.test \
 acloca21.test \
 acloca22.test \
 acloca23.test \
-acoutnoq.test \
-acoutpt.test \
-acoutpt2.test \
-acoutqnl.test \
-acoutbs.test \
-acoutbs2.test \
+ac-output-old.tap \
 acsilent.test \
 acsubst.test \
 acsubst2.test \
@@ -1139,6 +1141,7 @@ self-check-is_newest.test \
 self-check-me.test \
 self-check-report.test \
 self-check-sanity.test \
+self-check-tap.test \
 self-check-unindent.test \
 sanity.test \
 scripts.test \
@@ -1429,7 +1432,7 @@ tap-summary-color.test
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .html .log .test .trs
+.SUFFIXES: .html .log .tap .test .trs
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/parallel-tests.am $(srcdir)/instspc-tests.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -1638,6 +1641,11 @@ recheck recheck-html:
 	@p='$<'; $(am__check_pre) $(TEST_LOG_DRIVER) --test-name "$$f" \
 	--log-file '$*.log' --trs-file '$*.trs' \
 	$(am__common_driver_flags) $(AM_TEST_LOG_DRIVER_FLAGS) $(TEST_LOG_DRIVER_FLAGS) -- $(TEST_LOG_COMPILE) "$$tst" \
+	$(AM_TESTS_FD_REDIRECT)
+.tap.log:
+	@p='$<'; $(am__check_pre) $(TAP_LOG_DRIVER) --test-name "$$f" \
+	--log-file '$*.log' --trs-file '$*.trs' \
+	$(am__common_driver_flags) $(AM_TAP_LOG_DRIVER_FLAGS) $(TAP_LOG_DRIVER_FLAGS) -- $(TAP_LOG_COMPILE) "$$tst" \
 	$(AM_TESTS_FD_REDIRECT)
 
 distdir: $(DISTFILES)
@@ -1891,6 +1899,9 @@ tap-summary.log tap-summary-color.log: tap-summary-aux.sh
 
 # Dependencies valid for each test case.
 $(TEST_LOGS): defs defs-static aclocal-$(APIVERSION) automake-$(APIVERSION)
+# FIXME: this should be made more granular once we have a cleaner
+# subdivision of the tests.
+$(TEST_LOGS): plain-functions.sh tap-functions.sh
 
 clean-local: clean-local-check
 .PHONY: clean-local-check

@@ -16,6 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+TEST_EXTENSIONS = .test .tap
+TAP_LOG_DRIVER = $(PERL) $(top_srcdir)/lib/tap-driver
+TAP_LOG_DRIVER_FLAGS = --merge
+
 MAINTAINERCLEANFILES =
 EXTRA_DIST = ChangeLog-old
 
@@ -107,6 +111,7 @@ XFAIL_TESTS += $(instspc_xfail_tests)
 AM_TESTS_ENVIRONMENT = \
   test x"$$me" = x || unset me; \
   test x"$$required" = x || unset required; \
+  test x"$$use_tap" = x || unset use_tap; \
   test x"$$parallel_tests" = x || unset parallel_tests; \
   test x"$$original_AUTOMAKE" = x || unset original_AUTOMAKE; \
   test x"$$original_ACLOCAL" = x || unset original_ACLOCAL;
@@ -134,12 +139,7 @@ acloca20.test \
 acloca21.test \
 acloca22.test \
 acloca23.test \
-acoutnoq.test \
-acoutpt.test \
-acoutpt2.test \
-acoutqnl.test \
-acoutbs.test \
-acoutbs2.test \
+ac-output-old.tap \
 acsilent.test \
 acsubst.test \
 acsubst2.test \
@@ -888,6 +888,7 @@ self-check-is_newest.test \
 self-check-me.test \
 self-check-report.test \
 self-check-sanity.test \
+self-check-tap.test \
 self-check-unindent.test \
 sanity.test \
 scripts.test \
@@ -1110,6 +1111,9 @@ $(parallel_tests)
 
 EXTRA_DIST += $(TESTS)
 
+## Files containing auxiliary functions used by our test cases.
+EXTRA_DIST += tap-functions.sh plain-functions.sh
+
 test-driver-custom-multitest.log: trivial-test-driver
 test-driver-custom-multitest-recheck.log: trivial-test-driver
 test-driver-custom-multitest-recheck2.log: trivial-test-driver
@@ -1200,6 +1204,9 @@ EXTRA_DIST += tap-summary-aux.sh
 
 # Dependencies valid for each test case.
 $(TEST_LOGS): defs defs-static aclocal-$(APIVERSION) automake-$(APIVERSION)
+# FIXME: this should be made more granular once we have a cleaner
+# subdivision of the tests.
+$(TEST_LOGS): plain-functions.sh tap-functions.sh
 
 clean-local: clean-local-check
 .PHONY: clean-local-check

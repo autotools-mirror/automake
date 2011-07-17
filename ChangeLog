@@ -1,5 +1,54 @@
 2011-08-03  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
+	testsuite: scaffolding to allow use of TAP in our own tests
+	Now that Automake has initial support for the TAP test protocol,
+	we can start "eating our own dog food" and rewrite some tests to
+	use TAP; this should allow for better granularity, especially in
+	the control of skips and expected failures.  With this change, we
+	set up the initial scaffolding required by the planned TAP tests,
+	and convert few older tests to use TAP, mostly in order to verify
+	that there are no obvious errors.  The tests in our testsuite that
+	use the TAP protocol will be marked by the new `.tap' extension.
+	* tests/plain-functions.sh: New file containing definition of
+	helper shell functions used by the "protocol-less" tests of the
+	Automake testsuite.
+	* tests/tap-functions.sh:  New file containing definition of
+	helper shell functions used by the TAP-producing tests of the
+	Automake testsuite.
+	* tests/defs: Remove definitions of some functions that are
+	now defined in `plain-functions.sh'.  Instead, source one of
+	`plain-functions.sh' or `tap-functions.sh', depending on whether
+	`$use_tap' is set to "no" or "yes".
+	(exit trap): Call `late_plan_' if `$use_tap' is true.  Also,
+	unset shell traces before issuing the latest commands, to avoid
+	confusing the tap driver with spurious output.
+	* tests/defs-static.in ($use_tap): New variable, by default set
+	to "yes" if the calling test script has a `.tap' suffix, and to
+	"no" otherwise.  The individual scripts can override it though.
+	In code sanity-checking the environment, verify that `$use_tap'
+	is not exported.
+	* tests/self-check-env-sanitize.test: Update, and small related
+	reformatting.
+	* tests/self-check-tap.test: New very minimal self test.
+	* tests/acoutbs.test, tests/acoutbs2.test, tests/acoutnoq.test,
+	tests/acoutpt.test, tests/acoutpt2.test, tests/acoutqnl.test:
+	Removed, merged into ...
+	* tests/ac-output-old.tap: ... this new test, that uses TAP.
+	* tests/Makefile.am (TAP_LOG_DRIVER): Define to invoke our own
+	`tap-driver' script.
+	(TAP_LOG_DRIVER_FLAGS): Define to `--merge', so that the stdout
+	and stderr of the test scripts remains synced.
+	(TEST_EXTENSIONS): Define, to add the `.tap' suffix; also list
+	the `.test' suffix explicitly.
+	(EXTRA_DIST): Distribute the new files `plain-functions.sh' and
+	`tap-functions.sh'.
+	($(TEST_LOGS)): Depends on them.
+	(AM_TESTS_ENVIRONMENT): Ensure that `use_tap' is not exported in
+	the environment of the tests.
+	(TESTS): Update.
+
+2011-08-03  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
 	* NEWS: Fix typo, and related reformatting.
 
 2011-08-03  Stefano Lattarini  <stefano.lattarini@gmail.com>

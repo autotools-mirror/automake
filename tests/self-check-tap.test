@@ -15,28 +15,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Sanity check for the automake testsuite.
-# Make sure that the testsuite initialization code complains when
-# some testsuite-influential variables are set in the environment.
+# Make sure that $using_tap gets automatically defined by `./defs-static',
+# but can be overridden by the individual tests.
 
 . ./defs-static || exit 1
 
-set -x
-exec 5>&1
+set -ex
 
-vars='
-  me
-  parallel_tests
-  required
-  use_tap
-  original_AUTOMAKE
-  original_ACLOCAL
-'
+$SHELL -c '. ./defs-static && test $using_tap = yes' foo.tap
+$SHELL -c '. ./defs-static && test $using_tap = no' foo.test
+$SHELL -c '. ./defs-static && test $using_tap = no' tap
+$SHELL -c '. ./defs-static && test $using_tap = no' tap.test
+$SHELL -c '. ./defs-static && test $using_tap = no' foo-tap
 
-for var in $vars; do
-  env "$var=foo" $SHELL -c '. ./defs' foo.test && exit 1
-  env "$var=foo" $SHELL -c '. ./defs' foo.test 2>&1 1>&5 \
-    | grep "foo\.test:.* variable \`$var'.* in the environment.*unsafe" \
-    || exit 1
-done
+$SHELL -c 'using_tap=no; . ./defs-static; test $using_tap = no' foo.tap
+$SHELL -c 'using_tap=yes; . ./defs-static; test $using_tap = yes' foo.test
 
 :
