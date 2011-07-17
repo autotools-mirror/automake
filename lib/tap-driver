@@ -211,10 +211,23 @@ sub stringify_test_result ($)
   die "INTERNAL ERROR"; # NOTREACHED
 }
 
-sub console_output (@)
+sub console_output ($;$)
 {
-  return unless @_ > 0;
-  my $msg = join ("\n", @_) . "\n";
+  my ($msg, $result, $explanation) = (undef, @_);
+  if ($result =~ /^(?:X?(?:PASS|FAIL)|SKIP|ERROR)/)
+    {
+      $msg = "$result: $test_script_name";
+    }
+  elsif ($result eq "#")
+    {
+      $msg = "# $test_script_name:";
+    }
+  else
+    {
+      die "INTERNAL ERROR"; # NOTREACHED
+    }
+  $msg .= " $explanation" if defined $explanation;
+  $msg .= "\n";
   print OLDOUT $msg;
   # Log the result in the log file too, to help debugging (this is
   # especially true when said result is a TAP error or "Bail out!").
@@ -224,7 +237,7 @@ sub console_output (@)
 sub testuite_error ($)
 {
   add_test_result "ERROR";
-  console_output "ERROR: $test_script_name - $_[0]";
+  console_output "ERROR", "- $_[0]";
 }
 
 sub handle_tap_test ($)
@@ -233,7 +246,7 @@ sub handle_tap_test ($)
   my $test = shift;
 
   my $test_result = stringify_test_result $test;
-  my $string = "$test_result: $test_script_name " . $test->number;
+  my $string = $test->number;
   
   if (my $description = $test->description)
     {
@@ -256,7 +269,7 @@ sub handle_tap_test ($)
         }
     }
   add_test_result $test_result;
-  console_output $string;
+  console_output $test_result, $string;
 }
 
 sub handle_tap_plan ($)
@@ -273,13 +286,10 @@ sub handle_tap_plan ($)
   # Nothing more to do, unless the plan contains a SKIP directive.
   return
     if not defined $plan->directive && length ($plan->directive) > 0;
-  my $string = "SKIP: $test_script_name";
-  if (my $explanation = $plan->explanation)
-    {
-      $string .= " - $explanation";
-    }
+  my $explanation = $plan->explanation ?
+                    "- " . $plan->explanation : undef;
   add_test_result "SKIP";
-  console_output $string;
+  console_output "SKIP", $explanation;
   finish;
 }
 
@@ -295,8 +305,7 @@ sub handle_tap_comment ($)
 {
   return unless $cfg{comments};
   my $comment = $_[0]->comment;
-  console_output "# $test_script_name: $comment"
-    if length $comment;
+  console_output "#", "$comment" if length $comment;
 }
 
 sub main (@)
