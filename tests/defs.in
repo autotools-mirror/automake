@@ -64,7 +64,25 @@ test -f "$srcdir/defs.in" || {
    exit 1
 }
 
-me=`echo "$0" | sed -e 's,.*[\\/],,;s/\.test$//'`
+# The name of the current test (without the `.test' suffix).
+# Test scripts can override it if they need to (but this should
+# be done carefully, and *before* including ./defs).
+if test -z "$me"; then
+  me=`echo "$0" | sed -e 's,.*[\\/],,;s/\.test$//'`
+elif env | grep '^me=' >/dev/null; then
+  echo "$0: variable \`me' is set in the environment: this is unsafe" >&2
+  exit 99
+fi
+
+# Check that the environment is properly sanitized.
+for var in required parallel_tests; do
+  if env | grep "^$var=" >/dev/null; then
+    echo "$me: variable \`$var' is set in the environment:" \
+         "this is unsafe" >&2
+    exit 99
+  fi
+done
+unset var
 
 # This might be used in testcases checking distribution-related features.
 # Test scripts are free to override this if they need to.
@@ -80,8 +98,10 @@ export SHELL
 test -z "$PERL" && PERL='@PERL@'
 test -z "$MAKE" && MAKE=make
 test -z "$AUTOCONF" && AUTOCONF="@am_AUTOCONF@"
+test -z "$AUTOM4TE" && AUTOM4TE="@am_AUTOM4TE@"
+test -z "$AUTORECONF" && AUTORECONF="@am_AUTORECONF@"
 test -z "$AUTOHEADER" && AUTOHEADER="@am_AUTOHEADER@"
-test -z "$AUTOUPDATE" && AUTOUPDATE=autoupdate
+test -z "$AUTOUPDATE" && AUTOUPDATE="@am_AUTOUPDATE@"
 test -z "$MISSING" && MISSING=`pwd`/../lib/missing
 # Use -Werror because this also turns some Perl warnings into error.
 # (Tests for which this is inappropriate should use -Wno-error.)
@@ -104,17 +124,71 @@ echo "$PATH"
 # (See note about `export' in the Autoconf manual.)
 export PATH
 
+# We use a trap below for cleanup.  This requires us to go through
+# hoops to get the right exit status transported through the signal.
+# So use `Exit STATUS' instead of `exit STATUS' inside of the tests.
+# Turn off errexit here so that we don't trip the bug with OSF1/Tru64
+# sh inside this function.
+Exit ()
+{
+  set +e
+  (exit $1)
+  exit $1
+}
+
+# Print warnings (e.g., about skipped and failed tests) to this file
+# number.  Override by putting, say:
+#   stderr_fileno_=9; export stderr_fileno_; exec 9>&2;
+# in the definition of AM_TESTS_ENVIRONMENT.
+# This is useful when using automake's parallel tests mode, to print the
+# reason for skip/failure to console, rather than to the *.log files.
+: ${stderr_fileno_=2}
+
+# Copied from Gnulib's `tests/init.sh'.
+warn_ () { echo "$@" 1>&$stderr_fileno_; }
+fail_ () { warn_ "$me: failed test: $@"; Exit 1; }
+skip_ () { warn_ "$me: skipped test: $@"; Exit 77; }
+fatal_ () { warn_ "$me: hard error: $@"; Exit 99; }
+framework_failure_ () { warn_ "$me: set-up failure: $@"; Exit 99; }
+
+# cross_compiling
+# ---------------
+# Tell whether we are cross-compiling.  This is especially useful to skip
+# tests (or portions of them) that requires a native compiler.
+cross_compiling ()
+{
+  test x"$host_alias" != x
+}
+
+# So that we can force the use of correct gcc, g++ etc., consistently
+# with cross-compilation settings.
+if cross_compiling; then
+  am__tool_prefix="$host_alias-"
+else
+  am__tool_prefix=
+fi
+
 for tool in : $required
 do
   # Check that each required tool is present.
   case $tool in
     :) ;;
-    bison)
+    bison|yacc)
       # Since bison is required, we pick YACC for ./configure.
       YACC='bison -y'
       export YACC
       echo "$me: running bison --version"
       ( bison --version ) || exit 77
+      ;;
+    flex|lex)
+      # Since flex is required, we pick LEX for ./configure.
+      LEX=flex
+      export LEX
+      echo "$me: running flex --version"
+      flex --version || exit 77
+      ;;
+    cc|c++|fortran|fortran77)
+      echo "$me: dummy requirement '$tool', no check done"
       ;;
     bzip2)
       # Do not use --version, bzip2 still tries to compress stdin.
@@ -141,23 +215,47 @@ do
       # always use it.  This is important only when the user
       # has defined CC in his environment, otherwise ./configure will
       # prefer gcc to other compilers.
-      CC=gcc
+      CC=${am__tool_prefix}gcc
       export CC
       echo "$me: running $CC --version"
       ( $CC --version ) || exit 77
       ;;
     gcj)
-      GCJ=gcj
+      GCJ=${am__tool_prefix}gcj
       export GCJ
       echo "$me: running $GCJ --version"
       ( $GCJ --version ) || exit 77
       ( $GCJ -v ) || exit 77
       ;;
     g++)
-      CXX=g++
+      CXX=${am__tool_prefix}g++
       export CXX
       echo "$me: running $CXX --version"
       ( $CXX --version ) || exit 77
+      ;;
+    gfortran)
+      FC=${am__tool_prefix}gfortran
+      export FC
+      echo "$me: running $FC --version"
+      $FC --version || skip_ "GNU Fortran compiler not available"
+      echo "$me: running $FC -v"
+      $FC -v || skip_ "botched installation for GNU Fortran compiler"
+      case " $required " in
+        *\ g77\ *) ;;
+        *) F77=$FC; export F77;;
+      esac
+      ;;
+    g77)
+      F77=${am__tool_prefix}g77
+      export F77
+      echo "$me: running $F77 --version"
+      $F77 --version || skip_ "GNU Fortran 77 compiler not available"
+      echo "$me: running $F77 -v"
+      $F77 -v || skip_ "botched installation for GNU Fortran 77 compiler"
+      case " $required " in
+        *\ gfortran\ *) ;;
+        *) FC=$F77; export FC;;
+      esac
       ;;
     icc)
       CC=icc
@@ -196,6 +294,9 @@ do
       overwrite_status=$?
       rm -f $priv_check_temp
       test $overwrite_status = 0 && exit 77
+      ;;
+    native)
+      cross_compiling && skip_ "doesn't work in cross-compile mode"
       ;;
     python)
       # Python doesn't support --version, it has -V
@@ -259,18 +360,6 @@ case "$srcdir" in
     srcdir=`CDPATH=: && cd "$srcdir" && pwd`
     ;;
 esac
-
-# We use a trap below for cleanup.  This requires us to go through
-# hoops to get the right exit status transported through the signal.
-# So use `Exit STATUS' instead of `exit STATUS' inside of the tests.
-# Turn off errexit here so that we don't trip the bug with OSF1/Tru64
-# sh inside this function.
-Exit ()
-{
-  set +e
-  (exit $1)
-  exit $1
-}
 
 curdir=`pwd`
 testSubDir=$me.dir
@@ -337,6 +426,8 @@ unset DESTDIR
 unset prefix exec_prefix bindir datarootdir datadir docdir dvidir
 unset htmldir includedir infodir libdir libexecdir localedir mandir
 unset oldincludedir pdfdir psdir sbindir sharedstatedir sysconfdir
+# Unset variables that might change the "make distcheck" behaviour.
+unset DISTCHECK_CONFIGURE_FLAGS AM_DISTCHECK_CONFIGURE_FLAGS
 # Also unset variables that control our test driver.  While not
 # conceptually independent, they cause some changed semantics we
 # need to control (and test for) in some of the tests to ensure
@@ -427,6 +518,16 @@ is_newest ()
   test -z "$is_newest_files"
 }
 
+# using_gmake
+# -----------
+# Return success if $MAKE is GNU make, return failure otherwise.
+using_gmake ()
+{
+  # Use --version AND -v, because SGI Make doesn't fail on --version.
+  # Also grep for GNU because newer versions of FreeBSD make do
+  # not complain about `--version' (they seem to silently ignore it).
+  $MAKE --version -v | grep GNU
+}
 
 # AUTOMAKE_run status [options...]
 # --------------------------------
@@ -480,6 +581,7 @@ unindent ()
   fi
   sed "$sed_unindent_prog" ${1+"$@"}
 }
+sed_unindent_prog="" # Avoid interferences from the environment.
 
 # Turn on shell traces.
 set -x

@@ -38,7 +38,16 @@ $(parallel_tests): $(parallel_tests:-p.test=.test) Makefile.am
 
 MAINTAINERCLEANFILES = $(parallel_tests)
 
+# Some testsuite-influential variables should be overridable from the
+# test scripts, but not from the environment.
+TESTS_ENVIRONMENT = \
+  test x"$$me" = x || unset me; \
+  test x"$$required" = x || unset required; \
+  test x"$$parallel_tests" = x || unset parallel_tests;
+
 TESTS = \
+self-check-env-sanitize.test \
+self-check-report.test \
 aclibobj.test \
 aclocal.test \
 aclocal3.test \
@@ -76,10 +85,14 @@ alloca.test \
 alloca2.test \
 alpha.test \
 alpha2.test \
+amhello-cflags.test \
+amhello-cross-compile.test \
+amhello-binpkg.test \
 amassign.test \
 ammissing.test \
 amopt.test \
 amsubst.test \
+ansi2knr-deprecation.test \
 ansi.test \
 ansi2.test \
 ansi3.test \
@@ -103,6 +116,7 @@ autodist-acconfig-no-subdir.test \
 autodist-aclocal-m4.test \
 autodist-config-headers.test \
 autodist-configure-no-subdir.test \
+autodist-no-duplicate.test \
 autodist-stamp-vti.test \
 autohdr.test \
 autohdr2.test \
@@ -146,6 +160,7 @@ check11.test \
 check-exported-srcdir.test \
 check-tests-in-builddir.test \
 check-tests_environment.test \
+tests-environment-backcompat.test \
 checkall.test \
 clean.test \
 clean2.test \
@@ -288,7 +303,6 @@ depend4.test \
 depend5.test \
 depend6.test \
 destdir.test \
-dirforbid.test \
 dirlist.test \
 dirlist2.test \
 discover.test \
@@ -304,6 +318,11 @@ distdir.test \
 distlinks.test \
 distlinksbrk.test \
 distname.test \
+distcheck-configure-flags.test \
+distcheck-configure-flags-am.test \
+distcheck-configure-flags-subpkg.test \
+distcheck-hook.test \
+distcheck-hook2.test \
 dmalloc.test \
 dollar.test \
 dollarvar.test \
@@ -509,7 +528,6 @@ man2.test \
 man3.test \
 man4.test \
 man5.test \
-mclean.test \
 mdate.test \
 mdate2.test \
 mdate3.test \
@@ -580,8 +598,13 @@ parallel-tests7.test \
 parallel-tests8.test \
 parallel-tests9.test \
 parallel-tests10.test \
+parallel-tests-harderror.test \
 parallel-tests-unreadable-log.test \
 parallel-tests-subdir.test \
+parallel-tests-log-override-1.test \
+parallel-tests-log-override-2.test \
+parallel-tests-log-override-recheck.test \
+parallel-tests-log-compiler-example.test \
 parse.test \
 percent.test \
 percent2.test \
@@ -624,6 +647,10 @@ prefix.test \
 primary.test \
 primary2.test \
 primary3.test \
+primary-prefix-invalid-couples.test \
+primary-prefix-valid-couples.test \
+primary-prefix-couples-force-valid.test \
+primary-prefix-couples-documented-valid.test \
 proginst.test \
 python.test \
 python2.test \
@@ -646,6 +673,11 @@ remake4.test \
 remake5.test \
 remake6.test \
 remake7.test \
+remake-subdir-from-subdir.test \
+remake-subdir-gnu.test \
+remake-subdir.test \
+remake-subdir2.test \
+remake-subdir-long-time.test \
 pr8365-remake-timing.test \
 regex.test \
 req.test \
@@ -671,6 +703,7 @@ silent-lex-gcc.test \
 silent-lex-generic.test \
 silent-yacc-gcc.test \
 silent-yacc-generic.test \
+silent-configsite.test \
 srcsub.test \
 srcsub2.test \
 space.test \
