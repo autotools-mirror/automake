@@ -317,12 +317,18 @@ What Goes in a Distribution
 
 Support for test suites
 
-* Simple Tests::                Listing programs and scripts in @code{TESTS}
-* Simple Tests using parallel-tests::  More powerful test driver
+* Generalities about Testing::  Generic concepts and terminology about testing
+* Simple Tests::                Listing test scripts in @code{TESTS}
 * Custom Test Drivers::         Writing and using custom test drivers
 * Using the TAP test protocol:: Integrating test scripts that use the TAP protocol
-* DejaGnu Tests::               Interfacing with the external testing framework
+* DejaGnu Tests::               Interfacing with the @command{dejagnu} testing framework
 * Install Tests::               Running tests on installed packages
+
+Simple Tests
+
+* Script-based Testsuites::     Automake-specific concepts and terminology
+* Serial Test Harness::         Older (and obsolescent) serial test harness
+* Parallel Test Harness::       Generic concurrent test harness
 
 Custom Test Drivers
 
@@ -2325,8 +2331,8 @@ multilibs (@pxref{Multilibs}).  This file is maintained in the GCC
 tree at @url{http://gcc.gnu.org/svn.html}.
 
 @item test-driver
-This implements the default testsuite driver offered by the
-@option{parallel-tests} testsuite harness.
+This implements the default test driver offered by the parallel
+testsuite harness.
 
 @item texinfo.tex
 Not a program, this file is required for @samp{make dvi}, @samp{make
@@ -8650,42 +8656,183 @@ default, only the @code{dist-gzip} target is hooked to @code{dist}.
 @cindex @code{make check}
 @trindex check
 
-Automake supports three forms of test suites, the first two of which
-are very similar.
+Automake can generate code to handle two kinds of test suites.  One is
+based on integration with the @command{dejagnu} framework.  The other
+(and most used) form is based on the use of generic test scripts, and
+its activation is triggered by the definition of the special @code{TESTS}
+variable.  This second form allows for various degrees of sophistication
+and customization; in particular, it allows for concurrent execution
+of test scripts, use of established test protocols such as TAP, and
+definition of custom test drivers and test runners.
+
+@noindent
+In either case, the testsuite is invoked via @samp{make check}.
 
 @menu
-* Simple Tests::                Listing programs and scripts in @code{TESTS}
-* Simple Tests using parallel-tests::  More powerful test driver
+* Generalities about Testing::  Concepts and terminology about testing
+* Simple Tests::                Listing test scripts in @code{TESTS}
 * Custom Test Drivers::         Writing and using custom test drivers
 * Using the TAP test protocol:: Integrating test scripts that use the TAP protocol
-* DejaGnu Tests::               Interfacing with the external testing framework
+* DejaGnu Tests::               Interfacing with the @command{dejagnu} testing framework
 * Install Tests::               Running tests on installed packages
 @end menu
+
+@node Generalities about Testing
+@section Generalities about Testing
+
+The purpose of testing is to determine whether a program or system behaves
+as expected (e.g., known inputs produce the expected outputs, error
+conditions are correctly handled or reported, and older bugs do not
+resurface).
+
+@cindex test case
+The minimal unit of testing is usually called @emph{test case}, or simply
+@emph{test}.  How a test case is defined or delimited, and even what
+exactly @emph{constitutes} a test case, depends heavily on the testing
+paradigm and/or framework in use, so we won't attempt any more precise
+definition.  The set of the test cases for a given program or system
+constitutes its @emph{testsuite}.
+
+@cindex test harness
+@cindex testsuite harness
+A @emph{test harness} (also @emph{testsuite harness}) is a program or
+software component that executes all (or part of) the defined test cases,
+analyzes their outcomes, and report or register these outcomes
+appropriately.  Again, the details of how this is accomplished (and how
+the developer and user can influence it or interface with it) varies
+wildly, and we'll attempt no precise definition.
+
+@cindex test pass
+@cindex test failure
+A test is said to @emph{pass} when it can determine that the condition or
+behaviour it means to verify holds, and is said to @emph{fail} when it can
+determine that such condition of behaviour does @emph{not} hold.
+
+@cindex test skip
+Sometimes, tests can rely on non-portable tools or prerequisites, or
+simply make no sense on a given system (for example, a test checking a
+Windows-specific feature makes no sense on a GNU/Linux system).  In this
+case, accordingly to the definition above, the tests can neither be
+considered passed nor failed; instead, they are @emph{skipped} -- i.e.,
+they are not run, or their result is anyway ignored for what concerns
+the count of failures an successes.  Skips are usually explicitly
+reported though, so that the user will be aware that not all of the
+testsuite has really run.
+
+@cindex xfail
+@cindex expected failure
+@cindex expected test failure
+@cindex xpass
+@cindex unexpected pass
+@cindex unexpected test pass
+It's not uncommon, especially during early development stages, that some
+tests fail for known reasons, and that the developer doesn't want to
+tackle these failures immediately (this is especially true when the
+failing tests deal with corner cases).  In this situation, the better
+policy is to declare that each of those failures is an @emph{expected
+failure} (or @emph{xfail}).  In case a test that is expected to fail ends
+up passing instead, many testing environments will flag the result as a
+special kind of failure called @emph{unexpected pass} (or @emph{xpass}).
+
+@cindex hard error
+@cindex Distinction between errors and failures in testsuites
+Many testing environments and frameworks distinguish between test failures
+and hard errors.  As we've seen, a test failure happens when some invariant
+or expected behaviour of the software under test is not met.  An @emph{hard
+error} happens when e.g., the set-up of a test case scenario fails, or when
+some other unexpected or highly undesirable condition is encountered (for
+example, the program under test experiences a segmentation fault).
+
+@emph{TODO}: Links to other test harnesses (esp. those sharing our
+terminology)?
 
 @node Simple Tests
 @section Simple Tests
 
-If the variable @code{TESTS} is defined, its value is taken to be a
-list of programs or scripts to run in order to do the testing.
-Programs needing data files should look for them in @code{srcdir}
-(which is both an environment variable and a make variable) so they
-work when building in a separate directory (@pxref{Build Directories,
-, Build Directories , autoconf, The Autoconf Manual}), and in
-particular for the @code{distcheck} rule (@pxref{Checking the
-Distribution}).
+@menu
+* Script-based Testsuites::     Automake-specific concepts and terminology
+* Serial Test Harness::         Older (and obsolescent) serial test harness
+* Parallel Test Harness::       Generic concurrent test harness
+@end menu
 
-For each of the @code{TESTS}, the result of execution is printed along
-with the test name, where @code{PASS} denotes a successful test,
-@code{FAIL} denotes a failed test, @code{XFAIL} an expected failure,
-@code{XPASS} an unexpected pass for a test that is supposed to fail,
-and @code{SKIP} denotes a skipped test.
+@node Script-based Testsuites
+@subsection Script-based Testsuites
+
+If the special variable @code{TESTS} is defined, its value is taken to be
+a list of programs or scripts to run in order to do the testing.  Under
+the appropriate circumstances, it's possible for @code{TESTS} to list
+also data files to be passed to one or more test scripts defined by
+different means (the so-called ``log compilers'', @pxref{Parallel Test
+Harness}).
+
+Test scripts can be executed serially or concurrently.  Automake
+supports both these kinds of test execution, with the serial test harness
+being the default (for backward-compatibility reasons only, as its use
+is nowadays discouraged).  The concurrent test harness relies on the
+concurrence capabilities (if any) offered by the underlying @command{make}
+implementation, and can thus only be as good as those are.
+
+By default, only the exit statuses of the test scripts are considered when
+determining the testsuite outcome.  But Automake allows also the use of
+more complex test protocols, either standard (@pxref{Using the TAP test
+protocol}) or custom (@pxref{Custom Test Drivers}).  Note that you can
+enable such protocols only when the parallel harness is used: they won't
+work with the serial test harness.  In the rest of this section we are
+going to concentrate mostly on protocol-less tests, since  we'll have later
+a whole section devoted to the use of test protocols (again, @pxref{Custom
+Test Drivers}).
 
 @cindex Exit status 77, special interpretation
+@cindex Exit status 99, special interpretation
+When no test protocol is in use, an exit status of 0 from a test script will
+denote a success, an exit status of 77 a skipped test, an exit status of 99
+an hard error, and any other exit status will denote a failure.
 
-The number of failures will be printed at the end of the run.  If a
-given test program exits with a status of 77, then its result is ignored
-in the final count.  This feature allows non-portable tests to be
-ignored in environments where they don't make sense.
+@cindex Tests, expected failure
+@cindex Expected test failure
+@vindex XFAIL_TESTS
+@vindex DISABLE_HARD_ERRORS
+@cindex Disabling hard errors
+You may define the variable @code{XFAIL_TESTS} to a list of tests
+(usually a subset of @code{TESTS}) that are expected to fail; this will
+effectively reverse the result of those tests (with the provision that
+skips and hard errors remain untouched).  You may also instruct the
+testsuite harness to treat hard errors like simple failures, by defining
+the @code{DISABLE_HARD_ERRORS} make variable to a nonempty value.
+
+Note however that, for tests based on more complex test protocols,
+the exact effects of @code{XFAIL_TESTS} and @code{DISABLE_HARD_ERRORS}
+might change, or they might even have no effect at all (for example,
+@c Keep this in sync with tap-no-disable-hard-errors.test.
+in tests using TAP, there is not way to disable hard errors, and the
+@code{DISABLE_HARD_ERRORS} variable has no effect on them).
+
+The result of each test case run by the scripts in @code{TESTS} will be
+printed on standard output, along with the test name.  For test protocols
+that allow more test cases per test script (such as TAP), a number,
+identifier and/or brief description specific for the single test case is
+expected to be printed in addition to the name of the test script.  The
+possible results (whose meanings should be clear from the previous
+@ref{Generalities about Testing}) are @code{PASS}, @code{FAIL},
+@code{SKIP}, @code{XFAIL}, @code{XPASS} and @code{ERROR}.  Here is an
+example of output from an hypothetical testsuite that uses both plain
+and TAP tests:
+@c Keep in sync with tap-doc.test.
+@example
+PASS: foo.sh
+PASS: zardoz.tap 1 - Daemon started
+PASS: zardoz.tap 2 - Daemon responding
+SKIP: zardoz.tap 3 - Daemon uses /proc # SKIP /proc is not mounted
+PASS: zardoz.tap 4 - Daemon stopped
+SKIP: bar.sh
+PASS: mu.tap 1
+XFAIL: mu.tap 2 # TODO frobnication not yet implemented
+@end example
+
+@noindent
+A testsuite summary (expected to report at least the number of run,
+skipped and failed tests) will be printed at the end of the testsuite
+run.
 
 @anchor{Simple tests and color-tests}
 @vindex AM_COLOR_TESTS
@@ -8695,52 +8842,58 @@ and standard output is connected to a capable terminal, then the test
 results and the summary are colored appropriately.  The user can disable
 colored output by setting the @command{make} variable
 @samp{AM_COLOR_TESTS=no}, or force colored output even without a connecting
-terminal with @samp{AM_COLOR_TESTS=always}.
+terminal with @samp{AM_COLOR_TESTS=always}.  It's also worth noting that
+some @command{make} implementations, when used in parallel mode, have
+slightly different semantics (@pxref{Parallel make,,, autoconf,
+The Autoconf Manual}), which can break the automatic detection of a
+connection to a capable terminal.  If this is the case, you'll have to
+resort to the use of @samp{AM_COLOR_TESTS=always} in order to have the
+testsuite output colorized.
 
-Note that the semantics of some @command{make} implementations when used
-in parallel mode (@pxref{Parallel make,,, autoconf, The Autoconf Manual})
-can cause the automatic detection of a connection to a capable terminal
-to fail.  In that case, you can still resort to the use of
-@samp{AM_COLOR_TESTS=always}.
+Test programs that need data files should look for them in @code{srcdir}
+(which is both a make variable and an environment variable made available
+to the tests), so that they work when building in a separate directory
+(@pxref{Build Directories, , Build Directories , autoconf,
+The Autoconf Manual}), and in particular for the @code{distcheck} rule
+(@pxref{Checking the Distribution}).
 
 @vindex TESTS
 @vindex TESTS_ENVIRONMENT
-The variable @code{TESTS_ENVIRONMENT} can be used to set environment
-variables for the test run; the environment variable @env{srcdir} is
-set in the rule.  If all your test programs are scripts, you can also
-set @code{TESTS_ENVIRONMENT} to an invocation of the shell (e.g.
-@samp{$(SHELL) -x} can be useful for debugging the tests), or any other
-interpreter.  For instance, the following setup may be used to run tests
-with Perl:
+@vindex AM_TESTS_ENVIRONMENT
+The @code{AM_TESTS_ENVIRONMENT} and @code{TESTS_ENVIRONMENT} variables can
+be used to run initialization code and set environment variables for the
+test scripts.  The former variable is developer-reserved, and can be
+defined in the @file{Makefile.am}, while the latter is reserved for the
+user, which can employ it to extend or override the settings in the
+former; for this to work portably, however, the contents of a non-empty
+@code{AM_TESTS_ENVIRONMENT} @emph{must} be terminated by a semicolon.
 
 @example
-TESTS_ENVIRONMENT = $(PERL) -Mstrict -w
-TESTS = foo.pl bar.pl baz.pl
+AM_TESTS_ENVIRONMENT = \
+## Some environment initializations are kept in a separate shell file
+## `tests-env.sh', which can make it easier to also run tests from
+## the command line.
+  . $(srcdir)/tests-env.sh; \
+## On Solaris, prefer more POSIX-compliant versions of the standard
+## tools by default.
+  if test -d /usr/xpg4/bin; then \
+    PATH=/usr/xpg4/bin:$$PATH; export PATH; \
+  fi;
+@c $$ restore font-lock
 @end example
 
-It's important to note that this last use of @code{TESTS_ENVIRONMENT}
-is invalid when the @option{parallel-tests} option is active; however,
-the @option{parallel-tests} driver provides a more elegant way to
-achieve the same effect, with the further benefit of freeing the
-@code{TESTS_ENVIRONMENT} variable for the user
-(@pxref{Simple Tests using parallel-tests}).
-
-
-@cindex Tests, expected failure
-@cindex Expected test failure
-
-@vindex XFAIL_TESTS
-You may define the variable @code{XFAIL_TESTS} to a list of tests
-(usually a subset of @code{TESTS}) that are expected to fail.  This will
-reverse the result of those tests.
+@noindent
+Note however that @code{AM_TESTS_ENVIRONMENT} is, for historical and
+implementation reasons, @emph{not} supported by the serial harness
+(@pxref{Serial Test Harness}).
 
 Automake ensures that each file listed in @code{TESTS} is built before
-any tests are run; you can list both source and derived programs (or
-scripts) in @code{TESTS}; the generated rule will look both in
-@code{srcdir} and @file{.}.  For instance, you might want to run a C
-program as a test.  To do this you would list its name in @code{TESTS}
-and also in @code{check_PROGRAMS}, and then specify it as you would
-any other program.
+it is run; you can list both source and derived programs (or scripts)
+in @code{TESTS}; the generated rule will look both in @code{srcdir} and
+@file{.}.  For instance, you might want to run a C program as a test.
+To do this you would list its name in @code{TESTS} and also in
+@code{check_PROGRAMS}, and then specify it as you would any other
+program.
 
 Programs listed in @code{check_PROGRAMS} (and @code{check_LIBRARIES},
 @code{check_LTLIBRARIES}...) are only built during @code{make check},
@@ -8751,41 +8904,68 @@ that @code{check_PROGRAMS} are @emph{not} automatically added to
 by the tests, not the tests themselves.  Of course you can set
 @code{TESTS = $(check_PROGRAMS)} if all your programs are test cases.
 
+@node Serial Test Harness
+@subsection Serial Test Harness
 
-@node Simple Tests using parallel-tests
-@section Simple Tests using @samp{parallel-tests}
+@emph{NOTE:} This harness, while still being the default one, is
+obsolescent, and kept mostly for backward-compatibility reasons.
+The user is advised to use the parallel test harness instead
+(@pxref{Parallel Test Harness}).
+
+The serial harness operates by simply running the tests serially, one at
+the time, without any I/O redirection.  It's up to the user to implement
+logging of tests' output, if that's requited or desired.
+@c TODO: give an example of how this can be done.
+
+For historical and implementation reasons, the @code{AM_TESTS_ENVIRONMENT}
+variable is @emph{not} supported by this harness (it will be silently
+ignored if defined); only @code{TESTS_ENVIRONMENT} is, and it is to be
+considered a developer-reserved variable.  This is done so that, when
+using the serial harness, @code{TESTS_ENVIRONMENT} can be defined to an
+invocation of an interpreter through which the tests are to be run.
+For instance, the following setup may be used to run tests with Perl:
+
+@example
+TESTS_ENVIRONMENT = $(PERL) -Mstrict -w
+TESTS = foo.pl bar.pl baz.pl
+@end example
+
+@noindent
+It's important to note that the use of @code{TESTS_ENVIRONMENT} endorsed
+here would be @emph{invalid} with the parallel harness.  That harness
+provides a more elegant way to achieve the same effect, with the further
+benefit of freeing the @code{TESTS_ENVIRONMENT} variable for the user
+(@pxref{Parallel Test Harness}).
+
+Another, less serious limit of the serial harness is that it doesn't
+really distinguish between simple failures and hard errors; this is
+due to historical reasons only, and might be fixed in future Automake
+versions.
+
+@node Parallel Test Harness
+@subsection Parallel Test Harness
 @cindex @option{parallel-tests}, Using
 
-The option @option{parallel-tests} (@pxref{Options}) enables a test
-suite driver that is mostly compatible to the simple test driver described
-in the previous section, but provides a few more features and slightly different
-semantics.  It features concurrent execution of tests with @code{make -j},
-allows to specify inter-test dependencies, lazy reruns of tests that
-have not completed in a prior run, summary and verbose output in
-@samp{RST} (reStructuredText) and @samp{HTML} format, and hard errors
-for exceptional failures.  Similar to the simple test driver,
-@code{AM_COLOR_TESTS}, @code{XFAIL_TESTS}, and
-the @code{check_*} variables are honored, and the environment variable
-@env{srcdir} is set during test execution. Also, @code{TESTS_ENVIRONMENT}
-is still honored, but is complemented by a new developer-reserved variable
-@code{AM_TESTS_ENVIRONMENT} (described below), and its allowed uses are
-somewhat restricted (other features of the @option{parallel-tests} driver
-compensate for this, though).
+The parallel (or concurrent) test harness is enabled by the Automake option
+@option{parallel-tests} .  It features concurrent execution of tests with
+@code{make -j}, allows to specify inter-test dependencies, lazy reruns of
+tests that have not completed in a prior run, summary and verbose output in
+@samp{RST} (reStructuredText) and @samp{HTML} format.
 
-This test driver is still experimental and may undergo changes in order
-to satisfy additional portability requirements.
+This harness is still somewhat experimental and may undergo changes in
+order to satisfy additional portability requirements.
 
 @vindex TEST_SUITE_LOG
 @vindex TESTS
-The driver operates by defining a set of @command{make} rules to create
-a summary log file, @code{TEST_SUITE_LOG}, which defaults to
+The parallel harness operates by defining a set of @command{make} rules
+to create a summary log file, @code{TEST_SUITE_LOG}, which defaults to
 @file{test-suite.log} and requires a @file{.log} suffix.  This file
 depends upon log files created for each single test program listed in
 @code{TESTS}, which in turn contain all output produced by the
 corresponding tests.
 
 @vindex VERBOSE
-As with the simple driver above, by default one status line is printed
+As with the serial harness above, by default one status line is printed
 per completed test, and a short summary after the suite has completed.
 However, standard output and standard error of the test are redirected
 to a per-test log file, so that parallel execution does not produce
@@ -8816,12 +8996,12 @@ if a test file name ends in several concatenated suffixes.
 @vindex AM_@var{ext}_LOG_FLAGS
 @vindex AM_LOG_FLAGS
 For tests that match an extension @code{.@var{ext}} listed in
-@code{TEST_EXTENSIONS}, you can provide a test driver using the variable
-@code{@var{ext}_LOG_COMPILER} (note the upper-case extension) and pass
-options in @code{AM_@var{ext}_LOG_FLAGS} and allow the user to pass
-options in @code{@var{ext}_LOG_FLAGS}.  It will cause all tests with
-this extension to be called with this driver.  For all tests without a
-registered extension, the variables @code{LOG_COMPILER},
+@code{TEST_EXTENSIONS}, you can provide a custom ``test runner'' using
+the variable @code{@var{ext}_LOG_COMPILER} (note the upper-case
+extension) and pass options in @code{AM_@var{ext}_LOG_FLAGS} and allow
+the user to pass options in @code{@var{ext}_LOG_FLAGS}.  It will cause
+all tests with this extension to be called with this runner.  For all
+tests without a registered extension, the variables @code{LOG_COMPILER},
 @code{AM_LOG_FLAGS}, and @code{LOG_FLAGS} may be used.  For example,
 
 @example
@@ -8838,37 +9018,12 @@ AM_LOG_FLAGS = -d
 @noindent
 will invoke @samp{$(PERL) -w foo.pl}, @samp{$(PYTHON) -v bar.py},
 and @samp{./wrapper-script -d baz} to produce @file{foo.log},
-@file{bar.log}, and @file{baz.log}, respectively.  The
-@samp{TESTS_ENVIRONMENT} variable is still expanded before the driver,
-but should be reserved for the user.
-
-@vindex AM_TESTS_ENVIRONMENT
-The @code{AM_TESTS_ENVIRONMENT} and @code{TESTS_ENVIRONMENT} variables can
-be used to run initialization code and set environment variables for the
-test scripts.  The former variable is developer-reserved, and can be
-defined in the @file{Makefile.am}, while the latter is reserved for the
-user, which can employ it to extend or override the settings in the
-former; for this to work portably, however, the contents of a non-empty
-@code{AM_TESTS_ENVIRONMENT} @emph{must} be terminated by a semicolon.
-
-@example
-AM_TESTS_ENVIRONMENT = \
-## Some environment initializations are kept in a separate shell file
-## `tests-env.sh', which can make it easier to also run tests from
-## the command line.
-  . $(srcdir)/tests-env.sh; \
-## On Solaris, prefer more POSIX-compliant versions of the standard
-## tools by default.
-  if test -d /usr/xpg4/bin; then \
-    PATH=/usr/xpg4/bin:$$PATH; export PATH; \
-  fi;
-@c $$ restore font-lock
-@end example
+@file{bar.log}, and @file{baz.log}, respectively.
 
 It's important to note that, differently from what we've seen for the
-serial testsuite driver (@pxref{Simple Tests using parallel-tests}), the
+serial test harness (@pxref{Parallel Test Harness}), the
 @code{AM_TESTS_ENVIRONMENT} and @code{TESTS_ENVIRONMENT} variables
-@emph{cannot} be use to define a custom test driver; the
+@emph{cannot} be use to define a custom test runner; the
 @code{LOG_COMPILER} and @code{LOG_FLAGS} (or their extension-specific
 counterparts) should be used instead:
 
@@ -8895,28 +9050,13 @@ to HTML using @samp{RST2HTML}, which defaults to @command{rst2html} or
 set of converted log files.  The log and HTML files are removed upon
 @code{make mostlyclean}.
 
-@vindex DISABLE_HARD_ERRORS
-@cindex Exit status 99, special interpretation
-@cindex hard error
-Even in the presence of expected failures (see @code{XFAIL_TESTS}), there
-may be conditions under which a test outcome needs attention.  For
-example, with test-driven development, you may write tests for features
-that you have not implemented yet, and thus mark these tests as expected
-to fail.  However, you may still be interested in exceptional conditions,
-for example, tests that fail due to a segmentation violation or another
-error that is independent of the feature awaiting implementation.
-Tests can exit with an exit status of 99 to signal such a @emph{hard
-error}.  Unless the variable @code{DISABLE_HARD_ERRORS} is set to a
-nonempty value, such tests will be counted as failed.
-
-By default, the test suite driver will run all tests, but there are
+By default, the test suite harness will run all tests, but there are
 several ways to limit the set of tests that are run:
 
 @itemize @bullet
 @item
-You can set the @code{TESTS} variable, similarly to how you can with
-the simple test driver from the previous section.  For example, you can
-use a command like this to run only a subset of the tests:
+You can set the @code{TESTS} variable.  For example, you can use a
+command like this to run only a subset of the tests:
 
 @example
 env TESTS="foo.test bar.test" make -e check
@@ -8952,8 +9092,8 @@ here too.
 @item
 @vindex RECHECK_LOGS
 @cindex lazy test execution
-By default, the test driver removes all old per-test log files before it
-starts running tests to regenerate them.  The variable
+By default, the test harness removes all old per-test log files before
+it starts running tests to regenerate them.  The variable
 @code{RECHECK_LOGS} contains the set of log files which are removed.
 @code{RECHECK_LOGS} defaults to @code{TEST_LOGS}, which means all tests
 need to be rechecked.  By overriding this variable, you can choose which
@@ -8971,7 +9111,7 @@ env RECHECK_LOGS= make -e check
 You can ensure that all tests are rerun which have failed or passed
 unexpectedly, by running @code{make recheck} in the test directory.
 This convenience target will set @code{RECHECK_LOGS} appropriately
-before invoking the main test driver.  The @code{recheck-html} target
+before invoking the main test harness.  The @code{recheck-html} target
 does the same as @code{recheck} but again converts the resulting log
 file in HTML format, like the @code{check-html} target.
 @end itemize
@@ -9038,10 +9178,10 @@ or work around the issue with inference rules to generate the tests.
 @node Overview of Custom Test Drivers Support
 @subsection Overview of Custom Test Drivers Support
 
-Starting form Automake version 1.12, the @option{parallel-tests} harness
-allows the package authors to use third-party custom test drivers, in
-case the default ones are inadequate for their purposes, or do not support
-their testing protocol of choice.
+Starting from Automake version 1.12, the parallel test harness allows
+the package authors to use third-party custom test drivers, in case the
+default ones are inadequate for their purposes, or do not support their
+testing protocol of choice.
 
 A custom test driver is expected to properly run the test programs
 passed to it, including the command-line arguments passed to it,
@@ -9058,24 +9198,28 @@ generation and test results recording}).
 The exact details of how test scripts' results are to be determined and
 analyzed is left to the individual drivers.  Some drivers might only
 consider the test script exit status (this is done for example by the
-default test driver used by the @option{parallel-tests} harness, described
+default test driver used by the parallel test harness, described
 in the previous section).  Other drivers might implement more complex and
 advanced test protocols, which might require them to parse and interpreter
 the output emitted by the test script they're running (examples of such
 protocols are TAP and SubUnit).
 
 It's very important to note that, even when using custom test drivers,
-most of the @option{parallel-tests} infrastructure described in the
-previous section remains in place; this includes:
+most of the infrastructure described in the previous section about the
+the parallel harness remains in place; this includes:
 
 @itemize
 @item
-concurrency through the use of  @command{make}'s option @option{-j};
+list of test scripts defined in @code{TESTS}, and overridable at
+runtime through the redefinition of @code{TESTS} or @code{TEST_LOGS};
+@item
+concurrency through the use of @command{make}'s option @option{-j};
 @item
 per-test @file{.log} files, and generation of a summary @file{.log}
 file from them;
 @item
-@code{recheck} target and lazy reruns of tests;
+@code{recheck} target, @code{RECHECK_LOGS} variable, and lazy reruns
+of tests;
 @item
 inter-test dependencies;
 @item
@@ -9144,9 +9288,9 @@ for new features or to satisfy additional portability requirements.
 
 The main characteristic of these APIs is that they are designed to share
 as much infrastructure, semantics, and implementation details as possible
-with the @option{parallel-tests} harness and its default driver.  So
-everything said in the previous section should apply here too, unless
-explicitly stated otherwise.
+with the parallel test harness and its default driver.  So everything
+said in the previous section should apply here too, unless explicitly
+stated otherwise.
 
 @menu
 * Command-line arguments for test drivers::
@@ -9176,8 +9320,8 @@ mostly meant to be used in console reports about testsuite advancements and
 results (@pxref{Testsuite progress output}).
 @item --log-file=@var{PATH}
 The log file the test driver must create.  If it has a directory component
-(as in e.g., @file{sub/foo.log}), the Automake harness will ensure that
-such directory exist @emph{before} the test driver is called.
+(as in e.g., @file{sub/foo.log}), the test harness will ensure that such
+directory exist @emph{before} the test driver is called.
 @item --color-tests=@{yes|no@}
 Whether the console output should be colorized or not (@pxref{Simple
 tests and color-tests}, to learn when this option gets activated and
@@ -9461,8 +9605,6 @@ Especially, @file{site.exp} should not be distributed.
 For more information regarding DejaGnu test suites, see @ref{Top, , ,
 dejagnu, The DejaGnu Manual}.
 
-In either case, the testing is done via @samp{make check}.
-
 @node Install Tests
 @section Install Tests
 
@@ -9673,10 +9815,9 @@ in the first few lines of the @file{NEWS} file.
 @item @option{color-tests}
 @cindex Option, @option{color-tests}
 @opindex color-tests
-Cause output of the simple and parallel test suites (see @ref{Simple Tests}
-and @ref{Simple Tests using parallel-tests}) and of properly-written custom
-test drivers (@pxref{Custom Test Drivers}) to be colorized on capable
-terminals.
+Cause output of the serial and parallel test harnesses (see @ref{Simple
+Tests}) and of properly-written custom test drivers (@pxref{Custom Test
+Drivers}) to be colorized on capable terminals.
 
 @item @option{dejagnu}
 @cindex Option, @option{dejagnu}
@@ -9804,8 +9945,8 @@ this directory.
 @item @option{parallel-tests}
 @cindex Option, @option{parallel-tests}
 @opindex parallel-tests
-Enable test suite driver for @code{TESTS} that can run tests in parallel
-(@pxref{Simple Tests using parallel-tests}, for more information).
+Enable test suite harness for @code{TESTS} that can run tests in parallel
+(@pxref{Parallel Test Harness}, for more information).
 
 @item @option{readme-alpha}
 @cindex Option, @option{readme-alpha}

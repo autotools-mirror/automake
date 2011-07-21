@@ -991,6 +991,7 @@ tap-basic.test \
 tap-color.test \
 tap-deps.test \
 tap-diagnostic.test \
+tap-doc.test \
 tap-empty.test \
 tap-empty-diagnostic.test \
 tap-escape-directive.test \
@@ -1006,6 +1007,7 @@ tap-more2.test \
 tap-message-0.test \
 tap-merge-stdout-stderr.test \
 tap-no-merge-stdout-stderr.test \
+tap-no-disable-hard-error.test \
 tap-no-spurious-summary.test \
 tap-no-spurious.test \
 tap-not-ok-skip.test \
