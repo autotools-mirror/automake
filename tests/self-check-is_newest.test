@@ -39,4 +39,37 @@ stat c d || : # for debugging
 
 is_newest c d
 
+# Should work on directories too, both empty and not-empty.  An older
+# implementation of `is_newest' failed if the first argument was a
+# directory containing files newer than itself (see automake bug#9147).
+mkdir u x
+touch x/foo
+$sleep
+touch x/foo
+$sleep
+mkdir v y
+touch y/foo
+$sleep
+touch y/foo
+
+stat u v x y x/foo y/foo || : # For debugging.
+
+for older in u x; do
+  for newer in v y; do
+    is_newest $newer $older
+    is_newest $older $newer && Exit 1
+  done
+done
+
+is_newest x/foo x
+is_newest x x/foo && Exit 1
+
+touch -r x u
+is_newest x u
+is_newest u x
+
+# A couple of mild "stress" tests.
+is_newest y x u v
+is_newest y u x/foo a b c
+
 :
