@@ -1,0 +1,109 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# parallel-tests support: redirection of file descriptors with
+# AM_TESTS_FD_REDIRECT, even when using tests without suffix, or
+# which are binary executables.
+# We use some tricks to ensure that all code paths in `lib/am/check2.am'
+# are covered, even on platforms where $(EXEEXT) would be naturally empty.
+# See also the more generic test 'check-fd-redirect.test'.
+
+required='cc native'
+parallel_tests=yes
+. ./defs || Exit 1
+
+cat >> configure.in << 'END'
+AC_PROG_CC
+AM_CONDITIONAL([real_EXEEXT], [test -n "$EXEEXT"])
+test -n "$EXEEXT" || EXEEXT=.bin
+AC_OUTPUT
+END
+
+cat > Makefile.am << 'END'
+AM_TESTS_FD_REDIRECT = 9>&1
+TEST_EXTENSIONS = .test .sh
+TESTS = foo.sh bar $(check_PROGRAMS)
+check_PROGRAMS = baz qux.test
+qux_test_SOURCES = zardoz.c
+
+## Sanity check.
+if !real_EXEEXT
+check-local:
+	test -f baz.bin
+	test -f qux.test.bin
+endif
+END
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE -a
+
+cat > foo.sh <<'END'
+#!/bin/sh
+echo " foofoofoo" >&9
+END
+chmod a+x foo.sh
+
+cat > bar <<'END'
+#!/bin/sh
+echo " barbarbar" >&9
+END
+
+chmod a+x foo.sh bar
+
+cat > baz.c <<'END'
+#include <unistd.h>
+int main (void)
+{
+  write (9, " bazbazbaz\n", 11);
+  return 0;
+}
+END
+
+cat > zardoz.c <<'END'
+#include <unistd.h>
+int main (void)
+{
+  write (9, " quxquxqux\n", 11);
+  return 0;
+}
+END
+
+./configure
+
+# Sanity checks.
+st=0
+grep '^bar\.log:.*bar' Makefile || st=1
+grep '^baz\.log:.*baz\$(EXEEXT)' Makefile || st=1
+grep '^\.test\$(EXEEXT)\.log:' Makefile || st=1
+$EGREP '^(foo|qux)\.log:' Makefile && st=1
+test $st -eq 0 || fatal_ "doesn't cover expected code paths"
+
+st=0
+$MAKE check >stdout || st=1
+cat stdout
+cat foo.log
+cat bar.log
+cat baz.log
+cat qux.log
+test $st -eq 0
+grep "^ foofoofoo$" stdout
+grep "^ barbarbar$" stdout
+grep "^ bazbazbaz$" stdout
+grep "^ quxquxqux$" stdout
+$EGREP '(foofoofoo|barbarbar|bazbazbaz|quxquxqux)' *.log && Exit 1
+
+:

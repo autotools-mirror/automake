@@ -8868,6 +8868,19 @@ user, which can employ it to extend or override the settings in the
 former; for this to work portably, however, the contents of a non-empty
 @code{AM_TESTS_ENVIRONMENT} @emph{must} be terminated by a semicolon.
 
+@vindex AM_TESTS_FD_REDIRECT
+The @code{AM_TESTS_FD_REDIRECT} variable can be used to define file
+descriptor redirections for the test scripts.  One might think that
+@code{AM_TESTS_ENVIRONMENT} could be used for this purpose, but experience
+has shown that doing so portably is practically impossible.  The main
+hurdle is constituted by Korn shells, which usually set the close-on-exec
+flag on file descriptors opened with the @command{exec} builtin, thus
+rendering an idiom like @code{AM_TESTS_ENVIRONMENT = exec 9>&2;}
+ineffectual.  This issue also affects some Bourne shells, such as the
+HP-UX's @command{/bin/sh},
+@c FIXME: should we offer a link to the relevant discussions on the
+@c bug-autoconf list?
+
 @example
 AM_TESTS_ENVIRONMENT = \
 ## Some environment initializations are kept in a separate shell file
@@ -8880,6 +8893,11 @@ AM_TESTS_ENVIRONMENT = \
     PATH=/usr/xpg4/bin:$$PATH; export PATH; \
   fi;
 @c $$ restore font-lock
+## With this, the test scripts will be able to print diagnostic messages
+## to the original standard error stream, even if the test driver
+## redirects the stderr of the test scripts to a log file before executing
+## them.
+AM_TESTS_FD_REDIRECT = 9>&2
 @end example
 
 @noindent
@@ -9229,8 +9247,9 @@ support for @code{check_*} variables (@code{check_PROGRAMS},
 use of @code{VERBOSE} environment variable to get verbose output on
 testsuite failures;
 @item
-definition and honoring of @code{TESTS_ENVIRONMENT} and
-@code{AM_TESTS_ENVIRONMENT} variables;
+definition and honoring of @code{TESTS_ENVIRONMENT},
+@code{AM_TESTS_ENVIRONMENT} and @code{AM_TESTS_FD_REDIRECT}
+variables;
 @item
 definition of generic and extension-specific @code{LOG_COMPILER} and
 @code{LOG_FLAGS} variables.

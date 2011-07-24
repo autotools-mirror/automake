@@ -238,6 +238,7 @@ check10.test \
 check11.test \
 check12.test \
 check-exported-srcdir.test \
+check-fd-redirect.test \
 check-tests-in-builddir.test \
 check-tests_environment.test \
 check-no-test-driver.test \
@@ -723,6 +724,7 @@ parallel-tests7.test \
 parallel-tests8.test \
 parallel-tests9.test \
 parallel-tests10.test \
+parallel-tests-fd-redirect.test \
 parallel-tests-am_tests_environment.test \
 parallel-tests-unreadable-log.test \
 parallel-tests-subdir.test \
