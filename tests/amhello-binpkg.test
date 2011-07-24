@@ -30,12 +30,19 @@ make
 make DESTDIR="`pwd`/inst" install
 cd inst
 find . -type f -print > ../files.lst
-tar cvf amhello-1.0-i686.tar.gz `cat ../files.lst` > t
-LC_ALL=C sort t > tar.got
+tar cvf amhello-1.0-i686.tar.gz `cat ../files.lst` > tar.got 2>&1
 
-diff - tar.got <<'END'
+if tar --version </dev/null | grep GNU; then
+  LC_ALL=C sort tar.got > t
+  mv -f t tar.got
+  diff - tar.got <<'END'
 ./usr/bin/hello
 ./usr/share/doc/amhello/README
 END
+else
+  : Be laxer with other tar implementations, to avoid spurious failures.
+  $EGREP '(^| )\./usr/bin/hello( |$)' tar.got
+  $EGREP '(^| )\./usr/share/doc/amhello/README( |$)' tar.got
+fi
 
 :
