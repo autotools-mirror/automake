@@ -14,8 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that the output of testcases having a global outcome that is not
-# "PASS" or "XFAIL" is copied in the global 'test-suite.log'.
+# Custom test drivers and parallel-tests harness: check the documented
+# semantics for deciding when the content of a test log file should be
+# copied in the global test-suite.log file.  Currently, this is done
+# with the use of the reStructuredText field `:copy-in-global-log:'.
 
 parallel_tests=yes
 . ./defs || Exit 1
@@ -24,36 +26,69 @@ cat >> configure.in << 'END'
 AC_OUTPUT
 END
 
-# The :test-result: fields should be irrelevant for the decision
-# of whether a test output is to be copied in the test-suite.log.
-cat > pass.test <<END
-PASS: pass.test
+# The `:test-result:' and `:recheck:' fields and the first line of the
+# log file should be be irrelevant for the decision of whether a test
+# output is to be copied in the `test-suite.log'.
+
+cat > no-1.test <<END
+FAIL: no-1.test
 :test-result: SKIP
+:copy-in-global-log: no
 :test-result: FAIL
-:test-result: XFAIL
 :test-result: XPASS
-:test-result: ERROR
-not seen (pass)
+not seen 1
 END
 
-cat > xfail.test <<'END'
-XFAIL: xfail.test
-not seen (xfail)
+for RES in XPASS FAIL XFAIL SKIP ERROR UNKNOWN; do
+  unindent > $RES.test <<END
+    $RES: $RES.test
+    :test-result: $RES
+    :copy-in-global-log: no
+    not seen $RES
+END
+done
+
+# In the last line, with leading and trailing whitespace.
+cat > no-2.test <<END
+:test-result: FAIL
+not seen 2
+:recheck: yes
+:copy-in-global-log:$tab $tab no   $tab
 END
 
-echo SKIP: skip.test > skip.test
-echo FAIL: fail.test > fail.test
-echo XPASS: xpass.test > xpass.test
-echo ERROR: error.test > error.test
-echo :test-result: PASS > fake-pass.test
-echo "$tab $tab$tab" > empty.test
-
-cat > Makefile.am << 'END'
-TEST_LOG_DRIVER = ./dummy-driver
-TESTS = pass.test skip.test fail.test xfail.test xpass.test error.test \
-        fake-pass.test empty.test
+# In the first line, with no whitespace.
+cat > no-3.test <<END
+:copy-in-global-log:no
+not seen 3
+:test-result: FAIL
 END
 
+cat > yes-1.test <<END
+PASS: yes-1.test
+:test-result: PASS
+:copy-in-global-log: yes
+seen yes 1
+END
+
+# A lacking `:copy-in-global-log:' implies that the content of
+# the log file should be copied.
+cat > yes-2.test <<END
+PASS: y.test
+:test-result: PASS
+seen yes 2
+END
+
+# Corner cases.
+echo ':copy-in-global-log:' > corn-1.test
+echo "  $tab $tab$tab" > corn-2.test
+cat > corn-3.test <<'END'
+seen corn 31
+:copy-in-global-log:#@%!
+seen corn 32
+END
+
+echo TEST_LOG_DRIVER = ./dummy-driver > Makefile.am
+echo TESTS = *.test >> Makefile.am
 
 cat > dummy-driver <<'END'
 #!/bin/sh
@@ -78,35 +113,19 @@ $AUTOMAKE
 
 ./configure
 
-$MAKE check && { cat test-suite.log; Exit 1; }
+# We don't care about the exit status of "make check" here, that
+# should be checked in other tests.
+$MAKE check || :
 cat test-suite.log
-grep '^SKIP: skip\.test$' test-suite.log
-grep '^FAIL: fail.test$' test-suite.log
-grep '^XPASS: xpass.test$' test-suite.log
-grep '^ERROR: error.test$' test-suite.log
-grep '^:test-result: PASS$' test-suite.log
-grep "^$tab $tab$tab$" test-suite.log
-$EGREP 'not seen' test-suite.log && Exit 1
-test `grep -c ':test-result:' test-suite.log` -eq 1
 
-cat > pass.test <<END
-PASS: pass.test
-:test-result: SKIP
-:test-result: XFAIL
-not seen (pass)
-END
-
-cat > xfail.test <<END
-XFAIL: xfail.test
-:test-result: SKIP
-:test-result: PASS
-not seen (xfail)
-END
-
-TESTS='pass.test skip.test xfail.test' $MAKE -e check \
-  || { cat test-suite.log; Exit 1; }
-cat test-suite.log
-grep '^SKIP: skip\.test$' test-suite.log
-$EGREP ':test-result:|not seen' test-suite.log && Exit 1
+grep '^seen yes 1$' test-suite.log
+grep '^seen yes 2$' test-suite.log
+grep '^seen corn 31$' test-suite.log
+grep '^seen corn 32$' test-suite.log
+grep '^:copy-in-global-log:$' test-suite.log
+grep "^  $tab $tab$tab$" test-suite.log
+$FGREP 'not seen' test-suite.log && Exit 1
+$EGREP '^(XPASS|FAIL|SKIP|ERROR|UNKNOWN)' test-suite.log && Exit 1
+test `grep -c ':test-result:' test-suite.log` -eq 2
 
 :

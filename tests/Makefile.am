@@ -743,7 +743,8 @@ testsuite-summary-color.test \
 testsuite-summary-count.test \
 testsuite-summary-count-many.test \
 testsuite-summary-reference-log.test \
-test-driver-end-test-results.test \
+test-driver-end-metadata.test \
+test-driver-metadata-no-leading-space.test \
 test-driver-custom-no-extra-driver.test \
 test-driver-custom.test \
 test-driver-custom-xfail-tests.test \
@@ -757,6 +758,7 @@ test-driver-global-log.test \
 test-driver-recheck.test \
 test-driver-strip-vpath.test \
 test-driver-fail.test \
+test-log.test \
 parse.test \
 percent.test \
 percent2.test \
@@ -1001,6 +1003,7 @@ tap-exit.test \
 tap-signal.test \
 tap-fancy.test \
 tap-fancy2.test \
+tap-global-log.test \
 tap-global-result.test \
 tap-html.test \
 tap-log.test \

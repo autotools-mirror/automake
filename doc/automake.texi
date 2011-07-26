@@ -9372,41 +9372,26 @@ consistency and a more pleasant user experience.
 
 The test driver must correctly generate the file specified by the
 @option{--log-file} option (of course even when the tested program
-fails or crashes).  This file is quite free-form, but still it has
-to conform to the following conventions, in order to work with the
-@option{parallel-tests} harness and take advantage of its features.
+fails or crashes).  This file, while being quite free-form, @emph{must}
+register some metadata through the use of custom reStructuredText fields,
+in order to work with the @option{parallel-tests} harness and take
+advantage of its features.  Note that such fields will be recognized only
+when used @emph{exactly} at the beginning of a line -- not even leading
+whitespace is permitted.
 
-@itemize @bullet
-@item
-@cindex Global test script result
-@cindex Test result, global
-The @emph{global test result} for the whole test script must be placed
-in the first line of the @file{.log} file.
-@c The following semantics is checked by tests 'test-driver-recheck.test'
-@c and 'test-driver-global-log.test'.  Please keep them in sync whenever
-@c the following is changed.
-If this line does not begin with either @code{PASS:}, @code{XFAIL:} or
-@code{SKIP:}, the test script will be considered failed, and it will be
-re-run by @code{make recheck}.  Also, if this line does not begin with
-either @code{PASS:} or @code{XFAIL:}, the content of the @file{.log} file
-will be copied into the global @file{test-suite.log} (in order to help in
-debugging and bug-report analysis).
+@table @code
 
-@item
-@cindex Single test case result
-@cindex Test result, single
-@cindex @code{:test-result:} reStructuredText field
-@cindex  reStructuredText field, @code{:test-result:}
-One of the main features of the new testsuite harness is the ability to
-support test protocols that allow a single test script to run more
-test cases, @emph{each with its distinct result}.  In order for the
-testsuite summary to be correct in this case, the test driver must
-register @emph{each} such result in the generated @file{.log} file, using
-the @code{:test-result:} reStructuredText field.  Otherwise, only the
-global test result will be considered (as it is the case of the default
-@option{parallel-tests} driver).  Note that such a field will be
-recognized only when used @emph{exactly} at the beginning of a line:
-leading whitespace will not be ignored.
+@item :test-result:
+@cindex Register test result
+@cindex Register test case result
+@cindex Test result, registering
+@cindex Test case result, registering
+@cindex @code{:test-result:}
+@cindex reStructuredText field, @code{:test-result:}
+The test driver must use this filed to register the results of @emph{each}
+test case run by a test script file.  Several @code{:test-result:} fields
+can be present in the same log file; this is done in order to support test
+protocols that allow a single test script to run more test cases.
 
 @c Keep this in sync with lib/am/check-am:$(TEST_SUITE_LOG).
 The only recognized test results are currently @code{PASS}, @code{XFAIL},
@@ -9415,48 +9400,63 @@ when declared with @code{:test-result:}, can be optionally followed by
 text holding the name and/or a brief description of the corresponding
 test; the @option{parallel-tests} harness will ignore such extra text when
 generating @file{test-suite.log} and preparing the testsuite summary.
-Also, @code{:test-result:} can be used with a special ``pseudo-result''
-@code{END}, that will instruct the testsuite harness to stop scanning
-the rest of the log file (this feature is used internally by the default
-@option{parallel-tests} driver, and can be useful to avoid spurious
-testsuite results).
 
-Let's see a small example.  If a @file{.log} file contains the following
-lines (exactly in this order, but possibly interleaved with other
-``non-@code{:test-results:}'' lines):
+@c Keep in sync with 'test-driver-recheck.test'.
+@item @code{:recheck:}
+@cindex :recheck:
+@cindex reStructuredText field, @code{:recheck:}
+If this field is present and defined to @code{no}, then the corresponding
+test script will @emph{not} be run upon a @command{make recheck}.  What
+happens when two or more @code{:recheck:} fields are present in a
+@file{.log} file is undefined behaviour.
+
+@c Keep in sync with 'test-driver-global-log.test'.
+@item @code{:copy-in-global-log:}
+@cindex :copy-in-global-log:
+@cindex reStructuredText field, @code{:copy-in-global-log:}
+If this field is present and defined to @code{no}, then the content
+of the @file{.log} file will @emph{not} be copied into the global
+@file{test-suite.log}.  We allow to forsake such copying because, while
+it can be useful in debugging and analysis of bug report, it can also be
+just a waste of space in normal situations, e.g., when a test script is
+successful.  What happens when two or more @code{:copy-in-global-log:}
+fields are present in a @file{.log} file is undefined behaviour.
+
+@c Keep in sync with 'test-driver-end-metadata.test'.
+@item @code{:end-metadata:}
+@cindex :end-metadata:
+@cindex reStructuredText field, @code{:end-metadata:}
+This special field causes all the following text in the @file{.log}
+file not to be scanned by the testsuite harness in search for other
+test metadata.  This feature is used internally by the default
+@option{parallel-tests} driver, and can be useful to e.g., avoid
+spurious testsuite results.
+
+@end table
+
+@noindent
+Let's see a small example.  Assume a @file{.log} file contains the
+following lines (in this order, but possibly interleaved with other
+``non-metadata'' lines):
 
 @example
 :test-result: PASS server starts
 :test-result: PASS HTTP/1.1 request
 :test-result: FAIL HTTP/1.0 request
+:recheck: yes
 :test-result: SKIP HTTPS request (TLS library wasn't available)
 :test-result: PASS server stops
-:test-result: END
+:global-log-copy: no
+:metadata-end:
 :test-result: XPASS (this shouldn't be parsed as a test result)
 @end example
 
 @noindent
-it means that the corresponding test script contributes with @emph{five}
-test results to the testsuite summary (three of these tests being
-successful, one failed, and one skipped).
-
-@c FIXME: currently, the @code{:test-result:} field is recognized anywhere
-@c in the @file{.log} file; this is possibly prone to generating spurious
-@c results, in case of verbose tests.  We should allow a special
-@c @code{:test-result:} that stops any further parsing (maybe a line
-@c @code{:test-result:END} will do?).
-
-@end itemize
-
-Finally, note that the declaration of the global test result in the first
-line, apart from being needed for backward-compatibility with the default
-@option{parallel-tests} driver, can be useful also for test protocols
-that allow more test results per test script: using it, a custom test
-driver is allowed to decide what the global outcome of the test script
-is in case of conflicting test results within the script.  For example,
-if a test script reports 8 successful test cases and 2 skipped test
-cases, some drivers might report that globally as a SKIP, while others
-as a PASS.
+Then the corresponding test script will be re-run by @command{make check},
+will contribute with @emph{five} test results to the testsuite summary
+(three of these tests being successful, one failed, and one skipped), and
+the @file{.log} file content will @emph{not} be copied in the global log
+file @file{test-suite.log}.
 
 @node Testsuite progress output
 @subsubsection Testsuite progress output

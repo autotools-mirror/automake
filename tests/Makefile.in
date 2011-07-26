@@ -988,7 +988,8 @@ testsuite-summary-color.test \
 testsuite-summary-count.test \
 testsuite-summary-count-many.test \
 testsuite-summary-reference-log.test \
-test-driver-end-test-results.test \
+test-driver-end-metadata.test \
+test-driver-metadata-no-leading-space.test \
 test-driver-custom-no-extra-driver.test \
 test-driver-custom.test \
 test-driver-custom-xfail-tests.test \
@@ -1002,6 +1003,7 @@ test-driver-global-log.test \
 test-driver-recheck.test \
 test-driver-strip-vpath.test \
 test-driver-fail.test \
+test-log.test \
 parse.test \
 percent.test \
 percent2.test \
@@ -1246,6 +1248,7 @@ tap-exit.test \
 tap-signal.test \
 tap-fancy.test \
 tap-fancy2.test \
+tap-global-log.test \
 tap-global-result.test \
 tap-html.test \
 tap-log.test \
@@ -1441,8 +1444,10 @@ cscope cscopelist:
 
 $(TEST_SUITE_LOG): $(TEST_LOGS)
 	@$(am__sh_e_setup); $(am__tty_colors); \
-	rst_magic=":test-result:"; \
+	tab='	'; \
 	nlinit=`echo 'nl="'; echo '"'`; eval "$$nlinit"; unset nlinit; \
+	IFS=" $$tab$$nl"; oIFS=$$IFS; \
+	ws="[ $$tab]"; \
 	list='$(TEST_LOGS)'; \
 	list2=`for f in $$list; do test ! -r $$f || echo $$f; done`; \
 	results1=`for f in $$list; do test -r $$f || echo ERROR; done`; \
@@ -1450,12 +1455,19 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	exec 5<&0; \
 	for f in $$list2; do \
 	  exec 0<$$f; \
+	  IFS=''; \
 	  while read line; do \
-	    case $$line in $$rst_magic*);; *) continue;; esac; \
-	    res=`expr "x$$line" : "x$$rst_magic[	 ]*\\\\(.*\\\\)$$"`; \
-	    case $$res in END*) break;; esac; \
-	    results2="$$results2$$nl$$res"; \
+	    IFS=$$oIFS; \
+	    case $$line in \
+	      :end-metadata:*) \
+	        break;; \
+	      :test-result:*) \
+	        res=`expr "x$$line" : "x:test-result:$$ws*\\\\(.*\\\\)$$"`; \
+	        results2="$$results2$$nl$$res";; \
+	    esac; \
+	    IFS=''; \
 	  done; \
+	  IFS=$$oIFS; \
 	  exec 0<&5; \
 	done; \
 	exec 5<&-; \
@@ -1509,11 +1521,9 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	  echo ".. contents:: :depth: 2";				\
 	  echo;								\
 	  for f in $$list; do						\
-	    test -r $$f && read line < $$f || line=;			\
-	    case $$line in						\
-	      PASS:*|XFAIL:*);;						\
-	      *) echo; cat $$f;;					\
-	    esac;							\
+	    sed -e '/^:end-metadata:/,$$d' $$f |			\
+	      grep "^:copy-in-global-log:$$ws*no$$ws*$$" >/dev/null	\
+	        || { echo && cat $$f; }					\
 	  done;								\
 	} >$(TEST_SUITE_LOG).tmp;					\
 	mv $(TEST_SUITE_LOG).tmp $(TEST_SUITE_LOG);			\
@@ -1572,13 +1582,14 @@ check-html:
 	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_HTML) || exit 4;	\
 	exit $$rv
 recheck recheck-html:
-	@target=`echo $@ | sed 's,^re,,'`;				\
+	@ws='[ 	]';							\
+	target=`echo $@ | sed 's,^re,,'`;				\
 	list='$(TEST_LOGS)';						\
-	list=`for f in $$list; do					\
-	        test -f $$f || continue;				\
-	        if test -r $$f && read line < $$f; then			\
-	          case $$line in PASS:*|XFAIL:*|SKIP:*);; *) echo $$f;; esac; \
-	        else echo $$f; fi;					\
+	list=`for f in $$list; do 					\
+	        test -f $$f || continue; 				\
+	        sed -e '/^:end-metadata:/,$$d' $$f |			\
+	          grep "^:recheck:$$ws*no$$ws*$$" >/dev/null		\
+		    || echo $$f; 					\
 	      done | tr '\012\015' '  '`;				\
 	list=`echo "$$list" | sed 's/ *$$//'`;				\
 	$(MAKE) $(AM_MAKEFLAGS) $$target AM_MAKEFLAGS='$(AM_MAKEFLAGS) TEST_LOGS="'"$$list"'"'

@@ -138,6 +138,19 @@ TEST_RESULTS :
     return @test_results;
   }
 
+  # Whether the test script should be re-run by "make recheck".
+  sub must_recheck ()
+  {
+    return grep { !/^(?:XFAIL|PASS|SKIP)$/ } (keys %test_results);
+  }
+
+  # Whether the content of the log file associated to this test should
+  # be copied into the "global" test-suite.log.
+  sub copy_in_global_log ()
+  {
+    return grep { not $_ eq "PASS" } (keys %test_results);
+  }
+
   # FIXME: this can certainly be improved ...
   sub get_global_test_result ()
   {
@@ -168,25 +181,31 @@ sub finish ()
 {
   open LOG, ">", $log_file or die "opening $log_file: $!\n";
 
-  # We need to declare a global test result in order to have
-  # "make recheck" working.
+  # Some extra trailing empty lines outputted below are required
+  # to support reStructuredText -> HTML conversion.
+
   my $global_result = get_global_test_result;
   my $global_result_line = "$global_result: $test_script_name";
   print LOG "$global_result_line\n";
   print LOG "=" x length ($global_result_line) . "\n";
   print LOG "\n";
 
+  print LOG ":recheck: " . (must_recheck ? "yes" : "no") . "\n";
+  print LOG "\n";
+
+  print LOG ":copy-in-global-log: " .
+            (copy_in_global_log ? "yes" : "no") . "\n";
+  print LOG "\n";
+
   foreach (get_test_results)
   {
     print LOG ":test-result: $_\n";
-    # Add extra trailing empty lines to support reStructuredText -> HTML
-    # conversion.
     print LOG "\n";
   }
 
-  # So that the output from the test script won't be parsed for test
-  # results (which would potentially expose us to false positives).
-  print LOG ":test-result: END\n";
+  # So that the output from the test script won't be parsed for
+  # testsuite metadata.
+  print LOG ":end-metadata:\n";
   print LOG "\n";
 
   close TMP or die "closing $log_file-t: $!\n";

@@ -1,0 +1,94 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Custom test drivers and parallel-tests harness: check that, in the
+# log files, the reStructuredText fields for metadata declaration are
+# recognized only when placed at the beginning of a line.
+
+parallel_tests=yes
+. ./defs || Exit 1
+
+cat >> configure.in << 'END'
+AC_OUTPUT
+END
+
+cat > Makefile.am << 'END'
+TEST_LOG_DRIVER = ./passthrough-driver
+TESTS = foo.test
+END
+
+cat > passthrough-driver <<'END'
+#!/bin/sh
+set -e; set -u;
+while test $# -gt 0; do
+  case $1 in
+    --log-file) log_file=$2; shift;;
+    --test-name) test_name=$2; shift;;
+    --expect-failure|--color-tests|--enable-hard-errors) shift;;
+    --) shift; break;;
+     *) echo "$0: invalid option/argument: '$1'" >&2; exit 2;;
+  esac
+  shift
+done
+echo "$test_name: RUN"
+cp $1 $log_file
+END
+chmod a+x passthrough-driver
+
+cat > foo.test <<END
+ $tab  :test-result: FAIL
+ $tab  :end-metadata:
+:test-result: PASS
+ $tab  :copy-in-global-log: no
+ $tab  :recheck: no
+foo foo foo
+END
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
+
+./configure
+
+st=0
+$MAKE check >stdout || st=1
+# For debugging.
+cat stdout
+cat foo.log
+cat test-suite.log
+
+# Check that only the second `:test-result:' has been processed.
+test $st -eq 0
+grep '^# TOTAL: *1$' stdout
+grep '^# PASS: *1$' stdout
+for result in SKIP XPASS FAIL XFAIL ERROR; do
+  grep "^# $result: *0$" stdout
+done
+
+# Check that `:copy-in-global-log:' hasn't been processed.
+grep 'foo foo foo' test-suite.log
+
+# Check that `:recheck:' hasn't been processed.
+: > older
+$sleep
+$MAKE recheck >stdout || { cat stdout; Exit 1; }
+cat stdout
+grep '^foo\.test: RUN$' stdout
+grep 'foo foo foo' test-suite.log
+is_newest test-suite.log older
+is_newest foo.log older
+
+:

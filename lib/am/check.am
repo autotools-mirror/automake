@@ -126,14 +126,14 @@ $(AM_TESTS_ENVIRONMENT) $(TESTS_ENVIRONMENT)
 
 $(TEST_SUITE_LOG): $(TEST_LOGS)
 	@$(am__sh_e_setup); $(am__tty_colors); \
-## The custom reStructuredText field used to register the outcome of
-## a test.  This is for supporting test protocols, such as TAP and
-## SubUnit, where a single test script can run multiple tests, each
-## with its own outcome.
-	rst_magic=":test-result:"; \
+	tab='	'; \
 ## The following line will define the `$nl' shell variable to a literal
 ## newline.  Idiom taken from the Autoconf manual.
 	nlinit=`echo 'nl="'; echo '"'`; eval "$$nlinit"; unset nlinit; \
+## Sanitize internal field separator for the shell: "space tab newline".
+	IFS=" $$tab$$nl"; oIFS=$$IFS; \
+## Regular expression to match a whitespace.
+	ws="[ $$tab]"; \
 ## All test logs.
 	list='$(TEST_LOGS)'; \
 ## Readable test logs.
@@ -148,19 +148,27 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	exec 5<&0; \
 	for f in $$list2; do \
 	  exec 0<$$f; \
+## We want to support special reStructuredText fields only when they're
+## placed at the beginning of a line (as documented in the manual), so
+## we have to temporarily clear the $IFS variable to prevent automatic
+## whitespace stripping by the shell.
+	  IFS=''; \
 	  while read line; do \
-## Ignore lines that do not declare test results.
-	    case $$line in $$rst_magic*);; *) continue;; esac; \
-## The test result declared by this line goes in $res.
-	    res=`expr "x$$line" : "x$$rst_magic[	 ]*\\\\(.*\\\\)$$"`; \
-## A special result of "END" means that the rest of the log is not to be
-## scanned.  Be a little lax in matching such special result, to allow
-## for e.g., trailing whitespace or punctuation.
-	    case $$res in END*) break;; esac; \
-## Otherwise register the result.
-	    results2="$$results2$$nl$$res"; \
+	    IFS=$$oIFS; \
+	    case $$line in \
+## Special field that tells not to scan the rest of the log file.
+	      :end-metadata:*) \
+	        break;; \
+## A test test result -- register it.
+	      :test-result:*) \
+	        res=`expr "x$$line" : "x:test-result:$$ws*\\\\(.*\\\\)$$"`; \
+	        results2="$$results2$$nl$$res";; \
+	    esac; \
+## For the next loop.
+	    IFS=''; \
 	  done; \
-## Restore original standard input.
+## Restore original standard input and internal field separator.
+	  IFS=$$oIFS; \
 	  exec 0<&5; \
 	done; \
 ## We don't need this anymore.
@@ -225,14 +233,11 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	  echo;								\
 	  echo ".. contents:: :depth: 2";				\
 	  echo;								\
-## Here we assume that the test driver writes a proper "summarizing
-## result" for the test script on the first line.
 	  for f in $$list; do						\
-	    test -r $$f && read line < $$f || line=;			\
-	    case $$line in						\
-	      PASS:*|XFAIL:*);;						\
-	      *) echo; cat $$f;;					\
-	    esac;							\
+## FIXME: two forks per test -- this is horrendously inefficient!
+	    sed -e '/^:end-metadata:/,$$d' $$f |			\
+	      grep "^:copy-in-global-log:$$ws*no$$ws*$$" >/dev/null	\
+	        || { echo && cat $$f; }					\
 	  done;								\
 	} >$(TEST_SUITE_LOG).tmp;					\
 	mv $(TEST_SUITE_LOG).tmp $(TEST_SUITE_LOG);			\
@@ -326,20 +331,17 @@ AM_RECURSIVE_TARGETS += check-html
 ## Rechecking failures. ##
 ## -------------------- ##
 
-## Rerun all FAILed or XPASSed tests.
+## Rerun all tests that experienced an error or an unexpected failure.
 recheck recheck-html:
-	@target=`echo $@ | sed 's,^re,,'`;				\
+	@ws='[ 	]';							\
+	target=`echo $@ | sed 's,^re,,'`;				\
 	list='$(TEST_LOGS)';						\
-	list=`for f in $$list; do					\
-	        test -f $$f || continue;				\
-	        if test -r $$f && read line < $$f; then			\
-## Here we assume that the test driver writes a proper summary for the
-## test script on the first line.  See the comments in the rules of
-## $(TEST_SUITE_LOG) above for why we consider this acceptable and even
-## advisable.
-	          case $$line in PASS:*|XFAIL:*|SKIP:*);; *) echo $$f;; esac; \
-## A test whose log is unreadable is to be considered failed.
-	        else echo $$f; fi;					\
+	list=`for f in $$list; do 					\
+	        test -f $$f || continue; 				\
+## FIXME: two forks per test -- this is horrendously inefficient!
+	        sed -e '/^:end-metadata:/,$$d' $$f |			\
+	          grep "^:recheck:$$ws*no$$ws*$$" >/dev/null		\
+		    || echo $$f; 					\
 	      done | tr '\012\015' '  '`;				\
 ## This apparently useless munging helps to avoid a nasty bug (a
 ## segmentation fault!) on Solaris XPG4 make.

@@ -14,28 +14,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# TAP support:
+# Check parallel-tests features:
 #  - log file creation
 #  - log file removal
-#  - stdout and stderr of a script go in its log file
+#  - stdout and stderr of a test script go in its log file
 #  - TEST_SUITE_LOG redefinition, at either automake or make time
 #  - VERBOSE environment variable support
-# Keep in sync with 'test-log.test'.
+# Keep in sync with 'tap-log.test'.
 
 parallel_tests=yes
 . ./defs || Exit 1
 
-cp "$top_testsrcdir"/lib/tap-driver . \
-  || fatal_ "failed to fetch auxiliary script tap-driver"
-
 cat >> configure.in <<END
-AC_SUBST([PERL], ['$PERL'])
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-TEST_LOG_DRIVER = $(PERL) $(srcdir)/tap-driver
 TESTS = pass.test skip.test xfail.test fail.test xpass.test error.test
+XFAIL_TESTS = xpass.test xfail.test
 TEST_SUITE_LOG = global.log
 END
 
@@ -44,51 +40,46 @@ cmarker=::: # comment marker
 pmarker=%%% # plain maker
 
 cat > pass.test <<END
-#! /bin/sh -e
-echo 1..1
+#! /bin/sh
 echo   "$pmarker pass $pmarker" >&2
 echo "# $cmarker pass $cmarker" >&2
-echo "ok 1"
+exit 0
 END
 
 cat > skip.test <<END
-#! /bin/sh -e
-echo 1..1
+#! /bin/sh
 echo   "$pmarker skip $pmarker"
 echo "# $cmarker skip $cmarker"
-echo "ok 1 # SKIP"
+exit 1
 END
 
 cat > xfail.test <<END
-#! /bin/sh -e
-echo 1..1
+#! /bin/sh
 echo   "$pmarker xfail $pmarker" >&2
 echo "# $cmarker xfail $cmarker" >&2
-echo "not ok 1 # TODO"
+exit 1
 END
 
 cat > fail.test <<END
-#! /bin/sh -e
+#! /bin/sh
 echo 1..1
 echo   "$pmarker fail $pmarker"
 echo "# $cmarker fail $cmarker"
-echo "not ok 1"
+exit 1
 END
 
 cat > xpass.test <<END
-#! /bin/sh -e
-echo 1..1
+#! /bin/sh
 echo   "$pmarker xpass $pmarker" >&2
 echo "# $cmarker xpass $cmarker" >&2
-echo "ok 1 # TODO"
+exit 0
 END
 
 cat > error.test <<END
-#! /bin/sh -e
-echo 1..1
+#! /bin/sh
 echo   "$pmarker error $pmarker"
 echo "# $cmarker error $cmarker"
-echo 'Bail out!'
+exit 99
 END
 
 chmod a+x *.test

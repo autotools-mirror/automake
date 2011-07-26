@@ -14,8 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test the "make recheck" semantics for custom test driver, as
-# documented in detail in the Automake manual.
+# Test the "make recheck" semantics for custom test drivers, as documented
+# in the Automake manual.  Currently, that is based on the reStructuredText
+# field `:recheck:'.
+
 
 parallel_tests=yes
 . ./defs || Exit 1
@@ -30,54 +32,86 @@ TEST_EXTENSIONS =
 TESTS =
 END
 
-rechecked=''
-notrechecked=''
+#
+# Tests to be re-run by "make recheck"
+#
 
-for R in PASS XFAIL SKIP; do
-  echo $R: > $R-1
-  echo " $R:" > $R-2
-  echo $R:foo > $R-3
-  echo "$tab $R: bar baz" > $R-4
-  # The :test-result: fields should be irrelevant for the decision of
-  # whether "make recheck" should or should not re-run a test.
-  unindent > $R-5 <<END
-    $R:
-    :test-result: FAIL
-    :test-result: XPASS
-    :test-result: ERROR
+: > y-1
+echo "foo bar" > y-2
+echo ":recheck:" > y-3
+echo ":recheck:yes" > y-4
+echo ":recheck: who cares" > y-5
+echo ":recheck: $tab   y" > y-6
+echo ":recheck: yeah!$tab$tab " > y-7
+cat > y-10 <<END
+foo
+:recheck: ???
 END
-  notrechecked="$notrechecked $R-1 $R-2 $R-3 $R-4 $R-5"
-  echo $R > BAD-$R-1
-  echo $R. > BAD-$R-2
-  echo :$R: > BAD-$R-3
-  echo $R asd > BAD-$R-4
-  rechecked="$rechecked BAD-$R-1 BAD-$R-2 BAD-$R-3 BAD-$R-4"
-done
-
-for R in FAIL XPASS ERROR UNKNOWN; do
-  echo $R: > $R-1
-  echo $R:foo > $R-2
-  echo $R: bar baz > $R-3
-  echo $R > $R-4
-  echo $R asd > $R-5
-  # The :test-result: fields should be irrelevant for the decision of
-  # whether "make recheck" should or should not re-run a test.
-  unindent > $R-6 <<END
-    :test-result: PASS
-    :test-result: SKIP
-    :test-result: XFAIL
+cat > y-11 <<END
+:recheck: YES
+foo
 END
-  (echo $R: && cat $R-6) > $R-7
-  rechecked="$rechecked $R-1 $R-2 $R-3 $R-4 $R-5 $R-6 $R-7"
-done
+cat > y-12 <<END
+foo
+:recheck:yes
 
-: > EMPTY
-echo "  $tab $tab" > WHITE
-rechecked="$rechecked EMPTY WHITE"
+bar
+zardoz
+END
 
-tests="$rechecked $notrechecked"
+# The :test-result: fields and the fist line of the log should be
+# irrelevant for the decision of whether "make recheck" should or
+# should not re-run a test.
 
-for t in $tests; do echo $t; done | sed 's/.*/TESTS += &/' >> Makefile.am
+echo ":test-result: PASS" > y-100
+
+echo "PASS: y-101"
+
+cat > y-102 <<END
+PASS: y-102
+===========
+
+:test-result: PASS
+END
+
+#
+# Tests *not* to be re-run by "make recheck"
+#
+
+echo ":recheck:no" > n-1
+echo ":recheck: no " > n-2
+echo ":recheck: $tab   no" > n-3
+echo ":recheck: no $tab$tab " > n-4
+cat > n-5 <<END
+foo
+:recheck:no
+END
+cat > n-6 <<END
+:recheck: no
+foo
+END
+cat > n-7 <<END
+foo
+:recheck: no$tab$tab
+
+bar
+zardoz
+END
+
+# The :test-result: fields should be irrelevant for the decision of
+# whether "make recheck" should or should not re-run a test.
+cat > n-100 <<END
+:test-result: FAIL
+:test-result: XPASS
+:test-result: ERROR
+:test-result: UNKNOWN
+:recheck: no
+END
+
+rechecked=`echo y-[0-9]*`
+
+for t in [yn]-[0-9]*; do echo $t; done \
+  | sed 's/.*/TESTS += &/' >> Makefile.am
 
 cat Makefile.am # For debugging.
 
@@ -119,8 +153,7 @@ for iteration in 1 2; do
   $MAKE recheck
   ls -l
   for t in $rechecked; do test -f $t.run; done
-  for t in $notrechecked; do test ! -r $t.run; done
-  rm -f *.run
+  find . -name 'n-*.run' | grep . && Exit 1
 done
 
 :
