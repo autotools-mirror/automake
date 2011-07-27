@@ -47,6 +47,9 @@ END
 # /#\s*(TODO|SKIP)\b/.
 #
 
+# To avoid problems with backslashes in echo arguments.
+xecho () { printf '%s\n' "$*"; }
+
 # There are 34 values for $str ...
 for str in \
   \'  \
@@ -85,8 +88,8 @@ for str in \
   '*.*' \
 ; do
   # ... each of them add 1 pass, 1 fail, ...
-  echo "ok${str}"
-  echo "not ok${str}"
+  xecho "ok${str}"
+  xecho "not ok${str}"
   # ... and (generally) 4 skips, 4 xfails, and 4 xpasses ...
   for settings in \
     'result="ok" directive=SKIP' \
@@ -94,16 +97,22 @@ for str in \
     'result="ok" directive=TODO' \
   ; do
     eval "$settings"
-    echo "${result}# ${directive}${str}"
+    xecho "${result}# ${directive}${str}"
     # ... but 6 skips, 6 xpasses and 6 xfails are to be removed, since
     # they might not work with $str = '#' or $str = '\' ...
     if test x"$str" != x'#' && test x"$str" != x'\'; then
-      echo "${result}${str}#${directive}"
-      echo "${result}${str}#   ${tab}${tab} ${directive}"
-      echo "${result}${str}#${directive}${str}"
+      xecho "${result}${str}#${directive}"
+      xecho "${result}${str}#   ${tab}${tab} ${directive}"
+      xecho "${result}${str}#${directive}${str}"
     fi
   done
 done > all.test
+
+# Sanity check against a previous use of unportable usages of backslashes
+# with the "echo" builtin.
+if grep '[^\\]\\#' all.test; then
+  framework_failure_ "writing backslashes in all.test"
+fi
 
 # ... so that we finally have:
 pass=34
