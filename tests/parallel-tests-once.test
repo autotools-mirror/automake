@@ -14,10 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that custom test drivers does not need to produce sensible
-# reStructuredText output in the test logs.  This might be legitimate
-# for drivers that are not interested to support the .log -> HTML
-# conversion offered by Automake.
+# Tests shouldn't be run multiple times by a simple "make check" in a
+# clean directory.  An early implementation of the `.trs' intermediate
+# files incurred a similar problem.
 
 parallel_tests=yes
 . ./defs || Exit 1
@@ -27,41 +26,23 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-TEST_LOG_DRIVER = ./no-rst
 TESTS = foo.test
 END
 
-: > foo.test
-
-cat > no-rst <<'END'
+cat > foo.test <<'END'
 #! /bin/sh
-echo ':test-result: SKIP' > foo.trs
-echo ':copy-in-global-log: yes' >> foo.trs
-# The genereted log file is deliberately syntactically invalid
-# reStructuredText.
-cat > foo.log <<'EoL'
-SKIP: FooBar
-=============
-
---------------
- dummy title
-EoL
+test -f foo.run && Exit 1
+: > foo.run
 END
-chmod a+x no-rst
+chmod a+x foo.test
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE
+$AUTOMAKE -a
 
 ./configure
-VERBOSE=yes $MAKE check
-cat foo.log
-cat test-suite.log
-$FGREP 'dummy title' test-suite.log
 
-# Sanity check: trying to produce HTML output should fail.
-$MAKE check-html >output 2>&1 && { cat output; Exit 1; }
-cat output
-$FGREP SEVERE output
+$MAKE check
+test -f foo.run # Sanity check.
 
 :

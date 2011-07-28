@@ -14,10 +14,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that the testsuite driver copes well with unreadable test logs.
+# Check that the testsuite driver copes well with unreadable `.log'
+# and `.trs' files.
 
 parallel_tests=yes
 . ./defs || Exit 1
+
+: > t
+chmod a-r t && test ! -r t || skip_ "you can still read unreadable files"
+rm -f t
 
 cat >> configure.in << 'END'
 AC_OUTPUT
@@ -25,36 +30,46 @@ END
 
 cat > Makefile.am << 'END'
 TESTS = foo.test bar.test
-XFAIL_TESTS = bar.test
 END
 
 cat > foo.test << 'END'
 #! /bin/sh
+echo foofoofoo
 exit 0
 END
+
 cat > bar.test << 'END'
 #! /bin/sh
-exit 1
+echo barbarbar
+exit 77
 END
+
 chmod a+x foo.test bar.test
 
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-# The testsuite driver will use this variable, so ensure it sanitizes
-# it and do not allow in spurious values from the environment.
-line=PASS; export line
-
 ./configure
 
-$MAKE foo.log
-$MAKE bar.log
-chmod a-r foo.log bar.log
-test ! -r foo.log || Exit 77
-$MAKE test-suite.log >stdout && { cat stdout; Exit 1; }
-cat stdout
-grep '^# ERROR: *2$' stdout
-grep '^# ERROR: *2$' test-suite.log
+for files in \
+  'foo.log bar.log' \
+  'foo.trs bar.trs' \
+  'foo.trs bar.log' \
+  'foo.log bar.trs' \
+; do
+  $MAKE check
+  rm -f test-suite.log
+  chmod a-r $files
+  $MAKE test-suite.log || { ls -l; Exit 1; }
+  ls -l
+  grep '^foofoofoo$' foo.log
+  grep '^:test-result: PASS' foo.trs
+  grep '^barbarbar$' bar.log
+  grep '^:test-result: SKIP' bar.trs
+  grep '^SKIP: bar.test' test-suite.log
+  grep '^barbarbar$' test-suite.log
+  $EGREP 'foo\.test|foofoofoo' test-suite.log && Exit 1
+done
 
 :

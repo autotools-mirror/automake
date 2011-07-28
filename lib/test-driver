@@ -1,7 +1,7 @@
 #! /bin/sh
 # test-driver - basic driver script for the `parallel-tests' mode.
 
-scriptversion=2011-07-27.12; # UTC
+scriptversion=2011-08-01.21; # UTC
 
 # Copyright (C) 2011 Free Software Foundation, Inc.
 #
@@ -48,7 +48,7 @@ print_usage ()
 {
   cat <<END
 Usage:
-  test-driver [--help|--version] --test-name=NAME --log-file=PATH
+  test-driver --test-name=NAME --log-file=PATH --trs-file=PATH
               [--expect-failure={yes|no}] [--color-tests={yes|no}]
               [--enable-hard-errors={yes|no}] [--] TEST-SCRIPT
 The \`--test-name' and \`--log-file' options are mandatory.
@@ -59,9 +59,10 @@ END
 rst_section () { sed 'p;s/./=/g;p;g'; }
 
 # TODO: better error handling in option parsing (in particular, ensure
-# TODO: $logfile and $test_name are defined).
+# TODO: $logfile, $trsfile and $test_name are defined).
 test_name= # Used for reporting.
-logfile=   # Where to save the result and output of the test script.
+logfile=   # Where to save the output of the test script.
+trsfile=   # Where to save the result(s) the test script.
 expect_failure=no
 color_tests=no
 enable_hard_errors=yes
@@ -71,6 +72,7 @@ while test $# -gt 0; do
   --version) echo "test-driver $scriptversion"; exit $?;;
   --test-name) test_name=$2; shift;;
   --log-file) logfile=$2; shift;;
+  --trs-file) trsfile=$2; shift;;
   --color-tests) color_tests=$2; shift;;
   --expect-failure) expect_failure=$2; shift;;
   --enable-hard-errors) enable_hard_errors=$2; shift;;
@@ -118,24 +120,14 @@ esac
 # Report outcome to console.
 echo "${col}${res}${std}: $test_name"
 
+# Register the test result, and other relevant metadata.
+echo ":test-result: $res (exit status: $estatus)" > $trsfile
+echo ":recheck: $recheck" >> $trsfile
+echo ":copy-in-global-log: $gcopy" >> $trsfile
+
 # Now write log file.
 {
   echo "$res: $test_name (exit: $estatus)" | rst_section
-  # Blank lines required for having the output be valid RST.
-  echo
-  echo ":test-result: $res (exit status: $estatus)"
-  echo
-  echo ":recheck: $recheck"
-  echo
-  echo ":copy-in-global-log: $gcopy"
-  echo
-  # So that the output from the test script won't be parsed for
-  # testsuite metadata.
-  echo ":end-metadata:"
-  echo
-  # Use a reStructuredText transition to better separate the test
-  # metadata the test registered output.
-  echo ------------
   echo
   cat $tmpfile
 } > $logfile

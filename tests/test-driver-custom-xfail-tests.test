@@ -88,15 +88,17 @@ done
 
 cat > td <<'END'
 #! /bin/sh
-set -e
+set -e; set -u
 test_name=INVALID
 log_file=/dev/null
+trs_file=/dev/null
 expect_failure=no
 while test $# -gt 0; do
   case $1 in
     --test-name) test_name=$2; shift;;
     --expect-failure) expect_failure=$2; shift;;
     --log-file) log_file=$2; shift;;
+    --trs-file) trs_file=$2; shift;;
     # Ignored.
     --color-tests) shift;;
     --enable-hard-errors) shift;;
@@ -109,23 +111,22 @@ while test $# -gt 0; do
 done
 st=0
 "$@" || st=$?
-rm -f "$log_file"
 case $st,$expect_failure in
   0,no)
     echo "PASS: $test_name" | tee "$log_file"
-    echo ":test-result: PASS" >> "$log_file"
+    echo ":test-result: PASS" > "$trs_file"
     ;;
   1,no)
     echo "FAIL: $test_name" | tee "$log_file"
-    echo ":test-result: FAIL" >> "$log_file"
+    echo ":test-result: FAIL" > "$trs_file"
     ;;
   0,yes)
     echo "XPASS: $test_name" | tee "$log_file"
-    echo ":test-result: XPASS" >> "$log_file"
+    echo ":test-result: XPASS" > "$trs_file"
     ;;
   1,yes)
     echo "XFAIL: $test_name" | tee "$log_file"
-    echo ":test-result: XFAIL" >> "$log_file"
+    echo ":test-result: XFAIL" > "$trs_file"
     ;;
   *)
     echo "INTERNAL ERROR" >&2
@@ -141,21 +142,24 @@ $AUTOMAKE
 
 ./configure
 
-VERBOSE=yes $MAKE check
-test -f test-suite.log
-test -f sub1/test-suite.log
-test -f sub2/test-suite.log
+$MAKE check >stdout || { cat stdout; Exit 1; }
+cat stdout
+test `grep -c '^PASS:'  stdout` -eq 3
+test `grep -c '^XFAIL:' stdout` -eq 13
 
 for dir in sub1 sub2; do
   cd $dir
   cp pass.test x1.test
   cp x2.test pass.test
-  $MAKE check && { cat test-suite.log; Exit 1; }
-  cat test-suite.log
-  grep '^FAIL: pass\.test$' test-suite.log
-  grep '^XPASS: x1\.test$' test-suite.log
-  test `grep -c '^FAIL' test-suite.log` -eq 1
-  test `grep -c '^XPASS' test-suite.log` -eq 1
+  $MAKE check >stdout && { cat stdout; Exit 1; }
+  cat stdout
+  test "`cat pass.trs`" = ":test-result: FAIL"
+  test "`cat x1.trs`"   = ":test-result: XPASS"
+  test "`cat x2.trs`"   = ":test-result: XFAIL"
+  grep '^FAIL: pass\.test$' stdout
+  grep '^XPASS: x1\.test$'  stdout
+  grep '^XFAIL: x2\.test$'  stdout
+  count_test_results total=7 pass=0 xpass=1 fail=1 xfail=5 skip=0 error=0
   cd ..
 done
 

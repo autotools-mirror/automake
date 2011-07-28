@@ -83,10 +83,8 @@ am__rst_title = sed 's/.*/   &   /;h;s/./=/g;p;x;p;g;p;s/.*//'
 # by disabling -e (using the XSI extension "set +e") if it's set.
 am__sh_e_setup = case $$- in *e*) set +e;; esac
 
-# Default flags passed to all log compiler wrappers.
-am__test_driver_flags = \
-  --test-name "$$f" \
-  --log-file '$@' \
+# Default flags passed to test drivers.
+am__common_driver_flags = \
   --color-tests "$$am__color_tests" \
   --enable-hard-errors "$$am__enable_hard_errors" \
   --expect-failure "$$am__expect_failure"
@@ -124,64 +122,71 @@ case " $(XFAIL_TESTS) " in				\
 esac; 							\
 $(AM_TESTS_ENVIRONMENT) $(TESTS_ENVIRONMENT)
 
+# The names of the tests, with any registered extension removed.  Or
+# equivalently, the names of the test logs, with the `.log' extension
+# renoved.  This honours runtime overriding of TESTS and TEST_LOGS.
+am__TEST_BASES = $(TEST_LOGS:.log=)
+
+# This can be used instead of $(MAKE) in recipes requiring a recursive call
+# to make, but which are not intended to be executed by "make -n".  See the
+# GNU make manual for more details.
+am__stealth_MAKE = $(MAKE)
+
+# Recover from deleted `.trs' file; this should ensure that
+# "rm -f foo.log; make foo.trs" re-run `foo.test', and re-create
+# both `foo.log' and `foo.trs'.
+.log.trs:
+	rm -f $< $@ && $(am__stealth_MAKE) $(AM_MAKEFLAGS) $<
+
 $(TEST_SUITE_LOG): $(TEST_LOGS)
 	@$(am__sh_e_setup); $(am__tty_colors); \
-	tab='	'; \
-## The following line will define the `$nl' shell variable to a literal
-## newline.  Idiom taken from the Autoconf manual.
-	nlinit=`echo 'nl="'; echo '"'`; eval "$$nlinit"; unset nlinit; \
-## Sanitize internal field separator for the shell: "space tab newline".
-	IFS=" $$tab$$nl"; oIFS=$$IFS; \
-## Regular expression to match a whitespace.
-	ws="[ $$tab]"; \
-## All test logs.
-	list='$(TEST_LOGS)'; \
-## Readable test logs.
-	list2=`for f in $$list; do test ! -r $$f || echo $$f; done`; \
-## Each unreadable test log counts as a failed test.
-	results1=`for f in $$list; do test -r $$f || echo ERROR; done`; \
-## Now we're going to extract the outcome of all the testcases from the
-## test logs.
-	results2=''; \
-## Can't do the redirections directly in the "for" loop below, otherwise
-## some shells would run the loop body in a subshell.
-	exec 5<&0; \
-	for f in $$list2; do \
-	  exec 0<$$f; \
-## We want to support special reStructuredText fields only when they're
-## placed at the beginning of a line (as documented in the manual), so
-## we have to temporarily clear the $IFS variable to prevent automatic
-## whitespace stripping by the shell.
-	  IFS=''; \
-	  while read line; do \
-	    IFS=$$oIFS; \
-	    case $$line in \
-## Special field that tells not to scan the rest of the log file.
-	      :end-metadata:*) \
-	        break;; \
-## A test test result -- register it.
-	      :test-result:*) \
-	        res=`expr "x$$line" : "x:test-result:$$ws*\\\\(.*\\\\)$$"`; \
-	        results2="$$results2$$nl$$res";; \
-	    esac; \
-## For the next loop.
-	    IFS=''; \
+	bases='$(am__TEST_BASES)'; \
+	ws='[ 	]'; \
+## We need to ensures that all the required `.trs' and `.log' files will
+## be present and readable.  The direct dependencies of $(TEST_SUITE_LOG)
+## only ensure that all the `.log' files exists; they don't ensure that
+## the `.log' files are readable, and worse, they don't ensure that the
+## `.trs' files even exist.
+	redo_bases=`for b in $$bases; do \
+	              test -f $$b.trs && test -r $$b.trs \
+	                && test -f $$b.log && test -r $$b.log \
+		        || echo $$b; \
+	            done`; \
+	if test -n "$$redo_bases"; then \
+## Uh-oh, either some `.log' files were unreadable, or some `.trs' files
+## were missing (or unreadable).  We need to re-run the corresponding
+## tests in order to re-create them.
+	  redo_logs=`for i in $$redo_bases; do echo $$i.log; done`; \
+	  redo_results=`for i in $$redo_bases; do echo $$i.trs; done`; \
+	  rm -f $$redo_logs && rm -f $$redo_results \
+	    && $(am__stealth_MAKE) $(AM_MAKEFLAGS) $$redo_logs; \
+	fi; \
+## Sanity check: each unreadable or non-existent test result file should
+## has been properly remade at this point, as should the corresponding log
+## file.
+	st=0; \
+	for b in $$redo_bases; do \
+	  for e in trs log; do \
+	    if test ! -f $$b.$$e || test ! -r $$b.$$e; then \
+	      echo "fatal: making $@: failed to create $$b.$$e" >&2; \
+	      st=1; \
+	    fi; \
 	  done; \
-## Restore original standard input and internal field separator.
-	  IFS=$$oIFS; \
-	  exec 0<&5; \
 	done; \
-## We don't need this anymore.
-	exec 5<&-; \
-## Prepare data for the test suite summary.
-	results=`echo "$$results1" && echo "$$results2"`; \
-	all=`echo "$$results" | sed '/^$$/d' | wc -l | sed -e 's/^[	 ]*//'`; \
-	fail=`echo "$$results" | grep -c '^FAIL'`;			\
-	pass=`echo "$$results" | grep -c '^PASS'`;			\
-	skip=`echo "$$results" | grep -c '^SKIP'`;			\
-	xfail=`echo "$$results" | grep -c '^XFAIL'`;			\
-	xpass=`echo "$$results" | grep -c '^XPASS'`;			\
-	error=`echo "$$results" | grep -c '^ERROR'`;			\
+	test $$st -eq 0 || exit 1; \
+## List of test result files.
+	results=`for b in $$bases; do echo $$b.trs; done`; \
+	test -n "$$results" || results=/dev/null; \
+## Prepare data for the test suite summary.  These do not take into account
+## unreadable test results, but they'll be appropriately updated later if
+## needed.
+	all=`  grep "^$$ws*:test-result:"           $$results | wc -l`; \
+	pass=` grep "^$$ws*:test-result:$$ws*PASS"  $$results | wc -l`; \
+	fail=` grep "^$$ws*:test-result:$$ws*FAIL"  $$results | wc -l`; \
+	skip=` grep "^$$ws*:test-result:$$ws*SKIP"  $$results | wc -l`; \
+	xfail=`grep "^$$ws*:test-result:$$ws*XFAIL" $$results | wc -l`; \
+	xpass=`grep "^$$ws*:test-result:$$ws*XPASS" $$results | wc -l`; \
+	error=`grep "^$$ws*:test-result:$$ws*ERROR" $$results | wc -l`; \
 ## Whether the testsuite was successful or not.
 	if test `expr $$fail + $$xpass + $$error` -eq 0; then \
 	  success=true; \
@@ -233,11 +238,19 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	  echo;								\
 	  echo ".. contents:: :depth: 2";				\
 	  echo;								\
-	  for f in $$list; do						\
-## FIXME: two forks per test -- this is horrendously inefficient!
-	    sed -e '/^:end-metadata:/,$$d' $$f |			\
-	      grep "^:copy-in-global-log:$$ws*no$$ws*$$" >/dev/null	\
-	        || { echo && cat $$f; }					\
+	  for b in $$bases; do						\
+## FIXME: one fork per test -- this is horrendously inefficient!
+	    if grep "^$$ws*:copy-in-global-log:$$ws*no$$ws*$$" $$b.trs 	\
+	         >/dev/null; then :; 					\
+## If we cannot read the .log file of a test ...
+	    elif test ! -r $$b.log; then				\
+## ... print an error message to the console ...
+	      echo "ERROR: cannot read $$b.log" >&2;			\
+## ... and a warning in the `test-suite.log' file.
+	      echo && echo "WARNING: could not read $$b.log!";		\
+	    else							\
+	      echo && cat $$b.log;					\
+	    fi;								\
 	  done;								\
 	} >$(TEST_SUITE_LOG).tmp;					\
 	mv $(TEST_SUITE_LOG).tmp $(TEST_SUITE_LOG);			\
@@ -272,6 +285,7 @@ RECHECK_LOGS = $(TEST_LOGS)
 check-TESTS:
 ## Expand $(RECHECK_LOGS) only once, to avoid exceeding line length limits.
 	@list='$(RECHECK_LOGS)'; test -z "$$list" || rm -f $$list
+	@list='$(RECHECK_LOGS:.log=.trs)'; test -z "$$list" || rm -f $$list
 ## We always have to remove TEST_SUITE_LOG, to ensure its rule is run
 ## in any case even in lazy mode: otherwise, if no test needs rerunning,
 ## or a prior run plus reruns all happen within the same timestamp
@@ -335,13 +349,14 @@ AM_RECURSIVE_TARGETS += check-html
 recheck recheck-html:
 	@ws='[ 	]';							\
 	target=`echo $@ | sed 's,^re,,'`;				\
-	list='$(TEST_LOGS)';						\
-	list=`for f in $$list; do 					\
-	        test -f $$f || continue; 				\
-## FIXME: two forks per test -- this is horrendously inefficient!
-	        sed -e '/^:end-metadata:/,$$d' $$f |			\
-	          grep "^:recheck:$$ws*no$$ws*$$" >/dev/null		\
-		    || echo $$f; 					\
+	bases='$(am__TEST_BASES)';					\
+	list=`for b in $$bases; do 					\
+## Skip tests that haven't been run, but recover gracefully from deleted
+## `.trs' files.
+	        test ! -f $$b.trs && test ! -f $$b.log && continue;	\
+## FIXME: one fork per test -- this is horrendously inefficient!
+	        grep "^$$ws*:recheck:$$ws*no$$ws*$$" $$b.trs 		\
+		  >/dev/null 2>&1 || echo $$b.log; 			\
 	      done | tr '\012\015' '  '`;				\
 ## This apparently useless munging helps to avoid a nasty bug (a
 ## segmentation fault!) on Solaris XPG4 make.

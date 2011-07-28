@@ -119,10 +119,8 @@ am__rst_title = sed 's/.*/   &   /;h;s/./=/g;p;x;p;g;p;s/.*//'
 # pass "-e" to $(SHELL), and POSIX 2008 even requires this.  Work around it
 # by disabling -e (using the XSI extension "set +e") if it's set.
 am__sh_e_setup = case $$- in *e*) set +e;; esac
-# Default flags passed to all log compiler wrappers.
-am__test_driver_flags = \
-  --test-name "$$f" \
-  --log-file '$@' \
+# Default flags passed to test drivers.
+am__common_driver_flags = \
   --color-tests "$$am__color_tests" \
   --enable-hard-errors "$$am__enable_hard_errors" \
   --expect-failure "$$am__expect_failure"
@@ -156,6 +154,14 @@ case " $(XFAIL_TESTS) " in				\
     am__expect_failure=no;;				\
 esac; 							\
 $(AM_TESTS_ENVIRONMENT) $(TESTS_ENVIRONMENT)
+# The names of the tests, with any registered extension removed.  Or
+# equivalently, the names of the test logs, with the `.log' extension
+# renoved.  This honours runtime overriding of TESTS and TEST_LOGS.
+am__TEST_BASES = $(TEST_LOGS:.log=)
+# This can be used instead of $(MAKE) in recipes requiring a recursive call
+# to make, but which are not intended to be executed by "make -n".  See the
+# GNU make manual for more details.
+am__stealth_MAKE = $(MAKE)
 RECHECK_LOGS = $(TEST_LOGS)
 AM_RECURSIVE_TARGETS = check check-html recheck recheck-html
 TEST_SUITE_LOG = test-suite.log
@@ -289,7 +295,7 @@ EXTRA_DIST = $(TESTS)
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .html .log .pl
+.SUFFIXES: .html .log .pl .trs
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -329,43 +335,46 @@ CTAGS:
 cscope cscopelist:
 
 
+# Recover from deleted `.trs' file; this should ensure that
+# "rm -f foo.log; make foo.trs" re-run `foo.test', and re-create
+# both `foo.log' and `foo.trs'.
+.log.trs:
+	rm -f $< $@ && $(am__stealth_MAKE) $(AM_MAKEFLAGS) $<
+
 $(TEST_SUITE_LOG): $(TEST_LOGS)
 	@$(am__sh_e_setup); $(am__tty_colors); \
-	tab='	'; \
-	nlinit=`echo 'nl="'; echo '"'`; eval "$$nlinit"; unset nlinit; \
-	IFS=" $$tab$$nl"; oIFS=$$IFS; \
-	ws="[ $$tab]"; \
-	list='$(TEST_LOGS)'; \
-	list2=`for f in $$list; do test ! -r $$f || echo $$f; done`; \
-	results1=`for f in $$list; do test -r $$f || echo ERROR; done`; \
-	results2=''; \
-	exec 5<&0; \
-	for f in $$list2; do \
-	  exec 0<$$f; \
-	  IFS=''; \
-	  while read line; do \
-	    IFS=$$oIFS; \
-	    case $$line in \
-	      :end-metadata:*) \
-	        break;; \
-	      :test-result:*) \
-	        res=`expr "x$$line" : "x:test-result:$$ws*\\\\(.*\\\\)$$"`; \
-	        results2="$$results2$$nl$$res";; \
-	    esac; \
-	    IFS=''; \
+	bases='$(am__TEST_BASES)'; \
+	ws='[ 	]'; \
+	redo_bases=`for b in $$bases; do \
+	              test -f $$b.trs && test -r $$b.trs \
+	                && test -f $$b.log && test -r $$b.log \
+		        || echo $$b; \
+	            done`; \
+	if test -n "$$redo_bases"; then \
+	  redo_logs=`for i in $$redo_bases; do echo $$i.log; done`; \
+	  redo_results=`for i in $$redo_bases; do echo $$i.trs; done`; \
+	  rm -f $$redo_logs && rm -f $$redo_results \
+	    && $(am__stealth_MAKE) $(AM_MAKEFLAGS) $$redo_logs; \
+	fi; \
+	st=0; \
+	for b in $$redo_bases; do \
+	  for e in trs log; do \
+	    if test ! -f $$b.$$e || test ! -r $$b.$$e; then \
+	      echo "fatal: making $@: failed to create $$b.$$e" >&2; \
+	      st=1; \
+	    fi; \
 	  done; \
-	  IFS=$$oIFS; \
-	  exec 0<&5; \
 	done; \
-	exec 5<&-; \
-	results=`echo "$$results1" && echo "$$results2"`; \
-	all=`echo "$$results" | sed '/^$$/d' | wc -l | sed -e 's/^[	 ]*//'`; \
-	fail=`echo "$$results" | grep -c '^FAIL'`;			\
-	pass=`echo "$$results" | grep -c '^PASS'`;			\
-	skip=`echo "$$results" | grep -c '^SKIP'`;			\
-	xfail=`echo "$$results" | grep -c '^XFAIL'`;			\
-	xpass=`echo "$$results" | grep -c '^XPASS'`;			\
-	error=`echo "$$results" | grep -c '^ERROR'`;			\
+	test $$st -eq 0 || exit 1; \
+	results=`for b in $$bases; do echo $$b.trs; done`; \
+	test -n "$$results" || results=/dev/null; \
+	all=`  grep "^$$ws*:test-result:"           $$results | wc -l`; \
+	pass=` grep "^$$ws*:test-result:$$ws*PASS"  $$results | wc -l`; \
+	fail=` grep "^$$ws*:test-result:$$ws*FAIL"  $$results | wc -l`; \
+	skip=` grep "^$$ws*:test-result:$$ws*SKIP"  $$results | wc -l`; \
+	xfail=`grep "^$$ws*:test-result:$$ws*XFAIL" $$results | wc -l`; \
+	xpass=`grep "^$$ws*:test-result:$$ws*XPASS" $$results | wc -l`; \
+	error=`grep "^$$ws*:test-result:$$ws*ERROR" $$results | wc -l`; \
 	if test `expr $$fail + $$xpass + $$error` -eq 0; then \
 	  success=true; \
 	else \
@@ -407,10 +416,15 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	  echo;								\
 	  echo ".. contents:: :depth: 2";				\
 	  echo;								\
-	  for f in $$list; do						\
-	    sed -e '/^:end-metadata:/,$$d' $$f |			\
-	      grep "^:copy-in-global-log:$$ws*no$$ws*$$" >/dev/null	\
-	        || { echo && cat $$f; }					\
+	  for b in $$bases; do						\
+	    if grep "^$$ws*:copy-in-global-log:$$ws*no$$ws*$$" $$b.trs 	\
+	         >/dev/null; then :; 					\
+	    elif test ! -r $$b.log; then				\
+	      echo "ERROR: cannot read $$b.log" >&2;			\
+	      echo && echo "WARNING: could not read $$b.log!";		\
+	    else							\
+	      echo && cat $$b.log;					\
+	    fi;								\
 	  done;								\
 	} >$(TEST_SUITE_LOG).tmp;					\
 	mv $(TEST_SUITE_LOG).tmp $(TEST_SUITE_LOG);			\
@@ -437,6 +451,7 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 # Run all the tests.
 check-TESTS:
 	@list='$(RECHECK_LOGS)'; test -z "$$list" || rm -f $$list
+	@list='$(RECHECK_LOGS:.log=.trs)'; test -z "$$list" || rm -f $$list
 	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
 	@list='$(TEST_LOGS)';						\
 	list=`for f in $$list; do					\
@@ -471,19 +486,19 @@ check-html:
 recheck recheck-html:
 	@ws='[ 	]';							\
 	target=`echo $@ | sed 's,^re,,'`;				\
-	list='$(TEST_LOGS)';						\
-	list=`for f in $$list; do 					\
-	        test -f $$f || continue; 				\
-	        sed -e '/^:end-metadata:/,$$d' $$f |			\
-	          grep "^:recheck:$$ws*no$$ws*$$" >/dev/null		\
-		    || echo $$f; 					\
+	bases='$(am__TEST_BASES)';					\
+	list=`for b in $$bases; do 					\
+	        test ! -f $$b.trs && test ! -f $$b.log && continue;	\
+	        grep "^$$ws*:recheck:$$ws*no$$ws*$$" $$b.trs 		\
+		  >/dev/null 2>&1 || echo $$b.log; 			\
 	      done | tr '\012\015' '  '`;				\
 	list=`echo "$$list" | sed 's/ *$$//'`;				\
 	$(MAKE) $(AM_MAKEFLAGS) $$target AM_MAKEFLAGS='$(AM_MAKEFLAGS) TEST_LOGS="'"$$list"'"'
 .pl.log:
-	@p='$<'; $(am__check_pre) \
-	$(PL_LOG_DRIVER) $(am__test_driver_flags) $(AM_PL_LOG_DRIVER_FLAGS) $(PL_LOG_DRIVER_FLAGS) -- \
-	$(PL_LOG_COMPILE) "$$tst" $(AM_TESTS_FD_REDIRECT)
+	@p='$<'; $(am__check_pre) $(PL_LOG_DRIVER) --test-name "$$f" \
+	--log-file '$*.log' --trs-file '$*.trs' \
+	$(am__common_driver_flags) $(AM_PL_LOG_DRIVER_FLAGS) $(PL_LOG_DRIVER_FLAGS) -- $(PL_LOG_COMPILE) "$$tst" \
+	$(AM_TESTS_FD_REDIRECT)
 
 distdir: $(DISTFILES)
 	@srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
@@ -544,6 +559,7 @@ mostlyclean-generic:
 	-test -z "$(TEST_LOGS_TMP)" || rm -f $(TEST_LOGS_TMP)
 	-test -z "$(TEST_SUITE_HTML)" || rm -f $(TEST_SUITE_HTML)
 	-test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
+	-test -z "$(am__TEST_BASES:=.trs)" || rm -f $(am__TEST_BASES:=.trs)
 
 clean-generic:
 

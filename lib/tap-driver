@@ -15,7 +15,7 @@ my $ME = "tap-driver";
 
 my $USAGE = <<'END';
 Usage:
-  tap-driver [--help|--version] --test-name=NAME --log-file=PATH
+  tap-driver --test-name=NAME --log-file=PATH --trs-file=PATH
              [--expect-failure={yes|no}] [--color-tests={yes|no}]
              [--enable-hard-errors={yes|no}] [--merge|--no-merge]
              [--ignore-exit] [--comments|--no-comments] [--] TEST-COMMAND
@@ -62,12 +62,14 @@ my %cfg = (
 
 my $test_script_name = undef;
 my $log_file = undef;
+my $trs_file = undef;
 
 Getopt::Long::GetOptions (
     'help' => sub { print $HELP; exit 0; },
     'version' => sub { print "$ME $VERSION"; exit 0; },
     'test-name=s' => \$test_script_name,
     'log-file=s' => \$log_file,
+    'res-file=s' => \$trs_file,
     'color-tests=s'  => \&bool_opt,
     'expect-failure=s'  => \&bool_opt,
     'enable-hard-errors=s' => \&bool_opt,
@@ -164,6 +166,20 @@ TEST_RESULTS :
 
 }
 
+sub write_test_results ()
+{
+  open RES, ">", $trs_file or die "opening $trs_file: $!\n";
+  print RES ":recheck: " .
+            (must_recheck ? "yes" : "no") . "\n";
+  print RES ":copy-in-global-log: " .
+            (copy_in_global_log ? "yes" : "no") . "\n";
+  foreach my $result (get_test_results)
+    {
+      print RES ":test-result: $result\n";
+    }
+  close RES or die "closing $trs_file: $!\n";
+}
+
 sub start (@)
 {
   # Redirect stderr and stdout to a temporary log file.  Save the
@@ -179,33 +195,13 @@ sub start (@)
 
 sub finish ()
 {
+  write_test_results;
+
   open LOG, ">", $log_file or die "opening $log_file: $!\n";
-
-  # Some extra trailing empty lines outputted below are required
-  # to support reStructuredText -> HTML conversion.
-
   my $global_result = get_global_test_result;
   my $global_result_line = "$global_result: $test_script_name";
   print LOG "$global_result_line\n";
   print LOG "=" x length ($global_result_line) . "\n";
-  print LOG "\n";
-
-  print LOG ":recheck: " . (must_recheck ? "yes" : "no") . "\n";
-  print LOG "\n";
-
-  print LOG ":copy-in-global-log: " .
-            (copy_in_global_log ? "yes" : "no") . "\n";
-  print LOG "\n";
-
-  foreach (get_test_results)
-  {
-    print LOG ":test-result: $_\n";
-    print LOG "\n";
-  }
-
-  # So that the output from the test script won't be parsed for
-  # testsuite metadata.
-  print LOG ":end-metadata:\n";
   print LOG "\n";
 
   close TMP or die "closing $log_file-t: $!\n";

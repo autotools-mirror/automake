@@ -36,10 +36,12 @@ set -u
 
 test_name=INVALID.NAME
 log_file=BAD.LOG
+trs_file=BAD.TRS
 while test $# -gt 0; do
   case $1 in
     --test-name) test_name=$2; shift;;
     --log-file) log_file=$2; shift;;
+    --trs-file) trs_file=$2; shift;;
     # Ignored.
     --expect-failure) shift;;
     --color-tests) shift;;
@@ -52,16 +54,18 @@ while test $# -gt 0; do
   shift
 done
 
+## Log file header.
+{
+  echo "RUN: $test_name"
+  echo "RUN: $test_name" | sed 's/./=/g'
+  echo
+} > $log_file
+
 ## Run the test script, get test cases results, display them on console.
 
-tmp_output=$log_file-output.tmp
-tmp_results=$log_file-results.tmp
-tmp_status=$log_file-status.tmp
-
-"$@" 2>&1 | tee $tmp_output | (
+"$@" 2>&1 | tee -a $log_file | (
   i=0 st=0
-  exec 5> $tmp_results
-  : > $tmp_status
+  exec 5> $trs_file
   while read line; do
     result=
     case $line in
@@ -81,37 +85,17 @@ tmp_status=$log_file-status.tmp
       echo >&5
     fi
   done
-  test $st -eq 0 || echo fail > $tmp_status
+  if test $st -eq 0; then
+    recheck=no
+    copy_in_global_log=no
+  else
+    recheck=yes
+    copy_in_global_log=yes
+  fi
+  echo ":recheck: $recheck" >&5
+  echo ":copy-in-global-log: $copy_in_global_log" >&5
+  exec 5>&-
 ) | awk '{ print $0 ", testcase " NR }'
-
-if test ! -s $tmp_status; then
-  global_result=PASS
-  recheck=no
-  copy_in_global_log=no
-else
-  global_result=FAIL
-  recheck=yes
-  copy_in_global_log=yes
-fi
-
-## Write the log file.
-
-{
-  echo "$global_result: $test_name"
-  echo "$global_result: $test_name" | sed 's/./=/g'
-  # Blank lines required for having the output be valid RST.
-  echo
-  echo ":recheck: $recheck"
-  echo
-  echo ":copy-in-global-log: $copy_in_global_log"
-  echo
-  cat $tmp_results
-  echo
-  echo --------------------
-  echo
-  cat $tmp_output
-} > $log_file
-rm -f $tmp_output $tmp_results $tmp_status
 
 ## And we're done.
 

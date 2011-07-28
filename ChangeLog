@@ -1,3 +1,81 @@
+2011-08-01  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	test harness: use new `.trs' files to hold test metadata
+	With this change, the test harness will keep test metadata in
+	dedicated `.trs' files, instead of having them embedded into the
+	`.log' files.  This allows for easier forward-compatibility and
+	extension of test metadata, and for more flexibility in the
+	format of the `.log' files.  Note that this change makes the
+	`:end-metadata:' field obsolete.
+	* doc/automake.texi (Parallel Test Harness, Log files generation
+	and test results recording): Document the new APIs and behaviour;
+	some related minor rewordings and fixlets.
+	* NEWS: Update.
+	* automake.in (handle_tests): When bringing in the content of
+	`check2.am', substitute %BASE% with the basename of the `.log'
+	file being created by a rule.  Add the generated `.trs' files
+	to the list of files to be cleaned by "make mostlyclean".
+	* lib/am/check.am (am__test_driver_flags): Rename ...
+	(am__common_driver_flags): ... to this, and remove the flags
+	`--test-name' and `--log-file' from it: they are now define in
+	the proper rules in `check2.am'.
+	(am__TEST_BASES): New internal variable, holding the names of
+	the tests, with any registered extension removed.
+	(am__stealth_MAKE): New internal variable, can be used instead of
+	$(MAKE) in recipes requiring a recursive call to make, but which
+	are not intended to be executed by "make -n".
+	(.log.trs): New suffix rule, to recover from deletion of `.trs'
+	files.
+	($(TEST_SUITE_LOG)): Almost completely rewritten to follow the
+	new API of "test logs in `.log' files, test metadata in `.trs'
+	files".  It goes to some length to work correctly in face of
+	unreadable or missing `.log' and `.trs' files, and to error out
+	with proper error messages when this is not possible.
+	[%?PARALLEL_TESTS%] (check-TESTS): Also remove relevant "stale"
+	`.trs' files (in addition to `.log files) before remaking the
+	$(TEST_SUITE_LOG).
+	(recheck, recheck-html): Look for the `:recheck:' field in the
+	`.trs' files, not in the `.log' files.
+	* lib/am/check2.am (?GENERIC?%EXT%.log, ?!GENERIC?%OBJ%): Adjust
+	the call to the test driver, in particularly passing the new
+	option `--trs-file'.
+	[%am__EXEEXT%] (?GENERIC?%EXT%$(EXEEXT).log): Likewise.
+	* lib/tap-driver ($USAGE): Adjust the help screen.
+	(Getopt::Long::GetOptions): Handle the `--trs-file' option,
+	through the use of ...
+	($trs_file): ... this new global variable.
+	(finish): Write metadata for the test run to `$trs_file' rather
+	then to `$log_file', through the use of ...
+	(write_test_results): ... this new function.
+	* lib/test-driver (print_usage): Update the help screen.
+	(Option parsing): Handle the `--trs-file' option, through the
+	use of ...
+	($resfile): ... this new global variable.
+	(Main code): Write metadata for the test run to `$trsfile' rather
+	than to `$logfile'.
+	Minor related adjustments to comments.
+	* tests/.gitignore: Ignore `*.trs' files.
+	* tests/parallel-tests-unreadable-log.test: Moved ...
+	* tests/parallel-tests-unreadable.test: ... to this, and extended
+	to also check the semantics for unreadable `.trs' files.
+	* tests/test-driver-end-metadata.test: Deleted as obsolete.
+	* tests/test-driver-metadata-no-leading-space.test: Likewise.
+	* tests/test-driver-global-log.test: Renamed ...
+	* tests/test-metadata-global-log.test: ... to this, and modified
+	as to verify the new APIs and semantics.
+	* tests/test-driver-recheck: Renamed ...
+	* tests/test-metadata-recheck.test: ... to this, and modified
+	likewise.
+	* tests/parallel-tests-once.test: New test.
+	* tests/parallel-tests-make-n.test: Likewise.
+	* test-metadata-results.test: Likewise.
+	* test-missing.test: Likewise.
+	* test-missing2.test: Likewise.
+	* test-trs-basic.test: Likewise.
+	* test-trs-recover.test: Likewise.
+	* test-trs-recover2.test: Likewise.
+	* tests/Makefile.am (TESTS): Update.
+
 2011-07-27  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
 	test harness: allow more metadata in log files

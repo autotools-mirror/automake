@@ -40,14 +40,18 @@ check-local: $(TEST_SUITE_LOG)
 	test -f sub/foo.log
 	test -f sub/subsub/bar.log
 	test -f sub1/baz.log
+	test -f sub/foo.trs
+	test -f sub/subsub/bar.trs
+	test -f sub1/baz.trs
 END
 
 cat > checkdir-driver <<'END'
 #! /bin/sh
-set -e
+set -e; set -u
 while test $# -gt 0; do
   case $1 in
     --log-file) log_file=$2; shift;;
+    --trs-file) trs_file=$2; shift;;
     --test-name|--expect-failure|--color-tests|--enable-hard-errors) shift;;
     --) shift; break;;
      *) echo "$0: invalid option/argument: '$1'" >&2; exit 2;;
@@ -55,11 +59,16 @@ while test $# -gt 0; do
   shift
 done
 echo "log: $log_file" # For debugging.
+echo "trs: $trs_file" # Ditto.
 case $log_file in */*);; *) exit 1;; esac
-dir=`expr "$log_file" : '\(.*\)/[^/]*'`
-echo "dir: $dir" # For debugging.
-test -d "$dir" || exit 1
-echo dummy > "$log_file"
+dir_log=`expr "$log_file" : '\(.*\)/[^/]*'`
+dir_trs=`expr "$trs_file" : '\(.*\)/[^/]*'`
+echo "dir_log: $dir_log" # For debugging.
+echo "dir_trs: $dir_trs" # Likewise.
+test x"$dir_trs" = x"$dir_log" || exit 1
+test -d "$dir_log" || exit 1
+echo dummy1 > "$log_file"
+echo dummy2 > "$trs_file"
 END
 chmod a+x checkdir-driver
 

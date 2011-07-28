@@ -15,9 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test the "make recheck" semantics for custom test drivers, as documented
-# in the Automake manual.  Currently, that is based on the reStructuredText
-# field `:recheck:'.
-
+# in the Automake manual.
 
 parallel_tests=yes
 . ./defs || Exit 1
@@ -44,12 +42,12 @@ echo ":recheck: who cares" > y-5
 echo ":recheck: $tab   y" > y-6
 echo ":recheck: yeah!$tab$tab " > y-7
 cat > y-10 <<END
-foo
+:foo:
 :recheck: ???
 END
 cat > y-11 <<END
 :recheck: YES
-foo
+:foo:
 END
 cat > y-12 <<END
 foo
@@ -58,6 +56,8 @@ foo
 bar
 zardoz
 END
+
+echo "  $tab $tab$tab    :recheck: yes" > y-8
 
 # The :test-result: fields and the fist line of the log should be
 # irrelevant for the decision of whether "make recheck" should or
@@ -83,12 +83,12 @@ echo ":recheck: no " > n-2
 echo ":recheck: $tab   no" > n-3
 echo ":recheck: no $tab$tab " > n-4
 cat > n-5 <<END
-foo
+:foo:
 :recheck:no
 END
 cat > n-6 <<END
 :recheck: no
-foo
+:foo:
 END
 cat > n-7 <<END
 foo
@@ -97,6 +97,8 @@ foo
 bar
 zardoz
 END
+
+echo "  $tab $tab$tab    :recheck: no" > n-8
 
 # The :test-result: fields should be irrelevant for the decision of
 # whether "make recheck" should or should not re-run a test.
@@ -117,10 +119,11 @@ cat Makefile.am # For debugging.
 
 cat > dummy-driver <<'END'
 #!/bin/sh
-set -e
+set -e; set -u
 while test $# -gt 0; do
   case $1 in
     --log-file) log_file=$2; shift;;
+    --trs-file) trs_file=$2; shift;;
     --test-name) test_name=$2; shift;;
     --expect-failure|--color-tests|--enable-hard-errors) shift;;
     --) shift; break;;
@@ -129,7 +132,8 @@ while test $# -gt 0; do
   shift
 done
 : > $test_name.run
-cp $1 $log_file
+: > $log_file
+cp $1 $trs_file
 END
 chmod a+x dummy-driver
 

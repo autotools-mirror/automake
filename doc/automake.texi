@@ -8975,12 +8975,27 @@ order to satisfy additional portability requirements.
 
 @vindex TEST_SUITE_LOG
 @vindex TESTS
-The parallel harness operates by defining a set of @command{make} rules
-to create a summary log file, @code{TEST_SUITE_LOG}, which defaults to
-@file{test-suite.log} and requires a @file{.log} suffix.  This file
-depends upon log files created for each single test program listed in
-@code{TESTS}, which in turn contain all output produced by the
-corresponding tests.
+@cindex @file{.log} files
+@cindex @file{.trs} files
+@cindex test metadata
+The parallel test harness operates by defining a set of @command{make}
+rules that run the test scripts listed in @code{TESTS}, and, for each
+such script, save its output in a corresponding @file{.log} file and
+its results (and other ``metadata'', @pxref{API for Custom Test Drivers})
+in a corresponding @file{.trs} (as in @b{T}est @b{R}e@b{S}ults) file.
+@c We choose the `.trs' extension also because, at the time of writing,
+@c it isn't already used for other significant purposes; see e.g.:
+@c   - http://filext.com/file-extension/trs
+@c   - http://www.file-extensions.org/search/?searchstring=trs
+The @file{.log} file will contain all the output emitted by the test on
+its standard output and its standard error.  The @file{.trs} file will
+contain, among the other things, the results of the test cases run by
+the script.
+
+The parallel test harness will also create a summary log file,
+@code{TEST_SUITE_LOG}, which defaults to @file{test-suite.log} and requires
+a @file{.log} suffix.  This file depends upon all the @file{.log} and
+@file{.trs} files created for the test scripts listed in @code{TESTS}.
 
 @vindex VERBOSE
 As with the serial harness above, by default one status line is printed
@@ -8989,16 +9004,17 @@ However, standard output and standard error of the test are redirected
 to a per-test log file, so that parallel execution does not produce
 intermingled output.  The output from failed tests is collected in the
 @file{test-suite.log} file.  If the variable @samp{VERBOSE} is set, this
-file is output after the summary.  For best results, the tests should be
-verbose by default now.
+file is output after the summary.
+@c FIXME: we should be clearer about what we mean exactly here ...
+For best results, the tests should be verbose by default now.
 
 @vindex TEST_EXTENSIONS
 @vindex TEST_LOGS
-Each log file is created when the corresponding test has completed.
-The set of log files is listed in the read-only variable
-@code{TEST_LOGS}, and defaults to @code{TESTS}, with the executable
-extension if any (@pxref{EXEEXT}), as well as any suffix listed in
-@code{TEST_EXTENSIONS} removed, and @file{.log} appended.
+Each couple of @file{.log} and @file{.trs} files is created when the
+corresponding test has completed.  The set of log files is listed in
+the read-only variable @code{TEST_LOGS}, and defaults to @code{TESTS},
+with the executable extension if any (@pxref{EXEEXT}), as well as any
+suffix listed in @code{TEST_EXTENSIONS} removed, and @file{.log} appended.
 @code{TEST_EXTENSIONS} defaults to @file{.test}.  Results are undefined
 if a test file name ends in several concatenated suffixes.
 
@@ -9036,7 +9052,9 @@ AM_LOG_FLAGS = -d
 @noindent
 will invoke @samp{$(PERL) -w foo.pl}, @samp{$(PYTHON) -v bar.py},
 and @samp{./wrapper-script -d baz} to produce @file{foo.log},
-@file{bar.log}, and @file{baz.log}, respectively.
+@file{bar.log}, and @file{baz.log}, respectively.  The @file{foo.trs},
+@file{bar.trs} and @file{baz.trs} files will be automatically produced
+as a side-effect.
 
 It's important to note that, differently from what we've seen for the
 serial test harness (@pxref{Parallel Test Harness}), the
@@ -9110,14 +9128,15 @@ here too.
 @item
 @vindex RECHECK_LOGS
 @cindex lazy test execution
-By default, the test harness removes all old per-test log files before
-it starts running tests to regenerate them.  The variable
-@code{RECHECK_LOGS} contains the set of log files which are removed.
-@code{RECHECK_LOGS} defaults to @code{TEST_LOGS}, which means all tests
-need to be rechecked.  By overriding this variable, you can choose which
-tests need to be reconsidered.  For example, you can lazily rerun only
-those tests which are outdated, i.e., older than their prerequisite test
-files, by setting this variable to the empty value:
+By default, the test harness removes all old per-test @file{.log} and
+@file{.trs} files before it starts running tests to regenerate them.  The
+variable @code{RECHECK_LOGS} contains the set of @file{.log} (and, by
+implication, @file{.trs}) files which are removed.  @code{RECHECK_LOGS}
+defaults to @code{TEST_LOGS}, which means all tests need to be rechecked.
+By overriding this variable, you can choose which tests need to be
+reconsidered.  For example, you can lazily rerun only those tests which
+are outdated, i.e., older than their prerequisite test files, by setting
+this variable to the empty value:
 
 @example
 env RECHECK_LOGS= make -e check
@@ -9130,14 +9149,14 @@ You can ensure that all tests are rerun which have failed or passed
 unexpectedly, by running @code{make recheck} in the test directory.
 This convenience target will set @code{RECHECK_LOGS} appropriately
 before invoking the main test harness.  The @code{recheck-html} target
-does the same as @code{recheck} but again converts the resulting log
-file in HTML format, like the @code{check-html} target.
+does the same as @code{recheck} but again converts the resulting
+@file{.log} file in HTML format, like the @code{check-html} target.
 @end itemize
 
 In order to guarantee an ordering between tests even with @code{make
--j@var{N}}, dependencies between the corresponding log files may be
-specified through usual @command{make} dependencies.  For example, the
-following snippet lets the test named @file{foo-execute.test} depend
+-j@var{N}}, dependencies between the corresponding @file{.log} files
+may be specified through usual @command{make} dependencies.  For example,
+the following snippet lets the test named @file{foo-execute.test} depend
 upon completion of the test @file{foo-compile.test}:
 
 @example
@@ -9201,12 +9220,12 @@ the package authors to use third-party custom test drivers, in case the
 default ones are inadequate for their purposes, or do not support their
 testing protocol of choice.
 
-A custom test driver is expected to properly run the test programs
-passed to it, including the command-line arguments passed to it,
-to analyze their execution and outcome, to create the @file{.log}
-files associated to these test runs, and to display the test results
-on the console.  It is responsibility of the author of the test driver
-to ensure that it implements all the above steps meaningfully and
+A custom test driver is expected to properly run the test programs passed
+to it (including the command-line arguments passed to those programs, if
+any), to analyze their execution and outcome, to create the @file{.log}
+and @file{.trs} files associated to these test runs, and to display the test
+results on the console. It is responsibility of the author of the test
+driver to ensure that it implements all the above steps meaningfully and
 correctly; Automake isn't and can't be of any help here.  On the other
 hand, the Automake-provided code for testsuite summary generation offers
 support for test drivers allowing several test results per test script,
@@ -9233,8 +9252,8 @@ runtime through the redefinition of @code{TESTS} or @code{TEST_LOGS};
 @item
 concurrency through the use of @command{make}'s option @option{-j};
 @item
-per-test @file{.log} files, and generation of a summary @file{.log}
-file from them;
+per-test @file{.log} and @file{.trs} files, and generation of a summary
+@file{.log} file from them;
 @item
 @code{recheck} target, @code{RECHECK_LOGS} variable, and lazy reruns
 of tests;
@@ -9337,10 +9356,14 @@ The name of the test, with VPATH prefix (if any) removed.  This can have a
 suffix and a directory component (as in e.g., @file{sub/foo.test}), and is
 mostly meant to be used in console reports about testsuite advancements and
 results (@pxref{Testsuite progress output}).
-@item --log-file=@var{PATH}
-The log file the test driver must create.  If it has a directory component
-(as in e.g., @file{sub/foo.log}), the test harness will ensure that such
-directory exist @emph{before} the test driver is called.
+@item --log-file=@file{@var{PATH}.log}
+The @file{.log} file the test driver must create.  If it has a directory
+component (as in e.g., @file{sub/foo.log}), the test harness will ensure
+that such directory exist @emph{before} the test driver is called.
+@item --trs-file=@file{@var{PATH}.trs}
+The @file{.trs} file the test driver must create.  If it has a directory
+component (as in e.g., @file{sub/foo.trs}), the test harness will ensure
+that such directory exist @emph{before} the test driver is called.
 @item --color-tests=@{yes|no@}
 Whether the console output should be colorized or not (@pxref{Simple
 tests and color-tests}, to learn when this option gets activated and
@@ -9370,14 +9393,24 @@ consistency and a more pleasant user experience.
 @node Log files generation and test results recording
 @subsubsection Log files generation and test results recording
 
-The test driver must correctly generate the file specified by the
-@option{--log-file} option (of course even when the tested program
-fails or crashes).  This file, while being quite free-form, @emph{must}
-register some metadata through the use of custom reStructuredText fields,
-in order to work with the @option{parallel-tests} harness and take
-advantage of its features.  Note that such fields will be recognized only
-when used @emph{exactly} at the beginning of a line -- not even leading
-whitespace is permitted.
+The test driver must correctly generate the files specified by the
+@option{--log-file} and @option{--trs-file} option (even when the tested
+program fails or crashes).
+
+The @file{.log} file should ideally contain all the output produced by the
+tested program, plus optionally other information that might facilitate
+debugging or analysis of bug reports.  Apart from that, its format is
+basically free; the only limitation being that it must parse validly as
+reStructuredText if the @file{.log} -> @file{.html} conversion is to be
+supported.
+
+The @file{.trs} file is used to register some metadata through the use
+of custom reStructuredText fields.  This metadata is expected to be
+employed in various ways by the parallel test harness; for example, to
+count the test results when printing the testsuite summary, or to decide
+which tests to re-run upon @command{make reheck}.  Unrecognized metadata
+in a @file{.trs} file is currently ignored by the harness, but this might
+change in the future. The list of currently recognized metadata follows.
 
 @table @code
 
@@ -9388,10 +9421,11 @@ whitespace is permitted.
 @cindex Test case result, registering
 @cindex @code{:test-result:}
 @cindex reStructuredText field, @code{:test-result:}
-The test driver must use this filed to register the results of @emph{each}
+The test driver must use this field to register the results of @emph{each}
 test case run by a test script file.  Several @code{:test-result:} fields
-can be present in the same log file; this is done in order to support test
-protocols that allow a single test script to run more test cases.
+can be present in the same @file{.trs} file; this is done in order to
+support test protocols that allow a single test script to run more test
+cases.
 
 @c Keep this in sync with lib/am/check-am:$(TEST_SUITE_LOG).
 The only recognized test results are currently @code{PASS}, @code{XFAIL},
@@ -9401,16 +9435,16 @@ text holding the name and/or a brief description of the corresponding
 test; the @option{parallel-tests} harness will ignore such extra text when
 generating @file{test-suite.log} and preparing the testsuite summary.
 
-@c Keep in sync with 'test-driver-recheck.test'.
+@c Keep in sync with 'test-metadata-recheck.test'.
 @item @code{:recheck:}
 @cindex :recheck:
 @cindex reStructuredText field, @code{:recheck:}
 If this field is present and defined to @code{no}, then the corresponding
 test script will @emph{not} be run upon a @command{make recheck}.  What
-happens when two or more @code{:recheck:} fields are present in a
-@file{.log} file is undefined behaviour.
+happens when two or more @code{:recheck:} fields are present in the same
+@file{.trs} file is undefined behaviour.
 
-@c Keep in sync with 'test-driver-global-log.test'.
+@c Keep in sync with 'test-metadata-global-log.test'.
 @item @code{:copy-in-global-log:}
 @cindex :copy-in-global-log:
 @cindex reStructuredText field, @code{:copy-in-global-log:}
@@ -9420,43 +9454,30 @@ of the @file{.log} file will @emph{not} be copied into the global
 it can be useful in debugging and analysis of bug report, it can also be
 just a waste of space in normal situations, e.g., when a test script is
 successful.  What happens when two or more @code{:copy-in-global-log:}
-fields are present in a @file{.log} file is undefined behaviour.
-
-@c Keep in sync with 'test-driver-end-metadata.test'.
-@item @code{:end-metadata:}
-@cindex :end-metadata:
-@cindex reStructuredText field, @code{:end-metadata:}
-This special field causes all the following text in the @file{.log}
-file not to be scanned by the testsuite harness in search for other
-test metadata.  This feature is used internally by the default
-@option{parallel-tests} driver, and can be useful to e.g., avoid
-spurious testsuite results.
+fields are present in the same @file{.trs} file is undefined behaviour.
 
 @end table
 
 @noindent
-Let's see a small example.  Assume a @file{.log} file contains the
-following lines (in this order, but possibly interleaved with other
-``non-metadata'' lines):
+Let's see a small example.  Assume a @file{.trs} file contains the
+following lines:
 
 @example
 :test-result: PASS server starts
+:global-log-copy: no
 :test-result: PASS HTTP/1.1 request
 :test-result: FAIL HTTP/1.0 request
 :recheck: yes
 :test-result: SKIP HTTPS request (TLS library wasn't available)
 :test-result: PASS server stops
-:global-log-copy: no
-:metadata-end:
-:test-result: XPASS (this shouldn't be parsed as a test result)
 @end example
 
 @noindent
 Then the corresponding test script will be re-run by @command{make check},
 will contribute with @emph{five} test results to the testsuite summary
 (three of these tests being successful, one failed, and one skipped), and
-the @file{.log} file content will @emph{not} be copied in the global log
-file @file{test-suite.log}.
+the content of the corresponding @file{.log} file will @emph{not} be
+copied in the global log file @file{test-suite.log}.
 
 @node Testsuite progress output
 @subsubsection Testsuite progress output
@@ -9492,11 +9513,9 @@ implementations' output might be a good idea too.
 
 If HTML testsuite output (with @code{check-html}) is to be supported,
 the generated @file{.log} files must contain syntactically valid
-reStructuredText (among the other things, this means that every
-@code{:test-result:} line must be followed by a blank line).  If this
-is not the case, the HTML generation will not work, although all the
-other functionalities of the Automake testsuite harness should remain
-untouched, and continue to work correctly.
+reStructuredText.  If this is not the case, the HTML generation will not
+work, although all the other functionalities of the Automake testsuite
+harness should remain untouched, and continue to work correctly.
 
 @node Using the TAP test protocol
 @section Using the TAP test protocol
