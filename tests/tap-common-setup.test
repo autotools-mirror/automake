@@ -14,26 +14,34 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# TAP support:
-#  - TODO and SKIP directives on the same line: the first one wins
+# Auxiliary test to set up common data used by many tests on TAP support.
 
 parallel_tests=yes
 . ./defs || Exit 1
 
-. "$testsrcdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
+cp "$top_testsrcdir"/lib/tap-driver . \
+  || fatal_ "failed to fetch auxiliary script tap-driver"
 
-cat > all.test <<END
-1..2
-ok 1 # SKIP TODO
-not ok 2 # TODO SKIP
+cat >> configure.in << END
+AC_SUBST([PERL], ['$PERL'])
+AC_OUTPUT
 END
 
-$MAKE check >stdout || { cat stdout; Exit 1; }
-cat stdout
+cat > Makefile.am << 'END'
+TEST_LOG_DRIVER = $(PERL) $(srcdir)/tap-driver
+TEST_LOG_COMPILER = cat
+TESTS = all.test
+END
 
-count_test_results total=2 pass=0 fail=0 xpass=0 xfail=1 skip=1 error=0
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
 
-grep '^SKIP: all\.test 1 ' stdout
-grep '^XFAIL: all\.test 2 ' stdout
+./configure
+
+rm -rf autom4te*.cache
+
+# So that the data files we've created won't be removed at exit.
+keep_testdirs=yes
 
 :

@@ -20,19 +20,7 @@
 parallel_tests=yes
 . ./defs || Exit 1
 
-cp "$top_testsrcdir"/lib/tap-driver . \
-  || fatal_ "failed to fetch auxiliary script tap-driver"
-
-cat >> configure.in <<END
-AC_SUBST([PERL], ['$PERL'])
-AC_OUTPUT
-END
-
-cat > Makefile.am << 'END'
-TEST_LOG_DRIVER = $(PERL) $(srcdir)/tap-driver
-TEST_LOG_COMPILER = cat
-TESTS = a.test b.test c.test d.test e.test
-END
+. "$testsrcdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
 : > exp
 
@@ -131,13 +119,8 @@ echo "ERROR: e.test - Bail out!" >> exp
 # Doing the sums above, we have:
 test_counts='total=12 pass=3 fail=1 xpass=1 xfail=1 skip=1 error=5'
 
-$ACLOCAL
-$AUTOCONF
-$AUTOMAKE
-
-./configure
-
-$MAKE check >stdout && { cat stdout; Exit 1; }
+TESTS='a.test b.test c.test d.test e.test' $MAKE -e check >stdout \
+  && { cat stdout; Exit 1; }
 cat stdout
 
 count_test_results $test_counts

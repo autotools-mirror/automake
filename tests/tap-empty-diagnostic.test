@@ -20,20 +20,7 @@
 parallel_tests=yes
 . ./defs || Exit 1
 
-cp "$top_testsrcdir"/lib/tap-driver . \
-  || fatal_ "failed to fetch auxiliary script tap-driver"
-
-cat >> configure.in <<END
-AC_SUBST([PERL], ['$PERL'])
-AC_OUTPUT
-END
-
-cat > Makefile.am << 'END'
-TEST_LOG_DRIVER = $(PERL) $(srcdir)/tap-driver
-TEST_LOG_COMPILER = cat
-AM_TEST_LOG_DRIVER_FLAGS = --comments
-TESTS = all.test
-END
+. "$testsrcdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
 sed 's/\$$//' > all.test <<END
 1..1$
@@ -53,6 +40,7 @@ $AUTOMAKE
 $MAKE check >stdout || { cat stdout; Exit 1; }
 cat stdout
 
+grep '^PASS:.*all\.test' stdout # Sanity check.
 grep '#.*all\.test' stdout && Exit 1
 grep "all\.test[ $tab]*:[ $tab]*$" stdout && Exit 1
 

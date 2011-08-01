@@ -25,19 +25,12 @@
 parallel_tests=yes
 . ./defs || Exit 1
 
-cp "$top_testsrcdir"/lib/tap-driver . \
-  || fatal_ "failed to fetch auxiliary script tap-driver"
-
-cat >> configure.in <<END
-AC_SUBST([PERL], ['$PERL'])
-AC_OUTPUT
-END
-
 cat > Makefile.am << 'END'
-TEST_LOG_DRIVER = $(PERL) $(srcdir)/tap-driver
 TESTS = pass.test skip.test xfail.test fail.test xpass.test error.test
 TEST_SUITE_LOG = global.log
 END
+
+. "$testsrcdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
 # Custom markers, for use in grepping checks.
 cmarker=::: # comment marker
@@ -92,12 +85,6 @@ echo 'Bail out!'
 END
 
 chmod a+x *.test
-
-$ACLOCAL
-$AUTOCONF
-$AUTOMAKE -a
-
-./configure
 
 TEST_SUITE_LOG=my.log $MAKE -e check && Exit 1
 ls -l # For debugging.

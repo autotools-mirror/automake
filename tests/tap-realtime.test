@@ -35,18 +35,10 @@ expect -f expect-check || {
 }
 rm -f expect-check
 
-cp "$top_testsrcdir"/lib/tap-driver . \
-  || fatal_ "failed to fetch auxiliary script tap-driver"
-
-cat >> configure.in <<END
-AC_SUBST([PERL], ['$PERL'])
-AC_OUTPUT
-END
-
 cat > Makefile.am << 'END'
-TEST_LOG_DRIVER = $(PERL) $(srcdir)/tap-driver
 TESTS = all.test
 END
+. "$testsrcdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
 cat > all.test <<'END'
 #! /bin/sh
@@ -71,12 +63,6 @@ test -f ok-3 || { echo 'Bail out!'; exit 1; }
 END
 
 chmod a+x all.test
-
-$ACLOCAL
-$AUTOCONF
-$AUTOMAKE
-
-./configure
 
 cat > expect-make <<'END'
 eval spawn $env(MAKE) check

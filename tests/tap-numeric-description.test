@@ -19,19 +19,7 @@
 parallel_tests=yes
 . ./defs || Exit 1
 
-cp "$top_testsrcdir"/lib/tap-driver . \
-  || fatal_ "failed to fetch auxiliary script tap-driver"
-
-cat >> configure.in <<END
-AC_SUBST([PERL], ['$PERL'])
-AC_OUTPUT
-END
-
-cat > Makefile.am << 'END'
-TEST_LOG_DRIVER = $(PERL) $(srcdir)/tap-driver
-TEST_LOG_COMPILER = cat
-TESTS = all.test
-END
+. "$testsrcdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
 # Some random numbers to be used as test names.  The definitions below are
 # selected so that $x<n> != <n> for every n >= 1.  We can't use positional
@@ -65,12 +53,6 @@ XFAIL: all.test 8 - ${x8} # TODO
 XPASS: all.test 9 ${x9} # TODO
 XPASS: all.test 10 - ${x10} # TODO
 END
-
-$ACLOCAL
-$AUTOCONF
-$AUTOMAKE
-
-./configure
 
 $MAKE check >stdout && { cat stdout; Exit 1; }
 cat stdout

@@ -21,19 +21,12 @@
 parallel_tests=yes
 . ./defs || Exit 1
 
-cp "$top_testsrcdir"/lib/tap-driver . \
-  || fatal_ "failed to fetch auxiliary script tap-driver"
-
-cat >> configure.in <<END
-AC_SUBST([PERL], ['$PERL'])
-AC_OUTPUT
-END
-
 cat > Makefile.am << 'END'
-TEST_LOG_DRIVER = $(PERL) $(srcdir)/tap-driver
 TEST_LOG_COMPILER = cat
 TESTS = ok.test ko.test
 END
+
+. "$testsrcdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
 cat > ok.test << 'END'
 1..3
@@ -48,12 +41,6 @@ not ok 1 - unexpected failure
 ok 2 - spurious success # TODO
 Bail out! hard error
 END
-
-$ACLOCAL
-$AUTOCONF
-$AUTOMAKE
-
-./configure
 
 no_rst2html_error ()
 {

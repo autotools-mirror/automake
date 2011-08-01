@@ -20,27 +20,9 @@
 parallel_tests=yes
 . ./defs || Exit 1
 
-cp "$top_testsrcdir"/lib/tap-driver . \
-  || fatal_ "failed to fetch auxiliary script tap-driver"
+. "$testsrcdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
-cat >> configure.in <<END
-AC_SUBST([PERL], ['$PERL'])
-AC_OUTPUT
-END
-
-cat > Makefile.am << 'END'
-TEST_LOG_DRIVER = $(PERL) $(srcdir)/tap-driver
-TEST_LOG_COMPILER = cat
-TESTS = foo.test
-END
-
-$ACLOCAL
-$AUTOCONF
-$AUTOMAKE
-
-./configure
-
-cat > foo.test <<END
+cat > all.test <<END
 1..1
 ok 1
 ok 2
@@ -48,10 +30,10 @@ END
 $MAKE check >stdout && { cat stdout; Exit 1; }
 cat stdout
 count_test_results total=3 pass=1 fail=0 xpass=0 xfail=0 skip=0 error=2
-grep '^ERROR: foo\.test - too many tests run (expected 1, got 2)$' stdout
-grep '^ERROR: foo\.test 2 # UNPLANNED$' stdout
+grep '^ERROR: all\.test - too many tests run (expected 1, got 2)$' stdout
+grep '^ERROR: all\.test 2 # UNPLANNED$' stdout
 
-cat > foo.test <<END
+cat > all.test <<END
 1..2
 ok 1
 ok 2
@@ -60,11 +42,11 @@ END
 $MAKE check >stdout && { cat stdout; Exit 1; }
 cat stdout
 count_test_results total=4 pass=2 fail=0 xpass=0 xfail=0 skip=0 error=2
-grep '^ERROR: foo\.test - too many tests run (expected 2, got 3)$' stdout
-grep '^ERROR: foo\.test 3 # UNPLANNED$' stdout
+grep '^ERROR: all\.test - too many tests run (expected 2, got 3)$' stdout
+grep '^ERROR: all\.test 3 # UNPLANNED$' stdout
 
 # Interaction with XFAIL_TESTS.
-cat > foo.test <<END
+cat > all.test <<END
 1..2
 not ok 1
 ok 2 # SKIP
@@ -72,15 +54,15 @@ ok 3
 not ok 4
 ok 5 # SKIP
 END
-XFAIL_TESTS=foo.test $MAKE -e check >stdout && { cat stdout; Exit 1; }
+XFAIL_TESTS=all.test $MAKE -e check >stdout && { cat stdout; Exit 1; }
 cat stdout
 count_test_results total=6 pass=0 fail=0 xpass=0 xfail=1 skip=1 error=4
-grep '^ERROR: foo\.test - too many tests run (expected 2, got 5)$' stdout
-grep '^ERROR: foo\.test 3 # UNPLANNED$' stdout
-grep '^ERROR: foo\.test 4 # UNPLANNED$' stdout
-grep '^ERROR: foo\.test 5 # UNPLANNED$' stdout
+grep '^ERROR: all\.test - too many tests run (expected 2, got 5)$' stdout
+grep '^ERROR: all\.test 3 # UNPLANNED$' stdout
+grep '^ERROR: all\.test 4 # UNPLANNED$' stdout
+grep '^ERROR: all\.test 5 # UNPLANNED$' stdout
 
-cat > foo.test <<END
+cat > all.test <<END
 1..1
 ok 1
 
@@ -143,11 +125,11 @@ $MAKE check >stdout && { cat stdout; Exit 1; }
 cat stdout
 count_test_results total=22 pass=1 fail=0 xpass=0 xfail=0 skip=0 error=21
 
-echo 'PASS: foo.test 1' > exp
-sed -e '/^$/d' -e 's/.*/ERROR: foo.test & # UNPLANNED/' t >> exp
-echo 'ERROR: foo.test - too many tests run (expected 1, got 21)' >> exp
+echo 'PASS: all.test 1' > exp
+sed -e '/^$/d' -e 's/.*/ERROR: all.test & # UNPLANNED/' t >> exp
+echo 'ERROR: all.test - too many tests run (expected 1, got 21)' >> exp
 
-$FGREP ': foo.test' stdout > got
+$FGREP ': all.test' stdout > got
 
 cat exp
 cat got
@@ -159,7 +141,7 @@ diff exp got
 # message about the unmatched number of tests once we've got the plan.
 
 for x in 'ok' 'ok 3' 'not ok' 'not ok # TODO' 'ok # TODO' 'ok # SKIP'; do
-  unindent > foo.test <<END
+  unindent > all.test <<END
     ok 1
     ok 2 # SKIP
     $x
@@ -167,11 +149,11 @@ for x in 'ok' 'ok 3' 'not ok' 'not ok # TODO' 'ok # TODO' 'ok # SKIP'; do
 END
   $MAKE check >stdout && { cat stdout; Exit 1; }
   cat stdout
-  test `$FGREP -c ': foo.test' stdout` -eq 4
-  $EGREP '^PASS: foo\.test 1($| )' stdout
-  $EGREP '^SKIP: foo\.test 2($| )' stdout
-  $EGREP ': foo\.test 3($| )' stdout
-  grep '^ERROR: foo\.test - too many tests run (expected 2, got 3)$' stdout
+  test `$FGREP -c ': all.test' stdout` -eq 4
+  $EGREP '^PASS: all\.test 1($| )' stdout
+  $EGREP '^SKIP: all\.test 2($| )' stdout
+  $EGREP ': all\.test 3($| )' stdout
+  grep '^ERROR: all\.test - too many tests run (expected 2, got 3)$' stdout
 done
 
 :

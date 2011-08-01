@@ -994,55 +994,8 @@ suffix13.test \
 symlink.test \
 symlink2.test \
 syntax.test \
-tap-autonumber.test \
-tap-bad-prog.test \
-tap-bailout.test \
-tap-basic.test \
-tap-color.test \
-tap-deps.test \
-tap-diagnostic.test \
-tap-doc.test \
-tap-empty.test \
-tap-empty-diagnostic.test \
-tap-escape-directive.test \
-tap-exit.test \
-tap-signal.test \
-tap-fancy.test \
-tap-fancy2.test \
-tap-global-log.test \
-tap-global-result.test \
-tap-html.test \
-tap-log.test \
-tap-more.test \
-tap-more2.test \
-tap-message-0.test \
-tap-merge-stdout-stderr.test \
-tap-no-merge-stdout-stderr.test \
-tap-no-disable-hard-error.test \
-tap-no-spurious-summary.test \
-tap-no-spurious.test \
-tap-not-ok-skip.test \
-tap-numeric-description.test \
-tap-out-of-order.test \
-tap-passthrough.test \
-tap-passthrough-exit.test \
-tap-plan.test \
-tap-plan-errors.test \
-tap-plan-corner.test \
-tap-plan-corner2.test \
-tap-realtime.test \
-tap-recheck-logs.test \
-tap-recheck.test \
-tap-summary.test \
-tap-skip-whole.test \
-tap-skip-whole-whitespace.test \
-tap-todo-skip.test \
-tap-todo-skip-whitespace.test \
-tap-todo-skip-together.test \
-tap-unplanned.test \
-tap-whitespace-normalization.test \
-tap-with-and-without-number.test \
-tap-xfail-tests.test \
+$(tap_with_common_setup_tests) \
+$(tap_other_tests) \
 tags.test \
 tags2.test \
 tagsub.test \
@@ -1169,6 +1122,72 @@ EXTRA_DIST += extract-testsuite-summary
 
 testsuite-summary-count-many.log: trivial-test-driver
 testsuite-summary-count-many.log: extract-testsuite-summary
+
+# List of tests on TAP support that use the files pre-computed by
+# `tap-common-setup.test', and sources the `tap-setup.sh' helper
+# script.
+tap_with_common_setup_tests = \
+tap-autonumber.test \
+tap-bailout.test \
+tap-color.test \
+tap-deps.test \
+tap-diagnostic.test \
+tap-empty-diagnostic.test \
+tap-empty.test \
+tap-escape-directive.test \
+tap-exit.test \
+tap-signal.test \
+tap-fancy.test \
+tap-fancy2.test \
+tap-global-log.test \
+tap-global-result.test \
+tap-html.test \
+tap-log.test \
+tap-merge-stdout-stderr.test \
+tap-no-merge-stdout-stderr.test \
+tap-message-0.test \
+tap-no-disable-hard-error.test \
+tap-no-spurious-summary.test \
+tap-no-spurious.test \
+tap-not-ok-skip.test \
+tap-numeric-description.test \
+tap-out-of-order.test \
+tap-passthrough.test \
+tap-passthrough-exit.test \
+tap-plan.test \
+tap-plan-corner.test \
+tap-plan-corner2.test \
+tap-plan-errors.test \
+tap-realtime.test \
+tap-recheck-logs.test \
+tap-skip-whole-whitespace.test \
+tap-skip-whole.test \
+tap-todo-skip-together.test \
+tap-todo-skip-whitespace.test \
+tap-todo-skip.test \
+tap-unplanned.test \
+tap-whitespace-normalization.test \
+tap-with-and-without-number.test \
+tap-xfail-tests.test
+
+# Their log files.
+tap_with_common_setup_logs = $(tap_with_common_setup_tests:.test=.log)
+
+# Their dependencies.
+$(tap_with_common_setup_logs): tap-common-setup.log tap-setup.sh
+EXTRA_DIST += tap-setup.sh
+
+# Other tests on TAP support.
+tap_other_tests = \
+tap-common-setup.test \
+tap-bad-prog.test \
+tap-basic.test \
+tap-doc.test \
+tap-empty.test \
+tap-more.test \
+tap-more2.test \
+tap-recheck.test \
+tap-summary.test
 
 # Dependencies valid for each test case.
 $(TEST_LOGS): defs defs-static aclocal-$(APIVERSION) automake-$(APIVERSION)
