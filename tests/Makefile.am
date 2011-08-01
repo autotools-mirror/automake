@@ -1187,7 +1187,11 @@ tap-empty.test \
 tap-more.test \
 tap-more2.test \
 tap-recheck.test \
-tap-summary.test
+tap-summary.test \
+tap-summary-color.test
+
+tap-summary.log tap-summary-color.log: tap-summary-aux.sh
+EXTRA_DIST += tap-summary-aux.sh
 
 # Dependencies valid for each test case.
 $(TEST_LOGS): defs defs-static aclocal-$(APIVERSION) automake-$(APIVERSION)
