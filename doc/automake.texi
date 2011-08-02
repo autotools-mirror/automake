@@ -330,6 +330,13 @@ Simple Tests
 * Serial Test Harness::         Older (and obsolescent) serial test harness
 * Parallel Test Harness::       Generic concurrent test harness
 
+Using the TAP test protocol
+
+* Introduction to TAP::
+* Use TAP with the Automake test harness::
+* Incompatibilities with other TAP parsers and drivers::
+* Links and external resources::
+
 Custom Test Drivers
 
 * Overview of Custom Test Drivers Support::
@@ -8807,6 +8814,8 @@ might change, or they might even have no effect at all (for example,
 in tests using TAP, there is not way to disable hard errors, and the
 @code{DISABLE_HARD_ERRORS} variable has no effect on them).
 
+@anchor{Testsuite progress on console}
+@cindex Testsuite progress on console
 The result of each test case run by the scripts in @code{TESTS} will be
 printed on standard output, along with the test name.  For test protocols
 that allow more test cases per test script (such as TAP), a number,
@@ -8973,6 +8982,7 @@ tests that have not completed in a prior run, summary and verbose output in
 This harness is still somewhat experimental and may undergo changes in
 order to satisfy additional portability requirements.
 
+@anchor{Basics of test metadata}
 @vindex TEST_SUITE_LOG
 @vindex TESTS
 @cindex @file{.log} files
@@ -9520,23 +9530,188 @@ harness should remain untouched, and continue to work correctly.
 @node Using the TAP test protocol
 @section Using the TAP test protocol
 
-Brief introduction to TAP and its philosophy.
+@menu
+* Introduction to TAP::
+* Use TAP with the Automake test harness::
+* Incompatibilities with other TAP parsers and drivers::
+* Links and external resources::
+@end menu
 
-Real-word uses of TAP: testsuite of @command{perl} and of many
-perl modules, and of @command{git}.  Third-party libraries and
-utilities that can generate TAP (tell also to look at links
-below).
+@node Introduction to TAP
+@subsection Introduction to TAP
 
-@quotation
-A harness must only read TAP output from standard output and not
-from standard error.  Lines written to standard output matching
-@code{/^(not )?ok\b/} must be interpreted as test lines.  All other
-lines must not be considered test output.
-@end quotation
+TAP, the Test Anything Protocol, is a simple text-based interface between
+testing modules or programs and a test harness.  The tests (also called
+``TAP producers'' in this context) write test results in a simple format
+on standard output; a test harness (also called ``TAP consumer'') will
+parse and interpret these results, and properly present them to the user,
+and/or register them for later analysis.  The exact details of how this
+is accomplished can vary among different test harnesses.  The Automake
+parallel harness will present the results on the console in the usual
+fashion (@pxref{Testsuite progress on console}), and will use the
+@file{.trs} files (@pxref{Basics of test metadata}) to store the test
+results and related metadata.  Apart from that, it will try to remain
+as much compatible as possible with pre-existing and widespread utilities,
+such as the @uref{http://search.cpan.org/~andya/Test-Harness/bin/prove,
+@command{prove} utility}, at least for the simpler usages.
+
+TAP started its life as part of the test harness for Perl, but today
+it has been (mostly) standardized, and has various independent
+implementations in different languages; among them, C, C++, Perl,
+Python, PHP, and Java.  For a semi-official specification of the
+TAP protocol, please refer to the documentation of
+@uref{http://search.cpan.org/~petdance/Test-Harness/lib/Test/Harness/TAP.pod,
+      @samp{Test::Harness::TAP}}.
+
+The most relevant real-world usages of TAP are obviously in the testsuites
+of @command{perl} and of many perl modules.  Still, also other important
+third-party packages, such as @uref{http://git-scm.com/, @command{git}},
+use TAP in their testsuite.
+
+@node Use TAP with the Automake test harness
+@subsection Use TAP with the Automake test harness
+
+Currently, the TAP driver that comes with Automake requires a perl
+interpreter to work, and requires various by-hand steps on the
+developer's part (this should be fixed in future Automake versions).
+You'll have grab the @file{tap-driver} script from the Automake
+distribution by hand, copy it in your source tree, add code to
+@file{configure.ac} to search a perl interpreter and to define the
+@code{$(PERL)} variable accordingly, and use the Automake support
+for third-party test drivers to instruct the harness to use the
+@file{tap-driver} to run your TAP-producing tests.  See the example
+below for clarification.
+
+Apart from the options common to all the Automake test drivers
+(@pxref{Command-line arguments for test drivers}), the @file{tap-driver}
+supports the following options, whose names are chosen for enhanced
+compatibility with the @command{prove} utility.
+
+@table @option
+@item --ignore-exit
+Causes the test driver to ignore the exit status of the test scripts;
+by default, the driver will report an error if the script exit with a
+non-zero status.
+@item --comments
+Instruct the test driver to display TAP diagnostic (i.e., lines beginning
+with the @samp{#} character) in the testsuite progress output too; by
+default, TAP diagnostic is only copied in the @file{.log} file.
+@item --no-comments
+Revert the effects of @option{--comments}.
+@item --merge
+Instruct the test driver to merge the test scripts' standard error into
+their standard output.  This is necessary if you want to ensure that
+diagnostics from the test scripts are displayed in the correct order
+relative to test results; this can be of great help in debugging
+(especially if your test scripts are shell scripts run with shell
+tracing active).  As a downside, this option might cause the test
+harness to get confused if anything that appears on standard error
+looks like a test result.
+@item --no-merge
+Revert the effects of @option{--merge}.
+@end table
 
 @noindent
-Here are some links to more extensive official or third-party documentation
-and resources:
+Here is an example of how the TAP driver can be set up and used.
+
+@c Keep in sync with tap-doc2.test.
+@example
+% @kbd{cat configure.ac}
+AC_INIT([GNU Try Tap], [1.0], [bug-automake@@gnu.org])
+AC_CONFIG_AUX_DIR([build-aux])
+AM_INIT_AUTOMAKE([foreign parallel-tests -Wall -Werror])
+AC_CONFIG_FILES([Makefile])
+AC_REQUIRE_AUX_FILE([tap-driver])
+AC_PATH_PROG([PERL], [perl])
+test -n "$PERL" || AC_MSG_ERROR([perl not found])
+$PERL -MTAP::Parser -e 1 || AC_MSG_ERROR([TAP::Parser not found])
+AC_OUTPUT
+
+% @kbd{cat Makefile.am}
+TEST_LOG_DRIVER = $(PERL) $(srcdir)/build-aux/tap-driver
+TESTS = foo.test bar.test baz.test
+EXTRA_DIST = $(TESTS)
+
+% @kbd{cat foo.test}
+#!/bin/sh
+echo 1..4 # Number of tests to be executed.
+echo 'ok 1 - Swallows fly'
+echo 'not ok 2 - Caterpillars fly # TODO metamorphosis in progress'
+echo 'ok 3 - Pigs fly # SKIP not enough acid'
+echo '# I just love word plays ...'
+echo 'ok 4 - Flies fly too :-)'
+
+% @kbd{cat bar.test}
+#!/bin/sh
+echo 1..3
+echo 'not ok 1 - Bummer, this test has failed.'
+echo 'ok 2 - This passed though.'
+echo 'Bail out! Ennui kicking in, sorry...'
+echo 'ok 3 - This will not be seen.'
+
+% @kbd{cat baz.test}
+#!/bin/sh
+echo 1..1
+echo ok 1
+# Exit with error, even if all the test case has been successful.
+exit 7
+
+% @kbd{cp @var{PREFIX}/share/automake-@var{APIVERSION}/tap-driver .}
+% @kbd{autoreconf -vi && ./configure && make check}
+...
+PASS: foo.test 1 - Swallows fly
+XFAIL: foo.test 2 - Caterpillars fly # TODO metamorphosis in progress
+SKIP: foo.test 3 - Pigs fly # SKIP not enough acid
+PASS: foo.test 4 - Flies fly too :-)
+FAIL: bar.test 1 - Bummer, this test has failed.
+PASS: bar.test 2 - This passed though.
+ERROR: bar.test - Bail out! Ennui kicking in, sorry...
+PASS: baz.test 1
+ERROR: baz.test - exited with status 7
+...
+Please report to bug-automake@@gnu.org
+...
+% @kbd{echo exit status: $?}
+exit status: 1
+
+@c Keep the "skewed" indentation below, it produces pretty PDF output.
+% @kbd{env TEST_LOG_DRIVER_FLAGS='--comments --ignore-exit' \
+      TESTS='foo.test baz.test' make -e check}
+...
+PASS: foo.test 1 - Swallows fly
+XFAIL: foo.test 2 - Caterpillars fly # TODO metamorphosis in progress
+SKIP: foo.test 3 - Pigs fly # SKIP not enough acid
+# foo.test: I just love word plays...
+PASS: foo.test 4 - Flies fly too :-)
+PASS: baz.test 1
+...
+% @kbd{echo exit status: $?}
+exit status: 0
+@end example
+
+@node Incompatibilities with other TAP parsers and drivers
+@subsection Incompatibilities with other TAP parsers and drivers
+
+For implementation or historical reasons, the TAP driver and harness as
+implemented by Automake have some minors incompatibilities with the
+mainstream versions, which you should be aware of.
+
+@itemize @bullet
+@item
+A @code{Bail out!} directive doesn't stop the whole testsuite, but only
+the test script it occurs into.  This doesn't follows TAP specifications,
+but on the other hand it maximizes compatibility (and code sharing) with
+the ``hard error'' concept of the default @option{parallel-tests} driver.
+@item
+@emph{TODO}: there's surely something else ...
+@end itemize
+
+@node Links and external resources
+@subsection Links and external resources
+
+@noindent
+Here are some links to more extensive official or third-party
+documentation and resources:
 @itemize @bullet
 @item
 @uref{http://search.cpan.org/~petdance/Test-Harness/lib/Test/Harness/TAP.pod,
@@ -9565,39 +9740,9 @@ the standard perl testing libraries, which are based on TAP.
 @item
 @uref{http://www.eyrie.org/~eagle/software/c-tap-harness/,C TAP Harness},
 a C-based project implementing both a TAP producer and a TAP consumer.
-@end itemize
-
-Give example of output from @command{prove} command (when used in
-``verbose'' mode, with option @option{-v}), to which we'd like to
-remain somewhat compatible compatible, while also (and foremost)
-being compatible with the default @option{parallel-tests} driver.
-
-Example of output from out own TAP testsuite driver.  Point out
-similarities with the output from @command{prove --verbose} and
-from the default @option{parallel-tests} driver.
-
-Option @option{--ignore-exit} causes the driver to ignore the exit
-status of the test scripts; by default, the driver will report an
-error if the script exit with status != 0.
-@emph{TODO}: also add a @option{--no-ignore-exit} option, for
-completeness?
-
-By default, TAP diagnostic (i.e., lines beginning with the @samp{#}
-character) are copied only in the @file{.log} file.  The option
-@option{--comments} causes the driver to display them in the testsuite
-progress output too (@emph{TODO}: give example).  The option
-@option{--no-comments} restore the default behaviour.
-
-@noindent
-Differences and incompatibilities with other TAP parsers and drivers:
-@itemize @bullet
 @item
-A @code{Bail out!} directive doesn't stop the whole testsuite, but only
-the test script it occurs into.  This doesn't follows TAP specifications,
-but on the other hand maximize compatibility (and code sharing) with
-the ``hard error'' concept of the default @option{parallel-tests} driver.
-@item
-@emph{TODO}: there's surely something else ...
+@uref{http://www.tap4j.org/,tap4j},
+a Java-based project implementing both a TAP producer and a TAP consumer.
 @end itemize
 
 @node DejaGnu Tests

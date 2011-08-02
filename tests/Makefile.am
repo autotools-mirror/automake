@@ -1184,6 +1184,7 @@ tap-bad-prog.test \
 tap-bad-prog2.test \
 tap-basic.test \
 tap-doc.test \
+tap-doc2.test \
 tap-empty.test \
 tap-more.test \
 tap-more2.test \
