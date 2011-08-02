@@ -727,6 +727,7 @@ parallel-tests10.test \
 parallel-tests-make-n.test \
 parallel-tests-fd-redirect.test \
 parallel-tests-am_tests_environment.test \
+parallel-tests-extra-programs.test \
 parallel-tests-unreadable.test \
 parallel-tests-subdir.test \
 parallel-tests-interrupt.test \
