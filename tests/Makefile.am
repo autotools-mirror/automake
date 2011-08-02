@@ -240,7 +240,6 @@ check12.test \
 check-exported-srcdir.test \
 check-fd-redirect.test \
 check-tests-in-builddir.test \
-check-tests_environment.test \
 check-no-test-driver.test \
 checkall.test \
 clean.test \
@@ -724,9 +723,8 @@ parallel-tests7.test \
 parallel-tests8.test \
 parallel-tests9.test \
 parallel-tests10.test \
-parallel-tests-make-n.test \
+parallel-tests-dry-run.test \
 parallel-tests-fd-redirect.test \
-parallel-tests-am_tests_environment.test \
 parallel-tests-extra-programs.test \
 parallel-tests-unreadable.test \
 parallel-tests-subdir.test \
@@ -737,11 +735,13 @@ parallel-tests-log-override-1.test \
 parallel-tests-log-override-2.test \
 parallel-tests-log-override-recheck.test \
 parallel-tests-empty-testlogs.test \
-parallel-test-driver-install.test \
+parallel-tests-driver-install.test \
 parallel-tests-no-spurious-summary.test \
 parallel-tests-exit-statuses.test \
 parallel-tests-console-output.test \
 parallel-tests-once.test \
+tests-environment.test \
+am-tests-environment.test \
 testsuite-summary-color.test \
 testsuite-summary-count.test \
 testsuite-summary-count-many.test \
