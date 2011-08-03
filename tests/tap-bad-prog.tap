@@ -18,9 +18,6 @@
 #  - missing, unreadable, or not-executable test scripts cause proper
 #    error reports
 
-# The files created by this test will be required also by the sister
-# test `tap-bad-prog2.test', so we can't remove the test directory.
-keep_testdirs=yes
 parallel_tests=yes
 . ./defs || Exit 1
 
@@ -44,12 +41,8 @@ echo 1..1
 ok 1
 END
 
-./noexec.test && skip_ "can't have non-executable files"
-
 cp noexec.test noread.test
 chmod a-r noread.test
-
-test -r noread.test && skip_ "you can still read unreadable files"
 
 $ACLOCAL
 $AUTOCONF
@@ -57,12 +50,37 @@ $AUTOMAKE
 
 ./configure
 
-$MAKE check >stdout && { cat stdout; Exit 1; }
+if $MAKE check >stdout; then r='not ok'; else r='ok'; fi
 cat stdout
+result_ "$r" '"make check" returns non-zero exit status'
 
-# FIXME: maybe better error messages?
-grep '^ERROR: none\.test' stdout
-grep '^ERROR: noexec\.test' stdout
-grep '^ERROR: noread\.test' stdout
+# FIXME: maybe grep for stricter error messages in the next checks?
+
+command_ok_ "non-existent test is reported" \
+            grep '^ERROR: none\.test' stdout
+
+desc="non-executable test is reported"
+if ./noexec.test; then
+  skip_ -r "any file is executable" "$desc"
+else
+  command_ok_ "$desc" -- grep '^ERROR: noexec\.test' stdout
+fi
+
+desc="non-readable test is reported"
+if test -r noread.test; then
+  skip_ -r "any file is readable" "$desc"
+else
+  command_ok_ "$desc" -- grep '^ERROR: noread\.test' stdout
+fi
+
+# Check that no spurious test results is reported.  This is lower-priority
+# (and in fact the check currently fails.
+if count_test_results total=3 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=3
+then
+  r='ok'
+else
+  r='not ok'
+fi
+result_ "$r" 'no spurious results # TODO still get "missing plan"'
 
 :

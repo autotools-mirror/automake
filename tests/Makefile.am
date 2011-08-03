@@ -31,7 +31,6 @@ gcj6.test \
 override-conditional-2.test \
 pr8365-remake-timing.test \
 yacc-dist-nobuild-subdir.test \
-tap-bad-prog2.test \
 tap-plan-corner2.test \
 tap-message-0.test \
 tap-signal.test \
@@ -1185,8 +1184,7 @@ EXTRA_DIST += tap-setup.sh
 # Other tests on TAP support.
 tap_other_tests = \
 tap-common-setup.test \
-tap-bad-prog.test \
-tap-bad-prog2.test \
+tap-bad-prog.tap \
 tap-basic.test \
 tap-doc.test \
 tap-doc2.test \
@@ -1196,8 +1194,6 @@ tap-more2.test \
 tap-recheck.test \
 tap-summary.test \
 tap-summary-color.test
-
-tap-bad-prog2.log: tap-bad-prog.log
 
 tap-summary.log tap-summary-color.log: tap-summary-aux.sh
 EXTRA_DIST += tap-summary-aux.sh
