@@ -148,6 +148,9 @@ alloca.test \
 alloca2.test \
 alpha.test \
 alpha2.test \
+amhello-cflags.test \
+amhello-cross-compile.test \
+amhello-binpkg.test \
 amassign.test \
 ammissing.test \
 amopt.test \
@@ -733,6 +736,8 @@ parallel-tests-harderror.test \
 parallel-tests-log-override-1.test \
 parallel-tests-log-override-2.test \
 parallel-tests-log-override-recheck.test \
+parallel-tests-cmdline-override.test \
+parallel-tests-log-compiler-example.test \
 parallel-tests-empty-testlogs.test \
 parallel-tests-driver-install.test \
 parallel-tests-no-color-in-log.test \
@@ -742,6 +747,7 @@ parallel-tests-console-output.test \
 parallel-tests-once.test \
 tests-environment.test \
 am-tests-environment.test \
+tests-environment-backcompat.test \
 testsuite-summary-color.test \
 testsuite-summary-count.test \
 testsuite-summary-count-many.test \
@@ -865,6 +871,7 @@ remake-subdir-from-subdir.test \
 remake-subdir-gnu.test \
 remake-subdir.test \
 remake-subdir2.test \
+remake-subdir-long-time.test \
 remake-gnulib-add-acsubst.test \
 remake-gnulib-add-header.test \
 remake-gnulib-remove-header.test \

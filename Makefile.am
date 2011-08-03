@@ -392,9 +392,9 @@ sc_perl_local_no_parens:
 	  exit 1; \
 	fi
 
-## Allow only `local $_' in Automake.
+## Allow only few variables to be localized in Automake.
 sc_perl_local:
-	@if grep -v '^[ \t]*local \$$_;' $(srcdir)/automake.in | \
+	@if egrep -v '^[ \t]*local \$$[_~]( *=|;)' $(srcdir)/automake.in | \
 	        grep '^[ \t]*local [^*]'; then \
 	  echo "Please avoid \`local'." 1>&2; \
 	  exit 1; \
@@ -522,17 +522,19 @@ sc_tests_required_after_defs:
 
 ## Overriding a Makefile macro on the command line is not portable when
 ## recursive targets are used.  Better use an envvar.  SHELL is an
-## exception, POSIX says it can't come from the environment.  DESTDIR and
-## DISTCHECK_CONFIGURE_FLAGS and V are exceptions, too, as package authors
-## are urged not to initialize them anywhere.
+## exception, POSIX says it can't come from the environment.  V, DESTDIR,
+## DISTCHECK_CONFIGURE_FLAGS and DISABLE_HARD_ERRORS are exceptions, too,
+## as package authors are urged not to initialize them anywhere.
 sc_tests_overriding_macros_on_cmdline:
 	@if grep -E '\$$MAKE .*(SHELL=.*=|=.*SHELL=)' $(srcdir)/tests/*.test; then \
 	  echo 'Rewrite "$$MAKE foo=bar SHELL=$$SHELL" as "foo=bar $$MAKE -e SHELL=$$SHELL"' 1>&2; \
 	  echo ' in the above lines, it is more portable.' 1>&2; \
 	  exit 1; \
 	fi
-	@if sed -e 's/ DESTDIR=[^ ]*/ /' -e 's/ SHELL=[^ ]*/ /' \
-	        -e 's/ V=[^ ]*/ /' -e 's///' \
+## Also try to account for usages like "$MAKE || st=$?".
+	@if sed -e 's/ || .*//' -e 's/ && .*//' \
+	        -e 's/ DESTDIR=[^ ]*/ /' -e 's/ SHELL=[^ ]*/ /' \
+	        -e 's/ V=[^ ]*/ /' -e 's/ DISABLE_HARD_ERRORS=[^ ]*/ /' \
 ## DISTCHECK_CONFIGURE_FLAGS is allowed to contain whitespace in its
 ## definition, so the more complex substitutions below.
 	        -e "s/ DISTCHECK_CONFIGURE_FLAGS='[^']*'/ /" \

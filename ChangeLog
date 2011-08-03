@@ -1,5 +1,121 @@
 2011-08-03  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
+	maintcheck: fix maintainer-check failures, both real and spurious
+	* tests/amhello-binpkg.test: Use "$MAKE", not bare "make".
+	* Makefile.am (sc_perl_local): Also allow perl special variable
+	`$~' to be localized.  And be slightly laxer in the regexp, to
+	allow for usages like "local $_ = $foo;".
+	(sc_tests_overriding_macros_on_cmdline): Also allow for command
+	line overriding of the `DISABLE_HARD_ERRORS' make variable.  Try
+	to avoid false positives for usages like "$MAKE || st=$?".
+
+2011-08-03  Bruno Haible  <bruno@clisp.org>
+
+	docs: how to use '-I' option in AM_CPPFLAGS for best VPATH support
+	* doc/automake.texi (Program Variables): Recommend -I options to
+	both the build directory and the source directory when needed.
+
+2011-07-23  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: relax a test on amhello examples to cater to Solaris tar
+	* tests/amhello-binpkg.test: When the tar implementation in use
+	is not GNU tar, relax the tests on tar output, to avoid spurious
+	failures.  For example, "tar cvf ..." with GNU tar can output
+	lines like "./usr/bin/hello" on the standard output, while with
+	Solaris tar it can output lines like "a ./usr/bin/hello 8K" on
+	standard output, and with Heirloom tar it can output lines like
+	"a ./usr/bin/hello 15 tape blocks" on standard error.
+
+2011-07-23  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	test defs: function 'is_newest' now works also with directories
+	* tests/defs (is_newest): Call `find' with the `-prune' option,
+	so that it won't descend in the directories (which could cause
+	spurious results).
+	* tests/self-check-is_newest: Extend accordingly.
+	From a report by Jim Meyering, see automake bug#9147.
+
+2011-07-15  Benoit Sigoure  <tsunanet@gmail.com>
+
+	docs: add references between the 2 sections on java support
+	* doc/automake.texi (Java Support, Java): Add cross-references.
+
+2011-07-20  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	Sync auxiliary files from upstream.
+	* INSTALL, lib/INSTALL, lib/config.guess, lib/config.sub,
+	lib/texinfo.tex: Sync from upstream.
+
+2011-07-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix weakness in 'tests-environment-backcompat.test'
+	* tests/tests-environment-backcompat.test: Do not override the
+	content of xfailing test `baz.test' with a "weaker" version that
+	fails unconditionally: the test must fail only when the 'strict'
+	pragma is in use, in order not to reduce coverage.
+
+2011-07-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	docs, tests: synchronize examples on silent-rules from config.site
+	* doc/automake.texi (Automake silent-rules Option): Reference test
+	'silent-configsite.test' in comments.
+
+2011-07-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: portability fixes in tests on amhello examples
+	* tests/amhello-binpkg.test: Don't use "tar xzf too.tag.gz" to
+	extract a gzip-compressed tarball, that's unportable to some
+	tar implementations; use the "gzip -dc fo.tar.gz | tar xf -"
+	idiom instead.
+	* tests/amhello-cflags.test: Likewise.
+	* tests/amhello-cross-compile.test: Likewise.
+	Suggestion from Ralf Wildenhues.
+
+2011-07-04  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	remake: add test ensuring that slower remakes don't hang
+	* tests/remake-subdir-long-time.test: New test.
+	* tests/Makefile.am (TESTS): Update.
+	Suggestion by Ralf Wildenhues.
+
+2011-07-04  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	remake: fix outdated comment in configure.am
+	* lib/am/configure.am: Fix comment falsified by changes in
+	commit `v1.11-366-gbee9871'.
+	Suggestion by Ralf Wildenhues.
+
+2011-07-01  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	docs, tests: synchronize examples from docs to tests
+	* tests/README (Writing test cases): Give suggestions on how to
+	keep test cases and examples in the documentation synchronized.
+	* doc/automake.texi: Improve or fix existing testcase-referencing
+	comments, and add many new ones.
+	* HACKING (Administrivia): Suggest to test complex examples and
+	idioms from the manual.
+	* tests/specflg8.test: Improve synchronization with the example
+	in the manual.
+	* tests/output11.test:Likewise.
+	* tests/txinfo21.test:Likewise.
+	* tests/interp.test: Likewise.
+	* tests/amhello-cflags.test: New test.
+	* tests/amhello-cross-compile.test: Likewise.
+	* tests/amhello-binpkg.test: Likewise.
+	* tests/tests-environment-backcompat.test: Likewise.
+	* tests/parallel-tests-log-compiler-example.test: Likewise.
+	* tests/Makefile.am (TESTS): Update.
+
+2011-06-30   Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	coverage: new test on parallel-tests TESTS runtime overriding
+	* tests/parallel-tests-cmdline-override.test: New test, check that
+	we can use indirections when overriding TESTS and TEST_LOGS from
+	the command line.
+	* tests/Makefile.am (TESTS): Update.
+
+2011-08-03  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
 	gitignore: ignore `*.trs' files in lib/Automake/tests
 	* lib/Automake/tests/.gitignore: Add `*.trs' pattern.
 
@@ -686,14 +802,14 @@
 	example, simpler this time, but still inspired to real-world
 	usage (the GNU coreutils testsuite).
 
-2011-06-23   Stefano Lattarini  <stefano.lattarini@gmail.com>
+2011-06-23  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
 	docs: avoid a footnote, some related rewordings and improvements
 	* doc/automake.texi (Dist): Reword the part about automatically
 	distributed files to avoid a footnote.  Since we are at it, extend
 	a bit, and add an example and a reference to a relevant test case.
 
-2011-06-23   Stefano Lattarini  <stefano.lattarini@gmail.com>
+2011-06-23  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
 	docs: minor cosmetic fixes
 	* doc/automake.texi: Break few overly long lines, throughout the
@@ -706,7 +822,7 @@
 	("Other things Automake recognizes" @item AM_C_PROTOTYPES): Use
 	@pxref instead of @ref.
 
-2011-06-23   Stefano Lattarini  <stefano.lattarini@gmail.com>
+2011-06-23  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
 	help: improve text about automatically-distributed files
 	This change fixes automake bug#7819.
@@ -719,7 +835,7 @@
 	* tests/autodist.test: Likewise.
 	(configure.in): Remove useless call to AM_MAINTAINER_MODE.
 
-2011-06-23   Stefano Lattarini  <stefano.lattarini@gmail.com>
+2011-06-23  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
 	refactor: split 'usage' subroutine in automake
 	This change is related to automake bug#7819.

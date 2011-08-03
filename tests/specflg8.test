@@ -32,25 +32,18 @@ END
 # different flags.
 
 cat > Makefile.am << 'END'
-FALSESOURCE = false.c
+TRUESOURCE = true.c
 bin_PROGRAMS = false true
-true_SOURCES = $(FALSESOURCE)
-true_CPPFLAGS = -DAM_TRUE
-false_SOURCES = $(FALSESOURCE)
-false_CPPFLAGS = -DAM_FALSE
+true_SOURCES = $(TRUESOURCE)
+true_CPPFLAGS = -DEXIT_CODE=0
+false_SOURCES = $(TRUESOURCE)
+false_CPPFLAGS = -DEXIT_CODE=1
 END
 
-cat > false.c << 'END'
-#include <stdio.h>
-int
-main (int argc, char *argv[])
+cat > true.c << 'END'
+int main (void)
 {
-#ifdef AM_TRUE
-   puts ("true");
-#else
-   puts ("false");
-#endif
-   return 0;
+   return EXIT_CODE;
 }
 END
 
@@ -60,5 +53,11 @@ $AUTOMAKE -a
 
 ./configure
 $MAKE
-./true | grep true
-./false | grep false
+
+./true
+./false && Exit 1
+
+test -f ./true-true.o
+test -f ./true-true.o
+
+:
