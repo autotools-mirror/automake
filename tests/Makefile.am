@@ -735,6 +735,7 @@ parallel-tests-log-override-2.test \
 parallel-tests-log-override-recheck.test \
 parallel-tests-empty-testlogs.test \
 parallel-tests-driver-install.test \
+parallel-tests-no-color-in-log.test \
 parallel-tests-no-spurious-summary.test \
 parallel-tests-exit-statuses.test \
 parallel-tests-console-output.test \
