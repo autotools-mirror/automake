@@ -781,6 +781,7 @@ parallel-tests-log-compiler-example.test \
 parallel-tests-cmdline-override.test \
 parallel-tests-empty-testlogs.test \
 parallel-tests-driver-install.test \
+parallel-tests-no-color-in-log.test \
 parallel-tests-no-spurious-summary.test \
 parallel-tests-exit-statuses.test \
 parallel-tests-console-output.test \
@@ -1240,7 +1241,6 @@ tap-bad-prog.tap \
 tap-basic.test \
 tap-doc.test \
 tap-doc2.test \
-tap-empty.test \
 tap-more.test \
 tap-more2.test \
 tap-recheck.test \
