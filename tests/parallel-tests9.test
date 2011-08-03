@@ -58,21 +58,14 @@ $AUTOMAKE -a
 ./configure
 $MAKE check >stdout && { cat stdout; Exit 1; }
 cat stdout
+count_test_results total=3 pass=1 fail=1 skip=0 xfail=0 xpass=0 error=1
 
 $MAKE recheck >stdout && { cat stdout; Exit 1; }
 cat stdout
-grep foo.test stdout && Exit 1
-grep bar.test stdout || Exit 1
-grep baz.test stdout || Exit 1
-grep '2 of 2.*failed' stdout
-
-# If we cannot read the log file, then redo it as well.
-chmod a-r foo.log
-if test ! -r foo.log; then
-   $MAKE recheck >stdout && { cat stdout; Exit 1; }
-   cat stdout
-   grep foo.test stdout || Exit 1
-fi
+count_test_results total=2 pass=0 fail=1 skip=0 xfail=0 xpass=0 error=1
+grep 'foo\.test' stdout && Exit 1
+grep '^ERROR: bar\.test$' stdout
+grep '^FAIL: baz\.test$' stdout
 
 # Ensure that recheck builds check_SCRIPTS, and that
 # recheck reruns nothing if check has not been run.

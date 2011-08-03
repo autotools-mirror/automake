@@ -14,7 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that the testsuite driver copes well with unreadable test logs.
+# Check that custom test drivers does not need to produce sensible
+# reStructuredText output in the test logs.  This might be legitimate
+# for drivers that are not interested to support the .log -> HTML
+# conversion offered by Automake.
 
 parallel_tests=yes
 . ./defs || Exit 1
@@ -24,37 +27,41 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-TESTS = foo.test bar.test
-XFAIL_TESTS = bar.test
+TEST_LOG_DRIVER = ./no-rst
+TESTS = foo.test
 END
 
-cat > foo.test << 'END'
+: > foo.test
+
+cat > no-rst <<'END'
 #! /bin/sh
-exit 0
+echo ':test-result: SKIP' > foo.trs
+echo ':copy-in-global-log: yes' >> foo.trs
+# The genereted log file is deliberately syntactically invalid
+# reStructuredText.
+cat > foo.log <<'EoL'
+SKIP: FooBar
+=============
+
+--------------
+ dummy title
+EoL
 END
-cat > bar.test << 'END'
-#! /bin/sh
-exit 1
-END
-chmod a+x foo.test bar.test
+chmod a+x no-rst
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE -a
-
-# The testsuite driver will use this variable, so ensure it sanitizes
-# it and do not allow in spurious values from the environment.
-line=PASS; export line
+$AUTOMAKE
 
 ./configure
+VERBOSE=yes $MAKE check
+cat foo.log
+cat test-suite.log
+$FGREP 'dummy title' test-suite.log
 
-$MAKE foo.log
-$MAKE bar.log
-chmod a-r foo.log bar.log
-test ! -r foo.log || skip_ "cannot drop file read permissions"
-$MAKE test-suite.log >stdout && { cat stdout; Exit 1; }
-cat stdout
-grep '^2 of 2 tests failed *$' stdout
-grep '^2 of 2 tests failed\. *$' test-suite.log
+# Sanity check: trying to produce HTML output should fail.
+$MAKE check-html >output 2>&1 && { cat output; Exit 1; }
+cat output
+$FGREP SEVERE output
 
 :

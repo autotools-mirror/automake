@@ -1,3 +1,647 @@
+2011-08-03  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	testsuite: one more use of TAP in our own tests
+	* tests/tap-bad-prog.test, tests/tap-bad-prog2.test: Merged
+	into ...
+	* tests/tap-bad-prog.tap: ... this TAP-generating test.
+	* tests/Makefile.am (tap_other_tests): Remove plan-bad-prog.test
+	and plan-bad-prog2.test.
+	(XFAIL_TESTS): Remove plan-bad-prog2.test.
+	(plan-bad-prog2.log): Remove.
+
+2011-08-03  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	testsuite: scaffolding to allow use of TAP in our own tests
+	Now that Automake has initial support for the TAP test protocol,
+	we can start "eating our own dog food" and rewrite some tests to
+	use TAP; this should allow for better granularity, especially in
+	the control of skips and expected failures.  With this change, we
+	set up the initial scaffolding required by the planned TAP tests,
+	and convert few older tests to use TAP, mostly in order to verify
+	that there are no obvious errors.  The tests in our testsuite that
+	use the TAP protocol will be marked by the new `.tap' extension.
+	* tests/plain-functions.sh: New file containing definition of
+	helper shell functions used by the "protocol-less" tests of the
+	Automake testsuite.
+	* tests/tap-functions.sh:  New file containing definition of
+	helper shell functions used by the TAP-producing tests of the
+	Automake testsuite.
+	* tests/defs: Remove definitions of some functions that are
+	now defined in `plain-functions.sh'.  Instead, source one of
+	`plain-functions.sh' or `tap-functions.sh', depending on whether
+	`$use_tap' is set to "no" or "yes".
+	(exit trap): Call `late_plan_' if `$use_tap' is true.  Also,
+	unset shell traces before issuing the latest commands, to avoid
+	confusing the tap driver with spurious output.
+	* tests/defs-static.in ($use_tap): New variable, by default set
+	to "yes" if the calling test script has a `.tap' suffix, and to
+	"no" otherwise.  The individual scripts can override it though.
+	In code sanity-checking the environment, verify that `$use_tap'
+	is not exported.
+	* tests/self-check-env-sanitize.test: Update, and small related
+	reformatting.
+	* tests/self-check-tap.test: New very minimal self test.
+	* tests/acoutbs.test, tests/acoutbs2.test, tests/acoutnoq.test,
+	tests/acoutpt.test, tests/acoutpt2.test, tests/acoutqnl.test:
+	Removed, merged into ...
+	* tests/ac-output-old.tap: ... this new test, that uses TAP.
+	* tests/Makefile.am (TAP_LOG_DRIVER): Define to invoke our own
+	`tap-driver' script.
+	(TAP_LOG_DRIVER_FLAGS): Define to `--merge', so that the stdout
+	and stderr of the test scripts remains synced.
+	(TEST_EXTENSIONS): Define, to add the `.tap' suffix; also list
+	the `.test' suffix explicitly.
+	(EXTRA_DIST): Distribute the new files `plain-functions.sh' and
+	`tap-functions.sh'.
+	($(TEST_LOGS)): Depends on them.
+	(AM_TESTS_ENVIRONMENT): Ensure that `use_tap' is not exported in
+	the environment of the tests.
+	(TESTS): Update.
+
+2011-08-03  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	* NEWS: Fix typo, and related reformatting.
+
+2011-08-03  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	* NEWS: add mention of new experimental TAP support
+
+2011-08-02  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	testsuite: rename some test scripts
+	* tests/parallel-tests-am_tests_environment.test: Renamed ...
+	* tests/am-tests-environment.test: ... to this.
+	* tests/check-tests_environment.test: Renamed ...
+	* tests/tests-environment.test: ... to this.
+	* tests/parallel-test-driver-install.test: Renamed ...
+	* tests/parallel-tests-driver-install.test: ... to this.
+	* tests/parallel-tests-make-n.test: Renamed ...
+	* tests/parallel-tests-dry-run.test: ... to this.
+	* tests/Makefile.am (TESTS): Updated.
+
+2011-08-02  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	coverage: parallel-tests and lazy dependencies on EXTRA_PROGRAMS
+	* tests/parallel-tests-extra-programs.test: New test.
+	* tests/Makefile.am (TESTS): Update.
+	* doc/automake.texi (Parallel Test Harness): Add a comment
+	pointing to the new test.
+
+2011-08-02  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	docs: improve, extend and fix documentation on TAP support
+	* doc/automake.texi ("Using the TAP test protocol"): Divide this
+	section into ...
+	("Introduction to TAP", "Use TAP with the Automake test harness",
+	"Incompatibilities with other TAP parsers and drivers", "Links
+	and external resources"): ... these subsections, extend them by
+	adding more information and examples, and improve them by removing
+	incomplete and/or temporary wordings and TODO items.
+	("Script-based Testsuites", "Parallel Test Harness"): Add a couple
+	of anchors to improve the granularity of cross-references.
+	* tests/tap-doc2.test: New test, verifying the correctness of the
+	new examples given in the manual.
+	* tests/Makefile.am (tap_other_tests): Add the new test.
+
+2011-08-01  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	testsuite: separate the only failing check of an xfailing test
+	* tests/plan-bad-prog.test: Move the only failing check of this
+	test (i.e., the one about the total number of "ERROR" outcomes)
+	into ...
+	* tests/plan-bad-prog2.test: ... this new test.
+	* tests/Makefile.am (XFAIL_TESTS): Remove `plan-bad-prog.test',
+	add `plan-bad-prog2.test'.
+	(tap_other_tests): Add `plan-bad-prog2.test'.
+	(plan-bad-prog2.log): Depend on `plan-bad-prog.test'.
+
+2011-08-01  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	testsuite: fix spurious errors in an xfailing test on TAP support
+	* tests/plan-bad-prog.test: Fix typo in the name of the test
+	being made unreadable.  Correct the wording of the potential
+	skip message, and simplify the condition under which the test
+	is to be skipped.  Escape literal dots in grep regexps.
+
+2011-08-01  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	testsuite: better granularity in a couple of tests on TAP support
+	* tests/tap-summary-aux.sh: New auxiliary script, filled with code
+	moved out from ...
+	* tests/tap-summary.test: ... this test, from which the checks on
+	colored testsuite have further been moved into ...
+	* tests/tap-summary-color.test: ... this new test, which in turn
+	* tests/Makefile.am (tap_other_tests): Add `tap-summary-color.test'.
+	(EXTRA_DIST): Distribute `tap-summary-aux.sh'
+	(tap-summary.log): Depend on `tap-summary-aux.sh'.
+	(tap-summary-color.log): Likewise.
+
+2011-08-01  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	testsuite: optimize tests on TAP for speed and against duplication
+	The creation and configuration of common files and data used by
+	many tests on TAP is, with this change, factored out into a new
+	dedicated auxiliary test, from which those tests will depend upon.
+	This reduces code duplication in tests and, more importantly,
+	offers a noticeable speedup in the involved tests (30-40%).
+	* tests/tap-common-setup.test: New test, setting up the common
+	files and data used by various tests on TAP support.
+	* tests/tap-setup.sh: New file, to be sourced by tests wanting to
+	bring in data generated by `tap-common-setup.test'.
+	* tests/tap-autonumber.test: Update to use the pre-computed data
+	files.
+	* tests/tap-bailout.test: Likewise.
+	* tests/tap-color.test: Likewise.
+	* tests/tap-deps.test: Likewise.
+	* tests/tap-diagnostic.test: Likewise.
+	* tests/tap-empty-diagnostic.test: Likewise.
+	* tests/tap-empty.test: Likewise.
+	* tests/tap-escape-directive.test: Likewise.
+	* tests/tap-exit.test: Likewise.
+	* tests/tap-signal.test: Likewise.
+	* tests/tap-fancy.test: Likewise.
+	* tests/tap-fancy2.test: Likewise.
+	* tests/tap-global-log.test: Likewise.
+	* tests/tap-global-result.test: Likewise.
+	* tests/tap-html.test: Likewise.
+	* tests/tap-log.test: Likewise.
+	* tests/tap-merge-stdout-stderr.test: Likewise.
+	* tests/tap-no-merge-stdout-stderr.test: Likewise.
+	* tests/tap-message-0.test: Likewise.
+	* tests/tap-no-disable-hard-error.test: Likewise.
+	* tests/tap-no-spurious-summary.test: Likewise.
+	* tests/tap-no-spurious.test: Likewise.
+	* tests/tap-not-ok-skip.test: Likewise.
+	* tests/tap-numeric-description.test: Likewise.
+	* tests/tap-out-of-order.test: Likewise.
+	* tests/tap-passthrough.test: Likewise.
+	* tests/tap-passthrough-exit.test: Likewise.
+	* tests/tap-plan.test: Likewise.
+	* tests/tap-plan-corner.test: Likewise.
+	* tests/tap-plan-corner2.test: Likewise.
+	* tests/tap-plan-errors.test: Likewise.
+	* tests/tap-realtime.test: Likewise.
+	* tests/tap-recheck-logs.test: Likewise.
+	* tests/tap-skip-whole.test: Likewise.
+	* tests/tap-todo-skip-together.test: Likewise.
+	* tests/tap-todo-skip-whitespace.test: Likewise.
+	* tests/tap-todo-skip.test: Likewise.
+	* tests/tap-unplanned.test: Likewise.
+	* tests/tap-with-and-without-number.test: Likewise.
+	* tests/tap-xfail-tests.test: Likewise.
+	* tests/tap-skip-whole-whitespace.test: Likewise, and remove
+	redundant definitions of `$sp' and `$tab' (they are already
+	defined in `tests/defs').
+	* tests/tap-whitespace-normalization.test: Likewise.
+	* tests/Makefile.am (TESTS): Update.
+	(EXTRA_DIST): Distribute `tap-setup.sh'.
+	(tap_with_common_setup_tests, tap_with_common_setup_logs)): New
+	variables, holding respectively the list of tests using the files
+	pre-computed by `tap-common-setup.test', and the list of their
+	corresponding log files.
+	(tap_other_tests): New variable, holding the list of other tests
+	on TAP support.
+	($(tap_with_common_setup_logs)): Depend on `tap-common-setup.log'
+	and `tap-setup.sh'.
+
+2011-08-01  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	test harness: use new `.trs' files to hold test metadata
+	With this change, the test harness will keep test metadata in
+	dedicated `.trs' files, instead of having them embedded into the
+	`.log' files.  This allows for easier forward-compatibility and
+	extension of test metadata, and for more flexibility in the
+	format of the `.log' files.  Note that this change makes the
+	`:end-metadata:' field obsolete.
+	* doc/automake.texi (Parallel Test Harness, Log files generation
+	and test results recording): Document the new APIs and behaviour;
+	some related minor rewordings and fixlets.
+	* NEWS: Update.
+	* automake.in (handle_tests): When bringing in the content of
+	`check2.am', substitute %BASE% with the basename of the `.log'
+	file being created by a rule.  Add the generated `.trs' files
+	to the list of files to be cleaned by "make mostlyclean".
+	* lib/am/check.am (am__test_driver_flags): Rename ...
+	(am__common_driver_flags): ... to this, and remove the flags
+	`--test-name' and `--log-file' from it: they are now define in
+	the proper rules in `check2.am'.
+	(am__TEST_BASES): New internal variable, holding the names of
+	the tests, with any registered extension removed.
+	(am__stealth_MAKE): New internal variable, can be used instead of
+	$(MAKE) in recipes requiring a recursive call to make, but which
+	are not intended to be executed by "make -n".
+	(.log.trs): New suffix rule, to recover from deletion of `.trs'
+	files.
+	($(TEST_SUITE_LOG)): Almost completely rewritten to follow the
+	new API of "test logs in `.log' files, test metadata in `.trs'
+	files".  It goes to some length to work correctly in face of
+	unreadable or missing `.log' and `.trs' files, and to error out
+	with proper error messages when this is not possible.
+	[%?PARALLEL_TESTS%] (check-TESTS): Also remove relevant "stale"
+	`.trs' files (in addition to `.log files) before remaking the
+	$(TEST_SUITE_LOG).
+	(recheck, recheck-html): Look for the `:recheck:' field in the
+	`.trs' files, not in the `.log' files.
+	* lib/am/check2.am (?GENERIC?%EXT%.log, ?!GENERIC?%OBJ%): Adjust
+	the call to the test driver, in particularly passing the new
+	option `--trs-file'.
+	[%am__EXEEXT%] (?GENERIC?%EXT%$(EXEEXT).log): Likewise.
+	* lib/tap-driver ($USAGE): Adjust the help screen.
+	(Getopt::Long::GetOptions): Handle the `--trs-file' option,
+	through the use of ...
+	($trs_file): ... this new global variable.
+	(finish): Write metadata for the test run to `$trs_file' rather
+	then to `$log_file', through the use of ...
+	(write_test_results): ... this new function.
+	* lib/test-driver (print_usage): Update the help screen.
+	(Option parsing): Handle the `--trs-file' option, through the
+	use of ...
+	($resfile): ... this new global variable.
+	(Main code): Write metadata for the test run to `$trsfile' rather
+	than to `$logfile'.
+	Minor related adjustments to comments.
+	* tests/.gitignore: Ignore `*.trs' files.
+	* tests/parallel-tests-unreadable-log.test: Moved ...
+	* tests/parallel-tests-unreadable.test: ... to this, and extended
+	to also check the semantics for unreadable `.trs' files.
+	* tests/test-driver-end-metadata.test: Deleted as obsolete.
+	* tests/test-driver-metadata-no-leading-space.test: Likewise.
+	* tests/test-driver-global-log.test: Renamed ...
+	* tests/test-metadata-global-log.test: ... to this, and modified
+	as to verify the new APIs and semantics.
+	* tests/test-driver-recheck: Renamed ...
+	* tests/test-metadata-recheck.test: ... to this, and modified
+	likewise.
+	* tests/parallel-tests-once.test: New test.
+	* tests/parallel-tests-make-n.test: Likewise.
+	* test-metadata-results.test: Likewise.
+	* test-missing.test: Likewise.
+	* test-missing2.test: Likewise.
+	* test-trs-basic.test: Likewise.
+	* test-trs-recover.test: Likewise.
+	* test-trs-recover2.test: Likewise.
+	* tests/Makefile.am (TESTS): Update.
+
+2011-07-27  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	test harness: allow more metadata in log files
+	This change reworks and improves the parallel test harness to use
+	more specialized reStructuredText fields in the log files (instead
+	of relying on specially-placed of "magic lines" and more indirect
+	semantical formatting); the new fields are the following:
+	 - ":recheck:": tell whether the associated test will have to be
+	   re-run by "make recheck";
+	 - ":copy-in-global-log:": tell whether the content of the log
+	   file should be copied in the "global log" `test-suite.log';
+	 - ":end-metadata:", which inhibits the scanning of the rest of
+	   the log file (for what concerns test metadata).
+	Also, the special `:test-result:' value "END" has been removed,
+	superseded by the new `:end-metadata:' field.
+	* doc/automake.texi (Log files generation and test results
+	recording): Document the new API and semantics.  Remove or fix
+	some obsolete comments.
+	* lib/am/check.am ($(TEST_SUITE_LOG), recheck, recheck-html):
+	Adjust comments and code.
+	* lib/tap-driver (finish): Adjust, with the help of ...
+	(must_recheck, copy_in_global_log): ... these new functions.
+	* lib/test-driver (Main code): Adjust, with the help of ...
+	($recheck, $gcopy): ... these new variables.
+	* tests/trivial-test-driver: Update to obey the new APIs.
+	* tests/test-driver-recheck.test: Likewise.
+	* tests/test-driver-global-log.test: Likewise.
+	* tests/tap-passthrough.test: Relax the test, avoiding to check
+	what is written in `test-suite.log'; such check has been moved ...
+	* tests/tap-global-log.test: ... in this new test, and extended.
+	* tests/test-driver-metadata-no-leading-space.test: New test.
+	* tests/test-driver-end-test-results.test: Removed, it checked
+	the old APIs; superseded by ...
+	* tests/test-driver-end-metadata.test: ... this new test.
+	* tests/tap-log.test: Improve syncing with ...
+	* tests/test-log.test: ... this new test.
+	* tests/parallel-tests.test: Remove some duplication w.r.t. this
+	last new test.  Updated heading comments.
+	* tests/Makefile.am (TESTS): Update.
+
+2011-07-27  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	testsuite: fix a spurious failure with non-bash shells
+	* tests/tap-fancy2.test: Remove an unportable use of backslashes
+	with the `echo' builtin, which was causing some shells (among them
+	bash and Debian /bin/ksh) to print a `\\' string, while other
+	shells (among them zsh, dash, and Solaris /bin/sh and /bin/ksh)
+	were unexpectedly printing a single `\' character.  Since we are
+	at it, add a sanity check to ensure that this issue does not
+	resurface.
+
+2011-07-27  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	testsuite: fix spurious failures with Solaris /bin/sh
+	* tests/tap-more.test: Use `echo > file', not `: > file', to
+	create empty files in the "for" loops; this is required since,
+	as documented in the autoconf manual, Solaris 10 /bin/sh
+	"optimizes" away the `:' command after the first iteration,
+	even if it is redirected.
+	* tests/test-driver-custom-multitest-recheck2.test: Likewise.
+	* tests/tap-numeric-description.test: Partial rewrite to avoid
+	using positional parameters from the 10th onward, which are
+	unportable to Solaris /bin/sh (using `${10}' causes the shell
+	to die with "bad substitution").
+
+2011-07-31  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	simple tests: support developer-defined fd redirections
+	Motivated by coreutils bug#8846, and related discussions:
+	 <http://debbugs.gnu.org/cgi/bugreport.cgi?bug=8846>
+	 <http://lists.gnu.org/archive/html/bug-autoconf/2011-06/msg00002.html>
+	In those threads it has been shown how problematic it can be to do
+	portable file descriptor redirections in the testsuite when using
+	the Automake testsuite harness.  This change should remedy to that
+	situation.
+	* lib/am/check2.am (?GENERIC?%EXT%$(EXEEXT).log,
+	?GENERIC?%EXT%.log, ?!GENERIC?%OBJ%): Append redirection defined
+	in $(AM_TESTS_FD_REDIRECT) to the command-line invocations of the
+	test scripts.
+	* lib/am/check.am [!%?PARALLEL_TESTS%] $(check-TESTS): Likewise.
+	* NEWS: Update.
+	* doc/automake.texi (Script-based Testsuites): Document the new
+	feature.
+	* tests/check-fd-redirect.test: New test.
+	* tests/parallel-tests-fd-redirect.test: Likewise.
+	* tests/parallel-tests-am_tests_environment.test: Remove checks
+	about the use of redirections in AM_TESTS_ENVIRONMENT: they would
+	check deprecated (if not undefined) behaviour now.  Strengthen a
+	couple of still valid checks, to keep the test more in sync with
+	the documentation.  Improve debugging information.
+	* tests/Makefile.am (TESTS): Update.
+
+2011-07-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	docs: rework and extend documentation on testsuites support
+	* doc/automake.texi (Generalities about Testing): New section.
+	(Simple Tests using parallel-tests): Section removed, merged
+	into ...
+	(Simple Tests): ... this one, which on the other hand has been
+	subdivided into ...
+	(Script-based Testsuites, Serial Test Harness, Parallel Test
+	Harness): ... these new subsection.
+	(DejaGnu Tests): Minor adjustments.
+	Other related typofixes and rewordings throughout the manual;
+	in particular, avoid to use the term "test driver" for three
+	different concepts (and use instead "test harness" and "test
+	runner" where appropriate).
+	* tests/tap-doc.test: New test.
+	* tests/tap-no-disable-hard-error.test: Likewise.
+	* tests/Makefile.am (TESTS): Update.
+
+2011-07-18  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tap: support colorization of testsuite progress output
+	* lib/tap-driver (%COLORS): New variable (definition extracted
+	from `lib/am/check.am:$(am__tty_colors)', with some obvious
+	adjustments.
+	(report): Adjust to colorize console output when required,
+	using ...
+	(decorate_result): ... this new function.
+	(colored): New function, used by the one above.
+	* tests/tap-summary.test: Also run the checks when `color-tests'
+	is in use.
+	* tests/Makefile.am (XFAIL_TESTS): Remove `tap-color.test'.
+
+2011-07-18  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tap: some preparatory refactoring (2)
+	This is a follow-up simplification.
+	* lib/tap-driver (console_output): Renamed ...
+	(report): ... to this, and extended to appropriately register
+	the test results when needed.
+	(testsuite_error, handle_tap_comment, handle_tap_test,
+	handle_tap_plan): Adjusted accordingly.
+
+2011-07-18  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tap: some preparatory refactoring (1)
+	This refactoring is aimed at simplifying the introduction of
+	colored console output for the TAP driver.
+	* lib/tap-driver (console_output): Now accept two arguments, the
+	first one indicating which kind of thing is to be displayed (for
+	now only a test result or a diagnostic comment), and the second
+	one (if present) the message associated to it.
+	(handle_tap_test, handle_tap_comment, handle_tap_plan,
+	testsuite_error): Adapt to the new `console_output' interface.
+
+2011-07-18  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tap: add experimental TAP-aware driver
+	* doc/automake.texi (Using the TAP test protocol): New section.
+	(Overview of Custom Test Drivers Support): Minor updates.
+	* lib/tap-driver: New script, TAP-aware test driver for Automake;
+	implemented in perl and based on TAP::Parser.
+	* lib/Makefile.am (dist_script_DATA): Add it.
+	* tests/tap-autonumber.test: New test.
+	* tests/tap-bailout.test: Likewise.
+	* tests/tap-basic.test: Likewise.
+	* tests/tap-deps.test: Likewise.
+	* tests/tap-diagnostic.test: Likewise.
+	* tests/tap-empty.test: Likewise.
+	* tests/tap-empty-diagnostic.test: Likewise.
+	* tests/tap-escape-directive.test: Likewise.
+	* tests/tap-exit.test: Likewise.
+	* tests/tap-fancy.test: Likewise.
+	* tests/tap-fancy2.test: Likewise.
+	* tests/tap-global-result.test: Likewise.
+	* tests/tap-html.test: Likewise.
+	* tests/tap-log.test: Likewise.
+	* tests/tap-merge-stdout-stderr.test: Likewise.
+	* tests/tap-more.test: Likewise.
+	* tests/tap-more2.test: Likewise.
+	* tests/tap-no-merge-stdout-stderr.test: Likewise.
+	* tests/tap-no-spurious-summary.test: Likewise.
+	* tests/tap-no-spurious.test: Likewise.
+	* tests/tap-not-ok-skip.test: Likewise.
+	* tests/tap-numeric-description.test: Likewise.
+	* tests/tap-out-of-order.test: Likewise.
+	* tests/tap-passthrough.test: Likewise.
+	* tests/tap-plan.test: Likewise.
+	* tests/tap-plan-errors.test: Likewise.
+	* tests/tap-plan-corner.test: Likewise.
+	* tests/tap-realtime.test: Likewise.
+	* tests/tap-recheck-logs.test: Likewise.
+	* tests/tap-recheck.test: Likewise.
+	* tests/tap-skip-whole.test: Likewise.
+	* tests/tap-summary.test: Likewise.
+	* tests/tap-todo-skip.test: Likewise.
+	* tests/tap-todo-skip-together.test: Likewise.
+	* tests/tap-todo-skip-whitespace.test: Likewise.
+	* tests/tap-skipall-whitespace.test: Likewise.
+	* tests/tap-unplanned.test: Likewise.
+	* tests/tap-whitespace-normalization.test: Likewise.
+	* tests/tap-with-and-without-number.test: Likewise.
+	* tests/tap-xfail-tests.test: Likewise.
+	* tests/tap-bad-prog.test: New xfailing test.
+	* tests/tap-color.test: Likewise.
+	* tests/tap-plan-corner2.test: Likewise.
+	* tests/tap-message-0.test: Likewise.
+	* tests/tap-signal.test: Likewise.
+	* tests/Makefile.am (TESTS, XFAIL_TESTS): Update.
+
+2011-07-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	test defs: new auxiliary function 'count_test_results'
+	* tests/defs (count_test_results): New function.
+	* tests/check11.test: Use it.
+	* tests/test-driver-custom-multitest.test: Likewise.
+	* tests/test-driver-custom-multitest-recheck.test: Likewise.
+	* tests/test-driver-custom-multitest-recheck2.test: Likewise.
+	* tests/parallel-tests-log-override-recheck.test: Likewise.
+	* tests/parallel-tests-log-override-recheck.test: Likewise.
+	* tests/parallel-tests-no-spurious-summary.test: Likewise, and
+	slightly improve debugging output.
+	* tests/parallel-tests.test: Make use of `count_test_results'.
+	Also, make grepping of "make check" output slightly stricter
+	* tests/parallel-tests9.test: Likewise.
+	* tests/parallel-tests-log-override-2.test: Likewise, and throw
+	in a small optimization.
+
+2011-07-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	parallel-tests: simplify testsuite summary
+	Prefer a more deterministic, "tabular" format for the testsuite
+	summary, always listing the numbers of passed, failed, xfailed,
+	xpassed, skipped and errored tests, even when these numbers are
+	zero.  This simplify the logic of testsuite summary creation,
+	makes it more easily machine-parseable, and will probably allow
+	for easier addition of new kinds of test results in the future.
+	* lib/am/check.am (am__tty_colors_dummy): New make variable, to
+	reduce code duplication.  Extracted from previous versions of
+	$(am__tty_colors), and extended by defining two new variables
+	`$mgn' and `$brg'.
+	[%?COLOR%, %!?COLOR%] (am__tty_colors): Use that new variable.
+	(am__text_box): Delete, is not needed anymore.
+	($(TEST_SUITE_LOG)): Rewrite associated rules to implement the
+	new testsuite summary format.
+	* NEWS: Update.
+	* tests/check10.test: Don't run with the parallel-tests harness
+	too, that makes no sense anymore.
+	* tests/color.test: Update and adjust.
+	* tests/color2.test: Likewise.
+	* tests/parallel-tests.test: Likewise.
+	* tests/parallel-tests3.test: Likewise.
+	* tests/parallel-tests6.test: Likewise.
+	* tests/parallel-tests9.test: Likewise.
+	* tests/parallel-tests-unreadable-log.test: Likewise.
+	* tests/parallel-tests-empty-testlogs.test: Likewise.
+	* tests/parallel-tests-log-override-recheck.test: Likewise.
+	* tests/parallel-tests-no-spurious-summary.test: Likewise.
+	* tests/test-driver-custom-multitest.test: Likewise.
+	* tests/test-driver-end-test-results.test: Likewise.
+	* tests/parallel-tests-no-color-in-log.test: New test.
+	* tests/testsuite-summary-color.test: Likewise.
+	* tests/testsuite-summary-count.test: Likewise.
+	* tests/testsuite-summary-count-many.test: Likewise.
+	* tests/testsuite-summary-reference-log.test: Likewise.
+	* tests/testsuite-summary-checks.sh: New auxiliary script, used
+	by the new tests above.
+	* tests/extract-testsuite-summary: Likewise.
+	* tests/trivial-test-driver: Optimize for speed when there are
+	lots of of tests.
+	* tests/Makefile.am (EXTRA_DIST): Distribute them.
+	(testsuite-summary-color.log, testsuite-summary-count.log): Depend
+	on them.
+	(testsuite-summary-count-many.log): Depend on the auxiliary scripts
+	'trivial-test-driver' and 'extract-testsuite-summary'.
+	(TESTS): Update.
+
+2011-07-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	parallel-tests: new recognized test result 'ERROR'
+	* lib/am/check.am ($(TEST_SUITE_LOG)): Recognize a new test result
+	`ERROR'.  Use it when encountering unreadable test logs (previously
+	a simple `FAIL' was used in this situations).
+	* lib/test-driver: Set the global test result to `ERROR' when the
+	test exit status is 99.  When doing colorized output, color `ERROR'
+	results in magenta.
+	* doc/automake.texi (Log files generation and test results
+	recording): Update by listing `ERROR' too among the list of valid
+	`:test-results:' arguments.
+	* NEWS: Update.
+	* tests/trivial-test-driver: Update.
+	* tests/parallel-tests.test: Likewise.
+	* tests/parallel-tests-harderror.test: Likewise.
+	* tests/parallel-tests-no-spurious-summary.test: Likewise.
+	* tests/test-driver-global-log.test: Likewise.
+	* tests/test-driver-recheck.test: Likewise.
+	* tests/test-driver-custom-multitest-recheck.test: Likewise.
+	* tests/test-driver-custom-multitest-recheck2.test: Likewise.
+	* tests/test-driver-custom-multitest.test: Likewise.
+	* tests/test-driver-custom-no-html.test: Likewise.
+	* tests/test-driver-end-test-results.test: Likewise.
+	* tests/color.test: Likewise.  Also, make stricter, and also test
+	from VPATH.
+	* tests/color2.test: Likewise, and improve syncing with color.test.
+	* tests/parallel-tests-exit-statuses.test: New test.
+	* tests/parallel-tests-console-output.test: Likewise.
+	* tests/Makefile.am (TESTS): Update.
+
+2011-07-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	parallel-tests: make parsing of test results safer
+	The new code for parsing the testsuite-generated `.log' files,
+	as introduced in commit `v1.11-872-gc96b881', considers each
+	`:test-result:' field anywhere in a `.log' file as a declaration
+	of a test result, and accounts for it as such in the testsuite
+	summary.  Unfortunately this could easily cause spurious test
+	failures being reported in the testsuite summary.  This happened
+	in practice with the Automake's own testsuite; for example:
+	  $ make check TESTS='check12-p.test'; echo exit: $?
+	  ...
+	  PASS: check12-p.test
+	  =====================================
+	  4 of 5 tests failed
+	  See tests/test-suite.log
+	  Please report to bug-automake@gnu.org
+	  =====================================
+	  make[2]: *** [test-suite.log] Error 1
+	  make: *** [check-am] Error 2
+	  exit: 2
+	This change introduces a new special `:test-result:' "END", that,
+	when seen, prevents the rest of the log file from being parsed.
+	For more information, refer to the thread:
+	<http://lists.gnu.org/archive/html/automake-patches/2011-06/msg00199.html>
+	* lib/am/check.am ($(TEST_SUITE_LOG)): Stop the parsing of a log
+	file as soon as the special ":test-result:END" directive is seen.
+	Related changes and enhancements.
+	* lib/test-driver: Protect the rest of the log after the result
+	lined with a ":test-result:END" directive.
+	* doc/automake.texi (Log files generation and test results
+	recording): Update, and related improvements.
+	* tests/parallel-tests-no-spurious-summary.test: New test.
+	* tests/test-driver-end-test-results.test: Likewise.
+	* tests/Makefile.am (TESTS): Update.
+
+2011-06-29  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	docs: document custom test drivers and protocols
+	* doc/automake.texi (Simple Tests): Note that the TESTS_ENVIRONMENT
+	use suggested here is not portable to 'parallel-tests'.
+	(Simple Tests using parallel-tests): Document new restrictions on
+	the uses of TESTS_ENVIRONMENT and AM_TESTS_ENVIRONMENT.
+	(Custom Test Drivers): New section and node.
+	(Overview of Custom Test Drivers Support): New subsection.
+	(Declaring Custom Test Drivers in @file{Makefile.am}): Likewise.
+	(APIs for Custom Test Drivers): Likewise.
+	(Options): Update description of color-tests.
+	* lib/am/check ($(TEST_SUITE_LOG)): Remove comments that have been
+	moved into the manual.
+	(recheck, recheck-html): Minor adjustments to better conform to the
+	documentation (this should cause no semantic changes w.r.t. the
+	former behaviour); minor improvements and extensions to existing
+	comments.
+	* tests/test-driver-create-log-dir.test: New test.
+	* tests/test-driver-strip-vpath.test: Likewise.
+	* tests/test-driver-global-log.test: Likewise.
+	* tests/test-driver-recheck.test: Likewise.
+	* tests/Makefile.am (TESTS): Update.
+
 2011-08-03  Bruno Haible  <bruno@clisp.org>
 
 	docs: how to use '-I' option in AM_CPPFLAGS for best VPATH support
@@ -316,6 +960,141 @@
 	tests: fix bug in 'autodist.test'
 	* tests/autodist.test: Avoid spurious failure due to no
 	`defs-static' file being found in the parent directory.
+
+2011-06-21  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	parallel-tests: allow each test to have multiple results
+	With this change, we improve the code creating the `test-suite.log'
+	global log and the console testsuite summary to make it	able to
+	grasp multiple results per test script.  This is required in order
+	to introduce the planned support for test protocols, like TAP and
+	SubUnit, which can indeed run multiple tests per test script, each
+	with its individual result.
+	The implementation makes use of a custom reStructuredText field
+	`:test-result:'.
+	Note that no new documentation is added by this change; that is
+	be left for follow-up changes.
+	* lib/check.am ($(TEST_SUITE_LOG)): When processing .log files,
+	recognize a report of a test's result only if it is declared with
+	the custom `:test-result:' reStructuredText field placed at the
+	beginning of a line.  Extend and add explanatory comments.
+	(recheck, recheck-html): Add explanatory comments.
+	* lib/test-driver: Write an appropriate reStructuredText field
+	`:test-result:' in the generated log file.  Use a reStructuredText
+	transition to better separate the test outcome report from the
+	test script's registered output.  Improve comments.
+	* tests/test-driver-custom-xfail-tests.test: Adjust.
+	* tests/parallel-tests7.test: Adjust.
+	* tests/parallel-tests-empty-testlogs.test: New test.
+	* tests/parallel-tests-recheck-override.test: Likewise.
+	* tests/parallel-tests2.test: Extend and keep more in-sync with ...
+	* tests/test-driver-custom-html.test: ... this new related test.
+	* tests/test-driver-custom-no-html.test: New test.
+	* tests/test-driver-custom-multitest.test: Likewise.
+	* tests/test-driver-custom-multitest-recheck.test: Likewise.
+	* tests/test-driver-custom-multitest-recheck2.test: Likewise.
+	* tests/trivial-test-driver: New file, used by the last four tests
+	above.
+	* tests/Makefile.am (TESTS): Update.
+	(EXTRA_DIST): Distribute `trivial-test-driver'.
+	(test-driver-custom-multitest.log): Depend on `trivial-test-driver'.
+	(test-driver-custom-multitest-recheck.log): Likewise.
+	(test-driver-custom-multitest-recheck2.log): Likewise.
+	(test-driver-custom-html.log): Likewise.
+
+2011-06-21  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	parallel-tests: allow custom driver scripts
+	Allow suffix-based definition of custom "driver script" for the
+	test scripts.  These driver scripts will be responsible of
+	launching the tests (or their corresponding $(LOG_COMPILER), if
+	they have an associated one), interpreting and displaying the
+	test results, and writing the `.log' files.
+	This new API should allow easy and flexible use of different
+	test protocols in the future; in particular, we plan to use it
+	to implement TAP and SubUnit harnesses.
+	Note that no new documentation is added by this change; that is
+	be left for follow-up changes.
+	* automake.in (handle_tests): Define default for $(LOG_DRIVER),
+	and, for any registered test extension `<ext>', define defaults
+	for $(<ext>_LOG_DRIVER).  Substitute %DRIVER% using these new
+	variables, instead of the old internal $(am__test_driver).  When
+	processing check2.am, also substitute %DRIVER_FLAGS%.
+	Require auxiliary script `test-driver' only if no driver has been
+	explicitly defined for the test script kinds.
+	* am/check2.am (?GENERIC?%EXT%$(EXEEXT).log, ?GENERIC?%EXT%.log,
+	?!GENERIC?%OBJ%): Pass the %DRIVER_FLAGS% to the %DRIVER% call.
+	* tests/parallel-tests-no-extra-driver.test: New test.
+	* tests/test-driver-custom.test: Likewise.
+	* tests/test-driver-custom-xfail-tests.test: Likewise.
+	* tests/test-driver-fail.test: Likewise.
+	* tests/Makefile.am: Update.
+	* NEWS: Update.
+
+2011-06-21  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	parallel-tests: add auxiliary script 'test-driver', refactor
+	This refactoring should cause no API of functionality change,
+	and is meant only to simplify the future implementation of TAP
+	and SubUnit testsuite drivers.  More precisely, our roadmap is
+	to move most of the "testsuite driving" features out of the
+	Automake-generated Makefiles, and into external scripts with
+	well-defined interfaces.  This will allow the user to define
+	its own personalized testsuite drivers, and will also offer us
+	a framework upon which to implement our new TAP and SubUnit
+	drivers, all in a very unobtrusive way and retaining an high
+	degree of code reuse and backward-compatibility.
+	* lib/test-driver: New auxiliary script.
+	* lib/Makefile.am (dist_SCRIPT_DATA): Add it.
+	* automake.in (handle_tests): Require the new auxiliary script
+	`test-driver', and define a new internal makefile variable
+	`$(am__test_driver)', used to call it.  Perform new substitution
+	on `DRIVER' when processing the `check2.am' file.
+	* lib/check.am (am__tty_colors): Define new shell variable
+	`$am__color_tests'.
+	(am__rst_section): Removed, its role taken over by the new
+	`test-driver' script.
+	(am__test_driver_flags): New variable, contains the command
+	line options passed to `test-driver'.
+	(am__check_pre): Do not deal with temporary files and exit
+	traps anymore, as the `test-driver' script takes care of that
+	now.  Define shell variable `$am__enable_hard_errors', used by
+	`$(am__test_driver_flags)'.  Reorder so that we don't need to
+	save and restore the value of the `TERM' environment variable
+	anymore.
+	Other related adjustments.
+	(am__check_post): Remove, as its role has been completely taken
+	over by the `test-driver' script.
+	* am/check2.am (?GENERIC?%EXT%$(EXEEXT).log, ?GENERIC?%EXT%.log,
+	?!GENERIC?%OBJ%): Call the test script through the Automake
+	substituted `%DRIVER%', and honor the command-line options
+	in `$(am__test_driver_flags)'.  Do not call the obsoleted
+	`$(am__check_post)' anymore.
+	* doc/automake.texi (Auxiliary Programs): Mention the new
+	`test-driver' script.
+	(Optional): Mention `test-driver' in AC_CONFIG_AUX_DIR.
+	Since we are at it, break the list of auxiliary scripts by
+	placing one per line, to simplify potential future additions
+	of new scripts.
+	* tests/check.test: Adjust.
+	* tests/check2.test : Likewise.
+	* tests/check3.test : Likewise.
+	* tests/check4.test : Likewise.
+	* tests/check10.test: Likewise.
+	* tests/color.test: Likewise.
+	* tests/color2.test: Likewise.
+	* tests/comment9.test: Likewise.
+	* tests/dejagnu.test: Likewise.
+	* tests/exeext4.test: Likewise.
+	* tests/maken3.test: Likewise.
+	* tests/maken4.test: Likewise.
+	* tests/parallel-tests-interrupt.test: Likewise.
+	* tests/posixsubst-tests.test: Likewise.
+	* tests/repeated-options.test: Likewise.
+	* tests/check-no-test-driver.test: New test.
+	* tests/parallel-test-driver-install.test: Likewise.
+	* tests/Makefile.am (TESTS): Update.
+	* NEWS: Update.
 
 2011-06-21  Stefano Lattarini  <stefano.lattarini@gmail.com>
 

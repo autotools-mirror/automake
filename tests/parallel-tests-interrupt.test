@@ -28,12 +28,20 @@ END
 
 cat > Makefile.am << 'END'
 TESTS = foo.test
-## Ugly, but required by foo.test.  See below.
-TEST_LOG_COMPILER = echo $$$$ > pid && exec 9>&2 && $(SHELL) -x
+## Provide more debugging info.
+TEST_LOG_COMPILER = $(SHELL) -x
+## Rut required by foo.test; see below.
+AM_TESTS_ENVIRONMENT = 9>&2
 END
 
 # This is hacky and ugly, but has the great advantage of avoiding us a lot
 # of pain with background processes and related synchronization issues.
+
+cat - "$top_testsrcdir"/lib/test-driver > test-driver <<'END'
+#!/bin/sh
+echo $$ > pid
+END
+
 cat > foo.test << 'END'
 #!/bin/sh
 exec 2>&9
@@ -48,7 +56,7 @@ chmod a+x foo.test
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE -a
+$AUTOMAKE
 
 ./configure
 
@@ -60,6 +68,8 @@ for signum in $trapped_signals; do
   rm -f pid fail *.log *.log-t
   env signum=$signum $MAKE check && { ls -l; Exit 1; }
   ls -l
+  # These files shouldn't exist, but in case they do, their content might
+  # provide helpful information about the causes of the failure(s).
   cat foo.log-t || :
   cat foo.log || :
   cat test-suite.log || :

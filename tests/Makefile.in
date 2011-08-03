@@ -79,19 +79,25 @@ am__v_at_ = $(am__v_at_$(AM_DEFAULT_VERBOSITY))
 am__v_at_0 = @
 SOURCES =
 DIST_SOURCES =
+am__tty_colors_dummy = \
+  mgn= red= grn= lgn= blu= brg= std=; \
+  am__color_tests=no
 # If stdout is a non-dumb tty, use colors.  If test -t is not supported,
 # then this fails; a conservative approach.  Of course do not redirect
 # stdout here, just stderr.
 am__tty_colors = \
-red=; grn=; lgn=; blu=; std=; \
+$(am__tty_colors_dummy); \
 test "X$(AM_COLOR_TESTS)" != Xno \
 && test "X$$TERM" != Xdumb \
 && { test "X$(AM_COLOR_TESTS)" = Xalways || test -t 1 2>/dev/null; } \
 && { \
+  am__color_tests=yes; \
   red='[0;31m'; \
   grn='[0;32m'; \
   lgn='[1;32m'; \
   blu='[1;34m'; \
+  mgn='[0;35m'; \
+  brg='[1m'; \
   std='[m'; \
 }
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
@@ -115,100 +121,81 @@ am__nobase_list = $(am__nobase_strip_setup); \
 am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
-# Restructured Text title and section.
+# Restructured Text title.
 am__rst_title = sed 's/.*/   &   /;h;s/./=/g;p;x;p;g;p;s/.*//'
-am__rst_section = sed 'p;s/./=/g;p;g'
-# Put stdin (possibly several lines separated by ".  ") in a box.
-# Prefix each line by 'col' and terminate each with 'std', for coloring.
-# Multi line coloring is problematic with "less -R", so we really need
-# to color each line individually.
-am__text_box = $(AWK) '{			\
-  n = split($$0, lines, "\\.  "); max = 0;	\
-  for (i = 1; i <= n; ++i)			\
-    if (max < length(lines[i]))			\
-      max = length(lines[i]);			\
-  for (i = 0; i < max; ++i)			\
-    line = line "=";				\
-  print col line std;				\
-  for (i = 1; i <= n; ++i)			\
-    if (lines[i])				\
-      print col lines[i] std;			\
-  print col line std;				\
-}'
 # Solaris 10 'make', and several other traditional 'make' implementations,
 # pass "-e" to $(SHELL), and POSIX 2008 even requires this.  Work around it
 # by disabling -e (using the XSI extension "set +e") if it's set.
 am__sh_e_setup = case $$- in *e*) set +e;; esac
+# Default flags passed to test drivers.
+am__common_driver_flags = \
+  --color-tests "$$am__color_tests" \
+  --enable-hard-errors "$$am__enable_hard_errors" \
+  --expect-failure "$$am__expect_failure"
 # To be inserted before the command running the test.  Creates the
 # directory for the log if needed.  Stores in $dir the directory
 # containing $f, in $tst the test, in $log the log.  Executes the
 # developer- defined test setup AM_TESTS_ENVIRONMENT (if any), and
-# passes TESTS_ENVIRONMENT.  Saves and restores TERM around uses of
-# TESTS_ENVIRONMENT and AM_TESTS_ENVIRONMENT, in case any of them
-# unsets it.
+# passes TESTS_ENVIRONMENT.  Set up options for the wrapper that
+# will run the test scripts (or their associated LOG_COMPILER, if
+# thy have one).
 am__check_pre = \
 $(am__sh_e_setup);					\
 $(am__vpath_adj_setup) $(am__vpath_adj)			\
+$(am__tty_colors);					\
 srcdir=$(srcdir); export srcdir;			\
-rm -f $@-t;						\
-am__trap='rm -f '\''$(abs_builddir)/$@-t'\''; (exit $$st); exit $$st'; \
-trap "st=129; $$am__trap" 1; trap "st=130; $$am__trap" 2;	\
-trap "st=141; $$am__trap" 13; trap "st=143; $$am__trap" 15; \
 am__odir=`echo "./$@" | sed 's|/[^/]*$$||'`;		\
 test "x$$am__odir" = x. || $(MKDIR_P) "$$am__odir" || exit $$?;	\
 if test -f "./$$f"; then dir=./;			\
 elif test -f "$$f"; then dir=;				\
 else dir="$(srcdir)/"; fi;				\
-tst=$$dir$$f; log='$@'; __SAVED_TERM=$$TERM;		\
-$(AM_TESTS_ENVIRONMENT)					\
-$(TESTS_ENVIRONMENT)
-# To be appended to the command running the test.  Handle the stdout
-# and stderr redirection, and catch the exit status.
-am__check_post = \
->$@-t 2>&1;						\
-estatus=$$?;						\
-if test -n '$(DISABLE_HARD_ERRORS)'			\
-   && test $$estatus -eq 99; then			\
-  estatus=1;						\
-fi;							\
-TERM=$$__SAVED_TERM; export TERM;			\
-$(am__tty_colors);					\
-xfailed=PASS;						\
+tst=$$dir$$f; log='$@'; 				\
+if test -n '$(DISABLE_HARD_ERRORS)'; then		\
+  am__enable_hard_errors=no; 				\
+else							\
+  am__enable_hard_errors=yes; 				\
+fi; 							\
 case " $(XFAIL_TESTS) " in				\
   *[\ \	]$$f[\ \	]* | *[\ \	]$$dir$$f[\ \	]*) \
-    xfailed=XFAIL;;					\
-esac;							\
-case $$estatus.$$xfailed in				\
-    0.XFAIL) col=$$red; res=XPASS;;			\
-    0.*)     col=$$grn; res=PASS ;;			\
-    77.*)    col=$$blu; res=SKIP ;;			\
-    99.*)    col=$$red; res=FAIL ;;			\
-    *.XFAIL) col=$$lgn; res=XFAIL;;			\
-    *.*)     col=$$red; res=FAIL ;;			\
-esac;							\
-echo "$${col}$$res$${std}: $$f";			\
-echo "$$res: $$f (exit: $$estatus)" |			\
-  $(am__rst_section) >$@;				\
-cat $@-t >>$@;						\
-rm -f $@-t
+    am__expect_failure=yes;;				\
+  *)							\
+    am__expect_failure=no;;				\
+esac; 							\
+$(AM_TESTS_ENVIRONMENT) $(TESTS_ENVIRONMENT)
+# The names of the tests, with any registered extension removed.  Or
+# equivalently, the names of the test logs, with the `.log' extension
+# renoved.  This honours runtime overriding of TESTS and TEST_LOGS.
+am__TEST_BASES = $(TEST_LOGS:.log=)
+# This can be used instead of $(MAKE) in recipes requiring a recursive call
+# to make, but which are not intended to be executed by "make -n".  See the
+# GNU make manual for more details.
+am__stealth_MAKE = $(MAKE)
 RECHECK_LOGS = $(TEST_LOGS)
 AM_RECURSIVE_TARGETS = check check-html recheck recheck-html
 TEST_SUITE_LOG = test-suite.log
 TEST_SUITE_HTML = $(TEST_SUITE_LOG:.log=.html)
 am__test_logs1 = $(TESTS:=.log)
 am__test_logs2 = $(am__test_logs1:.test.log=.log)
+TEST_LOG_DRIVER = $(SHELL) $(top_srcdir)/lib/test-driver
 TEST_LOG_COMPILE = $(TEST_LOG_COMPILER) $(AM_TEST_LOG_FLAGS) \
 	$(TEST_LOG_FLAGS)
-am__test_logs3 = $(am__test_logs2:.ptest.log=.log)
+am__test_logs3 = $(am__test_logs2:.tap.log=.log)
+TAP_LOG_COMPILE = $(TAP_LOG_COMPILER) $(AM_TAP_LOG_FLAGS) \
+	$(TAP_LOG_FLAGS)
+am__test_logs4 = $(am__test_logs3:.ptest.log=.log)
+PTEST_LOG_DRIVER = $(SHELL) $(top_srcdir)/lib/test-driver
 PTEST_LOG_COMPILE = $(PTEST_LOG_COMPILER) $(AM_PTEST_LOG_FLAGS) \
 	$(PTEST_LOG_FLAGS)
-am__test_logs4 = $(am__test_logs3:.instspc.log=.log)
+am__test_logs5 = $(am__test_logs4:.instspc.log=.log)
+INSTSPC_LOG_DRIVER = $(SHELL) $(top_srcdir)/lib/test-driver
 INSTSPC_LOG_COMPILE = $(INSTSPC_LOG_COMPILER) $(AM_INSTSPC_LOG_FLAGS) \
 	$(INSTSPC_LOG_FLAGS)
-am__test_logs5 = $(am__test_logs4:.depmod.log=.log)
+am__test_logs6 = $(am__test_logs5:.depmod.log=.log)
+DEPMOD_LOG_DRIVER = $(SHELL) $(top_srcdir)/lib/test-driver
 DEPMOD_LOG_COMPILE = $(DEPMOD_LOG_COMPILER) $(AM_DEPMOD_LOG_FLAGS) \
 	$(DEPMOD_LOG_FLAGS)
-TEST_LOGS = $(am__test_logs5:.shtst.log=.log)
+TEST_LOGS = $(am__test_logs6:.shtst.log=.log)
+SHTST_LOG_DRIVER = $(SHELL) $(top_srcdir)/lib/test-driver
 SHTST_LOG_COMPILE = $(SHTST_LOG_COMPILER) $(AM_SHTST_LOG_FLAGS) \
 	$(SHTST_LOG_FLAGS)
 TEST_LOGS_TMP = $(TEST_LOGS:.log=.log-t)
@@ -311,26 +298,33 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+TEST_EXTENSIONS = .test .tap .ptest .instspc .depmod .shtst
+TAP_LOG_DRIVER = $(PERL) $(top_srcdir)/lib/tap-driver
+TAP_LOG_DRIVER_FLAGS = --merge
 MAINTAINERCLEANFILES = 
 EXTRA_DIST = ChangeLog-old gen-parallel-tests parallel-tests.sh \
 	instspc-tests.sh depmod-tests.sh gen-config-shell-tests \
-	config-shell-tests.sh $(handwritten_tests)
-TEST_EXTENSIONS = .test .ptest .instspc .depmod .shtst
+	config-shell-tests.sh $(handwritten_tests) tap-functions.sh \
+	plain-functions.sh trivial-test-driver \
+	testsuite-summary-checks.sh extract-testsuite-summary \
+	tap-setup.sh tap-summary-aux.sh
+
 # Run the tests with the shell detected at configure time.
 TEST_LOG_COMPILER = $(SHELL)
 XFAIL_TESTS = all.test auxdir2.test cond17.test gcj6.test \
 	override-conditional-2.test pr8365-remake-timing.test \
-	yacc-dist-nobuild-subdir.test txinfo5.test \
+	yacc-dist-nobuild-subdir.test tap-plan-corner2.test \
+	tap-message-0.test tap-signal.test txinfo5.test \
 	$(instspc_xfail_tests)
 parallel_tests = backcompat5-p.ptest check-exported-srcdir-p.ptest \
-	check-subst-prog-p.ptest check-subst-p.ptest \
-	check-tests-in-builddir-p.ptest \
-	check-tests_environment-p.ptest check-p.ptest check10-p.ptest \
-	check11-p.ptest check12-p.ptest check2-p.ptest check3-p.ptest \
-	check4-p.ptest check5-p.ptest check6-p.ptest check7-p.ptest \
-	check8-p.ptest color-p.ptest color2-p.ptest comment9-p.ptest \
-	dejagnu-p.ptest exeext4-p.ptest maken3-p.ptest maken4-p.ptest \
-	posixsubst-tests-p.ptest
+	check-fd-redirect-p.ptest check-subst-prog-p.ptest \
+	check-subst-p.ptest check-tests-in-builddir-p.ptest \
+	check-p.ptest check11-p.ptest check12-p.ptest check2-p.ptest \
+	check3-p.ptest check4-p.ptest check5-p.ptest check6-p.ptest \
+	check7-p.ptest check8-p.ptest color-p.ptest color2-p.ptest \
+	comment9-p.ptest dejagnu-p.ptest exeext4-p.ptest \
+	maken3-p.ptest maken4-p.ptest posixsubst-tests-p.ptest \
+	tests-environment-p.ptest
 PTEST_LOG_COMPILER = $(SHELL) $(srcdir)/parallel-tests.sh
 instspc_tests = build-squote.instspc install-squote.instspc \
 	build-dquote.instspc install-dquote.instspc \
@@ -418,6 +412,7 @@ SHTST_LOG_COMPILER = $(SHELL) $(srcdir)/config-shell-tests.sh
 AM_TESTS_ENVIRONMENT = \
   test x"$$me" = x || unset me; \
   test x"$$required" = x || unset required; \
+  test x"$$use_tap" = x || unset use_tap; \
   test x"$$parallel_tests" = x || unset parallel_tests; \
   test x"$$test_prefer_config_shell" || unset test_prefer_config_shell; \
   test x"$$original_AUTOMAKE" = x || unset original_AUTOMAKE; \
@@ -455,12 +450,7 @@ acloca20.test \
 acloca21.test \
 acloca22.test \
 acloca23.test \
-acoutnoq.test \
-acoutpt.test \
-acoutpt2.test \
-acoutqnl.test \
-acoutbs.test \
-acoutbs2.test \
+ac-output-old.tap \
 acsilent.test \
 acsubst.test \
 acsubst2.test \
@@ -564,9 +554,9 @@ check12.test \
 check-subst.test \
 check-subst-prog.test \
 check-exported-srcdir.test \
+check-fd-redirect.test \
 check-tests-in-builddir.test \
-check-tests_environment.test \
-tests-environment-backcompat.test \
+check-no-test-driver.test \
 checkall.test \
 clean.test \
 clean2.test \
@@ -1052,8 +1042,10 @@ parallel-tests-suffix.test \
 parallel-tests-suffix-prog.test \
 parallel-tests-ext-driver.test \
 parallel-tests-ext-driver-prog.test \
-parallel-tests-am_tests_environment.test \
-parallel-tests-unreadable-log.test \
+parallel-tests-dry-run.test \
+parallel-tests-fd-redirect.test \
+parallel-tests-extra-programs.test \
+parallel-tests-unreadable.test \
 parallel-tests-subdir.test \
 parallel-tests-interrupt.test \
 parallel-tests-reset-term.test \
@@ -1061,8 +1053,41 @@ parallel-tests-harderror.test \
 parallel-tests-log-override-1.test \
 parallel-tests-log-override-2.test \
 parallel-tests-log-override-recheck.test \
-parallel-tests-cmdline-override.test \
 parallel-tests-log-compiler-example.test \
+parallel-tests-cmdline-override.test \
+parallel-tests-empty-testlogs.test \
+parallel-tests-driver-install.test \
+parallel-tests-no-spurious-summary.test \
+parallel-tests-exit-statuses.test \
+parallel-tests-console-output.test \
+parallel-tests-once.test \
+tests-environment.test \
+am-tests-environment.test \
+tests-environment-backcompat.test \
+testsuite-summary-color.test \
+testsuite-summary-count.test \
+testsuite-summary-count-many.test \
+testsuite-summary-reference-log.test \
+test-driver-custom-no-extra-driver.test \
+test-driver-custom.test \
+test-driver-custom-xfail-tests.test \
+test-driver-custom-multitest.test \
+test-driver-custom-multitest-recheck.test \
+test-driver-custom-multitest-recheck2.test \
+test-driver-custom-html.test \
+test-driver-custom-no-html.test \
+test-driver-create-log-dir.test \
+test-driver-strip-vpath.test \
+test-driver-fail.test \
+test-log.test \
+test-metadata-global-log.test \
+test-metadata-recheck.test \
+test-metadata-results.test \
+test-missing.test \
+test-missing2.test \
+test-trs-basic.test \
+test-trs-recover.test \
+test-trs-recover2.test \
 parse.test \
 percent.test \
 percent2.test \
@@ -1192,6 +1217,7 @@ self-check-reexec.test \
 self-check-report.test \
 self-check-sanity.test \
 self-check-seq.test \
+self-check-tap.test \
 self-check-unindent.test \
 sanity.test \
 scripts.test \
@@ -1300,6 +1326,8 @@ suffix13.test \
 symlink.test \
 symlink2.test \
 syntax.test \
+$(tap_with_common_setup_tests) \
+$(tap_other_tests) \
 tags.test \
 tags2.test \
 tagsub.test \
@@ -1410,7 +1438,73 @@ yflags-force-override.test \
 yflags-force-conditional.test \
 yflags-var-expand.test
 
-checked_test_extensions = .test
+
+# List of tests on TAP support that use the files pre-computed by
+# `tap-common-setup.test', and sources the `tap-setup.sh' helper
+# script.
+tap_with_common_setup_tests = \
+tap-autonumber.test \
+tap-bailout.test \
+tap-color.test \
+tap-deps.test \
+tap-diagnostic.test \
+tap-empty-diagnostic.test \
+tap-empty.test \
+tap-escape-directive.test \
+tap-exit.test \
+tap-signal.test \
+tap-fancy.test \
+tap-fancy2.test \
+tap-global-log.test \
+tap-global-result.test \
+tap-html.test \
+tap-log.test \
+tap-merge-stdout-stderr.test \
+tap-no-merge-stdout-stderr.test \
+tap-message-0.test \
+tap-no-disable-hard-error.test \
+tap-no-spurious-summary.test \
+tap-no-spurious.test \
+tap-not-ok-skip.test \
+tap-numeric-description.test \
+tap-out-of-order.test \
+tap-passthrough.test \
+tap-passthrough-exit.test \
+tap-plan.test \
+tap-plan-corner.test \
+tap-plan-corner2.test \
+tap-plan-errors.test \
+tap-realtime.test \
+tap-recheck-logs.test \
+tap-skip-whole-whitespace.test \
+tap-skip-whole.test \
+tap-todo-skip-together.test \
+tap-todo-skip-whitespace.test \
+tap-todo-skip.test \
+tap-unplanned.test \
+tap-whitespace-normalization.test \
+tap-with-and-without-number.test \
+tap-xfail-tests.test
+
+
+# Their log files.
+tap_with_common_setup_logs = $(tap_with_common_setup_tests:.test=.log)
+
+# Other tests on TAP support.
+tap_other_tests = \
+tap-common-setup.test \
+tap-bad-prog.tap \
+tap-basic.test \
+tap-doc.test \
+tap-doc2.test \
+tap-empty.test \
+tap-more.test \
+tap-more2.test \
+tap-recheck.test \
+tap-summary.test \
+tap-summary-color.test
+
+checked_test_extensions = .test .tap
 expected_list_of_tests = $(handwritten_tests)
 am__tmk = tests-in-makefile-list.tmp
 am__tfs = tests-on-filesystem-list.tmp
@@ -1418,7 +1512,7 @@ am__tdf = diff-in-tests-lists.tmp
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .depmod .html .instspc .log .ptest .shtst .test
+.SUFFIXES: .depmod .html .instspc .log .ptest .shtst .tap .test .trs
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/parallel-tests.am $(srcdir)/instspc-tests.am $(srcdir)/depmod-tests.am $(srcdir)/config-shell-tests.am $(top_srcdir)/CheckListOfTests.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -1464,87 +1558,123 @@ CTAGS:
 cscope cscopelist:
 
 
+# Recover from deleted `.trs' file; this should ensure that
+# "rm -f foo.log; make foo.trs" re-run `foo.test', and re-create
+# both `foo.log' and `foo.trs'.
+.log.trs:
+	rm -f $< $@ && $(am__stealth_MAKE) $(AM_MAKEFLAGS) $<
+
 $(TEST_SUITE_LOG): $(TEST_LOGS)
-	@$(am__sh_e_setup);						\
-	list='$(TEST_LOGS)';						\
-	results=`for f in $$list; do					\
-		   test -r $$f && read line < $$f && echo "$$line"	\
-		     || echo FAIL;					\
-		 done`;							\
-	all=`echo "$$results" | sed '/^$$/d' | wc -l | sed -e 's/^[	 ]*//'`; \
-	fail=`echo "$$results" | grep -c '^FAIL'`;			\
-	pass=`echo "$$results" | grep -c '^PASS'`;			\
-	skip=`echo "$$results" | grep -c '^SKIP'`;			\
-	xfail=`echo "$$results" | grep -c '^XFAIL'`;			\
-	xpass=`echo "$$results" | grep -c '^XPASS'`;			\
-	failures=`expr $$fail + $$xpass`;				\
-	all=`expr $$all - $$skip`;					\
-	if test "$$all" -eq 1; then tests=test; All=;			\
-	else tests=tests; All="All "; fi;				\
-	case fail=$$fail:xpass=$$xpass:xfail=$$xfail in			\
-	  fail=0:xpass=0:xfail=0)					\
-	    msg="$$All$$all $$tests passed.  ";				\
-	    exit=true;;							\
-	  fail=0:xpass=0:xfail=*)					\
-	    msg="$$All$$all $$tests behaved as expected";		\
-	    if test "$$xfail" -eq 1; then xfailures=failure;		\
-	    else xfailures=failures; fi;				\
-	    msg="$$msg ($$xfail expected $$xfailures).  ";		\
-	    exit=true;;							\
-	  fail=*:xpass=0:xfail=*)					\
-	    msg="$$fail of $$all $$tests failed.  ";			\
-	    exit=false;;						\
-	  fail=*:xpass=*:xfail=*)					\
-	    msg="$$failures of $$all $$tests did not behave as expected"; \
-	    if test "$$xpass" -eq 1; then xpasses=pass;			\
-	    else xpasses=passes; fi;					\
-	    msg="$$msg ($$xpass unexpected $$xpasses).  ";		\
-	    exit=false;;						\
-	  *)								\
-	    echo >&2 "incorrect case"; exit 4;;				\
-	esac;								\
-	if test "$$skip" -ne 0; then					\
-	  if test "$$skip" -eq 1; then					\
-	    msg="$$msg($$skip test was not run).  ";			\
-	  else								\
-	    msg="$$msg($$skip tests were not run).  ";			\
-	  fi;								\
-	fi;								\
+	@$(am__sh_e_setup); $(am__tty_colors); \
+	bases='$(am__TEST_BASES)'; \
+	ws='[ 	]'; \
+	redo_bases=`for b in $$bases; do \
+	              test -f $$b.trs && test -r $$b.trs \
+	                && test -f $$b.log && test -r $$b.log \
+		        || echo $$b; \
+	            done`; \
+	if test -n "$$redo_bases"; then \
+	  redo_logs=`for i in $$redo_bases; do echo $$i.log; done`; \
+	  redo_results=`for i in $$redo_bases; do echo $$i.trs; done`; \
+	  rm -f $$redo_logs && rm -f $$redo_results \
+	    && $(am__stealth_MAKE) $(AM_MAKEFLAGS) $$redo_logs; \
+	fi; \
+	st=0; \
+	for b in $$redo_bases; do \
+	  for e in trs log; do \
+	    if test ! -f $$b.$$e || test ! -r $$b.$$e; then \
+	      echo "fatal: making $@: failed to create $$b.$$e" >&2; \
+	      st=1; \
+	    fi; \
+	  done; \
+	done; \
+	test $$st -eq 0 || exit 1; \
+	results=`for b in $$bases; do echo $$b.trs; done`; \
+	test -n "$$results" || results=/dev/null; \
+	all=`  grep "^$$ws*:test-result:"           $$results | wc -l`; \
+	pass=` grep "^$$ws*:test-result:$$ws*PASS"  $$results | wc -l`; \
+	fail=` grep "^$$ws*:test-result:$$ws*FAIL"  $$results | wc -l`; \
+	skip=` grep "^$$ws*:test-result:$$ws*SKIP"  $$results | wc -l`; \
+	xfail=`grep "^$$ws*:test-result:$$ws*XFAIL" $$results | wc -l`; \
+	xpass=`grep "^$$ws*:test-result:$$ws*XPASS" $$results | wc -l`; \
+	error=`grep "^$$ws*:test-result:$$ws*ERROR" $$results | wc -l`; \
+	if test `expr $$fail + $$xpass + $$error` -eq 0; then \
+	  success=true; \
+	else \
+	  success=false; \
+	fi; \
+	br='==================='; br=$$br$$br$$br$$br; \
+	result_count () \
+	{ \
+	    if test x"$$1" = x"--maybe-color"; then \
+	      maybe_colorize=yes; \
+	    elif test x"$$1" = x"--no-color"; then \
+	      maybe_colorize=no; \
+	    else \
+	      echo "$@: invalid 'result_count' usage" >&2; exit 4; \
+	    fi; \
+	    shift; \
+	    desc=$$1 count=$$2; \
+	    if test $$maybe_colorize = yes && test $$count -gt 0; then \
+	      color_start=$$3 color_end=$$std; \
+	    else \
+	      color_start= color_end=; \
+	    fi; \
+	    echo "$${color_start}# $$desc $$count$${color_end}"; \
+	}; \
+	create_testsuite_report () \
+	{ \
+	  result_count $$1 "TOTAL:" $$all   "$$brg"; \
+	  result_count $$1 "PASS: " $$pass  "$$grn"; \
+	  result_count $$1 "SKIP: " $$skip  "$$blu"; \
+	  result_count $$1 "XFAIL:" $$xfail "$$lgn"; \
+	  result_count $$1 "FAIL: " $$fail  "$$red"; \
+	  result_count $$1 "XPASS:" $$xpass "$$red"; \
+	  result_count $$1 "ERROR:" $$error "$$mgn"; \
+	}; \
 	{								\
 	  echo "$(PACKAGE_STRING): $(subdir)/$(TEST_SUITE_LOG)" |	\
 	    $(am__rst_title);						\
-	  echo "$$msg";							\
+	  create_testsuite_report --no-color;				\
 	  echo;								\
 	  echo ".. contents:: :depth: 2";				\
 	  echo;								\
-	  for f in $$list; do						\
-	    test -r $$f && read line < $$f || line=;			\
-	    case $$line in						\
-	      PASS:*|XFAIL:*);;						\
-	      *) echo; cat $$f;;					\
-	    esac;							\
+	  for b in $$bases; do						\
+	    if grep "^$$ws*:copy-in-global-log:$$ws*no$$ws*$$" $$b.trs 	\
+	         >/dev/null; then :; 					\
+	    elif test ! -r $$b.log; then				\
+	      echo "ERROR: cannot read $$b.log" >&2;			\
+	      echo && echo "WARNING: could not read $$b.log!";		\
+	    else							\
+	      echo && cat $$b.log;					\
+	    fi;								\
 	  done;								\
 	} >$(TEST_SUITE_LOG).tmp;					\
 	mv $(TEST_SUITE_LOG).tmp $(TEST_SUITE_LOG);			\
-	if test "$$failures" -ne 0; then				\
-	  msg="$${msg}See $(subdir)/$(TEST_SUITE_LOG).  ";		\
-	  if test -n "$(PACKAGE_BUGREPORT)"; then			\
-	    msg="$${msg}Please report to $(PACKAGE_BUGREPORT).  ";	\
-	  fi;								\
-	fi;								\
-	test x"$$VERBOSE" = x || $$exit || cat $(TEST_SUITE_LOG);	\
-	$(am__tty_colors);						\
-	if $$exit; then							\
+	if $$success; then						\
 	  col="$$grn";							\
 	 else								\
 	  col="$$red";							\
+	  test x"$$VERBOSE" = x || cat $(TEST_SUITE_LOG);		\
 	fi;								\
-	echo "$$msg" | $(am__text_box) "col=$$col" "std=$$std";		\
-	$$exit
+	echo "$${col}$$br$${std}"; 					\
+	echo "$${col}Testsuite summary for $(PACKAGE_STRING)$${std}";	\
+	echo "$${col}$$br$${std}"; 					\
+	create_testsuite_report --maybe-color;				\
+	echo "$$col$$br$$std";						\
+	if $$success; then :; else					\
+	  echo "$${col}See $(subdir)/$(TEST_SUITE_LOG)$${std}";		\
+	  if test -n "$(PACKAGE_BUGREPORT)"; then			\
+	    echo "$${col}Please report to $(PACKAGE_BUGREPORT)$${std}";	\
+	  fi;								\
+	  echo "$$col$$br$$std";					\
+	fi;								\
+	$$success
 
 # Run all the tests.
 check-TESTS:
 	@list='$(RECHECK_LOGS)'; test -z "$$list" || rm -f $$list
+	@list='$(RECHECK_LOGS:.log=.trs)'; test -z "$$list" || rm -f $$list
 	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
 	@list='$(TEST_LOGS)';						\
 	list=`for f in $$list; do					\
@@ -1577,26 +1707,46 @@ check-html:
 	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_HTML) || exit 4;	\
 	exit $$rv
 recheck recheck-html:
-	@target=`echo $@ | sed 's,^re,,'`;				\
-	list='$(TEST_LOGS)';						\
-	list=`for f in $$list; do					\
-	        test -f $$f || continue;				\
-	        if test -r $$f && read line < $$f; then			\
-	          case $$line in FAIL*|XPASS*) echo $$f;; esac;		\
-	        else echo $$f; fi;					\
+	@ws='[ 	]';							\
+	target=`echo $@ | sed 's,^re,,'`;				\
+	bases='$(am__TEST_BASES)';					\
+	list=`for b in $$bases; do 					\
+	        test ! -f $$b.trs && test ! -f $$b.log && continue;	\
+	        grep "^$$ws*:recheck:$$ws*no$$ws*$$" $$b.trs 		\
+		  >/dev/null 2>&1 || echo $$b.log; 			\
 	      done | tr '\012\015' '  '`;				\
 	list=`echo "$$list" | sed 's/ *$$//'`;				\
 	$(MAKE) $(AM_MAKEFLAGS) $$target AM_MAKEFLAGS='$(AM_MAKEFLAGS) TEST_LOGS="'"$$list"'"'
 .test.log:
-	@p='$<'; $(am__check_pre) $(TEST_LOG_COMPILE) "$$tst" $(am__check_post)
+	@p='$<'; $(am__check_pre) $(TEST_LOG_DRIVER) --test-name "$$f" \
+	--log-file '$*.log' --trs-file '$*.trs' \
+	$(am__common_driver_flags) $(AM_TEST_LOG_DRIVER_FLAGS) $(TEST_LOG_DRIVER_FLAGS) -- $(TEST_LOG_COMPILE) "$$tst" \
+	$(AM_TESTS_FD_REDIRECT)
+.tap.log:
+	@p='$<'; $(am__check_pre) $(TAP_LOG_DRIVER) --test-name "$$f" \
+	--log-file '$*.log' --trs-file '$*.trs' \
+	$(am__common_driver_flags) $(AM_TAP_LOG_DRIVER_FLAGS) $(TAP_LOG_DRIVER_FLAGS) -- $(TAP_LOG_COMPILE) "$$tst" \
+	$(AM_TESTS_FD_REDIRECT)
 .ptest.log:
-	@p='$<'; $(am__check_pre) $(PTEST_LOG_COMPILE) "$$tst" $(am__check_post)
+	@p='$<'; $(am__check_pre) $(PTEST_LOG_DRIVER) --test-name "$$f" \
+	--log-file '$*.log' --trs-file '$*.trs' \
+	$(am__common_driver_flags) $(AM_PTEST_LOG_DRIVER_FLAGS) $(PTEST_LOG_DRIVER_FLAGS) -- $(PTEST_LOG_COMPILE) "$$tst" \
+	$(AM_TESTS_FD_REDIRECT)
 .instspc.log:
-	@p='$<'; $(am__check_pre) $(INSTSPC_LOG_COMPILE) "$$tst" $(am__check_post)
+	@p='$<'; $(am__check_pre) $(INSTSPC_LOG_DRIVER) --test-name "$$f" \
+	--log-file '$*.log' --trs-file '$*.trs' \
+	$(am__common_driver_flags) $(AM_INSTSPC_LOG_DRIVER_FLAGS) $(INSTSPC_LOG_DRIVER_FLAGS) -- $(INSTSPC_LOG_COMPILE) "$$tst" \
+	$(AM_TESTS_FD_REDIRECT)
 .depmod.log:
-	@p='$<'; $(am__check_pre) $(DEPMOD_LOG_COMPILE) "$$tst" $(am__check_post)
+	@p='$<'; $(am__check_pre) $(DEPMOD_LOG_DRIVER) --test-name "$$f" \
+	--log-file '$*.log' --trs-file '$*.trs' \
+	$(am__common_driver_flags) $(AM_DEPMOD_LOG_DRIVER_FLAGS) $(DEPMOD_LOG_DRIVER_FLAGS) -- $(DEPMOD_LOG_COMPILE) "$$tst" \
+	$(AM_TESTS_FD_REDIRECT)
 .shtst.log:
-	@p='$<'; $(am__check_pre) $(SHTST_LOG_COMPILE) "$$tst" $(am__check_post)
+	@p='$<'; $(am__check_pre) $(SHTST_LOG_DRIVER) --test-name "$$f" \
+	--log-file '$*.log' --trs-file '$*.trs' \
+	$(am__common_driver_flags) $(AM_SHTST_LOG_DRIVER_FLAGS) $(SHTST_LOG_DRIVER_FLAGS) -- $(SHTST_LOG_COMPILE) "$$tst" \
+	$(AM_TESTS_FD_REDIRECT)
 
 distdir: $(DISTFILES)
 	@srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
@@ -1657,6 +1807,7 @@ mostlyclean-generic:
 	-test -z "$(TEST_LOGS_TMP)" || rm -f $(TEST_LOGS_TMP)
 	-test -z "$(TEST_SUITE_HTML)" || rm -f $(TEST_SUITE_HTML)
 	-test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
+	-test -z "$(am__TEST_BASES:=.trs)" || rm -f $(am__TEST_BASES:=.trs)
 
 clean-generic:
 
@@ -1750,12 +1901,11 @@ uninstall-am:
 
 backcompat5-p.log: backcompat5.test
 check-exported-srcdir-p.log: check-exported-srcdir.test
+check-fd-redirect-p.log: check-fd-redirect.test
 check-subst-prog-p.log: check-subst-prog.test
 check-subst-p.log: check-subst.test
 check-tests-in-builddir-p.log: check-tests-in-builddir.test
-check-tests_environment-p.log: check-tests_environment.test
 check-p.log: check.test
-check10-p.log: check10.test
 check11-p.log: check11.test
 check12-p.log: check12.test
 check2-p.log: check2.test
@@ -1773,6 +1923,7 @@ exeext4-p.log: exeext4.test
 maken3-p.log: maken3.test
 maken4-p.log: maken4.test
 posixsubst-tests-p.log: posixsubst-tests.test
+tests-environment-p.log: tests-environment.test
 
 $(srcdir)/parallel-tests.am: gen-parallel-tests Makefile.am
 	$(AM_V_GEN)($(am__cd) $(srcdir) && $(SHELL) ./gen-parallel-tests) >$@
@@ -1834,6 +1985,22 @@ $(config_shell_tests:.shtst=.log): config-shell-tests.sh
 # expected log files from the `.shtst.log' suffix rule.
 $(config_shell_tests):
 
+test-driver-custom-multitest.log: trivial-test-driver
+test-driver-custom-multitest-recheck.log: trivial-test-driver
+test-driver-custom-multitest-recheck2.log: trivial-test-driver
+test-driver-custom-html.log: trivial-test-driver
+
+testsuite-summary-color.log testsuite-summary-count.log: \
+  testsuite-summary-checks.sh extract-testsuite-summary
+
+testsuite-summary-count-many.log: trivial-test-driver
+testsuite-summary-count-many.log: extract-testsuite-summary
+
+# Their dependencies.
+$(tap_with_common_setup_logs): tap-common-setup.log tap-setup.sh
+
+tap-summary.log tap-summary-color.log: tap-summary-aux.sh
+
 .PHONY: maintainer-check-list-of-tests
 maintainer-check-list-of-tests:
 	 @if diff -u /dev/null /dev/null >/dev/null 2>&1; then \
@@ -1879,6 +2046,9 @@ clean-maintcheck-testslist-tmp:
 
 # Dependencies valid for each test case.
 $(TEST_LOGS): defs defs-static aclocal-$(APIVERSION) automake-$(APIVERSION)
+# FIXME: this should be made more granular once we have a cleaner
+# subdivision of the tests.
+$(TEST_LOGS): plain-functions.sh tap-functions.sh
 
 clean-local: clean-local-check
 .PHONY: clean-local-check

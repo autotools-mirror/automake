@@ -169,21 +169,19 @@ Exit ()
   (exit $1); exit $1
 }
 
-# Print warnings (e.g., about skipped and failed tests) to this file
-# number.  Override by putting, say:
-#   stderr_fileno_=9; export stderr_fileno_; 9>&2
-# at the *end* (yes, this is mandatory; see comments in Makefile.am) of
-# the definition of AM_TESTS_ENVIRONMENT.
-# This is useful when using automake's parallel tests mode, to print the
-# reason for skip/failure to console, rather than to the *.log files.
-: ${stderr_fileno_=2}
+if test $using_tap = yes; then
+  funcs_file_=tap-functions.sh
+else
+  funcs_file_=plain-functions.sh
+fi
 
-# Copied from Gnulib's `tests/init.sh'.
-warn_ () { echo "$@" 1>&$stderr_fileno_; }
-fail_ () { warn_ "$me: failed test: $@"; Exit 1; }
-skip_ () { warn_ "$me: skipped test: $@"; Exit 77; }
-fatal_ () { warn_ "$me: hard error: $@"; Exit 99; }
-framework_failure_ () { warn_ "$me: set-up failure: $@"; Exit 99; }
+if test -f "$testsrcdir/$funcs_file_"; then
+  . "$testsrcdir/$funcs_file_"
+else
+  echo "$me: $testsrcdir/$funcs_file_ not found, check \$testsrcdir" >&2
+  Exit 99
+fi
+unset funcs_file_
 
 # cross_compiling
 # ---------------
@@ -291,6 +289,43 @@ seq_ ()
     echo $i
     i=`expr $i + $seq_incr`
   done
+}
+
+# count_test_results total=N pass=N fail=N xpass=N xfail=N skip=N error=N
+# -----------------------------------------------------------------------
+# Check that a testsuite run driven by the parallel-tests harness has
+# had the specified numbers of test results (specified by kind).
+# This function assumes that the output of "make check" or "make recheck"
+# has been saved in the `stdout' file in the current directory, and its
+# log in the `test-suite.log' file.
+count_test_results ()
+{
+  # Use a subshell so that we won't pollute the script namespace.
+  (
+    # TODO: Do proper checks on the arguments?
+    total=ERR pass=ERR fail=ERR xpass=ERR xfail=ERR skip=ERR error=ERR
+    eval "$@"
+    # For debugging.
+    $EGREP -i '(total|x?pass|x?fail|skip|error)' stdout || :
+    rc=0
+    # Avoid spurious failures with shells with "overly sensible"
+    # `errexit' shell flag, such as e.g., Solaris /bin/sh.
+    set +e
+    test `grep -c '^PASS:'  stdout` -eq $pass  || rc=1
+    test `grep -c '^XFAIL:' stdout` -eq $xfail || rc=1
+    test `grep -c '^SKIP:'  stdout` -eq $skip  || rc=1
+    test `grep -c '^FAIL:'  stdout` -eq $fail  || rc=1
+    test `grep -c '^XPASS:' stdout` -eq $xpass || rc=1
+    test `grep -c '^ERROR:' stdout` -eq $error || rc=1
+    grep "^# TOTAL:  *$total$" stdout || rc=1
+    grep "^# PASS:  *$pass$"   stdout || rc=1
+    grep "^# XFAIL:  *$xfail$" stdout || rc=1
+    grep "^# SKIP:  *$skip$"   stdout || rc=1
+    grep "^# FAIL:  *$fail$"   stdout || rc=1
+    grep "^# XPASS:  *$xpass$" stdout || rc=1
+    grep "^# ERROR:  *$error$" stdout || rc=1
+    test $rc -eq 0
+  )
 }
 
 commented_sed_unindent_prog='
@@ -762,8 +797,10 @@ if test "$sh_errexit_works" = yes; then
       rm -rf $testSubDir
       ;;
     esac
+    set +x
     test "$signal" != 0 && echo "$me: caught signal $signal"
     echo "$me: exit $exit_status"
+    test $using_tap = yes && late_plan_
     exit $exit_status
   ' 0
   for signal in 1 2 13 15; do

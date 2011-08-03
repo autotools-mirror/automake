@@ -29,27 +29,37 @@ cat > Makefile.am << 'END'
 TEST_EXTENSIONS = .sh .test
 TESTS = foo.test bar.sh
 SH_LOG_COMPILER = sh
-AM_TESTS_ENVIRONMENT = $(MKDIR_P) quux.dir; exec 9>&2; fd=9; export fd;
-EXTRA_DIST = $(TESTS)
+AM_TESTS_ENVIRONMENT = \
+  $(MKDIR_P) quux.dir; \
+  if test -f $(srcdir)/test-env.sh; then \
+    . $(srcdir)/test-env.sh; \
+  fi; \
+  FOO=1; export FOO;
+EXTRA_DIST = $(TESTS) test-env.sh
 END
 
 cat > foo.test << 'END'
 #! /bin/sh
-echo "FOO='$FOO'"
-echo "BAR='$BAR'"
-test x"$FOO" = x"$BAR"
+ls -l && test -d quux.dir
 END
 chmod a+x foo.test
 
 cat > bar.sh << 'END'
-: ${fd=2}
-eval "echo 'diagnostic message from test bar' >&${fd}"
+echo "FOO='$FOO'"
+echo "BAR='$BAR'"
+test x"$FOO" = x"$BAR"
 END
+
+debug_info ()
+{
+  cat test-suite.log
+  cat foo.log
+  cat bar.log
+}
 
 minicheck ()
 {
-  cat foo.log
-  cat bar.log
+  debug_info
   test -d quux.dir
 }
 
@@ -65,31 +75,17 @@ $AUTOMAKE -a
 
 ./configure
 
-FOO=1; export FOO
-
-TESTS_ENVIRONMENT='BAR=1' $MAKE check || { cat test-suite.log; Exit 1; }
-minicheck
-miniclean
-TESTS_ENVIRONMENT='BAR=2' $MAKE check && { cat test-suite.log; Exit 1; }
+TESTS_ENVIRONMENT='BAR=1' $MAKE check || { debug_info; Exit 1; }
 minicheck
 miniclean
 
-BAR=$FOO; export BAR
-
-$MAKE check 2>stderr || { cat stderr >&2; Exit1; }
-cat stderr >&2
+TESTS_ENVIRONMENT='BAR=2' $MAKE check && { debug_info; Exit 1; }
 minicheck
-grep 'diagnostic message from test bar' stderr
-grep 'diagnostic message from test bar' bar.log && Exit 1
 miniclean
 
-TESTS_ENVIRONMENT='fd=2' $MAKE check 2>stderr || { cat stderr >&2; Exit1; }
-cat stderr >&2
+echo 'BAR=1 && export BAR' > test-env.sh
+$MAKE check || { debug_info; Exit 1; }
 minicheck
-grep 'diagnostic message from test bar' stderr && Exit 1
-grep 'diagnostic message from test bar' bar.log
-miniclean
-
 $MAKE distcheck
 
 :

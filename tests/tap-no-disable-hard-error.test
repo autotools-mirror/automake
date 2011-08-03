@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001, 2002, 2010, 2011 Free Software Foundation, Inc.
+# Copyright (C) 2011 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,31 +14,37 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test for bug reported by Eric Magnien.
+# TAP support:
+#  - "Bail out!" magic and TAP parse errors are not disabled nor turned
+#    into simple failures by the definition DISABLE_HARD_ERRORS.
 
+parallel_tests=yes
 . ./defs || Exit 1
 
-cat > configure.in <<END
-AC_INIT([$me], [1.0])
-AM_INIT_AUTOMAKE
-AC_OUTPUT([subdir/Makefile subdir/foo Makefile foo], [true])
+cat > Makefile.am << 'END'
+DISABLE_HARD_ERRORS = yes
+TEST_LOG_COMPILER = cat
+TESTS = bail.test few.test noplan.test
 END
 
-mkdir subdir
+. "$testsrcdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
-: > Makefile.am
-: > subdir/Makefile.am
-: > foo.in
-: > subdir/foo.in
+cat > bail.test <<END
+1..1
+Bail out!
+END
 
-$ACLOCAL
-$AUTOMAKE
+cat > few.test <<END
+1..1
+END
 
-count=`$FGREP foo.in Makefile.in | wc -l`
-test $count -eq 2
+cat > noplan.test <<END
+# nothing here
+END
 
-# This ought to work as well.
-$ACLOCAL
-$AUTOMAKE --add-missing --force-missing
+$MAKE check >stdout && { cat stdout; Exit 1; }
+cat stdout
+
+count_test_results total=3 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=3
 
 :

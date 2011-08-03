@@ -16,10 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+TEST_EXTENSIONS = .test .tap
+TAP_LOG_DRIVER = $(PERL) $(top_srcdir)/lib/tap-driver
+TAP_LOG_DRIVER_FLAGS = --merge
+
 MAINTAINERCLEANFILES =
 EXTRA_DIST = ChangeLog-old
 
-TEST_EXTENSIONS = .test
 # Run the tests with the shell detected at configure time.
 TEST_LOG_COMPILER = $(SHELL)
 
@@ -31,6 +34,9 @@ gcj6.test \
 override-conditional-2.test \
 pr8365-remake-timing.test \
 yacc-dist-nobuild-subdir.test \
+tap-plan-corner2.test \
+tap-message-0.test \
+tap-signal.test \
 txinfo5.test
 
 
@@ -128,6 +134,7 @@ $(config_shell_tests):
 AM_TESTS_ENVIRONMENT = \
   test x"$$me" = x || unset me; \
   test x"$$required" = x || unset required; \
+  test x"$$use_tap" = x || unset use_tap; \
   test x"$$parallel_tests" = x || unset parallel_tests; \
   test x"$$test_prefer_config_shell" || unset test_prefer_config_shell; \
   test x"$$original_AUTOMAKE" = x || unset original_AUTOMAKE; \
@@ -167,12 +174,7 @@ acloca20.test \
 acloca21.test \
 acloca22.test \
 acloca23.test \
-acoutnoq.test \
-acoutpt.test \
-acoutpt2.test \
-acoutqnl.test \
-acoutbs.test \
-acoutbs2.test \
+ac-output-old.tap \
 acsilent.test \
 acsubst.test \
 acsubst2.test \
@@ -276,9 +278,9 @@ check12.test \
 check-subst.test \
 check-subst-prog.test \
 check-exported-srcdir.test \
+check-fd-redirect.test \
 check-tests-in-builddir.test \
-check-tests_environment.test \
-tests-environment-backcompat.test \
+check-no-test-driver.test \
 checkall.test \
 clean.test \
 clean2.test \
@@ -764,8 +766,10 @@ parallel-tests-suffix.test \
 parallel-tests-suffix-prog.test \
 parallel-tests-ext-driver.test \
 parallel-tests-ext-driver-prog.test \
-parallel-tests-am_tests_environment.test \
-parallel-tests-unreadable-log.test \
+parallel-tests-dry-run.test \
+parallel-tests-fd-redirect.test \
+parallel-tests-extra-programs.test \
+parallel-tests-unreadable.test \
 parallel-tests-subdir.test \
 parallel-tests-interrupt.test \
 parallel-tests-reset-term.test \
@@ -773,8 +777,41 @@ parallel-tests-harderror.test \
 parallel-tests-log-override-1.test \
 parallel-tests-log-override-2.test \
 parallel-tests-log-override-recheck.test \
-parallel-tests-cmdline-override.test \
 parallel-tests-log-compiler-example.test \
+parallel-tests-cmdline-override.test \
+parallel-tests-empty-testlogs.test \
+parallel-tests-driver-install.test \
+parallel-tests-no-spurious-summary.test \
+parallel-tests-exit-statuses.test \
+parallel-tests-console-output.test \
+parallel-tests-once.test \
+tests-environment.test \
+am-tests-environment.test \
+tests-environment-backcompat.test \
+testsuite-summary-color.test \
+testsuite-summary-count.test \
+testsuite-summary-count-many.test \
+testsuite-summary-reference-log.test \
+test-driver-custom-no-extra-driver.test \
+test-driver-custom.test \
+test-driver-custom-xfail-tests.test \
+test-driver-custom-multitest.test \
+test-driver-custom-multitest-recheck.test \
+test-driver-custom-multitest-recheck2.test \
+test-driver-custom-html.test \
+test-driver-custom-no-html.test \
+test-driver-create-log-dir.test \
+test-driver-strip-vpath.test \
+test-driver-fail.test \
+test-log.test \
+test-metadata-global-log.test \
+test-metadata-recheck.test \
+test-metadata-results.test \
+test-missing.test \
+test-missing2.test \
+test-trs-basic.test \
+test-trs-recover.test \
+test-trs-recover2.test \
 parse.test \
 percent.test \
 percent2.test \
@@ -904,6 +941,7 @@ self-check-reexec.test \
 self-check-report.test \
 self-check-sanity.test \
 self-check-seq.test \
+self-check-tap.test \
 self-check-unindent.test \
 sanity.test \
 scripts.test \
@@ -1012,6 +1050,8 @@ suffix13.test \
 symlink.test \
 symlink2.test \
 syntax.test \
+$(tap_with_common_setup_tests) \
+$(tap_other_tests) \
 tags.test \
 tags2.test \
 tagsub.test \
@@ -1122,14 +1162,104 @@ yflags-force-override.test \
 yflags-force-conditional.test \
 yflags-var-expand.test
 
+## Files containing auxiliary functions used by our test cases.
+EXTRA_DIST += tap-functions.sh plain-functions.sh
 
-## Checking the test of tests.
-checked_test_extensions = .test
+test-driver-custom-multitest.log: trivial-test-driver
+test-driver-custom-multitest-recheck.log: trivial-test-driver
+test-driver-custom-multitest-recheck2.log: trivial-test-driver
+test-driver-custom-html.log: trivial-test-driver
+EXTRA_DIST += trivial-test-driver
+
+testsuite-summary-color.log testsuite-summary-count.log: \
+  testsuite-summary-checks.sh extract-testsuite-summary
+EXTRA_DIST += testsuite-summary-checks.sh
+EXTRA_DIST += extract-testsuite-summary
+
+testsuite-summary-count-many.log: trivial-test-driver
+testsuite-summary-count-many.log: extract-testsuite-summary
+
+# List of tests on TAP support that use the files pre-computed by
+# `tap-common-setup.test', and sources the `tap-setup.sh' helper
+# script.
+tap_with_common_setup_tests = \
+tap-autonumber.test \
+tap-bailout.test \
+tap-color.test \
+tap-deps.test \
+tap-diagnostic.test \
+tap-empty-diagnostic.test \
+tap-empty.test \
+tap-escape-directive.test \
+tap-exit.test \
+tap-signal.test \
+tap-fancy.test \
+tap-fancy2.test \
+tap-global-log.test \
+tap-global-result.test \
+tap-html.test \
+tap-log.test \
+tap-merge-stdout-stderr.test \
+tap-no-merge-stdout-stderr.test \
+tap-message-0.test \
+tap-no-disable-hard-error.test \
+tap-no-spurious-summary.test \
+tap-no-spurious.test \
+tap-not-ok-skip.test \
+tap-numeric-description.test \
+tap-out-of-order.test \
+tap-passthrough.test \
+tap-passthrough-exit.test \
+tap-plan.test \
+tap-plan-corner.test \
+tap-plan-corner2.test \
+tap-plan-errors.test \
+tap-realtime.test \
+tap-recheck-logs.test \
+tap-skip-whole-whitespace.test \
+tap-skip-whole.test \
+tap-todo-skip-together.test \
+tap-todo-skip-whitespace.test \
+tap-todo-skip.test \
+tap-unplanned.test \
+tap-whitespace-normalization.test \
+tap-with-and-without-number.test \
+tap-xfail-tests.test
+
+# Their log files.
+tap_with_common_setup_logs = $(tap_with_common_setup_tests:.test=.log)
+
+# Their dependencies.
+$(tap_with_common_setup_logs): tap-common-setup.log tap-setup.sh
+EXTRA_DIST += tap-setup.sh
+
+# Other tests on TAP support.
+tap_other_tests = \
+tap-common-setup.test \
+tap-bad-prog.tap \
+tap-basic.test \
+tap-doc.test \
+tap-doc2.test \
+tap-empty.test \
+tap-more.test \
+tap-more2.test \
+tap-recheck.test \
+tap-summary.test \
+tap-summary-color.test
+
+tap-summary.log tap-summary-color.log: tap-summary-aux.sh
+EXTRA_DIST += tap-summary-aux.sh
+
+## Checking the list of tests.
+checked_test_extensions = .test .tap
 expected_list_of_tests = $(handwritten_tests)
 include $(top_srcdir)/CheckListOfTests.am
 
 # Dependencies valid for each test case.
 $(TEST_LOGS): defs defs-static aclocal-$(APIVERSION) automake-$(APIVERSION)
+# FIXME: this should be made more granular once we have a cleaner
+# subdivision of the tests.
+$(TEST_LOGS): plain-functions.sh tap-functions.sh
 
 clean-local: clean-local-check
 .PHONY: clean-local-check

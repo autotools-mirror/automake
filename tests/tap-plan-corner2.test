@@ -1,6 +1,5 @@
-#!/bin/sh
-# Copyright (C) 1996, 2000, 2001, 2002, 2010, 2011 Free Software
-# Foundation, Inc.
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,21 +14,36 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test for bug reported by Jerome Santini.
-# If I put this line in my configure.in:
-# AC_OUTPUT(Makefile src/Makefile tests/Makefile, echo timestamp > stamp-h)dnl
-# automake is not happy:
-# [ ... ]
+# TAP support:
+#  - more corner cases for TAP plan
 
+parallel_tests=yes
 . ./defs || Exit 1
 
-cat > configure.in << 'END'
-AC_INIT
-AM_INIT_AUTOMAKE(nonesuch, nonesuch)
-AC_OUTPUT(Makefile, [true])
+. "$testsrcdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
+
+# The leading blank line is meant.
+cat > leading-blank.test <<END
+
+1..2
+ok 1
+ok 2
 END
 
-: > Makefile.am
+# The trailing blank line is meant.
+cat > trailing-blank.test <<END
+ok 1
+ok 2
+1..2
 
-$ACLOCAL
-$AUTOMAKE
+END
+
+for kind in leading trailing; do
+  cp $kind-blank.test all.test
+  $MAKE check >stdout && { cat stdout; Exit 1; }
+  cat stdout
+  count_test_results total=3 pass=2 fail=0 xpass=0 xfail=0 skip=0 error=1
+  grep '^ERROR: all\.test - test plan in middle of output$' stdout
+done
+
+:
