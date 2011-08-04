@@ -54,8 +54,8 @@ $ACLOCAL || framework_failure_ "cannot pre-compute aclocal.m4"
 rm -rf install-sh missing depcomp configure.in autom4te*.cache
 mv aclocal.m4 aclocal.stub
 
-cat configure.stub # For debugging.
-cat aclocal.stub   # Likewise.
+show_ configure.stub
+show_ aclocal.stub
 
 # This is hacky and ugly and complex, but allow us to organize our tests
 # below in a more "declarative fashion".  All in all, a good trade-off.
@@ -64,31 +64,32 @@ check_ ()
   set +x # Temporary disable shell traces to remove noise from log files.
   override=no
   run_aclocal=no
-  extra_file=
+  fetch_file=
   while test $# -gt 0; do
     case $1 in
       --override) override=yes;;
       --run-aclocal) run_aclocal=yes;;
-      --extra-file) extra_file=$2; shift;;
+      --fetch-file) fetch_file=$2; shift;;
       *) framework_failure_ "check_: invalid argument '$1'";;
     esac
     shift
   done
   mkdir testdir-generic
   cd testdir-generic
-  : > Makefile.am
+  # Use `echo > ...', not `: > ...', here and below, as Solaris 10 /bin/sh
+  # might not execute the latter (the Autoconf manual gives more details).
+  echo > Makefile.am
   if test $override = yes; then
-    : > configure.in
+    echo > configure.in
   else
     cp ../configure.stub configure.in
   fi
-  test -z "$extra_file" || cp ../"$extra_file" .
+  test -z "$fetch_file" || cp ../"$fetch_file" .
   # Read description of "test scenario" from standard input.
-  what=
-  line=
-  files='install-sh missing' # These are always installed by automake.
+  what= line= name= files=
   while read line; do
     case $line in
+      '== Name ==') what=NAME;;
       '== Makefile.am ==') what=Makefile.am;;
       '== configure.in ==') what=configure.in;;
       '== Files ==') what=LIST;;
@@ -97,26 +98,28 @@ check_ ()
       *)
         if test $what = LIST; then
           files="$files $line"
+        elif test $what = NAME; then
+          name=$line
         else
           printf '%s\n' "$line" >> "$what"
         fi
         ;;
     esac
   done
+  test -n "$name" || fatal_ "name of a test case not specified"
+  diag_ "Will run checks for $name."
   if test $run_aclocal = yes; then
-    $ACLOCAL
-    echo == aclocal.m4 ==
-    cat aclocal.m4
+    if $ACLOCAL; then
+      ok_ "[$name] aclocal.m4 rebuilt"
+      show_ aclocal.m4
+    else
+      not_ok_ "[$name] aclocal failure, aclocal.m4 not rebuilt"
+    fi
   else
     cp ../aclocal.stub aclocal.m4 
   fi
-  # For debugging.
-  if test -s Makefile.am; then
-    echo == Makefile.am ==
-    cat Makefile.am
-  fi
-  echo == configure.in ==
-  cat configure.in
+  show_ Makefile.am
+  show_ configure.in
   echo Expected files: $files
   mkdir "$build_aux"
   cd ..
@@ -126,62 +129,91 @@ check_ ()
   # Test once with `--copy', once without.
   for action in link copy; do
     case $action in
-      link) opts='--add-missing' test_linked='test -h';;
-      copy) opts='-a --copy' test_linked='test ! -h';;
-         *) Exit 99;; # Can't happen.
+      link) opts='--add-missing';;
+      copy) opts='-a --copy';;
+         *) fatal_ "invalid value '$action' for \$action";;
     esac
+    pfx="[$action $name]"
     cp -R testdir-generic testdir-$action
     cd testdir-$action
     # If the required auxiliary files are missing, and automake is
     # not told to install them, it should complain and error out,
     # and also give a useful suggestion.
-    AUTOMAKE_fails
+    AUTOMAKE_fails -d "$pfx missing files, automake fails"
     for f in $files; do 
-      grep "required file ['\`]$build_aux/$f' not found" stderr
+      command_ok_ \
+        "$pfx warn about missing file $f" \
+        grep "required file ['\`]$build_aux/$f' not found" stderr
       # Suggest the user to use `--add-missing'.
-      grep ".*--add-missing.* install .*$f" stderr
+      command_ok_ \
+        "$pfx suggest --add-missing for $f" \
+        grep ".*--add-missing.* install .*$f" stderr
     done
     # No files should be automatically installed by automake if it
     # is not told to.
-    ls "$build_aux" | grep . && Exit 1
-    $AUTOMAKE $opts 2>stderr || { cat stderr >&2; Exit 1; }
-    cat stderr >&2
+    if ls "$build_aux" | grep .; then r='not ok'; else r=ok; fi
+    result_ "$r" "$pfx no extra files installed"
+    AUTOMAKE_run -d "$pfx automake run successfully" -- $opts
     ls -l . $build_aux
     # The expected files should get installed correctly (e.g., no
     # broken symlinks).
     for f in $files; do
-      test -f $build_aux/$f
+      command_ok_ \
+        "$pfx file $f installed" \
+        test -f $build_aux/$f
     done
     # Automake should inform about which files it's installing.
     for f in $files; do 
-      grep ": installing ['\`]$build_aux/$f'$" stderr
+      command_ok_ \
+        "$pfx report installation of $f" \
+        grep ": installing ['\`]$build_aux/$f'$" stderr
     done
-    # Only the expected files should be installed.
-    for f in $files; do echo $f; done | sort > files.exp
+    # Only the expected files should be installed.  But automake always
+    # require `missing' and `install-sh', so account for them.
+    all_files="install-sh missing $files"
+    for f in $all_files; do echo $f; done | sort | uniq > files.exp
     (cd $build_aux && ls) | sort > files.got
-    cat files.exp
-    cat files.got
-    $am_diff files.exp files.got
+    show_ files.exp
+    show_ files.got
+    command_ok_ \
+      "$pfx all and only expected files installed" \
+      $am_diff files.exp files.got
     # The files should be copied by `--copy' and symlinked otherwise.
     for f in $files; do
-      $test_linked $build_aux/$f
+      if test -h $build_aux/$f; then
+        is_symlink=yes
+      else
+        is_symlink=no
+      fi
+      case $action,$is_symlink in
+        link,yes)     ok_ "$pfx $f has been symlinked"     ;;
+         link,no) not_ok_ "$pfx $f has not been symlinked" ;;
+        copy,yes) not_ok_ "$pfx $f has been symlinked"     ;;
+         copy,no)     ok_ "$pfx $f has not been symlinked" ;;
+               *)  fatal_ "invalid condition in case"      ;;
+      esac
     done
     # Now that the required auxiliary files have been installed, automake
     # should not complain anymore even if the `--add-missing' option is
     # not used.
-    $AUTOMAKE
+    AUTOMAKE_run -d "$pfx automake finds all added files"
     cd ..
-  done
+  done # for action in link copy
   rm -rf testdir-*
 }
 
-: %%% install-sh and missing %%%
+# Automake should always and unconditionally require the `missing'
+# and `install-sh' scripts.
 check_ <<'END'
-#% 'install-sh' and 'missing' should always get installed.
+== Name ==
+minimal
+== Files ==
+install-sh missing
 END
 
-: %%% depcomp with C %%%
 check_ <<'END'
+== Name ==
+depcomp/C
 == Files ==
 depcomp
 == configure.in ==
@@ -190,8 +222,9 @@ AC_PROG_CC
 bin_PROGRAMS = foo
 END
 
-: %%% depcomp with C++ %%%
 check_ <<'END'
+== Name ==
+depcomp/C++
 == Files ==
 depcomp
 == configure.in ==
@@ -201,8 +234,9 @@ bin_PROGRAMS = foo
 foo_SOURCES = foo.cc
 END
 
-: %%% compile script %%%
 check_ --run-aclocal <<'END'
+== Name ==
+compile
 == Files ==
 compile
 == configure.in ==
@@ -211,21 +245,23 @@ compile
 AM_PROG_CC_C_O
 END
 
-: %%% config.guess and config.sub %%%
-
-for macro in AC_CANONICAL_BUILD AC_CANONICAL_HOST \
-             AC_CANONICAL_TARGET AC_CANONICAL_SYSTEM; do
+# For config.guess and config.sub.
+for mach in build host target system; do
+  MACH=`echo "$mach" | LC_ALL=C tr '[a-z]' '[A-Z]'`
   check_ <<END
+== Name ==
+cfg-$mach
 == Files ==
 config.sub
 config.guess
 == configure.in ==
-$macro
+AC_CANONICAL_$MACH
 END
 done
 
-: %%% ylwrap with Lex %%%
 check_ <<'END'
+== Name ==
+ylwrap/Lex
 == Files ==
 ylwrap
 == configure.in ==
@@ -237,8 +273,9 @@ bin_PROGRAMS = foo
 foo_SOURCES = foo.l
 END
 
-: %%% ylwrap with Yacc %%%
 check_ <<'END'
+== Name ==
+ylwrap/Yacc
 == Files ==
 ylwrap
 == configure.in ==
@@ -250,18 +287,20 @@ bin_PROGRAMS = foo
 foo_SOURCES = foo.y
 END
 
-: %%%  texinfo.tex %%%
 echo '@setfilename foo.info' > foo.texi
-check_ --extra-file foo.texi <<'END'
+check_ --fetch-file foo.texi <<'END'
+== Name ==
+Texinfo
 == Files ==
 texinfo.tex
 == Makefile.am ==
 info_TEXINFOS = foo.texi
 END
 
-: %%% mdate-sh and texinfo.tex %%%
 echo '@include version.texi' >> foo.texi
-check_ --extra-file foo.texi <<'END'
+check_ --fetch-file foo.texi <<'END'
+== Name ==
+Texinfo/mdate-sh
 == Files ==
 mdate-sh
 texinfo.tex
@@ -271,8 +310,9 @@ END
 
 rm -f foo.texi
 
-: %%% elisp-compile %%%
 check_ <<'END'
+== Name ==
+elisp-comp
 == Files ==
 elisp-comp
 == configure.in ==
@@ -281,8 +321,9 @@ AM_PATH_LISPDIR
 lisp_LISP = foo.el
 END
 
-: %%% py-compile %%%
 check_ <<'END'
+== Name ==
+py-compile
 == Files ==
 py-compile
 == configure.in ==
@@ -291,8 +332,10 @@ AM_PATH_PYTHON
 python_PYTHON = foo.py
 END
 
-: %%% few unrelated auxiliary scripts together %%%
+# Try few unrelated auxiliary scripts together.
 check_ <<'END'
+== Name ==
+misc
 == Files ==
 py-compile
 depcomp

@@ -202,28 +202,78 @@ is_newest ()
   test -z "$is_newest_files"
 }
 
-# AUTOMAKE_run status [options...]
-# --------------------------------
-# Run Automake with OPTIONS, and fail if automake
-# does not exit with STATUS.
-AUTOMAKE_run ()
+# show_ [--prepend STRING] [FILES...]
+# ----------------------------
+# Show the content of each of the given files that is not empty,
+# prepending every one of its lines with the given STRING (defaulting
+# to " | ").  STRING cannot contain the "#" or "\" character.
+# This function is not just eye-candy and syntactic sugar: in tests
+# that use the TAP protocols, a line beginning with a "#" character
+# would be interpreted by the TAP driver as a diagnostic line, and
+# possibly displayed on console (with the risk of cluttering precious
+# screen space with noise).
+show_ ()
 {
-  expected_exitcode=$1
-  shift
-  exitcode=0
-  $AUTOMAKE ${1+"$@"} >stdout 2>stderr || exitcode=$?
-  cat stderr >&2
-  cat stdout
-  test $exitcode = $expected_exitcode || Exit 1
+  set +x
+  p_=" | "
+  case $1 in -p|--prepend) p_=$2; shift 2;; esac
+  for f_ in ${1+"$@"}; do
+    test -s "$f_" || { echo "== $f_ is empty"; continue; }
+    echo "== $f_ =="
+    sed "s#^#$p_#" "$f_"
+  done
+  set -x
 }
 
-# AUTOMAKE_fails [options...]
-# ---------------------------
-# Run Automake with OPTIONS, and fail if automake
-# does not exit with STATUS.
+# AUTOMAKE_run [-e STATUS] [-d DESCRIPTION] [--] [AUTOMAKE-ARGS...]
+# -----------------------------------------------------------------
+# Run automake with AUTOMAKE-ARGS, and fail if it doesn't exit with
+# STATUS.  Should be polymorphic for TAP and "plain" tests.  The
+# DESCRIPTION, when provided, is used for console reporting, only if
+# the TAP protocol is in use in the current test script.
+AUTOMAKE_run ()
+{
+  am__desc=
+  am__exp_rc=0
+  while test $# -gt 0; do
+    case $1 in
+      -d) am__desc=$2; shift;;
+      -e) am__exp_rc=$2; shift;;
+      --) shift; break;;
+       # Don't fail on unknown option: assume they (and the rest of the
+       # command line) are to be passed verbatim to automake (so stop our
+       # own option parsing).
+       *) break;;
+    esac
+    shift
+  done
+  am__got_rc=0
+  $AUTOMAKE ${1+"$@"} >stdout 2>stderr || am__got_rc=$?
+  cat stderr >&2
+  cat stdout
+  if test $using_tap != yes; then
+    test $am__got_rc -eq $am__exp_rc || Exit 1
+    return
+  fi
+  if test -z "$am__desc"; then
+    if test $am__got_rc -eq $am__exp_rc; then
+      am__desc="automake exited $am__got_rc"
+    else
+      am__desc="automake exited $am__got_rc, expecting $am__exp_rc"
+    fi
+  fi
+  command_ok_ "$am__desc" test $am__got_rc -eq $am__exp_rc
+}
+
+# AUTOMAKE_fails [-d DESCRIPTION] [OPTIONS...]
+# --------------------------------------------
+# Run automake with OPTIONS, and fail if doesn't exit with status `1'.
+# Should be polymorphic for TAP and "plain" tests.  The DESCRIPTION,
+# when provided, is used for console reporting, only if the TAP
+# protocol is in use in the current test script.
 AUTOMAKE_fails ()
 {
-  AUTOMAKE_run 1 ${1+"$@"}
+  AUTOMAKE_run -e 1 ${1+"$@"}
 }
 
 # using_gmake

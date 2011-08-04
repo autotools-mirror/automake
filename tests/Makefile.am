@@ -18,7 +18,7 @@
 
 TEST_EXTENSIONS = .test .tap
 TAP_LOG_DRIVER = $(PERL) $(top_srcdir)/lib/tap-driver
-TAP_LOG_DRIVER_FLAGS = --merge
+TAP_LOG_DRIVER_FLAGS = --merge --comments
 
 MAINTAINERCLEANFILES =
 EXTRA_DIST = ChangeLog-old
@@ -178,7 +178,7 @@ ac-output-old.tap \
 acsilent.test \
 acsubst.test \
 acsubst2.test \
-add-missing.test \
+add-missing.tap \
 all.test \
 all2.test \
 alloca.test \
@@ -226,7 +226,7 @@ autohdr2.test \
 autohdr3.test \
 autohdr4.test \
 autohdrdry.test \
-automake.test \
+automake-cmdline.tap \
 auxdir.test \
 auxdir2.test \
 auxdir3.test \
