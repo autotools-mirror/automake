@@ -764,8 +764,8 @@ parallel-tests9.test \
 parallel-tests10.test \
 parallel-tests-suffix.test \
 parallel-tests-suffix-prog.test \
-parallel-tests-ext-driver.test \
-parallel-tests-ext-driver-prog.test \
+parallel-tests-log-compiler-1.test \
+parallel-tests-log-compiler-2.test \
 parallel-tests-dry-run.test \
 parallel-tests-fd-redirect.test \
 parallel-tests-extra-programs.test \
