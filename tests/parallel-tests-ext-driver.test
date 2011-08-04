@@ -15,16 +15,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Check parallel-tests features:
-# - per-extension test drivers (xxx_LOG_COMPILER and xxx_LOG_FLAGS),
-#   also with AC_SUBST'd stuff.
-# See also related test 'parallel-tests-ext-driver-prog.test'.
+# - per-extension "test runners" a.k.a. "log compilers" (xxx_LOG_COMPILER
+#   and xxx_LOG_FLAGS), also with AC_SUBST'd stuff.
+# See also related test 'parallel-tests-ext-compiler-prog.test'.
 
 parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.in << 'END'
-AC_SUBST([acsubst_driver], [t-driver])
-AC_CONFIG_LINKS([chk-driver:chk-driver])
+AC_SUBST([acsubst_compiler], [t-compiler])
+AC_CONFIG_LINKS([chk-compiler:chk-compiler])
 AC_OUTPUT
 END
 
@@ -35,10 +35,10 @@ TESTS = foo.chk bar.test baz bla.t bli.suff sub/test
 
 TEST_EXTENSIONS = .chk .test .t
 
-CHK_LOG_COMPILER = ./chk-driver
-TEST_LOG_COMPILER = $(SHELL) $(srcdir)/test-driver
-T_LOG_COMPILER = @acsubst_driver@
-LOG_COMPILER = @SHELL@ -x $(srcdir)/noext-driver
+CHK_LOG_COMPILER = ./chk-compiler
+TEST_LOG_COMPILER = $(SHELL) $(srcdir)/test-compiler
+T_LOG_COMPILER = @acsubst_compiler@
+LOG_COMPILER = @SHELL@ -x $(srcdir)/noext-compiler
 
 CHK_LOG_FLAGS = --chk
 
@@ -50,14 +50,14 @@ AM_T_LOG_FLAGS = --am-t
 AM_LOG_FLAGS = -a
 LOG_FLAGS = -b
 
-# `t-driver' is deliberately not distributed; it should be available
+# `t-compiler' is deliberately not distributed; it should be available
 # in PATH also from "make distcheck".
-EXTRA_DIST = $(TESTS) chk-driver test-driver noext-driver
+EXTRA_DIST = $(TESTS) chk-compiler test-compiler noext-compiler
 END
 
 mkdir sub
 
-cat > chk-driver <<'END'
+cat > chk-compiler <<'END'
 #! /bin/sh
 test x"$1" = x"--chk" || {
   echo "$0: invalid command line: $*" >&2
@@ -67,12 +67,12 @@ shift
 exec "$@"
 exit 127
 END
-sed 's/--chk/--am-test/' chk-driver > test-driver
+sed 's/--chk/--am-test/' chk-compiler > test-compiler
 
 mkdir bin
 PATH=`pwd`/bin$PATH_SEPARATOR$PATH; export PATH
 
-cat > bin/t-driver <<'END'
+cat > bin/t-compiler <<'END'
 #! /bin/sh
 if test x"$1,$2" != x"--am-t,--t"; then
   echo "$0: invalid command line: $*" >&2
@@ -82,9 +82,9 @@ shift; shift
 exec "$@"
 exit 127
 END
-sed 's/--am-t,--t/-a,-b/' bin/t-driver > noext-driver
+sed 's/--am-t,--t/-a,-b/' bin/t-compiler > noext-compiler
 
-chmod a+x chk-driver chk-driver test-driver bin/t-driver noext-driver
+chmod a+x chk-compiler chk-compiler test-compiler bin/t-compiler noext-compiler
 
 cat >foo.chk << 'END'
 #! /bin/sh
@@ -116,7 +116,7 @@ T_LOG_FLAGS=--bad $MAKE -e check && Exit 1
 cat test-suite.log
 cat bla.log
 # With the above flag overridden, bla.t should fail ...
-$EGREP '(^ *|/)t-driver:.* invalid .*--bad' bla.log
+$EGREP '(^ *|/)t-compiler:.* invalid .*--bad' bla.log
 # ... but no other test should.
 grep -v '^FAIL: bla\.t ' bla.log | grep 'FAIL:' && Exit 1
 
