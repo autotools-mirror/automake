@@ -75,8 +75,9 @@ include inst-vars.am
 ## test is XFAIL or not.  You can disable this feature by setting the
 ## variable DISABLE_HARD_ERRORS to a nonempty value.
 
-# Restructured Text title.
+# Restructured Text title and section.
 am__rst_title = sed 's/.*/   &   /;h;s/./=/g;p;x;p;g;p;s/.*//'
+am__rst_section = sed 'p;s/./=/g;p;g'
 
 # Solaris 10 'make', and several other traditional 'make' implementations,
 # pass "-e" to $(SHELL), and POSIX 2008 even requires this.  Work around it
@@ -240,18 +241,26 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	  echo;								\
 	  for b in $$bases; do						\
 ## FIXME: one fork per test -- this is horrendously inefficient!
-	    if grep "^$$ws*:copy-in-global-log:$$ws*no$$ws*$$" $$b.trs 	\
-	         >/dev/null; then :; 					\
-## If we cannot read the .log file of a test ...
-	    elif test ! -r $$b.log; then				\
-## ... print an error message to the console ...
-	      echo "ERROR: cannot read $$b.log" >&2;			\
-## ... and a warning in the `test-suite.log' file.
-	      echo && echo "WARNING: could not read $$b.log!";		\
-	    else							\
-	      echo && cat $$b.log;					\
-	    fi;								\
-	  done;								\
+	    if grep "^$$ws*:copy-in-global-log:$$ws*no$$ws*$$" $$b.trs \
+	         >/dev/null; then continue; \
+	    fi; \
+## Get the declared "global result" of the test.
+## FIXME: yet another one fork per test here!
+	    glob_res=`sed -n -e "s/$$ws*$$//" \
+	                     -e "s/^$$ws*:global-test-result:$$ws*//p" \
+		        $$b.trs`; \
+## If no global result is explicitly declared, we'll merely mark the
+## test as "RUN" in the global test log.
+	    test -n "$$glob_res" || glob_res=RUN; \
+## Write the name and result of the test as an RST section title.
+	    echo "$$glob_res: $$b" | $(am__rst_section); \
+## If we should have remade any unreadable `.log', above.
+	    if test ! -r $$b.log; then \
+	      echo "fatal: making $@: $$b.log is unreadable" >&2; \
+	      exit 1; \
+	    fi; \
+	    cat $$b.log; echo; \
+	  done;	\
 	} >$(TEST_SUITE_LOG).tmp;					\
 	mv $(TEST_SUITE_LOG).tmp $(TEST_SUITE_LOG);			\
 ## Emit the test summary on the console.

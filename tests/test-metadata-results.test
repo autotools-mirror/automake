@@ -84,36 +84,43 @@ $AUTOMAKE
 
 ./configure
 
-# Basic checks.  Also that that "old-style" directives with format
-# "RESULT: test-name" are be ignored now.
+# Basic checks.  Also that that `:global-test-result:' fields and
+# "old-style" directives with format "RESULT: test-name" are now ignored.
+
+: > foo.test
+echo blah blah blah > bar.test
+mk_check
+count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
+
+cat > foo.test <<END
+:test-global-result: PASS
+:test-result: FAIL
+END
+cat > bar.test <<END
+:test-result: SKIP
+:test-global-result: ERROR
+END
+mk_check && Exit 1
+count_test_results total=2 pass=0 fail=1 xpass=0 xfail=0 skip=1 error=0
 
 cat > foo.test <<END
 FAIL: foo.test
 :test-result: PASS
+:test-global-result: XPASS
 END
 echo ERROR: bar.test > bar.test
 mk_check
 count_test_results total=1 pass=1 fail=0 xpass=0 xfail=0 skip=0 error=0
 
 cat > foo.test <<END
-PASS: foo.test
-:test-result: FAIL
-END
-echo SKIP: bar.test > bar.test
-: > bar.test
-mk_check && Exit 1
-count_test_results total=1 pass=0 fail=1 xpass=0 xfail=0 skip=0 error=0
-
-cat > foo.test <<END
-PASS: foo.test
+:test-global-result: SKIP
 :test-result: FAIL
 END
 cat > bar.test <<END
-ERROR: foo.test
-:test-result: SKIP
+:test-global-result: PASS
 END
 mk_check && Exit 1
-count_test_results total=2 pass=0 fail=1 xpass=0 xfail=0 skip=1 error=0
+count_test_results total=1 pass=0 fail=1 xpass=0 xfail=0 skip=0 error=0
 
 cat > foo.test <<END
 :test-result: XFAIL

@@ -169,6 +169,8 @@ TEST_RESULTS :
 sub write_test_results ()
 {
   open RES, ">", $trs_file or die "opening $trs_file: $!\n";
+  print RES ":global-test-result: " . 
+            get_global_test_result . "\n";
   print RES ":recheck: " .
             (must_recheck ? "yes" : "no") . "\n";
   print RES ":copy-in-global-log: " .
@@ -185,10 +187,10 @@ sub start (@)
   # Redirect stderr and stdout to a temporary log file.  Save the
   # original stdout stream, since we need it to print testsuite
   # progress output.
+  open LOG, ">", $log_file or die "opening $log_file: $!\n";
   open OLDOUT, ">&STDOUT" or die "duplicating stdout: $!\n";
-  open TMP, ">$log_file-t" or die "opening $log_file-t: $!\n";
-  open STDOUT, ">&TMP" or die "redirecting stdout: $!\n";
-  open STDERR, ">&TMP" or die "redirecting stderr: $!\n";
+  open STDOUT, ">&LOG" or die "redirecting stdout: $!\n";
+  open STDERR, ">&LOG" or die "redirecting stderr: $!\n";
   $parser = TAP::Parser->new ({ exec => \@_, merge => $cfg{merge} });
   $parser->ignore_exit(1) if $cfg{"ignore-exit"};
 }
@@ -196,20 +198,7 @@ sub start (@)
 sub finish ()
 {
   write_test_results;
-
-  open LOG, ">", $log_file or die "opening $log_file: $!\n";
-  my $global_result = get_global_test_result;
-  my $global_result_line = "$global_result: $test_script_name";
-  print LOG "$global_result_line\n";
-  print LOG "=" x length ($global_result_line) . "\n";
-  print LOG "\n";
-
-  close TMP or die "closing $log_file-t: $!\n";
-  # FIXME: remove this hack!
-  my $test_output = `cat $log_file-t && rm -f $log_file-t`;
-  print LOG $test_output;
   close LOG or die "closing $log_file: $!\n";
-
   exit 0;
 }
 

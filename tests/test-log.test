@@ -50,7 +50,7 @@ cat > skip.test <<END
 #! /bin/sh
 echo   "$pmarker skip $pmarker"
 echo "# $cmarker skip $cmarker"
-exit 1
+exit 77
 END
 
 cat > xfail.test <<END
@@ -111,14 +111,25 @@ done
 test `$FGREP -c "$pmarker" my.log` -eq 5
 test `$FGREP -c "$cmarker" my.log` -eq 5
 
+have_rst_section ()
+{
+  eqeq=`echo "$1" | sed 's/./=/g'`
+  # Assume $1 contains no RE metacharacters.
+  sed -n "/^$1$/,/^$eqeq$/p" $2 > got
+  (echo "$1" && echo "$eqeq") > exp
+  cat exp
+  cat got
+  diff exp got
+}
+
 # Passed test scripts shouldn't be mentioned in the global log.
-$EGREP '(^pass|[^x]pass)\.test' my.log && Exit 1
+$EGREP ':.*[^x]pass' my.log && Exit 1
 # But failing (expectedly or not) and skipped ones should.
-$FGREP 'xfail.test' my.log
-$FGREP 'skip.test' my.log
-$FGREP 'fail.test' my.log
-$FGREP 'xpass.test' my.log
-$FGREP 'error.test' my.log
+have_rst_section 'SKIP: skip'   my.log
+have_rst_section 'FAIL: fail'   my.log
+have_rst_section 'XFAIL: xfail' my.log
+have_rst_section 'XPASS: xpass' my.log
+have_rst_section 'ERROR: error' my.log
 
 touch error2.log test-suite.log global.log
 TEST_SUITE_LOG=my.log $MAKE -e mostlyclean

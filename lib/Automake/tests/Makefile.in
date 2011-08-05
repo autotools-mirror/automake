@@ -113,8 +113,9 @@ am__nobase_list = $(am__nobase_strip_setup); \
 am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
-# Restructured Text title.
+# Restructured Text title and section.
 am__rst_title = sed 's/.*/   &   /;h;s/./=/g;p;x;p;g;p;s/.*//'
+am__rst_section = sed 'p;s/./=/g;p;g'
 # Solaris 10 'make', and several other traditional 'make' implementations,
 # pass "-e" to $(SHELL), and POSIX 2008 even requires this.  Work around it
 # by disabling -e (using the XSI extension "set +e") if it's set.
@@ -417,15 +418,20 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	  echo ".. contents:: :depth: 2";				\
 	  echo;								\
 	  for b in $$bases; do						\
-	    if grep "^$$ws*:copy-in-global-log:$$ws*no$$ws*$$" $$b.trs 	\
-	         >/dev/null; then :; 					\
-	    elif test ! -r $$b.log; then				\
-	      echo "ERROR: cannot read $$b.log" >&2;			\
-	      echo && echo "WARNING: could not read $$b.log!";		\
-	    else							\
-	      echo && cat $$b.log;					\
-	    fi;								\
-	  done;								\
+	    if grep "^$$ws*:copy-in-global-log:$$ws*no$$ws*$$" $$b.trs \
+	         >/dev/null; then continue; \
+	    fi; \
+	    glob_res=`sed -n -e "s/$$ws*$$//" \
+	                     -e "s/^$$ws*:global-test-result:$$ws*//p" \
+		        $$b.trs`; \
+	    test -n "$$glob_res" || glob_res=RUN; \
+	    echo "$$glob_res: $$b" | $(am__rst_section); \
+	    if test ! -r $$b.log; then \
+	      echo "fatal: making $@: $$b.log is unreadable" >&2; \
+	      exit 1; \
+	    fi; \
+	    cat $$b.log; echo; \
+	  done;	\
 	} >$(TEST_SUITE_LOG).tmp;					\
 	mv $(TEST_SUITE_LOG).tmp $(TEST_SUITE_LOG);			\
 	if $$success; then						\

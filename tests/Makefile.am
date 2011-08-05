@@ -766,6 +766,7 @@ test-driver-trs-suffix-registered.test \
 test-driver-fail.test \
 test-log.test \
 test-metadata-global-log.test \
+test-metadata-global-result.test \
 test-metadata-recheck.test \
 test-metadata-results.test \
 test-missing.test \
