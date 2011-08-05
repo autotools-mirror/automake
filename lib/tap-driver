@@ -17,8 +17,9 @@ my $USAGE = <<'END';
 Usage:
   tap-driver --test-name=NAME --log-file=PATH --trs-file=PATH
              [--expect-failure={yes|no}] [--color-tests={yes|no}]
-             [--enable-hard-errors={yes|no}] [--merge|--no-merge]
-             [--ignore-exit] [--comments|--no-comments] [--] TEST-COMMAND
+             [--enable-hard-errors={yes|no}] [--ignore-exit]
+             [--diagnostic-string=STRING] [--merge|--no-merge]
+             [--comments|--no-comments] [--] TEST-COMMAND
 The `--test-name' and `--log-file' options are mandatory.
 END
 
@@ -63,6 +64,7 @@ my %cfg = (
 my $test_script_name = undef;
 my $log_file = undef;
 my $trs_file = undef;
+my $diag_string = "#";
 
 Getopt::Long::GetOptions (
     'help' => sub { print $HELP; exit 0; },
@@ -73,6 +75,7 @@ Getopt::Long::GetOptions (
     'color-tests=s'  => \&bool_opt,
     'expect-failure=s'  => \&bool_opt,
     'enable-hard-errors=s' => \&bool_opt,
+    'diagnostic-string=s' => \$diag_string,
     'comments' => sub { $cfg{"comments"} = 1; },
     'no-comments' => sub { $cfg{"comments"} = 0; },
     'merge' => sub { $cfg{"merge"} = 1; },
@@ -348,11 +351,15 @@ sub handle_tap_bailout ($)
   finish;
 }
 
-sub handle_tap_comment ($)
+sub extract_tap_comment ($)
 {
-  return unless $cfg{comments};
-  my $comment = $_[0]->comment;
-  report "#", "$comment" if length $comment;
+  local $_ = shift;
+  if (/^\Q$diag_string\E(.*)$/o)
+    {
+      (my $comment = $1) =~ s/(?:^\s*|\s*$)//;
+      return $comment;
+    }
+  return "";
 }
 
 sub main (@)
@@ -372,14 +379,15 @@ sub main (@)
         {
           handle_tap_test ($cur);
         }
-      elsif ($cur->is_comment)
-        {
-          handle_tap_comment ($cur);
-        }
       elsif ($cur->is_bailout)
         {
           handle_tap_bailout ($cur);
         }
+      elsif ($cfg{comments})
+        {
+          my $comment = extract_tap_comment ($cur->raw);
+          report "#", "$comment" if length $comment;
+       }
     }
   if (!$plan_seen)
     {
