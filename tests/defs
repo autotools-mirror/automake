@@ -183,6 +183,10 @@ else
 fi
 unset funcs_file_
 
+# Avoid spurious TAP diagnostic.  Keep this in sync with the definition
+# of $(TAP_LOG_DRIVER_FLAGS) in `tests/Makefile.am'.
+diag_string_="#%#"
+
 # cross_compiling
 # ---------------
 # Tell whether we are cross-compiling.  This is especially useful to skip
@@ -200,29 +204,6 @@ is_newest ()
 {
   is_newest_files=`find "$@" -prune -newer "$1"`
   test -z "$is_newest_files"
-}
-
-# show_ [--prepend STRING] [FILES...]
-# ----------------------------
-# Show the content of each of the given files that is not empty,
-# prepending every one of its lines with the given STRING (defaulting
-# to " | ").  STRING cannot contain the "#" or "\" character.
-# This function is not just eye-candy and syntactic sugar: in tests
-# that use the TAP protocols, a line beginning with a "#" character
-# would be interpreted by the TAP driver as a diagnostic line, and
-# possibly displayed on console (with the risk of cluttering precious
-# screen space with noise).
-show_ ()
-{
-  set +x
-  p_=" | "
-  case $1 in -p|--prepend) p_=$2; shift 2;; esac
-  for f_ in ${1+"$@"}; do
-    test -s "$f_" || { echo "== $f_ is empty"; continue; }
-    echo "== $f_ =="
-    sed "s#^#$p_#" "$f_"
-  done
-  set -x
 }
 
 # AUTOMAKE_run [-e STATUS] [-d DESCRIPTION] [--] [AUTOMAKE-ARGS...]

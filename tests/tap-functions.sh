@@ -63,11 +63,17 @@ have_tap_plan_=no
 
 # diag_ [EXPLANATION]
 # ------------------
-# Report the given text as TAP diagnostic.
+# Report the given text as TAP diagnostic.  Assumes the string denoting
+# TAP diagnostic lines is stored in the `$diag_string_' variable; this is
+# done to allow better interplay with TAP drivers that allow such a string
+# to be configured.
 diag_ ()
 {
-  test $# -eq 0 || echo "# $*"
+  test $# -eq 0 || echo "$diag_string_ $*"
 }
+
+# Used by the `diag_' function above.  User-overridable.
+diag_string_="#"
 
 # warn_ [EXPLANATION]
 # ------------------
