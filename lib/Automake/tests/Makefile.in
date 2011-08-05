@@ -171,7 +171,6 @@ am__test_logs1 = $(TESTS:=.log)
 TEST_LOGS = $(am__test_logs1:.pl.log=.log)
 PL_LOG_DRIVER = $(SHELL) $(top_srcdir)/lib/test-driver
 PL_LOG_COMPILE = $(PL_LOG_COMPILER) $(AM_PL_LOG_FLAGS) $(PL_LOG_FLAGS)
-TEST_LOGS_TMP = $(TEST_LOGS:.log=.log-t)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -344,12 +343,11 @@ cscope cscopelist:
 
 $(TEST_SUITE_LOG): $(TEST_LOGS)
 	@$(am__sh_e_setup); $(am__tty_colors); \
+	f_ok () { test -f "$$1" && test -r "$$1"; }; \
 	bases='$(am__TEST_BASES)'; \
 	ws='[ 	]'; \
 	redo_bases=`for b in $$bases; do \
-	              test -f $$b.trs && test -r $$b.trs \
-	                && test -f $$b.log && test -r $$b.log \
-		        || echo $$b; \
+	              f_ok $$b.trs && f_ok $$b.log || echo $$b; \
 	            done`; \
 	if test -n "$$redo_bases"; then \
 	  redo_logs=`for i in $$redo_bases; do echo $$i.log; done`; \
@@ -360,10 +358,10 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	st=0; \
 	for b in $$redo_bases; do \
 	  for e in trs log; do \
-	    if test ! -f $$b.$$e || test ! -r $$b.$$e; then \
+	    f_ok $$b.$$e || { \
 	      echo "fatal: making $@: failed to create $$b.$$e" >&2; \
 	      st=1; \
-	    fi; \
+	    }; \
 	  done; \
 	done; \
 	test $$st -eq 0 || exit 1; \
@@ -494,7 +492,7 @@ recheck recheck-html:
 	target=`echo $@ | sed 's,^re,,'`;				\
 	bases='$(am__TEST_BASES)';					\
 	list=`for b in $$bases; do 					\
-	        test ! -f $$b.trs && test ! -f $$b.log && continue;	\
+	        test -f $$b.trs || test -f $$b.log || continue;		\
 	        grep "^$$ws*:recheck:$$ws*no$$ws*$$" $$b.trs 		\
 		  >/dev/null 2>&1 || echo $$b.log; 			\
 	      done | tr '\012\015' '  '`;				\
@@ -562,7 +560,6 @@ install-strip:
 	fi
 mostlyclean-generic:
 	-test -z "$(TEST_LOGS)" || rm -f $(TEST_LOGS)
-	-test -z "$(TEST_LOGS_TMP)" || rm -f $(TEST_LOGS_TMP)
 	-test -z "$(TEST_SUITE_HTML)" || rm -f $(TEST_SUITE_HTML)
 	-test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
 	-test -z "$(am__TEST_BASES:=.trs)" || rm -f $(am__TEST_BASES:=.trs)

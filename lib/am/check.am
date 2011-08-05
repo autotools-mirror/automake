@@ -141,6 +141,9 @@ am__stealth_MAKE = $(MAKE)
 
 $(TEST_SUITE_LOG): $(TEST_LOGS)
 	@$(am__sh_e_setup); $(am__tty_colors); \
+## Helper shell function, tells whether a path refers to an existing,
+## regular, readable file.
+	f_ok () { test -f "$$1" && test -r "$$1"; }; \
 	bases='$(am__TEST_BASES)'; \
 	ws='[ 	]'; \
 ## We need to ensures that all the required `.trs' and `.log' files will
@@ -149,9 +152,7 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 ## the `.log' files are readable, and worse, they don't ensure that the
 ## `.trs' files even exist.
 	redo_bases=`for b in $$bases; do \
-	              test -f $$b.trs && test -r $$b.trs \
-	                && test -f $$b.log && test -r $$b.log \
-		        || echo $$b; \
+	              f_ok $$b.trs && f_ok $$b.log || echo $$b; \
 	            done`; \
 	if test -n "$$redo_bases"; then \
 ## Uh-oh, either some `.log' files were unreadable, or some `.trs' files
@@ -168,10 +169,10 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	st=0; \
 	for b in $$redo_bases; do \
 	  for e in trs log; do \
-	    if test ! -f $$b.$$e || test ! -r $$b.$$e; then \
+	    f_ok $$b.$$e || { \
 	      echo "fatal: making $@: failed to create $$b.$$e" >&2; \
 	      st=1; \
-	    fi; \
+	    }; \
 	  done; \
 	done; \
 	test $$st -eq 0 || exit 1; \
@@ -362,7 +363,7 @@ recheck recheck-html:
 	list=`for b in $$bases; do 					\
 ## Skip tests that haven't been run, but recover gracefully from deleted
 ## `.trs' files.
-	        test ! -f $$b.trs && test ! -f $$b.log && continue;	\
+	        test -f $$b.trs || test -f $$b.log || continue;		\
 ## FIXME: one fork per test -- this is horrendously inefficient!
 	        grep "^$$ws*:recheck:$$ws*no$$ws*$$" $$b.trs 		\
 		  >/dev/null 2>&1 || echo $$b.log; 			\
