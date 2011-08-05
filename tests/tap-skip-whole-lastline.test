@@ -1,0 +1,59 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# TAP support:
+#  - the special plan format to skip all the tests in a script can also
+#    be used on the last line, even if preceded by non-TAP output, TAP
+#    diagnostic, and even non-failing TAP test results.
+
+parallel_tests=yes
+. ./defs || Exit 1
+
+. "$testsrcdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
+
+echo AM_TEST_LOG_DRIVER_FLAGS = --comments >> Makefile
+
+cat > foo.test <<END
+some non-TAP text, will be copied in the global log
+1..0 # SKIP from the last line
+END
+
+cat > bar.test <<END
+# some TAP diagnostic, will go to console
+1..0
+END
+
+cat > baz.test <<END
+ok 1 - seen also if the whole test is skipped!
+1..0 # SKIP
+END
+
+st=0
+TESTS='foo.test bar.test baz.test' $MAKE -e check >stdout || st=$?
+cat stdout
+cat test-suite.log
+test $st -eq 0
+
+grep '^SKIP: foo\.test .* from the last line$' stdout
+grep '^SKIP: bar\.test$' stdout
+grep '^SKIP: baz\.test$' stdout
+grep '^# bar\.test: some TAP diagnostic, will go to console$' stdout
+grep '^some non-TAP text, will be copied in the global log$' test-suite.log
+grep '^PASS: baz\.test 1 - seen also if the whole test is skipped!$' stdout
+test `grep -c ': .*\.test' stdout` -eq 4
+count_test_results total=4 pass=1 fail=0 xpass=0 xfail=0 skip=3 error=0
+
+:

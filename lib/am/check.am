@@ -49,34 +49,16 @@ include inst-vars.am
 
 ## New parallel test driver.
 ##
-## This code is adapted from check.mk which was originally
-## written at EPITA/LRDE, further developed at Gostai, then made
-## its way from GNU coreutils to end up, largely rewritten, in
-## Automake.
-##
-## It provides special support for "unit tests", that is to say,
-## tests that (once run) no longer need to be re-compiled and
-## re-run at each "make check", unless their sources changed.  To
-## enable unit-test supports, set RECHECK_LOGS to empty.  In such a
-## setting, that heavily relies on correct dependencies, its users may
-## prefer to define EXTRA_PROGRAMS instead of check_PROGRAMS, because
-## it allows intertwined compilation and execution of the tests.
-## Sometimes this helps catching errors earlier (you don't have to
-## wait for all the tests to be compiled).
-##
-## Define TEST_SUITE_LOG to be the name of the global log to create.
-## Define TEST_LOGS to the set of logs to include in it.  It defaults
-## to $(TESTS), with `.test' and `@EXEEXT@' removed, and `'.log'
-## appended.
-##
-## In addition to the magic "exit 77 means SKIP" feature (which was
-## imported from automake), there is a magic "exit 99 means ERROR" feature
-## which is useful if you need to issue a hard error no matter whether the
-## test is XFAIL or not.  You can disable this feature by setting the
-## variable DISABLE_HARD_ERRORS to a nonempty value.
+## The first version of the code here was adapted from check.mk, which was
+## originally written at EPITA/LRDE, further developed at Gostai, then made
+## its way from GNU coreutils to end up, largely rewritten, in Automake.
+## The current version is an heavy rewrite of that, to allow for support
+## of more test metadata, and the use of custom test derivers and protocols
+## (among them, TAP).
 
-# Restructured Text title.
+# Restructured Text title and section.
 am__rst_title = sed 's/.*/   &   /;h;s/./=/g;p;x;p;g;p;s/.*//'
+am__rst_section = sed 'p;s/./=/g;p;g'
 
 # Solaris 10 'make', and several other traditional 'make' implementations,
 # pass "-e" to $(SHELL), and POSIX 2008 even requires this.  Work around it
@@ -140,6 +122,9 @@ am__stealth_MAKE = $(MAKE)
 
 $(TEST_SUITE_LOG): $(TEST_LOGS)
 	@$(am__sh_e_setup); $(am__tty_colors); \
+## Helper shell function, tells whether a path refers to an existing,
+## regular, readable file.
+	f_ok () { test -f "$$1" && test -r "$$1"; }; \
 	bases='$(am__TEST_BASES)'; \
 	ws='[ 	]'; \
 ## We need to ensures that all the required `.trs' and `.log' files will
@@ -148,9 +133,7 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 ## the `.log' files are readable, and worse, they don't ensure that the
 ## `.trs' files even exist.
 	redo_bases=`for b in $$bases; do \
-	              test -f $$b.trs && test -r $$b.trs \
-	                && test -f $$b.log && test -r $$b.log \
-		        || echo $$b; \
+	              f_ok $$b.trs && f_ok $$b.log || echo $$b; \
 	            done`; \
 	if test -n "$$redo_bases"; then \
 ## Uh-oh, either some `.log' files were unreadable, or some `.trs' files
@@ -167,10 +150,10 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	st=0; \
 	for b in $$redo_bases; do \
 	  for e in trs log; do \
-	    if test ! -f $$b.$$e || test ! -r $$b.$$e; then \
+	    f_ok $$b.$$e || { \
 	      echo "fatal: making $@: failed to create $$b.$$e" >&2; \
 	      st=1; \
-	    fi; \
+	    }; \
 	  done; \
 	done; \
 	test $$st -eq 0 || exit 1; \
@@ -240,18 +223,26 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	  echo;								\
 	  for b in $$bases; do						\
 ## FIXME: one fork per test -- this is horrendously inefficient!
-	    if grep "^$$ws*:copy-in-global-log:$$ws*no$$ws*$$" $$b.trs 	\
-	         >/dev/null; then :; 					\
-## If we cannot read the .log file of a test ...
-	    elif test ! -r $$b.log; then				\
-## ... print an error message to the console ...
-	      echo "ERROR: cannot read $$b.log" >&2;			\
-## ... and a warning in the `test-suite.log' file.
-	      echo && echo "WARNING: could not read $$b.log!";		\
-	    else							\
-	      echo && cat $$b.log;					\
-	    fi;								\
-	  done;								\
+	    if grep "^$$ws*:copy-in-global-log:$$ws*no$$ws*$$" $$b.trs \
+	         >/dev/null; then continue; \
+	    fi; \
+## Get the declared "global result" of the test.
+## FIXME: yet another one fork per test here!
+	    glob_res=`sed -n -e "s/$$ws*$$//" \
+	                     -e "s/^$$ws*:global-test-result:$$ws*//p" \
+		        $$b.trs`; \
+## If no global result is explicitly declared, we'll merely mark the
+## test as "RUN" in the global test log.
+	    test -n "$$glob_res" || glob_res=RUN; \
+## Write the name and result of the test as an RST section title.
+	    echo "$$glob_res: $$b" | $(am__rst_section); \
+## If we should have remade any unreadable `.log', above.
+	    if test ! -r $$b.log; then \
+	      echo "fatal: making $@: $$b.log is unreadable" >&2; \
+	      exit 1; \
+	    fi; \
+	    cat $$b.log; echo; \
+	  done;	\
 	} >$(TEST_SUITE_LOG).tmp;					\
 	mv $(TEST_SUITE_LOG).tmp $(TEST_SUITE_LOG);			\
 ## Emit the test summary on the console.
@@ -353,7 +344,7 @@ recheck recheck-html:
 	list=`for b in $$bases; do 					\
 ## Skip tests that haven't been run, but recover gracefully from deleted
 ## `.trs' files.
-	        test ! -f $$b.trs && test ! -f $$b.log && continue;	\
+	        test -f $$b.trs || test -f $$b.log || continue;		\
 ## FIXME: one fork per test -- this is horrendously inefficient!
 	        grep "^$$ws*:recheck:$$ws*no$$ws*$$" $$b.trs 		\
 		  >/dev/null 2>&1 || echo $$b.log; 			\

@@ -79,26 +79,42 @@ END
 # TODO: add scripts with TAP errors (multiple plans, out-of-order
 # tests, etc).
 
-TESTS="`echo *.test`" $MAKE -e check >stdout && { cat stdout; Exit 1; }
+tests=`echo *.test` # Also required later.
+
+TESTS="$tests" $MAKE -e check >stdout && { cat stdout; Exit 1; }
 cat stdout
 
+# Dirty tricks required here.
 for tst in ok skip skipall fail fail2 xpass xpass2 error error2 \
            hodgepodge hodgepodge-all; do
-  sed -e 2q $tst.log > $tst.res
+  echo :copy-in-global-log: yes >> $tst.trs
 done
 
-cat *.res # For debugging.
+rm -f test-suite.log
+TESTS="$tests" $MAKE -e test-suite.log && Exit 1
+cat test-suite.log
 
-grep '^PASS:' ok.res
-grep '^SKIP:' skip.res
-grep '^SKIP:' skipall.res
-grep '^FAIL:' fail.res
-grep '^FAIL:' fail2.res
-grep '^FAIL:' xpass.res
-grep '^FAIL:' xpass2.res
-grep '^ERROR:' error.res
-grep '^ERROR:' error2.res
-grep '^ERROR:' hodgepodge.res
-grep '^ERROR:' hodgepodge-all.res
+have_rst_section ()
+{
+  eqeq=`echo "$1" | sed 's/./=/g'`
+  # Assume $1 contains no RE metacharacters.
+  sed -n "/^$1$/,/^$eqeq$/p" test-suite.log > got
+  (echo "$1" && echo "$eqeq") > exp
+  cat exp
+  cat got
+  diff exp got
+}
+
+have_rst_section 'PASS: ok'
+have_rst_section 'SKIP: skip'
+have_rst_section 'SKIP: skipall'
+have_rst_section 'FAIL: fail'
+have_rst_section 'FAIL: fail2'
+have_rst_section 'FAIL: xpass'
+have_rst_section 'FAIL: xpass2'
+have_rst_section 'ERROR: error'
+have_rst_section 'ERROR: error2'
+have_rst_section 'ERROR: hodgepodge'
+have_rst_section 'ERROR: hodgepodge-all'
 
 :

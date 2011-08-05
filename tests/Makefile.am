@@ -807,6 +807,7 @@ test-driver-trs-suffix-registered.test \
 test-driver-fail.test \
 test-log.test \
 test-metadata-global-log.test \
+test-metadata-global-result.test \
 test-metadata-recheck.test \
 test-metadata-results.test \
 test-missing.test \
@@ -1220,6 +1221,7 @@ tap-realtime.test \
 tap-recheck-logs.test \
 tap-skip-whole-whitespace.test \
 tap-skip-whole.test \
+tap-skip-whole-lastline.test \
 tap-todo-skip-together.test \
 tap-todo-skip-whitespace.test \
 tap-todo-skip.test \
@@ -1240,6 +1242,7 @@ tap_other_tests = \
 tap-common-setup.test \
 tap-bad-prog.tap \
 tap-basic.test \
+tap-diagnostic-custom.test \
 tap-doc.test \
 tap-doc2.test \
 tap-more.test \

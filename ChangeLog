@@ -1,3 +1,148 @@
+2011-08-05  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tap: fix typo in TAP driver version message
+	* lib/tap-driver (anonymous subroutine printing the script version
+	message): Add missing trailing newline to the version message.
+
+2011-08-05  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tap docs: we don't support pragma or version directives (yet)
+	* doc/automake.texi (Incompatibilities with other TAP parsers
+	and drivers): Document that limitation.  Normalize an unrelated
+	"TODO" item.
+
+2011-08-05  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tap: new option to change the string designating TAP diagnostic
+	Here we introduce a new option `--diagnostic-string' in our TAP
+	test driver, that allows the user to specify which string should
+	denote the beginning of a TAP diagnostic line.  This change is
+	not gratuitous, nor result if over-engineering: it is motivated
+	by real issues that have emerged during the use of TAP in the
+	Automake's own testsuite (see the commit `v1.11-1082-g9b967c2'
+	"testsuite: yet more use of TAP, and related extensions").
+	* doc/automake.texi (Use TAP with Automake test harness): Document
+	the new option.
+	(Incompatibilities with other TAP parsers and drivers): Report it
+	as a potential source of incompatibility.
+	* lib/tap-driver ($diag_string): New global variable, defaulting
+	to "#", and whose value can be changed ...
+	(Getopt::Long::GetOptions): ... by the newly recognized option
+	`--diagnostic-string'.
+	(handle_tap_comment): Subroutine removed, some of its simple logic
+	inlined ...
+	(main): ... in here, where now ...
+	(extract_tap_comment): ... this new subroutine is used.
+	($USAGE): Adjust.
+	* tests/tap-diagnostic.test: Make one check slightly stricter.
+	* tests/tap-diag-custom.test: New test.
+	* tests/Makefile.am (tap_other_tests): Add it.
+
+2011-08-05  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	check: add small "synchronization" comment to `test-driver'
+	* lib/test-driver: Add comment to the code initializing ANSI color
+	escapes, telling to keep it in sync with the similar initialization
+	in `lib/am/check.am'.
+
+2011-08-05  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	maintcheck: fix spurious failure w.r.t. use of bare "exit"
+	* tests/check12.test: Cosmetic changes to avoid triggering a
+	spurious failure of the `sc_tests_Exit_not_exit' maintainer
+	check.
+
+2011-08-05  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	check: update comments to reflect recent heavy changes
+	* lib/am/check.am [%?PARALLEL_TESTS%]: Update the comments to
+	reflect the recent changes.  Remove quite many comments that
+	were merely duplicating excerpts from the Automake manual.
+
+2011-08-05  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	check: small cleanups and refactorings in test harness and drivers
+	* lib/tap-driver (yn): New subroutine, converts a boolean value to
+	a "yes" or "no" string.
+	(write_test_results): Use it, and related reformatting.
+	* lib/test-driver (trap): Also remove the `.trs' file on signals,
+	for extra safety.
+	(fatal): Remove this function, it's never used.
+	($logfile, $trsfile): Renamed ...
+	($log_file, $trs_file): ... to these, for clarity, and in order to
+	be more consistent with the `tap-driver' script.
+	Improve a couple of comments.
+	* automake.in (handle_tests): Don't define anymore the now-obsolete
+	make macro `$(TEST_LOGS_TMP)', nor add it to the list of files to
+	be removed upon "make mostlyclean".
+	* lib/am/check.am ($(TEST_SUITE_LOG)): New shell function `f_ok',
+	tells whether a path refers to an existing, regular, readable file.
+	Use it throughout.
+	(recheck): Be safer w.r.t. make implementation that run recipes
+	with `errexit' shell flag active.
+
+2011-08-05  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	testsuite: use AM_TESTS_FD_REDIRECT where appropriate
+	* parallel-tests-interrupt.test: Use AM_TESTS_FD_REDIRECT, not
+	AM_TESTS_ENVIRONMENT, to define file descriptors' redirection
+	for "make check".  Fix botched comment.
+
+2011-08-05  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	docs: some fixlets in documentation on testsuites support
+	* doc/automake.texi (Script-based Testsuites): Rename node ...
+	(Scripts-based Testsuites): ... to this.  Break overly long lines
+	in an example (were causing problems with PDF output).
+	(Parallel Test Harness): Don't intend paragraphs that come after
+	examples or bulleted list.
+	(Overview of Custom Test Drivers Support): Fix typo s/the the/the/.
+	(Declaring Custom Test Drivers): When giving an aside, prefer comma
+	to parentheses, as it disrupts the reading flow less.
+	(API for Custom Test Drivers): Remove a sentence that was basically
+	duplicated from the previous subsection.
+	(Command-line arguments for test drivers): Don't intend paragraph
+	coming after an itemized list.  Clarify wording and fix grammaros.
+	Add a couple of cross-references to earlier explanations of `.log'
+	and `.trs' files.
+	(Links and external resources): Node renamed ...
+	(Links and external resources on TAP): ... to this, for clarity.
+	Slightly extend and clarify introductory sentence.
+
+2011-08-04  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	test harness: be aware of more metadata, simplify test drivers
+	* lib/am/check.am ($(TEST_SUITE_LOG)):  When producing the
+	global test log, take into account the new metadata field
+	`:global-test-result:, to write nicely formatted RST section
+	titles, instead of leaving this chore to the individual test
+	drivers.
+	(am_rst_section): Re-introduce this variable, as removed in
+	commit `v1.11-870-ga27c9c4'.
+	* lib/test-driver, lib/tap-driver: Write the global test result
+	as metadata in the `.trs' file, not as (part of) a formatted RST
+	subsection title in the `.log' file.  Related simplifications;
+	in particular, get rid of temporary files usage.
+	* doc/automake.texi (Log files generation and test results
+	recording): Document the new metadata.
+	* tests/check12.test: Update.
+	* tests/parallel-tests-harderror.test: Likewise.
+	* tests/parallel-tests-interrupt.test: Likewise.
+	* tests/parallel-tests-log-override-2.test: Likewise.
+	* tests/parallel-tests-log-override-recheck.test: Likewise.
+	* tests/parallel-tests-unreadable.test: Likewise.
+	* tests/tap-global-result.test: Likewise.
+	* tests/test-metadata-results.test: Likewise.
+	* tests/test-log.test: Likewise, and another minor unrelated fix.
+	* tests/test-metadata-global-result.test: New test.
+	* tests/Makefile.am (TESTS): Update.
+
+2011-08-03  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tap: check that also a trailing TAP plan can hold a skip directive
+	* tests/tap-skip-whole-lastline.test: New test.
+	* tests/Makefile.am (tap_with_common_setup_tests): Add it.
+
 2011-08-04  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
 	testsuite: more correct names for a couple of tests

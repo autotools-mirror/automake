@@ -17,8 +17,9 @@ my $USAGE = <<'END';
 Usage:
   tap-driver --test-name=NAME --log-file=PATH --trs-file=PATH
              [--expect-failure={yes|no}] [--color-tests={yes|no}]
-             [--enable-hard-errors={yes|no}] [--merge|--no-merge]
-             [--ignore-exit] [--comments|--no-comments] [--] TEST-COMMAND
+             [--enable-hard-errors={yes|no}] [--ignore-exit]
+             [--diagnostic-string=STRING] [--merge|--no-merge]
+             [--comments|--no-comments] [--] TEST-COMMAND
 The `--test-name' and `--log-file' options are mandatory.
 END
 
@@ -63,16 +64,18 @@ my %cfg = (
 my $test_script_name = undef;
 my $log_file = undef;
 my $trs_file = undef;
+my $diag_string = "#";
 
 Getopt::Long::GetOptions (
     'help' => sub { print $HELP; exit 0; },
-    'version' => sub { print "$ME $VERSION"; exit 0; },
+    'version' => sub { print "$ME $VERSION\n"; exit 0; },
     'test-name=s' => \$test_script_name,
     'log-file=s' => \$log_file,
     'trs-file=s' => \$trs_file,
     'color-tests=s'  => \&bool_opt,
     'expect-failure=s'  => \&bool_opt,
     'enable-hard-errors=s' => \&bool_opt,
+    'diagnostic-string=s' => \$diag_string,
     'comments' => sub { $cfg{"comments"} = 1; },
     'no-comments' => sub { $cfg{"comments"} = 0; },
     'merge' => sub { $cfg{"merge"} = 1; },
@@ -99,6 +102,13 @@ sub bool_opt ($$)
     {
       die "invalid argument '$val' for option '$opt'\n";
     }
+}
+
+# Convert a boolean to a "yes"/"no" string.
+sub yn ($)
+{
+  my $bool = shift;
+  return $bool ? "yes" : "no";
 }
 
 TAP_PEEKING :
@@ -169,10 +179,9 @@ TEST_RESULTS :
 sub write_test_results ()
 {
   open RES, ">", $trs_file or die "opening $trs_file: $!\n";
-  print RES ":recheck: " .
-            (must_recheck ? "yes" : "no") . "\n";
-  print RES ":copy-in-global-log: " .
-            (copy_in_global_log ? "yes" : "no") . "\n";
+  print RES ":global-test-result: " . get_global_test_result . "\n";
+  print RES ":recheck: " . yn (must_recheck) . "\n";
+  print RES ":copy-in-global-log: " . yn (copy_in_global_log) . "\n";
   foreach my $result (get_test_results)
     {
       print RES ":test-result: $result\n";
@@ -185,10 +194,10 @@ sub start (@)
   # Redirect stderr and stdout to a temporary log file.  Save the
   # original stdout stream, since we need it to print testsuite
   # progress output.
+  open LOG, ">", $log_file or die "opening $log_file: $!\n";
   open OLDOUT, ">&STDOUT" or die "duplicating stdout: $!\n";
-  open TMP, ">$log_file-t" or die "opening $log_file-t: $!\n";
-  open STDOUT, ">&TMP" or die "redirecting stdout: $!\n";
-  open STDERR, ">&TMP" or die "redirecting stderr: $!\n";
+  open STDOUT, ">&LOG" or die "redirecting stdout: $!\n";
+  open STDERR, ">&LOG" or die "redirecting stderr: $!\n";
   $parser = TAP::Parser->new ({ exec => \@_, merge => $cfg{merge} });
   $parser->ignore_exit(1) if $cfg{"ignore-exit"};
 }
@@ -196,20 +205,7 @@ sub start (@)
 sub finish ()
 {
   write_test_results;
-
-  open LOG, ">", $log_file or die "opening $log_file: $!\n";
-  my $global_result = get_global_test_result;
-  my $global_result_line = "$global_result: $test_script_name";
-  print LOG "$global_result_line\n";
-  print LOG "=" x length ($global_result_line) . "\n";
-  print LOG "\n";
-
-  close TMP or die "closing $log_file-t: $!\n";
-  # FIXME: remove this hack!
-  my $test_output = `cat $log_file-t && rm -f $log_file-t`;
-  print LOG $test_output;
   close LOG or die "closing $log_file: $!\n";
-
   exit 0;
 }
 
@@ -355,11 +351,15 @@ sub handle_tap_bailout ($)
   finish;
 }
 
-sub handle_tap_comment ($)
+sub extract_tap_comment ($)
 {
-  return unless $cfg{comments};
-  my $comment = $_[0]->comment;
-  report "#", "$comment" if length $comment;
+  local $_ = shift;
+  if (/^\Q$diag_string\E(.*)$/o)
+    {
+      (my $comment = $1) =~ s/(?:^\s*|\s*$)//;
+      return $comment;
+    }
+  return "";
 }
 
 sub main (@)
@@ -379,14 +379,15 @@ sub main (@)
         {
           handle_tap_test ($cur);
         }
-      elsif ($cur->is_comment)
-        {
-          handle_tap_comment ($cur);
-        }
       elsif ($cur->is_bailout)
         {
           handle_tap_bailout ($cur);
         }
+      elsif ($cfg{comments})
+        {
+          my $comment = extract_tap_comment ($cur->raw);
+          report "#", "$comment" if length $comment;
+       }
     }
   if (!$plan_seen)
     {
