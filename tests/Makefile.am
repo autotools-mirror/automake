@@ -127,19 +127,6 @@ $(config_shell_tests):
 
 # Some testsuite-influential variables should be overridable from the
 # test scripts, but not from the environment.
-# The `AM_TESTS_REEXEC=no' setting tells the tests not to needlessly
-# re-execute themselves with the shell detected at configure time, since
-# we are already running them under it explicitly in our setup (see e.g.
-# the definition of TEST_LOG_COMPILER above).
-# We want warning messages and explanations for skipped tests to go to
-# the console if possible, so set up `stderr_fileno_' properly.
-# The `9>&2' redirection *must* be placed at the end, and without a
-# following semicolon, because some shells (e.g., various Korn Shells
-# or HP-HX /bin/sh) close any file descriptor > 2 upon `exec' sycall.
-# For more references, with lots of discussion, see:
-#  - http://lists.gnu.org/archive/html/bug-autoconf/2011-06/msg00002.html
-#  - http://thread.gmane.org/gmane.comp.gnu.coreutils.bugs/22488
-#  - http://debbugs.gnu.org/cgi/bugreport.cgi?bug=8846
 AM_TESTS_ENVIRONMENT = \
   test x"$$me" = x || unset me; \
   test x"$$required" = x || unset required; \
@@ -147,9 +134,16 @@ AM_TESTS_ENVIRONMENT = \
   test x"$$parallel_tests" = x || unset parallel_tests; \
   test x"$$test_prefer_config_shell" || unset test_prefer_config_shell; \
   test x"$$original_AUTOMAKE" = x || unset original_AUTOMAKE; \
-  test x"$$original_ACLOCAL" = x || unset original_ACLOCAL; \
-  AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC; \
-  stderr_fileno_=9; export stderr_fileno_; 9>&2
+  test x"$$original_ACLOCAL" = x || unset original_ACLOCAL;
+# The `AM_TESTS_REEXEC=no' setting tells the tests not to needlessly
+# re-execute themselves with the shell detected at configure time, since
+# we are already running them under it explicitly in our setup (see e.g.
+# the definition of TEST_LOG_COMPILER above).
+AM_TESTS_ENVIRONMENT += AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC;
+# We want warning messages and explanations for skipped tests to go to
+# the console if possible, so set up `stderr_fileno_' properly.
+AM_TESTS_FD_REDIRECT = 9>&2
+AM_TESTS_ENVIRONMENT += stderr_fileno_=9; export stderr_fileno_;
 
 TESTS = \
   $(handwritten_tests) \

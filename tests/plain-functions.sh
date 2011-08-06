@@ -20,8 +20,9 @@
 
 # Print warnings (e.g., about skipped and failed tests) to this file
 # number.  Override by putting, say:
-#   stderr_fileno_=9; export stderr_fileno_; exec 9>&2;
-# in the definition of AM_TESTS_ENVIRONMENT.
+#   AM_TESTS_ENVIRONMENT = stderr_fileno_=9; export stderr_fileno_;
+#   AM_TESTS_FD_REDIRECT = 9>&2
+# in your Makefile.am.
 # This is useful when using automake's parallel tests mode, to print the
 # reason for skip/failure to console, rather than to the *.log files.
 : ${stderr_fileno_=2}
