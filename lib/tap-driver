@@ -232,21 +232,16 @@ sub start (@)
 
 sub finish ()
 {
-  # Flush all the remaining TAP stream, so that we can obtain the
-  # exit status of the TAP producer.
-  do {} while defined get_tap_line ();
-  # TODO: we should probably use $parser->wait here, to catch signals too
-  if ($parser->exit != 0)
+  if (!$cfg{"ignore-exit"})
     {
-      my $msg = sprintf "exited with status %d", $parser->exit;
-      if ($cfg{"ignore-exit"})
+      # Flush all the remaining TAP stream, so that we can obtain the
+      # exit status of the TAP producer.
+      do {} while defined get_tap_line ();
+      # TODO: we should probably use $parser->wait here, to catch
+      # TODO: signals too
+      if ($parser->exit != 0)
         {
-          # Log the exit status of the script anyway, even if it is not
-          # considered to be an error, to help debugging.
-          print "INFO: $test_script_name - $msg\n";
-        }
-      else
-        {
+          my $msg = sprintf "exited with status %d", $parser->exit;
           testsuite_error $msg;
         }
     }
