@@ -83,6 +83,34 @@ Getopt::Long::GetOptions (
     'ignore-exit' => sub { $cfg{"ignore-exit"} = 1; },
   ) or exit 1;
 
+# ------------- #
+#  Prototypes.  #
+# ------------- #
+
+sub add_test_result ($);
+sub bool_opt ($$);
+sub colored ($$);
+sub copy_in_global_log ();
+sub decorate_result ($);
+sub extract_tap_comment ($);
+sub finish ();
+sub get_global_test_result ();
+sub get_tap_line ();
+sub get_test_results ();
+sub handle_tap_bailout ($);
+sub handle_tap_plan ($);
+sub handle_tap_test ($);
+sub main (@);
+sub must_recheck ();
+sub peek_tap_line ();
+sub report ($;$);
+sub start (@);
+sub stringify_test_result ($);
+sub testuite_error ($);
+sub unget_tap_line ($);
+sub write_test_results ();
+sub yn ($);
+
 # -------------- #
 #  Subroutines.  #
 # -------------- #
@@ -204,6 +232,24 @@ sub start (@)
 
 sub finish ()
 {
+  # Flush all the remaining TAP stream, so that we can obtain the
+  # exit status of the TAP producer.
+  do {} while defined get_tap_line ();
+  # TODO: we should probably use $parser->wait here, to catch signals too
+  if ($parser->exit != 0)
+    {
+      my $msg = sprintf "exited with status %d", $parser->exit;
+      if ($cfg{"ignore-exit"})
+        {
+          # Log the exit status of the script anyway, even if it is not
+          # considered to be an error, to help debugging.
+          print "INFO: $test_script_name - $msg\n";
+        }
+      else
+        {
+          testuite_error $msg;
+        }
+    }
   write_test_results;
   close LOG or die "closing $log_file: $!\n";
   exit 0;
@@ -400,21 +446,6 @@ sub main (@)
       testuite_error (sprintf "too %s tests run (expected %d, got %d)",
                               $bad_amount, $planned, $run);
     }
-  # TODO: we should probably use $parser->wait here, to catch signals too
-  if ($parser->exit != 0)
-  {
-    my $msg = sprintf "exited with status %d", $parser->exit;
-    if ($cfg{"ignore-exit"})
-      {
-        # Log the exit status of the script anyway, even if it is not
-        # considered to be an error, to help debugging.
-        print "INFO: $test_script_name - $msg\n";
-      }
-    else
-      {
-        testuite_error $msg;;
-      }
-  }
   finish;
 }
 
