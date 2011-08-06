@@ -96,6 +96,7 @@ sub extract_tap_comment ($);
 sub finish ();
 sub get_global_test_result ();
 sub get_tap_line ();
+sub get_test_exit_message ();
 sub get_test_results ();
 sub handle_tap_bailout ($);
 sub handle_tap_plan ($);
@@ -230,20 +231,23 @@ sub start (@)
   $parser->ignore_exit(1) if $cfg{"ignore-exit"};
 }
 
+sub get_test_exit_message ()
+{
+  # Flush all the remaining TAP stream, so that we can obtain the
+  # exit status of the TAP producer.
+  do {} while defined get_tap_line ();
+  # TODO: we should probably use $parser->wait here, to catch signals too
+  if ($parser->exit != 0)
+    {
+      return sprintf "exited with status %d", $parser->exit;
+    }
+}
+
 sub finish ()
 {
-  if (!$cfg{"ignore-exit"})
+  if (!$cfg{"ignore-exit"} and my $msg = get_test_exit_message)
     {
-      # Flush all the remaining TAP stream, so that we can obtain the
-      # exit status of the TAP producer.
-      do {} while defined get_tap_line ();
-      # TODO: we should probably use $parser->wait here, to catch
-      # TODO: signals too
-      if ($parser->exit != 0)
-        {
-          my $msg = sprintf "exited with status %d", $parser->exit;
-          testsuite_error $msg;
-        }
+      testsuite_error $msg;
     }
   write_test_results;
   close LOG or die "closing $log_file: $!\n";
