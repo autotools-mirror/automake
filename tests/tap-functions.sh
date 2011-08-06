@@ -83,29 +83,46 @@ warn_ ()
   diag_ "WARNING:" ${1-"(unknown warning)"} ${1+"$@"}
 }
 
-# result_ RESULT [DESCRIPTION...]
-# -------------------------------
-# Report a test case with the given result.
+# result_ RESULT [-D DIRECTIVE] [-r REASON] [--] [DESCRIPTION...]
+# ---------------------------------------------------------------
+# Report a test case with the given RESULT (valid values are "ok" and
+# "not ok") and the given DESCRIPTION (if any).  If DIRECTIVE is given
+# and non-empty (valid values being "TODO" and "SKIP"), it will be
+# reported too, with the REASON (if given) appended.
 result_ ()
 {
-  incr_tap_count_
+  set +x # Don't pollute the log files.
+  test $# -gt 0 || bailout_ "result_: missing argument"
   tap_result_=$1; shift
-  echo "$tap_result_" $tap_count_ ${1+"- $*"}
-}
-
-# tap_with_directive_ RESULT DIRECTIVE [-r REASON] [DESCRIPTION...]
-# -----------------------------------------------------------------
-# Write a tap result with the given directive (can be "TODO" or "SKIP").
-# The REASON, if given is appended after the directive.  This function is
-# for internal use only.
-result_with_directive_ ()
-{
+  case $tap_result_ in
+    "ok"|"not ok") ;;
+    *) bailout_ "result_: invalid result '$tap_result'" ;;
+  esac
+  tap_directive_= tap_reason_=
+  while test $# -gt 0; do
+    case $1 in
+      -D|--directive) tap_directive_=$2; shift;;
+      -r|--reason) tap_reason_=$2; shift;;
+      --) shift; break;;
+      -*) bailout_ "result_: invalid option '$1'";;
+       *) break;;
+    esac
+    shift
+  done
+  case $tap_directive_ in
+    ""|TODO|SKIP) ;;
+    *) bailout_ "result_: invalid directive '$directive_'" ;;
+  esac
   incr_tap_count_
-  tap_result_=$1; shift
-  tap_directive_=$1; shift
-  case $1 in -r) tap_reason_=" $2" shift 2;; *) tap_reason_="";; esac
-  echo "$tap_result_" $tap_count_ ${1+"- $*"} \
-       "# ${tap_directive_}${tap_reason_}"
+  tap_text_="$tap_result_ $tap_count_"
+  if test x"$*" != x; then
+    tap_text_="$tap_text_ - $*"
+  fi
+  if test x"$tap_directive_" != x; then
+    tap_text_="$tap_text_ # $tap_directive_"${tap_reason_:+" $tap_reason_"}
+  fi
+  printf '%s\n' "$tap_text_"
+  set -x # Restore shell xtraces.
 }
 
 # ok_ [DESCRIPTION...]
@@ -113,7 +130,7 @@ result_with_directive_ ()
 # Report a successful test.
 ok_ ()
 {
-  result_ 'ok' ${1+"$@"}
+  result_ 'ok' -- ${1+"$@"}
 }
 
 # not_ok_ [DESCRIPTION...]
@@ -121,20 +138,20 @@ ok_ ()
 # Report a failed test.
 not_ok_ ()
 {
-  result_ 'not ok' ${1+"$@"}
+  result_ 'not ok' -- ${1+"$@"}
 }
 
-# skip_ [-r REASON] [DESCRIPTION...]
-# ----------------------------------
+# skip_ [-r REASON] [--] [DESCRIPTION...]
+# ---------------------------------------
 # Report a skipped test.  If the `-r' option is present, its argument is
 # give as the reason of the skip.
 skip_ ()
 {
-  result_with_directive_ 'ok' SKIP ${1+"$@"}
+  result_ 'ok' -D SKIP ${1+"$@"}
 }
 
-# skip_row_ COUNT [-r REASON] [DESCRIPTION...]
-# --------------------------------------------
+# skip_row_ COUNT [-r REASON] [--] [DESCRIPTION...]
+# -------------------------------------------------
 # Report a COUNT of skipped test, with the given reason and descriptions
 # (if any).  Useful to avoid cascade failures in case a fair number of
 # tests depend on an earlier one that failed.
@@ -150,7 +167,7 @@ skip_row_ ()
 # argument is give as the reason why the failure is expected.
 xfail_ ()
 {
-  result_with_directive_ 'not ok' TODO ${1+"$@"}
+  result_ 'not ok' -D TODO ${1+"$@"}
 }
 
 # xpass_ [-r REASON] [DESCRIPTION...]
@@ -159,7 +176,7 @@ xfail_ ()
 # argument is give as the reason why the failure is expected.
 xpass_ ()
 {
-  result_with_directive_ 'ok' TODO ${1+"$@"}
+  result_ 'ok' -D TODO ${1+"$@"}
 }
 
 # skip_all_ [REASON ...]
@@ -230,7 +247,6 @@ command_not_ok_ ()
     ok_ "$tap_desc_"
   fi
 }
-
 
 # reset_test_count_ COUNT
 # -----------------------
