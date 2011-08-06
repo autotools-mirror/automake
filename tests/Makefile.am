@@ -1184,6 +1184,7 @@ tap-recheck-logs.test \
 tap-skip-whole-whitespace.test \
 tap-skip-whole.test \
 tap-skip-whole-lastline.test \
+tap-skip-whole-badexit.test \
 tap-todo-skip-together.test \
 tap-todo-skip-whitespace.test \
 tap-todo-skip.test \

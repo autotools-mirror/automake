@@ -83,6 +83,35 @@ Getopt::Long::GetOptions (
     'ignore-exit' => sub { $cfg{"ignore-exit"} = 1; },
   ) or exit 1;
 
+# ------------- #
+#  Prototypes.  #
+# ------------- #
+
+sub add_test_result ($);
+sub bool_opt ($$);
+sub colored ($$);
+sub copy_in_global_log ();
+sub decorate_result ($);
+sub extract_tap_comment ($);
+sub finish ();
+sub get_global_test_result ();
+sub get_tap_line ();
+sub get_test_exit_message ();
+sub get_test_results ();
+sub handle_tap_bailout ($);
+sub handle_tap_plan ($);
+sub handle_tap_test ($);
+sub main (@);
+sub must_recheck ();
+sub peek_tap_line ();
+sub report ($;$);
+sub start (@);
+sub stringify_test_result ($);
+sub testsuite_error ($);
+sub unget_tap_line ($);
+sub write_test_results ();
+sub yn ($);
+
 # -------------- #
 #  Subroutines.  #
 # -------------- #
@@ -202,8 +231,37 @@ sub start (@)
   $parser->ignore_exit(1) if $cfg{"ignore-exit"};
 }
 
+sub get_test_exit_message ()
+{
+  # Flush all the remaining TAP stream, so that we can obtain the
+  # exit status of the TAP producer.
+  do {} while defined get_tap_line ();
+  my $wstatus = $parser->wait;
+  # Return an undefined value if the producer exited with success.
+  return unless $wstatus;
+  # Otherwise, determine whether it exited with error or was terminated
+  # by a signal.
+  use POSIX qw (WIFEXITED WEXITSTATUS WIFSIGNALED WTERMSIG);
+  if (WIFEXITED ($wstatus))
+	{
+      return sprintf "exited with status %d", WEXITSTATUS ($wstatus);
+	}
+  elsif (WIFSIGNALED ($wstatus))
+	{
+      return sprintf "terminated by signal %d", WTERMSIG ($wstatus);
+	}
+  else
+	{
+	  return "terminated abnormally";
+	}
+}
+
 sub finish ()
 {
+  if (!$cfg{"ignore-exit"} and my $msg = get_test_exit_message)
+    {
+      testsuite_error $msg;
+    }
   write_test_results;
   close LOG or die "closing $log_file: $!\n";
   exit 0;
@@ -287,7 +345,7 @@ sub report ($;$)
   print $result . $msg;
 }
 
-sub testuite_error ($)
+sub testsuite_error ($)
 {
   report "ERROR", "- $_[0]";
 }
@@ -326,12 +384,12 @@ sub handle_tap_test ($)
 sub handle_tap_plan ($)
 {
   my $plan = shift;
-  testuite_error "multiple test plans" if $plan_seen;
+  testsuite_error "multiple test plans" if $plan_seen;
   $plan_seen = 1;
   # TAP plan must be either in the first or in the last line.
   if ($lineno > 1 && peek_tap_line)
     {
-      testuite_error "test plan in middle of output";
+      testsuite_error "test plan in middle of output";
       return;
     }
   # Nothing more to do, unless the plan contains a SKIP directive.
@@ -347,7 +405,7 @@ sub handle_tap_bailout ($)
 {
   my ($bailout, $msg) = ($_[0], "Bail out!");
   $msg .= " " . $bailout->explanation if $bailout->explanation;
-  testuite_error $msg;
+  testsuite_error $msg;
   finish;
 }
 
@@ -391,30 +449,15 @@ sub main (@)
     }
   if (!$plan_seen)
     {
-      testuite_error "missing test plan";
+      testsuite_error "missing test plan";
     }
   elsif ($parser->tests_planned != $parser->tests_run)
     {
       my ($planned, $run) = ($parser->tests_planned, $parser->tests_run);
       my $bad_amount = $run > $planned ? "many" : "few";
-      testuite_error (sprintf "too %s tests run (expected %d, got %d)",
-                              $bad_amount, $planned, $run);
+      testsuite_error (sprintf "too %s tests run (expected %d, got %d)",
+                               $bad_amount, $planned, $run);
     }
-  # TODO: we should probably use $parser->wait here, to catch signals too
-  if ($parser->exit != 0)
-  {
-    my $msg = sprintf "exited with status %d", $parser->exit;
-    if ($cfg{"ignore-exit"})
-      {
-        # Log the exit status of the script anyway, even if it is not
-        # considered to be an error, to help debugging.
-        print "INFO: $test_script_name - $msg\n";
-      }
-    else
-      {
-        testuite_error $msg;;
-      }
-  }
   finish;
 }
 
