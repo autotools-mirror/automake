@@ -21,6 +21,16 @@
 
 . ./defs || Exit 99
 
+# Usage: is_in_list ITEM [LIST...]
+is_in_list ()
+{
+  item=$1; shift;
+  case " $* " in
+    *[\ \	]"$item"[\ \	]*) return 0;;
+    *) return 1;;
+  esac
+}
+
 # Helper subroutine for test data definition.
 # Usage: define_problematic_string NAME STRING
 define_problematic_string ()
@@ -29,39 +39,31 @@ define_problematic_string ()
   eval "instspc__$tst=\$1" \
     || fatal_ "define_problematic_string: bad argument: '$tst'"
   shift
-  instspc_names_list="$instspc_names_list $tst"
+  test_names_list="$test_names_list $tst"
   # Some of the "problematic" characters cannot be used in the name of
   # a build or install directory on a POSIX host.  These lists should
   # be empty, but are not due to limitations in Autoconf, Automake, Make,
   # M4, or the shell.
-  case " $* " in *' fail-build '*|*' build-fail '*)
-    instspc_xfail_builds_list="$instspc_xfail_builds_list $tst";;
-  esac
-  case " $* " in *' fail-install '*|*' install-fail '*)
-    instspc_xfail_installs_list="$instspc_xfail_installs_list $tst";;
-  esac
+  if is_in_list fail-builddir "$@"; then
+    builddir_xfails="$builddir_xfails $tst"
+  fi
+  if is_in_list fail-destdir "$@"; then
+    destdir_xfails="$destdir_xfails $tst"
+  fi
 }
 
 # Be sure to avoid interferences from the environment.
-instspc_names_list=''
-instspc_xfail_builds_list=''
-instspc_xfail_installs_list=''
+test_names_list=''
+builddir_xfails=''
+destdir_xfails=''
 
 expected_to_fail ()
 {
    case $1 in
-     build)
-       case " $instspc_xfail_builds_list " in
-         *" $2 "*) return 0 ;;
-                *) return 1 ;;
-       esac;;
-     dest)
-       case " $instspc_xfail_installs_list " in
-         *" $2 "*) return 0 ;;
-                *) return 1 ;;
-       esac;;
-    esac
-    fatal_ "incorrect 'expected_to_fail' usage"
+     build) is_in_list "$2" $builddir_xfails;;
+      dest) is_in_list "$2" $destdir_xfails;;
+         *) fatal_ "incorrect 'expected_to_fail' usage";;
+   esac
 }
 
 # Helper subroutines for creation of input data files.
@@ -152,14 +154,14 @@ lf='
 # Hack to save typing and make code visually clearer.
 def=define_problematic_string
 
-$def    squote          \'          fail-build  fail-install
-$def    dquote          '"'         fail-build  fail-install
-$def    bquote          '`'         fail-build  fail-install
-$def    sharp           '#'         fail-build  fail-install
-$def    dollar          '$'         fail-build  fail-install
+$def    squote          \'          fail-builddir  fail-destdir
+$def    dquote          '"'         fail-builddir  fail-destdir
+$def    bquote          '`'         fail-builddir  fail-destdir
+$def    sharp           '#'         fail-builddir  fail-destdir
+$def    dollar          '$'         fail-builddir  fail-destdir
 $def    bang            '!'
-$def    bslash          '\'         fail-build
-$def    ampersand       '&'         fail-build
+$def    bslash          '\'         fail-builddir
+$def    ampersand       '&'         fail-builddir
 $def    percent         '%'
 $def    leftpar         '('
 $def    rightpar        ')'
@@ -183,18 +185,18 @@ $def    lcbrack         '{'
 $def    rcbrack         '}'
 $def    space           ' '
 $def    tab             "$ht"
-$def    linefeed        "$lf"       fail-build  fail-install
+$def    linefeed        "$lf"       fail-builddir  fail-destdir
 $def    backspace       "$bs"
 $def    formfeed        "$ff"
 $def    carriageret     "$cr"
-$def    quadrigraph0    '@&t@'      fail-build
+$def    quadrigraph0    '@&t@'      fail-builddir
 $def    quadrigraph1    '@<:@'
 $def    quadrigraph2    '@:>@'
 $def    quadrigraph3    '@S|@'
 $def    quadrigraph4    '@%:@'
 $def    a_b             'a b'
 $def    a__b            'a  b'
-$def    a_lf_b          "a${lf}b"   fail-build  fail-install
+$def    a_lf_b          "a${lf}b"   fail-builddir  fail-destdir
 $def    dotdotdot       '...'
 $def    dosdrive        'a:'
 $def    miscglob1       '?[a-z]*'
@@ -210,28 +212,31 @@ ocwd=`pwd` || fatal_ "cannot get current working directory"
 
 create_input_data
 
-for test_name in $instspc_names_list; do
+for test_name in $test_names_list; do
 
-  eval "instspc_test_string=\${instspc__$test_name}" \
-    && test x"$instspc_test_string" != x \
+  eval "test_string=\${instspc__$test_name}" \
+    && test x"$test_string" != x \
     || fatal_ "invalid test name: '$test_name'"
 
   # Skip the next checks if this system doesn't support the required
   # characters in file names.
 
-  mkdir "./$instspc_test_string" || \
+  mkdir "./$test_string" || \
     skip_row_ 2 -r "mkdir failed" "$test_name"
 
+  # Where are the "weird" characters going to be used, in $(builddir)
+  # or in $(DESTDIR)?  They are always going to be used in $(prefix)
+  # though; should we maybe separate this into a dedicated check?
   for where in build dest; do
 
     case $where in
       build)
-        build=./$instspc_test_string
+        build=./$test_string
         dest=$ocwd/dest-$test_name
         ;;
       dest)
         build=build-$test_name
-        dest=$ocwd/$instspc_test_string
+        dest=$ocwd/$test_string
         mkdir "$build" || fatal_ "cannot create '$build'"
         ;;
       *)
@@ -246,16 +251,16 @@ for test_name in $instspc_names_list; do
     # whitespace from macros set from environment variables, so prepend
     # './' and use the latter here.
     r=ok
-    ../configure --prefix "/$instspc_test_string-prefix" \
+    ../configure --prefix "/$test_string-prefix" \
       && $MAKE all \
-      && DESTDIR="$dest" file="./$instspc_test_string" $MAKE -e test-inst \
+      && DESTDIR="$dest" file="./$test_string" $MAKE -e test-inst \
       || r='not ok'
 
     tap_text="$test_name in ${where}dir"
     if expected_to_fail "$where" "$test_name"; then
       tap_text="$tap_text # TODO long-standing limitation"
     fi
-    result_ "$r" "$tap_text"
+    result_ "$r" "$tap_text" # Test case outcome is here.
 
     cd "$ocwd" || fatal_ "cannot chdir back to test directory"
 
