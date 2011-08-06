@@ -34,6 +34,7 @@ EXTRA_DIST = ChangeLog-old
 
 # Run the tests with the shell detected at configure time.
 TEST_LOG_COMPILER = $(SHELL)
+TAP_LOG_COMPILER = $(SHELL)
 
 XFAIL_TESTS = \
 all.test \
