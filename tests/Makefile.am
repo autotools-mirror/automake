@@ -33,8 +33,9 @@ MAINTAINERCLEANFILES =
 EXTRA_DIST = ChangeLog-old
 
 # Run the tests with the shell detected at configure time.
-TEST_LOG_COMPILER = $(SHELL)
-TAP_LOG_COMPILER = $(SHELL)
+LOG_COMPILER = $(SHELL)
+TEST_LOG_COMPILER = $(LOG_COMPILER)
+TAP_LOG_COMPILER = $(LOG_COMPILER)
 
 XFAIL_TESTS = \
 all.test \
