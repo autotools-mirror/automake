@@ -91,6 +91,7 @@ $(config_shell_tests):
 AM_TESTS_ENVIRONMENT = \
   test x"$$me" = x || unset me; \
   test x"$$required" = x || unset required; \
+  test x"$$planned" = x || unset planned; \
   test x"$$use_tap" = x || unset use_tap; \
   test x"$$parallel_tests" = x || unset parallel_tests; \
   test x"$$test_prefer_config_shell" || unset test_prefer_config_shell; \
