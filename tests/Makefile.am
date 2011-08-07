@@ -33,7 +33,6 @@ pr8365-remake-timing.test \
 yacc-dist-nobuild-subdir.test \
 tap-plan-corner2.test \
 tap-message-0.test \
-tap-signal.test \
 txinfo5.test
 
 
