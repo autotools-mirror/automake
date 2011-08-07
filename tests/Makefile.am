@@ -31,7 +31,6 @@ gcj6.test \
 override-conditional-2.test \
 pr8365-remake-timing.test \
 yacc-dist-nobuild-subdir.test \
-tap-plan-corner2.test \
 tap-message-0.test \
 txinfo5.test
 
@@ -1169,8 +1168,8 @@ tap-passthrough.test \
 tap-passthrough-exit.test \
 tap-plan.test \
 tap-plan-corner.test \
-tap-plan-corner2.test \
 tap-plan-errors.test \
+tap-plan-middle.test \
 tap-realtime.test \
 tap-recheck-logs.test \
 tap-skip-whole-whitespace.test \

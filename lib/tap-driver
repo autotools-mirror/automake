@@ -43,10 +43,13 @@ my %COLOR = (
 #  Global variables.  #
 # ------------------- #
 
-my $lineno = 0;     # Number of input lines seen so far.
 my $testno = 0;     # Number of test results seen so far.
 my $plan_seen = 0;  # Whether the TAP plan has been seen or not.
 my $parser;         # TAP parser object (will be initialized later).
+
+# When true, it means that the rest of the input stream cannot
+# contain any further TAP results.
+my $tap_stopped = 0;
 
 # ----------------- #
 #  Option parsing.  #
@@ -272,7 +275,7 @@ sub stringify_test_result ($)
   my $result = shift;
   my $PASS = $cfg{"expect-failure"} ? "XPASS": "PASS";
   my $FAIL = $cfg{"expect-failure"} ? "XFAIL": "FAIL";
-  if ($result->is_unplanned || $result->number != $testno)
+  if ($result->is_unplanned || $result->number != $testno || $tap_stopped)
     {
       return "ERROR";
     }
@@ -362,7 +365,12 @@ sub handle_tap_test ($)
     {
       $string .= " $description";
     }
-  if ($test->is_unplanned)
+
+  if ($tap_stopped)
+    {
+      $string .= " # AFTER LATE PLAN";
+    }
+  elsif ($test->is_unplanned)
     {
       $string .= " # UNPLANNED";
     }
@@ -378,20 +386,20 @@ sub handle_tap_test ($)
           $string .= " $explanation";
         }
     }
+
   report $test_result, $string;
 }
 
 sub handle_tap_plan ($)
 {
   my $plan = shift;
+  # Only one plan per stream is acceptable.
   testsuite_error "multiple test plans" if $plan_seen;
   $plan_seen = 1;
-  # TAP plan must be either in the first or in the last line.
-  if ($lineno > 1 && peek_tap_line)
-    {
-      testsuite_error "test plan in middle of output";
-      return;
-    }
+  # TAP plan must come either before or after *all* the TAP results.
+  # So, if we find it after having already seen at least one TAP result,
+  # set a flag signaling that no more TAP results are acceptable.
+  $tap_stopped = 1 if $testno >= 1;
   # Nothing more to do, unless the plan contains a SKIP directive.
   return
     if not defined $plan->directive && length ($plan->directive) > 0;
@@ -428,7 +436,6 @@ sub main (@)
     {
       # Verbatim copy any input line into the log file.
       print $cur->raw . "\n";
-      $lineno++;
       if ($cur->is_plan)
         {
           handle_tap_plan ($cur);

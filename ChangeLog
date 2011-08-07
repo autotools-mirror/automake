@@ -1,5 +1,40 @@
 2011-08-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
+	tap: plan location is more liberal w.r.t. non-TAP lines
+	With this change, only lines that are TAP results will matter
+	w.r.t. the position of the TAP plan in the input; for example,
+	this input:
+	  this is a non-TAP line
+	  # and this a TAP diagnostic line
+	  1..1
+	  ok 1
+	was considered to be an error, diagnosed with a message "test
+	plan in middle of output"; as effect of the current change, such
+	input is now valid.  This is more consistent with the behaviour
+	of the `prove' utility.
+	* lib/tap-driver ($lineno): Removed, no more needed.
+	($tap_stopped): New global variable.
+	(stringify_test_result): Return "ERROR" if a TAP result is found
+	when `$tap_stopped' is set to true.
+	(handle_tap_test): Diagnose TAP results that comes after a late
+	plan.  Add a couple of blank lines, for clarity.
+	(handle_tap_plan): Set `$tap_stopped' to true after a late plan
+	is encountered.  Do not complain anymore for extra non-TAP lines
+	preceding or following the plan.  Adjust comments.
+	(main): Don't increment $lineno anymore.
+	* tests/tap-plan.test: Extend a bit, and remove stale comment.
+	* tests/tap-color.test: Adjust.
+	* tests/tap-passthrough.test: Likewise.
+	* tests/tap-plan-corner.test: Adjust and extend.
+	* tests/tap-plan-errors.test: Likewise.
+	* tests/tap-plan-middle.test: New test.
+	* tests/tap-plan-corner2.test: Delete, it's obsolete now.
+	* tests/Makefile.am (XFAIL_TESTS): Remove it.
+	(tap_with_common_setup_tests): Likewise, and add
+	`tap-plan-corner.test'.
+
+2011-08-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
 	testsuite: remove now-passing test from XFAIL_TESTS
 	* tests/Makefile.am (XFAIL_TESTS): Remove `tap-signal.test',
 	which is passing since previous commit `v1.11-974-gc7fa872'.
