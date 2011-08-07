@@ -56,21 +56,45 @@ Interpretation
 
   Other:
     SKIP  - skipped tests (third party tools not available)
+    ERROR - some unexpected error condition
 
 
 Getting details from failures
 -----------------------------
 
-  Each test is a shell script.  In a non-VPATH build you can run the
-  tests directly, they will be verbose.  By default, verbose output of
-  a test foo.test is retained in the log file foo.log.  A summary log
-  is created in the file test-suite.log.
+  By default, verbose output of a test `foo.test' or `foo.tap' is
+  retained in the log file `foo.log'.  A summary log is created in
+  the file `test-suite.log'.
 
   You can limit the set of files using the TESTS variable, and enable
   detailed test output at the end of the test run with the VERBOSE
   variable:
 
     env VERBOSE=x TESTS='first.test second.test ...' make -e check
+
+  You can also run the tests by hand, as explained in the next subsection.
+
+
+About the tests
+---------------
+
+  There are two kinds of tests in the Automake testsuite (both implemented
+  as shell scripts).  The scripts with the `.test' suffix are "simple"
+  tests, their outcome completely determined by their exit status.  Those
+  with the `.tap' suffix use the TAP protocol.  If you want to run a test
+  by hand, you can do so directly if it is a simple test:
+
+    ./nogzip.test
+
+  (it will be verbose by default), while if it is a TAP test you can pass
+  it to your preferred TAP runner, as in e.g.:
+
+    prove --verbose --merge ./add-missing.tap
+
+  The tests can also be run directly in a VPATH build, as with:
+
+    /path/to/srcdir/tests/nogzip.test
+    prove --verbose --merge /path/to/srcdir/tests/add-missing.tap
 
 
 Supported shells
@@ -82,11 +106,12 @@ Supported shells
   `/path/to/another/sh', the user must use:
 
     AM_TESTS_REEXEC=no /path/to/another/sh ./foo.test
+    AM_TESTS_REEXEC=no prove -v -e /path/to/another/sh ./bar.tap
 
   to run a test directly, and:
 
-    make check TEST_LOG_COMPILER=/path/to/sh            (GNU make)
-    TEST_LOG_COMPILER=/path/to/sh make -e check         (non-GNU make)
+    make check LOG_COMPILER=/path/to/sh         (GNU make)
+    LOG_COMPILER=/path/to/sh make -e check      (non-GNU make)
 
   to run the test(s) through the makefile test driver.
 
