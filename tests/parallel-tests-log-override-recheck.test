@@ -56,6 +56,13 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
+# Filter make output before grepping it, for make implementations that,
+# like Solaris' one, print the whole of the failed recipe on failure.
+filter_stdout ()
+{
+  grep -v 'bases=.*;' stdout > t && mv -f t stdout
+}
+
 ./configure
 $MAKE check >stdout && { cat stdout; Exit 1; }
 cat stdout
@@ -65,6 +72,7 @@ TEST_SUITE_LOG=my.log $MAKE -e recheck >stdout \
   && { cat stdout; Exit 1; }
 cat stdout
 ls -l
+filter_stdout
 count_test_results total=2 pass=0 fail=1 skip=0 xfail=0 xpass=0 error=1
 for x in stdout my.log; do
   $FGREP foofoo $x && Exit 1
@@ -78,6 +86,7 @@ BAZ_EXIT_STATUS=0 TEST_SUITE_LOG=my2.log $MAKE -e recheck >stdout \
 cat stdout
 ls -l
 count_test_results total=2 pass=1 fail=0 skip=0 xfail=0 xpass=0 error=1
+filter_stdout
 $FGREP foofoo stdout && Exit 1
 $FGREP barbar stdout
 $FGREP bazbaz stdout
