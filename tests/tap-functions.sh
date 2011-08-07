@@ -24,15 +24,22 @@
 
 # The count of the TAP test results seen so far.
 tap_count_=0
+# The count of skipped tests.
+tap_skip_count_=0
+# The count of tests that experienced an expected failure.
+tap_xfail_count_=0
+# The count of tests with unexpected outcomes (i.e., failed and xpassed).
+tap_bad_count_=0
 
 # The first "test -n" tries to avoid extra forks when possible.
 if test -n "${ZSH_VERSION}${BASH_VERSION}" \
      || (eval 'test $((1 + 1)) = 2') >/dev/null 2>&1
 then
-  # Use of 'eval' needed to protect dumber shells from parsing errors.
-  eval 'incr_tap_count_ () { tap_count_=$(($tap_count_ + 1)); }'
+  # Outer use of 'eval' needed to protect dumber shells from parsing
+  # errors.
+  eval 'incr_ () { eval "$1=\$((\${$1} + 1))"; }'
 else
-  incr_tap_count_ () { tap_count_=`expr $tap_count_ + 1`; }
+  incr_ () { eval "$1=\`expr \${$1} + 1\`"; }
 fi
 
 # plan_ NUMBER-OF-PLANNED-TESTS
@@ -113,7 +120,14 @@ result_ ()
     ""|TODO|SKIP) ;;
     *) bailout_ "result_: invalid directive '$directive_'" ;;
   esac
-  incr_tap_count_
+  incr_ tap_count_
+  case $tap_result_,$tap_directive_ in
+    ok,) ;;                                     # Passed.
+    not\ ok,TODO) incr_ tap_xfail_count_;;      # Expected failure.
+    not\ ok,*|ok,TODO) incr_ tap_bad_count_ ;;  # Failed or xpassed.
+    ok,SKIP) incr_ tap_skip_count_ ;;           # Skipped.
+    *) bailout_ "internal error in 'result_'";; # Can't happen.
+  esac
   tap_text_="$tap_result_ $tap_count_"
   if test x"$*" != x; then
     tap_text_="$tap_text_ - $*"

@@ -322,6 +322,20 @@ seq_ ()
   done
 }
 
+# rm_rf_ [FILES OR DIRECTORIES ...]
+# ---------------------------------
+# Recursively remove the given files or directory, also handling the case
+# of non-writable subdirectories.
+rm_rf_ ()
+{
+  test $# -gt 0 || return 0
+  # Ignore failures in find, we are only interested in failures of the
+  # final rm.
+  find "$@" -type d ! -perm -700 -exec chmod u+rwx {} \; || :
+  rm -rf "$@"
+}
+
+
 # count_test_results total=N pass=N fail=N xpass=N xfail=N skip=N error=N
 # -----------------------------------------------------------------------
 # Check that a testsuite run driven by the parallel-tests harness has
@@ -802,10 +816,7 @@ distdir=$me-1.0
 # this directory will be kept, to facilitate debugging.
 testSubDir=$me.dir
 
-test ! -d $testSubDir || {
-  find $testSubDir -type d ! -perm -700 -exec chmod u+rwx {} ";"
-  rm -rf $testSubDir
-}
+test ! -d $testSubDir || rm_rf_ $testSubDir
 mkdir $testSubDir
 
 cd ./$testSubDir
@@ -814,31 +825,40 @@ if test "$sh_errexit_works" = yes; then
   trap 'exit_status=$?
     set +e
     cd "$testbuilddir"
-    # This is to ensure that a test script does give a SKIP outcome just
-    # because a command in it happens to exit with status 77.  This
-    # behaviour, while from time to time useful to developers, is not
-    # meant to be enabled by default, as it could cause spurious failures
-    # in the wild.  Thus it will be enabled only when the variable
-    # "am_explicit_skips" is set to a "true" value.
-    case $am_explicit_skips in
-      [yY]|[yY]es|1)
-        if test $exit_status -eq 77 && test $am__test_skipped != yes; then
-          exit_status=78
-        fi
-        ;;
-    esac
-    case $exit_status,$keep_testdirs in
-    0,)
-      find $testSubDir -type d ! -perm -700 -exec chmod u+rwx {} ";"
-      rm -rf $testSubDir
-      ;;
-    esac
+    if test -n "$keep_testdirs"; then
+      keep_testdirs=yes
+    else
+      keep_testdirs=no
+    fi
+    if test $using_tap = yes; then
+      if test $have_tap_plan_ != yes; then
+        late_plan_
+      fi
+      test $exit_status -eq 0 \
+        && test $tap_xfail_count_ -eq 0 \
+        && test $tap_skip_count_ -eq 0 \
+        && test $tap_bad_count_ -eq 0 \
+        || keep_testdirs=yes
+    else
+      # This is to ensure that a test script does give a SKIP outcome just
+      # because a command in it happens to exit with status 77.  This
+      # behaviour, while from time to time useful to developers, is not
+      # meant to be enabled by default, as it could cause spurious failures
+      # in the wild.  Thus it will be enabled only when the variable
+      # "am_explicit_skips" is set to a "true" value.
+      case $am_explicit_skips in
+        [yY]|[yY]es|1)
+          if test $exit_status -eq 77 && test $am__test_skipped != yes; then
+            echo "$me: implicit skip turned into failure"
+            exit_status=78
+          fi;;
+      esac
+      test $exit_status -eq 0 || keep_testdirs=yes
+    fi
+    test $keep_testdirs = no && rm_rf_ $testSubDir
     set +x
     test "$signal" != 0 && echo "$me: caught signal $signal"
     echo "$me: exit $exit_status"
-    if test $using_tap = yes && test $have_tap_plan_ != yes; then
-      late_plan_
-    fi
     exit $exit_status
   ' 0
   for signal in 1 2 13 15; do
