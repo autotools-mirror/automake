@@ -16,7 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# Run the tests with the shell detected at configure time.
+LOG_COMPILER = $(SHELL)
+
 TEST_EXTENSIONS = .test .tap
+TEST_LOG_COMPILER = $(LOG_COMPILER)
+TAP_LOG_COMPILER = $(LOG_COMPILER)
+
 TAP_LOG_DRIVER = $(PERL) $(top_srcdir)/lib/tap-driver
 TAP_LOG_DRIVER_FLAGS = --merge --comments
 ## Avoid spurious TAP diagnostic.  We use an awful indirection with a
@@ -31,11 +37,6 @@ TAP_LOG_DRIVER_FLAGS += --diagnostic-string `printf '\043%%\043\n'`
 
 MAINTAINERCLEANFILES =
 EXTRA_DIST = ChangeLog-old
-
-# Run the tests with the shell detected at configure time.
-LOG_COMPILER = $(SHELL)
-TEST_LOG_COMPILER = $(LOG_COMPILER)
-TAP_LOG_COMPILER = $(LOG_COMPILER)
 
 XFAIL_TESTS = \
 all.test \
@@ -58,7 +59,7 @@ $(srcdir)/parallel-tests.am: gen-parallel-tests Makefile.am
 EXTRA_DIST += gen-parallel-tests
 
 TEST_EXTENSIONS += .ptest
-PTEST_LOG_COMPILER = $(SHELL) $(srcdir)/parallel-tests.sh
+PTEST_LOG_COMPILER = $(LOG_COMPILER) $(srcdir)/parallel-tests.sh
 EXTRA_DIST += parallel-tests.sh
 
 # All `*-p.ptest' tests work by sourcing the script `parallel-tests.sh'.
@@ -75,7 +76,7 @@ $(srcdir)/config-shell-tests.am: gen-config-shell-tests Makefile.am
 EXTRA_DIST += gen-config-shell-tests
 
 TEST_EXTENSIONS += .shtst
-SHTST_LOG_COMPILER = $(SHELL) $(srcdir)/config-shell-tests.sh
+SHTST_LOG_COMPILER = $(LOG_COMPILER) $(srcdir)/config-shell-tests.sh
 EXTRA_DIST += config-shell-tests.sh
 
 # All `*-w.shtst' tests work by sourcing the script `config-shell-tests.sh'.
