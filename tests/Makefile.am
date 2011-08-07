@@ -762,6 +762,7 @@ test-driver-create-log-dir.test \
 test-driver-strip-vpath.test \
 test-driver-trs-suffix-registered.test \
 test-driver-fail.test \
+test-harness-vpath-rewrite.test \
 test-log.test \
 test-metadata-global-log.test \
 test-metadata-global-result.test \
