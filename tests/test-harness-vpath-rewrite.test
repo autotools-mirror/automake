@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2011 Free Software Foundation, Inc.
+# Copyright (C) 2010, 2011 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,36 +14,46 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# TAP support:
-#  - more corner cases for TAP plan
+# Check that our concurrent test harness is not subject to spurious VPATH
+# rewrites.
 
 parallel_tests=yes
 . ./defs || Exit 1
 
-. "$testsrcdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
-
-# The leading blank line is meant.
-cat > leading-blank.test <<END
-
-1..2
-ok 1
-ok 2
+cat >> configure.in << 'END'
+AC_OUTPUT
 END
 
-# The trailing blank line is meant.
-cat > trailing-blank.test <<END
-ok 1
-ok 2
-1..2
-
+cat > Makefile.am << 'END'
+LOG_COMPILER = true
+empty =
+TESTS = x0 foo bar baz x1
+EXTRA_DIST = $(TESTS)
 END
 
-for kind in leading trailing; do
-  cp $kind-blank.test all.test
-  $MAKE check >stdout && { cat stdout; Exit 1; }
-  cat stdout
-  count_test_results total=3 pass=2 fail=0 xpass=0 xfail=0 skip=0 error=1
-  grep '^ERROR: all\.test - test plan in middle of output$' stdout
-done
+: > x0
+: > foo
+: > bar
+: > baz
+: > x1
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE -a
+
+mkdir build
+cd build
+../configure
+$MAKE check
+test -f test-suite.log
+test -f foo.log
+test -f foo.trs
+test -f bar.log
+test -f bar.trs
+test -f baz.log
+test -f baz.trs
+# We don't want VPATH rewrites, really.
+$MAKE check -n | $EGREP '\.\./(foo|bar|baz)( |$)' && Exit 1
+$MAKE distcheck
 
 :

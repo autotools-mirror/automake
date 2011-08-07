@@ -158,10 +158,17 @@ case " $(XFAIL_TESTS) " in				\
     am__expect_failure=no;;				\
 esac; 							\
 $(AM_TESTS_ENVIRONMENT) $(TESTS_ENVIRONMENT)
-# The names of the tests, with any registered extension removed.  Or
-# equivalently, the names of the test logs, with the `.log' extension
-# renoved.  This honours runtime overriding of TESTS and TEST_LOGS.
-am__TEST_BASES = $(TEST_LOGS:.log=)
+# A shell command to get the names of the tests scripts with any registered
+# extension removed (i.e., equivalently, the names of the test logs, with
+# the `.log' extension removed).  The result is saved in the shell variable
+# `$bases'.  This honors runtime overriding of TESTS and TEST_LOGS.  Sadly,
+# we cannot use something simpler, involving e.g., "$(TEST_LOGS:.log=)",
+# since that might cause problem with VPATH rewrites for suffix-less tests.
+# See also 'test-harness-vpath-rewrite.test'.
+am__set_TESTS_bases = \
+  bases='$(TEST_LOGS)'; \
+  bases=`for f in $$bases; do echo $$f; done | sed 's/\.log//'`; \
+  bases=`echo $$bases`
 # This can be used instead of $(MAKE) in recipes requiring a recursive call
 # to make, but which are not intended to be executed by "make -n".  See the
 # GNU make manual for more details.
@@ -354,7 +361,7 @@ cscope cscopelist:
 $(TEST_SUITE_LOG): $(TEST_LOGS)
 	@$(am__sh_e_setup); $(am__tty_colors); \
 	f_ok () { test -f "$$1" && test -r "$$1"; }; \
-	bases='$(am__TEST_BASES)'; \
+	$(am__set_TESTS_bases); \
 	ws='[ 	]'; \
 	redo_bases=`for b in $$bases; do \
 	              f_ok $$b.trs && f_ok $$b.log || echo $$b; \
@@ -471,6 +478,7 @@ check-TESTS:
 	list=`for f in $$list; do					\
 	  test .log = $$f || echo $$f;					\
 	done | tr '\012\015' '  '`;					\
+	list=`echo "$$list" | sed 's/ *$$//'`;				\
 	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG) TEST_LOGS="$$list"
 
 .log.html:
@@ -500,7 +508,7 @@ check-html:
 recheck recheck-html:
 	@ws='[ 	]';							\
 	target=`echo $@ | sed 's,^re,,'`;				\
-	bases='$(am__TEST_BASES)';					\
+	$(am__set_TESTS_bases);						\
 	list=`for b in $$bases; do 					\
 	        test -f $$b.trs || test -f $$b.log || continue;		\
 	        grep "^$$ws*:recheck:$$ws*no$$ws*$$" $$b.trs 		\
@@ -570,9 +578,9 @@ install-strip:
 	fi
 mostlyclean-generic:
 	-test -z "$(TEST_LOGS)" || rm -f $(TEST_LOGS)
+	-test -z "$(TEST_LOGS:.log=.trs)" || rm -f $(TEST_LOGS:.log=.trs)
 	-test -z "$(TEST_SUITE_HTML)" || rm -f $(TEST_SUITE_HTML)
 	-test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
-	-test -z "$(am__TEST_BASES:=.trs)" || rm -f $(am__TEST_BASES:=.trs)
 
 clean-generic:
 

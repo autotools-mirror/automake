@@ -46,9 +46,7 @@ gcj6.test \
 override-conditional-2.test \
 pr8365-remake-timing.test \
 yacc-dist-nobuild-subdir.test \
-tap-plan-corner2.test \
 tap-message-0.test \
-tap-signal.test \
 txinfo5.test
 
 
@@ -771,6 +769,7 @@ test-driver-create-log-dir.test \
 test-driver-strip-vpath.test \
 test-driver-trs-suffix-registered.test \
 test-driver-fail.test \
+test-harness-vpath-rewrite.test \
 test-log.test \
 test-metadata-global-log.test \
 test-metadata-global-result.test \
@@ -1181,8 +1180,8 @@ tap-passthrough.test \
 tap-passthrough-exit.test \
 tap-plan.test \
 tap-plan-corner.test \
-tap-plan-corner2.test \
 tap-plan-errors.test \
+tap-plan-middle.test \
 tap-realtime.test \
 tap-recheck-logs.test \
 tap-skip-whole-whitespace.test \

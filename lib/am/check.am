@@ -104,10 +104,19 @@ case " $(XFAIL_TESTS) " in				\
 esac; 							\
 $(AM_TESTS_ENVIRONMENT) $(TESTS_ENVIRONMENT)
 
-# The names of the tests, with any registered extension removed.  Or
-# equivalently, the names of the test logs, with the `.log' extension
-# renoved.  This honours runtime overriding of TESTS and TEST_LOGS.
-am__TEST_BASES = $(TEST_LOGS:.log=)
+# A shell command to get the names of the tests scripts with any registered
+# extension removed (i.e., equivalently, the names of the test logs, with
+# the `.log' extension removed).  The result is saved in the shell variable
+# `$bases'.  This honors runtime overriding of TESTS and TEST_LOGS.  Sadly,
+# we cannot use something simpler, involving e.g., "$(TEST_LOGS:.log=)",
+# since that might cause problem with VPATH rewrites for suffix-less tests.
+# See also 'test-harness-vpath-rewrite.test'.
+am__set_TESTS_bases = \
+  bases='$(TEST_LOGS)'; \
+  bases=`for f in $$bases; do echo $$f; done | sed 's/\.log//'`; \
+## Trim away any extra whitespace.  This has already proved useful in
+## avoiding weird bug on lesser make implementations.
+  bases=`echo $$bases`
 
 # This can be used instead of $(MAKE) in recipes requiring a recursive call
 # to make, but which are not intended to be executed by "make -n".  See the
@@ -125,7 +134,7 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 ## Helper shell function, tells whether a path refers to an existing,
 ## regular, readable file.
 	f_ok () { test -f "$$1" && test -r "$$1"; }; \
-	bases='$(am__TEST_BASES)'; \
+	$(am__set_TESTS_bases); \
 	ws='[ 	]'; \
 ## We need to ensures that all the required `.trs' and `.log' files will
 ## be present and readable.  The direct dependencies of $(TEST_SUITE_LOG)
@@ -294,6 +303,9 @@ check-TESTS:
 	list=`for f in $$list; do					\
 	  test .log = $$f || echo $$f;					\
 	done | tr '\012\015' '  '`;					\
+## This apparently useless munging helps to avoid a nasty bug (a
+## segmentation fault!) on Solaris XPG4 make.
+	list=`echo "$$list" | sed 's/ *$$//'`;				\
 	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG) TEST_LOGS="$$list"
 
 AM_RECURSIVE_TARGETS += check
@@ -340,7 +352,7 @@ AM_RECURSIVE_TARGETS += check-html
 recheck recheck-html:
 	@ws='[ 	]';							\
 	target=`echo $@ | sed 's,^re,,'`;				\
-	bases='$(am__TEST_BASES)';					\
+	$(am__set_TESTS_bases);						\
 	list=`for b in $$bases; do 					\
 ## Skip tests that haven't been run, but recover gracefully from deleted
 ## `.trs' files.

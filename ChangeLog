@@ -1,3 +1,112 @@
+2011-08-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	test harness: work around a VPATH rewrite issue
+	* lib/am/check.am (am__TEST_BASES): Removed, it's role taken
+	over by ...
+	(am__set_TESTS_bases): ... these new variable.
+	($(TEST_SUITE_LOG): Use it, to avoid VPATH rewrite issues.
+	* automake.in (handle_tests): Update the code for the cleanup
+	of the `.trs' file to use `$(TEST_LOGS)' instead of
+	`$(am__TEST_BASES)'.
+	* tests/test-harness-vpath-rewrite.test: New test, better
+	exposing the problem fixed by this change
+	* tests/Makefile.am (TESTS): Add it.
+	* tests/test-trs-basic.test: Update and extend.
+
+2011-08-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	parallel-tests: work around Solaris XPG4 make segfault
+	Issue exposed by test `posixsubst-tests-p.test', and similar to
+	the problem solved by commit `v1.11-159-ge7aa360'.
+	* lib/am/check.am [%?PARALLEL_TESTS%] (check-TESTS): Trim trailing
+	whitespace from $list, to avoid triggering a nasty bug (potential
+	segfault) on Solaris XPG4 make and Heirloom make.
+
+2011-08-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	testsuite: fix weird spurious failure with Solaris /bin/sh
+	Solaris /bin/sh, when killed with a SIGTERM or SIGINT signal, can
+	apparently end up exiting with exit status 208, instead of leaving
+	the correct wide exit status to the parent.  See:
+	 <http://dbaspot.com/shell/396118-bourne-shell-exit-code-term.html>
+	Work around this incompatibility.
+	* tap-signal.test: Look for the above Solaris bug.
+	(signal_caught): Adapt to handle it.
+
+2011-08-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	testsuite: fix another spurious failure on Solaris make
+	* tests/parallel-tests-log-override-recheck.test: Filter make
+	output before grepping it, for make implementations that, like
+	Solaris' one, print the whole of the failed recipe on failure.
+
+2011-08-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	testsuite: fix two spurious failures on Solaris make
+	* tests/tests-environment-and-log-compiler.test: Do not fail if
+	"make -n check" fails, as that is issued only for debugging, its
+	semantics being tested in other test scripts.
+	* tests/test-driver-strip-vpath.test: Likewise.
+
+2011-08-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tap driver: refactor and remove dead code
+	* lib/tap-driver (get_tap_line): Removed, ...
+	(all callers): ... updated to use $parser->next directly instead.
+	(peek_tap_line, unget_tap_line, @tap_lines): Remove, they're not
+	used anymore.
+	(TAP_PEEKING): Block deleted, all its subroutines and variables
+	having been removed.
+
+2011-08-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	testsuite: fix spurious failure in a test on TAP support
+	* tests/tap-passthrough-exit.test: When the `--ignore-exit' flag
+	of the TAP driver is used, don't look for a message reporting the
+	non-zero exit statuses of tests in the log files; such message is
+	not expected to be there anymore.  Related simplifications.
+
+2011-08-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tap: plan location is more liberal w.r.t. non-TAP lines
+	With this change, only lines that are TAP results will matter
+	w.r.t. the position of the TAP plan in the input; for example,
+	this input:
+	  this is a non-TAP line
+	  # and this a TAP diagnostic line
+	  1..1
+	  ok 1
+	was considered to be an error, diagnosed with a message "test
+	plan in middle of output"; as effect of the current change, such
+	input is now valid.  This is more consistent with the behaviour
+	of the `prove' utility.
+	* lib/tap-driver ($lineno): Removed, no more needed.
+	($tap_stopped): New global variable.
+	(stringify_test_result): Return "ERROR" if a TAP result is found
+	when `$tap_stopped' is set to true.
+	(handle_tap_test): Diagnose TAP results that comes after a late
+	plan.  Add a couple of blank lines, for clarity.
+	(handle_tap_plan): Set `$tap_stopped' to true after a late plan
+	is encountered.  Do not complain anymore for extra non-TAP lines
+	preceding or following the plan.  Adjust comments.
+	(main): Don't increment $lineno anymore.
+	* tests/tap-plan.test: Extend a bit, and remove stale comment.
+	* tests/tap-color.test: Adjust.
+	* tests/tap-passthrough.test: Likewise.
+	* tests/tap-plan-corner.test: Adjust and extend.
+	* tests/tap-plan-errors.test: Likewise.
+	* tests/tap-plan-middle.test: New test.
+	* tests/tap-plan-corner2.test: Delete, it's obsolete now.
+	* tests/Makefile.am (XFAIL_TESTS): Remove it.
+	(tap_with_common_setup_tests): Likewise, and add
+	`tap-plan-corner.test'.
+
+2011-08-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	testsuite: remove now-passing test from XFAIL_TESTS
+	* tests/Makefile.am (XFAIL_TESTS): Remove `tap-signal.test',
+	which is passing since previous commit `v1.11-974-gc7fa872'.
+
 2011-08-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
 	test defs: get name of TAP-using tests correctly

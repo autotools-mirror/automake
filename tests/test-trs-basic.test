@@ -31,9 +31,10 @@ TESTS = foo.test bar.sh sub/zardoz.test
 TEST_LOG_COMPILER = $(SHELL)
 SH_LOG_COMPILER = $(SHELL)
 
-## Used to check some internal details.
+## Used to check some internal details.  And yes, the quotes around
+## `$bases' are deliberate: they check for whitespace normalization.
 tb:
-	echo $(am__TEST_BASES) > $@
+	$(am__set_TESTS_bases); echo "$$bases" > $@
 END
 
 cat > foo.test << 'END'
@@ -50,18 +51,34 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-./configure
 
 #
 # Check some internal details first.
 #
 
-$MAKE tb
-test x"`cat tb`" = x"foo bar sub/zardoz"
-rm -f tb
-TESTS='foo.test foo2.sh foo3.exe foo4' $MAKE -e tb
-test x"`cat tb`" = x"foo foo2 foo3.exe foo4"
-rm -f tb
+for vpath in : false; do
+
+  if $vpath; then
+    srcdir=..
+    mkdir build
+    cd build
+  else
+    srcdir=.
+  fi
+
+  $srcdir/configure
+
+  $MAKE tb
+  test x"`cat tb`" = x"foo bar sub/zardoz"
+  rm -f tb
+  # Please don't change the order of the stuff in TESTS, below.
+  TESTS='a foo.test foo2.sh foo3 foo.log foo-log foolog b.exe' $MAKE -e tb
+  test x"`cat tb`" = x"a foo foo2 foo3 foo.log foo-log foolog b.exe"
+  rm -f tb
+
+  cd $srcdir
+
+done
 
 #
 # The `test-suite.stamp' file and the `.trs' files get created by
