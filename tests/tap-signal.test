@@ -36,13 +36,36 @@ chmod a+x *.test
 
 . "$testsrcdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
+# Solaris /bin/sh, when killed with a SIGTERM or SIGINT signal, can end up
+# exiting with exit status 208, instead of leaving the correct wide exit
+# status to the parent.  See:
+#   <http://dbaspot.com/shell/396118-bourne-shell-exit-code-term.html>
+# We need to detect and work around this incompatibility.
+
+if /bin/sh -c 'kill -2 $$'; then
+  fatal_ "/bin/sh cannot kill itself"
+elif test $? -eq 208; then
+  have_solaris_bug=yes
+else
+  have_solaris_bug=no
+fi
+
 signal_caught ()
 {
   numeric=$1
   symbolic=$2
   sig_re="((SIG)?$symbolic|$numeric)"
   tst_re="signal-$numeric\\.test"
-  $EGREP "^ERROR: $tst_re - terminated by signal $sig_re$" stdout
+  if $EGREP "^ERROR: $tst_re - terminated by signal $sig_re$" stdout; then
+    return 0
+  elif test $have_solaris_bug = yes; then
+    case $symbolic in
+      INT|TERM) $EGREP "^ERROR: $tst_re - exited with status 208$" stdout;;
+             *) return 1;;
+    esac
+  else
+    return 1
+  fi
 }
 
 all_signals_caught ()
