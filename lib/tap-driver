@@ -98,7 +98,6 @@ sub decorate_result ($);
 sub extract_tap_comment ($);
 sub finish ();
 sub get_global_test_result ();
-sub get_tap_line ();
 sub get_test_exit_message ();
 sub get_test_results ();
 sub handle_tap_bailout ($);
@@ -106,12 +105,10 @@ sub handle_tap_plan ($);
 sub handle_tap_test ($);
 sub main (@);
 sub must_recheck ();
-sub peek_tap_line ();
 sub report ($;$);
 sub start (@);
 sub stringify_test_result ($);
 sub testsuite_error ($);
-sub unget_tap_line ($);
 sub write_test_results ();
 sub yn ($);
 
@@ -141,29 +138,6 @@ sub yn ($)
 {
   my $bool = shift;
   return $bool ? "yes" : "no";
-}
-
-TAP_PEEKING :
-{
-  my @tap_lines = ();
-
-  sub get_tap_line ()
-  {
-    @tap_lines > 0 ? pop @tap_lines : $parser->next;
-  }
-
-  sub unget_tap_line ($)
-  {
-    push @tap_lines, @_;
-  }
-
-  sub peek_tap_line ()
-  {
-    my $res = get_tap_line;
-    unget_tap_line ($res);
-    return $res;
-  }
-
 }
 
 TEST_RESULTS :
@@ -238,7 +212,7 @@ sub get_test_exit_message ()
 {
   # Flush all the remaining TAP stream, so that we can obtain the
   # exit status of the TAP producer.
-  do {} while defined get_tap_line ();
+  do {} while defined $parser->next;
   my $wstatus = $parser->wait;
   # Return an undefined value if the producer exited with success.
   return unless $wstatus;
@@ -432,7 +406,7 @@ sub main (@)
 {
   start @_;
 
-  while (defined (my $cur = get_tap_line))
+  while (defined (my $cur = $parser->next))
     {
       # Verbatim copy any input line into the log file.
       print $cur->raw . "\n";
