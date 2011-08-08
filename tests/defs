@@ -281,8 +281,7 @@ using_gmake ()
         return 1
       fi;;
     *)
-      echo "invalid value for \$am__using_gmake: '$am__using_gmake'" >&2
-      Exit 99;;
+      fatal_ "invalid value for \$am__using_gmake: '$am__using_gmake'";;
   esac
 }
 am__using_gmake="" # Avoid interferences from the environment.
@@ -607,9 +606,11 @@ do
       # Skip this test case if the user is root.
       # We try to append to a read-only file to detect this.
       priv_check_temp=priv-check.$$
-      touch $priv_check_temp || exit 99
-      chmod a-w $priv_check_temp || exit 99
-      (echo foo >> $priv_check_temp) >/dev/null 2>&1
+      touch $priv_check_temp && chmod a-w $priv_check_temp \
+        || framework_failure_ "creating unwritable file $priv_check_temp"
+      # Not a useless use of subshell: lesser shells like Solaris /bin/sh
+      # can exit if a builtin fails.
+      (echo foo >> $priv_check_temp)
       overwrite_status=$?
       rm -f $priv_check_temp
       if test $overwrite_status -eq 0; then
@@ -634,9 +635,11 @@ do
       # Skip this test case if read-only directories aren't supported
       # (e.g., under DOS.)
       ro_dir_temp=ro_dir.$$
-      mkdir $ro_dir_temp || exit 99
-      chmod a-w $ro_dir_temp || exit 99
-      (: > $ro_dir_temp/probe) >/dev/null 2>/dev/null
+      mkdir $ro_dir_temp && chmod a-w $ro_dir_temp \
+        || framework_failure_ "creating unwritable directory $ro_dir_temp"
+      # Not a useless use of subshell: lesser shells like Solaris /bin/sh
+      # can exit if a builtin fails.
+      (: > $ro_dir_temp/probe)
       create_status=$?
       rm -rf $ro_dir_temp
       if test $create_status -eq 0; then
@@ -813,7 +816,7 @@ distdir=$me-1.0
 testSubDir=$me.dir
 
 test ! -d $testSubDir || rm_rf_ $testSubDir
-mkdir $testSubDir
+mkdir $testSubDir || framework_failure_ "creating test subdirectory"
 
 cd ./$testSubDir
 
@@ -853,20 +856,19 @@ if test "$sh_errexit_works" = yes; then
     fi
     test $keep_testdirs = no && rm_rf_ $testSubDir
     set +x
-    test "$signal" != 0 && echo "$me: caught signal $signal"
     echo "$me: exit $exit_status"
     exit $exit_status
   ' 0
   for signal in 1 2 13 15; do
-    trap 'signal='$signal'; { Exit 99; }' $signal
+    trap "fatal_ 'caught signal $signal'" $signal
   done
-  signal=0
+  unset signal
 fi
 
 # Copy in some files we need.
-for file in install-sh missing depcomp; do
-   cp "$top_testsrcdir/lib/$file" . || Exit 99
-done
+cp "$top_testsrcdir"/lib/install-sh "$top_testsrcdir"/lib/missing \
+   "$top_testsrcdir"/lib/depcomp . \
+  || framework_failure_ "fetching common files from lib/"
 
 # Build appropriate environment in test directory.  Eg create
 # configure.in, touch all necessary files, etc.
