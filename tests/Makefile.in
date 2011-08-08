@@ -169,7 +169,7 @@ $(AM_TESTS_ENVIRONMENT) $(TESTS_ENVIRONMENT)
 # See also 'test-harness-vpath-rewrite.test' and 'test-trs-basic.test'.
 am__set_TESTS_bases = \
   bases='$(TEST_LOGS)'; \
-  bases=`for f in $$bases; do echo $$f; done | sed 's/\.log$$//'`; \
+  bases=`for i in $$bases; do echo $$i; done | sed 's/\.log$$//'`; \
   bases=`echo $$bases`
 RECHECK_LOGS = $(TEST_LOGS)
 AM_RECURSIVE_TARGETS = check check-html recheck recheck-html
@@ -1507,29 +1507,29 @@ am--redo-logs:
 	@rm -f $$redo_logs
 	@rm -f $$redo_results
 	@$(MAKE) $(AM_MAKEFLAGS) $$redo_logs
-	@st=0; \
-	for b in $$redo_bases; do \
-	  for e in trs log; do \
-	    if test ! -f $$b.$$e || test ! -r $$b.$$e; then \
-	      echo "fatal: making $(TEST_SUITE_LOG): failed to create" \
-	           "$$b.$$e" >&2; \
-	      st=1; \
-	    fi; \
-	  done; \
+	@st=0;  \
+	errmsg="fatal: making $(TEST_SUITE_LOG): failed to create"; \
+	for i in $$redo_bases; do \
+	  test -f $$i.trs && test -r $$i.trs \
+	    || { echo "$$errmsg $$i.trs"; st=1; }; \
+	  test -f $$i.log && test -r $$i.log \
+	    || { echo "$$errmsg $$i.log"; st=1; }; \
 	done; \
 	test $$st -eq 0
 
 $(TEST_SUITE_LOG): $(TEST_LOGS)
 	@$(am__set_TESTS_bases); \
-	f_ok () { test -f "$$1" && test -r "$$1"; }; \
-	redo_bases=`for b in $$bases; do \
-	              f_ok $$b.trs && f_ok $$b.log || echo $$b; \
+	am__f_ok () { test -f "$$1" && test -r "$$1"; }; \
+	redo_bases=`for i in $$bases; do \
+	              am__f_ok $$i.trs && am__f_ok $$i.log || echo $$i; \
 	            done`; \
 	if test -n "$$redo_bases"; then \
 	  redo_logs=`for i in $$redo_bases; do echo $$i.log; done`; \
 	  redo_results=`for i in $$redo_bases; do echo $$i.trs; done`; \
-	  (export redo_bases redo_logs redo_results \
-	     && $(MAKE) am--redo-logs) || exit 1; \
+	  redo_bases="$$redo_bases" \
+	  redo_logs="$$redo_logs" \
+	  redo_results="$$redo_results" \
+	    $(MAKE) am--redo-logs || exit 1; \
 	else :; fi;
 	@$(am__sh_e_setup); $(am__tty_colors); $(am__set_TESTS_bases); \
 	ws='[ 	]'; \
@@ -1583,20 +1583,20 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	  echo;								\
 	  echo ".. contents:: :depth: 2";				\
 	  echo;								\
-	  for b in $$bases; do						\
-	    if grep "^$$ws*:copy-in-global-log:$$ws*no$$ws*$$" $$b.trs \
+	  for i in $$bases; do						\
+	    if grep "^$$ws*:copy-in-global-log:$$ws*no$$ws*$$" $$i.trs \
 	         >/dev/null; then continue; \
 	    fi; \
 	    glob_res=`sed -n -e "s/$$ws*$$//" \
 	                     -e "s/^$$ws*:global-test-result:$$ws*//p" \
-		        $$b.trs`; \
+		        $$i.trs`; \
 	    test -n "$$glob_res" || glob_res=RUN; \
-	    echo "$$glob_res: $$b" | $(am__rst_section); \
-	    if test ! -r $$b.log; then \
-	      echo "fatal: making $@: $$b.log is unreadable" >&2; \
+	    echo "$$glob_res: $$i" | $(am__rst_section); \
+	    if test ! -r $$i.log; then \
+	      echo "fatal: making $@: $$i.log is unreadable" >&2; \
 	      exit 1; \
 	    fi; \
-	    cat $$b.log; echo; \
+	    cat $$i.log; echo; \
 	  done;	\
 	} >$(TEST_SUITE_LOG).tmp;					\
 	mv $(TEST_SUITE_LOG).tmp $(TEST_SUITE_LOG);			\
@@ -1625,11 +1625,11 @@ check-TESTS:
 	@list='$(RECHECK_LOGS)'; test -z "$$list" || rm -f $$list
 	@list='$(RECHECK_LOGS:.log=.trs)'; test -z "$$list" || rm -f $$list
 	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
-	@list='$(TEST_LOGS)';						\
-	list=`for f in $$list; do					\
-	  test .log = $$f || echo $$f;					\
-	done | tr '\012\015' '  '`;					\
-	list=`echo "$$list" | sed 's/ *$$//'`;				\
+	@list='$(TEST_LOGS)'; \
+	list=`for i in $$list; do \
+	  test .log = $$i || echo $$i; \
+	done | tr '\012\015' '  '`; \
+	list=`echo "$$list" | sed 's/ *$$//'`; \
 	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG) TEST_LOGS="$$list"
 
 .log.html:
@@ -1660,10 +1660,10 @@ recheck recheck-html:
 	@ws='[ 	]';							\
 	target=`echo $@ | sed 's,^re,,'`;				\
 	$(am__set_TESTS_bases);						\
-	list=`for b in $$bases; do 					\
-	        test -f $$b.trs || test -f $$b.log || continue;		\
-	        grep "^$$ws*:recheck:$$ws*no$$ws*$$" $$b.trs 		\
-		  >/dev/null 2>&1 || echo $$b.log; 			\
+	list=`for i in $$bases; do 					\
+	        test -f $$i.trs || test -f $$i.log || continue;		\
+	        grep "^$$ws*:recheck:$$ws*no$$ws*$$" $$i.trs 		\
+		  >/dev/null 2>&1 || echo $$i.log; 			\
 	      done | tr '\012\015' '  '`;				\
 	list=`echo "$$list" | sed 's/ *$$//'`;				\
 	$(MAKE) $(AM_MAKEFLAGS) $$target AM_MAKEFLAGS='$(AM_MAKEFLAGS) TEST_LOGS="'"$$list"'"'
