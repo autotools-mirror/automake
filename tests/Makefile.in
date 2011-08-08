@@ -171,10 +171,6 @@ am__set_TESTS_bases = \
   bases='$(TEST_LOGS)'; \
   bases=`for f in $$bases; do echo $$f; done | sed 's/\.log$$//'`; \
   bases=`echo $$bases`
-# This can be used instead of $(MAKE) in recipes requiring a recursive call
-# to make, but which are not intended to be executed by "make -n".  See the
-# GNU make manual for more details.
-am__stealth_MAKE = $(MAKE)
 RECHECK_LOGS = $(TEST_LOGS)
 AM_RECURSIVE_TARGETS = check check-html recheck recheck-html
 TEST_SUITE_LOG = test-suite.log
@@ -1498,34 +1494,45 @@ cscope cscopelist:
 
 # Recover from deleted `.trs' file; this should ensure that
 # "rm -f foo.log; make foo.trs" re-run `foo.test', and re-create
-# both `foo.log' and `foo.trs'.
+# both `foo.log' and `foo.trs'.  Break the recipe in two subshells
+# to avoid problems with "make -n".
 .log.trs:
-	rm -f $< $@ && $(am__stealth_MAKE) $(AM_MAKEFLAGS) $<
+	rm -f $< $@
+	$(MAKE) $(AM_MAKEFLAGS) $<
+
+# Helper recipe used by $(TEST_SUITE_LOG) below, to avoid problems with
+# "make -n".  Break this recipe in multiple shell invocations too, to
+# really work as expected with "make -n".
+am--redo-logs:
+	@rm -f $$redo_logs
+	@rm -f $$redo_results
+	@$(MAKE) $(AM_MAKEFLAGS) $$redo_logs
+	@st=0; \
+	for b in $$redo_bases; do \
+	  for e in trs log; do \
+	    if test ! -f $$b.$$e || test ! -r $$b.$$e; then \
+	      echo "fatal: making $(TEST_SUITE_LOG): failed to create" \
+	           "$$b.$$e" >&2; \
+	      st=1; \
+	    fi; \
+	  done; \
+	done; \
+	test $$st -eq 0
 
 $(TEST_SUITE_LOG): $(TEST_LOGS)
-	@$(am__sh_e_setup); $(am__tty_colors); \
+	@$(am__set_TESTS_bases); \
 	f_ok () { test -f "$$1" && test -r "$$1"; }; \
-	$(am__set_TESTS_bases); \
-	ws='[ 	]'; \
 	redo_bases=`for b in $$bases; do \
 	              f_ok $$b.trs && f_ok $$b.log || echo $$b; \
 	            done`; \
 	if test -n "$$redo_bases"; then \
 	  redo_logs=`for i in $$redo_bases; do echo $$i.log; done`; \
 	  redo_results=`for i in $$redo_bases; do echo $$i.trs; done`; \
-	  rm -f $$redo_logs && rm -f $$redo_results \
-	    && $(am__stealth_MAKE) $(AM_MAKEFLAGS) $$redo_logs; \
-	fi; \
-	st=0; \
-	for b in $$redo_bases; do \
-	  for e in trs log; do \
-	    f_ok $$b.$$e || { \
-	      echo "fatal: making $@: failed to create $$b.$$e" >&2; \
-	      st=1; \
-	    }; \
-	  done; \
-	done; \
-	test $$st -eq 0 || exit 1; \
+	  (export redo_bases redo_logs redo_results \
+	     && $(MAKE) am--redo-logs) || exit 1; \
+	else :; fi;
+	@$(am__sh_e_setup); $(am__tty_colors); $(am__set_TESTS_bases); \
+	ws='[ 	]'; \
 	results=`for b in $$bases; do echo $$b.trs; done`; \
 	test -n "$$results" || results=/dev/null; \
 	all=`  grep "^$$ws*:test-result:"           $$results | wc -l`; \
@@ -1810,16 +1817,17 @@ uninstall-am:
 .MAKE: check-am check-html install-am install-strip recheck \
 	recheck-html
 
-.PHONY: all all-am check check-TESTS check-am check-html clean \
-	clean-generic clean-local distclean distclean-generic distdir \
-	dvi dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dvi install-dvi-am \
-	install-exec install-exec-am install-html install-html-am \
-	install-info install-info-am install-man install-pdf \
-	install-pdf-am install-ps install-ps-am install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-generic pdf \
-	pdf-am ps ps-am recheck recheck-html uninstall uninstall-am
+.PHONY: all all-am am--redo-logs check check-TESTS check-am check-html \
+	clean clean-generic clean-local distclean distclean-generic \
+	distdir dvi dvi-am html html-am info info-am install \
+	install-am install-data install-data-am install-dvi \
+	install-dvi-am install-exec install-exec-am install-html \
+	install-html-am install-info install-info-am install-man \
+	install-pdf install-pdf-am install-ps install-ps-am \
+	install-strip installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-generic pdf pdf-am ps ps-am recheck recheck-html \
+	uninstall uninstall-am
 
 backcompat5-p.log: backcompat5.test
 check-exported-srcdir-p.log: check-exported-srcdir.test
