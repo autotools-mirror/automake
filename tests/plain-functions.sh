@@ -35,6 +35,6 @@ fatal_ () { warn_ "$me: hard error: $@"; Exit 99; }
 framework_failure_ () { warn_ "$me: set-up failure: $@"; Exit 99; }
 
 # For compatibility with TAP functions.
-skip_all_ () { skip "$@"; }
+skip_all_ () { skip_ "$@"; }
 
 :
