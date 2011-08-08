@@ -113,36 +113,52 @@ $(AM_TESTS_ENVIRONMENT) $(TESTS_ENVIRONMENT)
 # See also 'test-harness-vpath-rewrite.test' and 'test-trs-basic.test'.
 am__set_TESTS_bases = \
   bases='$(TEST_LOGS)'; \
-  bases=`for f in $$bases; do echo $$f; done | sed 's/\.log$$//'`; \
+  bases=`for i in $$bases; do echo $$i; done | sed 's/\.log$$//'`; \
 ## Trim away any extra whitespace.  This has already proved useful in
 ## avoiding weird bug on lesser make implementations.
   bases=`echo $$bases`
 
-# This can be used instead of $(MAKE) in recipes requiring a recursive call
-# to make, but which are not intended to be executed by "make -n".  See the
-# GNU make manual for more details.
-am__stealth_MAKE = $(MAKE)
-
 # Recover from deleted `.trs' file; this should ensure that
 # "rm -f foo.log; make foo.trs" re-run `foo.test', and re-create
-# both `foo.log' and `foo.trs'.
+# both `foo.log' and `foo.trs'.  Break the recipe in two subshells
+# to avoid problems with "make -n".
 .log.trs:
-	rm -f $< $@ && $(am__stealth_MAKE) $(AM_MAKEFLAGS) $<
+	rm -f $< $@
+	$(MAKE) $(AM_MAKEFLAGS) $<
+
+# Helper recipe used by $(TEST_SUITE_LOG) below, to avoid problems with
+# "make -n".  Break this recipe in multiple shell invocations too, to
+# really work as expected with "make -n".
+am--redo-logs:
+	@rm -f $$redo_logs
+	@rm -f $$redo_results
+	@$(MAKE) $(AM_MAKEFLAGS) $$redo_logs
+## Sanity check: each unreadable or non-existent test result file should
+## has been properly remade at this point, as should the corresponding log
+## file.
+	@st=0;  \
+	errmsg="fatal: making $(TEST_SUITE_LOG): failed to create"; \
+	for i in $$redo_bases; do \
+	  test -f $$i.trs && test -r $$i.trs \
+	    || { echo "$$errmsg $$i.trs"; st=1; }; \
+	  test -f $$i.log && test -r $$i.log \
+	    || { echo "$$errmsg $$i.log"; st=1; }; \
+	done; \
+	test $$st -eq 0
+.PHONY: am--redo-logs
 
 $(TEST_SUITE_LOG): $(TEST_LOGS)
-	@$(am__sh_e_setup); $(am__tty_colors); \
+	@$(am__set_TESTS_bases); \
 ## Helper shell function, tells whether a path refers to an existing,
 ## regular, readable file.
-	f_ok () { test -f "$$1" && test -r "$$1"; }; \
-	$(am__set_TESTS_bases); \
-	ws='[ 	]'; \
+	am__f_ok () { test -f "$$1" && test -r "$$1"; }; \
 ## We need to ensures that all the required `.trs' and `.log' files will
 ## be present and readable.  The direct dependencies of $(TEST_SUITE_LOG)
 ## only ensure that all the `.log' files exists; they don't ensure that
 ## the `.log' files are readable, and worse, they don't ensure that the
 ## `.trs' files even exist.
-	redo_bases=`for b in $$bases; do \
-	              f_ok $$b.trs && f_ok $$b.log || echo $$b; \
+	redo_bases=`for i in $$bases; do \
+	              am__f_ok $$i.trs && am__f_ok $$i.log || echo $$i; \
 	            done`; \
 	if test -n "$$redo_bases"; then \
 ## Uh-oh, either some `.log' files were unreadable, or some `.trs' files
@@ -150,22 +166,16 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 ## tests in order to re-create them.
 	  redo_logs=`for i in $$redo_bases; do echo $$i.log; done`; \
 	  redo_results=`for i in $$redo_bases; do echo $$i.trs; done`; \
-	  rm -f $$redo_logs && rm -f $$redo_results \
-	    && $(am__stealth_MAKE) $(AM_MAKEFLAGS) $$redo_logs; \
-	fi; \
-## Sanity check: each unreadable or non-existent test result file should
-## has been properly remade at this point, as should the corresponding log
-## file.
-	st=0; \
-	for b in $$redo_bases; do \
-	  for e in trs log; do \
-	    f_ok $$b.$$e || { \
-	      echo "fatal: making $@: failed to create $$b.$$e" >&2; \
-	      st=1; \
-	    }; \
-	  done; \
-	done; \
-	test $$st -eq 0 || exit 1; \
+## The exported variables are needed by the helper hook.
+	  redo_bases="$$redo_bases" \
+	  redo_logs="$$redo_logs" \
+	  redo_results="$$redo_results" \
+	    $(MAKE) am--redo-logs || exit 1; \
+	else :; fi;
+## We need a new subshell to work portably with "make -n", since the
+## previous part of the recipe contained a $(MAKE) invocation.
+	@$(am__sh_e_setup); $(am__tty_colors); $(am__set_TESTS_bases); \
+	ws='[ 	]'; \
 ## List of test result files.
 	results=`for b in $$bases; do echo $$b.trs; done`; \
 	test -n "$$results" || results=/dev/null; \
@@ -230,27 +240,27 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	  echo;								\
 	  echo ".. contents:: :depth: 2";				\
 	  echo;								\
-	  for b in $$bases; do						\
+	  for i in $$bases; do						\
 ## FIXME: one fork per test -- this is horrendously inefficient!
-	    if grep "^$$ws*:copy-in-global-log:$$ws*no$$ws*$$" $$b.trs \
+	    if grep "^$$ws*:copy-in-global-log:$$ws*no$$ws*$$" $$i.trs \
 	         >/dev/null; then continue; \
 	    fi; \
 ## Get the declared "global result" of the test.
 ## FIXME: yet another one fork per test here!
 	    glob_res=`sed -n -e "s/$$ws*$$//" \
 	                     -e "s/^$$ws*:global-test-result:$$ws*//p" \
-		        $$b.trs`; \
+		        $$i.trs`; \
 ## If no global result is explicitly declared, we'll merely mark the
 ## test as "RUN" in the global test log.
 	    test -n "$$glob_res" || glob_res=RUN; \
 ## Write the name and result of the test as an RST section title.
-	    echo "$$glob_res: $$b" | $(am__rst_section); \
+	    echo "$$glob_res: $$i" | $(am__rst_section); \
 ## If we should have remade any unreadable `.log', above.
-	    if test ! -r $$b.log; then \
-	      echo "fatal: making $@: $$b.log is unreadable" >&2; \
+	    if test ! -r $$i.log; then \
+	      echo "fatal: making $@: $$i.log is unreadable" >&2; \
 	      exit 1; \
 	    fi; \
-	    cat $$b.log; echo; \
+	    cat $$i.log; echo; \
 	  done;	\
 	} >$(TEST_SUITE_LOG).tmp;					\
 	mv $(TEST_SUITE_LOG).tmp $(TEST_SUITE_LOG);			\
@@ -299,13 +309,13 @@ check-TESTS:
 ## 3.80 to erroneously expand $(TESTS_LOGS) to `foo.log .log'.
 ## Work around this bug.
 	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
-	@list='$(TEST_LOGS)';						\
-	list=`for f in $$list; do					\
-	  test .log = $$f || echo $$f;					\
-	done | tr '\012\015' '  '`;					\
+	@list='$(TEST_LOGS)'; \
+	list=`for i in $$list; do \
+	  test .log = $$i || echo $$i; \
+	done | tr '\012\015' '  '`; \
 ## This apparently useless munging helps to avoid a nasty bug (a
 ## segmentation fault!) on Solaris XPG4 make.
-	list=`echo "$$list" | sed 's/ *$$//'`;				\
+	list=`echo "$$list" | sed 's/ *$$//'`; \
 	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG) TEST_LOGS="$$list"
 
 AM_RECURSIVE_TARGETS += check
@@ -353,13 +363,13 @@ recheck recheck-html:
 	@ws='[ 	]';							\
 	target=`echo $@ | sed 's,^re,,'`;				\
 	$(am__set_TESTS_bases);						\
-	list=`for b in $$bases; do 					\
+	list=`for i in $$bases; do 					\
 ## Skip tests that haven't been run, but recover gracefully from deleted
 ## `.trs' files.
-	        test -f $$b.trs || test -f $$b.log || continue;		\
+	        test -f $$i.trs || test -f $$i.log || continue;		\
 ## FIXME: one fork per test -- this is horrendously inefficient!
-	        grep "^$$ws*:recheck:$$ws*no$$ws*$$" $$b.trs 		\
-		  >/dev/null 2>&1 || echo $$b.log; 			\
+	        grep "^$$ws*:recheck:$$ws*no$$ws*$$" $$i.trs 		\
+		  >/dev/null 2>&1 || echo $$i.log; 			\
 	      done | tr '\012\015' '  '`;				\
 ## This apparently useless munging helps to avoid a nasty bug (a
 ## segmentation fault!) on Solaris XPG4 make.
