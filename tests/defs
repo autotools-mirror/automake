@@ -809,17 +809,7 @@ esac
 # Test scripts are free to override this if they need to.
 distdir=$me-1.0
 
-# The subdirectory where the current test script will run and write its
-# temporary/data files.  This will be created shortly, and will be removed
-# by the cleanup trap below if the test passes.  If the test doesn't pass,
-# this directory will be kept, to facilitate debugging.
-testSubDir=$me.dir
-
-test ! -d $testSubDir || rm_rf_ $testSubDir
-mkdir $testSubDir || framework_failure_ "creating test subdirectory"
-
-cd ./$testSubDir
-
+# Set up the exit trap.
 if test "$sh_errexit_works" = yes; then
   trap 'exit_status=$?
     set +e
@@ -865,25 +855,38 @@ if test "$sh_errexit_works" = yes; then
   unset signal
 fi
 
-# Copy in some files we need.
-cp "$top_testsrcdir"/lib/install-sh "$top_testsrcdir"/lib/missing \
-   "$top_testsrcdir"/lib/depcomp . \
-  || framework_failure_ "fetching common files from lib/"
-
-# Build appropriate environment in test directory.  Eg create
-# configure.in, touch all necessary files, etc.
-# Don't use AC_OUTPUT, but AC_CONFIG_FILES so that appending
-# still produces a valid configure.ac.  But then, tests running
-# config.status really need to append AC_OUTPUT.
-{
-  echo "AC_INIT([$me], [1.0])"
-  if test x"$parallel_tests" = x"yes"; then
-    echo "AM_INIT_AUTOMAKE([parallel-tests])"
-  else
-    echo "AM_INIT_AUTOMAKE"
+# Create and populate the temporary directory, if and as required.
+if test x"$am_create_testdir" = x"no"; then
+  testSubDir=
+else
+  # The subdirectory where the current test script will run and write its
+  # temporary/data files.  This will be created shortly, and will be removed
+  # by the cleanup trap below if the test passes.  If the test doesn't pass,
+  # this directory will be kept, to facilitate debugging.
+  testSubDir=$me.dir
+  test ! -d $testSubDir || rm_rf_ $testSubDir
+  mkdir $testSubDir || framework_failure_ "creating test subdirectory"
+  cd ./$testSubDir
+  if test x"$am_create_testdir" != x"empty"; then
+    cp "$top_testsrcdir"/lib/install-sh "$top_testsrcdir"/lib/missing \
+       "$top_testsrcdir"/lib/depcomp . \
+      || framework_failure_ "fetching common files from lib/"
+    # Build appropriate environment in test directory.  E.g., create
+    # configure.in, touch all necessary files, etc.  Don't use AC_OUTPUT,
+    # but AC_CONFIG_FILES so that appending still produces a valid
+    # configure.in.  But then, tests running config.status really need
+    # to append AC_OUTPUT.
+    {
+      echo "AC_INIT([$me], [1.0])"
+      if test x"$parallel_tests" = x"yes"; then
+        echo "AM_INIT_AUTOMAKE([parallel-tests])"
+      else
+        echo "AM_INIT_AUTOMAKE"
+      fi
+      echo "AC_CONFIG_FILES([Makefile])"
+    } > configure.in
   fi
-  echo "AC_CONFIG_FILES([Makefile])"
-} >configure.in
+fi
 
 ## ---------------- ##
 ##  Ready to go...  ##

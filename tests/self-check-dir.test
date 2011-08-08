@@ -16,26 +16,51 @@
 
 # Sanity check for the automake testsuite.
 # Check that tests using `./defs' create a proper temporary directory,
-# and run in it.
+# and run in it.  Also check that we can prevent the pre-population
+# and the creation of such directory if we want.
 
 . ./defs-static || exit 1
 
 set -ex
-
 AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC
 
-this=S_dir
-outcome=:
-pwd
+# This needs to be consistent with what $SHELL deems to be the
+# current working directory.
+cwd=`$SHELL -c 'pwd'` || exit 99
+echo "$cwd"
 
-rm -f $this.tmp
+rm -f _self.tmp
 
-$SHELL -c "
+st=0
+$SHELL -c '
   . ./defs || Exit 1
-  : > $this.tmp
-  case \`pwd\` in '`pwd`'/$this.dir);; *) Exit 1;; esac
-" $this.test || outcome=false
+  pwd; ls -l; # For debugging.
+  : > _self.tmp
+  test -f install-sh
+  test -f configure.in
+  case `pwd` in '"$cwd"'/_self.dir);; *) Exit 1;; esac
+' _self.test || st=1
+test -f _self.tmp && { rm -f _self.tmp; st=1; }
+test $st -eq 0 || exit 1
 
-test -f $this.tmp && { rm -f $this.tmp; outcome=false; }
+st=0
+$SHELL -c '
+  am_create_testdir=empty
+  . ./defs || Exit 1
+  pwd; ls -l; # For debugging.
+  ls -a | grep -v "^\\.\\{1,2\\}$" | grep . && Exit 1
+  : > _self.tmp
+  case `pwd` in '"$cwd"'/_self.dir);; *) Exit 1;; esac
+  :
+' _self.test || st=1
+test -f _self.tmp && { rm -f _self.tmp; st=1; }
+test $st -eq 0 || exit 1
 
-$outcome
+$SHELL -c '
+  am_create_testdir=no
+  . ./defs || Exit 1
+  test -f self-check-dir.test
+  case `pwd` in '"$cwd"');; *) Exit 1;; esac
+' _self.test || exit 1
+
+:
