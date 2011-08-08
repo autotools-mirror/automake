@@ -200,6 +200,7 @@ xpass_ ()
 skip_all_ ()
 {
   echo "1..0 # SKIP" ${1+"$@"}
+  have_tap_plan_=yes
   Exit 0
 }
 
