@@ -18,10 +18,13 @@
 # Make sure that the testsuite initialization code complains when
 # some testsuite-influential variables are set in the environment.
 
-. ./defs-static || exit 1
+am_create_testdir=no
+. ./defs || Exit 1
 
 set -x
 exec 5>&1
+
+plan_ 16 # Two times the number of variable names in $vars.
 
 vars='
   me
@@ -34,11 +37,20 @@ vars='
   original_ACLOCAL
 '
 
+do_run ()
+{
+  env "$1=foo" $SHELL -c '. ./defs' foo.test
+}
+
+do_grep ()
+{
+  env "$1=foo" $SHELL -c '. ./defs' foo.test 2>&1 1>&5 \
+    | grep "foo\.test:.* variable \`$1'.* in the environment.*unsafe"
+}
+
 for var in $vars; do
-  env "$var=foo" $SHELL -c '. ./defs' foo.test && exit 1
-  env "$var=foo" $SHELL -c '. ./defs' foo.test 2>&1 1>&5 \
-    | grep "foo\.test:.* variable \`$var'.* in the environment.*unsafe" \
-    || exit 1
+  command_not_ok_ "$var [err status]" do_run $var
+  command_ok_ "$var [err message]" do_grep $var
 done
 
 :

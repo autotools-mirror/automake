@@ -19,65 +19,60 @@
 # passed to the exit trap installed by the `./defs' script.
 # Also check that the `errexit' shell flag is active.
 
-. ./defs-static || exit 99
+am_create_testdir=no
+. ./defs || Exit 99
 
-unset am_explicit_skips
+plan_ 34
+
+unset am_explicit_skips stderr_fileno_
 AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC
 
 for st in 1 2 3 4 5 77 99 126 127 128 129 130 255; do
-
-  echo "* Try: Exit $st"
-  $SHELL -c  ". ./defs; Exit $st; :"
-  rc=$?
-  echo "* rc=$rc"
-  echo
-  test $rc -eq $st || exit 1
-
-  echo "* Try: sh -c 'exit $st'"
-  $SHELL -c  ". ./defs; sh -c 'exit $st'; :"
-  rc=$?
-  echo "* rc=$rc"
-  echo
-  test $rc -eq $st || exit 1
-
+  rc=0; $SHELL -c  ". ./defs; Exit $st; :" || rc=$?
+  command_ok_ "Exit $st" test $rc -eq $st
+  rc=0; $SHELL -c  ". ./defs; sh -c 'exit $st'; :" || rc=$?
+  command_ok_ "exit $st" test $rc -eq $st
 done
 
-echo "* Try: non-existent-program"
-$SHELL -c  ". ./defs; non-existent-program; :"
-rc=$?
-echo "* rc=$rc"
-echo
-test $rc -eq 127 || exit 1
-
 for sig in 1 2 13 15; do
-
-  echo "* Try: kill -$sig \$\$"
   if test $sig -eq 2; then
     # Some Korn shells might otherwise get a spurious SIGINT
     # signal when one is sent to the child $SHELL.
     trap : 2
   fi
-  $SHELL -c  ". ./defs; kill -$sig \$\$; :"
-  rc=$?
+  rc=0; $SHELL -c  ". ./defs; kill -$sig \$\$; :" || rc=$?
   if test $sig -eq 2; then
     # Reset default SIGINT handler as portably as possible.
     trap 2 || trap - 2
   fi
-  echo "* rc=$rc"
-  echo
   if test x"$sh_errexit_works" = x"yes"; then
     # The exit trap should turn into an hard errors any failure
     # caused by signals.
-    test $rc -eq 99 || exit 1
+    command_ok_ "kill -$sig" test $rc -eq 99
   else
     # The exit trap is not installed, so that the shell should exit
     # with status 128+n when receiving signal number n.  But don't
     # be too strict in the check, as POSIX only says that "The exit
     # status of a command that terminated because it received a
     # signal shall be reported as greater than 128".
-    test $rc -gt 128 || exit 1
+    command_ok_ "kill -$sig" test $rc -gt 128
   fi
 
 done
+
+: Non-existent program.
+rc=0; $SHELL -c  ". ./defs; non-existent-program; :" || rc=$?
+command_ok_ "command not found" test $rc -gt 0
+
+: Non-executable command.
+: > non-executable
+rc=0; $SHELL -c  ". ./defs; ./non-executable; :" || rc=$?
+command_ok_ "permission denied" test $rc -gt 0
+
+: Syntax errors in the test code.
+rc=0; $SHELL -c  ". ./defs; if :; then" || rc=$?
+command_ok_ "syntax error 1" test $rc -gt 0
+rc=0; $SHELL -c  ". ./defs; fi" || rc=$?
+command_ok_ "syntax error 2" test $rc -gt 0
 
 :
