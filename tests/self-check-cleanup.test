@@ -57,6 +57,7 @@ test ! -r $dir
 # Check that post-test cleanup works also with directories with
 # "null" permissions, and containing broken symlinks.
 $SHELL -c '
+  stderr_fileno_=2
   . ./defs || Exit 1
   set -e
   mkdir dir dir/sub
@@ -95,6 +96,7 @@ if $have_symlinks; then
 
   $SHELL -c '
     ocwd=`pwd` || exit 1
+    stderr_fileno_=2
     . ./defs || Exit 1
     ln -s "$ocwd/dir" "$ocwd/file" .
   ' dummy.test
@@ -125,7 +127,12 @@ for bailout_command in \
   'kill -13 $$' \
   'kill -15 $$' \
 ; do
-  $SHELL -c  ". ./defs; : > foo; $bailout_command" dummy.test && Exit 1
+  $SHELL -c  "
+    stderr_fileno_=2
+    . ./defs
+    : > foo
+    $bailout_command
+  " dummy.test && Exit 1
   test -f dummy.dir/foo
 done
 
