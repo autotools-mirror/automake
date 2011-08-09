@@ -188,7 +188,10 @@ else
 fi
 
 if test -f "$testsrcdir/$funcs_file_"; then
-  . "$testsrcdir/$funcs_file_"
+  . "$testsrcdir/$funcs_file_" || {
+    echo "$me: error sourcing $testsrcdir/$funcs_file_" >&2
+    Exit 99
+  }
 else
   echo "$me: $testsrcdir/$funcs_file_ not found, check \$testsrcdir" >&2
   Exit 99
@@ -875,9 +878,12 @@ else
   # by the cleanup trap below if the test passes.  If the test doesn't pass,
   # this directory will be kept, to facilitate debugging.
   testSubDir=$me.dir
-  test ! -d $testSubDir || rm_rf_ $testSubDir
-  mkdir $testSubDir || framework_failure_ "creating test subdirectory"
-  cd ./$testSubDir
+  test ! -d $testSubDir || rm_rf_ $testSubDir \
+    || framework_failure_ "removing old test subdirectory"
+  mkdir $testSubDir \
+    || framework_failure_ "creating test subdirectory"
+  cd ./$testSubDir \
+    || framework_failure_ "cannot chdir into test subdirectory"
   if test x"$am_create_testdir" != x"empty"; then
     cp "$top_testsrcdir"/lib/install-sh "$top_testsrcdir"/lib/missing \
        "$top_testsrcdir"/lib/depcomp . \
@@ -895,7 +901,7 @@ else
         echo "AM_INIT_AUTOMAKE"
       fi
       echo "AC_CONFIG_FILES([Makefile])"
-    } > configure.in
+    } >configure.in || framework_failure_ "creating configure.in skeleton"
   fi
 fi
 
