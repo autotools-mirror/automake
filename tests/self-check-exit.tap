@@ -61,12 +61,29 @@ for sig in 1 2 13 15; do
 done
 
 : Non-existent program.
-rc=0; $SHELL -c  ". ./defs; non-existent-program; :" || rc=$?
-command_ok_ "command not found" test $rc -gt 0
+# Solaris 10 /bin/sh erroneously exit with success right away when the
+# following three conditions are met at the same time:
+#   1. the `errexit' flag is active,
+#   2. an exit trap is installed, and
+#   3. a non-existing command is issued.
+# Note that the non-existent command is issued as the last command to
+# the shell in the next line; this is deliberate.
+if $SHELL -c 'set -e; trap "exit \$?" 0; non-existent-program'; then
+  maybe_todo=TODO reason="known Solaris /bin/sh bug"
+else
+  maybe_todo="" reason=""
+fi
+if $SHELL -c  ". ./defs; non-existent-program; :"; then
+  r='not ok'
+else
+  r='ok'
+fi
+result_ "$r" -D "$maybe_todo" -r "$reason" "command not found"
 
 : Non-executable command.
-: > non-executable
-rc=0; $SHELL -c  ". ./defs; ./non-executable; :" || rc=$?
+test -f Makefile && test ! -x Makefile || \
+  framowork_failure_ "no proper Makefile in the current directory"
+rc=0; $SHELL -c  ". ./defs; ./Makefile; :" || rc=$?
 command_ok_ "permission denied" test $rc -gt 0
 
 : Syntax errors in the test code.
