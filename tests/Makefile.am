@@ -1001,6 +1001,7 @@ suffix10.test \
 suffix11.test \
 suffix12.test \
 suffix13.test \
+suffix-chain.test \
 symlink.test \
 symlink2.test \
 syntax.test \
