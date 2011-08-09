@@ -300,6 +300,41 @@ using_gmake ()
 }
 am__using_gmake="" # Avoid interferences from the environment.
 
+# make_can_chain_suffix_rules
+# ---------------------------
+# Return 0 if $MAKE is a make implementation that can chain suffix rules
+# automatically, return 1 otherwise.  Caches the result for speed reasons.
+make_can_chain_suffix_rules ()
+{
+  if test -z "$am__can_chain_suffix_rules"; then
+    if using_gmake; then
+      am__can_chain_suffix_rules=yes
+      return 0
+    else
+      mkdir am__chain.dir$$
+      cd am__chain.dir$$
+      unindent > Makefile << 'END'
+        .u.v: ; cp $< $@
+        .v.w: ; cp $< $@
+END
+      echo make can chain suffix rules > foo.u
+      if $MAKE foo.w && diff foo.u foo.w; then
+        am__can_chain_suffix_rules=yes
+      else
+        am__can_chain_suffix_rules=no
+      fi
+      cd ..
+      rm -rf am__chain.dir$$
+    fi
+  fi
+  case $am__can_chain_suffix_rules in
+    yes) return 0;;
+     no) return 1;;
+      *) fatal_ "make_can_chain_suffix_rules: internal error";;
+  esac
+}
+am__can_chain_suffix_rules="" # Avoid interferences from the environment.
+
 # seq_ - print a sequence of numbers
 # ----------------------------------
 # This function simulates GNU seq(1) portably.  Valid usages:
@@ -348,7 +383,6 @@ rm_rf_ ()
   find "$@" -type d ! -perm -700 -exec chmod u+rwx {} \; || :
   rm -rf "$@"
 }
-
 
 # count_test_results total=N pass=N fail=N xpass=N xfail=N skip=N error=N
 # -----------------------------------------------------------------------
