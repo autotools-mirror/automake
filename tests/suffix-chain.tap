@@ -18,9 +18,12 @@
 # some make implementations to automatically chain suffix rules.
 # See automake bug#7824 and bug#7670.
 
+required=cc
 . ./defs || Exit 1
 
-cat >> configure.ac <<'END'
+plan_ 8
+
+cat >> configure.in <<'END'
 AC_PROG_CC
 AC_OUTPUT
 END
@@ -29,29 +32,33 @@ cat > Makefile.am <<'END'
 bin_PROGRAMS = foo
 foo_SOURCES = foo.e
 .e.d:
-      (echo 'int main (void)' && echo '{' && cat $<) > $@
+	(echo 'int main (void)' && echo '{' && cat $<) > $@
 .d.c:
-      (cat $< && echo '}') > $@
+	(cat $< && echo '}') > $@
 CLEANFILES = foo.d foo.c
 END
 
-echo 'return 0' > foo.e
+echo 'return 0;' > foo.e
 
-$ACLOCAL
-$AUTOMAKE
-$AUTOCONF
-./configure
+command_ok_ "aclocal"   $ACLOCAL
+command_ok_ "automake"  $AUTOMAKE
+command_ok_ "autoconf"  $AUTOCONF
+command_ok_ "configure" ./configure
 
-$MAKE
-$MAKE distcheck
+directive=''; make_can_chain_suffix_rules || directive=TODO
 
-$MAKE clean
+for target in all distcheck; do
+  if $MAKE $target; then r='ok'; else r='not ok'; fi
+  result_ "$r" -D "$directive" -r "make doesn't chain suffix rules" \
+               -- "make $target"
+done
 
+command_ok_ "clean" $MAKE clean
+# Sanity check.
 cat >> Makefile <<'END'
 foo.c: foo.d
 foo.d: foo.e
 END
-
-$MAKE
+command_ok_ "make with explicit dependencies" $MAKE
 
 :

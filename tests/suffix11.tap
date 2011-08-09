@@ -21,6 +21,8 @@
 required=cc
 . ./defs || Exit 1
 
+plan_ 10
+
 cat >>configure.in <<EOF
 AC_PROG_CC
 AC_OUTPUT
@@ -55,24 +57,26 @@ echo 'INTEGER main(void) { return 0; }' > bar.y-z
 echo 'INTEGER main(void) { INTEGER baz(void); return baz(); }' > baz1.x_
 echo 'INTEGER baz(void) { return 0; }' > baz2.y-z
 
-$ACLOCAL
-$AUTOCONF
+command_ok_ "aclocal" $ACLOCAL
+command_ok_ "autoconf" $AUTOCONF
 
 # What we do is not portable.  Automake should warn.
 AUTOMAKE_fails -a
-grep '[iI]nference rules can have only one target before the colon' stderr
-
+command_ok_ "warn about unportable make usage" \
+  grep '[iI]nference rules can have only one target before the colon' stderr
 # But this should work anyway.
-$AUTOMAKE -a -Wno-portability
+command_ok_ "automake" $AUTOMAKE -a -Wno-portability
 
-./configure
+command_ok_ "configure"  ./configure
+command_ok_ "make test-fake" env OBJEXT=foo $MAKE -e test-fake
+command_ok_ "make test-real" $MAKE test-real
 
-OBJEXT=foo $MAKE -e test-fake
-$MAKE test-real
+directive=''; make_can_chain_suffix_rules || directive=TODO
 
-make_can_chain_suffix_rules || skip_ "make doesn't chain suffix rules"
-
-$MAKE
-$MAKE distcheck
+for target in '' distcheck; do
+  if $MAKE $target; then r='ok'; else r='not ok'; fi
+  result_ "$r" -D "$directive" -r "make doesn't chain suffix rules" \
+               -- "make $target"
+done
 
 :

@@ -21,6 +21,8 @@
 required='cc libtoolize'
 . ./defs || Exit 1
 
+plan_ 10
+
 cat >>configure.in <<'END'
 AM_PROG_LIBTOOL
 AC_OUTPUT
@@ -67,21 +69,23 @@ test2: $(foo_OBJECTS) $(libfoo_la_OBJECTS)
 check-local: test1 test2
 END
 
-echo 'int main(void) { return 0; }' > foo.x_
-echo 'int bar(void) { return 0; }' > bar.x_
+echo 'int main (void) { return 0; }' > foo.x_
+echo 'int bar (void) { return 0; }' > bar.x_
 
-libtoolize
-$ACLOCAL
-$AUTOCONF
-$AUTOMAKE -a
+command_ok_ "libtoolize" libtoolize
+command_ok_ "aclocal"    $ACLOCAL
+command_ok_ "autoconf"   $AUTOCONF
+command_ok_ "automake"   $AUTOMAKE -a
+command_ok_ "configure"  ./configure
+command_ok_ "make test0" env OBJEXT=foo $MAKE -e test0
+command_ok_ "make test1" $MAKE test1
 
-./configure
+directive=''; make_can_chain_suffix_rules || directive=TODO
 
-OBJEXT=foo $MAKE -e test0
-$MAKE test1
-make_can_chain_suffix_rules || skip_ "make doesn't chain suffix rules"
-$MAKE test2
-$MAKE all
-$MAKE distcheck
+for target in test2 all distcheck; do
+  if $MAKE $target; then r='ok'; else r='not ok'; fi
+  result_ "$r" -D "$directive" -r "make doesn't chain suffix rules" \
+               -- "make $target"
+done
 
 :
