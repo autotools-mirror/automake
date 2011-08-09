@@ -42,31 +42,41 @@ else
   incr_ () { eval "$1=\`expr \${$1} + 1\`"; }
 fi
 
-# plan_ NUMBER-OF-PLANNED-TESTS
-# -----------------------------
+# not COMMAND [ARGS...]
+# ---------------------
+# Run the given command and invert its exit status.
+not ()
+{
+  if "$@"; then return 1; else return 0; fi
+}
+
+# plan_ [unknown|later|lazy|now|NUMBER-OF-PLANNED-TESTS]
+# ------------------------------------------------------
 # Print a TAP plan for the given number of tests.  This must be called
-# before reporting any test result; in fact, it must be called before
-# emitting anything on standard output.
+# before reporting any test result.  If called with the special argument
+# "unknown" or "later", it will do nothing, expecting the calling script
+# to declare the plan later.  If called with the special argument "lazy"
+# or "now", it will print a TAP plan that accounts for the number of tests
+# seen so far.
 plan_ ()
 {
-  echo "1..$1"
-  have_tap_plan_=yes
+  if test $# -eq 0; then
+    bailout_ "plan_: missing argument"
+  elif test $# -ge 2; then
+    bailout_ "plan_: too many arguments"
+  elif test x"$1" = x"unknown" || test x"$1" = x"later"; then
+    : No-op.
+  elif test x"$1" = x"lazy" || test x"$1" = x"now"; then
+    echo "1..$tap_count_" # Number of test results seen so far.
+    have_tap_plan_=yes
+  elif test $1 -ge 0; then
+    echo "1..$1"
+    have_tap_plan_=yes
+  else
+    bailout_ "plan_: invalid argument '$1'"
+  fi
 }
-
-# late_plan_
-# ----------
-# Print a TAP plan that accounts for the number of tests seen so far.
-# This must be called after all the tests result have been reported;
-# in fact, after this has been called, nothing more can be print on
-# standard output.
-late_plan_ ()
-{
-  echo "1..$tap_count_"
-  have_tap_plan_=yes
-}
-
-# Initialize it to avoid interferences from the environment.
-have_tap_plan_=no
+have_tap_plan_=no # Avoid interferences from the environment.
 
 # diag_ [EXPLANATION]
 # ------------------
@@ -139,30 +149,10 @@ result_ ()
   set -x # Restore shell xtraces.
 }
 
-# ok_ [DESCRIPTION...]
-# --------------------
-# Report a successful test.
-ok_ ()
-{
-  result_ 'ok' -- ${1+"$@"}
-}
-
-# not_ok_ [DESCRIPTION...]
-# ------------------------
-# Report a failed test.
-not_ok_ ()
-{
-  result_ 'not ok' -- ${1+"$@"}
-}
-
-# skip_ [-r REASON] [--] [DESCRIPTION...]
-# ---------------------------------------
-# Report a skipped test.  If the `-r' option is present, its argument is
-# give as the reason of the skip.
-skip_ ()
-{
-  result_ 'ok' -D SKIP ${1+"$@"}
-}
+#  Shorthands for common usages of `result_'.
+ok_ () { result_ 'ok' ${1+"$@"}; }
+not_ok_ () { result_ 'not ok' ${1+"$@"}; }
+skip_ () { result_ 'ok' -D SKIP ${1+"$@"}; }
 
 # skip_row_ COUNT [-r REASON] [--] [DESCRIPTION...]
 # -------------------------------------------------
@@ -173,24 +163,6 @@ skip_row_ ()
 {
   skip_count_=$1; shift
   for i_ in `seq $skip_count_`; do skip_ ${1+"$@"}; done
-}
-
-# xfail_ [-r REASON] [DESCRIPTION...]
-# ----------------------------------
-# Report a test that failed expectedly.  If the `-r' option is present, its
-# argument is give as the reason why the failure is expected.
-xfail_ ()
-{
-  result_ 'not ok' -D TODO ${1+"$@"}
-}
-
-# xpass_ [-r REASON] [DESCRIPTION...]
-# -----------------------------------
-# Report a test that failed unexpectedly.  If the `-r' option is present, its
-# argument is give as the reason why the failure is expected.
-xpass_ ()
-{
-  result_ 'ok' -D TODO ${1+"$@"}
 }
 
 # skip_all_ [REASON ...]
@@ -233,44 +205,28 @@ framework_failure_ ()
   bailout_ "set-up failure"${1+": $*"}
 }
 
-# command_ok_ TEST-DESCRIPTION [--] CMD [ARGS...]
-# -----------------------------------------------
-# Report a passed test if the given command returns with success,
-# a failed test otherwise.
+# command_ok_ TEST-DESCRIPTION [OPTIONS..] [--] CMD [ARGS...]
+# -----------------------------------------------------------
+# Helper subroutine for when a TAP result must be determined by the
+# outcome of a command.
 command_ok_ ()
 {
-  tap_desc_=$1; shift
-  test x"$1" != x"--" || shift
-  if "$@"; then
-    ok_ "$tap_desc_"
-  else
-    not_ok_ "$tap_desc_"
-  fi
-}
-
-# command_not_ok_ TEST-DESCRIPTION [--] CMD [ARGS...]
-# ---------------------------------------------------
-# Report a failed test if the given command returns with success,
-# a failed test otherwise.
-command_not_ok_ ()
-{
-  tap_desc_=$1; shift
-  test x"$1" != x"--" || shift
-  if "$@"; then
-    not_ok_ "$tap_desc_"
-  else
-    ok_ "$tap_desc_"
-  fi
-}
-
-# reset_test_count_ COUNT
-# -----------------------
-# Reset the count of the TAP test results seen so far to COUNT.
-# This function is for use in corner cases only (e.g., when `ok_' and
-# `not_ok_' must be used inside a subshell).  Be careful when using it!
-reset_test_count_ ()
-{
-  tap_count_=$1
+  tap_directive_= tap_reason_=
+  test $# -gt 0 || bailout_ "command_ok_: missing argument"
+  tap_description_=$1; shift
+  while test $# -gt 0; do
+    case $1 in
+      -D|--directive) tap_directive_=$2; shift;;
+      -r|--reason) tap_reason_=$2; shift;;
+      --) shift; break;;
+      -*) bailout_ "command_ok_: invalid option '$1'";;
+       *) break;;
+    esac
+    shift
+  done
+  tap_result_="ok"; "$@" || tap_result_="not ok"
+  result_ "$tap_result_" -D "$tap_directive_" -r "$tap_reason_" \
+          -- "$tap_description_"
 }
 
 :

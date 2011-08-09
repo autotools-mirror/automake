@@ -29,9 +29,9 @@ AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC
 init='. ./defs; stderr_fileno_=2; unset am_explicit_skips'
 
 for st in 1 2 3 4 5 77 99 126 127 128 129 130 255; do
-  for ex in "Exit $st" "sh -c 'exit $st'"; do
-    rc=0; $SHELL -c  "$init; $ex; :" || rc=$?
-    command_ok_ "$ex" test $rc -eq $st
+  for exit_cmd in "Exit $st" "sh -c 'exit $st'"; do
+    rc=0; $SHELL -c  "$init; $exit_cmd; :" || rc=$?
+    command_ok_ "$exit_cmd" test $rc -eq $st
   done
 done
 
@@ -74,12 +74,9 @@ if $SHELL -c 'set -e; trap "exit \$?" 0; non-existent-program'; then
 else
   maybe_todo="" reason=""
 fi
-if $SHELL -c  "$init; non-existent-program; :"; then
-  r='not ok'
-else
-  r='ok'
-fi
-result_ "$r" -D "$maybe_todo" -r "$reason" "command not found"
+rc=0; $SHELL -c  "$init; non-existent-program; :" || rc=$?
+command_ok_ "command not found" -D "$maybe_todo" -r "$reason" \
+            -- test $rc -gt 0
 
 : Non-executable command.
 test -f Makefile && test ! -x Makefile || \
