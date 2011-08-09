@@ -17,17 +17,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+########################################################
+###  IMPORTANT NOTE: keep this file 'set -e' clean.  ###
+########################################################
 
-# IMPORTANT NOTE: This file should execute correctly with any system's
-# /bin/sh shell, and not only with configure-time detected $CONFIG_SHELL,
-# until differently and explicitly specified.
-
+# NOTE: This file should execute correctly with any system's /bin/sh
+# shell, and not only with configure-time detected $CONFIG_SHELL,
+# *until differently and explicitly specified*.
 
 ## -------------------------------------------------------- ##
 ##  Source static setup and definitions for the testsuite.  ##
 ## -------------------------------------------------------- ##
-
-# This code needs to be 'set -e' clean.
 
 # Ensure we are running from the right directory.
 test -f ./defs-static || {
@@ -37,6 +37,9 @@ test -f ./defs-static || {
 
 # Source the shell sanitization and variables' definitions.
 . ./defs-static || exit 99
+
+# Enable the errexit shell flag early.
+set -e
 
 # The name of the current test (without the `.test' suffix).
 # Test scripts can override it if they need to (but this should
@@ -103,9 +106,10 @@ case ${AM_TESTS_REEXEC-yes} in
       *) opts=;;
     esac
     echo $me: exec $SHELL $opts "$0" "$*"
-    exec $SHELL $opts "$0" ${1+"$@"}
-    echo "$me: failed to re-execute with $SHELL" >&2
-    exit 99
+    exec $SHELL $opts "$0" ${1+"$@"} || {
+      echo "$me: failed to re-execute with $SHELL" >&2
+      exit 99
+    }
     ;;
 esac
 
@@ -116,6 +120,11 @@ esac
 ## ---------------------- ##
 ##  Environment cleanup.  ##
 ## ---------------------- ##
+
+# Temporarily disable this, since some shells (e.g., older version
+# of Bash) can return a non-zero exit status upon the when a non-set
+# variable is unset.
+set +e
 
 # Unset some MAKE... variables that may cause $MAKE to act like a
 # recursively invoked sub-make.  Any $MAKE invocation in a test is
@@ -148,6 +157,8 @@ unset TEST_LOGS
 unset RECHECK_LOGS
 unset VERBOSE
 
+# Re-enable, it had been temporarily disabled above.
+set -e
 
 ## ---------------------------- ##
 ##  Auxiliary shell functions.  ##
@@ -610,8 +621,8 @@ do
         || framework_failure_ "creating unwritable file $priv_check_temp"
       # Not a useless use of subshell: lesser shells like Solaris /bin/sh
       # can exit if a builtin fails.
-      (echo foo >> $priv_check_temp)
-      overwrite_status=$?
+      overwrite_status=0
+      (echo foo >> $priv_check_temp) || overwrite_status=$?
       rm -f $priv_check_temp
       if test $overwrite_status -eq 0; then
         skip_all_ "cannot drop file write permissions"
@@ -639,8 +650,8 @@ do
         || framework_failure_ "creating unwritable directory $ro_dir_temp"
       # Not a useless use of subshell: lesser shells like Solaris /bin/sh
       # can exit if a builtin fails.
-      (: > $ro_dir_temp/probe)
-      create_status=$?
+      create_status=0
+      (: > $ro_dir_temp/probe) || create_status=$?
       rm -rf $ro_dir_temp
       if test $create_status -eq 0; then
         skip_all_ "cannot drop directory write permissions"
@@ -893,6 +904,4 @@ fi
 ## ---------------- ##
 
 set -x
-set -e
-
 pwd
