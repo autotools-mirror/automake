@@ -733,6 +733,7 @@ parallel-tests-log-override-2.test \
 parallel-tests-log-override-recheck.test \
 parallel-tests-cmdline-override.test \
 parallel-tests-log-compiler-example.test \
+parallel-tests-fork-bomb.test \
 parse.test \
 percent.test \
 percent2.test \
