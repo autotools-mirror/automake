@@ -65,6 +65,34 @@ for pos in leading trailing; do
   grep "^ERROR: $pos-repeated\\.test 2 # AFTER LATE PLAN$" stdout
 done
 
+cat > 1.test <<END
+1..0
+1..0
+END
+
+cat > 2.test <<END
+1..0 # SKIP
+1..0
+END
+
+cat > 3.test <<END
+1..0
+1..0 # SKIP
+END
+
+cat > 4.test <<END
+1..0 # SKIP
+1..0 # SKIP
+END
+
+env TESTS="1.test 2.test 3.test 4.test" \
+  $MAKE -e check >stdout && { cat stdout; Exit 1; }
+cat stdout
+count_test_results total=8 pass=0 fail=0 xpass=0 xfail=0 skip=4 error=4
+for i in 1 2 3 4; do
+  grep "^ERROR: $i\\.test - multiple test plans$" stdout
+done
+
 cat > all.test <<END
 1..5
 ok 1

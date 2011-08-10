@@ -14,40 +14,50 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# TAP support:
-#  - the special plan format to skip all the tests in a script can also
-#    be used on the last line, even if preceded by non-TAP output, TAP
-#    diagnostic, and even non-failing TAP test results.
+# Basic TAP test protocol support:
+#  - parsing of input TAP stream continue after a "SKIP" plan has
+#    been seen.
 
 parallel_tests=yes
 . ./defs || Exit 1
 
 . "$testsrcdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
-echo AM_TEST_LOG_DRIVER_FLAGS = --comments >> Makefile
+echo TEST_LOG_DRIVER_FLAGS = --comments >> Makefile
 
 cat > foo.test <<END
-some non-TAP text, will be copied in the global log
-1..0 # SKIP from the last line
+1..0
+a non-TAP line
+# a comment
 END
 
 cat > bar.test <<END
-# some TAP diagnostic, will go to console
-1..0
+# an early comment
+an early non-TAP line
+ $tab
+1..0 # SKIP
+# a later comment
+a later non-TAP line
 END
 
-st=0
-TESTS='foo.test bar.test' $MAKE -e check >stdout || st=$?
+TESTS='foo.test bar.test' $MAKE -e check >stdout || { cat stdout; Exit 1; }
 cat stdout
-cat test-suite.log
-test $st -eq 0
 
-grep '^SKIP: foo\.test .* from the last line$' stdout
-grep '^SKIP: bar\.test$' stdout
-grep '^# bar\.test: some TAP diagnostic, will go to console$' stdout
-grep '^# some TAP diagnostic, will go to console$' test-suite.log
-grep '^some non-TAP text, will be copied in the global log$' test-suite.log
-test `grep -c ': .*\.test' stdout` -eq 2
 count_test_results total=2 pass=0 fail=0 xpass=0 xfail=0 skip=2 error=0
+
+grep '^# foo\.test: a comment$' stdout
+grep '^# bar\.test: an early comment$' stdout
+grep '^# bar\.test: a later comment$' stdout
+
+cat foo.log
+cat bar.log
+
+grep '^a non-TAP line$' foo.log
+grep '^# a comment$' foo.log
+grep '^# an early comment' bar.log
+grep '^an early non-TAP line$' bar.log
+grep '^# a later comment' bar.log
+grep '^a later non-TAP line$' bar.log
+grep "^ $tab$" bar.log
 
 :
