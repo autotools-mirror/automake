@@ -736,6 +736,7 @@ parallel-tests-log-override-2.test \
 parallel-tests-log-override-recheck.test \
 parallel-tests-cmdline-override.test \
 parallel-tests-log-compiler-example.test \
+parallel-tests-fork-bomb.test \
 parallel-tests-empty-testlogs.test \
 parallel-tests-driver-install.test \
 parallel-tests-no-color-in-log.test \
