@@ -1183,6 +1183,7 @@ tap-skip-whole-badexit.test \
 tap-skip-whole-bailout.test \
 tap-skip-whole-continue.test \
 tap-skip-whole-unplanned.test \
+tap-results-with-planskip.test \
 tap-todo-skip-together.test \
 tap-todo-skip-whitespace.test \
 tap-todo-skip.test \
