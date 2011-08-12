@@ -45,6 +45,7 @@ my %COLOR = (
 
 my $testno = 0;     # Number of test results seen so far.
 my $plan_seen = 0;  # Whether the TAP plan has been seen or not.
+my $bailed_out = 0; # Whether a "Bail out!" directive has been seen.
 my $parser;         # TAP parser object (will be initialized later).
 
 # When true, it means that the rest of the input stream cannot
@@ -96,7 +97,6 @@ sub colored ($$);
 sub copy_in_global_log ();
 sub decorate_result ($);
 sub extract_tap_comment ($);
-sub finish ();
 sub get_global_test_result ();
 sub get_test_exit_message ();
 sub get_test_results ();
@@ -210,10 +210,10 @@ sub start (@)
 
 sub get_test_exit_message ()
 {
-  # Flush all the remaining TAP stream, so that we can obtain the
-  # exit status of the TAP producer.
-  do {} while defined $parser->next;
   my $wstatus = $parser->wait;
+  # Watch out for possible internal errors.
+  die "couldn't get the exit ststus of the TAP producer"
+    unless defined $wstatus;
   # Return an undefined value if the producer exited with success.
   return unless $wstatus;
   # Otherwise, determine whether it exited with error or was terminated
@@ -231,13 +231,6 @@ sub get_test_exit_message ()
 	{
 	  return "terminated abnormally";
 	}
-}
-
-sub finish ()
-{
-  write_test_results;
-  close LOG or die "closing $log_file: $!\n";
-  exit 0;
 }
 
 sub stringify_test_result ($)
@@ -387,9 +380,9 @@ sub handle_tap_plan ($)
 sub handle_tap_bailout ($)
 {
   my ($bailout, $msg) = ($_[0], "Bail out!");
+  $bailed_out = 1;
   $msg .= " " . $bailout->explanation if $bailout->explanation;
   testsuite_error $msg;
-  finish;
 }
 
 sub extract_tap_comment ($)
@@ -411,6 +404,9 @@ sub main (@)
     {
       # Verbatim copy any input line into the log file.
       print $cur->raw . "\n";
+      # Parsing of TAP input should stop after a "Bail out!" directive.
+      next if $bailed_out;
+
       if ($cur->is_plan)
         {
           handle_tap_plan ($cur);
@@ -429,22 +425,30 @@ sub main (@)
           report "#", "$comment" if length $comment;
        }
     }
-  if (!$plan_seen)
+  # A "Bail out!" directive should cause us to ignore any following TAP
+  # error, as well as a non-zero exit status from the TAP producer.
+  if (!$bailed_out)
     {
-      testsuite_error "missing test plan";
+      if (!$plan_seen)
+      {
+        testsuite_error "missing test plan";
+      }
+    elsif ($parser->tests_planned != $parser->tests_run)
+      {
+        my ($planned, $run) = ($parser->tests_planned, $parser->tests_run);
+        my $bad_amount = $run > $planned ? "many" : "few";
+        testsuite_error (sprintf "too %s tests run (expected %d, got %d)",
+                                 $bad_amount, $planned, $run);
+      }
     }
-  elsif ($parser->tests_planned != $parser->tests_run)
-    {
-      my ($planned, $run) = ($parser->tests_planned, $parser->tests_run);
-      my $bad_amount = $run > $planned ? "many" : "few";
-      testsuite_error (sprintf "too %s tests run (expected %d, got %d)",
-                               $bad_amount, $planned, $run);
-    }
-  if (!$cfg{"ignore-exit"} and my $msg = get_test_exit_message)
-    {
-      testsuite_error $msg;
-    }
-  finish;
+  if (!$cfg{"ignore-exit"} && !$bailed_out)
+  {
+    my $msg = get_test_exit_message ();
+    testsuite_error $msg if $msg;
+  }
+  write_test_results;
+  close LOG or die "closing $log_file: $!\n";
+  exit 0;
 }
 
 # ----------- #

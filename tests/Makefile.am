@@ -1144,6 +1144,7 @@ testsuite-summary-count-many.log: extract-testsuite-summary
 tap_with_common_setup_tests = \
 tap-autonumber.test \
 tap-bailout.test \
+tap-bailout-and-logging.test \
 tap-bailout-suppress-badexit.test \
 tap-bailout-suppress-later-diagnostic.test \
 tap-bailout-suppress-later-errors.test \
