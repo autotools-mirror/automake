@@ -22,6 +22,8 @@ parallel_tests=yes
 
 . "$testsrcdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
+# -------------------------------------------------------------------------
+
 cat > leading-repeated.test <<END
 1..1
 1..1
@@ -42,6 +44,8 @@ for pos in leading trailing; do
   grep "^ERROR: $pos-repeated\\.test - multiple test plans$" stdout
 done
 
+# -------------------------------------------------------------------------
+
 cat > leading-repeated.test <<END
 1..2
 ok 1
@@ -59,11 +63,13 @@ END
 env TESTS="leading-repeated.test trailing-repeated.test" \
   $MAKE -e check >stdout && { cat stdout; Exit 1; }
 cat stdout
-count_test_results total=6 pass=2 fail=0 xpass=0 xfail=0 skip=0 error=4
-for pos in leading trailing; do
-  grep "^ERROR: $pos-repeated\\.test - multiple test plans$" stdout
-  grep "^ERROR: $pos-repeated\\.test 2 # AFTER LATE PLAN$" stdout
-done
+count_test_results total=6 pass=3 fail=0 xpass=0 xfail=0 skip=0 error=3
+grep "^ERROR: leading-repeated\\.test - multiple test plans$" stdout
+grep "^ERROR: trailing-repeated\\.test - multiple test plans$" stdout
+grep "^ERROR: trailing-repeated\\.test 2 # AFTER LATE PLAN$" stdout
+grep "leading .*AFTER LATE PLAN" stdout && Exit 1
+
+# -------------------------------------------------------------------------
 
 cat > 1.test <<END
 1..0
@@ -93,6 +99,8 @@ for i in 1 2 3 4; do
   grep "^ERROR: $i\\.test - multiple test plans$" stdout
 done
 
+# -------------------------------------------------------------------------
+
 cat > all.test <<END
 1..5
 ok 1
@@ -107,17 +115,17 @@ END
 
 $MAKE -e check >stdout && { cat stdout; Exit 1; }
 cat stdout
-count_test_results total=8 pass=2 fail=0 xpass=0 xfail=0 skip=0 error=6
+count_test_results total=8 pass=5 fail=0 xpass=0 xfail=0 skip=0 error=3
 
 cat > exp <<'END'
 PASS: all.test 1
 PASS: all.test 2
 ERROR: all.test - multiple test plans
-ERROR: all.test 3 # AFTER LATE PLAN
+PASS: all.test 3
 ERROR: all.test - multiple test plans
-ERROR: all.test 4 # AFTER LATE PLAN
+PASS: all.test 4
 ERROR: all.test - multiple test plans
-ERROR: all.test 5 # AFTER LATE PLAN
+PASS: all.test 5
 END
 
 $FGREP ': all.test' stdout > got
@@ -126,17 +134,55 @@ cat exp
 cat got
 diff exp got
 
-sed -e 1d all.test > t
-mv -f t all.test
+# -------------------------------------------------------------------------
+
+cat > all.test <<END
+1..2
+ok 1
+ok 2
+1..3
+ok 3
+END
 
 $MAKE -e check >stdout && { cat stdout; Exit 1; }
 cat stdout
-count_test_results total=7 pass=2 fail=0 xpass=0 xfail=0 skip=0 error=5
+count_test_results total=5 pass=2 fail=0 xpass=0 xfail=0 skip=0 error=3
 
 cat > exp <<'END'
 PASS: all.test 1
 PASS: all.test 2
-ERROR: all.test 3 # AFTER LATE PLAN
+ERROR: all.test - multiple test plans
+ERROR: all.test 3 # UNPLANNED
+ERROR: all.test - too many tests run (expected 2, got 3)
+END
+
+$FGREP ': all.test' stdout > got
+
+cat exp
+cat got
+diff exp got
+
+# -------------------------------------------------------------------------
+
+cat > all.test <<END
+ok 1
+ok 2
+ok 3
+1..5
+1..5
+ok 4
+1..5
+ok 5
+END
+
+$MAKE -e check >stdout && { cat stdout; Exit 1; }
+cat stdout
+count_test_results total=7 pass=3 fail=0 xpass=0 xfail=0 skip=0 error=4
+
+cat > exp <<'END'
+PASS: all.test 1
+PASS: all.test 2
+PASS: all.test 3
 ERROR: all.test - multiple test plans
 ERROR: all.test 4 # AFTER LATE PLAN
 ERROR: all.test - multiple test plans

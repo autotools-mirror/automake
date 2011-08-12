@@ -39,18 +39,22 @@ my %COLOR = (
   std => "\e[m",
 );
 
+# It's important that NO_PLAN evaluates "false" as a boolean.
+use constant NO_PLAN => 0;
+use constant EARLY_PLAN => 1;
+use constant LATE_PLAN => 2;
+
 # ------------------- #
 #  Global variables.  #
 # ------------------- #
 
 my $testno = 0;     # Number of test results seen so far.
-my $plan_seen = 0;  # Whether the TAP plan has been seen or not.
 my $bailed_out = 0; # Whether a "Bail out!" directive has been seen.
 my $parser;         # TAP parser object (will be initialized later).
 
-# When true, it means that the rest of the input stream cannot
-# contain any further TAP results.
-my $tap_stopped = 0;
+# Whether the TAP plan has been seen or not, and if yes, which kind
+# it is ("early" is seen before any test result, "late" otherwise).
+my $plan_seen = NO_PLAN;
 
 # ----------------- #
 #  Option parsing.  #
@@ -238,7 +242,9 @@ sub stringify_test_result ($)
   my $result = shift;
   my $PASS = $cfg{"expect-failure"} ? "XPASS": "PASS";
   my $FAIL = $cfg{"expect-failure"} ? "XFAIL": "FAIL";
-  if ($result->is_unplanned || $result->number != $testno || $tap_stopped)
+  if ($result->is_unplanned
+       || $result->number != $testno
+       || $plan_seen == LATE_PLAN)
     {
       return "ERROR";
     }
@@ -329,7 +335,7 @@ sub handle_tap_test ($)
       $string .= " $description";
     }
 
-  if ($tap_stopped)
+  if ($plan_seen == LATE_PLAN)
     {
       $string .= " # AFTER LATE PLAN";
     }
@@ -356,25 +362,30 @@ sub handle_tap_test ($)
 sub handle_tap_plan ($)
 {
   my $plan = shift;
-  # Only one plan per stream is acceptable.
-  testsuite_error "multiple test plans" if $plan_seen;
-  # TAP plan must come either before or after *all* the TAP results.
-  # So, if we find it after having already seen at least one TAP result,
-  # set a flag signaling that no more TAP results are acceptable.
-  $tap_stopped = 1 if $testno >= 1;
+  if ($plan_seen)
+    {
+      # Error, only one plan per stream is acceptable.
+      testsuite_error "multiple test plans";
+      return;
+    }
+  # The TAP plan can come before or after *all* the TAP results; we speak
+  # respectively of an "early" or a "late" plan.  If we see the plan line
+  # after at least one TAP result has been seen, assume we have a late
+  # plan; in this case, any further test result seen after the plan will
+  # be flagged as an error.
+  $plan_seen = ($testno >= 1 ? LATE_PLAN : EARLY_PLAN);
   # If $testno > 0, we have an error ("too many tests run") that will be
   # automatically dealt with later, so don't worry about it here.  If
   # $plan_seen is true, we have an error due to a repeated plan, and that
   # has already been dealt with above.  Otherwise, we have a valid "plan
   # with SKIP" specification, and should report it as a particular kind
   # of SKIP result.
-  if ($plan->directive && $testno == 0 && !$plan_seen)
+  if ($plan->directive && $testno == 0)
     {
       my $explanation = $plan->explanation ?
                         "- " . $plan->explanation : undef;
       report "SKIP", $explanation;
     }
-  $plan_seen = 1;
 }
 
 sub handle_tap_bailout ($)
