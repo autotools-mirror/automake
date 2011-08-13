@@ -146,27 +146,43 @@ for vpath in simple long absolute; do
     mkdir $depmode-$vpath.d
     cd $depmode-$vpath.d
 
-    command_ok_ "$pfx configure" \
-      "$srcdir"/configure am_cv_CC_dependencies_compiler_type=$depmode
+    if "$srcdir"/configure am_cv_CC_dependencies_compiler_type=$depmode
+    then
+      r0='ok'
+    else
+      r0='not ok'
+    fi
+    result_ "$r0" "$pfx configure" \
 
     # Do not fail with the first call to make fails, as the depmode
     # we've forced might not actually work, but we have overridden the
     # _AM_DEPENDENCIES tests.
+    r1='not ok'
     if $MAKE; then
       # We must clean and rebuild, as the actual error only happens the
       # second time the objects are built because 'depcomp' has silently
       # messed up the .Po files the first time.
-      r=ok
       $MAKE clean \
         && { e=0; $MAKE >output 2>&1 || e=1; cat output; test $e -eq 0; } \
         && { if grep 'src/[._]deps' output; then false; else :; fi; } \
-        || r='not ok'
-      result_ "$r" "$pfx make & remake"
+        && r1='ok'
+      result_ "$r1" "$pfx make & remake"
     else
       skip_ -r "can't force depmode" "$pfx make & remake"
     fi
 
     cd "$ocwd" || fatal_ "cannot chdir back to top directory"
+
+    # Remove subdirectories for tests that have passed, to avoid ending up
+    # with a too big test directory.  This is especially important since,
+    # on each and every system, at least some tests in this script are
+    # expected to be skipped (which ones exactly depends on the system),
+    # thus causing the test directory not to be removed when the script
+    # terminates.
+    case $keep_testdirs,$r0,$r1 in
+      ,ok,ok) rm_rf_ $depmode-$vpath.d;;
+      *) : For lesser shells with broken 'set -e';;
+    esac
 
   done
 done

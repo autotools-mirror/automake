@@ -136,9 +136,9 @@ EOF
 	test   -f '$(DESTDIR)/$(file)-prefix/foo/libbase.a'
 EOF
 
-  $ACLOCAL
-  $AUTOCONF
-  $AUTOMAKE -a
+  $ACLOCAL  || framework_failure_ "aclocal failed"
+  $AUTOCONF || framework_failure_ "autoconf failed"
+  $AUTOMAKE || framework_failure_ "automake failed"
 }
 
 # ================= #
@@ -223,8 +223,11 @@ for test_name in $test_names_list; do
   # Skip the next checks if this system doesn't support the required
   # characters in file names.
 
-  mkdir "./$test_string" || \
-    skip_ -r "mkdir failed" "$test_name"
+  mkdir "./$test_string" || {
+    skip_ -r "mkdir failed" "$test_name in builddir"
+    skip_ -r "mkdir failed" "$test_name in destdir"
+    continue
+  }
 
   # Where are the "weird" characters going to be used, in $(builddir)
   # or in $(DESTDIR)?  They are always going to be used in $(prefix)
@@ -270,6 +273,15 @@ for test_name in $test_names_list; do
     result_ "$r" -D "$directive" -r "$reason" -- "$description"
 
     cd "$ocwd" || fatal_ "cannot chdir back to test directory"
+
+    # Remove subdirectories for tests that have passed, to avoid ending up
+    # with a too big test directory.  This is especially important since
+    # some tests in this tests are expected to fail, and this will cause
+    # the test directory not to be removed when the script terminates.
+    case $keep_testdirs,$r1 in
+      ,ok) rm_rf_ $depmode-$vpath.d;;
+        *) : For lesser shells with broken 'set -e';;
+    esac
 
   done # $instspc_action
 
