@@ -19,9 +19,12 @@
 # the files) it's supposed to, and that these files are symlinked by
 # default, but copied if the `--copy' option is used.
 
+am_create_testdir=empty
 . ./defs || Exit 1
 
 build_aux=build-aux
+
+ocwd=`pwd` || fatal_ "cannot get current working directory"
 
 # Try to improve readability of displayed diffs.
 if diff -u /dev/null /dev/null; then
@@ -40,7 +43,7 @@ AC_CONFIG_FILES([Makefile])
 END
 
 # Pre-compute aclocal.m4, in order to save several aclocal invocations.
-cat >> configure.in <<'END'
+cat configure.stub - > configure.in <<'END'
 AC_PROG_CC
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
@@ -51,17 +54,22 @@ AM_PATH_PYTHON
 END
 $ACLOCAL || framework_failure_ "cannot pre-compute aclocal.m4"
 
-rm -rf install-sh missing depcomp configure.in autom4te*.cache
+rm -rf configure.in autom4te*.cache
 mv aclocal.m4 aclocal.stub
 
+# For debugging.
 cat configure.stub
 cat aclocal.stub
+
+check_count=0
 
 # This is hacky and ugly and complex, but allow us to organize our tests
 # below in a more "declarative fashion".  All in all, a good trade-off.
 check_ ()
 {
   set +x # Temporary disable shell traces to remove noise from log files.
+  incr_ check_count
+  echo check count: $check_count
   override=no
   run_aclocal=no
   fetch_file=
@@ -74,17 +82,21 @@ check_ ()
     esac
     shift
   done
-  mkdir testdir-generic
-  cd testdir-generic
+  mkdir testdir-$check_count
+  cd testdir-$check_count
+  # Directory for common data files (specific to the current test, but
+  # shared by its "subtests").
+  mkdir generic
+  cd generic
   # Use `echo > ...', not `: > ...', here and below, as Solaris 10 /bin/sh
   # might not execute the latter (the Autoconf manual gives more details).
   echo > Makefile.am
   if test $override = yes; then
     echo > configure.in
   else
-    cp ../configure.stub configure.in
+    cp "$ocwd"/configure.stub configure.in
   fi
-  test -z "$fetch_file" || cp ../"$fetch_file" .
+  test -z "$fetch_file" || cp "$ocwd/$fetch_file" .
   # Read description of "test scenario" from standard input.
   what= line= name= files=
   while read line; do
@@ -107,7 +119,6 @@ check_ ()
     esac
   done
   test -n "$name" || fatal_ "name of a test case not specified"
-  diag_ "Will run checks for $name."
   if test $run_aclocal = yes; then
     if $ACLOCAL; then
       ok_ "[$name] aclocal.m4 rebuilt"
@@ -117,7 +128,7 @@ check_ ()
       not_ok_ "[$name] aclocal failure, aclocal.m4 not rebuilt"
     fi
   else
-    cp ../aclocal.stub aclocal.m4 
+    cp "$ocwd"/aclocal.stub aclocal.m4
   fi
   echo == Makefile.am ==
   cat Makefile.am
@@ -128,7 +139,8 @@ check_ ()
   cd ..
   # End of "test scenario" setup.
   set -x # Re-enable shell traces.
-  ls -l testdir-generic
+  pwd
+  ls -l generic
   # Test once with `--copy', once without.
   for action in link copy; do
     case $action in
@@ -137,8 +149,8 @@ check_ ()
          *) fatal_ "invalid value '$action' for \$action";;
     esac
     pfx="[$action $name]"
-    cp -R testdir-generic testdir-$action
-    cd testdir-$action
+    cp -R generic $action
+    cd $action
     # If the required auxiliary files are missing, and automake is
     # not told to install them, it should complain and error out,
     # and also give a useful suggestion.
@@ -202,7 +214,7 @@ check_ ()
     AUTOMAKE_run -d "$pfx automake finds all added files"
     cd ..
   done # for action in link copy
-  rm -rf testdir-*
+  cd "$ocwd" || fatal_ "cannot chdir back to top-level test directory"
 }
 
 # Automake should always and unconditionally require the `missing'
