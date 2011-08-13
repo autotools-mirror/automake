@@ -22,14 +22,14 @@
 #            from within a subshell, unless explicitly noted otherwise.
 #
 
-# The count of the TAP test results seen so far.
+# The counts of the TAP test results seen so far: total count and
+# per-result counts.
 tap_count_=0
-# The count of skipped tests.
+tap_pass_count_=0
 tap_skip_count_=0
-# The count of tests that experienced an expected failure.
+tap_fail_count_=0
 tap_xfail_count_=0
-# The count of tests with unexpected outcomes (i.e., failed and xpassed).
-tap_bad_count_=0
+tap_xpass_count_=0
 
 # The first "test -n" tries to avoid extra forks when possible.
 if test -n "${ZSH_VERSION}${BASH_VERSION}" \
@@ -132,9 +132,10 @@ result_ ()
   esac
   incr_ tap_count_
   case $tap_result_,$tap_directive_ in
-    ok,) ;;                                     # Passed.
+    ok,) incr_ tap_pass_count_;;                # Passed.
     not\ ok,TODO) incr_ tap_xfail_count_;;      # Expected failure.
-    not\ ok,*|ok,TODO) incr_ tap_bad_count_ ;;  # Failed or xpassed.
+    not\ ok,*) incr_ tap_fail_count_ ;;         # Failed.
+    ok,TODO) incr_ tap_xpass_count_ ;;          # Unexpected pass.
     ok,SKIP) incr_ tap_skip_count_ ;;           # Skipped.
     *) bailout_ "internal error in 'result_'";; # Can't happen.
   esac
