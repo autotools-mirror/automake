@@ -1177,6 +1177,7 @@ tap-plan.test \
 tap-plan-corner.test \
 tap-plan-errors.test \
 tap-plan-middle.test \
+tap-missing-plan-and-bad-exit.test \
 tap-planskip.test \
 tap-planskip-late.test \
 tap-planskip-and-logging.test \
