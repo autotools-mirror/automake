@@ -24,14 +24,19 @@ am_create_testdir=no
 
 plan_ 34
 
+# This test becomes more cumbersome if we keep the `errexit' shell flag
+# set.  And removing it is no big deal, as this test is a TAP-based one,
+# so that false positives remain very unlikely.
+set +e
+
 AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC
 
 init='. ./defs; stderr_fileno_=2; unset am_explicit_skips'
 
 for st in 1 2 3 4 5 77 99 126 127 128 129 130 255; do
   for exit_cmd in "Exit $st" "sh -c 'exit $st'"; do
-    rc=0; $SHELL -c  "$init; $exit_cmd; :" || rc=$?
-    command_ok_ "$exit_cmd" test $rc -eq $st
+    $SHELL -c  "$init; $exit_cmd; :"
+    command_ok_ "$exit_cmd" test $? -eq $st
   done
 done
 
@@ -41,7 +46,8 @@ for sig in 1 2 13 15; do
     # signal when one is sent to the child $SHELL.
     trap : 2
   fi
-  rc=0; $SHELL -c  "$init; kill -$sig \$\$; :" || rc=$?
+  $SHELL -c  "$init; kill -$sig \$\$; :"
+  rc=$?
   if test $sig -eq 2; then
     # Reset default SIGINT handler as portably as possible.
     trap 2 || trap - 2
@@ -58,7 +64,7 @@ for sig in 1 2 13 15; do
     # signal shall be reported as greater than 128".
     command_ok_ "kill -$sig" test $rc -gt 128
   fi
-
+  unset rc
 done
 
 : Non-existent program.
@@ -74,20 +80,20 @@ if $SHELL -c 'set -e; trap "exit \$?" 0; non-existent-program'; then
 else
   maybe_todo="" reason=""
 fi
-rc=0; $SHELL -c  "$init; non-existent-program; :" || rc=$?
+$SHELL -c  "$init; non-existent-program; :"
 command_ok_ "command not found" -D "$maybe_todo" -r "$reason" \
-            -- test $rc -gt 0
+            -- test $? -gt 0
 
 : Non-executable command.
 test -f Makefile && test ! -x Makefile || \
   framowork_failure_ "no proper Makefile in the current directory"
-rc=0; $SHELL -c  "$init; ./Makefile; :" || rc=$?
-command_ok_ "permission denied" test $rc -gt 0
+$SHELL -c  "$init; ./Makefile; :"
+command_ok_ "permission denied" test $? -gt 0
 
 : Syntax errors in the test code.
-rc=0; $SHELL -c  "$init; if :; then" || rc=$?
-command_ok_ "syntax error 1" test $rc -gt 0
-rc=0; $SHELL -c  "$init; fi" || rc=$?
-command_ok_ "syntax error 2" test $rc -gt 0
+$SHELL -c  "$init; if :; then"
+command_ok_ "syntax error 1" test $? -gt 0
+$SHELL -c  "$init; fi"
+command_ok_ "syntax error 2" test $? -gt 0
 
 :

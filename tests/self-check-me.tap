@@ -24,17 +24,16 @@ am_create_testdir=no
 plan_ 9
 
 AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC
+
+# This test becomes cumbersome if we keep the `errexit' shell flag set.
+# And removing it is no big deal, as this test is a TAP-based one, so
+# that false positives remain very unlikely.
 set +e
 
 do_check ()
 {
-  if $SHELL -c '. ./defs && echo me=$me' "$1" | grep "^me=$2$"; then
-    r='ok'
-  else
-    r='not ok'
-  fi
-  result_ "$r" "me=$1"
-  unset r
+  $SHELL -c '. ./defs && echo me=$me' "$1" | grep "^me=$2$"
+  command_ok_ "me=$1" test $? -eq 0
 }
 
 do_check foo-bar-.test 'foo-bar-'
@@ -45,31 +44,26 @@ do_check a.b.c.test 'a\.b\.c'
 
 # If we override $me, ./defs should not modify it.
 
-if s=`$SHELL -c 'me=foo.test && . ./defs && echo me=$me' bad.test`; then
-  r='ok'
-else
-  r='not ok'
-fi
-result_ "$r" "override of \$me before ./defs causes no error"
+s=`$SHELL -c 'me=foo.test && . ./defs && echo me=$me' bad.test`
+command_ok_ "override of \$me before ./defs causes no error" \
+            test $? -eq 0
 
 r='ok'
-if printf '%s\n' "$s" | grep '^me=foo\.test$'; then :; else r='not ok'; fi
-if printf '%s\n' "$s" | grep 'me=bad'; then r='not ok'; else :; fi
+printf '%s\n' "$s" | grep '^me=foo\.test$' || r='not ok'
+printf '%s\n' "$s" | grep 'me=bad'         && r='not ok'
 result_ "$r" "override of \$me before defs is honored"
+unset r
 
 # Overriding $me after sourcing ./defs-static should work.
-
-if s=`$SHELL -c '. ./defs-static && me=zardoz &&
-                 . ./defs && echo me=$me' bad.test`; then
-  r='ok'
-else
-  r='not ok'
-fi
-result_ "$r" "override of \$me after defs-static causes no error"
+s=`$SHELL -c '. ./defs-static && me=zardoz &&
+              . ./defs && echo me=$me' bad.test`
+command_ok_ "override of \$me after ./defs-static causes no error" \
+            test $? -eq 0
 
 r='ok'
-if printf '%s\n' "$s" | grep '^me=zardoz$'; then :; else r='not ok'; fi
-if printf '%s\n' "$s" | grep 'me=bad'; then r='not ok'; else :; fi
+printf '%s\n' "$s" | grep '^me=zardoz$' || r='not ok'
+printf '%s\n' "$s" | grep 'me=bad'      && r='not ok'
 result_ "$r" "override of \$me after ./defs-static is honored"
+unset r
 
 :
