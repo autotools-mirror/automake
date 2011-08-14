@@ -132,7 +132,16 @@ am__set_TESTS_bases = \
 am--redo-logs:
 	@rm -f $$redo_logs
 	@rm -f $$redo_results
-	@$(MAKE) $(AM_MAKEFLAGS) $$redo_logs
+## The use of the `am__remaking_logs' environment variable below is
+## required to ensure that we don't go into an infinite recursion in
+## case a test log in $(TEST_LOGS) is the same as $(TEST_SUITE_LOG).
+## Yes, this has already happened in practice.  Sigh!
+	@if test -n "$$am__remaking_logs"; then \
+	  echo "fatal: making $(TEST_SUITE_LOG): possible infinite" \
+	       "recursion detected" >&2; \
+	else \
+	  am__remaking_logs=yes $(MAKE) $(AM_MAKEFLAGS) $$redo_logs; \
+	fi;
 ## Sanity check: each unreadable or non-existent test result file should
 ## has been properly remade at this point, as should the corresponding log
 ## file.

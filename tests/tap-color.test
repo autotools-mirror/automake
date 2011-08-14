@@ -44,7 +44,7 @@ AUTOMAKE_OPTIONS = color-tests
 AM_TEST_LOG_DRIVER_FLAGS = --comments
 TEST_LOG_COMPILER = cat
 TESTS = all.test skip.test bail.test badplan.test noplan.test \
-        few.test many.test order.test
+        few.test many.test order.test afterlate.test
 END
 
 . "$testsrcdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
@@ -96,6 +96,12 @@ cat > order.test << 'END'
 ok 5
 END
 
+cat > afterlate.test << 'END'
+ok 1
+1..2
+ok 2
+END
+
 AM_COLOR_TESTS=always $MAKE check >stdout && { cat stdout; Exit 1; }
 cat stdout
 
@@ -111,12 +117,12 @@ test_color ()
   cat stdout | grep "^${grn}PASS${std}: bail\.test 1$"
   cat stdout | grep "^${mgn}ERROR${std}: bail\.test - Bail out!$"
   cat stdout | grep "^${mgn}ERROR${std}: badplan\.test - multiple test plans$"
-  cat stdout | grep "^${mgn}ERROR${std}: badplan\.test 2 # AFTER LATE PLAN$"
   cat stdout | grep "^${mgn}ERROR${std}: noplan\.test - missing test plan$"
   cat stdout | grep "^${mgn}ERROR${std}: few.test - too few tests run (expected 2, got 1)$"
   cat stdout | grep "^${mgn}ERROR${std}: many.test - too many tests run (expected 1, got 2)$"
   cat stdout | grep "^${mgn}ERROR${std}: many.test 2 # UNPLANNED$"
   cat stdout | grep "^${mgn}ERROR${std}: order.test 5 # OUT-OF-ORDER (expecting 1)$"
+  cat stdout | grep "^${mgn}ERROR${std}: afterlate\.test 2 # AFTER LATE PLAN$"
   # Diagnostic messages shouldn't be colorized.
   cat stdout | grep "^# all\.test: Hi! I shouldn't be colorized!$"
   :

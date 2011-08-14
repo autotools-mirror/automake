@@ -39,7 +39,8 @@ END
 
 cat > skipall.test <<'END'
 1..0 # SKIP
-not ok 1
+foo
+# bar
 END
 
 cat > fail.test <<'END'
@@ -56,8 +57,70 @@ END
 
 (sed '1s/.*/1..4/' ok.test && echo 'ok 4 # TODO') > xpass2.test
 
-echo 'Bail out!' > error.test
-(cat ok.test && echo 'Bail out!') > error2.test
+echo 'Bail out!' > bail.test
+
+(cat ok.test && echo 'Bail out!') > bail2.test
+
+cat > bail3.test <<'END'
+1..0 # SKIP
+Bail out!
+END
+
+# Too many tests.
+cat > error.test <<'END'
+1..2
+ok 1
+ok 2 # SKIP
+not ok 3
+not ok 4 # TODO
+END
+
+# Too few tests.
+cat > error2.test <<'END'
+1..4
+ok 1
+not ok 2 # TODO
+ok 3 # SKIP
+END
+
+# Repeated plan.
+cat > error3.test <<'END'
+1..2
+1..2
+ok 1
+ok 2
+END
+
+# Too many tests, after a "SKIP" plan.
+cat > error4.test <<'END'
+1..0 # SKIP
+ok 1
+ok 2
+END
+
+# Tests out of order.
+cat > error5.test <<'END'
+1..4
+not ok 1 # TODO
+ok 3
+ok 2
+ok 4
+END
+
+# Wrong test number.
+cat > error6.test <<'END'
+1..2
+ok 1 # SKIP
+ok 7
+END
+
+# No plan.
+cat > error7.test <<'END'
+ok 1 # SKIP
+ok 2 # TODO
+not ok 3 # TODO
+ok 4
+END
 
 cat > hodgepodge.test <<'END'
 1..2
@@ -76,17 +139,13 @@ ok 4 # TODO
 Bail out!
 END
 
-# TODO: add scripts with TAP errors (multiple plans, out-of-order
-# tests, etc).
-
 tests=`echo *.test` # Also required later.
 
 TESTS="$tests" $MAKE -e check >stdout && { cat stdout; Exit 1; }
 cat stdout
 
-# Dirty tricks required here.
-for tst in ok skip skipall fail fail2 xpass xpass2 error error2 \
-           hodgepodge hodgepodge-all; do
+# Dirty trick required here.
+for tst in `echo " $tests " | sed 's/.test / /'`; do
   echo :copy-in-global-log: yes >> $tst.trs
 done
 
@@ -112,8 +171,16 @@ have_rst_section 'FAIL: fail'
 have_rst_section 'FAIL: fail2'
 have_rst_section 'FAIL: xpass'
 have_rst_section 'FAIL: xpass2'
+have_rst_section 'ERROR: bail'
+have_rst_section 'ERROR: bail2'
+have_rst_section 'ERROR: bail3'
 have_rst_section 'ERROR: error'
 have_rst_section 'ERROR: error2'
+have_rst_section 'ERROR: error3'
+have_rst_section 'ERROR: error4'
+have_rst_section 'ERROR: error5'
+have_rst_section 'ERROR: error6'
+have_rst_section 'ERROR: error7'
 have_rst_section 'ERROR: hodgepodge'
 have_rst_section 'ERROR: hodgepodge-all'
 

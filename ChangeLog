@@ -1,5 +1,180 @@
 2011-08-14  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
+	coverage: missing tap plan and non-zero exit status
+	* tests/tap-missing-plan-and-bad-exit.test: New test.
+	* tests/Makefile.am (tap_with_common_setup_tests): Update.
+
+2011-08-12  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	testsuite: fix an unportable use of sed
+	* tests/tap-todo-skip-whitespace.test: Alternation with "\|" in
+	sed regular expressions is not portable to (at least) FreeBSD
+	sed; do not use it.
+
+2011-08-12  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	testsuite: avoid spurious failure if rst2html program is missing
+	* tests/test-driver-custom-no-html.test: Account for the
+	possibility of a lacking `rst2html' program in our final
+	grepping of make output.
+
+2011-08-12  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tap: improve diagnosing and reporting of plan mismatches
+	Problem exposed by a failure in the test 'tap-plan-errors.test'.
+	* lib/tap-driver (NO_PLAN, EARLY_PLAN, LATE_PLAN): New constants.
+	(Throughout the file): Use more complex semantics for `$plan_seen',
+	which now also remember whether the plan that has been seen is an
+	"early" or "late" plan; in turn, this makes ...
+	($tap_stopped): ... this variable redundant; remove it.
+	(handle_tap_plan): Adjust to avoid producing spurious or confusing
+	error messages about extra or mismatched "late" TAP plans.
+	* tests/tap-plan-corned.test: Adjust and extend.
+	* tests/tap-color.test: Likewise.
+
+2011-08-12  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tap: log all TAP stream, even after a "Bail out!"
+	* lib/tap-driver ($bailed_out): New global boolean variable,
+	telling whether a "Bail out!" directive has been seen or not.
+	(handle_tap_bailout): This function does not anymore stop the
+	reading from TAP stream; instead, it sets `$bailed_out' to a
+	true value, so that only the subsequent parsing of the input
+	TAP stream is stopped.
+	(finish): Remove, no more needed, its contents inlined into ...
+	(main): ... this function, with related adjustments in the code
+	flow.
+	(get_test_exit_message): Do not "flush" the input TAP stream
+	to fetch the exit status of test script, it is not anymore
+	required.  Add a sanity check.
+	* tests/tap-bailout-and-logging.test: New test.
+	* tests/Makefile.am (tap_with_common_setup_tests): Update.
+
+2011-08-12  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	coverage: TAP diagnostics after "Bail out!" aren't reported
+	This is compatible with the behaviour of the `prove' utility.
+	* tests/tap-bailout-suppress-later-diagnostic.test: New test.
+	* tests/Makefile.am (tap_with_common_setup_tests): Update.
+
+2011-08-12  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	coverage: TAP errors after a "Bail out!" directive aren't reported
+	This is compatible with the behaviour of the `prove' utility.
+	* tests/tap-bailout-suppress-later-errors.test: New test.
+	* tests/tap-bailout-badexit.test: Renamed ...
+	* tests/tap-bailout-suppress-badexit.test: ... to this, for
+	consistency.
+	* tests/Makefile.am (tap_with_common_setup_tests): Update.
+
+2011-08-12  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	testsuite: reorganize tests on TAP plans
+	* tests/tap-skip-whole.test: Rename ...
+	* tests/tap-planskip.test: ... to this
+	* tests/tap-skip-whole-badexit.test: Rename ...
+	* tests/tap-planskip-badexit.test: ... to this.
+	* tests/tap-skip-whole-bailout.test: Rename ...
+	* tests/tap-planskip-bailout.test: ... to this.
+	* tests/tap-skip-whole-bailout.test: Rename ...
+	* tests/tap-planskip-later-errors.test: ... to this.
+	* tests/tap-skip-whole-unplanned.test: Rename ...
+	* tests/tap-planskip-unplanned.test: ... to this.
+	* tests/tap-skip-whole-whitespace.test: Rename ...
+	* tests/tap-planskip-whitespace.test: ... to this.
+	* tests/tap-skip-whole-continue.test: Rename ...
+	* tests/tap-planskip-and-logging.test: ... to this, extend to try
+	more cases, and fix heading comments.
+	* tests/tap-skip-whole-lastline.test: Rename ...
+	* tests/tap-planskip-late.test: ... to this, fix heading comments,
+	and remove some checks that are just a duplication of those already
+	performed in the previous script.
+	* tests/tap-results-with-planskip.test: Rename to ...
+	* tests/tap-planskip-unplanned-corner.test: ... this, and improve
+	hading comments.
+	* tests/tap-planskip-later-errors.test: New test.
+	* tests/Makefile.am (tap_with_common_setup_tests): Update.
+
+2011-08-12  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	coverage: more TAP driver consistency w.r.t. 'prove'
+	* tests/skip-results-with-planskip.test: New test, verifies that
+	test results seen in a TAP stream that has a "plan with SKIP" are
+	flagged as errors.
+	* tests/Makefile.am (tap_with_common_setup_tests): Update.
+
+2011-08-12  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tap: improve some comments in the TAP driver
+	* lib/tap-driver (handle_tap_plan): Improve comments describing
+	possible errors in a "plan with SKIP" directive.
+
+2011-08-12  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tap: non-zero exit status after "Bail out!" should not be reported
+	This new behaviour is more consistent with that of the `prove'
+	utility.  Also, experience with the use of TAP in the Automake's
+	own test suite has shown that reporting non-zero exit status from
+	a script after it has issued a "Bail out!" directive is mostly
+	redundant, more introducing noise rather than conveying useful
+	information.
+	* lib/tap-driver (finish): Inline the part of it that was getting
+	the script exit status ...
+	(main): ... in here.
+	* tests/tap-bailout-badexit.test: New test.
+	* tests/Makefile.am (tap_with_common_setup_tests): Update.
+
+2011-08-11  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tap: a "plan with SKIP" after test results is an error
+	This new behaviour is both more natural and more consistent with
+	that of the `prove' utility.
+	* lib/tap-driver (handle_tap_plan): Do not stop TAP parsing when
+	a "plan with SKIP" line (e.g., "1..0 # SKIP") is encountered, and
+	do not print a "SKIP" line if some TAP result has already been
+	seen.
+	* tests/tap-skip-whole.test: Adapt.
+	* tests/tap-skip-whole-lastline.test: Likewise.
+	* tests/tap-global-result.test: Adapt and extend.
+	* tests/tap-skip-plan-errors.test: Likewise, and fix an obsolete
+	small part of a comment.
+	* tests/tap-skip-whole-bailout.test: New test.
+	* tests/tap-skip-whole-unplanned.test: Likewise.
+	* tests/tap-skip-whole-continue.test: Likewise.
+	* tests/Makefile.am (tap_with_common_setup_tests): Update.
+
+2011-08-09  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	test harness: avoid possible fork bomb
+	This fixes a regression w.r.t. the master branch, exposed by
+	test 'parallel-tests-fork-bomb.test'.
+	* lib/am/check.am (am--redo-logs): Detect possible infinite
+	recursion due to a test log in $(TEST_LOGS) being the same
+	as $(TEST_SUITE_LOG).
+
+2011-08-09  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	coverage: enhance test against infinite recursion in test harness
+	* tests/parallel-tests-fork-bomb.test: Enhance and extend a
+	little now, for soon-to-be-implemented more explicit and safer
+	semantics.
+
+2011-08-09  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	coverage: possible infinite recursion in the test harness
+	Motivated by a regression in the 'test-protocols' branch.
+	* tests/parallel-tests-fork-bomb.test: New test, checking that
+	if $(TEST_SUITE_LOG) is in $(TEST_LOGS), we obtain a diagnosed
+	error rather than a make hang or a fork bomb.
+	* tests/Makefile.am (TESTS): Update.
+
+2011-08-09  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	test defs: yet more environment cleanup
+	* tests/defs: Also unset the TEST_SUITE_LOG variable.
+
+2011-08-14  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
 	self tests: some minor refactoring
 	* tests/self-check-exit.tap: Disable the `errexit' shell flag;
 	this allow to remove some boilerplate idioms and to make some

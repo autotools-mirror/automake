@@ -39,17 +39,22 @@ my %COLOR = (
   std => "\e[m",
 );
 
+# It's important that NO_PLAN evaluates "false" as a boolean.
+use constant NO_PLAN => 0;
+use constant EARLY_PLAN => 1;
+use constant LATE_PLAN => 2;
+
 # ------------------- #
 #  Global variables.  #
 # ------------------- #
 
 my $testno = 0;     # Number of test results seen so far.
-my $plan_seen = 0;  # Whether the TAP plan has been seen or not.
+my $bailed_out = 0; # Whether a "Bail out!" directive has been seen.
 my $parser;         # TAP parser object (will be initialized later).
 
-# When true, it means that the rest of the input stream cannot
-# contain any further TAP results.
-my $tap_stopped = 0;
+# Whether the TAP plan has been seen or not, and if yes, which kind
+# it is ("early" is seen before any test result, "late" otherwise).
+my $plan_seen = NO_PLAN;
 
 # ----------------- #
 #  Option parsing.  #
@@ -96,7 +101,6 @@ sub colored ($$);
 sub copy_in_global_log ();
 sub decorate_result ($);
 sub extract_tap_comment ($);
-sub finish ();
 sub get_global_test_result ();
 sub get_test_exit_message ();
 sub get_test_results ();
@@ -210,10 +214,10 @@ sub start (@)
 
 sub get_test_exit_message ()
 {
-  # Flush all the remaining TAP stream, so that we can obtain the
-  # exit status of the TAP producer.
-  do {} while defined $parser->next;
   my $wstatus = $parser->wait;
+  # Watch out for possible internal errors.
+  die "couldn't get the exit ststus of the TAP producer"
+    unless defined $wstatus;
   # Return an undefined value if the producer exited with success.
   return unless $wstatus;
   # Otherwise, determine whether it exited with error or was terminated
@@ -233,23 +237,14 @@ sub get_test_exit_message ()
 	}
 }
 
-sub finish ()
-{
-  if (!$cfg{"ignore-exit"} and my $msg = get_test_exit_message)
-    {
-      testsuite_error $msg;
-    }
-  write_test_results;
-  close LOG or die "closing $log_file: $!\n";
-  exit 0;
-}
-
 sub stringify_test_result ($)
 {
   my $result = shift;
   my $PASS = $cfg{"expect-failure"} ? "XPASS": "PASS";
   my $FAIL = $cfg{"expect-failure"} ? "XFAIL": "FAIL";
-  if ($result->is_unplanned || $result->number != $testno || $tap_stopped)
+  if ($result->is_unplanned
+       || $result->number != $testno
+       || $plan_seen == LATE_PLAN)
     {
       return "ERROR";
     }
@@ -340,7 +335,7 @@ sub handle_tap_test ($)
       $string .= " $description";
     }
 
-  if ($tap_stopped)
+  if ($plan_seen == LATE_PLAN)
     {
       $string .= " # AFTER LATE PLAN";
     }
@@ -367,28 +362,38 @@ sub handle_tap_test ($)
 sub handle_tap_plan ($)
 {
   my $plan = shift;
-  # Only one plan per stream is acceptable.
-  testsuite_error "multiple test plans" if $plan_seen;
-  $plan_seen = 1;
-  # TAP plan must come either before or after *all* the TAP results.
-  # So, if we find it after having already seen at least one TAP result,
-  # set a flag signaling that no more TAP results are acceptable.
-  $tap_stopped = 1 if $testno >= 1;
-  # Nothing more to do, unless the plan contains a SKIP directive.
-  return
-    if not defined $plan->directive && length ($plan->directive) > 0;
-  my $explanation = $plan->explanation ?
-                    "- " . $plan->explanation : undef;
-  report "SKIP", $explanation;
-  finish;
+  if ($plan_seen)
+    {
+      # Error, only one plan per stream is acceptable.
+      testsuite_error "multiple test plans";
+      return;
+    }
+  # The TAP plan can come before or after *all* the TAP results; we speak
+  # respectively of an "early" or a "late" plan.  If we see the plan line
+  # after at least one TAP result has been seen, assume we have a late
+  # plan; in this case, any further test result seen after the plan will
+  # be flagged as an error.
+  $plan_seen = ($testno >= 1 ? LATE_PLAN : EARLY_PLAN);
+  # If $testno > 0, we have an error ("too many tests run") that will be
+  # automatically dealt with later, so don't worry about it here.  If
+  # $plan_seen is true, we have an error due to a repeated plan, and that
+  # has already been dealt with above.  Otherwise, we have a valid "plan
+  # with SKIP" specification, and should report it as a particular kind
+  # of SKIP result.
+  if ($plan->directive && $testno == 0)
+    {
+      my $explanation = $plan->explanation ?
+                        "- " . $plan->explanation : undef;
+      report "SKIP", $explanation;
+    }
 }
 
 sub handle_tap_bailout ($)
 {
   my ($bailout, $msg) = ($_[0], "Bail out!");
+  $bailed_out = 1;
   $msg .= " " . $bailout->explanation if $bailout->explanation;
   testsuite_error $msg;
-  finish;
 }
 
 sub extract_tap_comment ($)
@@ -410,6 +415,9 @@ sub main (@)
     {
       # Verbatim copy any input line into the log file.
       print $cur->raw . "\n";
+      # Parsing of TAP input should stop after a "Bail out!" directive.
+      next if $bailed_out;
+
       if ($cur->is_plan)
         {
           handle_tap_plan ($cur);
@@ -428,18 +436,30 @@ sub main (@)
           report "#", "$comment" if length $comment;
        }
     }
-  if (!$plan_seen)
+  # A "Bail out!" directive should cause us to ignore any following TAP
+  # error, as well as a non-zero exit status from the TAP producer.
+  if (!$bailed_out)
     {
-      testsuite_error "missing test plan";
+      if (!$plan_seen)
+      {
+        testsuite_error "missing test plan";
+      }
+    elsif ($parser->tests_planned != $parser->tests_run)
+      {
+        my ($planned, $run) = ($parser->tests_planned, $parser->tests_run);
+        my $bad_amount = $run > $planned ? "many" : "few";
+        testsuite_error (sprintf "too %s tests run (expected %d, got %d)",
+                                 $bad_amount, $planned, $run);
+      }
     }
-  elsif ($parser->tests_planned != $parser->tests_run)
-    {
-      my ($planned, $run) = ($parser->tests_planned, $parser->tests_run);
-      my $bad_amount = $run > $planned ? "many" : "few";
-      testsuite_error (sprintf "too %s tests run (expected %d, got %d)",
-                               $bad_amount, $planned, $run);
-    }
-  finish;
+  if (!$cfg{"ignore-exit"} && !$bailed_out)
+  {
+    my $msg = get_test_exit_message ();
+    testsuite_error $msg if $msg;
+  }
+  write_test_results;
+  close LOG or die "closing $log_file: $!\n";
+  exit 0;
 }
 
 # ----------- #

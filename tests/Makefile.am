@@ -742,6 +742,7 @@ parallel-tests-log-override-2.test \
 parallel-tests-log-override-recheck.test \
 parallel-tests-log-compiler-example.test \
 parallel-tests-cmdline-override.test \
+parallel-tests-fork-bomb.test \
 parallel-tests-empty-testlogs.test \
 parallel-tests-driver-install.test \
 parallel-tests-no-color-in-log.test \
@@ -1153,6 +1154,10 @@ testsuite-summary-count-many.log: extract-testsuite-summary
 tap_with_common_setup_tests = \
 tap-autonumber.test \
 tap-bailout.test \
+tap-bailout-and-logging.test \
+tap-bailout-suppress-badexit.test \
+tap-bailout-suppress-later-diagnostic.test \
+tap-bailout-suppress-later-errors.test \
 tap-color.test \
 tap-deps.test \
 tap-diagnostic.test \
@@ -1182,12 +1187,18 @@ tap-plan.test \
 tap-plan-corner.test \
 tap-plan-errors.test \
 tap-plan-middle.test \
+tap-missing-plan-and-bad-exit.test \
+tap-planskip.test \
+tap-planskip-late.test \
+tap-planskip-and-logging.test \
+tap-planskip-unplanned.test \
+tap-planskip-unplanned-corner.test \
+tap-planskip-whitespace.test \
+tap-planskip-badexit.test \
+tap-planskip-bailout.test \
+tap-planskip-later-errors.test \
 tap-realtime.test \
 tap-recheck-logs.test \
-tap-skip-whole-whitespace.test \
-tap-skip-whole.test \
-tap-skip-whole-lastline.test \
-tap-skip-whole-badexit.test \
 tap-todo-skip-together.test \
 tap-todo-skip-whitespace.test \
 tap-todo-skip.test \
