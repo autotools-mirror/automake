@@ -51,7 +51,7 @@ Usage:
              [--enable-hard-errors={yes|no}] [--ignore-exit]
              [--diagnostic-string=STRING] [--merge|--no-merge]
              [--comments|--no-comments] [--] TEST-COMMAND
-The \`--test-name' and \`--log-file' options are mandatory.
+The \`--test-name', \`--log-file' and \`--trs-file' options are mandatory.
 END
 }
 
