@@ -63,7 +63,6 @@ my $plan_seen = NO_PLAN;
 my %cfg = (
   "color-tests" => 0,
   "expect-failure" => 0,
-  "enable-hard-errors" => 1,
   "merge" => 0,
   "comments" => 0,
   "ignore-exit" => 0,
@@ -82,7 +81,7 @@ Getopt::Long::GetOptions (
     'trs-file=s' => \$trs_file,
     'color-tests=s'  => \&bool_opt,
     'expect-failure=s'  => \&bool_opt,
-    'enable-hard-errors=s' => \&bool_opt,
+    'enable-hard-errors=s' => sub {}, # No-op.
     'diagnostic-string=s' => \$diag_string,
     'comments' => sub { $cfg{"comments"} = 1; },
     'no-comments' => sub { $cfg{"comments"} = 0; },
