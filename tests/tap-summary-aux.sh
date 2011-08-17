@@ -26,19 +26,17 @@ case $use_colors in
   *) fatal_ "invalid \$use_colors value '$use_colors'"
 esac
 
-cp "$top_testsrcdir"/lib/tap-driver . \
-  || fatal_ "failed to fetch auxiliary script tap-driver"
+fetch_tap_driver
 
 cat > configure.in <<END
 AC_INIT([GNU AutoTAP], [5.12], [bug-automake@gnu.org])
 AM_INIT_AUTOMAKE([parallel-tests])
-AC_SUBST([PERL], ['$PERL'])
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-TEST_LOG_DRIVER = $(PERL) $(srcdir)/tap-driver
+TEST_LOG_DRIVER = $(srcdir)/tap-driver
 TEST_LOG_COMPILER = cat
 TESTS = all.test
 END
