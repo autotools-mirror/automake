@@ -106,6 +106,7 @@ sub get_test_results ();
 sub handle_tap_bailout ($);
 sub handle_tap_plan ($);
 sub handle_tap_test ($);
+sub is_null_string ($);
 sub main (@);
 sub must_recheck ();
 sub report ($;$);
@@ -134,6 +135,16 @@ sub bool_opt ($$)
     {
       die "invalid argument '$val' for option '$opt'\n";
     }
+}
+
+# If the given string is undefined or empty, return true, otherwise
+# return false.  This function is useful to avoid pitfalls like:
+#   if ($message) { print "$message\n"; }
+# which wouldn't print anything if $message is the literal "0".
+sub is_null_string ($)
+{
+  my $str = shift;
+  return ! (defined $str and length $str);
 }
 
 # Convert a boolean to a "yes"/"no" string.
@@ -329,10 +340,9 @@ sub handle_tap_test ($)
   my $test_result = stringify_test_result $test;
   my $string = $test->number;
   
-  if (my $description = $test->description)
-    {
-      $string .= " $description";
-    }
+  my $description = $test->description;
+  $string .= " $description"
+    unless is_null_string $description;
 
   if ($plan_seen == LATE_PLAN)
     {
@@ -349,10 +359,9 @@ sub handle_tap_test ($)
   elsif (my $directive = $test->directive)
     {
       $string .= " # $directive";
-      if (my $explanation = $test->explanation)
-        {
-          $string .= " $explanation";
-        }
+      my $explanation = $test->explanation;
+      $string .= " $explanation"
+        unless is_null_string $explanation;
     }
 
   report $test_result, $string;
@@ -381,8 +390,8 @@ sub handle_tap_plan ($)
   # of SKIP result.
   if ($plan->directive && $testno == 0)
     {
-      my $explanation = $plan->explanation ?
-                        "- " . $plan->explanation : undef;
+      my $explanation = is_null_string ($plan->explanation) ?
+                        undef : "- " . $plan->explanation;
       report "SKIP", $explanation;
     }
 }
@@ -391,7 +400,8 @@ sub handle_tap_bailout ($)
 {
   my ($bailout, $msg) = ($_[0], "Bail out!");
   $bailed_out = 1;
-  $msg .= " " . $bailout->explanation if $bailout->explanation;
+  $msg .= " " . $bailout->explanation
+    unless is_null_string $bailout->explanation;
   testsuite_error $msg;
 }
 

@@ -31,7 +31,6 @@ gcj6.test \
 override-conditional-2.test \
 pr8365-remake-timing.test \
 yacc-dist-nobuild-subdir.test \
-tap-message-0.test \
 txinfo5.test
 
 

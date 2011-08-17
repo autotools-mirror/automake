@@ -15,10 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # TAP support:
-#  - having "0" as a test description (or TODO or SKIP message) should
-#    be supported
-# Note that a bug in some versions of TAP::Parser causes this not to be
-# generally true!
+#  - having "0" as a test description (or TODO or SKIP or "Bail out!"
+#    message) should be supported
 
 parallel_tests=yes
 . ./defs || Exit 1
@@ -62,5 +60,22 @@ $FGREP ': all.test' stdout > got
 cat exp
 cat got
 diff exp got
+
+echo '1..0 # SKIP 0' > all.test
+$MAKE check >stdout || { cat stdout; Exit 1; }
+cat stdout
+
+count_test_results total=1 pass=0 fail=0 xpass=0 xfail=0 skip=1 error=0
+
+grep '^SKIP: all.test - 0' stdout
+
+echo 'Bail out! 0' > all.test
+$MAKE check >stdout && { cat stdout; Exit 1; }
+cat stdout
+
+count_test_results total=1 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=1
+
+grep '^ERROR: all.test - Bail out! 0' stdout
+
 
 :
