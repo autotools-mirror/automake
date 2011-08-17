@@ -313,11 +313,23 @@ sed_unindent_prog="" # Avoid interferences from the environment.
 # run with the perl interpreter determined at configure time.
 fetch_tap_driver ()
 {
-  sed "1s|#!.*|#! $PERL -w|" "$top_testsrcdir"/lib/tap-driver >tap-driver \
+  # TODO: we should devise a way to make the shell TAP driver tested also
+  # TODO: with /bin/sh, for better coverage.
+  case $am_tap_implementation in
+    perl)
+      sed "1s|#!.*|#! $PERL -w|" "$top_testsrcdir"/lib/tap-driver.pl ;;
+    shell)
+      sed "1s|#!.*|#! $SHELL|" "$top_testsrcdir"/lib/tap-driver.sh ;;
+    *)
+      fatal_ "invalid \$am_tap_implementation '$am_tap_implementation'" ;;
+  esac > tap-driver \
     && chmod a+x tap-driver \
-    || fatal_ "failed to fetch perl tap driver"
+    || framework_failure_ "couldn't fetch $am_tap_implementation TAP driver"
   sed 10q tap-driver # For debugging.
 }
+# The shell/awk implementation of the TAP driver is still mostly dummy, so
+# use the perl implementation by default for the moment.
+am_tap_implementation=${am_tap_implementation-perl}
 
 ## ----------------------------------------------------------- ##
 ##  Checks for required tools, and additional setups (if any)  ##

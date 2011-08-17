@@ -17,7 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 TEST_EXTENSIONS = .test .tap
-TAP_LOG_DRIVER = $(PERL) $(top_srcdir)/lib/tap-driver
+TAP_LOG_DRIVER = $(PERL) $(top_srcdir)/lib/tap-driver.pl
 TAP_LOG_DRIVER_FLAGS = --merge
 
 MAINTAINERCLEANFILES =

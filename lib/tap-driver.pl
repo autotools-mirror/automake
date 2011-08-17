@@ -11,7 +11,7 @@ use strict;
 use Getopt::Long ();
 use TAP::Parser;
 
-my $ME = "tap-driver";
+my $ME = "tap-driver.pl";
 
 my $USAGE = <<'END';
 Usage:
