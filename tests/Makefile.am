@@ -240,6 +240,7 @@ check-exported-srcdir.test \
 check-fd-redirect.test \
 check-tests-in-builddir.test \
 check-no-test-driver.test \
+check-concurrency-bug9245.test \
 checkall.test \
 clean.test \
 clean2.test \
