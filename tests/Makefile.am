@@ -239,6 +239,7 @@ check12.test \
 check-exported-srcdir.test \
 check-tests-in-builddir.test \
 check-tests_environment.test \
+check-concurrency-bug9245.test \
 tests-environment-backcompat.test \
 checkall.test \
 clean.test \
