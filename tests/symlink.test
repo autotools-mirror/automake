@@ -18,20 +18,24 @@
 # Make sure we get an error if symlink creation fails.
 # Reported by Joerg-Martin Schwarz.
 
+am_create_testdir=empty
 . ./defs || Exit 1
-
-rm -f install-sh
-rm -f mkinstalldirs
 
 : > Makefile.am
 
 cat > configure.in << 'END'
 AC_INIT([symlink], [1.0])
-AC_CONFIG_AUX_DIR(sub)
+AC_CONFIG_AUX_DIR([subdir])
 AM_INIT_AUTOMAKE
 AC_CONFIG_FILES([Makefile])
 END
 
 $ACLOCAL
 AUTOMAKE_fails --add-missing
-grep 'error while making link' stderr
+
+grep '^configure\.in:3: .*missing.*error while making link' stderr
+grep '^configure\.in:3: .*install-sh.*error while making link' stderr
+
+test `$FGREP -c 'error while making link' stderr` -eq 2
+
+:
