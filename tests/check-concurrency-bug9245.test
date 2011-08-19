@@ -14,30 +14,49 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Auxiliary test to set up common data used by many tests on TAP support.
+# Look for a bug where FreeBSD make in concurrent mode reported success
+# even when the Automake-generated parallel testsuite harness failed.
+# See automake bug#9245.
 
-parallel_tests=yes
 . ./defs || Exit 1
 
-cat >> configure.in << END
+cat >> configure.in << 'END'
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-TEST_LOG_DRIVER = $(srcdir)/tap-driver
-TEST_LOG_COMPILER = cat
-TESTS = all.test
+TESTS = foo.test bar.test
 END
+
+cat > foo.test <<'END'
+#!/bin/sh
+exit 1
+END
+chmod a+x foo.test
+
+cp foo.test bar.test
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE
+$AUTOMAKE -a
 
 ./configure
 
-rm -rf autom4te*.cache
+# Some make implementations don't grok the `-j' option.
+$MAKE -j1 || Exit 77
 
-# So that the data files we've created won't be removed at exit.
-keep_testdirs=yes
+for j in '' -j1 -j2; do
+  $MAKE $j check && Exit 1
+  TESTS=foo.test $MAKE $j -e check && Exit 1
+  if test x"$parallel_tests" = x"yes"; then
+    $MAKE $j recheck && Exit 1
+    TEST_LOGS=foo.log $MAKE $j -e check && Exit 1
+    rm -f test-suite.log
+    $MAKE $j test-suite.log && Exit 1
+    test -f test-suite.log || Exit 1
+  else
+    : # For shells with buggy 'set -e'.
+  fi
+done
 
 :

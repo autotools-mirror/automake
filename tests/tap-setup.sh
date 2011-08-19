@@ -31,8 +31,7 @@ test ! -f Makefile.am || mv Makefile.am Makefile.am~ \
 test -d ../tap-common-setup.dir && cp -Rp ../tap-common-setup.dir/* . \
   || fatal_ "couldn't get precomputed data files"
 
-cp "$top_testsrcdir"/lib/tap-driver . \
-  || fatal_ "failed to fetch auxiliary script tap-driver"
+fetch_tap_driver
 
 if test -f Makefile.am~; then
   mv -f Makefile.am~ Makefile.am \

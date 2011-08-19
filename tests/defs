@@ -487,6 +487,30 @@ xsi_shell_code='
     && eval '\''test $(( 1 + 1 )) -eq 2 \
     && test "${#_lt_dummy}" -eq 5'\'
 
+# fetch_tap_driver
+# ----------------
+# Fetch the Automake-provided TAP driver from the `lib/' directory into
+# the current directory, and edit its shebang line so that it will be
+# run with the perl interpreter determined at configure time.
+fetch_tap_driver ()
+{
+  # TODO: we should devise a way to make the shell TAP driver tested also
+  # TODO: with /bin/sh, for better coverage.
+  case $am_tap_implementation in
+    perl)
+      sed "1s|#!.*|#! $PERL -w|" "$top_testsrcdir"/lib/tap-driver.pl ;;
+    shell)
+      sed "1s|#!.*|#! $SHELL|" "$top_testsrcdir"/lib/tap-driver.sh ;;
+    *)
+      fatal_ "invalid \$am_tap_implementation '$am_tap_implementation'" ;;
+  esac > tap-driver \
+    && chmod a+x tap-driver \
+    || framework_failure_ "couldn't fetch $am_tap_implementation TAP driver"
+  sed 10q tap-driver # For debugging.
+}
+# The shell/awk implementation of the TAP driver is still mostly dummy, so
+# use the perl implementation by default for the moment.
+am_tap_implementation=${am_tap_implementation-perl}
 
 ## ----------------------------------------------------------- ##
 ##  Checks for required tools, and additional setups (if any)  ##

@@ -23,7 +23,7 @@ TEST_EXTENSIONS = .test .tap
 TEST_LOG_COMPILER = $(LOG_COMPILER)
 TAP_LOG_COMPILER = $(LOG_COMPILER)
 
-TAP_LOG_DRIVER = $(PERL) $(top_srcdir)/lib/tap-driver
+TAP_LOG_DRIVER = $(PERL) $(top_srcdir)/lib/tap-driver.pl
 TAP_LOG_DRIVER_FLAGS = --merge --comments
 ## Avoid spurious TAP diagnostic.  We use an awful indirection with a
 ## shell command substitution here, since the string needs to contain
@@ -46,7 +46,6 @@ gcj6.test \
 override-conditional-2.test \
 pr8365-remake-timing.test \
 yacc-dist-nobuild-subdir.test \
-tap-message-0.test \
 txinfo5.test
 
 
@@ -246,6 +245,7 @@ check-exported-srcdir.test \
 check-fd-redirect.test \
 check-tests-in-builddir.test \
 check-no-test-driver.test \
+check-concurrency-bug9245.test \
 checkall.test \
 clean.test \
 clean2.test \
@@ -1172,9 +1172,13 @@ tap-global-log.test \
 tap-global-result.test \
 tap-html.test \
 tap-log.test \
+tap-msg0-result.test \
+tap-msg0-directive.test \
+tap-msg0-planskip.test \
+tap-msg0-bailout.test \
+tap-msg0-misc.test \
 tap-merge-stdout-stderr.test \
 tap-no-merge-stdout-stderr.test \
-tap-message-0.test \
 tap-no-disable-hard-error.test \
 tap-no-spurious-summary.test \
 tap-no-spurious.test \

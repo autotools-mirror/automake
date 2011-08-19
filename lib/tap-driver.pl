@@ -11,7 +11,7 @@ use strict;
 use Getopt::Long ();
 use TAP::Parser;
 
-my $ME = "tap-driver";
+my $ME = "tap-driver.pl";
 
 my $USAGE = <<'END';
 Usage:
@@ -20,7 +20,7 @@ Usage:
              [--enable-hard-errors={yes|no}] [--ignore-exit]
              [--diagnostic-string=STRING] [--merge|--no-merge]
              [--comments|--no-comments] [--] TEST-COMMAND
-The `--test-name' and `--log-file' options are mandatory.
+The `--test-name', `--log-file' and `--trs-file' options are mandatory.
 END
 
 my $HELP = "$ME: TAP-aware test driver for Automake testsuite harness." .
@@ -63,7 +63,6 @@ my $plan_seen = NO_PLAN;
 my %cfg = (
   "color-tests" => 0,
   "expect-failure" => 0,
-  "enable-hard-errors" => 1,
   "merge" => 0,
   "comments" => 0,
   "ignore-exit" => 0,
@@ -82,7 +81,7 @@ Getopt::Long::GetOptions (
     'trs-file=s' => \$trs_file,
     'color-tests=s'  => \&bool_opt,
     'expect-failure=s'  => \&bool_opt,
-    'enable-hard-errors=s' => \&bool_opt,
+    'enable-hard-errors=s' => sub {}, # No-op.
     'diagnostic-string=s' => \$diag_string,
     'comments' => sub { $cfg{"comments"} = 1; },
     'no-comments' => sub { $cfg{"comments"} = 0; },
@@ -107,6 +106,7 @@ sub get_test_results ();
 sub handle_tap_bailout ($);
 sub handle_tap_plan ($);
 sub handle_tap_test ($);
+sub is_null_string ($);
 sub main (@);
 sub must_recheck ();
 sub report ($;$);
@@ -135,6 +135,16 @@ sub bool_opt ($$)
     {
       die "invalid argument '$val' for option '$opt'\n";
     }
+}
+
+# If the given string is undefined or empty, return true, otherwise
+# return false.  This function is useful to avoid pitfalls like:
+#   if ($message) { print "$message\n"; }
+# which wouldn't print anything if $message is the literal "0".
+sub is_null_string ($)
+{
+  my $str = shift;
+  return ! (defined $str and length $str);
 }
 
 # Convert a boolean to a "yes"/"no" string.
@@ -330,10 +340,9 @@ sub handle_tap_test ($)
   my $test_result = stringify_test_result $test;
   my $string = $test->number;
   
-  if (my $description = $test->description)
-    {
-      $string .= " $description";
-    }
+  my $description = $test->description;
+  $string .= " $description"
+    unless is_null_string $description;
 
   if ($plan_seen == LATE_PLAN)
     {
@@ -350,10 +359,9 @@ sub handle_tap_test ($)
   elsif (my $directive = $test->directive)
     {
       $string .= " # $directive";
-      if (my $explanation = $test->explanation)
-        {
-          $string .= " $explanation";
-        }
+      my $explanation = $test->explanation;
+      $string .= " $explanation"
+        unless is_null_string $explanation;
     }
 
   report $test_result, $string;
@@ -382,8 +390,8 @@ sub handle_tap_plan ($)
   # of SKIP result.
   if ($plan->directive && $testno == 0)
     {
-      my $explanation = $plan->explanation ?
-                        "- " . $plan->explanation : undef;
+      my $explanation = is_null_string ($plan->explanation) ?
+                        undef : "- " . $plan->explanation;
       report "SKIP", $explanation;
     }
 }
@@ -392,7 +400,8 @@ sub handle_tap_bailout ($)
 {
   my ($bailout, $msg) = ($_[0], "Bail out!");
   $bailed_out = 1;
-  $msg .= " " . $bailout->explanation if $bailout->explanation;
+  $msg .= " " . $bailout->explanation
+    unless is_null_string $bailout->explanation;
   testsuite_error $msg;
 }
 

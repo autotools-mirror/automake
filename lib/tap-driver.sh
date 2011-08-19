@@ -1,8 +1,4 @@
 #! /bin/sh
-# test-driver - basic driver script for the `parallel-tests' mode.
-
-scriptversion=2011-08-17.14; # UTC
-
 # Copyright (C) 2011 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -27,9 +23,17 @@ scriptversion=2011-08-17.14; # UTC
 # bugs to <bug-automake@gnu.org> or send patches to
 # <automake-patches@gnu.org>.
 
+scriptversion=2011-08-17.14; # UTC
+
 # Make unconditional expansion of undefined variables an error.  This
 # helps a lot in preventing typo-related bugs.
 set -u
+
+fatal ()
+{
+  echo "$0: fatal: $*" >&2
+  exit 1
+}
 
 usage_error ()
 {
@@ -42,9 +46,11 @@ print_usage ()
 {
   cat <<END
 Usage:
-  test-driver --test-name=NAME --log-file=PATH --trs-file=PATH
-              [--expect-failure={yes|no}] [--color-tests={yes|no}]
-              [--enable-hard-errors={yes|no}] [--] TEST-SCRIPT
+  tap-driver --test-name=NAME --log-file=PATH --trs-file=PATH
+             [--expect-failure={yes|no}] [--color-tests={yes|no}]
+             [--enable-hard-errors={yes|no}] [--ignore-exit]
+             [--diagnostic-string=STRING] [--merge|--no-merge]
+             [--comments|--no-comments] [--] TEST-COMMAND
 The \`--test-name', \`--log-file' and \`--trs-file' options are mandatory.
 END
 }
@@ -52,29 +58,44 @@ END
 # TODO: better error handling in option parsing (in particular, ensure
 # TODO: $log_file, $trs_file and $test_name are defined).
 test_name= # Used for reporting.
-log_file=  # Where to save the output of the test script.
+log_file=  # Where to save the result and output of the test script.
 trs_file=  # Where to save the metadata of the test run.
 expect_failure=no
 color_tests=no
-enable_hard_errors=yes
+merge=no
+ignore_exit=no
+comments=no
+diag_string='#'
 while test $# -gt 0; do
   case $1 in
   --help) print_usage; exit $?;;
-  --version) echo "test-driver $scriptversion"; exit $?;;
+  --version) echo "tap-driver $scriptversion"; exit $?;;
   --test-name) test_name=$2; shift;;
   --log-file) log_file=$2; shift;;
   --trs-file) trs_file=$2; shift;;
   --color-tests) color_tests=$2; shift;;
   --expect-failure) expect_failure=$2; shift;;
-  --enable-hard-errors) enable_hard_errors=$2; shift;;
+  --enable-hard-errors) shift;; # No-op.
+  --merge) merge=yes;;
+  --no-merge) merge=no;;
+  --ignore-exit) ignore_exit=yes;;
+  --comments) comments=yes;;
+  --no-comments) comments=no;;
+  --diag-string) diag_string=$2; shift;;
   --) shift; break;;
   -*) usage_error "invalid option: '$1'";;
   esac
   shift
 done
 
+test $# -gt 0 || usage_error "missing test command"
+
+case $expect_failure in
+  yes) expect_failure=1;;
+    *) expect_failure=0;;
+esac
+
 if test $color_tests = yes; then
-  # Keep this in sync with `lib/am/check.am:$(am__tty_colors)'.
   red='[0;31m' # Red.
   grn='[0;32m' # Green.
   lgn='[1;32m' # Light green.
@@ -85,36 +106,11 @@ else
   red= grn= lgn= blu= mgn= std=
 fi
 
-do_exit='rm -f $log_file $trs_file; (exit $st); exit $st'
-trap "st=129; $do_exit" 1
-trap "st=130; $do_exit" 2
-trap "st=141; $do_exit" 13
-trap "st=143; $do_exit" 15
+# TODO: test script is run here.
+# "$@" | [our magic awk script]
 
-# Test script is run here.
-"$@" >$log_file 2>&1
-estatus=$?
-if test $enable_hard_errors = no && test $estatus -eq 99; then
-  estatus=1
-fi
-
-case $estatus:$expect_failure in
-  0:yes) col=$red res=XPASS recheck=yes gcopy=yes;;
-  0:*)   col=$grn res=PASS  recheck=no  gcopy=no;;
-  77:*)  col=$blu res=SKIP  recheck=no  gcopy=yes;;
-  99:*)  col=$mgn res=ERROR recheck=yes gcopy=yes;;
-  *:yes) col=$lgn res=XFAIL recheck=no  gcopy=yes;;
-  *:*)   col=$red res=FAIL  recheck=yes gcopy=yes;;
-esac
-
-# Report outcome to console.
-echo "${col}${res}${std}: $test_name"
-
-# Register the test result, and other relevant metadata.
-echo ":test-result: $res" > $trs_file
-echo ":global-test-result: $res" >> $trs_file
-echo ":recheck: $recheck" >> $trs_file
-echo ":copy-in-global-log: $gcopy" >> $trs_file
+echo "$0: still to be implemented, sorry" >&2
+exit 255
 
 # Local Variables:
 # mode: shell-script

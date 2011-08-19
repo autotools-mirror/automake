@@ -1,3 +1,142 @@
+2011-08-19  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	testsuite: fix some redundant autotools calls in tests on TAP
+	* tests/tap-deps.test: Do not call autotools and configure; there
+	is no need to, since this script sources `tap-setup.sh'.
+	* tests/tap-empty-diagnostic.test: Likewise.
+	* tests/tap-escape-directive.test: Likewise.
+	* tests/tap-fancy2.test: Likewise.
+	* tests/tap-no-spurious.test: Likewise.
+	* tests/tap-out-of-order.test: Likewise.
+
+2011-08-17  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	* THANKS (Daniel Richard G.): Update e-mail address.
+
+2011-08-16  Daniel Richard G. <skunk@iskunk.org>  (tiny change)
+	    Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	java: avoid compilation errors when CLASSPATH is empty
+	* lib/am/java.am (CLASSPATH_ENV): When redefining `$CLASSPATH',
+	do not append an empty component in case the previous value of
+	CLASSPATH is empty or unset.
+	* tests/java-empty-classpath.test: New test.
+	* tests/Makefile.am (TESTS): Update.
+	Fixes automake bug#9306.
+
+2011-08-16  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	parallel-tests: no more spurious successes for FreeBSD make
+	Work around a bug of FreeBSD make bug that was causing the
+	automake-generated "check" target to complete with success
+	even if some tests failed; this happened only when FreeBSD
+	make was run in concurrent mode (as in, e.g., "make -j2
+	check").  The bug is not present in NetBSD make.
+	This change fixes automake bug#9245:
+	 <http://debbugs.gnu.org/cgi/bugreport.cgi?bug=9245>
+	See also FreeBSD PR bin/159730:
+	 <http://www.freebsd.org/cgi/query-pr.cgi?pr=159730>
+	* lib/am/check.am [%?PARALLEL_TESTS%] $(TEST_SUITE_LOG): Use a
+	more "safe" (and apparently redundant) idiom to exit with error,
+	so that the non-zero exit status is picked up also by FreeBSD
+	make when it's running in concurrent mode.
+	* NEWS: Update.
+	* tests/check-concurrency-bug9245.test: New test.
+	* tests/Makefile.am (TESTS): Update.
+
+2011-08-11  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	hacking: we now require autoconf 2.68
+	* HACKING ("Working in git"): Use autoconf and autom4te 2.68,
+	not 2.67, in the examples.
+
+2011-08-17  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tap: improve granularity for tests on problematic TAP messages
+	* tests/tap-message-0.test: Break up into ...
+	* tests/tap-msg0-result.test, tests/tap-msg0-directive.test,
+	tests/tap-msg0-planskip.test, tests/tap-msg0-misc.test,
+	tests/tap-msg0-bailout.test: ... these new tests, and extend
+	a little.
+	* tests/Makefile.am (tap_with_common_setup_tests): Update.
+
+2011-08-17  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tap: correctly handle string "0" in TAP messages
+	* lib/tap-driver.pl (is_null_string): New function, can be used
+	to determine whether a given string variable is empty or undefined.
+	Useful to avoid pitfalls like:
+	  if ($message) { print "$message\n"; }
+	which wouldn't print anything if $message is the literal "0".
+	(handle_tap_test, handle_tap_plan, handle_tap_bailout): Use it,
+	to avoid missing messages composed only by a literal "0" in TAP
+	result descriptions and in skip, todo and bailout explanations.
+	* tests/tap-message-0.test: Enhance.
+	* tests/Makefile.am (XFAIL_TESTS): Remove it, it passes now.
+
+2011-08-17  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tap: a minor simplification in the perl TAP driver
+	* lib/tap-driver.pl: The `--disable-hard-errors' option is a
+	no-op, so just ignore it and its argument.
+
+2011-08-17  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	parallel-tests: fix help screen for test driver scripts
+	* lib/tap-driver.pl ($USAGE): The `--trs-file' option is mandatory
+	too.
+	* lib/tap-driver.sh (print_usage): Likewise.
+	* lib/test-driver (print_usage): Likewise.
+	($scriptversion): Update.
+
+2011-08-17  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tap: add a dummy TAP driver script implemented in shell + awk
+	The user can also now decide which implementation of the TAP driver
+	to use in the testsuite by defining the `$am_tap_implementation'
+	variable to either "perl" or "shell".  Future enhancements will
+	allow the testsuite to automatically run the test scripts on TAP
+	support with both the TAP driver implementations, to improve
+	coverage.
+	* tests/defs (fetch_tap_driver): Honor the `$am_tap_implementation'
+	variable to decide which implementation of the TAP driver to fetch.
+	($am_tap_implementation): Default to "perl".
+	* tests/tap-common-setup.test: Do not fetch the TAP driver, the
+	code in tap-setup.sh does that already (and respecting runtime
+	overriding of `$am_tap_implementation').
+	* lib/tap-driver: Renamed ...
+	* lib/tap-driver.pl: ... to this, and ...
+	($ME): ... adjusted this.
+	* doc/automake.texi: Adjust to the renaming.
+	* tests/Makefile.am (TAP_LOG_DRIVER): Likewise.
+	* tests/tap-doc2.test: Likewise.
+	* lib/tap-driver.sh: New script, still mostly dummy.
+	* lib/Makefile.am (dist_script_DATA): Update, and since we are at
+	it, rewrite it to make it easier to add new entries in the future.
+
+2011-08-17  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	testsuite: refactor tests on TAP support in view of future changes
+	* tests/defs (fetch_tap_driver): New subroutine; it fetches the
+	automake-provided TAP driver from the `lib/' directory into the
+	current directory, and edits its shebang line so that it will be
+	run with the perl interpreter determined at configure time.
+	* tests/tap-setup.sh: Use it.
+	* tests/tap-common-setup.test: There's no need to AC_SUBST `PERL'
+	anymore, nor to use it in the Makefile to run the TAP driver.
+	Also, use the `fetch_tap_driver' function instead of copying the
+	`tap-driver' auxiliary script directly.
+	* tests/tap-bad-prog.tap: Likewise.
+	* tests/tap-diagnostic-custom.test: Likewise.
+	* tests/tap-doc.test: Likewise.
+	* tests/tap-merge-stdout-stderr.test: Likewise.
+	* tests/tap-more.test: Likewise.
+	* tests/tap-more2.test: Likewise.
+	* tests/tap-recheck.test: Likewise.
+	* tests/tap-summary-aux.sh: Likewise.
+	* tests/tap-basic.test: Likewise, and fix a grammaro in comments
+	since we are at it.
+
 2011-08-17  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
 	test defs: fix typo in comments

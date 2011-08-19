@@ -15,27 +15,49 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # TAP support:
-#  - empty diagnostic messages are discarder
+#  - the string "0" as a test description
 
 parallel_tests=yes
 . ./defs || Exit 1
 
 . "$testsrcdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
-sed 's/\$$//' > all.test <<END
-1..1$
-ok 1$
-#$
-# $
-#${tab}$
-#   ${tab} $tab${tab}$
+cat > all.test << 'END'
+1..10
+ok 1 0
+ok - 0
+not ok 3 0
+not ok - 0
+ok 5 0 # TODO
+ok - 0 # TODO
+not ok 7 0 # TODO
+not ok - 0 # TODO
+ok 9 0 # SKIP
+ok - 0 # SKIP
 END
 
-$MAKE check >stdout || { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; Exit 1; }
 cat stdout
 
-grep '^PASS:.*all\.test' stdout # Sanity check.
-grep '#.*all\.test' stdout && Exit 1
-grep "all\.test[ $tab]*:[ $tab]*$" stdout && Exit 1
+count_test_results total=10 pass=2 fail=2 xpass=2 xfail=2 skip=2 error=0
+
+cat > exp << 'END'
+PASS: all.test 1 0
+PASS: all.test 2 - 0
+FAIL: all.test 3 0
+FAIL: all.test 4 - 0
+XPASS: all.test 5 0 # TODO
+XPASS: all.test 6 - 0 # TODO
+XFAIL: all.test 7 0 # TODO
+XFAIL: all.test 8 - 0 # TODO
+SKIP: all.test 9 0 # SKIP
+SKIP: all.test 10 - 0 # SKIP
+END
+
+$FGREP ': all.test' stdout > got
+
+cat exp
+cat got
+diff exp got
 
 :
