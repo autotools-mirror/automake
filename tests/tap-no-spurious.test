@@ -46,14 +46,10 @@ cat >> all.test <<END
  ok 1
 ${tab}ok
 ${tab}ok 1
-ok1
-ok23
  not ok
  not ok 1
 ${tab}not ok
 ${tab}not ok 1
-not ok1
-not ok23
 notok
 notok 1
 not${tab}ok
@@ -72,6 +68,20 @@ no ok 1
 #not ok 1
 END
 
+set +x # Don't pollute logs too much.
+for r in 'ok' 'not ok'; do
+  for s1 in \
+    a b c d e f g h i j k l m n o p q r s t u v w x y z \
+    A B C D E F G H I J K L M N O P Q R S T U V W X Y Z \
+    0 1 2 3 4 5 6 7 8 9 _ ab 0a 23 a1B2c _o _x_y_
+  do
+    for s2 in '' @ % + - = / . : \; \* \? \& \! \# \$ \< \> \\; do
+      printf '%s\n' "$r$s1$s2"
+    done
+  done
+done >> all.test
+set -x # Reset shell xtraces.
+
 # The prove(1) utility doesn't bail out on these, so our driver
 # shouldn't either.
 cat >> all.test <<'END'
@@ -87,6 +97,13 @@ Bail out
 #Bail out!
 # Bail out!
 END
+
+cat all.test # For debugging.
+
+# Minor sanity check.
+test `grep -c '^ok1$' all.test` -eq 1 \
+  && test `grep -c '^not ok1$' all.test` -eq 1 \
+  || framework_failure_ "creating all.test"
 
 $MAKE check >stdout || { cat stdout; Exit 1; }
 cat stdout

@@ -1171,9 +1171,12 @@ tap-merge-stdout-stderr.test \
 tap-no-merge-stdout-stderr.test \
 tap-no-disable-hard-error.test \
 tap-no-spurious-summary.test \
+tap-no-spurious-numbers.test \
 tap-no-spurious.test \
 tap-not-ok-skip.test \
 tap-numeric-description.test \
+tap-negative-numbers.test \
+tap-numbers-leading-zero.test \
 tap-out-of-order.test \
 tap-passthrough.test \
 tap-passthrough-exit.test \
@@ -1181,6 +1184,9 @@ tap-plan.test \
 tap-plan-corner.test \
 tap-plan-errors.test \
 tap-plan-middle.test \
+tap-plan-whitespace.test \
+tap-plan-leading-zero.test \
+tap-plan-malformed.test \
 tap-missing-plan-and-bad-exit.test \
 tap-planskip.test \
 tap-planskip-late.test \
