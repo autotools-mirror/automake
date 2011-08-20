@@ -73,7 +73,8 @@ my $log_file = undef;
 my $trs_file = undef;
 my $diag_string = "#";
 
-Getopt::Long::GetOptions (
+Getopt::Long::GetOptions
+  (
     'help' => sub { print $HELP; exit 0; },
     'version' => sub { print "$ME $VERSION\n"; exit 0; },
     'test-name=s' => \$test_script_name,
@@ -450,22 +451,22 @@ sub main (@)
   if (!$bailed_out)
     {
       if (!$plan_seen)
-      {
-        testsuite_error "missing test plan";
-      }
-    elsif ($parser->tests_planned != $parser->tests_run)
-      {
-        my ($planned, $run) = ($parser->tests_planned, $parser->tests_run);
-        my $bad_amount = $run > $planned ? "many" : "few";
-        testsuite_error (sprintf "too %s tests run (expected %d, got %d)",
-                                 $bad_amount, $planned, $run);
-      }
+        {
+          testsuite_error "missing test plan";
+        }
+      elsif ($parser->tests_planned != $parser->tests_run)
+        {
+          my ($planned, $run) = ($parser->tests_planned, $parser->tests_run);
+          my $bad_amount = $run > $planned ? "many" : "few";
+          testsuite_error (sprintf "too %s tests run (expected %d, got %d)",
+                                   $bad_amount, $planned, $run);
+        }
     }
   if (!$cfg{"ignore-exit"} && !$bailed_out)
-  {
-    my $msg = get_test_exit_message ();
-    testsuite_error $msg if $msg;
-  }
+    {
+      my $msg = get_test_exit_message ();
+      testsuite_error $msg if $msg;
+    }
   write_test_results;
   close LOG or die "closing $log_file: $!\n";
   exit 0;
