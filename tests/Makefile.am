@@ -1174,6 +1174,7 @@ tap-no-spurious-summary.test \
 tap-no-spurious-numbers.test \
 tap-no-spurious.test \
 tap-not-ok-skip.test \
+tap-number-wordboundary.test \
 tap-numeric-description.test \
 tap-negative-numbers.test \
 tap-numbers-leading-zero.test \
