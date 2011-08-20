@@ -1198,6 +1198,7 @@ tap-planskip-badexit.test \
 tap-planskip-bailout.test \
 tap-planskip-later-errors.test \
 tap-realtime.test \
+tap-test-number-0.test \
 tap-recheck-logs.test \
 tap-todo-skip-together.test \
 tap-todo-skip-whitespace.test \
