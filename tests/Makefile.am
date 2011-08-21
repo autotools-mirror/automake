@@ -1195,6 +1195,7 @@ tap-planskip-late.test \
 tap-planskip-and-logging.test \
 tap-planskip-unplanned.test \
 tap-planskip-unplanned-corner.test \
+tap-planskip-case-insensitive.test \
 tap-planskip-whitespace.test \
 tap-planskip-badexit.test \
 tap-planskip-bailout.test \
