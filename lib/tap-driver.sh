@@ -23,7 +23,7 @@
 # bugs to <bug-automake@gnu.org> or send patches to
 # <automake-patches@gnu.org>.
 
-scriptversion=2011-08-21.16; # UTC
+scriptversion=2011-08-21.21; # UTC
 
 # Make unconditional expansion of undefined variables an error.  This
 # helps a lot in preventing typo-related bugs.
@@ -502,7 +502,7 @@ BEGIN {
   # leading and trailing whitespace.  This is a little more tricky in
   # thruth, since we want to also strip a potential leading "SKIP"
   # string from the message.
-  sub("^[^#]*#[ \\t]*(SKIP[: \\t][ \\t]*)", "")
+  sub("^[^#]*#[ \\t]*(SKIP[: \\t][ \\t]*)?", "")
   sub("[ \\t]*$", "");
   handle_tap_plan(0, $0)
   next
