@@ -1201,6 +1201,7 @@ tap-planskip-later-errors.test \
 tap-realtime.test \
 tap-test-number-0.test \
 tap-recheck-logs.test \
+tap-result-comment.test \
 tap-todo-skip-together.test \
 tap-todo-skip-whitespace.test \
 tap-todo-skip.test \
