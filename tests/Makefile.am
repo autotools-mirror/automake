@@ -1142,6 +1142,7 @@ testsuite-summary-count-many.log: extract-testsuite-summary
 # `tap-common-setup.test', and sources the `tap-setup.sh' helper
 # script.
 tap_with_common_setup_tests = \
+tap-ambiguous-directive.test \
 tap-autonumber.test \
 tap-bailout.test \
 tap-bailout-and-logging.test \
