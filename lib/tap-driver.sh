@@ -97,20 +97,22 @@ case $expect_failure in
     *) expect_failure=0;;
 esac
 
-case $color_tests in
-  yes) color_tests=1;;
-    *) color_tests=0;;
-esac
-
 if test $color_tests = yes; then
-  red='[0;31m' # Red.
-  grn='[0;32m' # Green.
-  lgn='[1;32m' # Light green.
-  blu='[1;34m' # Blue.
-  mgn='[0;35m' # Magenta.
-  std='[m'     # No color.
+  init_colors='
+    color_map["red"]="[0;31m" # Red.
+    color_map["grn"]="[0;32m" # Green.
+    color_map["lgn"]="[1;32m" # Light green.
+    color_map["blu"]="[1;34m" # Blue.
+    color_map["mgn"]="[0;35m" # Magenta.
+    color_map["std"]="[m"     # No color.
+    color_for_result["ERROR"] = "mgn"
+    color_for_result["PASS"]  = "grn"
+    color_for_result["XPASS"] = "red"
+    color_for_result["FAIL"]  = "red"
+    color_for_result["XFAIL"] = "lgn"
+    color_for_result["SKIP"]  = "blu"'
 else
-  red= grn= lgn= blu= mgn= std=
+  init_colors=''
 fi
 
 {
@@ -125,7 +127,6 @@ fi
         -v test_script_name="$test_name" \
         -v log_file="$log_file" \
         -v trs_file="$trs_file" \
-        -v color_tests="$color_tests" \
         -v expect_failure="$expect_failure" \
         -v merge="$merge" \
         -v ignore_exit="$ignore_exit" \
@@ -232,7 +233,12 @@ function stringify_result_obj(obj)
 
 function decorate_result(result)
 {
-  return result # TODO!
+  color_name = color_for_result[result]
+  if (color_name)
+    return color_map[color_name] "" result "" color_map["std"]
+  # If we are not using colorized output, or if we do not know how
+  # to colorize the given result, we should return it unchanged.
+  return result
 }
 
 function report(result, details)
@@ -431,6 +437,8 @@ function write_test_results()
 ## ------- ##
 
 BEGIN {
+
+  '"$init_colors"'
 
   # Properly initialized once the TAP plan is seen.
   planned_tests = 0
