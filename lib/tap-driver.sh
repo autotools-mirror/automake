@@ -121,7 +121,7 @@ fi
   #   expression | getline [var]
   # idiom, which should allow us to obtain the final exit status from
   # <expression> when closing it.
-  { test $merge -eq 0 || exec 2>&1; "$@"; } \
+  { test $merge -eq 0 || exec 2>&1; "$@"; echo $?; } \
     | LC_ALL=C ${AM_TAP_AWK-awk} \
         -v me="$me" \
         -v test_script_name="$test_name" \
@@ -458,13 +458,33 @@ plan_seen = NO_PLAN
 ##  PARSING  ##
 ## --------- ##
 
+is_first_read = 1
+
 while (1)
   {
+    # Involutions required so that we are able to read the exit status
+    # from the last input line.
     st = getline
-    if (st == 0) # End-of-input
-      break
-    else if (st < 0) # I/O error.
+    if (st < 0) # I/O error.
       fatal("I/O error while reading from input stream")
+    else if (st == 0) # End-of-input
+      {
+        if (is_first_read)
+          abort("in input loop: only one input line")
+        break
+      }
+    if (is_first_read)
+      {
+        is_first_read = 0
+        nextline = $0
+        continue
+      }
+    else
+      {
+        curline = nextline
+        nextline = $0
+        $0 = curline
+      }
     # Copy any input line verbatim into the log file.
     print
     # Parsing of TAP input should stop after a "Bail out!" directive.
