@@ -416,6 +416,23 @@ function setup_result_obj(line)
   result_obj["explanation"] = line
 }
 
+function get_test_exit_message(status)
+{
+  if (status == 0)
+    return ""
+  if (status !~ /^[1-9][0-9]*$/)
+    abort("getting exit status")
+  if (status < 127)
+    exit_details = ""
+  else if (status == 127)
+    exit_details = " (command not found?)"
+  else if (status >= 128 && status <= 255)
+    exit_details = sprintf(" (terminated by signal %d?)", status - 128)
+  else if (status >= 256)
+    exit_details = " (abnormal termination)"
+  return sprintf("exited with status %d%s", status, exit_details)
+}
+
 function write_test_results()
 {
   print ":global-test-result: " get_global_test_result() > trs_file
@@ -558,6 +575,13 @@ if (!bailed_out)
         bad_amount = testno > planned_tests ? "many" : "few"
         testsuite_error(sprintf("too %s tests run (expected %d, got %d)",
                                 bad_amount, planned_tests, testno))
+      }
+    if (!ignore_exit)
+      {
+        # Fetch exit status from the last line.
+        exit_message = get_test_exit_message(nextline)
+        if (exit_message)
+          testsuite_error(exit_message)
       }
   }
 
