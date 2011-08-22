@@ -23,7 +23,7 @@ TEST_EXTENSIONS = .test .tap
 TEST_LOG_COMPILER = $(LOG_COMPILER)
 TAP_LOG_COMPILER = $(LOG_COMPILER)
 
-TAP_LOG_DRIVER = $(PERL) $(top_srcdir)/lib/tap-driver.pl
+TAP_LOG_DRIVER = AM_TAP_AWK='$(AWK)' $(SHELL) $(top_srcdir)/lib/tap-driver.sh
 TAP_LOG_DRIVER_FLAGS = --merge --comments
 ## Avoid spurious TAP diagnostic.  We use an awful indirection with a
 ## shell command substitution here, since the string needs to contain
@@ -1151,6 +1151,7 @@ testsuite-summary-count-many.log: extract-testsuite-summary
 # `tap-common-setup.test', and sources the `tap-setup.sh' helper
 # script.
 tap_with_common_setup_tests = \
+tap-ambiguous-directive.test \
 tap-autonumber.test \
 tap-bailout.test \
 tap-bailout-and-logging.test \
@@ -1180,9 +1181,13 @@ tap-merge-stdout-stderr.test \
 tap-no-merge-stdout-stderr.test \
 tap-no-disable-hard-error.test \
 tap-no-spurious-summary.test \
+tap-no-spurious-numbers.test \
 tap-no-spurious.test \
 tap-not-ok-skip.test \
+tap-number-wordboundary.test \
 tap-numeric-description.test \
+tap-negative-numbers.test \
+tap-numbers-leading-zero.test \
 tap-out-of-order.test \
 tap-passthrough.test \
 tap-passthrough-exit.test \
@@ -1190,18 +1195,24 @@ tap-plan.test \
 tap-plan-corner.test \
 tap-plan-errors.test \
 tap-plan-middle.test \
+tap-plan-whitespace.test \
+tap-plan-leading-zero.test \
+tap-plan-malformed.test \
 tap-missing-plan-and-bad-exit.test \
 tap-planskip.test \
 tap-planskip-late.test \
 tap-planskip-and-logging.test \
 tap-planskip-unplanned.test \
 tap-planskip-unplanned-corner.test \
+tap-planskip-case-insensitive.test \
 tap-planskip-whitespace.test \
 tap-planskip-badexit.test \
 tap-planskip-bailout.test \
 tap-planskip-later-errors.test \
 tap-realtime.test \
+tap-test-number-0.test \
 tap-recheck-logs.test \
+tap-result-comment.test \
 tap-todo-skip-together.test \
 tap-todo-skip-whitespace.test \
 tap-todo-skip.test \

@@ -14,27 +14,47 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# TAP support:
-#  - TODO and SKIP directives on the same line: the first one wins
-# See also related test 'tap-ambiguous-directive.test'.
+# TAP support: a malformed TAP plan is not recognized.  The checks in
+# here should be consistent with the behaviour of the `prove' utility.
 
 parallel_tests=yes
 . ./defs || Exit 1
 
 . "$testsrcdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
-cat > all.test <<END
-1..2
-ok 1 # SKIP TODO
-not ok 2 # TODO SKIP
+cat > a.test <<END
+1..1 foo
 END
 
-$MAKE check >stdout || { cat stdout; Exit 1; }
+cat > b.test <<END
+ 1..2
+ok 1
+ok 2
+END
+
+cat > c.test <<END
+1..1 # SKIP
+END
+
+cat > d.test <<END
+1..2 # foo bar
+not ok 1 # TODO
+not ok 2 # TODO
+END
+
+cat > e.test <<END
+0..0
+END
+
+tests_list=`echo *.test`
+
+TESTS="$tests_list" $MAKE -e check >stdout && { cat stdout; Exit 1; }
 cat stdout
 
-count_test_results total=2 pass=0 fail=0 xpass=0 xfail=1 skip=1 error=0
+count_test_results total=9 pass=2 fail=0 xpass=0 xfail=2 skip=0 error=5
 
-grep '^SKIP: all\.test 1 ' stdout
-grep '^XFAIL: all\.test 2 ' stdout
+for tst in $tests_list; do
+  grep "^ERROR: $tst - missing test plan$" stdout
+done
 
 :

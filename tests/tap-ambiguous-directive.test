@@ -15,8 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # TAP support:
-#  - TODO and SKIP directives on the same line: the first one wins
-# See also related test 'tap-ambiguous-directive.test'.
+#  - handling of "ambiguous" TODO and SKIP directives
+# See also related test 'tap-todo-skip-together.test'.
 
 parallel_tests=yes
 . ./defs || Exit 1
@@ -24,17 +24,33 @@ parallel_tests=yes
 . "$testsrcdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
 cat > all.test <<END
-1..2
-ok 1 # SKIP TODO
-not ok 2 # TODO SKIP
+1..6
+ok 1 # foo SKIP
+not ok 2 # bar TODO
+ok 3 # :SKIP
+not ok 4 # :TODO
+ok 5 # SKIP SKIP
+not ok 6 # TODO TODO
 END
 
-$MAKE check >stdout || { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; Exit 1; }
 cat stdout
 
-count_test_results total=2 pass=0 fail=0 xpass=0 xfail=1 skip=1 error=0
+count_test_results total=6 pass=2 fail=2 xpass=0 xfail=1 skip=1 error=0
 
-grep '^SKIP: all\.test 1 ' stdout
-grep '^XFAIL: all\.test 2 ' stdout
+cat > exp << 'END'
+PASS: all.test 1 # foo SKIP
+FAIL: all.test 2 # bar TODO
+PASS: all.test 3 # :SKIP
+FAIL: all.test 4 # :TODO
+SKIP: all.test 5 # SKIP SKIP
+XFAIL: all.test 6 # TODO TODO
+END
+
+$FGREP ': all.test' stdout > got
+
+cat exp
+cat got
+diff exp got
 
 :

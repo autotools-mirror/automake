@@ -15,26 +15,44 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # TAP support:
-#  - TODO and SKIP directives on the same line: the first one wins
-# See also related test 'tap-ambiguous-directive.test'.
+#  - don't spuriously recognize negative TAP result numbers, but correctly
+#    interpret them as test descriptions instead
 
 parallel_tests=yes
 . ./defs || Exit 1
 
 . "$testsrcdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
-cat > all.test <<END
-1..2
-ok 1 # SKIP TODO
-not ok 2 # TODO SKIP
+cat > all.test <<'END'
+1..7
+ok -1
+not ok -3
+ok -2 # SKIP
+not ok -5 # TODO
+ok -04 # TODO
+ok -121
+not ok -50000
 END
 
-$MAKE check >stdout || { cat stdout; Exit 1; }
+$MAKE check >stdout && { cat stdout; Exit 1; }
 cat stdout
 
-count_test_results total=2 pass=0 fail=0 xpass=0 xfail=1 skip=1 error=0
+count_test_results total=7 pass=2 fail=2 xpass=1 xfail=1 skip=1 error=0
 
-grep '^SKIP: all\.test 1 ' stdout
-grep '^XFAIL: all\.test 2 ' stdout
+cat > exp <<'END'
+PASS: all.test 1 -1
+FAIL: all.test 2 -3
+SKIP: all.test 3 -2 # SKIP
+XFAIL: all.test 4 -5 # TODO
+XPASS: all.test 5 -04 # TODO
+PASS: all.test 6 -121
+FAIL: all.test 7 -50000
+END
+
+$FGREP ': all.test' stdout > got
+
+cat exp
+cat got
+diff exp got
 
 :

@@ -15,26 +15,49 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # TAP support:
-#  - TODO and SKIP directives on the same line: the first one wins
-# See also related test 'tap-ambiguous-directive.test'.
+#  - a test result numbered as 0 is to be considered out-of-order
+# This is consistent with the behaviour of the `prove' utility.
 
 parallel_tests=yes
 . ./defs || Exit 1
 
 . "$testsrcdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
-cat > all.test <<END
-1..2
-ok 1 # SKIP TODO
-not ok 2 # TODO SKIP
+cat > a.test <<END
+1..1
+ok 0
 END
 
-$MAKE check >stdout || { cat stdout; Exit 1; }
+cat > b.test <<END
+1..1
+not ok 0
+END
+
+cat > c.test <<END
+1..1
+ok 0 foo # SKIP
+END
+
+cat > d.test <<END
+1..1
+not ok 0 bar # TODO
+END
+
+cat > e.test <<END
+1..1
+ok 0 # TODO
+END
+
+TESTS='a.test b.test c.test d.test e.test' $MAKE -e check >stdout \
+  && { cat stdout; Exit 1; }
 cat stdout
 
-count_test_results total=2 pass=0 fail=0 xpass=0 xfail=1 skip=1 error=0
+count_test_results total=5 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=5
 
-grep '^SKIP: all\.test 1 ' stdout
-grep '^XFAIL: all\.test 2 ' stdout
+grep '^ERROR: a\.test 0 # OUT-OF-ORDER (expecting 1)$' stdout
+grep '^ERROR: b\.test 0 # OUT-OF-ORDER (expecting 1)$' stdout
+grep '^ERROR: c\.test 0 foo # OUT-OF-ORDER (expecting 1)$' stdout
+grep '^ERROR: d\.test 0 bar # OUT-OF-ORDER (expecting 1)$' stdout
+grep '^ERROR: e\.test 0 # OUT-OF-ORDER (expecting 1)$' stdout
 
 :

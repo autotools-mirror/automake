@@ -55,22 +55,27 @@ signal_caught ()
   numeric=$1
   symbolic=$2
   sig_re="((SIG)?$symbolic|$numeric)"
-  tst_re="signal-$numeric\\.test"
-  if $EGREP "^ERROR: $tst_re - terminated by signal $sig_re$" stdout; then
+  wbound_re="($|[^a-zA-Z0-9_-])"
+  pfx_re="^ERROR: signal-$numeric\\.test"
+  case $am_tap_implementation in
+    perl) rx="$pfx_re - terminated by signal $sig_re$";;
+    shell) rx="$pfx_re .*terminated by signal $sig_re$wbound_re";;
+    *) fatal_ "invalid \$am_tap_implementation '$am_tap_implementation'";;
+  esac
+  if LC_ALL=C $EGREP "$rx" stdout; then
     return 0
   elif test $have_solaris_bug = yes; then
     case $symbolic in
-      INT|TERM) $EGREP "^ERROR: $tst_re - exited with status 208$" stdout;;
-             *) return 1;;
+      INT|TERM)
+        $EGREP "$pfx_re - exited with status 208( |$)" stdout;;
     esac
-  else
-    return 1
   fi
+  return 1
 }
 
 all_signals_caught ()
 {
-  # This are the only signals that are portably trappable.
+  # These are the only signals that are portably trappable.
   signal_caught  1 HUP
   signal_caught  2 INT
   signal_caught 13 PIPE

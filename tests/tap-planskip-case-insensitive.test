@@ -15,26 +15,32 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # TAP support:
-#  - TODO and SKIP directives on the same line: the first one wins
-# See also related test 'tap-ambiguous-directive.test'.
+#  - "SKIP" keyword in a TAP plan is case-insensitive
 
 parallel_tests=yes
 . ./defs || Exit 1
 
 . "$testsrcdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
-cat > all.test <<END
-1..2
-ok 1 # SKIP TODO
-not ok 2 # TODO SKIP
-END
+# These nested loops are clearer without indentation.
 
-$MAKE check >stdout || { cat stdout; Exit 1; }
+i=0
+for c1 in s S; do
+for c2 in k K; do
+for c3 in i I; do
+for c4 in p P; do
+  i=`expr $i + 1`
+  case $i in ?) i=0$i; esac
+  echo "1..0 # $c1$c2$c3$c4 foobar" > $i.test
+done; done; done; done
+
+TESTS="`echo *.test`" $MAKE -e check >stdout || { cat stdout; Exit 1; }
 cat stdout
 
-count_test_results total=2 pass=0 fail=0 xpass=0 xfail=1 skip=1 error=0
+count_test_results total=16 pass=0 fail=0 xpass=0 xfail=0 skip=16 error=0
 
-grep '^SKIP: all\.test 1 ' stdout
-grep '^XFAIL: all\.test 2 ' stdout
+for tst in *.test; do
+  grep "^SKIP: $tst .* foobar$" stdout
+done
 
 :
