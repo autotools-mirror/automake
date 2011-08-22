@@ -62,14 +62,11 @@ signal_caught ()
     shell) rx="$pfx_re .*terminated by signal $sig_re$wbound_re";;
     *) fatal_ "invalid \$am_tap_implementation '$am_tap_implementation'";;
   esac
-  if LC_ALL=C $EGREP "$rx" stdout; then
-    return 0
-  elif test $have_solaris_bug = yes; then
-    case $symbolic in
-      INT|TERM)
-        $EGREP "$pfx_re - exited with status 208( |$)" stdout;;
-    esac
-  fi
+  LC_ALL=C $EGREP "$rx" stdout && return 0
+  case $have_solaris_bug,$symbolic in
+    yes,INT|yes,TERM)
+      $EGREP "$pfx_re - exited with status 208( |$)" stdout && return 0;;
+  esac
   return 1
 }
 
