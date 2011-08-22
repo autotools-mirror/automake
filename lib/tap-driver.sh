@@ -426,131 +426,126 @@ function write_test_results()
   close(trs_file);
 }
 
+BEGIN {
+
 ## ------- ##
 ##  SETUP  ##
 ## ------- ##
 
-BEGIN {
+'"$init_colors"'
 
-  '"$init_colors"'
+# Properly initialized once the TAP plan is seen.
+planned_tests = 0
 
-  # Properly initialized once the TAP plan is seen.
-  planned_tests = 0
+COOKED_PASS = expect_failure ? "XPASS": "PASS";
+COOKED_FAIL = expect_failure ? "XFAIL": "FAIL";
 
-  COOKED_PASS = expect_failure ? "XPASS": "PASS";
-  COOKED_FAIL = expect_failure ? "XFAIL": "FAIL";
+# Enumeration-like constants to remember which kind of plan (if any)
+# has been seen.  It is important that NO_PLAN evaluates "false" as
+# a boolean.
+NO_PLAN = 0
+EARLY_PLAN = 1
+LATE_PLAN = 2
 
-  # Enumeration-like constants to remember which kind of plan (if any)
-  # has been seen.  It is important that NO_PLAN evaluates "false" as
-  # a boolean.
-  NO_PLAN = 0
-  EARLY_PLAN = 1
-  LATE_PLAN = 2
+testno = 0     # Number of test results seen so far.
+bailed_out = 0 # Whether a "Bail out!" directive has been seen.
 
-  testno = 0     # Number of test results seen so far.
-  bailed_out = 0 # Whether a "Bail out!" directive has been seen.
-
-  # Whether the TAP plan has been seen or not, and if yes, which kind
-  # it is ("early" is seen before any test result, "late" otherwise).
-  plan_seen = NO_PLAN
-
-}
+# Whether the TAP plan has been seen or not, and if yes, which kind
+# it is ("early" is seen before any test result, "late" otherwise).
+plan_seen = NO_PLAN
 
 ## --------- ##
 ##  PARSING  ##
 ## --------- ##
 
-{
-  # Copy any input line verbatim into the log file.
-  print
-  # Parsing of TAP input should stop after a "Bail out!" directive.
-  if (bailed_out)
-    next
-}
+while (1)
+  {
+    st = getline
+    if (st == 0) # End-of-input
+      break
+    else if (st < 0) # I/O error.
+      fatal("I/O error while reading from input stream")
+    # Copy any input line verbatim into the log file.
+    print
+    # Parsing of TAP input should stop after a "Bail out!" directive.
+    if (bailed_out)
+      continue
 
-# TAP test result.
-($0 ~ /^(not )?ok$/ || $0 ~ /^(not )?ok[^a-zA-Z0-9_]/) {
-
-  testno += 1
-  setup_result_obj($0)
-  handle_tap_result()
-  next
-
-}
-
-# TAP plan (normal or "SKIP" without explanation).
-/^1\.\.[0-9]+[ \t]*$/ {
-
-  # The next two lines will put the number of planned tests in $0.
-  sub("^1\\.\\.", "")
-  sub("[^0-9]*$", "")
-  handle_tap_plan($0, "")
-  next
-
-}
-
-# TAP "SKIP" plan, with an explanation.
-/^1\.\.0+[ \t]*#/ {
-
-  # The next lines will put the skip explanation in $0, stripping any
-  # leading and trailing whitespace.  This is a little more tricky in
-  # thruth, since we want to also strip a potential leading "SKIP"
-  # string from the message.
-  sub("^[^#]*#[ \t]*(SKIP[: \t][ \t]*)?", "")
-  sub("[ \t]*$", "");
-  handle_tap_plan(0, $0)
-  next
-
-}
-
-# "Bail out!" magic.
-/^Bail out!/ {
-
-  bailed_out = 1
-  # Get the bailout message (if any), with leading and trailing
-  # whitespace stripped.  The message remains stored in `$0`.
-  sub("^Bail out![ \t]*", "");
-  sub("[ \t]*$", "");
-  # Format the error message for the
-  bailout_message = "Bail out!"
-  if (length($0))
-    bailout_message = bailout_message " " $0
-  testsuite_error(bailout_message)
-  next
-
-}
-
-(comments != 0) {
-
-  comment = extract_tap_comment($0);
-  if (length(comment))
-    report("#", comment);
-
-}
+    # TAP test result.
+    if ($0 ~ /^(not )?ok$/ || $0 ~ /^(not )?ok[^a-zA-Z0-9_]/)
+      {
+        testno += 1
+        setup_result_obj($0)
+        handle_tap_result()
+      }
+    # TAP plan (normal or "SKIP" without explanation).
+    else if ($0 ~ /^1\.\.[0-9]+[ \t]*$/)
+      {
+        # The next two lines will put the number of planned tests in $0.
+        sub("^1\\.\\.", "")
+        sub("[^0-9]*$", "")
+        handle_tap_plan($0, "")
+        continue
+      }
+    # TAP "SKIP" plan, with an explanation.
+    else if ($0 ~ /^1\.\.0+[ \t]*#/)
+      {
+        # The next lines will put the skip explanation in $0, stripping
+        # any leading and trailing whitespace.  This is a little more
+        # tricky in truth, since we want to also strip a potential leading
+        # "SKIP" string from the message.
+        sub("^[^#]*#[ \t]*(SKIP[: \t][ \t]*)?", "")
+        sub("[ \t]*$", "");
+        handle_tap_plan(0, $0)
+      }
+    # "Bail out!" magic.
+    else if ($0 ~ /^Bail out!/)
+      {
+        bailed_out = 1
+        # Get the bailout message (if any), with leading and trailing
+        # whitespace stripped.  The message remains stored in `$0`.
+        sub("^Bail out![ \t]*", "");
+        sub("[ \t]*$", "");
+        # Format the error message for the
+        bailout_message = "Bail out!"
+        if (length($0))
+          bailout_message = bailout_message " " $0
+        testsuite_error(bailout_message)
+      }
+    # Maybe we have too look for dianogtic comments too.
+    else if (comments != 0)
+      {
+        comment = extract_tap_comment($0);
+        if (length(comment))
+          report("#", comment);
+      }
+  }
 
 ## -------- ##
 ##  FINISH  ##
 ## -------- ##
 
-END {
-
-  # A "Bail out!" directive should cause us to ignore any following TAP
-  # error, as well as a non-zero exit status from the TAP producer.
-  if (!bailed_out)
-    {
-      if (!plan_seen)
+# A "Bail out!" directive should cause us to ignore any following TAP
+# error, as well as a non-zero exit status from the TAP producer.
+if (!bailed_out)
+  {
+    if (!plan_seen)
+      {
         testsuite_error("missing test plan")
-      else if (planned_tests != testno)
-        {
-          bad_amount = testno > planned_tests ? "many" : "few"
-          testsuite_error(sprintf("too %s tests run (expected %d, got %d)",
-                                  bad_amount, planned_tests, testno))
-        }
-    }
-  write_test_results()
+      }
+    else if (planned_tests != testno)
+      {
+        bad_amount = testno > planned_tests ? "many" : "few"
+        testsuite_error(sprintf("too %s tests run (expected %d, got %d)",
+                                bad_amount, planned_tests, testno))
+      }
+  }
 
-  exit 0
-}
+write_test_results()
+
+exit 0
+
+} # End of "BEGIN" block.
 '
 
 # TODO: document that we consume the file descriptor 3 :-(
