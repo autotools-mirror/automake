@@ -335,8 +335,8 @@ function extract_tap_comment(line)
       # FIXME: verify there is not an off-by-one bug here.
       line = substr(line, length(diag_string) + 1)
       # And strip any leading and trailing whitespace left.
-      sub("^[ \\t]*", "", line)
-      sub("[ \\t]*$", "", line)
+      sub("^[ \t]*", "", line)
+      sub("[ \t]*$", "", line)
       # Return what is left (if any).
       return line;
     }
@@ -349,7 +349,7 @@ function setup_result_obj(line)
 {
   # Get the result, and remove it from the line.
   result_obj["is_ok"] = (substr(line, 1, 2) == "ok" ? 1 : 0)
-  sub("^(not )?ok[ \\t]*", "", line)
+  sub("^(not )?ok[ \t]*", "", line)
 
   # If the result has an explicit number, get it and strip it; otherwise,
   # automatically assing the next progresive number to it.
@@ -375,8 +375,8 @@ function setup_result_obj(line)
     result_obj["is_unplanned"] = 0
 
   # Strip trailing and leading whitespace.
-  sub("^[ \\t]*", "", line)
-  sub("[ \\t]*$", "", line)
+  sub("^[ \t]*", "", line)
+  sub("[ \t]*$", "", line)
 
   # This will have to be corrected if we have a "TODO"/"SKIP" directive.
   result_obj["description"] = line
@@ -388,7 +388,7 @@ function setup_result_obj(line)
     return # No possible directive, nothing more to do.
 
   # Directives are case-insensitive.
-  rx = "[ \\t]*#[ \\t]*([tT][oO][dD][oO]|[sS][kK][iI][pP])[ \\t]*"
+  rx = "[ \t]*#[ \t]*([tT][oO][dD][oO]|[sS][kK][iI][pP])[ \t]*"
 
   # See whether we have the directive, and if yes, where.
   pos = match(line, rx "$")
@@ -406,13 +406,13 @@ function setup_result_obj(line)
   # with already.
   line = substr(line, pos)
   # Strip the directive, and save its value (normalized to upper case).
-  sub("^[ \\t]*#[ \\t]*", "", line)
+  sub("^[ \t]*#[ \t]*", "", line)
   result_obj["directive"] = toupper(substr(line, 1, 4))
   line = substr(line, 5)
   # Now get the explanation for the directive (if any), with leading
   # and trailing whitespace removed.
-  sub("^[ \\t]*", "", line)
-  sub("[ \\t]*$", "", line)
+  sub("^[ \t]*", "", line)
+  sub("[ \t]*$", "", line)
   result_obj["explanation"] = line
 }
 
@@ -496,8 +496,8 @@ BEGIN {
   # leading and trailing whitespace.  This is a little more tricky in
   # thruth, since we want to also strip a potential leading "SKIP"
   # string from the message.
-  sub("^[^#]*#[ \\t]*(SKIP[: \\t][ \\t]*)?", "")
-  sub("[ \\t]*$", "");
+  sub("^[^#]*#[ \t]*(SKIP[: \t][ \t]*)?", "")
+  sub("[ \t]*$", "");
   handle_tap_plan(0, $0)
   next
 
@@ -509,8 +509,8 @@ BEGIN {
   bailed_out = 1
   # Get the bailout message (if any), with leading and trailing
   # whitespace stripped.  The message remains stored in `$0`.
-  sub("^Bail out![ \\t]*", "");
-  sub("[ \\t]*$", "");
+  sub("^Bail out![ \t]*", "");
+  sub("[ \t]*$", "");
   # Format the error message for the
   bailout_message = "Bail out!"
   if (length($0))
