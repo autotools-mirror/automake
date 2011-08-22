@@ -155,12 +155,6 @@ function abort(where)
   fatal("internal error " where)
 }
 
-function close_or_die(fpath, fname)
-{
-  if (close(fpath) != 0)
-    fatal(sprintf("could not close %s \"%s\"", fname, fpath))
-}
-
 # Convert a boolean to a "yes"/"no" string.
 function yn(bool)
 {
@@ -429,7 +423,7 @@ function write_test_results()
   print ":copy-in-global-log: " yn(copy_in_global_log()) > trs_file
   for (i = 0; i < test_results_index; i += 1)
     print ":test-result: " test_results_list[i] > trs_file
-  close_or_die(trs_file, "trs file");
+  close(trs_file);
 }
 
 ## ------- ##
