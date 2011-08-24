@@ -23,7 +23,7 @@
 # bugs to <bug-automake@gnu.org> or send patches to
 # <automake-patches@gnu.org>.
 
-scriptversion=2011-08-24.08; # UTC
+scriptversion=2011-08-24.09; # UTC
 
 # Make unconditional expansion of undefined variables an error.  This
 # helps a lot in preventing typo-related bugs.
@@ -116,8 +116,14 @@ else
 fi
 
 {
-  { test $merge -eq 0 || exec 2>&1; "$@"; echo $?; } \
-    | LC_ALL=C ${AM_TAP_AWK-awk} \
+  { if test $merge -gt 0; then
+      exec 2>&1
+    else
+      exec 2>&3
+    fi
+    "$@"
+    echo $?
+  } | LC_ALL=C ${AM_TAP_AWK-awk} \
         -v me="$me" \
         -v test_script_name="$test_name" \
         -v log_file="$log_file" \
@@ -141,7 +147,7 @@ fi
 
 function fatal(msg)
 {
-  print me ": " msg | "cat >&3"
+  print me ": " msg | "cat >&2"
   exit 1
 }
 
@@ -248,10 +254,10 @@ function report(result, details)
   if (length(details))
     msg = msg " " details
   # Output on console might be colorized.
-  print decorate_result(result) msg | "cat >&3";
+  print decorate_result(result) msg
   # Log the result in the log file too, to help debugging (this is
   # especially true when said result is a TAP error or "Bail out!").
-  print result msg;
+  print result msg | "cat >&3";
 }
 
 function testsuite_error(error_message)
@@ -498,7 +504,7 @@ while (1)
         $0 = curline
       }
     # Copy any input line verbatim into the log file.
-    print
+    print | "cat >&3"
     # Parsing of TAP input should stop after a "Bail out!" directive.
     if (bailed_out)
       continue
@@ -588,7 +594,7 @@ exit 0
 '
 
 # TODO: document that we consume the file descriptor 3 :-(
-} 3>&1 >"$log_file" 2>&1
+} 3>"$log_file"
 
 test $? -eq 0 || fatal "I/O or internal error"
 

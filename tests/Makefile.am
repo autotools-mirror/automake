@@ -1225,6 +1225,7 @@ tap-common-setup.test \
 tap-bad-prog.tap \
 tap-basic.test \
 tap-diagnostic-custom.test \
+tap-driver-stderr.test \
 tap-doc.test \
 tap-doc2.test \
 tap-more.test \
