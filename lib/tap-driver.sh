@@ -23,7 +23,7 @@
 # bugs to <bug-automake@gnu.org> or send patches to
 # <automake-patches@gnu.org>.
 
-scriptversion=2011-08-21.21; # UTC
+scriptversion=2011-08-24.08; # UTC
 
 # Make unconditional expansion of undefined variables an error.  This
 # helps a lot in preventing typo-related bugs.
@@ -116,11 +116,6 @@ else
 fi
 
 {
-  # FIXME: this usage loses the test program exit status.  We should
-  # probably rewrite the awk script to use the
-  #   expression | getline [var]
-  # idiom, which should allow us to obtain the final exit status from
-  # <expression> when closing it.
   { test $merge -eq 0 || exec 2>&1; "$@"; echo $?; } \
     | LC_ALL=C ${AM_TAP_AWK-awk} \
         -v me="$me" \
@@ -133,7 +128,7 @@ fi
         -v comments="$comments" \
         -v diag_string="$diag_string" \
 '
-# FIXME: the usages of "cat >&3" below could be optimized whne using
+# FIXME: the usages of "cat >&3" below could be optimized when using
 # FIXME: GNU awk, and/on on systems that supports /dev/fd/.
 
 # Implementation note: in what follows, `result_obj` will be an
