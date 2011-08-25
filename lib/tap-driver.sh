@@ -23,7 +23,7 @@
 # bugs to <bug-automake@gnu.org> or send patches to
 # <automake-patches@gnu.org>.
 
-scriptversion=2011-08-24.09; # UTC
+scriptversion=2011-08-25.10; # UTC
 
 # Make unconditional expansion of undefined variables an error.  This
 # helps a lot in preventing typo-related bugs.
@@ -195,35 +195,35 @@ function get_global_test_result()
 {
     if ("ERROR" in test_results_seen)
       return "ERROR"
+    if ("FAIL" in test_results_seen || "XPASS" in test_results_seen)
+      return "FAIL"
     all_skipped = 1
     for (k in test_results_seen)
       if (k != "SKIP")
         all_skipped = 0
     if (all_skipped)
       return "SKIP"
-    if ("FAIL" in test_results_seen || "XPASS" in test_results_seen)
-      return "FAIL"
     return "PASS";
 }
 
-function stringify_result_obj(obj)
+function stringify_result_obj(result_obj)
 {
-  if (obj["is_unplanned"] || obj["number"] != testno)
+  if (result_obj["is_unplanned"] || result_obj["number"] != testno)
     return "ERROR"
 
   if (plan_seen == LATE_PLAN)
     return "ERROR"
 
   if (result_obj["directive"] == "TODO")
-    return obj["is_ok"] ? "XPASS" : "XFAIL"
+    return result_obj["is_ok"] ? "XPASS" : "XFAIL"
 
   if (result_obj["directive"] == "SKIP")
-    return obj["is_ok"] ? "SKIP" : COOKED_FAIL;
+    return result_obj["is_ok"] ? "SKIP" : COOKED_FAIL;
 
   if (length(result_obj["directive"]))
       abort("in function stringify_result_obj()")
 
-  return obj["is_ok"] ? COOKED_PASS : COOKED_FAIL
+  return result_obj["is_ok"] ? COOKED_PASS : COOKED_FAIL
 }
 
 function decorate_result(result)
@@ -294,7 +294,7 @@ function handle_tap_result()
   report(stringify_result_obj(result_obj), details)
 }
 
-# `skip_reason` should be emprty whenever planned > 0.
+# `skip_reason` should be empty whenever planned > 0.
 function handle_tap_plan(planned, skip_reason)
 {
   planned += 0 # Avoid getting confused if, say, `planned` is "00"
@@ -329,11 +329,9 @@ function handle_tap_plan(planned, skip_reason)
 
 function extract_tap_comment(line)
 {
-  # FIXME: verify there is not an off-by-one bug here.
   if (index(line, diag_string) == 1)
     {
       # Strip leading `diag_string` from `line`.
-      # FIXME: verify there is not an off-by-one bug here.
       line = substr(line, length(diag_string) + 1)
       # And strip any leading and trailing whitespace left.
       sub("^[ \t]*", "", line)

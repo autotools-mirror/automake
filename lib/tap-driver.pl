@@ -32,7 +32,7 @@ use strict;
 use Getopt::Long ();
 use TAP::Parser;
 
-my $VERSION = '2011-08-25.08'; # UTC
+my $VERSION = '2011-08-25.10'; # UTC
 
 my $ME = "tap-driver.pl";
 
@@ -127,13 +127,13 @@ sub get_test_exit_message ();
 sub get_test_results ();
 sub handle_tap_bailout ($);
 sub handle_tap_plan ($);
-sub handle_tap_test ($);
+sub handle_tap_result ($);
 sub is_null_string ($);
 sub main (@);
 sub must_recheck ();
 sub report ($;$);
 sub start (@);
-sub stringify_test_result ($);
+sub stringify_result_obj ($);
 sub testsuite_error ($);
 sub trap_perl_warnings_and_errors ();
 sub write_test_results ();
@@ -179,41 +179,42 @@ sub yn ($)
 
 TEST_RESULTS :
 {
-  my (@test_results, %test_results);
+  my (@test_results_list, %test_results_seen);
 
   sub add_test_result ($)
   {
     my $res = shift;
-    push @test_results, $res;
-    $test_results{$res} = 1;
+    push @test_results_list, $res;
+    $test_results_seen{$res} = 1;
   }
 
   sub get_test_results ()
   {
-    return @test_results;
+    return @test_results_list;
   }
 
   # Whether the test script should be re-run by "make recheck".
   sub must_recheck ()
   {
-    return grep { !/^(?:XFAIL|PASS|SKIP)$/ } (keys %test_results);
+    return grep { !/^(?:XFAIL|PASS|SKIP)$/ } (keys %test_results_seen);
   }
 
   # Whether the content of the log file associated to this test should
   # be copied into the "global" test-suite.log.
   sub copy_in_global_log ()
   {
-    return grep { not $_ eq "PASS" } (keys %test_results);
+    return grep { not $_ eq "PASS" } (keys %test_results_seen);
   }
 
   # FIXME: this can certainly be improved ...
   sub get_global_test_result ()
   {
-    my @results = keys %test_results;
-    return "ERROR" if exists $test_results{"ERROR"};
-    return "SKIP" if @results == 1 && $results[0] eq "SKIP";
-    return "FAIL" if exists $test_results{"FAIL"};
-    return "FAIL" if exists $test_results{"XPASS"};
+    return "ERROR"
+      if $test_results_seen{"ERROR"};
+    return "FAIL"
+      if $test_results_seen{"FAIL"} || $test_results_seen{"XPASS"};
+    return "SKIP"
+      if scalar keys %test_results_seen == 1 && $test_results_seen{"SKIP"};
     return "PASS";
   }
 
@@ -263,7 +264,7 @@ sub get_test_exit_message ()
 {
   my $wstatus = $parser->wait;
   # Watch out for possible internal errors.
-  die "couldn't get the exit ststus of the TAP producer"
+  die "$ME: couldn't get the exit ststus of the TAP producer"
     unless defined $wstatus;
   # Return an undefined value if the producer exited with success.
   return unless $wstatus;
@@ -284,36 +285,38 @@ sub get_test_exit_message ()
 	}
 }
 
-sub stringify_test_result ($)
+sub stringify_result_obj ($)
 {
-  my $result = shift;
-  my $PASS = $cfg{"expect-failure"} ? "XPASS": "PASS";
-  my $FAIL = $cfg{"expect-failure"} ? "XFAIL": "FAIL";
-  if ($result->is_unplanned
-       || $result->number != $testno
-       || $plan_seen == LATE_PLAN)
+  my $result_obj = shift;
+  my $COOKED_PASS = $cfg{"expect-failure"} ? "XPASS": "PASS";
+  my $COOKED_FAIL = $cfg{"expect-failure"} ? "XFAIL": "FAIL";
+  if ($result_obj->is_unplanned || $result_obj->number != $testno)
     {
       return "ERROR";
     }
-  elsif (!$result->directive)
+  elsif ($plan_seen == LATE_PLAN)
     {
-      return $result->is_ok ? $PASS: $FAIL;
+      return "ERROR";
     }
-  elsif ($result->has_todo)
+  elsif (!$result_obj->directive)
     {
-      return $result->is_actual_ok ? "XPASS" : "XFAIL";
+      return $result_obj->is_ok ? $COOKED_PASS: $COOKED_FAIL;
     }
-  elsif ($result->has_skip)
+  elsif ($result_obj->has_todo)
     {
-      return $result->is_ok ? "SKIP" : $FAIL;
+      return $result_obj->is_actual_ok ? "XPASS" : "XFAIL";
     }
-  die "INTERNAL ERROR"; # NOTREACHED
+  elsif ($result_obj->has_skip)
+    {
+      return $result_obj->is_ok ? "SKIP" : $COOKED_FAIL;
+    }
+  die "$ME: INTERNAL ERROR"; # NOTREACHED
 }
 
 sub colored ($$)
 {
   my ($color_name, $text) = @_;
-  return  $COLOR{$color_name} . $text . $COLOR{'std'};
+  return $COLOR{$color_name} . $text . $COLOR{'std'};
 }
 
 sub decorate_result ($)
@@ -353,7 +356,7 @@ sub report ($;$)
     }
   else
     {
-      die "INTERNAL ERROR"; # NOTREACHED
+      die "$ME: INTERNAL ERROR"; # NOTREACHED
     }
   $msg .= " $explanation" if defined $explanation;
   $msg .= "\n";
@@ -369,15 +372,15 @@ sub testsuite_error ($)
   report "ERROR", "- $_[0]";
 }
 
-sub handle_tap_test ($)
+sub handle_tap_result ($)
 {
   $testno++;
-  my $test = shift;
+  my $result_obj = shift;
 
-  my $test_result = stringify_test_result $test;
-  my $string = $test->number;
+  my $test_result = stringify_result_obj $result_obj;
+  my $string = $result_obj->number;
   
-  my $description = $test->description;
+  my $description = $result_obj->description;
   $string .= " $description"
     unless is_null_string $description;
 
@@ -385,18 +388,18 @@ sub handle_tap_test ($)
     {
       $string .= " # AFTER LATE PLAN";
     }
-  elsif ($test->is_unplanned)
+  elsif ($result_obj->is_unplanned)
     {
       $string .= " # UNPLANNED";
     }
-  elsif ($test->number != $testno)
+  elsif ($result_obj->number != $testno)
     {
       $string .= " # OUT-OF-ORDER (expecting $testno)";
     }
-  elsif (my $directive = $test->directive)
+  elsif (my $directive = $result_obj->directive)
     {
       $string .= " # $directive";
-      my $explanation = $test->explanation;
+      my $explanation = $result_obj->explanation;
       $string .= " $explanation"
         unless is_null_string $explanation;
     }
@@ -444,11 +447,15 @@ sub handle_tap_bailout ($)
 
 sub extract_tap_comment ($)
 {
-  local $_ = shift;
-  if (/^\Q$diag_string\E(.*)$/o)
+  my $line = shift;
+  if (index ($line, $diag_string) == 0)
     {
-      (my $comment = $1) =~ s/(?:^\s*|\s*$)//g;
-      return $comment;
+      # Strip leading `$diag_string' from `$line'.
+      $line = substr ($line, length ($diag_string));
+      # And strip any leading and trailing whitespace left.
+      $line =~ s/(?:^\s*|\s*$)//g;
+      # Return what is left (if any).
+      return $line;
     }
   return "";
 }
@@ -470,7 +477,7 @@ sub main (@)
         }
       elsif ($cur->is_test)
         {
-          handle_tap_test ($cur);
+          handle_tap_result ($cur);
         }
       elsif ($cur->is_bailout)
         {
@@ -497,11 +504,11 @@ sub main (@)
           testsuite_error (sprintf "too %s tests run (expected %d, got %d)",
                                    $bad_amount, $planned, $run);
         }
-    }
-  if (!$cfg{"ignore-exit"} && !$bailed_out)
-    {
-      my $msg = get_test_exit_message ();
-      testsuite_error $msg if $msg;
+      if (!$cfg{"ignore-exit"})
+        {
+          my $msg = get_test_exit_message ();
+          testsuite_error $msg if $msg;
+        }
     }
   write_test_results;
   close LOG or die "$ME: closing $log_file: $!\n";
