@@ -23,7 +23,7 @@
 # bugs to <bug-automake@gnu.org> or send patches to
 # <automake-patches@gnu.org>.
 
-scriptversion=2011-08-25.10; # UTC
+scriptversion=2011-08-25.11; # UTC
 
 # Make unconditional expansion of undefined variables an error.  This
 # helps a lot in preventing typo-related bugs.
@@ -382,7 +382,6 @@ function setup_result_obj(line)
   result_obj["directive"] = ""
   result_obj["explanation"] = ""
 
-  # TODO: maybe we should allow a way to escape "#"?
   if (index(line, "#") == 0)
     return # No possible directive, nothing more to do.
 
@@ -397,6 +396,20 @@ function setup_result_obj(line)
   # If there was no TAP directive, we have nothing more to do.
   if (!pos)
     return
+
+  # Let`s now see if the TAP directive has been escaped.  For example:
+  #  escaped:     ok \# SKIP
+  #  not escaped: ok \\# SKIP
+  #  escaped:     ok \\\\\# SKIP
+  #  not escaped: ok \ # SKIP
+  if (substr(line, pos, 1) == "#")
+    {
+      bslash_count = 0
+      for (i = pos; i > 1 && substr(line, i - 1, 1) == "\\"; i--)
+        bslash_count += 1
+      if (bslash_count % 2)
+        return # Directive was escaped.
+    }
 
   # Strip the directive and its explanation (if any) from the test
   # description.
