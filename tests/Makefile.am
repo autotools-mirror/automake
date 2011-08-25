@@ -444,6 +444,7 @@ java.test \
 java2.test \
 java3.test \
 java-check.test \
+java-empty-classpath.test \
 javaprim.test \
 javasubst.test \
 ldadd.test \
