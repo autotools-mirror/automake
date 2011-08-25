@@ -135,6 +135,7 @@ sub report ($;$);
 sub start (@);
 sub stringify_test_result ($);
 sub testsuite_error ($);
+sub trap_perl_warnings_and_errors ();
 sub write_test_results ();
 sub yn ($);
 
@@ -155,7 +156,7 @@ sub bool_opt ($$)
     }
   else
     {
-      die "invalid argument '$val' for option '$opt'\n";
+      die "$ME: invalid argument '$val' for option '$opt'\n";
     }
 }
 
@@ -220,7 +221,7 @@ TEST_RESULTS :
 
 sub write_test_results ()
 {
-  open RES, ">", $trs_file or die "opening $trs_file: $!\n";
+  open RES, ">", $trs_file or die "$ME: opening $trs_file: $!\n";
   print RES ":global-test-result: " . get_global_test_result . "\n";
   print RES ":recheck: " . yn (must_recheck) . "\n";
   print RES ":copy-in-global-log: " . yn (copy_in_global_log) . "\n";
@@ -228,18 +229,32 @@ sub write_test_results ()
     {
       print RES ":test-result: $result\n";
     }
-  close RES or die "closing $trs_file: $!\n";
+  close RES or die "$ME: closing $trs_file: $!\n";
+}
+
+sub trap_perl_warnings_and_errors ()
+{
+  $SIG{__WARN__} = $SIG{__DIE__} = sub
+    {
+      # Be sure to send the warning/error message to the original stderr
+      # (presumably the console), not into the log file.
+      open STDERR, ">&", \*OLDERR;
+      die @_;
+    }
 }
 
 sub start (@)
 {
   # Redirect stderr and stdout to a temporary log file.  Save the
   # original stdout stream, since we need it to print testsuite
-  # progress output.
-  open LOG, ">", $log_file or die "opening $log_file: $!\n";
-  open OLDOUT, ">&STDOUT" or die "duplicating stdout: $!\n";
-  open STDOUT, ">&LOG" or die "redirecting stdout: $!\n";
-  open STDERR, ">&LOG" or die "redirecting stderr: $!\n";
+  # progress output. Save original stderr stream, so that we can
+  # redirect warning and error messages from perl there.
+  open LOG, ">", $log_file or die "$ME: opening $log_file: $!\n";
+  open OLDOUT, ">&STDOUT" or die "$ME: duplicating stdout: $!\n";
+  open OLDERR, ">&STDERR" or die "$ME: duplicating stdout: $!\n";
+  trap_perl_warnings_and_errors;
+  open STDOUT, ">&LOG" or die "$ME: redirecting stdout: $!\n";
+  open STDERR, ">&LOG" or die "$ME: redirecting stderr: $!\n";
   $parser = TAP::Parser->new ({ exec => \@_, merge => $cfg{merge} });
   $parser->ignore_exit(1) if $cfg{"ignore-exit"};
 }
@@ -489,7 +504,7 @@ sub main (@)
       testsuite_error $msg if $msg;
     }
   write_test_results;
-  close LOG or die "closing $log_file: $!\n";
+  close LOG or die "$ME: closing $log_file: $!\n";
   exit 0;
 }
 
