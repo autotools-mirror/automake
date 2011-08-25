@@ -23,17 +23,33 @@ parallel_tests=yes
 . "$testsrcdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
 cat > all.test <<'END'
-1..2
-ok \# TODO
-ok \# SKIP
+1..8
+
+not ok \ # TODO
+ok \ # SKIP
+
+not ok \\# TODO
+ok \\# SKIP
+
+ok \\\# TODO
+ok \\\# SKIP
+
+not ok \\\\\\\\\\# TODO
+ok     \\\\\\\\\\# SKIP
 END
 
 $MAKE check >stdout || { cat stdout; Exit 1; }
 cat stdout
 
-count_test_results total=2 pass=2 fail=0 xpass=0 xfail=0 skip=0 error=0
+count_test_results total=8 pass=2 fail=0 xpass=0 xfail=3 skip=3 error=0
 
-grep '^PASS: all\.test 1 .*# TODO' stdout
-grep '^PASS: all\.test 2 .*# SKIP' stdout
+grep '^XFAIL: all\.test 1 .*# TODO' stdout
+grep '^SKIP: all\.test 2 .*# SKIP' stdout
+grep '^XFAIL: all\.test 3 .*# TODO' stdout
+grep '^SKIP: all\.test 4 .*# SKIP' stdout
+grep '^PASS: all\.test 5 .*# TODO' stdout
+grep '^PASS: all\.test 6 .*# SKIP' stdout
+grep '^XFAIL: all\.test 7 .*# TODO' stdout
+grep '^SKIP: all\.test 8 .*# SKIP' stdout
 
 :
