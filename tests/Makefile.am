@@ -446,6 +446,7 @@ java2.test \
 java3.test \
 java-check.test \
 java-clean.test \
+java-empty-classpath.test \
 javaprim.test \
 javasubst.test \
 javaflags.test \
