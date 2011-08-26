@@ -23,7 +23,7 @@
 # bugs to <bug-automake@gnu.org> or send patches to
 # <automake-patches@gnu.org>.
 
-scriptversion=2011-08-21.21; # UTC
+scriptversion=2011-08-25.11; # UTC
 
 # Make unconditional expansion of undefined variables an error.  This
 # helps a lot in preventing typo-related bugs.
@@ -116,13 +116,14 @@ else
 fi
 
 {
-  # FIXME: this usage loses the test program exit status.  We should
-  # probably rewrite the awk script to use the
-  #   expression | getline [var]
-  # idiom, which should allow us to obtain the final exit status from
-  # <expression> when closing it.
-  { test $merge -eq 0 || exec 2>&1; "$@"; echo $?; } \
-    | LC_ALL=C ${AM_TAP_AWK-awk} \
+  { if test $merge -gt 0; then
+      exec 2>&1
+    else
+      exec 2>&3
+    fi
+    "$@"
+    echo $?
+  } | LC_ALL=C ${AM_TAP_AWK-awk} \
         -v me="$me" \
         -v test_script_name="$test_name" \
         -v log_file="$log_file" \
@@ -133,7 +134,7 @@ fi
         -v comments="$comments" \
         -v diag_string="$diag_string" \
 '
-# FIXME: the usages of "cat >&3" below could be optimized whne using
+# FIXME: the usages of "cat >&3" below could be optimized when using
 # FIXME: GNU awk, and/on on systems that supports /dev/fd/.
 
 # Implementation note: in what follows, `result_obj` will be an
@@ -146,7 +147,7 @@ fi
 
 function fatal(msg)
 {
-  print me ": " msg | "cat >&3"
+  print me ": " msg | "cat >&2"
   exit 1
 }
 
@@ -194,35 +195,35 @@ function get_global_test_result()
 {
     if ("ERROR" in test_results_seen)
       return "ERROR"
+    if ("FAIL" in test_results_seen || "XPASS" in test_results_seen)
+      return "FAIL"
     all_skipped = 1
     for (k in test_results_seen)
       if (k != "SKIP")
         all_skipped = 0
     if (all_skipped)
       return "SKIP"
-    if ("FAIL" in test_results_seen || "XPASS" in test_results_seen)
-      return "FAIL"
     return "PASS";
 }
 
-function stringify_result_obj(obj)
+function stringify_result_obj(result_obj)
 {
-  if (obj["is_unplanned"] || obj["number"] != testno)
+  if (result_obj["is_unplanned"] || result_obj["number"] != testno)
     return "ERROR"
 
   if (plan_seen == LATE_PLAN)
     return "ERROR"
 
   if (result_obj["directive"] == "TODO")
-    return obj["is_ok"] ? "XPASS" : "XFAIL"
+    return result_obj["is_ok"] ? "XPASS" : "XFAIL"
 
   if (result_obj["directive"] == "SKIP")
-    return obj["is_ok"] ? "SKIP" : COOKED_FAIL;
+    return result_obj["is_ok"] ? "SKIP" : COOKED_FAIL;
 
   if (length(result_obj["directive"]))
       abort("in function stringify_result_obj()")
 
-  return obj["is_ok"] ? COOKED_PASS : COOKED_FAIL
+  return result_obj["is_ok"] ? COOKED_PASS : COOKED_FAIL
 }
 
 function decorate_result(result)
@@ -253,10 +254,10 @@ function report(result, details)
   if (length(details))
     msg = msg " " details
   # Output on console might be colorized.
-  print decorate_result(result) msg | "cat >&3";
+  print decorate_result(result) msg
   # Log the result in the log file too, to help debugging (this is
   # especially true when said result is a TAP error or "Bail out!").
-  print result msg;
+  print result msg | "cat >&3";
 }
 
 function testsuite_error(error_message)
@@ -293,7 +294,7 @@ function handle_tap_result()
   report(stringify_result_obj(result_obj), details)
 }
 
-# `skip_reason` should be emprty whenever planned > 0.
+# `skip_reason` should be empty whenever planned > 0.
 function handle_tap_plan(planned, skip_reason)
 {
   planned += 0 # Avoid getting confused if, say, `planned` is "00"
@@ -328,11 +329,9 @@ function handle_tap_plan(planned, skip_reason)
 
 function extract_tap_comment(line)
 {
-  # FIXME: verify there is not an off-by-one bug here.
   if (index(line, diag_string) == 1)
     {
       # Strip leading `diag_string` from `line`.
-      # FIXME: verify there is not an off-by-one bug here.
       line = substr(line, length(diag_string) + 1)
       # And strip any leading and trailing whitespace left.
       sub("^[ \t]*", "", line)
@@ -383,7 +382,6 @@ function setup_result_obj(line)
   result_obj["directive"] = ""
   result_obj["explanation"] = ""
 
-  # TODO: maybe we should allow a way to escape "#"?
   if (index(line, "#") == 0)
     return # No possible directive, nothing more to do.
 
@@ -398,6 +396,20 @@ function setup_result_obj(line)
   # If there was no TAP directive, we have nothing more to do.
   if (!pos)
     return
+
+  # Let`s now see if the TAP directive has been escaped.  For example:
+  #  escaped:     ok \# SKIP
+  #  not escaped: ok \\# SKIP
+  #  escaped:     ok \\\\\# SKIP
+  #  not escaped: ok \ # SKIP
+  if (substr(line, pos, 1) == "#")
+    {
+      bslash_count = 0
+      for (i = pos; i > 1 && substr(line, i - 1, 1) == "\\"; i--)
+        bslash_count += 1
+      if (bslash_count % 2)
+        return # Directive was escaped.
+    }
 
   # Strip the directive and its explanation (if any) from the test
   # description.
@@ -503,7 +515,7 @@ while (1)
         $0 = curline
       }
     # Copy any input line verbatim into the log file.
-    print
+    print | "cat >&3"
     # Parsing of TAP input should stop after a "Bail out!" directive.
     if (bailed_out)
       continue
@@ -593,7 +605,7 @@ exit 0
 '
 
 # TODO: document that we consume the file descriptor 3 :-(
-} 3>&1 >"$log_file" 2>&1
+} 3>"$log_file"
 
 test $? -eq 0 || fatal "I/O or internal error"
 

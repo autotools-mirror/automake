@@ -1,3 +1,104 @@
+2011-08-26  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix spurious failure for awk implementation of TAP driver
+	* tests/tap-realtime.test: The awk+shell implementation of the TAP
+	driver must "read ahead" of one line in order to catch the exit
+	status of the test script it runs.  So, in the TAP-producer script
+	here, be sure to echo one "dummy" line after each TAP result line
+	in order not to cause false positives.
+
+2011-08-25  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tap/awk: allow escaping of TAP directives
+	* lib/tap-driver.sh (setup_result_obj): Handle escaping of TAP
+	directives in a way tat is (mostly) compatible by what is done
+	by the TAP::Parser module.
+	With this change, the tests `tap-escape-directive.test' and
+	`tap-escape-directive-2.test' now also pass with the shell/awk
+	implementation of the TAP driver.
+
+2011-08-25  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	coverage: more about escaping of TAP directives
+	* tests/tap-escape-directive.test: Make grepping of testsuite
+	progress output slightly stricter.
+	* tests/tap-escape-directive-2.test: New test (failing with the
+	awk implementation of the TAP driver).
+	* tests/Makefile.am (tap_with_common_setup_tests): Update.
+
+2011-08-25  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tap: improve syncing between awk+shell and perl implementations
+	* lib/tap-driver.pl (stringify_test_result): Renamed ...
+	(stringify_result_obj): ... to this.  Break up a clause in the
+	long "if/elsif/.../else" construct to avoid unaesthetic line
+	breaks and to be more synced with the sibling function in
+	`tap-driver.sh'.  Rename the `$result', `$PASS' and `$FAIL'
+	variables to respectively `$result_obj', `$COOKED_PASS' and
+	`$COOKED_FAIL', for clarity and better syncing.
+	(handle_tap_test): Renamed  ...
+	(handle_tap_result): ... to this, and change the name of the
+	`$test' local variable to `$result_obj'.
+	(extract_comment): Reimplement using the simpler `index' and
+	`substr' builtins, rather than with more advanced uses of
+	regular expressions.
+	(%test_results, @test_results): Renamed respectively ...
+	(%test_results_seen, @test_results_list): ... to these, and
+	related adjustments throughout the `TEST_RESULTS' block.
+	(main, get_global_test_result): Refactor and do some cosmetic
+	changes to make these functions clearer and better synced with
+	sibling code in `tap-driver.sh'.
+	Other minor cosmetic and typo fixes.
+	* lib/tap-driver.sh (extract_tap_comment): Remove outdated
+	"FIXME" comments.
+	(get_global_test_result): Small reordering to make it better
+	synced with its sibling function in `tap-driver.pl'.
+	(stringify_result_obj): Consistently use `result_obj' as the
+	parameter name.
+	Other minor cosmetic and typo fixes.
+
+2011-08-25  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tap/perl: don't redirect perl warnings/errors to log files
+	With this change, the test `tap-driver-stderr.test' also passes
+	with the perl implementation of the TAP driver.
+	* lib/tap-driver.pl (start): Save the original stderr into the
+	`OLDERR' file handle, and call ...
+	(trap_perl_warnings_and_errors): ... this new function, trapping
+	the `__WARN__' and `__DIE__' "pseudo-signals" to ensure that the
+	warning and error messages goes to that original stderr stream.
+	Since we are at it, be sure to prepend all possible "die" message
+	with the name of the script as given by the `$ME' variable.
+
+2011-08-25  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tap/perl: add copyright notice, version string, and emacs stuff
+	* lib/tap-driver.pl: Add proper copyright notice and bug reporting
+	address.  Remove obsolete heading comments.  Add trailing comments
+	for emacs w.r.t. code-formatting rules and automatic updating of
+	the date-based script version saved into the `$VERSION' variable.
+	($VERSION): Define to the current UTC date.
+
+2011-08-24  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tap/awk: don't redirect awk stderr to log files
+	* lib/tap-driver.sh: Handle the file descriptors redirections
+	more smartly, to avoid sending error messages from awk (about
+	e.g. syntax or I/O errors) to the log files instead that to the
+	console.
+	* tests/tap-driver-stderr.test: New test, verifying the improved
+	driver behaviour.  Notice that this test still fails when using
+	the perl implementation of the TAP driver.
+	* tests/Makefile.am (tap_other_tests): Update.
+
+2011-08-24  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tap/awk: remove obsolete "FIXME" comment
+	* lib/tap-driver.sh: Remove obsolete "FIXME" comment about our
+	driver losing the exit status of the tested program; this issue
+	has been solved in precedent commit `v1.11-1052-gd630a0d'.  Fix
+	an unrelated typo in comments since we are at it.
+
 2011-08-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
 	testsuite: avoid spurious failure on Solaris

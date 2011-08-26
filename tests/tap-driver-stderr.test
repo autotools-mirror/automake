@@ -14,26 +14,36 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# TAP support:
-#  - "escape" TODO and SKIP directives (by escaping the "#" character)
+# Unit test on TAP driver:
+#  - error messages from awk/shell/perl goes to the console
 
+required=non-root
 parallel_tests=yes
 . ./defs || Exit 1
 
-. "$testsrcdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
+fetch_tap_driver
 
-cat > all.test <<'END'
-1..2
-ok \# TODO
-ok \# SKIP
-END
+tst=zardoz
 
-$MAKE check >stdout || { cat stdout; Exit 1; }
-cat stdout
+for suf in trs log; do
 
-count_test_results total=2 pass=2 fail=0 xpass=0 xfail=0 skip=0 error=0
+  rm -f $tst.log $tst.trs
+  touch $tst.$suf
+  chmod a-w $tst.$suf
 
-grep '^PASS: all\.test 1 .*# TODO' stdout
-grep '^PASS: all\.test 2 .*# SKIP' stdout
+  st=0
+  ./tap-driver --test-name $tst --log-file $tst.log --trs-file $tst.trs \
+    -- sh -c 'echo 1..1; echo ok 1; echo "Hello, World!"' \
+    >stdout 2>stderr && st=1
+  cat stdout
+  cat stderr >&2
+  cat $tst.log || :
+  cat $tst.trs || :
+  test $st -eq 0
+
+  $FGREP 'Hello, World!' stderr stdout && Exit 1
+  $FGREP $tst.$suf stderr
+
+done
 
 :

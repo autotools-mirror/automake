@@ -1164,6 +1164,7 @@ tap-diagnostic.test \
 tap-empty-diagnostic.test \
 tap-empty.test \
 tap-escape-directive.test \
+tap-escape-directive-2.test \
 tap-exit.test \
 tap-signal.test \
 tap-fancy.test \
@@ -1234,6 +1235,7 @@ tap-common-setup.test \
 tap-bad-prog.tap \
 tap-basic.test \
 tap-diagnostic-custom.test \
+tap-driver-stderr.test \
 tap-doc.test \
 tap-doc2.test \
 tap-more.test \
