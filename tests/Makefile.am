@@ -36,8 +36,10 @@ AM_TAP_LOG_DRIVER_FLAGS = --merge --comments
 ## Keep this in sync with the definition of $diag_string_ in tests/defs.
 AM_TAP_LOG_DRIVER_FLAGS += --diagnostic-string `printf '\043%%\043\n'`
 
-MAINTAINERCLEANFILES =
 EXTRA_DIST = ChangeLog-old
+
+## Will be updated later.
+TESTS =
 
 XFAIL_TESTS = \
 all.test \
@@ -47,45 +49,6 @@ override-conditional-2.test \
 pr8365-remake-timing.test \
 yacc-dist-nobuild-subdir.test \
 txinfo5.test
-
-
-include $(srcdir)/parallel-tests.am
-
-$(srcdir)/parallel-tests.am: gen-parallel-tests Makefile.am
-	$(AM_V_GEN)($(am__cd) $(srcdir) \
-	  && $(MAKE) $(AM_MAKEFLAGS) -s print-list-of-test \
-	    | $(SHELL) ./gen-parallel-tests) >$@
-EXTRA_DIST += gen-parallel-tests
-
-TEST_EXTENSIONS += .ptest
-PTEST_LOG_COMPILER = $(LOG_COMPILER) $(srcdir)/parallel-tests.sh
-EXTRA_DIST += parallel-tests.sh
-
-# All `*-p.ptest' tests work by sourcing the script `parallel-tests.sh'.
-$(parallel_tests:.ptest=.log): parallel-tests.sh
-# This dummy declaration is required to have make actually produce
-# expected log files from the `.ptest.log' suffix rule.
-$(parallel_tests):
-
-
-include $(srcdir)/config-shell-tests.am
-
-$(srcdir)/config-shell-tests.am: gen-config-shell-tests Makefile.am
-	$(AM_V_GEN)($(am__cd) $(srcdir) \
-	  && $(MAKE) $(AM_MAKEFLAGS) print-list-of-test \
-	    | $(SHELL) ./gen-config-shell-tests) >$@
-EXTRA_DIST += gen-config-shell-tests
-
-TEST_EXTENSIONS += .shtst
-SHTST_LOG_COMPILER = $(LOG_COMPILER) $(srcdir)/config-shell-tests.sh
-EXTRA_DIST += config-shell-tests.sh
-
-# All `*-w.shtst' tests work by sourcing the script `config-shell-tests.sh'.
-$(config_shell_tests:.shtst=.log): config-shell-tests.sh
-# This dummy declaration is required to have make actually produce
-# expected log files from the `.shtst.log' suffix rule.
-$(config_shell_tests):
-
 
 # Some testsuite-influential variables should be overridable from the
 # test scripts, but not from the environment.
@@ -107,16 +70,31 @@ AM_TESTS_ENVIRONMENT += AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC;
 AM_TESTS_FD_REDIRECT = 9>&2
 AM_TESTS_ENVIRONMENT += stderr_fileno_=9; export stderr_fileno_;
 
-# Include definition of list of hand-written tests.  We keep that in a
-# separate file to simplify bootstrapping of Automake from a VCS checkout.
+# Hand-written tests.
+
 include $(srcdir)/list-of-tests.mk
 
+TESTS += $(handwritten_TESTS)
 EXTRA_DIST += $(handwritten_TESTS)
 
-TESTS = \
-  $(handwritten_TESTS) \
-  $(config_shell_tests) \
-  $(parallel_tests)
+# "Auto-generated" tests wrapping hand-written ones.
+
+include $(srcdir)/wrap-tests.am
+
+TESTS += $(wrap_TESTS)
+
+$(srcdir)/wrap-tests.am: gen-wrap-tests list-of-tests.mk Makefile.am
+	$(AM_V_GEN)($(am__cd) $(srcdir) \
+	  && $(SHELL) ./gen-wrap-tests) > wrap-tests.tmp
+	$(AM_V_at)chmod a-w wrap-tests.tmp && mv -f wrap-tests.tmp $@
+EXTRA_DIST += gen-wrap-tests
+
+# These tests are not expected to exist on filesystem, so we need this
+# declaration to avoid spurious failures.
+$(wrap_TESTS):
+# All the "wrapper" tests work by sourcing the script `wrap-tests.sh'.
+$(wrap_LOGS): wrap-tests.sh
+EXTRA_DIST += wrap-tests.sh
 
 # Extra dependencies for hand-written tests.
 

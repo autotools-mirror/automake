@@ -50,10 +50,9 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/aclocal.in $(srcdir)/automake.in \
-	$(srcdir)/config-shell-tests.am $(srcdir)/defs \
+	$(srcdir)/aclocal.in $(srcdir)/automake.in $(srcdir)/defs \
 	$(srcdir)/defs-static.in $(srcdir)/list-of-tests.mk \
-	$(srcdir)/parallel-tests.am $(top_srcdir)/CheckListOfTests.am
+	$(srcdir)/wrap-tests.am $(top_srcdir)/CheckListOfTests.am
 subdir = tests
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/amversion.m4 \
@@ -301,16 +300,15 @@ TAP_LOG_COMPILER = $(LOG_COMPILER)
 TAP_LOG_DRIVER = AM_TAP_AWK='$(AWK)' $(SHELL) $(top_srcdir)/lib/tap-driver.sh
 AM_TAP_LOG_DRIVER_FLAGS = --merge --comments --diagnostic-string \
 	`printf '\043%%\043\n'`
-MAINTAINERCLEANFILES = 
+EXTRA_DIST = ChangeLog-old $(handwritten_TESTS) gen-wrap-tests \
+	wrap-tests.sh trivial-test-driver testsuite-summary-checks.sh \
+	extract-testsuite-summary tap-setup.sh tap-summary-aux.sh \
+	tap-functions.sh plain-functions.sh
 
-# Include definition of list of hand-written tests.  We keep that in a
-# separate file to simplify bootstrapping of Automake from a VCS checkout.
-EXTRA_DIST = ChangeLog-old gen-parallel-tests parallel-tests.sh \
-	gen-config-shell-tests config-shell-tests.sh \
-	$(handwritten_TESTS) trivial-test-driver \
-	testsuite-summary-checks.sh extract-testsuite-summary \
-	tap-setup.sh tap-summary-aux.sh tap-functions.sh \
-	plain-functions.sh
+# Hand-written tests.
+
+# "Auto-generated" tests wrapping hand-written ones.
+TESTS = $(handwritten_TESTS) $(wrap_TESTS)
 XFAIL_TESTS = \
 all.test \
 cond17.test \
@@ -320,22 +318,6 @@ pr8365-remake-timing.test \
 yacc-dist-nobuild-subdir.test \
 txinfo5.test
 
-parallel_tests = check-concurrency-bug9245-p.ptest \
-	check-exported-srcdir-p.ptest check-fd-redirect-p.ptest \
-	check-subst-prog-p.ptest check-subst-p.ptest \
-	check-tests-in-builddir-p.ptest check-p.ptest check11-p.ptest \
-	check12-p.ptest check2-p.ptest check3-p.ptest check4-p.ptest \
-	check5-p.ptest check6-p.ptest check7-p.ptest check8-p.ptest \
-	color-p.ptest color2-p.ptest comment9-p.ptest dejagnu-p.ptest \
-	exeext4-p.ptest maken3-p.ptest maken4-p.ptest \
-	posixsubst-tests-p.ptest tests-environment-p.ptest
-PTEST_LOG_COMPILER = $(LOG_COMPILER) $(srcdir)/parallel-tests.sh
-config_shell_tests = ar-lib-w.shtst compile-w.shtst compile2-w.shtst \
-	compile3-w.shtst compile4-w.shtst compile5-w.shtst \
-	compile6-w.shtst instsh2-w.shtst instsh3-w.shtst \
-	mdate5-w.shtst mdate6-w.shtst missing-w.shtst missing2-w.shtst \
-	missing3-w.shtst missing5-w.shtst mkinst3-w.shtst
-SHTST_LOG_COMPILER = $(LOG_COMPILER) $(srcdir)/config-shell-tests.sh
 
 # Some testsuite-influential variables should be overridable from the
 # test scripts, but not from the environment.
@@ -1471,10 +1453,40 @@ tap-recheck.test \
 tap-summary.test \
 tap-summary-color.test
 
-TESTS = \
-  $(handwritten_TESTS) \
-  $(config_shell_tests) \
-  $(parallel_tests)
+wrap_TESTS = check-concurrency-bug9245-w.ptest \
+	check-exported-srcdir-w.ptest check-fd-redirect-w.ptest \
+	check-subst-prog-w.ptest check-subst-w.ptest \
+	check-tests-in-builddir-w.ptest check-w.ptest check11-w.ptest \
+	check12-w.ptest check2-w.ptest check3-w.ptest check4-w.ptest \
+	check5-w.ptest check6-w.ptest check7-w.ptest check8-w.ptest \
+	color-w.ptest color2-w.ptest comment9-w.ptest dejagnu-w.ptest \
+	exeext4-w.ptest maken3-w.ptest maken4-w.ptest \
+	posixsubst-tests-w.ptest tests-environment-w.ptest \
+	ar-lib-w.shtst compile-w.shtst compile2-w.shtst \
+	compile3-w.shtst compile4-w.shtst compile5-w.shtst \
+	compile6-w.shtst instsh2-w.shtst instsh3-w.shtst \
+	mdate5-w.shtst mdate6-w.shtst missing-w.shtst missing2-w.shtst \
+	missing3-w.shtst missing5-w.shtst mkinst3-w.shtst
+wrap_LOGS = check-concurrency-bug9245-w.log \
+	check-exported-srcdir-w.log check-fd-redirect-w.log \
+	check-subst-prog-w.log check-subst-w.log \
+	check-tests-in-builddir-w.log check-w.log check11-w.log \
+	check12-w.log check2-w.log check3-w.log check4-w.log \
+	check5-w.log check6-w.log check7-w.log check8-w.log \
+	color-w.log color2-w.log comment9-w.log dejagnu-w.log \
+	exeext4-w.log maken3-w.log maken4-w.log posixsubst-tests-w.log \
+	tests-environment-w.log ar-lib-w.log compile-w.log \
+	compile2-w.log compile3-w.log compile4-w.log compile5-w.log \
+	compile6-w.log instsh2-w.log instsh3-w.log mdate5-w.log \
+	mdate6-w.log missing-w.log missing2-w.log missing3-w.log \
+	missing5-w.log mkinst3-w.log
+PTEST_LOG_COMPILER = \
+  $(LOG_COMPILER) $(srcdir)/wrap-tests.sh \
+  --type ptest --define parallel_tests "yes"
+
+SHTST_LOG_COMPILER = \
+  $(LOG_COMPILER) $(srcdir)/wrap-tests.sh \
+  --type shtst --define test_prefer_config_shell "yes"
 
 checked_test_extensions = .test .tap
 expected_list_of_tests = $(handwritten_TESTS)
@@ -1485,7 +1497,7 @@ all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .html .log .ptest .shtst .tap .test .trs
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/parallel-tests.am $(srcdir)/config-shell-tests.am $(srcdir)/list-of-tests.mk $(top_srcdir)/CheckListOfTests.am $(am__configure_deps)
+$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/list-of-tests.mk $(srcdir)/wrap-tests.am $(top_srcdir)/CheckListOfTests.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -1800,7 +1812,6 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
 clean-am: clean-generic clean-local mostlyclean-am
@@ -1882,42 +1893,35 @@ uninstall-am:
 	mostlyclean-generic pdf pdf-am ps ps-am recheck recheck-html \
 	uninstall uninstall-am
 
-check-concurrency-bug9245-p.log: check-concurrency-bug9245.test
-check-exported-srcdir-p.log: check-exported-srcdir.test
-check-fd-redirect-p.log: check-fd-redirect.test
-check-subst-prog-p.log: check-subst-prog.test
-check-subst-p.log: check-subst.test
-check-tests-in-builddir-p.log: check-tests-in-builddir.test
-check-p.log: check.test
-check11-p.log: check11.test
-check12-p.log: check12.test
-check2-p.log: check2.test
-check3-p.log: check3.test
-check4-p.log: check4.test
-check5-p.log: check5.test
-check6-p.log: check6.test
-check7-p.log: check7.test
-check8-p.log: check8.test
-color-p.log: color.test
-color2-p.log: color2.test
-comment9-p.log: comment9.test
-dejagnu-p.log: dejagnu.test
-exeext4-p.log: exeext4.test
-maken3-p.log: maken3.test
-maken4-p.log: maken4.test
-posixsubst-tests-p.log: posixsubst-tests.test
-tests-environment-p.log: tests-environment.test
 
-$(srcdir)/parallel-tests.am: gen-parallel-tests Makefile.am
-	$(AM_V_GEN)($(am__cd) $(srcdir) \
-	  && $(MAKE) $(AM_MAKEFLAGS) -s print-list-of-test \
-	    | $(SHELL) ./gen-parallel-tests) >$@
-
-# All `*-p.ptest' tests work by sourcing the script `parallel-tests.sh'.
-$(parallel_tests:.ptest=.log): parallel-tests.sh
-# This dummy declaration is required to have make actually produce
-# expected log files from the `.ptest.log' suffix rule.
-$(parallel_tests):
+print-list-of-tests:
+	@echo $(handwritten_TESTS)
+.PHONY: print-list-of-tests
+check-concurrency-bug9245-w.log: check-concurrency-bug9245.test
+check-exported-srcdir-w.log: check-exported-srcdir.test
+check-fd-redirect-w.log: check-fd-redirect.test
+check-subst-prog-w.log: check-subst-prog.test
+check-subst-w.log: check-subst.test
+check-tests-in-builddir-w.log: check-tests-in-builddir.test
+check-w.log: check.test
+check11-w.log: check11.test
+check12-w.log: check12.test
+check2-w.log: check2.test
+check3-w.log: check3.test
+check4-w.log: check4.test
+check5-w.log: check5.test
+check6-w.log: check6.test
+check7-w.log: check7.test
+check8-w.log: check8.test
+color-w.log: color.test
+color2-w.log: color2.test
+comment9-w.log: comment9.test
+dejagnu-w.log: dejagnu.test
+exeext4-w.log: exeext4.test
+maken3-w.log: maken3.test
+maken4-w.log: maken4.test
+posixsubst-tests-w.log: posixsubst-tests.test
+tests-environment-w.log: tests-environment.test
 ar-lib-w.log: ar-lib.test
 compile-w.log: compile.test
 compile2-w.log: compile2.test
@@ -1935,20 +1939,16 @@ missing3-w.log: missing3.test
 missing5-w.log: missing5.test
 mkinst3-w.log: mkinst3.test
 
-$(srcdir)/config-shell-tests.am: gen-config-shell-tests Makefile.am
+$(srcdir)/wrap-tests.am: gen-wrap-tests list-of-tests.mk Makefile.am
 	$(AM_V_GEN)($(am__cd) $(srcdir) \
-	  && $(MAKE) $(AM_MAKEFLAGS) print-list-of-test \
-	    | $(SHELL) ./gen-config-shell-tests) >$@
+	  && $(SHELL) ./gen-wrap-tests) > wrap-tests.tmp
+	$(AM_V_at)chmod a-w wrap-tests.tmp && mv -f wrap-tests.tmp $@
 
-# All `*-w.shtst' tests work by sourcing the script `config-shell-tests.sh'.
-$(config_shell_tests:.shtst=.log): config-shell-tests.sh
-# This dummy declaration is required to have make actually produce
-# expected log files from the `.shtst.log' suffix rule.
-$(config_shell_tests):
-
-print-list-of-tests:
-	@echo $(handwritten_TESTS)
-.PHONY: print-list-of-tests
+# These tests are not expected to exist on filesystem, so we need this
+# declaration to avoid spurious failures.
+$(wrap_TESTS):
+# All the "wrapper" tests work by sourcing the script `wrap-tests.sh'.
+$(wrap_LOGS): wrap-tests.sh
 
 # Extra dependencies for hand-written tests.
 
