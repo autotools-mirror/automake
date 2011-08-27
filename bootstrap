@@ -32,6 +32,8 @@ export AUTOCONF  # might be used by aclocal and/or automake
 export AUTOM4TE  # ditto
 : ${PERL=perl}
 
+BOOTSTRAP_MAKE=${BOOTSTRAP_MAKE-${MAKE-make}}
+
 # Variables to substitute.
 VERSION=`sed -ne '/AC_INIT/s/^[^[]*\[[^[]*\[\([^]]*\)\].*$/\1/p' configure.ac`
 PACKAGE=automake
@@ -105,8 +107,10 @@ dosubst automake.in automake.tmp
 
 # Create required makefile snippets.
 cd tests
-$BOOTSTRAP_SHELL ./gen-parallel-tests > parallel-tests.am
-$BOOTSTRAP_SHELL ./gen-config-shell-tests > config-shell-tests.am
+$BOOTSTRAP_MAKE -s -f list-of-tests.mk print-list-of-tests \
+  | $BOOTSTRAP_SHELL ./gen-parallel-tests > parallel-tests.am
+$BOOTSTRAP_MAKE -s -f list-of-tests.mk print-list-of-tests \
+  | $BOOTSTRAP_SHELL ./gen-config-shell-tests > config-shell-tests.am
 cd ..
 
 # Run the autotools.

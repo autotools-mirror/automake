@@ -52,8 +52,8 @@ host_triplet = @host@
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(srcdir)/aclocal.in $(srcdir)/automake.in \
 	$(srcdir)/config-shell-tests.am $(srcdir)/defs \
-	$(srcdir)/defs-static.in $(srcdir)/parallel-tests.am \
-	$(top_srcdir)/CheckListOfTests.am
+	$(srcdir)/defs-static.in $(srcdir)/list-of-tests.mk \
+	$(srcdir)/parallel-tests.am $(top_srcdir)/CheckListOfTests.am
 subdir = tests
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/amversion.m4 \
@@ -302,11 +302,15 @@ TAP_LOG_DRIVER = AM_TAP_AWK='$(AWK)' $(SHELL) $(top_srcdir)/lib/tap-driver.sh
 AM_TAP_LOG_DRIVER_FLAGS = --merge --comments --diagnostic-string \
 	`printf '\043%%\043\n'`
 MAINTAINERCLEANFILES = 
+
+# Include definition of list of hand-written tests.  We keep that in a
+# separate file to simplify bootstrapping of Automake from a VCS checkout.
 EXTRA_DIST = ChangeLog-old gen-parallel-tests parallel-tests.sh \
 	gen-config-shell-tests config-shell-tests.sh \
-	$(handwritten_tests) tap-functions.sh plain-functions.sh \
-	trivial-test-driver testsuite-summary-checks.sh \
-	extract-testsuite-summary tap-setup.sh tap-summary-aux.sh
+	$(handwritten_TESTS) trivial-test-driver \
+	testsuite-summary-checks.sh extract-testsuite-summary \
+	tap-setup.sh tap-summary-aux.sh tap-functions.sh \
+	plain-functions.sh
 XFAIL_TESTS = \
 all.test \
 cond17.test \
@@ -350,12 +354,12 @@ AM_TESTS_ENVIRONMENT = test x"$$me" = x || unset me; test \
 # We want warning messages and explanations for skipped tests to go to
 # the console if possible, so set up `stderr_fileno_' properly.
 AM_TESTS_FD_REDIRECT = 9>&2
-TESTS = \
-  $(handwritten_tests) \
-  $(config_shell_tests) \
-  $(parallel_tests)
 
-handwritten_tests = \
+# The order here is mostly alphabetical, with the deliberate exception
+# that tests having a high runtime (especially TAP tests that run various
+# checks sequentially) are listed early; this improved performance on
+# concurrent testsuite runs.
+handwritten_TESTS = \
 depmod.tap \
 instspc.tap \
 aclocal.test \
@@ -1263,8 +1267,8 @@ suffix-chain.tap \
 symlink.test \
 symlink2.test \
 syntax.test \
-$(tap_with_common_setup_tests) \
-$(tap_other_tests) \
+$(tap_with_common_setup_TESTS) \
+$(tap_other_TESTS) \
 tags.test \
 tags2.test \
 tagsub.test \
@@ -1377,9 +1381,9 @@ yflags-var-expand.test
 
 
 # List of tests on TAP support that use the files pre-computed by
-# `tap-common-setup.test', and sources the `tap-setup.sh' helper
+# `tap-common-setup.test', and source the `tap-setup.sh' helper
 # script.
-tap_with_common_setup_tests = \
+tap_with_common_setup_TESTS = \
 tap-ambiguous-directive.test \
 tap-autonumber.test \
 tap-bailout.test \
@@ -1452,11 +1456,8 @@ tap-with-and-without-number.test \
 tap-xfail-tests.test
 
 
-# Their log files.
-tap_with_common_setup_logs = $(tap_with_common_setup_tests:.test=.log)
-
 # Other tests on TAP support.
-tap_other_tests = \
+tap_other_TESTS = \
 tap-common-setup.test \
 tap-bad-prog.tap \
 tap-basic.test \
@@ -1470,8 +1471,13 @@ tap-recheck.test \
 tap-summary.test \
 tap-summary-color.test
 
+TESTS = \
+  $(handwritten_TESTS) \
+  $(config_shell_tests) \
+  $(parallel_tests)
+
 checked_test_extensions = .test .tap
-expected_list_of_tests = $(handwritten_tests)
+expected_list_of_tests = $(handwritten_TESTS)
 am__tmk = tests-in-makefile-list.tmp
 am__tfs = tests-on-filesystem-list.tmp
 am__tdf = diff-in-tests-lists.tmp
@@ -1479,7 +1485,7 @@ all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .html .log .ptest .shtst .tap .test .trs
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/parallel-tests.am $(srcdir)/config-shell-tests.am $(top_srcdir)/CheckListOfTests.am $(am__configure_deps)
+$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/parallel-tests.am $(srcdir)/config-shell-tests.am $(srcdir)/list-of-tests.mk $(top_srcdir)/CheckListOfTests.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -1903,7 +1909,9 @@ posixsubst-tests-p.log: posixsubst-tests.test
 tests-environment-p.log: tests-environment.test
 
 $(srcdir)/parallel-tests.am: gen-parallel-tests Makefile.am
-	$(AM_V_GEN)($(am__cd) $(srcdir) && $(SHELL) ./gen-parallel-tests) >$@
+	$(AM_V_GEN)($(am__cd) $(srcdir) \
+	  && $(MAKE) $(AM_MAKEFLAGS) -s print-list-of-test \
+	    | $(SHELL) ./gen-parallel-tests) >$@
 
 # All `*-p.ptest' tests work by sourcing the script `parallel-tests.sh'.
 $(parallel_tests:.ptest=.log): parallel-tests.sh
@@ -1928,13 +1936,21 @@ missing5-w.log: missing5.test
 mkinst3-w.log: mkinst3.test
 
 $(srcdir)/config-shell-tests.am: gen-config-shell-tests Makefile.am
-	$(AM_V_GEN)($(am__cd) $(srcdir) && $(SHELL) ./gen-config-shell-tests) >$@
+	$(AM_V_GEN)($(am__cd) $(srcdir) \
+	  && $(MAKE) $(AM_MAKEFLAGS) print-list-of-test \
+	    | $(SHELL) ./gen-config-shell-tests) >$@
 
 # All `*-w.shtst' tests work by sourcing the script `config-shell-tests.sh'.
 $(config_shell_tests:.shtst=.log): config-shell-tests.sh
 # This dummy declaration is required to have make actually produce
 # expected log files from the `.shtst.log' suffix rule.
 $(config_shell_tests):
+
+print-list-of-tests:
+	@echo $(handwritten_TESTS)
+.PHONY: print-list-of-tests
+
+# Extra dependencies for hand-written tests.
 
 test-driver-custom-multitest.log: trivial-test-driver
 test-driver-custom-multitest-recheck.log: trivial-test-driver
@@ -1947,8 +1963,7 @@ testsuite-summary-color.log testsuite-summary-count.log: \
 testsuite-summary-count-many.log: trivial-test-driver
 testsuite-summary-count-many.log: extract-testsuite-summary
 
-# Their dependencies.
-$(tap_with_common_setup_logs): tap-common-setup.log tap-setup.sh
+$(tap_with_common_setup_TESTS:.test=.log): tap-common-setup.log tap-setup.sh
 
 tap-summary.log tap-summary-color.log: tap-summary-aux.sh
 
