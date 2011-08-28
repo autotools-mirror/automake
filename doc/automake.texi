@@ -233,7 +233,6 @@ Building Programs and Libraries
 * Java Support::                Compiling Java sources
 * Vala Support::                Compiling Vala sources
 * Support for Other Languages::  Compiling other languages
-* ANSI::                        Automatic de-ANSI-fication (deprecated, soon to be removed)
 * Dependencies::                Automatic dependency tracking
 * EXEEXT::                      Support for executable extensions
 
@@ -2244,12 +2243,6 @@ source in case you need more recent versions.
 This is a wrapper primarily for the Microsoft lib archiver, to make
 it more POSIX-like.
 
-@item ansi2knr.c
-@itemx ansi2knr.1
-These two files are used for de-ANSI-fication support (they are
-deprecated now, and @emph{will be removed} in the next major Automake
-release; @pxref{ANSI}).
-
 @item compile
 This is a wrapper for compilers that do not accept options @option{-c}
 and @option{-o} at the same time.  It is only used when absolutely
@@ -3046,11 +3039,6 @@ this way, e.g., @code{AC_PATH_XTRA} defines @code{X_CFLAGS} and
 @code{X_LIBS}.  Thus, you can access these variables as
 @code{$(X_CFLAGS)} and @code{$(X_LIBS)} in any @file{Makefile.am}
 if @code{AC_PATH_XTRA} is called.
-
-@item AM_C_PROTOTYPES
-This is required when using the deprecated de-ANSI-fication feature;
-@pxref{ANSI}.  @emph{It will be removed} in the next major Automake
-release.
 
 @item AM_CONDITIONAL
 This introduces an Automake conditional (@pxref{Conditionals}).
@@ -4007,17 +3995,6 @@ automatically (@pxref{autoupdate Invocation, , Using
 Autoconf Manual}).
 
 @table @code
-@item AM_C_PROTOTYPES
-@acindex AM_C_PROTOTYPES
-@vindex ANSI2KNR
-@vindex U
-Check to see if function prototypes are understood by the compiler.  If
-so, define @samp{PROTOTYPES} and set the output variables @code{U} and
-@code{ANSI2KNR} to the empty string.  Otherwise, set @code{U} to
-@samp{_} and @code{ANSI2KNR} to @samp{./ansi2knr}.  Automake used these
-values to implement the deprecated de-ANSI-fication feature; however,
-support for @emph{that feature will be removed} in the next major Automake
-release, and then @emph{these macros and variables will go away as well}.
 
 @item AM_CONFIG_HEADER
 @acindex AM_CONFIG_HEADER
@@ -4629,7 +4606,6 @@ to build programs and libraries.
 * Java Support::                Compiling Java sources
 * Vala Support::                Compiling Vala sources
 * Support for Other Languages::  Compiling other languages
-* ANSI::                        Automatic de-ANSI-fication (deprecated, soon to be removed)
 * Dependencies::                Automatic dependency tracking
 * EXEEXT::                      Support for executable extensions
 @end menu
@@ -6807,85 +6783,6 @@ languages, support for which will be improved based on user demand.
 
 Some limited support for adding your own languages is available via the
 suffix rule handling (@pxref{Suffixes}).
-
-
-@node ANSI
-@section Automatic de-ANSI-fication (deprecated, soon to be removed)
-
-@cindex de-ANSI-fication, defined
-
-@emph{The features described in this section are deprecated; you must
-not use any of them in new code, and remove their use from older but
-still maintained code: they will be withdrawn in the next major
-Automake release.}
-
-When the C language was standardized in 1989, there was a long
-transition period where package developers needed to worry about
-porting to older systems that did not support ANSI C by default.
-These older systems are no longer in practical use and are no longer
-supported by their original suppliers, so developers need not worry
-about this problem any more.
-
-Automake allows you to write packages that are portable to K&R C by
-@dfn{de-ANSI-fying} each source file before the actual compilation takes
-place.
-
-@vindex AUTOMAKE_OPTIONS
-@opindex ansi2knr
-
-If the @file{Makefile.am} variable @code{AUTOMAKE_OPTIONS}
-(@pxref{Options}) contains the option @option{ansi2knr} then code to
-handle de-ANSI-fication is inserted into the generated
-@file{Makefile.in}.
-
-This causes each C source file in the directory to be treated as ANSI C@.
-If an ANSI C compiler is available, it is used.  If no ANSI C compiler
-is available, the @command{ansi2knr} program is used to convert the source
-files into K&R C, which is then compiled.
-
-The @command{ansi2knr} program is simple-minded.  It assumes the source
-code will be formatted in a particular way; see the @command{ansi2knr} man
-page for details.
-
-@acindex AM_C_PROTOTYPES
-Support for the obsolete de-ANSI-fication feature
-requires the source files @file{ansi2knr.c}
-and @file{ansi2knr.1} to be in the same package as the ANSI C source;
-these files are distributed with Automake.  Also, the package
-@file{configure.ac} must call the macro @code{AM_C_PROTOTYPES}
-(@pxref{Macros}).
-
-Automake also handles finding the @command{ansi2knr} support files in some
-other directory in the current package.  This is done by prepending the
-relative path to the appropriate directory to the @command{ansi2knr}
-option.  For instance, suppose the package has ANSI C code in the
-@file{src} and @file{lib} subdirectories.  The files @file{ansi2knr.c} and
-@file{ansi2knr.1} appear in @file{lib}.  Then this could appear in
-@file{src/Makefile.am}:
-
-@example
-AUTOMAKE_OPTIONS = ../lib/ansi2knr
-@end example
-
-If no directory prefix is given, the files are assumed to be in the
-current directory.
-
-Note that automatic de-ANSI-fication will not work when the package is
-being built for a different host architecture.  That is because
-@command{automake} currently has no way to build @command{ansi2knr}
-for the build machine.
-
-@c FIXME: this paragraph might be better moved to an `upgrading' section.
-@cindex @code{LTLIBOBJS} and @code{ansi2knr}
-@cindex @code{LIBOBJS} and @code{ansi2knr}
-@cindex @code{ansi2knr} and @code{LTLIBOBJS}
-@cindex @code{ansi2knr} and @code{LIBOBJS}
-Using @code{LIBOBJS} with source de-ANSI-fication used to require
-hand-crafted code in @file{configure} to append @samp{$U} to basenames
-in @code{LIBOBJS}.  This is no longer true today.  Starting with version
-2.54, Autoconf takes care of rewriting @code{LIBOBJS} and
-@code{LTLIBOBJS}.  (@pxref{AC_LIBOBJ vs LIBOBJS, , @code{AC_LIBOBJ}
-vs.@: @code{LIBOBJS}, autoconf, The Autoconf Manual})
 
 @node Dependencies
 @section Automatic dependency tracking
@@ -9241,20 +9138,6 @@ then @samp{portability} warnings will be @emph{disabled} in
 
 Set the strictness as appropriate.  The @option{gnits} option also
 implies options @option{readme-alpha} and @option{check-news}.
-
-@item @option{ansi2knr}
-@itemx @option{@var{path}/ansi2knr}
-@cindex Option, @option{ansi2knr}
-@opindex ansi2knr
-Turn on the deprecated de-ANSI-fication feature (@pxref{ANSI}).  Note
-that that feature and this option @emph{will be removed} in the next
-major Automake release.
-
-If preceded by a
-path, the generated @file{Makefile.in} will look in the specified
-directory to find the @file{ansi2knr} program.  The path should be a
-relative path to another directory in the same distribution (Automake
-does not check this).
 
 @item @option{check-news}
 @cindex Option, @option{check-news}
@@ -13485,7 +13368,7 @@ parentheses is the number of generated test cases.
 @c  LocalWords:  xs emph FIXME ref vindex pkglibdir pkgincludedir pkgdatadir mt
 @c  LocalWords:  pkg libdir cpio bindir sbindir rmt pax sbin zar zardir acindex
 @c  LocalWords:  HTML htmldir html noinst TEXINFOS nodist nobase strudel CFLAGS
-@c  LocalWords:  libmumble CC YFLAGS ansi knr itemx de fication config url comp
+@c  LocalWords:  libmumble CC YFLAGS itemx de fication config url comp
 @c  LocalWords:  depcomp elisp sh mdate mkinstalldirs mkdir py tex dvi ps pdf
 @c  LocalWords:  ylwrap zardoz INIT gettext acinclude mv FUNCS LIBOBJS LDADD fr
 @c  LocalWords:  uref featureful dnl src LINGUAS es ko nl pl sl sv PROG ISC doc
