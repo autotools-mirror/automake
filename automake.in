@@ -1667,7 +1667,6 @@ sub handle_single_transform ($$$$$%)
     my ($var, $topparent, $derived, $obj, $_file, %transform) = @_;
     my @files = ($_file);
     my @result = ();
-    my $nonansi_obj = $obj;
 
     # Turn sources into objects.  We use a while loop like this
     # because we might add to @files in the loop.
@@ -1714,7 +1713,7 @@ sub handle_single_transform ($$$$$%)
 	# language function.
 	my $aggregate = 'AM';
 
-	$extension = &derive_suffix ($extension, $nonansi_obj);
+	$extension = &derive_suffix ($extension, $obj);
 	my $lang;
 	if ($extension_map{$extension} &&
 	    ($lang = $languages{$extension_map{$extension}}))
@@ -1725,7 +1724,7 @@ sub handle_single_transform ($$$$$%)
 	    # Do we have per-executable flags for this executable?
 	    my $have_per_exec_flags = 0;
 	    my @peflags = @{$lang->flags};
-	    push @peflags, 'LIBTOOLFLAGS' if $nonansi_obj eq '.lo';
+	    push @peflags, 'LIBTOOLFLAGS' if $obj eq '.lo';
 	    foreach my $flag (@peflags)
 	      {
 		if (set_seen ("${derived}_$flag"))
@@ -1745,7 +1744,7 @@ sub handle_single_transform ($$$$$%)
 	    my $subr = \&{'lang_' . $lang->name . '_rewrite'};
 	    my ($r, $source_extension)
 		= &$subr ($directory, $base, $extension,
-			  $nonansi_obj, $have_per_exec_flags, $var);
+			  $obj, $have_per_exec_flags, $var);
 	    # Skip this entry if we were asked not to process it.
 	    next if $r == LANG_IGNORE;
 
@@ -1760,7 +1759,7 @@ sub handle_single_transform ($$$$$%)
 	    }
 	    else
 	    {
-		$this_obj_ext = $nonansi_obj;
+		$this_obj_ext = $obj;
 	    }
 	    $object = $base . $this_obj_ext;
 
@@ -1880,7 +1879,7 @@ sub handle_single_transform ($$$$$%)
 		      [@specifics, %transform]);
 	    }
 	}
-	elsif ($extension eq $nonansi_obj)
+	elsif ($extension eq $obj)
 	{
 	    # This is probably the result of a direct suffix rule.
 	    # In this case we just accept the rewrite.
@@ -5611,7 +5610,7 @@ sub lang_sub_obj
 # Rewrite a single C source file.
 sub lang_c_rewrite
 {
-  my ($directory, $base, $ext, $nonansi_obj, $have_per_exec_flags, $var) = @_;
+  my ($directory, $base, $ext, $obj, $have_per_exec_flags, $var) = @_;
 
   my $r = LANG_PROCESS;
   if (option 'subdir-objects')
@@ -5628,14 +5627,14 @@ sub lang_c_rewrite
 		   . "`AM_PROG_CC_C_O' in `$configure_ac'",
 		   uniq_scope => US_GLOBAL,
 		   uniq_part => 'AM_PROG_CC_C_O subdir')
-	    unless $seen_cc_c_o || $nonansi_obj eq '.lo';
+	    unless $seen_cc_c_o || $obj eq '.lo';
 	}
     }
 
   if (! $seen_cc_c_o
       && $have_per_exec_flags
       && ! option 'subdir-objects'
-      && $nonansi_obj ne '.lo')
+      && $obj ne '.lo')
     {
       msg_var ('portability',
 	       $var, "compiling `$base.c' with per-target flags requires "
