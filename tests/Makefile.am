@@ -154,6 +154,7 @@ amopt.test \
 amopts-location.test \
 amopts-variable-expansion.test \
 amsubst.test \
+ansi2knr-no-more.test \
 ar-lib.test \
 ar.test \
 ar2.test \
