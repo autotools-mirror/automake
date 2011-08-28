@@ -53,7 +53,6 @@ struct (# Short name of the language (c, f77...).
 	# List of configure variables which must be defined.
 	'config_vars' => '@',
 
-	'ansi'    => "\$",
 	# `pure' is `1' or `'.  A `pure' language is one where, if
 	# all the files in a directory are of that language, then we
 	# do not require the C compiler or any code to call it.
@@ -233,7 +232,7 @@ my @libtool_sometimes = qw(ltconfig ltcf-c.sh ltcf-cxx.sh ltcf-gcj.sh);
 my @common_files =
     (qw(ABOUT-GNU ABOUT-NLS AUTHORS BACKLOG COPYING COPYING.DOC COPYING.LIB
 	COPYING.LESSER ChangeLog INSTALL NEWS README THANKS TODO
-	ansi2knr.1 ansi2knr.c ar-lib compile config.guess config.rpath
+	ar-lib compile config.guess config.rpath
 	config.sub depcomp elisp-comp install-sh libversion.in mdate-sh
 	missing mkinstalldirs py-compile texinfo.tex ylwrap),
      @libtool_files, @libtool_sometimes);
@@ -568,12 +567,6 @@ my @dist_targets;
 my %known_programs;
 my %known_libraries;
 
-# Keys in this hash are the basenames of files which must depend on
-# ansi2knr.  Values are either the empty string, or the directory in
-# which the ANSI source file appears; the directory must have a
-# trailing `/'.
-my %de_ansi_files;
-
 # This keeps track of which extensions we've seen (that we care
 # about).
 my %extension_seen;
@@ -598,7 +591,7 @@ my %linkers_used;
 my $need_link;
 
 # Was get_object_extension run?
-# FIXME: This is a hack. a better switch should be found.
+# FIXME: This is a hack; a better switch should be found.
 my $get_object_extension_was_run;
 
 # Record each file processed by make_paragraphs.
@@ -699,8 +692,6 @@ sub initialize_per_input ()
     %known_programs = ();
     %known_libraries= ();
 
-    %de_ansi_files = ();
-
     %extension_seen = ();
 
     %language_scratch = ();
@@ -725,7 +716,6 @@ sub initialize_per_input ()
 register_language ('name' => 'c',
 		   'Name' => 'C',
 		   'config_vars' => ['CC'],
-		   'ansi' => 1,
 		   'autodep' => '',
 		   'flags' => ['CFLAGS', 'CPPFLAGS'],
 		   'ccer' => 'CC',
@@ -737,8 +727,7 @@ register_language ('name' => 'c',
 		   'link' => '$(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@',
 		   'compile_flag' => '-c',
 		   'libtool_tag' => 'CC',
-		   'extensions' => ['.c'],
-		   '_finish' => \&lang_c_finish);
+		   'extensions' => ['.c']);
 
 # C++.
 register_language ('name' => 'cxx',
@@ -895,10 +884,7 @@ register_language ('name' => 'asm',
 		   'compiler' => 'CCASCOMPILE',
 		   'compile_flag' => '-c',
 		   'output_flag' => '-o',
-		   'extensions' => ['.s'],
-
-		   # With assembly we still use the C linker.
-		   '_finish' => \&lang_c_finish);
+		   'extensions' => ['.s']);
 
 # Preprocessed Assembler.
 register_language ('name' => 'cppasm',
@@ -912,10 +898,7 @@ register_language ('name' => 'cppasm',
 		   'compiler' => 'CPPASCOMPILE',
 		   'compile_flag' => '-c',
 		   'output_flag' => '-o',
-		   'extensions' => ['.S', '.sx'],
-
-		   # With assembly we still use the C linker.
-		   '_finish' => \&lang_c_finish);
+		   'extensions' => ['.S', '.sx']);
 
 # Fortran 77
 register_language ('name' => 'f77',
@@ -1286,18 +1269,12 @@ sub shadow_unconditionally ($$)
 
 # get_object_extension ($EXTENSION)
 # ---------------------------------
-# Prefix $EXTENSION with $U if ansi2knr is in use.
+# FIXME: this is only used so that `$get_object_extension_was_run' gets
+# properly defined.  We should refactor to get rid of such an hack.
 sub get_object_extension ($)
 {
-    my ($extension) = @_;
-
-    # Check for automatic de-ANSI-fication.
-    $extension = '$U' . $extension
-      if option 'ansi2knr';
-
     $get_object_extension_was_run = 1;
-
-    return $extension;
+    return $_[0];
 }
 
 # check_user_variables (@LIST)
@@ -1524,97 +1501,6 @@ sub handle_languages
 		unless $depbase eq '';
 	    $depbase .= '$(DEPDIR)/' . basename ($obj);
 
-	    # Support for deansified files in subdirectories is ugly
-	    # enough to deserve an explanation.
-	    #
-	    # A Note about normal ansi2knr processing first.  On
-	    #
-	    #   AUTOMAKE_OPTIONS = ansi2knr
-	    #   bin_PROGRAMS = foo
-	    #   foo_SOURCES = foo.c
-	    #
-	    # we generate rules similar to:
-	    #
-	    #   foo: foo$U.o; link ...
-	    #   foo$U.o: foo$U.c; compile ...
-	    #   foo_.c: foo.c; ansi2knr ...
-	    #
-	    # this is fairly compact, and will call ansi2knr depending
-	    # on the value of $U (`' or `_').
-	    #
-	    # It's harder with subdir sources. On
-	    #
-	    #   AUTOMAKE_OPTIONS = ansi2knr
-	    #   bin_PROGRAMS = foo
-	    #   foo_SOURCES = sub/foo.c
-	    #
-	    # we have to create foo_.c in the current directory.
-	    # (Unless the user asks 'subdir-objects'.)  This is important
-	    # in case the same file (`foo.c') is compiled from other
-	    # directories with different cpp options: foo_.c would
-	    # be preprocessed for only one set of options if it were
-	    # put in the subdirectory.
-	    #
-	    # Because foo$U.o must be built from either foo_.c or
-	    # sub/foo.c we can't be as concise as in the first example.
-	    # Instead we output
-	    #
-	    #   foo: foo$U.o; link ...
-	    #   foo_.o: foo_.c; compile ...
-	    #   foo.o: sub/foo.c; compile ...
-	    #   foo_.c: foo.c; ansi2knr ...
-	    #
-	    # This is why we'll now transform $rule_file twice
-	    # if we detect this case.
-	    # A first time we output the compile rule with `$U'
-	    # replaced by `_' and the source directory removed,
-	    # and another time we simply remove `$U'.
-	    #
-	    # Note that at this point $source (as computed by
-	    # &handle_single_transform) is `sub/foo$U.c'.
-	    # This can be confusing: it can be used as-is when
-	    # subdir-objects is set, otherwise you have to know
-	    # it really means `foo_.c' or `sub/foo.c'.
-	    my $objdir = dirname ($obj);
-	    my $srcdir = dirname ($source);
-	    if ($lang->ansi && $obj =~ /\$U/)
-	      {
-		prog_error "`$obj' contains \$U, but `$source' doesn't"
-		  if $source !~ /\$U/;
-
-		(my $source_ = $source) =~ s/\$U/_/g;
-		# Output an additional rule if _.c and .c are not in
-		# the same directory.  (_.c is always in $objdir.)
-		if ($objdir ne $srcdir)
-		  {
-		    (my $obj_ = $obj) =~ s/\$U/_/g;
-		    (my $depbase_ = $depbase) =~ s/\$U/_/g;
-		    $source_ = basename ($source_);
-
-		    $output_rules .=
-		      file_contents ($rule_file,
-				     new Automake::Location,
-				     %transform,
-				     GENERIC   => 0,
-
-				     DEPBASE   => $depbase_,
-				     BASE      => $obj_,
-				     SOURCE    => $source_,
-				     SOURCEFLAG => $sourceflags{$srcext} || '',
-				     OBJ       => "$obj_$myext",
-				     OBJOBJ    => "$obj_.obj",
-				     LTOBJ     => "$obj_.lo",
-
-				     COMPILE   => $obj_compile,
-				     LTCOMPILE => $obj_ltcompile,
-				     -o        => $output_flag,
-				     %file_transform);
-		    $obj =~ s/\$U//g;
-		    $depbase =~ s/\$U//g;
-		    $source =~ s/\$U//g;
-		  }
-	      }
-
 	    $output_rules .=
 	      file_contents ($rule_file,
 			     new Automake::Location,
@@ -1770,7 +1656,7 @@ sub check_libobjs_sources
 #   $VAR is the name of the variable that the source filenames come from
 #   $TOPPARENT is the name of the _SOURCES variable which is being processed
 #   $DERIVED is the name of resulting executable or library
-#   $OBJ is the object extension (e.g., `$U.lo')
+#   $OBJ is the object extension (e.g., `.lo')
 #   $FILE the source file to transform
 #   %TRANSFORM contains extras arguments to pass to file_contents
 #     when producing explicit rules
@@ -1782,7 +1668,6 @@ sub handle_single_transform ($$$$$%)
     my @files = ($_file);
     my @result = ();
     my $nonansi_obj = $obj;
-    $nonansi_obj =~ s/\$U//g;
 
     # Turn sources into objects.  We use a while loop like this
     # because we might add to @files in the loop.
@@ -1872,10 +1757,6 @@ sub handle_single_transform ($$$$$%)
 	    {
 		$this_obj_ext = $source_extension;
 		$derived_source = 1;
-	    }
-	    elsif ($lang->ansi)
-	    {
-		$this_obj_ext = $obj;
 	    }
 	    else
 	    {
@@ -1967,12 +1848,6 @@ sub handle_single_transform ($$$$$%)
 	          {
 			$full_ansi = $base . $extension;
 	          }
-
-		if ($lang->ansi && option 'ansi2knr')
-		  {
-		    $full_ansi =~ s/$KNOWN_EXTENSIONS_PATTERN$/\$U$&/;
-		    $obj_sans_ext .= '$U';
-		  }
 
 		my @specifics = ($full_ansi, $obj_sans_ext,
 				 # Only use $this_obj_ext in the derived
@@ -2573,38 +2448,6 @@ sub handle_compile ()
 				'DISTRMS' => join ("\n", @dist_rms)));
     $output_vars .= $vars;
     $output_rules .= "$coms$rules";
-
-    # Check for automatic de-ANSI-fication.
-    if (option 'ansi2knr')
-      {
-	my ($ansi2knr_filename, $ansi2knr_where) = @{option 'ansi2knr'};
-	my $ansi2knr_dir = '';
-
-	require_variables ($ansi2knr_where, "option `ansi2knr' is used",
-			   TRUE, "ANSI2KNR", "U");
-
-	# topdir is where ansi2knr should be.
-	if ($ansi2knr_filename eq 'ansi2knr')
-	  {
-	    # Only require ansi2knr files if they should appear in
-	    # this directory.
-	    require_file ($ansi2knr_where, FOREIGN,
-			  'ansi2knr.c', 'ansi2knr.1');
-
-	    # ansi2knr needs to be built before subdirs, so unshift it
-	    # rather then pushing it.
-	    unshift (@all, '$(ANSI2KNR)');
-	  }
-	else
-	  {
-	    $ansi2knr_dir = dirname ($ansi2knr_filename);
-	  }
-
-	$output_rules .= &file_contents ('ansi2knr',
-					 new Automake::Location,
-					 'ANSI2KNR-DIR' => $ansi2knr_dir);
-
-    }
 }
 
 # handle_libtool ()
@@ -5770,12 +5613,6 @@ sub lang_c_rewrite
 {
   my ($directory, $base, $ext, $nonansi_obj, $have_per_exec_flags, $var) = @_;
 
-  if (option 'ansi2knr' && $base =~ /_$/)
-    {
-      # FIXME: include line number in error.
-      err_am "C source file `$base.c' would be deleted by ansi2knr rules";
-    }
-
   my $r = LANG_PROCESS;
   if (option 'subdir-objects')
     {
@@ -5793,16 +5630,6 @@ sub lang_c_rewrite
 		   uniq_part => 'AM_PROG_CC_C_O subdir')
 	    unless $seen_cc_c_o || $nonansi_obj eq '.lo';
 	}
-
-      # In this case we already have the directory information, so
-      # don't add it again.
-      $de_ansi_files{$base} = '';
-    }
-  else
-    {
-      $de_ansi_files{$base} = (($directory eq '.' || $directory eq '')
-			       ? ''
-			       : "$directory/");
     }
 
   if (! $seen_cc_c_o
@@ -5946,59 +5773,6 @@ sub lang_java_rewrite
 # processing is done.  Each should handle defining rules for the
 # language, etc.  A finish function is only called if a source file of
 # the appropriate type has been seen.
-
-sub lang_c_finish
-{
-    # Push all libobjs files onto de_ansi_files.  We actually only
-    # push files which exist in the current directory, and which are
-    # genuine source files.
-    foreach my $file (keys %libsources)
-    {
-	if ($file =~ /^(.*)\.[cly]$/ && -f "$relative_dir/$file")
-	{
-	    $de_ansi_files{$1} = ''
-	}
-    }
-
-    if (option 'ansi2knr' && keys %de_ansi_files)
-    {
-	# Make all _.c files depend on their corresponding .c files.
-	my @objects;
-	foreach my $base (sort keys %de_ansi_files)
-	{
-	    # Each _.c file must depend on ansi2knr; otherwise it
-	    # might be used in a parallel build before it is built.
-	    # We need to support files in the srcdir and in the build
-	    # dir (because these files might be auto-generated.  But
-	    # we can't use $< -- some makes only define $< during a
-	    # suffix rule.
-	    my $ansfile = $de_ansi_files{$base} . $base . '.c';
-	    $output_rules .= ($base . "_.c: $ansfile \$(ANSI2KNR)\n\t"
-			      . '$(CPP) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) '
-			      . '`if test -f $(srcdir)/' . $ansfile
-			      . '; then echo $(srcdir)/' . $ansfile
-			      . '; else echo ' . $ansfile . '; fi` '
-			      . "| sed 's/^# \\([0-9]\\)/#line \\1/' "
-			      . '| $(ANSI2KNR) > $@'
-			      # If ansi2knr fails then we shouldn't
-			      # create the _.c file
-			      . " || rm -f \$\@\n");
-	    push (@objects, $base . '_.$(OBJEXT)');
-	    push (@objects, $base . '_.lo')
-	      if var ('LIBTOOL');
-
-	    # Explicitly clean the _.c files if they are in a
-	    # subdirectory. (In the current directory they get erased
-	    # by a `rm -f *_.c' rule.)
-	    $clean_files{$base . '_.c'} = MOSTLY_CLEAN
-	      if dirname ($base) ne '.';
-	}
-
-	# Make all _.o (and _.lo) files depend on ansi2knr.
-	# Use a sneaky little hack to make it print nicely.
-	&pretty_print_rule ('', '', @objects, ':', '$(ANSI2KNR)');
-    }
-}
 
 sub lang_vala_finish_target ($$)
 {
@@ -6309,8 +6083,6 @@ sub register_language (%)
   my (%option) = @_;
 
   # Set the defaults.
-  $option{'ansi'} = 0
-    unless defined $option{'ansi'};
   $option{'autodep'} = 'no'
     unless defined $option{'autodep'};
   $option{'linker'} = ''
