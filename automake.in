@@ -590,10 +590,6 @@ my %linkers_used;
 # True if we need `LINK' defined.  This is a hack.
 my $need_link;
 
-# Was get_object_extension run?
-# FIXME: This is a hack; a better switch should be found.
-my $get_object_extension_was_run;
-
 # Record each file processed by make_paragraphs.
 my %transformed_files;
 
@@ -701,8 +697,6 @@ sub initialize_per_input ()
     $handle_dist_run = 0;
 
     $need_link = 0;
-
-    $get_object_extension_was_run = 0;
 
     %transformed_files = ();
 }
@@ -1265,16 +1259,6 @@ sub shadow_unconditionally ($$)
       define_pretty_variable ($varname, TRUE, $where, @files);
     }
   return "\$($varname)"
-}
-
-# get_object_extension ($EXTENSION)
-# ---------------------------------
-# FIXME: this is only used so that `$get_object_extension_was_run' gets
-# properly defined.  We should refactor to get rid of such an hack.
-sub get_object_extension ($)
-{
-    $get_object_extension_was_run = 1;
-    return $_[0];
 }
 
 # check_user_variables (@LIST)
@@ -2397,9 +2381,6 @@ sub check_canonical_spelling
 # Set up the compile suite.
 sub handle_compile ()
 {
-    return
-      unless $get_object_extension_was_run;
-
     # Boilerplate.
     my $default_includes = '';
     if (! option 'nostdinc')
@@ -2496,7 +2477,7 @@ sub handle_programs
       my ($where, $one_file) = @$pair;
 
       my $seen_libobjs = 0;
-      my $obj = get_object_extension '.$(OBJEXT)';
+      my $obj = '.$(OBJEXT)';
 
       $known_programs{$one_file} = $where;
 
@@ -2613,7 +2594,7 @@ sub handle_libraries
       $where->push_context ("while processing library `$onelib'");
       $where->set (INTERNAL->get);
 
-      my $obj = get_object_extension '.$(OBJEXT)';
+      my $obj = '.$(OBJEXT)';
 
       # Canonicalize names and check for misspellings.
       my $xlib = &check_canonical_spelling ($onelib, '_LIBADD', '_SOURCES',
@@ -2778,7 +2759,7 @@ sub handle_ltlibraries
       my ($where, $onelib) = @$pair;
 
       my $seen_libobjs = 0;
-      my $obj = get_object_extension '.lo';
+      my $obj = '.lo';
 
       # Canonicalize names and check for misspellings.
       my $xlib = &check_canonical_spelling ($onelib, '_LIBADD', '_LDFLAGS',
