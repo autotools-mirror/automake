@@ -770,6 +770,7 @@ test-driver-trs-suffix-registered.test \
 test-driver-fail.test \
 test-harness-vpath-rewrite.test \
 test-log.test \
+test-logs-repeated.test \
 test-metadata-global-log.test \
 test-metadata-global-result.test \
 test-metadata-recheck.test \
@@ -1246,6 +1247,21 @@ tap-summary-color.test
 
 tap-summary.log tap-summary-color.log: tap-summary-aux.sh
 EXTRA_DIST += tap-summary-aux.sh
+
+# If two test scripts have the same basename, they will end up sharing
+# the same log file, leading to all sort of undefined and undesired
+# behaviours.
+check-no-repeated-test-name:
+	@LC_ALL=C; export LC_ALL; \
+	 lst='$(TEST_LOGS)'; for log in $$lst; do echo $$log; done \
+	   | sort | uniq -c | awk '($$1 > 1) { print }' \
+	   | sed 's/\.log$$//' | grep . >&2 \
+	   && { \
+	     echo $@: test names listed above are duplicated >&2; \
+	     exit 1; \
+	   }; :
+check-local: check-no-repeated-test-name
+.PHONY: check-no-repeated-test-name
 
 ## Checking the list of tests.
 checked_test_extensions = .test .tap
