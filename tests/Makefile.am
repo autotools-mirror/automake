@@ -18,7 +18,7 @@
 
 TEST_EXTENSIONS = .test .tap
 TAP_LOG_DRIVER = AM_TAP_AWK='$(AWK)' $(SHELL) $(top_srcdir)/lib/tap-driver.sh
-TAP_LOG_DRIVER_FLAGS = --merge
+AM_TAP_LOG_DRIVER_FLAGS = --merge
 
 MAINTAINERCLEANFILES =
 EXTRA_DIST = ChangeLog-old
