@@ -24,7 +24,8 @@ TEST_LOG_COMPILER = $(LOG_COMPILER)
 TAP_LOG_COMPILER = $(LOG_COMPILER)
 
 TAP_LOG_DRIVER = AM_TAP_AWK='$(AWK)' $(SHELL) $(top_srcdir)/lib/tap-driver.sh
-TAP_LOG_DRIVER_FLAGS = --merge --comments
+
+AM_TAP_LOG_DRIVER_FLAGS = --merge --comments
 ## Avoid spurious TAP diagnostic.  We use an awful indirection with a
 ## shell command substitution here, since the string needs to contain
 ## `#' characters, and these can't be escaped portably in a make macro
@@ -33,7 +34,7 @@ TAP_LOG_DRIVER_FLAGS = --merge --comments
 ## FIXME: per TAP test script; this is OK for the moment, since we have
 ## FIXME: few such scripts, but might become an issue in the future.
 ## Keep this in sync with the definition of $diag_string_ in tests/defs.
-TAP_LOG_DRIVER_FLAGS += --diagnostic-string `printf '\043%%\043\n'`
+AM_TAP_LOG_DRIVER_FLAGS += --diagnostic-string `printf '\043%%\043\n'`
 
 MAINTAINERCLEANFILES =
 EXTRA_DIST = ChangeLog-old
@@ -87,7 +88,7 @@ $(config_shell_tests):
 AM_TESTS_ENVIRONMENT = \
   test x"$$me" = x || unset me; \
   test x"$$required" = x || unset required; \
-  test x"$$use_tap" = x || unset use_tap; \
+  test x"$$using_tap" = x || unset using_tap; \
   test x"$$parallel_tests" = x || unset parallel_tests; \
   test x"$$test_prefer_config_shell" || unset test_prefer_config_shell; \
   test x"$$original_AUTOMAKE" = x || unset original_AUTOMAKE; \
