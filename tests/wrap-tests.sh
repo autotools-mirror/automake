@@ -49,44 +49,41 @@ while test $# -gt 0; do
   esac
   shift
 done
-test -n "$typ" || fatal_ "suffix not specified"
 
-case $#,$1 in
-  0,) fatal_ "missing argument";;
-  1,*-w.$typ) test_name=`expr x/"$1" : ".*/\\\\(.*\\\\)-w\\\\.$typ$"`;;
-  1,*) fatal_ "invalid argument \`$1'";;
+case $typ in
+  "") fatal_ "suffix not specified";;
+  *.*) fatal_ "invalid suffix \`$typ' (contains dot)";;
+esac
+
+case $# in
+  0) fatal_ "missing argument";;
+  1) ;;
   *) fatal_ "too many arguments";;
 esac
 
-set -x
+# We must let the code in ./defs which kind of test script it is
+# dealing with -- TAP or "plain".  It won't be able to guess
+# automatically, since it uses `$0' for such a guess, and with
+# the present usage `$0' is always `wrap-tests.sh'.
+case $1 in
+  *-w.test_$typ) using_tap=no suf=test;;
+  *-w.tap_$typ) using_tap=yes suf=tap;;
+  *) fatal_ "invalid argument \`$1'";;
+esac
+
+test_name=`expr x/"$1" : ".*/\\\\(.*\\\\)-w\\\\.[^.][^.]*$"` \
+  && test -n "$test_name" \
+  || fatal_ "couldn't extract test name"
+shift
+
 # This is required to have the wrapped test use a proper temporary
 # directory to run into.
 me=${test_name}-w
 # In the spirit of VPATH, we prefer a test in the build tree
 # over one in the source tree.
 for dir in . "$testsrcdir"; do
-  # The testsuite shouldn't have a TAP and plain test with the same
-  # basename (they would end up sharing the same basename and thus the
-  # same `.log' and `.trs' files, wreaking havoc).  So just test for
-  # the two flavors in random order.
-  for suf in tap test; do
-    if test -f "$dir/$test_name.$suf"; then
-      # We must let the code in ./defs which kind of test script it is
-      # dealing with -- TAP or "plain".  It won't be able to guess
-      # automatically, since it uses `$0' for such a guess, and with
-      # the present usage `$0' is always `wrap-tests.sh'.
-      if test $suf = tap; then
-        using_tap=yes
-      else
-        using_tap=no
-      fi
-      # Shell traces will be properly re-enabled later by the sourced
-      # test script.
-      set +x
-      . "$dir/$test_name.$suf"
-      exit $?
-    fi
-  done
+  . "$dir/$test_name.$suf"
+  exit $?
 done
 
 fatal_ "cannot find wrapped test \`$test_name'"
