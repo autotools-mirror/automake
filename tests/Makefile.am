@@ -325,6 +325,8 @@ distcheck-configure-flags-subpkg.test \
 distcheck-hook.test \
 distcheck-hook2.test \
 dmalloc.test \
+doc-parsing-buglets-colneq-subst.test \
+doc-parsing-buglets-tabs.test \
 dollar.test \
 dollarvar.test \
 dollarvar2.test \
