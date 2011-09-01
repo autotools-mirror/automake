@@ -655,6 +655,7 @@ mkinst3.test \
 mmode.test \
 mmodely.test \
 multlib.test \
+no-extra-makefile-code.test \
 no-outdir-option.test \
 nobase.test \
 nobase-libtool.test \
