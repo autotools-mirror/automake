@@ -66,18 +66,7 @@ amopt.test \
 amopts-location.test \
 amopts-variable-expansion.test \
 amsubst.test \
-ansi2knr-deprecation.test \
-ansi.test \
-ansi2.test \
-ansi3.test \
-ansi3b.test \
-ansi4.test \
-ansi5.test \
-ansi6.test \
-ansi7.test \
-ansi8.test \
-ansi9.test \
-ansi10.test \
+ansi2knr-no-more.test \
 ar-lib.test \
 ar.test \
 ar2.test \
@@ -267,7 +256,6 @@ cscope2.test \
 cscope3.test \
 cxx.test \
 cxx2.test \
-cxxansi.test \
 cxxcpp.test \
 cxxlibobj.test \
 cxxlink.test \
@@ -480,7 +468,6 @@ libobj3.test \
 libobj4.test \
 libobj5.test \
 libobj7.test \
-libobj8.test \
 libobj10.test \
 libobj12.test \
 libobj13.test \
@@ -580,6 +567,7 @@ mkinst3.test \
 mmode.test \
 mmodely.test \
 multlib.test \
+no-extra-makefile-code.test \
 no-outdir-option.test \
 nobase.test \
 nobase-libtool.test \
@@ -886,7 +874,6 @@ subcond2.test \
 subcond3.test \
 subobj.test \
 subobj2.test \
-subobj3.test \
 subobj4.test \
 subobj5.test \
 subobj6.test \
