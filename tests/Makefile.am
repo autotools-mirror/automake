@@ -325,6 +325,8 @@ distcheck-configure-flags-subpkg.test \
 distcheck-hook.test \
 distcheck-hook2.test \
 dmalloc.test \
+doc-parsing-buglets-colneq-subst.test \
+doc-parsing-buglets-tabs.test \
 dollar.test \
 dollarvar.test \
 dollarvar2.test \
@@ -834,6 +836,7 @@ vala2.test \
 vala3.test \
 vala4.test \
 vala5.test \
+vala-vpath.test \
 vars.test \
 vars3.test \
 vartar.test \

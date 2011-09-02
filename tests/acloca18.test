@@ -53,51 +53,44 @@ cat >4/mumble.m4 <<EOF
 AC_DEFUN([AM_MACRO1], [echo macro14 >> foo])
 EOF
 
-
-ACLOCAL_TESTSUITE_FLAGS='-I 1 -I 2 -I 3 -I 4'
-
-$ACLOCAL
+$ACLOCAL -I 1 -I 2 -I 3 -I 4
 $AUTOCONF
 ./configure
 grep macro11 foo
 grep macro21 foo
 
 rm -f foo
-$ACLOCAL --install
-$AUTOCONF
-./configure
-grep macro12 foo
-grep macro23 foo
-
-ACLOCAL_TESTSUITE_FLAGS='-I 4 -I 1 -I 2 -I 3'
-rm -f foo
-$ACLOCAL --install --dry-run
+$ACLOCAL  -I 1 -I 2 -I 3 -I 4 --install
 $AUTOCONF
 ./configure
 grep macro12 foo
 grep macro23 foo
 
 rm -f foo
-$ACLOCAL --install
+$ACLOCAL -I 4 -I 1 -I 2 -I 3 --install --dry-run
+$AUTOCONF
+./configure
+grep macro12 foo
+grep macro23 foo
+
+rm -f foo
+$ACLOCAL -I 4 -I 1 -I 2 -I 3 --install
 $AUTOCONF
 ./configure
 grep macro14 foo
 grep macro23 foo
 
-ACLOCAL_TESTSUITE_FLAGS='-I 4 -I 1 -I 2'
 rm -f foo
-$ACLOCAL --install 2>stderr && { cat stderr >&2; Exit 1; }
+$ACLOCAL -I 4 -I 1 -I 2 --install 2>stderr && { cat stderr >&2; Exit 1; }
 cat stderr >&2
 grep 'macro.*AM_MACRO2.*not found' stderr
 
-ACLOCAL_TESTSUITE_FLAGS='-I 4 -I 1'
 rm -f foo
-$ACLOCAL --install
+$ACLOCAL -I 4 -I 1 --install
 $AUTOCONF
 ./configure
 grep macro14 foo
 grep macro21 foo
-
 
 mkdir dirlist-test
 cat >dirlist-test/m1.m4 <<EOF
@@ -106,7 +99,7 @@ AC_DEFUN([AM_MACRO1], [echo macro1d >> foo])
 AC_DEFUN([AM_MACRO2], [echo macro2d >> foo])
 EOF
 rm -f foo
-$ACLOCAL --diff=diff >stdout 2>stderr || {
+$ACLOCAL -I 4 -I 1 --diff=diff >stdout 2>stderr || {
   cat stderr >&2
   cat stdout
   Exit 1
