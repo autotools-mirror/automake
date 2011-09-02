@@ -836,6 +836,7 @@ vala2.test \
 vala3.test \
 vala4.test \
 vala5.test \
+vala-vpath.test \
 vars.test \
 vars3.test \
 vartar.test \
