@@ -71,8 +71,7 @@ F<Makefile.am>s.
 
 =cut
 
-# Values are the Automake::Location of the definition, except
-# for 'ansi2knr' whose value is a pair [filename, Location].
+# Values are the Automake::Location of the definition.
 use vars '%_options';		# From AUTOMAKE_OPTIONS
 use vars '%_global_options';	# from AM_INIT_AUTOMAKE or the command line.
 
@@ -269,14 +268,9 @@ sub _process_option_list (\%@)
 	}
       elsif (/^(.*\/)?ansi2knr$/)
 	{
-          # This feature is deprecated, will be removed in the next
-          # Automake major release.
-          msg 'obsolete', $where,
-              "automatic de-ANSI-fication support is deprecated\n";
-	  # An option like "../lib/ansi2knr" is allowed.  With no
-	  # path prefix, we assume the required programs are in this
-	  # directory.  We save the actual option for later.
-	  $options->{'ansi2knr'} = [$_, $where];
+          # Obsolete (and now removed) de-ANSI-fication support.
+          error ($where,
+                 "automatic de-ANSI-fication support has been removed");
 	}
       elsif ($_ eq 'no-installman' || $_ eq 'no-installinfo'
 	     || $_ eq 'dist-shar' || $_ eq 'dist-zip'

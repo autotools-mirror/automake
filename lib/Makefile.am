@@ -2,8 +2,8 @@
 
 ## Makefile for Automake lib.
 
-# Copyright (C) 2001, 2003, 2004, 2009, 2010 Free Software Foundation,
-# Inc.
+# Copyright (C) 2001, 2003, 2004, 2009, 2010, 2011 Free Software
+# Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,8 +20,7 @@
 
 SUBDIRS = Automake am
 
-dist_pkgvdata_DATA = COPYING INSTALL texinfo.tex ansi2knr.c ansi2knr.1 \
-  config-ml.in
+dist_pkgvdata_DATA = COPYING INSTALL texinfo.tex config-ml.in
 
 ## These must all be executable when installed.  However, if we use
 ## _SCRIPTS, then the program transform will be applied, which is not
