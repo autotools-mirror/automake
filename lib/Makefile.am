@@ -25,7 +25,6 @@ dist_pkgvdata_DATA = COPYING INSTALL texinfo.tex config-ml.in
 ## These must all be executable when installed.  However, if we use
 ## _SCRIPTS, then the program transform will be applied, which is not
 ## what we want.  So we make them executable by hand.
-scriptdir = $(pkgvdatadir)
 dist_script_DATA = \
   config.guess \
   config.sub \

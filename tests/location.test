@@ -42,11 +42,20 @@ VAR = 1 \
       3
 END
 
+# Smash the useless difference of lib file locations.
+smash_useless_diffs ()
+{
+  # FIXME: we could get rid of the second 's|||' once we improve our
+  # wrapper scripts ...
+  sed -e "s|^$am_amdir/\\([a-z]*\.am\\)|\\1|" \
+      -e "s|^automake-$APIVERSION:|automake:|" ${1+"$@"};
+}
+
 $ACLOCAL
 AUTOMAKE_fails -Wno-error
 
-# Smash the useless difference of lib file locations.
-sed 's,^.*lib/am/\([a-z]*\.am\),\1,' stderr >observed
+smash_useless_diffs stderr >observed
+
 cat >expected <<\EOF
 Makefile.am:12: warning: VAR multiply defined in condition TRUE ...
 Makefile.am:8: ... `VAR' previously defined here
@@ -68,10 +77,18 @@ program.am: ... `ctags$(EXEEXT)' previously defined here
 Makefile.am:6:   while processing program `ctags'
 EOF
 
+cat expected
+cat observed
 diff expected observed || Exit 1
 
 AUTOMAKE_fails -Werror
-sed 's,^.*lib/am/\([a-z]*\.am\),\1,' stderr >observed
-( echo 'automake: warnings are treated as errors'; cat expected ) \
-  | diff - observed || Exit 1
+smash_useless_diffs stderr >observed
+(echo 'automake: warnings are treated as errors' && cat expected) > t
+mv -f t expected
+
+cat expected
+cat observed
+
+diff expected observed || Exit 1
+
 :

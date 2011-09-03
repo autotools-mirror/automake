@@ -103,6 +103,49 @@ $(TEST_LOGS): defs defs-static aclocal-$(APIVERSION) automake-$(APIVERSION)
 $(TEST_LOGS): plain-functions.sh tap-functions.sh
 EXTRA_DIST += tap-functions.sh plain-functions.sh
 
+# Keep in sync with AC_SUBST'd stuff in defs-static.in.
+do_subst = sed \
+  -e 's|@abs_srcdir[@]|$(abs_srcdir)|g' \
+  -e 's|@abs_top_srcdir[@]|$(abs_top_srcdir)|g' \
+  -e 's|@abs_builddir[@]|$(abs_builddir)|g' \
+  -e 's|@prefix[@]|$(prefix)|g' \
+  -e 's|@amdir[@]|$(amdir)|g' \
+  -e 's|@bindir[@]|$(bindir)|g' \
+  -e 's|@datadir[@]|$(datadir)|g' \
+  -e 's|@docdir[@]|$(docdir)|g' \
+  -e 's|@automake_acdir[@]|$(automake_acdir)|g' \
+  -e 's|@system_acdir[@]|$(system_acdir)|g' \
+  -e 's|@scriptdir[@]|$(scriptdir)|g' \
+  -e 's|@pkgvdatadir[@]|$(pkgvdatadir)|g' \
+  -e 's|@host_alias[@]|$(host_alias)|g' \
+  -e 's|@build_alias[@]|$(build_alias)|g' \
+  -e 's|@APIVERSION[@]|$(APIVERSION)|g' \
+  -e 's|@PATH_SEPARATOR[@]|$(PATH_SEPARATOR)|g' \
+  -e 's|@SHELL[@]|$(SHELL)|g' \
+  -e 's|@PERL[@]|$(PERL)|g' \
+  -e 's|@EGREP[@]|$(EGREP)|g' \
+  -e 's|@FGREP[@]|$(FGREP)|g' \
+  -e 's|@TEX[@]|$(TEX)|g' \
+  -e 's|@MODIFICATION_DELAY[@]|$(MODIFICATION_DELAY)|g' \
+  -e 's|@am_AUTOCONF[@]|$(am_AUTOCONF)|g' \
+  -e 's|@am_AUTOM4TE[@]|$(am_AUTOM4TE)|g' \
+  -e 's|@am_AUTORECONF[@]|$(am_AUTORECONF)|g' \
+  -e 's|@am_AUTOHEADER[@]|$(am_AUTOHEADER)|g' \
+  -e 's|@am_AUTOUPDATE[@]|$(am_AUTOUPDATE)|g' \
+  -e 's|@sh_errexit_works[@]|$(sh_errexit_works)|g' \
+  -e 's|@configure_input[@]|Generated from $@.in.  DO NOT EDIT BY HAND!|'
+
+defs-static: defs-static.in
+	$(AM_V_at)rm -f $@ $@-t
+	$(AM_V_GEN)$(do_subst) $(srcdir)/defs-static.in >$@-t
+	$(AM_V_at) : Sanity check on the substitutions; \
+	if LC_ALL=C grep '@[a-zA-Z0-9_][a-zA-Z0-9_]*@' $@-t; then \
+	  echo "$@ contains unexpanded substitution (see lines above)"; \
+	  exit 1; \
+	fi
+	$(AM_V_at)chmod a-w $@-t && mv -f $@-t $@
+EXTRA_DIST += defs-static.in
+CLEANFILES = defs-static
 
 # If two test scripts have the same basename, they will end up sharing
 # the same log file, leading to all sort of undefined and undesired
@@ -121,6 +164,10 @@ check-local: check-no-repeated-test-name
 
 ## Checking the list of tests.
 include $(top_srcdir)/CheckListOfTests.am
+
+# Run the testsuite with the installed aclocal and automake.
+installcheck-local:
+	am_running_installcheck=yes $(MAKE) $(AM_MAKEFLAGS) check
 
 clean-local: clean-local-check
 .PHONY: clean-local-check

@@ -20,6 +20,9 @@
 #
 # Also check for --install.
 
+# TODO: write a sister test that doesn't use a `dirlist' file, but
+# TODO: puts third-party macros directly into `acdir'.
+
 . ./defs || Exit 1
 
 cat >> configure.in << 'END'
@@ -28,7 +31,10 @@ MACRO1
 MACRO3
 END
 
-mkdir m4_1 m4_2 dirlist-test
+ACLOCAL="$ACLOCAL --system-acdir acdir"
+
+mkdir m4_1 m4_2 acdir acdir2
+echo ./acdir2 > acdir/dirlist
 
 cat >m4_1/somedefs.m4 <<EOF
 AC_DEFUN([MACRO1], [echo macro11 >> foo])
@@ -39,7 +45,7 @@ cat >m4_2/somedefs.m4 <<EOF
 AC_DEFUN([MACRO1], [echo macro12 >> foo])
 EOF
 
-cat >dirlist-test/macro.m4 <<EOF
+cat >acdir2/macro.m4 <<EOF
 AC_DEFUN([MACRO3], [echo macro3 >> foo])
 EOF
 
@@ -77,7 +83,7 @@ test ! -f m4_2/macro.m4
 cp aclocal.m4 copy.m4
 
 $sleep
-echo '#GREPME' >>dirlist-test/macro.m4
+echo '#GREPME' >>acdir2/macro.m4
 $ACLOCAL -I m4_1 -I m4_2 --install
 $AUTOCONF
 ./configure

@@ -117,6 +117,15 @@ esac
 # by the configure-time detected $CONFIG_SHELL.
 
 
+## ----------------------- ##
+##  Early debugging info.  ##
+## ----------------------- ##
+
+echo "Running from installcheck: $am_running_installcheck"
+echo "Using TAP: $using_tap"
+echo "PATH = $PATH"
+
+
 ## ---------------------- ##
 ##  Environment cleanup.  ##
 ## ---------------------- ##
@@ -470,10 +479,10 @@ sed_unindent_prog="" # Avoid interferences from the environment.
 get_shell_script ()
 {
   if test x"$test_prefer_config_shell" = x"yes"; then
-    sed "1s|#!.*|#! $SHELL|" "$top_testsrcdir/lib/$1" > "$1"
+    sed "1s|#!.*|#! $SHELL|" "$am_scriptdir/$1" > "$1"
     chmod a+x "$1"
   else
-    cp "$top_testsrcdir/lib/$1" .
+    cp "$am_scriptdir/$1" .
   fi
   sed 10q "$1" # For debugging.
 }
@@ -507,9 +516,9 @@ fetch_tap_driver ()
   # TODO: with /bin/sh, for better coverage.
   case $am_tap_implementation in
     perl)
-      sed "1s|#!.*|#! $PERL -w|" "$top_testsrcdir"/lib/tap-driver.pl ;;
+      sed "1s|#!.*|#! $PERL -w|" "$am_scriptdir"/tap-driver.pl ;;
     shell)
-      sed "1s|#!.*|#! $SHELL|" "$top_testsrcdir"/lib/tap-driver.sh ;;
+      sed "1s|#!.*|#! $SHELL|" "$am_scriptdir"/tap-driver.sh ;;
     *)
       fatal_ "invalid \$am_tap_implementation '$am_tap_implementation'" ;;
   esac > tap-driver \
@@ -525,10 +534,6 @@ am_tap_implementation=${am_tap_implementation-shell}
 ##  Checks for required tools, and additional setups (if any)  ##
 ##  required by them.                                          ##
 ## ----------------------------------------------------------- ##
-
-# Print it here, so that the user will see it also if the test
-# will be skipped due to some tool missing in $PATH itself.
-echo "$PATH"
 
 # So that we can force the use of correct gcc, g++ etc., consistently
 # with cross-compilation settings.
@@ -830,11 +835,6 @@ esac
 
 # We might need extra macros, e.g., from Libtool or Gettext.
 # Find them on the system.
-# Use `-I $top_testsrcdir/m4' in addition to `--acdir=$top_testsrcdir/m4',
-# because the other `-I' directories added for libtool and gettext might
-# contain files from an old version of Automake that we don't want to use.
-# Use `-Wno-syntax' because we do not want our test suite to fail because
-# some third-party .m4 file is underquoted.
 case " $required " in
   *' libtool '* | *' libtoolize '* | *' gettext '* )
     aclocaldir=$testprefix/share/aclocal
@@ -875,7 +875,13 @@ case " $required " in
         fi
         ;;
     esac
-    ACLOCAL="$ACLOCAL -Wno-syntax -I $top_testsrcdir/m4 $extra_includes -I $aclocaldir"
+    # Use `-I $am_automake_acdir' because the other `-I' directories added
+    # for libtool and gettext might contain files from an old version of
+    # Automake that we don't want to use.  Use `-Wno-syntax' because we
+    # do not want our test suite to fail because some third-party `.m4'
+    # file is underquoted.
+    ACLOCAL="$ACLOCAL -Wno-syntax -I $am_automake_acdir"
+    ACLOCAL="$ACLOCAL $extra_includes -I $aclocaldir"
     unset libtool_found gettext_found
     unset extra_includes aclocaldir
     ;;
@@ -950,9 +956,9 @@ else
   cd ./$testSubDir \
     || framework_failure_ "cannot chdir into test subdirectory"
   if test x"$am_create_testdir" != x"empty"; then
-    cp "$top_testsrcdir"/lib/install-sh "$top_testsrcdir"/lib/missing \
-       "$top_testsrcdir"/lib/depcomp . \
-      || framework_failure_ "fetching common files from lib/"
+    cp "$am_scriptdir"/install-sh "$am_scriptdir"/missing \
+       "$am_scriptdir"/depcomp . \
+      || framework_failure_ "fetching common files from $am_scriptdir"
     # Build appropriate environment in test directory.  E.g., create
     # configure.in, touch all necessary files, etc.  Don't use AC_OUTPUT,
     # but AC_CONFIG_FILES so that appending still produces a valid

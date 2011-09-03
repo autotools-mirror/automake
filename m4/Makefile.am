@@ -18,9 +18,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-automake_acdir = $(datadir)/aclocal-$(APIVERSION)
-system_acdir = $(datadir)/aclocal
-
 dist_automake_ac_DATA = \
 $(top_srcdir)/m4/amversion.m4 \
 as.m4 \
@@ -63,7 +60,7 @@ vala.m4
 # So that $(system_acdir) will be created by "make install".
 dist_system_ac_DATA =
 
-EXTRA_DIST = acdir/dirlist amversion.in
+EXTRA_DIST = acdir/.placeholder amversion.in
 
 # We build amversion.m4 here, instead of from config.status,
 # because config.status is rerun each time one of configure's

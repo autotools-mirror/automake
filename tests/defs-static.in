@@ -101,6 +101,35 @@ top_testsrcdir='@abs_top_srcdir@'
 testbuilddir='@abs_builddir@'
 testprefix='@prefix@'
 
+# Support for the "installcheck" target.
+case ${am_running_installcheck:=no} in
+  yes)
+    am_amdir='@amdir@'
+    am_automake_acdir='@automake_acdir@'
+    am_bindir='@bindir@'
+    am_datadir='@datadir@'
+    am_docdir='@docdir@'
+    am_pkgvdatadir='@pkgvdatadir@'
+    am_scriptdir='@scriptdir@'
+    am_system_acdir='@system_acdir@'
+    ;;
+  no)
+    am_amdir=$top_testsrcdir/lib/am
+    am_automake_acdir=$top_testsrcdir/m4
+    am_bindir=$testbuilddir
+    am_datadir=$top_testsrcdir
+    am_docdir=$top_testsrcdir/doc
+    am_pkgvdatadir=$top_testsrcdir/lib
+    am_scriptdir=$top_testsrcdir/lib
+    am_system_acdir=$top_testsrcdir/m4/acdir
+    ;;
+  *)
+    echo "$argv0: variable \`am_running_installcheck' has invalid"
+         "value \`$am_running_installcheck'" >&2
+    exit 99
+    ;;
+esac
+
 APIVERSION='@APIVERSION@'
 PATH_SEPARATOR='@PATH_SEPARATOR@'
 
@@ -117,7 +146,6 @@ test -z "$AUTOM4TE" && AUTOM4TE="@am_AUTOM4TE@"
 test -z "$AUTORECONF" && AUTORECONF="@am_AUTORECONF@"
 test -z "$AUTOHEADER" && AUTOHEADER="@am_AUTOHEADER@"
 test -z "$AUTOUPDATE" && AUTOUPDATE="@am_AUTOUPDATE@"
-test -z "$MISSING" && MISSING=$top_testsrcdir/lib/missing
 
 # Use -Werror because this also turns some Perl warnings into error.
 # Tests for which this is inappropriate should use -Wno-error.
@@ -168,10 +196,11 @@ sleep='sleep @MODIFICATION_DELAY@'
 # in UTC; see <http://www.gnu.org/gnu/initial-announcement.html>.
 old_timestamp=198309271735.59
 
-# Make our wrapper scripts accessible by default.  And avoid to uselessly
+# Make our wrapper script (or installed scripts, if running under
+# "installcheck") accessible by default.  And avoid to uselessly
 # extend $PATH multiple times if this file is sourced multiple times.
 case $PATH in
-  "$testbuilddir$PATH_SEPARATOR"*) ;;
-  *) PATH="$testbuilddir$PATH_SEPARATOR$PATH";;
+  $am_bindir$PATH_SEPARATOR*) ;;
+  *) PATH=$am_bindir$PATH_SEPARATOR$PATH;;
 esac
 export PATH

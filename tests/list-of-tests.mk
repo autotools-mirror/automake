@@ -301,6 +301,7 @@ deprecated-acinit.test \
 destdir.test \
 dirlist.test \
 dirlist2.test \
+dirlist-abspath.test \
 discover.test \
 dist-included-parent-dir.test \
 distcleancheck.test \

@@ -15,8 +15,8 @@
 
 @SET_MAKE@
 
-# Copyright (C) 2002, 2003, 2008, 2009, 2010 Free Software Foundation,
-# Inc.
+# Copyright (C) 2002, 2003, 2008, 2009, 2010, 2011 Free Software
+# Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -234,6 +234,8 @@ am_AUTOUPDATE = @am_AUTOUPDATE@
 am__leading_dot = @am__leading_dot@
 am__tar = @am__tar@
 am__untar = @am__untar@
+amdir = @amdir@
+automake_acdir = @automake_acdir@
 bindir = @bindir@
 build = @build@
 build_alias = @build_alias@
@@ -268,16 +270,24 @@ prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
 sbindir = @sbindir@
+scriptdir = @scriptdir@
 sh_errexit_works = @sh_errexit_works@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
+system_acdir = @system_acdir@
 target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 PL_LOG_COMPILER = $(PERL)
-AM_PL_LOG_FLAGS = -Mstrict -I ../.. -I $(top_srcdir)/lib -w
+AM_TESTS_ENVIRONMENT = \
+  case $$am_running_installcheck in \
+    yes) am_pl_I_flags='-I $(pkgvdatadir)';; \
+      *) am_pl_I_flags='-I ../.. -I $(top_srcdir)/lib';; \
+  esac;
+
+AM_PL_LOG_FLAGS = -Mstrict -w $$am_pl_I_flags
 TEST_EXTENSIONS = .pl
 TESTS = \
 Condition.pl \
@@ -649,7 +659,7 @@ install-ps: install-ps-am
 
 install-ps-am:
 
-installcheck-am:
+installcheck-am: installcheck-local
 
 maintainer-clean: maintainer-clean-am
 	-rm -f Makefile
@@ -679,10 +689,10 @@ uninstall-am:
 	install-dvi-am install-exec install-exec-am install-html \
 	install-html-am install-info install-info-am install-man \
 	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-generic pdf pdf-am ps ps-am recheck recheck-html \
-	uninstall uninstall-am
+	install-strip installcheck installcheck-am installcheck-local \
+	installdirs maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am recheck \
+	recheck-html uninstall uninstall-am
 
 
 .PHONY: maintainer-check-list-of-tests
@@ -727,6 +737,10 @@ maintainer-check-list-of-tests:
 clean-local: clean-maintcheck-testslist-tmp
 clean-maintcheck-testslist-tmp:
 	rm -f $(am__tmk) $(am__tfs) $(am__tdf)
+
+# Run the testsuite with the installed aclocal and automake.
+installcheck-local:
+	am_running_installcheck=yes $(MAKE) $(AM_MAKEFLAGS) check
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

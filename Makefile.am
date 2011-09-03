@@ -103,6 +103,10 @@ automake aclocal: Makefile
 INSTALL: lib/INSTALL
 	$(AM_V_GEN)cp $(srcdir)/lib/INSTALL $@
 
+# Run the testsuite with the installed aclocal and automake.
+installcheck-local:
+	am_running_installcheck=yes $(MAKE) $(AM_MAKEFLAGS) check
+
 ## recheck: convenience proxy target for the test suites.
 .PHONY: recheck
 recheck:

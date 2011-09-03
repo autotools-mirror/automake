@@ -51,8 +51,8 @@ build_triplet = @build@
 host_triplet = @host@
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(srcdir)/aclocal.in $(srcdir)/automake.in $(srcdir)/defs \
-	$(srcdir)/defs-static.in $(srcdir)/list-of-tests.mk \
-	$(srcdir)/testsuite-part.am $(top_srcdir)/CheckListOfTests.am
+	$(srcdir)/list-of-tests.mk $(srcdir)/testsuite-part.am \
+	$(top_srcdir)/CheckListOfTests.am
 subdir = tests
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/amversion.m4 \
@@ -66,8 +66,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/amversion.m4 \
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/lib/mkinstalldirs
-CONFIG_CLEAN_FILES = defs-static aclocal-${APIVERSION} \
-	automake-${APIVERSION}
+CONFIG_CLEAN_FILES = aclocal-${APIVERSION} automake-${APIVERSION}
 CONFIG_CLEAN_VPATH_FILES = defs
 AM_V_GEN = $(am__v_GEN_$(V))
 am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
@@ -241,6 +240,8 @@ am_AUTOUPDATE = @am_AUTOUPDATE@
 am__leading_dot = @am__leading_dot@
 am__tar = @am__tar@
 am__untar = @am__untar@
+amdir = @amdir@
+automake_acdir = @automake_acdir@
 bindir = @bindir@
 build = @build@
 build_alias = @build_alias@
@@ -275,10 +276,12 @@ prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
 sbindir = @sbindir@
+scriptdir = @scriptdir@
 sh_errexit_works = @sh_errexit_works@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
+system_acdir = @system_acdir@
 target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
@@ -296,7 +299,7 @@ EXTRA_DIST = ChangeLog-old $(handwritten_TESTS) tap-summary-aux.sh \
 	tap-setup.sh extract-testsuite-summary \
 	testsuite-summary-checks.sh trivial-test-driver \
 	$(generated_TESTS) gen-testsuite-part tap-functions.sh \
-	plain-functions.sh
+	plain-functions.sh defs-static.in
 
 # Hand-written tests.
 
@@ -616,6 +619,7 @@ deprecated-acinit.test \
 destdir.test \
 dirlist.test \
 dirlist2.test \
+dirlist-abspath.test \
 discover.test \
 dist-included-parent-dir.test \
 distcleancheck.test \
@@ -1484,6 +1488,40 @@ generated_TESTS = ar-lib-w.test compile-w.test compile2-w.test \
 	tap-diagnostic-custom-w.test tap-driver-stderr-w.test \
 	tap-doc-w.test tap-more-w.test tap-more2-w.test \
 	tap-recheck-w.test
+
+# Keep in sync with AC_SUBST'd stuff in defs-static.in.
+do_subst = sed \
+  -e 's|@abs_srcdir[@]|$(abs_srcdir)|g' \
+  -e 's|@abs_top_srcdir[@]|$(abs_top_srcdir)|g' \
+  -e 's|@abs_builddir[@]|$(abs_builddir)|g' \
+  -e 's|@prefix[@]|$(prefix)|g' \
+  -e 's|@amdir[@]|$(amdir)|g' \
+  -e 's|@bindir[@]|$(bindir)|g' \
+  -e 's|@datadir[@]|$(datadir)|g' \
+  -e 's|@docdir[@]|$(docdir)|g' \
+  -e 's|@automake_acdir[@]|$(automake_acdir)|g' \
+  -e 's|@system_acdir[@]|$(system_acdir)|g' \
+  -e 's|@scriptdir[@]|$(scriptdir)|g' \
+  -e 's|@pkgvdatadir[@]|$(pkgvdatadir)|g' \
+  -e 's|@host_alias[@]|$(host_alias)|g' \
+  -e 's|@build_alias[@]|$(build_alias)|g' \
+  -e 's|@APIVERSION[@]|$(APIVERSION)|g' \
+  -e 's|@PATH_SEPARATOR[@]|$(PATH_SEPARATOR)|g' \
+  -e 's|@SHELL[@]|$(SHELL)|g' \
+  -e 's|@PERL[@]|$(PERL)|g' \
+  -e 's|@EGREP[@]|$(EGREP)|g' \
+  -e 's|@FGREP[@]|$(FGREP)|g' \
+  -e 's|@TEX[@]|$(TEX)|g' \
+  -e 's|@MODIFICATION_DELAY[@]|$(MODIFICATION_DELAY)|g' \
+  -e 's|@am_AUTOCONF[@]|$(am_AUTOCONF)|g' \
+  -e 's|@am_AUTOM4TE[@]|$(am_AUTOM4TE)|g' \
+  -e 's|@am_AUTORECONF[@]|$(am_AUTORECONF)|g' \
+  -e 's|@am_AUTOHEADER[@]|$(am_AUTOHEADER)|g' \
+  -e 's|@am_AUTOUPDATE[@]|$(am_AUTOUPDATE)|g' \
+  -e 's|@sh_errexit_works[@]|$(sh_errexit_works)|g' \
+  -e 's|@configure_input[@]|Generated from $@.in.  DO NOT EDIT BY HAND!|'
+
+CLEANFILES = defs-static
 am__tmk = tests-in-makefile-list.tmp
 am__tfs = tests-on-filesystem-list.tmp
 am__tdf = diff-in-tests-lists.tmp
@@ -1521,8 +1559,6 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
-defs-static: $(top_builddir)/config.status $(srcdir)/defs-static.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 aclocal-${APIVERSION}: $(top_builddir)/config.status $(srcdir)/aclocal.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 automake-${APIVERSION}: $(top_builddir)/config.status $(srcdir)/automake.in
@@ -1788,6 +1824,7 @@ mostlyclean-generic:
 	-test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -1842,7 +1879,7 @@ install-ps: install-ps-am
 
 install-ps-am:
 
-installcheck-am:
+installcheck-am: installcheck-local
 
 maintainer-clean: maintainer-clean-am
 	-rm -f Makefile
@@ -1872,10 +1909,10 @@ uninstall-am:
 	install-dvi-am install-exec install-exec-am install-html \
 	install-html-am install-info install-info-am install-man \
 	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-generic pdf pdf-am ps ps-am recheck recheck-html \
-	uninstall uninstall-am
+	install-strip installcheck installcheck-am installcheck-local \
+	installdirs maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am recheck \
+	recheck-html uninstall uninstall-am
 
 
 print-list-of-tests:
@@ -2216,6 +2253,16 @@ $(TEST_LOGS): defs defs-static aclocal-$(APIVERSION) automake-$(APIVERSION)
 # subdivision of the tests.
 $(TEST_LOGS): plain-functions.sh tap-functions.sh
 
+defs-static: defs-static.in
+	$(AM_V_at)rm -f $@ $@-t
+	$(AM_V_GEN)$(do_subst) $(srcdir)/defs-static.in >$@-t
+	$(AM_V_at) : Sanity check on the substitutions; \
+	if LC_ALL=C grep '@[a-zA-Z0-9_][a-zA-Z0-9_]*@' $@-t; then \
+	  echo "$@ contains unexpanded substitution (see lines above)"; \
+	  exit 1; \
+	fi
+	$(AM_V_at)chmod a-w $@-t && mv -f $@-t $@
+
 # If two test scripts have the same basename, they will end up sharing
 # the same log file, leading to all sort of undefined and undesired
 # behaviours.
@@ -2273,6 +2320,10 @@ maintainer-check-list-of-tests:
 clean-local: clean-maintcheck-testslist-tmp
 clean-maintcheck-testslist-tmp:
 	rm -f $(am__tmk) $(am__tfs) $(am__tdf)
+
+# Run the testsuite with the installed aclocal and automake.
+installcheck-local:
+	am_running_installcheck=yes $(MAKE) $(AM_MAKEFLAGS) check
 
 clean-local: clean-local-check
 .PHONY: clean-local-check

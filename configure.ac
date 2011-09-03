@@ -51,8 +51,11 @@ AM_INIT_AUTOMAKE([1.10a dist-bzip2 filename-length-max=99 color-tests
 APIVERSION=`echo "$VERSION" | sed -e 's/^\([[0-9]]*\.[[0-9]]*[[a-z]]*\).*$/\1/'`
 AC_SUBST([APIVERSION])
 
-# A versioned directory, defined here for convenience.
 AC_SUBST([pkgvdatadir], ["\${datadir}/$PACKAGE-$APIVERSION"])
+AC_SUBST([scriptdir], ["\${pkgvdatadir}"])
+AC_SUBST([amdir], ["\${pkgvdatadir}/am"])
+AC_SUBST([automake_acdir], ["\${datadir}/aclocal-$APIVERSION"])
+AC_SUBST([system_acdir], ["\${datadir}/aclocal"])
 
 # $AUTOMAKE and $ACLOCAL are always run after a `cd $top_srcdir',
 # hence `.' is really what we want for perllibdir, libdir, and acdir.
@@ -209,7 +212,6 @@ AC_CONFIG_FILES([
   lib/am/Makefile
   m4/Makefile
   tests/Makefile
-  tests/defs-static
 ])
 AC_CONFIG_LINKS([tests/defs:tests/defs])
 AC_CONFIG_FILES([tests/aclocal-${APIVERSION}:tests/aclocal.in],
