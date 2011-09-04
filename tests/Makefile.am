@@ -23,6 +23,7 @@ cond17.test \
 gcj6.test \
 pr8365-remake-timing.test \
 yacc-dist-nobuild-subdir.test \
+vala-vpath.test \
 txinfo5.test
 
 include $(srcdir)/parallel-tests.am
