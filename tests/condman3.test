@@ -1,0 +1,65 @@
+#! /bin/sh
+# Copyright (C) 2010 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Make sure conditionals work with man pages.
+
+. ./defs || Exit 1
+
+set -e
+
+cat >> configure.in << 'END'
+AM_CONDITIONAL([COND], [test x"$FOO" = x"true"])
+AC_OUTPUT
+END
+
+cat > Makefile.am << 'END'
+if COND
+man_MANS = foo.1
+else
+man_MANS = bar.2
+endif
+
+.PHONY: test1 test2
+test1:
+	test -f $(mandir)/man1/foo.1
+	test ! -f $(mandir)/man2/bar.2
+test2:
+	test ! -f $(mandir)/man1/foo.1
+	test -f $(mandir)/man2/bar.2
+END
+
+$ACLOCAL
+$AUTOMAKE
+$AUTOCONF
+
+mkdir dir1
+cd dir1
+../configure FOO=true --prefix="`pwd`/_inst"
+sed -n '/man_MANS/p' Makefile # useful for debugging
+: > foo.1
+$MAKE install
+$MAKE test1
+
+cd ..
+mkdir dir2
+cd dir2
+../configure FOO=false --prefix="`pwd`/_inst"
+sed -n '/man_MANS/p' Makefile # useful for debugging
+: > bar.2
+$MAKE install
+$MAKE test2
+
+:

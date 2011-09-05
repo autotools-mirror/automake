@@ -13,6 +13,8 @@
 
 AC_DEFUN([AM_C_PROTOTYPES],
 [AC_REQUIRE([AC_C_PROTOTYPES])
+AC_DIAGNOSE([obsolete],
+            [$0: automatic de-ANSI-fication support is deprecated])
 if test "$ac_cv_prog_cc_stdc" != no; then
   U= ANSI2KNR=
 else

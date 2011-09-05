@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2006, 2007  Free Software Foundation, Inc.
+# Copyright (C) 2006, 2007, 2010, 2011 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ cat >> configure.in << 'END'
 AC_PROG_CC
 AM_PROG_CC_C_O
 AM_PROG_LIBTOOL
-AC_CONFIG_FILES(sub2/Makefile)
+AC_CONFIG_FILES([sub2/Makefile])
 AC_OUTPUT
 END
 
@@ -48,7 +48,7 @@ cat >foo.c <<'END'
 #include "foo.h"
 #include "sub2/baz.h"
 #include <stdlib.h>
-int main() { printf("foo"); return bar() + baz(); }
+int main (void) { printf ("foo"); return bar () + baz (); }
 END
 
 cat >foo.h <<'END'
@@ -58,28 +58,28 @@ END
 
 cat >sub/bar.c <<'END'
 #include "sub/bar.h"
-int bar() { return 0; }
+int bar (void) { return 0; }
 END
 
 echo 'extern int x;' > sub2/sub3/ba3.h
 
 cat >sub/bar.h <<'END'
 #include <stdio.h>
-extern int bar();
+extern int bar (void);
 END
 
 cat >sub2/baz.c <<'END'
 #include "baz.h"
-int baz() { return 0; }
+int baz (void) { return 0; }
 END
 
 cat >sub2/baz.h <<'END'
-extern int baz();
+extern int baz (void);
 END
 
-cat >sub2/sub3/ba3.c <<'END'
+cat >sub2/sub3/ba3.in <<'END'
 #include "ba3.h"
-int ba3() { return 0; }
+int ba3 (void) { return 0; }
 END
 
 libtoolize
@@ -87,17 +87,32 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
+st=0
 for staticshared in --disable-shared "" --disable-static; do
-  ./configure --enable-dependency-tracking $staticshared
-  $MAKE 
 
-  # check that dependency tracking works
-  if grep 'depmode=none' Makefile; then :
+  cp sub2/sub3/ba3.in sub2/sub3/ba3.c
+  ./configure --enable-dependency-tracking $staticshared
+  $MAKE
+
+  # If we cannot enable dependency tracking, perform only the most basic
+  # checks, and don't consider this test to be PASSed but SKIPped, because
+  # the main purpose of this test is exposing the depmode features.
+  if grep 'depmode=none' Makefile; then
+    st=77
   else
     cd sub2
     $sleep
     echo 'choke me' > sub3/ba3.h
-    if $MAKE; then Exit 1; fi
+    # Do not use `$MAKE && Exit 1' here, since even relatively-recent
+    # versions of the BSD shell wrongly exit when the `errexit' shell
+    # flag is active if a command within "&&" fails inside a compound
+    # statement.
+    if $MAKE; then Exit 1; else :; fi
+
+    # Ensure the deleted header bug is fixed.
+    rm -f sub3/ba3.h
+    sed 1d sub3/ba3.in >sub3/ba3.c
+    $MAKE
     cd ..
   fi
 
@@ -106,4 +121,7 @@ for staticshared in --disable-shared "" --disable-static; do
   test ! -f sub2/sub3/ba3.d
 
   echo 'extern int x;' > sub2/sub3/ba3.h
+
 done
+
+Exit $st

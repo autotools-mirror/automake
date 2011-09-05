@@ -1,5 +1,6 @@
 #! /bin/sh
-# Copyright (C) 1999, 2000, 2001, 2002, 2006  Free Software Foundation, Inc.
+# Copyright (C) 1999, 2000, 2001, 2002, 2006, 2010 Free Software
+# Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,38 +20,46 @@
 
 . ./defs || Exit 1
 
-cat > configure.in << 'END'
-AC_INIT
-AM_INIT_AUTOMAKE(nonesuch, nonesuch)
-AM_CONFIG_HEADER(include/config.h)
-AC_OUTPUT(Makefile include/Makefile)
+set -e
+
+cat >> configure.in << 'END'
+AM_CONFIG_HEADER([include/config.h])
+AC_OUTPUT
 END
 
-: > Makefile.am
-: > acconfig.h
+cat > Makefile.am << 'END'
+.PHONY: test1 test2
+test1:
+	@echo DIST_COMMON = $(DIST_COMMON)
+	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]acconfig\.h '
+test2: distdir
+	ls -l $(distdir)/*
+	test -f $(distdir)/acconfig.h
+check-local: test1 test2
+END
 
 mkdir include
-: > include/Makefile.am
 : > include/config.h.in
+: > acconfig.h
 
-$ACLOCAL || Exit 1
-$AUTOMAKE || Exit 1
+# The test used to fail if `include/Makefile.am' was created (!)
+: > include/Makefile.am
 
-(sed -n -e '/^DIST_COMMON =.*\\$/ {
-   :loop
-   p
-   n
-   t clear
-   :clear
-   s/\\$/\\/
-   t loop
-   p
-   n
-   }' -e '/^DIST_COMMON =/ p' Makefile.in | grep acconfig.h) || Exit 1
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
+
+./configure
+
+$MAKE test1
+$MAKE test2
+$MAKE distcheck
 
 # Make sure re-running automake in a different way generates same
 # Makefile.in.
-mv Makefile.in save
-$ACLOCAL || Exit 1
-$AUTOMAKE Makefile || Exit 1
-cmp Makefile.in save
+mv Makefile.in Makefile.sav
+$ACLOCAL
+$AUTOMAKE Makefile
+diff Makefile.sav Makefile.in
+
+:

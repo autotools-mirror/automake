@@ -24,8 +24,8 @@ This manual is for GNU Automake (version @value{VERSION},
 Makefiles from template files.
 
 Copyright @copyright{} 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002,
-2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010 Free Software Foundation,
-Inc.
+2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software
+Foundation, Inc.
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document
@@ -63,6 +63,7 @@ section entitled ``GNU Free Documentation License.''
 @insertcopying
 @end titlepage
 
+@contents
 
 @c We use the following macros to define indices:
 @c   @cindex   concepts, and anything that does not fit elsewhere
@@ -83,7 +84,8 @@ section entitled ``GNU Free Documentation License.''
 @c Put the macros in the function index.
 @syncodeindex ac fn
 
-@c Put everything else into one index (arbitrarily chosen to be the concept index).
+@c Put everything else into one index (arbitrarily chosen to be the
+@c concept index).
 @syncodeindex op cp
 @syncodeindex tr cp
 @syncodeindex cm cp
@@ -101,7 +103,7 @@ section entitled ``GNU Free Documentation License.''
 * Generalities::                General ideas
 * Examples::                    Some example packages
 * Invoking Automake::           Creating a Makefile.in
-* configure::                   Scanning configure.ac or configure.in
+* configure::                   Scanning configure.ac, using aclocal
 * Directories::                 Declaring subdirectories
 * Programs::                    Building programs and libraries
 * Other Objects::               Other derived objects
@@ -116,6 +118,7 @@ section entitled ``GNU Free Documentation License.''
 * Miscellaneous::               Miscellaneous rules
 * Include::                     Including extra files in an Automake template
 * Conditionals::                Conditionals
+* Silencing Make::              Obtain less verbose output from @command{make}
 * Gnits::                       The effect of @option{--gnu} and @option{--gnits}
 * Cygnus::                      The effect of @option{--cygnus}
 * Not Enough::                  When Automake is not Enough
@@ -156,15 +159,16 @@ Use Cases for the GNU Build System
 A Small Hello World
 
 * Creating amhello::            Create @file{amhello-1.0.tar.gz} from scratch
-* amhello Explained::           @file{configure.ac} and @file{Makefile.am} explained
+* amhello's configure.ac Setup Explained::
+* amhello's Makefile.am Setup Explained::
 
 General ideas
 
 * General Operation::           General operation of Automake
 * Strictness::                  Standards conformance checking
 * Uniform::                     The Uniform Naming Scheme
-* Canonicalization::            How derived variables are named
 * Length Limitations::          Staying below the command line length limit
+* Canonicalization::            How derived variables are named
 * User Variables::              Variables reserved for the user
 * Auxiliary Programs::          Programs automake might require
 
@@ -173,7 +177,7 @@ Some example packages
 * Complete::                    A simple example, start to finish
 * true::                        Building true and false
 
-Scanning @file{configure.ac}
+Scanning @file{configure.ac}, using @command{aclocal}
 
 * Requirements::                Configuration requirements
 * Optional::                    Other things Automake recognizes
@@ -229,7 +233,7 @@ Building Programs and Libraries
 * Java Support::                Compiling Java sources
 * Vala Support::                Compiling Vala sources
 * Support for Other Languages::  Compiling other languages
-* ANSI::                        Automatic de-ANSI-fication (obsolete)
+* ANSI::                        Automatic de-ANSI-fication (deprecated, soon to be removed)
 * Dependencies::                Automatic dependency tracking
 * EXEEXT::                      Support for executable extensions
 
@@ -238,7 +242,7 @@ Building a program
 * Program Sources::             Defining program sources
 * Linking::                     Linking with libraries or extra objects
 * Conditional Sources::         Handling conditional sources
-* Conditional Programs::        Building program conditionally
+* Conditional Programs::        Building a program conditionally
 
 Building a Shared Library
 
@@ -251,6 +255,11 @@ Building a Shared Library
 * Libtool Flags::               Using _LIBADD, _LDFLAGS, and _LIBTOOLFLAGS
 * LTLIBOBJS::                   Using $(LTLIBOBJS) and $(LTALLOCA)
 * Libtool Issues::              Common Issues Related to Libtool's Use
+
+Common Issues Related to Libtool's Use
+
+* Error required file ltmain.sh not found::  The need to run libtoolize
+* Objects created both with libtool and without::  Avoid a specific build race
 
 Fortran 77 Support
 
@@ -290,7 +299,7 @@ Building documentation
 * Texinfo::                     Texinfo
 * Man Pages::                   Man pages
 
-Installation
+What Gets Installed
 
 * Basics of Installation::      What gets installed where
 * The Two Parts of Install::    Installing data and programs separately
@@ -298,7 +307,7 @@ Installation
 * Staged Installs::             Installation in a temporary location
 * Install Rules for the User::  Useful additional rules
 
-Distribution
+What Goes in a Distribution
 
 * Basics of Distribution::      Files distributed by default
 * Fine-grained Distribution Control::  @code{dist_} and @code{nodist_} prefixes
@@ -306,7 +315,7 @@ Distribution
 * Checking the Distribution::   @samp{make distcheck} explained
 * The Types of Distributions::  A variety of formats and compression methods
 
-Support for Test Suites
+Support for test suites
 
 * Simple Tests::                Listing programs and scripts in @code{TESTS}
 * Simple Tests using parallel-tests::  More powerful test driver
@@ -323,6 +332,12 @@ Conditionals
 
 * Usage of Conditionals::       Declaring conditional content
 * Limits of Conditionals::      Enclosing complete statements
+
+Silencing Make
+
+* Make verbosity::               Make is verbose by default
+* Tricks For Silencing Make::    Standard and generic ways to silence make
+* Automake silent-rules Option:: How Automake can help in silencing make
 
 When Automake Isn't Enough
 
@@ -342,6 +357,7 @@ Frequently Asked Questions about Automake
 * Multiple Outputs::            Writing rules for tools with many output files
 * Hard-Coded Install Paths::    Installing to hard-coded locations
 * Debugging Make Rules::        Strategies when things don't work as expected
+* Reporting Bugs::              Feedback on bugs and feature requests
 
 History of Automake
 
@@ -349,12 +365,12 @@ History of Automake
 * Dependency Tracking Evolution::  Evolution of Automatic Dependency Tracking
 * Releases::                    Statistics about Automake Releases
 
-Dependency Tracking Evolution
+Dependency Tracking in Automake
 
 * First Take on Dependencies::  Precomputed dependency tracking
 * Dependencies As Side Effects::  Update at developer compile time
 * Dependencies for the User::   Update at user compile time
-* Techniques for Dependencies:: Alternative approaches
+* Techniques for Dependencies::  Alternative approaches
 * Recommendations for Tool Writers::  What tool writers can do to help
 * Future Directions for Dependencies::  Languages Automake does not know
 
@@ -423,8 +439,7 @@ to be built.
 @cindex Reporting bugs
 @cindex E-mail, bug reports
 
-Mail suggestions and bug reports for Automake to
-@email{@value{PACKAGE_BUGREPORT}}.
+For more information on bug reports, @xref{Reporting Bugs}.
 
 @node Autotools Introduction
 @chapter An Introduction to the Autotools
@@ -889,6 +904,7 @@ GNU Make Manual}).
 VPATH builds have other interesting uses.  One is to build the same
 sources with multiple configurations.  For instance:
 
+@c Keep in sync with amhello-cflags.test.
 @example
 ~ % @kbd{tar zxf ~/amhello-1.0.tar.gz}
 ~ % @kbd{cd amhello-1.0}
@@ -1040,6 +1056,7 @@ instance my cross-compiler for MinGW32 has its binaries called
 Here is how we could build @code{amhello-1.0} for
 @code{i586-mingw32msvc} on a GNU/Linux PC.
 
+@c Keep in sync with amhello-cross-compile.test.
 @smallexample
 ~/amhello-1.0 % @kbd{./configure --build i686-pc-linux-gnu --host i586-mingw32msvc}
 checking for a BSD-compatible install... /usr/bin/install -c
@@ -1154,6 +1171,7 @@ by some means.
 For instance here is how we could create a binary package containing a
 snapshot of all the files to be installed.
 
+@c Keep in sync with amhello-binpkg.test.
 @example
 ~/amhello-1.0 % @kbd{./configure --prefix /usr}
 @dots{}
@@ -1245,6 +1263,10 @@ list of dependencies (in C these are the header files included by the
 source being compiled).  Later, any time @command{make} is run and a
 dependency appears to have changed, the dependent files will be
 rebuilt.
+
+Automake generates code for automatic dependency tracking by default,
+unless the developer chooses to override it; for more information,
+@pxref{Dependencies}.
 
 When @command{configure} is executed, you can see it probing each
 compiler for the dependency mechanism it supports (several mechanisms
@@ -1382,9 +1404,11 @@ instantiate the GNU Build System, while the second explains the
 meaning of the @file{configure.ac} and @file{Makefile.am} files read
 by the Autotools.
 
+@anchor{amhello Explained}
 @menu
 * Creating amhello::            Create @file{amhello-1.0.tar.gz} from scratch
-* amhello Explained::           @file{configure.ac} and @file{Makefile.am} explained
+* amhello's configure.ac Setup Explained::
+* amhello's Makefile.am Setup Explained::
 @end menu
 
 @node Creating amhello
@@ -1545,8 +1569,10 @@ creating @file{configure} from @file{configure.ac}, while
 direct you to the right manual when seeking answers.
 
 
-@node amhello Explained
-@subsection @file{amhello-1.0} Explained
+@node amhello's configure.ac Setup Explained
+@subsection @code{amhello}'s @file{configure.ac} Setup Explained
+
+@cindex @file{configure.ac}, Hello World
 
 Let us begin with the contents of @file{configure.ac}.
 
@@ -1654,6 +1680,10 @@ your package may need (@pxref{autoscan Invocation, , Using
 @command{autoscan} to Create @file{configure.ac}, autoconf, The
 Autoconf Manual}).
 
+
+@node amhello's Makefile.am Setup Explained
+@subsection @code{amhello}'s @file{Makefile.am} Setup Explained
+
 @cindex @file{Makefile.am}, Hello World
 
 We now turn to @file{src/Makefile.am}.  This file contains
@@ -1726,6 +1756,11 @@ automatically distributed is presented by @code{automake --help}).
 The only important effect of this second line is therefore to install
 @file{README} during @code{make install}.
 
+One thing not covered in this example is accessing the installation
+directory values (@pxref{Standard Directory Variables}) from your
+program code, that is, converting them into defined macros.  For this,
+@pxref{Defining Directories,,, autoconf, The Autoconf Manual}.
+
 
 @node Generalities
 @chapter General ideas
@@ -1737,8 +1772,8 @@ understand how Automake works.
 * General Operation::           General operation of Automake
 * Strictness::                  Standards conformance checking
 * Uniform::                     The Uniform Naming Scheme
-* Canonicalization::            How derived variables are named
 * Length Limitations::          Staying below the command line length limit
+* Canonicalization::            How derived variables are named
 * User Variables::              Variables reserved for the user
 * Auxiliary Programs::          Programs automake might require
 @end menu
@@ -1754,12 +1789,12 @@ for instance, a @code{bin_PROGRAMS} variable definition will cause rules
 for compiling and linking programs to be generated.
 
 @cindex Non-standard targets
-@cindex @code{cvs-dist}, non-standard example
-@trindex cvs-dist
+@cindex @code{git-dist}, non-standard example
 @trindex git-dist
 
 The variable definitions and rules in the @file{Makefile.am} are
-copied verbatim into the generated file.  This allows you to add
+copied mostly verbatim into the generated file, with all variable
+definitions preceding all rules.  This allows you to add almost
 arbitrary code into the generated @file{Makefile.in}.  For instance,
 the Automake distribution includes a non-standard rule for the
 @code{git-dist} target, which the Automake maintainer uses to make
@@ -1778,13 +1813,29 @@ supported.  This operator appends its right hand argument to the variable
 specified on the left.  Automake will translate the operator into
 an ordinary @samp{=} operator; @samp{+=} will thus work with any make program.
 
-@cindex indentation
-Further note that variable assignments should not be indented with
-@key{TAB} characters, use spaces if necessary.  On the other hand,
-rule commands should be indented with a leading @key{TAB} character.
-
 Automake tries to keep comments grouped with any adjoining rules or
 variable definitions.
+
+@cindex Limitations of automake parser
+@cindex Automake parser, limitations of
+@cindex indentation in Makefile.am
+Generally, Automake is not particularly smart in the parsing of unusual
+Makefile constructs, so you're advised to avoid fancy constructs or
+``creative'' use of whitespaces.
+@c Keep this in sync with doc-parsing-buglets-tabs.test.
+For example, @key{TAB} characters cannot be used between a target name
+and the following ``@code{:}'' character, and variable assignments
+shouldn't be indented with @key{TAB} characters.
+@c Keep this in sync with doc-parsing-buglets-colneq-subst.test.
+Also, using more complex macro in target names can cause trouble:
+
+@example
+% @kbd{cat Makefile.am}
+$(FOO:=x): bar
+% @kbd{automake}
+Makefile.am:1: bad characters in variable name `$(FOO'
+Makefile.am:1: `:='-style assignments are not portable
+@end example
 
 @cindex Make targets, overriding
 @cindex Make rules, overriding
@@ -1816,6 +1867,7 @@ When examining a variable definition, Automake will recursively examine
 variables referenced in the definition.  For example, if Automake is
 looking at the content of @code{foo_SOURCES} in this snippet
 
+@c Keep in sync with interp.test.
 @example
 xs = a.c b.c
 foo_SOURCES = c.c $(xs)
@@ -1976,7 +2028,8 @@ variable names; thus one writes @samp{bin_PROGRAMS} and not
 @samp{bindir_PROGRAMS}.
 
 Not every sort of object can be installed in every directory.  Automake
-will flag those attempts it finds in error.
+will flag those attempts it finds in error (but see below how to override
+the check if you really need to).
 Automake will also diagnose obvious misspellings in directory names.
 
 @cindex Extending list of installation directories
@@ -1993,10 +2046,40 @@ defined (e.g., @samp{zardir}).
 For instance, the following snippet will install @file{file.xml} into
 @samp{$(datadir)/xml}.
 
+@c Keep in sync with primary-prefix-couples-documented-valid.test.
 @example
 xmldir = $(datadir)/xml
 xml_DATA = file.xml
 @end example
+
+This feature can also be used to override the sanity checks Automake
+performs to diagnose suspicious directory/primary couples (in the
+unlikely case these checks are undesirable, and you really know what
+you're doing).  For example, Automake would error out on this input:
+
+@c Should be tested in primary-prefix-invalid-couples.test.
+@example
+# Forbidden directory combinations, automake will error out on this.
+pkglib_PROGRAMS = foo
+doc_LIBRARIES = libquux.a
+@end example
+
+@noindent
+but it will succeed with this:
+
+@c Keep in sync with primary-prefix-couples-documented-valid.test.
+@example
+# Work around forbidden directory combinations.  Do not use this
+# without a very good reason!
+my_execbindir = $(pkglibdir)
+my_doclibdir = $(docdir)
+my_execbin_PROGRAMS = foo
+my_doclib_LIBRARIES = libquux.a
+@end example
+
+The @samp{exec} substring of the @samp{my_execbindir} variable lets
+the files be installed at the right time (@pxref{The Two Parts of
+Install}).
 
 @cindex @samp{noinst_} primary prefix, definition
 @vindex noinst_
@@ -2014,10 +2097,12 @@ should not be built until the @samp{make check} command is run.  Those
 objects are not installed either.
 
 The current primary names are @samp{PROGRAMS}, @samp{LIBRARIES},
-@samp{LISP}, @samp{PYTHON}, @samp{JAVA}, @samp{SCRIPTS}, @samp{DATA},
-@samp{HEADERS}, @samp{MANS}, and @samp{TEXINFOS}.
+@samp{LTLIBRARIES}, @samp{LISP}, @samp{PYTHON}, @samp{JAVA},
+@samp{SCRIPTS}, @samp{DATA}, @samp{HEADERS}, @samp{MANS}, and
+@samp{TEXINFOS}.
 @vindex PROGRAMS
 @vindex LIBRARIES
+@vindex LTLIBRARIES
 @vindex LISP
 @vindex PYTHON
 @vindex JAVA
@@ -2063,6 +2148,7 @@ data_DATA = file1 @dots{} file@var{N} file@var{N+1} @dots{} file@var{2N}
 @noindent
 may also be written as
 
+@c Keep in sync with primary-prefix-couples-documented-valid.test.
 @example
 data_DATA = file1 @dots{} file@var{N}
 data2dir = $(datadir)
@@ -2169,8 +2255,9 @@ it more POSIX-like.
 
 @item ansi2knr.c
 @itemx ansi2knr.1
-These two files are used for de-ANSI-fication support (obsolete
-@pxref{ANSI}).
+These two files are used for de-ANSI-fication support (they are
+deprecated now, and @emph{will be removed} in the next major Automake
+release; @pxref{ANSI}).
 
 @item compile
 This is a wrapper for compilers that do not accept options @option{-c}
@@ -2394,24 +2481,13 @@ false.o: true.c
         $(COMPILE) -DEXIT_CODE=1 -c true.c && mv true.o false.o
 @end example
 
-Also, these explicit rules do not work if the obsolete de-ANSI-fication feature
-is used (@pxref{ANSI}).  Supporting de-ANSI-fication requires a little
-more work:
-
-@example
-true_.o: true_.c false_.o
-        $(COMPILE) -DEXIT_CODE=0 -c true_.c
-
-false_.o: true_.c
-        $(COMPILE) -DEXIT_CODE=1 -c true_.c && mv true_.o false_.o
-@end example
-
 As it turns out, there is also a much easier way to do this same task.
-Some of the above techniques are useful enough that we've kept the
+Some of the above technique is useful enough that we've kept the
 example in the manual.  However if you were to build @code{true} and
 @code{false} in real life, you would probably use per-program
 compilation flags, like so:
 
+@c Keep in sync with specflg7.test and specflg8.test.
 @example
 bin_PROGRAMS = false true
 
@@ -2423,10 +2499,9 @@ true_CPPFLAGS = -DEXIT_CODE=0
 @end example
 
 In this case Automake will cause @file{true.c} to be compiled twice,
-with different flags.  De-ANSI-fication will work automatically.  In
-this instance, the names of the object files would be chosen by
-automake; they would be @file{false-true.o} and @file{true-true.o}.
-(The name of the object files rarely matters.)
+with different flags.  In this instance, the names of the object files
+would be chosen by automake; they would be @file{false-true.o} and
+@file{true-true.o}. (The name of the object files rarely matters.)
 
 
 @node Invoking Automake
@@ -2645,10 +2720,12 @@ concurrently.  This is an experimental feature.
 
 
 @node configure
-@chapter Scanning @file{configure.ac}
+@chapter Scanning @file{configure.ac}, using @command{aclocal}
 
 @cindex @file{configure.ac}, scanning
 @cindex Scanning @file{configure.ac}
+@cindex Using @command{aclocal}
+@cindex @command{aclocal}, using
 
 Automake scans the package's @file{configure.ac} to determine certain
 information about the package.  Some @command{autoconf} macros are required
@@ -2734,6 +2811,7 @@ literals.  If part of the specification uses shell variables,
 @command{automake} will not be able to fulfill this setup, and you will
 have to complete the missing bits by hand.  For instance, on
 
+@c Keep in sync with output11.test.
 @example
 file=input
 @dots{}
@@ -2749,6 +2827,7 @@ source file.)
 
 Similarly
 
+@c Keep in sync with output11.test.
 @example
 file=output
 file2=out:in
@@ -2873,7 +2952,7 @@ Automake will generate rules to rebuild these headers.  Older versions
 of Automake required the use of @code{AM_CONFIG_HEADER}
 (@pxref{Macros}); this is no longer the case.
 
-As for @code{AC_CONFIG_FILES} (@pxref{Requirements}), parts of the
+As with @code{AC_CONFIG_FILES} (@pxref{Requirements}), parts of the
 specification using shell variables will be ignored as far as
 cleaning, distributing, and rebuilding is concerned.
 
@@ -2978,8 +3057,9 @@ this way, e.g., @code{AC_PATH_XTRA} defines @code{X_CFLAGS} and
 if @code{AC_PATH_XTRA} is called.
 
 @item AM_C_PROTOTYPES
-This is required when using the obsolete de-ANSI-fication feature; see
-@ref{ANSI}.
+This is required when using the deprecated de-ANSI-fication feature;
+@pxref{ANSI}.  @emph{It will be removed} in the next major Automake
+release.
 
 @item AM_CONDITIONAL
 This introduces an Automake conditional (@pxref{Conditionals}).
@@ -3375,6 +3455,7 @@ installs this macro so that @command{aclocal} will find it.
 A macro file's name should end in @file{.m4}.  Such files should be
 installed in @file{$(datadir)/aclocal}.  This is as simple as writing:
 
+@c Keep in sync with primary-prefix-couples-documented-valid.test.
 @example
 aclocaldir = $(datadir)/aclocal
 aclocal_DATA = mymacro.m4 myothermacro.m4
@@ -3410,6 +3491,7 @@ not actually needed.  Doing so should alleviate many problems of the
 current implementation, however it requires a stricter style from the
 macro authors.  Hopefully it is easy to revise the existing macros.
 For instance,
+
 @example
 # bad style
 AC_PREREQ(2.57)
@@ -3419,8 +3501,10 @@ AX_FOO
 AX_BAR
 ])
 @end example
+
 @noindent
 should be rewritten as
+
 @example
 AC_DEFUN([AX_FOOBAR],
 [AC_PREREQ([2.57])dnl
@@ -3952,8 +4036,10 @@ Autoconf Manual}).
 Check to see if function prototypes are understood by the compiler.  If
 so, define @samp{PROTOTYPES} and set the output variables @code{U} and
 @code{ANSI2KNR} to the empty string.  Otherwise, set @code{U} to
-@samp{_} and @code{ANSI2KNR} to @samp{./ansi2knr}.  Automake uses these
-values to implement the obsolete de-ANSI-fication feature.
+@samp{_} and @code{ANSI2KNR} to @samp{./ansi2knr}.  Automake used these
+values to implement the deprecated de-ANSI-fication feature; however,
+support for @emph{that feature will be removed} in the next major Automake
+release, and then @emph{these macros and variables will go away as well}.
 
 @item AM_CONFIG_HEADER
 @acindex AM_CONFIG_HEADER
@@ -4208,9 +4294,7 @@ does not know the possible values of these variables.  In this case
 @cindex @code{SUBDIRS} and @code{AM_CONDITIONAL}
 @cindex @code{AM_CONDITIONAL} and @code{SUBDIRS}
 
-@c The test case for the setup described here is
-@c     test/subdircond2.test
-@c Try to keep it in sync.
+@c Keep in sync with subcond2.test.
 
 @file{configure} should output the @file{Makefile} for each directory
 and define a condition into which @file{opt/} should be built.
@@ -4250,9 +4334,7 @@ automatically because it knows that @code{MAYBE_OPT} can contain
 @cindex @code{SUBDIRS} and @code{AC_SUBST}
 @cindex @code{AC_SUBST} and @code{SUBDIRS}
 
-@c The test case for the setup described here is
-@c     test/subdircond3.test
-@c Try to keep it in sync.
+@c Keep in sync with subcond3.test.
 
 Another possibility is to define @code{MAYBE_OPT} from
 @file{./configure} using @code{AC_SUBST}:
@@ -4410,6 +4492,7 @@ often be replaced by several variables, one for each destination
 directory (@pxref{Uniform}).  For instance, the last example could be
 rewritten as follows:
 
+@c Keep in sync with primary-prefix-couples-documented-valid.test.
 @example
 imagesdir = $(pkgdatadir)/images
 soundsdir = $(pkgdatadir)/sounds
@@ -4553,7 +4636,7 @@ to build programs and libraries.
 * Java Support::                Compiling Java sources
 * Vala Support::                Compiling Vala sources
 * Support for Other Languages::  Compiling other languages
-* ANSI::                        Automatic de-ANSI-fication (obsolete)
+* ANSI::                        Automatic de-ANSI-fication (deprecated, soon to be removed)
 * Dependencies::                Automatic dependency tracking
 * EXEEXT::                      Support for executable extensions
 @end menu
@@ -4584,14 +4667,14 @@ programs.  Most of the comments about these also apply to libraries
 @vindex bin_PROGRAMS
 @vindex sbin_PROGRAMS
 @vindex libexec_PROGRAMS
-@vindex pkglib_PROGRAMS
+@vindex pkglibexec_PROGRAMS
 @vindex noinst_PROGRAMS
 @vindex check_PROGRAMS
 
 In a directory containing source that gets built into a program (as
 opposed to a library or a script), the @code{PROGRAMS} primary is used.
 Programs can be installed in @code{bindir}, @code{sbindir},
-@code{libexecdir}, @code{pkglibdir}, @code{pkglibexecdir}, or not at all
+@code{libexecdir}, @code{pkglibexecdir}, or not at all
 (@code{noinst_}).  They can also be built only for @samp{make check}, in
 which case the prefix is @samp{check_}.
 
@@ -4860,6 +4943,7 @@ You can also use Automake conditionals (@pxref{Conditionals}) to
 select programs to be built.  In this case you don't have to worry
 about @samp{$(EXEEXT)} or @code{EXTRA_PROGRAMS}.
 
+@c Keep in sync with exeext.test.
 @example
 bin_PROGRAMS = cpio pax
 if WANT_MT
@@ -4910,6 +4994,7 @@ Extra objects can be added to a library using the
 @code{@var{library}_LIBADD} variable.  This should be used for objects
 determined by @command{configure}.  Again from @code{cpio}:
 
+@c Keep in sync with pr401c.test.
 @example
 libcpio_a_LIBADD = $(LIBOBJS) $(ALLOCA)
 @end example
@@ -5113,6 +5198,7 @@ relates to @file{libfoo.la} or @file{libbar.la} at the time it creates
 the link rule for these two libraries.  Therefore the @option{-rpath}
 argument must be explicitly supplied.
 
+@c Keep in sync with ltcond.test.
 @example
 EXTRA_LTLIBRARIES = libfoo.la libbar.la
 lib_LTLIBRARIES = $(WANTEDLIBS)
@@ -5128,6 +5214,7 @@ Automake is able to compute the @option{-rpath} setting itself, because
 it's clear that both libraries will end up in @samp{$(libdir)} if they
 are installed.
 
+@c Keep in sync with ltcond.test.
 @example
 lib_LTLIBRARIES =
 if WANT_LIBFOO
@@ -5154,6 +5241,7 @@ we could build a @file{libhello.la} library using either
 @file{hello-linux.c} or @file{hello-generic.c} with the following
 @file{Makefile.am}.
 
+@c Keep in sync with ltcond2.test.
 @example
 lib_LTLIBRARIES = libhello.la
 libhello_la_SOURCES = hello-common.c
@@ -5168,6 +5256,7 @@ either @file{hello-linux.lo} or @file{hello-@-generic.lo}.
 
 Or we could simply use an Automake conditional as follows.
 
+@c Keep in sync with ltcond2.test.
 @example
 lib_LTLIBRARIES = libhello.la
 libhello_la_SOURCES = hello-common.c
@@ -5207,6 +5296,7 @@ dependency anywhere it won't be built (this is why
 Here is a sample setup merging libtool convenience libraries from
 subdirectories into one main @file{libtop.la} library.
 
+@c Keep in sync with ltconv.test.
 @example
 # -- Top-level Makefile.am --
 SUBDIRS = sub1 sub2 @dots{}
@@ -5373,8 +5463,8 @@ performed automatically by Autoconf (@pxref{AC_LIBOBJ vs LIBOBJS, ,
 @subsection Common Issues Related to Libtool's Use
 
 @menu
-* Error required file ltmain.sh not found::      The need to run libtoolize
-* Objects created both with libtool and without:: Avoid a specific build race
+* Error required file ltmain.sh not found::  The need to run libtoolize
+* Objects created both with libtool and without::  Avoid a specific build race
 @end menu
 
 @node Error required file ltmain.sh not found
@@ -5780,8 +5870,8 @@ needs to be avoided: when a target should not be built from sources.
 We already saw such an example in @ref{true}; this happens when all
 the constituents of a target have already been compiled and just need
 to be combined using a @code{_LDADD} variable.  Then it is necessary
-to define an empty @code{_SOURCES} variable, so that @command{automake} does not
-compute a default.
+to define an empty @code{_SOURCES} variable, so that @command{automake}
+does not compute a default.
 
 @example
 bin_PROGRAMS = target
@@ -5970,6 +6060,18 @@ the C preprocessor.  In particular it generates @samp{-I.},
 @code{AM_CONFIG_HEADER}).  You can disable the default @option{-I}
 options using the @option{nostdinc} option.
 
+When a file to be included is generated during the build and not part
+of a distribution tarball, its location is under @code{$(builddir)},
+not under @code{$(srcdir)}.  This matters especially for packages that
+use header files placed in sub-directories and want to allow builds
+outside the source tree (@pxref{VPATH Builds}). In that case we
+recommend to use a pair of @option{-I} options, such as, e.g.,
+@samp{-Isome/subdir -I$(srcdir)/some/subdir} or
+@samp{-I$(top_builddir)/some/subdir -I$(top_srcdir)/some/subdir}.
+Note that the reference to the build tree should come before the
+reference to the source tree, so that accidentally leftover generated
+files in the source directory are ignored.
+
 @code{AM_CPPFLAGS} is ignored in preference to a per-executable (or
 per-library) @code{_CPPFLAGS} variable if it is defined.
 
@@ -6046,7 +6148,12 @@ intended for the @file{Makefile.am} author.
 @code{AM_YFLAGS} is usually used to pass the @option{-d} option to
 @command{yacc}.  Automake knows what this means and will automatically
 adjust its rules to update and distribute the header file built by
-@samp{yacc -d}.  What Automake cannot guess, though, is where this
+@samp{yacc -d}@footnote{Please note that @command{automake} recognizes
+@option{-d} in @code{AM_YFLAGS} only if it is not clustered with other
+options; for example, it won't be recognized if @code{AM_YFLAGS} is
+@option{-dt}, but it will be if @code{AM_YFLAGS} is @option{-d -t} or
+@option{-d -t}}.
+What Automake cannot guess, though, is where this
 header will be used: it is up to you to ensure the header gets built
 before it is first used.  Typically this is necessary in order for
 dependency tracking to work when the header is included by another
@@ -6594,8 +6701,10 @@ is as follows:
 @cindex Java support
 @cindex Support for Java
 
-Automake includes support for compiled Java, using @command{gcj}, the Java
-front end to the GNU Compiler Collection.
+Automake includes support for natively compiled Java, using @command{gcj},
+the Java front end to the GNU Compiler Collection (preliminary support
+for compiling Java to bytecode using the @command{javac} compiler is
+also present; @pxref{Java}).
 
 Any package including Java code to be compiled must define the output
 variable @code{GCJ} in @file{configure.ac}; the variable @code{GCJFLAGS}
@@ -6697,13 +6806,14 @@ suffix rule handling (@pxref{Suffixes}).
 
 
 @node ANSI
-@section Automatic de-ANSI-fication
+@section Automatic de-ANSI-fication (deprecated, soon to be removed)
 
 @cindex de-ANSI-fication, defined
 
-The features described in this section are obsolete; you should not
-used any of them in new code, and they may be withdrawn in future
-Automake releases.
+@emph{The features described in this section are deprecated; you must
+not use any of them in new code, and remove their use from older but
+still maintained code: they will be withdrawn in the next major
+Automake release.}
 
 When the C language was standardized in 1989, there was a long
 transition period where package developers needed to worry about
@@ -6757,8 +6867,9 @@ If no directory prefix is given, the files are assumed to be in the
 current directory.
 
 Note that automatic de-ANSI-fication will not work when the package is
-being built for a different host architecture.  That is because @command{automake}
-currently has no way to build @command{ansi2knr} for the build machine.
+being built for a different host architecture.  That is because
+@command{automake} currently has no way to build @command{ansi2knr}
+for the build machine.
 
 @c FIXME: this paragraph might be better moved to an `upgrading' section.
 @cindex @code{LTLIBOBJS} and @code{ansi2knr}
@@ -6776,7 +6887,7 @@ vs.@: @code{LIBOBJS}, autoconf, The Autoconf Manual})
 @section Automatic dependency tracking
 
 As a developer it is often painful to continually update the
-@file{Makefile.in} whenever the include-file dependencies change in a
+@file{Makefile.am} whenever the include-file dependencies change in a
 project.  Automake supplies a way to automatically track dependency
 changes (@pxref{Dependency Tracking}).
 
@@ -6852,10 +6963,10 @@ bin_PROGRAMS = liver$(EXEEXT)
 The targets Automake generates are likewise given the @samp{$(EXEEXT)}
 extension.
 
-The variables @code{TESTS} and @code{XFAIL_TESTS} (@pxref{Simple Tests}) are also
-rewritten if they contain filenames that have been declared as programs
-in the same @file{Makefile}.  (This is mostly useful when some programs
-from @code{check_PROGRAMS} are listed in @code{TESTS}.)
+The variables @code{TESTS} and @code{XFAIL_TESTS} (@pxref{Simple Tests})
+are also rewritten if they contain filenames that have been declared as
+programs in the same @file{Makefile}.  (This is mostly useful when some
+programs from @code{check_PROGRAMS} are listed in @code{TESTS}.)
 
 However, Automake cannot apply this rewriting to @command{configure}
 substitutions.  This means that if you are conditionally building a
@@ -7404,18 +7515,21 @@ installation less nice for everybody else.
 
 There are two ways to avoid byte-compiling.  Historically, we have
 recommended the following construct.
+
 @example
 lisp_LISP = file1.el file2.el
 ELCFILES =
 @end example
+
 @noindent
 @code{ELCFILES} is an internal Automake variable that normally lists
 all @file{.elc} files that must be byte-compiled.  Automake defines
 @code{ELCFILES} automatically from @code{lisp_LISP}.  Emptying this
 variable explicitly prevents byte-compilation.
 
-Since Automake 1.8, we now recommend using @code{lisp_DATA} instead.  As
-in
+Since Automake 1.8, we now recommend using @code{lisp_DATA} instead:
+
+@c Keep in sync with primary-prefix-couples-documented-valid.test.
 @example
 lisp_DATA = file1.el file2.el
 @end example
@@ -7458,8 +7572,9 @@ libtool, The Libtool Manual}) with the @code{LTLIBRARIES} primary.
 @cindex @code{JAVA} primary, defined
 @cindex Primary variable, @code{JAVA}
 
-Automake provides some minimal support for Java compilation with the
-@code{JAVA} primary.
+Automake provides some minimal support for Java bytecode compilation with
+the @code{JAVA} primary (in addition to the support for compiling Java to
+native machine code; @pxref{Java Support}).
 
 Any @file{.java} files listed in a @code{_JAVA} variable will be
 compiled with @code{JAVAC} at build time.  By default, @file{.java}
@@ -7469,6 +7584,7 @@ files are not included in the distribution, you should use the
 Here is a typical setup for distributing @file{.java} files and
 installing the @file{.class} files resulting from their compilation.
 
+@c Keep in sync with primary-prefix-couples-documented-valid.test.
 @example
 javadir = $(datadir)/java
 dist_java_JAVA = a.java b.java @dots{}
@@ -7542,12 +7658,14 @@ Automake ships with an Autoconf macro called @code{AM_PATH_PYTHON}
 that will determine some Python-related directory variables (see
 below).  If you have called @code{AM_PATH_PYTHON} from
 @file{configure.ac}, then you may use the variables
+@c Keep in sync with primary-prefix-couples-documented-valid.test.
 @code{python_PYTHON} or @code{pkgpython_PYTHON} to list Python source
 files in your @file{Makefile.am}, depending on where you want your files
 installed (see the definitions of @code{pythondir} and
 @code{pkgpythondir} below).
 
-@defmac AM_PATH_PYTHON (@ovar{version}, @ovar{action-if-found}, @ovar{action-if-not-found})
+@defmac AM_PATH_PYTHON (@ovar{version}, @ovar{action-if-found},
+  @ovar{action-if-not-found})
 
 Search for a Python interpreter on the system.  This macro takes three
 optional arguments.  The first argument, if present, is the minimum
@@ -7573,6 +7691,9 @@ If Python >= 2.5 was only @emph{optional} to the package,
 AM_PATH_PYTHON([2.5],, [:])
 @end example
 
+If the @env{PYTHON} variable is set when @code{AM_PATH_PYTHON} is
+called, then that will be the only Python interpreter that is tried.
+
 @code{AM_PATH_PYTHON} creates the following output variables based on
 the Python installation found during configuration.
 @end defmac
@@ -7588,8 +7709,8 @@ to setup a conditional in order to disable the relevant part of a build
 as follows.
 
 @example
-  AM_PATH_PYTHON(,, [:])
-  AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
+AM_PATH_PYTHON(,, [:])
+AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
 @end example
 
 @item PYTHON_VERSION
@@ -7626,9 +7747,10 @@ This is the directory where Python extension modules (shared libraries)
 should be installed.  An extension module written in C could be declared
 as follows to Automake:
 
+@c Keep in sync with primary-prefix-couples-documented-valid.test.
 @example
 pyexec_LTLIBRARIES = quaternion.la
-quaternion_SOURCES = quaternion.c support.c support.h
+quaternion_la_SOURCES = quaternion.c support.c support.h
 quaternion_la_LDFLAGS = -avoid-version -module
 @end example
 
@@ -7822,6 +7944,7 @@ passed to @code{makeinfo} when building @file{.info} files; and
 @samp{$(AM_MAKEINFOHTMLFLAGS)} is used when building @file{.html}
 files.
 
+@c Keep in sync with txinfo21.test.
 For instance, the following setting can be used to obtain one single
 @file{.html} file per manual, without node separators.
 @example
@@ -8047,10 +8170,11 @@ Variables using the standard directory prefixes @samp{bin},
 For instance, @code{data_DATA} files are installed by @code{install-data},
 while @code{bin_PROGRAMS} files are installed by @code{install-exec}.
 
-Any variable using a user-defined directory prefix with @samp{exec} in
-the name (e.g., @code{myexecbin_PROGRAMS}) is installed by
-@code{install-exec}.  All other user-defined prefixes are installed by
-@code{install-data}.
+Any variable using a user-defined directory prefix with
+@samp{exec} in the name (e.g.,
+@c Keep in sync with primary-prefix-couples-documented-valid.test.
+@code{myexecbin_PROGRAMS}) is installed by @code{install-exec}.  All
+other user-defined prefixes are installed by @code{install-data}.
 
 @node Extending Installation
 @section Extending Installation
@@ -8229,14 +8353,19 @@ is run.  The default setting is @option{--best}.
 @cmindex include
 For the most part, the files to distribute are automatically found by
 Automake: all source files are automatically included in a distribution,
-as are all @file{Makefile.am}s and @file{Makefile.in}s.  Automake also
+as are all @file{Makefile.am} and @file{Makefile.in} files.  Automake also
 has a built-in list of commonly used files that are automatically
 included if they are found in the current directory (either physically,
-or as the target of a @file{Makefile.am} rule).  This list is printed by
-@samp{automake --help}.  Also, files that are read by @command{configure}
+or as the target of a @file{Makefile.am} rule); this list is printed by
+@samp{automake --help}.  Note that some files in this list are actually
+distributed only if other certain conditions hold (for example,
+@c Keep in sync with autodist-config-headers.test.
+the @file{config.h.top} and @file{config.h.bot} files are automatically
+distributed only if, e.g., @samp{AC_CONFIG_HEADERS([config.h])} is used
+in @file{configure.ac}).  Also, files that are read by @command{configure}
 (i.e.@: the source files corresponding to the files specified in various
 Autoconf macros such as @code{AC_CONFIG_FILES} and siblings) are
-automatically distributed.  Files included in @file{Makefile.am}s (using
+automatically distributed.  Files included in a @file{Makefile.am} (using
 @code{include}) or in @file{configure.ac} (using @code{m4_include}), and
 helper scripts installed with @samp{automake --add-missing} are also
 distributed.
@@ -8250,8 +8379,8 @@ subdirectories in @code{EXTRA_DIST}.
 You can also mention a directory in @code{EXTRA_DIST}; in this case the
 entire directory will be recursively copied into the distribution.
 Please note that this will also copy @emph{everything} in the directory,
-including CVS/RCS version control files.  We recommend against using
-this feature.
+including, e.g., Subversion's @file{.svn} private directories or CVS/RCS
+version control files.  We recommend against using this feature.
 
 @vindex SUBDIRS
 @vindex DIST_SUBDIRS
@@ -8312,7 +8441,7 @@ recursively included by specifying a directory in EXTRA_DIST:
 EXTRA_DIST = doc
 
 dist-hook:
-        rm -rf `find $(distdir)/doc -name CVS`
+        rm -rf `find $(distdir)/doc -type d -name .svn`
 @end example
 
 @vindex distdir
@@ -8355,11 +8484,29 @@ makes a distribution, then tries to do a @code{VPATH} build
 (@pxref{VPATH Builds}), run the test suite, and finally make another
 tarball to ensure the distribution is self-contained.
 
+@vindex AM_DISTCHECK_CONFIGURE_FLAGS
 @vindex DISTCHECK_CONFIGURE_FLAGS
 Building the package involves running @samp{./configure}.  If you need
 to supply additional flags to @command{configure}, define them in the
-@code{DISTCHECK_CONFIGURE_FLAGS} variable, either in your top-level
-@file{Makefile.am}, or on the command line when invoking @command{make}.
+@code{AM_DISTCHECK_CONFIGURE_FLAGS} variable in your top-level
+@file{Makefile.am}.  The user can still extend or override the flags
+provided there by defining the @code{DISTCHECK_CONFIGURE_FLAGS} variable,
+on the command line when invoking @command{make}.
+
+Still, developers are encouraged to strive to make their code buildable
+without requiring any special configure option; thus, in general, you
+shouldn't define @code{AM_DISTCHECK_CONFIGURE_FLAGS}. However, there
+might be few scenarios in which the use of this variable is justified.
+GNU @command{m4} offers an example.  GNU @command{m4} configures by
+default with its experimental and seldom used "changeword" feature
+disabled; so in its case it is useful to have @command{make distcheck}
+run configure with the @option{--with-changeword} option, to ensure that
+the code for changeword support still compiles correctly.
+GNU @command{m4} also employs the @code{AM_DISTCHECK_CONFIGURE_FLAGS}
+variable to stress-test the use of @option{--program-prefix=g}, since at
+one point the @command{m4} build system had a bug where @command{make
+installcheck} was wrongly assuming it could blindly test "@command{m4}",
+rather than the just-installed "@command{gm4}".
 
 @trindex distcheck-hook
 If the @code{distcheck-hook} rule is defined in your top-level
@@ -8369,9 +8516,10 @@ is configured and built.  Your @code{distcheck-hook} can do almost
 anything, though as always caution is advised.  Generally this hook is
 used to check for potential distribution errors not caught by the
 standard mechanism.  Note that @code{distcheck-hook} as well as
-@code{DISTCHECK_CONFIGURE_FLAGS} are not honored in a subpackage
-@file{Makefile.am}, but the @code{DISTCHECK_CONFIGURE_FLAGS} are
-passed down to the @command{configure} script of the subpackage.
+@code{AM_DISTCHECK_CONFIGURE_FLAGS} and @code{DISTCHECK_CONFIGURE_FLAGS}
+are not honored in a subpackage @file{Makefile.am}, but the flags from
+@code{AM_DISTCHECK_CONFIGURE_FLAGS} and @code{DISTCHECK_CONFIGURE_FLAGS}
+are passed down to the @command{configure} script of the subpackage.
 
 @trindex distcleancheck
 @vindex DISTCLEANFILES
@@ -8401,6 +8549,7 @@ If you want @code{distcleancheck} to ignore built files that have not
 been cleaned because they are also part of the distribution, add the
 following definition instead:
 
+@c Keep in sync with distcleancheck.test.
 @example
 distcleancheck_listfiles = \
   find . -type f -exec sh -c 'test -f $(srcdir)/$$1 || echo $$1' \
@@ -8533,6 +8682,12 @@ colored output by setting the @command{make} variable
 @samp{AM_COLOR_TESTS=no}, or force colored output even without a connecting
 terminal with @samp{AM_COLOR_TESTS=always}.
 
+Note that the semantics of some @command{make} implementations when used
+in parallel mode (@pxref{Parallel make,,, autoconf, The Autoconf Manual})
+can cause the automatic detection of a connection to a capable terminal
+to fail.  In that case, you can still resort to the use of
+@samp{AM_COLOR_TESTS=always}.
+
 @vindex TESTS
 @vindex TESTS_ENVIRONMENT
 The variable @code{TESTS_ENVIRONMENT} can be used to set environment
@@ -8540,21 +8695,28 @@ variables for the test run; the environment variable @env{srcdir} is
 set in the rule.  If all your test programs are scripts, you can also
 set @code{TESTS_ENVIRONMENT} to an invocation of the shell (e.g.
 @samp{$(SHELL) -x} can be useful for debugging the tests), or any other
-interpreter.  For instance the following setup is used by the Automake
-package to run four tests in Perl.
+interpreter.  For instance, the following setup may be used to run tests
+with Perl:
+
+@c Keep in sync with tests-environment-backcompat.test.
 @example
-TESTS_ENVIRONMENT = $(PERL) -Mstrict -I $(top_srcdir)/lib -w
-TESTS = Condition.pl DisjConditions.pl Version.pl Wrap.pl
+TESTS_ENVIRONMENT = $(PERL) -Mstrict -w
+TESTS = foo.pl bar.pl baz.pl
 @end example
+
+Note that the @option{parallel-tests} driver provides a more elegant
+way to achieve the same effect, freeing the @code{TESTS_ENVIRONMENT}
+variable for the user to override (@pxref{Simple Tests using
+parallel-tests}).
 
 
 @cindex Tests, expected failure
 @cindex Expected test failure
 
+@vindex XFAIL_TESTS
 You may define the variable @code{XFAIL_TESTS} to a list of tests
 (usually a subset of @code{TESTS}) that are expected to fail.  This will
 reverse the result of those tests.
-@vindex XFAIL_TESTS
 
 Automake ensures that each file listed in @code{TESTS} is built before
 any tests are run; you can list both source and derived programs (or
@@ -8632,6 +8794,7 @@ this extension to be called with this driver.  For all tests without a
 registered extension, the variables @code{LOG_COMPILER},
 @code{AM_LOG_FLAGS}, and @code{LOG_FLAGS} may be used.  For example,
 
+@c Keep in sync with parallel-tests-log-compiler-example.test.
 @example
 TESTS = foo.pl bar.py baz
 TEST_EXTENSIONS = .pl .py
@@ -8698,6 +8861,21 @@ use a command like this to run only a subset of the tests:
 env TESTS="foo.test bar.test" make -e check
 @end example
 
+Note however that the command above will unconditionally overwrite the
+@file{test-suite.log} file, thus clobbering the recorded results
+of any previous testsuite run.  This might be undesirable for packages
+whose testsuite takes long time to execute.  Luckily, this problem can
+easily be avoided by overriding also @code{TEST_SUITE_LOG} at runtime;
+for example,
+
+@c Keep in sync with parallel-tests-log-override-2.test.
+@example
+env TEST_SUITE_LOG=partial.log TESTS="..." make -e check
+@end example
+
+will write the result of the partial testsuite runs to the
+@file{partial.log}, without touching @file{test-suite.log}.
+
 @item
 You can set the @code{TEST_LOGS} variable.  By default, this variable is
 computed at @command{make} run time from the value of @code{TESTS} as
@@ -8707,6 +8885,9 @@ described above.  For example, you can use the following:
 set x subset*.log; shift
 env TEST_LOGS="foo.log $*" make -e check
 @end example
+
+The comments made above about @code{TEST_SUITE_LOG} overriding applies
+here too.
 
 @item
 @vindex RECHECK_LOGS
@@ -8874,9 +9055,11 @@ output in all them), so it is safer and easier to @code{AC_SUBST} them
 from @file{configure.ac}.  For instance, the following statement will
 cause @file{configure} to be rerun each time @file{version.sh} is
 changed.
+
 @example
 AC_SUBST([CONFIG_STATUS_DEPENDENCIES], ['$(top_srcdir)/version.sh'])
 @end example
+
 @noindent
 Note the @samp{$(top_srcdir)/} in the file name.  Since this variable
 is to be used in all @file{Makefile}s, its value must be sensible at
@@ -8902,12 +9085,14 @@ Speaking of @file{version.sh} scripts, we recommend against them
 today.  They are mainly used when the version of a package is updated
 automatically by a script (e.g., in daily builds).  Here is what some
 old-style @file{configure.ac}s may look like:
+
 @example
 AC_INIT
 . $srcdir/version.sh
 AM_INIT_AUTOMAKE([name], $VERSION_NUMBER)
 @dots{}
 @end example
+
 @noindent
 Here, @file{version.sh} is a shell fragment that sets
 @code{VERSION_NUMBER}.  The problem with this example is that
@@ -8918,12 +9103,14 @@ to the user), and that it uses the obsolete form of @code{AC_INIT} and
 straightforward, because shell variables are not allowed in
 @code{AC_INIT}'s arguments.  We recommend that @file{version.sh} be
 replaced by an M4 file that is included by @file{configure.ac}:
+
 @example
 m4_include([version.m4])
 AC_INIT([name], VERSION_NUMBER)
 AM_INIT_AUTOMAKE
 @dots{}
 @end example
+
 @noindent
 Here @file{version.m4} could contain something like
 @samp{m4_define([VERSION_NUMBER], [1.2])}.  The advantage of this
@@ -8972,11 +9159,15 @@ implies options @option{readme-alpha} and @option{check-news}.
 @itemx @option{@var{path}/ansi2knr}
 @cindex Option, @option{ansi2knr}
 @opindex ansi2knr
-Turn on the obsolete de-ANSI-fication feature.  @xref{ANSI}.  If preceded by a
+Turn on the deprecated de-ANSI-fication feature (@pxref{ANSI}).  Note
+that that feature and this option @emph{will be removed} in the next
+major Automake release.
+
+If preceded by a
 path, the generated @file{Makefile.in} will look in the specified
 directory to find the @file{ansi2knr} program.  The path should be a
 relative path to another directory in the same distribution (Automake
-currently does not check this).
+does not check this).
 
 @item @option{check-news}
 @cindex Option, @option{check-news}
@@ -9129,90 +9320,18 @@ letter; it should be omitted for non-alpha releases.
 @cindex Option, @option{silent-rules}
 @opindex silent-rules
 Enable less verbose build rules.  This can be used to let build rules
-output a status line of the form
-
+output status lines of the form:
 @example
-  GEN @var{output-file}
+GEN @var{output-file}
+ CC @var{object-file}
 @end example
-
 @noindent
 instead of printing the command that will be executed to update
-@var{output-file}.  It can also silence @command{libtool} output.
+@var{output-file} or to compile @var{object-file}.  It can also
+silence @command{libtool} output.
 
-To enable less verbose build rules, both the developer and the user
-of the package have to take a number of steps.  The developer needs
-to do either of the following:
-
-@itemize @bullet
-@item
-Add the @option{silent-rules} option as argument to @code{AM_INIT_AUTOMAKE}.
-@item
-Call the @code{AM_SILENT_RULES} macro from within the @file{configure.ac}
-file.
-@end itemize
-
-It is not possible to instead specify @option{silent-rules} in a
-@file{Makefile.am} file.
-
-@cindex default verbosity for silent-rules
-If the developer has done either of the above, then the user of the
-package may influence the verbosity at @command{configure} run time as
-well as at @command{make} run time:
-
-@itemize @bullet
-@item
-@opindex --enable-silent-rules
-@opindex --disable-silent-rules
-Passing @option{--enable-silent-rules} to @command{configure} will cause
-build rules to be less verbose; the option @option{--disable-silent-rules}
-is the default and will cause normal verbose output.
-@item
-@vindex @code{V}
-At @command{make} run time, the default chosen at @command{configure}
-time may be overridden: @code{make V=1} will produce verbose output,
-@code{make V=0} less verbose output.
-@end itemize
-
-For portability to different @command{make} implementations, package authors
-are advised to not set the variable @code{V} inside the @file{Makefile.am}
-file, to allow the user to override the value for subdirectories as well.
-
-The current implementation of this feature relies on a non-POSIX, but in
-practice rather widely supported @file{Makefile} construct of nested
-variable expansion @samp{$(@var{var1}$(V))}.  Do not use the
-@option{silent-rules} option if your package needs to build with
-@command{make} implementations that do not support it.  The
-@option{silent-rules} option turns off warnings about recursive variable
-expansion, which are in turn enabled by @option{-Wportability}
-(@pxref{Invoking Automake}).
-
-@vindex @code{AM_V_GEN}
-@vindex @code{AM_V_at}
-@vindex @code{AM_DEFAULT_VERBOSITY}
-To extend the silent mode to your own rules, you have two choices:
-
-@itemize @bullet
-@item
-You can use the predefined variable @code{AM_V_GEN} as a prefix to
-commands that should output a status line in silent mode, and
-@code{AM_V_at} as a prefix to commands that should not output anything
-in silent mode.  When output is to be verbose, both of these variables
-will expand to the empty string.
-@item
-You can add your own variables, so strings of your own choice are shown.
-The following snippet shows how you would define your own equivalent of
-@code{AM_V_GEN}:
-
-@example
-pkg_verbose = $(pkg_verbose_$(V))
-pkg_verbose_ = $(pkg_verbose_$(AM_DEFAULT_VERBOSITY))
-pkg_verbose_0 = @@echo GEN $@@;
-
-foo: foo.in
-        $(pkg_verbose)cp $(srcdir)/foo.in $@@
-@end example
-@end itemize
-
+For more information about how to use, enable, or disable silent
+rules, @pxref{Automake silent-rules Option}.
 
 @item @option{std-options}
 @cindex Options, @option{std-options}
@@ -9453,6 +9572,7 @@ For instance, the following definition prevents Automake from misinterpreting
 the @samp{.idlC.cpp:} rule as an attempt to transform @file{.idlC} files into
 @file{.cpp} files.
 
+@c Keep in sync with suffix7.test.
 @example
 SUFFIXES = .idl C.cpp
 .idlC.cpp:
@@ -9687,6 +9807,293 @@ Subdirectories}, @pxref{Conditional Sources}, @pxref{Conditional
 Programs}, @pxref{Conditional Libtool Libraries}, @pxref{Conditional
 Libtool Sources}).
 
+@node Silencing Make
+@chapter Silencing @command{make}
+
+@cindex Silent @command{make}
+@cindex Silencing @command{make}
+@cindex Silent rules
+@cindex Silent @command{make} rules
+
+@menu
+* Make verbosity::               Make is verbose by default
+* Tricks For Silencing Make::    Standard and generic ways to silence make
+* Automake silent-rules Option:: How Automake can help in silencing make
+@end menu
+
+@node Make verbosity
+@section Make is verbose by default
+
+Normally, when executing the set of rules associated with a target,
+@command{make} prints each rule before it is executed.  This behaviour,
+while having been in place for a long time, and being even mandated by
+the POSIX standard, starkly violates the ``silence is golden'' UNIX
+principle@footnote{See also
+@uref{http://catb.org/~esr/writings/taoup/html/ch11s09.html}.}:
+
+@quotation
+When a program has nothing interesting or surprising to say, it should
+say nothing.  Well-behaved Unix programs do their jobs unobtrusively,
+with a minimum of fuss and bother.  Silence is golden.
+@end quotation
+
+In fact, while such verbosity of @command{make} can theoretically be
+useful to track bugs and understand reasons of failures right away, it
+can also hide warning and error messages from @command{make}-invoked
+tools, drowning them in a flood of uninteresting and seldom useful
+messages, and thus allowing them to go easily undetected.
+
+This problem can be very annoying, especially for developers, who usually
+know quite well what's going on behind the scenes, and for whom the
+verbose output from @command{make} ends up being mostly noise that hampers
+the easy detection of potentially important warning messages.
+
+@node Tricks For Silencing Make
+@section Standard and generic ways to silence make
+
+Here we describe some common idioms/tricks to obtain a quieter make
+output, with their relative advantages and drawbacks.  In the next
+section (@ref{Automake silent-rules Option}) we'll see how Automake
+can help in this respect.
+
+@itemize @bullet
+
+@item @command{make -s}
+
+This simply causes @command{make} not to print @emph{any} rule before
+executing it.
+
+The @option{-s} flag is mandated by POSIX, universally supported, and
+its purpose and function are easy to understand.
+
+But it also has its serious limitations too.  First of all, it embodies
+an ``all or nothing'' strategy, i.e., either everything is silenced, or
+nothing is; this lack of granularity can sometimes be a fatal flaw.
+Moreover, when the @option{-s} flag is used, the @command{make} output
+might turn out to be too much terse; in case of errors, the user won't
+be able to easily see what rule or command have caused them, or even,
+in case of tools with poor error reporting, what the errors were!
+
+@item @command{make >/dev/null || make}
+
+Apparently, this perfectly obeys the ``silence is golden'' rule: warnings
+from stderr are passed through, output reporting is done only in case of
+error, and in that case it should provide a verbose-enough report to allow
+an easy determination of the error location and causes.
+
+However, calling @command{make} two times in a row might hide errors
+(especially intermittent ones), or subtly change the expected semantic
+of the @command{make} calls --- things these which can clearly make
+debugging and error assessment very difficult.
+
+@item @command{make --no-print-directory}
+
+This is GNU @command{make} specific.  When called with the
+@option{--no-print-directory} option, GNU @command{make} will disable
+printing of the working directory by invoked sub-@command{make}s (the
+well-known ``@i{Entering/Leaving directory ...}'' messages).  This helps
+to decrease the verbosity of the output, but experience has shown that
+it can also often render debugging considerably harder in projects using
+deeply-nested @command{make} recursion.
+
+As an aside, notice that the @option{--no-print-directory} option is
+automatically activated if the @option{-s} flag is used.
+
+@c TODO: Other tricks?
+@c TODO: Maybe speak about the @code{.SILENT} target?
+@c TODO:  - Pros: More granularity on what to silence.
+@c TODO:  - Cons: No easy way to temporarily override.
+
+@end itemize
+
+@node Automake silent-rules Option
+@section How Automake can help in silencing make
+
+The tricks and idioms for silencing @command{make} described in the
+previous section can be useful from time to time, but we've seen that
+they all have their serious drawbacks and limitations.  That's why
+automake provides support for a more advanced and flexible way of
+obtaining quieter output from @command{make}: the @option{silent-rules}
+mode.
+
+@c TODO: Maybe describe in brief the precedent set by the build system
+@c of the Linux Kernel, from which Automake took inspiration ... Links?
+
+To give the gist of what @option{silent-rules} can do, here is a simple
+comparison between a typical @command{make} output (where silent rules
+are disabled) and one with silent rules enabled:
+
+@example
+% @kbd{cat Makefile.am}
+bin_PROGRAMS = foo
+foo_SOURCES = main.c func.c
+% @kbd{cat main.c}
+int main (void) @{ return func (); @}  /* func used undeclared */
+% @kbd{cat func.c}
+int func (void) @{ int i; return i; @} /* i used uninitialized */
+
+@i{The make output is by default very verbose.  This causes warnings
+from the compiler to be somewhat hidden, and not immediate to spot.}
+% @kbd{make CFLAGS=-Wall}
+gcc -DPACKAGE_NAME=\"foo\" -DPACKAGE_TARNAME=\"foo\" ...
+-DPACKAGE_STRING=\"foo\ 1.0\" -DPACKAGE_BUGREPORT=\"\" ...
+-DPACKAGE=\"foo\" -DVERSION=\"1.0\" -I. -Wall -MT main.o
+-MD -MP -MF .deps/main.Tpo -c -o main.o main.c
+main.c: In function ‘main’:
+main.c:3:3: warning: implicit declaration of function ‘func’
+mv -f .deps/main.Tpo .deps/main.Po
+gcc -DPACKAGE_NAME=\"foo\" -DPACKAGE_TARNAME=\"foo\" ...
+-DPACKAGE_STRING=\"foo\ 1.0\" -DPACKAGE_BUGREPORT=\"\" ...
+-DPACKAGE=\"foo\" -DVERSION=\"1.0\" -I. -Wall -MT func.o
+-MD -MP -MF .deps/func.Tpo -c -o func.o func.c
+func.c: In function ‘func’:
+func.c:4:3: warning: ‘i’ used uninitialized in this function
+mv -f .deps/func.Tpo .deps/func.Po
+gcc -Wall -o foo main.o func.o
+
+@i{Clean up, so that we we can rebuild everything from scratch.}
+% @kbd{make clean}
+test -z "foo" || rm -f foo
+rm -f *.o
+
+@i{Silent rules enabled: the output is minimal but informative.  In
+particular, the warnings from the compiler stick out very clearly.}
+% @kbd{make V=0 CFLAGS=-Wall}
+  CC     main.o
+main.c: In function ‘main’:
+main.c:3:3: warning: implicit declaration of function ‘func’
+  CC     func.o
+func.c: In function ‘func’:
+func.c:4:3: warning: ‘i’ used uninitialized in this function
+  CCLD   foo
+@end example
+
+@cindex silent-rules and libtool
+Also, in projects using @command{libtool}, the use of silent rules can
+automatically enable the @command{libtool}'s @option{--silent} option:
+
+@example
+% @kbd{cat Makefile.am}
+lib_LTLIBRARIES = libx.la
+
+% @kbd{make # Both make and libtool are verbose by default.}
+...
+libtool: compile: gcc -DPACKAGE_NAME=\"foo\" ... -DLT_OBJDIR=\".libs/\"
+  -I. -g -O2 -MT libx.lo -MD -MP -MF .deps/libx.Tpo -c libx.c -fPIC
+  -DPIC -o .libs/libx.o
+mv -f .deps/libx.Tpo .deps/libx.Plo
+/bin/sh ./libtool --tag=CC --mode=link gcc -g -O2 -o libx.la -rpath
+  /usr/local/lib libx.lo
+libtool: link: gcc -shared .libs/libx.o -Wl,-soname -Wl,libx.so.0
+  -o .libs/libx.so.0.0.0
+libtool: link: cd .libs && rm -f libx.so && ln -s libx.so.0.0.0 libx.so
+...
+
+% @kbd{make V=0}
+  CC     libx.lo
+  CCLD   libx.la
+@end example
+
+Let's now see how the @option{silent-rules} mode interfaces with the
+package developer and the package user.
+
+To enable the use of @option{silent-rules} in his package, a developer
+needs to do either of the following:
+
+@itemize @bullet
+@item
+Add the @option{silent-rules} option as argument to @code{AM_INIT_AUTOMAKE}.
+@item
+Call the @code{AM_SILENT_RULES} macro from within the @file{configure.ac}
+file.
+@end itemize
+
+It is not possible to instead specify @option{silent-rules} in a
+@file{Makefile.am} file.
+
+If the developer has done either of the above, then the user of the
+package may influence the verbosity at @command{configure} run time as
+well as at @command{make} run time:
+
+@itemize @bullet
+@item
+@opindex --enable-silent-rules
+@opindex --disable-silent-rules
+Passing @option{--enable-silent-rules} to @command{configure} will cause
+build rules to be less verbose; the option @option{--disable-silent-rules}
+will cause normal verbose output.
+@item
+@vindex @code{V}
+At @command{make} run time, the default chosen at @command{configure}
+time may be overridden: @code{make V=1} will produce verbose output,
+@code{make V=0} less verbose output.
+@end itemize
+
+@cindex default verbosity for silent-rules
+Note that silent rules are @emph{disabled} by default; the user must
+enable them explicitly at either @command{configure} run time or at
+@command{make} run time.  We think that this is a good policy, since
+it provides the casual user with enough information to prepare a good
+bug report in case anything breaks.
+
+Still, notwithstanding the rationales above, a developer who wants to
+make silent rules enabled by default in his own package can do so by
+adding a @samp{yes} argument to the @code{AM_SILENT_RULES} call in
+@file{configure.ac}.  We advise against this approach, though.
+
+@c Keep in sync with silent-configsite.test
+Users who prefer to have silent rules enabled by default can edit their
+@file{config.site} file to make the variable @code{enable_silent_rules}
+default to @samp{yes}.  This should still allow disabling silent rules
+at @command{configure} time and at @command{make} time.
+
+@c FIXME: there's really a need to specify this explicitly?
+For portability to different @command{make} implementations, package authors
+are advised to not set the variable @code{V} inside the @file{Makefile.am}
+file, to allow the user to override the value for subdirectories as well.
+
+The current implementation of this feature relies on a non-POSIX, but in
+practice rather widely supported @file{Makefile} construct of nested
+variable expansion @samp{$(@var{var1}$(V))}.  Do not use the
+@option{silent-rules} option if your package needs to build with
+@command{make} implementations that do not support it.  The
+@option{silent-rules} option turns off warnings about recursive variable
+expansion, which are in turn enabled by @option{-Wportability}
+(@pxref{Invoking Automake}).
+
+@vindex @code{AM_V_GEN}
+@vindex @code{AM_V_at}
+@vindex @code{AM_DEFAULT_VERBOSITY}
+To extend the silent mode to your own rules, you have two choices:
+
+@itemize @bullet
+@item
+You can use the predefined variable @code{AM_V_GEN} as a prefix to
+commands that should output a status line in silent mode, and
+@code{AM_V_at} as a prefix to commands that should not output anything
+in silent mode.  When output is to be verbose, both of these variables
+will expand to the empty string.
+@item
+You can add your own variables, so strings of your own choice are shown.
+The following snippet shows how you would define your own equivalent of
+@code{AM_V_GEN}:
+
+@example
+pkg_verbose = $(pkg_verbose_$(V))
+pkg_verbose_ = $(pkg_verbose_$(AM_DEFAULT_VERBOSITY))
+pkg_verbose_0 = @@echo PKG-GEN $@@;
+
+foo: foo.in
+        $(pkg_verbose)cp $(srcdir)/foo.in $@@
+@end example
+
+@end itemize
+
+As a final note, observe that, even when silent rules are enabled,
+the @option{--no-print-directory} option is still required with GNU
+@command{make} if the ``@i{Entering/Leaving directory ...}'' messages
+are to be disabled.
+
 @node Gnits
 @chapter The effect of @option{--gnu} and @option{--gnits}
 
@@ -9803,8 +10210,7 @@ The options @option{no-installinfo} and @option{no-dependencies} are
 implied.
 
 @item
-The macros @code{AM_MAINTAINER_MODE} and @code{AM_CYGWIN32} are
-required.
+The macro @code{AM_MAINTAINER_MODE} is required.
 
 @item
 The @code{check} target doesn't depend on @code{all}.
@@ -9996,6 +10402,7 @@ Checks, autoconf, The Autoconf Manual}) and use @samp{$(LN_S)} in
 For instance, here is how you could install a versioned copy of a
 program using @samp{$(LN_S)}:
 
+@c Keep in sync with insthook.test
 @example
 install-exec-hook:
         cd $(DESTDIR)$(bindir) && \
@@ -10010,7 +10417,9 @@ destination directory in order to create relative links.
 When writing @code{install-exec-hook} or @code{install-data-hook},
 please bear in mind that the exec/data distinction is based on the
 installation directory, not on the primary used (@pxref{The Two Parts of
-Install}).  So a @code{foo_SCRIPTS} will be installed by
+Install}).
+@c Keep in sync with primary-prefix-couples-documented-valid.test.
+So a @code{foo_SCRIPTS} will be installed by
 @code{install-data}, and a @code{barexec_SCRIPTS} will be installed by
 @code{install-exec}.  You should define your hooks consequently.
 
@@ -10250,12 +10659,14 @@ older releases will not be used.  For instance, use this in your
 @example
   AM_INIT_AUTOMAKE([1.6.1])    dnl Require Automake 1.6.1 or better.
 @end example
+
 @noindent
 or, in a particular @file{Makefile.am}:
 
 @example
   AUTOMAKE_OPTIONS = 1.6.1   # Require Automake 1.6.1 or better.
 @end example
+
 @noindent
 Automake will print an error message if its version is
 older than the requested version.
@@ -10354,6 +10765,7 @@ lists.
 * Multiple Outputs::            Writing rules for tools with many output files
 * Hard-Coded Install Paths::    Installing to hard-coded locations
 * Debugging Make Rules::        Strategies when things don't work as expected
+* Reporting Bugs::              Feedback on bugs and feature requests
 @end menu
 
 @node CVS
@@ -10538,9 +10950,10 @@ Besides the warning, when a tool is missing, @command{missing} will
 attempt to fix timestamps in a way that allows the build to continue.
 For instance, @command{missing} will touch @file{configure} if
 @command{autoconf} is not installed.  When all distributed files are
-kept under CVS, this feature of @command{missing} allows a user
-@emph{with no maintainer tools} to build a package off CVS, bypassing
-any timestamp inconsistency implied by @samp{cvs update}.
+kept under version control, this feature of @command{missing} allows a
+user @emph{with no maintainer tools} to build a package off its version
+control repository, bypassing any timestamp inconsistency (implied by
+e.g.@: @samp{cvs update} or @samp{git clone}).
 
 If the required tool is installed, @command{missing} will run it and
 won't attempt to continue after failures.  This is correct during
@@ -10595,9 +11008,9 @@ swayed by Fran@,{c}ois's arguments, and got rid of
 @code{AM_MAINTAINER_MODE} in all of his packages.
 
 Still many people continue to use @code{AM_MAINTAINER_MODE}, because
-it helps them working on projects where all files are kept under CVS,
-and because @command{missing} isn't enough if you have the wrong
-version of the tools.
+it helps them working on projects where all files are kept under version
+control, and because @command{missing} isn't enough if you have the
+wrong version of the tools.
 
 
 @node Wildcards
@@ -11140,6 +11553,7 @@ true_CPPFLAGS = -DEXIT_CODE=0
 false_SOURCES = generic.c
 false_CPPFLAGS = -DEXIT_CODE=1
 @end example
+
 @noindent
 Obviously the two programs are built from the same source, but it
 would be bad if they shared the same object, because @file{generic.o}
@@ -11309,6 +11723,7 @@ data.c: data.foo
 data.h: data.foo data.c
         foo data.foo
 @end example
+
 @noindent
 therefore a parallel @command{make} will have to serialize the builds
 of @file{data.c} and @file{data.h}, and will detect that the second is
@@ -11373,11 +11788,15 @@ data.h data.w data.x: data.c
         fi
 @end example
 
-However there are now two minor problems in this setup.  One is related
+However there are now three minor problems in this setup.  One is related
 to the timestamp ordering of @file{data.h}, @file{data.w},
-@file{data.x}, and @file{data.c}.  The other one is a race condition
+@file{data.x}, and @file{data.c}.  Another one is a race condition
 if a parallel @command{make} attempts to run multiple instances of the
-recover block at once.
+recover block at once.  Finally, the recursive rule breaks @samp{make -n}
+when run with GNU @command{make} (as well as some other @command{make}
+implementations), as it may remove @file{data.h} even when it should not
+(@pxref{MAKE Variable, , How the @code{MAKE} Variable Works, make,
+The GNU Make Manual}).
 
 Let us deal with the first problem.  @command{foo} outputs four files,
 but we do not know in which order these files are created.  Suppose
@@ -11485,8 +11904,8 @@ elc-stamp: $(ELFILES)
         @@mv -f elc-temp $@@
 
 $(ELCFILES): elc-stamp
-## Recover from the removal of $@@
         @@if test -f $@@; then :; else \
+## Recover from the removal of $@@
           trap 'rm -rf elc-lock elc-stamp' 1 2 13 15; \
           if mkdir elc-lock 2>/dev/null; then \
 ## This code is being executed by the first process.
@@ -11499,10 +11918,58 @@ $(ELCFILES): elc-stamp
             while test -d elc-lock; do sleep 1; done; \
 ## Succeed if and only if the first process succeeded.
             test -f elc-stamp; exit $$?; \
+@c $$
           fi; \
         fi
 @end example
+
+These solutions all still suffer from the third problem, namely that
+they break the promise that @samp{make -n} should not cause any actual
+changes to the tree.  For those solutions that do not create lock files,
+it is possible to split the recover rules into two separate recipe
+commands, one of which does all work but the recursion, and the
+other invokes the recursive @samp{$(MAKE)}.  The solutions involving
+locking could act upon the contents of the @samp{MAKEFLAGS} variable,
+but parsing that portably is not easy (@pxref{The Make Macro MAKEFLAGS,,,
+autoconf, The Autoconf Manual}).  Here is an example:
+
+@example
+ELFILES = one.el two.el three.el @dots{}
+ELCFILES = $(ELFILES:=c)
+
+elc-stamp: $(ELFILES)
+        @@rm -f elc-temp
+        @@touch elc-temp
+        $(elisp_comp) $(ELFILES)
+        @@mv -f elc-temp $@@
+
+$(ELCFILES): elc-stamp
+## Recover from the removal of $@@
+        @@dry=; for f in x $$MAKEFLAGS; do \
+          case $$f in \
+            *=*|--*);; \
+            *n*) dry=:;; \
+          esac; \
+        done; \
+        if test -f $@@; then :; else \
+          $$dry trap 'rm -rf elc-lock elc-stamp' 1 2 13 15; \
+          if $$dry mkdir elc-lock 2>/dev/null; then \
+## This code is being executed by the first process.
+            $$dry rm -f elc-stamp; \
+            $(MAKE) $(AM_MAKEFLAGS) elc-stamp; \
+            $$dry rmdir elc-lock; \
+          else \
+## This code is being executed by the follower processes.
+## Wait until the first process is done.
+            while test -d elc-lock && test -z "$$dry"; do \
 @c $$
+              sleep 1; \
+            done; \
+## Succeed if and only if the first process succeeded.
+            $$dry test -f elc-stamp; exit $$?; \
+          fi; \
+        fi
+@end example
 
 For completeness it should be noted that GNU @command{make} is able to
 express rules with multiple output files using pattern rules
@@ -11691,6 +12158,45 @@ complex GNU @command{make}-specific Makefiles and allows to trace
 execution, examine variables, and call rules interactively, much like
 a debugger.
 @end itemize
+
+
+@node Reporting Bugs
+@section Reporting Bugs
+
+Most nontrivial software has bugs.  Automake is no exception.  Although
+we cannot promise we can or will fix a bug, and we might not even agree
+that it is a bug, we want to hear about problems you encounter. Often we
+agree they are bugs and want to fix them.
+
+To make it possible for us to fix a bug, please report it. In order to
+do so effectively, it helps to know when and how to do it.
+
+Before reporting a bug, it is a good idea to see if it is already known.
+You can look at the @uref{http://debbugs.gnu.org/, GNU Bug Tracker}
+and the @uref{http://lists.gnu.org/@/archive/@/html/@/bug-automake/,
+bug-automake mailing list archives} for previous bug reports.  We
+previously used a
+@uref{http://sourceware.org/@/cgi-bin/@/gnatsweb.pl?database=automake,
+Gnats database} for bug tracking, so some bugs might have been reported
+there already.  Please do not use it for new bug reports, however.
+
+If the bug is not already known, it should be reported.  It is very
+important to report bugs in a way that is useful and efficient.  For
+this, please familiarize yourself with
+@uref{http://www.chiark.greenend.org.uk/@/~sgtatham/@/bugs.html, How to
+Report Bugs Effectively} and
+@uref{http://catb.org/@/~esr/@/faqs/@/smart-questions.html, How to Ask
+Questions the Smart Way}.  This helps you and developers to save time
+which can then be spent on fixing more bugs and implementing more
+features.
+
+For a bug report, a feature request or other suggestions, please send
+email to @email{@value{PACKAGE_BUGREPORT}}.  This will then open a new
+bug in the @uref{http://debbugs.gnu.org/@/automake, bug tracker}.  Be
+sure to include the versions of Autoconf and Automake that you use.
+Ideally, post a minimal @file{Makefile.am} and @file{configure.ac} that
+reproduces the problem you encounter.  If you have encountered test
+suite failures, please attach the @file{tests/test-suite.log} file.
 
 
 @node History
@@ -12468,7 +12974,7 @@ for dependency tracking work in Automake.
 * First Take on Dependencies::  Precomputed dependency tracking
 * Dependencies As Side Effects::  Update at developer compile time
 * Dependencies for the User::   Update at user compile time
-* Techniques for Dependencies:: Alternative approaches
+* Techniques for Dependencies::  Alternative approaches
 * Recommendations for Tool Writers::  What tool writers can do to help
 * Future Directions for Dependencies::  Languages Automake does not know
 @end menu
@@ -12867,8 +13373,6 @@ parentheses is the number of generated test cases.
 @printindex cp
 
 
-@page
-@contents
 @bye
 
 @c  LocalWords:  texinfo setfilename settitle setchapternewpage texi direntry

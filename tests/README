@@ -93,15 +93,34 @@ Do
   Cite the PR number (if any), and the original reporter (if any), so
   we can find or ask for information if needed.
 
-  Use `required=...' for required tools.
+  If a test checks examples or idioms given in the documentation, make
+  sure the documentation reference them appropriately in comments, as in:
+    @c Keep in sync with autodist-config-headers.test.
+    @example
+    ...
+    @end example
+
+  Use `required=...' for required tools.  Do not explicitly require
+  tools which can be taken for granted because they're listed in the
+  GNU Coding Standards (for example, `gzip').
 
   Include ./defs in every test script (see existing tests for examples
   of how to do this).
 
+  Use the `skip_' function to skip tests, with a meaningful message if
+  possible.  Where convenient, use the `warn_' function to print generic
+  warnings, the `fail_' function for test failures, and the `fatal_'
+  function for hard errors.  In case a hard error is due to a failed
+  set-up of a test scenario, you can use the `framework_fail_' function
+  instead.
+
   For tests that use the `parallel-tests' Automake option, set the shell
   variable `parallel_tests' to "yes" before including ./defs.  Also,
-  use for them a name that ends in `-p.test' and does not clash with any
-  generated tests in the suite.
+  do not use for them a name that ends in `-p.test', since that would
+  risk to clash with automatically-generated tests.  For tests that are
+  *not* meant to work with the `parallel-tests' Automake option (these
+  should be very very few), set the shell variable `parallel_tests' to
+  "no" before including ./defs.
 
   ./defs sets a skeleton configure.in.  If possible, append to this
   file.  In some cases you'll have to overwrite it, but this should
@@ -133,6 +152,9 @@ Do
   even in the failure case, before exiting.
 
   Use `Exit' rather than `exit' to abort a test.
+
+  Use `$PATH_SEPARATOR', not hard-coded `:', as the separator of
+  PATH's entries.
 
   It's more important to make sure that a feature works, than
   make sure that Automake's output looks correct.  It might look
@@ -167,12 +189,12 @@ Do not
   reason, but at least it makes sure the original error is still
   here.)
 
-  Do not override Makefile variables using make arguments, as in
-    $MAKE ANSI2KNR=./ansi2knr U=_ all
-  this is not portable for recursive targets (targets that
-  call a sub-make may not pass `ANSI2KNR=./ansi2knr U=_' along).
-  Use the following instead.
-    ANSI2KNR=./ansi2knr U=_ $MAKE -e all
+  Do not override Makefile variables using make arguments, as in e.g.:
+    $MAKE prefix=/opt install
+  This is not portable for recursive targets (targets that call a
+  sub-make may not pass `prefix=/opt' along).  Use the following
+  instead:
+    prefix=/opt $MAKE -e install
 
   Do not send a test case without signing a copyright disclaimer.
   See http://sources.redhat.com/automake/contribute.html or

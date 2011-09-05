@@ -1,7 +1,7 @@
 ## Process this file with automake to create Makefile.in
 
 # Copyright (C) 1996, 1997, 1998, 1999, 2001, 2002, 2003, 2004, 2005,
-# 2006, 2007, 2008, 2009, 2010  Free Software Foundation, Inc.
+# 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,11 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-XFAIL_TESTS =					\
-all.test					\
-auxdir2.test					\
-cond17.test					\
-gcj6.test					\
+XFAIL_TESTS = \
+all.test \
+auxdir2.test \
+cond17.test \
+gcj6.test \
+pr8365-remake-timing.test \
+yacc-dist-nobuild-subdir.test \
+vala-vpath.test \
 txinfo5.test
 
 include $(srcdir)/parallel-tests.am
@@ -36,7 +39,16 @@ $(parallel_tests): $(parallel_tests:-p.test=.test) Makefile.am
 
 MAINTAINERCLEANFILES = $(parallel_tests)
 
+# Some testsuite-influential variables should be overridable from the
+# test scripts, but not from the environment.
+TESTS_ENVIRONMENT = \
+  test x"$$me" = x || unset me; \
+  test x"$$required" = x || unset required; \
+  test x"$$parallel_tests" = x || unset parallel_tests;
+
 TESTS = \
+self-check-env-sanitize.test \
+self-check-report.test \
 aclibobj.test \
 aclocal.test \
 aclocal3.test \
@@ -69,14 +81,19 @@ acsilent.test \
 acsubst.test \
 acsubst2.test \
 all.test \
+all2.test \
 alloca.test \
 alloca2.test \
 alpha.test \
 alpha2.test \
+amhello-cflags.test \
+amhello-cross-compile.test \
+amhello-binpkg.test \
 amassign.test \
 ammissing.test \
 amopt.test \
 amsubst.test \
+ansi2knr-deprecation.test \
 ansi.test \
 ansi2.test \
 ansi3.test \
@@ -94,10 +111,20 @@ ar2.test \
 asm.test \
 asm2.test \
 asm3.test \
+autodist.test \
+autodist-subdir.test \
+autodist-acconfig.test \
+autodist-acconfig-no-subdir.test \
+autodist-aclocal-m4.test \
+autodist-config-headers.test \
+autodist-configure-no-subdir.test \
+autodist-no-duplicate.test \
+autodist-stamp-vti.test \
 autohdr.test \
 autohdr2.test \
 autohdr3.test \
 autohdr4.test \
+autohdrdry.test \
 automake.test \
 auxdir.test \
 auxdir2.test \
@@ -132,6 +159,11 @@ check8.test \
 check9.test \
 check10.test \
 check11.test \
+check-exported-srcdir.test \
+check-tests-in-builddir.test \
+check-tests_environment.test \
+check-concurrency-bug9245.test \
+tests-environment-backcompat.test \
 checkall.test \
 clean.test \
 clean2.test \
@@ -157,6 +189,7 @@ comment8.test \
 comment9.test \
 commen10.test \
 commen11.test \
+comments-in-var-def.test \
 compile.test \
 compile2.test \
 compile3.test \
@@ -211,20 +244,23 @@ cond44.test \
 cond45.test \
 condd.test \
 condhook.test \
+condhook2.test \
 condinc.test \
 condinc2.test \
 condlib.test \
 condman.test \
 condman2.test \
+condman3.test \
 configure.test \
-conf2.test \
 confdeps.test \
 conff.test \
 conff2.test \
 confh.test \
 confh4.test \
 confh5.test \
-config.test \
+confh6.test \
+confh7.test \
+confh8.test \
 confincl.test \
 conflnk.test \
 conflnk2.test \
@@ -262,6 +298,10 @@ depcomp4.test \
 depcomp5.test \
 depcomp6.test \
 depcomp7.test \
+depcomp8a.test \
+depcomp8b.test \
+depcomp9.test \
+depcomp10.test \
 depdist.test \
 depend.test \
 depend2.test \
@@ -270,10 +310,10 @@ depend4.test \
 depend5.test \
 depend6.test \
 destdir.test \
-dirforbid.test \
 dirlist.test \
 dirlist2.test \
 discover.test \
+dist-included-parent-dir.test \
 distcleancheck.test \
 distcom2.test \
 distcom3.test \
@@ -285,6 +325,14 @@ distdir.test \
 distlinks.test \
 distlinksbrk.test \
 distname.test \
+distcheck-configure-flags.test \
+distcheck-configure-flags-am.test \
+distcheck-configure-flags-subpkg.test \
+distcheck-hook.test \
+distcheck-hook2.test \
+dmalloc.test \
+doc-parsing-buglets-colneq-subst.test \
+doc-parsing-buglets-tabs.test \
 dollar.test \
 dollarvar.test \
 dollarvar2.test \
@@ -331,8 +379,6 @@ fort4.test \
 fort5.test \
 fonly.test \
 fortdep.test \
-fpinst2.test \
-fpinstall.test \
 gcj.test \
 gcj2.test \
 gcj3.test \
@@ -349,13 +395,26 @@ gnuwarn2.test \
 gnits.test \
 gnits2.test \
 gnits3.test \
+hdr-vars-defined-once.test \
 header.test \
 help.test \
+help2.test \
+help3.test \
+help4.test \
+help-depend.test \
+help-depend2.test \
+help-dmalloc.test \
+help-init.test \
+help-lispdir.test \
+help-maintainer.test \
+help-multilib.test \
+help-python.test \
+help-regex.test \
+help-silent.test \
+help-upc.test \
 hfs.test \
 hosts.test \
 implicit.test \
-include.test \
-include2.test \
 info.test \
 init.test \
 init2.test \
@@ -392,6 +451,8 @@ interp2.test \
 java.test \
 java2.test \
 java3.test \
+java-check.test \
+java-empty-classpath.test \
 javaprim.test \
 javasubst.test \
 ldadd.test \
@@ -401,6 +462,7 @@ lex2.test \
 lex3.test \
 lex4.test \
 lex5.test \
+lex-subobj-nodep.test \
 lflags.test \
 lflags2.test \
 libexec.test \
@@ -445,6 +507,7 @@ lisp5.test \
 lisp6.test \
 lisp7.test \
 lisp8.test \
+lispdry.test \
 listval.test \
 location.test \
 longline.test \
@@ -453,12 +516,15 @@ ltcond.test \
 ltcond2.test \
 ltconv.test \
 ltdeps.test \
+ltinit.test \
 ltinstloc.test \
 ltlibobjs.test \
 ltlibsrc.test \
 ltorder.test \
 lzma.test \
+m4-inclusion.test \
 maintclean.test \
+maintclean-vpath.test \
 make.test \
 makej.test \
 makej2.test \
@@ -472,12 +538,12 @@ man2.test \
 man3.test \
 man4.test \
 man5.test \
-mclean.test \
 mdate.test \
 mdate2.test \
 mdate3.test \
 mdate4.test \
 mdate5.test \
+mdate6.test \
 missing.test \
 missing2.test \
 missing3.test \
@@ -542,6 +608,13 @@ parallel-tests7.test \
 parallel-tests8.test \
 parallel-tests9.test \
 parallel-tests10.test \
+parallel-tests-harderror.test \
+parallel-tests-unreadable-log.test \
+parallel-tests-subdir.test \
+parallel-tests-log-override-1.test \
+parallel-tests-log-override-2.test \
+parallel-tests-log-override-recheck.test \
+parallel-tests-log-compiler-example.test \
 parse.test \
 percent.test \
 percent2.test \
@@ -556,6 +629,7 @@ pluseq7.test \
 pluseq8.test \
 pluseq9.test \
 pluseq10.test \
+pluseq11.test \
 postproc.test \
 ppf77.test \
 pr2.test \
@@ -583,6 +657,10 @@ prefix.test \
 primary.test \
 primary2.test \
 primary3.test \
+primary-prefix-invalid-couples.test \
+primary-prefix-valid-couples.test \
+primary-prefix-couples-force-valid.test \
+primary-prefix-couples-documented-valid.test \
 proginst.test \
 python.test \
 python2.test \
@@ -605,6 +683,12 @@ remake4.test \
 remake5.test \
 remake6.test \
 remake7.test \
+remake-subdir-from-subdir.test \
+remake-subdir-gnu.test \
+remake-subdir.test \
+remake-subdir2.test \
+remake-subdir-long-time.test \
+pr8365-remake-timing.test \
 regex.test \
 req.test \
 reqd.test \
@@ -617,16 +701,19 @@ silent.test \
 silent2.test \
 silent3.test \
 silent4.test \
-silent5.test \
 silent6.test \
 silent7.test \
 silent9.test \
 silentcxx.test \
 silentf77.test \
 silentf90.test \
-silentlex.test \
-silentyacc.test \
-sinclude.test \
+silent-many-gcc.test \
+silent-many-generic.test \
+silent-lex-gcc.test \
+silent-lex-generic.test \
+silent-yacc-gcc.test \
+silent-yacc-generic.test \
+silent-configsite.test \
 srcsub.test \
 srcsub2.test \
 space.test \
@@ -638,6 +725,7 @@ specflg7.test \
 specflg8.test \
 specflg9.test \
 specflg10.test \
+specflg-dummy.test \
 spell.test \
 spell2.test \
 spell3.test \
@@ -648,6 +736,8 @@ stamph2.test \
 stdlib.test \
 stdlib2.test \
 strip.test \
+strip2.test \
+strip3.test \
 subdir.test \
 subdir2.test \
 subdir3.test \
@@ -672,6 +762,9 @@ subobj7.test \
 subobj8.test \
 subobj9.test \
 subobj10.test \
+subobj11a.test \
+subobj11b.test \
+subobj11c.test \
 subobjname.test \
 subpkg.test \
 subpkg2.test \
@@ -712,6 +805,7 @@ txinfo2.test \
 txinfo3.test \
 txinfo4.test \
 txinfo5.test \
+txinfo5b.test \
 txinfo6.test \
 txinfo7.test \
 txinfo8.test \
@@ -748,6 +842,7 @@ vala2.test \
 vala3.test \
 vala4.test \
 vala5.test \
+vala-vpath.test \
 vars.test \
 vars3.test \
 vartar.test \
@@ -761,6 +856,8 @@ version8.test \
 vpath.test \
 vtexi.test \
 vtexi2.test \
+vtexi3.test \
+vtexi4.test \
 warnopts.test \
 werror.test \
 werror2.test \
@@ -776,8 +873,10 @@ yacc5.test \
 yacc6.test \
 yacc7.test \
 yacc8.test \
+yaccdry.test \
 yaccpp.test \
 yaccvpath.test \
+yacc-dist-nobuild-subdir.test \
 yflags.test \
 yflags2.test \
 $(parallel_tests)
@@ -794,6 +893,6 @@ clean-local-check:
 	 if test "$$#,$$1" = "1,*.dir"; then \
 	   : there is no test directory to clean; \
 	 else \
-	   find "$$@" -type d '!' -perm -200 -exec chmod u+w {} ';'; \
+	   find "$$@" -type d ! -perm -700 -exec chmod u+rwx {} ';'; \
 	   rm -rf "$$@"; \
 	 fi;

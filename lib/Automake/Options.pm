@@ -252,6 +252,10 @@ sub _process_option_list (\%$@)
 	}
       elsif (/^(.*\/)?ansi2knr$/)
 	{
+          # This feature is deprecated, will be removed in the next
+          # Automake major release.
+          msg 'obsolete', $where,
+              "automatic de-ANSI-fication support is deprecated\n";
 	  # An option like "../lib/ansi2knr" is allowed.  With no
 	  # path prefix, we assume the required programs are in this
 	  # directory.  We save the actual option for later.

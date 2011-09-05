@@ -19,40 +19,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Find the path separator.
-# (Snippet copied from configure's initialization in Autoconf 2.65)
-if test "${PATH_SEPARATOR+set}" != set; then
-  PATH_SEPARATOR=:
-  (PATH='/bin;/bin'; FPATH=$PATH; sh -c :) >/dev/null 2>&1 && {
-    (PATH='/bin:/bin'; FPATH=$PATH; sh -c :) >/dev/null 2>&1 ||
-      PATH_SEPARATOR=';'
-  }
-fi
-
 # Don't ignore failures.
 set -e
 
 # Set program basename.
 me=`echo "$0" | sed 's,^.*/,,'`
 
-# Find perl.  Code based on Autoconf, but without non-POSIX support.
-if test -z "$PERL"; then
-  save_IFS=$IFS
-  IFS=$PATH_SEPARATOR
-  for dir in $PATH; do
-    IFS=$save_IFS
-    test -z "$dir" && dir=.
-    if test -x "$dir/perl" && test ! -d "$dir/perl"; then
-      PERL="$dir/perl"
-      break
-    fi
-  done
-fi
-
-if test -z "$PERL"; then
-  echo "$me: cannot find perl" >&2
-  exit 1
-fi
+# Let user choose which version of autoconf, autom4te and perl to use.
+: ${AUTOCONF=autoconf}
+export AUTOCONF  # might be used by aclocal and/or automake
+: ${AUTOM4TE=autom4te}
+export AUTOM4TE  # ditto
+: ${PERL=perl}
 
 # Variables to substitute.
 VERSION=`sed -ne '/AC_INIT/s/^[^[]*\[[^[]*\[\([^]]*\)\].*$/\1/p' configure.ac`
@@ -71,7 +49,7 @@ fi
 
 # Read the rule for calculating APIVERSION and execute it.
 apiver_cmd=`sed -ne 's/\[\[/[/g;s/\]\]/]/g;/^APIVERSION=/p' configure.ac`
-eval $apiver_cmd
+eval "$apiver_cmd"
 
 # Sanity checks.
 if test -z "$VERSION"; then
@@ -80,7 +58,7 @@ if test -z "$VERSION"; then
 fi
 
 if test -z "$APIVERSION"; then
-  echo "$me: cannot find VERSION" >&2
+  echo "$me: cannot find APIVERSION" >&2
   exit 1
 fi
 
@@ -112,7 +90,6 @@ dosubst ()
   chmod a-w $2
 }
 
-
 # Create temporary replacement for lib/Automake/Config.pm.
 dosubst automake-$APIVERSION/Automake/Config.in \
         automake-$APIVERSION/Automake/Config.pm
@@ -133,10 +110,9 @@ cd ..
 
 # Run the autotools.
 $PERL ./aclocal.tmp -I m4
-autoconf
+$AUTOCONF
 $PERL ./automake.tmp
 
 # Remove temporary files and directories.
 rm -rf aclocal-$APIVERSION automake-$APIVERSION
 rm -f aclocal.tmp automake.tmp
-rm -f lib/Automake/Config.pm

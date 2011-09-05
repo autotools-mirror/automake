@@ -80,7 +80,7 @@ Fatal errors.  Use C<&fatal> to send messages over this channel.
 
 =item C<error>
 
-Common errors.   Use C<&error> to send messages over this channel.
+Common errors.  Use C<&error> to send messages over this channel.
 
 =item C<error-gnu>
 

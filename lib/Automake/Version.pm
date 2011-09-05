@@ -1,4 +1,4 @@
-# Copyright (C) 2001, 2002, 2003  Free Software Foundation, Inc.
+# Copyright (C) 2001, 2002, 2003, 2010 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ C<MICRO> are digits, C<ALPHA> is a character, and C<FORK> any
 alphanumeric word.
 
 Usually, C<ALPHA> is used to label alpha releases or intermediate
-snapshots, C<FORK> is used for CVS branches or patched releases, and
+snapshots, C<FORK> is used for git branches or patched releases, and
 C<MICRO> is used for bug fixes releases on the C<MAJOR.MINOR> branch.
 
 For the purpose of ordering, C<1.4> is the same as C<1.4.0>, but

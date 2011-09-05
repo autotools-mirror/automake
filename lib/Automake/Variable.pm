@@ -162,7 +162,7 @@ my %_am_macro_for_var =
    EMACS => 'AM_PATH_LISPDIR',
    GCJ => 'AM_PROG_GCJ',
    LEX => 'AM_PROG_LEX',
-   LIBTOOL => 'AC_PROG_LIBTOOL',
+   LIBTOOL => 'LT_INIT',
    lispdir => 'AM_PATH_LISPDIR',
    pkgpyexecdir => 'AM_PATH_PYTHON',
    pkgpythondir => 'AM_PATH_PYTHON',
@@ -354,7 +354,7 @@ sub reset ()
 =item C<var ($varname)>
 
 Return the C<Automake::Variable> object for the variable
-named C<$varname> if defined.   Return 0 otherwise.
+named C<$varname> if defined.  Return 0 otherwise.
 
 =cut
 

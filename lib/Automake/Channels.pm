@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ###############################################################
-# The main copy of this file is in Automake's CVS repository. #
+# The main copy of this file is in Automake's git repository. #
 # Updates should be sent to automake-patches@gnu.org.         #
 ###############################################################
 
@@ -500,7 +500,7 @@ sub _print_message ($$%)
   my $msg = _format_message ($location, $message, %opts);
   if ($opts{'partial'})
     {
-      # Incomplete message.   Store, don't print.
+      # Incomplete message.  Store, don't print.
       $partial .= $msg;
       return;
     }

@@ -1,6 +1,6 @@
 #! /bin/sh
-# Copyright (C) 1996, 1997, 1998, 2000, 2001, 2002, 2003
-# Free Software Foundation, Inc.
+# Copyright (C) 1996, 1997, 1998, 2000, 2001, 2002, 2003, 2011 Free
+# Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,22 +15,36 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to ensure texinfo.tex included in distribution.  Bug report by
+# Test to ensure texinfo.tex is included in distribution.  Bug report by
 # Jim Meyering.
 
+required=makeinfo
 . ./defs || Exit 1
+
+set -e
+
+cat >> configure.in <<'END'
+AC_OUTPUT
+END
 
 cat > Makefile.am << 'END'
 info_TEXINFOS = textutils.texi
-magic:
-	@echo $(DISTFILES)
+.PHONY: test1 test2
+test1:
+	@echo DISTFILES = $(DISTFILES)
+	echo ' ' $(DISTFILES) ' ' | grep '[ /]texinfo\.tex '
+test2: distdir
+	ls -l $(distdir)
+	test -f $(distdir)/texinfo.tex
 END
 
 echo '@setfilename textutils.info' > textutils.texi
 : > texinfo.tex
 
-$ACLOCAL || Exit 1
-$AUTOMAKE || Exit 1
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
+./configure
+$MAKE test1 test2
 
-$FGREP -v @SET_MAKE@ Makefile.in > Makefile.sed
-$MAKE -s -f Makefile.sed SHELL=$SHELL magic | grep 'texinfo\.tex'
+:

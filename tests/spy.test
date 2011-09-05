@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2003  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2011 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,8 +16,8 @@
 
 # Check whether double colon rules work.  The Unix V7 make manual
 # mentions double-colon rules, but POSIX does not.  They seem to be
-# supported by all Make implementation as we can tell. This test case
-# is a spy: we want to detect if there exist implementations where
+# supported by all Make implementation as far as we can tell. This test
+# case is a spy: we want to detect if there exist implementations where
 # these do not work.  We might use these rules to simplify the rebuild
 # rules (instead of the $? hack).
 
@@ -87,8 +87,22 @@ $sleep
 touch b
 $MAKE
 test "`cat a`" = rule1
+# Ensure a is strictly newer than b, so HP-UX make does not execute rule2.
+$sleep
 : > a
 $sleep
 touch c
 $MAKE
 test "`cat a`" = rule2
+
+# Unfortunately, the following is not portable to FreeBSD/NetBSD/OpenBSD
+# make, see explanation above.
+
+#: > a
+#$sleep
+#touch b c
+#$MAKE
+#grep rule1 a
+#grep rule2 a
+
+:

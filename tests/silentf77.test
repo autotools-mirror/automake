@@ -18,7 +18,7 @@
 # Keep this ins sync with the sister test silentf90.test.
 
 required='gfortran' # FIXME: any working Fortran compiler should be OK!
-. ./defs
+. ./defs || Exit 1
 
 set -e
 
@@ -63,6 +63,10 @@ $AUTOCONF
 ./configure --enable-silent-rules
 $MAKE >stdout || { cat stdout; Exit 1; }
 cat stdout
+# Avoid spurious failures with SunStudio Fortran compilers.
+sed '/^NOTICE:/d' stdout > t
+mv -f t stdout
+cat stdout
 
 $EGREP ' (-c|-o)' stdout && Exit 1
 grep 'mv ' stdout && Exit 1
@@ -87,5 +91,4 @@ grep ' -o ' stdout
 
 $EGREP '(F77|FC|LD) ' stdout && Exit 1
 
-$MAKE clean
-$MAKE maintainer-clean
+:

@@ -7,7 +7,7 @@ eval 'case $# in 0) exec @PERL@ -S "$0";; *) exec @PERL@ -S "$0" "$@";; esac'
 
 # automake - create Makefile.in from Makefile.am
 # Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002,
-# 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010  Free Software
+# 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software
 # Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
@@ -249,16 +249,16 @@ my @common_sometimes =
 # Standard directories from the GNU Coding Standards, and additional
 # pkg* directories from Automake.  Stored in a hash for fast member check.
 my %standard_prefix =
-    map { $_ => 1 } (qw(bin data dataroot dvi exec html include info
-			lib libexec lisp localstate man man1 man2 man3
-			man4 man5 man6 man7 man8 man9 oldinclude pdf
-			pkgdatadir pkgincludedir pkglibdir pkglibexecdir
-			ps sbin sharedstate sysconf));
+    map { $_ => 1 } (qw(bin data dataroot doc dvi exec html include info
+			lib libexec lisp locale localstate man man1 man2
+			man3 man4 man5 man6 man7 man8 man9 oldinclude pdf
+			pkgdata pkginclude pkglib pkglibexec ps sbin
+			sharedstate sysconf));
 
 # Copyright on generated Makefile.ins.
 my $gen_copyright = "\
 # Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002,
-# 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010  Free Software
+# 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software
 # Foundation, Inc.
 # This Makefile.in is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -1369,7 +1369,7 @@ sub handle_languages
 
     my %done;
 
-    # Is the c linker needed?
+    # Is the C linker needed?
     my $needs_c = 0;
     foreach my $ext (sort keys %extension_seen)
     {
@@ -1991,7 +1991,7 @@ sub handle_single_transform ($$$$$%)
 
 		# Each item on this list is a reference to a list consisting
 		# of four values followed by additional transform flags for
-		# file_contents.   The four values are the derived flag prefix
+		# file_contents.  The four values are the derived flag prefix
 		# (e.g. for `foo_CFLAGS', it is `foo'), the name of the
 		# source file, the base name of the output file, and
 		# the extension for the object file.
@@ -2053,6 +2053,15 @@ sub handle_single_transform ($$$$$%)
 	    # derived from is not.
 	    &push_dist_common ($object)
 	      unless ($topparent =~ /^(?:nobase_)?nodist_/);
+
+	    # If resulting derived source is in a subdir, we need to make
+	    # sure the subdir exists at build time.
+	    if ($object =~ /\//)
+	      {
+		my $dirstamp = require_build_directory_maybe ($object);
+		depend ($object, $dirstamp)
+		  if ($dirstamp);
+	      }
 	    next;
 	  }
 
@@ -2108,14 +2117,24 @@ sub handle_single_transform ($$$$$%)
 
 	# Transform .o or $o file into .P file (for automatic
 	# dependency code).
-	if ($lang && $lang->autodep ne 'no')
-	{
-	    my $depfile = $object;
-	    $depfile =~ s/\.([^.]*)$/.P$1/;
-	    $depfile =~ s/\$\(OBJEXT\)$/o/;
-	    $dep_files{dirname ($depfile) . '/$(DEPDIR)/'
-			 . basename ($depfile)} = 1;
-	}
+        # Properly flatten multiple adjacent slashes, as Solaris 10 make
+        # might fail over them in an include statement.
+        # Leading double slashes may be special, as per Posix, so deal
+        # with them carefully.
+        if ($lang && $lang->autodep ne 'no')
+        {
+            my $depfile = $object;
+            $depfile =~ s/\.([^.]*)$/.P$1/;
+            $depfile =~ s/\$\(OBJEXT\)$/o/;
+            my $maybe_extra_leading_slash = '';
+            $maybe_extra_leading_slash = '/' if $depfile =~ m,^//[^/],;
+            $depfile =~ s,/+,/,g;
+            my $basename = basename ($depfile);
+            # This might make $dirname empty, but we account for that below.
+            (my $dirname = dirname ($depfile)) =~ s/\/*$//;
+            $dirname = $maybe_extra_leading_slash . $dirname;
+            $dep_files{$dirname . '/$(DEPDIR)/' . $basename} = 1;
+        }
     }
 
     return @result;
@@ -2325,7 +2344,7 @@ sub handle_lib_objects
 	   if ($val !~ /^-[lL]/ &&
 	       # Skip -dlopen and -dlpreopen; these are explicitly allowed
 	       # for Libtool libraries or programs.  (Actually we are a bit
-	       # laxe here since this code also applies to non-libtool
+	       # lax here since this code also applies to non-libtool
 	       # libraries or programs, for which -dlopen and -dlopreopen
 	       # are pure nonsense.  Diagnosing this doesn't seem very
 	       # important: the developer will quickly get complaints from
@@ -2566,7 +2585,8 @@ sub handle_compile ()
 	    require_file ($ansi2knr_where, FOREIGN,
 			  'ansi2knr.c', 'ansi2knr.1');
 
-	    # ansi2knr needs to be built before subdirs, so unshift it.
+	    # ansi2knr needs to be built before subdirs, so unshift it
+	    # rather then pushing it.
 	    unshift (@all, '$(ANSI2KNR)');
 	  }
 	else
@@ -2616,7 +2636,7 @@ sub handle_libtool
 sub handle_programs
 {
   my @proglist = &am_install_var ('progs', 'PROGRAMS',
-				  'bin', 'sbin', 'libexec', 'pkglib',
+				  'bin', 'sbin', 'libexec', 'pkglibexec',
 				  'noinst', 'check');
   return if ! @proglist;
 
@@ -3178,7 +3198,7 @@ sub scan_texinfo_file ($)
 # ------------------------------------------------------------------
 # SOURCE - the source Texinfo file
 # DEST - the destination Info file
-# INSRC - wether DEST should be built in the source tree
+# INSRC - whether DEST should be built in the source tree
 # DEPENDENCIES - known dependencies
 sub output_texinfo_build_rules ($$$@)
 {
@@ -3726,8 +3746,8 @@ sub handle_man_pages
 sub handle_data
 {
     &am_install_var ('-noextra', '-candist', 'data', 'DATA',
-		     'data', 'dataroot', 'dvi', 'html', 'pdf', 'ps',
-		     'sysconf', 'sharedstate', 'localstate',
+		     'data', 'dataroot', 'doc', 'dvi', 'html', 'pdf',
+		     'ps', 'sysconf', 'sharedstate', 'localstate',
 		     'pkgdata', 'lisp', 'noinst', 'check');
 }
 
@@ -4159,7 +4179,7 @@ sub prepend_srcdir (@)
 # Compute a list of dependencies appropriate for the rebuild
 # rule of
 #   AC_CONFIG_FILES($OUTPUT:$INPUT[0]:$INPUTS[1]:...)
-# Also distribute $INPUTs which are not built by another AC_CONFIG_FOOS.
+# Also distribute $INPUTs which are not built by another AC_CONFIG_FOOs.
 sub rewrite_inputs_into_dependencies ($@)
 {
   my ($file, @inputs) = @_;
@@ -5101,8 +5121,14 @@ sub handle_java
 	$dir = $curs;
       }
 
-
-    push (@all, 'class' . $dir . '.stamp');
+    if ($dir eq 'check')
+      {
+        push (@check, "class$dir.stamp");
+      }
+    else
+      {
+        push (@all, "class$dir.stamp");
+      }
 }
 
 
@@ -5255,7 +5281,7 @@ sub scan_autoconf_traces ($)
 		sinclude => 1,
 	      );
 
-  my $traces = ($ENV{AUTOCONF} || 'autoconf') . " ";
+  my $traces = ($ENV{AUTOCONF} || '@am_AUTOCONF@') . " ";
 
   # Use a separator unlikely to be used, not `:', the default, which
   # has a precise meaning for AC_CONFIG_FILES and so on.
@@ -5954,11 +5980,11 @@ sub lang_vala_finish_target ($$)
     {
       foreach my $file ($var->value_as_list_recursive)
         {
-          $output_rules .= "\$(srcdir)/$file: \$(srcdir)/${derived}_vala.stamp\n".
-            "\t\@if test -f \$@; then :; else \\\n".
-            "\t  rm -f \$(srcdir)/${derived}_vala.stamp; \\\n".
-            "\t  \$(am__cd) \$(srcdir) && \$(MAKE) \$(AM_MAKEFLAGS) ${derived}_vala.stamp; \\\n".
-            "\tfi\n"
+          $output_rules .= "\$(srcdir)/$file: \$(srcdir)/${derived}_vala.stamp\n"
+            . "\t\@if test -f \$@; then :; else rm -f \$(srcdir)/${derived}_vala.stamp; fi\n"
+            . "\t\@if test -f \$@; then :; else \\\n"
+            . "\t  \$(am__cd) \$(srcdir) && \$(MAKE) \$(AM_MAKEFLAGS) ${derived}_vala.stamp; \\\n"
+	    . "\tfi\n"
             if $file =~ s/(.*)\.vala$/$1.c/;
         }
     }
@@ -5974,11 +6000,11 @@ sub lang_vala_finish_target ($$)
 	                          '--vapi', '--internal-vapi', '--gir')))
 	    {
 	      my $headerfile = $flag;
-	      $output_rules .= "\$(srcdir)/$headerfile: \$(srcdir)/${derived}_vala.stamp\n".
-		"\t\@if test -f \$@; then :; else \\\n".
-		"\t  rm -f \$(srcdir)/${derived}_vala.stamp; \\\n".
-		"\t  \$(am__cd) \$(srcdir) && \$(MAKE) \$(AM_MAKEFLAGS) ${derived}_vala.stamp; \\\n".
-		"\tfi\n";
+	      $output_rules .= "\$(srcdir)/$headerfile: \$(srcdir)/${derived}_vala.stamp\n"
+		. "\t\@if test -f \$@; then :; else rm -f \$(srcdir)/${derived}_vala.stamp; fi\n"
+		. "\t\@if test -f \$@; then :; else \\\n"
+		. "\t  \$(am__cd) \$(srcdir) && \$(MAKE) \$(AM_MAKEFLAGS) ${derived}_vala.stamp; \\\n"
+		. "\tfi\n";
 
 	      # valac is not used when building from dist tarballs
 	      # distribute the generated files
@@ -6073,10 +6099,8 @@ sub lang_yacc_target_hook
 	    $output_rules .=
 	      "$condstr${header}: $output\n"
 	      # Recover from removal of $header
-	      . "$condstr\t\@if test ! -f \$@; then \\\n"
-	      . "$condstr\t  rm -f $output; \\\n"
-	      . "$condstr\t  \$(MAKE) \$(AM_MAKEFLAGS) $output; \\\n"
-	      . "$condstr\telse :; fi\n";
+	      . "$condstr\t\@if test ! -f \$@; then rm -f $output; else :; fi\n"
+	      . "$condstr\t\@if test ! -f \$@; then \$(MAKE) \$(AM_MAKEFLAGS) $output; else :; fi\n";
 	  }
 	# Distribute the generated file, unless its .y source was
 	# listed in a nodist_ variable.  (&handle_source_transform
@@ -8299,6 +8323,50 @@ sub generate_makefile ($$)
 
 ################################################################
 
+# Helper function for usage().
+sub print_autodist_files (@)
+{
+  my @lcomm = sort (&uniq (@_));
+
+  my @four;
+  format USAGE_FORMAT =
+  @<<<<<<<<<<<<<<<<   @<<<<<<<<<<<<<<<<   @<<<<<<<<<<<<<<<<   @<<<<<<<<<<<<<<<<
+  $four[0],           $four[1],           $four[2],           $four[3]
+.
+  local $~ = "USAGE_FORMAT";
+
+  my $cols = 4;
+  my $rows = int(@lcomm / $cols);
+  my $rest = @lcomm % $cols;
+
+  if ($rest)
+    {
+      $rows++;
+    }
+  else
+    {
+      $rest = $cols;
+    }
+
+  for (my $y = 0; $y < $rows; $y++)
+    {
+      @four = ("", "", "", "");
+      for (my $x = 0; $x < $cols; $x++)
+        {
+          last if $y + 1 == $rows && $x == $rest;
+
+          my $idx = (($x > $rest)
+               ?  ($rows * $rest + ($rows - 1) * ($x - $rest))
+               : ($rows * $x));
+
+          $idx += $y;
+          $four[$x] = $lcomm[$idx];
+        }
+      write;
+    }
+}
+
+
 # Print usage information.
 sub usage ()
 {
@@ -8332,51 +8400,12 @@ Library files:
 ";
     Automake::ChannelDefs::usage;
 
-    my ($last, @lcomm);
-    $last = '';
-    foreach my $iter (sort ((@common_files, @common_sometimes)))
-    {
-	push (@lcomm, $iter) unless $iter eq $last;
-	$last = $iter;
-    }
-
-    my @four;
-    print "\nFiles which are automatically distributed, if found:\n";
-    format USAGE_FORMAT =
-  @<<<<<<<<<<<<<<<<   @<<<<<<<<<<<<<<<<   @<<<<<<<<<<<<<<<<   @<<<<<<<<<<<<<<<<
-  $four[0],           $four[1],           $four[2],           $four[3]
-.
-    $~ = "USAGE_FORMAT";
-
-    my $cols = 4;
-    my $rows = int(@lcomm / $cols);
-    my $rest = @lcomm % $cols;
-
-    if ($rest)
-    {
-	$rows++;
-    }
-    else
-    {
-	$rest = $cols;
-    }
-
-    for (my $y = 0; $y < $rows; $y++)
-    {
-	@four = ("", "", "", "");
-	for (my $x = 0; $x < $cols; $x++)
-	{
-	    last if $y + 1 == $rows && $x == $rest;
-
-	    my $idx = (($x > $rest)
-		       ?  ($rows * $rest + ($rows - 1) * ($x - $rest))
-		       : ($rows * $x));
-
-	    $idx += $y;
-	    $four[$x] = $lcomm[$idx];
-	}
-	write;
-    }
+    print "\nFiles automatically distributed if found " .
+          "(always):\n";
+    print_autodist_files @common_files;
+    print "\nFiles automatically distributed if found " .
+          "(under certain conditions):\n";
+    print_autodist_files @common_sometimes;
 
     print '
 Report bugs to <@PACKAGE_BUGREPORT@>.
@@ -8396,7 +8425,7 @@ sub version ()
 {
   print <<EOF;
 automake (GNU $PACKAGE) $VERSION
-Copyright (C) 2010 Free Software Foundation, Inc.
+Copyright (C) 2011 Free Software Foundation, Inc.
 License GPLv2+: GNU GPL version 2 or later <http://gnu.org/licenses/gpl-2.0.html>
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.

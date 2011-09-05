@@ -34,17 +34,20 @@ mkdir nonmk-subdir sdir sdir/mk-subdir
 
 cat >> Makefile.am <<'EOF'
 SUBDIRS = sdir
+.PHONY: test
 test: distdir
 	test -f $(distdir)/src
 	test -f $(distdir)/sdir/src2
+	test -f $(distdir)/nonmk-subdir/src3
+	test -f $(distdir)/sdir/mk-subdir/src4
 EOF
 
 cat >>configure.in << 'EOF'
-AC_CONFIG_FILES(sdir/Makefile)
-AC_CONFIG_LINKS(src:src)
-AC_CONFIG_LINKS(sdir/src2:sdir/src2)
-AC_CONFIG_LINKS(nonmk-subdir/src3:nonmk-subdir/src3)
-AC_CONFIG_LINKS(sdir/mk-subdir/src4:sdir/mk-subdir/src4)
+AC_CONFIG_FILES([sdir/Makefile])
+AC_CONFIG_LINKS([src:src])
+AC_CONFIG_LINKS([sdir/src2:sdir/src2])
+AC_CONFIG_LINKS([nonmk-subdir/src3:nonmk-subdir/src3])
+AC_CONFIG_LINKS([sdir/mk-subdir/src4:sdir/mk-subdir/src4])
 AC_OUTPUT
 EOF
 
@@ -56,7 +59,6 @@ mkdir build
 cd build
 ../configure
 
-# TODO: Make sure links are distributed
 $MAKE test
 
 # Make sure nothing is deleted by `make clean'
@@ -84,7 +86,6 @@ test -r sdir/mk-subdir/src4 && Exit 1
 cd ..
 ./configure
 
-# TODO: Make sure links are distributed
 $MAKE test
 
 # Make sure nothing is deleted by `make distclean'
@@ -94,3 +95,5 @@ test -f src
 test -f sdir/src2
 test -f nonmk-subdir/src3
 test -f sdir/mk-subdir/src4
+
+:

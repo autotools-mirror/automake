@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001, 2002, 2003  Free Software Foundation, Inc.
+# Copyright (C) 2001, 2002, 2003, 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,18 +15,27 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test for PR 211.
+#
+# == Description ==
+# Suppose you have a library and an ltlibrary in the same
+# directory which use the same source:
+#
+#   libfoo_la_SOURCES = foo.c
+#   libbar_a_SOURCES = foo.c
+#
+# In this case foo.c will be compiled twice but using different
+# compilers.  This is a conflict.  In this case the user should
+# rename one of the `foo.o's.
 
 required=libtoolize
 . ./defs || Exit 1
 
 set -e
 
-cat > configure.in << 'END'
-AC_INIT(Makefile.am)
-AM_INIT_AUTOMAKE(hello,0.23)
+cat >> configure.in << 'END'
 AC_PROG_CC
 AC_PROG_LIBTOOL
-AC_OUTPUT(Makefile)
+AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
@@ -40,3 +49,5 @@ libtoolize
 $ACLOCAL
 AUTOMAKE_fails -a
 $FGREP 'foo.$(OBJEXT)' stderr
+
+:

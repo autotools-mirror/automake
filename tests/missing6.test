@@ -22,7 +22,7 @@ set -e
 
 {
   echo 'm4_define([AC_AUTOCONF_VERSION], [9999a])'
-  echo 'm4_define([b], [oops])'
+  echo 'dnl!! m4_define([a], [oops])'
   cat configure.in
   echo AC_OUTPUT
 } >configure.ac
@@ -39,10 +39,9 @@ $AUTOMAKE
 ./configure
 $MAKE
 
-sed 's/\[b\]/[a]/' < configure.ac > configure.tmp
-cmp configure.ac configure.tmp && Exit 1
-
-mv configure.tmp configure.ac
+sed 's/^dnl!! //' < configure.ac > configure.tmp
+cmp configure.ac configure.tmp && Exit 99 # sanity check
+mv -f configure.tmp configure.ac
 
 $MAKE 2>stderr || { cat stderr >&2; Exit 1; }
 cat stderr >&2

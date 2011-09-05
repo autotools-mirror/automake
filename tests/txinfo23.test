@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002, 2003, 2007  Free Software Foundation, Inc.
+# Copyright (C) 2002, 2003, 2007, 2011 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,15 +14,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check for subdir Texinfo in $(srcdir).
+# Check that info files are built in builddir when needed.
+# Test with subdir Texinfo.
 # (Similar to txinfo13.test, plus DISTCLEANFILES.)
+# (See also txinfo24.test and txinfo25.test)
 
 required='makeinfo tex texi2dvi-o'
 . ./defs || Exit 1
 
 set -e
 
-echo AC_OUTPUT >> configure.in
+cat >> configure.in << 'END'
+AC_OUTPUT
+END
 
 cat > Makefile.am << 'END'
 DISTCLEANFILES = subdir/*.info*
@@ -50,7 +54,6 @@ cat > subdir/inc.texi << 'END'
 I'm included.
 END
 
-
 $ACLOCAL
 $AUTOMAKE --add-missing
 $AUTOCONF
@@ -60,3 +63,6 @@ cd build
 ../configure
 $MAKE distcheck
 test -f subdir/main.info
+test ! -f ../subdir/main.info
+
+:
