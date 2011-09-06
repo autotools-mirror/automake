@@ -24,6 +24,7 @@ gcj6.test \
 java-nobase.test \
 pr8365-remake-timing.test \
 yacc-dist-nobuild-subdir.test \
+vala-vpath.test \
 txinfo5.test
 
 include $(srcdir)/parallel-tests.am
@@ -326,6 +327,8 @@ distcheck-configure-flags-subpkg.test \
 distcheck-hook.test \
 distcheck-hook2.test \
 dmalloc.test \
+doc-parsing-buglets-colneq-subst.test \
+doc-parsing-buglets-tabs.test \
 dollar.test \
 dollarvar.test \
 dollarvar2.test \
@@ -848,6 +851,7 @@ vala2.test \
 vala3.test \
 vala4.test \
 vala5.test \
+vala-vpath.test \
 vars.test \
 vars3.test \
 vartar.test \
