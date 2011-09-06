@@ -20,8 +20,7 @@
 
 SUBDIRS = Automake am
 
-dist_pkgvdata_DATA = COPYING INSTALL texinfo.tex ansi2knr.c ansi2knr.1 \
-  config-ml.in
+dist_pkgvdata_DATA = COPYING INSTALL texinfo.tex config-ml.in
 
 ## These must all be executable when installed.  However, if we use
 ## _SCRIPTS, then the program transform will be applied, which is not

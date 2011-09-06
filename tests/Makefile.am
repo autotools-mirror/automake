@@ -31,6 +31,7 @@ gcj6.test \
 override-conditional-2.test \
 pr8365-remake-timing.test \
 yacc-dist-nobuild-subdir.test \
+vala-vpath.test \
 txinfo5.test
 
 
@@ -154,18 +155,7 @@ amopt.test \
 amopts-location.test \
 amopts-variable-expansion.test \
 amsubst.test \
-ansi2knr-deprecation.test \
-ansi.test \
-ansi2.test \
-ansi3.test \
-ansi3b.test \
-ansi4.test \
-ansi5.test \
-ansi6.test \
-ansi7.test \
-ansi8.test \
-ansi9.test \
-ansi10.test \
+ansi2knr-no-more.test \
 ar-lib.test \
 ar.test \
 ar2.test \
@@ -355,7 +345,6 @@ cscope2.test \
 cscope3.test \
 cxx.test \
 cxx2.test \
-cxxansi.test \
 cxxcpp.test \
 cxxlibobj.test \
 cxxlink.test \
@@ -420,6 +409,8 @@ distcheck-configure-flags-subpkg.test \
 distcheck-hook.test \
 distcheck-hook2.test \
 dmalloc.test \
+doc-parsing-buglets-colneq-subst.test \
+doc-parsing-buglets-tabs.test \
 dollar.test \
 dollarvar.test \
 dollarvar2.test \
@@ -568,7 +559,6 @@ libobj3.test \
 libobj4.test \
 libobj5.test \
 libobj7.test \
-libobj8.test \
 libobj10.test \
 libobj12.test \
 libobj13.test \
@@ -668,6 +658,7 @@ mkinst3.test \
 mmode.test \
 mmodely.test \
 multlib.test \
+no-extra-makefile-code.test \
 no-outdir-option.test \
 nobase.test \
 nobase-libtool.test \
@@ -964,7 +955,6 @@ subcond2.test \
 subcond3.test \
 subobj.test \
 subobj2.test \
-subobj3.test \
 subobj4.test \
 subobj5.test \
 subobj6.test \
@@ -1062,6 +1052,7 @@ vala2.test \
 vala3.test \
 vala4.test \
 vala5.test \
+vala-vpath.test \
 vars.test \
 vars3.test \
 vartar.test \

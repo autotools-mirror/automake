@@ -156,7 +156,6 @@ my %_gen_varname_n = ();
 # Macros accessible via aclocal.
 my %_am_macro_for_var =
   (
-   ANSI2KNR => 'AM_C_PROTOTYPES',
    CCAS => 'AM_PROG_AS',
    CCASFLAGS => 'AM_PROG_AS',
    EMACS => 'AM_PATH_LISPDIR',
@@ -169,7 +168,6 @@ my %_am_macro_for_var =
    pyexecdir => 'AM_PATH_PYTHON',
    PYTHON => 'AM_PATH_PYTHON',
    pythondir => 'AM_PATH_PYTHON',
-   U => 'AM_C_PROTOTYPES',
    );
 
 # Macros shipped with Autoconf.
