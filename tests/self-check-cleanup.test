@@ -108,23 +108,21 @@ fi # $have_symlinks
 # Check that the cleanup trap does not remove the temporary
 # test directory in case of test failure, skip, hard-error,
 # or when receiving a signal.
-for bailout_command in \
-  'Exit 1' \
-  'Exit 2' \
-  'Exit 10' \
-  'Exit 77' \
-  'Exit 99' \
-  'Exit 126' \
-  'Exit 127' \
-  'Exit 255' \
-  'kill -1 $$' \
-  'kill -2 $$' \
-  'kill -9 $$' \
-  'kill -13 $$' \
-  'kill -15 $$' \
-; do
-  $SHELL -c  ". ./defs; : > foo; $bailout_command" dummy.test && Exit 1
+
+for st in 1 2 3 10 77 99 126 127 130 255; do
+  $SHELL -c  ". ./defs; : > foo; Exit $st" dummy.test && Exit 1
   test -f dummy.dir/foo
+  rm -rf dummy.dir
+done
+
+for signum in 1 2 3 9 13 15; do
+  if is_blocked_signal $signum; then
+    echo "$me: signal $signum is blocked, skipping part of the test"
+    continue
+  fi
+  $SHELL -c  ". ./defs; : > foo; kill -$signum \$\$" dummy.test && Exit 1
+  test -f dummy.dir/foo
+  rm -rf dummy.dir
 done
 
 :
