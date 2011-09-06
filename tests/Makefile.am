@@ -27,6 +27,7 @@ gcj6.test \
 override-conditional-2.test \
 pr8365-remake-timing.test \
 yacc-dist-nobuild-subdir.test \
+vala-vpath.test \
 txinfo5.test
 
 
