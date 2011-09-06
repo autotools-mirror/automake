@@ -19,9 +19,27 @@
 
 . ./defs || Exit 1
 
+plan_ 22
+
 #------------------------------------------------------------------
 
-: Leading spaces.
+will_test () { tst=$*; }
+
+do_check ()
+{
+  command_ok_ "$tst [simple, exit status]" \
+              eval 'unindent input > got'
+  command_ok_ "$tst [simple, output]" \
+              diff exp got
+  command_ok_ "$tst [parallel, exit status]" \
+              eval 'unindent input | unindent > got'
+  command_ok_ "$tst [parallel, output]" \
+              diff exp got
+}
+
+#------------------------------------------------------------------
+
+will_test 'leading spaces'
 
 cat > input <<END
   1
@@ -73,15 +91,11 @@ ${tab}
 last line
 END
 
-unindent input > got
-diff exp got
-
-unindent input | unindent > got
-diff exp got
+do_check
 
 #------------------------------------------------------------------
 
-: Leading tab.
+will_test 'leading tab'
 
 cat > input <<END
 ${tab}1
@@ -131,15 +145,11 @@ ${sp}${tab}
 last line
 END
 
-unindent input > got
-diff exp got
-
-unindent input | unindent > got
-diff exp got
+do_check "leading tab"
 
 #------------------------------------------------------------------
 
-: No leading whitespace.
+will_test 'no leading whitespace'
 
 cat > input <<END
 1
@@ -164,15 +174,11 @@ END
 
 cp input exp
 
-unindent input > got
-diff exp got
-
-unindent input | unindent > got
-diff exp got
+do_check
 
 #------------------------------------------------------------------
 
-: Leading empty lines are ignored [1].
+will_test 'leading empty lines ignored (1)'
 
 cat > input <<END
 
@@ -190,15 +196,11 @@ bar
   quux
 END
 
-unindent input > got
-diff exp got
-
-unindent input | unindent > got
-diff exp got
+do_check
 
 #------------------------------------------------------------------
 
-: Leading empty lines are ignored [2].
+will_test 'leading empty lines ignored (2)'
 
 cat > input <<END
 
@@ -216,15 +218,11 @@ bar
    quux
 END
 
-unindent input > got
-diff exp got
-
-unindent input | unindent > got
-diff exp got
+do_check
 
 #------------------------------------------------------------------
 
-: More elaborated parallel use.
+will_test 'more elaborated parallel use'
 
 cat > input <<END
   x
@@ -249,7 +247,9 @@ c
 ${tab}f
 END
 
-unindent input | sed 1d | unindent > got
-diff exp got
+command_ok_ "$tst [exit status]" \
+            eval 'unindent input | sed 1d | unindent > got'
+
+command_ok_ "$tst [output]" diff exp got
 
 :

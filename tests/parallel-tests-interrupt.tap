@@ -22,6 +22,8 @@
 parallel_tests=yes
 . ./defs || Exit 1
 
+plan_ 16
+
 cat >> configure.in << 'END'
 AC_OUTPUT
 END
@@ -31,7 +33,7 @@ TESTS = foo.test
 ## Provide more debugging info.
 TEST_LOG_COMPILER = $(SHELL) -x
 ## Required by foo.test; see below.
-AM_TESTS_FD_REDIRECT = 9>&2
+AM_TESTS_FD_REDIRECT = 9>&1
 END
 
 # This is hacky and ugly, but has the great advantage of avoiding us a lot
@@ -44,40 +46,54 @@ END
 
 cat > foo.test << 'END'
 #!/bin/sh
-exec 2>&9
+
 echo "foo is starting to run"
-ls -l >&2
-cat foo.log >&2 || : > fail
-grep '^foo is starting to run$' foo.log >&2 || : > fail
-cat pid >&2 || : > fail
-kill -$signum `cat pid` || : > fail
+
+ls -l >&9 || exit 99
+
+test $sig -gt 0 || {
+  echo "Bailout! \$sig not exported to test script" >&9
+  exit 99
+}
+
+res=ok; cat foo.log >&9 || res="not ok"
+echo "$res - logfile created and readable [SIG $sig]" >&9
+
+res=ok; grep '^foo is starting to run$' foo.log >&2 || res='not ok'
+echo "$res - logfile contains output from test script [SIG $sig]" >&9
+
+cat pid >&9 \
+  || echo "Bailout! cannot get PID of test driver" >&9
+kill -$sig `cat pid` \
+  || echo "Bailout! cannot send signal $sig to test driver" >&9
 END
 chmod a+x foo.test
 
-$ACLOCAL
-$AUTOCONF
-$AUTOMAKE
+$ACLOCAL  || fatal_ "aclocal failed"
+$AUTOCONF || fatal_ "autoconf failed"
+$AUTOMAKE || fatal_ "automake failed"
 
-./configure
+./configure || fatal_ "./configure failed"
 
 # The only signals that can be trapped portable are 1 "SIGHUP",
 # 2 "SIGINT", 13 "SIGPIPE" and 15 "SIGTERM".
 trapped_signals='1 2 13 15'
 
-for signum in $trapped_signals; do
-  if is_blocked_signal $signum; then
-    echo "$me: signal $signum is blocked, skipping part of the test"
+for sig in $trapped_signals; do
+  if is_blocked_signal $sig; then
+    for i in 1 2 3 4; do echo "ok # SKIP signal $sig is blocked"; done
     continue
   fi
   rm -f pid fail *.log
-  env signum=$signum $MAKE check && { ls -l; Exit 1; }
+  r=ok; env sig=$sig $MAKE check && r='not ok'
+  echo "$r - signal $sig to test driver causes \"make check\" to fail"
   ls -l
   # These files shouldn't exist, but in case they do, their content might
   # provide helpful information about the causes of the failure(s).
   cat foo.log || :
   cat test-suite.log || :
-  test -f fail && Exit 1
-  ls | $EGREP 'foo.*\.(log|tmp)' && Exit 1
+  r=ok; ls | $EGREP 'foo.*\.(log|tmp)' && r='not ok'
+  echo "$r - test driver clean up log and tmp files after signal $sig"
 done
 
 :

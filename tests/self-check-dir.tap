@@ -1,0 +1,72 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Sanity check for the automake testsuite.
+# Check that tests using `./defs' create a proper temporary directory,
+# and run in it.  Also check that we can prevent the pre-population
+# and the creation of such directory if we want.
+
+am_create_testdir=no
+. ./defs || Exit 99
+
+plan_ 5
+
+AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC
+
+# This needs to be consistent with what $SHELL deems to be the
+# current working directory.
+cwd=`$SHELL -c 'pwd'` || fatal_ "can't get current working directory"
+echo "$cwd"
+
+do_check ()
+{
+  test ! -d _self.dir || rm -rf _self.dir \
+    || framework_failure_ "cleaning up _self.dir"
+  command_ok_ "$1 [$2]" $SHELL -c "
+    $2
+    . ./defs || Exit 99
+    pwd; ls -l; # For debugging.
+    $3
+  " _self.test
+}
+
+do_check 'testdir has the expected path' \
+         'unset am_create_testdir' \
+         'case `pwd` in '"$cwd"'/_self.dir);; *) Exit 1;; esac'
+
+do_check 'fully pre-populated testdir' \
+         'unset am_create_testdir' \
+         'test -f install-sh || Exit 1
+          test -f configure.in || Exit 1
+          case `pwd` in '"$cwd"'/_self.dir) : ;; *) Exit 1;; esac'
+
+do_check 'testdir has the expected path' \
+         'am_create_testdir=empty' \
+         'case `pwd` in '"$cwd"'/_self.dir) : ;; *) Exit 1;; esac'
+
+do_check 'do not pre-populate testdir' \
+         'am_create_testdir=empty' \
+         'ls -a | grep -v "^\\.\\{1,2\\}$" | grep . && Exit 1; :'
+
+do_check 'do not create nor chdir in testdir' \
+         'am_create_testdir=no' \
+         'test ! -d _self.dir || Exit 1
+          test ! -f _self.dir || Exit 1
+          test ! -r _self.dir || Exit 1
+          test -f self-check-dir.tap || Exit 1
+          case `pwd` in '"$cwd"') : ;; *) Exit 1;; esac'
+
+:

@@ -633,7 +633,7 @@ parallel-tests-fd-redirect.test \
 parallel-tests-extra-programs.test \
 parallel-tests-unreadable.test \
 parallel-tests-subdir.test \
-parallel-tests-interrupt.test \
+parallel-tests-interrupt.tap \
 parallel-tests-reset-term.test \
 parallel-tests-harderror.test \
 parallel-tests-log-override-1.test \
@@ -798,12 +798,12 @@ reqd.test \
 reqd2.test \
 repeated-options.test \
 rulepat.test \
-self-check-cleanup.test \
-self-check-dir.test \
+self-check-cleanup.tap \
+self-check-dir.tap \
 self-check-env-sanitize.tap \
 self-check-exit.tap \
 self-check-explicit-skips.test \
-self-check-is_newest.test \
+self-check-is_newest.tap \
 self-check-me.tap \
 self-check-reexec.test \
 self-check-report.test \
@@ -811,7 +811,7 @@ self-check-sanity.test \
 self-check-seq.test \
 self-check-is-blocked-signal.tap \
 self-check-tap.test \
-self-check-unindent.test \
+self-check-unindent.tap \
 sanity.test \
 scripts.test \
 seenc.test \

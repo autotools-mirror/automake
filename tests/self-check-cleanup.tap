@@ -20,19 +20,24 @@
 . ./defs || Exit 1
 
 if test x"$sh_errexit_works" != x"yes"; then
-  skip_ "$me: no working exit trap with 'set -e'"
+  skip_all_ "$me: no working exit trap with 'set -e'"
 fi
+
+plan_ 42
 
 # We still need a little hack to make ./defs work outside automake's
 # tree `tests' subdirectory.  Not a big deal.
 sed "s|^testbuilddir=.*|testbuilddir='`pwd`'|" ../defs-static >defs-static
-diff ../defs-static defs-static && Exit 99
+diff ../defs-static defs-static && fatal_ "failed to edit defs-static"
 cp ../defs .
 
 AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC
 
-have_symlinks=false
-ln -s defs foo && have_symlinks=:
+if ln -s defs foo; then
+  have_symlinks=yes
+else
+  have_symlinks=no
+fi
 export have_symlinks # Is used also by spawned shells.
 
 dir=dummy.dir
@@ -42,28 +47,29 @@ dir=dummy.dir
 mkdir $dir $dir/sub
 cd $dir
 touch file sub/file
-if $have_symlinks; then
+if test $have_symlinks = yes; then
   ln -s file symlink
   ln -s none brokenlink
 fi
 cd ..
 chmod 000 $dir/sub/* $dir/file $dir/symlink
 chmod 000 $dir/sub $dir
-$SHELL -c  '. ./defs' dummy.test
-test ! -f $dir
-test ! -d $dir
-test ! -r $dir
+command_ok_ "pre-cleanup can deal with null-perms testdir" \
+            $SHELL -c  '. ./defs' dummy.test
+command_ok_ "pre-cleanup removed null-perms testdir"
+            eval 'test ! -f $dir && test ! -d $dir && test ! -r $dir'
 
 # Check that post-test cleanup works also with directories with
 # "null" permissions, and containing broken symlinks.
-$SHELL -c '
+command_ok_ "post-cleanup can deal with null-perms testdir" \
+            $SHELL -c  '
   stderr_fileno_=2
   . ./defs || Exit 1
   set -e
   mkdir dir dir/sub
   cd dir
   touch file sub/file
-  if $have_symlinks; then
+  if test $have_symlinks = yes; then
     ln -s file symlink
     ln -s none brokenlink
   fi
@@ -72,13 +78,12 @@ $SHELL -c '
   chmod 000 dir/sub dir
   :
 ' dummy.test
-test ! -f $dir
-test ! -d $dir
-test ! -r $dir
+command_ok_ "post-cleanup removed null-perms testdir"
+            eval 'test ! -f $dir && test ! -d $dir && test ! -r $dir'
 
 # Check that pre-test cleanup does not unduly change the permissions of
 # files to which symlinks in the temporary test directory point to.
-if $have_symlinks; then
+if test $have_symlinks = yes; then
 
   mkdir dir
   chmod 000 dir
@@ -89,53 +94,64 @@ if $have_symlinks; then
   cd $dir
   ln -s ../dir ../file .
   cd ..
-  $SHELL -c '. ./defs' dummy.test
-  ls -l # For debugging.
-  ls -l file | grep "^----------.*file"
-  ls -ld dir | grep "^d---------.*dir"
 
-  $SHELL -c '
+  command_ok_ "pre-cleanup with testdir with zero-perms symlinks" \
+               $SHELL -c '. ./defs' dummy.test
+  ls -l # For debugging.
+  command_ok_ "pre-cleanup chmod doesn't follow symlinks to files" \
+               eval 'ls -l file | grep "^----------.*file"'
+  command_ok_ "pre-cleanup chmod doesn't follow symlinks to dirs" \
+              eval 'ls -ld dir | grep "^d---------.*dir"'
+
+  command_ok_ "post-cleanup with testdir with zero-perms symlinks" \
+              $SHELL -c '
     ocwd=`pwd` || exit 1
     stderr_fileno_=2
     . ./defs || Exit 1
     ln -s "$ocwd/dir" "$ocwd/file" .
   ' dummy.test
   ls -l # For debugging.
-  ls -l file | grep "^----------.*file"
-  ls -ld dir | grep "^d---------.*dir"
+  command_ok_ "post-cleanup chmod doesn't follow symlinks to files" \
+               eval 'ls -l file | grep "^----------.*file"'
+  command_ok_ "post-cleanup chmod doesn't follow symlinks to dirs" \
+              eval 'ls -ld dir | grep "^d---------.*dir"'
 
   rmdir dir
   rm -f file
 
-fi # $have_symlinks
+else # $have_symlinks = no
+  skip_row_ 6 "symlinks not supported"
+fi
 
 # Check that the cleanup trap does not remove the temporary
 # test directory in case of test failure, skip, hard-error,
 # or when receiving a signal.
 
 for st in 1 2 3 10 77 99 126 127 130 255; do
-  $SHELL -c  "
+  command_ok_ "exit trap doesn't clobber exit status $st" not $SHELL -c "
     stderr_fileno_=2
     . ./defs
     : > foo
     Exit $st
-  " dummy.test && Exit 1
-  test -f dummy.dir/foo
+  " dummy.test
+  command_ok_ "testdir not removed if exiting with status $st" \
+              test -f dummy.dir/foo
   rm -rf dummy.dir
 done
 
-for signum in 1 2 3 9 13 15; do
-  if is_blocked_signal $signum; then
-    echo "$me: signal $signum is blocked, skipping part of the test"
+for sig in 1 2 3 9 13 15; do
+  if is_blocked_signal $sig; then
+    skip_row_ 2 -r "signal $sig seems blocked"
     continue
   fi
-  $SHELL -c  "
+  command_ok_ "exit trap doesn't clobber signal $sig" not $SHELL -c "
     stderr_fileno_=2
     . ./defs
     : > foo
-    kill -$signum \$\$
-  " dummy.test && Exit 1
-  test -f dummy.dir/foo
+    kill -$sig \$\$
+  " dummy.test
+  command_ok_ "testdir not removed if getting signal $sig" \
+              test -f dummy.dir/foo
   rm -rf dummy.dir
 done
 

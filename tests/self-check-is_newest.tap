@@ -14,10 +14,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Sanity check for the automake testsuite.
-# Check the `is_newest' subroutine.
+# Sanity check for the automake testsuite: the `is_newest' subroutine.
 
 . ./defs || Exit 1
+
+plan_ 21
+
+# I'm a lazy typist.
+Y () { command_ok_ "is_newest $*" is_newest "$@"; }
+N () { command_ok_ "not is_newest $*" not is_newest "$@"; }
 
 : > a
 $sleep
@@ -26,18 +31,18 @@ $sleep
 
 stat a b c || : # For debugging.
 
-is_newest c a
-is_newest b a
-is_newest a b && Exit 1
-is_newest c b
-is_newest c c
-is_newest c a b c
+Y c a
+Y b a
+N a b
+Y c b
+Y c c
+Y c a b c
 
 touch -r c d
 
 stat c d || : # For debugging.
 
-is_newest c d
+Y c d
 
 # Should work on directories too, both empty and not-empty.  An older
 # implementation of `is_newest' failed if the first argument was a
@@ -56,20 +61,20 @@ stat u v x y x/foo y/foo || : # For debugging.
 
 for older in u x; do
   for newer in v y; do
-    is_newest $newer $older
-    is_newest $older $newer && Exit 1
+    Y $newer $older
+    N $older $newer
   done
 done
 
-is_newest x/foo x
-is_newest x x/foo && Exit 1
+Y x/foo x
+N x x/foo
 
 touch -r x u
-is_newest x u
-is_newest u x
+Y x u
+Y u x
 
 # A couple of mild "stress" tests.
-is_newest y x u v
-is_newest y u x/foo a b c
+Y y x u v
+Y y u x/foo a b c
 
 :
