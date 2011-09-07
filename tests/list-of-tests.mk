@@ -1051,7 +1051,7 @@ tap-empty.test \
 tap-escape-directive.test \
 tap-escape-directive-2.test \
 tap-exit.test \
-tap-signal.test \
+tap-signal.tap \
 tap-fancy.test \
 tap-fancy2.test \
 tap-global-log.test \
