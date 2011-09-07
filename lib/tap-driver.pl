@@ -239,7 +239,7 @@ sub trap_perl_warnings_and_errors ()
     {
       # Be sure to send the warning/error message to the original stderr
       # (presumably the console), not into the log file.
-      open STDERR, ">&", \*OLDERR;
+      open STDERR, ">&OLDERR";
       die @_;
     }
 }
@@ -253,6 +253,7 @@ sub start (@)
   open LOG, ">", $log_file or die "$ME: opening $log_file: $!\n";
   open OLDOUT, ">&STDOUT" or die "$ME: duplicating stdout: $!\n";
   open OLDERR, ">&STDERR" or die "$ME: duplicating stdout: $!\n";
+  *OLDERR = *OLDERR; # To pacify a "used only once" warning.
   trap_perl_warnings_and_errors;
   open STDOUT, ">&LOG" or die "$ME: redirecting stdout: $!\n";
   open STDERR, ">&LOG" or die "$ME: redirecting stderr: $!\n";
