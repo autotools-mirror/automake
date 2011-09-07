@@ -97,7 +97,10 @@ diag_string_="#"
 # Give a warning (using TAP diagnostic).
 warn_ ()
 {
-  diag_ "WARNING:" ${1-"(unknown warning)"} ${1+"$@"}
+  case $# in
+    0) diag_ "WARNING: (unknown warning)";;
+    *) diag_ "WARNING: $*";;
+  esac
 }
 
 # result_ RESULT [-D DIRECTIVE] [-r REASON] [--] [DESCRIPTION...]
