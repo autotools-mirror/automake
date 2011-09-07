@@ -32,7 +32,7 @@ use strict;
 use Getopt::Long ();
 use TAP::Parser;
 
-my $VERSION = '2011-08-25.10'; # UTC
+my $VERSION = '2011-09-07.15'; # UTC
 
 my $ME = "tap-driver.pl";
 
@@ -257,7 +257,6 @@ sub start (@)
   open STDOUT, ">&LOG" or die "$ME: redirecting stdout: $!\n";
   open STDERR, ">&LOG" or die "$ME: redirecting stderr: $!\n";
   $parser = TAP::Parser->new ({ exec => \@_, merge => $cfg{merge} });
-  $parser->ignore_exit(1) if $cfg{"ignore-exit"};
 }
 
 sub get_test_exit_message ()
