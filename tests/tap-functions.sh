@@ -166,7 +166,7 @@ skip_ () { result_ 'ok' -D SKIP ${1+"$@"}; }
 skip_row_ ()
 {
   skip_count_=$1; shift
-  for i_ in `seq $skip_count_`; do skip_ ${1+"$@"}; done
+  for i_ in `seq_ $skip_count_`; do skip_ ${1+"$@"}; done
 }
 
 # skip_all_ [REASON ...]
