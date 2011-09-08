@@ -120,8 +120,6 @@ check-local: check-no-repeated-test-name
 .PHONY: check-no-repeated-test-name
 
 ## Checking the list of tests.
-checked_test_extensions = .test .tap
-expected_list_of_tests = $(handwritten_TESTS)
 include $(top_srcdir)/CheckListOfTests.am
 
 clean-local: clean-local-check

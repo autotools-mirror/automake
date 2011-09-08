@@ -548,10 +548,16 @@ sc_tests_tap_plan:
 	 with_plan=`echo $$with_plan`; \
 	 ok=:; \
 	 for t in $(srcdir)/tests/*.tap; do \
-	   case " $$with_plan " in \
-	     *" $$t "*) ;; \
-	     *) ok=false; echo $$t;; \
+	   case " $$with_plan " in *" $$t "*) continue;; esac; \
+## It's ok for an *auto-generated* test sourcing an hand-written one not
+## to declare a TAP plan: that will be done by the sourced test.
+	   case $$t in \
+	     *-w.tap) \
+	       t2=`echo $$t | sed -e 's|.*/||' -e 's/-w\.tap$$/.tap/'` \
+	         && grep -E "^ *\\.  *[^ 	]*/$$t2\\b" $$t >/dev/null \
+	         && continue || : ;; \
 	   esac; \
+	   ok=false; echo $$t; \
 	 done; \
 	 $$ok || { \
 	  echo 'The tests above do not declare a TAP plan.' 1>&2; \
