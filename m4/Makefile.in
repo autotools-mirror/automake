@@ -16,7 +16,7 @@
 @SET_MAKE@
 
 # Copyright (C) 1996, 1997, 1998, 1999, 2001, 2002, 2003, 2004, 2006,
-# 2008, 2009 Free Software Foundation, Inc.
+# 2008, 2009, 2011 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,8 +50,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 subdir = m4
-DIST_COMMON = $(dist_m4data_DATA) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in
+DIST_COMMON = $(dist_automake_ac_DATA) $(dist_system_ac_DATA) \
+	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/amversion.m4 \
 	$(top_srcdir)/m4/auxdir.m4 $(top_srcdir)/m4/init.m4 \
@@ -95,8 +95,9 @@ am__nobase_list = $(am__nobase_strip_setup); \
 am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
-am__installdirs = "$(DESTDIR)$(m4datadir)"
-DATA = $(dist_m4data_DATA)
+am__installdirs = "$(DESTDIR)$(automake_acdir)" \
+	"$(DESTDIR)$(system_acdir)"
+DATA = $(dist_automake_ac_DATA) $(dist_system_ac_DATA)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -192,8 +193,9 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-m4datadir = $(datadir)/aclocal-$(APIVERSION)
-dist_m4data_DATA = \
+automake_acdir = $(datadir)/aclocal-$(APIVERSION)
+system_acdir = $(datadir)/aclocal
+dist_automake_ac_DATA = \
 $(top_srcdir)/m4/amversion.m4 \
 as.m4 \
 auxdir.m4 \
@@ -232,7 +234,10 @@ tar.m4 \
 upc.m4 \
 vala.m4
 
-EXTRA_DIST = dirlist amversion.in
+
+# So that $(system_acdir) will be created by "make install".
+dist_system_ac_DATA = 
+EXTRA_DIST = acdir/dirlist amversion.in
 all: all-am
 
 .SUFFIXES:
@@ -266,26 +271,46 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
-install-dist_m4dataDATA: $(dist_m4data_DATA)
+install-dist_automake_acDATA: $(dist_automake_ac_DATA)
 	@$(NORMAL_INSTALL)
-	test -z "$(m4datadir)" || $(MKDIR_P) "$(DESTDIR)$(m4datadir)"
-	@list='$(dist_m4data_DATA)'; test -n "$(m4datadir)" || list=; \
+	test -z "$(automake_acdir)" || $(MKDIR_P) "$(DESTDIR)$(automake_acdir)"
+	@list='$(dist_automake_ac_DATA)'; test -n "$(automake_acdir)" || list=; \
 	for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  echo "$$d$$p"; \
 	done | $(am__base_list) | \
 	while read files; do \
-	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(m4datadir)'"; \
-	  $(INSTALL_DATA) $$files "$(DESTDIR)$(m4datadir)" || exit $$?; \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(automake_acdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(automake_acdir)" || exit $$?; \
 	done
 
-uninstall-dist_m4dataDATA:
+uninstall-dist_automake_acDATA:
 	@$(NORMAL_UNINSTALL)
-	@list='$(dist_m4data_DATA)'; test -n "$(m4datadir)" || list=; \
+	@list='$(dist_automake_ac_DATA)'; test -n "$(automake_acdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	test -n "$$files" || exit 0; \
-	echo " ( cd '$(DESTDIR)$(m4datadir)' && rm -f" $$files ")"; \
-	cd "$(DESTDIR)$(m4datadir)" && rm -f $$files
+	echo " ( cd '$(DESTDIR)$(automake_acdir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(automake_acdir)" && rm -f $$files
+install-dist_system_acDATA: $(dist_system_ac_DATA)
+	@$(NORMAL_INSTALL)
+	test -z "$(system_acdir)" || $(MKDIR_P) "$(DESTDIR)$(system_acdir)"
+	@list='$(dist_system_ac_DATA)'; test -n "$(system_acdir)" || list=; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(system_acdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(system_acdir)" || exit $$?; \
+	done
+
+uninstall-dist_system_acDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(dist_system_ac_DATA)'; test -n "$(system_acdir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	test -n "$$files" || exit 0; \
+	echo " ( cd '$(DESTDIR)$(system_acdir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(system_acdir)" && rm -f $$files
 tags: TAGS
 TAGS:
 
@@ -329,7 +354,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(m4datadir)"; do \
+	for dir in "$(DESTDIR)$(automake_acdir)" "$(DESTDIR)$(system_acdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -382,7 +407,8 @@ info: info-am
 
 info-am:
 
-install-data-am: install-dist_m4dataDATA
+install-data-am: install-dist_automake_acDATA \
+	install-dist_system_acDATA
 
 install-dvi: install-dvi-am
 
@@ -426,21 +452,23 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-dist_m4dataDATA
+uninstall-am: uninstall-dist_automake_acDATA \
+	uninstall-dist_system_acDATA
 
 .MAKE: install-am install-strip
 
 .PHONY: all all-am check check-am clean clean-generic distclean \
 	distclean-generic distdir dvi dvi-am html html-am info info-am \
 	install install-am install-data install-data-am \
-	install-dist_m4dataDATA install-dvi install-dvi-am \
-	install-exec install-exec-am install-html install-html-am \
-	install-info install-info-am install-man install-pdf \
-	install-pdf-am install-ps install-ps-am install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-generic pdf \
-	pdf-am ps ps-am uninstall uninstall-am \
-	uninstall-dist_m4dataDATA
+	install-dist_automake_acDATA install-dist_system_acDATA \
+	install-dvi install-dvi-am install-exec install-exec-am \
+	install-html install-html-am install-info install-info-am \
+	install-man install-pdf install-pdf-am install-ps \
+	install-ps-am install-strip installcheck installcheck-am \
+	installdirs maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am uninstall \
+	uninstall-am uninstall-dist_automake_acDATA \
+	uninstall-dist_system_acDATA
 
 
 # We build amversion.m4 here, instead of from config.status,
