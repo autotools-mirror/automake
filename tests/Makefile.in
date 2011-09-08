@@ -52,7 +52,7 @@ host_triplet = @host@
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(srcdir)/aclocal.in $(srcdir)/automake.in $(srcdir)/defs \
 	$(srcdir)/defs-static.in $(srcdir)/list-of-tests.mk \
-	$(srcdir)/tests-deps.am $(top_srcdir)/CheckListOfTests.am
+	$(srcdir)/testsuite-part.am $(top_srcdir)/CheckListOfTests.am
 subdir = tests
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/amversion.m4 \
@@ -295,7 +295,7 @@ AM_TAP_LOG_DRIVER_FLAGS = --merge --comments --diagnostic-string \
 EXTRA_DIST = ChangeLog-old $(handwritten_TESTS) tap-summary-aux.sh \
 	tap-setup.sh extract-testsuite-summary \
 	testsuite-summary-checks.sh trivial-test-driver \
-	$(generated_TESTS) gen-tests-deps tap-functions.sh \
+	$(generated_TESTS) gen-testsuite-part tap-functions.sh \
 	plain-functions.sh
 
 # Hand-written tests.
@@ -1491,7 +1491,7 @@ all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .html .log .tap .test .trs
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/list-of-tests.mk $(srcdir)/tests-deps.am $(top_srcdir)/CheckListOfTests.am $(am__configure_deps)
+$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/list-of-tests.mk $(srcdir)/testsuite-part.am $(top_srcdir)/CheckListOfTests.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -2200,14 +2200,15 @@ tap-more2-w.log: tap-more2.log
 tap-recheck-w.log: tap-recheck.test
 tap-recheck-w.log: tap-recheck.log
 
-$(srcdir)/tests-deps.am:
-	$(AM_V_at)rm -f tests-deps.tmp $@
-	$(AM_V_GEN)$(PERL) $(srcdir)/gen-tests-deps --srcdir $(srcdir) \
-	             > tests-deps.tmp
-	$(AM_V_at)chmod a-w tests-deps.tmp && mv -f tests-deps.tmp $@
+$(srcdir)/testsuite-part.am:
+	$(AM_V_at)rm -f testsuite-part.tmp $@
+	$(AM_V_GEN)$(PERL) $(srcdir)/gen-testsuite-part \
+	  --srcdir $(srcdir) > testsuite-part.tmp
+	$(AM_V_at)chmod a-w testsuite-part.tmp
+	$(AM_V_at)mv -f testsuite-part.tmp $@
 
-$(generated_TESTS) $(srcdir)/tests-deps.am: \
-  gen-tests-deps list-of-tests.mk Makefile.am $(handwritten_TESTS)
+$(generated_TESTS) $(srcdir)/testsuite-part.am: \
+  gen-testsuite-part list-of-tests.mk Makefile.am $(handwritten_TESTS)
 
 # Static dependencies valid for each test case.
 $(TEST_LOGS): defs defs-static aclocal-$(APIVERSION) automake-$(APIVERSION)

@@ -80,20 +80,21 @@ EXTRA_DIST += $(handwritten_TESTS)
 # Automatically-generated tests wrapping hand-written ones.
 # Also, automatically-computed dependencies for tests.
 
-include $(srcdir)/tests-deps.am
+include $(srcdir)/testsuite-part.am
 
 TESTS += $(generated_TESTS)
 EXTRA_DIST += $(generated_TESTS)
 
-$(srcdir)/tests-deps.am:
-	$(AM_V_at)rm -f tests-deps.tmp $@
-	$(AM_V_GEN)$(PERL) $(srcdir)/gen-tests-deps --srcdir $(srcdir) \
-	             > tests-deps.tmp
-	$(AM_V_at)chmod a-w tests-deps.tmp && mv -f tests-deps.tmp $@
-EXTRA_DIST += gen-tests-deps
+$(srcdir)/testsuite-part.am:
+	$(AM_V_at)rm -f testsuite-part.tmp $@
+	$(AM_V_GEN)$(PERL) $(srcdir)/gen-testsuite-part \
+	  --srcdir $(srcdir) > testsuite-part.tmp
+	$(AM_V_at)chmod a-w testsuite-part.tmp
+	$(AM_V_at)mv -f testsuite-part.tmp $@
+EXTRA_DIST += gen-testsuite-part
 
-$(generated_TESTS) $(srcdir)/tests-deps.am: \
-  gen-tests-deps list-of-tests.mk Makefile.am $(handwritten_TESTS)
+$(generated_TESTS) $(srcdir)/testsuite-part.am: \
+  gen-testsuite-part list-of-tests.mk Makefile.am $(handwritten_TESTS)
 
 # Static dependencies valid for each test case.
 $(TEST_LOGS): defs defs-static aclocal-$(APIVERSION) automake-$(APIVERSION)
