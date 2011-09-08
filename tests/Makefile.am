@@ -38,8 +38,7 @@ AM_TAP_LOG_DRIVER_FLAGS += --diagnostic-string `printf '\043%%\043\n'`
 
 EXTRA_DIST = ChangeLog-old
 
-## Will be updated later.
-TESTS =
+TESTS = ## Will be updated later.
 
 XFAIL_TESTS = \
 all.test \
@@ -78,24 +77,31 @@ include $(srcdir)/list-of-tests.mk
 TESTS += $(handwritten_TESTS)
 EXTRA_DIST += $(handwritten_TESTS)
 
-# "Auto-generated" tests wrapping hand-written ones.
+# Automatically-generated tests wrapping hand-written ones.
+# Also, automatically-computed dependencies for tests.
 
-include $(srcdir)/wrap-tests.am
+include $(srcdir)/tests-deps.am
 
-TESTS += $(wrap_TESTS)
+TESTS += $(generated_TESTS)
+EXTRA_DIST += $(generated_TESTS)
 
-$(srcdir)/wrap-tests.am: gen-wrap-tests list-of-tests.mk Makefile.am
-	$(AM_V_GEN)($(am__cd) $(srcdir) \
-	  && $(SHELL) ./gen-wrap-tests) > wrap-tests.tmp
-	$(AM_V_at)chmod a-w wrap-tests.tmp && mv -f wrap-tests.tmp $@
-EXTRA_DIST += gen-wrap-tests
+$(srcdir)/tests-deps.am:
+	$(AM_V_at)rm -f tests-deps.tmp $@
+	$(AM_V_GEN)$(PERL) $(srcdir)/gen-tests-deps --srcdir $(srcdir) \
+	             > tests-deps.tmp
+	$(AM_V_at)chmod a-w tests-deps.tmp && mv -f tests-deps.tmp $@
+EXTRA_DIST += gen-tests-deps
 
-# These tests are not expected to exist on filesystem, so we need this
-# declaration to avoid spurious failures.
-$(wrap_TESTS):
-# All the "wrapper" tests work by sourcing the script `wrap-tests.sh'.
-$(wrap_LOGS): wrap-tests.sh
-EXTRA_DIST += wrap-tests.sh
+$(generated_TESTS) $(srcdir)/tests-deps.am: \
+  gen-tests-deps list-of-tests.mk Makefile.am $(handwritten_TESTS)
+
+# Static dependencies valid for each test case.
+$(TEST_LOGS): defs defs-static aclocal-$(APIVERSION) automake-$(APIVERSION)
+# FIXME: this should be made more granular once we have a cleaner
+# subdivision of the tests.
+$(TEST_LOGS): plain-functions.sh tap-functions.sh
+EXTRA_DIST += tap-functions.sh plain-functions.sh
+
 
 # If two test scripts have the same basename, they will end up sharing
 # the same log file, leading to all sort of undefined and undesired
@@ -116,24 +122,6 @@ check-local: check-no-repeated-test-name
 checked_test_extensions = .test .tap
 expected_list_of_tests = $(handwritten_TESTS)
 include $(top_srcdir)/CheckListOfTests.am
-
-# Automatically computed dependencies for tests.
-
-$(srcdir)/tests-deps.am: gen-tests-deps list-of-tests.mk Makefile.am
-	$(AM_V_at)rm -f tests-deps.tmp $@
-	$(AM_V_GEN)$(PERL) $(srcdir)/gen-tests-deps --srcdir $(srcdir) \
-	             > tests-deps.tmp
-	$(AM_V_at)chmod a-w tests-deps.tmp && mv -f tests-deps.tmp $@
-EXTRA_DIST += gen-tests-deps
-
-include $(srcdir)/tests-deps.am
-
-# Static dependencies valid for each test case.
-$(TEST_LOGS): defs defs-static aclocal-$(APIVERSION) automake-$(APIVERSION)
-# FIXME: this should be made more granular once we have a cleaner
-# subdivision of the tests.
-$(TEST_LOGS): plain-functions.sh tap-functions.sh
-EXTRA_DIST += tap-functions.sh plain-functions.sh
 
 clean-local: clean-local-check
 .PHONY: clean-local-check

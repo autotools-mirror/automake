@@ -52,8 +52,7 @@ host_triplet = @host@
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(srcdir)/aclocal.in $(srcdir)/automake.in $(srcdir)/defs \
 	$(srcdir)/defs-static.in $(srcdir)/list-of-tests.mk \
-	$(srcdir)/tests-deps.am $(srcdir)/wrap-tests.am \
-	$(top_srcdir)/CheckListOfTests.am
+	$(srcdir)/tests-deps.am $(top_srcdir)/CheckListOfTests.am
 subdir = tests
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/amversion.m4 \
@@ -182,21 +181,9 @@ am__test_logs2 = $(am__test_logs1:.test.log=.log)
 TEST_LOG_DRIVER = $(SHELL) $(top_srcdir)/lib/test-driver
 TEST_LOG_COMPILE = $(TEST_LOG_COMPILER) $(AM_TEST_LOG_FLAGS) \
 	$(TEST_LOG_FLAGS)
-am__test_logs3 = $(am__test_logs2:.tap.log=.log)
+TEST_LOGS = $(am__test_logs2:.tap.log=.log)
 TAP_LOG_COMPILE = $(TAP_LOG_COMPILER) $(AM_TAP_LOG_FLAGS) \
 	$(TAP_LOG_FLAGS)
-am__test_logs4 = $(am__test_logs3:.test_pt.log=.log)
-TEST_PT_LOG_COMPILE = $(TEST_PT_LOG_COMPILER) $(AM_TEST_PT_LOG_FLAGS) \
-	$(TEST_PT_LOG_FLAGS)
-am__test_logs5 = $(am__test_logs4:.test_cs.log=.log)
-TEST_CS_LOG_COMPILE = $(TEST_CS_LOG_COMPILER) $(AM_TEST_CS_LOG_FLAGS) \
-	$(TEST_CS_LOG_FLAGS)
-am__test_logs6 = $(am__test_logs5:.test_pltap.log=.log)
-TEST_PLTAP_LOG_COMPILE = $(TEST_PLTAP_LOG_COMPILER) \
-	$(AM_TEST_PLTAP_LOG_FLAGS) $(TEST_PLTAP_LOG_FLAGS)
-TEST_LOGS = $(am__test_logs6:.tap_pltap.log=.log)
-TAP_PLTAP_LOG_COMPILE = $(TAP_PLTAP_LOG_COMPILER) \
-	$(AM_TAP_PLTAP_LOG_FLAGS) $(TAP_PLTAP_LOG_FLAGS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -299,21 +286,23 @@ top_srcdir = @top_srcdir@
 
 # Run the tests with the shell detected at configure time.
 LOG_COMPILER = $(SHELL)
-TEST_EXTENSIONS = .test .tap .test_pt .test_cs .test_pltap .tap_pltap
+TEST_EXTENSIONS = .test .tap
 TEST_LOG_COMPILER = $(LOG_COMPILER)
 TAP_LOG_COMPILER = $(LOG_COMPILER)
 TAP_LOG_DRIVER = AM_TAP_AWK='$(AWK)' $(SHELL) $(top_srcdir)/lib/tap-driver.sh
 AM_TAP_LOG_DRIVER_FLAGS = --merge --comments --diagnostic-string \
 	`printf '\043%%\043\n'`
-EXTRA_DIST = ChangeLog-old $(handwritten_TESTS) gen-wrap-tests \
-	wrap-tests.sh gen-tests-deps tap-summary-aux.sh tap-setup.sh \
-	extract-testsuite-summary testsuite-summary-checks.sh \
-	trivial-test-driver tap-functions.sh plain-functions.sh
+EXTRA_DIST = ChangeLog-old $(handwritten_TESTS) tap-summary-aux.sh \
+	tap-setup.sh extract-testsuite-summary \
+	testsuite-summary-checks.sh trivial-test-driver \
+	$(generated_TESTS) gen-tests-deps tap-functions.sh \
+	plain-functions.sh
 
 # Hand-written tests.
 
-# "Auto-generated" tests wrapping hand-written ones.
-TESTS = $(handwritten_TESTS) $(wrap_TESTS)
+# Automatically-generated tests wrapping hand-written ones.
+# Also, automatically-computed dependencies for tests.
+TESTS = $(handwritten_TESTS) $(generated_TESTS)
 XFAIL_TESTS = \
 all.test \
 cond17.test \
@@ -1438,170 +1427,61 @@ yflags-force-override.test \
 yflags-force-conditional.test \
 yflags-var-expand.test
 
-wrap_TESTS = check-concurrency-bug9245-w.test_pt \
-	check-exported-srcdir-w.test_pt check-fd-redirect-w.test_pt \
-	check-subst-prog-w.test_pt check-subst-w.test_pt \
-	check-tests-in-builddir-w.test_pt check-w.test_pt \
-	check11-w.test_pt check12-w.test_pt check2-w.test_pt \
-	check3-w.test_pt check4-w.test_pt check5-w.test_pt \
-	check6-w.test_pt check7-w.test_pt check8-w.test_pt \
-	color-w.test_pt color2-w.test_pt comment9-w.test_pt \
-	dejagnu-w.test_pt exeext4-w.test_pt maken3-w.test_pt \
-	maken4-w.test_pt posixsubst-tests-w.test_pt \
-	tests-environment-w.test_pt ar-lib-w.test_cs compile-w.test_cs \
-	compile2-w.test_cs compile3-w.test_cs compile4-w.test_cs \
-	compile5-w.test_cs compile6-w.test_cs instsh2-w.test_cs \
-	instsh3-w.test_cs mdate5-w.test_cs mdate6-w.test_cs \
-	missing-w.test_cs missing2-w.test_cs missing3-w.test_cs \
-	missing5-w.test_cs mkinst3-w.test_cs \
-	tap-ambiguous-directive-w.test_pltap \
-	tap-autonumber-w.test_pltap tap-bad-prog-w.tap_pltap \
-	tap-bailout-and-logging-w.test_pltap \
-	tap-bailout-suppress-badexit-w.test_pltap \
-	tap-bailout-suppress-later-diagnostic-w.test_pltap \
-	tap-bailout-suppress-later-errors-w.test_pltap \
-	tap-bailout-w.test_pltap tap-basic-w.test_pltap \
-	tap-color-w.test_pltap tap-deps-w.test_pltap \
-	tap-diagnostic-custom-w.test_pltap tap-diagnostic-w.test_pltap \
-	tap-doc-w.test_pltap tap-driver-stderr-w.test_pltap \
-	tap-empty-diagnostic-w.test_pltap tap-empty-w.test_pltap \
-	tap-escape-directive-2-w.test_pltap \
-	tap-escape-directive-w.test_pltap tap-exit-w.test_pltap \
-	tap-fancy-w.test_pltap tap-fancy2-w.test_pltap \
-	tap-global-log-w.test_pltap tap-global-result-w.test_pltap \
-	tap-html-w.test_pltap tap-log-w.test_pltap \
-	tap-merge-stdout-stderr-w.test_pltap \
-	tap-missing-plan-and-bad-exit-w.test_pltap \
-	tap-more-w.test_pltap tap-more2-w.test_pltap \
-	tap-msg0-bailout-w.test_pltap tap-msg0-directive-w.test_pltap \
-	tap-msg0-misc-w.test_pltap tap-msg0-planskip-w.test_pltap \
-	tap-msg0-result-w.test_pltap tap-negative-numbers-w.test_pltap \
-	tap-no-disable-hard-error-w.test_pltap \
-	tap-no-merge-stdout-stderr-w.test_pltap \
-	tap-no-spurious-numbers-w.test_pltap \
-	tap-no-spurious-summary-w.test_pltap \
-	tap-no-spurious-w.test_pltap tap-not-ok-skip-w.test_pltap \
-	tap-number-wordboundary-w.test_pltap \
-	tap-numbers-leading-zero-w.test_pltap \
-	tap-numeric-description-w.test_pltap \
-	tap-out-of-order-w.test_pltap \
-	tap-passthrough-exit-w.test_pltap tap-passthrough-w.test_pltap \
-	tap-plan-corner-w.test_pltap tap-plan-errors-w.test_pltap \
-	tap-plan-leading-zero-w.test_pltap \
-	tap-plan-malformed-w.test_pltap tap-plan-middle-w.test_pltap \
-	tap-plan-whitespace-w.test_pltap tap-plan-w.test_pltap \
-	tap-planskip-and-logging-w.test_pltap \
-	tap-planskip-badexit-w.test_pltap \
-	tap-planskip-bailout-w.test_pltap \
-	tap-planskip-case-insensitive-w.test_pltap \
-	tap-planskip-late-w.test_pltap \
-	tap-planskip-later-errors-w.test_pltap \
-	tap-planskip-unplanned-corner-w.test_pltap \
-	tap-planskip-unplanned-w.test_pltap \
-	tap-planskip-whitespace-w.test_pltap tap-planskip-w.test_pltap \
-	tap-realtime-w.test_pltap tap-recheck-logs-w.test_pltap \
-	tap-recheck-w.test_pltap tap-result-comment-w.test_pltap \
-	tap-signal-w.tap_pltap tap-test-number-0-w.test_pltap \
-	tap-todo-skip-together-w.test_pltap \
-	tap-todo-skip-whitespace-w.test_pltap \
-	tap-todo-skip-w.test_pltap tap-unplanned-w.test_pltap \
-	tap-whitespace-normalization-w.test_pltap \
-	tap-with-and-without-number-w.test_pltap \
-	tap-xfail-tests-w.test_pltap
-wrap_LOGS = check-concurrency-bug9245-w.log \
-	check-exported-srcdir-w.log check-fd-redirect-w.log \
-	check-subst-prog-w.log check-subst-w.log \
-	check-tests-in-builddir-w.log check-w.log check11-w.log \
-	check12-w.log check2-w.log check3-w.log check4-w.log \
-	check5-w.log check6-w.log check7-w.log check8-w.log \
-	color-w.log color2-w.log comment9-w.log dejagnu-w.log \
-	exeext4-w.log maken3-w.log maken4-w.log posixsubst-tests-w.log \
-	tests-environment-w.log ar-lib-w.log compile-w.log \
-	compile2-w.log compile3-w.log compile4-w.log compile5-w.log \
-	compile6-w.log instsh2-w.log instsh3-w.log mdate5-w.log \
-	mdate6-w.log missing-w.log missing2-w.log missing3-w.log \
-	missing5-w.log mkinst3-w.log tap-ambiguous-directive-w.log \
-	tap-autonumber-w.log tap-bad-prog-w.log \
-	tap-bailout-and-logging-w.log \
-	tap-bailout-suppress-badexit-w.log \
-	tap-bailout-suppress-later-diagnostic-w.log \
-	tap-bailout-suppress-later-errors-w.log tap-bailout-w.log \
-	tap-basic-w.log tap-color-w.log tap-deps-w.log \
-	tap-diagnostic-custom-w.log tap-diagnostic-w.log tap-doc-w.log \
-	tap-driver-stderr-w.log tap-empty-diagnostic-w.log \
-	tap-empty-w.log tap-escape-directive-2-w.log \
-	tap-escape-directive-w.log tap-exit-w.log tap-fancy-w.log \
-	tap-fancy2-w.log tap-global-log-w.log tap-global-result-w.log \
-	tap-html-w.log tap-log-w.log tap-merge-stdout-stderr-w.log \
-	tap-missing-plan-and-bad-exit-w.log tap-more-w.log \
-	tap-more2-w.log tap-msg0-bailout-w.log \
-	tap-msg0-directive-w.log tap-msg0-misc-w.log \
-	tap-msg0-planskip-w.log tap-msg0-result-w.log \
-	tap-negative-numbers-w.log tap-no-disable-hard-error-w.log \
-	tap-no-merge-stdout-stderr-w.log tap-no-spurious-numbers-w.log \
-	tap-no-spurious-summary-w.log tap-no-spurious-w.log \
-	tap-not-ok-skip-w.log tap-number-wordboundary-w.log \
-	tap-numbers-leading-zero-w.log tap-numeric-description-w.log \
-	tap-out-of-order-w.log tap-passthrough-exit-w.log \
-	tap-passthrough-w.log tap-plan-corner-w.log \
-	tap-plan-errors-w.log tap-plan-leading-zero-w.log \
-	tap-plan-malformed-w.log tap-plan-middle-w.log \
-	tap-plan-whitespace-w.log tap-plan-w.log \
-	tap-planskip-and-logging-w.log tap-planskip-badexit-w.log \
-	tap-planskip-bailout-w.log tap-planskip-case-insensitive-w.log \
-	tap-planskip-late-w.log tap-planskip-later-errors-w.log \
-	tap-planskip-unplanned-corner-w.log \
-	tap-planskip-unplanned-w.log tap-planskip-whitespace-w.log \
-	tap-planskip-w.log tap-realtime-w.log tap-recheck-logs-w.log \
-	tap-recheck-w.log tap-result-comment-w.log tap-signal-w.log \
-	tap-test-number-0-w.log tap-todo-skip-together-w.log \
-	tap-todo-skip-whitespace-w.log tap-todo-skip-w.log \
-	tap-unplanned-w.log tap-whitespace-normalization-w.log \
-	tap-with-and-without-number-w.log tap-xfail-tests-w.log
-TEST_PT_LOG_DRIVER = \
-  $(TEST_LOG_DRIVER)
-
-AM_TEST_PT_LOG_DRIVER_FLAGS = \
-  $(AM_TEST_LOG_DRIVER_FLAGS) \
-  $(TEST_LOG_DRIVER_FLAGS)
-
-TEST_PT_LOG_COMPILER = \
-  $(LOG_COMPILER) $(srcdir)/wrap-tests.sh \
-  --type pt --define parallel_tests "yes"
-
-TEST_CS_LOG_DRIVER = \
-  $(TEST_LOG_DRIVER)
-
-AM_TEST_CS_LOG_DRIVER_FLAGS = \
-  $(AM_TEST_LOG_DRIVER_FLAGS) \
-  $(TEST_LOG_DRIVER_FLAGS)
-
-TEST_CS_LOG_COMPILER = \
-  $(LOG_COMPILER) $(srcdir)/wrap-tests.sh \
-  --type cs --define test_prefer_config_shell "yes"
-
-TEST_PLTAP_LOG_DRIVER = \
-  $(TEST_LOG_DRIVER)
-
-AM_TEST_PLTAP_LOG_DRIVER_FLAGS = \
-  $(AM_TEST_LOG_DRIVER_FLAGS) \
-  $(TEST_LOG_DRIVER_FLAGS)
-
-TEST_PLTAP_LOG_COMPILER = \
-  $(LOG_COMPILER) $(srcdir)/wrap-tests.sh \
-  --type pltap --define am_tap_implementation "perl"
-
-TAP_PLTAP_LOG_DRIVER = \
-  $(TAP_LOG_DRIVER)
-
-AM_TAP_PLTAP_LOG_DRIVER_FLAGS = \
-  $(AM_TAP_LOG_DRIVER_FLAGS) \
-  $(TAP_LOG_DRIVER_FLAGS)
-
-TAP_PLTAP_LOG_COMPILER = \
-  $(LOG_COMPILER) $(srcdir)/wrap-tests.sh \
-  --type pltap --define am_tap_implementation "perl"
-
+generated_TESTS = ar-lib-w.test compile-w.test compile2-w.test \
+	compile3-w.test compile4-w.test compile5-w.test \
+	compile6-w.test instsh2-w.test instsh3-w.test mdate5-w.test \
+	mdate6-w.test missing-w.test missing2-w.test missing3-w.test \
+	missing5-w.test mkinst3-w.test check-w.test check2-w.test \
+	check3-w.test check4-w.test check5-w.test check6-w.test \
+	check7-w.test check8-w.test check11-w.test check12-w.test \
+	check-subst-w.test check-subst-prog-w.test \
+	check-exported-srcdir-w.test check-fd-redirect-w.test \
+	check-tests-in-builddir-w.test \
+	check-concurrency-bug9245-w.test color-w.test color2-w.test \
+	comment9-w.test dejagnu-w.test exeext4-w.test maken3-w.test \
+	maken4-w.test tests-environment-w.test posixsubst-tests-w.test \
+	tap-ambiguous-directive-w.test tap-autonumber-w.test \
+	tap-bailout-w.test tap-bailout-and-logging-w.test \
+	tap-bailout-suppress-badexit-w.test \
+	tap-bailout-suppress-later-diagnostic-w.test \
+	tap-bailout-suppress-later-errors-w.test tap-color-w.test \
+	tap-deps-w.test tap-diagnostic-w.test \
+	tap-empty-diagnostic-w.test tap-empty-w.test \
+	tap-escape-directive-w.test tap-escape-directive-2-w.test \
+	tap-exit-w.test tap-signal-w.tap tap-fancy-w.test \
+	tap-fancy2-w.test tap-global-log-w.test \
+	tap-global-result-w.test tap-html-w.test tap-log-w.test \
+	tap-msg0-result-w.test tap-msg0-directive-w.test \
+	tap-msg0-planskip-w.test tap-msg0-bailout-w.test \
+	tap-msg0-misc-w.test tap-merge-stdout-stderr-w.test \
+	tap-no-merge-stdout-stderr-w.test \
+	tap-no-disable-hard-error-w.test \
+	tap-no-spurious-summary-w.test tap-no-spurious-numbers-w.test \
+	tap-no-spurious-w.test tap-not-ok-skip-w.test \
+	tap-number-wordboundary-w.test tap-numeric-description-w.test \
+	tap-negative-numbers-w.test tap-numbers-leading-zero-w.test \
+	tap-out-of-order-w.test tap-passthrough-w.test \
+	tap-passthrough-exit-w.test tap-plan-w.test \
+	tap-plan-corner-w.test tap-plan-errors-w.test \
+	tap-plan-middle-w.test tap-plan-whitespace-w.test \
+	tap-plan-leading-zero-w.test tap-plan-malformed-w.test \
+	tap-missing-plan-and-bad-exit-w.test tap-planskip-w.test \
+	tap-planskip-late-w.test tap-planskip-and-logging-w.test \
+	tap-planskip-unplanned-w.test \
+	tap-planskip-unplanned-corner-w.test \
+	tap-planskip-case-insensitive-w.test \
+	tap-planskip-whitespace-w.test tap-planskip-badexit-w.test \
+	tap-planskip-bailout-w.test tap-planskip-later-errors-w.test \
+	tap-realtime-w.test tap-test-number-0-w.test \
+	tap-recheck-logs-w.test tap-result-comment-w.test \
+	tap-todo-skip-together-w.test tap-todo-skip-whitespace-w.test \
+	tap-todo-skip-w.test tap-unplanned-w.test \
+	tap-whitespace-normalization-w.test \
+	tap-with-and-without-number-w.test tap-xfail-tests-w.test \
+	tap-bad-prog-w.tap tap-basic-w.test \
+	tap-diagnostic-custom-w.test tap-driver-stderr-w.test \
+	tap-doc-w.test tap-more-w.test tap-more2-w.test \
+	tap-recheck-w.test
 checked_test_extensions = .test .tap
 expected_list_of_tests = $(handwritten_TESTS)
 am__tmk = tests-in-makefile-list.tmp
@@ -1610,8 +1490,8 @@ am__tdf = diff-in-tests-lists.tmp
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .html .log .tap .tap_pltap .test .test_cs .test_pltap .test_pt .trs
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/list-of-tests.mk $(srcdir)/wrap-tests.am $(top_srcdir)/CheckListOfTests.am $(srcdir)/tests-deps.am $(am__configure_deps)
+.SUFFIXES: .html .log .tap .test .trs
+$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/list-of-tests.mk $(srcdir)/tests-deps.am $(top_srcdir)/CheckListOfTests.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -1846,26 +1726,6 @@ recheck recheck-html:
 	--log-file '$*.log' --trs-file '$*.trs' \
 	$(am__common_driver_flags) $(AM_TAP_LOG_DRIVER_FLAGS) $(TAP_LOG_DRIVER_FLAGS) -- $(TAP_LOG_COMPILE) "$$tst" \
 	$(AM_TESTS_FD_REDIRECT)
-.test_pt.log:
-	@p='$<'; $(am__check_pre) $(TEST_PT_LOG_DRIVER) --test-name "$$f" \
-	--log-file '$*.log' --trs-file '$*.trs' \
-	$(am__common_driver_flags) $(AM_TEST_PT_LOG_DRIVER_FLAGS) $(TEST_PT_LOG_DRIVER_FLAGS) -- $(TEST_PT_LOG_COMPILE) "$$tst" \
-	$(AM_TESTS_FD_REDIRECT)
-.test_cs.log:
-	@p='$<'; $(am__check_pre) $(TEST_CS_LOG_DRIVER) --test-name "$$f" \
-	--log-file '$*.log' --trs-file '$*.trs' \
-	$(am__common_driver_flags) $(AM_TEST_CS_LOG_DRIVER_FLAGS) $(TEST_CS_LOG_DRIVER_FLAGS) -- $(TEST_CS_LOG_COMPILE) "$$tst" \
-	$(AM_TESTS_FD_REDIRECT)
-.test_pltap.log:
-	@p='$<'; $(am__check_pre) $(TEST_PLTAP_LOG_DRIVER) --test-name "$$f" \
-	--log-file '$*.log' --trs-file '$*.trs' \
-	$(am__common_driver_flags) $(AM_TEST_PLTAP_LOG_DRIVER_FLAGS) $(TEST_PLTAP_LOG_DRIVER_FLAGS) -- $(TEST_PLTAP_LOG_COMPILE) "$$tst" \
-	$(AM_TESTS_FD_REDIRECT)
-.tap_pltap.log:
-	@p='$<'; $(am__check_pre) $(TAP_PLTAP_LOG_DRIVER) --test-name "$$f" \
-	--log-file '$*.log' --trs-file '$*.trs' \
-	$(am__common_driver_flags) $(AM_TAP_PLTAP_LOG_DRIVER_FLAGS) $(TAP_PLTAP_LOG_DRIVER_FLAGS) -- $(TAP_PLTAP_LOG_COMPILE) "$$tst" \
-	$(AM_TESTS_FD_REDIRECT)
 
 distdir: $(DISTFILES)
 	@srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
@@ -2021,202 +1881,6 @@ uninstall-am:
 print-list-of-tests:
 	@echo $(handwritten_TESTS)
 .PHONY: print-list-of-tests
-check-concurrency-bug9245-w.log: check-concurrency-bug9245.test
-check-exported-srcdir-w.log: check-exported-srcdir.test
-check-fd-redirect-w.log: check-fd-redirect.test
-check-subst-prog-w.log: check-subst-prog.test
-check-subst-w.log: check-subst.test
-check-tests-in-builddir-w.log: check-tests-in-builddir.test
-check-w.log: check.test
-check11-w.log: check11.test
-check12-w.log: check12.test
-check2-w.log: check2.test
-check3-w.log: check3.test
-check4-w.log: check4.test
-check5-w.log: check5.test
-check6-w.log: check6.test
-check7-w.log: check7.test
-check8-w.log: check8.test
-color-w.log: color.test
-color2-w.log: color2.test
-comment9-w.log: comment9.test
-dejagnu-w.log: dejagnu.test
-exeext4-w.log: exeext4.test
-maken3-w.log: maken3.test
-maken4-w.log: maken4.test
-posixsubst-tests-w.log: posixsubst-tests.test
-tests-environment-w.log: tests-environment.test
-ar-lib-w.log: ar-lib.test
-compile-w.log: compile.test
-compile2-w.log: compile2.test
-compile3-w.log: compile3.test
-compile4-w.log: compile4.test
-compile5-w.log: compile5.test
-compile6-w.log: compile6.test
-instsh2-w.log: instsh2.test
-instsh3-w.log: instsh3.test
-mdate5-w.log: mdate5.test
-mdate6-w.log: mdate6.test
-missing-w.log: missing.test
-missing2-w.log: missing2.test
-missing3-w.log: missing3.test
-missing5-w.log: missing5.test
-mkinst3-w.log: mkinst3.test
-tap-ambiguous-directive-w.log: tap-ambiguous-directive.test
-tap-autonumber-w.log: tap-autonumber.test
-tap-bad-prog-w.log: tap-bad-prog.tap
-tap-bailout-and-logging-w.log: tap-bailout-and-logging.test
-tap-bailout-suppress-badexit-w.log: tap-bailout-suppress-badexit.test
-tap-bailout-suppress-later-diagnostic-w.log: tap-bailout-suppress-later-diagnostic.test
-tap-bailout-suppress-later-errors-w.log: tap-bailout-suppress-later-errors.test
-tap-bailout-w.log: tap-bailout.test
-tap-basic-w.log: tap-basic.test
-tap-color-w.log: tap-color.test
-tap-deps-w.log: tap-deps.test
-tap-diagnostic-custom-w.log: tap-diagnostic-custom.test
-tap-diagnostic-w.log: tap-diagnostic.test
-tap-doc-w.log: tap-doc.test
-tap-driver-stderr-w.log: tap-driver-stderr.test
-tap-empty-diagnostic-w.log: tap-empty-diagnostic.test
-tap-empty-w.log: tap-empty.test
-tap-escape-directive-2-w.log: tap-escape-directive-2.test
-tap-escape-directive-w.log: tap-escape-directive.test
-tap-exit-w.log: tap-exit.test
-tap-fancy-w.log: tap-fancy.test
-tap-fancy2-w.log: tap-fancy2.test
-tap-global-log-w.log: tap-global-log.test
-tap-global-result-w.log: tap-global-result.test
-tap-html-w.log: tap-html.test
-tap-log-w.log: tap-log.test
-tap-merge-stdout-stderr-w.log: tap-merge-stdout-stderr.test
-tap-missing-plan-and-bad-exit-w.log: tap-missing-plan-and-bad-exit.test
-tap-more-w.log: tap-more.test
-tap-more2-w.log: tap-more2.test
-tap-msg0-bailout-w.log: tap-msg0-bailout.test
-tap-msg0-directive-w.log: tap-msg0-directive.test
-tap-msg0-misc-w.log: tap-msg0-misc.test
-tap-msg0-planskip-w.log: tap-msg0-planskip.test
-tap-msg0-result-w.log: tap-msg0-result.test
-tap-negative-numbers-w.log: tap-negative-numbers.test
-tap-no-disable-hard-error-w.log: tap-no-disable-hard-error.test
-tap-no-merge-stdout-stderr-w.log: tap-no-merge-stdout-stderr.test
-tap-no-spurious-numbers-w.log: tap-no-spurious-numbers.test
-tap-no-spurious-summary-w.log: tap-no-spurious-summary.test
-tap-no-spurious-w.log: tap-no-spurious.test
-tap-not-ok-skip-w.log: tap-not-ok-skip.test
-tap-number-wordboundary-w.log: tap-number-wordboundary.test
-tap-numbers-leading-zero-w.log: tap-numbers-leading-zero.test
-tap-numeric-description-w.log: tap-numeric-description.test
-tap-out-of-order-w.log: tap-out-of-order.test
-tap-passthrough-exit-w.log: tap-passthrough-exit.test
-tap-passthrough-w.log: tap-passthrough.test
-tap-plan-corner-w.log: tap-plan-corner.test
-tap-plan-errors-w.log: tap-plan-errors.test
-tap-plan-leading-zero-w.log: tap-plan-leading-zero.test
-tap-plan-malformed-w.log: tap-plan-malformed.test
-tap-plan-middle-w.log: tap-plan-middle.test
-tap-plan-whitespace-w.log: tap-plan-whitespace.test
-tap-plan-w.log: tap-plan.test
-tap-planskip-and-logging-w.log: tap-planskip-and-logging.test
-tap-planskip-badexit-w.log: tap-planskip-badexit.test
-tap-planskip-bailout-w.log: tap-planskip-bailout.test
-tap-planskip-case-insensitive-w.log: tap-planskip-case-insensitive.test
-tap-planskip-late-w.log: tap-planskip-late.test
-tap-planskip-later-errors-w.log: tap-planskip-later-errors.test
-tap-planskip-unplanned-corner-w.log: tap-planskip-unplanned-corner.test
-tap-planskip-unplanned-w.log: tap-planskip-unplanned.test
-tap-planskip-whitespace-w.log: tap-planskip-whitespace.test
-tap-planskip-w.log: tap-planskip.test
-tap-realtime-w.log: tap-realtime.test
-tap-recheck-logs-w.log: tap-recheck-logs.test
-tap-recheck-w.log: tap-recheck.test
-tap-result-comment-w.log: tap-result-comment.test
-tap-signal-w.log: tap-signal.tap
-tap-test-number-0-w.log: tap-test-number-0.test
-tap-todo-skip-together-w.log: tap-todo-skip-together.test
-tap-todo-skip-whitespace-w.log: tap-todo-skip-whitespace.test
-tap-todo-skip-w.log: tap-todo-skip.test
-tap-unplanned-w.log: tap-unplanned.test
-tap-whitespace-normalization-w.log: tap-whitespace-normalization.test
-tap-with-and-without-number-w.log: tap-with-and-without-number.test
-tap-xfail-tests-w.log: tap-xfail-tests.test
-
-$(srcdir)/wrap-tests.am: gen-wrap-tests list-of-tests.mk Makefile.am
-	$(AM_V_GEN)($(am__cd) $(srcdir) \
-	  && $(SHELL) ./gen-wrap-tests) > wrap-tests.tmp
-	$(AM_V_at)chmod a-w wrap-tests.tmp && mv -f wrap-tests.tmp $@
-
-# These tests are not expected to exist on filesystem, so we need this
-# declaration to avoid spurious failures.
-$(wrap_TESTS):
-# All the "wrapper" tests work by sourcing the script `wrap-tests.sh'.
-$(wrap_LOGS): wrap-tests.sh
-
-# If two test scripts have the same basename, they will end up sharing
-# the same log file, leading to all sort of undefined and undesired
-# behaviours.
-check-no-repeated-test-name:
-	@LC_ALL=C; export LC_ALL; \
-	 lst='$(TEST_LOGS)'; for log in $$lst; do echo $$log; done \
-	   | sort | uniq -c | awk '($$1 > 1) { print }' \
-	   | sed 's/\.log$$//' | grep . >&2 \
-	   && { \
-	     echo $@: test names listed above are duplicated >&2; \
-	     exit 1; \
-	   }; :
-check-local: check-no-repeated-test-name
-.PHONY: check-no-repeated-test-name
-
-.PHONY: maintainer-check-list-of-tests
-maintainer-check-list-of-tests:
-	 @if diff -u /dev/null /dev/null >/dev/null 2>&1; then \
-	   diff='diff -u'; \
-	 else \
-	   diff='diff'; \
-	 fi; \
-	 set X $(checked_test_extensions); shift; \
-	 if test $$# -eq 0; then \
-	   set X $(TEST_EXTENSIONS); shift; \
-	 fi; \
-	 if test $$# -eq 0; then \
-	   echo '$@: internal error: $$(checked_test_extensions) and' \
-	        '$$(TEST_EXTENSIONS) are both undefined or empty' >&2; \
-	   exit 255; \
-	 fi; \
-	 lst='$(expected_list_of_tests)'; \
-	 test -n "$$lst" || lst='$(TESTS)'; \
-	 for t in $$lst; do \
-	   echo "$$t"; \
-	 done | sort >$(am__tmk); \
-	 for ext in $$*; do \
-	   ls *$$ext 2>/dev/null; \
-	   if test $(srcdir) != $(builddir); then \
-	     (cd $(srcdir) && ls *$$ext 2>/dev/null); \
-	   fi; \
-	 done | sort | uniq >$(am__tfs); \
-	 if $$diff $(am__tmk) $(am__tfs) >$(am__tdf); then \
-	    result=0; \
-	 else \
-	    echo '$@: list of tests in Makefile an on filesystem differ' >&2; \
-	    echo "+ $$diff in-makefile on-filesystem" >&2; \
-	    cat $(am__tdf) >&2; \
-	    result=1; \
-	 fi; \
-	 rm -f $(am__tmk) $(am__tfs) $(am__tdf); \
-	 exit $$result;
-
-.PHONY: clean-maintcheck-testslist-tmp
-clean-local: clean-maintcheck-testslist-tmp
-clean-maintcheck-testslist-tmp:
-	rm -f $(am__tmk) $(am__tfs) $(am__tdf)
-
-# Automatically computed dependencies for tests.
-
-$(srcdir)/tests-deps.am: gen-tests-deps list-of-tests.mk Makefile.am
-	$(AM_V_at)rm -f tests-deps.tmp $@
-	$(AM_V_GEN)$(PERL) $(srcdir)/gen-tests-deps --srcdir $(srcdir) \
-	             > tests-deps.tmp
-	$(AM_V_at)chmod a-w tests-deps.tmp && mv -f tests-deps.tmp $@
 tap-summary.log: tap-summary-aux.sh 
 tap-summary-color.log: tap-summary-aux.sh 
 tap-ambiguous-directive.log: tap-setup.sh tap-common-setup.log
@@ -2297,12 +1961,317 @@ test-driver-custom-multitest.log: trivial-test-driver
 test-driver-custom-multitest-recheck.log: trivial-test-driver 
 test-driver-custom-multitest-recheck2.log: trivial-test-driver 
 test-driver-custom-html.log: trivial-test-driver 
+ar-lib-w.log: ar-lib.test
+ar-lib-w.log: ar-lib.log
+compile-w.log: compile.test
+compile-w.log: compile.log
+compile2-w.log: compile2.test
+compile2-w.log: compile2.log
+compile3-w.log: compile3.test
+compile3-w.log: compile3.log
+compile4-w.log: compile4.test
+compile4-w.log: compile4.log
+compile5-w.log: compile5.test
+compile5-w.log: compile5.log
+compile6-w.log: compile6.test
+compile6-w.log: compile6.log
+instsh2-w.log: instsh2.test
+instsh2-w.log: instsh2.log
+instsh3-w.log: instsh3.test
+instsh3-w.log: instsh3.log
+mdate5-w.log: mdate5.test
+mdate5-w.log: mdate5.log
+mdate6-w.log: mdate6.test
+mdate6-w.log: mdate6.log
+missing-w.log: missing.test
+missing-w.log: missing.log
+missing2-w.log: missing2.test
+missing2-w.log: missing2.log
+missing3-w.log: missing3.test
+missing3-w.log: missing3.log
+missing5-w.log: missing5.test
+missing5-w.log: missing5.log
+mkinst3-w.log: mkinst3.test
+mkinst3-w.log: mkinst3.log
+check-w.log: check.test
+check-w.log: check.log
+check2-w.log: check2.test
+check2-w.log: check2.log
+check3-w.log: check3.test
+check3-w.log: check3.log
+check4-w.log: check4.test
+check4-w.log: check4.log
+check5-w.log: check5.test
+check5-w.log: check5.log
+check6-w.log: check6.test
+check6-w.log: check6.log
+check7-w.log: check7.test
+check7-w.log: check7.log
+check8-w.log: check8.test
+check8-w.log: check8.log
+check11-w.log: check11.test
+check11-w.log: check11.log
+check12-w.log: check12.test
+check12-w.log: check12.log
+check-subst-w.log: check-subst.test
+check-subst-w.log: check-subst.log
+check-subst-prog-w.log: check-subst-prog.test
+check-subst-prog-w.log: check-subst-prog.log
+check-exported-srcdir-w.log: check-exported-srcdir.test
+check-exported-srcdir-w.log: check-exported-srcdir.log
+check-fd-redirect-w.log: check-fd-redirect.test
+check-fd-redirect-w.log: check-fd-redirect.log
+check-tests-in-builddir-w.log: check-tests-in-builddir.test
+check-tests-in-builddir-w.log: check-tests-in-builddir.log
+check-concurrency-bug9245-w.log: check-concurrency-bug9245.test
+check-concurrency-bug9245-w.log: check-concurrency-bug9245.log
+color-w.log: color.test
+color-w.log: color.log
+color2-w.log: color2.test
+color2-w.log: color2.log
+comment9-w.log: comment9.test
+comment9-w.log: comment9.log
+dejagnu-w.log: dejagnu.test
+dejagnu-w.log: dejagnu.log
+exeext4-w.log: exeext4.test
+exeext4-w.log: exeext4.log
+maken3-w.log: maken3.test
+maken3-w.log: maken3.log
+maken4-w.log: maken4.test
+maken4-w.log: maken4.log
+tests-environment-w.log: tests-environment.test
+tests-environment-w.log: tests-environment.log
+posixsubst-tests-w.log: posixsubst-tests.test
+posixsubst-tests-w.log: posixsubst-tests.log
+tap-ambiguous-directive-w.log: tap-ambiguous-directive.test
+tap-ambiguous-directive-w.log: tap-ambiguous-directive.log
+tap-autonumber-w.log: tap-autonumber.test
+tap-autonumber-w.log: tap-autonumber.log
+tap-bailout-w.log: tap-bailout.test
+tap-bailout-w.log: tap-bailout.log
+tap-bailout-and-logging-w.log: tap-bailout-and-logging.test
+tap-bailout-and-logging-w.log: tap-bailout-and-logging.log
+tap-bailout-suppress-badexit-w.log: tap-bailout-suppress-badexit.test
+tap-bailout-suppress-badexit-w.log: tap-bailout-suppress-badexit.log
+tap-bailout-suppress-later-diagnostic-w.log: tap-bailout-suppress-later-diagnostic.test
+tap-bailout-suppress-later-diagnostic-w.log: tap-bailout-suppress-later-diagnostic.log
+tap-bailout-suppress-later-errors-w.log: tap-bailout-suppress-later-errors.test
+tap-bailout-suppress-later-errors-w.log: tap-bailout-suppress-later-errors.log
+tap-color-w.log: tap-color.test
+tap-color-w.log: tap-color.log
+tap-deps-w.log: tap-deps.test
+tap-deps-w.log: tap-deps.log
+tap-diagnostic-w.log: tap-diagnostic.test
+tap-diagnostic-w.log: tap-diagnostic.log
+tap-empty-diagnostic-w.log: tap-empty-diagnostic.test
+tap-empty-diagnostic-w.log: tap-empty-diagnostic.log
+tap-empty-w.log: tap-empty.test
+tap-empty-w.log: tap-empty.log
+tap-escape-directive-w.log: tap-escape-directive.test
+tap-escape-directive-w.log: tap-escape-directive.log
+tap-escape-directive-2-w.log: tap-escape-directive-2.test
+tap-escape-directive-2-w.log: tap-escape-directive-2.log
+tap-exit-w.log: tap-exit.test
+tap-exit-w.log: tap-exit.log
+tap-signal-w.log: tap-signal.tap
+tap-signal-w.log: tap-signal.log
+tap-fancy-w.log: tap-fancy.test
+tap-fancy-w.log: tap-fancy.log
+tap-fancy2-w.log: tap-fancy2.test
+tap-fancy2-w.log: tap-fancy2.log
+tap-global-log-w.log: tap-global-log.test
+tap-global-log-w.log: tap-global-log.log
+tap-global-result-w.log: tap-global-result.test
+tap-global-result-w.log: tap-global-result.log
+tap-html-w.log: tap-html.test
+tap-html-w.log: tap-html.log
+tap-log-w.log: tap-log.test
+tap-log-w.log: tap-log.log
+tap-msg0-result-w.log: tap-msg0-result.test
+tap-msg0-result-w.log: tap-msg0-result.log
+tap-msg0-directive-w.log: tap-msg0-directive.test
+tap-msg0-directive-w.log: tap-msg0-directive.log
+tap-msg0-planskip-w.log: tap-msg0-planskip.test
+tap-msg0-planskip-w.log: tap-msg0-planskip.log
+tap-msg0-bailout-w.log: tap-msg0-bailout.test
+tap-msg0-bailout-w.log: tap-msg0-bailout.log
+tap-msg0-misc-w.log: tap-msg0-misc.test
+tap-msg0-misc-w.log: tap-msg0-misc.log
+tap-merge-stdout-stderr-w.log: tap-merge-stdout-stderr.test
+tap-merge-stdout-stderr-w.log: tap-merge-stdout-stderr.log
+tap-no-merge-stdout-stderr-w.log: tap-no-merge-stdout-stderr.test
+tap-no-merge-stdout-stderr-w.log: tap-no-merge-stdout-stderr.log
+tap-no-disable-hard-error-w.log: tap-no-disable-hard-error.test
+tap-no-disable-hard-error-w.log: tap-no-disable-hard-error.log
+tap-no-spurious-summary-w.log: tap-no-spurious-summary.test
+tap-no-spurious-summary-w.log: tap-no-spurious-summary.log
+tap-no-spurious-numbers-w.log: tap-no-spurious-numbers.test
+tap-no-spurious-numbers-w.log: tap-no-spurious-numbers.log
+tap-no-spurious-w.log: tap-no-spurious.test
+tap-no-spurious-w.log: tap-no-spurious.log
+tap-not-ok-skip-w.log: tap-not-ok-skip.test
+tap-not-ok-skip-w.log: tap-not-ok-skip.log
+tap-number-wordboundary-w.log: tap-number-wordboundary.test
+tap-number-wordboundary-w.log: tap-number-wordboundary.log
+tap-numeric-description-w.log: tap-numeric-description.test
+tap-numeric-description-w.log: tap-numeric-description.log
+tap-negative-numbers-w.log: tap-negative-numbers.test
+tap-negative-numbers-w.log: tap-negative-numbers.log
+tap-numbers-leading-zero-w.log: tap-numbers-leading-zero.test
+tap-numbers-leading-zero-w.log: tap-numbers-leading-zero.log
+tap-out-of-order-w.log: tap-out-of-order.test
+tap-out-of-order-w.log: tap-out-of-order.log
+tap-passthrough-w.log: tap-passthrough.test
+tap-passthrough-w.log: tap-passthrough.log
+tap-passthrough-exit-w.log: tap-passthrough-exit.test
+tap-passthrough-exit-w.log: tap-passthrough-exit.log
+tap-plan-w.log: tap-plan.test
+tap-plan-w.log: tap-plan.log
+tap-plan-corner-w.log: tap-plan-corner.test
+tap-plan-corner-w.log: tap-plan-corner.log
+tap-plan-errors-w.log: tap-plan-errors.test
+tap-plan-errors-w.log: tap-plan-errors.log
+tap-plan-middle-w.log: tap-plan-middle.test
+tap-plan-middle-w.log: tap-plan-middle.log
+tap-plan-whitespace-w.log: tap-plan-whitespace.test
+tap-plan-whitespace-w.log: tap-plan-whitespace.log
+tap-plan-leading-zero-w.log: tap-plan-leading-zero.test
+tap-plan-leading-zero-w.log: tap-plan-leading-zero.log
+tap-plan-malformed-w.log: tap-plan-malformed.test
+tap-plan-malformed-w.log: tap-plan-malformed.log
+tap-missing-plan-and-bad-exit-w.log: tap-missing-plan-and-bad-exit.test
+tap-missing-plan-and-bad-exit-w.log: tap-missing-plan-and-bad-exit.log
+tap-planskip-w.log: tap-planskip.test
+tap-planskip-w.log: tap-planskip.log
+tap-planskip-late-w.log: tap-planskip-late.test
+tap-planskip-late-w.log: tap-planskip-late.log
+tap-planskip-and-logging-w.log: tap-planskip-and-logging.test
+tap-planskip-and-logging-w.log: tap-planskip-and-logging.log
+tap-planskip-unplanned-w.log: tap-planskip-unplanned.test
+tap-planskip-unplanned-w.log: tap-planskip-unplanned.log
+tap-planskip-unplanned-corner-w.log: tap-planskip-unplanned-corner.test
+tap-planskip-unplanned-corner-w.log: tap-planskip-unplanned-corner.log
+tap-planskip-case-insensitive-w.log: tap-planskip-case-insensitive.test
+tap-planskip-case-insensitive-w.log: tap-planskip-case-insensitive.log
+tap-planskip-whitespace-w.log: tap-planskip-whitespace.test
+tap-planskip-whitespace-w.log: tap-planskip-whitespace.log
+tap-planskip-badexit-w.log: tap-planskip-badexit.test
+tap-planskip-badexit-w.log: tap-planskip-badexit.log
+tap-planskip-bailout-w.log: tap-planskip-bailout.test
+tap-planskip-bailout-w.log: tap-planskip-bailout.log
+tap-planskip-later-errors-w.log: tap-planskip-later-errors.test
+tap-planskip-later-errors-w.log: tap-planskip-later-errors.log
+tap-realtime-w.log: tap-realtime.test
+tap-realtime-w.log: tap-realtime.log
+tap-test-number-0-w.log: tap-test-number-0.test
+tap-test-number-0-w.log: tap-test-number-0.log
+tap-recheck-logs-w.log: tap-recheck-logs.test
+tap-recheck-logs-w.log: tap-recheck-logs.log
+tap-result-comment-w.log: tap-result-comment.test
+tap-result-comment-w.log: tap-result-comment.log
+tap-todo-skip-together-w.log: tap-todo-skip-together.test
+tap-todo-skip-together-w.log: tap-todo-skip-together.log
+tap-todo-skip-whitespace-w.log: tap-todo-skip-whitespace.test
+tap-todo-skip-whitespace-w.log: tap-todo-skip-whitespace.log
+tap-todo-skip-w.log: tap-todo-skip.test
+tap-todo-skip-w.log: tap-todo-skip.log
+tap-unplanned-w.log: tap-unplanned.test
+tap-unplanned-w.log: tap-unplanned.log
+tap-whitespace-normalization-w.log: tap-whitespace-normalization.test
+tap-whitespace-normalization-w.log: tap-whitespace-normalization.log
+tap-with-and-without-number-w.log: tap-with-and-without-number.test
+tap-with-and-without-number-w.log: tap-with-and-without-number.log
+tap-xfail-tests-w.log: tap-xfail-tests.test
+tap-xfail-tests-w.log: tap-xfail-tests.log
+tap-bad-prog-w.log: tap-bad-prog.tap
+tap-bad-prog-w.log: tap-bad-prog.log
+tap-basic-w.log: tap-basic.test
+tap-basic-w.log: tap-basic.log
+tap-diagnostic-custom-w.log: tap-diagnostic-custom.test
+tap-diagnostic-custom-w.log: tap-diagnostic-custom.log
+tap-driver-stderr-w.log: tap-driver-stderr.test
+tap-driver-stderr-w.log: tap-driver-stderr.log
+tap-doc-w.log: tap-doc.test
+tap-doc-w.log: tap-doc.log
+tap-more-w.log: tap-more.test
+tap-more-w.log: tap-more.log
+tap-more2-w.log: tap-more2.test
+tap-more2-w.log: tap-more2.log
+tap-recheck-w.log: tap-recheck.test
+tap-recheck-w.log: tap-recheck.log
+
+$(srcdir)/tests-deps.am:
+	$(AM_V_at)rm -f tests-deps.tmp $@
+	$(AM_V_GEN)$(PERL) $(srcdir)/gen-tests-deps --srcdir $(srcdir) \
+	             > tests-deps.tmp
+	$(AM_V_at)chmod a-w tests-deps.tmp && mv -f tests-deps.tmp $@
+
+$(generated_TESTS) $(srcdir)/tests-deps.am: \
+  gen-tests-deps list-of-tests.mk Makefile.am $(handwritten_TESTS)
 
 # Static dependencies valid for each test case.
 $(TEST_LOGS): defs defs-static aclocal-$(APIVERSION) automake-$(APIVERSION)
 # FIXME: this should be made more granular once we have a cleaner
 # subdivision of the tests.
 $(TEST_LOGS): plain-functions.sh tap-functions.sh
+
+# If two test scripts have the same basename, they will end up sharing
+# the same log file, leading to all sort of undefined and undesired
+# behaviours.
+check-no-repeated-test-name:
+	@LC_ALL=C; export LC_ALL; \
+	 lst='$(TEST_LOGS)'; for log in $$lst; do echo $$log; done \
+	   | sort | uniq -c | awk '($$1 > 1) { print }' \
+	   | sed 's/\.log$$//' | grep . >&2 \
+	   && { \
+	     echo $@: test names listed above are duplicated >&2; \
+	     exit 1; \
+	   }; :
+check-local: check-no-repeated-test-name
+.PHONY: check-no-repeated-test-name
+
+.PHONY: maintainer-check-list-of-tests
+maintainer-check-list-of-tests:
+	 @if diff -u /dev/null /dev/null >/dev/null 2>&1; then \
+	   diff='diff -u'; \
+	 else \
+	   diff='diff'; \
+	 fi; \
+	 set X $(checked_test_extensions); shift; \
+	 if test $$# -eq 0; then \
+	   set X $(TEST_EXTENSIONS); shift; \
+	 fi; \
+	 if test $$# -eq 0; then \
+	   echo '$@: internal error: $$(checked_test_extensions) and' \
+	        '$$(TEST_EXTENSIONS) are both undefined or empty' >&2; \
+	   exit 255; \
+	 fi; \
+	 lst='$(expected_list_of_tests)'; \
+	 test -n "$$lst" || lst='$(TESTS)'; \
+	 for t in $$lst; do \
+	   echo "$$t"; \
+	 done | sort >$(am__tmk); \
+	 for ext in $$*; do \
+	   ls *$$ext 2>/dev/null; \
+	   if test $(srcdir) != $(builddir); then \
+	     (cd $(srcdir) && ls *$$ext 2>/dev/null); \
+	   fi; \
+	 done | sort | uniq >$(am__tfs); \
+	 if $$diff $(am__tmk) $(am__tfs) >$(am__tdf); then \
+	    result=0; \
+	 else \
+	    echo '$@: list of tests in Makefile an on filesystem differ' >&2; \
+	    echo "+ $$diff in-makefile on-filesystem" >&2; \
+	    cat $(am__tdf) >&2; \
+	    result=1; \
+	 fi; \
+	 rm -f $(am__tmk) $(am__tfs) $(am__tdf); \
+	 exit $$result;
+
+.PHONY: clean-maintcheck-testslist-tmp
+clean-local: clean-maintcheck-testslist-tmp
+clean-maintcheck-testslist-tmp:
+	rm -f $(am__tmk) $(am__tfs) $(am__tdf)
 
 clean-local: clean-local-check
 .PHONY: clean-local-check
