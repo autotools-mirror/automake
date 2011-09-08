@@ -47,6 +47,8 @@ acloca21.test \
 acloca22.test \
 acloca23.test \
 ac-output-old.tap \
+aclocal-acdir.test \
+aclocal-print-acdir.test \
 acsilent.test \
 acsubst.test \
 acsubst2.test \
