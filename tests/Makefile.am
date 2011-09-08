@@ -97,28 +97,6 @@ $(wrap_TESTS):
 $(wrap_LOGS): wrap-tests.sh
 EXTRA_DIST += wrap-tests.sh
 
-# Extra dependencies for hand-written tests.
-
-test-driver-custom-multitest.log: trivial-test-driver
-test-driver-custom-multitest-recheck.log: trivial-test-driver
-test-driver-custom-multitest-recheck2.log: trivial-test-driver
-test-driver-custom-html.log: trivial-test-driver
-EXTRA_DIST += trivial-test-driver
-
-testsuite-summary-color.log testsuite-summary-count.log: \
-  testsuite-summary-checks.sh extract-testsuite-summary
-EXTRA_DIST += testsuite-summary-checks.sh
-EXTRA_DIST += extract-testsuite-summary
-
-testsuite-summary-count-many.log: trivial-test-driver
-testsuite-summary-count-many.log: extract-testsuite-summary
-
-$(tap_with_common_setup_TESTS:.test=.log): tap-common-setup.log tap-setup.sh
-EXTRA_DIST += tap-setup.sh
-
-tap-summary.log tap-summary-color.log: tap-summary-aux.sh
-EXTRA_DIST += tap-summary-aux.sh
-
 # If two test scripts have the same basename, they will end up sharing
 # the same log file, leading to all sort of undefined and undesired
 # behaviours.
@@ -139,13 +117,22 @@ checked_test_extensions = .test .tap
 expected_list_of_tests = $(handwritten_TESTS)
 include $(top_srcdir)/CheckListOfTests.am
 
-# Dependencies valid for each test case.
+# Automatically computed dependencies for tests.
+
+$(srcdir)/tests-deps.am: gen-tests-deps list-of-tests.mk Makefile.am
+	$(AM_V_at)rm -f tests-deps.tmp $@
+	$(AM_V_GEN)$(PERL) $(srcdir)/gen-tests-deps --srcdir $(srcdir) \
+	             > tests-deps.tmp
+	$(AM_V_at)chmod a-w tests-deps.tmp && mv -f tests-deps.tmp $@
+EXTRA_DIST += gen-tests-deps
+
+include $(srcdir)/tests-deps.am
+
+# Static dependencies valid for each test case.
 $(TEST_LOGS): defs defs-static aclocal-$(APIVERSION) automake-$(APIVERSION)
 # FIXME: this should be made more granular once we have a cleaner
 # subdivision of the tests.
 $(TEST_LOGS): plain-functions.sh tap-functions.sh
-
-## Files containing auxiliary functions used by our test cases.
 EXTRA_DIST += tap-functions.sh plain-functions.sh
 
 clean-local: clean-local-check
