@@ -103,6 +103,10 @@ $(TEST_LOGS): defs defs-static aclocal-$(APIVERSION) automake-$(APIVERSION)
 $(TEST_LOGS): plain-functions.sh tap-functions.sh
 EXTRA_DIST += tap-functions.sh plain-functions.sh
 
+# Few more static dependencies.
+distcheck-missing-m4.log distcheck-outdated-m4.log: distcheck-hook-m4.am
+EXTRA_DIST += distcheck-hook-m4.am
+
 # Keep in sync with AC_SUBST'd stuff in defs-static.in.
 do_subst = sed \
   -e 's|@abs_srcdir[@]|$(abs_srcdir)|g' \

@@ -320,6 +320,8 @@ distcheck-configure-flags-am.test \
 distcheck-configure-flags-subpkg.test \
 distcheck-hook.test \
 distcheck-hook2.test \
+distcheck-missing-m4.test \
+distcheck-outdated-m4.test \
 dmalloc.test \
 doc-parsing-buglets-colneq-subst.test \
 doc-parsing-buglets-tabs.test \
