@@ -54,13 +54,6 @@
 required=cc
 . ./defs || Exit 99
 
-# Per each valid depmode three kinds of VPATH, and per each of them
-# a test on "./configure" and one on "make & remake"; so there are
-# 17 * 3 * 2 = 102.
-plan_ 102
-
-ocwd=`pwd` || fatal_ "cannot get current working directory"
-
 # Keep this in sync with the contents of depend.m4.
 all_depmodes=`\
   sed -n 's/^#*\([a-zA-Z0-9]*\))$/\1/p' < "$am_scriptdir/depcomp" \
@@ -69,6 +62,30 @@ all_depmodes=`\
   && all_depmodes=`echo $all_depmodes` \
   && test -n "$all_depmodes" \
   || fatal_ "can't extract list of valid depmodes"
+
+# Allow the user to select a subset of the tests.
+if test $# -gt 0; then
+  tested_depmodes=$*
+  for depmode in $tested_depmodes; do
+    case " $all_depmodes " in
+      *" $depmode "*);;
+      *) fatal_ "invalid user-specified depmode '$depmode'"
+    esac
+  done
+  n=`for m in $tested_depmodes; do echo $m; done | wc -l`
+  # We need to determine the TAP plan adaptively.
+  # Per each valid depmode three kinds of VPATH, and per each of them
+  # a test on "./configure" and one on "make & remake"; so there are
+  # $n * 3 * 2 tests.
+  plan_ `expr $n '*' 6`
+  unset n
+else
+  tested_depmodes=$all_depmodes
+  # Prefer static TAP plan if possible, minimizes the chance of errors.
+  plan_ 102
+fi
+
+ocwd=`pwd` || fatal_ "cannot get current working directory"
 
 srctree=depmod-1.0
 mkdir $srctree
@@ -129,7 +146,7 @@ cp -pR $srctree/* $longpath || fatal_ "cannot populate long path"
 cp -pR $srctree/* . || fatal_ "cannot populate top-level directory"
 
 for vpath in simple long absolute; do
-  for depmode in $all_depmodes; do
+  for depmode in $tested_depmodes; do
     case $vpath in
       simple)
         srcdir=..;;
