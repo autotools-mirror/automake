@@ -21,8 +21,6 @@
 
 . ./defs || Exit 99
 
-plan_ 94 # Two tests per "problematic string".
-
 # Usage: is_in_list ITEM [LIST...]
 is_in_list ()
 {
@@ -41,7 +39,7 @@ define_problematic_string ()
   eval "instspc__$tst=\$1" \
     || fatal_ "define_problematic_string: bad argument: '$tst'"
   shift
-  test_names_list="$test_names_list $tst"
+  all_test_names_list="$all_test_names_list $tst"
   # Some of the "problematic" characters cannot be used in the name of
   # a build or install directory on a POSIX host.  These lists should
   # be empty, but are not due to limitations in Autoconf, Automake, Make,
@@ -55,7 +53,7 @@ define_problematic_string ()
 }
 
 # Be sure to avoid interferences from the environment.
-test_names_list=''
+all_test_names_list=''
 builddir_xfails=''
 destdir_xfails=''
 
@@ -209,6 +207,25 @@ unset def
 # --------------- #
 #  Test data end  #
 # =============== #
+
+# Allow the user to select a subset of the tests.
+if test $# -gt 0; then
+  test_names_list=$*
+  for test_name in $test_names_list; do
+    case " $all_test_names_list " in
+      *" $test_name "*);;
+      *) fatal_ "invalid user-specified test_name '$test_name'"
+    esac
+  done
+  # We need to determine the TAP plan adaptively.
+  n=`for t in $test_names_list; do echo $t; done | wc -l`
+  plan_ `expr $n '*' 2` # Two tests per "problematic string".
+  unset n
+else
+  test_names_list=$all_test_names_list
+  # Prefer static TAP plan if possible, minimizes the chance of errors.
+  plan_ 94
+fi
 
 ocwd=`pwd` || fatal_ "cannot get current working directory"
 
