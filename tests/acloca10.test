@@ -28,8 +28,8 @@ am_create_testdir=empty
 
 cat > configure.in << 'END'
 AC_INIT
-MACRO2
 MACRO1
+MACRO2
 MACRO3
 END
 
@@ -39,61 +39,59 @@ mkdir m4_1 m4_2 acdir acdir2
 echo ./acdir2 > acdir/dirlist
 
 cat >m4_1/somedefs.m4 <<EOF
-AC_DEFUN([MACRO1], [echo macro11 >> foo])
-AC_DEFUN([MACRO2], [echo macro21 > foo])
+AC_DEFUN([MACRO1], [:macro11:])
+AC_DEFUN([MACRO2], [:macro21:])
 EOF
 
 cat >m4_2/somedefs.m4 <<EOF
-AC_DEFUN([MACRO1], [echo macro12 >> foo])
+AC_DEFUN([MACRO1], [:macro12:])
 EOF
 
 cat >acdir2/macro.m4 <<EOF
-AC_DEFUN([MACRO3], [echo macro3 >> foo])
+AC_DEFUN([MACRO3], [:macro33:])
 EOF
 
 $ACLOCAL -I m4_1 -I m4_2
 $AUTOCONF
-./configure
-grep macro11 foo
-grep macro21 foo
-grep macro3 foo
+$FGREP ':macro11:' configure
+$FGREP ':macro21:' configure
+$FGREP ':macro33:' configure
 grep MACRO3 aclocal.m4
 test ! -f m4_1/macro.m4
 test ! -f m4_2/macro.m4
 
-$sleep
+rm -rf autom4te*.cache
 $ACLOCAL -I m4_2 -I m4_1
 $AUTOCONF
-./configure
-grep macro12 foo
-grep macro21 foo
-grep macro3 foo
+$FGREP ':macro12:' configure
+$FGREP ':macro21:' configure
+$FGREP ':macro33:' configure
 grep MACRO3 aclocal.m4
 test ! -f m4_1/macro.m4
 test ! -f m4_2/macro.m4
 
-$sleep
+rm -rf autom4te*.cache
 $ACLOCAL -I m4_1 -I m4_2 --install
 $AUTOCONF
-./configure
-grep macro11 foo
-grep macro21 foo
-grep macro3 foo
+$FGREP ':macro11:' configure
+$FGREP ':macro21:' configure
+$FGREP ':macro33:' configure
 grep MACRO3 aclocal.m4 && Exit 1
 test -f m4_1/macro.m4
 test ! -f m4_2/macro.m4
 cp aclocal.m4 copy.m4
 
-$sleep
+rm -rf autom4te*.cache
 echo '#GREPME' >>acdir2/macro.m4
 $ACLOCAL -I m4_1 -I m4_2 --install
 $AUTOCONF
-./configure
-grep macro11 foo
-grep macro21 foo
-grep macro3 foo
+$FGREP ':macro11:' configure
+$FGREP ':macro21:' configure
+$FGREP ':macro33:' configure
 grep MACRO3 aclocal.m4 && Exit 1
 grep GREPME m4_1/macro.m4 && Exit 1
 test -f m4_1/macro.m4
 test ! -f m4_2/macro.m4
 diff aclocal.m4 copy.m4
+
+:

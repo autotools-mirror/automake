@@ -30,96 +30,85 @@ mkdir 1 2 3 4 5 6
 
 cat >1/m1.m4 <<EOF
 #serial 1.8.1230.9
-AC_DEFUN([AM_MACRO1], [echo macro11 >> foo])
-AC_DEFUN([AM_MACRO2], [echo macro21 >> foo])
+AC_DEFUN([AM_MACRO1], [:macro11:])
+AC_DEFUN([AM_MACRO2], [:macro21:])
 EOF
 
 cat >2/m1.m4 <<EOF
 #serial 1.8.1231.9
-AC_DEFUN([AM_MACRO1], [echo macro12 >> foo])
+AC_DEFUN([AM_MACRO1], [:macro12:])
 EOF
 
 cat >3/m2.m4 <<EOF
 #serial 13
-AC_DEFUN([AM_MACRO2], [echo macro23 >> foo])
+AC_DEFUN([AM_MACRO2], [:macro23:])
 EOF
 
 cat >3/m1.m4 <<EOF
 #serial 1.8.1230.1
-AC_DEFUN([AM_MACRO1], [echo macro13 >> foo])
+AC_DEFUN([AM_MACRO1], [:macro13:])
 EOF
 
 cat >4/mumble.m4 <<EOF
 #serial 0
-AC_DEFUN([AM_MACRO1], [echo macro14 >> foo])
+AC_DEFUN([AM_MACRO1], [:macro14:])
 EOF
 
 cat >5/ill-formed.m4 <<EOF
 #serial bla
 #serial .2
 #serial
-AC_DEFUN([AM_MACRO1], [echo macro15 >> foo])
+AC_DEFUN([AM_MACRO1], [:macro15:])
 EOF
 
 cat >6/after-def.m4 <<EOF
-AC_DEFUN([AM_MACRO1], [echo macro16 >> foo])
+AC_DEFUN([AM_MACRO1], [:macro16:])
 #serial 1
 EOF
 
 $ACLOCAL -I 1 -I 2 -I 3 -I 4
 $AUTOCONF
-./configure
-grep macro11 foo
-grep macro21 foo
+$FGREP ':macro11:' configure
+$FGREP ':macro21:' configure
 
-$sleep
-rm -f foo
+rm -rf autom4te*.cache
 $ACLOCAL  -I 1 -I 2 -I 3 -I 4 --install
 $AUTOCONF
-./configure
-grep macro12 foo
-grep macro23 foo
+$FGREP ':macro12:' configure
+$FGREP ':macro23:' configure
 
-$sleep
-rm -f foo
+rm -rf autom4te*.cache
 $ACLOCAL -I 4 -I 1 -I 2 -I 3 --install --dry-run
 $AUTOCONF
-./configure
-grep macro12 foo
-grep macro23 foo
+$FGREP ':macro12:' configure
+$FGREP ':macro23:' configure
 
-$sleep
-rm -f foo
+rm -rf autom4te*.cache
 $ACLOCAL -I 4 -I 1 -I 2 -I 3 --install
 $AUTOCONF
-./configure
-grep macro14 foo
-grep macro23 foo
+$FGREP ':macro14:' configure
+$FGREP ':macro23:' configure
 
-$sleep
-rm -f foo
+rm -rf autom4te*.cache
 $ACLOCAL -I 4 -I 1 -I 2 --install 2>stderr && { cat stderr >&2; Exit 1; }
 cat stderr >&2
 grep 'macro.*AM_MACRO2.*not found' stderr
 
-$sleep
-rm -f foo
+rm -rf autom4te*.cache
 $ACLOCAL -I 4 -I 1 --install
 $AUTOCONF
-./configure
-grep macro14 foo
-grep macro21 foo
+$FGREP ':macro14:' configure
+$FGREP ':macro21:' configure
 
 mkdir acdir
 ACLOCAL="$ACLOCAL --system-acdir acdir"
 
-$sleep
+rm -rf autom4te*.cache
 cat >acdir/m1.m4 <<EOF
 #serial 456
-AC_DEFUN([AM_MACRO1], [echo macro1d >> foo])
-AC_DEFUN([AM_MACRO2], [echo macro2d >> foo])
+AC_DEFUN([AM_MACRO1], [:macro1d:])
+AC_DEFUN([AM_MACRO2], [:macro2d:])
 EOF
-rm -f foo
 $ACLOCAL -I 4 -I 1 --diff=diff >stdout 2>stderr || {
   cat stderr >&2
   cat stdout

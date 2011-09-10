@@ -19,34 +19,23 @@
 am_create_testdir=empty
 . ./defs || Exit 1
 
-cat >foo.m4 <<'END'
-m4_define([FOO], [echo wrong foo])
-END
+echo 'm4_define([FOO], [wrong foo])' > foo.m4
+echo 'm4_define([FOO], [right foo])' > acinclude.m4
+echo 'AC_INIT FOO' > configure.in
 
-cat >doit.in <<'END'
-@LN_S@ foo.m4 aclocal.m4
-END
+chmod a-w foo.m4
 
-cat >configure.in <<'END'
-AC_INIT([acloca20], [1.0])
-AC_PROG_LN_S
-dnl FOO
-AC_CONFIG_FILES([doit], [chmod +x doit])
-AC_OUTPUT
-END
+# Setup.
+ln -s foo.m4 aclocal.m4 && test -h aclocal.m4 \
+  || skip_ "cannot create symlinks to files"
 
-$AUTOCONF
-./configure
-./doit
-grep 'wrong foo' aclocal.m4
-
-cat >acinclude.m4 <<'END'
-m4_define([FOO], [echo right foo])
-END
-sed 's/dnl //' <configure.in >configure.int
-mv -f configure.int configure.in
+# Sanity check.
+grep 'wrong foo' aclocal.m4 \
+  || fatal_ "weird error symlinking aclocal.m4 -> foo.m4"
 
 $ACLOCAL
-$AUTOCONF --force
-./configure | grep 'right foo'
+$AUTOCONF
+grep 'right foo' configure
 grep 'wrong foo' foo.m4
+
+:
