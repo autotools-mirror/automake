@@ -23,6 +23,7 @@ cond17.test \
 gcj6.test \
 pr8365-remake-timing.test \
 yacc-dist-nobuild-subdir.test \
+vala-vpath.test \
 txinfo5.test
 
 include $(srcdir)/parallel-tests.am
@@ -70,6 +71,8 @@ acloca19.test \
 acloca20.test \
 acloca21.test \
 acloca22.test \
+aclocal-acdir.test \
+aclocal-print-acdir.test \
 acoutnoq.test \
 acoutpt.test \
 acoutpt2.test \
@@ -324,6 +327,8 @@ distcheck-configure-flags-am.test \
 distcheck-configure-flags-subpkg.test \
 distcheck-hook.test \
 distcheck-hook2.test \
+distcheck-missing-m4.test \
+distcheck-outdated-m4.test \
 dmalloc.test \
 doc-parsing-buglets-colneq-subst.test \
 doc-parsing-buglets-tabs.test \
@@ -876,6 +881,9 @@ yflags2.test \
 $(parallel_tests)
 
 EXTRA_DIST = ChangeLog-old gen-parallel-tests $(TESTS)
+
+distcheck-missing-m4.log distcheck-outdated-m4.log: distcheck-hook-m4.am
+EXTRA_DIST += distcheck-hook-m4.am
 
 # Each test case depends on defs, aclocal, and automake.
 check_SCRIPTS = defs aclocal-$(APIVERSION) automake-$(APIVERSION)
