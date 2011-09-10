@@ -189,6 +189,7 @@ sc_perl_local_no_parens \
 sc_perl_local \
 sc_AMDEP_TRUE_in_automake_in \
 sc_tests_make_without_am_makeflags \
+sc_tests_obsolete_variables \
 sc_tests_plain_make \
 sc_tests_plain_autoconf \
 sc_tests_plain_autoupdate \
@@ -436,6 +437,34 @@ sc_tests_make_without_am_makeflags:
 	  echo 'Use $$(MAKE) $$(AM_MAKEFLAGS).' 1>&2; \
 	  exit 1; \
 	fi
+
+## Look out for some obsolete variables.
+sc_tests_obsolete_variables:
+	@vars=" \
+	  using_tap \
+	  parallel_tests \
+	  test_prefer_config_shell \
+	  original_AUTOMAKE \
+	  original_ACLOCAL \
+	"; \
+	seen=""; \
+	for v in $$vars; do \
+	  if grep -E "\b$$v\b" \
+	    $(srcdir)/tests/*.test \
+	    $(srcdir)/tests/*.tap \
+	    $(srcdir)/tests/*.sh \
+	    $(srcdir)/tests/defs \
+	    $(srcdir)/tests/defs-static.in \
+	  ; then \
+	    seen="$$seen $$v"; \
+	  fi; \
+	done; \
+	if test -n "$$seen"; then \
+	  for v in $$seen; do \
+	    echo "Variable '$$v' is obsolete, use 'am_$$v' instead." 1>&2; \
+	  done; \
+	  exit 1; \
+	else :; fi
 
 ## Tests should never call make directly.
 sc_tests_plain_make:

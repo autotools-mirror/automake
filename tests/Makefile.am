@@ -53,13 +53,17 @@ txinfo5.test
 # Some testsuite-influential variables should be overridable from the
 # test scripts, but not from the environment.
 AM_TESTS_ENVIRONMENT = \
-  test x"$$me" = x || unset me; \
-  test x"$$required" = x || unset required; \
-  test x"$$using_tap" = x || unset using_tap; \
-  test x"$$parallel_tests" = x || unset parallel_tests; \
-  test x"$$test_prefer_config_shell" || unset test_prefer_config_shell; \
-  test x"$$original_AUTOMAKE" = x || unset original_AUTOMAKE; \
-  test x"$$original_ACLOCAL" = x || unset original_ACLOCAL;
+  for v in \
+    me \
+    required \
+    am_using_tap \
+    am_parallel_tests \
+    am_test_prefer_config_shell \
+    am_original_AUTOMAKE \
+    am_original_ACLOCAL \
+  ; do \
+    eval test x"\$${$$v}" = x || unset $$v; \
+  done;
 # The `AM_TESTS_REEXEC=no' setting tells the tests not to needlessly
 # re-execute themselves with the shell detected at configure time, since
 # we are already running them under it explicitly in our setup (see e.g.
