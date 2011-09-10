@@ -1813,13 +1813,29 @@ supported.  This operator appends its right hand argument to the variable
 specified on the left.  Automake will translate the operator into
 an ordinary @samp{=} operator; @samp{+=} will thus work with any make program.
 
-@cindex indentation
-Further note that variable assignments should not be indented with
-@key{TAB} characters, use spaces if necessary.  On the other hand,
-rule commands should be indented with a leading @key{TAB} character.
-
 Automake tries to keep comments grouped with any adjoining rules or
 variable definitions.
+
+@cindex Limitations of automake parser
+@cindex Automake parser, limitations of
+@cindex indentation in Makefile.am
+Generally, Automake is not particularly smart in the parsing of unusual
+Makefile constructs, so you're advised to avoid fancy constructs or
+``creative'' use of whitespaces.
+@c Keep this in sync with doc-parsing-buglets-tabs.test.
+For example, @key{TAB} characters cannot be used between a target name
+and the following ``@code{:}'' character, and variable assignments
+shouldn't be indented with @key{TAB} characters.
+@c Keep this in sync with doc-parsing-buglets-colneq-subst.test.
+Also, using more complex macro in target names can cause trouble:
+
+@example
+% @kbd{cat Makefile.am}
+$(FOO:=x): bar
+% @kbd{automake}
+Makefile.am:1: bad characters in variable name `$(FOO'
+Makefile.am:1: `:='-style assignments are not portable
+@end example
 
 @cindex Make targets, overriding
 @cindex Make rules, overriding
@@ -3170,10 +3186,21 @@ overridden using the @env{AUTOM4TE} environment variable.
 @command{aclocal} accepts the following options:
 
 @table @code
+@item --automake-acdir=@var{dir}
+@opindex --automake-acdir
+Look for the automake-provided macro files in @var{dir} instead of
+in the installation directory.  This is typically used for debugging.
+
+@item --system-acdir=@var{dir}
+@opindex --system-acdir
+Look for the system-wide third-party macro files (and the special
+@file{dirlist} file) in @var{dir} instead of in the installation
+directory.  This is typically used for debugging.
+
 @item --acdir=@var{dir}
 @opindex --acdir
-Look for the macro files in @var{dir} instead of the installation
-directory.  This is typically used for debugging.
+@emph{Deprecated} shorthand for ``@option{--automake-acdir=@var{dir}
+--system-acdir=@var{dir}}''.  Will be removed in future aclocal versions.
 
 @item --diff[=@var{command}]
 @opindex --diff
@@ -3278,7 +3305,7 @@ directories, in this order:
 @item @var{acdir-APIVERSION}
 This is where the @file{.m4} macros distributed with Automake itself
 are stored.  @var{APIVERSION} depends on the Automake release used;
-for Automake 1.6.x, @var{APIVERSION} = @code{1.6}.
+for example, for Automake 1.11.x, @var{APIVERSION} = @code{1.11}.
 
 @item @var{acdir}
 This directory is intended for third party @file{.m4} files, and is
@@ -3289,30 +3316,23 @@ value of @var{acdir}, use the @option{--print-ac-dir} option
 (@pxref{aclocal Options}).
 @end table
 
-As an example, suppose that @command{automake-1.6.2} was configured with
+As an example, suppose that @command{automake-1.11.2} was configured with
 @option{--prefix=@-/usr/local}.  Then, the search path would be:
 
 @enumerate
-@item @file{/usr/local/share/aclocal-1.6/}
+@item @file{/usr/local/share/aclocal-1.11.2/}
 @item @file{/usr/local/share/aclocal/}
 @end enumerate
 
+The paths for the @var{acdir} and @var{acdir-APIVERSION} directories can
+be changed respectively through aclocal options @option{--system-acdir}
+and @option{--automake-acdir} (@pxref{aclocal Options}).  Note however
+that these options are only intended for use by the internal Automake
+test suite, or for debugging under highly unusual situations; they are
+not ordinarily needed by end-users.
+
 As explained in (@pxref{aclocal Options}), there are several options that
 can be used to change or extend this search path.
-
-@subsubheading Modifying the Macro Search Path: @option{--acdir}
-
-The most erroneous option to modify the search path is
-@option{--acdir=@var{dir}}, which changes default directory and
-drops the @var{APIVERSION} directory.  For example, if one specifies
-@samp{--acdir=/opt/private/}, then the search path becomes:
-
-@enumerate
-@item @file{/opt/private/}
-@end enumerate
-
-This option, @option{--acdir}, is intended for use by the internal
-Automake test suite only; it is not ordinarily needed by end-users.
 
 @subsubheading Modifying the Macro Search Path: @samp{-I @var{dir}}
 
@@ -3363,21 +3383,19 @@ Then, the search path would be
 @noindent
 and all directories with path names starting with @code{/test3}.
 
-If the @option{--acdir=@var{dir}} option is used, then @command{aclocal}
-will search for the @file{dirlist} file in @var{dir}.  In the
-@samp{--acdir=/opt/private/} example above, @command{aclocal} would look
-for @file{/opt/private/dirlist}.  Again, however, the @option{--acdir}
-option is intended for use by the internal Automake test suite only;
-@option{--acdir} is not ordinarily needed by end-users.
+If the @option{--system-acdir=@var{dir}} option is used, then
+@command{aclocal} will search for the @file{dirlist} file in
+@var{dir}; but remember the warnings  above against the use of
+@option{--system-acdir}.
 
 @file{dirlist} is useful in the following situation: suppose that
-@command{automake} version @code{1.6.2} is installed with
+@command{automake} version @code{1.11.2} is installed with
 @samp{--prefix=/usr} by the system vendor.  Thus, the default search
 directories are
 
 @c @code looks better than @file here
 @enumerate
-@item @code{/usr/share/aclocal-1.6/}
+@item @code{/usr/share/aclocal-1.11/}
 @item @code{/usr/share/aclocal/}
 @end enumerate
 
@@ -3398,7 +3416,7 @@ Now, the ``default'' search path on the affected system is
 
 @c @code looks better than @file here
 @enumerate
-@item @code{/usr/share/aclocal-1.6/}
+@item @code{/usr/share/aclocal-1.11/}
 @item @code{/usr/share/aclocal/}
 @item @code{/usr/local/share/aclocal/}
 @end enumerate
