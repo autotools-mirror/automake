@@ -944,10 +944,18 @@ if test "$sh_errexit_works" = yes; then
     echo "$me: exit $exit_status"
     exit $exit_status
   ' 0
-  for signal in 1 2 13 15; do
-    trap "fatal_ 'caught signal $signal'" $signal
-  done
-  unset signal
+  trap "fatal_ 'caught signal SIGHUP'" 1
+  trap "fatal_ 'caught signal SIGINIT'" 2
+  trap "fatal_ 'caught signal SIGTERM'" 15
+  # Ignore further SIGPIPE in the trap code.  This is required to avoid
+  # a very weird issue with some shells, at least when the execution of
+  # the automake testsuite is driven by the `prove' utility: if prove
+  # (or the make process that has spawned it) gets interrupted with
+  # Ctrl-C, the shell might go in a loop, continually getting a SIGPIPE,
+  # sometimes finally dumping core, other times hanging indefinitely.
+  # See also Test::Harness bug [rt.cpan.org #70855], archived at
+  # <https://rt.cpan.org/Ticket/Display.html?id=70855>
+  trap "trap '' 13; fatal_ 'caught signal SIGPIPE'" 13
 fi
 
 # Create and populate the temporary directory, if and as required.
