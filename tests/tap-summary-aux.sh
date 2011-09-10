@@ -16,7 +16,7 @@
 
 # Auxiliary script for tests on TAP support: checking testsuite summary.
 
-parallel_tests=yes
+am_parallel_tests=yes
 . ./defs || Exit 1
 
 br='============================================================================'

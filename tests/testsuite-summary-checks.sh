@@ -20,7 +20,7 @@
 # testsuite output, packages with and without bug-report addresses,
 # testsuites in subdirectories, ...)
 
-parallel_tests=yes
+am_parallel_tests=yes
 . ./defs || Exit 1
 
 case $use_colors in
