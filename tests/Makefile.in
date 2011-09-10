@@ -295,11 +295,12 @@ TAP_LOG_COMPILER = $(LOG_COMPILER)
 TAP_LOG_DRIVER = AM_TAP_AWK='$(AWK)' $(SHELL) $(top_srcdir)/lib/tap-driver.sh
 AM_TAP_LOG_DRIVER_FLAGS = --merge --comments --diagnostic-string \
 	`printf '\043%%\043\n'`
-EXTRA_DIST = ChangeLog-old $(handwritten_TESTS) tap-summary-aux.sh \
-	tap-setup.sh extract-testsuite-summary \
+EXTRA_DIST = ChangeLog-old $(handwritten_TESTS) tap-setup.sh \
+	tap-summary-aux.sh extract-testsuite-summary \
 	testsuite-summary-checks.sh trivial-test-driver \
 	$(generated_TESTS) gen-testsuite-part tap-functions.sh \
-	plain-functions.sh distcheck-hook-m4.am defs-static.in
+	plain-functions.sh distcheck-hook-m4.am defs-static.in \
+	prove-runner
 
 # Hand-written tests.
 
@@ -1432,6 +1433,96 @@ yflags-force-override.test \
 yflags-force-conditional.test \
 yflags-var-expand.test
 
+on_tap_with_common_setup_TESTS = \
+  tap-ambiguous-directive.test \
+  tap-autonumber.test \
+  tap-bailout.test \
+  tap-bailout-and-logging.test \
+  tap-bailout-suppress-badexit.test \
+  tap-bailout-suppress-later-diagnostic.test \
+  tap-bailout-suppress-later-errors.test \
+  tap-color.test \
+  tap-deps.test \
+  tap-diagnostic.test \
+  tap-empty-diagnostic.test \
+  tap-empty.test \
+  tap-escape-directive.test \
+  tap-escape-directive-2.test \
+  tap-exit.test \
+  tap-signal.tap \
+  tap-fancy.test \
+  tap-fancy2.test \
+  tap-global-log.test \
+  tap-global-result.test \
+  tap-html.test \
+  tap-log.test \
+  tap-msg0-result.test \
+  tap-msg0-directive.test \
+  tap-msg0-planskip.test \
+  tap-msg0-bailout.test \
+  tap-msg0-misc.test \
+  tap-merge-stdout-stderr.test \
+  tap-no-merge-stdout-stderr.test \
+  tap-no-disable-hard-error.test \
+  tap-no-spurious-summary.test \
+  tap-no-spurious-numbers.test \
+  tap-no-spurious.test \
+  tap-not-ok-skip.test \
+  tap-number-wordboundary.test \
+  tap-numeric-description.test \
+  tap-negative-numbers.test \
+  tap-numbers-leading-zero.test \
+  tap-out-of-order.test \
+  tap-passthrough.test \
+  tap-passthrough-exit.test \
+  tap-plan.test \
+  tap-plan-corner.test \
+  tap-plan-errors.test \
+  tap-plan-middle.test \
+  tap-plan-whitespace.test \
+  tap-plan-leading-zero.test \
+  tap-plan-malformed.test \
+  tap-missing-plan-and-bad-exit.test \
+  tap-planskip.test \
+  tap-planskip-late.test \
+  tap-planskip-and-logging.test \
+  tap-planskip-unplanned.test \
+  tap-planskip-unplanned-corner.test \
+  tap-planskip-case-insensitive.test \
+  tap-planskip-whitespace.test \
+  tap-planskip-badexit.test \
+  tap-planskip-bailout.test \
+  tap-planskip-later-errors.test \
+  tap-realtime.test \
+  tap-test-number-0.test \
+  tap-recheck-logs.test \
+  tap-result-comment.test \
+  tap-todo-skip-together.test \
+  tap-todo-skip-whitespace.test \
+  tap-todo-skip.test \
+  tap-unplanned.test \
+  tap-whitespace-normalization.test \
+  tap-with-and-without-number.test \
+  tap-xfail-tests.test
+
+check_tap_testsuite_summary_TESTS = \
+  tap-summary.test \
+  tap-summary-color.test
+
+extract_testsuite_summary_TESTS = \
+  testsuite-summary-count-many.test
+
+check_testsuite_summary_TESTS = \
+  testsuite-summary-color.test \
+  testsuite-summary-count.test
+
+use_trivial_test_driver_TESTS = \
+  testsuite-summary-count-many.test \
+  test-driver-custom-multitest.test \
+  test-driver-custom-multitest-recheck.test \
+  test-driver-custom-multitest-recheck2.test \
+  test-driver-custom-html.test
+
 generated_TESTS = ar-lib-w.test compile-w.test compile2-w.test \
 	compile3-w.test compile4-w.test compile5-w.test \
 	compile6-w.test instsh2-w.test instsh3-w.test mdate5-w.test \
@@ -1524,6 +1615,16 @@ CLEANFILES = defs-static
 am__tmk = tests-in-makefile-list.tmp
 am__tfs = tests-on-filesystem-list.tmp
 am__tdf = diff-in-tests-lists.tmp
+PROVE = prove
+AM_PROVEFLAGS = --timer
+AM_PROVECMD = \
+  test -z "$$tests" || \
+    { \
+      $(AM_TESTS_ENVIRONMENT) $(TESTS_ENVIRONMENT) \
+      $(PROVE) $(AM_PROVEFLAGS) -e $(srcdir)/prove-runner $(PROVEFLAGS) \
+      $$tests $(AM_TESTS_FD_REDIRECT); \
+    }
+
 all: all-am
 
 .SUFFIXES:
@@ -1917,8 +2018,6 @@ uninstall-am:
 print-list-of-tests:
 	@echo $(handwritten_TESTS)
 .PHONY: print-list-of-tests
-tap-summary.log: tap-summary-aux.sh 
-tap-summary-color.log: tap-summary-aux.sh 
 tap-ambiguous-directive.log: tap-setup.sh tap-common-setup.log
 tap-autonumber.log: tap-setup.sh tap-common-setup.log
 tap-bailout.log: tap-setup.sh tap-common-setup.log
@@ -1989,6 +2088,8 @@ tap-unplanned.log: tap-setup.sh tap-common-setup.log
 tap-whitespace-normalization.log: tap-setup.sh tap-common-setup.log
 tap-with-and-without-number.log: tap-setup.sh tap-common-setup.log
 tap-xfail-tests.log: tap-setup.sh tap-common-setup.log
+tap-summary.log: tap-summary-aux.sh 
+tap-summary-color.log: tap-summary-aux.sh 
 testsuite-summary-count-many.log: extract-testsuite-summary 
 testsuite-summary-color.log: testsuite-summary-checks.sh 
 testsuite-summary-count.log: testsuite-summary-checks.sh 
@@ -2337,6 +2438,54 @@ clean-local-check:
 	   find "$$@" -type d ! -perm -700 -exec chmod u+rwx {} ';'; \
 	   rm -rf "$$@"; \
 	 fi;
+
+.PHONY: prove installprove
+prove installprove: $(TESTS) prove-runner defs-static
+	@exit_status=0; \
+	case '$@' in \
+	  install*) am_running_installcheck=yes;; \
+	  *) am_running_installcheck=no;; \
+	esac; \
+	export am_running_installcheck; \
+	need_tap_common_setup=no; \
+	lst=' $(TESTS) '; for t in $$lst; do \
+	  case ' $(on_tap_with_common_setup_TESTS) ' in \
+	    *" $$t "*) need_tap_common_setup=yes; break;; \
+	  esac; \
+	done; \
+	if test $$need_tap_common_setup = yes; then \
+	  t=tap-common-setup.test; \
+	  if test -f ./$$t; then \
+	    tests=./$$t; \
+	  else \
+	    tests=$(srcdir)/$$t; \
+	  fi; \
+	  echo "$@: running pre-requisite tests ..."; \
+	  $(AM_PROVECMD) || exits_status=$$?; \
+	  echo "$@: done.  We'll shortly run the main testsuite."; \
+	fi; \
+	tests=`\
+	  for t in $(TESTS); do \
+	    case "$$need_tap_common_setup,/$$t" in \
+	      yes,*/tap-common-setup.test) continue;; \
+	    esac; \
+	    if test -f ./$$t; then \
+	      echo ./$$t; \
+	    else \
+	      echo $(srcdir)/$$t; \
+	    fi; \
+	  done`; \
+	XFAIL_TESTS=`\
+	  for t in $(XFAIL_TESTS); do \
+	    echo $$t; echo ./$$t; echo $(srcdir)/$$t; \
+	  done | LC_ALL=C sort | uniq`; \
+	XFAIL_TESTS=`echo $$XFAIL_TESTS`; \
+	TAP_RUNNER='$(TAP_LOG_COMPILE)' \
+	TEST_RUNER='$(TEST_LOG_COMPILE)' \
+	export XFAIL_TESTS TAP_RUNNER TEST_RUNNER; \
+	srcdir='$(srcdir)'; export srcdir; \
+	$(AM_PROVECMD) || exit_status=$$?; \
+	exit $$exit_status;
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
