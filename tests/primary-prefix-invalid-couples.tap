@@ -22,6 +22,8 @@
 
 . ./defs || Exit 1
 
+plan_ "later"
+
 oIFS=$IFS # Saved for later.
 
 : > ltmain.sh
@@ -40,7 +42,7 @@ AM_PATH_PYTHON
 AM_PATH_LISPDIR
 END
 
-$ACLOCAL
+$ACLOCAL || fatal_ "aclocal failure"
 
 # Please keep this list in sync with the list of "Directory Variables"
 # in the GNU Coding Standards and with the list additional directory
@@ -163,14 +165,18 @@ cat Makefile.am
 
 set -x # Restore shell xtraces from now on.
 
-AUTOMAKE_fails -a
+AUTOMAKE_fails \
+  -d "'automake -a' error out on mismatched prefix/primary couples" \
+  -- --add-missing
 
 while read lineno prefix primary; do
   test -n "$prefix" && test -n "$primary" && test 0 -lt $lineno \
     || fatal_ "internal error in 'all.list'"
   grep "^${prefix}_${primary}$" allow.list >/dev/null && continue
   errmsg_rx=".*${prefix}dir.* not a legitimate directory .*$primary"
-  grep "^Makefile\\.am:$lineno: $errmsg_rx" stderr || Exit 1
+  command_ok_ \
+    "mismatched prefix/primary in ${prefix}_${primary}" \
+    grep "^Makefile\\.am:$lineno: $errmsg_rx" stderr
 done <all.list
 
 # Check that automake really failed only for the expected reason(s).
@@ -179,7 +185,8 @@ grep -v 'dir.* not a legitimate directory' stderr && Exit 1
 # Check that the same failures are present without the `--add-missing'
 # option.
 mv stderr stderr.old
-AUTOMAKE_fails
-diff stderr.old stderr
+AUTOMAKE_fails -d "automake error out on mismatched prefix/primary couples"
+command_ok_ "... and with the same diagnostic of 'automake -a'" \
+            diff stderr.old stderr
 
 :

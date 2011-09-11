@@ -736,7 +736,7 @@ prefix.test \
 primary.test \
 primary2.test \
 primary3.test \
-primary-prefix-invalid-couples.test \
+primary-prefix-invalid-couples.tap \
 primary-prefix-valid-couples.test \
 primary-prefix-couples-force-valid.test \
 primary-prefix-couples-documented-valid.test \
