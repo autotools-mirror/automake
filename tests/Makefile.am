@@ -454,6 +454,11 @@ java-check.test \
 java-empty-classpath.test \
 javaprim.test \
 javasubst.test \
+java-clean.test \
+java-compile-install.test \
+java-sources.test \
+java-no-duplicate.test \
+java-mix-dist-nodist.test \
 ldadd.test \
 ldflags.test \
 lex.test \

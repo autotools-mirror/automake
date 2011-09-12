@@ -1,6 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1998, 2001, 2002, 2004, 2007, 2011 Free Software
-# Foundation, Inc.
+# Copyright (C) 1998, 2001, 2002, 2004, 2007  Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,41 +14,44 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Minimal test of Java functionality.
+# Test cleaning of Java class files and timestamps.
 
 required=javac
 . ./defs || Exit 1
 
 set -e
 
-cat >>configure.in <<'EOF'
+cat >> configure.in <<'END'
 AC_OUTPUT
-EOF
+END
 
 cat > Makefile.am << 'END'
 javadir = $(datadir)/java
-dist_java_JAVA = a.java b.java
+java_JAVA = Class.java
+dist_java_JAVA = ClassDist.java
+nodist_java_JAVA = ClassNoDist.java
 END
+
+echo 'class Class {}' > Class.java
+echo 'class ClassDist {}' > ClassDist.java
+echo 'class ClassNoDist {}' > ClassNoDist.java
 
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 
-$EGREP '\.stamp|class' Makefile.in # For debugging.
-grep '^all[-a-z]*:.*classjava\.stamp' Makefile.in
-test `grep -c '^all[-a-z]*:.*classjava\.stamp' Makefile.in` -eq 1
+./configure
+$MAKE
+ls -l
+test -f classjava.stamp
+test -f Class.class
+test -f ClassDist.class
+test -f ClassNoDist.class
+$MAKE clean
+find . -name '*.class' -o -name '*.stamp' | grep . && Exit 1
+# We should not remove unrelated stamp files.
+echo timestamp > classjava2.stamp
+$MAKE clean
+test -f classjava2.stamp
 
-cat >a.java <<EOF
-class a
-{
-}
-EOF
-
-cat >b.java <<EOF
-class b
-{
-}
-EOF
-
-./configure --prefix "`pwd`"
-$MAKE distcheck
+:

@@ -5107,19 +5107,31 @@ sub handle_java
 				      'java', 'noinst', 'check');
     return if ! @sourcelist;
 
-    my @prefix = am_primary_prefixes ('JAVA', 1,
+    my @prefixes = am_primary_prefixes ('JAVA', 1,
 				      'java', 'noinst', 'check');
 
     my $dir;
-    foreach my $curs (@prefix)
+    my @java_sources = ();
+    foreach my $prefix (@prefixes)
       {
+        (my $curs = $prefix) =~ s/^(?:no)?dist_//;
+
 	next
 	  if $curs eq 'EXTRA';
 
-	err_var "${curs}_JAVA", "multiple _JAVA primaries in use"
-	  if defined $dir;
+        push @java_sources, '$(' . $prefix . '_JAVA' . ')';
+
+	if (defined $dir)
+	  {
+	    err_var "${curs}_JAVA", "multiple _JAVA primaries in use"
+	     unless $curs eq $dir;
+	  }
+
 	$dir = $curs;
       }
+
+    define_pretty_variable ('am__java_sources', TRUE, INTERNAL,
+                            "@java_sources");
 
     if ($dir eq 'check')
       {
