@@ -42,6 +42,14 @@ export have_symlinks # Is used also by spawned shells.
 
 dir=dummy.dir
 
+# Don't let a failure poison all subsequent tests.
+do_clean ()
+{
+  test -d $dir || return 0
+  find $dir -type d -exec chmod u+rwx '{}' ';' || :
+  rm -rf $dir
+}
+
 # Check that pre-test cleanup works also with directories with
 # "null" permissions, and containing broken symlinks.
 mkdir $dir $dir/sub
@@ -56,8 +64,10 @@ chmod 000 $dir/sub/* $dir/file $dir/symlink
 chmod 000 $dir/sub $dir
 command_ok_ "pre-cleanup can deal with null-perms testdir" \
             $SHELL -c  '. ./defs' dummy.test
-command_ok_ "pre-cleanup removed null-perms testdir"
+command_ok_ "pre-cleanup removed null-perms testdir" \
             eval 'test ! -f $dir && test ! -d $dir && test ! -r $dir'
+
+do_clean
 
 # Check that post-test cleanup works also with directories with
 # "null" permissions, and containing broken symlinks.
@@ -78,8 +88,10 @@ command_ok_ "post-cleanup can deal with null-perms testdir" \
   chmod 000 dir/sub dir
   :
 ' dummy.test
-command_ok_ "post-cleanup removed null-perms testdir"
+command_ok_ "post-cleanup removed null-perms testdir" \
             eval 'test ! -f $dir && test ! -d $dir && test ! -r $dir'
+
+do_clean
 
 # Check that pre-test cleanup does not unduly change the permissions of
 # files to which symlinks in the temporary test directory point to.
@@ -123,6 +135,8 @@ else # $have_symlinks = no
   skip_row_ 6 "symlinks not supported"
 fi
 
+do_clean
+
 # Check that the cleanup trap does not remove the temporary
 # test directory in case of test failure, skip, hard-error,
 # or when receiving a signal.
@@ -136,7 +150,7 @@ for st in 1 2 3 10 77 99 126 127 130 255; do
   " dummy.test
   command_ok_ "testdir not removed if exiting with status $st" \
               test -f dummy.dir/foo
-  rm -rf dummy.dir
+  do_clean
 done
 
 for sig in 1 2 3 9 13 15; do
@@ -152,7 +166,7 @@ for sig in 1 2 3 9 13 15; do
   " dummy.test
   command_ok_ "testdir not removed if getting signal $sig" \
               test -f dummy.dir/foo
-  rm -rf dummy.dir
+  do_clean
 done
 
 :
