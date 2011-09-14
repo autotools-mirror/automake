@@ -4793,6 +4793,57 @@ sub handle_tests_dejagnu
     $output_rules .= file_contents ('dejagnu', new Automake::Location);
 }
 
+sub handle_per_suffix_test
+{
+  my ($test_suffix, %transform) = @_;
+  my ($pfx, $generic, $parallel_tests_option, $am_exeext);
+  prog_error ("called with 'parallel-tests' option not set")
+    unless $parallel_tests_option = option 'parallel-tests';
+  if ($test_suffix eq '')
+    {
+      $pfx = '';
+      $generic = 0;
+      $am_exeext = 'FALSE';
+    }
+  else
+    {
+      prog_error ("test suffix `$test_suffix' lacks leading dot")
+        unless $test_suffix =~ m/^\.(.*)/;
+      $pfx = uc ($1) . '_';
+      $generic = 1;
+      $am_exeext = exists $configure_vars{'EXEEXT'} ? 'am__EXEEXT'
+                                                    : 'FALSE';
+    }
+  # The "test driver" program, deputed to handle tests protocol used by
+  # test scripts.  By default, it's assumed that no protocol is used,
+  # so we fall back to the old "parallel-tests" behaviour, implemented
+  # by the `test-driver' auxiliary script.
+  if (! var "${pfx}LOG_DRIVER")
+    {
+      require_conf_file ($parallel_tests_option->{position}, FOREIGN,
+                        'test-driver');
+      define_variable ("${pfx}LOG_DRIVER",
+                       "\$(SHELL) $am_config_aux_dir/test-driver",
+                       INTERNAL);
+    }
+  my $driver = '$(' . $pfx . 'LOG_DRIVER)';
+  my $driver_flags = '$(AM_' . $pfx . 'LOG_DRIVER_FLAGS)'
+                       . ' $(' . $pfx . 'LOG_DRIVER_FLAGS)';
+  my $compile = "${pfx}LOG_COMPILE";
+  define_variable ($compile,
+                   '$(' . $pfx . 'LOG_COMPILER)'
+                      . ' $(AM_' .  $pfx . 'LOG_FLAGS)'
+                      . ' $(' . $pfx . 'LOG_FLAGS)',
+                     INTERNAL);
+  $output_rules .= file_contents ('check2', new Automake::Location,
+                                   GENERIC => $generic,
+                                   DRIVER => $driver,
+                                   DRIVER_FLAGS => $driver_flags,
+                                   COMPILE => '$(' . $compile . ')',
+                                   EXT => $test_suffix,
+                                   am__EXEEXT => $am_exeext,
+                                   %transform);
+}
 
 # Handle TESTS variable and other checks.
 sub handle_tests
@@ -4869,33 +4920,10 @@ sub handle_tests
 		  }
 		my $base = $obj;
 		$obj .= '.log';
-                # The "test driver" program, deputed to handle tests protocol used by
-                # test scripts.  By default, it's assumed that no protocol is used,
-                # so we fall back to the old "parallel-tests" behaviour, implemented
-                # by the `test-driver' auxiliary script.
-                if (! var 'LOG_DRIVER')
-                  {
-                    require_conf_file ($parallel_tests->{position}, FOREIGN,
-                                       'test-driver');
-                    define_variable ('LOG_DRIVER',
-                                     "\$(SHELL) $am_config_aux_dir/test-driver",
-                                     INTERNAL);
-                  }
-		my $driver = '$(LOG_DRIVER)';
-		my $driver_flags = '$(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS)';
-		my $compile = 'LOG_COMPILE';
-		define_variable ($compile,
-				 '$(LOG_COMPILER) $(AM_LOG_FLAGS) $(LOG_FLAGS)', INTERNAL);
-		$output_rules .= file_contents ('check2', new Automake::Location,
-						GENERIC => 0,
-						OBJ => $obj,
-			                        BASE => $base,
-						SOURCE => $val,
-						DRIVER => $driver,
-						DRIVER_FLAGS => $driver_flags,
-						COMPILE =>'$(' . $compile . ')',
-						EXT => '',
-						am__EXEEXT => 'FALSE');
+                handle_per_suffix_test ('',
+                                        OBJ => $obj,
+                                        BASE => $base,
+                                        SOURCE => $val);
 	        return $obj;
 	      });
 
@@ -4921,35 +4949,10 @@ sub handle_tests
 	      $nhelper++;
 	      if ($test_suffix ne $at_exeext && $test_suffix ne '')
 	        {
-		  (my $ext = $test_suffix) =~ s/^\.//;
-		  $ext = uc $ext;
-                  # See comments about definition of LOG_DRIVER, above.
-                  if (! var "${ext}_LOG_DRIVER")
-                  {
-                    require_conf_file ($parallel_tests->{position}, FOREIGN,
-                                       'test-driver');
-                    define_variable ("${ext}_LOG_DRIVER",
-                                     "\$(SHELL) $am_config_aux_dir/test-driver",
-                                     INTERNAL);
-                  }
-		  my $driver = '$(' . $ext . '_LOG_DRIVER)';
-		  my $driver_flags = '$(AM_' . $ext . '_LOG_DRIVER_FLAGS) ' .
-                                     '$(' . $ext . '_LOG_DRIVER_FLAGS)';
-		  my $compile = $ext . '_LOG_COMPILE';
-		  define_variable ($compile,
-				   '$(' . $ext . '_LOG_COMPILER) $(AM_' .  $ext . '_LOG_FLAGS)'
-				   . ' $(' . $ext . '_LOG_FLAGS)', INTERNAL);
-		  my $am_exeext = $handle_exeext ? 'am__EXEEXT' : 'FALSE';
-		  $output_rules .= file_contents ('check2', new Automake::Location,
-						  GENERIC => 1,
-						  OBJ => '',
-			                          BASE => '$*',
-						  SOURCE => '$<',
-						  DRIVER => $driver,
-						  DRIVER_FLAGS => $driver_flags,
-						  COMPILE => '$(' . $compile . ')',
-						  EXT => $test_suffix,
-						  am__EXEEXT => $am_exeext);
+                  handle_per_suffix_test ($test_suffix,
+                                          OBJ => '',
+                                          BASE => '$*',
+                                          SOURCE => '$<');
 	        }
 	    }
 	  $clean_files{'$(TEST_LOGS)'} = MOSTLY_CLEAN;

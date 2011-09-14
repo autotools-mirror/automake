@@ -721,6 +721,7 @@ parallel-tests9.test \
 parallel-tests10.test \
 parallel-tests-dry-run.test \
 parallel-tests-fd-redirect.test \
+parallel-tests-exeext.test \
 parallel-tests-extra-programs.test \
 parallel-tests-unreadable.test \
 parallel-tests-subdir.test \
