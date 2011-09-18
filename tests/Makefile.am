@@ -33,6 +33,7 @@ java-nobase.test \
 pr8365-remake-timing.test \
 yacc-dist-nobuild-subdir.test \
 vala-vpath.test \
+test-driver-is-distributed.test \
 txinfo5.test
 
 
@@ -773,6 +774,7 @@ test-driver-create-log-dir.test \
 test-driver-strip-vpath.test \
 test-driver-trs-suffix-registered.test \
 test-driver-fail.test \
+test-driver-is-distributed.test \
 test-harness-vpath-rewrite.test \
 test-log.test \
 test-metadata-global-log.test \
