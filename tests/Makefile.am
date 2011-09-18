@@ -679,6 +679,7 @@ no-outdir-option.test \
 nobase.test \
 nobase-libtool.test \
 nobase-python.test \
+nobase-nodist.test \
 nodef.test \
 nodef2.test \
 nodep.test \
@@ -799,6 +800,13 @@ primary-prefix-valid-couples.test \
 primary-prefix-couples-force-valid.test \
 primary-prefix-couples-documented-valid.test \
 proginst.test \
+py-compile-basic.test \
+py-compile-basic2.test \
+py-compile-basedir.test \
+py-compile-destdir.test \
+py-compile-env.test \
+py-compile-option-terminate.test \
+py-compile-usage.test \
 python.test \
 python2.test \
 python3.test \
