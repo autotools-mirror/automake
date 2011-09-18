@@ -21,6 +21,7 @@ all.test \
 auxdir2.test \
 cond17.test \
 gcj6.test \
+java-nobase.test \
 pr8365-remake-timing.test \
 yacc-dist-nobuild-subdir.test \
 vala-vpath.test \
@@ -454,6 +455,12 @@ java-check.test \
 java-empty-classpath.test \
 javaprim.test \
 javasubst.test \
+java-clean.test \
+java-nobase.test \
+java-compile-install.test \
+java-sources.test \
+java-no-duplicate.test \
+java-mix.test \
 ldadd.test \
 ldflags.test \
 lex.test \
@@ -558,6 +565,7 @@ multlib.test \
 nobase.test \
 nobase-libtool.test \
 nobase-python.test \
+nobase-nodist.test \
 nodef.test \
 nodef2.test \
 nodep.test \
@@ -661,6 +669,13 @@ primary-prefix-valid-couples.test \
 primary-prefix-couples-force-valid.test \
 primary-prefix-couples-documented-valid.test \
 proginst.test \
+py-compile-basic.test \
+py-compile-basic2.test \
+py-compile-basedir.test \
+py-compile-destdir.test \
+py-compile-env.test \
+py-compile-option-terminate.test \
+py-compile-usage.test \
 python.test \
 python2.test \
 python3.test \
