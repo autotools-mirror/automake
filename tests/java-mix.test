@@ -16,9 +16,11 @@
 
 # Check that the JAVA primary can be used freely in the same Makefile.am
 # with proper combinations of the `dist_', `nodist_' and `nobase_'
-# modifiers .
+# modifiers.  Also check that `.java' files are not ditributed by default.
 
 . ./defs || Exit 1
+
+set -e
 
 cat >> configure.in << 'END'
 AC_OUTPUT
@@ -37,19 +39,18 @@ nobase_java_JAVA = ClassNobase.java
 nobase_dist_java_JAVA = ClassNobaseDist.java
 nobase_nodist_java_JAVA = ClassNobaseNodist.java
 
-Class3.java Class6.java:
+Class.java ClassNodist.java ClassNobase.java ClassNobaseNodist.java:
 	@echo '$@ should not be generated!' >&2; exit 1
 END
 
-: > Class.java
 : > ClassDist.java
-: > ClassNobase.java
 : > ClassNobaseDist.java
 
 $ACLOCAL
 $AUTOCONF
-# Automake used to display non-fatal warnings with this test,
-# but those must be seen as a failure by us.
+# Automake used to display non-fatal warnings with this test, but
+# they were unexpected, so we want to consider them as failures in
+# this test.
 $AUTOMAKE 2>stderr || { cat stderr >&2; Exit 1; }
 cat stderr >&2
 test ! -s stderr
@@ -58,11 +59,11 @@ test ! -s stderr
 
 $MAKE distdir
 ls -l $distdir # For debugging.
-test -f $distdir/Class.java
+test ! -f $distdir/Class.java
 test -f $distdir/ClassDist.java
-test -f $distdir/NobaseClass.java
-test -f $distdir/NobaseClassDist.java
+test ! -f $distdir/ClassNobase.java
+test -f $distdir/ClassNobaseDist.java
 test ! -f $distdir/ClassNodist.java
-test ! -f $distdir/NobaseClassNodist.java
+test ! -f $distdir/ClassNobaseNodist.java
 
 :
