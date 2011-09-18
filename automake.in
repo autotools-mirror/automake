@@ -5006,19 +5006,31 @@ sub handle_java
 				      'java', 'noinst', 'check');
     return if ! @sourcelist;
 
-    my @prefix = am_primary_prefixes ('JAVA', 1,
+    my @prefixes = am_primary_prefixes ('JAVA', 1,
 				      'java', 'noinst', 'check');
 
     my $dir;
-    foreach my $curs (@prefix)
+    my @java_sources = ();
+    foreach my $prefix (@prefixes)
       {
+        (my $curs = $prefix) =~ s/^(?:nobase_)?(?:dist_|nodist_)?//;
+
 	next
 	  if $curs eq 'EXTRA';
 
-	err_var "${curs}_JAVA", "multiple _JAVA primaries in use"
-	  if defined $dir;
+        push @java_sources, '$(' . $prefix . '_JAVA' . ')';
+
+	if (defined $dir)
+	  {
+	    err_var "${curs}_JAVA", "multiple _JAVA primaries in use"
+	     unless $curs eq $dir;
+	  }
+
 	$dir = $curs;
       }
+
+    define_pretty_variable ('am__java_sources', TRUE, INTERNAL,
+                            "@java_sources");
 
     if ($dir eq 'check')
       {
@@ -6363,22 +6375,11 @@ sub define_files_variable ($\@$$)
 sub define_configure_variable ($)
 {
   my ($var) = @_;
-
-  my $pretty = VAR_ASIS;
-  my $owner = VAR_CONFIGURE;
-
   # Some variables we do not want to output.  For instance it
   # would be a bad idea to output `U = @U@` when `@U@` can be
   # substituted as `\`.
-  $pretty = VAR_SILENT if exists $ignored_configure_vars{$var};
-
-  # ANSI2KNR is a variable that Automake wants to redefine, so
-  # it must be owned by Automake.  (It is also used as a proof
-  # that AM_C_PROTOTYPES has been run, that's why we do not simply
-  # omit the AC_SUBST.)
-  $owner = VAR_AUTOMAKE if $var eq 'ANSI2KNR';
-
-  Automake::Variable::define ($var, $owner, '', TRUE, subst $var,
+  my $pretty = exists $ignored_configure_vars{$var} ? VAR_SILENT : VAR_ASIS;
+  Automake::Variable::define ($var, VAR_CONFIGURE, '', TRUE, subst $var,
 			      '', $configure_vars{$var}, $pretty);
 }
 
