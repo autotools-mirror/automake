@@ -565,6 +565,7 @@ multlib.test \
 nobase.test \
 nobase-libtool.test \
 nobase-python.test \
+nobase-nodist.test \
 nodef.test \
 nodef2.test \
 nodep.test \
