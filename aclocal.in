@@ -57,8 +57,9 @@ $perl_threads = 0;
 # third-party macros.
 # @user_includes can be augmented with -I.
 # @automake_includes can be reset with the `--automake-acdir' option.
-# @system_includes can be augmented with the `dirlist' file, and reset
-# with the `--system-acdir' option.
+# @system_includes can be augmented with the `dirlist' file or the
+# ACLOCAL_PATH environment variable, and reset with the `--system-acdir'
+# option.
 my @user_includes = ();
 my @automake_includes = ("@datadir@/aclocal-$APIVERSION");
 my @system_includes = ('@datadir@/aclocal');
@@ -1045,10 +1046,26 @@ sub parse_arguments ()
     }
 }
 
+# Add any directory listed in the `ACLOCAL_PATH' environment variable
+# to the list of system include directories.
+sub parse_ACLOCAL_PATH ()
+{
+  return if not defined $ENV{"ACLOCAL_PATH"};
+  # Directories in ACLOCAL_PATH should take precedence over system
+  # directories, so we use unshift.  However, directories that
+  # come first in ACLOCAL_PATH take precedence over directories
+  # coming later, which is why the result of split is reversed.
+  foreach my $dir (reverse split /:/, $ENV{"ACLOCAL_PATH"})
+    {
+      unshift (@system_includes, $dir) if $dir ne '' && -d $dir;
+    }
+}
+
 ################################################################
 
 parse_WARNINGS;		    # Parse the WARNINGS environment variable.
 parse_arguments;
+parse_ACLOCAL_PATH;
 $configure_ac = require_configure_ac;
 
 # We may have to rerun aclocal if some file have been installed, but

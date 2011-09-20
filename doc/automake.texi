@@ -230,7 +230,7 @@ Building Programs and Libraries
 * Assembly Support::            Compiling assembly sources
 * Fortran 77 Support::          Compiling Fortran 77 sources
 * Fortran 9x Support::          Compiling Fortran 9x sources
-* Java Support::                Compiling Java sources
+* Java Support with gcj::       Compiling Java sources using gcj
 * Vala Support::                Compiling Vala sources
 * Support for Other Languages::  Compiling other languages
 * Dependencies::                Automatic dependency tracking
@@ -290,7 +290,7 @@ Other GNU Tools
 * Emacs Lisp::                  Emacs Lisp
 * gettext::                     Gettext
 * Libtool::                     Libtool
-* Java::                        Java
+* Java::                        Java bytecode compilation (deprecated)
 * Python::                      Python
 
 Building documentation
@@ -3244,11 +3244,6 @@ Look for the system-wide third-party macro files (and the special
 @file{dirlist} file) in @var{dir} instead of in the installation
 directory.  This is typically used for debugging.
 
-@item --acdir=@var{dir}
-@opindex --acdir
-@emph{Deprecated} shorthand for ``@option{--automake-acdir=@var{dir}
---system-acdir=@var{dir}}''.  Will be removed in future aclocal versions.
-
 @item --diff[=@var{command}]
 @opindex --diff
 Run @var{command} on M4 file that would be installed or overwritten
@@ -3477,6 +3472,40 @@ Similarly, @file{dirlist} can be handy if you have installed a local
 copy of Automake in your account and want @command{aclocal} to look for
 macros installed at other places on the system.
 
+@subsubheading Modifying the Macro Search Path: @file{ACLOCAL_PATH}
+@cindex @env{ACLOCAL_PATH}
+
+The fourth and last mechanism to customize the macro search path is
+also the simplest.  Any directory included in the colon-separated
+environment variable @env{ACLOCAL_PATH} is added to the search path
+@c Keep in sync with aclocal-path-precedence.test.
+and takes precedence over system directories (including those found via
+@file{dirlist}), with the exception of the versioned directory
+@var{acdir-APIVERSION} (@pxref{Macro Search Path}).  However, directories
+passed via @option{-I} will take precedence over directories in
+@env{ACLOCAL_PATH}.
+
+@c Keep in sync with aclocal-path-installed.test.
+Also note that, if the @option{--install} option is used, any @file{.m4}
+file containing a required macro that is found in a directory listed in
+@env{ACLOCAL_PATH} will be installed locally.
+@c Keep in sync with aclocal-path-installed-serial.test.
+In this case, serial numbers in @file{.m4} are honoured too,
+@pxref{Serials}.
+
+Conversely to @file{dirlist}, @env{ACLOCAL_PATH} is useful if you are
+using a global copy of Automake and want @command{aclocal} to look for
+macros somewhere under your home directory.
+
+@subsubheading Planned future incompatibilities
+
+The order in which the directories in the macro search path are currently
+looked up is confusing and/or suboptimal in various aspects, and is
+probably going to be changed in the future Automake release.  In
+particular, directories in @env{ACLOCAL_PATH} and @file{@var{acdir}}
+might end up taking precedence over @file{@var{acdir-APIVERSION}}, and
+directories in @file{@var{acdir}/dirlist} might end up taking precedence
+over @file{@var{acdir}}.  @emph{This is a possible future incompatibility!}
 
 @node Extending aclocal
 @subsection Writing your own aclocal macros
@@ -4665,7 +4694,7 @@ to build programs and libraries.
 * Assembly Support::            Compiling assembly sources
 * Fortran 77 Support::          Compiling Fortran 77 sources
 * Fortran 9x Support::          Compiling Fortran 9x sources
-* Java Support::                Compiling Java sources
+* Java Support with gcj::       Compiling Java sources using gcj
 * Vala Support::                Compiling Vala sources
 * Support for Other Languages::  Compiling other languages
 * Dependencies::                Automatic dependency tracking
@@ -6736,17 +6765,19 @@ is as follows:
 
 @end table
 
-@node Java Support
+@node Java Support with gcj
 @comment  node-name,  next,  previous,  up
-@section Java Support
+@section Compiling Java sources using gcj
 
-@cindex Java support
-@cindex Support for Java
+@cindex Java support with gcj
+@cindex Support for Java with gcj
+@cindex Java to native code, compilation
+@cindex Compilation of Java to native code
 
 Automake includes support for natively compiled Java, using @command{gcj},
-the Java front end to the GNU Compiler Collection (preliminary support
+the Java front end to the GNU Compiler Collection (rudimentary support
 for compiling Java to bytecode using the @command{javac} compiler is
-also present; @pxref{Java}).
+also present, @emph{albeit deprecated}; @pxref{Java}).
 
 Any package including Java code to be compiled must define the output
 variable @code{GCJ} in @file{configure.ac}; the variable @code{GCJFLAGS}
@@ -6840,8 +6871,9 @@ source file.
 Automake currently only includes full support for C, C++ (@pxref{C++
 Support}), Objective C (@pxref{Objective C Support}), Fortran 77
 (@pxref{Fortran 77 Support}), Fortran 9x (@pxref{Fortran 9x Support}),
-and Java (@pxref{Java Support}).  There is only rudimentary support for other
-languages, support for which will be improved based on user demand.
+and Java (@pxref{Java Support with gcj}).  There is only rudimentary
+support for other languages, support for which will be improved based
+on user demand.
 
 Some limited support for adding your own languages is available via the
 suffix rule handling (@pxref{Suffixes}).
@@ -7436,7 +7468,7 @@ use in GNU programs, it tries hard to interoperate with other GNU tools.
 * Emacs Lisp::                  Emacs Lisp
 * gettext::                     Gettext
 * Libtool::                     Libtool
-* Java::                        Java
+* Java::                        Java bytecode compilation (deprecated)
 * Python::                      Python
 @end menu
 
@@ -7529,15 +7561,22 @@ libtool, The Libtool Manual}) with the @code{LTLIBRARIES} primary.
 
 
 @node Java
-@section Java
+@section Java bytecode compilation (deprecated)
 
 @cindex @code{_JAVA} primary, defined
 @cindex @code{JAVA} primary, defined
 @cindex Primary variable, @code{JAVA}
+@cindex Java to bytecode, compilation
+@cindex Compilation of Java to bytecode
 
 Automake provides some minimal support for Java bytecode compilation with
 the @code{JAVA} primary (in addition to the support for compiling Java to
-native machine code; @pxref{Java Support}).
+native machine code; @pxref{Java Support with gcj}).  Note however that
+@emph{the interface and most features described here are deprecated}; the
+next automake release will strive to provide a better and cleaner
+interface, which however @emph{won't be backward-compatible}; the present
+interface will probably be removed altogether in future automake releases
+(1.13 or later), so don't use it in new code.
 
 Any @file{.java} files listed in a @code{_JAVA} variable will be
 compiled with @code{JAVAC} at build time.  By default, @file{.java}
