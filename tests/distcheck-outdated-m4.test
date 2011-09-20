@@ -48,7 +48,8 @@ END
 
 ACLOCAL="$ACLOCAL --system-acdir=$cwd/acdir"; export ACLOCAL
 
-# We don't use `--install' here.  Our distcheck-hook should catch this.
+# The use of `--install' here won't help when the installed file `.m4'
+# will become out-of-date w.r.t. the one in the system acdir.
 $ACLOCAL -I m4 --install
 $AUTOCONF
 $AUTOMAKE
@@ -75,10 +76,54 @@ cat output
 $EGREP "required m4 file.* outdated.* baz.m4( |$)" output
 # Check that we don't fail for spurious errors.
 $EGREP -i 'mkdir:|autom4te.*\.cache|permission|denied' output && Exit 1
-# Check that we don't complain for files that should have been found.
+# Check that we don't complain for files that aren't outdated.
 $EGREP " (foo|bar).m4" output && Exit 1
 
-# Now we again use `--install', and "make distcheck" should pass.
+# Now we again use `--install' explicitly, and "make distcheck"
+# should pass.
+$ACLOCAL -I m4 --install
+using_gmake || $MAKE Makefile
+$MAKE distcheck
+
+# Similar to what have been done above, but this time we:
+#  - use ACLOCAL_PATH, and
+#  - do not add the use of a new macro.
+
+echo MY_FNORD >> configure.in
+
+mkdir pth
+cat > pth/fnord.m4 << 'END'
+# serial 1
+AC_DEFUN([MY_FNORD], [:])
+END
+
+ACLOCAL_PATH="$cwd/pth"; export ACLOCAL_PATH
+
+# The explicit use of `--install' here won't help when the installed file
+# `.m4' will become out-of-date w.r.t. the one in the system acdir.
+$ACLOCAL -I m4 --install
+using_gmake || $MAKE Makefile
+$MAKE distcheck
+
+# Only increase serial number, without changing the other contents; this
+# is deliberate.
+cat > pth/fnord.m4 << 'END'
+# serial 2
+AC_DEFUN([MY_FNORD], [:])
+END
+
+$MAKE # Rebuild configure and makefiles.
+$MAKE distcheck >output 2>&1 && { cat output; Exit 1; }
+cat output
+
+$EGREP "required m4 file.* outdated.* fnord.m4( |$)" output
+# Check that we don't fail for spurious errors.
+$EGREP -i 'mkdir:|autom4te.*\.cache|permission|denied' output && Exit 1
+# Check that we don't complain for files that aren't outdated.
+$EGREP " (foo|bar|baz).m4" output && Exit 1
+
+# Now we again use `--install' explicitly, and "make distcheck"
+# should pass.
 $ACLOCAL -I m4 --install
 using_gmake || $MAKE Makefile
 $MAKE distcheck

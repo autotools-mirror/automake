@@ -46,9 +46,14 @@ acloca20.test \
 acloca21.test \
 acloca22.test \
 acloca23.test \
-ac-output-old.tap \
 aclocal-acdir.test \
 aclocal-print-acdir.test \
+aclocal-path.test \
+aclocal-path-install.test \
+aclocal-path-install-serial.test \
+aclocal-path-nonexistent.test \
+aclocal-path-precedence.test \
+ac-output-old.tap \
 acsilent.test \
 acsubst.test \
 acsubst2.test \
@@ -446,6 +451,7 @@ interp2.test \
 java.test \
 java2.test \
 java3.test \
+javadir-undefined.test \
 javaflags.test \
 java-check.test \
 java-clean.test \
@@ -686,6 +692,7 @@ test-driver-create-log-dir.test \
 test-driver-strip-vpath.test \
 test-driver-trs-suffix-registered.test \
 test-driver-fail.test \
+test-driver-is-distributed.test \
 test-harness-vpath-rewrite.test \
 test-log.test \
 test-logs-repeated.test \
@@ -762,7 +769,6 @@ py-compile-destdir.test \
 py-compile-env.test \
 py-compile-option-terminate.test \
 py-compile-usage.test \
-python-dist.test \
 python.test \
 python2.test \
 python3.test \

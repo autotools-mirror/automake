@@ -49,6 +49,7 @@ java-nobase.test \
 pr8365-remake-timing.test \
 yacc-dist-nobuild-subdir.test \
 vala-vpath.test \
+test-driver-is-distributed.test \
 txinfo5.test
 
 # Some testsuite-influential variables should be overridable from the
