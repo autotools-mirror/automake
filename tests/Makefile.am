@@ -852,6 +852,8 @@ txinfo32.test \
 txinfo33.test \
 transform.test \
 transform2.test \
+uninstall-pr9578.test \
+uninstall-fail.test \
 unused.test \
 upc.test \
 upc2.test \
