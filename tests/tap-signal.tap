@@ -60,24 +60,6 @@ chmod a+x *.test
 
 . "$testsrcdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
 
-# Solaris /bin/sh, when killed with a SIGTERM, SIGQUIT or SIGINT signal,
-# can end up exiting with exit status 208, instead of leaving the correct
-# wide exit status to the parent.  See:
-#   <http://dbaspot.com/shell/396118-bourne-shell-exit-code-term.html>
-# We need to detect and work around this incompatibility.
-
-have_solaris_bug=no
-for sig in 2 3 15; do
-  if /bin/sh -c "kill -$sig \$\$"; then
-    warn_ "/bin/sh cannot kill itself with signal $sig"
-  elif test $? -eq 208; then
-    warn_ "/bin/sh exits with status 208 upon some signals (Solaris?)"
-    warn_ "we will try to work around this bug"
-    have_solaris_bug=yes
-    break
-  fi
-done
-
 signal_caught ()
 {
   numeric=$1
@@ -98,18 +80,11 @@ signal_caught ()
     shell) rx="$pfx_re .*terminated by signal $sig_re$wbound_re";;
     *) fatal_ "invalid \$am_tap_implementation '$am_tap_implementation'";;
   esac
-  directive='' reason=''
-  case $have_solaris_bug,$symbolic in
-    yes,INT|yes,TERM|yes,QUIT) directive=TODO reason="Solaris /bin/sh bug";;
-  esac
+  desc="TAP driver catch test termination by signal SIG$symbolic"
   case " $blocked_signals " in
-    *" $numeric "*)
-      reason="SIG$symbolic is blocked" directive=SKIP result=ok;;
-    *)
-      LC_ALL=C $EGREP "$rx" stdout && result='ok' || result='not ok';;
+    *" $numeric "*) skip_ -r "SIG$symbolic is blocked" "$desc" ;;
+    *) command_ok_ "$desc" env LC_ALL=C $EGREP "$rx" stdout ;;
   esac
-  result_ "$result" -D "$directive" -r "$reason" \
-          "TAP driver catch test termination by signal SIG$symbolic"
 }
 
 command_ok_ '"make check" fails' eval 'not $MAKE check >stdout'
