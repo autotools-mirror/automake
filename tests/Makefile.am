@@ -1075,6 +1075,8 @@ txinfo33.test \
 txinfo-unrecognized-extension.test \
 transform.test \
 transform2.test \
+uninstall-pr9578.test \
+uninstall-fail.test \
 unused.test \
 upc.test \
 upc2.test \
