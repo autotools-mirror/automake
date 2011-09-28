@@ -94,16 +94,15 @@ uninstall-%DIR%PYTHON:
 ?BASE?	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 ?!BASE?	$(am__nobase_strip_setup); files=`$(am__nobase_strip)`; \
 	test -n "$$files" || exit 0; \
+	dir='$(DESTDIR)$(%NDIR%dir)'; \
+## Also remove the .pyc and .pyo byte compiled versions.
 	filesc=`echo "$$files" | sed 's|$$|c|'`; \
 	fileso=`echo "$$files" | sed 's|$$|o|'`; \
-	echo " ( cd '$(DESTDIR)$(%NDIR%dir)' && rm -f" $$files ")"; \
-	cd "$(DESTDIR)$(%NDIR%dir)" && rm -f $$files || exit $$?; \
-## This is to remove the .pyc and .pyo byte compiled versions (a bit
-## of a hack).
-	echo " ( cd '$(DESTDIR)$(%NDIR%dir)' && rm -f" $$filesc ")"; \
-	cd "$(DESTDIR)$(%NDIR%dir)" && rm -f $$filesc || exit $$?; \
-	echo " ( cd '$(DESTDIR)$(%NDIR%dir)' && rm -f" $$fileso ")"; \
-	cd "$(DESTDIR)$(%NDIR%dir)" && rm -f $$fileso
+	st=0; \
+	for files in "$$files" "$$filesc" "$$fileso"; do \
+	  $(am__uninstall_files_from_dir) || st=$$?; \
+	done; \
+	exit $$st
 endif %?INSTALL%
 
 
