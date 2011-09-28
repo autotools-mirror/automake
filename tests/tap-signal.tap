@@ -22,7 +22,11 @@ am_parallel_tests=yes
 
 plan_ 10
 
-echo TESTS = > Makefile.am
+cat > Makefile.am << END
+TEST_LOG_COMPILER = $PERL -w
+## Will be updated later.
+TESTS =
+END
 
 all_signals='1 2 3 9 13 15'
 blocked_signals=''
@@ -32,12 +36,21 @@ for sig in $all_signals; do
     blocked_signals="$blocked_signals $sig"
     continue
   fi
+  # Write the dummy test scripts in perl, not as shell scripts, to work
+  # around unportabilities in the handling of signals (in fact, even
+  # with bash, the older script were unable to properly deliver a SIGQUIT
+  # to themselves consistently).  The shebang is dummy here, as we prefer
+  # to rely on the definition of TEST_LOG_COMPILER instead.
   unindent > signal-$sig.test <<END
-    #!/bin/sh
-    echo 1..1
-    echo ok 1
-    kill -$sig \$\$
-    echo "Bail out! \$0 not killed?"
+    #! perl
+    # We need autoflush to avoid losing output, which could cause spurious
+    # "no test plan seen" in the TAP driver.
+    BEGIN { $| = 1 }
+    use warnings FATAL => "all";
+    print "1..1\\n";
+    print "ok 1\\n";
+    kill $sig, \$\$;
+    print "Bail out! \$0 not killed?\\n";
 END
   echo TESTS += signal-$sig.test >> Makefile.am
 done
