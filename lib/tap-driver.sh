@@ -23,7 +23,7 @@
 # bugs to <bug-automake@gnu.org> or send patches to
 # <automake-patches@gnu.org>.
 
-scriptversion=2011-08-25.11; # UTC
+scriptversion=2011-09-28.14; # UTC
 
 # Make unconditional expansion of undefined variables an error.  This
 # helps a lot in preventing typo-related bugs.
@@ -116,14 +116,27 @@ else
 fi
 
 {
-  { if test $merge -gt 0; then
+  (
+    # Ignore common signals (in this subshell only!) to avoid potential
+    # problems with Korn shells.  Some Korn shells are known to propagate
+    # to themselves signals that have killed a child process they were
+    # waiting for (this is done at least for SIGINT -- and usually only
+    # for it in truth); this would cause a premature exit in this subshell,
+    # so that the awk script would never seen the exit status it expects
+    # on its last input line (and which is displayed below by the last
+    # `echo $?' command), and would thus die reporting an internal error.
+    # For more information, see the Autoconf manual and the threads:
+    # <http://lists.gnu.org/archive/html/bug-autoconf/2011-09/msg00004.html>
+    # <http://mail.opensolaris.org/pipermail/ksh93-integration-discuss/2009-February/004121.html>
+    trap : 1 3 2 13 15
+    if test $merge -gt 0; then
       exec 2>&1
     else
       exec 2>&3
     fi
     "$@"
     echo $?
-  } | LC_ALL=C ${AM_TAP_AWK-awk} \
+  ) | LC_ALL=C ${AM_TAP_AWK-awk} \
         -v me="$me" \
         -v test_script_name="$test_name" \
         -v log_file="$log_file" \
@@ -440,7 +453,15 @@ function get_test_exit_message(status)
     exit_details = " (command not found?)"
   else if (status >= 128 && status <= 255)
     exit_details = sprintf(" (terminated by signal %d?)", status - 128)
-  else if (status >= 256)
+  else if (status > 256 && status <= 384)
+    # We used to report an "abnormal termination" here, but some Korn
+    # shells, when a child process die due to signal number n, can leave
+    # in $? an exit status of 256+n instead of the more standard 128+n.
+    # Apparently, both behaviours are allowed by POSIX (2008), so be
+    # prepared to handle them both.
+    exit_details = sprintf(" (terminated by signal %d?)", status - 256)
+  else
+    # Never seen in practice.
     exit_details = " (abnormal termination)"
   return sprintf("exited with status %d%s", status, exit_details)
 }
