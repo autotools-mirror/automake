@@ -23,7 +23,7 @@
 # bugs to <bug-automake@gnu.org> or send patches to
 # <automake-patches@gnu.org>.
 
-scriptversion=2011-08-25.11; # UTC
+scriptversion=2011-09-28.14; # UTC
 
 # Make unconditional expansion of undefined variables an error.  This
 # helps a lot in preventing typo-related bugs.
@@ -440,7 +440,15 @@ function get_test_exit_message(status)
     exit_details = " (command not found?)"
   else if (status >= 128 && status <= 255)
     exit_details = sprintf(" (terminated by signal %d?)", status - 128)
-  else if (status >= 256)
+  else if (status > 256 && status <= 384)
+    # We used to report an "abnormal termination" here, but some Korn
+    # shells, when a child process die due to signal number n, can leave
+    # in $? an exit status of 256+n instead of the more standard 128+n.
+    # Apparently, both behaviours are allowed by POSIX (2008), so be
+    # prepared to handle them both.
+    exit_details = sprintf(" (terminated by signal %d?)", status - 256)
+  else
+    # Never seen in practice.
     exit_details = " (abnormal termination)"
   return sprintf("exited with status %d%s", status, exit_details)
 }
