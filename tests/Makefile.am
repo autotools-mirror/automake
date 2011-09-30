@@ -28,14 +28,13 @@ all.test \
 auxdir2.test \
 cond17.test \
 dist-auxfile.test \
-dist-auxfile-2.test \
 gcj6.test \
 override-conditional-2.test \
+parallel-am.test \
 java-nobase.test \
 pr8365-remake-timing.test \
 yacc-dist-nobuild-subdir.test \
 vala-vpath.test \
-test-driver-is-distributed.test \
 txinfo5.test
 
 
@@ -405,13 +404,16 @@ discover.test \
 dist-auxfile.test \
 dist-auxfile-2.test \
 dist-included-parent-dir.test \
+dist-readonly.test \
+dist-repeated.test \
+dist-auxdir-many-subdirs.test \
 distcleancheck.test \
 distcom2.test \
 distcom3.test \
 distcom4.test \
 distcom5.test \
 distcom6.test \
-distcom7.test \
+distcom-subdir.test \
 distdir.test \
 distlinks.test \
 distlinksbrk.test \

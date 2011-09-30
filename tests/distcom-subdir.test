@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure that Automake complains when an auxfile (here depcomp)
-# is installed, but the Makefile that distributes it is not processed.
+# Test to make sure that if an auxfile (here depcomp) is required
+# by a subdir Makefile.am, it is distributed by that Makefile.am.
 
 . ./defs || Exit 1
 
@@ -32,14 +32,44 @@ END
 rm -f depcomp
 mkdir subdir
 
+: > subdir/Makefile.am
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
+test ! -f depcomp
+
 cat > subdir/Makefile.am << 'END'
 bin_PROGRAMS = foo
 END
 
 : > subdir/foo.c
 
-$ACLOCAL
-AUTOMAKE_fails --add-missing subdir/Makefile
-grep 'without.*Makefile.*arguments' stderr
+$AUTOMAKE -a subdir/Makefile
+test -f depcomp
+
+# FIXME: the logic of this check and other similar ones in other
+# FIXME: `distcom*.test' files should be factored out in a common
+# FIXME: subroutine in `defs'...
+sed -n -e "
+  /^DIST_COMMON =.*\\\\$/ {
+    :loop
+    p
+    n
+    t clear
+    :clear
+    s/\\\\$/\\\\/
+    t loop
+    s/$/ /
+    s/[$tab ][$tab ]*/ /g
+    p
+    n
+  }" subdir/Makefile.in > dc.txt
+cat dc.txt
+$FGREP ' $(top_srcdir)/depcomp ' dc.txt
+
+./configure
+$MAKE distdir
+test -f $distdir/depcomp
 
 :

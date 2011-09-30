@@ -7619,6 +7619,17 @@ sub maybe_push_required_file
       push_dist_common ($file);
       return 1;
     }
+  # This is needed to allow a construct in a non-top-level Makefile.am
+  # to require a file in the build-aux directory (see at least the test
+  # script `test-driver-is-distributed.test').  This is related to the
+  # automake bug#9546.  Note that the use of $config_aux_dir instead
+  # of $am_config_aux_dir here is deliberate and necessary.
+  elsif ($dir eq $config_aux_dir)
+    {
+      # FIXME: this breaks serialization of threaded automake :-(
+      push_dist_common ("$am_config_aux_dir/$file");
+      return 1;
+    }
   elsif ($relative_dir eq '.' && ! &is_make_dir ($dir))
     {
       # If we are doing the topmost directory, and the file is in a

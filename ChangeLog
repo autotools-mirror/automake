@@ -1,3 +1,46 @@
+2011-10-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	dist: auxiliary files can be distributed from subdir Makefiles
+	With this change, we make it possible for a subdir Makefile.am
+	to distribute files in the config auxdir; while this means that
+	some files might be copied multiple times, it simplify some logic
+	in the automake script, and fix at least one important bug.  In
+	fact, before this change, the auxiliary script `test-driver' was
+	not being distributed as expected when TESTS was defined only in
+	a subdir Makefile (which is a pretty common setup indeed).  Now
+	this does not happen anymore: so the present change fixes automake
+	bug#9546.
+	Another welcome collateral effect is that `dist-auxfile-2.test'
+	now passes.
+	OTOH, the present changes *breaks threaded automake*.  The reason
+	is that automake needs to serialize file installations spawned
+	by `--add-missing' (this isn't for cosmetic reasons, but is
+	really needed to avoid possible race conditions and botched output
+	files).  Currently the code that installs required files is
+	intertwined with the code that declares the DIST_COMMON variables;
+	so, upon de-serialization, the definition of DIST_COMMON might get
+	emitted in the wrong Makefile.in.
+	Some follow-up refactoring in automake will soon take care of
+	remedying this situation.  For the moment, we just declare some
+	"parallel-am" tests as xfailing.
+	* automake.in (maybe_push_required_file): Add ad-hoc handling for
+	the case where the directory part of the required file is different
+	from the subdir where the current Makefile.am resides, but is equal
+	to the "config-aux directory" ($config_auxdir).  This is needed to
+	allow a construct in a non-top-level Makefile.am to require a file
+	in the config-aux directory.
+	* tests/test-driver-is-distributed.test: Extend and adjust.  This
+	test now passes.
+	* tests/java-compile-run-nested.test: Call automake with the `-a'
+	option to ensure that the `test-driver' auxiliary script gets
+	correctly installed.  This test now passes.
+	* tests/distcom-subdir.test: New test.
+	* tests/dist-readonly.test: Likewise.
+	* tests/dist-repeated.test: Likewise.
+	* tests/dist-auxdir-many-subdirs.test: Likewise.
+	* tests/distcom7.test: Removed, it's obsolete now.
+	* tests/Makefile.am (TESTS, XFAIL_TESTS): Update.
+
 2011-10-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
 	parallel-tests: warn on conditional TEST_EXTENSIONS definition
