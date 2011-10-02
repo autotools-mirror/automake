@@ -470,10 +470,6 @@ my %required_targets =
    'install-man' => 1,
   );
 
-# Set to 1 if this run will create the Makefile.in that distributes
-# the files in config_aux_dir.
-my $automake_will_process_aux_dir = 0;
-
 # The name of the Makefile currently being processed.
 my $am_file = 'BUG';
 
@@ -5545,37 +5541,6 @@ sub scan_autoconf_files ()
 
   locate_aux_dir ();
 
-  # Reorder @input_files so that the Makefile that distributes aux
-  # files is processed last.  This is important because each directory
-  # can require auxiliary scripts and we should wait until they have
-  # been installed before distributing them.
-
-  # The Makefile.in that distribute the aux files is the one in
-  # $config_aux_dir or the top-level Makefile.
-  my $auxdirdist = is_make_dir ($config_aux_dir) ? $config_aux_dir : '.';
-  my @new_input_files = ();
-  while (@input_files)
-    {
-      my $in = pop @input_files;
-      my @ins = split (/:/, $output_files{$in});
-      if (dirname ($ins[0]) eq $auxdirdist)
-	{
-	  push @new_input_files, $in;
-	  $automake_will_process_aux_dir = 1;
-	}
-      else
-	{
-	  unshift @new_input_files, $in;
-	}
-    }
-  @input_files = @new_input_files;
-
-  # If neither the auxdir/Makefile nor the ./Makefile are generated
-  # by Automake, we won't distribute the aux files anyway.  Assume
-  # the user know what (s)he does, and pretend we will distribute
-  # them to disable the error in require_file_internal.
-  $automake_will_process_aux_dir = 1 if ! is_make_dir ($auxdirdist);
-
   # Look for some files we need.  Always check for these.  This
   # check must be done for every run, even those where we are only
   # looking at a subdir Makefile.  We must set relative_dir for
@@ -7608,16 +7573,17 @@ sub locate_aux_dir ()
 
 # &maybe_push_required_file ($DIR, $FILE, $FULLFILE)
 # --------------------------------------------------
-# See if we want to push this file onto dist_common.  This function
-# encodes the rules for deciding when to do so.
+# Push the given file onto DIST_COMMON.
 sub maybe_push_required_file
 {
   my ($dir, $file, $fullfile) = @_;
 
+  # If the file to be distributed is in the same directory of the
+  # currently processed Makefile.am, then we want to distribute it
+  # from this same Makefile.am.
   if ($dir eq $relative_dir)
     {
       push_dist_common ($file);
-      return 1;
     }
   # This is needed to allow a construct in a non-top-level Makefile.am
   # to require a file in the build-aux directory (see at least the test
@@ -7628,7 +7594,20 @@ sub maybe_push_required_file
     {
       # FIXME: this breaks serialization of threaded automake :-(
       push_dist_common ("$am_config_aux_dir/$file");
-      return 1;
+    }
+  # FIXME: another spacial case, for AC_LIBOBJ/AC_LIBSOURCE support.
+  # We probably need some refactoring of this function and its callers,
+  # to have a more explicit and systematic handling of all the special
+  # cases; but, since there are only two of them, this is low-priority
+  # ATM.
+  elsif ($config_libobj_dir && $dir eq $config_libobj_dir)
+    {
+      # Avoid unsightly '/.'s.
+      my $am_config_libobj_dir =
+        '$(top_srcdir)' .
+        ($config_libobj_dir eq '.' ? "" : "/$config_libobj_dir");
+      $am_config_libobj_dir =~ s|/*$||;
+      push_dist_common ("$am_config_libobj_dir/$file");
     }
   elsif ($relative_dir eq '.' && ! &is_make_dir ($dir))
     {
@@ -7666,9 +7645,12 @@ sub maybe_push_required_file
 	if $dir =~ m,^\.\.(?:$|/),;
 
       push_dist_common ($fullfile);
-      return 1;
     }
-  return 0;
+  else
+    {
+      prog_error "a Makefile in relative directory $relative_dir " .
+                 "can't add files in directory $dir to DIST_COMMON";
+    }
 }
 
 
@@ -7774,23 +7756,7 @@ sub require_file_internal ($$$@)
 			}
 		      set_dir_cache_file ($dir, $file);
 		    }
-
-		  if (! maybe_push_required_file (dirname ($fullfile),
-						  $file, $fullfile))
-		    {
-		      if (! $found_it && ! $automake_will_process_aux_dir)
-			{
-			  # We have added the file but could not push it
-			  # into DIST_COMMON, probably because this is
-			  # an auxiliary file and we are not processing
-			  # the top level Makefile.  Furthermore Automake
-			  # hasn't been asked to create the Makefile.in
-			  # that distributes the aux dir files.
-			  error ($where, 'please rerun automake without '
-				 . "Makefile arguments\n"
-				 . "so $fullfile gets distributed");
-			}
-		    }
+		  maybe_push_required_file ($dir, $file, $fullfile);
 		}
 	      else
 		{
@@ -8483,11 +8449,6 @@ sub get_number_of_threads
   # It doesn't make sense to use more threads than makefiles,
   my $max_threads = @input_files;
 
-  # but a single worker thread is helpful for exposing bugs.
-  if ($automake_will_process_aux_dir && $max_threads > 1)
-    {
-      $max_threads--;
-    }
   if ($nthreads > $max_threads)
     {
       $nthreads = $max_threads;
@@ -8511,18 +8472,11 @@ sub handle_makefiles_threaded ($)
 {
   my ($nthreads) = @_;
 
-  my @queued_input_files = @input_files;
-  my $last_input_file = undef;
-  if ($automake_will_process_aux_dir)
-    {
-      $last_input_file = pop @queued_input_files;
-    }
-
   # The file queue distributes all makefiles, the message queues
   # collect all serializations needed for respective files.
   my $file_queue = Thread::Queue->new;
   my %msg_queues;
-  foreach my $file (@queued_input_files)
+  foreach my $file (@input_files)
     {
       $msg_queues{$file} = Thread::Queue->new;
     }
@@ -8548,12 +8502,12 @@ sub handle_makefiles_threaded ($)
 	});
     }
 
-  # Queue all normal makefiles.
-  verb "queuing " . @queued_input_files . " input files";
-  $file_queue->enqueue (@queued_input_files, (undef) x @threads);
+  # Queue all makefiles.
+  verb "queuing " . @input_files . " input files";
+  $file_queue->enqueue (@input_files, (undef) x @threads);
 
   # Collect and process serializations.
-  foreach my $file (@queued_input_files)
+  foreach my $file (@input_files)
     {
       verb "dequeuing messages for " . $file;
       reset_local_duplicates ();
@@ -8580,13 +8534,6 @@ sub handle_makefiles_threaded ($)
       my @exit_thread = $t->join;
       $exit_code = $exit_thread[0]
 	if ($exit_thread[0] > $exit_code);
-    }
-
-  # The master processes the last file.
-  if ($automake_will_process_aux_dir)
-    {
-      verb "processing last input file";
-      handle_makefile ($last_input_file);
     }
 }
 

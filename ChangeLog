@@ -1,5 +1,40 @@
 2011-10-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
+	dist: simplify automake code accordingly to the previous changes
+	After the previous change `v1.11-1219-g326ecba', every Makefile.am
+	requiring a file in the "config auxdir" will cause it to be listed
+	in the DIST_COMMON variable of the corresponding generated
+	Makefile.in, not only of the top-level Makefile.in.  Thus we don't
+	need to worry anymore about trying to distribute files in the
+	config auxdir from the top-level Makefile or the Makefile in
+	config auxdir (if any).  This allows us to carry out some useful
+	simplifications in the automake script.
+	This will however cause some changes in the generated Makefile;
+	for example, if the `PROGRAMS' primary is used only in a subdir
+	Makefile.am, the `depcomp' script will be distributed only by
+	`subdir/Makefile', not by the top-level Makefile.  This change
+	can be seen as an internal detail though, and definitely warranted
+	by the nice simplifications the current commit provides.
+	* automake.in ($automake_will_process_aux_dir): Variable removed.
+	(scan_autoconf_files): Adjust and simplify.
+	(handle_makefiles_threaded): Likewise.
+	(get_number_of_threads): Likewise.
+	(require_file_internal): Likewise.
+	(maybe_push_required_file): Its return value is not used anymore,
+	so return nothing.  Add special handling for distributed files from
+	`$config_libobj_dir'.  Also, catch "this can't happen" situations,
+	and abort accordingly.  Fix function description to better fit its
+	new role.
+	* tests/libobj19.test: Extend to also check situations where the
+	Makefile.am using $(LIBOBJS) is not the top-level one.
+	* tests/distcom6.test: Delete, merged into ...
+	* tests/distcom2.test: ... this test, which has been update to
+	account for the changed automake semantics.
+	* tests/Makefile.am (TESTS): Update.
+	* NEWS: Update.
+
+2011-10-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
 	dist: auxiliary files can be distributed from subdir Makefiles
 	With this change, we make it possible for a subdir Makefile.am
 	to distribute files in the config auxdir; while this means that
