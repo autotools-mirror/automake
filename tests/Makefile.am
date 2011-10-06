@@ -20,6 +20,8 @@ XFAIL_TESTS = \
 all.test \
 auxdir2.test \
 cond17.test \
+dist-auxfile.test \
+dist-auxfile-2.test \
 gcj6.test \
 java-nobase.test \
 pr8365-remake-timing.test \
@@ -74,6 +76,11 @@ acloca21.test \
 acloca22.test \
 aclocal-acdir.test \
 aclocal-print-acdir.test \
+aclocal-path.test \
+aclocal-path-install.test \
+aclocal-path-install-serial.test \
+aclocal-path-nonexistent.test \
+aclocal-path-precedence.test \
 acoutnoq.test \
 acoutpt.test \
 acoutpt2.test \
@@ -311,6 +318,8 @@ destdir.test \
 dirlist.test \
 dirlist2.test \
 discover.test \
+dist-auxfile.test \
+dist-auxfile-2.test \
 dist-included-parent-dir.test \
 distcleancheck.test \
 distcom2.test \
@@ -330,6 +339,8 @@ distcheck-hook.test \
 distcheck-hook2.test \
 distcheck-missing-m4.test \
 distcheck-outdated-m4.test \
+distcheck-pr9579.test \
+distcheck-override-infodir.test \
 dmalloc.test \
 doc-parsing-buglets-colneq-subst.test \
 doc-parsing-buglets-tabs.test \
@@ -453,6 +464,7 @@ java2.test \
 java3.test \
 java-check.test \
 java-empty-classpath.test \
+javadir-undefined.test \
 javaprim.test \
 javasubst.test \
 java-clean.test \
@@ -622,6 +634,7 @@ parallel-tests-log-override-1.test \
 parallel-tests-log-override-2.test \
 parallel-tests-log-override-recheck.test \
 parallel-tests-log-compiler-example.test \
+test-extensions.test \
 parse.test \
 percent.test \
 percent2.test \
@@ -846,6 +859,8 @@ txinfo32.test \
 txinfo33.test \
 transform.test \
 transform2.test \
+uninstall-pr9578.test \
+uninstall-fail.test \
 unused.test \
 upc.test \
 upc2.test \

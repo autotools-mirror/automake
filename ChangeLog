@@ -1,3 +1,168 @@
+2011-10-06  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	fix: make a test script executable
+	* tests/nobase-nodist.test: Make executable.
+
+2011-10-06  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	coverage: expose automake bug#9651
+	* tests/dist-auxfile.test: New test, xfailing.
+	* tests/dist-auxfile-2.test: Likewise.
+	* tests/Makefile.am (TESTS, XFAIL_TESTS): Add them.
+
+2011-10-01  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	parallel-tests: automake error our on invalid TEST_EXTENSIONS
+	This change fixes automake bug#9400.
+	* automake.in (handle_tests): Bail out if a suffix specified in
+	TEST_EXTENSIONS would produce an invalid `xxx_LOG_COMPILER'
+	variable or an invalid suffix rule.  Before this change, automake
+	would have issued a confusing error messages (about invalid or
+	non-POSIX variables being defined), and in some situations would
+	have even produced a broken `Makefile.in' file.
+	($TEST_EXTENSION_PATTERN): New helper variable.
+	* doc/automake.texi (Simple Tests using parallel-tests): Document
+	the limitations on TEST_EXTENSIONS explicitly.
+	* NEWS: Update.
+	* tests/test-extensions.test: New test.
+	* tests/Makefile.am (TESTS): Update.
+
+2011-09-28  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	docs: don't suggest installing `.m4' files in hard-coded location
+	This change fixes automake bug#7988.
+	* doc/automake.texi (aclocal Options): State that the use of
+	the `--print-ac-dir' option to determine the directory where
+	third-party packages can install their `.m4' files is discouraged
+	now.
+	(Extending aclocal): Suggest telling the user about ACLOCAL_PATH.
+	* THANKS: Update.
+	Report by Peter Johansson.
+
+2011-09-26  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	distuninstallcheck: fail also when only one file is left installed
+	This change fixes automake bug#9579.
+	* lib/am/distdir.am (distuninstallcheck): Be stricter in ignoring
+	a potential `dir' file created by install-info and left installed.
+	Also, be more careful about "this can't happen" kind of errors.
+	(am__distuninstallcheck_listfiles): New internal helper macro.
+	* tests/distcheck-pr9579.test: New test.
+	* tests/distcheck-override-infodir.test: Likewise.
+	* tests/Makefile.am (TESTS): Add them.
+	* NEWS, THANKS: Update.
+	Report by Nick Bowler.
+
+2011-09-28  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	maintcheck: fix usage of `cd' instead of `$(am__cd)'
+	* lib/am/inst-vars.am (am__uninstall_files_from_dir): Use
+	`$(am__cd)', not plain `cd'.
+
+2011-09-24  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	uninstall: "make uninstall" before "make install" works
+	This change fixes automake bug#9578.
+	* lib/am/inst-vars.am (am__uninstall_files_from_dir): New internal
+	macro, that defines a shell code fragment to uninstall files from
+	a given directory.
+	* lib/am/data.am (uninstall-%DIR%%PRIMARY%): Use it, to reduce code
+	duplication and improve consistency and correctness.
+	* lib/am/libs.am (uninstall-%DIR%LIBRARIES): Likewise.
+	* lib/am/lisp.am (uninstall-%DIR%LISP): Likewise.
+	* lib/am/mans.am (uninstall-man%SECTION%): Likewise.
+	* lib/am/python.am (uninstall-%DIR%LIBRARIES): Likewise.
+	* lib/am/scripts.am (uninstall-%DIR%SCRIPTS): Likewise.
+	* tests/uninstall-pr9578.test: New test.
+	* tests/uninstall-fail.test: New test.
+	* tests/Makefile.am (TESTS): Add them.
+	* NEWS, THANKS: Update.
+	Report by Nick Bowler.
+
+2011-09-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix tests on aclocal search path precedences
+	* tests/aclocal-path-precedence.test: Call `$ACLOCAL' with the
+	proper overridden system acdir.
+
+2011-09-20  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	* NEWS: Fix typo.
+
+2011-09-20  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	docs: document planned precedence changes in aclocal search path
+	* doc/automake.texi (Macro Search Path): Explicitly state that the
+	lookup order for extra directories of `.m4' files will be changed
+	in the next major release.
+	* NEWS: Likewise.
+
+2011-09-19  Paolo Bonzini  <bonzini@gnu.org>
+	    Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	aclocal: handle ACLOCAL_PATH environment variable
+	* aclocal.in (parse_ACLOCAL_PATH): New function, parse ACLOCAL_PATH
+	as a colon-separated list of directories to be included in the
+	search path.
+	* doc/automake.texi (Macro Search Path): Document new behavior and
+	the precedence rules for various elements of the search path.
+	* tests/aclocal-path.test: New test.
+	* tests/aclocal-path-install.test: Likewise.
+	* tests/aclocal-path-install-serial.test: Likewise.
+	* tests/aclocal-path-precedence.test: Likewise.
+	* tests/aclocal-path-nonexistent.test: Likewise.
+	* tests/Makefile.am (TESTS): Add them.
+	* NEWS: Update.
+	* tests/distcheck-missing-m4.test: Extend by also checking
+	interactions with ACLOCAL_PATH.
+	* tests/distcheck-outdated-m4.test: Likewise, and fix a couple
+	of botched comments since we are at it.
+
+2011-09-19  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix spurious failure in 'primary-prefix-valid-couples.test'
+	* tests/primary-prefix-valid-couples.test: After commit
+	v1.11-464-gc9dfc36, `java_JAVA' is not a valid prefix/primary
+	combination by default anymore: one has to explicitly define
+	$(javadir) to make it so.  So just drop `java_JAVA' from our
+	Makefile.am  Also, since we are at it, ...
+	(configure.in): ... remove AM_PROG_GCJ from here, as it's not
+	really required.
+
+2011-09-19  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	docs: deprecate JAVA primary
+	* doc/automake.texi (Java): Deprecate the JAVA primary, stating
+	that it will become obsolete in automake 1.12 and probably removed
+	altogether in automake 1.13.  Reflect this in the section title,
+	by appending the string "(deprecated feature)".
+	(@menu, @detailmenu): Update.
+	(Java Support with gcj): The cross-referenced support for bytecode
+	compilation with the JAVA primary is rudimentary and deprecated.
+	State that explicitly.
+
+2011-09-19  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	docs: clearer distinction between `.java' with javac and with gcj
+	* doc/automake.texi (Java support): Rename this node ...
+	(Java support with gcj): ... to this, and change its title from
+	"Compiling Java sources" to "Compiling Java sources using gcj".
+	(@detailmenu, @menu, @cindex): Update and make more precise.
+	(Java): Change the title of this node from simply "Java" to
+	"Java bytecode compilation".
+	(@detailmenu, @menu, @cindex): Update and make more precise.
+
+2011-09-18  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	java: complain if java_JAVA is used but $(javadir) is undefined
+	Fixes automake bug#8461.
+	* automake.in (handle_java): Remove inappropriate "java" argument
+	from the calls to `&am_install_var' and `&am_primary_prefixes'.
+	* tests/instdir-java.test (Makefile.am): Define `$(javadir)'.
+	* tests/javadir-undefined.test: New test.
+	* tests/Makefile.am (TESTS): Add it.
+	* NEWS: Update.
+
 2011-09-12  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
 	cosmetics: fix various typos and grammaros
