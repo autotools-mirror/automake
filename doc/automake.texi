@@ -3296,8 +3296,12 @@ Cause the output to be put into @var{file} instead of @file{aclocal.m4}.
 @opindex --print-ac-dir
 Prints the name of the directory that @command{aclocal} will search to
 find third-party @file{.m4} files.  When this option is given, normal
-processing is suppressed.  This option can be used by a package to
-determine where to install a macro file.
+processing is suppressed.  This option was used @emph{in the past} by
+third-party packages to determine where to install @file{.m4} macro
+files, but @emph{this usage is today discouraged}, since it causes
+@samp{$(prefix)} not to be thoroughly honoured (which violates the
+GNU Coding Standards), and a similar semantics can be better obtained
+with the @env{ACLOCAL_PATH} environment variable; @pxref{Extending aclocal}.
 
 @item --verbose
 @opindex --verbose
@@ -3472,6 +3476,7 @@ Similarly, @file{dirlist} can be handy if you have installed a local
 copy of Automake in your account and want @command{aclocal} to look for
 macros installed at other places on the system.
 
+@anchor{ACLOCAL_PATH}
 @subsubheading Modifying the Macro Search Path: @file{ACLOCAL_PATH}
 @cindex @env{ACLOCAL_PATH}
 
@@ -3533,8 +3538,12 @@ aclocal_DATA = mymacro.m4 myothermacro.m4
 
 @noindent
 Please do use @file{$(datadir)/aclocal}, and not something based on
-the result of @samp{aclocal --print-ac-dir}.  @xref{Hard-Coded Install
-Paths}, for arguments.
+the result of @samp{aclocal --print-ac-dir} (@pxref{Hard-Coded Install
+Paths}, for arguments).  It might also be helpful to suggest to
+the user to add the @file{$(datadir)/aclocal} directory to his
+@env{ACLOCAL_PATH} variable (@pxref{ACLOCAL_PATH}) so that
+@command{aclocal} will find the @file{.m4} files installed by your
+package automatically.
 
 A file of macros should be a series of properly quoted
 @code{AC_DEFUN}'s (@pxref{Macro Definitions, , , autoconf, The
@@ -9018,8 +9027,14 @@ corresponding test has completed.  The set of log files is listed in
 the read-only variable @code{TEST_LOGS}, and defaults to @code{TESTS},
 with the executable extension if any (@pxref{EXEEXT}), as well as any
 suffix listed in @code{TEST_EXTENSIONS} removed, and @file{.log} appended.
-@code{TEST_EXTENSIONS} defaults to @file{.test}.  Results are undefined
-if a test file name ends in several concatenated suffixes.
+Results are undefined if a test file name ends in several concatenated
+suffixes.  @code{TEST_EXTENSIONS} defaults to @file{.test}; it can be
+overridden by the user, in which case any extension listed in it must be
+constituted by a dot, followed by a non-digit alphabetic character,
+followed by any number of alphabetic characters.
+@c Keep in sync with test-extensions.test.
+For example, @samp{.sh}, @samp{.T} and @samp{.t1} are valid extensions,
+while @samp{.x-y}, @samp{.6c} and @samp{.t.1} are not.
 
 @vindex _LOG_COMPILE
 @vindex _LOG_COMPILER

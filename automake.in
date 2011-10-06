@@ -210,6 +210,8 @@ my $INCLUDE_PATTERN = ('^include\s+'
 # Directories installed during 'install-exec' phase.
 my $EXEC_DIR_PATTERN =
   '^(?:bin|sbin|libexec|sysconf|localstate|lib|pkglib|.*exec.*)' . "\$";
+# Suffixes that can appear in TEST_EXTENSIONS (parallel-tests support).
+my $TEST_EXTENSION_PATTERN = '^(\.[a-zA-Z_][a-zA-Z0-9_]*|@[a-zA-Z0-9_]+@)$';
 
 # Values for AC_CANONICAL_*
 use constant AC_CANONICAL_BUILD  => 1;
@@ -4888,7 +4890,15 @@ sub handle_tests
 	    }
 	  define_variable ('TEST_EXTENSIONS', $suff, INTERNAL);
 	  # FIXME: this mishandles conditions.
-	  my @test_suffixes = (var 'TEST_EXTENSIONS')->value_as_list_recursive;
+	  my $var = rvar 'TEST_EXTENSIONS';
+	  my @test_suffixes = $var->value_as_list_recursive;
+          if ((my @invalid_test_suffixes =
+                  grep { !/$TEST_EXTENSION_PATTERN/o } @test_suffixes) > 0)
+            {
+              error $var->rdef (TRUE)->location,
+                    "invalid test extensions: @invalid_test_suffixes";
+            }
+          @test_suffixes = grep { /$TEST_EXTENSION_PATTERN/o } @test_suffixes;
 	  if ($handle_exeext)
 	    {
 	      unshift (@test_suffixes, $at_exeext)
