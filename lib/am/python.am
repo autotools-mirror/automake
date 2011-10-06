@@ -1,6 +1,6 @@
 ## automake - create Makefile.in from Makefile.am
-## Copyright (C) 1999, 2001, 2003, 2004, 2006, 2007, 2008, 2009  Free
-## Software Foundation, Inc.
+## Copyright (C) 1999, 2001, 2003, 2004, 2006, 2007, 2008, 2009, 2011
+## Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ endif %?INSTALL%
 ## ------------ ##
 
 if %?INSTALL%
+?FIRST?am__py_compile = PYTHON=$(PYTHON) $(SHELL) $(py_compile)
 am__installdirs += "$(DESTDIR)$(%NDIR%dir)"
 .PHONY install-%EXEC?exec:data%-am: install-%DIR%PYTHON
 install-%DIR%PYTHON: $(%DIR%_PYTHON)
@@ -52,11 +53,8 @@ if %?BASE%
 ## Byte-compile must be done at install time, since file times are
 ## encoded in the actual files.
 	if test -n "$$dlist"; then \
-	  if test -z "$(DESTDIR)"; then \
-	    PYTHON=$(PYTHON) $(py_compile) --basedir "$(%NDIR%dir)" $$dlist; \
-	  else \
-	    PYTHON=$(PYTHON) $(py_compile) --destdir "$(DESTDIR)" --basedir "$(%NDIR%dir)" $$dlist; \
-	  fi; \
+	  $(am__py_compile) --destdir "$(DESTDIR)" \
+	                    --basedir "$(%NDIR%dir)" $$dlist; \
 	else :; fi
 else !%?BASE%
 	@list='$(%DIR%_PYTHON)'; test -n "$(%NDIR%dir)" || list=; \
@@ -76,11 +74,8 @@ else !%?BASE%
 ## Byte-compile must be done at install time, since file times are
 ## encoded in the actual files.
 	  if test -n "$$dlist"; then \
-	    if test -z "$(DESTDIR)"; then \
-	      PYTHON=$(PYTHON) $(py_compile) --basedir "$(%NDIR%dir)" $$dlist; \
-	    else \
-	      PYTHON=$(PYTHON) $(py_compile) --destdir "$(DESTDIR)" --basedir "$(%NDIR%dir)" $$dlist; \
-	    fi; \
+	    $(am__py_compile) --destdir "$(DESTDIR)" \
+	                      --basedir "$(%NDIR%dir)" $$dlist; \
 	  else :; fi \
 	done
 endif !%?BASE%
@@ -99,16 +94,15 @@ uninstall-%DIR%PYTHON:
 ?BASE?	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 ?!BASE?	$(am__nobase_strip_setup); files=`$(am__nobase_strip)`; \
 	test -n "$$files" || exit 0; \
+	dir='$(DESTDIR)$(%NDIR%dir)'; \
+## Also remove the .pyc and .pyo byte compiled versions.
 	filesc=`echo "$$files" | sed 's|$$|c|'`; \
 	fileso=`echo "$$files" | sed 's|$$|o|'`; \
-	echo " ( cd '$(DESTDIR)$(%NDIR%dir)' && rm -f" $$files ")"; \
-	cd "$(DESTDIR)$(%NDIR%dir)" && rm -f $$files || exit $$?; \
-## This is to remove the .pyc and .pyo byte compiled versions (a bit
-## of a hack).
-	echo " ( cd '$(DESTDIR)$(%NDIR%dir)' && rm -f" $$filesc ")"; \
-	cd "$(DESTDIR)$(%NDIR%dir)" && rm -f $$filesc || exit $$?; \
-	echo " ( cd '$(DESTDIR)$(%NDIR%dir)' && rm -f" $$fileso ")"; \
-	cd "$(DESTDIR)$(%NDIR%dir)" && rm -f $$fileso
+	st=0; \
+	for files in "$$files" "$$filesc" "$$fileso"; do \
+	  $(am__uninstall_files_from_dir) || st=$$?; \
+	done; \
+	exit $$st
 endif %?INSTALL%
 
 

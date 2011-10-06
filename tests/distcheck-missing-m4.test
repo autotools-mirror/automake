@@ -39,9 +39,10 @@ AC_OUTPUT
 MY_FOO
 MY_BAR
 MY_BAZ
+MY_ZAR
 END
 
-mkdir m4 acdir acdir1 acdir2
+mkdir m4 acdir acdir1 acdir2 pth
 
 cat > acdir/dirlist << END
 $cwd/acdir1
@@ -52,21 +53,25 @@ echo 'AC_DEFUN([MY_FOO], [:])' > m4/foo.m4
 echo 'AC_DEFUN([MY_BAR], [:])' > acdir1/bar.m4
 echo 'AC_DEFUN([MY_BAZ], [:])' > acdir1/baz.m4
 echo 'AC_DEFUN([MY_QUX], [:])' > acdir2/qux.m4
+echo 'AC_DEFUN([MY_ZAR], [:])' > pth/zar.m4
+echo 'AC_DEFUN([MY_BLA], [:])' > pth/bla.m4
 
 ACLOCAL="$ACLOCAL --system-acdir=$cwd/acdir"; export ACLOCAL
+ACLOCAL_PATH=$cwd/pth; export ACLOCAL_PATH
 
 # We don't use `--install' here.  Our distcheck-hook should catch this.
 $ACLOCAL -I m4
 $AUTOCONF
-$EGREP 'MY_(FOO|BAR|BAZ)' configure && Exit 1 # Sanity check.
+$EGREP 'MY_(FOO|BAR|BAZ|ZAR)' configure && Exit 1 # Sanity check.
 $AUTOMAKE
 
 ./configure
 
 $MAKE distcheck >output 2>&1 && { cat output; Exit 1; }
 cat output
-$EGREP "required m4 file.*not distributed.* bar.m4( |$)" output
-$EGREP "required m4 file.*not distributed.* baz.m4( |$)" output
+for x in bar baz zar; do
+  $EGREP "required m4 file.*not distributed.* $x.m4( |$)" output
+done
 # Check that we don't fail for spurious errors.
 $EGREP -i 'mkdir:|autom4te.*\.cache|:.*(permission|denied)' output && Exit 1
 
@@ -74,28 +79,34 @@ $EGREP -i 'mkdir:|autom4te.*\.cache|:.*(permission|denied)' output && Exit 1
 $ACLOCAL -I m4 --install
 test -f m4/bar.m4 # Sanity check.
 test -f m4/baz.m4 # Likewise.
+test -f m4/zar.m4 # Likewise.
 using_gmake || $MAKE Makefile
 $MAKE distcheck
 
-# We start to use a new "third-party" macro from a new .m4 file, but forget
+# We start to use new "third-party" macros from new .m4 files, but forget
 # to re-run "aclocal --install" by hand, relying on automatic remake rules.
 # Our distcheck-hook should catch this too.
-echo MY_QUX >> configure.in
+cat >> configure.in << 'END'
+MY_QUX
+MY_BLA
+END
 
 $MAKE
-$EGREP 'MY_(FOO|BAR|BAZ|QUX)' configure && Exit 1 # Sanity check.
+$EGREP 'MY_(FOO|BAR|BAZ|QUX|ZAR|BLA)' configure && Exit 1 # Sanity check.
 
 $MAKE distcheck >output 2>&1 && { cat output; Exit 1; }
 cat output
 $EGREP "required m4 file.*not distributed.* qux.m4( |$)" output
+$EGREP "required m4 file.*not distributed.* bla.m4( |$)" output
 # Check that we don't fail for spurious errors.
 $EGREP -i 'mkdir:|autom4te.*\.cache|permission|denied' output && Exit 1
 # Check that we don't complain for files that should have been found.
-grep " ba[rz].m4" output && Exit 1
+$FGREP " (bar|baz|zar).m4" output && Exit 1
 
 # Now we again use `--install', and "make distcheck" should pass.
 $ACLOCAL -I m4 --install
 test -f m4/qux.m4 # Sanity check.
+test -f m4/bla.m4 # Likewise.
 using_gmake || $MAKE Makefile
 $MAKE distcheck
 

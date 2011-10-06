@@ -22,7 +22,10 @@ auxdir2.test \
 yacc-bison-skeleton-cxx.test \
 yacc-bison-skeleton.test \
 cond17.test \
+dist-auxfile.test \
+dist-auxfile-2.test \
 gcj6.test \
+java-nobase.test \
 pr8365-remake-timing.test \
 yacc-dist-nobuild-subdir.test \
 vala-vpath.test \
@@ -75,6 +78,11 @@ acloca21.test \
 acloca22.test \
 aclocal-acdir.test \
 aclocal-print-acdir.test \
+aclocal-path.test \
+aclocal-path-install.test \
+aclocal-path-install-serial.test \
+aclocal-path-nonexistent.test \
+aclocal-path-precedence.test \
 acoutnoq.test \
 acoutpt.test \
 acoutpt2.test \
@@ -312,6 +320,8 @@ destdir.test \
 dirlist.test \
 dirlist2.test \
 discover.test \
+dist-auxfile.test \
+dist-auxfile-2.test \
 dist-included-parent-dir.test \
 distcleancheck.test \
 distcom2.test \
@@ -331,6 +341,8 @@ distcheck-hook.test \
 distcheck-hook2.test \
 distcheck-missing-m4.test \
 distcheck-outdated-m4.test \
+distcheck-pr9579.test \
+distcheck-override-infodir.test \
 dmalloc.test \
 doc-parsing-buglets-colneq-subst.test \
 doc-parsing-buglets-tabs.test \
@@ -454,8 +466,15 @@ java2.test \
 java3.test \
 java-check.test \
 java-empty-classpath.test \
+javadir-undefined.test \
 javaprim.test \
 javasubst.test \
+java-clean.test \
+java-nobase.test \
+java-compile-install.test \
+java-sources.test \
+java-no-duplicate.test \
+java-mix.test \
 ldadd.test \
 ldflags.test \
 lex.test \
@@ -569,6 +588,7 @@ multlib.test \
 nobase.test \
 nobase-libtool.test \
 nobase-python.test \
+nobase-nodist.test \
 nodef.test \
 nodef2.test \
 nodep.test \
@@ -625,6 +645,7 @@ parallel-tests-log-override-1.test \
 parallel-tests-log-override-2.test \
 parallel-tests-log-override-recheck.test \
 parallel-tests-log-compiler-example.test \
+test-extensions.test \
 parse.test \
 percent.test \
 percent2.test \
@@ -671,6 +692,13 @@ primary-prefix-valid-couples.test \
 primary-prefix-couples-force-valid.test \
 primary-prefix-couples-documented-valid.test \
 proginst.test \
+py-compile-basic.test \
+py-compile-basic2.test \
+py-compile-basedir.test \
+py-compile-destdir.test \
+py-compile-env.test \
+py-compile-option-terminate.test \
+py-compile-usage.test \
 python.test \
 python2.test \
 python3.test \
@@ -840,6 +868,8 @@ txinfo32.test \
 txinfo33.test \
 transform.test \
 transform2.test \
+uninstall-pr9578.test \
+uninstall-fail.test \
 unused.test \
 upc.test \
 upc2.test \
