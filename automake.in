@@ -211,6 +211,8 @@ my $INCLUDE_PATTERN = ('^include\s+'
 # Directories installed during 'install-exec' phase.
 my $EXEC_DIR_PATTERN =
   '^(?:bin|sbin|libexec|sysconf|localstate|lib|pkglib|.*exec.*)' . "\$";
+# Suffixes that can appear in TEST_EXTENSIONS (parallel-tests support).
+my $TEST_EXTENSION_PATTERN = '^(\.[a-zA-Z_][a-zA-Z0-9_]*|@[a-zA-Z0-9_]+@)$';
 
 # Values for AC_CANONICAL_*
 use constant AC_CANONICAL_BUILD  => 1;
@@ -4969,7 +4971,15 @@ sub handle_tests
 	    }
 	  define_variable ('TEST_EXTENSIONS', $suff, INTERNAL);
 	  # FIXME: this mishandles conditions.
-	  my @test_suffixes = (var 'TEST_EXTENSIONS')->value_as_list_recursive;
+	  my $var = rvar 'TEST_EXTENSIONS';
+	  my @test_suffixes = $var->value_as_list_recursive;
+          if ((my @invalid_test_suffixes =
+                  grep { !/$TEST_EXTENSION_PATTERN/o } @test_suffixes) > 0)
+            {
+              error $var->rdef (TRUE)->location,
+                    "invalid test extensions: @invalid_test_suffixes";
+            }
+          @test_suffixes = grep { /$TEST_EXTENSION_PATTERN/o } @test_suffixes;
 	  if ($handle_exeext)
 	    {
 	      unshift (@test_suffixes, $at_exeext)
@@ -5102,22 +5112,34 @@ sub handle_java
 {
     my @sourcelist = &am_install_var ('-candist',
 				      'java', 'JAVA',
-				      'java', 'noinst', 'check');
+				      'noinst', 'check');
     return if ! @sourcelist;
 
-    my @prefix = am_primary_prefixes ('JAVA', 1,
-				      'java', 'noinst', 'check');
+    my @prefixes = am_primary_prefixes ('JAVA', 1,
+				        'noinst', 'check');
 
     my $dir;
-    foreach my $curs (@prefix)
+    my @java_sources = ();
+    foreach my $prefix (@prefixes)
       {
+        (my $curs = $prefix) =~ s/^(?:nobase_)?(?:dist_|nodist_)?//;
+
 	next
 	  if $curs eq 'EXTRA';
 
-	err_var "${curs}_JAVA", "multiple _JAVA primaries in use"
-	  if defined $dir;
+        push @java_sources, '$(' . $prefix . '_JAVA' . ')';
+
+	if (defined $dir)
+	  {
+	    err_var "${curs}_JAVA", "multiple _JAVA primaries in use"
+	     unless $curs eq $dir;
+	  }
+
 	$dir = $curs;
       }
+
+    define_pretty_variable ('am__java_sources', TRUE, INTERNAL,
+                            "@java_sources");
 
     if ($dir eq 'check')
       {

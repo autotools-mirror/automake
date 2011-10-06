@@ -1,6 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1998, 2001, 2002, 2004, 2007, 2011 Free Software
-# Foundation, Inc.
+# Copyright (C) 2011 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,41 +14,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Minimal test of Java functionality.
+# Use of JAVA primary should not allow the use of the `java_' prefix
+# when $(javadir) is undefined.  Otherwise, we could silently end up
+# with a broken Makefile.in (where "make install" doesn't install
+# the *.class files).
+# See automake bug#8461.
 
-required=javac
 . ./defs || Exit 1
 
 set -e
 
-cat >>configure.in <<'EOF'
-AC_OUTPUT
-EOF
-
-cat > Makefile.am << 'END'
-javadir = $(datadir)/java
-dist_java_JAVA = a.java b.java
-END
-
 $ACLOCAL
-$AUTOCONF
+
+echo java_JAVA = a.java > Makefile.am
+AUTOMAKE_fails
+grep '^Makefile\.am:1:.*java_JAVA.*javadir.* undefined' stderr
+$EGREP '(uninitialized|line) ' stderr && Exit 1
+
+echo javadir = a-dummy-value >> Makefile.am
 $AUTOMAKE
 
-$EGREP '\.stamp|class' Makefile.in # For debugging.
-grep '^all[-a-z]*:.*classjava\.stamp' Makefile.in
-test `grep -c '^all[-a-z]*:.*classjava\.stamp' Makefile.in` -eq 1
-
-cat >a.java <<EOF
-class a
-{
-}
-EOF
-
-cat >b.java <<EOF
-class b
-{
-}
-EOF
-
-./configure --prefix "`pwd`"
-$MAKE distcheck
+:
