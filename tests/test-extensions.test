@@ -24,29 +24,29 @@ am_parallel_tests=yes
 set -e
 
 cat >> configure.in <<'END'
-AC_SUBST([ext], [".e"])
 AC_OUTPUT
 END
 
 $ACLOCAL
 $AUTOCONF
 
-cat > Makefile.am << 'END'
-TESTS =
-TEST_EXTENSIONS = .sh .T .t1 ._foo .BAR .x_Y_z ._ @ext@
-END
+valid_extensions='sh T t1 _foo BAR x_Y_z _'
 
-$AUTOMAKE
+echo TESTS = > Makefile.am
+echo " $valid_extensions" \
+  | sed -e 's/ / ./g' -e 's/^/TEST_EXTENSIONS =/' >> Makefile.am
+cat Makefile.am # For debugging.
 
-$EGREP -i 'log|ext' Makefile.in # For debugging.
+$AUTOMAKE -a
 
-for lc in sh T t1 _foo BAR x_Y_z _; do
+grep -i 'log' Makefile.in # For debugging.
+
+for lc in $valid_extensions; do
   uc=`echo $lc | tr '[a-z]' '[A-Z]'`
   $FGREP "\$(${uc}_LOG_COMPILER)" Makefile.in
   grep "^${uc}_LOG_COMPILE =" Makefile.in
   grep "^\.${lc}\.log:" Makefile.in
 done
-grep "^@ext@\.log:" Makefile.in
 
 # The produced Makefile is not broken.
 ./configure
@@ -54,11 +54,12 @@ $MAKE all check
 
 cat > Makefile.am << 'END'
 TESTS = foo.test bar.sh
-TEST_EXTENSIONS = .test mu .x-y a-b .t.1 .sh .6c .0 .11 .@ .t33 .a=b _&_
+TEST_EXTENSIONS  = .test mu .x-y a-b .t.1 .sh .6c .0 .11 .= @suf@ .@ext@
+TEST_EXTENSIONS += .= .t33 .a@b _&_
 END
 
 AUTOMAKE_fails
-for suf in mu .x-y a-b .t.1 .6c .0 .11 '.@' '.a=b' '_&_'; do
+for suf in mu .x-y a-b .t.1 .6c .0 .11  @suf@ .@ext@ '.=' '_&_'; do
   suf2=`printf '%s\n' "$suf" | sed -e 's/\./\\./'`
   $EGREP "^Makefile\.am:2:.*invalid test extension.* $suf2( |$)" stderr
 done
