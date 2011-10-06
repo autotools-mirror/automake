@@ -3830,12 +3830,19 @@ sub handle_dist ()
   # directory, we would have discovered it already, so we don't
   # check that.  But if the file is in a subdir without a Makefile,
   # we want to distribute it here if we are doing `.'.  Ugly!
+  # Also, in some corner cases, it's possible that the following code
+  # will cause the same file to appear in the $(DIST_COMMON) variables
+  # of two distinct Makefiles; but this is not a problem, since the
+  # `distdir' target in `lib/am/distdir.am' can deal with the same
+  # file being distributed multiple times.
+  # See also automake bug#9651.
   if ($relative_dir eq '.')
     {
       foreach my $file (split (' ' , $configure_dist_common))
 	{
+	  my $dir = dirname ($file);
 	  push_dist_common ($file)
-	    unless is_make_dir (dirname ($file));
+	    if ($dir eq '.' || ! is_make_dir ($dir));
 	}
     }
 

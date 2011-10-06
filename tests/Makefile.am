@@ -27,7 +27,6 @@ XFAIL_TESTS = \
 all.test \
 auxdir2.test \
 cond17.test \
-dist-auxfile.test \
 gcj6.test \
 override-conditional-2.test \
 parallel-am.test \
