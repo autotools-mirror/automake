@@ -23,6 +23,8 @@ XFAIL_TESTS = \
 all.test \
 auxdir2.test \
 cond17.test \
+dist-auxfile.test \
+dist-auxfile-2.test \
 gcj6.test \
 override-conditional-2.test \
 java-nobase.test \
@@ -399,6 +401,8 @@ destdir.test \
 dirlist.test \
 dirlist2.test \
 discover.test \
+dist-auxfile.test \
+dist-auxfile-2.test \
 dist-included-parent-dir.test \
 distcleancheck.test \
 distcom2.test \
@@ -418,6 +422,8 @@ distcheck-hook.test \
 distcheck-hook2.test \
 distcheck-missing-m4.test \
 distcheck-outdated-m4.test \
+distcheck-pr9579.test \
+distcheck-override-infodir.test \
 dmalloc.test \
 doc-parsing-buglets-colneq-subst.test \
 doc-parsing-buglets-tabs.test \
@@ -750,6 +756,7 @@ parallel-tests-log-override-recheck.test \
 parallel-tests-cmdline-override.test \
 parallel-tests-log-compiler-example.test \
 parallel-tests-fork-bomb.test \
+test-extensions.test \
 parse.test \
 percent.test \
 percent2.test \
