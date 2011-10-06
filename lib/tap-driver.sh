@@ -117,14 +117,17 @@ fi
 
 {
   (
-    # Ignore common signals (in this subshell only!) to avoid potential
+    # Ignore common signals (in this subshell only!), to avoid potential
     # problems with Korn shells.  Some Korn shells are known to propagate
     # to themselves signals that have killed a child process they were
-    # waiting for (this is done at least for SIGINT -- and usually only
-    # for it in truth); this would cause a premature exit in this subshell,
-    # so that the awk script would never seen the exit status it expects
-    # on its last input line (and which is displayed below by the last
-    # `echo $?' command), and would thus die reporting an internal error.
+    # waiting for; this is done at least for SIGINT (and usually only for
+    # it, in truth).  Without the `trap' below, such a behaviour could
+    # cause a premature exit in the current subshell, e.g., in case the
+    # test command it runs gets terminated by a SIGINT.  Thus, the awk
+    # script we are piping into would never seen the exit status it
+    # expects on its last input line (which is displayed below by the
+    # last `echo $?' statement), and would thus die reporting an internal
+    # error.
     # For more information, see the Autoconf manual and the threads:
     # <http://lists.gnu.org/archive/html/bug-autoconf/2011-09/msg00004.html>
     # <http://mail.opensolaris.org/pipermail/ksh93-integration-discuss/2009-February/004121.html>
@@ -458,7 +461,8 @@ function get_test_exit_message(status)
     # shells, when a child process die due to signal number n, can leave
     # in $? an exit status of 256+n instead of the more standard 128+n.
     # Apparently, both behaviours are allowed by POSIX (2008), so be
-    # prepared to handle them both.
+    # prepared to handle them both.  See also Austing Group report ID
+    # 0000051 <http://www.austingroupbugs.net/view.php?id=51>
     exit_details = sprintf(" (terminated by signal %d?)", status - 256)
   else
     # Never seen in practice.
