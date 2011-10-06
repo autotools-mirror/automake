@@ -43,6 +43,8 @@ TESTS = ## Will be updated later.
 XFAIL_TESTS = \
 all.test \
 cond17.test \
+dist-auxfile.test \
+dist-auxfile-2.test \
 gcj6.test \
 override-conditional-2.test \
 java-nobase.test \

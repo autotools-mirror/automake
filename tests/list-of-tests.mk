@@ -308,6 +308,8 @@ dirlist.test \
 dirlist2.test \
 dirlist-abspath.test \
 discover.test \
+dist-auxfile-2.test \
+dist-auxfile.test \
 dist-included-parent-dir.test \
 distcleancheck.test \
 distcom2.test \
@@ -327,6 +329,8 @@ distcheck-hook.test \
 distcheck-hook2.test \
 distcheck-missing-m4.test \
 distcheck-outdated-m4.test \
+distcheck-override-infodir.test \
+distcheck-pr9579.test \
 dmalloc.test \
 doc-parsing-buglets-colneq-subst.test \
 doc-parsing-buglets-tabs.test \
@@ -693,6 +697,7 @@ test-driver-strip-vpath.test \
 test-driver-trs-suffix-registered.test \
 test-driver-fail.test \
 test-driver-is-distributed.test \
+test-extensions.test \
 test-harness-vpath-rewrite.test \
 test-log.test \
 test-logs-repeated.test \
