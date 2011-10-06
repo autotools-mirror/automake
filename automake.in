@@ -210,8 +210,6 @@ my $INCLUDE_PATTERN = ('^include\s+'
 # Directories installed during 'install-exec' phase.
 my $EXEC_DIR_PATTERN =
   '^(?:bin|sbin|libexec|sysconf|localstate|lib|pkglib|.*exec.*)' . "\$";
-# Suffixes that can appear in TEST_EXTENSIONS (parallel-tests support).
-my $TEST_EXTENSION_PATTERN = '^(\.[a-zA-Z_][a-zA-Z0-9_]*|@[a-zA-Z0-9_]+@)$';
 
 # Values for AC_CANONICAL_*
 use constant AC_CANONICAL_BUILD  => 1;
@@ -4847,6 +4845,20 @@ sub handle_per_suffix_test
                                    %transform);
 }
 
+# is_valid_test_extension ($EXT)
+# ------------------------------
+# Return true if $EXT can appear in $(TEST_EXTENSIONS), return false
+# otherwise.
+sub is_valid_test_extension ($)
+{
+  my $ext = shift;
+  return 1
+    if ($ext =~ /^\.[a-zA-Z_][a-zA-Z0-9_]*$/);
+  return 1
+    if (exists $configure_vars{'EXEEXT'} && $ext eq subst ('EXEEXT'));
+  return 0;
+}
+
 # Handle TESTS variable and other checks.
 sub handle_tests
 {
@@ -4893,12 +4905,12 @@ sub handle_tests
 	  my $var = rvar 'TEST_EXTENSIONS';
 	  my @test_suffixes = $var->value_as_list_recursive;
           if ((my @invalid_test_suffixes =
-                  grep { !/$TEST_EXTENSION_PATTERN/o } @test_suffixes) > 0)
+                  grep { !is_valid_test_extension $_ } @test_suffixes) > 0)
             {
               error $var->rdef (TRUE)->location,
                     "invalid test extensions: @invalid_test_suffixes";
             }
-          @test_suffixes = grep { /$TEST_EXTENSION_PATTERN/o } @test_suffixes;
+          @test_suffixes = grep { is_valid_test_extension $_ } @test_suffixes;
 	  if ($handle_exeext)
 	    {
 	      unshift (@test_suffixes, $at_exeext)
