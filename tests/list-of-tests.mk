@@ -698,6 +698,7 @@ test-driver-trs-suffix-registered.test \
 test-driver-fail.test \
 test-driver-is-distributed.test \
 test-extensions.test \
+test-extensions-cond.test \
 test-harness-vpath-rewrite.test \
 test-log.test \
 test-logs-repeated.test \
