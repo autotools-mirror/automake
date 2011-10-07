@@ -7676,9 +7676,14 @@ sub require_file_internal ($$$@)
 
   foreach my $file (@files)
     {
+      next
+        unless $strictness >= $mystrict;
+
       my $fullfile = "$dir/$file";
       my $found_it = 0;
       my $dangling_sym = 0;
+
+      push_required_file ($dir, $file, $fullfile);
 
       if (-l $fullfile && ! -f $fullfile)
 	{
@@ -7687,7 +7692,6 @@ sub require_file_internal ($$$@)
       elsif (dir_has_case_matching_file ($dir, $file))
 	{
 	  $found_it = 1;
-	  push_required_file ($dir, $file, $fullfile);
 	}
 
       # `--force-missing' only has an effect if `--add-missing' is
@@ -7708,9 +7712,7 @@ sub require_file_internal ($$$@)
 	      next if defined $required_file_not_found{$fullfile};
 	      $required_file_not_found{$fullfile} = 1;
 	    }
-
-	  if ($strictness >= $mystrict)
-	    {
+          # FIXME: re-indent this correctly
 	      if ($dangling_sym && $add_missing)
 		{
 		  unlink ($fullfile);
@@ -7763,7 +7765,6 @@ sub require_file_internal ($$$@)
 			}
 		      set_dir_cache_file ($dir, $file);
 		    }
-		  push_required_file ($dir, $file, $fullfile);
 		}
 	      else
 		{
@@ -7783,7 +7784,6 @@ sub require_file_internal ($$$@)
 		if !$suppress && rule $file;
 
 	      msg ($suppress ? 'note' : 'error', $where, "$message$trailer$trailer2");
-	    }
 	}
     }
 }
