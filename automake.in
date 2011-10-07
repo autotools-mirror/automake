@@ -4900,9 +4900,18 @@ sub handle_tests
 	      $at_exeext = subst ('EXEEXT');
 	      $suff = $at_exeext  . ' ' . $suff;
 	    }
-	  define_variable ('TEST_EXTENSIONS', $suff, INTERNAL);
-	  # FIXME: this mishandles conditions.
-	  my $var = rvar 'TEST_EXTENSIONS';
+          if (! var 'TEST_EXTENSIONS')
+            {
+	      define_variable ('TEST_EXTENSIONS', $suff, INTERNAL);
+            }
+          my $var = var 'TEST_EXTENSIONS';
+          # Currently, we are not able to deal with conditional contents
+          # in TEST_EXTENSIONS.
+          if ($var->has_conditional_contents)
+           {
+	     msg_var 'unsupported', $var,
+                     "`TEST_EXTENSIONS' cannot have conditional contents";
+           }
 	  my @test_suffixes = $var->value_as_list_recursive;
           if ((my @invalid_test_suffixes =
                   grep { !is_valid_test_extension $_ } @test_suffixes) > 0)

@@ -799,6 +799,7 @@ test-trs-basic.test \
 test-trs-recover.test \
 test-trs-recover2.test \
 test-extensions.test \
+test-extensions-cond.test \
 parse.test \
 percent.test \
 percent2.test \
