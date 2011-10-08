@@ -470,6 +470,9 @@ my %required_targets =
    'install-man' => 1,
   );
 
+# Queue to push require_conf_file requirements to.
+my $required_conf_file_queue;
+
 # The name of the Makefile currently being processed.
 my $am_file = 'BUG';
 
@@ -7775,13 +7778,15 @@ sub required_file_check_or_copy ($$$)
 }
 
 
-# &require_file_internal ($WHERE, $MYSTRICT, $DIRECTORY, @FILES)
-# --------------------------------------------------------------
+# &require_file_internal ($WHERE, $MYSTRICT, $DIRECTORY, $QUEUE, @FILES)
+# ----------------------------------------------------------------------
 # Verify that the file must exist in $DIRECTORY, or install it.
 # $MYSTRICT is the strictness level at which this file becomes required.
+# Worker threads may queue up the action to be serialized by the master,
+# if $QUEUE is true
 sub require_file_internal ($$$@)
 {
-  my ($where, $mystrict, $dir, @files) = @_;
+  my ($where, $mystrict, $dir, $queue, @files) = @_;
 
   return
     unless $strictness >= $mystrict;
@@ -7789,7 +7794,16 @@ sub require_file_internal ($$$@)
   foreach my $file (@files)
     {
       push_required_file ($dir, $file, "$dir/$file");
-      required_file_check_or_copy ($where, $dir, $file);
+      if ($queue)
+        {
+          queue_required_file_check_or_copy ($required_conf_file_queue,
+                                             QUEUE_CONF_FILE, $relative_dir,
+                                             $where, $mystrict, @files);
+        }
+      else
+        {
+          required_file_check_or_copy ($where, $dir, $file);
+        }
     }
 }
 
@@ -7798,7 +7812,7 @@ sub require_file_internal ($$$@)
 sub require_file ($$@)
 {
     my ($where, $mystrict, @files) = @_;
-    require_file_internal ($where, $mystrict, $relative_dir, @files);
+    require_file_internal ($where, $mystrict, $relative_dir, 0, @files);
 }
 
 # &require_file_with_macro ($COND, $MACRO, $MYSTRICT, @FILES)
@@ -7821,7 +7835,7 @@ sub require_libsource_with_macro ($$$@)
     if ($config_libobj_dir)
       {
 	require_file_internal ($macro->rdef ($cond)->location, $mystrict,
-			       $config_libobj_dir, @files);
+			       $config_libobj_dir, 0, @files);
       }
     else
       {
@@ -7829,12 +7843,10 @@ sub require_libsource_with_macro ($$$@)
       }
 }
 
-# Queue to push require_conf_file requirements to.
-my $required_conf_file_queue;
-
-# &queue_required_conf_file ($QUEUE, $KEY, $DIR, $WHERE, $MYSTRICT, @FILES)
-# -------------------------------------------------------------------------
-sub queue_required_conf_file ($$$$@)
+# &queue_required_file_check_or_copy ($QUEUE, $KEY, $DIR, $WHERE,
+#                                     $MYSTRICT, @FILES)
+# ---------------------------------------------------------------
+sub queue_required_file_check_or_copy ($$$$@)
 {
     my ($queue, $key, $dir, $where, $mystrict, @files) = @_;
     my @serial_loc;
@@ -7849,9 +7861,9 @@ sub queue_required_conf_file ($$$$@)
     $queue->enqueue ($key, $dir, @serial_loc, $mystrict, 0 + @files, @files);
 }
 
-# &require_queued_conf_file ($QUEUE)
-# ----------------------------------
-sub require_queued_conf_file ($)
+# &require_queued_file_check_or_copy ($QUEUE)
+# -------------------------------------------
+sub require_queued_file_check_or_copy ($)
 {
     my ($queue) = @_;
     my $where;
@@ -7874,35 +7886,23 @@ sub require_queued_conf_file ($)
     my @files;
     push @files, $queue->dequeue ()
       foreach (1 .. $nfiles);
-
-    # Dequeuing happens outside of per-makefile context, so we have to
-    # set the variables used by require_file_internal and the functions
-    # it calls.  Gross!
-    $relative_dir = $dir;
-    require_file_internal ($where, $mystrict, $config_aux_dir, @files);
+    return
+      unless $strictness >= $mystrict;
+    foreach my $file (@files)
+      {
+        required_file_check_or_copy ($where, $config_aux_dir, $file);
+      }
 }
 
 # &require_conf_file ($WHERE, $MYSTRICT, @FILES)
 # ----------------------------------------------
-# Looks in configuration path, as specified by AC_CONFIG_AUX_DIR;
-# worker threads may queue up the action to be serialized by the master.
-#
-# FIXME: this seriously relies on the semantics of require_file_internal
-# and push_required_file, in that we exploit the fact that only the
-# contents of the last handled output file may be impacted (which in turn
-# is dealt with by the master thread).
+# Looks in configuration path, as specified by AC_CONFIG_AUX_DIR.
 sub require_conf_file ($$@)
 {
     my ($where, $mystrict, @files) = @_;
-    if (defined $required_conf_file_queue)
-      {
-	queue_required_conf_file ($required_conf_file_queue, QUEUE_CONF_FILE,
-				  $relative_dir, $where, $mystrict, @files);
-      }
-    else
-      {
-	require_file_internal ($where, $mystrict, $config_aux_dir, @files);
-      }
+    my $queue = defined $required_conf_file_queue ? 1 : 0;
+    require_file_internal ($where, $mystrict, $config_aux_dir,
+                           $queue, @files);
 }
 
 
@@ -8532,7 +8532,7 @@ sub handle_makefiles_threaded ($)
 	    }
 	  elsif ($key eq QUEUE_CONF_FILE)
 	    {
-	      require_queued_conf_file ($queue);
+	      require_queued_file_check_or_copy ($queue);
 	    }
 	  else
 	    {
