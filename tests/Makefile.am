@@ -788,6 +788,7 @@ test-driver-trs-suffix-registered.test \
 test-driver-fail.test \
 test-driver-is-distributed.test \
 test-driver-acsubst.test \
+test-driver-cond.test \
 test-harness-vpath-rewrite.test \
 test-log.test \
 test-metadata-global-log.test \
