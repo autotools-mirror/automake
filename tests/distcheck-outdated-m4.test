@@ -59,6 +59,15 @@ $AUTOMAKE
 ./configure
 $MAKE distcheck # Sanity check.
 
+check_no_spurious_error ()
+{
+  $EGREP -i 'mkdir:|:.*(permission|denied)' output && Exit 1
+  # On failure, some make implementations (such as Solaris make) print the
+  # whole failed recipe on stdout.  The first grep works around this.
+  grep -v 'rm -rf ' output | grep -i 'autom4te.*\.cache' && Exit 1
+  : # To placate `set -e'.
+}
+
 # We start to use a new "third-party" macro in a new version
 # of a pre-existing third-party m4 file, but forget to re-run
 # "aclocal --install" by hand, relying on automatic remake
@@ -76,8 +85,7 @@ $MAKE distcheck >output 2>&1 && { cat output; Exit 1; }
 cat output
 
 $EGREP "required m4 file.* outdated.* baz.m4( |$)" output
-# Check that we don't fail for spurious errors.
-$EGREP -i 'mkdir:|autom4te.*\.cache|permission|denied' output && Exit 1
+check_no_spurious_error
 # Check that we don't complain for files that aren't outdated.
 $EGREP " (foo|bar).m4" output && Exit 1
 
@@ -117,10 +125,8 @@ END
 $MAKE # Rebuild configure and makefiles.
 $MAKE distcheck >output 2>&1 && { cat output; Exit 1; }
 cat output
-
 $EGREP "required m4 file.* outdated.* fnord.m4( |$)" output
-# Check that we don't fail for spurious errors.
-$EGREP -i 'mkdir:|autom4te.*\.cache|permission|denied' output && Exit 1
+check_no_spurious_error
 # Check that we don't complain for files that aren't outdated.
 $EGREP " (foo|bar|baz).m4" output && Exit 1
 
