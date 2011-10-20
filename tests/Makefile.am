@@ -25,7 +25,7 @@ dist-auxfile-2.test \
 gcj6.test \
 java-nobase.test \
 pr8365-remake-timing.test \
-yacc-dist-nobuild-subdir.test \
+lex-subobj-nodep.test \
 vala-vpath.test \
 txinfo5.test
 
