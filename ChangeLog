@@ -1,3 +1,166 @@
+2011-10-17  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	cosmetics: remove obsolete comment
+	* automake.in (push_required_file): Remove "FIXME" comment stating
+	that the special handling of `$config_aux_dir' breaks threaded
+	automake: this is not true anymore after the recent commits (see
+	in particular commit `v1.11-1225-gf672944').
+
+2011-10-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix spurious failure with Solaris /bin/sh
+	* tests/dist-auxfile.test: Don't use redirected `:' in a loop,
+	it hits a bug in Solaris 10 /bin/sh.
+
+2011-10-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	threaded-am: better serialization for required config files
+	With this change, we make serialization/de-serialization of
+	required config files installs more granular, and in the process
+	fix the bug introduced by commit `v1.11-1219-g326ecba'.
+	* automake.in ($required_conf_file_queue): Move its declaration
+	earlier.
+	(require_file_internal): Add a new argument telling whether the
+	function should act immediately or queue its action for the master
+	thread to handle.
+	(queue_required_conf_file): Renamed ...
+	(queue_required_file_check_or_copy): ... to this.
+	(require_queued_conf_file): Renamed ...
+	(require_queued_file_check_or_copy): ... to this, and make it call
+	`required_file_check_or_copy' instead of `require_file_internal'.
+	(require_conf_file, handle_makefiles_threaded): Adjust and simplify
+	accordingly.
+	* tests/Makefile.am (XFAIL_TESTS): Remove `parallel-am.test'.
+
+2011-10-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	automake: refactor, break up 'require_file_internal'
+	This refactoring is only required in view of future changes.
+	* automake.in (require_file_internal): Move the guts of this
+	function ...
+	(required_file_check_or_copy): ... into this new function.  This
+	ensures that calls to `push_required_file' and code that copies
+	required files are placed in separate functions; this will be
+	very useful for reorganizing de-serialization of file installs
+	in future changes.
+
+2011-10-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	dist: separate auxiliary file instantiation from DIST_COMMON update
+	This change simplifies the automake internals dealing with the
+	checking, copying and distributing of required auxiliary files.
+	With this change, a required auxiliary file is *unconditionally*
+	added to the contents of the DIST_COMMON variable in the generated
+	Makefile.in, before checking whether it exists, or trying to copy
+	it (if `--add-missing' is in use).  This shouldn't be a problem,
+	since if the checking or copying of the file fails, automake will
+	bail out, the Makefile.in won't be created, and thus its content
+	will not matter.  OK, this is not completely true when threaded
+	automake is in use, but then, such a situation was also possible
+	before this patch, so no regression here, which is enough for us.
+	This change is the first of a series of steps aimed at fixing
+	the regression introduced in threaded automake usage by commit
+	`v1.11-1219-g326ecba'.
+	* automake.in (require_file_internal): Add the required file to
+	DIST_COMMON unconditionally.
+	* tests/missing-auxfile-stops-makefiles-creation.test: New test.
+	* tests/Makefile.am (TESTS): Add it.
+
+2011-10-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	refactor: rename a subroutine to a more proper name
+	* automake.in (maybe_push_require_file): Renamed ...
+	(push_required_file): ... to this.
+	All callers adjusted.
+
+2011-10-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	dist: truly always distribute files in AC_REQUIRE_AUX_FILE
+	This change fixes automake bug#9651.
+	* automake.in (handle_dist): Files whose distribution is required
+	by configure.ac are now correctly distributed even if the build-aux
+	directory coincides with the top-level directory.
+	* tests/Makefile.am (XFAIL_TESTS): Remove `dist-auxfile.test'.
+	* NEWS: Update.
+
+2011-10-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	dist: simplify automake code accordingly to the previous changes
+	After the previous change `v1.11-1219-g326ecba', every Makefile.am
+	requiring a file in the "config auxdir" will cause it to be listed
+	in the DIST_COMMON variable of the corresponding generated
+	Makefile.in, not only of the top-level Makefile.in.  Thus we don't
+	need to worry anymore about trying to distribute files in the
+	config auxdir from the top-level Makefile or the Makefile in
+	config auxdir (if any).  This allows us to carry out some useful
+	simplifications in the automake script.
+	This will however cause some changes in the generated Makefile;
+	for example, if the `PROGRAMS' primary is used only in a subdir
+	Makefile.am, the `depcomp' script will be distributed only by
+	`subdir/Makefile', not by the top-level Makefile.  This change
+	can be seen as an internal detail though, and definitely warranted
+	by the nice simplifications the current commit provides.
+	* automake.in ($automake_will_process_aux_dir): Variable removed.
+	(scan_autoconf_files): Adjust and simplify.
+	(handle_makefiles_threaded): Likewise.
+	(get_number_of_threads): Likewise.
+	(require_file_internal): Likewise.
+	(maybe_push_required_file): Its return value is not used anymore,
+	so return nothing.  Add special handling for distributed files from
+	`$config_libobj_dir'.  Also, catch "this can't happen" situations,
+	and abort accordingly.  Fix function description to better fit its
+	new role.
+	* tests/libobj19.test: Extend to also check situations where the
+	Makefile.am using $(LIBOBJS) is not the top-level one.
+	* tests/distcom6.test: Delete, merged into ...
+	* tests/distcom2.test: ... this test, which has been update to
+	account for the changed automake semantics.
+	* tests/Makefile.am (TESTS): Update.
+	* NEWS: Update.
+
+2011-10-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	dist: auxiliary files can be distributed from subdir Makefiles
+	With this change, we make it possible for a subdir Makefile.am
+	to distribute files in the config auxdir; while this means that
+	some files might be copied multiple times, it simplify some logic
+	in the automake script, and fix at least one important bug.  In
+	fact, before this change, the auxiliary script `test-driver' was
+	not being distributed as expected when TESTS was defined only in
+	a subdir Makefile (which is a pretty common setup indeed).  Now
+	this does not happen anymore: so the present change fixes automake
+	bug#9546.
+	Another welcome collateral effect is that `dist-auxfile-2.test'
+	now passes.
+	OTOH, the present changes *breaks threaded automake*.  The reason
+	is that automake needs to serialize file installations spawned
+	by `--add-missing' (this isn't for cosmetic reasons, but is
+	really needed to avoid possible race conditions and botched output
+	files).  Currently the code that installs required files is
+	intertwined with the code that declares the DIST_COMMON variables;
+	so, upon de-serialization, the definition of DIST_COMMON might get
+	emitted in the wrong Makefile.in.
+	Some follow-up refactoring in automake will soon take care of
+	remedying this situation.  For the moment, we just declare some
+	"parallel-am" tests as xfailing.
+	* automake.in (maybe_push_required_file): Add ad-hoc handling for
+	the case where the directory part of the required file is different
+	from the subdir where the current Makefile.am resides, but is equal
+	to the "config-aux directory" ($config_auxdir).  This is needed to
+	allow a construct in a non-top-level Makefile.am to require a file
+	in the config-aux directory.
+	* tests/test-driver-is-distributed.test: Extend and adjust.  This
+	test now passes.
+	* tests/java-compile-run-nested.test: Call automake with the `-a'
+	option to ensure that the `test-driver' auxiliary script gets
+	correctly installed.  This test now passes.
+	* tests/distcom-subdir.test: New test.
+	* tests/dist-readonly.test: Likewise.
+	* tests/dist-repeated.test: Likewise.
+	* tests/dist-auxdir-many-subdirs.test: Likewise.
+	* tests/distcom7.test: Removed, it's obsolete now.
+	* tests/Makefile.am (TESTS, XFAIL_TESTS): Update.
+
 2011-10-11  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
 	coverage: conditional contents in LOG_DRIVER variables

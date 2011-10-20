@@ -26,19 +26,23 @@ AC_CONFIG_FILES([tests/Makefile])
 AC_OUTPUT
 END
 
+rm -f depcomp # It's unneeded.
+
 mkdir tests
 
 cat > Makefile.am << 'END'
 SUBDIRS = tests
-test0:
-	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]test-driver '
-test1: distdir
+check-local: test-top
+test-top: distdir
 	ls -l $(distdir) $(distdir)/* ;: For debugging.
 	test -f $(distdir)/test-driver
-.PHONY: test0 test1
+.PHONY: test-top
 END
 
 cat > tests/Makefile.am << 'END'
+check-local: test-sub
+test-sub:
+	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]test-driver '
 TESTS = foo.test
 EXTRA_DIST = $(TESTS)
 END
@@ -53,7 +57,37 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 ./configure
-$MAKE test0 test1
+$MAKE test-top
+cd tests; $MAKE test-sub; cd ..;
+$MAKE distcheck
+
+# Try again, with a `config_auxdir' != `.' this time.
+
+$MAKE distclean
+
+mkdir build-aux
+mv missing install-sh test-driver build-aux
+
+for d in . tests; do
+  sed 's|test-driver|build-aux/test-driver|' $d/Makefile.am > $d/t
+  mv -f $d/t $d/Makefile.am
+  cat $d/Makefile.am # For debugging.
+done
+
+# Extra newline possibly required by OpenBSD 3.9 sed, see the autoconf
+# manual for details.
+sed '/^AC_INIT/i\
+AC_CONFIG_AUX_DIR([build-aux])
+' configure.in > t
+mv -f t configure.in
+cat configure.in # For debugging.
+
+touch aclocal.m4 # To avoid useless remakes.
+$AUTOCONF
+$AUTOMAKE
+./configure
+$MAKE test-top
+cd tests; $MAKE test-sub; cd ..;
 $MAKE distcheck
 
 :

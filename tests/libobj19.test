@@ -31,13 +31,17 @@ AUTOMAKE_OPTIONS = subdir-objects
 noinst_LIBRARIES = libtu.a
 libtu_a_SOURCES =
 libtu_a_LIBADD = $(LIBOBJS)
-check-local: distdir
-	ls -l $(srcdir)/* $(builddir)/* $(distdir)/*
+## Hack with this variable ans with extra make recursion in the check-local
+## rule are required for when we move this Makefile in a subdir, later.
+my_distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)
+check-local:
+	(cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) distdir)
+	ls -l $(top_srcdir)/* $(top_builddir)/* $(my_distdir)/*
 	test -f libtu.a
-	test ! -r $(srcdir)/foobar.c
-	test -f $(srcdir)/libobj-dir/foobar.c
-	test ! -r $(distdir)/foobar.c
-	test -f $(distdir)/libobj-dir/foobar.c
+	test ! -r $(top_srcdir)/foobar.c
+	test -f $(top_srcdir)/libobj-dir/foobar.c
+	test ! -r $(my_distdir)/foobar.c
+	test -f $(my_distdir)/libobj-dir/foobar.c
 	$(AR) t libtu.a
 	$(AR) t libtu.a | grep foobar
 END
@@ -46,6 +50,32 @@ mkdir libobj-dir
 cat > libobj-dir/foobar.c << 'END'
 extern int dummy;
 END
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
+
+./configure
+
+$MAKE
+$MAKE check
+$MAKE distcheck
+
+# Same check, but with the Makefile.am using $(LIBOBJS) not being
+# the top-level one.
+
+$MAKE distclean
+rm -rf autom4te*.cache aclocal.m4 configure
+
+mkdir sub
+mv -f Makefile.am sub
+echo SUBDIRS = sub > Makefile.am
+
+sed '/^AC_OUTPUT/i\
+AC_CONFIG_FILES([sub/Makefile])
+' configure.in > t
+mv -f t configure.in
+cat configure.in # For debugging.
 
 $ACLOCAL
 $AUTOCONF
