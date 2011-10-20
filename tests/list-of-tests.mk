@@ -316,8 +316,6 @@ distcom2.test \
 distcom3.test \
 distcom4.test \
 distcom5.test \
-distcom6.test \
-distcom7.test \
 distdir.test \
 distlinks.test \
 distlinksbrk.test \
