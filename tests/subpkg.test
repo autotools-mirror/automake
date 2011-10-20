@@ -52,10 +52,8 @@ ACLOCAL_AMFLAGS = -I m4
 EOF
 
 cat >LDADD.c <<'EOF'
-int lib ();
-
-int
-main ()
+int lib (void);
+int main (void)
 {
   return lib ();
 }
@@ -68,7 +66,6 @@ cat >lib/configure.ac <<'EOF'
 AC_INIT([lib], [2.3])
 AM_INIT_AUTOMAKE
 AC_PROG_RANLIB
-AC_PROG_YACC
 AC_CONFIG_HEADERS([config.h:config.hin])
 AC_CONFIG_FILES([Makefile])
 FOO
@@ -76,33 +73,20 @@ EOF
 
 cat >lib/Makefile.am <<'EOF'
 noinst_LIBRARIES = liblib.a
-liblib_a_SOURCES = src/x.c foo.y
-EXTRA_liblib_a_SOURCES = bar.y
+liblib_a_SOURCES = src/x.c
 
 dist-hook:
 	test ! -f $(distdir)/LDADD.c
 	test -f $(top_distdir)/LDADD.c
 	test -f $(distdir)/src/x.c
 	test ! -f $(top_distdir)/src/x.c
-	test -f $(YLWRAP)
 
 ACLOCAL_AMFLAGS = -I ../m4
 EOF
 
-cat > lib/foo.y << 'END'
-%{
-int yylex () {return 0;}
-void yyerror (char *s) {}
-%}
-%%
-foobar : 'f' 'o' 'o' 'b' 'a' 'r' {};
-END
-
-cp lib/foo.y lib/bar.y
-
 cat >lib/src/x.c <<'EOF'
 #include <config.h>
-int lib ()
+int lib (void)
 {
   return 0;
 }
@@ -123,5 +107,7 @@ cd ..
 ./configure
 $MAKE
 $MAKE distcheck
-test ! -d subpack-1		# make sure distcheck cleans up after itself
+test ! -d subpack-1 # Make sure distcheck cleans up after itself.
 test -f subpack-1.tar.gz
+
+:

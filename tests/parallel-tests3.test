@@ -68,15 +68,22 @@ $sleep
 : >stdout
 $MAKE -j4 check >> stdout
 cd ..
-kill $!
+# Ensure the tests are really being run in parallel mode: if this is
+# the case, the serial run of the dummy testsuite started above should
+# still be ongoing when the parallel one has terminated.
+kill -0 $!
 cat parallel/stdout
 test `grep -c PASS parallel/stdout` -eq 8
 
-# Wait long enough so that there are no open files any more
-# when the post-test cleanup runs.
-while test ! -f serial/test-suite.log
-do
-  $sleep
+# Wait long enough so that there are no open files any more when the
+# post-test cleanup runs.  But exit after we've waited for two minutes
+# or more, to avoid testsuite hangs in unusual situations (this has
+# already happened).
+i=1
+while test ! -f serial/test-suite.log && test $i -le 120; do
+  i=`expr $i + 1`
+  sleep '1' # Extra quoting to please maintainer-check.
 done
 $sleep
+
 :
