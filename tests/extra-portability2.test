@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2000, 2001, 2002, 2010 Free Software Foundation, Inc.
+# Copyright (C) 2011  Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,33 +14,40 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test for PR 72
-# Empty _SOURCES results in $(LINK) undefined.
+# Make sure that extra-portability warnings are not enabled by --gnits,
+# --gnu and --foreign.
 
-required=libtool
 . ./defs || Exit 1
 
 set -e
 
-cat >> configure.in << 'END'
+# Satisfy --gnits and --gnu.
+: > INSTALL
+: > NEWS
+: > README
+: > AUTHORS
+: > ChangeLog
+: > COPYING
+: > THANKS
+
+cat >>configure.in <<END
 AC_PROG_CC
-AC_PROG_LIBTOOL
+AC_PROG_RANLIB
+AC_OUTPUT
 END
 
-cat > Makefile.am << 'END'
-lib_LTLIBRARIES = libviewer.la
-libviewer_la_SOURCES =
-libviewer_la_LIBADD = libphony.la
+cat >Makefile.am <<END
+EXTRA_LIBRARIES = libfoo.a
+libfoo_a_SOURCES = foo.c
 END
-
-: > ltconfig
-: > ltmain.sh
-: > config.guess
-: > config.sub
 
 $ACLOCAL
-$AUTOMAKE -Wno-extra-portability
 
-grep '^LINK =' Makefile.in
+# Make sure the test is useful.
+AUTOMAKE_fails
+
+$AUTOMAKE --foreign
+$AUTOMAKE --gnu
+$AUTOMAKE --gnits
 
 :

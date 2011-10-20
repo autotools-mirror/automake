@@ -375,6 +375,8 @@ extra8.test \
 extra10.test \
 extra11.test \
 extra12.test \
+extra-portability.test \
+extra-portability2.test \
 f90only.test \
 flavor.test \
 flibs.test \
