@@ -308,14 +308,18 @@ dirlist.test \
 dirlist2.test \
 dirlist-abspath.test \
 discover.test \
+dist-auxdir-many-subdirs.test \
 dist-auxfile-2.test \
 dist-auxfile.test \
 dist-included-parent-dir.test \
+dist-readonly.test \
+dist-repeated.test \
 distcleancheck.test \
 distcom2.test \
 distcom3.test \
 distcom4.test \
 distcom5.test \
+distcom-subdir.test \
 distdir.test \
 distlinks.test \
 distlinksbrk.test \
@@ -587,6 +591,7 @@ missing3.test \
 missing4.test \
 missing5.test \
 missing6.test \
+missing-auxfile-stops-makefiles-creation.test \
 mkinstall.test \
 mkinst2.test \
 mkinst3.test \
@@ -682,6 +687,8 @@ testsuite-summary-color.test \
 testsuite-summary-count.test \
 testsuite-summary-count-many.test \
 testsuite-summary-reference-log.test \
+test-driver-acsubst.test \
+test-driver-cond.test \
 test-driver-custom-no-extra-driver.test \
 test-driver-custom.test \
 test-driver-custom-xfail-tests.test \
@@ -928,6 +935,7 @@ subpkg.test \
 subpkg2.test \
 subpkg3.test \
 subpkg4.test \
+subpkg-yacc.test \
 subst.test \
 subst3.test \
 subst4.test \
