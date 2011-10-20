@@ -396,6 +396,9 @@ my $package_version_location;
 # TRUE if we've seen AM_ENABLE_MULTILIB.
 my $seen_multilib = 0;
 
+# TRUE if we've seen AM_PROG_AR
+my $seen_ar = 0;
+
 # TRUE if we've seen AM_PROG_CC_C_O
 my $seen_cc_c_o = 0;
 
@@ -2820,6 +2823,13 @@ sub handle_libraries
 	      &check_libobjs_sources ($xlib, $xlib . '_LIBADD');
 	    }
 	}
+
+      if (! $seen_ar)
+	{
+	  msg ('portability', $where,
+	       "`$onelib': linking libraries using a non-POSIX\n"
+	       . "archiver requires `AM_PROG_AR' in `$configure_ac'")
+	}
     }
 }
 
@@ -3056,6 +3066,13 @@ sub handle_ltlibraries
 	    {
 	      &check_libobjs_sources ($xlib, $xlib . '_LIBADD');
 	    }
+	}
+
+      if (! $seen_ar)
+	{
+	  msg ('portability', $where,
+	       "`$onelib': linking libtool libraries using a non-POSIX\n"
+	       . "archiver requires `AM_PROG_AR' in `$configure_ac'")
 	}
     }
 }
@@ -5268,6 +5285,7 @@ sub scan_autoconf_traces ($)
 		AM_GNU_GETTEXT_INTL_SUBDIR => 0,
 		AM_INIT_AUTOMAKE => 0,
 		AM_MAINTAINER_MODE => 0,
+		AM_PROG_AR => 0,
 		AM_PROG_CC_C_O => 0,
 		AM_SILENT_RULES => 0,
 		_AM_SUBST_NOTMAKE => 1,
@@ -5458,6 +5476,10 @@ sub scan_autoconf_traces ($)
       elsif ($macro eq 'AM_MAINTAINER_MODE')
 	{
 	  $seen_maint_mode = $where;
+	}
+      elsif ($macro eq 'AM_PROG_AR')
+	{
+	  $seen_ar = $where;
 	}
       elsif ($macro eq 'AM_PROG_CC_C_O')
 	{
