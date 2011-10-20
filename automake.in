@@ -3886,16 +3886,17 @@ sub handle_dist ()
 }
 
 
-# check_directory ($NAME, $WHERE)
-# -------------------------------
-# Ensure $NAME is a directory, and that it uses a sane name.
-# Use $WHERE as a location in the diagnostic, if any.
-sub check_directory ($$)
+# check_directory ($NAME, $WHERE [, $RELATIVE_DIR = "."])
+# -------------------------------------------------------
+# Ensure $NAME is a directory (in $RELATIVE_DIR), and that it uses a sane
+# name.  Use $WHERE as a location in the diagnostic, if any.
+sub check_directory ($$;$)
 {
-  my ($dir, $where) = @_;
+  my ($dir, $where, $reldir) = @_;
+  $reldir = '.' unless defined $reldir;
 
-  error $where, "required directory $relative_dir/$dir does not exist"
-    unless -d "$relative_dir/$dir";
+  error $where, "required directory $reldir/$dir does not exist"
+    unless -d "$reldir/$dir";
 
   # If an `obj/' directory exists, BSD make will enter it before
   # reading `Makefile'.  Hence the `Makefile' in the current directory
@@ -3934,7 +3935,7 @@ sub check_directories_in_var ($)
     (sub
      {
        my ($var, $val, $cond, $full_cond) = @_;
-       check_directory ($val, $var->rdef ($cond)->location);
+       check_directory ($val, $var->rdef ($cond)->location, $relative_dir);
        return ();
      },
      undef,
@@ -5292,7 +5293,6 @@ sub scan_autoconf_traces ($)
 	    }
 	  $config_aux_dir = $args[1];
 	  $config_aux_dir_set_in_configure_ac = 1;
-	  $relative_dir = '.';
 	  check_directory ($config_aux_dir, $where);
 	}
       elsif ($macro eq 'AC_CONFIG_FILES')
@@ -5312,7 +5312,6 @@ sub scan_autoconf_traces ($)
       elsif ($macro eq 'AC_CONFIG_LIBOBJ_DIR')
 	{
 	  $config_libobj_dir = $args[1];
-	  $relative_dir = '.';
 	  check_directory ($config_libobj_dir, $where);
 	}
       elsif ($macro eq 'AC_CONFIG_LINKS')
