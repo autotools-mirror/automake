@@ -1,3 +1,128 @@
+2011-10-18  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix spurious failure with FreeBSD make and Yacc in VPATH
+	* tests/subpkg.test: Some cosmetic adjustments.  Move the tests
+	checking that $(YLWRAP) is defined and installed properly when
+	ylwrap is in a default auxdir found in a parent package ...
+	* tests/subpkg-yacc.test: ... into this new test, which carefully
+	avoids to trigger the known bug#7884 (combo FreeBSD make plus Yacc
+	plus VPATH build).
+	* tests/Makefile.am (TESTS): Update.
+
+2011-10-18  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: avoid spurious failure in 'parallel-tests3.test'
+	This fixes automake bug#8788.
+	* tests/parallel-tests3.test: To ensure that the serial run of
+	the dummy testsuite is still ongoing when the parallel run has
+	terminated, use `kill -0', not a bare `kill'.  This will prevent
+	a testsuite crash on NetBSD 5.1, and a testsuite hang on FreeBSD
+	8.2.  Also, since we are at it, try harder to avoid possible
+	hangs of the script in other unusual situations.
+
+2011-10-20  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix spurious failures with "chatty" make implementations
+	* tests/distcheck-missing-m4.test: On failure, some make
+	implementations (such as Solaris make) print the whole failed
+	recipe on standard output.  This was causing a spurious failure
+	in the checks grepping the output from make.  Work around this.
+	* tests/distcheck-outdated-m4.test: Likewise.
+
+2011-10-20  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix spurious failure on fast machines
+	* tests/aclocal-path-precedence.test: Also remove the `configure'
+	script between different test runs, to ensure it is always remade
+	by autoconf.  Add proper explicative comments.
+
+2011-10-20  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: avoid spurious failure of 'uninstall-fail.test' on Solaris
+	* tests/uninstall-fail.test: All the Solaris 10 shells (/bin/sh,
+	/bin/ksh, and /usr/xpg4/bin/sh), upon failing to chdir to a
+	directory with the `cd' builtin, print a message like:
+	  "sh: /root: permission denied"
+	which doesn't report the `cd' builtin anywhere.  Relax the grepping
+	of the error message accordingly.
+
+2011-10-19  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: avoid spurious failure of 'uninstall-fail.test' on Cygwin
+	* tests/uninstall-fail.test: Be sure to really skip this test
+	on systems that allows files to be removed from unwritable
+	directories.  Motivated by a spurious failure on Cygwin 1.5.
+
+2011-10-17  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix spurious failure with autoconf 2.62
+	* tests/aclocal-path-precedence.test: Rewrite configure.in,
+	rather than appending to it, to avoid spurious failures (at
+	least with autoconf 2.62) due to repeated calls to AC_INIT.
+	Also, add package name and version arguments to AC_INIT, to
+	avoid spurious errors from automake.
+
+2011-10-16  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	docs: avoid using colon character inside arguments of @pxref
+	Fixes automake bug#9753
+	* doc/automake.texi (VPATH Builds): Avoid using colon character
+	`:' inside arguments of @pxref, as this can cause problems in
+	the generated `.info' files, and such an usage will be explicitly
+	forbidden by future texinfo documentation.
+	* THANKS: Update.
+	Reported by Дилян Палаузов.
+
+2011-10-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	parallel-tests: warn on conditional TEST_EXTENSIONS definition
+	Before this change, automake would have still bailed out, but
+	with a confusing error message (about an invalid redefinition
+	of TEST_EXTENSIONS).
+	* automake.in (handle_tests): Warn explicitly if TEST_EXTENSIONS
+	has conditional contents.
+	* tests/test-extensions-con.test: New test.
+	* tests/Makefile.am (TESTS): Add it.
+	* NEWS: Update.
+
+2011-10-06  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	parallel-tests: don't allow @substitutions@ in TEST_EXTENSIONS
+	Even after the last commit `v1.11-476-g90bea64', the checks
+	performed by automake on entries in $(TEST_EXTENSIONS) tried to
+	allow for @substitited@ stuff.  This however ends up allowing
+	quite brittle setups, which, most importantly, are of no real
+	practical usefulness anyway.  So it's better to just disallow
+	@substitutions@ in TEST_EXTENSIONS altogether, offering a clear
+	error message, instead of risking weird bugs and unexpected
+	behaviors in the generated Makefile.in.
+	* automake.in ($TEST_EXTENSION_PATTERN): Turned from a regular
+	expression ...
+	(is_valid_test_extension): ... into this subroutine.  Don't allow
+	generic @substitutions@ anymore (possibly making an exception for
+	`@EXEEXT@' under the proper circumstances).
+	* tests/test-extensions.test: Adjust and extend.
+
+2011-10-06  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix spurious failure in 'insthook.test'
+	* tests/insthook.test (Makefile.am): Add a proper `uninstall-hook'
+	target to remove the symlink created by the `install-exec-hook'
+	target; this prevents "make distcheck" from failing spuriously.
+	Since we are at it, delete an extra blank line, and add a trailing
+	`:' command.
+
+2011-10-06  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	maintcheck: fix spurious failure
+	* lib/am/distdir.am: Use `$(infodir)', not `${infodir}', to avoid
+	complaints from the `sc_no_brace_variable_expansions' maintainer
+	check.
+
+2011-10-18  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	* tests/yacc-dist-nobuild.test: Add reference to relevant bug#7884.
+
 2011-10-06  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
 	fix: make a test script executable

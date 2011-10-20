@@ -646,6 +646,7 @@ parallel-tests-log-override-2.test \
 parallel-tests-log-override-recheck.test \
 parallel-tests-log-compiler-example.test \
 test-extensions.test \
+test-extensions-cond.test \
 parse.test \
 percent.test \
 percent2.test \
@@ -806,6 +807,7 @@ subpkg.test \
 subpkg2.test \
 subpkg3.test \
 subpkg4.test \
+subpkg-yacc.test \
 subst.test \
 subst2.test \
 subst3.test \
