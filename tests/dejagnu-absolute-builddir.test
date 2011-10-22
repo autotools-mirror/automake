@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2003, 2010 Free Software Foundation, Inc.
+# Copyright (C) 2011 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,39 +14,32 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that the DejaGnu rules do look for a testsuite named after
-# the package by default.
+# Check that DejaGnu testsuites have 'objdir' defined (as a TCL variable)
+# to an absolute path.
 
 required=runtest
 . ./defs || Exit 1
 
 set -e
 
-package=$me
-
-cat > $package << 'END'
-#! /bin/sh
-echo "Ah, we have been expecting you, Mr. Blond."
-END
-chmod +x $package
-
 cat >> configure.in << 'END'
 AC_OUTPUT
 END
 
-cat > Makefile.am << END
+cat > Makefile.am << 'END'
 AUTOMAKE_OPTIONS = dejagnu
-EXTRA_DIST = $package $package.test/$package.exp
-AM_RUNTESTFLAGS = PACKAGE=\$(srcdir)/$package
+DEJATOOL = tcl env
+EXTRA_DIST = tcl.test/tcl.exp
 END
 
-mkdir $package.test
-cat > $package.test/$package.exp << 'END'
-set test "a_dejagnu_test"
-spawn $PACKAGE
-expect {
-    "Ah, we have been expecting you, Mr. Blond." { pass "$test" }
-    default { fail "$test" }
+mkdir tcl.test
+
+cat > tcl.test/tcl.exp << 'END'
+send_user "tcl_objdir: $objdir\n"
+if { [ regexp "^/" $objdir ] } {
+    pass "test_tcl_objdir"
+} else {
+    fail "test_tcl_objdir"
 }
 END
 
@@ -57,8 +50,12 @@ $AUTOMAKE --add-missing
 ./configure
 
 $MAKE check
-test -f $package.log
-test -f $package.sum
+
+# Sanity check: all tests have run.
+test -f env.log
+test -f env.sum
+test -f tcl.log
+test -f tcl.sum
 
 $MAKE distcheck
 
