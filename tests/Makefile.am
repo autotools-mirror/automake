@@ -437,6 +437,7 @@ init2.test \
 insh2.test \
 install2.test \
 installdir.test \
+install-info-dir.test \
 instsh.test \
 instsh2.test \
 instsh3.test \
