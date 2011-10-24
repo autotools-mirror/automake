@@ -1,3 +1,43 @@
+2011-12-04  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix spurious failures due to missing 'yywrap()' function
+
+	The AC_PROG_LEX Autoconf macro does not diagnose a failure to find
+	the "lex library" expected to provide a `yywrap' function (function
+	which is required to link most lex-generated programs).  On the
+	contrary, when all the link attempts (i.e., with `-ll' and `-lfl')
+	fail, configure declares that no lex library is needed, and simply
+	proceeds with the configuration process -- only for the build to
+	possibly fail later, at make time.
+
+	This behaviour is intended; the Autoconf manual reads:
+	 ``You are encouraged to use Flex in your sources, since it is
+	   both more pleasant to use than plain Lex and the C source it
+	   produces is portable.  In order to ensure portability, however,
+	   you must either provide a function `yywrap' or, if you don't use
+	   it (e.g., your scanner has no `#include'-like feature), simply
+	   include a `%noyywrap' statement in the scanner's source.''
+
+	This AC_PROG_LEX behaviour is causing some spurious failures of
+	the Automake testsuite in environments which lack a proper library
+	providing `yywrap' (this happens for example on Fedora-based
+	systems).   The proper workaround is to simply provide a fall-back
+	implementation of `yywrap' in our lexers.
+
+	See also partially-overlapping commit `v1.11-871-geb147a1' (from
+	the 'testsuite-work' branch), which was motivated by similar
+	spurious failures experienced when cross-compiling.
+
+	From a report by Jim Meyering:
+	<http://lists.gnu.org/archive/html/automake-patches/2011-10/msg00092.html>
+
+	* tests/cond35.test: Provide a dummy `yywrap' function.
+	* tests/lex3.test: Likewise.
+	* tests/silent-lex-generic.test: Likewise.
+	* tests/silent-lex-gcc.test: Likewise.
+	* tests/silent-many-generic.test: Likewise.
+	* tests/silent-many-gcc.test: Likewise.
+
 2011-12-04  Paul Eggert  <eggert@cs.ucla.edu>
 
 	depcomp: spelling fix
