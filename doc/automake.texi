@@ -230,7 +230,7 @@ Building Programs and Libraries
 * Assembly Support::            Compiling assembly sources
 * Fortran 77 Support::          Compiling Fortran 77 sources
 * Fortran 9x Support::          Compiling Fortran 9x sources
-* Java Support::                Compiling Java sources
+* Java Support with gcj::       Compiling Java sources using gcj
 * Vala Support::                Compiling Vala sources
 * Support for Other Languages::  Compiling other languages
 * ANSI::                        Automatic de-ANSI-fication (deprecated, soon to be removed)
@@ -291,7 +291,7 @@ Other GNU Tools
 * Emacs Lisp::                  Emacs Lisp
 * gettext::                     Gettext
 * Libtool::                     Libtool
-* Java::                        Java
+* Java::                        Java bytecode compilation (deprecated)
 * Python::                      Python
 
 Building documentation
@@ -894,7 +894,7 @@ about some concurrency in the way build commands are run.  For this
 reason we refer to such setups using the name @emph{VPATH builds} in
 the following.  @emph{VPATH} is the name of the @command{make} feature
 used by the @file{Makefile}s to allow these builds (@pxref{General
-Search, , @code{VPATH}: Search Path for All Prerequisites, make, The
+Search, , @code{VPATH} Search Path for All Prerequisites, make, The
 GNU Make Manual}).
 
 @cindex multiple configurations, example
@@ -3203,10 +3203,21 @@ overridden using the @env{AUTOM4TE} environment variable.
 @command{aclocal} accepts the following options:
 
 @table @code
+@item --automake-acdir=@var{dir}
+@opindex --automake-acdir
+Look for the automake-provided macro files in @var{dir} instead of
+in the installation directory.  This is typically used for debugging.
+
+@item --system-acdir=@var{dir}
+@opindex --system-acdir
+Look for the system-wide third-party macro files (and the special
+@file{dirlist} file) in @var{dir} instead of in the installation
+directory.  This is typically used for debugging.
+
 @item --acdir=@var{dir}
 @opindex --acdir
-Look for the macro files in @var{dir} instead of the installation
-directory.  This is typically used for debugging.
+@emph{Deprecated} shorthand for ``@option{--automake-acdir=@var{dir}
+--system-acdir=@var{dir}}''.  Will be removed in future aclocal versions.
 
 @item --diff[=@var{command}]
 @opindex --diff
@@ -3260,8 +3271,12 @@ Cause the output to be put into @var{file} instead of @file{aclocal.m4}.
 @opindex --print-ac-dir
 Prints the name of the directory that @command{aclocal} will search to
 find third-party @file{.m4} files.  When this option is given, normal
-processing is suppressed.  This option can be used by a package to
-determine where to install a macro file.
+processing is suppressed.  This option was used @emph{in the past} by
+third-party packages to determine where to install @file{.m4} macro
+files, but @emph{this usage is today discouraged}, since it causes
+@samp{$(prefix)} not to be thoroughly honoured (which violates the
+GNU Coding Standards), and a similar semantics can be better obtained
+with the @env{ACLOCAL_PATH} environment variable; @pxref{Extending aclocal}.
 
 @item --verbose
 @opindex --verbose
@@ -3311,7 +3326,7 @@ directories, in this order:
 @item @var{acdir-APIVERSION}
 This is where the @file{.m4} macros distributed with Automake itself
 are stored.  @var{APIVERSION} depends on the Automake release used;
-for Automake 1.6.x, @var{APIVERSION} = @code{1.6}.
+for example, for Automake 1.11.x, @var{APIVERSION} = @code{1.11}.
 
 @item @var{acdir}
 This directory is intended for third party @file{.m4} files, and is
@@ -3322,30 +3337,23 @@ value of @var{acdir}, use the @option{--print-ac-dir} option
 (@pxref{aclocal Options}).
 @end table
 
-As an example, suppose that @command{automake-1.6.2} was configured with
+As an example, suppose that @command{automake-1.11.2} was configured with
 @option{--prefix=@-/usr/local}.  Then, the search path would be:
 
 @enumerate
-@item @file{/usr/local/share/aclocal-1.6/}
+@item @file{/usr/local/share/aclocal-1.11.2/}
 @item @file{/usr/local/share/aclocal/}
 @end enumerate
 
+The paths for the @var{acdir} and @var{acdir-APIVERSION} directories can
+be changed respectively through aclocal options @option{--system-acdir}
+and @option{--automake-acdir} (@pxref{aclocal Options}).  Note however
+that these options are only intended for use by the internal Automake
+test suite, or for debugging under highly unusual situations; they are
+not ordinarily needed by end-users.
+
 As explained in (@pxref{aclocal Options}), there are several options that
 can be used to change or extend this search path.
-
-@subsubheading Modifying the Macro Search Path: @option{--acdir}
-
-The most erroneous option to modify the search path is
-@option{--acdir=@var{dir}}, which changes default directory and
-drops the @var{APIVERSION} directory.  For example, if one specifies
-@samp{--acdir=/opt/private/}, then the search path becomes:
-
-@enumerate
-@item @file{/opt/private/}
-@end enumerate
-
-This option, @option{--acdir}, is intended for use by the internal
-Automake test suite only; it is not ordinarily needed by end-users.
 
 @subsubheading Modifying the Macro Search Path: @samp{-I @var{dir}}
 
@@ -3396,21 +3404,19 @@ Then, the search path would be
 @noindent
 and all directories with path names starting with @code{/test3}.
 
-If the @option{--acdir=@var{dir}} option is used, then @command{aclocal}
-will search for the @file{dirlist} file in @var{dir}.  In the
-@samp{--acdir=/opt/private/} example above, @command{aclocal} would look
-for @file{/opt/private/dirlist}.  Again, however, the @option{--acdir}
-option is intended for use by the internal Automake test suite only;
-@option{--acdir} is not ordinarily needed by end-users.
+If the @option{--system-acdir=@var{dir}} option is used, then
+@command{aclocal} will search for the @file{dirlist} file in
+@var{dir}; but remember the warnings  above against the use of
+@option{--system-acdir}.
 
 @file{dirlist} is useful in the following situation: suppose that
-@command{automake} version @code{1.6.2} is installed with
+@command{automake} version @code{1.11.2} is installed with
 @samp{--prefix=/usr} by the system vendor.  Thus, the default search
 directories are
 
 @c @code looks better than @file here
 @enumerate
-@item @code{/usr/share/aclocal-1.6/}
+@item @code{/usr/share/aclocal-1.11/}
 @item @code{/usr/share/aclocal/}
 @end enumerate
 
@@ -3431,7 +3437,7 @@ Now, the ``default'' search path on the affected system is
 
 @c @code looks better than @file here
 @enumerate
-@item @code{/usr/share/aclocal-1.6/}
+@item @code{/usr/share/aclocal-1.11/}
 @item @code{/usr/share/aclocal/}
 @item @code{/usr/local/share/aclocal/}
 @end enumerate
@@ -3445,6 +3451,41 @@ Similarly, @file{dirlist} can be handy if you have installed a local
 copy of Automake in your account and want @command{aclocal} to look for
 macros installed at other places on the system.
 
+@anchor{ACLOCAL_PATH}
+@subsubheading Modifying the Macro Search Path: @file{ACLOCAL_PATH}
+@cindex @env{ACLOCAL_PATH}
+
+The fourth and last mechanism to customize the macro search path is
+also the simplest.  Any directory included in the colon-separated
+environment variable @env{ACLOCAL_PATH} is added to the search path
+@c Keep in sync with aclocal-path-precedence.test.
+and takes precedence over system directories (including those found via
+@file{dirlist}), with the exception of the versioned directory
+@var{acdir-APIVERSION} (@pxref{Macro Search Path}).  However, directories
+passed via @option{-I} will take precedence over directories in
+@env{ACLOCAL_PATH}.
+
+@c Keep in sync with aclocal-path-installed.test.
+Also note that, if the @option{--install} option is used, any @file{.m4}
+file containing a required macro that is found in a directory listed in
+@env{ACLOCAL_PATH} will be installed locally.
+@c Keep in sync with aclocal-path-installed-serial.test.
+In this case, serial numbers in @file{.m4} are honoured too,
+@pxref{Serials}.
+
+Conversely to @file{dirlist}, @env{ACLOCAL_PATH} is useful if you are
+using a global copy of Automake and want @command{aclocal} to look for
+macros somewhere under your home directory.
+
+@subsubheading Planned future incompatibilities
+
+The order in which the directories in the macro search path are currently
+looked up is confusing and/or suboptimal in various aspects, and is
+probably going to be changed in the future Automake release.  In
+particular, directories in @env{ACLOCAL_PATH} and @file{@var{acdir}}
+might end up taking precedence over @file{@var{acdir-APIVERSION}}, and
+directories in @file{@var{acdir}/dirlist} might end up taking precedence
+over @file{@var{acdir}}.  @emph{This is a possible future incompatibility!}
 
 @node Extending aclocal
 @subsection Writing your own aclocal macros
@@ -3472,8 +3513,12 @@ aclocal_DATA = mymacro.m4 myothermacro.m4
 
 @noindent
 Please do use @file{$(datadir)/aclocal}, and not something based on
-the result of @samp{aclocal --print-ac-dir}.  @xref{Hard-Coded Install
-Paths}, for arguments.
+the result of @samp{aclocal --print-ac-dir} (@pxref{Hard-Coded Install
+Paths}, for arguments).  It might also be helpful to suggest to
+the user to add the @file{$(datadir)/aclocal} directory to his
+@env{ACLOCAL_PATH} variable (@pxref{ACLOCAL_PATH}) so that
+@command{aclocal} will find the @file{.m4} files installed by your
+package automatically.
 
 A file of macros should be a series of properly quoted
 @code{AC_DEFUN}'s (@pxref{Macro Definitions, , , autoconf, The
@@ -4652,7 +4697,7 @@ to build programs and libraries.
 * Assembly Support::            Compiling assembly sources
 * Fortran 77 Support::          Compiling Fortran 77 sources
 * Fortran 9x Support::          Compiling Fortran 9x sources
-* Java Support::                Compiling Java sources
+* Java Support with gcj::       Compiling Java sources using gcj
 * Vala Support::                Compiling Vala sources
 * Support for Other Languages::  Compiling other languages
 * ANSI::                        Automatic de-ANSI-fication (deprecated, soon to be removed)
@@ -6715,17 +6760,19 @@ is as follows:
 
 @end table
 
-@node Java Support
+@node Java Support with gcj
 @comment  node-name,  next,  previous,  up
-@section Java Support
+@section Compiling Java sources using gcj
 
-@cindex Java support
-@cindex Support for Java
+@cindex Java support with gcj
+@cindex Support for Java with gcj
+@cindex Java to native code, compilation
+@cindex Compilation of Java to native code
 
 Automake includes support for natively compiled Java, using @command{gcj},
-the Java front end to the GNU Compiler Collection (preliminary support
+the Java front end to the GNU Compiler Collection (rudimentary support
 for compiling Java to bytecode using the @command{javac} compiler is
-also present; @pxref{Java}).
+also present, @emph{albeit deprecated}; @pxref{Java}).
 
 Any package including Java code to be compiled must define the output
 variable @code{GCJ} in @file{configure.ac}; the variable @code{GCJFLAGS}
@@ -6819,8 +6866,9 @@ source file.
 Automake currently only includes full support for C, C++ (@pxref{C++
 Support}), Objective C (@pxref{Objective C Support}), Fortran 77
 (@pxref{Fortran 77 Support}), Fortran 9x (@pxref{Fortran 9x Support}),
-and Java (@pxref{Java Support}).  There is only rudimentary support for other
-languages, support for which will be improved based on user demand.
+and Java (@pxref{Java Support with gcj}).  There is only rudimentary
+support for other languages, support for which will be improved based
+on user demand.
 
 Some limited support for adding your own languages is available via the
 suffix rule handling (@pxref{Suffixes}).
@@ -7494,7 +7542,7 @@ use in GNU programs, it tries hard to interoperate with other GNU tools.
 * Emacs Lisp::                  Emacs Lisp
 * gettext::                     Gettext
 * Libtool::                     Libtool
-* Java::                        Java
+* Java::                        Java bytecode compilation (deprecated)
 * Python::                      Python
 @end menu
 
@@ -7587,15 +7635,22 @@ libtool, The Libtool Manual}) with the @code{LTLIBRARIES} primary.
 
 
 @node Java
-@section Java
+@section Java bytecode compilation (deprecated)
 
 @cindex @code{_JAVA} primary, defined
 @cindex @code{JAVA} primary, defined
 @cindex Primary variable, @code{JAVA}
+@cindex Java to bytecode, compilation
+@cindex Compilation of Java to bytecode
 
 Automake provides some minimal support for Java bytecode compilation with
 the @code{JAVA} primary (in addition to the support for compiling Java to
-native machine code; @pxref{Java Support}).
+native machine code; @pxref{Java Support with gcj}).  Note however that
+@emph{the interface and most features described here are deprecated}; the
+next automake release will strive to provide a better and cleaner
+interface, which however @emph{won't be backward-compatible}; the present
+interface will probably be removed altogether in future automake releases
+(1.13 or later), so don't use it in new code.
 
 Any @file{.java} files listed in a @code{_JAVA} variable will be
 compiled with @code{JAVAC} at build time.  By default, @file{.java}
@@ -8791,9 +8846,15 @@ Each log file is created when the corresponding test has completed.
 The set of log files is listed in the read-only variable
 @code{TEST_LOGS}, and defaults to @code{TESTS}, with the executable
 extension if any (@pxref{EXEEXT}), as well as any suffix listed in
-@code{TEST_EXTENSIONS} removed, and @file{.log} appended.
-@code{TEST_EXTENSIONS} defaults to @file{.test}.  Results are undefined
-if a test file name ends in several concatenated suffixes.
+@code{TEST_EXTENSIONS} removed, and @file{.log} appended.  Results
+are undefined if a test file name ends in several concatenated suffixes.
+@code{TEST_EXTENSIONS} defaults to @file{.test}; it can be overridden by
+the user, in which case any extension listed in it must be constituted
+by a dot, followed by a non-digit alphabetic character, followed by any
+number of alphabetic characters.
+@c Keep in sync with test-extensions.test.
+For example, @samp{.sh}, @samp{.T} and @samp{.t1} are valid extensions,
+while @samp{.x-y}, @samp{.6c} and @samp{.t.1} are not.
 
 @vindex _LOG_COMPILE
 @vindex _LOG_COMPILER
@@ -9027,6 +9088,14 @@ to edit this file in order to tune the test suite.  However this is
 not the place where the test suite author should define new variables:
 this should be done elsewhere in the real test suite code.
 Especially, @file{site.exp} should not be distributed.
+
+Still, if the package author has legitimate reasons to extend
+@file{site.exp} at @command{make} time, he can do so by defining
+the variable @code{EXTRA_DEJAGNU_SITE_CONFIG}; the files listed
+there will be considered @file{site.exp} prerequisites, and their
+content will be appended to it (in the same order in which they
+appear in @code{EXTRA_DEJAGNU_SITE_CONFIG}).  Note that files are
+@emph{not} distributed by default.
 
 For more information regarding DejaGnu test suites, see @ref{Top, , ,
 dejagnu, The DejaGnu Manual}.

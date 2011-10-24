@@ -54,9 +54,12 @@ $perl_threads = 0;
 # Include paths for searching macros.  We search macros in this order:
 # user-supplied directories first, then the directory containing the
 # automake macros, and finally the system-wide directories for
-# third-party macro.  @user_includes can be augmented with -I.
-# @system_includes can be augmented with the `dirlist' file.  Also
-# --acdir will reset both @automake_includes and @system_includes.
+# third-party macros.
+# @user_includes can be augmented with -I.
+# @automake_includes can be reset with the `--automake-acdir' option.
+# @system_includes can be augmented with the `dirlist' file or the
+# ACLOCAL_PATH environment variable, and reset with the `--system-acdir'
+# option.
 my @user_includes = ();
 my @automake_includes = ("@datadir@/aclocal-$APIVERSION");
 my @system_includes = ('@datadir@/aclocal');
@@ -562,7 +565,7 @@ sub scan_file ($$$)
 	    {
 	      msg ('syntax', "$file:$.", "warning: underquoted definition of $2"
 		   . "\n  run info '(automake)Extending aclocal'\n"
-		   . "  or see http://sources.redhat.com/automake/"
+		   . "  or see http://www.gnu.org/software/automake/manual/"
 		   . "automake.html#Extending-aclocal")
 		unless $underquoted_manual_once;
 	      $underquoted_manual_once = 1;
@@ -877,7 +880,8 @@ sub usage ($)
 Generate `aclocal.m4' by scanning `configure.ac' or `configure.in'
 
 Options:
-      --acdir=DIR           directory holding config files (for debugging)
+      --automake-acdir=DIR  directory holding automake-provided m4 files
+      --system-acdir=DIR    directory holding third-party system-wide files
       --diff[=COMMAND]      run COMMAND [diff -u] on M4 files that would be
                               changed (implies --install and --dry-run)
       --dry-run             pretend to, but do not actually update any file
@@ -886,7 +890,8 @@ Options:
   -I DIR                    add directory to search list for .m4 files
       --install             copy third-party files to the first -I directory
       --output=FILE         put output in FILE (default aclocal.m4)
-      --print-ac-dir        print name of directory holding m4 files, then exit
+      --print-ac-dir        print name of directory holding system-wide
+                              third-party m4 files, then exit
       --verbose             don't be silent
       --version             print version number, then exit
   -W, --warnings=CATEGORY   report the warnings falling in CATEGORY
@@ -923,6 +928,15 @@ EOF
   exit 0;
 }
 
+# Using --acdir overrides both the automake (versioned) directory and
+# the public (unversioned) system directory.  This usage is obsolete.
+sub handle_acdir_option ($$)
+{
+  msg 'obsolete', '', "`--acdir' is deprecated\n";
+  @system_includes = ($_[1]);
+  @automake_includes = ();
+}
+
 # Parse command line.
 sub parse_arguments ()
 {
@@ -931,12 +945,9 @@ sub parse_arguments ()
 
   my %cli_options =
     (
-     'acdir=s'		=> sub # Setting --acdir overrides both the
-                             { # automake (versioned) directory and the
-			       # public (unversioned) system directory.
-			       @automake_includes = ();
-			       @system_includes = ($_[1])
-			     },
+     'acdir=s'		=> \&handle_acdir_option,
+     'system-acdir=s'	=> sub { shift; @system_includes = @_; },
+     'automake-acdir=s'	=> sub { shift; @automake_includes = @_; },
      'diff:s'		=> \$diff_command,
      'dry-run'		=> \$dry_run,
      'force'		=> \$force_output,
@@ -1017,34 +1028,37 @@ sub parse_arguments ()
 	     . "\nfirst -I option, but no -I was supplied.");
     }
 
-  if (! -d $system_includes[0])
+  # Finally, adds any directory listed in the `dirlist' file.
+  if (open (DIRLIST, "$system_includes[0]/dirlist"))
     {
-      # By default $(datadir)/aclocal doesn't exist.  We don't want to
-      # get an error in the case where we are searching the default
-      # directory and it hasn't been created.  (We know
-      # @system_includes has its default value if @automake_includes
-      # is not empty, because --acdir is the only way to change this.)
-      @system_includes = () if @automake_includes;
+      while (<DIRLIST>)
+        {
+          # Ignore '#' lines.
+          next if /^#/;
+          # strip off newlines and end-of-line comments
+          s/\s*\#.*$//;
+          chomp;
+          foreach my $dir (glob)
+            {
+              push (@system_includes, $dir) if -d $dir;
+            }
+        }
+      close (DIRLIST);
     }
-  else
+}
+
+# Add any directory listed in the `ACLOCAL_PATH' environment variable
+# to the list of system include directories.
+sub parse_ACLOCAL_PATH ()
+{
+  return if not defined $ENV{"ACLOCAL_PATH"};
+  # Directories in ACLOCAL_PATH should take precedence over system
+  # directories, so we use unshift.  However, directories that
+  # come first in ACLOCAL_PATH take precedence over directories
+  # coming later, which is why the result of split is reversed.
+  foreach my $dir (reverse split /:/, $ENV{"ACLOCAL_PATH"})
     {
-      # Finally, adds any directory listed in the `dirlist' file.
-      if (open (DIRLIST, "$system_includes[0]/dirlist"))
-	{
-	  while (<DIRLIST>)
-	    {
-	      # Ignore '#' lines.
-	      next if /^#/;
-	      # strip off newlines and end-of-line comments
-	      s/\s*\#.*$//;
-	      chomp;
-	      foreach my $dir (glob)
-		{
-		  push (@system_includes, $dir) if -d $dir;
-		}
-	    }
-	  close (DIRLIST);
-	}
+      unshift (@system_includes, $dir) if $dir ne '' && -d $dir;
     }
 }
 
@@ -1052,6 +1066,7 @@ sub parse_arguments ()
 
 parse_WARNINGS;		    # Parse the WARNINGS environment variable.
 parse_arguments;
+parse_ACLOCAL_PATH;
 $configure_ac = require_configure_ac;
 
 # We may have to rerun aclocal if some file have been installed, but

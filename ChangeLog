@@ -1,3 +1,496 @@
+2011-10-24  Peter Rosin  <peda@lysator.liu.se>
+
+	Merge branch 'maint' into msvc
+
+	* tests/subpkg-yacc.test: Adjust to new portability requirements due
+	to the new AM_PROG_AR macro.
+
+2011-10-19  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	dejagnu: allow the package developer to extend site.exp
+	Fixes automake bug#7873.
+	* lib/am/dejagnu.am (site.exp): Depend from the files listed in
+	$(EXTRA_DEJAGNU_SITE_CONFIG), if any.  Append their contents to
+	the generated site.exp (still preserving user edits).
+	* doc/automake.texi (Dejagnu Tests): Update.
+	* tests/dejagnu-siteexp-append.test: New test.
+	* tests/dejagnu-siteexp-extend.test: Likewise.
+	* tests/dejagnu-siteexp-useredit.test: Likewise.
+	* tests/Makefile.am (TESTS): Update.
+	* NEWS: Update.
+	Suggestion by Rainer Orth.
+
+2011-10-19  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	dejagnu: ensure 'srcdir' is defined as a relative directory
+	This change fixes automake bug#7833.
+	* lib/am/dejagnu.am (check-DEJAGNU): Prefer using plain $(srcdir)
+	over calculating and using the absolute path of $(srcdir).
+	* tests/dejagnu-relative-srcdir.test: New test.
+	* tests/dejagnu-absolute-builddir.test: Likewise.
+	* tests/Makefile.am (TESTS): Update.
+	Report by Ian Lance Taylor.  Suggestions by Ralf Wildenhues.
+
+2010-12-13  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	Fix testsuite failure of check12.test without DejaGNU.
+	* tests/check12.test: Require runtest.
+
+2010-12-10  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	Extend and improve tests on DejaGnu support.
+	* tests/dejagnu.test: Do not create useless dummy test script.
+	Add trailing `:' command.  In heading comments, add reference
+	to ...
+	* tests/check12.test: ... this new "semantic" test, covering
+	concurrent use of dejagnu tests, simple tests and `check-local'
+	target.
+	* tests/dejagnu2.test: Make test more reliable, by avoid weak
+	grepping of make output.  Prefer `cat' over `echo' to append
+	to configure.in.  Quote literal dots in grep regexps.  Prefer
+	`grep -c ...' over `grep ... | wc -l'.  Make grepping of
+	automake stderr slightly stricter.  Add trailing `:' command.
+	* tests/dejagnu3.test: Prefer `cat' over `echo' to append to
+	configure.in.  Check stderr of expected-to-fail "make" call.
+	Remove extra blank lines from Makefile.am.
+	* tests/dejagnu4.test: Prefer `cat' over `echo' to append to
+	configure.in.  Prefer `mv -f' over plain `mv' when the target
+	file already exists.  Avoid extra mkdir calls by creating more
+	directories at once.  Better use of blank lines.  Check that
+	the `*.log' and `*.sum' files are created by runtest also when
+	"make check" fails.
+	* tests/dejagnu7.test: Prefer `cat' over `echo' to append to
+	configure.in.  Better use of blank lines.  Add a trailing `:'
+	command.
+	* tests/dejagnu6.test: Likewise, and give the dejagnu test a
+	more descriptive name.
+	* tests/dejagnu5.test: Likewise.  Also, simply define package
+	name to `$me' rather than using a non-obvious sed script to
+	extract it from `AC_INIT', and write the Makefile.am with only
+	one command.
+	* tests/Makefile.am (TESTS): Updated.
+
+2011-10-21  Peter Rosin  <peda@lysator.liu.se>
+
+	* THANKS: Fix whitespace issue.
+
+2011-10-18  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix spurious failure with FreeBSD make and Yacc in VPATH
+	* tests/subpkg.test: Some cosmetic adjustments.  Move the tests
+	checking that $(YLWRAP) is defined and installed properly when
+	ylwrap is in a default auxdir found in a parent package ...
+	* tests/subpkg-yacc.test: ... into this new test, which carefully
+	avoids to trigger the known bug#7884 (combo FreeBSD make plus Yacc
+	plus VPATH build).
+	* tests/Makefile.am (TESTS): Update.
+
+2011-10-18  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: avoid spurious failure in 'parallel-tests3.test'
+	This fixes automake bug#8788.
+	* tests/parallel-tests3.test: To ensure that the serial run of
+	the dummy testsuite is still ongoing when the parallel run has
+	terminated, use `kill -0', not a bare `kill'.  This will prevent
+	a testsuite crash on NetBSD 5.1, and a testsuite hang on FreeBSD
+	8.2.  Also, since we are at it, try harder to avoid possible
+	hangs of the script in other unusual situations.
+
+2011-10-20  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix spurious failures with "chatty" make implementations
+	* tests/distcheck-missing-m4.test: On failure, some make
+	implementations (such as Solaris make) print the whole failed
+	recipe on standard output.  This was causing a spurious failure
+	in the checks grepping the output from make.  Work around this.
+	* tests/distcheck-outdated-m4.test: Likewise.
+
+2011-10-20  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix spurious failure on fast machines
+	* tests/aclocal-path-precedence.test: Also remove the `configure'
+	script between different test runs, to ensure it is always remade
+	by autoconf.  Add proper explicative comments.
+
+2011-10-20  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: avoid spurious failure of 'uninstall-fail.test' on Solaris
+	* tests/uninstall-fail.test: All the Solaris 10 shells (/bin/sh,
+	/bin/ksh, and /usr/xpg4/bin/sh), upon failing to chdir to a
+	directory with the `cd' builtin, print a message like:
+	  "sh: /root: permission denied"
+	which doesn't report the `cd' builtin anywhere.  Relax the grepping
+	of the error message accordingly.
+
+2011-10-19  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: avoid spurious failure of 'uninstall-fail.test' on Cygwin
+	* tests/uninstall-fail.test: Be sure to really skip this test
+	on systems that allows files to be removed from unwritable
+	directories.  Motivated by a spurious failure on Cygwin 1.5.
+
+2011-10-17  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix spurious failure with autoconf 2.62
+	* tests/aclocal-path-precedence.test: Rewrite configure.in,
+	rather than appending to it, to avoid spurious failures (at
+	least with autoconf 2.62) due to repeated calls to AC_INIT.
+	Also, add package name and version arguments to AC_INIT, to
+	avoid spurious errors from automake.
+
+2011-10-16  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	docs: avoid using colon character inside arguments of @pxref
+	Fixes automake bug#9753
+	* doc/automake.texi (VPATH Builds): Avoid using colon character
+	`:' inside arguments of @pxref, as this can cause problems in
+	the generated `.info' files, and such an usage will be explicitly
+	forbidden by future texinfo documentation.
+	* THANKS: Update.
+	Reported by Дилян Палаузов.
+
+2011-10-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	parallel-tests: warn on conditional TEST_EXTENSIONS definition
+	Before this change, automake would have still bailed out, but
+	with a confusing error message (about an invalid redefinition
+	of TEST_EXTENSIONS).
+	* automake.in (handle_tests): Warn explicitly if TEST_EXTENSIONS
+	has conditional contents.
+	* tests/test-extensions-con.test: New test.
+	* tests/Makefile.am (TESTS): Add it.
+	* NEWS: Update.
+
+2011-10-06  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	parallel-tests: don't allow @substitutions@ in TEST_EXTENSIONS
+	Even after the last commit `v1.11-476-g90bea64', the checks
+	performed by automake on entries in $(TEST_EXTENSIONS) tried to
+	allow for @substitited@ stuff.  This however ends up allowing
+	quite brittle setups, which, most importantly, are of no real
+	practical usefulness anyway.  So it's better to just disallow
+	@substitutions@ in TEST_EXTENSIONS altogether, offering a clear
+	error message, instead of risking weird bugs and unexpected
+	behaviors in the generated Makefile.in.
+	* automake.in ($TEST_EXTENSION_PATTERN): Turned from a regular
+	expression ...
+	(is_valid_test_extension): ... into this subroutine.  Don't allow
+	generic @substitutions@ anymore (possibly making an exception for
+	`@EXEEXT@' under the proper circumstances).
+	* tests/test-extensions.test: Adjust and extend.
+
+2011-10-06  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix spurious failure in 'insthook.test'
+	* tests/insthook.test (Makefile.am): Add a proper `uninstall-hook'
+	target to remove the symlink created by the `install-exec-hook'
+	target; this prevents "make distcheck" from failing spuriously.
+	Since we are at it, delete an extra blank line, and add a trailing
+	`:' command.
+
+2011-10-06  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	maintcheck: fix spurious failure
+	* lib/am/distdir.am: Use `$(infodir)', not `${infodir}', to avoid
+	complaints from the `sc_no_brace_variable_expansions' maintainer
+	check.
+
+2011-10-06  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	fix: make a test script executable
+	* tests/nobase-nodist.test: Make executable.
+
+2011-10-06  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	coverage: expose automake bug#9651
+	* tests/dist-auxfile.test: New test, xfailing.
+	* tests/dist-auxfile-2.test: Likewise.
+	* tests/Makefile.am (TESTS, XFAIL_TESTS): Add them.
+
+2011-10-01  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	parallel-tests: automake error our on invalid TEST_EXTENSIONS
+	This change fixes automake bug#9400.
+	* automake.in (handle_tests): Bail out if a suffix specified in
+	TEST_EXTENSIONS would produce an invalid `xxx_LOG_COMPILER'
+	variable or an invalid suffix rule.  Before this change, automake
+	would have issued a confusing error messages (about invalid or
+	non-POSIX variables being defined), and in some situations would
+	have even produced a broken `Makefile.in' file.
+	($TEST_EXTENSION_PATTERN): New helper variable.
+	* doc/automake.texi (Simple Tests using parallel-tests): Document
+	the limitations on TEST_EXTENSIONS explicitly.
+	* NEWS: Update.
+	* tests/test-extensions.test: New test.
+	* tests/Makefile.am (TESTS): Update.
+
+2011-09-28  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	docs: don't suggest installing `.m4' files in hard-coded location
+	This change fixes automake bug#7988.
+	* doc/automake.texi (aclocal Options): State that the use of
+	the `--print-ac-dir' option to determine the directory where
+	third-party packages can install their `.m4' files is discouraged
+	now.
+	(Extending aclocal): Suggest telling the user about ACLOCAL_PATH.
+	* THANKS: Update.
+	Report by Peter Johansson.
+
+2011-09-26  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	distuninstallcheck: fail also when only one file is left installed
+	This change fixes automake bug#9579.
+	* lib/am/distdir.am (distuninstallcheck): Be stricter in ignoring
+	a potential `dir' file created by install-info and left installed.
+	Also, be more careful about "this can't happen" kind of errors.
+	(am__distuninstallcheck_listfiles): New internal helper macro.
+	* tests/distcheck-pr9579.test: New test.
+	* tests/distcheck-override-infodir.test: Likewise.
+	* tests/Makefile.am (TESTS): Add them.
+	* NEWS, THANKS: Update.
+	Report by Nick Bowler.
+
+2011-09-28  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	maintcheck: fix usage of `cd' instead of `$(am__cd)'
+	* lib/am/inst-vars.am (am__uninstall_files_from_dir): Use
+	`$(am__cd)', not plain `cd'.
+
+2011-09-24  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	uninstall: "make uninstall" before "make install" works
+	This change fixes automake bug#9578.
+	* lib/am/inst-vars.am (am__uninstall_files_from_dir): New internal
+	macro, that defines a shell code fragment to uninstall files from
+	a given directory.
+	* lib/am/data.am (uninstall-%DIR%%PRIMARY%): Use it, to reduce code
+	duplication and improve consistency and correctness.
+	* lib/am/libs.am (uninstall-%DIR%LIBRARIES): Likewise.
+	* lib/am/lisp.am (uninstall-%DIR%LISP): Likewise.
+	* lib/am/mans.am (uninstall-man%SECTION%): Likewise.
+	* lib/am/python.am (uninstall-%DIR%LIBRARIES): Likewise.
+	* lib/am/scripts.am (uninstall-%DIR%SCRIPTS): Likewise.
+	* tests/uninstall-pr9578.test: New test.
+	* tests/uninstall-fail.test: New test.
+	* tests/Makefile.am (TESTS): Add them.
+	* NEWS, THANKS: Update.
+	Report by Nick Bowler.
+
+2011-09-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix tests on aclocal search path precedences
+	* tests/aclocal-path-precedence.test: Call `$ACLOCAL' with the
+	proper overridden system acdir.
+
+2011-09-20  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	* NEWS: Fix typo.
+
+2011-09-20  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	docs: document planned precedence changes in aclocal search path
+	* doc/automake.texi (Macro Search Path): Explicitly state that the
+	lookup order for extra directories of `.m4' files will be changed
+	in the next major release.
+	* NEWS: Likewise.
+
+2011-09-19  Paolo Bonzini  <bonzini@gnu.org>
+	    Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	aclocal: handle ACLOCAL_PATH environment variable
+	* aclocal.in (parse_ACLOCAL_PATH): New function, parse ACLOCAL_PATH
+	as a colon-separated list of directories to be included in the
+	search path.
+	* doc/automake.texi (Macro Search Path): Document new behavior and
+	the precedence rules for various elements of the search path.
+	* tests/aclocal-path.test: New test.
+	* tests/aclocal-path-install.test: Likewise.
+	* tests/aclocal-path-install-serial.test: Likewise.
+	* tests/aclocal-path-precedence.test: Likewise.
+	* tests/aclocal-path-nonexistent.test: Likewise.
+	* tests/Makefile.am (TESTS): Add them.
+	* NEWS: Update.
+	* tests/distcheck-missing-m4.test: Extend by also checking
+	interactions with ACLOCAL_PATH.
+	* tests/distcheck-outdated-m4.test: Likewise, and fix a couple
+	of botched comments since we are at it.
+
+2011-09-19  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix spurious failure in 'primary-prefix-valid-couples.test'
+	* tests/primary-prefix-valid-couples.test: After commit
+	v1.11-464-gc9dfc36, `java_JAVA' is not a valid prefix/primary
+	combination by default anymore: one has to explicitly define
+	$(javadir) to make it so.  So just drop `java_JAVA' from our
+	Makefile.am  Also, since we are at it, ...
+	(configure.in): ... remove AM_PROG_GCJ from here, as it's not
+	really required.
+
+2011-09-19  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	docs: deprecate JAVA primary
+	* doc/automake.texi (Java): Deprecate the JAVA primary, stating
+	that it will become obsolete in automake 1.12 and probably removed
+	altogether in automake 1.13.  Reflect this in the section title,
+	by appending the string "(deprecated feature)".
+	(@menu, @detailmenu): Update.
+	(Java Support with gcj): The cross-referenced support for bytecode
+	compilation with the JAVA primary is rudimentary and deprecated.
+	State that explicitly.
+
+2011-09-19  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	docs: clearer distinction between `.java' with javac and with gcj
+	* doc/automake.texi (Java support): Rename this node ...
+	(Java support with gcj): ... to this, and change its title from
+	"Compiling Java sources" to "Compiling Java sources using gcj".
+	(@detailmenu, @menu, @cindex): Update and make more precise.
+	(Java): Change the title of this node from simply "Java" to
+	"Java bytecode compilation".
+	(@detailmenu, @menu, @cindex): Update and make more precise.
+
+2011-09-18  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	java: complain if java_JAVA is used but $(javadir) is undefined
+	Fixes automake bug#8461.
+	* automake.in (handle_java): Remove inappropriate "java" argument
+	from the calls to `&am_install_var' and `&am_primary_prefixes'.
+	* tests/instdir-java.test (Makefile.am): Define `$(javadir)'.
+	* tests/javadir-undefined.test: New test.
+	* tests/Makefile.am (TESTS): Add it.
+	* NEWS: Update.
+
+2011-09-12  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	cosmetics: fix various typos and grammaros
+	* NEWS: Fix typos.
+	* tests/py-compile-basic.test: Likewise.
+	* tests/py-compile-basedir.test: Fix botched wording in comments.
+	* tests/py-compile-option-terminate.test: Fix typo and incomplete
+	comment.
+	Suggestions by Peter Rosin.
+
+2011-09-18  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	coverage: test interactions of `nobase_' and `nodist_'
+	* tests/nobase-nodist.test: New test.
+	* tests/Makefile.am (TESTS): Add it.
+
+2011-09-18  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	java: fix various blunders in test 'java-mix.test'
+	* tests/java-mix.test: Add missing call to `set -e'.  Fix inverted
+	semantics (`.java' files are expected *not* to be distributed by
+	default, not the other way round).  Fix various typos in the name
+	of the `.java' files.  Correct other minor blunders.  Improve some
+	comments.
+
+2011-04-23  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	java: allow both JAVA and nobase_JAVA in the same Makefile.am
+	* automake.in (handle_java): Also strip `nobase_' from the given
+	prefix, when needed.
+	* tests/java-clean.test: Update and extend.
+	* tests/java-compile-install.test: Likewise.
+	* tests/java-no-duplicate.test: Likewise.
+	* tests/java-sources.test: Likewise.
+	* tests/java-noinst.test: Likewise.
+	* tests/java-mix-dist-nodist.test: Renamed to ...
+	* tests/java-mix.test: ... this, and extended.
+	* tests/java-nobase.test: New test, still xfailing due to
+	unrelated issues.
+	* tests/Makefile.am (TESTS, XFAIL_TESTS): Update.
+
+2011-04-18  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	java: allow both dist_JAVA and nodist_JAVA in the same Makefile.am
+	Fixes automake bug#8434.
+	* automake.in (handle_java): Strip `dist_' and `nodist_' from
+	the given prefix.  Define a new internal Makefile variable
+	`am__java_sources'.  Related adjustments.
+	* lib/am/java.am (JAVAC, JAVAROOT, CLASSPATH_ENV): Define only the
+	first time this am file is processed.
+	(class%DIR%.stamp): Stamp file renamed ...
+	(class%NDIR%.stamp): ... to this, so that the `dist_' and `nodist_'
+	prefixes are stripped from the name of the stampfile.  Adjust
+	declaration of dependencies by using the new automake-generated
+	internal variable `$(am__java_sources)'.  In the rule, use `$@'
+	as the name of the target, rather than hard-coding it.
+	* tests/java.test: Update and extend.
+	* tests/java-no-duplicate.test: New test.
+	* tests/java-mix-dist-nodist.test: Likewise.
+	* tests/java-compile-and-install.test: Likewise.
+	* tests/java-clean.test: Likewise.
+	* tests/java-sources.test: Likewise.
+	* tests/Makefile.am (TESTS): Update.
+
+2011-09-11  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix spurious failure on fast machines
+	* tests/aclocal-acdir.test: Avoid spurious failures due to caching
+	issues, by cleaning the autom4te cache between all the aclocal
+	invocations, and by always calling autoconf with the `--force'
+	flag.
+
+2011-09-09  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	aclocal: better URL reference in error message
+	* aclocal.in (scan_file): In the error message about underquoted
+	definitions, reference the automake page at `www.gnu.org', not
+	at `sources.redhat.com'.
+
+2011-09-09  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	coverage: distcheck-hook to catch missing/outdated *.m4 files
+	Related to automake bug#9037.
+	* tests/distcheck-missing-m4.test: New test.
+	* tests/distcheck-outdated-m4.test: Likewise.
+	* tests/distcheck-hook-m4.am: New data file, used by the new
+	tests.
+	* tests/Makefile.am (distcheck-m4-missing.log,
+	distcheck-m4-outdated.log): Depend on it.
+	(EXTRA_DIST): Distribute it.
+	(TESTS): Add the new tests.
+
+2011-09-06  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	aclocal: more granularity in acdir overriding
+	Before this change, using the `--acdir' option caused aclocal to
+	redefine both the directory of automake-provided m4 macros and the
+	directory of third-party system-wide m4 macros.  With this change,
+	we deprecate the `--acdir' aclocal option, and introduce two new
+	options `--automake-acdir' and `--system-acdir', to allow for more
+	granularity.
+	* aclocal.in (@automake_includes, @system_includes,
+	@user_includes): Fix and extend comments.
+	(usage): Update.
+	(handle_acdir_option): New function.
+	(parse_arguments): Recognize new options `--system-acdir' and
+	`automake-acdir', and handle `--acdir' using the new function
+	above.  Simplify logic by assuming that the directory of
+	third-party system-wide m4 files always exists.
+	* tests/aclocal.in: Update to use the new options, instead of
+	the deprecated. `--acdir'.
+	* m4/dirlist: Move ...
+	* m4/acdir/dirlist: ... here.
+	* m4/Makefile.am (EXTRA_DIST): Update.
+	(m4datadir): Rename ...
+	(automake_acdir): ... to this.  Accordingly, ...
+	(dist_m4data_DATA): ... rename this ...
+	(dist_automake_ac_DATA): ... to this.
+	(system_acdir): New, directory.
+	(dist_system_ac_DATA): New, defined to an empty value; this will
+	ensure that the $(system_acdir) directory will be created by
+	"make install".
+	* tests/aclocal.test: Remove check about the `--print-ac-dir'
+	option of aclocal, it has been moved into ...
+	* tests/aclocal-print-acdir.test: ... this new test, and quite
+	extended.
+	* tests/aclocal-acdir.test: New test.
+	* tests/Makefile.am (TESTS): Add the new tests.
+	* NEWS, bootstrap: Update.
+	* doc/automake.texi (aclocal Options, Macro Search Path): Update.
+
 2011-10-21  Peter Rosin  <peda@lysator.liu.se>
 
 	warnings: new 'extra-portability' category, for AM_PROG_AR
@@ -515,6 +1008,67 @@
 	Suggest the use of `fatal_', not of `framework_failure_', for
 	generic hard errors.  The latter should be reserved for "real"
 	set-up failures.
+
+2011-06-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	py-compile: '--' and non-option arguments terminate the option list
+	* lib/py-compile: Any non-option argument, or the special `--'
+	argument, now explicitly terminates the list of options.
+	* tests/py-compile-option-terminate.test: New test.
+	* tests/Makefile.am (TESTS): Update.
+	* NEWS: Update.
+
+2011-06-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	py-compile: complain on unrecognized options
+	* lib/py-compile: Complain on unrecognized options.  Don't be too
+	lax in matching `--help' and `--version' options.
+	* tests/py-compile-usage.test: Extend accordingly.
+	* NEWS: Update.
+
+2011-06-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	py-compile: normalize error and help messages
+	* lib/py-compile: Now error messages do not begin with a capital
+	letter, nor end with a period, as per GNU standards.  Prepend the
+	error messages with the name of the script, not with its path.
+	When an invalid usage is recognized, always display the customary
+	message "Try `py-compile --help' ..." on a line of its own.
+	($me): New variable, containing the name of the
+	program, i.e., `py-compile'.  Use it throughout.
+	(usage_error): New function, used to display error messages about
+	invalid usage.
+	* tests/py-compile-usage.test: Extend and tighten accordingly.
+
+2011-06-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	python tests: add "unit tests" on py-compile
+	* tests/py-compile-basic.test: New test.
+	* tests/py-compile-basic2.test: New test.
+	* tests/py-compile-basedir.test: Likewise.
+	* tests/py-compile-destdir.test: Likewise.
+	* tests/py-compile-env.test: Likewise.
+	* tests/py-compile-usage.test: Likewise.
+	* tests/Makefile.am (TESTS): Update.
+	Tested with python 2.0.1, 2.4.6, 2.6.6, 2.7.1, and 3.1.3.
+
+2011-06-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	py-compile: the '--destdir' option now accepts a blank argument
+	* lib/py-compile (Option parsing): Do not count an empty argument
+	to `--destdir' or `--basedir' as a missing argument.
+	* lib/python.am: Simplify accordingly, passing the `--destdir'
+	option to py-compile unconditionally, even if `$(DESTDIR)' is
+	empty.
+	* NEWS: Update.
+
+2011-06-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	python: run the 'py-compile' script with $(SHELL)
+	* lib/python.am (install-%DIR%PYTHON): Run each instance of
+	py-compile using $(SHELL).  Since we are at it, break overly
+	long lines.
+	(am__py_compile): New variable, to reduce code duplication.
 
 2011-06-02  Stefano Lattarini  <stefano.lattarini@gmail.com>
 

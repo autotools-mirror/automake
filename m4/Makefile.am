@@ -3,7 +3,7 @@
 ## Makefile for Automake m4.
 
 # Copyright (C) 1996, 1997, 1998, 1999, 2001, 2002, 2003, 2004, 2006,
-# 2008, 2009 Free Software Foundation, Inc.
+# 2008, 2009, 2011 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,9 +18,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-m4datadir = $(datadir)/aclocal-$(APIVERSION)
+automake_acdir = $(datadir)/aclocal-$(APIVERSION)
+system_acdir = $(datadir)/aclocal
 
-dist_m4data_DATA = \
+dist_automake_ac_DATA = \
 $(top_srcdir)/m4/amversion.m4 \
 ar-lib.m4 \
 as.m4 \
@@ -60,7 +61,10 @@ tar.m4 \
 upc.m4 \
 vala.m4
 
-EXTRA_DIST = dirlist amversion.in
+# So that $(system_acdir) will be created by "make install".
+dist_system_ac_DATA =
+
+EXTRA_DIST = acdir/dirlist amversion.in
 
 # We build amversion.m4 here, instead of from config.status,
 # because config.status is rerun each time one of configure's

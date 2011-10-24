@@ -4944,6 +4944,19 @@ sub handle_tests_dejagnu
     $output_rules .= file_contents ('dejagnu', new Automake::Location);
 }
 
+# is_valid_test_extension ($EXT)
+# ------------------------------
+# Return true if $EXT can appear in $(TEST_EXTENSIONS), return false
+# otherwise.
+sub is_valid_test_extension ($)
+{
+  my $ext = shift;
+  return 1
+    if ($ext =~ /^\.[a-zA-Z_][a-zA-Z0-9_]*$/);
+  return 1
+    if (exists $configure_vars{'EXEEXT'} && $ext eq subst ('EXEEXT'));
+  return 0;
+}
 
 # Handle TESTS variable and other checks.
 sub handle_tests
@@ -4986,9 +4999,26 @@ sub handle_tests
 	      $at_exeext = subst ('EXEEXT');
 	      $suff = $at_exeext  . ' ' . $suff;
 	    }
-	  define_variable ('TEST_EXTENSIONS', $suff, INTERNAL);
-	  # FIXME: this mishandles conditions.
-	  my @test_suffixes = (var 'TEST_EXTENSIONS')->value_as_list_recursive;
+          if (! var 'TEST_EXTENSIONS')
+            {
+	      define_variable ('TEST_EXTENSIONS', $suff, INTERNAL);
+            }
+          my $var = var 'TEST_EXTENSIONS';
+          # Currently, we are not able to deal with conditional contents
+          # in TEST_EXTENSIONS.
+          if ($var->has_conditional_contents)
+           {
+	     msg_var 'unsupported', $var,
+                     "`TEST_EXTENSIONS' cannot have conditional contents";
+           }
+	  my @test_suffixes = $var->value_as_list_recursive;
+          if ((my @invalid_test_suffixes =
+                  grep { !is_valid_test_extension $_ } @test_suffixes) > 0)
+            {
+              error $var->rdef (TRUE)->location,
+                    "invalid test extensions: @invalid_test_suffixes";
+            }
+          @test_suffixes = grep { is_valid_test_extension $_ } @test_suffixes;
 	  if ($handle_exeext)
 	    {
 	      unshift (@test_suffixes, $at_exeext)
@@ -5121,22 +5151,34 @@ sub handle_java
 {
     my @sourcelist = &am_install_var ('-candist',
 				      'java', 'JAVA',
-				      'java', 'noinst', 'check');
+				      'noinst', 'check');
     return if ! @sourcelist;
 
-    my @prefix = am_primary_prefixes ('JAVA', 1,
-				      'java', 'noinst', 'check');
+    my @prefixes = am_primary_prefixes ('JAVA', 1,
+				        'noinst', 'check');
 
     my $dir;
-    foreach my $curs (@prefix)
+    my @java_sources = ();
+    foreach my $prefix (@prefixes)
       {
+        (my $curs = $prefix) =~ s/^(?:nobase_)?(?:dist_|nodist_)?//;
+
 	next
 	  if $curs eq 'EXTRA';
 
-	err_var "${curs}_JAVA", "multiple _JAVA primaries in use"
-	  if defined $dir;
+        push @java_sources, '$(' . $prefix . '_JAVA' . ')';
+
+	if (defined $dir)
+	  {
+	    err_var "${curs}_JAVA", "multiple _JAVA primaries in use"
+	     unless $curs eq $dir;
+	  }
+
 	$dir = $curs;
       }
+
+    define_pretty_variable ('am__java_sources', TRUE, INTERNAL,
+                            "@java_sources");
 
     if ($dir eq 'check')
       {
