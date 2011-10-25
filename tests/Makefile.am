@@ -47,7 +47,7 @@ gcj6.test \
 override-conditional-2.test \
 java-nobase.test \
 pr8365-remake-timing.test \
-yacc-dist-nobuild-subdir.test \
+lex-subobj-nodep.test \
 vala-vpath.test \
 txinfo5.test
 

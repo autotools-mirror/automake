@@ -285,6 +285,11 @@ dejagnu4.test \
 dejagnu5.test \
 dejagnu6.test \
 dejagnu7.test \
+dejagnu-absolute-builddir.test \
+dejagnu-relative-srcdir.test \
+dejagnu-siteexp-append.test \
+dejagnu-siteexp-extend.test \
+dejagnu-siteexp-useredit.test \
 depacl2.test \
 depcomp.test \
 depcomp2.test \
