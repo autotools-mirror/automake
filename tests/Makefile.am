@@ -29,7 +29,7 @@ gcj6.test \
 override-conditional-2.test \
 java-nobase.test \
 pr8365-remake-timing.test \
-yacc-dist-nobuild-subdir.test \
+lex-subobj-nodep.test \
 vala-vpath.test \
 txinfo5.test
 
@@ -377,6 +377,11 @@ dejagnu4.test \
 dejagnu5.test \
 dejagnu6.test \
 dejagnu7.test \
+dejagnu-absolute-builddir.test \
+dejagnu-relative-srcdir.test \
+dejagnu-siteexp-extend.test \
+dejagnu-siteexp-append.test \
+dejagnu-siteexp-useredit.test \
 depacl2.test \
 depcomp.test \
 depcomp2.test \
