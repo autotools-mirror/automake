@@ -51,7 +51,7 @@ END
 
 mkdir auxdir
 cat > auxdir/ar-lib << 'END'
-# /bin/sh
+#! /bin/sh
 :> ar-lib-worked
 END
 chmod +x auxdir/ar-lib
@@ -59,14 +59,30 @@ chmod +x auxdir/ar-lib
 # Let's fake microsoft lib.
 mkdir bin
 cat > bin/lib << 'END'
-# /bin/sh
+#! /bin/sh
+echo lib command line: $* >&2 # For debugging.
 case " $* " in
+  # The `-OUT:' option is used by tests in configure.  So don't create
+  # the `ar-lib-worked' file here, as that might cause spurious passes
+  # of this test; but don't fail either, as that would confuse said
+  # configure tests.
   *' -OUT:'*) exit 0;;
-  *' cru '*) exit 1;;
+  # This means that $* looks like a command-line for `ar'.  We have to
+  # exit with failure here, to accomodate the two following ortoghonal
+  # scenarios:
+  #  1. when `lib' is tested by configure, this will tell that it does
+  #     not use the ar(1) interface, so that the `ar-lib' script will
+  #     get involved;
+  #  2. when `lib' is called by the Makefile, an ar-style command line
+  #     passed to it would mean that the `ar-lib' script has failed to
+  #     properly munge the command line, or hasn't been invoked to do so.
+  *\ c*) exit 1;;
+  # Assume everything else is OK.
   *) : > ar-lib-worked;;
 esac
 END
 chmod +x bin/lib
+PATH=`pwd`/bin$PATH_SEPARATOR$PATH; export PATH
 
 $ACLOCAL
 $AUTOCONF
@@ -75,9 +91,9 @@ $AUTOMAKE --add-missing
 # Sanity check: test that it is ok to use `am_cv_ar_interface' as we do.
 $FGREP 'am_cv_ar_interface=' configure
 
-./configure AR=bin/lib RANLIB=:
+./configure AR=lib RANLIB=:
 
 $MAKE check
-$MAKE distcheck DISTCHECK_CONFIGURE_FLAGS="AR=`pwd`/bin/lib RANLIB=:"
+$MAKE distcheck DISTCHECK_CONFIGURE_FLAGS="AR=lib RANLIB=:"
 
 :
