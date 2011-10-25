@@ -184,6 +184,16 @@ set -e
 ##  Auxiliary shell functions.  ##
 ## ---------------------------- ##
 
+# Tell whether we should keep the test directories around, even in
+# case of success.  By default, we don't.
+am_keeping_testdirs ()
+{
+  case $keep_testdirs in
+     ""|n|no|NO) return 1;;
+              *) return 0;;
+  esac
+}
+
 # This is used in `Exit' and in the exit trap.  See comments in the latter
 # for more information,
 am__test_skipped=no
@@ -933,11 +943,6 @@ if test "$sh_errexit_works" = yes; then
   trap 'exit_status=$?
     set +e
     cd "$testbuilddir"
-    if test -n "$keep_testdirs"; then
-      keep_testdirs=yes
-    else
-      keep_testdirs=no
-    fi
     if test $am_using_tap = yes; then
       if test $have_tap_plan_ != yes && test $exit_status -eq 0; then
         plan_ "now"
@@ -960,7 +965,7 @@ if test "$sh_errexit_works" = yes; then
       esac
       test $exit_status -eq 0 || keep_testdirs=yes
     fi
-    test $keep_testdirs = no && rm_rf_ $testSubDir
+    am_keeping_testdirs || rm_rf_ $testSubDir
     set +x
     echo "$me: exit $exit_status"
     exit $exit_status
