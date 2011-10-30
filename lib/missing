@@ -322,12 +322,13 @@ WARNING: \`$1' is $msg.  You should only need it if
     shift
     # We have already tried tar in the generic part.  So try with GNU tar.
     # Look for gnutar/gtar before invocation to avoid ugly error messages.
-    if (gnutar --version) > /dev/null 2>&1; then
-       exec gnutar "$@"
-    fi
-    if (gtar --version) > /dev/null 2>&1; then
-       exec gtar "$@"
-    fi
+    for cmd in gnutar gtar; do
+      ($cmd --version) > /dev/null 2>&1 || continue
+      echo 1>&2 "\
+WARNING: I can't seem to be able to run \`tar' with the given arguments.
+         Trying to use GNU tar (\"$cmd\") instead ..."
+      exec $cmd "$@"
+    done
     firstarg=$1
     if shift; then
 	case $firstarg in
