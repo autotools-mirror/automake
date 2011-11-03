@@ -20,6 +20,7 @@
 
 dist_automake_ac_DATA = \
 $(top_srcdir)/m4/amversion.m4 \
+ar-lib.m4 \
 as.m4 \
 auxdir.m4 \
 ccstdc.m4 \
