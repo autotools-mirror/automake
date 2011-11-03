@@ -2712,6 +2712,9 @@ user redefinitions of Automake rules or variables
 @item portability
 portability issues (e.g., use of @command{make} features that are
 known to be not portable)
+@item extra-portability
+extra portability issues related to obscure tools.  One example of such
+a tool is the Microsoft @command{lib} archiver.
 @item syntax
 weird syntax, unused variables, typos
 @item unsupported
@@ -2733,6 +2736,12 @@ The categories output by default are @samp{syntax} and
 are enabled in @option{--gnu} and @option{--gnits} strictness.
 On the other hand, the @option{silent-rules} options (@pxref{Options})
 turns off portability warnings about recursive variable expansions.
+
+@c Checked by extra-portability.test
+Turning off @samp{portability} will also turn off @samp{extra-portability},
+and similarly turning on @samp{extra-portability} will also turn on
+@samp{portability}.  However, turning on @samp{portability} or turning
+off @samp{extra-portability} will not affect the other category.
 
 @vindex WARNINGS
 The environment variable @env{WARNINGS} can contain a comma separated
@@ -4024,6 +4033,15 @@ environment, or use the @option{--with-lispdir} option to
 @command{configure} to explicitly set the correct path (if you're sure
 you have an @command{emacs} that supports Emacs Lisp).
 
+@item AM_PROG_AR(@ovar{act-if-fail})
+@acindex AM_PROG_AR
+@vindex AR
+You must use this macro when you use the archiver in your project, if
+you want support for unusual archivers such as Microsoft @command{lib}.
+The content of the optional argument is executed if the archiver
+interface is not recognized; the default action is to abort configure
+with an error message.
+
 @item AM_PROG_AS
 @acindex AM_PROG_AS
 @vindex CCAS
@@ -4638,6 +4656,7 @@ AC_INIT([hand], [1.2])
 AC_CONFIG_AUX_DIR([.])
 AM_INIT_AUTOMAKE
 AC_PROG_CC
+AM_PROG_AR
 AC_PROG_RANLIB
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
@@ -5082,12 +5101,14 @@ by invoking @samp{$(AR) $(ARFLAGS)} followed by the name of the
 library and the list of objects, and finally by calling
 @samp{$(RANLIB)} on that library.  You should call
 @code{AC_PROG_RANLIB} from your @file{configure.ac} to define
-@code{RANLIB} (Automake will complain otherwise).  @code{AR} and
-@code{ARFLAGS} default to @code{ar} and @code{cru} respectively; you
-can override these two variables my setting them in your
-@file{Makefile.am}, by @code{AC_SUBST}ing them from your
-@file{configure.ac}, or by defining a per-library @code{maude_AR}
-variable (@pxref{Program and Library Variables}).
+@code{RANLIB} (Automake will complain otherwise).  You should also
+call @code{AM_PROG_AR} to define @code{AR}, in order to support unusual
+archivers such as Microsoft lib.  @code{ARFLAGS} will default to
+@code{cru}; you can override this variable by setting it in your
+@file{Makefile.am} or by @code{AC_SUBST}ing it from your
+@file{configure.ac}.  You can override the @code{AR} variable by
+defining a per-library @code{maude_AR} variable (@pxref{Program and
+Library Variables}).
 
 @cindex Empty libraries
 Be careful when selecting library components conditionally.  Because
@@ -7926,6 +7947,13 @@ install}, so running @code{make install-info} is pointless.  This can
 be prevented via the @code{no-installinfo} option.  In this case,
 @file{.info} files are not installed by default, and user must
 request this explicitly using @samp{make install-info}.
+
+@vindex AM_UPDATE_INFO_DIR
+By default, @code{make install-info} will try to run the
+@command{install-info} program (if available) to update (or create)
+the @file{@code{$@{infodir@}}/dir} index.  If this is undesired, it
+can be prevented by exporting the @code{AM_UPDATE_INFO_DIR} variable
+to "@code{no}".
 
 The following variables are used by the Texinfo build rules.
 

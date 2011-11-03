@@ -21,15 +21,33 @@
 
 cat >> configure.in << 'END'
 AC_PROG_CC
+AM_PROG_AR
 AC_PROG_RANLIB
 END
 
 cat > Makefile.am << 'END'
 noinst_LIBRARIES = sub/foo
+include $(srcdir)/foo.mk
 END
+
+cat > foo.mk << 'END'
+## A dummy automake comment.
+a = x \
+    y
+# A dummy make comment.
+lib_LIBRARIES = zardoz.a
+END
+
+: > ar-lib
 
 $ACLOCAL
 AUTOMAKE_fails
+q="[\`'\"]"
+badname='not a standard library name'
 # We're specifically testing for line-number information.
-grep 'Makefile.am:1:.*sub/foo.*standard library name' stderr
-grep 'Makefile.am:1:.*sub/libfoo.a.*' stderr
+grep "^Makefile\\.am:1:.*${q}sub/foo${q}.*$badname" stderr
+grep "^Makefile\\.am:1:.*sub/libfoo\\.a" stderr
+grep "^foo\\.mk:5:.*${q}zardoz\\.a${q}.*$badname" stderr
+grep "^foo\\.mk:5:.*libzardoz\\.a" stderr
+
+:
