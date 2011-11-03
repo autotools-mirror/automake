@@ -422,7 +422,6 @@ help-depend2.test \
 help-dmalloc.test \
 help-init.test \
 help-lispdir.test \
-help-maintainer.test \
 help-multilib.test \
 help-python.test \
 help-regex.test \
@@ -549,6 +548,7 @@ lzma.test \
 m4-inclusion.test \
 maintclean.test \
 maintclean-vpath.test \
+maintmode-configure-msg.test \
 make.test \
 makej.test \
 makej2.test \
