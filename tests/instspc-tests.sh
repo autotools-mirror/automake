@@ -111,6 +111,7 @@ create_input_data ()
     AC_CONFIG_FILES([Makefile])
     AC_PROG_CC
     AC_PROG_RANLIB
+    AM_PROG_AR
     AC_OUTPUT
 EOF
 

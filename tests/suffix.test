@@ -31,16 +31,28 @@ noinst_PROGRAMS = foo
 noinst_LIBRARIES = libbar.a
 END
 
-$ACLOCAL
+for use_arlib in false :; do
 
-$AUTOMAKE -i
-grep '^ *\.c' Makefile.in # for debugging
-test `grep -c '^\.c\.o:' Makefile.in` -eq 1
-test `grep -c '^\.c\.obj:' Makefile.in` -eq 1
+  if $use_arlib; then
+    am_warns=
+    echo AM_PROG_AR >> configure.in
+    : > ar-lib
+  else
+    am_warns=-Wno-extra-portability
+  fi
 
-$AUTOMAKE
-grep '^ *\.c' Makefile.in # for debugging
-test `grep -c '^\.c\.o:' Makefile.in` -eq 1
-test `grep -c '^\.c\.obj:' Makefile.in` -eq 1
+  $ACLOCAL --force
+
+  $AUTOMAKE $am_warns -i
+  grep '^ *\.c' Makefile.in # for debugging
+  test `grep -c '^\.c\.o:' Makefile.in` -eq 1
+  test `grep -c '^\.c\.obj:' Makefile.in` -eq 1
+
+  $AUTOMAKE $am_warns
+  grep '^ *\.c' Makefile.in # for debugging
+  test `grep -c '^\.c\.o:' Makefile.in` -eq 1
+  test `grep -c '^\.c\.obj:' Makefile.in` -eq 1
+
+done
 
 :
