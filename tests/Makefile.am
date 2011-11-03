@@ -25,7 +25,7 @@ dist-auxfile-2.test \
 gcj6.test \
 java-nobase.test \
 pr8365-remake-timing.test \
-yacc-dist-nobuild-subdir.test \
+lex-subobj-nodep.test \
 vala-vpath.test \
 txinfo5.test
 
@@ -440,7 +440,6 @@ help-depend2.test \
 help-dmalloc.test \
 help-init.test \
 help-lispdir.test \
-help-maintainer.test \
 help-multilib.test \
 help-python.test \
 help-regex.test \
@@ -455,6 +454,7 @@ init2.test \
 insh2.test \
 install2.test \
 installdir.test \
+install-info-dir.test \
 instsh.test \
 instsh2.test \
 instsh3.test \
@@ -566,6 +566,7 @@ lzma.test \
 m4-inclusion.test \
 maintclean.test \
 maintclean-vpath.test \
+maintmode-configure-msg.test \
 make.test \
 makej.test \
 makej2.test \
