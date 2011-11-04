@@ -18,6 +18,7 @@
 # warning categories:
 #   1. `-Wextra-portability' must imply `-Wportability'.
 #   2. `-Wno-portability' must imply `-Wno-extra-portability'.
+#   3. `-Wall' does *not* imply `-Wextra-portability'.
 
 . ./defs || Exit 1
 
@@ -32,10 +33,21 @@ END
 cat >Makefile.am <<END
 EXTRA_LIBRARIES = libfoo.a
 libfoo_a_SOURCES = sub/foo.c
-libfoo_a_CPPFLAGS = -Dwhatever
 END
 
 $ACLOCAL
+
+# `-Wall' does not enable extra-portability warnings.
+$AUTOMAKE -Wall -Werror
+
+# Enabling extra-portability works.
+AUTOMAKE_fails -Wnone -Wextra-portability
+grep 'requires.*AM_PROG_AR' stderr
+# Disabling portability disables extra-portability.
+$AUTOMAKE -Wno-portability -Wall
+$AUTOMAKE -Wextra-portability -Wno-portability -Wall
+
+echo libfoo_a_CPPFLAGS = -Dwhatever >> Makefile.am
 
 # Enabling extra-portability enables portability.
 AUTOMAKE_fails -Wnone -Wextra-portability
@@ -47,11 +59,23 @@ AUTOMAKE_fails -Wnone -Wextra-portability
 grep 'requires.*AM_PROG_CC_C_O' stderr
 grep 'requires.*AM_PROG_AR' stderr
 
+# `-Wall' does not reset extra portability warnings to their
+# default (i.e., disabled).
+AUTOMAKE_fails -Wextra-portability -Wall
+grep 'requires.*AM_PROG_CC_C_O' stderr
+grep 'requires.*AM_PROG_AR' stderr
+
 # Disabling extra-portability leaves portability intact.
 AUTOMAKE_fails -Wno-extra-portability
 # The expected diagnostic is
 #    Makefile.am:2: compiling `foo.c' with per-target flags requires `AM_PROG_CC_C_O' in `configure.in'
 #    Makefile.am:1:   while processing library `libfoo.a'
+grep 'requires.*AM_PROG_CC_C_O' stderr
+grep 'requires.*AM_PROG_AR' stderr && Exit 1
+
+# `-Wall' does not set extra portability warnings if they have
+# been previously disabled.
+AUTOMAKE_fails -Wno-extra-portability -Wall
 grep 'requires.*AM_PROG_CC_C_O' stderr
 grep 'requires.*AM_PROG_AR' stderr && Exit 1
 
@@ -65,5 +89,6 @@ grep 'requires.*AM_PROG_AR' stderr && Exit 1
 
 # Disabling portability disables extra-portability.
 $AUTOMAKE -Wno-portability
+$AUTOMAKE -Wextra-portability -Wno-portability
 
 :

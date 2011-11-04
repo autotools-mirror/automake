@@ -258,6 +258,10 @@ Else handle C<all> and C<none> for completeness.
 
 =cut
 
+# HACK to have `-Wextra-portability' *not* implied by `-Wall'.
+# This will go away in automake 1.12.
+my $have_extra_portability = 0;
+
 sub switch_warning ($)
 {
   my ($cat) = @_;
@@ -272,6 +276,8 @@ sub switch_warning ($)
   if ($cat eq 'all')
     {
       setup_channel_type 'warning', silent => $has_no;
+      setup_channel 'extra-portability', silent => 1
+        unless $have_extra_portability;
     }
   elsif ($cat eq 'none')
     {
@@ -290,10 +296,16 @@ sub switch_warning ($)
       setup_channel $cat, silent => $has_no;
       setup_channel 'portability-recursive', silent => $has_no
         if $cat eq 'portability';
-      setup_channel 'extra-portability', silent => $has_no
-        if ($cat eq 'portability' && $has_no);
-      setup_channel 'portability', silent => $has_no
-        if ($cat eq 'extra-portability' && ! $has_no);
+      if ($cat eq 'portability' && $has_no)
+        {
+          setup_channel 'extra-portability', silent => 1;
+          $have_extra_portability = 0;
+        }
+      if ($cat eq 'extra-portability' && ! $has_no)
+        {
+          setup_channel 'portability', silent => 0;
+          $have_extra_portability = 1;
+        }
     }
   else
     {
@@ -381,6 +393,8 @@ sub set_strictness ($)
       prog_error "level `$name' not recognized\n";
     }
 }
+
+1;
 
 =back
 
