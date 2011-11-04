@@ -900,6 +900,7 @@ reqd2.test \
 repeated-options.test \
 rulepat.test \
 self-check-cleanup.test \
+self-check-configure-help.test \
 self-check-dir.test \
 self-check-env-sanitize.test \
 self-check-exit.test \
