@@ -1,3 +1,38 @@
+2011-11-03  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: various minor tweakings, mostly related to AM_PROG_AR
+	* tests/alloca.test: Adjust to new portability requirements due
+	to the new AM_PROG_AR macro.
+	* tests/discover.test: Likewise.
+	* tests/libobj3.test: Likewise.
+	* tests/pluseq7.test: Likewise.  Also, make grepping of automake
+	expected error message stricter.
+	* tests/stdlib.test: Likewise, and extend the test a bit.
+	* tests/parse.test (configure.in): Remove redundant call to
+	AC_PROG_RANLIB.
+	* tests/library2.test: Adjust to new portability requirements
+	due to the new AM_PROG_AR macro.  Also ...
+	(configure.in): ... add call to AC_PROG_CC, to ensure automake
+	really fails for the expected reason.
+
+2011-11-03  Zack Weinberg <zackw@panix.com>  (tiny change)
+	    Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	maint-mode: fix botched configure messages
+	This change fixes automake bug#9890.
+	* m4/maintainer.m4 (AM_MAINTAINER_MODE): Fix the "checking ..."
+	configure message related to the enabling/disabling of maintainer
+	mode.
+	* tests/help-maintainer.test: Renamed ...
+	* tests/maintmode-configure-msg.test: ... to this, and extended
+	to cover the fixed bug.  Also, since we are at it, make grepping
+	of configure help screens stricter, and throw in some few other
+	changes to reduce code duplication and enhance readability.
+	* tests/Makefile.am (TESTS): Update.
+	* THANKS: Update with Zack's new e-mail address.
+	Report and initial patch by Zack Weinberg, test cases added by
+	Stefano Lattarini.
+
 2011-10-23  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
 	info: allow user to inhibit creation/update of '${infodir}/dir'
@@ -36,6 +71,29 @@
 	dependency, even when $object is derived and lands in a subdir.
 	* tests/Makefile.am (XFAIL_TESTS): Add lex-subobj-nodep.test,
 	remove yacc-dist-nobuild-subdir.test.
+
+2011-10-25  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: few improvements to some `ar-lib' related tests
+
+	* tests/ar-lib5a.test (Makefile.am): Also check that the target
+	library has truly been created.
+	(ar-lib): Use the real `ar-lib' script (mildly patched) rather
+	than a dummy one, to ensure better "real-life coverage".  Fix
+	botched shebang line.
+	* tests/ar-lib5b.test: Extend the PATH variable to make the dummy
+	`lib' script accessible, instead of explicitly calling it by its
+	relative/absolute path.
+	(ar-lib): Fix botched shebang line.
+	(bin/lib): Likewise.  Also, add explicative comments, and make
+	slightly stricter.
+
+2011-10-24  Peter Rosin  <peda@lysator.liu.se>
+
+	Merge branch 'maint' into msvc
+
+	* tests/subpkg-yacc.test: Adjust to new portability requirements due
+	to the new AM_PROG_AR macro.
 
 2011-10-19  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
@@ -522,6 +580,81 @@
 	* tests/Makefile.am (TESTS): Add the new tests.
 	* NEWS, bootstrap: Update.
 	* doc/automake.texi (aclocal Options, Macro Search Path): Update.
+
+2011-10-21  Peter Rosin  <peda@lysator.liu.se>
+
+	warnings: new 'extra-portability' category, for AM_PROG_AR
+	* lib/Automake/ChannelDefs.pm: Register new extra-portability
+	warning channel.
+	(switch_warning): Turn off extra-portability if portability is
+	turned off, and turn on portability if extra-portability is
+	turned on.
+	(set_strictness): Silence extra-portability for --gnits, --gnu
+	and --foreign.
+	* tests/extra-portability2.test: New test, checking that the
+	extra-portability channel is silenced by --gnits, --gnu and
+	--foreign.
+	* doc/automake.texi (Invoking Automake): Document the new warning
+	category and its interaction with the portability category.
+	* tests/extra-portability.test: New test, checking the interaction
+	between the portability and extra-portability warning categories.
+	* automake.in (handle_libraries, handle_ltlibraries): Move the
+	AM_PROG_AR warnings to the new extra-portability channel.
+	* tests/ar2.test: Adjust to the new warning channel.
+	* tests/pr300-lib.test: Likewise.
+	* tests/pr300-ltlib.test: Likewise.
+	* tests/pr307.test: Likewise.
+	* tests/pr401.test: Likewise.
+	* tests/pr401b.test: Likewise.
+	* tests/pr401c.test: Likewise.
+	* tests/pr72.test: Likewise.
+	* NEWS: Likewise.
+	* tests/Makefile.am (TESTS): Update.
+
+2011-10-21  Peter Rosin  <peda@lysator.liu.se>
+	    Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+	    Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	Add new 'AM_PROG_AR' macro, triggering the 'ar-lib' script.
+	* m4/ar-lib.m4: New macro AM_PROG_AR, which locates an
+	archiver and triggers the auxiliary 'ar-lib' script if needed.
+	* m4/Makefile.am (dist_m4data_DATA): Update.
+	* automake.in ($seen_ar): New variable.
+	(scan_autoconf_traces): Set it.
+	(handle_libraries, handle_ltlibraries): Require AM_PROG_AR for
+	portability.
+	* doc/automake.texi (Public Macros): Mention the new
+	'AM_PROG_AR' macro.
+	(Subpackages): Add AM_PROG_AR to the example.
+	(A Library): Adjust recommendations for AR given the new
+	AM_PROG_AR macro.
+	* All relevant tests: Adjust to new portability requirements due
+	to the new AM_PROG_AR macro.
+	* tests/ar-lib2.test: New test, checking that AM_PROG_AR triggers
+	install of ar-lib.
+	* tests/ar-lib3.test: New test, checking that lib_LIBRARIES
+	requires AM_PROG_AR.
+	* tests/ar-lib4.test: New test, checking that lib_LTLIBRARIES
+	requires AM_PROG_AR.
+	* tests/ar-lib5a.test: New test, checking that AM_PROG_AR triggers
+	use of ar-lib when the archiver is Microsoft lib.
+	* tests/ar-lib5b.test: New test, checking that AM_PROG_AR triggers
+	use of ar-lib when the archiver is a faked lib.
+	* tests/ar-lib6a.test: New test, checking the ordering of
+	AM_PROG_AR and LT_INIT.
+	* tests/ar-lib6b.test: New test, checking the ordering of
+	AM_PROG_AR and AC_PROG_LIBTOOL.
+	* tests/ar-lib7.test: New test, checking that automake warns
+	if ar-lib is missing.
+	* tests/ar3.test: New test, checking that AR and ARFLAGS may
+	be overridden by the user even if AM_PROG_AR is used.
+	* tests/ar4.test: New test, checking that AM_PROG_AR bails out
+	if it cannot determine the archiver interface.
+	* tests/ar5.test: New test, checking that AM_PROG_AR runs its
+	optional argument if it cannot determine the archiver interface.
+	* tests/defs.in: New required entry 'lib'.
+	* tests/Makefile.am (TESTS): Update.
+	* NEWS: Update.
 
 2011-09-05  Peter Rosin  <peda@lysator.liu.se>
 
@@ -2854,6 +2987,128 @@
 	Make cond5.test more robust on MSYS.
 	* tests/cond5.test: Add delay before the first kill attempt to
 	cater for problems with MSYS bash.
+
+2010-11-16  Peter Rosin  <peda@lysator.liu.se>
+
+	Skip MSVC oriented tests if the shell is not capable.
+	* tests/defs: New required entry 'xsi-shell'.
+	* tests/ar-lib.test, tests/compile3.test, tests/compile6.test:
+	Require a XSI capable shell.
+	Reported by Ralf Wildenhues.
+
+2010-11-15  Peter Rosin  <peda@lysator.liu.se>
+
+	compile: clear the `eat' variable earlier.
+	* lib/compile: Clear the `eat' variable earlier.
+	($scriptversion): Update.
+	* tests/compile3.test: Prevent regressions.
+
+2010-10-07  Peter Rosin  <peda@lysator.liu.se>
+
+	depcomp: add new one-pass depmode for MSVC 7 and later.
+	* lib/depcomp: Add new depmodes 'msvc7' and 'msvc7msys' which
+	make use of the -showIncludes option added in MSVC 7.
+	* m4/depend.m4 (_AM_DEPENDENCIES): Handle the new depmodes
+	similarly to 'msvisualcpp' and 'msvcmsys' as MSVC does not
+	support the -o option.
+
+2010-10-03  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	tests: fix ar-lib.test for echo that interprets backslashes.
+	* tests/ar-lib.test: Use printf instead of echo.  Avoid test -a.
+	More robust quoting.
+
+2010-09-21  Peter Rosin  <peda@lysator.liu.se>
+
+	compile: implement library search to support MSVC static linking
+	* lib/compile (func_cl_wrapper): Implement library search and
+	-static option so that the user can select whether to prefer
+	dll import libraries or static libraries.  This enables MSVC to
+	link against dlls generated by libtool without requiring libtool
+	or workarounds such as -lfoo.dll etc.  Makes the tests/static.at
+	test case in libtool pass.
+	* tests/compile3.test: Don't trip up if there happens to exist
+	a "foo" library in the library search path.
+	* tests/compile6.test: New test, verifying the library search.
+	* tests/Makefile.am (TESTS): Update.
+
+2010-09-02  Peter Rosin  <peda@lysator.liu.se>
+
+	Make ar-lib support backslashed files in archives.
+	* lib/ar-lib: If an archive member contains a backslash, make sure
+	it is escaped when the archive member is extracted.
+	* tests/ar-lib.test: Test the above.
+
+2010-08-31  Peter Rosin  <peda@lysator.liu.se>
+
+	Do file name conversion for object files in the compile wrapper.
+	* lib/compile (func_cl_wrapper): Do file name conversion for object
+	files (i.e. extensions .obj, .OBJ, .o and .O) if needed.
+	* tests/compile4.test: Test the above.
+
+2010-08-16  Peter Rosin  <peda@lysator.liu.se>
+
+	Optimize compile script on MSYS.
+	* lib/compile (func_file_conv): Add new argument 'lazy' which
+	takes an optional list of conversion types where the requested
+	conversion isn't needed.
+	(func_cl_wrapper): Take advantage of the above for cases where
+	MSYS is doing the conversion for us.
+	Suggested by Ralf Wildenhues.
+
+2010-08-16  Peter Rosin  <peda@lysator.liu.se>
+
+	Support more C++ file extensions for MSVC in the compile script.
+	* lib/compile (func_cl_wrapper): MSVC only recognizes the .cpp
+	file extension as C++, unless it's given a hint. So hint about
+	.cc, .CC, .cxx, .CXX, c++ and C++. Also do path conversion on
+	.c, .cpp, .CPP, .lib, .LIB and .Lib files.
+	* tests/compile3.test: Test the C++ hinting.
+
+2010-08-12  Peter Rosin  <peda@lysator.liu.se>
+
+	Enable the use of "link -lib" as the wrapped archiver.
+	* lib/ar-lib: Enable the use of "link -lib" as the wrapped
+	archiver, as well as allowing some other options to be passed
+	through to the wrapped archiver.
+	* tests/ar-lib.test: Test the above.
+
+2010-08-06  Peter Rosin  <peda@lysator.liu.se>
+
+	Add new auxiliary 'ar-lib' script, wrapping Microsoft lib.
+	* lib/ar-lib: New auxiliary script.
+	* lib/Makefile.am: Add above.
+	* tests/ar-lib.test: New test.
+	* tests/Makefile.am: Add above.
+	* automake.in (@common_files): Distribute the 'ar-lib' script.
+	* doc/automake.texi (Auxiliary Programs): Mention the new
+	'ar-lib' script.
+	(Optional): Mention 'ar-lib' in AC_CONFIG_AUX_DIR.
+	* NEWS: Update.
+
+2010-08-07  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	Fix shell pattern negation in compile script.
+	* lib/compile (func_file_conv): Use `!' not `^' for pattern
+	negation.
+
+2010-08-01  Peter Rosin  <peda@lysator.liu.se>
+
+	Wrap some MSVC options in the compile script.
+	* lib/compile: MSVC supports naming the output file, the option
+	is just not called -o, so transform -o into the appropriate form
+	for MSVC. Also wrap some other options while at it (-L, -l, -Wl,
+	-Xlinker and -I) and convert file names to windows form where
+	needed for those options to make MSVC more usable in an
+	autotooled environment.
+	* doc/automake.texi (Auxiliary Programs): Document the above
+	extension of the compile script.
+	* NEWS: Updated.
+	* tests/defs.in: New required entry 'cl'.
+	* tests/compile3.test: New test.
+	* tests/compile4.test: New test.
+	* tests/compile5.test: New test.
+	* tests/Makefile.am: Update.
 
 2010-07-31  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
 
