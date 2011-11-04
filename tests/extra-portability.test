@@ -18,10 +18,15 @@
 # warning categories:
 #   1. `-Wextra-portability' must imply `-Wportability'.
 #   2. `-Wno-portability' must imply `-Wno-extra-portability'.
+#   3. `-Wall' must imply `-Wextra-portability'.
 
 . ./defs || Exit 1
 
 set -e
+
+# We want (almost) complete control over automake options.
+# FIXME: use $original_AUTOMAKE here once we are merged into master.
+AUTOMAKE="`(set $AUTOMAKE && echo $1)` --foreign -Werror"
 
 cat >>configure.in <<END
 AC_PROG_CC
@@ -29,41 +34,62 @@ AC_PROG_RANLIB
 AC_OUTPUT
 END
 
+$ACLOCAL
+
+#
+# First, a setup where only an extra-portability warning is present
+# (no "simple" portability-warnings are).
+#
+
 cat >Makefile.am <<END
 EXTRA_LIBRARIES = libfoo.a
 libfoo_a_SOURCES = sub/foo.c
-libfoo_a_CPPFLAGS = -Dwhatever
 END
 
-$ACLOCAL
+# Sanity check: extra-portability warnings causes the expected error.
+AUTOMAKE_fails -Wextra-portability
+grep 'requires.*AM_PROG_AR' stderr
 
-# Enabling extra-portability enables portability.
-AUTOMAKE_fails -Wnone -Wextra-portability
-# The expected diagnostic is
-#    Makefile.am:2: compiling `foo.c' with per-target flags requires `AM_PROG_CC_C_O' in `configure.in'
-#    .../lib/am/library.am: `libfoo.a': linking libraries using a non-POSIX
-#    .../lib/am/library.am: archiver requires `AM_PROG_AR' in `configure.in'
-#    Makefile.am:1:   while processing library `libfoo.a'
+# Warnings in extra-portability category are not enabled by default.
+$AUTOMAKE
+
+# -Wall enables extra-portability.
+AUTOMAKE_fails -Wall
+grep 'requires.*AM_PROG_AR' stderr
+
+# Disabling portability disables extra-portability as well.
+$AUTOMAKE -Wextra-portability -Wno-portability
+$AUTOMAKE -Wall -Wno-portability
+
+#
+# Now, a setup where also a "simple" portability warning is present.
+#
+
+# Per-target flags require the use of AM_PROG_CC_C_O in configure.ac.
+echo libfoo_a_CPPFLAGS = -Dwhatever >> Makefile.am
+
+# Enabling extra-portability enables portability as well ...
+AUTOMAKE_fails -Wextra-portability
+grep 'requires.*AM_PROG_CC_C_O' stderr
+grep 'requires.*AM_PROG_AR' stderr
+# ... even if it had been previously disabled.
+AUTOMAKE_fails -Wno-portability -Wextra-portability
 grep 'requires.*AM_PROG_CC_C_O' stderr
 grep 'requires.*AM_PROG_AR' stderr
 
 # Disabling extra-portability leaves portability intact.
-AUTOMAKE_fails -Wno-extra-portability
-# The expected diagnostic is
-#    Makefile.am:2: compiling `foo.c' with per-target flags requires `AM_PROG_CC_C_O' in `configure.in'
-#    Makefile.am:1:   while processing library `libfoo.a'
+AUTOMAKE_fails -Wportability -Wno-extra-portability
 grep 'requires.*AM_PROG_CC_C_O' stderr
 grep 'requires.*AM_PROG_AR' stderr && Exit 1
 
 # Enabling portability does not enable extra-portability.
 AUTOMAKE_fails -Wnone -Wportability
-# The expected diagnostic is
-#    Makefile.am:2: compiling `foo.c' with per-target flags requires `AM_PROG_CC_C_O' in `configure.in'
-#    Makefile.am:1:   while processing library `libfoo.a'
 grep 'requires.*AM_PROG_CC_C_O' stderr
 grep 'requires.*AM_PROG_AR' stderr && Exit 1
 
 # Disabling portability disables extra-portability.
 $AUTOMAKE -Wno-portability
+$AUTOMAKE -Wextra-portability -Wno-portability
+$AUTOMAKE -Wall -Wno-portability
 
 :
