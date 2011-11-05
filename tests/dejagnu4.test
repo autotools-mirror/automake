@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2003, 2006  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2006, 2010 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,17 +26,17 @@ cat > hammer << 'END'
 #! /bin/sh
 echo "Everything looks like a nail to me!"
 END
-
 chmod +x hammer
 
 cat > spanner << 'END'
 #! /bin/sh
 echo "I'm a right spanner!"
 END
-
 chmod +x spanner
 
-echo AC_OUTPUT >> configure.in
+cat >> configure.in << 'END'
+AC_OUTPUT
+END
 
 cat > Makefile.am << 'END'
 AUTOMAKE_OPTIONS = dejagnu
@@ -49,8 +49,7 @@ EXTRA_DIST  = hammer  hammer.test/hammer.exp
 EXTRA_DIST += spanner spanner.test/spanner.exp
 END
 
-mkdir hammer.test
-mkdir spanner.test
+mkdir hammer.test spanner.test
 
 cat > hammer.test/hammer.exp << 'END'
 set test test
@@ -86,8 +85,14 @@ $MAKE distcheck
 
 # Test for PR 488.
 sed 's/E\(verything\)/Not e\1/' hammer > thammer
-mv thammer hammer
+mv -f thammer hammer
 chmod +x hammer
 
+rm -f hammer.log hammer.sum spanner.log spanner.sum
 $MAKE check && Exit 1
+test -f hammer.log
+test -f hammer.sum
+test -f spanner.log
+test -f spanner.sum
+
 :
