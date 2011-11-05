@@ -327,6 +327,54 @@ AUTOMAKE_fails ()
   AUTOMAKE_run -e 1 ${1+"$@"}
 }
 
+# extract_configure_help { --OPTION | VARIABLE-NAME } [FILES]
+# -----------------------------------------------------------
+# Use this to extract from the output of `./configure --help' (or similar)
+# the description or help message associated to the given --OPTION or
+# VARIABLE-NAME.
+extract_configure_help ()
+{
+  am__opt_re='' am__var_re=''
+  case $1 in
+    --*'=')   am__opt_re="^  $1";;
+    --*'[=]') am__opt_re='^  '`printf '%s\n' "$1" | sed 's/...$//'`'\[=';;
+    --*)      am__opt_re="^  $1( .*|$)";;
+      *)      am__var_re="^  $1( .*|$)";;
+  esac
+  shift
+  if test x"$am__opt_re" != x; then
+    LC_ALL=C awk '
+      /'"$am__opt_re"'/        { print; do_print = 1; next; }
+      /^$/                     { do_print = 0; next }
+      /^  --/                  { do_print = 0; next }
+      (do_print == 1)          { print }
+    ' ${1+"$@"}
+  else
+    LC_ALL=C awk '
+      /'"$am__var_re"'/        { print; do_print = 1; next; }
+      /^$/                     { do_print = 0; next }
+      /^  [A-Z][A-Z0-9_]* /    { do_print = 0; next }
+      /^  [A-Z][A-Z0-9_]*$/    { do_print = 0; next }
+      (do_print == 1)          { print }
+    ' ${1+"$@"}
+  fi
+}
+
+# grep_configure_help { --OPTION | VARIABLE-NAME } REGEXP
+# -------------------------------------------------------
+# Grep the section of `./configure --help' output associated with either
+# --OPTION or VARIABLE-NAME for the given *extended* regular expression.
+grep_configure_help ()
+{
+  ./configure --help > am--all-help \
+    || { cat am--all-help; Exit 1; }
+  cat am--all-help
+  extract_configure_help "$1" am--all-help > am--our-help \
+    || { cat am--our-help; Exit 1; }
+  cat am--our-help
+  $EGREP "$2" am--our-help || Exit 1
+}
+
 # using_gmake
 # -----------
 # Return success if $MAKE is GNU make, return failure otherwise.
