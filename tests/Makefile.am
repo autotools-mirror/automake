@@ -480,6 +480,7 @@ extradep.test \
 extradep2.test \
 extra-portability.test \
 extra-portability2.test \
+extra-portability3.test \
 f90only.test \
 flavor.test \
 flibs.test \
