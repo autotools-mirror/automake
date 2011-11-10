@@ -36,16 +36,31 @@ case `echo "$std" | grep .` in
   *) echo "$me: grep can't parse nonprinting characters" >&2; Exit 77;;
 esac
 
-# Check that we have a working expect program.
-cat >expect-check <<'END'
-#! /usr/bin/expect -f
-eval spawn $env(THE_SYSTEM_SHELL) -c :
-expect eof
+# This test requires a working a working `expect' program.
+(set +e; expect -c "exit 77"; test $? -eq 77) \
+  || skip_ "requires a working expect program"
+
+# Also, if the $MAKE program fails to consider the standard output as a
+# tty (this happens with e.g., BSD make and Solaris dmake when they're
+# run in parallel mode; see the autoconf manual), there is little point
+# in proceeding.
+cat > Makefile <<'END'
+all:
+## Creaive quoting in the `echo' below to avoid risk of spurious output
+## matches by `expect', below.
+	@test -t 1 && echo "stdout" "is" "a" "tty"
 END
-THE_SYSTEM_SHELL=/bin/sh expect -f expect-check || {
-    echo "$me: failed to find a working expect program" >&2
-    Exit 77
+cat > expect-check <<'END'
+eval spawn $env(MAKE)
+expect {
+  "stdout is a tty" { exit 0 }
+  default { exit 1 }
 }
+exit 1
+END
+MAKE=$MAKE expect -f expect-check \
+  || skip_ "make spawned by expect should have a tty stdout"
+rm -f check Makefile
 
 # Do the tests.
 
@@ -106,9 +121,7 @@ test_no_color ()
 }
 
 cat >expect-make <<'END'
-#! /usr/bin/expect -f
 eval spawn $env(MAKE) -e check
-expect eof
 END
 
 MAKE=$MAKE expect -f expect-make >stdout \
