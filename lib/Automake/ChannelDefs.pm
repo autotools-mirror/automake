@@ -115,6 +115,10 @@ variables (silent by default).
 
 Warnings about non-portable constructs.
 
+=item C<extra-portability>
+
+Extra warnings about non-portable constructs covering obscure tools.
+
 =item C<syntax>
 
 Warnings about weird syntax, unused variables, typos...
@@ -151,6 +155,7 @@ register_channel 'automake', type => 'fatal', backtrace => 1,
   footer => "\nPlease contact <$PACKAGE_BUGREPORT>.",
   uniq_part => UP_NONE, ordered => 0;
 
+register_channel 'extra-portability', type => 'warning', silent => 1;
 register_channel 'gnu', type => 'warning';
 register_channel 'obsolete', type => 'warning', silent => 1;
 register_channel 'override', type => 'warning', silent => 1;
@@ -180,6 +185,7 @@ sub usage ()
   `obsolete'      obsolete features or constructions
   `override'      user redefinitions of Automake rules or variables
   `portability'   portability issues (default in gnu and gnits modes)
+  `extra-portability'  extra portability issues related to obscure tools
   `syntax'        dubious syntactic constructs (default)
   `unsupported'   unsupported or incomplete features (default)
   `all'           all the warnings
@@ -252,6 +258,10 @@ Else handle C<all> and C<none> for completeness.
 
 =cut
 
+# HACK to have `-Wextra-portability' *not* implied by `-Wall'.
+# This will go away in automake 1.12.
+my $have_extra_portability = 0;
+
 sub switch_warning ($)
 {
   my ($cat) = @_;
@@ -266,6 +276,8 @@ sub switch_warning ($)
   if ($cat eq 'all')
     {
       setup_channel_type 'warning', silent => $has_no;
+      setup_channel 'extra-portability', silent => 1
+        unless $have_extra_portability;
     }
   elsif ($cat eq 'none')
     {
@@ -284,6 +296,17 @@ sub switch_warning ($)
       setup_channel $cat, silent => $has_no;
       setup_channel 'portability-recursive', silent => $has_no
         if $cat eq 'portability';
+      if ($cat eq 'portability' && $has_no)
+        {
+          setup_channel 'extra-portability', silent => 1;
+          $have_extra_portability = 0;
+        }
+      if ($cat eq 'extra-portability' && ! $has_no)
+        {
+          setup_channel 'portability', silent => 0;
+          setup_channel 'portability-recursive', silent => 0;
+          $have_extra_portability = 1;
+        }
     }
   else
     {
@@ -345,6 +368,7 @@ sub set_strictness ($)
       setup_channel 'error-gnu/warn', silent => 0, type => 'error';
       setup_channel 'error-gnits', silent => 1;
       setup_channel 'portability', silent => 0;
+      setup_channel 'extra-portability', silent => 1;
       setup_channel 'gnu', silent => 0;
     }
   elsif ($name eq 'gnits')
@@ -353,6 +377,7 @@ sub set_strictness ($)
       setup_channel 'error-gnu/warn', silent => 0, type => 'error';
       setup_channel 'error-gnits', silent => 0;
       setup_channel 'portability', silent => 0;
+      setup_channel 'extra-portability', silent => 1;
       setup_channel 'gnu', silent => 0;
     }
   elsif ($name eq 'foreign')
@@ -361,6 +386,7 @@ sub set_strictness ($)
       setup_channel 'error-gnu/warn', silent => 0, type => 'warning';
       setup_channel 'error-gnits', silent => 1;
       setup_channel 'portability', silent => 1;
+      setup_channel 'extra-portability', silent => 1;
       setup_channel 'gnu', silent => 1;
     }
   else
@@ -368,6 +394,8 @@ sub set_strictness ($)
       prog_error "level `$name' not recognized\n";
     }
 }
+
+1;
 
 =back
 

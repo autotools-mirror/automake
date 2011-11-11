@@ -235,9 +235,9 @@ my @libtool_sometimes = qw(ltconfig ltcf-c.sh ltcf-cxx.sh ltcf-gcj.sh);
 my @common_files =
     (qw(ABOUT-GNU ABOUT-NLS AUTHORS BACKLOG COPYING COPYING.DOC COPYING.LIB
 	COPYING.LESSER ChangeLog INSTALL NEWS README THANKS TODO
-	ansi2knr.1 ansi2knr.c compile config.guess config.rpath config.sub
-	depcomp elisp-comp install-sh libversion.in mdate-sh missing
-	mkinstalldirs py-compile texinfo.tex ylwrap),
+	ansi2knr.1 ansi2knr.c ar-lib compile config.guess config.rpath
+	config.sub depcomp elisp-comp install-sh libversion.in mdate-sh
+	missing mkinstalldirs py-compile texinfo.tex ylwrap),
      @libtool_files, @libtool_sometimes);
 
 # Commonly used files we auto-include, but only sometimes.  This list
@@ -395,6 +395,9 @@ my $package_version_location;
 
 # TRUE if we've seen AM_ENABLE_MULTILIB.
 my $seen_multilib = 0;
+
+# TRUE if we've seen AM_PROG_AR
+my $seen_ar = 0;
 
 # TRUE if we've seen AM_PROG_CC_C_O
 my $seen_cc_c_o = 0;
@@ -2811,6 +2814,13 @@ sub handle_libraries
 	      &check_libobjs_sources ($xlib, $xlib . '_LIBADD');
 	    }
 	}
+
+      if (! $seen_ar)
+	{
+	  msg ('extra-portability', $where,
+	       "`$onelib': linking libraries using a non-POSIX\n"
+	       . "archiver requires `AM_PROG_AR' in `$configure_ac'")
+	}
     }
 }
 
@@ -3047,6 +3057,13 @@ sub handle_ltlibraries
 	    {
 	      &check_libobjs_sources ($xlib, $xlib . '_LIBADD');
 	    }
+	}
+
+      if (! $seen_ar)
+	{
+	  msg ('extra-portability', $where,
+	       "`$onelib': linking libtool libraries using a non-POSIX\n"
+	       . "archiver requires `AM_PROG_AR' in `$configure_ac'")
 	}
     }
 }
@@ -5301,6 +5318,7 @@ sub scan_autoconf_traces ($)
 		AM_GNU_GETTEXT_INTL_SUBDIR => 0,
 		AM_INIT_AUTOMAKE => 0,
 		AM_MAINTAINER_MODE => 0,
+		AM_PROG_AR => 0,
 		AM_PROG_CC_C_O => 0,
 		AM_SILENT_RULES => 0,
 		_AM_SUBST_NOTMAKE => 1,
@@ -5491,6 +5509,10 @@ sub scan_autoconf_traces ($)
       elsif ($macro eq 'AM_MAINTAINER_MODE')
 	{
 	  $seen_maint_mode = $where;
+	}
+      elsif ($macro eq 'AM_PROG_AR')
+	{
+	  $seen_ar = $where;
 	}
       elsif ($macro eq 'AM_PROG_CC_C_O')
 	{
