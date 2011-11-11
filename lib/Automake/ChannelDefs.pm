@@ -304,6 +304,7 @@ sub switch_warning ($)
       if ($cat eq 'extra-portability' && ! $has_no)
         {
           setup_channel 'portability', silent => 0;
+          setup_channel 'portability-recursive', silent => 0;
           $have_extra_portability = 1;
         }
     }

@@ -33,8 +33,7 @@ AC_CACHE_CHECK([the archiver ($AR) interface], [am_cv_ar_interface],
         if test "$ac_status" -eq 0; then
           am_cv_ar_interface=lib
         else
-          m4_default([$1],
-            [AC_MSG_ERROR([could not determine $AR interface])])
+          am_cv_ar_interface=unknown
         fi
       fi
       rm -f conftest.lib libconftest.a
@@ -52,6 +51,10 @@ lib)
   # and then we could set am__AR="$am_aux_dir/ar-lib \$(AR)" or something
   # similar.
   AR="$am_aux_dir/ar-lib $AR"
+  ;;
+unknown)
+  m4_default([$1],
+             [AC_MSG_ERROR([could not determine $AR interface])])
   ;;
 esac
 AC_SUBST([AR])dnl
