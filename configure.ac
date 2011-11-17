@@ -60,6 +60,8 @@ AC_PATH_PROG(PERL, perl)
 if test -z "$PERL"; then
    AC_MSG_ERROR([perl not found])
 fi
+# Save details about the selected perl interpreter in config.log.
+AM_RUN_LOG([eval $PERL --version])
 $PERL -e 'require 5.006;' || {
    AC_MSG_ERROR(
 [perl 5.6 or better is required; perl 5.8.2 or better
