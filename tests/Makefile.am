@@ -26,6 +26,8 @@ gcj6.test \
 java-nobase.test \
 pr8365-remake-timing.test \
 lex-subobj-nodep.test \
+remake-am-pr10111.test \
+remake-m4-pr10111.test \
 vala-vpath.test \
 txinfo5.test
 
@@ -316,6 +318,8 @@ dejagnu-relative-srcdir.test \
 dejagnu-siteexp-extend.test \
 dejagnu-siteexp-append.test \
 dejagnu-siteexp-useredit.test \
+deleted-am.test \
+deleted-m4.test \
 depacl2.test \
 depcomp.test \
 depcomp2.test \
@@ -741,6 +745,8 @@ remake-subdir-gnu.test \
 remake-subdir.test \
 remake-subdir2.test \
 remake-subdir-long-time.test \
+remake-am-pr10111.test \
+remake-m4-pr10111.test \
 pr8365-remake-timing.test \
 regex.test \
 req.test \
