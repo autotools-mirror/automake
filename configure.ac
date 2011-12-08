@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+AC_PREREQ([2.68])
 AC_INIT([GNU Automake], [1.11], [bug-automake@gnu.org])
 
 m4_ifndef([AC_PACKAGE_URL],
