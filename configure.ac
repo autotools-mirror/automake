@@ -1,7 +1,8 @@
 # Process this file with autoconf to produce a configure script.
 
 # Copyright (C) 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003,
-# 2004, 2006, 2007, 2008, 2009, 2010 Free Software Foundation, Inc.
+# 2004, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation,
+# Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -218,3 +219,28 @@ AC_CONFIG_FILES([tests/automake-${APIVERSION}:tests/automake.in],
                 [chmod +x tests/automake-${APIVERSION}])
 
 AC_OUTPUT
+
+# Inform the user if this version of automake is a beta release or
+# a development snapshot.
+# According to HACKING, the version of a development snapshot should
+# end with an "odd" letter (a, c, ...), the version of a test release
+# should end wit an "even" letter (b, d, ...).
+
+am_stable_version_rx='[[1-9]\.[0-9]+(\.[0-9]+)?]'
+am_beta_version_rx="[$am_stable_version_rx[bdfhjlnprtvxz]]"
+
+am_release_type=`AS_ECHO(["$PACKAGE_VERSION"]) | LC_ALL=C awk ["
+  /^$am_stable_version_rx$/ { print \"stable\"; exit(0); }
+  /^$am_beta_version_rx$/ { print \"beta version\"; exit(0); }
+  { print \"development snapshot\"; }"]`
+
+test "$am_release_type" = stable || cat <<EOF
+
+WARNING: You are about to use a $am_release_type of automake.
+WARNING: It might easily suffer from new bugs or regressions.
+WARNING: You are strongly advised not to use it in production code.
+
+Please report bugs, problems and feedback to <bug-automake@gnu.org>.
+EOF
+
+AS_EXIT([0])
