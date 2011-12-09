@@ -30,6 +30,8 @@ override-conditional-2.test \
 java-nobase.test \
 pr8365-remake-timing.test \
 lex-subobj-nodep.test \
+remake-am-pr10111.test \
+remake-m4-pr10111.test \
 vala-vpath.test \
 txinfo5.test
 
@@ -393,6 +395,8 @@ dejagnu-relative-srcdir.test \
 dejagnu-siteexp-extend.test \
 dejagnu-siteexp-append.test \
 dejagnu-siteexp-useredit.test \
+deleted-am.test \
+deleted-m4.test \
 depacl2.test \
 depcomp.test \
 depcomp2.test \
@@ -892,6 +896,8 @@ remake-deleted-m4-file.test \
 remake-renamed-m4-file.test \
 remake-renamed-m4-macro-and-file.test \
 remake-renamed-m4-macro.test \
+remake-am-pr10111.test \
+remake-m4-pr10111.test \
 pr8365-remake-timing.test \
 regex.test \
 regex-obsolete.test \
