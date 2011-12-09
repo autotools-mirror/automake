@@ -606,6 +606,75 @@ path-check: distdir
 	  rm -rf $(distdir); \
 	  exit $$estatus
 
+## Visually comparing differences between the Makefile.in files in
+## automake's own build system as generated in two different branches
+## might help to catch bugs and blunders.  This has already happened a
+## few times in the past, when we used to version-control Makefile.in.
+autodiffs:
+	@set -u; \
+	 NEW_COMMIT=$${NEW_COMMIT-"HEAD"}; \
+	 OLD_COMMIT=$${OLD_COMMIT-"HEAD~1"}; \
+	 am_gitdir='$(abs_top_srcdir)/.git'; \
+	 get_autofiles_from_rev () \
+	 { \
+	     rev=$$1 dir=$$2 \
+	       && echo "$@: will get files from revision $$rev" \
+	       && git clone -q --depth 1 "$$am_gitdir" tmp \
+	       && cd tmp \
+	       && git checkout -q "$$rev" \
+	       && echo "$@: bootstrapping $$rev" \
+	       && $(SHELL) ./bootstrap \
+	       && echo "$@: copying files from $$rev" \
+	       && makefile_ins=`find . -name Makefile.in` \
+	       && (tar cf - configure aclocal.m4 $$makefile_ins) | \
+	          (cd .. && cd "$$dir" && tar xf -) \
+	       && cd .. \
+	       && rm -rf tmp; \
+	 }; \
+	 outdir=$@.dir \
+## Before proceeding, ensure the specified revisions truly exist.
+	   && git --git-dir="$$am_gitdir" describe $$OLD_COMMIT >/dev/null \
+	   && git --git-dir="$$am_gitdir" describe $$NEW_COMMIT >/dev/null \
+	   && rm -rf $$outdir \
+	   && mkdir $$outdir \
+	   && cd $$outdir \
+	   && mkdir new old \
+	   && get_autofiles_from_rev $$OLD_COMMIT old \
+	   && get_autofiles_from_rev $$NEW_COMMIT new \
+	   && exit 0
+## With lots of eye candy; we like our developers pampered and spoiled :-)
+compare-autodiffs: autodiffs
+	@set -u; \
+	: $${COLORDIFF=colordiff} $${DIFF=diff}; \
+	dir=autodiffs.dir; \
+	if test ! -d "$$dir"; then \
+	  echo "$@: $$dir: Not a directory" >&2; \
+	  exit 1; \
+	fi; \
+	mydiff=false mypager=false; \
+	if test -t 1; then \
+	  if ($$COLORDIFF -r . .) </dev/null >/dev/null 2>&1; then \
+	    mydiff=$$COLORDIFF; \
+	    mypager="less -R"; \
+	  else \
+	    mypager=less; \
+	  fi; \
+	else \
+	  mypager=cat; \
+	fi; \
+	if test "$$mydiff" = false; then \
+	  if ($$DIFF -r -u . .); then \
+	    mydiff=$$DIFF; \
+	  else \
+	    echo "$@: no good-enough diff program specified" >&2; \
+	    exit 1; \
+	  fi; \
+	fi; \
+	st=0; $$mydiff -r -u $$dir/old $$dir/new | $$mypager || st=$$?; \
+	rm -rf $$dir; \
+	exit $$st
+.PHONY: autodiffs compare-autodiffs
+
 ## Program to use to fetch files.
 WGET = wget
 WGET_SV_CVS = $(WGET) http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~/
