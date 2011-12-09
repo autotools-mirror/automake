@@ -1,3 +1,38 @@
+2011-12-09  Jim Meyering  <meyering@redhat.com>
+	    Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	dist-xz, dist-bzip2: don't hard-code -9, honor envvar settings
+	Before the present change, automake-generated `dist-xz' rule used
+	a hard-coded `xz -9'.  That was a problem because on this front,
+	xz differs from gzip and bzip2.  While the latter two don't incur
+	any run-time decompression penalty for using a higher compression
+	level, specifying -9 with xz imposes a potentially fatal virtual
+	memory requirement on any client that wants to decompress your
+	tar.xz file.
+	People have complained that a tarball compressed with -9 cannot
+	be uncompressed in a low-memory environment (wrt-based embedded).
+	Hence, instead of defaulting to -9, which is useful only for very
+	large tarballs, it defaults to -e (equivalent to -6e).  This
+	limits the default memory requirements imposed on decompressors,
+	yet still gives very good compression ratios.
+	* lib/am/distdir.am (dist-xz): Do not hard-code xz's -9: that made
+	it impossible to override.  Actually don't default to -9, either,
+	since that induced inordinately large virtual memory usage when
+	merely decompressing.  Instead, use its XZ_OPT envvar, defaulting
+	to -e if not defined.  Suggested by Lasse Collin.
+	(dist, dist-all) [?XZ?]: Likewise
+	(dist-bzip2): Similarly, do not hard-code -9, but do continue to
+	use -9 by default.  Honor the BZIP2 envvar.
+	(dist, dist-all) [?BZIP2?]: Likewise
+	* NEWS: Update.
+	* doc/automake.texi (The Types of Distributions): Describe the
+	newly enabled environment variables.
+
+2011-12-09  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	* NEWS: Fix typos, grammaros and suboptimal wording.
+	Reported by Jim Meyering.
+
 2011-12-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
 	maint: sync auxiliary files from upstream
@@ -299,7 +334,7 @@
 
 	info: allow user to inhibit creation/update of '${infodir}/dir'
 	With this change, we allow the user to request the install-info
-	rules not to update the `${infodir}/dir' file, by exporting the
+	rules not to update the `${infodir}/dir' file, by setting the
 	environment variable `AM_UPDATE_INFO_DIR' to the value "no".
 	This is especially useful to distro packagers, and is a definite
 	improvement over our previous hack of looking whether the
