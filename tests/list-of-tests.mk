@@ -301,6 +301,8 @@ dejagnu-relative-srcdir.test \
 dejagnu-siteexp-append.test \
 dejagnu-siteexp-extend.test \
 dejagnu-siteexp-useredit.test \
+deleted-am.test \
+deleted-m4.test \
 depacl2.test \
 depcomp.test \
 depcomp2.test \
@@ -328,6 +330,9 @@ dist-auxdir-many-subdirs.test \
 dist-auxfile-2.test \
 dist-auxfile.test \
 dist-included-parent-dir.test \
+dist-missing-am.test \
+dist-missing-included-m4.test \
+dist-missing-m4.test \
 dist-readonly.test \
 dist-repeated.test \
 distcleancheck.test \
@@ -853,6 +858,8 @@ remake-deleted-m4-file.test \
 remake-renamed-m4-file.test \
 remake-renamed-m4-macro-and-file.test \
 remake-renamed-m4-macro.test \
+remake-am-pr10111.test \
+remake-m4-pr10111.test \
 pr8365-remake-timing.test \
 regex.test \
 regex-obsolete.test \

@@ -25,7 +25,19 @@
 mkdir d
 : > d/f
 chmod a-w d || skip "cannot make directories unwritable"
-rm -f d/f && skip_ "can delete files from unwritable directories"
+
+# On Solaris 10, if `/bin/rm' is run with the `-f' option, it doesn't
+# print any error message when failing to remove a file (due to e.g.,
+# "Permission denied").  Yikes.  We'll cater to this incompatibility
+# by relaxing a test below if a faulty `rm' is detected.
+st=0; rm -f d/f 2>stderr || st=$?
+cat stderr >&2
+test $st -gt 0 || skip_ "can delete files from unwritable directories"
+if grep 'rm:' stderr; then
+  rm_f_is_silent_on_error=no
+else
+  rm_f_is_silent_on_error=yes
+fi
 
 cat >> configure.in << 'END'
 AC_OUTPUT
@@ -51,15 +63,34 @@ mkdir $inst $inst/share
 chmod a-w $inst/share
 $MAKE uninstall >output 2>&1 && { cat output; Exit 1; }
 cat output
-grep "rm: .*foobar\.txt" output
+if test $rm_f_is_silent_on_error = yes; then
+  : "rm -f" is silent on errors, skip the grepping of make output
+else
+  grep "rm: .*foobar\.txt" output
+fi
 
 chmod a-rwx $inst/share
 (cd $inst/share) && skip_ "cannot make directories fully unreadable"
 
 $MAKE uninstall >output 2>&1 && { cat output; Exit 1; }
 cat output
+#
 # Some shells, like Solaris 10 /bin/sh and /bin/ksh, do not report
-# the name of the `cd' builtin upon a chdir error.
-$EGREP "(cd|sh): .*$inst/share" output
+# the name of the `cd' builtin upon a chdir error:
+#
+#   $ /bin/sh -c 'cd /none'
+#   /bin/sh: /none: does not exist
+#
+# In addition, some shells, like Solaris 10 /usr/xpg4/bin/sh, also print
+# a line number in the error message *if the command contains newlines*:
+#
+#   $ /usr/xpg4/bin/sh -c 'cd unreadable'
+#   /usr/xpg4/bin/sh: unreadable: permission denied
+#   $ /usr/xpg4/bin/sh -c '\
+#   > \
+#   > cd unreadable'
+#   /usr/xpg4/bin/sh[3]: unreadable: permission denied
+#
+$EGREP "(cd|sh)(\[[0-9]*[0-9]\])?: .*$inst/share" output
 
 :
