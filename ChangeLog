@@ -1,3 +1,75 @@
+2011-12-14  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: better handling of gettext and libtool requirements
+
+	This change fixes automake bug#9807.
+
+	Before this change, the automake testsuite only looked for the
+	`.m4' files containing libtool and gettext macros definitions in
+	the directory `${prefix}/share/aclocal' (and in the directories
+	specified by the `dirlist' file in there, if any), where ${prefix}
+	was the configure-time automake installation prefix (defaulting
+	to `/usr/local').
+
+	This approach had various shortcomings and disadvantages.  Let's
+	briefly describe the three major ones.
+
+	First, on most GNU/Linux systems, a libtool or gettext installed
+	from distro-provided packages (e.g., by dpkg on Debian/Ubuntu, or
+	by rmp on RedHat/Fedora) would have `/usr', not `/usr/local', as
+	its ${prefix}; so, trying to run the automake testsuite with a
+	simple "./configure && make && make check" would have failed to
+	execute the libtool and gettext tests on most GNU/Linux distros.
+	It's true that it was quite easy to work around this issue, by
+	creating a proper `/usr/local/share/aclocal/dirlist' file with
+	an entry pointing to `/usr/share/aclocal' (a workaround in fact
+	used by most automake developers); but the typical user wasn't
+	aware of the necessity of this trick, so the libtool and gettext
+	tests was usually skipped on testsuite runs "in the wild", thus
+	needlessly reducing coverage.
+
+	Second, the older testsuite behaviour made more difficult for
+	the developers to run the testsuite with non-default libtool or
+	gettext.  For example, assume the developer is working on a system
+	that has a default libtool version 1.5 installed in the /usr/local
+	hierarchy; to improve coverage, the developer installs also a more
+	modern libtool version, say 2.4, in its home directory, let's say
+	in ~/libtool-2.4; he then tries to run the automake testsuite with
+	this more modern libtool by doing an (apparently) simple:
+	  $ PATH=$HOME/libtool-2.4:$PATH make check
+	But the automake testsuite would still look for libtool macros in
+	/usr/local/share/aclocal, not in ~/libtool-2.4/share/aclocal, so
+	the wrong version of the macros would be picked up, and the tests
+	would either fail spuriously or (which would be worse) pass without
+	truly covering the libtool version the developers was thinking to
+	be testing with.
+	Worse again, the automake testsuite would *unconditionally* look
+	for libtool macros in /usr/local/share/aclocal, so even something
+	like:
+	  $ export ACLOCAL_PATH=$HOME/libtool-2.4/share/aclocal
+	  $ PATH=$HOME/libtool-2.4:$PATH make check
+	wouldn't work.
+
+	Third and last, during a "make distcheck", automake is configured
+	with a ${prefix} pointing to a proper subdirectory of the build
+	directory (usually `pwd`/_inst), which gets created on-the-fly;
+	in this case, with the old approach, the automake testsuite never
+	found the libtool and gettext macro files, ans so the libtool and
+	gettext tests was *always* skipped in a "make distcheck".
+
+	* tests/libtool-macros.test: New helper test, looking (with the
+	help of the `libtoolize' script) for libtool macro files required
+	by most libtool tests, and making them easily accessible.
+	* tests/gettext-macros.test: New helper test, looking (with the
+	help of the `libtoolize' script) for libtool macro files required
+	by most libtool tests, and making them easily accessible.
+	* tests/defs.in: Update to make it rely on the results and setups
+	of `libtool-macros.test' and `gettext-macros.test'.
+	* tests/Makefile.am: Declare dependency of all the logs of libtool
+	tests from `libtool-macros.log', and all the logs of gettext tests
+	from `gettext-macros.log'.
+	(TESTS): Add the new tests.
+
 2011-12-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
 	fix: typos and grammaros in comments of the new test
