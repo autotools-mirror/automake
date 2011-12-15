@@ -1,3 +1,285 @@
+2011-12-15  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	Merge branch 'maint' into 'yacc-work'
+	* tests/silent-lex.test: Provide a dummy `yywrap()' function, to
+	avoid link errors on systems that doesn't provide a "lex library".
+	See also commit `v1.11-546-gca0ba5d'.
+
+2011-12-14  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	readme: reference webpages for automake mailing lists
+	* README: Rationalize and reorganize the (brief) description of
+	the automake mailing lists.   In particular, instead of suggesting
+	the reader to write to the `-request' addresses to subscribe to
+	mailing lists, point him to the relevant webpages, where he can
+	also subscribe via a web form.
+
+2011-12-14  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	readme: update advice about testsuite execution
+	* README: Now that the automake testsuite uses the parallel-tests
+	driver, there is no need for the user to capture the stdout of
+	"make check" to determine which tests have failed: a detailed log
+	is automatically saved into the `tests/test-suite.log' file.
+	Since we are at it, improve the wording by dropping an extra
+	"please".
+
+2011-12-14  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	readme: don't reference the old homepage at sources.redhat.com
+	* README: Don't reference the old homepage at sources.redhat.com,
+	which is no longer active; reference the homepage on www.gnu.org
+	instead.  See also automake bug#10157 and bug#10248.
+	* tests/README: Likewise, and remove related extra-pedantic advice
+	about copyright papers for test cases (we'll ask for those papers
+	explicitly when we think they are warranted).
+
+2011-12-12  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	hacking: some more fixlets
+	* HACKING (Release Procedure): Place the list of pre-release
+	bootstrap-and-test commands on a line of its own, so it's easy to
+	select and then paste it into a terminal window.
+	Fix the explanation of "make git-release", as, since the previous
+	change, "make git-release" would simply run "make dist" rather
+	than "make distcheck".
+	Suggestion from Jim Meyering.
+
+2011-12-12  Peter Rosin  <peda@lysator.liu.se>
+
+	* NEWS: Fix typo in 'make dist-bzip2' description.
+
+2011-12-10  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	release: don't run "make distcheck" automatically
+	* Makefile.am (git-dist): The developers should test extensively
+	before finally creating the release tarball; so don't run "make
+	distcheck" on their behalf here; instead ...
+	* HACKING (Release procedure): ... state here that "make check"
+	and "make distcheck" should be run before calling "make git-dist".
+
+2011-12-09  Jim Meyering  <meyering@redhat.com>
+	    Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	dist-xz, dist-bzip2: don't hard-code -9, honor envvar settings
+	Before the present change, automake-generated `dist-xz' rule used
+	a hard-coded `xz -9'.  That was a problem because on this front,
+	xz differs from gzip and bzip2.  While the latter two don't incur
+	any run-time decompression penalty for using a higher compression
+	level, specifying -9 with xz imposes a potentially fatal virtual
+	memory requirement on any client that wants to decompress your
+	tar.xz file.
+	People have complained that a tarball compressed with -9 cannot
+	be uncompressed in a low-memory environment (wrt-based embedded).
+	Hence, instead of defaulting to -9, which is useful only for very
+	large tarballs, it defaults to -e (equivalent to -6e).  This
+	limits the default memory requirements imposed on decompressors,
+	yet still gives very good compression ratios.
+	* lib/am/distdir.am (dist-xz): Do not hard-code xz's -9: that made
+	it impossible to override.  Actually don't default to -9, either,
+	since that induced inordinately large virtual memory usage when
+	merely decompressing.  Instead, use its XZ_OPT envvar, defaulting
+	to -e if not defined.  Suggested by Lasse Collin.
+	(dist, dist-all) [?XZ?]: Likewise
+	(dist-bzip2): Similarly, do not hard-code -9, but do continue to
+	use -9 by default.  Honor the BZIP2 envvar.
+	(dist, dist-all) [?BZIP2?]: Likewise
+	* NEWS: Update.
+	* doc/automake.texi (The Types of Distributions): Describe the
+	newly enabled environment variables.
+
+2011-12-09  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	* NEWS: Fix typos, grammaros and suboptimal wording.
+	Reported by Jim Meyering.
+
+2011-12-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	maint: sync auxiliary files from upstream
+	* lib/texinfo.tex: Synced from upstream, by "make fetch".
+	* lib/config.guess: Likewise.
+	* lib/config.sub: Likewise.
+
+2011-12-04  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix spurious failures due to missing 'yywrap()' function
+
+	The AC_PROG_LEX Autoconf macro does not diagnose a failure to find
+	the "lex library" expected to provide a `yywrap' function (function
+	which is required to link most lex-generated programs).  On the
+	contrary, when all the link attempts (i.e., with `-ll' and `-lfl')
+	fail, configure declares that no lex library is needed, and simply
+	proceeds with the configuration process -- only for the build to
+	possibly fail later, at make time.
+
+	This behaviour is intended; the Autoconf manual reads:
+	 ``You are encouraged to use Flex in your sources, since it is
+	   both more pleasant to use than plain Lex and the C source it
+	   produces is portable.  In order to ensure portability, however,
+	   you must either provide a function `yywrap' or, if you don't use
+	   it (e.g., your scanner has no `#include'-like feature), simply
+	   include a `%noyywrap' statement in the scanner's source.''
+
+	This AC_PROG_LEX behaviour is causing some spurious failures of
+	the Automake testsuite in environments which lack a proper library
+	providing `yywrap' (this happens for example on Fedora-based
+	systems).   The proper workaround is to simply provide a fall-back
+	implementation of `yywrap' in our lexers.
+
+	See also partially-overlapping commit `v1.11-871-geb147a1' (from
+	the 'testsuite-work' branch), which was motivated by similar
+	spurious failures experienced when cross-compiling.
+
+	From a report by Jim Meyering:
+	<http://lists.gnu.org/archive/html/automake-patches/2011-10/msg00092.html>
+
+	* tests/cond35.test: Provide a dummy `yywrap' function.
+	* tests/lex3.test: Likewise.
+	* tests/silent-lex-generic.test: Likewise.
+	* tests/silent-lex-gcc.test: Likewise.
+	* tests/silent-many-generic.test: Likewise.
+	* tests/silent-many-gcc.test: Likewise.
+
+2011-12-04  Paul Eggert  <eggert@cs.ucla.edu>
+
+	depcomp: spelling fix
+	* lib/depcomp (-h): Fix misspelling in usage diagnostic.
+
+2011-11-28  Peter Rosin  <peda@lysator.liu.se>
+
+	tests: fix 'distcheck-override-infodir.test' on Cygwin
+	* tests/distcheck-override-infodir.test (Makefile.am): Do not add
+	any `/' between $(DESTDIR) and the following paths.  Otherwise,
+	when $(DESTDIR) is empty, the recipes will try to access files
+	with a leading double slash, which have an implementation-defined
+	interpretation (e.g., for Cygwin, they mean UNC paths).
+
+2011-11-24  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	cosmetics: typofix in comments
+	* tests/remake-am-pr10111.test (Makefile.am): Fix typo in comments.
+	* THANKS: Update.
+	Reported by Krzysztof Żelechowski.
+
+2011-11-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	coverage: undistributed '.am' and '.m4' files are diagnosed
+	The stub rules emitted to work around the "deleted header problem"
+	for `.m4' files (included by autoconf in e.g., configure.ac) and
+	for `.am' files (included by automake in e.g., Makefile.am) should
+	not prevent "make" from correctly complaining when such a required
+	file is missing from a distribution tarball.
+	* tests/dist-missing-am.test: New test.
+	* tests/dist-missing-m4.test: Likewise.
+	* tests/dist-missing-included-m4.test: Likewise.
+	* tests/Makefile.am (TESTS): Add them.
+	Suggestion by Ralf Wildenhues.
+
+2011-11-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	coverage: required but missing '.am' and '.m4' files are diagnosed
+	The stub rules emitted to work around the "deleted header problem"
+	for `.m4' files (included by autoconf in e.g., configure.ac) and
+	for `.am' files (included by automake in e.g., Makefile.am) should
+	not prevent the remake rules from correctly erroring out when a
+	still-required file is missing.
+	* tests/deleted-am.test: New test.
+	* tests/deleted-m4.test: Likewise.
+	* tests/Makefile.am (TESTS): Add them.
+
+2011-11-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	coverage: expose automake bug#10111 in the testsuite
+	* tests/remake-am-pr10111.test: New test, xfailing.
+	* tests/remake-m4-pr10111.test: Likewise.
+	* tests/Makefile.am (TESTS, XFAIL_TESTS): Add them.
+
+2011-11-19  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	texinfo: work around Solaris 10 xpg4 shell bug in install rules
+	* lib/am/texinfos.am (install-html-am): Use an extra variable
+	indirection to work around a bug in Solaris 10 /usr/xpg4/bin/sh.
+	Bug revealed by a failure of `txinfo21.test'.  See also:
+	<http://lists.gnu.org/archive/html/bug-autoconf/2011-11/msg00005.html>
+	<http://debbugs.gnu.org/cgi/bugreport.cgi?bug=10026#23>
+
+2011-11-17  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	configure: report perl version in config.log
+	* configure.ac: Report the version of the selected perl interpreter
+	in config.log; this should render the logs more informative.
+
+2011-11-13  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix spurious failure with older install-info
+	* tests/install-info-dir.test (foo.texi): Also add proper
+	`@settitle', `@dircategory' and `@direntry' directive, otherwise
+	older versions of `install-info' (e.g., 4.8) will fail to create
+	the `dir' index file in ${infodir}.
+	Problem revealed by a failure on NetBSD 5.1.
+
+2011-11-12  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	maintcheck: fix spurious failure in 'color2.test'
+	* tests/color2.test: Avoid creative quoting to avoid a spurious
+	failure of the `sc_tests_Exit_not_exit' maintainer check.
+
+2011-11-12  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix spurious error in 'uninstall-fail.test' on Solaris
+	* tests/uninstall-fail.test: Solaris 10 /usr/xpg4/bin/sh can add
+	a line number before the `:' in the error messages issued by shell
+	builtins.  Account for that in our grepping of make output.
+
+2011-11-12  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix typo in 'uninstall-fail.test'
+	* tests/uninstall-fail.test: Always use `$rm_f_is_silent_on_error'
+	instead of the bogus `$rm_f_is_silent_on_failure'.
+
+2011-11-10  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: avoid a spurious failure of 'ltinit.test' MinGW
+	* tests/ltinit.test: Be laxer in grepping configure output, to
+	avoid spurious failures on systems which lack POSIX dynamic
+	linking (e.g., MinGW), or when cross-compiling for such systems.
+	See also commit `v1.11-855-ge9e5d4a'.
+	Report and suggestion from Peter Rosin.
+
+2011-11-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: testsuite is now safe to run with dmake in parallel mode
+	* tests/defs.in: Unset variables DMAKE_CHILD, DMAKE_DEF_PRINTED
+	and DMAKE_MAX_JOBS, which are exported by Solaris dmake when run
+	in parallel mode, and which might confuse make processes spawned
+	by our testsuite.
+
+2011-11-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix spurious failures w.r.t. parallel make and colorization
+	* tests/color2.test: Skip the test if the $MAKE program fails to
+	consider the standard output as a tty when spawned by `expect'.
+	This is required for make implementations, like FreeBSD make and
+	Solaris dmake, that redirect the output of recipes to temporary
+	files or pipes when run in parallel mode.  Since we are at it,
+	simplify the detection of a working `expect' program, and throw
+	in other minor simplifications.
+
+2011-11-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix spurious failure in 'distcheck-override-infodir.test'
+	* tests/distcheck-override-infodir.test ($required): Add
+	'install-info'.
+
+2011-11-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: avoid another failure of 'uninstall-fail.test' on Solaris
+	* tests/uninstall-fail.test: On Solaris 10, if `/bin/rm' is run
+	with the `-f' option, it doesn't print any error message when
+	failing to remove a file (due to e.g., "Permission denied").
+	Yikes.  Cater to this incompatibility, by relaxing the test when
+	a faulty `rm' is detected.
+
 2011-11-03  Zack Weinberg <zackw@panix.com>  (tiny change)
 	    Stefano Lattarini  <stefano.lattarini@gmail.com>
 
@@ -20,7 +302,7 @@
 
 	info: allow user to inhibit creation/update of '${infodir}/dir'
 	With this change, we allow the user to request the install-info
-	rules not to update the `${infodir}/dir' file, by exporting the
+	rules not to update the `${infodir}/dir' file, by setting the
 	environment variable `AM_UPDATE_INFO_DIR' to the value "no".
 	This is especially useful to distro packagers, and is a definite
 	improvement over our previous hack of looking whether the
