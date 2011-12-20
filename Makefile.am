@@ -660,8 +660,10 @@ git-dist: maintainer-check
 	  echo "NEWS not updated; not releasing" 1>&2; \
 	  exit 1;				\
 	fi
-## Build the distribution
-	$(MAKE) $(AM_MAKEFLAGS) distcheck
+## Build the distribution.  We expect the developer to have already run
+## "make check" and "make distcheck" on his own (as required in the
+## HACKING file, section "Release procedure").
+	$(MAKE) $(AM_MAKEFLAGS) dist
 ## Finally, if anything was successful, commit the last changes and tag
 ## the release in the repository.  We don't use RCS keywords so it's OK
 ## to distribute the files before they were committed.
