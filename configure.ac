@@ -100,6 +100,10 @@ AC_SUBST([PERL_THREADS])
 
 # The test suite will skip some tests if tex is absent.
 AC_CHECK_PROG([TEX], [tex], [tex])
+# Save details about the selected TeX program in config.log.
+# Redirect input from /dev/null, as TeX might otherwise hang waiting
+# for input from the terminal.
+AM_RUN_LOG([$TEX --version </dev/null])
 
 # Generate man pages.
 AM_MISSING_PROG([HELP2MAN], [help2man])
