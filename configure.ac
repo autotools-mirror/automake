@@ -63,7 +63,7 @@ if test -z "$PERL"; then
    AC_MSG_ERROR([perl not found])
 fi
 # Save details about the selected perl interpreter in config.log.
-AM_RUN_LOG([eval $PERL --version])
+AM_RUN_LOG([$PERL --version])
 $PERL -e 'require 5.006;' || {
    AC_MSG_ERROR(
 [perl 5.6 or better is required; perl 5.8.2 or better
@@ -116,7 +116,7 @@ AM_MISSING_PROG([HELP2MAN], [help2man])
 
 required_autoconf_version=2.62
 AC_CACHE_CHECK([whether autoconf is installed], [am_cv_autoconf_installed],
-[if AM_RUN_LOG([eval $am_AUTOCONF --version]);
+[if AM_RUN_LOG([$am_AUTOCONF --version]);
 then
   am_cv_autoconf_installed=yes
 else
@@ -130,7 +130,7 @@ fi
 AC_CACHE_CHECK([whether autoconf works], [am_cv_autoconf_works],
 [mkdir conftest
 echo 'AC''_INIT' > conftest/conftest.ac
-if AM_RUN_LOG([cd conftest && eval $am_AUTOCONF -o /dev/null conftest.ac]);
+if AM_RUN_LOG([cd conftest && $am_AUTOCONF -o /dev/null conftest.ac]);
 then
   am_cv_autoconf_works=yes
 else
@@ -146,7 +146,7 @@ AC_CACHE_CHECK([whether autoconf is recent enough], [am_cv_autoconf_version],
 [mkdir conftest
 dnl Creative quoting required to avoid spurious expansion of AC_PREREQ macro
 echo 'AC'"_PREREQ([[$required_autoconf_version]])" > conftest/conftest.ac
-if AM_RUN_LOG([cd conftest && eval $am_AUTOCONF -o /dev/null conftest.ac]);
+if AM_RUN_LOG([cd conftest && $am_AUTOCONF -o /dev/null conftest.ac]);
 then
   am_cv_autoconf_version=yes
 else
