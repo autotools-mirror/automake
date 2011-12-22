@@ -23,8 +23,8 @@ AC_INIT([GNU Automake], [1.11.0a], [bug-automake@gnu.org])
 m4_ifndef([AC_PACKAGE_URL],
 	  [AC_SUBST([PACKAGE_URL], [http://www.gnu.org/software/automake/])])
 
-AC_CONFIG_SRCDIR(automake.in)
-AC_CONFIG_AUX_DIR(lib)
+AC_CONFIG_SRCDIR([automake.in])
+AC_CONFIG_AUX_DIR([lib])
 
 AC_CANONICAL_BUILD
 
@@ -58,7 +58,7 @@ AC_SUBST([pkgvdatadir], ["\${datadir}/$PACKAGE-$APIVERSION"])
 ACLOCAL="perllibdir=\"`pwd`/lib$PATH_SEPARATOR./lib\" \"`pwd`/aclocal\" --acdir=m4 -I m4"
 AUTOMAKE="perllibdir=\"`pwd`/lib$PATH_SEPARATOR./lib\" \"`pwd`/automake\" --libdir=lib"
 
-AC_PATH_PROG(PERL, perl)
+AC_PATH_PROG([PERL], [perl])
 if test -z "$PERL"; then
    AC_MSG_ERROR([perl not found])
 fi
