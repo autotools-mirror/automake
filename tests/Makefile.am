@@ -555,6 +555,7 @@ maintclean.test \
 maintclean-vpath.test \
 maintmode-configure-msg.test \
 make.test \
+makefile-deps.test \
 makej.test \
 makej2.test \
 maken.test \
@@ -730,6 +731,10 @@ remake-subdir2.test \
 remake-subdir-long-time.test \
 remake-am-pr10111.test \
 remake-m4-pr10111.test \
+remake-deleted-am.test \
+remake-deleted-am-2.test \
+remake-deleted-am-subdir.test \
+remake-renamed-am.test \
 pr8365-remake-timing.test \
 regex.test \
 req.test \
