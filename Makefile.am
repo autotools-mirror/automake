@@ -33,6 +33,7 @@ AUTOMAKESOURCES = automake.in aclocal.in
 TAGS_FILES = $(AUTOMAKESOURCES)
 
 EXTRA_DIST = \
+  HACKING \
   ChangeLog.96 \
   ChangeLog.98 \
   ChangeLog.00 \
