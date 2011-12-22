@@ -629,55 +629,8 @@ case $testsrcdir in
 esac
 
 # We might need extra macros, e.g., from Libtool or Gettext.
-# Find them on the system.
-# Use `-I $top_testsrcdir/m4' in addition to `--acdir=$top_testsrcdir/m4',
-# because the other `-I' directories added for libtool and gettext might
-# contain files from an old version of Automake that we don't want to use.
-# Use `-Wno-syntax' because we do not want our test suite to fail because
-# some third-party .m4 file is underquoted.
-case " $required " in
-  *' libtool '* | *' libtoolize '* | *' gettext '* )
-    aclocaldir=$testprefix/share/aclocal
-    extra_includes=""
-    if test -f $aclocaldir/dirlist; then
-       extra_includes=`
-       <$aclocaldir/dirlist \
-       sed  's/#.*//;s/[	 ][	 ]*$//g' \
-       | while read dir; do test ! -d "$dir" || echo "-I $dir"; done`
-    else :; fi
-
-    libtool_found=no
-    gettext_found=no
-    for d in $extra_includes $aclocaldir ; do
-      test "x$d" != x-I || continue
-      if test -f "$d/libtool.m4"; then
-        libtool_found=yes
-      fi
-      if test -f "$d/gettext.m4"; then
-        gettext_found=yes
-      fi
-    done
-    case " $required " in
-      *' libtool '*|*' libtoolize '*)
-        if test $libtool_found != yes; then
-          echo "$me: libtool/libtoolize is required, but libtool.m4 wasn't" >&2
-          echo "$me: found in directories $aclocaldir $extra_includes" >&2
-          exit 77
-        fi
-        ;;
-      *' gettext '*)
-        if test $gettext_found != yes; then
-          echo "$me: gettext is required, but gettext.m4 wasn't found" >&2
-          echo "$me: in directories $aclocaldir $extra_includes" >&2
-          exit 77
-        fi
-        ;;
-    esac
-    ACLOCAL="$ACLOCAL -Wno-syntax -I $top_testsrcdir/m4 $extra_includes -I $aclocaldir"
-    unset libtool_found gettext_found
-    unset extra_includes aclocaldir
-    ;;
-esac
+case " $required " in *\ libtool*) . ./libtool-macros.dir/get.sh;; esac
+case " $required " in *\ gettext*) . ./gettext-macros.dir/get.sh;; esac
 
 
 ## ---------------------------------------------------------------- ##
@@ -742,6 +695,7 @@ done
   fi
   echo "AC_CONFIG_FILES([Makefile])"
 } >configure.in
+
 
 ## ---------------- ##
 ##  Ready to go...  ##
