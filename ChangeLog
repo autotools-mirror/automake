@@ -1,3 +1,41 @@
+2011-12-23  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: avoid spurious failure of libtool and gettext tests
+
+	On Solaris 10 (and presumably earlier), /bin/sh trips up on
+	here-documents that contains a command substitution *and* are
+	fed to a shell function:
+
+	  # All as expected.
+	  $ cat <<END
+	  `pwd`
+	  END
+	  /home/stefano
+	  $ echo status = $?
+	  status = 0
+
+	  # An apparently innocuous function ...
+	  $ kitty () { cat; }
+	  # ... but hilarity ensues!
+	  $ kitty <<END
+	  `pwd`
+	  END
+	  /tmp/sh137723: cannot open
+	  $ echo status = $?
+	  status = 1
+
+	We need to work around this misbehaviour in a couple of our
+	tests (whose failures where causing cascading failures in a
+	lot of other tests).
+
+	* tests/gettext-macros.test: Avoid the use of command substitution
+	in a here-document passed to the `indent' function, by using the
+	`echo' builtin instead.
+	* tests/libtool-macros.test: Likewise.
+
+	See also:
+	<http://lists.gnu.org/archive/html/bug-autoconf/2011-12/msg00001.html>
+
 2011-12-14  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
 	tests: better handling of gettext and libtool requirements
