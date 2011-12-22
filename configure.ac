@@ -35,7 +35,7 @@ AC_SUBST([am_AUTORECONF], ["${AUTORECONF-autoreconf}"])
 AC_SUBST([am_AUTOHEADER], ["${AUTOHEADER-autoheader}"])
 AC_SUBST([am_AUTOUPDATE], ["${AUTOUPDATE-autoupdate}"])
 
-AM_INIT_AUTOMAKE([1.10a dist-bzip2 filename-length-max=99 color-tests parallel-tests])
+AM_INIT_AUTOMAKE([1.10a dist-xz filename-length-max=99 color-tests parallel-tests])
 
 # The API version is the base version.  We must guarantee
 # compatibility for all releases with the same API version.
