@@ -1,0 +1,48 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Dummy test case, aimed at reporting useful system information in the
+# final `test-suite.log'.  This way, if a user experiencing a failure in
+# the Automake test suite only sends us the `test-suite.log' file upon,
+# we won't have to ask him for more information to start analyzing the
+# failure (that had happened too many times in the past!).
+
+. ./defs || Exit 1
+
+set -e
+
+# FIXME: remove these once we are merged into master.
+top_testsrcdir=$testsrcdir/..
+testbuilddir=`(cd .. && pwd)`
+top_testbuilddir=`(cd $testbuilddir/.. && pwd)`
+
+st=0
+sed 20q "$top_testsrcdir/ChangeLog" || st=1
+$PERL -V || st=1
+cat "$top_testbuilddir/config.log" || st=1
+cat "$testbuilddir/aclocal-$APIVERSION" || st=1
+cat "$testbuilddir/automake-$APIVERSION" || st=1
+
+if test $st -eq 0; then
+  # This test SKIPs, so that all the information is has gathered and
+  # printed will get unconditionally copied into the `test-suite.log'
+  # file.
+  Exit 77
+fi
+
+# Some unexpected error occurred; this must be reported as an hard
+# error by the testsuite driver.
+Exit 99

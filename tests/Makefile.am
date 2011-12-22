@@ -52,6 +52,7 @@ TESTS_ENVIRONMENT = \
   test x"$$parallel_tests" = x || unset parallel_tests;
 
 TESTS = \
+get-sysconf.test \
 self-check-env-sanitize.test \
 self-check-report.test \
 aclibobj.test \
