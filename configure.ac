@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-AC_INIT([GNU Automake], [1.11.2], [bug-automake@gnu.org])
+AC_INIT([GNU Automake], [1.11.2a], [bug-automake@gnu.org])
 
 m4_ifndef([AC_PACKAGE_URL],
 	  [AC_SUBST([PACKAGE_URL], [http://www.gnu.org/software/automake/])])
