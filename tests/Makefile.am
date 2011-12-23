@@ -52,6 +52,7 @@ TESTS_ENVIRONMENT = \
   test x"$$parallel_tests" = x || unset parallel_tests;
 
 TESTS = \
+get-sysconf.test \
 self-check-env-sanitize.test \
 self-check-report.test \
 aclibobj.test \
@@ -573,6 +574,7 @@ maintclean.test \
 maintclean-vpath.test \
 maintmode-configure-msg.test \
 make.test \
+makefile-deps.test \
 makej.test \
 makej2.test \
 maken.test \
@@ -597,6 +599,7 @@ missing3.test \
 missing4.test \
 missing5.test \
 missing6.test \
+missing-tar.test \
 mkinstall.test \
 mkinst2.test \
 mkinst3.test \
@@ -747,8 +750,13 @@ remake-subdir2.test \
 remake-subdir-long-time.test \
 remake-am-pr10111.test \
 remake-m4-pr10111.test \
+remake-deleted-am.test \
+remake-deleted-am-2.test \
+remake-deleted-am-subdir.test \
+remake-renamed-am.test \
 pr8365-remake-timing.test \
 regex.test \
+regex-obsolete.test \
 req.test \
 reqd.test \
 reqd2.test \
@@ -941,7 +949,71 @@ yaccvpath.test \
 yacc-dist-nobuild-subdir.test \
 yflags.test \
 yflags2.test \
+libtool-macros.test \
+gettext-macros.test \
 $(parallel_tests)
+
+# FIXME: make these automatically computed once we are merged into
+# FIXME: the `testsuite-work' branch.
+depcomp4.log: libtool-macros.log
+depcomp7.log: libtool-macros.log
+depcomp8b.log: libtool-macros.log
+fort5.log: libtool-macros.log
+instdir-ltlib.log: libtool-macros.log
+instfail-libtool.log: libtool-macros.log
+ldadd.log: libtool-macros.log
+ldflags.log: libtool-macros.log
+libobj13.log: libtool-macros.log
+libtoo10.log: libtool-macros.log
+libtoo11.log: libtool-macros.log
+libtool.log: libtool-macros.log
+libtool2.log: libtool-macros.log
+libtool3.log: libtool-macros.log
+libtool5.log: libtool-macros.log
+libtool6.log: libtool-macros.log
+libtool7.log: libtool-macros.log
+libtool8.log: libtool-macros.log
+libtool9.log: libtool-macros.log
+listval.log: libtool-macros.log
+ltcond.log: libtool-macros.log
+ltcond2.log: libtool-macros.log
+ltconv.log: libtool-macros.log
+ltdeps.log: libtool-macros.log
+ltinit.log: libtool-macros.log
+ltinstloc.log: libtool-macros.log
+ltlibobjs.log: libtool-macros.log
+ltlibsrc.log: libtool-macros.log
+ltorder.log: libtool-macros.log
+nobase-libtool.log: libtool-macros.log
+pr211.log: libtool-macros.log
+pr300-ltlib.log: libtool-macros.log
+pr307.log: libtool-macros.log
+pr401b.log: libtool-macros.log
+pr72.log: libtool-macros.log
+reqd2.log: libtool-macros.log
+silent3.log: libtool-macros.log
+silent4.log: libtool-macros.log
+silent9.log: libtool-macros.log
+stdlib2.log: libtool-macros.log
+strip3.log: libtool-macros.log
+subobj9.log: libtool-macros.log
+suffix10.log: libtool-macros.log
+suffix2.log: libtool-macros.log
+suffix5.log: libtool-macros.log
+suffix8.log: libtool-macros.log
+vala.log: libtool-macros.log
+vala1.log: libtool-macros.log
+vala2.log: libtool-macros.log
+vala3.log: libtool-macros.log
+vala4.log: libtool-macros.log
+vala5.log: libtool-macros.log
+
+# FIXME: make these automatically computed once we are merged into
+# FIXME: the `testsuite-work' branch.
+gettext.log: gettext-macros.log
+gettext2.log: gettext-macros.log
+gettext3.log: gettext-macros.log
+subcond.log: gettext-macros.log
 
 EXTRA_DIST = ChangeLog-old gen-parallel-tests $(TESTS)
 
