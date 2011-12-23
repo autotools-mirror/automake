@@ -17,13 +17,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+AC_PREREQ([2.68])
 AC_INIT([GNU Automake], [1.11a], [bug-automake@gnu.org])
 
-m4_ifndef([AC_PACKAGE_URL],
-	  [AC_SUBST([PACKAGE_URL], [http://www.gnu.org/software/automake/])])
-
-AC_CONFIG_SRCDIR(automake.in)
-AC_CONFIG_AUX_DIR(lib)
+AC_CONFIG_SRCDIR([automake.in])
+AC_CONFIG_AUX_DIR([lib])
 
 AC_CANONICAL_HOST
 AC_CANONICAL_BUILD
@@ -38,7 +36,7 @@ AC_SUBST([am_AUTORECONF], ["${AUTORECONF-autoreconf}"])
 AC_SUBST([am_AUTOHEADER], ["${AUTOHEADER-autoheader}"])
 AC_SUBST([am_AUTOUPDATE], ["${AUTOUPDATE-autoupdate}"])
 
-AM_INIT_AUTOMAKE([1.10a dist-bzip2 filename-length-max=99 color-tests
+AM_INIT_AUTOMAKE([1.10a dist-xz filename-length-max=99 color-tests
 		  parallel-tests silent-rules])
 
 # The API version is the base version.  We must guarantee
@@ -62,12 +60,12 @@ AC_SUBST([system_acdir], ["\${datadir}/aclocal"])
 ACLOCAL="perllibdir=\"`pwd`/lib$PATH_SEPARATOR./lib\" \"`pwd`/aclocal\" --acdir=m4 -I m4"
 AUTOMAKE="perllibdir=\"`pwd`/lib$PATH_SEPARATOR./lib\" \"`pwd`/automake\" --libdir=lib"
 
-AC_PATH_PROG(PERL, perl)
+AC_PATH_PROG([PERL], [perl])
 if test -z "$PERL"; then
    AC_MSG_ERROR([perl not found])
 fi
 # Save details about the selected perl interpreter in config.log.
-AM_RUN_LOG([eval $PERL --version])
+AM_RUN_LOG([$PERL --version])
 $PERL -e 'require 5.006;' || {
    AC_MSG_ERROR(
 [perl 5.6 or better is required; perl 5.8.2 or better
@@ -104,6 +102,10 @@ AC_SUBST([PERL_THREADS])
 
 # The test suite will skip some tests if tex is absent.
 AC_CHECK_PROG([TEX], [tex], [tex])
+# Save details about the selected TeX program in config.log.
+# Redirect input from /dev/null, as TeX might otherwise hang waiting
+# for input from the terminal.
+AM_RUN_LOG([$TEX --version </dev/null])
 
 # Generate man pages.
 AM_MISSING_PROG([HELP2MAN], [help2man])
@@ -116,7 +118,7 @@ AM_MISSING_PROG([HELP2MAN], [help2man])
 
 required_autoconf_version=2.62
 AC_CACHE_CHECK([whether autoconf is installed], [am_cv_autoconf_installed],
-[if AM_RUN_LOG([eval $am_AUTOCONF --version]);
+[if AM_RUN_LOG([$am_AUTOCONF --version]);
 then
   am_cv_autoconf_installed=yes
 else
@@ -130,7 +132,7 @@ fi
 AC_CACHE_CHECK([whether autoconf works], [am_cv_autoconf_works],
 [mkdir conftest
 echo 'AC''_INIT' > conftest/conftest.ac
-if AM_RUN_LOG([cd conftest && eval $am_AUTOCONF -o /dev/null conftest.ac]);
+if AM_RUN_LOG([cd conftest && $am_AUTOCONF -o /dev/null conftest.ac]);
 then
   am_cv_autoconf_works=yes
 else
@@ -146,7 +148,7 @@ AC_CACHE_CHECK([whether autoconf is recent enough], [am_cv_autoconf_version],
 [mkdir conftest
 dnl Creative quoting required to avoid spurious expansion of AC_PREREQ macro
 echo 'AC'"_PREREQ([[$required_autoconf_version]])" > conftest/conftest.ac
-if AM_RUN_LOG([cd conftest && eval $am_AUTOCONF -o /dev/null conftest.ac]);
+if AM_RUN_LOG([cd conftest && $am_AUTOCONF -o /dev/null conftest.ac]);
 then
   am_cv_autoconf_version=yes
 else
@@ -223,3 +225,28 @@ AC_CONFIG_FILES([tests/automake-${APIVERSION}:tests/automake.in],
                 [chmod +x tests/automake-${APIVERSION}])
 
 AC_OUTPUT
+
+# Inform the user if this version of automake is a beta release or
+# a development snapshot.
+# According to HACKING, the version of a development snapshot should
+# end with an "odd" letter (a, c, ...), the version of a test release
+# should end wit an "even" letter (b, d, ...).
+
+am_stable_version_rx='[[1-9]\.[0-9]+(\.[0-9]+)?]'
+am_beta_version_rx="[$am_stable_version_rx[bdfhjlnprtvxz]]"
+
+am_release_type=`AS_ECHO(["$PACKAGE_VERSION"]) | LC_ALL=C awk ["
+  /^$am_stable_version_rx$/ { print \"stable\"; exit(0); }
+  /^$am_beta_version_rx$/ { print \"beta version\"; exit(0); }
+  { print \"development snapshot\"; }"]`
+
+test "$am_release_type" = stable || cat <<EOF
+
+WARNING: You are about to use a $am_release_type of automake.
+WARNING: It might easily suffer from new bugs or regressions.
+WARNING: You are strongly advised not to use it in production code.
+
+Please report bugs, problems and feedback to <bug-automake@gnu.org>.
+EOF
+
+AS_EXIT([0])

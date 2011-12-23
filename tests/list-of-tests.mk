@@ -22,6 +22,7 @@
 # checks sequentially) are listed early; this improved performance on
 # concurrent testsuite runs.
 handwritten_TESTS = \
+get-sysconf.test \
 depmod.tap \
 instspc.tap \
 aclocal.test \
@@ -596,6 +597,7 @@ maken2.test \
 maken3.test \
 maken4.test \
 makevars.test \
+makefile-deps.test \
 man.test \
 man2.test \
 man3.test \
@@ -617,6 +619,7 @@ missing4.test \
 missing5.test \
 missing6.test \
 missing-auxfile-stops-makefiles-creation.test \
+missing-tar.test \
 mkinstall.test \
 mkinst2.test \
 mkinst3.test \
@@ -858,6 +861,10 @@ remake-deleted-m4-file.test \
 remake-renamed-m4-file.test \
 remake-renamed-m4-macro-and-file.test \
 remake-renamed-m4-macro.test \
+remake-renamed-am.test \
+remake-deleted-am-2.test \
+remake-deleted-am-subdir.test \
+remake-deleted-am.test \
 remake-am-pr10111.test \
 remake-m4-pr10111.test \
 pr8365-remake-timing.test \
@@ -1184,7 +1191,9 @@ yflags-conditional.test \
 yflags-d-false-positives.test \
 yflags-force-override.test \
 yflags-force-conditional.test \
-yflags-var-expand.test
+yflags-var-expand.test \
+libtool-macros.test \
+gettext-macros.test
 
 print-list-of-tests:
 	@echo $(handwritten_TESTS)
