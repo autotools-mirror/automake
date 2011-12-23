@@ -119,6 +119,7 @@ do_subst = sed \
   -e 's|@abs_srcdir[@]|$(abs_srcdir)|g' \
   -e 's|@abs_top_srcdir[@]|$(abs_top_srcdir)|g' \
   -e 's|@abs_builddir[@]|$(abs_builddir)|g' \
+  -e 's|@abs_top_builddir[@]|$(abs_top_builddir)|g' \
   -e 's|@prefix[@]|$(prefix)|g' \
   -e 's|@amdir[@]|$(amdir)|g' \
   -e 's|@bindir[@]|$(bindir)|g' \
