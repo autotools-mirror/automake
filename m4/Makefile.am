@@ -48,7 +48,6 @@ obsolete.m4 \
 options.m4 \
 protos.m4 \
 python.m4 \
-regex.m4 \
 runlog.m4 \
 sanity.m4 \
 silent.m4 \

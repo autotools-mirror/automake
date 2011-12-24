@@ -441,7 +441,6 @@ help-init.test \
 help-lispdir.test \
 help-multilib.test \
 help-python.test \
-help-regex.test \
 help-silent.test \
 help-upc.test \
 hfs.test \
@@ -868,8 +867,6 @@ remake-deleted-am.test \
 remake-am-pr10111.test \
 remake-m4-pr10111.test \
 pr8365-remake-timing.test \
-regex.test \
-regex-obsolete.test \
 req.test \
 reqd.test \
 reqd2.test \
