@@ -1,3 +1,41 @@
+2011-12-25  Paul Eggert  <eggert@cs.ucla.edu>
+
+	silent-rules: fallback for makes without nested vars
+
+	This fixes two problems reported for Automake (Bug#9928, Bug#10237)
+	and is in response to a bug report for building coreutils on HP
+	NonStop OS (Bug#10234).  The problem is that HP NonStop 'make'
+	treats a line like "AM_V_CC = $(am__v_CC_$(V))" as one that
+	expands a macro with the funny name am__v_CC_$(V instead of the
+	desired name am__v_CC_1 or am__v_CC_0, and since the funny macro
+	is not defined the line is equivalent to "AM_V_CC = )"; this
+	inserts a stray ")" when $(AM_V_CC) is used, which eventually
+	causes 'make' to fail.
+
+	The basic idea is that instead of generating Makefile.in lines like
+	"AM_V_CC = $(am__v_CC_$(V))", we generate
+	"AM_V_CC = $(am__v_CC_@AM_V@)".  We then AC_SUBST $(V) for @AM_V@
+	in the usual case where `make' supports nested variables,
+	and substitute 1 (or 0) otherwise.  Similarly for usages like
+	$(am__v_CC_$(AM_DEFAULT_VERBOSITY)).
+
+	With this change, make implementations that doesn't grasp nested
+	variable expansions will still be able to run Makefiles generated
+	using the silent-rules option.  They won't allow the user to
+	override the make verbosity at runtime through redefinition of
+	$(V) (as in "make V=0"); but this is still an improvement over not
+	being able to work at all.
+
+	* NEWS: Document this.
+	* automake.in (define_verbose_var): When defining the variables,
+	use @AM_V@ rather than $(V), and use @AM_DEFAULT_V@ rather than
+	$(AM_DEFAULT_VERBOSITY).
+	* doc/automake.texi (Automake silent-rules Option): Explain new system.
+	* m4/silent.m4 (AM_SILENT_RULES): Check whether `make' supports
+	nested variables, and substitute AM_V and AM_DEFAULT_V accordingly.
+	* tests/silent-nested-vars.test: New test.
+	* tests/Makefile.am (TESTS): Add it.
+
 2011-12-24  Stefano Lattarini  <stefano.lattarini@gmail.com>
 
 	gitignore: use only one .gitignore file, in the top-level directory

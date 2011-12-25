@@ -759,6 +759,7 @@ silent-many-gcc.test \
 silent-many-generic.test \
 silent-lex-gcc.test \
 silent-lex-generic.test \
+silent-nested-vars.test \
 silent-yacc-gcc.test \
 silent-yacc-generic.test \
 silent-configsite.test \

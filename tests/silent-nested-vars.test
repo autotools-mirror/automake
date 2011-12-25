@@ -1,0 +1,193 @@
+#!/bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check silent-rules mode, on 'make' implementations that do not
+# support nested variables (Bug#9928, Bug#10237).
+
+. ./defs || Exit 1
+
+set -e
+
+mkdir sub
+
+cat >>configure.in <<'EOF'
+AM_SILENT_RULES
+AM_CONDITIONAL([HAVE_NESTED_VARIABLES],
+  [expr "x$AM_V" : '.*\$' >/dev/null])
+AC_CONFIG_FILES([sub/Makefile])
+AC_PROG_CC
+AM_PROG_CC_C_O
+AC_OUTPUT
+EOF
+
+cat > Makefile.am <<'EOF'
+# Need generic and non-generic rules.
+bin_PROGRAMS = foo bar
+bar_CFLAGS = $(AM_CFLAGS)
+SUBDIRS = sub
+
+# Check that AM_V and AM_DEFAULT_V work as advertised.
+pkg_verbose = $(pkg_verbose_@AM_V@)
+pkg_verbose_ = $(pkg_verbose_@AM_DEFAULT_V@)
+pkg_verbose_0 = @echo PKG-GEN $@;
+
+bin_SCRIPTS = oop
+oop:
+	$(pkg_verbose)echo $@ >$@
+
+mostlyclean-local:
+	rm -f oop
+
+if HAVE_NESTED_VARIABLES
+# Check that the older form (documented in Automake 1.11) works.
+older_pkg_verbose = $(older_pkg_verbose_$(V))
+older_pkg_verbose_ = $(older_pkg_verbose_$(AM_DEFAULT_VERBOSITY))
+older_pkg_verbose_0 = @echo OLDER-PKG-GEN $@;
+
+bin_SCRIPTS += older-oop
+older-oop:
+	$(older_pkg_verbose)echo $@ >$@
+endif
+EOF
+
+cat > sub/Makefile.am <<'EOF'
+AUTOMAKE_OPTIONS = subdir-objects
+# Need generic and non-generic rules.
+bin_PROGRAMS = baz bla
+bla_CFLAGS = $(AM_CFLAGS)
+EOF
+
+cat > foo.c <<'EOF'
+int main ()
+{
+  return 0;
+}
+EOF
+cp foo.c bar.c
+cp foo.c sub/baz.c
+cp foo.c sub/bla.c
+
+cat >mymake <<'EOF'
+#! /bin/sh
+makerules=
+LC_ALL=C
+export LC_ALL
+
+case $1 in
+  -f)
+    makefile=$2
+    case $2 in
+      -) makerules=`cat` || exit ;;
+    esac ;;
+  *)
+    for makefile in makefile Makefile; do
+      test -f $makefile && break
+    done ;;
+esac
+
+if
+  nested_var_pat='^[^#]*\$([a-zA-Z0-9_]*\$'
+  case $makefile in
+    -) printf '%s\n' "$makerules" | grep "$nested_var_pat";;
+    *) grep "$nested_var_pat" $makefile;;
+  esac
+then
+  echo >&2 "mymake: $makefile contains nested variables"
+  exit 1
+fi
+
+case $makefile in
+  -) printf '%s\n' "$makerules" | $mymake_MAKE "$@";;
+  *) exec $mymake_MAKE "$@";;
+esac
+EOF
+chmod a+x mymake
+mymake_MAKE=${MAKE-make}
+export mymake_MAKE
+
+# As a sanity check, verify that `mymake' rejects Makefiles that
+# use nested variables.
+cat > Makefile <<'END'
+a = $(b$(c))
+all:
+	touch bar
+END
+./mymake && Exit 99
+mv -f Makefile foo.mk
+./mymake -f foo.mk && Exit 99
+cat foo.mk | ./mymake -f - && Exit 99
+test -f bar && Exit 99
+sed '/a =/d' foo.mk > Makefile
+./mymake && test -f bar || Exit 99
+
+$ACLOCAL
+$AUTOMAKE --add-missing
+$AUTOCONF
+
+for make in ${MAKE-make} ./mymake; do
+  ./configure --enable-silent-rules MAKE=$make >enable.out 2>&1 ||
+    { cat enable.out; Exit 1; }
+  cat enable.out
+  case $make in
+    ./mymake)
+      grep 'AM_V_CC = .*0' Makefile
+      grep 'checking whether ./mymake supports nested variables... no' \
+        enable.out
+      ;;
+  esac
+
+  $make >stdout || { cat stdout; Exit 1; }
+  cat stdout
+  $EGREP ' (-c|-o)' stdout && Exit 1
+  grep 'mv ' stdout && Exit 1
+  grep 'CC    .*foo\.' stdout
+  grep 'CC .*bar\.' stdout
+  grep 'CC .*baz\.' stdout
+  grep 'CC .*bla\.' stdout
+  grep 'CCLD .*foo' stdout
+  grep 'CCLD .*bar' stdout
+  grep 'CCLD .*baz' stdout
+  grep 'CCLD .*bla' stdout
+  grep 'PKG-GEN .*oop' stdout
+  if test $am_cv_make_support_nested_variables = yes; then
+    grep 'OLDER-PKG-GEN .*older-oop' stdout
+  fi
+  $make clean
+
+  ./configure --disable-silent-rules MAKE=$make >disable.out 2>&1 ||
+    { cat disable.out; Exit 1; }
+  cat disable.out
+  case $make in
+    ./mymake)
+      grep 'AM_V_CC = .*1' Makefile
+      grep 'checking whether ./mymake supports nested variables... no' \
+        disable.out
+      ;;
+  esac
+
+  $make >stdout || { cat stdout; Exit 1; }
+  cat stdout
+  grep ' -c' stdout
+  grep ' -o foo' stdout
+  grep 'echo .*oop' stdout
+  if test $am_cv_make_support_nested_variables = yes; then
+    grep 'echo .*older-oop' stdout
+  fi
+  $EGREP '(CC|LD) ' stdout && Exit 1
+  $make clean
+done
+
+:
