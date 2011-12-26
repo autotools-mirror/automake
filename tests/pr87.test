@@ -18,19 +18,22 @@
 # Test for PR automake/87.
 # "make distcheck" fails when two source dirs exist.
 
-required=gcc
+required=cc
 . ./defs || Exit 1
 
 subdirs="foo bar"
 
 for i in $subdirs; do
     mkdir $i
-    cat >$i/$i.c <<EOF
-int main() { return 0; }
+    unindent >$i/$i.c <<EOF
+      int main (void)
+      {
+        return 0;
+      }
 EOF
-    cat >$i/Makefile.am <<EOF
-bin_PROGRAMS = $i
-${i}_SOURCES = $i.c
+    unindent >$i/Makefile.am <<EOF
+      bin_PROGRAMS = $i
+      ${i}_SOURCES = $i.c
 EOF
 done
 
@@ -42,10 +45,6 @@ AM_INIT_AUTOMAKE($me, 1.0)
 AC_PROG_CC
 AC_OUTPUT(Makefile `echo $subdirs | sed 's|\([a-z][a-z]*\)|\1/Makefile|g'`)
 EOF
-
-# Ignore user CFLAGS.
-CFLAGS=
-export CFLAGS
 
 mkdir build
 
@@ -60,7 +59,7 @@ $AUTOMAKE -a
        if test -z "$next"; then
 	  Exit 1
        else
-          : # for shells with broken 'set -e'
+          : # For shells with broken 'set -e'.
        fi
        break
     fi

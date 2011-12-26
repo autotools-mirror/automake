@@ -18,15 +18,14 @@
 # Check support for AC_CONFIG_LIBOBJ_DIR vs LIBOBJS.
 # (pr401b.test and pr401c.test do the same for LTLIBOBJS and ALLOCA)
 
-parallel_tests=no
-required=gcc
+am_parallel_tests=no
+required=cc
 . ./defs || Exit 1
 
 mkdir lib src
 
 cat >lib/feep.c <<'EOF'
-char *
-feep ()
+const char *feep (void)
 {
   return "feep";
 }
@@ -35,10 +34,9 @@ EOF
 cat >src/main.c <<'EOF'
 #include <stdio.h>
 
-extern char *feep ();
+extern const char *feep (void);
 
-int
-main (int argc, char **argv)
+int main (void)
 {
   puts (feep ());
   return 0;
@@ -54,6 +52,7 @@ AC_LIBOBJ([feep])
 AC_LIBSOURCE([feep.c])
 AC_PROG_RANLIB
 AC_CONFIG_FILES([lib/Makefile src/Makefile])
+AM_CONDITIONAL([CROSS_COMPILING], [test $cross_compiling = yes])
 AC_OUTPUT
 EOF
 
@@ -75,7 +74,9 @@ cat >src/Makefile.am <<'EOF'
 check_PROGRAMS = main
 main_LDADD = ../lib/libfeep.a
 
+if !CROSS_COMPILING
 TESTS = main
+endif
 EOF
 
 $ACLOCAL
@@ -133,7 +134,9 @@ libfeep_a_LIBADD = $(LIBOBJS)
 check_PROGRAMS = main
 main_LDADD = libfeep.a
 
+if !CROSS_COMPILING
 TESTS = main
+endif
 EOF
 
 $ACLOCAL
@@ -165,7 +168,9 @@ check_PROGRAMS = src/main
 src_main_SOURCES = src/main.c
 src_main_LDADD = lib/libfeep.a
 
+if !CROSS_COMPILING
 TESTS = src/main
+endif
 
 check-local:
 	test -f src/main.$(OBJEXT)

@@ -16,8 +16,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test for PR 312.
+#
+# == Report ==
+# When using non-recursive make to build a libtoolize-library from
+# sources in a subdirectory, 'make distcheck' fails because of incomplete
+# cleanup. "make clean" tries to remove `*.o' and `.../<file>.lo' but
+# forgets `.../<file>.o'.
 
-required='libtoolize g++'
+required='c++ libtoolize'
 . ./defs || Exit 1
 
 cat > configure.in << END
@@ -32,7 +38,7 @@ END
 
 cat > Makefile.am << 'END'
 noinst_LTLIBRARIES = libfoo.la
-libfoo_la_SOURCES = src/foo.cc .//src/bar.cc  # the `.//' is meant.
+libfoo_la_SOURCES = src/foo.cc .//src/bar.cc  # The `.//' is meant.
 .PHONY: print
 print:
 	@echo BEG1: "$(LTCXXCOMPILE)" :1END
@@ -61,8 +67,7 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-# Skip this test on configure errors (e.g., broken C++ compilers).
-./configure || Exit 77
+./configure
 
 # Ensure './libtool --help' will use the right tool versions.
 export AUTOCONF AUTOMAKE

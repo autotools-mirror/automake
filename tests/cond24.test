@@ -15,22 +15,25 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Check that conditional redefinitions of AC_SUBST'ed variables are detected.
-# Report from Patrik Weiskircher
+# Report from Patrik Weiskircher.
 
 . ./defs || Exit 1
 
 cat >>configure.in <<EOF
 AC_SUBST([foo], [bar])
 AM_CONDITIONAL([COND], [true])
-AC_OUTPUT
 EOF
 
 cat >Makefile.am <<EOF
 if COND
+## A dummy comment to change line numer.
 foo = baz
 endif
 EOF
 
 $ACLOCAL
 AUTOMAKE_fails
-grep 'foo was already defined' stderr
+grep '^Makefile\.am:3:.* foo was already defined' stderr
+grep '^configure\.in:4:.*foo.* previously defined here' stderr
+
+:

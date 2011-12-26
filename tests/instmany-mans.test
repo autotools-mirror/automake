@@ -28,14 +28,7 @@
 limit=2500
 subdir=long_subdir_name_with_many_characters
 nfiles=81
-
-# Let's use `seq' if available, it's faster than the loop.
-list=`(seq 1 $nfiles) 2>/dev/null || {
-  i=1
-  while test $i -le $nfiles; do
-    echo $i
-    i=\`expr $i + 1\`
-  done; }`
+list=`seq_ 1 $nfiles`
 
 sed "s|@limit@|$limit|g" >myinstall.in <<'END'
 #! /bin/sh
@@ -90,11 +83,11 @@ notrans_man3_MANS =
 END
 
 for n in $list; do
-  cat >>Makefile.am <<END
-man_MANS += page$n.1
-man3_MANS += page$n.man
-notrans_man_MANS += npage$n.1
-notrans_man3_MANS += npage$n.man
+  unindent >>Makefile.am <<END
+    man_MANS += page$n.1
+    man3_MANS += page$n.man
+    notrans_man_MANS += npage$n.1
+    notrans_man3_MANS += npage$n.man
 END
   echo >page$n.1
   echo >page$n.man
@@ -134,7 +127,7 @@ srcdir=../../$subdir
 
 for file in page3.1 page$nfiles.1 npage3.1 npage$nfiles.1; do
   chmod a-r $srcdir/$file
-  test ! -r $srcdir/$file || Exit 77
+  test ! -r $srcdir/$file || skip_ "cannot drop file read permissions"
   $MAKE install-man1 && Exit 1
   chmod u+r $srcdir/$file
 done

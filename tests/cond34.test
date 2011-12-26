@@ -14,19 +14,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check for _DEPDENDENCIES definition with conditional _LDADD.
-# Report from Elena A. Vengerova
+# Check for _DEPENDENCIES definition with conditional _LDADD.
+# Report from Elena A. Vengerova.
 
 . ./defs || Exit 1
 
 cat >>configure.in <<'EOF'
-AM_CONDITIONAL([TWO], test -n "$two")
-AC_PROG_CC
+AM_CONDITIONAL([TWO], [test -n "$two"])
 AC_OUTPUT
 EOF
 
-cat >>Makefile.am <<'EOF'
+cat > Makefile.am <<'EOF'
 OBJEXT=z
+CC=false
+AUTOMAKE_OPTIONS=no-dependencies
 
 bin_PROGRAMS = test1 test2
 
@@ -41,26 +42,34 @@ endif !TWO
 
 test1_DEPENDENCIES = $(test1_LDADD) somethingelse.a
 
+.PHONY: dep-test1 dep-test2
 dep-test1:
 	echo BEG: $(test1_DEPENDENCIES) :END
 dep-test2:
 	echo BEG: $(test2_DEPENDENCIES) :END
-
 EOF
-
-:> test.c
 
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 ./configure
-$MAKE dep-test1 >out
-grep 'BEG: one.z somethingelse.a :END' out
-$MAKE dep-test2 >out
-grep 'BEG: three.z :END' out
+
+$MAKE dep-test1 >stdout || { cat stdout; Exit 1; }
+cat stdout
+$FGREP 'BEG: one.z somethingelse.a :END' stdout
+
+$MAKE dep-test2 >stdout || { cat stdout; Exit 1; }
+cat stdout
+$FGREP 'BEG: three.z :END' stdout
 
 ./configure two=2
-$MAKE dep-test1 >out
-grep 'BEG: two.z somethingelse.a :END' out
-$MAKE dep-test2 >out
-grep 'BEG: two.z somethingelse.a :END' out
+
+$MAKE dep-test1 >stdout || { cat stdout; Exit 1; }
+cat stdout
+$FGREP 'BEG: two.z somethingelse.a :END' stdout
+
+$MAKE dep-test2 >stdout || { cat stdout; Exit 1; }
+cat stdout
+$FGREP 'BEG: two.z somethingelse.a :END' stdout
+
+:

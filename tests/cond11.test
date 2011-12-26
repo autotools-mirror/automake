@@ -21,14 +21,13 @@
 . ./defs || Exit 1
 
 cat >> configure.in << 'END'
-AC_PROG_CC
+AC_SUBST([CC], [false])
 AM_CONDITIONAL([USE_A], [test -z "$two"])
 AC_SUBST([SUBSTVAR], [bar])
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-
 if USE_A
 foolibs=faz.la
 else
@@ -39,8 +38,11 @@ noinst_PROGRAMS = foo
 foo_SOURCES = foo.c
 LDADD = $(SUBSTVAR) $(foolibs)
 
-print:
-	@echo BEG: $(foo_DEPENDENCIES) :END
+.PHONY: test1 test2
+test1:
+	test faz.la = $(foo_DEPENDENCIES)
+test2:
+	test -z "`echo $(foo_DEPENDENCIES)`"
 END
 
 : > config.guess
@@ -49,14 +51,12 @@ END
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE
+$AUTOMAKE --ignore-deps
 
 ./configure
-$MAKE -e print > stdout
-cat stdout
-grep 'BEG: faz.la :END' stdout
+$MAKE test1
 
 ./configure two=yes
-$MAKE -e print > stdout
-cat stdout
-grep 'BEG: :END' stdout
+$MAKE test2
+
+:

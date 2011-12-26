@@ -14,8 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check for conditional library with a conditional directory.
-# Report from Ralf Corsepius
+# Check that conditionally-defined install directories are handled
+# correctly.
+# Report from Ralf Corsepius.
 
 . ./defs || Exit 1
 
@@ -24,7 +25,7 @@ AM_CONDITIONAL([INC], [test -z "$two"])
 AC_OUTPUT
 EOF
 
-cat >>Makefile.am <<'EOF'
+cat > Makefile.am <<'EOF'
 if INC
 include_foodir = $(includedir)/foo
 include_foo_HEADERS = foo.h
@@ -35,6 +36,8 @@ endif
 
 foo.h x.sh:
 	:>$@
+
+.PHONY: distdircheck
 distdircheck: distdir
 	test -f $(distdir)/foo.h
 	test -f $(distdir)/x.sh
@@ -44,9 +47,12 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 
+cwd=`pwd` || fatal_ "cannot get current directory"
 mkdir nowhere
 chmod a-w nowhere
-./configure "--prefix=`pwd`/nowhere" "--bindir=`pwd`/bin" "--includedir=`pwd`/inc"
+
+./configure --prefix="$cwd"/nowhere --bindir="$cwd"/bin \
+            --includedir="$cwd"/inc
 $MAKE installdirs
 test ! -d bin
 test -d inc/foo
@@ -55,13 +61,19 @@ rm -rf inc
 $MAKE install
 test ! -d bin
 test -f inc/foo/foo.h
+$MAKE distdircheck
+
 rm -rf inc
-./configure two=two \
-            "--prefix=`pwd`/nowhere" "--bindir=`pwd`/bin" "--includedir=`pwd`/inc"
+
+./configure two=two --prefix="$cwd"/nowhere --bindir="$cwd"/bin \
+                    --includedir="$cwd"/inc
 $MAKE install
 test ! -d inc
 test -f bin/x.sh
+rm -rf inc
 $MAKE installdirs
 test ! -d inc
 test -d bin
 $MAKE distdircheck
+
+:

@@ -19,8 +19,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Defines and minimal setup for Automake testing environment.
-# Multiple inclusions of this file should be idempotent!
-# This code needs to be 'set -e' clean.
+
+# IMPORTANT NOTES AND REQUIREMENTS
+#   - Multiple inclusions of this file should be idempotent.
+#   - This code has to be 'set -e' clean.
+#   - This file should execute correctly with any system's /bin/sh
+#     shell, not only with configure-time detected $CONFIG_SHELL.
 
 # Be more Bourne compatible.
 # (Snippet inspired to configure's initialization in Autoconf 2.64)
@@ -66,7 +70,17 @@ fi
 # Check that the environment is properly sanitized.
 # Having variables exported to the empty string is OK, since our code
 # treats such variables as if they were unset.
-for var in me required parallel_tests original_AUTOMAKE original_ACLOCAL; do
+for var in \
+  me \
+  required \
+  am_using_tap \
+  am_parallel_tests \
+  am_create_testdir \
+  am_tap_implementation \
+  am_test_prefer_config_shell \
+  am_original_AUTOMAKE \
+  am_original_ACLOCAL \
+; do
   if eval "test x\"\$$var\" != x" && env | grep "^$var=" >/dev/null; then
     echo "$argv0: variable \`$var' is set in the environment:" \
          "this is unsafe" >&2
@@ -75,50 +89,95 @@ for var in me required parallel_tests original_AUTOMAKE original_ACLOCAL; do
 done
 unset var
 
+# See whether the current test script is expected to use TAP or not.
+# Use a sensible default, while allowing the scripts to override this
+# check.
+if test -z "$am_using_tap"; then
+  case $argv0 in *.tap) am_using_tap=yes;; *) am_using_tap=no;; esac
+fi
+
 testsrcdir='@abs_srcdir@'
 top_testsrcdir='@abs_top_srcdir@'
 testbuilddir='@abs_builddir@'
+top_testbuilddir='@abs_top_builddir@'
 testprefix='@prefix@'
+
+# Support for the "installcheck" target.
+case ${am_running_installcheck:=no} in
+  yes)
+    am_amdir='@amdir@'
+    am_automake_acdir='@automake_acdir@'
+    am_bindir='@bindir@'
+    am_datadir='@datadir@'
+    am_docdir='@docdir@'
+    am_pkgvdatadir='@pkgvdatadir@'
+    am_scriptdir='@scriptdir@'
+    am_system_acdir='@system_acdir@'
+    ;;
+  no)
+    am_amdir=$top_testsrcdir/lib/am
+    am_automake_acdir=$top_testsrcdir/m4
+    am_bindir=$testbuilddir
+    am_datadir=$top_testsrcdir
+    am_docdir=$top_testsrcdir/doc
+    am_pkgvdatadir=$top_testsrcdir/lib
+    am_scriptdir=$top_testsrcdir/lib
+    am_system_acdir=$top_testsrcdir/m4/acdir
+    ;;
+  *)
+    echo "$argv0: variable \`am_running_installcheck' has invalid"
+         "value \`$am_running_installcheck'" >&2
+    exit 99
+    ;;
+esac
 
 APIVERSION='@APIVERSION@'
 PATH_SEPARATOR='@PATH_SEPARATOR@'
 
-# Make sure we override the user shell.
-SHELL='@SHELL@'; export SHELL
-# User can override various tools used.
-test -z "$PERL" && PERL='@PERL@'
-test -z "$MAKE" && MAKE=make
-test -z "$AUTOCONF" && AUTOCONF="@am_AUTOCONF@"
-test -z "$AUTOM4TE" && AUTOM4TE="@am_AUTOM4TE@"
-test -z "$AUTORECONF" && AUTORECONF="@am_AUTORECONF@"
-test -z "$AUTOHEADER" && AUTOHEADER="@am_AUTOHEADER@"
-test -z "$AUTOUPDATE" && AUTOUPDATE="@am_AUTOUPDATE@"
-test -z "$MISSING" && MISSING=$top_testsrcdir/lib/missing
+host_alias=${host_alias-'@host_alias@'}; export host_alias
+build_alias=${build_alias-'@build_alias@'}; export build_alias
+
+# Make sure we override the user shell.  And do not read the value of
+# $SHELL from the environment (think to the non-uncommon situation where
+# e.g., $SHELL=/bin/tcsh).
+SHELL=${AM_TESTSUITE_SHELL-'@SHELL@'}; export SHELL
+
+# User can override various tools used.  Prefer overriding specific for
+# that automake testsuite, if they are available.
+PERL=${AM_TESTUITE_PERL-${PERL-'@PERL@'}}
+MAKE=${AM_TESTSUITE_MAKE-${MAKE-'make'}}
+AUTOCONF=${AM_TESTSUITE_AUTOCONF-${AUTOCONF-'@am_AUTOCONF@'}}
+AUTOM4TE=${AM_TESTSUITE_AUTOM4TE-${AUTOM4TE-'@am_AUTOM4TE@'}}
+AUTORECONF=${AM_TESTSUITE_AUTORECONF-${AUTORECONF-'@am_AUTORECONF@'}}
+AUTOHEADER=${AM_TESTSUITE_AUTOHEADER-${AUTOHEADER-'@am_AUTOHEADER@'}}
+AUTOUPDATE=${AM_TESTSUITE_AUTOUPDATE-${AUTOUPDATE-'@am_AUTOUPDATE@'}}
+
+# Tests who want complete control over aclocal or automake command-line
+# options should use $am_original_ACLOCAL or $am_original_AUTOMAKE.  The
+# `test -z' tests take care not to re-initialize them if defs-static
+# is re-sourced, as we want defs-static to remain really idempotent.
+if test -z "$am_original_AUTOMAKE"; then
+  am_original_AUTOMAKE=${AM_TESTSUITE_AUTOMAKE-${AUTOMAKE-"automake-$APIVERSION"}}
+fi
+if test -z "$am_original_ACLOCAL"; then
+  am_original_ACLOCAL=${AM_TESTSUITE_ACLOCAL-${ACLOCAL-"aclocal-$APIVERSION"}}
+fi
 
 # Use -Werror because this also turns some Perl warnings into error.
 # Tests for which this is inappropriate should use -Wno-error.
 # Tests who want complete control over aclocal command-line options
-# should use $original_ACLOCAL.
-# Note: the first `test -z' conditional below is to ensure defs-static
-# really remains idempotent.
-if test -z "$original_ACLOCAL"; then
-  original_ACLOCAL=${ACLOCAL-"aclocal-$APIVERSION"}
-fi
-test -z "$ACLOCAL" && ACLOCAL="aclocal-$APIVERSION -Werror"
+# should use $am_original_ACLOCAL instead.
+ACLOCAL="$am_original_ACLOCAL -Werror"
 
 # See how Automake should be run.  We put --foreign as the default
 # strictness to avoid having to create lots and lots of files.  A test
 # can override this by specifying a different strictness.  Use -Wall
 # -Werror by default.  Tests for which this is inappropriate (e.g. when
 # testing that a warning is enabled by a specific switch) should use
-# -Wnone or/and -Wno-error.  Tests who want complete control over
-# automake command-line options should use $original_AUTOMAKE.
-# Note: the first `test -z' conditional below is to ensure defs-static
-# really remains idempotent.
-if test -z "$original_AUTOMAKE"; then
-  original_AUTOMAKE=${AUTOMAKE-"automake-$APIVERSION"}
-fi
-test -z "$AUTOMAKE" && AUTOMAKE="automake-$APIVERSION --foreign -Werror -Wall"
+# -Wnone or/and -Wno-error.
+# Tests who want complete control over automake command-line options
+# should use $am_original_AUTOMAKE instead.
+AUTOMAKE="$am_original_AUTOMAKE --foreign -Werror -Wall"
 
 # This is a hack to seamlessly support the infamous "autoconf wrappers",
 # that might dispatch different autoconf versions depending on the name
@@ -132,15 +191,15 @@ AUTORECONF="$AUTORECONF -B /no/such/dir"
 
 # POSIX no longer requires 'egrep' and 'fgrep',
 # but some hosts lack 'grep -E' and 'grep -F'.
-EGREP='@EGREP@'
-FGREP='@FGREP@'
+EGREP=${AM_TESTSUITE_EGREP-'@EGREP@'}
+FGREP=${AM_TESTSUITE_FGREP-'@FGREP@'}
 
 # No all versions of Tex support `--version', so we use a configure
 # check to decide if tex is available.  This decision is embodied in
 # this variable.
-TEX='@TEX@'
+TEX=${AM_TESTSUITE_TEX-'@TEX@'}
 
-# Whether /bin/sh has working 'set -e' with exit trap.
+# Whether $SHELL has working 'set -e' with exit trap.
 sh_errexit_works='@sh_errexit_works@'
 
 # The amount we should wait after modifying files depends on the platform.
@@ -154,10 +213,11 @@ sleep='sleep @MODIFICATION_DELAY@'
 # in UTC; see <http://www.gnu.org/gnu/initial-announcement.html>.
 old_timestamp=198309271735.59
 
-# Make our wrapper scripts accessible by default.  And avoid to uselessly
+# Make our wrapper script (or installed scripts, if running under
+# "installcheck") accessible by default.  And avoid to uselessly
 # extend $PATH multiple times if this file is sourced multiple times.
 case $PATH in
-  "$testbuilddir$PATH_SEPARATOR"*) ;;
-  *) PATH="$testbuilddir$PATH_SEPARATOR$PATH";;
+  $am_bindir$PATH_SEPARATOR*) ;;
+  *) PATH=$am_bindir$PATH_SEPARATOR$PATH;;
 esac
 export PATH

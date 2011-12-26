@@ -17,11 +17,11 @@
 
 # Another sources-in-conditional test.  Report from Tim Goodwin.
 
-required='GNUmake gcc'
 . ./defs || Exit 1
 
 cat >> configure.in << 'END'
-AC_PROG_CC
+AC_SUBST([CC], [false])
+AC_SUBST([OBJEXT], [o])
 AM_CONDITIONAL([ONE], [test "x$CONDITION1" = "xtrue"])
 AM_CONDITIONAL([TWO], [test "x$CONDITION2" = "xtrue"])
 AC_OUTPUT
@@ -40,39 +40,29 @@ endif
 
 targ_SOURCES = main.c $(OPT1) $(OPT2)
 
-echo-objects:
-	@echo $(targ_OBJECTS)
+got = `echo $(targ_OBJECTS)`
+
+.PHONY: test
+test:
+	test x"$(exp)" = x"$(got)"
 END
 
 $ACLOCAL
-$AUTOMAKE
+$AUTOMAKE -i
 
 # We should not output useless definitions.
-test "`grep '^@TWO_FALSE@' Makefile.in | wc -l`" -eq 0
+grep '^@ONE_FALSE@' Makefile.in && Exit 1
+grep '^@TWO_FALSE@' Makefile.in && Exit 1
 
 $AUTOCONF
 
-# Ignore user CFLAGS.
-CFLAGS=
-export CFLAGS
-
 CONDITION1=true CONDITION2=true ./configure
-msgtt=`$MAKE --no-print-directory echo-objects`
+exp='main.o one.o two.o' $MAKE -e test
 CONDITION1=true CONDITION2=false ./configure
-msgtf=`$MAKE --no-print-directory echo-objects`
+exp='main.o one.o' $MAKE -e test
 CONDITION1=false CONDITION2=true ./configure
-msgft=`$MAKE --no-print-directory echo-objects`
+exp='main.o two.o' $MAKE -e test
 CONDITION1=false CONDITION2=false ./configure
-msgff=`$MAKE --no-print-directory echo-objects`
-
-: msgtt = $msgtt
-: msgtf = $msgtf
-: msgft = $msgft
-: msgff = $msgff
-
-test x"$msgtt" = x"main.o one.o two.o"
-test x"$msgtf" = x"main.o one.o"
-test x"$msgft" = x"main.o two.o"
-test x"$msgff" = x"main.o"
+exp='main.o' $MAKE -e test
 
 :

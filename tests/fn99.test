@@ -25,15 +25,13 @@ AUTOMAKE_OPTIONS = filename-length-max=99
 EXTRA_DIST = 12345678
 END
 
-(for i in 1 2 3 4 5 6 7 8 9
-do
-  mkdir -p 12345678 || Exit 77
-  cd 12345678
-  touch x
-done) || Exit 77
+(for i in 1 2 3 4 5 6 7 8 9; do
+  mkdir -p 12345678 && cd 12345678 && touch x || Exit 1
+done) || skip_ "failed to create deep directory hierarchy"
 
 # AIX 5.3 `cp -R' is too buggy for `make dist'.
-cp -R 12345678 t || Exit 77
+cp -R 12345678 t \
+  || skip_ "'cp -R' failed to copy deep directory hierarchy"
 
 $ACLOCAL
 $AUTOCONF
@@ -41,15 +39,13 @@ $AUTOMAKE
 ./configure
 $MAKE distcheck
 
-(for i in 1 2 3 4 5 6 7 8 9 10 11
-do
-  mkdir -p 12345678 || Exit 77
-  cd 12345678
-  touch x
-done) || Exit 77
+(for i in 1 2 3 4 5 6 7 8 9 10 11; do
+  mkdir -p 12345678 && cd 12345678 && touch x || Exit 1
+done) || skip_ "failed to create deeper directory hierarchy"
 
 $MAKE dist 2>stderr && { cat stderr >&2; Exit 1; }
 cat stderr >&2
 grep 'filenames are too long' stderr
 test 2 = `grep 12345678 stderr | wc -l`
+
 :

@@ -23,8 +23,23 @@
 
 # Please keep this test in sync with sister test maken3.test.
 
-required=GNUmake
 . ./defs || Exit 1
+
+if using_gmake; then
+  : Good, make is GNU make.
+else
+  unindent > mk.tmp << 'END'
+    targ.tmp:
+	: > $@
+    .MAKE: targ.tmp
+END
+  if $MAKE -n -f mk.tmp targ.tmp && test -f targ.tmp; then
+    : Good, make supports the '.MAKE' special target.
+  else
+    skip_ "GNU or BSD make required"
+  fi
+  rm -f *.tmp
+fi
 
 mkdir sub sub2
 
@@ -154,7 +169,7 @@ check_targets ()
   done
 }
 
-$AUTOMAKE -Wno-override
+$AUTOMAKE -a -Wno-override
 ./configure
 check_targets || Exit 1
 

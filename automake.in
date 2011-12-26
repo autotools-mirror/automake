@@ -473,9 +473,8 @@ my %required_targets =
    'install-man' => 1,
   );
 
-# Set to 1 if this run will create the Makefile.in that distributes
-# the files in config_aux_dir.
-my $automake_will_process_aux_dir = 0;
+# Queue to push require_conf_file requirements to.
+my $required_conf_file_queue;
 
 # The name of the Makefile currently being processed.
 my $am_file = 'BUG';
@@ -3842,12 +3841,19 @@ sub handle_dist ()
   # directory, we would have discovered it already, so we don't
   # check that.  But if the file is in a subdir without a Makefile,
   # we want to distribute it here if we are doing `.'.  Ugly!
+  # Also, in some corner cases, it's possible that the following code
+  # will cause the same file to appear in the $(DIST_COMMON) variables
+  # of two distinct Makefiles; but this is not a problem, since the
+  # `distdir' target in `lib/am/distdir.am' can deal with the same
+  # file being distributed multiple times.
+  # See also automake bug#9651.
   if ($relative_dir eq '.')
     {
       foreach my $file (split (' ' , $configure_dist_common))
 	{
+	  my $dir = dirname ($file);
 	  push_dist_common ($file)
-	    unless is_make_dir (dirname ($file));
+	    if ($dir eq '.' || ! is_make_dir ($dir));
 	}
     }
 
@@ -4803,6 +4809,58 @@ sub handle_tests_dejagnu
     $output_rules .= file_contents ('dejagnu', new Automake::Location);
 }
 
+sub handle_per_suffix_test
+{
+  my ($test_suffix, %transform) = @_;
+  my ($pfx, $generic, $parallel_tests_option, $am_exeext);
+  prog_error ("called with 'parallel-tests' option not set")
+    unless $parallel_tests_option = option 'parallel-tests';
+  if ($test_suffix eq '')
+    {
+      $pfx = '';
+      $generic = 0;
+      $am_exeext = 'FALSE';
+    }
+  else
+    {
+      prog_error ("test suffix `$test_suffix' lacks leading dot")
+        unless $test_suffix =~ m/^\.(.*)/;
+      $pfx = uc ($1) . '_';
+      $generic = 1;
+      $am_exeext = exists $configure_vars{'EXEEXT'} ? 'am__EXEEXT'
+                                                    : 'FALSE';
+    }
+  # The "test driver" program, deputed to handle tests protocol used by
+  # test scripts.  By default, it's assumed that no protocol is used,
+  # so we fall back to the old "parallel-tests" behaviour, implemented
+  # by the `test-driver' auxiliary script.
+  if (! var "${pfx}LOG_DRIVER")
+    {
+      require_conf_file ($parallel_tests_option->{position}, FOREIGN,
+                        'test-driver');
+      define_variable ("${pfx}LOG_DRIVER",
+                       "\$(SHELL) $am_config_aux_dir/test-driver",
+                       INTERNAL);
+    }
+  my $driver = '$(' . $pfx . 'LOG_DRIVER)';
+  my $driver_flags = '$(AM_' . $pfx . 'LOG_DRIVER_FLAGS)'
+                       . ' $(' . $pfx . 'LOG_DRIVER_FLAGS)';
+  my $compile = "${pfx}LOG_COMPILE";
+  define_variable ($compile,
+                   '$(' . $pfx . 'LOG_COMPILER)'
+                      . ' $(AM_' .  $pfx . 'LOG_FLAGS)'
+                      . ' $(' . $pfx . 'LOG_FLAGS)',
+                     INTERNAL);
+  $output_rules .= file_contents ('check2', new Automake::Location,
+                                   GENERIC => $generic,
+                                   DRIVER => $driver,
+                                   DRIVER_FLAGS => $driver_flags,
+                                   COMPILE => '$(' . $compile . ')',
+                                   EXT => $test_suffix,
+                                   am__EXEEXT => $am_exeext,
+                                   %transform);
+}
+
 # is_valid_test_extension ($EXT)
 # ------------------------------
 # Return true if $EXT can appear in $(TEST_EXTENSIONS), return false
@@ -4846,7 +4904,7 @@ sub handle_tests
       append_exeext { exists $known_programs{$_[0]} } 'XFAIL_TESTS'
 	if (var ('XFAIL_TESTS'));
 
-      if (option 'parallel-tests')
+      if (my $parallel_tests = option 'parallel-tests')
         {
 	  define_variable ('TEST_SUITE_LOG', 'test-suite.log', INTERNAL);
 	  define_variable ('TEST_SUITE_HTML', '$(TEST_SUITE_LOG:.log=.html)', INTERNAL);
@@ -4907,17 +4965,12 @@ sub handle_tests
 		    return substr ($obj, 0, length ($obj) - length ($test_suffix)) . '.log'
 		      if substr ($obj, - length ($test_suffix)) eq $test_suffix;
 		  }
+		my $base = $obj;
 		$obj .= '.log';
-		my $compile = 'LOG_COMPILE';
-		define_variable ($compile,
-				 '$(LOG_COMPILER) $(AM_LOG_FLAGS) $(LOG_FLAGS)', INTERNAL);
-		$output_rules .= file_contents ('check2', new Automake::Location,
-						GENERIC => 0,
-						OBJ => $obj,
-						SOURCE => $val,
-						COMPILE =>'$(' . $compile . ')',
-						EXT => '',
-						am__EXEEXT => 'FALSE');
+                handle_per_suffix_test ('',
+                                        OBJ => $obj,
+                                        BASE => $base,
+                                        SOURCE => $val);
 	        return $obj;
 	      });
 
@@ -4943,27 +4996,14 @@ sub handle_tests
 	      $nhelper++;
 	      if ($test_suffix ne $at_exeext && $test_suffix ne '')
 	        {
-		  (my $ext = $test_suffix) =~ s/^\.//;
-		  $ext = uc $ext;
-		  my $compile = $ext . '_LOG_COMPILE';
-		  define_variable ($compile,
-				   '$(' . $ext . '_LOG_COMPILER) $(AM_' .  $ext . '_LOG_FLAGS)'
-				   . ' $(' . $ext . '_LOG_FLAGS)', INTERNAL);
-		  my $am_exeext = $handle_exeext ? 'am__EXEEXT' : 'FALSE';
-		  $output_rules .= file_contents ('check2', new Automake::Location,
-						  GENERIC => 1,
-						  OBJ => '',
-						  SOURCE => '$<',
-						  COMPILE => '$(' . $compile . ')',
-						  EXT => $test_suffix,
-						  am__EXEEXT => $am_exeext);
+                  handle_per_suffix_test ($test_suffix,
+                                          OBJ => '',
+                                          BASE => '$*',
+                                          SOURCE => '$<');
 	        }
 	    }
-
-	  define_variable ('TEST_LOGS_TMP', '$(TEST_LOGS:.log=.log-t)', INTERNAL);
-
-	  $clean_files{'$(TEST_LOGS_TMP)'} = MOSTLY_CLEAN;
 	  $clean_files{'$(TEST_LOGS)'} = MOSTLY_CLEAN;
+	  $clean_files{'$(TEST_LOGS:.log=.trs)'} = MOSTLY_CLEAN;
 	  $clean_files{'$(TEST_SUITE_LOG)'} = MOSTLY_CLEAN;
 	  $clean_files{'$(TEST_SUITE_HTML)'} = MOSTLY_CLEAN;
 	}
@@ -5524,41 +5564,10 @@ sub scan_autoconf_files ()
 
   locate_aux_dir ();
 
-  # Reorder @input_files so that the Makefile that distributes aux
-  # files is processed last.  This is important because each directory
-  # can require auxiliary scripts and we should wait until they have
-  # been installed before distributing them.
-
-  # The Makefile.in that distribute the aux files is the one in
-  # $config_aux_dir or the top-level Makefile.
-  my $auxdirdist = is_make_dir ($config_aux_dir) ? $config_aux_dir : '.';
-  my @new_input_files = ();
-  while (@input_files)
-    {
-      my $in = pop @input_files;
-      my @ins = split (/:/, $output_files{$in});
-      if (dirname ($ins[0]) eq $auxdirdist)
-	{
-	  push @new_input_files, $in;
-	  $automake_will_process_aux_dir = 1;
-	}
-      else
-	{
-	  unshift @new_input_files, $in;
-	}
-    }
-  @input_files = @new_input_files;
-
-  # If neither the auxdir/Makefile nor the ./Makefile are generated
-  # by Automake, we won't distribute the aux files anyway.  Assume
-  # the user know what (s)he does, and pretend we will distribute
-  # them to disable the error in require_file_internal.
-  $automake_will_process_aux_dir = 1 if ! is_make_dir ($auxdirdist);
-
   # Look for some files we need.  Always check for these.  This
   # check must be done for every run, even those where we are only
   # looking at a subdir Makefile.  We must set relative_dir for
-  # maybe_push_required_file to work.
+  # push_required_file to work.
   # Sort the files for stable verbose output.
   $relative_dir = '.';
   foreach my $file (sort keys %required_aux_file)
@@ -7585,18 +7594,42 @@ sub locate_aux_dir ()
 }
 
 
-# &maybe_push_required_file ($DIR, $FILE, $FULLFILE)
+# &push_required_file ($DIR, $FILE, $FULLFILE)
 # --------------------------------------------------
-# See if we want to push this file onto dist_common.  This function
-# encodes the rules for deciding when to do so.
-sub maybe_push_required_file
+# Push the given file onto DIST_COMMON.
+sub push_required_file
 {
   my ($dir, $file, $fullfile) = @_;
 
+  # If the file to be distributed is in the same directory of the
+  # currently processed Makefile.am, then we want to distribute it
+  # from this same Makefile.am.
   if ($dir eq $relative_dir)
     {
       push_dist_common ($file);
-      return 1;
+    }
+  # This is needed to allow a construct in a non-top-level Makefile.am
+  # to require a file in the build-aux directory (see at least the test
+  # script `test-driver-is-distributed.test').  This is related to the
+  # automake bug#9546.  Note that the use of $config_aux_dir instead
+  # of $am_config_aux_dir here is deliberate and necessary.
+  elsif ($dir eq $config_aux_dir)
+    {
+      push_dist_common ("$am_config_aux_dir/$file");
+    }
+  # FIXME: another spacial case, for AC_LIBOBJ/AC_LIBSOURCE support.
+  # We probably need some refactoring of this function and its callers,
+  # to have a more explicit and systematic handling of all the special
+  # cases; but, since there are only two of them, this is low-priority
+  # ATM.
+  elsif ($config_libobj_dir && $dir eq $config_libobj_dir)
+    {
+      # Avoid unsightly '/.'s.
+      my $am_config_libobj_dir =
+        '$(top_srcdir)' .
+        ($config_libobj_dir eq '.' ? "" : "/$config_libobj_dir");
+      $am_config_libobj_dir =~ s|/*$||;
+      push_dist_common ("$am_config_libobj_dir/$file");
     }
   elsif ($relative_dir eq '.' && ! &is_make_dir ($dir))
     {
@@ -7634,9 +7667,12 @@ sub maybe_push_required_file
 	if $dir =~ m,^\.\.(?:$|/),;
 
       push_dist_common ($fullfile);
-      return 1;
     }
-  return 0;
+  else
+    {
+      prog_error "a Makefile in relative directory $relative_dir " .
+                 "can't add files in directory $dir to DIST_COMMON";
+    }
 }
 
 
@@ -7645,141 +7681,141 @@ sub maybe_push_required_file
 # than once.
 my %required_file_not_found = ();
 
-# &require_file_internal ($WHERE, $MYSTRICT, $DIRECTORY, @FILES)
-# --------------------------------------------------------------
+# &required_file_check_or_copy ($WHERE, $DIRECTORY, $FILE)
+# --------------------------------------------------------
+# Verify that the file must exist in $DIRECTORY, or install it.
+sub required_file_check_or_copy ($$$)
+{
+  my ($where, $dir, $file) = @_;
+
+  my $fullfile = "$dir/$file";
+  my $found_it = 0;
+  my $dangling_sym = 0;
+
+  if (-l $fullfile && ! -f $fullfile)
+    {
+      $dangling_sym = 1;
+    }
+  elsif (dir_has_case_matching_file ($dir, $file))
+    {
+      $found_it = 1;
+    }
+
+  # `--force-missing' only has an effect if `--add-missing' is
+  # specified.
+  return
+    if $found_it && (! $add_missing || ! $force_missing);
+
+  # If we've already looked for it, we're done.  You might
+  # wonder why we don't do this before searching for the
+  # file.  If we do that, then something like
+  # AC_OUTPUT(subdir/foo foo) will fail to put foo.in into
+  # DIST_COMMON.
+  if (! $found_it)
+    {
+      return if defined $required_file_not_found{$fullfile};
+      $required_file_not_found{$fullfile} = 1;
+    }
+  if ($dangling_sym && $add_missing)
+    {
+      unlink ($fullfile);
+    }
+
+  my $trailer = '';
+  my $trailer2 = '';
+  my $suppress = 0;
+
+  # Only install missing files according to our desired
+  # strictness level.
+  my $message = "required file `$fullfile' not found";
+  if ($add_missing)
+    {
+      if (-f "$libdir/$file")
+        {
+          $suppress = 1;
+
+          # Install the missing file.  Symlink if we
+          # can, copy if we must.  Note: delete the file
+          # first, in case it is a dangling symlink.
+          $message = "installing `$fullfile'";
+
+          # The license file should not be volatile.
+          if ($file eq "COPYING")
+            {
+              $message .= " using GNU General Public License v3 file";
+              $trailer2 = "\n    Consider adding the COPYING file"
+                        . " to the version control system"
+                        . "\n    for your code, to avoid questions"
+                        . " about which license your project uses";
+            }
+
+          # Windows Perl will hang if we try to delete a
+          # file that doesn't exist.
+          unlink ($fullfile) if -f $fullfile;
+          if ($symlink_exists && ! $copy_missing)
+            {
+              if (! symlink ("$libdir/$file", $fullfile)
+                  || ! -e $fullfile)
+                {
+                  $suppress = 0;
+                  $trailer = "; error while making link: $!";
+                }
+            }
+          elsif (system ('cp', "$libdir/$file", $fullfile))
+            {
+              $suppress = 0;
+              $trailer = "\n    error while copying";
+            }
+          set_dir_cache_file ($dir, $file);
+        }
+    }
+  else
+    {
+      $trailer = "\n  `automake --add-missing' can install `$file'"
+        if -f "$libdir/$file";
+    }
+
+  # If --force-missing was specified, and we have
+  # actually found the file, then do nothing.
+  return
+    if $found_it && $force_missing;
+
+  # If we couldn't install the file, but it is a target in
+  # the Makefile, don't print anything.  This allows files
+  # like README, AUTHORS, or THANKS to be generated.
+  return
+    if !$suppress && rule $file;
+
+  msg ($suppress ? 'note' : 'error', $where, "$message$trailer$trailer2");
+}
+
+
+# &require_file_internal ($WHERE, $MYSTRICT, $DIRECTORY, $QUEUE, @FILES)
+# ----------------------------------------------------------------------
 # Verify that the file must exist in $DIRECTORY, or install it.
 # $MYSTRICT is the strictness level at which this file becomes required.
+# Worker threads may queue up the action to be serialized by the master,
+# if $QUEUE is true
 sub require_file_internal ($$$@)
 {
-  my ($where, $mystrict, $dir, @files) = @_;
+  my ($where, $mystrict, $dir, $queue, @files) = @_;
+
+  return
+    unless $strictness >= $mystrict;
 
   foreach my $file (@files)
     {
-      my $fullfile = "$dir/$file";
-      my $found_it = 0;
-      my $dangling_sym = 0;
-
-      if (-l $fullfile && ! -f $fullfile)
-	{
-	  $dangling_sym = 1;
-	}
-      elsif (dir_has_case_matching_file ($dir, $file))
-	{
-	  $found_it = 1;
-	  maybe_push_required_file ($dir, $file, $fullfile);
-	}
-
-      # `--force-missing' only has an effect if `--add-missing' is
-      # specified.
-      if ($found_it && (! $add_missing || ! $force_missing))
-	{
-	  next;
-	}
+      push_required_file ($dir, $file, "$dir/$file");
+      if ($queue)
+        {
+          queue_required_file_check_or_copy ($required_conf_file_queue,
+                                             QUEUE_CONF_FILE, $relative_dir,
+                                             $where, $mystrict, @files);
+        }
       else
-	{
-	  # If we've already looked for it, we're done.  You might
-	  # wonder why we don't do this before searching for the
-	  # file.  If we do that, then something like
-	  # AC_OUTPUT(subdir/foo foo) will fail to put foo.in into
-	  # DIST_COMMON.
-	  if (! $found_it)
-	    {
-	      next if defined $required_file_not_found{$fullfile};
-	      $required_file_not_found{$fullfile} = 1;
-	    }
-
-	  if ($strictness >= $mystrict)
-	    {
-	      if ($dangling_sym && $add_missing)
-		{
-		  unlink ($fullfile);
-		}
-
-	      my $trailer = '';
-	      my $trailer2 = '';
-	      my $suppress = 0;
-
-	      # Only install missing files according to our desired
-	      # strictness level.
-	      my $message = "required file `$fullfile' not found";
-	      if ($add_missing)
-		{
-		  if (-f "$libdir/$file")
-		    {
-		      $suppress = 1;
-
-		      # Install the missing file.  Symlink if we
-		      # can, copy if we must.  Note: delete the file
-		      # first, in case it is a dangling symlink.
-		      $message = "installing `$fullfile'";
-
-		      # The license file should not be volatile.
-		      if ($file eq "COPYING")
-		        {
-			  $message .= " using GNU General Public License v3 file";
-			  $trailer2 = "\n    Consider adding the COPYING file"
-				    . " to the version control system"
-				    . "\n    for your code, to avoid questions"
-				    . " about which license your project uses";
-			}
-
-		      # Windows Perl will hang if we try to delete a
-		      # file that doesn't exist.
-		      unlink ($fullfile) if -f $fullfile;
-		      if ($symlink_exists && ! $copy_missing)
-			{
-			  if (! symlink ("$libdir/$file", $fullfile)
-			      || ! -e $fullfile)
-			    {
-			      $suppress = 0;
-			      $trailer = "; error while making link: $!";
-			    }
-			}
-		      elsif (system ('cp', "$libdir/$file", $fullfile))
-			{
-			  $suppress = 0;
-			  $trailer = "\n    error while copying";
-			}
-		      set_dir_cache_file ($dir, $file);
-		    }
-
-		  if (! maybe_push_required_file (dirname ($fullfile),
-						  $file, $fullfile))
-		    {
-		      if (! $found_it && ! $automake_will_process_aux_dir)
-			{
-			  # We have added the file but could not push it
-			  # into DIST_COMMON, probably because this is
-			  # an auxiliary file and we are not processing
-			  # the top level Makefile.  Furthermore Automake
-			  # hasn't been asked to create the Makefile.in
-			  # that distributes the aux dir files.
-			  error ($where, 'please rerun automake without '
-				 . "Makefile arguments\n"
-				 . "so $fullfile gets distributed");
-			}
-		    }
-		}
-	      else
-		{
-		  $trailer = "\n  `automake --add-missing' can install `$file'"
-		    if -f "$libdir/$file";
-		}
-
-	      # If --force-missing was specified, and we have
-	      # actually found the file, then do nothing.
-	      next
-		if $found_it && $force_missing;
-
-	      # If we couldn't install the file, but it is a target in
-	      # the Makefile, don't print anything.  This allows files
-	      # like README, AUTHORS, or THANKS to be generated.
-	      next
-		if !$suppress && rule $file;
-
-	      msg ($suppress ? 'note' : 'error', $where, "$message$trailer$trailer2");
-	    }
-	}
+        {
+          required_file_check_or_copy ($where, $dir, $file);
+        }
     }
 }
 
@@ -7788,7 +7824,7 @@ sub require_file_internal ($$$@)
 sub require_file ($$@)
 {
     my ($where, $mystrict, @files) = @_;
-    require_file_internal ($where, $mystrict, $relative_dir, @files);
+    require_file_internal ($where, $mystrict, $relative_dir, 0, @files);
 }
 
 # &require_file_with_macro ($COND, $MACRO, $MYSTRICT, @FILES)
@@ -7811,7 +7847,7 @@ sub require_libsource_with_macro ($$$@)
     if ($config_libobj_dir)
       {
 	require_file_internal ($macro->rdef ($cond)->location, $mystrict,
-			       $config_libobj_dir, @files);
+			       $config_libobj_dir, 0, @files);
       }
     else
       {
@@ -7819,12 +7855,10 @@ sub require_libsource_with_macro ($$$@)
       }
 }
 
-# Queue to push require_conf_file requirements to.
-my $required_conf_file_queue;
-
-# &queue_required_conf_file ($QUEUE, $KEY, $DIR, $WHERE, $MYSTRICT, @FILES)
-# -------------------------------------------------------------------------
-sub queue_required_conf_file ($$$$@)
+# &queue_required_file_check_or_copy ($QUEUE, $KEY, $DIR, $WHERE,
+#                                     $MYSTRICT, @FILES)
+# ---------------------------------------------------------------
+sub queue_required_file_check_or_copy ($$$$@)
 {
     my ($queue, $key, $dir, $where, $mystrict, @files) = @_;
     my @serial_loc;
@@ -7839,9 +7873,9 @@ sub queue_required_conf_file ($$$$@)
     $queue->enqueue ($key, $dir, @serial_loc, $mystrict, 0 + @files, @files);
 }
 
-# &require_queued_conf_file ($QUEUE)
-# ----------------------------------
-sub require_queued_conf_file ($)
+# &require_queued_file_check_or_copy ($QUEUE)
+# -------------------------------------------
+sub require_queued_file_check_or_copy ($)
 {
     my ($queue) = @_;
     my $where;
@@ -7864,35 +7898,23 @@ sub require_queued_conf_file ($)
     my @files;
     push @files, $queue->dequeue ()
       foreach (1 .. $nfiles);
-
-    # Dequeuing happens outside of per-makefile context, so we have to
-    # set the variables used by require_file_internal and the functions
-    # it calls.  Gross!
-    $relative_dir = $dir;
-    require_file_internal ($where, $mystrict, $config_aux_dir, @files);
+    return
+      unless $strictness >= $mystrict;
+    foreach my $file (@files)
+      {
+        required_file_check_or_copy ($where, $config_aux_dir, $file);
+      }
 }
 
 # &require_conf_file ($WHERE, $MYSTRICT, @FILES)
 # ----------------------------------------------
-# Looks in configuration path, as specified by AC_CONFIG_AUX_DIR;
-# worker threads may queue up the action to be serialized by the master.
-#
-# FIXME: this seriously relies on the semantics of require_file_internal
-# and maybe_push_required_file, in that we exploit the fact that only the
-# contents of the last handled output file may be impacted (which in turn
-# is dealt with by the master thread).
+# Looks in configuration path, as specified by AC_CONFIG_AUX_DIR.
 sub require_conf_file ($$@)
 {
     my ($where, $mystrict, @files) = @_;
-    if (defined $required_conf_file_queue)
-      {
-	queue_required_conf_file ($required_conf_file_queue, QUEUE_CONF_FILE,
-				  $relative_dir, $where, $mystrict, @files);
-      }
-    else
-      {
-	require_file_internal ($where, $mystrict, $config_aux_dir, @files);
-      }
+    my $queue = defined $required_conf_file_queue ? 1 : 0;
+    require_file_internal ($where, $mystrict, $config_aux_dir,
+                           $queue, @files);
 }
 
 
@@ -8451,11 +8473,6 @@ sub get_number_of_threads
   # It doesn't make sense to use more threads than makefiles,
   my $max_threads = @input_files;
 
-  # but a single worker thread is helpful for exposing bugs.
-  if ($automake_will_process_aux_dir && $max_threads > 1)
-    {
-      $max_threads--;
-    }
   if ($nthreads > $max_threads)
     {
       $nthreads = $max_threads;
@@ -8479,18 +8496,11 @@ sub handle_makefiles_threaded ($)
 {
   my ($nthreads) = @_;
 
-  my @queued_input_files = @input_files;
-  my $last_input_file = undef;
-  if ($automake_will_process_aux_dir)
-    {
-      $last_input_file = pop @queued_input_files;
-    }
-
   # The file queue distributes all makefiles, the message queues
   # collect all serializations needed for respective files.
   my $file_queue = Thread::Queue->new;
   my %msg_queues;
-  foreach my $file (@queued_input_files)
+  foreach my $file (@input_files)
     {
       $msg_queues{$file} = Thread::Queue->new;
     }
@@ -8516,12 +8526,12 @@ sub handle_makefiles_threaded ($)
 	});
     }
 
-  # Queue all normal makefiles.
-  verb "queuing " . @queued_input_files . " input files";
-  $file_queue->enqueue (@queued_input_files, (undef) x @threads);
+  # Queue all makefiles.
+  verb "queuing " . @input_files . " input files";
+  $file_queue->enqueue (@input_files, (undef) x @threads);
 
   # Collect and process serializations.
-  foreach my $file (@queued_input_files)
+  foreach my $file (@input_files)
     {
       verb "dequeuing messages for " . $file;
       reset_local_duplicates ();
@@ -8534,7 +8544,7 @@ sub handle_makefiles_threaded ($)
 	    }
 	  elsif ($key eq QUEUE_CONF_FILE)
 	    {
-	      require_queued_conf_file ($queue);
+	      require_queued_file_check_or_copy ($queue);
 	    }
 	  else
 	    {
@@ -8548,13 +8558,6 @@ sub handle_makefiles_threaded ($)
       my @exit_thread = $t->join;
       $exit_code = $exit_thread[0]
 	if ($exit_thread[0] > $exit_code);
-    }
-
-  # The master processes the last file.
-  if ($automake_will_process_aux_dir)
-    {
-      verb "processing last input file";
-      handle_makefile ($last_input_file);
     }
 }
 

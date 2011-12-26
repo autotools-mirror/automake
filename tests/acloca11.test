@@ -17,9 +17,11 @@
 # Make sure that when two files define the same macro in the same
 # directory, the macro from the lexically greatest file is used.
 
+am_create_testdir=empty
 . ./defs || Exit 1
 
-cat >> configure.in << 'END'
+cat > configure.in << 'END'
+AC_INIT
 MACRO2
 MACRO1
 END
@@ -27,16 +29,17 @@ END
 mkdir m4
 
 cat >m4/version1.m4 <<EOF
-AC_DEFUN([MACRO1], [echo macro11 >> foo])
-AC_DEFUN([MACRO2], [echo macro21 > foo])
+AC_DEFUN([MACRO1], [:macro11:])
+AC_DEFUN([MACRO2], [:macro21:])
 EOF
 
 cat >m4/version2.m4 <<EOF
-AC_DEFUN([MACRO1], [echo macro12 >> foo])
+AC_DEFUN([MACRO1], [:macro12:])
 EOF
 
 $ACLOCAL -I m4
 $AUTOCONF
-./configure
-grep macro12 foo
-grep macro21 foo
+$FGREP ':macro12:' configure
+$FGREP ':macro21:' configure
+
+:

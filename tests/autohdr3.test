@@ -16,7 +16,6 @@
 
 # Check rebuild rules for autoheader.
 
-required=GNUmake
 . ./defs || Exit 1
 
 cat >>configure.in <<EOF
@@ -25,8 +24,17 @@ AC_CONFIG_HEADERS([config.h:config.hin])
 AC_OUTPUT
 EOF
 
-: > Makefile.am
 : > foo.m4
+
+cat > Makefile.am <<'END'
+.PHONY: test
+check-local: test
+test: all
+	cat $(srcdir)/config.hin ;: For debugging.
+	cat config.h             ;: Likewise.
+	grep '#.*GREPME' $(srcdir)/config.hin
+	grep '#.*define.*GREPME' config.h
+END
 
 $ACLOCAL
 $AUTOCONF
@@ -39,8 +47,7 @@ $MAKE
 $sleep
 echo 'AC_DEFINE([GREPME], 1, [Doc for GREPME])' > foo.m4
 
-$MAKE
-grep GREPME config.hin
-grep GREPME config.h
-
+$MAKE test
 $MAKE distcheck
+
+:

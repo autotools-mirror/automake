@@ -22,6 +22,7 @@
 #  <http://lists.gnu.org/archive/html/bug-gnulib/2011-04/msg00005.html>
 # for more info).
 
+required=cc
 . ./defs || Exit 1
 
 cat >> configure.in <<'END'
@@ -95,8 +96,9 @@ for vpath in : false; do
 
   # Do not reject slow dependency extractors: we need dependency tracking.
   $srcdir/configure --enable-dependency-tracking
-  # Skip the test if dependency tracking couldn't be activated.
-  $FGREP 'depmode=none' Makefile && Exit 77
+  if $FGREP 'depmode=none' Makefile; then
+    skip_ "automatic dependency tracking couldn't be activated"
+  fi
 
   $MAKE
   ls -l
@@ -106,7 +108,7 @@ for vpath in : false; do
 
   $sleep
   sed -e 's/^\( *override_stdio\)=.*$/\1=false/' $srcdir/macros.m4 > t
-  diff $srcdir/macros.m4 t && Exit 99 # sanity check
+  diff $srcdir/macros.m4 t && fatal_ "failed to edit macros.m4"
   mv -f t $srcdir/macros.m4
 
   using_gmake || $MAKE Makefile
@@ -118,7 +120,7 @@ for vpath in : false; do
 
   $sleep
   sed -e 's/^\( *override_stdio\)=.*$/\1=:/' $srcdir/macros.m4 > t
-  diff $srcdir/macros.m4 t && Exit 99 # sanity check
+  diff $srcdir/macros.m4 t && fatal_ "failed to edit macros.m4"
   mv -f t $srcdir/macros.m4
 
   using_gmake || $MAKE Makefile

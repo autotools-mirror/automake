@@ -25,6 +25,8 @@
 ## run aclocal and automake.
 SUBDIRS = lib . doc m4 tests
 
+TEST_SUBDIRS = lib/Automake/tests tests
+
 bin_SCRIPTS = automake aclocal
 
 CLEANFILES = $(bin_SCRIPTS)
@@ -102,9 +104,11 @@ automake aclocal: Makefile
 INSTALL: lib/INSTALL
 	$(AM_V_GEN)cp $(srcdir)/lib/INSTALL $@
 
-## recheck: convenience proxy target for the test suites.
-TEST_SUBDIRS = lib/Automake/tests tests
+# Run the testsuite with the installed aclocal and automake.
+installcheck-local:
+	am_running_installcheck=yes $(MAKE) $(AM_MAKEFLAGS) check
 
+## recheck: convenience proxy target for the test suites.
 .PHONY: recheck
 recheck:
 	@failcom='exit 1'; \
@@ -186,6 +190,7 @@ sc_perl_local_no_parens \
 sc_perl_local \
 sc_AMDEP_TRUE_in_automake_in \
 sc_tests_make_without_am_makeflags \
+sc_tests_obsolete_variables \
 sc_tests_plain_make \
 sc_tests_plain_autoconf \
 sc_tests_plain_autoupdate \
@@ -199,6 +204,7 @@ sc_tests_automake_fails \
 sc_tests_plain_aclocal \
 sc_tests_plain_perl \
 sc_tests_required_after_defs \
+sc_tests_tap_plan \
 sc_tests_overriding_macros_on_cmdline \
 sc_tests_plain_sleep \
 sc_tests_plain_egrep_fgrep \
@@ -213,7 +219,24 @@ sc_at_in_texi
 
 .PHONY: $(syntax_check_rules)
 $(syntax_check_rules): automake aclocal
-maintainer-check: $(syntax_check_rules)
+
+## Check that the list of tests given in the Makefile is equal to the
+## list of all test scripts in the Automake testsuite.
+.PHONY: maintainer-check-list-of-tests
+maintainer-check-list-of-tests:
+	@failcom='exit 1'; \
+	for f in x $$MAKEFLAGS; do \
+	  case $$f in \
+	    *=* | --[!k]*);; \
+	    *k*) failcom='fail=yes';; \
+	  esac; \
+	done; \
+	for subdir in $(TEST_SUBDIRS); do \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $@) || eval $$failcom; \
+	done; \
+	test -z "$$fail"
+
+maintainer-check: $(syntax_check_rules) maintainer-check-list-of-tests
 
 ## Look for test whose names can cause spurious failures when used as
 ## first argument to AC_INIT (chiefly because they might contain an
@@ -416,6 +439,34 @@ sc_tests_make_without_am_makeflags:
 	  exit 1; \
 	fi
 
+## Look out for some obsolete variables.
+sc_tests_obsolete_variables:
+	@vars=" \
+	  using_tap \
+	  parallel_tests \
+	  test_prefer_config_shell \
+	  original_AUTOMAKE \
+	  original_ACLOCAL \
+	"; \
+	seen=""; \
+	for v in $$vars; do \
+	  if grep -E "\b$$v\b" \
+	    $(srcdir)/tests/*.test \
+	    $(srcdir)/tests/*.tap \
+	    $(srcdir)/tests/*.sh \
+	    $(srcdir)/tests/defs \
+	    $(srcdir)/tests/defs-static.in \
+	  ; then \
+	    seen="$$seen $$v"; \
+	  fi; \
+	done; \
+	if test -n "$$seen"; then \
+	  for v in $$seen; do \
+	    echo "Variable '$$v' is obsolete, use 'am_$$v' instead." 1>&2; \
+	  done; \
+	  exit 1; \
+	else :; fi
+
 ## Tests should never call make directly.
 sc_tests_plain_make:
 	@if grep -v '^#' $(srcdir)/tests/*.test | $(EGREP) ':[	]*make( |$$)'; then \
@@ -520,6 +571,32 @@ sc_tests_required_after_defs:
 	    exit 1; \
 	  fi; \
 	done
+
+## TAP-based test scripts should not forget to declare a TAP plan.  In
+## case it is not known in advance how many tests will be run, a "lazy"
+## plan can be used; but its use should be deliberate, explicitly declared
+## with a "plan_ later" call, rather than the result of an oversight.
+## This check helps to ensure this is indeed the case.
+sc_tests_tap_plan:
+	@with_plan=`grep -l '^ *plan_ ' $(srcdir)/tests/*.tap`; \
+	 with_plan=`echo $$with_plan`; \
+	 ok=:; \
+	 for t in $(srcdir)/tests/*.tap; do \
+	   case " $$with_plan " in *" $$t "*) continue;; esac; \
+## It's ok for an *auto-generated* test sourcing an hand-written one not
+## to declare a TAP plan: that will be done by the sourced test.
+	   case $$t in \
+	     *-w.tap) \
+	       t2=`echo $$t | sed -e 's|.*/||' -e 's/-w\.tap$$/.tap/'` \
+	         && grep -E "^ *\\.  *[^ 	]*/$$t2\\b" $$t >/dev/null \
+	         && continue || : ;; \
+	   esac; \
+	   ok=false; echo $$t; \
+	 done; \
+	 $$ok || { \
+	  echo 'The tests above do not declare a TAP plan.' 1>&2; \
+	  exit 1; \
+	 }
 
 ## Overriding a Makefile macro on the command line is not portable when
 ## recursive targets are used.  Better use an envvar.  SHELL is an

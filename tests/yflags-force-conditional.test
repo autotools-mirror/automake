@@ -20,7 +20,7 @@
 . ./defs || Exit 1
 
 cat >> configure.in <<'END'
-AC_PROG_CC
+AC_SUBST([CC], [false])
 AC_PROG_YACC
 AM_CONDITIONAL([COND], [test x"$cond" = x"yes"])
 AC_OUTPUT
@@ -37,6 +37,7 @@ PATH=`pwd`/bin$PATH_SEPARATOR$PATH; export PATH
 YACC=fake-yacc; export YACC
 
 cat > Makefile.am <<'END'
+AUTOMAKE_OPTIONS = no-dependencies
 bin_PROGRAMS = foo bar
 foo_SOURCES = foo.y main.c
 bar_SOURCES = $(foo_SOURCES)
@@ -50,13 +51,6 @@ bar_yflags2 = __bar_cond_no__
 endif !COND
 END
 
-cat > main.c <<'END'
-int main (void)
-{
-  return 0;
-}
-END
-
 : > foo.y
 
 $ACLOCAL
@@ -66,9 +60,8 @@ $AUTOMAKE -a -Wno-unsupported
 $EGREP '(YFLAGS|yflags|am__append)' Makefile.in # For debugging.
 
 ./configure cond=yes
-$MAKE
+$MAKE foo.c bar-foo.c
 
-ls -l
 cat foo.c
 cat bar-foo.c
 
@@ -80,9 +73,8 @@ $MAKE maintainer-clean
 ls -l
 
 ./configure cond=no
-$MAKE
+$MAKE foo.c bar-foo.c
 
-ls -l
 cat foo.c
 cat bar-foo.c
 

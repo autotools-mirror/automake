@@ -15,21 +15,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Regression test for substitution references to conditional variables.
-# Report from Richard Boulton
+# Report from Richard Boulton.
 
-required='GNUmake gcc'
 . ./defs || Exit 1
 
-cat > configure.in << 'END'
-AC_INIT(Makefile.am)
-AM_INIT_AUTOMAKE(hello,0.23)
-AC_PROG_CC
-AM_CONDITIONAL(COND1, true)
-AM_CONDITIONAL(COND2, true)
-AC_OUTPUT(Makefile)
+cat >> configure.in << 'END'
+AM_CONDITIONAL([COND1], [true])
+AM_CONDITIONAL([COND2], [true])
+AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+AUTOMAKE_OPTIONS = no-dependencies
+CC = false
+OBJEXT = obj
 
 var1 = dlmain
 
@@ -47,22 +46,18 @@ endif
 
 helldl_SOURCES = $(var3)
 
-echorule:
-	@echo $(helldl_SOURCES) $(helldl_OBJECTS)
+.PHONY: test
+test:
+	test x"`echo $(helldl_SOURCES) $(helldl_OBJECTS)`" = \
+	     x"dlmain.c foo.c dlmain.obj foo.obj"
 
 bin_PROGRAMS = helldl
 END
 
-# Ignore user CFLAGS.
-CFLAGS=
-export CFLAGS
-
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
-
 ./configure
+$MAKE test
 
-val=`$MAKE --no-print-directory echorule`;
-echo $val
-test "x$val" = "xdlmain.c foo.c dlmain.o foo.o"
+:

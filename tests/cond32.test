@@ -19,22 +19,28 @@
 . ./defs || Exit 1
 
 cat >>configure.in <<'EOF'
-AC_PROG_CC
-AM_CONDITIONAL(C1, [test -z "$two"])
-AM_CONDITIONAL(C2, [test -n "$two"])
-AM_CONDITIONAL(C3, [test -z "$three"])
-AC_SUBST([MYSUB], [foo.o])
+AM_CONDITIONAL([C1], [test -z "$two"])
+AM_CONDITIONAL([C2], [test -n "$two"])
+AM_CONDITIONAL([C3], [test -z "$three"])
+# We define CC in Makefile.am, but OBJEXT here.
+OBJEXT=o; AC_SUBST([OBJEXT])
+AC_SUBST([MYSUB], ["foo.$OBJEXT"])
 AC_OUTPUT
 EOF
 
 cat >>Makefile.am <<'EOF'
+AUTOMAKE_OPTIONS = no-dependencies
+CC = :
+
 bin_PROGRAMS = a
+
 if C1
 a_LDADD = $(MYSUB)
 a_DEPENDENCIES = $(MYSUB) nonsense.a
 # Note that `nonsense.a' is there just to make sure Automake insn't
 # using some self computed a_DEPENDENCIES variable.
 endif
+
 if C2
 if C3
 BAR = bar.o
@@ -43,8 +49,11 @@ BAR = baz.o
 endif
 a_LDADD = $(BAR)
 endif
-print:
-	@echo BEG: $(a_DEPENDENCIES) :END
+
+got = `echo $(a_DEPENDENCIES)`
+test:
+	test "$(exp)" = "$(got)"
+.PHONY: test
 EOF
 
 $ACLOCAL
@@ -52,16 +61,12 @@ $AUTOCONF
 $AUTOMAKE
 
 ./configure
-$MAKE -e print > stdout
-cat stdout
-grep 'BEG: foo.o nonsense.a :END' stdout
+exp='foo.o nonsense.a' $MAKE -e test
 
 ./configure two=yes three=
-$MAKE -e print > stdout
-cat stdout
-grep 'BEG: bar.o :END' stdout
+exp='bar.o' $MAKE -e test
 
 ./configure two=yes three=yes
-$MAKE -e print > stdout
-cat stdout
-grep 'BEG: baz.o :END' stdout
+exp='baz.o' $MAKE -e test
+
+:

@@ -18,7 +18,7 @@
 #  - If $(TEST_SUITE_LOG) is in $(TEST_LOGS), we get a diagnosed
 #    error, not a make hang or a system freeze.
 
-parallel_tests=yes
+am_parallel_tests=yes
 . ./defs || Exit 1
 
 # The tricky part of this test is to avoid that make hangs or even
@@ -100,11 +100,18 @@ do_check ()
   cat output
   $FGREP '::OOPS::' output && Exit 1 # Possible infinite recursion.
   # Check that at least we don't create a botched global log file.
-# FIXME: GNU make currently creates it!
-#  test ! -f "$log"
+  test ! -f "$log"
+  if using_gmake; then
+    grep "[Cc]ircular.*dependency" output | $FGREP "$log"
+    test $st -gt 0
+  else
     # Look for possible error messages about circular dependencies from
     # either make or our own recipes.  At least one such a message must
-    # be present.
+    # be present.  OTOH, some make implementations (e.g., NetBSD's), while
+    # smartly detecting the circular dependency early and diagnosing it,
+    # still exit with a successful exit status (yikes!).  So don't check
+    # the exit status of non-GNU make, to avoid spurious failures.
+    # this case.
     err_seen=no
     for err_rx in \
       'circular.* depend' \
@@ -118,12 +125,7 @@ do_check ()
       break
     done
     test $err_seen = yes || Exit 1
-    # Some make implementations (e.g., NetBSD's), while smartly detecting
-    # the circular dependency early and diagnosing it, still exit with a
-    # successful exit status (yikes!).  Relax our checks not to fail in
-    # this case.
-    using_gmake && { test $st -gt 0 || Exit 1; }
-    :
+  fi
 }
 
 : > test-suite.test

@@ -16,7 +16,7 @@
 
 # Stress test on canonicalization.
 
-required='libtool libtoolize'
+required='cc libtool libtoolize'
 . ./defs || Exit 1
 
 cat >> configure.in << 'END'
@@ -24,11 +24,15 @@ AC_PROG_CC
 AM_PROG_AR
 AC_PROG_RANLIB  dnl: for static libraries
 AC_PROG_LIBTOOL dnl: for libtool libraries
+AM_CONDITIONAL([CROSS_COMPILING], [test "$cross_compiling" = yes])
 AC_OUTPUT
 END
 
-touch ,foo-bar libb.az+baz lib~zardoz,, || Exit 77
-rm -f ,foo-bar libb.az+baz lib~zardoz,,
+if touch ,foo-bar libb.az+baz lib~zardoz,,; then
+  rm -f ,foo-bar libb.az+baz lib~zardoz,,
+else
+  skip_ "cannot create regular files with \"tricky\" names"
+fi
 
 cat > Makefile.am << 'END'
 noinst_PROGRAMS = dummy_static dummy_dynamic ,foo-bar
@@ -47,12 +51,18 @@ lib_zardoz___la_SOURCES = libd.c
 
 check-local:
 	ls -l
+if CROSS_COMPILING
+	test -f ./,foo-bar$(EXEEXT)
+	test -f ./dummy_static$(EXEEXT)
+	test -f ./dummy_dynamic$(EXEEXT)
+else !CROSS_COMPILING
 	./,foo-bar
 	./dummy_static
 	./dummy_dynamic
 	./,foo-bar | grep 'Hello, FooBar!'
 	./dummy_static | grep 'Hello from Static!'
 	./dummy_dynamic | grep 'Hello from Dynamic!'
+endif !CROSS_COMPILING
 END
 
 cat > foobar.c << 'END'

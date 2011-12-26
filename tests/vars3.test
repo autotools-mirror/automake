@@ -43,36 +43,24 @@ cat stderr >&2
 # Lines number are printed in error message.
 # Use them to make sure errors are diagnosed against the right lines.
 
-# No error expected for these lines.
-grep 1: stderr
-grep 2: stderr && Exit 1
-grep 3: stderr && Exit 1
-grep 4: stderr
-grep 5: stderr
-grep 6: stderr && Exit 1
-grep 7: stderr
-grep 8: stderr
-grep 9: stderr
-grep 10: stderr && Exit 1
-grep 11: stderr && Exit 1
-grep 12: stderr && Exit 1
+# No error expected apart from those on these lines.
+grep -v '^Makefile\.am:[145789]:' stderr | grep . && Exit 1
 
 # Now check some individual values.
-grep 'shell echo' stderr
+grep ':1:.*shell echo' stderr
 grep 'nextvariableisbad' stderr && Exit 1
-grep 'addsuffix' stderr
-grep 'bad boy' stderr
-grep 'ok' stderr && Exit 1
-grep 'three errors' stderr
-grep 'on this' stderr
-grep 'long line' stderr
-grep 'o u c h' stderr
-grep 'wildcard' stderr
-grep 'another Error' stderr
-grep 'thisis' stderr && Exit 1
-grep 'here' stderr && Exit 1
+grep ':4:.*addsuffix' stderr
+grep ':5:.*bad boy' stderr
+grep ':7:.*three errors' stderr
+grep ':7:.*on this' stderr
+grep ':7:.*long line' stderr
+grep ':8:.*o u c h' stderr
+grep ':8:.*wildcard' stderr
+grep ':9:.*another Error' stderr
 
-# None of these errors be diagnosed with -Wno-portability
+$EGREP 'ok|thisis|here' stderr && Exit 1
+
+# None of these errors be diagnosed with `-Wno-portability'.
 $AUTOMAKE -Wno-portability
 
 # Likewise if we add this in the Makefile.am

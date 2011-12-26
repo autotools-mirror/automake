@@ -15,7 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Check dirlist support.
-# This test relies on m4/dirlist
 
 . ./defs || Exit 1
 
@@ -24,7 +23,8 @@ AC_INIT
 AM_INIT_GUILE_MODULE
 EOF
 
-mkdir dirlist-test
+mkdir acdir dirlist-test
+echo ./dirlist-test > acdir/dirlist
 
 cat >dirlist-test/dirlist-check.m4 <<'END'
 AC_DEFUN([AM_INIT_GUILE_MODULE],[
@@ -39,12 +39,12 @@ cat >dirlist-test/init.m4 <<EOF
 AC_DEFUN([AM_INIT_AUTOMAKE], [I should not be included])
 EOF
 
-$ACLOCAL
+$ACLOCAL --system-acdir acdir
 $AUTOCONF
 
-# there should be no m4_include in aclocal.m4, even tho m4/dirlist contains
-# `./dirlist-test' as a relative directory.  Only -I directories are subject
-# to file inclusion.
+# There should be no m4_include in aclocal.m4, even though m4/dirlist
+# contains `./dirlist-test' as a relative directory.  Only -I directories
+# are subject to file inclusion.
 grep m4_include aclocal.m4 && Exit 1
 
 grep 'GUILE-VERSION' configure

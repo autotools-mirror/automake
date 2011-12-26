@@ -22,17 +22,21 @@ cat > Makefile.am << 'END'
 TESTS = frob.test
 END
 
+test x"$am_parallel_tests" != x"yes" || : > test-driver
+
 : > frob.test
 
 $ACLOCAL
 $AUTOMAKE
 
 grep '^check-TESTS:' Makefile.in
-grep '^check-DEJAGNU' Makefile.in && Exit 1
+grep 'check-DEJAGNU' Makefile.in && Exit 1
 
-# check-TESTS is phony.
-sed -n '/^\.PHONY:/,/^$/p' Makefile.in | grep check-TESTS
+# 'check-TESTS' is phony.
+sed -n '/^\.PHONY:/,/^$/p' Makefile.in | $EGREP '(^| )check-TESTS($| )'
 
-# check should depend directly on check-am (similar tests are
+# 'check' should depend directly on 'check-am' (similar tests are
 # in check2.test and check3.test).
-grep '^check: check-am' Makefile.in
+$EGREP '^check:.* check-am( |$)' Makefile.in
+
+:

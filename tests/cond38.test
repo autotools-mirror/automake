@@ -25,7 +25,7 @@ AM_CONDITIONAL([CASE_B], :)
 AC_OUTPUT
 EOF
 
-cat >>Makefile.am <<'EOF'
+cat > Makefile.am <<'EOF'
 SUBDIRS = a
 if CASE_A
 SUBDIRS += b
@@ -46,8 +46,10 @@ if CASE_B
 SUBDIRS += iXYZ
 SUBDIRS += jZYX
 endif
-print:
-	@echo BEG: $(SUBDIRS) :END
+
+.PHONY: test
+test:
+	test "`echo $(SUBDIRS)`" = 'a b c d e f g h iXYZ jZYX'
 EOF
 
 mkdir a b c d e f g h iXYZ jZYX
@@ -57,9 +59,9 @@ $AUTOCONF
 $AUTOMAKE
 
 ./configure
-$MAKE print >stdout
-cat stdout
-# Check good ordering
-grep 'BEG: a b c d e f g h iXYZ jZYX :END' stdout
 # Make sure no extra variable was created for the last 3 items.
 grep 'append.*=.* h iXYZ jZYX' Makefile
+# Check good ordering.
+$MAKE test
+
+:

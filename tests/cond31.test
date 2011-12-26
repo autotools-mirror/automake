@@ -19,13 +19,14 @@
 . ./defs || Exit 1
 
 cat >>configure.in <<'EOF'
-AC_PROG_CC
-AM_CONDITIONAL(C1, [test -z "$two"])
-AM_CONDITIONAL(C2, [test -n "$two"])
+AC_SUBST([CC], [false])
+AC_SUBST([OBJEXT], [o])
+AM_CONDITIONAL([C1], [test -z "$two"])
+AM_CONDITIONAL([C2], [test -n "$two"])
 AC_OUTPUT
 EOF
 
-cat >>Makefile.am <<'EOF'
+cat > Makefile.am <<'EOF'
 bin_PROGRAMS = a
 a_LDADD = c0.o -L/some/where
 if C1
@@ -34,20 +35,22 @@ endif
 if C2
 a_LDADD += c2.o -dlopen c3.la
 endif
-print:
-	@echo BEG: $(a_DEPENDENCIES) :END
+
+.PHONY: test1 test2
+test1:
+	test "`echo $(a_DEPENDENCIES)`" = "c0.o c1.o"
+test2:
+	test "`echo $(a_DEPENDENCIES)`" = "c0.o c2.o c3.la"
 EOF
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE
+$AUTOMAKE --ignore-deps
 
 ./configure
-$MAKE -e print > stdout
-cat stdout
-grep 'BEG: c0.o c1.o :END' stdout
+$MAKE test1
 
 ./configure two=yes
-$MAKE -e print > stdout
-cat stdout
-grep 'BEG: c0.o c2.o c3.la :END' stdout
+$MAKE test2
+
+:

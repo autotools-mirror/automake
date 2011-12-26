@@ -22,8 +22,7 @@
 # sister test `silent-many-gcc.test', which requires the GNU compilers
 # and forces the use of gcc depmode.
 
-# FIXME: generic C++/Fortran compilers should suffice here
-required='g++ gfortran flex yacc'
+required='cc c++ fortran fortran77 flex yacc'
 . ./defs || Exit 1
 
 # Avoids too much code duplication.
@@ -100,11 +99,33 @@ mkdir sub
 cat >>configure.in <<'EOF'
 AM_SILENT_RULES
 AM_PROG_CC_C_O
-AC_PROG_CXX
 AC_PROG_F77
 AC_PROG_FC
 AC_PROG_LEX
 AC_PROG_YACC
+AC_PROG_CXX
+
+# FIXME: remove this hack once the requirements c++, fortran and fortran77
+# are implemented correctly.
+test -n "`echo $CXX`" || AC_MSG_ERROR([C++ compiler not found], [77])
+test -n "`echo $FC`"  || AC_MSG_ERROR([Fortran compiler not found], [77])
+test -n "`echo $F77`" || AC_MSG_ERROR([Fortran 77 compiler not found], [77])
+
+# The SunStudio C++ compiler is unfortunately named `CC' (yuck!),
+# and this can cause problems with our grepping checks on the
+# output from make.  Avoid these problems by invoking a wrapper
+# script, as filtering the make output proved too fragile.
+case " $CXX " in
+  *' CC '*|*'/CC '*)
+    AC_MSG_WARN([the C++ compiler '$CXX' seems to be named 'CC'])
+    AC_MSG_WARN([it will be wrapped with the custom script 'am--cxx'])
+    echo '#!/bin/sh' > bin/am--cxx
+    echo 'PATH=$saved_PATH; export PATH' >> bin/am--cxx
+    echo "exec $CXX \${1+"\$@"}" >> bin/am--cxx
+    chmod a+x bin/am--cxx
+    CXX=am--cxx
+esac
+
 AC_CONFIG_FILES([sub/Makefile])
 AC_OUTPUT
 EOF
@@ -182,6 +203,10 @@ cp foo2.f90 sub/baz2.f90
 cp foo3.f sub/baz3.f
 cp foo5.l sub/baz5.l
 cp foo6.y sub/baz6.y
+
+mkdir bin
+saved_PATH=$PATH; export saved_PATH
+PATH=`pwd`/bin$PATH_SEPARATOR$PATH; export PATH
 
 $ACLOCAL
 $AUTOMAKE --add-missing

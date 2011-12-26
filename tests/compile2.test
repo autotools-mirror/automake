@@ -16,9 +16,10 @@
 
 # Make sure `compile' deals correctly with w32 style paths.
 
+am_create_testdir=empty
 . ./defs || Exit 1
 
-cp "$top_testsrcdir/lib/compile" .
+get_shell_script compile
 
 cat >mycc <<'END'
 source_seen=no
@@ -63,8 +64,13 @@ test -f "$amtest_object"
 
 # Absolute w32 paths should be accepted.
 # Do not actually run this test on anything that could be w32.
-test -d "C:\\" && Exit 77
-case $PATH_SEPARATOR in ';'|':');; *) Exit 77;; esac
+if test -d 'C:\'; then
+  skip_ "this test shouldn't run on a win32-like system"
+fi
+case $PATH_SEPARATOR in
+ ';'|':');;
+ *) skip_ "unrecognized PATH separator \`$PATH_SEPARATOR'"
+esac
 
 amtest_source='C:\libltdl\libltdl\slist.c'
 amtest_object='C:\libltdl\libltdl\libltdl_libltdl_la-slist.obj'

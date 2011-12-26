@@ -46,37 +46,38 @@ chmod +x ok.sh dir/fail.sh
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE
+$AUTOMAKE --add-missing
+
 ./configure --prefix "`pwd`/inst"
+
 $MAKE check >stdout && { cat stdout; Exit 1; }
 cat stdout
-grep 'FAIL: fail.sh' stdout
-grep 'PASS: ok.sh' stdout && Exit 1
+grep '^FAIL: fail\.sh *$' stdout
+grep '^PASS: ok\.sh *$' stdout && Exit 1
 
 # The exit status of `make -k' can be anything
 # (depending on the Make implementation)
 $MAKE -k check >stdout || :
 cat stdout
-grep 'FAIL: fail.sh' stdout
-grep 'PASS: ok.sh' stdout
+grep '^FAIL: fail\.sh *$' stdout
+grep '^PASS: ok\.sh *$' stdout
 
-# should also works when -k is not in first position
+# Should also works when -k is not in first position.
 $MAKE -s -k check >stdout || :
 cat stdout
-grep 'FAIL: fail.sh' stdout
-grep 'PASS: ok.sh' stdout
+grep '^FAIL: fail\.sh *' stdout
+grep '^PASS: ok\.sh *' stdout
 
 # The rest of the test is for GNU Make.
 
-# Use --version AND -v, because SGI Make doesn't fail on --version.
-# Also grep for GNU because newer versions of FreeBSD make do
-# not complain about `--version' (they seem to silently ignore it).
-($MAKE --version -v | grep GNU) || Exit 0
+if using_gmake; then
+  # Try with a long-option that do not have a short option equivalent
+  # (here, --no-print-directory).  That should cause all options to
+  # appear verbatim in MAKEFLAGS.
+  $MAKE --no-print-directory -k check >stdout || :
+  cat stdout
+  grep '^FAIL: fail\.sh *$' stdout
+  grep '^PASS: ok\.sh *$' stdout
+fi
 
-# Try with a long-option that do not have a short option equivalent
-# (here, --no-print-directory).  That should cause all options to
-# appear verbatim in MAKEFLAGS.
-$MAKE --no-print-directory -k check >stdout || :
-cat stdout
-grep 'FAIL: fail.sh' stdout
-grep 'PASS: ok.sh' stdout
+:

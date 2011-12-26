@@ -15,8 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Check silent-rules mode for C++.
+# This test should work with generic C++ compilers; keep it in sync with
+# sister test `silentcxx-gcc.test', which requires the GNU C++ compiler
+# and forces the use of gcc depmode.
 
-required='g++' # FIXME: any decent C++ compiler should be OK
+required=c++
 . ./defs || Exit 1
 
 mkdir sub
@@ -47,11 +50,11 @@ bar2_CXXFLAGS = $(AM_CXXFLAGS)
 EOF
 
 cat > foo.cpp <<'EOF'
-using namespace std; /* C compilers fail on this */
-int main() { return 0; }
+using namespace std; /* C compilers fail on this. */
+int main (void) { return 0; }
 EOF
 
-# let's try out other extensions too
+# Let's try out other extensions too.
 echo 'class Baz  { public: int i;  };' > baz.cxx
 echo 'class Quux { public: bool b; };' > quux.cc
 
@@ -61,11 +64,15 @@ $ACLOCAL
 $AUTOMAKE --add-missing
 $AUTOCONF
 
-# configure once for fastdep, once for non-fastdep, once for nodep
+# Sanity check: make sure the cache variable we force is really used
+# by configure.
+$FGREP am_cv_CXX_dependencies_compiler_type configure
+
+# Force dependency tracking explicitly, so that slow dependency
+# extractors are not rejected.  Try also with dependency tracking
+# explicitly disabled.
 for config_args in \
-  '' \
-  am_cv_CC_dependencies_compiler_type=gcc \
-  --disable-dependency-tracking
+  --enable-dependency-tracking --disable-dependency-tracking
 do
   ./configure $config_args --enable-silent-rules
   $MAKE >stdout || { cat stdout; Exit 1; }
@@ -92,7 +99,7 @@ do
   grep ' -c ' stdout
   grep ' -o ' stdout
 
-  $EGREP '(CC|CXX|LD) ' stdout && Exit 1
+  $EGREP '(CXX|LD) ' stdout && Exit 1
 
   # Ensure a clean reconfiguration/rebuild.
   $MAKE clean

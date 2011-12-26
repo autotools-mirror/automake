@@ -20,10 +20,11 @@
 . ./defs || Exit 1
 
 cat >> configure.in << 'END'
-AC_PROG_CC
-AM_CONDITIONAL(ONE, true)
-AM_CONDITIONAL(TWO, false)
-AM_CONDITIONAL(THREE, false)
+CC=false; AC_SUBST([CC])
+OBJEXT=oo; AC_SUBST([OBJEXT])
+AM_CONDITIONAL([ONE], [true])
+AM_CONDITIONAL([TWO], [false])
+AM_CONDITIONAL([THREE], [false])
 AC_OUTPUT
 END
 
@@ -54,14 +55,15 @@ endif
 
 targ_SOURCES = $(SONE) $(STWO) $(STHREE) $(STHREE2)
 
-echo:
-	echo BEG: $(targ_OBJECTS) :END;
+.PHONY: test
+test:
+	test "`echo $(targ_OBJECTS)`" = "one.oo two.oo three.oo three2.oo"
 END
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE
+$AUTOMAKE --ignore-deps
 ./configure
-OBJEXT=oo $MAKE -e echo > output
-cat output
-$FGREP 'BEG: one.oo two.oo three.oo three2.oo :END' output
+$MAKE test
+
+:

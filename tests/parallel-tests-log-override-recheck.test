@@ -17,32 +17,30 @@
 # Check parallel-tests features: runtime redefinition of $(TEST_SUITE_LOG)
 # for the recheck target.
 
-parallel_tests=yes
+am_parallel_tests=yes
 . ./defs || Exit 1
-
-set -e
 
 cat >> configure.in <<'END'
 AC_OUTPUT
 END
 
 cat > Makefile.am <<'END'
-TESTS = foo.test bar.test baz.test
+TESTS = foofoo.test barbar.test bazbaz.test
 END
 
-cat > foo.test <<'END'
+cat > foofoo.test <<'END'
 #! /bin/sh
 echo "this is $0"
 exit 0
 END
 
-cat > bar.test <<'END'
+cat > barbar.test <<'END'
 #! /bin/sh
 echo "this is $0"
 exit 99
 END
 
-cat > baz.test <<'END'
+cat > bazbaz.test <<'END'
 #! /bin/sh
 echo "this is $0"
 exit ${BAZ_EXIT_STATUS-1}
@@ -56,6 +54,13 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
+# Filter make output before grepping it, for make implementations that,
+# like Solaris' one, print the whole of the failed recipe on failure.
+filter_stdout ()
+{
+  grep -v 'bases=.*;' stdout > t && mv -f t stdout
+}
+
 ./configure
 $MAKE check >stdout && { cat stdout; Exit 1; }
 cat stdout
@@ -65,11 +70,12 @@ TEST_SUITE_LOG=my.log $MAKE -e recheck >stdout \
   && { cat stdout; Exit 1; }
 cat stdout
 ls -l
-grep '^2 of 2 .*failed' stdout
+filter_stdout
+count_test_results total=2 pass=0 fail=1 skip=0 xfail=0 xpass=0 error=1
 for x in stdout my.log; do
-  $FGREP foo.test $x && Exit 1
-  $FGREP bar.test $x
-  $FGREP baz.test $x
+  $FGREP foofoo $x && Exit 1
+  $FGREP barbar $x
+  $FGREP bazbaz $x
 done
 
 chmod a-rw my.log
@@ -77,16 +83,17 @@ BAZ_EXIT_STATUS=0 TEST_SUITE_LOG=my2.log $MAKE -e recheck >stdout \
   && { cat stdout; Exit 1; }
 cat stdout
 ls -l
-grep '^1 of 2 .*failed' stdout
-$FGREP foo.test stdout && Exit 1
-$FGREP bar.test stdout
-$FGREP baz.test stdout
-$FGREP foo.test my2.log && Exit 1
-$FGREP bar.test my2.log
-$FGREP baz.test my2.log && Exit 1
+count_test_results total=2 pass=1 fail=0 skip=0 xfail=0 xpass=0 error=1
+filter_stdout
+$FGREP foofoo stdout && Exit 1
+$FGREP barbar stdout
+$FGREP bazbaz stdout
+$FGREP foofoo my2.log && Exit 1
+$FGREP barbar my2.log
+$FGREP bazbaz my2.log && Exit 1
 
 chmod u+r test-suite.log my.log
-$FGREP baz.test test-suite.log
-$FGREP baz.test my.log
+$FGREP bazbaz test-suite.log
+$FGREP bazbaz my.log
 
 :

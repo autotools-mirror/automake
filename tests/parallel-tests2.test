@@ -15,10 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Check parallel-tests features:
-# - check-html
-# - recheck-html
+#  - check-html
+#  - recheck-html
+# Keep this in sync with sister test `test-driver-custom-html.test'.
 
-parallel_tests=yes
+am_parallel_tests=yes
 required=rst2html
 . ./defs || Exit 1
 
@@ -35,22 +36,25 @@ bla:
 CLEANFILES = bla
 END
 
-cat >>foo.test <<'END'
+cat > foo.test <<'END'
 #! /bin/sh
 echo "this is $0"
 test -f bla || exit 1
 exit 0
 END
-cat >>bar.test <<'END'
+
+cat > bar.test <<'END'
 #! /bin/sh
 echo "this is $0"
 exit 99
 END
-cat >>baz.test <<'END'
+
+cat > baz.test <<'END'
 #! /bin/sh
 echo "this is $0"
 exit 1
 END
+
 chmod a+x foo.test bar.test baz.test
 
 $ACLOCAL
@@ -58,30 +62,39 @@ $AUTOCONF
 $AUTOMAKE -a
 
 ./configure
-$MAKE check-html >stdout && { cat stdout; Exit 1; }
-cat stdout
+
+$MAKE check-html && Exit 1
 test -f mylog.html
+# check-html should cause check_SCRIPTS to be created.
+test -f bla
+
+# "make clean" should remove HTML files.
+$MAKE clean
+test ! -f mylog.html
+test ! -f bla
 
 # Always create the HTML output, even if there were no failures.
 rm -f mylog.html
-env TESTS=foo.test $MAKE -e check-html >stdout || { cat stdout; Exit 1; }
-cat stdout
-test -f mylog.html
-
-# Create HTML output also with recheck-html
-rm -f mylog.html
-env TESTS=foo.test $MAKE -e recheck-html >stdout || { cat stdout; Exit 1; }
-cat stdout
-test -f mylog.html
-
-# check-html and recheck-html should cause check_SCRIPTS to be created,
-# and recheck-html should rerun no tests if check has not been run.
-$MAKE clean
 env TESTS=foo.test $MAKE -e check-html
+test -f mylog.html
+
+# Create summarizing HTML output also with recheck-html.
+rm -f mylog.html
+env TESTS=foo.test $MAKE -e recheck-html
+test -f mylog.html
+
+# check-html should cause check_SCRIPTS to be created.
+$MAKE clean
+env TEST_LOGS=foo.log $MAKE -e check-html
 test -f bla
+test -f foo.log
+test -f mylog.html
+# recheck-html should cause check_SCRIPTS to be created, and should rerun
+# no tests if it appears that check has not been run.
 $MAKE clean
 env TESTS=foo.test $MAKE -e recheck-html
 test -f bla
 test ! -f foo.log
 test -f mylog.html
+
 :

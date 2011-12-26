@@ -19,7 +19,7 @@
 . ./defs || Exit 1
 
 # We want (almost) complete control over automake options.
-AUTOMAKE="$original_AUTOMAKE --foreign -Werror"
+AUTOMAKE="$am_original_AUTOMAKE --foreign -Werror"
 
 cat > configure.in <<END
 AC_INIT([$me], [1.0])
@@ -34,9 +34,13 @@ END
 $ACLOCAL
 
 AUTOMAKE_fails -Wbazquux
+# FIXME: we could get rid of this once we improve our wrapper scripts.
+sed "s/^automake:/automake-$APIVERSION:/" stderr > t
+mv -f t stderr
+cat stderr >&2
 grep '^configure\.in:2:.* unknown warning category.*zardoz' stderr
 grep '^Makefile\.am:1:.* unknown warning category.*foobar' stderr
-grep '^automake:.* unknown warning category.*bazquux' stderr
+grep "^automake-$APIVERSION:.* unknown warning category.*bazquux" stderr
 
 # Check that we can override warnings about unknown warning categories.
 $AUTOMAKE -Wno-unsupported -Wbazquux

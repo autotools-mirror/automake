@@ -22,8 +22,6 @@
 am_create_testdir=empty
 . ./defs || Exit 1
 
-set -e
-
 i=0
 for auxdir in build-aux ''; do
 
@@ -61,8 +59,8 @@ END
 END
 
   mkdir subdir
-  : > subdir/Makefile.am
-  
+  echo > subdir/Makefile.am # `echo', not `:', for Solaris /bin/sh.
+
   test -z "$auxdir" || mkdir "$auxdir" || Exit 99
 
   if test -z "$auxdir"; then
@@ -81,7 +79,8 @@ END
   grep "^configure\\.in:6:.* required file.*$auxdir_rx/zardoz"    stderr
 
   touch $auxdir/foo.txt $auxdir/bar.sh $auxdir/zardoz
-  cp "$testsrcdir"/../lib/missing "$testsrcdir"/../lib/install-sh $auxdir
+  cp "$am_scriptdir"/missing "$am_scriptdir"/install-sh $auxdir \
+    || fatal_ "fetching auxiliary scripts \`missing' and \`install-sh'"
   $AUTOMAKE
   ./configure
   $MAKE test

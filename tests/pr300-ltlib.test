@@ -18,7 +18,7 @@
 # Make sure that installing subdirectory libtool libraries works.
 # PR/300
 
-required='libtoolize gcc'
+required='cc libtoolize'
 . ./defs || Exit 1
 
 cat >> configure.in << 'END'
@@ -39,9 +39,6 @@ cat > a.c << 'END'
 int i = 3;
 END
 
-## A rule in the Makefile should create subdir
-# mkdir subdir
-
 libtoolize
 $ACLOCAL
 $AUTOCONF
@@ -49,8 +46,11 @@ $AUTOMAKE -Wno-extra-portability --copy --add-missing
 
 ./configure --prefix "`pwd`/inst"
 
-$MAKE V=1 >stdout || { cat stdout; Exit 1; }
+# A rule in the Makefile should create subdir.
+test ! -d subdir
+$MAKE >stdout || { cat stdout; Exit 1; }
 cat stdout
+test -d subdir
 
 grep 'liba.la .*-rpath .*lib' stdout
 grep 'liba.la .*-rpath .*lib/subdir' stdout && Exit 1

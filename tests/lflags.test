@@ -17,8 +17,9 @@
 # Check that $(LFLAGS) takes precedence over both $(AM_LFLAGS) and
 # $(foo_LFLAGS).
 # Please keep this in sync with the sister tests lflags2.test, yflags.test
-# and yflags2.test
+# and yflags2.test.
 
+required=cc
 . ./defs || Exit 1
 
 cat >fake-lex <<'END'
@@ -33,7 +34,7 @@ chmod a+x fake-lex
 unset LEX || :
 
 cat >> configure.in <<'END'
-AC_PROG_CC
+AC_SUBST([CC], [false])
 # Simulate presence of Lex using our fake-lex script.
 AC_SUBST([LEX], ['$(abs_top_srcdir)'/fake-lex])
 AC_SUBST([LEX_OUTPUT_ROOT], [lex.yy])
@@ -42,6 +43,7 @@ AC_OUTPUT
 END
 
 cat > Makefile.am <<'END'
+AUTOMAKE_OPTIONS = no-dependencies
 bin_PROGRAMS = foo bar
 foo_SOURCES = main.c foo.l
 bar_SOURCES = main.c bar.l
@@ -55,19 +57,17 @@ $AUTOMAKE -a
 grep '\$(LFLAGS).*\$(bar_LFLAGS)' Makefile.in && Exit 1
 grep '\$(LFLAGS).*\$(AM_LFLAGS)' Makefile.in && Exit 1
 
-echo 'int main(void){ return 0; }' > main.c
 : > foo.l
 : > bar.l
 
 $AUTOCONF
 ./configure
-env LFLAGS=__user_flags__ $MAKE -e
-
-ls -l
+env LFLAGS=__user_flags__ $MAKE -e foo.c bar-bar.c
 
 cat foo.c
-grep '__am_flags__.*__user_flags__' foo.c
 cat bar-bar.c
+
+grep '__am_flags__.*__user_flags__' foo.c
 grep '__bar_flags__.*__user_flags__' bar-bar.c
 
 :

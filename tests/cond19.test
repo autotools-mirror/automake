@@ -15,21 +15,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Regression test for substitution references to conditional variables.
-# Report from Richard Boulton
+# Report from Richard Boulton.
 
-required='GNUmake gcc'
 . ./defs || Exit 1
 
-cat > configure.in << 'END'
-AC_INIT(Makefile.am)
-AM_INIT_AUTOMAKE(hello,0.23)
-AC_PROG_CC
-AM_CONDITIONAL(COND1, test "x$CONDITION1" = "xtrue")
-AM_CONDITIONAL(COND2, test "x$CONDITION2" = "xtrue")
-AC_OUTPUT(Makefile)
+cat >> configure.in << 'END'
+AC_SUBST([CC], [false])
+AC_SUBST([OBJEXT], [o])
+AM_CONDITIONAL([COND1], [test "x$CONDITION1" = "xtrue"])
+AM_CONDITIONAL([COND2], [test "x$CONDITION2" = "xtrue"])
+AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+bin_PROGRAMS = helldl
 
 var1 = dlmain
 
@@ -49,34 +48,24 @@ endif
 
 helldl_SOURCES = $(var3:.c=1.c) $(var4:.c=2.c)
 
-echorule:
-	@echo $(helldl_SOURCES) $(helldl_OBJECTS)
+got = `echo $(helldl_SOURCES) $(helldl_OBJECTS)`
 
-bin_PROGRAMS = helldl
+.PHONY: test
+test:
+	test x"$(exp)" = x"$(got)"
 END
-
-# Ignore user CFLAGS.
-CFLAGS=
-export CFLAGS
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE -a
+$AUTOMAKE -a -i
 
 CONDITION1=true CONDITION2=true ./configure
-vala=`$MAKE --no-print-directory echorule`;
+exp='dlmaina1.c dlmainb2.c dlmaina1.o dlmainb2.o' $MAKE -e test
 CONDITION1=true CONDITION2=false ./configure
-valb=`$MAKE --no-print-directory echorule`;
+exp='dlmainb1.c dlmaina2.c dlmainb1.o dlmaina2.o' $MAKE -e test
 CONDITION1=false CONDITION2=true ./configure
-valc=`$MAKE --no-print-directory echorule`;
+exp='dlmaina1.c dlmainb2.c dlmaina1.o dlmainb2.o' $MAKE -e test
 CONDITION1=false CONDITION2=false ./configure
-vald=`$MAKE --no-print-directory echorule`;
+exp='dlmainb1.c dlmaina2.c dlmainb1.o dlmaina2.o' $MAKE -e test
 
-echo $vala
-echo $valb
-echo $valc
-echo $vald
-test "x$vala" = "xdlmaina1.c dlmainb2.c dlmaina1.o dlmainb2.o" || Exit 1
-test "x$valb" = "xdlmainb1.c dlmaina2.c dlmainb1.o dlmaina2.o" || Exit 1
-test "x$valc" = "xdlmaina1.c dlmainb2.c dlmaina1.o dlmainb2.o" || Exit 1
-test "x$vald" = "xdlmainb1.c dlmaina2.c dlmainb1.o dlmaina2.o" || Exit 1
+:

@@ -40,6 +40,10 @@ install-test: install
 	test ! -f "$(lispdir)/am-one.elc"
 	test ! -f "$(lispdir)/am-two.elc"
 	test ! -f "$(lispdir)/am-three.elc"
+
+not-installed:
+	find "$(lispdir)" | grep '\.el$$' && exit 1; :
+	find "$(lispdir)" | grep '\.elc$$' && exit 1; :
 EOF
 
 cat >> configure.in << 'EOF'
@@ -60,10 +64,16 @@ $MAKE
 $MAKE test
 $MAKE install-test
 $MAKE uninstall
+$MAKE not-installed
 
 # Fake the absence of emacs.
-# *.el files SHOULD be installed.
+# *.el files SHOULD be installed by "make install" (and uninstalled
+# by "make uninstall").
 ./configure EMACS=no --prefix "`pwd`"
 $MAKE
 $MAKE test
 $MAKE install-test
+$MAKE uninstall
+$MAKE not-installed
+
+:

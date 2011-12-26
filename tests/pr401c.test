@@ -18,8 +18,8 @@
 # Check support for AC_CONFIG_LIBOBJ_DIR vs ALLOCA.
 # (pr401.test and pr401b.test do the same for LIBOBJS and LTLIBOBJS)
 
-parallel_tests=no
-required=gcc
+am_parallel_tests=no
+required=cc
 . ./defs || Exit 1
 
 mkdir lib src
@@ -28,8 +28,7 @@ ac_cv_func_alloca_works=no
 export  ac_cv_func_alloca_works
 
 cat >lib/alloca.c <<'EOF'
-char *
-feep ()
+const char *feep (void)
 {
   return "feep";
 }
@@ -38,10 +37,9 @@ EOF
 cat >src/main.c <<'EOF'
 #include <stdio.h>
 
-extern char *feep ();
+extern const char *feep (void);
 
-int
-main (int argc, char **argv)
+int main (void)
 {
   puts (feep ());
   return 0;
@@ -49,13 +47,14 @@ main (int argc, char **argv)
 EOF
 
 cat >>configure.in << 'EOF'
-## These lines are activated for later tests
+## These lines are activated for later tests.
 #: AC_CONFIG_LIBOBJ_DIR([lib])
 AC_PROG_CC
 #x AM_PROG_CC_C_O
 AC_PROG_RANLIB
 AC_FUNC_ALLOCA
 AC_CONFIG_FILES([lib/Makefile src/Makefile])
+AM_CONDITIONAL([CROSS_COMPILING], [test $cross_compiling = yes])
 AC_OUTPUT
 EOF
 
@@ -77,7 +76,9 @@ cat >src/Makefile.am <<'EOF'
 check_PROGRAMS = main
 main_LDADD = ../lib/libfeep.a
 
+if !CROSS_COMPILING
 TESTS = main
+endif
 EOF
 
 $ACLOCAL
@@ -87,9 +88,9 @@ $AUTOMAKE -Wno-extra-portability
 $MAKE distcheck
 
 
-## ------------------------------------------ ##
-## Traditional LIBOBJS with LIBOBJDIR set.    ##
-## ------------------------------------------ ##
+## --------------------------------------- ##
+## Traditional ALLOCA with LIBOBJDIR set.  ##
+## --------------------------------------- ##
 
 # Invocation of AC_CONFIG_LIBOBJ_DIR may be necessary for reasons
 # unrelated to Automake or Makefile.am layout.
@@ -131,12 +132,14 @@ AUTOMAKE_OPTIONS = subdir-objects
 
 noinst_LIBRARIES = libfeep.a
 libfeep_a_SOURCES =
-libfeep_a_LIBADD = $(ALLOCA) $(LIBOBJS) # Add LIBOBJS for fun
+libfeep_a_LIBADD = $(ALLOCA) $(LIBOBJS) # Add LIBOBJS for fun.
 
 check_PROGRAMS = main
 main_LDADD = libfeep.a
 
+if !CROSS_COMPILING
 TESTS = main
+endif
 EOF
 
 $ACLOCAL
@@ -168,7 +171,9 @@ check_PROGRAMS = src/main
 src_main_SOURCES = src/main.c
 src_main_LDADD = lib/libfeep.a
 
+if !CROSS_COMPILING
 TESTS = src/main
+endif
 
 check-local:
 	test -f src/main.$(OBJEXT)

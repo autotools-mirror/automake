@@ -23,35 +23,41 @@
 # but better to be safe.
 
 . ./defs || Exit 1
+
 cat >>configure.in <<'END'
 AM_CONDITIONAL([COND], [:])
-# next line needed so that cond-if.m4 is pulled in.
+# The next line is needed so that cond-if.m4 is pulled in.
 AM_COND_IF([COND])
 _AM_COND_IF([COND])
 AC_OUTPUT
 END
+
+edit_configure_in ()
+{
+  sed "$@" < configure.in >configure.int
+  mv -f configure.int configure.in
+  rm -rf autom4te*.cache
+}
+
 : >Makefile.am
 
 $ACLOCAL
 AUTOMAKE_fails
-grep 'condition stack' stderr
+grep '^configure\.in:8:.* condition stack' stderr
 
-sed 's/_AM_COND_IF/_AM_COND_ELSE/' < configure.in >configure.int
-mv -f configure.int configure.in
-rm -rf autom4te*.cache
+edit_configure_in 's/_AM_COND_IF/_AM_COND_ELSE/'
 AUTOMAKE_fails
-grep 'else without if' stderr
+grep '^configure\.in:7:.* else without if' stderr
 
-sed 's/_AM_COND_ELSE/_AM_COND_ENDIF/' < configure.in >configure.int
-mv -f configure.int configure.in
-rm -rf autom4te*.cache
+edit_configure_in 's/_AM_COND_ELSE/_AM_COND_ENDIF/'
 AUTOMAKE_fails
-grep 'endif without if' stderr
+grep '^configure\.in:7:.* endif without if' stderr
 
-sed 's/\(_AM_COND_ENDIF\).*/_AM_COND_IF\
-_AM_COND_ENDIF/' < configure.in >configure.int
-mv -f configure.int configure.in
-rm -rf autom4te*.cache
+edit_configure_in 's/\(_AM_COND_ENDIF\).*/_AM_COND_IF\
+_AM_COND_ENDIF/'
 AUTOMAKE_fails
+grep '^configure\.in:7:.* not enough arguments.* _AM_COND_IF' stderr
+grep '^configure\.in:8:.* not enough arguments.* _AM_COND_ENDIF' stderr
 test 2 = `grep -c 'not enough arguments' stderr`
+
 :

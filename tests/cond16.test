@@ -14,24 +14,23 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test for bug in conditionals in SOURCES with variable substitution references.
-# Report from Richard Boulton
+# Test for bug in conditionals in SOURCES with variable substitution
+# references.
+# Report from Richard Boulton.
 
-required=gcc
 . ./defs || Exit 1
 
-cat > configure.in << 'END'
-AC_INIT(hello.c)
-AM_INIT_AUTOMAKE(hello,0.23)
-AC_PROG_CC
-AM_CONDITIONAL(COND1, true)
-AC_OUTPUT(Makefile)
+cat >> configure.in << 'END'
+AM_CONDITIONAL([COND1], [true])
+AC_OUTPUT
 END
 
-cat > hello.c << 'END'
-END
+: > hello.c
 
 cat > Makefile.am << 'END'
+AUTOMAKE_OPTIONS = no-dependencies
+CC = false
+OBJEXT = o
 
 if COND1
 var = foo.c
@@ -42,21 +41,15 @@ endif
 bin_PROGRAMS = hell
 hell_SOURCES = $(var:=)
 
-echorule:
-	@echo $(hell_SOURCES) $(hell_OBJECTS)
-
+.PHONY: test
+test:
+	test "`echo $(hell_SOURCES) $(hell_OBJECTS)`" = "foo.c foo.o"
 END
-
-# Ignore user CFLAGS.
-CFLAGS=
-export CFLAGS
 
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
-
 ./configure
+$MAKE test
 
-val=`$MAKE -s echorule`;
-echo $val
-test "x$val" = "xfoo.c foo.o"
+:

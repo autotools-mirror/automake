@@ -17,11 +17,16 @@
 # Test remake rules when aclocal.m4 or its prerequisites change.
 # Keep in sync with the other sister tests `remake9*.test'.
 
-required=GNUmake
 . ./defs || Exit 1
 
 magic1=::MagicStringOne::
 magic2=__MagicStringTwo__
+
+if using_gmake; then
+  remake_() { $MAKE nil; }
+else
+  remake_() { $MAKE Makefile && $MAKE foo.sh; }
+fi
 
 cat >> configure.in <<END
 FINGERPRINT='my_fingerprint'
@@ -52,9 +57,9 @@ cat > foo.in <<END
 echo '@FINGERPRINT@'
 END
 
-echo cat > tweak-aclocal-m4 # no-op by default
+echo cat > tweak-aclocal-m4 # It is a no-op by default.
 
-$sleep # so that generated autotools files will be newer than prerequisites
+$sleep # So that generated autotools files will be newer than prerequisites.
 $ACLOCAL
 # Cheatingly mark aclocal.m4 as non auto-generated.
 sed '/^ *#.*generated automatically/d' aclocal.m4 > t
@@ -73,30 +78,31 @@ for vpath in : false; do
   fi
 
   $srcdir/configure
-  $MAKE # should be no-op
+  $MAKE # Should be a no-op.
 
   $sleep
   echo "AC_DEFUN([my_fingerprint], [$magic1])dnl %%%" >> $srcdir/aclocal.m4
-  $MAKE nil
-  $FGREP FINGERPRINT Makefile # for debugging
+  remake_
+  $FGREP FINGERPRINT Makefile # For debugging.
   $FGREP $magic1 Makefile
   test x"`./foo.sh`" = x"$magic1"
 
   $sleep
   echo "sed 's/.*dnl *%%%.*/AC_DEFUN([my_fingerprint], [$magic2])/'" \
     > $srcdir/tweak-aclocal-m4
-  $MAKE nil
-  $FGREP FINGERPRINT Makefile # for debugging
+  remake_
+  $FGREP FINGERPRINT Makefile # For debugging.
   $FGREP $magic1 Makefile && Exit 1
   $FGREP $magic2 Makefile
   test x"`./foo.sh`" = x"$magic2"
 
   $sleep
-  echo cat > $srcdir/tweak-aclocal-m4 # no-op again
+  echo cat > $srcdir/tweak-aclocal-m4 # Make it a no-op again.
   echo 'AC_DEFUN([my_fingerprint], [DummyValue])' >> $srcdir/aclocal.m4
+  using_gmake || remake_
   $MAKE distcheck
-  $FGREP $magic1 Makefile && Exit 1 # sanity check
-  $FGREP $magic2 Makefile && Exit 1 # likewise
+  $FGREP $magic1 Makefile && Exit 1 # Sanity check.
+  $FGREP $magic2 Makefile && Exit 1 # Likewise.
 
   $MAKE distclean
 

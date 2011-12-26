@@ -17,6 +17,7 @@
 
 # Test TESTS = $(check_PROGRAMS)
 
+required='cc native'
 . ./defs || Exit 1
 
 cat >> configure.in << 'END'
@@ -31,6 +32,7 @@ check-local:
 	test -f one$(EXEEXT)
 	test -f two$(EXEEXT)
 	touch ok
+.PHONY: print-tests
 print-tests:
 	echo BEG: $(TESTS) :END
 END
@@ -39,17 +41,22 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-cat >one.c <<END
-int main() { return 0; }
+cat > one.c << 'END'
+int main (void)
+{
+  return 0;
+}
 END
 cp one.c two.c
 
 ./configure
 $MAKE check
 test -f ok
-EXEEXT=.bin $MAKE -e print-tests >output
-cat output
+EXEEXT=.bin $MAKE -e print-tests >stdout || { cat stdout; Exit 1; }
+cat stdout
+$FGREP 'BEG: one.bin two.bin :END' stdout
 # No am__EXEEXT_* variable is needed.
 grep '_EXEEXT_[1-9]' Makefile.in && Exit 1
-grep 'BEG: one.bin two.bin :END' output
 $FGREP 'TESTS = $(check_PROGRAMS)' Makefile.in
+
+:

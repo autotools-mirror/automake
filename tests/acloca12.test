@@ -18,26 +18,29 @@
 # directory, the macro from the lexically greatest file is used.
 # Same as acloca11.test, but without calling MACRO2.
 
+am_create_testdir=empty
 . ./defs || Exit 1
 
-cat >> configure.in << 'END'
+cat > configure.in <<END
+AC_INIT([$me], [1.0])
 MACRO1
 END
 
 mkdir m4
 
 cat >m4/version1.m4 <<EOF
-AC_DEFUN([MACRO1], [echo macro11 >> foo])
-AC_DEFUN([MACRO2], [echo macro21 > foo])
+AC_DEFUN([MACRO1], [:macro11:])
+AC_DEFUN([MACRO2], [:macro21:])
 EOF
 
 cat >m4/version2.m4 <<EOF
-AC_DEFUN([MACRO1], [echo macro12 >> foo])
+AC_DEFUN([MACRO1], [:macro12:])
 EOF
 
 $ACLOCAL --verbose -I m4
 $AUTOCONF
-./configure
-grep macro11 foo && Exit 1
-grep macro21 foo && Exit 1
-grep macro12 foo
+$FGREP ':macro11:' configure && Exit 1
+$FGREP ':macro21:' configure && Exit 1
+$FGREP ':macro12:' configure
+
+:

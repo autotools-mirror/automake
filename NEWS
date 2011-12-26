@@ -29,7 +29,79 @@ New in 1.11a:
 
   - New `cscope' target to build a cscope database for the source tree.
 
-* Miscellaneous changes:
+* Changes to Automake-generated testsuite harnesses:
+
+  - Test scripts that exit with status 99 to signal an "hard error" (e.g.,
+    and unexpected or internal error, or a failure to set up the test case
+    scenario) have their outcome reported as an 'ERROR' now.  Previous
+    versions of automake reported such an outcome as a 'FAIL' (the only
+    difference with normal failures being that hard errors were counted
+    as failures even when the test originating them was listed in
+    XFAIL_TESTS).
+
+  - The testsuite summary displayed by the parallel-test harness has a
+    completely new format, that always list the numbers of passed, failed,
+    xfailed, xpassed, skipped and errored tests, even when these numbers
+    are zero (but using smart coloring when the color-tests option is in
+    effect).
+
+  - The default testsuite driver offered by the 'parallel-tests' option is
+    now implemented (partly at least) with the help of automake-provided
+    auxiliary scripts (e.g., `test-driver'), instead of relying entirely
+    on code in the generated Makefile.in.
+    This has two noteworthy implications.  The first one is that projects
+    using the `parallel-tests' option should now either run automake with
+    the `--add-missing' option, or manually copy the `test-driver' script
+    into their tree.  The second, and more important, implication is that
+    now, when the `parallel-tests' option is in use, TESTS_ENVIRONMENT can
+    not be used anymore to define a test runner, and the command specified
+    in LOG_COMPILER (and <ext>_LOG_COMPILER) must be a *real* executable
+    program or script.  For example, this is still a valid usage (albeit
+    a little contorted):
+
+      TESTS_ENVIRONMENT = \
+        if test -n '$(STRICT_TESTS)'; then \
+          maybe_errexit='-e'; \
+        else \
+          maybe_errexit=''; \
+        fi;
+      LOG_COMPILER = $(SHELL) $$maybe_errexit
+
+    while this is not anymore:
+
+      TESTS_ENVIRONMENT = \
+        $(SHELL) `test -n '$(STRICT_TESTS_CHECKING)' && echo ' -e'`
+
+    neither is this:
+
+      TESTS_ENVIRONMENT = \
+        run_with_perl_or_shell () \
+        { \
+          if grep -q '^#!.*perl' $$1; then
+            $(PERL) $$1; \
+          else \
+            $(SHELL) $$1; \
+          fi; \
+        }
+      LOG_COMPILER = run_with_per_or_shell
+
+  - The package authors can now use customary testsuite drivers within
+    the framework provided by the 'parallel-tests' testsuite harness.
+    Consistently with the existing syntax, this can be done by defining
+    special makefile variables `LOG_DRIVER' and `<ext>_LOG_DRIVER'.
+
+  - A new developer-reserved variable `AM_TESTS_FD_REDIRECT' can be used
+    to redirect/define file descriptors used by the test scripts.
+
+  - The parallel-tests harness generates now, in addition the `.log' files
+    holding the output produced by the test scripts, a new set of `.trs'
+    files, holding "metadata" derived by the execution of the test scripts;
+    among such metadata are the outcomes of the test cases run by a script.
+
+  - Initial and still experimental support for the TAP test protocol is
+    now provided.
+
+* Changes related to distribution tarballs:
 
   - The `dist' and `dist-all' targets now can run compressors in parallel.
 
@@ -48,6 +120,13 @@ New in 1.11a:
     The default is now merely -e for xz, but still -9 for bzip;  you may
     specify a different level via the XZ_OPT and BZIP2 envvars respectively.
     E.g., "make dist-xz XZ_OPT=-7" or "make dist-bzip2 BZIP2=-5"
+
+  - Some auxiliary files that are automatically distributed by Automake
+    (e.g., `install-sh', or the `depcomp' script for packages compiling
+    C sources) might now be listed in the DIST_COMMON variable in many
+    Makefile.in files, rather than in the top-level one.
+
+* Miscellaneous changes:
 
   - Messages of types warning or error from `automake' and `aclocal' are now
     prefixed with the respective type, and presence of -Werror is noted.
@@ -126,6 +205,12 @@ Bugs fixed in 1.11a:
     is no longer valid for the condition.
 
 * Long-standing bugs:
+
+  - Automake's own build system finally have a real "installcheck" target.
+
+  - Files listed with the AC_REQUIRE_AUX_FILE macro in configure.ac are
+    now automatically distributed also if the directory of the auxiliary
+    files coincides with the top-level directory.
 
   - The "deleted header file problem" for *.am files is avoided by stub
     rules.  This allows `make' to trigger a rerun of `automake' also if

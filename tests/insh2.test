@@ -19,16 +19,23 @@
 
 . ./defs || Exit 1
 
+echo AC_OUTPUT >> configure.in
+
 cat > Makefile.am << 'END'
 pkgdata_DATA =
-magic:
-	@echo $(DISTFILES)
+.PHONY: test
+test: distdir
+	find $(distdir) ;: For debugging.
+	echo ' ' $(DISTFILES) ' ' | grep '[ /]install-sh '
+	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]install-sh '
+	test -f $(distdir)/install-sh
 END
 
 $ACLOCAL
 $AUTOMAKE
+$AUTOCONF
 
-$FGREP -v @SET_MAKE@ Makefile.in > Makefile.sed
-$MAKE -s -f Makefile.sed SHELL=$SHELL magic | grep install-sh
+./configure
+$MAKE test
 
 :

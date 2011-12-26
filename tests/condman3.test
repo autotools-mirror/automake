@@ -26,37 +26,48 @@ END
 cat > Makefile.am << 'END'
 if COND
 man_MANS = foo.1
+man4_MANS = 6.man
 else
-man_MANS = bar.2
+man_MANS = bar.2 baz.1
+man5_MANS = zap.5
 endif
 
 .PHONY: test1 test2
 test1:
+	find $(mandir) ;: For debugging.
 	test -f $(mandir)/man1/foo.1
+	test -f $(mandir)/man4/6.4
 	test ! -f $(mandir)/man2/bar.2
+	test ! -f $(mandir)/man1/baz.1
+	test ! -f $(mandir)/man5/zap.5
 test2:
-	test ! -f $(mandir)/man1/foo.1
+	find $(mandir) ;: For debugging.
 	test -f $(mandir)/man2/bar.2
+	test -f $(mandir)/man1/baz.1
+	test -f $(mandir)/man5/zap.5
+	test ! -f $(mandir)/man1/foo.1
+	test ! -f $(mandir)/man4/6.4
+	test ! -f $(mandir)/man4/6.man
 END
 
 $ACLOCAL
 $AUTOMAKE
 $AUTOCONF
 
-mkdir dir1
-cd dir1
+$EGREP 'MANS|\.([123456789]|man)' Makefile.in # For debugging.
+
+mkdir build
+cd build
 ../configure FOO=true --prefix="`pwd`/_inst"
-sed -n '/man_MANS/p' Makefile # useful for debugging
-: > foo.1
+$EGREP 'MANS|\.([123456789]|man)' Makefile # For debugging.
+touch foo.1 6.man
 $MAKE install
 $MAKE test1
 
 cd ..
-mkdir dir2
-cd dir2
-../configure FOO=false --prefix="`pwd`/_inst"
-sed -n '/man_MANS/p' Makefile # useful for debugging
-: > bar.2
+./configure FOO=false --prefix="`pwd`/_inst"
+$EGREP 'MANS|\.([123456789]|man)' Makefile # For debugging.
+touch bar.2 baz.1 zap.5
 $MAKE install
 $MAKE test2
 

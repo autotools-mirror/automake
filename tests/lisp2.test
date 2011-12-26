@@ -18,7 +18,8 @@
 
 . ./defs || Exit 1
 
-echo 1
+
+: TRY 1 -- We lack both EMACS and lispdir.
 
 cat > Makefile.am << 'END'
 lisp_LISP = foo.el
@@ -27,10 +28,12 @@ END
 $ACLOCAL
 AUTOMAKE_fails
 grep AM_PATH_LISPDIR stderr
+grep '[Ll]isp source.*EMACS.* undefined' stderr
+grep '[Ll]isp source.*lispdir.* undefined' stderr
+grep ' add .*AM_PATH_LISPDIR' stderr
 
 
-echo 2
-# Setting lispdir should not be enough.
+: TRY 2 -- Setting lispdir should not be enough.
 
 cat > Makefile.am << 'END'
 lispdir = /usr/share/emacs/site-lisp
@@ -39,10 +42,12 @@ END
 
 $ACLOCAL
 AUTOMAKE_fails
-grep AM_PATH_LISPDIR stderr
+grep 'lispdir.*undefined' stderr && Exit 1
+grep '[Ll]isp source.*EMACS.* undefined' stderr
+grep 'define .*EMACS.* add .*AM_PATH_LISPDIR' stderr
 
-echo 3
-# Setting EMACS should not be enough.
+
+: TRY 3 -- Setting EMACS should not be enough.
 
 cat > Makefile.am << 'END'
 EMACS = emacs
@@ -51,11 +56,12 @@ END
 
 $ACLOCAL
 AUTOMAKE_fails
-grep AM_PATH_LISPDIR stderr
+grep 'EMACS.*undefined' stderr && Exit 1
+grep '[Ll]isp source.*lispdir.* undefined' stderr
+grep 'define .*lispdir.* add .*AM_PATH_LISPDIR' stderr
 
 
-echo 4
-# Setting both is OK.
+: TRY 4 -- Setting both EMACS and lispdir is OK.
 
 cat > Makefile.am << 'END'
 lispdir = /usr/share/emacs/site-lisp
@@ -65,3 +71,5 @@ END
 
 $ACLOCAL
 $AUTOMAKE -a
+
+:

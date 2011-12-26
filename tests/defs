@@ -17,11 +17,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+########################################################
+###  IMPORTANT NOTE: keep this file 'set -e' clean.  ###
+########################################################
+
+# NOTE: This file should execute correctly with any system's /bin/sh
+# shell, and not only with configure-time detected $CONFIG_SHELL,
+# *until differently and explicitly specified*.
+
 ## -------------------------------------------------------- ##
 ##  Source static setup and definitions for the testsuite.  ##
 ## -------------------------------------------------------- ##
-
-# This code needs to be 'set -e' clean.
 
 # Ensure we are running from the right directory.
 test -f ./defs-static || {
@@ -32,19 +38,22 @@ test -f ./defs-static || {
 # Source the shell sanitization and variables' definitions.
 . ./defs-static || exit 99
 
+# Enable the errexit shell flag early.
+set -e
+
 # The name of the current test (without the `.test' suffix).
 # Test scripts can override it if they need to (but this should
 # be done carefully, and *before* including ./defs).
 if test -z "$me"; then
   # Guard against failure to spawn sed (seen on MSYS), or empty $argv0.
-  me=`echo "$argv0" | sed -e 's,.*[\\/],,;s/\.test$//'` \
+  me=`echo "$argv0" | sed -e 's,.*[\\/],,;s/\.test$//;s/\.tap$//;'` \
     && test -n "$me" \
     || { echo "$argv0: failed to define \$me" >&2; exit 99; }
 fi
 
-## ---------------------------------------- ##
-##  Sanity checks and environment cleanup.  ##
-## ---------------------------------------- ##
+## ---------------------- ##
+##  Early sanity checks.  ##
+## ---------------------- ##
 
 # A single whitespace character.
 sp=' '
@@ -69,6 +78,62 @@ test -f "$testbuilddir/defs-static" || {
    echo "$me: $testbuilddir/defs-static not found, check \$testbuilddir" >&2
    exit 99
 }
+
+
+## ------------------------------------ ##
+##  Ensure we run with a proper shell.  ##
+## ------------------------------------ ##
+
+# Make sure we run with the shell detected at configure time (unless
+# the user forbids it).
+case ${AM_TESTS_REEXEC-yes} in
+  n|no|false|0)
+    ;;
+  *)
+    # Ensure we can find ourselves.
+    if test ! -f "$0"; then
+      echo "$me: unable to find myself: $0" >&2
+      exit 99
+    fi
+    AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC
+    # Cannot simply do `opts=$-', since the content of $- is not
+    # portable among different shells.  So try to propagate only
+    # the portable and interesting options.
+    case $- in
+      *x*v*|*v*x) opts=-vx;;
+      *v*) opts=-v;;
+      *x*) opts=-x;;
+      *) opts=;;
+    esac
+    echo $me: exec $SHELL $opts "$0" "$*"
+    exec $SHELL $opts "$0" ${1+"$@"} || {
+      echo "$me: failed to re-execute with $SHELL" >&2
+      exit 99
+    }
+    ;;
+esac
+
+# NOTE: From this point on, we can assume this file is being executed
+# by the configure-time detected $CONFIG_SHELL.
+
+
+## ----------------------- ##
+##  Early debugging info.  ##
+## ----------------------- ##
+
+echo "Running from installcheck: $am_running_installcheck"
+echo "Using TAP: $am_using_tap"
+echo "PATH = $PATH"
+
+
+## ---------------------- ##
+##  Environment cleanup.  ##
+## ---------------------- ##
+
+# Temporarily disable this, since some shells (e.g., older version
+# of Bash) can return a non-zero exit status upon the when a non-set
+# variable is unset.
+set +e
 
 # Unset some make-related variables that may cause $MAKE to act like
 # a recursively invoked sub-make.  Any $MAKE invocation in a test is
@@ -98,16 +163,42 @@ unset TESTS_ENVIRONMENT AM_TESTS_ENVIRONMENT
 unset DISABLE_HARD_ERRORS
 unset AM_COLOR_TESTS
 unset TESTS
-unset TEST_LOG_COMPILER
+unset XFAIL_TESTS
 unset TEST_LOGS
 unset TEST_SUITE_LOG
 unset RECHECK_LOGS
 unset VERBOSE
+for pfx in TEST_ TAP_ ''; do
+  unset ${pfx}LOG_COMPILER
+  unset ${pfx}LOG_COMPILE # Not a typo!
+  unset ${pfx}LOG_FLAGS
+  unset AM_${pfx}LOG_FLAGS
+  unset ${pfx}LOG_DRIVER
+  unset ${pfx}LOG_DRIVER_FLAGS
+  unset AM_${pfx}LOG_DRIVER_FLAGS
+done
+unset pfx
 
+# Re-enable, it had been temporarily disabled above.
+set -e
 
 ## ---------------------------- ##
 ##  Auxiliary shell functions.  ##
 ## ---------------------------- ##
+
+# Tell whether we should keep the test directories around, even in
+# case of success.  By default, we don't.
+am_keeping_testdirs ()
+{
+  case $keep_testdirs in
+     ""|n|no|NO) return 1;;
+              *) return 0;;
+  esac
+}
+
+# This is used in `Exit' and in the exit trap.  See comments in the latter
+# for more information,
+am__test_skipped=no
 
 # We use a trap below for cleanup.  This requires us to go through
 # hoops to get the right exit status transported through the signal.
@@ -117,24 +208,31 @@ unset VERBOSE
 Exit ()
 {
   set +e
-  (exit $1)
-  exit $1
+  # See comments in the exit trap for the reason we do this.
+  test 77 = $1 && am__test_skipped=yes
+  (exit $1); exit $1
 }
 
-# Print warnings (e.g., about skipped and failed tests) to this file
-# number.  Override by putting, say:
-#   stderr_fileno_=9; export stderr_fileno_; exec 9>&2;
-# in the definition of AM_TESTS_ENVIRONMENT.
-# This is useful when using automake's parallel tests mode, to print the
-# reason for skip/failure to console, rather than to the *.log files.
-: ${stderr_fileno_=2}
+if test $am_using_tap = yes; then
+  am_funcs_file=tap-functions.sh
+else
+  am_funcs_file=plain-functions.sh
+fi
 
-# Copied from Gnulib's `tests/init.sh'.
-warn_ () { echo "$@" 1>&$stderr_fileno_; }
-fail_ () { warn_ "$me: failed test: $@"; Exit 1; }
-skip_ () { warn_ "$me: skipped test: $@"; Exit 77; }
-fatal_ () { warn_ "$me: hard error: $@"; Exit 99; }
-framework_failure_ () { warn_ "$me: set-up failure: $@"; Exit 99; }
+if test -f "$testsrcdir/$am_funcs_file"; then
+  . "$testsrcdir/$am_funcs_file" || {
+    echo "$me: error sourcing $testsrcdir/$am_funcs_file" >&2
+    Exit 99
+  }
+else
+  echo "$me: $testsrcdir/$am_funcs_file not found, check \$testsrcdir" >&2
+  Exit 99
+fi
+unset am_funcs_file
+
+# Avoid spurious TAP diagnostic.  Keep this in sync with the definition
+# of $(TAP_LOG_DRIVER_FLAGS) in `tests/Makefile.am'.
+diag_string_="#%#"
 
 # cross_compiling
 # ---------------
@@ -142,7 +240,7 @@ framework_failure_ () { warn_ "$me: set-up failure: $@"; Exit 99; }
 # tests (or portions of them) that requires a native compiler.
 cross_compiling ()
 {
-  test x"$host_alias" != x
+  test x"$host_alias" != x && test x"$build_alias" != x"$host_alias"
 }
 
 # is_newest FILE FILES
@@ -161,31 +259,74 @@ is_newest ()
 # return a non-zero exit status and print a proper diagnostic otherwise.
 is_blocked_signal ()
 {
-  $SHELL -c "kill -$1 \$\$; echo '$me: signal $1 seems blocked'"
+  # Use perl, since trying to do this portably in the shell can be
+  # very tricky, if not downright impossible.  For reference, see:
+  # <http://lists.gnu.org/archive/html/bug-autoconf/2011-09/msg00004.html>
+  if $PERL -w -e '
+    use strict;
+    use warnings FATAL => "all";
+    use POSIX;
+    my %oldsigaction = ();
+    sigaction('"$1"', 0, \%oldsigaction);
+    exit ($oldsigaction{"HANDLER"} eq "IGNORE" ? 0 : 77);
+  '; then
+    return 0
+  elif test $? -eq 77; then
+    return 1
+  else
+    fatal_ "couldn't determine whether signal $1 is blocked"
+  fi
 }
 
-# AUTOMAKE_run status [options...]
-# --------------------------------
-# Run Automake with OPTIONS, and fail if automake
-# does not exit with STATUS.
+# AUTOMAKE_run [-e STATUS] [-d DESCRIPTION] [--] [AUTOMAKE-ARGS...]
+# -----------------------------------------------------------------
+# Run automake with AUTOMAKE-ARGS, and fail if it doesn't exit with
+# STATUS.  Should be polymorphic for TAP and "plain" tests.  The
+# DESCRIPTION, when provided, is used for console reporting, only if
+# the TAP protocol is in use in the current test script.
 AUTOMAKE_run ()
 {
-  expected_exitcode=$1
-  shift
-  exitcode=0
-  $AUTOMAKE ${1+"$@"} >stdout 2>stderr || exitcode=$?
+  am__desc=
+  am__exp_rc=0
+  while test $# -gt 0; do
+    case $1 in
+      -d) am__desc=$2; shift;;
+      -e) am__exp_rc=$2; shift;;
+      --) shift; break;;
+       # Don't fail on unknown option: assume they (and the rest of the
+       # command line) are to be passed verbatim to automake (so stop our
+       # own option parsing).
+       *) break;;
+    esac
+    shift
+  done
+  am__got_rc=0
+  $AUTOMAKE ${1+"$@"} >stdout 2>stderr || am__got_rc=$?
   cat stderr >&2
   cat stdout
-  test $exitcode = $expected_exitcode || Exit 1
+  if test $am_using_tap != yes; then
+    test $am__got_rc -eq $am__exp_rc || Exit 1
+    return
+  fi
+  if test -z "$am__desc"; then
+    if test $am__got_rc -eq $am__exp_rc; then
+      am__desc="automake exited $am__got_rc"
+    else
+      am__desc="automake exited $am__got_rc, expecting $am__exp_rc"
+    fi
+  fi
+  command_ok_ "$am__desc" test $am__got_rc -eq $am__exp_rc
 }
 
-# AUTOMAKE_fails [options...]
-# ---------------------------
-# Run Automake with OPTIONS, and fail if automake
-# does not exit with STATUS.
+# AUTOMAKE_fails [-d DESCRIPTION] [OPTIONS...]
+# --------------------------------------------
+# Run automake with OPTIONS, and fail if doesn't exit with status `1'.
+# Should be polymorphic for TAP and "plain" tests.  The DESCRIPTION,
+# when provided, is used for console reporting, only if the TAP
+# protocol is in use in the current test script.
 AUTOMAKE_fails ()
 {
-  AUTOMAKE_run 1 ${1+"$@"}
+  AUTOMAKE_run -e 1 ${1+"$@"}
 }
 
 # extract_configure_help { --OPTION | VARIABLE-NAME } [FILES]
@@ -259,10 +400,10 @@ using_gmake ()
         return 1
       fi;;
     *)
-      echo "invalid value for \$am__using_gmake: '$am__using_gmake'" >&2
-      Exit 99;;
+      fatal_ "invalid value for \$am__using_gmake: '$am__using_gmake'";;
   esac
 }
+am__using_gmake="" # Avoid interferences from the environment.
 
 # make_can_chain_suffix_rules
 # ---------------------------
@@ -299,6 +440,92 @@ END
 }
 am__can_chain_suffix_rules="" # Avoid interferences from the environment.
 
+# seq_ - print a sequence of numbers
+# ----------------------------------
+# This function simulates GNU seq(1) portably.  Valid usages:
+#  - seq LAST
+#  - seq FIRST LAST
+#  - seq FIRST INCREMENT LAST
+seq_ ()
+{
+  case $# in
+    0) fatal_ "seq_: missing argument";;
+    1) seq_first=1  seq_incr=1  seq_last=$1;;
+    2) seq_first=$1 seq_incr=1  seq_last=$2;;
+    3) seq_first=$1 seq_incr=$2 seq_last=$3;;
+    *) fatal_ "seq_: too many arguments";;
+  esac
+  # Try to avoid forks if possible.
+  case "$BASH_VERSION" in
+    ""|[12].*)
+      : Not bash, or a too old bash version. ;;
+    *)
+      # Use eval to protect dumber shells from parsing errors.
+      eval 'for ((i = seq_first; i <= seq_last; i += seq_incr)); do
+              echo $i
+            done'
+      return 0;;
+  esac
+  # Else, use GNU seq if available.
+  seq "$@" && return 0
+  # Otherwise revert to a slower loop using expr(1).
+  i=$seq_first
+  while test $i -le $seq_last; do
+    echo $i
+    i=`expr $i + $seq_incr`
+  done
+}
+
+# rm_rf_ [FILES OR DIRECTORIES ...]
+# ---------------------------------
+# Recursively remove the given files or directory, also handling the case
+# of non-writable subdirectories.
+rm_rf_ ()
+{
+  test $# -gt 0 || return 0
+  # Ignore failures in find, we are only interested in failures of the
+  # final rm.
+  find "$@" -type d ! -perm -700 -exec chmod u+rwx {} \; || :
+  rm -rf "$@"
+}
+
+# count_test_results total=N pass=N fail=N xpass=N xfail=N skip=N error=N
+# -----------------------------------------------------------------------
+# Check that a testsuite run driven by the parallel-tests harness has
+# had the specified numbers of test results (specified by kind).
+# This function assumes that the output of "make check" or "make recheck"
+# has been saved in the `stdout' file in the current directory, and its
+# log in the `test-suite.log' file.
+count_test_results ()
+{
+  # Use a subshell so that we won't pollute the script namespace.
+  (
+    # TODO: Do proper checks on the arguments?
+    total=ERR pass=ERR fail=ERR xpass=ERR xfail=ERR skip=ERR error=ERR
+    eval "$@"
+    # For debugging.
+    $EGREP -i '(total|x?pass|x?fail|skip|error)' stdout || :
+    rc=0
+    # Avoid spurious failures with shells with "overly sensible"
+    # `errexit' shell flag, such as e.g., Solaris /bin/sh.
+    set +e
+    test `grep -c '^PASS:'  stdout` -eq $pass  || rc=1
+    test `grep -c '^XFAIL:' stdout` -eq $xfail || rc=1
+    test `grep -c '^SKIP:'  stdout` -eq $skip  || rc=1
+    test `grep -c '^FAIL:'  stdout` -eq $fail  || rc=1
+    test `grep -c '^XPASS:' stdout` -eq $xpass || rc=1
+    test `grep -c '^ERROR:' stdout` -eq $error || rc=1
+    grep "^# TOTAL:  *$total$" stdout || rc=1
+    grep "^# PASS:  *$pass$"   stdout || rc=1
+    grep "^# XFAIL:  *$xfail$" stdout || rc=1
+    grep "^# SKIP:  *$skip$"   stdout || rc=1
+    grep "^# FAIL:  *$fail$"   stdout || rc=1
+    grep "^# XPASS:  *$xpass$" stdout || rc=1
+    grep "^# ERROR:  *$error$" stdout || rc=1
+    test $rc -eq 0
+  )
+}
+
 commented_sed_unindent_prog='
   /^$/b                    # Nothing to do for empty lines.
   x                        # Get x<indent> into pattern space.
@@ -329,15 +556,70 @@ unindent ()
 }
 sed_unindent_prog="" # Avoid interferences from the environment.
 
+# get_shell_script SCRIPT-NAME
+# -----------------------------
+# Fetch an Automake-provided shell script from the `lib/' directory into
+# the current directory, and, if the `$am_test_prefer_config_shell'
+# variable is set to "yes", modify its shebang line to use $SHELL instead
+# of /bin/sh.
+get_shell_script ()
+{
+  if test x"$am_test_prefer_config_shell" = x"yes"; then
+    sed "1s|#!.*|#! $SHELL|" "$am_scriptdir/$1" > "$1"
+    chmod a+x "$1"
+  else
+    cp "$am_scriptdir/$1" .
+  fi
+  sed 10q "$1" # For debugging.
+}
+
+# require_xsi SHELL
+# -----------------
+# Skip the test if the given shell fails to support common XSI constructs.
+require_xsi ()
+{
+  test $# -eq 1 || fatal_ "require_xsi needs exactly one argument"
+  echo "$me: trying some XSI constructs with $1"
+  $1 -c "$xsi_shell_code" || skip_all_ "$1 lacks XSI features"
+}
+# Shell code supposed to work only with XSI shells.  Keep this in sync
+# with libtool.m4:_LT_CHECK_SHELL_FEATURES.
+xsi_shell_code='
+  _lt_dummy="a/b/c"
+  test "${_lt_dummy##*/},${_lt_dummy%/*},${_lt_dummy#??}"${_lt_dummy%"$_lt_dummy"}, \
+      = c,a/b,b/c, \
+    && eval '\''test $(( 1 + 1 )) -eq 2 \
+    && test "${#_lt_dummy}" -eq 5'\'
+
+# fetch_tap_driver
+# ----------------
+# Fetch the Automake-provided TAP driver from the `lib/' directory into
+# the current directory, and edit its shebang line so that it will be
+# run with the perl interpreter determined at configure time.
+fetch_tap_driver ()
+{
+  # TODO: we should devise a way to make the shell TAP driver tested also
+  # TODO: with /bin/sh, for better coverage.
+  case $am_tap_implementation in
+    perl)
+      sed "1s|#!.*|#! $PERL -w|" "$am_scriptdir"/tap-driver.pl ;;
+    shell)
+      sed "1s|#!.*|#! $SHELL|" "$am_scriptdir"/tap-driver.sh ;;
+    *)
+      fatal_ "invalid \$am_tap_implementation '$am_tap_implementation'" ;;
+  esac > tap-driver \
+    && chmod a+x tap-driver \
+    || framework_failure_ "couldn't fetch $am_tap_implementation TAP driver"
+  sed 10q tap-driver # For debugging.
+}
+# The shell/awk implementation of the TAP driver is still mostly dummy, so
+# use the perl implementation by default for the moment.
+am_tap_implementation=${am_tap_implementation-shell}
 
 ## ----------------------------------------------------------- ##
 ##  Checks for required tools, and additional setups (if any)  ##
 ##  required by them.                                          ##
 ## ----------------------------------------------------------- ##
-
-# Print it here, so that the user will see it also if the test
-# will be skipped due to some tool missing in $PATH itself.
-echo "$PATH"
 
 # So that we can force the use of correct gcc, g++ etc., consistently
 # with cross-compilation settings.
@@ -354,24 +636,42 @@ do
   # Check that each required tool is present.
   case $tool in
     :) ;;
-    cc|c++|fortran|fortran77)
-      echo "$me: dummy requirement '$tool', no check done"
+    cc)
+      test "$CC"  = false && skip_all_ "no C compiler available";;
+    c++)
+      test "$CXX" = false && skip_all_ "no C++ compiler available";;
+    fortran)
+      test "$FC"  = false && skip_all_ "no Fortran compiler available";;
+    fortran77)
+      test "$F77" = false && skip_all_ "no Fortran 77 compiler available";;
+    xsi-shell)
+      require_xsi "$SHELL";;
+    xsi-bin-sh)
+      require_xsi "/bin/sh";;
+    xsi-lib-shell)
+      if test x"$am_test_prefer_config_shell" = x"yes"; then
+        require_xsi "$SHELL"
+      else
+        require_xsi "/bin/sh"
+      fi
       ;;
     bzip2)
       # Do not use --version, bzip2 still tries to compress stdin.
       echo "$me: running bzip2 --help"
-      bzip2 --help || exit 77
+      bzip2 --help \
+        || skip_all_ "required program \`bzip2' not available"
       ;;
     cl)
       CC=cl
       export CC
       echo "$me: running $CC -?"
-      $CC -? || exit 77
+      $CC -? || skip_all_ "Microsoft C compiler \`$CC' not available"
       ;;
     cscope)
       # Sun cscope is interactive without redirection.
       echo "$me: running cscope --version </dev/null"
-      cscope --version </dev/null || exit 77
+      cscope --version </dev/null \
+        || skip_all_ "required program \`cscope' not available"
       ;;
     etags)
       # Exuberant Ctags will create a TAGS file even
@@ -379,11 +679,19 @@ do
       # does not have such problem.)  Use -o /dev/null
       # to make sure we do not pollute the tests/ directory.
       echo "$me: running etags --version -o /dev/null"
-      etags --version -o /dev/null || exit 77
+      etags --version -o /dev/null \
+        || skip_all_ "required program \`etags' not available"
       ;;
     GNUmake)
-      echo "$me: determine if $MAKE is GNU make"
-      using_gmake || exit 77
+      for make_ in "$MAKE" gmake gnumake :; do
+        MAKE=$make_ am__using_gmake=''
+        test "$MAKE" =  : && break
+        echo "$me: determine whether $MAKE is GNU make"
+        using_gmake && break
+      done
+      test "$MAKE" = : && skip_all_ "this test requires GNU make"
+      export MAKE
+      unset make_
       ;;
     gcc)
       # When gcc is required, export `CC=gcc' so that ./configure
@@ -393,33 +701,33 @@ do
       CC=${am__tool_prefix}gcc
       export CC
       echo "$me: running $CC --version"
-      $CC --version || exit 77
+      $CC --version || skip_all_ "GNU C compiler not available"
       echo "$me: running $CC -v"
-      $CC -v || exit 77
+      $CC -v || skip_all_ "botched installation for GNU C compiler"
       ;;
     gcj)
       GCJ=${am__tool_prefix}gcj
       export GCJ
       echo "$me: running $GCJ --version"
-      $GCJ --version || exit 77
+      $GCJ --version || skip_all_ "GNU Java compiler not available"
       echo "$me: running $GCJ -v"
-      $GCJ -v || exit 77
+      $GCJ -v || skip_all_ "botched installation for GNU Java compiler"
       ;;
     g++)
       CXX=${am__tool_prefix}g++
       export CXX
       echo "$me: running $CXX --version"
-      $CXX --version || exit 77
+      $CXX --version || skip_all_ "GNU C++ compiler not available"
       echo "$me: running $CXX -v"
-      $CXX -v || exit 77
+      $CXX -v || skip_all_ "botched installation for GNU C++ compiler"
       ;;
     gfortran)
       FC=${am__tool_prefix}gfortran
       export FC
       echo "$me: running $FC --version"
-      $FC --version || skip_ "GNU Fortran compiler not available"
+      $FC --version || skip_all_ "GNU Fortran compiler not available"
       echo "$me: running $FC -v"
-      $FC -v || skip_ "botched installation for GNU Fortran compiler"
+      $FC -v || skip_all_ "botched installation for GNU Fortran compiler"
       case " $required " in
         *\ g77\ *) ;;
         *) F77=$FC; export F77;;
@@ -429,9 +737,9 @@ do
       F77=${am__tool_prefix}g77
       export F77
       echo "$me: running $F77 --version"
-      $F77 --version || skip_ "GNU Fortran 77 compiler not available"
+      $F77 --version || skip_all_ "GNU Fortran 77 compiler not available"
       echo "$me: running $F77 -v"
-      $F77 -v || skip_ "botched installation for GNU Fortran 77 compiler"
+      $F77 -v || skip_all_ "botched installation for GNU Fortran 77 compiler"
       case " $required " in
         *\ gfortran\ *) ;;
         *) FC=$F77; export FC;;
@@ -445,7 +753,7 @@ do
       # it will try link *nothing* and complain it cannot find
       # main(); funny).  Use -help so it does not try linking anything.
       echo "$me: running $CC -V -help"
-      $CC -V -help || exit 77
+      $CC -V -help || skip_all_ "Intel C compiler \`$CC' not available"
       ;;
     javac)
       # The Java compiler from JDK 1.5 (and presumably earlier versions)
@@ -453,12 +761,12 @@ do
       # telling that source files are missing.  Adding also the `-help'
       # option seems to solve the problem.
       echo "$me: running javac -version -help"
-      javac -version -help || skip_ "java compiler not found"
+      javac -version -help || skip_all_ "Sun Java compiler not available"
       ;;
     java)
       # See the comments above about `javac' for why we use also `-help'.
       echo "$me: running java -version -help"
-      java -version -help || skip_ "java interpreter not found"
+      java -version -help || skip_all_ "Sun Java interpreter not found"
       ;;
     lib)
       AR=lib
@@ -470,54 +778,58 @@ do
       ;;
     makedepend)
       echo "$me: running makedepend -f-"
-      makedepend -f- || exit 77
+      makedepend -f- \
+        || skip_all_ "required program \`makedepend' not available"
       ;;
     makeinfo-html)
-      # Make sure makeinfo understands --html.
+      # Make sure we have makeinfo, and it understands `--html'.
       echo "$me: running makeinfo --html --version"
-      makeinfo --html --version || exit 77
+      makeinfo --html --version \
+        || skip_all_ "cannot find a makeinfo program that groks the" \
+                 "\`--html' option"
       ;;
     non-root)
       # Skip this test case if the user is root.
       # We try to append to a read-only file to detect this.
       priv_check_temp=priv-check.$$
-      touch $priv_check_temp || exit 99
-      chmod a-w $priv_check_temp || exit 99
-      (echo foo >> $priv_check_temp) >/dev/null 2>&1
-      overwrite_status=$?
+      touch $priv_check_temp && chmod a-w $priv_check_temp \
+        || framework_failure_ "creating unwritable file $priv_check_temp"
+      # Not a useless use of subshell: lesser shells like Solaris /bin/sh
+      # can exit if a builtin fails.
+      overwrite_status=0
+      (echo foo >> $priv_check_temp) || overwrite_status=$?
       rm -f $priv_check_temp
       if test $overwrite_status -eq 0; then
-        echo "$me: cannot drop file write permissions" >&2
-        exit 77
+        skip_all_ "cannot drop file write permissions"
       fi
       unset priv_check_temp overwrite_status
       ;;
     perl-threads)
       if test "$WANT_NO_THREADS" = "yes"; then
-        echo "$me: skip with Devel::Cover: cannot cope with threads" >&2
-        exit 77
+        skip_all_ "Devel::Cover cannot cope with threads"
       fi
       ;;
     native)
-      cross_compiling && skip_ "doesn't work in cross-compile mode"
+      cross_compiling && skip_all_ "doesn't work in cross-compile mode"
       ;;
     python)
       # Python doesn't support --version, it has -V
       echo "$me: running python -V"
-      python -V || exit 77
+      python -V || skip_all_ "python interpreter not available"
       ;;
     ro-dir)
       # Skip this test case if read-only directories aren't supported
       # (e.g., under DOS.)
       ro_dir_temp=ro_dir.$$
-      mkdir $ro_dir_temp || exit 99
-      chmod a-w $ro_dir_temp || exit 99
-      (: > $ro_dir_temp/probe) >/dev/null 2>/dev/null
-      create_status=$?
+      mkdir $ro_dir_temp && chmod a-w $ro_dir_temp \
+        || framework_failure_ "creating unwritable directory $ro_dir_temp"
+      # Not a useless use of subshell: lesser shells like Solaris /bin/sh
+      # can exit if a builtin fails.
+      create_status=0
+      (: > $ro_dir_temp/probe) || create_status=$?
       rm -rf $ro_dir_temp
       if test $create_status -eq 0; then
-        echo "$me: cannot drop directory write permissions" >&2
-        exit 77
+        skip_all_ "cannot drop directory write permissions"
       fi
       unset ro_dir_temp create_status
       ;;
@@ -528,8 +840,7 @@ do
           echo "$me: running $r2h --version"
           $r2h --version && break 2
         done
-        echo "$me: no proper rst2html program found" >&2
-        exit 77
+        skip_all_ "no proper rst2html program found"
       done
       unset r2h
       ;;
@@ -538,52 +849,51 @@ do
       # the program on the runtest command-line. This requires
       # DejaGnu 1.4.3 or later.
       echo "$me: running runtest SOMEPROGRAM=someprogram --version"
-      runtest SOMEPROGRAM=someprogram --version || exit 77
+      runtest SOMEPROGRAM=someprogram --version \
+        || skip_all_ "DejaGnu is not available"
       ;;
     tex)
       # No all versions of Tex support `--version', so we use
       # a configure check.
       if test -z "$TEX"; then
-        echo "$me: TeX is required, but it wasn't found by configure" >&2
-        exit 77
+        skip_all_ "TeX is required, but it wasn't found by configure"
       fi
       ;;
     texi2dvi-o)
       # Texi2dvi supports `-o' since Texinfo 4.1.
       echo "$me: running texi2dvi -o /dev/null --version"
-      texi2dvi -o /dev/null --version || exit 77
+      texi2dvi -o /dev/null --version \
+        || skip_all_ "required program \`texi2dvi' not available"
       ;;
-    xsi-shell)
-      # Try some XSI features.
-      # Keep this in sync with libtool.m4:_LT_CHECK_SHELL_FEATURES.
-      echo "$me: trying some XSI constructs"
-      ( _am_dummy="a/b/c"
-	test "${_am_dummy##*/},${_am_dummy%/*},${_am_dummy#??}"${_am_dummy%"$_am_dummy"}, \
-		= c,a/b,b/c, \
-	&& eval 'test $(( 1 + 1 )) -eq 2 \
-	&& test "${#_am_dummy}" -eq 5' ) || exit 77
-      ;;
-    flex|lex)
+    flex)
       # Since flex is required, we pick LEX for ./configure.
       LEX=flex
       export LEX
       echo "$me: running flex --version"
-      flex --version || exit 77
+      flex --version || skip_all_ "required program \`flex' not available"
+      ;;
+    lex)
+      test "$LEX" = false && skip_all_ "no Lex program available"
+      if test -z "$LEX"; then
+        # The user hasn't explicitly specified any lex program in the
+        # environment, so we try to use flex, skipping the test if it's
+        # not found.
+        LEX=flex
+        export LEX
+        echo "$me: running flex --version"
+        flex --version || skip_all_ "required program \`flex' not available"
+      fi
       ;;
     yacc)
-      if test x"$YACC" = x"no"; then
-        # The user has explicitly told he doesn't want a yacc program
-        # to be used.
-        echo "$me: \$YACC is \"no\", skipping test" >&2
-        exit 77
-      elif test -z "$YACC"; then
+      test "$YACC" = false && skip_all_ "no Yacc program available"
+      if test -z "$YACC"; then
         # The user hasn't explicitly specified any yacc program in the
         # environment, so we try to use bison, skipping the test if it's
         # not found.
         YACC='bison -y'
         export YACC
         echo "$me: running bison --version"
-        bison --version || exit 77
+        bison --version || skip_all_ "required program \`bison' not available"
       fi
       ;;
     *)
@@ -592,7 +902,7 @@ do
       # It is not likely but possible that $tool is a special builtin,
       # in which case the shell is allowed to exit after an error.
       # So, please leave the subshell here.
-      ( $tool --version ) || exit 77
+      ($tool --version) || skip_all_ "required program \`$tool' not available"
       ;;
   esac
 done
@@ -604,10 +914,7 @@ case $testbuilddir in
   *\ *|*\	*)
     case " $required " in
       *' libtool '* | *' libtoolize '* )
-        echo "$me: libtool/libtoolized cannot cope correctly" >&2
-        echo "$me: with spaces in the build tree" >&2
-        exit 77
-        ;;
+        skip_all_ "libtool has problems with spaces in builddir name";;
     esac
     ;;
 esac
@@ -620,10 +927,7 @@ case $testsrcdir in
   *\ * |*\	*)
     case " $required " in
       *' libtool '* | *' libtoolize '* | *' gettext '* )
-        echo "$me: our testsuite setup cannot cope correctly with spaces" >&2
-        echo "$me: in the source tree for libtool/gettext tests" >&2
-        exit 77
-        ;;
+        skip_all_ "spaces in srcdir name: libtool/gettext tests won't work";;
    esac
    ;;
 esac
@@ -642,59 +946,102 @@ case " $required " in *\ gettext*) . ./gettext-macros.dir/get.sh;; esac
 # Test scripts are free to override this if they need to.
 distdir=$me-1.0
 
-# The subdirectory where the current test script will run and write its
-# temporary/data files.  This will be created shortly, and will be removed
-# by the cleanup trap below if the test passes.  If the test doesn't pass,
-# this directory will be kept, to facilitate debugging.
-testSubDir=$me.dir
-
-test ! -d $testSubDir || {
-  find $testSubDir -type d ! -perm -700 -exec chmod u+rwx {} ";"
-  rm -rf $testSubDir
-}
-mkdir $testSubDir
-
-cd ./$testSubDir
-
+# Set up the exit trap.
 if test "$sh_errexit_works" = yes; then
   trap 'exit_status=$?
     set +e
     cd "$testbuilddir"
-    case $exit_status,$keep_testdirs in
-    0,)
-      find $testSubDir -type d ! -perm -700 -exec chmod u+rwx {} ";"
-      rm -rf $testSubDir
-      ;;
-    esac
-    test "$signal" != 0 && echo "$me: caught signal $signal"
+    if test $am_using_tap = yes; then
+      if test $have_tap_plan_ != yes && test $exit_status -eq 0; then
+        plan_ "now"
+      fi
+      test $exit_status -eq 0 && test $tap_pass_count_ -eq $tap_count_ \
+        || keep_testdirs=yes
+    else
+      # This is to ensure that a test script does give a SKIP outcome just
+      # because a command in it happens to exit with status 77.  This
+      # behaviour, while from time to time useful to developers, is not
+      # meant to be enabled by default, as it could cause spurious failures
+      # in the wild.  Thus it will be enabled only when the variable
+      # "am_explicit_skips" is set to a "true" value.
+      case $am_explicit_skips in
+        [yY]|[yY]es|1)
+          if test $exit_status -eq 77 && test $am__test_skipped != yes; then
+            echo "$me: implicit skip turned into failure"
+            exit_status=78
+          fi;;
+      esac
+      test $exit_status -eq 0 || keep_testdirs=yes
+    fi
+    am_keeping_testdirs || rm_rf_ $testSubDir
+    set +x
     echo "$me: exit $exit_status"
     exit $exit_status
   ' 0
-  for signal in 1 2 13 15; do
-    trap 'signal='$signal'; { Exit 99; }' $signal
-  done
-  signal=0
+  trap "fatal_ 'caught signal SIGHUP'" 1
+  trap "fatal_ 'caught signal SIGINT'" 2
+  trap "fatal_ 'caught signal SIGTERM'" 15
+  # Various shells seems to just ignore SIGQUIT under some circumstances,
+  # even if the signal is not blocked; however, if the signal it trapped,
+  # the trap gets correctly executed.  So we also trap SIGQUIT.
+  # Here is a list of some shells that have been verified to exhibit the
+  # problematic behavior with SIGQUIT:
+  #  - zsh 4.3.12 on Debian GNU/Linux
+  #  - /bin/ksh and /usr/xpg4/bin/sh on Solaris 10
+  #  - Bash 3.2.51 on Solaris 10 and bash 4.1.5 on Debian GNU/Linux
+  #  - AT&T ksh on Debian Gnu/Linux (deb package ksh, version 93u-1)
+  # OTOH, at least these shells that do *not* exhibit that behaviour:
+  #  - modern version of the Almquist Shell (at least 0.5.5.1), on
+  #    both Solaris and GNU/Linux
+  #  - Solaris 10 /bin/sh
+  #  - public domain Korn Shell, version 5.2.14, on Debian GNU/Linux
+  trap "fatal_ 'caught signal SIGQUIT'" 3
+  # Ignore further SIGPIPE in the trap code.  This is required to avoid
+  # a very weird issue with some shells, at least when the execution of
+  # the automake testsuite is driven by the `prove' utility: if prove
+  # (or the make process that has spawned it) gets interrupted with
+  # Ctrl-C, the shell might go in a loop, continually getting a SIGPIPE,
+  # sometimes finally dumping core, other times hanging indefinitely.
+  # See also Test::Harness bug [rt.cpan.org #70855], archived at
+  # <https://rt.cpan.org/Ticket/Display.html?id=70855>
+  trap "trap '' 13; fatal_ 'caught signal SIGPIPE'" 13
 fi
 
-# Copy in some files we need.
-for file in install-sh missing depcomp; do
-   cp "$top_testsrcdir/lib/$file" . || Exit 99
-done
-
-# Build appropriate environment in test directory.  Eg create
-# configure.in, touch all necessary files, etc.
-# Don't use AC_OUTPUT, but AC_CONFIG_FILES so that appending
-# still produces a valid configure.ac.  But then, tests running
-# config.status really need to append AC_OUTPUT.
-{
-  echo "AC_INIT([$me], [1.0])"
-  if test x"$parallel_tests" = x"yes"; then
-    echo "AM_INIT_AUTOMAKE([parallel-tests])"
-  else
-    echo "AM_INIT_AUTOMAKE"
+# Create and populate the temporary directory, if and as required.
+if test x"$am_create_testdir" = x"no"; then
+  testSubDir=
+else
+  # The subdirectory where the current test script will run and write its
+  # temporary/data files.  This will be created shortly, and will be removed
+  # by the cleanup trap below if the test passes.  If the test doesn't pass,
+  # this directory will be kept, to facilitate debugging.
+  testSubDir=$me.dir
+  test ! -d $testSubDir || rm_rf_ $testSubDir \
+    || framework_failure_ "removing old test subdirectory"
+  mkdir $testSubDir \
+    || framework_failure_ "creating test subdirectory"
+  cd ./$testSubDir \
+    || framework_failure_ "cannot chdir into test subdirectory"
+  if test x"$am_create_testdir" != x"empty"; then
+    cp "$am_scriptdir"/install-sh "$am_scriptdir"/missing \
+       "$am_scriptdir"/depcomp . \
+      || framework_failure_ "fetching common files from $am_scriptdir"
+    # Build appropriate environment in test directory.  E.g., create
+    # configure.in, touch all necessary files, etc.  Don't use AC_OUTPUT,
+    # but AC_CONFIG_FILES so that appending still produces a valid
+    # configure.in.  But then, tests running config.status really need
+    # to append AC_OUTPUT.
+    {
+      echo "AC_INIT([$me], [1.0])"
+      if test x"$am_parallel_tests" = x"yes"; then
+        echo "AM_INIT_AUTOMAKE([parallel-tests])"
+      else
+        echo "AM_INIT_AUTOMAKE"
+      fi
+      echo "AC_CONFIG_FILES([Makefile])"
+    } >configure.in || framework_failure_ "creating configure.in skeleton"
   fi
-  echo "AC_CONFIG_FILES([Makefile])"
-} >configure.in
+fi
 
 
 ## ---------------- ##
@@ -702,6 +1049,4 @@ done
 ## ---------------- ##
 
 set -x
-set -e
-
 pwd

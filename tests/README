@@ -26,11 +26,21 @@ Running the tests
 
   To run only selected tests:
 
-    make -k check TESTS="foo.test bar.test"
+    make -k check TESTS="foo.test bar.test"             (GNU make)
+    env TESTS="foo.test bar.test" make -e -k check      (non-GNU make)
 
-  For non-GNU make, you might have to use this instead:
+ To run the tests in cross-compilation mode:
 
-    env TESTS="foo.test bar.test" make -e -k check
+    make -k check host_alias="$host_alias"              (GNU make)
+    env host_alias="$host_alias" make -e -k check       (non-GNU make)
+
+ Here `$host_alias' should be defined to a proper value different from
+ configure-determined `$build_alias', and should refer to a set of
+ cross-compilers you have available on your system; for example, if
+ on Linux you have a set of MinGW-targeted cross-compilers named
+ 'i586-mingw32msvc-cc', 'i586-mingw32msvc-c++', etc., you could use:
+
+   make -k check host_alias='i586-mingw32msvc'
 
 
 Interpretation
@@ -46,15 +56,15 @@ Interpretation
 
   Other:
     SKIP  - skipped tests (third party tools not available)
+    ERROR - some unexpected error condition
 
 
 Getting details from failures
 -----------------------------
 
-  Each test is a shell script, and by default is run by /bin/sh.
-  In a non-VPATH build you can run them directly, they will be verbose.
-  By default, verbose output of a test foo.test is retained in the log
-  file foo.log.  A summary log is created in the file test-suite.log.
+  By default, verbose output of a test `foo.test' or `foo.tap' is
+  retained in the log file `foo.log'.  A summary log is created in
+  the file `test-suite.log'.
 
   You can limit the set of files using the TESTS variable, and enable
   detailed test output at the end of the test run with the VERBOSE
@@ -62,9 +72,48 @@ Getting details from failures
 
     env VERBOSE=x TESTS='first.test second.test ...' make -e check
 
+  You can also run the tests by hand, as explained in the next subsection.
+
+
+About the tests
+---------------
+
+  There are two kinds of tests in the Automake testsuite (both implemented
+  as shell scripts).  The scripts with the `.test' suffix are "simple"
+  tests, their outcome completely determined by their exit status.  Those
+  with the `.tap' suffix use the TAP protocol.  If you want to run a test
+  by hand, you can do so directly if it is a simple test:
+
+    ./nogzip.test
+
+  (it will be verbose by default), while if it is a TAP test you can pass
+  it to your preferred TAP runner, as in e.g.:
+
+    prove --verbose --merge ./add-missing.tap
+
+  The tests can also be run directly in a VPATH build, as with:
+
+    /path/to/srcdir/tests/nogzip.test
+    prove --verbose --merge /path/to/srcdir/tests/add-missing.tap
+
 
 Supported shells
 ----------------
+
+  By default, the tests are run by the $SHELL detected at configure
+  time.  They also take care to re-execute themselves with that shell,
+  unless told not to.  So, to run the tests with a different shell, say
+  `/path/to/another/sh', the user must use:
+
+    AM_TESTS_REEXEC=no /path/to/another/sh ./foo.test
+    AM_TESTS_REEXEC=no prove -v -e /path/to/another/sh ./bar.tap
+
+  to run a test directly, and:
+
+    make check LOG_COMPILER=/path/to/sh         (GNU make)
+    LOG_COMPILER=/path/to/sh make -e check      (non-GNU make)
+
+  to run the test(s) through the makefile test driver.
 
   The test scripts are written with portability in mind, so that they
   should run with any decent Bourne-compatible shell.
@@ -77,7 +126,7 @@ Supported shells
   version of Zsh is used.  Thus, if you want to run a test script, say
   foo.test, with Zsh 4.2, you *can't* simply do `zsh foo.test', but
   you *must* resort to:
-    zsh -o no_function_argzero foo.test
+    AM_TESTS_REEXEC=no zsh -o no_function_argzero foo.test
 
   Note that this problem does not occur if Zsh is executed through
   a symlink with a basename of `sh', since in that case Zsh starts
@@ -135,18 +184,28 @@ Do
   instead.
 
   For tests that use the `parallel-tests' Automake option, set the shell
-  variable `parallel_tests' to "yes" before including ./defs.  Also,
-  do not use for them a name that ends in `-p.test', since that would
-  risk to clash with automatically-generated tests.  For tests that are
-  *not* meant to work with the `parallel-tests' Automake option (these
-  should be very very few), set the shell variable `parallel_tests' to
-  "no" before including ./defs.
+  variable `am_parallel_tests' to "yes" before including ./defs.  For tests
+  that are *not* meant to work with the `parallel-tests' Automake option
+  (these should be very very few), set the shell variable `am_parallel_tests'
+  to "no" before including ./defs.
 
-  ./defs sets a skeleton configure.in.  If possible, append to this
-  file.  In some cases you'll have to overwrite it, but this should
-  be the exception.  Note that configure.in registers Makefile.in
-  but do not output anything by default.  If you need ./configure
-  to create Makefile, append AC_OUTPUT to configure.in.
+  Some tests in the Automake testsuite are auto-generated; those tests
+  might have custom extensions, but their basename (that is, with such
+  extension stripped) is expected to end with "-w" string, optionally
+  followed by decimal digits.  For example, the name of a valid
+  auto-generated test can be `color-w.test' or `tap-signal-w09.tap'.
+  Please don't name hand-written tests in a way that could cause them
+  to be confused with auto-generated tests; for example, `u-v-w.test'
+  or `option-w0.tap' are *not* valid name for hand-written tests.
+
+  ./defs brings in some commonly required files, and sets a skeleton
+  configure.in.  If possible, append to this file.  In some cases
+  you'll have to overwrite it, but this should be the exception.  Note
+  that configure.in registers Makefile.in but do not output anything by
+  default.  If you need ./configure to create Makefile, append AC_OUTPUT
+  to configure.in.  In case you don't want ./defs to pre-populate your
+  test directory (which is a rare occurrence), set `$am_create_destdir'
+  to "empty" before sourcing ./defs.
 
   By default, the testcases are run with the `errexit' shell flag on,
   to make it easier to catch failures you might not have thought of.
@@ -194,6 +253,13 @@ Do
   Use filenames with two consecutive spaces when testing that some
   code preserves filenames with spaces.  This will catch errors like
   `echo $filename | ...`.
+
+  Make sure your test script can be used to faithfully check an
+  installed version of automake (as with "make installcheck").  For
+  example, if you need to copy or grep an automake-provided script,
+  do not assume that they can be found in the `$top_srcdir/lib'
+  directory, but use `$am_scriptdir' instead.  The complete list of
+  such `$am_..dir' variables can be found in tests/defs-static.in.
 
   Before commit: make sure the test is executable, add the tests to
   TESTS in Makefile.am, add it to XFAIL_TESTS in addition if needed,

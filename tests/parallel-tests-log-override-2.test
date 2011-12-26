@@ -18,10 +18,8 @@
 #  - $(TEST_SUITE_LOG) and $(TESTS)
 #  - $(TEST_SUITE_LOG) and $(TEST_LOGS)
 
-parallel_tests=yes
+am_parallel_tests=yes
 . ./defs || Exit 1
-
-set -e
 
 cat >> configure.in <<'END'
 AC_OUTPUT
@@ -67,6 +65,7 @@ do
     $MAKE -e check >stdout || { cat stdout; Exit 1; }
   cat stdout
   ls -l
+  count_test_results total=2 pass=1 fail=0 skip=1 xfail=0 xpass=0 error=0
   cat pass.log
   cat skip.log
   cat partial.log
@@ -74,14 +73,12 @@ do
   test ! -f pass2.log
   test ! -f skip2.log
   test ! -f fail.log
-  grep '^PASS: .*pass\.test' stdout
-  grep '^SKIP: .*skip\.test' stdout
-  $FGREP 'skip.test' partial.log
+  grep '^PASS: pass\.test$' stdout
+  grep '^SKIP: skip\.test$' stdout
+  $FGREP 'SKIP: skip' partial.log
   $FGREP '% skipped test %' partial.log
-  for t in pass2 skip2 fail; do
-    $FGREP "$t.test" stdout && Exit 1
-    $FGREP "$t.test" partial.log && Exit 1
-  done
+  $EGREP '(pass2|skip2|fail)\.test' stdout && Exit 1
+  $EGREP '(pass2|skip2|fail)' partial.log && Exit 1
   rm -f *.log
 done
 

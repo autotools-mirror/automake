@@ -17,13 +17,12 @@
 # Check parallel-tests features:
 # - concurrent parallel execution
 
-parallel_tests=yes
+am_parallel_tests=yes
 required=GNUmake
 . ./defs || Exit 1
 
-# This test does not work well if $MAKE contains -j.
 case $MAKE in
-*\ -j*) Exit 77 ;;
+  *\ -j*) skip_ "\$MAKE contains \`-j'";;
 esac
 
 cat >> configure.in << 'END'
@@ -36,13 +35,12 @@ END
 
 for i in 1 2 3 4 5 6 7 8; do
   echo "TESTS += foo$i.test" >> Makefile.am
-  cat >foo$i.test <<'END'
-#! /bin/sh
-echo "this is $0"
-# hack around maintainer-check check:
-sleep='sleep '1
-$sleep
-exit 0
+  unindent >foo$i.test <<'END'
+    #! /bin/sh
+    echo "this is $0"
+    # Creative quoting below to please maintainer-check.
+    sleep '1'
+    exit 0
 END
   chmod a+x foo$i.test
 done
@@ -73,7 +71,7 @@ cd ..
 # still be ongoing when the parallel one has terminated.
 kill -0 $!
 cat parallel/stdout
-test `grep -c PASS parallel/stdout` -eq 8
+test `grep -c '^PASS:' parallel/stdout` -eq 8
 
 # Wait long enough so that there are no open files any more when the
 # post-test cleanup runs.  But exit after we've waited for two minutes

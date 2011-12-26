@@ -17,7 +17,7 @@
 # Check that $(YFLAGS) takes precedence over both $(AM_YFLAGS) and
 # $(foo_YFLAGS).
 # Please keep this in sync with the sister tests yflags2.test, lflags.test
-# and lflags2.test
+# and lflags2.test.
 
 . ./defs || Exit 1
 
@@ -33,13 +33,14 @@ chmod a+x fake-yacc
 unset YACC || :
 
 cat >> configure.in <<'END'
-AC_PROG_CC
+AC_SUBST([CC], [false])
 # Simulate presence of Yacc using our fake-yacc script.
 AC_SUBST([YACC], ['$(abs_top_srcdir)'/fake-yacc])
 AC_OUTPUT
 END
 
 cat > Makefile.am <<'END'
+AUTOMAKE_OPTIONS = no-dependencies
 bin_PROGRAMS = foo bar
 foo_SOURCES = main.c foo.y
 bar_SOURCES = main.c bar.y
@@ -53,19 +54,17 @@ $AUTOMAKE -a
 grep '\$(YFLAGS).*\$(bar_YFLAGS)' Makefile.in && Exit 1
 grep '\$(YFLAGS).*\$(AM_YFLAGS)' Makefile.in && Exit 1
 
-echo 'int main(void){ return 0; }' > main.c
 : > foo.y
 : > bar.y
 
 $AUTOCONF
 ./configure
-env YFLAGS=__user_flags__ $MAKE -e
-
-ls -l
+env YFLAGS=__user_flags__ $MAKE -e foo.c bar-bar.c
 
 cat foo.c
-grep '__am_flags__.*__user_flags__' foo.c
 cat bar-bar.c
+
+grep '__am_flags__.*__user_flags__' foo.c
 grep '__bar_flags__.*__user_flags__' bar-bar.c
 
 :

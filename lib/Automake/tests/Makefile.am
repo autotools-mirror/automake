@@ -1,6 +1,7 @@
 ## Process this file with automake to create Makefile.in
 
-# Copyright (C) 2002, 2003, 2008, 2009  Free Software Foundation, Inc.
+# Copyright (C) 2002, 2003, 2008, 2009, 2010, 2011 Free Software
+# Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +17,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 PL_LOG_COMPILER = $(PERL)
-AM_PL_LOG_FLAGS = -Mstrict -I ../.. -I $(top_srcdir)/lib -w
+AM_TESTS_ENVIRONMENT = \
+  case $$am_running_installcheck in \
+    yes) am_pl_I_flags='-I $(pkgvdatadir)';; \
+      *) am_pl_I_flags='-I ../.. -I $(top_srcdir)/lib';; \
+  esac;
+AM_PL_LOG_FLAGS = -Mstrict -w $$am_pl_I_flags
 TEST_EXTENSIONS = .pl
 
 TESTS = \
@@ -42,3 +48,9 @@ Version2.pl \
 Version3.pl
 
 EXTRA_DIST = $(TESTS)
+
+include $(top_srcdir)/CheckListOfTests.am
+
+# Run the testsuite with the installed aclocal and automake.
+installcheck-local:
+	am_running_installcheck=yes $(MAKE) $(AM_MAKEFLAGS) check
