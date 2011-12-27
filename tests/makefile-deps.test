@@ -14,51 +14,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that automake can cope with a definition of the $(YFLAGS) variable
-# in Makefile.am (even if that is extremely bad practice, because that
-# variable is user-reserved).
+# Make sure we don't emit a rule with empty target if list of
+# automatically-computed dependencies for Makefile.in is empty.
 
-required=yacc
 . ./defs || Exit 1
 
 set -e
 
-cat >> configure.in <<'END'
-AC_PROG_CC
-AC_PROG_YACC
-AC_OUTPUT
-END
-
-cat > Makefile.am <<'END'
-bin_PROGRAMS = foo
-foo_SOURCES = foo.y
-# Don't do this in a real-life Makefile.am!
-YFLAGS = -d -v
-END
-
-cat > foo.y << 'END'
-%{
-int yylex () { return 0; }
-void yyerror (char *s) { return; }
-int main () { return 0; }
-%}
-%%
-foobar : 'f' 'o' 'o' 'b' 'a' 'r' {};
-END
+: > Makefile.am
 
 $ACLOCAL
-$AUTOMAKE -a -Wno-gnu
+$AUTOMAKE
 
-$EGREP '(foo|YFLAGS)' Makefile.in # for debugging
-grep '^foo.h *:' Makefile.in
-
-$AUTOCONF
-./configure
-
-$MAKE
-
-test -f foo.c
-test -f foo.h
-test -f foo.output
+grep "^ *:" Makefile.in && Exit 1
 
 :

@@ -1,3 +1,832 @@
+2011-12-27  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: drop unnecessary in 'subpkg.test'
+	* tests/subpkg.test ($required): Drop "bison", it is not required
+	anymore since commit `v1.11-502-g7e5ae80'.
+
+2011-12-27  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	gitlog-to-changelog: new auxiliary script, synced from gnulib
+
+	We have plans to stop maintaining a version-controlled ChangeLog
+	file in the Automake repository, and instead begin to generate it
+	automatically from the git log messages.  To do so, we will use
+	the `gitlog-to-changelog' script from gnulib.
+
+	* lib/gitlog-to-changelog: New, synced from gnulib.
+	* Makefile.am (fetch): Fetch and sync it.
+	* lib/Makefile.am (EXTRA_DIST): Distribute it.
+
+2011-12-27  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	docs: "aclocal --install -I /abs/dir" actually copies files
+
+	This change is for automake bug#8407.
+
+	In the past, there had been some debate and confusion about
+	whether "aclocal --install" should copy third-party .m4 files
+	in the first directory passed to the `-I' option even when
+	such directory was given as an absolute path, or whether it
+	was better to do so only for directories specified with a
+	relative path.
+
+	The rationale for this latter behaviour was that, before the
+	existence of the `ACLOCAL_PATH' variable, the only way (a poor
+	way, I might add) for a common user to extend the search path
+	of a system-wide installation of aclocal was to export something
+	like ACLOCAL="aclocal -I /my/extra/macros" in the environment.
+	Today, the correct way to proceed is undoubtedly through the
+	use of ACLOCAL_PATH, so we can settle the question once and for
+	all, and start verifying the correct behaviour of `-I' with a
+	new test.
+
+	* tests/aclocal-install-absdir.test: New test.
+	* tests/Makefile.am (TESTS): Add it.
+	* doc/automake.texi (aclocal Options): Be more explicit about
+	this part of `--install' semantics.
+
+2011-12-26  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	docs: fix node names for automake and aclocal invocations
+
+	With the older node names, an "info automake" command issued
+	from the command line would have opened the node about the
+	invocation of the automake program, rather than the Top node
+	of the automake documentation.  To invoke the Top node, one
+	had to issue the command "info Automake" instead (note the
+	different capitalization).  This was suboptimal, and certainly
+	confusing.
+
+	With this change, "info automake" will open the Top node of the
+	automake documentation; to access the nodes about the invocation
+	of the automake and aclocal program, one has now to issue "info
+	automake-invocation" and "info aclocal-invocation" respectively.
+
+	This change fixes automake bug#8071.
+
+	See also commits `v2.61a-22-ge9215d1' and `v2.61a-72-g8c07b48' in
+	the autoconf git repository, which tackled a similar issue.
+
+	* doc/automake.texi (@direntry): Rename nodes `aclocal' and
+	`automake' to `aclocal-invocation' and `automake-invocation'
+	respectively.
+	* NEWS: Update.
+
+2011-12-24  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	gitignore: use only one .gitignore file, in the top-level directory
+	* doc/.gitignore, doc/amhello/.gitignore, lib/Automake/.gitignore,
+	lib/Automake/tests/.gitignore, tests/.gitignore: Deleted, their
+	contents merged into ...
+	* .gitignore: ... this top-level file.  Since we are at it, improve
+	it by anchoring files where it makes sense.
+
+2011-12-24  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: one more fixlet for gettext macros requirement
+	* tests/gettext-macros.test (configure.in): Add calls to
+	AC_INIT and AC_PROG_CC, to avoid a spurious failure in the
+	later aclocal invocation.
+	Luckily, this wart wasn't causing any spurious SKIP or FAIL,
+	but only the redundant addition to the `-Wno-syntax' option
+	to some aclocal invocations in the gettext tests.
+
+2011-12-24  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix handling of gettext macros requirement
+
+	The code introduced in the earlier change `v1.11-581-gb7d67d5'
+	and aimed at automatically fetching all the .m4 files provided by
+	gettext has proven inadequate, since it hasn't managed to truly
+	and always get *all* the required .m4 files.  For example, it has
+	failed to fetch the file `intldir.m4' (present in gettext 0.18.1,
+	and where the macro `AM_GNU_GETTEXT_INTL_SUBDIR' is defined),
+	which in turn has caused spurious SKIPs of at least the test
+	`gettext3.test'.
+
+	The reason for this debacle is that autopoint looks at the version
+	specified in AM_GNU_GETTEXT_VERSION to decide which version of the
+	gettext infrastructure to bring in; since we were unconditionally
+	specifying the older 0.10.35 version, the newer `.m4' files weren't
+	brought in.
+
+	* tests/gettext-macros.test: In AM_GNU_GETTEXT_VERSION, instead
+	of unconditionally specifying the older 0.10.35 version, specify
+	the version of the available `gettextize' or `autopoint' program,
+	dynamically extracted with the help of ...
+	(extract_program_version):... this new function, and saved ...
+	($autopoint_version): ... in this new variable.
+
+2011-12-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix failure due to debugging code forgotten into a test
+	* tests/missing-tar.test: Don't ever call the `missing' script
+	with `sh -x'; this was used for debugging, but an instance of
+	it slipped into the committed test case.  Bug revealed by a
+	failure on a Solaris 10 system with GNU tar installed as `gtar'.
+
+2011-12-23  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: avoid spurious failure of libtool and gettext tests
+
+	On Solaris 10 (and presumably earlier), /bin/sh trips up on
+	here-documents that contains a command substitution *and* are
+	fed to a shell function:
+
+	  # All as expected.
+	  $ cat <<END
+	  `pwd`
+	  END
+	  /home/stefano
+	  $ echo status = $?
+	  status = 0
+
+	  # An apparently innocuous function ...
+	  $ kitty () { cat; }
+	  # ... but hilarity ensues!
+	  $ kitty <<END
+	  `pwd`
+	  END
+	  /tmp/sh137723: cannot open
+	  $ echo status = $?
+	  status = 1
+
+	We need to work around this misbehaviour in a couple of our
+	tests (whose failures where causing cascading failures in a
+	lot of other tests).
+
+	* tests/gettext-macros.test: Avoid the use of command substitution
+	in a here-document passed to the `indent' function, by using the
+	`echo' builtin instead.
+	* tests/libtool-macros.test: Likewise.
+
+	See also:
+	<http://lists.gnu.org/archive/html/bug-autoconf/2011-12/msg00001.html>
+
+2011-12-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	hacking: distribute it, and mention it in the ChangeLog
+	Not distributing the HACKING file might make it more difficult,
+	for some random curious user, to get informed about or interested
+	in the Automake development process, or to send us patches.
+	* Makefile.am (EXTRA_DIST): Add HACKING.
+	* HACKING: It's OK to distribute this file, and to mention it in
+	the ChangeLog.
+
+2011-12-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	regex: deprecate the obsolete macro AM_WITH_REGEX
+	This is a backport of commit v1.11-433-g37b0aee.
+	Today, practically nobody uses the GNU rx library, which, according
+	to its own website <http://www.gnu.org/software/rx/rx.html>, has
+	been "decommissioned".  Consequently, the automake-provided macro
+	AM_WITH_REGEX is not used nor required anymore.  Deprecate it, so
+	that it will be possible to safely remove it in the next major
+	automake version.
+	* m4/regex.m4 (AM_WITH_REGEX): Give a warning of the class
+	`obsolete' when this macro is used.
+	* doc/automake.texi (Public Macros): Move description of
+	`AM_WITH_REGEX' from here ...
+	(Obsolete Macros): ... to here, and declare it as obsolete
+	and "to be removed in a future version".
+	* tests/regex-obsolete.test: New test.
+	* tests/Makefile.am (TESTS): Add it.
+	* NEWS: Update.
+	See also:
+	<http://lists.gnu.org/archive/html/automake-patches/2010-11/msg00131.html>
+
+2011-12-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	maint: distribute .xz tarballs, not .bz2 ones
+	Many GNU packages are moving towards xz-compressed tarballs, so
+	let's follow suit, by dropping the creation and distribution of
+	a bzip2-compressed tarball and switching to xz instead.
+	For compatibility and safeness, we will continue to create and
+	distribute a gzip-compressed tarball as well.
+	* configure.ac (AM_INIT_AUTOMAKE): Drop `dist-bzip2', add
+	`dist-xz'.
+	* NEWS: Update
+	Suggested by Jim Meyering.
+
+2011-12-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	include: avoid "deleted .am file" problem
+	* automake.in (handle_configure): When processing `configure.am',
+	also expand `HAVE-MAKEFILE-IN-DEPS' to a boolean telling whether
+	`MAKEFILE-IN-DEPS' is empty or not.
+	* lib/am/configure.am [?HAVE-MAKEFILE-IN-DEPS?]
+	(%MAKEFILE-IN-DEPS%): New target without dependencies, to
+	avoid the "deleted .am file" problem.  Emit this only when
+	`?HAVE-MAKEFILE-IN-DEPS?' is true, to avoid generating an
+	"empty" dependency declaration.
+	* tests/deleted-am.test: Make grepping of error message stricter.
+	* tests/dist-missing-am.test: Likewise.
+	* tests/remake-deleted-am.test: New test.
+	* tests/remake-deleted-am-2.test: Likewise.
+	* tests/remake-deleted-am-subdir.test: Likewise.
+	* tests/remake-renamed-am.test: Likewise.
+	* tests/makefile-deps.test: Likewise.
+	* tests/Makefile.am (TESTS): Add the new tests.
+	* NEWS: Update.
+	Fixes automake bug#9768.
+	Report by Peter Johansson.
+	See also commit `Release-1-10-40-gd0ebf71', which fixed a similar
+	problem for .m4 files included by configure.ac.
+
+2011-12-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	maint: better use of autoconf 2.68 features
+	* configure.ac: Now that Automake requires autoconf 2.68 for its
+	own bootstrapping and build system, we can assume that PACKAGE_URL
+	gets automatically AC_SUBT'd.
+
+2011-12-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	cosmetics: use proper m4 quoting in configure.ac
+	* configure.ac (AC_CONFIG_SRCDIR): Use proper m4 quoting
+	for its arguments.
+	(AC_CONFIG_AUX_DIR): Likewise.
+	(AC_PROG_PATH): Likewise.
+
+2011-12-14  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: better handling of gettext and libtool requirements
+
+	This change fixes automake bug#9807.
+
+	Before this change, the automake testsuite only looked for the
+	`.m4' files containing libtool and gettext macros definitions in
+	the directory `${prefix}/share/aclocal' (and in the directories
+	specified by the `dirlist' file in there, if any), where ${prefix}
+	was the configure-time automake installation prefix (defaulting
+	to `/usr/local').
+
+	This approach had various shortcomings and disadvantages.  Let's
+	briefly describe the three major ones.
+
+	First, on most GNU/Linux systems, a libtool or gettext installed
+	from distro-provided packages (e.g., by dpkg on Debian/Ubuntu, or
+	by rmp on RedHat/Fedora) would have `/usr', not `/usr/local', as
+	its ${prefix}; so, trying to run the automake testsuite with a
+	simple "./configure && make && make check" would have failed to
+	execute the libtool and gettext tests on most GNU/Linux distros.
+	It's true that it was quite easy to work around this issue, by
+	creating a proper `/usr/local/share/aclocal/dirlist' file with
+	an entry pointing to `/usr/share/aclocal' (a workaround in fact
+	used by most automake developers); but the typical user wasn't
+	aware of the necessity of this trick, so the libtool and gettext
+	tests was usually skipped on testsuite runs "in the wild", thus
+	needlessly reducing coverage.
+
+	Second, the older testsuite behaviour made more difficult for
+	the developers to run the testsuite with non-default libtool or
+	gettext.  For example, assume the developer is working on a system
+	that has a default libtool version 1.5 installed in the /usr/local
+	hierarchy; to improve coverage, the developer installs also a more
+	modern libtool version, say 2.4, in its home directory, let's say
+	in ~/libtool-2.4; he then tries to run the automake testsuite with
+	this more modern libtool by doing an (apparently) simple:
+	  $ PATH=$HOME/libtool-2.4:$PATH make check
+	But the automake testsuite would still look for libtool macros in
+	/usr/local/share/aclocal, not in ~/libtool-2.4/share/aclocal, so
+	the wrong version of the macros would be picked up, and the tests
+	would either fail spuriously or (which would be worse) pass without
+	truly covering the libtool version the developers was thinking to
+	be testing with.
+	Worse again, the automake testsuite would *unconditionally* look
+	for libtool macros in /usr/local/share/aclocal, so even something
+	like:
+	  $ export ACLOCAL_PATH=$HOME/libtool-2.4/share/aclocal
+	  $ PATH=$HOME/libtool-2.4:$PATH make check
+	wouldn't work.
+
+	Third and last, during a "make distcheck", automake is configured
+	with a ${prefix} pointing to a proper subdirectory of the build
+	directory (usually `pwd`/_inst), which gets created on-the-fly;
+	in this case, with the old approach, the automake testsuite never
+	found the libtool and gettext macro files, ans so the libtool and
+	gettext tests was *always* skipped in a "make distcheck".
+
+	* tests/libtool-macros.test: New helper test, looking (with the
+	help of the `libtoolize' script) for libtool macro files required
+	by most libtool tests, and making them easily accessible.
+	* tests/gettext-macros.test: New helper test, looking (with the
+	help of the `libtoolize' script) for libtool macro files required
+	by most libtool tests, and making them easily accessible.
+	* tests/defs.in: Update to make it rely on the results and setups
+	of `libtool-macros.test' and `gettext-macros.test'.
+	* tests/Makefile.am: Declare dependency of all the logs of libtool
+	tests from `libtool-macros.log', and all the logs of gettext tests
+	from `gettext-macros.log'.
+	(TESTS): Add the new tests.
+
+2011-12-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	fix: typos and grammaros in comments of the new test
+	* tests/get-sysconf.test: Fix few typos, grammaros and botched
+	wording.  Reported by Eric Blake.
+
+2011-12-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: report useful system information in 'test-suite.log'
+	It has already happened various times that a user has run the
+	automake testsuite, experienced a failure, read the messages
+	telling him "See tests/test-suite.log" and "Please report to
+	bug-automake@gnu.org", and done exactly that -- sending us only
+	the contents of `tests/test-suite.log', which are usually not
+	enough to start debugging the reported failure.  So we have to
+	ask him for more details, and usually also for the `config.log'
+	file generated by configure.  It's time to fix this recurring
+	feedback inefficiency.  We do so by creating a dummy test case
+	that takes care of copying the contents of `config.log', plus
+	other useful system information, in the final `test-suite.log'.
+	* tests/get-sysconf.test: New test, gathering system information
+	and then always terminating with a SKIP, so that its output gets
+	copied in `test-suite.log'.
+	* tests/Makefile.am (TESTS): Add it.
+
+2011-12-07  Reuben Thomas  <rrt@sc3d.org>  (tiny change)
+
+	python: remove relics for Python 1.5 support
+	* m4/python.m4: The comments in here claim to support only
+	Python >= 2.0, yet this file still has specific support for
+	Python 1.5.  Just remove it, python 1.5 is 12 years old now,
+	and practically defunct.
+	* NEWS: Update.
+	See also commit `Release-1-10-205-gd5bec12', "Support for
+	Python 3.0, drop support for pre-2.0."
+
+2011-12-21  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	configure: remove extraneous 'eval's from AM_RUN_LOG invocations
+	* configure.ac: Remove extra 'eval's from AM_RUN_LOG invocations;
+	for example, instead of "AM_RUN_LOG([eval $PERL --version])",
+	simply use "AM_RUN_LOG([$PERL --version])"
+
+2011-12-21  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	configure: report TeX version in config.log
+	* configure.ac: If possible, report the version of the selected
+	TeX program; this should render the logs more informative.
+
+2011-12-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	maint: snapshots from `maint' are still development snapshots
+	The maintenance-oriented development line in the `maint' branch,
+	while being usually pretty stable and 99% backward-compatible,
+	is not always right off production-quality; but until now, the
+	Automake package version declared in configure.ac hid this fact,
+	since it appeared to be the version of a stable release (e.g.,
+	11.1).  Fix this.
+	* configure.ac (AC_INIT): Bump version to "1.11.0a".
+
+2011-12-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	configure: print proper message for test releases
+	* configure.ac: If the current release is detected to be a test
+	release or a development snapshot, print a proper warning for
+	the user.
+	* README-alpha: Delete, it's obsolete now (and in fact this file
+	hasn't been touched in eleven years, since release 1.4b or so).
+	* HACKING (Release procedure): Don't say to update README-alpha.
+
+2011-12-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	devel: help in comparing Makefile.in from different commits
+	Now that the generated Makefile.in, configure and aclocal.m4 files
+	are no longer committed in Automake's git repository, a simple
+	"git diff" or "git log" no longer shows if and how a change in
+	Automake results in changes to the Makefile.in files and/or
+	configure script of its own build system.  Still, the ability to
+	peek so easily at such differences has proved itself quite useful
+	in the past, often revealing inconsistencies and blunders, and
+	sometimes even bugs; so it would be a pity to lose that altogether.
+	With this change, we add a new maintainer recipe that re-introduces
+	much of that capability, by generating and comparing on the fly the
+	Makefile.in, configure and aclocal.m4 derived from two arbitrary
+	commits of the Automake repository.
+	* Makefile.am (autodiffs, compare-autodiffs): New phony targets.
+
+2011-12-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	repo: don't commit generated files in the git repository anymore
+	It has been quite some time since autoconf and libtool have stopped
+	committing the generated autotools files in their git repositories,
+	with no significant ill effects we're aware of.  It's true that the
+	autoconf bootstrap process has now the minor annoyance that a
+	pre-installed autoconf is required to complete it; but luckily
+	automake will not have a similar annoyance, since our bootstrap
+	script take care, through some hoops, to use the very automake and
+	aclocal versions from the current git checkout to generate the
+	required aclocal.m4 and Makefile.in files.  In fact, this has been
+	a necessity also in the past, because automake has been known to
+	use in its own build system new development features that hadn't
+	been present in any previously released automake distribution.
+	* .gitignore: Ignore configure, aclocal.m4, and all the
+	Makefile.in files.
+	* configure.ac (AC_PREREQ): New macro call, to require the
+	latest autoconf (2.68 for the moment).
+
+2011-12-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	missing: don't try to re-run tar with a munged command line
+	* lib/missing: If the default `tar' program fails with the given
+	arguments, and GNU tar is not available, don't try to re-run the
+	default `tar' with a munged command line (e.g., ditching possibly
+	unportable options), as that could be subtly alter the intended
+	semantics (and maybe even create a somewhat corrupted tarball).
+	Also, it's worth noting that the main purpose of the `missing'
+	script is to allow a non-developer to build the package in the
+	face of slightly-skewed timestamps, not to provide wrappers for
+	all the maintainer tools -- so we don't have to try too hard
+	when `missing' is just called to wrap `tar'.
+	* tests/missing-tar.test: New test.
+	* tests/Makefile.am (TESTS): Add it.
+
+2011-12-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	missing: inform the user if GNU tar is called
+	* lib/missing: If the code trying to run GNU tar is reached, it
+	means that the previous attempt to run the default tar program
+	has failed, very likely producing some error message.  At this
+	point, just running GNU tar without further comments might be
+	confusing.
+
+2011-12-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	missing: if GNU tar exists but fails when called, give up
+	* lib/missing: If the code trying to run GNU tar is reached,
+	don't continue if the invoked GNU tar program fails, as there
+	is little point in doing so (and can even be confusing and
+	counter-productive).
+
+2011-12-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	missing: miscellaneous fixlets
+	* lib/missing: Some shells, such as Solaris or FreeBSD /bin/sh,
+	warn about missing programs before performing redirections.
+	Therefore, where we have to silently check whether a program
+	exists, perform redirections on a subshell.
+	Remove redundant uses of double-quotes in variable definitions.
+	Delete an extra blank line.
+
+2011-12-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	maint: remove executable bit from automake.in
+	* automake.in: This file is not meant to be executed, only to
+	be preprocessed to create the `automake' script; so don't leave
+	it executable.
+
+2011-12-20  Peter Rosin  <peda@lysator.liu.se>
+
+	tests: fix spurious failure on systems lacking unistd.h
+	This is for automake bug#10324.
+	* tests/silent-lex-generic.test (foo.l): Add a dummy #define of
+	YY_NO_UNISTD_H,	so that the generated foo.c file won't require
+	unistd.h to be present (it is not present when compiling with,
+	e.g., MSVC 9).
+
+2011-12-16  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	test defs: hack to support autoconf-wrapper programs
+	* tests/defs.in ($AUTOCONF): Add a dummy `-B' option to the
+	autoconf invocation, so that, when the Debian autoconf wrapper
+	is involved, it will correctly dispatch an autoconf >= 2.50
+	instead of defaulting to autoconf 2.13.
+	($AUTOHEADER, $AUTORECONF): Likewise, but for autoheader and
+	autoreconf respectively.
+	Reported by Bruno Haible:
+	<http://lists.gnu.org/archive/html/automake/2011-12/msg00039.html>
+
+2011-12-16  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix a minor spurious failure with FreeBSD make
+	* tests/remake-am-pr10111.test: Avoid using `#' comments in
+	makefile recipes, as these have been confusing FreeBSD make.
+	The failure was masked by the fact that this test is currently
+	expected to fail.
+	Suggested by a report from Bruno Haible.
+
+2011-12-16  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: make two test scripts executable
+	* tests/remake-am-pr10111.test: Make executable.
+	* tests/remake-m4-pr10111.test: Likewise.
+
+2011-12-27  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	yacc/lex tests: remove an unneeded workaround for bug#8485
+
+	* tests/yacc-d-cxx.test: Remove the workaround previously required
+	to avoid spurious failures due to automake bug#8485: that bug has
+	been solved with commit `v1.11-512-g40c3432'.
+
+2011-12-27  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	yacc/lex tests: avoid too much failures with FreeBSD make
+
+	In various Yacc/Lex tests, we used to run "make distcheck" commands
+	whose value was mostly dubious, and, even when it was there, was
+	very, very little.  The presence of these extra distchecks had two
+	disadvantages: it slowed down our already-too-slow testsuite even
+	more, and, much worse, caused a lot of extra failures with FreeBSD,
+	all due to automake bug#7884, which is already exposed by the test
+	case `yacc-dist-nobuild.test'.
+
+	We can improve this situation by simply removing "make distcheck"
+	calls from a few testcases, or making them conditional to the use
+	of GNU make.
+
+	* tests/lex-clean-cxx.test: Do not call "make distcheck".
+	* tests/lex-clean.test: Likewise.
+	* tests/yacc-clean-cxx.test: Likewise.
+	* tests/yacc-clean.test: Likewise.
+	* tests/yflags-force-override.test: Likewise.
+	* tests/yacc-nodist.test: Only run "make distcheck" if make
+	is GNU make.
+
+2011-12-15  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	Merge branch 'maint' into 'yacc-work'
+	* tests/silent-lex.test: Provide a dummy `yywrap()' function, to
+	avoid link errors on systems that doesn't provide a "lex library".
+	See also commit `v1.11-546-gca0ba5d'.
+
+2011-12-14  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	readme: reference webpages for automake mailing lists
+	* README: Rationalize and reorganize the (brief) description of
+	the automake mailing lists.   In particular, instead of suggesting
+	the reader to write to the `-request' addresses to subscribe to
+	mailing lists, point him to the relevant webpages, where he can
+	also subscribe via a web form.
+
+2011-12-14  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	readme: update advice about testsuite execution
+	* README: Now that the automake testsuite uses the parallel-tests
+	driver, there is no need for the user to capture the stdout of
+	"make check" to determine which tests have failed: a detailed log
+	is automatically saved into the `tests/test-suite.log' file.
+	Since we are at it, improve the wording by dropping an extra
+	"please".
+
+2011-12-14  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	readme: don't reference the old homepage at sources.redhat.com
+	* README: Don't reference the old homepage at sources.redhat.com,
+	which is no longer active; reference the homepage on www.gnu.org
+	instead.  See also automake bug#10157 and bug#10248.
+	* tests/README: Likewise, and remove related extra-pedantic advice
+	about copyright papers for test cases (we'll ask for those papers
+	explicitly when we think they are warranted).
+
+2011-12-12  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	hacking: some more fixlets
+	* HACKING (Release Procedure): Place the list of pre-release
+	bootstrap-and-test commands on a line of its own, so it's easy to
+	select and then paste it into a terminal window.
+	Fix the explanation of "make git-release", as, since the previous
+	change, "make git-release" would simply run "make dist" rather
+	than "make distcheck".
+	Suggestion from Jim Meyering.
+
+2011-12-12  Peter Rosin  <peda@lysator.liu.se>
+
+	* NEWS: Fix typo in 'make dist-bzip2' description.
+
+2011-12-10  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	release: don't run "make distcheck" automatically
+	* Makefile.am (git-dist): The developers should test extensively
+	before finally creating the release tarball; so don't run "make
+	distcheck" on their behalf here; instead ...
+	* HACKING (Release procedure): ... state here that "make check"
+	and "make distcheck" should be run before calling "make git-dist".
+
+2011-12-09  Jim Meyering  <meyering@redhat.com>
+	    Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	dist-xz, dist-bzip2: don't hard-code -9, honor envvar settings
+	Before the present change, automake-generated `dist-xz' rule used
+	a hard-coded `xz -9'.  That was a problem because on this front,
+	xz differs from gzip and bzip2.  While the latter two don't incur
+	any run-time decompression penalty for using a higher compression
+	level, specifying -9 with xz imposes a potentially fatal virtual
+	memory requirement on any client that wants to decompress your
+	tar.xz file.
+	People have complained that a tarball compressed with -9 cannot
+	be uncompressed in a low-memory environment (wrt-based embedded).
+	Hence, instead of defaulting to -9, which is useful only for very
+	large tarballs, it defaults to -e (equivalent to -6e).  This
+	limits the default memory requirements imposed on decompressors,
+	yet still gives very good compression ratios.
+	* lib/am/distdir.am (dist-xz): Do not hard-code xz's -9: that made
+	it impossible to override.  Actually don't default to -9, either,
+	since that induced inordinately large virtual memory usage when
+	merely decompressing.  Instead, use its XZ_OPT envvar, defaulting
+	to -e if not defined.  Suggested by Lasse Collin.
+	(dist, dist-all) [?XZ?]: Likewise
+	(dist-bzip2): Similarly, do not hard-code -9, but do continue to
+	use -9 by default.  Honor the BZIP2 envvar.
+	(dist, dist-all) [?BZIP2?]: Likewise
+	* NEWS: Update.
+	* doc/automake.texi (The Types of Distributions): Describe the
+	newly enabled environment variables.
+
+2011-12-09  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	* NEWS: Fix typos, grammaros and suboptimal wording.
+	Reported by Jim Meyering.
+
+2011-12-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	maint: sync auxiliary files from upstream
+	* lib/texinfo.tex: Synced from upstream, by "make fetch".
+	* lib/config.guess: Likewise.
+	* lib/config.sub: Likewise.
+
+2011-12-04  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix spurious failures due to missing 'yywrap()' function
+
+	The AC_PROG_LEX Autoconf macro does not diagnose a failure to find
+	the "lex library" expected to provide a `yywrap' function (function
+	which is required to link most lex-generated programs).  On the
+	contrary, when all the link attempts (i.e., with `-ll' and `-lfl')
+	fail, configure declares that no lex library is needed, and simply
+	proceeds with the configuration process -- only for the build to
+	possibly fail later, at make time.
+
+	This behaviour is intended; the Autoconf manual reads:
+	 ``You are encouraged to use Flex in your sources, since it is
+	   both more pleasant to use than plain Lex and the C source it
+	   produces is portable.  In order to ensure portability, however,
+	   you must either provide a function `yywrap' or, if you don't use
+	   it (e.g., your scanner has no `#include'-like feature), simply
+	   include a `%noyywrap' statement in the scanner's source.''
+
+	This AC_PROG_LEX behaviour is causing some spurious failures of
+	the Automake testsuite in environments which lack a proper library
+	providing `yywrap' (this happens for example on Fedora-based
+	systems).   The proper workaround is to simply provide a fall-back
+	implementation of `yywrap' in our lexers.
+
+	See also partially-overlapping commit `v1.11-871-geb147a1' (from
+	the 'testsuite-work' branch), which was motivated by similar
+	spurious failures experienced when cross-compiling.
+
+	From a report by Jim Meyering:
+	<http://lists.gnu.org/archive/html/automake-patches/2011-10/msg00092.html>
+
+	* tests/cond35.test: Provide a dummy `yywrap' function.
+	* tests/lex3.test: Likewise.
+	* tests/silent-lex-generic.test: Likewise.
+	* tests/silent-lex-gcc.test: Likewise.
+	* tests/silent-many-generic.test: Likewise.
+	* tests/silent-many-gcc.test: Likewise.
+
+2011-12-04  Paul Eggert  <eggert@cs.ucla.edu>
+
+	depcomp: spelling fix
+	* lib/depcomp (-h): Fix misspelling in usage diagnostic.
+
+2011-11-28  Peter Rosin  <peda@lysator.liu.se>
+
+	tests: fix 'distcheck-override-infodir.test' on Cygwin
+	* tests/distcheck-override-infodir.test (Makefile.am): Do not add
+	any `/' between $(DESTDIR) and the following paths.  Otherwise,
+	when $(DESTDIR) is empty, the recipes will try to access files
+	with a leading double slash, which have an implementation-defined
+	interpretation (e.g., for Cygwin, they mean UNC paths).
+
+2011-11-24  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	cosmetics: typofix in comments
+	* tests/remake-am-pr10111.test (Makefile.am): Fix typo in comments.
+	* THANKS: Update.
+	Reported by Krzysztof Żelechowski.
+
+2011-11-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	coverage: undistributed '.am' and '.m4' files are diagnosed
+	The stub rules emitted to work around the "deleted header problem"
+	for `.m4' files (included by autoconf in e.g., configure.ac) and
+	for `.am' files (included by automake in e.g., Makefile.am) should
+	not prevent "make" from correctly complaining when such a required
+	file is missing from a distribution tarball.
+	* tests/dist-missing-am.test: New test.
+	* tests/dist-missing-m4.test: Likewise.
+	* tests/dist-missing-included-m4.test: Likewise.
+	* tests/Makefile.am (TESTS): Add them.
+	Suggestion by Ralf Wildenhues.
+
+2011-11-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	coverage: required but missing '.am' and '.m4' files are diagnosed
+	The stub rules emitted to work around the "deleted header problem"
+	for `.m4' files (included by autoconf in e.g., configure.ac) and
+	for `.am' files (included by automake in e.g., Makefile.am) should
+	not prevent the remake rules from correctly erroring out when a
+	still-required file is missing.
+	* tests/deleted-am.test: New test.
+	* tests/deleted-m4.test: Likewise.
+	* tests/Makefile.am (TESTS): Add them.
+
+2011-11-22  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	coverage: expose automake bug#10111 in the testsuite
+	* tests/remake-am-pr10111.test: New test, xfailing.
+	* tests/remake-m4-pr10111.test: Likewise.
+	* tests/Makefile.am (TESTS, XFAIL_TESTS): Add them.
+
+2011-11-19  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	texinfo: work around Solaris 10 xpg4 shell bug in install rules
+	* lib/am/texinfos.am (install-html-am): Use an extra variable
+	indirection to work around a bug in Solaris 10 /usr/xpg4/bin/sh.
+	Bug revealed by a failure of `txinfo21.test'.  See also:
+	<http://lists.gnu.org/archive/html/bug-autoconf/2011-11/msg00005.html>
+	<http://debbugs.gnu.org/cgi/bugreport.cgi?bug=10026#23>
+
+2011-11-17  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	configure: report perl version in config.log
+	* configure.ac: Report the version of the selected perl interpreter
+	in config.log; this should render the logs more informative.
+
+2011-11-13  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix spurious failure with older install-info
+	* tests/install-info-dir.test (foo.texi): Also add proper
+	`@settitle', `@dircategory' and `@direntry' directive, otherwise
+	older versions of `install-info' (e.g., 4.8) will fail to create
+	the `dir' index file in ${infodir}.
+	Problem revealed by a failure on NetBSD 5.1.
+
+2011-11-12  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	maintcheck: fix spurious failure in 'color2.test'
+	* tests/color2.test: Avoid creative quoting to avoid a spurious
+	failure of the `sc_tests_Exit_not_exit' maintainer check.
+
+2011-11-12  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix spurious error in 'uninstall-fail.test' on Solaris
+	* tests/uninstall-fail.test: Solaris 10 /usr/xpg4/bin/sh can add
+	a line number before the `:' in the error messages issued by shell
+	builtins.  Account for that in our grepping of make output.
+
+2011-11-12  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix typo in 'uninstall-fail.test'
+	* tests/uninstall-fail.test: Always use `$rm_f_is_silent_on_error'
+	instead of the bogus `$rm_f_is_silent_on_failure'.
+
+2011-11-10  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: avoid a spurious failure of 'ltinit.test' MinGW
+	* tests/ltinit.test: Be laxer in grepping configure output, to
+	avoid spurious failures on systems which lack POSIX dynamic
+	linking (e.g., MinGW), or when cross-compiling for such systems.
+	See also commit `v1.11-855-ge9e5d4a'.
+	Report and suggestion from Peter Rosin.
+
+2011-11-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: testsuite is now safe to run with dmake in parallel mode
+	* tests/defs.in: Unset variables DMAKE_CHILD, DMAKE_DEF_PRINTED
+	and DMAKE_MAX_JOBS, which are exported by Solaris dmake when run
+	in parallel mode, and which might confuse make processes spawned
+	by our testsuite.
+
+2011-11-08  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix spurious failures w.r.t. parallel make and colorization
+	* tests/color2.test: Skip the test if the $MAKE program fails to
+	consider the standard output as a tty when spawned by `expect'.
+	This is required for make implementations, like FreeBSD make and
+	Solaris dmake, that redirect the output of recipes to temporary
+	files or pipes when run in parallel mode.  Since we are at it,
+	simplify the detection of a working `expect' program, and throw
+	in other minor simplifications.
+
+2011-11-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: fix spurious failure in 'distcheck-override-infodir.test'
+	* tests/distcheck-override-infodir.test ($required): Add
+	'install-info'.
+
+2011-11-07  Stefano Lattarini  <stefano.lattarini@gmail.com>
+
+	tests: avoid another failure of 'uninstall-fail.test' on Solaris
+	* tests/uninstall-fail.test: On Solaris 10, if `/bin/rm' is run
+	with the `-f' option, it doesn't print any error message when
+	failing to remove a file (due to e.g., "Permission denied").
+	Yikes.  Cater to this incompatibility, by relaxing the test when
+	a faulty `rm' is detected.
+
 2011-11-03  Zack Weinberg <zackw@panix.com>  (tiny change)
 	    Stefano Lattarini  <stefano.lattarini@gmail.com>
 
@@ -20,7 +849,7 @@
 
 	info: allow user to inhibit creation/update of '${infodir}/dir'
 	With this change, we allow the user to request the install-info
-	rules not to update the `${infodir}/dir' file, by exporting the
+	rules not to update the `${infodir}/dir' file, by setting the
 	environment variable `AM_UPDATE_INFO_DIR' to the value "no".
 	This is especially useful to distro packagers, and is a definite
 	improvement over our previous hack of looking whether the

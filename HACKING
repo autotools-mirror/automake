@@ -4,11 +4,12 @@
 * This file attempts to describe the rules to use when hacking
   automake.
 
-* Don't put this file into the distribution.  Don't mention it in the
-  ChangeLog.
-
 ================================================================
 = Administrivia
+
+* The correct response to most actual bugs is to write a new test case
+  which demonstrates the bug.  Then fix the bug, re-run the test suite,
+  and check everything in.
 
 * If you incorporate a change from somebody on the net:
   First, if it is a large change, you must make sure they have signed the
@@ -16,6 +17,8 @@
   Second, be sure to add their name and email address to THANKS
 
 * If a change fixes a test, mention the test in the ChangeLog entry.
+  If a change fixes a bug registered in the Automake debbugs tracker,
+  mention the bug number in the ChangeLog entry.
 
 * If somebody reports a new bug, mention his name in the ChangeLog entry
   and in the test case you write.  Put him into THANKS.
@@ -23,10 +26,6 @@
 * When documenting a non-trivial idiom or example in the manual, be
   sure to add a test case for it, and to reference such test case from
   a proper Texinfo comment.
-
-* The correct response to most actual bugs is to write a new test case
-  which demonstrates the bug.  Then fix the bug, re-run the test suite,
-  and check everything in.
 
 * Some files in the automake package are not owned by automake.  These
   files should never be edited here.  These files are
@@ -151,9 +150,9 @@
 
 * There may be a number of longer-lived feature branches for new developments.
   They should be based off of a common ancestor of all active branches to
-  which the feature should be merged later.  The next branch may serve as
-  common ground for feature merging and testing, should they not be ready
-  for master yet.
+  which the feature should or might be merged later.  The next branch may
+  serve as common ground for feature merging and testing, should they not
+  be ready for master yet.
 
 * For merges from branches other than maint, prefer 'git merge --log' over
   plain 'git merge', so that a later 'git log' gives an indication of which
@@ -184,11 +183,15 @@
 ================================================================
 = Release procedure
 
+* The steps outlined here are meant to be followed for alpha and stable
+  releases as well.  Where differences are expected, they will be
+  explicitly described.
+
 * Fetch new versions of the files that are maintained by the FSF.
   Commit.  Unfortunately you need an FSF account to do this.
   (You can also use `make fetch', but that is still woefully incomplete.)
 
-* Update NEWS.  For an alpha release, update README-alpha.
+* Update NEWS.
 
 * Update the version number in configure.ac.
   (The idea is that every other alpha number will be a net release.
@@ -197,13 +200,14 @@
 
 * Update ChangeLog.
 
-* Run ./bootstrap, ./configure, make.
+* Run this:
+  ./bootstrap && ./configure && make && make check && make distcheck
 
 * Run `make release-stats' if release statistics in doc/automake.texi
   have not been updated yet.
 
 * Run `make git-release'.
-  This will run distcheck to create the tarballs, commit the last
+  This will run "make dist" to create the tarballs, commit the last
   NEWS/configure.ac/ChangeLog changes, tag the repository, sign
   the tarballs, and upload them.
   Use `make GNUPLOADFLAGS="--user key" git-release' to sign with
@@ -215,18 +219,7 @@
 * Don't forget to `git push' your changes so they appear in the public
   git tree.
 
-* Update the web pages at sources.redhat.com:
-  - bump version in index.rst,
-  - add entry to news.rst,
-  - run `make' to update .html files,
-  - create manuals:
-      cd doc
-      make pdf
-      make html MAKEINFOFLAGS=--no-split
-  - copy automake.html and automake.pdf to web cvs,
-  - add ChangeLog entry and commit.
-
-* Update the manuals at www.gnu.org:
+* For stable releases, update the manuals at www.gnu.org:
   - Generate manuals:
     cd doc
     wget "http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~/texinfo/texinfo/util/gendocs.sh"
@@ -237,9 +230,12 @@
   - Check for link errors, fix them, recheck until convergence:
     <http://validator.w3.org/checklink>
 
-* Send announcement at least to autotools-announce@gnu.org, and
-  automake@gnu.org.  If not an alpha, announcement must also go to
-  info-gnu@gnu.org.  Copy this announcement into the NEWS feed at
+* Send the announcement at least to <autotools-announce@gnu.org> and
+  <automake@gnu.org>.  If the release is a stable one, the announcement
+  must also go to <info-gnu@gnu.org>; if it is an alpha or beta release,
+  announcement should be sent also to <platform-testers@gnu.org>, to
+  maximize the possibility of early testing on exotic or proprietary
+  systems.  Finally, copy the announcement into the NEWS feed at
   <https://savannah.gnu.org/projects/automake>.
 
 -----

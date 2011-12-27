@@ -14,51 +14,47 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that automake can cope with a definition of the $(YFLAGS) variable
-# in Makefile.am (even if that is extremely bad practice, because that
-# variable is user-reserved).
+# Check that inclusion of `.am' fragments by automake does not suffer
+# of the "deleted header problem".  This test checks that we can rename
+# an included .am file without confusing the remake rules.
 
-required=yacc
 . ./defs || Exit 1
 
 set -e
 
-cat >> configure.in <<'END'
-AC_PROG_CC
-AC_PROG_YACC
-AC_OUTPUT
-END
+echo AC_OUTPUT >> configure.in
 
 cat > Makefile.am <<'END'
-bin_PROGRAMS = foo
-foo_SOURCES = foo.y
-# Don't do this in a real-life Makefile.am!
-YFLAGS = -d -v
+include foo.am
 END
 
-cat > foo.y << 'END'
-%{
-int yylex () { return 0; }
-void yyerror (char *s) { return; }
-int main () { return 0; }
-%}
-%%
-foobar : 'f' 'o' 'o' 'b' 'a' 'r' {};
+cat > foo.am <<'END'
+all-local:
+	echo ok > has-run-1
 END
 
 $ACLOCAL
-$AUTOMAKE -a -Wno-gnu
-
-$EGREP '(foo|YFLAGS)' Makefile.in # for debugging
-grep '^foo.h *:' Makefile.in
-
+$AUTOMAKE
 $AUTOCONF
+
 ./configure
-
 $MAKE
+test -f has-run-1
 
-test -f foo.c
-test -f foo.h
-test -f foo.output
+$sleep
+rm -f has-run-1
+mv -f foo.am bar.am
+echo include bar.am > Makefile.am
+$MAKE Makefile
+$FGREP 'foo.am' Makefile Makefile.in && Exit 1
+
+$sleep
+rm -f has-run-1 bar.am
+echo 'all-local:; echo ok > has-run-2' > zardoz.am
+echo 'include $(srcdir)/zardoz.am' > Makefile.am
+using_gmake || $MAKE Makefile
+$MAKE
+test ! -f has-run-1
+test -f has-run-2
 
 :
