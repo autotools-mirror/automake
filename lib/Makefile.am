@@ -31,7 +31,7 @@ dist_script_DATA = config.guess config.sub install-sh mdate-sh missing \
   mkinstalldirs elisp-comp ylwrap acinstall depcomp compile py-compile \
   symlink-tree ar-lib
 
-EXTRA_DIST = gnupload
+EXTRA_DIST = gnupload gitlog-to-changelog
 
 install-data-hook:
 	@$(POST_INSTALL)
