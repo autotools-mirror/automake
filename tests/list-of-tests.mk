@@ -1001,6 +1001,7 @@ syntax.test \
 tap-ambiguous-directive.test \
 tap-autonumber.test \
 tap-bailout.test \
+tap-bailout-leading-space.test \
 tap-bailout-and-logging.test \
 tap-bailout-suppress-badexit.test \
 tap-bailout-suppress-later-diagnostic.test \

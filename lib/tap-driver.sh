@@ -23,7 +23,7 @@
 # bugs to <bug-automake@gnu.org> or send patches to
 # <automake-patches@gnu.org>.
 
-scriptversion=2011-09-28.14; # UTC
+scriptversion=2011-12-27.17; # UTC
 
 # Make unconditional expansion of undefined variables an error.  This
 # helps a lot in preventing typo-related bugs.
@@ -573,12 +573,16 @@ while (1)
         handle_tap_plan(0, $0)
       }
     # "Bail out!" magic.
-    else if ($0 ~ /^Bail out!/)
+    # Older versions of prove and TAP::Harness (e.g., 3.17) did not
+    # recognize a "Bail out!" directive when preceded by leading
+    # whitespace, but more modern versions (e.g., 3.23) do.  So we
+    # emulate the latter, "more modern" behaviour.
+    else if ($0 ~ /^[ \t]*Bail out!/)
       {
         bailed_out = 1
         # Get the bailout message (if any), with leading and trailing
         # whitespace stripped.  The message remains stored in `$0`.
-        sub("^Bail out![ \t]*", "");
+        sub("^[ \t]*Bail out![ \t]*", "");
         sub("[ \t]*$", "");
         # Format the error message for the
         bailout_message = "Bail out!"
