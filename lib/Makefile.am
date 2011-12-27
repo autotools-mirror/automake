@@ -44,7 +44,7 @@ dist_script_DATA = \
   tap-driver.sh \
   tap-driver.pl
 
-EXTRA_DIST = gnupload
+EXTRA_DIST = gnupload gitlog-to-changelog
 
 install-data-hook:
 	@$(POST_INSTALL)

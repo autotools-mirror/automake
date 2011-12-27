@@ -873,6 +873,7 @@ fetch:
 	$(WGET_SV_GIT_CF)config.sub -O config.sub && \
 	$(WGET_SV_CVS)texinfo/texinfo/doc/texinfo.tex -O texinfo.tex && \
 	$(WGET_SV_GIT_GL)doc/INSTALL -O INSTALL && \
+	$(WGET_SV_GIT_GL)build-aux/gitlog-to-changelog -O gitlog-to-changelog && \
 	$(WGET_GCC)config-ml.in -O config-ml.in && \
 	$(WGET_GCC)symlink-tree -O symlink-tree)
 ## Don't exit after test because we want to give as many errors as

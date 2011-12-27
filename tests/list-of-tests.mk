@@ -48,6 +48,7 @@ acloca21.test \
 acloca22.test \
 acloca23.test \
 aclocal-acdir.test \
+aclocal-install-absdir.test \
 aclocal-print-acdir.test \
 aclocal-path.test \
 aclocal-path-install.test \
