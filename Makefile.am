@@ -44,6 +44,7 @@ EXTRA_DIST = \
   ChangeLog.03 \
   ChangeLog.04 \
   ChangeLog.09 \
+  ChangeLog.11 \
   bootstrap \
   $(AUTOMAKESOURCES)
 
@@ -129,6 +130,43 @@ recheck:
 ## Everything past here is useful to the maintainer, but probably not
 ## to anybody else
 ##
+
+gitlog_to_changelog_command = $(PERL) $(srcdir)/lib/gitlog-to-changelog
+gitlog_to_changelog_options = --since='2011-12-28 00:00:00'
+
+# Automatic generation of the ChangeLog from git history.
+#
+# When executed from a git checkout, generate the ChangeLog from the git
+# history.  When executed from an extracted distribution tarball, just
+# copy the distributed ChangeLog in the build directory (and if this
+# fails, or if no distributed ChangeLog file is present, complain and
+# give an error).
+#
+# We need the apparently useless dependency from another .PHONY target
+# `am--changelog-regen-hook' to work around a bug of Solaris make, which
+# doesn't execute the recipe of a target named as an existing file, even
+# if such target is declared `.PHONY' (yikes!)
+#
+.PHONY: am--changelog-regen-hook
+am--changelog-regen-hook:
+ChangeLog: am--changelog-regen-hook
+	$(AM_V_GEN)set -e; set -u; \
+## The ChangeLog should be regenerated unconditionally when working from
+## checked-out sources; otherwise, if we're working from a distribution
+## tarball, we expect the ChangeLog to be distributed, so check that it
+## is indeed present in the source directory.
+	if test -d $(srcdir)/.git; then \
+	  rm -f $@-t \
+	    && $(gitlog_to_changelog_command) \
+	       $(gitlog_to_changelog_options) >$@-t \
+	    && chmod a-w $@-t \
+	    && mv -f $@-t $@ \
+	    || exit 1; \
+	elif test ! -f $(srcdir)/$@; then \
+	  echo "Source tree is not a git checkout, and no pre-existent" \
+	       "$@ file has been found there" >&2; \
+	  exit 1; \
+	fi
 
 # Ensure tests are world-executable
 dist-hook:
