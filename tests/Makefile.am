@@ -41,6 +41,7 @@ gcj6.test \
 override-conditional-2.test \
 java-nobase.test \
 objext-pr10128.test \
+parallel-tests-many.test \
 pr8365-remake-timing.test \
 lex-subobj-nodep.test \
 remake-am-pr10111.test \
