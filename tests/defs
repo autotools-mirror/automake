@@ -620,6 +620,56 @@ fetch_tap_driver ()
 # use the perl implementation by default for the moment.
 am_tap_implementation=${am_tap_implementation-shell}
 
+# Usage: require_compiler_ {cc|c++|fortran|fortran77}
+require_compiler_ ()
+{
+  case $# in
+    0) fatal_ "require_compiler_: missing argument";;
+    1) ;;
+    *) fatal_ "require_compiler_: too many arguments";;
+  esac
+  case $1 in
+    cc)
+      am__comp_lang="C"
+      am__comp_var=CC
+      am__comp_flag_vars='CFLAGS CPPFLAGS'
+      ;;
+    c++)
+      am__comp_lang="C++"
+      am__comp_var=CXX
+      am__comp_flag_vars='CXXFLAGS CPPFLAGS'
+      ;;
+    fortran)
+      am__comp_lang="Fortran"
+      am__comp_var=FC
+      am__comp_flag_vars='FCFLAGS'
+      ;;
+    fortran77)
+      am__comp_lang="Fortran 77"
+      am__comp_var=F77
+      am__comp_flag_vars='FFLAGS'
+      ;;
+  esac
+  shift
+  eval "am__comp_prog=\${$am__comp_var}" \
+    || fatal_ "expanding \${$am__comp_var} in require_compiler_"
+  case $am__comp_prog in
+    "")
+      fatal_ "botched configuration: \$$am__comp_var is empty";;
+    false)
+      skip_all_ "no $am__comp_lang compiler available";;
+    autodetect|autodetected)
+      # Let the ./configure commands in the test script try to determine
+      # these automatically.
+      unset $am__comp_var $am__comp_flag_vars;;
+    *)
+      # Pre-set these for the ./configure commands in the test script.
+      export $am__comp_var $am__comp_flag_vars;;
+  esac
+  # Delete private variables.
+  unset am__comp_lang am__comp_prog am__comp_var am__comp_flag_vars
+}
+
 ## ----------------------------------------------------------- ##
 ##  Checks for required tools, and additional setups (if any)  ##
 ##  required by them.                                          ##
@@ -640,22 +690,8 @@ do
   # Check that each required tool is present.
   case $tool in
     :) ;;
-    cc)
-      test "$CC"  = false && skip_all_ "no C compiler available"
-      export CC CFLAGS CPPFLAGS
-      ;;
-    c++)
-      test "$CXX" = false && skip_all_ "no C++ compiler available"
-      export CXX CXXFLAGS CPPFLAGS
-      ;;
-    fortran)
-      test "$FC"  = false && skip_all_ "no Fortran compiler available"
-      export FC FCFLAGS
-      ;;
-    fortran77)
-      test "$F77" = false && skip_all_ "no Fortran 77 compiler available"
-      export F77 FFLAGS
-      ;;
+    cc|c++|fortran|fortran77)
+      require_compiler_ $tool;;
     xsi-shell)
       require_xsi "$SHELL";;
     xsi-bin-sh)
