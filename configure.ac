@@ -261,6 +261,7 @@ AC_DEFUN([_AM_COMPILER_CAN_FAIL], [
 
 # C compiler.
 _AM_COMPILER_CAN_FAIL([AC_PROG_CC([cc gcc])], [CC=false])
+AS_IF([test x"$GCC" = x"yes"], [am_CC_is_GNU=yes], [am_CC_is_GNU=no])
 
 # The list of C++ compilers here has been copied, pasted and edited
 # from `lib/autoconf/c.m4:AC_PROG_CXX' in the Autoconf distribution.
@@ -269,18 +270,44 @@ _AM_COMPILER_CAN_FAIL([AC_PROG_CC([cc gcc])], [CC=false])
 _AM_COMPILER_CAN_FAIL([AC_PROG_CXX(dnl
   [aCC CC FCC KCC RCC xlC_r xlC c++ cxx cc++ gpp g++])],
   [CXX=false])
+AS_IF([test x"$GXX" = x"yes"], [am_CXX_is_GNU=yes], [am_CXX_is_GNU=no])
 
 # The lists of Fortran compilers here has been copied, pasted and edited
 # from file `lib/autoconf/fortran.m4' in the Autoconf distribution.
 # Keep it in sync, or better again, find out a way to avoid this code
 # duplication.
+
 _AM_COMPILER_CAN_FAIL([AC_PROG_FC(dnl
   [xlf95 f95 fort ifort ifc efc pgfortran pgf95 lf95 ftn nagfor] dnl
   [xlf90 f90 pgf90 pghpf epcf90 g95 gfortran])],
   [FC=false])
+# FIXME this won't work as expected until we can assume autoconf 2.69 :-(
+AS_IF([test x"$GFC" = x"yes"], [am_FC_is_GNU=yes], [am_FC_is_GNU=no])
+
 _AM_COMPILER_CAN_FAIL([AC_PROG_F77(dnl
   [xlf f77 frt pgf77 cf77 fort77 fl32 af77 g77 gfortran])],
   [F77=false])
+AS_IF([test x"$G77" = x"yes"], [am_F77_is_GNU=yes], [am_F77_is_GNU=no])
+
+# Some tests will need the GNU compilers.  Searching for them here would
+# be overkill, since our testsuite already handles their search and setup
+# pretty well.  However, in case the compilers detected above at configure
+# time are not the GNU ones, we cannot use the values of CFLAGS, CXXFLAGS,
+# FCFLAGS and FFLAGS detected for them with the GNU compilers too, since
+# it's likely they won't be compatible.  So we allow the user to define
+# variants of this variables for the GNU compilers separately.
+
+test $am_CC_is_GNU = yes && GNU_CFLAGS=${GNU_CFLAGS-$CFLAGS}
+AC_ARG_VAR([GNU_CFLAGS], [GNU C compiler flags])
+
+test $am_CXX_is_GNU = yes && GNU_CXXFLAGS=${GNU_CXXFLAGS-$CXXFLAGS}
+AC_ARG_VAR([GNU_CXXFLAGS], [GNU C++ compiler flags])
+
+test $am_F77_is_GNU = yes && GNU_FCFLAGS=${GNU_FCFLAGS-$FCFLAGS}
+AC_ARG_VAR([GNU_FCFLAGS], [GNU Fortran compiler flags])
+
+test $am_FC_is_GNU = yes && GNU_FFLAGS=${GNU_FFLAGS-$FFLAGS}
+AC_ARG_VAR([GNU_FFLAGS], [GNU Fortran 77 compiler flags])
 
 # If we have been able to find at least a working compiler above, we
 # know what the object and executable extensions for this platform are.

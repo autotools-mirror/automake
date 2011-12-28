@@ -147,6 +147,10 @@ do_subst = sed \
   -e 's|@PERL[@]|$(PERL)|g' \
   -e 's|@EGREP[@]|$(EGREP)|g' \
   -e 's|@FGREP[@]|$(FGREP)|g' \
+  -e 's|@GNU_CFLAGS[@]|$(GNU_CFLAGS)|g' \
+  -e 's|@GNU_CXXFLAGS[@]|$(GNU_CXXFLAGS)|g' \
+  -e 's|@GNU_FFLAGS[@]|$(GNU_FFLAGS)|g' \
+  -e 's|@GNU_FCFLAGS[@]|$(GNU_FCFLAGS)|g' \
   -e 's|@TEX[@]|$(TEX)|g' \
   -e 's|@MODIFICATION_DELAY[@]|$(MODIFICATION_DELAY)|g' \
   -e 's|@am_AUTOCONF[@]|$(am_AUTOCONF)|g' \
