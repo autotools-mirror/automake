@@ -1,0 +1,768 @@
+#! /bin/sh
+# Copyright (C) 2011 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check the various ways to extend/influence aclocal search path, and
+# the interactions and precedences among them.
+# This test does not cover the `--install' option.
+# FIXME: add proper reference to the test(s) covering it.
+
+am_create_testdir=empty
+. ./defs || Exit 1
+
+plan_ 51
+
+## ----------------------------------------------- ##
+##  Shared initialization and common subroutines.  ##
+## ----------------------------------------------- ##
+
+unset ACLOCAL_PATH || :
+
+ocwd=`pwd` || fatal_ "cannot get current working directory"
+
+start_testgroup ()
+{
+  cd "$ocwd" \
+    || fatal_ "failed to chdir back to $ocwd"
+  mkdir "$1.d" && cd "$1.d" \
+    || framework_failure_ "setting up directory $1.d"
+}
+
+end_testgroup ()
+{
+  cd "$ocwd" || fatal_ "failed to chdir back to $ocwd"
+}
+
+# Usage: check_expanded --description TEXT [--output LIST-OF-STRINGS]
+#                       [--not-output LIST-OF-STRINGS] [--] ACLOCAL-CMD
+check_expanded ()
+{
+  # `ce__' prefix to avoid conflicts with global or other subroutine's
+  # variables; this has already happened in practice.
+  ce__description=
+  ce__output=
+  ce__no_output=
+  ce__r=ok
+  while test $# -gt 0; do
+    case $1 in
+      --output) ce__output="$ce__output $2"; shift;;
+      --no-output) ce__no_output="$ce__no_output $2"; shift;;
+      --desc*) ce__description=$2; shift;;
+      --) shift; break;;
+      -*) fatal_ "check_expanded: invalid option \`$1'";;
+       *) break;;
+    esac
+    shift
+  done
+  if "$@" && test -f aclocal.m4 && $AUTOCONF; then
+    for str in $ce__output; do
+      $FGREP "$str" configure || ce__r='not ok'
+    done
+    for str in $ce__no_output; do
+      $FGREP "$str" configure && ce__r='not ok'
+    done
+  else
+    ce__r='not ok'
+  fi
+  result_ "$ce__r" "$ce__description"
+}
+
+
+## -------------------------------------------------------------------- ##
+##  Setup H0: for options used to override system and automake acdirs.  ##
+## -------------------------------------------------------------------- ##
+
+mkdir H0 H0/am H0/sys
+
+cat > H0/configure.in <<'END'
+AC_INIT([foo], [1.0])
+AM_INIT_AUTOMAKE
+MY_MACRO
+END
+
+cat > H0/am/foo.m4 <<'END'
+AC_DEFUN([AM_INIT_AUTOMAKE], [fake--init--automake])
+END
+
+cat > H0/sys/foo.m4 <<'END'
+AC_DEFUN([MY_MACRO], [my--macro])
+END
+
+## -------------------------- ##
+##  Option --automake-acdir.  ##
+## -------------------------- ##
+
+start_testgroup automake-acdir
+cp ../H0/configure.in .
+command_ok_ "option --automake-acdir" eval '
+  $ACLOCAL --automake-acdir "$ocwd"/H0/am \
+    && $AUTOCONF \
+    && $FGREP "fake--init--automake" configure \
+    && $FGREP "MY_MACRO" configure'
+end_testgroup
+
+## ------------------------ ##
+##  Option --system-acdir.  ##
+## ------------------------ ##
+
+start_testgroup system-acdir
+cp ../H0/configure.in .
+command_ok_ "option --system-acdir" eval '
+  $ACLOCAL --system-acdir "$ocwd"/H0/sys \
+    && $AUTOCONF \
+    && $FGREP "am__api_version" configure \
+    && $FGREP "my--macro" configure'
+end_testgroup
+
+## ------------------------------------------------------------------- ##
+##  Options --automake-acdir and --system-acdir can be used together.  ##
+## ------------------------------------------------------------------- ##
+
+start_testgroup both-system-automake-acdir
+cp -fR ../H0/* .
+command_ok_ "options --system-acdir and --automake-acdir together" eval '
+  $ACLOCAL --automake-acdir am --system-acdir sys \
+    && $AUTOCONF \
+    && $FGREP "fake--init--automake" configure \
+    && $FGREP "my--macro" configure'
+end_testgroup
+
+## ------------------------------------------------------------------ ##
+##  Option --acdir option is diagnosed as obsolete, but still works.  ##
+## ------------------------------------------------------------------ ##
+
+start_testgroup obsolete-acdir
+cp ../H0/configure.in .
+st=0; $ACLOCAL -Wobsolete --acdir ../H0/am 2>stderr || st=$?
+cat stderr >&2
+command_ok_ "option --acdir is diagnosed as obsolete" \
+            eval 'test $st -gt 0 && grep ".*--acdir.*deprecated" stderr'
+end_testgroup
+
+start_testgroup option-acdir-1
+cp -fR ../H0/* .
+echo 'AC_DEFUN([MY_MACRO], [am--macro])' > am/bar.m4
+command_ok_ "option --acdir works (1)" eval '
+  $ACLOCAL -Wno-obsolete --acdir am \
+    && $AUTOCONF \
+    && $FGREP "fake--init--automake" configure \
+    && $FGREP "am--macro" configure'
+end_testgroup
+
+start_testgroup option-acdir-2
+cp -fR ../H0/* .
+command_ok_ "option --acdir works (2)" eval '
+  not $ACLOCAL -Wno-obsolete --acdir sys 2>stderr \
+    && cat stderr >&2 \
+    && grep "macro .*AM_INIT_AUTOMAKE.* not found" stderr'
+end_testgroup
+
+
+## --------------------------------------------------------------------- ##
+##  Setup H1: for tests on basic ACLOCAL_PATH, dirlist, and `-I' usage.  ##
+## --------------------------------------------------------------------- ##
+
+mkdir H1 H1/foodir H1/bardir H1/bazdir
+
+cat > H1/foodir/a.m4 <<END
+AC_DEFUN([AM_FOO], [am--foo])
+END
+
+cat > H1/bardir/b.m4 <<END
+AC_DEFUN([AM_BAR], [am--bar])
+END
+
+cat > H1/bazdir/c.m4 <<END
+AC_DEFUN([AM_BAZ], [am--baz])
+END
+
+cat > H1/configure.in <<END
+AC_INIT
+AM_FOO
+AM_BAR
+AM_BAZ
+END
+
+check_no_m4_include ()
+{
+  # There should be no m4_include in aclocal.m4, even though dirlist and/or
+  # ACLOCAL_PATH contains relative directories.  Only -I directories are
+  # subject to file inclusion.
+  command_ok_ "no m4_include in aclocal.m4"${1+" ($*)"} \
+              not $FGREP m4_include aclocal.m4
+}
+
+## ------------------- ##
+##  Basic -I support.  ##
+## ------------------- ##
+
+start_testgroup localdir-basic
+
+cp -fR ../H1/* .
+
+check_expanded \
+  --description 'basic -I usage' \
+  --output 'am--foo am--bar am--baz' \
+  $ACLOCAL -I foodir -I ./bardir -I "`pwd`/bazdir"
+
+$EGREP -i '(foo|bar|baz)' aclocal.m4 || : # For debugging
+
+r=ok
+$FGREP 'm4_include([foodir/a.m4])' aclocal.m4 || r='not ok'
+$EGREP 'm4_include\(\[(./)?bardir/b\.m4\]\)' aclocal.m4 || r='not ok'
+result_ "$r" "files in local -I dirs are m4_included"
+
+r=ok
+grep 'm4_include.*bazdir/.*\.m4' aclocal.m4 && r='not ok'
+$FGREP 'am--baz' aclocal.m4 || r='not ok'
+result_ "$r" "files in absolute -I dirs are copied"
+
+end_testgroup
+
+## ------------------------ ##
+##  Basic dirlist support.  ##
+## ------------------------ ##
+
+start_testgroup dirlist-basic
+
+mkdir acdir
+cat > acdir/dirlist <<END
+foodir
+./bardir
+`pwd`/bazdir
+END
+
+cp -fR ../H1/* .
+
+check_expanded \
+  --description 'basic dirlist usage' \
+  --output 'am--foo am--bar am--baz' \
+  $ACLOCAL --system-acdir ./acdir
+
+check_no_m4_include "dirlist"
+
+end_testgroup
+
+## ----------------------------- ##
+##  Basic ACLOCAL_PATH support.  ##
+## ----------------------------- ##
+
+start_testgroup aclocal-path-basic
+
+cp -fR ../H1/* .
+
+check_expanded \
+  --description 'basic ACLOCAL_PATH usage' \
+  --output 'am--foo am--bar am--baz' \
+  env ACLOCAL_PATH="foodir:./bardir:`pwd`/bazdir" $ACLOCAL
+
+check_no_m4_include "ACLOCAL_PATH"
+
+end_testgroup
+
+## ----------------------- ##
+##  Wildcards in dirlist.  ##
+## ----------------------- ##
+
+start_testgroup dirlist-wildcard-basic
+
+mkdir acdir
+cat > acdir/dirlist <<END
+`pwd`/food*
+*a[rz]dir
+END
+
+cp -fR ../H1/* .
+
+check_expanded \
+  --description 'wildcards in dirlist' \
+  --output 'am--foo am--bar am--baz' \
+  $ACLOCAL --system-acdir ./acdir
+
+check_no_m4_include "dirlist with wildcards"
+
+end_testgroup
+
+
+## -------------------------------------------------------------------- ##
+##  Setup H2: for tests non-existent dirs in ACLOCAL_PATH and dirlist.  ##
+## -------------------------------------------------------------------- ##
+
+mkdir H2 H2/foodir
+
+cat > H2/foodir/blah.m4 <<END
+AC_DEFUN([AM_FOO], [am--foo])
+END
+
+cat > H2/configure.in <<END
+AC_INIT
+AM_FOO
+END
+
+## --------------------------------------------------------- ##
+##  Non-existent directories with `-I' option cause errors.  ##
+## --------------------------------------------------------- ##
+
+check_nosuchdir_err ()
+{
+  dirpath=$1 dirname=${2-$1}
+  echo AC_INIT > configure.in
+  st=0; $ACLOCAL -Wnone -Wno-error -I "$dirpath" 2>stderr || st=$?
+  cat stderr >&2
+  r=ok
+  test $st -eq 1 \
+    && test ! -f aclocal.m4 \
+    && grep "open.*directory.*$dirpath" stderr \
+    || r='not ok'
+  result_ "$r" "aclocal complains if -I $dirname is non-existent"
+}
+
+start_testgroup I-nonexistent
+check_nosuchdir_err nonesuch
+end_testgroup
+
+start_testgroup I-nonexistent-abspath
+check_nosuchdir_err "`pwd`/nonesuch"
+end_testgroup
+
+## --------------------------------------------- ##
+##  Non-existent directories in dirlist are OK.  ##
+## --------------------------------------------- ##
+
+start_testgroup dirlist-nonexistent
+
+mkdir acdir
+cat > acdir/dirlist <<END
+nonesuch
+./nonesuch2
+foodir
+`pwd`/nonesuch3
+END
+
+cp -fR ../H2/* .
+
+check_expanded \
+  --description 'non-existent directories in dirlist' \
+  --output 'am--foo' \
+  $ACLOCAL --system-acdir ./acdir
+
+end_testgroup
+
+## -------------------------------------------------- ##
+##  Non-existent directories in ACLOCAL_PATH are OK.  ##
+## -------------------------------------------------- ##
+
+start_testgroup aclocal-path-nonexistent
+
+cp -fR ../H2/* .
+
+check_expanded \
+  --description 'non-existent directories in ACLOCAL_PATH' \
+  --output 'am--foo' \
+  env ACLOCAL_PATH="nonesuch:foodir:`pwd`/nonesuch2:./nonesuch3" $ACLOCAL
+
+end_testgroup
+
+
+## -------------------------------------------------------------------- ##
+##  Setup H3: for simple tests on precedence in ACLOCAL_PATH, dirlist,  ##
+##  and `-I' options.                                                   ##
+## -------------------------------------------------------------------- ##
+
+mkdir H3 H3/dir1 H3/dir2
+
+cat > H3/dir1/foo.m4 <<'END'
+AC_DEFUN([AM_FOO], [::foo-1::])
+END
+
+cat > H3/dir2/bar.m4 <<'END'
+AC_DEFUN([AM_FOO], [::foo-2::])
+END
+
+cat > H3/configure.in << 'END'
+AC_INIT
+AM_FOO
+END
+
+# Usage: check_precedence DESC WINNER-NUMBER ACLOCAL-COMMAND [ARGS..]
+check_precedence ()
+{
+  desc=$1 winnum=$2; shift; shift;
+  cp -fR "$ocwd"/H3/* .
+  check_expanded \
+    --description "earlier $desc take precedence (simple usage, $winnum)" \
+    --output "::foo-$winnum::" "$@"
+}
+
+## ----------------------------------- ##
+##  Precedences between several `-I'.  ##
+## ----------------------------------- ##
+
+start_testgroup precedence-basic-local
+
+mkdir a && cd a || Exit 99
+check_precedence "-I dirs" 1 $ACLOCAL -I dir1 -I dir2
+cd ..
+
+mkdir b && cd b || Exit 99
+check_precedence "-I dirs" 2 $ACLOCAL -I dir2 -I dir1
+cd ..
+
+end_testgroup
+
+## ------------------------------------------- ##
+##  Precedences between ACLOCAL_PATH entries.  ##
+## ------------------------------------------- ##
+
+start_testgroup precedence-aclocal-path
+
+mkdir a && cd a || Exit 99
+check_precedence "ACLOCAL_PATH entries" 1 env ACLOCAL_PATH=dir1:dir2 $ACLOCAL
+cd ..
+
+mkdir b && cd b || Exit 99
+check_precedence "ACLOCAL_PATH entries" 2 env ACLOCAL_PATH=dir2:dir1 $ACLOCAL
+cd ..
+
+end_testgroup
+
+## -------------------------------------- ##
+##  Precedences between dirlist entries.  ##
+## -------------------------------------- ##
+
+start_testgroup precedence-dirlist
+
+mkdir a && cd a || Exit 99
+mkdir sdir
+(echo dir1 && echo dir2) > sdir/dirlist
+check_precedence "dirlist entries" 1 $ACLOCAL --system-acdir sdir 
+cd ..
+
+mkdir b && cd b || Exit 99
+mkdir sdir
+(echo dir2 && echo dir1) > sdir/dirlist
+check_precedence "dirlist entries" 2 $ACLOCAL --system-acdir sdir 
+cd ..
+
+end_testgroup
+
+
+## ------------------------------------------------------------- ##
+##  Setup H4: for trickier tests on precedence in ACLOCAL_PATH,  ##
+##  dirlist and `-I' options.                                    ##
+## ------------------------------------------------------------- ##
+
+mkdir H4 H4/adir H4/zdir
+
+cat > H4/zdir/foo.m4 <<'END'
+AC_DEFUN([AM_FOO], [::foo-z::])
+END
+
+cat > H4/adir/foo.m4 <<'END'
+AC_DEFUN([AM_FOO], [::foo-a::])
+AC_DEFUN([AM_BAR], [::bar-a::])
+END
+
+cat > H4/configure.1 << 'END'
+AC_INIT
+AM_FOO
+AM_BAR
+END
+
+# Try also with the macro calls reversed (it did make a difference).
+cat > H4/configure.2 << 'END'
+AC_INIT
+AM_BAR
+AM_FOO
+END
+
+# Usage: check_precedence_trickier DESCRIPTION ACLOCAL-COMMAND [ARGS..]
+check_precedence_trickier ()
+{
+  desc=$1; shift
+  for i in 1 2; do
+    mkdir $i.d
+    cd $i.d
+    cp -fR "$ocwd"/H4/* .
+    mv -f configure.$i configure.in
+    check_expanded \
+      --description "$desc (trickier usage, $i)" \
+      --output "::foo-z:: ::bar-a::" --no-output "::foo-a::" \
+      "$@"
+    cd ..
+  done
+}
+
+## ------------------------------------------------------ ##
+##  Precedences between `-I' options, trickier scenario.  ##
+## ------------------------------------------------------ ##
+
+start_testgroup precedence-trickier-local
+check_precedence_trickier "earlier -I dirs take precedence" \
+                          $ACLOCAL -I zdir -I adir
+end_testgroup
+
+## --------------------------------------------------------- ##
+##  Precedences between dirlist entries, trickier scenario.  ##
+## --------------------------------------------------------- ##
+
+start_testgroup precedence-trickier-dirlist
+mkdir sdir
+cat > sdir/dirlist <<END
+zdir
+adir
+END
+check_precedence_trickier "earlier dirlist entries take precedence" \
+                          $ACLOCAL --system-acdir "`pwd`/sdir"
+end_testgroup
+
+## -------------------------------------------------------------- ##
+##  Precedences between ACLOCAL_PATH entries, trickier scenario.  ##
+## -------------------------------------------------------------- ##
+
+start_testgroup precedence-trickier-aclocal-path
+check_precedence_trickier "earlier ACLOCAL_PATH entries take precedence" \
+                          env ACLOCAL_PATH=zdir:adir $ACLOCAL
+end_testgroup
+
+
+## ------------------------------------------------------------- ##
+##  Setup H5: precedence between different methods of extending  ##
+##  aclocal search path.                                         ##
+## ------------------------------------------------------------- ##
+
+mkdir H5 H5/local-dir H5/acpath-dir H5/dirlist-dir H5/acsys-dir
+
+cat > H5/configure.in << 'END'
+AC_INIT([mu], [1.0])
+AM_INIT_AUTOMAKE
+AM_SILENT_RULES
+FOO_MACRO
+BAR_MACRO
+AC_PROG_LIBTOOL
+END
+
+cat > H5/local-dir/a.m4 << 'END'
+AC_DEFUN([FOO_MACRO], [::foo-local::])
+END
+cat > H5/local-dir/silent.m4 << 'END'
+AC_DEFUN([AM_SILENT_RULES], [::silent-rules-local::])
+END
+
+cat > H5/acpath-dir/a.m4 << 'END'
+AC_DEFUN([FOO_MACRO], [::foo-acpath::])
+END
+cat > H5/acpath-dir/b.m4 << 'END'
+AC_DEFUN([BAR_MACRO], [::bar-acpath::])
+END
+cat > H5/acpath-dir/init.m4 << 'END'
+AC_DEFUN([AM_INIT_AUTOMAKE], [::am-acpath::])
+END
+
+cat > H5/dirlist-dir/a.m4 << 'END'
+AC_DEFUN([FOO_MACRO], [::foo-dirlist::])
+END
+cat > H5/dirlist-dir/b.m4 << 'END'
+AC_DEFUN([BAR_MACRO], [::bar-dirlist::])
+END
+cat > H5/dirlist-dir/x.m4 << 'END'
+AC_DEFUN([AC_PROG_LIBTOOL], [::libtool-dirlist::])
+END
+cat > H5/dirlist-dir/init.m4 << 'END'
+AC_DEFUN([AM_INIT_AUTOMAKE], [::am-dirlist::])
+END
+
+cat > H5/acsys-dir/a.m4 << 'END'
+AC_DEFUN([FOO_MACRO], [::foo-acsys::])
+END
+cat > H5/acsys-dir/b.m4 << 'END'
+AC_DEFUN([BAR_MACRO], [::bar-acsys::])
+END
+cat > H5/acsys-dir/c.m4 << 'END'
+AC_DEFUN([AC_PROG_LIBTOOL], [::libtool-acsys::])
+END
+cat > H5/acsys-dir/init.m4 << 'END'
+AC_DEFUN([AM_INIT_AUTOMAKE], [::am-acsys::])
+END
+
+echo ./dirlist-dir > H5/acsys-dir/dirlist
+
+check_precedence_hodgepodge ()
+{
+  moredesc=${1+"[$1]"}
+
+  check_expanded \
+    --description "many aclocal search paths at the same time $moredesc" \
+    env ACLOCAL_PATH=acpath-dir $ACLOCAL -I local-dir --system-acdir acsys-dir
+
+  $FGREP :: configure # For debugging.
+
+  command_ok_ \
+    "-I takes precedence over automake private macros $moredesc" \
+    $FGREP '::silent-rules-local::' configure
+
+  command_ok_ \
+    "-I takes precedence over everything else $moredesc" \
+    $FGREP '::foo-local::' configure
+
+  # Files in automake's "private" acdir-APIVERSION takes precedence over
+  # everything else *but* stuff in -I dirs.
+  # FIXME: this might be changed in future automake versions.
+  command_ok_ \
+    "acdir-APIVERSION take precedence over everything but -I $moredesc" \
+    eval ' not $FGREP ::am- configure && $FGREP "am__api_version" configure'
+
+  command_ok_ \
+    "ACLOCAL_PATH take precedence over dirlist and acdir $moredesc" \
+    $FGREP '::bar-acpath::' configure
+
+  # FIXME: this might be changed in future automake versions.
+  command_ok_ \
+    "acdir takes precedence over dirlist $moredesc" \
+    $FGREP '::libtool-acsys::' configure
+}
+
+## ------------------------------------------------------------------ ##
+##  Precedences between different components of the aclocal search    ##
+##  path: -I option, ACLOCAL_PATH environment variable, dirlist file  ##
+##  and system acdir.                                                 ##
+## ------------------------------------------------------------------ ##
+
+start_testgroup precedence-hodgepodge
+cp -fR ../H5/* .
+check_precedence_hodgepodge
+end_testgroup
+
+## -------------------------------------------------------------------- ##
+##  The same as above, but with serial number (which should be ignored  ##
+##  when `--install' is not used) and different names for the `.m4'     ##
+##  files (which shouldn't make any difference).                        ##
+## -------------------------------------------------------------------- ##
+
+start_testgroup precedence-hodgepodge-serial
+
+cp -fR ../H5/* .
+
+i=0
+for d in local-dir acpath-dir dirlist-dir acsys-dir; do
+  i=`expr $i + 1`
+  cd $d
+  for f in *.m4; do
+    echo "# serial $i" > t
+    cat $f >> t
+    mv -f t $i$f
+    rm -f $f
+    cat $i$f # For debugging.
+  done
+  pwd && ls -l # For debugging.
+  cd ..
+done
+
+check_precedence_hodgepodge "varied names and serials"
+
+end_testgroup
+
+
+## -------------------------------------------------------------------- ##
+##  Setup H6: for tests checking that, when two files define the same   ##
+##  macro in the same directory, the macro from the lexically greatest  ##
+##  file is used.                                                       ##
+## -------------------------------------------------------------------- ##
+
+mkdir H6
+
+mkdir H6/1 H6/1/m4
+cat > H6/1/configure.in <<END
+AC_INIT
+MACRO1
+END
+cat > H6/1/m4/version1.m4 <<END
+AC_DEFUN([MACRO1], [::macro11::])
+AC_DEFUN([MACRO2], [::macro21::])
+END
+cat > H6/1/m4/version2.m4 <<END
+AC_DEFUN([MACRO1], [::macro12::])
+END
+
+cp -fR H6/1 H6/2
+echo MACRO2 >> H6/2/configure.in
+
+check_lexicographic_precedence_1 ()
+{
+  desc=$1; shift
+  check_expanded \
+    --description "in the same $desc, lexicographic order is used (1)" \
+    --output "::macro12::" --no-output "::macro11 ::macro21::" \
+    "$@" 
+}
+
+check_lexicographic_precedence_2 ()
+{
+  desc=$1; shift
+  check_expanded \
+    --description "in the same $desc, lexicographic order is used (2)" \
+    --output "::macro12:: ::macro21::" --no-output "::macro11::" \
+    "$@" 
+}
+
+
+for i in 1 2; do
+
+  ## ---------------------------------------------------------------- ##
+  ##  Lexicographic precedence for files in the same `-I' directory.  ##
+  ## ---------------------------------------------------------------- ##
+
+  start_testgroup lexical-precedence-local-$i
+  cp -fR ../H6/$i/* .
+  check_lexicographic_precedence_$i "'-I' directory" $ACLOCAL -I m4
+  end_testgroup
+
+  ## ------------------------------------------------------------- ##
+  ##  Lexicographic precedence for files in the same ACLOCAL_PATH  ##
+  ##  directory.                                                   ##
+  ## ------------------------------------------------------------- ##
+
+  start_testgroup lexical-precedence-aclocal-path-$i
+  cp -fR ../H6/$i/* .
+  check_lexicographic_precedence_$i "ACLOCAL_PATH entry" \
+    env ACLOCAL_PATH=m4 $ACLOCAL
+  end_testgroup
+
+  ## ------------------------------------------------------------------- ##
+  ##  Lexicographic precedence for files in the same dirlist directory.  ##
+  ## ------------------------------------------------------------------- ##
+
+  start_testgroup lexical-precedence-dirlist-$i
+  cp -fR ../H6/$i/* .
+  mkdir acdir
+  echo ./m4 > acdir/dirlist
+  check_lexicographic_precedence_$i "dirlist entry" \
+    $ACLOCAL --system-acdir acdir
+  end_testgroup
+
+  ## ----------------------------------------------------------------- ##
+  ##  Lexicographic precedence for files in the same acdir directory.  ##
+  ## ----------------------------------------------------------------- ##
+
+  start_testgroup lexical-precedence-acdir-$i
+  cp -fR ../H6/$i/* .
+  mv -f m4 acdir
+  check_lexicographic_precedence_$i "system-wide acdir" \
+    $ACLOCAL --system-acdir acdir
+  end_testgroup
+
+done
+
+:

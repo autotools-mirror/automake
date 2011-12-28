@@ -32,10 +32,7 @@ aclocal5.test \
 aclocal6.test \
 aclocal7.test \
 aclocal8.test \
-aclocal9.test \
 acloca10.test \
-acloca11.test \
-acloca12.test \
 acloca13.test \
 acloca14.test \
 acloca15.test \
@@ -47,14 +44,11 @@ acloca20.test \
 acloca21.test \
 acloca22.test \
 acloca23.test \
-aclocal-acdir.test \
-aclocal-install-absdir.test \
+aclocal-search-path.tap \
 aclocal-print-acdir.test \
-aclocal-path.test \
+aclocal-install-absdir.test \
 aclocal-path-install.test \
 aclocal-path-install-serial.test \
-aclocal-path-nonexistent.test \
-aclocal-path-precedence.test \
 ac-output-old.tap \
 acsilent.test \
 acsubst.test \
@@ -324,9 +318,6 @@ depend5.test \
 depend6.test \
 deprecated-acinit.test \
 destdir.test \
-dirlist.test \
-dirlist2.test \
-dirlist-abspath.test \
 discover.test \
 dist-auxdir-many-subdirs.test \
 dist-auxfile-2.test \
