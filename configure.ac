@@ -378,9 +378,6 @@ fi
 AC_ARG_VAR([AM_TEST_RUNNER_SHELL],
            [a sturdy POSIX shell for our testsuite])
 
-# FIXME: remove soon
-AC_SUBST([sh_errexit_works], [yes])
-
 ## ---------------------- ##
 ##  Create output files.  ##
 ## ---------------------- ##

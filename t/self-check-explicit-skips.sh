@@ -20,8 +20,6 @@
 am_create_testdir=empty
 . ./defs || Exit 1
 
-test x"$sh_errexit_works" = x"yes" || skip_ "no working shell exit trap"
-
 # We still need a little hack to make ./defs work outside automake's
 # tree 'tests' subdirectory.  Not a big deal.
 sed "s|^am_top_builddir=.*|am_top_builddir='`pwd`'|" \
