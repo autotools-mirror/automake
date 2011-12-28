@@ -209,6 +209,10 @@ AC_SUBST([MODIFICATION_DELAY])
 AC_PROG_EGREP
 AC_PROG_FGREP
 
+# Shell used to run our test scripts.  The same as $SHELL/$CONFIG_SHELL
+# for the moment.
+AC_SUBST([AM_TEST_RUNNER_SHELL], [$SHELL])
+
 AC_CACHE_CHECK([whether $SHELL has working 'set -e' with exit trap],
 [am_cv_sh_errexit_works],
 [if $SHELL -ec "trap 'exit \$?' 0; (exit 77); exit 77"; test $? = 77
