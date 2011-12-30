@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2003, 2007  Free Software Foundation, Inc.
+# Copyright (C) 2003, 2007, 2011 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,10 +16,16 @@
 
 # Check support for no-dist-gzip with lzma
 
-required=lzma
 . ./defs || Exit 1
 
+errmsg='lzma.*deprecated.*dist-xz.*dist-lzip.*instead'
+
 set -e
+
+echo AUTOMAKE_OPTIONS = dist-lzma > Makefile.am
+$ACLOCAL --force
+AUTOMAKE_fails -Wnone -Wobsolete
+grep "^Makefile\\.am:1:.*$errmsg" stderr
 
 cat > configure.in << 'END'
 AC_INIT([lzma], [1.0])
@@ -34,8 +40,16 @@ test: distcheck
 	test -f $(DIST_ARCHIVES)
 END
 
-$ACLOCAL
+$ACLOCAL --force
+AUTOMAKE_fails
+grep "^configure\\.in:2:.*$errmsg" stderr
+
+$AUTOMAKE -Wno-obsolete
+
+lzma --version || skip_ "lzma compressor required for the rest of the test"
+
 $AUTOCONF
-$AUTOMAKE
 ./configure
 $MAKE test
+
+:
