@@ -264,7 +264,7 @@ sub _process_option_list (\%$@)
       elsif ($_ eq 'no-installman' || $_ eq 'no-installinfo'
 	     || $_ eq 'dist-shar' || $_ eq 'dist-zip'
 	     || $_ eq 'dist-tarZ' || $_ eq 'dist-bzip2'
-	     || $_ eq 'dist-lzma' || $_ eq 'dist-xz'
+	     || $_ eq 'dist-lzip' || $_ eq 'dist-lzma' || $_ eq 'dist-xz'
 	     || $_ eq 'no-dist-gzip' || $_ eq 'no-dist'
 	     || $_ eq 'dejagnu' || $_ eq 'no-texinfo.tex'
 	     || $_ eq 'readme-alpha' || $_ eq 'check-news'
