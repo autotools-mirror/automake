@@ -550,6 +550,7 @@ ltinstloc.test \
 ltlibobjs.test \
 ltlibsrc.test \
 ltorder.test \
+lzip.test \
 lzma.test \
 m4-inclusion.test \
 maintclean.test \
