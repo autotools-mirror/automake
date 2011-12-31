@@ -207,6 +207,22 @@ clean-local: clean-coverage
 .PHONY: check-coverage recheck-coverage check-coverage-run \
 	recheck-coverage-run check-coverage-report clean-coverage
 
+# We also have to take into account VPATH builds (where some generated
+# tests might be in `$(builddir)' rather than in `$(srcdir)'), TAP-based
+# tests script (which have a `.tap' extension) and helper scripts used
+# by other test cases (which have a `.sh' extension).
+xtests = \
+  `if test $(srcdir) = .; then \
+     dirs=.; \
+   else \
+     dirs='$(srcdir) .'; \
+   fi; \
+   for d in $$dirs; do \
+     for s in test tap sh; do \
+       ls $$d/tests/*.$$s 2>/dev/null; \
+     done; \
+   done | sort`
+
 # Some simple checks, and then ordinary check.  These are only really
 # guaranteed to work on my machine.
 syntax_check_rules = \
@@ -330,7 +346,10 @@ m4_builtins = \
 sc_test_names:
 	@m4_builtin_rx=`echo $(m4_builtins) | sed 's/ /|/g'`; \
 	 m4_macro_rx="\\<($$m4_builtin_rx)\\>|\\<_?(A[CUMHS]|m4)_"; \
-	 if ls tests/*.test | LC_ALL=C grep -E "$$m4_macro_rx"; then \
+	 if { \
+	   for t in $(xtests); do echo $$t; done \
+	     | LC_ALL=C grep -E "$$m4_macro_rx"; \
+	 }; then \
 	   echo "the names of the tests above can be problematic" 1>&2; \
 	   echo "Avoid test names that contain names of m4 macros" 1>&2; \
 	   exit 1; \
@@ -369,8 +388,9 @@ sc_no_brace_variable_expansions:
 
 ## Make sure `rm' is called with `-f'.
 sc_rm_minus_f:
-	@if grep -v '^#' $(srcdir)/lib/am/[a-z]*.am $(srcdir)/tests/*.test | \
-	    grep -E '\<rm ([^-]|\-[^f ]*\>)'; then \
+	@if grep -v '^#' $(srcdir)/lib/am/[a-z]*.am $(xtests) \
+	   | grep -E '\<rm ([^-]|\-[^f ]*\>)'; \
+	then \
 	  echo "Suspicious 'rm' invocation." 1>&2; \
 	  exit 1;				\
 	else :; fi
@@ -489,10 +509,7 @@ sc_tests_obsolete_variables:
 	seen=""; \
 	for v in $$vars; do \
 	  if grep -E "\b$$v\b" \
-	    $(srcdir)/tests/*.test \
-	    $(srcdir)/tests/*.tap \
-	    $(srcdir)/tests/*.sh \
-	    $(srcdir)/tests/defs \
+	    $(xtests) $(srcdir)/tests/defs \
 	    $(srcdir)/tests/defs-static.in \
 	  ; then \
 	    seen="$$seen $$v"; \
@@ -507,49 +524,49 @@ sc_tests_obsolete_variables:
 
 ## Tests should never call make directly.
 sc_tests_plain_make:
-	@if grep -v '^#' $(srcdir)/tests/*.test | $(EGREP) ':[	]*make( |$$)'; then \
+	@if grep -v '^#' $(xtests) | $(EGREP) ':[	]*make( |$$)'; then \
 	  echo 'Do not run "make" in the above tests.  Use "$$MAKE" instead.' 1>&2; \
 	  exit 1; \
 	fi
 
 ## Tests should never call autoconf directly.
 sc_tests_plain_autoconf:
-	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*autoconf\>'; then \
+	@if grep -v '^#' $(xtests) | grep ':[	]*autoconf\>'; then \
 	  echo 'Do not run "autoconf" in the above tests.  Use "$$AUTOCONF" instead.' 1>&2; \
 	  exit 1; \
 	fi
 
 ## Tests should never call autoupdate directly.
 sc_tests_plain_autoupdate:
-	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*autoupdate\>'; then \
+	@if grep -v '^#' $(xtests) | grep ':[	]*autoupdate\>'; then \
 	  echo 'Do not run "autoupdate" in the above tests.  Use "$$AUTOUPDATE" instead.' 1>&2; \
 	  exit 1; \
 	fi
 
 ## Tests should never call automake directly.
 sc_tests_plain_automake:
-	@if grep -v '^#' $(srcdir)/tests/*.test | grep -E ':[	]*automake\>([^:]|$$)'; then \
+	@if grep -v '^#' $(xtests) | grep -E ':[	]*automake\>([^:]|$$)'; then \
 	  echo 'Do not run "automake" in the above tests.  Use "$$AUTOMAKE" instead.' 1>&2;  \
 	  exit 1; \
 	fi
 
 ## Tests should never call autoheader directly.
 sc_tests_plain_autoheader:
-	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*autoheader\>'; then \
+	@if grep -v '^#' $(xtests) | grep ':[	]*autoheader\>'; then \
 	  echo 'Do not run "automake" in the above tests.  Use "$$AUTOHEADER" instead.' 1>&2;  \
 	  exit 1; \
 	fi
 
 ## Tests should never call autoreconf directly.
 sc_tests_plain_autoreconf:
-	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*autoreconf\>'; then \
+	@if grep -v '^#' $(xtests) | grep ':[	]*autoreconf\>'; then \
 	  echo 'Do not run "automake" in the above tests.  Use "$$AUTORECONF" instead.' 1>&2;  \
 	  exit 1; \
 	fi
 
 ## Tests should never call autom4te directly.
 sc_tests_plain_autom4te:
-	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*autom4te\>'; then \
+	@if grep -v '^#' $(xtests) | grep ':[	]*autom4te\>'; then \
 	  echo 'Do not run "automake" in the above tests.  Use "$$AUTOM4TE" instead.' 1>&2;  \
 	  exit 1; \
 	fi
@@ -557,7 +574,7 @@ sc_tests_plain_autom4te:
 ## Tests should only use END and EOF for here documents
 ## (so that the next test is effective).
 sc_tests_here_document_format:
-	@if grep '<<' $(srcdir)/tests/*.test | grep -v 'END' | grep -v 'EOF'; then \
+	@if grep '<<' $(xtests) | grep -v 'END' | grep -v 'EOF'; then \
 	  echo 'Use here documents with "END" and "EOF" only, for greppability.' 1>&2; \
 	  exit 1; \
 	fi
@@ -566,8 +583,8 @@ sc_tests_here_document_format:
 ## This is so that the exit status is transported correctly across the 0 trap.
 ## Ignore comments, testsuite self tests, and one perl line in ext2.test.
 sc_tests_Exit_not_exit:
-	@found=false; for file in $(srcdir)/tests/*.test; do \
-	  case $$file in */self-check-*.test) continue;; esac; \
+	@found=false; for file in $(xtests); do \
+	  case $$file in */self-check-*) continue;; esac; \
 	  res=`sed -n -e '/^#/d; /^\$$PERL/d' -e '/<<.*END/,/^END/b' \
 		      -e '/<<.*EOF/,/^EOF/b' -e '/exit [$$0-9]/p' $$file`; \
 	  if test -n "$$res"; then \
@@ -582,28 +599,28 @@ sc_tests_Exit_not_exit:
 
 ## Use AUTOMAKE_fails when appropriate
 sc_tests_automake_fails:
-	@if grep -v '^#' $(srcdir)/tests/*.test | grep '\$$AUTOMAKE.*&&.*[eE]xit'; then \
+	@if grep -v '^#' $(xtests) | grep '\$$AUTOMAKE.*&&.*[eE]xit'; then \
 	  echo 'Use AUTOMAKE_fails + grep to catch automake failures in the above tests.' 1>&2;  \
 	  exit 1; \
 	fi
 
 ## Tests should never call aclocal directly.
 sc_tests_plain_aclocal:
-	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*aclocal\>'; then \
+	@if grep -v '^#' $(xtests) | grep ':[	]*aclocal\>'; then \
 	  echo 'Do not run "aclocal" in the above tests.  Use "$$ACLOCAL" instead.' 1>&2;  \
 	  exit 1; \
 	fi
 
 ## Tests should never call perl directly.
 sc_tests_plain_perl:
-	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*perl\>'; then \
+	@if grep -v '^#' $(xtests) | grep ':[	]*perl\>'; then \
 	  echo 'Do not run "perl" in the above tests.  Use "$$PERL" instead.' 1>&2; \
 	  exit 1; \
 	fi
 
 ## Setting `required' after sourcing `./defs' is a bug.
 sc_tests_required_after_defs:
-	@for file in $(srcdir)/tests/*.test; do \
+	@for file in $(xtests); do \
 	  if out=`sed -n '/defs/,$${/required=/p;}' $$file`; test -n "$$out"; then \
 	    echo 'Do not set "required" after sourcing "defs" in '"$$file: $$out" 1>&2; \
 	    exit 1; \
@@ -642,7 +659,7 @@ sc_tests_tap_plan:
 ## DISTCHECK_CONFIGURE_FLAGS and DISABLE_HARD_ERRORS are exceptions, too,
 ## as package authors are urged not to initialize them anywhere.
 sc_tests_overriding_macros_on_cmdline:
-	@if grep -E '\$$MAKE .*(SHELL=.*=|=.*SHELL=)' $(srcdir)/tests/*.test; then \
+	@if grep -E '\$$MAKE .*(SHELL=.*=|=.*SHELL=)' $(xtests); then \
 	  echo 'Rewrite "$$MAKE foo=bar SHELL=$$SHELL" as "foo=bar $$MAKE -e SHELL=$$SHELL"' 1>&2; \
 	  echo ' in the above lines, it is more portable.' 1>&2; \
 	  exit 1; \
@@ -656,12 +673,12 @@ sc_tests_overriding_macros_on_cmdline:
 	        -e "s/ DISTCHECK_CONFIGURE_FLAGS='[^']*'/ /" \
 		-e 's/ DISTCHECK_CONFIGURE_FLAGS="[^"]*"/ /' \
 		-e 's/ DISTCHECK_CONFIGURE_FLAGS=[^ ]/ /' \
-	      $(srcdir)/tests/*.test | grep '\$$MAKE .*='; then \
+	      $(xtests) | grep '\$$MAKE .*='; then \
 	  echo 'Rewrite "$$MAKE foo=bar" as "foo=bar $$MAKE -e" in the above lines,' 1>&2; \
 	  echo 'it is more portable.' 1>&2; \
 	  exit 1; \
 	fi
-	@if grep 'SHELL=.*\$$MAKE' $(srcdir)/tests/*.test; then \
+	@if grep 'SHELL=.*\$$MAKE' $(xtests); then \
 	  echo '$$MAKE ignores the SHELL envvar, use "$$MAKE SHELL=$$SHELL" in' 1>&2; \
 	  echo 'the above lines.' 1>&2; \
 	  exit 1; \
@@ -671,14 +688,14 @@ sc_tests_overriding_macros_on_cmdline:
 ## Use `$sleep' instead.  Some filesystems (e.g., Windows') have only
 ## a 2sec resolution.
 sc_tests_plain_sleep:
-	@if grep -E '\bsleep +[12345]\b' $(srcdir)/tests/*.test; then \
+	@if grep -E '\bsleep +[12345]\b' $(xtests); then \
 	  echo 'Do not use "sleep x" in the above tests.  Use "$$sleep" instead.' 1>&2; \
 	  exit 1; \
 	fi
 
 ## fgrep and egrep are not required by POSIX.
 sc_tests_plain_egrep_fgrep:
-	@if grep -E '\b[ef]grep\b' $(srcdir)/tests/*.test ; then \
+	@if grep -E '\b[ef]grep\b' $(xtests) ; then \
 	  echo 'Do not use egrep or fgrep in test cases.  Use $$FGREP or $$EGREP.' 1>&2; \
 	  exit 1; \
 	fi
@@ -726,14 +743,17 @@ sc_tests_makefile_variable_order: sc_ensure_testsuite_has_run
 
 ## Using `:' as a PATH separator is not portable.
 sc_tests_PATH_SEPARATOR:
-	@if grep -E '\bPATH=.*:.*' $(srcdir)/tests/*.test ; then \
+	@if grep -E '\bPATH=.*:.*' $(xtests) ; then \
 	  echo "Use \`\$$PATH_SEPARATOR', not \`:', in PATH definitions above." 1>&2; \
 	  exit 1; \
 	fi
 
 sc_mkdir_p:
-	@if grep 'mkdir_p' $(srcdir)/automake.in \
-	      $(srcdir)/lib/am/*.am $(srcdir)/tests/*.test; then \
+	@if grep 'mkdir_p' \
+	  $(srcdir)/automake.in \
+	  $(srcdir)/lib/am/*.am \
+	  $(xtests); \
+	then \
 	  echo 'Do not use mkdir_p in the above files, use MKDIR_P.' 1>&2; \
 	  exit 1; \
 	fi
