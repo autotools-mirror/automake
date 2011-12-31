@@ -553,21 +553,21 @@ sc_tests_plain_automake:
 ## Tests should never call autoheader directly.
 sc_tests_plain_autoheader:
 	@if grep -v '^#' $(xtests) | grep ':[	]*autoheader\>'; then \
-	  echo 'Do not run "automake" in the above tests.  Use "$$AUTOHEADER" instead.' 1>&2;  \
+	  echo 'Do not run "autoheader" in the above tests.  Use "$$AUTOHEADER" instead.' 1>&2;  \
 	  exit 1; \
 	fi
 
 ## Tests should never call autoreconf directly.
 sc_tests_plain_autoreconf:
 	@if grep -v '^#' $(xtests) | grep ':[	]*autoreconf\>'; then \
-	  echo 'Do not run "automake" in the above tests.  Use "$$AUTORECONF" instead.' 1>&2;  \
+	  echo 'Do not run "autoreconf" in the above tests.  Use "$$AUTORECONF" instead.' 1>&2;  \
 	  exit 1; \
 	fi
 
 ## Tests should never call autom4te directly.
 sc_tests_plain_autom4te:
 	@if grep -v '^#' $(xtests) | grep ':[	]*autom4te\>'; then \
-	  echo 'Do not run "automake" in the above tests.  Use "$$AUTOM4TE" instead.' 1>&2;  \
+	  echo 'Do not run "autom4te" in the above tests.  Use "$$AUTOM4TE" instead.' 1>&2;  \
 	  exit 1; \
 	fi
 
