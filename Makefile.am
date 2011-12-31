@@ -229,6 +229,7 @@ sc_perl_at_uscore_in_scalar_context \
 sc_perl_local_no_parens \
 sc_perl_local \
 sc_AMDEP_TRUE_in_automake_in \
+sc_tests_no_gmake_requirement \
 sc_tests_make_without_am_makeflags \
 sc_tests_obsolete_variables \
 sc_tests_plain_make \
@@ -462,6 +463,16 @@ sc_perl_local:
 sc_AMDEP_TRUE_in_automake_in:
 	@if grep '@AMDEP''_TRUE@' $(srcdir)/automake.in; then \
 	  echo "Don't put AMDEP_TRUE substitution in automake.in" 1>&2; \
+	  exit 1; \
+	fi
+
+## Tests should never require GNU make explicitly: automake-ng assumes
+## it unconditionally.
+sc_tests_no_gmake_requirement:
+	@if grep -iE '^ *required=.*\b(gmake|gnumake)\b' \
+	  $(xtests) $(srcdir)/tests/defs $(srcdir)/tests/defs-static.in \
+	; then \
+	  echo 'Tests should never require GNU make explicitly.' 1>&2; \
 	  exit 1; \
 	fi
 
