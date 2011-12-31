@@ -31,56 +31,18 @@ TESTS =
 
 errmsg = ::OOPS:: Recursion too deep
 
-if IS_GNU_MAKE
+is_too_deep := $(shell test $(MAKELEVEL) -lt 10 && echo no)
 
- is_too_deep := $(shell test $(MAKELEVEL) -lt 10 && echo no)
-
-## Indenteation here required to avoid confusing Automake.
+## Extra indentation here required to avoid confusing Automake.
+## FIXME: now that we assume make is GNU make, this shouldn't happen!
  ifeq ($(is_too_deep),no)
+   # All is ok.
  else
- $(error $(errmsg), $(MAKELEVEL) levels)
+   $(error $(errmsg), $(MAKELEVEL) levels)
  endif
-
-else !IS_GNU_MAKE
-
-# We use mkdir to detect the level of recursion, since it is easy
-# to use and assured to be portably atomical.  Also use an higher
-# number than with GNU make above, since the level used here can
-# be incremented by tow or more per recursion.
-recursion-not-too-deep:
-	@ok=no; \
-	for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 \
-	         18 19 20 21 22 23 24 25 26 27 28 29; \
-	do \
-	  echo " mkdir rec-$$i.d"; \
-	  if mkdir rec-$$i.d; then \
-	    ok=yes; break; \
-	  else :; fi; \
-	done; \
-	test $$ok = yes || { echo '$(errmsg)' >&2; exit 1; }
-.PHONY: recursion-not-too-deep
-clean-local:
-	rmdir rec-[0-9].d
-
-targets = all check recheck $(TESTS) $(TEST_LOGS) $(TEST_SUITE_LOG)
-$(targets): recursion-not-too-deep
-
-# For BSD make.
-.BEGIN: recursion-not-too-deep
-
-endif !IS_GNU_MAKE
 END
 
-if using_gmake; then
-  cond=:
-else
-  cond=false
-fi
-
-cat >> configure.in << END
-AM_CONDITIONAL([IS_GNU_MAKE], [$cond])
-AC_OUTPUT
-END
+echo AC_OUTPUT >> configure.in
 
 # Another helpful idiom to avoid hanging on capable systems.  The subshell
 # is needed since `ulimit' might be a special shell builtin.
@@ -101,31 +63,8 @@ do_check ()
   $FGREP '::OOPS::' output && Exit 1 # Possible infinite recursion.
   # Check that at least we don't create a botched global log file.
   test ! -f "$log"
-  if using_gmake; then
-    grep "[Cc]ircular.*dependency" output | $FGREP "$log"
-    test $st -gt 0
-  else
-    # Look for possible error messages about circular dependencies from
-    # either make or our own recipes.  At least one such a message must
-    # be present.  OTOH, some make implementations (e.g., NetBSD's), while
-    # smartly detecting the circular dependency early and diagnosing it,
-    # still exit with a successful exit status (yikes!).  So don't check
-    # the exit status of non-GNU make, to avoid spurious failures.
-    # this case.
-    err_seen=no
-    for err_rx in \
-      'circular.* depend' \
-      'depend.* circular' \
-      'graph cycle' \
-      'infinite (loop|recursion)' \
-      'depend.* on itself' \
-    ; do
-      $EGREP -i "$err_rx" output | $FGREP "$log" || continue
-      err_seen=yes
-      break
-    done
-    test $err_seen = yes || Exit 1
-  fi
+  grep "[Cc]ircular.*dependency" output | $FGREP "$log"
+  test $st -gt 0
 }
 
 : > test-suite.test

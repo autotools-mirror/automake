@@ -19,12 +19,6 @@
 
 . ./defs || Exit 1
 
-if using_gmake; then
-  remake_() { $MAKE nil; }
-else
-  remake_() { $MAKE Makefile && $MAKE foo.sh; }
-fi
-
 magic1=::MagicStringOne::
 magic2=__MagicStringTwo__
 
@@ -80,7 +74,7 @@ for vpath in : false; do
   $sleep
   sed "s/^\\(FINGERPRINT\\) *=.*/\\1 = $magic1/" $srcdir/Makefile.am >t
   mv -f t $srcdir/Makefile.am
-  remake_
+  $MAKE nil
   $FGREP FINGERPRINT Makefile # For debugging.
   $FGREP $magic1 Makefile
   test x"`./foo.sh`" = x"$magic1"
@@ -88,7 +82,7 @@ for vpath in : false; do
   $sleep
   echo 'sed "s/^\\(FINGERPRINT\\) *=.*/\\1 = '$magic2'/"' \
     > $srcdir/tweak-makefile-am
-  remake_
+  $MAKE nil
   $FGREP FINGERPRINT Makefile # For debugging.
   $FGREP $magic1 Makefile && Exit 1
   $FGREP $magic2 Makefile
@@ -98,7 +92,6 @@ for vpath in : false; do
   echo cat > $srcdir/tweak-makefile-am # Make it a no-op again.
   sed "s/^\\(FINGERPRINT\\) *=.*/\\1 = DummyValue/" $srcdir/Makefile.am >t
   mv -f t $srcdir/Makefile.am
-  using_gmake || remake_
   $MAKE distcheck
   $FGREP $magic1 Makefile && Exit 1 # Sanity check.
   $FGREP $magic2 Makefile && Exit 1 # Likewise.

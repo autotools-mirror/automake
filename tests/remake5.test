@@ -20,12 +20,6 @@
 
 . ./defs || Exit 1
 
-if using_gmake; then
-  remake="$MAKE"
-else
-  remake="$MAKE Makefile"
-fi
-
 cat >>configure.in <<'EOF'
 AM_MAINTAINER_MODE
 m4_include([foo.m4])
@@ -51,12 +45,12 @@ $MAKE
 # tools are set to false.)
 $sleep
 touch aclocal.m4 Makefile.am configure.in foo.m4
-$remake
+$MAKE
 
 # Make sure the rebuild rule for Makefile is triggered.
 $sleep
 echo '# GrEpMe' >>Makefile.in
-$remake
+$MAKE
 grep GrEpMe Makefile
 
 # Make sure the rebuild rule for config.status is triggered.
@@ -64,14 +58,14 @@ $sleep
 grep 'AUTOCONF.*=.*false' Makefile
 : > rebuild_ok
 ./configure --no-create
-$remake
+$MAKE
 grep 'AUTOCONF.*=.*false' Makefile && Exit 1
 
 # Make sure rebuild rules do work if --enable-maintainer-mode is given.
 ./configure --enable-maintainer-mode
 $sleep
 echo 'AC_SUBST([YIPPY_YIPPY_YEAH])' >foo.m4
-$remake
+$MAKE
 grep YIPPY_YIPPY_YEAH Makefile
 
 # Try the distribution, for completeness.
