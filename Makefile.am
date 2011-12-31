@@ -231,6 +231,7 @@ sc_perl_local \
 sc_AMDEP_TRUE_in_automake_in \
 sc_tests_no_gmake_requirement \
 sc_tests_no_gmake_checking \
+sc_tests_make_can_chain_suffix_rules \
 sc_tests_make_without_am_makeflags \
 sc_tests_obsolete_variables \
 sc_tests_plain_make \
@@ -486,6 +487,15 @@ sc_tests_no_gmake_checking:
 	; then \
 	  echo 'Tests should never explicitly check whether $$MAKE' \
 	       'is GNU make.' 1>&2; \
+	  exit 1; \
+	fi
+
+## GNU make can obviously chain suffix rules, so don't try to check
+## whether this is the case.
+sc_tests_make_can_chain_suffix_rules:
+	@if grep 'chain_suffix_rule' $(xtests); then \
+	  echo 'GNU make can implicitly chain suffix rules; tests' \
+	       'should just assume that without checking.' 1>&2; \
 	  exit 1; \
 	fi
 
