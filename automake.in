@@ -1164,9 +1164,12 @@ sub define_verbose_var ($$)
     my $silent_var = $pvar . '_0';
     if (option 'silent-rules')
       {
-	# Using `$V' instead of `$(V)' breaks IRIX make.
-	define_variable ($var, '$(' . $pvar . '_$(V))', INTERNAL);
-	define_variable ($pvar . '_', '$(' . $pvar . '_$(AM_DEFAULT_VERBOSITY))', INTERNAL);
+	# For typical `make's, `configure' replaces AM_V (inside @@) with $(V)
+	# and AM_DEFAULT_V (inside @@) with $(AM_DEFAULT_VERBOSITY).
+	# For strict POSIX 2008 `make's, it replaces them with 0 or 1 instead.
+	# See AM_SILENT_RULES in m4/silent.m4.
+	define_variable ($var, '$(' . $pvar . '_@'.'AM_V'.'@)', INTERNAL);
+	define_variable ($pvar . '_', '$(' . $pvar . '_@'.'AM_DEFAULT_V'.'@)', INTERNAL);
 	Automake::Variable::define ($silent_var, VAR_AUTOMAKE, '', TRUE, $val,
 				    '', INTERNAL, VAR_ASIS)
 	  if (! vardef ($silent_var, TRUE));
@@ -3935,7 +3938,7 @@ sub handle_dist ()
     {
       my $archive_defined = option 'no-dist-gzip' ? 0 : 1;
       $archive_defined ||=
-	grep { option "dist-$_" } qw(shar zip tarZ bzip2 lzma xz);
+	grep { option "dist-$_" } qw(shar zip tarZ bzip2 lzip lzma xz);
       error (option 'no-dist-gzip',
 	     "no-dist-gzip specified but no dist-* specified, "
 	     . "at least one archive format must be enabled")
@@ -7141,6 +7144,7 @@ sub make_paragraphs ($%)
 
 		 'XZ'          => !! option 'dist-xz',
 		 'LZMA'        => !! option 'dist-lzma',
+		 'LZIP'        => !! option 'dist-lzip',
 		 'BZIP2'       => !! option 'dist-bzip2',
 		 'COMPRESS'    => !! option 'dist-tarZ',
 		 'GZIP'        =>  ! option 'no-dist-gzip',
