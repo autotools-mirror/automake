@@ -274,11 +274,8 @@ sub _process_option_list (\%@)
 	}
       elsif ($_ eq 'dist-lzma')
         {
-          # Creation of distribution tarball compressed with lzma is
-          # deprecated, will be removed in the next major release.
-          msg 'obsolete', $where,
-              "lzma compression is deprecated; use `dist-xz' " .
-              "or `dist-lzip' instead\n";
+          error ($where, "support for lzma-compressed distribution " .
+                         "archives has been removed");
         }
       elsif ($_ eq 'no-installman' || $_ eq 'no-installinfo'
 	     || $_ eq 'dist-shar' || $_ eq 'dist-zip'
