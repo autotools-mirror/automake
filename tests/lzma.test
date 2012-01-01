@@ -16,8 +16,14 @@
 
 # Check support for no-dist-gzip with lzma.
 
-required=lzma
 . ./defs || Exit 1
+
+errmsg='lzma.*deprecated.*dist-xz.*dist-lzip.*instead'
+
+echo AUTOMAKE_OPTIONS = dist-lzma > Makefile.am
+$ACLOCAL --force
+AUTOMAKE_fails -Wnone -Wobsolete
+grep "^Makefile\\.am:1:.*$errmsg" stderr
 
 cat > configure.in << 'END'
 AC_INIT([lzma], [1.0])
@@ -32,8 +38,16 @@ test: distcheck
 	test -f $(DIST_ARCHIVES)
 END
 
-$ACLOCAL
+$ACLOCAL --force
+AUTOMAKE_fails
+grep "^configure\\.in:2:.*$errmsg" stderr
+
+$AUTOMAKE -Wno-obsolete
+
+lzma --version || skip_ "lzma compressor required for the rest of the test"
+
 $AUTOCONF
-$AUTOMAKE
 ./configure
 $MAKE test
+
+:
