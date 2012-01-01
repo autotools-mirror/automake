@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2011 Free Software Foundation, Inc.
+# Copyright (C) 2011, 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,27 +45,45 @@ echo $$ > pid
 END
 
 cat > foo.test << 'END'
-#!/bin/sh
+#!/bin/sh -e
 
-echo "foo is starting to run"
+# We expect the test driver to be terminated by a signal, and so
+# to exit with non-zero status, thus causing "make check" to fail.
+# Exiting with status 0 from this test script is thus a good way to
+# make unexpected behaviours more evident, since this will likely
+# cause and unexpected success in "make check".
+trap 'exit 0' 0;
+stop_test () { exit 0; }
 
-ls -l >&9 || exit 99
+# We need the "foo is starting to run" string flushed to standard output
+# ASAP, because we are soon going to grep for that string in the log file
+# where the test driver is redirecting this script's stdout.  The safest
+# way force this flushing portably is to rely on perl I/O capabilities.
+$PERL -e 'BEGIN { $| = 1 }; print "foo is starting to run\n"' || stop_test
 
-test $sig -gt 0 || {
-  echo "Bailout! \$sig not exported to test script" >&9
-  exit 99
+ls -l >&9 || stop_test
+
+bailout ()
+{
+  # Print this to the original stdout (saved in the fd 9), so that the
+  # emitted "Bail out!" directive will be interpreted by the test driver
+  # running the Automake testsuite.
+  echo "Bail out! $*" >&9
+  stop_test
 }
+
+test $sig -gt 0 || bailout "\$sig not exported to test script"
 
 res=ok; cat foo.log >&9 || res="not ok"
 echo "$res - logfile created and readable [SIG $sig]" >&9
 
-res=ok; grep '^foo is starting to run$' foo.log >&2 || res='not ok'
+res=ok; grep '^foo is starting to run$' foo.log >&9 || res='not ok'
 echo "$res - logfile contains output from test script [SIG $sig]" >&9
 
-cat pid >&9 \
-  || echo "Bailout! cannot get PID of test driver" >&9
-kill -$sig `cat pid` \
-  || echo "Bailout! cannot send signal $sig to test driver" >&9
+cat pid >&9 || bailout "cannot get PID of test driver"
+kill -$sig `cat pid` || bailout "cannot send signal $sig to test driver"
+
+stop_test
 END
 chmod a+x foo.test
 
@@ -85,7 +103,7 @@ for sig in $trapped_signals; do
     continue
   fi
   rm -f pid fail *.log
-  r=ok; env sig=$sig $MAKE check && r='not ok'
+  r=ok; env PERL="$PERL" sig="$sig" $MAKE check && r='not ok'
   echo "$r - signal $sig to test driver causes \"make check\" to fail"
   ls -l
   # These files shouldn't exist, but in case they do, their content might
