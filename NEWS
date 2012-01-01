@@ -1,27 +1,16 @@
 New in 1.11a:
 
-* Changes to automake:
+* Obsolete features removed:
 
-  - automake now generates silenced rules for texinfo outputs.
+  - Support for automatic de-ANSI-fication has been removed.
 
-  - The deprecated options `--output-dir', `--Werror' and `--Wno-error'
-    have been removed.
+  - The deprecated `lzma' compression format for distribution archives
+    has been removed, in favor of `xz' and `lzip'.
 
   - The obsolete AM_WITH_REGEX macro has been removed.
 
-* Changes to aclocal:
-
-  - The `--acdir' option is deprecated.  Now you should use the new options
-    `--automake-acdir' and `--system-acdir' instead.
-
-  - The `ACLOCAL_PATH' environment variable is now interpreted as a
-    colon-separated list of additional directories to search after the
-    automake internal acdir (by default ${prefix}/share/aclocal-APIVERSION)
-    and before the system acdir (by default ${prefix}/share/aclocal).
-
-  - The exact order in which the directories in the aclocal macro
-    search path are looked up is probably going to be changed in the
-    next Automake release (1.12).
+  - The deprecated options `--output-dir', `--Werror' and `--Wno-error'
+    have been removed.
 
 * New targets:
 
@@ -99,14 +88,96 @@ New in 1.11a:
   - Initial and still experimental support for the TAP test protocol is
     now provided.
 
-* Changes related to distribution tarballs:
+* Miscellaneous changes:
 
   - The `dist' and `dist-all' targets now can run compressors in parallel.
 
-  - "make dist" can now create lzip-compressed tarballs.
+  - Automake can now generate silenced rules for texinfo outputs.
 
-  - The deprecated `lzma' compression format for distribution archives
-    has been removed, in favor of `xz' and `lzip'.
+  - Some auxiliary files that are automatically distributed by Automake
+    (e.g., `install-sh', or the `depcomp' script for packages compiling
+    C sources) might now be listed in the DIST_COMMON variable in many
+    Makefile.in files, rather than in the top-level one.
+
+  - Messages of types warning or error from `automake' and `aclocal'
+    are now prefixed with the respective type, and presence of -Werror
+    is noted.
+
+  - Automake's early configure-time sanity check now tries to avoid
+    sleeping for a second, which slowed down cached configure runs
+    noticeably.  In that case, it will check back at the end of the
+    configure script to ensure that at least one second has passed, to
+    avoid time stamp issues with makefile rules rerunning autotools
+    programs.
+
+  - For programs and libraries, automake now detect EXTRA_foo_DEPENDENCIES
+    and adds them to the normal list of dependencies, but without
+    overwriting the foo_DEPENDENCIES variable, which is normally computed
+    by automake.
+
+  - C source and header files derived from non-distributed Yacc sources
+    are now removed by "make clean", not only by "make maintainer-clean".
+
+  - The warnings in the category `extra-portability' are now enabled by
+    `-Wall'.  In previous versions, one has to use `-Wextra-portability'
+    to enable them.
+
+Bugs fixed in 1.11a:
+
+  - Various minor bugfixes.
+
+* Bugs introduced by 1.11:
+
+  - The AM_COND_IF macro also works if the shell expression for the
+    conditional is no longer valid for the condition.
+
+* Long-standing bugs:
+
+  - Automake's own build system finally have a real "installcheck" target.
+
+  - Files listed with the AC_REQUIRE_AUX_FILE macro in configure.ac are
+    now automatically distributed also if the directory of the auxiliary
+    files coincides with the top-level directory.
+
+  - Automake now detects the presence of the `-d' flag in the various
+    `*YFLAGS' variables even when their definitions involve indirections
+    through other variables, such as in:
+      foo_opts = -d
+      AM_YFLAGS = $(foo_opts)
+
+  - Automake now complains if a `*YFLAGS' variable has any conditional
+    content, not only a conditional definition.
+
+  - Explicit enabling and/or disabling of Automake warning categories
+    through the `-W...' options now always takes precedence over the
+    implicit warning level implied by Automake strictness (foreign, gnu
+    or gnits), regardless of the order in which such strictness and
+    warning flags appear.  For example, a setting like:
+      AUTOMAKE_OPTIONS = -Wall --foreign
+    will cause the warnings in category `portability' to be enabled, even
+    if those warnings are by default disabled in `foreign' strictness.
+
+
+New in 1.11.2a:
+
+* WARNING: Future backward-incompatibilities!
+
+  - The obsolescent AM_WITH_REGEX  macro has been deprecated, since the
+    GNU rx library has been decommissioned.
+
+  - The `lzma' compression format for distribution archives has been
+    deprecated in favor of `xz' and `lzip'.
+
+  - The `--acdir' option of aclocal is deprecated, and will probably be
+    removed in the next major Automake release (1.12). [FIXME]
+
+  - The exact order in which the directories in the aclocal macro
+    search path are looked up is probably going to be changed in the
+    next Automake release (1.12). [FIXME]
+
+* Miscellaneous changes:
+
+  - "make dist" can now create lzip-compressed tarballs.
 
   - In the Automake info documentation, the Top node and the nodes about
     the invocation of the automake and aclocal programs have been renamed;
@@ -120,41 +191,46 @@ New in 1.11a:
   - The last relics of Python 1.5 support have been removed from the
     AM_PATH_PYTHON macro.
 
+Bugs fixed in 1.11.2a:
+
+* Long-standing bugs:
+
+  - The "deleted header file problem" for *.am files is avoided by stub
+    rules.  This allows `make' to trigger a rerun of `automake' also if
+    some previously needed `.am' file has been removed.
+
+  - The `silent-rules' option now generates working makefiles even
+    for the uncommon `make' implementations that do not support the
+    nested-variables extension to POSIX 2008.  For such `make'
+    implementations, whether a build is silent is determined at
+    configure time, and cannot be overridden at make time with
+    `make V=0' or `make V=1'.
+
+
+New in 1.11.2:
+
+* Changes to aclocal:
+
+  - The `--acdir' option is deprecated.  Now you should use the new options
+    `--automake-acdir' and `--system-acdir' instead.
+
+  - The `ACLOCAL_PATH' environment variable is now interpreted as a
+    colon-separated list of additional directories to search after the
+    automake internal acdir (by default ${prefix}/share/aclocal-APIVERSION)
+    and before the system acdir (by default ${prefix}/share/aclocal).
+
+* Miscellaneous changes:
+
+  - The Automake support for automatic de-ANSI-fication has been
+    deprecated.
+
   - The `lzma' compression scheme and associated automake option `dist-lzma'
     is obsoleted by `xz' and `dist-xz' due to upstream changes.
-
-  - "make dist" can now create lzip-compressed tarballs.
 
   - You may adjust the compression options used in dist-xz and dist-bzip2.
     The default is now merely -e for xz, but still -9 for bzip;  you may
     specify a different level via the XZ_OPT and BZIP2 envvars respectively.
     E.g., "make dist-xz XZ_OPT=-7" or "make dist-bzip2 BZIP2=-5"
-
-  - Some auxiliary files that are automatically distributed by Automake
-    (e.g., `install-sh', or the `depcomp' script for packages compiling
-    C sources) might now be listed in the DIST_COMMON variable in many
-    Makefile.in files, rather than in the top-level one.
-
-* Miscellaneous changes:
-
-  - Messages of types warning or error from `automake' and `aclocal' are now
-    prefixed with the respective type, and presence of -Werror is noted.
-
-  - The `compile' script now converts some options for MSVC for a better
-    user experience.  Similarly, the new `ar-lib' script wraps Microsoft lib.
-
-  - Automake's early configure-time sanity check now tries to avoid sleeping
-    for a second, which slowed down cached configure runs noticeably.  In that
-    case, it will check back at the end of the configure script to ensure that
-    at least one second has passed, to avoid time stamp issues with makefile
-    rules rerunning autotools programs.
-
-  - For programs and libraries, automake now detects EXTRA_foo_DEPENDENCIES and
-    adds them to the normal list of dependencies, but without overwriting the
-    foo_DEPENDENCIES variable, which is normally computed by automake.
-
-  - C source and header files derived from non-distributed Yacc sources are
-    now removed by "make clean", not only by "make maintainer-clean".
 
   - The `compile' script now converts some options for MSVC for a better
     user experience.  Similarly, the new `ar-lib' script wraps Microsoft lib.
@@ -173,9 +249,9 @@ New in 1.11a:
     still continue to work as before.
 
   - New macro AM_PROG_AR that looks for an archiver and wraps it in the new
-    'ar-lib' auxiliary script if the found archiver is Microsoft lib.  This
-    new macro is required for LIBRARIES and LTLIBRARIES when automake is
-    run with -Wextra-portability (or -Wall) and -Werror.
+    'ar-lib' auxiliary script if the selected archiver is Microsoft lib.
+    This new macro is required for LIBRARIES and LTLIBRARIES when automake
+    is run with -Wextra-portability and -Werror.
 
   - When using DejaGnu-based testsuites, the user can extend the `site.exp'
     file generated by automake-provided rules by defining the special make
@@ -185,18 +261,15 @@ New in 1.11a:
     the `${infodir}/dir' file, by exporting the new environment variable
     `AM_UPDATE_INFO_DIR' to the value "no".
 
-  - Support for automatic de-ANSI-fication has been removed.
-
-Bugs fixed in 1.11a:
-
-  - Lots of minor bugfixes.
+Bugs fixed in 1.11.2:
 
 * Bugs introduced by 1.11:
 
-  - The `parallel-tests' test driver works around a GNU make 3.80 bug with
-    trailing white space in the test list (`TESTS = foo $(EMPTY)'), and
-    does not report spurious successes when used with concurrent FreeBSD
-    make (e.g., "make check -j3").
+  - The parallel-tests driver no longer produces erroneous results with
+    Tru64/OSF 5.1 sh upon unreadable log files.
+
+  - The `parallel-tests' test driver does not report spurious successes
+    when used with concurrent FreeBSD make (e.g., "make check -j3").
 
   - When the parallel-tests driver is in use, automake now explicitly
     rejects invalid entries and conditional contents in TEST_EXTENSIONS,
@@ -210,27 +283,14 @@ Bugs fixed in 1.11a:
     not used, `make' output no longer contains spurious backslash-only
     lines, thus once again matching what Automake did before 1.11.
 
-  - The `silent-rules' option now generates working makefiles even for
-    the uncommon `make' implementations that do not support the
-    nested-variables extension to POSIX 2008.  For such `make'
-    implementations, whether a build is silent is determined at
-    configure time, and cannot be overridden at make time with
-    `make V=0' or `make V=1'.
-
-  - The AM_COND_IF macro also works if the shell expression for the conditional
-    is no longer valid for the condition.
+  - The AM_COND_IF macro also works if the shell expression for the
+    conditional is no longer valid for the condition.
 
 * Long-standing bugs:
 
-  - Automake's own build system finally have a real "installcheck" target.
-
-  - Files listed with the AC_REQUIRE_AUX_FILE macro in configure.ac are
-    now automatically distributed also if the directory of the auxiliary
-    files coincides with the top-level directory.
-
-  - The "deleted header file problem" for *.am files is avoided by stub
-    rules.  This allows `make' to trigger a rerun of `automake' also if
-    some previously needed `.am' file has been removed.
+  - The order of Yacc and Lex flags is fixed to be consistent with other
+    languages: $(AM_YFLAGS) comes before $(YFLAGS), and $(AM_LFLAGS) before
+    $(LFLAGS), so that the user variables override the developer variables.
 
   - "make distcheck" now correctly complains also when "make uninstall"
     leaves one and only one file installed in $(prefix).
@@ -242,22 +302,9 @@ Bugs fixed in 1.11a:
   - Automake now warns about more primary/directory invalid combinations,
     such as "doc_LIBRARIES" or "pkglib_PROGRAMS".
 
-  - On Darwin 9, `pythondir' and `pyexecdir' pointed below `/Library/Python'
-    even if the `--prefix' argument pointed outside of a system directory.
-    AM_PATH_PYTHON has been fixed to ignore the value returned from python's
-    `get_python_lib' function if it points outside the configured prefix,
-    unless the `--prefix' argument was either `/usr' or below `/System'.
-
-  - The testsuite does not try to change the mode of `ltmain.sh' files from
-    a Libtool installation (symlinked to test directories) any more.
-
-  - AM_PROG_GCJ uses AC_CHECK_TOOLS to look for `gcj' now, so that prefixed
-    tools are preferred in a cross-compile setup.
-
-  - The distribution is tarred up with mode 755 now by the `dist*' targets.
-    This fixes a race condition where untrusted users could modify files
-    in the $(PACKAGE)-$(VERSION) distdir before packing if the toplevel
-    build directory was world-searchable.  This is CVE-2009-4029.
+  - Rules generated by Automake now try harder to not change any files when
+    `make -n' is invoked.  Fixes include compilation of Emacs Lisp, Vala, or
+    Yacc source files and the rule to update config.h.
 
   - Several scripts and the parallel-tests testsuite driver now exit with
     the right exit status upon receiving a signal.
@@ -265,38 +312,9 @@ Bugs fixed in 1.11a:
   - A per-Makefile.am setting of -Werror does not erroneously carry over
     to the handling of other Makefile.am files.
 
-  - The order of Yacc and Lex flags is now consistent with that of other
-    languages: $(AM_YFLAGS) comes before $(YFLAGS), and $(AM_LFLAGS) before
-    $(LFLAGS), so that the user variables override the developer variables.
-
-  - Rules generated by Automake now try harder not to change any files when
-    `make -n' is invoked.  Fixes include compilation of Emacs Lisp, Vala, or
-    Yacc source files and the rule to update config.h.
-
   - The code for automatic dependency tracking works around a Solaris
     make bug triggered by sources containing repeated slashes when the
     `subdir-objects' option was used.
-
-  - Automake now detects the presence of the `-d' flag in the various
-    `*YFLAGS' variables even when their definitions involve indirections
-    through other variables, such as in:
-      foo_opts = -d
-      AM_YFLAGS = $(foo_opts)
-
-  - Automake now complains if a `*YFLAGS' variable has any conditional
-    content, not only a conditional definition.
-
-  - Explicit enabling and/or disabling of Automake warning categories
-    through the `-W...' options now always takes precedence over the
-    implicit warning level implied by Automake strictness (foreign, gnu
-    or gnits),  regardless of the order in which such strictness and
-    warning flags appear.  For example, a setting like:
-      AUTOMAKE_OPTIONS = -Wall --foreign
-    will cause the warnings in category `portability' to be enabled, even
-    if those warnings are by default disabled in `foreign' strictness.
-
-  - The parallel-tests driver no longer produces erroneous results with
-    Tru64/OSF 5.1 sh upon unreadable log files.
 
   - The makedepend and hp depmodes now work better with VPATH builds.
 
@@ -314,6 +332,34 @@ Bugs fixed in 1.11a:
     `install-info' program is from Debian or from GNU, and adaptively
     change its behaviour; this has proven to be frail and easy to
     regress.
+
+Bugs fixed in 1.11.1:
+
+  - Lots of minor bugfixes.
+
+* Bugs introduced by 1.11:
+
+  - The `parallel-tests' test driver works around a GNU make 3.80 bug with
+    trailing white space in the test list (`TESTS = foo $(EMPTY)').
+
+* Long standing bugs:
+
+  - On Darwin 9, `pythondir' and `pyexecdir' pointed below `/Library/Python'
+    even if the `--prefix' argument pointed outside of a system directory.
+    AM_PATH_PYTHON has been fixed to ignore the value returned from python's
+    `get_python_lib' function if it points outside the configured prefix,
+    unless the `--prefix' argument was either `/usr' or below `/System'.
+
+  - The testsuite does not try to change the mode of `ltmain.sh' files from
+    a Libtool installation (symlinked to test directories) any more.
+
+  - AM_PROG_GCJ uses AC_CHECK_TOOLS to look for `gcj' now, so that prefixed
+    tools are preferred in a cross-compile setup.
+
+  - The distribution is tarred up with mode 755 now by the `dist*' targets.
+    This fixes a race condition where untrusted users could modify files
+    in the $(PACKAGE)-$(VERSION) distdir before packing if the toplevel
+    build directory was world-searchable.  This is CVE-2009-4029.
 
 New in 1.11:
 
