@@ -25,6 +25,7 @@ dist-auxfile.test \
 dist-auxfile-2.test \
 gcj6.test \
 java-nobase.test \
+objext-pr10128.test \
 pr8365-remake-timing.test \
 lex-subobj-nodep.test \
 remake-am-pr10111.test \
@@ -614,6 +615,7 @@ notrans.test \
 number.test \
 objc.test \
 objc2.test \
+objext-pr10128.test \
 obsolete.test \
 order.test \
 outdir.test \
