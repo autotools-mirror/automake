@@ -1,7 +1,8 @@
 ## Process this file with automake to create Makefile.in
 
 # Copyright (C) 1996, 1997, 1998, 1999, 2001, 2002, 2003, 2004, 2005,
-# 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
+# 2006, 2007, 2008, 2009, 2010, 2011, 2012 Free Software Foundation,
+# Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -46,6 +47,7 @@ cond17.test \
 gcj6.test \
 override-conditional-2.test \
 java-nobase.test \
+objext-pr10128.test \
 pr8365-remake-timing.test \
 lex-subobj-nodep.test \
 remake-am-pr10111.test \
