@@ -1,7 +1,8 @@
 ## Process this file with automake to create Makefile.in
 
 # Copyright (C) 1996, 1997, 1998, 1999, 2001, 2002, 2003, 2004, 2005,
-# 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
+# 2006, 2007, 2008, 2009, 2010, 2011, 2012 Free Software Foundation,
+# Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,6 +25,7 @@ dist-auxfile.test \
 dist-auxfile-2.test \
 gcj6.test \
 java-nobase.test \
+objext-pr10128.test \
 pr8365-remake-timing.test \
 lex-subobj-nodep.test \
 remake-am-pr10111.test \
@@ -402,6 +404,8 @@ extra8.test \
 extra10.test \
 extra11.test \
 extra12.test \
+extradep.test \
+extradep2.test \
 extra-portability.test \
 extra-portability2.test \
 extra-portability3.test \
@@ -630,6 +634,7 @@ notrans.test \
 number.test \
 objc.test \
 objc2.test \
+objext-pr10128.test \
 obsolete.test \
 order.test \
 outdir.test \
@@ -961,6 +966,7 @@ $(parallel_tests)
 depcomp4.log: libtool-macros.log
 depcomp7.log: libtool-macros.log
 depcomp8b.log: libtool-macros.log
+extradep2.log: libtool-macros.log
 fort5.log: libtool-macros.log
 instdir-ltlib.log: libtool-macros.log
 instfail-libtool.log: libtool-macros.log
