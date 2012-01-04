@@ -729,6 +729,7 @@ INSTALL \
 config-ml.in \
 config.guess \
 config.sub \
+gitlog-to-changelog \
 symlink-tree \
 texinfo.tex
 
