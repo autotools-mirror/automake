@@ -106,10 +106,8 @@ $(generated_TESTS) $(srcdir)/testsuite-part.am: \
   gen-testsuite-part list-of-tests.mk Makefile.am $(handwritten_TESTS)
 
 # Static dependencies valid for each test case.
-$(TEST_LOGS): defs defs-static aclocal-$(APIVERSION) automake-$(APIVERSION)
-# FIXME: this should be made more granular once we have a cleaner
-# subdivision of the tests.
-$(TEST_LOGS): plain-functions.sh tap-functions.sh
+check_SCRIPTS = aclocal-$(APIVERSION) automake-$(APIVERSION)
+check_DATA = defs defs-static plain-functions.sh tap-functions.sh
 EXTRA_DIST += tap-functions.sh plain-functions.sh
 
 # Few more static dependencies.
