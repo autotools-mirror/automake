@@ -650,6 +650,7 @@ notrans.test \
 number.test \
 objc.test \
 objc2.test \
+objext-pr10128.test \
 obsolete.test \
 oldvars.test \
 order.test \
@@ -911,6 +912,7 @@ silent-yacc-gcc.test \
 silent-yacc-generic.test \
 silent-nowarn.test \
 silent-configsite.test \
+silent-nested-vars.test \
 srcsub.test \
 srcsub2.test \
 space.test \
