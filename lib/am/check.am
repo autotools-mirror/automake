@@ -318,18 +318,16 @@ check-TESTS:
 ## OTOH, this means that, in the rule for `$(TEST_SUITE_LOG)', we
 ## cannot use `$?' to compute the set of lazily rerun tests, lest
 ## we rely on .PHONY to work portably.
-##
+	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
+	@list='' list2='$(TEST_LOGS)'; for i in $$list2; do \
 ## Trailing whitespace in `TESTS = foo.test $(empty)' causes GNU make
 ## 3.80 to erroneously expand $(TESTS_LOGS) to `foo.log .log'.
 ## Work around this bug.
-	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
-	@list='$(TEST_LOGS)'; \
-	list=`for i in $$list; do \
-	  test .log = $$i || echo $$i; \
-	done | tr '\012\015' '  '`; \
-## This apparently useless munging helps to avoid a nasty bug (a
-## segmentation fault!) on Solaris XPG4 make.
-	list=`echo "$$list" | sed 's/ *$$//'`; \
+	  test .log = $$i && continue; \
+## Be careful to avoid extra whitespace in the definition of $list.  See
+## comments in `recheck' below for why this might be useful.
+	  if test -z "$$list"; then list=$$i; else list="$$list $$i"; fi; \
+	done; \
 	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG) TEST_LOGS="$$list"
 
 AM_RECURSIVE_TARGETS += check
@@ -374,20 +372,24 @@ AM_RECURSIVE_TARGETS += check-html
 
 ## Rerun all tests that experienced an error or an unexpected failure.
 recheck recheck-html:
-	@ws='[ 	]';							\
-	target=`echo $@ | sed 's,^re,,'`;				\
-	$(am__set_TESTS_bases);						\
-	list=`for i in $$bases; do 					\
+	@ws='[ 	]'; \
+	target=`echo $@ | sed 's,^re,,'`; \
+	list=''; $(am__set_TESTS_bases); \
+	for i in $$bases; do \
 ## Skip tests that haven't been run, but recover gracefully from deleted
 ## `.trs' files.
-	        test -f $$i.trs || test -f $$i.log || continue;		\
+	  test -f $$i.trs || test -f $$i.log || continue; \
 ## FIXME: one fork per test -- this is horrendously inefficient!
-	        grep "^$$ws*:recheck:$$ws*no$$ws*$$" $$i.trs 		\
-		  >/dev/null 2>&1 || echo $$i.log; 			\
-	      done | tr '\012\015' '  '`;				\
-## This apparently useless munging helps to avoid a nasty bug (a
-## segmentation fault!) on Solaris XPG4 make.
-	list=`echo "$$list" | sed 's/ *$$//'`;				\
+	  grep "^$$ws*:recheck:$$ws*no$$ws*$$" $$i.trs \
+	    >/dev/null 2>&1 && continue; \
+## Be careful to avoid extra whitespace in the definition of $list, since
+## its value will be passed to the recursive make invocation below through
+## the TEST_LOGS macro, and leading/trailing white space in a make macro
+## definition can be problematic.  In this particular case, trailing white
+## space was known to cause a segmentation fault on Solaris 10 XPG4 make:
+## <http://lists.gnu.org/archive/html/bug-automake/2010-08/msg00004.html>
+	  if test -z "$$list"; then list=$$i.log; else list="$$list $$i.log"; fi; \
+	done; \
 	$(MAKE) $(AM_MAKEFLAGS) $$target AM_MAKEFLAGS='$(AM_MAKEFLAGS) TEST_LOGS="'"$$list"'"'
 
 .PHONY: recheck recheck-html
