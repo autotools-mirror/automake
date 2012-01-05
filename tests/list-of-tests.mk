@@ -709,6 +709,7 @@ parallel-tests-no-spurious-summary.test \
 parallel-tests-exit-statuses.test \
 parallel-tests-console-output.test \
 parallel-tests-once.test \
+parallel-tests-trailing-bslash.test \
 tests-environment.test \
 am-tests-environment.test \
 tests-environment-backcompat.test \
