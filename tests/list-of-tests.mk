@@ -619,7 +619,6 @@ missing4.test \
 missing5.test \
 missing6.test \
 missing-auxfile-stops-makefiles-creation.test \
-missing-tar.test \
 mkinstall.test \
 mkinst2.test \
 mkinst3.test \

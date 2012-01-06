@@ -1,6 +1,6 @@
 #! /bin/sh
-# Copyright (C) 2005, 2006, 2008, 2010, 2011 Free Software Foundation,
-# Inc.
+# Copyright (C) 2005, 2006, 2008, 2010, 2011, 2012 Free Software
+# Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -66,35 +66,42 @@ AC_DEFUN([AM_MACRO1], [:macro16:])
 #serial 1
 EOF
 
+clean_stale ()
+{
+  rm -rf aclocal.m4 configure autom4te*.cache
+}
+
 $ACLOCAL -I 1 -I 2 -I 3 -I 4
 $AUTOCONF
 $FGREP ':macro11:' configure
 $FGREP ':macro21:' configure
 
-rm -rf autom4te*.cache
+clean_stale
 $ACLOCAL  -I 1 -I 2 -I 3 -I 4 --install
 $AUTOCONF
 $FGREP ':macro12:' configure
 $FGREP ':macro23:' configure
 
-rm -rf autom4te*.cache
+cp -f aclocal.m4 aclocal-m4.sav
+clean_stale
+mv -f aclocal-m4.sav aclocal.m4
 $ACLOCAL -I 4 -I 1 -I 2 -I 3 --install --dry-run
 $AUTOCONF
 $FGREP ':macro12:' configure
 $FGREP ':macro23:' configure
 
-rm -rf autom4te*.cache
+clean_stale
 $ACLOCAL -I 4 -I 1 -I 2 -I 3 --install
 $AUTOCONF
 $FGREP ':macro14:' configure
 $FGREP ':macro23:' configure
 
-rm -rf autom4te*.cache
+clean_stale
 $ACLOCAL -I 4 -I 1 -I 2 --install 2>stderr && { cat stderr >&2; Exit 1; }
 cat stderr >&2
 grep 'macro.*AM_MACRO2.*not found' stderr
 
-rm -rf autom4te*.cache
+clean_stale
 $ACLOCAL -I 4 -I 1 --install
 $AUTOCONF
 $FGREP ':macro14:' configure
@@ -103,12 +110,12 @@ $FGREP ':macro21:' configure
 mkdir acdir
 ACLOCAL="$ACLOCAL --system-acdir acdir"
 
-rm -rf autom4te*.cache
 cat >acdir/m1.m4 <<EOF
 #serial 456
 AC_DEFUN([AM_MACRO1], [:macro1d:])
 AC_DEFUN([AM_MACRO2], [:macro2d:])
 EOF
+clean_stale
 $ACLOCAL -I 4 -I 1 --diff=diff >stdout 2>stderr || {
   cat stderr >&2
   cat stdout
