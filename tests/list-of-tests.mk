@@ -1087,6 +1087,7 @@ tagsub.test \
 tar.test \
 tar2.test \
 tar3.test \
+tar-override.test \
 target-cflags.test \
 targetclash.test \
 tests-environment-fd-redirect.test \
