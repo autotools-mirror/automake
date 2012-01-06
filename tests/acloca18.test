@@ -1,5 +1,6 @@
 #! /bin/sh
-# Copyright (C) 2005, 2006, 2008, 2010 Free Software Foundation, Inc.
+# Copyright (C) 2005, 2006, 2008, 2010, 2012 Free Software Foundation,
+# Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -53,39 +54,44 @@ cat >4/mumble.m4 <<EOF
 AC_DEFUN([AM_MACRO1], [echo macro14 >> foo])
 EOF
 
+clean_stale ()
+{
+  rm -rf aclocal.m4 configure foo autom4te*.cache
+}
+
 $ACLOCAL -I 1 -I 2 -I 3 -I 4
 $AUTOCONF
 ./configure
 grep macro11 foo
 grep macro21 foo
 
-rm -rf foo autom4te*.cache
+clean_stale
 $ACLOCAL  -I 1 -I 2 -I 3 -I 4 --install
 $AUTOCONF
 ./configure
 grep macro12 foo
 grep macro23 foo
 
-rm -rf foo autom4te*.cache
+clean_stale
 $ACLOCAL -I 4 -I 1 -I 2 -I 3 --install --dry-run
 $AUTOCONF
 ./configure
 grep macro12 foo
 grep macro23 foo
 
-rm -rf foo autom4te*.cache
+clean_stale
 $ACLOCAL -I 4 -I 1 -I 2 -I 3 --install
 $AUTOCONF
 ./configure
 grep macro14 foo
 grep macro23 foo
 
-rm -rf foo autom4te*.cache
+clean_stale
 $ACLOCAL -I 4 -I 1 -I 2 --install 2>stderr && { cat stderr >&2; Exit 1; }
 cat stderr >&2
 grep 'macro.*AM_MACRO2.*not found' stderr
 
-rm -rf foo autom4te*.cache
+clean_stale
 $ACLOCAL -I 4 -I 1 --install
 $AUTOCONF
 ./configure
@@ -98,7 +104,7 @@ cat >dirlist-test/m1.m4 <<EOF
 AC_DEFUN([AM_MACRO1], [echo macro1d >> foo])
 AC_DEFUN([AM_MACRO2], [echo macro2d >> foo])
 EOF
-rm -rf foo autom4te*.cache
+clean_stale
 $ACLOCAL -I 4 -I 1 --diff=diff >stdout 2>stderr || {
   cat stderr >&2
   cat stdout
