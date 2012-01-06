@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2011 Free Software Foundation, Inc.
+# Copyright (C) 2011, 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,9 +20,16 @@
 am_parallel_tests=yes
 . ./defs || Exit 1
 
+fetch_tap_driver
+
 plan_ 10
 
+cat >> configure.in <<END
+AC_OUTPUT
+END
+
 cat > Makefile.am << END
+TEST_LOG_DRIVER = \$(srcdir)/tap-driver
 TEST_LOG_COMPILER = $PERL -w
 ## Will be updated later.
 TESTS =
@@ -58,7 +65,11 @@ results_count=`ls *.test | wc -l | tr -d "$tab$sp"`
 
 chmod a+x *.test
 
-. "$testsrcdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
+
+./configure
 
 signal_caught ()
 {
