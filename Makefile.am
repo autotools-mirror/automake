@@ -401,7 +401,7 @@ sc_tests_make_without_am_makeflags:
 
 ## Tests should never call make directly.
 sc_tests_plain_make:
-	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*make'; then \
+	@if grep -v '^#' $(srcdir)/tests/*.test | $(EGREP) ':[ 	]*make( |$$)'; then \
 	  echo 'Do not run "make" in the above tests.  Use "$$MAKE" instead.' 1>&2; \
 	  exit 1; \
 	fi
@@ -729,6 +729,7 @@ INSTALL \
 config-ml.in \
 config.guess \
 config.sub \
+gitlog-to-changelog \
 symlink-tree \
 texinfo.tex
 

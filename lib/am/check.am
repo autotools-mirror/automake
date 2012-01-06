@@ -245,15 +245,16 @@ check-TESTS:
 ## OTOH, this means that, in the rule for `$(TEST_SUITE_LOG)', we
 ## cannot use `$?' to compute the set of lazily rerun tests, lest
 ## we rely on .PHONY to work portably.
-##
+	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
+	@list='' list2='$(TEST_LOGS)'; for f in $$list2; do \
 ## Trailing whitespace in `TESTS = foo.test $(empty)' causes GNU make
 ## 3.80 to erroneously expand $(TESTS_LOGS) to `foo.log .log'.
 ## Work around this bug.
-	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
-	@list='$(TEST_LOGS)';						\
-	list=`for f in $$list; do					\
-	  test .log = $$f || echo $$f;					\
-	done | tr '\012\015' '  '`;					\
+	  test .log = $$f && continue; \
+## Be careful to avoid extra whitespace in the definition of $list.  See
+## comments in `recheck' below for why this might be useful.
+	  if test -z "$$list"; then list=$$f; else list="$$list $$f"; fi; \
+	done; \
 	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG) TEST_LOGS="$$list"
 
 AM_RECURSIVE_TARGETS += check
@@ -298,17 +299,20 @@ AM_RECURSIVE_TARGETS += check-html
 
 ## Rerun all FAILed or XPASSed tests.
 recheck recheck-html:
-	@target=`echo $@ | sed 's,^re,,'`;				\
-	list='$(TEST_LOGS)';						\
-	list=`for f in $$list; do					\
-	        test -f $$f || continue;				\
-	        if test -r $$f && read line < $$f; then			\
-	          case $$line in FAIL*|XPASS*) echo $$f;; esac;		\
-	        else echo $$f; fi;					\
-	      done | tr '\012\015' '  '`;				\
-## This apparently useless munging helps to avoid a nasty bug (a
-## segmentation fault!) on Solaris XPG4 make.
-	list=`echo "$$list" | sed 's/ *$$//'`;				\
+	@target=`echo $@ | sed 's,^re,,'`; \
+	list='' list2='$(TEST_LOGS)'; for f in $$list2; do \
+	  test -f $$f || continue; \
+	  if test -r $$f && read line < $$f; then \
+	    case $$line in FAIL*|XPASS*) : ;; *) continue;; esac; \
+	  fi; \
+## Be careful to avoid extra whitespace in the definition of $list, since
+## its value will be passed to the recursive make invocation below through
+## the TEST_LOGS macro, and leading/trailing white space in a make macro
+## definition can be problematic.  In this particular case, trailing white
+## space was known to cause a segmentation fault on Solaris 10 XPG4 make:
+## <http://lists.gnu.org/archive/html/bug-automake/2010-08/msg00004.html>
+	  if test -z "$$list"; then list=$$f; else list="$$list $$f"; fi; \
+	done; \
 	$(MAKE) $(AM_MAKEFLAGS) $$target AM_MAKEFLAGS='$(AM_MAKEFLAGS) TEST_LOGS="'"$$list"'"'
 
 .PHONY: recheck recheck-html

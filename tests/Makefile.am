@@ -605,7 +605,6 @@ missing3.test \
 missing4.test \
 missing5.test \
 missing6.test \
-missing-tar.test \
 mkinstall.test \
 mkinst2.test \
 mkinst3.test \
@@ -874,6 +873,7 @@ tagsub.test \
 tar.test \
 tar2.test \
 tar3.test \
+tar-override.test \
 target-cflags.test \
 targetclash.test \
 txinfo.test \
