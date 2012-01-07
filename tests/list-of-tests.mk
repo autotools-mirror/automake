@@ -328,6 +328,7 @@ dirlist.test \
 dirlist2.test \
 dirlist-abspath.test \
 discover.test \
+dist-formats.tap \
 dist-auxdir-many-subdirs.test \
 dist-auxfile-2.test \
 dist-auxfile.test \
@@ -583,7 +584,6 @@ ltinstloc.test \
 ltlibobjs.test \
 ltlibsrc.test \
 ltorder.test \
-lzip.test \
 lzma.test \
 m4-inclusion.test \
 maintclean.test \
@@ -639,8 +639,6 @@ nodepcomp.test \
 nodist.test \
 nodist2.test \
 nodist3.test \
-nogzip.test \
-nogzip2.test \
 noinst.test \
 noinstdir.test \
 nolink.test \
@@ -1168,7 +1166,6 @@ werror3.test \
 werror4.test \
 whoami.test \
 xsource.test \
-xz.test \
 yacc-basic.test \
 yacc-d-basic.test \
 yacc-clean.test \
