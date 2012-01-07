@@ -38,7 +38,7 @@ END
 cat > hello.vala <<'END'
 void main ()
 {
-  stdout.printf ("foo\n");
+  stdout.printf ("foofoofoo\n");
 }
 END
 
@@ -50,6 +50,23 @@ mkdir build
 cd build
 ../configure || Exit 77
 $MAKE
+grep foofoofoo ../hello.c
 $MAKE distcheck
+
+# Rebuild rules work also in VPATH builds.
+cat > ../hello.vala <<'END'
+int main ()
+{
+  stdout.printf ("barbarbar\n");
+  return 0;
+}
+END
+
+$MAKE
+grep barbarbar ../hello.c
+
+# Rebuild rules are not uselessly triggered.
+$MAKE -q
+$MAKE -n | grep '\.stamp' && Exit 1
 
 :
