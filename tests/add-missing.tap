@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2011 Free Software Foundation, Inc.
+# Copyright (C) 2011, 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,6 +35,16 @@ elif diff -c /dev/null /dev/null; then
 else
   am_diff=diff
 fi
+
+# MinGW/MSYS lacks real symlinks, so we'll have to skip some checks
+# on that system.  More details below.
+echo dummy > foo
+if ln -s foo bar && test -h bar; then
+  have_true_symlinks=yes
+else
+  have_true_symlinks=no
+fi
+rm -f foo bar
 
 cat > configure.stub << END
 AC_INIT([$me], [1.0])
@@ -195,19 +205,26 @@ check_ ()
       "$pfx all and only expected files installed" \
       $am_diff files.exp files.got
     # The files should be copied by `--copy' and symlinked otherwise.
+    # But these checks make no sense on systems like MSYS/MinGW where
+    # there are no true symlinks ('ln -s' behaves like 'cp -p'), so be
+    # ready to skip the checks in that case.  See automake bug#10441.
     for f in $files; do
-      if test -h $build_aux/$f; then
-        is_symlink=yes
+      if test $have_true_symlinks = no; then
+        skip_ -r "system lacks true symlinks" "$pfx $f is a symlink or not"
       else
-        is_symlink=no
+        if test -h $build_aux/$f; then
+          is_symlink=yes
+        else
+          is_symlink=no
+        fi
+        case $action,$is_symlink in
+          link,yes)     ok_ "$pfx $f has been symlinked"     ;;
+           link,no) not_ok_ "$pfx $f has not been symlinked" ;;
+          copy,yes) not_ok_ "$pfx $f has been symlinked"     ;;
+           copy,no)     ok_ "$pfx $f has not been symlinked" ;;
+                 *)  fatal_ "invalid condition in case"      ;;
+        esac
       fi
-      case $action,$is_symlink in
-        link,yes)     ok_ "$pfx $f has been symlinked"     ;;
-         link,no) not_ok_ "$pfx $f has not been symlinked" ;;
-        copy,yes) not_ok_ "$pfx $f has been symlinked"     ;;
-         copy,no)     ok_ "$pfx $f has not been symlinked" ;;
-               *)  fatal_ "invalid condition in case"      ;;
-      esac
     done
     # Now that the required auxiliary files have been installed, automake
     # should not complain anymore even if the `--add-missing' option is

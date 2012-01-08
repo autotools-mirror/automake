@@ -1,6 +1,6 @@
 #! /bin/sh
-# Copyright (C) 1999, 2001, 2002, 2010, 2011 Free Software Foundation,
-# Inc.
+# Copyright (C) 1999, 2001, 2002, 2010, 2011, 2012 Free Software
+# Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +20,19 @@
 
 . ./defs || Exit 1
 
+# We'll have to cater to systems like MSYS/MinGW where there are no
+# true symlinks ('ln -s' behaves like 'cp -p'); see automake bug#10441.
+
+echo dummy > foo
+if ln -s foo bar && test -h bar; then
+  is_symlink () { test -h "$1"; }
+  is_not_symlink () { test ! -h "$1"; }
+else
+  is_symlink () { return 0; } # Avoid spurious failures.
+  is_not_symlink () { return 0; }
+fi
+rm -f foo bar
+
 # First a simple test, where the auxdir is automatically determined
 # by automake.
 
@@ -31,7 +44,7 @@ $AUTOMAKE -c -a
 ls -l # For debugging.
 
 test -f install-sh
-test ! -h install-sh
+is_not_symlink install-sh
 
 # Let's do a couple of more elaborated tests, this time with the auxdir
 # explicitly defined in configure.in.
@@ -62,9 +75,9 @@ echo FAKE-DEPCOMP > auxdir/depcomp
 $AUTOMAKE -a
 ls -l auxdir # For debugging.
 test -f auxdir/install-sh
-test -h auxdir/install-sh
+is_symlink auxdir/install-sh
 test -f auxdir/depcomp
-test ! -h auxdir/depcomp
+is_not_symlink auxdir/depcomp
 test FAKE-DEPCOMP = `cat auxdir/depcomp`
 
 # `automake -a -c' should not create symlinks, even when there are
@@ -79,11 +92,11 @@ cd ..
 $AUTOMAKE -a -c
 ls -l auxdir # For debugging.
 test -f auxdir/install-sh
-test -h auxdir/install-sh
+is_symlink auxdir/install-sh
 test -f auxdir/missing
-test -h auxdir/missing
+is_symlink auxdir/missing
 test -f auxdir/depcomp
-test ! -h auxdir/depcomp
+is_not_symlink auxdir/depcomp
 diff "$am_scriptdir"/depcomp auxdir/depcomp
 
 :
