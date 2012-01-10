@@ -115,7 +115,10 @@ else
   init_colors=''
 fi
 
-{
+# :; is there to work around a bug in bash 3.2 (and earlier) which
+# does not always set '$?' properly on redirection failure.
+# See the Autoconf manual for more details.
+:;{
   (
     # Ignore common signals (in this subshell only!), to avoid potential
     # problems with Korn shells.  Some Korn shells are known to propagate
