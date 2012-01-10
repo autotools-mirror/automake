@@ -15,36 +15,22 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # parallel-tests support: redirection of file descriptors with
-# AM_TESTS_FD_REDIRECT, even when using tests without suffix, or
-# which are binary executables.
-# We use some tricks to ensure that all code paths in `lib/am/check2.am'
-# are covered, even on platforms where $(EXEEXT) would be naturally empty.
+# AM_TESTS_FD_REDIRECT, even when using tests without suffix.
+# The sister `parallel-tests-fd-redirect-exeext.test' do a similar
+# check for tests that are binary executables.
 # See also the more generic test 'check-fd-redirect.test'.
 
-required='cc native'
 am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.in << 'END'
-AC_PROG_CC
-AM_CONDITIONAL([real_EXEEXT], [test -n "$EXEEXT"])
-test -n "$EXEEXT" || EXEEXT=.bin
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
 AM_TESTS_FD_REDIRECT = 9>&1
 TEST_EXTENSIONS = .test .sh
-TESTS = foo.sh bar $(check_PROGRAMS)
-check_PROGRAMS = baz qux.test
-qux_test_SOURCES = zardoz.c
-
-## Sanity check.
-if !real_EXEEXT
-check-local:
-	test -f baz.bin
-	test -f qux.test.bin
-endif
+TESTS = foo.sh bar
 END
 
 $ACLOCAL
@@ -64,52 +50,21 @@ END
 
 chmod a+x foo.sh bar
 
-cat > baz.c <<'END'
-#include <stdio.h>
-#include <unistd.h>
-int main (void)
-{
-  ssize_t res = write (9, " bazbazbaz\n", 11);
-  if (res < 0)
-    perror("write failed");
-  return res != 11;
-}
-END
-
-cat > zardoz.c <<'END'
-#include <stdio.h>
-#include <unistd.h>
-int main (void)
-{
-  ssize_t res = write (9, " quxquxqux\n", 11);
-  if (res < 0)
-    perror("write failed");
-  return res != 11;
-}
-END
-
 ./configure
 
 # Sanity checks.
 st=0
 grep '^bar\.log:.*bar' Makefile || st=1
-grep '^baz\.log:.*baz\$(EXEEXT)' Makefile || st=1
-grep '^\.test\$(EXEEXT)\.log:' Makefile || st=1
-$EGREP '^(foo|qux)\.log:' Makefile && st=1
+grep '^foo\.log:' Makefile && st=1
 test $st -eq 0 || fatal_ "doesn't cover expected code paths"
 
-st=0
-$MAKE check >stdout || st=1
+st=0; $MAKE check >stdout || st=1
 cat stdout
 cat foo.log
 cat bar.log
-cat baz.log
-cat qux.log
 test $st -eq 0
 grep "^ foofoofoo$" stdout
 grep "^ barbarbar$" stdout
-grep "^ bazbazbaz$" stdout
-grep "^ quxquxqux$" stdout
-$EGREP '(foofoofoo|barbarbar|bazbazbaz|quxquxqux)' *.log && Exit 1
+$EGREP '(foofoofoo|barbarbar)' *.log && Exit 1
 
 :
