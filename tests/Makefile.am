@@ -963,6 +963,9 @@ $(parallel_tests)
 
 # FIXME: make these automatically computed once we are merged into
 # FIXME: the `testsuite-work' branch.
+ar-lib4.log: libtool-macros.log
+ar-lib6a.log: libtool-macros.log
+ar-lib6b.log: libtool-macros.log
 depcomp4.log: libtool-macros.log
 depcomp7.log: libtool-macros.log
 depcomp8b.log: libtool-macros.log
