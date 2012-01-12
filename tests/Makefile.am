@@ -23,6 +23,7 @@ auxdir2.test \
 cond17.test \
 dist-auxfile.test \
 dist-auxfile-2.test \
+distcheck-pr10470.test \
 gcj6.test \
 java-nobase.test \
 objext-pr10128.test \
@@ -352,6 +353,7 @@ distcheck-hook2.test \
 distcheck-missing-m4.test \
 distcheck-outdated-m4.test \
 distcheck-pr9579.test \
+distcheck-pr10470.test \
 distcheck-override-infodir.test \
 dmalloc.test \
 doc-parsing-buglets-colneq-subst.test \
