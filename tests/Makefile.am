@@ -352,6 +352,7 @@ distcheck-hook2.test \
 distcheck-missing-m4.test \
 distcheck-outdated-m4.test \
 distcheck-pr9579.test \
+distcheck-pr10470.test \
 distcheck-override-infodir.test \
 dmalloc.test \
 doc-parsing-buglets-colneq-subst.test \
