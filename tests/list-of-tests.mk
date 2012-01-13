@@ -617,6 +617,7 @@ parallel-tests7.test \
 parallel-tests8.test \
 parallel-tests9.test \
 parallel-tests10.test \
+parallel-tests-dryrun.test \
 parallel-tests-harderror.test \
 parallel-tests-unreadable-log.test \
 parallel-tests-subdir.test \

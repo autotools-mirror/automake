@@ -272,8 +272,12 @@ check-TESTS recheck:
 	done; \
 ## Under "make recheck", remove the logs of the files to recheck, so that
 ## those will be rerun by the "make test-suite.log" recursive invocation
-## below.
-	test $@ != recheck || test -z "$$list" || rm -f $$list || exit 1; \
+## below.  But use a proper hack to avoid extra files removal when running
+## under "make -n".
+	if test $@ = recheck && test -n "$$list"; then \
+	  echo "am--clean: ; rm -f $$list" \
+	    | $(MAKE) $(AM_MAKEFLAGS) -f - am--clean || exit 1; \
+	fi; \
 	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG) TEST_LOGS="$$list"
 
 ## Recheck must depend on $(check_SCRIPTS), $(check_PROGRAMS), etc.
@@ -282,7 +286,6 @@ recheck: %CHECK_DEPS%
 AM_RECURSIVE_TARGETS += check recheck
 
 .PHONY: recheck
-.MAKE: recheck
 
 ## ----------------------------------------------- ##
 ## Produce HTML.  To be removed in automake 1.12.  ##
