@@ -565,9 +565,7 @@ makefile-deps.test \
 makej.test \
 makej2.test \
 maken.test \
-maken2.test \
 maken3.test \
-maken4.test \
 makevars.test \
 man.test \
 man2.test \
