@@ -52,7 +52,6 @@ pr8365-remake-timing.test \
 lex-subobj-nodep.test \
 remake-am-pr10111.test \
 remake-m4-pr10111.test \
-vala-vpath.test \
 txinfo5.test
 
 # Some testsuite-influential variables should be overridable from the

@@ -357,6 +357,7 @@ distcheck-missing-m4.test \
 distcheck-outdated-m4.test \
 distcheck-override-infodir.test \
 distcheck-pr9579.test \
+distcheck-pr10470.test \
 dmalloc.test \
 doc-parsing-buglets-colneq-subst.test \
 doc-parsing-buglets-tabs.test \
