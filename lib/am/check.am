@@ -233,15 +233,18 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 
 RECHECK_LOGS = $(TEST_LOGS)
 
-# Run all the tests.
-check-TESTS:
+check-TESTS recheck:
+## If we are running "make recheck", it's not the user which can decide
+## which tests to consider for re-execution, so we must ignore the value
+## of $(RECHECK_LOGS).
+	@if test $@ != recheck; then \
 ## Expand $(RECHECK_LOGS) only once, to avoid exceeding line length limits.
-	@list='$(RECHECK_LOGS)'; test -z "$$list" || rm -f $$list
+	   list='$(RECHECK_LOGS)'; test -z "$$list" || rm -f $$list; \
+	 fi
 ## We always have to remove TEST_SUITE_LOG, to ensure its rule is run
 ## in any case even in lazy mode: otherwise, if no test needs rerunning,
-## or a prior run plus reruns all happen within the same timestamp
-## (can happen with a prior `make TESTS=<subset>'),
-## then we get no log output.
+## or a prior run plus reruns all happen within the same timestamp (can
+## happen with a prior `make TESTS=<subset>'), then we get no log output.
 ## OTOH, this means that, in the rule for `$(TEST_SUITE_LOG)', we
 ## cannot use `$?' to compute the set of lazily rerun tests, lest
 ## we rely on .PHONY to work portably.
@@ -251,25 +254,13 @@ check-TESTS:
 ## 3.80 to erroneously expand $(TESTS_LOGS) to `foo.log .log'.
 ## Work around this bug.
 	  test .log = $$f && continue; \
-## Be careful to avoid extra whitespace in the definition of $list.  See
-## comments in `recheck' below for why this might be useful.
-	  if test -z "$$list"; then list=$$f; else list="$$list $$f"; fi; \
-	done; \
-	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG) TEST_LOGS="$$list"
-
-AM_RECURSIVE_TARGETS += check
-
-## -------------------- ##
-## Rechecking failures. ##
-## -------------------- ##
-
-## Rerun all FAILed or XPASSed tests.
-recheck:
-	@list='' list2='$(TEST_LOGS)'; \
-	for f in $$list2; do \
-	  test -f $$f || continue; \
-	  if test -r $$f && read line < $$f; then \
-	    case $$line in FAIL*|XPASS*) : ;; *) continue;; esac; \
+## If running a "make recheck", we must only consider tests that had
+## an unexpected outcome (FAIL or XPASS) in the earlier run.
+	  if test $@ = recheck; then \
+	    test -f $$f || continue; \
+	    if test -r $$f && read line < $$f; then \
+	      case $$line in FAIL*|XPASS*) : ;; *) continue;; esac; \
+	    fi; \
 	  fi; \
 ## Be careful to avoid extra whitespace in the definition of $list, since
 ## its value will be passed to the recursive make invocation below through
@@ -279,12 +270,19 @@ recheck:
 ## <http://lists.gnu.org/archive/html/bug-automake/2010-08/msg00004.html>
 	  if test -z "$$list"; then list=$$f; else list="$$list $$f"; fi; \
 	done; \
-	$(MAKE) $(AM_MAKEFLAGS) check AM_MAKEFLAGS='$(AM_MAKEFLAGS) TEST_LOGS="'"$$list"'"'
+## Under "make recheck", remove the logs of the files to recheck, so that
+## those will be rerun by the "make test-suite.log" recursive invocation
+## below.
+	test $@ != recheck || test -z "$$list" || rm -f $$list || exit 1; \
+	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG) TEST_LOGS="$$list"
+
+## Recheck must depend on $(check_SCRIPTS), $(check_PROGRAMS), etc.
+recheck: %CHECK_DEPS%
+
+AM_RECURSIVE_TARGETS += check recheck
 
 .PHONY: recheck
 .MAKE: recheck
-
-AM_RECURSIVE_TARGETS += recheck
 
 ## ----------------------------------------------- ##
 ## Produce HTML.  To be removed in automake 1.12.  ##

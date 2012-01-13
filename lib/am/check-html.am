@@ -47,30 +47,13 @@ am--mostlyclean-test-html:
 # Beware of concurrent executions.  Run "check" not "check-TESTS", as
 # check-SCRIPTS and other dependencies are rebuilt by the former only.
 # And expect check to fail.
-check-html:
-	@if $(MAKE) $(AM_MAKEFLAGS) check; then			\
-	  rv=0; else rv=$$?;					\
-	fi;							\
-	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_HTML) || exit 4;	\
+check-html recheck-html:
+	@target=`echo $@ | sed 's/-html$$//'`; \
+	rv=0; $(MAKE) $(AM_MAKEFLAGS) $$target || rv=$$?; \
+## The nullification of $(TEST_LOGS) is required to ensure that
+## "make recheck-html" do not try to uselessly re-run tests.
+	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_HTML) TEST_LOGS= || exit 4; \
 	exit $$rv
-
-## Rerun all FAILed or XPASSed tests.
-recheck-html:
-	@list='' list2='$(TEST_LOGS)'; \
-	for f in $$list2; do \
-	  test -f $$f || continue; \
-	  if test -r $$f && read line < $$f; then \
-	    case $$line in FAIL*|XPASS*) : ;; *) continue;; esac; \
-	  fi; \
-## Be careful to avoid extra whitespace in the definition of $list, since
-## its value will be passed to the recursive make invocation below through
-## the TEST_LOGS macro, and leading/trailing white space in a make macro
-## definition can be problematic.  In this particular case, trailing white
-## space was known to cause a segmentation fault on Solaris 10 XPG4 make:
-## <http://lists.gnu.org/archive/html/bug-automake/2010-08/msg00004.html>
-	  if test -z "$$list"; then list=$$f; else list="$$list $$f"; fi; \
-	done; \
-	$(MAKE) $(AM_MAKEFLAGS) check-html AM_MAKEFLAGS='$(AM_MAKEFLAGS) TEST_LOGS="'"$$list"'"'
 
 AM_RECURSIVE_TARGETS += check-html recheck-html
 
