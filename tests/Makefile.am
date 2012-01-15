@@ -35,13 +35,13 @@ txinfo5.test
 include $(srcdir)/parallel-tests.am
 
 $(srcdir)/parallel-tests.am: gen-parallel-tests Makefile.am
-	(cd $(srcdir) && $(SHELL) ./gen-parallel-tests) >$@
+	$(AM_V_GEN)(cd $(srcdir) && $(SHELL) ./gen-parallel-tests) >$@
 
 $(parallel_tests): $(parallel_tests:-p.test=.test) Makefile.am
-	input=`echo $@ | sed 's,.*/,,; s,-p.test$$,.test,'`; \
-	sed 's|^\. \./defs.*|parallel_tests=yes; &|' \
-	  < $(srcdir)/$$input >$@
-	chmod a+rx $@
+	$(AM_V_GEN)input=`echo $@ | sed 's,.*/,,; s,-p.test$$,.test,'` \
+	  && sed 's|^\. \./defs.*|parallel_tests=yes; &|' \
+	       < $(srcdir)/$$input >$@ \
+	  && chmod a+rx $@
 
 MAINTAINERCLEANFILES = $(parallel_tests)
 
