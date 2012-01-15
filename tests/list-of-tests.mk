@@ -3,6 +3,7 @@
 ## but also to be executed directly by make when bootstrapping automake.
 
 ## Copyright (C) 2011 Free Software Foundation, Inc.
+## Copyright (C) 2011, 2012 Free Software Foundation, Inc.
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -19,7 +20,7 @@
 
 # The order here is mostly alphabetical, with the deliberate exception
 # that tests having a high runtime (especially TAP tests that run various
-# checks sequentially) are listed early; this improved performance on
+# checks sequentially) are listed early; this improves performance on
 # concurrent testsuite runs.
 handwritten_TESTS = \
 get-sysconf.test \
@@ -300,8 +301,8 @@ dejagnu6.test \
 dejagnu7.test \
 dejagnu-absolute-builddir.test \
 dejagnu-relative-srcdir.test \
-dejagnu-siteexp-append.test \
 dejagnu-siteexp-extend.test \
+dejagnu-siteexp-append.test \
 dejagnu-siteexp-useredit.test \
 deleted-am.test \
 deleted-m4.test \
@@ -591,12 +592,12 @@ maintclean.test \
 maintclean-vpath.test \
 maintmode-configure-msg.test \
 make.test \
+makefile-deps.test \
 makej.test \
 makej2.test \
 maken.test \
 maken3.test \
 makevars.test \
-makefile-deps.test \
 man.test \
 man2.test \
 man3.test \
@@ -728,8 +729,6 @@ test-driver-strip-vpath.test \
 test-driver-trs-suffix-registered.test \
 test-driver-fail.test \
 test-driver-is-distributed.test \
-test-extensions.test \
-test-extensions-cond.test \
 test-harness-vpath-rewrite.test \
 test-log.test \
 test-logs-repeated.test \
@@ -742,6 +741,8 @@ test-missing2.test \
 test-trs-basic.test \
 test-trs-recover.test \
 test-trs-recover2.test \
+test-extensions.test \
+test-extensions-cond.test \
 parse.test \
 percent.test \
 percent2.test \
@@ -799,9 +800,9 @@ primary-prefix-couples-force-valid.test \
 primary-prefix-couples-documented-valid.test \
 proginst.test \
 programs-primary-rewritten.test \
-py-compile-basedir.test \
 py-compile-basic.test \
 py-compile-basic2.test \
+py-compile-basedir.test \
 py-compile-destdir.test \
 py-compile-env.test \
 py-compile-option-terminate.test \
@@ -859,12 +860,12 @@ remake-deleted-m4-file.test \
 remake-renamed-m4-file.test \
 remake-renamed-m4-macro-and-file.test \
 remake-renamed-m4-macro.test \
-remake-renamed-am.test \
+remake-am-pr10111.test \
+remake-m4-pr10111.test \
 remake-deleted-am-2.test \
 remake-deleted-am-subdir.test \
 remake-deleted-am.test \
-remake-am-pr10111.test \
-remake-m4-pr10111.test \
+remake-renamed-am.test \
 pr8365-remake-timing.test \
 req.test \
 reqd.test \

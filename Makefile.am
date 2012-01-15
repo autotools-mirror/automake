@@ -3,8 +3,8 @@
 ## Makefile for Automake.
 
 # Copyright (C) 1995, 1996, 1997, 1998, 1999, 2001, 2002, 2003, 2004,
-# 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation,
-# Inc.
+# 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 Free Software
+# Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -374,8 +374,8 @@ sc_diff_aclocal_in_aclocal:
 
 ## Syntax check with default Perl (on my machine, Perl 5).
 sc_perl_syntax:
-	perllibdir="./lib$(PATH_SEPARATOR)$(srcdir)/lib" $(PERL) -c -w automake
-	perllibdir="./lib$(PATH_SEPARATOR)$(srcdir)/lib" $(PERL) -c -w aclocal
+	@perllibdir="./lib$(PATH_SEPARATOR)$(srcdir)/lib" $(PERL) -c -w automake
+	@perllibdir="./lib$(PATH_SEPARATOR)$(srcdir)/lib" $(PERL) -c -w aclocal
 
 ## expect no instances of '${...}'.  However, $${...} is ok, since that
 ## is a shell construct, not a Makefile construct.
@@ -815,6 +815,7 @@ git-release: git-dist
 	  --to $$dest.gnu.org:automake $(DIST_ARCHIVES)
 
 git-diff:
+	$(AM_V_GEN):; \
 	thisver="v$(VERSION)"; \
 	if test -z "$$OLDVERSION"; then \
 	  prevno=`echo "$(VERSION)" - 0.01 | bc | sed 's/^\./0./'`; \
@@ -825,7 +826,7 @@ git-diff:
 
 ## Check our path lengths.
 path-check: distdir
-	($(am__cd) $(distdir) && \
+	$(AM_V_GEN)($(am__cd) $(distdir) && \
 ## FIXME there's got to be a better way!  pathchk should take the list
 ## of files on stdin, at least.
 	  find . -print | xargs pathchk -p); \
@@ -956,7 +957,8 @@ fetch:
 ## This has to be run in an up to date build tree, but there must
 ## be no temp files nor unused other files lying around!
 release-stats: ps
-	@am=`wc -l < automake` && \
+	$(AM_V_GEN): && \
+	am=`wc -l < automake` && \
 	acl=`wc -l < aclocal` && \
 	pmfiles="lib/Automake/*.pm" && \
 	if test . != '$(srcdir)'; then pmfiles="$$pmfiles $(srcdir)/lib/Automake/*.pm"; \
