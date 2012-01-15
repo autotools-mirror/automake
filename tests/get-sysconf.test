@@ -30,7 +30,19 @@ testbuilddir=`(cd .. && pwd)`
 top_testbuilddir=`(cd $testbuilddir/.. && pwd)`
 
 st=0
-sed 20q "$top_testsrcdir/ChangeLog" || st=1
+if test -d "$top_testsrcdir"/.git; then
+  # We are running from a git checkout.
+  git log -1 || st=1
+else
+  # We are probably running from a distribution tarball, so
+  # the ChangeLog file must be present.
+  awk '
+    BEGIN { first = 1 }
+    (first == 1) { print; first = 0; next; }
+    /^[^\t]/ { exit(0); }
+    { print }
+  ' "$top_testsrcdir"/ChangeLog || st=1
+fi
 $PERL -V || st=1
 cat "$top_testbuilddir/config.log" || st=1
 cat "$testbuilddir/aclocal-$APIVERSION" || st=1

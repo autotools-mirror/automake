@@ -368,6 +368,7 @@ distcheck-hook2.test \
 distcheck-missing-m4.test \
 distcheck-outdated-m4.test \
 distcheck-pr9579.test \
+distcheck-pr10470.test \
 distcheck-override-infodir.test \
 dmalloc.test \
 doc-parsing-buglets-colneq-subst.test \
@@ -583,9 +584,7 @@ makefile-deps.test \
 makej.test \
 makej2.test \
 maken.test \
-maken2.test \
 maken3.test \
-maken4.test \
 makevars.test \
 man.test \
 man2.test \

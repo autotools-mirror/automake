@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2009  Free Software Foundation, Inc.
+# Copyright (C) 2009, 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,13 +14,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test `make -n' for various targets, to ensure that no files or
-# directories are created.
+# Test `make -n' for various targets, to ensure that:
+#
+#  1. no files or directories are created or removed, and
+#
+#  2. if using GNU make, stdout output is sufficiently complete.
+#
+# FIXME: The checks in (2) should also work with BSD make implementations
+# FIXME: that support the `.MAKE' special target, but currently we don't
+# FIXME: explicitly test that this is truly the case.
 #
 # This test exercises the GCS-mandated targets (except for dist)
 # as well as tags, TAGS.
-
-# Please keep this test in sync with sister test maken4.test.
 
 . ./defs || Exit 1
 
@@ -134,18 +139,27 @@ check_targets ()
     case $target in
     install-* | installdirs | tags | TAGS ) ;;
     *)
+      if using_gmake; then
+        grep "stamp-$target$" stdout || Exit 1
+      fi
       test ! -f "stamp-$target$" || Exit 1
       ;;
     esac
     case $target in
     install-* | installdirs ) ;;
     *)
+      if using_gmake; then
+        grep "stamp-$target-sub" stdout || Exit 1
+      fi
       test ! -f "sub/stamp-$target-sub" || Exit 1
       ;;
     esac
     case $target in
     distclean | maintainer-clean ) ;;
     *)
+      if using_gmake; then
+        grep "should-not-be-executed" stdout || Exit 1
+      fi
       test ! -f "sub2/sub2-$target-should-not-be-executed" || Exit 1
       ;;
     esac
