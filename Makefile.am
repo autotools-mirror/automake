@@ -192,9 +192,9 @@ sc_unquoted_DESTDIR \
 sc_tabs_in_texi \
 sc_at_in_texi
 
-.PHONY: $(syntax_check_rules)
 $(syntax_check_rules): automake aclocal
 maintainer-check: $(syntax_check_rules)
+.PHONY: maintainer-check $(syntax_check_rules)
 
 ## Look for test whose names can cause spurious failures when used as
 ## first argument to AC_INIT (chiefly because they might contain an
@@ -623,6 +623,8 @@ git-release: git-dist
 	$(srcdir)/lib/gnupload $(GNUPLOADFLAGS) \
 	  --to $$dest.gnu.org:automake $(DIST_ARCHIVES)
 
+.PHONY: git-release git-dist
+
 ## Visually comparing differences between the Makefile.in files in
 ## automake's own build system as generated in two different branches
 ## might help to catch bugs and blunders.  This has already happened a
@@ -740,6 +742,7 @@ fetch:
 	test $$stat = 0 || \
 	  echo "See Fetchdir/update.patch for a log of the changes."; \
 	exit $$stat
+.PHONY: fetch
 
 ## Generate release statistics, for the table in automake.texi.
 ## This has to be run in an up to date build tree, but there must
