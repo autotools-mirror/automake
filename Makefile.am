@@ -623,27 +623,6 @@ git-release: git-dist
 	$(srcdir)/lib/gnupload $(GNUPLOADFLAGS) \
 	  --to $$dest.gnu.org:automake $(DIST_ARCHIVES)
 
-git-diff:
-	$(AM_V_GEN):; \
-	thisver="v$(VERSION)"; \
-	if test -z "$$OLDVERSION"; then \
-	  prevno=`echo "$(VERSION)" - 0.01 | bc | sed 's/^\./0./'`; \
-	else prevno="$$OLDVERSION"; fi; \
-	prevver=v$$prevno; \
-	git diff $$prevver..$$thisver $(PACKAGE) \
-	    > $(PACKAGE)-$$prevno-$(VERSION).diff
-
-## Check our path lengths.
-path-check: distdir
-	$(AM_V_GEN)($(am__cd) $(distdir) && \
-## FIXME there's got to be a better way!  pathchk should take the list
-## of files on stdin, at least.
-	  find . -print | xargs pathchk -p); \
-	  estatus=$$?; \
-	  find $(distdir) -type d '!' -perm -200 -exec chmod u+w {} ';'; \
-	  rm -rf $(distdir); \
-	  exit $$estatus
-
 ## Visually comparing differences between the Makefile.in files in
 ## automake's own build system as generated in two different branches
 ## might help to catch bugs and blunders.  This has already happened a
