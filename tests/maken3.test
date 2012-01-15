@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2009, 2011 Free Software Foundation, Inc.
+# Copyright (C) 2009, 2011, 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,15 +14,32 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test `make -n' for various targets, to ensure that no files or
-# directories are created.
+# Test `make -n' for various targets, to ensure that:
+#
+#  1. no files or directories are created or removed, and
+#
+#  2. if using GNU make or a make implementation supporting the .MAKE
+#     special target, the output from make is sufficiently complete.
 #
 # This test exercises the GCS-mandated targets (except for dist)
 # as well as tags, TAGS.
 
-# Please keep this test in sync with sister test maken4.test.
-
 . ./defs || Exit 1
+
+# Does $MAKE support the '.MAKE' special target?
+have_dotmake=false
+if using_gmake; then
+  have_dotmake=: # GNU make must support it.
+else
+  unindent > mk.tmp << 'END'
+    targ.tmp:
+	: > $@
+    .MAKE: targ.tmp
+END
+  if $MAKE -n -f mk.tmp targ.tmp && test -f targ.tmp; then
+    have_dotmake=:
+  fi
+fi
 
 mkdir sub sub2
 
@@ -131,18 +148,27 @@ check_targets ()
     case $target in
     install-* | installdirs | tags | TAGS ) ;;
     *)
+      if $have_dotmake; then
+        grep "stamp-$target$" stdout || Exit 1
+      fi
       test ! -f "stamp-$target$" || Exit 1
       ;;
     esac
     case $target in
     install-* | installdirs ) ;;
     *)
+      if $have_dotmake; then
+        grep "stamp-$target-sub" stdout || Exit 1
+      fi
       test ! -f "sub/stamp-$target-sub" || Exit 1
       ;;
     esac
     case $target in
     distclean | maintainer-clean ) ;;
     *)
+      if $have_dotmake; then
+        grep "should-not-be-executed" stdout || Exit 1
+      fi
       test ! -f "sub2/sub2-$target-should-not-be-executed" || Exit 1
       ;;
     esac
