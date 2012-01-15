@@ -3,8 +3,8 @@
 ## Makefile for Automake.
 
 # Copyright (C) 1995, 1996, 1997, 1998, 1999, 2001, 2002, 2003, 2004,
-# 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation,
-# Inc.
+# 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 Free Software
+# Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -91,17 +91,15 @@ do_subst = sed \
 automake: automake.in
 aclocal: aclocal.in
 automake aclocal: Makefile
-	rm -f $@ $@.tmp
-	$(do_subst) $(srcdir)/$@.in >$@.tmp
-	chmod +x $@.tmp
-	chmod a-w $@.tmp
-	mv -f $@.tmp $@
+	$(AM_V_at)rm -f $@ $@-t
+	$(AM_V_GEN)$(do_subst) $(srcdir)/$@.in >$@-t
+	$(AM_V_at)chmod a+x,a-w $@-t && mv -f $@-t $@
 
 ## The master location for INSTALL is lib/INSTALL.
 ## This is where `make fetch' will install new versions.
 ## Make sure we also update this copy.
 INSTALL: lib/INSTALL
-	cp $(srcdir)/lib/INSTALL $@
+	$(AM_V_GEN)cp $(srcdir)/lib/INSTALL $@
 
 ################################################################
 ##
@@ -194,9 +192,9 @@ sc_unquoted_DESTDIR \
 sc_tabs_in_texi \
 sc_at_in_texi
 
-.PHONY: $(syntax_check_rules)
 $(syntax_check_rules): automake aclocal
 maintainer-check: $(syntax_check_rules)
+.PHONY: maintainer-check $(syntax_check_rules)
 
 ## Look for test whose names can cause spurious failures when used as
 ## first argument to AC_INIT (chiefly because they might contain an
@@ -277,8 +275,8 @@ sc_diff_aclocal_in_aclocal:
 
 ## Syntax check with default Perl (on my machine, Perl 5).
 sc_perl_syntax:
-	perllibdir="./lib$(PATH_SEPARATOR)$(srcdir)/lib" $(PERL) -c -w automake
-	perllibdir="./lib$(PATH_SEPARATOR)$(srcdir)/lib" $(PERL) -c -w aclocal
+	@perllibdir="./lib$(PATH_SEPARATOR)$(srcdir)/lib" $(PERL) -c -w automake
+	@perllibdir="./lib$(PATH_SEPARATOR)$(srcdir)/lib" $(PERL) -c -w aclocal
 
 ## expect no instances of '${...}'.  However, $${...} is ok, since that
 ## is a shell construct, not a Makefile construct.
@@ -625,25 +623,7 @@ git-release: git-dist
 	$(srcdir)/lib/gnupload $(GNUPLOADFLAGS) \
 	  --to $$dest.gnu.org:automake $(DIST_ARCHIVES)
 
-git-diff:
-	thisver="v$(VERSION)"; \
-	if test -z "$$OLDVERSION"; then \
-	  prevno=`echo "$(VERSION)" - 0.01 | bc | sed 's/^\./0./'`; \
-	else prevno="$$OLDVERSION"; fi; \
-	prevver=v$$prevno; \
-	git diff $$prevver..$$thisver $(PACKAGE) \
-	    > $(PACKAGE)-$$prevno-$(VERSION).diff
-
-## Check our path lengths.
-path-check: distdir
-	(cd $(distdir) && \
-## FIXME there's got to be a better way!  pathchk should take the list
-## of files on stdin, at least.
-	  find . -print | xargs pathchk -p); \
-	  estatus=$$?; \
-	  find $(distdir) -type d '!' -perm -200 -exec chmod u+w {} ';'; \
-	  rm -rf $(distdir); \
-	  exit $$estatus
+.PHONY: git-release git-dist
 
 ## Visually comparing differences between the Makefile.in files in
 ## automake's own build system as generated in two different branches
@@ -762,12 +742,14 @@ fetch:
 	test $$stat = 0 || \
 	  echo "See Fetchdir/update.patch for a log of the changes."; \
 	exit $$stat
+.PHONY: fetch
 
 ## Generate release statistics, for the table in automake.texi.
 ## This has to be run in an up to date build tree, but there must
 ## be no temp files nor unused other files lying around!
 release-stats: ps
-	@am=`wc -l < automake` && \
+	$(AM_V_GEN): && \
+	am=`wc -l < automake` && \
 	acl=`wc -l < aclocal` && \
 	pmfiles="lib/Automake/*.pm" && \
 	if test . != '$(srcdir)'; then pmfiles="$$pmfiles $(srcdir)/lib/Automake/*.pm"; \

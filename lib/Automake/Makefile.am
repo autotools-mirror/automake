@@ -64,10 +64,8 @@ do_subst = in=`echo $@ | sed 's/\.[^.]*$$//'`; sed \
 ## $(datadir) or other do_subst'ituted variables change.
 ## Use chmod a-w to prevent people from editing the wrong file by accident.
 Config.pm: Config.in Makefile
-	rm -f Config.tmp Config.pm
-	$(do_subst) $(srcdir)/Config.in >Config.tmp
-	chmod +x Config.tmp
-	chmod a-w Config.tmp
-	mv -f Config.tmp Config.pm
+	$(AM_V_at)rm -f $@ $@-t
+	$(AM_V_GEN)$(do_subst) $(srcdir)/Config.in >$@-t
+	$(AM_V_at)chmod a+x,a-w $@-t && mv -f $@-t $@
 
 EXTRA_DIST = Config.in
