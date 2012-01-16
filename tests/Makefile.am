@@ -130,6 +130,10 @@ EXTRA_DIST += distcheck-hook-m4.am
 # Each test case depends on defs, aclocal, and automake.
 check_SCRIPTS = defs aclocal-$(APIVERSION) automake-$(APIVERSION)
 
+## Checking the list of tests.
+include $(top_srcdir)/CheckListOfTests.am
+maintainer-check-list-of-tests: $(parallel_tests)
+
 clean-local: clean-local-check
 .PHONY: clean-local-check
 clean-local-check:
