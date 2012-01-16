@@ -1,6 +1,6 @@
 ## automake - create Makefile.in from Makefile.am
-## Copyright (C) 2001, 2003, 2006, 2007, 2008, 2009, 2010, 2011 Free
-## Software Foundation, Inc.
+## Copyright (C) 2001, 2003, 2006, 2007, 2008, 2009, 2010, 2011, 2012
+## Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -114,8 +114,11 @@ $(AM_TESTS_ENVIRONMENT) $(TESTS_ENVIRONMENT)
 am__set_TESTS_bases = \
   bases='$(TEST_LOGS)'; \
   bases=`for i in $$bases; do echo $$i; done | sed 's/\.log$$//'`; \
-## Trim away any extra whitespace.  This has already proved useful in
-## avoiding weird bug on lesser make implementations.
+## Trim away any extra whitespace.  This has already proved useful
+## in avoiding weird bug on lesser make implementations.  It also
+## works around the GNU make 3.80 bug where trailing whitespace in
+## "TESTS = foo.test $(empty)" causes $(TESTS_LOGS)  to erroneously
+## expand to "foo.log .log".
   bases=`echo $$bases`
 
 # Recover from deleted `.trs' file; this should ensure that
@@ -305,83 +308,45 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 
 RECHECK_LOGS = $(TEST_LOGS)
 
-# Run all the tests.
-check-TESTS:
-## Expand $(RECHECK_LOGS) only once, to avoid exceeding line length limits.
-	@list='$(RECHECK_LOGS)'; test -z "$$list" || rm -f $$list
-	@list='$(RECHECK_LOGS:.log=.trs)'; test -z "$$list" || rm -f $$list
+## ------------------------------------------ ##
+## Running all tests, or rechecking failures. ##
+## ------------------------------------------ ##
+
+check-TESTS recheck:
+## If we are running "make recheck", it's not the user which can decide
+## which tests to consider for re-execution, so we must ignore the value
+## of $(RECHECK_LOGS).
+## Here and below, we expand $(RECHECK_LOGS) only once, to avoid exceeding
+## line length limits.
+	@if test $@ != recheck; then \
+	   list='$(RECHECK_LOGS)'; \
+	   test -z "$$list" || rm -f $$list; \
+	 fi
+	@if test $@ != recheck; then \
+	   list='$(RECHECK_LOGS:.log=.trs)'; \
+	   test -z "$$list" || rm -f $$list; \
+	 fi
 ## We always have to remove TEST_SUITE_LOG, to ensure its rule is run
 ## in any case even in lazy mode: otherwise, if no test needs rerunning,
-## or a prior run plus reruns all happen within the same timestamp
-## (can happen with a prior `make TESTS=<subset>'),
-## then we get no log output.
+## or a prior run plus reruns all happen within the same timestamp (can
+## happen with a prior `make TESTS=<subset>'), then we get no log output.
 ## OTOH, this means that, in the rule for `$(TEST_SUITE_LOG)', we
 ## cannot use `$?' to compute the set of lazily rerun tests, lest
 ## we rely on .PHONY to work portably.
 	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
-	@list='' list2='$(TEST_LOGS)'; for i in $$list2; do \
-## Trailing whitespace in `TESTS = foo.test $(empty)' causes GNU make
-## 3.80 to erroneously expand $(TESTS_LOGS) to `foo.log .log'.
-## Work around this bug.
-	  test .log = $$i && continue; \
-## Be careful to avoid extra whitespace in the definition of $list.  See
-## comments in `recheck' below for why this might be useful.
-	  if test -z "$$list"; then list=$$i; else list="$$list $$i"; fi; \
-	done; \
-	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG) TEST_LOGS="$$list"
-
-AM_RECURSIVE_TARGETS += check
-
-## -------------- ##
-## Produce HTML.  ##
-## -------------- ##
-
-.log.html:
-	@list='$(RST2HTML) $$RST2HTML rst2html rst2html.py';		\
-	for r2h in $$list; do						\
-	  if ($$r2h --version) >/dev/null 2>&1; then			\
-	    R2H=$$r2h;							\
-	  fi;								\
-	done;								\
-	if test -z "$$R2H"; then					\
-	  echo >&2 "cannot find rst2html, cannot create $@";		\
-	  exit 2;							\
-	fi;								\
-	$$R2H $< >$@.tmp
-	@mv $@.tmp $@
-
-# Be sure to run check first, and then to convert the result.
-# Beware of concurrent executions.  Run "check" not "check-TESTS", as
-# check-SCRIPTS and other dependencies are rebuilt by the former only.
-# And expect check to fail.
-check-html:
-	@if $(MAKE) $(AM_MAKEFLAGS) check; then			\
-	  rv=0; else rv=$$?;					\
-	fi;							\
-	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_HTML) || exit 4;	\
-	exit $$rv
-
-.PHONY: check-html
-.MAKE: check-html
-
-AM_RECURSIVE_TARGETS += check-html
-
-## -------------------- ##
-## Rechecking failures. ##
-## -------------------- ##
-
-## Rerun all tests that experienced an error or an unexpected failure.
-recheck recheck-html:
 	@ws='[ 	]'; \
-	target=`echo $@ | sed 's,^re,,'`; \
 	list=''; $(am__set_TESTS_bases); \
 	for i in $$bases; do \
-## Skip tests that haven't been run, but recover gracefully from deleted
+## If running a "make recheck", we must only consider tests that had an
+## unexpected outcome (FAIL or XPASS) in the earlier run.  In particular,
+## skip tests that haven't been run.  But recover gracefully from deleted
 ## `.trs' files.
-	  test -f $$i.trs || test -f $$i.log || continue; \
+	  if test $@ = recheck; then \
+	    test -f $$i.trs || test -f $$i.log || continue; \
 ## FIXME: one fork per test -- this is horrendously inefficient!
-	  grep "^$$ws*:recheck:$$ws*no$$ws*$$" $$i.trs \
-	    >/dev/null 2>&1 && continue; \
+	    grep "^$$ws*:recheck:$$ws*no$$ws*$$" $$i.trs \
+	      >/dev/null 2>&1 && continue; \
+	  else :; fi; \
 ## Be careful to avoid extra whitespace in the definition of $list, since
 ## its value will be passed to the recursive make invocation below through
 ## the TEST_LOGS macro, and leading/trailing white space in a make macro
@@ -390,12 +355,32 @@ recheck recheck-html:
 ## <http://lists.gnu.org/archive/html/bug-automake/2010-08/msg00004.html>
 	  if test -z "$$list"; then list=$$i.log; else list="$$list $$i.log"; fi; \
 	done; \
-	$(MAKE) $(AM_MAKEFLAGS) $$target AM_MAKEFLAGS='$(AM_MAKEFLAGS) TEST_LOGS="'"$$list"'"'
+## Under "make recheck", remove the .log and .trs files associated
+## with the files to recheck, so that those will be rerun by the
+## "make test-suite.log" recursive invocation below.  But use a proper
+## hack to avoid extra files removal when running under "make -n".
+	if test $@ = recheck && test -n "$$list"; then \
+	  { \
+	   echo 'am--clean: am--clean-log am--clean-trs'; \
+	   echo 'am--clean-log: ; rm -f $$(am__logs)'; \
+	   echo 'am--clean-trs: ; rm -f $$(am__logs:.log=.trs)'; \
+	  } | $(MAKE) $(AM_MAKEFLAGS) -f - am--clean am__logs="$$list" \
+	    || exit 1; \
+	fi; \
+	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG) TEST_LOGS="$$list"
 
-.PHONY: recheck recheck-html
-.MAKE: recheck recheck-html
+## Recheck must depend on $(check_SCRIPTS), $(check_PROGRAMS), etc.
+recheck: %CHECK_DEPS%
 
-AM_RECURSIVE_TARGETS += recheck recheck-html
+AM_RECURSIVE_TARGETS += check recheck
+
+.PHONY: recheck
+
+## ----------------------------------------------- ##
+## Produce HTML.  To be removed in automake 1.12.  ##
+## ----------------------------------------------- ##
+
+include check-html.am
 
 else !%?PARALLEL_TESTS%
 

@@ -686,6 +686,7 @@ parallel-tests-suffix-prog.test \
 parallel-tests-log-compiler-1.test \
 parallel-tests-log-compiler-2.test \
 parallel-tests-dry-run.test \
+parallel-tests-dryrun.test \
 parallel-tests-fd-redirect.test \
 parallel-tests-extra-programs.test \
 parallel-tests-unreadable.test \

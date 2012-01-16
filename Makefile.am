@@ -93,11 +93,9 @@ do_subst = sed \
 automake: automake.in
 aclocal: aclocal.in
 automake aclocal: Makefile
-	$(AM_V_GEN)rm -f $@ $@.tmp
-	$(AM_V_at)$(do_subst) $(srcdir)/$@.in >$@.tmp
-	$(AM_V_at)chmod +x $@.tmp
-	$(AM_V_at)chmod a-w $@.tmp
-	$(AM_V_at)mv -f $@.tmp $@
+	$(AM_V_at)rm -f $@ $@-t
+	$(AM_V_GEN)$(do_subst) $(srcdir)/$@.in >$@-t
+	$(AM_V_at)chmod a+x,a-w $@-t && mv -f $@-t $@
 
 ## The master location for INSTALL is lib/INSTALL.
 ## This is where `make fetch' will install new versions.
@@ -271,14 +269,15 @@ sc_unquoted_DESTDIR \
 sc_tabs_in_texi \
 sc_at_in_texi
 
-.PHONY: $(syntax_check_rules)
 $(syntax_check_rules): automake aclocal
+maintainer-check: $(syntax_check_rules)
+.PHONY: maintainer-check $(syntax_check_rules)
 
 ## Check that the list of tests given in the Makefile is equal to the
 ## list of all test scripts in the Automake testsuite.
 .PHONY: maintainer-check-list-of-tests
 maintainer-check-list-of-tests:
-	@failcom='exit 1'; \
+	@fail= failcom='exit 1'; \
 	for f in x $$MAKEFLAGS; do \
 	  case $$f in \
 	    *=* | --[!k]*);; \
@@ -290,7 +289,7 @@ maintainer-check-list-of-tests:
 	done; \
 	test -z "$$fail"
 
-maintainer-check: $(syntax_check_rules) maintainer-check-list-of-tests
+maintainer-check: maintainer-check-list-of-tests
 
 ## Look for test whose names can cause spurious failures when used as
 ## first argument to AC_INIT (chiefly because they might contain an
@@ -814,27 +813,6 @@ git-release: git-dist
 	$(srcdir)/lib/gnupload $(GNUPLOADFLAGS) \
 	  --to $$dest.gnu.org:automake $(DIST_ARCHIVES)
 
-git-diff:
-	$(AM_V_GEN):; \
-	thisver="v$(VERSION)"; \
-	if test -z "$$OLDVERSION"; then \
-	  prevno=`echo "$(VERSION)" - 0.01 | bc | sed 's/^\./0./'`; \
-	else prevno="$$OLDVERSION"; fi; \
-	prevver=v$$prevno; \
-	git diff $$prevver..$$thisver $(PACKAGE) \
-	    > $(PACKAGE)-$$prevno-$(VERSION).diff
-
-## Check our path lengths.
-path-check: distdir
-	$(AM_V_GEN)($(am__cd) $(distdir) && \
-## FIXME there's got to be a better way!  pathchk should take the list
-## of files on stdin, at least.
-	  find . -print | xargs pathchk -p); \
-	  estatus=$$?; \
-	  find $(distdir) -type d '!' -perm -200 -exec chmod u+w {} ';'; \
-	  rm -rf $(distdir); \
-	  exit $$estatus
-
 ## Visually comparing differences between the Makefile.in files in
 ## automake's own build system as generated in two different branches
 ## might help to catch bugs and blunders.  This has already happened a
@@ -952,6 +930,7 @@ fetch:
 	test $$stat = 0 || \
 	  echo "See Fetchdir/update.patch for a log of the changes."; \
 	exit $$stat
+.PHONY: fetch
 
 ## Generate release statistics, for the table in automake.texi.
 ## This has to be run in an up to date build tree, but there must
