@@ -142,6 +142,7 @@ check8.test \
 check9.test \
 check10.test \
 check11.test \
+check12.test \
 check-exported-srcdir.test \
 check-tests-in-builddir.test \
 check-tests_environment.test \
@@ -302,6 +303,9 @@ discover.test \
 dist-auxfile.test \
 dist-auxfile-2.test \
 dist-included-parent-dir.test \
+dist-missing-am.test \
+dist-missing-included-m4.test \
+dist-missing-m4.test \
 distcleancheck.test \
 distcom2.test \
 distcom3.test \
