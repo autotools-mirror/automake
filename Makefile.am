@@ -110,7 +110,8 @@ INSTALL: lib/INSTALL
 ##
 
 gitlog_to_changelog_command = $(PERL) $(srcdir)/lib/gitlog-to-changelog
-gitlog_to_changelog_options = --since='2011-12-28 00:00:00'
+gitlog_to_changelog_options = --since='2011-12-28 00:00:00' \
+                              --no-cluster --format '%s%n%n%b'
 
 # Automatic generation of the ChangeLog from git history.
 #
