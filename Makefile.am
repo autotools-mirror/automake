@@ -23,7 +23,7 @@
 ## automake (run in doc, tests, and in the rebuild rules.)
 ## `.' goes before doc and tests, because the latter two directories
 ## run aclocal and automake.
-SUBDIRS = lib . doc m4 tests
+SUBDIRS = lib . contrib doc m4 tests
 
 TEST_SUBDIRS = tests lib/Automake/tests
 
