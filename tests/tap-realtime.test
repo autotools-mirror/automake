@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2011 Free Software Foundation, Inc.
+# Copyright (C) 2011, 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,6 +35,23 @@ expect -f expect-check || {
 }
 rm -f expect-check
 
+# Unfortunately, some make implementations (among them, FreeBSD make,
+# NetBSD make, and Solaris Distributed make), when run in parallel mode,
+# serialize the output from their targets' recipes unconditionally.  In
+# such a situation, there's no way the partial results of a TAP test can
+# be displayed until the test has terminated.  And this is not something
+# our TAP driver script can work around; in fact, the driver *is* sending
+# out its output progressively and "in sync" with test execution -- it is
+# make that is stowing such output away instead of presenting it to the
+# user as soon as it gets it.
+if using_gmake; then :; else
+  case $MAKE in
+    *\ -j*) skip_ "doesn't with non-GNU concurrent make";;
+  esac
+  # Prevent Sun Distributed Make from trying to run in parallel.
+  DMAKE_MODE=serial; export DMAKE_MODE
+fi
+
 cat > Makefile.am << 'END'
 TESTS = all.test
 END
@@ -44,7 +61,7 @@ cat > all.test <<'END'
 #! /bin/sh
 echo 1..3
 
-# Creative quoting to placate maintainer-check
+# Creative quoting to placate maintainer-check.
 sleep="sleep "3
 
 # The awk+shell implementation of the TAP driver must "read ahead" of one
