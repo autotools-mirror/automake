@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2011 Free Software Foundation, Inc.
+# Copyright (C) 2011, 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -71,13 +71,6 @@ chmod a+x *.test
 
 # Strip extra "informative" lines that could be printed by Solaris
 # Distributed Make.
-strip_dmake_junk ()
-{
-  cat $1
-  LC_ALL=C $EGREP -v ' --> ([0-9][0-9]* job|[Jj]ob output)' "$@" >t
-  mv -f t $1
-}
-
 mkdir build-aux
 cp "$am_scriptdir"/tap-driver.pl build-aux \
   || framework_failure_ "fetching the perl TAP driver"
@@ -88,6 +81,9 @@ cp "$am_scriptdir"/tap-driver.pl build-aux \
 ./configure || skip_ "configure failed"
 
 case $MAKE in *\ -j*) skip_ "can't work easily with concurrent make";; esac
+
+# Prevent Sun Distributed Make from trying to run in parallel.
+DMAKE_MODE=serial; export DMAKE_MODE
 
 $MAKE check >stdout && { cat stdout; Exit 1; }
 cat stdout
@@ -105,7 +101,6 @@ ERROR: baz.test - exited with status 7
 END
 
 sed -n '/^PASS: foo\.test/,/^ERROR: baz\.test/p' stdout > got
-strip_dmake_junk got
 
 cat exp
 cat got
@@ -128,7 +123,6 @@ PASS: baz.test 1
 END
 
 sed -n '/^PASS: foo\.test/,/^PASS: baz\.test/p' stdout > got
-strip_dmake_junk got
 
 cat exp
 cat got
