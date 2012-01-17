@@ -723,8 +723,6 @@ test-driver-custom-xfail-tests.test \
 test-driver-custom-multitest.test \
 test-driver-custom-multitest-recheck.test \
 test-driver-custom-multitest-recheck2.test \
-test-driver-custom-html.test \
-test-driver-custom-no-html.test \
 test-driver-create-log-dir.test \
 test-driver-strip-vpath.test \
 test-driver-trs-suffix-registered.test \
@@ -1018,7 +1016,6 @@ tap-fancy.test \
 tap-fancy2.test \
 tap-global-log.test \
 tap-global-result.test \
-tap-html.test \
 tap-log.test \
 tap-msg0-result.test \
 tap-msg0-directive.test \

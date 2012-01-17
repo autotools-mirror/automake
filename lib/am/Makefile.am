@@ -20,7 +20,6 @@
 
 dist_am_DATA = \
 check.am \
-check-html.am \
 check2.am \
 clean-hdr.am \
 clean.am \

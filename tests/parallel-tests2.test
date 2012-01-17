@@ -17,11 +17,24 @@
 # Check parallel-tests features:
 #  - check-html
 #  - recheck-html
-# Keep this in sync with sister test `test-driver-custom-html.test'.
+# FIXME: the features tested by this script has been moved in contrib.
+# FIXME: We should move this script accordingly.
 
 am_parallel_tests=yes
-required=rst2html
 . ./defs || Exit 1
+
+# Try the variants that are tried in check-html.am.
+while :; do
+  for r2h in $RST2HTML rst2html rst2html.py; do
+    echo "$me: running $r2h --version"
+    $r2h --version && break 2
+  done
+  skip_all_ "no proper rst2html program found"
+done
+unset r2h
+
+cp "$top_testsrcdir"/contrib/check-html.am . \
+  || fatal_ "cannot fetch 'check-html.am' from contrib"
 
 cat >> configure.in << 'END'
 AC_OUTPUT
@@ -34,6 +47,7 @@ check_SCRIPTS = bla
 bla:
 	echo bla > $@
 CLEANFILES = bla
+include $(srcdir)/check-html.am
 END
 
 cat > foo.test <<'END'
