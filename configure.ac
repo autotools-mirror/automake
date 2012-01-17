@@ -211,6 +211,7 @@ AC_SUBST([sh_errexit_works], [$am_cv_sh_errexit_works])
 
 AC_CONFIG_FILES([
   Makefile
+  contrib/Makefile
   doc/Makefile
   lib/Automake/Makefile
   lib/Automake/tests/Makefile
