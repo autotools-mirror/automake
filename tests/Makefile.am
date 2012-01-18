@@ -28,16 +28,7 @@ AM_PL_LOG_FLAGS = -Mstrict -I $(top_builddir)/lib -I $(top_srcdir)/lib -w
 
 TAP_LOG_DRIVER = AM_TAP_AWK='$(AWK)' $(SHELL) $(top_srcdir)/lib/tap-driver.sh
 
-AM_TAP_LOG_DRIVER_FLAGS = --merge --comments
-## Avoid spurious TAP diagnostic.  We use an awful indirection with a
-## shell command substitution here, since the string needs to contain
-## `#' characters, and these can't be escaped portably in a make macro
-## definition.
-## FIXME: this is quite inefficient though, as it adds one extra fork
-## FIXME: per TAP test script; this is OK for the moment, since we have
-## FIXME: few such scripts, but might become an issue in the future.
-## Keep this in sync with the definition of $diag_string_ in tests/defs.
-AM_TAP_LOG_DRIVER_FLAGS += --diagnostic-string `printf '\043%%\043\n'`
+AM_TAP_LOG_DRIVER_FLAGS = --merge
 
 EXTRA_DIST = ChangeLog-old
 
