@@ -134,7 +134,7 @@ check_SCRIPTS = defs aclocal-$(APIVERSION) automake-$(APIVERSION)
 
 ## Checking the list of tests.
 test_subdirs = . pm
-include $(top_srcdir)/CheckListOfTests.am
+include $(srcdir)/CheckListOfTests.am
 maintainer-check-list-of-tests: $(parallel_tests)
 
 clean-local: clean-local-check
