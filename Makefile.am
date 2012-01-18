@@ -105,21 +105,10 @@ INSTALL: lib/INSTALL
 installcheck-local:
 	am_running_installcheck=yes $(MAKE) $(AM_MAKEFLAGS) check
 
-## recheck: convenience proxy target for the test suites.
-.PHONY: recheck
+# Convenience proxy target for the test suites.
 recheck:
-	@failcom='exit 1'; \
-	for f in x $$MAKEFLAGS; do \
-	  case $$f in \
-	    *=* | --[!k]*);; \
-	    *k*) failcom='fail=yes';; \
-	  esac; \
-	done; \
-	for subdir in $(TEST_SUBDIRS); do \
-	  ($(am__cd) $$subdir && $(MAKE) $(AM_MAKEFLAGS) $@) \
-	    || eval $$failcom; \
-	done; \
-	test -z "$$fail"
+	$(am__cd) tests && $(MAKE) $(AM_MAKEFLAGS) $@
+.PHONY: recheck
 
 ################################################################
 ##
