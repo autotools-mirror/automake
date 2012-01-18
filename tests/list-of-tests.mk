@@ -17,12 +17,21 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+perl_TESTS = \
+pm/Condition.pl \
+pm/Condition-t.pl \
+pm/DisjConditions.pl \
+pm/DisjConditions-t.pl \
+pm/Version.pl \
+pm/Wrap.pl
+
 # The order here is mostly alphabetical, with the deliberate exception
 # that tests having a high runtime (especially TAP tests that run various
 # checks sequentially) are listed early; this improves performance on
 # concurrent testsuite runs.
 handwritten_TESTS = \
 get-sysconf.test \
+$(perl_TESTS) \
 self-check-env-sanitize.test \
 self-check-report.test \
 aclibobj.test \

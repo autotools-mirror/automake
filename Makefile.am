@@ -25,8 +25,6 @@
 ## run aclocal and automake.
 SUBDIRS = lib . contrib doc m4 tests
 
-TEST_SUBDIRS = tests lib/Automake/tests
-
 bin_SCRIPTS = automake aclocal
 
 CLEANFILES = $(bin_SCRIPTS)
@@ -203,18 +201,7 @@ maintainer-check: $(syntax_check_rules)
 ## list of all test scripts in the Automake testsuite.
 .PHONY: maintainer-check-list-of-tests
 maintainer-check-list-of-tests:
-	@fail= failcom='exit 1'; \
-	for f in x $$MAKEFLAGS; do \
-	  case $$f in \
-	    *=* | --[!k]*);; \
-	    *k*) failcom='fail=yes';; \
-	  esac; \
-	done; \
-	for subdir in $(TEST_SUBDIRS); do \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $@) || eval $$failcom; \
-	done; \
-	test -z "$$fail"
-
+	$(am__cd) tests && $(MAKE) $(AM_MAKEFLAGS) $@
 maintainer-check: maintainer-check-list-of-tests
 
 ## Look for test whose names can cause spurious failures when used as

@@ -52,6 +52,11 @@ TESTS_ENVIRONMENT = \
   test x"$$required" = x || unset required; \
   test x"$$parallel_tests" = x || unset parallel_tests;
 
+TEST_EXTENSIONS = .pl .test
+
+PL_LOG_COMPILER = $(PERL)
+AM_PL_LOG_FLAGS = -Mstrict -I $(top_builddir)/lib -I $(top_srcdir)/lib -w
+
 include $(srcdir)/list-of-tests.mk
 
 TESTS = $(handwritten_TESTS) $(parallel_tests)
@@ -128,6 +133,7 @@ EXTRA_DIST += distcheck-hook-m4.am
 check_SCRIPTS = defs aclocal-$(APIVERSION) automake-$(APIVERSION)
 
 ## Checking the list of tests.
+test_subdirs = . pm
 include $(top_srcdir)/CheckListOfTests.am
 maintainer-check-list-of-tests: $(parallel_tests)
 

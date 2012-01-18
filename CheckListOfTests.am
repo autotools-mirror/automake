@@ -37,13 +37,18 @@ maintainer-check-list-of-tests:
 	 for t in $$lst; do \
 	   echo "$$t"; \
 	 done | sort >$(am__tmk); \
+## List of subdirs where to look for tests.
+	 dirs='$(test_subdirs)'; \
+	 test -n "$$dirs" || dirs=.; \
 ## List of tests on filesystem.  Be careful to cater for VPATH builds too.
 	 for ext in $(TEST_EXTENSIONS); do \
-	   ls *$$ext 2>/dev/null; \
-	   if test $(srcdir) != $(builddir); then \
-	     (cd $(srcdir) && ls *$$ext 2>/dev/null); \
-	   fi; \
-	 done | sort | uniq >$(am__tfs); \
+	   for dir in $$dirs; do \
+	     ls $$dir/*$$ext 2>/dev/null; \
+	     if test $(srcdir) != $(builddir); then \
+	       (cd $(srcdir) && ls $$dir/*$$ext 2>/dev/null); \
+	     fi; \
+	   done; \
+	 done | sed 's,^\./,,' | sort | uniq >$(am__tfs); \
 ## Compare the two lists, complain if they differ.
 	 if $$diff $(am__tmk) $(am__tfs) >$(am__tdf); then \
 	    result=0; \
