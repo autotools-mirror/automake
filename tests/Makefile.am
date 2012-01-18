@@ -20,9 +20,11 @@
 # Run the tests with the shell detected at configure time.
 LOG_COMPILER = $(SHELL)
 
-TEST_EXTENSIONS = .test .tap
+TEST_EXTENSIONS = .pl .test .tap
 TEST_LOG_COMPILER = $(LOG_COMPILER)
 TAP_LOG_COMPILER = $(LOG_COMPILER)
+PL_LOG_COMPILER = $(PERL)
+AM_PL_LOG_FLAGS = -Mstrict -I $(top_builddir)/lib -I $(top_srcdir)/lib -w
 
 TAP_LOG_DRIVER = AM_TAP_AWK='$(AWK)' $(SHELL) $(top_srcdir)/lib/tap-driver.sh
 
@@ -52,7 +54,16 @@ pr8365-remake-timing.test \
 lex-subobj-nodep.test \
 remake-am-pr10111.test \
 remake-m4-pr10111.test \
-txinfo5.test
+txinfo5.test \
+## FIXME: this "expected failures" are in truth an hack used to
+## FIXME: to verify that some incorrect usages of our perl: libraries
+## FIXME: raise an error.  We should find a cleaner way to check that.
+pm/Cond2.pl \
+pm/Cond3.pl \
+pm/DisjCon2.pl \
+pm/DisjCon3.pl \
+pm/Version2.pl \
+pm/Version3.pl
 
 # Some testsuite-influential variables should be overridable from the
 # test scripts, but not from the environment.
@@ -174,7 +185,8 @@ check-local: check-no-repeated-test-name
 .PHONY: check-no-repeated-test-name
 
 ## Checking the list of tests.
-include $(top_srcdir)/CheckListOfTests.am
+test_subdirs = . pm
+include $(srcdir)/CheckListOfTests.am
 
 # Run the testsuite with the installed aclocal and automake.
 installcheck-local:

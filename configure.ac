@@ -214,7 +214,6 @@ AC_CONFIG_FILES([
   contrib/Makefile
   doc/Makefile
   lib/Automake/Makefile
-  lib/Automake/tests/Makefile
   lib/Makefile
   lib/am/Makefile
   m4/Makefile

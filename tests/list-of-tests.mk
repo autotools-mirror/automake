@@ -18,12 +18,27 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+perl_TESTS = \
+pm/Cond2.pl \
+pm/Cond3.pl \
+pm/Condition.pl \
+pm/Condition-t.pl \
+pm/DisjCon2.pl \
+pm/DisjCon3.pl \
+pm/DisjConditions.pl \
+pm/DisjConditions-t.pl \
+pm/Version.pl \
+pm/Version2.pl \
+pm/Version3.pl \
+pm/Wrap.pl
+
 # The order here is mostly alphabetical, with the deliberate exception
 # that tests having a high runtime (especially TAP tests that run various
 # checks sequentially) are listed early; this improves performance on
 # concurrent testsuite runs.
 handwritten_TESTS = \
 get-sysconf.test \
+$(perl_TESTS) \
 depmod.tap \
 instspc.tap \
 aclocal.test \
@@ -1134,6 +1149,7 @@ vala3.test \
 vala4.test \
 vala5.test \
 vala-vpath.test \
+vala-mix.test \
 vars.test \
 vars3.test \
 vartar.test \

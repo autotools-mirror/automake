@@ -25,8 +25,6 @@
 ## run aclocal and automake.
 SUBDIRS = lib . contrib doc m4 tests
 
-TEST_SUBDIRS = lib/Automake/tests tests
-
 bin_SCRIPTS = automake aclocal
 
 CLEANFILES = $(bin_SCRIPTS)
@@ -130,7 +128,8 @@ recheck:
 ##
 
 gitlog_to_changelog_command = $(PERL) $(srcdir)/lib/gitlog-to-changelog
-gitlog_to_changelog_options = --since='2011-12-28 00:00:00'
+gitlog_to_changelog_options = --since='2011-12-28 00:00:00' \
+                              --no-cluster --format '%s%n%n%b'
 
 # Automatic generation of the ChangeLog from git history.
 #
@@ -277,18 +276,7 @@ maintainer-check: $(syntax_check_rules)
 ## list of all test scripts in the Automake testsuite.
 .PHONY: maintainer-check-list-of-tests
 maintainer-check-list-of-tests:
-	@fail= failcom='exit 1'; \
-	for f in x $$MAKEFLAGS; do \
-	  case $$f in \
-	    *=* | --[!k]*);; \
-	    *k*) failcom='fail=yes';; \
-	  esac; \
-	done; \
-	for subdir in $(TEST_SUBDIRS); do \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $@) || eval $$failcom; \
-	done; \
-	test -z "$$fail"
-
+	$(am__cd) tests && $(MAKE) $(AM_MAKEFLAGS) $@
 maintainer-check: maintainer-check-list-of-tests
 
 ## Look for test whose names can cause spurious failures when used as
