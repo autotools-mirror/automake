@@ -393,7 +393,6 @@ gcj3.test \
 gcj4.test \
 gcj5.test \
 gcj6.test \
-getopt.test \
 gettext.test \
 gettext2.test \
 gettext3.test \
