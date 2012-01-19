@@ -397,7 +397,8 @@ sc_AMDEP_TRUE_in_automake_in:
 	  exit 1; \
 	fi
 
-## Tests should never call make directly.
+## Recursive make invocations should always pass $(AM_MAKEFLAGS)
+## to $(MAKE), for portability to non-GNU make.
 sc_tests_make_without_am_makeflags:
 	@if grep '^[^#].*(MAKE) ' $(srcdir)/lib/am/*.am $(srcdir)/automake.in |\
 		grep -v 'AM_MAKEFLAGS'; then \
