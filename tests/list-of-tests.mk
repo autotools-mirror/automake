@@ -2,7 +2,7 @@
 ## testsuite.  This fragment is meant to be included by the Makefile.am,
 ## but also to be executed directly by make when bootstrapping automake.
 
-## Copyright (C) 2011 Free Software Foundation, Inc.
+## Copyright (C) 2011, 2012 Free Software Foundation, Inc.
 ## Copyright (C) 2011, 2012 Free Software Foundation, Inc.
 ##
 ## This program is free software; you can redistribute it and/or modify
@@ -859,11 +859,9 @@ remake10c.test \
 remake11.test \
 remake12.test \
 remake-all-1.test \
-remake-all-2.test \
 remake-subdir-from-subdir.test \
 remake-subdir-gnu.test \
 remake-subdir.test \
-remake-subdir2.test \
 remake-subdir-long-time.test \
 remake-gnulib-add-acsubst.test \
 remake-gnulib-add-header.test \

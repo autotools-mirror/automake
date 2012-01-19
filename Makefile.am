@@ -232,7 +232,7 @@ sc_AMDEP_TRUE_in_automake_in \
 sc_tests_no_gmake_requirement \
 sc_tests_no_gmake_checking \
 sc_tests_make_can_chain_suffix_rules \
-sc_tests_make_without_am_makeflags \
+sc_no_am_makeflags \
 sc_tests_obsolete_variables \
 sc_tests_plain_make \
 sc_tests_plain_autoconf \
@@ -499,11 +499,18 @@ sc_tests_make_can_chain_suffix_rules:
 	  exit 1; \
 	fi
 
-## Tests should never call make directly.
-sc_tests_make_without_am_makeflags:
-	@if grep '^[^#].*(MAKE) ' $(srcdir)/lib/am/*.am $(srcdir)/automake.in |\
-		grep -v 'AM_MAKEFLAGS'; then \
-	  echo 'Use $$(MAKE) $$(AM_MAKEFLAGS).' 1>&2; \
+## $(AM_MAKEFLAGS) is obsolete now that we assume GNU make, since it
+## is smart enough to correctly pass the values of macros redefined on
+## the command line to sub-make invocations.
+sc_no_am_makeflags:
+	@files="\
+	  $(xtests) \
+	  $(srcdir)/lib/am/*.am \
+	  $(srcdir)/automake.in \
+	  $(srcdir)/doc/*.texi \
+	 "; \
+	if grep '\bAM_MAKEFLAGS\b' $$files; then \
+	  echo "\$$(AM_MAKEFLAGS) is obsolete, don't use it." 1>&2; \
 	  exit 1; \
 	fi
 
@@ -662,37 +669,6 @@ sc_tests_tap_plan:
 	  echo 'The tests above do not declare a TAP plan.' 1>&2; \
 	  exit 1; \
 	 }
-
-## Overriding a Makefile macro on the command line is not portable when
-## recursive targets are used.  Better use an envvar.  SHELL is an
-## exception, POSIX says it can't come from the environment.  V, DESTDIR,
-## DISTCHECK_CONFIGURE_FLAGS and DISABLE_HARD_ERRORS are exceptions, too,
-## as package authors are urged not to initialize them anywhere.
-sc_tests_overriding_macros_on_cmdline:
-	@if grep -E '\$$MAKE .*(SHELL=.*=|=.*SHELL=)' $(xtests); then \
-	  echo 'Rewrite "$$MAKE foo=bar SHELL=$$SHELL" as "foo=bar $$MAKE -e SHELL=$$SHELL"' 1>&2; \
-	  echo ' in the above lines, it is more portable.' 1>&2; \
-	  exit 1; \
-	fi
-## Also try to account for usages like "$MAKE || st=$?".
-	@if sed -e 's/ || .*//' -e 's/ && .*//' \
-	        -e 's/ DESTDIR=[^ ]*/ /' -e 's/ SHELL=[^ ]*/ /' \
-	        -e 's/ V=[^ ]*/ /' -e 's/ DISABLE_HARD_ERRORS=[^ ]*/ /' \
-## DISTCHECK_CONFIGURE_FLAGS is allowed to contain whitespace in its
-## definition, so the more complex substitutions below.
-	        -e "s/ DISTCHECK_CONFIGURE_FLAGS='[^']*'/ /" \
-		-e 's/ DISTCHECK_CONFIGURE_FLAGS="[^"]*"/ /' \
-		-e 's/ DISTCHECK_CONFIGURE_FLAGS=[^ ]/ /' \
-	      $(xtests) | grep '\$$MAKE .*='; then \
-	  echo 'Rewrite "$$MAKE foo=bar" as "foo=bar $$MAKE -e" in the above lines,' 1>&2; \
-	  echo 'it is more portable.' 1>&2; \
-	  exit 1; \
-	fi
-	@if grep 'SHELL=.*\$$MAKE' $(xtests); then \
-	  echo '$$MAKE ignores the SHELL envvar, use "$$MAKE SHELL=$$SHELL" in' 1>&2; \
-	  echo 'the above lines.' 1>&2; \
-	  exit 1; \
-	fi
 
 ## Never use `sleep 1' to create files with different timestamps.
 ## Use `$sleep' instead.  Some filesystems (e.g., Windows') have only

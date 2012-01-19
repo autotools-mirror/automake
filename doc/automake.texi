@@ -4260,12 +4260,8 @@ SUBDIRS = doc intl po src tests
 @end example
 
 When Automake invokes @command{make} in a subdirectory, it uses the value
-of the @code{MAKE} variable.  It passes the value of the variable
-@code{AM_MAKEFLAGS} to the @command{make} invocation; this can be set in
-@file{Makefile.am} if there are flags you must always pass to
-@command{make}.
+of the @code{MAKE} variable.
 @vindex MAKE
-@vindex AM_MAKEFLAGS
 
 The directories mentioned in @code{SUBDIRS} are usually direct
 children of the current directory, each subdirectory containing its
@@ -11454,31 +11450,31 @@ check: test
 @cindex Proxy @file{Makefile} for third-party packages
 A similar idea that does not use @code{include} is to write a proxy
 @file{Makefile} that dispatches rules to the real @file{Makefile},
-either with @samp{$(MAKE) -f Makefile.real $(AM_MAKEFLAGS) target} (if
-it's OK to rename the original @file{Makefile}) or with @samp{cd
-subdir && $(MAKE) $(AM_MAKEFLAGS) target} (if it's OK to store the
-subdirectory project one directory deeper).  The good news is that
-this proxy @file{Makefile} can be generated with Automake.  All we
-need are @option{-local} targets (@pxref{Extending}) that perform the
-dispatch.  Of course the other Automake features are available, so you
-could decide to let Automake perform distribution or installation.
+either with @samp{$(MAKE) -f Makefile.real target} (if it's OK to
+rename the original @file{Makefile}) or with @samp{cd subdir &&
+$(MAKE) target} (if it's OK to store the subdirectory project one
+directory deeper).  The good news is that this proxy @file{Makefile}
+can be generated with Automake.  All we need are @option{-local}
+targets (@pxref{Extending}) that perform the dispatch.  Of course
+the other Automake features are available, so you could decide to
+let Automake perform distribution or installation.
 Here is a possible @file{Makefile.am}:
 
 @example
 all-local:
-        cd subdir && $(MAKE) $(AM_MAKEFLAGS) all
+        cd subdir && $(MAKE) all
 check-local:
-        cd subdir && $(MAKE) $(AM_MAKEFLAGS) test
+        cd subdir && $(MAKE) test
 clean-local:
-        cd subdir && $(MAKE) $(AM_MAKEFLAGS) clean
+        cd subdir && $(MAKE) clean
 
 # Assuming the package knows how to install itself
 install-data-local:
-        cd subdir && $(MAKE) $(AM_MAKEFLAGS) install-data
+        cd subdir && $(MAKE) install-data
 install-exec-local:
-        cd subdir && $(MAKE) $(AM_MAKEFLAGS) install-exec
+        cd subdir && $(MAKE) install-exec
 uninstall-local:
-        cd subdir && $(MAKE) $(AM_MAKEFLAGS) uninstall
+        cd subdir && $(MAKE) uninstall
 
 # Distribute files from here.
 EXTRA_DIST = subdir/Makefile subdir/program.c ...
@@ -12119,7 +12115,7 @@ foo_SOURCES = foo.c
 dist_man_MANS = foo.1
 
 foo.1: foo.c $(top_srcdir)/configure.ac
-        $(MAKE) $(AM_MAKEFLAGS) foo$(EXEEXT)
+        $(MAKE) foo$(EXEEXT)
         help2man --output=foo.1 ./foo$(EXEEXT)
 @end example
 
@@ -12151,7 +12147,7 @@ should be changed to
 
 @example
 distributed-file: distributed-sources
-        $(MAKE) $(AM_MAKEFLAGS) built-tools
+        $(MAKE) built-tools
         build-command
 @end example
 
@@ -12393,11 +12389,6 @@ DejaGnu tests (@pxref{DejaGnu Tests}) use @code{RUNTESTDEFAULTFLAGS} and
 @code{CTAGSFLAGS}, and @code{AM_CTAGSFLAGS}.  Java rules
 (@pxref{Java}) use @code{JAVACFLAGS} and @code{AM_JAVACFLAGS}.  None
 of these rules support per-target flags (yet).
-
-To some extent, even @code{AM_MAKEFLAGS} (@pxref{Subdirectories})
-obeys this naming scheme.  The slight difference is that
-@code{MAKEFLAGS} is passed to sub-@command{make}s implicitly by
-@command{make} itself.
 
 However you should not think that all variables ending with
 @code{FLAGS} follow this convention.  For instance,
@@ -12645,7 +12636,7 @@ data.h: data.c
 ## Recover from the removal of $@@
         @@if test -f $@@; then :; else \
           rm -f data.c; \
-          $(MAKE) $(AM_MAKEFLAGS) data.c; \
+          $(MAKE) data.c; \
         fi
 @end example
 
@@ -12663,7 +12654,7 @@ data.h data.w data.x: data.c
 ## Recover from the removal of $@@
         @@if test -f $@@; then :; else \
           rm -f data.c; \
-          $(MAKE) $(AM_MAKEFLAGS) data.c; \
+          $(MAKE) data.c; \
         fi
 @end example
 
@@ -12699,7 +12690,7 @@ data.h data.w data.x: data.c
         else \
 ## Recover from the removal of $@@
           rm -f data.c; \
-          $(MAKE) $(AM_MAKEFLAGS) data.c; \
+          $(MAKE) data.c; \
         fi
 @end example
 
@@ -12716,7 +12707,7 @@ data.c data.h data.w data.x: data.stamp
 ## Recover from the removal of $@@
         @@if test -f $@@; then :; else \
           rm -f data.stamp; \
-          $(MAKE) $(AM_MAKEFLAGS) data.stamp; \
+          $(MAKE) data.stamp; \
         fi
 @end example
 
@@ -12729,9 +12720,9 @@ This solution still suffers from the second problem: the race
 condition in the recover rule.  If, after a successful build, a user
 erases @file{data.c} and @file{data.h}, and runs @samp{make -j}, then
 @command{make} may start both recover rules in parallel.  If the two
-instances of the rule execute @samp{$(MAKE) $(AM_MAKEFLAGS)
-data.stamp} concurrently the build is likely to fail (for instance, the
-two rules will create @file{data.tmp}, but only one can rename it).
+instances of the rule execute @samp{$(MAKE) data.stamp} concurrently
+the build is likely to fail (for instance, the two rules will create
+@file{data.tmp}, but only one can rename it).
 
 Admittedly, such a weird situation does not arise during ordinary
 builds.  It occurs only when the build tree is mutilated.  Here
@@ -12753,7 +12744,7 @@ data.c data.h data.w data.x: data.stamp
           if mkdir data.lock 2>/dev/null; then \
 ## This code is being executed by the first process.
             rm -f data.stamp; \
-            $(MAKE) $(AM_MAKEFLAGS) data.stamp; \
+            $(MAKE) data.stamp; \
             result=$$?; rm -rf data.lock; exit $$result; \
           else \
 ## This code is being executed by the follower processes.
@@ -12789,7 +12780,7 @@ $(ELCFILES): elc-stamp
           if mkdir elc-lock 2>/dev/null; then \
 ## This code is being executed by the first process.
             rm -f elc-stamp; \
-            $(MAKE) $(AM_MAKEFLAGS) elc-stamp; \
+            $(MAKE) elc-stamp; \
             rmdir elc-lock; \
           else \
 ## This code is being executed by the follower processes.
@@ -12835,7 +12826,7 @@ $(ELCFILES): elc-stamp
           if $$dry mkdir elc-lock 2>/dev/null; then \
 ## This code is being executed by the first process.
             $$dry rm -f elc-stamp; \
-            $(MAKE) $(AM_MAKEFLAGS) elc-stamp; \
+            $(MAKE) elc-stamp; \
             $$dry rmdir elc-lock; \
           else \
 ## This code is being executed by the follower processes.
