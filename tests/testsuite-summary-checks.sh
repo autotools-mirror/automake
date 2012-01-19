@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2011 Free Software Foundation, Inc.
+# Copyright (C) 2011, 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -69,15 +69,14 @@ do_check ()
 {
   cat > summary.exp
   expect_failure=false
-  xfail_tests=''
-  tests="TESTS='$*'"
+  tests=$* xfail_tests=
   for t in $*; do
     case $t in fail*|xpass*|error*) expect_failure=:;; esac
     case $t in xfail*|xpass*) xfail_tests="$xfail_tests $t";; esac
   done
-  test -z "$xfail_tests" || xfail_tests="XFAIL_TESTS='$xfail_tests'"
-  st=0
-  eval "env $tests $xfail_tests \$MAKE -e check > stdout || st=\$?"
+  set "TESTS=$tests"
+  test -z "$xfail_tests" || set "$@" XFAIL_TESTS="$xfail_tests"
+  st=0; $MAKE "$@" check >stdout || st=$?
   cat stdout
   if $expect_failure; then
     test $st -gt 0 || Exit 1

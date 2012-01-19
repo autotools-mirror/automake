@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2011 Free Software Foundation, Inc.
+# Copyright (C) 2011, 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ do_check ()
   cat all.test
   st=0
   if test $use_colors = yes; then
-    make_cmd="env AM_COLOR_TESTS=always $MAKE -e"
+    make_cmd="$MAKE AM_COLOR_TESTS=always"
   else
     make_cmd=$MAKE
   fi

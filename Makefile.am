@@ -233,6 +233,8 @@ sc_tests_no_gmake_requirement \
 sc_tests_no_gmake_checking \
 sc_tests_make_can_chain_suffix_rules \
 sc_no_am_makeflags \
+sc_tests_no_make_e \
+sc_docs_no_make_e \
 sc_tests_obsolete_variables \
 sc_tests_plain_make \
 sc_tests_plain_autoconf \
@@ -511,6 +513,22 @@ sc_no_am_makeflags:
 	 "; \
 	if grep '\bAM_MAKEFLAGS\b' $$files; then \
 	  echo "\$$(AM_MAKEFLAGS) is obsolete, don't use it." 1>&2; \
+	  exit 1; \
+	fi
+
+## "make -e" is brittle and unsafe, since it let *all* the environment
+## win over the macro definitions in the Makefiles.  We needed it when
+## we couldn't assume GNU make, but now that the tide has turned, it's
+## better to prohibit it altogether.
+sc_tests_no_make_e:
+	@if grep -E '\$$MAKE\b.* -[a-zA-Z0-9]*e' $(xtests); then \
+	  echo "\"make -e\" is brittle, don't use it." 1>&2; \
+	  exit 1; \
+	fi
+sc_docs_no_make_e:
+	@if grep '\bmake\b.* -[a-zA-Z0-9]*e' README tests/README; then \
+	  echo "Don't advocate the use of \"make -e\" in the manual or" \
+	       " in the README files." 1>&2; \
 	  exit 1; \
 	fi
 

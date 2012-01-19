@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2011 Free Software Foundation, Inc.
+# Copyright (C) 2011, 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -68,9 +68,10 @@ $AUTOMAKE -a
 sed 's/^FAIL:/XFAIL:/' exp-fail | LC_ALL=C sort > exp-xfail-1
 sed '/^ERROR:/d' exp-xfail-1 > exp-xfail-2
 
-sort exp-fail
-sort exp-xfail-1
-sort exp-xfail-2
+# For debugging.
+cat exp-fail
+cat exp-xfail-1
+cat exp-xfail-2
 
 ./configure
 
@@ -83,7 +84,7 @@ LC_ALL=C grep '^[A-Z][A-Z]*:' stdout | LC_ALL=C sort > got-fail
 diff exp-fail got-fail
 
 st=1
-XFAIL_TESTS="$failure_statuses 99" $MAKE -e check >stdout && st=0
+$MAKE check XFAIL_TESTS="$failure_statuses 99" >stdout && st=0
 cat stdout
 cat test-suite.log
 test $st -gt 0 || Exit 1
@@ -91,8 +92,10 @@ LC_ALL=C grep '^[A-Z][A-Z]*:' stdout | LC_ALL=C sort > got-xfail-1
 diff exp-xfail-1 got-xfail-1
 
 st=0
-XFAIL_TESTS="$failure_statuses" TESTS="0 77 $failure_statuses" \
-  $MAKE -e check >stdout || st=$?
+$MAKE check \
+  XFAIL_TESTS="$failure_statuses" \
+  TESTS="0 77 $failure_statuses" \
+  > stdout || st=$?
 cat stdout
 cat test-suite.log
 test $st -eq 0 || Exit 1
