@@ -1,5 +1,6 @@
 #! /bin/sh
-# Copyright (C) 2003, 2004, 2007, 2010 Free Software Foundation, Inc.
+# Copyright (C) 2003, 2004, 2007, 2010, 2012 Free Software Foundation,
+# Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +22,23 @@ required='gcc GNUmake'
 . ./defs || Exit 1
 
 set -e
+
+# Multilib support has been deprecated in the Automake core.
+
+cat >>configure.in <<'END'
+AM_ENABLE_MULTILIB([Makefile], [.])
+END
+
+$ACLOCAL
+$AUTOCONF -Wall -Werror 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+grep '^configure\.in:4:.*AM_ENABLE_MULTILIB.* removed.* soon' stderr
+grep '"multilib".*feature' stderr
+grep 'contrib.* in the Automake distribution' stderr
+
+rm -rf autom4te*.cache aclocal.m4 configure
+
+# Functional tests now.
 
 cat >configure.in <<'END'
 AC_INIT([multlib], [1.0])
@@ -112,16 +130,16 @@ mkdir libbar/sub
 cp "$testsrcdir/../lib/config-ml.in" .
 cp "$testsrcdir/../lib/symlink-tree" .
 
-$ACLOCAL
-$AUTOCONF
+$ACLOCAL -Wno-obsolete
+$AUTOCONF -Werror -Wall -Wno-obsolete
 $AUTOMAKE --add-missing
 cd libfoo
 $ACLOCAL
-$AUTOCONF
+$AUTOCONF -Werror -Wall -Wno-obsolete
 $AUTOMAKE --add-missing
 cd ../libbar
 $ACLOCAL
-$AUTOCONF
+$AUTOCONF -Werror -Wall -Wno-obsolete
 $AUTOMAKE --add-missing
 cd ..
 
