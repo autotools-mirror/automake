@@ -20,7 +20,10 @@
 
 SUBDIRS = Automake am
 
-dist_pkgvdata_DATA = COPYING INSTALL texinfo.tex config-ml.in
+dist_pkgvdata_DATA = \
+  COPYING \
+  INSTALL \
+  texinfo.tex
 
 ## These must all be executable when installed.  However, if we use
 ## _SCRIPTS, then the program transform will be applied, which is not
@@ -38,7 +41,6 @@ dist_script_DATA = \
   depcomp \
   compile \
   py-compile \
-  symlink-tree \
   ar-lib \
   test-driver \
   tap-driver.sh \
