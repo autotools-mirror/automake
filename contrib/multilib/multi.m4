@@ -1,25 +1,20 @@
 ##                                                          -*- Autoconf -*-
-# Copyright (C) 1998, 1999, 2000, 2001, 2003, 2004, 2005, 2006, 2011,
-# 2012 Free Software Foundation, Inc.
+# Copyright (C) 1998, 1999, 2000, 2001, 2003, 2004, 2005, 2006
+# Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 8
+# serial 6
 
 # AM_ENABLE_MULTILIB([MAKEFILE], [REL-TO-TOP-SRCDIR])
 # ---------------------------------------------------
 # Add --enable-multilib to configure.
 AC_DEFUN([AM_ENABLE_MULTILIB],
-[m4_warn([obsolete], [$0 will be removed from Automake core soon.
-Files implementing the "multilib" feature are (and will remain) available
-to the 'contrib/' directory in the Automake distribution.])]dnl
 [# Default to --enable-multilib
-AC_ARG_ENABLE([multilib],
-[AS_HELP_STRING(
-   [--enable-multilib],
-   [build many library versions (default)])],
+AC_ARG_ENABLE(multilib,
+[  --enable-multilib       build many library versions (default)],
 [case "$enableval" in
   yes) multilib=yes ;;
   no)  multilib=no ;;
@@ -40,7 +35,7 @@ if test "$srcdir" = "."; then
 else
   multi_basedir="$srcdir/$2"
 fi
-AC_SUBST([multi_basedir])
+AC_SUBST(multi_basedir)
 
 # Even if the default multilib is not a cross compilation,
 # it may be that some of the other multilibs are.

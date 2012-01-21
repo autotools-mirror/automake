@@ -465,7 +465,8 @@ sc_AMDEP_TRUE_in_automake_in:
 	  exit 1; \
 	fi
 
-## Tests should never call make directly.
+## Recursive make invocations should always pass $(AM_MAKEFLAGS)
+## to $(MAKE), for portability to non-GNU make.
 sc_tests_make_without_am_makeflags:
 	@if grep '^[^#].*(MAKE) ' $(srcdir)/lib/am/*.am $(srcdir)/automake.in |\
 		grep -v 'AM_MAKEFLAGS'; then \
@@ -865,18 +866,15 @@ WGET_SV_CVS = $(WGET) http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~/
 WGET_SV_GIT_CF = $(WGET) 'http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;hb=HEAD;f='
 WGET_SV_GIT_AC = $(WGET) 'http://git.savannah.gnu.org/gitweb/?p=autoconf.git;a=blob_plain;hb=HEAD;f='
 WGET_SV_GIT_GL = $(WGET) 'http://git.savannah.gnu.org/gitweb/?p=gnulib.git;a=blob_plain;hb=HEAD;f='
-WGET_GCC = $(WGET) 'http://gcc.gnu.org/viewcvs/*checkout*/trunk/'
 
 ## Files that we fetch and which we compare against.
 ## FIXME should be a lot more here
 FETCHFILES = \
 INSTALL \
-config-ml.in \
 config.guess \
 config.sub \
 gnupload \
 gitlog-to-changelog \
-symlink-tree \
 texinfo.tex
 
 ## Fetch the latest versions of files we care about.
@@ -890,9 +888,7 @@ fetch:
 	$(WGET_SV_CVS)texinfo/texinfo/doc/texinfo.tex -O texinfo.tex && \
 	$(WGET_SV_GIT_GL)doc/INSTALL -O INSTALL && \
 	$(WGET_SV_GIT_GL)build-aux/gnupload -O gnupload && \
-	$(WGET_SV_GIT_GL)build-aux/gitlog-to-changelog -O gitlog-to-changelog && \
-	$(WGET_GCC)config-ml.in -O config-ml.in && \
-	$(WGET_GCC)symlink-tree -O symlink-tree)
+	$(WGET_SV_GIT_GL)build-aux/gitlog-to-changelog -O gitlog-to-changelog)
 ## Don't exit after test because we want to give as many errors as
 ## possible.
 	@stat=0; for file in $(FETCHFILES); do \

@@ -19,4 +19,5 @@
 
 EXTRA_DIST = \
   check-html.am \
+  multilib/multi.m4 \
   README
