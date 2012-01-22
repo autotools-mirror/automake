@@ -917,7 +917,6 @@ silent-lex-generic.test \
 silent-yacc-gcc.test \
 silent-yacc-generic.test \
 silent-configsite.test \
-silent-nested-vars.test \
 srcsub.test \
 srcsub2.test \
 space.test \
