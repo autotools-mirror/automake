@@ -602,7 +602,6 @@ m4-inclusion.test \
 maintclean.test \
 maintclean-vpath.test \
 maintmode-configure-msg.test \
-make.test \
 makefile-deps.test \
 makej.test \
 makej2.test \
@@ -967,7 +966,6 @@ subobj8.test \
 subobj9.test \
 subobj10.test \
 subobj11a.test \
-subobj11b.test \
 subobj11c.test \
 subobjname.test \
 subpkg.test \

@@ -1,12 +1,12 @@
 ##                                                          -*- Autoconf -*-
 # Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2009,
-# 2010, 2011 Free Software Foundation, Inc.
+# 2010, 2011, 2012 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 14
+# serial 15
 
 # There are a few dirty hacks below to avoid letting `AC_PROG_CC' be
 # written in clear, in which case automake, when reading aclocal.m4,
@@ -28,7 +28,6 @@
 AC_DEFUN([_AM_DEPENDENCIES],
 [AC_REQUIRE([AM_SET_DEPDIR])dnl
 AC_REQUIRE([AM_OUTPUT_DEPENDENCY_COMMANDS])dnl
-AC_REQUIRE([AM_MAKE_INCLUDE])dnl
 AC_REQUIRE([AM_DEP_TRACK])dnl
 
 m4_if([$1], [CC],   [depcc="$CC"   am_compiler_list=],
@@ -89,7 +88,7 @@ AC_CACHE_CHECK([dependency style of $depcc],
       # Solaris 8's {/usr,}/bin/sh.
       touch sub/conftst$i.h
     done
-    echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
+    echo "include sub/conftest.Po" > confmf
 
     # We check with `-c' and `-o' for the sake of the "dashmstdout"
     # mode.  It turns out that the SunPro C++ compiler does not properly

@@ -37,7 +37,6 @@ lead-dot.m4 \
 lex.m4 \
 lispdir.m4 \
 maintainer.m4 \
-make.m4 \
 minuso.m4 \
 missing.m4 \
 mkdirp.m4 \

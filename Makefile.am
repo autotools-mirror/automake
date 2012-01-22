@@ -235,6 +235,8 @@ sc_tests_make_can_chain_suffix_rules \
 sc_no_am_makeflags \
 sc_tests_no_make_e \
 sc_docs_no_make_e \
+sc_make_simple_include \
+sc_tests_make_simple_include \
 sc_tests_obsolete_variables \
 sc_tests_plain_make \
 sc_tests_plain_autoconf \
@@ -500,6 +502,28 @@ sc_tests_make_can_chain_suffix_rules:
 	       'should just assume that without checking.' 1>&2; \
 	  exit 1; \
 	fi
+
+## GNU make supports POSIX-style runtime include directives.
+sc_grep_for_bad_make_include = \
+  if grep -E 'AM_MAKE_INCLUDE|am__(include|quote)' $$files; then \
+    echo 'GNU make supports runtime "include" directive.' 1>&2; \
+    echo 'Neither am__{include,quote} nor AM_MAKE_INCLUDE' \
+         'should be used anymore.' 1>&2; \
+    exit 1; \
+  fi
+sc_tests_make_simple_include: sc_ensure_testsuite_has_run
+	@files=tests/*.log; $(sc_grep_for_bad_make_include)
+sc_make_simple_include:
+	@files=" \
+	   $(xtests) \
+	   $(srcdir)/lib/am/*.am \
+	   $(srcdir)/m4/*.m4 \
+	   $(srcdir)/automake.in \
+	   $(srcdir)/doc/*.texi \
+	   aclocal.m4 \
+	   configure \
+	 "; \
+	 $(sc_grep_for_bad_make_include)
 
 ## $(AM_MAKEFLAGS) is obsolete now that we assume GNU make, since it
 ## is smart enough to correctly pass the values of macros redefined on
