@@ -236,6 +236,13 @@ unset am_funcs_file
 # tests (or portions of them) that requires a native compiler.
 cross_compiling ()
 {
+  # Quoting from the autoconf manual:
+  #   ... [$host_alias and $build both] default to the result of running
+  #   config.guess, unless you specify either --build or --host.  In
+  #   this case, the default becomes the system type you specified.
+  #   If you specify both, *and they're different*, configure enters
+  #   cross compilation mode (so it doesn't run any tests that require
+  #   execution).
   test x"$host_alias" != x && test x"$build_alias" != x"$host_alias"
 }
 
@@ -616,6 +623,56 @@ fetch_tap_driver ()
 # use the perl implementation by default for the moment.
 am_tap_implementation=${am_tap_implementation-shell}
 
+# Usage: require_compiler_ {cc|c++|fortran|fortran77}
+require_compiler_ ()
+{
+  case $# in
+    0) fatal_ "require_compiler_: missing argument";;
+    1) ;;
+    *) fatal_ "require_compiler_: too many arguments";;
+  esac
+  case $1 in
+    cc)
+      am__comp_lang="C"
+      am__comp_var=CC
+      am__comp_flag_vars='CFLAGS CPPFLAGS'
+      ;;
+    c++)
+      am__comp_lang="C++"
+      am__comp_var=CXX
+      am__comp_flag_vars='CXXFLAGS CPPFLAGS'
+      ;;
+    fortran)
+      am__comp_lang="Fortran"
+      am__comp_var=FC
+      am__comp_flag_vars='FCFLAGS'
+      ;;
+    fortran77)
+      am__comp_lang="Fortran 77"
+      am__comp_var=F77
+      am__comp_flag_vars='FFLAGS'
+      ;;
+  esac
+  shift
+  eval "am__comp_prog=\${$am__comp_var}" \
+    || fatal_ "expanding \${$am__comp_var} in require_compiler_"
+  case $am__comp_prog in
+    "")
+      fatal_ "botched configuration: \$$am__comp_var is empty";;
+    false)
+      skip_all_ "no $am__comp_lang compiler available";;
+    autodetect|autodetected)
+      # Let the ./configure commands in the test script try to determine
+      # these automatically.
+      unset $am__comp_var $am__comp_flag_vars;;
+    *)
+      # Pre-set these for the ./configure commands in the test script.
+      export $am__comp_var $am__comp_flag_vars;;
+  esac
+  # Delete private variables.
+  unset am__comp_lang am__comp_prog am__comp_var am__comp_flag_vars
+}
+
 ## ----------------------------------------------------------- ##
 ##  Checks for required tools, and additional setups (if any)  ##
 ##  required by them.                                          ##
@@ -636,14 +693,8 @@ do
   # Check that each required tool is present.
   case $tool in
     :) ;;
-    cc)
-      test "$CC"  = false && skip_all_ "no C compiler available";;
-    c++)
-      test "$CXX" = false && skip_all_ "no C++ compiler available";;
-    fortran)
-      test "$FC"  = false && skip_all_ "no Fortran compiler available";;
-    fortran77)
-      test "$F77" = false && skip_all_ "no Fortran 77 compiler available";;
+    cc|c++|fortran|fortran77)
+      require_compiler_ $tool;;
     xsi-shell)
       require_xsi "$SHELL";;
     xsi-bin-sh)
@@ -663,7 +714,11 @@ do
       ;;
     cl)
       CC=cl
-      export CC
+      # Don't export CFLAGS, as that could have been initialized to only
+      # work with the C compiler detected at configure time.  If the user
+      # wants CFLAGS to also influence `cl', he can still export CFLAGS
+      # in the environment "by hand" before calling the testsuite.
+      export CC CPPFLAGS
       echo "$me: running $CC -?"
       $CC -? || skip_all_ "Microsoft C compiler \`$CC' not available"
       ;;
@@ -699,7 +754,8 @@ do
       # has defined CC in his environment, otherwise ./configure will
       # prefer gcc to other compilers.
       CC=${am__tool_prefix}gcc
-      export CC
+      CFLAGS=$GNU_CFLAGS
+      export CC CFLAGS CPPFLAGS
       echo "$me: running $CC --version"
       $CC --version || skip_all_ "GNU C compiler not available"
       echo "$me: running $CC -v"
@@ -715,7 +771,8 @@ do
       ;;
     g++)
       CXX=${am__tool_prefix}g++
-      export CXX
+      CXXFLAGS=$GNU_CXXFLAGS
+      export CXX CXXFLAGS CPPFLAGS
       echo "$me: running $CXX --version"
       $CXX --version || skip_all_ "GNU C++ compiler not available"
       echo "$me: running $CXX -v"
@@ -723,31 +780,33 @@ do
       ;;
     gfortran)
       FC=${am__tool_prefix}gfortran
-      export FC
+      FCFLAGS=$GNU_FCFLAGS
+      export FC FCFLAGS
       echo "$me: running $FC --version"
       $FC --version || skip_all_ "GNU Fortran compiler not available"
       echo "$me: running $FC -v"
       $FC -v || skip_all_ "botched installation for GNU Fortran compiler"
       case " $required " in
         *\ g77\ *) ;;
-        *) F77=$FC; export F77;;
+        *) F77=$FC FFLAGS=$FCFLAGS; export F77 FFLAGS;;
       esac
       ;;
     g77)
       F77=${am__tool_prefix}g77
-      export F77
+      FFLAGS=$GNU_FFLAGS
+      export F77 FFLAGS
       echo "$me: running $F77 --version"
       $F77 --version || skip_all_ "GNU Fortran 77 compiler not available"
       echo "$me: running $F77 -v"
       $F77 -v || skip_all_ "botched installation for GNU Fortran 77 compiler"
       case " $required " in
         *\ gfortran\ *) ;;
-        *) FC=$F77; export FC;;
+        *) FC=$F77 FCFLAGS=$FFLAGS; export FC FCFLAGS;;
       esac
       ;;
     icc)
       CC=icc
-      export CC
+      export CC CPPFLAGS # But not CFLAGS (see comments for `cl' above).
       # There is no way to ask *only* the compiler's version.
       # This tool always wants to do something (by default
       # it will try link *nothing* and complain it cannot find

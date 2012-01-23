@@ -38,8 +38,11 @@ AC_SUBST([am_AUTORECONF], ["${AUTORECONF-autoreconf}"])
 AC_SUBST([am_AUTOHEADER], ["${AUTOHEADER-autoheader}"])
 AC_SUBST([am_AUTOUPDATE], ["${AUTOUPDATE-autoupdate}"])
 
+dnl We call AC_PROG_CC in an unusual way, and only for use in our
+dnl testsuite, so also use `no-dependencies' and `no-define' among
+dnl the automake options to avoid bloating and potential problems.
 AM_INIT_AUTOMAKE([1.10a dist-xz filename-length-max=99 color-tests
-		  parallel-tests silent-rules])
+		  parallel-tests silent-rules no-define no-dependencies])
 
 # The API version is the base version.  We must guarantee
 # compatibility for all releases with the same API version.
@@ -208,6 +211,112 @@ if test $am_cv_sh_errexit_works = no; then
   dnl restore font-lock: `
 fi
 AC_SUBST([sh_errexit_works], [$am_cv_sh_errexit_works])
+
+
+###########################################################################
+
+# Look for C, C++ and fortran compilers to be used in the testsuite.
+
+dnl We don't want to abort our configuration script if no C compiler is
+dnl available, as such a compiler is only required to run part of the
+dnl testsuite, not to build or install Automake.  Ditto for C++, Fortran
+dnl and Fortran 77 compilers.  Unfortunately, autoconf does not offer an
+dnl easy way to obtain this behaviour, so we'll need a few hacks.
+
+dnl We want the body of this macro to expand as a single shell statement,
+dnl thus we wrap it into { ... } brackets.
+AC_DEFUN([_AM_WRAP_MSG_ERROR], [ {
+  AC_MSG_WARN([$1])
+  am__failed=yes
+  break
+} ])
+
+AC_DEFUN([_AM_COMPILER_CAN_FAIL], [
+  m4_pushdef([AC_MSG_FAILURE], m4_defn([_AM_WRAP_MSG_ERROR]))
+  m4_pushdef([AC_MSG_ERROR],   m4_defn([_AM_WRAP_MSG_ERROR]))
+  am__failed=no
+  while :; do
+     $1
+     break
+  done
+  AS_IF([test $am__failed = yes], [$2])
+  # We have to clear these cache variables, so that future checks on
+  # compilers for different languages won't be confused.
+  unset ac_cv_objext ac_cv_exeext
+  # We also need to meddle with the autoconf internals to ensure that
+  # checks to find object and executable extensions will be run anew.
+  # FIXME: In the long run, the better thing to do would be to fix
+  # FIXME: autoconf instead ...
+  m4_undefine([m4_provide(_AC_COMPILER_OBJEXT)])
+  m4_undefine([m4_provide(_AC_COMPILER_EXEEXT)])
+  m4_popdef([AC_MSG_FAILURE])
+  m4_popdef([AC_MSG_ERROR])
+])
+
+# Prefer generic compilers to GNU ones when possible.  This will ensure
+# more testsuite coverage "in the wild".
+# Note that we don't look for the MSVC C/C++ compiler here.  This is
+# deliberate; for more discussion an rationale, see:
+# <http://lists.gnu.org/archive/html/automake-patches/2012-01/msg00130.html>
+
+# C compiler.
+_AM_COMPILER_CAN_FAIL([AC_PROG_CC([cc gcc])], [CC=false])
+AS_IF([test x"$GCC" = x"yes"], [am_CC_is_GNU=yes], [am_CC_is_GNU=no])
+
+# The list of C++ compilers here has been copied, pasted and edited
+# from `lib/autoconf/c.m4:AC_PROG_CXX' in the Autoconf distribution.
+# Keep it in sync, or better again, find out a way to avoid this code
+# duplication.
+_AM_COMPILER_CAN_FAIL([AC_PROG_CXX(dnl
+  [aCC CC FCC KCC RCC xlC_r xlC c++ cxx cc++ gpp g++])],
+  [CXX=false])
+AS_IF([test x"$GXX" = x"yes"], [am_CXX_is_GNU=yes], [am_CXX_is_GNU=no])
+
+# The lists of Fortran compilers here has been copied, pasted and edited
+# from file `lib/autoconf/fortran.m4' in the Autoconf distribution.
+# Keep it in sync, or better again, find out a way to avoid this code
+# duplication.
+
+_AM_COMPILER_CAN_FAIL([AC_PROG_FC(dnl
+  [xlf95 f95 fort ifort ifc efc pgfortran pgf95 lf95 ftn nagfor] dnl
+  [xlf90 f90 pgf90 pghpf epcf90 g95 gfortran])],
+  [FC=false])
+# FIXME this won't work as expected until we can assume autoconf 2.69 :-(
+AS_IF([test x"$GFC" = x"yes"], [am_FC_is_GNU=yes], [am_FC_is_GNU=no])
+
+_AM_COMPILER_CAN_FAIL([AC_PROG_F77(dnl
+  [xlf f77 frt pgf77 cf77 fort77 fl32 af77 g77 gfortran])],
+  [F77=false])
+AS_IF([test x"$G77" = x"yes"], [am_F77_is_GNU=yes], [am_F77_is_GNU=no])
+
+# Some tests will need the GNU compilers.  Searching for them here would
+# be overkill, since our testsuite already handles their search and setup
+# pretty well.  However, in case the compilers detected above at configure
+# time are not the GNU ones, we cannot use the values of CFLAGS, CXXFLAGS,
+# FCFLAGS and FFLAGS detected for them with the GNU compilers too, since
+# it's likely they won't be compatible.  So we allow the user to define
+# variants of this variables for the GNU compilers separately.
+
+test $am_CC_is_GNU = yes && GNU_CFLAGS=${GNU_CFLAGS-$CFLAGS}
+AC_ARG_VAR([GNU_CFLAGS], [GNU C compiler flags])
+
+test $am_CXX_is_GNU = yes && GNU_CXXFLAGS=${GNU_CXXFLAGS-$CXXFLAGS}
+AC_ARG_VAR([GNU_CXXFLAGS], [GNU C++ compiler flags])
+
+test $am_F77_is_GNU = yes && GNU_FCFLAGS=${GNU_FCFLAGS-$FCFLAGS}
+AC_ARG_VAR([GNU_FCFLAGS], [GNU Fortran compiler flags])
+
+test $am_FC_is_GNU = yes && GNU_FFLAGS=${GNU_FFLAGS-$FFLAGS}
+AC_ARG_VAR([GNU_FFLAGS], [GNU Fortran 77 compiler flags])
+
+# If we have been able to find at least a working compiler above, we
+# know what the object and executable extensions for this platform are.
+OBJEXT=${ac_cv_objext-UNKNOWN}
+EXEEXT=${ac_cv_exeext-UNKNOWN}
+AC_SUBST([OBJEXT])
+AC_SUBST([EXEEXT])
+
+###########################################################################
 
 AC_CONFIG_FILES([
   Makefile
