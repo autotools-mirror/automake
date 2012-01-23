@@ -34,7 +34,7 @@ use vars '@ISA', '@EXPORT', '@EXPORT_OK';
 @EXPORT = qw (err_var msg_var msg_cond_var reject_var
 	      var rvar vardef rvardef
 	      variables
-	      scan_variable_expansions check_variable_expansions
+	      scan_variable_expansions
 	      variable_delete
 	      variables_dump
 	      set_seen
@@ -753,44 +753,6 @@ sub scan_variable_expansions ($)
   return @result;
 }
 
-=item C<check_variable_expansions ($text, $where)>
-
-Check variable expansions in C<$text> and warn about any name that
-does not conform to POSIX.  C<$where> is the location of C<$text>
-for the error message.
-
-=cut
-
-sub check_variable_expansions ($$)
-{
-  my ($text, $where) = @_;
-  # Catch expansion of variables whose name does not conform to POSIX.
-  foreach my $var (scan_variable_expansions ($text))
-    {
-      if ($var !~ /$_VARIABLE_PATTERN/o)
-	{
-	  # If the variable name contains a space, it's likely
-	  # to be a GNU make extension (such as $(addsuffix ...)).
-	  # Mention this in the diagnostic.
-	  my $gnuext = "";
-	  $gnuext = "\n(probably a GNU make extension)" if $var =~ / /;
-	  # Accept recursive variable expansions if so desired
-	  # (we hope they are rather portable in practice).
-	  if ($var =~ /$_VARIABLE_RECURSIVE_PATTERN/o)
-	    {
-	      msg ('portability-recursive', $where,
-		   "$var: non-POSIX recursive variable expansion$gnuext");
-	    }
-	  else
-	    {
-	      msg ('portability', $where, "$var: non-POSIX variable name$gnuext");
-	    }
-	}
-    }
-}
-
-
-
 =item C<Automake::Variable::define($varname, $owner, $type, $cond, $value, $comment, $where, $pretty)>
 
 Define or append to a new variable.
@@ -842,17 +804,12 @@ sub define ($$$$$$$$)
 			       || $pretty == VAR_SILENT
 			       || $pretty == VAR_SORTED);
 
-  error $where, "bad characters in variable name `$var'"
-    if $var !~ /$_VARIABLE_PATTERN/o;
-
   # `:='-style assignments are not acknowledged by POSIX.  Moreover it
   # has multiple meanings.  In GNU make or BSD make it means "assign
   # with immediate expansion", while in OSF make it is used for
   # conditional assignments.
   msg ('portability', $where, "`:='-style assignments are not portable")
     if $type eq ':';
-
-  check_variable_expansions ($value, $where);
 
   # If there's a comment, make sure it is \n-terminated.
   if ($comment)

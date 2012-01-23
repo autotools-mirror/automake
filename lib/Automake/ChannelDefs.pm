@@ -160,7 +160,6 @@ register_channel 'gnu', type => 'warning';
 register_channel 'obsolete', type => 'warning', silent => 1;
 register_channel 'override', type => 'warning', silent => 1;
 register_channel 'portability', type => 'warning', silent => 1;
-register_channel 'portability-recursive', type => 'warning', silent => 1;
 register_channel 'syntax', type => 'warning';
 register_channel 'unsupported', type => 'warning';
 
@@ -292,37 +291,18 @@ sub switch_warning ($)
   elsif (channel_type ($cat) eq 'warning')
     {
       setup_channel $cat, silent => $has_no;
-      #
-      # Handling of portability warnings is trickier.  For relevant tests,
-      # see `dollarvar2', `extra-portability' and `extra-portability3'.
-      #
-      # -Wportability-recursive and -Wno-portability-recursive should not
-      # have any effect on other 'portability' or 'extra-portability'
-      # warnings, so there's no need to handle them separately or ad-hoc.
-      #
+      # Handling of portability warnings is trickier.
+      # See 'extra-portability.test'.
       if ($cat eq 'extra-portability' && ! $has_no) # -Wextra-portability
         {
-          # -Wextra-portability must enable 'portability' and
-          # 'portability-recursive' warnings.
+          # '-Wextra-portability' must enable 'portability' warnings.
           setup_channel 'portability', silent => 0;
-          setup_channel 'portability-recursive', silent => 0;
         }
-      if ($cat eq 'portability') # -Wportability or -Wno-portability
+      if ($cat eq 'portability' && $has_no) # -Wno-portability
         {
-          if ($has_no) # -Wno-portability
-            {
-              # -Wno-portability must disable 'extra-portability' and
-              # 'portability-recursive' warnings.
-              setup_channel 'portability-recursive', silent => 1;
-              setup_channel 'extra-portability', silent => 1;
-            }
-          else # -Wportability
-            {
-              # -Wportability must enable 'portability-recursive'
-              # warnings.  But it should have no influence over the
-              # 'extra-portability' warnings.
-              setup_channel 'portability-recursive', silent => 0;
-            }
+          # '-Wno-portability' must disable 'extra-portability'
+          # warnings.
+          setup_channel 'extra-portability', silent => 1;
         }
     }
   else

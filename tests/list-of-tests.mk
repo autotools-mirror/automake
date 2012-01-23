@@ -375,11 +375,8 @@ distcheck-override-infodir.test \
 distcheck-pr9579.test \
 distcheck-pr10470.test \
 dmalloc.test \
-doc-parsing-buglets-colneq-subst.test \
 doc-parsing-buglets-tabs.test \
 dollar.test \
-dollarvar.test \
-dollarvar2.test \
 double.test \
 dup2.test \
 else.test \
@@ -413,7 +410,6 @@ extra12.test \
 extra-programs-empty.test \
 extra-portability.test \
 extra-portability2.test \
-extra-portability3.test \
 extradep.test \
 extradep2.test \
 f90only.test \
@@ -440,6 +436,7 @@ gcj6.test \
 gettext.test \
 gettext2.test \
 gettext3.test \
+gmake-vars.test \
 gnumake.test \
 gnuwarn.test \
 gnuwarn2.test \
@@ -919,7 +916,6 @@ silent-lex-gcc.test \
 silent-lex-generic.test \
 silent-yacc-gcc.test \
 silent-yacc-generic.test \
-silent-nowarn.test \
 silent-configsite.test \
 silent-nested-vars.test \
 srcsub.test \
@@ -1148,7 +1144,6 @@ vala5.test \
 vala-vpath.test \
 vala-mix.test \
 vars.test \
-vars3.test \
 vartar.test \
 vartypos.test \
 vartypo2.test \
