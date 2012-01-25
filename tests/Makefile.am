@@ -37,7 +37,6 @@ TESTS = ## Will be updated later.
 XFAIL_TESTS = \
 all.test \
 cond17.test \
-depcomp-recover.test \
 gcj6.test \
 interp3.test \
 override-conditional-2.test \

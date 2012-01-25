@@ -339,8 +339,6 @@ depend.test \
 depend2.test \
 depend3.test \
 depend4.test \
-depend5.test \
-depend6.test \
 deprecated-acinit.test \
 destdir.test \
 dirlist.test \
@@ -781,7 +779,6 @@ posixsubst-programs.test \
 posixsubst-scripts.test \
 posixsubst-sources.test \
 posixsubst-tests.test \
-postproc.test \
 ppf77.test \
 pr2.test \
 pr9.test \
@@ -792,8 +789,6 @@ pr211.test \
 pr220.test \
 pr224.test \
 pr229.test \
-pr243.test \
-pr266.test \
 pr279.test \
 pr279-2.test \
 pr287.test \

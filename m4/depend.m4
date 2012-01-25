@@ -27,7 +27,6 @@
 # just rely on AC_PROG_CC.
 AC_DEFUN([_AM_DEPENDENCIES],
 [AC_REQUIRE([AM_SET_DEPDIR])dnl
-AC_REQUIRE([AM_OUTPUT_DEPENDENCY_COMMANDS])dnl
 AC_REQUIRE([AM_DEP_TRACK])dnl
 
 m4_if([$1], [CC],   [depcc="$CC"   am_compiler_list=],

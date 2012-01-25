@@ -27,7 +27,6 @@ ccstdc.m4 \
 cond.m4 \
 cond-if.m4 \
 depend.m4 \
-depout.m4 \
 dmalloc.m4 \
 gcj.m4 \
 header.m4 \
