@@ -711,7 +711,7 @@ WGET_SV_GIT_AC = $(WGET) 'http://git.savannah.gnu.org/gitweb/?p=autoconf.git;a=b
 WGET_SV_GIT_GL = $(WGET) 'http://git.savannah.gnu.org/gitweb/?p=gnulib.git;a=blob_plain;hb=HEAD;f='
 
 ## Files that we fetch and which we compare against.
-## FIXME should be a lot more here
+## The 'lib/COPYING' file must still be synced by hand.
 FETCHFILES = \
 INSTALL \
 config.guess \
