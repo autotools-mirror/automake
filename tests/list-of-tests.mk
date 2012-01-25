@@ -329,6 +329,11 @@ depcomp6.test \
 depcomp7.test \
 depcomp8a.test \
 depcomp8b.test \
+depcomp-recover.test \
+depcomp-shuffle.test \
+depcomp-shuffle-vpath.test \
+depcomp-shuffle-sub.test \
+depcomp-shuffle-sub-vpath.test \
 depdist.test \
 depend.test \
 depend2.test \
