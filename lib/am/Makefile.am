@@ -46,7 +46,6 @@ ltlib.am \
 ltlibrary.am \
 mans-vars.am \
 mans.am \
-multilib.am \
 program.am \
 progs.am \
 python.am \

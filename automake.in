@@ -386,9 +386,6 @@ my $package_version = '';
 # Where version is defined.
 my $package_version_location;
 
-# TRUE if we've seen AM_ENABLE_MULTILIB.
-my $seen_multilib = 0;
-
 # TRUE if we've seen AM_PROG_AR
 my $seen_ar = 0;
 
@@ -3683,16 +3680,6 @@ sub handle_tags
     }
 }
 
-# Handle multilib support.
-sub handle_multilib
-{
-  if ($seen_multilib && $relative_dir eq '.')
-    {
-      $output_rules .= &file_contents ('multilib', new Automake::Location);
-      push (@all, 'all-multi');
-    }
-}
-
 
 # user_phony_rule ($NAME)
 # -----------------------
@@ -5209,7 +5196,6 @@ sub scan_autoconf_traces ($)
 		AC_SUBST_TRACE => 1,
 		AM_AUTOMAKE_VERSION => 1,
 		AM_CONDITIONAL => 2,
-		AM_ENABLE_MULTILIB => 0,
 		AM_GNU_GETTEXT => 0,
 		AM_GNU_GETTEXT_INTL_SUBDIR => 0,
 		AM_INIT_AUTOMAKE => 0,
@@ -5370,10 +5356,6 @@ sub scan_autoconf_traces ($)
       elsif ($macro eq 'AM_CONDITIONAL')
 	{
 	  $configure_cond{$args[1]} = $where;
-	}
-      elsif ($macro eq 'AM_ENABLE_MULTILIB')
-	{
-	  $seen_multilib = $where;
 	}
       elsif ($macro eq 'AM_GNU_GETTEXT')
 	{
@@ -5892,9 +5874,9 @@ sub lang_vala_finish_target ($$)
 # especially important on systems with sub-second timestamp resolution).
 # Thus we need to create the stamp file *before* invoking valac, and to
 # move it to its final location only after valac has been invoked.
-    "\t${silent}rm -f \$@ && echo stamp > \$@-t\n".
+    "\t${silent}rm -f \$\@ && echo stamp > \$\@-t\n".
     "\t${verbose}\$(am__cd) \$(srcdir) && ${compile} \$(${derived}_SOURCES)\n".
-    "\t${silent}mv -f \$@-t \$@\n";
+    "\t${silent}mv -f \$\@-t \$\@\n";
 
   push_dist_common ("${derived}_vala.stamp");
 
@@ -8092,7 +8074,6 @@ sub generate_makefile ($$)
       define_pretty_variable ('DIST_SOURCES', TRUE, INTERNAL, @dist_sources);
     }
 
-  handle_multilib;
   handle_texinfo;
   handle_emacs_lisp;
   handle_python;

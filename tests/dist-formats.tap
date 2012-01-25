@@ -75,12 +75,10 @@ all_compressors=`
   done | tr "$nl" ' '`
 echo All compressors: $all_compressors
 
-# Assume gzip(1) and compress(1) are available on every reasonable
-# portability target.
+# Assume gzip(1) is available on every reasonable portability target.
 missing_compressors=`
   for c in $all_compressors; do
-    test $c = compress || test $c = gzip || $c --version </dev/null >&2 \
-      && continue
+    test $c = gzip || $c --version </dev/null >&2 && continue
     echo $c
   done | tr "$nl" ' '`
 echo Missing compressors: $missing_compressors
@@ -147,7 +145,7 @@ can_compress ()
 
   command_ok_if_have_compressor "'make dist-$format' work by default" \
     eval '
-      rm -f *$tarname* \
+      rm -rf *$tarname* \
         && make dist-$format \
         && test -f $tarname-1.0.$suffix \
         && ls -l *$tarname* \
@@ -170,7 +168,7 @@ command_ok_ "default [make distcheck]"  $MAKE distcheck
 command_ok_ "'make dist' only builds *.tar.gz by default" \
             test "`ls *defaults*`" = defaults-1.0.tar.gz
 
-rm -f *defaults*
+rm -rf *defaults*
 
 for fmt in $all_compression_formats; do
   can_compress defaults $fmt
@@ -249,7 +247,7 @@ END
   command_ok_ "$desc [configure]" ./configure
   command_ok_ "$desc [ark-name]" $MAKE check-ark-name
   command_ok_if_have_compressor "$desc [distcheck]" $MAKE distcheck
-  command_ok_if_have_compressor "$desc [distcheck]" $MAKE check-ark-exists
+  command_ok_if_have_compressor "$desc [ark-exists]" $MAKE check-ark-exists
   command_ok_ "$desc [no .tar.gz]"  $MAKE check-no-tar-gz
 
   unset desc
@@ -310,6 +308,7 @@ check_tarball ()
 command_ok_ "$desc [automake]" $AUTOMAKE
 
 skip_reason=
+have_compressor compress || skip_reason="'compress' not available"
 have_compressor bzip2 || skip_reason="'bzip2' not available"
 if test "$MAKE_j4" = false; then
   test -z "$skip_reason" || skip_reason="$skip_reason and "

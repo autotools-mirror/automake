@@ -1,6 +1,6 @@
 #! /bin/sh
-# Copyright (C) 2003, 2004, 2007, 2010, 2011 Free Software Foundation,
-# Inc.
+# Copyright (C) 2003, 2004, 2007, 2010, 2011, 2012 Free Software
+# Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,9 +17,19 @@
 
 # Check multilib support.
 # Based on a test case from Ralf Corsepius.
+# FIXME: the features tested by this script has been moved in contrib.
+# FIXME: We should move this script accordingly.
 
 required=gcc
 . ./defs || Exit 1
+
+mldir=$top_testsrcdir/contrib/multilib
+mkdir m4
+cp "$mldir"/config-ml.in "$mldir"/symlink-tree .
+cp "$mldir"/multi.m4 m4
+
+ACLOCAL_PATH=${ACLOCAL_PATH+"$ACLOCAL_PATH:"}`pwd`/m4
+export ACLOCAL_PATH
 
 cat >configure.in <<'END'
 AC_INIT([multlib], [1.0])
@@ -49,12 +59,18 @@ PATH=`pwd`$PATH_SEPARATOR$PATH
 cat >Makefile.am <<'EOF'
 SUBDIRS = @subdirs@
 EXTRA_DIST = config-ml.in symlink-tree
+check-all:
+	test -f debug/libfoo/libfoo.a
+	test -f debug/libbar/libbar.a
+	test -f libfoo/libfoo.a
+	test -f libbar/libbar.a
 EOF
 
 # libfoo tests multilib supports when there are no subdirectories
 # libbar tests multilib supports when there are subdirectories
 
 mkdir libfoo
+cp "$mldir"/multilib.am libfoo/
 
 cat >libfoo/configure.in <<'END'
 AC_PREREQ(2.57)
@@ -75,11 +91,13 @@ END
 cat >libfoo/Makefile.am <<'END'
 noinst_LIBRARIES = libfoo.a
 libfoo_a_SOURCES = foo.c
+include $(top_srcdir)/multilib.am
 END
 
 : > libfoo/foo.c
 
 mkdir libbar
+cp "$mldir"/multilib.am libbar/
 
 cat >libbar/configure.in <<'END'
 AC_PREREQ(2.57)
@@ -100,35 +118,38 @@ cat >libbar/Makefile.am <<'END'
 SUBDIRS = sub
 noinst_LIBRARIES = libbar.a
 libbar_a_SOURCES = bar.c
+include $(top_srcdir)/multilib.am
 END
 
 mkdir libbar/sub
-
-: >libbar/sub/Makefile.am
-
+echo 'include $(top_srcdir)/multilib.am' >libbar/sub/Makefile.am
 : > libbar/bar.c
 
-cp "$am_scriptdir"/config-ml.in "$am_scriptdir"/symlink-tree .
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE --add-missing
 
-$ACLOCAL
-$AUTOCONF
-$AUTOMAKE --add-missing
 cd libfoo
-$ACLOCAL
-$AUTOCONF
-$AUTOMAKE --add-missing
-cd ../libbar
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
 cd ..
 
+cd libbar
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE --add-missing
+cd ..
 
 # Check VPATH builds
 mkdir build
 cd build
 ../configure --enable-multilib CC=mycc
 $MAKE
+test -f debug/libfoo/libfoo.a
+test -f debug/libbar/libbar.a
+test -f libfoo/libfoo.a
+test -f libbar/libbar.a
 $MAKE install
 $MAKE distcleancheck
 
@@ -136,4 +157,7 @@ $MAKE distcleancheck
 cd ..
 # Why to I have to specify --with-target-subdir?
 ./configure --enable-multilib --with-target-subdir=. CC=mycc
-$MAKE
+$MAKE check
+DISTCHECK_CONFIGURE_FLAGS='--enable-multilib CC=mycc' $MAKE distcheck
+
+:

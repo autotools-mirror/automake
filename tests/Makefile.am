@@ -138,6 +138,19 @@ do_subst = sed \
   -e 's|@PERL[@]|$(PERL)|g' \
   -e 's|@EGREP[@]|$(EGREP)|g' \
   -e 's|@FGREP[@]|$(FGREP)|g' \
+  -e 's|@CPPFLAGS[@]|$(CPPFLAGS)|g' \
+  -e 's|@CC[@]|$(CC)|g' \
+  -e 's|@CFLAGS[@]|$(CFLAGS)|g' \
+  -e 's|@CXX[@]|$(CXX)|g' \
+  -e 's|@CXXFLAGS[@]|$(CXXFLAGS)|g' \
+  -e 's|@F77[@]|$(F77)|g' \
+  -e 's|@FFLAGS[@]|$(FFLAGS)|g' \
+  -e 's|@FC[@]|$(FC)|g' \
+  -e 's|@FCFLAGS[@]|$(FCFLAGS)|g' \
+  -e 's|@GNU_CFLAGS[@]|$(GNU_CFLAGS)|g' \
+  -e 's|@GNU_CXXFLAGS[@]|$(GNU_CXXFLAGS)|g' \
+  -e 's|@GNU_FFLAGS[@]|$(GNU_FFLAGS)|g' \
+  -e 's|@GNU_FCFLAGS[@]|$(GNU_FCFLAGS)|g' \
   -e 's|@TEX[@]|$(TEX)|g' \
   -e 's|@MODIFICATION_DELAY[@]|$(MODIFICATION_DELAY)|g' \
   -e 's|@am_AUTOCONF[@]|$(am_AUTOCONF)|g' \

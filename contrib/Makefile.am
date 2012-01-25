@@ -19,4 +19,9 @@
 
 EXTRA_DIST = \
   check-html.am \
+  multilib/README \
+  multilib/config-ml.in \
+  multilib/symlink-tree \
+  multilib/multilib.am \
+  multilib/multi.m4 \
   README
