@@ -34,6 +34,7 @@ TAGS_FILES = $(AUTOMAKESOURCES)
 
 EXTRA_DIST = \
   HACKING \
+  NG-NEWS \
   ChangeLog.96 \
   ChangeLog.98 \
   ChangeLog.00 \
