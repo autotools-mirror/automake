@@ -491,6 +491,7 @@ instmany-python.test \
 install-info-dir.test \
 interp.test \
 interp2.test \
+interp3.test \
 java.test \
 java2.test \
 java3.test \

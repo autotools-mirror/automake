@@ -38,6 +38,7 @@ XFAIL_TESTS = \
 all.test \
 cond17.test \
 gcj6.test \
+interp3.test \
 override-conditional-2.test \
 java-nobase.test \
 objext-pr10128.test \
