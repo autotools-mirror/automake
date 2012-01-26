@@ -1,4 +1,4 @@
-# Copyright (C) 2003, 2004, 2006, 2007, 2010, 2011 Free Software
+# Copyright (C) 2003, 2004, 2006, 2007, 2010, 2011, 2012 Free Software
 # Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
@@ -625,11 +625,6 @@ sub define ($$$$$)
     }
 
 
-  # A GNU make-style pattern rule has a single "%" in the target name.
-  msg ('portability', $where,
-       "`%'-style pattern rules are a GNU make extension")
-    if $target =~ /^[^%]*%[^%]*$/;
-
   # Diagnose target redefinitions.
   if ($tdef)
     {
@@ -647,8 +642,7 @@ sub define ($$$$$)
 	  if ($oldowner == RULE_USER)
 	    {
 	      # Ignore `%'-style pattern rules.  We'd need the
-	      # dependencies to detect duplicates, and they are
-	      # already diagnosed as unportable by -Wportability.
+	      # dependencies to detect duplicates.
 	      if ($target !~ /^[^%]*%[^%]*$/)
 		{
 		  ## FIXME: Presently we can't diagnose duplicate user rules

@@ -1,5 +1,5 @@
-# Copyright (C) 2003, 2004, 2005, 2006, 2008, 2009, 2010 Free Software
-# Foundation, Inc.
+# Copyright (C) 2003, 2004, 2005, 2006, 2008, 2009, 2010, 2012 Free
+# Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -803,13 +803,6 @@ sub define ($$$$$$$$)
 			       || $pretty == VAR_PRETTY
 			       || $pretty == VAR_SILENT
 			       || $pretty == VAR_SORTED);
-
-  # `:='-style assignments are not acknowledged by POSIX.  Moreover it
-  # has multiple meanings.  In GNU make or BSD make it means "assign
-  # with immediate expansion", while in OSF make it is used for
-  # conditional assignments.
-  msg ('portability', $where, "`:='-style assignments are not portable")
-    if $type eq ':';
 
   # If there's a comment, make sure it is \n-terminated.
   if ($comment)

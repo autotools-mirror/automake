@@ -182,9 +182,7 @@ check-concurrency-bug9245.test \
 checkall.test \
 clean.test \
 clean2.test \
-colneq.test \
 colneq2.test \
-colneq3.test \
 colon.test \
 colon2.test \
 colon3.test \
@@ -657,6 +655,7 @@ notrans.test \
 number.test \
 objc.test \
 objc2.test \
+objdir.test \
 objext-pr10128.test \
 obsolete.test \
 oldvars.test \
@@ -679,6 +678,8 @@ override-conditional-1.test \
 override-conditional-2.test \
 override-html.test \
 override-suggest-local.test \
+pattern-rules.test \
+pattern-rules2.test \
 parallel-am.test \
 parallel-am2.test \
 parallel-am3.test \
@@ -753,8 +754,6 @@ test-trs-recover2.test \
 test-extensions.test \
 test-extensions-cond.test \
 parse.test \
-percent.test \
-percent2.test \
 phony.test \
 pluseq.test \
 pluseq2.test \
@@ -948,7 +947,6 @@ subdir3.test \
 subdir4.test \
 subdir5.test \
 subdir6.test \
-subdir7.test \
 subdir8.test \
 subdir9.test \
 subdir10.test \
@@ -1141,6 +1139,7 @@ vala5.test \
 vala-vpath.test \
 vala-mix.test \
 vars.test \
+vars-assign.test \
 vartar.test \
 vartypos.test \
 vartypo2.test \

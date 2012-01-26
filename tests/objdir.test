@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2011, 2012 Free Software Foundation, Inc.
+# Copyright (C) 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,39 +14,46 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that AUTOMAKE_OPTIONS support variable expansion.
+# A directory named 'obj' could create problems with BSD make, but
+# shouldn't with GNU make; so check that
+#  - the old portability warning diagnosing it is gone, and
+#  - such a directory truly causes no problems with GNU make.
 
+am_create_testdir=empty
 . ./defs || Exit 1
-
-# We want complete control over automake options.
-AUTOMAKE=$am_original_AUTOMAKE
 
 cat > configure.in <<END
 AC_INIT([$me], [1.0])
-AM_INIT_AUTOMAKE([-Wall -Werror gnu])
+AC_CONFIG_AUX_DIR([obj])
+AM_INIT_AUTOMAKE
+AC_REQUIRE_AUX_FILE([Makefile])
 AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
+END
+
+mkdir obj
+cat > obj/Makefile <<'END'
+$(error GNU make should not consider this)
+all:
+	echo "GNU make should not consider this"; exit 1
 END
 
 cat > Makefile.am <<'END'
-# The following should expand to '-Wnone -Wno-error foreign -Wportability'.
-AUTOMAKE_OPTIONS = $(foo) foreign
-AUTOMAKE_OPTIONS += ${bar}
-foo = $(foo1)
-foo1 = ${foo2}
-foo2 = -Wnone
-foo2 += $(foo3)
-foo3 = -Wno-error
-bar = -Wportability
-# This will give a warning with `-Wportability'.
-.aaa.bbb .ccc.ddd:
-# This would give a warning with `-Woverride'.
-install:
+check-local:
+	test -f $(srcdir)/obj/Makefile
 END
 
 $ACLOCAL
-AUTOMAKE_run
-grep '^Makefile\.am:.*inference rules can have only one target' stderr
-grep README stderr && Exit 1
-$EGREP '(install|override)' stderr && Exit 1
+$AUTOMAKE -a
+$AUTOCONF
+
+test -f obj/install-sh
+test ! -f install-sh
+
+./configure
+# This first make invocation actually fails with NetBSD make
+# and FreeBSD 8.2 make.
+$MAKE
+$MAKE distcheck
 
 :

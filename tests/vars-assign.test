@@ -1,6 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002, 2003, 2004, 2010, 2011 Free Software Foundation,
-# Inc.
+# Copyright (C) 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,32 +14,35 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Naming a subdirectory `obj/' is a bad idea.  Automake should say so.
+# Automake do not complain about nor messes up GNU make specific
+# variable assignments (":=" and "?=").
 
 . ./defs || Exit 1
 
-mkdir obj
+echo AC_OUTPUT >> configure.in
 
-cat >>configure.in << 'END'
-AC_CONFIG_FILES([obj/Makefile])
-AC_OUTPUT
+unset PREFOO FOO BAR BAZ XFOO XBAZ || :
+
+cat > Makefile.am <<'END'
+PREFOO = bar
+FOO := foo$(PREFOO)$(XFOO)
+XFOO = fail
+BAR ?= barbar
+
+.PHONY: test1 test2
+test1:
+	test $(FOO) = foobar
+	test $(BAR) = barbar
+test2:
+	test $(FOO) = foobar
+	test $(BAR) = rabrab
 END
-
-: > obj/Makefile.am
-echo 'SUBDIRS = obj' >Makefile.am
 
 $ACLOCAL
-
-AUTOMAKE_fails
-grep 'Makefile.am:1:.*obj.*BSD' stderr
-
-cat >Makefile.am <<'END'
-SUBDIRS = @STH@
-FOO = obj
-DIST_SUBDIRS = $(FOO)
-END
-
-AUTOMAKE_fails
-grep 'Makefile.am:2:.*obj.*BSD' stderr
+$AUTOCONF
+$AUTOMAKE
+./configure
+$MAKE test1
+PREFOO=notseen FOO=notseen BAR=rabrab $MAKE test2
 
 :
