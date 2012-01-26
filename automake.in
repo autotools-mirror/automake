@@ -1385,27 +1385,6 @@ sub handle_languages
 	    # This is not used by depend2.am.
 	    my $der_ext = (&{$lang->output_extensions} ($ext))[0];
 
-	    # When we output an inference rule like `.c.o:' we
-	    # have two cases to consider: either subdir-objects
-	    # is used, or it is not.
-	    #
-	    # In the latter case the rule is used to build objects
-	    # in the current directory, and dependencies always
-	    # go into `./$(DEPDIR)/'.  We can hard-code this value.
-	    #
-	    # In the former case the rule can be used to build
-	    # objects in sub-directories too.  Dependencies should
-	    # go into the appropriate sub-directories, e.g.,
-	    # `sub/$(DEPDIR)/'.  The value of this directory
-	    # needs to be computed on-the-fly.
-	    #
-	    # DEPBASE holds the name of this directory, plus the
-	    # basename part of the object file (extensions Po, TPo,
-	    # Plo, TPlo will be added later as appropriate).  It is
-	    # either hardcoded, or a shell variable (`$depbase') that
-	    # will be computed by the rule.
-	    my $depbase =
-	      option ('subdir-objects') ? '$$depbase' : '$(DEPDIR)/$*';
 	    $output_rules .=
 	      file_contents ($rule_file,
 			     new Automake::Location,
@@ -1414,7 +1393,6 @@ sub handle_languages
 
 			     'DERIVED-EXT' => $der_ext,
 
-			     DEPBASE   => $depbase,
 			     BASE      => '$*',
 			     SOURCE    => '$<',
 			     SOURCEFLAG => $sourceflags{$ext} || '',
@@ -1472,20 +1450,12 @@ sub handle_languages
 	    # We _need_ `-o' for per object rules.
 	    my $output_flag = $lang->output_flag || '-o';
 
-	    my $depbase = dirname ($obj);
-	    $depbase = ''
-		if $depbase eq '.';
-	    $depbase .= '/'
-		unless $depbase eq '';
-	    $depbase .= '$(DEPDIR)/' . basename ($obj);
-
 	    $output_rules .=
 	      file_contents ($rule_file,
 			     new Automake::Location,
 			     %transform,
 			     GENERIC   => 0,
 
-			     DEPBASE   => $depbase,
 			     BASE      => $obj,
 			     SOURCE    => $source,
 			     SOURCEFLAG => $sourceflags{$srcext} || '',
