@@ -260,6 +260,7 @@ configure.test \
 confdeps.test \
 conff.test \
 conff2.test \
+conffile-leading-dot.test \
 confh.test \
 confh4.test \
 confh5.test \
