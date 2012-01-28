@@ -19,8 +19,8 @@
 # tests might be in `$(builddir)' rather than in `$(srcdir)'), TAP-based
 # tests script (which have a `.tap' extension) and helper scripts used
 # by other test cases (which have a `.sh' extension).
-xtests = \
-  `if test $(srcdir) = .; then \
+xtests := $(shell \
+  if test $(srcdir) = .; then \
      dirs=.; \
    else \
      dirs='$(srcdir) .'; \
@@ -29,9 +29,9 @@ xtests = \
      for s in test tap sh; do \
        ls $$d/tests/*.$$s 2>/dev/null; \
      done; \
-   done | sort`
+   done | sort)
 
-ams = `find $(srcdir) -name '*.am'`
+ams := $(shell find $(srcdir) -name '*.am')
 
 # Some simple checks, and then ordinary check.  These are only really
 # guaranteed to work on my machine.
@@ -89,7 +89,7 @@ maintainer-check: $(syntax_check_rules)
 ## list of all test scripts in the Automake testsuite.
 .PHONY: maintainer-check-list-of-tests
 maintainer-check-list-of-tests:
-	$(am__cd) tests && $(MAKE) $(AM_MAKEFLAGS) $@
+	$(MAKE) -C tests $@
 maintainer-check: maintainer-check-list-of-tests
 
 ## Look for test whose names can cause spurious failures when used as
