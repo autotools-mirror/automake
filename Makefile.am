@@ -56,16 +56,16 @@ install-exec-hook:
 	@for p in $(bin_SCRIPTS); do \
 	  f="`echo $$p|sed '$(transform)'`"; \
 	  fv="$$f-$(APIVERSION)"; \
-	  rm -f $(DESTDIR)$(bindir)/$$fv; \
-	  echo " $(LN) $(DESTDIR)$(bindir)/$$f $(DESTDIR)$(bindir)/$$fv"; \
-	  $(LN) $(DESTDIR)$(bindir)/$$f $(DESTDIR)$(bindir)/$$fv; \
+	  rm -f "$(DESTDIR)$(bindir)/$$fv"; \
+	  echo " $(LN) '$(DESTDIR)$(bindir)/$$f' '$(DESTDIR)$(bindir)/$$fv'"; \
+	  $(LN) "$(DESTDIR)$(bindir)/$$f" "$(DESTDIR)$(bindir)/$$fv"; \
 	done
 
 uninstall-hook:
 	@for p in $(bin_SCRIPTS); do \
 	  f="`echo $$p|sed '$(transform)'`"; \
 	  fv="$$f-$(APIVERSION)"; \
-	  rm -f $(DESTDIR)$(bindir)/$$fv; \
+	  rm -f "$(DESTDIR)$(bindir)/$$fv"; \
 	done
 
 
@@ -233,14 +233,14 @@ autodiffs:
 	     rev=$$1 dir=$$2 \
 	       && echo "$@: will get files from revision $$rev" \
 	       && git clone -q --depth 1 "$$am_gitdir" tmp \
-	       && cd tmp \
+	       && $(am__cd) tmp \
 	       && git checkout -q "$$rev" \
 	       && echo "$@: bootstrapping $$rev" \
 	       && $(SHELL) ./bootstrap \
 	       && echo "$@: copying files from $$rev" \
 	       && makefile_ins=`find . -name Makefile.in` \
 	       && (tar cf - configure aclocal.m4 $$makefile_ins) | \
-	          (cd .. && cd "$$dir" && tar xf -) \
+	          (cd .. && $(am__cd) "$$dir" && tar xf -) \
 	       && cd .. \
 	       && rm -rf tmp; \
 	 }; \
@@ -250,7 +250,7 @@ autodiffs:
 	   && git --git-dir="$$am_gitdir" describe $$NEW_COMMIT >/dev/null \
 	   && rm -rf $$outdir \
 	   && mkdir $$outdir \
-	   && cd $$outdir \
+	   && $(am__cd) $$outdir \
 	   && mkdir new old \
 	   && get_autofiles_from_rev $$OLD_COMMIT old \
 	   && get_autofiles_from_rev $$NEW_COMMIT new \

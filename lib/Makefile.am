@@ -51,8 +51,8 @@ EXTRA_DIST = gnupload gitlog-to-changelog
 install-data-hook:
 	@$(POST_INSTALL)
 	@for prog in $(dist_script_DATA); do \
-	  echo " chmod +x $(DESTDIR)$(scriptdir)/$$prog"; \
-	  chmod +x $(DESTDIR)$(scriptdir)/$$prog; \
+	  echo " chmod +x '$(DESTDIR)$(scriptdir)/$$prog'"; \
+	  chmod +x "$(DESTDIR)$(scriptdir)/$$prog"; \
 	done
 
 ## `test -x' is not portable.  So we use Perl instead.  If Perl

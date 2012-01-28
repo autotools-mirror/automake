@@ -198,15 +198,17 @@ sc_rm_minus_f:
 ## if FILES is empty or if it contains shell meta characters (e.g. $ is
 ## commonly used in Java filenames).
 sc_no_for_variable_in_macro:
-	@if grep 'for .* in \$$(' $(ams); then \
+	@if grep 'for .* in \$$(' $(ams) | grep -v '/Makefile\.am:'; then \
 	  echo 'Use "list=$$(mumble); for var in $$$$list".' 1>&2 ; \
 	  exit 1; \
 	else :; fi
 
 ## Make sure all invocations of mkinstalldirs are correct.
 sc_mkinstalldirs:
-	@if grep -n 'mkinstalldirs' $(ams) | \
-	      grep -F -v '$$(mkinstalldirs)'; then \
+	@if grep -n 'mkinstalldirs' $(ams) \
+	      | grep -F -v '$$(mkinstalldirs)' \
+	      | grep -v '^\./lib/Makefile.am:37:  *mkinstalldirs \\$$'; \
+	then \
 	  echo "Found incorrect use of mkinstalldirs in the lines above" 1>&2; \
 	  exit 1; \
 	else :; fi
