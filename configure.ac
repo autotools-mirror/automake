@@ -328,6 +328,7 @@ AC_CONFIG_FILES([
   m4/Makefile
   tests/Makefile
 ])
+AC_CONFIG_LINKS([GNUmakefile:GNUmakefile])
 AC_CONFIG_LINKS([tests/defs:tests/defs])
 AC_CONFIG_FILES([tests/aclocal-${APIVERSION}:tests/aclocal.in],
                 [chmod +x tests/aclocal-${APIVERSION}],
