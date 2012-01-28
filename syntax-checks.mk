@@ -56,6 +56,7 @@ sc_AMDEP_TRUE_in_automake_in \
 sc_tests_no_gmake_requirement \
 sc_tests_no_gmake_checking \
 sc_tests_make_can_chain_suffix_rules \
+sc_no_dotmake_target \
 sc_no_am_makeflags \
 sc_tests_no_make_e \
 sc_docs_no_make_e \
@@ -345,6 +346,21 @@ sc_make_simple_include:
 	   configure \
 	 "; \
 	 $(sc_grep_for_bad_make_include)
+
+## The '.MAKE' special target is NetBSD-make specific, and not supported
+## by GNU make.  No point in using it.
+sc_no_dotmake_target:
+	@files="\
+	  `find $(srcdir) -name '*.am'` \
+	  $(srcdir)/automake.in \
+	  $(srcdir)/doc/*.texi \
+	 "; \
+	if grep '\.MAKE' $$files; then \
+	  echo "Special target '.MAKE' not supported by GNU make." 1>&2; \
+	  echo "Use the '+' recipe modifier instead, or put the" \
+	       "'\$$(MAKE)' string somewhere in the recipe text." 1>&2; \
+	  exit 1; \
+	fi
 
 ## $(AM_MAKEFLAGS) is obsolete now that we assume GNU make, since it
 ## is smart enough to correctly pass the values of macros redefined on

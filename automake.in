@@ -3574,7 +3574,6 @@ sub handle_tags
 			  . "\tdone\n");
 	push (@tag_deps, 'tags-recursive');
 	&depend ('.PHONY', 'tags-recursive');
-	&depend ('.MAKE', 'tags-recursive');
 
 	$output_rules .= ("ctags-recursive:\n"
 			  . "\tlist=\'\$(SUBDIRS)\'; for subdir in \$\$list; do \\\n"
@@ -3585,7 +3584,6 @@ sub handle_tags
 			  . "\tdone\n");
 	push (@ctag_deps, 'ctags-recursive');
 	&depend ('.PHONY', 'ctags-recursive');
-	&depend ('.MAKE', 'ctags-recursive');
 
 	$output_rules .= ("cscopelist-recursive:\n"
 			  . "\tlist=\'\$(SUBDIRS)\'; for subdir in \$\$list; do \\\n"
@@ -3596,7 +3594,6 @@ sub handle_tags
 			  . "\tdone\n");
 	push (@cscope_deps, 'cscopelist-recursive');
 	&depend ('.PHONY', 'cscopelist-recursive');
-	&depend ('.MAKE', 'cscopelist-recursive');
     }
 
     if (&saw_sources_p (1)
@@ -4500,7 +4497,6 @@ sub handle_all ($)
 			. "\n\t\$(MAKE) "
 			. (var ('SUBDIRS') ? 'all-recursive' : 'all-am')
 			. "\n\n");
-        depend ('.MAKE', 'all');
       }
     else
       {
@@ -4535,14 +4531,12 @@ sub do_check_merge_target ()
         {
 	  pretty_print_rule ("\t\$(MAKE)", "\t  ",
 			     @check);
-	  depend ('.MAKE', 'check-am');
 	}
     }
   if (@check_tests)
     {
       pretty_print_rule ("\t\$(MAKE)", "\t  ",
 			 @check_tests);
-      depend ('.MAKE', 'check-am');
     }
 
   depend '.PHONY', 'check', 'check-am';
@@ -4553,8 +4547,6 @@ sub do_check_merge_target ()
 		       : '')
 		    . (var ('SUBDIRS') ? 'check-recursive' : 'check-am')
 		    . "\n");
-  depend ('.MAKE', 'check')
-    if var ('BUILT_SOURCES');
 }
 
 # handle_clean ($MAKEFILE)
@@ -4671,7 +4663,6 @@ sub handle_factored_dependencies
     {
       if (user_phony_rule "$_-hook")
 	{
-	  depend ('.MAKE', "$_-am");
 	  register_action("$_-am",
 			  ("\t\@\$(NORMAL_INSTALL)\n"
 			   . "\t\$(MAKE) $_-hook"));
@@ -4697,9 +4688,8 @@ sub handle_factored_dependencies
       # to append dependencies.  This would not work if Automake
       # refrained from defining its own .PHONY target as it does
       # with other overridden targets.
-      # Likewise for `.MAKE'.
       my @undefined_conds = (TRUE,);
-      if ($_ ne '.PHONY' && $_ ne '.MAKE')
+      if ($_ ne '.PHONY')
 	{
 	  @undefined_conds =
 	    Automake::Rule::define ($_, 'internal',
