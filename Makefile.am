@@ -209,6 +209,8 @@ xtests = \
      done; \
    done | sort`
 
+ams = `find $(srcdir) -name '*.am'`
+
 # Some simple checks, and then ordinary check.  These are only really
 # guaranteed to work on my machine.
 syntax_check_rules = \
@@ -356,15 +358,14 @@ sc_perl_syntax:
 ## expect no instances of '${...}'.  However, $${...} is ok, since that
 ## is a shell construct, not a Makefile construct.
 sc_no_brace_variable_expansions:
-	@if grep -F '$${' $(srcdir)/lib/am/[a-z]*.am | \
-	       grep -F -v '$$$$'; then \
+	@if grep -F '$${' $(ams) | grep -F -v '$$$$'; then \
 	  echo "Found too many uses of '\$${' in the lines above." 1>&2; \
 	  exit 1;				\
 	else :; fi
 
 ## Make sure `rm' is called with `-f'.
 sc_rm_minus_f:
-	@if grep -v '^#' $(srcdir)/lib/am/[a-z]*.am $(xtests) \
+	@if grep -v '^#' $(ams) $(xtests) \
 	   | grep -E '\<rm ([^-]|\-[^f ]*\>)'; \
 	then \
 	  echo "Suspicious 'rm' invocation." 1>&2; \
@@ -375,14 +376,14 @@ sc_rm_minus_f:
 ## if FILES is empty or if it contains shell meta characters (e.g. $ is
 ## commonly used in Java filenames).
 sc_no_for_variable_in_macro:
-	@if grep 'for .* in \$$(' $(srcdir)/lib/am/[a-z]*.am; then \
+	@if grep 'for .* in \$$(' $(ams); then \
 	  echo 'Use "list=$$(mumble); for var in $$$$list".' 1>&2 ; \
 	  exit 1; \
 	else :; fi
 
 ## Make sure all invocations of mkinstalldirs are correct.
 sc_mkinstalldirs:
-	@if grep -n 'mkinstalldirs' $(srcdir)/lib/am/[a-z]*.am | \
+	@if grep -n 'mkinstalldirs' $(ams) | \
 	      grep -F -v '$$(mkinstalldirs)'; then \
 	  echo "Found incorrect use of mkinstalldirs in the lines above" 1>&2; \
 	  exit 1; \
@@ -390,8 +391,7 @@ sc_mkinstalldirs:
 
 ## Make sure all calls to PRE/NORMAL/POST_INSTALL/UNINSTALL
 sc_pre_normal_post_install_uninstall:
-	@if grep -E -n '\((PRE|NORMAL|POST)_(|UN)INSTALL\)' \
-                 $(srcdir)/lib/am/[a-z]*.am | \
+	@if grep -E -n '\((PRE|NORMAL|POST)_(|UN)INSTALL\)' $(ams) | \
 	      grep -v ':##' | grep -v ':	@\$$('; then \
 	  echo "Found incorrect use of PRE/NORMAL/POST_INSTALL/UNINSTALL in the lines above" 1>&2; \
 	  exit 1; \
@@ -414,8 +414,7 @@ sc_perl_no_split_regex_space:
 
 ## Look for cd within backquotes
 sc_cd_in_backquotes:
-	@if grep -n '^[^#]*` *cd ' $(srcdir)/automake.in \
-	      $(srcdir)/lib/am/*.am; then \
+	@if grep -n '^[^#]*` *cd ' $(srcdir)/automake.in $(ams); then \
 	  echo "Consider using \$$(am__cd) in the lines above." 1>&2; \
 	  exit 1; \
 	fi
@@ -423,8 +422,7 @@ sc_cd_in_backquotes:
 ## Look for cd to a relative directory (may be influenced by CDPATH).
 ## Skip some known directories that are OK.
 sc_cd_relative_dir:
-	@if grep -n '^[^#]*cd ' $(srcdir)/automake.in \
-	      $(srcdir)/lib/am/*.am | \
+	@if grep -n '^[^#]*cd ' $(srcdir)/automake.in $(ams) | \
 	      grep -v 'echo.*cd ' | \
 	      grep -v 'am__cd =' | \
 	      grep -v '^[^#]*cd [./]' | \
@@ -468,7 +466,7 @@ sc_AMDEP_TRUE_in_automake_in:
 ## Recursive make invocations should always pass $(AM_MAKEFLAGS)
 ## to $(MAKE), for portability to non-GNU make.
 sc_tests_make_without_am_makeflags:
-	@if grep '^[^#].*(MAKE) ' $(srcdir)/lib/am/*.am $(srcdir)/automake.in |\
+	@if grep '^[^#].*(MAKE) ' $(ams) $(srcdir)/automake.in | \
 		grep -v 'AM_MAKEFLAGS'; then \
 	  echo 'Use $$(MAKE) $$(AM_MAKEFLAGS).' 1>&2; \
 	  exit 1; \
@@ -676,7 +674,7 @@ sc_tests_plain_egrep_fgrep:
 	  echo 'Do not use egrep or fgrep in test cases.  Use $$FGREP or $$EGREP.' 1>&2; \
 	  exit 1; \
 	fi
-	@if grep -E '\b[ef]grep\b' $(srcdir)/lib/am/*.am $(srcdir)/m4/*.m4; then \
+	@if grep -E '\b[ef]grep\b' $(ams) $(srcdir)/m4/*.m4; then \
 	  echo 'Do not use egrep or fgrep in the above files, they are not portable.' 1>&2; \
 	  exit 1; \
 	fi
@@ -726,11 +724,7 @@ sc_tests_PATH_SEPARATOR:
 	fi
 
 sc_mkdir_p:
-	@if grep 'mkdir_p' \
-	  $(srcdir)/automake.in \
-	  $(srcdir)/lib/am/*.am \
-	  $(xtests); \
-	then \
+	@if grep 'mkdir_p' $(srcdir)/automake.in $(ams) $(xtests); then \
 	  echo 'Do not use mkdir_p in the above files, use MKDIR_P.' 1>&2; \
 	  exit 1; \
 	fi
@@ -748,7 +742,7 @@ sc_perl_at_substs:
 	fi
 
 sc_unquoted_DESTDIR:
-	@if grep -E "[^\'\"]\\\$$\(DESTDIR" $(srcdir)/lib/am/*.am; then \
+	@if grep -E "[^\'\"]\\\$$\(DESTDIR" $(ams); then \
 	  echo 'Suspicious unquoted DESTDIR uses.' 1>&2 ; \
 	  exit 1; \
 	fi
