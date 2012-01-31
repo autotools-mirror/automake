@@ -35,12 +35,18 @@
 ## and easily inline the dependency tracking.
 
 if %?FIRST%
+
 ?SUBDIROBJ?am__depdir = $(dir $@)/$(DEPDIR)
 ?!SUBDIROBJ?am__depdir = $(DEPDIR)
 ## FIXME: more precise in the removal of the suffix?
 am__depbase = $(am__depdir)/$(basename $(notdir $@))
 ## Avoid useless forks when possible.
 am__ensure_depdir = test -d $(am__depdir) || $(MKDIR_P) $(am__depdir)
+
+## Emulate VPATH rewrites.  This only uses GNU make primitives, which
+## allows us to avoid extra forks.
+am__vpath_rewrite = $(firstword $(wildcard $(strip $(1))) $(srcdir)/$(strip $(1)))
+
 endif %?FIRST%
 
 if %?NONLIBTOOL%
@@ -52,7 +58,7 @@ if %FASTDEP%
 	%VERBOSE%%COMPILE% -MT $@ -MD -MP -MF $(am__depbase).Tpo %-c% -o $@ \
 ?GENERIC?	%SOURCEFLAG%%SOURCE%
 ## For non-suffix rules, we must emulate a VPATH search on %SOURCE%.
-?!GENERIC?	%SOURCEFLAG%`test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%
+?!GENERIC?	%SOURCEFLAG%$(call am__vpath_rewrite, %SOURCE%)
 	%SILENT%$(am__mv) $(am__depbase).Tpo $(am__depbase).Po
 else !%FASTDEP%
 if %AMDEP%
@@ -65,8 +71,8 @@ if %?GENERIC%
 ?!-o?	%VERBOSE-NODEP%%COMPILE% %-c% %SOURCEFLAG%%SOURCE%
 else !%?GENERIC%
 ## For non-suffix rules, we must emulate a VPATH search on %SOURCE%.
-?-o?	%VERBOSE-NODEP%%COMPILE% %-c% %-o% %OBJ% %SOURCEFLAG%`test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%
-?!-o?	%VERBOSE-NODEP%%COMPILE% %-c% %SOURCEFLAG%`test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%
+?-o?	%VERBOSE-NODEP%%COMPILE% %-c% %-o% %OBJ% %SOURCEFLAG%$(call am__vpath_rewrite, %SOURCE%)
+?!-o?	%VERBOSE-NODEP%%COMPILE% %-c% %SOURCEFLAG%$(call am__vpath_rewrite, %SOURCE%)
 endif !%?GENERIC%
 endif !%FASTDEP%
 
@@ -78,10 +84,7 @@ if %FASTDEP%
 	%VERBOSE%%COMPILE% -MT $@ -MD -MP -MF $(am__depbase).Tpo %-c% -o $@ \
 ?GENERIC?	%SOURCEFLAG%`$(CYGPATH_W) '%SOURCE%'`
 ## For non-suffix rules, we must emulate a VPATH search on %SOURCE%.
-?!GENERIC?	%SOURCEFLAG%`if test -f '%SOURCE%';  \
-?!GENERIC?	  then $(CYGPATH_W) '%SOURCE%'; \
-?!GENERIC?	  else $(CYGPATH_W) '$(srcdir)/%SOURCE%'; \
-?!GENERIC?	fi`
+?!GENERIC?	%SOURCEFLAG%`$(CYGPATH_W) $(call am__vpath_rewrite,%SOURCE%)`
 	%SILENT%$(am__mv) $(am__depbase).Tpo $(am__depbase).Po
 else !%FASTDEP%
 if %AMDEP%
@@ -94,8 +97,8 @@ if %?GENERIC%
 ?!-o?	%VERBOSE-NODEP%%COMPILE% %-c% `$(CYGPATH_W) %SOURCEFLAG%'%SOURCE%'`
 else !%?GENERIC%
 ## For non-suffix rules, we must emulate a VPATH search on %SOURCE%.
-?-o?	%VERBOSE-NODEP%%COMPILE% %-c% %-o% %OBJOBJ% %SOURCEFLAG%`if test -f '%SOURCE%'; then $(CYGPATH_W) '%SOURCE%'; else $(CYGPATH_W) '$(srcdir)/%SOURCE%'; fi`
-?!-o?	%VERBOSE-NODEP%%COMPILE% %-c% %SOURCEFLAG%`if test -f '%SOURCE%'; then $(CYGPATH_W) '%SOURCE%'; else $(CYGPATH_W) '$(srcdir)/%SOURCE%'; fi`
+?-o?	%VERBOSE-NODEP%%COMPILE% %-c% %-o% %OBJOBJ% %SOURCEFLAG%`$(CYGPATH_W) $(call am__vpath_rewrite, %SOURCE%)`
+?!-o?	%VERBOSE-NODEP%%COMPILE% %-c% %SOURCEFLAG%`$(CYGPATH_W) $(call am__vpath_rewrite, %SOURCE%)`
 endif !%?GENERIC%
 endif !%FASTDEP%
 endif %?NONLIBTOOL%
@@ -109,7 +112,7 @@ if %FASTDEP%
 	%VERBOSE%%LTCOMPILE% -MT $@ -MD -MP -MF $(am__depbase).Tpo %-c% -o $@ \
 ?GENERIC?	%SOURCEFLAG%%SOURCE%
 ## For non-suffix rules, we must emulate a VPATH search on %SOURCE%.
-?!GENERIC?	%SOURCEFLAG%`test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%
+?!GENERIC?	%SOURCEFLAG%$(call am__vpath_rewrite, %SOURCE%)
 	%SILENT%$(am__mv) $(am__depbase).Tpo $(am__depbase).Plo
 else !%FASTDEP%
 if %AMDEP%
@@ -120,6 +123,6 @@ endif %AMDEP%
 ## We can always use `-o' with Libtool.
 ?GENERIC?	%VERBOSE-NODEP%%LTCOMPILE% %-c% -o %LTOBJ% %SOURCEFLAG%%SOURCE%
 ## For non-suffix rules, we must emulate a VPATH search on %SOURCE%.
-?!GENERIC?	%VERBOSE-NODEP%%LTCOMPILE% %-c% -o %LTOBJ% %SOURCEFLAG%`test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%
+?!GENERIC?	%VERBOSE-NODEP%%LTCOMPILE% %-c% -o %LTOBJ% %SOURCEFLAG%$(call am__vpath_rewrite, %SOURCE%)
 endif !%FASTDEP%
 endif %?LIBTOOL%
