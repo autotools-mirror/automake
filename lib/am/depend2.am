@@ -47,6 +47,11 @@ am__ensure_depdir = test -d $(am__depdir) || $(MKDIR_P) $(am__depdir)
 ## allows us to avoid extra forks.
 am__vpath_rewrite = $(firstword $(wildcard $(strip $(1))) $(srcdir)/$(strip $(1)))
 
+## Used for suffix rules.
+am__cooked_source_0 = $(call am__vpath_rewrite, $<)
+## Used for explicit rules.
+am__cooked_source_1 = $<
+
 endif %?FIRST%
 
 if %?NONLIBTOOL%
@@ -56,9 +61,7 @@ if %FASTDEP%
 	%SILENT%$(am__ensure_depdir)
 ## In fast-dep mode, we can always use -o.
 	%VERBOSE%%COMPILE% -MT $@ -MD -MP -MF $(am__depbase).Tpo %-c% -o $@ \
-?GENERIC?	%SOURCEFLAG%%SOURCE%
-## For non-suffix rules, we must emulate a VPATH search on %SOURCE%.
-?!GENERIC?	%SOURCEFLAG%$(call am__vpath_rewrite, %SOURCE%)
+	         %SOURCEFLAG%$(am__cooked_source_%GENERIC%)
 	%SILENT%$(am__mv) $(am__depbase).Tpo $(am__depbase).Po
 else !%FASTDEP%
 if %AMDEP%
@@ -66,14 +69,8 @@ if %AMDEP%
 	%VERBOSE%source='%SOURCE%' object='%OBJ%' libtool=no @AMDEPBACKSLASH@
 	DEPDIR=$(DEPDIR) $(%FPFX%DEPMODE) $(depcomp) @AMDEPBACKSLASH@
 endif %AMDEP%
-if %?GENERIC%
-?-o?	%VERBOSE-NODEP%%COMPILE% %-c% %-o% %OBJ% %SOURCEFLAG%%SOURCE%
-?!-o?	%VERBOSE-NODEP%%COMPILE% %-c% %SOURCEFLAG%%SOURCE%
-else !%?GENERIC%
-## For non-suffix rules, we must emulate a VPATH search on %SOURCE%.
-?-o?	%VERBOSE-NODEP%%COMPILE% %-c% %-o% %OBJ% %SOURCEFLAG%$(call am__vpath_rewrite, %SOURCE%)
-?!-o?	%VERBOSE-NODEP%%COMPILE% %-c% %SOURCEFLAG%$(call am__vpath_rewrite, %SOURCE%)
-endif !%?GENERIC%
+?-o?	%VERBOSE-NODEP%%COMPILE% %-c% %-o% %OBJ% %SOURCEFLAG%$(am__cooked_source_%GENERIC%)
+?!-o?	%VERBOSE-NODEP%%COMPILE% %-c% %SOURCEFLAG%$(am__cooked_source_%GENERIC%)
 endif !%FASTDEP%
 
 ?GENERIC?%EXT%.obj:
@@ -82,9 +79,7 @@ if %FASTDEP%
 	%SILENT%$(am__ensure_depdir)
 ## In fast-dep mode, we can always use -o.
 	%VERBOSE%%COMPILE% -MT $@ -MD -MP -MF $(am__depbase).Tpo %-c% -o $@ \
-?GENERIC?	%SOURCEFLAG%`$(CYGPATH_W) '%SOURCE%'`
-## For non-suffix rules, we must emulate a VPATH search on %SOURCE%.
-?!GENERIC?	%SOURCEFLAG%`$(CYGPATH_W) $(call am__vpath_rewrite,%SOURCE%)`
+	         %SOURCEFLAG%`$(CYGPATH_W) $(am__cooked_source_%GENERIC%)`
 	%SILENT%$(am__mv) $(am__depbase).Tpo $(am__depbase).Po
 else !%FASTDEP%
 if %AMDEP%
@@ -92,14 +87,8 @@ if %AMDEP%
 	%VERBOSE%source='%SOURCE%' object='%OBJOBJ%' libtool=no @AMDEPBACKSLASH@
 	DEPDIR=$(DEPDIR) $(%FPFX%DEPMODE) $(depcomp) @AMDEPBACKSLASH@
 endif %AMDEP%
-if %?GENERIC%
-?-o?	%VERBOSE-NODEP%%COMPILE% %-c% %-o% %OBJOBJ% %SOURCEFLAG%`$(CYGPATH_W) '%SOURCE%'`
-?!-o?	%VERBOSE-NODEP%%COMPILE% %-c% `$(CYGPATH_W) %SOURCEFLAG%'%SOURCE%'`
-else !%?GENERIC%
-## For non-suffix rules, we must emulate a VPATH search on %SOURCE%.
-?-o?	%VERBOSE-NODEP%%COMPILE% %-c% %-o% %OBJOBJ% %SOURCEFLAG%`$(CYGPATH_W) $(call am__vpath_rewrite, %SOURCE%)`
-?!-o?	%VERBOSE-NODEP%%COMPILE% %-c% %SOURCEFLAG%`$(CYGPATH_W) $(call am__vpath_rewrite, %SOURCE%)`
-endif !%?GENERIC%
+?-o?	%VERBOSE-NODEP%%COMPILE% %-c% %-o% %OBJOBJ% %SOURCEFLAG%`$(CYGPATH_W) $(am__cooked_source_%GENERIC%)`
+?!-o?	%VERBOSE-NODEP%%COMPILE% %-c% %SOURCEFLAG%`$(CYGPATH_W) $(am__cooked_source_%GENERIC%)`
 endif !%FASTDEP%
 endif %?NONLIBTOOL%
 
@@ -110,9 +99,7 @@ if %FASTDEP%
 	%SILENT%$(am__ensure_depdir)
 ## In fast-dep mode, we can always use -o.
 	%VERBOSE%%LTCOMPILE% -MT $@ -MD -MP -MF $(am__depbase).Tpo %-c% -o $@ \
-?GENERIC?	%SOURCEFLAG%%SOURCE%
-## For non-suffix rules, we must emulate a VPATH search on %SOURCE%.
-?!GENERIC?	%SOURCEFLAG%$(call am__vpath_rewrite, %SOURCE%)
+	         %SOURCEFLAG%$(am__cooked_source_%GENERIC%)
 	%SILENT%$(am__mv) $(am__depbase).Tpo $(am__depbase).Plo
 else !%FASTDEP%
 if %AMDEP%
@@ -121,8 +108,6 @@ if %AMDEP%
 	DEPDIR=$(DEPDIR) $(%FPFX%DEPMODE) $(depcomp) @AMDEPBACKSLASH@
 endif %AMDEP%
 ## We can always use `-o' with Libtool.
-?GENERIC?	%VERBOSE-NODEP%%LTCOMPILE% %-c% -o %LTOBJ% %SOURCEFLAG%%SOURCE%
-## For non-suffix rules, we must emulate a VPATH search on %SOURCE%.
-?!GENERIC?	%VERBOSE-NODEP%%LTCOMPILE% %-c% -o %LTOBJ% %SOURCEFLAG%$(call am__vpath_rewrite, %SOURCE%)
+	%VERBOSE-NODEP%%LTCOMPILE% %-c% -o %LTOBJ% %SOURCEFLAG%$(am__cooked_source_%GENERIC%)
 endif !%FASTDEP%
 endif %?LIBTOOL%
