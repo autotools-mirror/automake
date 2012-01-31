@@ -1154,6 +1154,7 @@ version6.test \
 version7.test \
 version8.test \
 vpath.test \
+vpath-rewrite.test \
 vtexi.test \
 vtexi2.test \
 vtexi3.test \
