@@ -270,6 +270,7 @@ configure.test \
 confdeps.test \
 conff.test \
 conff2.test \
+conffile-leading-dot.test \
 confh.test \
 confh4.test \
 confh5.test \
@@ -703,6 +704,7 @@ parallel-tests-log-compiler-2.test \
 parallel-tests-dry-run-1.test \
 parallel-tests-dry-run-2.test \
 parallel-tests-fd-redirect.test \
+parallel-tests-fd-redirect-exeext.test \
 parallel-tests-extra-programs.test \
 parallel-tests-unreadable.test \
 parallel-tests-subdir.test \
