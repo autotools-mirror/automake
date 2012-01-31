@@ -1183,6 +1183,7 @@ yacc6.test \
 yacc7.test \
 yacc8.test \
 yaccdry.test \
+yacc-subobj-nodep.test \
 yacc-dist-nobuild.test \
 yacc-nodist.test \
 yaccpp.test \
