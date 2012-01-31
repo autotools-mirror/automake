@@ -195,29 +195,66 @@ clean-local: clean-coverage
 .PHONY: check-coverage recheck-coverage check-coverage-run \
 	recheck-coverage-run check-coverage-report clean-coverage
 
-git-dist: maintainer-check
-## Make sure the NEWS file is up-to-date.
-	@if sed 1q $(srcdir)/NEWS | grep -e "$(VERSION)" > /dev/null; then :; else \
-	  echo "NEWS not updated; not releasing" 1>&2; \
-	  exit 1;				\
-	fi
-## Build the distribution.  We expect the developer to have already run
-## "make check" and "make distcheck" on his own (as required in the
-## HACKING file, section "Release procedure").
-	$(MAKE) $(AM_MAKEFLAGS) dist
-## Finally, if anything was successful, commit the last changes and tag
-## the release in the repository.  We don't use RCS keywords so it's OK
-## to distribute the files before they were committed.
-	$(am__cd) $(srcdir) && git commit -a -s && \
-	   git tag -s "v$(VERSION)" -m "Release $(VERSION)"
+## Tagging and/or uploading stable and beta releases.
 
-git-release: git-dist
-	case $(VERSION) in \
-	  *[a-z]) dest=alpha;; \
-	  *)      dest=ftp;; \
+GIT = git
+
+version_rx = ^[1-9][0-9]*\.[0-9][0-9]*(\.[0-9][0-9]*)?
+stable_version_rx = $(version_rx)$$
+beta_version_rx = $(version_rx)[bdfhjlnprtvxz]$$
+match_version = echo "$(VERSION)" | $(EGREP) >/dev/null
+
+## Check that we don't have uncommitted or unstaged changes.
+## TODO: Maybe the git suite already offers a shortcut to verify if the
+## TODO: working directory is "clean" or not?  If yes, use that instead
+## TODO: of duplicating the logic here.
+git_must_have_clean_workdir = \
+  $(GIT) rev-parse --verify HEAD >/dev/null \
+    && $(GIT) update-index -q --refresh \
+    && $(GIT) diff-files --quiet \
+    && $(GIT) diff-index --quiet --cached HEAD \
+    || fatal "you have uncommitted or unstaged changes"
+
+determine_release_type = \
+  if $(match_version) '$(stable_version_rx)'; then \
+    release_type='Release' dest=ftp; \
+  elif $(match_version) '$(beta_version_rx)'; then \
+    release_type='Beta release' dest=alpha; \
+  else \
+    fatal "invalid version '$(VERSION)' for a release"; \
+  fi
+
+git-tag-release: maintainer-check
+	@set -e; set -u; \
+	fatal () { echo "$@: $$*; not tagging" >&2; exit 1; }; \
+	case '$(AM_TAG_DRYRUN)' in \
+	  ""|[nN]|[nN]o|NO) run="";; \
+	  *) run="echo Running:";; \
 	esac; \
-	$(srcdir)/lib/gnupload $(GNUPLOADFLAGS) \
-	  --to $$dest.gnu.org:automake $(DIST_ARCHIVES)
+	$(determine_release_type); \
+	$(git_must_have_clean_workdir); \
+## Make sure the NEWS file is up-to-date.
+	sed 1q $(srcdir)/NEWS | grep '$(VERSION)' >/dev/null \
+	  || fatal "NEWS not updated"; \
+## If all was successful, tag the release in the local repository.
+	$$run $(GIT) tag -s "v$(VERSION)" -m "$$release_type $(VERSION)"
+
+git-upload-release:
+	@set -e; set -u; \
+	fatal () { echo "$@: $$*; not releasing" >&2; exit 1; }; \
+	$(determine_release_type); \
+	dest=$$dest.gnu.org:automake; \
+	$(git_must_have_clean_workdir); \
+## Check that we are releasing from a valid tag.
+	tag=`$(GIT) describe` \
+	  && case $$tag in "v$(VERSION)") true;; *) false;; esac \
+	  || fatal "you can only create a release from a tagged version"; \
+## Build and upload the distribution tarball(s).
+	$(MAKE) $(AM_MAKEFLAGS) dist || exit 1; \
+	echo Will upload to $$dest: $(DIST_ARCHIVES); \
+	$(srcdir)/lib/gnupload $(GNUPLOADFLAGS) --to $$dest $(DIST_ARCHIVES)
+
+.PHONY: git-upload-release git-tag-release
 
 ## Visually comparing differences between the Makefile.in files in
 ## automake's own build system as generated in two different branches
@@ -296,7 +333,7 @@ WGET_SV_GIT_AC = $(WGET) 'http://git.savannah.gnu.org/gitweb/?p=autoconf.git;a=b
 WGET_SV_GIT_GL = $(WGET) 'http://git.savannah.gnu.org/gitweb/?p=gnulib.git;a=blob_plain;hb=HEAD;f='
 
 ## Files that we fetch and which we compare against.
-## FIXME should be a lot more here
+## The 'lib/COPYING' file must still be synced by hand.
 FETCHFILES = \
 INSTALL \
 config.guess \

@@ -68,7 +68,7 @@ EXTRA_DIST = acdir/.placeholder amversion.in
 # loop otherwise.
 # Use `$(top_srcdir)/m4' for the benefit of non-GNU makes: this is
 # how amversion.m4 appears in our dependencies.
-$(top_srcdir)/m4/amversion.m4: $(srcdir)/amversion.in
+$(top_srcdir)/m4/amversion.m4: $(top_srcdir)/configure.ac $(srcdir)/amversion.in
 	$(AM_V_at)sed \
 	    -e 's,[@]VERSION[@],$(VERSION),g' \
 	    -e 's,[@]APIVERSION[@],$(APIVERSION),g' \
