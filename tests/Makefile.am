@@ -195,7 +195,7 @@ include $(srcdir)/CheckListOfTests.am
 
 # Run the testsuite with the installed aclocal and automake.
 installcheck-local:
-	am_running_installcheck=yes $(MAKE) $(AM_MAKEFLAGS) check
+	am_running_installcheck=yes $(MAKE) check
 
 clean-local: clean-local-check
 .PHONY: clean-local-check

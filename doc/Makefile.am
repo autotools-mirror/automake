@@ -84,7 +84,7 @@ $(srcdir)/amhello-1.0.tar.gz: $(amhello_sources) $(top_srcdir)/configure.ac
 	AUTOUPDATE='$(am_AUTOUPDATE)' && export AUTOUPDATE && \
 	$(am_AUTORECONF) -vfi && \
 	./configure && \
-	$(MAKE) $(AM_MAKEFLAGS) distcheck && \
-	$(MAKE) $(AM_MAKEFLAGS) distclean && \
+	$(MAKE) distcheck && \
+	$(MAKE) distclean && \
 	rm -rf $(amhello_configury) && \
 	mv amhello-1.0.tar.gz ..

@@ -106,11 +106,11 @@ INSTALL: lib/INSTALL
 
 # Run the testsuite with the installed aclocal and automake.
 installcheck-local:
-	am_running_installcheck=yes $(MAKE) $(AM_MAKEFLAGS) check
+	am_running_installcheck=yes $(MAKE) check
 
 # Convenience proxy target for the test suites.
 recheck:
-	$(am__cd) tests && $(MAKE) $(AM_MAKEFLAGS) $@
+	$(am__cd) tests && $(MAKE) $@
 .PHONY: recheck
 
 ################################################################
@@ -171,7 +171,7 @@ check-coverage-run recheck-coverage-run: all
 	$(mkinstalldirs) $(PERL_COVERAGE_DB)
 	PERL5OPT="$$PERL5OPT $(PERL_COVERAGE_FLAGS)"; export PERL5OPT; \
 	WANT_NO_THREADS=yes; export WANT_NO_THREADS; unset AUTOMAKE_JOBS; \
-	$(MAKE) $(AM_MAKEFLAGS) `echo $@ | sed 's/-coverage-run//'`
+	$(MAKE) `echo $@ | sed 's/-coverage-run//'`
 
 check-coverage-report:
 	@if test ! -d "$(PERL_COVERAGE_DB)"; then \
@@ -184,10 +184,9 @@ check-coverage-report:
 # We don't use direct dependencies here because we'd like to be able
 # to invoke the report even after interrupted check-coverage.
 check-coverage: check-coverage-run
-	$(MAKE) $(AM_MAKEFLAGS) check-coverage-report
-
+	$(MAKE) check-coverage-report
 recheck-coverage: recheck-coverage-run
-	$(MAKE) $(AM_MAKEFLAGS) check-coverage-report
+	$(MAKE) check-coverage-report
 
 clean-coverage:
 	rm -rf "$(PERL_COVERAGE_DB)"
@@ -251,7 +250,7 @@ git-upload-release:
 	  && case $$tag in "v$(VERSION)") true;; *) false;; esac \
 	  || fatal "you can only create a release from a tagged version"; \
 ## Build and upload the distribution tarball(s).
-	$(MAKE) $(AM_MAKEFLAGS) dist || exit 1; \
+	$(MAKE) dist || exit 1; \
 	echo Will upload to $$dest: $(DIST_ARCHIVES); \
 	$(srcdir)/lib/gnupload $(GNUPLOADFLAGS) --to $$dest $(DIST_ARCHIVES)
 
