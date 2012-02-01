@@ -935,6 +935,7 @@ spell2.test \
 spell3.test \
 spelling.test \
 spy.test \
+spy-vpath-rewrite.test \
 stdinc.test \
 stamph2.test \
 stdlib.test \
