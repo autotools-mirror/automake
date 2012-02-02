@@ -32,7 +32,7 @@ use strict;
 use Getopt::Long ();
 use TAP::Parser;
 
-my $VERSION = '2012-02-01.18'; # UTC
+my $VERSION = '2012-02-01.19'; # UTC
 
 my $ME = "tap-driver.pl";
 
@@ -279,7 +279,7 @@ sub get_test_exit_message ()
 {
   my $wstatus = $parser->wait;
   # Watch out for possible internal errors.
-  die "$ME: couldn't get the exit ststus of the TAP producer"
+  die "$ME: couldn't get the exit status of the TAP producer"
     unless defined $wstatus;
   # Return an undefined value if the producer exited with success.
   return unless $wstatus;
@@ -287,17 +287,17 @@ sub get_test_exit_message ()
   # by a signal.
   use POSIX qw (WIFEXITED WEXITSTATUS WIFSIGNALED WTERMSIG);
   if (WIFEXITED ($wstatus))
-	{
-      return sprintf "exited with status %d", WEXITSTATUS ($wstatus);
-	}
+  {
+    return sprintf "exited with status %d", WEXITSTATUS ($wstatus);
+  }
   elsif (WIFSIGNALED ($wstatus))
-	{
+    {
       return sprintf "terminated by signal %d", WTERMSIG ($wstatus);
-	}
+    }
   else
-	{
-	  return "terminated abnormally";
-	}
+    {
+      return "terminated abnormally";
+    }
 }
 
 sub stringify_result_obj ($)
