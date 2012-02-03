@@ -39,7 +39,6 @@ pm/Wrap.pl
 handwritten_TESTS = \
 get-sysconf.test \
 $(perl_TESTS) \
-depmod.tap \
 instspc.tap \
 aclocal.test \
 aclocal3.test \
@@ -325,16 +324,10 @@ deleted-m4.test \
 depacl2.test \
 depcomp.test \
 depcomp2.test \
-depcomp3.test \
-depcomp4.test \
-depcomp5.test \
-depcomp6.test \
-depcomp7.test \
 depcomp8a.test \
 depcomp8b.test \
 depdist.test \
 depend.test \
-depend2.test \
 depend3.test \
 depend4.test \
 depend5.test \
