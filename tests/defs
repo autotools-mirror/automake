@@ -742,7 +742,10 @@ do
         MAKE=$make_ am__using_gmake=''
         test "$MAKE" =  : && break
         echo "$me: determine whether $MAKE is GNU make"
-        using_gmake && break
+        # Don't use "&&" here, or a bug of 'set -e' present in some
+        # versions of the BSD shell will be triggered.  We add the
+        # dummy "else" branch for extra safety.
+        if using_gmake; then break; else :; fi
       done
       test "$MAKE" = : && skip_all_ "this test requires GNU make"
       export MAKE
@@ -870,7 +873,12 @@ do
       fi
       ;;
     native)
-      cross_compiling && skip_all_ "doesn't work in cross-compile mode"
+      # Don't use "&&" here, to avoid a bug of 'set -e' present in
+      # some (even relatively recent) versions of the BSD shell.
+      # We add the dummy "else" branch for extra safety.
+      if cross_compiling; then
+        skip_all_ "doesn't work in cross-compile mode"
+      else :; fi
       ;;
     python)
       # Python doesn't support --version, it has -V
@@ -898,7 +906,10 @@ do
       while :; do
         for r2h in $RST2HTML rst2html rst2html.py; do
           echo "$me: running $r2h --version"
-          $r2h --version && break 2
+          # Don't use "&&" here, or a bug of 'set -e' present in some
+          # versions of the BSD shell will be triggered.  We add the
+          # dummy "else" branch for extra safety.
+          if $r2h --version; then break 2; else :; fi
         done
         skip_all_ "no proper rst2html program found"
       done
