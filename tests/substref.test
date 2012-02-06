@@ -18,24 +18,24 @@
 # pattern is null.
 # Report from Richard Boulton.
 
-required=cc
 . ./defs || Exit 1
 
 cat >> configure.in << 'END'
-AC_PROG_CC
+AC_SUBST([CC], [whocares])
 AC_OUTPUT
 END
 
-cat > hello.c << 'END'
-END
+: > hello.c
 
 cat > Makefile.am << 'END'
+AUTOMAKE_OPTIONS = no-dependencies
 var1 = dlmain
 var2 = $(var1:=.)
 helldl_SOURCES = $(var2:=c)
 bin_PROGRAMS = helldl
-got:
-	@echo $(helldl_SOURCES) $(helldl_OBJECTS) >got
+.PHONY: test
+test:
+	is $(helldl_SOURCES) $(helldl_OBJECTS) == dlmain.c dlmain.$(OBJEXT)
 END
 
 $ACLOCAL
@@ -43,12 +43,7 @@ $AUTOCONF
 $AUTOMAKE -a
 
 ./configure
-
-objext=`sed -n -e 's/^OBJEXT = //p' < Makefile`
-echo dlmain.c dlmain.$objext >exp
-$MAKE got
-cat got
-diff exp got
+$MAKE test
 
 # This is unrelated to the rest of this test.  But while we are
 # at it, make sure we don't use am__helldl_SOURCES_DIST here, since

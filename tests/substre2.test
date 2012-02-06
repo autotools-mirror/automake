@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2003, 2010, 2011 Free Software Foundation, Inc.
+# Copyright (C) 2003, 2010, 2011, 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,15 +17,15 @@
 # Test for bug in variable substitution references, where
 # undefined variables break later substitutions.
 
-required=cc
 . ./defs || Exit 1
 
 cat >> configure.in << 'END'
-AC_PROG_CC
+AC_SUBST([CC], [whocares])
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+AUTOMAKE_OPTIONS = no-dependencies
 
 foo = foo.a foo.b $(doesnt_exist)
 bar = bar.a bar.b
@@ -36,16 +36,15 @@ bin_PROGRAMS = foo
 foo_SOURCES = $(var2)
 
 OBJEXT = obj
-echorule:
-	@echo BEG: $(foo_OBJECTS) :END
+.PHONY: test
+test:
+	is $(foo_OBJECTS) == foo1.obj foo4.obj bar3.obj bar4.obj
 END
 
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 ./configure
-$MAKE echorule >output || { cat output; Exit 1; }
-cat output
-$FGREP 'BEG: foo1.obj foo4.obj bar3.obj bar4.obj :END' output
+$MAKE test
 
 :
