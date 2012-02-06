@@ -261,10 +261,18 @@ sub _process_option_list (\%$@)
 	  # directory.  We save the actual option for later.
 	  $options->{'ansi2knr'} = [$_, $where];
 	}
+      elsif ($_ eq 'dist-lzma')
+        {
+          # Creation of distribution tarball compressed with lzma is
+          # deprecated, will be removed in the next major release.
+          msg 'obsolete', $where,
+              "lzma compression is deprecated; use `dist-xz' " .
+              "or `dist-lzip' instead\n";
+        }
       elsif ($_ eq 'no-installman' || $_ eq 'no-installinfo'
 	     || $_ eq 'dist-shar' || $_ eq 'dist-zip'
 	     || $_ eq 'dist-tarZ' || $_ eq 'dist-bzip2'
-	     || $_ eq 'dist-lzma' || $_ eq 'dist-xz'
+	     || $_ eq 'dist-lzip' || $_ eq 'dist-xz'
 	     || $_ eq 'no-dist-gzip' || $_ eq 'no-dist'
 	     || $_ eq 'dejagnu' || $_ eq 'no-texinfo.tex'
 	     || $_ eq 'readme-alpha' || $_ eq 'check-news'

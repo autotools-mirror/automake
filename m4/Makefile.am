@@ -3,7 +3,7 @@
 ## Makefile for Automake m4.
 
 # Copyright (C) 1996, 1997, 1998, 1999, 2001, 2002, 2003, 2004, 2006,
-# 2008, 2009, 2011 Free Software Foundation, Inc.
+# 2008, 2009, 2011, 2012 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -72,10 +72,10 @@ EXTRA_DIST = acdir/dirlist amversion.in
 # loop otherwise.
 # Use `$(top_srcdir)/m4' for the benefit of non-GNU makes: this is
 # how amversion.m4 appears in our dependencies.
-$(top_srcdir)/m4/amversion.m4: $(srcdir)/amversion.in
-	sed -e 's,[@]VERSION[@],$(VERSION),g' \
+$(top_srcdir)/m4/amversion.m4: $(top_srcdir)/configure.ac $(srcdir)/amversion.in
+	$(AM_V_at)sed \
+	    -e 's,[@]VERSION[@],$(VERSION),g' \
 	    -e 's,[@]APIVERSION[@],$(APIVERSION),g' \
 	    -e "s,[@]configure_input[@],Generated from amversion.in; do not edit by hand.,g" \
-	    $(srcdir)/amversion.in > $@t
-	chmod a-w $@t
-	mv -f $@t $@
+	    $(srcdir)/amversion.in > $@-t
+	@$(AM_V_at)chmod a-w $@-t && mv -f $@-t $@

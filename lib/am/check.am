@@ -1,6 +1,6 @@
 ## automake - create Makefile.in from Makefile.am
-## Copyright (C) 2001, 2003, 2006, 2007, 2008, 2009, 2010, 2011 Free
-## Software Foundation, Inc.
+## Copyright (C) 2001, 2003, 2006, 2007, 2008, 2009, 2010, 2011, 2012
+## Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -233,88 +233,63 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 
 RECHECK_LOGS = $(TEST_LOGS)
 
-# Run all the tests.
-check-TESTS:
+check-TESTS recheck:
+## If we are running "make recheck", it's not the user which can decide
+## which tests to consider for re-execution, so we must ignore the value
+## of $(RECHECK_LOGS).
+	@if test $@ != recheck; then \
 ## Expand $(RECHECK_LOGS) only once, to avoid exceeding line length limits.
-	@list='$(RECHECK_LOGS)'; test -z "$$list" || rm -f $$list
+	   list='$(RECHECK_LOGS)'; test -z "$$list" || rm -f $$list; \
+	 fi
 ## We always have to remove TEST_SUITE_LOG, to ensure its rule is run
 ## in any case even in lazy mode: otherwise, if no test needs rerunning,
-## or a prior run plus reruns all happen within the same timestamp
-## (can happen with a prior `make TESTS=<subset>'),
-## then we get no log output.
+## or a prior run plus reruns all happen within the same timestamp (can
+## happen with a prior `make TESTS=<subset>'), then we get no log output.
 ## OTOH, this means that, in the rule for `$(TEST_SUITE_LOG)', we
 ## cannot use `$?' to compute the set of lazily rerun tests, lest
 ## we rely on .PHONY to work portably.
-##
+	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
+	@list='' list2='$(TEST_LOGS)'; for f in $$list2; do \
 ## Trailing whitespace in `TESTS = foo.test $(empty)' causes GNU make
 ## 3.80 to erroneously expand $(TESTS_LOGS) to `foo.log .log'.
 ## Work around this bug.
-	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
-	@list='$(TEST_LOGS)';						\
-	list=`for f in $$list; do					\
-	  test .log = $$f || echo $$f;					\
-	done | tr '\012\015' '  '`;					\
+	  test .log = $$f && continue; \
+## If running a "make recheck", we must only consider tests that had
+## an unexpected outcome (FAIL or XPASS) in the earlier run.
+	  if test $@ = recheck; then \
+	    test -f $$f || continue; \
+	    if test -r $$f && read line < $$f; then \
+	      case $$line in FAIL*|XPASS*) : ;; *) continue;; esac; \
+	    fi; \
+	  fi; \
+## Be careful to avoid extra whitespace in the definition of $list, since
+## its value will be passed to the recursive make invocation below through
+## the TEST_LOGS macro, and leading/trailing white space in a make macro
+## definition can be problematic.  In this particular case, trailing white
+## space was known to cause a segmentation fault on Solaris 10 XPG4 make:
+## <http://lists.gnu.org/archive/html/bug-automake/2010-08/msg00004.html>
+	  if test -z "$$list"; then list=$$f; else list="$$list $$f"; fi; \
+	done; \
+## Under "make recheck", remove the logs of the files to recheck, so that
+## those will be rerun by the "make test-suite.log" recursive invocation
+## below.  But avoid extra files removal when running under "make -n".
+	if test $@ = recheck && test -n "$$list"; then \
+	  $(am__make_dryrun) || rm -f $$list || exit 1; \
+	fi; \
 	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG) TEST_LOGS="$$list"
 
-AM_RECURSIVE_TARGETS += check
+## Recheck must depend on $(check_SCRIPTS), $(check_PROGRAMS), etc.
+recheck: %CHECK_DEPS%
 
-## -------------- ##
-## Produce HTML.  ##
-## -------------- ##
+AM_RECURSIVE_TARGETS += check recheck
 
-.log.html:
-	@list='$(RST2HTML) $$RST2HTML rst2html rst2html.py';		\
-	for r2h in $$list; do						\
-	  if ($$r2h --version) >/dev/null 2>&1; then			\
-	    R2H=$$r2h;							\
-	  fi;								\
-	done;								\
-	if test -z "$$R2H"; then					\
-	  echo >&2 "cannot find rst2html, cannot create $@";		\
-	  exit 2;							\
-	fi;								\
-	$$R2H $< >$@.tmp
-	@mv $@.tmp $@
+.PHONY: recheck
 
-# Be sure to run check first, and then to convert the result.
-# Beware of concurrent executions.  Run "check" not "check-TESTS", as
-# check-SCRIPTS and other dependencies are rebuilt by the former only.
-# And expect check to fail.
-check-html:
-	@if $(MAKE) $(AM_MAKEFLAGS) check; then			\
-	  rv=0; else rv=$$?;					\
-	fi;							\
-	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_HTML) || exit 4;	\
-	exit $$rv
+## ----------------------------------------------- ##
+## Produce HTML.  To be removed in automake 1.12.  ##
+## ----------------------------------------------- ##
 
-.PHONY: check-html
-.MAKE: check-html
-
-AM_RECURSIVE_TARGETS += check-html
-
-## -------------------- ##
-## Rechecking failures. ##
-## -------------------- ##
-
-## Rerun all FAILed or XPASSed tests.
-recheck recheck-html:
-	@target=`echo $@ | sed 's,^re,,'`;				\
-	list='$(TEST_LOGS)';						\
-	list=`for f in $$list; do					\
-	        test -f $$f || continue;				\
-	        if test -r $$f && read line < $$f; then			\
-	          case $$line in FAIL*|XPASS*) echo $$f;; esac;		\
-	        else echo $$f; fi;					\
-	      done | tr '\012\015' '  '`;				\
-## This apparently useless munging helps to avoid a nasty bug (a
-## segmentation fault!) on Solaris XPG4 make.
-	list=`echo "$$list" | sed 's/ *$$//'`;				\
-	$(MAKE) $(AM_MAKEFLAGS) $$target AM_MAKEFLAGS='$(AM_MAKEFLAGS) TEST_LOGS="'"$$list"'"'
-
-.PHONY: recheck recheck-html
-.MAKE: recheck recheck-html
-
-AM_RECURSIVE_TARGETS += recheck recheck-html
+include check-html.am
 
 else !%?PARALLEL_TESTS%
 
