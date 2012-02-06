@@ -394,7 +394,7 @@ sub handle_tap_result ($)
 
   my $test_result = stringify_result_obj $result_obj;
   my $string = $result_obj->number;
-  
+
   my $description = $result_obj->description;
   $string .= " $description"
     unless is_null_string $description;
