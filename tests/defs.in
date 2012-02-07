@@ -487,6 +487,50 @@ is_newest ()
   test -z "$is_newest_files"
 }
 
+# useless_vpath_rebuild
+# ---------------------
+# Tell whether $MAKE suffers of the bug triggering automake bug#7884.
+# For example, this happens with FreeBSD make, since in a VPATH build
+# it tends to rebuilt files for which there is an explicit or even just
+# a suffix rule, even if said files are already available in the VPATH
+# directory.
+useless_vpath_rebuild ()
+{
+  case $am__useless_vpath_rebuild in
+    yes) return 0;;
+     no) return 1;;
+     "") ;;
+      *) fatal_ "no_useless_builddir_remake: internal error";;
+  esac
+  if using_gmake; then
+    am__useless_vpath_rebuild=no
+    return 1
+  else
+    mkdir am__vpath.dir$$
+    cd am__vpath.dir$$
+    touch foo.a foo.b bar baz
+    mkdir build
+    cd build
+    unindent > Makefile << 'END'
+        .SUFFIXES: .a .b
+        VPATH = ..
+        all: foo.b baz
+        .PHONY: all
+        .a.b: ; cp $< $@
+        baz: bar ; cp ../baz bar
+END
+    if $MAKE all && test ! -f foo.b && test ! -f bar; then
+      am__useless_vpath_rebuild=no
+    else
+      am__useless_vpath_rebuild=yes
+    fi
+    cd ../..
+    rm -rf am__vpath.dir$$
+  fi
+}
+
+yl_distcheck () { useless_vpath_rebuild || $MAKE distcheck ${1+"$@"}; }
+
 # using_gmake
 # -----------
 # Return success if $MAKE is GNU make, return failure otherwise.
