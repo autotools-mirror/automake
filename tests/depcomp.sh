@@ -148,7 +148,6 @@ mkdir build-aux sub src src/sub2
 
 case $depcomp_with_libtool in
   yes)
-    plan_ 84
     po=Plo objext=lo a=la
     normalized_target=libfoo_la
     LIBPRIMARY=LTLIBRARIES LINKADD=LIBADD
@@ -166,7 +165,6 @@ case $depcomp_with_libtool in
     }
     ;;
   no)
-    plan_ 28
     po=Po objext='$(OBJEXT)' a=a
     normalized_target=foo
     LIBPRIMARY=LIBRARIES LINKADD=LDADD
@@ -260,14 +258,42 @@ $ACLOCAL && $AUTOCONF && $AUTOMAKE -a \
 test -f build-aux/depcomp \
   || fatal_ "depcomp script not installed"
 
+# To offer extra coverage for the depmodes (like "aix" of "hp2") where the
+# name of the compiler-generated depfiles can depend on whether libtool is
+# in use *and* on which kind of libraries libtool is building (static,
+# shared, or both), we would like to run the libtool-oriented tests thrice:
+# once after having run configure with the '--disable-shared' option, once
+# after having run it with the '--enable-shared' options, and once by
+# leaving it to configure to automatically select which kind of library (or
+# libraries) to build.
+#
+# But doing such three-fold checks unconditionally for all the depmodes
+# would slow down the already too slow libtool tests unacceptably (up to a
+# 150-200% factor), with no real gain in coverage for most of the depmodes.
+# So, since the depmodes that would benefit from the extra tests are never
+# forced to configure in out tests below, but can only be automatically
+# selected by '--enable-dependency-tracking', we make this threefold check
+# only in this later case.
+
 case $depmode in
   auto)
+    plan_ 84
+    do_all_tests ()
+    {
+      do_test default
+      do_test noshared --disable-shared
+      do_test nostatic --disable-static
+    }
     displayed_depmode='..*' # At least one character long.
     cfg_deptrack=--enable-dependency-tracking ;;
   disabled)
+    plan_ 28
+    do_all_tests() { do_test; }
     displayed_depmode=none
     cfg_deptrack=--disable-dependency-tracking ;;
   *)
+    plan_ 28
+    do_all_tests() { do_test; }
     displayed_depmode="(cached) $depmode"
     cfg_deptrack="$cachevar=$depmode"
     # Sanity check: ensure the cache variable we force is truly
@@ -378,13 +404,7 @@ do_test ()
 }
 
 for vpath in no simple long absolute; do
-  if test $depcomp_with_libtool = no; then
-    do_test
-  else
-    do_test default
-    do_test noshared --disable-shared
-    do_test nostatic --disable-static
-  fi
+  do_all_tests
 done
 
 :
