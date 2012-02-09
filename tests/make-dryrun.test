@@ -1,0 +1,67 @@
+#! /bin/sh
+# Copyright (C) 2012 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check that $(am__make_dryrun) works as expected.
+
+. ./defs || Exit 1
+
+set -e
+
+mkdir sub
+
+echo AC_OUTPUT >> configure.in
+
+cat > Makefile.am <<'END'
+all:
+	: Dummy, nothing to do.
+foo:
+	$(MAKE) all
+notdry:
+	@echo ":: $$MAKEFLAGS ::"; : For debugging.
+	$(am__make_dryrun) && exit 1; exit 0
+dry:
+	+@echo ":: $$MAKEFLAGS ::"; : For debugging.
+	+$(am__make_dryrun) || exit 1; echo ok > from-dry-mode
+END
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
+./configure
+
+$MAKE notdry
+
+# Test against a known regressions.  This was especially
+# heinous, since make running in normal mode was sometimes
+# mistaken for make running in dry mode.
+$MAKE notdry TESTS="n1.test n2.test"
+$MAKE notdry TESTS="n1 n2" AM_MAKEFLAGS="TESTS='n1 n2'"
+$MAKE notdry TESTS="n1 n2" AM_MAKEFLAGS='TESTS="n1 n2"'
+$MAKE notdry FOOFLAGS="-n -n -knf2 \\n --none -n"
+$MAKE notdry BARFLAGS="-n \"n\" '-n' --none -n"
+
+if echo 'all: ; @+printf %sbb%s aa cc' | $MAKE -n -f - | grep aabbcc; then
+  $MAKE -n dry
+  test -f from-dry-mode
+  rm -f from-dry-mode
+fi
+
+if using_gmake; then
+  $MAKE --dry-run -k dry
+  test -f from-dry-mode
+fi
+
+:
