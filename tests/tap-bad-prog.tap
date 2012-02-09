@@ -23,7 +23,7 @@ am_parallel_tests=yes
 
 fetch_tap_driver
 
-plan_ 5
+plan_ 6
 
 cat >> configure.in <<END
 AC_OUTPUT
@@ -78,9 +78,36 @@ else
   command_ok_ "$desc" -- grep '^ERROR: noread\.test' stdout
 fi
 
-# Check that no spurious test results is reported.  This is lower-priority
-# (and in fact the check currently fails.
-command_ok_ 'no spurious results' -D TODO -r 'still get "missing plan"' \
+# Check that no spurious test result is reported.  This is lower-priority
+# (and in fact the check currently fails for our awk-based driver).
+directive=
+if test $am_tap_implementation = shell; then
+  directive=TODO
+else
+  # Older versions of IPC::Open3 (e.g., version 1.05 on perl 5.12.4 or
+  # version 1.0103 on perl 5.6.2) fail to properly trap errors in exec(2)
+  # calls in the child process; hence, the TAP driver cannot be properly
+  # informed of such error.
+  if $PERL -w -e '
+    use IPC::Open3 qw/open3/;
+    $@ = "";
+    eval { open3(*STDIN, *STDOUT, *STDERR, "am--no-such-command") };
+    $@ =~ m/\bopen3:.*am--no-such-command/
+      or die "Bad \$@ value: \"$@\"\n";
+  '; then
+    : # OK. IPC::Open3 should be good enough.
+  else
+    for s in '"missing plan" message' 'results'; do
+      skip_ -r "IPC::Open3 not good enough" "no spurious $s"
+    done
+    Exit 0
+  fi
+fi
+
+command_ok_ 'no spurious "missing plan" message' \
+    -D "$directive" -- not grep 'missing.* plan' stdout
+command_ok_ 'no spurious results' \
+  -D "$directive" -r 'still get "missing plan"' \
   count_test_results total=3 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=3
 
 :

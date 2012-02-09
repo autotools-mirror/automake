@@ -39,7 +39,6 @@ pm/Wrap.pl
 handwritten_TESTS = \
 get-sysconf.test \
 $(perl_TESTS) \
-depmod.tap \
 instspc.tap \
 aclocal.test \
 aclocal3.test \
@@ -323,11 +322,6 @@ deleted-m4.test \
 depacl2.test \
 depcomp.test \
 depcomp2.test \
-depcomp3.test \
-depcomp4.test \
-depcomp5.test \
-depcomp6.test \
-depcomp7.test \
 depcomp8a.test \
 depcomp8b.test \
 depcomp-recover.test \
@@ -337,7 +331,6 @@ depcomp-shuffle-sub.test \
 depcomp-shuffle-sub-vpath.test \
 depdist.test \
 depend.test \
-depend2.test \
 depend3.test \
 depend4.test \
 deprecated-acinit.test \
@@ -610,6 +603,7 @@ makej.test \
 makej2.test \
 maken.test \
 maken3.test \
+make-dryrun.test \
 makevars.test \
 man.test \
 man2.test \

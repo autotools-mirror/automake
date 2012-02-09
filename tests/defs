@@ -663,6 +663,10 @@ do
       cscope --version </dev/null \
         || skip_all_ "required program \`cscope' not available"
       ;;
+    cygpath)
+      echo "$me: running cygpath --version"
+      cygpath --version || skip_all_ "cygpath not available"
+      ;;
     etags)
       # Exuberant Ctags will create a TAGS file even
       # when asked for --help or --version.  (Emacs's etags
@@ -772,6 +776,14 @@ do
         || skip_all_ "cannot find a makeinfo program that groks the" \
                  "\`--html' option"
       ;;
+    mingw)
+      uname_s=`uname -s || echo UNKNOWN`
+      echo "$me: system name: $uname_s"
+      case $uname_s in
+        MINGW*) ;;
+        *) skip_all_ "this test requires MSYS in MinGW mode" ;;
+      esac
+      ;;
     non-root)
       # Skip this test case if the user is root.
       # We try to append to a read-only file to detect this.
@@ -794,7 +806,12 @@ do
       fi
       ;;
     native)
-      cross_compiling && skip_all_ "doesn't work in cross-compile mode"
+      # Don't use "&&" here, to avoid a bug of 'set -e' present in
+      # some (even relatively recent) versions of the BSD shell.
+      # We add the dummy "else" branch for extra safety.
+      if cross_compiling; then
+        skip_all_ "doesn't work in cross-compile mode"
+      else :; fi
       ;;
     python)
       # Python doesn't support --version, it has -V
@@ -816,17 +833,6 @@ do
         skip_all_ "cannot drop directory write permissions"
       fi
       unset ro_dir_temp create_status
-      ;;
-    rst2html)
-      # Try the variants that are tried in check.am.
-      while :; do
-        for r2h in $RST2HTML rst2html rst2html.py; do
-          echo "$me: running $r2h --version"
-          $r2h --version && break 2
-        done
-        skip_all_ "no proper rst2html program found"
-      done
-      unset r2h
       ;;
     runtest)
       # DejaGnu's runtest program. We rely on being able to specify

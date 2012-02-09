@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# Copyright (C) 2011 Free Software Foundation, Inc.
+# Copyright (C) 2011, 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ use strict;
 use Getopt::Long ();
 use TAP::Parser;
 
-my $VERSION = '2011-09-07.15'; # UTC
+my $VERSION = '2012-02-01.19'; # UTC
 
 my $ME = "tap-driver.pl";
 
@@ -122,6 +122,7 @@ sub colored ($$);
 sub copy_in_global_log ();
 sub decorate_result ($);
 sub extract_tap_comment ($);
+sub finish ();
 sub get_global_test_result ();
 sub get_test_exit_message ();
 sub get_test_results ();
@@ -132,7 +133,8 @@ sub is_null_string ($);
 sub main (@);
 sub must_recheck ();
 sub report ($;$);
-sub start (@);
+sub setup_io ();
+sub setup_parser (@);
 sub stringify_result_obj ($);
 sub testsuite_error ($);
 sub trap_perl_warnings_and_errors ();
@@ -244,7 +246,7 @@ sub trap_perl_warnings_and_errors ()
     }
 }
 
-sub start (@)
+sub setup_io ()
 {
   # Redirect stderr and stdout to a temporary log file.  Save the
   # original stdout stream, since we need it to print testsuite
@@ -257,14 +259,27 @@ sub start (@)
   trap_perl_warnings_and_errors;
   open STDOUT, ">&LOG" or die "$ME: redirecting stdout: $!\n";
   open STDERR, ">&LOG" or die "$ME: redirecting stderr: $!\n";
-  $parser = TAP::Parser->new ({ exec => \@_, merge => $cfg{merge} });
+}
+
+sub setup_parser (@)
+{
+  local $@ = '';
+  eval { $parser = TAP::Parser->new ({exec => \@_, merge => $cfg{merge}}) };
+  if ($@ ne '')
+    {
+      # Don't use the error message in $@ as set by TAP::Parser, since
+      # currently it's both too generic (at the point of being basically
+      # useless) and quite long.
+      report "ERROR", "- couldn't execute test script";
+      finish;
+    }
 }
 
 sub get_test_exit_message ()
 {
   my $wstatus = $parser->wait;
   # Watch out for possible internal errors.
-  die "$ME: couldn't get the exit ststus of the TAP producer"
+  die "$ME: couldn't get the exit status of the TAP producer"
     unless defined $wstatus;
   # Return an undefined value if the producer exited with success.
   return unless $wstatus;
@@ -272,17 +287,17 @@ sub get_test_exit_message ()
   # by a signal.
   use POSIX qw (WIFEXITED WEXITSTATUS WIFSIGNALED WTERMSIG);
   if (WIFEXITED ($wstatus))
-	{
-      return sprintf "exited with status %d", WEXITSTATUS ($wstatus);
-	}
+  {
+    return sprintf "exited with status %d", WEXITSTATUS ($wstatus);
+  }
   elsif (WIFSIGNALED ($wstatus))
-	{
+    {
       return sprintf "terminated by signal %d", WTERMSIG ($wstatus);
-	}
+    }
   else
-	{
-	  return "terminated abnormally";
-	}
+    {
+      return "terminated abnormally";
+    }
 }
 
 sub stringify_result_obj ($)
@@ -379,7 +394,7 @@ sub handle_tap_result ($)
 
   my $test_result = stringify_result_obj $result_obj;
   my $string = $result_obj->number;
-  
+
   my $description = $result_obj->description;
   $string .= " $description"
     unless is_null_string $description;
@@ -460,9 +475,17 @@ sub extract_tap_comment ($)
   return "";
 }
 
+sub finish ()
+{
+  write_test_results;
+  close LOG or die "$ME: closing $log_file: $!\n";
+  exit 0;
+}
+
 sub main (@)
 {
-  start @_;
+  setup_io;
+  setup_parser @_;
 
   while (defined (my $cur = $parser->next))
     {
@@ -510,9 +533,7 @@ sub main (@)
           testsuite_error $msg if $msg;
         }
     }
-  write_test_results;
-  close LOG or die "$ME: closing $log_file: $!\n";
-  exit 0;
+  finish;
 }
 
 # ----------- #

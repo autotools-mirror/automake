@@ -129,36 +129,6 @@ am__set_TESTS_bases = \
 	rm -f $< $@
 	$(MAKE) $<
 
-# Helper recipe used by $(TEST_SUITE_LOG) below, to avoid problems with
-# "make -n".  Break this recipe in multiple shell invocations too, to
-# really work as expected with "make -n".
-am--redo-logs:
-	@rm -f $$redo_logs
-	@rm -f $$redo_results
-## The use of the `am__remaking_logs' environment variable below is
-## required to ensure that we don't go into an infinite recursion in
-## case a test log in $(TEST_LOGS) is the same as $(TEST_SUITE_LOG).
-## Yes, this has already happened in practice.  Sigh!
-	@if test -n "$$am__remaking_logs"; then \
-	  echo "fatal: making $(TEST_SUITE_LOG): possible infinite" \
-	       "recursion detected" >&2; \
-	else \
-	  am__remaking_logs=yes $(MAKE) $$redo_logs; \
-	fi;
-## Sanity check: each unreadable or non-existent test result file should
-## has been properly remade at this point, as should the corresponding log
-## file.
-	@st=0;  \
-	errmsg="fatal: making $(TEST_SUITE_LOG): failed to create"; \
-	for i in $$redo_bases; do \
-	  test -f $$i.trs && test -r $$i.trs \
-	    || { echo "$$errmsg $$i.trs"; st=1; }; \
-	  test -f $$i.log && test -r $$i.log \
-	    || { echo "$$errmsg $$i.log"; st=1; }; \
-	done; \
-	test $$st -eq 0
-.PHONY: am--redo-logs
-
 $(TEST_SUITE_LOG): $(TEST_LOGS)
 	@$(am__set_TESTS_bases); \
 ## Helper shell function, tells whether a path refers to an existing,
@@ -178,12 +148,35 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 ## tests in order to re-create them.
 	  redo_logs=`for i in $$redo_bases; do echo $$i.log; done`; \
 	  redo_results=`for i in $$redo_bases; do echo $$i.trs; done`; \
-## The exported variables are needed by the helper hook.
-	  redo_bases="$$redo_bases" \
-	  redo_logs="$$redo_logs" \
-	  redo_results="$$redo_results" \
-	    $(MAKE) am--redo-logs || exit 1; \
-	else :; fi;
+	  if $(am__make_dryrun); then :; else \
+## Break "rm -f" into two calls to minimize the possibility of exceeding
+## command line length limits.
+	    rm -f $$redo_logs && rm -f $$redo_results || exit 1; \
+	  fi; \
+	fi; \
+## Use a trick to to ensure that we don't go into an infinite recursion
+## in case a test log in $(TEST_LOGS) is the same as $(TEST_SUITE_LOG).
+## Yes, this has already happened in practice.  Sigh!
+	if test -n "$$am__remaking_logs"; then \
+	  echo "fatal: making $(TEST_SUITE_LOG): possible infinite" \
+	       "recursion detected" >&2; \
+	else \
+	  am__remaking_logs=yes $(MAKE) $(AM_MAKEFLAGS) $$redo_logs; \
+	fi; \
+	if $(am__make_dryrun); then :; else \
+## Sanity check: each unreadable or non-existent test result file should
+## has been properly remade at this point, as should the corresponding log
+## file.
+	  st=0;  \
+	  errmsg="fatal: making $(TEST_SUITE_LOG): failed to create"; \
+	  for i in $$redo_bases; do \
+	    test -f $$i.trs && test -r $$i.trs \
+	      || { echo "$$errmsg $$i.trs"; st=1; }; \
+	    test -f $$i.log && test -r $$i.log \
+	      || { echo "$$errmsg $$i.log"; st=1; }; \
+	  done; \
+	  test $$st -eq 0 || exit 1; \
+	fi
 ## We need a new subshell to work portably with "make -n", since the
 ## previous part of the recipe contained a $(MAKE) invocation.
 	@$(am__sh_e_setup); $(am__tty_colors); $(am__set_TESTS_bases); \
@@ -335,7 +328,7 @@ check-TESTS recheck:
 ## we rely on .PHONY to work portably.
 	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
 	@ws='[ 	]'; \
-	list=''; $(am__set_TESTS_bases); \
+	log_list='' trs_list=''; $(am__set_TESTS_bases); \
 	for i in $$bases; do \
 ## If running a "make recheck", we must only consider tests that had an
 ## unexpected outcome (FAIL or XPASS) in the earlier run.  In particular,
@@ -353,21 +346,26 @@ check-TESTS recheck:
 ## definition can be problematic.  In this particular case, trailing white
 ## space was known to cause a segmentation fault on Solaris 10 XPG4 make:
 ## <http://lists.gnu.org/archive/html/bug-automake/2010-08/msg00004.html>
-	  if test -z "$$list"; then list=$$i.log; else list="$$list $$i.log"; fi; \
+	  if test -z "$$log_list"; then \
+	    log_list="$$i.log"; \
+	  else \
+	    log_list="$$log_list $$i.log"; \
+	  fi; \
+	  if test -z "$$trs_list"; then \
+	    trs_list="$$i.trs"; \
+	  else \
+	    trs_list="$$trs_list $$i.trs"; \
+	  fi; \
 	done; \
 ## Under "make recheck", remove the .log and .trs files associated
 ## with the files to recheck, so that those will be rerun by the
 ## "make test-suite.log" recursive invocation below.  But use a proper
 ## hack to avoid extra files removal when running under "make -n".
-	if test $@ = recheck && test -n "$$list"; then \
-	  { \
-	   echo 'am--clean: am--clean-log am--clean-trs'; \
-	   echo 'am--clean-log: ; rm -f $$(am__logs)'; \
-	   echo 'am--clean-trs: ; rm -f $$(am__logs:.log=.trs)'; \
-	  } | $(MAKE) -f - am--clean am__logs="$$list" \
-	    || exit 1; \
+	if test $@ != recheck || $(am__make_dryrun); then :; else \
+	  test -z "$$log_list" || rm -f $$log_list; \
+	  test -z "$$trs_list" || rm -f $$trs_list; \
 	fi; \
-	$(MAKE) $(TEST_SUITE_LOG) TEST_LOGS="$$list"
+	$(MAKE) $(TEST_SUITE_LOG) TEST_LOGS="$$log_list"
 
 ## Recheck must depend on $(check_SCRIPTS), $(check_PROGRAMS), etc.
 recheck: %CHECK_DEPS%
