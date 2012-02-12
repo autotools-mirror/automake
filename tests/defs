@@ -444,6 +444,50 @@ END
 }
 am__can_chain_suffix_rules="" # Avoid interferences from the environment.
 
+# useless_vpath_rebuild
+# ---------------------
+# Tell whether $MAKE suffers of the bug triggering automake bug#7884.
+# For example, this happens with FreeBSD make, since in a VPATH build
+# it tends to rebuilt files for which there is an explicit or even just
+# a suffix rule, even if said files are already available in the VPATH
+# directory.
+useless_vpath_rebuild ()
+{
+  case $am__useless_vpath_rebuild in
+    yes) return 0;;
+     no) return 1;;
+     "") ;;
+      *) fatal_ "no_useless_builddir_remake: internal error";;
+  esac
+  if using_gmake; then
+    am__useless_vpath_rebuild=no
+    return 1
+  else
+    mkdir am__vpath.dir$$
+    cd am__vpath.dir$$
+    touch foo.a foo.b bar baz
+    mkdir build
+    cd build
+    unindent > Makefile << 'END'
+        .SUFFIXES: .a .b
+        VPATH = ..
+        all: foo.b baz
+        .PHONY: all
+        .a.b: ; cp $< $@
+        baz: bar ; cp ../baz bar
+END
+    if $MAKE all && test ! -f foo.b && test ! -f bar; then
+      am__useless_vpath_rebuild=no
+    else
+      am__useless_vpath_rebuild=yes
+    fi
+    cd ../..
+    rm -rf am__vpath.dir$$
+  fi
+}
+
+yl_distcheck () { useless_vpath_rebuild || $MAKE distcheck ${1+"$@"}; }
+
 # seq_ - print a sequence of numbers
 # ----------------------------------
 # This function simulates GNU seq(1) portably.  Valid usages:
@@ -935,36 +979,23 @@ do
       texi2dvi -o /dev/null --version \
         || skip_all_ "required program \`texi2dvi' not available"
       ;;
-    flex)
-      # Since flex is required, we pick LEX for ./configure.
-      LEX=flex
+    lex)
+      test x"$LEX" = x"false" && skip_all_ "lex not found or disabled"
       export LEX
+      ;;
+    yacc)
+      test x"$YACC" = x"false" && skip_all_ "yacc not found or disabled"
+      export YACC
+      ;;
+    flex)
+      LEX=flex; export LEX
       echo "$me: running flex --version"
       flex --version || skip_all_ "required program \`flex' not available"
       ;;
-    lex)
-      test "$LEX" = false && skip_all_ "no Lex program available"
-      if test -z "$LEX"; then
-        # The user hasn't explicitly specified any lex program in the
-        # environment, so we try to use flex, skipping the test if it's
-        # not found.
-        LEX=flex
-        export LEX
-        echo "$me: running flex --version"
-        flex --version || skip_all_ "required program \`flex' not available"
-      fi
-      ;;
-    yacc)
-      test "$YACC" = false && skip_all_ "no Yacc program available"
-      if test -z "$YACC"; then
-        # The user hasn't explicitly specified any yacc program in the
-        # environment, so we try to use bison, skipping the test if it's
-        # not found.
-        YACC='bison -y'
-        export YACC
-        echo "$me: running bison --version"
-        bison --version || skip_all_ "required program \`bison' not available"
-      fi
+    bison)
+      YACC='bison -y'; export YACC
+      echo "$me: running bison --version"
+      bison --version || skip_all_ "required program \`bison' not available"
       ;;
     *)
       # Generic case: the tool must support --version.

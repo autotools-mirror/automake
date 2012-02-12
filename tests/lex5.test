@@ -17,7 +17,7 @@
 
 # Test for subdir lexers.
 
-required='cc flex'
+required='cc lex'
 . ./defs || Exit 1
 
 cat >> configure.in << 'END'
@@ -56,15 +56,18 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
+# We expect ylwrap to be used and distributed even if there is
+# only one lexer.
+test -f ylwrap
+
 mkdir sub
 cd sub
 ../configure
 $MAKE foo/foo.o
+ls -l # For debugging.
 
 test -f foo/foo.c
 test -f foo/foo.o
-# ylwrap is not needed
-test ! -f ./ylwrap
 
 # Now, adds another lexer to test ylwrap.
 
@@ -82,11 +85,11 @@ END
 $sleep
 
 $AUTOMAKE -a --no-force
-test -f ./ylwrap
 
 cd sub
 using_gmake || $MAKE Makefile
 $MAKE foo/foo2.o
+ls -l # For debugging.
 test -f foo/foo2.c
 test -f foo/foo2.o
 

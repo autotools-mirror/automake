@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2011, 2012 Free Software Foundation, Inc.
+# Copyright (C) 2011 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,12 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that distributed Yacc-generated parsers are not uselessly
-# remade from an unpacked distributed tarball.
-# See automake bug#7884.
+# Test to make sure bison + bison's skeleton works.
+# For Automake bug#7648 and PR automake/491.
 
-required='cc yacc'
+required=bison
 . ./defs || Exit 1
+
+set -e
 
 cat >> configure.in << 'END'
 AC_PROG_CC
@@ -28,59 +29,46 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-bin_PROGRAMS = foobar zardoz
-foobar_SOURCES = parse.y main.c
-zardoz_SOURCES = $(foobar_SOURCES)
-zardoz_YFLAGS = -d
+bin_PROGRAMS = zardoz
+zardoz_SOURCES = zardoz.y foo.c
+AM_YFLAGS = -d --skeleton glr.c
 END
 
-cat > parse.y << 'END'
+# Parser.
+cat > zardoz.y << 'END'
 %{
 int yylex () { return 0; }
-void yyerror (char *s) {}
+void yyerror (const char *s) { return; }
 %}
 %%
 foobar : 'f' 'o' 'o' 'b' 'a' 'r' {};
 END
 
-cat > main.c << 'END'
-int main () { return 0; }
+cat > foo.c << 'END'
+#include "zardoz.h"
+int main (void)
+{
+  return yyparse ();
+}
 END
 
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-./configure
-$MAKE
-
-$MAKE distdir
-chmod -R a-w $distdir
-
-mkdir bin
-cat > bin/yacc <<'END'
-#!/bin/sh
-echo "$0 invoked, shouldn't happen!" >&2
-exit 1
-END
-cp bin/yacc bin/bison
-chmod a+x bin/yacc bin/bison
-PATH=`pwd`/bin$PATH_SEPARATOR$PATH
-
-YACC=yacc BISON=bison
-export YACC BISON
-
+# Try a VPATH build first.
 mkdir build
 cd build
-../$distdir/configure
+../configure YACC='bison -y'
+$MAKE
+cd ..
+
+# Now try an in-tree build.
+./configure YACC='bison -y'
 $MAKE
 
-# Sanity check.
-chmod u+w ../$distdir
-rm -f ../$distdir/parse.c
-chmod a-w ../$distdir
-$MAKE >out 2>&1 && { cat out; Exit 1; }
-cat out
-$FGREP parse.c out
+# Check that distribution is self-contained, and do not require
+# bison to be built.
+env YACC=false DISTCHECK_CONFIGURE_FLAGS='YACC=false' $MAKE -e distcheck
 
 :

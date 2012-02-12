@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2010, 2011 Free Software Foundation, Inc.
+# Copyright (C) 2011 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,45 +14,43 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Removal recovery rules for headers should not remove files with `make -n'.
+# Check that yacc sources with many dots in their name are handled
+# correctly.
 
-required='cc yacc'
 . ./defs || Exit 1
+
+set -e
 
 cat >> configure.in << 'END'
 AC_PROG_CC
+AC_PROG_CXX
 AC_PROG_YACC
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-AM_YFLAGS = -d
-bin_PROGRAMS = foo
-foo_SOURCES = foo.c parse.y
+bin_PROGRAMS = foo bar foo2 bar2
+
+foo_SOURCES = parse.y.y
+bar_SOURCES = parse.s.f..y
+bar_YFLAGS = -d
+
+foo2_SOURCES = parse..5.y++
+bar2_SOURCES = parse.yxx.yy
+bar2_YFLAGS = -d
 END
 
-cat > foo.c << 'END'
-int main () { return 0; }
-END
-
-cat > parse.y << 'END'
-%{
-int yylex () { return 0; }
-void yyerror (char *s) {}
-%}
-%%
-foobar : 'f' 'o' 'o' 'b' 'a' 'r' {};
-END
+outputs=' parse.y.c      bar-parse.s.f..c   bar-parse.s.f..h
+          parse..5.c++   bar2-parse.yxx.cc  bar2-parse.yxx.hh '
 
 $ACLOCAL
-$AUTOMAKE --add-missing
-$AUTOCONF
-./configure
-$MAKE
+$AUTOMAKE -a
 
-rm -f parse.h
-$MAKE -n parse.h
-test -f parse.c
-test ! -f parse.h
+$EGREP '(\.[ch]|parse)' Makefile.in # For debugging.
+
+# All expected files should be mentioned in the generated Makefile.in.
+for s in $outputs; do
+  $FGREP $s Makefile.in
+done
 
 :
