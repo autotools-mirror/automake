@@ -98,7 +98,15 @@ signal_caught ()
   esac
 }
 
-command_ok_ '"make check" fails' eval 'not $MAKE check >stdout'
+command_ok_ '"make check" fails' eval '
+  (
+    st=0; $MAKE check >stdout || st=$?
+    # Extra "echo" and silencing of xtraces required to avoid possible
+    # garbled output with NetBSD make, which would miss some final
+    # newlines in the expected places and thus mess up our TAP output.
+    set +x; echo
+  )
+'
 cat stdout # For debugging.
 
 command_ok_ "count of test results" count_test_results \
