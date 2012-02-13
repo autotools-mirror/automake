@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2011 Free Software Foundation, Inc.
+# Copyright (C) 2011, 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,76 +18,77 @@
 #  - `test-driver' script not correctly distributed when TESTS is
 #    defined in a subdir Makefile
 
+am_create_testdir=empty
 am_parallel_tests=yes
 . ./defs || Exit 1
 
-cat >> configure.in << 'END'
-AC_CONFIG_FILES([tests/Makefile])
-AC_OUTPUT
+ocwd=`pwd` || fatal_ "getting current working directory"
+
+do_check ()
+{
+  whereopts=$1 auxdir=$2
+  case $#,$whereopts in
+    2,ac) ac_opts=parallel-tests am_code= ;;
+    2,am) am_opts=parallel-tests ac_code= ;;
+       *) fatal_ "do_check: bad usage";;
+  esac
+  mkdir $whereopts
+  cd $whereopts
+  mkdir tests
+  unindent > configure.in << END
+    AC_INIT([$me], [1.0])
+    AC_CONFIG_AUX_DIR([$auxdir])
+    AM_INIT_AUTOMAKE([$ac_opts])
+    AC_CONFIG_FILES([Makefile tests/Makefile])
+    AC_OUTPUT
 END
-
-rm -f depcomp # It's unneeded.
-
-mkdir tests
-
-cat > Makefile.am << 'END'
-SUBDIRS = tests
-check-local: test-top
-test-top: distdir
-	ls -l $(distdir) $(distdir)/* ;: For debugging.
-	test -f $(distdir)/test-driver
-.PHONY: test-top
+  if test $auxdir = .; then
+    test_driver=test-driver
+  else
+    mkdir $auxdir
+    test_driver=$auxdir/test-driver
+  fi
+  # No 'AUTOMAKE_OPTIONS' in here -- purposely.
+  unindent > Makefile.am << END
+    SUBDIRS = tests
+    check-local: test-top
+    test-top: distdir
+	ls -l \$(distdir) \$(distdir)/* ;: For debugging.
+	test -f \$(distdir)/$test_driver
+    .PHONY: test-top
 END
-
-cat > tests/Makefile.am << 'END'
-check-local: test-sub
-test-sub:
-	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]test-driver '
-TESTS = foo.test
-EXTRA_DIST = $(TESTS)
+  unindent > tests/Makefile.am << END
+    AUTOMAKE_OPTIONS = $am_opts
+    check-local: test-sub
+    test-sub:
+	echo ' ' \$(DIST_COMMON) ' ' | grep '[ /]$test_driver '
+    TESTS = foo.test
+    EXTRA_DIST = \$(TESTS)
 END
-
-cat > tests/foo.test << 'END'
-#!/bin/sh
-exit 0
+  unindent > tests/foo.test << 'END'
+    #!/bin/sh
+    exit 0
 END
-chmod a+x tests/foo.test
+  chmod a+x tests/foo.test
+  $ACLOCAL
+  $AUTOCONF
+  $AUTOMAKE -a
+  ./configure
+  $MAKE test-top
+  cd tests
+  $MAKE test-sub
+  cd ..
+  $MAKE distcheck
+  # Try code path without automatic installation of required files.
+  mv -f Makefile.in Makefile.sav
+  mv -f tests/Makefile.in tests/Makefile.sav
+  $AUTOMAKE
+  diff Makefile.in Makefile.sav
+  diff tests/Makefile.in tests/Makefile.sav
+  :
+}
 
-$ACLOCAL
-$AUTOCONF
-$AUTOMAKE -a
-./configure
-$MAKE test-top
-cd tests; $MAKE test-sub; cd ..;
-$MAKE distcheck
-
-# Try again, with a `config_auxdir' != `.' this time.
-
-$MAKE distclean
-
-mkdir build-aux
-mv missing install-sh test-driver build-aux
-
-for d in . tests; do
-  sed 's|test-driver|build-aux/test-driver|' $d/Makefile.am > $d/t
-  mv -f $d/t $d/Makefile.am
-  cat $d/Makefile.am # For debugging.
-done
-
-# Extra newline possibly required by OpenBSD 3.9 sed, see the autoconf
-# manual for details.
-sed '/^AC_INIT/i\
-AC_CONFIG_AUX_DIR([build-aux])
-' configure.in > t
-mv -f t configure.in
-cat configure.in # For debugging.
-
-touch aclocal.m4 # To avoid useless remakes.
-$AUTOCONF
-$AUTOMAKE
-./configure
-$MAKE test-top
-cd tests; $MAKE test-sub; cd ..;
-$MAKE distcheck
+do_check ac .
+do_check am build-aux
 
 :
