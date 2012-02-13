@@ -150,7 +150,14 @@ case $depcomp_with_libtool in
   yes)
     po=Plo objext=lo a=la
     normalized_target=libfoo_la
-    LIBPRIMARY=LTLIBRARIES LINKADD=LIBADD
+    # On platforms requiring that no undefined symbols exist in order
+    # to build shared libraries (e.g. Windows DLLs), you have to
+    # explicitly declare that the libtool library you are building
+    # does not actually have any undefined symbols, for libtool to
+    # even try to build it as a shared library.  Without that
+    # explicit declaration, libtool falls back to a static library
+    # only, regardless of any --enable-shared flags etc.
+    LIBPRIMARY=LTLIBRARIES LINKADD=LIBADD NOUNDEF=-no-undefined
     echo lib_LTLIBRARIES = libfoo.la >> Makefile.am
     make_ok ()
     {
@@ -167,7 +174,7 @@ case $depcomp_with_libtool in
   no)
     po=Po objext='$(OBJEXT)' a=a
     normalized_target=foo
-    LIBPRIMARY=LIBRARIES LINKADD=LDADD
+    LIBPRIMARY=LIBRARIES LINKADD=LDADD NOUNDEF=
     echo bin_PROGRAMS = foo >> Makefile.am
     make_ok ()
     {
@@ -185,6 +192,7 @@ SUBDIRS = src
 # We include subfoo only to be sure that the munging in depcomp
 # doesn't remove too much from the object file name.
 ${normalized_target}_SOURCES = foo.c sub/subfoo.c foo.h sub/subfoo.h
+${normalized_target}_LDFLAGS = ${NOUNDEF}
 ${normalized_target}_${LINKADD} = src/libbaz.$a
 
 .PHONY: grep-test
@@ -207,6 +215,7 @@ noinst_${LIBPRIMARY} = libbaz.$a
 # We include sub2foo only to be sure that the munging in depcomp
 # doesn't remove too much from the object file name.
 libbaz_${a}_SOURCES = baz.c sub2/sub2foo.c baz.h sub2/sub2foo.h
+libbaz_${a}_LDFLAGS = ${NOUNDEF}
 END
 
 cat > foo.c <<'END'
