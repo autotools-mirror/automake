@@ -125,11 +125,6 @@ AM_RUN_LOG([$TEX --version </dev/null])
 #     configure help screen.
 AC_CHECK_PROGS([YACC], [yacc byacc 'bison -y'], [false])
 AC_CHECK_PROGS([LEX], [lex flex], [false])
-# We don't want YACC and LEX defined as make variables, otherwise the
-# values determined at configure time will override those from the
-# environment, even in the make-spawned testcases.
-AM_SUBST_NOTMAKE([YACC])
-AM_SUBST_NOTMAKE([LEX])
 
 # Generate man pages.
 AM_MISSING_PROG([HELP2MAN], [help2man])
