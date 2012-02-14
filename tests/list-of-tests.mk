@@ -880,6 +880,7 @@ req.test \
 reqd.test \
 reqd2.test \
 repeated-options.test \
+rst-formatting.test \
 rulepat.test \
 self-check-cleanup.tap \
 self-check-configure-help.test \
