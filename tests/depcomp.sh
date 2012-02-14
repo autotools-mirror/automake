@@ -158,6 +158,7 @@ case $depcomp_with_libtool in
     # explicit declaration, libtool falls back to a static library
     # only, regardless of any --enable-shared flags etc.
     LIBPRIMARY=LTLIBRARIES LINKADD=LIBADD NOUNDEF=-no-undefined
+    libbaz_ldflags="libbaz_${a}_LDFLAGS = $NOUNDEF"
     echo lib_LTLIBRARIES = libfoo.la >> Makefile.am
     make_ok ()
     {
@@ -175,6 +176,7 @@ case $depcomp_with_libtool in
     po=Po objext='$(OBJEXT)' a=a
     normalized_target=foo
     LIBPRIMARY=LIBRARIES LINKADD=LDADD NOUNDEF=
+    libbaz_ldflags=
     echo bin_PROGRAMS = foo >> Makefile.am
     make_ok ()
     {
@@ -192,7 +194,7 @@ SUBDIRS = src
 # We include subfoo only to be sure that the munging in depcomp
 # doesn't remove too much from the object file name.
 ${normalized_target}_SOURCES = foo.c sub/subfoo.c foo.h sub/subfoo.h
-${normalized_target}_LDFLAGS = ${NOUNDEF}
+${normalized_target}_LDFLAGS = $NOUNDEF
 ${normalized_target}_${LINKADD} = src/libbaz.$a
 
 .PHONY: grep-test
@@ -215,7 +217,7 @@ noinst_${LIBPRIMARY} = libbaz.$a
 # We include sub2foo only to be sure that the munging in depcomp
 # doesn't remove too much from the object file name.
 libbaz_${a}_SOURCES = baz.c sub2/sub2foo.c baz.h sub2/sub2foo.h
-libbaz_${a}_LDFLAGS = ${NOUNDEF}
+$libbaz_ldflags
 END
 
 cat > foo.c <<'END'
