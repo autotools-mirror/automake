@@ -286,23 +286,28 @@ test -f build-aux/depcomp \
 
 case $depmode in
   auto)
-    plan_ 84
-    do_all_tests ()
-    {
-      do_test default
-      do_test noshared --disable-shared
-      do_test nostatic --disable-static
-    }
+    if test $depcomp_with_libtool = no; then
+      plan_ 28
+      do_all_tests () { do_test; }
+    else
+      plan_ 84
+      do_all_tests ()
+      {
+        do_test default
+        do_test noshared --disable-shared
+        do_test nostatic --disable-static
+      }
+    fi
     displayed_depmode='..*' # At least one character long.
     cfg_deptrack=--enable-dependency-tracking ;;
   disabled)
     plan_ 28
-    do_all_tests() { do_test; }
+    do_all_tests () { do_test; }
     displayed_depmode=none
     cfg_deptrack=--disable-dependency-tracking ;;
   *)
     plan_ 28
-    do_all_tests() { do_test; }
+    do_all_tests () { do_test; }
     displayed_depmode="(cached) $depmode"
     cfg_deptrack="$cachevar=$depmode"
     # Sanity check: ensure the cache variable we force is truly
