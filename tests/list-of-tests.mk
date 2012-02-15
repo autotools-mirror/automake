@@ -287,7 +287,7 @@ confsub.test \
 confvar.test \
 confvar2.test \
 copy.test \
-cscope.test \
+cscope.tap \
 cscope2.test \
 cscope3.test \
 cxx.test \
