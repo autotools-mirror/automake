@@ -269,9 +269,9 @@ autodiffs:
 	 { \
 	     rev=$$1 dir=$$2 \
 	       && echo "$@: will get files from revision $$rev" \
-	       && git clone -q --depth 1 "$$am_gitdir" tmp \
+	       && $(GIT) clone -q --depth 1 "$$am_gitdir" tmp \
 	       && $(am__cd) tmp \
-	       && git checkout -q "$$rev" \
+	       && $(GIT) checkout -q "$$rev" \
 	       && echo "$@: bootstrapping $$rev" \
 	       && $(SHELL) ./bootstrap \
 	       && echo "$@: copying files from $$rev" \
@@ -283,8 +283,8 @@ autodiffs:
 	 }; \
 	 outdir=$@.dir \
 ## Before proceeding, ensure the specified revisions truly exist.
-	   && git --git-dir="$$am_gitdir" describe $$OLD_COMMIT >/dev/null \
-	   && git --git-dir="$$am_gitdir" describe $$NEW_COMMIT >/dev/null \
+	   && $(GIT) --git-dir="$$am_gitdir" describe $$OLD_COMMIT >/dev/null \
+	   && $(GIT) --git-dir="$$am_gitdir" describe $$NEW_COMMIT >/dev/null \
 	   && rm -rf $$outdir \
 	   && mkdir $$outdir \
 	   && $(am__cd) $$outdir \
@@ -378,5 +378,5 @@ update_copyright_env = \
 
 .PHONY: update-copyright
 update-copyright:
-	git ls-files | grep -Ev 'COPYING|INSTALL' \
+	$(GIT) ls-files | grep -Ev 'COPYING|INSTALL' \
 	  | $(update_copyright_env) xargs $(srcdir)/lib/$@
