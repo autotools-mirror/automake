@@ -340,7 +340,8 @@ config.guess \
 config.sub \
 gnupload \
 gitlog-to-changelog \
-texinfo.tex
+texinfo.tex \
+update-copyright
 
 ## Fetch the latest versions of files we care about.
 fetch:
@@ -353,6 +354,7 @@ fetch:
 	$(WGET_SV_CVS)texinfo/texinfo/doc/texinfo.tex -O texinfo.tex && \
 	$(WGET_SV_GIT_GL)doc/INSTALL -O INSTALL && \
 	$(WGET_SV_GIT_GL)build-aux/gnupload -O gnupload && \
+	$(WGET_SV_GIT_GL)build-aux/update-copyright -O update-copyright && \
 	$(WGET_SV_GIT_GL)build-aux/gitlog-to-changelog -O gitlog-to-changelog)
 ## Don't exit after test because we want to give as many errors as
 ## possible.
@@ -369,3 +371,12 @@ fetch:
 	  echo "See Fetchdir/update.patch for a log of the changes."; \
 	exit $$stat
 .PHONY: fetch
+
+update_copyright_env = \
+  UPDATE_COPYRIGHT_FORCE=1 \
+  UPDATE_COPYRIGHT_USE_INTERVALS=2
+
+.PHONY: update-copyright
+update-copyright:
+	git ls-files | grep -Ev 'COPYING|INSTALL' \
+	  | $(update_copyright_env) xargs $(srcdir)/lib/$@
