@@ -16,6 +16,8 @@
 
 # Check that wildcards in EXTRA_DIST are honoured.
 # Suggested by observations from Braden McDaniel.
+# See also sister test 'extra11.test', that check a similar usage
+# with the involvement of the $(wildcard) GNU make builtin.
 
 required=GNUmake
 . ./defs || Exit 1
@@ -23,12 +25,16 @@ required=GNUmake
 echo AC_OUTPUT >> configure.in
 
 cat > Makefile.am <<'END'
-EXTRA_DIST=*.foo
+EXTRA_DIST = *.foo
 .PHONY: test
 test: distdir
 	diff a.foo $(distdir)/a.foo
 	diff b.foo $(distdir)/b.foo
 	test ! -r $(distdir)/c.bar
+check-local:
+	test -f $(srcdir)/a.foo
+	test -f $(srcdir)/b.foo
+	test ! -r $(srcdir)/c.bar
 END
 
 $ACLOCAL
@@ -37,6 +43,10 @@ $AUTOCONF
 
 echo aaa > a.foo
 echo bbb > b.foo
-echo ccc > c.foo
+echo ccc > c.bar
 ./configure
 $MAKE test
+
+$MAKE distcheck
+
+:
