@@ -36,6 +36,8 @@ TESTS = ## Will be updated later.
 
 XFAIL_TESTS = \
 all.test \
+yacc-bison-skeleton-cxx.test \
+yacc-bison-skeleton.test \
 cond17.test \
 gcj6.test \
 override-conditional-2.test \
@@ -151,6 +153,8 @@ do_subst = sed \
   -e 's|@GNU_CXXFLAGS[@]|$(GNU_CXXFLAGS)|g' \
   -e 's|@GNU_FFLAGS[@]|$(GNU_FFLAGS)|g' \
   -e 's|@GNU_FCFLAGS[@]|$(GNU_FCFLAGS)|g' \
+  -e 's|@YACC[@]|$(YACC)|g' \
+  -e 's|@LEX[@]|$(LEX)|g' \
   -e 's|@TEX[@]|$(TEX)|g' \
   -e 's|@MODIFICATION_DELAY[@]|$(MODIFICATION_DELAY)|g' \
   -e 's|@am_AUTOCONF[@]|$(am_AUTOCONF)|g' \
