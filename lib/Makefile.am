@@ -2,8 +2,7 @@
 
 ## Makefile for Automake lib.
 
-# Copyright (C) 2001, 2003, 2004, 2009, 2010, 2011 Free Software
-# Foundation, Inc.
+# Copyright (C) 2001-2012 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

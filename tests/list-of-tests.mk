@@ -2,7 +2,7 @@
 ## testsuite.  This fragment is meant to be included by the Makefile.am,
 ## but also to be executed directly by make when bootstrapping automake.
 
-## Copyright (C) 2011 Free Software Foundation, Inc.
+## Copyright (C) 2011-2012 Free Software Foundation, Inc.
 ## Copyright (C) 2011, 2012 Free Software Foundation, Inc.
 ##
 ## This program is free software; you can redistribute it and/or modify
