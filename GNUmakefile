@@ -15,5 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-include ./Makefile
-include $(srcdir)/syntax-checks.mk
+# If the user runs GNU make but has not yet run ./configure,
+# give them an helpful diagnostic instead of a cryptic error.
+am--Makefile := $(wildcard Makefile)
+ifeq ($(am--Makefile),)
+  $(warning There seems to be no Makefile in this directory.)
+  $(warning You must run ./configure before running 'make'.)
+  $(error Fatal Error)
+else
+  include ./Makefile
+  include $(srcdir)/syntax-checks.mk
+endif
