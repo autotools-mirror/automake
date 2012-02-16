@@ -71,6 +71,8 @@ $AUTOMAKE
 
 ./configure
 
+system=`uname -s -r || echo unknown` # Needed later.
+
 signal_caught ()
 {
   numeric=$1
@@ -83,7 +85,13 @@ signal_caught ()
     15) symbolic=TERM;;
      *) fatal_ "unexpected signal number '$numeric'"
   esac
-  sig_re="((SIG)?$symbolic|$numeric)"
+  # Sending a SIGQUIT on Cygwin 1.5 can cause a segmentation fault
+  # instead (sometimes).  Don't let this older bug pollute the results
+  # of our testsuite.
+  case $numeric,$system in
+    3,CYGWIN*\ 1.5.*) sig_re="((SIG)?($symbolic|SEGV)|$numeric|11)";;
+    *) sig_re="((SIG)?$symbolic|$numeric)";;
+  esac
   wbound_re="($|[^a-zA-Z0-9_-])"
   pfx_re="^ERROR: signal-$numeric\\.test"
   case $am_tap_implementation in
