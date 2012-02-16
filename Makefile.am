@@ -378,5 +378,9 @@ update_copyright_env = \
 
 .PHONY: update-copyright
 update-copyright:
-	$(GIT) ls-files | grep -Ev 'COPYING|INSTALL' \
+	$(AM_V_GEN)excluded_re=`echo $(FETCHFILES) \
+	  | sed -e 's|^|lib/|' -e 's| | lib/|g' -e 's, ,|,g'`; \
+	$(GIT) ls-files \
+	  | grep -Ev '/(COPYING|INSTALL)' \
+	  | grep -Ev "^($$excluded_re)$$" \
 	  | $(update_copyright_env) xargs $(srcdir)/lib/$@
