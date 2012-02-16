@@ -370,7 +370,7 @@ WARNING: You are about to use a $am_release_type of automake.
 WARNING: It might easily suffer from new bugs or regressions.
 WARNING: You are strongly advised not to use it in production code.
 
-Please report bugs, problems and feedback to <bug-automake@gnu.org>.
+Please report bugs, problems and feedback to <AC_PACKAGE_BUGREPORT>. 
 EOF
 
 AS_EXIT([0])
