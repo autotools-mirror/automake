@@ -56,6 +56,7 @@ sc_AMDEP_TRUE_in_automake_in \
 sc_tests_no_gmake_requirement \
 sc_tests_no_gmake_checking \
 sc_tests_make_can_chain_suffix_rules \
+sc_tests_make_dont_do_useless_vpath_rebuilds \
 sc_no_dotmake_target \
 sc_no_am_makeflags \
 sc_tests_no_make_e \
@@ -324,6 +325,16 @@ sc_tests_make_can_chain_suffix_rules:
 	       'should just assume that without checking.' 1>&2; \
 	  exit 1; \
 	fi
+
+## Automake bug#7884 affects only FreeBSD make, so that we don't
+## need to work around in any of our tests anymore.
+sc_tests_make_dont_do_useless_vpath_rebuilds:
+	@if grep -E 'useless_vpath_rebuild|yl_distcheck' $(xtests); then \
+	  echo 'No need to work around automake bug#7884 anymore;' \
+	       'it only affects FreeBSD make.' 1>&2; \
+	  exit 1; \
+	fi
+
 ## GNU make supports POSIX-style runtime include directives.
 sc_grep_for_bad_make_include = \
   if grep -E 'AM_MAKE_INCLUDE|am__(include|quote)' $$files; then \
@@ -332,7 +343,6 @@ sc_grep_for_bad_make_include = \
          'should be used anymore.' 1>&2; \
     exit 1; \
   fi
-
 sc_tests_make_simple_include: sc_ensure_testsuite_has_run
 	@files=tests/*.log; $(sc_grep_for_bad_make_include)
 sc_make_simple_include:
