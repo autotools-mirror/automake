@@ -1,4 +1,4 @@
-# Maintainer checks for Automake.  Requires GNU make.
+# Maintainer checks for Automake-NG.
 
 # Copyright (C) 2012 Free Software Foundation, Inc.
 #
@@ -279,7 +279,7 @@ sc_perl_local_no_parens:
 	  exit 1; \
 	fi
 
-## Allow only few variables to be localized in Automake.
+## Allow only few variables to be localized in automake.
 sc_perl_local:
 	@if egrep -v '^[ \t]*local \$$[_~]( *=|;)' $(srcdir)/automake.in | \
 	        grep '^[ \t]*local [^*]'; then \

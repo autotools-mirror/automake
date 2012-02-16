@@ -1,4 +1,4 @@
-# Do all the work for Automake.                             -*- Autoconf -*-
+# Do all the work for Automake-NG.                         -*- Autoconf -*-
 
 # Copyright (C) 1996-2012 Free Software Foundation, Inc.
 #
@@ -19,7 +19,7 @@
 # and VERSION should now be passed to AC_INIT and removed from
 # the call to AM_INIT_AUTOMAKE.
 # We support both call styles for the transition.  After
-# the next Automake release, Autoconf can make the AC_INIT
+# the next Automake-NG release, Autoconf can make the AC_INIT
 # arguments mandatory, and then we can depend on a new Autoconf
 # release and drop the old call support.
 AC_DEFUN([AM_INIT_AUTOMAKE],
@@ -68,7 +68,7 @@ _AM_IF_OPTION([no-define],,
 [AC_DEFINE_UNQUOTED([PACKAGE], ["$PACKAGE"], [Name of package])
  AC_DEFINE_UNQUOTED([VERSION], ["$VERSION"], [Version number of package])])dnl
 
-# Some tools Automake needs.
+# Some tools Automake-NG needs.
 AC_REQUIRE([AM_SANITY_CHECK])dnl
 AC_REQUIRE([AC_ARG_PROGRAM])dnl
 AM_MISSING_PROG([ACLOCAL], [aclocal-${am__api_version}])

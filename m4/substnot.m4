@@ -9,8 +9,8 @@
 
 # _AM_SUBST_NOTMAKE(VARIABLE)
 # ---------------------------
-# Prevent Automake from outputting VARIABLE = @VARIABLE@ in Makefile.in.
-# This macro is traced by Automake.
+# Prevent Automake-NG from outputting VARIABLE = @VARIABLE@ in Makefile.in.
+# This macro is traced by Automake-NG.
 AC_DEFUN([_AM_SUBST_NOTMAKE])
 
 # AM_SUBST_NOTMAKE(VARIABLE)

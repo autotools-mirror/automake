@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 AC_PREREQ([2.68])
-AC_INIT([GNU Automake], [1.11a], [bug-automake@gnu.org])
+AC_INIT([GNU Automake-NG], [2.0a], [automake-ng@gnu.org])
 
 AC_CONFIG_SRCDIR([automake.in])
 AC_CONFIG_AUX_DIR([lib])
@@ -39,7 +39,7 @@ AC_SUBST([am_AUTOUPDATE], ["${AUTOUPDATE-autoupdate}"])
 dnl We call AC_PROG_CC in an unusual way, and only for use in our
 dnl testsuite, so also use `no-dependencies' and `no-define' among
 dnl the automake options to avoid bloating and potential problems.
-AM_INIT_AUTOMAKE([1.10a dist-xz filename-length-max=99 color-tests
+AM_INIT_AUTOMAKE([dist-xz filename-length-max=99 color-tests
 		  parallel-tests silent-rules no-define no-dependencies])
 
 # The API version is the base version.  We must guarantee
@@ -73,7 +73,7 @@ $PERL -e 'require 5.006;' || {
    AC_MSG_ERROR(
 [perl 5.6 or better is required; perl 5.8.2 or better
 is recommended.  If you have several perl versions
-installed, select the one Automake should use using
+installed, select the one Automake-NG should use using
   ./configure PERL=/path/to/perl])
 }
 
@@ -231,7 +231,7 @@ AC_SUBST([sh_errexit_works], [$am_cv_sh_errexit_works])
 
 dnl We don't want to abort our configuration script if no C compiler is
 dnl available, as such a compiler is only required to run part of the
-dnl testsuite, not to build or install Automake.  Ditto for C++, Fortran
+dnl testsuite, not to build or install Automake-NG.  Ditto for C++, Fortran
 dnl and Fortran 77 compilers.  Unfortunately, autoconf does not offer an
 dnl easy way to obtain this behaviour, so we'll need a few hacks.
 
@@ -350,8 +350,8 @@ AC_CONFIG_FILES([tests/automake-${APIVERSION}:tests/automake.in],
 
 AC_OUTPUT
 
-# Inform the user if this version of automake is a beta release or
-# a development snapshot.
+# Inform the user if this version of Automake-ng is a beta release
+# or a development snapshot.
 # According to HACKING, the version of a development snapshot should
 # end with an "odd" letter (a, c, ...), the version of a test release
 # should end wit an "even" letter (b, d, ...).
@@ -366,11 +366,11 @@ am_release_type=`AS_ECHO(["$PACKAGE_VERSION"]) | LC_ALL=C awk ["
 
 test "$am_release_type" = stable || cat <<EOF
 
-WARNING: You are about to use a $am_release_type of automake.
+WARNING: You are about to use a $am_release_type of Automake-NG.
 WARNING: It might easily suffer from new bugs or regressions.
 WARNING: You are strongly advised not to use it in production code.
 
-Please report bugs, problems and feedback to <bug-automake@gnu.org>.
+Please report bugs, problems and feedback to <automake-ng@gnu.org>.
 EOF
 
 AS_EXIT([0])

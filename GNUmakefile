@@ -1,4 +1,4 @@
-# Maintainer makefile for Automake.  Requires GNU make.
+# Maintainer makefile for Automake-NG.
 
 # Copyright (C) 2012 Free Software Foundation, Inc.
 #
