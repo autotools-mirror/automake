@@ -67,8 +67,7 @@
 
 # -------------------------------------------------------------------------
 
-am_create_testdir=empty
-. ./defs || Exit 1
+# This expects ./defs has already been included has already been included..
 
 ocwd=`pwd` || fatal_ "cannot get current working directory"
 longpath=this-is/a-path/which-has/quite-a/definitely/truly/long_long_name
@@ -287,14 +286,14 @@ test -f build-aux/depcomp \
 # only in this later case.
 
 if test $depmode,$depcomp_with_libtool = auto,yes; then
-  do_all_tests () { do_test; }
-else
   do_all_tests ()
   {
     do_test default
     do_test noshared --disable-shared
     do_test nostatic --disable-static
   }
+else
+  do_all_tests () { do_test; }
 fi
 
 case $depmode in
