@@ -207,7 +207,7 @@ sc_no_for_variable_in_macro:
 sc_mkinstalldirs:
 	@if grep -n 'mkinstalldirs' $(ams) \
 	      | grep -F -v '$$(mkinstalldirs)' \
-	      | grep -v '^\./lib/Makefile.am:37:  *mkinstalldirs \\$$'; \
+	      | grep -v '^\./lib/Makefile.am:[0-9][0-9]*:  *mkinstalldirs \\$$'; \
 	then \
 	  echo "Found incorrect use of mkinstalldirs in the lines above" 1>&2; \
 	  exit 1; \
@@ -458,6 +458,8 @@ sc_tests_tap_plan:
 ## exception, POSIX says it can't come from the environment.  V, DESTDIR,
 ## DISTCHECK_CONFIGURE_FLAGS and DISABLE_HARD_ERRORS are exceptions, too,
 ## as package authors are urged not to initialize them anywhere.
+## Finally, 'exp' is used by some ad-hoc checks, where we ensure it's
+## ok to override it from the command line.
 sc_tests_overriding_macros_on_cmdline:
 	@if grep -E '\$$MAKE .*(SHELL=.*=|=.*SHELL=)' $(xtests); then \
 	  echo 'Rewrite "$$MAKE foo=bar SHELL=$$SHELL" as "foo=bar $$MAKE -e SHELL=$$SHELL"' 1>&2; \
@@ -465,15 +467,24 @@ sc_tests_overriding_macros_on_cmdline:
 	  exit 1; \
 	fi
 # The first s/// tries to account for usages like "$MAKE || st=$?".
-# DISTCHECK_CONFIGURE_FLAGS is allowed to contain whitespace in its
-# definition, hence the more complex last three substitutions below.
-	@if sed -e 's/ || .*//' -e 's/ && .*//' \
+# 'DISTCHECK_CONFIGURE_FLAGS' and 'exp' are allowed to contain whitespace in
+# their definitions, hence the more complex last three substitutions below.
+# Also, the 'make-dryrun.test' is whitelisted, since there we need to
+# override variables from the command line in order to cover the expected
+# code paths.
+	@tests=`for t in $(xtests); do \
+	          case $$t in */make-dryrun.test);; *) echo $$t;; esac; \
+		done`; \
+	if sed -e 's/ || .*//' -e 's/ && .*//' \
 	        -e 's/ DESTDIR=[^ ]*/ /' -e 's/ SHELL=[^ ]*/ /' \
 	        -e 's/ V=[^ ]*/ /' -e 's/ DISABLE_HARD_ERRORS=[^ ]*/ /' \
 	        -e "s/ DISTCHECK_CONFIGURE_FLAGS='[^']*'/ /" \
 		-e 's/ DISTCHECK_CONFIGURE_FLAGS="[^"]*"/ /' \
 		-e 's/ DISTCHECK_CONFIGURE_FLAGS=[^ ]/ /' \
-	      $(xtests) | grep '\$$MAKE .*='; then \
+	        -e "s/ exp='[^']*'/ /" \
+		-e 's/ exp="[^"]*"/ /' \
+		-e 's/ exp=[^ ]/ /' \
+	      $$tests | grep '\$$MAKE .*='; then \
 	  echo 'Rewrite "$$MAKE foo=bar" as "foo=bar $$MAKE -e" in the above lines,' 1>&2; \
 	  echo 'it is more portable.' 1>&2; \
 	  exit 1; \
