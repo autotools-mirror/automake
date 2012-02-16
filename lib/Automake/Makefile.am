@@ -1,7 +1,6 @@
 ## Process this file with automake to create Makefile.in
 
-# Copyright (C) 2001, 2002, 2003, 2004, 2008, 2009, 2010, 2012 Free
-# Software Foundation, Inc.
+# Copyright (C) 2001-2012 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

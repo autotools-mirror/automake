@@ -2,8 +2,7 @@
 ## testsuite.  This fragment is meant to be included by the Makefile.am,
 ## but also to be executed directly by make when bootstrapping automake.
 
-## Copyright (C) 2011, 2012 Free Software Foundation, Inc.
-## Copyright (C) 2011, 2012 Free Software Foundation, Inc.
+## Copyright (C) 2011-2012 Free Software Foundation, Inc.
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -285,7 +284,7 @@ confsub.test \
 confvar.test \
 confvar2.test \
 copy.test \
-cscope.test \
+cscope.tap \
 cscope2.test \
 cscope3.test \
 cxx.test \
@@ -515,7 +514,6 @@ ldflags.test \
 lex.test \
 lex2.test \
 lex3.test \
-lex4.test \
 lex5.test \
 lexcpp.test \
 lexvpath.test \
@@ -524,6 +522,14 @@ lex-lib.test \
 lex-lib-external.test \
 lex-libobj.test \
 lex-noyywrap.test \
+lex-clean-cxx.test \
+lex-clean.test \
+lex-depend-cxx.test \
+lex-depend-grep.test \
+lex-depend.test \
+lex-line.test \
+lex-nodist.test \
+lex-pr204.test \
 lflags.test \
 lflags2.test \
 libexec.test \
@@ -780,7 +786,6 @@ pr2.test \
 pr9.test \
 pr72.test \
 pr87.test \
-pr204.test \
 pr211.test \
 pr220.test \
 pr224.test \
@@ -874,6 +879,7 @@ req.test \
 reqd.test \
 reqd2.test \
 repeated-options.test \
+rst-formatting.test \
 rulepat.test \
 self-check-cleanup.tap \
 self-check-configure-help.test \
@@ -907,11 +913,10 @@ silentf77.test \
 silentf90.test \
 silent-many-gcc.test \
 silent-many-generic.test \
-silent-lex-gcc.test \
-silent-lex-generic.test \
-silent-yacc-gcc.test \
-silent-yacc-generic.test \
 silent-configsite.test \
+silent-lex.test \
+silent-yacc.test \
+silent-yacc-headers.test \
 srcsub.test \
 srcsub2.test \
 space.test \
@@ -1167,31 +1172,43 @@ werror3.test \
 werror4.test \
 whoami.test \
 xsource.test \
-yacc-basic.test \
-yacc-d-basic.test \
-yacc-clean.test \
 yacc.test \
 yacc2.test \
 yacc4.test \
 yacc5.test \
-yacc6.test \
 yacc7.test \
 yacc8.test \
 yaccdry.test \
-yacc-subobj-nodep.test \
-yacc-dist-nobuild.test \
-yacc-nodist.test \
 yaccpp.test \
 yaccvpath.test \
+yacc-auxdir.test \
+yacc-basic.test \
+yacc-cxx.test \
+yacc-bison-skeleton-cxx.test \
+yacc-bison-skeleton.test \
+yacc-clean.test \
+yacc-clean-cxx.test \
+yacc-d-basic.test \
+yacc-d-cxx.test \
 yacc-d-vpath.test \
+yacc-deleted-headers.test \
+yacc-depend.test \
+yacc-depend2.test \
 yacc-dist-nobuild-subdir.test \
+yacc-dist-nobuild.test \
+yacc-line.test \
+yacc-mix-c-cxx.test \
+yacc-nodist.test \
+yacc-pr204.test \
+yacc-subobj-nodep.test \
+yacc-weirdnames.test \
 yflags.test \
 yflags2.test \
 yflags-cmdline-override.test \
 yflags-conditional.test \
 yflags-d-false-positives.test \
-yflags-force-override.test \
 yflags-force-conditional.test \
+yflags-force-override.test \
 yflags-var-expand.test \
 libtool-macros.test \
 gettext-macros.test

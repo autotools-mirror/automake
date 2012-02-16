@@ -1,6 +1,5 @@
 ## automake - create Makefile.in from Makefile.am
-## Copyright (C) 1998, 1999, 2001, 2002, 2003, 2004, 2006, 2009, 2012
-## Free Software Foundation, Inc.
+## Copyright (C) 1998-2012 Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -33,15 +32,19 @@
 ## distributed or not.  We cannot have a generic rule that works in
 ## both cases, so we ensure in automake that nodist_ parsers always
 ## use non-generic rules.
-if %?MAINTAINER-MODE%
 if %?FIRST%
+if %?MAINTAINER-MODE%
 @MAINTAINER_MODE_FALSE@am__skipyacc = test -f $@ ||
-endif %?FIRST%
 endif %?MAINTAINER-MODE%
+## The 's/c$/h/' substitution *must* be the last one.
+am__yacc_c2h = sed -e s/cc$$/hh/ -e s/cpp$$/hpp/ -e s/cxx$$/hxx/ \
+		   -e s/c++$$/h++/ -e s/c$$/h/
+endif %?FIRST%
 
 ?GENERIC?%EXT%%DERIVED-EXT%:
 ?!GENERIC?%OBJ%: %SOURCE%
 ?SUBDIROBJ?	%SILENT%test -d $(dir $@) || $(MKDIR_P) $(dir $@)
 ?GENERIC?	%VERBOSE%$(am__skipyacc) \
-?!GENERIC??DIST_SOURCE?	%VERBOSE%$(am__skipyacc) \
-	$(SHELL) $(YLWRAP) $< y.tab.c %OBJ% y.tab.h %BASE%.h y.output %BASE%.output -- %COMPILE%
+-?!GENERIC??DIST_SOURCE?	%VERBOSE%$(am__skipyacc) \
+	$(SHELL) $(YLWRAP) $< y.tab.c %OBJ% y.tab.h %BASE%.h \
+	`echo %OBJ% | $(am__yacc_c2h)` y.output %BASE%.output -- %COMPILE%

@@ -2,8 +2,7 @@
 
 ## Makefile for Automake.
 
-# Copyright (C) 2003, 2006, 2008, 2009, 2012 Free Software Foundation,
-# Inc.
+# Copyright (C) 2003-2012 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,8 +17,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-info_TEXINFOS = automake.texi
+info_TEXINFOS = automake.texi automake-history.texi
 automake_TEXINFOS = fdl.texi
+history_TEXINFOS = fdl.texi
 
 dist_man1_MANS = \
   $(srcdir)/aclocal.1 \

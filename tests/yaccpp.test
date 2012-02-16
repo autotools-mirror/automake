@@ -1,6 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1997, 2001, 2002, 2006, 2010, 2011 Free Software
-# Foundation, Inc.
+# Copyright (C) 1997-2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,8 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure Yacc + C++ is supported.
-# Please keep this is sync with sister test lexcpp.test.
+# Test to make sure Yacc + C++ is not obviously broken.
+# See also related tests `yacc-cxx.test' and `yacc-d-cxx.test',
+# which does much more in-depth checks (but requires an actual
+# Yacc program and a working C++ compiler).
 
 . ./defs || Exit 1
 
@@ -36,10 +37,45 @@ END
 $ACLOCAL
 $AUTOMAKE -a
 
+$EGREP '(\.[ch]|foo|bar|baz|qux)' Makefile.in # For debugging.
+
+$EGREP '(foo|bar|baz|qux)\.h' Makefile.in && Exit 1
+
 sed -e 's/^/ /' -e 's/$/ /' Makefile.in >mk
+
 $FGREP ' foo.c++ ' mk
 $FGREP ' bar.cpp ' mk
 $FGREP ' baz.cc '  mk
 $FGREP ' qux.cxx ' mk
+
+cat >> Makefile.am <<END
+AM_YFLAGS = -d
+qux_YFLAGS = foo
+END
+
+$AUTOMAKE
+
+$EGREP '(\.[ch]|foo|bar|baz|qux)' Makefile.in # For debugging.
+
+sed -e 's/^/ /' -e 's/$/ /' Makefile.in >mk
+
+$FGREP ' foo.c++ ' mk
+$FGREP ' foo.h++ ' mk
+$FGREP ' bar.cpp ' mk
+$FGREP ' bar.hpp ' mk
+$FGREP ' baz.cc '  mk
+$FGREP ' baz.hh '  mk
+
+$EGREP '(^| )foo\.h\+\+(:| .*:)' Makefile.in
+$EGREP '(^| )bar\.hpp(:| .*:)'   Makefile.in
+$EGREP '(^| )baz\.hh(:| .*:)'    Makefile.in
+
+grep ' foo\.h[ :]' mk && Exit 1
+grep ' bar\.h[ :]' mk && Exit 1
+grep ' baz\.h[ :]' mk && Exit 1
+
+$FGREP ' qux-qux.cxx ' mk
+$EGREP '(^| )qux-qux\.cxx(:| .*:)' Makefile.in
+grep 'qux\.h.*:' Makefile.in && Exit 1
 
 :

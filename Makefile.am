@@ -2,9 +2,7 @@
 
 ## Makefile for Automake.
 
-# Copyright (C) 1995, 1996, 1997, 1998, 1999, 2001, 2002, 2003, 2004,
-# 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 Free Software
-# Foundation, Inc.
+# Copyright (C) 1995-2012 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -269,9 +267,9 @@ autodiffs:
 	 { \
 	     rev=$$1 dir=$$2 \
 	       && echo "$@: will get files from revision $$rev" \
-	       && git clone -q --depth 1 "$$am_gitdir" tmp \
+	       && $(GIT) clone -q --depth 1 "$$am_gitdir" tmp \
 	       && $(am__cd) tmp \
-	       && git checkout -q "$$rev" \
+	       && $(GIT) checkout -q "$$rev" \
 	       && echo "$@: bootstrapping $$rev" \
 	       && $(SHELL) ./bootstrap \
 	       && echo "$@: copying files from $$rev" \
@@ -283,8 +281,8 @@ autodiffs:
 	 }; \
 	 outdir=$@.dir \
 ## Before proceeding, ensure the specified revisions truly exist.
-	   && git --git-dir="$$am_gitdir" describe $$OLD_COMMIT >/dev/null \
-	   && git --git-dir="$$am_gitdir" describe $$NEW_COMMIT >/dev/null \
+	   && $(GIT) --git-dir="$$am_gitdir" describe $$OLD_COMMIT >/dev/null \
+	   && $(GIT) --git-dir="$$am_gitdir" describe $$NEW_COMMIT >/dev/null \
 	   && rm -rf $$outdir \
 	   && mkdir $$outdir \
 	   && $(am__cd) $$outdir \
@@ -340,7 +338,8 @@ config.guess \
 config.sub \
 gnupload \
 gitlog-to-changelog \
-texinfo.tex
+texinfo.tex \
+update-copyright
 
 ## Fetch the latest versions of files we care about.
 fetch:
@@ -353,6 +352,7 @@ fetch:
 	$(WGET_SV_CVS)texinfo/texinfo/doc/texinfo.tex -O texinfo.tex && \
 	$(WGET_SV_GIT_GL)doc/INSTALL -O INSTALL && \
 	$(WGET_SV_GIT_GL)build-aux/gnupload -O gnupload && \
+	$(WGET_SV_GIT_GL)build-aux/update-copyright -O update-copyright && \
 	$(WGET_SV_GIT_GL)build-aux/gitlog-to-changelog -O gitlog-to-changelog)
 ## Don't exit after test because we want to give as many errors as
 ## possible.
@@ -370,33 +370,15 @@ fetch:
 	exit $$stat
 .PHONY: fetch
 
-## Generate release statistics, for the table in automake.texi.
-## This has to be run in an up to date build tree, but there must
-## be no temp files nor unused other files lying around!
-release-stats: ps
-	$(AM_V_GEN): && \
-	am=`wc -l < automake` && \
-	acl=`wc -l < aclocal` && \
-	pmfiles="lib/Automake/*.pm" && \
-	if test . != '$(srcdir)'; then pmfiles="$$pmfiles $(srcdir)/lib/Automake/*.pm"; \
-	else :; fi && \
-	pm=`cat $$pmfiles | wc -l` && \
-	dot_am_files=`ls -1 $(srcdir)/lib/am/*.am | grep -v Makefile.am` && \
-	amf=`echo "$$dot_am_files" | wc -l` && \
-	aml=`cat $$dot_am_files | wc -l` && \
-	m4f=`ls -1 $(srcdir)/m4/*.m4 | wc -l` && \
-	m4l=`cat $(srcdir)/m4/*.m4 | wc -l` && \
-	doc_text=`$(am__cd) doc && LC_ALL=C pstops 0 automake.ps unused.ps 2>&1` && \
-	echo "$$doc_text" && \
-	rm -f doc/unused.ps && \
-	doc=`echo "$$doc_text" | sed -n 's/.*Wrote \([1-9][0-9]*\) pages.*/\1/p'` && \
-	tests="tests/*.test"; \
-	if test . != '$(srcdir)'; then tests="$$tests $(srcdir)/tests/*.test"; \
-	else :; fi && \
-	t=`ls -1 $$tests | wc -l` && \
-	tgen=`grep 'GENERATED AUTOMATICALLY' $$tests | wc -l` && \
-	today=`date +%Y-%m-%d` && \
-	echo "add this to the table in doc/automake.texi after verification:" && \
-	printf '@item %s @tab %-6s @tab %4d @tab %4d @tab %4d @tab %4d %-4s @tab %4d %-4s @tab %3d @tab %d %-4s\n' \
-	              $$today $(VERSION) $$am    $$acl    $$pm   $$aml "($$amf)" $$m4l "($$m4f)" $$doc $$t "($$tgen)"
-.PHONY: release-stats
+update_copyright_env = \
+  UPDATE_COPYRIGHT_FORCE=1 \
+  UPDATE_COPYRIGHT_USE_INTERVALS=2
+
+.PHONY: update-copyright
+update-copyright:
+	$(AM_V_GEN)excluded_re=`echo $(FETCHFILES) \
+	  | sed -e 's|^|lib/|' -e 's| | lib/|g' -e 's, ,|,g'`; \
+	$(GIT) ls-files \
+	  | grep -Ev '/(COPYING|INSTALL)' \
+	  | grep -Ev "^($$excluded_re)$$" \
+	  | $(update_copyright_env) xargs $(srcdir)/lib/$@

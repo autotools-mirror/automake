@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2010, 2011 Free Software Foundation, Inc.
+# Copyright (C) 2010-2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +22,9 @@
 echo AC_OUTPUT >> configure.in
 
 cat > Makefile.am <<'END'
-EXTRA_DIST = [!c-z].t d.t [ab].dir foo.* *zardoz*
+AUTOMAKE_OPTIONS = -Wno-portability
+
+EXTRA_DIST = $(wildcard [!c-z].t d.t [ab].dir foo.* *zardoz*)
 
 .PHONY: prereq
 prereq:
@@ -44,6 +46,7 @@ prereq:
 
 .PHONY: test
 test: distdir
+	ls -l $(distdir) $(distdir)/*.dir ;: For debugging.
 	diff a.t $(distdir)/a.t
 	diff b.t $(distdir)/b.t
 	test ! -r $(distdir)/c.t
@@ -58,6 +61,22 @@ test: distdir
 	diff foo.bar $(distdir)/foo.bar
 	test ! -r $(distdir)/foo
 	diff _zardoz_ $(distdir)/_zardoz_
+check-local:
+	ls -l . *.dir ;: For debugging.
+	test -f $(srcdir)/a.t
+	test -f $(srcdir)/b.t
+	test ! -r $(srcdir)/c.t
+	test -f $(srcdir)/d.t
+	test ! -r $(srcdir)/m.t
+	test ! -r $(srcdir)/z.t
+	test -f $(srcdir)/a.dir/f1
+	test -f $(srcdir)/a.dir/f2
+	test -f $(srcdir)/b.dir/f
+	test ! -r $(srcdir)/c.dir
+	test -f $(srcdir)/foo.x
+	test -f $(srcdir)/foo.bar
+	test ! -r $(srcdir)/foo
+	test -f $(srcdir)/_zardoz_
 END
 
 $ACLOCAL
@@ -66,5 +85,8 @@ $AUTOCONF
 
 ./configure
 $MAKE prereq
-ls -l . *.dir
+ls -l . *.dir # For debugging.
 $MAKE test
+$MAKE distcheck
+
+:

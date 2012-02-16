@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (C) 2009, 2010, 2011 Free Software Foundation, Inc.
+# Copyright (C) 2009-2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 # This test requires the GNU compilers; keep it in sync with sister test
 # `silent-many-generic.test', which should work with generic compilers.
 
-required='gcc g++ gfortran flex yacc'
+required='gcc g++ gfortran lex yacc'
 . ./defs || Exit 1
 
 # Avoids too much code duplication.
@@ -71,7 +71,6 @@ do_and_check_silent_build ()
 # Avoids too much code duplication.
 do_and_check_verbose_build ()
 {
-
   case $1 in
     --rebuild) rebuild=true;;
             *) rebuild=false;;
@@ -116,6 +115,8 @@ fo2_SOURCES = $(foo_SOURCES)
 fo2_CPPFLAGS = $(AM_CPPFLAGS)
 fo2_FFLAGS = $(AM_FFLAGS)
 fo2_FCFLAGS = $(AM_FCFLAGS)
+fo2_YFLAGS = -v
+fo2_LFLAGS = -n
 SUBDIRS = sub
 AM_YFLAGS = -d
 LDADD = $(LEXLIB)
@@ -132,6 +133,8 @@ ba2_SOURCES = $(baz_SOURCES)
 ba2_CPPFLAGS = $(AM_CPPFLAGS)
 ba2_FFLAGS = $(AM_FFLAGS)
 ba2_FCFLAGS = $(AM_FCFLAGS)
+ba2_YFLAGS = -v
+ba2_LFLAGS = -n
 AM_YFLAGS = -d
 LDADD = $(LEXLIB)
 BUILT_SOURCES = baz6.h
@@ -189,6 +192,11 @@ $AUTOCONF
 # used by configure.
 $FGREP am_cv_CC_dependencies_compiler_type configure
 $FGREP am_cv_CXX_dependencies_compiler_type configure
+# Ensure per-target rules are used, to ensure their coverage below.
+# (We do not do an exhaustive check, that wouldn't be practical).
+$FGREP 'bar-bar.o' Makefile.in
+$FGREP 'fo2-foo5.c' Makefile.in
+$FGREP 'fo2-foo6.c' Makefile.in
 
 # Force gcc ("fast") depmode.
 depmodes="am_cv_CC_dependencies_compiler_type=gcc \
@@ -212,7 +220,7 @@ do
   $MAKE clean
   # This is required, since these files are not removed by `make clean'
   # (as dictated by the GNU Coding Standards).
-  rm -f foo5.c foo6.[ch] sub/baz5.c sub/baz6.[ch]
+  rm -f *foo5.c *foo6.[ch] sub/*baz5.c sub/*baz6.[ch]
 
   do_and_check_verbose_build
   # Cleaning and then rebuilding with the same V flag (and without

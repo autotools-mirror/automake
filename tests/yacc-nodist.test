@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2011 Free Software Foundation, Inc.
+# Copyright (C) 2011-2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Checks for .c and .h files derived from non-distributed .y sources.
+# Checks for .c and .h files derived from non-distributed yacc sources.
+# The test 'yacc-pr204.test' does similar check with AM_MAINTAINER_MODE
+# enabled.
+# The tests 'lex-nodist.test' and 'lex-pr204.test' does similar checks
+# for lex-generated .c files.
 
 required='cc yacc'
 . ./defs || Exit 1
@@ -28,7 +32,7 @@ END
 
 cat > Makefile.am << 'END'
 SUBDIRS = sub1 sub2
-.PHONY: test
+.PHONY: test-build test-dist
 test-build: all
 	ls -l . sub1 sub2
 	test -f sub1/parse.y
@@ -60,8 +64,8 @@ parse.y:
 	  && echo "%%" \
 	  && echo "maude : 'm' 'a' 'u' 'd' 'e' {}"; \
 	} > $@-t
-	chmod a-w $@-t
-	mv -f $@-t $@
+	chmod a-w $@-t && mv -f $@-t $@
+
 bin_PROGRAMS = prog
 prog_SOURCES = main.c
 nodist_prog_SOURCES = parse.y
@@ -93,7 +97,8 @@ $MAKE test-build
 $MAKE test-dist
 
 # But the distribution must work correctly, assuming the user has
-# the proper tools to process yacc files.
-$MAKE distcheck
+# the proper tools to process yacc files.  Do this check only with
+# GNU make, to avoid tripping on automake bug#7884.
+if using_gmake; then $MAKE distcheck; fi
 
 :

@@ -6,9 +6,7 @@ eval 'case $# in 0) exec @PERL@ -S "$0";; *) exec @PERL@ -S "$0" "$@";; esac'
     if 0;
 
 # automake - create Makefile.in from Makefile.am
-# Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002,
-# 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 Free
-# Software Foundation, Inc.
+# Copyright (C) 1994-2012 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -5872,12 +5870,26 @@ sub lang_yacc_target_hook
 
     if ($yflags_contains_minus_d)
       {
-	(my $output_base = $output) =~ s/$KNOWN_EXTENSIONS_PATTERN$//;
-	my $header = $output_base . '.h';
-
 	# Found a `-d' that applies to the compilation of this file.
 	# Add a dependency for the generated header file, and arrange
 	# for that file to be included in the distribution.
+
+	# The extension of the output file (e.g., `.c' or `.cxx').
+	# We'll need it to compute the name of the generated header file.
+	(my $output_ext = basename ($output)) =~ s/.*(\.[^.]+)$/$1/;
+
+	# We know that a yacc input should be turned into either a C or
+	# C++ output file.  We depend on this fact (here and in yacc.am),
+	# so check that it really holds.
+	my $lang = $languages{$extension_map{$output_ext}};
+	prog_error "invalid output name `$output' for yacc file `$input'"
+	  if (!$lang || ($lang->name ne 'c' && $lang->name ne 'cxx'));
+
+	(my $header_ext = $output_ext) =~ s/c/h/g;
+        # Quote $output_ext in the regexp, so that dots in it are taken
+        # as literal dots, not as metacharacters.
+	(my $header = $output) =~ s/\Q$output_ext\E$/$header_ext/;
+
 	foreach my $cond (Automake::Rule::define (${header}, 'internal',
 						  RULE_AUTOMAKE, TRUE,
 						  INTERNAL))
@@ -5909,13 +5921,12 @@ sub lang_yacc_target_hook
 # compile a lex file.
 sub lang_lex_target_hook
 {
-    my ($self, $aggregate, $output, $input) = @_;
-    # If the files are built in the build directory, then we want to
-    # remove them with `make clean'.  If they are in srcdir they
-    # shouldn't be touched.  However, we can't determine this
-    # statically, and the GNU rules say that yacc/lex output files
-    # should be removed by maintainer-clean.  So that's what we do.
-    $clean_files{$output} = MAINTAINER_CLEAN;
+    my ($self, $aggregate, $output, $input, %transform) = @_;
+    # The GNU rules say that yacc/lex output files should be removed
+    # by maintainer-clean.  However, if the files are not distributed,
+    # then we want to remove them with "make clean"; otherwise,
+    # "make distcheck" will fail.
+    $clean_files{$output} = $transform{'DIST_SOURCE'} ? MAINTAINER_CLEAN : CLEAN;
 }
 
 # This is a helper for both lex and yacc.

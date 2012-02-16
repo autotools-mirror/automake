@@ -1,6 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002, 2003, 2004, 2010, 2011 Free Software Foundation,
-# Inc.
+# Copyright (C) 2002-2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,7 +16,7 @@
 
 # Test for subdir lexers.
 
-required='cc flex'
+required='cc lex'
 . ./defs || Exit 1
 
 cat >> configure.in << 'END'
@@ -56,15 +55,18 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
+# We expect ylwrap to be used and distributed even if there is
+# only one lexer.
+test -f ylwrap
+
 mkdir sub
 cd sub
 ../configure
 $MAKE foo/foo.o
+ls -l # For debugging.
 
 test -f foo/foo.c
 test -f foo/foo.o
-# ylwrap is not needed
-test ! -f ./ylwrap
 
 # Now, adds another lexer to test ylwrap.
 
@@ -82,10 +84,10 @@ END
 $sleep
 
 $AUTOMAKE -a --no-force
-test -f ./ylwrap
 
 cd sub
 $MAKE foo/foo2.o
+ls -l # For debugging.
 test -f foo/foo2.c
 test -f foo/foo2.o
 

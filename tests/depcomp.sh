@@ -148,10 +148,17 @@ mkdir build-aux sub src src/sub2
 
 case $depcomp_with_libtool in
   yes)
-    plan_ 84
     po=Plo objext=lo a=la
     normalized_target=libfoo_la
-    LIBPRIMARY=LTLIBRARIES LINKADD=LIBADD
+    # On platforms requiring that no undefined symbols exist in order
+    # to build shared libraries (e.g. Windows DLLs), you have to
+    # explicitly declare that the libtool library you are building
+    # does not actually have any undefined symbols, for libtool to
+    # even try to build it as a shared library.  Without that
+    # explicit declaration, libtool falls back to a static library
+    # only, regardless of any --enable-shared flags etc.
+    LIBPRIMARY=LTLIBRARIES LINKADD=LIBADD NOUNDEF=-no-undefined
+    libbaz_ldflags="libbaz_${a}_LDFLAGS = $NOUNDEF"
     echo lib_LTLIBRARIES = libfoo.la >> Makefile.am
     make_ok ()
     {
@@ -166,10 +173,10 @@ case $depcomp_with_libtool in
     }
     ;;
   no)
-    plan_ 28
     po=Po objext='$(OBJEXT)' a=a
     normalized_target=foo
-    LIBPRIMARY=LIBRARIES LINKADD=LDADD
+    LIBPRIMARY=LIBRARIES LINKADD=LDADD NOUNDEF=
+    libbaz_ldflags=
     echo bin_PROGRAMS = foo >> Makefile.am
     make_ok ()
     {
@@ -187,6 +194,7 @@ SUBDIRS = src
 # We include subfoo only to be sure that the munging in depcomp
 # doesn't remove too much from the object file name.
 ${normalized_target}_SOURCES = foo.c sub/subfoo.c foo.h sub/subfoo.h
+${normalized_target}_LDFLAGS = $NOUNDEF
 ${normalized_target}_${LINKADD} = src/libbaz.$a
 
 .PHONY: grep-test
@@ -209,6 +217,7 @@ noinst_${LIBPRIMARY} = libbaz.$a
 # We include sub2foo only to be sure that the munging in depcomp
 # doesn't remove too much from the object file name.
 libbaz_${a}_SOURCES = baz.c sub2/sub2foo.c baz.h sub2/sub2foo.h
+$libbaz_ldflags
 END
 
 cat > foo.c <<'END'
@@ -260,14 +269,47 @@ $ACLOCAL && $AUTOCONF && $AUTOMAKE -a \
 test -f build-aux/depcomp \
   || fatal_ "depcomp script not installed"
 
+# To offer extra coverage for the depmodes (like "aix" of "hp2") where the
+# name of the compiler-generated depfiles can depend on whether libtool is
+# in use *and* on which kind of libraries libtool is building (static,
+# shared, or both), we would like to run the libtool-oriented tests thrice:
+# once after having run configure with the '--disable-shared' option, once
+# after having run it with the '--enable-shared' options, and once by
+# leaving it to configure to automatically select which kind of library (or
+# libraries) to build.
+#
+# But doing such three-fold checks unconditionally for all the depmodes
+# would slow down the already too slow libtool tests unacceptably (up to a
+# 150-200% factor), with no real gain in coverage for most of the depmodes.
+# So, since the depmodes that would benefit from the extra tests are never
+# forced to configure in out tests below, but can only be automatically
+# selected by '--enable-dependency-tracking', we make this threefold check
+# only in this later case.
+
 case $depmode in
   auto)
+    if test $depcomp_with_libtool = no; then
+      plan_ 28
+      do_all_tests () { do_test; }
+    else
+      plan_ 84
+      do_all_tests ()
+      {
+        do_test default
+        do_test noshared --disable-shared
+        do_test nostatic --disable-static
+      }
+    fi
     displayed_depmode='..*' # At least one character long.
     cfg_deptrack=--enable-dependency-tracking ;;
   disabled)
+    plan_ 28
+    do_all_tests () { do_test; }
     displayed_depmode=none
     cfg_deptrack=--disable-dependency-tracking ;;
   *)
+    plan_ 28
+    do_all_tests () { do_test; }
     displayed_depmode="(cached) $depmode"
     cfg_deptrack="$cachevar=$depmode"
     # Sanity check: ensure the cache variable we force is truly
@@ -378,13 +420,7 @@ do_test ()
 }
 
 for vpath in no simple long absolute; do
-  if test $depcomp_with_libtool = no; then
-    do_test
-  else
-    do_test default
-    do_test noshared --disable-shared
-    do_test nostatic --disable-static
-  fi
+  do_all_tests
 done
 
 :

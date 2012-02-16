@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2011, 2012 Free Software Foundation, Inc.
+# Copyright (C) 2011-2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -71,6 +71,8 @@ $AUTOMAKE
 
 ./configure
 
+system=`uname -s -r || echo unknown` # Needed later.
+
 signal_caught ()
 {
   numeric=$1
@@ -83,7 +85,13 @@ signal_caught ()
     15) symbolic=TERM;;
      *) fatal_ "unexpected signal number '$numeric'"
   esac
-  sig_re="((SIG)?$symbolic|$numeric)"
+  # Sending a SIGQUIT on Cygwin 1.5 can cause a segmentation fault
+  # instead (sometimes).  Don't let this older bug pollute the results
+  # of our testsuite.
+  case $numeric,$system in
+    3,CYGWIN*\ 1.5.*) sig_re="((SIG)?($symbolic|SEGV)|$numeric|11)";;
+    *) sig_re="((SIG)?$symbolic|$numeric)";;
+  esac
   wbound_re="($|[^a-zA-Z0-9_-])"
   pfx_re="^ERROR: signal-$numeric\\.test"
   case $am_tap_implementation in
@@ -98,7 +106,17 @@ signal_caught ()
   esac
 }
 
-command_ok_ '"make check" fails' eval 'not $MAKE check >stdout'
+command_ok_ '"make check" fails' eval '
+  (
+    st=0; $MAKE check >stdout || st=$?
+    cat stdout
+    # Extra "echo" and silencing of xtraces required to avoid possible
+    # garbled output with NetBSD make, which would miss some final
+    # newlines in the expected places and thus mess up our TAP output.
+    set +x; echo
+    test $st -gt 0
+  )
+'
 cat stdout # For debugging.
 
 command_ok_ "count of test results" count_test_results \
