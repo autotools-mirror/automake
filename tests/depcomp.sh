@@ -67,8 +67,7 @@
 
 # -------------------------------------------------------------------------
 
-am_create_testdir=empty
-. ./defs || Exit 1
+# This expects ./defs has already been included has already been included..
 
 ocwd=`pwd` || fatal_ "cannot get current working directory"
 longpath=this-is/a-path/which-has/quite-a/definitely/truly/long_long_name
@@ -286,30 +285,25 @@ test -f build-aux/depcomp \
 # selected by '--enable-dependency-tracking', we make this threefold check
 # only in this later case.
 
+if test $depmode,$depcomp_with_libtool = auto,yes; then
+  do_all_tests ()
+  {
+    do_test default
+    do_test noshared --disable-shared
+    do_test nostatic --disable-static
+  }
+else
+  do_all_tests () { do_test; }
+fi
+
 case $depmode in
   auto)
-    if test $depcomp_with_libtool = no; then
-      plan_ 28
-      do_all_tests () { do_test; }
-    else
-      plan_ 84
-      do_all_tests ()
-      {
-        do_test default
-        do_test noshared --disable-shared
-        do_test nostatic --disable-static
-      }
-    fi
     displayed_depmode='..*' # At least one character long.
     cfg_deptrack=--enable-dependency-tracking ;;
   disabled)
-    plan_ 28
-    do_all_tests () { do_test; }
     displayed_depmode=none
     cfg_deptrack=--disable-dependency-tracking ;;
   *)
-    plan_ 28
-    do_all_tests () { do_test; }
     displayed_depmode="(cached) $depmode"
     cfg_deptrack="$cachevar=$depmode"
     # Sanity check: ensure the cache variable we force is truly

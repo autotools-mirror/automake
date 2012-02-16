@@ -214,7 +214,7 @@ sc_no_for_variable_in_macro:
 sc_mkinstalldirs:
 	@if grep -n 'mkinstalldirs' $(ams) \
 	      | grep -F -v '$$(mkinstalldirs)' \
-	      | grep -v '^\./lib/Makefile.am:37:  *mkinstalldirs \\$$'; \
+	      | grep -v '^\./lib/Makefile.am:[0-9][0-9]*:  *mkinstalldirs \\$$'; \
 	then \
 	  echo "Found incorrect use of mkinstalldirs in the lines above" 1>&2; \
 	  exit 1; \
