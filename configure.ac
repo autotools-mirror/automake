@@ -342,11 +342,12 @@ AC_CONFIG_FILES([
 ])
 AC_CONFIG_LINKS([GNUmakefile:GNUmakefile])
 AC_CONFIG_LINKS([tests/defs:tests/defs])
-AC_CONFIG_FILES([tests/aclocal-${APIVERSION}:tests/aclocal.in],
-                [chmod +x tests/aclocal-${APIVERSION}],
+AC_CONFIG_FILES([tests/wrap/aclocal-${APIVERSION}:tests/wrap/aclocal.in],
+                [chmod +x tests/wrap/aclocal-${APIVERSION}],
 	        [APIVERSION=$APIVERSION])
-AC_CONFIG_FILES([tests/automake-${APIVERSION}:tests/automake.in],
-                [chmod +x tests/automake-${APIVERSION}])
+AC_CONFIG_FILES([tests/wrap/automake-${APIVERSION}:tests/wrap/automake.in],
+                [chmod +x tests/wrap/automake-${APIVERSION}],
+	        [APIVERSION=$APIVERSION])
 
 AC_OUTPUT
 
