@@ -34,9 +34,18 @@ mkdir sub1 sub2
 
 cat > sub1/Makefile.am << 'END'
 TESTS =
-check-local:
+END
+
+# When $(TESTS) is empty, NetBSD 5.1 make ends up defining $(TESTS_LOGS)
+# to ".log" rather than to the empty string (as would be expected).
+# But our recipes are smart enough to work around such a botched-up
+# substitution, so let's not bother too much about it.
+if using_gmake; then
+  unindent >> sub1/Makefile.am << 'END'
+    check-local:
 	echo $(TEST_LOGS) | grep . && exit 1; exit 0
 END
+fi
 
 cat > sub2/Makefile.am << 'END'
 TESTS = foo.test
