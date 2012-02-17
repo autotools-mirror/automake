@@ -30,20 +30,28 @@ VPATH = @srcdir@
 ## ("make -n") or not.  Useful in rules that invoke make recursively,
 ## and are thus executed also with "make -n" -- either because they
 ## are declared as dependencies to '.MAKE' (NetBSD make), or because
-## their recipes contain the "$(MAKE)" string (GNU and Solari make).
+## their recipes contain the "$(MAKE)" string (GNU and Solaris make).
 
-## The case statement has [:] in order to not tickle makefile-deps.test
-## which greps for '^ *:'.
 am__make_dryrun = \
   { \
     am__dry=no; \
-    for am__flg in : $(MAKEFLAGS); do \
-      case $$am__flg in \
-        [:]) ;; \
-        *=*|--*) ;; \
-        *n*) am__dry=yes; break;; \
-      esac; \
-    done; \
+    case $$MAKEFLAGS in \
+## If we run "make TESTS='snooze nap'", GNU make will export MAKEFLAGS
+## to "TESTS=foo\ nap", so that the simpler loop below (on word-splitted
+## $$MAKEFLAGS) would see a "make flag" equal to "nap", and would wrongly
+## misinterpret that as and indication that make is running in dry mode.
+## This has already happened in practice.  So we need this hack.
+      *\\[\ \	]*) \
+        echo 'am--echo: ; @echo "AM"  OK' | $(MAKE) -f - 2>/dev/null \
+          | grep '^AM OK$$' >/dev/null || am__dry=yes;; \
+      *) \
+        for am__flg in $$MAKEFLAGS; do \
+          case $$am__flg in \
+            *=*|--*) ;; \
+            *n*) am__dry=yes; break;; \
+          esac; \
+        done;; \
+    esac; \
     test $$am__dry = yes; \
   }
 
