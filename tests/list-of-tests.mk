@@ -612,7 +612,7 @@ makej.test \
 makej2.test \
 maken.test \
 maken3.test \
-make-dryrun.test \
+make-dryrun.tap \
 makevars.test \
 man.test \
 man2.test \

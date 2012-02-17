@@ -1,0 +1,125 @@
+#! /bin/sh
+# Copyright (C) 2012 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check that $(am__make_dryrun) works as expected.
+
+am_parallel_tests=yes # Avoid generation of a useless wrapper test.
+. ./defs || Exit 1
+
+plan_ 14
+
+if echo "all: ; @+printf %sbb%s aa cc" | $MAKE -n -f - | grep aabbcc; then
+  make_plus_silence () { return 0; }
+else
+  make_plus_silence () { return 1; }
+fi
+
+mkdir sub
+
+echo AC_OUTPUT >> configure.in
+
+cat > Makefile.am <<'END'
+all:
+	: Dummy, nothing to do.
+foo:
+	$(MAKE) all
+notdry:
+	@echo ":: $$MAKEFLAGS ::"; : For debugging.
+	$(am__make_dryrun) && exit 1; exit 0
+dry:
+	+@echo ":: $$MAKEFLAGS ::"; : For debugging.
+	+$(am__make_dryrun) || exit 1; echo ok > from-dry-mode
+END
+
+$ACLOCAL    || fatal_ "aclocal failed"
+$AUTOCONF   || fatal_ "autoconf failed"
+$AUTOMAKE   || fatal_ "automake failed"
+./configure || fatal_ "configure failed"
+
+# ----------------------------------------------------------------------
+
+check_no_dryrun ()
+{
+  command_ok_ "dry-run ($cnt)" $MAKE notdry ${1+"$@"}
+  cnt=`expr $cnt + 1`
+}
+cnt=1
+
+check_no_dryrun
+
+# Test against a known regression.  This was especially heinous, since
+# make running in normal mode was sometimes mistaken for make running
+# in dry mode.
+check_no_dryrun TESTS="n1.test n2.test"
+check_no_dryrun TESTS="n1 n2" AM_MAKEFLAGS="TESTS='n1 n2'"
+check_no_dryrun TESTS="n1 n2" AM_MAKEFLAGS='TESTS="n1 n2"'
+check_no_dryrun FOOFLAGS="-n -n -knf2 n --none -n"
+check_no_dryrun MYFLAGS="-n --dryrun -n --dry-run -n"
+
+# ----------------------------------------------------------------------
+
+check_dryrun ()
+{
+  r=ok directive=
+  case $1 in
+    -C) condition=$2 reason=$3; shift; shift; shift;;
+     *) condition=: reason=;;
+  esac
+  if $condition; then
+    $MAKE dry ${1+"$@"}   || r='not ok'
+    test -f from-dry-mode || r='not ok'
+    rm -f from-dry-mode   || fatal_ "cleaning up"
+  else
+    directive=SKIP
+  fi
+  result_ "$r" -D "$directive" -r "$reason" "not dry-run ($cnt)"
+  unset r directive reason
+  cnt=`expr $cnt + 1`
+}
+cnt=1
+
+check_dryrun -C make_plus_silence 'recipe prefix "+" unsupported' -n
+check_dryrun -C using_gmake "\$MAKE is not GNU make" --dry-run -k
+
+# ----------------------------------------------------------------------
+
+# Test for when shell metacharacters or backslashes are in $(MAKEFLAGS).
+
+check_metachars ()
+{
+  r=ok
+  $MAKE notdry ${1+"$@"} || r='not ok'
+  if test -f bad; then
+    r='not ok'
+  else
+    rm -f bad || fatal_ "cleaning up"
+  fi
+  result_ "$r" "dry-run, with shell metachars ($cnt)"
+  unset r
+  cnt=`expr $cnt + 1`
+}
+cnt=1
+
+check_metachars MYFLAGS="-n \"n\" '-n' --none -n"
+check_metachars MYFLAGS='-knf2\ n\ \\n'
+check_metachars MYFLAGS="(&) | ; \" \` '"
+check_metachars MYFLAGS=" ' # ' "
+check_metachars MYFLAGS='$(foo)'
+check_metachars MYFLAGS='`touch bad`'
+
+# ----------------------------------------------------------------------
+
+:
