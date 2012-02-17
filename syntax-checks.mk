@@ -68,7 +68,6 @@ sc_tests_automake_fails \
 sc_tests_plain_aclocal \
 sc_tests_plain_perl \
 sc_tests_required_after_defs \
-sc_tests_tap_plan \
 sc_tests_overriding_macros_on_cmdline \
 sc_tests_plain_sleep \
 sc_tests_plain_egrep_fgrep \
@@ -425,33 +424,6 @@ sc_tests_required_after_defs:
 	    exit 1; \
 	  fi; \
 	done
-
-## TAP-based test scripts should not forget to declare a TAP plan.  In
-## case it is not known in advance how many tests will be run, a "lazy"
-## plan can be used; but its use should be deliberate, explicitly declared
-## with a "plan_ later" call, rather than the result of an oversight.
-## This check helps to ensure this is indeed the case.
-sc_tests_tap_plan:
-	@with_plan=`grep -l '^ *plan_ ' $(srcdir)/tests/*.tap`; \
-	 with_plan=`echo $$with_plan`; \
-	 ok=:; \
-	 for t in $(srcdir)/tests/*.tap; do \
-	   case " $$with_plan " in *" $$t "*) continue;; esac; \
-	   case $$t in \
-	     *-w.tap) \
-	       : it is ok for an *auto-generated* test sourcing an \
-	       : hand-written one not to declare a TAP plan: that will \
-	       : be done by the sourced test; \
-	       t2=`echo $$t | sed -e 's|.*/||' -e 's/-w\.tap$$/.tap/'` \
-	         && grep -E "^ *\\.  *[^ 	]*/$$t2\\b" $$t >/dev/null \
-	         && continue || : ;; \
-	   esac; \
-	   ok=false; echo $$t; \
-	 done; \
-	 $$ok || { \
-	  echo 'The tests above do not declare a TAP plan.' 1>&2; \
-	  exit 1; \
-	 }
 
 ## Overriding a Makefile macro on the command line is not portable when
 ## recursive targets are used.  Better use an envvar.  SHELL is an

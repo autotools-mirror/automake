@@ -64,19 +64,22 @@ plan_ ()
     bailout_ "plan_: missing argument"
   elif test $# -ge 2; then
     bailout_ "plan_: too many arguments"
+  elif test x"$planned_" != x"none" && test x"$planned_" != x"later"; then
+    bailout_ "plan_: called to many times"
   elif test x"$1" = x"unknown" || test x"$1" = x"later"; then
-    : No-op.
+    # This means we want to get back later to declaring the TAP plan.
+    planned_=later
+    return 0
   elif test x"$1" = x"lazy" || test x"$1" = x"now"; then
-    echo "1..$tap_count_" # Number of test results seen so far.
-    have_tap_plan_=yes
+    planned_=$tap_count_ # Number of test results seen so far.
   elif test $1 -ge 0; then
-    echo "1..$1"
-    have_tap_plan_=yes
+    planned_=$1
   else
     bailout_ "plan_: invalid argument '$1'"
   fi
+  echo "1..$planned_"
 }
-have_tap_plan_=no # Avoid interferences from the environment.
+planned_=none
 
 # diag_ [EXPLANATION]
 # ------------------
@@ -176,7 +179,7 @@ skip_row_ ()
 skip_all_ ()
 {
   echo "1..0 # SKIP" ${1+"$@"}
-  have_tap_plan_=yes
+  planned_=0
   Exit 0
 }
 
