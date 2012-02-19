@@ -121,7 +121,13 @@ $MAKE -k check >stdout 2>stderr || st=$?
 cat stdout
 cat stderr >&2
 ls -l
-test $st -gt 0 || Exit 1
+if using_gmake; then
+  test $st -gt 0 || Exit 1
+else
+  # Don't trust exit status of "make -k" for non-GNU make.
+  $MAKE check && Exit 1
+  : For shells with busted 'set -e'.
+fi
 
 # Files that should have been created, with the expected content.
 cat bar.c
