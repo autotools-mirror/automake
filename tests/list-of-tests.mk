@@ -813,6 +813,7 @@ primary-prefix-invalid-couples.tap \
 primary-prefix-valid-couples.test \
 primary-prefix-couples-force-valid.test \
 primary-prefix-couples-documented-valid.test \
+print-libdir.test \
 proginst.test \
 programs-primary-rewritten.test \
 py-compile-basic.test \
