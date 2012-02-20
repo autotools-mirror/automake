@@ -688,6 +688,7 @@ override-suggest-local.test \
 parallel-am.test \
 parallel-am2.test \
 parallel-am3.test \
+serial-tests.test \
 parallel-tests.test \
 parallel-tests2.test \
 parallel-tests3.test \

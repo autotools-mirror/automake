@@ -276,6 +276,15 @@ sub _process_option_list (\%@)
           error ($where, "support for lzma-compressed distribution " .
                          "archives has been removed");
         }
+      elsif ($_ eq 'parallel-tests')
+        {
+          # Just recognize it explicitly.
+        }
+      elsif ($_ eq 'serial-tests')
+        {
+          # This is a little of an hack, but good enough for the moment.
+	  delete $options->{'parallel-tests'};
+        }
       elsif ($_ eq 'no-installman' || $_ eq 'no-installinfo'
 	     || $_ eq 'dist-shar' || $_ eq 'dist-zip'
 	     || $_ eq 'dist-tarZ' || $_ eq 'dist-bzip2'
@@ -286,7 +295,7 @@ sub _process_option_list (\%@)
 	     || $_ eq 'subdir-objects' || $_ eq 'nostdinc'
 	     || $_ eq 'no-exeext' || $_ eq 'no-define'
 	     || $_ eq 'std-options'
-	     || $_ eq 'color-tests' || $_ eq 'parallel-tests'
+	     || $_ eq 'color-tests' 
 	     || $_ eq 'cygnus' || $_ eq 'no-dependencies')
 	{
 	  # Explicitly recognize these.
