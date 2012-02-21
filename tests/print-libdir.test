@@ -14,38 +14,33 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that the parallel-tests driver creates parent directories for
-# the log files when needed.
+# Test on automake options '--print-data-dir' and '--print-script-dir'.
 
-am_parallel_tests=yes
+am_create_testdir=empty
 . ./defs || Exit 1
 
-cat >> configure.in << 'END'
-AC_OUTPUT
+libdir=`$AUTOMAKE --print-libdir` || Exit 1
+case $libdir in /*);; *) Exit 1;; esac
+test -d "$libdir"
+test "$libdir" = "$am_pkgvdatadir"
+test "$libdir" = "$am_scriptdir"
+
+: > Makefile.am
+
+cat > configure.ac <<END
+AC_INIT([$me], [1.0])
+AC_CONFIG_AUX_DIR([.])
+AM_INIT_AUTOMAKE
+AC_CONFIG_FILES([Makefile])
 END
 
-cat > Makefile.am << 'END'
-TESTS = dir1/foo.test dir2/dir3/foo.test
-TEST_LOG_COMPILER = sh
-END
-
-mkdir dir1 dir2 dir2/dir3
-echo : > dir1/foo.test
-echo : > dir2/dir3/foo.test
+touch ChangeLog README NEWS AUTHORS COPYING
 
 $ACLOCAL
-$AUTOCONF
-$AUTOMAKE -a
+$AUTOMAKE --gnu --add-missing
+ls -l
 
-mkdir build
-cd build
-../configure
-$MAKE check
-find . # For debugging.
-test -f test-suite.log
-test -f dir1/foo.log
-test -f dir1/foo.trs
-test -f dir2/dir3/foo.log
-test -f dir2/dir3/foo.trs
+diff missing "$libdir"/missing
+diff INSTALL "$libdir"/INSTALL
 
 :

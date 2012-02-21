@@ -2593,6 +2593,12 @@ for more information.
 Look for Automake data files in directory @var{dir} instead of in the
 installation directory.  This is typically used for debugging.
 
+@item --print-libdir
+@opindex --print-libdir
+Print the path of the installation directory containing Automake-provided
+scripts and data files (like e.g., @file{texinfo.texi} and
+@file{install-sh}).
+
 @item -c
 @opindex -c
 @itemx --copy
@@ -8916,15 +8922,18 @@ by the tests, not the tests themselves.  Of course you can set
 
 @node Serial Test Harness
 @subsection Serial Test Harness
+@cindex @option{serial-tests}, Using
 
 @emph{NOTE:} This harness, while still being the default one, is
-obsolescent, and kept mostly for backward-compatibility reasons.
-The user is advised to use the parallel test harness instead
-(@pxref{Parallel Test Harness}).
+obsolescent, and kept mostly for backward-compatibility reasons.  The user
+is advised to use the parallel test harness instead (@pxref{Parallel Test
+Harness}).  Be warned that future Automake versions might switch to use
+that more modern and feature-rich harness by default.
 
-The serial harness operates by simply running the tests serially, one at
-the time, without any I/O redirection.  It's up to the user to implement
-logging of tests' output, if that's requited or desired.
+The serial test harness is enabled by the Automake option
+@option{serial-tests}. It operates by simply running the tests serially,
+one at the time, without any I/O redirection.  It's up to the user to
+implement logging of tests' output, if that's requited or desired.
 @c TODO: give an example of how this can be done.
 
 For historical and implementation reasons, the @code{AM_TESTS_ENVIRONMENT}
@@ -9547,19 +9556,18 @@ use TAP in their testsuite.
 @node Use TAP with the Automake test harness
 @subsection Use TAP with the Automake test harness
 
-Currently, the TAP driver that comes with Automake requires a perl
-interpreter to work, and requires various by-hand steps on the
-developer's part (this should be fixed in future Automake versions).
-You'll have grab the @file{tap-driver.pl} script from the Automake
-distribution by hand, copy it in your source tree, add code to
-@file{configure.ac} to search a perl interpreter and to define the
-@code{$(PERL)} variable accordingly, and use the Automake support
-for third-party test drivers to instruct the harness to use the
-@file{tap-driver.pl} to run your TAP-producing tests.  See the example
+Currently, the TAP driver that comes with Automake requires some by-hand
+steps on the developer's part (this situation should hopefully be improved
+in future Automake versions).  You'll have grab the @file{tap-driver.sh}
+script from the Automake distribution by hand, copy it in your source tree,
+add a call to @code{AC_PROG_AWK} in @file{configure.ac} to search for a
+proper awk program, and use the Automake support for third-party test
+drivers to instruct the harness to use the @file{tap-driver.sh} script
+and that awk program to run your TAP-producing tests.  See the example
 below for clarification.
 
 Apart from the options common to all the Automake test drivers
-(@pxref{Command-line arguments for test drivers}), the @file{tap-driver.pl}
+(@pxref{Command-line arguments for test drivers}), the @file{tap-driver.sh}
 supports the following options, whose names are chosen for enhanced
 compatibility with the @command{prove} utility.
 
@@ -9609,14 +9617,13 @@ AC_INIT([GNU Try Tap], [1.0], [bug-automake@@gnu.org])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([foreign parallel-tests -Wall -Werror])
 AC_CONFIG_FILES([Makefile])
-AC_REQUIRE_AUX_FILE([tap-driver.pl])
-AC_PATH_PROG([PERL], [perl])
-test -n "$PERL" || AC_MSG_ERROR([perl not found])
-$PERL -MTAP::Parser -e 1 || AC_MSG_ERROR([TAP::Parser not found])
+AC_REQUIRE_AUX_FILE([tap-driver.sh])
+AC_PROG_AWK
 AC_OUTPUT
 
 % @kbd{cat Makefile.am}
-TEST_LOG_DRIVER = $(PERL) $(srcdir)/build-aux/tap-driver.pl
+TEST_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(top_srcdir)/build-aux/tap-driver.sh
 TESTS = foo.test bar.test baz.test
 EXTRA_DIST = $(TESTS)
 
@@ -10122,6 +10129,13 @@ this directory.
 @opindex parallel-tests
 Enable test suite harness for @code{TESTS} that can run tests in parallel
 (@pxref{Parallel Test Harness}, for more information).
+
+@item @option{serial-tests}
+@cindex Option, @option{serial-tests}
+@opindex serial-tests
+Enable the older serial test suite harness for @code{TESTS} (@pxref{Serial
+Test Harness}, for more information).  This is still the default for the
+moment.
 
 @item @option{readme-alpha}
 @cindex Option, @option{readme-alpha}

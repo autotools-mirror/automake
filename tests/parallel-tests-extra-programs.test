@@ -121,7 +121,13 @@ $MAKE -k check >stdout 2>stderr || st=$?
 cat stdout
 cat stderr >&2
 ls -l
-test $st -gt 0 || Exit 1
+if using_gmake; then
+  test $st -gt 0 || Exit 1
+else
+  # Don't trust exit status of "make -k" for non-GNU make.
+  $MAKE check && Exit 1
+  : For shells with busted 'set -e'.
+fi
 
 # Files that should have been created, with the expected content.
 cat bar.c
@@ -137,8 +143,10 @@ grep '^PASS: baz\.test$' stdout
 # $(EXEEXT).
 grep '^PASS: foo\.bin' stdout
 grep '^PASS: bar\.bin' stdout
-# Expected error messages from make.
-$EGREP 'none\.(bin|o|c)' stderr
+# Expected error messages from make.  Some make implementations (e.g.,
+# FreeBSD make) seem to print the error on stdout instead, so check for
+# it there as well.
+$EGREP 'none\.(bin|o|c)' stderr stdout
 
 # What we check now:
 #  1. if we make the last EXTRA_PROGRAM buildable, the failed tests

@@ -342,11 +342,12 @@ AC_CONFIG_FILES([
 ])
 AC_CONFIG_LINKS([GNUmakefile:GNUmakefile])
 AC_CONFIG_LINKS([tests/defs:tests/defs])
-AC_CONFIG_FILES([tests/aclocal-${APIVERSION}:tests/aclocal.in],
-                [chmod +x tests/aclocal-${APIVERSION}],
+AC_CONFIG_FILES([tests/wrap/aclocal-${APIVERSION}:tests/wrap/aclocal.in],
+                [chmod +x tests/wrap/aclocal-${APIVERSION}],
 	        [APIVERSION=$APIVERSION])
-AC_CONFIG_FILES([tests/automake-${APIVERSION}:tests/automake.in],
-                [chmod +x tests/automake-${APIVERSION}])
+AC_CONFIG_FILES([tests/wrap/automake-${APIVERSION}:tests/wrap/automake.in],
+                [chmod +x tests/wrap/automake-${APIVERSION}],
+	        [APIVERSION=$APIVERSION])
 
 AC_OUTPUT
 
@@ -370,7 +371,7 @@ WARNING: You are about to use a $am_release_type of Automake-NG.
 WARNING: It might easily suffer from new bugs or regressions.
 WARNING: You are strongly advised not to use it in production code.
 
-Please report bugs, problems and feedback to <automake-ng@gnu.org>.
+Please report bugs, problems and feedback to <AC_PACKAGE_BUGREPORT>.
 EOF
 
 AS_EXIT([0])

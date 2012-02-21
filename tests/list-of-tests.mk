@@ -609,7 +609,7 @@ makej.test \
 makej2.test \
 maken.test \
 maken3.test \
-make-dryrun.test \
+make-dryrun.tap \
 makevars.test \
 man.test \
 man2.test \
@@ -688,6 +688,7 @@ pattern-rules2.test \
 parallel-am.test \
 parallel-am2.test \
 parallel-am3.test \
+serial-tests.test \
 parallel-tests.test \
 parallel-tests2.test \
 parallel-tests3.test \
@@ -808,6 +809,7 @@ primary-prefix-invalid-couples.tap \
 primary-prefix-valid-couples.test \
 primary-prefix-couples-force-valid.test \
 primary-prefix-couples-documented-valid.test \
+print-libdir.test \
 proginst.test \
 programs-primary-rewritten.test \
 py-compile-basic.test \

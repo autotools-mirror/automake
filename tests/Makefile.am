@@ -28,7 +28,7 @@ TAP_LOG_DRIVER = AM_TAP_AWK='$(AWK)' $(SHELL) $(top_srcdir)/lib/tap-driver.sh
 
 AM_TAP_LOG_DRIVER_FLAGS = --merge
 
-EXTRA_DIST = is ChangeLog-old
+EXTRA_DIST = ax/is ChangeLog-old
 
 TESTS = ## Will be updated later.
 
@@ -107,7 +107,7 @@ $(generated_TESTS) $(srcdir)/testsuite-part.am: \
   gen-testsuite-part list-of-tests.mk Makefile.am $(handwritten_TESTS)
 
 # Static dependencies valid for each test case.
-check_SCRIPTS = aclocal-$(APIVERSION) automake-$(APIVERSION)
+check_SCRIPTS = wrap/aclocal-$(APIVERSION) wrap/automake-$(APIVERSION)
 check_DATA = defs defs-static plain-functions.sh tap-functions.sh
 EXTRA_DIST += tap-functions.sh plain-functions.sh
 

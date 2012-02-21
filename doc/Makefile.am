@@ -26,7 +26,8 @@ dist_man1_MANS = \
   $(srcdir)/automake-$(APIVERSION).1
 MAINTAINERCLEANFILES = $(dist_man1_MANS)
 update_mans = \
-  $(AM_V_GEN)PATH="`pwd`/../tests$(PATH_SEPARATOR)$$PATH" && \
+  $(AM_V_GEN): && \
+  PATH="$(abs_top_builddir)/tests/wrap$(PATH_SEPARATOR)$$PATH" && \
   export PATH && \
   $(HELP2MAN) --output=$@
 $(dist_man1_MANS): $(top_srcdir)/configure.ac
@@ -70,7 +71,7 @@ dist_doc_DATA = $(srcdir)/amhello-1.0.tar.gz
 # configure in tests/.
 $(srcdir)/amhello-1.0.tar.gz: $(amhello_sources) $(top_srcdir)/configure.ac
 	$(AM_V_GEN): && \
-	PATH="$(abs_top_builddir)/tests$(PATH_SEPARATOR)$$PATH" && \
+	PATH="$(abs_top_builddir)/tests/wrap$(PATH_SEPARATOR)$$PATH" && \
 	export PATH && \
 	$(am__cd) $(srcdir)/amhello && \
 	ACLOCAL=aclocal-$(APIVERSION) && export ACLOCAL && \
