@@ -40,16 +40,6 @@ mkdir setup \
   && rm -rf setup \
   || fatal_ "creating common aclocal.m4 file"
 
-# Some make implementations (e.g., HP-UX) don't grok '-j', some require
-# no space between '-j' and the number of jobs (e.g., older GNU make
-# versions), and some *do* require a space between '-j' and the number
-# of jobs (e.g., Solaris dmake).  We need a runtime test to see what
-# works.
-for MAKE_j4 in "$MAKE -j4" "$MAKE -j 4" false; do
-  echo all: | $MAKE_j4 -f - && break
-  : For shells with buggy 'set -e'.
-done
-
 # Set variables '$compressor' and '$suffix'.
 setup_vars_for_compression_format ()
 {
@@ -332,17 +322,13 @@ command_ok_ "$desc [automake]" $AUTOMAKE
 skip_reason=
 have_compressor compress || skip_reason="'compress' not available"
 have_compressor bzip2 || skip_reason="'bzip2' not available"
-if test "$MAKE_j4" = false; then
-  test -z "$skip_reason" || skip_reason="$skip_reason and "
-  skip_reason="${skip_reason}make concurrency unavailable"
-fi
 
 if test -n "$skip_reason"; then
   skip_row_ 6 -r "$skip_reason" "$desc"
 else
   command_ok_ "$desc [autoconf]" $AUTOCONF
   command_ok_ "$desc [configure]" ./configure
-  command_ok_ "$desc [make -j4 dist-all]"  $MAKE_j4 dist
+  command_ok_ "$desc [make -j4 dist-all]"  $MAKE -j4 dist
   ls -l # For debugging.
   command_ok_ "$desc [check .tar.gz tarball]"  check_tarball gzip
   command_ok_ "$desc [check .tar.bz2 tarball]" check_tarball bzip2
@@ -436,13 +422,7 @@ command_ok_ \
   "$desc ['make dist-all', stubbed]" \
   $MAKE dist-all
 
-subdesc="$desc ['make dist -j4', stubbed]"
-if test "$MAKE_j4" = false; then
-  skip_ -r "make concurrency unavailable" "$subdesc"
-else
-  command_ok_ "$subdesc" $MAKE_j4 dist
-fi
-unset subdesc
+command_ok_ "$desc ['make dist -j4', stubbed]" $MAKE -j4 dist
 
 PATH=$oPATH; export PATH
 

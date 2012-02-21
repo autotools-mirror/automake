@@ -39,9 +39,6 @@ AM_YFLAGS = -d
 bar_YFLAGS =
 foo_SOURCES = zardoz.y
 bar_SOURCES = dir/quux.y
-## Avoid spurious failures with Solaris make.
-zardoz.@OBJEXT@: zardoz.c
-bar-quux.@OBJEXT@: bar-quux.c
 END
 
 cat > sub/Makefile.am << 'END'
@@ -50,9 +47,6 @@ noinst_PROGRAMS = foo bar
 foo_YFLAGS = -d
 foo_SOURCES = zardoz.y
 bar_SOURCES = dir/quux.y
-## Avoid spurious failures with Solaris make.
-foo-zardoz.@OBJEXT@: foo-zardoz.c
-dir/quux.@OBJEXT@: dir/quux.c
 END
 
 cat > zardoz.y << 'END'

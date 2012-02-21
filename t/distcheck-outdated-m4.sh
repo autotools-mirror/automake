@@ -60,10 +60,8 @@ $MAKE distcheck # Sanity check.
 check_no_spurious_error ()
 {
   $EGREP -i 'mkdir:|:.*(permission|denied)' output && Exit 1
-  # On failure, some make implementations (such as Solaris make) print the
-  # whole failed recipe on stdout.  The first grep works around this.
-  grep -v 'rm -rf ' output | grep -i 'autom4te.*\.cache' && Exit 1
-  : To placate 'set -e'.
+  grep -i 'autom4te.*\.cache' output && Exit 1
+  : # To placate 'set -e'.
 }
 
 # We start to use a new "third-party" macro in a new version

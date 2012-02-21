@@ -130,36 +130,8 @@ test_color ()
 
 test_no_color ()
 {
-  # With make implementations that, like Solaris make, in case of errors
-  # print the whole failing recipe on standard output, we should content
-  # ourselves with a laxer check, to avoid false positives.
-  # Keep this in sync with lib/am/check.am:$(am__color_tests).
-  if $FGREP '= Xalways || test -t 1 ' stdout; then
-    # Extra verbose make, resort to laxer checks.
-    # But we also want to check that the testsuite summary is not unduly
-    # colorized.
-    (
-      set +e # In case some grepped regex below isn't matched.
-      # Not a useless use of cat; see above comments about grep.
-      cat stdout | grep "TOTAL.*:"
-      cat stdout | grep "PASS.*:"
-      cat stdout | grep "FAIL.*:"
-      cat stdout | grep "SKIP.*:"
-      cat stdout | grep "XFAIL.*:"
-      cat stdout | grep "XPASS.*:"
-      cat stdout | grep "ERROR.*:"
-      cat stdout | grep "^#"
-      cat stdout | grep 'test.*expected'
-      cat stdout | grep 'test.*not run'
-      cat stdout | grep '===='
-      cat stdout | grep '[Ss]ee .*test-suite\.log'
-      cat stdout | grep '[Tt]estsuite summary'
-    ) | grep "$esc" && Exit 1
-    : For shells with broken 'set -e'
-  else
-    cat stdout | grep "$esc" && Exit 1
-    : For shells with broken 'set -e'
-  fi
+  cat stdout | grep "$esc" && Exit 1
+  :
 }
 
 # It should be possible to override AM_COLOR_TESTS also from the

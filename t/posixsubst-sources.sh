@@ -41,7 +41,6 @@ nodist_foo_SOURCES = $(BAZ:=c)
 bar.c baz.c:
 	echo 'int $@ (void) { return 0; }' | sed 's/\.c //' > $@
 CLEANFILES = baz.c
-CLEANFILES += bar.c # For FreeBSD make.
 
 .PHONY: test test2
 check-local: test1 test2

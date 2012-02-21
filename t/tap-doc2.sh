@@ -68,8 +68,6 @@ END
 
 chmod a+x *.test
 
-# Strip extra "informative" lines that could be printed by Solaris
-# Distributed Make.
 mkdir build-aux
 cp "$am_scriptdir"/tap-driver.sh build-aux \
   || framework_failure_ "fetching the perl TAP driver"

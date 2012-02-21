@@ -38,7 +38,6 @@ lib_LIBRARIES = $(foolibs:=.a) $(barlibs:z=r.a)
 
 libbar.c:
 	echo 'int bar(void) { return 0; }' > $@
-CLEANFILES = libbar.c # For FreeBSD make.
 
 installcheck-local:
 	ls -l $(prefix)/lib

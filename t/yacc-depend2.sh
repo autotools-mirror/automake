@@ -15,8 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Make sure depcomp does not needlessly update headers and objects
-# for yacc rules.  This test still fails with FreeBSD make (but passes
-# with NetBSD make).
+# for yacc rules.
 
 required=yacc
 . ./defs || Exit 1

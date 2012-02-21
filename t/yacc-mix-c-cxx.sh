@@ -153,16 +153,7 @@ for try in 0 1; do
         # not override it.
         run_make=$MAKE;;
       *)
-        # Some make implementations (e.g., HP-UX) don't grok '-j',
-        # some require no space between '-j' and the number of jobs
-        # (e.g., older GNU make versions), and some *do* require a
-        # space between '-j' and the number of jobs (e.g., Solaris
-        # dmake).  We need a runtime test to see what works.
-        echo 'all:' > Makefile
-        for run_make in "$MAKE -j3" "$MAKE -j 3" "$MAKE"; do
-          $run_make && break
-        done
-        rm -f Makefile
+        run_make="$MAKE -j3";;
     esac
   else
     echo "$me: invalid value of \$try '$try'" >&2

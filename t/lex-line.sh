@@ -39,9 +39,6 @@ LDADD = $(LEXLIB)
 bar_LFLAGS = -v
 foo_SOURCES = zardoz.l
 bar_SOURCES = dir/quux.l
-## Avoid spurious failures with Solaris make.
-zardoz.@OBJEXT@: zardoz.c
-bar-quux.@OBJEXT@: bar-quux.c
 END
 
 cat > sub/Makefile.am << 'END'
@@ -52,9 +49,6 @@ LDADD = @LEXLIB@
 foo_LFLAGS = -v
 foo_SOURCES = zardoz.l
 bar_SOURCES = dir/quux.l
-## Avoid spurious failures with Solaris make.
-foo-zardoz.@OBJEXT@: foo-zardoz.c
-dir/quux.@OBJEXT@: dir/quux.c
 END
 
 cat > zardoz.l << 'END'

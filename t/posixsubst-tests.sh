@@ -30,7 +30,6 @@ t3 = bar2
 
 foo2.test barz:
 	(echo '#!/bin/sh' && echo 'exit 0') > $@ && chmod a+x $@
-CLEANFILES = foo2.test barz # For FreeBSD make.
 
 # Also try an empty match suffix, to ensure that the ':=' in there is
 # not confused by the parser with an unportable assignment operator.

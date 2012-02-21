@@ -44,29 +44,6 @@ esac
 (set +e; expect -c 'exit ''77'; test $? -eq 77) \
   || skip_ "requires a working expect program"
 
-# Also, if the $MAKE program fails to consider the standard output as a
-# tty (this happens with e.g., BSD make and Solaris dmake when they're
-# run in parallel mode; see the autoconf manual), there is little point
-# in proceeding.
-cat > Makefile <<'END'
-all:
-## Creative quoting in the 'echo' below to avoid risk of spurious output
-## matches by 'expect', below.
-	@test -t 1 && echo "stdout" "is" "a" "tty"
-END
-
-cat > expect-check <<'END'
-eval spawn $env(MAKE)
-expect {
-  "stdout is a tty" { exit 0 }
-  default { exit 1 }
-}
-exit 1
-END
-MAKE=$MAKE expect -f expect-check \
-  || skip_ "make spawned by expect should have a tty stdout"
-rm -f expect-check Makefile
-
 # Do the tests.
 
 cat >>configure.ac <<END
@@ -128,35 +105,8 @@ test_color ()
 
 test_no_color ()
 {
-  # With make implementations that, like Solaris make, in case of errors
-  # print the whole failing recipe on standard output, we should content
-  # ourselves with a laxer check, to avoid false positives.
-  # Keep this in sync with lib/am/check.am:$(am__color_tests).
-  if $FGREP '= Xalways || test -t 1 ' stdout; then
-    # Extra verbose make, resort to laxer checks.
-    # Note that we also want to check that the testsuite summary is
-    # not unduly colorized.
-    (
-      set +e # In case some grepped regex below isn't matched.
-      # Not a useless use of cat; see above comments about grep.
-      cat stdout | grep "TOTAL.*:"
-      cat stdout | grep "PASS.*:"
-      cat stdout | grep "FAIL.*:"
-      cat stdout | grep "SKIP.*:"
-      cat stdout | grep "XFAIL.*:"
-      cat stdout | grep "XPASS.*:"
-      cat stdout | grep "ERROR.*:"
-      cat stdout | grep 'test.*expected'
-      cat stdout | grep 'test.*not run'
-      cat stdout | grep '===='
-      cat stdout | grep '[Ss]ee .*test-suite\.log'
-      cat stdout | grep '[Tt]estsuite summary'
-    ) | grep "$esc" && Exit 1
-    : For shells with broken 'set -e'
-  else
-    cat stdout | grep "$esc" && Exit 1
-    : For shells with broken 'set -e'
-  fi
+  cat stdout | grep "$esc" && Exit 1
+  :
 }
 
 cat >expect-make <<'END'
