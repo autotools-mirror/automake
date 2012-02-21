@@ -127,7 +127,7 @@ check_distclean ()
   fi
 }
 
-cat > configure.in <<END
+cat > configure.ac <<END
 AC_INIT([$me], [1.0])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE

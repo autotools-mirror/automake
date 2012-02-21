@@ -27,7 +27,7 @@
 # We'll use calls to stat to get debugging information.
 if stat /dev/null; then stat=stat; else stat=:; fi
 
-cat >> configure.in << 'END'
+cat >> configure.ac << 'END'
 FOOBAR=zardoz
 AC_OUTPUT
 END
@@ -45,7 +45,7 @@ $MAKE Makefile
 # Sanity check.
 $EGREP 'FOOBAR|zardoz' Makefile && fatal_ 'unexpected AC_SUBST in Makefile'
 
-echo 'AC_SUBST([FOOBAR])' >> configure.in
+echo 'AC_SUBST([FOOBAR])' >> configure.ac
 
 # Modified configure dependencies must have the same timestamp of
 # config.status and Makefile in order to trigger the bug.
@@ -54,11 +54,11 @@ echo 'AC_SUBST([FOOBAR])' >> configure.in
 # autoconf manual).  Finally, we also sleep before touching, to ensure
 # that the (possibly truncated) timestamps of config.status etc. are
 # strictly newer than the non-truncated configure timestamp.
-$stat config.status Makefile configure.in
+$stat config.status Makefile configure.ac
 $sleep
 touch config.status
-touch -r config.status config.status Makefile configure.in
-$stat config.status Makefile configure.in
+touch -r config.status config.status Makefile configure.ac
+$stat config.status Makefile configure.ac
 
 # Also, the race condition is triggered only when aclocal, automake
 # and aclocal run fast enough to keep the timestamp of the generated
@@ -70,7 +70,7 @@ cat > aclocal-wrap <<END
 #!/bin/sh
 set -ex
 # aclocal shouldn't use our autoconf wrapper when extracting
-# the races from configure.in.
+# the races from configure.ac.
 AUTOCONF='$AUTOCONF'; export AUTOCONF
 $ACLOCAL "\$@"
 touch -r config.status aclocal.m4
@@ -81,7 +81,7 @@ cat > automake-wrap <<END
 #!/bin/sh
 set -ex
 # automake shouldn't use our autoconf wrapper when extracting
-# the races from configure.in.
+# the races from configure.ac.
 AUTOCONF='$AUTOCONF'; export AUTOCONF
 $AUTOMAKE "\$@"
 touch -r config.status Makefile.in

@@ -28,7 +28,7 @@ esac
 
 fetch_tap_driver
 
-cat > configure.in <<END
+cat > configure.ac <<END
 AC_INIT([GNU AutoTAP], [5.12], [bug-automake@gnu.org])
 AM_INIT_AUTOMAKE([parallel-tests])
 AC_CONFIG_FILES([Makefile])

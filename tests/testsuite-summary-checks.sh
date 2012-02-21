@@ -36,7 +36,7 @@ case $use_colors in
     fatal_ "invalid use_colors='$use_colors'";;
 esac
 
-cat > configure.in <<END
+cat > configure.ac <<END
 AC_INIT([GNU AutoFoo], [7.1], [bug-automake@gnu.org])
 AM_INIT_AUTOMAKE([$am_opts])
 AC_CONFIG_FILES([Makefile])
