@@ -24,27 +24,6 @@ case $MAKE in
   *\ -j*) skip_ "\$MAKE contains \`-j'";;
 esac
 
-if using_gmake; then
-  j=-j
-else
-  unindent > Makefile <<END
-    all: one two
-    one:
-	$sleep && test -f two
-    two:
-	echo ok > \$@
-END
-  for j in "-j" "-j " NONE; do
-    if test x"$j" = xNONE; then
-      skip_ "can't run make in parallel mode"
-    fi
-    $MAKE ${j}2 all >output 2>&1 || continue
-    $EGREP -i "(warning|error):|-j[\"\'\` ]" output && continue
-    break
-  done
-  rm -f one output Makefile
-fi
-
 cat >> configure.in << 'END'
 AC_OUTPUT
 END
@@ -87,13 +66,13 @@ for build in serial parallel; do
 done
 
 cd serial
-$MAKE ${j}1 check &
+$MAKE -j1 check &
 cd ../parallel
 $sleep
 # Use append mode here to avoid dropping output.
 # Yes, this actually happens.
 : >stdout
-$MAKE ${j}4 check >> stdout
+$MAKE -j4 check >> stdout
 cd ..
 # Ensure the tests are really being run in parallel mode: if this is
 # the case, the serial run of the dummy testsuite started above should
