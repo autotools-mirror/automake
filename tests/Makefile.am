@@ -148,9 +148,13 @@ do_subst = sed \
   -e 's|@FFLAGS[@]|$(FFLAGS)|g' \
   -e 's|@FC[@]|$(FC)|g' \
   -e 's|@FCFLAGS[@]|$(FCFLAGS)|g' \
+  -e 's|@GNU_CC[@]|$(GNU_CC)|g' \
   -e 's|@GNU_CFLAGS[@]|$(GNU_CFLAGS)|g' \
+  -e 's|@GNU_CXX[@]|$(GNU_CXX)|g' \
   -e 's|@GNU_CXXFLAGS[@]|$(GNU_CXXFLAGS)|g' \
+  -e 's|@GNU_F77[@]|$(GNU_F77)|g' \
   -e 's|@GNU_FFLAGS[@]|$(GNU_FFLAGS)|g' \
+  -e 's|@GNU_FC[@]|$(GNU_FC)|g' \
   -e 's|@GNU_FCFLAGS[@]|$(GNU_FCFLAGS)|g' \
   -e 's|@YACC[@]|$(YACC)|g' \
   -e 's|@LEX[@]|$(LEX)|g' \

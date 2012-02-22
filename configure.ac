@@ -264,14 +264,22 @@ AC_DEFUN([_AM_COMPILER_CAN_FAIL], [
   m4_popdef([AC_MSG_ERROR])
 ])
 
+AC_DEFUN([_AM_SKIP_COMP_TESTS],
+  [AC_MSG_NOTICE([tests requiring the $1 compiler will be skipped])])
+
 # Prefer generic compilers to GNU ones when possible.  This will ensure
 # more testsuite coverage "in the wild".
 # Note that we don't look for the MSVC C/C++ compiler here.  This is
 # deliberate; for more discussion an rationale, see:
 # <http://lists.gnu.org/archive/html/automake-patches/2012-01/msg00130.html>
 
+AC_MSG_NOTICE([will now look for generic compilers])
+
 # C compiler.
-_AM_COMPILER_CAN_FAIL([AC_PROG_CC([cc gcc])], [CC=false])
+_AM_COMPILER_CAN_FAIL(dnl
+  [AC_PROG_CC([cc gcc])],
+  [CC=false; _AM_SKIP_COMP_TESTS([C])])
+
 AS_IF([test x"$GCC" = x"yes"], [am_CC_is_GNU=yes], [am_CC_is_GNU=no])
 
 # The list of C++ compilers here has been copied, pasted and edited
@@ -280,7 +288,8 @@ AS_IF([test x"$GCC" = x"yes"], [am_CC_is_GNU=yes], [am_CC_is_GNU=no])
 # duplication.
 _AM_COMPILER_CAN_FAIL([AC_PROG_CXX(dnl
   [aCC CC FCC KCC RCC xlC_r xlC c++ cxx cc++ gpp g++])],
-  [CXX=false])
+  [CXX=false; _AM_SKIP_COMP_TESTS([C++])])
+
 AS_IF([test x"$GXX" = x"yes"], [am_CXX_is_GNU=yes], [am_CXX_is_GNU=no])
 
 # The lists of Fortran compilers here has been copied, pasted and edited
@@ -291,34 +300,83 @@ AS_IF([test x"$GXX" = x"yes"], [am_CXX_is_GNU=yes], [am_CXX_is_GNU=no])
 _AM_COMPILER_CAN_FAIL([AC_PROG_FC(dnl
   [xlf95 f95 fort ifort ifc efc pgfortran pgf95 lf95 ftn nagfor] dnl
   [xlf90 f90 pgf90 pghpf epcf90 g95 gfortran])],
-  [FC=false])
+  [FC=false; _AM_SKIP_COMP_TESTS([Fortran])])
+
 # FIXME this won't work as expected until we can assume autoconf 2.69 :-(
 AS_IF([test x"$GFC" = x"yes"], [am_FC_is_GNU=yes], [am_FC_is_GNU=no])
 
 _AM_COMPILER_CAN_FAIL([AC_PROG_F77(dnl
   [xlf f77 frt pgf77 cf77 fort77 fl32 af77 g77 gfortran])],
-  [F77=false])
+  [F77=false; _AM_SKIP_COMP_TESTS([Fortran 77])])
+
 AS_IF([test x"$G77" = x"yes"], [am_F77_is_GNU=yes], [am_F77_is_GNU=no])
 
 # Some tests will need the GNU compilers.  Searching for them here would
 # be overkill, since our testsuite already handles their search and setup
-# pretty well.  However, in case the compilers detected above at configure
-# time are not the GNU ones, we cannot use the values of CFLAGS, CXXFLAGS,
-# FCFLAGS and FFLAGS detected for them with the GNU compilers too, since
-# it's likely they won't be compatible.  So we allow the user to define
-# variants of this variables for the GNU compilers separately.
+# pretty well.  But in case the compilers already found are the GNU ones,
+# we want to use them in the testsuite where GNU compilers are required.
+# Also, in case the compilers detected above (at configure time) are not
+# the GNU ones, we cannot use the values of CFLAGS, CXXFLAGS, FCFLAGS and
+# FFLAGS detected for them with the GNU compilers too, since it's likely
+# they won't be compatible.  So we allow the user to define variants of
+# these variables for the GNU compilers separately.
 
-test $am_CC_is_GNU = yes && GNU_CFLAGS=${GNU_CFLAGS-$CFLAGS}
+AC_MSG_NOTICE([will now look for GNU compilers])
+
+# GNU C compiler.
+AC_ARG_VAR([GNU_CC],     [GNU C compiler])
 AC_ARG_VAR([GNU_CFLAGS], [GNU C compiler flags])
+if test $am_CC_is_GNU = yes; then
+  AC_MSG_NOTICE([$CC is already a GNU C compiler])
+  GNU_CC=$CC GNU_CFLAGS=${GNU_CFLAGS-$CFLAGS}
+else
+  AC_CHECK_TOOLS([GNU_CC], [gcc], [false])
+fi
+AS_IF([AM_RUN_LOG([$GNU_CC --version && $GNU_CC -v])], [],
+      [AC_MSG_WARN([botched installation for GNU C compiler])
+       _AM_SKIP_COMP_TESTS([GNU C])])
 
-test $am_CXX_is_GNU = yes && GNU_CXXFLAGS=${GNU_CXXFLAGS-$CXXFLAGS}
+# GNU C++ compiler.
+AC_ARG_VAR([GNU_CXX],      [GNU C++ compiler])
 AC_ARG_VAR([GNU_CXXFLAGS], [GNU C++ compiler flags])
+if test $am_CXX_is_GNU = yes; then
+  AC_MSG_NOTICE([$CXX is already a GNU C++ compiler])
+  GNU_CXX=$CXX
+  GNU_CXXFLAGS=${GNU_CXXFLAGS-$CXXFLAGS}
+else
+  AC_CHECK_TOOLS([GNU_CXX], [g++ gpp], [false])
+fi
+AS_IF([AM_RUN_LOG([$GNU_CXX --version && $GNU_CXX -v])], [],
+      [AC_MSG_WARN([botched installation for GNU C++ compiler])
+       _AM_SKIP_COMP_TESTS([GNU C++])])
 
-test $am_F77_is_GNU = yes && GNU_FCFLAGS=${GNU_FCFLAGS-$FCFLAGS}
+# GNU Fortran compiler.
+AC_ARG_VAR([GNU_FC],      [GNU Fortran compiler])
 AC_ARG_VAR([GNU_FCFLAGS], [GNU Fortran compiler flags])
+if test $am_FC_is_GNU = yes; then
+  AC_MSG_NOTICE([$FC is already a GNU Fortran compiler])
+  GNU_FC=$FC
+  GNU_FCFLAGS=${GNU_FCFLAGS-$FCFLAGS}
+else
+  AC_CHECK_TOOLS([GNU_FC], [gfortran], [false])
+fi
+AS_IF([AM_RUN_LOG([$GNU_FC --version && $GNU_FC -v])], [],
+      [AC_MSG_WARN([botched installation for GNU Fortran compiler])
+       _AM_SKIP_COMP_TESTS([GNU Fortran])])
 
-test $am_FC_is_GNU = yes && GNU_FFLAGS=${GNU_FFLAGS-$FFLAGS}
+# GNU Fortran 77 compiler.
+AC_ARG_VAR([GNU_F77],    [GNU Fortran 77 compiler])
 AC_ARG_VAR([GNU_FFLAGS], [GNU Fortran 77 compiler flags])
+if test $am_F77_is_GNU = yes; then
+  AC_MSG_NOTICE([$F77 is already a GNU Fortran 77 compiler])
+  GNU_F77=$F77
+  GNU_FFLAGS=${GNU_FFLAGS-$FFLAGS}
+else
+  AC_CHECK_TOOLS([GNU_F77], [g77 gfortran], [false])
+fi
+AS_IF([AM_RUN_LOG([$GNU_F77 --version && $GNU_F77 -v])], [],
+      [AC_MSG_WARN([botched installation for GNU Fortran 77 compiler])
+      _AM_SKIP_COMP_TESTS([GNU Fortran 77])])
 
 # If we have been able to find at least a working compiler above, we
 # know what the object and executable extensions for this platform are.
