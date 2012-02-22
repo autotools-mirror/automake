@@ -946,6 +946,7 @@ spell2.test \
 spell3.test \
 spelling.test \
 spy.test \
+spy-rm.tap \
 stdinc.test \
 stamph2.test \
 stdlib.test \
