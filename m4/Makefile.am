@@ -55,10 +55,9 @@ tar.m4 \
 upc.m4 \
 vala.m4
 
-# So that $(system_acdir) will be created by "make install".
-dist_system_ac_DATA =
+dist_system_ac_DATA = acdir/README
 
-EXTRA_DIST = acdir/.placeholder amversion.in
+EXTRA_DIST = amversion.in
 
 # We build amversion.m4 here, instead of from config.status,
 # because config.status is rerun each time one of configure's
