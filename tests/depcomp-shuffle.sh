@@ -68,11 +68,11 @@ else
   grep_prog_out () { ./prg && ./prg | grep "$1" || Exit 1; }
 fi
 
-echo AC_PROG_CC                         >> configure.in
-echo AM_PROG_AR                         >> configure.in
-echo AC_PROG_RANLIB                     >> configure.in
-test -z "$xdir" || echo AM_PROG_CC_C_O  >> configure.in
-echo AC_OUTPUT                          >> configure.in
+echo AC_PROG_CC                         >> configure.ac
+echo AM_PROG_AR                         >> configure.ac
+echo AC_PROG_RANLIB                     >> configure.ac
+test -z "$xdir" || echo AM_PROG_CC_C_O  >> configure.ac
+echo AC_OUTPUT                          >> configure.ac
 
 if test -n "$xdir"; then
   echo AUTOMAKE_OPTIONS = subdir-objects > Makefile.am
@@ -86,7 +86,7 @@ get-exeext:
 	@echo \$(EXEEXT)
 END
 
-cat configure.in # For debugging.
+cat configure.ac # For debugging.
 cat Makefile.am  # Likewise.
 
 test -z "$xdir" || mkdir "$xdir"
