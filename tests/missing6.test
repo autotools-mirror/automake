@@ -16,24 +16,26 @@
 
 # Make sure autoconf version checks in aclocal.m4 are robust.
 
+am_create_testdirs=empty
 . ./defs || Exit 1
 
-{
-  echo 'm4_define([AC_AUTOCONF_VERSION], [9999a])'
-  echo 'dnl!! m4_define([a], [oops])'
-  cat configure.in
-  echo AC_OUTPUT
-} >configure.ac
-rm -f configure.in
+cat > configure.ac <<END
+m4_define([AC_AUTOCONF_VERSION], [9999a])
+dnl!! m4_define([a], [oops])
+AC_INIT([$me], [1.0])
+AM_INIT_AUTOMAKE
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
+END
 
-touch Makefile.am
+: > Makefile.am
 
 $ACLOCAL
 $AUTOCONF 2>stderr || { cat stderr >&2; Exit 1; }
 cat stderr >&2
 grep 'You have another version of autoconf' stderr
 grep 'aclocal.m4:.*this file was generated for' stderr
-$AUTOMAKE
+$AUTOMAKE -a
 ./configure
 $MAKE
 

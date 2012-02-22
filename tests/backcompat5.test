@@ -20,15 +20,18 @@
 # See also the similar test `backcompat6.test'.
 
 am_parallel_tests=no
+am_create_testdir=empty
 . ./defs || Exit 1
 
+makefiles='hacky/Makefile src/Makefile data/Makefile tests/Makefile'
+
 # Yuck!
-cat > configure.in <<'END'
+cat > configure.in <<END
 dnl: Everything here is *deliberately* underquoted!
 AC_INIT(src/foo.input)
 AM_INIT_AUTOMAKE(foo, 1.0)
 AC_CONFIG_FILES(Makefile:mkfile.in)
-AC_OUTPUT(hacky/Makefile src/Makefile data/Makefile tests/Makefile)
+AC_OUTPUT($makefiles)
 END
 
 distdir=foo-1.0
@@ -91,7 +94,11 @@ END
 
 $ACLOCAL
 $AUTOCONF
+$AUTOMAKE -a
+test -f install-sh
+for f in $makefiles; do mv -f $f.in $f.sav; done
 $AUTOMAKE
+for f in $makefiles; do diff $f.sav $f.in; done
 
 ./configure
 ls -l . hacky src data tests # For debugging.

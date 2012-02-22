@@ -726,6 +726,7 @@ parallel-tests-exit-statuses.test \
 parallel-tests-console-output.test \
 parallel-tests-once.test \
 parallel-tests-trailing-bslash.test \
+parallel-tests-many.test \
 tests-environment.test \
 am-tests-environment.test \
 tests-environment-backcompat.test \

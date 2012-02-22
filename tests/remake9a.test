@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test remake rules when configure.in or its prerequisites change.
+# Test remake rules when configure.ac or its prerequisites change.
 # Keep in sync with the other sister tests `remake9*.test'.
 
 . ./defs || Exit 1
@@ -22,7 +22,7 @@
 magic1=::MagicStringOne::
 magic2=__MagicStringTwo__
 
-cat >> configure.in <<END
+cat >> configure.ac <<END
 FINGERPRINT=BadBadBad
 AC_SUBST([FINGERPRINT])
 AC_CONFIG_FILES([foo.sh:foo.in], [chmod a+x foo.sh])
@@ -33,7 +33,7 @@ cat > Makefile.am <<'END'
 nil:
 .PHONY: nil
 
-$(srcdir)/configure.in: $(srcdir)/tweak-configure-in
+$(srcdir)/configure.ac: $(srcdir)/tweak-configure-in
 	$(SHELL) $(srcdir)/tweak-configure-in <$@ >$@-t
 	mv -f $@-t $@
 EXTRA_DIST = $(srcdir)/tweak-configure-in
@@ -70,8 +70,8 @@ for vpath in : false; do
   $MAKE # Should be a no-op.
 
   $sleep
-  sed "s/^\\(FINGERPRINT\\)=.*/\\1=$magic1/" $srcdir/configure.in >t
-  mv -f t $srcdir/configure.in
+  sed "s/^\\(FINGERPRINT\\)=.*/\\1=$magic1/" $srcdir/configure.ac >t
+  mv -f t $srcdir/configure.ac
   $MAKE nil
   $FGREP FINGERPRINT Makefile # For debugging.
   $FGREP $magic1 Makefile
@@ -88,8 +88,8 @@ for vpath in : false; do
 
   $sleep
   echo cat > $srcdir/tweak-configure-in # Make it a no-op again.
-  sed "s/^\\(FINGERPRINT\\)=.*/\\1=DummyValue/" $srcdir/configure.in >t
-  mv -f t $srcdir/configure.in
+  sed "s/^\\(FINGERPRINT\\)=.*/\\1=DummyValue/" $srcdir/configure.ac >t
+  mv -f t $srcdir/configure.ac
   $MAKE distcheck
   $FGREP $magic1 Makefile && Exit 1 # Sanity check.
   $FGREP $magic2 Makefile && Exit 1 # Likewise.

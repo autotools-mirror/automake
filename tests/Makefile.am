@@ -42,6 +42,7 @@ interp3.test \
 override-conditional-2.test \
 java-nobase.test \
 objext-pr10128.test \
+parallel-tests-many.test \
 pr8365-remake-timing.test \
 remake-am-pr10111.test \
 remake-m4-pr10111.test \
