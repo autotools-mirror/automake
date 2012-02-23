@@ -54,9 +54,10 @@ install-data-hook:
 	  chmod +x "$(DESTDIR)$(scriptdir)/$$prog"; \
 	done
 
-## 'test -x' is not portable.  So we use Perl instead.  If Perl
-## doesn't exist, then this test is meaningless anyway.
 installcheck-local:
-	for file in $(dist_script_DATA); do \
-	  $(PERL) -e "exit ! -x '$(pkgvdatadir)/$$file';" || exit 1; \
-	done
+	@for file in $(dist_script_DATA); do \
+	  path="$(pkgvdatadir)/$$file"; \
+	  test -x "$$path" || echo $$path; \
+	done \
+	  | sed 's/$$/: not executable/' \
+	  | grep . && exit 1; exit 0
