@@ -84,7 +84,7 @@ planned_=none
 # diag_ [EXPLANATION]
 # ------------------
 # Report the given text as TAP diagnostic.  Assumes the string denoting
-# TAP diagnostic lines is stored in the `$diag_string_' variable; this is
+# TAP diagnostic lines is stored in the '$diag_string_' variable; this is
 # done to allow better interplay with TAP drivers that allow such a string
 # to be configured.
 diag_ ()
@@ -92,7 +92,7 @@ diag_ ()
   test $# -eq 0 || echo "$diag_string_ $*"
 }
 
-# Used by the `diag_' function above.  User-overridable.
+# Used by the 'diag_' function above.  User-overridable.
 diag_string_="#"
 
 # warn_ [EXPLANATION]
@@ -156,7 +156,7 @@ result_ ()
   set -x # Restore shell xtraces.
 }
 
-#  Shorthands for common usages of `result_'.
+#  Shorthands for common usages of 'result_'.
 ok_ () { result_ 'ok' ${1+"$@"}; }
 not_ok_ () { result_ 'not ok' ${1+"$@"}; }
 skip_ () { result_ 'ok' -D SKIP ${1+"$@"}; }
@@ -174,7 +174,7 @@ skip_row_ ()
 
 # skip_all_ [REASON ...]
 # ----------------------
-# Skip all the tests in a test script.  Must be used before calling `plan_'
+# Skip all the tests in a test script.  Must be used before calling 'plan_'
 # or reporting any test result.  Can't be used from within a subshell.
 skip_all_ ()
 {
@@ -196,7 +196,7 @@ bailout_ ()
 
 # fatal_ [REASON ...]
 # -------------------
-# Same as `bailout_'; for compatibility with `plain-functions.sh'.
+# Same as 'bailout_'; for compatibility with 'plain-functions.sh'.
 fatal_ ()
 {
   bailout_ ${1+"$@"}

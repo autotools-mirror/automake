@@ -17,7 +17,7 @@
 # Auxiliary shell script that copies the common data and files used by
 # many tests on TAP support into the current directory.  It should be
 # sourced by client test scripts, and assumes the auxiliary test
-# `tap-common-setup.test' has been run beforehand (it will error out
+# 'tap-common-setup.test' has been run beforehand (it will error out
 # if this is not the case).
 
 # Check that we are running from a proper directory: last thing we want
