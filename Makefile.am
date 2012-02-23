@@ -19,7 +19,7 @@
 
 ## lib goes first, because it builds Config.pm, used by aclocal and
 ## automake (run in doc, tests, and in the rebuild rules.)
-## `.' goes before doc and tests, because the latter two directories
+## '.' goes before doc and tests, because the latter two directories
 ## run aclocal and automake.
 SUBDIRS = lib . contrib doc m4 tests
 
@@ -97,7 +97,7 @@ automake aclocal: Makefile
 	$(AM_V_at)chmod a+x,a-w $@-t && mv -f $@-t $@
 
 ## The master location for INSTALL is lib/INSTALL.
-## This is where `make fetch' will install new versions.
+## This is where "make fetch" will install new versions.
 ## Make sure we also update this copy.
 INSTALL: lib/INSTALL
 	$(AM_V_GEN)cp $(srcdir)/lib/INSTALL $@
@@ -128,9 +128,9 @@ gitlog_to_changelog_options = --amend=$(gitlog_to_changelog_fixes) \
 # give an error).
 #
 # We need the apparently useless dependency from another .PHONY target
-# `am--changelog-regen-hook' to work around a bug of Solaris make, which
+# 'am--changelog-regen-hook' to work around a bug of Solaris make, which
 # doesn't execute the recipe of a target named as an existing file, even
-# if such target is declared `.PHONY' (yikes!)
+# if such target is declared '.PHONY' (yikes!)
 #
 .PHONY: am--changelog-regen-hook
 am--changelog-regen-hook:
@@ -171,8 +171,8 @@ check-coverage-run recheck-coverage-run: all
 
 check-coverage-report:
 	@if test ! -d "$(PERL_COVERAGE_DB)"; then \
-	  echo "No coverage database found in \`$(PERL_COVERAGE_DB)'." >&2; \
-	  echo "Please run \`make check-coverage' first" >&2; \
+	  echo "No coverage database found in '$(PERL_COVERAGE_DB)'." >&2; \
+	  echo "Please run \"make check-coverage\" first" >&2; \
 	  exit 1; \
 	fi
 	$(PERL_COVER) $(PERL_COVER_FLAGS) "$(PERL_COVERAGE_DB)"

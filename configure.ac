@@ -28,7 +28,7 @@ AC_CANONICAL_BUILD
 
 # Save the AUTOCONF setting before AM_INIT_AUTOMAKE overrides it; this
 # way we can run Autoconf tests from configure (or from the test
-# suite) without being bothered by `missing'.  Likewise for autom4te,
+# suite) without being bothered by 'missing'.  Likewise for autom4te,
 # autoreconf, autoheader, and autoupdate.
 AC_SUBST([am_AUTOCONF], ["${AUTOCONF-autoconf}"])
 AC_SUBST([am_AUTOM4TE], ["${AUTOM4TE-autom4te}"])
@@ -37,7 +37,7 @@ AC_SUBST([am_AUTOHEADER], ["${AUTOHEADER-autoheader}"])
 AC_SUBST([am_AUTOUPDATE], ["${AUTOUPDATE-autoupdate}"])
 
 dnl We call AC_PROG_CC in an unusual way, and only for use in our
-dnl testsuite, so also use `no-dependencies' and `no-define' among
+dnl testsuite, so also use 'no-dependencies' and 'no-define' among
 dnl the automake options to avoid bloating and potential problems.
 AM_INIT_AUTOMAKE([1.10a dist-xz filename-length-max=99 color-tests
 		  parallel-tests silent-rules no-define no-dependencies])
@@ -58,8 +58,8 @@ AC_SUBST([amdir], ["\${pkgvdatadir}/am"])
 AC_SUBST([automake_acdir], ["\${datadir}/aclocal-$APIVERSION"])
 AC_SUBST([system_acdir], ["\${datadir}/aclocal"])
 
-# $AUTOMAKE and $ACLOCAL are always run after a `cd $top_srcdir',
-# hence `.' is really what we want for perllibdir, libdir, and acdir.
+# $AUTOMAKE and $ACLOCAL are always run after a "cd $top_srcdir",
+# hence '.' is really what we want for perllibdir, libdir, and acdir.
 ACLOCAL="perllibdir=\"`pwd`/lib$PATH_SEPARATOR./lib\" \"`pwd`/aclocal\" --acdir=m4 -I m4"
 AUTOMAKE="perllibdir=\"`pwd`/lib$PATH_SEPARATOR./lib\" \"`pwd`/automake\" --libdir=lib"
 
@@ -217,10 +217,9 @@ else
 fi
 ])
 if test $am_cv_sh_errexit_works = no; then
-  AC_MSG_WARN([`${MAKE-make} check' will leave leftover directories tests/*.dir])
-  AC_MSG_WARN([you can clean them up manually using `${MAKE-make} clean' or])
-  AC_MSG_WARN([`cd tests && ${MAKE-make} clean-local-check'])
-  dnl restore font-lock: `
+  AC_MSG_WARN(["${MAKE-make} check" will leave leftover directories tests/*.dir])
+  AC_MSG_WARN([you can clean them up manually using "${MAKE-make} clean" or])
+  AC_MSG_WARN(["cd tests && ${MAKE-make} clean-local-check'])
 fi
 AC_SUBST([sh_errexit_works], [$am_cv_sh_errexit_works])
 
@@ -276,7 +275,7 @@ _AM_COMPILER_CAN_FAIL([AC_PROG_CC([cc gcc])], [CC=false])
 AS_IF([test x"$GCC" = x"yes"], [am_CC_is_GNU=yes], [am_CC_is_GNU=no])
 
 # The list of C++ compilers here has been copied, pasted and edited
-# from `lib/autoconf/c.m4:AC_PROG_CXX' in the Autoconf distribution.
+# from 'lib/autoconf/c.m4:AC_PROG_CXX' in the Autoconf distribution.
 # Keep it in sync, or better again, find out a way to avoid this code
 # duplication.
 _AM_COMPILER_CAN_FAIL([AC_PROG_CXX(dnl
@@ -285,7 +284,7 @@ _AM_COMPILER_CAN_FAIL([AC_PROG_CXX(dnl
 AS_IF([test x"$GXX" = x"yes"], [am_CXX_is_GNU=yes], [am_CXX_is_GNU=no])
 
 # The lists of Fortran compilers here has been copied, pasted and edited
-# from file `lib/autoconf/fortran.m4' in the Autoconf distribution.
+# from file 'lib/autoconf/fortran.m4' in the Autoconf distribution.
 # Keep it in sync, or better again, find out a way to avoid this code
 # duplication.
 

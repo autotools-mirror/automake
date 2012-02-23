@@ -54,7 +54,7 @@ install-data-hook:
 	  chmod +x "$(DESTDIR)$(scriptdir)/$$prog"; \
 	done
 
-## `test -x' is not portable.  So we use Perl instead.  If Perl
+## 'test -x' is not portable.  So we use Perl instead.  If Perl
 ## doesn't exist, then this test is meaningless anyway.
 installcheck-local:
 	for file in $(dist_script_DATA); do \

@@ -65,7 +65,7 @@ EXTRA_DIST = acdir/.placeholder amversion.in
 # dependencies change and amversion.m4 happens to be a configure
 # dependency.  configure and amversion.m4 would be rebuilt in
 # loop otherwise.
-# Use `$(top_srcdir)/m4' for the benefit of non-GNU makes: this is
+# Use '$(top_srcdir)/m4' for the benefit of non-GNU makes: this is
 # how amversion.m4 appears in our dependencies.
 $(top_srcdir)/m4/amversion.m4: $(top_srcdir)/configure.ac $(srcdir)/amversion.in
 	$(AM_V_at)sed \
