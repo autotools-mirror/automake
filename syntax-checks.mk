@@ -50,7 +50,6 @@ sc_perl_no_split_regex_space \
 sc_cd_in_backquotes \
 sc_cd_relative_dir \
 sc_perl_at_uscore_in_scalar_context \
-sc_perl_local_no_parens \
 sc_perl_local \
 sc_AMDEP_TRUE_in_automake_in \
 sc_tests_make_without_am_makeflags \
@@ -262,13 +261,6 @@ sc_cd_relative_dir:
 sc_perl_at_uscore_in_scalar_context:
 	@if grep -Hn '[^@_A-Za-z0-9][_A-Za-z0-9]*[^) ] *= *@_' $(srcdir)/automake.in; then \
 	  echo "Using @_ in a scalar context in the lines above." 1>&2; \
-	  exit 1; \
-	fi
-
-## Forbid using parens with 'local' to ease counting.
-sc_perl_local_no_parens:
-	@if grep '^[ \t]*local *(' $(srcdir)/automake.in; then \
-	  echo "Don't use 'local' with parens: use several 'local' above." >&2; \
 	  exit 1; \
 	fi
 
