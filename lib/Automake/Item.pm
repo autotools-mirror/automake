@@ -71,7 +71,7 @@ sub def ($$)
 {
   # This method is called very often, so keep it small and fast.  We
   # don't mind the extra undefined items introduced by lookup failure;
-  # avoiding this with `exists' means doing two hash lookup on
+  # avoiding this with 'exists' means doing two hash lookup on
   # success, and proved worse on benchmark.
   my $def = $_[0]->{'defs'}{$_[1]};
   return defined $def && $def;
@@ -91,7 +91,7 @@ sub rdef ($$)
 {
   my ($self, $cond) = @_;
   my $d = $self->def ($cond);
-  prog_error ("undefined condition `" . $cond->human . "' for `"
+  prog_error ("undefined condition '" . $cond->human . "' for '"
 	      . $self->name . "'\n" . $self->dump)
     unless $d;
   return $d;

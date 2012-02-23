@@ -308,14 +308,14 @@ sub _process_option_list (\%@)
       elsif ($_ eq  'silent-rules')
         {
 	  error ($where,
-		 "option `$_' can only be used as argument to AM_INIT_AUTOMAKE\n"
+		 "option '$_' can only be used as argument to AM_INIT_AUTOMAKE\n"
 		 . "but not in AUTOMAKE_OPTIONS makefile statements")
 	    if $where->get !~ /^configure\./;
 	}
       elsif ($_ eq 'tar-v7' || $_ eq 'tar-ustar' || $_ eq 'tar-pax')
 	{
 	  error ($where,
-		 "option `$_' can only be used as argument to AM_INIT_AUTOMAKE\n"
+		 "option '$_' can only be used as argument to AM_INIT_AUTOMAKE\n"
 		 . "but not in AUTOMAKE_OPTIONS makefile statements")
 	    if $where->get !~ /^configure\./;
 	  for my $opt ('tar-v7', 'tar-ustar', 'tar-pax')
@@ -324,7 +324,7 @@ sub _process_option_list (\%@)
 	      if (exists $options->{$opt})
 		{
 		  error ($where,
-			 "options `$_' and `$opt' are mutually exclusive");
+			 "options '$_' and '$opt' are mutually exclusive");
 		  last;
 		}
 	    }
@@ -346,7 +346,7 @@ sub _process_option_list (\%@)
 	}
       else
 	{
-	  error ($where, "option `$_' not recognized",
+	  error ($where, "option '$_' not recognized",
 		 uniq_scope => US_GLOBAL);
 	  return 1;
 	}
@@ -357,7 +357,7 @@ sub _process_option_list (\%@)
   foreach my $w (@warnings)
     {
       msg 'unsupported', $w->{'loc'},
-          "unknown warning category `$w->{'cat'}'"
+          "unknown warning category '$w->{'cat'}'"
 	if switch_warning $w->{cat};
     }
   return 0;
@@ -407,7 +407,7 @@ sub set_strictness ($)
     }
   else
     {
-      prog_error "level `$strictness_name' not recognized";
+      prog_error "level '$strictness_name' not recognized";
     }
 }
 

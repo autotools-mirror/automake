@@ -1,4 +1,3 @@
-# autoconf -- create `configure' using m4 macros
 # Copyright (C) 2001-2012 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
@@ -17,7 +16,7 @@
 # This file is basically Perl 5.6's Class::Struct, but made compatible
 # with Perl 5.5.  If someday this has to be updated, be sure to rename
 # all the occurrences of Class::Struct into Automake::Struct, otherwise
-# if we `use' a Perl module (e.g., File::stat) that uses Class::Struct,
+# if we 'use' a Perl module (e.g., File::stat) that uses Class::Struct,
 # we would have two packages defining the same symbols.  Boom.
 
 ###############################################################

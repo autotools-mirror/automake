@@ -133,7 +133,7 @@ sub open
   my ($file) = @_;
 
   # WARNING: Gross hack: $FH is a typeglob: use its hash slot to store
-  # the `name' of the file we are opening.  See the example with
+  # the 'name' of the file we are opening.  See the example with
   # io_socket_timeout in IO::Socket for more, and read Graham's
   # comment in IO::Handle.
   ${*$fh}{'autom4te_xfile_file'} = "$file";
@@ -225,14 +225,14 @@ sub lock
   my ($fh, $mode) = @_;
   # Cannot use @_ here.
 
-  # Unless explicitly configured otherwise, Perl implements its `flock' with the
+  # Unless explicitly configured otherwise, Perl implements its 'flock' with the
   # first of flock(2), fcntl(2), or lockf(3) that works.  These can fail on
   # NFS-backed files, with ENOLCK (GNU/Linux) or EOPNOTSUPP (FreeBSD); we
   # usually ignore these errors.  If $ENV{MAKEFLAGS} suggests that a parallel
-  # invocation of `make' has invoked the tool we serve, report all locking
+  # invocation of 'make' has invoked the tool we serve, report all locking
   # failures and abort.
   #
-  # On Unicos, flock(2) and fcntl(2) over NFS hang indefinitely when `lockd' is
+  # On Unicos, flock(2) and fcntl(2) over NFS hang indefinitely when 'lockd' is
   # not running.  NetBSD NFS clients silently grant all locks.  We do not
   # attempt to defend against these dangers.
   #
@@ -241,7 +241,7 @@ sub lock
     {
       my $make_j = (exists $ENV{'MAKEFLAGS'}
 		    && " -$ENV{'MAKEFLAGS'}" =~ / (-[BdeikrRsSw]*[jP]|--[jP]|---?jobs)/);
-      my $note = "\nforgo `make -j' or use a file system that supports locks";
+      my $note = "\nforgo \"make -j\" or use a file system that supports locks";
       my $file = $fh->name;
 
       msg ($make_j ? 'fatal' : 'unsupported',

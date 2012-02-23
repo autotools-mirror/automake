@@ -136,7 +136,7 @@ ignored.
 =cut
 
 # Keys in this hash are DisjConditions strings. Values are the
-# associated object DisjConditions.  This is used by `new' to reuse
+# associated object DisjConditions.  This is used by 'new' to reuse
 # DisjConditions objects with identical conditions.
 use vars '%_disjcondition_singletons';
 
@@ -146,8 +146,8 @@ sub new ($;@)
   my @filtered_conds = ();
   for my $cond (@conds)
     {
-      confess "`$cond' isn't a reference" unless ref $cond;
-      confess "`$cond' isn't an Automake::Condition"
+      confess "'$cond' isn't a reference" unless ref $cond;
+      confess "'$cond' isn't an Automake::Condition"
 	unless $cond->isa ("Automake::Condition");
 
       # This is a disjunction of conditions, so we drop
@@ -462,7 +462,7 @@ sub sub_conditions ($$)
   my ($self, $subcond) = @_;
 
   # Make $subcond blindingly apparent in the DisjConditions.
-  # For instance `$b->multiply($a->conds)' (from the POD example) is:
+  # For instance '$b->multiply($a->conds)' (from the POD example) is:
   # 	(new Automake::Condition ("FALSE"),
   # 	 new Automake::Condition ("A_TRUE", "B_FALSE", "C_FALSE"),
   # 	 new Automake::Condition ("A_TRUE", "B_FALSE", "C_TRUE"),

@@ -87,7 +87,7 @@ Errors related to GNU Standards.
 
 =item C<error-gnu/warn>
 
-Errors related to GNU Standards that should be warnings in `foreign' mode.
+Errors related to GNU Standards that should be warnings in 'foreign' mode.
 
 =item C<error-gnits>
 
@@ -183,19 +183,20 @@ Display warning categories.
 
 sub usage ()
 {
-  print "Warning categories include:
-  `gnu'           GNU coding standards (default in gnu and gnits modes)
-  `obsolete'      obsolete features or constructions
-  `override'      user redefinitions of Automake rules or variables
-  `portability'   portability issues (default in gnu and gnits modes)
-  `extra-portability'  extra portability issues related to obscure tools
-  `syntax'        dubious syntactic constructs (default)
-  `unsupported'   unsupported or incomplete features (default)
-  `all'           all the warnings
-  `no-CATEGORY'   turn off warnings in CATEGORY
-  `none'          turn off all the warnings
-  `error'         treat warnings as errors
-";
+  print <<EOF;
+Warning categories include:
+  gnu                GNU coding standards (default in gnu and gnits modes)
+  obsolete           obsolete features or constructions
+  override           user redefinitions of Automake rules or variables
+  portability        portability issues (default in gnu and gnits modes)
+  extra-portability  extra portability issues related to obscure tools
+  syntax             dubious syntactic constructs (default)
+  unsupported        unsupported or incomplete features (default)
+  all                all the warnings
+  no-CATEGORY        turn off warnings in CATEGORY
+  none'              turn off all the warnings
+  error              treat warnings as errors
+EOF
 }
 
 =item C<prog_error ($MESSAGE, [%OPTIONS])>
@@ -293,7 +294,7 @@ sub switch_warning ($)
       setup_channel $cat, silent => $has_no;
       #
       # Handling of portability warnings is trickier.  For relevant tests,
-      # see `dollarvar2', `extra-portability' and `extra-portability3'.
+      # see 'dollarvar2', 'extra-portability' and 'extra-portability3'.
       #
       # -Wportability-recursive and -Wno-portability-recursive should not
       # have any effect on other 'portability' or 'extra-portability'
@@ -363,7 +364,7 @@ sub parse_warnings ($$)
 
   foreach my $cat (split (',', $categories))
     {
-      msg 'unsupported', "unknown warning category `$cat'"
+      msg 'unsupported', "unknown warning category '$cat'"
 	if switch_warning $cat;
     }
 }
@@ -407,7 +408,7 @@ sub set_strictness ($)
     }
   else
     {
-      prog_error "level `$name' not recognized";
+      prog_error "level '$name' not recognized";
     }
 }
 
