@@ -378,6 +378,14 @@ AS_IF([AM_RUN_LOG([$GNU_F77 --version && $GNU_F77 -v])], [],
       [AC_MSG_WARN([botched installation for GNU Fortran 77 compiler])
       _AM_SKIP_COMP_TESTS([GNU Fortran 77])])
 
+# GNU Java compiler.
+AC_ARG_VAR([GNU_GCJ], [GNU Java compiler])
+AC_ARG_VAR([GNU_GCJFLAGS], [GNU Java compiler flags])
+AC_CHECK_TOOLS([GNU_GCJ], [gcj], [false])
+AS_IF([AM_RUN_LOG([$GNU_GCJ --version && $GNU_GCJ -v])], [],
+      [AC_MSG_WARN([botched installation for GNU Java compiler])
+      _AM_SKIP_COMP_TESTS([GNU Java])])
+
 # If we have been able to find at least a working compiler above, we
 # know what the object and executable extensions for this platform are.
 OBJEXT=${ac_cv_objext-UNKNOWN}
