@@ -355,6 +355,7 @@ distcom4.test \
 distcom5.test \
 distcom-subdir.test \
 distdir.test \
+disthook-perms.test \
 distlinks.test \
 distlinksbrk.test \
 distname.test \
@@ -363,6 +364,7 @@ distcheck-configure-flags-am.test \
 distcheck-configure-flags-subpkg.test \
 distcheck-hook.test \
 distcheck-hook2.test \
+distcheck-writable-srcdir.test \
 distcheck-missing-m4.test \
 distcheck-outdated-m4.test \
 distcheck-override-infodir.test \
