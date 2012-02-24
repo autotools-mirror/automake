@@ -270,7 +270,7 @@ AC_DEFUN([_AM_SKIP_COMP_TESTS],
 # Prefer generic compilers to GNU ones when possible.  This will ensure
 # more testsuite coverage "in the wild".
 # Note that we don't look for the MSVC C/C++ compiler here.  This is
-# deliberate; for more discussion an rationale, see:
+# deliberate; for more discussion and rationale, see:
 # <http://lists.gnu.org/archive/html/automake-patches/2012-01/msg00130.html>
 
 AC_MSG_NOTICE([will now look for generic compilers])
