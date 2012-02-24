@@ -26,11 +26,11 @@ use vars qw (@ISA @EXPORT);
 
 @ISA = qw (Exporter);
 @EXPORT = qw (option global_option
-	      set_option set_global_option
-	      unset_option unset_global_option
-	      process_option_list process_global_option_list
-	      set_strictness $strictness $strictness_name
-	      &FOREIGN &GNU &GNITS);
+              set_option set_global_option
+              unset_option unset_global_option
+              process_option_list process_global_option_list
+              set_strictness $strictness $strictness_name
+              &FOREIGN &GNU &GNITS);
 
 =head1 NAME
 
@@ -71,8 +71,8 @@ F<Makefile.am>s.
 =cut
 
 # Values are the Automake::Location of the definition.
-use vars '%_options';		# From AUTOMAKE_OPTIONS
-use vars '%_global_options';	# from AM_INIT_AUTOMAKE or the command line.
+use vars '%_options';        # From AUTOMAKE_OPTIONS
+use vars '%_global_options'; # From AM_INIT_AUTOMAKE or the command line.
 
 # Whether process_option_list has already been called for the current
 # Makefile.am.
@@ -244,6 +244,53 @@ Return 1 on error, 0 otherwise.
 
 =cut
 
+# _option_must_be_from_configure ($OPTION, $WHERE)
+# ----------------------------------------------
+# Check that the $OPTION given in location $WHERE is specified with
+# AM_INIT_AUTOMAKE, not with AUTOMAKE_OPTIONS.
+sub _option_must_be_from_configure ($$)
+{
+  my ($opt, $where)= @_;
+  return
+    if $where->get =~ /^configure\./;
+  error $where,
+        "option '$opt' can only be used as argument to AM_INIT_AUTOMAKE\n" .
+        "but not in AUTOMAKE_OPTIONS makefile statements";
+}
+
+# _is_valid_easy_option ($OPTION)
+# -------------------------------
+# Explicitly recognize valid automake options that require no
+# special handling by '_process_option_list' below.
+sub _is_valid_easy_option ($)
+{
+  my $opt = shift;
+  return scalar grep { $opt eq $_ } qw(
+    check-news
+    color-tests
+    cygnus
+    dejagnu
+    dist-bzip2
+    dist-lzip
+    dist-shar
+    dist-tarZ
+    dist-xz
+    dist-zip
+    no-define
+    no-dependencies
+    no-dist
+    no-dist-gzip
+    no-exeext
+    no-installinfo
+    no-installman
+    no-texinfo.tex
+    nostdinc
+    readme-alpha
+    std-options
+    subdir-objects
+  );
+}
+
 # $BOOL
 # _process_option_list (\%OPTIONS, @LIST)
 # ------------------------------------------
@@ -262,15 +309,15 @@ sub _process_option_list (\%@)
       my $where = $h->{'where'};
       $options->{$_} = $where;
       if ($_ eq 'gnits' || $_ eq 'gnu' || $_ eq 'foreign')
-	{
-	  set_strictness ($_);
-	}
+        {
+          set_strictness ($_);
+        }
       elsif (/^(.*\/)?ansi2knr$/)
-	{
+        {
           # Obsolete (and now removed) de-ANSI-fication support.
           error ($where,
                  "automatic de-ANSI-fication support has been removed");
-	}
+        }
       elsif ($_ eq 'dist-lzma')
         {
           error ($where, "support for lzma-compressed distribution " .
@@ -283,73 +330,50 @@ sub _process_option_list (\%@)
       elsif ($_ eq 'serial-tests')
         {
           # This is a little of an hack, but good enough for the moment.
-	  delete $options->{'parallel-tests'};
+          delete $options->{'parallel-tests'};
         }
-      elsif ($_ eq 'no-installman' || $_ eq 'no-installinfo'
-	     || $_ eq 'dist-shar' || $_ eq 'dist-zip'
-	     || $_ eq 'dist-tarZ' || $_ eq 'dist-bzip2'
-	     || $_ eq 'dist-lzip' || $_ eq 'dist-xz'
-	     || $_ eq 'no-dist-gzip' || $_ eq 'no-dist'
-	     || $_ eq 'dejagnu' || $_ eq 'no-texinfo.tex'
-	     || $_ eq 'readme-alpha' || $_ eq 'check-news'
-	     || $_ eq 'subdir-objects' || $_ eq 'nostdinc'
-	     || $_ eq 'no-exeext' || $_ eq 'no-define'
-	     || $_ eq 'std-options'
-	     || $_ eq 'color-tests' 
-	     || $_ eq 'cygnus' || $_ eq 'no-dependencies')
-	{
-	  # Explicitly recognize these.
-	}
-      elsif ($_ =~ /^filename-length-max=(\d+)$/)
-	{
-	  delete $options->{$_};
-	  $options->{'filename-length-max'} = [$_, $1];
-	}
-      elsif ($_ eq  'silent-rules')
+      elsif (/^filename-length-max=(\d+)$/)
         {
-	  error ($where,
-		 "option '$_' can only be used as argument to AM_INIT_AUTOMAKE\n"
-		 . "but not in AUTOMAKE_OPTIONS makefile statements")
-	    if $where->get !~ /^configure\./;
-	}
+          delete $options->{$_};
+          $options->{'filename-length-max'} = [$_, $1];
+        }
+      elsif ($_ eq 'silent-rules')
+        {
+          _option_must_be_from_configure ($_, $where);
+        }
       elsif ($_ eq 'tar-v7' || $_ eq 'tar-ustar' || $_ eq 'tar-pax')
-	{
-	  error ($where,
-		 "option '$_' can only be used as argument to AM_INIT_AUTOMAKE\n"
-		 . "but not in AUTOMAKE_OPTIONS makefile statements")
-	    if $where->get !~ /^configure\./;
-	  for my $opt ('tar-v7', 'tar-ustar', 'tar-pax')
-	    {
-	      next if $opt eq $_;
-	      if (exists $options->{$opt})
-		{
-		  error ($where,
-			 "options '$_' and '$opt' are mutually exclusive");
-		  last;
-		}
-	    }
-	}
+        {
+          _option_must_be_from_configure ($_, $where);
+          for my $opt ('tar-v7', 'tar-ustar', 'tar-pax')
+            {
+              next
+                if $opt eq $_ or ! exists $options->{$opt};
+              error ($where,
+                     "options '$_' and '$opt' are mutually exclusive");
+              last;
+            }
+        }
       elsif (/^\d+\.\d+(?:\.\d+)?[a-z]?(?:-[A-Za-z0-9]+)?$/)
-	{
-	  # Got a version number.
-	  if (Automake::Version::check ($VERSION, $&))
-	    {
-	      error ($where, "require Automake $_, but have $VERSION",
-		     uniq_scope => US_GLOBAL);
-	      return 1;
-	    }
-	}
+        {
+          # Got a version number.
+          if (Automake::Version::check ($VERSION, $&))
+            {
+              error ($where, "require Automake $_, but have $VERSION",
+                     uniq_scope => US_GLOBAL);
+              return 1;
+            }
+        }
       elsif (/^(?:--warnings=|-W)(.*)$/)
-	{
-	  my @w = map { { cat => $_, loc => $where} } split (',', $1);
-	  push @warnings, @w;
-	}
-      else
-	{
-	  error ($where, "option '$_' not recognized",
-		 uniq_scope => US_GLOBAL);
-	  return 1;
-	}
+        {
+          my @w = map { { cat => $_, loc => $where} } split (',', $1);
+          push @warnings, @w;
+        }
+      elsif (! _is_valid_easy_option $_)
+        {
+          error ($where, "option '$_' not recognized",
+                 uniq_scope => US_GLOBAL);
+          return 1;
+        }
     }
   # We process warnings here, so that any explicitly-given warning setting
   # will take precedence over warning settings defined implicitly by the
@@ -358,7 +382,7 @@ sub _process_option_list (\%@)
     {
       msg 'unsupported', $w->{'loc'},
           "unknown warning category '$w->{'cat'}'"
-	if switch_warning $w->{cat};
+        if switch_warning $w->{cat};
     }
   return 0;
 }

@@ -921,6 +921,7 @@ silentcxx.test \
 silentcxx-gcc.test \
 silentf77.test \
 silentf90.test \
+silent-amopts.test \
 silent-many-gcc.test \
 silent-many-generic.test \
 silent-nowarn.test \
