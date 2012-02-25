@@ -8420,24 +8420,35 @@ nodist_foo_SOURCES = do-not-distribute.c
 
 Occasionally it is useful to be able to change the distribution before
 it is packaged up.  If the @code{dist-hook} rule exists, it is run
-after the distribution directory is filled, but before the actual tar
-(or shar) file is created.  One way to use this is for distributing
-files in subdirectories for which a new @file{Makefile.am} is overkill:
-
-@example
-dist-hook:
-        mkdir $(distdir)/random
-        cp -p $(srcdir)/random/a1 $(srcdir)/random/a2 $(distdir)/random
-@end example
-
-Another way to use this is for removing unnecessary files that get
-recursively included by specifying a directory in EXTRA_DIST:
+after the distribution directory is filled, but before the actual
+distribution archives are created.  One way to use this is for
+removing unnecessary files that get recursively included by specifying
+a directory in @code{EXTRA_DIST}:
 
 @example
 EXTRA_DIST = doc
-
 dist-hook:
         rm -rf `find $(distdir)/doc -type d -name .svn`
+@end example
+
+@c The caveates described here should be documented in 'disthook.test'.
+@noindent
+Note that the @code{dist-hook} recipe shouldn't assume that the regular
+files in the distribution directory are writable; this might not be the
+case if one is packaging from a read-only source tree, or when a
+@code{make distcheck} is being done.  For similar reasons, the recipe
+shouldn't assume that the subdirectories put into the distribution
+directory as effect of having them listed in @code{EXTRA_DIST} are
+writable.  So, if the @code{dist-hook} recipe wants to modify the
+content of an existing file (or @code{EXTRA_DIST} subdirectory) in the
+distribution directory, it should explicitly to make it writable first:
+
+@example
+EXTRA_DIST = README doc
+dist-hook:
+        chmod u+w $(distdir)/README $(distdir)/doc
+        echo "Distribution date: `date`" >> README
+        rm -f $(distdir)/doc/HACKING
 @end example
 
 @vindex distdir

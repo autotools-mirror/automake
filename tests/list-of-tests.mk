@@ -355,7 +355,7 @@ distcom4.test \
 distcom5.test \
 distcom-subdir.test \
 distdir.test \
-disthook-perms.test \
+disthook.test \
 distlinks.test \
 distlinksbrk.test \
 distname.test \
