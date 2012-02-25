@@ -156,6 +156,8 @@ do_subst = sed \
   -e 's|@GNU_FFLAGS[@]|$(GNU_FFLAGS)|g' \
   -e 's|@GNU_FC[@]|$(GNU_FC)|g' \
   -e 's|@GNU_FCFLAGS[@]|$(GNU_FCFLAGS)|g' \
+  -e 's|@GNU_GCJ[@]|$(GNU_GCJ)|g' \
+  -e 's|@GNU_GCJFLAGS[@]|$(GNU_GCJFLAGS)|g' \
   -e 's|@YACC[@]|$(YACC)|g' \
   -e 's|@LEX[@]|$(LEX)|g' \
   -e 's|@TEX[@]|$(TEX)|g' \
