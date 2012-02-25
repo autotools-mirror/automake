@@ -56,6 +56,8 @@ include inst-vars.am
 ## (among them, TAP).
 
 am__recheck_rx = ^[ 	]*:recheck:[ 	]*
+am__global_test_result_rx = ^[ 	]*:global-test-result:[ 	]*
+am__copy_in_global_log_rx = ^[ 	]*:copy-in-global-log:[ 	]*
 
 # A command that, given a newline-separated list of test names on the
 # standard input, print the name of the tests that are to be re-run
@@ -106,9 +108,59 @@ am__list_recheck_tests = $(AWK) '{ \
   close ($$0 ".log"); \
 }'
 
-# Restructured Text title and section.
+# A command that, given a newline-separated list of test names on the
+# standard input, create the global log from their .trs and .log files.
+am__create_global_log = $(AWK) ' \
+function fatal(msg) \
+{ \
+  print "fatal: making $@: " msg | "cat >&2"; \
+  exit 1; \
+} \
+function rst_section(header) \
+{ \
+  print header; \
+  len = length(header); \
+  for (i = 1; i <= len; i = i + 1) \
+    printf "="; \
+  printf "\n\n"; \
+} \
+{ \
+## By default, we assume the test log is to be copied in the global log,
+## and that its result is simply "RUN" (i.e., we still don't know what
+## it outcome was, but we know that at least it has run).
+  copy_in_global_log = 1; \
+  global_test_result = "RUN"; \
+  while ((rc = (getline line < ($$0 ".trs"))) != 0) \
+    { \
+      if (rc < 0) \
+         fatal("failed to read from " $$0 ".trs"); \
+      if (line ~ /$(am__global_test_result_rx)/) \
+        { \
+          sub("$(am__global_test_result_rx)", "", line); \
+          sub("[ 	]*$$", "", line); \
+          global_test_result = line; \
+        } \
+      else if (line ~ /$(am__copy_in_global_log_rx)[nN][oO]/) \
+        copy_in_global_log = 0; \
+    }; \
+  if (copy_in_global_log) \
+    { \
+      rst_section(global_test_result ": " $$0); \
+      while ((rc = (getline line < ($$0 ".log"))) != 0) \
+      { \
+        if (rc < 0) \
+          fatal("failed to read from " $$0 ".log"); \
+        print line; \
+      }; \
+    }; \
+## Don't leak open file descriptors, as this could cause serious
+## problems when there are many tests (yes, even on Linux).
+  close ($$0 ".trs"); \
+  close ($$0 ".log"); \
+}'
+
+# Restructured Text title.
 am__rst_title = { sed 's/.*/   &   /;h;s/./=/g;p;x;s/ *$$//;p;g' && echo; }
-am__rst_section = { sed 'p;s/./=/g;' && echo; }
 
 # Solaris 10 'make', and several other traditional 'make' implementations,
 # pass "-e" to $(SHELL), and POSIX 2008 even requires this.  Work around it
@@ -295,29 +347,9 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	  echo;								\
 	  echo ".. contents:: :depth: 2";				\
 	  echo;								\
-	  for i in $$bases; do						\
-## FIXME: one fork per test -- this is horrendously inefficient!
-	    if grep "^$$ws*:copy-in-global-log:$$ws*no$$ws*$$" $$i.trs \
-	         >/dev/null; then continue; \
-	    fi; \
-## Get the declared "global result" of the test.
-## FIXME: yet another one fork per test here!
-	    glob_res=`sed -n -e "s/$$ws*$$//" \
-	                     -e "s/^$$ws*:global-test-result:$$ws*//p" \
-		        $$i.trs`; \
-## If no global result is explicitly declared, we'll merely mark the
-## test as "RUN" in the global test log.
-	    test -n "$$glob_res" || glob_res=RUN; \
-## Write the name and result of the test as an RST section title.
-	    echo "$$glob_res: $$i" | $(am__rst_section); \
-## If we should have remade any unreadable '.log', above.
-	    if test ! -r $$i.log; then \
-	      echo "fatal: making $@: $$i.log is unreadable" >&2; \
-	      exit 1; \
-	    fi; \
-	    cat $$i.log; echo; \
-	  done;	\
-	} >$(TEST_SUITE_LOG).tmp;					\
+	  for b in $$bases; do echo $$b; done				\
+	    | $(am__create_global_log);					\
+	} >$(TEST_SUITE_LOG).tmp || exit 1;				\
 	mv $(TEST_SUITE_LOG).tmp $(TEST_SUITE_LOG);			\
 ## Emit the test summary on the console.
 	if $$success; then						\
