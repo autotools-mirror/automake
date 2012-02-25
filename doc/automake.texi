@@ -374,7 +374,7 @@ Frequently Asked Questions about Automake
 * maintainer-mode::             missing and AM_MAINTAINER_MODE
 * Wildcards::                   Why doesn't Automake support wildcards?
 * Limitations on File Names::   Limitations on source and installed file names
-* distcleancheck::              Files left in build directory after distclean
+* Errors with distclean::       Files left in build directory after distclean
 * Flag Variables Ordering::     CFLAGS vs.@: AM_CFLAGS vs.@: mumble_CFLAGS
 * Renamed Objects::             Why are object files sometimes renamed?
 * Per-Object Flags::            How to simulate per-object flags?
@@ -8468,20 +8468,32 @@ dist} was run, not to any sub-packages involved.
 @section Checking the Distribution
 
 @cindex @samp{make distcheck}
-@cindex @samp{make distcleancheck}
-@vindex distcleancheck_listfiles
-@cindex @samp{make distuninstallcheck}
-@vindex distuninstallcheck_listfiles
-
 @trindex distcheck
-Automake also generates a @code{distcheck} rule that can be of help to
-ensure that a given distribution will actually work.  @code{distcheck}
-makes a distribution, then tries to do a @code{VPATH} build
-(@pxref{VPATH Builds}), run the test suite, and finally make another
-tarball to ensure the distribution is self-contained.
+Automake also generates a @code{distcheck} rule that can be of help
+to ensure that a given distribution will actually work.  Simplifying
+a bit, we can say this rule first makes a distribution, and then,
+@emph{operating from it}, takes the following steps:
+@itemize
+@item
+tries to do a @code{VPATH} build (@pxref{VPATH Builds}), with the
+@code{srcdir} and all its content made @emph{read-only};
+@item
+runs the test suite (with @command{make check}) on this fresh build;
+@item
+installs the package in a temporary directory (with @command{make
+install}), and tries runs the test suite on the resulting installation
+(with @command{make installcheck});
+@item
+checks that the package can be correctly uninstalled (by @command{make
+uninstall}) and cleaned (by @code{make distclean});
+@item
+finally, makes another tarball to ensure the distribution is
+self-contained.
+@end itemize
 
 @vindex AM_DISTCHECK_CONFIGURE_FLAGS
 @vindex DISTCHECK_CONFIGURE_FLAGS
+@subheading DISTCHECK_CONFIGURE_FLAGS
 Building the package involves running @samp{./configure}.  If you need
 to supply additional flags to @command{configure}, define them in the
 @code{AM_DISTCHECK_CONFIGURE_FLAGS} variable in your top-level
@@ -8505,6 +8517,7 @@ installcheck} was wrongly assuming it could blindly test "@command{m4}",
 rather than the just-installed "@command{gm4}".
 
 @trindex distcheck-hook
+@subheading distcheck-hook
 If the @code{distcheck-hook} rule is defined in your top-level
 @file{Makefile.am}, then it will be invoked by @code{distcheck} after
 the new distribution has been unpacked, but before the unpacked copy
@@ -8517,9 +8530,12 @@ are not honored in a subpackage @file{Makefile.am}, but the flags from
 @code{AM_DISTCHECK_CONFIGURE_FLAGS} and @code{DISTCHECK_CONFIGURE_FLAGS}
 are passed down to the @command{configure} script of the subpackage.
 
+@cindex @samp{make distcleancheck}
 @trindex distcleancheck
 @vindex DISTCLEANFILES
 @vindex distcleancheck_listfiles
+
+@subheading distcleancheck
 Speaking of potential distribution errors, @code{distcheck} also
 ensures that the @code{distclean} rule actually removes all built
 files.  This is done by running @samp{make distcleancheck} at the end of
@@ -8557,9 +8573,14 @@ your Makefiles cause some distributed files to be rebuilt when the user
 build the package.  (Think about the user missing the tool required to
 build the file; or if the required tool is built by your package,
 consider the cross-compilation case where it can't be run.)  There is
-an entry in the FAQ about this (@pxref{distcleancheck}), make sure you
-read it before playing with @code{distcleancheck_listfiles}.
+an entry in the FAQ about this (@pxref{Errors with distclean}), make
+sure you read it before playing with @code{distcleancheck_listfiles}.
 
+@cindex @samp{make distuninstallcheck}
+@trindex distuninstallcheck
+@vindex distuninstallcheck_listfiles
+
+@subheading distuninstallcheck
 @code{distcheck} also checks that the @code{uninstall} rule works
 properly, both for ordinary and @code{DESTDIR} builds.  It does this
 by invoking @samp{make uninstall}, and then it checks the install tree
@@ -11586,7 +11607,7 @@ lists.
 * maintainer-mode::             missing and AM_MAINTAINER_MODE
 * Wildcards::                   Why doesn't Automake support wildcards?
 * Limitations on File Names::   Limitations on source and installed file names
-* distcleancheck::              Files left in build directory after distclean
+* Errors with distclean::       Files left in build directory after distclean
 * Flag Variables Ordering::     CFLAGS vs.@: AM_CFLAGS vs.@: mumble_CFLAGS
 * Renamed Objects::             Why are object files sometimes renamed?
 * Per-Object Flags::            How to simulate per-object flags?
@@ -11981,13 +12002,14 @@ differ only in case (e.g., @file{makefile} and @file{Makefile}).
 Nowadays it is no longer worth worrying about the 8.3 limits of
 DOS file systems.
 
-@node distcleancheck
-@section Files left in build directory after distclean
+@c FIXME This should probably be moved in the "Checking the Distribution"
+@c FIXME section...
+@node Errors with distclean
+@section Errors with distclean
 @cindex @code{distclean}, diagnostic
 @cindex @samp{make distclean}, diagnostic
 @cindex dependencies and distributed files
 @trindex distclean
-@trindex distcleancheck
 
 This is a diagnostic you might encounter while running @samp{make
 distcheck}.
