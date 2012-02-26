@@ -87,14 +87,28 @@ END
 
 setup_data ()
 {
-  awk "
-    BEGIN {
-      print \"TESTS = \\\\\"
-      for (i = 1; i < $count; i = i + 1)
-        print \"  $deepdir/$tname-\" i \".test \\\\\"
-      print \"  $deepdir/$tname-\" i \".test\"
-    }
-  " > list-of-tests.am || Exit 99
+  # Use perl, not awk, to avoid errors like "awk: string too long"
+  # (seen e.g. with Solaris 10 /usr/bin/awk).
+  count=$count deepdir=$deepdir tname=$tname $PERL -e '
+    use warnings FATAL => "all";
+    use strict;
+    print "TESTS = \\\n";
+    my $i = 0;
+    while (++$i)
+      {
+        print "  $ENV{deepdir}/$ENV{tname}-$i.test";
+        if ($i >= $ENV{count})
+          {
+            print "\n";
+            last;
+          }
+        else
+          {
+            print " \\\n";
+          }
+      }
+  ' > list-of-tests.am || Exit 99
+  sed 20q list-of-tests.am || Exit 99 # For debugging.
   $AUTOMAKE Makefile \
     || framework_failure_ "unexpected automake failure"
   ./config.status Makefile \
