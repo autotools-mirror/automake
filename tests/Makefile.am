@@ -136,6 +136,7 @@ do_subst = sed \
   -e 's|@APIVERSION[@]|$(APIVERSION)|g' \
   -e 's|@PATH_SEPARATOR[@]|$(PATH_SEPARATOR)|g' \
   -e 's|@SHELL[@]|$(SHELL)|g' \
+  -e 's|@AWK[@]|$(AWK)|g' \
   -e 's|@PERL[@]|$(PERL)|g' \
   -e 's|@EGREP[@]|$(EGREP)|g' \
   -e 's|@FGREP[@]|$(FGREP)|g' \
