@@ -30,7 +30,6 @@ pr8365-remake-timing.test \
 lex-subobj-nodep.test \
 remake-am-pr10111.test \
 remake-m4-pr10111.test \
-vala-mix2.test \
 txinfo5.test
 
 include $(srcdir)/parallel-tests.am
