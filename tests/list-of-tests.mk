@@ -1144,6 +1144,7 @@ txinfo33.test \
 txinfo-unrecognized-extension.test \
 transform.test \
 transform2.test \
+transform3.test \
 uninstall-fail.test \
 uninstall-pr9578.test \
 unused.test \
