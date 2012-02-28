@@ -110,17 +110,21 @@ test -n "`echo $CXX`" || AC_MSG_ERROR([C++ compiler not found], [77])
 test -n "`echo $FC`"  || AC_MSG_ERROR([Fortran compiler not found], [77])
 test -n "`echo $F77`" || AC_MSG_ERROR([Fortran 77 compiler not found], [77])
 
-# The SunStudio C++ compiler is unfortunately named 'CC' (yuck!),
-# and this can cause problems with our grepping checks on the
-# output from make.  Avoid these problems by invoking a wrapper
-# script, as filtering the make output proved too fragile.
+# The SunStudio C++ compiler is unfortunately named 'sunCC' (or even just
+# 'CC', yuck!); similarly and the Portland group C++ compiler is named
+# 'pgCC'.  This can cause problems with our grepping checks on the output
+# from make.  Avoid these problems by invoking a wrapper script, as
+# filtering the make output proved too fragile.
 case " $CXX " in
-  *' CC '*|*'/CC '*)
-    AC_MSG_WARN([the C++ compiler '$CXX' seems to be named 'CC'])
+  *'CC '*)
+    AC_MSG_WARN([the C++ compiler '$CXX' name ends with 'CC'])
     AC_MSG_WARN([it will be wrapped with the custom script 'am--cxx'])
     echo '#!/bin/sh' > bin/am--cxx
     echo 'PATH=$saved_PATH; export PATH' >> bin/am--cxx
-    echo "exec $CXX \${1+"\$@"}" >> bin/am--cxx
+    echo "case \$# in" >> bin/am--cxx
+    echo "  0) exec $CXX ;;" >> bin/am--cxx
+    echo "  *) exec $CXX \"\$@\" ;;" >> bin/am--cxx
+    echo "esac" >> bin/am--cxx
     chmod a+x bin/am--cxx
     CXX=am--cxx
 esac
