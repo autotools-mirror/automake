@@ -1158,6 +1158,7 @@ vala4.test \
 vala5.test \
 vala-vpath.test \
 vala-mix.test \
+vala-mix2.test \
 vars.test \
 vars3.test \
 vartar.test \
