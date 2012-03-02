@@ -187,6 +187,7 @@ sc_no_brace_variable_expansions:
 ## Make sure 'rm' is called with '-f'.
 sc_rm_minus_f:
 	@if grep -v '^#' $(ams) $(xtests) \
+	   | grep -v '/spy-rm\.tap:' \
 	   | grep -E '\<rm ([^-]|\-[^f ]*\>)'; \
 	then \
 	  echo "Suspicious 'rm' invocation." 1>&2; \
@@ -282,8 +283,10 @@ sc_AMDEP_TRUE_in_automake_in:
 ## Recursive make invocations should always pass $(AM_MAKEFLAGS)
 ## to $(MAKE), for portability to non-GNU make.
 sc_tests_make_without_am_makeflags:
-	@if grep '^[^#].*(MAKE) ' $(ams) $(srcdir)/automake.in | \
-		grep -v 'AM_MAKEFLAGS'; then \
+	@if grep '^[^#].*(MAKE) ' $(ams) $(srcdir)/automake.in \
+	    | grep -v 'AM_MAKEFLAGS' \
+	    | grep -v '/am/header-vars\.am:.*am--echo.*| $$(MAKE) -f *-'; \
+	then \
 	  echo 'Use $$(MAKE) $$(AM_MAKEFLAGS).' 1>&2; \
 	  exit 1; \
 	fi
@@ -365,7 +368,7 @@ sc_tests_plain_autom4te:
 ## Tests should only use END and EOF for here documents
 ## (so that the next test is effective).
 sc_tests_here_document_format:
-	@if grep '<<' $(xtests) | grep -v 'END' | grep -v 'EOF'; then \
+	@if grep '<<' $(xtests) | grep -Ev '\b(END|EOF)\b|\bstd::cout <<'; then \
 	  echo 'Use here documents with "END" and "EOF" only, for greppability.' 1>&2; \
 	  exit 1; \
 	fi
