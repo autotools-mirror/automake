@@ -3,8 +3,8 @@
 ## Makefile for Automake.
 
 # Copyright (C) 1995, 1996, 1997, 1998, 1999, 2001, 2002, 2003, 2004,
-# 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation,
-# Inc.
+# 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 Free Software
+# Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 ## automake (run in doc, tests, and in the rebuild rules.)
 ## `.' goes before doc and tests, because the latter two directories
 ## run aclocal and automake.
-SUBDIRS = lib . doc m4 tests
+SUBDIRS = lib . contrib doc m4 tests
 
 bin_SCRIPTS = automake aclocal
 
@@ -91,17 +91,15 @@ do_subst = sed \
 automake: automake.in
 aclocal: aclocal.in
 automake aclocal: Makefile
-	rm -f $@ $@.tmp
-	$(do_subst) $(srcdir)/$@.in >$@.tmp
-	chmod +x $@.tmp
-	chmod a-w $@.tmp
-	mv -f $@.tmp $@
+	$(AM_V_at)rm -f $@ $@-t
+	$(AM_V_GEN)$(do_subst) $(srcdir)/$@.in >$@-t
+	$(AM_V_at)chmod a+x,a-w $@-t && mv -f $@-t $@
 
 ## The master location for INSTALL is lib/INSTALL.
 ## This is where `make fetch' will install new versions.
 ## Make sure we also update this copy.
 INSTALL: lib/INSTALL
-	cp $(srcdir)/lib/INSTALL $@
+	$(AM_V_GEN)cp $(srcdir)/lib/INSTALL $@
 
 ################################################################
 ##
@@ -110,7 +108,8 @@ INSTALL: lib/INSTALL
 ##
 
 gitlog_to_changelog_command = $(PERL) $(srcdir)/lib/gitlog-to-changelog
-gitlog_to_changelog_options = --since='2011-12-28 00:00:00'
+gitlog_to_changelog_options = --since='2011-12-28 00:00:00' \
+                              --no-cluster --format '%s%n%n%b'
 
 # Automatic generation of the ChangeLog from git history.
 #
@@ -194,9 +193,16 @@ sc_unquoted_DESTDIR \
 sc_tabs_in_texi \
 sc_at_in_texi
 
-.PHONY: $(syntax_check_rules)
 $(syntax_check_rules): automake aclocal
 maintainer-check: $(syntax_check_rules)
+.PHONY: maintainer-check $(syntax_check_rules)
+
+## Check that the list of tests given in the Makefile is equal to the
+## list of all test scripts in the Automake testsuite.
+.PHONY: maintainer-check-list-of-tests
+maintainer-check-list-of-tests:
+	$(am__cd) tests && $(MAKE) $(AM_MAKEFLAGS) $@
+maintainer-check: maintainer-check-list-of-tests
 
 ## Look for test whose names can cause spurious failures when used as
 ## first argument to AC_INIT (chiefly because they might contain an
@@ -277,8 +283,8 @@ sc_diff_aclocal_in_aclocal:
 
 ## Syntax check with default Perl (on my machine, Perl 5).
 sc_perl_syntax:
-	perllibdir="./lib$(PATH_SEPARATOR)$(srcdir)/lib" $(PERL) -c -w automake
-	perllibdir="./lib$(PATH_SEPARATOR)$(srcdir)/lib" $(PERL) -c -w aclocal
+	@perllibdir="./lib$(PATH_SEPARATOR)$(srcdir)/lib" $(PERL) -c -w automake
+	@perllibdir="./lib$(PATH_SEPARATOR)$(srcdir)/lib" $(PERL) -c -w aclocal
 
 ## expect no instances of '${...}'.  However, $${...} is ok, since that
 ## is a shell construct, not a Makefile construct.
@@ -391,7 +397,8 @@ sc_AMDEP_TRUE_in_automake_in:
 	  exit 1; \
 	fi
 
-## Tests should never call make directly.
+## Recursive make invocations should always pass $(AM_MAKEFLAGS)
+## to $(MAKE), for portability to non-GNU make.
 sc_tests_make_without_am_makeflags:
 	@if grep '^[^#].*(MAKE) ' $(srcdir)/lib/am/*.am $(srcdir)/automake.in |\
 		grep -v 'AM_MAKEFLAGS'; then \
@@ -401,7 +408,7 @@ sc_tests_make_without_am_makeflags:
 
 ## Tests should never call make directly.
 sc_tests_plain_make:
-	@if grep -v '^#' $(srcdir)/tests/*.test | grep ':[	]*make'; then \
+	@if grep -v '^#' $(srcdir)/tests/*.test | $(EGREP) ':[ 	]*make( |$$)'; then \
 	  echo 'Do not run "make" in the above tests.  Use "$$MAKE" instead.' 1>&2; \
 	  exit 1; \
 	fi
@@ -600,50 +607,66 @@ sc_at_in_texi:
 	  exit 1; \
 	fi
 
+## Tagging and/or uploading stable and beta releases.
 
-git-dist: maintainer-check
-## Make sure the NEWS file is up-to-date.
-	@if sed 1q $(srcdir)/NEWS | grep -e "$(VERSION)" > /dev/null; then :; else \
-	  echo "NEWS not updated; not releasing" 1>&2; \
-	  exit 1;				\
-	fi
-## Build the distribution.  We expect the developer to have already run
-## "make check" and "make distcheck" on his own (as required in the
-## HACKING file, section "Release procedure").
-	$(MAKE) $(AM_MAKEFLAGS) dist
-## Finally, if anything was successful, commit the last changes and tag
-## the release in the repository.  We don't use RCS keywords so it's OK
-## to distribute the files before they were committed.
-	cd $(srcdir) && git commit -a -s && \
-	   git tag -s "v$(VERSION)" -m "Release $(VERSION)"
+GIT = git
 
-git-release: git-dist
-	case $(VERSION) in \
-	  *[a-z]) dest=alpha;; \
-	  *)      dest=ftp;; \
+version_rx = ^[1-9][0-9]*\.[0-9][0-9]*(\.[0-9][0-9]*)?
+stable_version_rx = $(version_rx)$$
+beta_version_rx = $(version_rx)[bdfhjlnprtvxz]$$
+match_version = echo "$(VERSION)" | $(EGREP) >/dev/null
+
+## Check that we don't have uncommitted or unstaged changes.
+## TODO: Maybe the git suite already offers a shortcut to verify if the
+## TODO: working directory is "clean" or not?  If yes, use that instead
+## TODO: of duplicating the logic here.
+git_must_have_clean_workdir = \
+  $(GIT) rev-parse --verify HEAD >/dev/null \
+    && $(GIT) update-index -q --refresh \
+    && $(GIT) diff-files --quiet \
+    && $(GIT) diff-index --quiet --cached HEAD \
+    || fatal "you have uncommitted or unstaged changes"
+
+determine_release_type = \
+  if $(match_version) '$(stable_version_rx)'; then \
+    release_type='Release' dest=ftp; \
+  elif $(match_version) '$(beta_version_rx)'; then \
+    release_type='Beta release' dest=alpha; \
+  else \
+    fatal "invalid version '$(VERSION)' for a release"; \
+  fi
+
+git-tag-release: maintainer-check
+	@set -e; set -u; \
+	fatal () { echo "$@: $$*; not tagging" >&2; exit 1; }; \
+	case '$(AM_TAG_DRYRUN)' in \
+	  ""|[nN]|[nN]o|NO) run="";; \
+	  *) run="echo Running:";; \
 	esac; \
-	$(srcdir)/lib/gnupload $(GNUPLOADFLAGS) \
-	  --to $$dest.gnu.org:automake $(DIST_ARCHIVES)
+	$(determine_release_type); \
+	$(git_must_have_clean_workdir); \
+## Make sure the NEWS file is up-to-date.
+	sed 1q $(srcdir)/NEWS | grep '$(VERSION)' >/dev/null \
+	  || fatal "NEWS not updated"; \
+## If all was successful, tag the release in the local repository.
+	$$run $(GIT) tag -s "v$(VERSION)" -m "$$release_type $(VERSION)"
 
-git-diff:
-	thisver="v$(VERSION)"; \
-	if test -z "$$OLDVERSION"; then \
-	  prevno=`echo "$(VERSION)" - 0.01 | bc | sed 's/^\./0./'`; \
-	else prevno="$$OLDVERSION"; fi; \
-	prevver=v$$prevno; \
-	git diff $$prevver..$$thisver $(PACKAGE) \
-	    > $(PACKAGE)-$$prevno-$(VERSION).diff
+git-upload-release:
+	@set -e; set -u; \
+	fatal () { echo "$@: $$*; not releasing" >&2; exit 1; }; \
+	$(determine_release_type); \
+	dest=$$dest.gnu.org:automake; \
+	$(git_must_have_clean_workdir); \
+## Check that we are releasing from a valid tag.
+	tag=`$(GIT) describe` \
+	  && case $$tag in "v$(VERSION)") true;; *) false;; esac \
+	  || fatal "you can only create a release from a tagged version"; \
+## Build and upload the distribution tarball(s).
+	$(MAKE) $(AM_MAKEFLAGS) dist || exit 1; \
+	echo Will upload to $$dest: $(DIST_ARCHIVES); \
+	$(srcdir)/lib/gnupload $(GNUPLOADFLAGS) --to $$dest $(DIST_ARCHIVES)
 
-## Check our path lengths.
-path-check: distdir
-	(cd $(distdir) && \
-## FIXME there's got to be a better way!  pathchk should take the list
-## of files on stdin, at least.
-	  find . -print | xargs pathchk -p); \
-	  estatus=$$?; \
-	  find $(distdir) -type d '!' -perm -200 -exec chmod u+w {} ';'; \
-	  rm -rf $(distdir); \
-	  exit $$estatus
+.PHONY: git-upload-release git-tag-release
 
 ## Visually comparing differences between the Makefile.in files in
 ## automake's own build system as generated in two different branches
@@ -720,17 +743,17 @@ WGET_SV_CVS = $(WGET) http://savannah.gnu.org/cgi-bin/viewcvs/~checkout~/
 WGET_SV_GIT_CF = $(WGET) 'http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;hb=HEAD;f='
 WGET_SV_GIT_AC = $(WGET) 'http://git.savannah.gnu.org/gitweb/?p=autoconf.git;a=blob_plain;hb=HEAD;f='
 WGET_SV_GIT_GL = $(WGET) 'http://git.savannah.gnu.org/gitweb/?p=gnulib.git;a=blob_plain;hb=HEAD;f='
-WGET_GCC = $(WGET) 'http://gcc.gnu.org/viewcvs/*checkout*/trunk/'
 
 ## Files that we fetch and which we compare against.
-## FIXME should be a lot more here
+## The 'lib/COPYING' file must still be synced by hand.
 FETCHFILES = \
 INSTALL \
-config-ml.in \
 config.guess \
 config.sub \
-symlink-tree \
-texinfo.tex
+gnupload \
+gitlog-to-changelog \
+texinfo.tex \
+update-copyright
 
 ## Fetch the latest versions of files we care about.
 fetch:
@@ -742,9 +765,9 @@ fetch:
 	$(WGET_SV_GIT_CF)config.sub -O config.sub && \
 	$(WGET_SV_CVS)texinfo/texinfo/doc/texinfo.tex -O texinfo.tex && \
 	$(WGET_SV_GIT_GL)doc/INSTALL -O INSTALL && \
-	$(WGET_SV_GIT_GL)build-aux/gitlog-to-changelog -O gitlog-to-changelog && \
-	$(WGET_GCC)config-ml.in -O config-ml.in && \
-	$(WGET_GCC)symlink-tree -O symlink-tree)
+	$(WGET_SV_GIT_GL)build-aux/gnupload -O gnupload && \
+	$(WGET_SV_GIT_GL)build-aux/update-copyright -O update-copyright && \
+	$(WGET_SV_GIT_GL)build-aux/gitlog-to-changelog -O gitlog-to-changelog)
 ## Don't exit after test because we want to give as many errors as
 ## possible.
 	@stat=0; for file in $(FETCHFILES); do \
@@ -759,12 +782,14 @@ fetch:
 	test $$stat = 0 || \
 	  echo "See Fetchdir/update.patch for a log of the changes."; \
 	exit $$stat
+.PHONY: fetch
 
 ## Generate release statistics, for the table in automake.texi.
 ## This has to be run in an up to date build tree, but there must
 ## be no temp files nor unused other files lying around!
 release-stats: ps
-	@am=`wc -l < automake` && \
+	$(AM_V_GEN): && \
+	am=`wc -l < automake` && \
 	acl=`wc -l < aclocal` && \
 	pmfiles="lib/Automake/*.pm" && \
 	if test . != '$(srcdir)'; then pmfiles="$$pmfiles $(srcdir)/lib/Automake/*.pm"; \
@@ -789,3 +814,16 @@ release-stats: ps
 	printf '@item %s @tab %-6s @tab %4d @tab %4d @tab %4d @tab %4d %-4s @tab %4d %-4s @tab %3d @tab %d %-4s\n' \
 	              $$today $(VERSION) $$am    $$acl    $$pm   $$aml "($$amf)" $$m4l "($$m4f)" $$doc $$t "($$tgen)"
 .PHONY: release-stats
+
+update_copyright_env = \
+  UPDATE_COPYRIGHT_FORCE=1 \
+  UPDATE_COPYRIGHT_USE_INTERVALS=2
+
+.PHONY: update-copyright
+update-copyright:
+	$(AM_V_GEN)excluded_re=`echo $(FETCHFILES) \
+	  | sed -e 's|^|lib/|' -e 's| | lib/|g' -e 's, ,|,g'`; \
+	$(GIT) ls-files \
+	  | grep -Ev '/(COPYING|INSTALL)' \
+	  | grep -Ev "^($$excluded_re)$$" \
+	  | $(update_copyright_env) xargs $(srcdir)/lib/$@

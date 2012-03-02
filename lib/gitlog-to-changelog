@@ -3,13 +3,13 @@ eval '(exit $?0)' && eval 'exec perl -wS "$0" ${1+"$@"}'
     if 0;
 # Convert git log output to ChangeLog format.
 
-my $VERSION = '2011-12-24 18:51'; # UTC
+my $VERSION = '2012-01-18 07:50'; # UTC
 # The definition above must lie within the first 8 lines in order
 # for the Emacs time-stamp write hook (at end) to update it.
 # If you change this file with Emacs, please let the write hook
 # do its job.  Otherwise, update this string manually.
 
-# Copyright (C) 2008-2011 Free Software Foundation, Inc.
+# Copyright (C) 2008-2012 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ sub usage ($)
   my $STREAM = ($exit_code == 0 ? *STDOUT : *STDERR);
   if ($exit_code != 0)
     {
-      print $STREAM "Try `$ME --help' for more information.\n";
+      print $STREAM "Try '$ME --help' for more information.\n";
     }
   else
     {
@@ -64,6 +64,10 @@ OPTIONS:
                   makes a change to SHA1's commit log text or metadata.
    --append-dot append a dot to the first line of each commit message if
                   there is no other punctuation or blank at the end.
+   --no-cluster never cluster commit messages under the same date/author
+                  header; the default is to cluster adjacent commit messages
+                  if their headers are the same and neither commit message
+                  contains multiple paragraphs.
    --since=DATE convert only the logs since DATE;
                   the default is to convert all log entries.
    --format=FMT set format string for commit subject and body;
@@ -77,6 +81,21 @@ EXAMPLE:
 
   $ME --since=2008-01-01 > ChangeLog
   $ME -- -n 5 foo > last-5-commits-to-branch-foo
+
+SPECIAL SYNTAX:
+
+The following types of strings are interpreted specially when they appear
+at the beginning of a log message line.  They are not copied to the output.
+
+  Copyright-paperwork-exempt: Yes
+    Append the "(tiny change)" notation to the usual "date name email"
+    ChangeLog header to mark a change that does not require a copyright
+    assignment.
+  Co-authored-by: Joe User <user\@example.com>
+    List the specified name and email address on a second
+    ChangeLog header, denoting a co-author.
+  Signed-off-by: Joe User <user\@example.com>
+    These lines are simply elided.
 
 In a FILE specified via --amend, comment lines (starting with "#") are ignored.
 FILE must consist of <SHA,CODE+> pairs where SHA is a 40-byte SHA1 (alone on
@@ -93,7 +112,7 @@ s/all tile types/all file types/
 1379ed974f1fa39b12e2ffab18b3f7a607082202
 # Due to a bug in vc-dwim, I mis-attributed a patch by Paul to myself.
 # Change the author to be Paul.  Note the escaped "@":
-s,Jim .*>,Paul Eggert <eggert\@cs.ucla.edu>,
+s,Jim .*>,Paul Eggert <eggert\\\@cs.ucla.edu>,
 
 EOF
     }
@@ -175,6 +194,7 @@ sub parse_amend_file($)
   my $format_string = '%s%n%b%n';
   my $amend_file;
   my $append_dot = 0;
+  my $cluster = 1;
   GetOptions
     (
      help => sub { usage 0 },
@@ -183,6 +203,7 @@ sub parse_amend_file($)
      'format=s' => \$format_string,
      'amend=s' => \$amend_file,
      'append-dot' => \$append_dot,
+     'cluster!' => \$cluster,
     ) or usage 1;
 
 
@@ -196,7 +217,7 @@ sub parse_amend_file($)
   my @cmd = (qw (git log --log-size),
              '--pretty=format:%H:%ct  %an  <%ae>%n%n'.$format_string, @ARGV);
   open PIPE, '-|', @cmd
-    or die ("$ME: failed to run `". quoted_cmd (@cmd) ."': $!\n"
+    or die ("$ME: failed to run '". quoted_cmd (@cmd) ."': $!\n"
             . "(Is your Git too old?  Version 1.5.1 or later is required.)\n");
 
   my $prev_multi_paragraph;
@@ -249,12 +270,21 @@ sub parse_amend_file($)
       $author_line =~ /^(\d+)  (.*>)$/
         or die "$ME:$.: Invalid line "
           . "(expected date/author/email):\n$author_line\n";
-      my $date_line = sprintf "%s  $2\n", strftime ("%F", localtime ($1));
+
+      # Format 'Copyright-paperwork-exempt: Yes' as a standard ChangeLog
+      # `(tiny change)' annotation.
+      my $tiny = (grep (/^Copyright-paperwork-exempt:\s+[Yy]es$/, @line)
+                  ? '  (tiny change)' : '');
+
+      my $date_line = sprintf "%s  %s$tiny\n",
+        strftime ("%F", localtime ($1)), $2;
 
       my @coauthors = grep /^Co-authored-by:.*$/, @line;
-      # Omit "Co-authored-by..." and "Signed-off-by..." lines.
-      @line = grep !/^Signed-off-by: .*>$/, @line;
-      @line = grep !/^Co-authored-by: /, @line;
+      # Omit meta-data lines we've already interpreted.
+      @line = grep !/^(?:Signed-off-by:[ ].*>$
+                       |Co-authored-by:[ ]
+                       |Copyright-paperwork-exempt:[ ]
+                       )/x, @line;
 
       # Remove leading and trailing blank lines.
       if (@line)
@@ -278,13 +308,15 @@ sub parse_amend_file($)
               . substr ($_, 5) . "\n";
         }
 
-      # If this header would be different from the previous date/name/email/
-      # coauthors header, or if this or the previous entry consists of two
-      # or more paragraphs, then print the header.
-      if ($date_line ne $prev_date_line
-          or "@coauthors" ne "@prev_coauthors"
-          or $multi_paragraph
-          or $prev_multi_paragraph)
+      # If clustering of commit messages has been disabled, if this header
+      # would be different from the previous date/name/email/coauthors header,
+      # or if this or the previous entry consists of two or more paragraphs,
+      # then print the header.
+      if ( ! $cluster
+          || $date_line ne $prev_date_line
+          || "@coauthors" ne "@prev_coauthors"
+          || $multi_paragraph
+          || $prev_multi_paragraph)
         {
           $prev_date_line eq ''
             or print "\n";

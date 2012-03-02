@@ -7,8 +7,8 @@ eval 'case $# in 0) exec @PERL@ -S "$0";; *) exec @PERL@ -S "$0" "$@";; esac'
 
 # automake - create Makefile.in from Makefile.am
 # Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002,
-# 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software
-# Foundation, Inc.
+# 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 Free
+# Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -2681,6 +2681,7 @@ sub handle_programs
 		  "use `${xname}_LDADD', not `${xname}_LIBADD'");
 
       set_seen ($xname . '_DEPENDENCIES');
+      set_seen ('EXTRA_' . $xname . '_DEPENDENCIES');
       set_seen ($xname . '_LDFLAGS');
 
       # Determine program to use for link.
@@ -2792,6 +2793,7 @@ sub handle_libraries
 
       # Make sure we at look at this.
       set_seen ($xlib . '_DEPENDENCIES');
+      set_seen ('EXTRA_' . $xlib . '_DEPENDENCIES');
 
       &handle_source_transform ($xlib, $onelib, $obj, $where,
 				NONLIBTOOL => 1, LIBTOOL => 0);
@@ -2978,6 +2980,7 @@ sub handle_ltlibraries
       # Make sure we look at these.
       set_seen ($xlib . '_LDFLAGS');
       set_seen ($xlib . '_DEPENDENCIES');
+      set_seen ('EXTRA_' . $xlib . '_DEPENDENCIES');
 
       # Generate support for conditional object inclusion in
       # libraries.
@@ -3105,7 +3108,7 @@ sub handle_scripts
     # useful to sometimes distribute scripts verbatim.  This happens
     # e.g. in Automake itself.
     &am_install_var ('-candist', 'scripts', 'SCRIPTS',
-		     'bin', 'sbin', 'libexec', 'pkgdata',
+		     'bin', 'sbin', 'libexec', 'pkglibexec', 'pkgdata',
 		     'noinst', 'check');
 }
 
@@ -4972,9 +4975,11 @@ sub handle_tests
   if (var ('TESTS'))
     {
       push (@check_tests, 'check-TESTS');
+      my $check_deps = "@check";
       $output_rules .= &file_contents ('check', new Automake::Location,
 				       COLOR => !! option 'color-tests',
-				       PARALLEL_TESTS => !! option 'parallel-tests');
+				       PARALLEL_TESTS => !! option 'parallel-tests',
+                                       CHECK_DEPS => $check_deps);
 
       # Tests that are known programs should have $(EXEEXT) appended.
       # For matching purposes, we need to adjust XFAIL_TESTS as well.
@@ -4985,7 +4990,6 @@ sub handle_tests
       if (option 'parallel-tests')
         {
 	  define_variable ('TEST_SUITE_LOG', 'test-suite.log', INTERNAL);
-	  define_variable ('TEST_SUITE_HTML', '$(TEST_SUITE_LOG:.log=.html)', INTERNAL);
 	  my $suff = '.test';
 	  my $at_exeext = '';
 	  my $handle_exeext = exists $configure_vars{'EXEEXT'};
@@ -5101,7 +5105,6 @@ sub handle_tests
 	  $clean_files{'$(TEST_LOGS_TMP)'} = MOSTLY_CLEAN;
 	  $clean_files{'$(TEST_LOGS)'} = MOSTLY_CLEAN;
 	  $clean_files{'$(TEST_SUITE_LOG)'} = MOSTLY_CLEAN;
-	  $clean_files{'$(TEST_SUITE_HTML)'} = MOSTLY_CLEAN;
 	}
     }
 }
@@ -5267,10 +5270,11 @@ sub scan_autoconf_config_files ($$)
       # Handle $local:$input syntax.
       my ($local, @rest) = split (/:/);
       @rest = ("$local.in",) unless @rest;
-      msg ('portability', $where,
-	  "Omit leading `./' from config file names such as `$local',"
-	  . "\nas not all make implementations treat `file' and `./file' equally.")
-	if ($local =~ /^\.\//);
+      # Keep in sync with 'conffile-leading-dot.test'.
+      msg ('unsupported', $where,
+           "omit leading './' from config file names such as '$local';"
+           . "\nremake rules might be subtly broken otherwise")
+        if ($local =~ /^\.\//);
       my $input = locate_am @rest;
       if ($input)
 	{
@@ -6032,20 +6036,19 @@ sub lang_vala_finish_target ($$)
   my ($self, $name) = @_;
 
   my $derived = canonicalize ($name);
-  my $varname = $derived . '_SOURCES';
-  my $var = var ($varname);
+  my $var = var "${derived}_SOURCES";
+  return unless $var;
 
-  if ($var)
+  my @vala_sources = grep { /\.vala$/ } ($var->value_as_list_recursive);
+
+  foreach my $vala_file (@vala_sources)
     {
-      foreach my $file ($var->value_as_list_recursive)
-        {
-          $output_rules .= "\$(srcdir)/$file: \$(srcdir)/${derived}_vala.stamp\n"
-            . "\t\@if test -f \$@; then :; else rm -f \$(srcdir)/${derived}_vala.stamp; fi\n"
-            . "\t\@if test -f \$@; then :; else \\\n"
-            . "\t  \$(am__cd) \$(srcdir) && \$(MAKE) \$(AM_MAKEFLAGS) ${derived}_vala.stamp; \\\n"
-	    . "\tfi\n"
-            if $file =~ s/(.*)\.vala$/$1.c/;
-        }
+      (my $c_file = $vala_file) =~ s/(.*)\.vala$/$1.c/;
+      $output_rules .= "\$(srcdir)/$c_file: \$(srcdir)/${derived}_vala.stamp\n"
+        . "\t\@if test -f \$@; then :; else rm -f \$(srcdir)/${derived}_vala.stamp; fi\n"
+        . "\t\@if test -f \$@; then :; else \\\n"
+        . "\t  \$(MAKE) \$(AM_MAKEFLAGS) \$(srcdir)/${derived}_vala.stamp; \\\n"
+        . "\tfi\n"
     }
 
   # Add rebuild rules for generated header and vapi files
@@ -6062,7 +6065,7 @@ sub lang_vala_finish_target ($$)
 	      $output_rules .= "\$(srcdir)/$headerfile: \$(srcdir)/${derived}_vala.stamp\n"
 		. "\t\@if test -f \$@; then :; else rm -f \$(srcdir)/${derived}_vala.stamp; fi\n"
 		. "\t\@if test -f \$@; then :; else \\\n"
-		. "\t  \$(am__cd) \$(srcdir) && \$(MAKE) \$(AM_MAKEFLAGS) ${derived}_vala.stamp; \\\n"
+		. "\t  \$(MAKE) \$(AM_MAKEFLAGS) \$(srcdir)/${derived}_vala.stamp; \\\n"
 		. "\tfi\n";
 
 	      # valac is not used when building from dist tarballs
@@ -6095,9 +6098,16 @@ sub lang_vala_finish_target ($$)
   my $silent = silent_flag ();
 
   $output_rules .=
-    "${derived}_vala.stamp: \$(${derived}_SOURCES)\n".
-    "\t${verbose}${compile} \$(${derived}_SOURCES)\n".
-    "\t${silent}touch \$@\n";
+    "\$(srcdir)/${derived}_vala.stamp: @vala_sources\n".
+# Since the C files generated from the vala sources depend on the
+# ${derived}_vala.stamp file, we must ensure its timestamp is older than
+# those of the C files generated by the valac invocation below (this is
+# especially important on systems with sub-second timestamp resolution).
+# Thus we need to create the stamp file *before* invoking valac, and to
+# move it to its final location only after valac has been invoked.
+    "\t${silent}rm -f \$\@ && echo stamp > \$\@-t\n".
+    "\t${verbose}\$(am__cd) \$(srcdir) && $compile @vala_sources\n".
+    "\t${silent}mv -f \$\@-t \$\@\n";
 
   push_dist_common ("${derived}_vala.stamp");
 
@@ -8508,6 +8518,8 @@ sub parse_arguments ()
   my $cli_where = new Automake::Location;
   my %cli_options =
     (
+     'version' => \&version,
+     'help'    => \&usage,
      'libdir=s'	=> \$libdir,
      'gnu'		=> sub { set_strictness ('gnu'); },
      'gnits'		=> sub { set_strictness ('gnits'); },
@@ -8528,32 +8540,9 @@ sub parse_arguments ()
      'Werror'           => sub { parse_warnings 'W', 'error'; },
      'Wno-error'        => sub { parse_warnings 'W', 'no-error'; },
      );
-  use Getopt::Long;
-  Getopt::Long::config ("bundling", "pass_through");
 
-  # See if --version or --help is used.  We want to process these before
-  # anything else because the GNU Coding Standards require us to
-  # `exit 0' after processing these options, and we can't guarantee this
-  # if we treat other options first.  (Handling other options first
-  # could produce error diagnostics, and in this condition it is
-  # confusing if Automake does `exit 0'.)
-  my %cli_options_1st_pass =
-    (
-     'version' => \&version,
-     'help'    => \&usage,
-     # Recognize all other options (and their arguments) but do nothing.
-     map { $_ => sub {} } (keys %cli_options)
-     );
-  my @ARGV_backup = @ARGV;
-  Getopt::Long::GetOptions %cli_options_1st_pass
-    or exit 1;
-  @ARGV = @ARGV_backup;
-
-  # Now *really* process the options.  This time we know that --help
-  # and --version are not present, but we specify them nonetheless so
-  # that ambiguous abbreviation are diagnosed.
-  Getopt::Long::GetOptions %cli_options, 'version' => sub {}, 'help' => sub {}
-    or exit 1;
+  use Automake::Getopt ();
+  Automake::Getopt::parse_options %cli_options;
 
   if (defined $output_directory)
     {
@@ -8566,33 +8555,6 @@ sub parse_arguments ()
     }
 
   return unless @ARGV;
-
-  if ($ARGV[0] =~ /^-./)
-    {
-      my %argopts;
-      for my $k (keys %cli_options)
-	{
-	  if ($k =~ /(.*)=s$/)
-	    {
-	      map { $argopts{(length ($_) == 1)
-			     ? "-$_" : "--$_" } = 1; } (split (/\|/, $1));
-	    }
-	}
-      if ($ARGV[0] eq '--')
-	{
-	  shift @ARGV;
-	}
-      elsif (exists $argopts{$ARGV[0]})
-	{
-	  fatal ("option `$ARGV[0]' requires an argument\n"
-		 . "Try `$0 --help' for more information.");
-	}
-      else
-	{
-	  fatal ("unrecognized option `$ARGV[0]'.\n"
-		 . "Try `$0 --help' for more information.");
-	}
-    }
 
   my $errspec = 0;
   foreach my $arg (@ARGV)

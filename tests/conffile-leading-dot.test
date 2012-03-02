@@ -1,0 +1,62 @@
+#! /bin/sh
+# Copyright (C) 2012 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Automake must complain if AC_CONFIG_FILES is passed something starting
+# with a dot (like "./Makefile"), since the remake rules might be subtly
+# broken in that case.
+
+required=GNUmake
+. ./defs || Exit 1
+
+set -e
+
+cat > configure.in << END
+AC_INIT([$me], [1.0])
+AM_INIT_AUTOMAKE
+AC_CONFIG_FILES([./Makefile])
+AC_CONFIG_FILES([./foo:a.in:b.in:c.in])
+AC_OUTPUT
+END
+
+echo foo = barbarbar > Makefile.am
+
+touch a.in b.in c.in
+
+$ACLOCAL
+
+AUTOMAKE_fails -Wnone -Wunsupported
+grep "^configure\.in:3:.*'\\./Makefile'" stderr
+grep "^configure\.in:3:.* omit leading '\\./'" stderr
+grep "^configure\.in:3:.*remake rules might be subtly broken" stderr
+grep "^configure\.in:4:.*'\\./foo'" stderr
+grep "^configure\.in:4:.* omit leading '\\./'" stderr
+grep "^configure\.in:4:.*remake rules might be subtly broken" stderr
+
+# Check that our warning was actually justified.
+$AUTOCONF
+$AUTOMAKE -Wall -Wno-unsupported
+./configure
+$MAKE
+grep barbarbar Makefile
+# No need to sleep here, configure did that for us already.
+echo foo = bazbazbaz > Makefile.am
+# Check that remake rules do truly break -- otherwise automake is
+# giving a bogus warning.
+$MAKE 2>stderr && { cat stderr >&2 Exit 1; }
+cat stderr >&2
+grep "config\\.status:.*invalid argument.*[\`\"']Makefile[\`\"']" stderr
+
+:

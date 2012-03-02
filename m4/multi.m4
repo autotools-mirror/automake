@@ -1,5 +1,5 @@
 ##                                                          -*- Autoconf -*-
-# Copyright (C) 1998, 1999, 2000, 2001, 2003, 2004, 2005, 2006
+# Copyright (C) 1998, 1999, 2000, 2001, 2003, 2004, 2005, 2006, 2012
 # Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
@@ -12,6 +12,9 @@
 # ---------------------------------------------------
 # Add --enable-multilib to configure.
 AC_DEFUN([AM_ENABLE_MULTILIB],
+[m4_warn([obsolete], [$0 will be removed from Automake core soon.
+Files implementing the "multilib" feature are (and will remain) available
+to the 'contrib/' directory in the Automake distribution.])]dnl
 [# Default to --enable-multilib
 AC_ARG_ENABLE(multilib,
 [  --enable-multilib       build many library versions (default)],

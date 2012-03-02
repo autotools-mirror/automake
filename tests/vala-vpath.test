@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2011 Free Software Foundation, Inc.
+# Copyright (C) 2011, 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,12 +17,10 @@
 # Test to make sure vala support handles from-scratch VPATH builds.
 # See automake bug#8753.
 
-required="valac"
+required="valac GNUmake"
 . ./defs || Exit 1
 
 set -e
-
-mkdir src
 
 cat >> configure.in << 'END'
 AC_CONFIG_SRCDIR([hello.vala])
@@ -31,17 +29,16 @@ AM_PROG_VALAC([0.7])
 AC_OUTPUT
 END
 
-
 cat > Makefile.am <<'END'
 bin_PROGRAMS = foo
+foo_VALAFLAGS = --profile=posix
 foo_SOURCES = hello.vala
 END
 
 cat > hello.vala <<'END'
 void main ()
 {
-  stdout.printf ("foo\n");
-  return 0;
+  stdout.printf ("foofoofoo\n");
 }
 END
 
@@ -53,6 +50,23 @@ mkdir build
 cd build
 ../configure || Exit 77
 $MAKE
+grep foofoofoo ../hello.c
 $MAKE distcheck
+
+# Rebuild rules work also in VPATH builds.
+cat > ../hello.vala <<'END'
+int main ()
+{
+  stdout.printf ("barbarbar\n");
+  return 0;
+}
+END
+
+$MAKE
+grep barbarbar ../hello.c
+
+# Rebuild rules are not uselessly triggered.
+$MAKE -q
+$MAKE -n | grep '\.stamp' && Exit 1
 
 :

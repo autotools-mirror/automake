@@ -1,6 +1,6 @@
 ## automake - create Makefile.in from Makefile.am
 ## Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009,
-## 2010, 2011 Free Software Foundation, Inc.
+## 2010, 2011, 2012 Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -23,10 +23,17 @@ distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
 
 am__remove_distdir = \
-  { test ! -d "$(distdir)" \
-    || { find "$(distdir)" -type d ! -perm -200 -exec chmod u+w {} ';' \
-         && rm -fr "$(distdir)"; }; }
-
+  if test -d "$(distdir)"; then \
+    find "$(distdir)" -type d ! -perm -200 -exec chmod u+w {} ';' \
+      && rm -rf "$(distdir)" \
+## On MSYS (1.0.17) it is not possible to remove a directory that is in
+## use; so, if the first rm fails, we sleep some seconds and retry, to
+## give pending processes some time to exit and "release" the directory
+## before we remove it.  The value of "some seconds" is 5 for the moment,
+## which is mostly an arbitrary value, but seems high enough in practice.
+## See automake bug#10470.
+      || { sleep 5 && rm -rf "$(distdir)"; }; \
+  else :; fi
 endif %?TOPDIR_P%
 
 if %?SUBDIRS%
@@ -229,19 +236,13 @@ endif %?TOPDIR_P%
 ## at the top level do the right thing.  If we're in the topmost
 ## directory, then we use `distdir' instead of `top_distdir'; this lets
 ## us work correctly with an enclosing package.
-##
-## Split the loop for the directory creation and the one for recursion,
-## so that with GNU make -n, only the latter is executed.
 if %?SUBDIRS%
 	@list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
 	  if test "$$subdir" = .; then :; else \
-	    test -d "$(distdir)/$$subdir" \
-	    || $(MKDIR_P) "$(distdir)/$$subdir" \
-	    || exit 1; \
-	  fi; \
-	done
-	@list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
-	  if test "$$subdir" = .; then :; else \
+	    $(am__make_dryrun) \
+	      || test -d "$(distdir)/$$subdir" \
+	      || $(MKDIR_P) "$(distdir)/$$subdir" \
+	      || exit 1; \
 	    dir1=$$subdir; dir2="$(distdir)/$$subdir"; \
 	    $(am__relativize); \
 	    new_distdir=$$reldir; \

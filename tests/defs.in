@@ -509,20 +509,37 @@ old_timestamp=198309271735.59
 # Resolve ties in favor of FILE.
 is_newest ()
 {
-  is_newest_files=`find "$@" -newer "$1"`
+  is_newest_files=`find "$@" -prune -newer "$1"`
   test -z "$is_newest_files"
 }
 
 # using_gmake
 # -----------
 # Return success if $MAKE is GNU make, return failure otherwise.
+# Caches the result for speed reasons.
 using_gmake ()
 {
-  # Use --version AND -v, because SGI Make doesn't fail on --version.
-  # Also grep for GNU because newer versions of FreeBSD make do
-  # not complain about `--version' (they seem to silently ignore it).
-  $MAKE --version -v | grep GNU
+  case $am__using_gmake in
+    yes)
+      return 0;;
+    no)
+      return 1;;
+    '')
+      # Use --version AND -v, because SGI Make doesn't fail on --version.
+      # Also grep for GNU because newer versions of FreeBSD make do
+      # not complain about `--version' (they seem to silently ignore it).
+      if $MAKE --version -v | grep GNU; then
+        am__using_gmake=yes
+        return 0
+      else
+        am__using_gmake=no
+        return 1
+      fi;;
+    *)
+      fatal_ "invalid value for \$am__using_gmake: '$am__using_gmake'";;
+  esac
 }
+am__using_gmake="" # Avoid interferences from the environment.
 
 # AUTOMAKE_run status [options...]
 # --------------------------------
