@@ -752,7 +752,8 @@ config.guess \
 config.sub \
 gnupload \
 gitlog-to-changelog \
-texinfo.tex
+texinfo.tex \
+update-copyright
 
 ## Fetch the latest versions of files we care about.
 fetch:
@@ -765,6 +766,7 @@ fetch:
 	$(WGET_SV_CVS)texinfo/texinfo/doc/texinfo.tex -O texinfo.tex && \
 	$(WGET_SV_GIT_GL)doc/INSTALL -O INSTALL && \
 	$(WGET_SV_GIT_GL)build-aux/gnupload -O gnupload && \
+	$(WGET_SV_GIT_GL)build-aux/update-copyright -O update-copyright && \
 	$(WGET_SV_GIT_GL)build-aux/gitlog-to-changelog -O gitlog-to-changelog)
 ## Don't exit after test because we want to give as many errors as
 ## possible.
@@ -812,3 +814,16 @@ release-stats: ps
 	printf '@item %s @tab %-6s @tab %4d @tab %4d @tab %4d @tab %4d %-4s @tab %4d %-4s @tab %3d @tab %d %-4s\n' \
 	              $$today $(VERSION) $$am    $$acl    $$pm   $$aml "($$amf)" $$m4l "($$m4f)" $$doc $$t "($$tgen)"
 .PHONY: release-stats
+
+update_copyright_env = \
+  UPDATE_COPYRIGHT_FORCE=1 \
+  UPDATE_COPYRIGHT_USE_INTERVALS=2
+
+.PHONY: update-copyright
+update-copyright:
+	$(AM_V_GEN)excluded_re=`echo $(FETCHFILES) \
+	  | sed -e 's|^|lib/|' -e 's| | lib/|g' -e 's, ,|,g'`; \
+	$(GIT) ls-files \
+	  | grep -Ev '/(COPYING|INSTALL)' \
+	  | grep -Ev "^($$excluded_re)$$" \
+	  | $(update_copyright_env) xargs $(srcdir)/lib/$@
