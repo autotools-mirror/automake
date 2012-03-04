@@ -14,9 +14,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package Automake::Item;
+
+use 5.006;
 use strict;
 use Carp;
-
 use Automake::ChannelDefs;
 use Automake::DisjConditions;
 

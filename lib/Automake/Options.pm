@@ -15,6 +15,7 @@
 
 package Automake::Options;
 
+use 5.006;
 use strict;
 use Exporter;
 use Automake::Config;

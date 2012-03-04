@@ -28,7 +28,7 @@ package Automake::Struct;
 
 ## See POD after __END__
 
-use 5.005_03;
+use 5.006;
 
 use strict;
 use vars qw(@ISA @EXPORT $VERSION);

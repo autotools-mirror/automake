@@ -15,6 +15,7 @@
 
 package Automake::Wrap;
 
+use 5.006;
 use strict;
 
 require Exporter;

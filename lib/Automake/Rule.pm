@@ -14,6 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package Automake::Rule;
+
+use 5.006;
 use strict;
 use Carp;
 

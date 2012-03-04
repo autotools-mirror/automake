@@ -20,6 +20,7 @@
 
 package Automake::Configure_ac;
 
+use 5.006;
 use strict;
 use Exporter;
 use Automake::Channels;

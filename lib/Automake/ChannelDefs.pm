@@ -55,7 +55,7 @@ shorthand function to output on specific channels.
 
 =cut
 
-use 5.005;
+use 5.006;
 use strict;
 use Exporter;
 
