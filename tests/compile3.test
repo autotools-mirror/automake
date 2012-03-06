@@ -31,24 +31,29 @@ END
 
 chmod +x ./cl
 
-# Check if compile handles "-o foo", -I, -l, -L, -Xlinker -Wl,
-opts=`LIB= ./compile ./cl foo.c -o foo -lbar -Lgazonk -Ibaz -Xlinker foobar -Wl,-foo,bar`
-test x"$opts" = x"foo.c -Fefoo bar.lib -Ibaz -link -LIBPATH:gazonk foobar -foo bar"
+# POSIX mandates that the compiler accepts a space between the -I,
+# -l and -L options and their respective arguments.  Traditionally,
+# this should work also without a space.  Try both usages.
+for sp in '' ' '; do
+  # Check if compile handles "-o foo", -I, -l, -L, -Xlinker -Wl,
+  opts=`LIB= ./compile ./cl foo.c -o foo -l${sp}bar -L${sp}gazonk -I${sp}baz -Xlinker foobar -Wl,-foo,bar`
+  test x"$opts" = x"foo.c -Fefoo bar.lib -Ibaz -link -LIBPATH:gazonk foobar -foo bar"
 
-# Check if compile handles "-o foo.obj"
-opts=`./compile ./cl -c foo.c -o foo.obj -Ibaz`
-test x"$opts" = x"-c foo.c -Fofoo.obj -Ibaz"
+  # Check if compile handles "-o foo.obj"
+  opts=`./compile ./cl -c foo.c -o foo.obj -I${sp}baz`
+  test x"$opts" = x"-c foo.c -Fofoo.obj -Ibaz"
 
-# Check if compile handles "-o foo.o"
-opts=`./compile ./cl -c foo.c -o foo.o -Ibaz`
-test x"$opts" = x"-c foo.c -Fofoo.o -Ibaz"
+  # Check if compile handles "-o foo.o"
+  opts=`./compile ./cl -c foo.c -o foo.o -I${sp}baz`
+  test x"$opts" = x"-c foo.c -Fofoo.o -Ibaz"
 
-# Check if compile handles "foo.cc" as C++.
-opts=`./compile ./cl -c foo.cc -o foo.o -Ibaz`
-test x"$opts" = x"-c -Tpfoo.cc -Fofoo.o -Ibaz"
+  # Check if compile handles "foo.cc" as C++.
+  opts=`./compile ./cl -c foo.cc -o foo.o -I${sp}baz`
+  test x"$opts" = x"-c -Tpfoo.cc -Fofoo.o -Ibaz"
 
-# Check if compile clears the "eat" variable properly.
-opts=`eat=1 ./compile ./cl -c foo.c -o foo.obj -Ibaz`
-test x"$opts" = x"-c foo.c -Fofoo.obj -Ibaz"
+  # Check if compile clears the "eat" variable properly.
+  opts=`eat=1 ./compile ./cl -c foo.c -o foo.obj -I${sp}baz`
+  test x"$opts" = x"-c foo.c -Fofoo.obj -Ibaz"
+done
 
 :
