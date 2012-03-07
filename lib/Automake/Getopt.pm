@@ -30,7 +30,7 @@ line options in conformance to the GNU Coding standards.
 
 =cut
 
-use 5.006_002;
+use 5.006;
 use strict;
 use warnings FATAL => 'all';
 use Exporter ();
@@ -76,13 +76,13 @@ sub parse_options (%)
 	}
       elsif (exists $argopts{$ARGV[0]})
 	{
-	  fatal ("option `$ARGV[0]' requires an argument\n"
-		 . "Try `$0 --help' for more information.");
+	  fatal ("option '$ARGV[0]' requires an argument\n"
+		 . "Try '$0 --help' for more information.");
 	}
       else
 	{
-	  fatal ("unrecognized option `$ARGV[0]'.\n"
-		 . "Try `$0 --help' for more information.");
+	  fatal ("unrecognized option '$ARGV[0]'.\n"
+		 . "Try '$0 --help' for more information.");
 	}
     }
 }

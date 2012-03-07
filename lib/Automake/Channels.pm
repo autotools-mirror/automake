@@ -35,7 +35,7 @@ Automake::Channels - support functions for error and warning management
   register_channel 'system', type => 'error', exit_code => 4;
 
   # Output a message on channel 'unused'.
-  msg 'unused', "$file:$line", "unused variable `$var'";
+  msg 'unused', "$file:$line", "unused variable '$var'";
 
   # Make the 'unused' channel silent.
   setup_channel 'unused', silent => 1;
@@ -66,7 +66,7 @@ etc.) that can also be overridden on a per-message basis.
 
 =cut
 
-use 5.005;
+use 5.006;
 use strict;
 use Exporter;
 use Carp;
@@ -340,7 +340,7 @@ sub _merge_options (\%%)
 	}
       else
 	{
-	  confess "unknown option `$_'";
+	  confess "unknown option '$_'";
 	}
     }
   if ($hash->{'ordered'})
@@ -585,12 +585,12 @@ associated to the message.
 For instance to complain about some unused variable C<mumble>
 declared at line 10 in F<foo.c>, one could do:
 
-  msg 'unused', 'foo.c:10', "unused variable `mumble'";
+  msg 'unused', 'foo.c:10', "unused variable 'mumble'";
 
 If channel C<unused> is not silent (and if this message is not a duplicate),
 the following would be output:
 
-  foo.c:10: unused variable `mumble'
+  foo.c:10: unused variable 'mumble'
 
 C<$location> can also be an instance of C<Automake::Location>.  In this
 case, the stack of contexts will be displayed in addition.

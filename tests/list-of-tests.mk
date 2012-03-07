@@ -355,6 +355,7 @@ distcom4.test \
 distcom5.test \
 distcom-subdir.test \
 distdir.test \
+disthook.test \
 distlinks.test \
 distlinksbrk.test \
 distname.test \
@@ -363,6 +364,7 @@ distcheck-configure-flags-am.test \
 distcheck-configure-flags-subpkg.test \
 distcheck-hook.test \
 distcheck-hook2.test \
+distcheck-writable-srcdir.test \
 distcheck-missing-m4.test \
 distcheck-outdated-m4.test \
 distcheck-override-infodir.test \
@@ -914,6 +916,7 @@ silentcxx.test \
 silentcxx-gcc.test \
 silentf77.test \
 silentf90.test \
+silent-amopts.test \
 silent-many-gcc.test \
 silent-many-generic.test \
 silent-configsite.test \
@@ -938,6 +941,7 @@ spell3.test \
 spelling.test \
 spy.test \
 spy-vpath-rewrite.test \
+spy-rm.tap \
 stdinc.test \
 stamph2.test \
 stdlib.test \
@@ -1130,6 +1134,7 @@ txinfo33.test \
 txinfo-unrecognized-extension.test \
 transform.test \
 transform2.test \
+transform3.test \
 uninstall-fail.test \
 uninstall-pr9578.test \
 unused.test \
@@ -1144,6 +1149,7 @@ vala4.test \
 vala5.test \
 vala-vpath.test \
 vala-mix.test \
+vala-mix2.test \
 vars.test \
 vars-assign.test \
 vartar.test \

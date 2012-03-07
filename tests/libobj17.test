@@ -33,6 +33,13 @@ cat > Makefile.am << 'END'
 noinst_LIBRARIES = libtu.a
 libtu_a_SOURCES =
 libtu_a_LIBADD = $(LIBOBJS)
+.PHONY: check-quux check-zardoz
+check-quux:
+	$(AR) t libtu.a | grep quux
+	$(AR) t libtu.a | grep zardoz && exit 1; exit 0
+check-zardoz:
+	$(AR) t libtu.a | grep zardoz
+	$(AR) t libtu.a | grep quux && exit 1; exit 0
 END
 
 cat > quux.c <<'END'
@@ -52,8 +59,7 @@ $AUTOCONF
 $MAKE
 ls -l # For debugging.
 test -f libtu.a
-ar t libtu.a | $FGREP quux
-ar t libtu.a | $FGREP zardoz && Exit 1
+$MAKE check-quux
 
 $MAKE distclean
 
@@ -61,7 +67,6 @@ $MAKE distclean
 $MAKE
 ls -l # For debugging.
 test -f libtu.a
-ar t libtu.a | $FGREP zardoz
-ar t libtu.a | $FGREP quux && Exit 1
+$MAKE check-zardoz
 
 :

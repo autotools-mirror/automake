@@ -14,6 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package Automake::Variable;
+
+use 5.006;
 use strict;
 use Carp;
 
@@ -139,7 +141,7 @@ my @_var_order;
 
 # This keeps track of all variables defined by &_gen_varname.
 # $_gen_varname{$base} is a hash for all variables defined with
-# prefix `$base'.  Values stored in this hash are the variable names.
+# prefix '$base'.  Values stored in this hash are the variable names.
 # Keys have the form "(COND1)VAL1(COND2)VAL2..." where VAL1 and VAL2
 # are the values of the variable for condition COND1 and COND2.
 my %_gen_varname = ();
@@ -470,7 +472,7 @@ sub _check_ambiguous_condition ($$$)
   if ($message && $def->pretty != VAR_SILENT)
     {
       msg 'syntax', $where, "$message ...", partial => 1;
-      msg_var ('syntax', $var, "... `$var' previously defined here");
+      msg_var ('syntax', $var, "... '$var' previously defined here");
       verb ($self->dump);
     }
 }
@@ -524,7 +526,7 @@ sub output ($@)
   foreach my $cond (@conds)
     {
       my $def = $self->def ($cond);
-      prog_error ("unknown condition `" . $cond->human . "' for `"
+      prog_error ("unknown condition '" . $cond->human . "' for '"
 		  . $self->name . "'")
 	unless $def;
 
@@ -672,8 +674,8 @@ sub has_conditional_contents ($)
 
   # Traverse the variable recursively until we
   # find a variable defined conditionally.
-  # Use `die' to abort the traversal, and pass it `$full_cond'
-  # to we can find easily whether the `eval' block aborted
+  # Use 'die' to abort the traversal, and pass it '$full_cond'
+  # to we can find easily whether the 'eval' block aborted
   # because we found a condition, or for some other error.
   eval
     {
@@ -744,7 +746,7 @@ sub scan_variable_expansions ($)
     {
       my $var = $1 || $2;
       # The occurrence may look like $(string1[:subst1=[subst2]]) but
-      # we want only `string1'.
+      # we want only 'string1'.
       $var =~ s/:[^:=]*=[^=]*$//;
       push @result, $var;
     }
@@ -827,9 +829,9 @@ sub define ($$$$$$$$)
       if ($def->type ne $type && $def->owner == VAR_AUTOMAKE)
 	{
 	  error ($def->location,
-		 "Automake variable `$var' was set with `"
+		 "Automake variable '$var' was set with '"
 		 . $def->type . "=' here ...", partial => 1);
-	  error ($where, "... and is now set with `$type=' here.");
+	  error ($where, "... and is now set with '$type=' here.");
 	  prog_error ("Automake variable assignments should be consistently\n"
 		      . "defined with the same sign");
 	}
@@ -841,15 +843,15 @@ sub define ($$$$$$$$)
 	  if (! exists $_silent_variable_override{$var})
 	    {
 	      my $condmsg = ($cond == TRUE
-			     ? '' : (" in condition `" . $cond->human . "'"));
+			     ? '' : (" in condition '" . $cond->human . "'"));
 	      msg_cond_var ('override', $cond, $var,
-			    "user variable `$var' defined here$condmsg ...",
+			    "user variable '$var' defined here$condmsg ...",
 			    partial => 1);
 	      msg ('override', $where,
-		   "... overrides Automake variable `$var' defined here");
+		   "... overrides Automake variable '$var' defined here");
 	    }
 	  verb ("refusing to override the user definition of:\n"
-		. $self->dump ."with `" . $cond->human . "' => `$value'");
+		. $self->dump ."with '" . $cond->human . "' => '$value'");
 	  return;
 	}
     }
@@ -938,16 +940,16 @@ sub define ($$$$$$$$)
 	  #   endif
 	  #   X += Z
 	  # should be rejected because X is not defined for all conditions
-	  # where `+=' applies.
+	  # where '+=' applies.
 	  my $undef_cond = $self->not_always_defined_in_cond ($cond);
 	  if (! $undef_cond->false)
 	    {
 	      error ($where,
-		     "cannot apply `+=' because `$var' is not defined "
+		     "cannot apply '+=' because '$var' is not defined "
 		     . "in\nthe following conditions:\n  "
 		     . join ("\n  ", map { $_->human } $undef_cond->conds)
-		     . "\neither define `$var' in these conditions,"
-		     . " or use\n`+=' in the same conditions as"
+		     . "\neither define '$var' in these conditions,"
+		     . " or use\n'+=' in the same conditions as"
 		     . " the definitions.");
 	    }
 	  else
@@ -974,7 +976,7 @@ sub define ($$$$$$$$)
 	if ! $new_var && $owner < $def->owner;
 
       # Assignments to a macro set its location.  We don't adjust
-      # locations for `+='.  Ideally I suppose we would associate
+      # locations for '+='.  Ideally I suppose we would associate
       # line numbers with random bits of text.
       $def = new Automake::VarDef ($var, $value, $comment, $where->clone,
 				   $type, $owner, $pretty);
@@ -1089,7 +1091,7 @@ sub require_variables ($$$@)
       next VARIABLE
 	if vardef ($var, $cond);
 
-      my $text = "$reason`$var' is undefined\n";
+      my $text = "$reason'$var' is undefined\n";
       my $v = var $var;
       if ($v)
 	{
@@ -1106,20 +1108,20 @@ sub require_variables ($$$@)
       if (exists $_am_macro_for_var{$var})
 	{
 	  my $mac = $_am_macro_for_var{$var};
-	  $text .= "  The usual way to define `$var' is to add "
-	    . "`$mac'\n  to `$configure_ac' and run `aclocal' and "
-	    . "`autoconf' again.";
+	  $text .= "  The usual way to define '$var' is to add "
+	    . "'$mac'\n  to '$configure_ac' and run 'aclocal' and "
+	    . "'autoconf' again.";
 	  # aclocal will not warn about undefined macros unless it
 	  # starts with AM_.
-	  $text .= "\n  If `$mac' is in `$configure_ac', make sure\n"
+	  $text .= "\n  If '$mac' is in '$configure_ac', make sure\n"
 	    . "  its definition is in aclocal's search path."
 	    unless $mac =~ /^AM_/;
 	}
       elsif (exists $_ac_macro_for_var{$var})
 	{
-	  $text .= "  The usual way to define `$var' is to add "
-	    . "`$_ac_macro_for_var{$var}'\n  to `$configure_ac' and "
-	    . "run `autoconf' again.";
+	  $text .= "  The usual way to define '$var' is to add "
+	    . "'$_ac_macro_for_var{$var}'\n  to '$configure_ac' and "
+	    . "run 'autoconf' again.";
 	}
 
       error $where, $text, uniq_scope => US_GLOBAL;
@@ -1261,7 +1263,7 @@ recursive calls).
 
 =cut
 
-# Contains a stack of `from' and `to' parts of variable
+# Contains a stack of 'from' and 'to' parts of variable
 # substitutions currently in force.
 my @_substfroms;
 my @_substtos;
@@ -1290,7 +1292,7 @@ sub _do_recursive_traversal ($$&&$$$$)
 
   if ($var->{'scanned'} == $_traversal)
     {
-      err_var $var, "variable `" . $var->name() . "' recursively defined";
+      err_var $var, "variable '" . $var->name() . "' recursively defined";
       return ();
     }
   $var->{'scanned'} = $_traversal;
@@ -1319,7 +1321,7 @@ sub _do_recursive_traversal ($$&&$$$$)
 	  my $val = shift @to_process;
 	  # If $val is a variable (i.e. ${foo} or $(bar), not a filename),
 	  # handle the sub variable recursively.
-	  # (Backslashes before `}' and `)' within brackets are here to
+	  # (Backslashes before '}' and ')' within brackets are here to
 	  # please Emacs's indentation.)
 	  if ($val =~ /^\$\{([^\}]*)\}$/ || $val =~ /^\$\(([^\)]*)\)$/)
 	    {
@@ -1361,7 +1363,7 @@ sub _do_recursive_traversal ($$&&$$$$)
 	      next;
 	    }
 	  # Try to expand variable references inside filenames such as
-	  # `$(NAME).txt'.  We do not handle `:.foo=.bar'
+	  # '$(NAME).txt'.  We do not handle ':.foo=.bar'
 	  # substitutions, but it would make little sense to use this
 	  # here anyway.
 	  elsif ($inner_expand

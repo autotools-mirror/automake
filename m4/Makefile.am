@@ -53,17 +53,16 @@ tar.m4 \
 upc.m4 \
 vala.m4
 
-# So that $(system_acdir) will be created by "make install".
-dist_system_ac_DATA =
+dist_system_ac_DATA = acdir/README
 
-EXTRA_DIST = acdir/.placeholder amversion.in
+EXTRA_DIST = amversion.in
 
 # We build amversion.m4 here, instead of from config.status,
 # because config.status is rerun each time one of configure's
 # dependencies change and amversion.m4 happens to be a configure
 # dependency.  configure and amversion.m4 would be rebuilt in
 # loop otherwise.
-# Use `$(top_srcdir)/m4' for the benefit of non-GNU makes: this is
+# Use '$(top_srcdir)/m4' for the benefit of non-GNU makes: this is
 # how amversion.m4 appears in our dependencies.
 $(top_srcdir)/m4/amversion.m4: $(top_srcdir)/configure.ac $(srcdir)/amversion.in
 	$(AM_V_at)sed \

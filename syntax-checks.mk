@@ -16,9 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # We also have to take into account VPATH builds (where some generated
-# tests might be in `$(builddir)' rather than in `$(srcdir)'), TAP-based
-# tests script (which have a `.tap' extension) and helper scripts used
-# by other test cases (which have a `.sh' extension).
+# tests might be in '$(builddir)' rather than in '$(srcdir)'), TAP-based
+# tests script (which have a '.tap' extension) and helper scripts used
+# by other test cases (which have a '.sh' extension).
 xtests := $(shell \
   if test $(srcdir) = .; then \
      dirs=.; \
@@ -50,7 +50,6 @@ sc_perl_no_split_regex_space \
 sc_cd_in_backquotes \
 sc_cd_relative_dir \
 sc_perl_at_uscore_in_scalar_context \
-sc_perl_local_no_parens \
 sc_perl_local \
 sc_AMDEP_TRUE_in_automake_in \
 sc_tests_no_gmake_requirement \
@@ -193,16 +192,17 @@ sc_no_brace_variable_expansions:
 	  exit 1;				\
 	else :; fi
 
-## Make sure `rm' is called with `-f'.
+## Make sure 'rm' is called with '-f'.
 sc_rm_minus_f:
 	@if grep -v '^#' $(ams) $(xtests) \
+	   | grep -v '/spy-rm\.tap:' \
 	   | grep -E '\<rm ([^-]|\-[^f ]*\>)'; \
 	then \
 	  echo "Suspicious 'rm' invocation." 1>&2; \
 	  exit 1;				\
 	else :; fi
 
-## Never use something like `for file in $(FILES)', this doesn't work
+## Never use something like "for file in $(FILES)", this doesn't work
 ## if FILES is empty or if it contains shell meta characters (e.g. $ is
 ## commonly used in Java filenames).
 sc_no_for_variable_in_macro:
@@ -273,18 +273,11 @@ sc_perl_at_uscore_in_scalar_context:
 	  exit 1; \
 	fi
 
-## Forbid using parens with `local' to ease counting.
-sc_perl_local_no_parens:
-	@if grep '^[ \t]*local *(' $(srcdir)/automake.in; then \
-	  echo "Don't use \`local' with parens: use several \`local' above." >&2; \
-	  exit 1; \
-	fi
-
-## Allow only few variables to be localized in automake.
+## Allow only few variables to be localized in Automake.
 sc_perl_local:
 	@if egrep -v '^[ \t]*local \$$[_~]( *=|;)' $(srcdir)/automake.in | \
 	        grep '^[ \t]*local [^*]'; then \
-	  echo "Please avoid \`local'." 1>&2; \
+	  echo "Please avoid 'local'." 1>&2; \
 	  exit 1; \
 	fi
 
@@ -480,7 +473,7 @@ sc_tests_plain_autom4te:
 ## Tests should only use END and EOF for here documents
 ## (so that the next test is effective).
 sc_tests_here_document_format:
-	@if grep '<<' $(xtests) | grep -v 'END' | grep -v 'EOF'; then \
+	@if grep '<<' $(xtests) | grep -Ev '\b(END|EOF)\b|\bstd::cout <<'; then \
 	  echo 'Use here documents with "END" and "EOF" only, for greppability.' 1>&2; \
 	  exit 1; \
 	fi
@@ -524,7 +517,7 @@ sc_tests_plain_perl:
 	  exit 1; \
 	fi
 
-## Setting `required' after sourcing `./defs' is a bug.
+## Setting 'required' after sourcing './defs' is a bug.
 sc_tests_required_after_defs:
 	@for file in $(xtests); do \
 	  if out=`sed -n '/defs/,$${/required=/p;}' $$file`; test -n "$$out"; then \
@@ -533,8 +526,8 @@ sc_tests_required_after_defs:
 	  fi; \
 	done
 
-## Never use `sleep 1' to create files with different timestamps.
-## Use `$sleep' instead.  Some filesystems (e.g., Windows') have only
+## Never use 'sleep 1' to create files with different timestamps.
+## Use '$sleep' instead.  Some filesystems (e.g., Windows) have only
 ## a 2sec resolution.
 sc_tests_plain_sleep:
 	@if grep -E '\bsleep +[12345]\b' $(xtests); then \
@@ -568,13 +561,15 @@ sc_tests_no_configure_in:
 	  exit 1; \
 	fi
 
-## Rule to ensure that the testsuite has been run before.  We don't depend on `check'
-## here, because that would be very wasteful in the common case.  We could run
-## `make check RECHECK_LOGS=' and avoid toplevel races with AM_RECURSIVE_TARGETS.
-## Suggest keeping test directories around for greppability of the Makefile.in files.
+## Rule to ensure that the testsuite has been run before.  We don't depend
+## on 'check' here, because that would be very wasteful in the common case.
+## We could run "make check RECHECK_LOGS=" and avoid toplevel races with
+## AM_RECURSIVE_TARGETS.  Suggest keeping test directories around for
+## greppability of the Makefile.in files.
 sc_ensure_testsuite_has_run:
 	@if test ! -f tests/test-suite.log; then \
-	  echo "Run \`env keep_testdirs=yes make check' before \`maintainer-check'" >&2; \
+	  echo 'Run "env keep_testdirs=yes make check" before' \
+	       'running "make maintainer-check"' >&2; \
 	  exit 1; \
 	fi
 .PHONY: sc_ensure_testsuite_has_run
@@ -609,10 +604,11 @@ sc_tests_makefile_variable_order: sc_ensure_testsuite_has_run
 	  exit 1; \
 	}
 
-## Using `:' as a PATH separator is not portable.
+## Using ':' as a PATH separator is not portable.
 sc_tests_PATH_SEPARATOR:
 	@if grep -E '\bPATH=.*:.*' $(xtests) ; then \
-	  echo "Use \`\$$PATH_SEPARATOR', not \`:', in PATH definitions above." 1>&2; \
+	  echo "Use '\$$PATH_SEPARATOR', not ':', in PATH definitions" \
+	       "above." 1>&2; \
 	  exit 1; \
 	fi
 

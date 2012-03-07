@@ -190,7 +190,7 @@ Auto-generating aclocal.m4
 Autoconf macros supplied with Automake
 
 * Public Macros::               Macros that you can use.
-* Obsolete Macros::             Macros that you should stop using.
+* Obsolete Macros::             Macros that will soon be removed.
 * Private Macros::              Macros that you should not use.
 
 Directories
@@ -374,7 +374,7 @@ Frequently Asked Questions about Automake
 * maintainer-mode::             missing and AM_MAINTAINER_MODE
 * Wildcards::                   Why doesn't Automake support wildcards?
 * Limitations on File Names::   Limitations on source and installed file names
-* distcleancheck::              Files left in build directory after distclean
+* Errors with distclean::       Files left in build directory after distclean
 * Flag Variables Ordering::     CFLAGS vs.@: AM_CFLAGS vs.@: mumble_CFLAGS
 * Renamed Objects::             Why are object files sometimes renamed?
 * Per-Object Flags::            How to simulate per-object flags?
@@ -3924,7 +3924,7 @@ Automake ships with several Autoconf macros that you can use from your
 
 @menu
 * Public Macros::               Macros that you can use.
-* Obsolete Macros::             Macros that you should stop using.
+* Obsolete Macros::             Macros that will soon be removed.
 * Private Macros::              Macros that you should not use.
 @end menu
 
@@ -3936,23 +3936,23 @@ Automake ships with several Autoconf macros that you can use from your
 @table @code
 
 @item AM_INIT_AUTOMAKE([OPTIONS])
-@itemx AM_INIT_AUTOMAKE(PACKAGE, VERSION, [NO-DEFINE])
 @acindex AM_INIT_AUTOMAKE
 Runs many macros required for proper operation of the generated Makefiles.
 
 @vindex AUTOMAKE_OPTIONS
-This macro has two forms, the first of which is preferred.
-In this form, @code{AM_INIT_AUTOMAKE} is called with a
-single argument: a space-separated list of Automake options that should
+Today, @code{AM_INIT_AUTOMAKE} is called with a single argument: a
+space-separated list of Automake options that should
 be applied to every @file{Makefile.am} in the tree.  The effect is as if
 each option were listed in @code{AUTOMAKE_OPTIONS} (@pxref{Options}).
 
 @acindex AC_INIT
-The second, deprecated, form of @code{AM_INIT_AUTOMAKE} has two required
-arguments: the package and the version number.  This form is
-obsolete because the @var{package} and @var{version} can be obtained
-from Autoconf's @code{AC_INIT} macro (which itself has an old and a new
-form).
+This macro can also be called in @emph{another, deprecated form} (support
+for which will be @emph{removed in the next major Automake release}):
+@code{AM_INIT_AUTOMAKE(PACKAGE, VERSION, [NO-DEFINE])}.  In this form,
+there are two required arguments: the package and the version number.
+This form is obsolete because the @var{package} and @var{version} can
+be obtained from Autoconf's @code{AC_INIT} macro (which itself has an
+old and a new form).
 
 If your @file{configure.ac} has:
 
@@ -3962,7 +3962,7 @@ AM_INIT_AUTOMAKE([mumble], [1.5])
 @end example
 
 @noindent
-you can modernize it as follows:
+you should modernize it as follows:
 
 @example
 AC_INIT([mumble], [1.5])
@@ -3987,11 +3987,10 @@ explicitly).
 @opindex no-define
 By default this macro @code{AC_DEFINE}'s @code{PACKAGE} and
 @code{VERSION}.  This can be avoided by passing the @option{no-define}
-option, as in:
+option:
 @example
 AM_INIT_AUTOMAKE([gnits 1.5 no-define dist-bzip2])
 @end example
-or by passing a third non-empty argument to the obsolete form.
 
 @item AM_PATH_LISPDIR
 @acindex AM_PATH_LISPDIR
@@ -4085,11 +4084,13 @@ define @code{WITH_DMALLOC} and add @option{-ldmalloc} to @code{LIBS}.
 @cindex autoupdate
 
 Although using some of the following macros was required in past
-releases, you should not use any of them in new code.  Running
-@command{autoupdate} should adjust your @file{configure.ac}
-automatically (@pxref{autoupdate Invocation, , Using
-@command{autoupdate} to Modernize @file{configure.ac}, autoconf, The
-Autoconf Manual}).
+releases, you should not use any of them in new code.  @emph{All
+these macros will be removed in the next major Automake version};
+if you are still using them, running @command{autoupdate} should
+adjust your @file{configure.ac} automatically (@pxref{autoupdate
+Invocation, , Using @command{autoupdate} to Modernize
+@file{configure.ac}, autoconf, The Autoconf Manual}).
+@emph{Do it NOW!}
 
 @table @code
 
@@ -4119,19 +4120,12 @@ variable @code{mkdir_p} to one of @code{mkdir -p}, @code{install-sh
 Nowadays Autoconf provides a similar functionality with
 @code{AC_PROG_MKDIR_P} (@pxref{Particular Programs, , Particular
 Program Checks, autoconf, The Autoconf Manual}), however this defines
-the output variable @code{MKDIR_P} instead.  Therefore
-@code{AM_PROG_MKDIR_P} has been rewritten as a thin wrapper around
-@code{AC_PROG_MKDIR_P} to define @code{mkdir_p} to the same value as
-@code{MKDIR_P} for backward compatibility.
-
-If you are using Automake, there is normally no reason to call this
-macro, because @code{AM_INIT_AUTOMAKE} already does so.  However, make
-sure that the custom rules in your @file{Makefile}s use
-@code{$(MKDIR_P)} and not @code{$(mkdir_p)}.  Even if both variables
-still work, the latter should be considered obsolete.
-
-If you are not using Automake, please call @code{AC_PROG_MKDIR_P}
-instead of @code{AM_PROG_MKDIR_P}.
+the output variable @code{MKDIR_P} instead.  In case you are still
+using the @code{AM_PROG_MKDIR_P} macro in your @file{configure.ac},
+or its provided variable @code{$(mkdir_p)} in your @file{Makefile.am},
+you are advised to switch ASAP to the more modern Autoconf-provided
+interface instead; both the macro and the variable @emph{will be
+removed} in the next major Automake release.
 
 @item AM_SYS_POSIX_TERMIOS
 @acindex AM_SYS_POSIX_TERMIOS
@@ -8421,24 +8415,35 @@ nodist_foo_SOURCES = do-not-distribute.c
 
 Occasionally it is useful to be able to change the distribution before
 it is packaged up.  If the @code{dist-hook} rule exists, it is run
-after the distribution directory is filled, but before the actual tar
-(or shar) file is created.  One way to use this is for distributing
-files in subdirectories for which a new @file{Makefile.am} is overkill:
-
-@example
-dist-hook:
-        mkdir $(distdir)/random
-        cp -p $(srcdir)/random/a1 $(srcdir)/random/a2 $(distdir)/random
-@end example
-
-Another way to use this is for removing unnecessary files that get
-recursively included by specifying a directory in EXTRA_DIST:
+after the distribution directory is filled, but before the actual
+distribution archives are created.  One way to use this is for
+removing unnecessary files that get recursively included by specifying
+a directory in @code{EXTRA_DIST}:
 
 @example
 EXTRA_DIST = doc
-
 dist-hook:
         rm -rf `find $(distdir)/doc -type d -name .svn`
+@end example
+
+@c The caveates described here should be documented in 'disthook.test'.
+@noindent
+Note that the @code{dist-hook} recipe shouldn't assume that the regular
+files in the distribution directory are writable; this might not be the
+case if one is packaging from a read-only source tree, or when a
+@code{make distcheck} is being done.  For similar reasons, the recipe
+shouldn't assume that the subdirectories put into the distribution
+directory as effect of having them listed in @code{EXTRA_DIST} are
+writable.  So, if the @code{dist-hook} recipe wants to modify the
+content of an existing file (or @code{EXTRA_DIST} subdirectory) in the
+distribution directory, it should explicitly to make it writable first:
+
+@example
+EXTRA_DIST = README doc
+dist-hook:
+        chmod u+w $(distdir)/README $(distdir)/doc
+        echo "Distribution date: `date`" >> README
+        rm -f $(distdir)/doc/HACKING
 @end example
 
 @vindex distdir
@@ -8469,20 +8474,32 @@ dist} was run, not to any sub-packages involved.
 @section Checking the Distribution
 
 @cindex @samp{make distcheck}
-@cindex @samp{make distcleancheck}
-@vindex distcleancheck_listfiles
-@cindex @samp{make distuninstallcheck}
-@vindex distuninstallcheck_listfiles
-
 @trindex distcheck
-Automake also generates a @code{distcheck} rule that can be of help to
-ensure that a given distribution will actually work.  @code{distcheck}
-makes a distribution, then tries to do a @code{VPATH} build
-(@pxref{VPATH Builds}), run the test suite, and finally make another
-tarball to ensure the distribution is self-contained.
+Automake also generates a @code{distcheck} rule that can be of help
+to ensure that a given distribution will actually work.  Simplifying
+a bit, we can say this rule first makes a distribution, and then,
+@emph{operating from it}, takes the following steps:
+@itemize
+@item
+tries to do a @code{VPATH} build (@pxref{VPATH Builds}), with the
+@code{srcdir} and all its content made @emph{read-only};
+@item
+runs the test suite (with @command{make check}) on this fresh build;
+@item
+installs the package in a temporary directory (with @command{make
+install}), and tries runs the test suite on the resulting installation
+(with @command{make installcheck});
+@item
+checks that the package can be correctly uninstalled (by @command{make
+uninstall}) and cleaned (by @code{make distclean});
+@item
+finally, makes another tarball to ensure the distribution is
+self-contained.
+@end itemize
 
 @vindex AM_DISTCHECK_CONFIGURE_FLAGS
 @vindex DISTCHECK_CONFIGURE_FLAGS
+@subheading DISTCHECK_CONFIGURE_FLAGS
 Building the package involves running @samp{./configure}.  If you need
 to supply additional flags to @command{configure}, define them in the
 @code{AM_DISTCHECK_CONFIGURE_FLAGS} variable in your top-level
@@ -8506,6 +8523,7 @@ installcheck} was wrongly assuming it could blindly test "@command{m4}",
 rather than the just-installed "@command{gm4}".
 
 @trindex distcheck-hook
+@subheading distcheck-hook
 If the @code{distcheck-hook} rule is defined in your top-level
 @file{Makefile.am}, then it will be invoked by @code{distcheck} after
 the new distribution has been unpacked, but before the unpacked copy
@@ -8518,9 +8536,12 @@ are not honored in a subpackage @file{Makefile.am}, but the flags from
 @code{AM_DISTCHECK_CONFIGURE_FLAGS} and @code{DISTCHECK_CONFIGURE_FLAGS}
 are passed down to the @command{configure} script of the subpackage.
 
+@cindex @samp{make distcleancheck}
 @trindex distcleancheck
 @vindex DISTCLEANFILES
 @vindex distcleancheck_listfiles
+
+@subheading distcleancheck
 Speaking of potential distribution errors, @code{distcheck} also
 ensures that the @code{distclean} rule actually removes all built
 files.  This is done by running @samp{make distcleancheck} at the end of
@@ -8558,9 +8579,14 @@ your Makefiles cause some distributed files to be rebuilt when the user
 build the package.  (Think about the user missing the tool required to
 build the file; or if the required tool is built by your package,
 consider the cross-compilation case where it can't be run.)  There is
-an entry in the FAQ about this (@pxref{distcleancheck}), make sure you
-read it before playing with @code{distcleancheck_listfiles}.
+an entry in the FAQ about this (@pxref{Errors with distclean}), make
+sure you read it before playing with @code{distcleancheck_listfiles}.
 
+@cindex @samp{make distuninstallcheck}
+@trindex distuninstallcheck
+@vindex distuninstallcheck_listfiles
+
+@subheading distuninstallcheck
 @code{distcheck} also checks that the @code{uninstall} rule works
 properly, both for ordinary and @code{DESTDIR} builds.  It does this
 by invoking @samp{make uninstall}, and then it checks the install tree
@@ -8606,13 +8632,6 @@ Generate an @samp{lzip} tar archive of the distribution.  @command{lzip}
 archives are frequently smaller than @command{bzip2}-compressed archives.
 @trindex dist-lzip
 
-@item @code{dist-lzma}
-Generate an @samp{lzma} tar archive of the distribution.
-The @samp{lzma} format is obsolete, you should use the @samp{xz} format
-instead. @emph{Support for @samp{lzma}-compressed archives will be
-removed in the next major Automake release.}
-@trindex dist-lzma
-
 @item @code{dist-shar}
 Generate a shar archive of the distribution.
 @trindex dist-shar
@@ -8621,7 +8640,6 @@ Generate a shar archive of the distribution.
 @item @code{dist-xz}
 Generate an @samp{xz} tar archive of the distribution.  @command{xz}
 archives are frequently smaller than @command{bzip2}-compressed archives.
-The @samp{xz} format displaces the obsolete @samp{lzma} format.
 By default, this rule makes @samp{xz} use a compression option of
 @option{-e}.  To make it use a different one, set the @env{XZ_OPT}
 environment variable.  For example, run this command to use the
@@ -10017,12 +10035,6 @@ Hook @code{dist-bzip2} to @code{dist}.
 @opindex dist-lzip
 Hook @code{dist-lzip} to @code{dist}.
 @trindex dist-lzip
-
-@item @option{dist-lzma}
-@cindex Option, @option{dist-lzma}
-@opindex dist-lzma
-Hook @code{dist-lzma} to @code{dist}.  Obsoleted by @code{dist-xz}.
-@trindex dist-lzma
 
 @item @option{dist-shar}
 @cindex Option, @option{dist-shar}
@@ -11580,7 +11592,7 @@ lists.
 * maintainer-mode::             missing and AM_MAINTAINER_MODE
 * Wildcards::                   Why doesn't Automake support wildcards?
 * Limitations on File Names::   Limitations on source and installed file names
-* distcleancheck::              Files left in build directory after distclean
+* Errors with distclean::       Files left in build directory after distclean
 * Flag Variables Ordering::     CFLAGS vs.@: AM_CFLAGS vs.@: mumble_CFLAGS
 * Renamed Objects::             Why are object files sometimes renamed?
 * Per-Object Flags::            How to simulate per-object flags?
@@ -11950,13 +11962,14 @@ differ only in case (e.g., @file{makefile} and @file{Makefile}).
 Nowadays it is no longer worth worrying about the 8.3 limits of
 DOS file systems.
 
-@node distcleancheck
-@section Files left in build directory after distclean
+@c FIXME This should probably be moved in the "Checking the Distribution"
+@c FIXME section...
+@node Errors with distclean
+@section Errors with distclean
 @cindex @code{distclean}, diagnostic
 @cindex @samp{make distclean}, diagnostic
 @cindex dependencies and distributed files
 @trindex distclean
-@trindex distcleancheck
 
 This is a diagnostic you might encounter while running @samp{make
 distcheck}.
@@ -13109,4 +13122,4 @@ suite failures, please attach the @file{tests/test-suite.log} file.
 @c  LocalWords:  LTALLOCA MALLOC malloc memcmp strdup alloca libcompat xyz DFOO
 @c  LocalWords:  unprefixed buildable preprocessed DBAZ DDATADIR WARNINGCFLAGS
 @c  LocalWords:  LIBFOOCFLAGS LIBFOOLDFLAGS ftable testSubDir obj LIBTOOLFLAGS
-@c  LocalWords:  barexec Pinard's automatize initialize lzip lzma xz cscope
+@c  LocalWords:  barexec Pinard's automatize initialize lzip xz cscope

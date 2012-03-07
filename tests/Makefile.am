@@ -71,13 +71,13 @@ AM_TESTS_ENVIRONMENT = \
   ; do \
     eval test x"\$${$$v}" = x || unset $$v; \
   done;
-# The `AM_TESTS_REEXEC=no' setting tells the tests not to needlessly
+# The 'AM_TESTS_REEXEC=no' setting tells the tests not to needlessly
 # re-execute themselves with the shell detected at configure time, since
 # we are already running them under it explicitly in our setup (see e.g.
 # the definition of TEST_LOG_COMPILER above).
 AM_TESTS_ENVIRONMENT += AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC;
 # We want warning messages and explanations for skipped tests to go to
-# the console if possible, so set up `stderr_fileno_' properly.
+# the console if possible, so set up 'stderr_fileno_' properly.
 AM_TESTS_FD_REDIRECT = 9>&2
 AM_TESTS_ENVIRONMENT += stderr_fileno_=9; export stderr_fileno_;
 
@@ -136,6 +136,7 @@ do_subst = sed \
   -e 's|@APIVERSION[@]|$(APIVERSION)|g' \
   -e 's|@PATH_SEPARATOR[@]|$(PATH_SEPARATOR)|g' \
   -e 's|@SHELL[@]|$(SHELL)|g' \
+  -e 's|@AWK[@]|$(AWK)|g' \
   -e 's|@PERL[@]|$(PERL)|g' \
   -e 's|@EGREP[@]|$(EGREP)|g' \
   -e 's|@FGREP[@]|$(FGREP)|g' \
@@ -148,10 +149,16 @@ do_subst = sed \
   -e 's|@FFLAGS[@]|$(FFLAGS)|g' \
   -e 's|@FC[@]|$(FC)|g' \
   -e 's|@FCFLAGS[@]|$(FCFLAGS)|g' \
+  -e 's|@GNU_CC[@]|$(GNU_CC)|g' \
   -e 's|@GNU_CFLAGS[@]|$(GNU_CFLAGS)|g' \
+  -e 's|@GNU_CXX[@]|$(GNU_CXX)|g' \
   -e 's|@GNU_CXXFLAGS[@]|$(GNU_CXXFLAGS)|g' \
+  -e 's|@GNU_F77[@]|$(GNU_F77)|g' \
   -e 's|@GNU_FFLAGS[@]|$(GNU_FFLAGS)|g' \
+  -e 's|@GNU_FC[@]|$(GNU_FC)|g' \
   -e 's|@GNU_FCFLAGS[@]|$(GNU_FCFLAGS)|g' \
+  -e 's|@GNU_GCJ[@]|$(GNU_GCJ)|g' \
+  -e 's|@GNU_GCJFLAGS[@]|$(GNU_GCJFLAGS)|g' \
   -e 's|@YACC[@]|$(YACC)|g' \
   -e 's|@LEX[@]|$(LEX)|g' \
   -e 's|@TEX[@]|$(TEX)|g' \
@@ -210,8 +217,8 @@ clean-local-check:
 	   rm -rf "$$@"; \
 	 fi;
 
-## Run the testsuite through the `prove' utility.  Mostly for maintainers,
-## and to find out possible incompatibilities between `prove' and the
+## Run the testsuite through the 'prove' utility.  Mostly for maintainers,
+## and to find out possible incompatibilities between 'prove' and the
 ## Automake own TAP driver.
 
 PROVE = prove
@@ -276,7 +283,7 @@ prove installprove: $(TESTS) prove-runner defs-static
 	      echo $(srcdir)/$$t; \
 	    fi; \
 	  done`; \
-## Extra environment, mostly for use by `prove-runner'.
+## Extra environment, mostly for use by 'prove-runner'.
 ## XFAIL_TESTS gets normalized to play nicer with VPATH builds.
 	XFAIL_TESTS=`\
 	  for t in $(XFAIL_TESTS); do \

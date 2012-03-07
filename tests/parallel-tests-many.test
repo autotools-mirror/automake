@@ -21,8 +21,6 @@
 am_parallel_tests=yes
 . ./defs || Exit 1
 
-set -e
-
 cat >> configure.ac << 'END'
 AC_OUTPUT
 END
@@ -89,14 +87,28 @@ END
 
 setup_data ()
 {
-  awk "
-    BEGIN {
-      print \"TESTS = \\\\\"
-      for (i = 1; i < $count; i = i + 1)
-        print \"  $deepdir/$tname-\" i \".test \\\\\"
-      print \"  $deepdir/$tname-\" i \".test\"
-    }
-  " > list-of-tests.am || Exit 99
+  # Use perl, not awk, to avoid errors like "awk: string too long"
+  # (seen e.g. with Solaris 10 /usr/bin/awk).
+  count=$count deepdir=$deepdir tname=$tname $PERL -e '
+    use warnings FATAL => "all";
+    use strict;
+    print "TESTS = \\\n";
+    my $i = 0;
+    while (++$i)
+      {
+        print "  $ENV{deepdir}/$ENV{tname}-$i.test";
+        if ($i >= $ENV{count})
+          {
+            print "\n";
+            last;
+          }
+        else
+          {
+            print " \\\n";
+          }
+      }
+  ' > list-of-tests.am || Exit 99
+  sed 20q list-of-tests.am || Exit 99 # For debugging.
   $AUTOMAKE Makefile \
     || framework_failure_ "unexpected automake failure"
   ./config.status Makefile \
@@ -139,7 +151,8 @@ rm -f $deepdir/* || Exit 99
 $MAKE check > stdout || { cat stdout; Exit 1; }
 cat stdout
 
-grep "All $count tests" stdout
+grep "^# TOTAL: $count$" stdout
+grep "^# PASS:  $count$" stdout
 
 grep "^PASS: .*$tname-[0-9][0-9]*\.test" stdout > grp
 ls -1 $deepdir | grep '\.log$' > lst
@@ -164,7 +177,8 @@ cat stdout
 grep "^PASS: .*$tname-1\.test" stdout
 grep "^PASS: .*$tname-2\.test" stdout
 test `LC_ALL=C grep -c "^[A-Z][A-Z]*:" stdout` -eq 2
-grep "All 2 tests" stdout
+grep "^# TOTAL: 2$" stdout
+grep "^# PASS:  2$" stdout
 
 # "make clean" might ignore some failures, so we prefer to also grep its
 # output to ensure that no "Argument list too long" error was encountered.

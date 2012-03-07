@@ -14,6 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package Automake::Condition;
+
+use 5.006;
 use strict;
 use Carp;
 
@@ -163,11 +165,11 @@ both create the C<"FALSE"> condition).
 =cut
 
 # Keys in this hash are conditional strings. Values are the
-# associated object conditions.  This is used by `new' to reuse
+# associated object conditions.  This is used by 'new' to reuse
 # Condition objects with identical conditionals.
 use vars '%_condition_singletons';
 # Do NOT reset this hash here.  It's already empty by default,
-# and any setting would otherwise occur AFTER the `TRUE' and `FALSE'
+# and any setting would otherwise occur AFTER the 'TRUE' and 'FALSE'
 # constants definitions.
 #   %_condition_singletons = ();
 
@@ -183,9 +185,9 @@ sub new ($;@)
     {
       # Catch some common programming errors:
       # - A Condition passed to new
-      confess "`$cond' is a reference, expected a string" if ref $cond;
+      confess "'$cond' is a reference, expected a string" if ref $cond;
       # - A Condition passed as a string to new
-      confess "`$cond' does not look like a condition" if $cond =~ /::/;
+      confess "'$cond' does not look like a condition" if $cond =~ /::/;
     }
 
   # Accept strings like "FOO BAR" as shorthand for ("FOO", "BAR").

@@ -28,7 +28,7 @@
 # thus the second make will invoke depcomp with object='../../src/foo.o',
 # causing errors such as:
 #
-#  touch: cannot touch `../../src/.deps/foo.TPo': No such file or directory
+#  touch: cannot touch '../../src/.deps/foo.TPo': No such file or directory
 #  makedepend: error:  cannot open "../../src/.deps/foo.TPo"
 #  ../../depcomp: line 560: ../../src/.deps/foo.TPo: No such file or directory
 
@@ -53,8 +53,8 @@
 # <http://lists.gnu.org/archive/html/automake-patches/2011-05/msg00019.html>
 #
 # A partial failure of an earlier version of this test; some bad
-# post-processing of the `*.Po' files led to the following broken
-# contents of `src/sub/.deps/subfoo.Po':
+# post-processing of the '*.Po' files led to the following broken
+# contents of 'src/sub/.deps/subfoo.Po':
 #
 #  > sub/subfoo.o: ../../depmod-data.dir/src/sub/subfoo.c \
 #  >   ../../depmod-data.dir/src/foo.h

@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Sanity check for the automake testsuite.
-# Check creation/removal of temporary test working directory by `./defs'.
+# Check creation/removal of temporary test working directory by './defs'.
 
 . ./defs || Exit 1
 
@@ -26,7 +26,7 @@ fi
 plan_ 42
 
 # We still need a little hack to make ./defs work outside automake's
-# tree `tests' subdirectory.  Not a big deal.
+# tree 'tests' subdirectory.  Not a big deal.
 sed "s|^testbuilddir=.*|testbuilddir='`pwd`'|" ../defs-static >defs-static
 diff ../defs-static defs-static && fatal_ "failed to edit defs-static"
 cp ../defs .
@@ -46,7 +46,11 @@ dir=dummy.dir
 do_clean ()
 {
   test -d $dir || return 0
-  find $dir -type d -exec chmod u+rwx '{}' ';' || :
+  # Don't try to be smart and use find here, that has caused issues
+  # and extra ERROR results in the past.  Be dumb and safe.
+  chmod u+rwx $dir || :
+  for d in $dir/*; do test ! -d $d || chmod u+rwx $d || :; done
+  for d in $dir/*/*; do test ! -d $d || chmod u+rwx $d || :; done
   rm -rf $dir
 }
 
@@ -62,17 +66,17 @@ fi
 cd ..
 chmod 000 $dir/sub/* $dir/file
 test $have_symlinks = yes && chmod 000 $dir/symlink
-chmod 000 $dir/sub $dir
-command_ok_ "pre-cleanup can deal with null-perms testdir" \
+chmod 500 $dir/sub $dir
+command_ok_ "pre-cleanup can deal with low-perms testdir" \
             $SHELL -c  '. ./defs' dummy.test
-command_ok_ "pre-cleanup removed null-perms testdir" \
+command_ok_ "pre-cleanup removed low-perms testdir" \
             eval 'test ! -f $dir && test ! -d $dir && test ! -r $dir'
 
 do_clean
 
 # Check that post-test cleanup works also with directories with
 # "null" permissions, and containing broken symlinks.
-command_ok_ "post-cleanup can deal with null-perms testdir" \
+command_ok_ "post-cleanup can deal with low-perms testdir" \
             $SHELL -c  '
   stderr_fileno_=2
   . ./defs || Exit 1
@@ -87,7 +91,7 @@ command_ok_ "post-cleanup can deal with null-perms testdir" \
   cd ..
   chmod 000 dir/sub/* dir/file
   test $have_symlinks = yes && chmod 000 dir/symlink
-  chmod 000 dir/sub dir
+  chmod 500 dir/sub dir
   :
 ' dummy.test
 command_ok_ "post-cleanup removed null-perms testdir" \
@@ -130,6 +134,7 @@ if test $have_symlinks = yes; then
   command_ok_ "post-cleanup chmod doesn't follow symlinks to dirs" \
               eval 'ls -ld dir | grep "^d---------.*dir"'
 
+  chmod u+rwx dir file
   rmdir dir
   rm -f file
 

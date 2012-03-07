@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Make sure `compile' wraps the Microsoft C/C++ compiler (cl) correctly
+# Make sure 'compile' wraps the Microsoft C/C++ compiler (cl) correctly
 # with respect to absolute paths.
 
 required='cl'
@@ -79,8 +79,15 @@ if test -f sub/libfoo.a; then
   cp sub/libfoo.a sub/foo.lib
 fi
 
-./compile cl $CFLAGS $LDFLAGS -L"$absfoodir" "$absmainobj" -o main -lfoo
+# POSIX mandates that the compiler accepts a space between the -I,
+# -l and -L options and their respective arguments.  Traditionally,
+# this should work also without a space.  Try both usages.
+for sp in '' ' '; do
+  rm -f main
 
-./main
+  ./compile cl $CFLAGS $LDFLAGS -L${sp}"$absfoodir" "$absmainobj" -o main -l${sp}foo
+
+  ./main
+done
 
 :

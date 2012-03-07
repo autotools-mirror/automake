@@ -27,7 +27,7 @@
 # reason for skip/failure to console, rather than to the *.log files.
 : ${stderr_fileno_=2}
 
-# Copied from Gnulib's `tests/init.sh'.
+# Copied from Gnulib's 'tests/init.sh'.
 warn_ () { echo "$@" 1>&$stderr_fileno_; }
 fail_ () { warn_ "$me: failed test: $@"; Exit 1; }
 skip_ () { warn_ "$me: skipped test: $@"; Exit 77; }

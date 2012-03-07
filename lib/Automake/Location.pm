@@ -15,6 +15,8 @@
 
 package Automake::Location;
 
+use 5.006;
+
 =head1 NAME
 
 Automake::Location - a class for location tracking, with a stack of contexts
