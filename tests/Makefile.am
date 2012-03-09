@@ -23,6 +23,7 @@ auxdir2.test \
 cond17.test \
 dist-auxfile.test \
 dist-auxfile-2.test \
+dist-pr109765.test \
 gcj6.test \
 java-nobase.test \
 objext-pr10128.test \

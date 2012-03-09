@@ -332,6 +332,7 @@ dist-included-parent-dir.test \
 dist-missing-am.test \
 dist-missing-included-m4.test \
 dist-missing-m4.test \
+dist-pr109765.test \
 distcleancheck.test \
 distcom2.test \
 distcom3.test \
