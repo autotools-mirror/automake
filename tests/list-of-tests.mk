@@ -459,6 +459,7 @@ instdat.test \
 instdat2.test \
 instdir.test \
 instdir2.test \
+instdir-cond.test \
 instdir-java.test \
 instdir-lisp.test \
 instdir-ltlib.test \

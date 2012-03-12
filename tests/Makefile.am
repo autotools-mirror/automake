@@ -25,6 +25,7 @@ dist-auxfile.test \
 dist-auxfile-2.test \
 dist-pr109765.test \
 gcj6.test \
+instdir-cond.test \
 java-nobase.test \
 objext-pr10128.test \
 pr8365-remake-timing.test \
