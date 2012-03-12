@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001, 2002  Free Software Foundation, Inc.
+# Copyright (C) 2001, 2002, 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure py_compile is defined.
+# Test to make sure py_compile and am__py_compile are correctly defined.
 
 . ./defs || Exit 1
 
@@ -26,8 +26,26 @@ cat > Makefile.am << 'END'
 python_PYTHON = foo.py
 END
 
+cat > Makefile2.am << 'END'
+python_PYTHON = a.py
+nodist_python_PYTHON = b.py
+nobase_python_PYTHON = x/c.py
+mydir = ${prefix}
+my_PYTHON = d.py
+END
+
 $ACLOCAL
 $AUTOMAKE -a
 
-grep '^py_compile =' Makefile.in
 test -f py-compile
+
+$AUTOMAKE Makefile2
+
+grep "py" Makefile.in Makefile2.in # For debugging.
+
+for f in Makefile.in Makefile2.in; do
+  test `grep -c '^py_compile =' $f` -eq 1
+  test `grep -c '^am__py_compile =' $f` -eq 1
+done
+
+:
