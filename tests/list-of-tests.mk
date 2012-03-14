@@ -347,6 +347,7 @@ dist-missing-included-m4.test \
 dist-missing-m4.test \
 dist-readonly.test \
 dist-repeated.test \
+dist-pr109765.test \
 distcleancheck.test \
 distcom2.test \
 distcom3.test \
@@ -471,6 +472,8 @@ instdat.test \
 instdat2.test \
 instdir.test \
 instdir2.test \
+instdir-cond.test \
+instdir-empty.test \
 instdir-java.test \
 instdir-lisp.test \
 instdir-ltlib.test \

@@ -39,6 +39,8 @@ yacc-bison-skeleton.test \
 cond17.test \
 gcj6.test \
 override-conditional-2.test \
+dist-pr109765.test \
+instdir-cond.test \
 java-nobase.test \
 objext-pr10128.test \
 parallel-tests-many.test \
