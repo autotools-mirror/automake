@@ -845,6 +845,7 @@ python12.test \
 python-dist.test \
 python-vars.test \
 python-virtualenv.test \
+python-pr10995.test \
 recurs.test \
 recurs2.test \
 remake.test \
