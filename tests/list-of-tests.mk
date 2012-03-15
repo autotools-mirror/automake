@@ -459,6 +459,8 @@ instdat.test \
 instdat2.test \
 instdir.test \
 instdir2.test \
+instdir-cond.test \
+instdir-empty.test \
 instdir-java.test \
 instdir-lisp.test \
 instdir-ltlib.test \
@@ -726,6 +728,7 @@ python9.test \
 python10.test \
 python11.test \
 python12.test \
+python-pr10995.test \
 recurs.test \
 recurs2.test \
 remake.test \
