@@ -30,6 +30,8 @@ java-nobase.test \
 objext-pr10128.test \
 pr8365-remake-timing.test \
 lex-subobj-nodep.test \
+python.test \
+python-pr10995.test \
 remake-am-pr10111.test \
 remake-m4-pr10111.test \
 txinfo5.test

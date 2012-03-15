@@ -728,6 +728,7 @@ python9.test \
 python10.test \
 python11.test \
 python12.test \
+python-pr10995.test \
 recurs.test \
 recurs2.test \
 remake.test \
