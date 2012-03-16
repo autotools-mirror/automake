@@ -14,45 +14,40 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# An empty "foo_PRIMARY" declaration should cause "make install" to create
-# directory $(foodir).  Suggested in discussion on automake bug#10997.
+# Check against automake bug#10997: directories holding only
+# conditionally-installed files should not be created unconditionally.
+# FIXME: this test tries to check that the above also hold for the
+# FIXME: "installdirs" target, but that doesn't currently work :-(
+# FIXME: So this test is still xfailing.
+# See sister test 'instdir-cond.test' for the succeeding part.
 
 . ./defs || Exit 1
 
 set -e
 
-echo AC_OUTPUT >> configure.in
+cat >> configure.in << 'END'
+AM_CONDITIONAL([ENABLE_FOO], [false])
+AC_OUTPUT
+END
+
+: > foo
+: > bar
 
 cat > Makefile.am << 'END'
-pkgdata_DATA =
-libexec_SCRIPTS =
+pkglibexec_SCRIPTS =
+if ENABLE_FOO
+pkgdata_DATA = foo
+pkglibexec_SCRIPTS += bar
+endif
 END
 
 $ACLOCAL
 $AUTOMAKE
 $AUTOCONF
 
-cwd=`pwd`
-./configure --prefix="$cwd/inst"
+./configure --prefix="`pwd`/inst"
 
-$MAKE install
-test -d inst/share/$me
-test -d inst/libexec
-rm -rf inst
-
-$MAKE install-exec
-test ! -d inst/share
-test -d inst/libexec
-rm -rf inst
-
-$MAKE install-data
-test -d inst/share/$me
-test ! -d inst/libexec
-rm -rf inst
-
-./configure --prefix=/foo
-$MAKE install DESTDIR=$cwd/dest
-test -d dest/foo/share/$me
-test -d dest/foo/libexec
+$MAKE installdirs
+test ! -d inst || { find inst; Exit 1; }
 
 :
