@@ -64,6 +64,10 @@ aclocal-path-install.test \
 aclocal-path-install-serial.test \
 aclocal-path-nonexistent.test \
 aclocal-path-precedence.test \
+aclocal-install-fail.test \
+aclocal-install-mkdir.test \
+aclocal-no-install-no-mkdir.test \
+aclocal-verbose-install.test \
 acoutnoq.test \
 acoutpt.test \
 acoutpt2.test \
