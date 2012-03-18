@@ -41,8 +41,7 @@ use Automake::ChannelDefs;
 use Automake::XFile;
 use Automake::FileUtils;
 use File::Basename;
-use File::stat;
-use Cwd;
+use File::Path ();
 
 # Some globals.
 
@@ -179,6 +178,17 @@ sub unlink_tmp
 $SIG{'INT'} = $SIG{'TERM'} = $SIG{'QUIT'} = $SIG{'HUP'} = 'unlink_tmp';
 END { unlink_tmp }
 
+sub xmkdir_p ($)
+{
+  my $dir = shift;
+  local $@ = undef;
+  return
+    if -d $dir or eval { File::Path::mkpath $dir };
+  chomp $@;
+  $@ =~ s/\s+at\s.*\bline\s\d+.*$//;
+  fatal "could not create directory '$dir': $@";
+}
+
 # Check macros in acinclude.m4.  If one is not used, warn.
 sub check_acinclude ()
 {
@@ -207,11 +217,14 @@ sub reset_maps ()
   undef &search;
 }
 
-# install_file ($SRC, $DEST)
+# install_file ($SRC, $DESTDIR)
 sub install_file ($$)
 {
-  my ($src, $dest) = @_;
+  my ($src, $destdir) = @_;
+  my $dest = $destdir . "/" . basename ($src);
   my $diff_dest;
+
+  verb "installing $src to $dest";
 
   if ($force_output
       || !exists $file_contents{$dest}
@@ -265,6 +278,7 @@ sub install_file ($$)
 	}
       elsif (!$dry_run)
 	{
+          xmkdir_p ($destdir);
 	  xsystem ('cp', $src, $dest);
 	}
     }
@@ -304,6 +318,7 @@ sub list_compare (\@\@)
 # --------------------------
 # Scan all M4 files installed in @DIRS for new macro definitions.
 # Register each file as of type $TYPE (one of the FT_* constants).
+my $first_user_m4dir = 1;
 sub scan_m4_dirs ($@)
 {
   my ($type, @dirlist) = @_;
@@ -312,6 +327,15 @@ sub scan_m4_dirs ($@)
     {
       if (! opendir (DIR, $m4dir))
 	{
+	  if ($install && $type == FT_USER && $first_user_m4dir)
+            {
+              # We will try to create this directory later, so don't
+              # complain if it doesn't exist.
+              # TODO: maybe we should avoid complaining only if errno
+              # is ENONENT?
+              $first_user_m4dir = 0;
+              next;
+            }
 	  fatal "couldn't open directory '$m4dir': $!";
 	}
 
@@ -770,9 +794,7 @@ sub write_aclocal ($@)
 	      my $dest;
 	      for my $ifile (@{$file_includes{$file}}, $file)
 		{
-		  $dest = "$user_includes[0]/" . basename $ifile;
-		  verb "installing $ifile to $dest";
-		  install_file ($ifile, $dest);
+		  install_file ($ifile, $user_includes[0]);
 		}
 	      $installed = 1;
 	    }

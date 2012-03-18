@@ -14,43 +14,26 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# An empty "foo_PRIMARY" declaration should cause "make install" to create
-# directory $(foodir).  Suggested in discussion on automake bug#10997.
+# Check that aclocal does not create a non-existent local m4 directory
+# if the '--install' option is not given.
 
+am_create_testdir=empty
 . ./defs || Exit 1
 
-echo AC_OUTPUT >> configure.ac
+set -e
 
-cat > Makefile.am << 'END'
-pkgdata_DATA =
-libexec_SCRIPTS =
+cat > configure.in <<END
+AC_INIT([$me], [1.0])
+MY_MACRO
 END
 
-$ACLOCAL
-$AUTOMAKE
-$AUTOCONF
+mkdir sys-acdir
+cat > sys-acdir/my-defs.m4 <<END
+AC_DEFUN([MY_MACRO], [:])
+END
 
-cwd=`pwd`
-./configure --prefix="$cwd/inst"
-
-$MAKE install
-test -d inst/share/$me
-test -d inst/libexec
-rm -rf inst
-
-$MAKE install-exec
-test ! -d inst/share
-test -d inst/libexec
-rm -rf inst
-
-$MAKE install-data
-test -d inst/share/$me
-test ! -d inst/libexec
-rm -rf inst
-
-./configure --prefix=/foo
-$MAKE install DESTDIR=$cwd/dest
-test -d dest/foo/share/$me
-test -d dest/foo/libexec
+$ACLOCAL -I foo --system-acdir=sys-acdir && Exit 1
+test ! -d foo
+test ! -r foo
 
 :
