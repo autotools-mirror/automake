@@ -1,6 +1,5 @@
 ## automake - create Makefile.in from Makefile.am
-## Copyright (C) 1994, 1995, 1996, 1998, 1999, 2001, 2003, 2004, 2006,
-## 2007, 2008, 2009  Free Software Foundation, Inc.
+## Copyright (C) 1994-2012 Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -28,11 +27,14 @@ am__installdirs += "$(DESTDIR)$(%NDIR%dir)"
 .PHONY install-%EXEC?exec:data%-am: install-%DIR%%PRIMARY%
 install-%DIR%%PRIMARY%: $(%DIR%_%PRIMARY%)
 	@$(NORMAL_INSTALL)
-	test -z "$(%NDIR%dir)" || $(MKDIR_P) "$(DESTDIR)$(%NDIR%dir)"
 if %?BASE%
 ## Funny invocation because Makefile variable can be empty, leading to
 ## a syntax error in sh.
 	@list='$(%DIR%_%PRIMARY%)'; test -n "$(%NDIR%dir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(%NDIR%dir)'"; \
+	  $(MKDIR_P) '$(DESTDIR)$(%NDIR%dir)' || exit 1; \
+	fi; \
 	for p in $$list; do \
 ## A file can be in the source directory or the build directory.
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
@@ -47,13 +49,17 @@ if %?BASE%
 	done
 else !%?BASE%
 	@list='$(%DIR%_%PRIMARY%)'; test -n "$(%NDIR%dir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(%NDIR%dir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(%NDIR%dir)" || exit 1; \
+	fi; \
 	$(am__nobase_list) | while read dir files; do \
 	  xfiles=; for file in $$files; do \
 	    if test -f "$$file"; then xfiles="$$xfiles $$file"; \
 	    else xfiles="$$xfiles $(srcdir)/$$file"; fi; done; \
 	  test -z "$$xfiles" || { \
 	    test "x$$dir" = x. || { \
-	      echo "$(MKDIR_P) '$(DESTDIR)$(%NDIR%dir)/$$dir'"; \
+	      echo " $(MKDIR_P) '$(DESTDIR)$(%NDIR%dir)/$$dir'"; \
 	      $(MKDIR_P) "$(DESTDIR)$(%NDIR%dir)/$$dir"; }; \
 	    echo " $(INSTALL_%ONE_PRIMARY%) $$xfiles '$(DESTDIR)$(%NDIR%dir)/$$dir'"; \
 	    $(INSTALL_%ONE_PRIMARY%) $$xfiles "$(DESTDIR)$(%NDIR%dir)/$$dir" || exit $$?; }; \
