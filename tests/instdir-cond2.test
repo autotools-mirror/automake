@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2004-2012 Free Software Foundation, Inc.
+# Copyright (C) 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,44 +14,38 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Make sure that Java rules don't attempt to compile or install
-# *.java files when there are none.
-# Report from Johannes Nicolai (PR/441).
+# Check against automake bug#10997: directories holding only
+# conditionally-installed files should not be created unconditionally.
+# FIXME: this test tries to check that the above also hold for the
+# FIXME: "installdirs" target, but that doesn't currently work :-(
+# FIXME: So this test is still xfailing.
+# See sister test 'instdir-cond.test' for the succeeding part.
 
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'
-AM_CONDITIONAL([WHO_CARES], [false])
+AM_CONDITIONAL([ENABLE_FOO], [false])
 AC_OUTPUT
 END
 
+: > foo
+: > bar
+
 cat > Makefile.am << 'END'
-if WHO_CARES
-JAVA_FILES = MyClass1.java
+pkglibexec_SCRIPTS =
+if ENABLE_FOO
+pkgdata_DATA = foo
+pkglibexec_SCRIPTS += bar
 endif
-
-javadir = $(prefix)/java
-java_JAVA = $(JAVA_FILES)
-END
-
-cat > MyClass1.java << 'END'
-class MyClass1 { // Deliberately missing right curly bracket.
 END
 
 $ACLOCAL
-$AUTOCONF
 $AUTOMAKE
+$AUTOCONF
 
-cwd=`pwd` || Exit 1
-./configure --prefix="$cwd/_inst"
-$MAKE
-$MAKE install
-ls -l .
-find . -name '*.class' | grep . && Exit 1
-# If we have nothing to install, we shouldn't create any installation
-# directory.  Related to automake bug#11030.
-test ! -d _inst
-$MAKE uninstall
-$MAKE distcheck
+./configure --prefix="`pwd`/inst"
+
+$MAKE installdirs
+test ! -d inst || { find inst; Exit 1; }
 
 :

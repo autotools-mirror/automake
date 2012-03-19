@@ -15,19 +15,50 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test for PR 203.
-# == Report ==
+# See also automake bug#11030.
+#
+# == Original Report for PR/203 ==
 # Some standard targets are missing '-local' hooks.  For instance,
 # installdirs is missing this.  Ideally this would be an automatic
 # feature of any exported target.
 
 . ./defs || Exit 1
 
+echo AC_OUTPUT >> configure.ac
+
 cat > Makefile.am << 'END'
+foodir = $(datadir)/$(distdir)
 installdirs-local:
-	@echo here
+	$(MKDIR_P) $(DESTDIR)$(foodir)
+install-data-hook: installdirs-local
 END
 
 $ACLOCAL
 $AUTOMAKE
 
-test `grep installdirs-local Makefile.in | wc -l` -eq 3
+test `grep installdirs-local Makefile.in | wc -l` -eq 4
+
+cwd=`pwd` || fatal_ "getting current working directory"
+
+$AUTOCONF
+./configure --prefix="$cwd/inst"
+
+$MAKE installdirs
+test -d inst/share/$me-1.0
+rm -rf inst
+
+$MAKE install
+test -d inst/share/$me-1.0
+rm -rf inst
+
+./configure --prefix=/foo
+
+$MAKE installdirs DESTDIR="$cwd/dest"
+test -d dest/foo/share/$me-1.0
+rm -rf dest
+
+$MAKE install DESTDIR="$cwd/dest"
+test -d dest/foo/share/$me-1.0
+rm -rf dest
+
+:

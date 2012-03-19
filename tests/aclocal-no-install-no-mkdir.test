@@ -1,5 +1,5 @@
-#!/bin/sh
-# Copyright (C) 2008-2012 Free Software Foundation, Inc.
+#! /bin/sh
+# Copyright (C) 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,17 +14,26 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# AM_COND_IF with an undefined condition should fail.
+# Check that aclocal does not create a non-existent local m4 directory
+# if the '--install' option is not given.
 
+am_create_testdir=empty
 . ./defs || Exit 1
 
-cat >>configure.ac <<'END'
-AM_COND_IF([BAD_COND], [AC_CONFIG_FILES([file1])])
-AC_OUTPUT
+set -e
+
+cat > configure.ac <<END
+AC_INIT([$me], [1.0])
+MY_MACRO
 END
 
-$ACLOCAL 2>stderr && { cat stderr >&2; Exit 1; }
-cat stderr >&2
-grep '^configure\.ac:4:.*AM_COND_IF.* no such condition.*BAD_COND' stderr
+mkdir sys-acdir
+cat > sys-acdir/my-defs.m4 <<END
+AC_DEFUN([MY_MACRO], [:])
+END
+
+$ACLOCAL -I foo --system-acdir=sys-acdir && Exit 1
+test ! -d foo
+test ! -r foo
 
 :

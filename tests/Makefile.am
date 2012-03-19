@@ -40,6 +40,8 @@ cond17.test \
 gcj6.test \
 interp3.test \
 override-conditional-2.test \
+dist-pr109765.test \
+instdir-cond2.test \
 java-nobase.test \
 objext-pr10128.test \
 parallel-tests-many.test \

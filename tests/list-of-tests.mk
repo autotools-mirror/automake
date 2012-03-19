@@ -69,6 +69,10 @@ aclocal-path-install.test \
 aclocal-path-install-serial.test \
 aclocal-path-nonexistent.test \
 aclocal-path-precedence.test \
+aclocal-install-fail.test \
+aclocal-install-mkdir.test \
+aclocal-no-install-no-mkdir.test \
+aclocal-verbose-install.test \
 ac-output-old.tap \
 acsilent.test \
 acsubst.test \
@@ -348,6 +352,7 @@ dist-missing-included-m4.test \
 dist-missing-m4.test \
 dist-readonly.test \
 dist-repeated.test \
+dist-pr109765.test \
 distcleancheck.test \
 distcom2.test \
 distcom3.test \
@@ -469,6 +474,9 @@ instdat.test \
 instdat2.test \
 instdir.test \
 instdir2.test \
+instdir-cond.test \
+instdir-cond2.test \
+instdir-no-empty.test \
 instdir-java.test \
 instdir-lisp.test \
 instdir-ltlib.test \
@@ -838,6 +846,7 @@ python12.test \
 python-dist.test \
 python-vars.test \
 python-virtualenv.test \
+python-pr10995.test \
 recurs.test \
 recurs2.test \
 remake.test \

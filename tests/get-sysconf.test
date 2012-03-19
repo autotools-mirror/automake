@@ -25,16 +25,21 @@
 st=0
 if test -d "$top_testsrcdir"/.git; then
   # We are running from a git checkout.
-  git log -1 || st=1
-else
-  # We are probably running from a distribution tarball, so
-  # the ChangeLog file must be present.
+  (cd "$top_testsrcdir" && git log -1) || st=1
+elif test -f "$top_testsrcdir"/ChangeLog; then
+  # We are probably running from a distribution tarball.
   awk '
     BEGIN { first = 1 }
     (first == 1) { print; first = 0; next; }
     /^[^\t]/ { exit(0); }
     { print }
   ' "$top_testsrcdir"/ChangeLog || st=1
+else
+  # Some non-common but possibly valid setup (see for example the Homebrew
+  # problem reported in automake bug#10866); so just give an harmless
+  # warning instead of failing.
+  warn_ "no .git directory nor ChangeLog file found, some info won't" \
+        "be available"
 fi
 $PERL -V || st=1
 # It's OK for the user not to have the TAP::Parser module; this can
