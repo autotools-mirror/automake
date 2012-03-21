@@ -17,6 +17,23 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+XFAIL_TESTS = \
+all.test \
+auxdir2.test \
+cond17.test \
+dist-auxfile.test \
+dist-auxfile-2.test \
+dist-pr109765.test \
+gcj6.test \
+instdir-cond2.test \
+java-nobase.test \
+objext-pr10128.test \
+pr8365-remake-timing.test \
+lex-subobj-nodep.test \
+remake-am-pr10111.test \
+remake-m4-pr10111.test \
+txinfo5.test
+
 perl_TESTS = \
 pm/Condition.pl \
 pm/Condition-t.pl \
