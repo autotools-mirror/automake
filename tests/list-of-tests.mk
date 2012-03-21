@@ -17,6 +17,33 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+XFAIL_TESTS = \
+all.test \
+yacc-bison-skeleton-cxx.test \
+yacc-bison-skeleton.test \
+cond17.test \
+gcj6.test \
+override-conditional-2.test \
+dist-pr109765.test \
+instdir-cond2.test \
+java-nobase.test \
+objext-pr10128.test \
+parallel-tests-many.test \
+pr8365-remake-timing.test \
+lex-subobj-nodep.test \
+remake-am-pr10111.test \
+remake-m4-pr10111.test \
+txinfo5.test \
+## FIXME: this "expected failures" are in truth an hack used to
+## FIXME: to verify that some incorrect usages of our perl libraries
+## FIXME: raise an error.  We should find a cleaner way to check that.
+pm/Cond2.pl \
+pm/Cond3.pl \
+pm/DisjCon2.pl \
+pm/DisjCon3.pl \
+pm/Version2.pl \
+pm/Version3.pl
+
 perl_TESTS = \
 pm/Cond2.pl \
 pm/Cond3.pl \
