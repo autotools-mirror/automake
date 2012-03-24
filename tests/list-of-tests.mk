@@ -412,9 +412,6 @@ extra8.test \
 extra10.test \
 extra11.test \
 extra12.test \
-extra-portability.test \
-extra-portability2.test \
-extra-portability3.test \
 extradep.test \
 extradep2.test \
 f90only.test \
