@@ -31,9 +31,7 @@ AC_CONFIG_FILES([./foo:a.in:b.in:c.in])
 AC_OUTPUT
 END
 
-echo foo = barbarbar > Makefile.am
-
-touch a.in b.in c.in
+touch a.in b.in c.in Makefile.am
 
 $ACLOCAL
 
@@ -46,17 +44,20 @@ grep "^configure\.in:4:.* omit leading '\\./'" stderr
 grep "^configure\.in:4:.*remake rules might be subtly broken" stderr
 
 # Check that our warning was actually justified.
+sed 's/^AM_INIT_AUTOMAKE/&([-Wall -Wno-unsupported])/' <configure.in >t
+mv -f t configure.in
+rm -rf autom4te*.cache
+$ACLOCAL
 $AUTOCONF
 $AUTOMAKE -Wall -Wno-unsupported
 ./configure
 $MAKE
-grep barbarbar Makefile
-# No need to sleep here, configure did that for us already.
-echo foo = bazbazbaz > Makefile.am
+$sleep
+touch Makefile.am
 # Check that remake rules do truly break -- otherwise automake is
 # giving a bogus warning.
-$MAKE 2>stderr && { cat stderr >&2 Exit 1; }
+$MAKE 2>stderr && { cat stderr >&2; Exit 1; }
 cat stderr >&2
-grep "config\\.status:.*invalid argument.*[\`\"']Makefile[\`\"']" stderr
+grep "config\\.status:.*invalid argument.*Makefile" stderr
 
 :
