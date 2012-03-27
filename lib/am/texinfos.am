@@ -94,6 +94,18 @@ endif ! %?LOCAL-TEXIS%
 ## Installing.  ##
 ## ------------ ##
 
+## Some code should be run only if install-info actually exists, and
+## if the user doesn't request it not to be run (through the
+## 'AM_UPDATE_INFO_DIR' environment variable).  See automake bug#9773
+## and Debian Bug#543992.
+if %?FIRST%
+am__can_run_installinfo = \
+  case $$AM_UPDATE_INFO_DIR in \
+    n|no|NO) false;; \
+    *) (install-info --version) >/dev/null 2>&1;; \
+  esac
+endif
+
 ## Look in both . and srcdir because the info pages might have been
 ## rebuilt in the build directory.  Can't cd to srcdir; that might
 ## break a possible install-sh reference.
@@ -222,16 +234,7 @@ install-info-am: $(INFO_DEPS)
 	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(infodir)'"; \
 	  $(INSTALL_DATA) $$files "$(DESTDIR)$(infodir)" || exit $$?; done
 	@$(POST_INSTALL)
-## Only run this code if install-info actually exists, and if the user
-## doesn't request it not to be run (through the 'AM_UPDATE_INFO_DIR'
-## environment variable).  See automake bug#9773 and Debian Bug#543992.
-	@am__run_installinfo=yes; \
-	case $$AM_UPDATE_INFO_DIR in \
-	  n|no|NO) am__run_installinfo=no;; \
-	  *) (install-info --version) >/dev/null 2>&1 \
-	       || am__run_installinfo=no;; \
-	esac; \
-	if test $$am__run_installinfo = yes; then \
+	@if $(am__can_run_installinfo); then \
 	  list='$(INFO_DEPS)'; test -n "$(infodir)" || list=; \
 	  for file in $$list; do \
 ## Strip directory
@@ -322,9 +325,7 @@ uninstall-info-am:
 	@$(PRE_UNINSTALL)
 ## Run two loops here so that we can handle PRE_UNINSTALL and
 ## NORMAL_UNINSTALL correctly.
-	@if test -d '$(DESTDIR)$(infodir)' && \
-	    (install-info --version && \
-	     install-info --version 2>&1 | sed 1q | grep -i -v debian) >/dev/null 2>&1; then \
+	@if test -d '$(DESTDIR)$(infodir)' && $(am__can_run_installinfo); then \
 	  list='$(INFO_DEPS)'; \
 	  for file in $$list; do \
 	    relfile=`echo "$$file" | sed 's|^.*/||'`; \

@@ -76,12 +76,28 @@ fi
 # by default (if the 'install-info' program is available).
 # This should happen in a normal as well as in a DESTDIR installation.
 if test $have_installinfo = yes; then
+
   $MAKE install-info
   test -f $instdir/info/foo.info
   test -f $instdir/info/dir
+  $FGREP 'Does nothing at all, but has a nice name' $instdir/info/dir
+
+  $MAKE uninstall
+  test ! -f $instdir/info/foo.info
+  $FGREP 'but has a nice name' $instdir/info/dir && Exit 1
+
+  dir="$destdir/$cwd/$instdir/info"
+
   $MAKE DESTDIR="$cwd/$destdir" install-info
-  test -f "$destdir/$cwd/$instdir"/info/foo.info
-  test -f "$destdir/$cwd/$instdir"/info/dir
+  test -f "$dir"/foo.info
+  test -f "$dir"/dir
+  $FGREP 'Does nothing at all, but has a nice name' "$dir"/dir
+  $MAKE DESTDIR="$cwd/$destdir" uninstall
+  test ! -f "$dir"/foo.info
+  $FGREP 'but has a nice name' "$dir"/dir && Exit 1
+
+  unset dir
+
 fi
 
 rm -rf $instdir $destdir
@@ -119,6 +135,11 @@ END
   $MAKE install-info
   test -f $instdir/info/foo.info
   test -f $instdir/info/dir
+  $MAKE uninstall
+  test ! -f $instdir/info/foo.info
+  test -f $instdir/info/dir
+  $FGREP 'but has a nice name' $instdir/info/dir && Exit 1
+  : For shells with busted 'set -e'.
 fi
 
 rm -rf $instdir bin/install-info
@@ -132,15 +153,24 @@ for val in no NO n; do
   test -f $instdir/info/foo.info
   test ! -f $instdir/info/dir
 done
+
+$MAKE install-info
+chmod a-w $instdir/info/dir
+for val in no NO n; do
+  env AM_UPDATE_INFO_DIR="$val" $MAKE uninstall
+  $FGREP 'Does nothing at all, but has a nice name' $instdir/info/dir
+done
+
 if test $have_installinfo = yes; then
   for val in 'yes' 'who cares!'; do
     rm -rf $instdir
     env AM_UPDATE_INFO_DIR="$val" $MAKE install-info
     test -f $instdir/info/foo.info
     test -f $instdir/info/dir
+    env AM_UPDATE_INFO_DIR="$val" $MAKE uninstall
+    test ! -f $instdir/info/foo.info
+    $FGREP 'but has a nice name' $instdir/info/dir && Exit 1
   done
 fi
-
-rm -rf $instdir
 
 :

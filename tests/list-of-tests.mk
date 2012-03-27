@@ -612,6 +612,7 @@ libtoo11.test \
 license.test \
 license2.test \
 link_c_cxx.test \
+link_cond.test \
 link_dist.test \
 link_f90_only.test \
 link_fc.test \
