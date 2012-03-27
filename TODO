@@ -1,12 +1,3 @@
-We should arrange so that install-%DIR%%PRIMARY% is run conditionally
-when %DIR%_%PRIMARY% is defined conditionally.  Currently it is always
-run, and that will therefore always create %DIR% (unless %DIR%dir is
-also defined conditionally).  Likewise, installdirs should not
-create %DIR% in conditions were no %DIR%_%PRIMARY% is enabled.
-
-check should depend on all
-  from ben elliston
-
 the new YFLAGS code doesn't correctly handle srcdir
 
 allow foo_NAME to rename an object (library or program)
@@ -14,9 +5,6 @@ at build/install time
 
 remove _LTLIBRARIES and just use _LIBRARIES
 then use this for zip/jar as well
-
-for 1.5
-investigate problems with conditionally defined libraries
 
 add an error if the user makefile.am violates our
    namespace rules
@@ -86,16 +74,6 @@ Alex Hornby
     unfortunately it isn't that useful until autoconf has support
     for this sort of thing as well ]
 
-* distcheck should make sure that each file that uses _() is
-  listed in POTFILES.in
-  From Jim Meyering:
-    # Verify that all source files using _() are listed in po/POTFILES.in.
-    po-check:
-	    grep -E -v '^(#|$$)' po/POTFILES.in | sort > $@-1
-	    grep -E -l '\b_\(' lib/*.c src/*.c | sort > $@-2
-	    diff -u $@-1 $@-2
-	    rm -f $@-1 $@-2
-
 * one performance enhancement would be to have autoconf write
   a single file containing all the macro assignments.
   then read this file via `include'
@@ -122,10 +100,6 @@ Alex Hornby
 * Allow creation of Java .zip/.jar files in natural way
   If you are building a compiled Java library, then the .zip/.jar
   ought to be made automatically.
-
-* Run automake before libtool.  It will report an error but
-  still won't put the file into the disty.  This is wrong.
-  From Mark H Wilkinson <mhw@kremvax.demon.co.uk>
 
 * examine possibility of using any character in a macro name
   and rewriting names automatically.  this means we must rewrite
@@ -183,11 +157,6 @@ Alex Hornby
 * For now I guess I'll just have automake give an error if it encounters
 non-C source in a libtool library specification.
 
-* must split $obj into two parts: one for libtool and one for
-  deansification.  Otherwise .S files will be deansified!
-
-* ansi2knr must currently appear in a directory that has some source
-
 * if program has the same name as a target, do something sensible:
   - if the target is internal, rename it
   - if the target is mandated (eg, "info"), tell the user
@@ -196,12 +165,6 @@ non-C source in a libtool library specification.
 * should separate actual options from strictness levels
   strictness should only cover requirements
   You should be able to pick and choose options
-
-* rewrite in guile (RMS request)
-at the same time, consider adding a GUI
-could use the same parsing code for the GUI and the standalone version
-that means figuring out a better representation of internal state
-[ that's easy -- anything is better than what we have now ]
 
 having just one Makefile for a project would give a big speed increase
 for a project with many directories, eg glibc.  ideally (?) you'd
@@ -259,14 +222,6 @@ from joerg-martin schwarz:
     in an explicitly written rule,  you should emit the corresponding
     Makefile variables automatically.
 
-Configuring in the large:
-* allow hierarchy of dirs to share one aclocal.m4
-  How?
-
-consider printing full file name of Makefile.am or configure.in when
-giving error.  This would help for very large trees with many
-configure.in scripts
-
 From the GNU Standards.  These things could be checked, and probably
 should be if --gnu.
 *    Make sure that the directory into which the distribution unpacks (as
@@ -276,14 +231,10 @@ characters long.
 *    Don't include any symbolic links in the distribution itself.
      (ditto hard links)
 *    Make sure that all the files in the distribution are world-readable.
-* standards no longer prohibit ANSI C.  What does this imply
-  for the de-ansi-fication feature? [ must keep it -- some users rely on it ]
 
 should be able to determine what is built by looking at rules (and
 configure.in).  Then built man pages (eg) could automatically be
 omitted from the distribution.
-
-Consider: "cvs" option adds some cvs-specific rules?
 
 Right now, targets generated internally (eg "install") are not
 overridable by user code.  This should probably be possible, even
@@ -309,14 +260,13 @@ Need way to say there are no suffixes in a Makefile (Franc,ois'
 Check to make sure various scripts are executable (IE when looking for
 them in a directory)
 
-Handle dist-zoo.  Generally add more DOS support.  Maybe run "doschk"
-(why isn't this merged with "pathchk"?) when doing a dist.  Do
-whatever else François says here...
-
 Add support for html via an option.  Use texi2html.  Use
 "html_TEXINFOS", and htmldir = .../html.  Include html files in
 distribution.  Also allow "html_DATA", for raw .html files.
   [ when will texinfo directly support html? ]
+See also Karl Berry's message on a roadmap for a "info -> html"
+transition:
+<http://lists.gnu.org/archive/html/texinfo-devel/2012-03/msg00018.html>
 
 uninstall and pkg-dirs should rm -rf the dir.
 
@@ -325,15 +275,6 @@ instance all the "clean" targets could be merged by keeping lists of
 things to be removed.  This would be a lot nicer looking.  Note that
 the install targets probably should not be merged; it is sometimes
 useful to only install a small part.
-
-* Clean up the output:
-** Order rules sensibly
-** Ensure every line has a purpose.  Omit unused stuff
-** Eliminate extraneous rules when possible (eg 'install-am' stuff)
-** Make sure vertical spacing is correct
-Omit program transform vars from header if no program installed.  This
-is currently pretty hard to do.  (But with beautification code it
-would probably be easy)
 
 * Lex, yacc support:
 ** It would be nice to automatically support using bison's better features
@@ -370,17 +311,6 @@ Some things for --strictness=gnits:
 
 Auto-distribute "ChangeLog.[0-9]+"?  "ChangeLog.[a-z]+"?
 
-Internationalize. [ gettext doesn't have the necessary machinery yet ]
-am_error should use printf-style arguments (for eventual gettext scheme)
-
-François says the ordering of files in a distribution should be as follows:
-* README
-* source files
-* derived files
-I agree, but I don't see how to implement this yet.
-It might be easier if "derived files" is limited to those that
-Automake itself knows about, eg output of yacc.
-
 Check all source files to make sure that FSF address is up-to-date.
 --gnits or --gnu only.
 
@@ -392,19 +322,12 @@ Should libexec programs have the name transform done on them?
 Order the output rules sensibly, so FOO_SOURCES and FOO_OBJECTS are
 together and rules are in the usual order.
 
-Make the output minimal: only output definitions for variables that
-are used.
-
 djm says:
 David> To avoid comments like the one about subdirs getting buried in
 David> the middle of a Makefile.in, how about pushing comments that
 David> start with ### to the top of the Makefile.in (in order)?  Sort
 David> of like how Autoconf uses diversions to force initialization
 David> code to the top of configure.
-
-Karl Berry says:
-Karl> 2) Your Makefile variable names are generally uppercase, but GNU
-Karl> generally uses lowercase. Not that it matters :-).
 
 ================================================================
 
