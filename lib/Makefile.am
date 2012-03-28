@@ -99,7 +99,7 @@ Automake/Config.pm: Automake/Config.in Makefile
 	$(AM_V_at)rm -f $@ $@-t
 	$(AM_V_at)test -d Automake || mkdir Automake
 	$(AM_V_GEN)$(do_subst) $(srcdir)/Automake/Config.in >$@-t
-	$(AM_V_at)chmod a+x,a-w $@-t && mv -f $@-t $@
+	$(AM_V_at)chmod a-w $@-t && mv -f $@-t $@
 EXTRA_DIST += Automake/Config.in
 
 ## --------------------- ##
