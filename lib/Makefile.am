@@ -36,7 +36,6 @@ dist_script_DATA = \
   mkinstalldirs \
   elisp-comp \
   ylwrap \
-  acinstall \
   depcomp \
   compile \
   py-compile \
