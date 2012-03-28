@@ -208,9 +208,7 @@ AC_CONFIG_FILES([
   Makefile
   contrib/Makefile
   doc/Makefile
-  lib/Automake/Makefile
   lib/Makefile
-  lib/am/Makefile
   m4/Makefile
   tests/Makefile
   tests/defs
