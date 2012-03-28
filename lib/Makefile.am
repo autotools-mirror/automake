@@ -17,7 +17,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-SUBDIRS = Automake am
+EXTRA_DIST = gnupload gitlog-to-changelog update-copyright
+
+## -------------------------------------------------------------------- ##
+##  Auxiliary scripts and files for use with "automake --add-missing".  ##
+## -------------------------------------------------------------------- ##
 
 dist_pkgvdata_DATA = \
   COPYING \
@@ -44,8 +48,6 @@ dist_script_DATA = \
   tap-driver.sh \
   tap-driver.pl
 
-EXTRA_DIST = gnupload gitlog-to-changelog update-copyright
-
 install-data-hook:
 	@$(POST_INSTALL)
 	@for prog in $(dist_script_DATA); do \
@@ -60,3 +62,101 @@ installcheck-local:
 	done \
 	  | sed 's/$$/: not executable/' \
 	  | grep . && exit 1; exit 0
+
+## ---------------------------------------------------- ##
+##  Private perl modules used by automake and aclocal.  ##
+## ---------------------------------------------------- ##
+
+perllibdir = $(pkgvdatadir)/Automake
+dist_perllib_DATA = \
+  Automake/ChannelDefs.pm \
+  Automake/Channels.pm \
+  Automake/Condition.pm \
+  Automake/Configure_ac.pm \
+  Automake/DisjConditions.pm \
+  Automake/FileUtils.pm \
+  Automake/General.pm \
+  Automake/Getopt.pm \
+  Automake/Item.pm \
+  Automake/ItemDef.pm \
+  Automake/Location.pm \
+  Automake/Options.pm \
+  Automake/Rule.pm \
+  Automake/RuleDef.pm \
+  Automake/Variable.pm \
+  Automake/VarDef.pm \
+  Automake/Version.pm \
+  Automake/XFile.pm \
+  Automake/Wrap.pm
+
+nodist_perllib_DATA = Automake/Config.pm
+CLEANFILES = $(nodist_perllib_DATA)
+
+## We can't use configure to do the substitution here; we must do it
+## by hand.  We use a funny notation here to avoid configure
+## substitutions in our text.
+do_subst = in=`echo $@ | sed 's/\.[^.]*$$//'`; sed \
+  -e 's,[@]APIVERSION[@],$(APIVERSION),g' \
+  -e 's,[@]PACKAGE[@],$(PACKAGE),g' \
+  -e 's,[@]PACKAGE_BUGREPORT[@],$(PACKAGE_BUGREPORT),g' \
+  -e 's,[@]PERL[@],$(PERL),g' \
+  -e 's,[@]PERL_THREADS[@],$(PERL_THREADS),g' \
+  -e 's,[@]SHELL[@],$(SHELL),g' \
+  -e 's,[@]VERSION[@],$(VERSION),g' \
+  -e "s,[@]configure_input[@],Generated from $$in.in; do not edit by hand.,g" \
+  -e 's,[@]datadir[@],$(datadir),g'
+
+## This file depends on Makefile so it is rebuilt if $(VERSION),
+## $(datadir) or other do_subst'ituted variables change.
+## Use chmod a-w to prevent people from editing the wrong file by accident.
+Automake/Config.pm: Automake/Config.in Makefile
+	$(AM_V_at)rm -f $@ $@-t
+	$(AM_V_at)test -d Automake || mkdir Automake
+	$(AM_V_GEN)$(do_subst) $(srcdir)/Automake/Config.in >$@-t
+	$(AM_V_at)chmod a-w $@-t && mv -f $@-t $@
+EXTRA_DIST += Automake/Config.in
+
+## --------------------- ##
+##  Makefile fragments.  ##
+## --------------------- ##
+
+dist_am_DATA = \
+  am/check.am \
+  am/check2.am \
+  am/clean-hdr.am \
+  am/clean.am \
+  am/compile.am \
+  am/configure.am \
+  am/data.am \
+  am/dejagnu.am \
+  am/depend.am \
+  am/depend2.am \
+  am/distdir.am \
+  am/footer.am \
+  am/header-vars.am \
+  am/header.am \
+  am/install.am \
+  am/inst-vars.am \
+  am/java.am \
+  am/lang-compile.am \
+  am/lex.am \
+  am/library.am \
+  am/libs.am \
+  am/libtool.am \
+  am/lisp.am \
+  am/ltlib.am \
+  am/ltlibrary.am \
+  am/mans-vars.am \
+  am/mans.am \
+  am/program.am \
+  am/progs.am \
+  am/python.am \
+  am/remake-hdr.am \
+  am/scripts.am \
+  am/subdirs.am \
+  am/tags.am \
+  am/texi-vers.am \
+  am/texibuild.am \
+  am/texinfos.am \
+  am/vala.am \
+  am/yacc.am
