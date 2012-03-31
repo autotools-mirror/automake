@@ -25,9 +25,10 @@ AM_MAINTAINER_MODE
 END
 
 cat > Makefile.am << 'END'
-# Disable 'override' warning to work around an unrelated
+# Disable 'override' warnings to work around an unrelated
 # texi+cygnus bug.
-AUTOMAKE_OPTIONS = -Wno-override
+# Disable obsolete warnings because the 'cygnus' mode is now deprecated.
+AUTOMAKE_OPTIONS = -Wno-override -Wno-obsolete
 info_TEXINFOS = ian.texi
 END
 
