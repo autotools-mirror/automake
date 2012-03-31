@@ -29,11 +29,8 @@
 
 . ./defs || Exit 1
 
-# Please keep this underquoted and old-style.
-cat > configure.ac << 'END'
-AC_INIT
-AM_INIT_AUTOMAKE(nonesuch, nonesuch)
-AC_OUTPUT(README.foo:templ/README.foo.in Makefile)
+cat >> configure.ac << 'END'
+AC_OUTPUT([README.foo:templ/README.foo.in])
 END
 
 : > Makefile.am
@@ -46,6 +43,6 @@ $AUTOCONF
 $AUTOMAKE
 ./configure
 $MAKE distdir
-test -f nonesuch-nonesuch/templ/README.foo.in
+test -f $distdir/templ/README.foo.in
 
 :

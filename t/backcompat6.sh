@@ -78,7 +78,7 @@ int main (void)
 END
 
 $ACLOCAL
-$AUTOMAKE --add-missing
+$AUTOMAKE -Wno-obsolete --add-missing
 $AUTOCONF
 
 ./configure

@@ -94,10 +94,10 @@ END
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE -a
+$AUTOMAKE -a -Wno-obsolete
 test -f install-sh
 for f in $makefiles; do mv -f $f.in $f.sav; done
-$AUTOMAKE
+$AUTOMAKE -Wno-obsolete
 for f in $makefiles; do diff $f.sav $f.in; done
 
 ./configure

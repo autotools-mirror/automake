@@ -37,12 +37,16 @@ EOF
 done
 
 echo "SUBDIRS = $subdirs" > Makefile.am
-cat >configure.ac <<EOF
-AC_INIT(`echo $subdirs | sed 's|\([a-z][a-z]*\).*|\1/\1.c|'`)
-AC_CONFIG_AUX_DIR(.)
-AM_INIT_AUTOMAKE($me, 1.0)
+
+cat > configure.ac <<EOF
+AC_INIT([$me], [1.0])
+AC_CONFIG_SRCDIR([foo/foo.c])
+AC_CONFIG_AUX_DIR([.])
+AM_INIT_AUTOMAKE
 AC_PROG_CC
-AC_OUTPUT(Makefile `echo $subdirs | sed 's|\([a-z][a-z]*\)|\1/Makefile|g'`)
+AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([`echo $subdirs | sed 's|\([a-z][a-z]*\)|\1/Makefile|g'`])
+AC_OUTPUT
 EOF
 
 mkdir build

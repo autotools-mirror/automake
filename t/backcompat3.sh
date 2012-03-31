@@ -22,6 +22,8 @@ am_create_testdir=empty
 
 empty=''
 
+AUTOMAKE="$AUTOMAKE -Wno-obsolete"
+
 cat > Makefile.am <<'END'
 ## Leading ':;' here required to work around bugs of (at least) bash 3.2
 got: Makefile

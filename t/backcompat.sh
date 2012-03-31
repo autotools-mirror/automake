@@ -55,7 +55,7 @@ END
     cat configure.in # For debugging.
     $ACLOCAL
     $AUTOCONF
-    $AUTOMAKE
+    $AUTOMAKE -Wno-obsolete
     ./configure
     $MAKE test
   done

@@ -117,6 +117,7 @@ t/alpha2.sh \
 t/amhello-cflags.sh \
 t/amhello-cross-compile.sh \
 t/amhello-binpkg.sh \
+t/aminit-moreargs-deprecation.sh \
 t/amassign.sh \
 t/ammissing.sh \
 t/amopt.sh \
