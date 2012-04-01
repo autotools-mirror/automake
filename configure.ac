@@ -395,14 +395,7 @@ AC_SUBST([EXEEXT])
 
 ###########################################################################
 
-AC_CONFIG_FILES([
-  Makefile
-  contrib/Makefile
-  doc/Makefile
-  lib/Makefile
-  m4/Makefile
-  tests/Makefile
-])
+AC_CONFIG_FILES([Makefile tests/Makefile])
 AC_CONFIG_LINKS([GNUmakefile:GNUmakefile])
 AC_CONFIG_LINKS([tests/defs:tests/defs])
 AC_CONFIG_FILES([tests/wrap/aclocal-${APIVERSION}:tests/wrap/aclocal.in],
