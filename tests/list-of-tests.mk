@@ -1164,7 +1164,6 @@ txinfo10.test \
 txinfo13.test \
 txinfo16.test \
 txinfo17.test \
-txinfo18.test \
 txinfo19.test \
 txinfo20.test \
 txinfo21.test \
@@ -1180,6 +1179,7 @@ txinfo30.test \
 txinfo31.test \
 txinfo32.test \
 txinfo33.test \
+txinfo-no-clutter.test \
 txinfo-unrecognized-extension.test \
 transform.test \
 transform2.test \
