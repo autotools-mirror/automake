@@ -18,7 +18,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 AC_PREREQ([2.68])
-AC_INIT([GNU Automake], [1.11.3c], [bug-automake@gnu.org])
+AC_INIT([GNU Automake], [1.11.4], [bug-automake@gnu.org])
 
 AC_CONFIG_SRCDIR([automake.in])
 AC_CONFIG_AUX_DIR([lib])
