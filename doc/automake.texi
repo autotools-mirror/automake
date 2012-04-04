@@ -115,7 +115,7 @@ section entitled ``GNU Free Documentation License.''
 * Conditionals::                Conditionals
 * Silencing Make::              Obtain less verbose output from @command{make}
 * Gnits::                       The effect of @option{--gnu} and @option{--gnits}
-* Cygnus::                      The effect of @option{--cygnus}
+* Cygnus::                      The effect of @option{--cygnus} (deprecated, soon to be removed)
 * Not Enough::                  When Automake is not Enough
 * Distributing::                Distributing the Makefile.in
 * API Versioning::              About compatibility between Automake versions
@@ -1964,10 +1964,13 @@ standard is actually published (which may never happen).
 @xref{Gnits}, for more information on the precise implications of the
 strictness level.
 
-Automake also has a special ``cygnus'' mode that is similar to
-strictness but handled differently.  This mode is useful for packages
-that are put into a ``Cygnus'' style tree (e.g., the GCC tree).
-@xref{Cygnus}, for more information on this mode.
+Automake also has a special (and @emph{today deprecated}) ``cygnus'' mode
+that is similar to strictness but handled differently.  This mode is
+useful for packages that are put into a ``Cygnus'' style tree (e.g., older
+versions of the GCC and gdb trees).  @xref{Cygnus}, for more information
+on this mode.  Please note that this mode is deprecated and @emph{will be
+removed in the future automake versions}; you must avoid its use in new
+packages, and should stop using it in existing packages as well.
 
 
 @node Uniform
@@ -2610,6 +2613,8 @@ copied.  The default is to make a symbolic link.
 @opindex --cygnus
 Causes the generated @file{Makefile.in}s to follow Cygnus rules, instead
 of GNU or Gnits rules.  For more information, see @ref{Cygnus}.
+Note that @emph{this mode of operation is deprecated, and will be removed}
+in a future Automake release.
 
 @item -f
 @opindex -f
@@ -11005,10 +11010,15 @@ The file @file{THANKS} is required.
 
 @cindex @option{cygnus} strictness
 
-Some packages, notably GNU GCC and GNU gdb, have a build environment
-originally written at Cygnus Support (subsequently renamed Cygnus
-Solutions, and then later purchased by Red Hat).  Packages with this
-ancestry are sometimes referred to as ``Cygnus'' trees.
+@emph{The features described in this section are deprecated; you must
+not use any of them in new code, and should remove their use from older
+but still maintained code: they will be withdrawn in a future Automake
+release.}
+
+Some packages, notably GNU GCC and GNU gdb, used to have a build
+environment originally written at Cygnus Support (subsequently renamed
+Cygnus Solutions, and then later purchased by Red Hat).  Packages with
+this ancestry are sometimes referred to as ``Cygnus'' trees.
 
 A Cygnus tree has slightly different rules for how a
 @file{Makefile.in} is to be constructed.  Passing @option{--cygnus} to
@@ -11018,19 +11028,30 @@ comply with Cygnus rules.
 Here are the precise effects of @option{--cygnus}:
 
 @itemize @bullet
+
+@item
+The @option{foreign} strictness is implied.
+
+@item
+The options @option{no-installinfo}, @option{no-dependencies} and
+@option{no-dist} are implied (@pxref{Options}).
+
+@item
+The macro @code{AM_MAINTAINER_MODE} is required.
+
 @item
 Info files are always created in the build directory, and not in the
-source directory.
+source directory.  Packages that don't use the @option{cygnus} option
+can emulate this effect by using the @option{no-installinfo} option
+and listing the generated info files in the @code{CLEANFILES} variable.
 
 @item
 @file{texinfo.tex} is not required if a Texinfo source file is
 specified.  The assumption is that the file will be supplied, but in a
-place that Automake cannot find.  This assumption is an artifact of how
-Cygnus packages are typically bundled.
-
-@item
-@samp{make dist} is not supported, and the rules for it are not
-generated.  Cygnus-style trees use their own distribution mechanism.
+place that Automake cannot find -- it is an artifact of how Cygnus
+packages are typically bundled.  This effect can be emulated in
+packages not using the @option{cygnus} option with a proper definition
+of the @code{TEXINFO_TEX} variable (@pxref{Texinfo}).
 
 @item
 Certain tools will be searched for in the build tree as well as in the
@@ -11038,24 +11059,8 @@ user's @env{PATH}.  These tools are @command{runtest}, @command{expect},
 @command{makeinfo} and @command{texi2dvi}.
 
 @item
-@option{--foreign} is implied.
-
-@item
-The options @option{no-installinfo} and @option{no-dependencies} are
-implied.
-
-@item
-The macro @code{AM_MAINTAINER_MODE} is required.
-
-@item
 The @code{check} target doesn't depend on @code{all}.
 @end itemize
-
-GNU maintainers are advised to use @option{gnu} strictness in preference
-to the special Cygnus mode.  Some day, perhaps, the differences between
-Cygnus trees and GNU trees will disappear (for instance, as GCC is made
-more standards compliant).  At that time the special Cygnus mode will be
-removed.
 
 
 @node Not Enough

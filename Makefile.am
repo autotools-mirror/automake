@@ -31,22 +31,24 @@ AUTOMAKESOURCES = automake.in aclocal.in
 TAGS_FILES = $(AUTOMAKESOURCES)
 
 EXTRA_DIST = \
+  $(AUTOMAKESOURCES) \
+  bootstrap \
   GNUmakefile \
   syntax-checks.mk \
   HACKING \
   NG-NEWS \
-  ChangeLog.96 \
-  ChangeLog.98 \
-  ChangeLog.00 \
-  ChangeLog.01 \
-  ChangeLog.02 \
-  ChangeLog.03 \
-  ChangeLog.04 \
-  ChangeLog.09 \
-  ChangeLog.11 \
-  bootstrap \
   $(gitlog_to_changelog_fixes) \
-  $(AUTOMAKESOURCES)
+  old/ChangeLog-tests \
+  old/ChangeLog.96 \
+  old/ChangeLog.98 \
+  old/ChangeLog.00 \
+  old/ChangeLog.01 \
+  old/ChangeLog.02 \
+  old/ChangeLog.03 \
+  old/ChangeLog.04 \
+  old/ChangeLog.09 \
+  old/ChangeLog.11 \
+  old/TODO
 
 ## Make versioned links.  We only run the transform on the root name;
 ## then we make a versioned link with the transformed base name.  This
@@ -107,6 +109,11 @@ INSTALL: lib/INSTALL
 recheck:
 	$(am__cd) tests && $(MAKE) $@
 .PHONY: recheck
+
+# We don't use the default name for the autom4te cache directory,
+# so we need this.
+maintainer-clean-local:
+	rm -rf .autom4te.cache
 
 ################################################################
 ##
