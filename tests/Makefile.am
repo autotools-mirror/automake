@@ -84,12 +84,13 @@ $(generated_TESTS) $(srcdir)/testsuite-part.am: \
 
 # Static dependencies valid for each test case.
 check_SCRIPTS = wrap/aclocal-$(APIVERSION) wrap/automake-$(APIVERSION)
-check_DATA = defs defs-static plain-functions.sh tap-functions.sh
-EXTRA_DIST += tap-functions.sh plain-functions.sh
+check_DATA = defs defs-static
+dist_check_DATA = ax/plain-functions.sh ax/tap-functions.sh
 
 # Few more static dependencies.
-distcheck-missing-m4.log distcheck-outdated-m4.log: distcheck-hook-m4.am
-EXTRA_DIST += distcheck-hook-m4.am
+distcheck-missing-m4.log:  ax/distcheck-hook-m4.am
+distcheck-outdated-m4.log: ax/distcheck-hook-m4.am
+EXTRA_DIST += ax/distcheck-hook-m4.am
 
 # Keep in sync with AC_SUBST'd stuff in defs-static.in.
 do_subst = sed \
@@ -202,14 +203,14 @@ AM_PROVECMD = \
   test -z "$$tests" || \
     { \
       $(AM_TESTS_ENVIRONMENT) $(TESTS_ENVIRONMENT) \
-      $(PROVE) $(AM_PROVEFLAGS) -e $(srcdir)/prove-runner $(PROVEFLAGS) \
+      $(PROVE) $(AM_PROVEFLAGS) -e $(srcdir)/ax/prove-runner $(PROVEFLAGS) \
       $$tests $(AM_TESTS_FD_REDIRECT); \
     }
 
-EXTRA_DIST += prove-runner
+EXTRA_DIST += ax/prove-runner
 
 .PHONY: prove installprove
-prove installprove: $(TESTS) prove-runner defs-static
+prove installprove: $(TESTS) ax/prove-runner defs-static
 	@exit_status=0; \
 ## The testsuite can be run either using the automake build tree or
 ## the already-installed automake package.

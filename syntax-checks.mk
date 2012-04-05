@@ -29,6 +29,7 @@ xtests := $(shell \
      for s in test tap sh; do \
        ls $$d/tests/*.$$s 2>/dev/null; \
      done; \
+     ls $$d/tests/ax/*.sh 2>/dev/null; \
    done | sort)
 
 ams := $(shell find $(srcdir) -name '*.am')
