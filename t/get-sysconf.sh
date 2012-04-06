@@ -23,17 +23,17 @@
 . ./defs || Exit 1
 
 st=0
-if test -d "$top_testsrcdir"/.git; then
+if test -d "$am_top_srcdir"/.git; then
   # We are running from a git checkout.
-  (cd "$top_testsrcdir" && git log -1) || st=1
-elif test -f "$top_testsrcdir"/ChangeLog; then
+  (cd "$am_top_srcdir" && git log -1) || st=1
+elif test -f "$am_top_srcdir"/ChangeLog; then
   # We are probably running from a distribution tarball.
   awk '
     BEGIN { first = 1 }
     (first == 1) { print; first = 0; next; }
     /^[^\t]/ { exit(0); }
     { print }
-  ' "$top_testsrcdir"/ChangeLog || st=1
+  ' "$am_top_srcdir"/ChangeLog || st=1
 else
   # Some non-common but possibly valid setup (see for example the Homebrew
   # problem reported in automake bug#10866); so just give an harmless
@@ -46,9 +46,9 @@ $PERL -V || st=1
 # happen with older perl installation, or on MinGW/MSYS.
 $PERL -e 'use TAP::Parser; print $TAP::Parser::VERSION, "\n"' || :
 
-cat "$top_testbuilddir/config.log" || st=1
-cat "$testbuilddir/wrap/aclocal-$APIVERSION" || st=1
-cat "$testbuilddir/wrap/automake-$APIVERSION" || st=1
+cat "$am_top_builddir/config.log" || st=1
+cat "$am_top_builddir/t/wrap/aclocal-$APIVERSION" || st=1
+cat "$am_top_builddir/t/wrap/automake-$APIVERSION" || st=1
 
 if test $st -eq 0; then
   # This test SKIPs, so that all the information it has gathered and

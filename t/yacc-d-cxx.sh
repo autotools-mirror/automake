@@ -80,7 +80,8 @@ END
 $ACLOCAL
 $AUTOCONF
 
-cp $testsrcdir/../lib/ylwrap .
+cp "$am_scriptdir/ylwrap" . \
+  || fatal_ "cannot fetch auxiliary script 'ylwrap'"
 
 $AUTOMAKE Makefile
 

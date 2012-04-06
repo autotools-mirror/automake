@@ -22,7 +22,7 @@
 required='gcc GNUmake'
 . ./defs || Exit 1
 
-mldir=$top_testsrcdir/contrib/multilib
+mldir=$am_top_srcdir/contrib/multilib
 mkdir m4
 cp "$mldir"/config-ml.in "$mldir"/symlink-tree .
 cp "$mldir"/multi.m4 m4

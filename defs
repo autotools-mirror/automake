@@ -44,7 +44,7 @@ set -e
 # be done carefully, and *before* including ./defs).
 if test -z "$me"; then
   # Guard against failure to spawn sed (seen on MSYS), or empty $argv0.
-  me=`echo "$argv0" | sed -e 's,.*[\\/],,;s/\.sh$//;s/\.tap$//;'` \
+  me=`echo "$argv0" | sed -e 's,.*[\\/],,;s/\.sh$//;s/\.tap$//'` \
     && test -n "$me" \
     || { echo "$argv0: failed to define \$me" >&2; exit 99; }
 fi
@@ -65,15 +65,17 @@ nl='
 # is defined initially, so that saving and restoring $IFS works.
 IFS=$sp$tab$nl
 
-# Ensure $testsrcdir is set correctly.
-test -f "$testsrcdir/defs-static.in" || {
-   echo "$me: $testsrcdir/defs-static.in not found, check \$testsrcdir" >&2
+# Ensure $am_top_srcdir is set correctly.
+test -f "$am_top_srcdir/defs-static.in" || {
+   echo "$me: $am_top_srcdir/defs-static.in not found," \
+        "check \$am_top_srcdir" >&2
    exit 99
 }
 
-# Ensure $testbuilddir is set correctly.
-test -f "$testbuilddir/defs-static" || {
-   echo "$me: $testbuilddir/defs-static not found, check \$testbuilddir" >&2
+# Ensure $am_top_builddir is set correctly.
+test -f "$am_top_builddir/defs-static" || {
+   echo "$me: $am_top_builddir/defs-static not found," \
+        "check \$am_top_builddir" >&2
    exit 99
 }
 
@@ -219,7 +221,7 @@ fi
 
 if test -f "$am_testauxdir/$am_funcs_file"; then
   . "$am_testauxdir/$am_funcs_file" || {
-    echo "$me: error sourcing $testsrcdir/$am_funcs_file" >&2
+    echo "$me: error sourcing $am_testauxdir/$am_funcs_file" >&2
     Exit 99
   }
 else
@@ -957,10 +959,10 @@ do
   esac
 done
 
-# Using just $testbuilddir for the check here is ok, since the
+# Using just $am_top_builddir for the check here is ok, since the
 # further temporary subdirectory where the test will be run is
 # ensured not to contain any whitespace character.
-case $testbuilddir in
+case $am_top_builddir in
   *\ *|*\	*)
     case " $required " in
       *' libtool '* | *' libtoolize '* )
@@ -970,10 +972,10 @@ case $testbuilddir in
 esac
 
 # This test is necessary, although Automake's configure script bails out
-# when $srcdir contains spaces.  This is because $testsrcdir is in not
+# when $srcdir contains spaces.  This is because $am_top_srcdir is in not
 # configure-time $srcdir, but is instead configure-time $abs_srcdir, and
 # that is allowed to contain spaces.
-case $testsrcdir in
+case $am_top_srcdir in
   *\ * |*\	*)
     case " $required " in
       *' libtool '* | *' libtoolize '* | *' gettext '* )
@@ -983,8 +985,8 @@ case $testsrcdir in
 esac
 
 # We might need extra macros, e.g., from Libtool or Gettext.
-case " $required " in *\ libtool*) . ./libtool-macros.dir/get.sh;; esac
-case " $required " in *\ gettext*) . ./gettext-macros.dir/get.sh;; esac
+case " $required " in *\ libtool*) . ./t/libtool-macros.dir/get.sh;; esac
+case " $required " in *\ gettext*) . ./t/gettext-macros.dir/get.sh;; esac
 
 
 ## ---------------------------------------------------------------- ##
@@ -1000,7 +1002,7 @@ distdir=$me-1.0
 if test "$sh_errexit_works" = yes; then
   trap 'exit_status=$?
     set +e
-    cd "$testbuilddir"
+    cd "$am_top_builddir"
     if test $am_using_tap = yes; then
       if test "$planned_" = later && test $exit_status -eq 0; then
         plan_ "now"
@@ -1065,11 +1067,13 @@ else
   # temporary/data files.  This will be created shortly, and will be removed
   # by the cleanup trap below if the test passes.  If the test doesn't pass,
   # this directory will be kept, to facilitate debugging.
-  testSubDir=$me.dir
+  testSubDir=t/$me.dir
   test ! -d $testSubDir || rm_rf_ $testSubDir \
     || framework_failure_ "removing old test subdirectory"
+  test -d t || mkdir t
   mkdir $testSubDir \
     || framework_failure_ "creating test subdirectory"
+  # The trailing './'ris to avoid CDPATH issues.
   cd ./$testSubDir \
     || framework_failure_ "cannot chdir into test subdirectory"
   if test x"$am_create_testdir" != x"empty"; then

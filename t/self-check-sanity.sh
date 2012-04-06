@@ -30,7 +30,9 @@ show_stderr ()
 
 AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC
 
-if $SHELL -c '. ../defs' dummy.test 2>stderr; then
+source_defs=". '$am_top_builddir/defs'"
+
+if $SHELL -c "$source_defs" dummy.test 2>stderr; then
   show_stderr
   Exit 1
 else
@@ -38,27 +40,30 @@ else
   grep 'defs-static: not found in current directory' stderr
 fi
 
-sed 's|^testsrcdir=.*|testsrcdir=foo|' ../defs-static > defs-static
-if $SHELL -c '. ../defs' dummy.test 2>stderr; then
+sed 's|^am_top_srcdir=.*|am_top_srcdir=foo|' \
+  "$am_top_builddir"/defs-static > defs-static
+if $SHELL -c "$source_defs" t/dummy.test 2>stderr; then
   show_stderr
   Exit 1
 else
   show_stderr
-  grep 'foo/defs-static\.in not found.*check \$testsrcdir' stderr
+  grep 'foo/defs-static\.in not found.*check \$am_top_srcdir' stderr
 fi
 
-sed 's|^testbuilddir=.*|testbuilddir=foo|' ../defs-static > defs-static
-if $SHELL -c '. ../defs' dummy.test 2>stderr; then
+sed 's|^am_top_builddir=.*|am_top_builddir=foo|' \
+  "$am_top_builddir"/defs-static > defs-static
+if $SHELL -c "$source_defs" t/dummy.test 2>stderr; then
   show_stderr
   Exit 1
 else
   show_stderr
-  grep 'foo/defs-static not found.*check \$testbuilddir' stderr
+  grep 'foo/defs-static not found.*check \$am_top_builddir' stderr
 fi
 
 # We still need a little hack to make ./defs work outside automake's
 # tree 'tests' subdirectory.  Not a big deal.
-sed "s|^testbuilddir=.*|testbuilddir='`pwd`'|" ../defs-static >defs-static
+sed "s|^am_top_builddir=.*|am_top_builddir='`pwd`'|" \
+  "$am_top_builddir"/defs-static > defs-static
 # Redefining *srcdir and *builddir variables in the environment shouldn't
 # cause problems
 env \
@@ -66,7 +71,7 @@ env \
   top_builddir=bad-dir top_srcdir=bad-dir \
   abs_builddir=bad-dir abs_srcdir=bad-dir \
   abs_top_builddir=bad-dir abs_top_srcdir=bad-dir \
-  $SHELL -c  '. ../defs && echo "!OK!" > ../foo' dummy.test
-$FGREP '!OK!' foo
+  $SHELL -c "$source_defs && echo '!OK!' > ../foo" t/dummy.test
+$FGREP '!OK!' t/foo
 
 :

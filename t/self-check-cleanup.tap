@@ -27,9 +27,11 @@ plan_ 42
 
 # We still need a little hack to make ./defs work outside automake's
 # tree 'tests' subdirectory.  Not a big deal.
-sed "s|^testbuilddir=.*|testbuilddir='`pwd`'|" ../defs-static >defs-static
-diff ../defs-static defs-static && fatal_ "failed to edit defs-static"
-cp ../defs .
+sed "s|^am_top_builddir=.*|am_top_builddir='`pwd`'|" \
+  "$am_top_builddir"/defs-static >defs-static
+diff "$am_top_builddir"/defs-static defs-static \
+  && fatal_ "failed to edit defs-static"
+cp "$am_top_builddir"/defs .
 
 AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC
 
@@ -40,37 +42,37 @@ else
 fi
 export have_symlinks # Is used also by spawned shells.
 
-dir=dummy.dir
-
 # Don't let a failure poison all subsequent tests.
 do_clean ()
 {
-  test -d $dir || return 0
   # Don't try to be smart and use find here, that has caused issues
   # and extra ERROR results in the past.  Be dumb and safe.
-  chmod u+rwx $dir || :
-  for d in $dir/*; do test ! -d $d || chmod u+rwx $d || :; done
-  for d in $dir/*/*; do test ! -d $d || chmod u+rwx $d || :; done
-  rm -rf $dir
+  for d in t t/* t/*/* t/*/*/*; do
+    test ! -d t/$d || chmod u+rwx t/$d || :
+  done
+  rm -rf t
 }
 
 # Check that pre-test cleanup works also with directories with
 # "null" permissions, and containing broken symlinks.
-mkdir $dir $dir/sub
-cd $dir
-touch file sub/file
-if test $have_symlinks = yes; then
-  ln -s file symlink
-  ln -s none brokenlink
-fi
-cd ..
-chmod 000 $dir/sub/* $dir/file
-test $have_symlinks = yes && chmod 000 $dir/symlink
-chmod 500 $dir/sub $dir
+mkdir t t/dummy.dir t/dummy.dir/sub
+(
+  cd t/dummy.dir
+  touch file sub/file
+  if test $have_symlinks = yes; then
+    ln -s file symlink
+    ln -s none brokenlink
+  fi
+)
+chmod 000 t/dummy.dir/sub/* t/dummy.dir/file
+test $have_symlinks = yes && chmod 000 t/dummy.dir/symlink
+chmod 500 t/dummy.dir/sub t/dummy.dir
 command_ok_ "pre-cleanup can deal with low-perms testdir" \
             $SHELL -c  '. ./defs' dummy.sh
 command_ok_ "pre-cleanup removed low-perms testdir" \
-            eval 'test ! -f $dir && test ! -d $dir && test ! -r $dir'
+            eval 'test ! -f dummy.dir \
+               && test ! -d dummy.dir \
+               && test ! -r dummy.dir'
 
 do_clean
 
@@ -93,9 +95,11 @@ command_ok_ "post-cleanup can deal with low-perms testdir" \
   test $have_symlinks = yes && chmod 000 dir/symlink
   chmod 500 dir/sub dir
   :
-' dummy.sh
+' t/dummy.sh
 command_ok_ "post-cleanup removed null-perms testdir" \
-            eval 'test ! -f $dir && test ! -d $dir && test ! -r $dir'
+            eval 'test ! -f dummy.dir \
+               && test ! -d dummy.dir \
+               && test ! -r dummy.dir'
 
 do_clean
 
@@ -108,10 +112,8 @@ if test $have_symlinks = yes; then
   : > file
   chmod 000 file
 
-  mkdir $dir
-  cd $dir
-  ln -s ../dir ../file .
-  cd ..
+  mkdir t t/dummy.dir
+  (cd t/dummy.dir && ln -s ../../dir ../../file .)
 
   command_ok_ "pre-cleanup with testdir with zero-perms symlinks" \
                $SHELL -c '. ./defs' dummy.sh
@@ -127,7 +129,7 @@ if test $have_symlinks = yes; then
     stderr_fileno_=2
     . ./defs || Exit 1
     ln -s "$ocwd/dir" "$ocwd/file" .
-  ' dummy.sh
+  ' t/dummy.sh
   ls -l # For debugging.
   command_ok_ "post-cleanup chmod doesn't follow symlinks to files" \
                eval 'ls -l file | grep "^----------.*file"'
@@ -154,9 +156,9 @@ for st in 1 2 3 10 77 99 126 127 130 255; do
     . ./defs
     : > foo
     Exit $st
-  " dummy.sh
+  " t/dummy.sh
   command_ok_ "testdir not removed if exiting with status $st" \
-              test -f dummy.dir/foo
+              test -f t/dummy.dir/foo
   do_clean
 done
 
@@ -170,9 +172,9 @@ for sig in 1 2 3 9 13 15; do
     . ./defs
     : > foo
     kill -$sig \$\$
-  " dummy.sh
+  " t/dummy.sh
   command_ok_ "testdir not removed if getting signal $sig" \
-              test -f dummy.dir/foo
+              test -f t/dummy.dir/foo
   do_clean
 done
 

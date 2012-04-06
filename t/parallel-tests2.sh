@@ -36,7 +36,7 @@ while :; do
 done
 unset r2h
 
-cp "$top_testsrcdir"/contrib/check-html.am . \
+cp "$am_top_srcdir"/contrib/check-html.am . \
   || fatal_ "cannot fetch 'check-html.am' from contrib"
 
 cat >> configure.ac << 'END'

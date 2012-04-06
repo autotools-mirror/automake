@@ -26,7 +26,7 @@ AC_INIT([$me], [1.0])
 AM_ENABLE_MULTILIB
 END
 
-cat "$top_testsrcdir"/contrib/multilib/multi.m4 > aclocal.m4
+cat "$am_top_srcdir"/contrib/multilib/multi.m4 > aclocal.m4
 $AUTOCONF
 
 grep_configure_help --enable-multilib ' many library versions \(default\)'

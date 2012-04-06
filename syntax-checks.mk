@@ -31,6 +31,8 @@ xtests := $(shell \
      done; \
    done | sort)
 
+xdefs = $(srcdir)/defs $(srcdir)/defs-static.in
+
 ams := $(shell find $(srcdir) -name '*.am')
 
 # Some simple checks, and then ordinary check.  These are only really
@@ -86,9 +88,6 @@ maintainer-check: $(syntax_check_rules)
 
 ## Check that the list of tests given in the Makefile is equal to the
 ## list of all test scripts in the Automake testsuite.
-.PHONY: maintainer-check-list-of-tests
-maintainer-check-list-of-tests:
-	$(MAKE) -C tests $@
 maintainer-check: maintainer-check-list-of-tests
 
 ## Look for test whose names can cause spurious failures when used as
@@ -302,10 +301,7 @@ sc_tests_obsolete_variables:
 	"; \
 	seen=""; \
 	for v in $$vars; do \
-	  if grep -E "\b$$v\b" \
-	    $(xtests) $(srcdir)/t/defs \
-	    $(srcdir)/t/defs-static.in \
-	  ; then \
+	  if grep -E "\b$$v\b" $(xtests) $(xdefs); then \
 	    seen="$$seen $$v"; \
 	  fi; \
 	done; \
@@ -487,7 +483,7 @@ sc_tests_plain_egrep_fgrep:
 ## for configure input files in our testsuite.  The latter  has been
 ## deprecated for several years (at least since autoconf 2.50).
 sc_tests_no_configure_in:
-	@if grep -E '\bconfigure\\*\.in\b' $(xtests) $(srcdir)/t/defs \
+	@if grep -E '\bconfigure\\*\.in\b' $(xtests) $(xdefs) \
 	      | grep -Ev '/backcompat.*\.(sh|tap):' \
 	      | grep -Ev '/autodist-configure-no-subdir\.sh:' \
 	      | grep -Ev '/(configure|help)\.sh:' \

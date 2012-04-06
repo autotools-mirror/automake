@@ -37,9 +37,13 @@ AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC
 # when unsetting an already-unset variable.
 init='stderr_fileno_=2; unset am_explicit_skips; . ./defs'
 
+# Required so that the code in defs doesn't go crazy trying to creating a
+# temporary directory in the absolute dir of $SHELL.
+dummy_test_script=t/$me.sh
+
 for st in 1 2 3 4 5 77 99 126 127 128 129 130 255; do
   for exit_cmd in "Exit $st" "sh -c 'exit $st'"; do
-    $SHELL -c  "$init; $exit_cmd; :"
+    $SHELL -c  "$init; $exit_cmd; :" "$dummy_test_script"
     command_ok_ "$exit_cmd" test $? -eq $st
   done
 done
@@ -55,7 +59,7 @@ for sig in 1 2 13 15; do
     # <http://lists.gnu.org/archive/html/bug-autoconf/2011-09/msg00004.html>
     trap : 2
   fi
-  $SHELL -c  "$init; kill -$sig \$\$; :"
+  $SHELL -c  "$init; kill -$sig \$\$; :" "$dummy_test_script"
   rc=$?
   if test $sig -eq 2; then
     # Reset default SIGINT handler as portably as possible.
@@ -89,20 +93,20 @@ if $SHELL -c 'set -e; trap "exit \$?" 0; non-existent-program'; then
 else
   maybe_todo="" reason=""
 fi
-$SHELL -c  "$init; non-existent-program; :"
+$SHELL -c  "$init; non-existent-program; :" "$dummy_test_script"
 command_ok_ "command not found" -D "$maybe_todo" -r "$reason" \
             -- test $? -gt 0
 
 : Non-executable command.
 test -f Makefile && test ! -x Makefile || \
   framowork_failure_ "no proper Makefile in the current directory"
-$SHELL -c  "$init; ./Makefile; :"
+$SHELL -c  "$init; ./Makefile; :" "$dummy_test_script"
 command_ok_ "permission denied" test $? -gt 0
 
 : Syntax errors in the test code.
-$SHELL -c  "$init; if :; then"
+$SHELL -c  "$init; if :; then" "$dummy_test_script"
 command_ok_ "syntax error 1" test $? -gt 0
-$SHELL -c  "$init; fi"
+$SHELL -c  "$init; fi" "$dummy_test_script"
 command_ok_ "syntax error 2" test $? -gt 0
 
 :

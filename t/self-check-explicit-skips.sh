@@ -24,9 +24,11 @@ test x"$sh_errexit_works" = x"yes" || skip_ "no working shell exit trap"
 
 # We still need a little hack to make ./defs work outside automake's
 # tree 'tests' subdirectory.  Not a big deal.
-sed "s|^testbuilddir=.*|testbuilddir='`pwd`'|" ../defs-static >defs-static
-diff ../defs-static defs-static && Exit 99
-cp ../defs .
+sed "s|^am_top_builddir=.*|am_top_builddir='`pwd`'|" \
+  "$am_top_builddir"/defs-static > defs-static
+diff "$am_top_builddir"/defs-static defs-static \
+  && fatal_ "failed to edit defs-static"
+cp "$am_top_builddir"/defs .
 
 set +e
 

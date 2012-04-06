@@ -395,9 +395,11 @@ AC_SUBST([EXEEXT])
 
 ###########################################################################
 
-AC_CONFIG_FILES([Makefile t/Makefile])
+AC_CONFIG_FILES([Makefile])
+
 AC_CONFIG_LINKS([GNUmakefile:GNUmakefile])
-AC_CONFIG_LINKS([t/defs:t/defs])
+AC_CONFIG_LINKS([defs:defs])
+
 AC_CONFIG_FILES([t/wrap/aclocal-${APIVERSION}:t/wrap/aclocal.in],
                 [chmod +x t/wrap/aclocal-${APIVERSION}],
 	        [APIVERSION=$APIVERSION])
