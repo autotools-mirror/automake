@@ -20,36 +20,17 @@
 
 . ./defs || Exit 1
 
-warn_rx='support for Cygnus.*trees.*deprecated'
-
-cat >> configure.ac <<'END'
-AC_PROG_CC
-AM_MAINTAINER_MODE
-END
+warn_rx='support for Cygnus.*trees.*removed'
 
 $ACLOCAL
-$AUTOCONF
 
-: > Makefile.am
-
-# 'cygnus' option from command line
-$AUTOMAKE --cygnus -Wno-obsolete
-AUTOMAKE_fails --cygnus
-grep "^automake.*: .*$warn_rx" stderr
-AUTOMAKE_fails -Wnone -Wobsolete --cygnus
-grep "^automake.*: .*$warn_rx" stderr
-AUTOMAKE_fails --cygnus -Wnone -Wobsolete
-grep "^automake.*: .*$warn_rx" stderr
-
-rm -rf autom4te*.cache
+# Use of 'cygnus' option must raise an unconditional error, not a
+# warning.
+AUTOMAKE="$am_original_AUTOMAKE -Wnone -Wno-error"
 
 # 'cygnus' option in Makefile.am
 echo "AUTOMAKE_OPTIONS = cygnus" > Makefile.am
-cat Makefile.am # For debugging.
-$AUTOMAKE -Wno-obsolete
 AUTOMAKE_fails
-grep "^Makefile\.am:1:.*$warn_rx" stderr
-AUTOMAKE_fails -Wnone -Wobsolete
 grep "^Makefile\.am:1:.*$warn_rx" stderr
 
 rm -rf autom4te*.cache
@@ -59,10 +40,7 @@ rm -rf autom4te*.cache
 sed "s|^\\(AM_INIT_AUTOMAKE\\).*|\1([cygnus])|" configure.ac > t
 diff configure.ac t && fatal_ "failed to edit configure.ac"
 mv -f t configure.ac
-$AUTOMAKE -Wno-obsolete
 AUTOMAKE_fails
-grep "^configure\.ac:2:.*$warn_rx" stderr
-AUTOMAKE_fails -Wnone -Wobsolete
 grep "^configure\.ac:2:.*$warn_rx" stderr
 
 :

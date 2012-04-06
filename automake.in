@@ -3364,11 +3364,6 @@ sub handle_texinfo_helper ($)
       $texinfodir = ('$(srcdir)/'
 		     . dirname (variable_value ('TEXINFO_TEX')));
     }
-  elsif (option 'cygnus')
-    {
-      $texinfodir = '$(top_srcdir)/../texinfo';
-      define_variable ('TEXINFO_TEX', "$texinfodir/texinfo.tex", INTERNAL);
-    }
   elsif ($config_aux_dir_set_in_configure_ac)
     {
       $texinfodir = $am_config_aux_dir;
@@ -4113,8 +4108,8 @@ sub handle_configure ($$$@)
   define_pretty_variable ('am__configure_deps', TRUE, INTERNAL,
 			  @configuredeps);
 
-  my $automake_options = '--' . (global_option 'cygnus' ? 'cygnus' : $strictness_name)
-			 . (global_option 'no-dependencies' ? ' --ignore-deps' : '');
+  my $automake_options = '--' . $strictness_name .
+			 (global_option 'no-dependencies' ? ' --ignore-deps' : '');
 
   $output_rules .= file_contents
     ('configure',
@@ -4587,25 +4582,16 @@ sub do_check_merge_target ()
   push @check_tests, 'check-local'
     if user_phony_rule 'check-local';
 
-  # In --cygnus mode, check doesn't depend on all.
-  if (option 'cygnus')
+  # The check target must depend on the local equivalent of
+  # 'all', to ensure all the primary targets are built.  Then it
+  # must build the local check rules.
+  $output_rules .= "check-am: all-am\n";
+  if (@check)
     {
-      # Just run the local check rules.
-      pretty_print_rule ('check-am:', "\t\t", @check);
+      pretty_print_rule ("\t\$(MAKE) \$(AM_MAKEFLAGS)", "\t  ", @check);
+      depend ('.MAKE', 'check-am');
     }
-  else
-    {
-      # The check target must depend on the local equivalent of
-      # 'all', to ensure all the primary targets are built.  Then it
-      # must build the local check rules.
-      $output_rules .= "check-am: all-am\n";
-      if (@check)
-        {
-	  pretty_print_rule ("\t\$(MAKE) \$(AM_MAKEFLAGS)", "\t  ",
-			     @check);
-	  depend ('.MAKE', 'check-am');
-	}
-    }
+
   if (@check_tests)
     {
       pretty_print_rule ("\t\$(MAKE) \$(AM_MAKEFLAGS)", "\t  ",
@@ -5563,26 +5549,6 @@ sub scan_autoconf_files ()
 }
 
 ################################################################
-
-# Set up for Cygnus mode.
-sub check_cygnus
-{
-  my $cygnus = option 'cygnus';
-  return unless $cygnus;
-
-  # This feature is deprecated, will be removed in the next
-  # Automake major release.
-  msg 'obsolete', $cygnus->get,
-      "support for Cygnus-style trees is deprecated";
-
-  set_strictness ('foreign');
-  set_option ('no-installinfo', $cygnus);
-  set_option ('no-dependencies', $cygnus);
-  set_option ('no-dist', $cygnus);
-
-  err_ac "'AM_MAINTAINER_MODE' required when --cygnus specified"
-    if !$seen_maint_mode;
-}
 
 # Do any extra checking for GNU standards.
 sub check_gnu_standards
@@ -6954,8 +6920,7 @@ sub preprocess_file ($%)
 
   # Complete %transform with global options.
   # Note that %transform goes last, so it overrides global options.
-  %transform = ('CYGNUS'      => !! option 'cygnus',
-		 'MAINTAINER-MODE'
+  %transform = ( 'MAINTAINER-MODE'
 		 => $seen_maint_mode ? subst ('MAINTAINER_MODE_TRUE') : '',
 
 		 'XZ'          => !! option 'dist-xz',
@@ -8097,7 +8062,6 @@ sub generate_makefile ($$)
     if var 'DIST_SUBDIRS' && ! var 'SUBDIRS';
 
   # Check first, because we might modify some state.
-  check_cygnus;
   check_gnu_standards;
   check_gnits_standards;
 
@@ -8279,7 +8243,6 @@ Dependency tracking:
       --include-deps     enable dependency tracking code
 
 Flavors:
-      --cygnus           assume program is part of Cygnus-style tree
       --foreign          set strictness to foreign
       --gnits            set strictness to gnits
       --gnu              set strictness to gnu
@@ -8337,7 +8300,6 @@ EOF
 sub parse_arguments ()
 {
   my $strict = 'gnu';
-  my $cygnus = 0;
   my $ignore_deps = 0;
   my @warnings = ();
 
@@ -8350,7 +8312,6 @@ sub parse_arguments ()
      'gnu'		=> sub { $strict = 'gnu'; },
      'gnits'		=> sub { $strict = 'gnits'; },
      'foreign'		=> sub { $strict = 'foreign'; },
-     'cygnus'		=> \$cygnus,
      'include-deps'	=> sub { $ignore_deps = 0; },
      'i|ignore-deps'	=> sub { $ignore_deps = 1; },
      'no-force'	=> sub { $force_generation = 0; },
@@ -8366,7 +8327,6 @@ sub parse_arguments ()
 
   set_strictness ($strict);
   my $cli_where = new Automake::Location;
-  set_global_option ('cygnus', $cli_where) if $cygnus;
   set_global_option ('no-dependencies', $cli_where) if $ignore_deps;
   for my $warning (@warnings)
     {

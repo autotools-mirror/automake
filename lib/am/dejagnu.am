@@ -20,24 +20,8 @@ DEJATOOL = $(PACKAGE)
 ## Default flags to pass to dejagnu.  The user can override this.
 RUNTESTDEFAULTFLAGS = --tool $$tool --srcdir $$srcdir
 
-## In Cygnus mode, these are found in the build tree.
-## Otherwise they are looked for in $PATH.
-if %?CYGNUS%
-EXPECT = `if test -f $(top_builddir)/../expect/expect; then \
-	    echo $(top_builddir)/../expect/expect; \
-	  else \
-	    echo expect; \
-	  fi`
-
-RUNTEST = `if test -f $(top_srcdir)/../dejagnu/runtest; then \
-	     echo $(top_srcdir)/../dejagnu/runtest; \
-	   else \
-	     echo runtest; \
-	   fi`
-else ! %?CYGNUS%
 EXPECT = expect
 RUNTEST = runtest
-endif ! %?CYGNUS%
 
 
 .PHONY: check-DEJAGNU
@@ -45,21 +29,14 @@ check-DEJAGNU: site.exp
 ## Life is easiest with an absolute srcdir, so do that.
 	srcdir='$(srcdir)'; export srcdir; \
 	EXPECT=$(EXPECT); export EXPECT; \
-## Allow this to work when expect and DejaGnu are in tree.
-## Only required when --cygnus in force.
-?CYGNUS?	if [ -f $(top_builddir)/../expect/expect ]; then \
-?CYGNUS?	  TCL_LIBRARY=`$(am__cd) $(top_srcdir)/../tcl/library && pwd`; \
-?CYGNUS?	  export TCL_LIBRARY; \
-?CYGNUS?	fi; \
-	runtest=$(RUNTEST); \
 ## If runtest can't be found, print a warning but don't die.  It is
 ## pointless to cause a failure if the tests cannot be run at all.
-	if $(SHELL) -c "$$runtest --version" > /dev/null 2>&1; then \
+	if $(SHELL) -c "$(RUNTEST) --version" > /dev/null 2>&1; then \
 	  exit_status=0; l='$(DEJATOOL)'; for tool in $$l; do \
-	    if $$runtest $(AM_RUNTESTFLAGS) $(RUNTESTDEFAULTFLAGS) $(RUNTESTFLAGS); \
+	    if $(RUNTEST) $(AM_RUNTESTFLAGS) $(RUNTESTDEFAULTFLAGS) $(RUNTESTFLAGS); \
 	    then :; else exit_status=1; fi; \
 	  done; \
-	else echo "WARNING: could not find 'runtest'" 1>&2; :;\
+	else echo "WARNING: could not find '$(RUNTEST)'" 1>&2; :;\
 	fi; \
 	exit $$exit_status
 
