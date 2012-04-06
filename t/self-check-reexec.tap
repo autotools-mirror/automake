@@ -86,7 +86,7 @@ get_sh ()
 # Check how to default, force or prevent a re-execution.
 #
 
-cat > need-bash.test <<'END'
+cat > need-bash.sh <<'END'
 #!/bin/false
 . ./defs
 # Ensure that the script gets re-executed with bash.  Also ensure that
@@ -104,13 +104,13 @@ sed -e "s|^testbuilddir=.*|testbuilddir='$cwd'|" \
 do_reexec ()
 {
   command_ok_ "re-exec if AM_TESTS_REEXEC=$1" \
-              env AM_TESTS_REEXEC="$1" $non_bash_shell need-bash.test
+              env AM_TESTS_REEXEC="$1" $non_bash_shell need-bash.sh
 }
 
 dont_reexec ()
 {
   command_ok_ "don't re-exec if AM_TESTS_REEXEC=$1" \
-              not env AM_TESTS_REEXEC="$1" $non_bash_shell need-bash.test
+              not env AM_TESTS_REEXEC="$1" $non_bash_shell need-bash.sh
 }
 
 if test "$bash_shell" = :; then
@@ -119,7 +119,7 @@ elif test "$non_bash_shell" = :; then
   skip_row_ 10 -r "no non-bash shell found" AM_TESTS_REEXEC
 else
   command_ok_ "re-exec if AM_TESTS_REEXEC unset" \
-              $non_bash_shell need-bash.test
+              $non_bash_shell need-bash.sh
   do_reexec ''
   do_reexec yes
   do_reexec y
@@ -136,21 +136,21 @@ fi
 # to a test script are preserved by a re-exec, even in "corner" cases.
 #
 
-cat > dummy.test <<'END'
+cat > dummy.sh <<'END'
 #!/bin/sh
 . ./defs
 :
 END
 
-cat > checkargs.test <<'END'
+cat > checkargs.sh <<'END'
 . ./defs
 test $# -eq 3 && test x"$1" = x'a' && test x"$2" = x && test x"$3" = x"-e"
 END
 
-chmod a+x dummy.test checkargs.test
+chmod a+x dummy.sh checkargs.sh
 
 mkdir sub
-cp dummy.test checkargs.test defs sub
+cp dummy.sh checkargs.sh defs sub
 sed -e "s|^testbuilddir=.*|testbuilddir='$cwd'|" \
     < ../defs-static > defs-static
 sed -e "s|^testbuilddir=.*|testbuilddir='$cwd/sub'|" \
@@ -160,7 +160,7 @@ check_preserve_args ()
 {
   dir=$1; shift
   get_ddata "$dir"
-  $sh "${dir}${dsep}checkargs.test" a '' -e && r='ok' || r='not ok'
+  $sh "${dir}${dsep}checkargs.sh" a '' -e && r='ok' || r='not ok'
   result_ "$r" "$sh re-exec preserving args [$dname]"
 }
 
@@ -168,17 +168,17 @@ check_reexec_message ()
 {
   dir=$1; shift
   get_ddata "$dir"
-  $sh "${dir}${dsep}dummy.test" "$@" \
-    | grep "^dummy: exec $SHELL ${dir}${dsep}dummy\\.test $*\$" \
+  $sh "${dir}${dsep}dummy.sh" "$@" \
+    | grep "^dummy: exec $SHELL ${dir}${dsep}dummy\\.sh $*\$" \
     && r='ok' || r='not ok'
   result_ "$r" "$sh display re-exec message [$dname] [args: $*]"
 }
 
-./dummy.test a b | grep "^dummy: exec $SHELL \\./dummy\\.test a b$" \
+./dummy.sh a b | grep "^dummy: exec $SHELL \\./dummy\\.sh a b$" \
   && r='ok' || r='not ok'
 result_ "$r" "direct run display re-exec message [args: a b]"
 
-./checkargs.test a '' -e && r='ok' || r='not ok'
+./checkargs.sh a '' -e && r='ok' || r='not ok'
 result_ "$r" "direct re-exec preserving args"
 
 for sh_type in non-bash bash; do

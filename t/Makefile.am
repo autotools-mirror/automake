@@ -18,8 +18,8 @@
 # Run the tests with the shell detected at configure time.
 LOG_COMPILER = $(SHELL)
 
-TEST_EXTENSIONS = .pl .test .tap
-TEST_LOG_COMPILER = $(LOG_COMPILER)
+TEST_EXTENSIONS = .pl .sh .tap
+SH_LOG_COMPILER = $(LOG_COMPILER)
 TAP_LOG_COMPILER = $(LOG_COMPILER)
 PL_LOG_COMPILER = $(PERL)
 AM_PL_LOG_FLAGS = -Mstrict -I $(top_builddir)/lib -I $(top_srcdir)/lib -w

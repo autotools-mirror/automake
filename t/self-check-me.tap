@@ -21,7 +21,7 @@
 am_create_testdir=no
 . ./defs || Exit 1
 
-plan_ 9
+plan_ 14
 
 AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC
 
@@ -36,27 +36,31 @@ do_check ()
   command_ok_ "me=$1" test $? -eq 0
 }
 
-do_check foo-bar-.test 'foo-bar-'
-do_check _foo__bar.test '_foo__bar'
-do_check 012.test '012'
+for e in sh tap; do
+  do_check foo-bar-.$e 'foo-bar-'
+  do_check _foo__bar.$e '_foo__bar'
+  do_check 012.$e '012'
+  do_check a.b.c.$e 'a\.b\.c'
+done
+
 do_check foo.bar 'foo\.bar'
-do_check a.b.c.test 'a\.b\.c'
+do_check abc. 'abc\.'
 
 # If we override $me, ./defs should not modify it.
 
-s=`$SHELL -c 'me=foo.test && . ./defs && echo me=$me' bad.test`
+s=`$SHELL -c 'me=foo.sh && . ./defs && echo me=$me' bad.sh`
 command_ok_ "override of \$me before ./defs causes no error" \
             test $? -eq 0
 
 r='ok'
-printf '%s\n' "$s" | grep '^me=foo\.test$' || r='not ok'
-printf '%s\n' "$s" | grep 'me=bad'         && r='not ok'
+printf '%s\n' "$s" | grep '^me=foo\.sh$' || r='not ok'
+printf '%s\n' "$s" | grep 'me=bad'       && r='not ok'
 result_ "$r" "override of \$me before ./defs is honored"
 unset r
 
 # Overriding $me after sourcing ./defs-static should work.
 s=`$SHELL -c '. ./defs-static && me=zardoz &&
-              . ./defs && echo me=$me' bad.test`
+              . ./defs && echo me=$me' bad.sh`
 command_ok_ "override of \$me after ./defs-static causes no error" \
             test $? -eq 0
 

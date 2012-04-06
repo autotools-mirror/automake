@@ -217,9 +217,9 @@ else
 fi
 ])
 if test $am_cv_sh_errexit_works = no; then
-  AC_MSG_WARN(["${MAKE-make} check" will leave leftover directories tests/*.dir])
+  AC_MSG_WARN(["${MAKE-make} check" will leave leftover directories t/*.dir])
   AC_MSG_WARN([you can clean them up manually using "${MAKE-make} clean" or])
-  AC_MSG_WARN(["cd tests && ${MAKE-make} clean-local-check'])
+  AC_MSG_WARN(["cd t && ${MAKE-make} clean-local-check'])
 fi
 AC_SUBST([sh_errexit_works], [$am_cv_sh_errexit_works])
 
@@ -395,14 +395,14 @@ AC_SUBST([EXEEXT])
 
 ###########################################################################
 
-AC_CONFIG_FILES([Makefile tests/Makefile])
+AC_CONFIG_FILES([Makefile t/Makefile])
 AC_CONFIG_LINKS([GNUmakefile:GNUmakefile])
-AC_CONFIG_LINKS([tests/defs:tests/defs])
-AC_CONFIG_FILES([tests/wrap/aclocal-${APIVERSION}:tests/wrap/aclocal.in],
-                [chmod +x tests/wrap/aclocal-${APIVERSION}],
+AC_CONFIG_LINKS([t/defs:t/defs])
+AC_CONFIG_FILES([t/wrap/aclocal-${APIVERSION}:t/wrap/aclocal.in],
+                [chmod +x t/wrap/aclocal-${APIVERSION}],
 	        [APIVERSION=$APIVERSION])
-AC_CONFIG_FILES([tests/wrap/automake-${APIVERSION}:tests/wrap/automake.in],
-                [chmod +x tests/wrap/automake-${APIVERSION}],
+AC_CONFIG_FILES([t/wrap/automake-${APIVERSION}:t/wrap/automake.in],
+                [chmod +x t/wrap/automake-${APIVERSION}],
 	        [APIVERSION=$APIVERSION])
 
 AC_OUTPUT

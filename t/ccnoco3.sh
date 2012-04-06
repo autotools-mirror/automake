@@ -52,7 +52,7 @@ case " \$* " in
     ;;
 esac
 
-# Use '$CC', not 'gcc', to honour the compiler chosen by 'tests/defs'.
+# Use '$CC', not 'gcc', to honour the compiler chosen by 't/defs'.
 exec $CC "\$@"
 END
 
