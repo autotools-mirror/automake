@@ -60,8 +60,14 @@ AC_SUBST([system_acdir], ["\${datadir}/aclocal"])
 
 # $AUTOMAKE and $ACLOCAL are always run after a "cd $top_srcdir",
 # hence '.' is really what we want for perllibdir, libdir, and acdir.
-ACLOCAL="perllibdir=\"`pwd`/lib$PATH_SEPARATOR./lib\" \"`pwd`/aclocal\" --acdir=m4 -I m4"
-AUTOMAKE="perllibdir=\"`pwd`/lib$PATH_SEPARATOR./lib\" \"`pwd`/automake\" --libdir=lib"
+# Use '-I' with aclocal so that our own *.m4 files in m4/ gets included,
+# not copied, in aclocal.m4.
+ACLOCAL="\
+  perllibdir=\"`pwd`/lib$PATH_SEPARATOR./lib\" \"`pwd`/aclocal\" \
+  --automake-acdir=m4 --system-acdir=m4/acdir -I m4"
+AUTOMAKE="\
+  perllibdir=\"`pwd`/lib$PATH_SEPARATOR./lib\" \"`pwd`/automake\" \
+  --libdir=lib"
 
 AC_PATH_PROG([PERL], [perl])
 if test -z "$PERL"; then

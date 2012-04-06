@@ -22,9 +22,6 @@ am_create_testdir=empty
 $ACLOCAL --print-ac-dir
 test "`$ACLOCAL --print-ac-dir`" = "$am_system_acdir"
 
-$ACLOCAL -Wno-obsolete --acdir foo --print-ac-dir
-test "`$ACLOCAL -Wno-obsolete --acdir foo --print-ac-dir`" = foo
-
 $ACLOCAL --system-acdir /bar --print-ac-dir
 test "`$ACLOCAL --system-acdir /bar --print-ac-dir`" = /bar
 
