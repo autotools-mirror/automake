@@ -22,7 +22,7 @@
 cat > configure.ac << 'END'
 AC_INIT
 AM_INIT_AUTOMAKE(nonesuch, nonesuch)
-AM_CONFIG_HEADER(subdir/config.h:subdir/config.hin)
+AC_CONFIG_HEADERS(subdir/config.h:subdir/config.hin)
 AC_OUTPUT(Makefile subdir/Makefile)
 END
 

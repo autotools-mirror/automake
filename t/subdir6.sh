@@ -19,7 +19,7 @@
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'
-AM_CONFIG_HEADER([sub/config.h:sub/config.hin])
+AC_CONFIG_HEADERS([sub/config.h:sub/config.hin])
 AC_OUTPUT
 END
 

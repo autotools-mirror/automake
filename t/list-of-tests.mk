@@ -151,7 +151,6 @@ t/autodist-configure-no-subdir.sh \
 t/autodist-no-duplicate.sh \
 t/autodist-stamp-vti.sh \
 t/autohdr.sh \
-t/autohdr2.sh \
 t/autohdr3.sh \
 t/autohdr4.sh \
 t/autohdrdry.sh \
@@ -704,7 +703,6 @@ t/number.sh \
 t/objc.sh \
 t/objc2.sh \
 t/objext-pr10128.sh \
-t/obsolete.sh \
 t/oldvars.sh \
 t/order.sh \
 t/output.sh \

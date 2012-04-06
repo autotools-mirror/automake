@@ -261,14 +261,12 @@ dist_automake_ac_DATA = \
   m4/ar-lib.m4 \
   m4/as.m4 \
   m4/auxdir.m4 \
-  m4/ccstdc.m4 \
   m4/cond.m4 \
   m4/cond-if.m4 \
   m4/depend.m4 \
   m4/depout.m4 \
   m4/dmalloc.m4 \
   m4/gcj.m4 \
-  m4/header.m4 \
   m4/init.m4 \
   m4/install-sh.m4 \
   m4/lead-dot.m4 \
@@ -279,9 +277,6 @@ dist_automake_ac_DATA = \
   m4/minuso.m4 \
   m4/missing.m4 \
   m4/mkdirp.m4 \
-  m4/obsol-gt.m4 \
-  m4/obsol-lt.m4 \
-  m4/obsolete.m4 \
   m4/options.m4 \
   m4/protos.m4 \
   m4/python.m4 \
