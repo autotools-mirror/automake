@@ -278,7 +278,6 @@ dist_automake_ac_DATA = \
   m4/make.m4 \
   m4/minuso.m4 \
   m4/missing.m4 \
-  m4/mkdirp.m4 \
   m4/obsol-gt.m4 \
   m4/obsol-lt.m4 \
   m4/obsolete.m4 \
