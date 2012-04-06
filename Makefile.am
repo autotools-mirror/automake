@@ -27,6 +27,37 @@ EXTRA_DIST =
 ##  Top level.  ##
 ## ------------ ##
 
+# We want a handful of substitutions to be fully-expanded by make;
+# then use config.status to substitute the remainder where a single
+# expansion is sufficient.  We use a funny notation here to avoid
+# configure substitutions in our text.
+do_subst = ( sed \
+  -e "s,[@]configure_input[@],Generated from $$in; do not edit by hand.,g" \
+  -e 's,[@]datadir[@],$(datadir),g' \
+  -e 's,[@]amdir[@],$(amdir),g' \
+  -e 's,[@]bindir[@],$(bindir),g' \
+  -e 's,[@]docdir[@],$(docdir),g' \
+  -e 's,[@]pkgvdatadir[@],$(pkgvdatadir),g' \
+  -e 's,[@]scriptdir[@],$(scriptdir),g' \
+  -e 's,[@]automake_acdir[@],$(automake_acdir),g' \
+  -e 's,[@]system_acdir[@],$(system_acdir),g' \
+## Hack to avoid a spurious substitution in the Automake script (part 1).
+  -e 's,[@]am__isrc[@],!!@!!am__isrc!!@!!,g' \
+  | $(SHELL) ./config.status --file=- \
+## Hack to avoid a spurious substitution in the Automake script (part 2).
+  | sed -e 's,!!@!!am__isrc!!@!!,@''am__isrc@,g' \
+  )
+
+# Generated  files shouldn't contain unexpanded '@substitutions@', and
+# should be made read-only, to prevent them from being edited by mistake
+# instead of the file the are generated from.
+generated_file_finalize = $(AM_V_at) \
+  if LC_ALL=C grep '@[a-zA-Z0-9_][a-zA-Z0-9_]*@' $@-t; then \
+    echo "$@ contains unexpanded substitution (see lines above)"; \
+    exit 1; \
+  fi; \
+  chmod a-w $@-t && mv -f $@-t $@
+
 bin_SCRIPTS = automake aclocal
 
 CLEANFILES += $(bin_SCRIPTS)
@@ -61,32 +92,16 @@ uninstall-hook:
 	  rm -f "$(DESTDIR)$(bindir)/$$fv"; \
 	done
 
-## We can't use configure to do the substitution here; we must do it
-## by hand.  We use a funny notation here to avoid configure
-## substitutions in our text.
-do_subst = sed \
-  -e 's,[@]APIVERSION[@],$(APIVERSION),g' \
-  -e 's,[@]PACKAGE[@],$(PACKAGE),g' \
-  -e 's,[@]PACKAGE_BUGREPORT[@],$(PACKAGE_BUGREPORT),g' \
-  -e 's,[@]PACKAGE_URL[@],$(PACKAGE_URL),g' \
-  -e 's,[@]PATH_SEPARATOR[@],$(PATH_SEPARATOR),g' \
-  -e 's,[@]PERL[@],$(PERL),g' \
-  -e 's,[@]PERL_THREADS[@],$(PERL_THREADS),g' \
-  -e 's,[@]SHELL[@],$(SHELL),g' \
-  -e 's,[@]am_AUTOCONF[@],$(am_AUTOCONF),g' \
-  -e 's,[@]am_AUTOM4TE[@],$(am_AUTOM4TE),g' \
-  -e 's,[@]VERSION[@],$(VERSION),g' \
-  -e 's,[@]configure_input[@],Generated from $@.in; do not edit by hand.,g' \
-  -e 's,[@]datadir[@],$(datadir),g'
-
 ## These files depend on Makefile so they are rebuilt if $(VERSION),
 ## $(datadir) or other do_subst'ituted variables change.
-## Use chmod a-w to prevent people from editing the wrong file by accident.
 automake: automake.in
 aclocal: aclocal.in
 automake aclocal: Makefile
 	$(AM_V_at)rm -f $@ $@-t
-	$(AM_V_GEN)$(do_subst) $(srcdir)/$@.in >$@-t
+	$(AM_V_GEN)in=$@.in; $(do_subst) <$(srcdir)/$@.in >$@-t
+## We can't use '$(generated_file_finalize)' here, because currently
+## Automake contains occurrences of unexpanded @substitutions@ in
+## comments, and that is perfectly legit.
 	$(AM_V_at)chmod a+x,a-w $@-t && mv -f $@-t $@
 
 ## The master location for INSTALL is lib/INSTALL.
@@ -182,23 +197,12 @@ dist_perllib_DATA = \
 nodist_perllib_DATA = lib/Automake/Config.pm
 CLEANFILES += $(nodist_perllib_DATA)
 
-## This file depends on Makefile so it is rebuilt if $(VERSION),
-## $(datadir) or other do_subst'ituted variables change.
-## Use chmod a-w to prevent people from editing the wrong file by accident.
 lib/Automake/Config.pm: lib/Automake/Config.in Makefile
 	$(AM_V_at)rm -f $@ $@-t
 	$(AM_V_at)test -d lib/Automake || $(MKDIR_P) lib/Automake
-	$(AM_V_GEN)sed <$(srcdir)/lib/Automake/Config.in >$@-t \
-	  -e 's,[@]APIVERSION[@],$(APIVERSION),g' \
-	  -e 's,[@]PACKAGE[@],$(PACKAGE),g' \
-	  -e 's,[@]PACKAGE_BUGREPORT[@],$(PACKAGE_BUGREPORT),g' \
-	  -e 's,[@]PERL[@],$(PERL),g' \
-	  -e 's,[@]PERL_THREADS[@],$(PERL_THREADS),g' \
-	  -e 's,[@]SHELL[@],$(SHELL),g' \
-	  -e 's,[@]VERSION[@],$(VERSION),g' \
-	  -e "s,[@]configure_input[@],Generated from Config.in; do not edit by hand.,g" \
-	  -e 's,[@]datadir[@],$(datadir),g'
-	$(AM_V_at)chmod a-w $@-t && mv -f $@-t $@
+	$(AM_V_GEN)in=Config.in \
+	  && $(do_subst) <$(srcdir)/lib/Automake/Config.in >$@-t
+	$(generated_file_finalize)
 EXTRA_DIST += lib/Automake/Config.in
 
 
@@ -300,12 +304,10 @@ dist_system_ac_DATA = m4/acdir/README
 # Use '$(top_srcdir)/m4' for the benefit of non-GNU makes: this is
 # how amversion.m4 appears in our dependencies.
 $(top_srcdir)/m4/amversion.m4: $(srcdir)/configure.ac $(srcdir)/m4/amversion.in
-	$(AM_V_at)sed \
-	    -e 's,[@]VERSION[@],$(VERSION),g' \
-	    -e 's,[@]APIVERSION[@],$(APIVERSION),g' \
-	    -e "s,[@]configure_input[@],Generated from amversion.in; do not edit by hand.,g" \
-	    $(srcdir)/m4/amversion.in > $@-t
-	$(AM_V_at)chmod a-w $@-t && mv -f $@-t $@
+	$(AM_V_at)rm -f $@-t $@
+	$(AM_V_GEN)in=amversion.in \
+	  && $(do_subst) <$(srcdir)/m4/amversion.in >$@-t
+	$(generated_file_finalize)
 EXTRA_DIST += m4/amversion.in
 
 
@@ -393,70 +395,11 @@ t/distcheck-missing-m4.log: t/ax/distcheck-hook-m4.am
 t/distcheck-outdated-m4.log: t/ax/distcheck-hook-m4.am
 EXTRA_DIST += t/ax/distcheck-hook-m4.am
 
-# Keep in sync with AC_SUBST'd stuff in defs-static.in.
-do_subst_t = sed \
-  -e 's|@abs_srcdir[@]|$(abs_srcdir)|g' \
-  -e 's|@abs_top_srcdir[@]|$(abs_top_srcdir)|g' \
-  -e 's|@abs_builddir[@]|$(abs_builddir)|g' \
-  -e 's|@abs_top_builddir[@]|$(abs_top_builddir)|g' \
-  -e 's|@prefix[@]|$(prefix)|g' \
-  -e 's|@amdir[@]|$(amdir)|g' \
-  -e 's|@bindir[@]|$(bindir)|g' \
-  -e 's|@datadir[@]|$(datadir)|g' \
-  -e 's|@docdir[@]|$(docdir)|g' \
-  -e 's|@automake_acdir[@]|$(automake_acdir)|g' \
-  -e 's|@system_acdir[@]|$(system_acdir)|g' \
-  -e 's|@scriptdir[@]|$(scriptdir)|g' \
-  -e 's|@pkgvdatadir[@]|$(pkgvdatadir)|g' \
-  -e 's|@host_alias[@]|$(host_alias)|g' \
-  -e 's|@build_alias[@]|$(build_alias)|g' \
-  -e 's|@APIVERSION[@]|$(APIVERSION)|g' \
-  -e 's|@PATH_SEPARATOR[@]|$(PATH_SEPARATOR)|g' \
-  -e 's|@SHELL[@]|$(SHELL)|g' \
-  -e 's|@AWK[@]|$(AWK)|g' \
-  -e 's|@PERL[@]|$(PERL)|g' \
-  -e 's|@EGREP[@]|$(EGREP)|g' \
-  -e 's|@FGREP[@]|$(FGREP)|g' \
-  -e 's|@CPPFLAGS[@]|$(CPPFLAGS)|g' \
-  -e 's|@CC[@]|$(CC)|g' \
-  -e 's|@CFLAGS[@]|$(CFLAGS)|g' \
-  -e 's|@CXX[@]|$(CXX)|g' \
-  -e 's|@CXXFLAGS[@]|$(CXXFLAGS)|g' \
-  -e 's|@F77[@]|$(F77)|g' \
-  -e 's|@FFLAGS[@]|$(FFLAGS)|g' \
-  -e 's|@FC[@]|$(FC)|g' \
-  -e 's|@FCFLAGS[@]|$(FCFLAGS)|g' \
-  -e 's|@GNU_CC[@]|$(GNU_CC)|g' \
-  -e 's|@GNU_CFLAGS[@]|$(GNU_CFLAGS)|g' \
-  -e 's|@GNU_CXX[@]|$(GNU_CXX)|g' \
-  -e 's|@GNU_CXXFLAGS[@]|$(GNU_CXXFLAGS)|g' \
-  -e 's|@GNU_F77[@]|$(GNU_F77)|g' \
-  -e 's|@GNU_FFLAGS[@]|$(GNU_FFLAGS)|g' \
-  -e 's|@GNU_FC[@]|$(GNU_FC)|g' \
-  -e 's|@GNU_FCFLAGS[@]|$(GNU_FCFLAGS)|g' \
-  -e 's|@GNU_GCJ[@]|$(GNU_GCJ)|g' \
-  -e 's|@GNU_GCJFLAGS[@]|$(GNU_GCJFLAGS)|g' \
-  -e 's|@YACC[@]|$(YACC)|g' \
-  -e 's|@LEX[@]|$(LEX)|g' \
-  -e 's|@TEX[@]|$(TEX)|g' \
-  -e 's|@MODIFICATION_DELAY[@]|$(MODIFICATION_DELAY)|g' \
-  -e 's|@am_AUTOCONF[@]|$(am_AUTOCONF)|g' \
-  -e 's|@am_AUTOM4TE[@]|$(am_AUTOM4TE)|g' \
-  -e 's|@am_AUTORECONF[@]|$(am_AUTORECONF)|g' \
-  -e 's|@am_AUTOHEADER[@]|$(am_AUTOHEADER)|g' \
-  -e 's|@am_AUTOUPDATE[@]|$(am_AUTOUPDATE)|g' \
-  -e 's|@sh_errexit_works[@]|$(sh_errexit_works)|g' \
-  -e 's|@configure_input[@]|Generated from $@.in.  DO NOT EDIT BY HAND!|'
-
-defs-static: defs-static.in
+defs-static: defs-static.in Makefile
 	$(AM_V_at)rm -f $@ $@-t
-	$(AM_V_GEN)$(do_subst_t) $(srcdir)/defs-static.in >$@-t
-	$(AM_V_at) : Sanity check on the substitutions; \
-	if LC_ALL=C grep '@[a-zA-Z0-9_][a-zA-Z0-9_]*@' $@-t; then \
-	  echo "$@ contains unexpanded substitution (see lines above)"; \
-	  exit 1; \
-	fi
-	$(AM_V_at)chmod a-w $@-t && mv -f $@-t $@
+	$(AM_V_GEN)in=defs-static.in\
+	  && $(do_subst) <$(srcdir)/defs-static.in >$@-t
+	$(generated_file_finalize)
 EXTRA_DIST += defs-static.in
 CLEANFILES += defs-static
 
