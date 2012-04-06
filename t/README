@@ -12,9 +12,14 @@ Running the tests
 
     make -k check
 
-  You can use '-jN' for faster completion (it even helps on a
-  uniprocessor system, due to unavoidable sleep delays, as
-  noted below).
+  By default, verbose output of a test 't/foo.sh' or 't/foo.tap' is retained
+  in the log file 't/foo.log'.  Also, a summary log is created in the file
+  'test-suite.log' (in the top-level directory).
+
+  You can use '-jN' for faster completion (it even helps on a uniprocessor
+  system, due to unavoidable sleep delays, as noted below):
+
+    make -k -j4
 
   To rerun only failed tests:
 
@@ -26,8 +31,8 @@ Running the tests
 
   To run only selected tests:
 
-    make -k check TESTS="foo.test bar.test"             (GNU make)
-    env TESTS="foo.test bar.test" make -e -k check      (non-GNU make)
+    make -k check TESTS="t/foo.sh t/bar.tap"           (GNU make)
+    env TESTS="t/foo.sh t/bar.tap" make -e -k check    (non-GNU make)
 
  To run the tests in cross-compilation mode, you should first configure
  the automake source tree to a cross-compilation setup.  For example, to
@@ -59,42 +64,26 @@ Interpretation
     ERROR - some unexpected error condition
 
 
-Getting details from failures
------------------------------
-
-  By default, verbose output of a test 'foo.test' or 'foo.tap' is
-  retained in the log file 'foo.log'.  A summary log is created in
-  the file 'test-suite.log'.
-
-  You can limit the set of files using the TESTS variable, and enable
-  detailed test output at the end of the test run with the VERBOSE
-  variable:
-
-    env VERBOSE=x TESTS='first.test second.test ...' make -e check
-
-  You can also run the tests by hand, as explained in the next subsection.
-
-
 About the tests
 ---------------
 
   There are two kinds of tests in the Automake testsuite (both implemented
-  as shell scripts).  The scripts with the '.test' suffix are "simple"
+  as shell scripts).  The scripts with the '.sh' suffix are "simple"
   tests, their outcome completely determined by their exit status.  Those
   with the '.tap' suffix use the TAP protocol.  If you want to run a test
   by hand, you can do so directly if it is a simple test:
 
-    ./nogzip.test
+    ./t/nogzip.sh
 
   (it will be verbose by default), while if it is a TAP test you can pass
   it to your preferred TAP runner, as in e.g.:
 
-    prove --verbose --merge ./add-missing.tap
+    prove --verbose --merge ./t/add-missing.tap
 
   The tests can also be run directly in a VPATH build, as with:
 
-    /path/to/srcdir/tests/nogzip.test
-    prove --verbose --merge /path/to/srcdir/tests/add-missing.tap
+    /path/to/srcdir/t/nogzip.sh
+    prove --verbose --merge /path/to/srcdir/t/add-missing.tap
 
 
 Supported shells
@@ -105,8 +94,8 @@ Supported shells
   unless told not to.  So, to run the tests with a different shell, say
   '/path/to/another/sh', the user must use:
 
-    AM_TESTS_REEXEC=no /path/to/another/sh ./foo.test
-    AM_TESTS_REEXEC=no prove -v -e /path/to/another/sh ./bar.tap
+    AM_TESTS_REEXEC=no /path/to/another/sh ./t/foo.sh
+    AM_TESTS_REEXEC=no prove -v -e /path/to/another/sh ./t/bar.tap
 
   to run a test directly, and:
 
@@ -124,10 +113,10 @@ Supported shells
   can automatically work around these incompatibilities when a version
   4.3 or later of Zsh is used, but unfortunately not when an older
   version of Zsh is used.  Thus, if you want to run a test script, say
-  foo.test, with Zsh 4.2, you *can't* simply do "zsh foo.test", but
+  'foo.sh', with Zsh 4.2, you *can't* simply do "zsh foo.sh", but
   you *must* resort to:
 
-    AM_TESTS_REEXEC=no zsh -o no_function_argzero foo.test
+    AM_TESTS_REEXEC=no zsh -o no_function_argzero foo.sh
 
   Note that this problem does not occur if Zsh is executed through
   a symlink with a basename of 'sh', since in that case Zsh starts
@@ -165,7 +154,7 @@ Do
 
   If a test checks examples or idioms given in the documentation, make
   sure the documentation reference them appropriately in comments, as in:
-    @c Keep in sync with autodist-config-headers.test.
+    @c Keep in sync with autodist-config-headers.sh
     @example
     ...
     @end example
@@ -194,9 +183,9 @@ Do
   might have custom extensions, but their basename (that is, with such
   extension stripped) is expected to end with "-w" string, optionally
   followed by decimal digits.  For example, the name of a valid
-  auto-generated test can be 'color-w.test' or 'tap-signal-w09.tap'.
+  auto-generated test can be 'color-w.sh' or 'tap-signal-w09.tap'.
   Please don't name hand-written tests in a way that could cause them
-  to be confused with auto-generated tests; for example, 'u-v-w.test'
+  to be confused with auto-generated tests; for example, 'u-v-w.sh'
   or 'option-w0.tap' are *not* valid name for hand-written tests.
 
   ./defs brings in some commonly required files, and sets a skeleton
@@ -261,7 +250,8 @@ Do
   example, if you need to copy or grep an automake-provided script,
   do not assume that they can be found in the '$top_srcdir/lib'
   directory, but use '$am_scriptdir' instead.  The complete list of
-  such "$am_...dir" variables can be found in tests/defs-static.in.
+  such "$am_...dir" variables can be found in the 'defs-static.in'
+  file.
 
   When writing input for lex, include the following in the definitions
   section:
