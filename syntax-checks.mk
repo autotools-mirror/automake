@@ -26,10 +26,12 @@ xtests := $(shell \
      dirs='$(srcdir) .'; \
    fi; \
    for d in $$dirs; do \
-     for s in test tap sh; do \
-       ls $$d/tests/*.$$s 2>/dev/null; \
+     for s in tap sh; do \
+       ls $$d/t/*.$$s $$d/t/ax/*.$$s 2>/dev/null; \
      done; \
    done | sort)
+
+xdefs = $(srcdir)/defs $(srcdir)/defs-static.in
 
 ams := $(shell find $(srcdir) -name '*.am')
 
@@ -94,9 +96,6 @@ maintainer-check: $(syntax_check_rules)
 
 ## Check that the list of tests given in the Makefile is equal to the
 ## list of all test scripts in the Automake testsuite.
-.PHONY: maintainer-check-list-of-tests
-maintainer-check-list-of-tests:
-	$(MAKE) -C tests $@
 maintainer-check: maintainer-check-list-of-tests
 
 ## Look for test whose names can cause spurious failures when used as
@@ -291,9 +290,8 @@ sc_AMDEP_TRUE_in_automake_in:
 ## Tests should never require GNU make explicitly: automake-ng assumes
 ## it unconditionally.
 sc_tests_no_gmake_requirement:
-	@if grep -iE '^ *required=.*\b(gmake|gnumake)\b' \
-	  $(xtests) $(srcdir)/tests/defs $(srcdir)/tests/defs-static.in \
-	; then \
+	@if grep -iE '^ *required=.*\b(g|gnu)make\b' $(xtests) $(xdefs); \
+	then \
 	  echo 'Tests should never require GNU make explicitly.' 1>&2; \
 	  exit 1; \
 	fi
@@ -302,9 +300,8 @@ sc_tests_no_gmake_requirement:
 ## used in the test suite is indeed GNU make: automake-ng assumes it
 ## unconditionally.
 sc_tests_no_gmake_checking:
-	@if grep -E '\b(is|using)_g(nu)?make\b' \
-	  $(xtests) $(srcdir)/tests/defs $(srcdir)/tests/defs-static.in \
-	; then \
+	@if grep -E '\b(is|using)_g(nu)?make\b' $(xtests) $(xdefs); \
+	then \
 	  echo 'Tests should never explicitly check whether $$MAKE' \
 	       'is GNU make.' 1>&2; \
 	  exit 1; \
@@ -390,7 +387,7 @@ sc_tests_no_make_e:
 	  exit 1; \
 	fi
 sc_docs_no_make_e:
-	@if grep '\bmake\b.* -[a-zA-Z0-9]*e' README tests/README; then \
+	@if grep '\bmake\b.* -[a-zA-Z0-9]*e' README t/README; then \
 	  echo "Don't advocate the use of \"make -e\" in the manual or" \
 	       " in the README files." 1>&2; \
 	  exit 1; \
@@ -407,10 +404,7 @@ sc_tests_obsolete_variables:
 	"; \
 	seen=""; \
 	for v in $$vars; do \
-	  if grep -E "\b$$v\b" \
-	    $(xtests) $(srcdir)/tests/defs \
-	    $(srcdir)/tests/defs-static.in \
-	  ; then \
+	  if grep -E "\b$$v\b" $(xtests) $(xdefs); then \
 	    seen="$$seen $$v"; \
 	  fi; \
 	done; \
@@ -480,7 +474,7 @@ sc_tests_here_document_format:
 
 ## Tests should never call exit directly, but use Exit.
 ## This is so that the exit status is transported correctly across the 0 trap.
-## Ignore comments, testsuite self tests, and one perl line in ext2.test.
+## Ignore comments, testsuite self tests, and one perl line in ext2.sh.
 sc_tests_Exit_not_exit:
 	@found=false; for file in $(xtests); do \
 	  case $$file in */self-check-*) continue;; esac; \
@@ -550,10 +544,10 @@ sc_tests_plain_egrep_fgrep:
 ## for configure input files in our testsuite.  The latter  has been
 ## deprecated for several years (at least since autoconf 2.50).
 sc_tests_no_configure_in:
-	@if grep -E '\bconfigure\\*\.in\b' $(xtests) $(srcdir)/tests/defs \
-	      | grep -Ev '/backcompat.*\.(test|tap):' \
-	      | grep -Ev '/autodist-configure-no-subdir\.test:' \
-	      | grep -Ev '/(configure|help)\.test:' \
+	@if grep -E '\bconfigure\\*\.in\b' $(xtests) $(xdefs) \
+	      | grep -Ev '/backcompat.*\.(sh|tap):' \
+	      | grep -Ev '/autodist-configure-no-subdir\.sh:' \
+	      | grep -Ev '/(configure|help)\.sh:' \
 	      | grep .; \
 	then \
 	  echo "Use 'configure.ac', not 'configure.in', as the name" >&2; \
@@ -567,7 +561,7 @@ sc_tests_no_configure_in:
 ## AM_RECURSIVE_TARGETS.  Suggest keeping test directories around for
 ## greppability of the Makefile.in files.
 sc_ensure_testsuite_has_run:
-	@if test ! -f tests/test-suite.log; then \
+	@if test ! -f t/test-suite.log; then \
 	  echo 'Run "env keep_testdirs=yes make check" before' \
 	       'running "make maintainer-check"' >&2; \
 	  exit 1; \
@@ -577,7 +571,7 @@ sc_ensure_testsuite_has_run:
 ## Ensure our warning and error messages do not contain duplicate 'warning:' prefixes.
 ## This test actually depends on the testsuite having been run before.
 sc_tests_logs_duplicate_prefixes: sc_ensure_testsuite_has_run
-	@if grep -E '(warning|error):.*(warning|error):' tests/*.log; then \
+	@if grep -E '(warning|error):.*(warning|error):' t/*.log; then \
 	  echo 'Duplicate warning/error message prefixes seen in above tests.' >&2; \
 	  exit 1; \
 	fi
@@ -585,7 +579,7 @@ sc_tests_logs_duplicate_prefixes: sc_ensure_testsuite_has_run
 ## Ensure variables are listed before rules in Makefile.in files we generate.
 sc_tests_makefile_variable_order: sc_ensure_testsuite_has_run
 	@st=0; \
-	for file in `find tests -name Makefile.in -print`; do \
+	for file in `find t -name Makefile.in -print`; do \
 	  latevars=`sed -n \
 	    -e :x -e 's/#.*//' \
 	    -e '/\\\\$$/{' -e N -e 'b x' -e '}' \

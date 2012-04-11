@@ -1,0 +1,73 @@
+#! /bin/sh
+# Copyright (C) 2011-2012 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Sanity check for the automake testsuite.
+# Make sure that $me gets automatically defined by './defs', and that it
+# can be overridden by the test script.
+
+am_create_testdir=no
+. ./defs || Exit 1
+
+plan_ 14
+
+AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC
+
+# This test becomes cumbersome if we keep the 'errexit' shell flag set.
+# And removing it is no big deal, as this test is a TAP-based one, so
+# that false positives remain very unlikely.
+set +e
+
+do_check ()
+{
+  $SHELL -c '. ./defs && echo me=$me' "$1" | grep "^me=$2$"
+  command_ok_ "me=$1" test $? -eq 0
+}
+
+for e in sh tap; do
+  do_check foo-bar-.$e 'foo-bar-'
+  do_check _foo__bar.$e '_foo__bar'
+  do_check 012.$e '012'
+  do_check a.b.c.$e 'a\.b\.c'
+done
+
+do_check foo.bar 'foo\.bar'
+do_check abc. 'abc\.'
+
+# If we override $me, ./defs should not modify it.
+
+s=`$SHELL -c 'me=foo.sh && . ./defs && echo me=$me' bad.sh`
+command_ok_ "override of \$me before ./defs causes no error" \
+            test $? -eq 0
+
+r='ok'
+printf '%s\n' "$s" | grep '^me=foo\.sh$' || r='not ok'
+printf '%s\n' "$s" | grep 'me=bad'       && r='not ok'
+result_ "$r" "override of \$me before ./defs is honored"
+unset r
+
+# Overriding $me after sourcing ./defs-static should work.
+s=`$SHELL -c '. ./defs-static && me=zardoz &&
+              . ./defs && echo me=$me' bad.sh`
+command_ok_ "override of \$me after ./defs-static causes no error" \
+            test $? -eq 0
+
+r='ok'
+printf '%s\n' "$s" | grep '^me=zardoz$' || r='not ok'
+printf '%s\n' "$s" | grep 'me=bad'      && r='not ok'
+result_ "$r" "override of \$me after ./defs-static is honored"
+unset r
+
+:
