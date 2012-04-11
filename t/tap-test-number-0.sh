@@ -1,0 +1,86 @@
+#! /bin/sh
+# Copyright (C) 2011-2012 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# TAP support:
+#  - a test result numbered as 0 is to be considered out-of-order
+# This is consistent with the behaviour of the 'prove' utility.
+
+am_parallel_tests=yes
+. ./defs || Exit 1
+
+if test $am_tap_implementation = perl; then
+  $PERL -MTAP::Parser -e 1 \
+    || skip_ "cannot import TAP::Parser perl module"
+  if $PERL -w -e '
+    use warnings FATAL => "all"; use strict;
+    use TAP::Parser;
+    my $parser = TAP::Parser->new({tap => "1..1\n" . "ok 0\n"});
+    my $result = $parser->next;
+    $result->is_plan or die "first line is not TAP plan";
+    $result = $parser->next;
+    $result->is_test or die "second line is not TAP test result";
+    my $testno = $result->number;
+    $parser->next and die "unexpected further TAP stream";
+    exit ($testno == 0 ? 0 : 77);
+  '; then
+    : # Nothing to do.
+  elif test $? -eq 77; then
+    skip_ 'TAP::Parser bug: test number 0 gets relabelled as 1'
+  else
+    fatal_ "error analyzing TAP::Parser module for bugs"
+  fi
+fi
+
+. "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
+
+cat > a.test <<END
+1..1
+ok 0
+END
+
+cat > b.test <<END
+1..1
+not ok 0
+END
+
+cat > c.test <<END
+1..1
+ok 0 foo # SKIP
+END
+
+cat > d.test <<END
+1..1
+not ok 0 bar # TODO
+END
+
+cat > e.test <<END
+1..1
+ok 0 # TODO
+END
+
+TESTS='a.test b.test c.test d.test e.test' $MAKE -e check >stdout \
+  && { cat stdout; Exit 1; }
+cat stdout
+
+count_test_results total=5 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=5
+
+grep '^ERROR: a\.test 0 # OUT-OF-ORDER (expecting 1)$' stdout
+grep '^ERROR: b\.test 0 # OUT-OF-ORDER (expecting 1)$' stdout
+grep '^ERROR: c\.test 0 foo # OUT-OF-ORDER (expecting 1)$' stdout
+grep '^ERROR: d\.test 0 bar # OUT-OF-ORDER (expecting 1)$' stdout
+grep '^ERROR: e\.test 0 # OUT-OF-ORDER (expecting 1)$' stdout
+
+:
