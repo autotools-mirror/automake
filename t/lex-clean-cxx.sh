@@ -55,7 +55,7 @@ END
 cat > parsefoo.lxx << 'END'
 %{
 #define YY_NO_UNISTD_H 1
-static int isatty (int fd) { return 0; }
+int isatty (int fd) { return 0; }
 %}
 %%
 "GOOD"   return EOF;
