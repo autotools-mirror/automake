@@ -206,7 +206,7 @@ sc_no_for_variable_in_macro:
 sc_mkinstalldirs:
 	@if grep -n 'mkinstalldirs' $(ams) \
 	      | grep -F -v '$$(mkinstalldirs)' \
-	      | grep -v '^\./lib/Makefile.am:[0-9][0-9]*:  *mkinstalldirs \\$$'; \
+	      | grep -v '^\./Makefile.am:[0-9][0-9]*:  *lib/mkinstalldirs \\$$'; \
 	then \
 	  echo "Found incorrect use of mkinstalldirs in the lines above" 1>&2; \
 	  exit 1; \
@@ -500,7 +500,7 @@ sc_tests_no_configure_in:
 ## AM_RECURSIVE_TARGETS.  Suggest keeping test directories around for
 ## greppability of the Makefile.in files.
 sc_ensure_testsuite_has_run:
-	@if test ! -f t/test-suite.log; then \
+	@if test ! -f '$(TEST_SUITE_LOG)'; then \
 	  echo 'Run "env keep_testdirs=yes make check" before' \
 	       'running "make maintainer-check"' >&2; \
 	  exit 1; \
