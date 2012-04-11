@@ -134,4 +134,6 @@ echo AM_TEST_LOG_DRIVER_FLAGS = --ignore-exit >> Makefile.in
 ./config.status Makefile
 $MAKE distcheck
 
+rm -f Makefile.in # To avoid a maintainer-check failure.
+
 :

@@ -25,7 +25,7 @@ cat >> configure.ac <<'END'
 AC_PROG_CC
 AM_PROG_CC_C_O
 AM_PROG_VALAC([0.7.0])
-PKG_CHECK_MODULES([GOBJECT], [gobject-2.0 >= 2.10])
+PKG_CHECK_MODULES([GOBJECT], [gobject-2.0 >= 2.4])
 AC_CONFIG_FILES([src/Makefile])
 AC_OUTPUT
 END
@@ -70,7 +70,7 @@ $AUTOMAKE -a
 
 grep PKG_CHECK_MODULES configure && skip_ "pkg-config m4 macros not found"
 
-./configure
+./configure || skip_ "configure failure"
 $MAKE
 
 if cross_compiling; then :; else
