@@ -32,6 +32,7 @@ pr8365-remake-timing.test \
 lex-subobj-nodep.test \
 remake-am-pr10111.test \
 remake-m4-pr10111.test \
+vala-vapi.test \
 txinfo5.test
 
 perl_TESTS = \
@@ -929,6 +930,7 @@ vala2.test \
 vala3.test \
 vala4.test \
 vala5.test \
+vala-vapi.test \
 vala-vpath.test \
 vala-mix.test \
 vala-mix2.test \
