@@ -71,7 +71,8 @@ $ACLOCAL
 $AUTOMAKE -a
 $AUTOCONF
 
-./configure
+# Do not reject slower dependency extractors.
+./configure --enable-dependency-tracking
 
 $MAKE all
 ls -l # For debugging.
