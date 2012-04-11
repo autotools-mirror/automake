@@ -459,7 +459,6 @@ MAINTAINERCLEANFILES += $(dist_man1_MANS)
 
 update_mans = \
   $(AM_V_GEN): \
-    && $(MAKE) $(AM_MAKEFLAGS) lib/Automake/Config.pm \
     && PATH="$(abs_builddir)/t/wrap$(PATH_SEPARATOR)$$PATH" \
     && export PATH \
     && $(HELP2MAN) --output=$@
@@ -469,9 +468,9 @@ $(srcdir)/doc/aclocal.1 $(srcdir)/doc/automake.1:
 	  && f=`echo $@ | sed 's|.*/||; s|\.1$$||; $(transform)'` \
 	  && echo ".so man1/$$f-$(APIVERSION).1" > $@
 
-$(srcdir)/doc/aclocal-$(APIVERSION).1: $(srcdir)/aclocal.in
+$(srcdir)/doc/aclocal-$(APIVERSION).1: $(srcdir)/aclocal.in aclocal lib/Automake/Config.pm
 	$(update_mans) aclocal-$(APIVERSION)
-$(srcdir)/doc/automake-$(APIVERSION).1: $(srcdir)/automake.in
+$(srcdir)/doc/automake-$(APIVERSION).1: $(srcdir)/automake.in automake lib/Automake/Config.pm
 	$(update_mans) automake-$(APIVERSION)
 
 
