@@ -23,7 +23,7 @@ if test x"$sh_errexit_works" != x"yes"; then
   skip_all_ "$me: no working exit trap with 'set -e'"
 fi
 
-plan_ 42
+plan_ 43
 
 # We still need a little hack to make ./defs work outside automake's
 # tree 'tests' subdirectory.  Not a big deal.
@@ -48,10 +48,20 @@ do_clean ()
   # Don't try to be smart and use find here, that has caused issues
   # and extra ERROR results in the past.  Be dumb and safe.
   for d in t t/* t/*/* t/*/*/*; do
-    test ! -d t/$d || chmod u+rwx t/$d || :
+    test ! -d $d || chmod u+rwx $d || :
   done
   rm -rf t
 }
+
+# Exporting 'keep_testdirs' to "yes" in the environment should cause
+# the cleanup code not to be run, so that the temporary directories
+# are left on disk.
+command_ok_ '"keep_testdirs=yes" causes testdir to be kept around' eval '
+     keep_testdirs=yes $SHELL -c ". ./defs && echo okok >foo" t/dummy.sh \
+     && test -f t/dummy.dir/foo \
+     && test okok = `cat t/dummy.dir/foo`'
+
+do_clean
 
 # Check that pre-test cleanup works also with directories with
 # "null" permissions, and containing broken symlinks.
@@ -68,11 +78,11 @@ chmod 000 t/dummy.dir/sub/* t/dummy.dir/file
 test $have_symlinks = yes && chmod 000 t/dummy.dir/symlink
 chmod 500 t/dummy.dir/sub t/dummy.dir
 command_ok_ "pre-cleanup can deal with low-perms testdir" \
-            $SHELL -c  '. ./defs' dummy.sh
+            $SHELL -c  '. ./defs' t/dummy.sh
 command_ok_ "pre-cleanup removed low-perms testdir" \
-            eval 'test ! -f dummy.dir \
-               && test ! -d dummy.dir \
-               && test ! -r dummy.dir'
+            eval 'test ! -f t/dummy.dir \
+               && test ! -d t/dummy.dir \
+               && test ! -r t/dummy.dir'
 
 do_clean
 
@@ -97,9 +107,9 @@ command_ok_ "post-cleanup can deal with low-perms testdir" \
   :
 ' t/dummy.sh
 command_ok_ "post-cleanup removed null-perms testdir" \
-            eval 'test ! -f dummy.dir \
-               && test ! -d dummy.dir \
-               && test ! -r dummy.dir'
+            eval 'test ! -f t/dummy.dir \
+               && test ! -d t/dummy.dir \
+               && test ! -r t/dummy.dir'
 
 do_clean
 
@@ -116,7 +126,7 @@ if test $have_symlinks = yes; then
   (cd t/dummy.dir && ln -s ../../dir ../../file .)
 
   command_ok_ "pre-cleanup with testdir with zero-perms symlinks" \
-               $SHELL -c '. ./defs' dummy.sh
+               $SHELL -c '. ./defs' t/dummy.sh
   ls -l # For debugging.
   command_ok_ "pre-cleanup chmod doesn't follow symlinks to files" \
                eval 'ls -l file | grep "^----------.*file"'
