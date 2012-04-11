@@ -86,6 +86,10 @@ $ACLOCAL --force -I m4 || cat >> get.sh <<'END'
 ACLOCAL="$ACLOCAL -Wno-syntax"
 END
 
+# Remove any Makefile.in possibly created by gettextize/autopoint, to
+# avoid spurious maintainer-check failures.
+rm -f `find . -name Makefile.in`
+
 # The file gettextize or autopoint might have copied in the 'm4'
 # subdirectory of the test directory are going to be needed by
 # other tests, so we must not remove the test directory.
