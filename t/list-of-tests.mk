@@ -1187,6 +1187,7 @@ t/vala2.sh \
 t/vala3.sh \
 t/vala4.sh \
 t/vala5.sh \
+t/vala-vapi.sh \
 t/vala-vpath.sh \
 t/vala-mix.sh \
 t/vala-mix2.sh \

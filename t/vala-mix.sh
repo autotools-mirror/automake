@@ -27,12 +27,13 @@ AC_OUTPUT
 END
 
 cat > Makefile.am <<'END'
-bin_PROGRAMS = zardoz mu
+bin_PROGRAMS = zardoz mu baz
 AM_VALAFLAGS = --profile=posix
 zardoz_SOURCES = foo.vala bar.c
 mu_SOURCES = 1.vala 2.c
 mu_VALAFLAGS = $(AM_VALAFLAGS) --main=run
 mu_CFLAGS = -DHAVE_MU
+baz_SOURCES = baz.c
 END
 
 if cross_compiling; then :; else
@@ -70,6 +71,14 @@ int all_is_ok = 1;
 #error "HAVE_MU no defined"
 chocke me
 #endif
+END
+
+# For automake bug#11229.
+cat > baz.c <<'END'
+int main (void)
+{
+  return 0;
+}
 END
 
 $ACLOCAL

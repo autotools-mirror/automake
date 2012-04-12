@@ -5734,16 +5734,20 @@ sub lang_vala_finish_target ($$)
   my $var = var "${derived}_SOURCES";
   return unless $var;
 
-  my @vala_sources = grep { /\.vala$/ } ($var->value_as_list_recursive);
+  my @vala_sources = grep { /\.(vala|vapi)$/ } ($var->value_as_list_recursive);
+
+  # For automake bug#11229.
+  return unless @vala_sources;
 
   foreach my $vala_file (@vala_sources)
     {
-      (my $c_file = $vala_file) =~ s/(.*)\.vala$/$1.c/;
+      my $c_file = $vala_file;
       $output_rules .= "\$(srcdir)/$c_file: \$(srcdir)/${derived}_vala.stamp\n"
         . "\t\@if test -f \$@; then :; else rm -f \$(srcdir)/${derived}_vala.stamp; fi\n"
         . "\t\@if test -f \$@; then :; else \\\n"
         . "\t  \$(MAKE) \$(srcdir)/${derived}_vala.stamp; \\\n"
         . "\tfi\n"
+        if $c_file =~ s/(.*)\.vala$/$1.c/;
     }
 
   # Add rebuild rules for generated header and vapi files
