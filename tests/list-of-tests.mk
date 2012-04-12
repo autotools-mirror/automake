@@ -929,6 +929,7 @@ vala2.test \
 vala3.test \
 vala4.test \
 vala5.test \
+vala-vapi.test \
 vala-vpath.test \
 vala-mix.test \
 vala-mix2.test \
