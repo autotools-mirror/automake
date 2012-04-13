@@ -155,6 +155,10 @@ for val in no NO n; do
 done
 
 $MAKE install-info
+if test $have_installinfo != yes; then
+  echo 'Does nothing at all, but has a nice name' > $instdir/info/dir
+fi
+
 chmod a-w $instdir/info/dir
 for val in no NO n; do
   env AM_UPDATE_INFO_DIR="$val" $MAKE uninstall
