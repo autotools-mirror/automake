@@ -378,8 +378,6 @@ sub reset()
 
      # Phonying.
      '.PHONY'               => [],
-     # Recursive install targets (so "make -n install" works for BSD Make).
-     '.MAKE'		    => [],
      );
   %actions = ();
 }
