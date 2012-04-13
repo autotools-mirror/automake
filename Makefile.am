@@ -458,31 +458,33 @@ info_TEXINFOS = doc/automake.texi doc/automake-history.texi
 doc_automake_TEXINFOS = doc/fdl.texi
 doc_automake_history_TEXINFOS = doc/fdl.texi
 
-dist_man1_MANS = \
-  $(srcdir)/doc/aclocal.1 \
-  $(srcdir)/doc/automake.1 \
-  $(srcdir)/doc/aclocal-$(APIVERSION).1 \
-  $(srcdir)/doc/automake-$(APIVERSION).1
+man1_MANS = \
+  doc/aclocal.1 \
+  doc/automake.1 \
+  doc/aclocal-$(APIVERSION).1 \
+  doc/automake-$(APIVERSION).1
 
-$(dist_man1_MANS): $(srcdir)/configure.ac
+$(man1_MANS): $(srcdir)/configure.ac
 
-MAINTAINERCLEANFILES += $(dist_man1_MANS)
+CLEANFILES += $(man1_MANS)
+EXTRA_DIST += doc/help2man
 
 update_mans = \
   $(AM_V_GEN): \
-    && $(MAKE) lib/Automake/Config.pm \
+    && $(MKDIR_P) doc \
     && PATH="$(abs_builddir)/t/wrap$(PATH_SEPARATOR)$$PATH" \
     && export PATH \
-    && $(HELP2MAN) --output=$@
+    && $(PERL) $(srcdir)/doc/help2man --output=$@
 
-$(srcdir)/doc/aclocal.1 $(srcdir)/doc/automake.1:
+doc/aclocal.1 doc/automake.1:
 	$(AM_V_GEN): \
+	  && $(MKDIR_P) doc \
 	  && f=`echo $@ | sed 's|.*/||; s|\.1$$||; $(transform)'` \
 	  && echo ".so man1/$$f-$(APIVERSION).1" > $@
 
-$(srcdir)/doc/aclocal-$(APIVERSION).1: $(srcdir)/aclocal.in
+doc/aclocal-$(APIVERSION).1: aclocal.in aclocal lib/Automake/Config.pm
 	$(update_mans) aclocal-$(APIVERSION)
-$(srcdir)/doc/automake-$(APIVERSION).1: $(srcdir)/automake.in
+doc/automake-$(APIVERSION).1: automake.in automake lib/Automake/Config.pm
 	$(update_mans) automake-$(APIVERSION)
 
 

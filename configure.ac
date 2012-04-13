@@ -124,9 +124,6 @@ AM_RUN_LOG([$TEX --version </dev/null])
 AC_CHECK_PROGS([YACC], [yacc byacc 'bison -y'], [false])
 AC_CHECK_PROGS([LEX], [lex flex], [false])
 
-# Generate man pages.
-AM_MISSING_PROG([HELP2MAN], [help2man])
-
 # Test for Autoconf.  We run Autoconf in a subdirectory to ease
 # deletion of any files created (such as those added to
 # autom4te.cache).  We used to perform only the last of the three
