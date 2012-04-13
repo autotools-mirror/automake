@@ -14,8 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Look for a bug where FreeBSD make in concurrent mode reported success
-# even when the Automake-generated parallel testsuite harness failed.
+# Look for a bug where make in concurrent mode reported success even
+# when the Automake-generated parallel testsuite harness failed.
+# This issue was originally present only with FreeBSD make, but we
+# keep the test anyway, for extra safety.
 # See automake bug#9245.
 
 . ./defs || Exit 1
@@ -42,12 +44,9 @@ $AUTOMAKE -a
 
 ./configure
 
-# Some make implementations don't grok the '-j' option.
-$MAKE -j1 || Exit 77
-
 for j in '' -j1 -j2; do
   $MAKE $j check && Exit 1
-   $MAKE $j TESTS=foo.test check && Exit 1
+  $MAKE $j TESTS=foo.test check && Exit 1
   if test x"$am_parallel_tests" = x"yes"; then
     $MAKE $j recheck && Exit 1
     $MAKE $j TEST_LOGS=foo.log check && Exit 1

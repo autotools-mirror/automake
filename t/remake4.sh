@@ -21,7 +21,9 @@
 #
 # If this fails, this is likely to be due to a dependency being
 # given two different name.  For instance BSD Make does not know
-# that 'Makefile' is the same as './Makefile'
+# that 'Makefile' is the same as './Makefile'.  This shouldn't
+# happen with GNU make, but we keep the test anyway, for extra
+# safety.
 #
 # Report from Akim Demaille.
 

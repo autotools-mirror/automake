@@ -17,6 +17,8 @@
 # Test to make sure known BSD 'make -jN' issues are fixed:
 # without -B, it may reuse the same shell for separate commands in a
 # rule, which can lead to interesting results.
+# Problems like this shouldn't happen with GNU make, but we keep the
+# test anyway for the moment, for extra safety.
 
 . ./defs || Exit 1
 
@@ -37,7 +39,6 @@ mkdir build
 cd build
 ../configure "--prefix=`pwd`/inst"
 
-$MAKE -j2 || skip_ "$MAKE failed to run with two parallel jobs"
 $MAKE -j2 distcheck
 $MAKE test-distdir-removed
 

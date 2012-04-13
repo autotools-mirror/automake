@@ -16,7 +16,6 @@
 
 # Check parallel-tests features:
 # - empty TESTS
-# BSD make will expand '$(TESTS:=.log)' to '.log' unless overridden.
 # See parallel-tests10.test for a similar issue.
 
 am_parallel_tests=yes
