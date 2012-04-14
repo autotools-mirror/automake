@@ -39,13 +39,13 @@ $AUTOMAKE
 $MAKE
 
 rm -f zardoz.m4
-$MAKE >output 2>&1 && { cat output; Exit 1; }
-cat output
+$MAKE 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
 # This error will come from aclocal, not make, so we can be stricter
 # in our grepping of it.
-grep ' foobar\.m4:1:.*zardoz\.m4.*does not exist' output
+grep ' foobar\.m4:1:.*zardoz\.m4.*does not exist' stderr
 # No spurious errors, please.
-$FGREP -v ' foobar.m4:1:' output | $FGREP 'foobar.m4' && Exit 1
+$FGREP -v ' foobar.m4:1:' stderr | $FGREP 'foobar.m4' && Exit 1
 
 # Try with one less indirection.
 : > foobar.m4
@@ -54,12 +54,12 @@ $AUTOCONF
 ./configure
 $MAKE # Sanity check.
 rm -f foobar.m4
-$MAKE >output 2>&1 && { cat output; Exit 1; }
-cat output
+$MAKE 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
 # This error will come from aclocal, not make, so we can be stricter
 # in our grepping of it.
-grep 'foobar\.m4.*does not exist' output
+grep 'foobar\.m4.*does not exist' stderr
 # No spurious errors, please (ok, this is really paranoid).
-$FGREP 'zardoz.m4' output && Exit 1
+$FGREP 'zardoz.m4' stderr && Exit 1
 
 :

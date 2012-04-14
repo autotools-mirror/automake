@@ -35,12 +35,12 @@ $AUTOMAKE
 $MAKE
 
 rm -f zardoz.am
-$MAKE >output 2>&1 && { cat output; Exit 1; }
-cat output
+$MAKE 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
 # This error will come from automake, not make, so we can be stricter
 # in our grepping of it.
-grep 'cannot open.*zardoz\.am' output
-grep 'foobar\.am' output && Exit 1 # No spurious error, please.
+grep 'cannot open.*zardoz\.am' stderr
+grep 'foobar\.am' stderr && Exit 1 # No spurious error, please.
 
 # Try with one less indirection.
 : > foobar.am
@@ -48,10 +48,10 @@ $AUTOMAKE Makefile
 ./config.status Makefile
 $MAKE # Sanity check.
 rm -f foobar.am
-$MAKE >output 2>&1 && { cat output; Exit 1; }
-cat output
+$MAKE 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
 # This error will come from automake, not make, so we can be stricter
 # in our grepping of it.
-grep 'cannot open.*foobar\.am' output
+grep 'cannot open.*foobar\.am' stderr
 
 :

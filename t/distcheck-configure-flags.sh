@@ -48,8 +48,8 @@ $MAKE distcheck \
   DISTCHECK_CONFIGURE_FLAGS="--enable-success=yes sentence='it works :-)'"
 
 # Sanity check.
-$MAKE distcheck >output 2>&1 && { cat output; Exit 1; }
-cat output
-grep "^configure:.* success='no', sentence=''" output
+$MAKE distcheck 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+grep "^configure:.* success='no', sentence=''" stderr
 
 :

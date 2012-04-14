@@ -56,12 +56,12 @@ for vpath in false :; do
     cd $distdir
     ./configure
   fi
-  $MAKE >output 2>&1 && { cat output; Exit 1; }
-  cat output
+  $MAKE 2>stderr && { cat stderr >&2; Exit 1; }
+  cat stderr
   # This error will come from automake, not make, so we can be stricter
   # in our grepping of it.
-  grep 'zardoz\.m4.*does not exist' output
-  grep 'foobar\.m4' output && Exit 1 # No spurious error, please.
+  grep 'zardoz\.m4.*does not exist' stderr
+  grep 'foobar\.m4' stderr && Exit 1 # No spurious error, please.
   cd "$ocwd" || fatal_ "cannot chdir back to top-level test directory"
 done
 

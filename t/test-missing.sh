@@ -38,21 +38,21 @@ $AUTOMAKE -a
 
 ./configure
 
-$MAKE check >output 2>&1 && { cat output; Exit 1; }
-cat output
+$MAKE check >stdout 2>stderr && { cat stdout; cat stderr >&2; Exit 1; }
+cat stdout; cat stderr >&2
 test -f ok.log
-grep '^PASS: ok\.test' output
-$FGREP 'zardoz.log' output
+grep '^PASS: ok\.test' stdout
+$FGREP 'zardoz.log' stderr
 test ! -f test-suite.log
 
-$MAKE TESTS='zardoz2.test' check >output 2>&1 && { cat output; Exit 1; }
-cat output
-$FGREP 'zardoz2.log' output
+$MAKE TESTS='zardoz2.test' check 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr
+$FGREP 'zardoz2.log' stderr
 test ! -f test-suite.log
 
-$MAKE TEST_LOGS='zardoz3.log' check >output 2>&1 && { cat output; Exit 1; }
-cat output
-$FGREP 'zardoz3.log' output
+$MAKE TEST_LOGS='zardoz3.log' check 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+$FGREP 'zardoz3.log' stderr
 test ! -f test-suite.log
 
 # The errors should persist even after 'test-suite.log'
@@ -62,9 +62,9 @@ test ! -f test-suite.log
 $MAKE check
 rm -f zardoz.test
 
-$MAKE check >output 2>&1 && { cat output; Exit 1; }
-cat output
-$FGREP 'zardoz.log' output
+$MAKE check 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+$FGREP 'zardoz.log' stderr
 test ! -f test-suite.log
 
 :

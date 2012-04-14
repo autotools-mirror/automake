@@ -43,12 +43,12 @@ test ! -f foobar1.trs || Exit 99
 test ! -f foobar2.log || Exit 99
 test ! -f foobar2.trs || Exit 99
 
-$MAKE check >output 2>&1 && { cat output; Exit 1; }
-cat output
-grep 'test-suite\.log.*foobar1\.log' output
-grep 'test-suite\.log.*foobar1\.trs' output
-grep 'test-suite\.log.*foobar2\.log' output
-grep 'test-suite\.log.*foobar2\.trs' output
+$MAKE check 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+grep 'test-suite\.log.*foobar1\.log' stderr
+grep 'test-suite\.log.*foobar1\.trs' stderr
+grep 'test-suite\.log.*foobar2\.log' stderr
+grep 'test-suite\.log.*foobar2\.trs' stderr
 test ! -f test-suite.log
 
 :

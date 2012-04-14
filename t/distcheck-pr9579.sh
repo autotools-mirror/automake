@@ -54,11 +54,11 @@ $MAKE uninstall
 test -f inst/share/dir
 rm -rf inst
 
-$MAKE distcheck >output 2>&1 && { cat output; Exit 1; }
-cat output
+$MAKE distcheck 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
 
-$FGREP 'ERROR: files left after uninstall:' output
-grep '/share/dir *$' output
+grep 'ERROR: files left after uninstall:' stderr
+grep '/share/dir *$' stderr
 
 # A few trickier corner cases.
 
@@ -86,11 +86,11 @@ test -f inst/mu/share/info/dir
 test -f inst/share/info/more/dir
 rm -rf inst
 
-$MAKE distcheck >output 2>&1 && { cat output; Exit 1; }
-cat output
+$MAKE distcheck 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
 
-$FGREP 'ERROR: files left after uninstall:' output
-grep '/mu/share/info/dir *$' output
-grep '/share/info/more/dir *$' output
+grep 'ERROR: files left after uninstall:' stderr
+grep '/mu/share/info/dir *$' stderr
+grep '/share/info/more/dir *$' stderr
 
 :

@@ -74,8 +74,8 @@ $MAKE distcheck
 
 # ... but not when "make distcheck" is run from the subpackage.
 cd subpkg
-$MAKE distcheck >output 2>&1 && { cat output; Exit 1; }
-cat output
-grep '^configure:.* dc=KO am_dc=KO' output
+$MAKE distcheck 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+grep '^configure:.* dc=KO am_dc=KO' stderr
 
 :

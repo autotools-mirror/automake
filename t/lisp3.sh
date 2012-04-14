@@ -84,9 +84,9 @@ find _inst | $EGREP '\.elc?$' && Exit 1
 unique=0a3346e2af8a689b85002b53df09142a
 $sleep
 echo "(message \"$unique\")(provide 'am-three)" > am-three.el
-$MAKE >output 2>&1 || { cat output; Exit 1; }
-cat output
-grep $unique output
+$MAKE 2>stderr || { cat stderr >&2; Exit 1; }
+cat stderr >&2
+grep $unique stderr
 
 # It should also work for VPATH-builds.
 $MAKE distcheck

@@ -82,10 +82,10 @@ for vpath in : false; do
 
   # version.good should depend on version.gin.
   rm -f version.good
-  $MAKE version.good >output 2>&1 && { cat output; Exit 1; }
-  cat output
+  $MAKE version.good 2>stderr && { cat stderr >&2; Exit 1; }
+  cat stderr >&2
   # Try to verify that we errored out for the right reason.
-  $FGREP version.gin output
+  $FGREP version.gin stderr
 
   cd .. # Back in top builddir.
   cd $srcdir

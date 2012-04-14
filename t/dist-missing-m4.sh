@@ -58,12 +58,12 @@ for vpath in false :; do
     cd $distdir
     ./configure
   fi
-  $MAKE >output 2>&1 && { cat output; Exit 1; }
-  cat output
+  $MAKE 2>stderr && { cat stderr; Exit 1; }
+  cat stderr
   # This error will come from autoconf, not make, so we can be stricter
   # in our grepping of it.
-  grep 'possibly undefined .*MY_ZARDOZ' output
-  grep 'MY_FOOBAR' output && Exit 1 # No spurious error, please.
+  grep 'possibly undefined .*MY_ZARDOZ' stderr
+  grep 'MY_FOOBAR' stderr && Exit 1 # No spurious error, please.
   cd "$ocwd" || fatal_ "cannot chdir back to top-level test directory"
 done
 
