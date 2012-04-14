@@ -705,6 +705,7 @@ t/objdir.sh \
 t/objext-pr10128.sh \
 t/obsolete.sh \
 t/oldvars.sh \
+t/option-ng.sh \
 t/order.sh \
 t/output.sh \
 t/output2.sh \
