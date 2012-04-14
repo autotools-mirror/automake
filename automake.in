@@ -528,6 +528,7 @@ my $output_deps_greatest_timestamp;
 # They hold the Makefile.in until it is ready to be printed.
 my $output_vars;
 my $output_header;
+my $output_verbatim;
 my $output_rules;
 my $output_trailer;
 
@@ -661,6 +662,7 @@ sub initialize_per_input ()
 
     $output_vars = '';
     $output_header = '';
+    $output_verbatim = '';
     $output_rules = '';
     $output_trailer = '';
 
@@ -6285,13 +6287,22 @@ sub read_am_file ($$)
     my $last_var_value = '';
     my $last_where;
     # FIXME: shouldn't use $_ in this loop; it is too big.
-    while ($_)
-    {
+    for (; defined $_; $_ = $am_file->getline)
+      {
 	$where->set ("$amfile:$.");
 
 	# Make sure the line is \n-terminated.
 	chomp;
 	$_ .= "\n";
+
+	if (s/^!//)
+	  {
+	    # A line starting with '!' must be passed verbatim to the
+	    # output Makefile, placed after the variables' definitions
+	    # and before the Makefile targets.
+	    $output_verbatim .= $_;
+	    next;
+	  }
 
 	# Don't look at MAINTAINER_MODE_TRUE here.  That shouldn't be
 	# used by users.  @MAINT@ is an anachronism now.
@@ -6474,7 +6485,6 @@ sub read_am_file ($$)
 	}
 
 	$saw_bk = $new_saw_bk;
-	$_ = $am_file->getline;
     }
 
     $output_trailer .= $comment;
@@ -6759,24 +6769,36 @@ sub file_contents_internal ($$$%)
 	# FIXME: no line number available.
 	$where->set ($file);
 
-	# Sanity checks.
-	error $where, "blank line following trailing backslash:\n$_"
-	  if /\\$/;
-	error $where, "comment following trailing backslash:\n$_"
-	  if /\\#/;
+        # A line starting with '!' must be passed verbatim to the output
+        # Makefile, placed after the variables' definitions and before the
+        # Makefile targets.
+        if (s/^!//)
+          {
+            $output_verbatim .= "$_\n";
+          }
 
-	if (/^$/)
-	{
+	# Sanity checks.
+	elsif (/\\$/)
+          {
+	    error $where, "blank line following trailing backslash:\n$_"
+          }
+	elsif (/\\#/)
+          {
+	    error $where, "comment following trailing backslash:\n$_"
+          }
+
+	elsif (/^$/)
+	  {
 	    $is_rule = 0;
 	    # Stick empty line before the incoming macro or rule.
 	    $spacing = "\n";
-	}
+	  }
 	elsif (/$COMMENT_PATTERN/mso)
-	{
+	  {
 	    $is_rule = 0;
 	    # Stick comments before the incoming macro or rule.
 	    $comment = "$_\n";
-	}
+	  }
 
 	# Handle inclusion of other files.
 	elsif (/$INCLUDE_PATTERN/o)
@@ -7829,8 +7851,11 @@ sub generate_makefile ($$)
   mkdir ($am_relative_dir, 0755) if ! -d $am_relative_dir;
 
   # We make sure that 'all:' is the first target.
-  my $output =
-    "$output_vars$output_header$output_rules$output_trailer";
+  my $output = $output_vars .
+               $output_header .
+               $output_verbatim .
+               $output_rules .
+               $output_trailer;
 
   # Decide whether we must update the output file or not.
   # We have to update in the following situations.
