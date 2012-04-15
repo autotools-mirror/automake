@@ -44,8 +44,6 @@ endif !%?COLOR%
 
 if %?PARALLEL_TESTS%
 
-include inst-vars.am
-
 ## New parallel test driver.
 ##
 ## The first version of the code here was adapted from check.mk, which was
@@ -79,46 +77,32 @@ am__common_driver_flags = \
 # thy have one).
 am__check_pre =						\
 $(am__sh_e_setup);					\
-$(am__vpath_adj_setup) $(am__vpath_adj)			\
 $(am__tty_colors);					\
 srcdir=$(srcdir); export srcdir;			\
 am__odir=`echo "./$@" | sed 's|/[^/]*$$||'`;		\
 test "x$$am__odir" = x. || $(MKDIR_P) "$$am__odir" || exit $$?;	\
-if test -f "./$$f"; then dir=./;			\
-elif test -f "$$f"; then dir=;				\
-else dir="$(srcdir)/"; fi;				\
-tst=$$dir$$f; log='$@'; 				\
+f='$(patsubst $(srcdir)/%,%,$<)';			\
+## We need to invoke the test in way that won't cause a PATH search.
+case $< in */*) tst=$<;; *) tst=./$<;; esac;		\
 if test -n '$(DISABLE_HARD_ERRORS)'; then		\
   am__enable_hard_errors=no; 				\
 else							\
   am__enable_hard_errors=yes; 				\
 fi; 							\
-## The use of $dir below is required to account for VPATH
-## rewriting done by Sun make.
-case " $(XFAIL_TESTS) " in				\
-  *[\ \	]$$f[\ \	]* | *[\ \	]$$dir$$f[\ \	]*) \
-    am__expect_failure=yes;;				\
-  *)							\
-    am__expect_failure=no;;				\
+case " $(strip $(XFAIL_TESTS)) " in			\
+  *" $$f "*) am__expect_failure=yes;;			\
+          *) am__expect_failure=no;;			\
 esac; 							\
 $(AM_TESTS_ENVIRONMENT) $(TESTS_ENVIRONMENT)
 
 # A shell command to get the names of the tests scripts with any registered
 # extension removed (i.e., equivalently, the names of the test logs, with
 # the '.log' extension removed).  The result is saved in the shell variable
-# '$bases'.  This honors runtime overriding of TESTS and TEST_LOGS.  Sadly,
-# we cannot use something simpler, involving e.g., "$(TEST_LOGS:.log=)",
-# since that might cause problem with VPATH rewrites for suffix-less tests.
-# See also 'test-harness-vpath-rewrite.test' and 'test-trs-basic.test'.
-am__set_TESTS_bases = \
-  bases='$(TEST_LOGS)'; \
-  bases=`for i in $$bases; do echo $$i; done | sed 's/\.log$$//'`; \
-## Trim away any extra whitespace.  This has already proved useful
-## in avoiding weird bug on lesser make implementations.  It also
-## works around the GNU make 3.80 bug where trailing whitespace in
-## "TESTS = foo.test $(empty)" causes $(TESTS_LOGS)  to erroneously
-## expand to "foo.log .log".
-  bases=`echo $$bases`
+# '$bases'.  This honors runtime overriding of TESTS and TEST_LOGS.
+# It also works around the GNU make 3.80 bug where trailing whitespace in
+# "TESTS = foo.test $(empty)" causes $(TESTS_LOGS) to erroneously expand to
+# "foo.log .log".
+am__set_TESTS_bases = bases='$(strip $(TEST_LOGS:.log=))'
 
 # Recover from deleted '.trs' file; this should ensure that
 # "rm -f foo.log; make foo.trs" re-run 'foo.test', and re-create
@@ -378,16 +362,11 @@ else !%?PARALLEL_TESTS%
 check-TESTS: $(TESTS)
 	@failed=0; all=0; xfail=0; xpass=0; skip=0; \
 	srcdir=$(srcdir); export srcdir; \
-## Make sure Solaris VPATH-expands all members of this list, even
-## the first and the last one; thus the spaces around $(TESTS)
-	list=' $(TESTS) '; \
+	list='$(TESTS)'; \
 	$(am__tty_colors); \
 	if test -n "$$list"; then \
 	  for tst in $$list; do \
 	    if test -f ./$$tst; then dir=./; \
-## Note: Solaris 2.7 seems to expand TESTS using VPATH.  That's
-## why we also try 'dir='.
-	    elif test -f $$tst; then dir=; \
 	    else dir="$(srcdir)/"; fi; \
 	    if $(TESTS_ENVIRONMENT) $${dir}$$tst $(AM_TESTS_FD_REDIRECT); then \
 ## Success
