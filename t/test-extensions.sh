@@ -41,8 +41,7 @@ grep -i 'log' Makefile.in # For debugging.
 
 for lc in $valid_extensions; do
   uc=`echo $lc | tr '[a-z]' '[A-Z]'`
-  $FGREP "\$(${uc}_LOG_COMPILER)" Makefile.in
-  grep "^${uc}_LOG_COMPILE =" Makefile.in
+  grep "^${uc}_LOG_DRIVER =" Makefile.in
   grep "^\.${lc}\.log:" Makefile.in
 done
 
