@@ -14,32 +14,11 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-if %?FIRST%
-## When BSD make is run in parallel mode, it apparently strips any
-## leading directory component from the automatic variable '$*' (of
-## course, against what POSIX mandates).  Try to detect and work
-## around this incompatibility.
-am__set_b = \
-  case '$@' in \
-    */*) \
-      case '$*' in \
-        */*) b='$*';; \
-          *) b=`echo '$@' | sed 's/\.log$$//'`; \
-       esac;; \
-    *) \
-      b='$*';; \
-  esac
-endif %?FIRST%
-
 ## From a test file to a .log and .trs file.
 ?GENERIC?%EXT%.log:
 ?!GENERIC?%OBJ%: %SOURCE%
-	@p='%SOURCE%'; \
-## Another hack to support BSD make in parallel mode.
-?!GENERIC?	b='%BASE%'; \
-?GENERIC?	$(am__set_b); \
-	$(am__check_pre) %DRIVER% --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
+	@p='%SOURCE%'; $(am__check_pre) %DRIVER% --test-name "$$f" \
+	--log-file '%BASE%.log' --trs-file '%BASE%.trs' \
 	$(am__common_driver_flags) %DRIVER_FLAGS% -- %COMPILE% \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
 
@@ -49,12 +28,8 @@ endif %?FIRST%
 ## conflict with the previous one.
 if %am__EXEEXT%
 ?GENERIC?%EXT%$(EXEEXT).log:
-	@p='%SOURCE%'; \
-	## Another hack to support BSD make in parallel mode.
-?!GENERIC?	b='%BASE%'; \
-?GENERIC?	$(am__set_b); \
-	$(am__check_pre) %DRIVER% --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
+	@p='%SOURCE%'; $(am__check_pre) %DRIVER% --test-name "$$f" \
+	--log-file '%BASE%.log' --trs-file '%BASE%.trs' \
 	$(am__common_driver_flags) %DRIVER_FLAGS% -- %COMPILE% \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
 endif %am__EXEEXT%
