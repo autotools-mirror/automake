@@ -36,5 +36,5 @@ mkdir x
 $ACLOCAL
 $AUTOMAKE
 
-grep '%' Makefile.in && Exit 1
+$FGREP -v '$(filter --%,' Makefile.in | grep '%' && Exit 1
 Exit 0

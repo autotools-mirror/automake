@@ -29,32 +29,21 @@ am__vpath_rewrite = \
 ## a vendor make.
 ## DESTDIR =
 
-## Shell code that determines whether make is running in "dry mode"
-## ("make -n") or not.  Useful in rules that invoke make recursively, and
-## are thus executed also with "make -n" -- because, say, their recipes
-## contain the "$(MAKE)" string or starts with the '+' modifier.
-am__make_dryrun = \
-  { \
-    am__dry=no; \
-    case $$MAKEFLAGS in \
-## If we run "make TESTS='snooze nap'", GNU make will export MAKEFLAGS
-## to "TESTS=foo\ nap", so that the simpler loop below (on word-splitted
-## $$MAKEFLAGS) would see a "make flag" equal to "nap", and would wrongly
-## misinterpret that as and indication that make is running in dry mode.
-## This has already happened in practice.  So we need this hack.
-      *\\[\ \	]*) \
-        echo 'am--echo: ; @echo "AM"  OK' | $(MAKE) -f - 2>/dev/null \
-          | grep '^AM OK$$' >/dev/null || am__dry=yes;; \
-      *) \
-        for am__flg in $$MAKEFLAGS; do \
-          case $$am__flg in \
-            *=*|--*) ;; \
-            *n*) am__dry=yes; break;; \
-          esac; \
-        done;; \
-    esac; \
-    test $$am__dry = yes; \
-  }
+## Tell whether make is running in "dry mode".  It is either 'true' or
+## 'false', so that it can be easily used in shell code as well as in
+## GNU make conditionals.
+## If we run "make TESTS='snooze nap'", GNU make will export MAKEFLAGS to
+## "TESTS=foo\ nap", so that the builtins operating on word-split lists
+## would see a "make flag" equal to "nap" when analyzing $(MAKEFLAGS), and
+## would wrongly misinterpret that as and indication that make is running
+## in dry mode.  This has already happened in practice.  So we need the
+## hack with $(subst \, ...).
+am__make_dryrun := \
+  $(strip $(if $(strip \
+    $(foreach am__v, $(subst \ ,,$(strip $(MAKEFLAGS))), \
+      $(if $(or $(findstring =,$(am__v)),$(filter --%,$(am__v))),, \
+        $(findstring n,$(am__v))))), \
+    true, false))
 
 ## Some derived variables that have been found to be useful.
 pkgdatadir = $(datadir)/@PACKAGE@
