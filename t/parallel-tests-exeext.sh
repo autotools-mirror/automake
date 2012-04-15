@@ -61,4 +61,15 @@ test ! -r y.bin.log
 test -f b.log
 test ! -r b.test.log
 
+# Opportunistically check that we are not forced to specify
+# the test suffixes nor the $(EXEEXT) suffix when overriding
+# TESTS on the command line.
+rm -f *.log *.trs
+
+$MAKE check TESTS='y a b'
+ls -l # For debugging.
+test -f a.log
+test -f b.log
+test -f y.log
+
 :

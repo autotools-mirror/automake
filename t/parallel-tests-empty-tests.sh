@@ -14,9 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check parallel-tests features:
-# - empty TESTS
-# - empty TEST_LOGS
+# Check parallel-tests features: empty TESTS
 
 am_parallel_tests=yes
 . ./defs || Exit 1
@@ -35,7 +33,9 @@ mkdir sub1 sub2
 cat > sub1/Makefile.am << 'END'
 TESTS =
 check-local:
-	echo $(TEST_LOGS) | grep . && exit 1; exit 0
+	echo $(am__cooked_tests) $(am__TEST_LOGS) \
+	     $(am__TEST_RESULTS) $(am__TEST_BASES) \
+	  | grep . && exit 1; exit 0
 END
 
 cat > sub2/Makefile.am << 'END'
@@ -73,8 +73,6 @@ for vpath in : false; do
   no_test_has_run
   cd ../sub2
   $MAKE check VERBOSE=yes TESTS=''
-  no_test_has_run
-  $MAKE check VERBOSE=yes TEST_LOGS=''
   no_test_has_run
   cd ..
   $MAKE check

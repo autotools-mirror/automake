@@ -202,12 +202,10 @@ am__common_driver_flags = \
   --expect-failure "$$am__expect_failure"
 
 # To be inserted before the command running the test.  Creates the
-# directory for the log if needed.  Stores in $dir the directory
-# containing $f, in $tst the test, in $log the log.  Executes the
-# developer- defined test setup AM_TESTS_ENVIRONMENT (if any), and
-# passes TESTS_ENVIRONMENT.  Set up options for the wrapper that
-# will run the test scripts (or their associated LOG_COMPILER, if
-# thy have one).
+# directory for the log if needed.  Executes the developer-defined
+# test setup AM_TESTS_ENVIRONMENT (if any), and passes TESTS_ENVIRONMENT.
+# Set up options for the wrapper that will run the test scripts (or their
+# associated LOG_COMPILER, if they have one).
 am__check_pre =						\
 $(am__sh_e_setup);					\
 $(am__tty_colors);					\
@@ -225,24 +223,34 @@ if test -n '$(DISABLE_HARD_ERRORS)'; then		\
 else							\
   am__enable_hard_errors=yes; 				\
 fi; 							\
-case " $(am__cooked_xfail_tests) " in			\
-  *" $$f "*) am__expect_failure=yes;;			\
-          *) am__expect_failure=no;;			\
+f2='$(patsubst $(srcdir)/%,%,$*)';			\
+case " $(am__xfail_test_bases) " in			\
+  *" $$f2 "*) am__expect_failure=yes;;			\
+           *) am__expect_failure=no;;			\
 esac; 							\
 $(AM_TESTS_ENVIRONMENT) $(TESTS_ENVIRONMENT)
 
 # The names of the tests scripts with any registered extension removed
-# (i.e., equivalently, the names of the test logs, with the '.log' suffix
-# stripped), and the name of the test result files (i.e., equivalently, the
-# names of the test logs, with the '.log' suffix substituted by the '.trs'
-# suffix).  This honors runtime overriding of TESTS and TEST_LOGS.  It
-# also works around the GNU make 3.80 bug where trailing whitespace in
-# "TESTS = foo.test $(empty)" causes $(TESTS_LOGS) to erroneously expand
-# to "foo.log .log".
-am__TEST_BASES   = $(patsubst %.log,%,$(strip $(TEST_LOGS)))
-am__TEST_RESULTS = $(patsubst %.log,%.trs,$(strip $(TEST_LOGS)))
+# This honors runtime overriding of TESTS, and takes into account
+# $(EXEEXT) appending.
+am__TEST_BASES = $(call am__strip_suffixes, $(TEST_EXTENSIONS), \
+?!HANDLE-EXEEXT?$(am__cooked_tests))
+?HANDLE-EXEEXT?$(patsubst %$(EXEEXT),%,$(am__cooked_tests)))
+# Likewise for the xfailing tests.
+am__xfail_test_bases = $(call am__strip_suffixes, $(TEST_EXTENSIONS), \
+?!HANDLE-EXEEXT?$(am__cooked_xfail_tests))
+?HANDLE-EXEEXT?$(patsubst %$(EXEEXT),%,$(am__cooked_xfail_tests)))
 
-$(TEST_SUITE_LOG): $(TEST_LOGS) $(am__TEST_RESULTS)
+# The $(strip) is to work around the GNU make 3.80 bug where trailing
+# whitespace in "TESTS = foo.test $(empty)" causes $(TESTS_LOGS) to
+# erroneously expand to "foo.log .log".
+am__TEST_RESULTS = $(addsuffix .trs,$(strip $(am__TEST_BASES)))
+am__TEST_LOGS    = $(addsuffix .log,$(strip $(am__TEST_BASES)))
+
+# $(TEST_LOGS) is a published interface.
+TEST_LOGS = $(am__TEST_LOGS)
+
+$(TEST_SUITE_LOG): $(am__TEST_LOGS) $(am__TEST_RESULTS)
 	@$(am__sh_e_setup); $(am__tty_colors); \
 	fatal () { echo "fatal: making $@: $$*" >&2; exit 1; }; \
 ## Detect a possible circular dependency, and error out.
@@ -394,6 +402,8 @@ check-TESTS recheck:
 ## unexpected outcome (FAIL or XPASS) in the earlier run.
 	  bases=`for i in $$bases; do echo $$i; done \
 	           | $(am__list_recheck_tests)` || exit 1; \
+## Remove newlines and normalize whitespace.
+	  bases=`echo $$bases`; \
 	fi; \
 	log_list=`for i in $$bases; do echo $$i.log; done`; \
 	trs_list=`for i in $$bases; do echo $$i.trs; done`; \
@@ -407,7 +417,7 @@ check-TESTS recheck:
 	  test -z "$$log_list" || rm -f $$log_list; \
 	  test -z "$$trs_list" || rm -f $$trs_list; \
 	fi; \
-	$(MAKE) $(TEST_SUITE_LOG) TEST_LOGS="$$log_list"
+	$(MAKE) $(TEST_SUITE_LOG) am__TEST_BASES="$$bases"
 
 ## Recheck must depend on $(check_SCRIPTS), $(check_PROGRAMS), etc.
 ## It must also depend on the 'all' target.  See automake bug#11252.

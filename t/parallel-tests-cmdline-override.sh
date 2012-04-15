@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that we can use indirections when overriding TESTS and
-# TEST_LOGS from the command line.
+# Check that we can use indirections when overriding TESTS from
+# the command line.
 
 am_parallel_tests=yes
 . ./defs || Exit 1
@@ -73,12 +73,12 @@ do_check ()
   return $st
 }
 
-tests='a.t $(var1) $(var3:.d=.t) $(var4:=.test)'
-test_logs='a.log $(var1:.test=.log) $(var3:.d=.log) $(var4:=.log)'
+tests1='a.t $(var1) $(var3:.d=.t) $(var4:=.test)'
+tests2='a $(var1:.test=) $(var3:.d=) $(var4)'
 
 touch a.t b.test c.test d.t e.test
 
-do_check TESTS="$tests"
-do_check TEST_LOGS="$test_logs"
+do_check TESTS="$tests1"
+do_check TESTS="$tests2"
 
 :

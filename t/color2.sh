@@ -107,7 +107,7 @@ test_no_color ()
 }
 
 cat >expect-make <<'END'
-eval spawn $env(MAKE) -e check
+eval spawn $env(MAKE) check
 expect eof
 END
 

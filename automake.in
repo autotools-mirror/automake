@@ -4708,11 +4708,12 @@ sub handle_tests
   if (var ('TESTS'))
     {
       push (@check_tests, 'check-TESTS');
-      my $check_deps = "@check";
       $output_rules .= &file_contents ('check', new Automake::Location,
 				       COLOR => !! option 'color-tests',
 				       PARALLEL_TESTS => !! option 'parallel-tests',
-                                       CHECK_DEPS => $check_deps);
+                                       CHECK_DEPS => "@check",
+                                       'HANDLE-EXEEXT' => (exists $configure_vars{'EXEEXT'} ?
+                                                           'TRUE' : 'FALSE'));
 
       if (my $parallel_tests = option 'parallel-tests')
         {
@@ -4743,30 +4744,12 @@ sub handle_tests
           # an explicit 'all' target) rather than from the 'all.test' script,
           # thus causing all sort of mishaps and confusion.
 	  push @test_suffixes, '';
-
-          define_variable ('am__test_logs1',
-                           '$(patsubst %,%.log,$(strip $(am__cooked_tests)))',
-                           INTERNAL);
-	  my $nhelper = 1;
 	  foreach my $test_suffix (@test_suffixes)
 	    {
               handle_per_suffix_test ($test_suffix);
-              my @cooked_test_suffixes = ($test_suffix);
-              push @cooked_test_suffixes, ($test_suffix . '$(EXEEXT)')
-                if exists $configure_vars{'EXEEXT'};
-              foreach my $cooked_test_suffix (@cooked_test_suffixes)
-                {
-                  my $old_var = 'am__test_logs' . $nhelper++;
-                  my $cur_var = 'am__test_logs' . $nhelper;
-                  define_variable (
-                    $cur_var,
-                    "\$($old_var:$cooked_test_suffix.log=.log)",
-                    INTERNAL);
-                }
 	    }
-	  define_variable ('TEST_LOGS', "\$(am__test_logs$nhelper)", INTERNAL);
-	  $clean_files{'$(TEST_LOGS)'} = MOSTLY_CLEAN;
-	  $clean_files{'$(TEST_LOGS:.log=.trs)'} = MOSTLY_CLEAN;
+	  $clean_files{'$(am__TEST_LOGS)'} = MOSTLY_CLEAN;
+	  $clean_files{'$(am__TEST_RESULTS)'} = MOSTLY_CLEAN;
 	  $clean_files{'$(TEST_SUITE_LOG)'} = MOSTLY_CLEAN;
 	}
       else

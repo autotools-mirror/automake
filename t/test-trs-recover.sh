@@ -102,9 +102,9 @@ test -f foo.trs
 test ! -f bar.trs
 test ! -f baz.trs
 
-: Recreate with a "make check" with redefined TEST_LOGS.
+: Recreate with a "make check" with redefined suffix-less TESTS.
 rm -f foo.trs bar.trs baz.trs
-$MAKE TEST_LOGS=bar.log check
+$MAKE TESTS=bar check
 test ! -f foo.trs
 test -f bar.trs
 test ! -f baz.trs

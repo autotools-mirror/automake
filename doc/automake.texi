@@ -8996,14 +8996,13 @@ For best results, the tests should be verbose by default now.
 @vindex TEST_LOGS
 Each couple of @file{.log} and @file{.trs} files is created when the
 corresponding test has completed.  The set of log files is listed in
-the read-only variable @code{TEST_LOGS}, and defaults to @code{TESTS},
-with the executable extension if any (@pxref{EXEEXT}), as well as any
-suffix listed in @code{TEST_EXTENSIONS} removed, and @file{.log} appended.
-Results are undefined if a test file name ends in several concatenated
-suffixes.  @code{TEST_EXTENSIONS} defaults to @file{.test}; it can be
-overridden by the user, in which case any extension listed in it must be
-constituted by a dot, followed by a non-digit alphabetic character,
-followed by any number of alphabetic characters.
+the @emph{read-only} variable @code{TEST_LOGS}, and defaults to
+@code{TESTS}, with the executable extension if any (@pxref{EXEEXT}),
+as well as any suffix listed in @code{TEST_EXTENSIONS} removed, and
+@file{.log} appended.  @code{TEST_EXTENSIONS} defaults to @file{.test};
+it can be overridden by the user, in which case any extension listed
+in it must be constituted by a dot, followed by a non-digit alphabetic
+character, followed by any number of alphabetic characters.
 @c Keep in sync with test-extensions.sh
 For example, @samp{.sh}, @samp{.T} and @samp{.t1} are valid extensions,
 while @samp{.x-y}, @samp{.6c} and @samp{.t.1} are not.
@@ -9075,10 +9074,17 @@ You can set the @code{TESTS} variable.  For example, you can use a
 command like this to run only a subset of the tests:
 
 @example
-make check TESTS="foo.test bar.test"
+make check TESTS="foo.test bar.sh"
 @end example
 
-Note however that the command above will unconditionally overwrite the
+If @code{.test} and @code{.sh} are in @code{$(TEST_EXTENSIONS)}, the
+command above can also be shortened as:
+
+@example
+make check TESTS="foo bar"
+@end example
+
+Note however that the commands above will unconditionally overwrite the
 @file{test-suite.log} file, thus clobbering the recorded results
 of any previous testsuite run.  This might be undesirable for packages
 whose testsuite takes long time to execute.  Luckily, this problem can
@@ -9094,19 +9100,8 @@ will write the result of the partial testsuite runs to the
 @file{partial.log}, without touching @file{test-suite.log}.
 
 @item
-You can set the @code{TEST_LOGS} variable.  By default, this variable is
-computed at @command{make} run time from the value of @code{TESTS} as
-described above.  For example, you can use the following:
-
-@example
-set x subset*.log; shift
-make check TEST_LOGS="foo.log $*"
-@end example
-
-The comments made above about @code{TEST_SUITE_LOG} overriding applies
-here too.
-
-@item
+@c FIXME: this should become "RECHECK_TESTS", for consistency.
+@c FIXME: this will imply a change to the API, of course.
 @vindex RECHECK_LOGS
 @cindex lazy test execution
 By default, the test harness removes all old per-test @file{.log} and
@@ -9217,7 +9212,7 @@ parallel harness remains in place; this includes:
 @itemize
 @item
 list of test scripts defined in @code{TESTS}, and overridable at
-runtime through the redefinition of @code{TESTS} or @code{TEST_LOGS};
+runtime through the redefinition of @code{TESTS};
 @item
 concurrency through the use of @command{make}'s option @option{-j};
 @item

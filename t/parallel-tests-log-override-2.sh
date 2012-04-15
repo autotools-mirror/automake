@@ -14,9 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check parallel-tests features: runtime redefinition of:
-#  - $(TEST_SUITE_LOG) and $(TESTS)
-#  - $(TEST_SUITE_LOG) and $(TEST_LOGS)
+# parallel-tests: runtime redefinition of $(TEST_SUITE_LOG) and $(TESTS)
 
 am_parallel_tests=yes
 . ./defs || Exit 1
@@ -60,8 +58,8 @@ $AUTOMAKE -a
 # Extra quoting for the sake of Solaris sh bugs.
 for test_list_override in \
   'TESTS=pass.test skip.test' \
-  'TEST_LOGS=pass.log skip.log'
-do
+  'TESTS=pass skip' \
+; do
   eval "\$MAKE TEST_SUITE_LOG=partial.log '$test_list_override'" \
         check >stdout || { cat stdout; Exit 1; }
   cat stdout

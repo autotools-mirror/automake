@@ -14,8 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that dynamic content for $(TESTS) and $(TEST_LOGS) is
-# supported.
+# Check that dynamic content for $(TESTS) is supported.
 
 am_parallel_tests=yes
 . ./defs || Exit 1
@@ -124,16 +123,15 @@ grep '^XFAIL: t98S\.sh'   stdout
 $MAKE mostlyclean
 test "`find . -name *.log`" = ./config.log
 
-# We can also override $(TEST_LOGS) dynamically.
-$MAKE check TEST_LOGS='$(shell echo t00 | sed "s/$$/-foo.log/") t99.log'
+$MAKE check TESTS='$(shell echo t00 | sed "s/$$/-foo/") t99'
 test -f t00-foo.log
 test -f t99.log
 
 # A little tricky in that we rely on the .log files created by
 # the previous run to be present.
-$MAKE check TEST_LOGS="\
-  \$(wildcard t[0-9]*.log) \
-  \$(call my_add_dirprefix, t, nosuffix).log \
+$MAKE check TESTS="\
+  \$(patsubst %.log,%,\$(wildcard t[0-9]*.log)) \
+  \$(call my_add_dirprefix, t, nosuffix) \
 " > stdout || { cat stdout; Exit 1; }
 cat stdout
 

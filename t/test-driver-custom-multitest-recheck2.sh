@@ -16,8 +16,7 @@
 
 # Custom test drivers: try the "recheck" functionality with test protocols
 # that allow multiple testcases in a single test script.  In particular,
-# check that this still works when we override $(TESTS) and $(TEST_LOGS)
-# at make runtime.
+# check that this still works when we override $(TESTS) at make runtime.
 # See also related tests 'test-driver-custom-multitest-recheck.test' and
 # 'parallel-tests-recheck-override.test'.
 
@@ -94,15 +93,13 @@ for vpath in : false; do
 
   rm -f *.run
 
-  : An empty '$(TESTS)' or '$(TEST_LOGS)' means that no test should be run.
-  for var in TESTS TEST_LOGS; do
-    $MAKE "$var=" recheck >stdout || { cat stdout; Exit 1; }
-    cat stdout
-    count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
-    test ! -r a.run
-    test ! -r b.run
-    test ! -r c.run
-  done
+  : An empty '$(TESTS)' means that no test should be run.
+  $MAKE TESTS= recheck >stdout || { cat stdout; Exit 1; }
+  cat stdout
+  count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
+  test ! -r a.run
+  test ! -r b.run
+  test ! -r c.run
   unset var
 
   : a.test was successful the first time, no need to re-run it.
@@ -115,7 +112,7 @@ for vpath in : false; do
 
   : b.test failed, it should be re-run.  And make it pass this time.
   echo OK > b.ok
-  $MAKE TEST_LOGS=b.log recheck >stdout || { cat stdout; Exit 1; }
+  $MAKE TESTS=b recheck >stdout || { cat stdout; Exit 1; }
   cat stdout
   test ! -r a.run
   test -f b.run
@@ -125,7 +122,7 @@ for vpath in : false; do
   rm -f *.run
 
   : No need to re-run a.test or b.test anymore.
-  $MAKE TEST_LOGS=b.log recheck >stdout || { cat stdout; Exit 1; }
+  $MAKE TESTS=b recheck >stdout || { cat stdout; Exit 1; }
   cat stdout
   count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
   test ! -r a.run
@@ -144,7 +141,7 @@ for vpath in : false; do
   # Use 'echo' here, since Solaris 10 /bin/sh would try to optimize
   # a ':' away after the first iteration, even if it is redirected.
   echo dummy > c.err
-  $MAKE TEST_LOGS='a.log c.log' recheck >stdout && { cat stdout; Exit 1; }
+  $MAKE TESTS='a.test c' recheck >stdout && { cat stdout; Exit 1; }
   cat stdout
   count_test_results total=1 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=1
   test ! -r a.run
