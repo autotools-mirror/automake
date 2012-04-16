@@ -79,4 +79,7 @@ for h in $headers; do test -f $h; done
 
 $MAKE distcheck
 
+$MAKE maintainer-clean
+for h in $headers; do test ! -f $h; done
+
 :

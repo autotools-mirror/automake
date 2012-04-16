@@ -32,7 +32,7 @@ bin_PROGRAMS = foo bar
 AM_VALAFLAGS = --profile=posix
 foo_SOURCES = hello.vala
 bar_VALAFLAGS = $(AM_VALAFLAGS) -H zardoz.h
-bar_SOURCES = $(foo_SOURCES)
+bar_SOURCES = goodbye.vala
 END
 
 cat > hello.vala <<'END'
@@ -41,6 +41,7 @@ void main ()
   stdout.printf ("foofoofoo\n");
 }
 END
+cp hello.vala goodbye.vala
 
 $ACLOCAL
 $AUTOCONF
@@ -79,12 +80,12 @@ $MAKE -n | grep '\.stamp' && Exit 1
 $MAKE clean
 test -f ../foo_vala.stamp
 test -f ../bar_vala.stamp
-grep barbarbar ../hello.c
+test -f ../zardoz.h
+test -f ../hello.c
 $MAKE maintainer-clean
-# FIXME: Generated C files and stamp files doesn't get correctly
-# FIXME: cleaned in a VPATH build.
-#test ! -f ../hello.c
-#test ! -f ../foo_vala.stamp
-#test ! -f ../bar_vala.stamp
+test ! -f ../zardoz.h
+test ! -f ../hello.c
+test ! -f ../foo_vala.stamp
+test ! -f ../bar_vala.stamp
 
 :
