@@ -979,7 +979,7 @@ t/spell.sh \
 t/spell2.sh \
 t/spell3.sh \
 t/spelling.sh \
-t/spy.sh \
+t/spy-double-colon.sh \
 t/spy-phony.sh \
 t/spy-rm.tap \
 t/spy-vpath-rewrite.sh \
