@@ -595,15 +595,8 @@ EXTRA_DIST += $(gitlog_to_changelog_fixes)
 # copy the distributed ChangeLog in the build directory (and if this
 # fails, or if no distributed ChangeLog file is present, complain and
 # give an error).
-#
-# We need the apparently useless dependency from another .PHONY target
-# 'am--changelog-regen-hook' to work around a bug of Solaris make, which
-# doesn't execute the recipe of a target named as an existing file, even
-# if such target is declared '.PHONY' (yikes!)
-#
-.PHONY: am--changelog-regen-hook
-am--changelog-regen-hook:
-ChangeLog: am--changelog-regen-hook
+.PHONY: ChangeLog
+ChangeLog:
 	$(AM_V_GEN)set -e; set -u; \
 ## The ChangeLog should be regenerated unconditionally when working from
 ## checked-out sources; otherwise, if we're working from a distribution
