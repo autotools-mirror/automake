@@ -16,12 +16,10 @@
 
 # Test AM_PROG_VALAC.
 
-required=libtoolize
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
-AC_PROG_LIBTOOL
 AM_PROG_VALAC([0.0.1])
 AC_OUTPUT
 END
@@ -42,7 +40,6 @@ cwd=`pwd`
 # Use $cwd instead of `pwd` in the && list below to avoid a bug in
 # the way Solaris/Heirloom Sh handles 'set -e'.
 
-libtoolize
 $ACLOCAL
 $AUTOMAKE -a
 $AUTOCONF

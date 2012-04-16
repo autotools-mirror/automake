@@ -17,7 +17,7 @@
 # Test to make sure vala support handles from-scratch VPATH builds.
 # See automake bug#8753.
 
-required="valac GNUmake"
+required="cc valac GNUmake"
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'
@@ -40,14 +40,15 @@ void main ()
 }
 END
 
-$ACLOCAL  || framework_failure_ "aclocal error"
-$AUTOCONF || framework_failure_ "autoconf error"
-$AUTOMAKE || framework_failure_ "automake error"
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
 
 mkdir build
 cd build
 ../configure || Exit 77
 $MAKE
+test -f ../foo_vala.stamp
 grep foofoofoo ../hello.c
 $MAKE distcheck
 
@@ -61,6 +62,7 @@ int main ()
 END
 
 $MAKE
+test -f ../foo_vala.stamp
 grep barbarbar ../hello.c
 
 # Rebuild rules are not uselessly triggered.
