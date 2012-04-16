@@ -55,8 +55,13 @@ $AUTOMAKE -a
 
 ./configure || skip_ "configure failure"
 $MAKE
+test -f src/zardoz.c
+test -f src_zardoz_vala.stamp
 $MAKE distcheck
-$MAKE distclean
+$MAKE maintainer-clean
+test ! -f src/zardoz.c
+test ! -f src_zardoz_vala.stamp
+
 mkdir build
 cd build
 ../configure

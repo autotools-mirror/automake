@@ -28,9 +28,11 @@ AC_OUTPUT
 END
 
 cat > Makefile.am <<'END'
-bin_PROGRAMS = foo
-foo_VALAFLAGS = --profile=posix
+bin_PROGRAMS = foo bar
+AM_VALAFLAGS = --profile=posix
 foo_SOURCES = hello.vala
+bar_VALAFLAGS = $(AM_VALAFLAGS) -H zardoz.h
+bar_SOURCES = $(foo_SOURCES)
 END
 
 cat > hello.vala <<'END'
@@ -49,10 +51,13 @@ cd build
 ../configure || Exit 77
 $MAKE
 test -f ../foo_vala.stamp
+test -f ../bar_vala.stamp
 grep foofoofoo ../hello.c
+test -f ../zardoz.h
 $MAKE distcheck
 
 # Rebuild rules work also in VPATH builds.
+
 cat > ../hello.vala <<'END'
 int main ()
 {
@@ -63,10 +68,23 @@ END
 
 $MAKE
 test -f ../foo_vala.stamp
+test -f ../bar_vala.stamp
 grep barbarbar ../hello.c
 
 # Rebuild rules are not uselessly triggered.
 $MAKE -q
 $MAKE -n | grep '\.stamp' && Exit 1
+
+# Cleanup rules work also in VPATH builds.
+$MAKE clean
+test -f ../foo_vala.stamp
+test -f ../bar_vala.stamp
+grep barbarbar ../hello.c
+$MAKE maintainer-clean
+# FIXME: Generated C files and stamp files doesn't get correctly
+# FIXME: cleaned in a VPATH build.
+#test ! -f ../hello.c
+#test ! -f ../foo_vala.stamp
+#test ! -f ../bar_vala.stamp
 
 :

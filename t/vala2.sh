@@ -63,11 +63,28 @@ $AUTOMAKE -a
 $MAKE
 
 # Test rebuild rules.
+
 rm -f src/zardoz.h
 $MAKE -C src zardoz.h
+test -f src/zardoz.h
+rm -f src/zardoz.c
+$MAKE -C src
+test -f src/zardoz.c
+
+echo am--error > src/zardoz.h
+echo am--error > src/zardoz.c
+$sleep
+touch src/zardoz.vala
+$MAKE
+grep 'am--error' src/zardoz.[ch] && Exit 1
+
+# Check the distribution.
 
 $MAKE distcheck
 $MAKE distclean
+
+# Tru a VPATH setup.
+
 mkdir build
 cd build
 ../configure
@@ -75,11 +92,18 @@ $MAKE
 $MAKE distcheck
 
 # Test rebuild rules from builddir.
+
+rm -f ../src/zardoz.h
+$MAKE -C src ../../src/zardoz.h
+test -f ../src/zardoz.h
+
 rm -f ../src/zardoz.c
 $MAKE
 grep 'Zardoz!' ../src/zardoz.c
-sed 's/Zardoz!/FooBar!/' ../src/zardoz.c > t
-mv -f t ../src/zardoz.c
+
+$sleep
+sed 's/Zardoz!/FooBar!/' ../src/zardoz.vala > t
+mv -f t ../src/zardoz.vala
 $MAKE
 grep 'FooBar!' ../src/zardoz.c
 grep 'Zardoz!' ../src/zardoz.c && Exit 1
