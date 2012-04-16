@@ -1191,13 +1191,13 @@ t/upc.sh \
 t/upc2.sh \
 t/upc3.sh \
 t/vala.sh \
-t/vala1.sh \
 t/vala2.sh \
 t/vala3.sh \
 t/vala4.sh \
 t/vala5.sh \
 t/vala-vapi.sh \
 t/vala-headers.sh \
+t/vala-libs.sh \
 t/vala-vpath.sh \
 t/vala-mix.sh \
 t/vala-mix2.sh \
