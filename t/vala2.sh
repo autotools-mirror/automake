@@ -16,7 +16,7 @@
 
 # Test to make sure compiling Vala code really works with recursive make.
 
-required="libtool libtoolize pkg-config valac gcc GNUmake"
+required="pkg-config valac gcc GNUmake"
 . ./defs || Exit 1
 
 mkdir src
@@ -24,7 +24,6 @@ mkdir src
 cat >> 'configure.ac' << 'END'
 AC_PROG_CC
 AM_PROG_CC_C_O
-AC_PROG_LIBTOOL
 AM_PROG_VALAC([0.7.0])
 PKG_CHECK_MODULES([GOBJECT], [gobject-2.0 >= 2.4])
 AC_CONFIG_FILES([src/Makefile])
@@ -52,8 +51,6 @@ public class Zardoz {
   }
 }
 END
-
-libtoolize
 
 $ACLOCAL
 $AUTOCONF
