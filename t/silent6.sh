@@ -19,7 +19,6 @@
 . ./defs || Exit 1
 
 cat >>configure.ac <<'EOF'
-AM_SILENT_RULES
 AC_OUTPUT
 EOF
 

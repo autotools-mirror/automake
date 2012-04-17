@@ -23,7 +23,6 @@ required=fortran
 mkdir sub
 
 cat >>configure.ac <<'EOF'
-AM_SILENT_RULES
 AC_PROG_FC
 AC_CONFIG_FILES([sub/Makefile])
 AC_OUTPUT

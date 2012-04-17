@@ -24,7 +24,6 @@ required='cc libtoolize'
 mkdir sub
 
 cat >>configure.ac <<'EOF'
-AM_SILENT_RULES
 AC_CONFIG_FILES([sub/Makefile])
 AC_PROG_CC
 AM_PROG_CC_C_O

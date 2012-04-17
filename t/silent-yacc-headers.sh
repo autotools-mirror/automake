@@ -23,7 +23,6 @@ required=yacc
 mkdir sub
 
 cat >>configure.ac <<'EOF'
-AM_SILENT_RULES
 AC_PROG_YACC
 AC_PROG_CC
 AC_OUTPUT

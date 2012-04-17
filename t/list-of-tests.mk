@@ -957,7 +957,6 @@ t/silentcxx.sh \
 t/silentcxx-gcc.sh \
 t/silentf77.sh \
 t/silentf90.sh \
-t/silent-amopts.sh \
 t/silent-many-gcc.sh \
 t/silent-many-generic.sh \
 t/silent-configsite.sh \

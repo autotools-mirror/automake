@@ -40,7 +40,7 @@ dnl We call AC_PROG_CC in an unusual way, and only for use in our
 dnl testsuite, so also use 'no-dependencies' and 'no-define' among
 dnl the automake options to avoid bloating and potential problems.
 AM_INIT_AUTOMAKE([dist-xz filename-length-max=99 color-tests
-		  parallel-tests silent-rules no-define no-dependencies])
+		  parallel-tests no-define no-dependencies])
 
 # The API version is the base version.  We must guarantee
 # compatibility for all releases with the same API version.

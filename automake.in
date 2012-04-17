@@ -1101,11 +1101,11 @@ sub backname ($)
 
 ################################################################
 
-# 'silent-rules' mode handling functions.
+# Silent rules handling functions.
 
 # verbose_var (NAME)
 # ------------------
-# The public variable stem used to implement 'silent-rules'.
+# The public variable stem used to implement silent rules.
 sub verbose_var ($)
 {
     my ($name) = @_;
@@ -1114,7 +1114,7 @@ sub verbose_var ($)
 
 # verbose_private_var (NAME)
 # --------------------------
-# The naming policy for the private variables for 'silent-rules'.
+# The naming policy for the private variables for silent rules.
 sub verbose_private_var ($)
 {
     my ($name) = @_;
@@ -1123,20 +1123,23 @@ sub verbose_private_var ($)
 
 # define_verbose_var (NAME, VAL)
 # ------------------------------
-# For 'silent-rules' mode, setup VAR and dispatcher, to expand to VAL if silent.
+# For silent rules, setup VAR and dispatcher, to expand to VAL if silent.
 sub define_verbose_var ($$)
 {
     my ($name, $val) = @_;
     my $var = verbose_var ($name);
     my $pvar = verbose_private_var ($name);
     my $silent_var = $pvar . '_0';
-    if (option 'silent-rules')
+    define_variable ($var,
+                     '$(' . $pvar . '_$(V))',
+                     INTERNAL);
+    define_variable ($pvar . '_',
+                     '$(' . $pvar . '_$(AM_DEFAULT_VERBOSITY))',
+                     INTERNAL);
+    if (! vardef ($silent_var, TRUE))
       {
-	define_variable ($var, '$(' . $pvar . '_$(V))', INTERNAL);
-	define_variable ($pvar . '_', '$(' . $pvar . '_$(AM_DEFAULT_VERBOSITY))', INTERNAL);
-	Automake::Variable::define ($silent_var, VAR_AUTOMAKE, '', TRUE, $val,
-				    '', INTERNAL, VAR_ASIS)
-	  if (! vardef ($silent_var, TRUE));
+        Automake::Variable::define ($silent_var, VAR_AUTOMAKE, '', TRUE,
+                                    $val, '', INTERNAL, VAR_ASIS);
       }
 }
 
@@ -1148,17 +1151,13 @@ sub define_verbose_var ($$)
 sub verbose_flag ($)
 {
     my ($name) = @_;
-    return '$(' . verbose_var ($name) . ')'
-      if (option 'silent-rules');
-    return '';
+    return '$(' . verbose_var ($name) . ')';
 }
 
 sub verbose_nodep_flag ($)
 {
     my ($name) = @_;
-    return '$(' . verbose_var ($name) . subst ('am__nodep') . ')'
-      if (option 'silent-rules');
-    return '';
+    return '$(' . verbose_var ($name) . subst ('am__nodep') . ')';
 }
 
 # silent_flag
@@ -1171,20 +1170,17 @@ sub silent_flag ()
 
 # define_verbose_tagvar (NAME)
 # ----------------------------
-# Engage the needed 'silent-rules' machinery for tag NAME.
+# Engage the needed silent rules machinery for tag NAME.
 sub define_verbose_tagvar ($)
 {
     my ($name) = @_;
-    if (option 'silent-rules')
-      {
-	define_verbose_var ($name, '@echo "  '. $name . ' ' x (8 - length ($name)) . '" $@;');
-	define_verbose_var ('at', '@');
-      }
+    define_verbose_var ($name, '@echo "  '. $name . ' ' x (8 - length ($name)) . '" $@;');
+    define_verbose_var ('at', '@');
 }
 
 # define_verbose_texinfo
 # ----------------------
-# Engage the needed 'silent-rules' machinery for assorted texinfo commands.
+# Engage the needed silent rules machinery for assorted texinfo commands.
 sub define_verbose_texinfo ()
 {
   my @tagvars = ('DVIPS', 'MAKEINFO', 'INFOHTML', 'TEXI2DVI', 'TEXI2PDF');
@@ -1198,7 +1194,7 @@ sub define_verbose_texinfo ()
 
 # define_verbose_libtool
 # ----------------------
-# Engage the needed 'silent-rules' machinery for 'libtool --silent'.
+# Engage the needed silent rules machinery for 'libtool --silent'.
 sub define_verbose_libtool ()
 {
     define_verbose_var ('lt', '--silent');
@@ -1521,7 +1517,7 @@ sub handle_languages
 	define_linker_variable ($languages{'c'});
       }
 
-    # Always provide the user with 'AM_V_GEN' for 'silent-rules' mode.
+    # Always provide the user with 'AM_V_GEN' for silent rules.
     define_verbose_tagvar ('GEN');
 }
 
@@ -5118,7 +5114,6 @@ sub scan_autoconf_traces ($)
 		AM_MAINTAINER_MODE => 0,
 		AM_PROG_AR => 0,
 		AM_PROG_CC_C_O => 0,
-		AM_SILENT_RULES => 0,
 		_AM_SUBST_NOTMAKE => 1,
 		_AM_COND_IF => 1,
 		_AM_COND_ELSE => 1,
@@ -5309,10 +5304,6 @@ sub scan_autoconf_traces ($)
       elsif ($macro eq 'AM_PROG_CC_C_O')
 	{
 	  $seen_cc_c_o = $where;
-	}
-      elsif ($macro eq 'AM_SILENT_RULES')
-        {
-	  set_global_option ('silent-rules', $where);
 	}
       elsif ($macro eq '_AM_COND_IF')
         {

@@ -287,6 +287,7 @@ sub _is_valid_easy_option ($)
     no-texinfo.tex
     nostdinc
     readme-alpha
+    silent-rules
     std-options
     subdir-objects
   );
