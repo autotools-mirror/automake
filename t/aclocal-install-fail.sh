@@ -21,8 +21,6 @@ am_create_testdir=empty
 required=ro-dir
 . ./defs || Exit 1
 
-set -e
-
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])
 MY_MACRO
