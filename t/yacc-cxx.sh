@@ -88,11 +88,13 @@ test -f foo4-parse4.cpp
 test -f foo3-parse3.output
 test -f foo4-parse4.output
 
-for i in 1 2 3 4; do
-  echo a | ./foo$i
-  echo b | ./foo$i && Exit 1
-  : For shells with busted 'set -e'.
-done
+if cross_compiling; then :; else
+  for i in 1 2 3 4; do
+    echo a | ./foo$i
+    echo b | ./foo$i && Exit 1
+    : For shells with busted 'set -e'.
+  done
+fi
 
 # The Yacc-derived C++ sources must be shipped.
 $MAKE echo-distcom
