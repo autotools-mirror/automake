@@ -19,8 +19,6 @@
 required='valac cc GNUmake'
 . ./defs || Exit 1
 
-set -e
-
 cat >> configure.ac <<'END'
 AC_PROG_CC
 AM_PROG_CC_C_O
@@ -72,7 +70,7 @@ $MAKE
 ls -l        # For debugging.
 cat zardoz.c # Likewise.
 grep 'BARBAR' zardoz.c
-$MAKE test1
+cross_compiling || $MAKE test1 || Exit 1
 
 # Simple check on remake rules.
 $sleep
@@ -83,7 +81,7 @@ sed 's/BARBAR/BAZBAZ/' foo.vapi > t && mv -f t foo.vapi || Exit 99
 $MAKE
 cat zardoz.c # For debugging.
 grep 'BAZBAZ' zardoz.c
-$MAKE test2
+cross_compiling || $MAKE test2 || Exit 1
 
 # Check the distribution.
 $MAKE distcheck

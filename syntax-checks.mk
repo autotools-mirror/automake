@@ -33,7 +33,7 @@ xtests := $(shell \
 
 xdefs = $(srcdir)/defs $(srcdir)/defs-static.in
 
-ams := $(shell find $(srcdir) '(' -name '*.dir' -prune ')' -o -name '*.am')
+ams := $(shell find $(srcdir) -name '*.dir' -prune -o -name '*.am' -print)
 
 # Some simple checks, and then ordinary check.  These are only really
 # guaranteed to work on my machine.

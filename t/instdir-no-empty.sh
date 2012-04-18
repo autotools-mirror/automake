@@ -19,8 +19,6 @@
 
 . ./defs || Exit 1
 
-set -e
-
 cat >> configure.ac <<'END'
 AC_SUBST([CC], [whatever])
 AC_SUBST([JAVAC], [whatever])

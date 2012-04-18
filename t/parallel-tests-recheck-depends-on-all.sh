@@ -18,7 +18,7 @@
 # See automake bug#11252.
 
 am_parallel_tests=yes
-required=cc
+required='cc native'
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

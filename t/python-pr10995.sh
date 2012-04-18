@@ -21,8 +21,6 @@
 required=python
 . ./defs || Exit 1
 
-set -e
-
 cat >> configure.ac <<'EOF'
 AM_PATH_PYTHON
 AC_OUTPUT

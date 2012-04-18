@@ -70,11 +70,10 @@ test -f bar-parse.output
 if cross_compiling; then :; else
   echo a | ./foo
   echo b | ./foo && Exit 1
+  echo a | ./bar
+  echo b | ./bar && Exit 1
   : For shells with busted 'set -e'.
 fi
-
-echo a | ./bar
-echo b | ./bar && Exit 1
 
 # The Yacc-derived C sources must be shipped.
 $MAKE echo-distcom
