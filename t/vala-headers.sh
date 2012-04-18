@@ -16,35 +16,41 @@
 
 # Test to make sure compiling Vala code really works with recursive make.
 
-required="pkg-config valac gcc"
+required="pkg-config valac gcc GNUmake"
 . ./defs || Exit 1
 
-mkdir src
-
-cat >> 'configure.ac' << 'END'
+cat >> configure.ac << 'END'
 AC_PROG_CC
-AM_PROG_CC_C_O
 AM_PROG_VALAC([0.7.0])
 PKG_CHECK_MODULES([GOBJECT], [gobject-2.0 >= 2.4])
-AC_CONFIG_FILES([src/Makefile])
 AC_OUTPUT
 END
 
-cat > 'Makefile.am' <<'END'
-SUBDIRS = src
-END
+cat > Makefile.am << 'END'
+bin_PROGRAMS = zardoz quux
 
-cat > 'src/Makefile.am' <<'END'
-bin_PROGRAMS = zardoz
-zardoz_VALAFLAGS = -H zardoz.h
-zardoz_CFLAGS = $(GOBJECT_CFLAGS)
-zardoz_LDADD = $(GOBJECT_LIBS)
 zardoz_SOURCES = zardoz.vala
+quux_SOURCES = quux.vala
+quux.vala: zardoz.vala
+	sed 's/Zardoz/Quux/' <zardoz.vala >quux.vala
+
+quux_VALAFLAGS = \
+  --header HDR.h \
+  --vapi hello.vapi
+
+zardoz_VALAFLAGS = \
+  -H foo.h \
+  --internal-header foo2.h \
+  --internal-vapi foo3.vapi
+
+AM_CFLAGS = $(GOBJECT_CFLAGS)
+LDADD = $(GOBJECT_LIBS)
 END
 
-cat > 'src/zardoz.vala' <<'END'
-using GLib;
+headers='HDR.h hello.vapi foo.h foo2.h foo3.vapi'
 
+cat > zardoz.vala << 'END'
+using GLib;
 public class Zardoz {
   public static void main () {
     stdout.printf ("Zardoz!\n");
@@ -61,48 +67,19 @@ $MAKE
 
 # Test rebuild rules.
 
-rm -f src/zardoz.h
-$MAKE -C src zardoz.h
-test -f src/zardoz.h
-rm -f src/zardoz.c
-$MAKE -C src
-test -f src/zardoz.c
+for h in $headers; do
+  rm -f $h
+  $MAKE $h
+  test -f $h
+done
 
-echo am--error > src/zardoz.h
-echo am--error > src/zardoz.c
-$sleep
-touch src/zardoz.vala
-$MAKE
-grep 'am--error' src/zardoz.[ch] && Exit 1
-
-# Check the distribution.
+rm -f $headers
+$MAKE $headers
+for h in $headers; do test -f $h; done
 
 $MAKE distcheck
-$MAKE distclean
 
-# Tru a VPATH setup.
-
-mkdir build
-cd build
-../configure
-$MAKE
-$MAKE distcheck
-
-# Test rebuild rules from builddir.
-
-rm -f ../src/zardoz.h
-$MAKE -C src ../../src/zardoz.h
-test -f ../src/zardoz.h
-
-rm -f ../src/zardoz.c
-$MAKE
-grep 'Zardoz!' ../src/zardoz.c
-
-$sleep
-sed 's/Zardoz!/FooBar!/' ../src/zardoz.vala > t
-mv -f t ../src/zardoz.vala
-$MAKE
-grep 'FooBar!' ../src/zardoz.c
-grep 'Zardoz!' ../src/zardoz.c && Exit 1
+$MAKE maintainer-clean
+for h in $headers; do test ! -f $h; done
 
 :

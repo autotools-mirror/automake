@@ -16,7 +16,7 @@
 
 # Test to make sure compiling Vala code really works with non-recursive make.
 
-required="libtool libtoolize pkg-config valac gcc"
+required="pkg-config valac gcc"
 . ./defs || Exit 1
 
 mkdir src
@@ -24,7 +24,6 @@ mkdir src
 cat >> 'configure.ac' << 'END'
 AC_PROG_CC
 AM_PROG_CC_C_O
-AC_PROG_LIBTOOL
 AM_PROG_VALAC([0.7.0])
 PKG_CHECK_MODULES([GOBJECT], [gobject-2.0 >= 2.4])
 AC_OUTPUT
@@ -47,16 +46,19 @@ src_zardoz_LDADD = $(GOBJECT_LIBS)
 src_zardoz_SOURCES = src/zardoz.vala
 END
 
-libtoolize
-
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
 ./configure || skip_ "configure failure"
 $MAKE
+test -f src/zardoz.c
+test -f src_zardoz_vala.stamp
 $MAKE distcheck
-$MAKE distclean
+$MAKE maintainer-clean
+test ! -f src/zardoz.c
+test ! -f src_zardoz_vala.stamp
+
 mkdir build
 cd build
 ../configure
@@ -76,8 +78,6 @@ src_zardoz_CFLAGS = $(GOBJECT_CFLAGS)
 src_zardoz_LDADD = $(GOBJECT_LIBS)
 src_zardoz_SOURCES = src/zardoz.vala
 END
-
-libtoolize
 
 $ACLOCAL
 $AUTOCONF

@@ -17,7 +17,7 @@
 # Test to make sure vala support handles from-scratch VPATH builds.
 # See automake bug#8753.
 
-required=valac
+required="cc valac"
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'
@@ -28,9 +28,11 @@ AC_OUTPUT
 END
 
 cat > Makefile.am <<'END'
-bin_PROGRAMS = foo
-foo_VALAFLAGS = --profile=posix
+bin_PROGRAMS = foo bar
+AM_VALAFLAGS = --profile=posix
 foo_SOURCES = hello.vala
+bar_VALAFLAGS = $(AM_VALAFLAGS) -H zardoz.h
+bar_SOURCES = goodbye.vala
 END
 
 cat > hello.vala <<'END'
@@ -39,19 +41,24 @@ void main ()
   stdout.printf ("foofoofoo\n");
 }
 END
+cp hello.vala goodbye.vala
 
-$ACLOCAL  || framework_failure_ "aclocal error"
-$AUTOCONF || framework_failure_ "autoconf error"
-$AUTOMAKE || framework_failure_ "automake error"
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE
 
 mkdir build
 cd build
 ../configure || Exit 77
 $MAKE
+test -f ../foo_vala.stamp
+test -f ../bar_vala.stamp
 grep foofoofoo ../hello.c
+test -f ../zardoz.h
 $MAKE distcheck
 
 # Rebuild rules work also in VPATH builds.
+
 cat > ../hello.vala <<'END'
 int main ()
 {
@@ -61,10 +68,24 @@ int main ()
 END
 
 $MAKE
+test -f ../foo_vala.stamp
+test -f ../bar_vala.stamp
 grep barbarbar ../hello.c
 
 # Rebuild rules are not uselessly triggered.
 $MAKE -q
 $MAKE -n | grep '\.stamp' && Exit 1
+
+# Cleanup rules work also in VPATH builds.
+$MAKE clean
+test -f ../foo_vala.stamp
+test -f ../bar_vala.stamp
+test -f ../zardoz.h
+test -f ../hello.c
+$MAKE maintainer-clean
+test ! -f ../zardoz.h
+test ! -f ../hello.c
+test ! -f ../foo_vala.stamp
+test ! -f ../bar_vala.stamp
 
 :

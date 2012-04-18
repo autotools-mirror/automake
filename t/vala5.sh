@@ -80,4 +80,24 @@ if cross_compiling; then :; else
   test `./src/bar` = bar
 fi
 
+# Test clean rules.
+
+cp config.status config.sav
+
+$MAKE clean
+test -f src/xfoo.c
+test -f src/xbar.c
+
+$MAKE distclean
+test -f src/xfoo.c
+test -f src/xbar.c
+
+# Re-create Makefile.
+mv config.sav config.status
+./config.status
+
+$MAKE maintainer-clean
+test ! -f src/xfoo.c
+test ! -f src/xbar.c
+
 :

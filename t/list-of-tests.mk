@@ -736,6 +736,7 @@ t/parallel-tests6.sh \
 t/parallel-tests8.sh \
 t/parallel-tests9.sh \
 t/parallel-tests10.sh \
+t/parallel-tests-recheck-depends-on-all.sh \
 t/parallel-tests-exeext.sh \
 t/parallel-tests-suffix.sh \
 t/parallel-tests-suffix-prog.sh \
@@ -1183,12 +1184,13 @@ t/upc.sh \
 t/upc2.sh \
 t/upc3.sh \
 t/vala.sh \
-t/vala1.sh \
 t/vala2.sh \
 t/vala3.sh \
 t/vala4.sh \
 t/vala5.sh \
 t/vala-vapi.sh \
+t/vala-headers.sh \
+t/vala-libs.sh \
 t/vala-vpath.sh \
 t/vala-mix.sh \
 t/vala-mix2.sh \
