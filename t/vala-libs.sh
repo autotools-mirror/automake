@@ -17,7 +17,7 @@
 # Building libraries (libtool and static) from Vala sources.
 # And use of vapi files to call C code from Vala.
 
-required="valac cc pkg-config libtoolize GNUmake"
+required="valac cc pkg-config libtoolize"
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

@@ -16,7 +16,7 @@
 
 # Test to make sure compiling Vala code really works with recursive make.
 
-required="pkg-config valac gcc GNUmake"
+required="pkg-config valac gcc"
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

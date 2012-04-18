@@ -16,7 +16,7 @@
 
 # Test and that vapi files are correctly handled by Vala support.
 
-required='valac cc GNUmake'
+required='valac cc'
 . ./defs || Exit 1
 
 cat >> configure.ac <<'END'
