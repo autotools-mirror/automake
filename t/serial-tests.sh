@@ -32,8 +32,8 @@ has_parallel_tests ()
 {
   $EGREP '(^| )check-TESTS.*:' $1
   $EGREP '(^| )recheck.*:' $1
-  grep '^\$(TEST_SUITE_LOG): \$(TEST_LOGS)$' $1
-  grep '^\.test\.log:$' $1
+  $EGREP '^\$\(TEST_SUITE_LOG\):.* \$\(TEST_LOGS\)( |$)' $1
+  grep '^%.log %.trs *:.*%\.test' $1
 }
 
 mkdir one two

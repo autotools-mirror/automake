@@ -14,45 +14,47 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# parallel-tests support: the following are registered with '.SUFFIXES':
-#  - .log
-#  - .trs (used by files that store test results and metadata)
-#  - .test if $(TEST_EXTENSIONS) is not defined
-#  - stuff in $(TEST_EXTENSIONS) otherwise
+# Check parallel harness features:
+#  - recovery from deleted '.log' and '.trs' files, with parallel make
 
 am_parallel_tests=yes
 . ./defs || Exit 1
 
-: > Makefile.am
-
-cat > 1.am << 'END'
-TESTS =
-END
-
-cat > 2.am << 'END'
-TEST_EXTENSIONS = .SH .abcdef
-TESTS =
-END
-
-: > test-driver
-
-$ACLOCAL
-
-$AUTOMAKE 1
-$AUTOMAKE 2
-
-sed -e 's/$/ /' 1.in > mk.1
-sed -e 's/$/ /' 2.in > mk.2
-
-grep '^\.SUFFIXES:' mk.1
-grep '^\.SUFFIXES:' mk.2
-
-for suf in test log trs; do
-  grep "^\\.SUFFIXES:.* \\.$suf " mk.1
+all= log= trs=
+for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+  all="$all $i" log="$log $i" trs="$trs $i"
 done
 
-for suf in SH abcdef log trs; do
-  grep "^\\.SUFFIXES:.* \\.$suf " mk.2
+echo AC_OUTPUT >> configure.ac
+echo TESTS = > Makefile.am
+
+for i in $all; do
+  echo TESTS += $i.test >> Makefile.am
+  (echo "#!/bin/sh" && echo "mkdir $i.d") > $i.test
+  chmod a+x $i.test
+done
+
+ls -l # For debugging.
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE -a
+
+./configure
+
+: Create the required log files.
+$MAKE check
+
+for n in 1 2 5 7 12; do
+  for suf in log trs; do
+    rmdir *.d
+    rm -f *.$suf
+    $MAKE -j$n check
+    for f in $all; do
+      test -f $f.log
+      test -f $f.trs
+    done
+  done
 done
 
 :

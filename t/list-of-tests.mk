@@ -737,6 +737,7 @@ t/parallel-tests6.sh \
 t/parallel-tests8.sh \
 t/parallel-tests9.sh \
 t/parallel-tests10.sh \
+t/parallel-tests-no-repeat.sh \
 t/parallel-tests-recheck-depends-on-all.sh \
 t/parallel-tests-exeext.sh \
 t/parallel-tests-suffix.sh \
@@ -785,7 +786,6 @@ t/test-driver-custom-multitest-recheck.sh \
 t/test-driver-custom-multitest-recheck2.sh \
 t/test-driver-create-log-dir.sh \
 t/test-driver-strip-vpath.sh \
-t/test-driver-trs-suffix-registered.sh \
 t/test-driver-fail.sh \
 t/test-driver-is-distributed.sh \
 t/test-harness-vpath-rewrite.sh \
@@ -796,10 +796,9 @@ t/test-metadata-global-result.sh \
 t/test-metadata-recheck.sh \
 t/test-metadata-results.sh \
 t/test-missing.sh \
-t/test-missing2.sh \
 t/test-trs-basic.sh \
 t/test-trs-recover.sh \
-t/test-trs-recover2.sh \
+t/test-trs-recover-parallel.sh \
 t/test-extensions.sh \
 t/test-extensions-cond.sh \
 t/parse.sh \

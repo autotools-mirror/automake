@@ -34,13 +34,11 @@ END
 
 cat > foo.test << 'END'
 #! /bin/sh
-echo foofoofoo
 exit 0
 END
 
 cat > bar.test << 'END'
 #! /bin/sh
-echo barbarbar
 exit 77
 END
 
@@ -52,25 +50,41 @@ $AUTOMAKE -a
 
 ./configure
 
-for files in \
-  'foo.log bar.log' \
-  'foo.trs bar.trs' \
-  'foo.trs bar.log' \
-  'foo.log bar.trs' \
-; do
+doit ()
+{
+  rm -f $*
   $MAKE check
   rm -f test-suite.log
-  chmod a-r $files
-  $MAKE test-suite.log || { ls -l; Exit 1; }
-  ls -l
-  grep '^foofoofoo$' foo.log
-  grep '^:test-result: PASS' foo.trs
-  grep '^barbarbar$' bar.log
-  grep '^:test-result: SKIP' bar.trs
-  grep '^SKIP: bar' test-suite.log
-  grep '^barbarbar$' test-suite.log
-  $EGREP ':.*foo|foofoofoo' test-suite.log && Exit 1
-  : For shells with busted 'set -e'.
+  chmod a-r $*
+  $MAKE test-suite.log 2>stderr && { cat stderr >&2; Exit 1; }
+  cat stderr >&2
+}
+
+permission_denied ()
+{
+  # FIXME: there are systems where errors on permissions generate a
+  # FIXME: different message?  We might experience spurious failures
+  # FIXME: there ...
+  grep "$1:.*[pP]ermission denied" stderr
+}
+
+for lst in bar.log 'foo.log bar.log'; do
+  doit $lst
+  permission_denied bar.log
+  grep 'test-suite\.log:.* I/O error reading test logs' stderr
 done
+
+doit foo.trs
+permission_denied foo.trs
+grep 'test-suite\.log:.* I/O error reading test results' stderr
+
+doit foo.trs bar.trs
+permission_denied foo.trs
+permission_denied bar.trs
+grep 'test-suite\.log:.* I/O error reading test results' stderr
+
+doit foo.trs bar.log
+permission_denied foo.trs
+grep 'test-suite\.log:.* I/O error reading test results' stderr
 
 :

@@ -618,23 +618,17 @@ sub _maybe_warn_about_duplicated_target ($$$$$$)
     {
       if ($oldowner == RULE_USER)
         {
-          # Ignore '%'-style pattern rules.  We'd need the
-          # dependencies to detect duplicates, and they are
-          # already diagnosed as unportable by -Wportability.
-          if ($target !~ /^[^%]*%[^%]*$/)
-            {
-              ## FIXME: Presently we can't diagnose duplicate user rules
-              ## because we don't distinguish rules with commands
-              ## from rules that only add dependencies.  E.g.,
-              ##   .PHONY: foo
-              ##   .PHONY: bar
-              ## is legitimate. (This is phony.test.)
+          ## FIXME: Presently we can't diagnose duplicate user rules
+          ## because we don't distinguish rules with commands
+          ## from rules that only add dependencies.  E.g.,
+          ##   .PHONY: foo
+          ##   .PHONY: bar
+          ## is legitimate. (This is phony.test.)
 
-              # msg ('syntax', $where,
-              #      "redefinition of '$target'$condmsg ...", partial => 1);
-              # msg_cond_rule ('syntax', $cond, $target,
-              #                "... '$target' previously defined here");
-            }
+          # msg ('syntax', $where,
+          #      "redefinition of '$target'$condmsg ...", partial => 1);
+          # msg_cond_rule ('syntax', $cond, $target,
+          #                "... '$target' previously defined here");
         }
       else
         {
@@ -704,9 +698,13 @@ sub _conditionals_for_rule ($$$$)
 
   return $cond if !$message; # No ambiguity.
 
+  # Ignore possible ambiguity in '%'-style pattern rules.  We'd need the
+  # dependencies to detect duplicates, and would be overkill anyway, worth
+  # the possibility of annoying false positives.
+  return $cond if $target =~ /%/;
+
   if ($owner == RULE_USER)
     {
-      # For user rules, just diagnose the ambiguity.
       msg 'syntax', $where, "$message ...", partial => 1;
       msg_cond_rule ('syntax', $ambig_cond, $target,
                      "... '$target' previously defined here");
@@ -774,7 +772,10 @@ sub define ($$$$$)
   my $tdef = _rule_defn_with_exeext_awareness ($target, $cond, $where);
 
   # See whether this is a duplicated target declaration.
-  if ($tdef)
+  # Ignore '%'-style pattern rules.  We'd need the dependencies to detect
+  # duplicates, and would be overkill anyway, worth the possibility of
+  # annoying false positives.
+  if ($tdef && $target !~ /%/)
     {
       # Diagnose invalid target redefinitions, if any.  Note that some
       # target redefinitions are valid (e.g., for multiple-targets

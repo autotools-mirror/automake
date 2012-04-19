@@ -61,7 +61,4 @@ test ! -r y.bin.log
 test -f b.log
 test ! -r b.test.log
 
-$EGREP '^y\.log: y(\$\(EXEEXT\)|\.bin)' Makefile
-$EGREP '^\.test(\$\(EXEEXT\)|\.bin)\.log:' Makefile
-
 :

@@ -82,7 +82,11 @@ srcdir=$(srcdir); export srcdir;			\
 test x$(@D) = x. || test -d $(@D) || $(MKDIR_P) $(@D) || exit $$?; \
 f='$(patsubst $(srcdir)/%,%,$<)';			\
 ## We need to invoke the test in way that won't cause a PATH search.
-case $< in */*) tst=$<;; *) tst=./$<;; esac;		\
+## Quotes around '$<' are required to avoid extra errors when a circular
+## dependency is detected (e.g., because $(TEST_SUITE_LOG) is in
+## $(TEST_LOGS)), because in that case '$<' expands to empty and an
+## unquote usage of it could cause syntax errors in the shell.
+case '$<' in */*) tst='$<';; *) tst=./'$<';; esac;	\
 if test -n '$(DISABLE_HARD_ERRORS)'; then		\
   am__enable_hard_errors=no; 				\
 else							\
@@ -94,88 +98,47 @@ case " $(strip $(XFAIL_TESTS)) " in			\
 esac; 							\
 $(AM_TESTS_ENVIRONMENT) $(TESTS_ENVIRONMENT)
 
-# A shell command to get the names of the tests scripts with any registered
-# extension removed (i.e., equivalently, the names of the test logs, with
-# the '.log' extension removed).  The result is saved in the shell variable
-# '$bases'.  This honors runtime overriding of TESTS and TEST_LOGS.
-# It also works around the GNU make 3.80 bug where trailing whitespace in
-# "TESTS = foo.test $(empty)" causes $(TESTS_LOGS) to erroneously expand to
-# "foo.log .log".
-am__set_TESTS_bases = bases='$(strip $(TEST_LOGS:.log=))'
+# The names of the tests scripts with any registered extension removed
+# (i.e., equivalently, the names of the test logs, with the '.log' suffix
+# stripped), and the name of the test result files (i.e., equivalently, the
+# names of the test logs, with the '.log' suffix substituted by the '.trs'
+# suffix).  This honors runtime overriding of TESTS and TEST_LOGS.  It
+# also works around the GNU make 3.80 bug where trailing whitespace in
+# "TESTS = foo.test $(empty)" causes $(TESTS_LOGS) to erroneously expand
+# to "foo.log .log".
+am__TEST_BASES   = $(patsubst %.log,%,$(strip $(TEST_LOGS)))
+am__TEST_RESULTS = $(patsubst %.log,%.trs,$(strip $(TEST_LOGS)))
 
-# Recover from deleted '.trs' file; this should ensure that
-# "rm -f foo.log; make foo.trs" re-run 'foo.test', and re-create
-# both 'foo.log' and 'foo.trs'.  Break the recipe in two subshells
-# to avoid problems with "make -n".
-.log.trs:
-	rm -f $< $@
-	$(MAKE) $<
-
-$(TEST_SUITE_LOG): $(TEST_LOGS)
-	@$(am__set_TESTS_bases); \
-## Helper shell function, tells whether a path refers to an existing,
-## regular, readable file.
-	am__f_ok () { test -f "$$1" && test -r "$$1"; }; \
-## We need to ensures that all the required '.trs' and '.log' files will
-## be present and readable.  The direct dependencies of $(TEST_SUITE_LOG)
-## only ensure that all the '.log' files exists; they don't ensure that
-## the '.log' files are readable, and worse, they don't ensure that the
-## '.trs' files even exist.
-	redo_bases=`for i in $$bases; do \
-	              am__f_ok $$i.trs && am__f_ok $$i.log || echo $$i; \
-	            done`; \
-	if test -n "$$redo_bases"; then \
-## Uh-oh, either some '.log' files were unreadable, or some '.trs' files
-## were missing (or unreadable).  We need to re-run the corresponding
-## tests in order to re-create them.
-	  redo_logs=`for i in $$redo_bases; do echo $$i.log; done`; \
-	  redo_results=`for i in $$redo_bases; do echo $$i.trs; done`; \
-	  if $(am__make_dryrun); then :; else \
-## Break "rm -f" into two calls to minimize the possibility of exceeding
-## command line length limits.
-	    rm -f $$redo_logs && rm -f $$redo_results || exit 1; \
-	  fi; \
-	fi; \
-## Use a trick to to ensure that we don't go into an infinite recursion
-## in case a test log in $(TEST_LOGS) is the same as $(TEST_SUITE_LOG).
-## Yes, this has already happened in practice.  Sigh!
-	if test -n "$$am__remaking_logs"; then \
-	  echo "fatal: making $(TEST_SUITE_LOG): possible infinite" \
-	       "recursion detected" >&2; \
-	else \
-	  am__remaking_logs=yes $(MAKE) $$redo_logs; \
-	fi; \
-	if $(am__make_dryrun); then :; else \
-## Sanity check: each unreadable or non-existent test result file should
-## has been properly remade at this point, as should the corresponding log
-## file.
-	  st=0;  \
-	  errmsg="fatal: making $(TEST_SUITE_LOG): failed to create"; \
-	  for i in $$redo_bases; do \
-	    test -f $$i.trs && test -r $$i.trs \
-	      || { echo "$$errmsg $$i.trs" >&2; st=1; }; \
-	    test -f $$i.log && test -r $$i.log \
-	      || { echo "$$errmsg $$i.log" >&2; st=1; }; \
-	  done; \
-	  test $$st -eq 0 || exit 1; \
-	fi
-## We need a new subshell to work portably with "make -n", since the
-## previous part of the recipe contained a $(MAKE) invocation.
-	@$(am__sh_e_setup); $(am__tty_colors); $(am__set_TESTS_bases); \
+$(TEST_SUITE_LOG): $(TEST_LOGS) $(am__TEST_RESULTS)
+	@$(am__sh_e_setup); $(am__tty_colors); \
+	fatal () { echo "fatal: making $@: $$*" >&2; exit 1; }; \
+## Detect a possible circular dependency, and error out.
+	case ' $(strip $(TEST_LOGS)) ' in *' $(TEST_SUITE_LOG) '*) \
+	  fatal "depends on itself (check TESTS content)";; \
+	esac; \
 	ws='[ 	]'; \
-## List of test result files.
-	results=`for b in $$bases; do echo $$b.trs; done`; \
-	test -n "$$results" || results=/dev/null; \
+	count_result () \
+	{ \
+	  r='$(strip $(am__TEST_RESULTS))'; \
+	  r=`grep "^$$ws*:test-result:$$ws*$${1-}" $$r </dev/null`; \
+## Catch I/O errors, and complain accordingly.
+	  test $$? -le 1 || fatal "I/O error reading test results"; \
+	  case $$r in \
+	    "") echo 0;; \
+	    * ) printf '%s\n' "$$r" | wc -l;; \
+	  esac; \
+	}; \
 ## Prepare data for the test suite summary.  These do not take into account
 ## unreadable test results, but they'll be appropriately updated later if
 ## needed.
-	all=`  grep "^$$ws*:test-result:"           $$results | wc -l`; \
-	pass=` grep "^$$ws*:test-result:$$ws*PASS"  $$results | wc -l`; \
-	fail=` grep "^$$ws*:test-result:$$ws*FAIL"  $$results | wc -l`; \
-	skip=` grep "^$$ws*:test-result:$$ws*SKIP"  $$results | wc -l`; \
-	xfail=`grep "^$$ws*:test-result:$$ws*XFAIL" $$results | wc -l`; \
-	xpass=`grep "^$$ws*:test-result:$$ws*XPASS" $$results | wc -l`; \
-	error=`grep "^$$ws*:test-result:$$ws*ERROR" $$results | wc -l`; \
+	all=`count_result` \
+	  && pass=` count_result PASS` \
+	  && fail=` count_result FAIL` \
+	  && skip=` count_result SKIP` \
+	  && xfail=`count_result XFAIL` \
+	  && xpass=`count_result XPASS` \
+	  && error=`count_result ERROR` \
+	  || exit 1; \
 ## Whether the testsuite was successful or not.
 	if test `expr $$fail + $$xpass + $$error` -eq 0; then \
 	  success=true; \
@@ -220,14 +183,15 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	  result_count $$1 "ERROR:" $$error "$$mgn"; \
 	}; \
 ## Write "global" testsuite log.
-	{								\
+	if {								\
+	  st=0; 							\
 	  echo "$(PACKAGE_STRING): $(subdir)/$(TEST_SUITE_LOG)" |	\
 	    $(am__rst_title);						\
 	  create_testsuite_report --no-color;				\
 	  echo;								\
 	  echo ".. contents:: :depth: 2";				\
 	  echo;								\
-	  for i in $$bases; do						\
+	  bases='$(am__TEST_BASES)'; for i in $$bases; do		\
 ## FIXME: one fork per test -- this is horrendously inefficient!
 	    if grep "^$$ws*:copy-in-global-log:$$ws*no$$ws*$$" $$i.trs \
 	         >/dev/null; then continue; \
@@ -242,15 +206,17 @@ $(TEST_SUITE_LOG): $(TEST_LOGS)
 	    test -n "$$glob_res" || glob_res=RUN; \
 ## Write the name and result of the test as an RST section title.
 	    echo "$$glob_res: $$i" | $(am__rst_section); \
-## If we should have remade any unreadable '.log', above.
-	    if test ! -r $$i.log; then \
-	      echo "fatal: making $@: $$i.log is unreadable" >&2; \
-	      exit 1; \
-	    fi; \
-	    cat $$i.log; echo; \
+## Register any failure in reading test logs, to report an error later.
+	    cat $$i.log || st=1; \
+	    echo; \
 	  done;	\
-	} >$(TEST_SUITE_LOG).tmp;					\
-	mv $(TEST_SUITE_LOG).tmp $(TEST_SUITE_LOG);			\
+	  test $$st -eq 0; \
+	} >$(TEST_SUITE_LOG).tmp; then \
+	  mv -f $(TEST_SUITE_LOG).tmp $(TEST_SUITE_LOG); \
+	else \
+	  rm -f $(TEST_SUITE_LOG).tmp; \
+	  fatal "I/O error reading test logs"; \
+	fi; \
 ## Emit the test summary on the console.
 	if $$success; then						\
 	  col="$$grn";							\
@@ -310,7 +276,7 @@ check-TESTS recheck:
 ## we rely on .PHONY to work portably.
 	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
 	@ws='[ 	]'; \
-	log_list='' trs_list=''; $(am__set_TESTS_bases); \
+	log_list='' trs_list=''; bases='$(am__TEST_BASES)'; \
 	for i in $$bases; do \
 ## If running a "make recheck", we must only consider tests that had an
 ## unexpected outcome (FAIL or XPASS) in the earlier run.  In particular,

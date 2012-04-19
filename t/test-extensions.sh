@@ -42,7 +42,7 @@ grep -i 'log' Makefile.in # For debugging.
 for lc in $valid_extensions; do
   uc=`echo $lc | tr '[a-z]' '[A-Z]'`
   grep "^${uc}_LOG_DRIVER =" Makefile.in
-  grep "^\.${lc}\.log:" Makefile.in
+  grep "^%\.log %\.trs *:.*%\.${lc}" Makefile.in
 done
 
 # The produced Makefile is not broken.

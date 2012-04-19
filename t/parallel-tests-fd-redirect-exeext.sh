@@ -98,13 +98,6 @@ else
   fatal_ "unexpected error in ./configure"
 fi
 
-# Sanity checks.
-st=0
-grep '^baz\.log:.*baz\$(EXEEXT)' Makefile || st=1
-grep '^\.test\$(EXEEXT)\.log:' Makefile || st=1
-grep '^qux\.log:' Makefile && st=1
-test $st -eq 0 || fatal_ "doesn't cover expected code paths"
-
 st=0
 $MAKE check >stdout || st=1
 cat stdout
