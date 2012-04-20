@@ -4706,23 +4706,21 @@ sub handle_tests_dejagnu
     $output_rules .= file_contents ('dejagnu', new Automake::Location);
 }
 
-sub handle_per_suffix_test
+sub handle_per_suffix_test($)
 {
-  my ($test_suffix, %transform) = @_;
-  my ($pfx, $generic, $parallel_tests_option, $am_exeext);
+  my $test_suffix = shift;
+  my ($pfx, $parallel_tests_option, $am_exeext);
   prog_error ("called with 'parallel-tests' option not set")
     unless $parallel_tests_option = option 'parallel-tests';
   if ($test_suffix eq '')
     {
       $pfx = '';
-      $generic = 0;
     }
   else
     {
       prog_error ("test suffix '$test_suffix' lacks leading dot")
         unless $test_suffix =~ m/^\.(.*)/;
       $pfx = uc ($1) . '_';
-      $generic = 1;
     }
   $am_exeext = exists $configure_vars{'EXEEXT'} ? 'am__EXEEXT'
                                                   : 'FALSE';
@@ -4739,11 +4737,9 @@ sub handle_per_suffix_test
                        INTERNAL);
     }
   $output_rules .= file_contents ('check2', new Automake::Location,
-                                   GENERIC => $generic,
                                    PFX => $pfx,
                                    EXT => $test_suffix,
-                                   am__EXEEXT => $am_exeext,
-                                   %transform);
+                                   am__EXEEXT => $am_exeext);
 }
 
 # is_valid_test_extension ($EXT)
@@ -4851,13 +4847,8 @@ sub handle_tests
 		    return substr ($obj, 0, length ($obj) - length ($test_suffix)) . '.log'
 		      if substr ($obj, - length ($test_suffix)) eq $test_suffix;
 		  }
-		my $base = $obj;
-		$obj .= '.log';
-                handle_per_suffix_test ('',
-                                        OBJ => $obj,
-                                        BASE => $base,
-                                        SOURCE => $val);
-	        return $obj;
+	        handle_per_suffix_test ('');
+	        return "$obj.log";
 	      });
 
 	  my $nhelper=1;
@@ -4882,10 +4873,7 @@ sub handle_tests
 	      $nhelper++;
 	      if ($test_suffix ne $at_exeext && $test_suffix ne '')
 	        {
-                  handle_per_suffix_test ($test_suffix,
-                                          OBJ => '',
-                                          BASE => '$*',
-                                          SOURCE => '$<');
+                  handle_per_suffix_test ($test_suffix);
 	        }
 	    }
 	  $clean_files{'$(TEST_LOGS)'} = MOSTLY_CLEAN;
