@@ -71,6 +71,28 @@ Parallel testsuite harness
   variables anymore.  These have always been meant for internal use only
   anyway.
 
+* The $(TESTS) and $(XFAIL_TESTS) variables are not anymore rewritten for
+  $(EXEEXT) appending.  The use of compiled programs in $(TESTS) still
+  works as before though, even on systems where $(EXEEXT) is non-empty,
+  thanks to a careful use of pattern rules.
+
+* The new implementation of the parallel-tests harness tries to defer
+  as much as possible processing on the $(TESTS) variable at make,
+  rather than doing it at automake time.  This as some positive effects
+  (FIXME: describe and quantify them), but also entails a minor annoyance.
+  When automake runs, it cannot know anymore whether $(TESTS) contains
+  or not any entry with no recognized test suffix; as a consequence, it
+  always need the '$(LOG_DRIVER)' variable to be defined.  If it's not,
+  automake will define it to a proper invocation of the 'test-driver'
+  auxiliary script, and require that script to be present in the
+  config-aux directory (or bring it in if "--add-missing" is in use).
+  If you know you package won't make use of suffix-less tests (thus, in
+  particular, no use of compiled programs in $(TESTS)), you can avoid
+  requiring the 'test-driver' script by adding this line to your
+  configure.ac:
+    AC_SUBST([LOG_DRIVER], ['unused but required by automake'])
+
+
 Miscellaneous
 =============
 

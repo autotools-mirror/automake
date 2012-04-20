@@ -29,7 +29,8 @@ am_parallel_tests=yes
 
 fetch_tap_driver
 
-cat >> configure.ac <<END
+cat >> configure.ac << 'END'
+AC_SUBST([LOG_DRIVER], ["dummy but required"])
 AC_SUBST([AM_TEST_LOG_DRIVER_FLAGS], ['--comments'])
 AC_OUTPUT
 END

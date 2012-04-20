@@ -24,6 +24,7 @@ am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'
+AC_SUBST([LOG_DRIVER], ['ignored but required by autoamke, sigh!'])
 AC_OUTPUT
 END
 

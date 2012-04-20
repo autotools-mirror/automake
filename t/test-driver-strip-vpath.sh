@@ -39,9 +39,10 @@ cat > Makefile.am << 'END'
 # The $(empty) are for eliciting VPATH rewrites on make implementations
 # that support it (e.g., Solaris make), to improve coverage.
 empty =
-TESTS = $(empty) foo.test src/bar.test ./src/baz.test $(empty)
+TESTS = $(empty) foo.test src/bar.test ./src/baz $(empty)
 $(TESTS):
-TEST_LOG_DRIVER = $(srcdir)/checkstrip-driver
+LOG_DRIVER = $(srcdir)/checkstrip-driver
+TEST_LOG_DRIVER = $(LOG_DRIVER)
 EXTRA_DIST = checkstrip-driver
 END
 
@@ -61,8 +62,10 @@ while test $# -gt 0; do
 done
 echo "test name: $test_name" # For debugging.
 case $test_name in
-  foo.test|./foo.test|src/ba[rz].test|./src/ba[rz].test);;
-  *) exit 1;;
+  foo.test|./foo.test) ;;
+  src/bar.test|./src/bar.test) ;;
+  src/baz|./src/baz) ;;
+  *) exit 1 ;;
 esac
 echo dummy > "$log_file"
 echo dummy > "$trs_file"

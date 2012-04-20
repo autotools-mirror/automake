@@ -14,44 +14,28 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check parallel-tests features: generated distributed tests.
+# Check parallel-tests features:
+# - listing $(srcdir)/ or $(top_srcdir)/ in TESTS doesn't work ATM,
+#   and is thus diagnosed.
+
+# TODO: this test should also ensure that the 'make' implementation
+#       properly adheres to rules in all cases.  See the Autoconf
+#       manual for the ugliness in this area, when VPATH comes into
+#       play.  :-/
 
 am_parallel_tests=yes
 . ./defs || Exit 1
 
-cat >> configure.ac << 'END'
-AC_OUTPUT
-END
+echo AC_OUTPUT >> configure.ac
 
 cat > Makefile.am << 'END'
-TESTS = foo.test
-.in.test:
-	cp $< $@ && chmod +x $@
-check_SCRIPTS = $(TESTS)
-EXTRA_DIST = foo.in foo.test
-DISTCLEANFILES = foo.test
-END
-
-cat > foo.in <<'END'
-#! /bin/sh
-echo "this is $0"
-exit 0
+TESTS = $(srcdir)/bar.test $(top_srcdir)/baz.test
 END
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE -a
-
-./configure
-$MAKE check
-$MAKE distcheck
-$MAKE distclean
-
-mkdir build
-cd build
-../configure
-$MAKE check
-test ! -f ../foo.log
-$MAKE distcheck
+AUTOMAKE_fails -a
+grep '$(srcdir).*TESTS.*bar\.test' stderr
+grep '$(top_srcdir).*TESTS.*baz\.test' stderr
 
 :

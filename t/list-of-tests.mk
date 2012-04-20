@@ -40,6 +40,7 @@ t/instdir-cond2.sh \
 t/interp3.sh \
 t/java-nobase.sh \
 t/objext-pr10128.sh \
+t/parallel-tests-srcdir-in-test-name.sh \
 t/parallel-tests-many.sh \
 t/pr8365-remake-timing.sh \
 t/remake-am-pr10111.sh \
@@ -738,6 +739,8 @@ t/parallel-tests8.sh \
 t/parallel-tests9.sh \
 t/parallel-tests10.sh \
 t/parallel-tests-no-repeat.sh \
+t/parallel-tests-longest-stem.sh \
+t/parallel-tests-srcdir-in-test-name.sh \
 t/parallel-tests-recheck-depends-on-all.sh \
 t/parallel-tests-exeext.sh \
 t/parallel-tests-suffix.sh \
@@ -981,6 +984,7 @@ t/spell3.sh \
 t/spelling.sh \
 t/spy-autovars.sh \
 t/spy-double-colon.sh \
+t/spy-pattern-rules.sh \
 t/spy-phony.sh \
 t/spy-rm.tap \
 t/spy-vpath-rewrite.sh \

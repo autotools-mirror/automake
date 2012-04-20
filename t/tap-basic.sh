@@ -47,6 +47,8 @@ ok.test:
 	echo 'ok 3 # SKIP' >>$@-t
 	cat $@-t ;: For debugging.
 	mv -f $@-t $@
+
+LOG_DRIVER = false  # Dummy but required.
 END
 
 cat > success.test << 'END'

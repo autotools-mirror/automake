@@ -70,7 +70,7 @@ chmod a+x *.test
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE
+$AUTOMAKE -a
 
 for vpath in : false; do
   if $vpath; then

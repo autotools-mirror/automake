@@ -29,7 +29,8 @@ cat > Makefile.am << 'END'
 TEST_EXTENSIONS = .test .x
 TEST_LOG_DRIVER = ./dummy-driver
 X_LOG_DRIVER = ./dummy-driver
-TESTS = foo.test zar-doz.test
+LOG_DRIVER = ./dummy-driver
+TESTS = foo.test zar-doz.test mu
 END
 
 cat > dummy-driver <<'END'
@@ -76,6 +77,7 @@ $AUTOMAKE
 : Basic checks.
 
 echo :global-test-result: PASS > foo.test
+echo :global-test-result: PASS > mu
 echo :global-test-result: ERROR > zar-doz.x
 
 $MAKE check
@@ -87,6 +89,11 @@ PASS: foo
 END
 
 have_result <<END
+PASS: mu
+========
+END
+
+have_result <<END
 ERROR: zar-doz
 ==============
 END
@@ -95,6 +102,7 @@ END
 
 echo :global-test-result: PASS/SKIP > foo.test
 echo :global-test-result: ALMOST PASSED > zar-doz.x
+echo :global-test-result: HU? > mu
 
 $MAKE check
 cat test-suite.log
@@ -107,6 +115,11 @@ END
 have_result <<END
 ALMOST PASSED: zar-doz
 ======================
+END
+
+have_result <<END
+HU?: mu
+=======
 END
 
 : Fields ':test-result:' does not interfere with the global test result.
@@ -123,6 +136,13 @@ cat > zar-doz.x << 'END'
 :test-result: XFAIL
 END
 
+cat > mu << 'END'
+:test-result: PASS
+:global-test-result: XFAIL
+:test-result: PASS
+:test-result: PASS
+END
+
 $MAKE check && Exit 1
 cat test-suite.log
 
@@ -136,6 +156,11 @@ FAIL: zar-doz
 =============
 END
 
+have_result <<END
+XFAIL: mu
+=========
+END
+
 : What happens when ':global-test-result:' is absent.
 
 cat > foo.test << 'END'
@@ -143,6 +168,7 @@ cat > foo.test << 'END'
 :test-result: ERROR
 END
 : > zar-doz.x
+: > mu
 
 $MAKE check && Exit 1
 cat test-suite.log
@@ -157,10 +183,16 @@ RUN: zar-doz
 ============
 END
 
+have_result <<END
+RUN: mu
+=======
+END
+
 # Leading and trailing whitespace gets eaten/normalized.
 
 echo ":global-test-result:SKIP${tab}   ${tab}${tab}" > foo.test
 echo ":global-test-result:${tab}   ${tab}XFAIL  ${tab}   " > zar-doz.x
+echo ":global-test-result: ${tab} PASS${tab} ${tab}${tab}" > mu
 
 $MAKE check
 cat test-suite.log
@@ -175,10 +207,16 @@ XFAIL: zar-doz
 ==============
 END
 
+have_result <<END
+PASS: mu
+========
+END
+
 # Whitespaces before and after ':global-test-result:' are handled OK.
 
 echo "   $tab:global-test-result:PASS" > foo.test
 echo "${tab}${tab}:global-test-result:${tab}   ${tab}SKIP" > zar-doz.x
+echo " :global-test-result:${tab}SKIP" > mu
 
 $MAKE check
 cat test-suite.log
@@ -191,6 +229,11 @@ END
 have_result <<END
 SKIP: zar-doz
 =============
+END
+
+have_result <<END
+SKIP: mu
+========
 END
 
 :

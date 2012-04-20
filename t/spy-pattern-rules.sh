@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2009-2012 Free Software Foundation, Inc.
+# Copyright (C) 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,44 +14,41 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check parallel-tests features: generated distributed tests.
+# Check that, if we have two pattern rules from which the same file (or
+# set of files) can be built, and both are applicable, the first one wins.
+# This is used at least in our 'parallel-tests' support.
 
-am_parallel_tests=yes
+am_create_testdir=empty
 . ./defs || Exit 1
 
-cat >> configure.ac << 'END'
-AC_OUTPUT
+cat > Makefile <<'END'
+default:
+
+%.foo: %
+	cp $< $@
+%.foo: %.x
+	cp $< $@
+
+%.bar: %.x
+	cp $< $@
+%.bar: %
+
+%.mu %.fu: %.1
+	cp $< $*.mu && cp $< $*.fu
+%.mu %.fu: %.2
+	cp $< $*.mu && cp $< $*.fu
 END
 
-cat > Makefile.am << 'END'
-TESTS = foo.test
-.in.test:
-	cp $< $@ && chmod +x $@
-check_SCRIPTS = $(TESTS)
-EXTRA_DIST = foo.in foo.test
-DISTCLEANFILES = foo.test
-END
+echo one > all
+echo two > all.x
+$MAKE all.foo all.bar
+diff all all.foo
+diff all.x all.bar
 
-cat > foo.in <<'END'
-#! /bin/sh
-echo "this is $0"
-exit 0
-END
-
-$ACLOCAL
-$AUTOCONF
-$AUTOMAKE -a
-
-./configure
-$MAKE check
-$MAKE distcheck
-$MAKE distclean
-
-mkdir build
-cd build
-../configure
-$MAKE check
-test ! -f ../foo.log
-$MAKE distcheck
+echo one > x.1
+echo two > x.2
+$MAKE x.mu
+diff x.mu x.1
+diff x.fu x.1
 
 :

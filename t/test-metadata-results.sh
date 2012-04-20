@@ -25,8 +25,9 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-TEST_LOG_DRIVER = ./dummy-driver
-TESTS = foo.test bar.test
+LOG_DRIVER = ./dummy-driver
+TEST_LOG_DRIVER = ${LOG_DRIVER}
+TESTS = foo.test bar
 END
 
 cat > dummy-driver <<'END'
@@ -88,7 +89,7 @@ $AUTOMAKE
 # "old-style" directives with format "RESULT: test-name" are now ignored.
 
 : > foo.test
-echo blah blah blah > bar.test
+echo blah blah blah > bar
 mk_check
 count_test_results total=0 pass=0 fail=0 xpass=0 xfail=0 skip=0 error=0
 
@@ -96,7 +97,7 @@ cat > foo.test <<END
 :test-global-result: PASS
 :test-result: FAIL
 END
-cat > bar.test <<END
+cat > bar <<END
 :test-result: SKIP
 :test-global-result: ERROR
 END
@@ -108,7 +109,7 @@ FAIL: foo.test
 :test-result: PASS
 :test-global-result: XPASS
 END
-echo ERROR: bar.test > bar.test
+echo ERROR: bar > bar
 mk_check
 count_test_results total=1 pass=1 fail=0 xpass=0 xfail=0 skip=0 error=0
 
@@ -116,7 +117,7 @@ cat > foo.test <<END
 :test-global-result: SKIP
 :test-result: FAIL
 END
-cat > bar.test <<END
+cat > bar <<END
 :test-global-result: PASS
 END
 mk_check && Exit 1
@@ -127,7 +128,7 @@ cat > foo.test <<END
 :test-result: PASS
 :test-result: SKIP
 END
-cat > bar.test <<END
+cat > bar <<END
 :test-result: SKIP
 :test-result: PASS
 :test-result: SKIP
@@ -147,18 +148,18 @@ cat > foo.test <<END
 :test-result: XPASS
 :test-result: ERROR
 END
-: > bar.test
+: > bar
 mk_check && Exit 1
 count_test_results total=6 pass=1 fail=1 xpass=1 xfail=1 skip=1 error=1
 
-cp foo.test bar.test
+cp foo.test bar
 mk_check && Exit 1
 count_test_results total=12 pass=2 fail=2 xpass=2 xfail=2 skip=2 error=2
 
 # Check that we are liberal w.r.t. whitespace use.
 
 : > foo.test
-: > bar.test
+: > bar
 for RESULT in PASS FAIL XPASS XFAIL SKIP ERROR; do
   sed -e 's/^ *//' -e 's/|//g' >> foo.test <<END
     |:test-result:$RESULT|
@@ -166,10 +167,10 @@ for RESULT in PASS FAIL XPASS XFAIL SKIP ERROR; do
     |:test-result:$RESULT  $tab|
     |:test-result:$tab$tab  $RESULT$tab  $tab |
 END
-  echo "  $tab $tab$tab   :test-result: $RESULT" >> bar.test
+  echo "  $tab $tab$tab   :test-result: $RESULT" >> bar
 done
 cat foo.test # For debugging.
-cat bar.test # Likewise.
+cat bar # Likewise.
 mk_check && Exit 1
 count_test_results total=30 pass=5 fail=5 xpass=5 xfail=5 skip=5 error=5
 
