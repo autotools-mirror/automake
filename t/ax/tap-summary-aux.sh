@@ -56,7 +56,7 @@ do_check ()
   cat all.test
   st=0
   if test $use_colors = yes; then
-    make_cmd="env AM_COLOR_TESTS=always $MAKE -e"
+    make_cmd="env TERM=ansi AM_COLOR_TESTS=always $MAKE -e"
   else
     make_cmd=$MAKE
   fi
