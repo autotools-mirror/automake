@@ -573,6 +573,178 @@ sub _new ($$)
   return $self;
 }
 
+sub _rule_defn_with_exeext_awareness ($$$)
+{
+  my ($target, $cond, $where) = @_;
+
+  # For now 'foo:' will override 'foo$(EXEEXT):'.  This is temporary,
+  # though, so we emit a warning.
+  (my $noexe = $target) =~ s/\$\(EXEEXT\)$//;
+  my $noexerule = rule $noexe;
+  my $tdef = $noexerule ? $noexerule->def ($cond) : undef;
+
+  if ($noexe ne $target
+      && $tdef
+      && $noexerule->name ne $target)
+    {
+      # The no-exeext option enables this feature.
+      if (! option 'no-exeext')
+	{
+	  msg ('obsolete', $tdef->location,
+	       "deprecated feature: target '$noexe' overrides "
+	       . "'$noexe\$(EXEEXT)'\n"
+	       . "change your target to read '$noexe\$(EXEEXT)'",
+	       partial => 1);
+	  msg ('obsolete', $where, "target '$target' was defined here");
+	}
+    }
+    return $tdef;
+}
+
+sub _maybe_warn_about_duplicated_target ($$$$$$)
+{
+  my ($target, $tdef, $source, $owner, $cond, $where) = @_;
+
+  my $oldowner  = $tdef->owner;
+  # Ok, it's the name target, but the name maybe different because
+  # 'foo$(EXEEXT)' and 'foo' have the same key in our table.
+  my $oldname = $tdef->name;
+
+  # Don't mention true conditions in diagnostics.
+  my $condmsg =
+    $cond == TRUE ? '' : (" in condition '" . $cond->human . "'");
+
+  if ($owner == RULE_USER)
+    {
+      if ($oldowner == RULE_USER)
+        {
+          # Ignore '%'-style pattern rules.  We'd need the
+          # dependencies to detect duplicates, and they are
+          # already diagnosed as unportable by -Wportability.
+          if ($target !~ /^[^%]*%[^%]*$/)
+            {
+              ## FIXME: Presently we can't diagnose duplicate user rules
+              ## because we don't distinguish rules with commands
+              ## from rules that only add dependencies.  E.g.,
+              ##   .PHONY: foo
+              ##   .PHONY: bar
+              ## is legitimate. (This is phony.test.)
+
+              # msg ('syntax', $where,
+              #      "redefinition of '$target'$condmsg ...", partial => 1);
+              # msg_cond_rule ('syntax', $cond, $target,
+              #                "... '$target' previously defined here");
+            }
+        }
+      else
+        {
+          # Since we parse the user Makefile.am before reading
+          # the Automake fragments, this condition should never happen.
+          prog_error ("user target '$target'$condmsg seen after Automake's"
+                      . " definition\nfrom " . $tdef->source);
+        }
+    }
+  else # $owner == RULE_AUTOMAKE
+    {
+      if ($oldowner == RULE_USER)
+        {
+          # -am targets listed in %dependencies support a -local
+          # variant.  If the user tries to override TARGET or
+          # TARGET-am for which there exists a -local variant,
+          # just tell the user to use it.
+          my $hint = 0;
+          my $noam = $target;
+          $noam =~ s/-am$//;
+          if (exists $dependencies{"$noam-am"})
+            {
+              $hint = "consider using $noam-local instead of $target";
+            }
+
+          msg_cond_rule ('override', $cond, $target,
+                         "user target '$target' defined here"
+                         . "$condmsg ...", partial => 1);
+          msg ('override', $where,
+               "... overrides Automake target '$oldname' defined here",
+               partial => $hint);
+          msg_cond_rule ('override', $cond, $target, $hint)
+            if $hint;
+        }
+      else # $oldowner == RULE_AUTOMAKE
+        {
+          # Automake should ignore redefinitions of its own
+          # rules if they came from the same file.  This makes
+          # it easier to process a Makefile fragment several times.
+          # However it's an error if the target is defined in many
+          # files.  E.g., the user might be using bin_PROGRAMS = ctags
+          # which clashes with our 'ctags' rule.
+          # (It would be more accurate if we had a way to compare
+          # the *content* of both rules.  Then $targets_source would
+          # be useless.)
+          my $oldsource = $tdef->source;
+          if (not ($source eq $oldsource && $target eq $oldname))
+            {
+               msg ('syntax',
+                    $where, "redefinition of '$target'$condmsg ...",
+                    partial => 1);
+               msg_cond_rule ('syntax', $cond, $target,
+                              "... '$oldname' previously defined here");
+            }
+        }
+    }
+}
+
+# Return the list of conditionals in which the rule was defined.  In case
+# an ambiguous conditional definition is detected, return the empty list.
+sub _conditionals_for_rule ($$$$)
+{
+  my ($rule, $owner, $cond, $where) = @_;
+  my $target = $rule->name;
+  my @conds;
+  my ($message, $ambig_cond) = $rule->conditions->ambiguous_p ($target, $cond);
+
+  return $cond if !$message; # No ambiguity.
+
+  if ($owner == RULE_USER)
+    {
+      # For user rules, just diagnose the ambiguity.
+      msg 'syntax', $where, "$message ...", partial => 1;
+      msg_cond_rule ('syntax', $ambig_cond, $target,
+                     "... '$target' previously defined here");
+      return ();
+    }
+
+  # FIXME: for Automake rules, we can't diagnose ambiguities yet.
+  # The point is that Automake doesn't propagate conditions
+  # everywhere.  For instance &handle_PROGRAMS doesn't care if
+  # bin_PROGRAMS was defined conditionally or not.
+  # On the following input
+  #   if COND1
+  #   foo:
+  #           ...
+  #   else
+  #   bin_PROGRAMS = foo
+  #   endif
+  # &handle_PROGRAMS will attempt to define a 'foo:' rule
+  # in condition TRUE (which conflicts with COND1).  Fixing
+  # this in &handle_PROGRAMS and siblings seems hard: you'd
+  # have to explain &file_contents what to do with a
+  # condition.  So for now we do our best *here*.  If 'foo:'
+  # was already defined in condition COND1 and we want to define
+  # it in condition TRUE, then define it only in condition !COND1.
+  # (See cond14.test and cond15.test for some test cases.)
+  @conds = $rule->not_always_defined_in_cond ($cond)->conds;
+
+  # No conditions left to define the rule.
+  # Warn, because our workaround is meaningless in this case.
+  if (scalar @conds == 0)
+    {
+      msg 'syntax', $where, "$message ...", partial => 1;
+      msg_cond_rule ('syntax', $ambig_cond, $target,
+                     "... '$target' previously defined here");
+      return ();
+    }
+  return @conds;
+}
 
 =item C<@conds = define ($rulename, $source, $owner, $cond, $where)>
 
@@ -599,179 +771,33 @@ sub define ($$$$$)
   # Don't even think about defining a rule in condition FALSE.
   return () if $cond == FALSE;
 
-  # For now 'foo:' will override 'foo$(EXEEXT):'.  This is temporary,
-  # though, so we emit a warning.
-  (my $noexe = $target) =~ s,\$\(EXEEXT\)$,,;
-  my $noexerule = rule $noexe;
-  my $tdef = $noexerule ? $noexerule->def ($cond) : undef;
+  my $tdef = _rule_defn_with_exeext_awareness ($target, $cond, $where);
 
-  if ($noexe ne $target
-      && $tdef
-      && $noexerule->name ne $target)
-    {
-      # The no-exeext option enables this feature.
-      if (! option 'no-exeext')
-	{
-	  msg ('obsolete', $tdef->location,
-	       "deprecated feature: target '$noexe' overrides "
-	       . "'$noexe\$(EXEEXT)'\n"
-	       . "change your target to read '$noexe\$(EXEEXT)'",
-	       partial => 1);
-	  msg ('obsolete', $where, "target '$target' was defined here");
-	}
-      # Don't 'return ()' now, as this might hide target clashes
-      # detected below.
-    }
-
-  # Diagnose target redefinitions.
+  # See whether this is a duplicated target declaration.
   if ($tdef)
     {
-      my $oldowner  = $tdef->owner;
-      # Ok, it's the name target, but the name maybe different because
-      # 'foo$(EXEEXT)' and 'foo' have the same key in our table.
-      my $oldname = $tdef->name;
-
-      # Don't mention true conditions in diagnostics.
-      my $condmsg =
-	$cond == TRUE ? '' : " in condition '" . $cond->human . "'";
-
-      if ($owner == RULE_USER)
-	{
-	  if ($oldowner == RULE_USER)
-	    {
-	      # Ignore '%'-style pattern rules.  We'd need the
-	      # dependencies to detect duplicates.
-	      if ($target !~ /^[^%]*%[^%]*$/)
-		{
-		  ## FIXME: Presently we can't diagnose duplicate user rules
-		  ## because we don't distinguish rules with commands
-		  ## from rules that only add dependencies.  E.g.,
-		  ##   .PHONY: foo
-		  ##   .PHONY: bar
-		  ## is legitimate. (This is phony.test.)
-
-		  # msg ('syntax', $where,
-		  #      "redefinition of '$target'$condmsg ...", partial => 1);
-		  # msg_cond_rule ('syntax', $cond, $target,
-		  #		   "... '$target' previously defined here");
-		}
-	      # Return so we don't redefine the rule in our tables,
-	      # don't check for ambiguous condition, etc.  The rule
-	      # will be output anyway because &read_am_file ignore the
-	      # return code.
-	      return ();
-	    }
-	  else
-	    {
-	      # Since we parse the user Makefile.am before reading
-	      # the Automake fragments, this condition should never happen.
-	      prog_error ("user target '$target'$condmsg seen after Automake's"
-			  . " definition\nfrom " . $tdef->source);
-	    }
-	}
-      else # $owner == RULE_AUTOMAKE
-	{
-	  if ($oldowner == RULE_USER)
-	    {
-	      # -am targets listed in %dependencies support a -local
-	      # variant.  If the user tries to override TARGET or
-	      # TARGET-am for which there exists a -local variant,
-	      # just tell the user to use it.
-	      my $hint = 0;
-	      my $noam = $target;
-	      $noam =~ s/-am$//;
-	      if (exists $dependencies{"$noam-am"})
-		{
-		  $hint = "consider using $noam-local instead of $target";
-		}
-
-	      msg_cond_rule ('override', $cond, $target,
-			     "user target '$target' defined here"
-			     . "$condmsg ...", partial => 1);
-	      msg ('override', $where,
-		   "... overrides Automake target '$oldname' defined here",
-		   partial => $hint);
-	      msg_cond_rule ('override', $cond, $target, $hint)
-		if $hint;
-
-	      # Don't overwrite the user definition of TARGET.
-	      return ();
-	    }
-	  else # $oldowner == RULE_AUTOMAKE
-	    {
-	      # Automake should ignore redefinitions of its own
-	      # rules if they came from the same file.  This makes
-	      # it easier to process a Makefile fragment several times.
-	      # However it's an error if the target is defined in many
-	      # files.  E.g., the user might be using bin_PROGRAMS = ctags
-	      # which clashes with our 'ctags' rule.
-	      # (It would be more accurate if we had a way to compare
-	      # the *content* of both rules.  Then $targets_source would
-	      # be useless.)
-	      my $oldsource = $tdef->source;
-	      return () if $source eq $oldsource && $target eq $oldname;
-
-	      msg ('syntax', $where, "redefinition of '$target'$condmsg ...",
-		   partial => 1);
-	      msg_cond_rule ('syntax', $cond, $target,
-			     "... '$oldname' previously defined here");
-	      return ();
-	    }
-	}
-      # Never reached.
-      prog_error ("unreachable place reached");
+      # Diagnose invalid target redefinitions, if any.  Note that some
+      # target redefinitions are valid (e.g., for multiple-targets
+      # pattern rules).
+      _maybe_warn_about_duplicated_target ($target, $tdef, $source,
+                                           $owner, $cond, $where);
+      # Return so we don't redefine the rule in our tables, don't check
+      # for ambiguous condition, etc.  The rule will be output anyway
+      # because '&read_am_file' ignores the return code.
+      return ();
     }
 
-  # Conditions for which the rule should be defined.
-  my @conds = $cond;
-
-  # Check ambiguous conditional definitions.
   my $rule = _crule $target;
-  my ($message, $ambig_cond) = $rule->conditions->ambiguous_p ($target, $cond);
-  if ($message)			# We have an ambiguity.
-    {
-      if ($owner == RULE_USER)
-	{
-	  # For user rules, just diagnose the ambiguity.
-	  msg 'syntax', $where, "$message ...", partial => 1;
-	  msg_cond_rule ('syntax', $ambig_cond, $target,
-			 "... '$target' previously defined here");
-	  return ();
-	}
-      else
-	{
-	  # FIXME: for Automake rules, we can't diagnose ambiguities yet.
-	  # The point is that Automake doesn't propagate conditions
-	  # everywhere.  For instance &handle_PROGRAMS doesn't care if
-	  # bin_PROGRAMS was defined conditionally or not.
-	  # On the following input
-	  #   if COND1
-	  #   foo:
-	  #           ...
-	  #   else
-	  #   bin_PROGRAMS = foo
-	  #   endif
-	  # &handle_PROGRAMS will attempt to define a 'foo:' rule
-	  # in condition TRUE (which conflicts with COND1).  Fixing
-	  # this in &handle_PROGRAMS and siblings seems hard: you'd
-	  # have to explain &file_contents what to do with a
-	  # condition.  So for now we do our best *here*.  If 'foo:'
-	  # was already defined in condition COND1 and we want to define
-	  # it in condition TRUE, then define it only in condition !COND1.
-	  # (See cond14.test and cond15.test for some test cases.)
-	  @conds = $rule->not_always_defined_in_cond ($cond)->conds;
 
-	  # No conditions left to define the rule.
-	  # Warn, because our workaround is meaningless in this case.
-	  if (scalar @conds == 0)
-	    {
-	      msg 'syntax', $where, "$message ...", partial => 1;
-	      msg_cond_rule ('syntax', $ambig_cond, $target,
-			     "... '$target' previously defined here");
-	      return ();
-	    }
-	}
-    }
+  # Conditions for which the rule should be defined.  Due to some
+  # complications in the automake internals, this aspect is not as
+  # obvious as it might be, and in come cases this list must contain
+  # other entries in addition to '$cond'.  See the comments in
+  # '_conditionals_for_rule' for a rationale.
+  my @conds = _conditionals_for_rule ($rule, $owner, $cond, $where);
+
+  # Stop if we had ambiguous conditional definitions.
+  return unless @conds;
 
   # Finally define this rule.
   for my $c (@conds)
@@ -798,8 +824,6 @@ sub define ($$$$$)
 	  # declared in SUFFIXES and are not known language
 	  # extensions).  Automake will complete SUFFIXES from
 	  # @suffixes automatically (see handle_footer).
-
-
 	  || ($t =~ /$_SUFFIX_RULE_PATTERN/o && accept_extensions($1)))
 	{
 	  ++$inference_rule_count;

@@ -6831,13 +6831,13 @@ sub transform ($$)
     }
 }
 
-
-# @PARAGRAPHS
-# &make_paragraphs ($MAKEFILE, [%TRANSFORM])
-# ------------------------------------------
-# Load a $MAKEFILE, apply the %TRANSFORM, and return it as a list of
-# paragraphs.
-sub make_paragraphs ($%)
+# $TEXT
+# preprocess_file ($MAKEFILE, [%TRANSFORM])
+# -----------------------------------------
+# Load a $MAKEFILE, apply the %TRANSFORM, and return the result.
+# No extra parsing of post-processing is done (i.e., recognition of
+# rules declaration or of make variables definitions).
+sub preprocess_file ($%)
 {
   my ($file, %transform) = @_;
 
@@ -6870,13 +6870,9 @@ sub make_paragraphs ($%)
 
 		 'LIBTOOL'      => !! var ('LIBTOOL'),
 		 'NONLIBTOOL'   => 1,
-		 'FIRST'        => ! $transformed_files{$file},
 		%transform);
 
-  $transformed_files{$file} = 1;
-  $_ = $am_file_cache{$file};
-
-  if (! defined $_)
+  if (! defined ($_ = $am_file_cache{$file}))
     {
       verb "reading $file";
       # Swallow the whole file.
@@ -6886,11 +6882,10 @@ sub make_paragraphs ($%)
       $_ = $fc_file->getline;
       $/ = $saved_dollar_slash;
       $fc_file->close;
-
       # Remove ##-comments.
       # Besides we don't need more than two consecutive new-lines.
       s/(?:$IGNORE_PATTERN|(?<=\n\n)\n+)//gom;
-
+      # Remember the contents of the just-read file.
       $am_file_cache{$file} = $_;
     }
 
@@ -6904,8 +6899,22 @@ sub make_paragraphs ($%)
   # ####### and do not remove the latter.)
   s/^[ \t]*(?:##%)+.*\n//gm;
 
-  # Split at unescaped new lines.
-  my @lines = split (/(?<!\\)\n/, $_);
+  return $_;
+}
+
+
+# @PARAGRAPHS
+# &make_paragraphs ($MAKEFILE, [%TRANSFORM])
+# ------------------------------------------
+# Load a $MAKEFILE, apply the %TRANSFORM, and return it as a list of
+# paragraphs.
+sub make_paragraphs ($%)
+{
+  my ($file, %transform) = @_;
+  $transform{FIRST} = !$transformed_files{$file};
+  $transformed_files{$file} = 1;
+
+  my @lines = split /(?<!\\)\n/, preprocess_file ($file, %transform);
   my @res;
 
   while (defined ($_ = shift @lines))

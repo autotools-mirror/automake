@@ -56,7 +56,7 @@ do_check ()
   cat all.test
   st=0
   if test $use_colors = yes; then
-    make_cmd="$MAKE AM_COLOR_TESTS=always"
+    make_cmd="$MAKE TERM=ansi AM_COLOR_TESTS=always"
   else
     make_cmd=$MAKE
   fi
