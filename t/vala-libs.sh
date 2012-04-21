@@ -49,7 +49,9 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-./configure || skip_ "configure failed"
+grep PKG_CHECK_MODULES configure && skip_ "pkg-config m4 macros not found"
+
+./configure
 
 cat > mu2.c << 'END'
 #include "mu2.h"
