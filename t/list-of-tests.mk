@@ -772,6 +772,7 @@ t/parallel-tests-console-output.sh \
 t/parallel-tests-once.sh \
 t/parallel-tests-trailing-bslash.sh \
 t/parallel-tests-many.sh \
+t/parallel-tests-dynamic.sh \
 t/tests-environment.sh \
 t/am-tests-environment.sh \
 t/tests-environment-backcompat.sh \
