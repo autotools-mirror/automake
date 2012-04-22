@@ -94,10 +94,6 @@ $(syntax_check_rules): automake aclocal
 maintainer-check: $(syntax_check_rules)
 .PHONY: maintainer-check $(syntax_check_rules)
 
-## Check that the list of tests given in the Makefile is equal to the
-## list of all test scripts in the Automake testsuite.
-maintainer-check: maintainer-check-list-of-tests
-
 ## Look for test whose names can cause spurious failures when used as
 ## first argument to AC_INIT (chiefly because they might contain an
 ## m4/m4sugar builtin or macro name).
