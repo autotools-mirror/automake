@@ -29,13 +29,58 @@ am_parallel_tests=yes
 echo AC_OUTPUT >> configure.ac
 
 cat > Makefile.am << 'END'
-TESTS = $(srcdir)/bar.test $(top_srcdir)/baz.test
+TESTS = \
+  $(srcdir)/foo \
+  @srcdir@/foo2 \
+  @srcdir@/bar.test \
+  ${srcdir}/sub/baz.test \
+  built.test
+
+XFAIL_TESTS = $(srcdir)/bar.test foo2
+
+built.test:
+	(echo '#!/bin/sh' && echo 'exit 77') >$@-t
+	chmod a-w,a+x $@-t && mv -f $@-t $@
 END
+
+cat > foo <<'END'
+#!/bin/sh
+exit 0
+END
+chmod a+x foo
+
+cat > foo2 <<'END'
+#!/bin/sh
+exit 1
+END
+chmod a+x foo2
+
+cp foo2 bar.test
+
+mkdir sub
+cp foo sub/baz.test
 
 $ACLOCAL
 $AUTOCONF
-AUTOMAKE_fails -a
-grep '$(srcdir).*TESTS.*bar\.test' stderr
-grep '$(top_srcdir).*TESTS.*baz\.test' stderr
+$AUTOMAKE -a
+
+mkdir build
+cd build
+../configure
+$MAKE check
+
+ls -l . .. # For debugging.
+
+test -f built.log
+test -f foo.log
+test -f bar.log
+test -f sub/baz.log
+test -f test-suite.log
+
+test ! -f ../built.log
+test ! -f ../foo.log
+test ! -f ../bar.log
+test ! -f ../sub/baz.log
+test ! -f ../test-suite.log
 
 :

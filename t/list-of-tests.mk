@@ -40,7 +40,6 @@ t/instdir-cond2.sh \
 t/interp3.sh \
 t/java-nobase.sh \
 t/objext-pr10128.sh \
-t/parallel-tests-srcdir-in-test-name.sh \
 t/parallel-tests-many.sh \
 t/pr8365-remake-timing.sh \
 t/remake-am-pr10111.sh \

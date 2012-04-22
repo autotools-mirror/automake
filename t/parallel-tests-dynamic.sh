@@ -72,9 +72,10 @@ cat > Makefile.am << 'END'
 my_add_dirprefix = $(strip $(1))/$(strip $(2))
 EXTRA_DIST = $(TESTS) get-tests-list
 TEST_EXTENSIONS = .sh
-TESTS = $(wildcard t[0-9][0-9]*.sh) $(shell $(srcdir)/get-tests-list)
+TESTS = $(wildcard $(srcdir)/t[0-9][0-9]*.sh)
+TESTS += $(shell $(srcdir)/get-tests-list)
 TESTS += $(call my_add_dirprefix, t, nosuffix)
-XFAIL_TESTS = $(wildcard t9[0-9]*.sh)
+XFAIL_TESTS = $(wildcard $(srcdir)/t9[0-9]*.sh)
 END
 
 $ACLOCAL
@@ -105,9 +106,7 @@ test "`find . -name *.log`" = ./config.log
 
 $MAKE distcheck > stdout || { cat stdout; Exit 1; }
 cat stdout
-# FIXME: this is currently broken, as the $(wildcard ...) call miss the
-# FIXME: $(srcdir) component ...
-#count_test_results total=11 pass=9 fail=0 xpass=0 xfail=2 skip=0 error=0
+count_test_results total=11 pass=9 fail=0 xpass=0 xfail=2 skip=0 error=0
 
 $MAKE check tests1='$(wildcard t00*.sh t98?.sh)' \
             tests2='$(shell ./get-tests-list | sed 1d)' \

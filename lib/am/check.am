@@ -53,6 +53,15 @@ if %?PARALLEL_TESTS%
 ## of more test metadata, and the use of custom test derivers and protocols
 ## (among them, TAP).
 
+# Required to support explicit use of $(srcdir) in TESTS entries.
+# That might actually be very useful in practice, for example in usages
+# like this:
+#   TESTS = $(wildcard $(srcdir)/t[0-9][0-9]*.sh)
+# Removing the '$(srcdir)' in there would cause the idiom to break in
+# VPATH builds.
+am__cooked_tests = $(patsubst $(srcdir)/%,%,$(strip $(TESTS)))
+am__cooked_xfail_tests = $(patsubst $(srcdir)/%,%,$(strip $(XFAIL_TESTS)))
+
 # Restructured Text title and section.
 am__rst_title = { sed 's/.*/   &   /;h;s/./=/g;p;x;s/ *$$//;p;g' && echo; }
 am__rst_section = { sed 'p;s/./=/g;' && echo; }
@@ -92,7 +101,7 @@ if test -n '$(DISABLE_HARD_ERRORS)'; then		\
 else							\
   am__enable_hard_errors=yes; 				\
 fi; 							\
-case " $(strip $(XFAIL_TESTS)) " in			\
+case " $(am__cooked_xfail_tests) " in			\
   *" $$f "*) am__expect_failure=yes;;			\
           *) am__expect_failure=no;;			\
 esac; 							\
