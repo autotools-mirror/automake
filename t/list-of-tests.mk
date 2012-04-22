@@ -1202,6 +1202,7 @@ t/vala-libs.sh \
 t/vala-vpath.sh \
 t/vala-mix.sh \
 t/vala-mix2.sh \
+t/vala-parallel.sh \
 t/vars.sh \
 t/vars3.sh \
 t/vartar.sh \
