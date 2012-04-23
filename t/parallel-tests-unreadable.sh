@@ -60,31 +60,44 @@ doit ()
   cat stderr >&2
 }
 
-permission_denied ()
+could_not_read ()
 {
-  # FIXME: there are systems where errors on permissions generate a
-  # FIXME: different message?  We might experience spurious failures
-  # FIXME: there ...
-  grep "$1:.*[pP]ermission denied" stderr
+  # We have to settle for weak checks to avoid spurious failures due to
+  # the differences in error massages on different systems; for example:
+  #
+  #   $ cat unreadable-file # GNU/Linux or NetBSD
+  #   cat: unreadable-file: Permission denied
+  #   $ cat unreadable-file # Solaris 10
+  #   cat: cannot open unreadable
+  #
+  #   $ grep foo unreadable-file # GNU/Linux and NetBSD
+  #   grep: unreadable: Permission denied
+  #   $ grep foo unreadable-file # Solaris 10
+  #   grep: can't open "unreadable"
+  #
+  # FIXME: this might still needs adjustments on other systems ...
+  #
+  grep "$1:.*[pP]ermission denied" stderr \
+    || $EGREP "can(no|')t open [\"'\`]?$1" stderr
 }
 
 for lst in bar.log 'foo.log bar.log'; do
   doit $lst
-  permission_denied bar.log
+  could_not_read bar.log
   grep 'test-suite\.log:.* I/O error reading test logs' stderr
 done
 
 doit foo.trs
-permission_denied foo.trs
+could_not_read foo.trs
 grep 'test-suite\.log:.* I/O error reading test results' stderr
 
 doit foo.trs bar.trs
-permission_denied foo.trs
-permission_denied bar.trs
+could_not_read foo.trs
+could_not_read bar.trs
 grep 'test-suite\.log:.* I/O error reading test results' stderr
 
 doit foo.trs bar.log
-permission_denied foo.trs
+could_not_read foo.trs
 grep 'test-suite\.log:.* I/O error reading test results' stderr
 
 :
