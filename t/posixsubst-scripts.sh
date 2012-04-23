@@ -65,17 +65,17 @@ test2: distdir
 	test ! -r $(distdir)/quux.pl
 
 installcheck-local:
-	ls -l $(prefix)/libexec $(prefix)/bin $(prefix)/sbin
-	test -f $(prefix)/sbin/foo1.sh
-	test -x $(prefix)/sbin/foo1.sh
-	test -f $(prefix)/sbin/foo2.sh
-	test -x $(prefix)/sbin/foo2.sh
-	test -f $(prefix)/libexec/bar1
-	test -x $(prefix)/libexec/bar1
-	test -f $(prefix)/libexec/bar2
-	test -x $(prefix)/libexec/bar2
-	test -f $(prefix)/bin/quux.pl
-	test -x $(prefix)/bin/quux.pl
+	ls -l $(libexecdir) $(bindir) $(sbindir)
+	test -f $(sbindir)/foo1.sh
+	test -x $(sbindir)/foo1.sh
+	test -f $(sbindir)/foo2.sh
+	test -x $(sbindir)/foo2.sh
+	test -f $(libexecdir)/bar1
+	test -x $(libexecdir)/bar1
+	test -f $(libexecdir)/bar2
+	test -x $(libexecdir)/bar2
+	test -f $(bindir)/quux.pl
+	test -x $(bindir)/quux.pl
 END
 
 cat > foo1.sh <<'END'
