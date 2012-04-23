@@ -885,6 +885,7 @@ t/python-virtualenv.sh \
 t/python-pr10995.sh \
 t/recurs.sh \
 t/recurs2.sh \
+t/relativize.tap \
 t/remake.sh \
 t/remake1a.sh \
 t/remake2.sh \
