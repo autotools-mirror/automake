@@ -56,7 +56,9 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-./configure || skip_ "configure failure"
+grep PKG_CHECK_MODULES configure && skip_ "pkg-config m4 macros not found"
+
+./configure
 $MAKE
 
 # Test rebuild rules.

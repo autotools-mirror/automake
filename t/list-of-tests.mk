@@ -882,6 +882,7 @@ t/python-virtualenv.sh \
 t/python-pr10995.sh \
 t/recurs.sh \
 t/recurs2.sh \
+t/relativize.tap \
 t/remake.sh \
 t/remake1a.sh \
 t/remake2.sh \
@@ -1195,6 +1196,7 @@ t/vala-libs.sh \
 t/vala-vpath.sh \
 t/vala-mix.sh \
 t/vala-mix2.sh \
+t/vala-parallel.sh \
 t/vars.sh \
 t/vars-assign.sh \
 t/vartar.sh \

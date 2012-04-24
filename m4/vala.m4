@@ -6,7 +6,7 @@
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 5
+# serial 6
 
 # Check whether the Vala compiler exists in $PATH. If it is found, the
 # variable VALAC is set. Optionally a minimum release number of the
@@ -25,5 +25,5 @@ AC_DEFUN([AM_PROG_VALAC],
          [AC_MSG_RESULT([yes])],
          [AC_MSG_RESULT([yes])],
          [AC_MSG_RESULT([no])
-          AC_MSG_ERROR([Vala $1 not found.])])])])
+          AC_MSG_ERROR([Vala $1 not found.], [77])])])])
 ])

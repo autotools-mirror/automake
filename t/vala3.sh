@@ -50,7 +50,9 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-./configure || skip_ "configure failure"
+grep PKG_CHECK_MODULES configure && skip_ "pkg-config m4 macros not found"
+
+./configure
 $MAKE
 test -f src/zardoz.c
 test -f src_zardoz_vala.stamp

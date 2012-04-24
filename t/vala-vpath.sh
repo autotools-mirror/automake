@@ -49,7 +49,7 @@ $AUTOMAKE
 
 mkdir build
 cd build
-../configure || Exit 77
+../configure
 $MAKE
 test -f ../foo_vala.stamp
 test -f ../bar_vala.stamp
