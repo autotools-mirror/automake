@@ -376,6 +376,7 @@ XFAIL_TESTS = \
   t/yacc-bison-skeleton-cxx.sh \
   t/yacc-bison-skeleton.sh \
   t/cond17.sh \
+  t/dist-srcdir2.sh \
   t/gcj6.sh \
   t/override-conditional-2.sh \
   t/dist-pr109765.sh \

@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2010-2012 Free Software Foundation, Inc.
+# Copyright (C) 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,36 +14,36 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that wildcards in elements of EXTRA_DIST are honoured when
-# $srcdir != $builddir, if properly declared.
-# Suggested by observations from Braden McDaniel.
+# If we distribute a file whose name that starts with $(srcdir),
+# then the distribution rules should not try to instead distribute
+# a file with the same name from the builddir.
+# Currently, this doesn't work (the reasons and details for this
+# limitation should be explained in depth in comments in file
+# 'lib/am/distdir.am').
 
 . ./defs || Exit 1
 
 echo AC_OUTPUT >> configure.ac
 
 cat > Makefile.am <<'END'
-EXTRA_DIST = $(wildcard *.foo $(srcdir)/*.foo $(builddir)/*.bar $(srcdir)/*.bar)
-
-.PHONY: test
-test: distdir
-	ls -l $(srcdir) $(builddir) $(distdir)
-	diff $(srcdir)/a.foo $(distdir)/a.foo
-	diff $(srcdir)/b.bar $(distdir)/b.bar
-	diff $(builddir)/c.foo $(distdir)/c.foo
-	diff $(builddir)/d.bar $(distdir)/d.bar
+EXTRA_DIST = $(srcdir)/filename-that-is-easy-to-grep
 END
 
 $ACLOCAL
-$AUTOMAKE
 $AUTOCONF
+$AUTOMAKE -a
 
-echo aaa > a.foo
-echo bbb > b.bar
 mkdir build
-echo ccc > build/c.foo
-echo ddd > build/d.bar
-
 cd build
 ../configure
-$MAKE test
+
+echo bad > filename-that-is-easy-to-grep
+$MAKE distdir 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+grep 'filename-that-is-easy-to-grep' stderr
+
+echo good > ../filename-that-is-easy-to-grep
+$MAKE distdir
+test "`cat $distdir/filename-that-is-easy-to-grep`" = good
+
+:
