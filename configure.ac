@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-AC_PREREQ([2.68])
+AC_PREREQ([2.69])
 AC_INIT([GNU Automake], [1.12.0a], [bug-automake@gnu.org])
 
 AC_CONFIG_SRCDIR([automake.in])
@@ -299,7 +299,6 @@ _AM_COMPILER_CAN_FAIL([AC_PROG_FC(dnl
   [xlf90 f90 pgf90 pghpf epcf90 g95 gfortran])],
   [FC=false; _AM_SKIP_COMP_TESTS([Fortran])])
 
-# FIXME this won't work as expected until we can assume autoconf 2.69 :-(
 AS_IF([test x"$GFC" = x"yes"], [am_FC_is_GNU=yes], [am_FC_is_GNU=no])
 
 _AM_COMPILER_CAN_FAIL([AC_PROG_F77(dnl
