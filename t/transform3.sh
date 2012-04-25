@@ -35,6 +35,27 @@ bin_SCRIPTS = foo
 pkgdata_DATA = bar.txt
 pkglib_LIBRARIES = libzap.a
 pkglibexec_SCRIPTS = mu
+
+test-install: install
+	find $(prefix) ;: For debugging.
+	test   -f $(bindir)/gnu-foo
+	test   -x $(bindir)/gnu-foo
+	test   -f $(datadir)/foo/bar.txt
+	test ! -d $(datadir)/gnu-foo
+	test   -f $(libdir)/foo/libzap.a
+	test ! -d $(libdir)/gnu-foo
+	test   -f $(libexecdir)/foo/gnu-mu
+	test   -x $(libexecdir)/foo/gnu-mu
+	test ! -d $(libexecdir)/gnu-foo
+
+test-installdirs: installdirs
+	find $(prefix) ;: For debugging.
+	test   -d $(datadir)/foo
+	test ! -d $(datadir)/gnu-foo
+	test   -d $(libdir)/foo
+	test ! -d $(libdir)/gnu-foo
+	test   -d $(libexecdir)/foo
+	test ! -d $(libexecdir)/gnu-foo
 END
 
 cat > libzap.c <<'END'
@@ -59,29 +80,13 @@ $AUTOMAKE -a
 
 ./configure --program-prefix=gnu- --prefix "`pwd`/inst"
 
-$MAKE install
-find inst # For debugging.
-test -f inst/bin/gnu-foo
-test -x inst/bin/gnu-foo
-test -f inst/share/foo/bar.txt
-test ! -d inst/share/gnu-foo
-test -f inst/lib/foo/libzap.a
-test ! -d inst/lib/gnu-foo
-test -f inst/libexec/foo/gnu-mu
-test -x inst/libexec/foo/gnu-mu
-test ! -d inst/libexec/gnu-foo
+$MAKE test-install
 
 $MAKE uninstall
 test `find inst -type f -print | wc -l` = 0
 
 # Opportunistically test for installdirs.
 rm -rf inst
-$MAKE installdirs
-test -d inst/share/foo
-test ! -d inst/share/gnu-foo
-test -d inst/lib/foo
-test ! -d inst/lib/gnu-foo
-test -d inst/libexec/foo
-test ! -d inst/libexec/gnu-foo
+$MAKE test-installdirs
 
 :
