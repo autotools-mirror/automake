@@ -1,4 +1,4 @@
-# Copyright (C) 2001, 2003  Free Software Foundation, Inc.
+# Copyright (C) 2001-2012 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 
 package Automake::General;
 
-use 5.005;
+use 5.006;
 use strict;
 use Exporter;
 use File::Basename;
@@ -26,7 +26,7 @@ use vars qw (@ISA @EXPORT);
 @EXPORT = qw (&uniq $me);
 
 # Variable we share with the main package.  Be sure to have a single
-# copy of them: using `my' together with multiple inclusion of this
+# copy of them: using 'my' together with multiple inclusion of this
 # package would introduce several copies.
 use vars qw ($me);
 $me = basename ($0);

@@ -1,4 +1,4 @@
-# Copyright (C) 2003, 2006  Free Software Foundation, Inc.
+# Copyright (C) 2003-2012 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,6 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package Automake::ItemDef;
+
+use 5.006;
 use strict;
 use Carp;
 

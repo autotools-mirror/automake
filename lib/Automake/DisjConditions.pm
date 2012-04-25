@@ -1,4 +1,4 @@
-# Copyright (C) 1997, 2001, 2002, 2003, 2004, 2006  Free Software Foundation, Inc.
+# Copyright (C) 1997-2012 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,8 +15,9 @@
 
 package Automake::DisjConditions;
 
-use Carp;
+use 5.006;
 use strict;
+use Carp;
 use Automake::Condition qw/TRUE FALSE/;
 
 =head1 NAME
@@ -136,7 +137,7 @@ ignored.
 =cut
 
 # Keys in this hash are DisjConditions strings. Values are the
-# associated object DisjConditions.  This is used by `new' to reuse
+# associated object DisjConditions.  This is used by 'new' to reuse
 # DisjConditions objects with identical conditions.
 use vars '%_disjcondition_singletons';
 
@@ -146,8 +147,8 @@ sub new ($;@)
   my @filtered_conds = ();
   for my $cond (@conds)
     {
-      confess "`$cond' isn't a reference" unless ref $cond;
-      confess "`$cond' isn't an Automake::Condition"
+      confess "'$cond' isn't a reference" unless ref $cond;
+      confess "'$cond' isn't an Automake::Condition"
 	unless $cond->isa ("Automake::Condition");
 
       # This is a disjunction of conditions, so we drop
@@ -462,7 +463,7 @@ sub sub_conditions ($$)
   my ($self, $subcond) = @_;
 
   # Make $subcond blindingly apparent in the DisjConditions.
-  # For instance `$b->multiply($a->conds)' (from the POD example) is:
+  # For instance '$b->multiply($a->conds)' (from the POD example) is:
   # 	(new Automake::Condition ("FALSE"),
   # 	 new Automake::Condition ("A_TRUE", "B_FALSE", "C_FALSE"),
   # 	 new Automake::Condition ("A_TRUE", "B_FALSE", "C_TRUE"),

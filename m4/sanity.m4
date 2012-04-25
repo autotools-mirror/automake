@@ -1,13 +1,12 @@
 # Check to make sure that the build environment is sane.    -*- Autoconf -*-
 
-# Copyright (C) 1996, 1997, 2000, 2001, 2003, 2005, 2008, 2009
-# Free Software Foundation, Inc.
+# Copyright (C) 1996-2012 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 6
+# serial 9
 
 # AM_SANITY_CHECK
 # ---------------
@@ -23,23 +22,23 @@ case `pwd` in
 esac
 case $srcdir in
   *[[\\\"\#\$\&\'\`$am_lf\ \	]]*)
-    AC_MSG_ERROR([unsafe srcdir value: `$srcdir']);;
+    AC_MSG_ERROR([unsafe srcdir value: '$srcdir']);;
 esac
 
-# Do `set' in a subshell so we don't clobber the current shell's
+# Do 'set' in a subshell so we don't clobber the current shell's
 # arguments.  Must try -L first in case configure is actually a
 # symlink; some systems play weird games with the mod time of symlinks
 # (eg FreeBSD returns the mod time of the symlink's containing
 # directory).
 if (
+   am_has_slept=no
    for am_try in 1 2; do
-     echo timestamp > conftest.file
+     echo "timestamp, slept: $am_has_slept" > conftest.file
      set X `ls -Lt "$srcdir/configure" conftest.file 2> /dev/null`
      if test "$[*]" = "X"; then
 	# -L didn't work.
 	set X `ls -t "$srcdir/configure" conftest.file`
      fi
-     rm -f conftest.file
      if test "$[*]" != "X $srcdir/configure conftest.file" \
 	&& test "$[*]" != "X conftest.file $srcdir/configure"; then
 
@@ -55,6 +54,7 @@ if (
      fi
      # Just in case.
      sleep 1
+     am_has_slept=yes
    done
    test "$[2]" = conftest.file
    )
@@ -65,4 +65,20 @@ else
    AC_MSG_ERROR([newly created file is older than distributed files!
 Check your system clock])
 fi
-AC_MSG_RESULT(yes)])
+AC_MSG_RESULT([yes])
+# If we didn't sleep, we still need to ensure time stamps of config.status and
+# generated files are strictly newer.
+am_sleep_pid=
+if grep 'slept: no' conftest.file >/dev/null 2>&1; then
+  ( sleep 1 ) &
+  am_sleep_pid=$!
+fi
+AC_CONFIG_COMMANDS_PRE(
+  [AC_MSG_CHECKING([that generated files are newer than configure])
+   if test -n "$am_sleep_pid"; then
+     # Hide warnings about reused PIDs.
+     wait $am_sleep_pid 2>/dev/null
+   fi
+   AC_MSG_RESULT([done])])
+rm -f conftest.file
+])

@@ -1,4 +1,4 @@
-# Copyright (C) 2003, 2004  Free Software Foundation, Inc.
+# Copyright (C) 2003-2012 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,9 +14,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package Automake::Item;
+
+use 5.006;
 use strict;
 use Carp;
-
 use Automake::ChannelDefs;
 use Automake::DisjConditions;
 
@@ -71,7 +72,7 @@ sub def ($$)
 {
   # This method is called very often, so keep it small and fast.  We
   # don't mind the extra undefined items introduced by lookup failure;
-  # avoiding this with `exists' means doing two hash lookup on
+  # avoiding this with 'exists' means doing two hash lookup on
   # success, and proved worse on benchmark.
   my $def = $_[0]->{'defs'}{$_[1]};
   return defined $def && $def;
@@ -91,7 +92,7 @@ sub rdef ($$)
 {
   my ($self, $cond) = @_;
   my $d = $self->def ($cond);
-  prog_error ("undefined condition `" . $cond->human . "' for `"
+  prog_error ("undefined condition '" . $cond->human . "' for '"
 	      . $self->name . "'\n" . $self->dump)
     unless $d;
   return $d;

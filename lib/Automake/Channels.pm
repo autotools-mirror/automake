@@ -1,5 +1,4 @@
-# Copyright (C) 2002, 2004, 2006, 2008, 2010 Free Software Foundation,
-# Inc.
+# Copyright (C) 2002-2012 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,7 +35,7 @@ Automake::Channels - support functions for error and warning management
   register_channel 'system', type => 'error', exit_code => 4;
 
   # Output a message on channel 'unused'.
-  msg 'unused', "$file:$line", "unused variable `$var'";
+  msg 'unused', "$file:$line", "unused variable '$var'";
 
   # Make the 'unused' channel silent.
   setup_channel 'unused', silent => 1;
@@ -67,7 +66,7 @@ etc.) that can also be overridden on a per-message basis.
 
 =cut
 
-use 5.005;
+use 5.006;
 use strict;
 use Exporter;
 use Carp;
@@ -164,7 +163,7 @@ functions.  The possible keys, with their default value are:
 The type of the channel.  One of C<'debug'>, C<'warning'>, C<'error'>, or
 C<'fatal'>.  Fatal messages abort the program when they are output.
 Error messages update the exit status.  Debug and warning messages are
-harmless, except that warnings can be treated as errors of
+harmless, except that warnings are treated as errors if
 C<$warnings_are_errors> is set.
 
 =item C<exit_code =E<gt> 1>
@@ -204,10 +203,14 @@ C<US_LOCAL>, and C<US_GLOBAL> constants above.
 =item C<header =E<gt> ''>
 
 A string to prepend to each message emitted through this channel.
+With partial messages, only the first part will have C<header>
+prepended.
 
 =item C<footer =E<gt> ''>
 
 A string to append to each message emitted through this channel.
+With partial messages, only the final part will have C<footer>
+appended.
 
 =item C<backtrace =E<gt> 0>
 
@@ -337,7 +340,7 @@ sub _merge_options (\%%)
 	}
       else
 	{
-	  confess "unknown option `$_'";
+	  confess "unknown option '$_'";
 	}
     }
   if ($hash->{'ordered'})
@@ -399,20 +402,24 @@ sub _format_sub_message ($$)
   return $leader . join ("\n" . $leader, split ("\n", $message)) . "\n";
 }
 
+# Store partial messages here. (See the 'partial' option.)
+use vars qw ($partial);
+$partial = '';
+
 # _format_message ($LOCATION, $MESSAGE, %OPTIONS)
 # -----------------------------------------------
 # Format the message.  Return a string ready to print.
 sub _format_message ($$%)
 {
   my ($location, $message, %opts) = @_;
-  my $msg = '';
+  my $msg = ($partial eq '' ? $opts{'header'} : '') . $message
+	    . ($opts{'partial'} ? '' : $opts{'footer'});
   if (ref $location)
     {
       # If $LOCATION is a reference, assume it's an instance of the
       # Automake::Location class and display contexts.
       my $loc = $location->get || $me;
-      $msg = _format_sub_message ("$loc: ", $opts{'header'}
-				  . $message . $opts{'footer'});
+      $msg = _format_sub_message ("$loc: ", $msg);
       for my $pair ($location->get_contexts)
 	{
 	  $msg .= _format_sub_message ($pair->[0] . ":   ", $pair->[1]);
@@ -421,8 +428,7 @@ sub _format_message ($$%)
   else
     {
       $location ||= $me;
-      $msg = _format_sub_message ("$location: ", $opts{'header'}
-				  . $message . $opts{'footer'});
+      $msg = _format_sub_message ("$location: ", $msg);
     }
   return $msg;
 }
@@ -484,10 +490,6 @@ sub _dequeue ($)
 }
 
 
-# Store partial messages here. (See the 'partial' option.)
-use vars qw ($partial);
-$partial = '';
-
 # _print_message ($LOCATION, $MESSAGE, %OPTIONS)
 # ----------------------------------------------
 # Format the message, check duplicates, and print it.
@@ -510,6 +512,9 @@ sub _print_message ($$%)
       $msg = $partial . $msg;
       $partial = '';
     }
+
+  msg ('note', '', 'warnings are treated as errors', uniq_scope => US_GLOBAL)
+    if ($opts{'type'} eq 'warning' && $warnings_are_errors);
 
   # Check for duplicate message if requested.
   my $to_filter;
@@ -580,12 +585,12 @@ associated to the message.
 For instance to complain about some unused variable C<mumble>
 declared at line 10 in F<foo.c>, one could do:
 
-  msg 'unused', 'foo.c:10', "unused variable `mumble'";
+  msg 'unused', 'foo.c:10', "unused variable 'mumble'";
 
 If channel C<unused> is not silent (and if this message is not a duplicate),
 the following would be output:
 
-  foo.c:10: unused variable `mumble'
+  foo.c:10: unused variable 'mumble'
 
 C<$location> can also be an instance of C<Automake::Location>.  In this
 case, the stack of contexts will be displayed in addition.
@@ -674,7 +679,7 @@ Override the options of C<$channel> with those specified by C<%options>.
 sub setup_channel ($%)
 {
   my ($name, %opts) = @_;
-  confess "channel $name doesn't exist" unless exists $channels{$name};
+  confess "unknown channel $name" unless exists $channels{$name};
   _merge_options %{$channels{$name}}, %opts;
 }
 

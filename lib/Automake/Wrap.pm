@@ -1,4 +1,4 @@
-# Copyright (C) 2003, 2006  Free Software Foundation, Inc.
+# Copyright (C) 2003-2012 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,6 +15,7 @@
 
 package Automake::Wrap;
 
+use 5.006;
 use strict;
 
 require Exporter;
@@ -48,10 +49,10 @@ maximum length allowed.  (Ticket #17141, fixed in Perl 5.8.0.)
 
 =cut
 
-# tab_length ($TXT)
-# -----------------
+# _tab_length ($TXT)
+# ------------------
 # Compute the length of TXT, counting tab characters as 8 characters.
-sub tab_length($)
+sub _tab_length($)
 {
   my ($txt) = @_;
   my $len = length ($txt);
@@ -78,16 +79,16 @@ sub wrap($$$$@)
   my ($head, $fill, $eol, $max_len, @values) = @_;
 
   my $result = $head;
-  my $column = tab_length ($head);
+  my $column = _tab_length ($head);
 
-  my $fill_len = tab_length ($fill);
-  my $eol_len = tab_length ($eol);
+  my $fill_len = _tab_length ($fill);
+  my $eol_len = _tab_length ($eol);
 
   my $not_first_word = 0;
 
   foreach (@values)
     {
-      my $len = tab_length ($_);
+      my $len = _tab_length ($_);
 
       # See if the new variable fits on this line.
       # (The + 1 is for the space we add in front of the value.).

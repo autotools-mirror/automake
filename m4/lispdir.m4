@@ -3,14 +3,13 @@
 ## From Ulrich Drepper
 ## Almost entirely rewritten by Alexandre Oliva
 ## ------------------------
-# Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,
-# 2006  Free Software Foundation, Inc.
+# Copyright (C) 1996-2012 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 10
+# serial 11
 
 # AM_PATH_LISPDIR
 # ---------------
@@ -23,7 +22,8 @@ AC_DEFUN([AM_PATH_LISPDIR],
  AC_ARG_VAR([EMACS], [the Emacs editor command])
  AC_ARG_VAR([EMACSLOADPATH], [the Emacs library search path])
  AC_ARG_WITH([lispdir],
- [  --with-lispdir          override the default lisp directory],
+ [AS_HELP_STRING([--with-lispdir],
+                 [override the default lisp directory])],
  [ lispdir="$withval"
    AC_MSG_CHECKING([where .elc files should go])
    AC_MSG_RESULT([$lispdir])],

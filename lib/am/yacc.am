@@ -1,6 +1,5 @@
 ## automake - create Makefile.in from Makefile.am
-## Copyright (C) 1998, 1999, 2001, 2002, 2003, 2004, 2006, 2009
-##   Free Software Foundation, Inc.
+## Copyright (C) 1998-2012 Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -20,7 +19,7 @@
 ##   2. --enable-maintainer-mode is not specified, and
 ##   3. parser.c already exist, and
 ##   4. parser.y and parser.c are distributed.
-## Point #3 is because `make maintainer-clean' erases parser.c, yet
+## Point #3 is because "make maintainer-clean" erases parser.c, yet
 ## the GNU Coding Standards require that ./configure; make works even
 ## after that.
 ## Point #4 is because parsers listed in nodist_*_SOURCES are always
@@ -33,16 +32,19 @@
 ## distributed or not.  We cannot have a generic rule that works in
 ## both cases, so we ensure in automake that nodist_ parsers always
 ## use non-generic rules.
-if %?MAINTAINER-MODE%
 if %?FIRST%
+if %?MAINTAINER-MODE%
 @MAINTAINER_MODE_FALSE@am__skipyacc = test -f $@ ||
-endif %?FIRST%
 endif %?MAINTAINER-MODE%
+## The 's/c$/h/' substitution *must* be the last one.
+am__yacc_c2h = sed -e s/cc$$/hh/ -e s/cpp$$/hpp/ -e s/cxx$$/hxx/ \
+		   -e s/c++$$/h++/ -e s/c$$/h/
+endif %?FIRST%
 
 ?GENERIC?%EXT%%DERIVED-EXT%:
 ?!GENERIC?%OBJ%: %SOURCE%
-?GENERIC?	%VERBOSE%$(am__skipyacc) $(SHELL) $(YLWRAP) %SOURCE% y.tab.c %OBJ% y.tab.h %BASE%.h y.output %BASE%.output -- %COMPILE%
+?GENERIC?	%VERBOSE%$(am__skipyacc) $(SHELL) $(YLWRAP) %SOURCE% y.tab.c %OBJ% y.tab.h `echo %OBJ% | $(am__yacc_c2h)` y.output %BASE%.output -- %COMPILE%
 ?!GENERIC?	%VERBOSE% \
 ?!GENERIC??DIST_SOURCE?	$(am__skipyacc) \
 ## For non-suffix rules, we must emulate a VPATH search on %SOURCE%.
-?!GENERIC?	$(SHELL) $(YLWRAP) `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE% y.tab.c %OBJ% y.tab.h %BASE%.h y.output %BASE%.output -- %COMPILE%
+?!GENERIC?	$(SHELL) $(YLWRAP) `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE% y.tab.c %OBJ% y.tab.h `echo %OBJ% | $(am__yacc_c2h)` y.output %BASE%.output -- %COMPILE%

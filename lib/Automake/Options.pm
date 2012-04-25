@@ -1,5 +1,4 @@
-# Copyright (C) 2003, 2004, 2006, 2007, 2008, 2009, 2010 Free Software
-# Foundation, Inc.
+# Copyright (C) 2003-2012 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,6 +15,7 @@
 
 package Automake::Options;
 
+use 5.006;
 use strict;
 use Exporter;
 use Automake::Config;
@@ -27,11 +27,11 @@ use vars qw (@ISA @EXPORT);
 
 @ISA = qw (Exporter);
 @EXPORT = qw (option global_option
-	      set_option set_global_option
-	      unset_option unset_global_option
-	      process_option_list process_global_option_list
-	      set_strictness $strictness $strictness_name
-	      &FOREIGN &GNU &GNITS);
+              set_option set_global_option
+              unset_option unset_global_option
+              process_option_list process_global_option_list
+              set_strictness $strictness $strictness_name
+              &FOREIGN &GNU &GNITS);
 
 =head1 NAME
 
@@ -71,10 +71,15 @@ F<Makefile.am>s.
 
 =cut
 
-# Values are the Automake::Location of the definition, except
-# for 'ansi2knr' whose value is a pair [filename, Location].
-use vars '%_options';		# From AUTOMAKE_OPTIONS
-use vars '%_global_options';	# from AM_INIT_AUTOMAKE or the command line.
+# Values are the Automake::Location of the definition.
+use vars '%_options';        # From AUTOMAKE_OPTIONS
+use vars '%_global_options'; # From AM_INIT_AUTOMAKE or the command line.
+
+# Whether process_option_list has already been called for the current
+# Makefile.am.
+use vars '$_options_processed';
+# Whether process_global_option_list has already been called.
+use vars '$_global_options_processed';
 
 =head2 Constants
 
@@ -135,6 +140,7 @@ previous F<Makefile.am>.
 
 sub reset ()
 {
+  $_options_processed = 0;
   %_options = %_global_options;
   # The first time we are run,
   # remember the current setting as the default.
@@ -222,135 +228,180 @@ sub unset_global_option ($)
 }
 
 
-=item C<process_option_list ($where, @options)>
+=item C<process_option_list (@list)>
 
-=item C<process_global_option_list ($where, @options)>
+=item C<process_global_option_list (@list)>
 
-Process Automake's option lists.  C<@options> should be a list of
-words, as they occur in C<AUTOMAKE_OPTIONS> or C<AM_INIT_AUTOMAKE>.
+Process Automake's option lists.  C<@list> should be a list of hash
+references with keys C<option> and C<where>, where C<option> is an
+option as they occur in C<AUTOMAKE_OPTIONS> or C<AM_INIT_AUTOMAKE>,
+and C<where> is the location where that option occurred.
+
+These functions should be called at most once for each set of options
+having the same precedence; i.e., do not call it twice for two options
+from C<AM_INIT_AUTOMAKE>.
 
 Return 1 on error, 0 otherwise.
 
 =cut
 
-# $BOOL
-# _process_option_list (\%OPTIONS, $WHERE, @OPTIONS)
-# --------------------------------------------------
-# Process a list of options.  Return 1 on error, 0 otherwise.
-# \%OPTIONS is the hash to fill with options data, $WHERE is
-# the location where @OPTIONS occurred.
-sub _process_option_list (\%$@)
+# _option_must_be_from_configure ($OPTION, $WHERE)
+# ----------------------------------------------
+# Check that the $OPTION given in location $WHERE is specified with
+# AM_INIT_AUTOMAKE, not with AUTOMAKE_OPTIONS.
+sub _option_must_be_from_configure ($$)
 {
-  my ($options, $where, @list) = @_;
+  my ($opt, $where)= @_;
+  return
+    if $where->get =~ /^configure\./;
+  error $where,
+        "option '$opt' can only be used as argument to AM_INIT_AUTOMAKE\n" .
+        "but not in AUTOMAKE_OPTIONS makefile statements";
+}
 
-  foreach (@list)
+# _is_valid_easy_option ($OPTION)
+# -------------------------------
+# Explicitly recognize valid automake options that require no
+# special handling by '_process_option_list' below.
+sub _is_valid_easy_option ($)
+{
+  my $opt = shift;
+  return scalar grep { $opt eq $_ } qw(
+    check-news
+    color-tests
+    cygnus
+    dejagnu
+    dist-bzip2
+    dist-lzip
+    dist-shar
+    dist-tarZ
+    dist-xz
+    dist-zip
+    no-define
+    no-dependencies
+    no-dist
+    no-dist-gzip
+    no-exeext
+    no-installinfo
+    no-installman
+    no-texinfo.tex
+    nostdinc
+    readme-alpha
+    std-options
+    subdir-objects
+  );
+}
+
+# $BOOL
+# _process_option_list (\%OPTIONS, @LIST)
+# ------------------------------------------
+# Process a list of options.  \%OPTIONS is the hash to fill with options
+# data.  @LIST is a list of options as get passed to public subroutines
+# process_option_list() and process_global_option_list() (see POD
+# documentation above).
+sub _process_option_list (\%@)
+{
+  my ($options, @list) = @_;
+  my @warnings = ();
+
+  foreach my $h (@list)
     {
+      local $_ = $h->{'option'};
+      my $where = $h->{'where'};
       $options->{$_} = $where;
       if ($_ eq 'gnits' || $_ eq 'gnu' || $_ eq 'foreign')
-	{
-	  set_strictness ($_);
-	}
+        {
+          set_strictness ($_);
+        }
       elsif (/^(.*\/)?ansi2knr$/)
-	{
-          # This feature is deprecated, will be removed in the next
-          # Automake major release.
-          msg 'obsolete', $where,
-              "automatic de-ANSI-fication support is deprecated\n";
-	  # An option like "../lib/ansi2knr" is allowed.  With no
-	  # path prefix, we assume the required programs are in this
-	  # directory.  We save the actual option for later.
-	  $options->{'ansi2knr'} = [$_, $where];
-	}
+        {
+          # Obsolete (and now removed) de-ANSI-fication support.
+          error ($where,
+                 "automatic de-ANSI-fication support has been removed");
+        }
       elsif ($_ eq 'dist-lzma')
         {
-          # Creation of distribution tarball compressed with lzma is
-          # deprecated, will be removed in the next major release.
-          msg 'obsolete', $where,
-              "lzma compression is deprecated; use `dist-xz' " .
-              "or `dist-lzip' instead\n";
+          error ($where, "support for lzma-compressed distribution " .
+                         "archives has been removed");
         }
-      elsif ($_ eq 'no-installman' || $_ eq 'no-installinfo'
-	     || $_ eq 'dist-shar' || $_ eq 'dist-zip'
-	     || $_ eq 'dist-tarZ' || $_ eq 'dist-bzip2'
-	     || $_ eq 'dist-lzip' || $_ eq 'dist-xz'
-	     || $_ eq 'no-dist-gzip' || $_ eq 'no-dist'
-	     || $_ eq 'dejagnu' || $_ eq 'no-texinfo.tex'
-	     || $_ eq 'readme-alpha' || $_ eq 'check-news'
-	     || $_ eq 'subdir-objects' || $_ eq 'nostdinc'
-	     || $_ eq 'no-exeext' || $_ eq 'no-define'
-	     || $_ eq 'std-options'
-	     || $_ eq 'color-tests' || $_ eq 'parallel-tests'
-	     || $_ eq 'cygnus' || $_ eq 'no-dependencies')
-	{
-	  # Explicitly recognize these.
-	}
-      elsif ($_ =~ /^filename-length-max=(\d+)$/)
-	{
-	  delete $options->{$_};
-	  $options->{'filename-length-max'} = [$_, $1];
-	}
-      elsif ($_ eq  'silent-rules')
+      elsif ($_ eq 'parallel-tests')
         {
-	  error ($where,
-		 "option `$_' can only be used as argument to AM_INIT_AUTOMAKE\n"
-		 . "but not in AUTOMAKE_OPTIONS makefile statements")
-	    if $where->get !~ /^configure\./;
-	}
+          # Just recognize it explicitly.
+        }
+      elsif ($_ eq 'serial-tests')
+        {
+          # This is a little of an hack, but good enough for the moment.
+          delete $options->{'parallel-tests'};
+        }
+      elsif (/^filename-length-max=(\d+)$/)
+        {
+          delete $options->{$_};
+          $options->{'filename-length-max'} = [$_, $1];
+        }
+      elsif ($_ eq 'silent-rules')
+        {
+          _option_must_be_from_configure ($_, $where);
+        }
       elsif ($_ eq 'tar-v7' || $_ eq 'tar-ustar' || $_ eq 'tar-pax')
-	{
-	  error ($where,
-		 "option `$_' can only be used as argument to AM_INIT_AUTOMAKE\n"
-		 . "but not in AUTOMAKE_OPTIONS makefile statements")
-	    if $where->get !~ /^configure\./;
-	  for my $opt ('tar-v7', 'tar-ustar', 'tar-pax')
-	    {
-	      next if $opt eq $_;
-	      if (exists $options->{$opt})
-		{
-		  error ($where,
-			 "options `$_' and `$opt' are mutually exclusive");
-		  last;
-		}
-	    }
-	}
+        {
+          _option_must_be_from_configure ($_, $where);
+          for my $opt ('tar-v7', 'tar-ustar', 'tar-pax')
+            {
+              next
+                if $opt eq $_ or ! exists $options->{$opt};
+              error ($where,
+                     "options '$_' and '$opt' are mutually exclusive");
+              last;
+            }
+        }
       elsif (/^\d+\.\d+(?:\.\d+)?[a-z]?(?:-[A-Za-z0-9]+)?$/)
-	{
-	  # Got a version number.
-	  if (Automake::Version::check ($VERSION, $&))
-	    {
-	      error ($where, "require Automake $_, but have $VERSION",
-		     uniq_scope => US_GLOBAL);
-	      return 1;
-	    }
-	}
+        {
+          # Got a version number.
+          if (Automake::Version::check ($VERSION, $&))
+            {
+              error ($where, "require Automake $_, but have $VERSION",
+                     uniq_scope => US_GLOBAL);
+              return 1;
+            }
+        }
       elsif (/^(?:--warnings=|-W)(.*)$/)
-	{
-	  foreach my $cat (split (',', $1))
-	    {
-	      msg 'unsupported', $where, "unknown warning category `$cat'"
-		if switch_warning $cat;
-	    }
-	}
-      else
-	{
-	  error ($where, "option `$_' not recognized",
-		 uniq_scope => US_GLOBAL);
-	  return 1;
-	}
+        {
+          my @w = map { { cat => $_, loc => $where} } split (',', $1);
+          push @warnings, @w;
+        }
+      elsif (! _is_valid_easy_option $_)
+        {
+          error ($where, "option '$_' not recognized",
+                 uniq_scope => US_GLOBAL);
+          return 1;
+        }
+    }
+  # We process warnings here, so that any explicitly-given warning setting
+  # will take precedence over warning settings defined implicitly by the
+  # strictness.
+  foreach my $w (@warnings)
+    {
+      msg 'unsupported', $w->{'loc'},
+          "unknown warning category '$w->{'cat'}'"
+        if switch_warning $w->{cat};
     }
   return 0;
 }
 
-sub process_option_list ($@)
+sub process_option_list (@)
 {
-  my ($where, @list) = @_;
-  return _process_option_list (%_options, $where, @list);
+  prog_error "local options already processed"
+    if $_options_processed;
+  return _process_option_list (%_options, @_);
+  $_options_processed = 1;
 }
 
-sub process_global_option_list ($@)
+sub process_global_option_list (@)
 {
-  my ($where, @list) = @_;
-  return _process_option_list (%_global_options, $where, @list);
+  prog_error "global options already processed"
+    if $_global_options_processed;
+  return _process_option_list (%_global_options, @_);
+  $_global_options_processed = 1;
 }
 
 =item C<set_strictness ($name)>
@@ -381,7 +432,7 @@ sub set_strictness ($)
     }
   else
     {
-      prog_error "level `$strictness_name' not recognized\n";
+      prog_error "level '$strictness_name' not recognized";
     }
 }
 

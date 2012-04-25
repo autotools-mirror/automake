@@ -1,6 +1,5 @@
 ## automake - create Makefile.in from Makefile.am
-## Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002,
-##   2003, 2004, 2005, 2008  Free Software Foundation, Inc.
+## Copyright (C) 1994-2012 Free Software Foundation, Inc.
 
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -18,8 +17,8 @@
 
 ?GENERIC_INFO?%SOURCE_SUFFIX%%DEST_SUFFIX%:
 ?!GENERIC_INFO?%DEST_INFO_PREFIX%%DEST_SUFFIX%: %SOURCE_INFO% %DEPS%
-## It is wrong to have `info' files dependent on %DIRSTAMP%, because
-## `info' files are distributed and %DIRSTAMP% isn't: a distributed file
+## It is wrong to have 'info' files dependent on %DIRSTAMP%, because
+## 'info' files are distributed and %DIRSTAMP% isn't: a distributed file
 ## should never be dependent upon a non-distributed built file.
 ## Therefore we ensure that %DIRSTAMP% exists in the rule.
 ?!INSRC??DIRSTAMP?	@test -f %DIRSTAMP% || $(MAKE) $(AM_MAKEFLAGS) %DIRSTAMP%
@@ -32,11 +31,11 @@
 ##    to fail, the info files are not removed.  (They are needed by the
 ##    developer while he writes documentation.)
 ## *.iNN files are used on DJGPP.  See the comments in install-info-am
-	restore=: && backupdir="$(am__leading_dot)am$$$$" && \
+	%AM_V_MAKEINFO%restore=: && backupdir="$(am__leading_dot)am$$$$" && \
 ?INSRC?	am__cwd=`pwd` && $(am__cd) $(srcdir) && \
 	rm -rf $$backupdir && mkdir $$backupdir && \
 ## If makeinfo is not installed we must not backup the files so
-##`missing' can do its job and touch $@ if it exists.
+## 'missing' can do its job and touch $@ if it exists.
 	if ($(MAKEINFO) --version) >/dev/null 2>&1; then \
 	  for f in $@ $@-[0-9] $@-[0-9][0-9] $(@:.info=).i[0-9] $(@:.info=).i[0-9][0-9]; do \
 	    if test -f $$f; then mv $$f $$backupdir; restore=mv; else :; fi; \
@@ -62,23 +61,33 @@ INFO_DEPS += %DEST_INFO_PREFIX%%DEST_SUFFIX%
 
 ?GENERIC?%SOURCE_SUFFIX%.dvi:
 ?!GENERIC?%DEST_PREFIX%.dvi: %SOURCE% %DEPS% %DIRSTAMP%
-	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
+	%AM_V_TEXI2DVI%TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
 ## Must set MAKEINFO like this so that version.texi will be found even
 ## if it is in srcdir (-I $(srcdir) is set in %MAKEINFOFLAGS%).
 	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) %MAKEINFOFLAGS%' \
-## Do not use `-o' unless necessary: it is only supported since Texinfo 4.1.
-?GENERIC?	$(TEXI2DVI) %SOURCE%
-?!GENERIC?	$(TEXI2DVI) -o $@ `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%
+## Do not use '-o' unless necessary: it is only supported since Texinfo 4.1.
+## texi2dvi doesn't silence everything with -q, redirect to /dev/null instead.
+## We still want -q (%TEXIQUIET%) because it turns on batch mode.
+## Use '--clean' to avoid leaving auxiliary files behind cluttering the build
+## directory (see automake bug#11146).  We should start using '--tidy' when we
+## can assume Texinf 4.9 or later.
+?GENERIC?	$(TEXI2DVI) %TEXIQUIET% --clean %SOURCE% %TEXIDEVNULL%
+?!GENERIC?	$(TEXI2DVI) %TEXIQUIET% --clean -o $@ `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE% %TEXIDEVNULL%
 
 ?GENERIC?%SOURCE_SUFFIX%.pdf:
 ?!GENERIC?%DEST_PREFIX%.pdf: %SOURCE% %DEPS% %DIRSTAMP%
-	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
+	%AM_V_TEXI2PDF%TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
 ## Must set MAKEINFO like this so that version.texi will be found even
 ## if it is in srcdir (-I $(srcdir) is set in %MAKEINFOFLAGS%).
 	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) %MAKEINFOFLAGS%' \
-## Do not use `-o' unless necessary: it is only supported since Texinfo 4.1.
-?GENERIC?	$(TEXI2PDF) %SOURCE%
-?!GENERIC?	$(TEXI2PDF) -o $@ `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%
+## Do not use '-o' unless necessary: it is only supported since Texinfo 4.1.
+## texi2pdf doesn't silence everything with -q, redirect to /dev/null instead.
+## We still want -q (%TEXIQUIET%) because it turns on batch mode.
+## Use '--clean' to avoid leaving auxiliary files behind cluttering the build
+## directory (see automake bug#11146).  We should start using '--tidy' when we
+## can assume Texinf 4.9 or later.
+?GENERIC?	$(TEXI2PDF) %TEXIQUIET% --clean %SOURCE% %TEXIDEVNULL%
+?!GENERIC?	$(TEXI2PDF) %TEXIQUIET% --clean -o $@ `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE% %TEXIDEVNULL%
 
 ?GENERIC?%SOURCE_SUFFIX%.html:
 ?!GENERIC?%DEST_PREFIX%.html: %SOURCE% %DEPS% %DIRSTAMP%
@@ -88,8 +97,8 @@ INFO_DEPS += %DEST_INFO_PREFIX%%DEST_SUFFIX%
 ## in the manual change, it may leave unused pages.  Our fix
 ## is to build under a temporary name, and replace the target on
 ## success.
-	rm -rf $(@:.html=.htp)
-	if $(MAKEINFOHTML) $(AM_MAKEINFOHTMLFLAGS) $(MAKEINFOFLAGS) %MAKEINFOFLAGS% \
+	%AM_V_MAKEINFO%rm -rf $(@:.html=.htp)
+	%SILENT%if $(MAKEINFOHTML) $(AM_MAKEINFOHTMLFLAGS) $(MAKEINFOFLAGS) %MAKEINFOFLAGS% \
 ?GENERIC?	 -o $(@:.html=.htp) %SOURCE%; \
 ?!GENERIC?	 -o $(@:.html=.htp) `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%; \
 	then \

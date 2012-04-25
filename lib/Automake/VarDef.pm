@@ -1,4 +1,4 @@
-# Copyright (C) 2003, 2004, 2006  Free Software Foundation, Inc.
+# Copyright (C) 2003-2012 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,6 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package Automake::VarDef;
+
+use 5.006;
 use strict;
 use Carp;
 use Automake::ChannelDefs;
@@ -47,7 +49,7 @@ Automake::VarDef - a class for variable definitions
   $def->append ('value to append', 'comment to append');
 
   # Accessors.
-  my $value    = $def->value;  # with trailing `#' comments and
+  my $value    = $def->value;  # with trailing '#' comments and
                                # continuation ("\\\n") omitted.
   my $value    = $def->raw_value; # the real value, as passed to new().
   my $comment  = $def->comment;
@@ -148,11 +150,11 @@ sub new ($$$$$$$$)
 {
   my ($class, $var, $value, $comment, $location, $type, $owner, $pretty) = @_;
 
-  # A user variable must be set by either `=' or `:=', and later
-  # promoted to `+='.
+  # A user variable must be set by either '=' or ':=', and later
+  # promoted to '+='.
   if ($owner != VAR_AUTOMAKE && $type eq '+')
     {
-      error $location, "$var must be set with `=' before using `+='";
+      error $location, "$var must be set with '=' before using '+='";
     }
 
   my $self = Automake::ItemDef::new ($class, $comment, $location, $owner);
@@ -182,18 +184,20 @@ sub append ($$$)
   #   VAR += bar
   # does not become
   #   VAR = foo # com bar
-  # Furthermore keeping `#' would not be portable if the variable is
+  # Furthermore keeping '#' would not be portable if the variable is
   # output on multiple lines.
   $val =~ s/ ?#.*//;
   # Insert a separator, if required.
   $val .= ' ' if $val;
   $self->{'value'} = $val . $value;
   # Turn ASIS appended variables into PRETTY variables.  This is to
-  # cope with `make' implementation that cannot read very long lines.
+  # cope with 'make' implementation that cannot read very long lines.
   $self->{'pretty'} = VAR_PRETTY if $self->{'pretty'} == VAR_ASIS;
 }
 
 =item C<$def-E<gt>value>
+
+=item C<$def-E<gt>raw_value>
 
 =item C<$def-E<gt>type>
 
@@ -208,7 +212,7 @@ sub value ($)
 {
   my ($self) = @_;
   my $val = $self->raw_value;
-  # Strip anything past `#'.  `#' characters cannot be escaped
+  # Strip anything past '#'.  '#' characters cannot be escaped
   # in Makefiles, so we don't have to be smart.
   $val =~ s/#.*$//s;
   # Strip backslashes.
@@ -247,7 +251,7 @@ sub set_owner ($$$)
 {
   my ($self, $owner, $location) = @_;
   # We always adjust the location when the owner changes (even for
-  # `+=' statements).  The risk otherwise is to warn about
+  # '+=' statements).  The risk otherwise is to warn about
   # a VAR_MAKEFILE variable and locate it in configure.ac...
   $self->{'owner'} = $owner;
   $self->{'location'} = $location;

@@ -1,0 +1,34 @@
+#! /bin/sh
+# Copyright (C) 2010-2012 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Make sure that our macro 'AM_ENABLE_MULTILIB' adds proper text to
+# the configure help screen.
+# FIXME: the features tested by this script has been moved in contrib.
+# FIXME: We should move this script accordingly.
+
+. ./defs || Exit 1
+
+cat > configure.ac <<END
+AC_INIT([$me], [1.0])
+AM_ENABLE_MULTILIB
+END
+
+cat "$am_top_srcdir"/contrib/multilib/multi.m4 > aclocal.m4
+$AUTOCONF
+
+grep_configure_help --enable-multilib ' many library versions \(default\)'
+
+:

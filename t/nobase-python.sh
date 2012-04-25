@@ -1,0 +1,79 @@
+#! /bin/sh
+# Copyright (C) 2008-2012 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Make sure nobase_* works for python files.
+
+required=python
+. ./defs || Exit 1
+
+cat >>configure.ac <<EOF
+AM_PATH_PYTHON
+AC_OUTPUT
+EOF
+
+cat > Makefile.am <<'END'
+mydir=$(prefix)/my
+my_PYTHON = one.py sub/base.py
+nobase_my_PYTHON = two.py sub/nobase.py
+
+test-install-data: install-data
+	find inst -print; : For debugging.
+	test   -f inst/my/one.py
+	test   -f inst/my/one.pyc
+	test   -f inst/my/two.py
+	test   -f inst/my/two.pyc
+	test   -f inst/my/base.py
+	test   -f inst/my/base.pyc
+	test   -f inst/my/sub/nobase.py
+	test   -f inst/my/sub/nobase.pyc
+	test ! -f inst/my/nobase.py
+	test ! -f inst/my/nobase.pyc
+END
+
+mkdir sub
+
+for file in one.py sub/base.py two.py sub/nobase.py
+do
+  echo 'def one(): return 1' >$file
+done
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE --add-missing
+
+./configure --prefix "`pwd`/inst" --program-prefix=p
+
+$MAKE
+$MAKE test-install-data
+$MAKE uninstall
+
+find inst/my -type f -print | grep . && Exit 1
+
+$MAKE install-strip
+
+# Likewise, in a VPATH build.
+
+$MAKE uninstall
+$MAKE distclean
+mkdir build
+cd build
+../configure --prefix "`pwd`/inst" --program-prefix=p
+$MAKE
+$MAKE test-install-data
+$MAKE uninstall
+find inst/my -type f -print | grep . && Exit 1
+
+:

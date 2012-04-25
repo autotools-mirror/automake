@@ -42,31 +42,31 @@
 = Naming
 
 * We've adopted the convention that internal AC_SUBSTs should be
-  named with a leading `am__', and internally generated targets
-  should be named with a leading `am--'.  This convention, although
+  named with a leading 'am__', and internally generated targets
+  should be named with a leading 'am--'.  This convention, although
   in place from at least February 2001, isn't yet universally used.
   But all new code should use it.
 
-  We used to use `_am_' as the prefix for an internal AC_SUBST.
+  We used to use '_am_' as the prefix for an internal AC_SUBST.
   However, it turns out that NEWS-OS 4.2R complains if a Makefile
-  variable begins with `_'.  Yay for them.  I changed the target
-  naming convention just to be safe.
+  variable begins with the underscore character.  Yay for them.
+  I changed the target naming convention just to be safe.
 
 ================================================================
-= Editing `.am' files
+= Editing '.am' files
 
 * Always use $(...) and not ${...}
 
-* Use `:', not `true'.  Use `exit 1', not `false'.
+* Use ':', not 'true'.  Use 'exit 1', not 'false'.
 
-* Use `##' comments liberally.  Comment anything even remotely
+* Use '##' comments liberally.  Comment anything even remotely
   unusual.
 
 * Never use basename or dirname.  Instead use sed.
 
-* Do not use `cd' within back-quotes, use `$(am__cd)' instead.
+* Do not use 'cd' within back-quotes, use '$(am__cd)' instead.
   Otherwise the directory name may be printed, depending on CDPATH.
-  More generally, do not ever use plain `cd' together with a relative
+  More generally, do not ever use plain 'cd' together with a relative
   directory that does not start with a dot, or you might end up in one
   computed with CDPATH.
 
@@ -96,66 +96,35 @@
 = Working with git
 
 * To regenerate dependent files created by aclocal and automake,
-  use the `bootstrap' script.  It uses the code from the source
+  use the 'bootstrap' script.  It uses the code from the source
   tree, so the resulting files (aclocal.m4 and Makefile.in) should
   be the same as you would get if you install this version of
   automake and use it to generate those files.  Be sure to have the
-  latest stable version of Autoconf installed.  If such version is
-  not installed as "autoconf", pass it explicitly (along with the
-  accompanying "autom4te") when calling `bootstrap' and `configure'.
-  For example:
-    $ AUTOCONF=autoconf2.68 AUTOM4TE=autom4te2.68 ./bootstrap
-    $ ./configure AUTOCONF=autoconf2.68 AUTOM4TE=autom4te2.68
+  latest stable version of Autoconf installed and available early
+  in your PATH.
 
-* Dependent files aclocal.m4, configure and Makefile.in in all
-  directories should be up to date in the git repository, so that
-  the changes in them can be easily noticed and analyzed.
+* The Automake git tree currently carries two basic branches: 'master' for
+  the current development, and 'maint' for maintenance and bug fixes.  The
+  maint branch should be kept regularly merged into the master branch.
+  It is advisable to merge only after a set of related commits have been
+  applied, to avoid introducing too much noise in the history.
 
-* The git tree currently carries a number of branches: master for the
-  current development, and release branches named branch-X.Y.  The maint
-  branch serves as common ground for both master and the active release
-  branches.  Changes intended for both should be applied to maint, which
-  should then be merged to release branches and master, of course after
-  suitable testing.  It is advisable to merge only after a set of related
-  commits have been applied.
+* There may be a number of longer-lived feature branches for new
+  developments.  They should be based off of a common ancestor of all
+  active branches to which the feature should or might be merged later.
+  in the future, we might introduce a special branch named 'next' that
+  may serve as common ground for feature merging and testing, should
+  they not yet be ready for master.
 
-* Example work flow for patches to maint:
-
-  # 1. Checkout the "maint" branch:
-  git checkout maint
-
-  # 2. Apply the patch(es) with "git am" (or create them with $EDITOR):
-  git am -3 0*.patch
-  # 2a. Run required tests, if any ...
-
-  # 3. Merge maint into branch-1.11:
-  git checkout branch-1.11
-  git merge maint
-  # 3a. Run required tests, if any ...
-
-  # 4. Redo steps 3 and 3a for master:
-  git checkout master
-  git merge maint
-  # testing ...
-
-  # 5. Push the maint and master branches:
-  git push --dry-run origin maint branch-1.11 master
-  # if all seems ok, then actually push:
-  git push origin maint branch-1.11 master
+* After a major release is done, the master branch is to be merged into
+  the maint branch, and then a "new" master branch created stemming
+  from the resulting commit.
 
 * When fixing a bug (especially a long-standing one), it may be useful
   to commit the fix to a new temporary branch based off the commit that
   introduced the bug.  Then this "bugfix branch" can be merged into all
   the active branches descending from the buggy commit.  This offers a
   simple way to fix the bug consistently and effectively.
-
-* When referring to older commits, use 'git describe' output as pointer.
-
-* There may be a number of longer-lived feature branches for new developments.
-  They should be based off of a common ancestor of all active branches to
-  which the feature should or might be merged later.  The next branch may
-  serve as common ground for feature merging and testing, should they not
-  be ready for master yet.
 
 * For merges from branches other than maint, prefer 'git merge --log' over
   plain 'git merge', so that a later 'git log' gives an indication of which
@@ -168,19 +137,80 @@
   branch should document rewinding policy.
 
 ================================================================
+= Writing a good commit message
+
+* Here is the general format that Automake's commit messages are expected
+  to follow.  See the further points below for clarifications and minor
+  corrections.
+
+      topic: brief description (this is the "summary line")
+
+      <reference to relevant bugs, if any>
+
+      Here goes a more detailed explanation of why the commit is needed,
+      and a general overview of what it does, and how.  This section is
+      optional, but you are expected to provide it more often than not.
+
+      And if the detailed explanation is quite long or detailed, you can
+      want to break it in more paragraphs.
+
+      Then you can add references to relevant mailing list discussions
+      (if any), with proper links.  But don't take this as an excuse for
+      writing incomplete commit messages!  The "distilled" conclusions
+      reached in such discussions should have been placed in the
+      paragraphs above.
+
+      Finally, here you can thank people that motivated or helped the
+      change.  So, thanks to John Doe for bringing up the issue, and to
+      J. Random Hacker for providing suggestions and testing the patch.
+
+      <detailed list of touched files>
+
+* The <detailed list of touched files> is mandatory but for the most
+  trivial changes, and should follows the GNU guidelines for ChangeLog
+  entries (described explicitly in the GNU Coding Standards); it might
+  be something of this sort:
+
+    * some/file (func1): Improved frobnication.
+    (func2): Adjusted accordingly.
+    * another/file (foo, bar): Likewise.
+    * tests/foo.tap: New test.
+    * tests/Makefile.am (TESTS): Add it.
+
+* If your commit fixes an automake bug registered in the tracker (say
+  numbered 1234), you should put the following line after the summary
+  line:
+
+      This change fixes automake bug#1234.
+
+* If your commit is just related to the given bug report, but does not
+  fix it, you might want to add a line like this instead:
+
+      This change is related to automake bug#1234.
+
+* When referring to older commits, use 'git describe' output as pointer.
+  But also try to identify the given commit by date and/or summary line
+  if possible.  Examples:
+
+      Since yesterday's commit, v1.11-2019-g4d2bf42, ...
+
+      ... removed in commit 'v1.11-1674-g02e9072' of 01-01-2012,
+      "dist: ditch support for lzma"...
+
+================================================================
 = Test suite
 
 * Use "make check" and "make maintainer-check" liberally.
 
 * Make sure each test file is executable.
 
-* Use `keep_testdirs=yes' to keep test directories for successful
-  tests also.
+* Export the 'keep_testdirs' environment variable to "yes" to keep
+  test directories for successful tests also.
 
 * Use perl coverage information to ensure your new code is thoroughly
   tested by your new tests.
 
-* See file `tests/README' for more information.
+* See file 't/README' for more information.
 
 ================================================================
 = Release procedure
@@ -189,9 +219,9 @@
   releases as well.  Where differences are expected, they will be
   explicitly described.
 
-* Fetch new versions of the files that are maintained by the FSF.
-  Commit.  Unfortunately you need an FSF account to do this.
-  (You can also use `make fetch', but that is still woefully incomplete.)
+* Fetch new versions of the files that are maintained by the FSF by
+  running "make fetch".  In case any file in the automake repository
+  has been updated, commit and re-run the testsuite.
 
 * Update NEWS.
 
@@ -203,20 +233,24 @@
 * Run this:
   ./bootstrap && ./configure && make && make check && make distcheck
 
-* Run `make release-stats' if release statistics in doc/automake.texi
-  have not been updated yet.
+* Run "make git-tag-release".
+  This will run the maintainer checks, check that the NEWS file is
+  up-to-date, check that the local git repository and working tree
+  are clean and up-to-date, and create a proper signed git tag for
+  the release (based on the contents of $(VERSION)).
 
-* Run `make git-release'.
-  This will run "make dist" to create the tarballs, commit the last
-  changes to NEWS, configure.ac and m4/amversion.m4, tag the repository,
-  sign the tarballs, and upload them.
-  Use `make GNUPLOADFLAGS="--user key" git-release' to sign with
-  a non-default key.
+* Run "make git-upload-release".
+  This will first verify that you are releasing from a tagged version
+  and that the local git repository and working tree are clean and
+  up-to-date, and will then run "make dist" to create the tarballs,
+  and invoke the 'gnupload' script sign and upload them to the correct
+  locations.  In case you need to sign with a non-default key, you can
+  use "make GNUPLOADFLAGS='--user KEY' git-upload-release".
 
 * Update version number in configure.ac to next alpha number.
   Re-run ./bootstrap and commit.
 
-* Don't forget to `git push' your changes so they appear in the public
+* Don't forget to "git push" your changes so they appear in the public
   git tree.
 
 * For stable releases, update the manuals at www.gnu.org:
@@ -240,8 +274,7 @@
 
 -----
 
-Copyright (C) 2003, 2007, 2008, 2010, 2011, 2012 Free Software
-Foundation, Inc.
+Copyright (C) 2003-2012 Free Software Foundation, Inc.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

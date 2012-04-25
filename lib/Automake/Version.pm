@@ -1,4 +1,4 @@
-# Copyright (C) 2001, 2002, 2003, 2010 Free Software Foundation, Inc.
+# Copyright (C) 2001-2012 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,6 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package Automake::Version;
+
+use 5.006;
 use strict;
 use Automake::ChannelDefs;
 
@@ -130,7 +132,7 @@ sub check ($$)
     if $#required == -1;
 
   # If we require 3.4n-foo then we require something
-  # >= 3.4n, with the `foo' fork identifier.
+  # >= 3.4n, with the 'foo' fork identifier.
   return 1
     if ($required[4] ne '' && $required[4] ne $version[4]);
 
