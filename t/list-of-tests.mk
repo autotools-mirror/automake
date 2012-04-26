@@ -704,6 +704,7 @@ t/notrans.sh \
 t/number.sh \
 t/objc.sh \
 t/objc2.sh \
+t/objcxx-basic.sh \
 t/objext-pr10128.sh \
 t/obsolete.sh \
 t/oldvars.sh \
