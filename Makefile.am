@@ -379,11 +379,11 @@ $(srcdir)/t/testsuite-part.am:
 	$(AM_V_at)mv -f t/testsuite-part.tmp $@
 EXTRA_DIST += gen-testsuite-part
 
-$(generated_TESTS) $(srcdir)/t/testsuite-part.am: \
-  $(srcdir)/gen-testsuite-part \
-  t/list-of-tests.mk \
-  Makefile.am \
-  $(handwritten_TESTS)
+## The dependecies declared here are not truly complete, but such
+## completeness would cause more issues than it would solve.  See
+## automake bug#11347.
+$(generated_TESTS): $(srcdir)/gen-testsuite-part
+$(srcdir)/t/testsuite-part.am: $(srcdir)/gen-testsuite-part Makefile.am
 
 # Static dependencies valid for each test case.
 check_SCRIPTS = t/wrap/aclocal-$(APIVERSION) t/wrap/automake-$(APIVERSION)
