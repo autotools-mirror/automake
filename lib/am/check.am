@@ -55,6 +55,57 @@ include inst-vars.am
 ## of more test metadata, and the use of custom test derivers and protocols
 ## (among them, TAP).
 
+am__recheck_rx = ^[ 	]*:recheck:[ 	]*
+
+# A command that, given a newline-separated list of test names on the
+# standard input, print the name of the tests that are to be re-run
+# upon "make recheck".
+am__list_recheck_tests = $(AWK) '{ \
+## By default, we assume the test is to be re-run.
+  recheck = 1; \
+  while ((rc = (getline line < ($$0 ".trs"))) != 0) \
+    { \
+      if (rc < 0) \
+        { \
+## If we've encountered an I/O error here, there are three possibilities:
+##
+##  [1] The '.log' file exists, but the '.trs' does not; in this case,
+##      we "gracefully" recover by assuming the corresponding test is
+##      to be re-run (which will re-create the missing '.trs' file).
+##
+##  [2] Both the '.log' and '.trs' files are missing; this means that
+##      the corresponding test has not been run, and is thus *not* to
+##      be re-run.
+##
+##  [3] We have encountered some corner-case problem (e.g., a '.log' or
+##      '.trs' files somehow made unreadable, or issues with a bad NFS
+##      connection, or whatever); we don't handle such corner cases.
+##
+          if ((getline line2 < ($$0 ".log")) < 0) \
+	    recheck = 0; \
+          break; \
+        } \
+      else if (line ~ /$(am__recheck_rx)[nN][Oo]/) \
+## A directive explicitly specifying the test is *not* to be re-run.
+        { \
+          recheck = 0; \
+          break; \
+        } \
+      else if (line ~ /$(am__recheck_rx)[yY][eE][sS]/) \
+        { \
+## A directive explicitly specifying the test *is* to be re-run.
+          break; \
+        } \
+## else continue with the next iteration.
+    }; \
+  if (recheck) \
+    print $$0; \
+## Don't leak open file descriptors, as this could cause serious
+## problems when there are many tests (yes, even on Linux).
+  close ($$0 ".trs"); \
+  close ($$0 ".log"); \
+}'
+
 # Restructured Text title and section.
 am__rst_title = { sed 's/.*/   &   /;h;s/./=/g;p;x;s/ *$$//;p;g' && echo; }
 am__rst_section = { sed 'p;s/./=/g;' && echo; }
@@ -326,36 +377,22 @@ check-TESTS recheck:
 ## cannot use '$?' to compute the set of lazily rerun tests, lest
 ## we rely on .PHONY to work portably.
 	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
-	@ws='[ 	]'; \
-	log_list='' trs_list=''; $(am__set_TESTS_bases); \
-	for i in $$bases; do \
+	@$(am__set_TESTS_bases); \
+	if test $@ = recheck; then \
 ## If running a "make recheck", we must only consider tests that had an
-## unexpected outcome (FAIL or XPASS) in the earlier run.  In particular,
-## skip tests that haven't been run.  But recover gracefully from deleted
-## '.trs' files.
-	  if test $@ = recheck; then \
-	    test -f $$i.trs || test -f $$i.log || continue; \
-## FIXME: one fork per test -- this is horrendously inefficient!
-	    grep "^$$ws*:recheck:$$ws*no$$ws*$$" $$i.trs \
-	      >/dev/null 2>&1 && continue; \
-	  else :; fi; \
-## Be careful to avoid extra whitespace in the definition of $list, since
-## its value will be passed to the recursive make invocation below through
-## the TEST_LOGS macro, and leading/trailing white space in a make macro
-## definition can be problematic.  In this particular case, trailing white
-## space was known to cause a segmentation fault on Solaris 10 XPG4 make:
-## <http://lists.gnu.org/archive/html/bug-automake/2010-08/msg00004.html>
-	  if test -z "$$log_list"; then \
-	    log_list="$$i.log"; \
-	  else \
-	    log_list="$$log_list $$i.log"; \
-	  fi; \
-	  if test -z "$$trs_list"; then \
-	    trs_list="$$i.trs"; \
-	  else \
-	    trs_list="$$trs_list $$i.trs"; \
-	  fi; \
-	done; \
+## unexpected outcome (FAIL or XPASS) in the earlier run.
+	  bases=`for i in $$bases; do echo $$i; done \
+	           | $(am__list_recheck_tests)` || exit 1; \
+	fi; \
+	log_list=`for i in $$bases; do echo $$i.log; done`; \
+	trs_list=`for i in $$bases; do echo $$i.trs; done`; \
+## Remove newlines and normalize whitespace, being careful to avoid extra
+## whitespace in the definition of $log_list, since its value will be
+## passed to the recursive make invocation below through the TEST_LOGS
+## macro, and leading/trailing white space in a make macro definition can
+## be problematic.  In this particular case, trailing white space is known
+## to have caused segmentation faults on Solaris 10 XPG4 make:
+	log_list=`echo $$log_list`; trs_list=`echo $$trs_list`; \
 ## Under "make recheck", remove the .log and .trs files associated
 ## with the files to recheck, so that those will be rerun by the
 ## "make test-suite.log" recursive invocation below.  But use a proper
