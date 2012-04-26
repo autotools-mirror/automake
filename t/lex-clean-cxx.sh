@@ -20,7 +20,7 @@
 # "make maintainer-clean".
 # See also sister test 'lex-clean.test'.
 
-required=lex
+required='c++ lex'
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'
