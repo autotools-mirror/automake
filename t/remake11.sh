@@ -30,6 +30,7 @@ echo "AC_SUBST([FOO], [$magic1])" >> configure.ac
 
 echo "@FOO@" > bar.in
 echo "AC_CONFIG_FILES([bar])" >> configure.ac
+d=; unset d # Avoid unduly interferences from the environment.
 for i in 0 1 2 3 4 5 6 7 8 9; do
   d=${d+"$d/"}sub$i
   echo "SUBDIRS = sub$i" > Makefile.am
