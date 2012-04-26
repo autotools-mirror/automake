@@ -16,7 +16,7 @@
 
 # Vala support with parallel make.
 
-required='valac cc GNUmake'
+required='valac cc'
 . ./defs || Exit 1
 
 cat >> configure.ac <<'END'
