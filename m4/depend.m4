@@ -5,7 +5,7 @@
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 16
+# serial 17
 
 # There are a few dirty hacks below to avoid letting 'AC_PROG_CC' be
 # written in clear, in which case automake, when reading aclocal.m4,
@@ -17,7 +17,7 @@
 # _AM_DEPENDENCIES(NAME)
 # ----------------------
 # See how the compiler implements dependency checking.
-# NAME is "CC", "CXX", "GCJ", or "OBJC".
+# NAME is "CC", "CXX", "OBJC", "OBJCXX", "UPC", or "GJC".
 # We try a few techniques and use that to set a single cache variable.
 #
 # We don't AC_REQUIRE the corresponding AC_PROG_CC since the latter was
@@ -33,6 +33,7 @@ AC_REQUIRE([AM_DEP_TRACK])dnl
 m4_if([$1], [CC],   [depcc="$CC"   am_compiler_list=],
       [$1], [CXX],  [depcc="$CXX"  am_compiler_list=],
       [$1], [OBJC], [depcc="$OBJC" am_compiler_list='gcc3 gcc'],
+      [$1], [OBJCXX], [depcc="$OBJCXX" am_compiler_list='gcc3 gcc'],
       [$1], [UPC],  [depcc="$UPC"  am_compiler_list=],
       [$1], [GCJ],  [depcc="$GCJ"  am_compiler_list='gcc3 gcc'],
                     [depcc="$$1"   am_compiler_list=])
