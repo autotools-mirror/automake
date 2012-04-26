@@ -17,6 +17,7 @@
 # Make sure $(EXEEXT) is appended to programs and to tests that are
 # programs, but not to @substitutions@.
 
+am_parallel_tests=no
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

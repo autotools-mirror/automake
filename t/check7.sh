@@ -59,9 +59,12 @@ $AUTOMAKE -a
 
 ./configure
 $MAKE check
-$MAKE EXEEXT=.bin print-xfail-tests >stdout || { cat stdout; Exit 1; }
-cat stdout
-$FGREP 'BEG: a.bin b c.bin d.bin :END' stdout
+
+if test x"$am_parallel_tests" != x"yes"; then
+  $MAKE EXEEXT=.bin print-xfail-tests >stdout || { cat stdout; Exit 1; }
+  cat stdout
+  $FGREP 'BEG: a.bin b c.bin d.bin :END' stdout
+fi
 
 $MAKE distcheck
 

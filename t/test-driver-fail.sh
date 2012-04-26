@@ -30,14 +30,16 @@ AC_OUTPUT
 END
 
 cat > Makefile.am <<'END'
-TEST_LOG_DRIVER = ./oops
-TESTS = foo.test
+TEST_EXTENSIONS =
+LOG_DRIVER = ./oops
+TESTS = foo
 END
 
-cat > foo.test <<'END'
+cat > foo <<'END'
 #! /bin/sh
 exit 0
 END
+chmod a+x foo
 
 $ACLOCAL
 $AUTOCONF

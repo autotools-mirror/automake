@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2009-2012 Free Software Foundation, Inc.
+# Copyright (C) 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,44 +14,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check parallel-tests features: generated distributed tests.
+# The parallel-tests harness do not cause the same test to be
+# uselessly run multiple times.
 
 am_parallel_tests=yes
 . ./defs || Exit 1
 
-cat >> configure.ac << 'END'
-AC_OUTPUT
-END
+echo AC_OUTPUT >> configure.ac
+echo TESTS = foo.test > Makefile.am
 
-cat > Makefile.am << 'END'
-TESTS = foo.test
-.in.test:
-	cp $< $@ && chmod +x $@
-check_SCRIPTS = $(TESTS)
-EXTRA_DIST = foo.in foo.test
-DISTCLEANFILES = foo.test
-END
-
-cat > foo.in <<'END'
+cat > foo.test <<'END'
 #! /bin/sh
-echo "this is $0"
-exit 0
+ls -l && mkdir bar
 END
+chmod a+x foo.test
 
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
 ./configure
-$MAKE check
-$MAKE distcheck
-$MAKE distclean
 
-mkdir build
-cd build
-../configure
-$MAKE check
-test ! -f ../foo.log
-$MAKE distcheck
+$MAKE -j1 check || { cat test-suite.log; Exit 1; }
+rmdir bar
+$MAKE -j2 check || { cat test-suite.log; Exit 1; }
+rmdir bar
+$MAKE -j4 check || { cat test-suite.log; Exit 1; }
 
 :

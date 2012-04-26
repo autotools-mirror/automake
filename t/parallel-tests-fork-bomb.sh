@@ -61,9 +61,8 @@ do_check ()
   $MAKE "$@" check >output 2>&1 || st=$?
   cat output
   $FGREP '::OOPS::' output && Exit 1 # Possible infinite recursion.
-  # Check that at least we don't create a botched global log file.
-  test ! -f "$log"
   grep "[Cc]ircular.*dependency" output | $FGREP "$log"
+  grep "$log:.*depends on itself" output
   test $st -gt 0
 }
 

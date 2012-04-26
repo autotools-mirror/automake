@@ -22,11 +22,12 @@ am_parallel_tests=yes
 
 fetch_tap_driver
 
-cat >> configure.ac <<END
+cat >> configure.ac << 'END'
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+LOG_DRIVER = $(error LOG_DRIVER should never be expanded) false
 TEST_LOG_DRIVER = $(srcdir)/tap-driver
 TESTS = a.test b.test c.test d.test
 END

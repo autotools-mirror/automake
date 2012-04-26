@@ -30,6 +30,8 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
+LOG_DRIVER = dummy but required
+
 TEST_EXTENSIONS = .t
 T_LOG_DRIVER = $(SHELL) $(srcdir)/trivial-test-driver
 

@@ -32,9 +32,10 @@ TEST_LOG_COMPILER = $(SHELL)
 SH_LOG_COMPILER = $(SHELL)
 
 ## Used to check some internal details.  And yes, the quotes around
-## '$bases' are deliberate: they check for whitespace normalization.
+## $(am__TESTS_BASES) are deliberate: they check for whitespace
+## normalization.
 tb:
-	$(am__set_TESTS_bases); echo "$$bases" > $@
+	echo '$(am__TEST_BASES)' > $@
 END
 
 cat > foo.test << 'END'

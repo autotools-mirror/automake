@@ -34,13 +34,11 @@ END
 
 cat > foo.test << 'END'
 #! /bin/sh
-echo foofoofoo
 exit 0
 END
 
 cat > bar.test << 'END'
 #! /bin/sh
-echo barbarbar
 exit 77
 END
 
@@ -52,25 +50,54 @@ $AUTOMAKE -a
 
 ./configure
 
-for files in \
-  'foo.log bar.log' \
-  'foo.trs bar.trs' \
-  'foo.trs bar.log' \
-  'foo.log bar.trs' \
-; do
+doit ()
+{
+  rm -f $*
   $MAKE check
   rm -f test-suite.log
-  chmod a-r $files
-  $MAKE test-suite.log || { ls -l; Exit 1; }
-  ls -l
-  grep '^foofoofoo$' foo.log
-  grep '^:test-result: PASS' foo.trs
-  grep '^barbarbar$' bar.log
-  grep '^:test-result: SKIP' bar.trs
-  grep '^SKIP: bar' test-suite.log
-  grep '^barbarbar$' test-suite.log
-  $EGREP ':.*foo|foofoofoo' test-suite.log && Exit 1
-  : For shells with busted 'set -e'.
+  chmod a-r $*
+  $MAKE test-suite.log 2>stderr && { cat stderr >&2; Exit 1; }
+  cat stderr >&2
+}
+
+could_not_read ()
+{
+  # We have to settle for weak checks to avoid spurious failures due to
+  # the differences in error massages on different systems; for example:
+  #
+  #   $ cat unreadable-file # GNU/Linux or NetBSD
+  #   cat: unreadable-file: Permission denied
+  #   $ cat unreadable-file # Solaris 10
+  #   cat: cannot open unreadable
+  #
+  #   $ grep foo unreadable-file # GNU/Linux and NetBSD
+  #   grep: unreadable: Permission denied
+  #   $ grep foo unreadable-file # Solaris 10
+  #   grep: can't open "unreadable"
+  #
+  # FIXME: this might still needs adjustments on other systems ...
+  #
+  grep "$1:.*[pP]ermission denied" stderr \
+    || $EGREP "can(no|')t open [\"'\`]?$1" stderr
+}
+
+for lst in bar.log 'foo.log bar.log'; do
+  doit $lst
+  could_not_read bar.log
+  grep 'test-suite\.log:.* I/O error reading test logs' stderr
 done
+
+doit foo.trs
+could_not_read foo.trs
+grep 'test-suite\.log:.* I/O error reading test results' stderr
+
+doit foo.trs bar.trs
+could_not_read foo.trs
+could_not_read bar.trs
+grep 'test-suite\.log:.* I/O error reading test results' stderr
+
+doit foo.trs bar.log
+could_not_read foo.trs
+grep 'test-suite\.log:.* I/O error reading test results' stderr
 
 :

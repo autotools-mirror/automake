@@ -4706,27 +4706,24 @@ sub handle_tests_dejagnu
     $output_rules .= file_contents ('dejagnu', new Automake::Location);
 }
 
-sub handle_per_suffix_test
+sub handle_per_suffix_test($)
 {
-  my ($test_suffix, %transform) = @_;
-  my ($pfx, $generic, $parallel_tests_option, $am_exeext);
+  my $test_suffix = shift;
+  my ($pfx, $parallel_tests_option, $am_exeext);
   prog_error ("called with 'parallel-tests' option not set")
     unless $parallel_tests_option = option 'parallel-tests';
   if ($test_suffix eq '')
     {
       $pfx = '';
-      $generic = 0;
-      $am_exeext = 'FALSE';
     }
   else
     {
       prog_error ("test suffix '$test_suffix' lacks leading dot")
         unless $test_suffix =~ m/^\.(.*)/;
       $pfx = uc ($1) . '_';
-      $generic = 1;
-      $am_exeext = exists $configure_vars{'EXEEXT'} ? 'am__EXEEXT'
-                                                    : 'FALSE';
     }
+  $am_exeext = exists $configure_vars{'EXEEXT'} ? 'am__EXEEXT'
+                                                  : 'FALSE';
   # The "test driver" program, deputed to handle tests protocol used by
   # test scripts.  By default, it's assumed that no protocol is used,
   # so we fall back to the old "parallel-tests" behaviour, implemented
@@ -4740,11 +4737,9 @@ sub handle_per_suffix_test
                        INTERNAL);
     }
   $output_rules .= file_contents ('check2', new Automake::Location,
-                                   GENERIC => $generic,
                                    PFX => $pfx,
                                    EXT => $test_suffix,
-                                   am__EXEEXT => $am_exeext,
-                                   %transform);
+                                   am__EXEEXT => $am_exeext);
 }
 
 # is_valid_test_extension ($EXT)
@@ -4786,27 +4781,12 @@ sub handle_tests
 				       PARALLEL_TESTS => !! option 'parallel-tests',
                                        CHECK_DEPS => $check_deps);
 
-      # Tests that are known programs should have $(EXEEXT) appended.
-      # For matching purposes, we need to adjust XFAIL_TESTS as well.
-      append_exeext { exists $known_programs{$_[0]} } 'TESTS';
-      append_exeext { exists $known_programs{$_[0]} } 'XFAIL_TESTS'
-	if (var ('XFAIL_TESTS'));
-
       if (my $parallel_tests = option 'parallel-tests')
         {
 	  define_variable ('TEST_SUITE_LOG', 'test-suite.log', INTERNAL);
 	  my $suff = '.test';
-	  my $at_exeext = '';
-	  my $handle_exeext = exists $configure_vars{'EXEEXT'};
-	  if ($handle_exeext)
-	    {
-	      $at_exeext = subst ('EXEEXT');
-	      $suff = $at_exeext  . ' ' . $suff;
-	    }
-          if (! var 'TEST_EXTENSIONS')
-            {
-	      define_variable ('TEST_EXTENSIONS', $suff, INTERNAL);
-            }
+	  define_variable ('TEST_EXTENSIONS', '.test', INTERNAL)
+            if (! var 'TEST_EXTENSIONS');
           my $var = var 'TEST_EXTENSIONS';
           # Currently, we are not able to deal with conditional contents
           # in TEST_EXTENSIONS.
@@ -4823,76 +4803,47 @@ sub handle_tests
                     "invalid test extensions: @invalid_test_suffixes";
             }
           @test_suffixes = grep { is_valid_test_extension $_ } @test_suffixes;
-	  if ($handle_exeext)
-	    {
-	      unshift (@test_suffixes, $at_exeext)
-	        unless $test_suffixes[0] eq $at_exeext;
-	    }
-	  unshift (@test_suffixes, '');
+          # It is *imperative* that the empty 'suffix goes last.
+          # Otherwise, a declaration like "TESTS = all.test" would cause GNU
+          # make to mistakenly try to build the 'all.log' and 'all.trs' files
+          # from a non-existent 'all' program (because the Makefile contains
+          # an explicit 'all' target) rather than from the 'all.test' script,
+          # thus causing all sort of mishaps and confusion.
+	  push @test_suffixes, '';
 
-	  transform_variable_recursively
-	    ('TESTS', 'TEST_LOGS', 'am__testlogs', 1, INTERNAL,
-	      sub {
-	        my ($subvar, $val, $cond, $full_cond) = @_;
-		my $obj = $val;
-		return $obj
-		  if $val =~ /^\@.*\@$/;
-		$obj =~ s/\$\(EXEEXT\)$//o;
-
-		if ($val =~ /(\$\((top_)?srcdir\))\//o)
-		  {
-		    msg ('error', $subvar->rdef ($cond)->location,
-			 "parallel-tests: using '$1' in TESTS is currently broken: '$val'");
-		  }
-
-		foreach my $test_suffix (@test_suffixes)
-		  {
-		    next
-		      if $test_suffix eq $at_exeext || $test_suffix eq '';
-		    return substr ($obj, 0, length ($obj) - length ($test_suffix)) . '.log'
-		      if substr ($obj, - length ($test_suffix)) eq $test_suffix;
-		  }
-		my $base = $obj;
-		$obj .= '.log';
-                handle_per_suffix_test ('',
-                                        OBJ => $obj,
-                                        BASE => $base,
-                                        SOURCE => $val);
-	        return $obj;
-	      });
-
-	  my $nhelper=1;
-	  my $prev = 'TESTS';
-	  my $post = '';
-	  my $last_suffix = $test_suffixes[$#test_suffixes];
-	  my $cur = '';
+          define_variable ('am__test_logs1',
+                           '$(patsubst %,%.log,$(strip $(am__cooked_tests)))',
+                           INTERNAL);
+	  my $nhelper = 1;
 	  foreach my $test_suffix (@test_suffixes)
 	    {
-	      if ($test_suffix eq $last_suffix)
-	        {
-		  $cur = 'TEST_LOGS';
-		}
-	      else
-	        {
-		  $cur = 'am__test_logs' . $nhelper;
-		}
-	      define_variable ($cur,
-		'$(' . $prev . ':' . $test_suffix . $post . '=.log)', INTERNAL);
-	      $post = '.log';
-	      $prev = $cur;
-	      $nhelper++;
-	      if ($test_suffix ne $at_exeext && $test_suffix ne '')
-	        {
-                  handle_per_suffix_test ($test_suffix,
-                                          OBJ => '',
-                                          BASE => '$*',
-                                          SOURCE => '$<');
-	        }
+              handle_per_suffix_test ($test_suffix);
+              my @cooked_test_suffixes = ($test_suffix);
+              push @cooked_test_suffixes, ($test_suffix . '$(EXEEXT)')
+                if exists $configure_vars{'EXEEXT'};
+              foreach my $cooked_test_suffix (@cooked_test_suffixes)
+                {
+                  my $old_var = 'am__test_logs' . $nhelper++;
+                  my $cur_var = 'am__test_logs' . $nhelper;
+                  define_variable (
+                    $cur_var,
+                    "\$($old_var:$cooked_test_suffix.log=.log)",
+                    INTERNAL);
+                }
 	    }
+	  define_variable ('TEST_LOGS', "\$(am__test_logs$nhelper)", INTERNAL);
 	  $clean_files{'$(TEST_LOGS)'} = MOSTLY_CLEAN;
 	  $clean_files{'$(TEST_LOGS:.log=.trs)'} = MOSTLY_CLEAN;
 	  $clean_files{'$(TEST_SUITE_LOG)'} = MOSTLY_CLEAN;
 	}
+      else
+        {
+          # Tests that are known programs should have $(EXEEXT) appended.
+          # For matching purposes, we need to adjust XFAIL_TESTS as well.
+          append_exeext { exists $known_programs{$_[0]} } 'TESTS';
+          append_exeext { exists $known_programs{$_[0]} } 'XFAIL_TESTS'
+	    if (var ('XFAIL_TESTS'));
+        }
     }
 }
 

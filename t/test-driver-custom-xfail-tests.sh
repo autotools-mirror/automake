@@ -136,7 +136,7 @@ chmod a+x td
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE
+$AUTOMAKE --add-missing
 
 ./configure
 
