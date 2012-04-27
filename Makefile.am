@@ -860,7 +860,11 @@ update_copyright_env = \
 
 .PHONY: update-copyright
 update-copyright:
-	$(AM_V_GEN)excluded_re=`echo $(FETCHFILES) \
+	$(AM_V_GEN)set -e; \
+	current_year=`date +%Y` && test -n "$$current_year" \
+	  || { echo "$@: cannot get current year" >&1; exit 1; }; \
+	sed -i "/^RELEASE_YEAR=/s/=.*$$/=$$current_year/" configure.ac; \
+	excluded_re=`echo $(FETCHFILES) \
 	  | sed -e 's|^|lib/|' -e 's| | lib/|g' -e 's, ,|,g'`; \
 	$(GIT) ls-files \
 	  | grep -Ev '^(lib/)?(COPYING|INSTALL)$$' \
