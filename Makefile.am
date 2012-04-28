@@ -67,7 +67,7 @@ TAGS_FILES = $(AUTOMAKESOURCES)
 
 EXTRA_DIST += \
   $(AUTOMAKESOURCES) \
-  bootstrap \
+  bootstrap.sh \
   GNUmakefile \
   syntax-checks.mk \
   HACKING
@@ -742,7 +742,7 @@ autodiffs:
 	       && $(am__cd) tmp \
 	       && $(GIT) checkout -q "$$rev" \
 	       && echo "$@: bootstrapping $$rev" \
-	       && $(SHELL) ./bootstrap \
+	       && $(SHELL) ./bootstrap.sh \
 	       && echo "$@: copying files from $$rev" \
 	       && makefile_ins=`find . -name Makefile.in` \
 	       && (tar cf - configure aclocal.m4 $$makefile_ins) | \

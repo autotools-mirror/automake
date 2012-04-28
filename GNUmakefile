@@ -51,7 +51,7 @@ endif
 # Must be phony, not to be confused with the 'bootstrap' script.
 .PHONY: bootstrap
 bootstrap:
-	$(AM_V_BOOTSTRAP)$(am__cd) $(srcdir) && ./bootstrap
+	$(AM_V_BOOTSTRAP)$(am__cd) $(srcdir) && ./bootstrap.sh
 	$(AM_V_CONFIGURE)set -e; \
 	am__bootstrap_configure () { \
 	  $(srcdir)/configure $${1+"$$@"} $(BOOTSTRAP_CONFIGURE_FLAGS); \
