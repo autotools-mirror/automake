@@ -330,7 +330,7 @@ sc_grep_for_bad_make_include = \
     exit 1; \
   fi
 sc_tests_make_simple_include: sc_ensure_testsuite_has_run
-	@files=tests/*.log; $(sc_grep_for_bad_make_include)
+	@files='t/*.log'; $(sc_grep_for_bad_make_include)
 sc_make_simple_include:
 	@files=" \
 	   $(xtests) \
