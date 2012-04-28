@@ -42,6 +42,11 @@ dnl the automake options to avoid bloating and potential problems.
 AM_INIT_AUTOMAKE([dist-xz filename-length-max=99 color-tests
 		  parallel-tests silent-rules no-define no-dependencies])
 
+## Keep this on a line of its own, since it must be found and processed
+## by the 'update-copyright' rule in out Makefile.
+RELEASE_YEAR=2012
+AC_SUBST([RELEASE_YEAR])
+
 # The API version is the base version.  We must guarantee
 # compatibility for all releases with the same API version.
 # Our current rule is that:
