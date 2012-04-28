@@ -24,6 +24,16 @@ plan_ 21
 Y () { command_ok_ "is_newest $*" is_newest "$@"; }
 N () { command_ok_ "not is_newest $*" not is_newest "$@"; }
 
+# A simple "touch -r" might not work, since on some file systems, and/or
+# with some 'touch' versions, it might truncate the timestamp (or even
+# rounded it upwards maybe).  So the first (apparently redundant) 'touch'
+# invocation below ensures that the timestamp gets "normalized" in a way
+# that allows it to be correctly copied by the second 'touch' invocation.
+copy_timestamp ()
+{
+  touch -r "$1" "$1" && touch -r "$1" "$2"
+}
+
 : > a
 $sleep
 : > b
@@ -38,7 +48,7 @@ Y c b
 Y c c
 Y c a b c
 
-touch -r c d
+copy_timestamp c d
 
 stat c d || : # For debugging.
 
@@ -69,7 +79,7 @@ done
 Y x/foo x
 N x x/foo
 
-touch -r x u
+copy_timestamp x u
 Y x u
 Y u x
 

@@ -40,10 +40,10 @@ libbar.c:
 	echo 'int bar(void) { return 0; }' > $@
 
 installcheck-local:
-	ls -l $(prefix)/lib
-	test -f $(prefix)/lib/libfoo1.a
-	test -f $(prefix)/lib/libfoo2.a
-	test -f $(prefix)/lib/libbar.a
+	ls -l $(libdir)
+	test -f $(libdir)/libfoo1.a
+	test -f $(libdir)/libfoo2.a
+	test -f $(libdir)/libbar.a
 END
 
 echo 'int bar1(void) { return 0; }' > libfoo1.c

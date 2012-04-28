@@ -67,8 +67,13 @@ grep LIBOBJS Makefile # For debugging.
 $MAKE
 $MAKE distclean
 
-# Force "no system lex library".
-./configure LEXLIB='-L /lib'
+# Force "no system lex library".  Setting LEXLIB to a non-empty value
+# ensures that configure won't search for a "lex library", and simply
+# rely on the LEXLIB to provide it, if needed.  So, by setting LEXLIB
+# to a blank but non-empty value we can fool configure into thinking
+# that no system-level library providing a 'yywrap' function is
+# available.  See also discussion on automake bug#11306.
+./configure LEXLIB=' '
 grep LIBOBJS Makefile # For debugging.
 grep '^LIBOBJS *=.*yywrap.*\.o' Makefile # Sanity check.
 $MAKE

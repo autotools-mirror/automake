@@ -67,7 +67,7 @@ TAGS_FILES = $(AUTOMAKESOURCES)
 
 EXTRA_DIST += \
   $(AUTOMAKESOURCES) \
-  bootstrap \
+  bootstrap.sh \
   GNUmakefile \
   syntax-checks.mk \
   HACKING \
@@ -274,13 +274,11 @@ dist_automake_ac_DATA = \
   m4/ar-lib.m4 \
   m4/as.m4 \
   m4/auxdir.m4 \
-  m4/ccstdc.m4 \
   m4/cond.m4 \
   m4/cond-if.m4 \
   m4/depend.m4 \
   m4/dmalloc.m4 \
   m4/gcj.m4 \
-  m4/header.m4 \
   m4/init.m4 \
   m4/install-sh.m4 \
   m4/lead-dot.m4 \
@@ -290,9 +288,6 @@ dist_automake_ac_DATA = \
   m4/minuso.m4 \
   m4/missing.m4 \
   m4/mkdirp.m4 \
-  m4/obsol-gt.m4 \
-  m4/obsol-lt.m4 \
-  m4/obsolete.m4 \
   m4/options.m4 \
   m4/protos.m4 \
   m4/python.m4 \
@@ -423,6 +418,9 @@ AM_TESTS_ENVIRONMENT += stderr_fileno_=9; export stderr_fileno_;
 # Automatically-computed dependencies for tests.
 include $(srcdir)/testsuite-autodeps.am
 
+## The dependecies declared here are not truly complete, but such
+## completeness would cause more issues than it would solve.  See
+## automake bug#11347.
 $(srcdir)/autodeps.am: $(srcdir)/gen-testsuite-part
 	$(AM_V_at)rm -f testsuite-autodeps.tmp $@
 	$(AM_V_GEN)$(PERL) $(srcdir)/gen-testsuite-part
@@ -776,7 +774,7 @@ autodiffs:
 	       && $(am__cd) tmp \
 	       && $(GIT) checkout -q "$$rev" \
 	       && echo "$@: bootstrapping $$rev" \
-	       && $(SHELL) ./bootstrap \
+	       && $(SHELL) ./bootstrap.sh \
 	       && echo "$@: copying files from $$rev" \
 	       && makefile_ins=`find . -name Makefile.in` \
 	       && (tar cf - configure aclocal.m4 $$makefile_ins) | \
@@ -894,7 +892,11 @@ update_copyright_env = \
 
 .PHONY: update-copyright
 update-copyright:
-	$(AM_V_GEN)excluded_re=`echo $(FETCHFILES) \
+	$(AM_V_GEN)set -e; \
+	current_year=`date +%Y` && test -n "$$current_year" \
+	  || { echo "$@: cannot get current year" >&1; exit 1; }; \
+	sed -i "/^RELEASE_YEAR=/s/=.*$$/=$$current_year/" configure.ac; \
+	excluded_re=`echo $(FETCHFILES) \
 	  | sed -e 's|^|lib/|' -e 's| | lib/|g' -e 's, ,|,g'`; \
 	$(GIT) ls-files \
 	  | grep -Ev '^(lib/)?(COPYING|INSTALL)$$' \

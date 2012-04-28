@@ -17,7 +17,7 @@
 # Test to make sure dependencies work with Lex/C++.
 # Test synthesized from PR automake/6.
 
-required=lex
+required='c++ lex'
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'
@@ -61,7 +61,6 @@ int yywrap (void)
 }
 int main (int argc, char **argv)
 {
-  printf("Hello, World!\n");
   return 0;
 }
 END
@@ -69,8 +68,7 @@ END
 cp joe.ll moe.l++
 
 cat > my-hdr.hxx <<'END'
-// This header contains deliberetly invalid C (but valid C++)
-#include <cstdio>
+// This header contains deliberately invalid C (but valid C++).
 using namespace std;
 END
 

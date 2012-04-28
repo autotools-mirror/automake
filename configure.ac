@@ -15,8 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-AC_PREREQ([2.68])
-AC_INIT([GNU Automake-NG], [1.11e], [automake-ng@gnu.org])
+AC_PREREQ([2.69])
+AC_INIT([GNU Automake-NG], [1.12a], [automake-ng@gnu.org])
 
 AC_CONFIG_SRCDIR([automake.in])
 AC_CONFIG_AUX_DIR([lib])
@@ -40,7 +40,12 @@ dnl We call AC_PROG_CC in an unusual way, and only for use in our
 dnl testsuite, so also use 'no-dependencies' and 'no-define' among
 dnl the automake options to avoid bloating and potential problems.
 AM_INIT_AUTOMAKE([dist-xz filename-length-max=99 color-tests
-		  parallel-tests no-define no-dependencies])
+                  parallel-tests no-define no-dependencies])
+
+## Keep this on a line of its own, since it must be found and processed
+## by the 'update-copyright' rule in out Makefile.
+RELEASE_YEAR=2012
+AC_SUBST([RELEASE_YEAR])
 
 # The API version is the base version.  We must guarantee
 # compatibility for all releases with the same API version.
@@ -60,8 +65,14 @@ AC_SUBST([system_acdir], ["\${datadir}/aclocal"])
 
 # $AUTOMAKE and $ACLOCAL are always run after a "cd $top_srcdir",
 # hence '.' is really what we want for perllibdir, libdir, and acdir.
-ACLOCAL="perllibdir=\"`pwd`/lib$PATH_SEPARATOR./lib\" \"`pwd`/aclocal\" --acdir=m4 -I m4"
-AUTOMAKE="perllibdir=\"`pwd`/lib$PATH_SEPARATOR./lib\" \"`pwd`/automake\" --libdir=lib"
+# Use '-I' with aclocal so that our own *.m4 files in m4/ gets included,
+# not copied, in aclocal.m4.
+ACLOCAL="\
+  perllibdir=\"`pwd`/lib$PATH_SEPARATOR./lib\" \"`pwd`/aclocal\" \
+  --automake-acdir=m4 --system-acdir=m4/acdir -I m4"
+AUTOMAKE="\
+  perllibdir=\"`pwd`/lib$PATH_SEPARATOR./lib\" \"`pwd`/automake\" \
+  --libdir=lib"
 
 AC_PATH_PROG([PERL], [perl])
 if test -z "$PERL"; then
@@ -299,7 +310,6 @@ _AM_COMPILER_CAN_FAIL([AC_PROG_FC(dnl
   [xlf90 f90 pgf90 pghpf epcf90 g95 gfortran])],
   [FC=false; _AM_SKIP_COMP_TESTS([Fortran])])
 
-# FIXME this won't work as expected until we can assume autoconf 2.69 :-(
 AS_IF([test x"$GFC" = x"yes"], [am_FC_is_GNU=yes], [am_FC_is_GNU=no])
 
 _AM_COMPILER_CAN_FAIL([AC_PROG_F77(dnl
