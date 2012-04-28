@@ -20,7 +20,7 @@
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'
-AM_CONFIG_HEADER([config.h two.h])
+AC_CONFIG_HEADERS([config.h two.h])
 END
 
 : > Makefile.am

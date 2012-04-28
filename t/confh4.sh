@@ -26,7 +26,7 @@
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([include/Makefile])
-AM_CONFIG_HEADER([include/config.h])
+AC_CONFIG_HEADERS([include/config.h])
 AC_PROG_CC
 END
 

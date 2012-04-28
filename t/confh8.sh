@@ -20,7 +20,7 @@
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'
-AM_CONFIG_HEADER([one.h two.h])
+AC_CONFIG_HEADERS([one.h two.h])
 AC_OUTPUT
 END
 
