@@ -19,7 +19,7 @@
 # distributed .l sources are cleaned by "make maintainer-clean".
 # See also sister test 'lex-clean-cxx.test'.
 
-required=yacc
+required=lex
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'
