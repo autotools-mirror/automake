@@ -5,7 +5,7 @@
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
 
-# serial 2
+# serial 3
 
 # AM_PROG_MKDIR_P
 # ---------------
@@ -13,6 +13,11 @@
 AC_DEFUN([AM_PROG_MKDIR_P],
 [AC_PREREQ([2.60])dnl
 AC_REQUIRE([AC_PROG_MKDIR_P])dnl
+dnl FIXME to be removed in Automake 1.13.
+AC_DIAGNOSE([obsolete],
+[$0: this macro is deprecated, and will soon be removed.
+You should use the Autoconf-provided 'AC][_PROG_MKDIR_P' macro instead,
+and use '$(MKDIR_P)' instead of '$(mkdir_p)'in your Makefile.am files.])
 dnl Automake 1.8 to 1.9.6 used to define mkdir_p.  We now use MKDIR_P,
 dnl while keeping a definition of mkdir_p for backward compatibility.
 dnl @MKDIR_P@ is magic: AC_OUTPUT adjusts its value for each Makefile.

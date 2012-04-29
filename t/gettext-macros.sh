@@ -80,6 +80,13 @@ fi
 
 . ./get.sh
 
+cat >> get.sh <<'END'
+# Even recent versions of gettext used the now-obsolete 'AM_PROG_MKDIR_P'
+# m4 macro.  So we need the following to avoid spurious errors.
+ACLOCAL="$ACLOCAL -Wno-obsolete"
+AUTOMAKE="$AUTOMAKE -Wno-obsolete"
+END
+
 $ACLOCAL --force -I m4 || cat >> get.sh <<'END'
 # We need to use '-Wno-syntax', since we do not want our test suite
 # to fail merely because some third-party '.m4' file is underquoted.
