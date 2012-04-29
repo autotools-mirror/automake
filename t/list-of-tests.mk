@@ -674,7 +674,6 @@ t/missing4.sh \
 t/missing5.sh \
 t/missing6.sh \
 t/missing-auxfile-stops-makefiles-creation.sh \
-t/mkdirp-deprecation.sh \
 t/mkinstall.sh \
 t/mkinst2.sh \
 t/mkinst3.sh \

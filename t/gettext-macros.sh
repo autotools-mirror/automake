@@ -61,10 +61,7 @@ AM_GNU_GETTEXT
 AM_GNU_GETTEXT_VERSION([$autopoint_version])
 END
 
-if $am_gettextize_command --force && test -f m4/gettext.m4; then
-  echo "ACLOCAL_PATH='`pwd`/m4':\$ACLOCAL_PATH" >> get.sh
-  echo "export ACLOCAL_PATH" >> get.sh
-else
+if $am_gettextize_command --force && test -f m4/gettext.m4; then :; else
   # Older versions of gettext might not have a gettextize program
   # available, but this doesn't mean the user hasn't made the gettext
   # macros available, e.g., by properly setting ACLOCAL_PATH.
@@ -78,14 +75,14 @@ else
   fi
 fi
 
-. ./get.sh
+echo "ACLOCAL_PATH='`pwd`/m4':\$ACLOCAL_PATH" >> get.sh
+echo "export ACLOCAL_PATH" >> get.sh
 
-cat >> get.sh <<'END'
 # Even recent versions of gettext used the now-obsolete 'AM_PROG_MKDIR_P'
 # m4 macro.  So we need the following to avoid spurious errors.
-ACLOCAL="$ACLOCAL -Wno-obsolete"
-AUTOMAKE="$AUTOMAKE -Wno-obsolete"
-END
+echo 'AC_DEFUN([AM_MKDIR_P], [AC_MKDIR_P([$@])])' >> m4/mk-dirp.m4
+
+. ./get.sh
 
 $ACLOCAL --force -I m4 || cat >> get.sh <<'END'
 # We need to use '-Wno-syntax', since we do not want our test suite
