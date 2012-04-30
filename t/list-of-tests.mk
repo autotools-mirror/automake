@@ -708,6 +708,7 @@ t/objc-deps.sh \
 t/objcxx-basic.sh \
 t/objcxx-minidemo.sh \
 t/objcxx-deps.sh \
+t/objc-megademo.sh \
 t/objext-pr10128.sh \
 t/obsolete.sh \
 t/oldvars.sh \
