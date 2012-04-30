@@ -26,7 +26,9 @@ am_parallel_tests=yes
 case $use_colors in
   yes)
     AM_COLOR_TESTS=always; export AM_COLOR_TESTS
-    TERM=ansi; export TERM
+    # Forced colorization should take place also with non-ANSI
+    # terminals; hence this setting.
+    TERM=dumb; export TERM
     am_opts='parallel-tests color-tests'
     ;;
   no)

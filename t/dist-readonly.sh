@@ -17,7 +17,9 @@
 # Test that a readonly files are distributed as such, and not make
 # writable while being copied in the $(distdir).
 
-required=cc
+# This test expect the user to be unable to write on files lacking
+# write permissions -- so it won't work if the user is 'root'.
+required='non-root cc'
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

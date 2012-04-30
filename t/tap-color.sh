@@ -20,8 +20,6 @@
 am_parallel_tests=yes
 . ./defs || Exit 1
 
-TERM=ansi; export TERM
-
 esc=''
 # Escape '[' for grep, below.
 red="$esc\[0;31m"
@@ -102,9 +100,6 @@ ok 1
 ok 2
 END
 
-AM_COLOR_TESTS=always $MAKE check >stdout && { cat stdout; Exit 1; }
-cat stdout
-
 test_color ()
 {
   # Not a useless use of cat; see above comments about grep.
@@ -136,11 +131,14 @@ test_no_color ()
 
 # It should be possible to override AM_COLOR_TESTS also from the
 # environment.
-AM_COLOR_TESTS=always $MAKE check >stdout && { cat stdout; Exit 1; }
+# Forced colorization should take place also with non-ANSI terminals;
+# hence the "TERM=dumb" definition.
+TERM=dumb AM_COLOR_TESTS=always $MAKE check >stdout \
+  && { cat stdout; Exit 1; }
 cat stdout
 test_color
 
-$MAKE check >stdout && { cat stdout; Exit 1; }
+$MAKE check TERM=ansi >stdout && { cat stdout; Exit 1; }
 cat stdout
 test_no_color
 

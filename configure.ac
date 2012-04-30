@@ -43,7 +43,7 @@ AM_INIT_AUTOMAKE([dist-xz filename-length-max=99 color-tests
                   parallel-tests no-define no-dependencies])
 
 ## Keep this on a line of its own, since it must be found and processed
-## by the 'update-copyright' rule in out Makefile.
+## by the 'update-copyright' rule in our Makefile.
 RELEASE_YEAR=2012
 AC_SUBST([RELEASE_YEAR])
 

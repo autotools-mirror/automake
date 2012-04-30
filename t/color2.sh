@@ -19,9 +19,6 @@
 
 . ./defs || Exit 1
 
-TERM=ansi
-export TERM
-
 esc=''
 # Escape '[' for grep, below.
 red="$esc\[0;31m"
@@ -126,10 +123,15 @@ for vpath in false :; do
 
   $srcdir/configure
 
-  MAKE=$MAKE expect -f $srcdir/expect-make >stdout \
+  TERM=ansi MAKE=$MAKE expect -f $srcdir/expect-make >stdout \
     || { cat stdout; Exit 1; }
   cat stdout
   test_color
+
+  TERM=dumb MAKE=$MAKE expect -f $srcdir/expect-make >stdout \
+    || { cat stdout; Exit 1; }
+  cat stdout
+  test_no_color
 
   AM_COLOR_TESTS=no MAKE=$MAKE expect -f $srcdir/expect-make >stdout \
     || { cat stdout; Exit 1; }

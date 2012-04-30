@@ -114,11 +114,14 @@ for vpath in false :; do
 
   $srcdir/configure
 
-  $MAKE check AM_COLOR_TESTS=always >stdout && { cat stdout; Exit 1; }
+  # Forced colorization should take place also with non-ANSI terminals;
+  # hence the "TERM=dumb" definition.
+  $MAKE check AM_COLOR_TESTS=always TERM=dumb >stdout \
+    && { cat stdout; Exit 1; }
   cat stdout
   test_color
 
-  $MAKE check >stdout && { cat stdout; Exit 1; }
+  $MAKE check TERM=ansi >stdout && { cat stdout; Exit 1; }
   cat stdout
   test_no_color
 

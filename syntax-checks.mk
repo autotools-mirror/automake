@@ -84,7 +84,6 @@ sc_tests_no_configure_in \
 sc_tests_PATH_SEPARATOR \
 sc_tests_logs_duplicate_prefixes \
 sc_tests_makefile_variable_order \
-sc_mkdir_p \
 sc_perl_at_substs \
 sc_unquoted_DESTDIR \
 sc_tabs_in_texi \
@@ -599,12 +598,6 @@ sc_tests_PATH_SEPARATOR:
 	@if grep -E '\bPATH=.*:.*' $(xtests) ; then \
 	  echo "Use '\$$PATH_SEPARATOR', not ':', in PATH definitions" \
 	       "above." 1>&2; \
-	  exit 1; \
-	fi
-
-sc_mkdir_p:
-	@if grep 'mkdir_p' $(srcdir)/automake.in $(ams) $(xtests); then \
-	  echo 'Do not use mkdir_p in the above files, use MKDIR_P.' 1>&2; \
 	  exit 1; \
 	fi
 

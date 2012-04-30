@@ -22,6 +22,8 @@ am_parallel_tests=yes
 
 esc='['
 
+TERM=ansi; export TERM
+
 # Check that grep can parse nonprinting characters.
 # BSD 'grep' works from a pipe, but not a seekable file.
 # GNU or BSD 'grep -a' works on files, but is not portable.
@@ -43,14 +45,13 @@ END
 cat > foobar << 'END'
 #!/bin/sh
 echo "TERM='$TERM'"
-echo "expected_term='$expected_term'"
-test x"$TERM" = x"$expected_term"
+test x"$TERM" = x"dumb"
 END
 chmod a+x foobar
 
 mkcheck ()
 {
-  if env AM_COLOR_TESTS=always $* $MAKE check > stdout; then
+  if $MAKE "$@" check > stdout; then
     rc=0
   else
     rc=1
@@ -66,24 +67,10 @@ $AUTOCONF
 $AUTOMAKE -a
 ./configure
 
-TERM=ansi; export TERM
-expected_term=dumb; export expected_term
 mkcheck TESTS_ENVIRONMENT='TERM=dumb'
 cat stdout | grep "PASS.*foobar" | $FGREP "$esc"
 
-TERM=dumb; export TERM
-expected_term=ansi; export expected_term
-mkcheck TESTS_ENVIRONMENT='TERM=ansi'
-cat stdout | $FGREP "$esc" && Exit 1
-
-TERM=ansi; export TERM
-expected_term=dumb; export expected_term
 mkcheck AM_TESTS_ENVIRONMENT='TERM=dumb'
 cat stdout | grep "PASS.*foobar" | $FGREP "$esc"
-
-TERM=dumb; export TERM
-expected_term=ansi; export expected_term
-mkcheck AM_TESTS_ENVIRONMENT='TERM=ansi'
-cat stdout | $FGREP "$esc" && Exit 1
 
 :
