@@ -13,6 +13,7 @@
 
 # Basic tests on the Objective C++ support that don't actually
 # require an Objective-C++ compiler.
+# See also sister test 'objc-basic.sh'.
 
 . ./defs || Exit 1
 

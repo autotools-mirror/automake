@@ -702,8 +702,7 @@ t/nolink.sh \
 t/nostdinc.sh \
 t/notrans.sh \
 t/number.sh \
-t/objc.sh \
-t/objc2.sh \
+t/objc-basic.sh \
 t/objc-minidemo.sh \
 t/objcxx-basic.sh \
 t/objcxx-minidemo.sh \
