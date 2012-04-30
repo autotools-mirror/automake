@@ -102,7 +102,7 @@ test_no_color ()
   # print the whole failing recipe on standard output, we should content
   # ourselves with a laxer check, to avoid false positives.
   # Keep this in sync with lib/am/check.am:$(am__color_tests).
-  if $FGREP '= Xalways || test -t 1 ' stdout; then
+  if $FGREP '= Xalways; then' stdout; then
     # Extra verbose make, resort to laxer checks.
     # Note that we also want to check that the testsuite summary is
     # not unduly colorized.
@@ -141,11 +141,14 @@ for vpath in false :; do
 
   $srcdir/configure
 
-  AM_COLOR_TESTS=always $MAKE -e check >stdout && { cat stdout; Exit 1; }
+  # Forced colorization should take place also with non-ANSI terminals;
+  # hence the "TERM=dumb" definition.
+  TERM=dumb AM_COLOR_TESTS=always $MAKE -e check >stdout \
+    && { cat stdout; Exit 1; }
   cat stdout
   test_color
 
-  $MAKE -e check >stdout && { cat stdout; Exit 1; }
+  TERM=ansi $MAKE -e check >stdout && { cat stdout; Exit 1; }
   cat stdout
   test_no_color
 
