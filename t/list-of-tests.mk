@@ -704,8 +704,10 @@ t/notrans.sh \
 t/number.sh \
 t/objc-basic.sh \
 t/objc-minidemo.sh \
+t/objc-deps.sh \
 t/objcxx-basic.sh \
 t/objcxx-minidemo.sh \
+t/objcxx-deps.sh \
 t/objext-pr10128.sh \
 t/obsolete.sh \
 t/oldvars.sh \
