@@ -19,9 +19,6 @@
 
 . ./defs || Exit 1
 
-TERM=ansi
-export TERM
-
 esc=''
 # Escape '[' for grep, below.
 red="$esc\[0;31m"
@@ -132,7 +129,7 @@ test_no_color ()
   # print the whole failing recipe on standard output, we should content
   # ourselves with a laxer check, to avoid false positives.
   # Keep this in sync with lib/am/check.am:$(am__color_tests).
-  if $FGREP '= Xalways || test -t 1 ' stdout; then
+  if $FGREP '= Xalways; then' stdout; then
     # Extra verbose make, resort to laxer checks.
     # Note that we also want to check that the testsuite summary is
     # not unduly colorized.
@@ -176,10 +173,15 @@ for vpath in false :; do
 
   $srcdir/configure
 
-  MAKE=$MAKE expect -f $srcdir/expect-make >stdout \
+  TERM=ansi MAKE=$MAKE expect -f $srcdir/expect-make >stdout \
     || { cat stdout; Exit 1; }
   cat stdout
   test_color
+
+  TERM=dumb MAKE=$MAKE expect -f $srcdir/expect-make >stdout \
+    || { cat stdout; Exit 1; }
+  cat stdout
+  test_no_color
 
   AM_COLOR_TESTS=no MAKE=$MAKE expect -f $srcdir/expect-make >stdout \
     || { cat stdout; Exit 1; }

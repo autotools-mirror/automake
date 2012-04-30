@@ -20,8 +20,6 @@
 am_parallel_tests=yes
 . ./defs || Exit 1
 
-TERM=ansi; export TERM
-
 esc=''
 # Escape '[' for grep, below.
 red="$esc\[0;31m"
@@ -102,9 +100,6 @@ ok 1
 ok 2
 END
 
-AM_COLOR_TESTS=always $MAKE check >stdout && { cat stdout; Exit 1; }
-cat stdout
-
 test_color ()
 {
   # Not a useless use of cat; see above comments about grep.
@@ -134,7 +129,7 @@ test_no_color ()
   # print the whole failing recipe on standard output, we should content
   # ourselves with a laxer check, to avoid false positives.
   # Keep this in sync with lib/am/check.am:$(am__color_tests).
-  if $FGREP '= Xalways || test -t 1 ' stdout; then
+  if $FGREP '= Xalways; then' stdout; then
     # Extra verbose make, resort to laxer checks.
     # But we also want to check that the testsuite summary is not unduly
     # colorized.
@@ -162,11 +157,15 @@ test_no_color ()
   fi
 }
 
-AM_COLOR_TESTS=always $MAKE check >stdout && { cat stdout; Exit 1; }
+# Forced colorization should take place also with non-ANSI terminals;
+# hence the "TERM=dumb" definition.
+TERM=dumb AM_COLOR_TESTS=always $MAKE check >stdout \
+  && { cat stdout; Exit 1; }
 cat stdout
 test_color
 
-$MAKE -e check >stdout && { cat stdout; Exit 1; }
+TERM=ansi $MAKE -e check >stdout \
+  && { cat stdout; Exit 1; }
 cat stdout
 test_no_color
 
