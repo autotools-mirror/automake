@@ -19,9 +19,6 @@
 
 . ./defs || Exit 1
 
-TERM=ansi
-export TERM
-
 esc=''
 # Escape '[' for grep, below.
 red="$esc\[0;31m"
