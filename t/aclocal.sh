@@ -34,6 +34,11 @@ cat stderr >&2
 grep 'unrecognized option.*--unknown-option' stderr
 grep '[Tt]ry.*--help.*for more information' stderr
 
+$ACLOCAL foobar 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+grep 'non-option argument.*foobar' stderr
+grep '[Tt]ry.*--help.*for more information' stderr
+
 $ACLOCAL --ver 2>stderr && { cat stderr >&2; Exit 1; }
 cat stderr >&2
 grep 'unrecognized option.*--ver' stderr
