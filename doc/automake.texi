@@ -359,9 +359,9 @@ Conditionals
 
 Silencing Make
 
-* Make verbosity::               Make is verbose by default
-* Tricks For Silencing Make::    Standard and generic ways to silence make
-* Automake silent-rules Option:: How Automake can help in silencing make
+* Make verbosity::              Make is verbose by default
+* Tricks For Silencing Make::   Standard and generic ways to silence make
+* Automake Silent Rules::       How Automake can help in silencing make
 
 When Automake Isn't Enough
 
@@ -2712,8 +2712,6 @@ variables.
 The categories output by default are @samp{syntax} and
 @samp{unsupported}.  Additionally, @samp{gnu} and @samp{portability}
 are enabled in @option{--gnu} and @option{--gnits} strictness.
-On the other hand, the @option{silent-rules} options (@pxref{Options})
-turns off portability warnings about recursive variable expansions.
 
 @c Checked by extra-portability.sh
 Turning off @samp{portability} will also turn off @samp{extra-portability},
@@ -4058,7 +4056,8 @@ compiler is found.
 
 @item AM_SILENT_RULES
 @acindex AM_SILENT_RULES
-Enable the machinery for less verbose build output (@pxref{Options}).
+Control the machinery for less verbose build output
+(@pxref{Automake Silent Rules}).
 
 @item AM_WITH_DMALLOC
 @acindex AM_WITH_DMALLOC
@@ -5480,9 +5479,8 @@ The libtool rules also use a @code{LIBTOOLFLAGS} variable that should
 not be set in @file{Makefile.am}: this is a user variable (@pxref{Flag
 Variables Ordering}.  It allows users to run @samp{make
 LIBTOOLFLAGS=--silent}, for instance.  Note that the verbosity of
-@command{libtool} can also be influenced with the Automake
-@option{silent-rules} option (@pxref{Options}).
-
+@command{libtool} can also be influenced by the Automake support
+for silent rules (@pxref{Automake Silent Rules}).
 
 @node LTLIBOBJS, Libtool Issues, Libtool Flags, A Shared Library
 @subsection @code{LTLIBOBJS} and @code{LTALLOCA}
@@ -10167,23 +10165,6 @@ non-alpha releases.  The second form is
 @samp{@var{major}.@var{minor}@var{alpha}}, where @var{alpha} is a
 letter; it should be omitted for non-alpha releases.
 
-@item @option{silent-rules}
-@cindex Option, @option{silent-rules}
-@opindex silent-rules
-Enable less verbose build rules.  This can be used to let build rules
-output status lines of the form:
-@example
-GEN @var{output-file}
- CC @var{object-file}
-@end example
-@noindent
-instead of printing the command that will be executed to update
-@var{output-file} or to compile @var{object-file}.  It can also
-silence @command{libtool} output.
-
-For more information about how to use, enable, or disable silent
-rules, @pxref{Automake silent-rules Option}.
-
 @item @option{std-options}
 @cindex Options, @option{std-options}
 @cindex @samp{make installcheck}, testing @option{--help} and @option{--version}
@@ -10665,9 +10646,9 @@ Libtool Sources}).
 @cindex Silent @command{make} rules
 
 @menu
-* Make verbosity::               Make is verbose by default
-* Tricks For Silencing Make::    Standard and generic ways to silence make
-* Automake silent-rules Option:: How Automake can help in silencing make
+* Make verbosity::              Make is verbose by default
+* Tricks For Silencing Make::   Standard and generic ways to silence make
+* Automake Silent Rules::       How Automake can help in silencing make
 @end menu
 
 @node Make verbosity
@@ -10702,8 +10683,8 @@ the easy detection of potentially important warning messages.
 
 Here we describe some common idioms/tricks to obtain a quieter make
 output, with their relative advantages and drawbacks.  In the next
-section (@ref{Automake silent-rules Option}) we'll see how Automake
-can help in this respect.
+section (@ref{Automake Silent Rules}) we'll see how Automake can help
+in this respect, providing more elaborate and flexible idioms.
 
 @itemize @bullet
 
@@ -10755,20 +10736,19 @@ automatically activated if the @option{-s} flag is used.
 
 @end itemize
 
-@node Automake silent-rules Option
+@node Automake Silent Rules
 @section How Automake can help in silencing make
 
 The tricks and idioms for silencing @command{make} described in the
 previous section can be useful from time to time, but we've seen that
 they all have their serious drawbacks and limitations.  That's why
 automake provides support for a more advanced and flexible way of
-obtaining quieter output from @command{make}: the @option{silent-rules}
-mode.
+obtaining quieter output from @command{make} (for most rules at least).
 
 @c TODO: Maybe describe in brief the precedent set by the build system
 @c of the Linux Kernel, from which Automake took inspiration ... Links?
 
-To give the gist of what @option{silent-rules} can do, here is a simple
+To give the gist of what Automake can do in this respect, here is a simple
 comparison between a typical @command{make} output (where silent rules
 are disabled) and one with silent rules enabled:
 
@@ -10817,7 +10797,7 @@ func.c:4:3: warning: ‘i’ used uninitialized in this function
   CCLD   foo
 @end example
 
-@cindex silent-rules and libtool
+@cindex silent rules and libtool
 Also, in projects using @command{libtool}, the use of silent rules can
 automatically enable the @command{libtool}'s @option{--silent} option:
 
@@ -10843,26 +10823,9 @@ libtool: link: cd .libs && rm -f libx.so && ln -s libx.so.0.0.0 libx.so
   CCLD   libx.la
 @end example
 
-Let's now see how the @option{silent-rules} mode interfaces with the
-package developer and the package user.
-
-To enable the use of @option{silent-rules} in his package, a developer
-needs to do either of the following:
-
-@itemize @bullet
-@item
-Add the @option{silent-rules} option as argument to @code{AM_INIT_AUTOMAKE}.
-@item
-Call the @code{AM_SILENT_RULES} macro from within the @file{configure.ac}
-file.
-@end itemize
-
-It is not possible to instead specify @option{silent-rules} in a
-@file{Makefile.am} file.
-
-If the developer has done either of the above, then the user of the
-package may influence the verbosity at @command{configure} run time as
-well as at @command{make} run time:
+For Automake-generated @file{Makefile}s, the user may influence the
+verbosity at @command{configure} run time as well as at @command{make}
+run time:
 
 @itemize @bullet
 @item
@@ -10878,17 +10841,16 @@ time may be overridden: @code{make V=1} will produce verbose output,
 @code{make V=0} less verbose output.
 @end itemize
 
-@cindex default verbosity for silent-rules
+@cindex default verbosity for silent rules
 Note that silent rules are @emph{disabled} by default; the user must
 enable them explicitly at either @command{configure} run time or at
 @command{make} run time.  We think that this is a good policy, since
 it provides the casual user with enough information to prepare a good
 bug report in case anything breaks.
 
-Still, notwithstanding the rationales above, a developer who wants to
-make silent rules enabled by default in his own package can do so by
-adding a @samp{yes} argument to the @code{AM_SILENT_RULES} call in
-@file{configure.ac}.  We advise against this approach, though.
+Still, notwithstanding the rationales above, a developer who really
+wants to make silent rules enabled by default in his own package can
+do so by calling @code{AM_SILENT_RULES([yes])} in @file{configure.ac}.
 
 @c Keep in sync with silent-configsite.sh
 Users who prefer to have silent rules enabled by default can edit their
@@ -10901,16 +10863,13 @@ For portability to different @command{make} implementations, package authors
 are advised to not set the variable @code{V} inside the @file{Makefile.am}
 file, to allow the user to override the value for subdirectories as well.
 
-The current implementation of this feature normally uses nested
-variable expansion @samp{$(@var{var1}$(V))}, a @file{Makefile} feature
-that is not required by POSIX 2008 but is widely supported in
-practice.  The @option{silent-rules} option thus turns off warnings
-about recursive variable expansion, which are in turn enabled by
-@option{-Wportability} (@pxref{automake Invocation}).  On the rare
-@command{make} implementations that do not support nested variable
-expansion, whether rules are silent is always determined at configure
-time, and cannot be overridden at make time.  Future versions of POSIX
-are likely to require nested variable expansion, so this minor
+To work at its best, the current implementation of this feature normally
+uses nested variable expansion @samp{$(@var{var1}$(V))}, a @file{Makefile}
+feature that is not required by POSIX 2008 but is widely supported in
+practice.  On the rare @command{make} implementations that do not support
+nested variable expansion, whether rules are silent is always determined at
+configure time, and cannot be overridden at make time.  Future versions of
+POSIX are likely to require nested variable expansion, so this minor
 limitation should go away with time.
 
 @vindex @code{AM_V_GEN}
@@ -12980,8 +12939,8 @@ generated by @command{automake} effectively:
 
 @itemize
 @item
-If less verbose output has been enabled in the package with the
-@samp{silent-rules} option (@pxref{Options}), you can use
+If less verbose output has been enabled in the package with the use
+of silent rules (@pxref{Automake Silent Rules}), you can use
 @code{make V=1} to see the commands being executed.
 @item
 @code{make -n} can help show what would be done without actually doing

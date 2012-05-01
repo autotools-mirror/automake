@@ -39,8 +39,8 @@ $ACLOCAL
 $AUTOMAKE
 
 # Look for the macros at the beginning of rules.
-$FGREP "$tab\$(COMPILE)"    Makefile.in
-$FGREP "$tab\$(CXXCOMPILE)" Makefile.in
-$FGREP "$tab\$(F77COMPILE)" Makefile.in
+$FGREP "$tab\$(AM_V_CC)\$(COMPILE)"     Makefile.in
+$FGREP "$tab\$(AM_V_CXX)\$(CXXCOMPILE)" Makefile.in
+$FGREP "$tab\$(AM_V_F77)\$(F77COMPILE)" Makefile.in
 
 :

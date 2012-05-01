@@ -95,7 +95,6 @@ do_and_check_verbose_build ()
 mkdir sub
 
 cat >>configure.ac <<'EOF'
-AM_SILENT_RULES
 AM_PROG_CC_C_O
 AC_PROG_CXX
 AC_PROG_F77

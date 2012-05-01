@@ -19,11 +19,12 @@
 . ./defs || Exit 1
 
 cat >>configure.ac <<'EOF'
-AM_SILENT_RULES
 AC_OUTPUT
 EOF
 
 cat > Makefile.am <<'EOF'
+AUTOMAKE_OPTIONS = -Wno-portability-recursive
+
 my_verbose = $(my_verbose_$(V))
 my_verbose_ = $(my_verbose_$(AM_DEFAULT_VERBOSITY))
 my_verbose_0 = @echo GEN $@;
@@ -67,41 +68,5 @@ $MAKE V=0 >stdout || { cat stdout; Exit 1; }
 cat stdout
 grep '^ *GEN foo *$' stdout
 grep 'cp ' stdout && Exit 1
-
-$MAKE distclean
-
-$sleep
-# Things should also work with -Wall in AM_INIT_AUTOMAKE.
-cat > configure.ac <<'END'
-AC_INIT([silent6], [1.0])
-AM_INIT_AUTOMAKE([-Wall])
-AC_CONFIG_FILES([Makefile])
-END
-
-$ACLOCAL
-AUTOMAKE_fails
-$AUTOMAKE -Wno-error
-
-# AM_SILENT_RULES should turn off the warning.
-$sleep
-echo 'AM_SILENT_RULES' >> configure.ac
-$ACLOCAL
-$AUTOMAKE
-grep 'AM_V_GEN' Makefile.in
-$AUTOMAKE --force -Wno-all -Wportability
-grep 'AM_V_GEN' Makefile.in
-
-# The 'silent-rules' option to AM_INIT_AUTOMAKE should work likewise.
-$sleep
-cat > configure.ac <<'END'
-AC_INIT([silent6], [1.0])
-AM_INIT_AUTOMAKE([silent-rules])
-AC_CONFIG_FILES([Makefile])
-END
-$ACLOCAL
-$AUTOMAKE
-grep 'AM_V_GEN' Makefile.in
-$AUTOMAKE --force -Wno-all -Wportability
-grep 'AM_V_GEN' Makefile.in
 
 :

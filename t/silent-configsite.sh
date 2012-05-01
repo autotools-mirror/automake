@@ -21,7 +21,7 @@
 . ./defs || Exit 1
 
 cat >> configure.ac <<'EOF'
-AM_SILENT_RULES
+# This line will be edited later to force silent-rules default.
 AC_OUTPUT
 EOF
 
@@ -51,8 +51,9 @@ $MAKE distclean
 
 : 'Disable by default in configure.ac, enable by default in config.site'
 
-sed 's/^AM_SILENT_RULES/&([no])/' configure.ac > configure.tmp
-mv -f configure.tmp configure.ac
+sed 's/.*silent-rules default.*/AM_SILENT_RULES([no])/' configure.ac > t
+diff t configure.ac && fatal_ "editing configure.ac"
+mv -f t configure.ac
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
@@ -67,8 +68,9 @@ $MAKE distclean
 
 : 'Enable by default in configure.ac, disable by default in config.site'
 
-sed 's/^AM_SILENT_RULES/&([yes])/' configure.ac > configure.tmp
-mv -f configure.tmp configure.ac
+sed 's/.*AM_SILENT_RULES.*/AM_SILENT_RULES([yes])/' configure.ac > t
+diff t configure.ac && fatal_ "editing configure.ac"
+mv -f t configure.ac
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing

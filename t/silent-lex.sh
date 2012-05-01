@@ -22,7 +22,6 @@ required=lex
 mkdir sub
 
 cat >>configure.ac <<'EOF'
-AM_SILENT_RULES
 AM_PROG_CC_C_O
 AC_PROG_LEX
 AC_CONFIG_FILES([sub/Makefile])
