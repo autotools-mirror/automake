@@ -87,7 +87,7 @@ dosubst ()
       -e "s%@SHELL@%$BOOTSTRAP_SHELL%g" \
       -e "s%@VERSION@%$VERSION%g" \
       -e "s%@datadir@%$datadir%g" \
-      -e "s%@RELEASE_YEAR@%$RELEASE_YEAR%G" \
+      -e "s%@RELEASE_YEAR@%$RELEASE_YEAR%g" \
       -e "s%@configure_input@%Generated from $in; do not edit by hand.%g" \
       $1 > $2
   chmod a-w $2
