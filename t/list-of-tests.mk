@@ -704,9 +704,11 @@ t/notrans.sh \
 t/number.sh \
 t/objc-basic.sh \
 t/objc-minidemo.sh \
+t/objc-flags.sh \
 t/objc-deps.sh \
 t/objcxx-basic.sh \
 t/objcxx-minidemo.sh \
+t/objcxx-flags.sh \
 t/objcxx-deps.sh \
 t/objc-megademo.sh \
 t/objext-pr10128.sh \
