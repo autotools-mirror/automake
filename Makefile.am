@@ -893,8 +893,9 @@ update_copyright_env = \
 update-copyright:
 	$(AM_V_GEN)set -e; \
 	current_year=`date +%Y` && test -n "$$current_year" \
-	  || { echo "$@: cannot get current year" >&1; exit 1; }; \
-	sed -i "/^RELEASE_YEAR=/s/=.*$$/=$$current_year/" configure.ac; \
+	  || { echo "$@: cannot get current year" >&2; exit 1; }; \
+	sed -i "/^RELEASE_YEAR=/s/=.*$$/=$$current_year/" \
+	  bootstrap.sh configure.ac; \
 	excluded_re=`echo $(FETCHFILES) \
 	  | sed -e 's|^|lib/|' -e 's| | lib/|g' -e 's, ,|,g'`; \
 	$(GIT) ls-files \
