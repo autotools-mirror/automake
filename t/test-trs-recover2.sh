@@ -80,16 +80,6 @@ test -r bar.trs
 grep '^PASS: foo\.test' stdout
 grep '^PASS: bar\.test' stdout
 
-: More complex interactions with "make recheck" are OK.
-chmod a-r bar.log bar.trs
-$MAKE recheck >stdout || { cat stdout; Exit 1; }
-cat stdout
-test -f bar.trs
-test -r bar.trs
-grep '^PASS: bar\.test' stdout
-grep 'foo\.test' stdout && Exit 1
-count_test_results total=1 pass=1 fail=0 xpass=0 xfail=0 skip=0 error=0
-
 : Recreate by remaking the global test log.
 chmod a-r foo.trs
 rm -f test-suite.log
