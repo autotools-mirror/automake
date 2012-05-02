@@ -49,7 +49,7 @@ END
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE --cygnus
+$AUTOMAKE --cygnus -Wno-obsolete
 
 ./configure
 $MAKE

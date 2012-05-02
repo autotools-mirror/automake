@@ -329,6 +329,7 @@ t/cxxlibobj.sh \
 t/cxxlink.sh \
 t/cxxnoc.sh \
 t/cxxo.sh \
+t/cygnus-deprecation.sh \
 t/cygnus-check-without-all.sh \
 t/cygnus-dependency-tracking.sh \
 t/cygnus-imply-foreign.sh \

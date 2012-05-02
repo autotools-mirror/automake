@@ -33,6 +33,6 @@ END
 echo '@setfilename ian.info' > ian.texi
 
 $ACLOCAL
-$AUTOMAKE --cygnus
+$AUTOMAKE --cygnus -Wno-obsolete
 
 :
