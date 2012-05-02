@@ -14,25 +14,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Make sure that our macro 'AM_SILENT_RULES' adds proper text to
-# the configure help screen.
+# Make sure configure options relative to automake silent rules are
+# added to the configure help screen.
 
 . ./defs || Exit 1
 
-cat > configure.ac <<END
-AC_INIT([$me], [1.0])
-AM_SILENT_RULES
-END
-
+: > Makefile.am
 $ACLOCAL
 
-mv -f configure.ac configure.tmpl
+cp configure.ac configure.tmpl
 
 q="[\`'\"]"
 
-for args in '' '([])' '([yes])' '([no])'; do
-  sed "s/AM_SILENT_RULES.*/&$args/" configure.tmpl >configure.ac
-  cat configure.ac
+for args in '' 'yes' 'no'; do
+  cp -f configure.tmpl configure.ac
+  test x"$args" = x || echo "AM_SILENT_RULES([$args])/" >> configure.ac
+  cat configure.ac # For debugging.
   $AUTOCONF --force
   grep_configure_help --enable-silent-rules \
                       " less verbose build.*\\(undo.*${q}make V=1${q}"

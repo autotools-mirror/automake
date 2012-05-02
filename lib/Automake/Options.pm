@@ -286,6 +286,7 @@ sub _is_valid_easy_option ($)
     no-texinfo.tex
     nostdinc
     readme-alpha
+    silent-rules
     std-options
     subdir-objects
   );
@@ -340,10 +341,6 @@ sub _process_option_list (\%@)
         {
           delete $options->{$_};
           $options->{'filename-length-max'} = [$_, $1];
-        }
-      elsif ($_ eq 'silent-rules')
-        {
-          _option_must_be_from_configure ($_, $where);
         }
       elsif ($_ eq 'tar-v7' || $_ eq 'tar-ustar' || $_ eq 'tar-pax')
         {

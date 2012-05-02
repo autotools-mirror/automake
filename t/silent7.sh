@@ -15,13 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Check user extensibility of silent-rules mode.
+# Aslo check that silent rules are disabled by default.
 
 . ./defs || Exit 1
 
-cat >>configure.ac <<'EOF'
-AM_SILENT_RULES
-AC_OUTPUT
-EOF
+echo AC_OUTPUT >> configure.ac
 
 cat > Makefile.am <<'EOF'
 all-local: foo
@@ -41,7 +39,9 @@ $ACLOCAL
 $AUTOMAKE --add-missing
 $AUTOCONF
 
-./configure --disable-silent-rules
+# Silent rules are disabled by default, since we haven't called
+# "AM_SILENT_RULES([yes])" explicitly.
+./configure
 $MAKE >stdout || { cat stdout; Exit 1; }
 cat stdout
 grep 'GEN ' stdout && Exit 1
@@ -84,9 +84,5 @@ cat stdout
 grep 'GEN ' stdout && Exit 1
 grep 'cp ' stdout
 grep 'echo ' stdout
-
-# Ensure that setting 'silent-rules' in a Makefile.am produces an error.
-echo 'AUTOMAKE_OPTIONS = silent-rules' >> Makefile.am
-AUTOMAKE_fails --force
 
 :

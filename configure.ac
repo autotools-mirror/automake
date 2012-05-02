@@ -40,7 +40,7 @@ dnl We call AC_PROG_CC in an unusual way, and only for use in our
 dnl testsuite, so also use 'no-dependencies' and 'no-define' among
 dnl the automake options to avoid bloating and potential problems.
 AM_INIT_AUTOMAKE([dist-xz filename-length-max=99 color-tests
-		  parallel-tests silent-rules no-define no-dependencies])
+		  parallel-tests no-define no-dependencies])
 
 ## Keep this on a line of its own, since it must be found and processed
 ## by the 'update-copyright' rule in our Makefile.

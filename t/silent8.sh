@@ -19,10 +19,7 @@
 required='makeinfo-html tex texi2dvi-o dvips'
 . ./defs || Exit 1
 
-cat >>configure.ac <<'EOF'
-AM_SILENT_RULES
-AC_OUTPUT
-EOF
+echo AC_OUTPUT >> configure.ac
 
 cat > Makefile.am <<'EOF'
 info_TEXINFOS = foo.texi
