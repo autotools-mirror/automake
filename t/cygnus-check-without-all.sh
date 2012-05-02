@@ -33,7 +33,7 @@ check-local:
 END
 
 $ACLOCAL
-$AUTOMAKE --cygnus
+$AUTOMAKE --cygnus -Wno-obsolete
 
 $EGREP '(^| )all.*(:|:.* )check' Makefile.in && Exit 1
 

@@ -33,9 +33,11 @@ cat > foo.texi <<'END'
 END
 
 $ACLOCAL
-# FIXME: -Wno-override works around a buglet in definition of $(MAKEINFO)
+# -Wno-override works around a buglet in definition of $(MAKEINFO)
 # in cygnus mode; see also xfailing test 'txinfo5.test'.
-$AUTOMAKE --cygnus -Wno-override
+# -Wno-obsolete accounts for the fact that the cygnus mode is now
+# deprecated.
+$AUTOMAKE --cygnus -Wno-override -Wno-obsolete
 $AUTOCONF
 
 cwd=`pwd` || Exit 1

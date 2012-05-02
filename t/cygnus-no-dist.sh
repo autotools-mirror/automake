@@ -29,7 +29,7 @@ END
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE --cygnus
+$AUTOMAKE --cygnus -Wno-obsolete
 
 ./configure
 $MAKE
@@ -55,6 +55,8 @@ cat > sub2/Makefile.am <<'END'
 # in override warnings, for when (below) we add the 'distdir'
 # target.
 AUTOMAKE_OPTIONS = cygnus -Wall
+# This is required because the 'cygnus' option is now deprecated.
+AUTOMAKE_OPTIONS += -Wno-obsolete
 END
 
 cat configure.stub - > configure.ac <<'END'

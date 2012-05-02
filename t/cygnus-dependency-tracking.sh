@@ -27,6 +27,7 @@ AC_OUTPUT
 END
 
 cat > Makefile.am <<'END'
+AUTOMAKE_OPTIONS = -Wno-obsolete
 bin_PROGRAMS = foo
 foo_SOURCES = foo.c
 .PHONY: test-nodeps

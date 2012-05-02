@@ -35,8 +35,8 @@ END
 $ACLOCAL
 $AUTOCONF
 # Order flavors so that all needed files are installed early.
-for flavor in --gnits --gnu --foreign --cygnus --ignore-deps
-do
+for flavor in --gnits --gnu --foreign --ignore-deps; do
+
   $AUTOMAKE --add-missing $flavor
   ./configure --enable-maintainer-mode
   grep " $flavor" Makefile
@@ -54,6 +54,24 @@ do
   touch Makefile.am
   $MAKE
   grep " $flavor" Makefile
+
 done
+
+# Cygnus mode is deprecated now, and must be handled separately.
+$AUTOMAKE --cygnus -Wno-obsolete
+./configure --enable-maintainer-mode
+grep " --cygnus" Makefile
+$MAKE
+# Two code paths in configure.am:
+# - either a file in $(am__configure_deps) has been updated ...
+$sleep
+touch aclocal.m4
+$MAKE
+grep " --cygnus" Makefile
+# - ... or not; i.e., Makefile.am or an included file has.
+$sleep
+touch Makefile.am
+$MAKE
+grep " --cygnus" Makefile
 
 :

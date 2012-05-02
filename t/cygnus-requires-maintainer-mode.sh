@@ -21,7 +21,7 @@
 : > Makefile.am
 
 $ACLOCAL
-AUTOMAKE_fails --cygnus
+AUTOMAKE_fails -Wno-obsolete --cygnus
 grep '^configure\.ac:.*AM_MAINTAINER_MODE.*required.*cygnus' stderr
 
 cat >> configure.ac <<'END'
@@ -34,7 +34,7 @@ END
 
 mkdir sub
 cat > sub/Makefile.am <<'END'
-AUTOMAKE_OPTIONS = cygnus
+AUTOMAKE_OPTIONS = -Wno-obsolete cygnus
 END
 
 rm -rf autom4te.cache
@@ -48,6 +48,6 @@ END
 
 rm -rf autom4te.cache
 $ACLOCAL
-$AUTOMAKE --cygnus
+$AUTOMAKE --cygnus -Wno-obsolete
 
 :
