@@ -212,7 +212,6 @@ t/check-no-test-driver.sh \
 t/check-concurrency-bug9245.sh \
 t/checkall.sh \
 t/clean.sh \
-t/clean2.sh \
 t/colneq.sh \
 t/colneq2.sh \
 t/colneq3.sh \
@@ -329,13 +328,7 @@ t/cxxlibobj.sh \
 t/cxxlink.sh \
 t/cxxnoc.sh \
 t/cxxo.sh \
-t/cygnus-deprecation.sh \
-t/cygnus-check-without-all.sh \
-t/cygnus-dependency-tracking.sh \
-t/cygnus-imply-foreign.sh \
-t/cygnus-no-dist.sh \
-t/cygnus-no-installinfo.sh \
-t/cygnus-requires-maintainer-mode.sh \
+t/cygnus-no-more.sh \
 t/cygwin32.sh \
 t/dash.sh \
 t/defun.sh \
@@ -1155,8 +1148,6 @@ t/txinfo.sh \
 t/txinfo2.sh \
 t/txinfo3.sh \
 t/txinfo4.sh \
-t/txinfo5.sh \
-t/txinfo5b.sh \
 t/txinfo6.sh \
 t/txinfo7.sh \
 t/txinfo8.sh \

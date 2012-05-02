@@ -269,7 +269,6 @@ sub _is_valid_easy_option ($)
   return scalar grep { $opt eq $_ } qw(
     check-news
     color-tests
-    cygnus
     dejagnu
     dist-bzip2
     dist-lzip
@@ -318,6 +317,10 @@ sub _process_option_list (\%@)
           # Obsolete (and now removed) de-ANSI-fication support.
           error ($where,
                  "automatic de-ANSI-fication support has been removed");
+        }
+      elsif ($_ eq 'cygnus')
+        {
+          error $where, "support for Cygnus-style trees has been removed";
         }
       elsif ($_ eq 'dist-lzma')
         {
