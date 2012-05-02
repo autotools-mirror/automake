@@ -767,6 +767,8 @@ t/testsuite-summary-color.sh \
 t/testsuite-summary-count.sh \
 t/testsuite-summary-count-many.sh \
 t/testsuite-summary-reference-log.sh \
+t/testsuite-recheck-speed.sh \
+t/testsuite-summary-speed.sh \
 t/test-driver-acsubst.sh \
 t/test-driver-cond.sh \
 t/test-driver-custom-no-extra-driver.sh \
@@ -924,7 +926,6 @@ t/req.sh \
 t/reqd.sh \
 t/reqd2.sh \
 t/repeated-options.sh \
-t/rst-formatting.sh \
 t/rulepat.sh \
 t/self-check-cleanup.tap \
 t/self-check-configure-help.sh \
