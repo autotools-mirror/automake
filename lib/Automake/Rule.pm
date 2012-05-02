@@ -786,8 +786,8 @@ sub define ($$$$$;$)
   # Finally define this rule.
   for my $c (@conds)
     {
-      my $def = new Automake::RuleDef ($target, '', $where->clone,
-				       $owner, $source);
+      my $def = new Automake::RuleDef ($target, $where->clone, $owner,
+                                       $source);
       $rule->set ($c, $def);
     }
 

@@ -33,10 +33,6 @@ Automake::ItemDef - base class for Automake::VarDef and Automake::RuleDef
 
 Create a new Makefile-item definition.
 
-C<$comment> is any comment preceding the definition.  (Because
-Automake reorders items in the output, it also tries to carry comments
-around.)
-
 C<$location> is the place where the definition occurred, it should be
 an instance of L<Automake::Location>.
 
@@ -44,12 +40,11 @@ C<$owner> specifies who owns the rule.
 
 =cut
 
-sub new ($$$$)
+sub new ($$$)
 {
-  my ($class, $comment, $location, $owner) = @_;
+  my ($class, $location, $owner) = @_;
 
   my $self = {
-    comment => $comment,
     location => $location,
     owner => $owner,
   };
@@ -57,8 +52,6 @@ sub new ($$$$)
 
   return $self;
 }
-
-=item C<$def-E<gt>comment>
 
 =item C<$def-E<gt>location>
 
@@ -68,12 +61,6 @@ Accessors to the various constituents of an C<ItemDef>.  See the
 documentation of C<new>'s arguments for a description of these.
 
 =cut
-
-sub comment ($)
-{
-  my ($self) = @_;
-  return $self->{'comment'};
-}
 
 sub location ($)
 {

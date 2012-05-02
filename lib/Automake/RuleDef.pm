@@ -59,19 +59,18 @@ use constant RULE_USER => 1;     # Rule defined in the user's Makefile.am.
 
 =over 4
 
-=item C<new Automake::RuleDef ($name, $comment, $location, $owner, $source)>
+=item C<new Automake::RuleDef ($name, $location, $owner, $source)>
 
-Create a new rule definition with target C<$name>, with associated comment
-C<$comment>, Location C<$location> and owner C<$owner>, defined in file
-C<$source>.
+Create a new rule definition with target C<$name>, Location C<$location>
+and owner C<$owner>, defined in file C<$source>.
 
 =cut
 
-sub new ($$$$$)
+sub new ($$$$)
 {
-  my ($class, $name, $comment, $location, $owner, $source) = @_;
+  my ($class, $name, $location, $owner, $source) = @_;
 
-  my $self = Automake::ItemDef::new ($class, $comment, $location, $owner);
+  my $self = Automake::ItemDef::new ($class, $location, $owner);
   $self->{'source'} = $source;
   $self->{'name'} = $name;
   return $self;

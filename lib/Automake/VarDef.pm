@@ -147,7 +147,8 @@ sub new ($$$$$$$$)
       error $location, "$var must be set with '=' before using '+='";
     }
 
-  my $self = Automake::ItemDef::new ($class, $comment, $location, $owner);
+  my $self = Automake::ItemDef::new ($class, $location, $owner);
+  $self->{'comment'} = $comment;
   $self->{'value'} = $value;
   $self->{'type'} = $type;
   $self->{'pretty'} = $pretty;
@@ -208,6 +209,12 @@ sub value ($)
   # Strip backslashes.
   $val =~ s/\\$/ /mg;
   return $val;
+}
+
+sub comment ($)
+{
+  my ($self) = @_;
+  return $self->{'comment'};
 }
 
 sub raw_value ($)
