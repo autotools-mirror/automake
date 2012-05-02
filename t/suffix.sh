@@ -32,6 +32,8 @@ END
 
 for use_arlib in false :; do
 
+  rm -rf autom4te*.cache
+
   if $use_arlib; then
     am_warns=
     echo AM_PROG_AR >> configure.ac
@@ -40,7 +42,7 @@ for use_arlib in false :; do
     am_warns=-Wno-extra-portability
   fi
 
-  $ACLOCAL --force
+  $ACLOCAL
 
   $AUTOMAKE $am_warns -i
   grep '^ *\.c' Makefile.in # For debugging.
