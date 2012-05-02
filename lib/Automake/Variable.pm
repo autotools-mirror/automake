@@ -542,13 +542,9 @@ sub output ($@)
 
 	  $res .= $wrap;
 	}
-      else # ($def->pretty == VAR_SORTED)
+      else
 	{
-	  # Suppress escaped new lines.  &makefile_wrap will
-	  # add them back, maybe at other places.
-	  $val =~ s/\\$//mg;
-	  $res .= makefile_wrap ("$str$name $equals", "$str\t",
-				 sort (split (' ' , $val)));
+          prog_error ("unknonw variable type '$def->pretty'");
 	}
     }
   return $res;
@@ -727,11 +723,11 @@ assignment.
 
 C<$where>: the C<Location> of the assignment.
 
-C<$pretty>: whether C<$value> should be pretty printed (one of
-C<VAR_ASIS>, C<VAR_PRETTY>, C<VAR_SILENT>, or C<VAR_SORTED>, defined
-by by L<Automake::VarDef>).  C<$pretty> applies only to real
-assignments.  I.e., it does not apply to a C<+=> assignment (except
-when part of it is being done as a conditional C<=> assignment).
+C<$pretty>: whether C<$value> should be pretty printed (one of C<VAR_ASIS>,
+C<VAR_PRETTY>, or C<VAR_SILENT>, defined by L<Automake::VarDef>).
+C<$pretty> applies only to real assignments.  I.e., it does not apply to
+a C<+=> assignment (except when part of it is being done as a conditional
+C<=> assignment).
 
 =cut
 
@@ -748,8 +744,7 @@ sub define ($$$$$$$$)
   prog_error "pretty argument missing"
     unless defined $pretty && ($pretty == VAR_ASIS
 			       || $pretty == VAR_PRETTY
-			       || $pretty == VAR_SILENT
-			       || $pretty == VAR_SORTED);
+			       || $pretty == VAR_SILENT);
 
   # If there's a comment, make sure it is \n-terminated.
   if ($comment)
