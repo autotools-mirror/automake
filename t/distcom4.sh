@@ -18,7 +18,6 @@
 # This tries to distribute a file from a subdirectory, without
 # Makefile in that directory.  distcom5.test performs the same
 # test with a Makefile in the directory.
-# Also make sure that README appears first in DIST_COMMON.
 
 . ./defs || Exit 1
 
@@ -71,7 +70,5 @@ cat dc.txt # For debugging.
 
 test 1 = `grep tests dc.txt | wc -l`
 grep configure dc.txt
-# README must come first.
-grep 'DIST_COMMON = README' Makefile.in
 
 :
