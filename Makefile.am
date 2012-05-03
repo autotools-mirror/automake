@@ -389,6 +389,7 @@ XFAIL_TESTS = \
   t/remake-am-pr10111.sh \
   t/remake-m4-pr10111.sh \
   t/txinfo5.sh \
+  t/var-undef-append.sh \
   $(perl_fake_XFAIL_TESTS)
 
 # Some testsuite-influential variables should be overridable from the
