@@ -61,10 +61,10 @@ $ACLOCAL
 $AUTOMAKE --gnu
 
 # Make sure that depcomp is *not* included in the definition
-# of DIST_COMMON in lib/Makefile.in.  If you change this test
-# so that more files are included in lib's DIST_COMMON definition,
+# of am__dist_common in lib/Makefile.in.  If you change this test
+# so that more files are included in lib's am__dist_common definition,
 # then you must handle the case in which depcomp is listed on a
 # continued line.
-grep '^DIST_COMMON.*depcomp' lib/Makefile.in && Exit 1
+grep '^am__dist_common.*depcomp' lib/Makefile.in && Exit 1
 
 :

@@ -226,7 +226,7 @@ my @libtool_files = qw(ltmain.sh config.guess config.sub);
 my @libtool_sometimes = qw(ltconfig ltcf-c.sh ltcf-cxx.sh ltcf-gcj.sh);
 
 # Commonly found files we look for and automatically include in
-# DISTFILES.
+# distributed files.
 my @common_files =
     (qw(ABOUT-GNU ABOUT-NLS AUTHORS BACKLOG COPYING COPYING.DOC COPYING.LIB
 	COPYING.LESSER ChangeLog INSTALL NEWS README THANKS TODO
@@ -418,7 +418,7 @@ my %configure_cond = ();
 # This maps extensions onto language names.
 my %extension_map = ();
 
-# List of the DIST_COMMON files we discovered while reading
+# List of the distributed files we discovered while reading
 # configure.ac.
 my $configure_dist_common = '';
 
@@ -3759,7 +3759,7 @@ sub handle_dist ()
   # check that.  But if the file is in a subdir without a Makefile,
   # we want to distribute it here if we are doing '.'.  Ugly!
   # Also, in some corner cases, it's possible that the following code
-  # will cause the same file to appear in the $(DIST_COMMON) variables
+  # will cause the same file to appear in the $(am__dist_common) variables
   # of two distinct Makefiles; but this is not a problem, since the
   # 'distdir' target in 'lib/am/distdir.am' can deal with the same
   # file being distributed multiple times.
@@ -3774,8 +3774,8 @@ sub handle_dist ()
 	}
     }
 
-  # We don't expected further attempts to modify DIST_COMMON after
-  # this point, so disallow it, for extra safety.
+  # We don't expected further attempts to modify $(am__dist_common)
+  # after this point, so disallow it, for extra safety.
   $handle_dist_run = 1;
 
   # Scan EXTRA_DIST to see if we need to distribute anything from a
@@ -5381,7 +5381,7 @@ sub scan_autoconf_files ()
     if -f $config_aux_dir . '/install.sh';
 
   # Preserve dist_common for later.
-  $configure_dist_common = variable_value ('DIST_COMMON') || '';
+  $configure_dist_common = variable_value ('am__dist_common') || '';
 
 }
 
@@ -6578,7 +6578,7 @@ sub read_am_file ($$)
 		push (@include_stack, "\$\(top_srcdir\)/$path");
 		# Distribute any included file.
 
-		# Always use the $(top_srcdir) prefix in DIST_COMMON,
+		# Always use the $(top_srcdir) prefix in am__dist_common,
 		# otherwise OSF make will implicitly copy the included
 		# file in the build tree during "make distdir" to satisfy
 		# the dependency.
@@ -6589,7 +6589,7 @@ sub read_am_file ($$)
 	      {
 		$path =~ s/\$\(srcdir\)\///;
 		push (@include_stack, "\$\(srcdir\)/$path");
-		# Always use the $(srcdir) prefix in DIST_COMMON,
+		# Always use the $(srcdir) prefix in am__dist_common,
 		# otherwise OSF make will implicitly copy the included
 		# file in the build tree during "make distdir" to satisfy
 		# the dependency.
@@ -7424,7 +7424,7 @@ sub locate_aux_dir ()
 
 # &push_required_file ($DIR, $FILE, $FULLFILE)
 # --------------------------------------------------
-# Push the given file onto DIST_COMMON.
+# Push the given file onto $(am__dist_common).
 sub push_required_file
 {
   my ($dir, $file, $fullfile) = @_;
@@ -7499,7 +7499,8 @@ sub push_required_file
   else
     {
       prog_error "a Makefile in relative directory $relative_dir " .
-                 "can't add files in directory $dir to DIST_COMMON";
+                 "can't add files in directory $dir to the list " .
+                 "of distributed files";
     }
 }
 
@@ -7534,11 +7535,10 @@ sub required_file_check_or_copy ($$$)
   return
     if $found_it && (! $add_missing || ! $force_missing);
 
-  # If we've already looked for it, we're done.  You might
-  # wonder why we don't do this before searching for the
-  # file.  If we do that, then something like
-  # AC_OUTPUT(subdir/foo foo) will fail to put foo.in into
-  # DIST_COMMON.
+  # If we've already looked for it, we're done.  You might wonder why
+  # we don't do this before searching for the file.  If we do that,
+  # then something like AC_OUTPUT(subdir/foo foo) will fail to put
+  # 'foo.in' into the list of distributed files $(am__dist_common).
   if (! $found_it)
     {
       return if defined $required_file_not_found{$fullfile};
@@ -7825,8 +7825,8 @@ sub push_dist_common
 {
   prog_error "push_dist_common run after handle_dist"
     if $handle_dist_run;
-  Automake::Variable::define ('DIST_COMMON', VAR_AUTOMAKE, '+', TRUE, "@_",
-			      '', INTERNAL, VAR_PRETTY);
+  Automake::Variable::define ('am__dist_common', VAR_AUTOMAKE, '+',
+                              TRUE, "@_", '', INTERNAL, VAR_PRETTY);
 }
 
 
@@ -7924,7 +7924,8 @@ sub generate_makefile ($$)
   define_pretty_variable ('SOURCES', TRUE, INTERNAL, @sources);
   if (! option 'no-dist')
     {
-      define_pretty_variable ('DIST_SOURCES', TRUE, INTERNAL, @dist_sources);
+      define_pretty_variable ('am__dist_sources', TRUE, INTERNAL,
+                              @dist_sources);
     }
 
   handle_texinfo;

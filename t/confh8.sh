@@ -27,11 +27,11 @@ END
 cat > Makefile.am << 'END'
 .PHONY: test0 test1 test2
 test0:
-	@echo DIST_COMMON = $(DIST_COMMON)
-	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]one\.h\.in '
-	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]two\.h\.in '
+	@echo am__dist_common = $(am__dist_common)
+	echo ' ' $(am__dist_common) ' ' | grep '[ /]one\.h\.in '
+	echo ' ' $(am__dist_common) ' ' | grep '[ /]two\.h\.in '
 	: Processed header files should not be distributed.
-	if echo ' ' $(DIST_COMMON) ' ' | grep '\.h '; then \
+	if echo ' ' $(am__dist_common) ' ' | grep '\.h '; then \
 	  exit 1; \
 	else \
 	  exit 0; \

@@ -41,7 +41,7 @@ cat > Makefile.am << 'END'
 info_TEXINFOS = foobar.texi quux.texi zardoz.texi
 .PHONY: echo-distfiles
 echo-distfiles:
-	@echo ' ' $(DISTFILES) ' '
+	@echo ' ' $(am__dist_files) ' '
 END
 
 cat > foobar.texi << 'END'
@@ -94,7 +94,7 @@ do_check ()
   vmonth=`grep '^@set UPDATED ' $srcdir/$vfile.texi | awk '{print $4, $5}'`
   grep "^@set UPDATED-MONTH $vmonth$" $srcdir/$vfile.texi
   # Check that the vers*.texi file is distributed according
-  # to $(DISTFILES).
+  # to $(am__dist_files).
   $MAKE echo-distfiles # For debugging.
   $MAKE -s echo-distfiles | grep "[ /]$vfile\\.texi"
 }

@@ -30,12 +30,12 @@ cat > Makefile.am <<'END'
 .PHONY: test
 test: distdir
 	ls -l $(distdir) $(distdir)/sub
-	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]config\.h\.bot '
-	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]config\.h\.top '
-	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]cfg2\.h\.bot '
-	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]cfg2\.h\.top '
-	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]sub/config\.h\.bot '
-	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]sub/config\.h\.top '
+	echo ' ' $(am__dist_common) ' ' | grep '[ /]config\.h\.bot '
+	echo ' ' $(am__dist_common) ' ' | grep '[ /]config\.h\.top '
+	echo ' ' $(am__dist_common) ' ' | grep '[ /]cfg2\.h\.bot '
+	echo ' ' $(am__dist_common) ' ' | grep '[ /]cfg2\.h\.top '
+	echo ' ' $(am__dist_common) ' ' | grep '[ /]sub/config\.h\.bot '
+	echo ' ' $(am__dist_common) ' ' | grep '[ /]sub/config\.h\.top '
 	test -f $(distdir)/config.h.bot
 	test -f $(distdir)/config.h.top
 	test -f $(distdir)/cfg2.h.bot

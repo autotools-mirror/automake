@@ -52,7 +52,7 @@ test -f depcomp
 # FIXME: 'distcom*.test' files should be factored out in a common
 # FIXME: subroutine in 'defs'...
 sed -n -e "
-  /^DIST_COMMON =.*\\\\$/ {
+  /^am__dist_common =.*\\\\$/ {
     :loop
     p
     n

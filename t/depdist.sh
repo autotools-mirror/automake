@@ -43,7 +43,7 @@ SUBDIRS = subdir
 check-local: test1 test2
 .PHONY: test1 test2
 test1:
-	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]config/depcomp '
+	echo ' ' $(am__dist_common) ' ' | grep '[ /]config/depcomp '
 test2: distdir
 	ls -l $(distdir)/*
 	test -f $(distdir)/config/depcomp

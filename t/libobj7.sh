@@ -39,10 +39,10 @@ check-local: test1 test2 test3
 test1: all
 	$(AR) tv libtu.a
 test2:
-	@echo DIST_COMMON = $(DIST_COMMON)
-	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]basename\.c '
-	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]dirname\.c '
-	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]am__dummy_function\.c '
+	@echo am__dist_common = $(am__dist_common)
+	echo ' ' $(am__dist_common) ' ' | grep '[ /]basename\.c '
+	echo ' ' $(am__dist_common) ' ' | grep '[ /]dirname\.c '
+	echo ' ' $(am__dist_common) ' ' | grep '[ /]am__dummy_function\.c '
 test3: distdir
 	test -f $(distdir)/basename.c
 	test -f $(distdir)/dirname.c

@@ -14,14 +14,14 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-DISTFILES = $(call am__uniq, \
-  $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST))
+am__dist_files = $(call am__uniq, \
+  $(am__dist_common) $(am__dist_sources) $(TEXINFOS) $(EXTRA_DIST))
 
-## Try to avoid repeated slashed in the $(DISTFILES) entries, to make the
+## Try to avoid repeated slashed in the entries, to make the
 ## filtering in the 'am__dist_files_1' definition below more reliable.
 ## This idiom should compress up to four consecutive '/' characters in
-## each $(DISTFILES) entry.
-am__dist_files_1 = $(subst //,/,$(subst //,/,$(DISTFILES)))
+## each $(am__dist_files) entry.
+am__dist_files_1 = $(subst //,/,$(subst //,/,$(am__dist_files)))
 
 am__dist_files_2 = \
 ## Files filtered out here require an ad-hoc "munging"; see the two
@@ -40,25 +40,27 @@ am__dist_files_2 = \
 ## situations that it's probably not worth worrying about.
   $(patsubst $(srcdir)/%, %, \
              $(filter $(srcdir)/%, $(am__dist_files_1))) \
-## Also rewrite $(top_srcdir) (which sometimes appears in DISTFILES, and
-## can be absolute) by $(top_builddir) (which is always relative).  If
-## needed, $(srcdir) will be prepended later by our VPATH-aware rules.
+## Also rewrite $(top_srcdir) -- which can sometimes appear in
+## $(am__dist_common), and can be absolute -- by $(top_builddir)
+## (which is always relative).  If needed, $(srcdir) will be
+## prepended later by our VPATH-aware rules.
 ## The same caveats reported above apply.
   $(patsubst $(top_srcdir)/%, $(top_builddir)/%, \
              $(filter $(top_srcdir)/%, $(am__dist_files_1)))
 
 ## Strip extra whitespaces, for more safety.
-am__dist_files = $(strip $(am__dist_files_2))
+am__dist_files_cooked = $(strip $(am__dist_files_2))
 
-## Given the pro-processing done above to 'am__dist_files', this
-## definition ensures that we won't try to create the wrong directories
-## when $(top_srcdir) or $(srcdir) appears in DISTFILES.  For example,
-## with EXTRA_DIST containing "$(srcdir)/subdir/file", this will allow
-## our rules to correctly create "$(distdir)/subdir", and not
+## Given the pre-processing done above to the list of distributed files,
+## this definition ensures that we won't try to create the wrong
+## directories when $(top_srcdir) or $(srcdir) appears in some entry of
+## the list of all distributed files.
+## For example, with EXTRA_DIST containing "$(srcdir)/subdir/file", this
+## will allow our rules to correctly create "$(distdir)/subdir", and not
 ## "$(distdir)/$(srcdir)/subdir" -- which, in a VPATH build where
-## $(subdir) = .., would be the build directory!
+## "$(subdir) = ..", would be the build directory!
 am__dist_parent_dirs = $(call am__uniq, \
-  $(filter-out ., $(patsubst ./%,%,$(dir $(am__dist_files)))))
+  $(filter-out ., $(patsubst ./%,%,$(dir $(am__dist_files_cooked)))))
 
 if %?TOPDIR_P%
 distdir = $(PACKAGE)-$(VERSION)
@@ -118,7 +120,7 @@ if %?SUBDIRS%
 AM_RECURSIVE_TARGETS += distdir
 endif %?SUBDIRS%
 
-distdir: $(DISTFILES)
+distdir: $(am__dist_files)
 ##
 ## For Gnits users, this is pretty handy.  Look at 15 lines
 ## in case some explanatory text is desirable.
@@ -175,7 +177,7 @@ endif %?TOPDIR_P%
 ## There are situations in which 'ln' can fail.  For instance a file to
 ## distribute could actually be a cross-filesystem symlink -- this can
 ## easily happen if "gettextize" was run on the distribution.
-	@lst='$(am__dist_files)'; for file in $$lst; do \
+	@lst='$(am__dist_files_cooked)'; for file in $$lst; do \
 ## Always look for the file or directory to distribute in the build
 ## directory first, in VPATH spirit.
 	  if test -f $$file || test -d $$file; then d=.; else d=$(srcdir); fi; \
@@ -199,14 +201,11 @@ endif %?TOPDIR_P%
 	    fi; \
 	    cp -fpR $$d/$$file "$(distdir)$$dir" || exit 1; \
 	  else \
-## Test for file existence because sometimes:
-##  - a file gets included in DISTFILES twice (for example, this happens
-##    when a single source file is used in building more than one
-##    program), or
-##  - a single auxiliary file is distributed from several Makefiles at
-##    once (see automake bug#9546 and bug#9651, and the follow-up commits
-##    v1.11-1219-g326ecba, v1.11-1220-g851b1ae and v1.11-1221-gdccae6a).
-## See also test 'dist-repeated.test'.
+## Test for file existence because sometimes a single auxiliary file
+## is distributed from several Makefiles at once (see automake bug#9546
+## and bug#9651, and the follow-up commits 'v1.11-1219-g326ecba',
+## 'v1.11-1220-g851b1ae' and 'v1.11-1221-gdccae6a').  See also test
+## 't/dist-repeated.sh'.
 	    test -f "$(distdir)/$$file" \
 	    || cp -p $$d/$$file "$(distdir)/$$file" \
 	    || exit 1; \

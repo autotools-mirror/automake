@@ -35,7 +35,7 @@ len=`grep '^srcdir' Makefile.in | wc -l`
 test $len -eq 1
 
 # Also make sure include file is distributed.
-sed -n -e '/^DIST_COMMON =.*\\$/ {
+sed -n -e '/^am__dist_common =.*\\$/ {
    :loop
    p
    n
@@ -45,6 +45,6 @@ sed -n -e '/^DIST_COMMON =.*\\$/ {
    t loop
    p
    n
-   }' -e '/^DIST_COMMON =/ p' Makefile.in | grep Will_Be_Included_In_Makefile
+   }' -e '/^am__dist_common =/ p' Makefile.in | grep Will_Be_Included_In_Makefile
 
 :

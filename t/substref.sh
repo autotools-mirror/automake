@@ -47,8 +47,8 @@ $MAKE test
 
 # This is unrelated to the rest of this test.  But while we are
 # at it, make sure we don't use am__helldl_SOURCES_DIST here, since
-# it's not needed.  DIST_SOURCES should contain $(helldl_SOURCES).
+# it's not needed.  am__dist_sources should contain $(helldl_SOURCES).
 grep am__helldl_SOURCES_DIST Makefile && Exit 1
-grep 'DIST_SOURCES.*\$(helldl_SOURCES)' Makefile
+grep 'am__dist_sources.*\$(helldl_SOURCES)' Makefile
 
 :
