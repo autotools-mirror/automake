@@ -447,7 +447,7 @@ sub _check_ambiguous_condition ($$$)
   # We allow silent variables to be overridden silently,
   # by either silent or non-silent variables.
   my $def = $self->def ($ambig_cond);
-  if ($message && $def->pretty != VAR_SILENT)
+  if ($message)
     {
       msg 'syntax', $where, "$message ...", partial => 1;
       msg_var ('syntax', $var, "... '$var' previously defined here");
@@ -507,9 +507,6 @@ sub output ($@)
       prog_error ("unknown condition '" . $cond->human . "' for '"
 		  . $self->name . "'")
 	unless $def;
-
-      next
-	if $def->pretty == VAR_SILENT;
 
       $res .= $def->comment;
 
@@ -723,8 +720,8 @@ assignment.
 
 C<$where>: the C<Location> of the assignment.
 
-C<$pretty>: whether C<$value> should be pretty printed (one of C<VAR_ASIS>,
-C<VAR_PRETTY>, or C<VAR_SILENT>, defined by L<Automake::VarDef>).
+C<$pretty>: whether C<$value> should be pretty printed (one of C<VAR_ASIS>
+or C<VAR_PRETTY> defined by L<Automake::VarDef>).
 C<$pretty> applies only to real assignments.  I.e., it does not apply to
 a C<+=> assignment (except when part of it is being done as a conditional
 C<=> assignment).
@@ -743,8 +740,7 @@ sub define ($$$$$$$$)
 
   prog_error "pretty argument missing"
     unless defined $pretty && ($pretty == VAR_ASIS
-			       || $pretty == VAR_PRETTY
-			       || $pretty == VAR_SILENT);
+			       || $pretty == VAR_PRETTY);
 
   # If there's a comment, make sure it is \n-terminated.
   if ($comment)
