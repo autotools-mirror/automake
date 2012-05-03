@@ -797,7 +797,7 @@ sub define ($$$$$$$$)
   # 1. append (+=) to a variable defined for current condition
   if ($type eq '+' && ! $new_var)
     {
-      $def->append ($value, $comment);
+      $def->append ($value, $comment, $cond);
       # Only increase owners.  A VAR_CONFIGURE variable augmented in a
       # Makefile.am becomes a VAR_MAKEFILE variable.
       $def->set_owner ($owner, $where->clone)
@@ -872,8 +872,8 @@ sub define ($$$$$$$$)
       # Assignments to a macro set its location.  We don't adjust
       # locations for '+='.  Ideally I suppose we would associate
       # line numbers with random bits of text.
-      $def = new Automake::VarDef ($var, $value, $comment, $where->clone,
-				   $type, $owner, $pretty);
+      $def = new Automake::VarDef ($var, $value, $comment, $cond,
+                                   $where->clone, $type, $owner, $pretty);
       $self->set ($cond, $def);
       push @_var_order, $var;
     }

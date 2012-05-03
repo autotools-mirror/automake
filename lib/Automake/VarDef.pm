@@ -136,9 +136,10 @@ be one of C<VAR_ASIS>, C<VAR_PRETTY>.
 
 =cut
 
-sub new ($$$$$$$$)
+sub new ($$$$$$$$$)
 {
-  my ($class, $var, $value, $comment, $location, $type, $owner, $pretty) = @_;
+  my ($class, $var, $value, $comment, $cond, $location, $type,
+      $owner, $pretty) = @_;
 
   # A user variable must be set by either '=' or ':=', and later
   # promoted to '+='.
@@ -148,28 +149,28 @@ sub new ($$$$$$$$)
     }
 
   my $self = Automake::ItemDef::new ($class, $location, $owner);
-  $self->{'value_list'} = [$value];
+  $self->{'value_list'} = [ { value => $value, cond => $cond } ];
   $self->{'type'} = $type;
   $self->{'pretty'} = $pretty;
   $self->{'seen'} = 0;
-  $self->{'comment_list'} = [$comment];
+  $self->{'comment_list'} = [ { text => $comment, cond => $cond } ];
   return $self;
 }
 
-=item C<$def-E<gt>append ($value, $comment)>
+=item C<$def-E<gt>append ($value, $comment, $cond)>
 
-Append C<$value> and <$comment> to the existing value and comment of
-C<$def>.  This is normally called on C<+=> definitions.
+Append C<$value> and C<$comment> to the existing value and comment of
+C<$def> in condition C<$cond>.  This is normally called on C<+=>
+definitions.
 
 =cut
 
 sub append ($$$)
 {
-  my ($self, $value, $comment) = @_;
+  my ($self, $value, $comment, $cond) = @_;
 
-  push @{$self->{'comment_list'}}, $comment;
-
-  push @{$self->{'value_list'}}, $value;
+  push @{$self->{'comment_list'}}, { text => $comment, cond => $cond };
+  push @{$self->{'value_list'}}, { value => $value, cond => $cond };
   # Turn ASIS appended variables into PRETTY variables.  This is to
   # cope with 'make' implementation that cannot read very long lines.
   $self->{'pretty'} = VAR_PRETTY if $self->{'pretty'} == VAR_ASIS;
@@ -204,13 +205,13 @@ sub value ($)
 sub comment ($)
 {
   my ($self) = @_;
-  return join ("", @{$self->{'comment_list'}});
+  return join ("", map { $_->{text} } @{$self->{'comment_list'}});
 }
 
 sub raw_value ($)
 {
   my ($self) = @_;
-  my @values = @{$self->{'value_list'}};
+  my @values = map { $_->{value} } @{$self->{'value_list'}};
 
   # Strip comments from augmented variables.  This is so that
   #   VAR = foo # com
