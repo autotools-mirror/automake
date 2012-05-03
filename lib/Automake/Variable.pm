@@ -423,7 +423,6 @@ sub _new ($$)
   my ($class, $name) = @_;
   my $self = Automake::Item::new ($class, $name);
   $self->{'scanned'} = 0;
-  $self->{'last-append'} = []; # helper variable for last conditional append.
   $_variable_dict{$name} = $self;
   if ($name =~ /_([[:alnum:]]+)$/)
     {
@@ -799,8 +798,6 @@ sub define ($$$$$$$$)
   if ($type eq '+' && ! $new_var)
     {
       $def->append ($value, $comment);
-      $self->{'last-append'} = [];
-
       # Only increase owners.  A VAR_CONFIGURE variable augmented in a
       # Makefile.am becomes a VAR_MAKEFILE variable.
       $def->set_owner ($owner, $where->clone)
@@ -809,63 +806,24 @@ sub define ($$$$$$$$)
   # 2. append (+=) to a variable defined for *another* condition
   elsif ($type eq '+' && ! $self->conditions->false)
     {
-      # * Generally, $cond is not TRUE.  For instance:
+      # * If we have an input like:
       #     FOO = foo
       #     if COND
       #       FOO += bar
       #     endif
-      #   In this case, we declare an helper variable conditionally,
-      #   and append it to FOO:
+      #   we declare an helper variable conditionally, and append
+      #   it to FOO:
       #     FOO = foo $(am__append_1)
       #     @COND_TRUE@am__append_1 = bar
       #   Of course if FOO is defined under several conditions, we add
       #   $(am__append_1) to each definitions.
-      #
-      # * If $cond is TRUE, we don't need the helper variable.  E.g., in
-      #     if COND1
-      #       FOO = foo1
-      #     else
-      #       FOO = foo2
-      #     endif
-      #     FOO += bar
-      #   we can add bar directly to all definition of FOO, and output
-      #     @COND_TRUE@FOO = foo1 bar
-      #     @COND_FALSE@FOO = foo2 bar
-
-      my $lastappend = [];
-      # Do we need an helper variable?
-      if ($cond != TRUE)
-        {
-	  # Can we reuse the helper variable created for the previous
-	  # append?  (We cannot reuse older helper variables because
-	  # we must preserve the order of items appended to the
-	  # variable.)
-	  my $condstr = $cond->string;
-	  my $key = "$var:$condstr";
-	  my ($appendvar, $appendvarcond) = @{$self->{'last-append'}};
-	  if ($appendvar && $condstr eq $appendvarcond)
-	    {
-	      # Yes, let's simply append to it.
-	      $var = $appendvar;
-	      $owner = VAR_AUTOMAKE;
-	      $self = var ($var);
-	      $def = $self->rdef ($cond);
-	      $new_var = 0;
-	    }
-	  else
-	    {
-	      # No, create it.
-	      my $num = ++$_appendvar;
-	      my $hvar = "am__append_$num";
-	      $lastappend = [$hvar, $condstr];
-	      &define ($hvar, VAR_AUTOMAKE, '+',
-		       $cond, $value, $comment, $where, $pretty);
-
-	      # Now HVAR is to be added to VAR.
-	      $comment = '';
-	      $value = "\$($hvar)";
-	    }
-	}
+      my $num = ++$_appendvar;
+      my $hvar = "am__append_$num";
+      &define ($hvar, VAR_AUTOMAKE, '+',
+               $cond, $value, $comment, $where, $pretty);
+      # Now HVAR is to be added to VAR.
+      $comment = '';
+      $value = "\$($hvar)";
 
       # Add VALUE to all definitions of SELF.
       foreach my $vcond ($self->conditions->conds)
@@ -895,7 +853,6 @@ sub define ($$$$$$$$)
 		       $where, $pretty);
 	    }
 	}
-      $self->{'last-append'} = $lastappend;
     }
   # 3. first assignment (=, :=, or +=)
   else
