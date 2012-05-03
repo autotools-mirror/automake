@@ -37,13 +37,40 @@ am__vpath_rewrite = \
 ## would see a "make flag" equal to "nap" when analyzing $(MAKEFLAGS), and
 ## would wrongly misinterpret that as and indication that make is running
 ## in dry mode.  This has already happened in practice.  So we need the
-## hack with $(subst \, ...).
+## hack with $(subst \ , ...).
 am__make_dryrun := \
   $(strip $(if $(strip \
     $(foreach am__v, $(subst \ ,,$(strip $(MAKEFLAGS))), \
       $(if $(or $(findstring =,$(am__v)),$(filter --%,$(am__v))),, \
         $(findstring n,$(am__v))))), \
     true, false))
+
+# An empty strings.  It only serves to make the code readable
+# in some places.
+am__empty :=
+
+# GNU make 3.80 lacks $(lastword).
+## FIXME: the best thing to do here is ts
+am__lastword = $(word $(words $(1)),$(1))
+
+am__strip_firstword = $(wordlist 2,$(words $(1)),$(1))
+am__strip_lastword  = $(wordlist 2,$(words $(1)),dummy $(1))
+
+## Remove repeated elements from the given list (without reordering),
+## and return the reduced list.
+am__uniq = $(strip \
+## If the list is empty, we have nothing to do.  Otherwise, go on.
+  $(if $(strip $(1)), \
+## Call the function recursively on the list of all the elements
+## but the last one.
+    $(call am__uniq, \
+      $(call am__strip_lastword, $(1))) \
+## And append the last element, unless it was already present.
+      $(if $(filter $(call am__lastword, $(1)), \
+                    $(call am__strip_lastword, $(1))), \
+           $(am__empty), \
+           $(call am__lastword,$(1)))))
+
 
 ## Some derived variables that have been found to be useful.
 pkgdatadir = $(datadir)/@PACKAGE@

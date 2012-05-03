@@ -1,0 +1,81 @@
+#! /bin/sh
+# Copyright (C) 2012 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Test some generic Automake-provided internal macros and make functions.
+
+am_create_testdir=empty
+. ./defs || Exit 1
+
+plan_ 3
+
+cp "$am_amdir"/header-vars.am . \
+  || fatal_ "fetching makefile fragment headers-vars.am"
+
+# Filter out Automake comments and things that would need configure
+# substitutions.
+LC_ALL=C $EGREP -v '(^##|=.*@[a-zA-Z0-9_]+@)' header-vars.am > defn.mk
+rm -f header-vars.am
+
+cat > Makefile << 'END'
+include ./defn.mk
+
+default:
+	@echo Please select an explicit test; exit 1
+.PHONY: default
+
+.PHONY: test-strip-firstword
+test-strip-firstword:
+	test '$(call am__strip_firstword,)'                = ''
+	test '$(call am__strip_firstword,1)'               = ''
+	test '$(call am__strip_firstword,1 1)'             = '1'
+	test '$(call am__strip_firstword,1 2)'             = '2'
+	test '$(call am__strip_firstword,1 2 3 4 5 6 7 8)' = '2 3 4 5 6 7 8'
+	test '$(call am__strip_firstword,  1	  2	)' = '2'
+
+.PHONY: test-strip-lastword
+test-strip-lastword:
+	test '$(call am__strip_lastword,)'                 = ''
+	test '$(call am__strip_lastword,1)'                = ''
+	test '$(call am__strip_lastword,1 1)'              = '1'
+	test '$(call am__strip_lastword,1 2)'              = '1'
+	test '$(call am__strip_lastword,1 2 3 4 5 6 7 8)'  = '1 2 3 4 5 6 7'
+	test '$(call am__strip_lastword,  1	  2	)' = '1'
+
+.PHONY: test-uniq
+test-uniq:
+	test '$(call am__uniq,)'                = ''
+	test '$(call am__uniq,1)'               = '1'
+	test '$(call am__uniq,1 1)'             = '1'
+	test '$(call am__uniq,1 2)'             = '1 2'
+	test '$(call am__uniq,2 1)'             = '2 1'
+	test '$(call am__uniq,1 2 3)'           = '1 2 3'
+	test '$(call am__uniq,2 3 1)'           = '2 3 1'
+	test '$(call am__uniq,1 1 1)'           = '1'
+	test '$(call am__uniq,1 2 1)'           = '1 2'
+	test '$(call am__uniq,2 1 1)'           = '2 1'
+	test '$(call am__uniq,2 1 1)'           = '2 1'
+	test '$(call am__uniq,2 2 1)'           = '2 1'
+	test '$(call am__uniq,1 1 1 3 1 1 1)'   = '1 3'
+	test '$(call am__uniq,3 1 1 4 1 4 1 1)' = '3 1 4'
+	test '$(call am__uniq,	1   3 	1  )'   = '1 3'
+
+END
+
+command_ok_ "am__strip_firstword" $MAKE test-strip-firstword
+command_ok_ "am__strip_lastword"  $MAKE test-strip-lastword
+command_ok_ "am__uniq"            $MAKE test-uniq
+
+:
