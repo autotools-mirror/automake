@@ -21,21 +21,6 @@
 
 . ./defs || Exit 1
 
-extract_distcommon ()
-{
-  sed -n -e '/^DIST_COMMON =.*\\$/ {
-    :loop
-    p
-    n
-    t clear
-    :clear
-    s/\\$/\\/
-    t loop
-    p
-    n
-    }' -e '/^DIST_COMMON =/ p' ${1+"$@"}
-}
-
 cat >> configure.ac << 'END'
    AC_CONFIG_FILES([tests/autoconf:tests/wrapper.in],
                    [chmod +x tests/autoconf])
@@ -57,28 +42,30 @@ END
 
 mkdir tests
 : > tests/wrapper.in
-: > tests/Makefile.am
+
 cat > Makefile.am << 'END'
 SUBDIRS = tests
 .PHONY: test
 test: distdir
 	test -f $(distdir)/tests/wrapper.in
+check-local: test
+	for x in $(DISTFILES); do echo $$x; done \
+	  | grep tests && exit 1; :
+END
+
+cat > tests/Makefile.am <<'END'
+check-local:
+	for x in $(DISTFILES); do echo $$x; done | grep wrapper.in > lst
+	cat lst # For debugging.
+	test `wc -l <lst` -eq 1
 END
 
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
 ./configure
-$MAKE test
-
-extract_distcommon Makefile.in > top.txt
-extract_distcommon tests/Makefile.in > inner.txt
-
-# Might be useful for debugging.
-cat top.txt
-cat inner.txt
-
-test 0 = `grep tests top.txt | wc -l`
-test 1 = `grep wrapper inner.txt | wc -l`
+$MAKE check
+# Sanity check.
+test -f tests/lst
 
 :

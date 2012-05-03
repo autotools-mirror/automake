@@ -29,13 +29,6 @@ bar_SOURCES = foo.c
 python_PYTHON = bar.py
 EXTRA_DIST = foo.c bar.py
 
-.PHONY: sanity-check
-sanity-check:
-	for f in $(DISTFILES); do echo " $$f "; done > dist.txt
-	cat dist.txt
-	test `grep ' foo\.c '  dist.txt | wc -l` -eq 3
-	test `grep ' bar\.py ' dist.txt | wc -l` -eq 2
-
 # So that we don't have to require a C compiler.
 AUTOMAKE_OPTIONS = no-dependencies
 CC = false
@@ -94,7 +87,6 @@ $AUTOCONF
 $AUTOMAKE
 
 ./configure
-$MAKE sanity-check || fatal_ "expected invariants not verified"
 $MAKE distdir
 test -f cp-wrapper-has-seen-foo-c && test -f cp-wrapper-has-seen-bar-py \
   || fatal_ "our cp wrapper hasn't run correctly"
