@@ -375,6 +375,7 @@ XFAIL_TESTS = \
   t/all.sh \
   t/yacc-bison-skeleton-cxx.sh \
   t/yacc-bison-skeleton.sh \
+  t/comments-in-var-def.sh \
   t/cond17.sh \
   t/dist-srcdir2.sh \
   t/gcj6.sh \

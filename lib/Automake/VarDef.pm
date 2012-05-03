@@ -148,11 +148,11 @@ sub new ($$$$$$$$)
     }
 
   my $self = Automake::ItemDef::new ($class, $location, $owner);
-  $self->{'comment'} = $comment;
-  $self->{'value'} = $value;
+  $self->{'value_list'} = [$value];
   $self->{'type'} = $type;
   $self->{'pretty'} = $pretty;
   $self->{'seen'} = 0;
+  $self->{'comment_list'} = [$comment];
   return $self;
 }
 
@@ -166,21 +166,10 @@ C<$def>.  This is normally called on C<+=> definitions.
 sub append ($$$)
 {
   my ($self, $value, $comment) = @_;
-  $self->{'comment'} .= $comment;
 
-  my $val = $self->{'value'};
+  push @{$self->{'comment_list'}}, $comment;
 
-  # Strip comments from augmented variables.  This is so that
-  #   VAR = foo # com
-  #   VAR += bar
-  # does not become
-  #   VAR = foo # com bar
-  # Furthermore keeping '#' would not be portable if the variable is
-  # output on multiple lines.
-  $val =~ s/ ?#.*//;
-  # Insert a separator, if required.
-  $val .= ' ' if $val;
-  $self->{'value'} = $val . $value;
+  push @{$self->{'value_list'}}, $value;
   # Turn ASIS appended variables into PRETTY variables.  This is to
   # cope with 'make' implementation that cannot read very long lines.
   $self->{'pretty'} = VAR_PRETTY if $self->{'pretty'} == VAR_ASIS;
@@ -203,6 +192,7 @@ sub value ($)
 {
   my ($self) = @_;
   my $val = $self->raw_value;
+
   # Strip anything past '#'.  '#' characters cannot be escaped
   # in Makefiles, so we don't have to be smart.
   $val =~ s/#.*$//s;
@@ -214,13 +204,23 @@ sub value ($)
 sub comment ($)
 {
   my ($self) = @_;
-  return $self->{'comment'};
+  return join ("", @{$self->{'comment_list'}});
 }
 
 sub raw_value ($)
 {
   my ($self) = @_;
-  return $self->{'value'};
+  my @values = @{$self->{'value_list'}};
+
+  # Strip comments from augmented variables.  This is so that
+  #   VAR = foo # com
+  #   VAR += bar
+  # does not become
+  #   VAR = foo # com bar
+  # Furthermore keeping '#' would not be portable if the variable is
+  # output on multiple lines.
+  map { s/ ?#.*// } @values;
+  return join (' ', @values);
 }
 
 sub type ($)
@@ -306,13 +306,12 @@ sub dump ($)
     }
 
   my $where = $self->location->dump;
-  my $comment = $self->comment;
   my $value = $self->raw_value;
   my $type = $self->type;
 
   return "{
       type: $type=
-      where: $where      comment: $comment
+      where: $where
       value: $value
       owner: $owner
     }\n";
