@@ -33,7 +33,6 @@ END
 
 cat > baz.h++ << 'END'
 #include <iostream>
-using namespace std;
 #include "baz2.hh"
 END
 
@@ -46,7 +45,7 @@ cat > bar.mm << 'END'
 #import "baz.h++"
 int main (void)
 {
-    cout << MSG << "\n";
+    std::cout << MSG << "\n";
     return 0;
 }
 END
