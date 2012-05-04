@@ -20,7 +20,7 @@
 
 cat > Makefile.am << 'END'
 bin_PROGRAMS = foo
-foo_SOURCES = a.c b.cpp c.m d.S e.java f.upc
+foo_SOURCES = a.c b.cpp c.m cxx.mm d.S e.java f.upc
 END
 
 cat > configure.ac << 'END'
@@ -30,6 +30,12 @@ AC_CONFIG_FILES([Makefile])
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_OBJC
+# FIXME: this is to cater to older autoconf; remove this once we
+# FIXME: automake requires Autoconf 2.65 or later.
+m4_ifdef([AC_PROG_OBJCXX], [AC_PROG_OBJCXX], [
+  AC_SUBST([OBJCXX], [whocares])
+  AM_CONDITIONAL([am__fastdepOBJCXX], [whocares])
+])
 AM_PROG_AS
 AM_PROG_GCJ
 AM_PROG_UPC

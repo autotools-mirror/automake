@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2002-2012 Free Software Foundation, Inc.
+# Copyright (C) 2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -10,22 +10,29 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test that Automake suggests using AC_PROG_OBJC if Objective C sources
-# are used.
+# Basic tests on the Objective C support that don't actually
+# require an Objective-C compiler.
+# See also sister test 'objcxx-basic.sh'.
 
 . ./defs || Exit 1
 
-echo AC_PROG_CC >>configure.ac
-
-cat >Makefile.am <<'END'
+cat > Makefile.am <<'END'
 bin_PROGRAMS = hello
 hello_SOURCES = hello.m
 END
 
 $ACLOCAL
 AUTOMAKE_fails
-grep AC_PROG_OBJC stderr
+grep "'OBJC'.* undefined" stderr
+grep "add .*'AC_PROG_OBJC'" stderr
+
+rm -rf autom4te*.cache
+
+echo AC_PROG_OBJC >> configure.ac
+
+$ACLOCAL
+$AUTOMAKE
+$EGREP '^\.SUFFIXES:.* \.m( |$)' Makefile.in
+
+:
