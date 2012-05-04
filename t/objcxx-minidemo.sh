@@ -40,10 +40,9 @@ cat > ok.mm << 'END'
 /* The use of #import makes this valid Object C++ but invalid C++. */
 #import <iostream>
 #import <config.h>
-using namespace std;
 int main (void)
 {
-    cout << "Success (" << PACKAGE_STRING << ")\n";
+    std::cout << "Success (" << PACKAGE_STRING << ")\n";
     return 0;
 }
 END
