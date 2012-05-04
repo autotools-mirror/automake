@@ -40,41 +40,33 @@ AC_PROG_CXX
 AC_PROG_OBJC
 AC_PROG_OBJCXX
 
+AC_LANG_PUSH([Objective C])
+AC_CACHE_CHECK(
+  [whether the Objective C compiler really works],
+  [my_cv_objc_works],
+  [AC_LINK_IFELSE([AC_LANG_PROGRAM([[#import <stdio.h>]],
+                                   [[printf ("foo\n");]])],
+                  [my_cv_objc_works=yes],
+                  [my_cv_objc_works=no])])
+AC_LANG_POP([Objective C])
+
 AC_LANG_PUSH([Objective C++])
-
-AC_CACHE_CHECK([a good Objective C++ program],
-               [my_cv_good_prog],
-               [AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdarg.h>]],
-                                                [[extern void foo(int i,...);]])],
-                               [my_cv_good_prog=PASS],
-                               [my_cv_good_prog=FAIL])])
-
-AC_CACHE_CHECK([a bad Objective C++ program],
-               [my_cv_bad_prog],
-               [AC_LINK_IFELSE([AC_LANG_PROGRAM([], [[choke me]])],
-                               [my_cv_bad_prog=XPASS],
-                               [my_cv_bad_prog=XFAIL])])
-
-AC_CACHE_CHECK([preprocess a good Objective C++ program],
-               [my_cv_good_preproc],
-               [AC_PREPROC_IFELSE([AC_LANG_PROGRAM([[#import <objc/Object.h>]],
-                                                   [[[Object class]]])],
-                                  [my_cv_good_preproc=PASS],
-                                  [my_cv_good_preproc=FAIL])])
-
-AC_CACHE_CHECK([preprocess a bad Objective C++ program],
-               [my_cv_bad_preproc],
-               [AC_PREPROC_IFELSE([AC_LANG_PROGRAM([[#import <junk/Object.h>]],
-                                                   [[choke me]])],
-                                  [my_cv_bad_preproc=XPASS],
-                                  [my_cv_bad_preproc=XFAIL])])
-
+AC_CACHE_CHECK(
+  [whether the Objective C++ compiler really works],
+  [my_cv_objcxx_works],
+  [AC_LINK_IFELSE([AC_LANG_PROGRAM([[#import <iostream>]],
+                                   [[std::cout << "foo" << "\n";]])],
+                  [my_cv_objcxx_works=yes],
+                  [my_cv_objcxx_works=no])])
 AC_LANG_POP([Objective C++])
 
-AC_SUBST([my_cv_good_prog])
-AC_SUBST([my_cv_bad_prog])
-AC_SUBST([my_cv_good_preproc])
-AC_SUBST([my_cv_bad_preproc])
+if test $my_cv_objc_works != yes; then
+  AC_MSG_ERROR([couldn't find a working Objective C compiler], [77])
+fi
+
+if test $my_cv_objcxx_works != yes; then
+  AC_MSG_ERROR([couldn't find a working Objective C++ compiler], [77])
+fi
 
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile])
@@ -89,14 +81,6 @@ play_LDADD = libfoo.la
 play_LDFLAGS = -lobjc
 lib_LTLIBRARIES = libfoo.la
 libfoo_la_SOURCES = foo.h foo.c fooxx.cxx fooo.m foooxx.mm
-
-check-local: test-cv
-.PHONY: test-cv
-test-cv:
-	test @my_cv_good_prog@    = PASS
-	test @my_cv_bad_prog@     = XFAIL
-	test @my_cv_good_preproc@ = PASS
-	test @my_cv_bad_preproc@  = XFAIL
 END
 
 ## Run Autotools.
