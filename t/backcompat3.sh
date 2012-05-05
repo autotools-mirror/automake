@@ -74,15 +74,7 @@ diff exp got
 ### Run 2 ###
 
 cat > configure.in <<'END'
-dnl: 'AC_INIT' in Autoconf <= 2.63 doesn't have an URL argument.
-dnl: Luckily, 'AC_AUTOCONF_VERSION' and 'm4_version_prereq' are
-dnl: both present in autoconf 2.62, which we require; so that we
-dnl: can at least use the following workaround.
-m4_version_prereq([2.64],
-    [AC_INIT([ac_name], [ac_version], [ac_bugreport], [ac_tarname],
-             [ac_url])],
-    [AC_INIT([ac_name], [ac_version], [ac_bugreport], [ac_tarname])
-     AC_SUBST([PACKAGE_URL], [ac_url])])
+AC_INIT([ac_name], [ac_version], [ac_bugreport], [ac_tarname], [ac_url])
 AM_INIT_AUTOMAKE([am_name], [am_version])
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

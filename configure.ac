@@ -141,7 +141,7 @@ AC_CHECK_PROGS([LEX], [lex flex], [false])
 # following tests, but some users were unable to figure out that their
 # installation was broken since --version appeared to work.
 
-required_autoconf_version=2.62
+required_autoconf_version=2.65
 AC_CACHE_CHECK([whether autoconf is installed], [am_cv_autoconf_installed],
 [if AM_RUN_LOG([$am_AUTOCONF --version]);
 then

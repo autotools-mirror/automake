@@ -47,9 +47,8 @@ else
   depdir=
 fi
 
-# For the fun of it, we should also cope with makefile
-# names that contain weird characters, with Autoconf 2.62
-# and newer.
+# For the fun of it, we should also cope with Makefile names
+# that contain weird characters and newer.
 # Pick the first name that the file system will accept.
 for name in \
   'weird  name with $ `#() &! characters"' \
