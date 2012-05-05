@@ -90,9 +90,8 @@ cd serial
 $MAKE ${j}1 check &
 cd ../parallel
 $sleep
-# Use append mode here to avoid dropping output.
-# Yes, this actually happens.
-: >stdout
+# Use append mode here to avoid dropping output.  See automake bug#11413.
+: > stdout
 $MAKE ${j}4 check >> stdout
 cd ..
 # Ensure the tests are really being run in parallel mode: if this is

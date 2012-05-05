@@ -37,6 +37,7 @@ $AUTOCONF
 $AUTOMAKE --add-missing
 ./configure
 
+# Use append mode here to avoid dropping output.  See automake bug#11413.
 : >stdout
 $MAKE -j >>stdout || { cat stdout; Exit 1; }
 
@@ -50,6 +51,7 @@ test -f elc-stamp
 
 rm -f am-*.elc
 
+# Use append mode here to avoid dropping output.  See automake bug#11413.
 : >stdout
 $MAKE -j >>stdout || { cat stdout; Exit 1; }
 
