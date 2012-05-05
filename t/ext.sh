@@ -22,18 +22,24 @@ cat >> configure.ac << 'END'
 AC_PROG_F77
 AC_PROG_FC
 AC_PROG_OBJC
+# FIXME: this is to cater to older autoconf; remove this once we
+# FIXME: automake requires Autoconf 2.65 or later.
+m4_ifdef([AC_PROG_OBJCXX], [AC_PROG_OBJCXX], [
+  AC_SUBST([OBJCXX], [whocares])
+  AM_CONDITIONAL([am__fastdepOBJCXX], [whocares])
+])
 AM_PROG_UPC
 END
 
 cat > Makefile.am << 'END'
 bin_PROGRAMS = foo
-foo_SOURCES = 1.f 2.for 3.f90 4.f95 5.F 6.F90 7.F95 8.r 9.m 10.upc
+foo_SOURCES = 1.f 2.for 3.f90 4.f95 5.F 6.F90 7.F95 8.r 9.m 10.mm 11.upc
 END
 
 $ACLOCAL
 $AUTOMAKE
 
-for ext in f for f90 f95 F F90 F95 r m upc
+for ext in f for f90 f95 F F90 F95 r m mm upc
 do
    # Some versions of the BSD shell wrongly exit when 'set -e' is active
    # if the last command within a compound statement fails and is guarded

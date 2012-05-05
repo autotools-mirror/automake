@@ -269,7 +269,6 @@ sub _is_valid_easy_option ($)
   return scalar grep { $opt eq $_ } qw(
     check-news
     color-tests
-    cygnus
     dejagnu
     dist-bzip2
     dist-lzip
@@ -321,6 +320,10 @@ sub _process_option_list (\%@)
           error ($where,
                  "automatic de-ANSI-fication support has been removed");
         }
+      elsif ($_ eq 'cygnus')
+        {
+          error $where, "support for Cygnus-style trees has been removed";
+        }
       elsif ($_ eq 'dist-lzma')
         {
           error ($where, "support for lzma-compressed distribution " .
@@ -339,10 +342,6 @@ sub _process_option_list (\%@)
         {
           delete $options->{$_};
           $options->{'filename-length-max'} = [$_, $1];
-        }
-      elsif ($_ eq 'silent-rules')
-        {
-          _option_must_be_from_configure ($_, $where);
         }
       elsif ($_ eq 'tar-v7' || $_ eq 'tar-ustar' || $_ eq 'tar-pax')
         {

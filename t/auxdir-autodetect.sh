@@ -121,7 +121,7 @@ grep '%%d[013]' out2 && Exit 1
 rm -f ../../missing ../../install-sh
 
 # --------------------------------------------------------- #
-:  AC_CONFIG_AUX_DIR will not be found: automake must fail  #
+:  AC_CONFIG_AUX_DIR will not be found: Automake must fail  #
 # --------------------------------------------------------- #
 
 AUTOMAKE_fails

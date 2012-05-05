@@ -115,7 +115,6 @@ section entitled ``GNU Free Documentation License.''
 * Conditionals::                Conditionals
 * Silencing Make::              Obtain less verbose output from @command{make}
 * Gnits::                       The effect of @option{--gnu} and @option{--gnits}
-* Cygnus::                      The effect of @option{--cygnus} (deprecated, soon to be removed)
 * Not Enough::                  When Automake is not Enough
 * Distributing::                Distributing the Makefile.in
 * API Versioning::              About compatibility between Automake versions
@@ -219,6 +218,7 @@ Building Programs and Libraries
 * Yacc and Lex::                Yacc and Lex support
 * C++ Support::                 Compiling C++ sources
 * Objective C Support::         Compiling Objective C sources
+* Objective C++ Support::       Compiling Objective C++ sources
 * Unified Parallel C Support::  Compiling Unified Parallel C sources
 * Assembly Support::            Compiling assembly sources
 * Fortran 77 Support::          Compiling Fortran 77 sources
@@ -1959,14 +1959,6 @@ standard is actually published (which may never happen).
 @xref{Gnits}, for more information on the precise implications of the
 strictness level.
 
-Automake also has a special (and @emph{today deprecated}) ``cygnus'' mode
-that is similar to strictness but handled differently.  This mode is
-useful for packages that are put into a ``Cygnus'' style tree (e.g., older
-versions of the GCC and gdb trees).  @xref{Cygnus}, for more information
-on this mode.  Please note that this mode is deprecated and @emph{will be
-removed in the future automake versions}; you must avoid its use in new
-packages, and should stop using it in existing packages as well.
-
 
 @node Uniform
 @section The Uniform Naming Scheme
@@ -2604,13 +2596,6 @@ scripts and data files (like e.g., @file{texinfo.texi} and
 When used with @option{--add-missing}, causes installed files to be
 copied.  The default is to make a symbolic link.
 
-@item --cygnus
-@opindex --cygnus
-Causes the generated @file{Makefile.in}s to follow Cygnus rules, instead
-of GNU or Gnits rules.  For more information, see @ref{Cygnus}.
-Note that @emph{this mode of operation is deprecated, and will be removed}
-in a future Automake release.
-
 @item -f
 @opindex -f
 @itemx --force-missing
@@ -3030,6 +3015,10 @@ Programs, , Particular Program Checks, autoconf, The Autoconf Manual}.
 
 @item AC_PROG_OBJC
 This is required if any Objective C source is included.  @xref{Particular
+Programs, , Particular Program Checks, autoconf, The Autoconf Manual}.
+
+@item AC_PROG_OBJCXX
+This is required if any Objective C++ source is included.  @xref{Particular
 Programs, , Particular Program Checks, autoconf, The Autoconf Manual}.
 
 @item AC_PROG_F77
@@ -4604,6 +4593,7 @@ to build programs and libraries.
 * Yacc and Lex::                Yacc and Lex support
 * C++ Support::                 Compiling C++ sources
 * Objective C Support::         Compiling Objective C sources
+* Objective C++ Support::       Compiling Objective C++ sources
 * Unified Parallel C Support::  Compiling Unified Parallel C sources
 * Assembly Support::            Compiling assembly sources
 * Fortran 77 Support::          Compiling Fortran 77 sources
@@ -5720,6 +5710,7 @@ they apply.
 @itemx maude_GCJFLAGS
 @itemx maude_LFLAGS
 @itemx maude_OBJCFLAGS
+@itemx maude_OBJCXXFLAGS
 @itemx maude_RFLAGS
 @itemx maude_UPCFLAGS
 @itemx maude_YFLAGS
@@ -5737,6 +5728,7 @@ Automake.  These @dfn{per-target compilation flags} are
 @samp{_GCJFLAGS},
 @samp{_LFLAGS},
 @samp{_OBJCFLAGS},
+@samp{_OBJCXXFLAGS},
 @samp{_RFLAGS},
 @samp{_UPCFLAGS}, and
 @samp{_YFLAGS}.
@@ -6313,6 +6305,41 @@ The command used to actually link an Objective C program.
 @end vtable
 
 
+@node Objective C++ Support
+@section Objective C++ Support
+
+@cindex Objective C++ support
+@cindex Support for Objective C++
+
+Automake includes some support for Objective C++.
+
+Any package including Objective C++ code must define the output variable
+@code{OBJCXX} in @file{configure.ac}; the simplest way to do this is to use
+the @code{AC_PROG_OBJCXX} macro (@pxref{Particular Programs, , Particular
+Program Checks, autoconf, The Autoconf Manual}).
+
+A few additional variables are defined when an Objective C++ source file
+is seen:
+
+@vtable @code
+@item OBJCXX
+The name of the Objective C++ compiler.
+
+@item OBJCXXFLAGS
+Any flags to pass to the Objective C++ compiler.
+
+@item AM_OBJCXXFLAGS
+The maintainer's variant of @code{OBJCXXFLAGS}.
+
+@item OBJCXXCOMPILE
+The command used to actually compile an Objective C++ source file.  The
+file name is appended to form the complete command line.
+
+@item OBJCXXLINK
+The command used to actually link an Objective C++ program.
+@end vtable
+
+
 @node Unified Parallel C Support
 @section Unified Parallel C Support
 
@@ -6578,6 +6605,9 @@ parentheses are the variables containing the link command.)
 @vindex GCJLINK
 Native Java (@code{GCJLINK})
 @item
+@vindex OBJCXXLINK
+Objective C++ (@code{OBJCXXLINK})
+@item
 @vindex CXXLINK
 C++ (@code{CXXLINK})
 @item
@@ -6786,7 +6816,9 @@ source file.
 @section Support for Other Languages
 
 Automake currently only includes full support for C, C++ (@pxref{C++
-Support}), Objective C (@pxref{Objective C Support}), Fortran 77
+Support}), Objective C (@pxref{Objective C Support}),
+Objective C++ (@pxref{Objective C++ Support}),
+Fortran 77
 (@pxref{Fortran 77 Support}), Fortran 9x (@pxref{Fortran 9x Support}),
 and Java (@pxref{Java Support with gcj}).  There is only rudimentary
 support for other languages, support for which will be improved based
@@ -9921,15 +9953,12 @@ then @samp{portability} warnings will be @emph{disabled} in
 @item @option{gnits}
 @itemx @option{gnu}
 @itemx @option{foreign}
-@itemx @option{cygnus}
 @cindex Option, @option{gnits}
 @cindex Option, @option{gnu}
 @cindex Option, @option{foreign}
-@cindex Option, @option{cygnus}
 @opindex gnits
 @opindex gnu
 @opindex foreign
-@opindex cygnus
 
 Set the strictness as appropriate.  The @option{gnits} option also
 implies options @option{readme-alpha} and @option{check-news}.
@@ -10892,64 +10921,6 @@ included.
 
 @item
 The file @file{THANKS} is required.
-@end itemize
-
-
-@node Cygnus
-@chapter The effect of @option{--cygnus}
-
-@cindex @option{cygnus} strictness
-
-@emph{The features described in this section are deprecated; you must
-not use any of them in new code, and should remove their use from older
-but still maintained code: they will be withdrawn in a future Automake
-release.}
-
-Some packages, notably GNU GCC and GNU gdb, used to have a build
-environment originally written at Cygnus Support (subsequently renamed
-Cygnus Solutions, and then later purchased by Red Hat).  Packages with
-this ancestry are sometimes referred to as ``Cygnus'' trees.
-
-A Cygnus tree has slightly different rules for how a
-@file{Makefile.in} is to be constructed.  Passing @option{--cygnus} to
-@command{automake} will cause any generated @file{Makefile.in} to
-comply with Cygnus rules.
-
-Here are the precise effects of @option{--cygnus}:
-
-@itemize @bullet
-
-@item
-The @option{foreign} strictness is implied.
-
-@item
-The options @option{no-installinfo}, @option{no-dependencies} and
-@option{no-dist} are implied (@pxref{Options}).
-
-@item
-The macro @code{AM_MAINTAINER_MODE} is required.
-
-@item
-Info files are always created in the build directory, and not in the
-source directory.  Packages that don't use the @option{cygnus} option
-can emulate this effect by using the @option{no-installinfo} option
-and listing the generated info files in the @code{CLEANFILES} variable.
-
-@item
-@file{texinfo.tex} is not required if a Texinfo source file is
-specified.  The assumption is that the file will be supplied, but in a
-place that Automake cannot find -- it is an artifact of how Cygnus
-packages are typically bundled.  This effect can be emulated in
-packages not using the @option{cygnus} option with a proper definition
-of the @code{TEXINFO_TEX} variable (@pxref{Texinfo}).
-
-@item
-Certain tools will be searched for in the build tree as well as in the
-user's @env{PATH}.  These tools are @command{runtest}, @command{expect},
-@command{makeinfo} and @command{texi2dvi}.
-
-@item
-The @code{check} target doesn't depend on @code{all}.
 @end itemize
 
 
@@ -12045,6 +12016,7 @@ flags, not appended.
 @cindex @code{AM_LFLAGS} and @code{LFLAGS}
 @cindex @code{AM_LIBTOOLFLAGS} and @code{LIBTOOLFLAGS}
 @cindex @code{AM_OBJCFLAGS} and @code{OBJCFLAGS}
+@cindex @code{AM_OBJCXXFLAGS} and @code{OBJXXCFLAGS}
 @cindex @code{AM_RFLAGS} and @code{RFLAGS}
 @cindex @code{AM_UPCFLAGS} and @code{UPCFLAGS}
 @cindex @code{AM_YFLAGS} and @code{YFLAGS}
@@ -12059,6 +12031,7 @@ flags, not appended.
 @cindex @code{LFLAGS} and @code{AM_LFLAGS}
 @cindex @code{LIBTOOLFLAGS} and @code{AM_LIBTOOLFLAGS}
 @cindex @code{OBJCFLAGS} and @code{AM_OBJCFLAGS}
+@cindex @code{OBJCXXFLAGS} and @code{AM_OBJCXXFLAGS}
 @cindex @code{RFLAGS} and @code{AM_RFLAGS}
 @cindex @code{UPCFLAGS} and @code{AM_UPCFLAGS}
 @cindex @code{YFLAGS} and @code{AM_YFLAGS}
@@ -12068,8 +12041,8 @@ mostly discuss @code{CPPFLAGS} in our examples, but actually the
 answer holds for all the compile flags used in Automake:
 @code{CCASFLAGS}, @code{CFLAGS}, @code{CPPFLAGS}, @code{CXXFLAGS},
 @code{FCFLAGS}, @code{FFLAGS}, @code{GCJFLAGS}, @code{LDFLAGS},
-@code{LFLAGS}, @code{LIBTOOLFLAGS}, @code{OBJCFLAGS}, @code{RFLAGS},
-@code{UPCFLAGS}, and @code{YFLAGS}.
+@code{LFLAGS}, @code{LIBTOOLFLAGS}, @code{OBJCFLAGS}, @code{OBJCXXFLAGS},
+@code{RFLAGS}, @code{UPCFLAGS}, and @code{YFLAGS}.
 
 @code{CPPFLAGS}, @code{AM_CPPFLAGS}, and @code{mumble_CPPFLAGS} are
 three variables that can be used to pass flags to the C preprocessor
@@ -12827,8 +12800,8 @@ generated by @command{automake} effectively:
 
 @itemize
 @item
-If less verbose output has been enabled in the package with the
-@samp{silent-rules} option (@pxref{Options}), you can use
+If less verbose output has been enabled in the package with the use
+of silent rules (@pxref{Automake Silent Rules}), you can use
 @code{make V=1} to see the commands being executed.
 @item
 @code{make -n} can help show what would be done without actually doing
@@ -12945,7 +12918,7 @@ suite failures, please attach the @file{tests/test-suite.log} file.
 @c  LocalWords:  texinfo setfilename settitle setchapternewpage texi direntry
 @c  LocalWords:  dircategory in's aclocal ifinfo titlepage Tromey vskip pt sp
 @c  LocalWords:  filll defcodeindex ov cv op tr syncodeindex fn cp vr ifnottex
-@c  LocalWords:  dir Automake's ac Dist Gnits gnits cygnus dfn Autoconf's pxref
+@c  LocalWords:  dir Automake's ac Dist Gnits gnits dfn Autoconf's pxref
 @c  LocalWords:  cindex Autoconf autoconf perl samp cvs dist trindex SUBST foo
 @c  LocalWords:  xs emph FIXME ref vindex pkglibdir pkgincludedir pkgdatadir mt
 @c  LocalWords:  pkg libdir cpio bindir sbindir rmt pax sbin zar zardir acindex
@@ -12971,6 +12944,7 @@ suite failures, please attach the @file{tests/test-suite.log} file.
 @c  LocalWords:  subsubsection OBJEXT esac lib LTLIBRARIES liblob LIBADD AR ar
 @c  LocalWords:  ARFLAGS cru ing maude libgettext lo LTLIBOBJS rpath SGI PRE yy
 @c  LocalWords:  libmaude CCLD CXXFLAGS FFLAGS LFLAGS OBJCFLAGS RFLAGS DEFS cc
+@c  LocalWords:  OBJCXXFLAGS
 @c  LocalWords:  SHORTNAME vtable srcdir nostdinc basename yxx cxx ll lxx gdb
 @c  LocalWords:  lexers yymaxdepth maxdepth yyparse yylex yyerror yylval lval
 @c  LocalWords:  yychar yydebug yypact yyr yydef def yychk chk yypgo pgo yyact

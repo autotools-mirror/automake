@@ -75,16 +75,19 @@ could_not_read ()
   #   $ grep foo unreadable-file # Solaris 10
   #   grep: can't open "unreadable"
   #
+  # Plus, we must cater to error messages displayed by our own awk
+  # script: "cannot read "unreadable"".
+  #
   # FIXME: this might still needs adjustments on other systems ...
   #
   grep "$1:.*[pP]ermission denied" stderr \
-    || $EGREP "can(no|')t open [\"'\`]?$1" stderr
+    || $EGREP "can(no|')t (open|read) [\"'\`]?$1" stderr
 }
 
 for lst in bar.log 'foo.log bar.log'; do
   doit $lst
   could_not_read bar.log
-  grep 'test-suite\.log:.* I/O error reading test logs' stderr
+  grep 'test-suite\.log:.* I/O error reading test results' stderr
 done
 
 doit foo.trs

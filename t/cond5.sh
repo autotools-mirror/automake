@@ -64,6 +64,6 @@ while test $try -le 30; do
   fi
 done
 # The automake process probably hung.  Kill it, and exit with failure.
-echo "$me: automake process $pid hung"
+echo "$me: Automake process $pid hung"
 kill $pid
 Exit 1
