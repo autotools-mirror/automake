@@ -185,6 +185,8 @@ EXTRA_DIST += lib/Automake/Config.in
 ## --------------------- ##
 
 dist_am_DATA = \
+  lib/am/all-target.am \
+  lib/am/check-target.am \
   lib/am/serial-tests.am \
   lib/am/parallel-tests.am \
   lib/am/check-typos.am \
@@ -333,6 +335,7 @@ perl_fake_XFAIL_TESTS = \
 
 XFAIL_TESTS = \
   t/all.sh \
+  t/override-suggest-local.sh \
   t/yacc-bison-skeleton-cxx.sh \
   t/yacc-bison-skeleton.sh \
   t/comments-in-var-def.sh \

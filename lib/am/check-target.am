@@ -1,0 +1,38 @@
+## automake - create Makefile.in from Makefile.am
+## Copyright (C) 2012 Free Software Foundation, Inc.
+
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2, or (at your option)
+## any later version.
+
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+
+## You should have received a copy of the GNU General Public License
+## along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+## The 'check' target.
+
+.PHONY: check check-am check-local
+ifdef SUBDIRS
+.PHONY: check-recursive
+endif
+
+# The check target must depend on the local equivalent of 'all', to
+# ensure all the primary targets are built; then it must build the
+# local check dependencies, and finally run the actual tests (as given
+# by $(TESTS), by DejaGNU, and by the 'check-local' target).
+check-am: all-am
+	$(if %CHECK-DEPS%,$(MAKE) %CHECK-DEPS%,@:)
+	$(MAKE) %CHECK-TESTS% check-local
+
+# Handle recursion.  We have to honor BUILT_SOURCES like for 'all:'.
+ifdef BUILT_SOURCES
+check: $(BUILT_SOURCES)
+	$(MAKE) $(if $(SUBDIRS),check-recursive,check-am)
+else
+check: $(if $(SUBDIRS),check-recursive,check-am)
+endif

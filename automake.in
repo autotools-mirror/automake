@@ -4139,110 +4139,27 @@ sub handle_footer
 # Generate 'make install' rules.
 sub handle_install ()
 {
-  $output_rules .= &file_contents
-    ('install',
-     new Automake::Location,
-     maybe_BUILT_SOURCES => (set_seen ('BUILT_SOURCES')
-			     ? (" \$(BUILT_SOURCES)\n"
-				. "\t\$(MAKE)")
-			     : ''),
-     'installdirs-local' => (user_phony_rule 'installdirs-local'
-			     ? ' installdirs-local' : ''),
-     am__installdirs => variable_value ('am__installdirs') || '');
+  $output_verbatim .= preprocess_file ("$libdir/am/install.am");
 }
 
-
-# Deal with all and all-am.
-sub handle_all ($)
+# Generate "make all" and "make check" rules.
+sub handle_all_and_check ()
 {
-    my ($makefile) = @_;
-
-    # Output 'all-am'.
-
-    # Put this at the beginning for the sake of non-GNU makes.  This
-    # is still wrong if these makes can run parallel jobs.  But it is
-    # right enough.
-    unshift (@all, basename ($makefile));
-
-    foreach my $spec (@config_headers)
-      {
-	my ($out, @ins) = split_config_file_spec ($spec);
-	push (@all, basename ($out))
-	  if dirname ($out) eq $relative_dir;
-      }
-
-    # Install 'all' hooks.
-    push (@all, "all-local")
-      if user_phony_rule "all-local";
-
-    &pretty_print_rule ("all-am:", "\t\t", @all);
-    &depend ('.PHONY', 'all-am', 'all');
-
-
-    # Output 'all'.
-
-    my @local_headers = ();
-    push @local_headers, '$(BUILT_SOURCES)'
-      if var ('BUILT_SOURCES');
-    foreach my $spec (@config_headers)
-      {
-	my ($out, @ins) = split_config_file_spec ($spec);
-	push @local_headers, basename ($out)
-	  if dirname ($out) eq $relative_dir;
-      }
-
-    if (@local_headers)
-      {
-	# We need to make sure config.h is built before we recurse.
-	# We also want to make sure that built sources are built
-	# before any ordinary 'all' targets are run.  We can't do this
-	# by changing the order of dependencies to the "all" because
-	# that breaks when using parallel makes.  Instead we handle
-	# things explicitly.
-        $output_rules .= ("all: @local_headers"
-                          . "\n\t\$(MAKE) "
-                          . (var ('SUBDIRS') ? 'all-recursive' : 'all-am')
-                          . "\n\n");
-      }
-    else
-      {
-        $output_rules .= "all: " . (var ('SUBDIRS')
-                                    ? 'all-recursive' : 'all-am') . "\n\n";
-      }
-}
-
-
-# &do_check_merge_target ()
-# -------------------------
-# Handle check merge target specially.
-sub do_check_merge_target ()
-{
-  # Include user-defined local form of target.
-  push @check_tests, 'check-local'
-    if user_phony_rule 'check-local';
-
-  # The check target must depend on the local equivalent of
-  # 'all', to ensure all the primary targets are built.  Then it
-  # must build the local check rules.
-  $output_rules .= "check-am: all-am\n";
-  if (@check)
+  my @local_headers = ();
+  foreach my $spec (@config_headers)
     {
-      pretty_print_rule ("\t\$(MAKE)", "\t  ", @check);
+      my ($out, @ins) = split_config_file_spec ($spec);
+      push (@local_headers, basename ($out))
+        if dirname ($out) eq $relative_dir;
     }
 
-  if (@check_tests)
-    {
-      pretty_print_rule ("\t\$(MAKE)", "\t  ", @check_tests);
-    }
+  $output_verbatim .= preprocess_file ("$libdir/am/all-target.am",
+                                       'ALL-DEPS' => "@all",
+                                       'LOCAL-HEADERS' => "@local_headers");
 
-  depend '.PHONY', 'check', 'check-am';
-  # Handle recursion.  We have to honor BUILT_SOURCES like for 'all:'.
-  $output_rules .= ("check: "
-		    . (var ('BUILT_SOURCES')
-		       ? "\$(BUILT_SOURCES)\n\t\$(MAKE) "
-		       : '')
-		    . (var ('SUBDIRS') ? 'check-recursive' : 'check-am')
-		    . "\n");
+  $output_verbatim .= preprocess_file ("$libdir/am/check-target.am",
+                                       'CHECK-DEPS' => "@check",
+                                       'CHECK-TESTS' => "@check_tests");
 }
 
 # handle_clean ($MAKEFILE)
@@ -7254,8 +7171,8 @@ sub generate_makefile ($$)
   handle_dist;
 
   handle_footer;
-  do_check_merge_target;
-  handle_all ($makefile);
+  # Special targets "all" and "check".
+  handle_all_and_check;
 
   # FIXME: Gross!
   if (var ('lib_LTLIBRARIES') && var ('bin_PROGRAMS'))

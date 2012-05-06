@@ -37,11 +37,9 @@ echo SUBDIRS = sub > $mkfile.am
 : > sub/$mkfile.am
 
 $ACLOCAL
+$AUTOCONF
 $AUTOMAKE
 
-$EGREP "^all-am:.* $mkfile( |$)" $mkfile.in sub/$mkfile.in
-
-$AUTOCONF
 ./configure
 
 $FGREP "$magic1" mkfile.in && Exit 1 # Sanity check.

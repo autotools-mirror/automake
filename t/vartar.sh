@@ -19,21 +19,21 @@
 . ./defs || Exit 1
 
 cat > Makefile.am << 'END'
-install = install
-install:
-	$(install) install
+xinstall = xinstall
+xinstall:
+	$(xinstall) xinstall
 END
 
 $ACLOCAL
 $AUTOMAKE -Wno-override
 
-grep '^install = install$' Makefile.in
+grep '^xinstall = xinstall$' Makefile.in
 
 cat > target.expected <<'EOF'
-install:
-	$(install) install
+xinstall:
+	$(xinstall) xinstall
 EOF
-sed -n '/^install:/,/^	/p' Makefile.in > target.value
+sed -n '/^xinstall:/,/^	/p' Makefile.in > target.value
 diff target.expected target.value
 
 :

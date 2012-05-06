@@ -26,4 +26,4 @@ EOF
 
 $ACLOCAL
 $AUTOMAKE
-test `$FGREP .PHONY: Makefile.in | wc -l` = 3
+test `$FGREP .PHONY: Makefile.in | wc -l` -gt 3

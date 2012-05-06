@@ -54,7 +54,7 @@ END
 
 $MAKE check >stdout || { cat stdout; Exit 1; }
 cat stdout
-$EGREP -i "#.*all\\.test|a comment|(Tests|Shell) " stdout && Exit 1
+$EGREP "#.*all\\.test|a comment|(Tests|Shell) " stdout && Exit 1
 count_test_results total=4 pass=2 fail=0 xpass=0 xfail=1 skip=1 error=0
 
 echo 'AM_TEST_LOG_DRIVER_FLAGS = --comments' >> Makefile
@@ -69,7 +69,7 @@ count_test_results total=4 pass=2 fail=0 xpass=0 xfail=1 skip=1 error=0
 $MAKE check TEST_LOG_DRIVER_FLAGS="--no-comments" >stdout \
   || { cat stdout; Exit 1; }
 cat stdout
-$EGREP -i "#.*all\\.test|a comment|(Tests|Shell) " stdout && Exit 1
+$EGREP "#.*all\\.test|a comment|(Tests|Shell) " stdout && Exit 1
 count_test_results total=4 pass=2 fail=0 xpass=0 xfail=1 skip=1 error=0
 
 # The "#"-prepended lines here shouldn't be parsed as test results.

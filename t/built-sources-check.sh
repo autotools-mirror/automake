@@ -63,11 +63,6 @@ cat stdout
 grep '^PASS: subrun\.sh *$' stdout
 grep 'PASS.*echo\.sh' stdout && Exit 1
 
-# check should depend directly on $(BUILT_SOURCES) (similar tests
-# are in check.test and check2.test).
-$EGREP '^check:.* \$\(BUILT_SOURCES\)( |$)' Makefile.in
-$EGREP '^check:.* \$\(BUILT_SOURCES\)( |$)' dir/Makefile.in
-
 $MAKE distcheck
 
 :

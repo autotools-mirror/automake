@@ -18,28 +18,24 @@
 ## installdirs -- Creating the installdirs.  ##
 ## ----------------------------------------- ##
 
-## The reason we loop over %am__installdirs% (instead of simply running
-## $(MKDIR_P) %am__installdirs%) is that directories variable such as
+.PHONY: installdirs installdirs-local
+ifdef SUBDIRS
+.PHONY: installdirs-am
+RECURSIVE_TARGETS += installdirs-recursive
+installdirs: installdirs-recursive
+endif
+
+$(if $(SUBDIRS),installdirs-am,installdirs): installdirs-local
+ifdef am__installdirs
+## The reason we loop over $(am__installdirs), instead of simply running
+## "$(MKDIR_P) $(am__installdirs), is that directories variable such as
 ## "$(DESTDIR)$(mydir)" can potentially expand to "" if $(mydir) is
 ## conditionally defined.  BTW, those directories are quoted in order
 ## to support installation paths with spaces.
-
-if %?SUBDIRS%
-.PHONY: installdirs installdirs-am
-RECURSIVE_TARGETS += installdirs-recursive
-installdirs: installdirs-recursive
-installdirs-am:%installdirs-local%
-?am__installdirs?	for dir in %am__installdirs%; do \
-?am__installdirs?	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
-?am__installdirs?	done
-else !%?SUBDIRS%
-.PHONY: installdirs
-installdirs:%installdirs-local%
-?am__installdirs?	for dir in %am__installdirs%; do \
-?am__installdirs?	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
-?am__installdirs?	done
-endif !%?SUBDIRS%
-
+	for dir in $(am__installdirs); do \
+	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
+	done
+endif
 
 ## ----------------- ##
 ## Install targets.  ##
@@ -48,19 +44,24 @@ endif !%?SUBDIRS%
 .PHONY: install install-exec install-data uninstall
 .PHONY: install-exec-am install-data-am uninstall-am
 
-if %?SUBDIRS%
-RECURSIVE_TARGETS += install-data-recursive install-exec-recursive \
-		     install-recursive uninstall-recursive
-install:%maybe_BUILT_SOURCES% install-recursive
+ifdef SUBDIRS
+RECURSIVE_TARGETS += install-data-recursive install-exec-recursive
+RECURSIVE_TARGETS += install-recursive uninstall-recursive
 install-exec: install-exec-recursive
 install-data: install-data-recursive
 uninstall: uninstall-recursive
-else !%?SUBDIRS%
-install:%maybe_BUILT_SOURCES% install-am
+else
 install-exec: install-exec-am
 install-data: install-data-am
 uninstall: uninstall-am
-endif !%?SUBDIRS%
+endif
+
+ifdef BUILT_SOURCES
+install: $(BUILT_SOURCES)
+	$(MAKE) $(if $(SUBDIRS),install-recursive,install-am)
+else
+install: $(if $(SUBDIRS),install-recursive,install-am)
+endif
 
 .PHONY: install-am
 install-am: all-am
@@ -68,16 +69,18 @@ install-am: all-am
 
 
 .PHONY: installcheck
-?SUBDIRS?installcheck: installcheck-recursive
-?!SUBDIRS?installcheck: installcheck-am
-?!SUBDIRS?.PHONY: installcheck-am
-?!SUBDIRS?installcheck-am:
+ifdef SUBDIRS
+installcheck: installcheck-recursive
+else
+installcheck: installcheck-am
+.PHONY: installcheck-am
+installcheck-am:
+endif
 
 ## If you ever modify this, keep in mind that INSTALL_PROGRAM is used
 ## in subdirectories, so never set it to a value relative to the top
 ## directory.
 .PHONY: install-strip
-install-strip:
 ## Beware that there are two variables used to install programs:
 ##   INSTALL_PROGRAM is used for ordinary *_PROGRAMS
 ##   install_sh_PROGRAM is used for nobase_*_PROGRAMS (because install-sh
@@ -90,12 +93,9 @@ install-strip:
 ##
 ## The case for empty $(STRIP) is separate so that it is quoted correctly for
 ## multiple words, but does not expand to an empty words if STRIP is empty.
-	if test -z '$(STRIP)'; then \
-	  $(MAKE) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
-	    install_sh_PROGRAM="$(INSTALL_STRIP_PROGRAM)" INSTALL_STRIP_FLAG=-s \
-	      install; \
-	else \
-	  $(MAKE) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
-	    install_sh_PROGRAM="$(INSTALL_STRIP_PROGRAM)" INSTALL_STRIP_FLAG=-s \
-	    "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'" install; \
-	fi
+install-strip:
+	$(MAKE) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
+	        install_sh_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
+		INSTALL_STRIP_FLAG=-s \
+		$(if $(STRIP),"INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'") \
+		install
