@@ -21,8 +21,6 @@ required=native
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'
-dnl Support for Object C++ was introduced only in Autoconf 2.65.
-AC_PREREQ([2.65])
 AC_PROG_OBJCXX
 AC_CONFIG_HEADERS([config.h])
 AC_OUTPUT
@@ -57,13 +55,7 @@ int main (void)
 }
 END
 
-if $ACLOCAL; then
-  : We have a modern enough autoconf, go ahead.
-elif test $? -eq 63; then
-  skip_ "Object C++ support requires Autoconf 2.65 or later"
-else
-  Exit 1 # Some other aclocal failure.
-fi
+$ACLOCAL
 $AUTOCONF
 $AUTOHEADER
 $AUTOMAKE --add-missing
