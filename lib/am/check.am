@@ -57,14 +57,19 @@ if %?PARALLEL_TESTS%
 ## of more test metadata, and the use of custom test derivers and protocols
 ## (among them, TAP).
 
-# Required to support explicit use of $(srcdir) in TESTS entries.
-# That might actually be very useful in practice, for example in usages
-# like this:
+# The names of the given tests scripts with any possible registered
+# test extension removed, as well as any leading '$(srcdir)' component
+# (if any) stripped.
+# The stripping of $(srcdir) is required to support explicit use of
+# $(srcdir) in TESTS entries.  That might actually be very useful in
+# practice, for example in usages like this:
 #   TESTS = $(wildcard $(srcdir)/t[0-9][0-9]*.sh)
-# Removing the '$(srcdir)' in there would cause the idiom to break in
-# VPATH builds.
-am__cooked_tests = $(patsubst $(srcdir)/%,%,$(strip $(TESTS)))
-am__cooked_xfail_tests = $(patsubst $(srcdir)/%,%,$(strip $(XFAIL_TESTS)))
+# where removing the $(srcdir) from the $(wildcard) invocation would
+# cause the idiom to break in VPATH builds.
+am__get_test_bases = $(patsubst $(srcdir)/%,%,$(strip \
+$(call am__strip_suffixes, $(TEST_EXTENSIONS), \
+?!HANDLE-EXEEXT?             $(1))))
+?HANDLE-EXEEXT?              $(patsubst %$(EXEEXT),%,$(1)))))
 
 am__recheck_rx = ^[ 	]*:recheck:[ 	]*
 am__global_test_result_rx = ^[ 	]*:global-test-result:[ 	]*
@@ -230,16 +235,9 @@ case " $(am__xfail_test_bases) " in			\
 esac; 							\
 $(AM_TESTS_ENVIRONMENT) $(TESTS_ENVIRONMENT)
 
-# The names of the tests scripts with any registered extension removed
-# This honors runtime overriding of TESTS, and takes into account
-# $(EXEEXT) appending.
-am__TEST_BASES = $(call am__strip_suffixes, $(TEST_EXTENSIONS), \
-?!HANDLE-EXEEXT?$(am__cooked_tests))
-?HANDLE-EXEEXT?$(patsubst %$(EXEEXT),%,$(am__cooked_tests)))
-# Likewise for the xfailing tests.
-am__xfail_test_bases = $(call am__strip_suffixes, $(TEST_EXTENSIONS), \
-?!HANDLE-EXEEXT?$(am__cooked_xfail_tests))
-?HANDLE-EXEEXT?$(patsubst %$(EXEEXT),%,$(am__cooked_xfail_tests)))
+# This supports runtime overriding of $(TESTS) and $(XFAIL_TESTS).
+am__TEST_BASES       = $(call am__get_test_bases, $(TESTS))
+am__xfail_test_bases = $(call am__get_test_bases, $(XFAIL_TESTS))
 
 # The $(strip) is to work around the GNU make 3.80 bug where trailing
 # whitespace in "TESTS = foo.test $(empty)" causes $(TESTS_LOGS) to
