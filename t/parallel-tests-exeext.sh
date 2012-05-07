@@ -22,11 +22,8 @@ am_parallel_tests=yes
 
 cat >> configure.ac << 'END'
 dnl We need to fool the init.m4 internals a little.
-AC_DEFUN([_AM_FOO],
-  [m4_provide([_AM_COMPILER_EXEEXT])
-  AC_SUBST([CC], [false])
-  AC_SUBST([EXEEXT])])
-_AM_FOO
+AC_SUBST([CC], [false])
+AC_SUBST([EXEEXT])
 AC_OUTPUT
 END
 

@@ -4642,7 +4642,7 @@ sub handle_tests_dejagnu
 sub handle_per_suffix_test($)
 {
   my $test_suffix = shift;
-  my ($pfx, $parallel_tests_option, $am_exeext);
+  my ($pfx, $parallel_tests_option);
   prog_error ("called with 'parallel-tests' option not set")
     unless $parallel_tests_option = option 'parallel-tests';
   if ($test_suffix eq '')
@@ -4655,8 +4655,6 @@ sub handle_per_suffix_test($)
         unless $test_suffix =~ m/^\.(.*)/;
       $pfx = uc ($1) . '_';
     }
-  $am_exeext = exists $configure_vars{'EXEEXT'} ? 'am__EXEEXT'
-                                                  : 'FALSE';
   # The "test driver" program, deputed to handle tests protocol used by
   # test scripts.  By default, it's assumed that no protocol is used,
   # so we fall back to the old "parallel-tests" behaviour, implemented
@@ -4671,8 +4669,7 @@ sub handle_per_suffix_test($)
     }
   $output_rules .= file_contents ('check2', new Automake::Location,
                                    PFX => $pfx,
-                                   EXT => $test_suffix,
-                                   am__EXEEXT => $am_exeext);
+                                   EXT => $test_suffix);
 }
 
 # is_valid_test_extension ($EXT)
@@ -4711,9 +4708,7 @@ sub handle_tests
       $output_rules .= &file_contents ('check', new Automake::Location,
 				       COLOR => !! option 'color-tests',
 				       PARALLEL_TESTS => !! option 'parallel-tests',
-                                       CHECK_DEPS => "@check",
-                                       'HANDLE-EXEEXT' => (exists $configure_vars{'EXEEXT'} ?
-                                                           'TRUE' : 'FALSE'));
+                                       CHECK_DEPS => "@check");
 
       if (my $parallel_tests = option 'parallel-tests')
         {
@@ -6736,6 +6731,8 @@ sub preprocess_file ($%)
 
 		 'LIBTOOL'      => !! var ('LIBTOOL'),
 		 'NONLIBTOOL'   => 1,
+                 'HANDLE-EXEEXT' => (exists $configure_vars{'EXEEXT'} ?
+                                     'TRUE' : 'FALSE'),
 		%transform);
 
   if (! defined ($_ = $am_file_cache{$file}))
