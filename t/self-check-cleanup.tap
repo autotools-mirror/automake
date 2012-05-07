@@ -19,10 +19,6 @@
 
 . ./defs || Exit 1
 
-if test x"$sh_errexit_works" != x"yes"; then
-  skip_all_ "$me: no working exit trap with 'set -e'"
-fi
-
 plan_ 43
 
 # We still need a little hack to make ./defs work outside automake's
@@ -58,7 +54,8 @@ do_clean ()
 # the cleanup code not to be run, so that the temporary directories
 # are left on disk.
 command_ok_ '"keep_testdirs=yes" causes testdir to be kept around' eval '
-     keep_testdirs=yes $SHELL -c ". ./defs && echo okok >foo" t/dummy.sh \
+     env keep_testdirs=yes \
+       $AM_TEST_RUNNER_SHELL -c ". ./defs && echo okok >foo" t/dummy.sh \
      && test -f t/dummy.dir/foo \
      && test okok = `cat t/dummy.dir/foo`'
 
@@ -79,7 +76,7 @@ chmod 000 t/dummy.dir/sub/* t/dummy.dir/file
 test $have_symlinks = yes && chmod 000 t/dummy.dir/symlink
 chmod 500 t/dummy.dir/sub t/dummy.dir
 command_ok_ "pre-cleanup can deal with low-perms testdir" \
-            $SHELL -c  '. ./defs' t/dummy.sh
+            $AM_TEST_RUNNER_SHELL -c  '. ./defs' t/dummy.sh
 command_ok_ "pre-cleanup removed low-perms testdir" \
             eval 'test ! -f t/dummy.dir \
                && test ! -d t/dummy.dir \
@@ -90,7 +87,7 @@ do_clean
 # Check that post-test cleanup works also with directories with
 # "null" permissions, and containing broken symlinks.
 command_ok_ "post-cleanup can deal with low-perms testdir" \
-            $SHELL -c  '
+            $AM_TEST_RUNNER_SHELL -c  '
   stderr_fileno_=2
   . ./defs || Exit 1
   set -e
@@ -127,7 +124,7 @@ if test $have_symlinks = yes; then
   (cd t/dummy.dir && ln -s ../../dir ../../file .)
 
   command_ok_ "pre-cleanup with testdir with zero-perms symlinks" \
-               $SHELL -c '. ./defs' t/dummy.sh
+               $AM_TEST_RUNNER_SHELL -c '. ./defs' t/dummy.sh
   ls -l # For debugging.
   command_ok_ "pre-cleanup chmod doesn't follow symlinks to files" \
                eval 'ls -l file | grep "^----------.*file"'
@@ -135,7 +132,7 @@ if test $have_symlinks = yes; then
               eval 'ls -ld dir | grep "^d---------.*dir"'
 
   command_ok_ "post-cleanup with testdir with zero-perms symlinks" \
-              $SHELL -c '
+              $AM_TEST_RUNNER_SHELL -c '
     ocwd=`pwd` || exit 1
     stderr_fileno_=2
     . ./defs || Exit 1
@@ -162,7 +159,8 @@ do_clean
 # or when receiving a signal.
 
 for st in 1 2 3 10 77 99 126 127 130 255; do
-  command_ok_ "exit trap doesn't clobber exit status $st" not $SHELL -c "
+  command_ok_ "exit trap doesn't clobber exit status $st" \
+              not $AM_TEST_RUNNER_SHELL -c "
     stderr_fileno_=2
     . ./defs
     : > foo
@@ -178,7 +176,8 @@ for sig in 1 2 3 9 13 15; do
     skip_row_ 2 -r "signal $sig seems blocked"
     continue
   fi
-  command_ok_ "exit trap doesn't clobber signal $sig" not $SHELL -c "
+  command_ok_ "exit trap doesn't clobber signal $sig" \
+              not $AM_TEST_RUNNER_SHELL -c "
     stderr_fileno_=2
     . ./defs
     : > foo

@@ -205,25 +205,182 @@ case $build in
 esac
 AC_SUBST([MODIFICATION_DELAY])
 
-# Test for things needed by the test suite.
+## ------------------------------------------- ##
+##  Test for things needed by the test suite.  ##
+## ------------------------------------------- ##
+
 AC_PROG_EGREP
 AC_PROG_FGREP
 
-AC_CACHE_CHECK([whether $SHELL has working 'set -e' with exit trap],
-[am_cv_sh_errexit_works],
-[if $SHELL -ec "trap 'exit \$?' 0; (exit 77); exit 77"; test $? = 77
-then
-  am_cv_sh_errexit_works=yes
+dnl FIXME: could we extract this in a simpler way through autoconf
+dnl FIXME: idioms or internals?
+AC_DEFUN(
+  [_AM_INIT_BOURNE_COMPATIBLE_VAR],
+  [am_bourne_compatible="AS_ESCAPE(_m4_expand([AS_BOURNE_COMPATIBLE]))"])
+
+dnl
+dnl Arguments to this macro:
+dnl
+dnl   $1 - shell to test
+dnl   $2 - description of the tested feature
+dnl   $3 - shell code used to check the feature; to indicate success,
+dnl        it can either exit with status 77, or have the last command
+dnl        returning with exit status of zero
+dnl   $4 - shell code to execute if the check on the shell is successful
+dnl        (defaults to nothing)
+dnl   $5 - shell code to execute if the check on the shell is not
+dnl        successful (defaults to nothing)
+dnl
+AC_DEFUN([_AM_CHECK_SHELL_FEATURE],
+  [AC_REQUIRE([_AM_INIT_BOURNE_COMPATIBLE_VAR])
+  AC_MSG_CHECKING([whether $1 $2])
+  if { $1 -c "$am_bourne_compatible
+AS_ESCAPE([$3])
+test \$? -eq 0 || exit 1
+# Use 77 to indicate success (rather than 0), in case some shell
+# acts like Solaris 10's /bin/sh, exiting successfully on some
+# syntax errors.
+exit 77" >&AS_MESSAGE_LOG_FD 2>&1; test $? -eq 77; }
+  then
+    AC_MSG_RESULT([yes])
+    $4
+  else
+    AC_MSG_RESULT([no])
+    $5
+  fi])
+
+# AM_CHECK_CANDIDATE_TEST_SHELL(SHELL-PATH)
+# -----------------------------------------
+#
+# Check if the given shell is good enough to run our test scripts.
+# Inspired to gnulib's 'tests/init.sh'.
+#
+# We require POSIX and XSI features (e.g., '$(...)' for command
+# substitutions, '$((...))' for shell arithmetic, and support for
+# '${var#...}' and '${var%...}' parameter expansions).
+#
+# We require that the shell can correctly trap EXIT when 'set -e' is in
+# effect (OSF1/Tru64 sh failed to do so, see commit v1.10b-52-g9fe8259).
+#
+# We also prefer shells that, when 'set -x' is in effect, do not also
+# redirect traces upon stderr redirections.  For example,
+#  $ set -x; echo x 2>file
+# would emit "+ echo x" into file with older zsh versions.  Similarly,
+#   $ set -x; P=1 true 2>file
+# would emit "P=1" into file with /usr/xpg4/bin/sh from Solaris 10 and
+# /bin/sh from SunOS 5.11 and OpenBSD 4.7.
+#
+# Finally, we look for weird bugs and portability problems mentioned in
+# the Autoconf manual, and reject shells that suffers from them. (TODO)
+#
+# Use '$am_score' to indicate the degree of acceptability of the shell.
+# A score of "10" means that the shell is good enough for our needs;
+# a score of "9" means that the shell has some minor bugs or limitation,
+# but is still (barely) acceptable for our uses.  Any other score means
+# that the shell is broken or unfit.
+#
+AC_DEFUN([_AM_CHECK_CANDIDATE_SHELL],
+  [am_score=10
+  while :; do
+
+    _AM_CHECK_SHELL_FEATURE([$1],
+      [supports \$(cmd)],
+      [test "$(echo x)" = x],
+      [], [am_score=1; break])
+
+    _AM_CHECK_SHELL_FEATURE([$1],
+      [supports \$((expr))],
+      [test $((1 + 2 * 3)) = 7],
+      [], [am_score=1; break])
+
+    _AM_CHECK_SHELL_FEATURE([$1],
+      [supports \${var@%:@glob}],
+      [v=a/b/c; test ${v@%:@*/} = b/c],
+      [], [am_score=1; break])
+
+    _AM_CHECK_SHELL_FEATURE([$1],
+      [supports \${var@%:@@%:@glob}],
+      [v=a/b/c; test ${v@%:@@%:@*/} = c],
+      [], [am_score=1; break])
+
+    _AM_CHECK_SHELL_FEATURE([$1],
+      [supports \${var%glob}],
+      [v=a.b.c; test ${v%.*} = a.b],
+      [], [am_score=1; break])
+
+    _AM_CHECK_SHELL_FEATURE([$1],
+      [supports \${var%%glob}],
+      [v=a.b.c; test ${v%%.*} = a],
+      [], [am_score=1; break])
+
+    _AM_CHECK_SHELL_FEATURE([$1],
+      ["set -e" preserves exit traps],
+      [set -e; trap 'exit $?' 0; (exit 77); exit 77],
+      [], [am_score=1; break])
+
+    _AM_CHECK_SHELL_FEATURE([$1],
+      ["set -x" corrupts stderr],
+      [(set -x; P=1 true 2>&3) 3>&1 2>/dev/null | grep P=1],
+      [am_score=9], [])
+
+    break
+  done])
+
+# These messages only goes to the config.log file.
+AC_MSG_NOTICE([will now look for a sturdy POSIX shell, for our testsuite])
+
+AC_CACHE_VAL(
+  [ac_cv_AM_TEST_RUNNER_SHELL],
+  [if test "$AM_TEST_RUNNER_SHELL"; then
+    # Let the user override it.
+    ac_cv_AM_TEST_RUNNER_SHELL=$AM_TEST_RUNNER_SHELL
+  else
+    ac_cv_AM_TEST_RUNNER_SHELL=no
+    am_candidate_shells=${CONFIG_SHELL-}
+    # For the benefit of Solaris.
+    am_PATH=$PATH$PATH_SEPARATOR/usr/xpg6/bin$PATH_SEPARATOR/usr/xpg4/bin
+    for am_sh in sh sh5 dash ash bash zsh ksh pdksh; do
+      AC_PATH_PROG([am_candidate_sh], [$am_sh], [], [$am_PATH])
+      if test -n "$am_candidate_sh"; then
+        am_candidate_shells="$am_candidate_shells $am_candidate_sh"
+      fi
+      AM_SUBST_NOTMAKE([am_candidate_sh])
+      # Must nullify these in order not to interfere with the checks in
+      # the next loop.
+      AS_UNSET([am_candidate_sh])
+      AS_UNSET([ac_cv_path_am_candidate_sh])
+    done
+    AS_UNSET([am_PATH]) # Not required anymore
+    for am_sh in $am_candidate_shells; do
+      am_score=0
+      _AM_CHECK_CANDIDATE_SHELL([$am_sh])
+      if test $am_score -eq 9; then
+        # The shell is barely acceptable for our needs.  We might
+        # still find one that is even better, so continue looking.
+        AC_MSG_NOTICE([shell $am_sh is acceptable, but we might do better])
+        ac_cv_AM_TEST_RUNNER_SHELL=$am_sh
+      elif test $am_score -eq 10; then
+        AC_MSG_NOTICE([shell $am_sh is good enough, stop looking])
+        ac_cv_AM_TEST_RUNNER_SHELL=$am_sh
+        break
+      fi
+    done
+  fi
+  AM_TEST_RUNNER_SHELL=$ac_cv_AM_TEST_RUNNER_SHELL])
+
+if test $AM_TEST_RUNNER_SHELL = no; then
+  AC_MSG_FAILURE([m4_normalize([no POSIX shell found that is good
+                                enough to be used in our testsuite])])
 else
-  am_cv_sh_errexit_works=no
+  AC_MSG_NOTICE([will use $AM_TEST_RUNNER_SHELL as the testsuite shell])
 fi
-])
-if test $am_cv_sh_errexit_works = no; then
-  AC_MSG_WARN(["${MAKE-make} check" will leave leftover directories t/*.dir])
-  AC_MSG_WARN([you can clean them up manually using "${MAKE-make} clean" or])
-  AC_MSG_WARN(["cd t && ${MAKE-make} clean-local-check'])
-fi
-AC_SUBST([sh_errexit_works], [$am_cv_sh_errexit_works])
+
+AC_ARG_VAR([AM_TEST_RUNNER_SHELL],
+           [a sturdy POSIX shell for our testsuite])
+
+## ---------------------- ##
+##  Create output files.  ##
+## ---------------------- ##
 
 
 ###########################################################################
