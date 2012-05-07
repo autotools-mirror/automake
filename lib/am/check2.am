@@ -15,39 +15,32 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 if %?FIRST%
+
+am__is_xfail_test = \
+  $(if $(filter-out $(am__xfail_test_bases), \
+                    $(patsubst $(srcdir)/%,%,$(1))),no,yes)
 am__runtest = \
   $(am__sh_e_setup);							\
   $(am__tty_colors);							\
   srcdir=$(srcdir); export srcdir;					\
 ## Creates the directory for the log if needed.
   test x$(@D) = x. || test -d $(@D) || $(MKDIR_P) $(@D) || exit $$?;	\
-  f='$(patsubst $(srcdir)/%,%,$<)';					\
 ## We need to invoke the test in way that won't cause a PATH search.
 ## Quotes around '$<' are required to avoid extra errors when a circular
 ## dependency is detected (e.g., because $(TEST_SUITE_LOG) is in
 ## $(am__test_logs)), because in that case '$<' expands to empty and an
 ## unquote usage of it could cause syntax errors in the shell.
   case '$<' in */*) tst='$<';; *) tst=./'$<';; esac;			\
-  if test -n '$(DISABLE_HARD_ERRORS)'; then				\
-    am__enable_hard_errors=no; 						\
-  else									\
-    am__enable_hard_errors=yes; 					\
-  fi; 									\
-  f2='$(patsubst $(srcdir)/%,%,$*)';					\
-  case " $(am__xfail_test_bases) " in					\
-    *" $$f2 "*) am__expect_failure=yes;;				\
-             *) am__expect_failure=no;;					\
-  esac; 								\
 ## Executes the developer-defined and user-defined test
 ## setups (if any), in that order.
   $(AM_TESTS_ENVIRONMENT) $(TESTS_ENVIRONMENT)				\
   $($(1)LOG_DRIVER)							\
-  --test-name "$$f" 							\
+  --test-name '$(patsubst $(srcdir)/%,%,$<)'				\
   --log-file $*.log							\
   --trs-file $*.trs							\
   --color-tests "$$am__color_tests"					\
-  --enable-hard-errors "$$am__enable_hard_errors"			\
-  --expect-failure "$$am__expect_failure"				\
+  --enable-hard-errors $(if $(DISABLE_HARD_ERRORS),no,yes)		\
+  --expect-failure $(call am__is_xfail_test,$*)				\
   $(AM_$(1)LOG_DRIVER_FLAGS)						\
   $($(1)LOG_DRIVER_FLAGS)						\
   --									\
@@ -56,6 +49,7 @@ am__runtest = \
   $($(1)LOG_FLAGS)							\
   "$$tst"								\
   $(AM_TESTS_FD_REDIRECT)
+
 endif %?FIRST%
 
 ## From a test file to a .log and .trs file.
