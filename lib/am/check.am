@@ -195,46 +195,6 @@ END { \
 # Restructured Text title.
 am__rst_title = { sed 's/.*/   &   /;h;s/./=/g;p;x;s/ *$$//;p;g' && echo; }
 
-# Solaris 10 'make', and several other traditional 'make' implementations,
-# pass "-e" to $(SHELL), and POSIX 2008 even requires this.  Work around it
-# by disabling -e (using the XSI extension "set +e") if it's set.
-am__sh_e_setup = case $$- in *e*) set +e;; esac
-
-# Default flags passed to test drivers.
-am__common_driver_flags = \
-  --color-tests "$$am__color_tests" \
-  --enable-hard-errors "$$am__enable_hard_errors" \
-  --expect-failure "$$am__expect_failure"
-
-# To be inserted before the command running the test.  Creates the
-# directory for the log if needed.  Executes the developer-defined
-# test setup AM_TESTS_ENVIRONMENT (if any), and passes TESTS_ENVIRONMENT.
-# Set up options for the wrapper that will run the test scripts (or their
-# associated LOG_COMPILER, if they have one).
-am__check_pre =						\
-$(am__sh_e_setup);					\
-$(am__tty_colors);					\
-srcdir=$(srcdir); export srcdir;			\
-test x$(@D) = x. || test -d $(@D) || $(MKDIR_P) $(@D) || exit $$?; \
-f='$(patsubst $(srcdir)/%,%,$<)';			\
-## We need to invoke the test in way that won't cause a PATH search.
-## Quotes around '$<' are required to avoid extra errors when a circular
-## dependency is detected (e.g., because $(TEST_SUITE_LOG) is in
-## $(am__test_logs)), because in that case '$<' expands to empty and an
-## unquote usage of it could cause syntax errors in the shell.
-case '$<' in */*) tst='$<';; *) tst=./'$<';; esac;	\
-if test -n '$(DISABLE_HARD_ERRORS)'; then		\
-  am__enable_hard_errors=no; 				\
-else							\
-  am__enable_hard_errors=yes; 				\
-fi; 							\
-f2='$(patsubst $(srcdir)/%,%,$*)';			\
-case " $(am__xfail_test_bases) " in			\
-  *" $$f2 "*) am__expect_failure=yes;;			\
-           *) am__expect_failure=no;;			\
-esac; 							\
-$(AM_TESTS_ENVIRONMENT) $(TESTS_ENVIRONMENT)
-
 # This supports runtime overriding of $(TESTS) and $(XFAIL_TESTS).
 am__test_bases       = $(call am__get_test_bases, $(TESTS))
 am__xfail_test_bases = $(call am__get_test_bases, $(XFAIL_TESTS))
