@@ -64,6 +64,9 @@ sc_no_am_makeflags \
 sc_no_DISTFILES \
 sc_no_DIST_COMMON \
 sc_no_DIST_SOURCES \
+sc_no_am_TEST_BASES \
+sc_no_am_TEST_RESULTS \
+sc_no_am_TEST_LOGS \
 sc_tests_no_make_e \
 sc_docs_no_make_e \
 sc_make_simple_include \
@@ -316,6 +319,20 @@ sc_no_DISTFILES sc_no_DIST_COMMON sc_no_DIST_SOURCES: sc_no_% :
 	if grep -F '$*' $$files; then \
 	  echo "'\$$($*)' is obsolete and no more used." >&2; \
 	  echo "You should use '$(modern_$*)' instead." >&2; \
+	  exit 1; \
+	fi
+
+sc_no_am_TEST_BASES sc_no_am_TEST_RESULTS sc_no_am_TEST_LOGS: sc_no_am_% :
+	@files="\
+	  $(xtests) \
+	  $(pms) \
+	  $(ams) \
+	  $(srcdir)/automake.in \
+	"; \
+	tolower () { LC_ALL=C tr '[A-Z]' '[a-z]'; }; \
+	if grep -F 'am__$*' $$files; then \
+	  echo "'\$$(am__$*)' is obsolete and no more used." >&2; \
+	  echo "You should use 'am__`echo $* | tolower`' instead." >&2; \
 	  exit 1; \
 	fi
 

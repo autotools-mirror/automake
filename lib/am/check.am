@@ -220,7 +220,7 @@ f='$(patsubst $(srcdir)/%,%,$<)';			\
 ## We need to invoke the test in way that won't cause a PATH search.
 ## Quotes around '$<' are required to avoid extra errors when a circular
 ## dependency is detected (e.g., because $(TEST_SUITE_LOG) is in
-## $(TEST_LOGS)), because in that case '$<' expands to empty and an
+## $(am__test_logs)), because in that case '$<' expands to empty and an
 ## unquote usage of it could cause syntax errors in the shell.
 case '$<' in */*) tst='$<';; *) tst=./'$<';; esac;	\
 if test -n '$(DISABLE_HARD_ERRORS)'; then		\
@@ -236,29 +236,29 @@ esac; 							\
 $(AM_TESTS_ENVIRONMENT) $(TESTS_ENVIRONMENT)
 
 # This supports runtime overriding of $(TESTS) and $(XFAIL_TESTS).
-am__TEST_BASES       = $(call am__get_test_bases, $(TESTS))
+am__test_bases       = $(call am__get_test_bases, $(TESTS))
 am__xfail_test_bases = $(call am__get_test_bases, $(XFAIL_TESTS))
 
 # The $(strip) is to work around the GNU make 3.80 bug where trailing
 # whitespace in "TESTS = foo.test $(empty)" causes $(TESTS_LOGS) to
 # erroneously expand to "foo.log .log".
-am__TEST_RESULTS = $(addsuffix .trs,$(strip $(am__TEST_BASES)))
-am__TEST_LOGS    = $(addsuffix .log,$(strip $(am__TEST_BASES)))
+am__test_results = $(addsuffix .trs,$(strip $(am__test_bases)))
+am__test_logs    = $(addsuffix .log,$(strip $(am__test_bases)))
 
 # $(TEST_LOGS) is a published interface.
-TEST_LOGS = $(am__TEST_LOGS)
+TEST_LOGS = $(am__test_logs)
 
-$(TEST_SUITE_LOG): $(am__TEST_LOGS) $(am__TEST_RESULTS)
+$(TEST_SUITE_LOG): $(am__test_logs) $(am__test_results)
 	@$(am__sh_e_setup); $(am__tty_colors); \
 	fatal () { echo "fatal: making $@: $$*" >&2; exit 1; }; \
 ## Detect a possible circular dependency, and error out.
-	case ' $(strip $(TEST_LOGS)) ' in *' $(TEST_SUITE_LOG) '*) \
+	case ' $(strip $(am__test_logs)) ' in *' $(TEST_SUITE_LOG) '*) \
 	  fatal "depends on itself (check TESTS content)";; \
 	esac; \
 	ws='[ 	]'; \
 	count_result () \
 	{ \
-	  r='$(strip $(am__TEST_RESULTS))'; \
+	  r='$(strip $(am__test_results))'; \
 	  r=`grep "^$$ws*:test-result:$$ws*$${1-}" $$r </dev/null`; \
 ## Catch I/O errors, and complain accordingly.
 	  test $$? -le 1 || fatal "I/O error reading test results"; \
@@ -332,7 +332,7 @@ $(TEST_SUITE_LOG): $(am__TEST_LOGS) $(am__TEST_RESULTS)
 	  echo;								\
 	  echo ".. contents:: :depth: 2";				\
 	  echo;								\
-	  bases='$(am__TEST_BASES)';					\
+	  bases='$(am__test_bases)';					\
 	  for b in $$bases; do echo $$b; done				\
 	    | $(am__create_global_log);					\
 	} >$(TEST_SUITE_LOG).tmp; then					\
@@ -394,7 +394,7 @@ check-TESTS recheck:
 ## cannot use '$?' to compute the set of lazily rerun tests, lest
 ## we rely on .PHONY to work portably.
 	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
-	@bases='$(am__TEST_BASES)'; \
+	@bases='$(am__test_bases)'; \
 	if test $@ = recheck; then \
 ## If running a "make recheck", we must only consider tests that had an
 ## unexpected outcome (FAIL or XPASS) in the earlier run.
@@ -415,7 +415,7 @@ check-TESTS recheck:
 	  test -z "$$log_list" || rm -f $$log_list; \
 	  test -z "$$trs_list" || rm -f $$trs_list; \
 	fi; \
-	$(MAKE) $(TEST_SUITE_LOG) am__TEST_BASES="$$bases"
+	$(MAKE) $(TEST_SUITE_LOG) am__test_bases="$$bases"
 
 ## Recheck must depend on $(check_SCRIPTS), $(check_PROGRAMS), etc.
 ## It must also depend on the 'all' target.  See automake bug#11252.

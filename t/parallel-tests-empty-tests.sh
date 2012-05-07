@@ -33,7 +33,7 @@ mkdir sub1 sub2
 cat > sub1/Makefile.am << 'END'
 TESTS =
 check-local:
-	echo $(am__TEST_LOGS) $(am__TEST_RESULTS) $(am__TEST_BASES) \
+	echo $(am__test_logs) $(am__test_results) $(am__test_bases) \
 	  | grep . && exit 1; exit 0
 END
 
