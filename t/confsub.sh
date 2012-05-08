@@ -21,7 +21,7 @@
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([subdir/Makefile])
-AM_CONFIG_HEADER([subdir/config.h:subdir/config.hin])
+AC_CONFIG_HEADERS([subdir/config.h:subdir/config.hin])
 AC_OUTPUT
 END
 
