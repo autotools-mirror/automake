@@ -127,16 +127,13 @@ $MAKE check TESTS='$(shell echo t00 | sed "s/$$/-foo/") t99'
 test -f t00-foo.log
 test -f t99.log
 
-# A little tricky in that we rely on the .log files created by
-# the previous run to be present.
-$MAKE check TESTS="\
-  \$(patsubst %.log,%,\$(wildcard t[0-9]*.log)) \
-  \$(call my_add_dirprefix, t, nosuffix) \
-" > stdout || { cat stdout; Exit 1; }
+$MAKE check \
+      foo='E9E9E' \
+      TESTS='t$(subst E,,$(foo)) $(call my_add_dirprefix,t,nosuffix)' \
+  > stdout || { cat stdout; Exit 1; }
 cat stdout
 
-count_test_results total=3 pass=2 fail=0 xpass=0 xfail=1 skip=0 error=0
-grep '^PASS: t00-foo\.sh' stdout
+count_test_results total=2 pass=1 fail=0 xpass=0 xfail=1 skip=0 error=0
 grep '^PASS: t/nosuffix'  stdout
 grep '^XFAIL: t99\.sh'    stdout
 
