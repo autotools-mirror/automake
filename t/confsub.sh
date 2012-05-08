@@ -19,11 +19,10 @@
 
 . ./defs || Exit 1
 
-cat > configure.ac << 'END'
-AC_INIT
-AM_INIT_AUTOMAKE(nonesuch, nonesuch)
-AC_CONFIG_HEADERS(subdir/config.h:subdir/config.hin)
-AC_OUTPUT(Makefile subdir/Makefile)
+cat >> configure.ac << 'END'
+AC_CONFIG_FILES([subdir/Makefile])
+AM_CONFIG_HEADER([subdir/config.h:subdir/config.hin])
+AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'

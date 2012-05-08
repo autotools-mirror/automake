@@ -20,8 +20,6 @@
 am_create_testdir=empty
 . ./defs || Exit 1
 
-test x"$sh_errexit_works" = x"yes" || skip_ "no working shell exit trap"
-
 # We still need a little hack to make ./defs work outside automake's
 # tree 'tests' subdirectory.  Not a big deal.
 sed "s|^am_top_builddir=.*|am_top_builddir='`pwd`'|" \
@@ -35,22 +33,25 @@ set +e
 unset am_explicit_skips stderr_fileno_
 AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC
 
-$SHELL -c '. ./defs; (exit 77); exit 77' dummy.test
+# I'm a lazy typist.
+sh=$AM_TEST_RUNNER_SHELL
+
+$sh -c '. ./defs; (exit 77); exit 77' dummy.test
 test $? -eq 77 || Exit 1
 
-am_explicit_skips=no $SHELL -c '. ./defs; sh -c "exit 77"' dummy.test
+am_explicit_skips=no $sh -c '. ./defs; sh -c "exit 77"' dummy.test
 test $? -eq 77 || Exit 1
 
-am_explicit_skips=yes $SHELL -c '. ./defs; (exit 77); exit 77' dummy.test
+am_explicit_skips=yes $sh -c '. ./defs; (exit 77); exit 77' dummy.test
 test $? -eq 78 || Exit 1
 
-am_explicit_skips=y $SHELL -c '. ./defs; sh -c "exit 77"' dummy.test
+am_explicit_skips=y $sh -c '. ./defs; sh -c "exit 77"' dummy.test
 test $? -eq 78 || Exit 1
 
-am_explicit_skips=yes $SHELL -c '. ./defs; Exit 77' dummy.test
+am_explicit_skips=yes $sh -c '. ./defs; Exit 77' dummy.test
 test $? -eq 77 || Exit 1
 
-am_explicit_skips=y $SHELL -c '. ./defs; skip_ "foo"' dummy.test
+am_explicit_skips=y $sh -c '. ./defs; skip_ "foo"' dummy.test
 test $? -eq 77 || Exit 1
 
 :

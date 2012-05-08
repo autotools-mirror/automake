@@ -309,8 +309,8 @@ EXTRA_DIST += m4/amversion.in
 ##  Testsuite.  ##
 ## ------------ ##
 
-# Run the tests with the shell detected at configure time.
-LOG_COMPILER = $(SHELL)
+# Run the tests with a proper shell detected at configure time.
+LOG_COMPILER = $(AM_TEST_RUNNER_SHELL)
 
 TEST_EXTENSIONS = .pl .sh .tap
 SH_LOG_COMPILER = $(LOG_COMPILER)
@@ -322,7 +322,7 @@ TAP_LOG_DRIVER = AM_TAP_AWK='$(AWK)' $(SHELL) $(srcdir)/lib/tap-driver.sh
 
 AM_TAP_LOG_DRIVER_FLAGS = --merge
 
-EXTRA_DIST += t/ax/is
+EXTRA_DIST += t/README t/ax/is
 
 TESTS = ## Will be updated later.
 

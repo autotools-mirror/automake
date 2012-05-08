@@ -22,19 +22,21 @@
 
 set -ex
 
-$SHELL -c '. ./defs-static && test $am_using_tap = yes' foo.tap
-$SHELL -c '. ./defs-static && test $am_using_tap = no'  foo.test
-$SHELL -c '. ./defs-static && test $am_using_tap = no'  tap
-$SHELL -c '. ./defs-static && test $am_using_tap = no'  tap.test
-$SHELL -c '. ./defs-static && test $am_using_tap = no'  foo-tap
+$AM_TEST_RUNNER_SHELL -c \
+  '. ./defs-static && test $am_using_tap = yes' foo.tap
 
-$SHELL -c '
+for name in foo.test tap tap.test foo-tap; do
+  $AM_TEST_RUNNER_SHELL -c \
+    '. ./defs-static && test $am_using_tap = no' $name
+done
+
+$AM_TEST_RUNNER_SHELL -c '
   am_using_tap=no
   . ./defs-static
   test $am_using_tap = no
 ' foo.tap
 
-$SHELL -c '
+$AM_TEST_RUNNER_SHELL -c '
   am_using_tap=yes
   . ./defs-static
   test $am_using_tap = yes

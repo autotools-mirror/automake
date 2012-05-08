@@ -38,4 +38,4 @@ END
 : > THANKS
 
 $ACLOCAL
-$AUTOMAKE --gnits
+$AUTOMAKE --gnits -Wno-obsolete

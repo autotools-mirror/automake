@@ -16,7 +16,7 @@
 
 # Sanity check for the automake testsuite.
 # Check that automatic re-execution of test script with the
-# configure-time $SHELL.
+# configure-time $AM_TEST_RUNNER_SHELL.
 
 am_create_testdir=empty
 . ./defs || Exit 1
@@ -32,7 +32,9 @@ cp "$am_top_builddir"/defs . || fatal_ "fetching 'defs' from top_builddir"
 # Search for required bash and non-bash shells.
 #
 
-for bash_shell in "$SHELL" bash bash3 bash4 :; do
+for bash_shell in \
+  "$SHELL" "$AM_TEST_RUNNER_SHELL" bash bash3 bash4 :
+do
   test "$bash_shell" = : && break
   $bash_shell --version || continue
   $bash_shell -c 'test -n "$BASH_VERSION"' || continue
@@ -41,7 +43,9 @@ done
 
 # This might not be optimal, but it's much better than writing wrapper
 # scripts acting as "fake" shells.
-for non_bash_shell in /bin/sh /bin/ksh "$SHELL" sh ksh ash dash pdksh :; do
+for non_bash_shell in \
+  /bin/sh /bin/ksh sh ksh ash dash pdksh "$SHELL" "$AM_TEST_RUNNER_SHELL" :
+do
   test "$non_bash_shell" = : && break
   $non_bash_shell -c 'exit 0' || continue
   $non_bash_shell -c 'test -n "$BASH_VERSION"' && continue
@@ -97,8 +101,9 @@ cat > need-bash.sh <<'END'
 (foo=abac && test xbxc = ${foo//a/x} && test -n "$BASH_VERSION")
 END
 
+sh_var=AM_TEST_RUNNER_SHELL
 sed -e "s|^am_top_builddir=.*|am_top_builddir='$cwd'|" \
-    -e 's|^SHELL=.*$|SHELL=bash; export SHELL|' \
+    -e "s|^$sh_var=.*$|$sh_var=bash; export $sh_var|" \
     < "$am_top_builddir"/defs-static >defs-static
 
 do_reexec ()
@@ -169,12 +174,13 @@ check_reexec_message ()
   dir=$1; shift
   get_ddata "$dir"
   $sh "${dir}${dsep}dummy.sh" "$@" \
-    | grep "^dummy: exec $SHELL ${dir}${dsep}dummy\\.sh $*\$" \
+    | grep "^dummy: exec $AM_TEST_RUNNER_SHELL ${dir}${dsep}dummy\\.sh $*\$" \
     && r='ok' || r='not ok'
   result_ "$r" "$sh display re-exec message [$dname] [args: $*]"
 }
 
-./dummy.sh a b | grep "^dummy: exec $SHELL \\./dummy\\.sh a b$" \
+./dummy.sh a b \
+  | grep "^dummy: exec $AM_TEST_RUNNER_SHELL \\./dummy\\.sh a b$" \
   && r='ok' || r='not ok'
 result_ "$r" "direct run display re-exec message [args: a b]"
 
