@@ -17,14 +17,16 @@
 # Test for bug in 'make dist'
 # From Pavel Roskin.
 
+am_create_testdir=empty
 . ./defs || Exit 1
 
-cat > configure.ac << 'END'
-AC_INIT
+cat > configure.ac << END
+AC_INIT([$me], [1.0])
 dnl Prevent automake from looking in .. and ../..
-AC_CONFIG_AUX_DIR(.)
-AM_INIT_AUTOMAKE(foo, 0.1)
-AC_OUTPUT(Makefile)
+AC_CONFIG_AUX_DIR([.])
+AM_INIT_AUTOMAKE
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'

@@ -32,7 +32,7 @@ AM_TESTS_REEXEC=no; export AM_TESTS_REEXEC
 
 source_defs=". '$am_top_builddir/defs'"
 
-if $SHELL -c "$source_defs" dummy.test 2>stderr; then
+if $AM_TEST_RUNNER_SHELL -c "$source_defs" dummy.sh 2>stderr; then
   show_stderr
   Exit 1
 else
@@ -42,7 +42,7 @@ fi
 
 sed 's|^am_top_srcdir=.*|am_top_srcdir=foo|' \
   "$am_top_builddir"/defs-static > defs-static
-if $SHELL -c "$source_defs" t/dummy.test 2>stderr; then
+if $AM_TEST_RUNNER_SHELL -c "$source_defs" t/dummy.sh 2>stderr; then
   show_stderr
   Exit 1
 else
@@ -52,7 +52,7 @@ fi
 
 sed 's|^am_top_builddir=.*|am_top_builddir=foo|' \
   "$am_top_builddir"/defs-static > defs-static
-if $SHELL -c "$source_defs" t/dummy.test 2>stderr; then
+if $AM_TEST_RUNNER_SHELL -c "$source_defs" t/dummy.sh 2>stderr; then
   show_stderr
   Exit 1
 else
@@ -71,7 +71,7 @@ env \
   top_builddir=bad-dir top_srcdir=bad-dir \
   abs_builddir=bad-dir abs_srcdir=bad-dir \
   abs_top_builddir=bad-dir abs_top_srcdir=bad-dir \
-  $SHELL -c "$source_defs && echo '!OK!' > ../foo" t/dummy.test
+  $AM_TEST_RUNNER_SHELL -c "$source_defs && echo '!OK!' > ../foo" t/dummy.sh
 $FGREP '!OK!' t/foo
 
 :
