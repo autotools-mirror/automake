@@ -20,7 +20,7 @@
 #  - make clean
 #  - dependencies between tests
 #  - TESTS redefinition at runtime (with and without test suffixes)
-#  - RECHECK_LOGS redefinition at runtime
+#  - AM_LAZY_CHECK
 
 am_parallel_tests=yes
 . ./defs || Exit 1
@@ -98,7 +98,7 @@ test -f test-suite.log
 # Note that the previous test and this one taken together expose the timing
 # issue that requires the check-TESTS rule to always remove TEST_SUITE_LOG
 # before running the tests lazily.
-$MAKE check RECHECK_LOGS= > stdout && { cat stdout; Exit 1; }
+$MAKE check AM_LAZY_CHECK=yes > stdout && { cat stdout; Exit 1; }
 cat stdout
 test -f foo.log
 grep '^PASS: foo\.test$' stdout
@@ -110,19 +110,9 @@ grep '^# ERROR: *1$' stdout
 
 # Now, explicitly retry with all test logs already updated, and ensure
 # that the summary is still displayed.
-$MAKE check RECHECK_LOGS= > stdout && { cat stdout; Exit 1; }
+$MAKE check AM_LAZY_CHECK=yes > stdout && { cat stdout; Exit 1; }
 cat stdout
 grep foo.test stdout && Exit 1
-grep bar.test stdout && Exit 1
-grep baz.test stdout && Exit 1
-grep '^# PASS: *1$' stdout
-grep '^# FAIL: *1$' stdout
-grep '^# ERROR: *1$' stdout
-
-# Lazily rerunning only foo should only rerun this one test.
-$MAKE check RECHECK_LOGS=foo.log > stdout && { cat stdout; Exit 1; }
-cat stdout
-grep foo.test stdout
 grep bar.test stdout && Exit 1
 grep baz.test stdout && Exit 1
 grep '^# PASS: *1$' stdout

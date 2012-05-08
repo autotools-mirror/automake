@@ -152,7 +152,7 @@ $sleep
 echo 'int main (void) { return 0; }' > none.c
 
 st=0
-$MAKE check RECHECK_LOGS= >stdout || st=$?
+$MAKE check AM_LAZY_CHECK=yes >stdout || st=$?
 cat stdout
 ls -l
 test $st -eq 0 || Exit 1

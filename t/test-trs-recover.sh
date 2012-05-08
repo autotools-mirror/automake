@@ -154,7 +154,7 @@ test -f baz.trs
 rm -f foo.trs
 update_stamp
 touch bar.test
-$MAKE RECHECK_LOGS= check >stdout || { cat stdout; Exit 1; }
+$MAKE AM_LAZY_CHECK=yes check >stdout || { cat stdout; Exit 1; }
 cat stdout
 # Check that make has updated what it needed to, but no more.
 test -f foo.trs
