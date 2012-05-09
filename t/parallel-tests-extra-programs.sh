@@ -90,7 +90,7 @@ int main (void)
 END
 
 # 4. A program that is also a test, but whose source files
-#    do not exit and are not buildable by make.
+#    do not exist and are not buildable by make.
 
 cat >> Makefile.am <<'END'
 EXTRA_PROGRAMS += none.bin

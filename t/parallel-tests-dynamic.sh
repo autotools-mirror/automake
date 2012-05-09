@@ -14,7 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that dynamic content for $(TESTS) is supported.
+# Check that dynamic content for $(TESTS) is supported, both when set from
+# inside the Makefile.am and when overriddend from the command line.
 
 am_parallel_tests=yes
 . ./defs || Exit 1
@@ -129,12 +130,15 @@ test -f t99.log
 
 $MAKE check \
       foo='E9E9E' \
-      TESTS='t$(subst E,,$(foo)) $(call my_add_dirprefix,t,nosuffix)' \
+      a='t00.err' \
+      b='${a:.err=-foo}' \
+      TESTS='$(b) t$(subst E,,$(foo)) $(call my_add_dirprefix,t,nosuffix)' \
   > stdout || { cat stdout; Exit 1; }
 cat stdout
 
-count_test_results total=2 pass=1 fail=0 xpass=0 xfail=1 skip=0 error=0
+count_test_results total=3 pass=2 fail=0 xpass=0 xfail=1 skip=0 error=0
 grep '^PASS: t/nosuffix'  stdout
+grep '^PASS: t00-foo\.sh' stdout
 grep '^XFAIL: t99\.sh'    stdout
 
 :

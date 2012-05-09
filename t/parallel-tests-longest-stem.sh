@@ -40,7 +40,6 @@ cp foo.test dist.test
 cp foo.test install.test
 cp foo.test bad-target.test
 
-
 cat > Makefile.am << 'END'
 bad-target:
 	@echo $@ has been run >&2; exit 1

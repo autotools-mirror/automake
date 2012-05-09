@@ -21,7 +21,7 @@ am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat > Makefile.am << 'END'
-# The tests are *deliberately* listed in inversed order here.
+# The tests are *deliberately* listed in inverted order here.
 TESTS = c.test b.test a.test
 b.log: a.log
 c.log: b.log

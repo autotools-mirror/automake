@@ -17,8 +17,7 @@
 # Custom test drivers: try the "recheck" functionality with test protocols
 # that allow multiple testcases in a single test script.  In particular,
 # check that this still works when we override $(TESTS) at make runtime.
-# See also related tests 'test-driver-custom-multitest-recheck.test' and
-# 'parallel-tests-recheck-override.test'.
+# See also related tests 'test-driver-custom-multitest-recheck.test'.
 
 am_parallel_tests=yes
 . ./defs || Exit 1
