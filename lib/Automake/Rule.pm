@@ -30,7 +30,7 @@ require Exporter;
 use vars '@ISA', '@EXPORT', '@EXPORT_OK';
 @ISA = qw/Automake::Item Exporter/;
 @EXPORT = qw (reset register_suffix_rule suffix_rules_count
-	      suffixes rules $suffix_rules $KNOWN_EXTENSIONS_PATTERN
+	      rules $suffix_rules $KNOWN_EXTENSIONS_PATTERN
 	      depend %dependencies %actions register_action
 	      accept_extensions
 	      reject_rule msg_rule msg_cond_rule err_rule err_cond_rule
@@ -94,12 +94,6 @@ non-object).
 =over 4
 
 =cut
-
-my $_SUFFIX_RULE_PATTERN =
-  '^(\.[a-zA-Z0-9_(){}$+@\-]+)(\.[a-zA-Z0-9_(){}$+@\-]+)' . "\$";
-
-# Suffixes found during a run.
-use vars '@_suffixes';
 
 # Same as $suffix_rules (declared below), but records only the
 # default rules supplied by the languages Automake supports.
@@ -316,7 +310,6 @@ other internal data.
 sub reset()
 {
   %_rule_dict = ();
-  @_suffixes = ();
   # The first time we initialize the variables,
   # we save the value of $suffix_rules.
   if (defined $_suffix_rules_default)
@@ -384,8 +377,8 @@ sub reset()
 
 =item C<register_suffix_rule ($where, $src, $dest)>
 
-Register a suffix rule defined on C<$where> that transforms
-files ending in C<$src> into files ending in C<$dest>.
+Register a suffix-based pattern rule defined on C<$where> that
+transforms files ending in C<$src> into files ending in C<$dest>.
 
 This upgrades the C<$suffix_rules> variables.
 
@@ -396,7 +389,6 @@ sub register_suffix_rule ($$$)
   my ($where, $src, $dest) = @_;
 
   verb "Sources ending in $src become $dest";
-  push @_suffixes, $src, $dest;
 
   # When transforming sources to objects, Automake uses the
   # %suffix_rules to move from each source extension to
@@ -472,17 +464,6 @@ F<Makefile> (excluding predefined suffix rules).
 sub suffix_rules_count ()
 {
   return (scalar keys %$suffix_rules) - (scalar keys %$_suffix_rules_default);
-}
-
-=item C<@list = suffixes>
-
-Return the list of known suffixes.
-
-=cut
-
-sub suffixes ()
-{
-  return @_suffixes;
 }
 
 =item C<rule ($rulename)>
@@ -810,36 +791,27 @@ sub define ($$$$$;$)
       $rule->set ($c, $def);
     }
 
-  # We honor inference rules with multiple targets because many
-  # makes support this and people use it.  However this is disallowed
-  # by POSIX.  We'll print a warning later.
-  my $target_count = 0;
-  my $inference_rule_count = 0;
+  my $chars_rx = '[a-zA-Z0-9_(){}$+@\-]+';
+  my $suffix_rule_rx = "^(\\.$chars_rx+)(\\.$chars_rx+)(?:\\s|\$)";
+  my $pattern_rx ="^%(\\.$chars_rx+)";
 
-  for my $t (split (' ', $target))
+  # Let's see if the rule is a suffix-based pattern rule we can handle.
+  if ($target =~ /^%(\.$chars_rx)$/o)
     {
-      ++$target_count;
-      # Check if the rule is a suffix rule: either it's a rule for
-      # two known extensions...
-      if ($t =~ /^($KNOWN_EXTENSIONS_PATTERN)($KNOWN_EXTENSIONS_PATTERN)$/
-	  # ...or it's a rule with unknown extensions (i.e., the rule
-	  # looks like '.foo.bar:' but '.foo' or '.bar' are not
-	  # declared in SUFFIXES and are not known language
-	  # extensions).  Automake will complete SUFFIXES from
-	  # @suffixes automatically (see handle_footer).
-	  || ($t =~ /$_SUFFIX_RULE_PATTERN/o && accept_extensions($1)))
-	{
-	  ++$inference_rule_count;
-	  register_suffix_rule ($where, $1, $2);
-	}
+      my $objsuf = $1;
+      if ($deps =~ /^\s*%(\.$chars_rx)(\s|$)/o)
+        {
+          my $srcsuf = $1;
+          accept_extensions ($srcsuf);
+          register_suffix_rule ($where, $srcsuf, $objsuf);
+        }
     }
-
-  # POSIX allows multiple targets before the colon, but disallows
-  # definitions of multiple inference rules.  It's also
-  # disallowed to mix plain targets with inference rules.
-  msg ('portability', $where,
-       "inference rules can have only one target before the colon (POSIX)")
-    if $inference_rule_count > 0 && $target_count > 1;
+  # We don't support old-fashioned  suffix rules anymore, but want to
+  # report them as errors.
+  elsif ($target =~ /$suffix_rule_rx/o)
+    {
+      error $where, "use pattern rules, not old-fashioned suffix rules";
+    }
 
   return @conds;
 }

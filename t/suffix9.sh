@@ -39,9 +39,9 @@ cat >Makefile.am << 'END'
 bin_PROGRAMS = foo
 foo_SOURCES = foo.x_
 
-.x_.y:
+%.y: %.x_
 	cp $< $@
-.x_.c:
+%.c: %.x_
 	cp $< $@
 END
 
@@ -53,9 +53,9 @@ cat >Makefile.am << 'END'
 bin_PROGRAMS = foo
 foo_SOURCES = foo.x_
 
-.x_.c:
+%.c: %.x_
 	cp $< $@
-.x_.y:
+%.y: %.x_
 	cp $< $@
 END
 

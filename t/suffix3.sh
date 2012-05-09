@@ -19,16 +19,13 @@
 required=c++
 . ./defs || Exit 1
 
-plan_ 10
-
 cat >> configure.ac << 'END'
 AC_PROG_CXX
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-SUFFIXES = .zoo
-.zoo.cc:
+%.cc: %.zoo
 	sed 's/INTEGER/int/g' $< >$@
 bin_PROGRAMS = foo
 foo_SOURCES = foo.zoo
@@ -38,21 +35,19 @@ FOO = foo
 CLEANFILES = $(FOO).cc
 END
 
-command_ok_ "aclocal" $ACLOCAL
-command_ok_ "automake" $AUTOMAKE
+$ACLOCAL
+$AUTOMAKE
 
 # The foo.cc intermediate step is implicit, it's a mistake if
 # Automake requires this file somewhere.  Also, Automake should
 # not require the file 'foo.c' anywhere.
-command_ok_ "intermediate files not mentioned" \
-  not $FGREP foo.c Makefile.in
+$FGREP foo.c Makefile.in && Exit 1
 # However Automake must figure that foo.zoo is eventually
 # transformed into foo.o, and use this latter file (to link foo).
-command_ok_ "final object file figured out" \
-  $FGREP 'foo.$(OBJEXT)' Makefile.in
+$FGREP 'foo.$(OBJEXT)' Makefile.in
 
-command_ok_ "autoconf" $AUTOCONF
-command_ok_ "configure" ./configure
+$AUTOCONF
+./configure
 
 # This is deliberately valid C++, but invalid C.
 cat > foo.zoo <<'END'
@@ -63,15 +58,15 @@ INTEGER main (void)
 }
 END
 
-command_ok_ "make all" $MAKE all
-command_ok_ "make distcheck"  $MAKE distcheck
+$MAKE all
+$MAKE distcheck
 
-# FIXME: should we check that intermediate file 'foo.cc' has
+# TODO: should we check that intermediate file 'foo.cc' has
 # been removed?  Or is this requiring too much from the make
 # implementation?
 
 # Intermediate files should not be distributed.
-command_ok_ "make distdir" $MAKE distdir
-command_ok_ "intermediate file not distributed" test ! -r $me-1.0/foo.cc
+$MAKE distdir
+test ! -r $me-1.0/foo.cc
 
 :

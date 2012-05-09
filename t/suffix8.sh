@@ -21,8 +21,6 @@
 required='cc libtoolize'
 . ./defs || Exit 1
 
-plan_ 10
-
 cat >>configure.ac <<'END'
 AM_PROG_AR
 AM_PROG_LIBTOOL
@@ -41,21 +39,16 @@ lib_LTLIBRARIES = libfoo.la
 foo_SOURCES = foo.x_
 libfoo_la_SOURCES = bar.x_
 
-.x_.y_:
+%.y_: %.x_
 	cp $< $@
-.y_.o:
+%.o: %.y_
 	cp $< $@
-.y_.obj:
+%.obj: %.y_
 	cp $< $@
-.y_.z_:
+%.z_: %.y_
 	cp $< $@
-.z_.lo:
+%.lo: %.z_
 	cp $< $@
-
-# Some make implementations don't remove intermediate files
-# automatically, thus causing "make distcheck" to fail if
-# this is not added.
-MOSTLYCLEANFILES = *.y_ *.z_
 
 .PHONY: test0 test1 test2
 test0:
@@ -73,15 +66,16 @@ END
 echo 'int main (void) { return 0; }' > foo.x_
 echo 'int bar (void) { return 0; }' > bar.x_
 
-command_ok_ "libtoolize" libtoolize
-command_ok_ "aclocal"    $ACLOCAL
-command_ok_ "autoconf"   $AUTOCONF
-command_ok_ "automake"   $AUTOMAKE -a
-command_ok_ "configure"  ./configure
-command_ok_ "make test0" $MAKE test0 OBJEXT=foo
+libtoolize
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE -a
+
+./configure
+$MAKE test0 OBJEXT=foo
 
 for target in test1 test2 all distcheck; do
-  command_ok_ "make $target" $MAKE $target
+  $MAKE $target
 done
 
 :

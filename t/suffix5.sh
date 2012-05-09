@@ -29,7 +29,7 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-.k.lo:
+%.lo: %.k
 	(echo $< && cat $<) > $@
 
 noinst_LTLIBRARIES = libfoo.la

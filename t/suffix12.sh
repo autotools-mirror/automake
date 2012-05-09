@@ -14,8 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Tests that Automake understands suffix rules with subdir objects.
-# Reported by John Ratliff.
+# Tests that pattern rules with subdir objects are understood.
+# Originally reported by John Ratliff against suffix rules.
+# This test currently fails, because Automake-NG don't scan nor
+# process pattern rules.
 
 required=cc
 . ./defs || Exit 1
@@ -27,9 +29,8 @@ EOF
 
 cat >Makefile.am << 'END'
 AUTOMAKE_OPTIONS = subdir-objects
-SUFFIXES = .baz .o
 # We fake here:
-.baz.o:
+%.o: %.baz
 	cp $< $@
 
 bin_PROGRAMS = foo

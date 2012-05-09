@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2001-2012 Free Software Foundation, Inc.
+# Copyright (C) 2002-2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,26 +14,43 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure Automake doesn't abort on user-defined extensions.
-# Based on a report from Dmitry Mikhin <dmitrym@acres.com.au>.
+# Check that Automake can take advantage of GNU make ability to
+# automatically chain suffix-based pattern rules.
+# See automake bug#7824 and bug#7670.
 
-# Also make sure that .SUFFIXES is automatically adjusted with
-# extensions from implicit rules.
-
+required=cc
 . ./defs || Exit 1
 
-cat > Makefile.am << 'END'
-.k.o:
-	echo $< > $@
-
-bin_PROGRAMS = foo
-foo_SOURCES = foo.k
+cat >> configure.ac <<'END'
+AC_PROG_CC
+AC_OUTPUT
 END
+
+cat > Makefile.am <<'END'
+bin_PROGRAMS = foo
+foo_SOURCES = foo.c1
+%.c0: %.c1
+	(echo 'int main (void)' && echo '{' && cat $<) > $@
+%.c: %.c0
+	(cat $< && echo '}') > $@
+CLEANFILES = foo.c0 foo.c
+END
+
+echo 'return 0;' > foo.c1
 
 $ACLOCAL
 $AUTOMAKE
-grep '^\.SUFFIXES:' Makefile.in | sed -e 's/$/ /' > suffixes
-cat suffixes
-$FGREP ' .k ' suffixes
+$AUTOCONF
+./configure
+$MAKE all
+$MAKE distcheck
+
+# Try with explicit dependencies as well.
+$MAKE clean
+cat >> Makefile <<'END'
+foo.c: foo.c0
+foo.c0: foo.c1
+END
+$MAKE all
 
 :

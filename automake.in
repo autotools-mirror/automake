@@ -604,23 +604,6 @@ my %am_file_cache;
 
 ################################################################
 
-# var_SUFFIXES_trigger ($TYPE, $VALUE)
-# ------------------------------------
-# This is called by Automake::Variable::define() when SUFFIXES
-# is defined ($TYPE eq '') or appended ($TYPE eq '+').
-# The work here needs to be performed as a side-effect of the
-# macro_define() call because SUFFIXES definitions impact
-# on $KNOWN_EXTENSIONS_PATTERN which is used used when parsing
-# the input am file.
-sub var_SUFFIXES_trigger ($$)
-{
-    my ($type, $value) = @_;
-    accept_extensions (split (' ', $value));
-}
-Automake::Variable::hook ('SUFFIXES', \&var_SUFFIXES_trigger);
-
-################################################################
-
 ## --------------------------------- ##
 ## Forward subroutine declarations.  ##
 ## --------------------------------- ##
@@ -4378,36 +4361,13 @@ sub handle_gettext
 # Handle footer elements.
 sub handle_footer
 {
-    reject_rule ('.SUFFIXES',
-		 "use variable 'SUFFIXES', not target '.SUFFIXES'");
-
-    # Note: AIX 4.1 /bin/make will fail if any suffix rule appears
-    # before .SUFFIXES.  So we make sure that .SUFFIXES appears before
-    # anything else, by sticking it right after the default: target.
-    $output_header .= ".SUFFIXES:\n";
-    my $suffixes = var 'SUFFIXES';
-    my @suffixes = Automake::Rule::suffixes;
-    if (@suffixes || $suffixes)
-    {
-	# Make sure SUFFIXES has unique elements.  Sort them to ensure
-	# the output remains consistent.  However, $(SUFFIXES) is
-	# always at the start of the list, unsorted.  This is done
-	# because make will choose rules depending on the ordering of
-	# suffixes, and this lets the user have some control.  Push
-	# actual suffixes, and not $(SUFFIXES).  Some versions of make
-	# do not like variable substitutions on the .SUFFIXES line.
-	my @user_suffixes = ($suffixes
-			     ? $suffixes->value_as_list_recursive : ());
-
-	my %suffixes = map { $_ => 1 } @suffixes;
-	delete @suffixes{@user_suffixes};
-
-	$output_header .= (".SUFFIXES: "
-			   . join (' ', @user_suffixes, sort keys %suffixes)
-			   . "\n");
-    }
-
-    $output_trailer .= file_contents ('footer', new Automake::Location);
+  # Automake used to have special support for old-fashioned suffix
+  # rules, but Automake-NG favors the use of GNU make pattern rules.
+  reject_rule '.SUFFIXES',
+              "use pattern rules, not old-fashioned suffix rules";
+  reject_var  'SUFFIXES',
+              "use pattern rules, not old-fashioned suffix rules";
+  $output_trailer .= file_contents ('footer', new Automake::Location);
 }
 
 

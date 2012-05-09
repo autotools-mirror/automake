@@ -25,27 +25,30 @@ cat > configure.ac <<END
 AC_INIT([$me], [1.0])
 AM_INIT_AUTOMAKE([-Wall -Werror gnu])
 AC_CONFIG_FILES([Makefile])
+AC_PROG_CC
 END
 
 cat > Makefile.am <<'END'
-# The following should expand to '-Wnone -Wno-error foreign -Wportability'.
+# The following should expand to:
+#   subdir-objects -Wnone -Wno-error foreign -Wportability
 AUTOMAKE_OPTIONS = $(foo) foreign
 AUTOMAKE_OPTIONS += ${bar}
 foo = $(foo1)
 foo1 = ${foo2}
-foo2 = -Wnone
+foo2 = subdir-objects -Wnone
 foo2 += $(foo3)
 foo3 = -Wno-error
 bar = -Wportability
+noinst_PROGRAMS = foo
 # This will give a warning with '-Wportability'.
-.aaa.bbb .ccc.ddd:
+foo_SOURCES = sub/foo.c
 # This would give a warning with '-Woverride'.
 install:
 END
 
 $ACLOCAL
 AUTOMAKE_run
-grep '^Makefile\.am:.*inference rules can have only one target' stderr
+grep '^Makefile\.am:.*sub/foo\.c.*requires.*AM_PROG_CC_C_O' stderr
 grep README stderr && Exit 1
 $EGREP '(install|override)' stderr && Exit 1
 

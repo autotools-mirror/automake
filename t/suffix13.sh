@@ -14,9 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Tests that Automake understands suffix rules with renamed objects
-# and subdir objects.
-# Reported by Florian Briegel.
+# Tests that Automake understands suffix-based pattern rules with
+# renamed objects and subdir objects.  Reported by Florian Briegel.
 
 required=cc
 . ./defs || Exit 1
@@ -29,8 +28,7 @@ EOF
 
 cat >Makefile.am << 'END'
 AUTOMAKE_OPTIONS = subdir-objects
-SUFFIXES = .baz .c
-.baz.c:
+%.c: %.baz
 	case $@ in sub/*) $(MKDIR_P) sub;; *) :;; esac
 	cp $< $@
 
@@ -38,7 +36,7 @@ DISTCLEANFILES = sub/bar.c
 
 bin_PROGRAMS = foo
 foo_SOURCES = foo.c sub/bar.baz
-foo_CFLAGS =
+foo_CFLAGS = -DRETVAL=0
 END
 
 mkdir sub
@@ -47,7 +45,7 @@ extern int foo ();
 int main () { return foo (); }
 END
 cat > foo.c <<'END'
-int foo () { return 0; }
+int foo () { return RETVAL; }
 END
 
 $ACLOCAL

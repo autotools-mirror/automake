@@ -99,6 +99,37 @@ Parallel testsuite harness
   work as expected:
     TESTS = $(wildcard $(srcdir)/t[0-9][0-9]*.sh)
 
+Pattern rules and suffix rules
+==============================
+
+* Old-fashioned suffix rules are not supported anymore; Automake-NG will
+  error out if you try to use them.  Use pattern rules instead, as
+  advised in the GNU make manual itself.
+
+* The .SUFFIXES: special target and the SUFFIXES special variable are
+  not supported anymore either; Automake-NG will error out if you try
+  to define them.
+
+* To retain support for user-defined file extensions in the '_SOURCES'
+  variables (see "Handling new file extensions" in the Automake manual),
+  Automake-NG still tries to parse and understand suffix-based pattern
+  rules.  So, an usage like:
+   
+      SUFFIXES = .baz .c
+      .baz.c:
+              cp $< $@
+      foo_SOURCES = foo.c bar.baz
+      DISTCLEANFILES = bar.c
+
+  which was valid with mainline Automake, should be translated for
+  Automake-NG as:
+
+      %.c: %.baz
+              cp $< $@
+      bin_PROGRAMS = foo
+      foo_SOURCES = foo.c sub/bar.baz
+      DISTCLEANFILES = bar.c
+
 Miscellaneous
 =============
 

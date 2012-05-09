@@ -25,7 +25,7 @@ END
 
 cat > Makefile.am << 'END'
 TESTS = foo.test
-.in.test:
+%.test: %.in
 	cp $< $@ && chmod +x $@
 check_SCRIPTS = $(TESTS)
 EXTRA_DIST = foo.in foo.test
