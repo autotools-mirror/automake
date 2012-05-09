@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test the example of usage of generic and extension-specific
-# LOG_COMPILER and LOG_FLAGS given in the manual.
+# LOG_COMPILER, LOG_FLAGS and LOG_DEPENDNECIES given in the manual.
 
 am_parallel_tests=yes
 required=python
@@ -30,16 +30,22 @@ END
 cat > Makefile.am << 'END'
 TESTS = foo.pl bar.py baz
 TEST_EXTENSIONS = .pl .py
+
 PL_LOG_COMPILER = $(PERL)
 AM_PL_LOG_FLAGS = -w
-PY_LOG_COMPILER = $(PYTHON)
-AM_PY_LOG_FLAGS = -v
+
 LOG_COMPILER = ./wrapper-script
 AM_LOG_FLAGS = -d
+
+PY_LOG_COMPILER = $(PYTHON)
+AM_PY_LOG_FLAGS = -v
+PY_LOG_DEPENDENCIES = mymod.py
+mymod.py:
+	echo "import sys" >$@
 END
 
 echo 'my $a =+ 2; exit (0);' > foo.pl
-echo 'import sys; sys.exit(0);' > bar.py
+echo 'import mymod; mymod.sys.exit(0);' > bar.py
 : > baz
 
 cat > wrapper-script <<'END'
@@ -59,6 +65,9 @@ $MAKE check || st=$?
 cat foo.log
 cat bar.log
 cat baz.log
+cat foo.trs
+cat bar.trs
+cat baz.trs
 test $st -eq 0 || Exit $st
 
 # Check that the wrappers have been run with the expected flags.
