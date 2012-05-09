@@ -28,6 +28,6 @@ echo '@setfilename foo.info' > foo.txi
 $ACLOCAL
 $AUTOMAKE
 
-grep '^\.txi\.info: *$' Makefile.in
+grep '^%\.info: %\.txi$' Makefile.in
 
 :

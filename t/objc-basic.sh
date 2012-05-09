@@ -33,6 +33,8 @@ echo AC_PROG_OBJC >> configure.ac
 
 $ACLOCAL
 $AUTOMAKE
-$EGREP '^\.SUFFIXES:.* \.m( |$)' Makefile.in
+$FGREP '$(OBJC)' Makefile.in
+$FGREP '$(OBJCLD)' Makefile.in
+grep '^%\.o: %\.m$' Makefile.in
 
 :

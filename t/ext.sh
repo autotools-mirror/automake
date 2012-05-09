@@ -34,13 +34,11 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-for ext in f for f90 f95 F F90 F95 r m mm upc
-do
-   # Some versions of the BSD shell wrongly exit when 'set -e' is active
-   # if the last command within a compound statement fails and is guarded
-   # by an && only.  So we play safe and use the following idiom, instead
-   # of the apparently simpler 'grep ... && Exit 1'.
-   if grep "^$ext\.o:" Makefile.in; then Exit 1; else :; fi
-   grep "^\.$ext\.o:" Makefile.in
+$FGREP '%.o' Makefile.in  # For debugging.
+
+for ext in f for f90 f95 F F90 F95 r m mm upc; do
+   grep "%.*: %$ext" Makefile.in && Exit 1
+   grep "^%\.o: %\.$ext$" Makefile.in
 done
-Exit 0
+
+:
