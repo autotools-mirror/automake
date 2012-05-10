@@ -744,22 +744,24 @@ sub _conditionals_for_rule ($$$$)
   return @conds;
 }
 
-=item C<@conds = define ($rulename, $source, $owner, $cond, $where)>
+=item C<@conds = define ($rulename, $source, $owner, $cond, $where, [$deps])>
 
 Define a new rule.  C<$rulename> is the list of targets.  C<$source>
 is the filename the rule comes from.  C<$owner> is the owner of the
 rule (C<RULE_AUTOMAKE> or C<RULE_USER>).  C<$cond> is the
 C<Automake::Condition> under which the rule is defined.  C<$where> is
-the C<Automake::Location> where the rule is defined.
+the C<Automake::Location> where the rule is defined.  C<$deps> is a
+withespace-separated list of dependencies (currently unused).
 
 Returns a (possibly empty) list of C<Automake::Condition>s where the
 rule's definition should be output.
 
 =cut
 
-sub define ($$$$$)
+sub define ($$$$$;$)
 {
-  my ($target, $source, $owner, $cond, $where) = @_;
+  my ($target, $source, $owner, $cond, $where, $deps) = @_;
+  $deps = '' unless defined $deps;
 
   prog_error "$where is not a reference"
     unless ref $where;
@@ -772,9 +774,9 @@ sub define ($$$$$)
   my $tdef = _rule_defn_with_exeext_awareness ($target, $cond, $where);
 
   # See whether this is a duplicated target declaration.
-  # Ignore '%'-style pattern rules.  We'd need the dependencies to detect
-  # duplicates, and would be overkill anyway, worth the possibility of
-  # annoying false positives.
+  # Ignore '%'-style pattern rules.  We'd need to scan the dependencies
+  # to detect duplicates, and doing so would be overkill anyway, not
+  # worth the possibility of annoying false positives.
   if ($tdef && $target !~ /%/)
     {
       # Diagnose invalid target redefinitions, if any.  Note that some

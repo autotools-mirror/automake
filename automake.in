@@ -6526,11 +6526,15 @@ sub read_am_file ($$)
 	{
 	    # Found a rule.
 	    $prev_state = IN_RULE_DEF;
+            my $targ = $1;
+            (my $deps = $2) =~ s/^\s*//;
 
 	    # For now we have to output all definitions of user rules
 	    # and can't diagnose duplicates (see the comment in
-	    # Automake::Rule::define). So we go on and ignore the return value.
-	    Automake::Rule::define ($1, $amfile, RULE_USER, $cond, $where);
+	    # Automake::Rule::define). So we go on and ignore the return
+            # value.
+	    Automake::Rule::define ($targ, $amfile, RULE_USER, $cond,
+                                    $where, $deps);
 
 	    $output_trailer .= $comment . $spacing;
 	    my $cond = new Automake::Condition @cond_stack;
@@ -7009,7 +7013,7 @@ sub file_contents_internal ($$$%)
 		  my @undefined_conds =
 		    Automake::Rule::define ($targets, $file,
 					    $is_am ? RULE_AUTOMAKE : RULE_USER,
-					    $cond, $where);
+					    $cond, $where, "@deps");
 		  for my $undefined_cond (@undefined_conds)
 		    {
 		      my $condparagraph = $paragraph;
