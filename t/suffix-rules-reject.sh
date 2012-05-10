@@ -14,31 +14,42 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure extensions are set correctly for various languages.
+# Automake-NG should reject suffix rules in favor of pattern rules.
 
 . ./defs || Exit 1
 
-cat >> configure.ac << 'END'
-AC_PROG_F77
-AC_PROG_FC
-AC_PROG_OBJC
-AC_PROG_OBJCXX
-AM_PROG_UPC
-END
+$ACLOCAL
 
 cat > Makefile.am << 'END'
-bin_PROGRAMS = foo
-foo_SOURCES = 1.f 2.for 3.f90 4.f95 5.F 6.F90 7.F95 8.r 9.m 10.mm 11.upc
+.SUFFIXES: .w
 END
 
-$ACLOCAL
-$AUTOMAKE
+cat > Makefile2.am <<'END'
+## Dummy comments ...
+## ... whose only purpose is ...
+## ... to alter ...
+## ... the line count.
+SUFFIXES = .w
+END
 
-$FGREP '%.o' Makefile.in  # For debugging.
+cat > Makefile3.am << 'END'
+.foo.bar: ; cp $< $@
+.mu.um:
+	cp $< $@
+.1.2 .3.4:
+	who cares
+END
 
-for ext in f for f90 f95 F F90 F95 r m mm upc; do
-   grep "%.*: %$ext" Makefile.in && Exit 1
-   grep "^%\.o: %\.$ext$" Makefile.in
-done
+msg='use pattern rules, not old-fashioned suffix rules'
+
+AUTOMAKE_fails -Wno-error -Wnone Makefile
+grep "^Makefile\\.am:1:.*$msg" stderr
+AUTOMAKE_fails -Wno-error -Wnone Makefile2
+grep "^Makefile2\\.am:5:.*$msg" stderr
+AUTOMAKE_fails -Wno-error -Wnone Makefile3
+grep "^Makefile3\\.am:1:.*$msg" stderr
+grep "^Makefile3\\.am:2:.*$msg" stderr
+grep "^Makefile3\\.am:4:.*$msg" stderr
+test `grep -c "$msg" stderr` -eq 3
 
 :

@@ -15,7 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test to make sure that '.o' and '.obj' are handled like '.$(OBJEXT)'.
-# See also related "grepping" test suffix6.test.
 
 . ./defs || Exit 1
 
@@ -31,19 +30,15 @@ AC_SUBST([OBJEXT])
 AC_OUTPUT
 END
 
-unset OBJEXT || :
-
 cat > Makefile.am << 'END'
-SUFFIXES = .zoo .o .obj .@OBJEXT@
-
 bin_PROGRAMS = foo
 foo_SOURCES = foo.zoo
 
-.zoo.o:
+%.o: %.zoo
 	{ echo '=.zoo.o=' && cat $<; } >$@
-.zoo.obj:
+%.obj: %.zoo
 	{ echo '=.zoo.obj=' && cat $<; } >$@
-.zoo.@OBJEXT@:
+%.@OBJEXT@: %.zoo
 	{ echo '=.zoo.@OBJEXT@=' && cat $<; } >$@
 END
 

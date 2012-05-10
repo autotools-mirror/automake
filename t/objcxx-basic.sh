@@ -35,6 +35,8 @@ END
 
 $ACLOCAL
 $AUTOMAKE
-$EGREP '^\.SUFFIXES:.* \.mm( |$)' Makefile.in
+$FGREP '$(OBJCXX)' Makefile.in
+$FGREP '$(OBJCXXLD)' Makefile.in
+grep '^%\.o: %\.mm$' Makefile.in
 
 :

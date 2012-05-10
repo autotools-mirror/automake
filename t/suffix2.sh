@@ -14,20 +14,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Make sure proper suffix rules for C compilation are produced,
+# Make sure proper pattern rules for C compilation are produced,
 # and only once, even for libtool libraries.
 # See also related test 'suffix.test'.
-required=libtoolize
 
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
 AM_PROG_AR
-AC_PROG_LIBTOOL
 END
 
 cat > Makefile.am << 'END'
+LIBTOOL = who cares
 lib_LTLIBRARIES = libltdl.la
 libltdl_la_SOURCES = ltdl.c ltdl.h
 END
@@ -42,13 +41,13 @@ END
 $ACLOCAL
 
 $AUTOMAKE -a
-grep '^ *\.c' Makefile.in # For debugging.
-test `grep -c '^\.c\.o:' Makefile.in` -eq 1
-test `grep -c '^\.c\.obj:' Makefile.in` -eq 1
+grep '%\.[co]' Makefile.in # For debugging.
+test `grep -c '^%\.o: %\.c$' Makefile.in` -eq 1
+test `grep -c '^%\.obj: %\.c$' Makefile.in` -eq 1
 
 $AUTOMAKE -i
-grep '^ *\.c' Makefile.in # For debugging.
-test `grep -c '^\.c\.o:' Makefile.in` -eq 1
-test `grep -c '^\.c\.obj:' Makefile.in` -eq 1
+grep '%.[co]' Makefile.in # For debugging.
+test `grep -c '^%\.o: %\.c$' Makefile.in` -eq 1
+test `grep -c '^%\.obj: %\.c$' Makefile.in` -eq 1
 
 :

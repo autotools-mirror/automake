@@ -286,25 +286,6 @@ sub reject_var ($$)
 
 =over 4
 
-=item C<Automake::Variable::hook ($varname, $fun)>
-
-Declare a function to be called whenever a variable
-named C<$varname> is defined or redefined.
-
-C<$fun> should take two arguments: C<$type> and C<$value>.
-When type is C<''> or <':'>, C<$value> is the value being
-assigned to C<$varname>.  When C<$type> is C<'+'>, C<$value>
-is the value being appended to  C<$varname>.
-
-=cut
-
-use vars '%_hooks';
-sub hook ($$)
-{
-  my ($var, $fun) = @_;
-  $_hooks{$var} = $fun;
-}
-
 =item C<variables ([$suffix])>
 
 Returns the list of all L<Automake::Variable> instances.  (I.e., all
@@ -757,9 +738,6 @@ by by L<Automake::VarDef>).  C<$pretty> applies only to real
 assignments.  I.e., it does not apply to a C<+=> assignment (except
 when part of it is being done as a conditional C<=> assignment).
 
-This function will all run any hook registered with the C<hook>
-function.
-
 =cut
 
 sub define ($$$$$$$$)
@@ -956,11 +934,6 @@ sub define ($$$$$$$$)
       $self->set ($cond, $def);
       push @_var_order, $var;
     }
-
-  # Call any defined hook.  This helps to update some internal state
-  # *while* parsing the file.  For instance the handling of SUFFIXES
-  # requires this (see var_SUFFIXES_trigger).
-  &{$_hooks{$var}}($type, $value) if exists $_hooks{$var};
 }
 
 =item C<variable_delete ($varname, [@conds])>

@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Make sure proper suffix rules for C compilation are produced, and
+# Make sure proper pattern rules for C compilation are produced, and
 # only once.
 # See also related test 'suffix2.test'.
 
@@ -45,14 +45,14 @@ for use_arlib in false :; do
   $ACLOCAL
 
   $AUTOMAKE $am_warns -i
-  grep '^ *\.c' Makefile.in # For debugging.
-  test `grep -c '^\.c\.o:' Makefile.in` -eq 1
-  test `grep -c '^\.c\.obj:' Makefile.in` -eq 1
+  grep '%\.[co]' Makefile.in # For debugging.
+  test `grep -c '^%\.o: %\.c$' Makefile.in` -eq 1
+  test `grep -c '^%\.obj: %\.c$' Makefile.in` -eq 1
 
   $AUTOMAKE $am_warns
-  grep '^ *\.c' Makefile.in # For debugging.
-  test `grep -c '^\.c\.o:' Makefile.in` -eq 1
-  test `grep -c '^\.c\.obj:' Makefile.in` -eq 1
+  grep '%\.[co]' Makefile.in # For debugging.
+  test `grep -c '^%\.o: %\.c$' Makefile.in` -eq 1
+  test `grep -c '^%\.obj: %\.c$' Makefile.in` -eq 1
 
 done
 

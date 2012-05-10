@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1999-2012 Free Software Foundation, Inc.
+# Copyright (C) 2002-2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,27 +14,43 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure no-dependencies option does the right thing.
-# Bug report from Greg A. Woods.
+# Check that Automake can take advantage of GNU make ability to
+# automatically chain suffix-based pattern rules.
+# See automake bug#7824 and bug#7670.
 
+required=cc
 . ./defs || Exit 1
 
-cat > Makefile.am << 'END'
-AUTOMAKE_OPTIONS = no-dependencies
-bin_PROGRAMS = zardoz
-zardoz_SOURCES = y.c
-END
-
-cat >> configure.ac << 'END'
+cat >> configure.ac <<'END'
 AC_PROG_CC
+AC_OUTPUT
 END
 
-mkdir x
+cat > Makefile.am <<'END'
+bin_PROGRAMS = foo
+foo_SOURCES = foo.c1
+%.c0: %.c1
+	(echo 'int main (void)' && echo '{' && cat $<) > $@
+%.c: %.c0
+	(cat $< && echo '}') > $@
+CLEANFILES = foo.c0 foo.c
+END
 
-: > y.c
+echo 'return 0;' > foo.c1
 
 $ACLOCAL
 $AUTOMAKE
+$AUTOCONF
+./configure
+$MAKE all
+$MAKE distcheck
 
-$FGREP -v '$(filter --%,' Makefile.in | grep '%' && Exit 1
-Exit 0
+# Try with explicit dependencies as well.
+$MAKE clean
+cat >> Makefile <<'END'
+foo.c: foo.c0
+foo.c0: foo.c1
+END
+$MAKE all
+
+:

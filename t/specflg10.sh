@@ -44,15 +44,14 @@ bin_PROGRAMS = bla
 if COND
 AM_DEFAULT_SOURCE_EXT = .foo .quux
 endif
-SUFFIXES = .foo .c
-.foo.c:
+%.c: %.foo
 	cat $< >$@
 BUILT_SOURCES = bla.c
 CLEANFILES = bla.c
 END
 
 cat > foo.c << 'END'
-int main () { return 0; }
+int main (void) { return 0; }
 END
 
 cp foo.c sub/bar.cpp

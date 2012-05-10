@@ -5546,10 +5546,10 @@ each source file to be compiled to a single @file{.o} file (or
 @file{.lo} when using libtool).  Normally these object files are named
 after the source file, but other factors can change this.  If a file in
 the @code{_SOURCES} variable has an unrecognized extension, Automake
-will do one of two things with it.  If a suffix rule exists for turning
-files with the unrecognized extension into @file{.o} files, then
-@command{automake} will treat this file as it will any other source file
-(@pxref{Support for Other Languages}).  Otherwise, the file will be
+will do one of two things with it.  If a suffix-based pattern rule exists
+for turning files with the unrecognized extension into @file{.o} files,
+then @command{automake} will treat this file as it will any other source
+file (@pxref{Support for Other Languages}).  Otherwise, the file will be
 ignored as though it were a header file.
 
 The prefixes @code{dist_} and @code{nodist_} can be used to control
@@ -6826,7 +6826,7 @@ support for other languages, support for which will be improved based
 on user demand.
 
 Some limited support for adding your own languages is available via the
-suffix rule handling (@pxref{Suffixes}).
+suffix-based pattern rules handling (@pxref{Suffixes}).
 
 @node Dependencies
 @section Automatic dependency tracking
@@ -7340,8 +7340,8 @@ not careful enough.  This is due to the way Automake tries not to
 overwrite your rules (it assumes you know better than it).
 @samp{foo.$(OBJEXT): bindir.h} supersedes any rule Automake may want to
 output to build @samp{foo.$(OBJEXT)}.  It happens to work in this case
-because Automake doesn't have to output any @samp{foo.$(OBJEXT):}
-target: it relies on a suffix rule instead (i.e., @samp{.c.$(OBJEXT):}).
+because Automake doesn't have to output any @samp{foo.$(OBJEXT):} target:
+it relies on a pattern rule instead (i.e., @samp{%.$(OBJEXT): %.c}).
 Always check the generated @file{Makefile.in} if you do this.
 
 @subsubheading Build @file{bindir.h} from @file{configure}
@@ -10348,14 +10348,15 @@ holds arguments that are passed to @command{gtags}.
 @vindex SUFFIXES
 
 It is sometimes useful to introduce a new implicit rule to handle a file
-type that Automake does not know about.
+type that Automake-NG does not know about.  Automake-NG offers a limited
+support to do so, through the use of suffix-based pattern rules.
 
 For instance, suppose you had a compiler that could compile @file{.foo}
-files to @file{.o} files.  You would simply define a suffix rule for
+files to @file{.o} files.  You would simply define a pattern rule for
 your language:
 
 @example
-.foo.o:
+%.o: %.foo
         foocc -c -o $@@ $<
 @end example
 
@@ -10367,30 +10368,13 @@ bin_PROGRAMS = doit
 doit_SOURCES = doit.foo
 @end example
 
-This was the simpler and more common case.  In other cases, you will
-have to help Automake to figure out which extensions you are defining your
-suffix rule for.  This usually happens when your extension does not
-start with a dot.  Then, all you have to do is to put a list of new
-suffixes in the @code{SUFFIXES} variable @strong{before} you define your
-implicit rule.
+Note that the above only works with suffixes that start with a dot.
 
-For instance, the following definition prevents Automake from misinterpreting
-the @samp{.idlC.cpp:} rule as an attempt to transform @file{.idlC} files into
-@file{.cpp} files.
-
-@c Keep in sync with suffix7.sh
-@example
-SUFFIXES = .idl C.cpp
-.idlC.cpp:
-        # whatever
-@end example
-
-As you may have noted, the @code{SUFFIXES} variable behaves like the
-@code{.SUFFIXES} special target of @command{make}.  You should not touch
-@code{.SUFFIXES} yourself, but use @code{SUFFIXES} instead and let
-Automake generate the suffix list for @code{.SUFFIXES}.  Any given
-@code{SUFFIXES} go at the start of the generated suffixes list, followed
-by Automake generated suffixes not already in the list.
+Also note that Automake-NG does not support old-fashioned suffix rules
+(@pxref{Suffix Rules, ,Old-fashioned Suffix Rules, make, The GNU make
+Manual}), since they are obsoleted by the GNU make pattern rules.  In
+fact, Automake-NG will error out an any attempt to use old-fashioned
+suffix rules.
 
 @node Include
 @chapter Include
