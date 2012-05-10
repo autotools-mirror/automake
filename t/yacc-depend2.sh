@@ -18,7 +18,7 @@
 # for yacc rules.  This test still fails with FreeBSD make (but passes
 # with NetBSD make).
 
-required=yacc
+required='cc yacc'
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

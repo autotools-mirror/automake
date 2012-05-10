@@ -19,7 +19,7 @@
 # 'subdir-object' option enabled.
 # See also sister test 'lex-line.test'.
 
-required=yacc
+required='cc yacc'
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

@@ -17,7 +17,7 @@
 # Test to make sure automatic dependency tracking work with Lex/C.
 # Test suggested by PR automake/6.
 
-required=lex
+required='cc lex'
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

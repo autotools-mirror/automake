@@ -18,7 +18,7 @@
 # (i.e., '-d' in *YFLAGS).
 # Keep in sync with sister test 'yacc-d-basic.test'.
 
-required=yacc
+required='c++ yacc'
 . ./defs || Exit 1
 
 write_parse ()

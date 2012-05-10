@@ -20,7 +20,7 @@
 # "make maintainer-clean".
 # See also sister test 'yacc-clean.test'.
 
-required=yacc
+required='c++ yacc'
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

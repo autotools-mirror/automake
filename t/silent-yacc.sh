@@ -17,7 +17,7 @@
 # Check silent-rules mode for Yacc.
 # Keep this in sync with sister test 'silent-yacc-gcc.test'.
 
-required=yacc
+required='cc yacc'
 . ./defs || Exit 1
 
 mkdir sub
