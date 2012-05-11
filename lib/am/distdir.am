@@ -14,7 +14,55 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
+## Use 'sort', not 'am__uniq', for performance reasons.  Luckily, we
+## don't care in which order the distributed files are.
+am__dist_files = $(strip $(sort \
+  $(am__dist_common) $(am__dist_sources) $(TEXINFOS) $(EXTRA_DIST)))
+
+## Try to avoid repeated slashed in the entries, to make the
+## filtering in the 'am__dist_files_1' definition below more reliable.
+## This idiom should compress up to four consecutive '/' characters in
+## each $(am__dist_files) entry.
+am__dist_files_1 = $(subst //,/,$(subst //,/,$(am__dist_files)))
+
+am__dist_files_2 = \
+## Files filtered out here require an ad-hoc "munging"; see the two
+## following 'patsubst's.
+  $(filter-out $(srcdir)/% $(top_srcdir)/%, $(am__dist_files_1)) \
+## Let's strip leading $(srcdir) (which might appears in EXTRA_DIST,
+## especially if one want to use the $(wildcard) built-in in there),
+## so that in our 'distdir' recipe below we can loop on the list of
+## distributed files and copy them in the distribution directory with
+## a simple "cp $file $(distdir)/$file" -- which would break if $file
+## contained a leading $(srcdir) component.
+## However, it should be noted that this filtering has the undesirable
+## side effect of triggering a VPATH search also for files specified
+## *explicitly* with a $(srcdir) prefix; but this limitation is also
+## present in mainstream Automake, and concerns only such corner-case
+## situations that it's probably not worth worrying about.
+  $(patsubst $(srcdir)/%, %, \
+             $(filter $(srcdir)/%, $(am__dist_files_1))) \
+## Also rewrite $(top_srcdir) -- which can sometimes appear in
+## $(am__dist_common), and can be absolute -- by $(top_builddir)
+## (which is always relative).  If needed, $(srcdir) will be
+## prepended later by our VPATH-aware rules.
+## The same caveats reported above apply.
+  $(patsubst $(top_srcdir)/%, $(top_builddir)/%, \
+             $(filter $(top_srcdir)/%, $(am__dist_files_1)))
+
+## Strip extra whitespaces, for more safety.
+am__dist_files_cooked = $(strip $(am__dist_files_2))
+
+## Given the pre-processing done above to the list of distributed files,
+## this definition ensures that we won't try to create the wrong
+## directories when $(top_srcdir) or $(srcdir) appears in some entry of
+## the list of all distributed files.
+## For example, with EXTRA_DIST containing "$(srcdir)/subdir/file", this
+## will allow our rules to correctly create "$(distdir)/subdir", and not
+## "$(distdir)/$(srcdir)/subdir" -- which, in a VPATH build where
+## "$(subdir) = ..", would be the build directory!
+am__dist_parent_dirs = $(strip $(sort \
+  $(filter-out ., $(patsubst ./%,%,$(dir $(am__dist_files_cooked))))))
 
 if %?TOPDIR_P%
 distdir = $(PACKAGE)-$(VERSION)
@@ -74,7 +122,7 @@ if %?SUBDIRS%
 AM_RECURSIVE_TARGETS += distdir
 endif %?SUBDIRS%
 
-distdir: $(DISTFILES)
+distdir: $(am__dist_files)
 ##
 ## For Gnits users, this is pretty handy.  Look at 15 lines
 ## in case some explanatory text is desirable.
@@ -122,92 +170,27 @@ if %?TOPDIR_P%
 	$(am__remove_distdir)
 	test -d "$(distdir)" || mkdir "$(distdir)"
 endif %?TOPDIR_P%
-##
-##
-	@srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
-	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
-##
-## Yet another hack to support SUN make.
-##
-## Let's assume 'foo' appears in DISTFILES and is not a built file.
-## When building with VPATH=$(srcdir), SUN make and OSF1/Tru64 will
-## rewrite 'foo' as '$(srcdir)/foo'.  An attempt to install the file
-## with
-##    cp $file $(distdir)/$file
-## will thus install $(srcdir)/foo as $(distdir)/$(srcdir)/foo
-## instead of $(distdir)/foo.
-##
-## So let's strip this leading $(srcdir)/ when it exists.  (As far we
-## know, only SUN make and OSF1/Tru64 make add it.)  Searching whether
-## the file is to be found in the source or build directory will be
-## done later.
-##
-## In case we are _not_ using SUN or OSF1/Tru64 make, how can we be sure
-## we are not stripping a legitimate filename that starts with the
-## same pattern as $(srcdir)?
-## Well, it can't happen without the Makefile author distributing
-## something out of the distribution (which is bad).  As an example,
-## consider "EXTRA_DIST = ../bar".  This is an issue if $srcdir is
-## '..', however getting this value for srcdir is impossible:
-## "EXTRA_DIST = ../bar" implies we are in a subdirectory (so '../bar'
-## is within the package), hence '$srcdir' is something like
-## '../../subdir'.
-##
-## There is more to say about files which are above the current directory,
-## like '../bar' in the previous example.  The OSF1/Tru64 make
-## implementation can simplify filenames resulting from a VPATH lookup.
-## For instance if "VPATH = ../../subdir" and '../bar' is found in that
-## VPATH directory, then occurrences of '../bar' will be replaced by
-## '../../bar' (instead of '../../subdir/../bar').  This obviously defeats
-## any attempt to strip a leading $srcdir.  Presently we have no workaround
-## for this.  We avoid this issue by writing "EXTRA_DIST = $(srcdir)/../bar"
-## instead of "EXTRA_DIST = ../bar".  This prefixing is needed only for files
-## above the current directory.  Fortunately, apart from auxdir files which
-## can be located in .. or ../.., this situation hardly occurs in practice.
-##
-## Also rewrite $(top_srcdir) (which sometimes appears in DISTFILES, and can
-## be absolute) by $(top_builddir) (which is always relative).  $(srcdir) will
-## be prepended later.
-	list='$(DISTFILES)'; \
-	  dist_files=`for file in $$list; do echo $$file; done | \
-	  sed -e "s|^$$srcdirstrip/||;t" \
-	      -e "s|^$$topsrcdirstrip/|$(top_builddir)/|;t"`; \
-## (The second 't' command clears the flag for the next round.)
-##
 ## Make the subdirectories for the files.
-##
-	case $$dist_files in \
-	  */*) $(MKDIR_P) `echo "$$dist_files" | \
-			   sed '/\//!d;s|^|$(distdir)/|;s,/[^/]*$$,,' | \
-			   sort -u` ;; \
-	esac; \
-##
-##
-	for file in $$dist_files; do \
-##
-## Always look for the file in the build directory first.  That way
-## for something like yacc output we will correctly pick up the latest
-## version.  Also check for directories in the build directory first,
-## so one can ship generated directories.
-##
+	@$(if $(am__dist_parent_dirs),\
+	   $(MKDIR_P) $(patsubst %,"$(distdir)"/%,$(am__dist_parent_dirs)))
+## Install the files and directories, applying a "VPATH rewrite"
+## by hand where needed.
+## To get the files in the distribution directory, use 'cp', not 'ln'.
+## There are situations in which 'ln' can fail.  For instance a file to
+## distribute could actually be a cross-filesystem symlink -- this can
+## easily happen if "gettextize" was run on the distribution.
+	@lst='$(am__dist_files_cooked)'; for file in $$lst; do \
+## Always look for the file or directory to distribute in the build
+## directory first, in VPATH spirit.
 	  if test -f $$file || test -d $$file; then d=.; else d=$(srcdir); fi; \
-##
-## Use cp, not ln.  There are situations in which "ln" can fail.  For
-## instance a file to distribute could actually be a cross-filesystem
-## symlink -- this can easily happen if "gettextize" was run on the
-## distribution.
-##
 	  if test -d $$d/$$file; then \
 ## Don't mention $$file in the destination argument, since this fails if
 ## the destination directory already exists.  Also, use '-R' and not '-r'.
 ## '-r' is almost always incorrect.
-##
 ## If a directory exists both in '.' and $(srcdir), then we copy the
 ## files from $(srcdir) first and then install those from '.'.  This
 ## can help people who distribute directories made of source files
-## *and* generated files.  It is also important when the directory
-## exists only in $(srcdir), because some vendor Make (such as Tru64)
-## will magically create an empty directory in '.'.
+## *and* generated files.
 	    dir=`echo "/$$file" | sed -e 's,/[^/]*$$,,'`; \
 ## If the destination directory already exists, it may contain read-only
 ## files, e.g., during "make distcheck".
@@ -220,10 +203,11 @@ endif %?TOPDIR_P%
 	    fi; \
 	    cp -fpR $$d/$$file "$(distdir)$$dir" || exit 1; \
 	  else \
-## Test for file existence because sometimes a file gets included in
-## DISTFILES twice.  For example this happens when a single source
-## file is used in building more than one program.
-## See also test 'dist-repeated.test'.
+## Test for file existence because sometimes a single auxiliary file
+## is distributed from several Makefiles at once (see automake bug#9546
+## and bug#9651, and the follow-up commits 'v1.11-1219-g326ecba',
+## 'v1.11-1220-g851b1ae' and 'v1.11-1221-gdccae6a').  See also test
+## 't/dist-repeated.sh'.
 	    test -f "$(distdir)/$$file" \
 	    || cp -p $$d/$$file "$(distdir)/$$file" \
 	    || exit 1; \

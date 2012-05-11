@@ -34,6 +34,7 @@ xtests := $(shell \
 xdefs = $(srcdir)/defs $(srcdir)/defs-static.in
 
 ams := $(shell find $(srcdir) -name '*.dir' -prune -o -name '*.am' -print)
+pms := $(dist_perllib_DATA)
 
 # Some simple checks, and then ordinary check.  These are only really
 # guaranteed to work on my machine.
@@ -60,6 +61,9 @@ sc_tests_make_can_chain_suffix_rules \
 sc_tests_make_dont_do_useless_vpath_rebuilds \
 sc_no_dotmake_target \
 sc_no_am_makeflags \
+sc_no_DISTFILES \
+sc_no_DIST_COMMON \
+sc_no_DIST_SOURCES \
 sc_tests_no_make_e \
 sc_docs_no_make_e \
 sc_make_simple_include \
@@ -293,6 +297,25 @@ sc_no_am_makeflags:
 	 "; \
 	if grep '\bAM_MAKEFLAGS\b' $$files; then \
 	  echo "\$$(AM_MAKEFLAGS) is obsolete, don't use it." 1>&2; \
+	  exit 1; \
+	fi
+
+# Modern names for internal variables that had a bad name once.
+modern_DISTFILES = am__dist_files
+modern_DIST_COMMON = am__dist_common
+modern_DIST_SOURCES = am__dist_sources
+
+sc_no_DISTFILES sc_no_DIST_COMMON sc_no_DIST_SOURCES: sc_no_% :
+	@files="\
+	  $(xtests) \
+	  $(pms) \
+	  $(ams) \
+	  $(srcdir)/automake.in \
+	  $(srcdir)/doc/*.texi \
+	"; \
+	if grep -F '$*' $$files; then \
+	  echo "'\$$($*)' is obsolete and no more used." >&2; \
+	  echo "You should use '$(modern_$*)' instead." >&2; \
 	  exit 1; \
 	fi
 

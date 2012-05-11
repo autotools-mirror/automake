@@ -18,8 +18,8 @@
 # sure *srcdir is properly handled.  Note that using './', as in
 #   EXTRA_DIST = ./joe
 # does not work portably: it fails with HP-UX and Tru64 make.
-# Also test DISTFILES containing a directory and a file in it,
-# and repeated directories.
+# Also test the situation when the lsit of distributed files contains
+# a directory and a file in it, and repeated directories.
 
 . ./defs || Exit 1
 

@@ -40,8 +40,8 @@ cat > sub/Makefile.am <<'END'
 acconfig.h:
 	echo target $@ should not be built >&2; exit 1
 check-local:
-	echo $(DISTFILES) | grep 'acconfig\.h' && exit 1; :
-	echo $(DIST_COMMON) | grep 'acconfig\.h' && exit 1; :
+	echo $(am__dist_common) $(am__dist_files) \
+          | grep 'acconfig\.h' && exit 1; :
 END
 
 : > sub/acconfig.h

@@ -48,8 +48,8 @@ cat > Makefile.am <<'END'
 SUBDIRS = sub
 check-local:
 ## For debugging.
-	@echo DIST_COMMON:
-	@for f in $(DIST_COMMON); do echo "  $$f"; done
+	@echo am__dist_common:
+	@for f in $(am__dist_common); do echo "  $$f"; done
 	@echo DISTDIR:
 	@ls -l $(distdir) | sed 's/^/  /'
 ## Now the checks.
@@ -66,8 +66,8 @@ cat > sub/Makefile.am <<'END'
 include distfiles.am
 check-local:
 ## For debugging.
-	@echo DIST_COMMON:
-	@for f in $(DIST_COMMON); do echo "  $$f"; done
+	@echo am__dist_common:
+	@for f in $(am__dist_common); do echo "  $$f"; done
 	@echo DISTDIR:
 	@ls -l $(distdir) | sed 's/^/  /'
 ## Now the checks.
@@ -76,7 +76,7 @@ check-local:
 ## Some filenames might contain dots, but this won't cause spurious
 ## failures, and "spurious successes" are so unlikely that they're
 ## not worth worrying about.
-	  echo ' ' $(DIST_COMMON) ' ' | grep "[ /]$$f " >/dev/null \
+	  echo ' ' $(am__dist_common) ' ' | grep "[ /]$$f " >/dev/null \
 	    || { echo $$f: distcom fail >&2; exit 1; }; \
 	done
 END

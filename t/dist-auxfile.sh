@@ -47,10 +47,10 @@ END
     SUBDIRS = subdir
     test: distdir
 	ls -l $(distdir) $(distdir)/*      ;: For debugging.
-	@echo DIST_COMMON = $(DIST_COMMON) ;: Likewise.
-	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]$(auxdir)foo.txt '
-	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]$(auxdir)bar.sh '
-	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]$(auxdir)zardoz '
+	@echo am__dist_common = $(am__dist_common) ;: Likewise.
+	echo ' ' $(am__dist_common) ' ' | grep '[ /]$(auxdir)foo.txt '
+	echo ' ' $(am__dist_common) ' ' | grep '[ /]$(auxdir)bar.sh '
+	echo ' ' $(am__dist_common) ' ' | grep '[ /]$(auxdir)zardoz '
 	test -f $(distdir)/$(auxdir)foo.txt
 	test -f $(distdir)/$(auxdir)bar.sh
 	test -f $(distdir)/$(auxdir)zardoz

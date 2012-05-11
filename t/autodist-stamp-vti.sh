@@ -30,7 +30,7 @@ info_TEXINFOS = foo.texi
 .PHONY: test
 test: all distdir
 	ls -l $(distdir)
-	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]stamp-vti '
+	echo ' ' $(am__dist_common) ' ' | grep '[ /]stamp-vti '
 	test -f $(distdir)/stamp-vti
 END
 

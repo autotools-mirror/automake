@@ -25,8 +25,7 @@ pkgdata_DATA =
 .PHONY: test
 test: distdir
 	find $(distdir) ;: For debugging.
-	echo ' ' $(DISTFILES) ' ' | grep '[ /]install-sh '
-	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]install-sh '
+	echo ' ' $(am__dist_common) ' ' | grep '[ /]install-sh '
 	test -f $(distdir)/install-sh
 END
 

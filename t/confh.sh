@@ -27,8 +27,8 @@ END
 cat > Makefile.am << 'END'
 .PHONY: test1 test2
 test1:
-	@echo DIST_COMMON = $(DIST_COMMON)
-	echo ' ' $(DIST_COMMON) ' ' | grep '[ /]acconfig\.h '
+	@echo am__dist_common = $(am__dist_common)
+	echo ' ' $(am__dist_common) ' ' | grep '[ /]acconfig\.h '
 test2: distdir
 	ls -l $(distdir)/*
 	test -f $(distdir)/acconfig.h

@@ -34,7 +34,7 @@ bar_YFLAGS = -v
 
 .PHONY: echo-distcom
 echo-distcom:
-	@echo ' ' $(DIST_COMMON) ' '
+	@echo ' ' $(am__dist_common) ' '
 END
 
 cat > parse.y << 'END'

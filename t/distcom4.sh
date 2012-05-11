@@ -43,8 +43,13 @@ mkdir tests
 : > README
 : > tests/wrapper.in
 cat > Makefile.am << 'END'
-.PHONY: test
-test: distdir
+.PHONY: test1 test 2
+test1:
+	for x in $(am__dist_files); do echo $$x; done \
+	  | grep 'tests/' > lst
+	cat lst # For debugging.
+	test `wc -l <lst` -eq 1
+test2: distdir
 	test -f $(distdir)/tests/wrapper.in
 END
 
@@ -52,23 +57,6 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing
 ./configure
-$MAKE test
-
-sed -n -e '/^DIST_COMMON =.*\\$/ {
-   :loop
-   p
-   n
-   t clear
-   :clear
-   s/\\$/\\/
-   t loop
-   p
-   n
-   }' -e '/^DIST_COMMON =/ p' Makefile.in > dc.txt
-
-cat dc.txt # For debugging.
-
-test 1 = `grep tests dc.txt | wc -l`
-grep configure dc.txt
+$MAKE test1 test2
 
 :

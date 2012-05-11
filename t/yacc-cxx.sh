@@ -38,7 +38,7 @@ foo4_YFLAGS = $(foo3_YFLAGS)
 
 .PHONY: echo-distcom
 echo-distcom:
-	@echo ' ' $(DIST_COMMON) ' '
+	@echo ' ' $(am__dist_common) ' '
 END
 
 cat > parse1.yy << 'END'

@@ -62,8 +62,8 @@ test-grepinfo:
 	cat $(srcdir)/foo.info | grep 'GREPDATE=$(my_date_rx)='
 	cat $(srcdir)/foo.info | grep 'GREPMONTH=$(my_month_rx)='
 test-distfiles:
-	@echo DISTFILES = $(DISTFILES)
-	echo ' ' $(DISTFILES) ' ' | grep '[ /]version.texi '
+	@echo am__dist_files = $(am__dist_files)
+	echo ' ' $(am__dist_files) ' ' | grep '[ /]version.texi '
 test-distdir: distdir
 	ls -l $(distdir)
 	diff $(srcdir)/version.texi $(distdir)/version.texi

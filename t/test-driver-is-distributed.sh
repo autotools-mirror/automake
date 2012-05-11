@@ -61,7 +61,7 @@ END
     AUTOMAKE_OPTIONS = $am_opts
     check-local: test-sub
     test-sub:
-	echo ' ' \$(DIST_COMMON) ' ' | grep '[ /]$test_driver '
+	echo ' ' \$(am__dist_common) ' ' | grep '[ /]$test_driver '
     TESTS = foo.test
     EXTRA_DIST = \$(TESTS)
 END

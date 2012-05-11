@@ -52,8 +52,8 @@ configure.ac:
 configure.in:
 	$(dontbuild)
 check-local:
-	echo $(DISTFILES) | grep 'configure' && exit 1; :
-	echo $(DIST_COMMON) | grep 'configure' && exit 1; :
+	echo $(am__dist_files) $(am__dist_common) \
+          | grep 'configure' && exit 1; :
 END
 
 : > sub/configure.ac

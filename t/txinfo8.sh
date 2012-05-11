@@ -32,8 +32,8 @@ cat > Makefile.am << 'END'
 info_TEXINFOS = textutils.texi
 .PHONY: test1 test2
 test1:
-	@echo DISTFILES = $(DISTFILES)
-	echo ' ' $(DISTFILES) ' ' | grep '[ /]auxdir/texinfo\.tex '
+	@echo am__dist_files = $(am__dist_files)
+	echo ' ' $(am__dist_files) ' ' | grep '[ /]auxdir/texinfo\.tex '
 test2: distdir
 	ls -l $(distdir)/*
 	test -f $(distdir)/auxdir/texinfo.tex
