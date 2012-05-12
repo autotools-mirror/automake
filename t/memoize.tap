@@ -1,0 +1,255 @@
+#! /bin/sh
+# Copyright (C) 2012 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Test Automake-provided memoization for make variables.
+
+am_create_testdir=empty
+. ./defs || Exit 1
+
+plan_ 12
+
+ocwd=`pwd` || fatal_ "couldn't get current working directory"
+
+cp "$am_amdir"/header-vars.am . \
+  || fatal_ "fetching makefile fragment headers-vars.am"
+
+# Filter out Automake comments and things that would need configure
+# substitutions.
+LC_ALL=C $EGREP -v '(^##|=.*@[a-zA-Z0-9_]+@)' header-vars.am > defn.mk
+rm -f header-vars.am
+
+T ()
+{
+  tcount=`expr $tcount + 1`
+  mkdir $tcount.d
+  cd $tcount.d
+  echo include ../defn.mk > Makefile
+  cat >> Makefile
+  command_ok_ "$1" "$MAKE" test
+  cd ..
+}
+tcount=0
+
+#---------------------------------------------------------------------------
+
+## NOTE: Every repeated check in the recipes of the tests below is
+##       really intended!
+
+#---------------------------------------------------------------------------
+
+T "basic usage" <<'END'
+
+memo/foo = ok
+$(call am__memoize,foo)
+
+test:
+	test '$(foo)' = ok
+	test '$(foo)' = ok
+END
+
+#---------------------------------------------------------------------------
+
+T "call with extra spaces" <<'END'
+
+memo/foo = ok
+## There are extra spaces and tabs here; do not normalize them!
+$(call am__memoize, 	foo 	   	)
+
+test:
+	test '$(foo)' = ok
+	test '$(foo)' = ok
+END
+
+#---------------------------------------------------------------------------
+
+T "memoize several variables at once" <<'END'
+
+memo/foo1 = bar
+memo/foo2 = baz
+$(call am__memoize, foo1 foo2)
+
+test:
+	test '$(foo1)' = bar
+	test '$(foo2)' = baz
+END
+
+#---------------------------------------------------------------------------
+
+# $var will be 3 * 2^12 ~ 12000 characters long.
+var=foo
+for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+  var=$var$var
+done
+
+T "very long variable name" <<END
+
+memo/$var = foo
+\$(call am__memoize,$var)
+
+test:
+	test '\$($var)' = foo
+	test '\$($var)' = foo
+END
+
+#---------------------------------------------------------------------------
+
+T "on indirect recursive variable expansion" <<'END'
+
+memo/foo = $(indir)
+$(call am__memoize,foo)
+
+## This is delibrately placed after the memoize call.
+indir = zardoz
+
+test:
+	test '$(foo)' = zardoz
+	test '$(foo)' = zardoz
+END
+
+#---------------------------------------------------------------------------
+
+T "on indirect immediate variable expansion" <<'END'
+
+memo/foo = $(indir)
+$(call am__memoize,foo)
+
+## This is delibrately placed after the memoize call.
+indir := blob
+
+test:
+	test '$(foo)' = blob
+	test '$(foo)' = blob
+END
+
+#---------------------------------------------------------------------------
+
+T "on function call" <<'END'
+
+my_func = $(firstword $(sort $(1)))
+
+memo/foo = $(call my_func, 6 3 1 7)
+$(call am__memoize,foo)
+
+test:
+	test '$(foo)' = 1
+	test '$(foo)' = 1
+END
+
+#---------------------------------------------------------------------------
+
+T "out-of-order memoization should work" <<'END'
+
+$(call am__memoize,foo)
+test:
+	test '$(foo)' = ok
+	test '$(foo)' = ok
+memo/foo = ok
+END
+
+#---------------------------------------------------------------------------
+
+T "memoization actually takes place (1)" <<'END'
+
+indir := ok
+memo/foo = $(indir)
+$(call am__memoize,foo)
+expand-it := $(foo)
+override indir := ko
+
+test:
+	test '$(foo)' = ok
+	test '$(indir)' = ko
+END
+
+#---------------------------------------------------------------------------
+
+T "memoization actually takes place (2)" <<'END'
+
+memo/foo1 = $(shell test -f x && echo "+")
+memo/foo2 = $(shell test -f y || echo "-")
+$(call am__memoize,foo1)
+$(call am__memoize,foo2)
+
+test: one two
+two: one
+.PHONY: one two one-setup two-setup
+one-setup:
+	rm -f y
+	echo dummy > x
+one: one-setup
+	test -f x
+	test '$(foo1)' = '+'
+	test ! -f y
+	test '$(foo2)' = '-'
+two-setup:
+	rm -f x
+	echo dummy > y
+two: two-setup
+	test ! -f x
+	test '$(foo1)' = '+'
+	test -f y
+	test '$(foo2)' = '-'
+END
+
+#---------------------------------------------------------------------------
+
+
+T "definition on multiple lines" <<'END'
+
+memo/foo = a \
+b \
+c \
+\
+d
+$(call am__memoize,foo)
+
+test:
+	test '$(foo)' = 'a b c d'
+	test '$(foo)' = 'a b c d'
+END
+
+#---------------------------------------------------------------------------
+
+# Try memoization with variables having a very long content.  Our first
+# (unpublished) memoization implementation didn't work in that case -- it
+# triggered errors like "*** unterminated variable reference.  Stop" when
+# the content's length because big enough.
+
+line='dummy abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ ='
+
+# About 1 million lines.
+echo "  $line \\" > t
+for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+  cat t t > t1
+  mv -f t1 t
+done
+
+(echo 'memo/list = \' && cat t && echo "  $line") > big.mk
+
+cat >> big.mk << 'END'
+$(call am__memoize,list)
+test:
+	test x'$(word  1, $(list))' = x'dummy'
+	test x'$(word  3, $(list))' = x'='
+	test x'$(word 31, $(list))' = x'dummy'
+	test x'$(word 93, $(list))' = x'='
+END
+
+T "very long variable content" < big.mk
+
+#---------------------------------------------------------------------------
+
+:
