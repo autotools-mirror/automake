@@ -17,7 +17,7 @@
 # Check silent-rules mode for Yacc, when yacc-generated headers are
 # involved (i.e., the '-d' option is in *YFLAGS).
 
-required=yacc
+required='cc yacc'
 . ./defs || Exit 1
 
 mkdir sub

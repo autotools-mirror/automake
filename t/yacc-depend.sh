@@ -17,7 +17,7 @@
 # Make sure depcomp does not needlessly update headers for yacc rules.
 # Report from Paolo Bonzini.
 
-required=yacc
+required='cc yacc'
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'
