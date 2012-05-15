@@ -83,19 +83,20 @@ am__uniq = $(strip \
 ## we can't afford to re-calculate it over and over every time the
 ## variable gets expanded.  Example of usage:
 ##
-##   memo/var1 = $(shell EXPENSIVE-COMMAND-LINE)
-##   memo/var2 = $(sort VERY-LONG-LIST)
-##   $(call am__memoize, var1 var2)
+##   var1 = $(am__memoize,var1,$(shell EXPENSIVE-COMMAND-LINE))
+##   var2 = $(am__memoize,var2,$(sort VERY-LONG-LIST))
 ##
 ## This API and implementation seems to work around a bug in GNU make
 ## (present up to and including version 3.82) which caused our first
 ## implementation attempts to fail:
+##
 ##   <http://lists.gnu.org/archive/html/bug-make/2012-05/msg00013.html>
 ##   <https://savannah.gnu.org/patch/?7534>
+##
 ## So please don't change this without a very good reason.
-am__memoize_0 = $(eval $1 = $$(eval override $1 := $$$$($2))$$($1))
-am__memoize = $(foreach am__memo_var, $1, \
-                $(call $(0)_0,$(am__memo_var),memo/$(am__memo_var)))
+##
+am__memoize = $(or $(am__memoized_value/$1),$(strip \
+  $(eval am__memoized_value/$1 := $$2))$(am__memoized_value/$1))
 
 ## Some derived variables that have been found to be useful.
 pkgdatadir = $(datadir)/@PACKAGE@

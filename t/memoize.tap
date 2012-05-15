@@ -19,7 +19,7 @@
 am_create_testdir=empty
 . ./defs || Exit 1
 
-plan_ 14
+plan_ 13
 
 ocwd=`pwd` || fatal_ "couldn't get current working directory"
 
@@ -52,8 +52,7 @@ tcount=0
 
 T "basic usage" <<'END'
 
-memo/foo = ok
-$(call am__memoize,foo)
+foo = $(call am__memoize,foo,ok)
 
 test:
 	test '$(foo)' = ok
@@ -62,28 +61,25 @@ END
 
 #---------------------------------------------------------------------------
 
-T "call with extra spaces" <<'END'
+T "variables expanding to blanks only (1)" <<'END'
 
-memo/foo = ok
-## There are extra spaces and tabs here; do not normalize them!
-$(call am__memoize, 	foo 	   	)
+foo = $(call am__memoize,foo,$(am__empty) )
 
 test:
-	test '$(foo)' = ok
-	test '$(foo)' = ok
+	test '$(foo)' = ' '
+	test '$(foo)' = ' '
 END
 
 #---------------------------------------------------------------------------
 
-T "memoize several variables at once" <<'END'
+T "variables expanding to blanks only (2)" <<END
 
-memo/foo1 = bar
-memo/foo2 = baz
-$(call am__memoize, foo1 foo2)
+blank = \$(am__empty) $tab$tab   \$(am__empty)
+foo = \$(call am__memoize,foo,\$(blank))
 
 test:
-	test '$(foo1)' = bar
-	test '$(foo2)' = baz
+	test '\$(foo)' = ' $tab$tab   '
+	test '\$(foo)' = ' $tab$tab   '
 END
 
 #---------------------------------------------------------------------------
@@ -96,8 +92,7 @@ done
 
 T "very long variable name" <<END
 
-memo/$var = foo
-\$(call am__memoize,$var)
+$var = \$(call am__memoize,$var,foo)
 
 test:
 	test '\$($var)' = foo
@@ -116,8 +111,7 @@ done
 
 T "very long variable name with long content" <<END
 
-memo/$var = $val
-\$(call am__memoize,$var)
+$var = \$(call am__memoize,$var,$val)
 
 test:
 	test '\$($var)' = '$val'
@@ -128,8 +122,7 @@ END
 
 T "on indirect recursive variable expansion" <<'END'
 
-memo/foo = $(indir)
-$(call am__memoize,foo)
+foo = $(call am__memoize,foo,$(indir))
 
 ## This is delibrately placed after the memoize call.
 indir = zardoz
@@ -143,8 +136,7 @@ END
 
 T "on indirect immediate variable expansion" <<'END'
 
-memo/foo = $(indir)
-$(call am__memoize,foo)
+foo = $(call am__memoize,foo,$(indir))
 
 ## This is delibrately placed after the memoize call.
 indir := blob
@@ -159,24 +151,11 @@ END
 T "on function call" <<'END'
 
 my_func = $(firstword $(sort $(1)))
-
-memo/foo = $(call my_func, 6 3 1 7)
-$(call am__memoize,foo)
+foo = $(call am__memoize,foo,$(call my_func, 6 3 1 7))
 
 test:
 	test '$(foo)' = 1
 	test '$(foo)' = 1
-END
-
-#---------------------------------------------------------------------------
-
-T "out-of-order memoization should work" <<'END'
-
-$(call am__memoize,foo)
-test:
-	test '$(foo)' = ok
-	test '$(foo)' = ok
-memo/foo = ok
 END
 
 #---------------------------------------------------------------------------
@@ -184,8 +163,7 @@ END
 T "memoization actually takes place (1)" <<'END'
 
 indir := ok
-memo/foo = $(indir)
-$(call am__memoize,foo)
+foo = $(call am__memoize,foo,$(indir))
 expand-it := $(foo)
 override indir := ko
 
@@ -198,10 +176,8 @@ END
 
 T "memoization actually takes place (2)" <<'END'
 
-memo/foo1 = $(shell test -f x && echo "+")
-memo/foo2 = $(shell test -f y || echo "-")
-$(call am__memoize,foo1)
-$(call am__memoize,foo2)
+foo1 = $(call am__memoize,foo1,$(shell test -f x && echo "+"))
+foo2 = $(call am__memoize,foo2,$(shell test -f y || echo "-"))
 
 test: one two
 two: one
@@ -229,12 +205,11 @@ END
 
 T "definition on multiple lines" <<'END'
 
-memo/foo = a \
-b \
-c \
-\
-d
-$(call am__memoize,foo)
+foo = $(call am__memoize,foo,a \
+  b \
+  c \
+  \
+  d)
 
 test:
 	test '$(foo)' = 'a b c d'
@@ -253,8 +228,7 @@ T "known GNU make issue (https://savannah.gnu.org/patch/?7534)" <<'END'
 setup := $(shell mkdir -p t/pm && : > t/pm/Cond2.pl)
 
 TESTS = $(wildcard t/pm/Cond2.pl)
-memo/am__test_bases = $(TESTS)
-$(call am__memoize,am__test_bases)
+am__test_bases = $(call am__memoize,am__test_bases,$(TESTS))
 
 test:
 	test '$(am__test_bases)' = 't/pm/Cond2.pl'
@@ -276,10 +250,11 @@ for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
   mv -f t1 t
 done
 
-(echo 'memo/list = \' && cat t && echo "  $line") > big.mk
+echo "list = \$(call am__memoize,list,$line \\" >> big.mk
+cat t >> big.mk
+echo "  $line)" >> big.mk
 
 cat >> big.mk << 'END'
-$(call am__memoize,list)
 test:
 	test x'$(word  1, $(list))' = x'dummy'
 	test x'$(word  3, $(list))' = x'='
