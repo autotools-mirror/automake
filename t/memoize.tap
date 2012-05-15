@@ -19,7 +19,7 @@
 am_create_testdir=empty
 . ./defs || Exit 1
 
-plan_ 12
+plan_ 13
 
 ocwd=`pwd` || fatal_ "couldn't get current working directory"
 
@@ -219,6 +219,25 @@ $(call am__memoize,foo)
 test:
 	test '$(foo)' = 'a b c d'
 	test '$(foo)' = 'a b c d'
+END
+
+#---------------------------------------------------------------------------
+
+# This usage has been known to cause problems with GNU make <= 3.82,
+# tickling this bug:
+# <http://lists.gnu.org/archive/html/bug-make/2012-05/msg00013.html>
+# <https://savannah.gnu.org/patch/?7534>
+
+T "known GNU make issue (https://savannah.gnu.org/patch/?7534)" <<'END'
+
+setup := $(shell mkdir -p t/pm && : > t/pm/Cond2.pl)
+
+TESTS = $(wildcard t/pm/Cond2.pl)
+memo/am__test_bases = $(TESTS)
+$(call am__memoize,am__test_bases)
+
+test:
+	test '$(am__test_bases)' = 't/pm/Cond2.pl'
 END
 
 #---------------------------------------------------------------------------
