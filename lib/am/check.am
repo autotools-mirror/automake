@@ -196,14 +196,18 @@ END { \
 am__rst_title = { sed 's/.*/   &   /;h;s/./=/g;p;x;s/ *$$//;p;g' && echo; }
 
 # This supports runtime overriding of $(TESTS) and $(XFAIL_TESTS).
-am__test_bases       = $(call am__get_test_bases, $(TESTS))
-am__xfail_test_bases = $(call am__get_test_bases, $(XFAIL_TESTS))
+am__test_bases = \
+  $(call am__memoize,am__test_bases,$(call am__get_test_bases,$(TESTS)))
+am__xfail_test_bases = \
+  $(call am__memoize,am__xfail_test_bases,$(call am__get_test_bases,$(XFAIL_TESTS)))
 
 # The $(strip) is to work around the GNU make 3.80 bug where trailing
 # whitespace in "TESTS = foo.test $(empty)" causes $(TESTS_LOGS) to
 # erroneously expand to "foo.log .log".
-am__test_results = $(addsuffix .trs,$(strip $(am__test_bases)))
-am__test_logs    = $(addsuffix .log,$(strip $(am__test_bases)))
+am__test_results = \
+  $(call am__memoize,am__test_results,$(addsuffix .trs,$(strip $(am__test_bases))))
+am__test_logs = \
+  $(call am__memoize,am__test_logs,$(addsuffix .log,$(strip $(am__test_bases))))
 
 # $(TEST_LOGS) is a published interface.
 TEST_LOGS = $(am__test_logs)
