@@ -24,6 +24,7 @@
 # This test exercises the GCS-mandated targets (except for dist)
 # as well as tags, TAGS.
 
+# For gen-testsuite-part: ==> try-with-serial-tests <==
 . ./defs || Exit 1
 
 # Does $MAKE support the '.MAKE' special target?

@@ -16,6 +16,7 @@
 
 # Make sure 'make -k check' processes all directories.
 
+# For gen-testsuite-part: ==> try-with-serial-tests <==
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

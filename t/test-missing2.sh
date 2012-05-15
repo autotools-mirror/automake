@@ -19,7 +19,6 @@
 #    all the $(TEST_LOGS) have a dummy dependency.
 # See also related test 'test-missing.test'.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

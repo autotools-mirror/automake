@@ -17,7 +17,7 @@
 # Check singular and plural in test summaries.
 
 # This test only makes sense for the older serial testsuite driver.
-am_parallel_tests=no
+am_serial_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

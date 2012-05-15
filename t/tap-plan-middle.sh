@@ -17,7 +17,6 @@
 # TAP support:
 #  - test plan preceding and/or following non-result TAP lines
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"

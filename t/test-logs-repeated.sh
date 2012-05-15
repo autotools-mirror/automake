@@ -20,7 +20,6 @@
 # different test scripts don't end up sharing the same log file.
 # (Automake itself is such a project, BTW ;-)
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac <<END

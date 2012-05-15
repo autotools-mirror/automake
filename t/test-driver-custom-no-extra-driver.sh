@@ -18,7 +18,6 @@
 # installed or referenced if it's not used, i.e., if the user has
 # defined his own '*LOG_DRIVER' variables.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac <<'END'

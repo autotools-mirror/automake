@@ -19,7 +19,7 @@
 # be run by (with the parallel-tests driver one should use LOG_COMPILER
 # for this).  The behaviour tested here is also documented in the manual.
 
-am_parallel_tests=no
+am_serial_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac <<END

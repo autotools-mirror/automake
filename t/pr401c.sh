@@ -17,14 +17,12 @@
 # Check support for AC_CONFIG_LIBOBJ_DIR vs ALLOCA.
 # (pr401.test and pr401b.test do the same for LIBOBJS and LTLIBOBJS)
 
-am_parallel_tests=no
 required=cc
 . ./defs || Exit 1
 
 mkdir lib src
 
-ac_cv_func_alloca_works=no
-export  ac_cv_func_alloca_works
+ac_cv_func_alloca_works=no; export ac_cv_func_alloca_works
 
 cat >lib/alloca.c <<'EOF'
 const char *feep (void)
@@ -85,7 +83,7 @@ cp "$am_scriptdir/ar-lib" . || fatal_ "fetching auxiliary script 'ar-lib'"
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE
+$AUTOMAKE -a
 ./configure
 $MAKE distcheck
 

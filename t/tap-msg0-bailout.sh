@@ -19,7 +19,6 @@
 #    of a "plan with skip" TAP plan
 # generally true!
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"

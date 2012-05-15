@@ -17,7 +17,6 @@
 # Test the "make recheck" semantics for custom test drivers, as documented
 # in the Automake manual.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

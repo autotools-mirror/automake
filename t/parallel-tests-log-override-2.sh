@@ -18,7 +18,6 @@
 #  - $(TEST_SUITE_LOG) and $(TESTS)
 #  - $(TEST_SUITE_LOG) and $(TEST_LOGS)
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac <<'END'

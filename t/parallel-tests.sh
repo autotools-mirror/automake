@@ -23,7 +23,6 @@
 #  - TEST_LOGS redefinition at runtime
 #  - RECHECK_LOGS redefinition at runtime
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

@@ -19,7 +19,6 @@
 #    log file
 # See also related test 'tap-passthrough.test'.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat > Makefile.am << 'END'

@@ -18,7 +18,6 @@
 # - empty TESTS
 # - empty TEST_LOGS
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

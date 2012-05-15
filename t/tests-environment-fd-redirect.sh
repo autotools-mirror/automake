@@ -26,7 +26,6 @@
 # and the following CC:ed thread on bug-autoconf list:
 #   <http://lists.gnu.org/archive/html/bug-autoconf/2011-06/msg00002.html>
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

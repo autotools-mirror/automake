@@ -16,6 +16,7 @@
 
 # Check EXEEXT extension for XFAIL_TESTS.
 
+# For gen-testsuite-part: ==> try-with-serial-tests <==
 required=cc
 . ./defs || Exit 1
 

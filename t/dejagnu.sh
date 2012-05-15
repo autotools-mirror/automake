@@ -24,7 +24,7 @@ AUTOMAKE_OPTIONS = dejagnu
 TESTS = frob.test
 END
 
-test x"$am_parallel_tests" != x"yes" || : > test-driver
+test x"$am_serial_tests" = x"yes" || : > test-driver
 
 $ACLOCAL
 $AUTOMAKE

@@ -17,6 +17,7 @@
 # Test that POSIX variable expansion '$(var:str=rpl)' works when used
 # with the TESTS special variable.
 
+# For gen-testsuite-part: ==> try-with-serial-tests <==
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

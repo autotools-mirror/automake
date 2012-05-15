@@ -18,7 +18,6 @@
 # - suffix rules, with PROGRAMS involved
 # See also sister test 'parallel-tests-suffix.test'.
 
-am_parallel_tests=yes
 required='cc native'
 . ./defs || Exit 1
 

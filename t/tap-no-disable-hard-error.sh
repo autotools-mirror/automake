@@ -18,7 +18,6 @@
 #  - "Bail out!" magic and TAP parse errors are not disabled nor turned
 #    into simple failures by the definition DISABLE_HARD_ERRORS.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat > Makefile.am << 'END'

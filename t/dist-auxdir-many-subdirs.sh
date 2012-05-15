@@ -18,7 +18,6 @@
 # same config-aux files.
 
 am_create_testdir=empty
-am_parallel_tests=yes
 required=cc
 . ./defs || Exit 1
 

@@ -17,6 +17,7 @@
 # Make sure 'check:' and 'install:' honor $(BUILT_SOURCES).
 # PR/359.
 
+# For gen-testsuite-part: ==> try-with-serial-tests <==
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

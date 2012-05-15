@@ -17,7 +17,6 @@
 # Check that the parallel-tests driver creates parent directories for
 # the log files when needed.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

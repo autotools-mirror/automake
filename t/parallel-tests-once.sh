@@ -18,7 +18,6 @@
 # clean directory.  An early implementation of the '.trs' intermediate
 # files incurred a similar problem.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

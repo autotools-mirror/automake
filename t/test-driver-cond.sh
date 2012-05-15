@@ -18,7 +18,6 @@
 #   - Automake can correctly handle conditionals contents for the
 #     LOG_DRIVER variables.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cp "$am_testauxdir"/trivial-test-driver . \

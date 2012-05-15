@@ -22,7 +22,6 @@
 # children, and is pretty hacky and complex; is there a better way to
 # accomplish the checks done here?
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >expect-check <<'END'

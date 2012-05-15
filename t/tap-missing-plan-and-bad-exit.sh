@@ -19,7 +19,6 @@
 #    plan, then the driver reports both "missing plan" and "exited with
 #    non-zero status" errors.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat > foo.test <<END

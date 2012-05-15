@@ -17,7 +17,6 @@
 # Check support for AC_CONFIG_LIBOBJ_DIR vs LIBOBJS.
 # (pr401b.test and pr401c.test do the same for LTLIBOBJS and ALLOCA)
 
-am_parallel_tests=no
 required=cc
 . ./defs || Exit 1
 
@@ -83,7 +82,7 @@ cp "$am_scriptdir/ar-lib" . || fatal_ "fetching auxiliary script 'ar-lib'"
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE
+$AUTOMAKE -a
 ./configure
 $MAKE distcheck
 

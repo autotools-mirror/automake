@@ -17,7 +17,6 @@
 # TAP support: some unusual forms for valid TAP input.
 # See also related test 'tap-fancy2.test'.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"

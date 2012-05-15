@@ -24,7 +24,6 @@
 # Note that some of the features checked here are checked in other
 # test cases too, usually in a more thorough and detailed way.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 fetch_tap_driver

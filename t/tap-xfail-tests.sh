@@ -17,7 +17,6 @@
 # TAP and $(XFAIL_TESTS): test results without directives are turned from
 # PASS to XPASS and from FAIL to XFAIL; other results are unchanged.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"

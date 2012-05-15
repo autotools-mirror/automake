@@ -19,7 +19,6 @@
 # older bash versions (e.g., bash 2.05b).
 # See automake bug#10436.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 echo AC_OUTPUT >> configure.ac

@@ -17,7 +17,6 @@
 # TAP support:
 #  - TAP errors following a "TAP plan with SKIP" are still diagnosed.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"

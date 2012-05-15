@@ -18,7 +18,6 @@
 # and do not diagnose valid (albeit more unusual) ones.
 # See automake bug#9400.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac <<'END'

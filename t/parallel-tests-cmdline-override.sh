@@ -17,7 +17,6 @@
 # Check that we can use indirections when overriding TESTS and
 # TEST_LOGS from the command line.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

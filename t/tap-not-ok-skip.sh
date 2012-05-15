@@ -18,7 +18,6 @@
 #  - a "not ok # SKIP" line should count as a failure, for consistency
 #    with the prove(1) utility.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"

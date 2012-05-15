@@ -17,7 +17,6 @@
 # TAP support:
 #  - colorization of TAP results and diagnostic messages
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 esc=''

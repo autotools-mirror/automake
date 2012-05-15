@@ -16,8 +16,6 @@
 
 # Option 'serial-tests'.
 
-# To avoid useless generation of a sibling test.
-am_parallel_tests=yes
 am_create_testdir=empty
 . ./defs || Exit 1
 
@@ -38,7 +36,7 @@ has_parallel_tests ()
 
 mkdir one two
 
-cat >> one/configure.ac <<END
+cat > one/configure.ac <<END
 AC_INIT([$me], [1.0])
 AM_INIT_AUTOMAKE([serial-tests])
 AC_CONFIG_FILES([Makefile])
@@ -46,7 +44,7 @@ END
 
 echo 'TESTS = foo.test bar.test' > one/Makefile.am
 
-cat >> two/configure.ac <<END
+cat > two/configure.ac <<END
 AC_INIT([$me], [2.0])
 AC_CONFIG_AUX_DIR([config])
 AM_INIT_AUTOMAKE([parallel-tests])

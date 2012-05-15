@@ -50,7 +50,7 @@ mv -f Makefile.sav Makefile.am
 
 # Try again, this time enabling cygnus mode from configure.ac.
 cp configure.ac configure.sav
-sed 's/^AM_INIT_AUTOMAKE$/&([gnits cygnus])/' configure.sav >configure.ac
+sed 's/^AM_INIT_AUTOMAKE/&([gnits cygnus])/' configure.sav >configure.ac
 cmp configure.ac configure.sav && fatal_ 'failed to edit configure.ac'
 
 $ACLOCAL --force

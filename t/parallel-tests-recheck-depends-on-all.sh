@@ -17,7 +17,6 @@
 # The parallel-tests 'recheck' target must depend on the 'all' target.
 # See automake bug#11252.
 
-am_parallel_tests=yes
 required='cc native'
 . ./defs || Exit 1
 

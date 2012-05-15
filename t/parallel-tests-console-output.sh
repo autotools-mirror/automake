@@ -17,7 +17,6 @@
 # parallel-tests: some checks on console output about testsuite
 # progress.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

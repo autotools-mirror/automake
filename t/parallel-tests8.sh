@@ -24,7 +24,6 @@
 #       manual for the ugliness in this area, when VPATH comes into
 #       play.  :-/
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

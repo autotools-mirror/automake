@@ -16,7 +16,6 @@
 
 # Custom test drivers: per-extension test drivers.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

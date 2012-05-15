@@ -17,6 +17,7 @@
 # Test Automake TESTS color output, using the expect(1) program.
 # Keep this in sync with the sister test 'color.test'.
 
+# For gen-testsuite-part: ==> try-with-serial-tests <==
 . ./defs || Exit 1
 
 esc=''
@@ -115,10 +116,10 @@ test_color ()
   cat stdout | grep "^${red}XPASS${std}: .*xpass"
   # The old serial testsuite driver doesn't distinguish between failures
   # and hard errors.
-  if test x"$am_parallel_tests" = x"yes"; then
-    cat stdout | grep "^${mgn}ERROR${std}: .*error"
-  else
+  if test x"$am_serial_tests" = x"yes"; then
     cat stdout | grep "^${red}FAIL${std}: .*error"
+  else
+    cat stdout | grep "^${mgn}ERROR${std}: .*error"
   fi
   :
 }

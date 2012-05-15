@@ -18,7 +18,6 @@
 #  - By default, TAP input is only from the stdout (and not the stderr)
 #    of the test command.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat > Makefile.am << 'END'

@@ -277,10 +277,11 @@ sc_tests_make_without_am_makeflags:
 sc_tests_obsolete_variables:
 	@vars=" \
 	  using_tap \
-	  parallel_tests \
 	  test_prefer_config_shell \
 	  original_AUTOMAKE \
 	  original_ACLOCAL \
+	  parallel_tests \
+	  am_parallel_tests \
 	"; \
 	seen=""; \
 	for v in $$vars; do \
@@ -290,7 +291,11 @@ sc_tests_obsolete_variables:
 	done; \
 	if test -n "$$seen"; then \
 	  for v in $$seen; do \
-	    echo "Variable '$$v' is obsolete, use 'am_$$v' instead." 1>&2; \
+	    case $$v in \
+	      parallel_tests|am_parallel_tests) v2=am_serial_tests;; \
+	      *) v2=am_$$v;; \
+	    esac; \
+	    echo "Variable '$$v' is obsolete, use '$$v2' instead." 1>&2; \
 	  done; \
 	  exit 1; \
 	else :; fi

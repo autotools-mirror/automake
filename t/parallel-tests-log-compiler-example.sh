@@ -17,7 +17,6 @@
 # Test the example of usage of generic and extension-specific
 # LOG_COMPILER and LOG_FLAGS given in the manual.
 
-am_parallel_tests=yes
 required=python
 . ./defs || Exit 1
 
