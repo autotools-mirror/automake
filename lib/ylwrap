@@ -79,6 +79,8 @@ quote_for_sed ()
 # The input.
 input="$1"
 shift
+# We'll later need for a correct munging of "#line" directives.
+input_sub_rx=`get_dirname "$input" | quote_for_sed`
 case "$input" in
   [\\/]* | ?:[\\/]*)
     # Absolute path; do nothing.
@@ -170,15 +172,11 @@ if test $ret -eq 0; then
         realtarget="$target"
         target="tmp-`echo $target | sed s/.*[\\/]//g`"
       fi
-      # Edit out '#line' or '#' directives.
-      #
+      # Munge "#line" or "#" directives.
       # We don't want the resulting debug information to point at
-      # an absolute srcdir; it is better for it to just mention the
-      # .y file with no path.
-      #
+      # an absolute srcdir.
       # We want to use the real output file name, not yy.lex.c for
       # instance.
-      #
       # We want the include guards to be adjusted too.
       FROM=`echo "$from" | sed \
             -e 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/'\
@@ -187,7 +185,7 @@ if test $ret -eq 0; then
             -e 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/'\
             -e 's/[^ABCDEFGHIJKLMNOPQRSTUVWXYZ]/_/g'`
 
-      sed -e "/^#/!b" -e "s,$input_rx,," -e "s,$from,$2," \
+      sed -e "/^#/!b" -e "s,$input_rx,$input_sub_rx," -e "s,$from,$2," \
           -e "s,$FROM,$TARGET," "$from" >"$target" || ret=$?
 
       # Check whether header files must be updated.
