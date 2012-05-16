@@ -103,25 +103,20 @@ am__uniq = $(strip \
 am__memoize = $(or $(am__memoized_value/$1),$(strip \
   $(eval am__memoized_value/$1 := $$2))$(am__memoized_value/$1))
 
-## $(call am__strip_suffixes_0, SUFFIXES, WORD)
-## --------------------------------------------
-## Strip any of the SUFFIXES from WORD.  Even if WORD terminates with
-## several suffixes, only one is stripped: the first one that matches.
-am__strip_suffixes_0 = $(strip \
-  $(if $(strip $(1)), \
-    $(if $(filter %$(firstword $(1)), $(2)), \
-         $(patsubst %$(firstword $(1)), %, $(2)), \
-         $(call am__strip_suffixes_0, \
-	        $(call am__strip_firstword, $(1)), $(2))), \
-    $(2)))
-
 ## $(call am__strip_suffixes, SUFFIXES, LIST)
 ## ------------------------------------------
 ## Strip any of the SUFFIXES from each of the entries of LIST.  Even if an
 ## entry of LIST terminates with several suffixes, only one is stripped:
 ## the first one that matches.
-am__strip_suffixes = \
-  $(foreach am__i,$(2),$(call am__strip_suffixes_0,$(1),$(am__i)))
+am__private_suffix = .,;&!@
+am__strip_suffixes = $(strip \
+  $(if \
+    $(strip $1), \
+      $(patsubst %$(am__private_suffix),%, \
+        $(call am__strip_suffixes, \
+          $(call am__strip_firstword,$1), \
+          $(patsubst %$(firstword $1),%$(am__private_suffix),$2))), \
+    $2))
 
 ## Some derived variables that have been found to be useful.
 pkgdatadir = $(datadir)/@PACKAGE@
