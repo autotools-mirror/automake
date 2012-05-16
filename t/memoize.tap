@@ -19,7 +19,7 @@
 am_create_testdir=empty
 . ./defs || Exit 1
 
-plan_ 13
+plan_ 17
 
 ocwd=`pwd` || fatal_ "couldn't get current working directory"
 
@@ -120,7 +120,7 @@ END
 
 #---------------------------------------------------------------------------
 
-T "on indirect recursive variable expansion" <<'END'
+T "memoize indirect recursive variable expansion" <<'END'
 
 foo = $(call am__memoize,foo,$(indir))
 
@@ -134,7 +134,7 @@ END
 
 #---------------------------------------------------------------------------
 
-T "on indirect immediate variable expansion" <<'END'
+T "memoize indirect immediate variable expansion" <<'END'
 
 foo = $(call am__memoize,foo,$(indir))
 
@@ -148,7 +148,7 @@ END
 
 #---------------------------------------------------------------------------
 
-T "on function call" <<'END'
+T "memoize function call (containing builtin calls)" <<'END'
 
 my_func = $(firstword $(sort $(1)))
 foo = $(call am__memoize,foo,$(call my_func, 6 3 1 7))
@@ -156,6 +156,47 @@ foo = $(call am__memoize,foo,$(call my_func, 6 3 1 7))
 test:
 	test '$(foo)' = 1
 	test '$(foo)' = 1
+END
+
+#---------------------------------------------------------------------------
+
+T "expanded as function argument" <<'END'
+
+foo = $(call am__memoize,foo,bar)
+func = ::$(0)::$(1)::
+
+test:
+	test '$(call func,$(foo))' = ::func::bar::
+	test '$(foo)' = bar
+        # Once more.
+	test '$(call func,$(foo))' = ::func::bar::
+END
+
+#---------------------------------------------------------------------------
+
+T "expanded as function argument (trickier)" <<'END'
+
+foo = $(call am__memoize,foo,zardoz)
+indir_func = ::$($1)::
+
+test:
+	test '$(call indir_func,foo)' = ::zardoz::
+	test '$(foo)' = zardoz
+        # Once more.
+	test '$(call indir_func,foo)' = ::zardoz::
+END
+
+#---------------------------------------------------------------------------
+
+T "expanded into another memoized variable" <<'END'
+
+foo = $(call am__memoize,foo,one $(bar))
+bar = $(call am__memoize,bar,two $(baz))
+baz = $(call am__memoize,baz,$(sort 4 3))
+
+test:
+	test '$(foo)' = 'one two 3 4'
+	test '$(bar)' = 'two 3 4'
 END
 
 #---------------------------------------------------------------------------
@@ -175,6 +216,22 @@ END
 #---------------------------------------------------------------------------
 
 T "memoization actually takes place (2)" <<'END'
+
+indir := ok
+expand = $(eval expanded-to := $$($1))
+foo = $(call am__memoize,foo,$(indir))
+$(call expand,foo)
+override indir := ko
+
+test:
+	test '$(foo)' = ok
+	test '$(indir)' = ko
+	test '$(expanded-to)' = ok
+END
+
+#---------------------------------------------------------------------------
+
+T "memoization actually takes place (3)" <<'END'
 
 foo1 = $(call am__memoize,foo1,$(shell test -f x && echo "+"))
 foo2 = $(call am__memoize,foo2,$(shell test -f y || echo "-"))
