@@ -18,7 +18,7 @@
 # headers are not involved).
 # Keep in sync with sister test 'yacc-basic.test'.
 
-required=yacc
+required='c++ yacc'
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

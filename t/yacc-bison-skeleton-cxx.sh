@@ -17,7 +17,7 @@
 # Test to make sure bison + bison's C++ skeleton + C++ works.
 # For Automake bug#7648 and PR automake/491.
 
-required=bison
+required='c++ bison'
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

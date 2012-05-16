@@ -17,7 +17,7 @@
 # Check that many different Yacc parsers (both C and C++) can co-exists
 # in the same directory.
 
-required=yacc
+required='cc c++ yacc'
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

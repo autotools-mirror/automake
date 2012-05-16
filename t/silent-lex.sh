@@ -16,7 +16,7 @@
 
 # Check silent-rules mode for Lex.
 
-required=lex
+required='cc lex'
 . ./defs || Exit 1
 
 mkdir sub

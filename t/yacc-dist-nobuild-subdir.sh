@@ -18,7 +18,7 @@
 # using yacc and the automake 'subdir-objects' option.
 # Exposes automake bug#8485.
 
-required=yacc
+required='cc yacc'
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

@@ -20,7 +20,7 @@
 # The tests 'yacc-nodist.test' and 'yacc-pr204.test' does similar checks
 # for yacc-generated .c and .h files.
 
-required=lex
+required='cc lex'
 . ./defs || Exit 1
 
 cat >> configure.ac <<'EOF'
