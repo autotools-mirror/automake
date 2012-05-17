@@ -16,6 +16,23 @@
 
 VPATH = @srcdir@
 
+am__mkdir = test -d $1 || $(MKDIR_P) $1
+
+# In a recipe, ensure the given directory exists, creating it if
+# necessary; but tries to do so avoiding useless forks, stats, and
+# extra recipe text (the latter is useful when doing "make V=1").
+# If the target has no directory component, or if the parent
+# directory of the target already exists, we have nothing to do, so
+# try to optimize for those cases -- especially because, for our
+# usage patterns, one of them should always be true in non-VPATH
+# builds.
+am__ensure_dir_exists = \
+  $(if $(filter .,$1),:,$(if $(wildcard $1/),:,$(call am__mkdir,$1)))
+
+# Ensure the directory containing the target of the current recipe
+# exists, by creating it if necessary.
+am__ensure_target_dir_exists = $(call am__ensure_dir_exists,$(@D))
+
 ## The 'all' target must be the default one, independently from the
 ## position it is declared in the output Makefile.
 .DEFAULT_GOAL := all
