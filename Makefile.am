@@ -483,9 +483,8 @@ clean-local-check:
 ##  Documentation.  ##
 ## ---------------- ##
 
-info_TEXINFOS = doc/automake.texi doc/automake-history.texi
-doc_automake_TEXINFOS = doc/fdl.texi
-doc_automake_history_TEXINFOS = doc/fdl.texi
+info_TEXINFOS = doc/automake-ng.texi
+doc_automake_ng_TEXINFOS = doc/fdl.texi
 
 man1_MANS = \
   doc/aclocal.1 \
