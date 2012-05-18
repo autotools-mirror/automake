@@ -17,7 +17,6 @@
 # Check parallel-tests features:
 # - concurrent parallel execution
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 case $MAKE in

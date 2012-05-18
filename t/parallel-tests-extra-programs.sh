@@ -18,7 +18,6 @@
 # (or even be) $(EXTRA_PROGRAMS).
 
 required='cc native'
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

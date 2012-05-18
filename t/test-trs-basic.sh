@@ -18,7 +18,6 @@
 #  - creation and removal of '.trs' auxiliary files
 #  - check some internals regarding the use of '.trs' files.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac <<END

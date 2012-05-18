@@ -18,7 +18,6 @@
 #  - non-existent scripts listed in TESTS get diagnosed
 # See also related test 'test-missing2.test'.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

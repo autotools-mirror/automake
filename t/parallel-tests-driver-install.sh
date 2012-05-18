@@ -17,7 +17,6 @@
 # Check that auxiliary script 'test-driver' gets automatically installed
 # in the correct directory by 'parallel-tests' option.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 : Try first with parallel-tests defined in AM_INIT_AUTOMAKE.

@@ -18,11 +18,12 @@
 # parallel-tests option enabled) exports the 'srcdir' value in the
 # environment of the tests.  This is documented in the manual.
 
+# For gen-testsuite-part: ==> try-with-serial-tests <==
 . ./defs || Exit 1
 
 show_info ()
 {
-  if test x"$am_parallel_tests" = x"yes"; then
+  if test x"$am_serial_tests" != x"yes"; then
      cat foo.log
      cat test-suite.log
   else

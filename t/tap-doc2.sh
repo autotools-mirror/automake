@@ -19,7 +19,6 @@
 # with the Automake test harness".
 
 am_create_testdir=empty
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat > Makefile.am <<'END'

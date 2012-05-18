@@ -18,7 +18,6 @@
 #  - don't spuriously recognize lines that are "almost" TAP lines as
 #    real TAP lines
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"

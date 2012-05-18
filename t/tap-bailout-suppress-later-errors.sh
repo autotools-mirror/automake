@@ -18,7 +18,6 @@
 #  - A "Bail out!" directive causes the driver to ignore any TAP
 #    result or error in the rest of the following TAP stream.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"

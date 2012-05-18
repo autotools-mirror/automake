@@ -333,7 +333,7 @@ AM_TESTS_ENVIRONMENT = \
     me \
     required \
     am_using_tap \
-    am_parallel_tests \
+    am_serial_tests \
     am_test_prefer_config_shell \
     am_original_AUTOMAKE \
     am_original_ACLOCAL \

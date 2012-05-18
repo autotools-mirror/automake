@@ -20,7 +20,6 @@
 #  - test results without number get automatically numbered in the
 #    console progress output
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"

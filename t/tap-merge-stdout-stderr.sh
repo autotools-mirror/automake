@@ -18,7 +18,6 @@
 #  - The Automake TAP driver has an option that instruct it to read TAP
 #    input also from the stderr of the test command, not only its stdout.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 fetch_tap_driver

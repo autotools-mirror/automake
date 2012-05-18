@@ -17,7 +17,6 @@
 # Check support for AC_CONFIG_LIBOBJ_DIR vs LTLIBOBJS.
 # (pr401.test and pr401c.test do the same for LIBOBJS and ALLOCA)
 
-am_parallel_tests=no
 required='cc libtoolize'
 . ./defs || Exit 1
 

@@ -17,7 +17,6 @@
 # Check parallel harness features:
 #  - recovery from unreadable '.trs' files, in various scenarios
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac <<END

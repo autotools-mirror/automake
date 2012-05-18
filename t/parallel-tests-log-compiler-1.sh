@@ -19,7 +19,6 @@
 #   and xxx_LOG_FLAGS), also with AC_SUBST'd stuff.
 # See also related test 'parallel-tests-log-compiler-2.test'.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

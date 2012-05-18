@@ -20,7 +20,6 @@
 # perl implementation of the Automake TAP driver, but expect the latter,
 # "more modern" behaviour in our awk TAP driver.
 
-am_parallel_tests=yes
 am_tap_implementation=shell
 . ./defs || Exit 1
 

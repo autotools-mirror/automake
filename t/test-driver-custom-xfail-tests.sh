@@ -16,7 +16,6 @@
 
 # Custom test drivers: "abstract" XFAIL_TESTS support.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac <<'END'

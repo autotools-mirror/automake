@@ -17,7 +17,6 @@
 # Check that our concurrent test harness is not subject to spurious VPATH
 # rewrites.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

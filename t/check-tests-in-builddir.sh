@@ -17,6 +17,7 @@
 # Check that the testsuite driver can find test in the srcdir as
 # well as in builddir, and that is prefers those in the builddir.
 
+# For gen-testsuite-part: ==> try-with-serial-tests <==
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'
@@ -55,26 +56,27 @@ $MAKE check >out 2>&1 || { cat out; Exit1; }
 cat out
 # The simple-tests driver does not strip VPATH components from
 # the name of the test, but the parallel-tests driver should.
-if test x"$am_parallel_tests" = x"yes"; then
-  grep '\.\./foo' out && Exit 1
-  grep '^PASS: foo.test *$' out
+if test x"$am_serial_tests" = x"yes"; then
+  grep '^PASS: .*foo\.test *$' out
 else
-  grep '^PASS: .*foo.test *$' out
+  grep '\.\./foo' out && Exit 1
+  grep '^PASS: foo\.test *$' out
 fi
-grep '^PASS: bar.test *$' out
+grep '^PASS: bar\.test *$' out
 
 rm -f test-suite.log foo.log bar.log
 
 FOO_EXIT_STATUS=1 $MAKE check >out 2>&1 && { cat out; Exit1; }
 cat out
-# See comments above.
-if test x"$am_parallel_tests" = x"yes"; then
-  grep '\.\./foo' out && Exit 1
-  grep '^FAIL: foo.test *$' out
+# The simple-tests driver does not strip VPATH components from
+# the name of the test, but the parallel-tests driver should.
+if test x"$am_serial_tests" = x"yes"; then
+  grep '^FAIL: .*foo\.test *$' out
 else
-  grep '^FAIL: .*foo.test *$' out
+  grep '\.\./foo' out && Exit 1
+  grep '^FAIL: foo\.test *$' out
 fi
-grep '^PASS: bar.test *$' out
+grep '^PASS: bar\.test *$' out
 
 rm -f test-suite.log foo.log bar.log
 
@@ -83,8 +85,8 @@ rm -f test-suite.log foo.log bar.log
 cp bar.test foo.test
 FOO_EXIT_STATUS=1 $MAKE check >out 2>&1 || { cat out; Exit1; }
 cat out
-grep '^PASS: foo.test *$' out
-grep '^PASS: bar.test *$' out
+grep '^PASS: foo\.test *$' out
+grep '^PASS: bar\.test *$' out
 
 # The tests in the builddir must be preferred also by "make dist".
 FOO_EXIT_STATUS=1 $MAKE distcheck

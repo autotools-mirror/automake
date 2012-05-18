@@ -20,7 +20,6 @@
 #  - .test if $(TEST_EXTENSIONS) is not defined
 #  - stuff in $(TEST_EXTENSIONS) otherwise
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 : > Makefile.am

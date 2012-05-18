@@ -16,7 +16,6 @@
 
 # Check parallel-tests features: runtime redefinition of $(TEST_SUITE_LOG).
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac <<'END'

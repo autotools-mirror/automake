@@ -19,7 +19,7 @@
 # This script can also serve as mild stress-testing for Automake.
 # See also the similar test 'backcompat6.test'.
 
-am_parallel_tests=no
+am_serial_tests=yes
 am_create_testdir=empty
 . ./defs || Exit 1
 

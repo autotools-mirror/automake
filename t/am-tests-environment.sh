@@ -17,7 +17,6 @@
 # parallel-tests: check AM_TESTS_ENVIRONMENT support, and its
 # interactions with TESTS_ENVIRONMENT.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

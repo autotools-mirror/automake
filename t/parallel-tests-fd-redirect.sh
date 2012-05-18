@@ -20,7 +20,6 @@
 # check for tests that are binary executables.
 # See also the more generic test 'check-fd-redirect.test'.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

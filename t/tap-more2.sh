@@ -20,7 +20,6 @@
 #  - interactions with 'check_*' variables
 
 required='cc native'
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 fetch_tap_driver

@@ -17,6 +17,7 @@
 # Make sure $(EXEEXT) is appended to programs and to tests that are
 # programs, but not to @substitutions@.
 
+# For gen-testsuite-part: ==> try-with-serial-tests <==
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

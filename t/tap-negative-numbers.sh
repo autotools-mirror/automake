@@ -18,7 +18,6 @@
 #  - don't spuriously recognize negative TAP result numbers, but correctly
 #    interpret them as test descriptions instead
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"

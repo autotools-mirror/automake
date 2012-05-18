@@ -18,7 +18,6 @@
 #  - which global test result derives from different test results
 #    mixed in a single script?
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"

@@ -18,7 +18,6 @@
 # e.g., 'sub/foo.log'), the Automake test harness must ensure that
 # directory exists before calling any custom test driver.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

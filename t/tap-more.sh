@@ -24,7 +24,6 @@
 #    correct test script(s)
 #  - "make distcheck" works
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 fetch_tap_driver

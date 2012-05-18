@@ -17,7 +17,6 @@
 # Check that an example given in the documentation really works.
 # See section "Simple Tests" subsection "Script-based Testsuites".
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 fetch_tap_driver

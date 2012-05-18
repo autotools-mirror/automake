@@ -20,7 +20,6 @@
 # with the use of the reStructuredText field ':copy-in-global-log:' in
 # the associated '.trs' files.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

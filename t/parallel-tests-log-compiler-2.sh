@@ -19,7 +19,6 @@
 #   and xxx_LOG_FLAGS), when some tests are PROGRAMS.
 # See also related test 'parallel-tests-log-compiler-1.test'.
 
-am_parallel_tests=yes
 required='cc native'
 . ./defs || Exit 1
 

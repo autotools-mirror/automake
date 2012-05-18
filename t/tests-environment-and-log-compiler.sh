@@ -18,7 +18,6 @@
 # by TESTS_ENVIRONMENT and AM_TESTS_ENVIRONMENT in LOG_COMPILER and
 # LOG_FLAGS (for tests both with and without registered extensions).
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

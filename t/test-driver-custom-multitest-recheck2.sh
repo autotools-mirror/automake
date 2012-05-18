@@ -21,7 +21,6 @@
 # See also related tests 'test-driver-custom-multitest-recheck.test' and
 # 'parallel-tests-recheck-override.test'.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cp "$am_testauxdir"/trivial-test-driver . \

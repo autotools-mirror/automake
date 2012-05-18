@@ -20,7 +20,6 @@
 # FIXME: the features tested by this script has been moved in contrib.
 # FIXME: We should move this script accordingly.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 # Try the variants that are tried in check-html.am.

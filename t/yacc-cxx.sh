@@ -46,7 +46,8 @@ cat > parse1.yy << 'END'
 // Valid C++, but deliberately invalid C.
 #include <cstdio>
 #include <cstdlib>
-int yylex (void) { return getchar (); }
+// "std::" qualification required by Sun C++ 5.9.
+int yylex (void) { return std::getchar (); }
 void yyerror (const char *s) { return; }
 %}
 %%

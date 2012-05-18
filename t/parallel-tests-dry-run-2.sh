@@ -17,7 +17,6 @@
 # Check parallel-tests interactions with "make -n".
 # See also sister test 'parallel-tests-dry-run-1.test'.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

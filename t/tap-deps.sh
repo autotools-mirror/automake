@@ -17,7 +17,6 @@
 # Basic TAP test protocol support:
 #  - dependencies between test scripts
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat > Makefile.am << 'END'

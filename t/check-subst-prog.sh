@@ -17,6 +17,7 @@
 # Check @substituted@ TESTS, some of which are also PROGRAMS.
 # See also sister test 'check-subst.test'.
 
+# For gen-testsuite-part: ==> try-with-serial-tests <==
 required='cc native'
 . ./defs || Exit 1
 

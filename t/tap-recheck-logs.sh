@@ -17,7 +17,6 @@
 # TAP support:
 # - RECHECK_LOGS
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat > Makefile.am << 'END'
