@@ -42,10 +42,7 @@
 	  done; \
 	else :; fi && \
 ?INSRC?	cd "$$am__cwd"; \
-	if $(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) %MAKEINFOFLAGS% \
-?!INSRC?	 -o $@ `test -f '%SOURCE_INFO%' || echo '$(srcdir)/'`%SOURCE_INFO%; \
-?INSRC??!GENERIC_INFO?	 -o $@ $(srcdir)/%SOURCE_INFO%; \
-?INSRC??GENERIC_INFO?	 -o $@ $<; \
+	if $(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) %MAKEINFOFLAGS% -o $@ $<; \
 	then \
 	  rc=0; \
 ?INSRC?	  $(am__cd) $(srcdir); \
@@ -65,14 +62,12 @@ INFO_DEPS += %DEST_INFO_PREFIX%%DEST_SUFFIX%
 ## Must set MAKEINFO like this so that version.texi will be found even
 ## if it is in srcdir (-I $(srcdir) is set in %MAKEINFOFLAGS%).
 	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) %MAKEINFOFLAGS%' \
-## Do not use '-o' unless necessary: it is only supported since Texinfo 4.1.
 ## texi2dvi doesn't silence everything with -q, redirect to /dev/null instead.
 ## We still want -q (%TEXIQUIET%) because it turns on batch mode.
 ## Use '--clean' to avoid leaving auxiliary files behind cluttering the build
 ## directory (see automake bug#11146).  We should start using '--tidy' when we
 ## can assume Texinf 4.9 or later.
-?GENERIC?	$(TEXI2DVI) %TEXIQUIET% --clean %SOURCE% %TEXIDEVNULL%
-?!GENERIC?	$(TEXI2DVI) %TEXIQUIET% --clean -o $@ `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE% %TEXIDEVNULL%
+	$(TEXI2DVI) %TEXIQUIET% --clean -o $@ $< %TEXIDEVNULL%
 
 ?GENERIC?%.pdf: %%SOURCE_SUFFIX%
 ?!GENERIC?%DEST_PREFIX%.pdf: %SOURCE% %DEPS% %DIRSTAMP%
@@ -80,14 +75,12 @@ INFO_DEPS += %DEST_INFO_PREFIX%%DEST_SUFFIX%
 ## Must set MAKEINFO like this so that version.texi will be found even
 ## if it is in srcdir (-I $(srcdir) is set in %MAKEINFOFLAGS%).
 	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) %MAKEINFOFLAGS%' \
-## Do not use '-o' unless necessary: it is only supported since Texinfo 4.1.
 ## texi2pdf doesn't silence everything with -q, redirect to /dev/null instead.
 ## We still want -q (%TEXIQUIET%) because it turns on batch mode.
 ## Use '--clean' to avoid leaving auxiliary files behind cluttering the build
 ## directory (see automake bug#11146).  We should start using '--tidy' when we
 ## can assume Texinf 4.9 or later.
-?GENERIC?	$(TEXI2PDF) %TEXIQUIET% --clean %SOURCE% %TEXIDEVNULL%
-?!GENERIC?	$(TEXI2PDF) %TEXIQUIET% --clean -o $@ `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE% %TEXIDEVNULL%
+	$(TEXI2PDF) %TEXIQUIET% --clean -o $@ $< %TEXIDEVNULL%
 
 ?GENERIC?%.html: %%SOURCE_SUFFIX%
 ?!GENERIC?%DEST_PREFIX%.html: %SOURCE% %DEPS% %DIRSTAMP%
@@ -98,9 +91,8 @@ INFO_DEPS += %DEST_INFO_PREFIX%%DEST_SUFFIX%
 ## is to build under a temporary name, and replace the target on
 ## success.
 	%AM_V_MAKEINFO%rm -rf $(@:.html=.htp)
-	%SILENT%if $(MAKEINFOHTML) $(AM_MAKEINFOHTMLFLAGS) $(MAKEINFOFLAGS) %MAKEINFOFLAGS% \
-?GENERIC?	 -o $(@:.html=.htp) %SOURCE%; \
-?!GENERIC?	 -o $(@:.html=.htp) `test -f '%SOURCE%' || echo '$(srcdir)/'`%SOURCE%; \
+	%SILENT%if $(MAKEINFOHTML) $(AM_MAKEINFOHTMLFLAGS) $(MAKEINFOFLAGS) \
+	                           %MAKEINFOFLAGS% -o $(@:.html=.htp) $<; \
 	then \
 	  rm -rf $@; \
 ## Work around a bug in Texinfo 4.1 (-o foo.html outputs files in foo/
