@@ -22,11 +22,8 @@ am_parallel_tests=yes
 
 cat >> configure.ac << 'END'
 dnl We need to fool the init.m4 internals a little.
-AC_DEFUN([_AM_FOO],
-  [m4_provide([_AM_COMPILER_EXEEXT])
-  AC_SUBST([CC], [false])
-  AC_SUBST([EXEEXT])])
-_AM_FOO
+AC_SUBST([CC], [false])
+AC_SUBST([EXEEXT])
 AC_OUTPUT
 END
 
@@ -60,5 +57,16 @@ test -f y.log
 test ! -r y.bin.log
 test -f b.log
 test ! -r b.test.log
+
+# Opportunistically check that we are not forced to specify
+# the test suffixes nor the $(EXEEXT) suffix when overriding
+# TESTS on the command line.
+rm -f *.log *.trs
+
+$MAKE check TESTS='y a b'
+ls -l # For debugging.
+test -f a.log
+test -f b.log
+test -f y.log
 
 :

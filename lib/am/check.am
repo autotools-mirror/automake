@@ -57,14 +57,19 @@ if %?PARALLEL_TESTS%
 ## of more test metadata, and the use of custom test derivers and protocols
 ## (among them, TAP).
 
-# Required to support explicit use of $(srcdir) in TESTS entries.
-# That might actually be very useful in practice, for example in usages
-# like this:
+# The names of the given tests scripts with any possible registered
+# test extension removed, as well as any leading '$(srcdir)' component
+# (if any) stripped.
+# The stripping of $(srcdir) is required to support explicit use of
+# $(srcdir) in TESTS entries.  That might actually be very useful in
+# practice, for example in usages like this:
 #   TESTS = $(wildcard $(srcdir)/t[0-9][0-9]*.sh)
-# Removing the '$(srcdir)' in there would cause the idiom to break in
-# VPATH builds.
-am__cooked_tests = $(patsubst $(srcdir)/%,%,$(strip $(TESTS)))
-am__cooked_xfail_tests = $(patsubst $(srcdir)/%,%,$(strip $(XFAIL_TESTS)))
+# where removing the $(srcdir) from the $(wildcard) invocation would
+# cause the idiom to break in VPATH builds.
+am__get_test_bases = $(patsubst $(srcdir)/%,%,$(strip \
+$(call am__strip_suffixes, $(TEST_EXTENSIONS), \
+?!HANDLE-EXEEXT?             $(1))))
+?HANDLE-EXEEXT?              $(patsubst %$(EXEEXT),%,$(1)))))
 
 am__recheck_rx = ^[ 	]*:recheck:[ 	]*
 am__global_test_result_rx = ^[ 	]*:global-test-result:[ 	]*
@@ -190,69 +195,34 @@ END { \
 # Restructured Text title.
 am__rst_title = { sed 's/.*/   &   /;h;s/./=/g;p;x;s/ *$$//;p;g' && echo; }
 
-# Solaris 10 'make', and several other traditional 'make' implementations,
-# pass "-e" to $(SHELL), and POSIX 2008 even requires this.  Work around it
-# by disabling -e (using the XSI extension "set +e") if it's set.
-am__sh_e_setup = case $$- in *e*) set +e;; esac
+# This supports runtime overriding of $(TESTS) and $(XFAIL_TESTS).
+am__test_bases = \
+  $(call am__memoize,am__test_bases,$(call am__get_test_bases,$(TESTS)))
+am__xfail_test_bases = \
+  $(call am__memoize,am__xfail_test_bases,$(call am__get_test_bases,$(XFAIL_TESTS)))
 
-# Default flags passed to test drivers.
-am__common_driver_flags = \
-  --color-tests "$$am__color_tests" \
-  --enable-hard-errors "$$am__enable_hard_errors" \
-  --expect-failure "$$am__expect_failure"
+# The $(strip) is to work around the GNU make 3.80 bug where trailing
+# whitespace in "TESTS = foo.test $(empty)" causes $(TESTS_LOGS) to
+# erroneously expand to "foo.log .log".
+am__test_results = \
+  $(call am__memoize,am__test_results,$(addsuffix .trs,$(strip $(am__test_bases))))
+am__test_logs = \
+  $(call am__memoize,am__test_logs,$(addsuffix .log,$(strip $(am__test_bases))))
 
-# To be inserted before the command running the test.  Creates the
-# directory for the log if needed.  Stores in $dir the directory
-# containing $f, in $tst the test, in $log the log.  Executes the
-# developer- defined test setup AM_TESTS_ENVIRONMENT (if any), and
-# passes TESTS_ENVIRONMENT.  Set up options for the wrapper that
-# will run the test scripts (or their associated LOG_COMPILER, if
-# thy have one).
-am__check_pre =						\
-$(am__sh_e_setup);					\
-$(am__tty_colors);					\
-srcdir=$(srcdir); export srcdir;			\
-test x$(@D) = x. || test -d $(@D) || $(MKDIR_P) $(@D) || exit $$?; \
-f='$(patsubst $(srcdir)/%,%,$<)';			\
-## We need to invoke the test in way that won't cause a PATH search.
-## Quotes around '$<' are required to avoid extra errors when a circular
-## dependency is detected (e.g., because $(TEST_SUITE_LOG) is in
-## $(TEST_LOGS)), because in that case '$<' expands to empty and an
-## unquote usage of it could cause syntax errors in the shell.
-case '$<' in */*) tst='$<';; *) tst=./'$<';; esac;	\
-if test -n '$(DISABLE_HARD_ERRORS)'; then		\
-  am__enable_hard_errors=no; 				\
-else							\
-  am__enable_hard_errors=yes; 				\
-fi; 							\
-case " $(am__cooked_xfail_tests) " in			\
-  *" $$f "*) am__expect_failure=yes;;			\
-          *) am__expect_failure=no;;			\
-esac; 							\
-$(AM_TESTS_ENVIRONMENT) $(TESTS_ENVIRONMENT)
+# $(TEST_LOGS) is a published interface.
+TEST_LOGS = $(am__test_logs)
 
-# The names of the tests scripts with any registered extension removed
-# (i.e., equivalently, the names of the test logs, with the '.log' suffix
-# stripped), and the name of the test result files (i.e., equivalently, the
-# names of the test logs, with the '.log' suffix substituted by the '.trs'
-# suffix).  This honors runtime overriding of TESTS and TEST_LOGS.  It
-# also works around the GNU make 3.80 bug where trailing whitespace in
-# "TESTS = foo.test $(empty)" causes $(TESTS_LOGS) to erroneously expand
-# to "foo.log .log".
-am__TEST_BASES   = $(patsubst %.log,%,$(strip $(TEST_LOGS)))
-am__TEST_RESULTS = $(patsubst %.log,%.trs,$(strip $(TEST_LOGS)))
-
-$(TEST_SUITE_LOG): $(TEST_LOGS) $(am__TEST_RESULTS)
+$(TEST_SUITE_LOG): $(am__test_logs) $(am__test_results)
 	@$(am__sh_e_setup); $(am__tty_colors); \
 	fatal () { echo "fatal: making $@: $$*" >&2; exit 1; }; \
 ## Detect a possible circular dependency, and error out.
-	case ' $(strip $(TEST_LOGS)) ' in *' $(TEST_SUITE_LOG) '*) \
+	case ' $(strip $(am__test_logs)) ' in *' $(TEST_SUITE_LOG) '*) \
 	  fatal "depends on itself (check TESTS content)";; \
 	esac; \
 	ws='[ 	]'; \
 	count_result () \
 	{ \
-	  r='$(strip $(am__TEST_RESULTS))'; \
+	  r='$(strip $(am__test_results))'; \
 	  r=`grep "^$$ws*:test-result:$$ws*$${1-}" $$r </dev/null`; \
 ## Catch I/O errors, and complain accordingly.
 	  test $$? -le 1 || fatal "I/O error reading test results"; \
@@ -326,7 +296,7 @@ $(TEST_SUITE_LOG): $(TEST_LOGS) $(am__TEST_RESULTS)
 	  echo;								\
 	  echo ".. contents:: :depth: 2";				\
 	  echo;								\
-	  bases='$(am__TEST_BASES)';					\
+	  bases='$(am__test_bases)';					\
 	  for b in $$bases; do echo $$b; done				\
 	    | $(am__create_global_log);					\
 	} >$(TEST_SUITE_LOG).tmp; then					\
@@ -360,26 +330,18 @@ $(TEST_SUITE_LOG): $(TEST_LOGS) $(am__TEST_RESULTS)
 	fi;								\
 	$$success || exit 1
 
-RECHECK_LOGS = $(TEST_LOGS)
-
 ## ------------------------------------------ ##
 ## Running all tests, or rechecking failures. ##
 ## ------------------------------------------ ##
 
-check-TESTS recheck:
-## If we are running "make recheck", it's not the user which can decide
-## which tests to consider for re-execution, so we must ignore the value
-## of $(RECHECK_LOGS).
-## Here and below, we expand $(RECHECK_LOGS) only once, to avoid exceeding
-## line length limits.
-	@if test $@ != recheck; then \
-	   list='$(RECHECK_LOGS)'; \
-	   test -z "$$list" || rm -f $$list; \
-	 fi
-	@if test $@ != recheck; then \
-	   list='$(RECHECK_LOGS:.log=.trs)'; \
-	   test -z "$$list" || rm -f $$list; \
-	 fi
+am__remove_if_not_lazy_check = \
+## Expand the given list only once, to avoid exceeding line length limits.
+  $(if $(filter yes,$(AM_LAZY_CHECK)),, \
+       list='$(strip $(1))'; test -z "$$list" || rm -f $$list)
+
+check-TESTS:
+	@$(call am__remove_if_not_lazy_check,$(am__test_results))
+	@$(call am__remove_if_not_lazy_check,$(am__test_logs))
 ## We always have to remove TEST_SUITE_LOG, to ensure its rule is run
 ## in any case even in lazy mode: otherwise, if no test needs rerunning,
 ## or a prior run plus reruns all happen within the same timestamp (can
@@ -387,35 +349,23 @@ check-TESTS recheck:
 ## OTOH, this means that, in the rule for '$(TEST_SUITE_LOG)', we
 ## cannot use '$?' to compute the set of lazily rerun tests, lest
 ## we rely on .PHONY to work portably.
-	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
-	@bases='$(am__TEST_BASES)'; \
-	if test $@ = recheck; then \
-## If running a "make recheck", we must only consider tests that had an
-## unexpected outcome (FAIL or XPASS) in the earlier run.
-	  bases=`for i in $$bases; do echo $$i; done \
-	           | $(am__list_recheck_tests)` || exit 1; \
-	fi; \
-	log_list=`for i in $$bases; do echo $$i.log; done`; \
-	trs_list=`for i in $$bases; do echo $$i.trs; done`; \
-## Remove newlines and normalize whitespace.
-	log_list=`echo $$log_list`; trs_list=`echo $$trs_list`; \
-## Under "make recheck", remove the .log and .trs files associated
-## with the files to recheck, so that those will be rerun by the
-## "make test-suite.log" recursive invocation below.  But use a proper
-## hack to avoid extra files removal when running under "make -n".
-	if test $@ != recheck || $(am__make_dryrun); then :; else \
-	  test -z "$$log_list" || rm -f $$log_list; \
-	  test -z "$$trs_list" || rm -f $$trs_list; \
-	fi; \
-	$(MAKE) $(TEST_SUITE_LOG) TEST_LOGS="$$log_list"
+	@rm -f $(TEST_SUITE_LOG)
+	$(MAKE) $(TEST_SUITE_LOG)
 
 ## Recheck must depend on $(check_SCRIPTS), $(check_PROGRAMS), etc.
 ## It must also depend on the 'all' target.  See automake bug#11252.
 recheck: all %CHECK_DEPS%
+	@bases='$(am__test_bases)'; \
+## If running a "make recheck", we must only consider tests that had an
+## unexpected outcome (FAIL or XPASS) in the earlier run.
+	bases=`for i in $$bases; do echo $$i; done \
+	         | $(am__list_recheck_tests)` || exit 1; \
+## Remove newlines and normalize whitespace.
+	bases=`echo $$bases`; \
+	$(MAKE) check-TESTS am__test_bases="$$bases"
+.PHONY: recheck
 
 AM_RECURSIVE_TARGETS += check recheck
-
-.PHONY: recheck
 
 else !%?PARALLEL_TESTS%
 

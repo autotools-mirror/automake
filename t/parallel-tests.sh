@@ -19,9 +19,8 @@
 #  - log files, and what goes in 'test-suite.log'
 #  - make clean
 #  - dependencies between tests
-#  - TESTS redefinition at runtime
-#  - TEST_LOGS redefinition at runtime
-#  - RECHECK_LOGS redefinition at runtime
+#  - TESTS redefinition at runtime (with and without test suffixes)
+#  - AM_LAZY_CHECK
 
 am_parallel_tests=yes
 . ./defs || Exit 1
@@ -37,19 +36,14 @@ foo.log: bar.log
 bar.log: baz.log
 END
 
-# foo.test and bar.test sleep to ensure their logs are always strictly newer
-# than the logs of their prerequisites, for HP-UX make.  The quoting pleases
-# maintainer-check.
 cat > foo.test <<'END'
 #! /bin/sh
 echo "this is $0"
-sleep '1'
 exit 0
 END
 cat > bar.test <<'END'
 #! /bin/sh
 echo "this is $0"
-sleep '1'
 exit 99
 END
 cat > baz.test <<'END'
@@ -85,9 +79,9 @@ test ! -f test-suite.log
 
 # Check dependencies: baz.test needs to run before bar.test,
 # but foo.test is not needed.
-# Note that this usage has a problem: the summary will only
-# take bar.log into account, because the $(TEST_SUITE_LOG) rule
-# does not "see" baz.log.  Hmm.
+# FIXME: Note that this usage has a problem: the summary will only
+# FIXME: take bar.log into account, because the $(TEST_SUITE_LOG)
+# FIXME: rule does not "see" baz.log.  Hmm.
 $MAKE check TESTS=bar.test >stdout && { cat stdout; Exit 1; }
 cat stdout
 grep '^FAIL: baz\.test$' stdout
@@ -104,7 +98,7 @@ test -f test-suite.log
 # Note that the previous test and this one taken together expose the timing
 # issue that requires the check-TESTS rule to always remove TEST_SUITE_LOG
 # before running the tests lazily.
-$MAKE check RECHECK_LOGS= > stdout && { cat stdout; Exit 1; }
+$MAKE check AM_LAZY_CHECK=yes > stdout && { cat stdout; Exit 1; }
 cat stdout
 test -f foo.log
 grep '^PASS: foo\.test$' stdout
@@ -116,7 +110,7 @@ grep '^# ERROR: *1$' stdout
 
 # Now, explicitly retry with all test logs already updated, and ensure
 # that the summary is still displayed.
-$MAKE check RECHECK_LOGS= > stdout && { cat stdout; Exit 1; }
+$MAKE check AM_LAZY_CHECK=yes > stdout && { cat stdout; Exit 1; }
 cat stdout
 grep foo.test stdout && Exit 1
 grep bar.test stdout && Exit 1
@@ -125,18 +119,8 @@ grep '^# PASS: *1$' stdout
 grep '^# FAIL: *1$' stdout
 grep '^# ERROR: *1$' stdout
 
-# Lazily rerunning only foo should only rerun this one test.
-$MAKE check RECHECK_LOGS=foo.log > stdout && { cat stdout; Exit 1; }
-cat stdout
-grep foo.test stdout
-grep bar.test stdout && Exit 1
-grep baz.test stdout && Exit 1
-grep '^# PASS: *1$' stdout
-grep '^# FAIL: *1$' stdout
-grep '^# ERROR: *1$' stdout
-
 $MAKE clean
-$MAKE check TEST_LOGS=baz.log > stdout && { cat stdout; Exit 1; }
+$MAKE check TESTS=baz > stdout && { cat stdout; Exit 1; }
 cat stdout
 grep foo.test stdout && Exit 1
 grep bar.test stdout && Exit 1

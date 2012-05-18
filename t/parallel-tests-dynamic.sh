@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that dynamic content for $(TESTS) and $(TEST_LOGS) is
-# supported.
+# Check that dynamic content for $(TESTS) is supported, both when set from
+# inside the Makefile.am and when overriddend from the command line.
 
 am_parallel_tests=yes
 . ./defs || Exit 1
@@ -124,22 +124,21 @@ grep '^XFAIL: t98S\.sh'   stdout
 $MAKE mostlyclean
 test "`find . -name *.log`" = ./config.log
 
-# We can also override $(TEST_LOGS) dynamically.
-$MAKE check TEST_LOGS='$(shell echo t00 | sed "s/$$/-foo.log/") t99.log'
+$MAKE check TESTS='$(shell echo t00 | sed "s/$$/-foo/") t99'
 test -f t00-foo.log
 test -f t99.log
 
-# A little tricky in that we rely on the .log files created by
-# the previous run to be present.
-$MAKE check TEST_LOGS="\
-  \$(wildcard t[0-9]*.log) \
-  \$(call my_add_dirprefix, t, nosuffix).log \
-" > stdout || { cat stdout; Exit 1; }
+$MAKE check \
+      foo='E9E9E' \
+      a='t00.err' \
+      b='${a:.err=-foo}' \
+      TESTS='$(b) t$(subst E,,$(foo)) $(call my_add_dirprefix,t,nosuffix)' \
+  > stdout || { cat stdout; Exit 1; }
 cat stdout
 
 count_test_results total=3 pass=2 fail=0 xpass=0 xfail=1 skip=0 error=0
-grep '^PASS: t00-foo\.sh' stdout
 grep '^PASS: t/nosuffix'  stdout
+grep '^PASS: t00-foo\.sh' stdout
 grep '^XFAIL: t99\.sh'    stdout
 
 :

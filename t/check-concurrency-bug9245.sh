@@ -49,7 +49,7 @@ for j in '' -j1 -j2; do
   $MAKE $j TESTS=foo.test check && Exit 1
   if test x"$am_parallel_tests" = x"yes"; then
     $MAKE $j recheck && Exit 1
-    $MAKE $j TEST_LOGS=foo.log check && Exit 1
+    $MAKE $j TESTS=foo check && Exit 1
     rm -f test-suite.log
     $MAKE $j test-suite.log && Exit 1
     test -f test-suite.log || Exit 1

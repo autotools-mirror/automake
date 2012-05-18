@@ -80,8 +80,7 @@ rm -f *.log *.test
 : > 2.test
 : > 3.test
 : > foobar.test
-do_check foobar.log TEST_LOGS='0.log 1.log foobar.log 2.log 3.log' \
-                    TEST_SUITE_LOG=foobar.log
+do_check foobar.log TESTS='0 1 foobar 2 3' TEST_SUITE_LOG=foobar.log
 rm -f *.log *.test
 
 :

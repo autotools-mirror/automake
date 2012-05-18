@@ -23,7 +23,7 @@ am_create_testdir=empty
 
 hasnt_parallel_tests ()
 {
-  $EGREP 'TEST_SUITE_LOG|TEST_LOGS|\.log.*:' $1 && Exit 1
+  $EGREP -i 'test_suite_log|test_(logs|bases)|\.log.*:' $1 && Exit 1
   grep 'recheck.*:' $1 && Exit 1
   grep '^check-TESTS: \$(TESTS)$' $1
 }
@@ -32,7 +32,7 @@ has_parallel_tests ()
 {
   $EGREP '(^| )check-TESTS.*:' $1
   $EGREP '(^| )recheck.*:' $1
-  $EGREP '^\$\(TEST_SUITE_LOG\):.* \$\(TEST_LOGS\)( |$)' $1
+  $EGREP '^\$\(TEST_SUITE_LOG\):.* \$\(am__test_logs\)( |$)' $1
   grep '^%.log %.trs *:.*%\.test' $1
 }
 

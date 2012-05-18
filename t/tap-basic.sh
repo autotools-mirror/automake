@@ -18,7 +18,7 @@
 #  - LOG_COMPILER support;
 #  - basic support for TODO and SKIP directives, and "Bail out!" magic;
 #  - testsuite progress output on console;
-#  - runtime overriding of TESTS and TEST_LOGS;
+#  - runtime overriding of TESTS;
 #  - correct counts of test results (both in summary and in progress
 #    output on console).
 # Note that some of the features checked here are checked in other
@@ -144,12 +144,12 @@ grep '^PASS:' stdout && Exit 1
 test `$FGREP -c ': bail.test' stdout` -eq 1
 $FGREP 'success.test' stdout && Exit 1
 
-# Override TEST_LOGS from the command line, making it point to a test
+# Override TESTS from the command line, making it point to a test
 # (ok.test) that has to be generated at make time.
 
 rm -f *.log *.test
 
-$MAKE TEST_LOGS=ok.log check >stdout || { cat stdout; Exit 1; }
+$MAKE TESTS=ok check >stdout || { cat stdout; Exit 1; }
 cat stdout
 
 count_test_results total=3 pass=1 fail=0 xpass=0 xfail=1 skip=1 error=0

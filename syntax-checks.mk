@@ -64,6 +64,10 @@ sc_no_am_makeflags \
 sc_no_DISTFILES \
 sc_no_DIST_COMMON \
 sc_no_DIST_SOURCES \
+sc_no_am_TEST_BASES \
+sc_no_am_TEST_RESULTS \
+sc_no_am_TEST_LOGS \
+sc_no_RECHECK_LOGS \
 sc_tests_no_make_e \
 sc_docs_no_make_e \
 sc_make_simple_include \
@@ -319,6 +323,35 @@ sc_no_DISTFILES sc_no_DIST_COMMON sc_no_DIST_SOURCES: sc_no_% :
 	  exit 1; \
 	fi
 
+sc_no_am_TEST_BASES sc_no_am_TEST_RESULTS sc_no_am_TEST_LOGS: sc_no_am_% :
+	@files="\
+	  $(xtests) \
+	  $(pms) \
+	  $(ams) \
+	  $(srcdir)/automake.in \
+	"; \
+	tolower () { LC_ALL=C tr '[A-Z]' '[a-z]'; }; \
+	if grep -F 'am__$*' $$files; then \
+	  echo "'\$$(am__$*)' is obsolete and no more used." >&2; \
+	  echo "You should use 'am__`echo $* | tolower`' instead." >&2; \
+	  exit 1; \
+	fi
+
+sc_no_RECHECK_LOGS:
+	@files="\
+	  $(xtests) \
+	  $(pms) \
+	  $(ams) \
+	  $(srcdir)/doc/*.texi \
+	  $(srcdir)/automake.in \
+	  README t/README \
+	"; \
+	if grep -F 'RECHECK_LOGS' $$files; then \
+	  echo "'RECHECK_LOGS' is obsolete and no more used." >&2; \
+	  echo "You should use 'AM_LAZY_CHECK' instead." >&2; \
+	  exit 1; \
+	fi
+
 ## "make -e" is brittle and unsafe, since it let *all* the environment
 ## win over the macro definitions in the Makefiles.  We needed it when
 ## we couldn't assume GNU make, but now that the tide has turned, it's
@@ -465,7 +498,7 @@ sc_tests_no_configure_in:
 
 ## Rule to ensure that the testsuite has been run before.  We don't depend
 ## on 'check' here, because that would be very wasteful in the common case.
-## We could run "make check RECHECK_LOGS=" and avoid toplevel races with
+## We could run "make check AM_LAZY_CHECK=yes" and avoid toplevel races with
 ## AM_RECURSIVE_TARGETS.  Suggest keeping test directories around for
 ## greppability of the Makefile.in files.
 sc_ensure_testsuite_has_run:

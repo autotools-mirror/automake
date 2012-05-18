@@ -14,9 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# parallel-tests:
-#  - non-existent scripts listed in TESTS get diagnosed
-# See also related test 'test-missing2.test'.
+# parallel-tests: non-existent scripts listed in TESTS get diagnosed.
 
 am_parallel_tests=yes
 . ./defs || Exit 1
@@ -50,7 +48,7 @@ cat stderr
 $FGREP 'zardoz2.log' stderr
 test ! -f test-suite.log
 
-$MAKE TEST_LOGS='zardoz3.log' check 2>stderr && { cat stderr >&2; Exit 1; }
+$MAKE TESTS='zardoz3' check 2>stderr && { cat stderr >&2; Exit 1; }
 cat stderr >&2
 $FGREP 'zardoz3.log' stderr
 test ! -f test-suite.log

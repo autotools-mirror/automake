@@ -67,7 +67,7 @@ cat stdout
 count_test_results total=256 pass=0 fail=0 xpass=0 xfail=128 skip=128 error=0
 
 # -------------------------------------------------------- #
-#  TODO ans SKIP directives aren't recognized spuriously.  #
+#  TODO and SKIP directives aren't recognized spuriously.  #
 # -------------------------------------------------------- #
 
 cat > all.test <<'END'

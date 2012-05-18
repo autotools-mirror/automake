@@ -20,6 +20,11 @@ VPATH = @srcdir@
 ## position it is declared in the output Makefile.
 .DEFAULT_GOAL := all
 
+# Solaris 10 'make', and several other traditional 'make' implementations,
+# pass "-e" to $(SHELL), and POSIX 2008 even requires this.  Work around it
+# by disabling -e (using the XSI extension "set +e") if it's set.
+am__sh_e_setup = case $$- in *e*) set +e;; esac
+
 ## Emulate VPATH rewrites.  This uses only GNU make primitives, which
 ## allows us to avoid extra forks.
 am__vpath_rewrite = \
@@ -97,6 +102,21 @@ am__uniq = $(strip \
 ##
 am__memoize = $(or $(am__memoized_value/$1),$(strip \
   $(eval am__memoized_value/$1 := $$2))$(am__memoized_value/$1))
+
+## $(call am__strip_suffixes, SUFFIXES, LIST)
+## ------------------------------------------
+## Strip any of the SUFFIXES from each of the entries of LIST.  Even if an
+## entry of LIST terminates with several suffixes, only one is stripped:
+## the first one that matches.
+am__private_suffix = .,;&!@
+am__strip_suffixes = $(strip \
+  $(if \
+    $(strip $1), \
+      $(patsubst %$(am__private_suffix),%, \
+        $(call am__strip_suffixes, \
+          $(call am__strip_firstword,$1), \
+          $(patsubst %$(firstword $1),%$(am__private_suffix),$2))), \
+    $2))
 
 ## Some derived variables that have been found to be useful.
 pkgdatadir = $(datadir)/@PACKAGE@

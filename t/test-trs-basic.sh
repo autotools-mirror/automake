@@ -32,10 +32,10 @@ TEST_LOG_COMPILER = $(SHELL)
 SH_LOG_COMPILER = $(SHELL)
 
 ## Used to check some internal details.  And yes, the quotes around
-## $(am__TESTS_BASES) are deliberate: they check for whitespace
+## $(am__tests_bases) are deliberate: they check for whitespace
 ## normalization.
 tb:
-	echo '$(am__TEST_BASES)' > $@
+	echo '$(am__test_bases)' > $@
 END
 
 cat > foo.test << 'END'
@@ -114,7 +114,7 @@ test -f unrelated.trs
 test -f sub/foo.trs
 
 #
-# Try with a subset of TESTS.
+# Try with a subset of TESTS, complete with test extensions.
 #
 
 $MAKE TESTS=foo.test check
@@ -135,22 +135,22 @@ test ! -f bar.trs
 $MAKE clean
 
 #
-# Try with a subset of TEST_LOGS.
+# Try with a subset of TESTS, omitting the test extensions.
 #
 
-$MAKE TEST_LOGS=sub/zardoz.log check
+$MAKE TESTS=sub/zardoz check
 test ! -f foo.trs
 test ! -f bar.trs
 test -f sub/zardoz.trs
 $MAKE clean
 test ! -f sub/zardoz.trs
-$MAKE TEST_LOGS='foo.log bar.log' check
+$MAKE TESTS='foo bar' check
 test -f foo.trs
 test -f bar.trs
 test ! -f sub/zardoz.trs
-# "make clean" shouldn't remove '.trs' files for tests whose log
-# is not in $(TEST_LOGS).
-$MAKE TEST_LOGS=foo.log clean
+# "make clean" shouldn't remove '.trs' files for tests that are not
+# in is not in $(TESTS).
+$MAKE TESTS=foo clean
 test ! -f foo.trs
 test -f bar.trs
 test ! -f sub/zardoz.trs

@@ -102,9 +102,9 @@ test -f foo.trs
 test ! -f bar.trs
 test ! -f baz.trs
 
-: Recreate with a "make check" with redefined TEST_LOGS.
+: Recreate with a "make check" with redefined suffix-less TESTS.
 rm -f foo.trs bar.trs baz.trs
-$MAKE TEST_LOGS=bar.log check
+$MAKE TESTS=bar check
 test ! -f foo.trs
 test -f bar.trs
 test ! -f baz.trs
@@ -154,7 +154,7 @@ test -f baz.trs
 rm -f foo.trs
 update_stamp
 touch bar.test
-$MAKE RECHECK_LOGS= check >stdout || { cat stdout; Exit 1; }
+$MAKE AM_LAZY_CHECK=yes check >stdout || { cat stdout; Exit 1; }
 cat stdout
 # Check that make has updated what it needed to, but no more.
 test -f foo.trs

@@ -9000,14 +9000,13 @@ For best results, the tests should be verbose by default now.
 @vindex TEST_LOGS
 Each couple of @file{.log} and @file{.trs} files is created when the
 corresponding test has completed.  The set of log files is listed in
-the read-only variable @code{TEST_LOGS}, and defaults to @code{TESTS},
-with the executable extension if any (@pxref{EXEEXT}), as well as any
-suffix listed in @code{TEST_EXTENSIONS} removed, and @file{.log} appended.
-Results are undefined if a test file name ends in several concatenated
-suffixes.  @code{TEST_EXTENSIONS} defaults to @file{.test}; it can be
-overridden by the user, in which case any extension listed in it must be
-constituted by a dot, followed by a non-digit alphabetic character,
-followed by any number of alphabetic characters.
+the @emph{read-only} variable @code{TEST_LOGS}, and defaults to
+@code{TESTS}, with the executable extension if any (@pxref{EXEEXT}),
+as well as any suffix listed in @code{TEST_EXTENSIONS} removed, and
+@file{.log} appended.  @code{TEST_EXTENSIONS} defaults to @file{.test};
+it can be overridden by the user, in which case any extension listed
+in it must be constituted by a dot, followed by a non-digit alphabetic
+character, followed by any number of alphabetic characters.
 @c Keep in sync with test-extensions.sh
 For example, @samp{.sh}, @samp{.T} and @samp{.t1} are valid extensions,
 while @samp{.x-y}, @samp{.6c} and @samp{.t.1} are not.
@@ -9023,33 +9022,52 @@ while @samp{.x-y}, @samp{.6c} and @samp{.t.1} are not.
 @vindex @var{ext}_LOG_FLAGS
 @vindex AM_@var{ext}_LOG_FLAGS
 @vindex AM_LOG_FLAGS
+@noindent
 For tests that match an extension @code{.@var{ext}} listed in
-@code{TEST_EXTENSIONS}, you can provide a custom ``test runner'' using
-the variable @code{@var{ext}_LOG_COMPILER} (note the upper-case
-extension) and pass options in @code{AM_@var{ext}_LOG_FLAGS} and allow
-the user to pass options in @code{@var{ext}_LOG_FLAGS}.  It will cause
-all tests with this extension to be called with this runner.  For all
-tests without a registered extension, the variables @code{LOG_COMPILER},
-@code{AM_LOG_FLAGS}, and @code{LOG_FLAGS} may be used.  For example,
+@code{TEST_EXTENSIONS}, you can:
 
-@c Keep in sync with parallel-tests-log-compiler-example.sh
+@itemize
+@item
+declare extra dependencies through @code{@var{ext}_LOG_DEPENDENCIES};
+@item
+provide a custom ``test runner'' using @code{@var{ext}_LOG_COMPILER},
+(it will be used to run all the tests with this extension);
+@item
+pass options to that runner through @code{AM_@var{ext}_LOG_FLAGS};
+@item
+allow the user to pass further options through @code{@var{ext}_LOG_FLAGS}.
+@end itemize
+
+@noindent
+Similarly, for tests without a registered extension, the variables
+@code{LOG_DEPENDENCIES}, @code{LOG_COMPILER}, @code{AM_LOG_FLAGS} and
+@code{LOG_FLAGS} may be used for those same purposes.
+
+Let's see an example.
+
+@c Keep in sync with parallel-tests-logvars-example.sh
 @example
 TESTS = foo.pl bar.py baz
 TEST_EXTENSIONS = .pl .py
+
 PL_LOG_COMPILER = $(PERL)
 AM_PL_LOG_FLAGS = -w
+
 PY_LOG_COMPILER = $(PYTHON)
 AM_PY_LOG_FLAGS = -v
+PY_LOG_DEPENDENCIES = mymod.py
+
 LOG_COMPILER = ./wrapper-script
 AM_LOG_FLAGS = -d
 @end example
 
 @noindent
-will invoke @samp{$(PERL) -w foo.pl}, @samp{$(PYTHON) -v bar.py},
+The above will invoke @samp{$(PERL) -w foo.pl}, @samp{$(PYTHON) -v bar.py},
 and @samp{./wrapper-script -d baz} to produce @file{foo.log},
-@file{bar.log}, and @file{baz.log}, respectively.  The @file{foo.trs},
-@file{bar.trs} and @file{baz.trs} files will be automatically produced
-as a side-effect.
+@file{bar.log}, and @file{baz.log}, respectively, and will ensure
+the python module @file{mymod.py} is built before the @file{bar.py}
+test is run.  The @file{foo.trs}, @file{bar.trs} and @file{baz.trs}
+files will be automatically produced as a side-effect.
 
 It's important to note that, differently from what we've seen for the
 serial test harness (@pxref{Parallel Test Harness}), the
@@ -9079,10 +9097,17 @@ You can set the @code{TESTS} variable.  For example, you can use a
 command like this to run only a subset of the tests:
 
 @example
-make check TESTS="foo.test bar.test"
+make check TESTS="foo.test bar.sh"
 @end example
 
-Note however that the command above will unconditionally overwrite the
+If @code{.test} and @code{.sh} are in @code{$(TEST_EXTENSIONS)}, the
+command above can also be shortened as:
+
+@example
+make check TESTS="foo bar"
+@end example
+
+Note however that the commands above will unconditionally overwrite the
 @file{test-suite.log} file, thus clobbering the recorded results
 of any previous testsuite run.  This might be undesirable for packages
 whose testsuite takes long time to execute.  Luckily, this problem can
@@ -9098,41 +9123,24 @@ will write the result of the partial testsuite runs to the
 @file{partial.log}, without touching @file{test-suite.log}.
 
 @item
-You can set the @code{TEST_LOGS} variable.  By default, this variable is
-computed at @command{make} run time from the value of @code{TESTS} as
-described above.  For example, you can use the following:
-
-@example
-set x subset*.log; shift
-make check TEST_LOGS="foo.log $*"
-@end example
-
-The comments made above about @code{TEST_SUITE_LOG} overriding applies
-here too.
-
-@item
-@vindex RECHECK_LOGS
+@vindex AM_LAZY_CHECK
 @cindex lazy test execution
-By default, the test harness removes all old per-test @file{.log} and
-@file{.trs} files before it starts running tests to regenerate them.  The
-variable @code{RECHECK_LOGS} contains the set of @file{.log} (and, by
-implication, @file{.trs}) files which are removed.  @code{RECHECK_LOGS}
-defaults to @code{TEST_LOGS}, which means all tests need to be rechecked.
-By overriding this variable, you can choose which tests need to be
-reconsidered.  For example, you can lazily rerun only those tests which
-are outdated, i.e., older than their prerequisite test files, by setting
-this variable to the empty value:
+By default, the test harness will run all the tests anew.  By setting
+the @code{AM_LAZY_CHECK} variable to @code{"yes"}, you can instruct the
+harness to re-run only those test scripts whose @file{.log} or
+@file{.trs} is out-of-date (or non-existent):
 
 @example
-make check RECHECK_LOGS=
+make check AM_LAZY_CHECK=yes
 @end example
+
+In normal circumstances, this offers a simple way to lazily rerun only
+those tests which are outdated, i.e., older than their prerequisites.
 
 @item
 @trindex recheck
 You can ensure that all tests are rerun which have failed or passed
 unexpectedly, by running @code{make recheck} in the test directory.
-This convenience target will set @code{RECHECK_LOGS} appropriately
-before invoking the main test harness.
 @end itemize
 
 @noindent
@@ -9221,15 +9229,14 @@ parallel harness remains in place; this includes:
 @itemize
 @item
 list of test scripts defined in @code{TESTS}, and overridable at
-runtime through the redefinition of @code{TESTS} or @code{TEST_LOGS};
+runtime through the redefinition of @code{TESTS};
 @item
 concurrency through the use of @command{make}'s option @option{-j};
 @item
 per-test @file{.log} and @file{.trs} files, and generation of a summary
 @file{.log} file from them;
 @item
-@code{recheck} target, @code{RECHECK_LOGS} variable, and lazy reruns
-of tests;
+@code{recheck} target and on-demand lazy reruns of tests;
 @item
 inter-test dependencies;
 @item

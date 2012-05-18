@@ -14,8 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# TAP support:
-# - RECHECK_LOGS
+# TAP support: AM_LAZY_CHECK
 
 am_parallel_tests=yes
 . ./defs || Exit 1
@@ -47,7 +46,7 @@ Bail out!
 END
 
 # Even the tests that are not re-run should contribute to the testsuite
-# summary when obtained by "make check RECHECK_LOGS=".
+# summary when obtained by "make check AM_LAZY_CHECK=yes".
 grep_summary ()
 {
   grep '^# TOTAL: *4$' stdout
@@ -66,7 +65,7 @@ test -f baz.log
 
 rm -f foo.log bar.log
 
-$MAKE RECHECK_LOGS= check > stdout && { cat stdout; Exit 1; }
+$MAKE AM_LAZY_CHECK=yes check > stdout && { cat stdout; Exit 1; }
 cat stdout
 test -f foo.log
 test -f bar.log
@@ -81,7 +80,7 @@ touch foo.test
 # We re-run only a successful test, but the tests that failed in the
 # previous run should still be taken into account, and cause an overall
 # failure.
-$MAKE RECHECK_LOGS= check > stdout && { cat stdout; Exit 1; }
+$MAKE AM_LAZY_CHECK=yes check > stdout && { cat stdout; Exit 1; }
 cat stdout
 grep '^PASS: foo\.test 1$' stdout
 grep '^PASS: foo\.test 2$' stdout
@@ -91,7 +90,7 @@ grep_summary
 
 $sleep
 touch zardoz
-$MAKE RECHECK_LOGS= check > stdout && { cat stdout; Exit 1; }
+$MAKE AM_LAZY_CHECK=yes check > stdout && { cat stdout; Exit 1; }
 cat stdout
 grep '^ERROR: baz\.test' stdout
 $EGREP '(foo|bar)\.test' stdout && Exit 1
@@ -100,20 +99,9 @@ grep_summary
 
 # Now, explicitly retry with all test logs already updated, and ensure
 # that the summary is still displayed.
-$MAKE RECHECK_LOGS= check > stdout && { cat stdout; Exit 1; }
+$MAKE AM_LAZY_CHECK=yes check > stdout && { cat stdout; Exit 1; }
 cat stdout
 $EGREP '(foo|bar|baz)\.test' stdout && Exit 1
-grep_summary
-
-# The following should re-run foo.test (and only foo.test), even if its
-# log file is up-to-date.
-: > older
-$MAKE RECHECK_LOGS=foo.log check > stdout && { cat stdout; Exit 1; }
-cat stdout
-grep '^PASS: foo\.test 1$' stdout
-grep '^PASS: foo\.test 2$' stdout
-grep 'ba[rz]\.test' stdout && Exit 1
-is_newest foo.log older
 grep_summary
 
 :
