@@ -571,13 +571,13 @@ sc_unquoted_DESTDIR:
 	fi
 
 sc_tabs_in_texi:
-	@if grep '	' $(srcdir)/doc/automake.texi; then \
+	@if grep '	' $(srcdir)/doc/*.texi; then \
 	  echo 'Do not use tabs in the manual.' 1>&2; \
 	  exit 1; \
 	fi
 
 sc_at_in_texi:
-	@if grep -E '([^@]|^)@([	 ][^@]|$$)' $(srcdir)/doc/automake.texi; \
+	@if grep -E '([^@]|^)@([	 ][^@]|$$)' $(srcdir)/doc/*.texi; \
 	then \
 	  echo 'Unescaped @.' 1>&2; \
 	  exit 1; \
