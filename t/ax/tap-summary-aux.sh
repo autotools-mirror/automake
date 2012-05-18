@@ -29,7 +29,7 @@ fetch_tap_driver
 
 cat > configure.ac <<END
 AC_INIT([GNU AutoTAP], [5.12], [bug-automake@gnu.org])
-AM_INIT_AUTOMAKE([parallel-tests])
+AM_INIT_AUTOMAKE
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 END
