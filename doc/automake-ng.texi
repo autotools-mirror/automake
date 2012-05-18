@@ -7250,11 +7250,10 @@ The symptom is as follows.
 
 @example
 % make
-source='foo.c' object='foo.o' libtool=no \
-depfile='.deps/foo.Po' tmpdepfile='.deps/foo.TPo' \
-depmode=gcc /bin/sh ./depcomp \
-gcc -I. -I. -g -O2 -c `test -f 'foo.c' || echo './'`foo.c
-foo.c:2: bindir.h: No such file or directory
+test -d .deps || mkdir -p .deps
+gcc ... -I. -g -O2 -MT foo.o -MD -MP -MF .deps/foo.Tpo -c -o foo.o foo.c
+foo.c:2:20: fatal error: bindir.h: No such file or directory
+compilation terminated.
 make: *** [foo.o] Error 1
 @end example
 
@@ -7286,13 +7285,12 @@ See how @file{bindir.h} gets built first:
 @example
 % make
 echo '#define bindir "/usr/local/bin"' >bindir.h
-make  all-am
+make all-am
 make[1]: Entering directory `/home/adl/tmp'
-source='foo.c' object='foo.o' libtool=no \
-depfile='.deps/foo.Po' tmpdepfile='.deps/foo.TPo' \
-depmode=gcc /bin/sh ./depcomp \
-gcc -I. -I. -g -O2 -c `test -f 'foo.c' || echo './'`foo.c
-gcc  -g -O2   -o foo  foo.o
+test -d .deps || mkdir -p .deps
+gcc ... -I. -g -O2 -MT foo.o -MD -MP -MF .deps/foo.Tpo -c -o foo.o foo.c
+mv -f .deps/foo.Tpo .deps/foo.Po
+gcc -g -O2 -o foo foo.o
 make[1]: Leaving directory `/home/adl/tmp'
 @end example
 
@@ -7307,11 +7305,10 @@ test -z "foo" || rm -f foo
 rm -f *.o
 % : > .deps/foo.Po # Suppress previously recorded dependencies
 % make foo
-source='foo.c' object='foo.o' libtool=no \
-depfile='.deps/foo.Po' tmpdepfile='.deps/foo.TPo' \
-depmode=gcc /bin/sh ./depcomp \
-gcc -I. -I. -g -O2 -c `test -f 'foo.c' || echo './'`foo.c
-foo.c:2: bindir.h: No such file or directory
+test -d .deps || mkdir -p .deps
+gcc -I. -g -O2 -MT foo.o -MD -MP -MF .deps/foo.Tpo -c -o foo.o foo.c
+foo.c:2:20: fatal error: bindir.h: No such file or directory
+compilation terminated.
 make: *** [foo.o] Error 1
 @end example
 
