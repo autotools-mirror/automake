@@ -14,14 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check parallel-tests features:
-# - listing $(srcdir)/ or $(top_srcdir)/ in TESTS doesn't work ATM,
-#   and is thus diagnosed.
-
-# TODO: this test should also ensure that the 'make' implementation
-#       properly adheres to rules in all cases.  See the Autoconf
-#       manual for the ugliness in this area, when VPATH comes into
-#       play.  :-/
+# Check parallel-tests features: listing $(srcdir)/ in TESTS works.
 
 am_parallel_tests=yes
 . ./defs || Exit 1
