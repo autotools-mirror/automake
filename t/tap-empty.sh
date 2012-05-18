@@ -18,7 +18,6 @@
 #  - empty TAP input
 #  - blank TAP input
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"

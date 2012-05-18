@@ -22,7 +22,6 @@
 # (like our dummy one in this test) might leave around a test log even
 # in case of internal failures.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac <<'END'

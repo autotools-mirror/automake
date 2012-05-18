@@ -19,7 +19,6 @@
 #  - TAP "SKIP" plans with multiple zeroes, as in "1..00 # SKIP"
 # This is consistent with the behaviour of the 'prove' utility.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"

@@ -18,6 +18,7 @@
 # AM_TESTS_FD_REDIRECT.
 # See also related test 'parallel-tests-fd-redirect.test'.
 
+# For gen-testsuite-part: ==> try-with-serial-tests <==
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'
@@ -50,7 +51,7 @@ do_check ()
   cat stdout
   cat stderr >&2
   cat four
-  test x"$am_parallel_tests" != x"yes" || cat foo.log
+  test x"$am_serial_tests" = x"yes" || cat foo.log
   test $st -eq 0
   grep '[ /]foo\.test: foofoofoo$' stdout
   grep '[ /]foo\.test: barbarbar$' stderr

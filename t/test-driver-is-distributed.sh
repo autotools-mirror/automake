@@ -19,7 +19,6 @@
 #    defined in a subdir Makefile
 
 am_create_testdir=empty
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 ocwd=`pwd` || fatal_ "getting current working directory"

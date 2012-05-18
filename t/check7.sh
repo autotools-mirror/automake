@@ -16,6 +16,7 @@
 
 # Check EXEEXT extension for XFAIL_TESTS.
 
+# For gen-testsuite-part: ==> try-with-serial-tests <==
 required=cc
 . ./defs || Exit 1
 
@@ -60,7 +61,7 @@ $AUTOMAKE -a
 ./configure
 $MAKE check
 
-if test x"$am_parallel_tests" != x"yes"; then
+if test x"$am_serial_tests" = x"yes"; then
   $MAKE EXEEXT=.bin print-xfail-tests >stdout || { cat stdout; Exit 1; }
   cat stdout
   $FGREP 'BEG: a.bin b c.bin d.bin :END' stdout

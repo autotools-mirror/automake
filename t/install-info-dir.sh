@@ -67,7 +67,15 @@ $MAKE info
 test -f foo.info
 
 if install-info --version; then
-  have_installinfo=yes
+  # Skip some checks even if 'install-info' is the one from dpkg, not
+  # the one from GNU info, as the former might try to create files in
+  # '/var/backups/', causing spurious failures like this for non-root
+  # users.
+  if install-info --version | $EGREP -i '(dpkg|debian) install-info'; then
+    have_installinfo=no
+  else
+    have_installinfo=yes
+  fi
 else
   have_installinfo=no
 fi

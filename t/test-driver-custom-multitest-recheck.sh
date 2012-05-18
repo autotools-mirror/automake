@@ -22,7 +22,6 @@
 # and 'parallel-tests-recheck-override.test'.
 # Keep in sync with 'tap-recheck.test'.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cp "$am_testauxdir"/trivial-test-driver . \

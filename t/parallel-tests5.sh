@@ -20,7 +20,6 @@
 # Actually, this test doesn't ensure that things happen concurrently.
 # It merely serves as demonstration.  :-)
 
-am_parallel_tests=yes
 required='cc native'
 . ./defs || Exit 1
 

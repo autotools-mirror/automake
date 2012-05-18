@@ -17,7 +17,6 @@
 # Check that dynamic content for $(TESTS) is supported, both when set from
 # inside the Makefile.am and when overriddend from the command line.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 echo AC_OUTPUT >> configure.ac

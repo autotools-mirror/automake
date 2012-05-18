@@ -18,7 +18,7 @@
 # installed or referenced when the 'parallel-tests' option is not
 # used.
 
-am_parallel_tests=no
+am_serial_tests=yes
 . ./defs || Exit 1
 
 echo 'TESTS = foo.test' > Makefile.am

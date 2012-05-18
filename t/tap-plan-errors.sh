@@ -23,7 +23,6 @@
 # and 'tap-skip-whole-badcount.test'.  More checks about corner-cases
 # in TAP plans are performed in 'tap-plan-corner.test'.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"

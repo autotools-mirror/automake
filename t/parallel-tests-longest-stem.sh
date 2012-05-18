@@ -18,7 +18,6 @@
 # extension-less tests.  This is required to allow the user to have
 # a, say, 'all.test' test case even in the face of the 'all' target.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 echo AC_OUTPUT >> configure.ac

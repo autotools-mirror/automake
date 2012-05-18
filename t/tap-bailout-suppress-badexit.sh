@@ -18,7 +18,6 @@
 #  - A "Bail out!" directive causes the driver to ignore the exit
 #    status of the test script.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 tests='exit.test exit127.test sighup.test sigterm.test'

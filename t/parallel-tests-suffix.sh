@@ -18,7 +18,6 @@
 # - suffix rules
 # See also sister test 'parallel-tests-suffix-prog.test'.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

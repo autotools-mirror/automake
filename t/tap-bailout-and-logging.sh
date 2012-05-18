@@ -18,7 +18,6 @@
 #  - even after a "Bail out!" directive, all input is still copied in
 #    the log file
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"

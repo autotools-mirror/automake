@@ -17,7 +17,6 @@
 # Check that the testsuite driver copes well with unreadable '.log'
 # and '.trs' files.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 : > t

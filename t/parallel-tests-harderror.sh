@@ -16,7 +16,6 @@
 
 # Check parallel-tests features: DISABLE_HARD_ERRORS
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

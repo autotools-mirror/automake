@@ -18,7 +18,6 @@
 #  - TAP result numbers terminated by a non-whitespace "word boundary"
 #    character are recognized
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"

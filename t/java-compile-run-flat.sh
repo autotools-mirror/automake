@@ -24,7 +24,7 @@
 # 'parallel-tests' driver.
 
 required='java javac'
-am_parallel_tests=no
+am_serial_tests=yes
 . ./defs || Exit 1
 
 echo "AC_SUBST([PATH_SEPARATOR], ['$PATH_SEPARATOR'])" >> configure.ac

@@ -19,7 +19,6 @@
 # check that this still works when we override $(TESTS) at make runtime.
 # See also related tests 'test-driver-custom-multitest-recheck.test'.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cp "$am_testauxdir"/trivial-test-driver . \

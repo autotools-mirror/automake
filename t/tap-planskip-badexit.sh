@@ -18,7 +18,6 @@
 #  - an exit status != 0 of a test script causes an hard error, even if
 #    the last line of output is a "SKIP plan" (e.g., "1..0 # SKIP").
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 echo TESTS = one.test two.test > Makefile.am

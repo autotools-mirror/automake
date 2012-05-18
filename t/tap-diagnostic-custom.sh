@@ -18,7 +18,6 @@
 #  - option '--diagnostic-string' to customize the string introducing
 #    TAP diagnostics
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 fetch_tap_driver

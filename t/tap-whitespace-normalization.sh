@@ -20,7 +20,6 @@
 # force us to tweak dozens of other tests (hopefully).
 # See also related test 'tap-todo-skip-whitespace.test'.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat > Makefile.am << 'END'

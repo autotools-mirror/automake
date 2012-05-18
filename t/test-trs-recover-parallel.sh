@@ -17,7 +17,6 @@
 # Check parallel harness features:
 #  - recovery from deleted '.log' and '.trs' files, with parallel make
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 all= log= trs=

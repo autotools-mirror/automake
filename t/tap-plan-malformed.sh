@@ -17,7 +17,6 @@
 # TAP support: a malformed TAP plan is not recognized.  The checks in
 # here should be consistent with the behaviour of the 'prove' utility.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"

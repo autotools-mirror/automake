@@ -16,7 +16,6 @@
 
 # Expose bug in conditional definition of TEST_EXTENSIONS.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

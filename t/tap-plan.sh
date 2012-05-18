@@ -18,7 +18,6 @@
 #  - test scripts with the test plan at the beginning
 #  - test scripts with the test plan at the end
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"

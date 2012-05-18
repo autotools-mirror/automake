@@ -19,7 +19,6 @@
 # by a process (e.g., that is its "current working directory").
 # See automake bug#10470.
 
-am_parallel_tests=no
 . ./defs || Exit 1
 
 mkdir foo.d

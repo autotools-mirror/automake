@@ -18,7 +18,6 @@
 #  - the special "plan with SKIP" can also be used "late" in the TAP
 #    stream, i.e., preceded by non-TAP output or TAP diagnostic.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"

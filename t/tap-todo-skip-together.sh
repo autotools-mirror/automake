@@ -18,7 +18,6 @@
 #  - TODO and SKIP directives on the same line: the first one wins
 # See also related test 'tap-ambiguous-directive.test'.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"

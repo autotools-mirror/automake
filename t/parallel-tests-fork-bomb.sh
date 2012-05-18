@@ -18,7 +18,6 @@
 #  - If $(TEST_SUITE_LOG) is in $(TEST_LOGS), we get a diagnosed
 #    error, not a make hang or a system freeze.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 # We don't want localized error messages from make, since we'll have

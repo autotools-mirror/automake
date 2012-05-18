@@ -16,15 +16,14 @@
 
 # Test Automake style tests.
 
+# For gen-testsuite-part: ==> try-with-serial-tests <==
 . ./defs || Exit 1
 
 cat > Makefile.am << 'END'
 TESTS = frob.test
 END
 
-test x"$am_parallel_tests" != x"yes" || : > test-driver
-
-: > frob.test
+test x"$am_serial_tests" = x"yes" || : > test-driver
 
 $ACLOCAL
 $AUTOMAKE

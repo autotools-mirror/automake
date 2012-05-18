@@ -17,6 +17,7 @@
 # Test for PR 400: XFAIL_TESTS delimited by TABs.
 # Also test that Solaris make VPATH rewriting is honored
 
+# For gen-testsuite-part: ==> try-with-serial-tests <==
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

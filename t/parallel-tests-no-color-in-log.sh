@@ -16,7 +16,6 @@
 
 # Colorized output from the testsuite report shouldn't end up in log files.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 esc=''

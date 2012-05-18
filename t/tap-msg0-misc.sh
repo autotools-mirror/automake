@@ -18,7 +18,6 @@
 #  - literal "0" and "0.0" in a test description and a TODO/SKIP message
 #    at the same time
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"

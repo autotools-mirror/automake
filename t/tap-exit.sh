@@ -19,7 +19,6 @@
 #  - the '--ignore-exit' option causes the TAP test driver to ignore
 #    exit statuses of the test scripts.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 echo TESTS = > Makefile.am

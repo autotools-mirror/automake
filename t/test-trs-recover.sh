@@ -19,7 +19,6 @@
 # This test is complex and tricky, but that's acceptable since we are
 # testing semantics that are potentially complex and tricky.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac <<END

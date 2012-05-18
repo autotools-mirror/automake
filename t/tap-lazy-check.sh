@@ -16,7 +16,6 @@
 
 # TAP support: AM_LAZY_CHECK
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat > Makefile.am << 'END'

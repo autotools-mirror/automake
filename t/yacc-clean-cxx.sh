@@ -68,7 +68,8 @@ cat > sub1/parsefoo.yxx << 'END'
 %{
 // This file should contain valid C++ but invalid C.
 #include <cstdio>
-int yylex (void) { return (getchar ()); }
+// "std::" qualification required by Sun C++ 5.9.
+int yylex (void) { return std::getchar (); }
 void yyerror (const char *s) { return; }
 %}
 %%

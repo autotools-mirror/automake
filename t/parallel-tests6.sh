@@ -18,7 +18,6 @@
 # - empty TESTS
 # See parallel-tests10.test for a similar issue.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

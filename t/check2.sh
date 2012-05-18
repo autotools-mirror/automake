@@ -16,6 +16,7 @@
 
 # Test Automake style tests.
 
+# For gen-testsuite-part: ==> try-with-serial-tests <==
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'
@@ -43,9 +44,7 @@ echo.sh:
 CLEANFILES = echo.sh
 END
 
-if test x"$am_parallel_tests" = x"yes"; then
-  cp "$am_scriptdir/test-driver" .
-fi
+test x"$am_serial_tests" = x"yes" || cp "$am_scriptdir/test-driver" .
 
 $ACLOCAL
 $AUTOCONF

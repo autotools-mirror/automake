@@ -18,7 +18,6 @@
 #  - test results seen in a TAP stream that has a "plan with SKIP" are
 #    flagged as errors, even if all of them are "SKIP" results.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"

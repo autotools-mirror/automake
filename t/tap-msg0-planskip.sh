@@ -18,7 +18,6 @@
 #  - literal strings "0" and "0.0" as the reason of the skip in a "TAP
 #    plan with skip" (i.e., "1..0 # SKIP ...").
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"

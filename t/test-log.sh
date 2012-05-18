@@ -22,7 +22,6 @@
 #  - VERBOSE environment variable support
 # Keep in sync with 'tap-log.test'.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac <<END

@@ -17,7 +17,6 @@
 # The parallel-tests driver should be able to cope with test scripts
 # whose names end with several concatenated suffixes.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

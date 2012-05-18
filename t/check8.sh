@@ -16,6 +16,7 @@
 
 # Check subdir TESTS.
 
+# For gen-testsuite-part: ==> try-with-serial-tests <==
 required='cc native'
 . ./defs || Exit 1
 

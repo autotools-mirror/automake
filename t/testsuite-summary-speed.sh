@@ -20,7 +20,6 @@
 # FIXME: performance is too low, and FAIL accordingly; it just offers
 # FIXME: an easy way verify how effective a performance optimization is.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 count=10000

@@ -16,6 +16,7 @@
 
 # "Simple Tests" testsuite driver: check TESTS_ENVIRONMENT support.
 
+am_serial_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

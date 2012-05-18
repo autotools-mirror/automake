@@ -19,7 +19,6 @@
 # We do so with the help of "${prefix}LOG_DEPENDENCIES" variables.
 # See the last wishlist in automake bug#11287.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac <<'END'

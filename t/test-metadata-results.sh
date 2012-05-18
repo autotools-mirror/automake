@@ -17,7 +17,6 @@
 # Parallel testsuite harness: check APIs for the registering of test
 # results in '*.trs' files, as documented in the automake manual.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

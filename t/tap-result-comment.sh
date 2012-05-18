@@ -17,7 +17,6 @@
 # TAP support:
 #  - non-directive comments in TAP results are kept verbatim
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"

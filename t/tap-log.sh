@@ -22,7 +22,6 @@
 #  - VERBOSE environment variable support
 # Keep in sync with 'test-log.test'.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat > Makefile.am << 'END'

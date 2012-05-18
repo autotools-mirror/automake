@@ -17,7 +17,6 @@
 # The parallel-tests harness do not cause the same test to be
 # uselessly run multiple times.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 echo AC_OUTPUT >> configure.ac

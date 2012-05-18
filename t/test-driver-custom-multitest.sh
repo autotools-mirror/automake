@@ -19,7 +19,6 @@
 # only checks implementation details in Automake's custom test drivers
 # support, but also serves as a "usability test" for our APIs.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cp "$am_testauxdir"/trivial-test-driver . \

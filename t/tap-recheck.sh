@@ -17,7 +17,6 @@
 # Test the 'recheck' target for TAP test protocol.
 # Keep in sync with 'test-driver-custom-multitest-recheck.test'.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 fetch_tap_driver

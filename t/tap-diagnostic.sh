@@ -18,7 +18,6 @@
 #  - diagnostic messages (TAP lines with leading "#")
 #  - flags '--comments' and '--no-comments' of the TAP test driver
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"

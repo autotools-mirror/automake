@@ -18,7 +18,6 @@
 # an exceeded command line length when there are many tests.
 # For automake bug#7868.  This test is currently expected to fail.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'

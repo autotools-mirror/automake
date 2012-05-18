@@ -18,7 +18,6 @@
 #  - a test result numbered as 0 is to be considered out-of-order
 # This is consistent with the behaviour of the 'prove' utility.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 if test $am_tap_implementation = perl; then

@@ -17,7 +17,6 @@
 # Check that the parallel-tests driver correctly handle overrides of the
 # TERM variable by either TESTS_ENVIRONMENT and AM_TESTS_ENVIRONMENT.
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 esc='['

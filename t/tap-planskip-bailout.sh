@@ -18,7 +18,6 @@
 #  - a "Bail out!" directive causes an hard error, even if coming after
 #    a "SKIP plan" (e.g., "1..0 # SKIP").
 
-am_parallel_tests=yes
 . ./defs || Exit 1
 
 . "$am_testauxdir"/tap-setup.sh || fatal_ "sourcing tap-setup.sh"
