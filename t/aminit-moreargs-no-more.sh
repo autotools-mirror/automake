@@ -14,12 +14,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that automake warns against old-style usages of AM_INIT_AUTOMAKE
-# (i.e., calls with two or three arguments).
+# Check that automake error out (with an helpful error message) against
+# old-style usages of AM_INIT_AUTOMAKE (i.e., calls with two or three
+# arguments).
 
 . ./defs || Exit 1
 
-warn_rx='AM_INIT_AUTOMAKE.* two-.* three-arguments form.*deprecated'
+warn_rx='AM_INIT_AUTOMAKE.* old-style two-.* three-arguments form.*unsupported'
+
+$ACLOCAL
+mv aclocal.m4 aclocal.sav
 
 cat > configure.ac <<'END'
 AC_INIT([Makefile.am])
@@ -27,16 +31,14 @@ AM_INIT_AUTOMAKE([twoargs], [1.0])
 AC_CONFIG_FILES([Makefile])
 END
 
-$ACLOCAL
-
 do_check()
 {
   rm -rf autom4te*.cache
-  for cmd in "$AUTOCONF" "$AUTOMAKE"; do
-    $cmd -Werror -Wnone -Wobsolete 2>stderr && { cat stderr; Exit 1; }
+  for cmd in "$ACLOCAL" "$AUTOCONF" "$AUTOMAKE"; do
+    cp aclocal.sav aclocal.m4
+    $cmd -Wnone -Wno-error 2>stderr && { cat stderr; Exit 1; }
     cat stderr >&2
     grep "^configure\.ac:2:.*$warn_rx" stderr
-    $cmd -Werror -Wall -Wno-obsolete || Exit 1
   done
 }
 

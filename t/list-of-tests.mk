@@ -117,7 +117,7 @@ t/alpha2.sh \
 t/amhello-cflags.sh \
 t/amhello-cross-compile.sh \
 t/amhello-binpkg.sh \
-t/aminit-moreargs-deprecation.sh \
+t/aminit-moreargs-no-more.sh \
 t/amassign.sh \
 t/ammissing.sh \
 t/amopt.sh \
@@ -166,12 +166,7 @@ t/auxdir-computed.tap \
 t/auxdir-misplaced.sh \
 t/auxdir-nonexistent.sh \
 t/auxdir-unportable.tap \
-t/backcompat.sh \
-t/backcompat2.sh \
-t/backcompat3.sh \
-t/backcompat4.sh \
-t/backcompat5.sh \
-t/backcompat6.sh \
+t/backcompat-acout.sh \
 t/backsl.sh \
 t/backsl2.sh \
 t/backsl3.sh \
@@ -690,7 +685,6 @@ t/nobase.sh \
 t/nobase-libtool.sh \
 t/nobase-python.sh \
 t/nobase-nodist.sh \
-t/nodef.sh \
 t/nodef2.sh \
 t/nodep.sh \
 t/nodep2.sh \
@@ -1220,8 +1214,6 @@ t/vars3.sh \
 t/vartar.sh \
 t/vartypos.sh \
 t/vartypo2.sh \
-t/version.sh \
-t/version2.sh \
 t/version3.sh \
 t/version4.sh \
 t/version6.sh \
