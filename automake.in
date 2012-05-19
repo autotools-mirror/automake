@@ -420,7 +420,10 @@ my %extension_map = ();
 
 # List of the distributed files we discovered while reading
 # configure.ac.
-my $configure_dist_common = '';
+my @configure_dist_common = ();
+
+# List of the "auto-discovered" distributed files.
+my @dist_common = ();
 
 # This maps languages names onto objects.
 my %languages = ();
@@ -632,6 +635,8 @@ sub initialize_per_input ()
     $output_header = '';
     $output_rules = '';
     $output_trailer = '';
+
+    @dist_common = ();
 
     Automake::Options::reset;
     Automake::Variable::reset;
@@ -3734,7 +3739,7 @@ sub handle_dist ()
 	}
     }
 
-  # We might copy elements from $configure_dist_common to
+  # We might copy elements from @configure_dist_common to
   # %dist_common if we think we need to.  If the file appears in our
   # directory, we would have discovered it already, so we don't
   # check that.  But if the file is in a subdir without a Makefile,
@@ -3747,15 +3752,16 @@ sub handle_dist ()
   # See also automake bug#9651.
   if ($relative_dir eq '.')
     {
-      foreach my $file (split (' ' , $configure_dist_common))
+      foreach my $file (@configure_dist_common)
 	{
 	  my $dir = dirname ($file);
 	  push_dist_common ($file)
 	    if ($dir eq '.' || ! is_make_dir ($dir));
 	}
+      @configure_dist_common  = ();
     }
 
-  # We don't expected further attempts to modify $(am__dist_common)
+  # We don't expected further attempts to modify @dist_common
   # after this point, so disallow it, for extra safety.
   $handle_dist_run = 1;
 
@@ -3781,7 +3787,8 @@ sub handle_dist ()
   $output_rules .= &file_contents ('distdir',
 				   new Automake::Location,
 				   %transform,
-				   FILENAME_FILTER => $filename_filter);
+				   FILENAME_FILTER => $filename_filter,
+                                   'DIST-COMMON' => "@dist_common");
 }
 
 
@@ -5325,8 +5332,7 @@ sub scan_autoconf_files ()
     if -f $config_aux_dir . '/install.sh';
 
   # Preserve dist_common for later.
-  $configure_dist_common = variable_value ('am__dist_common') || '';
-
+  @configure_dist_common = @dist_common;
 }
 
 ################################################################
@@ -6526,7 +6532,7 @@ sub read_am_file ($$)
 		push (@include_stack, "\$\(top_srcdir\)/$path");
 		# Distribute any included file.
 
-		# Always use the $(top_srcdir) prefix in am__dist_common,
+		# Always use the $(top_srcdir) prefix in @dist_common,
 		# otherwise OSF make will implicitly copy the included
 		# file in the build tree during "make distdir" to satisfy
 		# the dependency.
@@ -6537,7 +6543,7 @@ sub read_am_file ($$)
 	      {
 		$path =~ s/\$\(srcdir\)\///;
 		push (@include_stack, "\$\(srcdir\)/$path");
-		# Always use the $(srcdir) prefix in am__dist_common,
+		# Always use the $(srcdir) prefix in @dist_common,
 		# otherwise OSF make will implicitly copy the included
 		# file in the build tree during "make distdir" to satisfy
 		# the dependency.
@@ -7374,7 +7380,6 @@ sub locate_aux_dir ()
 
 # &push_required_file ($DIR, $FILE, $FULLFILE)
 # --------------------------------------------------
-# Push the given file onto $(am__dist_common).
 sub push_required_file
 {
   my ($dir, $file, $fullfile) = @_;
@@ -7488,7 +7493,7 @@ sub required_file_check_or_copy ($$$)
   # If we've already looked for it, we're done.  You might wonder why
   # we don't do this before searching for the file.  If we do that,
   # then something like AC_OUTPUT(subdir/foo foo) will fail to put
-  # 'foo.in' into the list of distributed files $(am__dist_common).
+  # 'foo.in' into the list of distributed files @dist_common.
   if (! $found_it)
     {
       return if defined $required_file_not_found{$fullfile};
@@ -7775,10 +7780,8 @@ sub push_dist_common
 {
   prog_error "push_dist_common run after handle_dist"
     if $handle_dist_run;
-  Automake::Variable::define ('am__dist_common', VAR_AUTOMAKE, '+',
-                              TRUE, "@_", '', INTERNAL, VAR_PRETTY);
+  push @dist_common, @_;
 }
-
 
 ################################################################
 
