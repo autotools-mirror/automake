@@ -1269,7 +1269,7 @@ sub shadow_unconditionally ($$)
     {
       $varname = "am__${varname}_DIST";
       my @files = uniq ($var->value_as_list_recursive);
-      define_pretty_variable ($varname, TRUE, $where, @files);
+      define_variable ($varname, $where, @files);
     }
   return "\$($varname)"
 }
@@ -2048,12 +2048,12 @@ sub handle_source_transform ($$$$%)
 				   $one_file, $obj,
 				   $default_source, %transform);
 	$linker ||= &resolve_linker (%linkers_used);
-	define_pretty_variable ($one_file . '_OBJECTS', TRUE, $where, @result);
+	define_variable ($one_file . '_OBJECTS', $where, @result);
     }
     else
     {
 	@keys = map { '$(' . $_ . $one_file . '_OBJECTS)' } @keys;
-	define_pretty_variable ($one_file . '_OBJECTS', TRUE, $where, @keys);
+	define_variable ($one_file . '_OBJECTS', $where, @keys);
     }
 
     # If we want to use 'LINK' we must make sure it is defined.
@@ -3602,16 +3602,14 @@ sub handle_dist ()
 	}
       elsif ($subdirs->has_conditional_contents)
 	{
-	  define_pretty_variable
-	    ('DIST_SUBDIRS', TRUE, INTERNAL,
-	     uniq ($subdirs->value_as_list_recursive));
+	  define_variable ('DIST_SUBDIRS', INTERNAL,
+	                   uniq ($subdirs->value_as_list_recursive));
 	}
       else
 	{
 	  # We always define this because that is what 'distclean'
 	  # wants.
-	  define_pretty_variable ('DIST_SUBDIRS', TRUE, INTERNAL,
-				  '$(SUBDIRS)');
+	  define_variable ('DIST_SUBDIRS', INTERNAL, '$(SUBDIRS)');
 	}
     }
 
@@ -3906,12 +3904,11 @@ sub handle_configure ($$$@)
   $colon_infile = '' if $colon_infile eq ":$makefile.in";
   my @rewritten = rewrite_inputs_into_dependencies ($makefile, @inputs);
   my $regen_aclocal_m4 = scan_aclocal_m4;
-  define_pretty_variable ('am__aclocal_m4_deps', TRUE, INTERNAL,
-			  @configure_deps, '$(top_srcdir)/' . $configure_ac);
+  define_variable ('am__aclocal_m4_deps', INTERNAL,
+                   @configure_deps, '$(top_srcdir)/' . $configure_ac);
   my @configuredeps = ('$(am__aclocal_m4_deps)', '$(CONFIGURE_DEPENDENCIES)');
   push @configuredeps, '$(ACLOCAL_M4)' if -f 'aclocal.m4';
-  define_pretty_variable ('am__configure_deps', TRUE, INTERNAL,
-			  @configuredeps);
+  define_variable ('am__configure_deps', INTERNAL, @configuredeps);
 
   my $automake_options = '--' . $strictness_name .
 			 (global_option 'no-dependencies' ? ' --ignore-deps' : '');
@@ -4143,10 +4140,10 @@ sub handle_configure ($$$@)
     }
 
   # These files get removed by "make distclean".
-  define_pretty_variable ('CONFIG_CLEAN_FILES', TRUE, INTERNAL,
-			  @actual_other_files);
-  define_pretty_variable ('CONFIG_CLEAN_VPATH_FILES', TRUE, INTERNAL,
-			  @actual_other_vpath_files);
+  define_variable ('CONFIG_CLEAN_FILES', INTERNAL,
+                   @actual_other_files);
+  define_variable ('CONFIG_CLEAN_VPATH_FILES',INTERNAL,
+                   @actual_other_vpath_files);
 }
 
 # Handle C headers.
@@ -4556,12 +4553,10 @@ sub handle_emacs_lisp
 
   return if ! @elfiles;
 
-  define_pretty_variable ('am__ELFILES', TRUE, INTERNAL,
-			  map { $_->[1] } @elfiles);
-  define_pretty_variable ('am__ELCFILES', TRUE, INTERNAL,
-			  '$(am__ELFILES:.el=.elc)');
+  define_variable ('am__ELFILES', INTERNAL, map { $_->[1] } @elfiles);
+  define_variable ('am__ELCFILES', INTERNAL, '$(am__ELFILES:.el=.elc)');
   # This one can be overridden by users.
-  define_pretty_variable ('ELCFILES', TRUE, INTERNAL, '$(LISP:.el=.elc)');
+  define_variable ('ELCFILES', INTERNAL, '$(LISP:.el=.elc)');
 
   push @all, '$(ELCFILES)';
 
@@ -4614,8 +4609,7 @@ sub handle_java
 	$dir = $curs;
       }
 
-    define_pretty_variable ('am__java_sources', TRUE, INTERNAL,
-                            "@java_sources");
+    define_variable ('am__java_sources', INTERNAL, @java_sources);
 
     if ($dir eq 'check')
       {
@@ -7065,7 +7059,7 @@ sub am_install_var
   if (@used && $primary ne 'JAVA' && $primary ne 'PYTHON')
     {
       # Define it.
-      define_pretty_variable ($primary, TRUE, INTERNAL, @used);
+      define_variable ($primary, INTERNAL, @used);
       $output_vars .= "\n";
     }
 
@@ -7485,7 +7479,6 @@ sub require_conf_file_with_macro ($$$@)
 
 ################################################################
 
-
 # Push a list of files onto dist_common.
 sub push_dist_common
 {
@@ -7559,7 +7552,7 @@ sub generate_makefile ($$)
 
   # If DIST_SUBDIRS is defined, make sure SUBDIRS is, so that
   # recursive rules are enabled.
-  define_pretty_variable ('SUBDIRS', TRUE, INTERNAL, '')
+  define_variable ('SUBDIRS', INTERNAL, '')
     if var 'DIST_SUBDIRS' && ! var 'SUBDIRS';
 
   # Check first, because we might modify some state.
@@ -7581,12 +7574,9 @@ sub generate_makefile ($$)
   handle_libtool;
 
   # Variables used by distdir.am and tags.am.
-  define_pretty_variable ('SOURCES', TRUE, INTERNAL, @sources);
-  if (! option 'no-dist')
-    {
-      define_pretty_variable ('am__dist_sources', TRUE, INTERNAL,
-                              @dist_sources);
-    }
+  define_variable ('SOURCES', INTERNAL, @sources);
+  define_variable ('am__dist_sources', INTERNAL, @dist_sources)
+    unless option 'no-dist';
 
   handle_texinfo;
   handle_emacs_lisp;
