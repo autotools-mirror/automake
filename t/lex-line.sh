@@ -104,18 +104,29 @@ for vpath in : false; do
 
   # For debugging,
   ls -l . sub sub/dir
-  $FGREP '.l' $c_outputs
+  $EGREP 'line|\.l' $c_outputs
 
-  # Adjusted "#line" should not contain reference to the builddir.
-  $EGREP '#.*line.*(build|\.\.).*\.l' $c_outputs && Exit 1
+  grep '#.*line.*build.*\.l' $c_outputs && Exit 1
+  # Adjusted "#line" should not contain reference to the absolute
+  # srcdir.
+  $EGREP '#.*line *"?/.*\.l' $c_outputs && Exit 1
   # Adjusted "#line" should not contain reference to the default
   # output file names, e.g., 'lex.yy.c'.
-  $EGREP '#.*line.*lex\.yy' $c_outputs && Exit 1
-  # Don't be excessively strict in grepping, to avoid spurious failures.
-  grep '#.*line.*zardoz\.l' zardoz.c
-  grep '#.*line.*quux\.l' bar-quux.c
-  grep '#.*line.*zardoz\.l' sub/foo-zardoz.c
-  grep '#.*line.*quux\.l' sub/dir/quux.c
+  grep '#.*line.*lex\.yy' $c_outputs && Exit 1
+  # Look out for a silly regression.
+  grep "#.*\.l.*\.l" $c_outputs && Exit 1
+  if $vpath; then
+    grep '#.*line.*"\.\./zardoz\.l"' zardoz.c
+    grep '#.*line.*"\.\./dir/quux\.l"' bar-quux.c
+    grep '#.*line.*"\.\./\.\./sub/zardoz\.l"' sub/foo-zardoz.c
+    grep '#.*line.*"\.\./\.\./sub/dir/quux\.l"' sub/dir/quux.c
+  else
+    grep '#.*line.*"zardoz\.l"' zardoz.c
+    grep '#.*line.*"dir/quux\.l"' bar-quux.c
+    grep '#.*line.*"zardoz\.l"' sub/foo-zardoz.c
+    grep '#.*line.*"dir/quux\.l"' sub/dir/quux.c
+  fi
+
   cd $srcdir
 
 done
