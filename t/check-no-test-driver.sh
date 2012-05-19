@@ -15,13 +15,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Check that auxiliary script 'test-driver' doesn't get needlessly
-# installed or referenced when the 'parallel-tests' option is not
-# used.
+# installed or referenced when the 'serial-tests' option is used.
 
 am_serial_tests=yes
 . ./defs || Exit 1
 
-echo 'TESTS = foo.test' > Makefile.am
+cat > Makefile.am <<'END'
+AUTOMAKE_OPTIONS = serial-tests
+TESTS = foo.test
+END
 
 $ACLOCAL
 

@@ -16,7 +16,7 @@
 
 # Check @substituted@ TESTS.
 # Note that in this test, we rely on the .test extension for the
-# substituted names: this is necessary for parallel-tests.
+# substituted names: this is necessary for the parallel harness.
 # See also sister test 'check-subst-prog.test'.
 
 # For gen-testsuite-part: ==> try-with-serial-tests <==

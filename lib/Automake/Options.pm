@@ -286,6 +286,8 @@ sub _is_valid_easy_option ($)
     no-texinfo.tex
     nostdinc
     readme-alpha
+    serial-tests
+    parallel-tests
     silent-rules
     std-options
     subdir-objects
@@ -327,15 +329,6 @@ sub _process_option_list (\%@)
         {
           error ($where, "support for lzma-compressed distribution " .
                          "archives has been removed");
-        }
-      elsif ($_ eq 'parallel-tests')
-        {
-          # Just recognize it explicitly.
-        }
-      elsif ($_ eq 'serial-tests')
-        {
-          # This is a little of an hack, but good enough for the moment.
-          delete $options->{'parallel-tests'};
         }
       elsif (/^filename-length-max=(\d+)$/)
         {
