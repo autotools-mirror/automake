@@ -24,8 +24,7 @@ use Automake::ItemDef;
 require Exporter;
 use vars '@ISA', '@EXPORT';
 @ISA = qw/Automake::ItemDef Exporter/;
-@EXPORT = qw (&VAR_AUTOMAKE &VAR_CONFIGURE &VAR_MAKEFILE
-	      &VAR_ASIS &VAR_PRETTY);
+@EXPORT = qw (&VAR_AUTOMAKE &VAR_CONFIGURE &VAR_MAKEFILE);
 
 =head1 NAME
 
@@ -43,7 +42,7 @@ Automake::VarDef - a class for variable definitions
   my $loc = new Automake::Location 'Makefile.am:2';
   my $def = new Automake::VarDef ('foo', 'bar # more comment',
                                   '# any comment',
-                                  $loc, '', VAR_MAKEFILE, VAR_ASIS);
+                                  $loc, '', VAR_MAKEFILE);
 
   # Appending to a definition.
   $def->append ('value to append', 'comment to append');
@@ -56,7 +55,6 @@ Automake::VarDef - a class for variable definitions
   my $location = $def->location;
   my $type     = $def->type;
   my $owner    = $def->owner;
-  my $pretty   = $def->pretty;
 
   # Changing owner.
   $def->set_owner (VAR_CONFIGURE,
@@ -91,18 +89,6 @@ use constant VAR_AUTOMAKE => 0; # Variable defined by Automake.
 use constant VAR_CONFIGURE => 1;# Variable defined in configure.ac.
 use constant VAR_MAKEFILE => 2; # Variable defined in Makefile.am.
 
-=item C<VAR_ASIS>, C<VAR_PRETTY>
-
-Possible print styles.  C<VAR_ASIS> variables should be output as-is.
-C<VAR_PRETTY> variables are wrapped on multiple lines if they cannot
-fit on one.
-
-=cut
-
-# Possible values for pretty.
-use constant VAR_ASIS => 0;	# Output as-is.
-use constant VAR_PRETTY => 1;	# Pretty printed on output.
-
 =back
 
 =head2 Methods
@@ -112,7 +98,7 @@ from L<Automake::ItemDef>.
 
 =over 4
 
-=item C<my $def = new Automake::VarDef ($varname, $value, $comment, $location, $type, $owner, $pretty)>
+=item C<my $def = new Automake::VarDef ($varname, $value, $comment, $location, $type, $owner)>
 
 Create a new Makefile-variable definition.  C<$varname> is the name of
 the variable being defined and C<$value> its value.
@@ -131,15 +117,12 @@ C<$owner> specifies who owns the variables, it can be one of
 C<VAR_AUTOMAKE>, C<VAR_CONFIGURE>, or C<VAR_MAKEFILE> (see these
 definitions).
 
-Finally, C<$pretty> tells how the variable should be output, and can
-be one of C<VAR_ASIS>, C<VAR_PRETTY>.
-
 =cut
 
-sub new ($$$$$$$$$)
+sub new ($$$$$$$$)
 {
   my ($class, $var, $value, $comment, $cond, $location, $type,
-      $owner, $pretty) = @_;
+      $owner) = @_;
 
   # A user variable must be set by either '=' or ':=', and later
   # promoted to '+='.
@@ -151,7 +134,6 @@ sub new ($$$$$$$$$)
   my $self = Automake::ItemDef::new ($class, $location, $owner);
   $self->{'value_list'} = [ { value => $value, cond => $cond } ];
   $self->{'type'} = $type;
-  $self->{'pretty'} = $pretty;
   $self->{'seen'} = 0;
   $self->{'comment_list'} = [ { text => $comment, cond => $cond } ];
   return $self;
@@ -171,9 +153,6 @@ sub append ($$$)
 
   push @{$self->{'comment_list'}}, { text => $comment, cond => $cond };
   push @{$self->{'value_list'}}, { value => $value, cond => $cond };
-  # Turn ASIS appended variables into PRETTY variables.  This is to
-  # cope with 'make' implementation that cannot read very long lines.
-  $self->{'pretty'} = VAR_PRETTY if $self->{'pretty'} == VAR_ASIS;
 }
 
 =item C<$def-E<gt>value>
@@ -181,8 +160,6 @@ sub append ($$$)
 =item C<$def-E<gt>raw_value>
 
 =item C<$def-E<gt>type>
-
-=item C<$def-E<gt>pretty>
 
 Accessors to the various constituents of a C<VarDef>.  See the
 documentation of C<new>'s arguments for a description of these.
@@ -228,12 +205,6 @@ sub type ($)
 {
   my ($self) = @_;
   return $self->{'type'};
-}
-
-sub pretty ($)
-{
-  my ($self) = @_;
-  return $self->{'pretty'};
 }
 
 =item C<$def-E<gt>set_owner ($owner, $location)>

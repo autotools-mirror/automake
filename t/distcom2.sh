@@ -50,23 +50,8 @@ for opt in '' --no-force; do
   test -f depcomp
 
   for dir in . subdir; do
-    # FIXME: the logic of this check and other similar ones in other
-    # FIXME: 'distcom*.test' files should be factored out in a common
-    # FIXME: subroutine in 'defs'...
-    sed -n -e "
-      /^am__dist_common =.*\\\\$/ {
-        :loop
-        p
-        n
-        t clear
-        :clear
-        s/\\\\$/\\\\/
-        t loop
-        s/$/ /
-        s/[$tab ][$tab ]*/ /g
-        p
-        n
-      }" $dir/Makefile.in > $dir/dc.txt
+    sed -n 's/^am__dist_common = *\(.*\)$/ \1 /p' \
+      <$dir/Makefile.in >$dir/dc.txt
   done
 
   cat dc.txt # For debugging.

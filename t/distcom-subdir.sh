@@ -17,6 +17,7 @@
 # Test to make sure that if an auxfile (here depcomp) is required
 # by a subdir Makefile.am, it is distributed by that Makefile.am.
 
+required=cc
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'
@@ -28,14 +29,18 @@ END
 
 cat > Makefile.am << 'END'
 SUBDIRS = subdir
+test-distdir: distdir
+	test -f $(distdir)/depcomp
+.PHONY: test-distdir
+check-local: test-distdir
 END
 
 rm -f depcomp
 mkdir subdir
 
 cat > subdir/Makefile.am << 'END'
-.PHONY: test-distcommon
-test-distcommon:
+.PHONY: test-distcom
+test-distcom:
 	echo ' ' $(am__dist_common) ' ' | $(FGREP) ' $(top_srcdir)/depcomp '
 END
 
@@ -46,15 +51,26 @@ test ! -f depcomp
 
 cat >> subdir/Makefile.am << 'END'
 bin_PROGRAMS = foo
+.PHONY: test-distcom
+test-distcom:
+	echo ' ' $(am__dist_common) ' ' | $(FGREP) ' $(top_srcdir)/depcomp '
+check-local: test-distcom
 END
 
-: > subdir/foo.c
+cat > subdir/foo.c <<'END'
+int main (void)
+{
+  return 0;
+}
+END
 
 $AUTOMAKE -a subdir/Makefile
 test -f depcomp
+
 ./configure
-(cd subdir && $MAKE test-distcommon)
-$MAKE distdir
-test -f $distdir/depcomp
+(cd subdir && $MAKE test-distcom)
+$MAKE test-distdir
+
+$MAKE distcheck
 
 :
