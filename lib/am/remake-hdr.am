@@ -14,26 +14,21 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-## Explicitly look in srcdir for benefit of non-GNU makes.
-
-
 %CONFIG_H%: %STAMP%
-## Recover from removal of CONFIG_HEADER
-	@if test ! -f $@; then rm -f %STAMP%; else :; fi
-	@if test ! -f $@; then $(MAKE) %STAMP%; else :; fi
-
+## Recover from removal of CONFIG_HEADER.  Break up in two invocations
+## so that "make -n" is properly honored.
+	@test -f $@ || rm -f %STAMP%
+	@test -f $@ || $(MAKE) %STAMP%
 
 %STAMP%: %CONFIG_H_DEPS% $(top_builddir)/config.status
 	@rm -f %STAMP%
 	cd $(top_builddir) && $(SHELL) ./config.status %CONFIG_H_PATH%
 
-
 ## Only the first file of AC_CONFIG_HEADERS is assumed to be generated
 ## by autoheader.
 if %?FIRST%
 %CONFIG_HIN%: %MAINTAINER-MODE% $(am__configure_deps)
-## Cater to parallel BSD make.
-	($(am__cd) $(top_srcdir) && $(AUTOHEADER))
+	$(am__cd) $(top_srcdir) && $(AUTOHEADER)
 ## Whenever $(AUTOHEADER) has run, we must make sure that
 ## ./config.status will rebuild config.h.  The dependency from %STAMP%
 ## on %CONFIG_H_DEPS% (which contains config.hin) is not enough to
