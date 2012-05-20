@@ -24,6 +24,8 @@ cat >> configure.ac <<'EOF'
 AC_OUTPUT
 EOF
 
+SOME_FILES=; unset SOME_FILES # Avoid spurious environment interference.
+
 ## There are two tests: one with backslashed comments at the top
 ## of the file, and one with a rule first.  This is because
 ## Comments at the top of the file are handled specially
@@ -35,34 +37,41 @@ cat > Makefile.am << 'EOF'
          file2 \
          file3
 
-all-local:
-	@echo Good
-
+.PHONY: test
+test:
+	test -z '$(SOME_FILES)'
 EOF
+
+do_check ()
+{
+  $MAKE test
+  grep '^# SOME_FILES =' Makefile
+  # No useless munging please.
+  grep '#.*file[123]' Makefile && Exit 1
+  :
+}
 
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 ./configure
-$MAKE
-
-grep '# SOME_FILES' Makefile
-grep '# *file3' Makefile
+do_check
 
 cat > Makefile.am << 'EOF'
-all-local:
-	@echo Good
+test: test2
+.PHONY: test test2
 
 # SOME_FILES = \
          file1 \
          file2 \
          file3
+
+test:
+	test -z '$(SOME_FILES)'
 EOF
 
 $AUTOMAKE
-./configure
-$MAKE
-grep '# SOME_FILES' Makefile
-grep '# *file3' Makefile
+./config.status
+do_check
 
 :
