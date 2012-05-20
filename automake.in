@@ -1921,24 +1921,14 @@ sub handle_single_transform ($$$$$%)
 
 	# Transform .o or $o file into .P file (for automatic
 	# dependency code).
-        # Properly flatten multiple adjacent slashes, as Solaris 10 make
-        # might fail over them in an include statement.
-        # Leading double slashes may be special, as per Posix, so deal
-        # with them carefully.
         if ($lang && $lang->autodep ne 'no')
-        {
+          {
             my $depfile = $object;
             $depfile =~ s/\.([^.]*)$/.P$1/;
             $depfile =~ s/\$\(OBJEXT\)$/o/;
-            my $maybe_extra_leading_slash = '';
-            $maybe_extra_leading_slash = '/' if $depfile =~ m,^//[^/],;
-            $depfile =~ s,/+,/,g;
-            my $basename = basename ($depfile);
-            # This might make $dirname empty, but we account for that below.
-            (my $dirname = dirname ($depfile)) =~ s/\/*$//;
-            $dirname = $maybe_extra_leading_slash . $dirname;
-            $dep_files{$dirname . '/$(DEPDIR)/' . $basename} = 1;
-        }
+            $dep_files{dirname ($depfile) . '/$(DEPDIR)/'
+                         . basename ($depfile)} = 1;
+          }
     }
 
     return @result;
