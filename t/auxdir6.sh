@@ -27,24 +27,25 @@ AC_INIT([$me], [1.0])
 AC_CONFIG_AUX_DIR([auxdir])
 AM_INIT_AUTOMAKE
 AC_CONFIG_FILES([Makefile subdir/Makefile])
+AM_PATH_PYTHON
 END
 
 mkdir subdir auxdir
 
 cat > Makefile.am << 'END'
-pkgdata_DATA =
+python_PYTHON = foo.py
 END
 
 cp Makefile.am subdir/Makefile.am
 
-: > auxdir/mkinstalldirs
 : > auxdir/install-sh
 : > auxdir/missing
+: > auxdir/py-compile
 
 $ACLOCAL
 $AUTOMAKE
 
-$FGREP '$(top_srcdir)/auxdir/mkinstalldirs' Makefile.in
-$FGREP '$(top_srcdir)/auxdir/mkinstalldirs' subdir/Makefile.in
+$FGREP '$(top_srcdir)/auxdir/py-compile' Makefile.in
+$FGREP '$(top_srcdir)/auxdir/py-compile' subdir/Makefile.in
 
 :

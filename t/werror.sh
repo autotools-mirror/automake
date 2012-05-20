@@ -16,11 +16,19 @@
 
 # Test to make sure -Werror and --add-missing work together.
 
+am_create_testdir=empty
 . ./defs || Exit 1
 
+cat > configure.ac <<END
+AC_INIT([$me], [1.0])
+AM_INIT_AUTOMAKE
+AC_CONFIG_FILES([Makefile])
+END
+
 : > Makefile.am
-
-rm -f install-sh depcomp missing mkinstalldirs
-
+test ! -f install-sh    # Sanity check.
 $ACLOCAL
 $AUTOMAKE -Werror --add-missing
+test -f install-sh      # Sanity check.
+
+:

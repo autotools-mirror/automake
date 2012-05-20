@@ -17,7 +17,7 @@
 # Test to make sure AC_CONFIG_AUX_DIR works correctly.
 # This test tries without an explicit call to AC_CONFIG_AUX_DIR;
 # the config auxdir should be implicitly defined to '.' since
-# the install-sh, mkinstalldirs, etc., scripts are in the top-level
+# the install-sh, py-compile, etc., scripts are in the top-level
 # directory.
 # Keep this in sync with sister tests auxdir6.test and auxdir7.test.
 
@@ -25,22 +25,23 @@
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([subdir/Makefile])
+AM_PATH_PYTHON
 END
 
 mkdir subdir
 
 cat > Makefile.am << 'END'
-pkgdata_DATA =
+python_PYTHON = foo.py
 END
 
 cp Makefile.am subdir/Makefile.am
 
-: > mkinstalldirs
+: > py-compile
 
 $ACLOCAL
 $AUTOMAKE
 
-$FGREP '$(top_srcdir)/mkinstalldirs' Makefile.in
-$FGREP '$(top_srcdir)/mkinstalldirs' subdir/Makefile.in
+$FGREP '$(top_srcdir)/py-compile' Makefile.in
+$FGREP '$(top_srcdir)/py-compile' subdir/Makefile.in
 
 :

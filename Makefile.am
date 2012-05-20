@@ -147,7 +147,6 @@ dist_script_DATA = \
   lib/install-sh \
   lib/mdate-sh \
   lib/missing \
-  lib/mkinstalldirs \
   lib/elisp-comp \
   lib/ylwrap \
   lib/depcomp \
@@ -658,7 +657,7 @@ PERL_COVERAGE_FLAGS = -MDevel::Cover=-db,$(PERL_COVERAGE_DB),-silent,on,-summary
 PERL_COVER = cover
 
 check-coverage-run recheck-coverage-run: all
-	$(mkinstalldirs) $(PERL_COVERAGE_DB)
+	$(MKDIR_P) $(PERL_COVERAGE_DB)
 	PERL5OPT="$$PERL5OPT $(PERL_COVERAGE_FLAGS)"; export PERL5OPT; \
 	WANT_NO_THREADS=yes; export WANT_NO_THREADS; unset AUTOMAKE_JOBS; \
 	$(MAKE) `echo $@ | sed 's/-coverage-run//'`

@@ -137,13 +137,17 @@ sc_no_for_variable_in_macro:
 	  exit 1; \
 	else :; fi
 
-## Make sure all invocations of mkinstalldirs are correct.
+## The script and variable 'mkinstalldirs' are obsolete.
 sc_mkinstalldirs:
-	@if grep -n 'mkinstalldirs' $(ams) \
-	      | grep -F -v '$$(mkinstalldirs)' \
-	      | grep -v '^\./Makefile.am:[0-9][0-9]*:  *lib/mkinstalldirs \\$$'; \
-	then \
-	  echo "Found incorrect use of mkinstalldirs in the lines above" 1>&2; \
+	@files="\
+	  $(xtests) \
+	  $(pms) \
+	  $(ams) \
+	  $(srcdir)/automake.in \
+	  $(srcdir)/doc/*.texi \
+	"; \
+	if grep 'mkinstalldirs' $$files; then \
+	  echo "Found use of mkinstalldirs; that is obsolete" 1>&2; \
 	  exit 1; \
 	else :; fi
 
