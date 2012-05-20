@@ -24,9 +24,9 @@ END
 
 cat > Makefile.am << 'END'
 if CHECK
-INCLUDES = abc
+AM_CPPFLAGS = abc
 endif
-INCLUDES += def
+AM_CPPFLAGS += def
 END
 
 $ACLOCAL
@@ -34,27 +34,15 @@ AUTOMAKE_fails
 
 # We expect the following diagnostic:
 #
-# Makefile.am:4: cannot apply '+=' because 'INCLUDES' is not defined in
+# Makefile.am:4: cannot apply '+=' because 'AM_CPPFLAGS' is not defined in
 # Makefile.am:4: the following conditions:
 # Makefile.am:4:   !CHECK
-# Makefile.am:4: either define 'INCLUDES' in these conditions, or use
+# Makefile.am:4: either define 'AM_CPPFLAGS' in these conditions, or use
 # Makefile.am:4: '+=' in the same conditions as the definitions.
 
 # Is !CHECK mentioned?
 grep ':.*!CHECK$' stderr
 # Is there only one missing condition?
 test `grep ':  ' stderr | wc -l` = 1
-
-# By the way, Automake should suggest using AM_CPPFLAGS,
-# because INCLUDES is an obsolete name.
-grep AM_CPPFLAGS stderr
-
-# A way to suppress the obsolete warning is to use
-# -Wno-obsolete:
-echo 'AUTOMAKE_OPTIONS = -Wno-obsolete' >> Makefile.am
-AUTOMAKE_fails
-grep AM_CPPFLAGS stderr && Exit 1
-# !CHECK should still be mentioned.
-grep ':.*!CHECK$' stderr
 
 :
