@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Check that dynamic content for $(TESTS) is supported, both when set from
-# inside the Makefile.am and when overriddend from the command line.
+# inside the Makefile.am and when overridden from the command line.
 
 . ./defs || Exit 1
 
@@ -31,13 +31,18 @@ cat > ko <<'END'
 exit 1
 END
 
+cat > sk <<'END'
+#!/bin/sh
+exit 77
+END
+
 cat > er << 'END'
 #!/bin/sh
 echo $0 should not be run >&2
 exit 99
 END
 
-chmod a+x ko ok
+chmod a+x ko ok sk
 
 mkdir t
 cp ok t/nosuffix
@@ -58,6 +63,9 @@ cp er t1.sh
 cp er t9.sh
 cp er tx98.sh
 
+cp sk fu.sh
+cp sk mu
+
 cat > get-tests-list <<END
 #!/bin/sh
 echo "g1.sh  ${tab}g2.sh "
@@ -71,7 +79,14 @@ cat > Makefile.am << 'END'
 my_add_dirprefix = $(strip $(1))/$(strip $(2))
 EXTRA_DIST = $(TESTS) get-tests-list
 TEST_EXTENSIONS = .sh
-TESTS = $(wildcard $(srcdir)/t[0-9][0-9]*.sh)
+
+t1 = fu
+t2 = mux
+
+# Also try an empty match suffix, to ensure that the ':=' in there is
+# not confused by the parser with an immediate assignment operator.
+TESTS = $(t1:=.sh) $(t2:x=)
+TESTS += $(wildcard $(srcdir)/t[0-9][0-9]*.sh)
 TESTS += $(shell $(srcdir)/get-tests-list)
 TESTS += $(call my_add_dirprefix, t, nosuffix)
 XFAIL_TESTS = $(wildcard $(srcdir)/t9[0-9]*.sh)
@@ -86,26 +101,28 @@ $AUTOMAKE -a
 $MAKE check > stdout || { cat stdout; Exit 1; }
 cat stdout
 
-count_test_results total=11 pass=9 fail=0 xpass=0 xfail=2 skip=0 error=0
+count_test_results total=13 pass=9 fail=0 xpass=0 xfail=2 skip=2 error=0
 
-grep '^PASS: t/nosuffix$' stdout
-grep '^PASS: g1\.sh$'     stdout
-grep '^PASS: g2\.sh$'     stdout
-grep '^PASS: g3\.sh$'     stdout
-grep '^PASS: g4\.sh$'     stdout
-grep '^PASS: t00-foo\.sh' stdout
-grep '^PASS: t02\.sh'     stdout
-grep '^PASS: t57_mu\.sh'  stdout
-grep '^PASS: t7311\.sh'   stdout
-grep '^XFAIL: t98S\.sh'   stdout
-grep '^XFAIL: t99\.sh'    stdout
+grep '^PASS: t/nosuffix$'  stdout
+grep '^PASS: g1\.sh$'      stdout
+grep '^PASS: g2\.sh$'      stdout
+grep '^PASS: g3\.sh$'      stdout
+grep '^PASS: g4\.sh$'      stdout
+grep '^PASS: t00-foo\.sh$' stdout
+grep '^PASS: t02\.sh$'     stdout
+grep '^PASS: t57_mu\.sh$'  stdout
+grep '^PASS: t7311\.sh$'   stdout
+grep '^XFAIL: t98S\.sh$'   stdout
+grep '^XFAIL: t99\.sh$'    stdout
+grep '^SKIP: fu\.sh$'      stdout
+grep '^SKIP: mu$'          stdout
 
 $MAKE mostlyclean
 test "`find . -name *.log`" = ./config.log
 
 $MAKE distcheck > stdout || { cat stdout; Exit 1; }
 cat stdout
-count_test_results total=11 pass=9 fail=0 xpass=0 xfail=2 skip=0 error=0
+count_test_results total=13 pass=9 fail=0 xpass=0 xfail=2 skip=2 error=0
 
 $MAKE check tests1='$(wildcard t00*.sh t98?.sh)' \
             tests2='$(shell ./get-tests-list | sed 1d)' \
