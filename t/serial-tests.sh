@@ -23,7 +23,7 @@ hasnt_parallel_tests ()
 {
   $EGREP -i 'test_suite_log|test_(logs|bases)|\.log.*:' $1 && Exit 1
   grep 'recheck.*:' $1 && Exit 1
-  grep '^check-TESTS: \$(TESTS)$' $1
+  grep '^check-TESTS: \$(am__cooked_tests)$' $1
 }
 
 has_parallel_tests ()

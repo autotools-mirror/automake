@@ -30,11 +30,22 @@ TESTS = $(XFAIL_TESTS)
 XFAIL_TESTS = a b c d
 check_PROGRAMS = a c d
 check_SCRIPTS = b
+EXTRA_PROGRAMS = new old
 EXTRA_DIST = $(check_SCRIPTS)
 
-.PHONY: print-xfail-tests
-print-xfail-tests:
-	@echo BEG: $(XFAIL_TESTS) :END
+prepare-for-fake-exeext:
+	rm -f out.new out.old
+	touch a.fake c.fake d.fake
+	mv -f new$(EXEEXT) new.fake
+	mv -f old$(EXEEXT) old.fake
+post-check-for-fake-exeext:
+	test -f new.fake
+	test -f old.fake
+	test ! -f new
+	test ! -f new$(EXEEXT)
+	test ! -f old
+	test ! -f old$(EXEEXT)
+.PHONY: prepare-for-fake-exeext post-check-for-fake-exeext
 END
 
 cat > b <<'END'
@@ -54,6 +65,26 @@ END
 cp a.c c.c
 cp a.c d.c
 
+cat > new.c <<'END'
+#include <stdio.h>
+int main (void)
+{
+  FILE *fp = fopen ("out.new", "w");
+  fprintf (fp, "%s!\n", "Hello, Brave New World");
+  return (fclose (fp) != 0);
+}
+END
+
+cat > old.c <<'END'
+#include <stdio.h>
+int main (void)
+{
+  FILE *fp = fopen ("out.old", "w");
+  fprintf (fp, "%s!\n", "Hello, Europe");
+  return (fclose (fp) == 0);
+}
+END
+
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
@@ -61,11 +92,15 @@ $AUTOMAKE -a
 ./configure
 $MAKE check
 
-if test x"$am_serial_tests" = x"yes"; then
-  $MAKE EXEEXT=.bin print-xfail-tests >stdout || { cat stdout; Exit 1; }
-  cat stdout
-  $FGREP 'BEG: a.bin b c.bin d.bin :END' stdout
-fi
+$MAKE check TESTS='old new' XFAIL_TESTS=old
+grep 'Hello, Brave New World!' out.new
+grep 'Hello, Europe!' out.old
+
+$MAKE prepare-for-fake-exeext
+$MAKE check TESTS='old new' EXEEXT=.fake XFAIL_TESTS=old
+$MAKE post-check-for-fake-exeext
+grep 'Hello, Brave New World!' out.new
+grep 'Hello, Europe!' out.old
 
 $MAKE distcheck
 

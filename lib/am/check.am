@@ -371,11 +371,33 @@ else %?SERIAL_TESTS%
 
 ## Obsolescent serial testsuite driver.
 
-check-TESTS: $(TESTS)
+if %?HANDLE-EXEEXT%
+## This is suboptimal, but we need to preserve the order of $(TESTS).
+am__check_cook_with_exeext_1 = \
+    $(if $(filter $(am__all_progs), $1), $1$(EXEEXT), $1)
+am__check_cook_with_exeext = $(strip \
+  $(if $(EXEEXT), $(foreach am__t, $1, $(call $(0)_1, $(am__t))), $1))
+else !%?HANDLE-EXEEXT%
+am__check_cook_with_exeext = $(strip $1)
+endif !%?HANDLE-EXEEXT%
+
+# TESTS can contain compiled programs, in which case we might have
+# to account for $(EXEEXT) appending.  For matching purposes, we
+# need to adjust XFAIL_TESTS as well.
+am__cooked_tests = $(call am__check_cook_with_exeext, $(TESTS))
+am__cooked_xfail_tests = $(call am__check_cook_with_exeext, $(XFAIL_TESTS))
+
+check-TESTS: $(am__cooked_tests)
 	@failed=0; all=0; xfail=0; xpass=0; skip=0; \
 	srcdir=$(srcdir); export srcdir; \
-	list='$(TESTS)'; \
+	list='$(am__cooked_tests)'; \
 	$(am__tty_colors); \
+	is_xfail_test () { \
+	  case " $(strip $(am__cooked_xfail_tests)) " in \
+	    *" $$tst "*) return 0;; \
+	    *) return 1;; \
+	  esac; \
+	}; \
 	if test -n "$$list"; then \
 	  for tst in $$list; do \
 	    if test -f ./$$tst; then dir=./; \
@@ -383,29 +405,23 @@ check-TESTS: $(TESTS)
 	    if $(TESTS_ENVIRONMENT) $${dir}$$tst $(AM_TESTS_FD_REDIRECT); then \
 ## Success
 	      all=`expr $$all + 1`; \
-	      case " $(XFAIL_TESTS) " in \
-	      *[\ \	]$$tst[\ \	]*) \
+	      if is_xfail_test; then \
 		xpass=`expr $$xpass + 1`; \
 		failed=`expr $$failed + 1`; \
 		col=$$red; res=XPASS; \
-	      ;; \
-	      *) \
+	      else \
 		col=$$grn; res=PASS; \
-	      ;; \
-	      esac; \
+	      fi; \
 	    elif test $$? -ne 77; then \
 ## Failure
 	      all=`expr $$all + 1`; \
-	      case " $(XFAIL_TESTS) " in \
-	      *[\ \	]$$tst[\ \	]*) \
+	      if is_xfail_test; then \
 		xfail=`expr $$xfail + 1`; \
 		col=$$lgn; res=XFAIL; \
-	      ;; \
-	      *) \
+	      else \
 		failed=`expr $$failed + 1`; \
 		col=$$red; res=FAIL; \
-	      ;; \
-	      esac; \
+	      fi; \
 	    else \
 ## Skipped
 	      skip=`expr $$skip + 1`; \

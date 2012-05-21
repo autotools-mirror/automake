@@ -37,18 +37,18 @@ if COND
   BAZ = baz $(DEP)
 endif
 bin_PROGRAMS = $(programs) @programs@ prg3 $(BAR) $(BAZE)
+sbin_PROGRAMS = prg4 $(BAZ)
 EXTRA_PROGRAMS = prg1 prg2 prg3
-TESTS = prg1 prg3 prg4 $(BAZ)
 
 .PHONY: test-cond test-nocond
 test-nocond:
 	is $(bin_PROGRAMS) == prg1.x prg2.x prg1.x prg2.x prg3.x
 	is $(EXTRA_PROGRAMS) == prg1.x prg2.x prg3.x
-	is $(TESTS) == prg1.x prg3.x prg4
+	is $(sbin_PROGRAMS) == prg4.x
 test-cond:
 	is $(bin_PROGRAMS) == prg1.x prg2.x prg1.x prg2.x prg3.x bar.x baz.x
 	is $(EXTRA_PROGRAMS) == prg1.x prg2.x prg3.x
-	is $(TESTS) == prg1.x prg3.x prg4 baz.x bar.x
+	is $(sbin_PROGRAMS) == prg4.x baz.x bar.x
 	is $(BAR) $(BAZ) == bar baz bar
 END
 
