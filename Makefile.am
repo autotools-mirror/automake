@@ -225,6 +225,7 @@ EXTRA_DIST += lib/Automake/Config.in
 dist_am_DATA = \
   lib/am/check.am \
   lib/am/check2.am \
+  lib/am/color-tests.am \
   lib/am/clean-hdr.am \
   lib/am/clean.am \
   lib/am/compile.am \
