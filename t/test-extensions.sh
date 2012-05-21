@@ -47,24 +47,25 @@ done
 # The produced Makefile is not broken.
 ./configure
 $MAKE all check
+$MAKE distclean
 
 cat > Makefile.am << 'END'
 TESTS = foo.test bar.sh
-TEST_EXTENSIONS  = .test mu .x-y a-b .t.1 .sh .6c .0 .11 .= @suf@ .@ext@
+TEST_EXTENSIONS  = .test mu .x-y a-b .t.1 .sh .6c .0 .11
 TEST_EXTENSIONS += .= .t33 .a@b _&_
 END
 
-AUTOMAKE_fails
-for suf in mu .x-y a-b .t.1 .6c .0 .11  @suf@ .@ext@ '.=' '_&_'; do
-  suf2=`printf '%s\n' "$suf" | sed -e 's/\./\\./'`
-  $EGREP "^Makefile\.am:2:.*invalid test extension.* $suf2( |$)" stderr
+$AUTOMAKE
+./configure
+
+$MAKE 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+for suf in mu .x-y a-b .t.1 .6c .0 .11  '.=' '_&_'; do
+  $FGREP "invalid test extension: '$suf'" stderr
 done
 
 # Verify that we accept valid suffixes, even if intermixed with
 # invalid ones.
-$EGREP '\.(sh|test|t33)' stderr && Exit 1
-
-# Verify that we don't try to handle invalid suffixes.
-$EGREP '(LOG_COMPILER|non-POSIX var|bad character)' stderr && Exit 1
+$EGREP 'invalid.*\.(sh|test|t33)' stderr && Exit 1
 
 :

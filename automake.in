@@ -4654,17 +4654,14 @@ sub handle_tests
                      "'TEST_EXTENSIONS' cannot have conditional contents";
            }
 	  my @test_suffixes = $var->value_as_list_recursive;
-          if ((my @invalid_test_suffixes =
-                  grep { !is_valid_test_extension $_ } @test_suffixes) > 0)
-            {
-              error $var->rdef (TRUE)->location,
-                    "invalid test extensions: @invalid_test_suffixes";
-            }
+          my @invalid_test_suffixes = grep { !is_valid_test_extension $_ }
+                                           @test_suffixes;
           @test_suffixes = grep { is_valid_test_extension $_ } @test_suffixes;
           $output_rules .=
             file_contents ('parallel-tests', new Automake::Location,
                            COLOR => !! option 'color-tests',
-                           CHECK_DEPS => "@check");
+                           CHECK_DEPS => "@check",
+                           INVALID_TEST_EXTENSIONS => "@invalid_test_suffixes");
           # It is *imperative* that the empty 'suffix goes last.
           # Otherwise, a declaration like "TESTS = all.test" would cause GNU
           # make to mistakenly try to build the 'all.log' and 'all.trs' files
