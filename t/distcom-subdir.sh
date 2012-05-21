@@ -22,6 +22,7 @@
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([subdir/Makefile])
 AC_PROG_CC
+AC_PROG_FGREP
 AC_OUTPUT
 END
 
@@ -32,14 +33,18 @@ END
 rm -f depcomp
 mkdir subdir
 
-: > subdir/Makefile.am
+cat > subdir/Makefile.am << 'END'
+.PHONY: test-distcommon
+test-distcommon:
+	echo ' ' $(am__dist_common) ' ' | $(FGREP) ' $(top_srcdir)/depcomp '
+END
 
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
 test ! -f depcomp
 
-cat > subdir/Makefile.am << 'END'
+cat >> subdir/Makefile.am << 'END'
 bin_PROGRAMS = foo
 END
 
@@ -47,28 +52,8 @@ END
 
 $AUTOMAKE -a subdir/Makefile
 test -f depcomp
-
-# FIXME: the logic of this check and other similar ones in other
-# FIXME: 'distcom*.test' files should be factored out in a common
-# FIXME: subroutine in 'defs'...
-sed -n -e "
-  /^am__dist_common =.*\\\\$/ {
-    :loop
-    p
-    n
-    t clear
-    :clear
-    s/\\\\$/\\\\/
-    t loop
-    s/$/ /
-    s/[$tab ][$tab ]*/ /g
-    p
-    n
-  }" subdir/Makefile.in > dc.txt
-cat dc.txt
-$FGREP ' $(top_srcdir)/depcomp ' dc.txt
-
 ./configure
+(cd subdir && $MAKE test-distcommon)
 $MAKE distdir
 test -f $distdir/depcomp
 

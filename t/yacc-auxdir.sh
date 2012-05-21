@@ -50,7 +50,7 @@ test -f aux1/ylwrap
 test ! -f ylwrap
 test ! -f sub/ylwrap
 grep -i 'ylwrap' Makefile.in sub/Makefile.in # For debugging.
-$FGREP '$(top_srcdir)/aux1/ylwrap' Makefile.in
-$FGREP '$(top_srcdir)/aux1/ylwrap' sub/Makefile.in
+$FGREP '$(am__config_aux_dir)/ylwrap' Makefile.in
+$FGREP '$(am__config_aux_dir)/ylwrap' sub/Makefile.in
 
 :
