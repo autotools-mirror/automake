@@ -15,19 +15,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Check that auxiliary script 'test-driver' gets automatically installed
-# in the correct directory by 'parallel-tests' option.
+# in the correct directory.
 
+am_create_testdir=empty
 . ./defs || Exit 1
-
-: Try first with parallel-tests defined in AM_INIT_AUTOMAKE.
-
-mkdir am-init-automake
-cd am-init-automake
 
 cat > configure.ac <<END
 AC_INIT([$me], [1.0])
 AC_CONFIG_AUX_DIR([my_aux_dir])
-AM_INIT_AUTOMAKE([parallel-tests])
+AM_INIT_AUTOMAKE
 AC_CONFIG_FILES([Makefile sub/Makefile])
 AC_OUTPUT
 END
@@ -52,41 +48,6 @@ test -f my_aux_dir/test-driver
 test ! -r test-driver
 test ! -r sub/test-driver
 
-grep '^configure\.ac:3:.*installing.*my_aux_dir/test-driver' stderr
-
-cd ..
-
-: Now try with parallel-tests defined in AUTOMAKE_OPTIONS.
-
-mkdir automake-options
-cd automake-options
-
-cat > configure.ac <<END
-AC_INIT([$me], [1.0])
-AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE
-AC_CONFIG_FILES([dir/GNUmakefile])
-AC_OUTPUT
-END
-
-mkdir build-aux dir
-
-cat > dir/GNUmakefile.am <<END
-TESTS = foo.test
-AUTOMAKE_OPTIONS = parallel-tests
-TESTS += bar.test
-END
-
-$ACLOCAL
-$AUTOMAKE --add-missing --copy dir/GNUmakefile 2>stderr \
-  || { cat stderr >&2; Exit 1; }
-cat stderr >&2
-
-ls -l . dir build-aux # For debugging.
-test -f build-aux/test-driver
-test ! -r test-driver
-test ! -r dir/test-driver
-
-grep '^dir/GNUmakefile\.am:2:.*installing.*build-aux/test-driver' stderr
+grep '^parallel-tests:.*installing.*my_aux_dir/test-driver' stderr
 
 :

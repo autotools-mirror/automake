@@ -31,7 +31,7 @@ END
 cat > configure.ac <<'END'
 AC_INIT([GNU Try Tap], [1.0], [bug-automake@gnu.org])
 AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE([foreign parallel-tests -Wall -Werror])
+AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 AC_CONFIG_FILES([Makefile])
 AC_REQUIRE_AUX_FILE([tap-driver.sh])
 AC_PROG_AWK

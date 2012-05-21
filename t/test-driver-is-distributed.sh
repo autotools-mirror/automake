@@ -23,31 +23,25 @@ am_create_testdir=empty
 
 ocwd=`pwd` || fatal_ "getting current working directory"
 
-do_check ()
-{
-  whereopts=$1 auxdir=$2
-  case $#,$whereopts in
-    2,ac) ac_opts=parallel-tests am_code= ;;
-    2,am) am_opts=parallel-tests ac_code= ;;
-       *) fatal_ "do_check: bad usage";;
-  esac
-  mkdir $whereopts
-  cd $whereopts
+for i in 1 2; do
+  mkdir D$i
+  cd D$i
+  if test $i -eq 1; then
+    auxdir=.
+    test_driver=test-driver
+  else
+    auxdir=build-aux
+    test_driver=$auxdir/test-driver
+    mkdir $auxdir
+  fi
   mkdir tests
   unindent > configure.ac << END
     AC_INIT([$me], [1.0])
     AC_CONFIG_AUX_DIR([$auxdir])
-    AM_INIT_AUTOMAKE([$ac_opts])
+    AM_INIT_AUTOMAKE
     AC_CONFIG_FILES([Makefile tests/Makefile])
     AC_OUTPUT
 END
-  if test $auxdir = .; then
-    test_driver=test-driver
-  else
-    mkdir $auxdir
-    test_driver=$auxdir/test-driver
-  fi
-  # No 'AUTOMAKE_OPTIONS' in here -- purposely.
   unindent > Makefile.am << END
     SUBDIRS = tests
     check-local: test-top
@@ -57,7 +51,6 @@ END
     .PHONY: test-top
 END
   unindent > tests/Makefile.am << END
-    AUTOMAKE_OPTIONS = $am_opts
     check-local: test-sub
     test-sub:
 	echo ' ' \$(am__dist_common) ' ' | grep '[ /]$test_driver '
@@ -84,10 +77,7 @@ END
   $AUTOMAKE
   diff Makefile.in Makefile.sav
   diff tests/Makefile.in tests/Makefile.sav
-  :
-}
-
-do_check ac .
-do_check am build-aux
+  cd "$ocwd" || fatal_ "cannot chdir back to '$ocwd'"
+done
 
 :

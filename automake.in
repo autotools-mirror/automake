@@ -4565,9 +4565,7 @@ sub handle_tests_dejagnu
 sub handle_per_suffix_test($)
 {
   my $test_suffix = shift;
-  my ($pfx, $parallel_tests_option);
-  prog_error ("called with 'parallel-tests' option not set")
-    unless $parallel_tests_option = option 'parallel-tests';
+  my $pfx;
   if ($test_suffix eq '')
     {
       $pfx = '';
@@ -4579,13 +4577,12 @@ sub handle_per_suffix_test($)
       $pfx = uc ($1) . '_';
     }
   # The "test driver" program, deputed to handle tests protocol used by
-  # test scripts.  By default, it's assumed that no protocol is used,
-  # so we fall back to the old "parallel-tests" behaviour, implemented
-  # by the 'test-driver' auxiliary script.
+  # test scripts.  By default, it's assumed that no protocol is used, so
+  # we fall back to the old behaviour, implemented by the 'test-driver'
+  # auxiliary script.
   if (! var "${pfx}LOG_DRIVER")
     {
-      require_conf_file ($parallel_tests_option->{position}, FOREIGN,
-                        'test-driver');
+      require_conf_file ("parallel-tests", FOREIGN, 'test-driver');
       define_variable ("${pfx}LOG_DRIVER",
                        "\$(SHELL) $am_config_aux_dir/test-driver",
                        INTERNAL);
@@ -4634,10 +4631,17 @@ sub handle_tests
       push (@check_tests, 'check-TESTS');
       $output_rules .= &file_contents ('check', new Automake::Location,
 				       COLOR => !! option 'color-tests',
-				       PARALLEL_TESTS => !! option 'parallel-tests',
+				       SERIAL_TESTS => !! option 'serial-tests',
                                        CHECK_DEPS => "@check");
-
-      if (my $parallel_tests = option 'parallel-tests')
+      if (option 'serial-tests')
+        {
+          # Tests that are known programs should have $(EXEEXT) appended.
+          # For matching purposes, we need to adjust XFAIL_TESTS as well.
+          append_exeext { exists $known_programs{$_[0]} } 'TESTS';
+          append_exeext { exists $known_programs{$_[0]} } 'XFAIL_TESTS'
+	    if (var ('XFAIL_TESTS'));
+        }
+      else
         {
 	  define_variable ('TEST_SUITE_LOG', 'test-suite.log', INTERNAL);
 	  my $suff = '.test';
@@ -4674,14 +4678,6 @@ sub handle_tests
 	  $clean_files{'$(am__test_results)'} = MOSTLY_CLEAN;
 	  $clean_files{'$(TEST_SUITE_LOG)'} = MOSTLY_CLEAN;
 	}
-      else
-        {
-          # Tests that are known programs should have $(EXEEXT) appended.
-          # For matching purposes, we need to adjust XFAIL_TESTS as well.
-          append_exeext { exists $known_programs{$_[0]} } 'TESTS';
-          append_exeext { exists $known_programs{$_[0]} } 'XFAIL_TESTS'
-	    if (var ('XFAIL_TESTS'));
-        }
     }
 }
 

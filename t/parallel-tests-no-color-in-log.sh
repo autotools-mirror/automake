@@ -37,7 +37,7 @@ END
 
 cat >Makefile.am <<'END'
 LOG_COMPILER = $(SHELL)
-AUTOMAKE_OPTIONS = color-tests parallel-tests
+AUTOMAKE_OPTIONS = color-tests
 TESTS = pass fail skip xpass xfail error
 XFAIL_TESTS = xpass xfail
 END

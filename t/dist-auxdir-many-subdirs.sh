@@ -41,7 +41,7 @@ do_check ()
   unindent > configure.ac << END
     AC_INIT([$me], [$count])
     AC_CONFIG_AUX_DIR([$auxdir])
-    AM_INIT_AUTOMAKE([parallel-tests])
+    AM_INIT_AUTOMAKE
     AC_PROG_CC
     # We don't want to require python or emcas in this test, so
     # the tricks below.

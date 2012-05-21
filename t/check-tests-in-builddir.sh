@@ -54,8 +54,8 @@ chmod a+x bar.test
 
 $MAKE check >out 2>&1 || { cat out; Exit1; }
 cat out
-# The simple-tests driver does not strip VPATH components from
-# the name of the test, but the parallel-tests driver should.
+# The serial test driver does not strip VPATH components from
+# the name of the test, but the parallel driver should.
 if test x"$am_serial_tests" = x"yes"; then
   grep '^PASS: .*foo\.test *$' out
 else
@@ -68,8 +68,8 @@ rm -f test-suite.log foo.log bar.log
 
 FOO_EXIT_STATUS=1 $MAKE check >out 2>&1 && { cat out; Exit1; }
 cat out
-# The simple-tests driver does not strip VPATH components from
-# the name of the test, but the parallel-tests driver should.
+# The serial test driver does not strip VPATH components from
+# the name of the test, but the parallel driver should.
 if test x"$am_serial_tests" = x"yes"; then
   grep '^FAIL: .*foo\.test *$' out
 else

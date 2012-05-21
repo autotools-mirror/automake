@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that the parallel-tests driver creates parent directories for
+# Check that the parallel test harness creates parent directories for
 # the log files when needed.
 
 . ./defs || Exit 1

@@ -8727,21 +8727,20 @@ also data files to be passed to one or more test scripts defined by
 different means (the so-called ``log compilers'', @pxref{Parallel Test
 Harness}).
 
-Test scripts can be executed serially or concurrently.  Automake
-supports both these kinds of test execution, with the serial test harness
-being the default (for backward-compatibility reasons only, as its use
-is nowadays discouraged).  The concurrent test harness relies on the
-concurrence capabilities (if any) offered by the underlying @command{make}
+Test scripts can be executed serially or concurrently.  Automake supports
+both these kinds of test execution, with the parallel test harness being
+the default.  The concurrent test harness relies on the concurrence
+capabilities (if any) offered by the underlying @command{make}
 implementation, and can thus only be as good as those are.
 
 By default, only the exit statuses of the test scripts are considered when
 determining the testsuite outcome.  But Automake allows also the use of
 more complex test protocols, either standard (@pxref{Using the TAP test
-protocol}) or custom (@pxref{Custom Test Drivers}).  Note that you can
-enable such protocols only when the parallel harness is used: they won't
-work with the serial test harness.  In the rest of this section we are
-going to concentrate mostly on protocol-less tests, since we cover
-test protocols in a later section (again, @pxref{Custom Test Drivers}).
+protocol}) or custom (@pxref{Custom Test Drivers}).  Note that you can't
+enable such protocols when the serial harness is used, though.
+In the rest of this section we are going to concentrate mostly on
+protocol-less tests, since we cover test protocols in a later section
+(again, @pxref{Custom Test Drivers}).
 
 @cindex Exit status 77, special interpretation
 @cindex Exit status 99, special interpretation
@@ -8887,14 +8886,12 @@ by the tests, not the tests themselves.  Of course you can set
 @code{TESTS = $(check_PROGRAMS)} if all your programs are test cases.
 
 @node Serial Test Harness
-@subsection Serial Test Harness
+@subsection Older (and obsolescent) serial test harness
 @cindex @option{serial-tests}, Using
 
-@emph{NOTE:} This harness, while still being the default one, is
-obsolescent, and kept mostly for backward-compatibility reasons.  The user
-is advised to use the parallel test harness instead (@pxref{Parallel Test
-Harness}).  Be warned that future Automake versions might switch to use
-that more modern and feature-rich harness by default.
+@emph{This harness is obsolescent}, and kept for backward-compatibility
+reasons only.  The user is strongly advised to just use the parallel test
+harness instead (@pxref{Parallel Test Harness}).
 
 The serial test harness is enabled by the Automake option
 @option{serial-tests}. It operates by simply running the tests serially,
@@ -8929,14 +8926,12 @@ versions.
 
 @node Parallel Test Harness
 @subsection Parallel Test Harness
-@cindex @option{parallel-tests}, Using
 
-The parallel (or concurrent) test harness is enabled by the Automake option
-@option{parallel-tests}.  It features automatic collection of the test
-scripts output in @file{.log} files, concurrent execution of tests with
-@code{make -j}, specification of inter-test dependencies, lazy reruns of
-tests that have not completed in a prior run, and hard errors for exceptional
-failures.
+By default, Automake generated a parallel (concurrent) test harness.  It
+features automatic collection of the test scripts output in @file{.log}
+files, concurrent execution of tests with @code{make -j}, specification
+of inter-test dependencies, lazy reruns of tests that have not completed
+in a prior run, and hard errors for exceptional failures.
 
 This harness is still somewhat experimental and may undergo changes in
 order to satisfy additional portability requirements.
@@ -9300,11 +9295,10 @@ with the parallel test harness and its default driver.
 @subsubsection Command-line arguments for test drivers
 
 A custom driver can rely on various command-line options and arguments
-being passed to it automatically by the Automake's @option{parallel-tests}
-harness.  It is @emph{mandatory} that it understands all of them (even
-if the exact interpretation of the associated semantics can legitimately
-change between a test driver and another, and even be a no-op in some
-drivers).
+being passed to it automatically by the Automake-generated test harness.
+It is @emph{mandatory} that it understands all of them (even if the exact
+interpretation of the associated semantics can legitimately change
+between a test driver and another, and even be a no-op in some drivers).
 
 @noindent
 Here is the list of options:
@@ -9348,9 +9342,9 @@ for this program.
 Note that the exact semantics attached to the @option{--color-tests},
 @option{--expect-failure} and @option{--enable-hard-errors} options are
 left up to the individual test drivers.  Still, having a behaviour
-compatible or at least similar to that provided by the default
-@option{parallel-tests} driver is advised, as that would offer a better
-consistency and a more pleasant user experience.
+compatible or at least similar to that provided by the default driver
+is advised, as that would offer a better consistency and a more pleasant
+user experience.
 
 @node Log files generation and test results recording
 @subsubsection Log files generation and test results recording
@@ -9392,8 +9386,8 @@ The only recognized test results are currently @code{PASS}, @code{XFAIL},
 @code{SKIP}, @code{FAIL}, @code{XPASS} and @code{ERROR}.  These results,
 when declared with @code{:test-result:}, can be optionally followed by
 text holding the name and/or a brief description of the corresponding
-test; the @option{parallel-tests} harness will ignore such extra text when
-generating @file{test-suite.log} and preparing the testsuite summary.
+test; the harness will ignore such extra text when generating
+@file{test-suite.log} and preparing the testsuite summary.
 
 @c Keep in sync with 'test-metadata-recheck.test'.
 @item @code{:recheck:}
@@ -9501,7 +9495,7 @@ on standard output; a test harness (also called ``TAP consumer'') will
 parse and interpret these results, and properly present them to the user,
 and/or register them for later analysis.  The exact details of how this
 is accomplished can vary among different test harnesses.  The Automake
-parallel harness will present the results on the console in the usual
+harness will present the results on the console in the usual
 fashion (@pxref{Testsuite progress on console}), and will use the
 @file{.trs} files (@pxref{Basics of test metadata}) to store the test
 results and related metadata.  Apart from that, it will try to remain
@@ -9585,7 +9579,7 @@ Here is an example of how the TAP driver can be set up and used.
 % @kbd{cat configure.ac}
 AC_INIT([GNU Try Tap], [1.0], [bug-automake@@gnu.org])
 AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE([foreign parallel-tests -Wall -Werror])
+AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 AC_CONFIG_FILES([Makefile])
 AC_REQUIRE_AUX_FILE([tap-driver.sh])
 AC_PROG_AWK
@@ -9666,7 +9660,7 @@ mainstream versions, which you should be aware of.
 A @code{Bail out!} directive doesn't stop the whole testsuite, but only
 the test script it occurs in.  This doesn't follow TAP specifications,
 but on the other hand it maximizes compatibility (and code sharing) with
-the ``hard error'' concept of the default @option{parallel-tests} driver.
+the ``hard error'' concept of the default testsuite driver.
 @item
 The @code{version} and @code{pragma} directives are not supported.
 @item
@@ -10094,18 +10088,19 @@ are ordinarily automatically provided by Automake.
 Don't require @file{texinfo.tex}, even if there are texinfo files in
 this directory.
 
-@item @option{parallel-tests}
-@cindex Option, @option{parallel-tests}
-@opindex parallel-tests
-Enable test suite harness for @code{TESTS} that can run tests in parallel
-(@pxref{Parallel Test Harness}, for more information).
-
 @item @option{serial-tests}
 @cindex Option, @option{serial-tests}
 @opindex serial-tests
 Enable the older serial test suite harness for @code{TESTS} (@pxref{Serial
-Test Harness}, for more information).  This is still the default for the
-moment.
+Test Harness}, for more information).
+
+@item @option{parallel-tests}
+@cindex Option, @option{parallel-tests}
+@opindex parallel-tests
+Enable test suite harness for @code{TESTS} that can run tests in parallel
+(@pxref{Parallel Test Harness}, for more information).  This option is
+only kept for backward-compatibility, since the parallel test harness is
+the default now.
 
 @item @option{readme-alpha}
 @cindex Option, @option{readme-alpha}

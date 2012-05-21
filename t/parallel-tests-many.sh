@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that the parallel-tests harness does not hit errors due to
-# an exceeded command line length when there are many tests.
+# Check that the parallel testsuite harness does not hit errors due
+# to an exceeded command line length when there are many tests.
 # For automake bug#7868.  This test is currently expected to fail.
 
 . ./defs || Exit 1

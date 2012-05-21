@@ -20,8 +20,8 @@
 # This test uses a "flat" setup for the source tree (i.e., everything in
 # the top-level directory), and forces the use of the old, non-parallel
 # testsuite driver.  The sister test 'java-compile-run-nested.test' do
-# similar checks with a more usual, "nested" setup, and using the newer
-# 'parallel-tests' driver.
+# similar checks with a more usual, "nested" setup, and using the older
+# 'serial-tests' driver.
 
 required='java javac'
 am_serial_tests=yes

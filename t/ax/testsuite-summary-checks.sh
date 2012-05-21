@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check the testsuite summary with the parallel-tests harness.  This
+# Check the testsuite summary with the parallel test harness.  This
 # script is meant to be sourced by other test script, so that it can
 # be used to check different scenarios (colorized and non-colorized
 # testsuite output, packages with and without bug-report addresses,
@@ -28,10 +28,10 @@ case $use_colors in
     # Forced colorization should take place also with non-ANSI
     # terminals; hence this setting.
     TERM=dumb; export TERM
-    am_opts='parallel-tests color-tests'
+    am_opts='color-tests'
     ;;
   no)
-    am_opts='parallel-tests'
+    am_opts=''
     ;;
   *)
     fatal_ "invalid use_colors='$use_colors'";;
