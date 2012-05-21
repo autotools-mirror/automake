@@ -23,14 +23,13 @@
 #   make: ... can't find '/foo.mk': No such file or directory
 #   make: fatal error ... read of include file '/foo.mk' failed
 #
-# (even if the file 'foo.mk' exists). The error disappear by
-# collapsing the repeated slash '/' characters into a single one.
+# (even if the file 'foo.mk' exists).  Our dependency tracking support
+# code used to generate include directives like that sometimes, thus
+# causing spurious failures.
 #
-# GNU make shouldn't suffer from this bug; but we check for it
-# anyway -- better safe than sorry.
+# GNU make shouldn't suffer from that Solaris make bug, but we check
+# the problematic setup anyway -- better safe than sorry.
 #
-# See also sister "grepping" test 'subobj11b.test', and related test
-# 'subobj11c.test'.
 
 required=cc
 . ./defs || Exit 1
@@ -68,8 +67,7 @@ depdir=`sed -n 's/^ *DEPDIR *= *//p' Makefile`
 if test x"$depdir" != x; then
   depdir=src/$depdir
 else
-  echo "$me: cannot extract value of DEPDIR from Makefile" >&2
-  Exit 1
+  fatal_ "cannot extract value of DEPDIR from Makefile"
 fi
 
 ls -l "$depdir"

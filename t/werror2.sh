@@ -21,7 +21,7 @@
 
 . ./defs || Exit 1
 
-echo AC_OUTPUT>>configure.ac
+echo AC_OUTPUT >> configure.ac
 
 : > Makefile.am
 
@@ -35,9 +35,8 @@ $AUTOCONF
 ./configure
 $MAKE
 
-cat >Makefile.am <<END
+cat > Makefile.am << 'END'
 AUTOMAKE_OPTIONS = -Werror
-INCLUDES = -Ifoo
 foo_SOURCES = unused
 END
 

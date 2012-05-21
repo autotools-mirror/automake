@@ -24,19 +24,20 @@ AC_INIT([$me], [1.0])
 AC_CONFIG_AUX_DIR([./.])
 AM_INIT_AUTOMAKE
 AC_CONFIG_FILES([Makefile])
+AM_PATH_PYTHON
 END
 
 cat > Makefile.am << 'END'
-pkgdata_DATA =
+python_PYTHON = foo.py
 END
 
-cp "$am_scriptdir/mkinstalldirs" .
+cp "$am_scriptdir/py-compile" .
 
 # The "././" prefix confuses Automake into thinking it is doing a
 # subdir build.  Yes, this is hacky.
 $ACLOCAL
 $AUTOMAKE ././Makefile
 
-grep '/\./\./mkinstalldirs' Makefile.in
+grep '/\./\./py-compile' Makefile.in
 
 :

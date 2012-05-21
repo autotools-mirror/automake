@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test mkinstalldirs with spaces in directory names.
+# Test "install-sh -d" with spaces in directory names.
 
 am_create_testdir=empty
 . ./defs || Exit 1
@@ -24,15 +24,15 @@ mkdir '~a b' && mkdir '~a b/-x  y' \
   || skip_ "directory names with spaces and metacharacters not accepted"
 rm -rf '~a b'
 
-get_shell_script mkinstalldirs
+get_shell_script install-sh
 
-# Test mkinstalldirs with the installed mkdir.
+# Test  with the installed mkdir.
 
-./mkinstalldirs '~a b/-x  y'
+./install-sh -d '~a b/-x  y'
 test -d '~a b/-x  y'
 rm -rf '~a b'
 
-# Trick mkinstalldirs into thinking mkdir does not support -p.
+# Trick install-sh into thinking mkdir does not support -p.
 
 mkdir bin
 cat >bin/mkdir <<'EOF'
@@ -54,12 +54,14 @@ export AM_PATH
 PATH=`pwd`/bin$PATH_SEPARATOR$PATH
 export PATH
 
-# Test mkinstalldirs without mkdir -p.
+# Test without mkdir -p.
 
-./mkinstalldirs '~a b/-x  y'
+./install-sh -d '~a b/-x  y'
 test -d '~a b/-x  y'
 rm -rf '~a b'
 
-./mkinstalldirs "`pwd`///~a b//-x  y"
+./install-sh -d "`pwd`///~a b//-x  y"
 test -d "`pwd`/~a b/-x  y"
 rm -rf '~a b'
+
+:

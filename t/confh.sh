@@ -28,16 +28,15 @@ cat > Makefile.am << 'END'
 .PHONY: test1 test2
 test1:
 	@echo am__dist_common = $(am__dist_common)
-	echo ' ' $(am__dist_common) ' ' | grep '[ /]acconfig\.h '
+	echo ' ' $(am__dist_common) ' ' | grep '[ /]include/config\.h\.in '
 test2: distdir
 	ls -l $(distdir)/*
-	test -f $(distdir)/acconfig.h
+	test -f $(distdir)/include/config.h.in
 check-local: test1 test2
 END
 
 mkdir include
 : > include/config.h.in
-: > acconfig.h
 
 # The test used to fail if 'include/Makefile.am' was created (!)
 : > include/Makefile.am

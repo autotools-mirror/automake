@@ -227,19 +227,53 @@ my @libtool_sometimes = qw(ltconfig ltcf-c.sh ltcf-cxx.sh ltcf-gcj.sh);
 
 # Commonly found files we look for and automatically include in
 # distributed files.
-my @common_files =
-    (qw(ABOUT-GNU ABOUT-NLS AUTHORS BACKLOG COPYING COPYING.DOC COPYING.LIB
-	COPYING.LESSER ChangeLog INSTALL NEWS README THANKS TODO
-	ar-lib compile config.guess config.rpath
-	config.sub depcomp elisp-comp install-sh libversion.in mdate-sh
-	missing mkinstalldirs py-compile texinfo.tex ylwrap),
-     @libtool_files, @libtool_sometimes);
+my @common_files = (
+  qw(
+    ABOUT-GNU
+    ABOUT-NLS
+    AUTHORS
+    BACKLOG
+    COPYING
+    COPYING.DOC
+    COPYING.LIB
+    COPYING.LESSER
+    ChangeLog
+    INSTALL
+    NEWS
+    README
+    THANKS
+    TODO
+    ar-lib
+    compile
+    config.guess
+    config.rpath
+    config.sub
+    depcomp
+    elisp-comp
+    install-sh
+    libversion.in
+    mdate-sh
+    missing
+    py-compile
+    texinfo.tex
+    ylwrap
+  ),
+  @libtool_files,
+  @libtool_sometimes,
+);
 
 # Commonly used files we auto-include, but only sometimes.  This list
 # is used for the --help output only.
 my @common_sometimes =
-  qw(aclocal.m4 acconfig.h config.h.top config.h.bot configure
-     configure.ac configure.in stamp-vti);
+  qw(
+    aclocal.m4
+    config.h.top
+    config.h.bot
+    configure
+    configure.ac
+    configure.in
+    stamp-vti
+  );
 
 # Standard directories from the GNU Coding Standards, and additional
 # pkg* directories from Automake.  Stored in a hash for fast member check.
@@ -420,7 +454,10 @@ my %extension_map = ();
 
 # List of the distributed files we discovered while reading
 # configure.ac.
-my $configure_dist_common = '';
+my @configure_dist_common = ();
+
+# List of the "auto-discovered" distributed files.
+my @dist_common = ();
 
 # This maps languages names onto objects.
 my %languages = ();
@@ -633,6 +670,8 @@ sub initialize_per_input ()
     $output_rules = '';
     $output_trailer = '';
 
+    @dist_common = ();
+
     Automake::Options::reset;
     Automake::Variable::reset;
     Automake::Rule::reset;
@@ -694,7 +733,7 @@ register_language ('name' => 'c',
 		   'flags' => ['CFLAGS', 'CPPFLAGS'],
 		   'ccer' => 'CC',
 		   'compiler' => 'COMPILE',
-		   'compile' => '$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)',
+		   'compile' => '$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)',
 		   'lder' => 'CCLD',
 		   'ld' => '$(CC)',
 		   'linker' => 'LINK',
@@ -711,7 +750,7 @@ register_language ('name' => 'cxx',
 		   'link' => '$(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@',
 		   'autodep' => 'CXX',
 		   'flags' => ['CXXFLAGS', 'CPPFLAGS'],
-		   'compile' => '$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)',
+		   'compile' => '$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)',
 		   'ccer' => 'CXX',
 		   'compiler' => 'CXXCOMPILE',
 		   'compile_flag' => '-c',
@@ -730,7 +769,7 @@ register_language ('name' => 'objc',
 		   'link' => '$(OBJCLD) $(AM_OBJCFLAGS) $(OBJCFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@',
 		   'autodep' => 'OBJC',
 		   'flags' => ['OBJCFLAGS', 'CPPFLAGS'],
-		   'compile' => '$(OBJC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_OBJCFLAGS) $(OBJCFLAGS)',
+		   'compile' => '$(OBJC) $(DEFS) $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_OBJCFLAGS) $(OBJCFLAGS)',
 		   'ccer' => 'OBJC',
 		   'compiler' => 'OBJCCOMPILE',
 		   'compile_flag' => '-c',
@@ -748,7 +787,7 @@ register_language ('name' => 'objcxx',
 		   'link' => '$(OBJCXXLD) $(AM_OBJCXXFLAGS) $(OBJCXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@',
 		   'autodep' => 'OBJCXX',
 		   'flags' => ['OBJCXXFLAGS', 'CPPFLAGS'],
-		   'compile' => '$(OBJCXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_OBJCXXFLAGS) $(OBJCXXFLAGS)',
+		   'compile' => '$(OBJCXX) $(DEFS) $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_OBJCXXFLAGS) $(OBJCXXFLAGS)',
 		   'ccer' => 'OBJCXX',
 		   'compiler' => 'OBJCXXCOMPILE',
 		   'compile_flag' => '-c',
@@ -766,7 +805,7 @@ register_language ('name' => 'upc',
 		   'link' => '$(UPCLD) $(AM_UPCFLAGS) $(UPCFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@',
 		   'autodep' => 'UPC',
 		   'flags' => ['UPCFLAGS', 'CPPFLAGS'],
-		   'compile' => '$(UPC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_UPCFLAGS) $(UPCFLAGS)',
+		   'compile' => '$(UPC) $(DEFS) $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_UPCFLAGS) $(UPCFLAGS)',
 		   'ccer' => 'UPC',
 		   'compiler' => 'UPCCOMPILE',
 		   'compile_flag' => '-c',
@@ -868,7 +907,7 @@ register_language ('name' => 'asm',
 		   'config_vars' => ['CCAS', 'CCASFLAGS'],
 
 		   'flags' => ['CCASFLAGS'],
-		   # Users can set AM_CCASFLAGS to include DEFS, INCLUDES,
+		   # Users can set AM_CCASFLAGS to include, say, DEFS, 
 		   # or anything else required.  They can also set CCAS.
 		   # Or simply use Preprocessed Assembler.
 		   'compile' => '$(CCAS) $(AM_CCASFLAGS) $(CCASFLAGS)',
@@ -885,7 +924,7 @@ register_language ('name' => 'cppasm',
 
 		   'autodep' => 'CCAS',
 		   'flags' => ['CCASFLAGS', 'CPPFLAGS'],
-		   'compile' => '$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CCASFLAGS) $(CCASFLAGS)',
+		   'compile' => '$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CCASFLAGS) $(CCASFLAGS)',
 		   'ccer' => 'CPPAS',
 		   'compiler' => 'CPPASCOMPILE',
 		   'compile_flag' => '-c',
@@ -939,7 +978,7 @@ register_language ('name' => 'ppfc',
 		   'flags' => ['FCFLAGS', 'CPPFLAGS'],
 		   'ccer' => 'PPFC',
 		   'compiler' => 'PPFCCOMPILE',
-		   'compile' => '$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS)',
+		   'compile' => '$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS)',
 		   'compile_flag' => '-c',
 		   'output_flag' => '-o',
 		   'libtool_tag' => 'FC',
@@ -949,11 +988,11 @@ register_language ('name' => 'ppfc',
 # Preprocessed Fortran 77
 #
 # The current support for preprocessing Fortran 77 just involves
-# passing "$(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS)
-# $(CPPFLAGS)" as additional flags to the Fortran 77 compiler, since
-# this is how GNU Make does it; see the "GNU Make Manual, Edition 0.51
-# for 'make' Version 3.76 Beta" (specifically, from info file
-# '(make)Catalogue of Rules').
+# passing "$(DEFS) $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS)"
+# as additional flags to the Fortran 77 compiler, since this is how
+# GNU Make does it; see the "GNU Make Manual, Edition 0.51 for 'make'
+# Version 3.76 Beta" (specifically, from info file '(make)Catalogue
+# of Rules').
 #
 # A better approach would be to write an Autoconf test
 # (i.e. AC_PROG_FPP) for a Fortran 77 preprocessor, because not all
@@ -971,7 +1010,7 @@ register_language ('name' => 'ppf77',
 		   'flags' => ['FFLAGS', 'CPPFLAGS'],
 		   'ccer' => 'PPF77',
 		   'compiler' => 'PPF77COMPILE',
-		   'compile' => '$(F77) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_FFLAGS) $(FFLAGS)',
+		   'compile' => '$(F77) $(DEFS) $(DEFAULT_INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_FFLAGS) $(FFLAGS)',
 		   'compile_flag' => '-c',
 		   'output_flag' => '-o',
 		   'libtool_tag' => 'F77',
@@ -1747,24 +1786,6 @@ sub handle_single_transform ($$$$$%)
 	    # (this happens when the subdir-objects option is used),
 	    # then the inference will work.
 	    #
-	    # The latter case deserves a historical note.  When the
-	    # subdir-objects option was added on 1999-04-11 it was
-	    # thought that inferences rules would work for
-	    # subdirectory objects too.  Later, on 1999-11-22,
-	    # automake was changed to output explicit rules even for
-	    # subdir-objects.  Nobody remembers why, but this occurred
-	    # soon after the merge of the user-dep-gen-branch so it
-	    # might be related.  In late 2003 people complained about
-	    # the size of the generated Makefile.ins (libgcj, with
-	    # 2200+ subdir objects was reported to have a 9MB
-	    # Makefile), so we now rely on inference rules again.
-	    # Maybe we'll run across the same issue as in the past,
-	    # but at least this time we can document it.  However since
-	    # dependency tracking has evolved it is possible that
-	    # our old problem no longer exists.
-	    # Using inference rules for subdir-objects has been tested
-	    # with GNU make, Solaris make, Ultrix make, BSD make,
-	    # HP-UX make, and OSF1 make successfully.
 	    if ($renamed
 		|| ($directory ne '' && ! option 'subdir-objects')
 		# We must also use specific rules for a nodist_ source
@@ -1916,24 +1937,14 @@ sub handle_single_transform ($$$$$%)
 
 	# Transform .o or $o file into .P file (for automatic
 	# dependency code).
-        # Properly flatten multiple adjacent slashes, as Solaris 10 make
-        # might fail over them in an include statement.
-        # Leading double slashes may be special, as per Posix, so deal
-        # with them carefully.
         if ($lang && $lang->autodep ne 'no')
-        {
+          {
             my $depfile = $object;
             $depfile =~ s/\.([^.]*)$/.P$1/;
             $depfile =~ s/\$\(OBJEXT\)$/o/;
-            my $maybe_extra_leading_slash = '';
-            $maybe_extra_leading_slash = '/' if $depfile =~ m,^//[^/],;
-            $depfile =~ s,/+,/,g;
-            my $basename = basename ($depfile);
-            # This might make $dirname empty, but we account for that below.
-            (my $dirname = dirname ($depfile)) =~ s/\/*$//;
-            $dirname = $maybe_extra_leading_slash . $dirname;
-            $dep_files{$dirname . '/$(DEPDIR)/' . $basename} = 1;
-        }
+            $dep_files{dirname ($depfile) . '/$(DEPDIR)/'
+                         . basename ($depfile)} = 1;
+          }
     }
 
     return @result;
@@ -2046,39 +2057,11 @@ sub handle_source_transform ($$$$%)
     my @keys = sort keys %used_pfx;
     if (scalar @keys == 0)
     {
-	# The default source for libfoo.la is libfoo.c, but for
-	# backward compatibility we first look at libfoo_la.c,
-	# if no default source suffix is given.
-	my $old_default_source = "$one_file.c";
 	my $ext_var = var ('AM_DEFAULT_SOURCE_EXT');
 	my $default_source_ext = $ext_var ? variable_value ($ext_var) : '.c';
 	msg_var ('unsupported', $ext_var, $ext_var->name . " can assume at most one value")
 	  if $default_source_ext =~ /[\t ]/;
 	(my $default_source = $unxformed) =~ s,(\.[^./\\]*)?$,$default_source_ext,;
-	if ($old_default_source ne $default_source
-	    && !$ext_var
-	    && (rule $old_default_source
-		|| rule '$(srcdir)/' . $old_default_source
-		|| rule '${srcdir}/' . $old_default_source
-		|| -f $old_default_source))
-	  {
-	    my $loc = $where->clone;
-	    $loc->pop_context;
-	    msg ('obsolete', $loc,
-		 "the default source for '$unxformed' has been changed "
-		 . "to '$default_source'.\n(Using '$old_default_source' for "
-		 . "backward compatibility.)");
-	    $default_source = $old_default_source;
-	  }
-	# If a rule exists to build this source with a $(srcdir)
-	# prefix, use that prefix in our variables too.  This is for
-	# the sake of BSD Make.
-	if (rule '$(srcdir)/' . $default_source
-	    || rule '${srcdir}/' . $default_source)
-	  {
-	    $default_source = '$(srcdir)/' . $default_source;
-	  }
-
 	&define_variable ($one_file . "_SOURCES", $default_source, $where);
 	push (@sources, $default_source);
 	push (@dist_sources, $default_source);
@@ -3734,7 +3717,7 @@ sub handle_dist ()
 	}
     }
 
-  # We might copy elements from $configure_dist_common to
+  # We might copy elements from @configure_dist_common to
   # %dist_common if we think we need to.  If the file appears in our
   # directory, we would have discovered it already, so we don't
   # check that.  But if the file is in a subdir without a Makefile,
@@ -3747,15 +3730,16 @@ sub handle_dist ()
   # See also automake bug#9651.
   if ($relative_dir eq '.')
     {
-      foreach my $file (split (' ' , $configure_dist_common))
+      foreach my $file (@configure_dist_common)
 	{
 	  my $dir = dirname ($file);
 	  push_dist_common ($file)
 	    if ($dir eq '.' || ! is_make_dir ($dir));
 	}
+      @configure_dist_common  = ();
     }
 
-  # We don't expected further attempts to modify $(am__dist_common)
+  # We don't expected further attempts to modify @dist_common
   # after this point, so disallow it, for extra safety.
   $handle_dist_run = 1;
 
@@ -3781,7 +3765,8 @@ sub handle_dist ()
   $output_rules .= &file_contents ('distdir',
 				   new Automake::Location,
 				   %transform,
-				   FILENAME_FILTER => $filename_filter);
+				   FILENAME_FILTER => $filename_filter,
+                                   'DIST-COMMON' => "@dist_common");
 }
 
 
@@ -3841,10 +3826,11 @@ sub handle_subdirs ()
 }
 
 
-# ($REGEN, @DEPENDENCIES)
+# $REGEN
 # &scan_aclocal_m4
 # ----------------
-# If aclocal.m4 creation is automated, return the list of its dependencies.
+# If aclocal.m4 creation is automated, return "aclocal.m4",
+# otherwise return 0.
 sub scan_aclocal_m4 ()
 {
   my $regen_aclocal = 0;
@@ -3861,21 +3847,11 @@ sub scan_aclocal_m4 ()
       $regen_aclocal = $line =~ 'generated automatically by aclocal';
     }
 
-  my @ac_deps = ();
-
-  if (set_seen ('ACLOCAL_M4_SOURCES'))
-    {
-      push (@ac_deps, '$(ACLOCAL_M4_SOURCES)');
-      msg_var ('obsolete', 'ACLOCAL_M4_SOURCES',
-	       "'ACLOCAL_M4_SOURCES' is obsolete.\n"
-	       . "It should be safe to simply remove it");
-    }
-
   # Note that it might be possible that aclocal.m4 doesn't exist but
   # should be auto-generated.  This case probably isn't very
   # important.
 
-  return ($regen_aclocal, @ac_deps);
+  return $regen_aclocal;
 }
 
 
@@ -3991,10 +3967,9 @@ sub handle_configure ($$$@)
   my $colon_infile = ':' . join (':', @inputs);
   $colon_infile = '' if $colon_infile eq ":$makefile.in";
   my @rewritten = rewrite_inputs_into_dependencies ($makefile, @inputs);
-  my ($regen_aclocal_m4, @aclocal_m4_deps) = scan_aclocal_m4;
+  my $regen_aclocal_m4 = scan_aclocal_m4;
   define_pretty_variable ('am__aclocal_m4_deps', TRUE, INTERNAL,
-			  @configure_deps, @aclocal_m4_deps,
-			  '$(top_srcdir)/' . $configure_ac);
+			  @configure_deps, '$(top_srcdir)/' . $configure_ac);
   my @configuredeps = ('$(am__aclocal_m4_deps)', '$(CONFIGURE_DEPENDENCIES)');
   push @configuredeps, '$(ACLOCAL_M4)' if -f 'aclocal.m4';
   define_pretty_variable ('am__configure_deps', TRUE, INTERNAL,
@@ -4017,12 +3992,6 @@ sub handle_configure ($$$@)
      'MAKEFILE-AM-SOURCES' => "$makefile$colon_infile",
      'REGEN-ACLOCAL-M4'    => $regen_aclocal_m4,
      VERBOSE               => verbose_flag ('GEN'));
-
-  if ($relative_dir eq '.')
-    {
-      &push_dist_common ('acconfig.h')
-	if -f 'acconfig.h';
-    }
 
   # If we have a configure header, require it.
   my $hdr_index = 0;
@@ -4066,30 +4035,10 @@ sub handle_configure ($$$@)
 	  # Cannot define rebuild rules for filenames with shell variables.
 	  next if (substitute_ac_subst_variables $config_h_path) =~ /\$/;
 
-	  # Header defined in this directory.
-	  my @files;
-	  if (-f $config_h_path . '.top')
-	    {
-	      push (@files, "$cn_sans_dir.top");
-	    }
-	  if (-f $config_h_path . '.bot')
-	    {
-	      push (@files, "$cn_sans_dir.bot");
-	    }
-
-	  push_dist_common (@files);
-
-	  # For now, acconfig.h can only appear in the top srcdir.
-	  if (-f 'acconfig.h')
-	    {
-	      push (@files, '$(top_srcdir)/acconfig.h');
-	    }
-
 	  my $stamp = "${stamp_dir}stamp-h${hdr_index}";
 	  $output_rules .=
 	    file_contents ('remake-hdr',
 			   new Automake::Location,
-			   FILES            => "@files",
 			   CONFIG_H         => $cn_sans_dir,
 			   CONFIG_HIN       => $ins[0],
 			   CONFIG_H_DEPS    => "@ins",
@@ -4104,26 +4053,6 @@ sub handle_configure ($$$@)
 				  new Automake::Location,
 				  FILES => "@distclean_config")
     if @distclean_config;
-
-  # Distribute and define mkinstalldirs only if it is already present
-  # in the package, for backward compatibility (some people may still
-  # use $(mkinstalldirs)).
-  my $mkidpath = "$config_aux_dir/mkinstalldirs";
-  if (-f $mkidpath)
-    {
-      # Use require_file so that any existing script gets updated
-      # by --force-missing.
-      require_conf_file ($mkidpath, FOREIGN, 'mkinstalldirs');
-      define_variable ('mkinstalldirs',
-		       "\$(SHELL) $am_config_aux_dir/mkinstalldirs", INTERNAL);
-    }
-  else
-    {
-      # Use $(install_sh), not $(MKDIR_P) because the latter requires
-      # at least one argument, and $(mkinstalldirs) used to work
-      # even without arguments (e.g. $(mkinstalldirs) $(conditional_dir)).
-      define_variable ('mkinstalldirs', '$(install_sh) -d', INTERNAL);
-    }
 
   reject_var ('CONFIG_HEADER',
 	      "'CONFIG_HEADER' is an anachronism; now determined "
@@ -5325,8 +5254,7 @@ sub scan_autoconf_files ()
     if -f $config_aux_dir . '/install.sh';
 
   # Preserve dist_common for later.
-  $configure_dist_common = variable_value ('am__dist_common') || '';
-
+  @configure_dist_common = @dist_common;
 }
 
 ################################################################
@@ -6416,14 +6344,6 @@ sub read_am_file ($$)
 	    }
 	    elsif ($prev_state == IN_COMMENT)
 	    {
-		# If the line doesn't start with a '#', add it.
-		# We do this because a continued comment like
-		#   # A = foo \
-		#         bar \
-		#         baz
-		# is not portable.  BSD make doesn't honor
-		# escaped newlines in comments.
-		s/^#?/#/;
 		$comment .= $spacing . $_;
 	    }
 	    else # $prev_state == IN_VAR_DEF
@@ -6526,7 +6446,7 @@ sub read_am_file ($$)
 		push (@include_stack, "\$\(top_srcdir\)/$path");
 		# Distribute any included file.
 
-		# Always use the $(top_srcdir) prefix in am__dist_common,
+		# Always use the $(top_srcdir) prefix in @dist_common,
 		# otherwise OSF make will implicitly copy the included
 		# file in the build tree during "make distdir" to satisfy
 		# the dependency.
@@ -6537,7 +6457,7 @@ sub read_am_file ($$)
 	      {
 		$path =~ s/\$\(srcdir\)\///;
 		push (@include_stack, "\$\(srcdir\)/$path");
-		# Always use the $(srcdir) prefix in am__dist_common,
+		# Always use the $(srcdir) prefix in @dist_common,
 		# otherwise OSF make will implicitly copy the included
 		# file in the build tree during "make distdir" to satisfy
 		# the dependency.
@@ -7374,7 +7294,6 @@ sub locate_aux_dir ()
 
 # &push_required_file ($DIR, $FILE, $FULLFILE)
 # --------------------------------------------------
-# Push the given file onto $(am__dist_common).
 sub push_required_file
 {
   my ($dir, $file, $fullfile) = @_;
@@ -7488,7 +7407,7 @@ sub required_file_check_or_copy ($$$)
   # If we've already looked for it, we're done.  You might wonder why
   # we don't do this before searching for the file.  If we do that,
   # then something like AC_OUTPUT(subdir/foo foo) will fail to put
-  # 'foo.in' into the list of distributed files $(am__dist_common).
+  # 'foo.in' into the list of distributed files @dist_common.
   if (! $found_it)
     {
       return if defined $required_file_not_found{$fullfile};
@@ -7775,10 +7694,8 @@ sub push_dist_common
 {
   prog_error "push_dist_common run after handle_dist"
     if $handle_dist_run;
-  Automake::Variable::define ('am__dist_common', VAR_AUTOMAKE, '+',
-                              TRUE, "@_", '', INTERNAL, VAR_PRETTY);
+  push @dist_common, @_;
 }
-
 
 ################################################################
 
@@ -7838,11 +7755,6 @@ sub generate_makefile ($$)
 	    if $def->owner != VAR_AUTOMAKE;
 	}
     }
-
-  # Catch some obsolete variables.
-  msg_var ('obsolete', 'INCLUDES',
-	   "'INCLUDES' is the old name for 'AM_CPPFLAGS' (or '*_CPPFLAGS')")
-    if var ('INCLUDES');
 
   # Must do this after reading .am file.
   define_variable ('subdir', $relative_dir, INTERNAL);

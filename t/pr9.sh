@@ -20,8 +20,8 @@
 # == Report ==
 # When AC_CONFIG_AUX_DIR is set (in my case to 'support'), make dist
 # no longer automatically includes config.guess, config.sub, install-sh,
-# ltconfig, ltmain.sh, mdate-sh, missing, and mkinstalldirs.  In fact,
-# the entire 'support/' directory is omitted.
+# ltconfig, ltmain.sh, mdate-sh, and missing.  In fact, the entire
+# 'support/' directory is omitted.
 
 . ./defs || Exit 1
 
