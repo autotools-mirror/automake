@@ -31,7 +31,6 @@ my_log_driver = $(srcdir)/tap-driver
 my_log_compiler = cat
 TEST_EXTENSIONS =
 TESTS =
-LOG_DRIVER = $(error LOG_DRIVER is dummy, required, never extended)
 END
 
 : > later.mk
@@ -78,7 +77,7 @@ done
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE
+$AUTOMAKE -a
 
 ./configure
 

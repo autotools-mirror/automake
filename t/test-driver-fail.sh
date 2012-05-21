@@ -42,7 +42,7 @@ chmod a+x foo
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE
+$AUTOMAKE -a
 
 ./configure
 

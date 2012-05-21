@@ -138,7 +138,7 @@ chmod a+x dummy-driver
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE
+$AUTOMAKE -a
 
 ./configure
 

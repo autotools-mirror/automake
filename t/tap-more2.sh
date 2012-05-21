@@ -77,7 +77,7 @@ END
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE
+$AUTOMAKE --add-missing
 
 ./configure
 

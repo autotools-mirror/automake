@@ -81,7 +81,7 @@ chmod a+x *.test
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE
+$AUTOMAKE -a
 
 do_recheck ()
 {

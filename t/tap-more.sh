@@ -40,6 +40,13 @@ TESTS = 1.test 2.test 3.test
 EXTRA_DIST = $(TESTS) tap-driver
 END
 
+cat > test-driver <<'END'
+#!/bin/sh
+echo "$0: required by Automake, but should never be actually used" >&2
+exit 1
+END
+chmod a+x test-driver
+
 cat > 1.test <<'END'
 #! /bin/sh
 echo 1..2

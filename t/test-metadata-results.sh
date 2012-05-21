@@ -80,7 +80,7 @@ count_test_results ()
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE
+$AUTOMAKE --add-missing
 
 ./configure
 

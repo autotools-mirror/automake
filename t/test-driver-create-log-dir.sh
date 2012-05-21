@@ -71,6 +71,13 @@ echo dummy2 > "$trs_file"
 END
 chmod a+x checkdir-driver
 
+cat > test-driver <<'END'
+#!/bin/sh
+echo "$0: required by Automake, but should never be actually used" >&2
+exit 1
+END
+chmod a+x test-driver
+
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE

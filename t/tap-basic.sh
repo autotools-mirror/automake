@@ -46,8 +46,6 @@ ok.test:
 	echo 'ok 3 # SKIP' >>$@-t
 	cat $@-t ;: For debugging.
 	mv -f $@-t $@
-
-LOG_DRIVER = false  # Dummy but required.
 END
 
 cat > success.test << 'END'
@@ -73,6 +71,13 @@ ok 18 eighteen # SKIP
 ok 19 - nineteen # SKIP
 ok 20 twenty twenty # SKIP
 END
+
+cat > test-driver <<'END'
+#!/bin/sh
+echo "$0: required by Automake, but should never be actually used" >&2
+exit 1
+END
+chmod a+x test-driver
 
 $ACLOCAL
 $AUTOCONF
