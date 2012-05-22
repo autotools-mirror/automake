@@ -14,56 +14,97 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Expose bug in conditional definition of TEST_EXTENSIONS.
+# Conditional definition of TEST_EXTENSIONS is supported.
 
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'
-AM_CONDITIONAL([COND], [:])
-AM_CONDITIONAL([COND2], [:])
+AC_CONFIG_FILES([sub/Makefile])
+AM_CONDITIONAL([COND1], [test x"$cond1" = x"yes"])
+AM_CONDITIONAL([COND2], [test x"$cond2" = x"yes"])
+AC_OUTPUT
 END
 
-$ACLOCAL
+mkdir sub
 
-cat > 1.am << 'END'
-TESTS =
-if COND
-## lineno 4
-TEST_EXTENSIONS = .foo
+cat > Makefile.am << 'END'
+SUBDIRS = sub
+TESTS = foo.sh bar.test
+if COND1
+TEST_EXTENSIONS = .sh
 endif
 END
 
-cat > 2.am << 'END'
-TESTS =
-## lineno 3
-TEST_EXTENSIONS = .foo
-if COND
-# Do nothing.
+cat > sub/Makefile.am << 'END'
+TESTS = 1.sh 2.bar 3.x
+TEST_EXTENSIONS = .sh
+if COND1
+if !COND2
+TEST_EXTENSIONS += .x
+endif
 else
 TEST_EXTENSIONS += .bar
 endif
 END
 
-cat > 3.am << 'END'
-TESTS =
-if COND
-if !COND2
-TESTS = x
-else
-## lineno 7
-TEST_EXTENSIONS = .foo
-endif
-endif
+cat > foo.sh << 'END'
+#!/bin/sh
+exit 0
 END
+chmod a+x foo.sh
 
-: > test-driver
+cp foo.sh bar.test
+cp foo.sh sub/1.sh
+cp foo.sh sub/2.bar
+cp foo.sh sub/3.x
 
-for i in 1 2 3; do
-  AUTOMAKE_fails $i
-  lineno=`sed -n 's/^## lineno //p' $i.am` \
-    && test 0 -lt "$lineno" \
-    || Exit 99
-  grep "^$i\\.am:$lineno:.*TEST_EXTENSIONS.*conditional content" stderr
-done
+do_setup ()
+{
+  ./configure "$@"
+  $MAKE check
+  ls -l . sub
+}
+
+do_clean ()
+{
+  $MAKE clean
+  test "$(find . -name '*.log')" = ./config.log
+}
+
+$ACLOCAL
+$AUTOCONF
+$AUTOMAKE -a
+
+do_setup cond1=yes cond2=yes
+test -f foo.log
+test -f bar.test.log
+test -f sub/1.log
+test -f sub/2.bar.log
+test -f sub/3.x.log
+do_clean
+
+do_setup cond1=yes cond2=no
+test -f foo.log
+test -f bar.test.log
+test -f sub/1.log
+test -f sub/2.bar.log
+test -f sub/3.log
+do_clean
+
+do_setup cond1=no cond2=yes
+test -f foo.sh.log
+test -f bar.log
+test -f sub/1.log
+test -f sub/2.log
+test -f sub/3.x.log
+do_clean
+
+do_setup cond1=no cond2=no
+test -f foo.sh.log
+test -f bar.log
+test -f sub/1.log
+test -f sub/2.log
+test -f sub/3.x.log
+do_clean
 
 :
