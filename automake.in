@@ -4551,20 +4551,6 @@ sub handle_tests_dejagnu
     $output_rules .= file_contents ('dejagnu', new Automake::Location);
 }
 
-# is_valid_test_extension ($EXT)
-# ------------------------------
-# Return true if $EXT can appear in $(TEST_EXTENSIONS), return false
-# otherwise.
-sub is_valid_test_extension ($)
-{
-  my $ext = shift;
-  return 1
-    if ($ext =~ /^\./);
-  return 1
-    if (exists $configure_vars{'EXEEXT'} && $ext eq subst ('EXEEXT'));
-  return 0;
-}
-
 # Handle TESTS variable and other checks.
 sub handle_tests
 {
@@ -4607,15 +4593,10 @@ sub handle_tests
 	     msg_var 'unsupported', $var,
                      "'TEST_EXTENSIONS' cannot have conditional contents";
            }
-	  my @test_suffixes = $var->value_as_list_recursive;
-          my @invalid_test_suffixes = grep { !is_valid_test_extension $_ }
-                                           @test_suffixes;
-          @test_suffixes = grep { is_valid_test_extension $_ } @test_suffixes;
           $output_rules .=
             file_contents ('parallel-tests', new Automake::Location,
                            COLOR => !! option 'color-tests',
-                           CHECK_DEPS => "@check",
-                           INVALID_TEST_EXTENSIONS => "@invalid_test_suffixes");
+                           CHECK_DEPS => "@check");
 	  $clean_files{'$(am__test_logs)'} = MOSTLY_CLEAN;
 	  $clean_files{'$(am__test_results)'} = MOSTLY_CLEAN;
 	  $clean_files{'$(TEST_SUITE_LOG)'} = MOSTLY_CLEAN;

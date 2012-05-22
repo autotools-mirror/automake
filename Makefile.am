@@ -388,7 +388,6 @@ XFAIL_TESTS = \
   t/pr8365-remake-timing.sh \
   t/remake-am-pr10111.sh \
   t/remake-m4-pr10111.sh \
-  t/test-extensions.sh \
   t/txinfo5.sh \
   $(perl_fake_XFAIL_TESTS)
 

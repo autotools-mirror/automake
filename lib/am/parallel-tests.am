@@ -25,11 +25,12 @@ include color-tests.am
 ## of more test metadata, and the use of custom test derivers and protocols
 ## (among them, TAP).
 
-am__invalid_test_extensions = %INVALID_TEST_EXTENSIONS%
-$(if $(am__invalid_test_extensions), \
-  $(foreach am__e, $(am__invalid_test_extensions), \
-    $(warning invalid test extension: '$(am__e)')) \
-  $(error invalid test extensions have been encountered))
+am__maybe_invalid_test_extensions = \
+  $(if \
+    $(strip $1), \
+    $(foreach am__e, $1,\
+      $(warning invalid test extension: '$(am__e)')) \
+    $(error invalid test extensions have been encountered))
 
 am__is_xfail_test = \
   $(if $(filter-out $(am__xfail_test_bases), \
@@ -81,6 +82,7 @@ am__tpfx = \
 !endif # am__handle_exeext = yes
 !endef
 !
+!$(call am__maybe_invalid_test_extensions,$(filter-out .%,$(TEST_EXTENSIONS)))
 ## FIXME: it would be nice to break these on multiple lines.  Unfortnately,
 ## FIXME: our '!' is not yet smart enough to handle that :-(
 !$(foreach am__e,$(TEST_EXTENSIONS), $(eval $(call am__handle_per_suffix_test,$(am__e))))
