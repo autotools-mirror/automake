@@ -225,7 +225,6 @@ EXTRA_DIST += lib/Automake/Config.in
 dist_am_DATA = \
   lib/am/serial-tests.am \
   lib/am/parallel-tests.am \
-  lib/am/check2.am \
   lib/am/color-tests.am \
   lib/am/clean-hdr.am \
   lib/am/clean.am \
@@ -389,6 +388,7 @@ XFAIL_TESTS = \
   t/pr8365-remake-timing.sh \
   t/remake-am-pr10111.sh \
   t/remake-m4-pr10111.sh \
+  t/test-extensions.sh \
   t/txinfo5.sh \
   $(perl_fake_XFAIL_TESTS)
 
