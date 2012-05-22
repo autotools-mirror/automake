@@ -4551,32 +4551,6 @@ sub handle_tests_dejagnu
     $output_rules .= file_contents ('dejagnu', new Automake::Location);
 }
 
-sub handle_per_suffix_test($)
-{
-  my $test_suffix = shift;
-  my $pfx;
-  if ($test_suffix eq '')
-    {
-      $pfx = '';
-    }
-  else
-    {
-      prog_error ("test suffix '$test_suffix' lacks leading dot")
-        unless $test_suffix =~ m/^\.(.*)/;
-      $pfx = uc ($1) . '_';
-    }
-  # The "test driver" program, deputed to handle tests protocol used by
-  # test scripts.  By default, it's assumed that no protocol is used, so
-  # we fall back to the old behaviour, implemented by the 'test-driver'
-  # auxiliary script.
-  if (! var "${pfx}LOG_DRIVER")
-    {
-      define_variable ("${pfx}LOG_DRIVER",
-                       '$(SHELL) $(am__config_aux_dir)/test-driver',
-                       INTERNAL);
-    }
-}
-
 # is_valid_test_extension ($EXT)
 # ------------------------------
 # Return true if $EXT can appear in $(TEST_EXTENSIONS), return false
@@ -4642,17 +4616,6 @@ sub handle_tests
                            COLOR => !! option 'color-tests',
                            CHECK_DEPS => "@check",
                            INVALID_TEST_EXTENSIONS => "@invalid_test_suffixes");
-          # It is *imperative* that the empty 'suffix goes last.
-          # Otherwise, a declaration like "TESTS = all.test" would cause GNU
-          # make to mistakenly try to build the 'all.log' and 'all.trs' files
-          # from a non-existent 'all' program (because the Makefile contains
-          # an explicit 'all' target) rather than from the 'all.test' script,
-          # thus causing all sort of mishaps and confusion.
-	  push @test_suffixes, '';
-	  foreach my $test_suffix (@test_suffixes)
-	    {
-              handle_per_suffix_test ($test_suffix);
-	    }
 	  $clean_files{'$(am__test_logs)'} = MOSTLY_CLEAN;
 	  $clean_files{'$(am__test_results)'} = MOSTLY_CLEAN;
 	  $clean_files{'$(TEST_SUITE_LOG)'} = MOSTLY_CLEAN;
