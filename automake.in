@@ -2429,8 +2429,6 @@ sub handle_programs
       reject_var ($xname . '_LIBADD',
 		  "use '${xname}_LDADD', not '${xname}_LIBADD'");
 
-      set_seen ($xname . '_DEPENDENCIES');
-      set_seen ('EXTRA_' . $xname . '_DEPENDENCIES');
       set_seen ($xname . '_LDFLAGS');
 
       # Determine program to use for link.
@@ -2540,10 +2538,6 @@ sub handle_libraries
 
       reject_var ($xlib . '_LDADD',
 		  "use '${xlib}_LIBADD', not '${xlib}_LDADD'");
-
-      # Make sure we at look at this.
-      set_seen ($xlib . '_DEPENDENCIES');
-      set_seen ('EXTRA_' . $xlib . '_DEPENDENCIES');
 
       &handle_source_transform ($xlib, $onelib, $obj, $where,
 				NONLIBTOOL => 1, LIBTOOL => 0);
@@ -2728,10 +2722,8 @@ sub handle_ltlibraries
       $where->push_context ("while processing Libtool library '$onelib'");
       $where->set (INTERNAL->get);
 
-      # Make sure we look at these.
+      # Make sure we look at this.
       set_seen ($xlib . '_LDFLAGS');
-      set_seen ($xlib . '_DEPENDENCIES');
-      set_seen ('EXTRA_' . $xlib . '_DEPENDENCIES');
 
       # Generate support for conditional object inclusion in
       # libraries.
@@ -2831,7 +2823,7 @@ sub check_typos ()
   # It is ok if the user sets this particular variable.
   set_seen 'AM_LDFLAGS';
 
-  foreach my $primary ('SOURCES', 'LIBADD', 'LDADD', 'LDFLAGS', 'DEPENDENCIES')
+  foreach my $primary ('SOURCES', 'LIBADD', 'LDADD', 'LDFLAGS')
     {
       foreach my $var (variables $primary)
 	{
@@ -3581,8 +3573,6 @@ sub handle_tags
 					 TAGSDIRS  => "@tag_deps",
 					 CTAGSDIRS => "@ctag_deps",
 					 CSCOPEDIRS => "@cscope_deps");
-
-	set_seen 'TAGS_DEPENDENCIES';
     }
     elsif (reject_var ('TAGS_DEPENDENCIES',
 		       "it doesn't make sense to define 'TAGS_DEPENDENCIES'"
@@ -3830,9 +3820,6 @@ sub handle_subdirs ()
 sub scan_aclocal_m4 ()
 {
   my $regen_aclocal = 0;
-
-  set_seen 'CONFIG_STATUS_DEPENDENCIES';
-  set_seen 'CONFIGURE_DEPENDENCIES';
 
   if (-f 'aclocal.m4')
     {
@@ -4588,10 +4575,6 @@ sub handle_per_suffix_test($)
                        '$(SHELL) $(am__config_aux_dir)/test-driver',
                        INTERNAL);
     }
-  # Required to avoid spurious errors like:
-  # ``variable 'LOG_DEPENDENCIES' is defined but no program or
-  #   library has 'LOG' as canonical name (possible typo)''
-  set_seen ("${pfx}LOG_DEPENDENCIES");
 }
 
 # is_valid_test_extension ($EXT)
