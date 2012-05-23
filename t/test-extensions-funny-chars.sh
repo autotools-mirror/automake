@@ -24,10 +24,11 @@ fetch_tap_driver
 echo AC_OUTPUT >> configure.ac
 
 cat >> Makefile.am <<'END'
-TEST_EXTENSIONS = .@ .f-o-o .l!Nu.x
-TESTS = foo.@ bar.f-o-o zardoz.l!Nu.x
+TEST_EXTENSIONS = .@ .2 .f-o-o .l!Nu.x
+TESTS = foo.@ bar.f-o-o baz.2 zardoz.l!Nu.x
 XFAIL_TESTS = zardoz.l!Nu.x
 @_LOG_COMPILER = $(SHELL)
+2_LOG_COMPILER = $(SHELL)
 F-O-O_LOG_DRIVER = $(srcdir)/tap-driver
 L!NU.X_LOG_COMPILER = false
 EXTRA_DIST = $(TESTS) tap-driver
@@ -42,7 +43,10 @@ cat > foo.@ << 'END'
 echo @K @K @K
 exit 0
 END
-chmod a-x foo.@ # We don't want it to be executable, either.
+cp foo.@ baz.2
+# We don't want them to be executable, either.  So do this for
+# extra safety.
+chmod a-x foo.@ baz.2
 
 cat > bar.f-o-o << 'END'
 #! /bin/sh
@@ -63,8 +67,9 @@ chmod a+x zardoz.l!Nu.x
 
 count_all ()
 {
-  count_test_results total=6 pass=3 fail=0 skip=1 xfail=2 xpass=0 error=0
+  count_test_results total=7 pass=4 fail=0 skip=1 xfail=2 xpass=0 error=0
   grep '^PASS: foo\.@$'                 stdout
+  grep '^PASS: baz\.2$'                 stdout
   grep '^XFAIL: zardoz.l!Nu\.x$'        stdout
   grep '^PASS: bar\.f-o-o 1 - good'     stdout
   grep '^SKIP: bar\.f-o-o 2 # SKIP'     stdout
@@ -84,6 +89,8 @@ ls -l
 cat test-suite.log
 cat foo.log
 grep '@K @K @K' foo.log
+cat baz.log
+grep '@K @K @K' baz.log
 cat bar.log
 cat zardoz.log
 grep 'Hello Zardoz' zardoz.log && Exit 1
@@ -94,6 +101,7 @@ $MAKE clean
 test ! -f test-suite.log
 test ! -f foo.log
 test ! -f bar.log
+test ! -f baz.log
 test ! -f zardoz.log
 
 st=0
@@ -103,6 +111,7 @@ count_test_results total=1 pass=0 fail=0 skip=0 xfail=0 xpass=1 error=0
 cat test-suite.log
 test ! -f foo.log
 test ! -f bar.log
+test ! -f baz.log
 cat zardoz.log
 grep 'Hello Zardoz' zardoz.log
 test $st -gt 0 || Exit 1
