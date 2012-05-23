@@ -1,0 +1,57 @@
+#! /bin/sh
+# Copyright (C) 2012 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Projects using only Fortran or C++ shouldn't need C-related stuff.
+
+am_create_testdir=empty
+. ./defs || Exit 1
+
+plan_ 6
+
+only_ ()
+{
+  test $# -eq 3 || fatal_ "only_: bad usage"
+  lang=$1; shift
+  macro=$1; shift
+  sources=$*
+  : ================  $lang  ================ :
+  mkdir "$macro"
+  cd "$macro"
+  unindent > configure.ac <<END
+    AC_INIT([Only $2], [1.0])
+    AM_INIT_AUTOMAKE
+    AC_CONFIG_FILES([Makefile])
+    $macro
+END
+  echo bin_PROGRAMS = foo > Makefile.am
+  echo foo_SOURCES = $sources >> Makefile.am
+  r=ok
+  $ACLOCAL \
+    && $AUTOMAKE -a \
+    && not $EGREP '\(CC\)|\(CFLAGS\)|AM_CFLAGS' Makefile.in \
+    || r='not ok'
+  result_ "$r" "$lang only"
+  cd ..
+}
+
+only_ "C++"           AC_PROG_CXX    '1.cxx 2.cpp 3.c++ 4.cc 5.C'
+only_ "Fortran"       AC_PROG_FC     'a.f90 b.f95 c.f03 d.f08'
+only_ "Fortran 77"    AC_PROG_F77    'x.f y.for'
+only_ "Java"          AM_PROG_GCJ    'foo.java bar.class'
+only_ "Objective C"   AC_PROG_OBJC   'zardoz.m fu.m'
+only_ "Objective C++" AC_PROG_OBJCXX 'foo.mm bar.mm'
+
+:

@@ -45,6 +45,13 @@ $FGREP foo.c Makefile.in && Exit 1
 # However Automake must figure that foo.zoo is eventually
 # transformed into foo.o, and use this latter file (to link foo).
 $FGREP 'foo.$(OBJEXT)' Makefile.in
+# Finally, our dummy package doesn't use C in any way, so it the
+# Makefile shouldn't contain stuff related to the C compiler.
+$FGREP '$(LINK)'   Makefile.in && Exit 1
+$FGREP 'AM_CFLAGS' Makefile.in && Exit 1
+$FGREP '$(CFLAGS)' Makefile.in && Exit 1
+$FGREP '$(CC)'     Makefile.in && Exit 1
+
 
 $AUTOCONF
 ./configure
