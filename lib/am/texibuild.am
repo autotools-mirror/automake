@@ -14,14 +14,9 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 ?GENERIC_INFO?%%DEST_SUFFIX%: %%SOURCE_SUFFIX%
 ?!GENERIC_INFO?%DEST_INFO_PREFIX%%DEST_SUFFIX%: %SOURCE_INFO% %DEPS%
-## It is wrong to have 'info' files dependent on %DIRSTAMP%, because
-## 'info' files are distributed and %DIRSTAMP% isn't: a distributed file
-## should never be dependent upon a non-distributed built file.
-## Therefore we ensure that %DIRSTAMP% exists in the rule.
-?!INSRC??DIRSTAMP?	@test -f %DIRSTAMP% || $(MAKE) %DIRSTAMP%
+?!INSRC?	@$(am__ensure_target_dir_exists)
 ## Back up the info files before running makeinfo. This is the cheapest
 ## way to ensure that
 ## 1) If the texinfo file shrinks (or if you start using --no-split),
@@ -57,8 +52,9 @@
 INFO_DEPS += %DEST_INFO_PREFIX%%DEST_SUFFIX%
 
 ?GENERIC?%.dvi: %%SOURCE_SUFFIX%
-?!GENERIC?%DEST_PREFIX%.dvi: %SOURCE% %DEPS% %DIRSTAMP%
-	%AM_V_TEXI2DVI%TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
+?!GENERIC?%DEST_PREFIX%.dvi: %SOURCE% %DEPS%
+	%AM_V_TEXI2DVI%$(am__ensure_target_dir_exists) && \
+	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
 ## Must set MAKEINFO like this so that version.texi will be found even
 ## if it is in srcdir (-I $(srcdir) is set in %MAKEINFOFLAGS%).
 	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) %MAKEINFOFLAGS%' \
@@ -70,8 +66,9 @@ INFO_DEPS += %DEST_INFO_PREFIX%%DEST_SUFFIX%
 	$(TEXI2DVI) %TEXIQUIET% --clean -o $@ $< %TEXIDEVNULL%
 
 ?GENERIC?%.pdf: %%SOURCE_SUFFIX%
-?!GENERIC?%DEST_PREFIX%.pdf: %SOURCE% %DEPS% %DIRSTAMP%
-	%AM_V_TEXI2PDF%TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
+?!GENERIC?%DEST_PREFIX%.pdf: %SOURCE% %DEPS%
+	%AM_V_TEXI2PDF%$(am__ensure_target_dir_exists) && \
+	TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
 ## Must set MAKEINFO like this so that version.texi will be found even
 ## if it is in srcdir (-I $(srcdir) is set in %MAKEINFOFLAGS%).
 	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) %MAKEINFOFLAGS%' \
@@ -83,7 +80,8 @@ INFO_DEPS += %DEST_INFO_PREFIX%%DEST_SUFFIX%
 	$(TEXI2PDF) %TEXIQUIET% --clean -o $@ $< %TEXIDEVNULL%
 
 ?GENERIC?%.html: %%SOURCE_SUFFIX%
-?!GENERIC?%DEST_PREFIX%.html: %SOURCE% %DEPS% %DIRSTAMP%
+?!GENERIC?%DEST_PREFIX%.html: %SOURCE% %DEPS%
+	%SILENT%$(am__ensure_target_dir_exists)
 ## When --split (the default) is used, makeinfo will output a
 ## directory.  However it will not update the time stamp of a
 ## previously existing directory, and when the names of the nodes
@@ -106,8 +104,6 @@ INFO_DEPS += %DEST_INFO_PREFIX%%DEST_SUFFIX%
 	fi
 
 ## If we are using the generic rules, we need separate dependencies.
-## (Don't wonder about %DIRSTAMP% here, this is used only by non-generic
-## rules.)
 if %?GENERIC_INFO%
 %DEST_INFO_PREFIX%%DEST_SUFFIX%: %SOURCE_REAL% %DEPS%
 endif %?GENERIC_INFO%

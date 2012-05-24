@@ -574,13 +574,6 @@ my %object_map;
 # libtool compilation (the COMPILE_* constants).
 my %object_compilation_map;
 
-
-# This keeps track of the directories for which we've already
-# created dirstamp code.  Keys are directories, values are stamp files.
-# Several keys can share the same stamp files if they are equivalent
-# (as are './/foo' and 'foo').
-my %directory_map;
-
 # All .P files.
 my %dep_files;
 
@@ -691,8 +684,6 @@ sub initialize_per_input ()
 
     %object_map = ();
     %object_compilation_map = ();
-
-    %directory_map = ();
 
     %dep_files = ();
 
@@ -1373,7 +1364,6 @@ sub handle_languages
 	my $verbose = verbose_flag ($lang->ccer || 'GEN');
 	my $verbose_nodep = ($AMDEP eq 'FALSE')
 	  ? $verbose : verbose_nodep_flag ($lang->ccer || 'GEN');
-	my $silent = silent_flag ();
 
 	my %transform = ('EXT'     => $ext,
 			 'PFX'     => $pfx,
@@ -1388,7 +1378,6 @@ sub handle_languages
 			 DIST_SOURCE   => 1,
 			 VERBOSE   => $verbose,
 			 'VERBOSE-NODEP' => $verbose_nodep,
-			 SILENT    => $silent,
 			);
 
 	# Generate the appropriate rules for this extension.
@@ -1490,7 +1479,6 @@ sub handle_languages
 
 			     VERBOSE   => $verbose,
 			     'VERBOSE-NODEP'  => $verbose_nodep,
-			     SILENT    => $silent,
 			     COMPILE   => $obj_compile,
 			     LTCOMPILE => $obj_ltcompile,
 			     -o        => $output_flag,
@@ -1894,7 +1882,6 @@ sub handle_single_transform ($$$$$%)
 
 	if (! defined $object_map{$object})
 	{
-	    my @dep_list = ();
 	    $object_map{$object} = $full;
 
 	    # If resulting object is in subdir, we need to make
@@ -1923,12 +1910,7 @@ sub handle_single_transform ($$$$$%)
 		    # Remove any libtool object in this directory.
 		    $libtool_clean_directories{$directory} = 1;
 		}
-
-		push (@dep_list, require_build_directory ($directory));
 	    }
-
-	    &pretty_print_rule ($object . ':', "\t", @dep_list)
-		if scalar @dep_list > 0;
 	}
 
 	# Transform .o or $o file into .P file (for automatic
@@ -2437,10 +2419,6 @@ sub handle_programs
       my($xlink, $vlink) = &define_per_target_linker_variable ($linker, $xname);
       $vlink = verbose_flag ($vlink || 'GEN');
 
-      # If the resulting program lies into a subdirectory,
-      # make sure this directory will exist.
-      my $dirstamp = require_build_directory_maybe ($one_file);
-
       $libtool_clean_directories{dirname ($one_file)} = 1;
 
       $output_rules .= &file_contents ('program',
@@ -2449,7 +2427,6 @@ sub handle_programs
 				       XPROGRAM => $xname,
 				       XLINK    => $xlink,
 				       VERBOSE  => $vlink,
-				       DIRSTAMP => $dirstamp,
 				       EXEEXT   => '$(EXEEXT)');
 
       if ($seen_libobjs || $seen_global_libobjs)
@@ -2548,19 +2525,13 @@ sub handle_libraries
       &handle_source_transform ($xlib, $onelib, $obj, $where,
 				NONLIBTOOL => 1, LIBTOOL => 0);
 
-      # If the resulting library lies into a subdirectory,
-      # make sure this directory will exist.
-      my $dirstamp = require_build_directory_maybe ($onelib);
       my $verbose = verbose_flag ('AR');
-      my $silent = silent_flag ();
 
       $output_rules .= &file_contents ('library',
 				       $where,
 				       VERBOSE  => $verbose,
-				       SILENT   => $silent,
 				       LIBRARY  => $onelib,
-				       XLIBRARY => $xlib,
-				       DIRSTAMP => $dirstamp);
+				       XLIBRARY => $xlib);
 
       if ($seen_libobjs)
 	{
@@ -2792,10 +2763,6 @@ sub handle_ltlibraries
 	    }
 	}
 
-      # If the resulting library lies into a subdirectory,
-      # make sure this directory will exist.
-      my $dirstamp = require_build_directory_maybe ($onelib);
-
       # Remember to cleanup .libs/ in this directory.
       my $dirname = dirname $onelib;
       $libtool_clean_directories{$dirname} = 1;
@@ -2806,8 +2773,7 @@ sub handle_ltlibraries
 				       XLTLIBRARY => $xlib,
 				       RPATH      => $rpath,
 				       XLINK      => $xlink,
-				       VERBOSE    => $vlink,
-				       DIRSTAMP   => $dirstamp);
+				       VERBOSE    => $vlink);
       if ($seen_libobjs)
 	{
 	  if (var ($xlib . '_LIBADD'))
@@ -2958,7 +2924,7 @@ sub scan_texinfo_file ($)
 }
 
 
-# ($DIRSTAMP, @CLEAN_FILES)
+# @CLEAN_FILES
 # output_texinfo_build_rules ($SOURCE, $DEST, $INSRC, @DEPENDENCIES)
 # ------------------------------------------------------------------
 # SOURCE - the source Texinfo file
@@ -3022,10 +2988,6 @@ sub output_texinfo_build_rules ($$$@)
   # extension).
   my $generic_info = ($generic && $dsfx) ? 1 : 0;
 
-  # If the resulting file lie into a subdirectory,
-  # make sure this directory will exist.
-  my $dirstamp = require_build_directory_maybe ($dest);
-
   my $dipfx = ($insrc ? '$(srcdir)/' : '') . $dpfx;
 
   $output_rules .= file_contents ('texibuild',
@@ -3037,12 +2999,10 @@ sub output_texinfo_build_rules ($$$@)
 				  DEST_PREFIX      => $dpfx,
 				  DEST_INFO_PREFIX => $dipfx,
 				  DEST_SUFFIX      => $dsfx,
-				  DIRSTAMP         => $dirstamp,
 				  GENERIC          => $generic,
 				  GENERIC_INFO     => $generic_info,
 				  INSRC		   => $insrc,
 				  MAKEINFOFLAGS    => $makeinfoflags,
-                                  SILENT           => silent_flag(),
 				  SOURCE           => ($generic
 						       ? '$<' : $source),
 				  SOURCE_INFO      => ($generic_info
@@ -3052,7 +3012,7 @@ sub output_texinfo_build_rules ($$$@)
                                   TEXIQUIET        => verbose_flag('texinfo'),
                                   TEXIDEVNULL      => verbose_flag('texidevnull'),
 				  );
-  return ($dirstamp, "$dpfx.dvi", "$dpfx.pdf", "$dpfx.ps", "$dpfx.html");
+  return ("$dpfx.dvi", "$dpfx.pdf", "$dpfx.ps", "$dpfx.html");
 }
 
 
@@ -3223,8 +3183,8 @@ sub handle_texinfo_helper ($)
 	  push_dist_common ('$(' . $canonical . '_TEXINFOS)');
 	}
 
-      my ($dirstamp, @cfiles) =
-	output_texinfo_build_rules ($texi, $out_file, $insrc, @texi_deps);
+      my @cfiles = output_texinfo_build_rules ($texi, $out_file,
+                                               $insrc, @texi_deps);
       push (@texi_cleans, @cfiles);
 
       push (@info_deps_list, $out_file);
@@ -3270,8 +3230,7 @@ sub handle_texinfo_helper ($)
 					  VTI      => $vti,
 					  STAMPVTI => "${soutdir}stamp-$vti",
 					  VTEXI    => "$soutdir$vtexi",
-					  MDDIR    => $conf_dir,
-					  DIRSTAMP => $dirstamp);
+					  MDDIR    => $conf_dir);
 	}
     }
 
@@ -6657,6 +6616,7 @@ sub preprocess_file ($%)
 		 'NONLIBTOOL'   => 1,
                  'HANDLE-EXEEXT' => (exists $configure_vars{'EXEEXT'} ?
                                      'TRUE' : 'FALSE'),
+		 'SILENT'       => silent_flag (),
 		%transform);
 
   if (! defined ($_ = $am_file_cache{$file}))
@@ -7638,68 +7598,6 @@ sub require_conf_file_with_macro ($$$@)
 
 ################################################################
 
-# &require_build_directory ($DIRECTORY)
-# -------------------------------------
-# Emit rules to create $DIRECTORY if needed, and return
-# the file that any target requiring this directory should be made
-# dependent upon.
-# We don't want to emit the rule twice, and want to reuse it
-# for directories with equivalent names (e.g., 'foo/bar' and './foo//bar').
-sub require_build_directory ($)
-{
-  my $directory = shift;
-
-  return $directory_map{$directory} if exists $directory_map{$directory};
-
-  my $cdir = File::Spec->canonpath ($directory);
-
-  if (exists $directory_map{$cdir})
-    {
-      my $stamp = $directory_map{$cdir};
-      $directory_map{$directory} = $stamp;
-      return $stamp;
-    }
-
-  my $dirstamp = "$cdir/\$(am__dirstamp)";
-
-  $directory_map{$directory} = $dirstamp;
-  $directory_map{$cdir} = $dirstamp;
-
-  # Set a variable for the dirstamp basename.
-  define_pretty_variable ('am__dirstamp', TRUE, INTERNAL,
-			  '$(am__leading_dot)dirstamp');
-
-  # Directory must be removed by 'make distclean'.
-  $clean_files{$dirstamp} = DIST_CLEAN;
-
-  $output_rules .= ("$dirstamp:\n"
-		    . "\t\@\$(MKDIR_P) $directory\n"
-		    . "\t\@: > $dirstamp\n");
-
-  return $dirstamp;
-}
-
-# &require_build_directory_maybe ($FILE)
-# --------------------------------------
-# If $FILE lies in a subdirectory, emit a rule to create this
-# directory and return the file that $FILE should be made
-# dependent upon.  Otherwise, just return the empty string.
-sub require_build_directory_maybe ($)
-{
-    my $file = shift;
-    my $directory = dirname ($file);
-
-    if ($directory ne '.')
-    {
-	return require_build_directory ($directory);
-    }
-    else
-    {
-	return '';
-    }
-}
-
-################################################################
 
 # Push a list of files onto dist_common.
 sub push_dist_common

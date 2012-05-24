@@ -14,60 +14,48 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test of subdir objects with C.
+# Test of subdir objects with libtool.
 
-required=cc
+required='cc libtoolize'
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
 AM_PROG_CC_C_O
 AM_PROG_AR
-AC_PROG_RANLIB
+AC_PROG_LIBTOOL
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
 AUTOMAKE_OPTIONS = subdir-objects
-bin_PROGRAMS = progs/wish
-lib_LIBRARIES = libs/libhope.a
-progs_wish_SOURCES = generic/a.c generic/b.c
-libs_libhope_a_SOURCES = sub/sub2/foo.c
+noinst_LTLIBRARIES = libs/libfoo.la
+libs_libfoo_la_SOURCES = generic/1.c generic/2.c sub/subsub/3.c
 
 .PHONY: remake-single-object
 remake-single-object:
 	rm -rf generic
-	$(MAKE) generic/a.$(OBJEXT)
-	test -f generic/a.$(OBJEXT)
-	test ! -f generic/b.$(OBJEXT)
+	$(MAKE) generic/1.lo
+	test -f generic/1.lo
+	test ! -f generic/2.lo
 	rm -rf generic
-	$(MAKE) generic/b.$(OBJEXT)
-	test ! -f generic/a.$(OBJEXT)
-	test -f generic/b.$(OBJEXT)
+	$(MAKE) generic/2.lo
+	test ! -f generic/1.lo
+	test -f generic/2.lo
 	rm -rf sub generic
-	$(MAKE) sub/sub2/foo.$(OBJEXT)
-	test -f sub/sub2/foo.$(OBJEXT)
+	$(MAKE) sub/subsub/3.lo
+	test -f sub/subsub/3.lo
 	test ! -d generic
 END
 
-mkdir generic sub sub/sub2
-cat > generic/a.c <<END
-int main (void)
-{
-  extern int i;
-  return i;
-}
-END
-echo 'int i = 0;' > generic/b.c
+mkdir generic sub sub/subsub
+echo 'int one (void) { return 1; }' > generic/1.c
+echo 'int two (void) { return 2; }' > generic/2.c
+echo 'int three (void) { return 3; }' > sub/subsub/3.c
 
-cat > sub/sub2/foo.c <<'END'
-int answer (void)
-{
-  return 42;
-}
-END
-
+libtoolize
 $ACLOCAL
+
 $AUTOMAKE --add-missing 2>stderr || { cat stderr >&2; Exit 1; }
 cat stderr >&2
 
@@ -75,7 +63,7 @@ cat stderr >&2
 grep 'install.*compile' stderr
 test -f compile
 
-$EGREP '[^/](a|b|foo)\.\$(OBJEXT)' Makefile.in && Exit 1
+grep '[^/][123]\.lo' Makefile.in && Exit 1
 
 $AUTOCONF
 
@@ -84,33 +72,23 @@ cd build
 ../configure
 $MAKE
 
-test -d progs
 test -d libs
 test -d generic
-test -d sub/sub2
-
-if test -f progs/wish; then
-  EXEEXT=
-elif test -f progs/wish.exe; then
-  EXEEXT=.exe
-else
-  fatal_ "couldn't determine extension of executables"
-fi
+test -d sub/subsub
 
 # The libraries and executables are not uselessly remade.
 : > xstamp
 $sleep
-echo dummy > progs/change-dir-timestamp
 echo dummy > libs/change-dir-timestamp
 echo dummy > generic/change-dir-timestamp
 echo dummy > sub/change-dir-timestamp
-echo dummy > sub/sub2/change-dir-timestamp
+echo dummy > sub/subsub/change-dir-timestamp
 $MAKE
-is_newest xstamp progs/wish$EXEEXT libs/libhope.a
+is_newest xstamp libs/libfoo.la
 
 $MAKE remake-single-object
 
-# Must work also with dependency tracking disabled.
+# VPATH builds must work also with dependency tracking disabled.
 # Also sanity check the distribution.
 $MAKE distcheck DISTCHECK_CONFIGURE_FLAGS=--disable-dependency-tracking
 
