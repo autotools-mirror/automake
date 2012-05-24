@@ -14,15 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# A line starting with '!' is passed verbatim to the output Makefile,
-# and in the right place too.
+# A line starting with '!' used in our internal .am fragments is
+# passed verbatim to the output Makefile, and in the right place
+# too.  Yes, this test is hacky ... as is the behaviour it tests
+# after all ;-)
 
 . ./defs || Exit 1
 
-cat >> configure.ac << 'END'
-AC_CONFIG_FILES([Makefile2 Makefile3])
-AC_OUTPUT
-END
+echo AC_OUTPUT >> configure.ac
 
 long1=long
 long2="$long1 $long1"
@@ -41,15 +40,32 @@ case $long512 in
   *) fatal_ 'defining $long512' ;;
 esac
 
-cat > Makefile.am << END
-!x = $long256
-!!unmodified!
-!## unmodified
-! foo = \
-rule:
+mkdir am
+cp "$am_amdir"/*.am ./am
+
+echo pkgdata_DATA = configure.ac > Makefile.am
+
+cat > am/data.am << 'END'
+include 0.am
+include 1.am
+include 2.am
+include 3.am
 END
 
-cat > Makefile2.am << 'END'
+echo "!x = $long256" > am/0.am
+
+cat >> am/1.am << 'END'
+!## unmodified
+!xyz = \
+rule:
+	@echo Go Custom Rule
+!!unmodified!
+.PHONY: test-xyz
+test-xyz:
+	test '$(xyz)' = '!unmodified!'
+END
+
+cat > am/2.am << 'END'
 !badrule1: ; @echo "'$@' unexpectedly won over 'all'!"; exit 1
 !badrule2:
 !	@echo "'$@' unexpectedly won over 'all'!"; exit 1
@@ -66,7 +82,7 @@ all-local: verbatim-rule
 x = ok
 END
 
-cat > Makefile3.am << 'END'
+cat > am/3.am << 'END'
 x1 := 1
 x2 := 2
 
@@ -96,46 +112,46 @@ END
 FOO= BAR=; unset FOO BAR
 
 $ACLOCAL
-$AUTOMAKE
+$AUTOMAKE --libdir=.
 
 grep '^!' Makefile.in | grep -v '^!unmodified!$' && Exit 1
-grep '^!' Makefile[23].in && Exit 1
 
 # Use perl, to avoid possible issues with regex length in vendor greps.
 $PERL -e "
-  while (<>) { exit 0 if (/^x = $long256$/); }
-  exit 1;
+  while (<>) { exit (0) if (/^x = $long256$/); }
+  exit (1);
 " Makefile.in
 
 grep '^!unmodified!$' Makefile.in
+test $(grep -c '^!unmodified!$' Makefile.in) -eq 1
 grep '^## unmodified$' Makefile.in
-# FIXME: automake is not yet smart enough to handle line continuation
-# FIXME: on the last line of a '!' series correctly.
-#grep '^ foo = \\$' Makefile.in
+grep '^xyz = \\$' Makefile.in
 
-$EGREP 'foo|bar' Makefile3.in # For debugging.
-test `grep -c '^foo +=' Makefile3.in` -eq 2
-test `grep -c '^bar =' Makefile3.in` -eq 3
+$EGREP 'foo|bar' Makefile.in # For debugging.
+test `grep -c '^foo +=' Makefile.in` -eq 2
+test `grep -c '^bar =' Makefile.in` -eq 3
 
 $AUTOCONF
 ./configure
 
-# FIXME: automake is not yet smart enough to handle line continuation
-# FIXME: on the last line of a '!' series correctly.
-#grep '^ foo = \\$' Makefile.in
-#$MAKE rule
+# The created makefile is not broken.
+$MAKE -n
 
-$MAKE -f Makefile2
+$MAKE rule
+test ! -f verbatim-rule.ok
+$MAKE
 test -f verbatim-rule.ok
+$MAKE | grep 'Custom Rule' && Exit 1
+$MAKE test-xyz
 
-$MAKE -f Makefile3 check-var var=foo val='. 1'
-$MAKE -f Makefile3 check-var var=foo val='. 1' FOO=''
-$MAKE -f Makefile3 check-var var=foo val='. 2' FOO=yes
-$MAKE -f Makefile3 check-var var=foo val='. 2' FOO=' who cares!'
+$MAKE check-var var=foo val='. 1'
+$MAKE check-var var=foo val='. 1' FOO=''
+$MAKE check-var var=foo val='. 2' FOO=yes
+$MAKE check-var var=foo val='. 2' FOO=' who cares!'
 
-$MAKE -f Makefile3 check-var var=bar val=default
-$MAKE -f Makefile3 check-var var=bar val=aaa     BAR=1
-$MAKE -f Makefile3 check-var var=bar val=lol     BAR=2
-$MAKE -f Makefile3 check-var var=bar val=default BAR=3
+$MAKE check-var var=bar val=default
+$MAKE check-var var=bar val=aaa     BAR=1
+$MAKE check-var var=bar val=lol     BAR=2
+$MAKE check-var var=bar val=default BAR=3
 
 :
