@@ -19,7 +19,7 @@
 am_create_testdir=empty
 . ./defs || Exit 1
 
-plan_ 6
+plan_ 7
 
 cp "$am_amdir"/header-vars.am . \
   || fatal_ "fetching makefile fragment headers-vars.am"
@@ -34,8 +34,12 @@ rm -f header-vars.am
 cat > Makefile << 'END'
 include ./defn.mk
 
-lo = abcdefghijklmnopqrstuvwxyz
-up = ABCDEFGHIJKLMNOPQRSTUVWXYZ
+lower = abcdefghijklmnopqrstuvwxyz
+upper = ABCDEFGHIJKLMNOPQRSTUVWXYZ
+digits = 0123456789
+comma = ,
+dollar = $$
+bslash = \\
 
 default:
 	@echo Please select an explicit test; exit 1
@@ -125,8 +129,8 @@ test-toupper:
 	test '$(call am__toupper,@:&/?-)' = '@:&/?-'
 	test '$(call am__toupper,a@B)' = A@B
 	test '$(call am__toupper,zxzxzxZXZxzxzxzxzx)' = ZXZXZXZXZXZXZXZXZX
-	test '$(call am__toupper,$(lo))' = '$(up)'
-	test '$(call am__toupper,$(up))' = '$(up)'
+	test '$(call am__toupper,$(lower))' = '$(upper)'
+	test '$(call am__toupper,$(upper))' = '$(upper)'
 
 .PHONY: test-tolower
 test-tolower:
@@ -142,8 +146,24 @@ test-tolower:
 	test '$(call am__tolower,@:&/?-)' = '@:&/?-'
 	test '$(call am__tolower,a@B)' = a@b
 	test '$(call am__tolower,ZXZXZXzxzXZXZXZXZX)' = zxzxzxzxzxzxzxzxzx
-	test '$(call am__tolower,$(up))' = '$(lo)'
-	test '$(call am__tolower,$(lo))' = '$(lo)'
+	test '$(call am__tolower,$(upper))' = '$(lower)'
+	test '$(call am__tolower,$(lower))' = '$(lower)'
+
+.PHONY: test-canonicalize
+test-canonicalize:
+	test '$(call am__canon,A)' = A
+	test '$(call am__canon, b)' = b
+	test '$(call am__canon, foo	 )' = foo
+	test '$(call am__canon,$(upper)$(lower)$(digits)_)' = '$(upper)$(lower)$(digits)_'
+	test '$(call am__canon,@)' = '@'
+	test '$(call am__canon,%)' = '_'
+	test '$(call am__canon,.&@!;)' = '__@__'
+	test '$(call am__canon,')' = '_'
+	test '$(call am__canon,$(dollar))' = '_'
+	test '$(call am__canon,$(bslash))' = '_'
+	test '$(call am__canon,$(comma))' = '_'
+	test '$(call am__canon,$(bslash)$(comma))' = '__'
+	test '$(call am__canon,x$(comma)@$(bslash))' = 'x_@_'
 END
 
 command_ok_  am__strip_firstword        $MAKE test-strip-firstword
@@ -152,5 +172,6 @@ command_ok_  am__uniq                   $MAKE test-uniq
 command_ok_  am__test_strip_suffixes    $MAKE test-strip-suffixes
 command_ok_  am__tolower                $MAKE test-tolower
 command_ok_  am__toupper                $MAKE test-toupper
+command_ok_  am__canon                  $MAKE test-canonicalize
 
 :
