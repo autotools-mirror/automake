@@ -54,8 +54,8 @@ test:
 	test '$(var2)' = bar
 	test '$(var3)' = '#'
 	test '$(var4)' = \#
-	: Use '[', not 'test', here, so that spurious comments
-	: are ensured to cause syntax errors.
+	# Use '[', not 'test', here, so that spurious comments
+	# are ensured to cause syntax errors.
 	[ $(var5) = ok ]
 
 # Yes, this file ends with a backslash-newline.  So what?

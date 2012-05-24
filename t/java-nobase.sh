@@ -40,7 +40,7 @@ sub2/Baz.java:
 
 .PHONY: test-install
 test-install:
-	find $(prefix) ;: For debugging.
+	find $(prefix) # For debugging.
 	test   -f $(javadir)/sub/subsub/Foo.class
 	test   -f $(javadir)/sub/Bar.class
 	test   -f $(javadir)/sub2/Baz.class

@@ -34,11 +34,11 @@ wish_SOURCES = generic/a.c
 
 .PHONY: test-distdir test-build
 test-distdir: distdir
-	ls -l $(distdir) $(distdir)/* ;: For debugging.
+	ls -l $(distdir) $(distdir)/* # For debugging.
 	test ! -r $(distdir)/a.c
 	test -f $(distdir)/generic/a.c
 test-build: all
-	ls -l . generic ;: For debugging.
+	ls -l . generic # For debugging.
 	test -f generic/a.$(OBJEXT)
 	test -f wish$(EXEEXT)
 	test ! -r a.$(OBJEXT)

@@ -44,7 +44,7 @@ ok.test:
 	echo 'ok 1' >> $@-t
 	echo 'not ok 2 # TODO' >>$@-t
 	echo 'ok 3 # SKIP' >>$@-t
-	cat $@-t ;: For debugging.
+	cat $@-t # For debugging.
 	mv -f $@-t $@
 END
 

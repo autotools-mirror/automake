@@ -62,17 +62,17 @@ test -f Makefile
 $sleep
 sed "s/%MAGIC3%/$magic3/" >> Makefile <<'END'
 my-check:
-	ls -l . $(srcdir) ;: For debugging.
+	ls -l . $(srcdir) # For debugging.
 	test -f $(srcdir)/quux.am
 	test -f $(srcdir)/quux.in
 	test -f $(srcdir)/bot.in
 	test -f $(srcdir)/top.in
 	test ! -r $(srcdir)/zardoz.am
 	test ! -r $(srcdir)/zardoz.in
-	grep FOO zardoz ;: For debugging.
+	grep FOO zardoz # For debugging.
 	test x'$(FOO)' = x'%MAGIC3%'
 test:
-	ls -l ;: For debugging.
+	ls -l # For debugging.
 	test x'$(FOO)' = x'dummy'
 .PHONY: test my-check
 END

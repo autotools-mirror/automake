@@ -46,7 +46,7 @@ END
     SUBDIRS = tests
     check-local: test-top
     test-top: distdir
-	ls -l \$(distdir) \$(distdir)/* ;: For debugging.
+	ls -l \$(distdir) \$(distdir)/* # For debugging.
 	test -f \$(distdir)/$test_driver
     .PHONY: test-top
 END

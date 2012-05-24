@@ -30,7 +30,7 @@ test0:
 	@echo am__dist_common = $(am__dist_common)
 	echo ' ' $(am__dist_common) ' ' | grep '[ /]one\.h\.in '
 	echo ' ' $(am__dist_common) ' ' | grep '[ /]two\.h\.in '
-	: Processed header files should not be distributed.
+	# Processed header files should not be distributed.
 	if echo ' ' $(am__dist_common) ' ' | grep '\.h '; then \
 	  exit 1; \
 	else \
@@ -43,7 +43,7 @@ test2: distdir
 	ls -l $(distdir)/*
 	test -f $(distdir)/one.h.in
 	test -f $(distdir)/two.h.in
-	: Processed header files should not be distributed.
+	# Processed header files should not be distributed.
 	test ! -r $(distdir)/one.h
 	test ! -r $(distdir)/two.h
 check-local: test0 test1 test2

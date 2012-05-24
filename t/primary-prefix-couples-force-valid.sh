@@ -46,7 +46,7 @@ x_HEADERS = bar.h
 installcheck-local: test
 .PHONY: test
 test:
-	(cd '$(prefix)' && find .);: For debugging.
+	(cd '$(prefix)' && find .) # For debugging.
 	ls -l '$(libdir)/foo$(EXEEXT)'
 	test -f '$(libdir)/foo$(EXEEXT)'
 	test -x '$(libdir)/foo$(EXEEXT)'

@@ -46,7 +46,7 @@ prereq:
 
 .PHONY: test
 test: distdir
-	ls -l $(distdir) $(distdir)/*.dir ;: For debugging.
+	ls -l $(distdir) $(distdir)/*.dir # For debugging.
 	diff a.t $(distdir)/a.t
 	diff b.t $(distdir)/b.t
 	test ! -r $(distdir)/c.t
@@ -62,7 +62,7 @@ test: distdir
 	test ! -r $(distdir)/foo
 	diff _zardoz_ $(distdir)/_zardoz_
 check-local:
-	ls -l . *.dir ;: For debugging.
+	ls -l $(srcdir) $(srcdir)/*.dir # For debugging.
 	test -f $(srcdir)/a.t
 	test -f $(srcdir)/b.t
 	test ! -r $(srcdir)/c.t

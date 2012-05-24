@@ -37,7 +37,7 @@ pkglib_LIBRARIES = libzap.a
 pkglibexec_SCRIPTS = mu
 
 test-install: install
-	find $(prefix) ;: For debugging.
+	find $(prefix) # For debugging.
 	test   -f $(bindir)/gnu-foo
 	test   -x $(bindir)/gnu-foo
 	test   -f $(datadir)/foo/bar.txt
@@ -49,7 +49,7 @@ test-install: install
 	test ! -d $(libexecdir)/gnu-foo
 
 test-installdirs: installdirs
-	find $(prefix) ;: For debugging.
+	find $(prefix) # For debugging.
 	test   -d $(datadir)/foo
 	test ! -d $(datadir)/gnu-foo
 	test   -d $(libdir)/foo

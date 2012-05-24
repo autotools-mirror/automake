@@ -34,14 +34,14 @@ endif
 
 .PHONY: test1 test2
 test1:
-	find $(mandir) ;: For debugging.
+	find $(mandir) # For debugging.
 	test -f $(mandir)/man1/foo.1
 	test -f $(mandir)/man4/6.4
 	test ! -f $(mandir)/man2/bar.2
 	test ! -f $(mandir)/man1/baz.1
 	test ! -f $(mandir)/man5/zap.5
 test2:
-	find $(mandir) ;: For debugging.
+	find $(mandir) # For debugging.
 	test -f $(mandir)/man2/bar.2
 	test -f $(mandir)/man1/baz.1
 	test -f $(mandir)/man5/zap.5

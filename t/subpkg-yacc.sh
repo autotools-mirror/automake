@@ -69,7 +69,7 @@ EXTRA_liblib_a_SOURCES = bar.y
 dist-hook:
 	test -d $(top_distdir)
 	test -d $(distdir)
-	find $(top_distdir) $(distdir) ;: For debugging.
+	find $(top_distdir) $(distdir) # For debugging.
 	test -f $(top_distdir)/MU.c
 	test ! -f $(distdir)/MU.c
 	for suf in y c; do \

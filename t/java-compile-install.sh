@@ -47,7 +47,7 @@ Baz.java:
 	chmod a-w $@-t && mv -f $@-t $@
 
 test:
-	ls -l $(srcdir) . ;: For debugging.
+	ls -l $(srcdir) . # For debugging.
 	test   -f $(srcdir)/Foo.java
 	test   -f $(srcdir)/Bar.java
 	test   -f Foo2.java
@@ -62,7 +62,7 @@ test:
 	test   -f classjava.stamp
 
 test-install:
-	ls -l $(javadir) ;: For debugging.
+	ls -l $(javadir) # For debugging.
 	test   -f '$(javadir)/bClass.class'
 	test   -f '$(javadir)/aClass.class'
 	test   -f '$(javadir)/Zardoz.class'

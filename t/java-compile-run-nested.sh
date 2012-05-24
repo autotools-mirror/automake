@@ -45,8 +45,8 @@ cat > Makefile.am <<'END'
 SUBDIRS = bin jprog tests
 
 test-built:
-	ls -l $(srcdir)/*             ;: For debugging.
-	test $(srcdir) = . || ls -l * ;: Likewise.
+	ls -l $(srcdir)/*             # For debugging.
+	test $(srcdir) = . || ls -l * # Likewise.
 	test -f $(srcdir)/jprog/Main.java
 	test -f $(srcdir)/jprog/HelloStream.java
 	test -f $(srcdir)/jprog/PkgLocation.jin
@@ -57,7 +57,7 @@ test-built:
 	test -f jprog/classjprogclass.stamp
 
 test-installed:
-	ls -l $(jprogclassdir) ;: For debugging.
+	ls -l $(jprogclassdir) # For debugging.
 	test -f $(jprogclassdir)/HelloStream.class
 	test -f $(jprogclassdir)/Main.class
 	test -f $(jprogclassdir)/PkgLocation.class
@@ -88,7 +88,7 @@ jprog: jprog.sh
 	rm -f $@ $@-t
 	$(edit_script) $< >$@-t
 	chmod a-w $@-t && chmod a+x $@-t && mv -f $@-t $@
-	sed 's/^/ | /' $@ ;: for debugging.
+	sed 's/^/ | /' $@ # For debugging.
 
 EXTRA_DIST = jprog.sh
 CLEANFILES = jprog

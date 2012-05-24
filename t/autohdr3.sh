@@ -30,8 +30,8 @@ cat > Makefile.am <<'END'
 .PHONY: test
 check-local: test
 test: all
-	cat $(srcdir)/config.hin ;: For debugging.
-	cat config.h             ;: Likewise.
+	cat $(srcdir)/config.hin # For debugging.
+	cat config.h             # Likewise.
 	grep '#.*GREPME' $(srcdir)/config.hin
 	grep '#.*define.*GREPME' config.h
 END

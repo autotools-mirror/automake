@@ -46,8 +46,8 @@ END
   unindent >> Makefile.am <<'END'
     SUBDIRS = subdir
     test: distdir
-	ls -l $(distdir) $(distdir)/*      ;: For debugging.
-	@echo am__dist_common = $(am__dist_common) ;: Likewise.
+	ls -l $(distdir) $(distdir)/*              # For debugging.
+	@echo am__dist_common = $(am__dist_common) # Likewise.
 	echo ' ' $(am__dist_common) ' ' | grep '[ /]$(auxdir)foo.txt '
 	echo ' ' $(am__dist_common) ' ' | grep '[ /]$(auxdir)bar.sh '
 	echo ' ' $(am__dist_common) ' ' | grep '[ /]$(auxdir)zardoz '

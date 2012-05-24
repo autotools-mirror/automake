@@ -34,7 +34,7 @@ END
 cat > Makefile.am <<'END'
 SUBDIRS = sub
 test: distdir
-	ls -l $(distdir) $(distdir)/* ;: For debugging.
+	ls -l $(distdir) $(distdir)/* # For debugging.
 	test -f $(distdir)/sub/zardoz
 .PHONY: test
 check-local: test
