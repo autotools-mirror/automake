@@ -54,7 +54,7 @@ if (ulimit -t 8); then ulimit -t 8; fi
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE -a -Wno-portability
+$AUTOMAKE -a
 
 ./configure
 

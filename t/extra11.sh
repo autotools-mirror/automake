@@ -22,8 +22,6 @@
 echo AC_OUTPUT >> configure.ac
 
 cat > Makefile.am <<'END'
-AUTOMAKE_OPTIONS = -Wno-portability
-
 EXTRA_DIST = $(wildcard [!c-z].t d.t [ab].dir foo.* *zardoz*)
 
 .PHONY: prereq

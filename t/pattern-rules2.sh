@@ -32,4 +32,6 @@ ${ARCH}/%.$(OBJEXT): %.c
 EOF
 
 $ACLOCAL
-$AUTOMAKE -Wno-portability
+$AUTOMAKE
+
+:

@@ -27,5 +27,5 @@ EXTRA_LIBRARIES = libfoo.a
 END
 
 $ACLOCAL
-AUTOMAKE_fails -Wno-portability
+AUTOMAKE_fails -Wnone
 grep AC_PROG_RANLIB stderr

@@ -52,6 +52,6 @@ bin_PROGRAMS = ,foo
 _foo_SOURCES = foo.c
 END
 
-$AUTOMAKE -Wno-portability
+$AUTOMAKE
 
 :
