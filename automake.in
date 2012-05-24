@@ -6571,9 +6571,27 @@ sub make_paragraphs ($%)
   $transform{FIRST} = !$transformed_files{$file};
   $transformed_files{$file} = 1;
 
-  my @lines = split /(?<!\\)\n/, preprocess_file ($file, %transform);
-  my @res;
+  my @lines = split /\n/, preprocess_file ($file, %transform);
 
+  # A line starting with '!' must be passed verbatim to the output
+  # Makefile, placed after the variables' definitions and before the
+  # Makefile targets.  This is an hack to allow us to use tricky GNU
+  # make constructs (on which the dumb Automake parser would choke).
+  # It is not perfect, but seems good enough for the moment.
+  my @verbatim_lines = grep /^!/, @lines;
+  foreach (@verbatim_lines)
+    {
+      s/^!//;
+      $output_verbatim .= "$_\n";
+    }
+  @lines = grep !/^!/, @lines;
+
+  # Handle line continuations.
+  # FIXME: this could probably be done more efficiently, but I'd rather
+  # FIXME: not change working (and trickish) code for the moment.
+  @lines = split /(?<!\\)\n/, join ("\n", @lines);
+
+  my @res;
   while (defined ($_ = shift @lines))
     {
       my $paragraph = $_;
@@ -6639,16 +6657,8 @@ sub file_contents_internal ($$$%)
 	# FIXME: no line number available.
 	$where->set ($file);
 
-        # A line starting with '!' must be passed verbatim to the output
-        # Makefile, placed after the variables' definitions and before the
-        # Makefile targets.
-        if (s/^!//)
-          {
-            $output_verbatim .= "$_\n";
-          }
-
 	# Sanity checks.
-	elsif (/\\$/)
+	if (/\\$/)
           {
 	    error $where, "blank line following trailing backslash:\n$_"
           }
