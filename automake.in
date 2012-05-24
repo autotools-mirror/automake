@@ -6116,8 +6116,6 @@ sub read_am_file ($$)
 	}
 	elsif (/$WHITE_PATTERN/o)
 	{
-	    error $where, "blank line following trailing backslash"
-	      if $saw_bk;
 	    # Stick a single white line before the incoming macro or rule.
 	    $spacing = "\n";
 	    $blank = 1;
@@ -6182,18 +6180,6 @@ sub read_am_file ($$)
 	{
 	    # Stick a single white line before the incoming macro or rule.
 	    $spacing = "\n";
-	    error $where, "blank line following trailing backslash"
-	      if $saw_bk;
-	}
-	elsif (/$COMMENT_PATTERN/o)
-	{
-	    error $where, "comment following trailing backslash"
-	      if $saw_bk && $prev_state != IN_COMMENT;
-
-	    # Stick comments before the incoming macro or rule.
-	    $comment .= $spacing . $_;
-	    $spacing = '';
-	    $prev_state = IN_COMMENT;
 	}
 	elsif ($saw_bk)
 	{
@@ -6225,6 +6211,13 @@ sub read_am_file ($$)
 	    }
 	}
 
+	elsif (/$COMMENT_PATTERN/o)
+	  {
+	    # Stick comments before the incoming macro or rule.
+	    $comment .= $spacing . $_;
+	    $spacing = '';
+	    $prev_state = IN_COMMENT;
+	  }
 	elsif (/$IF_PATTERN/o)
 	  {
 	    $cond = cond_stack_if ($1, $2, $where);
@@ -6348,9 +6341,6 @@ sub read_am_file ($$)
     }
 
     $output_trailer .= $comment;
-
-    error ($where, "trailing backslash on last line")
-      if $saw_bk;
 
     error ($where, (@cond_stack ? "unterminated conditionals: @cond_stack"
 		    : "too many conditionals closed in include file"))
@@ -6648,17 +6638,7 @@ sub file_contents_internal ($$$%)
 	# FIXME: no line number available.
 	$where->set ($file);
 
-	# Sanity checks.
-	if (/\\$/)
-          {
-	    error $where, "blank line following trailing backslash:\n$_"
-          }
-	elsif (/\\#/)
-          {
-	    error $where, "comment following trailing backslash:\n$_"
-          }
-
-	elsif (/^$/)
+	if (/^$/)
 	  {
 	    $is_rule = 0;
 	    # Stick empty line before the incoming macro or rule.
