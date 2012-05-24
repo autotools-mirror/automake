@@ -32,9 +32,15 @@ check-local:
 	test -f one$(EXEEXT)
 	test -f two$(EXEEXT)
 	touch ok
-.PHONY: print-tests
-print-tests:
-	echo BEG: $(TESTS) :END
+prepare-for-fake-exeext:
+	rm -f ok
+	mv -f one$(EXEEXT) one.bin
+	mv -f two$(EXEEXT) two.bin
+post-check-for-fake-exeext:
+	test -f ok
+	test ! -f one$(EXEEXT)
+	test ! -f two$(EXEEXT)
+.PHONY: prepare-for-fake-exeext post-check-for-fake-exeext
 END
 
 $ACLOCAL
@@ -50,13 +56,15 @@ END
 cp one.c two.c
 
 ./configure
+
 $MAKE check
 test -f ok
-$MAKE EXEEXT=.bin print-tests >stdout || { cat stdout; Exit 1; }
-cat stdout
-$FGREP 'BEG: one.bin two.bin :END' stdout
-# No am__EXEEXT_* variable is needed.
-grep '_EXEEXT_[1-9]' Makefile.in && Exit 1
-$FGREP 'TESTS = $(check_PROGRAMS)' Makefile.in
+
+$MAKE prepare-for-fake-exeext
+$MAKE check EXEEXT=.bin
+$MAKE post-check-for-fake-exeext
+
+# No TESTS rewriting has taken place.
+grep '^TESTS = \$(check_PROGRAMS)$' Makefile.in
 
 :

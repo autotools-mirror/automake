@@ -73,7 +73,7 @@ chmod a+x checkstrip-driver
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE
+$AUTOMAKE -a
 
 cd ..
 

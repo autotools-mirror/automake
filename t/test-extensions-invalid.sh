@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2004-2012 Free Software Foundation, Inc.
+# Copyright (C) 2011-2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,47 +14,32 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure that if an auxfile (here depcomp) is required
-# by a subdir Makefile.am, it is distributed by that Makefile.am.
+# Make sure that invalid entries in TEST_EXTENSIONS are diagnosed at
+# make runtime.  See automake bug#9400.
 
 . ./defs || Exit 1
 
-cat >> configure.ac << 'END'
-AC_CONFIG_FILES([subdir/Makefile])
-AC_PROG_CC
-AC_PROG_FGREP
-AC_OUTPUT
-END
+echo AC_OUTPUT >> configure.ac
 
 cat > Makefile.am << 'END'
-SUBDIRS = subdir
-END
-
-rm -f depcomp
-mkdir subdir
-
-cat > subdir/Makefile.am << 'END'
-.PHONY: test-distcommon
-test-distcommon:
-	echo ' ' $(am__dist_common) ' ' | $(FGREP) ' $(top_srcdir)/depcomp '
+TESTS =
+TEST_EXTENSIONS = mu x1 .foo _ x2
 END
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE
-test ! -f depcomp
+$AUTOMAKE -a
 
-cat >> subdir/Makefile.am << 'END'
-bin_PROGRAMS = foo
-END
-
-: > subdir/foo.c
-
-$AUTOMAKE -a subdir/Makefile
-test -f depcomp
 ./configure
-(cd subdir && $MAKE test-distcommon)
-$MAKE distdir
-test -f $distdir/depcomp
+
+$MAKE 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+for suf in mu x1 _ x2; do
+  $FGREP "invalid test extension: '$suf'" stderr
+done
+
+# Verify that we don't report valid suffixes, even if intermixed
+# with invalid ones.
+grep 'invalid.*extension.*foo' stderr && Exit 1
 
 :

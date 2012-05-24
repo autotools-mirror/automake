@@ -115,6 +115,13 @@ cp 1.chk 4.c.chk
 cp 1.chk 5.suf
 cp 1.chk sub/test
 
+cat > test-driver <<'END'
+#!/bin/sh
+echo "$0: required by Automake, but should never be actually used" >&2
+exit 1
+END
+chmod a+x test-driver
+
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE

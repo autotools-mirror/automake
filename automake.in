@@ -1313,7 +1313,7 @@ sub handle_languages
 	{
 	    # Set location of depcomp.
 	    &define_variable ('depcomp',
-			      "\$(SHELL) $am_config_aux_dir/depcomp",
+			      '$(SHELL) $(am__config_aux_dir)/depcomp',
 			      INTERNAL);
 
 	    require_conf_file ("$am_file.am", FOREIGN, 'depcomp');
@@ -2411,8 +2411,6 @@ sub handle_programs
       reject_var ($xname . '_LIBADD',
 		  "use '${xname}_LDADD', not '${xname}_LIBADD'");
 
-      set_seen ($xname . '_DEPENDENCIES');
-      set_seen ('EXTRA_' . $xname . '_DEPENDENCIES');
       set_seen ($xname . '_LDFLAGS');
 
       # Determine program to use for link.
@@ -2517,10 +2515,6 @@ sub handle_libraries
 
       reject_var ($xlib . '_LDADD',
 		  "use '${xlib}_LIBADD', not '${xlib}_LDADD'");
-
-      # Make sure we at look at this.
-      set_seen ($xlib . '_DEPENDENCIES');
-      set_seen ('EXTRA_' . $xlib . '_DEPENDENCIES');
 
       &handle_source_transform ($xlib, $onelib, $obj, $where,
 				NONLIBTOOL => 1, LIBTOOL => 0);
@@ -2699,10 +2693,8 @@ sub handle_ltlibraries
       $where->push_context ("while processing Libtool library '$onelib'");
       $where->set (INTERNAL->get);
 
-      # Make sure we look at these.
+      # Make sure we look at this.
       set_seen ($xlib . '_LDFLAGS');
-      set_seen ($xlib . '_DEPENDENCIES');
-      set_seen ('EXTRA_' . $xlib . '_DEPENDENCIES');
 
       # Generate support for conditional object inclusion in
       # libraries.
@@ -2797,7 +2789,7 @@ sub check_typos ()
   # It is ok if the user sets this particular variable.
   set_seen 'AM_LDFLAGS';
 
-  foreach my $primary ('SOURCES', 'LIBADD', 'LDADD', 'LDFLAGS', 'DEPENDENCIES')
+  foreach my $primary ('SOURCES', 'LIBADD', 'LDADD', 'LDFLAGS')
     {
       foreach my $var (variables $primary)
 	{
@@ -3218,7 +3210,7 @@ sub handle_texinfo_helper ($)
 	  my $conf_dir;
 	  if ($config_aux_dir_set_in_configure_ac)
 	    {
-	      $conf_dir = "$am_config_aux_dir/";
+	      $conf_dir = '$(am__config_aux_dir)/';
 	    }
 	  else
 	    {
@@ -3246,7 +3238,7 @@ sub handle_texinfo_helper ($)
     }
   elsif ($config_aux_dir_set_in_configure_ac)
     {
-      $texinfodir = $am_config_aux_dir;
+      $texinfodir = '$(am__config_aux_dir)';
       define_variable ('TEXINFO_TEX', "$texinfodir/texinfo.tex", INTERNAL);
       $need_texi_file = 2; # so that we require_conf_file later
     }
@@ -3540,8 +3532,6 @@ sub handle_tags
 					 TAGSDIRS  => "@tag_deps",
 					 CTAGSDIRS => "@ctag_deps",
 					 CSCOPEDIRS => "@cscope_deps");
-
-	set_seen 'TAGS_DEPENDENCIES';
     }
     elsif (reject_var ('TAGS_DEPENDENCIES',
 		       "it doesn't make sense to define 'TAGS_DEPENDENCIES'"
@@ -3789,9 +3779,6 @@ sub handle_subdirs ()
 sub scan_aclocal_m4 ()
 {
   my $regen_aclocal = 0;
-
-  set_seen 'CONFIG_STATUS_DEPENDENCIES';
-  set_seen 'CONFIGURE_DEPENDENCIES';
 
   if (-f 'aclocal.m4')
     {
@@ -4523,54 +4510,6 @@ sub handle_tests_dejagnu
     $output_rules .= file_contents ('dejagnu', new Automake::Location);
 }
 
-sub handle_per_suffix_test($)
-{
-  my $test_suffix = shift;
-  my $pfx;
-  if ($test_suffix eq '')
-    {
-      $pfx = '';
-    }
-  else
-    {
-      prog_error ("test suffix '$test_suffix' lacks leading dot")
-        unless $test_suffix =~ m/^\.(.*)/;
-      $pfx = uc ($1) . '_';
-    }
-  # The "test driver" program, deputed to handle tests protocol used by
-  # test scripts.  By default, it's assumed that no protocol is used, so
-  # we fall back to the old behaviour, implemented by the 'test-driver'
-  # auxiliary script.
-  if (! var "${pfx}LOG_DRIVER")
-    {
-      require_conf_file ("parallel-tests", FOREIGN, 'test-driver');
-      define_variable ("${pfx}LOG_DRIVER",
-                       "\$(SHELL) $am_config_aux_dir/test-driver",
-                       INTERNAL);
-    }
-  # Required to avoid spurious errors like:
-  # ``variable 'LOG_DEPENDENCIES' is defined but no program or
-  #   library has 'LOG' as canonical name (possible typo)''
-  set_seen ("${pfx}LOG_DEPENDENCIES");
-  $output_rules .= file_contents ('check2', new Automake::Location,
-                                   PFX => $pfx,
-                                   EXT => $test_suffix);
-}
-
-# is_valid_test_extension ($EXT)
-# ------------------------------
-# Return true if $EXT can appear in $(TEST_EXTENSIONS), return false
-# otherwise.
-sub is_valid_test_extension ($)
-{
-  my $ext = shift;
-  return 1
-    if ($ext =~ /^\.[a-zA-Z_][a-zA-Z0-9_]*$/);
-  return 1
-    if (exists $configure_vars{'EXEEXT'} && $ext eq subst ('EXEEXT'));
-  return 0;
-}
-
 # Handle TESTS variable and other checks.
 sub handle_tests
 {
@@ -4590,51 +4529,22 @@ sub handle_tests
   if (var ('TESTS'))
     {
       push (@check_tests, 'check-TESTS');
-      $output_rules .= &file_contents ('check', new Automake::Location,
-				       COLOR => !! option 'color-tests',
-				       SERIAL_TESTS => !! option 'serial-tests',
-                                       CHECK_DEPS => "@check");
+
       if (option 'serial-tests')
         {
-          # Tests that are known programs should have $(EXEEXT) appended.
-          # For matching purposes, we need to adjust XFAIL_TESTS as well.
-          append_exeext { exists $known_programs{$_[0]} } 'TESTS';
-          append_exeext { exists $known_programs{$_[0]} } 'XFAIL_TESTS'
-	    if (var ('XFAIL_TESTS'));
+          $output_rules .=
+            file_contents ('serial-tests', new Automake::Location,
+                           COLOR => !! option 'color-tests',
+                           CHECK_DEPS => "@check");
         }
       else
         {
 	  define_variable ('TEST_SUITE_LOG', 'test-suite.log', INTERNAL);
-	  my $suff = '.test';
-	  define_variable ('TEST_EXTENSIONS', '.test', INTERNAL)
-            if (! var 'TEST_EXTENSIONS');
-          my $var = var 'TEST_EXTENSIONS';
-          # Currently, we are not able to deal with conditional contents
-          # in TEST_EXTENSIONS.
-          if ($var->has_conditional_contents)
-           {
-	     msg_var 'unsupported', $var,
-                     "'TEST_EXTENSIONS' cannot have conditional contents";
-           }
-	  my @test_suffixes = $var->value_as_list_recursive;
-          if ((my @invalid_test_suffixes =
-                  grep { !is_valid_test_extension $_ } @test_suffixes) > 0)
-            {
-              error $var->rdef (TRUE)->location,
-                    "invalid test extensions: @invalid_test_suffixes";
-            }
-          @test_suffixes = grep { is_valid_test_extension $_ } @test_suffixes;
-          # It is *imperative* that the empty 'suffix goes last.
-          # Otherwise, a declaration like "TESTS = all.test" would cause GNU
-          # make to mistakenly try to build the 'all.log' and 'all.trs' files
-          # from a non-existent 'all' program (because the Makefile contains
-          # an explicit 'all' target) rather than from the 'all.test' script,
-          # thus causing all sort of mishaps and confusion.
-	  push @test_suffixes, '';
-	  foreach my $test_suffix (@test_suffixes)
-	    {
-              handle_per_suffix_test ($test_suffix);
-	    }
+          require_conf_file ("parallel-tests", FOREIGN, 'test-driver');
+          $output_rules .=
+            file_contents ('parallel-tests', new Automake::Location,
+                           COLOR => !! option 'color-tests',
+                           CHECK_DEPS => "@check");
 	  $clean_files{'$(am__test_logs)'} = MOSTLY_CLEAN;
 	  $clean_files{'$(am__test_results)'} = MOSTLY_CLEAN;
 	  $clean_files{'$(TEST_SUITE_LOG)'} = MOSTLY_CLEAN;
@@ -4662,7 +4572,7 @@ sub handle_emacs_lisp
   require_variables ($elfiles[0][0], "Emacs Lisp sources seen", TRUE,
 		     'EMACS', 'lispdir');
   require_conf_file ($elfiles[0][0], FOREIGN, 'elisp-comp');
-  &define_variable ('elisp_comp', "$am_config_aux_dir/elisp-comp", INTERNAL);
+  &define_variable ('elisp_comp', '$(am__config_aux_dir)/elisp-comp', INTERNAL);
 }
 
 # Handle Python
@@ -4674,7 +4584,7 @@ sub handle_python
 
   require_variables ($pyfiles[0][0], "Python sources seen", TRUE, 'PYTHON');
   require_conf_file ($pyfiles[0][0], FOREIGN, 'py-compile');
-  &define_variable ('py_compile', "$am_config_aux_dir/py-compile", INTERNAL);
+  &define_variable ('py_compile', '$(am__config_aux_dir)/py-compile', INTERNAL);
 }
 
 # Handle Java.
@@ -5662,7 +5572,7 @@ sub yacc_lex_finish_helper
 
   # FIXME: for now, no line number.
   require_conf_file ($configure_ac, FOREIGN, 'ylwrap');
-  &define_variable ('YLWRAP', "$am_config_aux_dir/ylwrap", INTERNAL);
+  &define_variable ('YLWRAP', '$(am__config_aux_dir)/ylwrap', INTERNAL);
 }
 
 sub lang_yacc_finish
@@ -7284,7 +7194,7 @@ sub push_required_file
   # of $am_config_aux_dir here is deliberate and necessary.
   elsif ($dir eq $config_aux_dir)
     {
-      push_dist_common ("$am_config_aux_dir/$file");
+      push_dist_common ('$(am__config_aux_dir)/' . $file);
     }
   # FIXME: another spacial case, for AC_LIBOBJ/AC_LIBSOURCE support.
   # We probably need some refactoring of this function and its callers,
@@ -7668,6 +7578,7 @@ sub generate_makefile ($$)
 
   # Must do this after reading .am file.
   define_variable ('subdir', $relative_dir, INTERNAL);
+  define_variable ('am__config_aux_dir', $am_config_aux_dir, INTERNAL);
 
   # If DIST_SUBDIRS is defined, make sure SUBDIRS is, so that
   # recursive rules are enabled.
@@ -7710,7 +7621,10 @@ sub generate_makefile ($$)
   handle_subdirs;
   handle_tags;
   handle_minor_options;
+
   # Must come after handle_programs so that %known_programs is up-to-date.
+  define_variable ('am__all_progs', join(" ", keys %known_programs),
+                   INTERNAL);
   handle_tests;
 
   # This must come after most other rules.

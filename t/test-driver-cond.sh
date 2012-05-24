@@ -79,13 +79,6 @@ chmod a+x foo bar.test baz.sh
 $AUTOMAKE -a
 test -f test-driver
 
-grep DRIVER Makefile.in || Exit 99 # For debugging.
-
-grep '^my_LOG_DRIVER *=' Makefile.in \
-  && fatal_ 'unexpected $(my_LOG_DRIVER) in Makefile.in'
-
-grep '^TEST_LOG_DRIVER =.*\$(SHELL).*/test-driver' Makefile.in
-
 $PERL -MTAP::Parser -e 1 \
   || skip_ "cannot import TAP::Parser perl module"
 

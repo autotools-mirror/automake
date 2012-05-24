@@ -69,7 +69,7 @@ have_result ()
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE
+$AUTOMAKE -a
 
 ./configure
 

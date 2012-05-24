@@ -26,6 +26,13 @@ cp "$am_testauxdir"/trivial-test-driver test-drivers/triv \
 cp "$am_scriptdir"/test-driver test-drivers/dflt \
   || fatal_ "failed to fetch auxiliary script test-driver"
 
+cat > test-driver <<'END'
+#!/bin/sh
+echo "$0: required by Automake, but should never be actually used" >&2
+exit 1
+END
+chmod a+x test-driver
+
 cat >> configure.ac <<'END'
 AC_SUBST([LOG_DRIVER],      ['${SHELL} test-drivers/triv'])
 AC_SUBST([TEST_LOG_DRIVER], ['${SHELL} test-drivers/dflt'])

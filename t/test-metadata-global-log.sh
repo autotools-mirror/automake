@@ -23,7 +23,6 @@
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'
-AC_SUBST([LOG_DRIVER], ['ignored but required by autoamke, sigh!'])
 AC_OUTPUT
 END
 
@@ -128,7 +127,7 @@ echo TESTS = *.test >> Makefile.am
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE
+$AUTOMAKE -a
 
 ./configure
 

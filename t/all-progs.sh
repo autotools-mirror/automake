@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 2004-2012 Free Software Foundation, Inc.
+# Copyright (C) 2007-2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,47 +14,49 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure that if an auxfile (here depcomp) is required
-# by a subdir Makefile.am, it is distributed by that Makefile.am.
+# Test internal automake variable $(am__all_progs).
 
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'
-AC_CONFIG_FILES([subdir/Makefile])
-AC_PROG_CC
-AC_PROG_FGREP
+AC_SUBST([CC], ['whocares'])
+AC_SUBST([EXEEXT], [''])
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-SUBDIRS = subdir
-END
+AUTOMAKE_OPTIONS = no-dependencies
 
-rm -f depcomp
-mkdir subdir
+check_PROGRAMS = p1
+check_SCRIPTS = x1
 
-cat > subdir/Makefile.am << 'END'
-.PHONY: test-distcommon
-test-distcommon:
-	echo ' ' $(am__dist_common) ' ' | $(FGREP) ' $(top_srcdir)/depcomp '
+EXTRA_PROGRAMS = p2
+EXTRA_SCRIPTS = x2
+
+bin_PROGRAMS = p3
+bin_SCRIPTS = x3
+
+noinst_PROGRAMS = p4
+noinst_SCRIPTS = x4
+
+mydir = $(prefix)
+my_PROGRAMS = p5
+my_SCRIPTS = x5
+
+.PHONY: debug test
+debug:
+	@echo BEG: $(am__all_progs) :END
+test: debug
+	test '$(sort $(am__all_progs))' = 'p1 p2 p3 p4 p5'
 END
 
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
-test ! -f depcomp
 
-cat >> subdir/Makefile.am << 'END'
-bin_PROGRAMS = foo
-END
-
-: > subdir/foo.c
-
-$AUTOMAKE -a subdir/Makefile
-test -f depcomp
 ./configure
-(cd subdir && $MAKE test-distcommon)
-$MAKE distdir
-test -f $distdir/depcomp
+$MAKE test
+$MAKE test EXEEXT=.exe
+$MAKE test EXEEXT=.bin
 
 :

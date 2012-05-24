@@ -18,14 +18,7 @@
 
 . ./defs || Exit 1
 
-cat >> configure.ac << 'END'
-# FIXME: must define this otherwise automake will require the presence
-# FIXME: of the 'test-driver' script.  This issue should be documented
-# FIXME: in the manual ...
-AC_SUBST([LOG_DRIVER],
-         ['$(error LOG_DRIVER should be never used) false'])
-AC_OUTPUT
-END
+echo AC_OUTPUT >> configure.ac
 
 cat > Makefile.am << 'END'
 TEST_LOG_DRIVER = $(srcdir)/tap-driver
@@ -33,10 +26,16 @@ TEST_LOG_COMPILER = cat
 TESTS = all.test
 END
 
+cat > test-driver <<'END'
+#!/bin/sh
+echo "$0: required by Automake, but should never be actually used" >&2
+exit 1
+END
+chmod a+x test-driver
+
 $ACLOCAL
 $AUTOCONF
 $AUTOMAKE
-test ! -f test-driver
 
 ./configure
 

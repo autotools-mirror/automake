@@ -25,23 +25,17 @@
 
 cat >> configure.ac << 'END'
 AC_CONFIG_FILES([subdir/Makefile])
-AM_PATH_PYTHON
 END
 
 mkdir subdir
 
-cat > Makefile.am << 'END'
-python_PYTHON = foo.py
-END
-
-cp Makefile.am subdir/Makefile.am
-
-: > py-compile
+: > Makefile.am
+: > subdir/Makefile.am
 
 $ACLOCAL
 $AUTOMAKE
 
-$FGREP '$(top_srcdir)/py-compile' Makefile.in
-$FGREP '$(top_srcdir)/py-compile' subdir/Makefile.in
+grep '^am__config_aux_dir = \$(top_srcdir)$' Makefile.in
+grep '^am__config_aux_dir = \$(top_srcdir)$' subdir/Makefile.in
 
 :

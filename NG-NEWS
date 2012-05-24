@@ -59,6 +59,20 @@ Warnings and diagnostic
 * The 'portability-recursive' warning category is obsolete, and has been
   removed.
 
+* Automake-NG is less smart than mainline Automake in detecting some kind
+  of possible typos or suspicious usages at automake runtime.  This is due
+  to the fact that more processing and logic takes place in the generated
+  Makefiles rather than in the automake script, so that the latter has
+  access to less context and information.
+
+Serial testsuite harness (obsolescent)
+======================================
+
+* The $(TESTS) and $(XFAIL_TESTS) variables are not anymore rewritten for
+  $(EXEEXT) appending.  The use of compiled programs in $(TESTS) and
+  $(XFAIL_TESTS) still works as before though, even on systems where
+  $(EXEEXT) is non-empty.
+
 Parallel testsuite harness
 ==========================
 
@@ -72,20 +86,18 @@ Parallel testsuite harness
   thanks to a careful use of pattern rules.
 
 * The new implementation of the parallel-tests harness tries to defer
-  as much as possible processing on the $(TESTS) variable at make,
-  rather than doing it at automake time.  This as some positive effects
-  (described below), but also entails a minor annoyance.  When automake
-  runs, it cannot know anymore whether $(TESTS) contains or not any
-  entry with no recognized test suffix; as a consequence, it always
-  need the '$(LOG_DRIVER)' variable to be defined.  If it's not,
-  automake will define it to a proper invocation of the 'test-driver'
-  auxiliary script, and require that script to be present in the
-  config-aux directory (or bring it in if "--add-missing" is in use).
-  If you know you package won't make use of suffix-less tests (thus, in
-  particular, no use of compiled programs in $(TESTS)), you can avoid
-  requiring the 'test-driver' script by adding this line to your
-  configure.ac:
-    AC_SUBST([LOG_DRIVER], ['unused but required by automake'])
+  as much as possible processing on the $(TESTS), $(XFAIL_TESTS) and
+  $(TEST_EXTENSIONS) variable at make runtime, rather than doing it at
+  automake time.  This has several positive effects (described below),
+  but also entails a minor annoyance: due to implementation reasons, the
+  'test-driver' auxiliary script is now always required and distributed,
+  even if no test script actually uses it as its LOG_DRIVER script.
+  This is not a big deal in practice, since as of today, all the real
+  world packages out there actually use 'test-driver' for most (if not
+  all) of their tests (the introduction of TAP support in mainstream
+  automake being too recent for those packages to have had time to phase
+  out their protocol-less tests, assuming they wanted to -- which is
+  usually not the case either).
 
 * The parallel testsuite harness realizes whether an entry of $(TESTS)
   start with $(srcdir) (as in "TESTS = $(srcdir)/foo.test"), and manages
@@ -97,7 +109,28 @@ Parallel testsuite harness
   advanced features (like specific builtins or user-defined functions)
   in the definition of $(TESTS); for example, the following should now
   work as expected:
-    TESTS = $(wildcard $(srcdir)/t[0-9][0-9]*.sh)
+
+      TESTS = $(wildcard $(srcdir)/t[0-9][0-9]*.sh)
+
+* The contents of $(TEST_EXTENSIONS) are mostly analyzed at make runtime
+  rather than at automake runtime, so that it is now possible to use
+  Automake conditionals and GNU make advanced features in the definition
+  of $(TEST_EXTENSIONS); for example, the following should now work as
+  expected:
+
+      TEST_EXTENSIONS = $(sort $(suffix $(TESTS)))
+      if SUPPORT_SHELL_TESTS
+      TEST_EXTENSIONS += .sh
+      endif
+
+* We are more liberal and lenient in accepting TEST_EXTENSIONS entries:
+  it's enough that they start with a dot to be considered valid.  However,
+  using overly "funny" characters (like '!' or '@') could cause problems,
+  so the user is still advised to limit himself to the use of alphanumeric
+  characters, plus eventually '.', '-', and '_'.
+
+* Errors about invalid content of $(TEST_EXTENSIONS) are reported at
+  make runtime, not auto Automake runtime.
 
 * It is not anymore possible to override TEST_LOGS at make runtime as a
   mean to redefine the list of tests to be run.

@@ -31,8 +31,6 @@ libfoo_la_SOURCES = unused
 nodist_libfoo_la_SOURCES = unused
 EXTRA_libfoo_la_SOURCES = unused
 libfoo_la_LIBADD = unused
-libfoo_la_DEPENDENCIES = unused
-EXTRA_libfoo_la_DEPENDENCIES = unused
 END
 
 libtoolize
@@ -48,14 +46,9 @@ AUTOMAKE_fails --add-missing
 # Makefile.am:2: library has `libfoo_la' as canonical name (possible typo)
 # Makefile.am:4: warning: variable `libfoo_la_LIBADD' is defined but no program or
 # Makefile.am:4: library has `libfoo_la' as canonical name (possible typo)
-# Makefile.am:6: warning: variable `EXTRA_libfoo_la_DEPENDENCIES' is defined but no program or
-# Makefile.am:6: library has `libfoo_la' as canonical name (possible typo)
-# Makefile.am:5: warning: variable `libfoo_la_DEPENDENCIES' is defined but no program or
-# Makefile.am:5: library has `libfoo_la' as canonical name (possible typo)
-
 
 grep 'as canonical' stderr | grep -v ' .libfoo_la. ' && Exit 1
-test `grep 'variable.*is defined but' stderr | wc -l` = 6
+test `grep 'variable.*is defined but' stderr | wc -l` = 4
 
 # If we add a global -Wnone, all warnings should disappear.
 $AUTOMAKE -Wnone
