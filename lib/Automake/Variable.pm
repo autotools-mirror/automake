@@ -130,11 +130,6 @@ non-object).
 
 =cut
 
-my $_VARIABLE_CHARACTERS = '[.A-Za-z0-9_@]+';
-my $_VARIABLE_PATTERN = '^' . $_VARIABLE_CHARACTERS . "\$";
-my $_VARIABLE_RECURSIVE_PATTERN =
-    '^([.A-Za-z0-9_@]|\$[({]' . $_VARIABLE_CHARACTERS . '[})]?)+' . "\$";
-
 # The order in which variables should be output.  (May contain
 # duplicates -- only the first occurrence matters.)
 my @_var_order;
