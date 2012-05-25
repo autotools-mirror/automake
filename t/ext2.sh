@@ -63,4 +63,4 @@ cat rules
 #|  #r-i.o: i.cxx
 
 # Bail out if we find a duplicate.
-$PERL -ne 'if (exists $a{$_}) { exit 1 } else { $a{$_} = 1 }' < rules
+$PERL -ne 'if (exists $a{$_}) { exit (1) } else { $a{$_} = 1 }' < rules
