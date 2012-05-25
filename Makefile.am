@@ -31,22 +31,16 @@ EXTRA_DIST =
 # then use config.status to substitute the remainder where a single
 # expansion is sufficient.  We use a funny notation here to avoid
 # configure substitutions in our text.
-do_subst = ( sed \
-  -e "s,[@]configure_input[@],Generated from $$in; do not edit by hand.,g" \
-  -e 's,[@]datadir[@],$(datadir),g' \
-  -e 's,[@]amdir[@],$(amdir),g' \
-  -e 's,[@]bindir[@],$(bindir),g' \
-  -e 's,[@]docdir[@],$(docdir),g' \
-  -e 's,[@]pkgvdatadir[@],$(pkgvdatadir),g' \
-  -e 's,[@]scriptdir[@],$(scriptdir),g' \
-  -e 's,[@]automake_acdir[@],$(automake_acdir),g' \
-  -e 's,[@]system_acdir[@],$(system_acdir),g' \
+do_subst = ( sed $(strip \
+  $(foreach x, data am bin doc pkgvdata script automake_ac system_ac, \
+              -e 's,@$(x)dir@,$($(x)dir),g')) \
+  -e "s,[@]configure_input@,Generated from $(<F) do not edit by hand.,g" \
 ## Hack to avoid a spurious substitution in the Automake script (part 1).
   -e 's,[@]am__isrc[@],!!@!!am__isrc!!@!!,g' \
   | $(SHELL) ./config.status --file=- \
 ## Hack to avoid a spurious substitution in the Automake script (part 2).
   | sed -e 's,!!@!!am__isrc!!@!!,@''am__isrc@,g' \
-  )
+) <$< >$@-t
 
 # Generated  files shouldn't contain unexpanded '@substitutions@', and
 # should be made read-only, to prevent them from being edited by mistake
@@ -58,12 +52,11 @@ generated_file_finalize = $(AM_V_at) \
   fi; \
   chmod a-w $@-t && mv -f $@-t $@
 
-bin_SCRIPTS = automake aclocal
-
-CLEANFILES += $(bin_SCRIPTS)
 AUTOMAKESOURCES = automake.in aclocal.in
-
 TAGS_FILES = $(AUTOMAKESOURCES)
+
+bin_SCRIPTS = $(basename $(AUTOMAKESOURCES))
+CLEANFILES += $(bin_SCRIPTS)
 
 EXTRA_DIST += \
   $(AUTOMAKESOURCES) \
@@ -72,18 +65,7 @@ EXTRA_DIST += \
   syntax-checks.mk \
   HACKING \
   NG-NEWS \
-  $(gitlog_to_changelog_fixes) \
-  old/ChangeLog-tests \
-  old/ChangeLog.96 \
-  old/ChangeLog.98 \
-  old/ChangeLog.00 \
-  old/ChangeLog.01 \
-  old/ChangeLog.02 \
-  old/ChangeLog.03 \
-  old/ChangeLog.04 \
-  old/ChangeLog.09 \
-  old/ChangeLog.11 \
-  old/TODO
+  $(gitlog_to_changelog_fixes)
 
 ## Make versioned links.  We only run the transform on the root name;
 ## then we make a versioned link with the transformed base name.  This
@@ -107,11 +89,9 @@ uninstall-hook:
 
 ## These files depend on Makefile so they are rebuilt if $(VERSION),
 ## $(datadir) or other do_subst'ituted variables change.
-automake: automake.in
-aclocal: aclocal.in
-automake aclocal: Makefile
+automake aclocal: %: %.in Makefile
 	$(AM_V_at)rm -f $@ $@-t
-	$(AM_V_GEN)in=$@.in; $(do_subst) <$(srcdir)/$@.in >$@-t
+	$(AM_V_GEN)$(do_subst)
 ## We can't use '$(generated_file_finalize)' here, because currently
 ## Automake contains occurrences of unexpanded @substitutions@ in
 ## comments, and that is perfectly legit.
@@ -159,25 +139,14 @@ dist_script_DATA = \
 
 install-data-hook:
 	@$(POST_INSTALL)
-	@for f in $(dist_script_DATA); do echo $$f; done \
-	  | sed 's,^lib/,,' \
-	  | ( st=0; \
-	      while read f; do \
-	        echo " chmod +x '$(DESTDIR)$(scriptdir)/$$f'"; \
-	        chmod +x "$(DESTDIR)$(scriptdir)/$$f" || st=1; \
-	      done; \
-	      exit $$st )
+	chmod +x $(patsubst lib/%,'$(DESTDIR)$(scriptdir)/%',$(dist_script_DATA))
 
 installcheck-local: installcheck-executable-scripts
 installcheck-executable-scripts:
-	@for f in $(dist_script_DATA); do echo $$f; done \
-	  | sed 's,^lib/,,' \
-	  | while read f; do \
-	      path="$(pkgvdatadir)/$$f"; \
-	      test -x "$$path" || echo $$path; \
-	    done \
-	  | sed 's/$$/: not executable/' \
-	  | grep . 1>&2 && exit 1; exit 0
+	@for f in $(patsubst lib/%,'$(scriptdir)/%',$(dist_script_DATA)); do \
+	   test -x $$f || { echo "$@: $$f: not executable" >&2; st=1; }; \
+	 done; \
+	 exit $$st;
 
 
 ## ---------------------------------------------------- ##
@@ -211,9 +180,8 @@ CLEANFILES += $(nodist_perllib_DATA)
 
 lib/Automake/Config.pm: lib/Automake/Config.in Makefile
 	$(AM_V_at)rm -f $@ $@-t
-	$(AM_V_at)test -d lib/Automake || $(MKDIR_P) lib/Automake
-	$(AM_V_GEN)in=Config.in \
-	  && $(do_subst) <$(srcdir)/lib/Automake/Config.in >$@-t
+	$(AM_V_at)$(MKDIR_P) $(@D)
+	$(AM_V_GEN)$(do_subst)
 	$(generated_file_finalize)
 EXTRA_DIST += lib/Automake/Config.in
 
@@ -306,12 +274,9 @@ dist_system_ac_DATA = m4/acdir/README
 # dependencies change and amversion.m4 happens to be a configure
 # dependency.  configure and amversion.m4 would be rebuilt in
 # loop otherwise.
-# Use '$(top_srcdir)/m4' for the benefit of non-GNU makes: this is
-# how amversion.m4 appears in our dependencies.
-$(top_srcdir)/m4/amversion.m4: $(srcdir)/configure.ac $(srcdir)/m4/amversion.in
+$(srcdir)/m4/amversion.m4: $(srcdir)/m4/amversion.in $(srcdir)/configure.ac
 	$(AM_V_at)rm -f $@-t $@
-	$(AM_V_GEN)in=amversion.in \
-	  && $(do_subst) <$(srcdir)/m4/amversion.in >$@-t
+	$(AM_V_GEN)$(do_subst)
 	$(generated_file_finalize)
 EXTRA_DIST += m4/amversion.in
 
@@ -418,15 +383,13 @@ AM_TESTS_ENVIRONMENT += stderr_fileno_=9; export stderr_fileno_;
 # Automatically-computed dependencies for tests.
 include $(srcdir)/testsuite-autodeps.am
 
-## The dependecies declared here are not truly complete, but such
+## The dependencies declared here are not truly complete, but such
 ## completeness would cause more issues than it would solve.  See
 ## automake bug#11347.
-$(srcdir)/autodeps.am: $(srcdir)/gen-testsuite-part
-	$(AM_V_at)rm -f testsuite-autodeps.tmp $@
-	$(AM_V_GEN)$(PERL) $(srcdir)/gen-testsuite-part
-	  --srcdir $(srcdir) > testsuite-autodeps.tmp
-	$(AM_V_at)chmod a-w testsuite-autodeps.tmp
-	$(AM_V_at)mv -f testsuite-autodeps.tmp $@
+$(srcdir)/testsuite-autodeps.am: $(srcdir)/gen-testsuite-part
+	$(AM_V_at)rm -f $(@F)-t $@
+	$(AM_V_GEN)$(PERL) $< --srcdir $(srcdir) > $(@F)-t
+	$(AM_V_at)chmod a-w $(@F)-t && mv -f $(@F)-t $@
 EXTRA_DIST += gen-testsuite-part
 
 # Static dependencies valid for each test case.
@@ -441,8 +404,7 @@ EXTRA_DIST += t/ax/distcheck-hook-m4.am
 
 defs-static: defs-static.in Makefile
 	$(AM_V_at)rm -f $@ $@-t
-	$(AM_V_GEN)in=defs-static.in\
-	  && $(do_subst) <$(srcdir)/defs-static.in >$@-t
+	$(AM_V_GEN)$(do_subst)
 	$(generated_file_finalize)
 EXTRA_DIST += defs-static.in
 CLEANFILES += defs-static
@@ -486,34 +448,24 @@ clean-local-check:
 info_TEXINFOS = doc/automake-ng.texi
 doc_automake_ng_TEXINFOS = doc/fdl.texi
 
-man1_MANS = \
-  doc/aclocal.1 \
-  doc/automake.1 \
-  doc/aclocal-$(APIVERSION).1 \
-  doc/automake-$(APIVERSION).1
-
-$(man1_MANS): $(srcdir)/configure.ac
-
 CLEANFILES += $(man1_MANS)
 EXTRA_DIST += doc/help2man
 
-update_mans = \
-  $(AM_V_GEN): \
-    && $(MKDIR_P) doc \
-    && PATH="$(abs_builddir)/t/wrap$(PATH_SEPARATOR)$$PATH" \
-    && export PATH \
-    && $(PERL) $(srcdir)/doc/help2man --output=$@
+man1_MANS = $(versioned_mans) $(unversioned_mans)
 
-doc/aclocal.1 doc/automake.1:
-	$(AM_V_GEN): \
-	  && $(MKDIR_P) doc \
-	  && f=`echo $@ | sed 's|.*/||; s|\.1$$||; $(transform)'` \
+unversioned_mans = doc/aclocal.1 doc/automake.1
+versioned_mans = doc/aclocal-$(APIVERSION).1 doc/automake-$(APIVERSION).1
+
+$(unversioned_mans): Makefile
+	$(AM_V_GEN)$(MKDIR_P) doc \
+	  && f=`echo $(@D) | sed 's|.*/||; s|\.1$$||; $(transform)'` \
 	  && echo ".so man1/$$f-$(APIVERSION).1" > $@
 
-doc/aclocal-$(APIVERSION).1: aclocal.in aclocal lib/Automake/Config.pm
-	$(update_mans) aclocal-$(APIVERSION)
-doc/automake-$(APIVERSION).1: automake.in automake lib/Automake/Config.pm
-	$(update_mans) automake-$(APIVERSION)
+$(versioned_mans): doc/%-$(APIVERSION).1: % lib/Automake/Config.pm
+	 $(AM_V_GEN)$(MKDIR_P) doc \
+	    && PATH="$(abs_builddir)/t/wrap$(PATH_SEPARATOR)$$PATH" \
+	    && export PATH \
+	    && $(PERL) $(srcdir)/doc/help2man --output=$@ $*
 
 
 ## ---------------------------- ##
@@ -584,17 +536,8 @@ EXTRA_DIST += \
 ## --------------------------------------------------- ##
 
 EXTRA_DIST += \
-  old/ChangeLog-tests \
-  old/ChangeLog.96 \
-  old/ChangeLog.98 \
-  old/ChangeLog.00 \
-  old/ChangeLog.01 \
-  old/ChangeLog.02 \
-  old/ChangeLog.03 \
-  old/ChangeLog.04 \
-  old/ChangeLog.09 \
-  old/ChangeLog.11 \
-  old/TODO
+  $(addprefix old/ChangeLog., 96 98 00 01 02 03 04 09 11) \
+  old/ChangeLog-tests old/TODO
 
 
 ##########################################################################
