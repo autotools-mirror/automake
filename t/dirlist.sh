@@ -19,7 +19,7 @@
 . ./defs || Exit 1
 
 cat > configure.ac <<EOF
-AC_INIT
+AC_INIT([$me], [1.0])
 AM_INIT_GUILE_MODULE
 EOF
 
@@ -29,7 +29,7 @@ echo ./dirlist-test > acdir/dirlist
 cat >dirlist-test/dirlist-check.m4 <<'END'
 AC_DEFUN([AM_INIT_GUILE_MODULE],[
 . $srcdir/../GUILE-VERSION
-AM_INIT_AUTOMAKE($PACKAGE, $VERSION)
+AM_INIT_AUTOMAKE(foreign)
 AC_CONFIG_AUX_DIR(..)
 module=[$1]
 AC_SUBST(module)])
