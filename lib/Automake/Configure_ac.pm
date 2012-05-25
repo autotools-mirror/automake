@@ -70,28 +70,7 @@ sub find_configure_ac (;@)
 {
   my ($directory) = @_;
   $directory ||= '.';
-  my $configure_ac =
-    File::Spec->canonpath (File::Spec->catfile ($directory, 'configure.ac'));
-  my $configure_in =
-    File::Spec->canonpath (File::Spec->catfile ($directory, 'configure.in'));
-
-  if (-f $configure_in)
-    {
-      msg ('obsolete', "autoconf input should be named 'configure.ac'," .
-                       " not 'configure.in'");
-      if (-f $configure_ac)
-	{
-	  msg ('unsupported',
-	       "'$configure_ac' and '$configure_in' both present.\n"
-	       . "proceeding with '$configure_ac'");
-          return $configure_ac
-	}
-      else
-        {
-          return $configure_in;
-        }
-    }
-  return $configure_ac;
+  return File::Spec->canonpath (File::Spec->catfile ($directory, 'configure.ac'));
 }
 
 

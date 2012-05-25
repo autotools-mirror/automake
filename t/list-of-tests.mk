@@ -315,7 +315,6 @@ t/condinc2.sh \
 t/condlib.sh \
 t/condman2.sh \
 t/condman3.sh \
-t/configure.sh \
 t/confdeps.sh \
 t/conff.sh \
 t/conff2.sh \
