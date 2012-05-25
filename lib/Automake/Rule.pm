@@ -29,10 +29,9 @@ use Automake::DisjConditions;
 require Exporter;
 use vars '@ISA', '@EXPORT', '@EXPORT_OK';
 @ISA = qw/Automake::Item Exporter/;
-@EXPORT = qw (reset register_suffix_rule suffix_rules_count
-	      rules $suffix_rules $KNOWN_EXTENSIONS_PATTERN
+@EXPORT = qw (reset register_suffix_rule
+	      rules $suffix_rules
 	      depend %dependencies %actions register_action
-	      accept_extensions
 	      reject_rule msg_rule msg_cond_rule err_rule err_cond_rule
 	      rule rrule ruledef rruledef);
 
@@ -150,21 +149,6 @@ C<register_suffix_rule> function.
 
 use vars '$suffix_rules';
 
-=item C<$KNOWN_EXTENSIONS_PATTERN>
-
-Pattern that matches all know input extensions (i.e. extensions used
-by the languages supported by Automake).  Using this pattern (instead
-of '\..*$') to match extensions allows Automake to support dot-less
-extensions.
-
-New extensions should be registered with C<accept_extensions>.
-
-=cut
-
-use vars qw ($KNOWN_EXTENSIONS_PATTERN @_known_extensions_list);
-$KNOWN_EXTENSIONS_PATTERN = "";
-@_known_extensions_list = ();
-
 =back
 
 =head2 Error reporting functions
@@ -250,20 +234,6 @@ sub reject_rule ($$)
 =head2 Administrative functions
 
 =over 4
-
-=item C<accept_extensions (@exts)>
-
-Update C<$KNOWN_EXTENSIONS_PATTERN> to recognize the extensions
-listed in C<@exts>.  Extensions should contain a dot if needed.
-
-=cut
-
-sub accept_extensions (@)
-{
-    push @_known_extensions_list, @_;
-    $KNOWN_EXTENSIONS_PATTERN =
-	'(?:' . join ('|', map (quotemeta, @_known_extensions_list)) . ')';
-}
 
 =item C<rules>
 
@@ -452,18 +422,6 @@ sub register_suffix_rule ($$$)
 	    }
 	}
     }
-}
-
-=item C<$count = suffix_rules_count>
-
-Return the number of suffix rules added while processing the current
-F<Makefile> (excluding predefined suffix rules).
-
-=cut
-
-sub suffix_rules_count ()
-{
-  return (scalar keys %$suffix_rules) - (scalar keys %$_suffix_rules_default);
 }
 
 =item C<rule ($rulename)>
@@ -802,7 +760,6 @@ sub define ($$$$$;$)
       if ($deps =~ /^\s*%(\.$chars_rx)(\s|$)/o)
         {
           my $srcsuf = $1;
-          accept_extensions ($srcsuf);
           register_suffix_rule ($where, $srcsuf, $objsuf);
         }
     }
