@@ -45,6 +45,10 @@ cp "$am_amdir"/*.am ./am
 
 echo pkgdata_DATA = configure.ac > Makefile.am
 
+# The '.am' file are read-only when this test is run under
+# "make distcheck", so we need to unlink any of them we want
+# to overwrite.
+rm -f am/data.am
 cat > am/data.am << 'END'
 include 0.am
 include 1.am
