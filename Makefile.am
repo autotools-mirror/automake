@@ -189,7 +189,6 @@ dist_perllib_DATA = \
   lib/Automake/ChannelDefs.pm \
   lib/Automake/Channels.pm \
   lib/Automake/Condition.pm \
-  lib/Automake/Configure_ac.pm \
   lib/Automake/DisjConditions.pm \
   lib/Automake/FileUtils.pm \
   lib/Automake/General.pm \
