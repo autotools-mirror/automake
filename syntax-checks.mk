@@ -80,7 +80,6 @@ sc_tests_automake_fails \
 sc_tests_required_after_defs \
 sc_tests_plain_sleep \
 sc_m4_am_plain_egrep_fgrep \
-sc_tests_no_configure_in \
 sc_tests_PATH_SEPARATOR \
 sc_tests_logs_duplicate_prefixes \
 sc_tests_makefile_variable_order \
@@ -502,21 +501,6 @@ sc_m4_am_plain_egrep_fgrep:
 	@if grep -E '\b[ef]grep\b' $(ams) $(srcdir)/m4/*.m4; then \
 	  echo 'Do not use egrep or fgrep in the above files,' \
 	       'they are not portable.' 1>&2; \
-	  exit 1; \
-	fi
-
-## Prefer 'configure.ac' over the obsolescent 'configure.in' as the name
-## for configure input files in our testsuite.  The latter  has been
-## deprecated for several years (at least since autoconf 2.50).
-sc_tests_no_configure_in:
-	@if grep -E '\bconfigure\\*\.in\b' $(xtests) $(xdefs) \
-	      | grep -Ev '/backcompat.*\.(sh|tap):' \
-	      | grep -Ev '/autodist-configure-no-subdir\.sh:' \
-	      | grep -Ev '/(configure|help)\.sh:' \
-	      | grep .; \
-	then \
-	  echo "Use 'configure.ac', not 'configure.in', as the name" >&2; \
-	  echo "for configure input files in the test cases above." >&2; \
 	  exit 1; \
 	fi
 
