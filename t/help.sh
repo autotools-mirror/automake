@@ -38,9 +38,7 @@ $AUTOMAKE --help
 $ACLOCAL 2>stderr && { cat stderr >&2; Exit 1; }
 cat stderr >&2
 $FGREP configure.ac stderr
-$FGREP configure.in stderr
 AUTOMAKE_fails
 $FGREP configure.ac stderr
-$FGREP configure.in stderr
 
 :

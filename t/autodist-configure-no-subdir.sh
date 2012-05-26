@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that 'configure', 'configure.ac' and 'configure.in' are *not*
-# automatically distributed when placed in a subdirectory.
+# Check that 'configure' and 'configure.ac' are *not* automatically
+# distributed when placed in a subdirectory.
 # Related to automake bug#7819.
 
 . ./defs || Exit 1
@@ -32,12 +32,9 @@ sub/configure:
 	$(dontbuild)
 sub/configure.ac:
 	$(dontbuild)
-sub/configure.in:
-	$(dontbuild)
 check-local: distdir
 	ls -l $(distdir)/sub
 	test ! -f $(distdir)/sub/configure
-	test ! -f $(distdir)/sub/configure.in
 	test ! -f $(distdir)/sub/configure.ac
 END
 
@@ -49,15 +46,12 @@ configure:
 	$(dontbuild)
 configure.ac:
 	$(dontbuild)
-configure.in:
-	$(dontbuild)
 check-local:
 	echo $(am__dist_files) $(am__dist_common) \
           | grep 'configure' && exit 1; :
 END
 
 : > sub/configure.ac
-: > sub/configure.in
 : > sub/configure
 
 $ACLOCAL
