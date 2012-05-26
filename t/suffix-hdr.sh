@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Use of "custom" headers (with custom suffix) in a _PROGRAMS variable.
+# Use of "custom" headers (with custom suffix).
 
 required='cc native'
 . ./defs || Exit 1
@@ -26,13 +26,14 @@ END
 
 cat > Makefile.am << 'END'
 noinst_PROGRAMS = zardoz
-zardoz_SOURCES = foo.my-c bar.my-h
+nodist_zardoz_SOURCES = foo.c
+EXTRA_DIST = bar.my-h foo.my-c
 BUILT_SOURCES = bar.h
 %.c: %.my-c
 	sed 's/INTEGER/int/' $< >$@
 %.h: %.my-h
 	sed 's/SUBSTITUTE/#define/' $< >$@
-CLEANFILES = foo.c $(BUILT_SOURCES)
+CLEANFILES = $(nodist_zardoz_SOURCES) $(BUILT_SOURCES)
 END
 
 cat > foo.my-c << 'END'

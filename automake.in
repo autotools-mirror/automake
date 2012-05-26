@@ -1667,7 +1667,6 @@ sub handle_single_transform ($$$$$%)
 	# language function.
 	my $aggregate = 'AM';
 
-	$extension = &derive_suffix ($extension, $obj);
 	my $lang;
 	if ($extension_map{$extension} &&
 	    ($lang = $languages{$extension_map{$extension}}))
@@ -1815,23 +1814,25 @@ sub handle_single_transform ($$$$$%)
 		      [@specifics, %transform]);
 	    }
 	}
-	elsif ($extension eq $obj)
+        elsif ($extension eq '.vapi')
+        {
+            # Explicitly pass vala headers through.  This is a bit of an
+            # hack, but good enough FTM.
+            next;
+        }
+	else
 	{
+            # Assume the user has defined a proper explicit or pattern
+            # rule to turn a source file with this extension in an object
+            # file with the same basename and a '.$(OBJEXT)' extension (if
+            # build as part of a program or static library) or a '.lo'
+            # extension (if built as part of a libtool library).
+	    $extension = $obj;
 	    # This is probably the result of a direct suffix rule.
 	    # In this case we just accept the rewrite.
 	    $object = "$base$extension";
 	    $object = "$directory/$object" if $directory ne '';
 	    $linker = '';
-	}
-	else
-	{
-	    # No error message here.  Used to have one, but it was
-	    # very unpopular.
-	    # FIXME: we could potentially do more processing here,
-	    # perhaps treating the new extension as though it were a
-	    # new source extension (as above).  This would require
-	    # more restructuring than is appropriate right now.
-	    next;
 	}
 
 	err_am "object '$object' created by '$full' and '$object_map{$object}'"
@@ -5718,34 +5719,6 @@ sub register_language (%)
 	  $link_languages{$link} = $lang;
 	}
     }
-
-  # Upate the $suffix_rule map.
-  foreach my $suffix (@{$lang->extensions})
-    {
-      foreach my $dest (&{$lang->output_extensions} ($suffix))
-	{
-	  register_suffix_rule (INTERNAL, $suffix, $dest);
-	}
-    }
-}
-
-# derive_suffix ($EXT, $OBJ)
-# --------------------------
-# This function is used to find a path from a user-specified suffix $EXT
-# to $OBJ or to some other suffix we recognize internally, e.g. 'cc'.
-sub derive_suffix ($$)
-{
-  my ($source_ext, $obj) = @_;
-
-  while (! $extension_map{$source_ext}
-	 && $source_ext ne $obj
-	 && exists $suffix_rules->{$source_ext}
-	 && exists $suffix_rules->{$source_ext}{$obj})
-    {
-      $source_ext = $suffix_rules->{$source_ext}{$obj}[0];
-    }
-
-  return $source_ext;
 }
 
 

@@ -16,8 +16,6 @@
 
 # Tests that pattern rules with subdir objects are understood.
 # Originally reported by John Ratliff against suffix rules.
-# This test currently fails, because Automake-NG don't scan nor
-# process pattern rules.
 
 required=cc
 . ./defs || Exit 1

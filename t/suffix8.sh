@@ -41,9 +41,9 @@ libfoo_la_SOURCES = bar.x_
 
 %.y_: %.x_
 	cp $< $@
-%.o: %.y_
+%.o: %.x_
 	cp $< $@
-%.obj: %.y_
+%.obj: %.x_
 	cp $< $@
 %.z_: %.y_
 	cp $< $@

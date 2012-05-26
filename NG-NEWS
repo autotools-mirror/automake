@@ -177,26 +177,6 @@ Pattern rules and suffix rules
   not supported anymore either; Automake-NG will error out if you try
   to define them.
 
-* To retain support for user-defined file extensions in the '_SOURCES'
-  variables (see "Handling new file extensions" in the Automake manual),
-  Automake-NG still tries to parse and understand suffix-based pattern
-  rules.  So, an usage like:
-   
-      SUFFIXES = .baz .c
-      .baz.c:
-              cp $< $@
-      foo_SOURCES = foo.c bar.baz
-      DISTCLEANFILES = bar.c
-
-  which was valid with mainline Automake, should be translated for
-  Automake-NG as:
-
-      %.c: %.baz
-              cp $< $@
-      bin_PROGRAMS = foo
-      foo_SOURCES = foo.c sub/bar.baz
-      DISTCLEANFILES = bar.c
-
 
 Distribution
 ============
@@ -255,6 +235,95 @@ Obsolete Features Removed
   Objective C, preprocessed assembler ...).  One should just use
   $(AM_CPPFLAGS) instead, which has been supported and recommended for
   a long time.
+
+
+Source Files with Unknown Extensions
+====================================
+
+* Automake-NG used a much simpler and dumber algorithm that mainline
+  Automake to determine how to build an object associated to a source
+  whose extension in not one of those handled internally by automake.
+
+  The new algorithm goes like this.  For any file listed in a '_SOURCES'
+  variable whose suffix is not recognized internally by automake (in
+  contrast to known suffixes like '.c' or '.f90'), automake will obtain
+  the expected target object file by stripping the suffix from the source
+  file, and appending either '.$(OBJEXT)' or '.lo' to it (which one depends
+  on whether the object is built as part of a program, a static library, or
+  a libtool library).  It will then be assumed that the user has defined a
+  rule (either explicit or defined from a pattern rule) which can turn that 
+  source file into this corresponding object file.  For example, on an
+  input like:
+
+      bin_PROGRAMS = foo
+      foo_SOURCES = mu.ext1 fu.ext1 zu.ext1
+
+  automake will expect that the three objects mu.$(OBJEXT), fu.$(OBJEXT)
+  and zu.$(OBJEXT) are to be used in the linking of the 'foo' program, and
+  that the user has provided proper recipes for all those objects to be
+  built at make time, as well as a link command for linking 'foo'.  Here
+  is an example of how those declarations could look like:
+
+      %.$(OBJEXT): %.ext1
+              my-compiler -c -o $@ $<
+      foo_LINK = $(CC) -o $@
+
+  In this particular case, the idiom above is basically the same one that
+  would be required in mainline automake (apart for the fact that, there,
+  old-fashioned suffix rules should be used instead of pattern rules).  To
+  see what is truly changed with the new algorithm, we have to look at a
+  more indirect usage.
+
+  Mainline Automake follows the chain of user-defined pattern rules to
+  determine how to build the object file deriving from a source file with
+  a custom user extension; for example, upon reading:
+
+       .zoo.cc:
+               $(preprocess) $< > $@
+       bin_PROGRAMS = foo
+       foo_SOURCES = bar.zoo
+
+  *mainline* Automake knows that it has to bring in the C++ support
+  (compilation rules, requirement for AC_PROG_CXX in configure.ac, etc),
+  and use the C++ linker to link the 'foo' executable.
+
+  But Autommake-NG *won't follow those implicit chains of pattern rules*
+  anymore; so that the idiom above will have to be re-worked like follows
+  to preserve its intent and behaviour:
+
+       %.cc: %.zoo:
+               $(preprocess) $< > $@
+       bin_PROGRAMS = foo
+       # The use of '.cc' is required to let Automake know to bring in
+       # stuff for the handling of C++ compilation, and to use the C++
+       # linker to build 'foo'.
+       nodist_foo_SOURCES = bar.cc
+       EXTRA_DIST = foo.zoo
+
+  And there is another major consequence of this change of semantics: one
+  can't use anymore "header files" with extensions unrecognized to Automake
+  anymore; for example, an usage like this will cause errors at make
+  runtime:
+
+      # Won't work anymore.
+      %.h: %.my-hdr
+            $(preprocess-header) $< >$@
+      foo_SOURCES = foo.c bar.my-hdr
+      BUILT_SOURCES = bar.h
+
+  errors that might look like:
+
+      make[1]: *** No rule to make target 'bar.o', needed by 'zardoz'.  Stop.
+
+  The simple workaround is to place the "non-standard" headers in EXTRA_DIST
+  rather than in a _SOURCES variable:
+
+      # This will work.
+      %.h: %.my-hdr
+            $(preprocess-header) $< >$@
+      foo_SOURCES = foo.c
+      EXTRA_DIST = foo.my-hdr
+      BUILT_SOURCES = foo.h
 
 
 Miscellaneous

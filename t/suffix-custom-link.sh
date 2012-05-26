@@ -14,44 +14,60 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Check that Automake can take advantage of GNU make ability to
-# automatically chain suffix-based pattern rules.
-# See automake bug#7824 and bug#7670.
+# Check that Automake support entries with user-defined extensions of
+# files in _SOURCES, and we can override the choice of a link in case
+# the Automake default (C linker) would be inappropriate.
 
-required=cc
+required=c++
 . ./defs || Exit 1
 
 cat >> configure.ac <<'END'
-AC_PROG_CC
+AC_PROG_CXX
 AC_OUTPUT
 END
 
 cat > Makefile.am <<'END'
+%.$(OBJEXT): %.xt
+	sed -e 's/@/o/g' -e 's/!/;/g' $< >$*-t.cc \
+	  && $(CXX) -c $*-t.cc \
+	  && rm -f $*-t.cc \
+	  && mv -f $*-t.$(OBJEXT) $@
 bin_PROGRAMS = foo
-nodist_foo_SOURCES = foo.c
-EXTRA_DIST = foo.c0
-%.c0: %.c1
-	(echo 'int main (void)' && echo '{' && cat $<) > $@
-%.c: %.c0
-	(cat $< && echo '}') > $@
-CLEANFILES = foo.c0 foo.c
+foo_SOURCES = 1.xt 2.xt
+foo_LINK = $(CXX) -o $@
 END
 
-echo 'return 0;' > foo.c1
+cat > 1.xt <<'END'
+#include <cstdlib>
+void say_hell@ (v@id)!
+int main (v@id)
+{
+   say_hell@ ()!
+   std::exit(0)!
+}
+END
+
+cat > 2.xt <<'END'
+#include <i@stream>
+void say_hell@ (v@id)
+{
+  using namespace std!
+  c@ut << "Hell@, W@rld\n" << endl!
+}
+END
 
 $ACLOCAL
 $AUTOMAKE
 $AUTOCONF
-./configure
-$MAKE all
-$MAKE distcheck
 
-# Try with explicit dependencies as well.
-$MAKE clean
-cat >> Makefile <<'END'
-foo.c: foo.c0
-foo.c0: foo.c1
-END
+./configure
+
 $MAKE all
+if cross_compiling; then :; else
+  ./foo
+  ./foo | grep 'Hello, World'
+fi
+
+$MAKE distcheck
 
 :
