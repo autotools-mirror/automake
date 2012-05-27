@@ -324,8 +324,9 @@ modern.DIST_SOURCES = am__dist_sources
 modern.am__TEST_BASES = am__test_bases
 modern.am__TEST_LOGS = am__test_logs
 modern.am__TEST_RESULTS = am__test_results
+modern.CONFIG_HEADER = AM_CONFIG_HEADERS
 
-sc_renamed_variables_rules = \
+Sc_renamed_variables_rules = \
   $(patsubst modern.%,sc_no_%,$(filter modern.%,$(.VARIABLES)))
 
 $(sc_renamed_variables_rules): sc_no_% :

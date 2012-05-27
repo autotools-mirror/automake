@@ -2281,7 +2281,7 @@ sub handle_compile ()
       {
 	my @incs = ('-I.', subst ('am__isrc'));
 
-	my $var = var 'CONFIG_HEADER';
+	my $var = var 'AM_CONFIG_HEADERS';
 	if ($var)
 	  {
 	    foreach my $hdr (split (' ', $var->variable_value))
@@ -2292,8 +2292,9 @@ sub handle_compile ()
 	# We want '-I. -I$(srcdir)', but the latter -I is redundant
 	# and unaesthetic in non-VPATH builds.  We use `-I.@am__isrc@`
 	# instead.  It will be replaced by '-I.' or '-I. -I$(srcdir)'.
-	# Items in CONFIG_HEADER are never in $(srcdir) so it is safe
-	# to just put @am__isrc@ right after '-I.', without a space.
+	# Items in AM_CONFIG_HEADERS are never in $(srcdir) so it
+        # is safe to just put @am__isrc@ right after '-I.', without a
+        # space.
 	($default_includes = ' ' . uniq (@incs)) =~ s/ @/@/;
       }
 
@@ -3992,15 +3993,10 @@ sub handle_configure ($$$@)
 				  FILES => "@distclean_config")
     if @distclean_config;
 
-  reject_var ('CONFIG_HEADER',
-	      "'CONFIG_HEADER' is an anachronism; now determined "
-	      . "automatically\nfrom '$configure_ac'");
-
   my @config_h;
   foreach my $spec (@config_headers)
     {
       my ($out, @ins) = split_config_file_spec ($spec);
-      # Generate CONFIG_HEADER define.
       if ($relative_dir eq dirname ($out))
 	{
 	  push @config_h, basename ($out);
@@ -4010,7 +4006,7 @@ sub handle_configure ($$$@)
 	  push @config_h, "\$(top_builddir)/$out";
 	}
     }
-  define_variable ("CONFIG_HEADER", "@config_h", INTERNAL)
+  define_variable ("AM_CONFIG_HEADERS", "@config_h", INTERNAL)
     if @config_h;
 
   # Now look for other files in this directory which must be remade
