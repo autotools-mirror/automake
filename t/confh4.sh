@@ -21,27 +21,60 @@
 # > How-To-Repeat:
 #  Use AM_CONFIG_HEADER(subdir/config.h) to place configuration
 #  header in subdirectory and observe that it is not included.
+# Also check that our preprocessing code is smart enough not to pass
+# repeated '-I<DIR>' options on the compiler command line.
 
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'
-AC_CONFIG_FILES([include/Makefile])
+AC_CONFIG_FILES([include/Makefile sub/Makefile])
 AC_CONFIG_HEADERS([include/config.h])
-AC_PROG_CC
+AC_PROG_FGREP
+AC_OUTPUT
+END
+
+mkdir include sub
+: > include/config.h.in
+
+cat > c-defs.am << 'END'
+## To bring in the definition of DEFAULT_INCLUDES
+CC = who-cares
+AUTOMAKE_OPTIONS = no-dependencies
+bin_PROGRAMS = foo
 END
 
 cat > Makefile.am << 'END'
-bin_PROGRAMS = foo
-foo_SOURCES = foo.c
+include $(top_srcdir)/c-defs.am
+.PHONY: test-default-includes
+test-default-includes:
+	echo ' ' $(DEFAULT_INCLUDES) ' ' \
+	  | $(FGREP) ' -I$(top_builddir)/include '
 END
 
-mkdir include
-: > include/Makefile.am
-: > include/config.h.in
+cp Makefile.am sub
+
+cat > include/Makefile.am << 'END'
+include $(top_srcdir)/c-defs.am
+.PHONY: test-default-includes
+test-default-includes:
+	echo ' ' $(DEFAULT_INCLUDES) ' ' | $(FGREP) ' -I. '
+	case ' $(DEFAULT_INCLUDES) ' in \
+	  *'$(top_builddir)'*) exit 1;; \
+	  *include*) exit 1;; \
+	  *-I.*-I.*) exit 1;; \
+	  *' -I. ') exit 0;; \
+	  *) exit 1;; \
+	esac
+END
 
 $ACLOCAL
+$AUTOCONF
 $AUTOMAKE
 
-grep '^ *DEFAULT_INCLUDES *=.* -I\$(top_builddir)/include' Makefile.in
+./configure
+
+$MAKE test-default-includes
+$MAKE -C sub test-default-includes
+$MAKE -C include test-default-includes
 
 :

@@ -31,16 +31,11 @@ EXTRA_DIST =
 # then use config.status to substitute the remainder where a single
 # expansion is sufficient.  We use a funny notation here to avoid
 # configure substitutions in our text.
-do_subst = ( sed $(strip \
+do_subst = sed $(strip \
   $(foreach x, data am bin doc pkgvdata script automake_ac system_ac, \
               -e 's,@$(x)dir@,$($(x)dir),g')) \
   -e "s,[@]configure_input@,Generated from $(<F) do not edit by hand.,g" \
-## Hack to avoid a spurious substitution in the Automake script (part 1).
-  -e 's,[@]am__isrc[@],!!@!!am__isrc!!@!!,g' \
-  | $(SHELL) ./config.status --file=- \
-## Hack to avoid a spurious substitution in the Automake script (part 2).
-  | sed -e 's,!!@!!am__isrc!!@!!,@''am__isrc@,g' \
-) <$< >$@-t
+  <"$<" | $(SHELL) ./config.status --file=- >"$@-t"
 
 # Generated  files shouldn't contain unexpanded '@substitutions@', and
 # should be made read-only, to prevent them from being edited by mistake

@@ -2275,29 +2275,6 @@ sub handle_compile ()
 {
    return if ! $must_handle_compiled_objects;
 
-    # Boilerplate.
-    my $default_includes = '';
-    if (! option 'nostdinc')
-      {
-	my @incs = ('-I.', subst ('am__isrc'));
-
-	my $var = var 'AM_CONFIG_HEADERS';
-	if ($var)
-	  {
-	    foreach my $hdr (split (' ', $var->variable_value))
-	      {
-		push @incs, '-I' . dirname ($hdr);
-	      }
-	  }
-	# We want '-I. -I$(srcdir)', but the latter -I is redundant
-	# and unaesthetic in non-VPATH builds.  We use `-I.@am__isrc@`
-	# instead.  It will be replaced by '-I.' or '-I. -I$(srcdir)'.
-	# Items in AM_CONFIG_HEADERS are never in $(srcdir) so it
-        # is safe to just put @am__isrc@ right after '-I.', without a
-        # space.
-	($default_includes = ' ' . uniq (@incs)) =~ s/ @/@/;
-      }
-
     my (@mostly_rms, @dist_rms);
     foreach my $item (sort keys %compile_clean_files)
     {
@@ -2318,7 +2295,7 @@ sub handle_compile ()
     my ($coms, $vars, $rules) =
       &file_contents_internal (1, "$libdir/am/compile.am",
 			       new Automake::Location,
-			       ('DEFAULT_INCLUDES' => $default_includes,
+			       ('STDINC' => ! option 'nostdinc',
 				'MOSTLYRMS' => join ("\n", @mostly_rms),
 				'DISTRMS' => join ("\n", @dist_rms)));
     $output_vars .= $vars;

@@ -1,5 +1,5 @@
-#! /bin/sh
-# Copyright (C) 1999-2012 Free Software Foundation, Inc.
+#!/bin/sh
+# Copyright (C) 2009-2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure nostdinc option works correctly.
+# Check that automake rules do not use repeated "-I $(srcdir)" in the
+# compiler invocation.
 
 required=cc
 . ./defs || Exit 1
@@ -24,24 +25,8 @@ AC_PROG_CC
 AC_OUTPUT
 END
 
-cat > Makefile.am << 'END'
-AUTOMAKE_OPTIONS = nostdinc
-bin_PROGRAMS = foo
-END
-
-cat > foo.c << 'END'
-#include <stdlib.h>
-int main (void)
-{
-  exit (0);
-}
-END
-
-# This shouldn't be picked up.
-cat > stdlib.h << 'END'
-#error "stdlib.h from source dir included"
-choke me
-END
+echo 'bin_PROGRAMS = foo' > Makefile.am
+echo 'int main (void) { return 0; }' > foo.c
 
 $ACLOCAL
 $AUTOCONF
@@ -51,19 +36,17 @@ $AUTOMAKE --add-missing
 mkdir build
 cd build
 ../configure
-$MAKE V=1 > output || { cat output; Exit 1; }
-cat output
-grep '.*-I *\.' stdout && Exit 1
-$MAKE clean
-# Shouldn't be picked up from builddir either.
-cp ../stdlib.h .
-$MAKE
+$MAKE V=1 > stdout || { cat stdout; Exit 1; }
+cat stdout
+grep '.*-I *\. .*-I *\.\. ' stdout
+grep '.*-I *\. .*-I *\. ' stdout && Exit 1
 cd ..
 
 # Test with $builddir = $srcdir
 ./configure
-$MAKE V=1 > output || { cat output; Exit 1; }
-cat output
-grep '.*-I *\.' output && Exit 1
+$MAKE V=1 > stdout || { cat stdout; Exit 1; }
+cat stdout
+grep '.*-I *\.  ' stdout
+grep '.*-I *\..*-I *\.' stdout && Exit 1
 
 :
