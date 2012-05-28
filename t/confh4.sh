@@ -37,7 +37,7 @@ mkdir include sub
 : > include/config.h.in
 
 cat > c-defs.am << 'END'
-## To bring in the definition of DEFAULT_INCLUDES
+## To bring in the definition of AM_DEFAULT_INCLUDES
 CC = who-cares
 AUTOMAKE_OPTIONS = no-dependencies
 bin_PROGRAMS = foo
@@ -47,7 +47,7 @@ cat > Makefile.am << 'END'
 include $(top_srcdir)/c-defs.am
 .PHONY: test-default-includes
 test-default-includes:
-	echo ' ' $(DEFAULT_INCLUDES) ' ' \
+	echo ' ' $(AM_DEFAULT_INCLUDES) ' ' \
 	  | $(FGREP) ' -I$(top_builddir)/include '
 END
 
@@ -57,8 +57,8 @@ cat > include/Makefile.am << 'END'
 include $(top_srcdir)/c-defs.am
 .PHONY: test-default-includes
 test-default-includes:
-	echo ' ' $(DEFAULT_INCLUDES) ' ' | $(FGREP) ' -I. '
-	case ' $(DEFAULT_INCLUDES) ' in \
+	echo ' ' $(AM_DEFAULT_INCLUDES) ' ' | $(FGREP) ' -I. '
+	case ' $(AM_DEFAULT_INCLUDES) ' in \
 	  *'$(top_builddir)'*) exit 1;; \
 	  *include*) exit 1;; \
 	  *-I.*-I.*) exit 1;; \
