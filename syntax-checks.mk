@@ -62,12 +62,7 @@ sc_tests_make_can_chain_suffix_rules \
 sc_tests_make_dont_do_useless_vpath_rebuilds \
 sc_no_dotmake_target \
 sc_no_am_makeflags \
-sc_no_DISTFILES \
-sc_no_DIST_COMMON \
-sc_no_DIST_SOURCES \
-sc_no_am_TEST_BASES \
-sc_no_am_TEST_RESULTS \
-sc_no_am_TEST_LOGS \
+$(sc_renamed_variables_rules) \
 sc_no_RECHECK_LOGS \
 sc_tests_no_make_e \
 sc_docs_no_make_e \
@@ -323,11 +318,19 @@ sc_no_am_makeflags:
 	fi
 
 # Modern names for internal variables that had a bad name once.
-modern_DISTFILES = am__dist_files
-modern_DIST_COMMON = am__dist_common
-modern_DIST_SOURCES = am__dist_sources
+modern.DISTFILES = am__dist_files
+modern.DIST_COMMON = am__dist_common
+modern.DIST_SOURCES = am__dist_sources
+modern.am__TEST_BASES = am__test_bases
+modern.am__TEST_LOGS = am__test_logs
+modern.am__TEST_RESULTS = am__test_results
+modern.CONFIG_HEADER = AM_CONFIG_HEADERS
+modern.DEFAULT_INCLUDES = AM_DEFAULT_INCLUDES
 
-sc_no_DISTFILES sc_no_DIST_COMMON sc_no_DIST_SOURCES: sc_no_% :
+Sc_renamed_variables_rules = \
+  $(patsubst modern.%,sc_no_%,$(filter modern.%,$(.VARIABLES)))
+
+$(sc_renamed_variables_rules): sc_no_% :
 	@files="\
 	  $(xtests) \
 	  $(pms) \
@@ -337,21 +340,7 @@ sc_no_DISTFILES sc_no_DIST_COMMON sc_no_DIST_SOURCES: sc_no_% :
 	"; \
 	if grep -F '$*' $$files; then \
 	  echo "'\$$($*)' is obsolete and no more used." >&2; \
-	  echo "You should use '$(modern_$*)' instead." >&2; \
-	  exit 1; \
-	fi
-
-sc_no_am_TEST_BASES sc_no_am_TEST_RESULTS sc_no_am_TEST_LOGS: sc_no_am_% :
-	@files="\
-	  $(xtests) \
-	  $(pms) \
-	  $(ams) \
-	  $(srcdir)/automake.in \
-	"; \
-	tolower () { LC_ALL=C tr '[A-Z]' '[a-z]'; }; \
-	if grep -F 'am__$*' $$files; then \
-	  echo "'\$$(am__$*)' is obsolete and no more used." >&2; \
-	  echo "You should use 'am__`echo $* | tolower`' instead." >&2; \
+	  echo "You should use '$(modern.$*)' instead." >&2; \
 	  exit 1; \
 	fi
 

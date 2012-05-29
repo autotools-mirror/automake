@@ -31,7 +31,9 @@ EOF
 
 cat >Makefile.am << 'END'
 lib_LTLIBRARIES = libfoo.la
-libfoo_la_SOURCES = foo.x-x
+nodist_libfoo_la_SOURCES = foo.y
+CLEANFILES = $(nodist_libfoo_la_SOURCES)
+EXTRA_DIST = $(nodist_libfoo_la_SOURCES:.y=.x-x)
 %.y: %.x-x
 	rm -f $@ $@-t
 ## The leading ':;' works around a bug in bash <= 3.2.
@@ -64,5 +66,7 @@ $AUTOMAKE --add-missing
 
 $MAKE test
 $MAKE all
+test -f libfoo.la
+$MAKE distcheck
 
 :

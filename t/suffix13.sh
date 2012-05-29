@@ -29,13 +29,15 @@ EOF
 cat >Makefile.am << 'END'
 AUTOMAKE_OPTIONS = subdir-objects
 %.c: %.baz
-	case $@ in sub/*) $(MKDIR_P) sub;; *) :;; esac
+	test -d $(@D) || $(MKDIR_P) $(@D)
 	cp $< $@
 
 DISTCLEANFILES = sub/bar.c
 
 bin_PROGRAMS = foo
-foo_SOURCES = foo.c sub/bar.baz
+foo_SOURCES = foo.c
+nodist_foo_SOURCES = sub/bar.c
+EXTRA_DIST = sub/bar.baz
 foo_CFLAGS = -DRETVAL=0
 END
 

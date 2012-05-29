@@ -30,7 +30,6 @@ rm -f depcomp compile
 $ACLOCAL
 $AUTOMAKE
 
-$EGREP 'DEFAULT_INCLUDES|@am__isrc@|-compile|\$\(OBJEXT\)|tab\.[ch]' \
-  Makefile.in && Exit 1
+$EGREP 'INCLUDE|-compile|\$\(OBJEXT\)|tab\.[ch]' Makefile.in && Exit 1
 
 :

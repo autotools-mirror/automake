@@ -29,8 +29,7 @@ use Automake::DisjConditions;
 require Exporter;
 use vars '@ISA', '@EXPORT', '@EXPORT_OK';
 @ISA = qw/Automake::Item Exporter/;
-@EXPORT = qw (reset register_suffix_rule
-	      rules $suffix_rules
+@EXPORT = qw (reset rules
 	      depend %dependencies %actions register_action
 	      reject_rule msg_rule msg_cond_rule err_rule err_cond_rule
 	      rule rrule ruledef rruledef);
@@ -94,10 +93,6 @@ non-object).
 
 =cut
 
-# Same as $suffix_rules (declared below), but records only the
-# default rules supplied by the languages Automake supports.
-use vars '$_suffix_rules_default';
-
 =item C<%dependencies>
 
 Holds the dependencies of targets which dependencies are factored.
@@ -118,36 +113,6 @@ only when keys exists in C<%dependencies>.
 =cut
 
 use vars '%actions';
-
-=item <$suffix_rules>
-
-This maps the source extension for all suffix rules seen to
-a C<hash> whose keys are the possible output extensions.
-
-Note that this is transitively closed by construction:
-if we have
-      exists $suffix_rules{$ext1}{$ext2}
-   && exists $suffix_rules{$ext2}{$ext3}
-then we also have
-      exists $suffix_rules{$ext1}{$ext3}
-
-So it's easy to check whether C<.foo> can be transformed to
-C<.$(OBJEXT)> by checking whether
-C<$suffix_rules{'.foo'}{'.$(OBJEXT)'}> exists.  This will work even if
-transforming C<.foo> to C<.$(OBJEXT)> involves a chain of several
-suffix rules.
-
-The value of C<$suffix_rules{$ext1}{$ext2}> is a pair
-C<[ $next_sfx, $dist ]> where C<$next_sfx> is target suffix
-for the next rule to use to reach C<$ext2>, and C<$dist> the
-distance to C<$ext2'>.
-
-The content of this variable should be updated via the
-C<register_suffix_rule> function.
-
-=cut
-
-use vars '$suffix_rules';
 
 =back
 
@@ -280,16 +245,6 @@ other internal data.
 sub reset()
 {
   %_rule_dict = ();
-  # The first time we initialize the variables,
-  # we save the value of $suffix_rules.
-  if (defined $_suffix_rules_default)
-    {
-      $suffix_rules = $_suffix_rules_default;
-    }
-  else
-    {
-      $_suffix_rules_default = $suffix_rules;
-    }
 
   %dependencies =
     (
@@ -343,85 +298,6 @@ sub reset()
      '.PHONY'               => [],
      );
   %actions = ();
-}
-
-=item C<register_suffix_rule ($where, $src, $dest)>
-
-Register a suffix-based pattern rule defined on C<$where> that
-transforms files ending in C<$src> into files ending in C<$dest>.
-
-This upgrades the C<$suffix_rules> variables.
-
-=cut
-
-sub register_suffix_rule ($$$)
-{
-  my ($where, $src, $dest) = @_;
-
-  verb "Sources ending in $src become $dest";
-
-  # When transforming sources to objects, Automake uses the
-  # %suffix_rules to move from each source extension to
-  # '.$(OBJEXT)', not to '.o' or '.obj'.  However some people
-  # define suffix rules for '.o' or '.obj', so internally we will
-  # consider these extensions equivalent to '.$(OBJEXT)'.  We
-  # CANNOT rewrite the target (i.e., automagically replace '.o'
-  # and '.obj' by '.$(OBJEXT)' in the output), or warn the user
-  # that (s)he'd better use '.$(OBJEXT)', because Automake itself
-  # output suffix rules for '.o' or '.obj' ...
-  $dest = '.$(OBJEXT)' if ($dest eq '.o' || $dest eq '.obj');
-
-  # Reading the comments near the declaration of $suffix_rules might
-  # help to understand the update of $suffix_rules that follows ...
-
-  # Register $dest as a possible destination from $src.
-  # We might have the create the \hash.
-  if (exists $suffix_rules->{$src})
-    {
-      $suffix_rules->{$src}{$dest} = [ $dest, 1 ];
-    }
-  else
-    {
-      $suffix_rules->{$src} = { $dest => [ $dest, 1 ] };
-    }
-
-  # If we know how to transform $dest in something else, then
-  # we know how to transform $src in that "something else".
-  if (exists $suffix_rules->{$dest})
-    {
-      for my $dest2 (keys %{$suffix_rules->{$dest}})
-	{
-	  my $dist = $suffix_rules->{$dest}{$dest2}[1] + 1;
-	  # Overwrite an existing $src->$dest2 path only if
-	  # the path via $dest which is shorter.
-	  if (! exists $suffix_rules->{$src}{$dest2}
-	      || $suffix_rules->{$src}{$dest2}[1] > $dist)
-	    {
-	      $suffix_rules->{$src}{$dest2} = [ $dest, $dist ];
-	    }
-	}
-    }
-
-  # Similarly, any extension that can be derived into $src
-  # can be derived into the same extensions as $src can.
-  my @dest2 = keys %{$suffix_rules->{$src}};
-  for my $src2 (keys %$suffix_rules)
-    {
-      if (exists $suffix_rules->{$src2}{$src})
-	{
-	  for my $dest2 (@dest2)
-	    {
-	      my $dist = $suffix_rules->{$src}{$dest2} + 1;
-	      # Overwrite an existing $src2->$dest2 path only if
-	      # the path via $src is shorter.
-	      if (! exists $suffix_rules->{$src2}{$dest2}
-		  || $suffix_rules->{$src2}{$dest2}[1] > $dist)
-		{
-		  $suffix_rules->{$src2}{$dest2} = [ $src, $dist ];
-		}
-	    }
-	}
-    }
 }
 
 =item C<rule ($rulename)>
@@ -751,21 +627,10 @@ sub define ($$$$$;$)
 
   my $chars_rx = '[a-zA-Z0-9_(){}$+@\-]+';
   my $suffix_rule_rx = "^(\\.$chars_rx+)(\\.$chars_rx+)(?:\\s|\$)";
-  my $pattern_rx ="^%(\\.$chars_rx+)";
 
-  # Let's see if the rule is a suffix-based pattern rule we can handle.
-  if ($target =~ /^%(\.$chars_rx)$/o)
-    {
-      my $objsuf = $1;
-      if ($deps =~ /^\s*%(\.$chars_rx)(\s|$)/o)
-        {
-          my $srcsuf = $1;
-          register_suffix_rule ($where, $srcsuf, $objsuf);
-        }
-    }
   # We don't support old-fashioned  suffix rules anymore, but want to
   # report them as errors.
-  elsif ($target =~ /$suffix_rule_rx/o)
+  if ($target =~ /$suffix_rule_rx/o)
     {
       error $where, "use pattern rules, not old-fashioned suffix rules";
     }

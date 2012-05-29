@@ -42,21 +42,33 @@ END
 cat > sub2/Makefile.am << 'END'
 bin_PROGRAMS = bla
 if COND
-AM_DEFAULT_SOURCE_EXT = .foo .quux
+AM_DEFAULT_SOURCE_EXT = .c .quux
 endif
 %.c: %.foo
 	cat $< >$@
-BUILT_SOURCES = bla.c
-CLEANFILES = bla.c
+EXTRA_DIST = $(addsuffix .foo,$(bin_PROGRAMS))
+CLEANFILES = $(addsuffix .c,$(bin_PROGRAMS))
 END
 
 cat > foo.c << 'END'
-int main (void) { return 0; }
+/* Valid C, invalid C++. */
+int main (void)
+{
+  int new = 0;
+  return new;
+}
 END
-
-cp foo.c sub/bar.cpp
-cp foo.c sub/baz.cpp
 cp foo.c sub2/bla.foo
+
+cat > sub/bar.cpp << 'END'
+/* Valid C++, invalid C. */
+using namespace std;
+int main (void)
+{
+  return 0;
+}
+END
+cp sub/bar.cpp sub/baz.cpp
 
 $ACLOCAL
 $AUTOCONF
@@ -64,7 +76,7 @@ $AUTOCONF
 # Conditional AM_DEFAULT_SOURCE_EXT does not work yet  :-(
 # (this limitation could be lifted).
 AUTOMAKE_fails --add-missing
-grep 'defined conditionally' stderr
+grep 'AM_DEFAULT_SOURCE_EXT.*defined conditionally' stderr
 
 sed '/^if/d; /^endif/d' sub2/Makefile.am > t
 mv -f t sub2/Makefile.am
@@ -72,7 +84,7 @@ mv -f t sub2/Makefile.am
 # AM_DEFAULT_SOURCE_EXT can only assume one value
 # (lifting this limitation is not such a good idea).
 AUTOMAKE_fails --add-missing
-grep 'at most one value' stderr
+grep 'AM_DEFAULT_SOURCE_EXT.*at most one value' stderr
 
 sed 's/ \.quux//' sub2/Makefile.am > t
 mv -f t sub2/Makefile.am

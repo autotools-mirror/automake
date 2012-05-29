@@ -52,7 +52,7 @@ done
 
 $ACLOCAL
 $AUTOMAKE
-grep '_OBJECTS.*foo\.lo' Makefile.in
+#grep '_OBJECTS.*foo\.lo' Makefile.in
 
 $AUTOCONF
 ./configure
