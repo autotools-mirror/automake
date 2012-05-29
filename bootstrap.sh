@@ -31,6 +31,8 @@ export AUTOCONF  # might be used by aclocal and/or automake
 export AUTOM4TE  # ditto
 : ${PERL=perl}
 
+BOOTSTRAP_SHELL=${BOOTSTRAP_SHELL-/bin/sh}
+
 # Variables to substitute.
 VERSION=`sed -ne '/AC_INIT/s/^[^[]*\[[^[]*\[\([^]]*\)\].*$/\1/p' configure.ac`
 PACKAGE=automake
@@ -39,15 +41,6 @@ PERL_THREADS=0
 # This should be automatically updated by the 'update-copyright'
 # rule of our Makefile.
 RELEASE_YEAR=2012
-
-# Override SHELL.  This is required on DJGPP so that Perl's system()
-# uses bash, not COMMAND.COM which doesn't quote arguments properly.
-# It's not used otherwise.
-if test -n "$DJDIR"; then
-  BOOTSTRAP_SHELL=/dev/env/DJDIR/bin/bash.exe
-else
-  BOOTSTRAP_SHELL=/bin/sh
-fi
 
 # Read the rule for calculating APIVERSION and execute it.
 apiver_cmd=`sed -ne 's/\[\[/[/g;s/\]\]/]/g;/^APIVERSION=/p' configure.ac`
