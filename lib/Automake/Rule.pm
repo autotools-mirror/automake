@@ -625,16 +625,6 @@ sub define ($$$$$;$)
       $rule->set ($c, $def);
     }
 
-  my $chars_rx = '[a-zA-Z0-9_(){}$+@\-]+';
-  my $suffix_rule_rx = "^(\\.$chars_rx+)(\\.$chars_rx+)(?:\\s|\$)";
-
-  # We don't support old-fashioned  suffix rules anymore, but want to
-  # report them as errors.
-  if ($target =~ /$suffix_rule_rx/o)
-    {
-      error $where, "use pattern rules, not old-fashioned suffix rules";
-    }
-
   return @conds;
 }
 
