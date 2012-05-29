@@ -830,7 +830,7 @@ register_language ('name' => 'yacc',
 		   'output_extensions' => sub { (my $ext = $_[0]) =~ tr/y/c/;
 						return ($ext,) },
 		   'rule_file' => 'yacc',
-		   '_finish' => \&lang_yacc_finish,
+		   '_finish' => \&lang_yacc_lex_finish,
 		   '_target_hook' => \&lang_yacc_target_hook,
 		   'nodist_specific' => 1);
 register_language ('name' => 'yaccxx',
@@ -844,7 +844,7 @@ register_language ('name' => 'yaccxx',
 		   'extensions' => ['.y++', '.yy', '.yxx', '.ypp'],
 		   'output_extensions' => sub { (my $ext = $_[0]) =~ tr/y/c/;
 						return ($ext,) },
-		   '_finish' => \&lang_yacc_finish,
+		   '_finish' => \&lang_yacc_lex_finish,
 		   '_target_hook' => \&lang_yacc_target_hook,
 		   'nodist_specific' => 1);
 
@@ -860,7 +860,7 @@ register_language ('name' => 'lex',
 		   'extensions' => ['.l'],
 		   'output_extensions' => sub { (my $ext = $_[0]) =~ tr/l/c/;
 						return ($ext,) },
-		   '_finish' => \&lang_lex_finish,
+		   '_finish' => \&lang_yacc_lex_finish,
 		   '_target_hook' => \&lang_lex_target_hook,
 		   'nodist_specific' => 1);
 register_language ('name' => 'lexxx',
@@ -874,7 +874,7 @@ register_language ('name' => 'lexxx',
 		   'extensions' => ['.l++', '.ll', '.lxx', '.lpp'],
 		   'output_extensions' => sub { (my $ext = $_[0]) =~ tr/l/c/;
 						return ($ext,) },
-		   '_finish' => \&lang_lex_finish,
+		   '_finish' => \&lang_yacc_lex_finish,
 		   '_target_hook' => \&lang_lex_target_hook,
 		   'nodist_specific' => 1);
 
@@ -5511,8 +5511,7 @@ sub lang_lex_target_hook
     $clean_files{$output} = $transform{'DIST_SOURCE'} ? MAINTAINER_CLEAN : CLEAN;
 }
 
-# This is a helper for both lex and yacc.
-sub yacc_lex_finish_helper
+sub lang_yacc_lex_finish
 {
   return if defined $language_scratch{'lex-yacc-done'};
   $language_scratch{'lex-yacc-done'} = 1;
@@ -5521,24 +5520,6 @@ sub yacc_lex_finish_helper
   require_conf_file ($configure_ac, FOREIGN, 'ylwrap');
   define_variable ('YLWRAP', INTERNAL, '$(am__config_aux_dir)/ylwrap');
 }
-
-sub lang_yacc_finish
-{
-  return if defined $language_scratch{'yacc-done'};
-  $language_scratch{'yacc-done'} = 1;
-
-  yacc_lex_finish_helper;
-}
-
-
-sub lang_lex_finish
-{
-  return if defined $language_scratch{'lex-done'};
-  $language_scratch{'lex-done'} = 1;
-
-  yacc_lex_finish_helper;
-}
-
 
 # Given a hash table of linker names, pick the name that has the most
 # precedence.  This is lame, but something has to have global
