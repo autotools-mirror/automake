@@ -64,8 +64,8 @@ if test -d automake-$APIVERSION; then
   find automake-$APIVERSION -exec chmod u+wx '{}' ';'
 fi
 rm -rf automake-$APIVERSION
-# Can't use "ln -s lib automake-$APIVERSION", that would create a
-# lib.exe stub under DJGPP 2.03.
+# Can't use "ln -s lib automake-$APIVERSION", that might not work
+# properly on MinGW/MSYS.
 mkdir automake-$APIVERSION
 cp -rf lib/* automake-$APIVERSION
 
