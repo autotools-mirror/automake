@@ -15,6 +15,9 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+## FIXME: this should probably be moved to header-vars.am ...
+am__create_installdir = $(if $(and $1,$^),$(MKDIR_P) $(DESTDIR)$1,@:)
+
 ## ----------- ##
 ## Variables.  ##
 ## ----------- ##
@@ -133,29 +136,25 @@ if %?LOCAL-TEXIS%
 
 include inst-vars.am
 
-install-dvi-am: $(DVIS)
-	@$(NORMAL_INSTALL)
-	@list='$(DVIS)'; test -n "$(dvidir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(dvidir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(dvidir)" || exit 1; \
-	fi; \
-	for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  echo "$$d$$p"; \
-	done | $(am__base_list) | \
-	while read files; do \
-	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(dvidir)'"; \
-	  $(INSTALL_DATA) $$files "$(DESTDIR)$(dvidir)" || exit $$?; \
-	done
+## FIXME: Extra indirection required because Automake proprocessing groups
+## FIXME: dependencies for a given '*-am' together, so that we might end up
+## FIXME: in our genereated Makefile with something like:
+## FIXME:
+## FIXME:   install-pdf-am: $(PDFS) install-pdf-local
+## FIXME:           ... [RECIPE] ...
+## FIXME: 
+## FIXME: which would cause a huge mess with our usages of '$^' in the recipes.
 
-install-html-am: $(HTMLS)
+install-dvi-am:  am--install-dvi
+install-ps-am:   am--install-ps
+install-pdf-am:  am--install-pdf
+install-info-am: am--install-info
+install-html-am: am--install-html
+
+am--install-html: $(HTMLS)
 	@$(NORMAL_INSTALL)
+	$(call am__create_installdir,$(htmldir))
 	@list='$(HTMLS)'; list2=; test -n "$(htmldir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(htmldir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(htmldir)" || exit 1; \
-	fi; \
 	for p in $$list; do \
 	  if test -f "$$p" || test -d "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  $(am__strip_dir) \
@@ -180,76 +179,62 @@ install-html-am: $(HTMLS)
 	  $(INSTALL_DATA) $$files "$(DESTDIR)$(htmldir)" || exit $$?; \
 	done; }
 
-install-info-am: $(INFO_DEPS)
+am--install-info: $(INFO_DEPS)
 	@$(NORMAL_INSTALL)
-	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
-	list='$(INFO_DEPS)'; test -n "$(infodir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(infodir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(infodir)" || exit 1; \
-	fi; \
+	$(call am__create_installdir,$(infodir))
+	@list='$(and $(infodir),$^)'; test -n "$$list" || exit 0; \
 	for file in $$list; do \
-## Strip possible $(srcdir) prefix.
-	  case $$file in \
-	    $(srcdir)/*) file=`echo "$$file" | sed "s|^$$srcdirstrip/||"`;; \
-	  esac; \
-	  if test -f $$file; then d=.; else d=$(srcdir); fi; \
-	  for ifile in $$d/$$file $$d/$$file-[0-9] $$d/$$file-[0-9][0-9]; do \
-	    if test -f $$ifile; then \
-	      echo "$$ifile"; \
-	    else : ; fi; \
+	  for ifile in $$file $$file-[0-9] $$file-[0-9][0-9]; do \
+	    test ! -f $$ifile || echo "$$ifile"; \
 	  done; \
 	done | $(am__base_list) | \
 	while read files; do \
 	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(infodir)'"; \
-	  $(INSTALL_DATA) $$files "$(DESTDIR)$(infodir)" || exit $$?; done
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(infodir)" || exit $$?; \
+	done
 	@$(POST_INSTALL)
-	@if $(am__can_run_installinfo); then \
-	  list='$(INFO_DEPS)'; test -n "$(infodir)" || list=; \
-	  for file in $$list; do \
-## Strip directory
-	    relfile=`echo "$$file" | sed 's|^.*/||'`; \
+	@$(am__can_run_installinfo) || exit 0; \
+	rellist='$(notdir $(and $(infodir),$^))'; \
+	test -n "$$rellist" || exit 0; \
+	for relfile in $$rellist; do \
+	  echo " install-info --info-dir='$(DESTDIR)$(infodir)' '$(DESTDIR)$(infodir)/$$relfile'";\
 ## Run ":" after install-info in case install-info fails.  We really
 ## don't care about failures here, because they can be spurious.  For
 ## instance if you don't have a dir file, install-info will fail.  I
 ## think instead it should create a new dir file for you.  This bug
 ## causes the "make distcheck" target to fail reliably.
-	    echo " install-info --info-dir='$(DESTDIR)$(infodir)' '$(DESTDIR)$(infodir)/$$relfile'";\
-## Use "|| :" here because Sun make passes -e to sh; if install-info
-## fails then we'd fail if we used ";".
-	    install-info --info-dir="$(DESTDIR)$(infodir)" "$(DESTDIR)$(infodir)/$$relfile" || :;\
-	  done; \
-	else : ; fi
+	  install-info --info-dir="$(DESTDIR)$(infodir)" "$(DESTDIR)$(infodir)/$$relfile" || :;\
+	done; \
 
-install-pdf-am: $(PDFS)
+am--install-dvi: $(DVIS)
 	@$(NORMAL_INSTALL)
-	@list='$(PDFS)'; test -n "$(pdfdir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(pdfdir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(pdfdir)" || exit 1; \
-	fi; \
-	for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  echo "$$d$$p"; \
-	done | $(am__base_list) | \
+	$(call am__create_installdir,$(dvidir))
+	@list='$(and $(dvidir),$^)'; test -n "$$list" || exit 0; \
+	for p in $$list; do echo "$$p"; done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(dvidir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(dvidir)" || exit $$?; \
+	done
+
+am--install-pdf: $(PDFS)
+	@$(NORMAL_INSTALL)
+	$(call am__create_installdir,$(pdfdir))
+	@list='$(and $(pdfdir),$^)'; test -n "$$list" || exit 0; \
+	for p in $$list; do echo "$$p"; done | $(am__base_list) | \
 	while read files; do \
 	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(pdfdir)'"; \
-	  $(INSTALL_DATA) $$files "$(DESTDIR)$(pdfdir)" || exit $$?; done
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(pdfdir)" || exit $$?; \
+	done
 
-install-ps-am: $(PSS)
+am--install-ps: $(PSS)
 	@$(NORMAL_INSTALL)
-	@list='$(PSS)'; test -n "$(psdir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(psdir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(psdir)" || exit 1; \
-	fi; \
-	for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  echo "$$d$$p"; \
-	done | $(am__base_list) | \
+	$(call am__create_installdir,$(psdir))
+	@list='$(and $(psdir),$^)'; test -n "$$list" || exit 0; \
+	for p in $$list; do echo "$$p"; done | $(am__base_list) | \
 	while read files; do \
 	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(psdir)'"; \
-	  $(INSTALL_DATA) $$files "$(DESTDIR)$(psdir)" || exit $$?; done
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(psdir)" || exit $$?; \
+	done
 
 else ! %?LOCAL-TEXIS%
 install-dvi-am:
@@ -274,22 +259,20 @@ if %?LOCAL-TEXIS%
 
 uninstall-dvi-am:
 	@$(NORMAL_UNINSTALL)
-	@list='$(DVIS)'; test -n "$(dvidir)" || list=; \
-	for p in $$list; do \
-	  $(am__strip_dir) \
-	  echo " rm -f '$(DESTDIR)$(dvidir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(dvidir)/$$f"; \
-	done
+	$(if $(and $(DVIS),$(dvidir)),rm -f $(addprefix '$(DESTDIR)$(dvidir)'/,$(notdir $(DVIS))))
+
+uninstall-pdf-am:
+	@$(NORMAL_UNINSTALL)
+	$(if $(and $(PDFS),$(pdfdir)),rm -f $(addprefix '$(DESTDIR)$(pdfdir)'/,$(notdir $(PDFS))))
+
+uninstall-ps-am:
+	@$(NORMAL_UNINSTALL)
+	$(if $(and $(PSS),$(psdir)),rm -f $(addprefix '$(DESTDIR)$(psdir)'/,$(notdir $(PSS))))
 
 uninstall-html-am:
 	@$(NORMAL_UNINSTALL)
-	@list='$(HTMLS)'; test -n "$(htmldir)" || list=; \
-	for p in $$list; do \
-	  $(am__strip_dir) \
-## $f can be a directory, hence the -r.
-	  echo " rm -rf '$(DESTDIR)$(htmldir)/$$f'"; \
-	  rm -rf "$(DESTDIR)$(htmldir)/$$f"; \
-	done
+## The HTML 'files' can be directories actually, hence the '-r'.
+	$(if $(and $(HTMLS),$(htmldir)),rm -rf $(addprefix '$(DESTDIR)$(htmldir)'/,$(notdir $(HTMLS))))
 
 uninstall-info-am:
 	@$(PRE_UNINSTALL)
@@ -318,46 +301,13 @@ uninstall-info-am:
 	   else :; fi); \
 	done
 
-uninstall-pdf-am:
-	@$(NORMAL_UNINSTALL)
-	@list='$(PDFS)'; test -n "$(pdfdir)" || list=; \
-	for p in $$list; do \
-	  $(am__strip_dir) \
-	  echo " rm -f '$(DESTDIR)$(pdfdir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(pdfdir)/$$f"; \
-	done
-
-uninstall-ps-am:
-	@$(NORMAL_UNINSTALL)
-	@list='$(PSS)'; test -n "$(psdir)" || list=; \
-	for p in $$list; do \
-	  $(am__strip_dir) \
-	  echo " rm -f '$(DESTDIR)$(psdir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(psdir)/$$f"; \
-	done
 endif %?LOCAL-TEXIS%
 
 if %?LOCAL-TEXIS%
 .PHONY: dist-info
 dist-info: $(INFO_DEPS)
-	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
-	list='$(INFO_DEPS)'; \
-	for base in $$list; do \
-## Strip possible $(srcdir) prefix.
-	  case $$base in \
-	    $(srcdir)/*) base=`echo "$$base" | sed "s|^$$srcdirstrip/||"`;; \
-	  esac; \
-	  if test -f $$base; then d=.; else d=$(srcdir); fi; \
-	  base_i=`echo "$$base" | sed 's|\.info$$||;s|$$|.i|'`; \
-	  for file in $$d/$$base $$d/$$base-[0-9] $$d/$$base-[0-9][0-9] $$d/$$base_i[0-9] $$d/$$base_i[0-9][0-9]; do \
-	    if test -f $$file; then \
-## Strip leading '$$d/'.
-	      relfile=`expr "$$file" : "$$d/\(.*\)"`; \
-	      test -f "$(distdir)/$$relfile" || \
-		cp -p $$file "$(distdir)/$$relfile"; \
-	    else :; fi; \
-	  done; \
-	done
+	@$(foreach f,$(foreach x,$^,$(wildcard $x $x-[0-9] $x-[0-9][0-9])), \
+	  cp -p $f $(distdir)/$(patsubst $(srcdir)/%,%,$f);)
 endif %?LOCAL-TEXIS%
 
 
