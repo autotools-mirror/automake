@@ -2237,29 +2237,12 @@ sub handle_compile ()
 {
    return if ! $must_handle_compiled_objects;
 
-    my (@mostly_rms, @dist_rms);
-    foreach my $item (sort keys %compile_clean_files)
-    {
-	if ($compile_clean_files{$item} == MOSTLY_CLEAN)
-	{
-	    push (@mostly_rms, "\t-rm -f $item");
-	}
-	elsif ($compile_clean_files{$item} == DIST_CLEAN)
-	{
-	    push (@dist_rms, "\t-rm -f $item");
-	}
-	else
-	{
-	  prog_error 'invalid entry in %compile_clean_files';
-	}
-    }
-
+    my @mostly_rms = map { "\t-rm -f $_" } sort keys %compile_clean_files;
     my ($coms, $vars, $rules) =
       &file_contents_internal (1, "$libdir/am/compile.am",
 			       new Automake::Location,
-			       ('STDINC' => ! option 'nostdinc',
-				'MOSTLYRMS' => join ("\n", @mostly_rms),
-				'DISTRMS' => join ("\n", @dist_rms)));
+			       'STDINC' => ! option 'nostdinc',
+			       'MOSTLYRMS' => join ("\n", @mostly_rms));
     $output_vars .= $vars;
     $output_rules .= "$coms$rules";
 }
