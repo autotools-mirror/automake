@@ -160,10 +160,7 @@ AM_CONDITIONAL([am__fastdep$1], [
 # -------------
 # Choose a directory name for dependency files.
 # This macro is AC_REQUIREd in _AM_DEPENDENCIES.
-AC_DEFUN([AM_SET_DEPDIR],
-[AC_REQUIRE([AM_SET_LEADING_DOT])dnl
-AC_SUBST([DEPDIR], ["${am__leading_dot}deps"])dnl
-])
+AC_DEFUN([AM_SET_DEPDIR], [AC_SUBST([DEPDIR], [.deps])])
 
 
 # AM_DEP_TRACK

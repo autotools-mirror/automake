@@ -57,14 +57,8 @@ $AUTOMAKE -a
 
 ./configure --enable-dependency-tracking
 
-depdir=$(sed -n 's/^ *DEPDIR *= *//p' Makefile)
-if test x"$depdir" != x; then
-  depdir=src/$depdir
-else
-  echo "$me: cannot extract value of DEPDIR from Makefile" >&2
-  exit 1
-fi
-
+$MAKE
+depdir=src/.deps
 ls -l "$depdir"
 test -f "$depdir"/foo.Po
 
