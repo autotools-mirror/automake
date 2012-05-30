@@ -2237,12 +2237,12 @@ sub handle_compile ()
 {
    return if ! $must_handle_compiled_objects;
 
-    my @mostly_rms = map { "\t-rm -f $_" } sort keys %compile_clean_files;
-    my ($coms, $vars, $rules) =
+   my @mostly_cleaned = sort keys %compile_clean_files;
+   my ($coms, $vars, $rules) =
       &file_contents_internal (1, "$libdir/am/compile.am",
 			       new Automake::Location,
 			       'STDINC' => ! option 'nostdinc',
-			       'MOSTLYRMS' => join ("\n", @mostly_rms));
+			       'MOSTLY-CLEANED' => "@mostly_cleaned");
     $output_vars .= $vars;
     $output_rules .= "$coms$rules";
 }
@@ -2260,20 +2260,17 @@ sub handle_libtool
   require_conf_file_with_macro (TRUE, 'LIBTOOL', FOREIGN, @libtool_files)
     if $relative_dir eq '.' && ! $libtool_new_api;
 
-  my @libtool_rms;
-  foreach my $item (sort keys %libtool_clean_directories)
-    {
-      my $dir = ($item eq '.') ? '' : "$item/";
-      # .libs is for Unix, _libs for DOS.
-      push (@libtool_rms, "\t-rm -rf ${dir}.libs ${dir}_libs");
-    }
-
+  # .libs is for Unix, _libs for DOS.
+  my @libtool_clean_directories = map { ("$_/.libs", "$_/_libs") }
+                                  (sort keys %libtool_clean_directories);
   check_user_variables 'LIBTOOLFLAGS';
 
   # Output the libtool compilation rules.
-  $output_rules .= &file_contents ('libtool',
-				   new Automake::Location,
-				   LTRMS => join ("\n", @libtool_rms));
+  # FIXME: actually, this only output the libtool cleaning rules ...
+  # FIXME: some code reorganization/refactoring is probably in order.
+  $output_rules .= &file_contents (
+    'libtool', new Automake::Location,
+    'LIBTOOL-CLEAN-DIRECTORIES' => "@libtool_clean_directories");
 }
 
 # handle_programs ()
@@ -4009,49 +4006,20 @@ sub handle_clean ($)
 {
   my ($makefile) = @_;
 
-  # Clean the files listed in user variables if they exist.
-  $clean_files{'$(MOSTLYCLEANFILES)'} = MOSTLY_CLEAN
-    if var ('MOSTLYCLEANFILES');
-  $clean_files{'$(CLEANFILES)'} = CLEAN
-    if var ('CLEANFILES');
-  $clean_files{'$(DISTCLEANFILES)'} = DIST_CLEAN
-    if var ('DISTCLEANFILES');
-  $clean_files{'$(MAINTAINERCLEANFILES)'} = MAINTAINER_CLEAN
-    if var ('MAINTAINERCLEANFILES');
-
-  # Built sources are automatically removed by maintainer-clean.
-  $clean_files{'$(BUILT_SOURCES)'} = MAINTAINER_CLEAN
-    if var ('BUILT_SOURCES');
-
-  # Compute a list of "rm"s to run for each target.
-  my %rms = (MOSTLY_CLEAN, [],
-	     CLEAN, [],
-	     DIST_CLEAN, [],
-	     MAINTAINER_CLEAN, []);
-
-  foreach my $file (keys %clean_files)
-    {
-      my $when = $clean_files{$file};
-      prog_error 'invalid entry in %clean_files'
-	unless exists $rms{$when};
-
-      my $rm = "rm -f $file";
-      # If file is a variable, make sure when don't call 'rm -f' without args.
-      $rm ="test -z \"$file\" || $rm"
-	if ($file =~ /^\s*\$(\(.*\)|\{.*\})\s*$/);
-
-      push @{$rms{$when}}, "\t-$rm\n";
-    }
+  my @keys = keys %clean_files;
+  my @mostly = grep { $clean_files{$_} == MOSTLY_CLEAN     } @keys;
+  my @plain  = grep { $clean_files{$_} == CLEAN            } @keys;
+  my @dist   = grep { $clean_files{$_} == DIST_CLEAN       } @keys;
+  my @maint  = grep { $clean_files{$_} == MAINTAINER_CLEAN } @keys;
 
   $output_rules .= &file_contents
     ('clean',
      new Automake::Location,
-     MOSTLYCLEAN_RMS      => join ('', sort @{$rms{&MOSTLY_CLEAN}}),
-     CLEAN_RMS            => join ('', sort @{$rms{&CLEAN}}),
-     DISTCLEAN_RMS        => join ('', sort @{$rms{&DIST_CLEAN}}),
-     MAINTAINER_CLEAN_RMS => join ('', sort @{$rms{&MAINTAINER_CLEAN}}),
-     MAKEFILE             => basename $makefile,
-     );
+     'MOSTLYCLEAN-FILES'     => "@mostly",
+     'CLEAN-FILES'           => "@plain",
+     'DISTCLEAN-FILES'       => "@dist",
+     'MAINTAINERCLEAN-FILES' => "@maint",
+     'MAKEFILE'              => basename $makefile);
 }
 
 
