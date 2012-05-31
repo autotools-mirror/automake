@@ -14,17 +14,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Long lines of += should be wrapped.
+# Long lines of = and += should be wrapped.
 # Report from Simon Josefsson.
 
 . ./defs || Exit 1
 
-(echo DUMMY = some_long_filename_1;
-for i in 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20;
-do
-  echo DUMMY += some_long_filename_$i
-done) > Makefile.am
+i=0
+while test $i -lt 30; do
+  echo some_very_very_long_variable_content_$i
+  i=$((i + 1))
+done > t
+
+{ echo "DUMMY =" && sed 's/^/DUMMY +=/' t; } > Makefile.am
+{ echo "ZARDOZ =" && cat t; } | tr '\012\015' '  ' >> Makefile.am
 
 $ACLOCAL
 $AUTOMAKE
+grep long_variable Makefile.in # For debugging.
 test 80 -ge `grep DUMMY Makefile.in | wc -c`
+test 80 -ge `grep ZARDOZ Makefile.in | wc -c`
+
+:

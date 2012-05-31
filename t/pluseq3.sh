@@ -43,7 +43,7 @@ $ACLOCAL
 $AUTOMAKE
 
 grep '^@CHECK_TRUE@data_DATA = zarrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr \\$' Makefile.in
-grep "^@CHECK_TRUE@${tab}doz$" Makefile.in
+grep "^@CHECK_TRUE@[ $tab]*doz$" Makefile.in
 
 grep '^@CHECK_FALSE@data_DATA = dog$' Makefile.in
 

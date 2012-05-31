@@ -1144,16 +1144,14 @@ sub define_verbose_var ($$)
     my $var = verbose_var ($name);
     my $pvar = verbose_private_var ($name);
     my $silent_var = $pvar . '_0';
-    define_variable ($var,
-                     '$(' . $pvar . '_$(V))',
-                     INTERNAL);
-    define_variable ($pvar . '_',
-                     '$(' . $pvar . '_$(AM_DEFAULT_VERBOSITY))',
-                     INTERNAL);
+    define_variable ($var, INTERNAL,
+                     '$(' . $pvar . '_$(V))');
+    define_variable ($pvar . '_', INTERNAL,
+                     '$(' . $pvar . '_$(AM_DEFAULT_VERBOSITY))');
     if (! vardef ($silent_var, TRUE))
       {
         Automake::Variable::define ($silent_var, VAR_AUTOMAKE, '', TRUE,
-                                    $val, '', INTERNAL, VAR_ASIS);
+                                    $val, '', INTERNAL);
       }
 }
 
@@ -1261,7 +1259,7 @@ sub shadow_unconditionally ($$)
     {
       $varname = "am__${varname}_DIST";
       my @files = uniq ($var->value_as_list_recursive);
-      define_pretty_variable ($varname, TRUE, $where, @files);
+      define_variable ($varname, $where, @files);
     }
   return "\$($varname)"
 }
@@ -1302,9 +1300,8 @@ sub handle_languages
 	if (&saw_sources_p (0) && keys %dep_files)
 	{
 	    # Set location of depcomp.
-	    &define_variable ('depcomp',
-			      '$(SHELL) $(am__config_aux_dir)/depcomp',
-			      INTERNAL);
+            define_variable ('depcomp', INTERNAL,
+                              '$(SHELL) $(am__config_aux_dir)/depcomp');
 
 	    require_conf_file ("$am_file.am", FOREIGN, 'depcomp');
 
@@ -1328,7 +1325,7 @@ sub handle_languages
     }
     else
     {
-	&define_variable ('depcomp', '', INTERNAL);
+	define_variable ('depcomp', INTERNAL, '');
     }
 
     my %done;
@@ -1859,7 +1856,7 @@ sub handle_single_transform ($$$$$%)
 	    unshift (@files, $object);
 	    # Distribute derived sources unless the source they are
 	    # derived from is not.
-	    &push_dist_common ($object)
+	    push_dist_common ($object)
 	      unless ($topparent =~ /^(?:nobase_)?nodist_/);
 	    next;
 	  }
@@ -2028,7 +2025,7 @@ sub handle_source_transform ($$$$%)
 	msg_var ('unsupported', $ext_var, $ext_var->name . " can assume at most one value")
 	  if $default_source_ext =~ /[\t ]/;
 	(my $default_source = $unxformed) =~ s,(\.[^./\\]*)?$,$default_source_ext,;
-	&define_variable ($one_file . "_SOURCES", $default_source, $where);
+	define_variable ($one_file . "_SOURCES", $where, $default_source);
 	push (@sources, $default_source);
 	push (@dist_sources, $default_source);
 
@@ -2039,12 +2036,12 @@ sub handle_source_transform ($$$$%)
 				   $one_file, $obj,
 				   $default_source, %transform);
 	$linker ||= &resolve_linker (%linkers_used);
-	define_pretty_variable ($one_file . '_OBJECTS', TRUE, $where, @result);
+	define_variable ($one_file . '_OBJECTS', $where, @result);
     }
     else
     {
 	@keys = map { '$(' . $_ . $one_file . '_OBJECTS)' } @keys;
-	define_pretty_variable ($one_file . '_OBJECTS', TRUE, $where, @keys);
+	define_variable ($one_file . '_OBJECTS', $where, @keys);
     }
 
     # If we want to use 'LINK' we must make sure it is defined.
@@ -2164,7 +2161,7 @@ sub handle_LIBOBJS_or_ALLOCA ($)
 	  # dependencies.
 	  $dir = "$config_libobj_dir/" if $config_libobj_dir ne '.';
 	  $dir = "$topsrcdir/$dir" if $relative_dir ne '.';
-	  define_variable ('LIBOBJDIR', "$dir", INTERNAL);
+	  define_variable ('LIBOBJDIR', INTERNAL, $dir);
 	  $clean_files{"\$($var)"} = MOSTLY_CLEAN;
 	  # If LTLIBOBJS is used, we must also clear LIBOBJS (which might
 	  # be created by libtool as a side-effect of creating LTLIBOBJS).
@@ -2364,7 +2361,7 @@ sub handle_programs
       else
 	{
 	  # User didn't define prog_LDADD override.  So do it.
-	  &define_variable ($xname . '_LDADD', '$(LDADD)', $where);
+	  define_variable ($xname . '_LDADD', $where, '$(LDADD)');
 
 	  # This does a bit too much work.  But we need it to
 	  # generate _DEPENDENCIES when appropriate.
@@ -2427,9 +2424,9 @@ sub handle_libraries
       $var->requires_variables ('library used', 'RANLIB');
     }
 
-  &define_variable ('AR', 'ar', INTERNAL);
-  &define_variable ('ARFLAGS', 'cru', INTERNAL);
-  &define_verbose_tagvar ('AR');
+  define_variable ('AR', INTERNAL, 'ar');
+  define_variable ('ARFLAGS', INTERNAL, 'cru');
+  define_verbose_tagvar ('AR');
 
   foreach my $pair (@liblist)
     {
@@ -2462,7 +2459,7 @@ sub handle_libraries
 
       if (! var ($xlib . '_AR'))
 	{
-	  &define_variable ($xlib . '_AR', '$(AR) $(ARFLAGS)', $where);
+	  define_variable ($xlib . '_AR', $where, '$(AR) $(ARFLAGS)');
 	}
 
       # Generate support for conditional object inclusion in
@@ -2476,7 +2473,7 @@ sub handle_libraries
 	}
       else
 	{
-	  &define_variable ($xlib . "_LIBADD", '', $where);
+	  define_variable ($xlib . "_LIBADD", $where, '');
 	}
 
       reject_var ($xlib . '_LDADD',
@@ -2673,7 +2670,7 @@ sub handle_ltlibraries
 	}
       else
 	{
-	  &define_variable ($xlib . "_LIBADD", '', $where);
+	  define_variable ($xlib . "_LIBADD", $where, '');
 	}
 
       reject_var ("${xlib}_LDADD",
@@ -2717,7 +2714,7 @@ sub handle_ltlibraries
 	    }
 	  else
 	    {
-	      define_pretty_variable ($rpathvar, $rcond, INTERNAL, $val);
+	      define_cond_variable ($rpathvar, $rcond, INTERNAL, $val);
 	    }
 	}
 
@@ -3205,7 +3202,7 @@ sub handle_texinfo_helper ($)
   elsif ($config_aux_dir_set_in_configure_ac)
     {
       $texinfodir = '$(am__config_aux_dir)';
-      define_variable ('TEXINFO_TEX', "$texinfodir/texinfo.tex", INTERNAL);
+      define_variable ('TEXINFO_TEX', INTERNAL, "$texinfodir/texinfo.tex");
       $need_texi_file = 2; # so that we require_conf_file later
     }
   else
@@ -3213,7 +3210,7 @@ sub handle_texinfo_helper ($)
       $texinfodir = '$(srcdir)';
       $need_texi_file = 1;
     }
-  define_variable ('am__TEXINFO_TEX_DIR', $texinfodir, INTERNAL);
+  define_variable ('am__TEXINFO_TEX_DIR', INTERNAL, $texinfodir);
 
   push (@dist_targets, 'dist-info');
 
@@ -3233,7 +3230,7 @@ sub handle_texinfo_helper ($)
   # This next isn't strictly needed now -- the places that look here
   # could easily be changed to look in info_TEXINFOS.  But this is
   # probably better, in case noinst_TEXINFOS is ever supported.
-  define_variable ("TEXINFOS", variable_value ('info_TEXINFOS'), INTERNAL);
+  define_variable ("TEXINFOS", INTERNAL, variable_value ('info_TEXINFOS'));
 
   # Do some error checking.  Note that this file is not required
   # when in Cygnus mode; instead we defined TEXINFO_TEX explicitly
@@ -3324,7 +3321,7 @@ sub handle_man_pages
 		      $trans_sect_vars{$varname} = 1;
 		    }
 
-		  &push_dist_common ($varname)
+		  push_dist_common ($varname)
 		    if $pfx eq 'dist_';
 		}
 	    }
@@ -3359,7 +3356,7 @@ sub handle_man_pages
 		{
 		  $trans_vars{$varname} = 1;
 		}
-	      &push_dist_common ($varname)
+	      push_dist_common ($varname)
 		if $pfx eq 'dist_';
 	    }
 	}
@@ -3571,16 +3568,14 @@ sub handle_dist ()
 	}
       elsif ($subdirs->has_conditional_contents)
 	{
-	  define_pretty_variable
-	    ('DIST_SUBDIRS', TRUE, INTERNAL,
-	     uniq ($subdirs->value_as_list_recursive));
+	  define_variable ('DIST_SUBDIRS', INTERNAL,
+	                   uniq ($subdirs->value_as_list_recursive));
 	}
       else
 	{
 	  # We always define this because that is what 'distclean'
 	  # wants.
-	  define_pretty_variable ('DIST_SUBDIRS', TRUE, INTERNAL,
-				  '$(SUBDIRS)');
+	  define_variable ('DIST_SUBDIRS', INTERNAL, '$(SUBDIRS)');
 	}
     }
 
@@ -3617,14 +3612,14 @@ sub handle_dist ()
 	  # The file might be absent, but if it can be built it's ok.
 	  || rule $cfile)
 	{
-	  &push_dist_common ($cfile);
+	  push_dist_common ($cfile);
 	}
 
       # Don't use 'elsif' here because a file might meaningfully
       # appear in both directories.
       if ($check_aux && dir_has_case_matching_file ($config_aux_dir, $cfile))
 	{
-	  &push_dist_common ("$config_aux_dir/$cfile")
+	  push_dist_common ("$config_aux_dir/$cfile")
 	}
     }
 
@@ -3733,7 +3728,6 @@ sub handle_subdirs ()
     if $dsubdirs;
 
   $output_rules .= &file_contents ('subdirs', new Automake::Location);
-  rvar ('RECURSIVE_TARGETS')->rdef (TRUE)->{'pretty'} = VAR_SORTED; # Gross!
 }
 
 
@@ -3748,7 +3742,7 @@ sub scan_aclocal_m4 ()
 
   if (-f 'aclocal.m4')
     {
-      &define_variable ("ACLOCAL_M4", '$(top_srcdir)/aclocal.m4', INTERNAL);
+      define_variable ("ACLOCAL_M4", INTERNAL, '$(top_srcdir)/aclocal.m4');
 
       my $aclocal = new Automake::XFile "< aclocal.m4";
       my $line = $aclocal->getline;
@@ -3876,12 +3870,11 @@ sub handle_configure ($$$@)
   $colon_infile = '' if $colon_infile eq ":$makefile.in";
   my @rewritten = rewrite_inputs_into_dependencies ($makefile, @inputs);
   my $regen_aclocal_m4 = scan_aclocal_m4;
-  define_pretty_variable ('am__aclocal_m4_deps', TRUE, INTERNAL,
-			  @configure_deps, '$(top_srcdir)/' . $configure_ac);
+  define_variable ('am__aclocal_m4_deps', INTERNAL,
+                   @configure_deps, '$(top_srcdir)/' . $configure_ac);
   my @configuredeps = ('$(am__aclocal_m4_deps)', '$(CONFIGURE_DEPENDENCIES)');
   push @configuredeps, '$(ACLOCAL_M4)' if -f 'aclocal.m4';
-  define_pretty_variable ('am__configure_deps', TRUE, INTERNAL,
-			  @configuredeps);
+  define_variable ('am__configure_deps', INTERNAL, @configuredeps);
 
   my $automake_options = '--' . $strictness_name .
 			 (global_option 'no-dependencies' ? ' --ignore-deps' : '');
@@ -3975,7 +3968,7 @@ sub handle_configure ($$$@)
 	  push @config_h, "\$(top_builddir)/$out";
 	}
     }
-  define_variable ("AM_CONFIG_HEADERS", "@config_h", INTERNAL)
+  define_variable ("AM_CONFIG_HEADERS", INTERNAL, @config_h)
     if @config_h;
 
   # Now look for other files in this directory which must be remade
@@ -4108,10 +4101,10 @@ sub handle_configure ($$$@)
     }
 
   # These files get removed by "make distclean".
-  define_pretty_variable ('CONFIG_CLEAN_FILES', TRUE, INTERNAL,
-			  @actual_other_files);
-  define_pretty_variable ('CONFIG_CLEAN_VPATH_FILES', TRUE, INTERNAL,
-			  @actual_other_vpath_files);
+  define_variable ('CONFIG_CLEAN_FILES', INTERNAL,
+                   @actual_other_files);
+  define_variable ('CONFIG_CLEAN_VPATH_FILES',INTERNAL,
+                   @actual_other_vpath_files);
 }
 
 # Handle C headers.
@@ -4497,7 +4490,7 @@ sub handle_tests
         }
       else
         {
-	  define_variable ('TEST_SUITE_LOG', 'test-suite.log', INTERNAL);
+	  define_variable ('TEST_SUITE_LOG', INTERNAL, 'test-suite.log');
           require_conf_file ("parallel-tests", FOREIGN, 'test-driver');
           $output_rules .=
             file_contents ('parallel-tests', new Automake::Location,
@@ -4518,19 +4511,17 @@ sub handle_emacs_lisp
 
   return if ! @elfiles;
 
-  define_pretty_variable ('am__ELFILES', TRUE, INTERNAL,
-			  map { $_->[1] } @elfiles);
-  define_pretty_variable ('am__ELCFILES', TRUE, INTERNAL,
-			  '$(am__ELFILES:.el=.elc)');
+  define_variable ('am__ELFILES', INTERNAL, map { $_->[1] } @elfiles);
+  define_variable ('am__ELCFILES', INTERNAL, '$(am__ELFILES:.el=.elc)');
   # This one can be overridden by users.
-  define_pretty_variable ('ELCFILES', TRUE, INTERNAL, '$(LISP:.el=.elc)');
+  define_variable ('ELCFILES', INTERNAL, '$(LISP:.el=.elc)');
 
   push @all, '$(ELCFILES)';
 
   require_variables ($elfiles[0][0], "Emacs Lisp sources seen", TRUE,
 		     'EMACS', 'lispdir');
   require_conf_file ($elfiles[0][0], FOREIGN, 'elisp-comp');
-  &define_variable ('elisp_comp', '$(am__config_aux_dir)/elisp-comp', INTERNAL);
+  define_variable ('elisp_comp', INTERNAL, '$(am__config_aux_dir)/elisp-comp');
 }
 
 # Handle Python
@@ -4542,7 +4533,7 @@ sub handle_python
 
   require_variables ($pyfiles[0][0], "Python sources seen", TRUE, 'PYTHON');
   require_conf_file ($pyfiles[0][0], FOREIGN, 'py-compile');
-  &define_variable ('py_compile', '$(am__config_aux_dir)/py-compile', INTERNAL);
+  define_variable ('py_compile', INTERNAL, '$(am__config_aux_dir)/py-compile');
 }
 
 # Handle Java.
@@ -4576,8 +4567,7 @@ sub handle_java
 	$dir = $curs;
       }
 
-    define_pretty_variable ('am__java_sources', TRUE, INTERNAL,
-                            "@java_sources");
+    define_variable ('am__java_sources', INTERNAL, @java_sources);
 
     if ($dir eq 'check')
       {
@@ -5496,7 +5486,7 @@ sub lang_yacc_target_hook
 	# Distribute the generated file, unless its .y source was
 	# listed in a nodist_ variable.  (&handle_source_transform
 	# will set DIST_SOURCE.)
-	&push_dist_common ($header)
+	push_dist_common ($header)
 	  if $transform{'DIST_SOURCE'};
 
 	# The GNU rules say that yacc/lex output files should be removed
@@ -5529,7 +5519,7 @@ sub yacc_lex_finish_helper
 
   # FIXME: for now, no line number.
   require_conf_file ($configure_ac, FOREIGN, 'ylwrap');
-  &define_variable ('YLWRAP', '$(am__config_aux_dir)/ylwrap', INTERNAL);
+  define_variable ('YLWRAP', INTERNAL, '$(am__config_aux_dir)/ylwrap');
 }
 
 sub lang_yacc_finish
@@ -5826,35 +5816,34 @@ sub cond_stack_endif ($$$)
 ## ------------------------ ##
 
 
-# &define_pretty_variable ($VAR, $COND, $WHERE, @VALUE)
+# &define_cond_variable ($VAR, $COND, $WHERE, @VALUE)
 # -----------------------------------------------------
 # Like define_variable, but the value is a list, and the variable may
 # be defined conditionally.  The second argument is the condition
 # under which the value should be defined; this should be the empty
 # string to define the variable unconditionally.  The third argument
-# is a list holding the values to use for the variable.  The value is
-# pretty printed in the output file.
-sub define_pretty_variable ($$$@)
+# is a list holding the values to use for the variable.
+sub define_cond_variable ($$$@)
 {
     my ($var, $cond, $where, @value) = @_;
 
     if (! vardef ($var, $cond))
     {
 	Automake::Variable::define ($var, VAR_AUTOMAKE, '', $cond, "@value",
-				    '', $where, VAR_PRETTY);
+				    '', $where);
 	rvar ($var)->rdef ($cond)->set_seen;
     }
 }
 
 
-# define_variable ($VAR, $VALUE, $WHERE)
+# define_variable ($VAR, $WHERE, @VALUE)
 # --------------------------------------
 # Define a new Automake Makefile variable VAR to VALUE, but only if
 # not already defined.
-sub define_variable ($$$)
+sub define_variable ($$@)
 {
-    my ($var, $value, $where) = @_;
-    define_pretty_variable ($var, TRUE, $where, $value);
+    my ($var, $where, @value) = @_;
+    define_cond_variable ($var, TRUE, $where, @value);
 }
 
 
@@ -5865,9 +5854,8 @@ sub define_variable ($$$)
 sub define_files_variable ($\@$$)
 {
   my ($var, $basename, $extension, $where) = @_;
-  define_variable ($var,
-		   join (' ', map { "$_.$extension" } @$basename),
-		   $where);
+  define_variable ($var, $where,
+		   join (' ', map { "$_.$extension" } @$basename));
 }
 
 
@@ -5879,9 +5867,9 @@ sub define_configure_variable ($)
   # Some variables we do not want to output.  For instance it
   # would be a bad idea to output `U = @U@` when `@U@` can be
   # substituted as `\`.
-  my $pretty = exists $ignored_configure_vars{$var} ? VAR_SILENT : VAR_ASIS;
+  return if exists $ignored_configure_vars{$var};
   Automake::Variable::define ($var, VAR_CONFIGURE, '', TRUE, subst $var,
-			      '', $configure_vars{$var}, $pretty);
+			      '', $configure_vars{$var});
 }
 
 
@@ -5897,14 +5885,13 @@ sub define_compiler_variable ($)
     my $libtool_tag = '';
     $libtool_tag = '--tag=' . $lang->libtool_tag . ' '
       if $lang->libtool_tag && exists $libtool_tags{$lang->libtool_tag};
-    &define_variable ($var, $value, INTERNAL);
+    &define_variable ($var, INTERNAL, $value);
     if (var ('LIBTOOL'))
       {
 	my $verbose = define_verbose_libtool ();
-	&define_variable ("LT$var",
+	&define_variable ("LT$var", INTERNAL,
 			  "\$(LIBTOOL) $verbose $libtool_tag\$(AM_LIBTOOLFLAGS) "
-			  . "\$(LIBTOOLFLAGS) --mode=compile $value",
-			  INTERNAL);
+			  . "\$(LIBTOOLFLAGS) --mode=compile $value");
       }
     define_verbose_tagvar ($lang->ccer || 'GEN');
 }
@@ -5921,7 +5908,7 @@ sub define_linker_variable ($)
     $libtool_tag = '--tag=' . $lang->libtool_tag . ' '
       if $lang->libtool_tag && exists $libtool_tags{$lang->libtool_tag};
     # CCLD = $(CC).
-    &define_variable ($lang->lder, $lang->ld, INTERNAL);
+    &define_variable ($lang->lder, INTERNAL, $lang->ld);
     # CCLINK = $(CCLD) blah blah...
     my $link = '';
     if (var ('LIBTOOL'))
@@ -5930,9 +5917,9 @@ sub define_linker_variable ($)
 	$link = "\$(LIBTOOL) $verbose $libtool_tag\$(AM_LIBTOOLFLAGS) "
 		. "\$(LIBTOOLFLAGS) --mode=link ";
       }
-    &define_variable ($lang->linker, $link . $lang->link, INTERNAL);
-    &define_variable ($lang->compiler,  $lang);
-    &define_verbose_tagvar ($lang->lder || 'GEN');
+    define_variable ($lang->linker, INTERNAL, $link . $lang->link);
+    define_variable ($lang->compiler, INTERNAL, $lang);
+    define_verbose_tagvar ($lang->lder || 'GEN');
 }
 
 sub define_per_target_linker_variable ($$)
@@ -5979,7 +5966,7 @@ sub define_per_target_linker_variable ($$)
   return ($lang->linker, $lang->lder)
     if $link_command eq $orig_command;
 
-  &define_variable ("${target}_LINK", $link_command, INTERNAL);
+  define_variable ("${target}_LINK", INTERNAL, $link_command);
   return ("${target}_LINK", $lang->lder);
 }
 
@@ -6026,7 +6013,6 @@ sub read_am_file ($$)
     my $comment = '';
     my $blank = 0;
     my $saw_bk = 0;
-    my $var_look = VAR_ASIS;
 
     use constant IN_VAR_DEF => 0;
     use constant IN_RULE_DEF => 1;
@@ -6130,7 +6116,7 @@ sub read_am_file ($$)
 		  Automake::Variable::define ($last_var_name, VAR_MAKEFILE,
 					      $last_var_type, $cond,
 					      $last_var_value, $comment,
-					      $last_where, VAR_ASIS)
+					      $last_where)
 		    if $cond != FALSE;
 		  $comment = $spacing = '';
 		}
@@ -6192,29 +6178,15 @@ sub read_am_file ($$)
 		# 'sed's.
 		$last_var_value = $3 . "\n";
 	      }
-	    # Normally we try to output variable definitions in the
-	    # same format they were input.  However, POSIX compliant
-	    # systems are not required to support lines longer than
-	    # 2048 bytes (most notably, some sed implementation are
-	    # limited to 4000 bytes, and sed is used by config.status
-	    # to rewrite Makefile.in into Makefile).  Moreover nobody
-	    # would really write such long lines by hand since it is
-	    # hardly maintainable.  So if a line is longer that 1000
-	    # bytes (an arbitrary limit), assume it has been
-	    # automatically generated by some tools, and flatten the
-	    # variable definition.  Otherwise, keep the variable as it
-	    # as been input.
-	    $var_look = VAR_PRETTY if length ($last_var_value) >= 1000;
 
 	    if (!/\\$/)
 	      {
 		Automake::Variable::define ($last_var_name, VAR_MAKEFILE,
 					    $last_var_type, $cond,
 					    $last_var_value, $comment,
-					    $last_where, $var_look)
+					    $last_where)
 		  if $cond != FALSE;
 		$comment = $spacing = '';
-		$var_look = VAR_ASIS;
 	      }
 	}
 	elsif (/$INCLUDE_PATTERN/o)
@@ -6687,8 +6659,7 @@ sub file_contents_internal ($$$%)
 
 	    Automake::Variable::define ($var,
 					$is_am ? VAR_AUTOMAKE : VAR_MAKEFILE,
-					$type, $cond, $val, $comment, $where,
-					VAR_ASIS)
+					$type, $cond, $val, $comment, $where)
 	      if $cond != FALSE;
 
 	    $comment = $spacing = '';
@@ -6993,7 +6964,7 @@ sub am_install_var
   if (@used && $primary ne 'JAVA' && $primary ne 'PYTHON')
     {
       # Define it.
-      define_pretty_variable ($primary, TRUE, INTERNAL, @used);
+      define_variable ($primary, INTERNAL, @used);
       $output_vars .= "\n";
     }
 
@@ -7413,7 +7384,6 @@ sub require_conf_file_with_macro ($$$@)
 
 ################################################################
 
-
 # Push a list of files onto dist_common.
 sub push_dist_common
 {
@@ -7482,12 +7452,12 @@ sub generate_makefile ($$)
     }
 
   # Must do this after reading .am file.
-  define_variable ('subdir', $relative_dir, INTERNAL);
-  define_variable ('am__config_aux_dir', $am_config_aux_dir, INTERNAL);
+  define_variable ('subdir', INTERNAL, $relative_dir);
+  define_variable ('am__config_aux_dir', INTERNAL, $am_config_aux_dir);
 
   # If DIST_SUBDIRS is defined, make sure SUBDIRS is, so that
   # recursive rules are enabled.
-  define_pretty_variable ('SUBDIRS', TRUE, INTERNAL, '')
+  define_variable ('SUBDIRS', INTERNAL, '')
     if var 'DIST_SUBDIRS' && ! var 'SUBDIRS';
 
   # Check first, because we might modify some state.
@@ -7509,12 +7479,9 @@ sub generate_makefile ($$)
   handle_libtool;
 
   # Variables used by distdir.am and tags.am.
-  define_pretty_variable ('SOURCES', TRUE, INTERNAL, @sources);
-  if (! option 'no-dist')
-    {
-      define_pretty_variable ('am__dist_sources', TRUE, INTERNAL,
-                              @dist_sources);
-    }
+  define_variable ('SOURCES', INTERNAL, @sources);
+  define_variable ('am__dist_sources', INTERNAL, @dist_sources)
+    unless option 'no-dist';
 
   handle_texinfo;
   handle_emacs_lisp;
@@ -7528,8 +7495,7 @@ sub generate_makefile ($$)
   handle_minor_options;
 
   # Must come after handle_programs so that %known_programs is up-to-date.
-  define_variable ('am__all_progs', join(" ", keys %known_programs),
-                   INTERNAL);
+  define_variable ('am__all_progs', INTERNAL, keys %known_programs);
   handle_tests;
 
   # This must come after most other rules.

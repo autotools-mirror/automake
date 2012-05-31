@@ -48,7 +48,7 @@ libfoo_a_SOURCES = foo.c
 END
 
 cat > lib/foo.c << 'END'
-int foo () {}
+int foo (void) { return 0; }
 END
 
 cat > src/Makefile.am << 'END'
@@ -59,12 +59,5 @@ END
 
 $ACLOCAL
 $AUTOMAKE --gnu
-
-# Make sure that depcomp is *not* included in the definition
-# of am__dist_common in lib/Makefile.in.  If you change this test
-# so that more files are included in lib's am__dist_common definition,
-# then you must handle the case in which depcomp is listed on a
-# continued line.
-grep '^am__dist_common.*depcomp' lib/Makefile.in && Exit 1
 
 :

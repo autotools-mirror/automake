@@ -24,8 +24,7 @@ use Automake::ItemDef;
 require Exporter;
 use vars '@ISA', '@EXPORT';
 @ISA = qw/Automake::ItemDef Exporter/;
-@EXPORT = qw (&VAR_AUTOMAKE &VAR_CONFIGURE &VAR_MAKEFILE
-	      &VAR_ASIS &VAR_PRETTY &VAR_SILENT &VAR_SORTED);
+@EXPORT = qw (&VAR_AUTOMAKE &VAR_CONFIGURE &VAR_MAKEFILE);
 
 =head1 NAME
 
@@ -43,7 +42,7 @@ Automake::VarDef - a class for variable definitions
   my $loc = new Automake::Location 'Makefile.am:2';
   my $def = new Automake::VarDef ('foo', 'bar # more comment',
                                   '# any comment',
-                                  $loc, '', VAR_MAKEFILE, VAR_ASIS);
+                                  $loc, '', VAR_MAKEFILE);
 
   # Appending to a definition.
   $def->append ('value to append', 'comment to append');
@@ -56,7 +55,6 @@ Automake::VarDef - a class for variable definitions
   my $location = $def->location;
   my $type     = $def->type;
   my $owner    = $def->owner;
-  my $pretty   = $def->pretty;
 
   # Changing owner.
   $def->set_owner (VAR_CONFIGURE,
@@ -91,27 +89,6 @@ use constant VAR_AUTOMAKE => 0; # Variable defined by Automake.
 use constant VAR_CONFIGURE => 1;# Variable defined in configure.ac.
 use constant VAR_MAKEFILE => 2; # Variable defined in Makefile.am.
 
-=item C<VAR_ASIS>, C<VAR_PRETTY>, C<VAR_SILENT>, C<VAR_SORTED>
-
-Possible print styles.  C<VAR_ASIS> variables should be output as-is.
-C<VAR_PRETTY> variables are wrapped on multiple lines if they cannot
-fit on one.  C<VAR_SILENT> variables are not output at all.  Finally,
-C<VAR_SORTED> variables should be sorted and then handled as
-C<VAR_PRETTY> variables.
-
-C<VAR_SILENT> variables can also be overridden silently (unlike the
-other kinds of variables whose overriding may sometimes produce
-warnings).
-
-=cut
-
-# Possible values for pretty.
-use constant VAR_ASIS => 0;	# Output as-is.
-use constant VAR_PRETTY => 1;	# Pretty printed on output.
-use constant VAR_SILENT => 2;	# Not output.  (Can also be
-				# overridden silently.)
-use constant VAR_SORTED => 3;	# Sorted and pretty-printed.
-
 =back
 
 =head2 Methods
@@ -121,7 +98,7 @@ from L<Automake::ItemDef>.
 
 =over 4
 
-=item C<my $def = new Automake::VarDef ($varname, $value, $comment, $location, $type, $owner, $pretty)>
+=item C<my $def = new Automake::VarDef ($varname, $value, $comment, $location, $type, $owner)>
 
 Create a new Makefile-variable definition.  C<$varname> is the name of
 the variable being defined and C<$value> its value.
@@ -140,15 +117,12 @@ C<$owner> specifies who owns the variables, it can be one of
 C<VAR_AUTOMAKE>, C<VAR_CONFIGURE>, or C<VAR_MAKEFILE> (see these
 definitions).
 
-Finally, C<$pretty> tells how the variable should be output, and can
-be one of C<VAR_ASIS>, C<VAR_PRETTY>, or C<VAR_SILENT>, or
-C<VAR_SORTED> (see these definitions).
-
 =cut
 
 sub new ($$$$$$$$)
 {
-  my ($class, $var, $value, $comment, $location, $type, $owner, $pretty) = @_;
+  my ($class, $var, $value, $comment, $cond, $location, $type,
+      $owner) = @_;
 
   # A user variable must be set by either '=' or ':=', and later
   # promoted to '+='.
@@ -157,42 +131,28 @@ sub new ($$$$$$$$)
       error $location, "$var must be set with '=' before using '+='";
     }
 
-  my $self = Automake::ItemDef::new ($class, $comment, $location, $owner);
-  $self->{'value'} = $value;
+  my $self = Automake::ItemDef::new ($class, $location, $owner);
+  $self->{'value_list'} = [ { value => $value, cond => $cond } ];
   $self->{'type'} = $type;
-  $self->{'pretty'} = $pretty;
   $self->{'seen'} = 0;
+  $self->{'comment_list'} = [ { text => $comment, cond => $cond } ];
   return $self;
 }
 
-=item C<$def-E<gt>append ($value, $comment)>
+=item C<$def-E<gt>append ($value, $comment, $cond)>
 
-Append C<$value> and <$comment> to the existing value and comment of
-C<$def>.  This is normally called on C<+=> definitions.
+Append C<$value> and C<$comment> to the existing value and comment of
+C<$def> in condition C<$cond>.  This is normally called on C<+=>
+definitions.
 
 =cut
 
 sub append ($$$)
 {
-  my ($self, $value, $comment) = @_;
-  $self->{'comment'} .= $comment;
+  my ($self, $value, $comment, $cond) = @_;
 
-  my $val = $self->{'value'};
-
-  # Strip comments from augmented variables.  This is so that
-  #   VAR = foo # com
-  #   VAR += bar
-  # does not become
-  #   VAR = foo # com bar
-  # Furthermore keeping '#' would not be portable if the variable is
-  # output on multiple lines.
-  $val =~ s/ ?#.*//;
-  # Insert a separator, if required.
-  $val .= ' ' if $val;
-  $self->{'value'} = $val . $value;
-  # Turn ASIS appended variables into PRETTY variables.  This is to
-  # cope with 'make' implementation that cannot read very long lines.
-  $self->{'pretty'} = VAR_PRETTY if $self->{'pretty'} == VAR_ASIS;
+  push @{$self->{'comment_list'}}, { text => $comment, cond => $cond };
+  push @{$self->{'value_list'}}, { value => $value, cond => $cond };
 }
 
 =item C<$def-E<gt>value>
@@ -200,8 +160,6 @@ sub append ($$$)
 =item C<$def-E<gt>raw_value>
 
 =item C<$def-E<gt>type>
-
-=item C<$def-E<gt>pretty>
 
 Accessors to the various constituents of a C<VarDef>.  See the
 documentation of C<new>'s arguments for a description of these.
@@ -212,6 +170,7 @@ sub value ($)
 {
   my ($self) = @_;
   my $val = $self->raw_value;
+
   # Strip anything past '#'.  '#' characters cannot be escaped
   # in Makefiles, so we don't have to be smart.
   $val =~ s/#.*$//s;
@@ -220,22 +179,32 @@ sub value ($)
   return $val;
 }
 
+sub comment ($)
+{
+  my ($self) = @_;
+  return join ("", map { $_->{text} } @{$self->{'comment_list'}});
+}
+
 sub raw_value ($)
 {
   my ($self) = @_;
-  return $self->{'value'};
+  my @values = map { $_->{value} } @{$self->{'value_list'}};
+
+  # Strip comments from augmented variables.  This is so that
+  #   VAR = foo # com
+  #   VAR += bar
+  # does not become
+  #   VAR = foo # com bar
+  # Furthermore keeping '#' would not be portable if the variable is
+  # output on multiple lines.
+  map { s/ ?#.*// } @values;
+  return join (' ', @values);
 }
 
 sub type ($)
 {
   my ($self) = @_;
   return $self->{'type'};
-}
-
-sub pretty ($)
-{
-  my ($self) = @_;
-  return $self->{'pretty'};
 }
 
 =item C<$def-E<gt>set_owner ($owner, $location)>
@@ -309,13 +278,12 @@ sub dump ($)
     }
 
   my $where = $self->location->dump;
-  my $comment = $self->comment;
   my $value = $self->raw_value;
   my $type = $self->type;
 
   return "{
       type: $type=
-      where: $where      comment: $comment
+      where: $where
       value: $value
       owner: $owner
     }\n";

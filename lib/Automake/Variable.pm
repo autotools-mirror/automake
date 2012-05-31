@@ -55,7 +55,7 @@ Automake::Variable - support for variable definitions
   # Defining a variable.
   Automake::Variable::define($varname, $owner, $type,
                              $cond, $value, $comment,
-                             $where, $pretty)
+                             $where)
 
   # Looking up a variable.
   my $var = var $varname;
@@ -128,11 +128,6 @@ informative than Perl's warning about calling a method on a
 non-object).
 
 =cut
-
-my $_VARIABLE_CHARACTERS = '[.A-Za-z0-9_@]+';
-my $_VARIABLE_PATTERN = '^' . $_VARIABLE_CHARACTERS . "\$";
-my $_VARIABLE_RECURSIVE_PATTERN =
-    '^([.A-Za-z0-9_@]|\$[({]' . $_VARIABLE_CHARACTERS . '[})]?)+' . "\$";
 
 # The order in which variables should be output.  (May contain
 # duplicates -- only the first occurrence matters.)
@@ -427,7 +422,6 @@ sub _new ($$)
   my ($class, $name) = @_;
   my $self = Automake::Item::new ($class, $name);
   $self->{'scanned'} = 0;
-  $self->{'last-append'} = []; # helper variable for last conditional append.
   $_variable_dict{$name} = $self;
   if ($name =~ /_([[:alnum:]]+)$/)
     {
@@ -451,7 +445,7 @@ sub _check_ambiguous_condition ($$$)
   # We allow silent variables to be overridden silently,
   # by either silent or non-silent variables.
   my $def = $self->def ($ambig_cond);
-  if ($message && $def->pretty != VAR_SILENT)
+  if ($message)
     {
       msg 'syntax', $where, "$message ...", partial => 1;
       msg_var ('syntax', $var, "... '$var' previously defined here");
@@ -488,6 +482,16 @@ sub check_defined_unconditionally ($;$$)
     }
 }
 
+sub _has_line_too_long ($)
+{
+  my ($text) = @_;
+  foreach my $line (split "\n", $text)
+    {
+      return 1 if length ($line) >= 1000 ;
+    }
+  return 0;
+}
+
 =item C<$str = $var-E<gt>output ([@conds])>
 
 Format all the definitions of C<$var> if C<@cond> is not specified,
@@ -512,48 +516,32 @@ sub output ($@)
 		  . $self->name . "'")
 	unless $def;
 
-      next
-	if $def->pretty == VAR_SILENT;
-
       $res .= $def->comment;
 
       my $val = $def->raw_value;
       my $equals = $def->type eq ':' ? ':=' : '=';
       my $str = $cond->subst_string;
-
-
-      if ($def->pretty == VAR_ASIS)
-	{
-	  my $output_var = "$name $equals $val";
-	  $output_var =~ s/^/$str/meg;
-	  $res .= "$output_var\n";
-	}
-      elsif ($def->pretty == VAR_PRETTY)
-	{
-	  # Suppress escaped new lines.  &makefile_wrap will
-	  # add them back, maybe at other places.
-	  $val =~ s/\\$//mg;
-	  my $wrap = makefile_wrap ("$str$name $equals", "$str\t",
-				    split (' ', $val));
-
-	  # If the last line of the definition is made only of
-	  # @substitutions@, append an empty variable to make sure it
-	  # cannot be substituted as a blank line (that would confuse
-	  # HP-UX Make).
-	  $wrap = makefile_wrap ("$str$name $equals", "$str\t",
-				 split (' ', $val), '$(am__empty)')
-	    if $wrap =~ /\n(\s*@\w+@)+\s*$/;
-
-	  $res .= $wrap;
-	}
-      else # ($def->pretty == VAR_SORTED)
-	{
-	  # Suppress escaped new lines.  &makefile_wrap will
-	  # add them back, maybe at other places.
-	  $val =~ s/\\$//mg;
-	  $res .= makefile_wrap ("$str$name $equals", "$str\t",
-				 sort (split (' ' , $val)));
-	}
+      my $output_var;
+      # Definition of variables whose value contains unescaped newlines
+      # (likely as a result of a "+=" appending) cannot be output as-is;
+      # we need to wrap their definition.  We also wrap the definition if
+      # the length of any line is too big, since POSIX-compliant systems
+      # are not required to support lines longer than 2048 bytes (most
+      # notably, some sed implementation are limited to 4000 bytes, and
+      # sed is used by config.status to rewrite Makefile.in into Makefile).
+      if (_has_line_too_long ($val) or $val =~ /(:?\\\\)*[^\\]\n./)
+        {
+          $val =~ s/\\$//mg;
+          $output_var = makefile_wrap ("$str$name $equals", "$str\t",
+                                       split (' ', $val));
+        }
+      else
+        {
+          $val =~ s/^[ \t]*//;
+          $output_var = "$name $equals $val";
+          $output_var =~ s/^/$str/meg;
+        }
+      $res .= "$output_var\n";
     }
   return $res;
 }
@@ -707,7 +695,7 @@ sub dump ($)
 
 =over 4
 
-=item C<Automake::Variable::define($varname, $owner, $type, $cond, $value, $comment, $where, $pretty)>
+=item C<Automake::Variable::define($varname, $owner, $type, $cond, $value, $comment, $where)>
 
 Define or append to a new variable.
 
@@ -731,29 +719,17 @@ assignment.
 
 C<$where>: the C<Location> of the assignment.
 
-C<$pretty>: whether C<$value> should be pretty printed (one of
-C<VAR_ASIS>, C<VAR_PRETTY>, C<VAR_SILENT>, or C<VAR_SORTED>, defined
-by by L<Automake::VarDef>).  C<$pretty> applies only to real
-assignments.  I.e., it does not apply to a C<+=> assignment (except
-when part of it is being done as a conditional C<=> assignment).
-
 =cut
 
-sub define ($$$$$$$$)
+sub define ($$$$$$$)
 {
-  my ($var, $owner, $type, $cond, $value, $comment, $where, $pretty) = @_;
+  my ($var, $owner, $type, $cond, $value, $comment, $where) = @_;
 
   prog_error "$cond is not a reference"
     unless ref $cond;
 
   prog_error "$where is not a reference"
     unless ref $where;
-
-  prog_error "pretty argument missing"
-    unless defined $pretty && ($pretty == VAR_ASIS
-			       || $pretty == VAR_PRETTY
-			       || $pretty == VAR_SILENT
-			       || $pretty == VAR_SORTED);
 
   # If there's a comment, make sure it is \n-terminated.
   if ($comment)
@@ -811,9 +787,7 @@ sub define ($$$$$$$$)
   # 1. append (+=) to a variable defined for current condition
   if ($type eq '+' && ! $new_var)
     {
-      $def->append ($value, $comment);
-      $self->{'last-append'} = [];
-
+      $def->append ($value, $comment, $cond);
       # Only increase owners.  A VAR_CONFIGURE variable augmented in a
       # Makefile.am becomes a VAR_MAKEFILE variable.
       $def->set_owner ($owner, $where->clone)
@@ -822,63 +796,24 @@ sub define ($$$$$$$$)
   # 2. append (+=) to a variable defined for *another* condition
   elsif ($type eq '+' && ! $self->conditions->false)
     {
-      # * Generally, $cond is not TRUE.  For instance:
+      # * If we have an input like:
       #     FOO = foo
       #     if COND
       #       FOO += bar
       #     endif
-      #   In this case, we declare an helper variable conditionally,
-      #   and append it to FOO:
+      #   we declare an helper variable conditionally, and append
+      #   it to FOO:
       #     FOO = foo $(am__append_1)
       #     @COND_TRUE@am__append_1 = bar
       #   Of course if FOO is defined under several conditions, we add
       #   $(am__append_1) to each definitions.
-      #
-      # * If $cond is TRUE, we don't need the helper variable.  E.g., in
-      #     if COND1
-      #       FOO = foo1
-      #     else
-      #       FOO = foo2
-      #     endif
-      #     FOO += bar
-      #   we can add bar directly to all definition of FOO, and output
-      #     @COND_TRUE@FOO = foo1 bar
-      #     @COND_FALSE@FOO = foo2 bar
-
-      my $lastappend = [];
-      # Do we need an helper variable?
-      if ($cond != TRUE)
-        {
-	  # Can we reuse the helper variable created for the previous
-	  # append?  (We cannot reuse older helper variables because
-	  # we must preserve the order of items appended to the
-	  # variable.)
-	  my $condstr = $cond->string;
-	  my $key = "$var:$condstr";
-	  my ($appendvar, $appendvarcond) = @{$self->{'last-append'}};
-	  if ($appendvar && $condstr eq $appendvarcond)
-	    {
-	      # Yes, let's simply append to it.
-	      $var = $appendvar;
-	      $owner = VAR_AUTOMAKE;
-	      $self = var ($var);
-	      $def = $self->rdef ($cond);
-	      $new_var = 0;
-	    }
-	  else
-	    {
-	      # No, create it.
-	      my $num = ++$_appendvar;
-	      my $hvar = "am__append_$num";
-	      $lastappend = [$hvar, $condstr];
-	      &define ($hvar, VAR_AUTOMAKE, '+',
-		       $cond, $value, $comment, $where, $pretty);
-
-	      # Now HVAR is to be added to VAR.
-	      $comment = '';
-	      $value = "\$($hvar)";
-	    }
-	}
+      my $num = ++$_appendvar;
+      my $hvar = "am__append_$num";
+      &define ($hvar, VAR_AUTOMAKE, '+',
+               $cond, $value, $comment, $where);
+      # Now HVAR is to be added to VAR.
+      $comment = '';
+      $value = "\$($hvar)";
 
       # Add VALUE to all definitions of SELF.
       foreach my $vcond ($self->conditions->conds)
@@ -904,11 +839,9 @@ sub define ($$$$$$$$)
 	    }
 	  else
 	    {
-	      &define ($var, $owner, '+', $vcond, $value, $comment,
-		       $where, $pretty);
+	      &define ($var, $owner, '+', $vcond, $value, $comment, $where);
 	    }
 	}
-      $self->{'last-append'} = $lastappend;
     }
   # 3. first assignment (=, :=, or +=)
   else
@@ -928,8 +861,8 @@ sub define ($$$$$$$$)
       # Assignments to a macro set its location.  We don't adjust
       # locations for '+='.  Ideally I suppose we would associate
       # line numbers with random bits of text.
-      $def = new Automake::VarDef ($var, $value, $comment, $where->clone,
-				   $type, $owner, $pretty);
+      $def = new Automake::VarDef ($var, $value, $comment, $cond,
+                                   $where->clone, $type, $owner);
       $self->set ($cond, $def);
       push @_var_order, $var;
     }
@@ -1542,7 +1475,7 @@ sub transform_variable_recursively ($$$$$&;%)
 	       foreach (@conds)
 		 {
 		   define ($varname, VAR_AUTOMAKE, '', $_, "@result",
-			   '', $where, VAR_PRETTY);
+			   '', $where);
 		 }
 	     }
 	 }

@@ -59,9 +59,6 @@ $AUTOCONF
 $AUTOMAKE
 
 ./configure
-# Make sure no extra variable was created for the last 3 items.
-grep 'append.*=.* h iXYZ jZYX' Makefile
-# Check good ordering.
 $MAKE test
 
 :

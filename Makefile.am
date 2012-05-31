@@ -333,6 +333,7 @@ XFAIL_TESTS = \
   t/all.sh \
   t/yacc-bison-skeleton-cxx.sh \
   t/yacc-bison-skeleton.sh \
+  t/comments-in-var-def.sh \
   t/cond17.sh \
   t/dist-srcdir2.sh \
   t/gcj6.sh \
@@ -347,6 +348,7 @@ XFAIL_TESTS = \
   t/remake-am-pr10111.sh \
   t/remake-m4-pr10111.sh \
   t/txinfo5.sh \
+  t/var-undef-append.sh \
   $(perl_fake_XFAIL_TESTS)
 
 # Some testsuite-influential variables should be overridable from the

@@ -62,8 +62,7 @@ $EGREP '^check:.* check-recursive( |$)' Makefile.in
 $EGREP '^check:.* check-am( |$)' dir/Makefile.in
 
 # Make sure subrun.sh is still on its line as above.  This means Automake
-# hasn't rewritten the TESTS line unnecessarily (we can tell, because all
-# Automake variables are reformatted by VAR_PRETTY).
+# hasn't rewritten the TESTS line unnecessarily.
 grep '^  subrun\.sh$' Makefile.in
 
 :
