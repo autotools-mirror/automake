@@ -327,7 +327,7 @@ modern.am__TEST_RESULTS = am__test_results
 modern.CONFIG_HEADER = AM_CONFIG_HEADERS
 modern.DEFAULT_INCLUDES = AM_DEFAULT_INCLUDES
 
-Sc_renamed_variables_rules = \
+sc_renamed_variables_rules = \
   $(patsubst modern.%,sc_no_%,$(filter modern.%,$(.VARIABLES)))
 
 $(sc_renamed_variables_rules): sc_no_% :
