@@ -26,7 +26,7 @@ AC_OUTPUT
 EOF
 
 cat > Makefile.am << 'EOF'
-VAR = valA# comA ## com C
+VAR = valA # comA ## com C
 VAR += valB # comB
 if COND1
   VAR += val1 # com1
@@ -35,10 +35,15 @@ VAR += valC
 if COND2
   VAR += val2 # com2
 endif COND2
+VAR2 = # this will be happily ignored
+VAR2 += x
+VAR2 += # this will be happily ignored too
+VAR2 += y
 
 .PHONY: test
 test:
 	is $(VAR) == valA valB val1 valC val2
+	is $(VAR2) == x y
 EOF
 
 $ACLOCAL

@@ -48,6 +48,11 @@ var4 = $(var3)
 var5 = ok \
 # ko
 
+var6 = \# \
+\#\\\\\# seen # not seen
+
+var6 += \# \# # again not seen
+
 .PHONY: test
 test:
 	test -z '$(var1)'
@@ -57,6 +62,7 @@ test:
 	# Use '[', not 'test', here, so that spurious comments
 	# are ensured to cause syntax errors.
 	[ $(var5) = ok ]
+	test '$(var6)' = '# #\\# seen # #'
 
 # Yes, this file ends with a backslash-newline.  So what?
 \

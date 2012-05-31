@@ -173,6 +173,8 @@ sub value ($)
 
   # Strip anything past '#'.  '#' characters cannot be escaped
   # in Makefiles, so we don't have to be smart.
+  # FIXME: Actually, '#' *can* be escaped in GNU make ...
+  # FIXME: Should we adapt our code?
   $val =~ s/#.*$//s;
   # Strip backslashes.
   $val =~ s/\\$/ /mg;
@@ -197,7 +199,12 @@ sub raw_value ($)
   #   VAR = foo # com bar
   # Furthermore keeping '#' would not be portable if the variable is
   # output on multiple lines.
-  map { s/ ?#.*// } @values;
+  # But we have to preserve escaped '#', so that a definition line:
+  #   hash = \#
+  # remains possible.  To make our life easier, we just assume that
+  # any tailed comment must be separated with whitespace from the
+  # actual variable value.
+  map { s/^#.*//; s/[ \t]+#.*// } @values;
   return join (' ', @values);
 }
 
