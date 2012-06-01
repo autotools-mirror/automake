@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# Diagnose if the autoconf input is named configure.in.
 # Diagnose if both configure.in and configure.ac are present, prefer
 # configure.ac.
 
@@ -50,5 +51,9 @@ grep 'proceeding.*configure\.ac' stderr
 AUTOMAKE_run -Wno-error
 grep 'configure\.ac.*configure\.in.*both present' stderr
 grep 'proceeding.*configure\.ac' stderr
+
+mv -f configure.ac configure.in
+AUTOMAKE_fails
+grep "autoconf input.*'configure.ac', not 'configure.in'" stderr
 
 :
