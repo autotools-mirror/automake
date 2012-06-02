@@ -19,15 +19,29 @@
 
 . ./defs || Exit 1
 
+echo AC_OUTPUT >> configure.ac
+
 cat > Makefile.am << 'END'
 VPATH = zardoz
+%.bar: %.foo
+	cp $< $@
 END
 
 $ACLOCAL
+$AUTOCONF
 $AUTOMAKE
 
-grep VPATH Makefile.in # For debugging.
-grep '^VPATH = zardoz$' Makefile.in
-grep 'VPATH.*@srcdir@' Makefile.in && Exit 1
+mkdir build
+cd build
+mkdir zardoz
+../configure
+
+echo OK > zardoz/file.foo
+echo KO > ../file.foo
+$MAKE file.bar
+test "$(cat file.bar)" = OK
+rm -f file.bar zardoz/file.foo
+$MAKE file.bar && Exit 1
+test ! -f file.bar
 
 :

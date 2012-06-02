@@ -31,9 +31,12 @@ EOF
 
 $ACLOCAL
 $AUTOMAKE
-# UnIqUe_COPYRIGHT_BOILERPLATE should appear near the top of the file
-test `sed -n -e '1,/UnIqUe_COPYRIGHT_BOILERPLATE/p' Makefile.in \
-      | wc -l` -le 30
+# UnIqUe_COPYRIGHT_BOILERPLATE shouldn't appear just before the
+# definition of 'mumble'.
+test $(sed -n -e '/UnIqUe_COPYRIGHT_BOILERPLATE/,/UnIqUe_MUMBLE_VALUE/p' \
+       Makefile.in | wc -l) -gt 50
 # UnIqUe_MUMBLE_COMMENT should appear right before the mumble declaration.
-test `sed -n -e '/UnIqUe_MUMBLE_COMMENT/,/UnIqUe_MUMBLE_VALUE/p' Makefile.in \
-      | wc -l` -eq 2
+test $(sed -n -e '/UnIqUe_MUMBLE_COMMENT/,/UnIqUe_MUMBLE_VALUE/p' \
+       Makefile.in | wc -l) -eq 2
+
+:
