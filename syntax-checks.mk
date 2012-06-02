@@ -338,7 +338,7 @@ $(sc_renamed_variables_rules): sc_no_% :
 	  $(srcdir)/automake.in \
 	  $(srcdir)/doc/*.texi \
 	"; \
-	if grep -F '$*' $$files; then \
+	if grep -E '\b$*\b' $$files; then \
 	  echo "'\$$($*)' is obsolete and no more used." >&2; \
 	  echo "You should use '$(modern.$*)' instead." >&2; \
 	  exit 1; \
