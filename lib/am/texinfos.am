@@ -136,14 +136,16 @@ if %?LOCAL-TEXIS%
 
 include inst-vars.am
 
-## FIXME: Extra indirection required because Automake proprocessing groups
-## FIXME: dependencies for a given '*-am' together, so that we might end up
-## FIXME: in our genereated Makefile with something like:
-## FIXME:
-## FIXME:   install-pdf-am: $(PDFS) install-pdf-local
-## FIXME:           ... [RECIPE] ...
-## FIXME: 
-## FIXME: which would cause a huge mess with our usages of '$^' in the recipes.
+# In GNU make, '$^' used in a recipe contains every dependency for the
+# target, even those not declared when the recipe is read; for example,
+# on:
+#    all: foo1; @echo $^
+#    all: foo2
+# "make all" would output "foo1 foo2".  In our usage, a dependecy like
+# "install-pdf-am: install-pdf-local" (that is automatically output by
+# Automake-NG if the 'install-pdf-local' target is declared) would make
+# '$^' unusable as a pure list of PDF target files in the recipe of
+# 'install-pdf-am'.  So we need the following indirections.
 
 install-dvi-am:  am--install-dvi
 install-ps-am:   am--install-ps
