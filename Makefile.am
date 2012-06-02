@@ -299,7 +299,8 @@ EXTRA_DIST += t/README t/ax/is
 all_TESTS = \
   $(wildcard $(srcdir)/t/*.sh) \
   $(wildcard $(srcdir)/t/*.tap) \
-  $(wildcard $(srcdir)/t/pm/*.pl)
+  $(wildcard $(srcdir)/t/pm/*.pl) \
+  $(wildcard $(srcdir)/t/perf/*.sh)
 
 # This is to ensure longer-running tests will be run earlier, which is
 # useful when running the testsuite in parallel on multicore machines.
@@ -666,9 +667,6 @@ git-tag-release: maintainer-check
 	esac; \
 	$(determine_release_type); \
 	$(git_must_have_clean_workdir); \
-## Make sure the NEWS file is up-to-date.
-	sed 1q $(srcdir)/NEWS | grep '$(VERSION)' >/dev/null \
-	  || fatal "NEWS not updated"; \
 ## If all was successful, tag the release in the local repository.
 	$$run $(GIT) tag -s "v$(VERSION)" -m "$$release_type $(VERSION)"
 

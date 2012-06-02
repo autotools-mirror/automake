@@ -193,7 +193,7 @@ Warning categories include:
   unsupported        unsupported or incomplete features (default)
   all                all the warnings
   no-CATEGORY        turn off warnings in CATEGORY
-  none'              turn off all the warnings
+  none               turn off all the warnings
   error              treat warnings as errors
 EOF
 }

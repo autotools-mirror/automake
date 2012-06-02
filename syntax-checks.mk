@@ -105,10 +105,10 @@ sc_perl_syntax:
 	@perllibdir="./lib$(PATH_SEPARATOR)$(srcdir)/lib" $(PERL) -c -w automake
 	@perllibdir="./lib$(PATH_SEPARATOR)$(srcdir)/lib" $(PERL) -c -w aclocal
 
-## expect no instances of '${...}'.  However, $${...} is ok, since that
+## Expect no instances of '${...}'.  However, $${...} is ok, since that
 ## is a shell construct, not a Makefile construct.
 sc_no_brace_variable_expansions:
-	@if grep -F '$${' $(ams) | grep -F -v '$$$$'; then \
+	@if grep -v '^ *#' $(ams) | grep -F '$${' | grep -F -v '$$$$'; then \
 	  echo "Found too many uses of '\$${' in the lines above." 1>&2; \
 	  exit 1;				\
 	else :; fi
@@ -437,19 +437,19 @@ $(sc_tests_plain_check_rules): sc_tests_plain_% :
 ## Tests should only use END and EOF for here documents
 ## (so that the next test is effective).
 sc_tests_here_document_format:
-	@if grep '<<' $(xtests) | grep -Ev '\b(END|EOF)\b|\bstd::cout <<'; then \
+	@if grep '<<' $(xtests) | grep -Ev '\b(END|EOF)\b|\bcout <<'; then \
 	  echo 'Use here documents with "END" and "EOF" only, for greppability.' 1>&2; \
 	  exit 1; \
 	fi
 
 ## Tests should never call exit directly, but use Exit.
 ## This is so that the exit status is transported correctly across the 0 trap.
-## Ignore comments, testsuite self tests, and one perl line in ext2.sh.
+## Ignore comments and our testsuite's own self tests.
 sc_tests_Exit_not_exit:
 	@found=false; for file in $(xtests); do \
 	  case $$file in */self-check-*) continue;; esac; \
-	  res=`sed -n -e '/^#/d; /^\$$PERL/d' -e '/<<.*END/,/^END/b' \
-		      -e '/<<.*EOF/,/^EOF/b' -e '/exit [$$0-9]/p' $$file`; \
+	  res=`sed -n -e '/^#/d' -e '/<<.*END/,/^END/b' -e '/<<.*EOF/,/^EOF/b' \
+	              -e '/exit [$$0-9]/p' $$file`; \
 	  if test -n "$$res"; then \
 	    echo "$$file:$$res"; \
 	    found=true; \
