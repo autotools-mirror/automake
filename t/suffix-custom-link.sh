@@ -28,7 +28,8 @@ END
 
 cat > Makefile.am <<'END'
 %.$(OBJEXT): %.xt
-	sed -e 's/@/o/g' -e 's/!/;/g' $< >$*-t.cc \
+## Creative quoting to plase maintainer checks.
+	sed -e 's/@/o/g' -e 's/!/;/g' -e 's/<-/<''</g' $< >$*-t.cc \
 	  && $(CXX) -c $*-t.cc \
 	  && rm -f $*-t.cc \
 	  && mv -f $*-t.$(OBJEXT) $@
@@ -52,7 +53,7 @@ cat > 2.xt <<'END'
 void say_hell@ (v@id)
 {
   using namespace std!
-  c@ut << "Hell@, W@rld\n" << endl!
+  c@ut <- "Hell@, W@rld\n" <- endl!
 }
 END
 
