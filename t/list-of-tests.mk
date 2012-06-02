@@ -61,6 +61,11 @@ t/pm/Version2.pl \
 t/pm/Version3.pl \
 t/pm/Wrap.pl
 
+perf_TESTS = \
+t/perf/cond.sh \
+t/perf/testsuite-recheck.sh \
+t/perf/testsuite-summary.sh
+
 # The order here is mostly alphabetical, with the deliberate exception
 # that tests having a high runtime (especially TAP tests that run various
 # checks sequentially) are listed early; this improves performance on
@@ -68,6 +73,7 @@ t/pm/Wrap.pl
 handwritten_TESTS = \
 t/get-sysconf.sh \
 $(perl_TESTS) \
+$(perf_TESTS) \
 t/instspc.tap \
 t/aclocal.sh \
 t/aclocal3.sh \
@@ -268,7 +274,6 @@ t/cond25.sh \
 t/cond26.sh \
 t/cond27.sh \
 t/cond28.sh \
-t/cond29.sh \
 t/cond30.sh \
 t/cond31.sh \
 t/cond32.sh \
@@ -769,8 +774,6 @@ t/testsuite-summary-color.sh \
 t/testsuite-summary-count.sh \
 t/testsuite-summary-count-many.sh \
 t/testsuite-summary-reference-log.sh \
-t/testsuite-recheck-speed.sh \
-t/testsuite-summary-speed.sh \
 t/test-driver-acsubst.sh \
 t/test-driver-cond.sh \
 t/test-driver-custom-no-extra-driver.sh \

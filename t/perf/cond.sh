@@ -32,13 +32,6 @@ EOF
 # to define a01_DEPENDENCIES, a02_DEPENDENCIES, a03_OBJECTS,
 # a04_OBJECTS, and to rewrite bin_PROGRAM), eating all memory, swap,
 # or cpu time it can found.
-# Limit memory available to spawned processes to ~ 150 MB.  Considering
-# that 70 MB is enough for x86_64 Fedora 16, that gives tools and
-# libraries plenty of room to grow.  Suggested by Jim Meyering in
-# automake bug#10374.
-(ulimit -v 1; sh -c ":") && skip_ "no adequate 'ulimit' builtin found"
-(ulimit -v 150000; sh -c ":") || skip_ "no adequate 'ulimit' builtin found"
-ulimit -v 150000
 
 for i in \
   01 02 03 04 05 06 07 08 09 10 \

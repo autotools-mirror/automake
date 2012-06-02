@@ -413,7 +413,7 @@ check-local: check-no-repeated-test-name
 .PHONY: check-no-repeated-test-name
 
 ## Checking the list of tests.
-test_subdirs = t t/pm
+test_subdirs = t t/pm t/perf
 include $(srcdir)/t/CheckListOfTests.am
 
 # Run the testsuite with the installed aclocal and automake.
@@ -691,9 +691,6 @@ git-tag-release: maintainer-check
 	esac; \
 	$(determine_release_type); \
 	$(git_must_have_clean_workdir); \
-## Make sure the NEWS file is up-to-date.
-	sed 1q $(srcdir)/NEWS | grep '$(VERSION)' >/dev/null \
-	  || fatal "NEWS not updated"; \
 ## If all was successful, tag the release in the local repository.
 	$$run $(GIT) tag -s "v$(VERSION)" -m "$$release_type $(VERSION)"
 
