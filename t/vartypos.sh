@@ -38,6 +38,9 @@ EXTRA_foo_SOURCES =
 EXTRA_dist_foo_SOURCES =
 EXTRA_nodist_foo_SOURCES =
 
+foo_DEPENDENCIES =
+EXTRA_foo_DEPENDENCIES =
+
 foo_LDADD =
 foo_LDFLAGS =
 EXTRA_foo_LDADD =
@@ -50,6 +53,9 @@ EXTRA_libfoo_a_SOURCES =
 EXTRA_dist_libfoo_a_SOURCES =
 EXTRA_nodist_libfoo_a_SOURCES =
 
+libfoo_a_DEPENDENCIES =
+EXTRA_libfoo_a_DEPENDENCIES =
+
 libfoo_a_LIBADD =
 EXTRA_libfoo_a_LIBADD =
 libfoo_a_LDFLAGS =
@@ -61,6 +67,9 @@ nodist_libbar_la_SOURCES =
 EXTRA_libbar_la_SOURCES =
 EXTRA_dist_libbar_la_SOURCES =
 EXTRA_nodist_libbar_la_SOURCES =
+
+libbar_la_DEPENDENCIES =
+EXTRA_libbar_la_DEPENDENCIES =
 
 libbar_la_LIBADD =
 EXTRA_libbar_la_LIBADD =
@@ -82,7 +91,7 @@ cat stderr >&2
 
 $FGREP 'as canonical' stderr \
   | $EGREP -v " '(foo|libfoo_a|libbar_la)' " && Exit 1
-test 30 -eq $(grep -c 'variable.*is defined but' stderr)
+test 36 -eq $(grep -c 'variable.*is defined but' stderr)
 
 # If matching programs or libraries are defined, all errors should
 # disappear.
