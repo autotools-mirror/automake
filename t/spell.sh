@@ -16,7 +16,13 @@
 
 # Test to make sure misspellings in _SOURCES variables cause failure.
 
+required=cc
 . ./defs || Exit 1
+
+cat >> configure.ac << 'END'
+AC_PROG_CC
+AC_OUTPUT
+END
 
 cat > Makefile.am << 'END'
 bin_PROGRAMS = zardoz foo
@@ -24,6 +30,25 @@ zardoz_SOURCES = x.c
 boo_SOURCES = y.c
 END
 
+echo 'int main (void) { return 0; }' > x.c
+echo 'int main (void) { return 0; }' > y.c
+
 $ACLOCAL
-AUTOMAKE_fails
-grep 'Makefile.am:3:.*boo' stderr
+$AUTOCONF
+$AUTOMAKE
+
+./configure
+$MAKE 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+
+LC_ALL=C sed 's/^Makefile:[0-9][0-9]*: //' stderr > got
+
+cat > exp << 'END'
+variable 'boo_SOURCES' is defined but no program
+  or library has 'boo' as canonical name
+*** Some Automake-NG error occurred.  Stop.
+END
+
+diff exp got
+
+:

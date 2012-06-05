@@ -18,7 +18,8 @@
 
 . ./defs || Exit 1
 
-cat >>configure.ac <<END
+cat >> configure.ac << 'END'
+AC_PROG_CC
 AC_CONFIG_FILES([sub/Makefile])
 AM_CONDITIONAL([COND_FALSE], [false])
 AC_OUTPUT
@@ -30,35 +31,36 @@ mkdir sub
 # warnings disabled.
 
 cat > Makefile.am << 'END'
-AUTOMAKE_OPTIONS = -Wno-unsupported
+AUTOMAKE_OPTIONS = subdir-objects -Wno-unsupported
 if COND_FALSE
 AUTOMAKE_OPTIONS += no-dependencies
 endif
-foo_SOURCES = unused
+bin_PROGRAMS = foo
+foo_SOURCES = sub/foo.c
 SUBDIRS = sub
 END
 
 cat > sub/Makefile.am << 'END'
-AUTOMAKE_OPTIONS = -Wno-syntax
+AUTOMAKE_OPTIONS = subdir-objects -Wno-portability
 if COND_FALSE
 AUTOMAKE_OPTIONS += no-dependencies
 endif
-foo_SOURCES = unused
+bin_PROGRAMS = foo
+foo_SOURCES = sub/foo.c
 END
 
 $ACLOCAL
 AUTOMAKE_fails
 # The expected diagnostic is
 #   automake: warnings are treated as errors
-#   Makefile.am:5: warning: variable 'foo_SOURCES' is defined but no program or
-#   Makefile.am:5: library has 'foo' as canonical name (possible typo)
+#   Makefile.am:6: warning: compiling 'sub/foo.c' in subdir requires 'AM_PROG_CC_C_O' in 'configure.ac'
 #   sub/Makefile.am:1: warning: 'AUTOMAKE_OPTIONS' cannot have conditional contents
-grep '^Makefile.am:.*foo_SOURCES' stderr
+grep '^Makefile\.am:.*sub/foo\.c.*AM_PROG_CC_C_O' stderr
 grep '^sub/Makefile.am:.*AUTOMAKE_OPTIONS' stderr
-grep '^sub/Makefile.am:.*foo_SOURCES' stderr && Exit 1
-grep '^Makefile.am:.*AUTOMAKE_OPTIONS' stderr && Exit 1
-# Only three lines of warnings.
-test `grep -v 'warnings are treated as errors' stderr | wc -l` = 3
+grep '^sub/Makefile\.am:.*AM_PROG_CC_C_O' stderr && Exit 1
+grep '^Makefile\.am:.*AUTOMAKE_OPTIONS' stderr && Exit 1
+# Only two lines of warnings.
+test $(grep -v 'warnings are treated as errors' stderr | wc -l) = 2
 
 rm -rf autom4te*.cache
 
@@ -67,6 +69,7 @@ cat >configure.ac <<END
 AC_INIT([warnopts], [1.0])
 AM_INIT_AUTOMAKE([-Wnone])
 AC_CONFIG_FILES([Makefile sub/Makefile])
+AC_PROG_CC
 AC_OUTPUT
 END
 $ACLOCAL
