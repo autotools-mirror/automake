@@ -14,43 +14,68 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# For PR/352: make sure we support bin_PROGRAMS being defined conditionally.
+# For PR/352: make sure we support bin_PROGRAMS, lib_LIBRARIES and
+#             lib_LTLIBRARIES being defined conditionally.
 
 . ./defs || Exit 1
 
 cat >>configure.ac <<'EOF'
-AM_CONDITIONAL([C1], [test -z "$two"])
-AM_CONDITIONAL([C2], [test -n "$two"])
+m4_define([AM_PROG_AR], [:])
+AM_PROG_AR
+AM_CONDITIONAL([C1], [test x"$two" != x"yes"])
+AM_CONDITIONAL([C2], [test x"$two"  = x"yes"])
 AC_OUTPUT
 EOF
+
+# Avoid spurious interferences from the environment.
+unset undefined two || :
 
 cat > Makefile.am <<'EOF'
 AUTOMAKE_OPTIONS = no-dependencies
 CC = false
+AR = false
+RANLIB = false
+LIBTOOL = false
 EXEEXT = .foo
 
 if C1
 bin_PROGRAMS = a
+lib_LIBRARIES = liba.a
+lib_LTLIBRARIES = libxa.la
 endif
 if C2
 bin_PROGRAMS = b $(undefined)
+lib_LIBRARIES = libb.a $(undefined)
+lib_LTLIBRARIES = libxb.la $(undefined)
 endif
 
 .PHONY: test-a test-b
 test-a:
 	test a.foo = $(bin_PROGRAMS)
+	test liba.a = $(lib_LIBRARIES)
+	test libxa.la = $(lib_LTLIBRARIES)
 test-b:
 	test b.foo = $(bin_PROGRAMS)
+	test libb.a = $(lib_LIBRARIES)
+	test libxb.la = $(lib_LTLIBRARIES)
 EOF
+
+: > ltmain.sh
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE
+$AUTOMAKE -a
+
+$FGREP SOURCES Makefile.in # For debugging.
 
 $FGREP 'a_SOURCES = a.c' Makefile.in
 $FGREP 'b_SOURCES = b.c' Makefile.in
+$FGREP 'liba_a_SOURCES = liba.c' Makefile.in
+$FGREP 'libb_a_SOURCES = libb.c' Makefile.in
+$FGREP 'libxa_la_SOURCES = libxa.c' Makefile.in
+$FGREP 'libxb_la_SOURCES = libxb.c' Makefile.in
 
-./configure
+./configure two=no
 $MAKE test-a
 
 ./configure two=yes
