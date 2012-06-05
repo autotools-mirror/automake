@@ -570,10 +570,11 @@ my %dep_files;
 # This is a list of all targets to run during "make dist".
 my @dist_targets;
 
-# Keep track of all programs declared in this Makefile, without
-# $(EXEEXT).  @substitutions@ are not listed.
+# Keep track of all programs and libraries declared in this Makefile,
+# without $(EXEEXT).  @substitutions@ are not listed.
 my %known_programs;
 my %known_libraries;
+my %known_ltlibraries;
 
 # This keeps track of which extensions we've seen (that we care
 # about).
@@ -681,6 +682,7 @@ sub initialize_per_input ()
 
     %known_programs = ();
     %known_libraries= ();
+    %known_ltlibraries= ();
 
     %extension_seen = ();
 
@@ -2651,7 +2653,7 @@ sub handle_ltlibraries
 	       . "did you mean '$suggestion'?")
 	}
 
-      ($known_libraries{$onelib} = $bn) =~ s/\.la$//;
+      ($known_ltlibraries{$onelib} = $bn) =~ s/\.la$//;
 
       $where->push_context ("while processing Libtool library '$onelib'");
       $where->set (INTERNAL->get);
@@ -5401,13 +5403,14 @@ sub lang_vala_finish_target ($$)
 sub lang_vala_finish
 {
   my ($self) = @_;
+  my @names =
+    (
+      keys %known_programs,
+      keys %known_libraries,
+      keys %known_ltlibraries,
+    );
 
-  foreach my $prog (keys %known_programs)
-    {
-      lang_vala_finish_target ($self, $prog);
-    }
-
-  while (my ($name) = each %known_libraries)
+  foreach my $name (@names)
     {
       lang_vala_finish_target ($self, $name);
     }
