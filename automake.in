@@ -517,7 +517,6 @@ my $output_deps_greatest_timestamp;
 # These variables are used when generating each Makefile.in.
 # They hold the Makefile.in until it is ready to be printed.
 my $output_vars;
-my $output_header;
 my $output_verbatim;
 my $output_rules;
 my $output_trailer;
@@ -570,10 +569,11 @@ my %dep_files;
 # This is a list of all targets to run during "make dist".
 my @dist_targets;
 
-# Keep track of all programs declared in this Makefile, without
-# $(EXEEXT).  @substitutions@ are not listed.
+# Keep track of all programs and libraries declared in this Makefile,
+# without $(EXEEXT).  @substitutions@ are not listed.
 my %known_programs;
 my %known_libraries;
+my %known_ltlibraries;
 
 # This keeps track of which extensions we've seen (that we care
 # about).
@@ -644,7 +644,6 @@ sub initialize_per_input ()
     $output_deps_greatest_timestamp = 0;
 
     $output_vars = '';
-    $output_header = '';
     $output_verbatim = '';
     $output_rules = '';
     $output_trailer = '';
@@ -681,6 +680,7 @@ sub initialize_per_input ()
 
     %known_programs = ();
     %known_libraries= ();
+    %known_ltlibraries= ();
 
     %extension_seen = ();
 
@@ -830,7 +830,7 @@ register_language ('name' => 'yacc',
 		   'output_extensions' => sub { (my $ext = $_[0]) =~ tr/y/c/;
 						return ($ext,) },
 		   'rule_file' => 'yacc',
-		   '_finish' => \&lang_yacc_finish,
+		   '_finish' => \&lang_yacc_lex_finish,
 		   '_target_hook' => \&lang_yacc_target_hook,
 		   'nodist_specific' => 1);
 register_language ('name' => 'yaccxx',
@@ -844,7 +844,7 @@ register_language ('name' => 'yaccxx',
 		   'extensions' => ['.y++', '.yy', '.yxx', '.ypp'],
 		   'output_extensions' => sub { (my $ext = $_[0]) =~ tr/y/c/;
 						return ($ext,) },
-		   '_finish' => \&lang_yacc_finish,
+		   '_finish' => \&lang_yacc_lex_finish,
 		   '_target_hook' => \&lang_yacc_target_hook,
 		   'nodist_specific' => 1);
 
@@ -860,7 +860,7 @@ register_language ('name' => 'lex',
 		   'extensions' => ['.l'],
 		   'output_extensions' => sub { (my $ext = $_[0]) =~ tr/l/c/;
 						return ($ext,) },
-		   '_finish' => \&lang_lex_finish,
+		   '_finish' => \&lang_yacc_lex_finish,
 		   '_target_hook' => \&lang_lex_target_hook,
 		   'nodist_specific' => 1);
 register_language ('name' => 'lexxx',
@@ -874,7 +874,7 @@ register_language ('name' => 'lexxx',
 		   'extensions' => ['.l++', '.ll', '.lxx', '.lpp'],
 		   'output_extensions' => sub { (my $ext = $_[0]) =~ tr/l/c/;
 						return ($ext,) },
-		   '_finish' => \&lang_lex_finish,
+		   '_finish' => \&lang_yacc_lex_finish,
 		   '_target_hook' => \&lang_lex_target_hook,
 		   'nodist_specific' => 1);
 
@@ -2651,7 +2651,7 @@ sub handle_ltlibraries
 	       . "did you mean '$suggestion'?")
 	}
 
-      ($known_libraries{$onelib} = $bn) =~ s/\.la$//;
+      ($known_ltlibraries{$onelib} = $bn) =~ s/\.la$//;
 
       $where->push_context ("while processing Libtool library '$onelib'");
       $where->set (INTERNAL->get);
@@ -2742,32 +2742,6 @@ sub handle_ltlibraries
 	  msg ('extra-portability', $where,
 	       "'$onelib': linking libtool libraries using a non-POSIX\n"
 	       . "archiver requires 'AM_PROG_AR' in '$configure_ac'")
-	}
-    }
-}
-
-# See if any _SOURCES variable were misspelled.
-sub check_typos ()
-{
-  # It is ok if the user sets this particular variable.
-  set_seen 'AM_LDFLAGS';
-
-  foreach my $primary ('SOURCES', 'LIBADD', 'LDADD', 'LDFLAGS')
-    {
-      foreach my $var (variables $primary)
-	{
-	  my $varname = $var->name;
-	  # A configure variable is always legitimate.
-	  next if exists $configure_vars{$varname};
-
-	  for my $cond ($var->conditions->conds)
-	    {
-	      $varname =~ /^(?:EXTRA_)?(?:nobase_)?(?:dist_|nodist_)?(.*)_[[:alnum:]]+$/;
-	      msg_var ('syntax', $var, "variable '$varname' is defined but no"
-		       . " program or\nlibrary has '$1' as canonical name"
-		       . " (possible typo)")
-		unless $var->rdef ($cond)->seen;
-	    }
 	}
     }
 }
@@ -5401,13 +5375,14 @@ sub lang_vala_finish_target ($$)
 sub lang_vala_finish
 {
   my ($self) = @_;
+  my @names =
+    (
+      keys %known_programs,
+      keys %known_libraries,
+      keys %known_ltlibraries,
+    );
 
-  foreach my $prog (keys %known_programs)
-    {
-      lang_vala_finish_target ($self, $prog);
-    }
-
-  while (my ($name) = each %known_libraries)
+  foreach my $name (@names)
     {
       lang_vala_finish_target ($self, $name);
     }
@@ -5511,8 +5486,7 @@ sub lang_lex_target_hook
     $clean_files{$output} = $transform{'DIST_SOURCE'} ? MAINTAINER_CLEAN : CLEAN;
 }
 
-# This is a helper for both lex and yacc.
-sub yacc_lex_finish_helper
+sub lang_yacc_lex_finish
 {
   return if defined $language_scratch{'lex-yacc-done'};
   $language_scratch{'lex-yacc-done'} = 1;
@@ -5521,26 +5495,6 @@ sub yacc_lex_finish_helper
   require_conf_file ($configure_ac, FOREIGN, 'ylwrap');
   define_variable ('YLWRAP', INTERNAL, '$(am__config_aux_dir)/ylwrap');
 }
-
-sub lang_yacc_finish
-{
-  return if defined $language_scratch{'yacc-done'};
-  $language_scratch{'yacc-done'} = 1;
-
-  reject_var 'YACCFLAGS', "'YACCFLAGS' obsolete; use 'YFLAGS' instead";
-
-  yacc_lex_finish_helper;
-}
-
-
-sub lang_lex_finish
-{
-  return if defined $language_scratch{'lex-done'};
-  $language_scratch{'lex-done'} = 1;
-
-  yacc_lex_finish_helper;
-}
-
 
 # Given a hash table of linker names, pick the name that has the most
 # precedence.  This is lame, but something has to have global
@@ -7488,8 +7442,12 @@ sub generate_makefile ($$)
   handle_tags;
   handle_minor_options;
 
-  # Must come after handle_programs so that %known_programs is up-to-date.
-  define_variable ('am__all_progs', INTERNAL, keys %known_programs);
+  # Must come after invocation of handle_programs, handle_libraries and
+  # handle_ltlibraries, so that %known_programs and %known_libraries are
+  # up-to-date.
+  define_variable 'am__all_progs',  INTERNAL, sort keys %known_programs;
+  define_variable 'am__all_libs',   INTERNAL, sort keys %known_libraries;
+  define_variable 'am__all_ltlibs', INTERNAL, sort keys %known_ltlibraries;
   handle_tests;
 
   # This must come after most other rules.
@@ -7517,7 +7475,13 @@ sub generate_makefile ($$)
   # defined or overridden variables.
   $output_vars .= output_variables;
 
-  check_typos;
+  my $output_checks = '';
+  # See if any _SOURCES (or _LIBADD, or ...) variable were misspelled.
+  $output_checks .= preprocess_file ("$libdir/am/check-typos.am");
+  # Report errors (if any) seen at make runtime.
+  $output_checks .= '$(if $(am__seen_error),' . 
+                    '$(error Some Automake-NG error occurred))' .
+                    "\n";
 
   if ($exit_code != 0)
     {
@@ -7529,8 +7493,8 @@ sub generate_makefile ($$)
 
   # We make sure that 'all:' is the first target.
   my $output = $output_vars .
-               $output_header .
                $output_verbatim .
+               $output_checks .
                $output_rules .
                $output_trailer;
 

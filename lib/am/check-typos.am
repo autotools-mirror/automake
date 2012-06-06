@@ -1,0 +1,84 @@
+## automake - create Makefile.in from Makefile.am
+## Copyright (C) 2012 Free Software Foundation, Inc.
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2, or (at your option)
+## any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program.  If not, see <http://www.gnu.org/licenses/>.
+##
+## See if any _SOURCES or similar variable were misspelled, as in:
+##    bin_PROGRAMS = bar
+##    baz_SOURCES = main.c  # Should be bar_SOURCES.
+
+## FIXME: With this, we impose runtime penalty to all make runs.  Maybe we
+## FIXME: should make all these checks conditional to whether the user sets
+## FIXME: a AM_SANITY_CHECKS variable or something?
+
+## FIXME: We should document the '.am/' namespace as reserved for automake
+## FIXME: internals somewhere.
+
+# Variables with these suffixes are candidates for typo checking.
+.am/vartypos/suffixes := _SOURCES _LIBADD _LDADD _LDFLAGS _DEPENDENCIES
+
+# But these variables are not, even if they match the patterns above.
+.am/vartypos/whitelisted-vars := \
+  AM_LDFLAGS \
+  BUILT_SOURCES \
+  TAGS_DEPENDENCIES \
+  CONFIG_STATUS_DEPENDENCIES \
+  CONFIGURE_DEPENDENCIES
+
+# The '*LOG_DEPENDENCIES' variables are used to declare extra dependencies
+# for test cases, but only when the parallel testsuite harness is in use.
+ifeq "$(am__using_parallel_tests)" "yes"
+# Extension-less tests are always accepted.
+.am/vartypos/whitelisted-vars += LOG_DEPENDENCIES
+# We expect '.ext' to be a valid tests extension iff 'EXT_LOG_DRIVER' is
+# defined.  Hence the following logic.
+.am/vartypos/whitelisted-vars += \
+  $(patsubst %_LOG_DRIVER,%_LOG_DEPENDENCIES, \
+             $(filter %_LOG_DRIVER,$(.VARIABLES)))
+endif
+
+# Canonicalized names of programs and libraries (vanilla or libtool) that
+# have been declared.
+.am/vartypos/known-canon-proglibs := \
+  $(sort $(call am__canon, $(am__all_progs) \
+                           $(am__all_libs) \
+			   $(am__all_ltlibs)))
+
+# Extract 'foo' from something like "EXTRA_nodist_foo_SOURCES".
+define .am/vartypos/canon-name-from-var
+$(call am__strip_suffixes, $(.am/vartypos/suffixes), \
+  $(patsubst dist_%,%, \
+  $(patsubst nodist_%,%, \
+  $(patsubst nobase_%,%, \
+  $(patsubst EXTRA_%,%, \
+  $1)))))
+endef
+
+define .am/vartypos/check
+$(eval $0/canon := $(call .am/vartypos/canon-name-from-var,$1))
+$(if $(filter $($0/canon),$(.am/vartypos/known-canon-proglibs)),, \
+     $(call am__error,variable '$1' is defined but no program) \
+     $(call am__error,  or library has '$($0/canon)' as canonical name))
+endef
+
+# The variables candidate for checking of typos.
+.am/vartypos/candidate-vars := \
+  $(filter-out $(.am/vartypos/whitelisted-vars), \
+               $(filter $(addprefix %,$(.am/vartypos/suffixes)), \
+                        $(.VARIABLES)))
+
+# Apparently useless use of eval required to avoid a spurious "missing
+# separator" error from GNU make.
+$(eval $(foreach v,$(.am/vartypos/candidate-vars), \
+                   $(call .am/vartypos/check,$v)))

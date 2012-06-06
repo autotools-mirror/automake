@@ -18,60 +18,92 @@
 
 . ./defs || Exit 1
 
-cat >>configure.ac <<'END'
+: > ltmain.sh
+
+cat >> configure.ac <<'END'
+m4_define([AC_PROG_RANLIB], [AC_SUBST([RANLIB],  [who-cares])])
+m4_define([AM_PROG_AR],     [AC_SUBST([AR],      [who-cares])])
+m4_define([LT_INIT],        [AC_SUBST([LIBTOOL], [who-cares])])
+LT_INIT
+AM_PROG_AR
 AC_PROG_RANLIB
 AC_OUTPUT
 END
 
-cat >Makefile.am <<'END'
-foo_SOURCES = unused
-nodist_foo_SOURCES = unused
-EXTRA_foo_SOURCES = unused
-foo_LDADD = unused
-foo_LDFLAGS = unused
+cat > Makefile.am <<'END'
+foo_SOURCES =
+dist_foo_SOURCES =
+nodist_foo_SOURCES =
+EXTRA_foo_SOURCES =
+EXTRA_dist_foo_SOURCES =
+EXTRA_nodist_foo_SOURCES =
 
-libfoo_a_SOURCES = unused
-nodist_libfoo_a_SOURCES = unused
-EXTRA_libfoo_a_SOURCES = unused
-libfoo_a_LIBADD = unused
+foo_DEPENDENCIES =
+EXTRA_foo_DEPENDENCIES =
+
+foo_LDADD =
+foo_LDFLAGS =
+EXTRA_foo_LDADD =
+EXTRA_foo_LDFLAGS =
+
+libfoo_a_SOURCES =
+dist_libfoo_a_SOURCES =
+nodist_libfoo_a_SOURCES =
+EXTRA_libfoo_a_SOURCES =
+EXTRA_dist_libfoo_a_SOURCES =
+EXTRA_nodist_libfoo_a_SOURCES =
+
+libfoo_a_DEPENDENCIES =
+EXTRA_libfoo_a_DEPENDENCIES =
+
+libfoo_a_LIBADD =
+EXTRA_libfoo_a_LIBADD =
+libfoo_a_LDFLAGS =
+EXTRA_libfoo_a_LDFLAGS =
+
+libbar_la_SOURCES =
+dist_libbar_la_SOURCES =
+nodist_libbar_la_SOURCES =
+EXTRA_libbar_la_SOURCES =
+EXTRA_dist_libbar_la_SOURCES =
+EXTRA_nodist_libbar_la_SOURCES =
+
+libbar_la_DEPENDENCIES =
+EXTRA_libbar_la_DEPENDENCIES =
+
+libbar_la_LIBADD =
+EXTRA_libbar_la_LIBADD =
+libbar_la_LDFLAGS =
+EXTRA_libbar_la_LDFLAGS =
+
+.PHONY: nihil
+nihil:
+	@:
 END
 
 $ACLOCAL
-AUTOMAKE_fails -Wno-extra-portability
-# The expected diagnostic is:
-# automake: warnings are treated as errors
-# Makefile.am:2: warning: variable 'nodist_foo_SOURCES' is defined but no program or
-# Makefile.am:2: library has 'foo' as canonical name (possible typo)
-# Makefile.am:1: warning: variable 'foo_SOURCES' is defined but no program or
-# Makefile.am:1: library has 'foo' as canonical name (possible typo)
-# Makefile.am:9: warning: variable 'libfoo_a_SOURCES' is defined but no program or
-# Makefile.am:9: library has 'libfoo_a' as canonical name (possible typo)
-# Makefile.am:10: warning: variable 'nodist_libfoo_a_SOURCES' is defined but no program or
-# Makefile.am:10: library has 'libfoo_a' as canonical name (possible typo)
-# Makefile.am:11: warning: variable 'EXTRA_libfoo_a_SOURCES' is defined but no program or
-# Makefile.am:11: library has 'libfoo_a' as canonical name (possible typo)
-# Makefile.am:3: warning: variable 'EXTRA_foo_SOURCES' is defined but no program or
-# Makefile.am:3: library has 'foo' as canonical name (possible typo)
-# Makefile.am:12: warning: variable 'libfoo_a_LIBADD' is defined but no program or
-# Makefile.am:12: library has 'libfoo_a' as canonical name (possible typo)
-# Makefile.am:4: warning: variable 'foo_LDADD' is defined but no program or
-# Makefile.am:4: library has 'foo' as canonical name (possible typo)
-# Makefile.am:5: warning: variable 'foo_LDFLAGS' is defined but no program or
-# Makefile.am:5: library has 'foo' as canonical name (possible typo)
+$AUTOCONF
+$AUTOMAKE -a
 
-grep 'as canonical' stderr | grep -v ' .foo. ' | grep -v ' .libfoo_a. ' \
-  && Exit 1
-test `grep 'variable.*is defined but' stderr | wc -l` = 9
+./configure
+$MAKE nihil 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
 
-# If we add a global -Wnone, all warnings should disappear.
-$AUTOMAKE -Wnone
+$FGREP 'as canonical' stderr \
+  | $EGREP -v " '(foo|libfoo_a|libbar_la)' " && Exit 1
+test 36 -eq $(grep -c 'variable.*is defined but' stderr)
 
-# Likewise, if matching programs or libraries are defined.
-cat >>Makefile.am <<'END'
+# If matching programs or libraries are defined, all errors should
+# disappear.
+cat >> Makefile.am <<'END'
 bin_PROGRAMS = foo
 lib_LIBRARIES = libfoo.a
+lib_LTLIBRARIES = libbar.la
 END
 
-$AUTOMAKE -Wno-extra-portability
+# FIXME!  We have to remake the Makefile by hand!  This is unacceptable.
+$AUTOMAKE Makefile
+./config.status Makefile
+$MAKE nihil
 
 :

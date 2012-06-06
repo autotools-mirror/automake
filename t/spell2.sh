@@ -14,18 +14,41 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure misspellings in _SOURCES variables cause failure.
+# Test to make sure misspellings in _LDADD variable cause failure.
 
+required=cc
 . ./defs || Exit 1
 
-echo AC_PROG_CC >> configure.ac
+cat >> configure.ac << 'END'
+AC_PROG_CC
+AC_OUTPUT
+END
 
 cat > Makefile.am << 'END'
 bin_PROGRAMS = zardoz
 zardoz_SOURCES = x.c
-qardoz_LDADD = -ljoe
+qardoz_LDADD = -lm
 END
 
+echo 'int main (void) { return 0; }' > x.c
+
 $ACLOCAL
-AUTOMAKE_fails
-grep 'Makefile.am:3:.*qardoz' stderr
+$AUTOCONF
+$AUTOMAKE
+
+./configure
+
+$MAKE 2>stderr && { cat stderr >&2; Exit 1; }
+cat stderr >&2
+
+LC_ALL=C sed 's/^Makefile:[0-9][0-9]*: //' stderr > got
+
+cat > exp << 'END'
+variable 'qardoz_LDADD' is defined but no program
+  or library has 'qardoz' as canonical name
+*** Some Automake-NG error occurred.  Stop.
+END
+
+diff exp got
+
+:
