@@ -20,13 +20,17 @@
 required='cc yacc'
 . ./defs || Exit 1
 
-cat >>configure.ac <<'END'
+cat > configure.ac <<'END'
+AC_INIT([suya], [0.5a], [automake-ng@gnu.org])
+AM_INIT_AUTOMAKE([foreign -Wall])
 AC_PROG_CC
+AC_CONFIG_FILES([GNUmakefile])
 AC_CONFIG_SUBDIRS([lib])
 AC_OUTPUT
 END
 
-cat >Makefile.am <<'EOF'
+cat >GNUmakefile.am <<'EOF'
+AUTOMAKE_OPTIONS = -Wno-override
 SUBDIRS = lib
 bin_PROGRAMS = MU
 MU_LDADD = lib/liblib.a
@@ -55,6 +59,7 @@ AC_PROG_RANLIB
 AC_PROG_YACC
 dnl This comes after YACC and RANLIB checks, deliberately.
 AC_PROG_CC
+AM_PROG_CC_C_O
 AM_PROG_AR
 AC_CONFIG_HEADERS([config.h:config.hin])
 AC_CONFIG_FILES([Makefile])
@@ -107,14 +112,16 @@ EOF
 
 $ACLOCAL
 $AUTOCONF
-$AUTOMAKE -Wno-override
+$AUTOMAKE
 
+test ! -f compile
 cd lib
 $ACLOCAL
 $AUTOCONF
 $AUTOHEADER
-$AUTOMAKE -Wno-override --add-missing
+$AUTOMAKE --add-missing
 cd ..
+test -f compile
 
 ./configure
 

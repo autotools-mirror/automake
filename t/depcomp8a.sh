@@ -24,7 +24,7 @@ required=cc
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
-#x AM_PROG_CC_C_O
+AM_PROG_CC_C_O
 AC_OUTPUT
 END
 
@@ -44,26 +44,6 @@ END
 cat > sub/bar.c << 'END'
 extern int bar = 0;
 END
-
-$ACLOCAL
-$AUTOMAKE -a
-grep include Makefile.in # For debugging.
-grep 'include.*\./\$(DEPDIR)/foo\.P' Makefile.in
-grep 'include.*\./\$(DEPDIR)/bar\.P' Makefile.in
-grep 'include.*/\./\$(DEPDIR)' Makefile.in && Exit 1
-
-$AUTOCONF
-# Don't reject slower dependency extractors, for better coverage.
-./configure --enable-dependency-tracking
-$MAKE
-cross_compiling || ./zardoz
-DISTCHECK_CONFIGURE_FLAGS='--enable-dependency-tracking' $MAKE distcheck
-
-# Try again with subdir-objects option.
-
-sed 's/#x //' configure.ac >configure.int
-mv -f configure.int configure.ac
-echo AUTOMAKE_OPTIONS = subdir-objects >> Makefile.am
 
 $ACLOCAL
 $AUTOMAKE -a

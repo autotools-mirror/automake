@@ -200,12 +200,12 @@ ${normalized_target}_${LINKADD} = src/libbaz.$a
 grep-test:
 ## For debugging.
 	cat \$(DEPDIR)/foo.$po || :
-	cat \$(DEPDIR)/subfoo.$po || :
+	cat sub/\$(DEPDIR)/subfoo.$po || :
 	cat src/\$(DEPDIR)/baz.$po || :
 	cat src/sub2/\$(DEPDIR)/sub2foo.$po || :
-## Checks done here.
+## Checks are done here.
 	grep '^foo.$objext.*:' \$(DEPDIR)/foo.$po
-	grep '^subfoo\.$objext.*:' \$(DEPDIR)/subfoo.$po
+	grep '^sub/subfoo\.$objext.*:' sub/\$(DEPDIR)/subfoo.$po
 	grep '^baz\.$objext.*:' src/\$(DEPDIR)/baz.$po
 	grep '^sub2/sub2foo\.$objext.*:' src/sub2/\$(DEPDIR)/sub2foo.$po
 END

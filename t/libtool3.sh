@@ -23,6 +23,7 @@ required='cc libtoolize'
 cat >> configure.ac << 'END'
 AC_PROG_CC
 AM_PROG_AR
+AM_PROG_CC_C_O
 AM_PROG_LIBTOOL
 AC_OUTPUT
 END
@@ -75,12 +76,8 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing --copy
 
-# We need explicit rules to build 1.o and a.lo.  Make sure
-# Automake did not output additional rules for 1.lo and and a.lo.
-$FGREP '1.o:' Makefile.in
-$FGREP '1.lo:' Makefile.in && Exit 1
-$FGREP 'a.o:' Makefile.in && Exit 1
-$FGREP 'a.lo:' Makefile.in
+# We shouldn't need explicit rules.
+$EGREP '[^%]\.(o|obj|lo) *:' Makefile.in && Exit 1
 
 ./configure
 

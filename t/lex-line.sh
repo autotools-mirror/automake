@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Check that automake lex support ensures that lex-generated C
-# files use correct "#line" directives.  Try also with the
+# files use correct "#line" directives.
 # 'subdir-object' option enabled.
 # See also sister test 'yacc-line.test'.
 
@@ -23,7 +23,6 @@ required='cc lex'
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'
-AC_CONFIG_FILES([sub/Makefile])
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_LEX
@@ -33,20 +32,9 @@ END
 mkdir dir sub sub/dir
 
 cat > Makefile.am << 'END'
-SUBDIRS = sub
 bin_PROGRAMS = foo bar
 LDADD = $(LEXLIB)
 bar_LFLAGS = -v
-foo_SOURCES = zardoz.l
-bar_SOURCES = dir/quux.l
-END
-
-cat > sub/Makefile.am << 'END'
-AUTOMAKE_OPTIONS = subdir-objects
-noinst_PROGRAMS = foo bar
-## We already used $(LEXLIB) above, so try @LEXLIB@ now.
-LDADD = @LEXLIB@
-foo_LFLAGS = -v
 foo_SOURCES = zardoz.l
 bar_SOURCES = dir/quux.l
 END
@@ -74,10 +62,8 @@ int yywrap (void)
 END
 
 cp zardoz.l dir/quux.l
-cp zardoz.l sub/zardoz.l
-cp zardoz.l sub/dir/quux.l
 
-c_outputs='zardoz.c bar-quux.c sub/foo-zardoz.c sub/dir/quux.c'
+c_outputs='zardoz.c dir/bar-quux.c'
 
 $ACLOCAL
 $AUTOCONF
@@ -97,7 +83,7 @@ for vpath in : false; do
   $MAKE
 
   # For debugging,
-  ls -l . sub sub/dir
+  ls -l . dir
   $EGREP 'line|\.l' $c_outputs
 
   grep '#.*line.*build.*\.l' $c_outputs && Exit 1
@@ -111,14 +97,10 @@ for vpath in : false; do
   grep "#.*\.l.*\.l" $c_outputs && Exit 1
   if $vpath; then
     grep '#.*line.*"\.\./zardoz\.l"' zardoz.c
-    grep '#.*line.*"\.\./dir/quux\.l"' bar-quux.c
-    grep '#.*line.*"\.\./\.\./sub/zardoz\.l"' sub/foo-zardoz.c
-    grep '#.*line.*"\.\./\.\./sub/dir/quux\.l"' sub/dir/quux.c
+    grep '#.*line.*"\.\./dir/quux\.l"' dir/bar-quux.c
   else
     grep '#.*line.*"zardoz\.l"' zardoz.c
-    grep '#.*line.*"dir/quux\.l"' bar-quux.c
-    grep '#.*line.*"zardoz\.l"' sub/foo-zardoz.c
-    grep '#.*line.*"dir/quux\.l"' sub/dir/quux.c
+    grep '#.*line.*"dir/quux\.l"' dir/bar-quux.c
   fi
 
   cd $srcdir

@@ -25,55 +25,31 @@ AM_PROG_CC_C_O
 AC_PROG_YACC
 END
 
+$ACLOCAL
+
 cat > Makefile.am << 'END'
 bin_PROGRAMS = maude
 maude_SOURCES = sub/maude.y
 END
-
-mkdir sub
-
-: > sub/maude.y
-
-$ACLOCAL
 $AUTOMAKE -a
-
-grep '^maude\.c:.*maude\.y' Makefile.in
-
-
-## Try again with subdir-objects.
-
-cat > Makefile.am << 'END'
-AUTOMAKE_OPTIONS = subdir-objects
-bin_PROGRAMS = maude
-maude_SOURCES = sub/maude.y
-END
-
-$ACLOCAL
-$AUTOMAKE -a
-
 # No rule needed, the default .y.c: inference rule is enough
 # (but there may be an additional dependency on a dirstamp file).
 grep '^sub/maude\.c:.*maude\.y' Makefile.in && Exit 1
-
 
 ## Try again with per-exe flags.
 
 cat > Makefile.am << 'END'
 bin_PROGRAMS = maude
 maude_SOURCES = sub/maude.y
-## A particularly trickey case.
+## A particularly tricky case.
 maude_YFLAGS = -d
 END
-
-$ACLOCAL
 $AUTOMAKE -a
-
+grep '^sub/maude-maude\.c:.*sub/maude\.y' Makefile.in
 # Rule should use maude_YFLAGS.
 grep 'AM_YFLAGS.*maude' Makefile.in && Exit 1
-
 # Silly regression.
 grep 'maudec' Makefile.in && Exit 1
-
 # Make sure the .o file is required.
 grep '^am_maude_OBJECTS.*maude' Makefile.in
 

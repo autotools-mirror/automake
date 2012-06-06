@@ -286,7 +286,6 @@ my $gen_copyright = "\
 # subdir if the source file is.  In this case the file name cannot
 # have '..' components.
 use constant LANG_IGNORE  => 0;
-use constant LANG_PROCESS => 1;
 use constant LANG_SUBDIR  => 2;
 
 # These are used when keeping track of whether an object can be built
@@ -1360,7 +1359,6 @@ sub handle_languages
 			 '-c'      => $lang->compile_flag || '',
 			 # These are not used, but they need to be defined
 			 # so &transform do not complain.
-			 SUBDIROBJ     => 0,
 			 'DERIVED-EXT' => 'BUG',
 			 DIST_SOURCE   => 1,
 			 VERBOSE   => $verbose,
@@ -1375,9 +1373,7 @@ sub handle_languages
 	    # needed.
 	    my $output_flag = $lang->output_flag || '';
 	    $output_flag = '-o'
-	      if (! $output_flag
-		  && $lang->name eq 'c'
-		  && option 'subdir-objects');
+	      if (! $output_flag && $lang->name eq 'c');
 
 	    # Compute a possible derived extension.
 	    # This is not used by depend2.am.
@@ -1400,8 +1396,7 @@ sub handle_languages
 
 			     COMPILE   => '$(' . $lang->compiler . ')',
 			     LTCOMPILE => '$(LT' . $lang->compiler . ')',
-			     -o        => $output_flag,
-			     SUBDIROBJ => !! option 'subdir-objects');
+			     -o        => $output_flag);
 	}
 
 	# Now include code for each specially handled object with this
@@ -1627,10 +1622,6 @@ sub handle_single_transform ($$$$$%)
 	  next;
 	}
 
-	# If the source file is in a subdirectory then the '.o' is put
-	# into the current directory, unless the subdir-objects option
-	# is in effect.
-
 	# Split file name into base and extension.
 	next if ! /^(?:(.*)\/)?([^\/]*?)(\.[^.]+)$/;
         prog_error ("source file '$_' missing dotted extension")
@@ -1683,7 +1674,7 @@ sub handle_single_transform ($$$$$%)
 	    # generates another source file which we must then process
 	    # further.
 	    my $subr = \&{'lang_' . $lang->name . '_rewrite'};
-            defined &$subr or $subr = \&lang_sub_obj;
+            defined &$subr or $subr = sub { return LANG_SUBDIR; };
 	    my ($r, $source_extension)
 		= &$subr ($directory, $base, $extension,
 			  $obj, $have_per_exec_flags, $var);
@@ -1747,15 +1738,10 @@ sub handle_single_transform ($$$$$%)
 	    # flags are used) we cannot compile the file with an
 	    # inference rule: we need an explicit rule.
 	    #
-	    # If the source is in a subdirectory and the object is in
-	    # the current directory, we also need an explicit rule.
-	    #
 	    # If both source and object files are in a subdirectory
-	    # (this happens when the subdir-objects option is used),
 	    # then the inference will work.
 	    #
 	    if ($renamed
-		|| ($directory ne '' && ! option 'subdir-objects')
 		# We must also use specific rules for a nodist_ source
 		# if its language requests it.
 		|| ($lang->nodist_specific && ! $transform{'DIST_SOURCE'}))
@@ -1824,6 +1810,8 @@ sub handle_single_transform ($$$$$%)
 	    $linker = '';
 	}
 
+        # FIXME: this is likely an internal error now that we use
+        # FIXME: subdir-objects unconditionally ...
 	err_am "object '$object' created by '$full' and '$object_map{$object}'"
 	  if (defined $object_map{$object}
 	      && $object_map{$object} ne $full);
@@ -2154,25 +2142,17 @@ sub handle_LIBOBJS_or_ALLOCA ($)
   if ($config_libobj_dir
       && $relative_dir ne $config_libobj_dir)
     {
-      if (option 'subdir-objects')
-	{
-	  # In the top-level Makefile we do not use $(top_builddir), because
-	  # we are already there, and since the targets are built without
-	  # a $(top_builddir), it helps BSD Make to match them with
-	  # dependencies.
-	  $dir = "$config_libobj_dir/" if $config_libobj_dir ne '.';
-	  $dir = "$topsrcdir/$dir" if $relative_dir ne '.';
-	  define_variable ('LIBOBJDIR', INTERNAL, $dir);
-	  $clean_files{"\$($var)"} = MOSTLY_CLEAN;
-	  # If LTLIBOBJS is used, we must also clear LIBOBJS (which might
-	  # be created by libtool as a side-effect of creating LTLIBOBJS).
-	  $clean_files{"\$($var)"} = MOSTLY_CLEAN if $var =~ s/^LT//;
-	}
-      else
-	{
-	  error ("'\$($var)' cannot be used outside '$config_libobj_dir' if"
-		 . " 'subdir-objects' is not set");
-	}
+      # In the top-level Makefile we do not use $(top_builddir), because
+      # we are already there, and since the targets are built without
+      # a $(top_builddir), it helps BSD Make to match them with
+      # dependencies.
+      $dir = "$config_libobj_dir/" if $config_libobj_dir ne '.';
+      $dir = "$topsrcdir/$dir" if $relative_dir ne '.';
+      define_variable ('LIBOBJDIR', INTERNAL, $dir);
+      $clean_files{"\$($var)"} = MOSTLY_CLEAN;
+      # If LTLIBOBJS is used, we must also clear LIBOBJS (which might
+      # be created by libtool as a side-effect of creating LTLIBOBJS).
+      $clean_files{"\$($var)"} = MOSTLY_CLEAN if $var =~ s/^LT//;
     }
 
   return $dir;
@@ -5099,50 +5079,34 @@ sub check_gnits_standards
 # Note that the calls to these functions are computed, so don't bother
 # searching for their precise names in the source.
 
-# This is just a convenience function that can be used to determine
-# when a subdir object should be used.
-sub lang_sub_obj
-{
-    return option 'subdir-objects' ? LANG_SUBDIR : LANG_PROCESS;
-}
-
 # Rewrite a single C source file.
 sub lang_c_rewrite
 {
   my ($directory, $base, $ext, $obj, $have_per_exec_flags, $var) = @_;
 
-  my $r = LANG_PROCESS;
-  if (option 'subdir-objects')
+  # libtool is always able to put the object at the proper place, so we
+  # do not have to require AM_PROG_CC_C_O when building '.lo' files.
+  if (! $seen_cc_c_o && $obj ne '.lo')
     {
-      $r = LANG_SUBDIR;
       if ($directory && $directory ne '.')
-	{
-	  $base = $directory . '/' . $base;
-
-	  # libtool is always able to put the object at the proper place,
-	  # so we do not have to require AM_PROG_CC_C_O when building .lo files.
-	  msg_var ('portability', $var,
-		   "compiling '$base.c' in subdir requires "
-		   . "'AM_PROG_CC_C_O' in '$configure_ac'",
-		   uniq_scope => US_GLOBAL,
-		   uniq_part => 'AM_PROG_CC_C_O subdir')
-	    unless $seen_cc_c_o || $obj eq '.lo';
-	}
+        {
+          msg_var ('portability', $var,
+                   "compiling '$directory/$base.c' in subdir requires"
+                   . " 'AM_PROG_CC_C_O' in '$configure_ac'",
+                   uniq_scope => US_GLOBAL,
+                   uniq_part => 'AM_PROG_CC_C_O subdir');
+        }
+      elsif ($have_per_exec_flags)
+        {
+           msg_var ('portability', $var,
+                    "compiling '$base.c' with per-target flags requires"
+                    . " 'AM_PROG_CC_C_O' in '$configure_ac'",
+                    uniq_scope => US_GLOBAL,
+                    uniq_part => 'AM_PROG_CC_C_O per-target');
+       }
     }
 
-  if (! $seen_cc_c_o
-      && $have_per_exec_flags
-      && ! option 'subdir-objects'
-      && $obj ne '.lo')
-    {
-      msg_var ('portability',
-	       $var, "compiling '$base.c' with per-target flags requires "
-	       . "'AM_PROG_CC_C_O' in '$configure_ac'",
-	       uniq_scope => US_GLOBAL,
-	       uniq_part => 'AM_PROG_CC_C_O per-target')
-    }
-
-    return $r;
+  return LANG_SUBDIR;
 }
 
 # Rewrite a single header file.
@@ -5166,9 +5130,8 @@ sub lang_yacc_rewrite
 {
     my ($directory, $base, $ext) = @_;
 
-    my $r = &lang_sub_obj;
     (my $newext = $ext) =~ tr/y/c/;
-    return ($r, $newext);
+    return (LANG_SUBDIR, $newext);
 }
 sub lang_yaccxx_rewrite { lang_yacc_rewrite (@_); };
 
@@ -5177,9 +5140,8 @@ sub lang_lex_rewrite
 {
     my ($directory, $base, $ext) = @_;
 
-    my $r = &lang_sub_obj;
     (my $newext = $ext) =~ tr/l/c/;
-    return ($r, $newext);
+    return (LANG_SUBDIR, $newext);
 }
 sub lang_lexxx_rewrite { lang_lex_rewrite (@_); };
 

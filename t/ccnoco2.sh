@@ -20,36 +20,33 @@
 . ./defs || Exit 1
 
 cat >>configure.ac <<EOF
+AC_CONFIG_FILES([src/Makefile])
 AC_PROG_CC
 AC_OUTPUT
 EOF
 
+$ACLOCAL
+
 cat >Makefile.am <<EOF
+SUBDIRS = src
 bin_PROGRAMS = wish
 wish_SOURCES = a.c
 wish_CPPFLAGS = -DWHATEVER
 EOF
 
-touch a.c
-
-$ACLOCAL
-$AUTOCONF
-AUTOMAKE_fails --copy --add-missing
-grep '^Makefile\.am:2:.*per-target.*AM_PROG_CC_C_O' stderr
-
-
-cat >Makefile.am <<EOF
-bin_PROGRAMS = wish
-wish_SOURCES = sub/a.c
+mkdir src
+cat >src/Makefile.am <<EOF
+bin_PROGRAMS = wish2
+wish2_SOURCES = sub/a.c
 EOF
 
-mkdir sub
-mv a.c sub
-
-$AUTOMAKE --copy --add-missing
-
-echo 'AUTOMAKE_OPTIONS = subdir-objects' >> Makefile.am
 AUTOMAKE_fails --copy --add-missing
-grep '^Makefile\.am:2:.*subdir.*AM_PROG_CC_C_O' stderr
+grep "^Makefile\.am:3:.* 'a\.c' with per-target flags.* 'AM_PROG_CC_C_O'" stderr
+grep "^src/Makefile\.am:2:.* 'sub/a\.c' in subdir.* 'AM_PROG_CC_C_O'" stderr
+
+rm -rf autom4te*.cache
+echo AM_PROG_CC_C_O >> configure.ac
+$ACLOCAL
+$AUTOMAKE -a
 
 :
