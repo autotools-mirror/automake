@@ -183,7 +183,6 @@ my $gen_copyright = "\
 # subdir if the source file is.  In this case the file name cannot
 # have '..' components.
 use constant LANG_IGNORE  => 0;
-use constant LANG_PROCESS => 1;
 use constant LANG_SUBDIR  => 2;
 
 # These are used when keeping track of whether an object can be built
@@ -1291,8 +1290,7 @@ sub handle_languages ()
 			 'FASTDEP' => $FASTDEP,
 			 '-c'      => $lang->compile_flag || '',
 			 # These are not used, but they need to be defined
-			 # so transform() do not complain.
-			 SUBDIROBJ     => 0,
+			 # so transform() does not complain.
 			 'DERIVED-EXT' => 'BUG',
 			 DIST_SOURCE   => 1,
 			 VERBOSE   => $verbose,
@@ -1308,9 +1306,7 @@ sub handle_languages ()
 	    # needed.
 	    my $output_flag = $lang->output_flag || '';
 	    $output_flag = '-o'
-	      if (! $output_flag
-		  && $lang->name eq 'c'
-		  && option 'subdir-objects');
+	      if (! $output_flag && $lang->name eq 'c');
 
 	    # Compute a possible derived extension.
 	    # This is not used by depend2.am.
@@ -1335,8 +1331,7 @@ sub handle_languages ()
 	    # Plo, TPlo will be added later as appropriate).  It is
 	    # either hardcoded, or a shell variable ('$depbase') that
 	    # will be computed by the rule.
-	    my $depbase =
-	      option ('subdir-objects') ? '$$depbase' : '$(DEPDIR)/$*';
+	    my $depbase = '$$depbase';
 	    $output_rules .=
 	      file_contents ($rule_file,
 			     new Automake::Location,
@@ -1355,8 +1350,7 @@ sub handle_languages ()
 
 			     COMPILE   => '$(' . $lang->compiler . ')',
 			     LTCOMPILE => '$(LT' . $lang->compiler . ')',
-			     -o        => $output_flag,
-			     SUBDIROBJ => !! option 'subdir-objects');
+			     -o        => $output_flag);
 	}
 
 	# Now include code for each specially handled object with this
@@ -1593,10 +1587,6 @@ sub handle_single_transform
 	  next;
 	}
 
-	# If the source file is in a subdirectory then the '.o' is put
-	# into the current directory, unless the subdir-objects option
-	# is in effect.
-
 	# Split file name into base and extension.
 	next if ! /^(?:(.*)\/)?([^\/]*)($KNOWN_EXTENSIONS_PATTERN)$/;
 	my $full = $_;
@@ -1648,7 +1638,7 @@ sub handle_single_transform
 	    # generates another source file which we must then process
 	    # further.
 	    my $subr = \&{'lang_' . $lang->name . '_rewrite'};
-	    defined &$subr or $subr = \&lang_sub_obj;
+	    defined &$subr or $subr = sub { return LANG_SUBDIR; };
 	    my ($r, $source_extension)
 		= &$subr ($directory, $base, $extension,
 			  $obj, $have_per_exec_flags, $var);
@@ -1739,11 +1729,7 @@ EOF
 	    # flags are used) we cannot compile the file with an
 	    # inference rule: we need an explicit rule.
 	    #
-	    # If the source is in a subdirectory and the object is in
-	    # the current directory, we also need an explicit rule.
-	    #
 	    # If both source and object files are in a subdirectory
-	    # (this happens when the subdir-objects option is used),
 	    # then the inference will work.
 	    #
 	    # The latter case deserves a historical note.  When the
@@ -1765,7 +1751,6 @@ EOF
 	    # with GNU make, Solaris make, Ultrix make, BSD make,
 	    # HP-UX make, and OSF1 make successfully.
 	    if ($renamed
-		|| ($directory ne '' && ! option 'subdir-objects')
 		# We must also use specific rules for a nodist_ source
 		# if its language requests it.
 		|| ($lang->nodist_specific && ! $transform{'DIST_SOURCE'}))
@@ -1832,6 +1817,8 @@ EOF
 	    next;
 	}
 
+        # FIXME: this is likely an internal error now that we use
+        # FIXME: subdir-objects unconditionally ...
 	err_am "object '$object' created by '$full' and '$object_map{$object}'"
 	  if (defined $object_map{$object}
 	      && $object_map{$object} ne $full);
@@ -2218,27 +2205,19 @@ sub handle_LIBOBJS_or_ALLOCA
   if ($config_libobj_dir
       && $relative_dir ne $config_libobj_dir)
     {
-      if (option 'subdir-objects')
-	{
-	  # In the top-level Makefile we do not use $(top_builddir), because
-	  # we are already there, and since the targets are built without
-	  # a $(top_builddir), it helps BSD Make to match them with
-	  # dependencies.
-	  $dir = "$config_libobj_dir/"
-	    if $config_libobj_dir ne '.';
-	  $dir = backname ($relative_dir) . "/$dir"
-	    if $relative_dir ne '.';
-	  define_variable ('LIBOBJDIR', "$dir", INTERNAL);
-	  $clean_files{"\$($var)"} = MOSTLY_CLEAN;
-	  # If LTLIBOBJS is used, we must also clear LIBOBJS (which might
-	  # be created by libtool as a side-effect of creating LTLIBOBJS).
-	  $clean_files{"\$($var)"} = MOSTLY_CLEAN if $var =~ s/^LT//;
-	}
-      else
-	{
-	  error ("'\$($var)' cannot be used outside '$config_libobj_dir' if"
-		 . " 'subdir-objects' is not set");
-	}
+      # In the top-level Makefile we do not use $(top_builddir), because
+      # we are already there, and since the targets are built without
+      # a $(top_builddir), it helps BSD Make to match them with
+      # dependencies.
+      $dir = "$config_libobj_dir/"
+      if $config_libobj_dir ne '.';
+      $dir = backname ($relative_dir) . "/$dir"
+      if $relative_dir ne '.';
+      define_variable ('LIBOBJDIR', "$dir", INTERNAL);
+      $clean_files{"\$($var)"} = MOSTLY_CLEAN;
+      # If LTLIBOBJS is used, we must also clear LIBOBJS (which might
+      # be created by libtool as a side-effect of creating LTLIBOBJS).
+      $clean_files{"\$($var)"} = MOSTLY_CLEAN if $var =~ s/^LT//;
     }
 
   return $dir;
@@ -5472,13 +5451,6 @@ sub check_gnits_standards ()
 # Note that the calls to these functions are computed, so don't bother
 # searching for their precise names in the source.
 
-# This is just a convenience function that can be used to determine
-# when a subdir object should be used.
-sub lang_sub_obj ()
-{
-    return option 'subdir-objects' ? LANG_SUBDIR : LANG_PROCESS;
-}
-
 # Rewrite a single header file.
 sub lang_header_rewrite
 {
@@ -5500,9 +5472,8 @@ sub lang_yacc_rewrite
 {
     my ($directory, $base, $ext) = @_;
 
-    my $r = lang_sub_obj;
     (my $newext = $ext) =~ tr/y/c/;
-    return ($r, $newext);
+    return (LANG_SUBDIR, $newext);
 }
 sub lang_yaccxx_rewrite { lang_yacc_rewrite (@_); };
 
@@ -5511,9 +5482,8 @@ sub lang_lex_rewrite
 {
     my ($directory, $base, $ext) = @_;
 
-    my $r = lang_sub_obj;
     (my $newext = $ext) =~ tr/l/c/;
-    return ($r, $newext);
+    return (LANG_SUBDIR, $newext);
 }
 sub lang_lexxx_rewrite { lang_lex_rewrite (@_); };
 

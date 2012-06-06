@@ -23,7 +23,7 @@ mkdir m4
 
 cat >m4/foo.m4 <<'EOF'
 AC_DEFUN([FOO],[
-  AC_PROG_CC
+  AC_REQUIRE([AC_PROG_CC])
   AC_OUTPUT
 ])
 EOF
@@ -102,7 +102,10 @@ $AUTOHEADER
 $AUTOMAKE -Wno-override --add-missing
 cd ..
 
-./configure
+./configure >stdout || { cat stdout; exit 1; }
+cat stdout
+grep '^checking whether cc understands -c and -o together' stdout
+
 $MAKE
 $MAKE distcheck
 test ! -e subpack-1 # Make sure distcheck cleans up after itself.
