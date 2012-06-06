@@ -48,6 +48,5 @@ $ACLOCAL
 $AUTOMAKE
 
 grep '^z\.o:.* \.\./d2/z\.c *$' d1/Makefile.in
-grep "@am__fastdepCC_FALSE@.*source=['\"]../d2/z.c['\"] " d1/Makefile.in
 
 :

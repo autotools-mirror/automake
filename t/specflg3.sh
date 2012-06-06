@@ -35,7 +35,7 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-$FGREP ' -o foo-foo' Makefile.in
+$FGREP 'foo-foo.$(OBJEXT)' Makefile.in
 $FGREP 'foo.o.o' Makefile.in && Exit 1
 $FGREP 'foo.$(OBJEXT).$(OBJEXT)' Makefile.in && Exit 1
 $FGREP '$(foo_CFLAGS)' Makefile.in
