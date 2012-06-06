@@ -28,13 +28,6 @@ include color-tests.am
 ## Used by (at least) 'check-typos.am'.
 am__using_parallel_tests := yes
 
-am__maybe_invalid_test_extensions = \
-  $(if \
-    $(strip $1), \
-    $(foreach am__e, $1,\
-      $(warning invalid test extension: '$(am__e)')) \
-    $(error invalid test extensions have been encountered))
-
 am__is_xfail_test = \
   $(if $(filter-out $(am__xfail_test_bases), \
                     $(patsubst $(srcdir)/%,%,$(1))),no,yes)
@@ -94,8 +87,8 @@ am__tpfx = \
 ## FIXME: this will pick up the default from the environment; are we sure
 ## FIXME: we want that?
 !TEST_EXTENSIONS ?= .test
-!$(call am__maybe_invalid_test_extensions,\
-!  $(filter-out .%,$(TEST_EXTENSIONS)))
+!$(foreach am__e,$(filter-out .%,$(TEST_EXTENSIONS)),\
+!     $(call am__error,invalid test extension: '$(am__e)'))
 !$(foreach am__e,$(TEST_EXTENSIONS), \
 !  $(eval $(call am__handle_per_suffix_test,$(am__e))))
 ## It is *imperative* that the "empty" suffix goes last.  Otherwise, a
