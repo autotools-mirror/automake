@@ -14,7 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Make sure 'compile' is included when subdir-objects is used in a subdir.
+# Make sure 'compile' is included when subdir objects are used in a
+# subdir.
 
 . ./defs || Exit 1
 
@@ -35,7 +36,6 @@ SUBDIRS = foo
 END
 
 cat > foo/Makefile.am << 'END'
-AUTOMAKE_OPTIONS = subdir-objects
 bin_PROGRAMS = mumble
 mumble_SOURCES = bar/a.c
 END

@@ -26,7 +26,6 @@ AC_OUTPUT
 EOF
 
 cat >Makefile.am << 'END'
-AUTOMAKE_OPTIONS = subdir-objects
 # We fake here:
 %.o: %.baz
 	cp $< $@

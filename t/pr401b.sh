@@ -117,8 +117,6 @@ SUBDIRS = src
 EOF
 
 cat > src/Makefile.am <<'EOF'
-AUTOMAKE_OPTIONS = subdir-objects
-
 noinst_LTLIBRARIES = libfeep.la
 libfeep_la_SOURCES =
 libfeep_la_LIBADD = $(LTLIBOBJS)
@@ -150,8 +148,6 @@ sed 's/^.*src\/Makefile.*$//' configure.ac >configure.int
 mv -f configure.int configure.ac
 
 cat >Makefile.am <<'EOF'
-AUTOMAKE_OPTIONS = subdir-objects
-
 noinst_LTLIBRARIES = lib/libfeep.la
 lib_libfeep_la_SOURCES =
 lib_libfeep_la_LIBADD = $(LTLIBOBJS)

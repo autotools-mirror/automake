@@ -33,7 +33,6 @@ END
 mkdir sub
 
 cat >Makefile.am <<'END'
-AUTOMAKE_OPTIONS = subdir-objects
 bin_PROGRAMS = p
 nobase_bin_PROGRAMS = np sub/np
 lib_LTIBRARIES = libfoo.la

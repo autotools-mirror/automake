@@ -43,27 +43,20 @@ do_and_check_silent_build ()
   $EGREP ' (-c|-o)' stdout && Exit 1
   $EGREP '(mv|ylwrap) ' stdout && Exit 1
 
+  grep ' CC .*bar\.'  stdout
   grep 'CXX .*foo1\.' stdout
-  grep 'CXX .*baz1\.' stdout
-  grep 'FC .*foo2\.'  stdout
-  grep 'FC .*baz2\.'  stdout
+  grep ' FC .*foo2\.' stdout
   grep 'F77 .*foo3\.' stdout
-  grep 'F77 .*baz3\.' stdout
   grep ' CC .*foo5\.' stdout
-  grep ' CC .*baz5\.' stdout
   grep ' CC .*foo6\.' stdout
-  grep ' CC .*baz6\.' stdout
 
   grep 'CXXLD .*foo' stdout
-  grep 'CCLD .*bar'  stdout
+  grep ' CCLD .*bar' stdout
   grep 'CXXLD .*baz' stdout
-  grep 'CCLD .*bla'  stdout
 
   if $rebuild; then :; else
     grep 'YACC .*foo6\.' stdout
-    grep 'YACC .*baz6\.' stdout
     grep 'LEX .*foo5\.'  stdout
-    grep 'LEX .*baz5\.'  stdout
   fi
 
   unset rebuild
@@ -92,8 +85,6 @@ do_and_check_verbose_build ()
 
   unset rebuild
 }
-
-mkdir sub
 
 cat >>configure.ac <<'EOF'
 AM_PROG_CC_C_O
@@ -128,46 +119,37 @@ case " $CXX " in
     CXX=am--cxx
 esac
 
-AC_CONFIG_FILES([sub/Makefile])
 AC_OUTPUT
 EOF
 
 cat > Makefile.am <<'EOF'
 # Need generic and non-generic rules.
-bin_PROGRAMS = foo bar fo2
+bin_PROGRAMS = foo bar baz
 bar_CFLAGS = $(AM_CFLAGS)
 foo_SOURCES = foo1.cpp foo2.f90 foo3.f foo5.l foo6.y
-fo2_SOURCES = $(foo_SOURCES)
-fo2_CPPFLAGS = $(AM_CPPFLAGS)
-fo2_FFLAGS = $(AM_FFLAGS)
-fo2_FCFLAGS = $(AM_FCFLAGS)
-fo2_YFLAGS = -v
-fo2_LFLAGS = -n
-SUBDIRS = sub
+baz_SOURCES = $(foo_SOURCES)
+baz_CPPFLAGS = $(AM_CPPFLAGS)
+baz_FFLAGS = $(AM_FFLAGS)
+baz_FCFLAGS = $(AM_FCFLAGS)
+baz_YFLAGS = -v
+baz_LFLAGS = -n
 AM_YFLAGS = -d
 LDADD = $(LEXLIB)
 BUILT_SOURCES = foo6.h
 EOF
 
-cat > sub/Makefile.am <<'EOF'
-AUTOMAKE_OPTIONS = subdir-objects
-# Need generic and non-generic rules.
-bin_PROGRAMS = baz bla ba2
-bla_CFLAGS = $(AM_CFLAGS)
-baz_SOURCES = baz1.cpp baz2.f90 baz3.f baz5.l baz6.y
-ba2_SOURCES = $(baz_SOURCES)
-ba2_CPPFLAGS = $(AM_CPPFLAGS)
-ba2_FFLAGS = $(AM_FFLAGS)
-ba2_FCFLAGS = $(AM_FCFLAGS)
-ba2_YFLAGS = -v
-ba2_LFLAGS = -n
-AM_YFLAGS = -d
-LDADD = $(LEXLIB)
-BUILT_SOURCES = baz6.h
+cat > bar.c <<'EOF'
+/* Valid C, invalid C++. */
+int main (void)
+{
+  int new = 0;
+  return new;
+}
 EOF
-
 cat > foo1.cpp <<'EOF'
-int main ()
+/* Valid C++, invalid C. */
+using namespace std;
+int main (void)
 {
   return 0;
 }
@@ -204,14 +186,6 @@ void yyerror (char *s) {}
 %%
 fubar : 'f' 'o' 'o' 'b' 'a' 'r' EOF {};
 EOF
-cp foo1.cpp bar.c
-cp foo1.cpp sub/baz.c
-cp foo1.cpp sub/bla.c
-cp foo1.cpp sub/baz1.cpp
-cp foo2.f90 sub/baz2.f90
-cp foo3.f sub/baz3.f
-cp foo5.l sub/baz5.l
-cp foo6.y sub/baz6.y
 
 mkdir bin
 saved_PATH=$PATH; export saved_PATH
@@ -223,9 +197,9 @@ $AUTOCONF
 
 # Ensure per-target rules are used, to ensure their coverage below.
 # (We do not do an exhaustive check, that wouldn't be practical).
-$FGREP 'bar-bar.o' Makefile.in
-$FGREP 'fo2-foo5.c' Makefile.in
-$FGREP 'fo2-foo6.c' Makefile.in
+$FGREP 'bar-bar.o'  Makefile.in || Exit 99
+$FGREP 'baz-foo5.c' Makefile.in || Exit 99
+$FGREP 'baz-foo6.c' Makefile.in || Exit 99
 
 # Force dependency tracking explicitly, so that slow dependency
 # extractors are not rejected.  Try also with dependency tracking
@@ -247,7 +221,7 @@ do
   $MAKE clean
   # This is required, since these files are not removed by 'make clean'
   # (as dictated by the GNU Coding Standards).
-  rm -f *foo5.c *foo6.[ch] sub/*baz5.c sub/*baz6.[ch]
+  rm -f *foo5.c *foo6.[ch]
 
   do_and_check_verbose_build
   # Cleaning and then rebuilding with the same V flag (and without

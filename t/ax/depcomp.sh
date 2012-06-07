@@ -211,7 +211,6 @@ grep-test:
 END
 
 cat > src/Makefile.am <<END
-AUTOMAKE_OPTIONS = subdir-objects
 noinst_${LIBPRIMARY} = libbaz.$a
 # We include sub2foo only to be sure that the munging in depcomp
 # doesn't remove too much from the object file name.

@@ -24,7 +24,6 @@ required='cc libtoolize'
 mkdir sub
 
 cat >>configure.ac <<'EOF'
-AC_CONFIG_FILES([sub/Makefile])
 AC_PROG_CC
 AM_PROG_AR
 AM_PROG_CC_C_O
@@ -34,24 +33,13 @@ EOF
 
 cat > Makefile.am <<'EOF'
 # Need generic and non-generic rules.
-lib_LTLIBRARIES = libfoo.la libbar.la
+lib_LTLIBRARIES = libfoo.la libbar.la sub/libbaz.la sub/libbla.la
 libbar_la_CFLAGS = $(AM_CFLAGS)
-SUBDIRS = sub
-EOF
-
-cat > sub/Makefile.am <<'EOF'
-AUTOMAKE_OPTIONS = subdir-objects
 # Need generic and non-generic rules.
-lib_LTLIBRARIES = libbaz.la libbla.la
-libbla_la_CFLAGS = $(AM_CFLAGS)
+sub_libbla_la_CFLAGS = $(AM_CFLAGS)
 EOF
 
-cat > libfoo.c <<'EOF'
-int main ()
-{
-  return 0;
-}
-EOF
+echo 'int main (void) { return 0; }' > libfoo.c
 cp libfoo.c libbar.c
 cp libfoo.c sub/libbaz.c
 cp libfoo.c sub/libbla.c
@@ -64,22 +52,22 @@ $AUTOCONF
 ./configure --enable-silent-rules
 $MAKE >stdout || { cat stdout; Exit 1; }
 cat stdout
-$EGREP ' (-c|-o)' stdout && Exit 1
-grep 'mv ' stdout && Exit 1
-grep ' CC .*foo\.' stdout
-grep ' CC .*bar\.' stdout
-grep ' CC .*baz\.' stdout
-grep ' CC .*bla\.' stdout
-grep ' CCLD .*foo' stdout
-grep ' CCLD .*bar' stdout
-grep ' CCLD .*baz' stdout
-grep ' CCLD .*bla' stdout
+$EGREP ' (-c|-o)|(mv|mkdir) '             stdout && Exit 1
+grep ' CC  *libfoo\.lo'                   stdout
+grep ' CC  *libbar_la-libbar\.lo'         stdout
+grep ' CC  *sub/libbaz\.lo'               stdout
+grep ' CC  *sub/sub_libbla_la-libbla\.lo' stdout
+grep ' CCLD  *libfoo\.la'                 stdout
+grep ' CCLD  *libbar\.la'                 stdout
+grep ' CCLD  *sub/libbaz\.la'             stdout
+grep ' CCLD  *sub/libbla\.la'             stdout
 
 $MAKE clean
 $MAKE V=1 >stdout || { cat stdout; Exit 1; }
 cat stdout
 grep ' -c' stdout
 grep ' -o libfoo' stdout
+grep ' -o sub/libbaz' stdout
 # The libtool command line can contain e.g. a '--tag=CC' option.
 sed 's/--tag=[^ ]*/--tag=x/g' stdout | $EGREP '(CC|LD) ' && Exit 1
 

@@ -27,7 +27,6 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-AUTOMAKE_OPTIONS = subdir-objects
 TESTS = foo sub/foo $(check_PROGRAMS)
 XFAIL_TESTS = foo sub/baz
 check_PROGRAMS = bar sub/bar baz sub/baz

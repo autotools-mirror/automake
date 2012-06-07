@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Make sure Automake requires AM_PROG_CC_C_O when either per-targets
-# flags or subdir-objects are used.
+# flags or subdir objects are used.
 
 . ./defs || Exit 1
 

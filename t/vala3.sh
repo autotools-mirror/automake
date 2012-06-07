@@ -55,44 +55,25 @@ grep PKG_CHECK_MODULES configure && skip_ "pkg-config m4 macros not found"
 ./configure
 $MAKE
 test -f src/zardoz.c
+# FIXME: having 'src/zardoz_vala.stamp' should be more appropriate here.
 test -f src_zardoz_vala.stamp
 $MAKE distcheck
 $MAKE maintainer-clean
 test ! -f src/zardoz.c
+# FIXME: having 'src/zardoz_vala.stamp' should be more appropriate here.
 test ! -f src_zardoz_vala.stamp
 
 mkdir build
 cd build
 ../configure
 $MAKE
+test -f ../src/zardoz.c
+# FIXME: having 'src/zardoz_vala.stamp' should be more appropriate here.
+test -f ../src_zardoz_vala.stamp
 $MAKE distcheck
+$MAKE maintainer-clean
+test ! -f src/zardoz.c
+# FIXME: having 'src/zardoz_vala.stamp' should be more appropriate here.
+test ! -f src_zardoz_vala.stamp
 
-cd ..
-rm -rf build
-
-# Try again with subdir-objects.
-
-cat > 'Makefile.am' <<'END'
-AUTOMAKE_OPTIONS = subdir-objects
-
-bin_PROGRAMS = src/zardoz
-src_zardoz_CFLAGS = $(GOBJECT_CFLAGS)
-src_zardoz_LDADD = $(GOBJECT_LIBS)
-src_zardoz_SOURCES = src/zardoz.vala
-END
-
-$ACLOCAL
-$AUTOCONF
-$AUTOMAKE -a
-
-./configure || skip_ "configure failure"
-$MAKE
-$MAKE distcheck
-$MAKE distclean
-mkdir build
-cd build
-../configure
-$MAKE
-$MAKE distcheck
-
-
+:

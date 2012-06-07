@@ -17,65 +17,31 @@
 # Check that automake does not complain on repeated options, nor
 # generate broken or incorrect makefiles.
 
-required='cc bzip2'
+required=bzip2
 . ./defs || Exit 1
 
 cat >configure.ac <<END
 AC_INIT([$me], [1.0])
-AM_INIT_AUTOMAKE([foreign dist-bzip2 no-dist-gzip no-dist-gzip dist-bzip2])
+AM_INIT_AUTOMAKE([foreign foreign dist-bzip2 no-dist-gzip dist-bzip2])
 AC_PROG_CC
-AM_PROG_CC_C_O
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 END
 
 cat > Makefile.am <<'END'
-AUTOMAKE_OPTIONS = parallel-tests subdir-objects subdir-objects
-AUTOMAKE_OPTIONS += dist-bzip2 parallel-tests
-TESTS = foo.test
-EXTRA_DIST = $(TESTS)
-TESTS_ENVIRONMENT = EXEEXT='$(EXEEXT)'
-bin_PROGRAMS = sub/foo
-.PHONY: test-build
-test-build:
-	ls -l . sub
-	test -f sub/foo.$(OBJEXT)
-	test -f sub/foo$(EXEEXT)
+AUTOMAKE_OPTIONS = no-dist-gzip no-dist-gzip dist-bzip2
+AUTOMAKE_OPTIONS += dist-bzip2 foreign
 END
-
-mkdir sub
-
-cat > foo.test <<'END'
-#!/bin/sh
-test -f sub/foo$EXEEXT && test -x sub/foo$EXEEXT
-END
-chmod a+x foo.test
-
-cat > sub/foo.c <<'END'
-int main (void)
-{
-  return 0;
-}
-END
-
-cp "$am_scriptdir"/compile "$am_scriptdir"/test-driver .
 
 $ACLOCAL
-$AUTOMAKE --foreign --foreign -Wall 2>stderr || { cat stderr >&2; Exit 1; }
-test -s stderr && { cat stderr >&2; Exit 1; }
-rm -f stderr
 $AUTOCONF
+$AUTOMAKE --foreign --foreign -Wall 2>stderr && test ! -s stderr \
+  || { cat stderr >&2; Exit 1; }
 
 ./configure
+
 $MAKE
-$MAKE test-build
-$MAKE check
-ls -l
-test -f foo.log
-test -f test-suite.log
-$MAKE clean
 $MAKE distcheck
-ls -l
 test -f $me-1.0.tar.bz2
 test ! -r $me-1.0.tar.gz
 

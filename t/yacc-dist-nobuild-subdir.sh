@@ -15,8 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Check that VPATH builds and "make distcheck" works with packages
-# using yacc and the automake 'subdir-objects' option.
-# Exposes automake bug#8485.
+# using yacc sources in a subdir option.  Exposes automake bug#8485.
 
 required='cc yacc'
 . ./defs || Exit 1
@@ -45,7 +44,6 @@ int main (void)
 END
 
 cat > Makefile.am <<'END'
-AUTOMAKE_OPTIONS = subdir-objects
 noinst_PROGRAMS = foo bar
 foo_SOURCES = sub/parse.y
 bar_SOURCES = $(foo_SOURCES)

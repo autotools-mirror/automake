@@ -25,31 +25,23 @@ mkdir sub
 
 cat >>configure.ac <<'EOF'
 AC_PROG_CXX
-AC_CONFIG_FILES([sub/Makefile])
 AC_OUTPUT
 EOF
 
 cat > Makefile.am <<'EOF'
 # Need generic and non-generic rules.
-bin_PROGRAMS = foo1 foo2
+bin_PROGRAMS = foo1 foo2 bar1 bar2
 foo1_SOURCES = foo.cpp baz.cxx quux.cc
 foo2_SOURCES = $(foo1_SOURCES)
 foo2_CXXFLAGS = $(AM_CXXFLAGS)
-SUBDIRS = sub
-EOF
-
-cat > sub/Makefile.am <<'EOF'
-AUTOMAKE_OPTIONS = subdir-objects
-# Need generic and non-generic rules.
-bin_PROGRAMS = bar1 bar2
-bar1_SOURCES = bar.cpp
+bar1_SOURCES = sub/bar.cpp
 bar2_SOURCES = $(bar1_SOURCES)
 bar2_CXXFLAGS = $(AM_CXXFLAGS)
 EOF
 
 cat > foo.cpp <<'EOF'
 using namespace std; /* C compilers fail on this. */
-int main() { return 0; }
+int main (void) { return 0; }
 EOF
 
 # Let's try out other extensions too.
@@ -79,14 +71,18 @@ do
   $EGREP ' (-c|-o)' stdout && Exit 1
   grep 'mv ' stdout && Exit 1
 
-  grep 'CXX .*foo\.'  stdout
-  grep 'CXX .*baz\.'  stdout
-  grep 'CXX .*quux\.' stdout
-  grep 'CXX .*bar\.'  stdout
-  grep 'CXXLD .*foo1' stdout
-  grep 'CXXLD .*bar1' stdout
-  grep 'CXXLD .*foo2' stdout
-  grep 'CXXLD .*bar2' stdout
+  grep ' CXX  *foo\.o'          stdout
+  grep ' CXX  *baz\.o'          stdout
+  grep ' CXX  *quux\.o'         stdout
+  grep ' CXX  *foo2-foo\.o'     stdout
+  grep ' CXX  *foo2-baz\.o'     stdout
+  grep ' CXX  *foo2-quux\.o'    stdout
+  grep ' CXX  *sub/bar\.o'      stdout
+  grep ' CXX  *sub/bar2-bar\.o' stdout
+  grep ' CXXLD  *foo1'          stdout
+  grep ' CXXLD  *bar1'          stdout
+  grep ' CXXLD  *foo2'          stdout
+  grep ' CXXLD  *bar2'          stdout
 
   # Ensure a clean rebuild.
   $MAKE clean
@@ -95,7 +91,8 @@ do
   cat stdout
 
   grep ' -c ' stdout
-  grep ' -o ' stdout
+  grep ' -o quux' stdout
+  grep ' -o bar2' stdout
 
   $EGREP '(CC|CXX|LD) ' stdout && Exit 1
 

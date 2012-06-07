@@ -28,7 +28,6 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-AUTOMAKE_OPTIONS = subdir-objects
 bin_PROGRAMS = wish
 wish_SOURCES = generic/a.c
 

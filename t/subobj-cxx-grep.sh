@@ -14,16 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test of subdir objects with C++.
+# Grepping checks on the use of subdir objects with C++.
+# See relate test 't/subobj-cxx-grep.sh' for semantic checks.
 
 . ./defs || Exit 1
 
-cat >> configure.ac << 'END'
-AC_PROG_CXX
-END
+echo AC_PROG_CXX >> configure.ac
 
 cat > Makefile.am << 'END'
-AUTOMAKE_OPTIONS = subdir-objects
 bin_PROGRAMS = wish
 wish_SOURCES = generic/a.cc generic/b.cxx
 END
@@ -32,7 +30,8 @@ $ACLOCAL
 $AUTOMAKE
 
 $FGREP 'generic/a.$(OBJEXT)' Makefile.in
-grep '[^/]a\.\$(OBJEXT)' Makefile.in && Exit 1
+$FGREP 'generic/b.$(OBJEXT)' Makefile.in
+grep '[^/][ab]\.\$(OBJEXT)' Makefile.in && Exit 1
 grep '.*-c -o' Makefile.in
 
 :

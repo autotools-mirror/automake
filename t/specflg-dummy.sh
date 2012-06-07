@@ -226,17 +226,13 @@ $AUTOMAKE -a
 do_check
 
 sed '
+
   s|^\(.*\)_SOURCES *= *|sub_\1_SOURCES = srcsub/|
   s|^\(.*\)PROGRAMS *+= *|\1PROGRAMS += sub/|
   s|^\(.*\)LIBRARIES *+= *|\1LIBRARIES += sub/|
   s|^\(.*\)FLAGS *=|sub_\1FLAGS =|
-' Makefile.am > t
 
-cat - t > Makefile.am <<'END'
-AUTOMAKE_OPTIONS = subdir-objects
-END
-
-rm -f t
+' Makefile.am > t && mv -f t Makefile.am
 
 # For debugging.
 cat Makefile.am

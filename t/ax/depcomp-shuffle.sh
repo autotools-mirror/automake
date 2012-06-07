@@ -74,10 +74,7 @@ echo AC_PROG_RANLIB                     >> configure.ac
 test -z "$xdir" || echo AM_PROG_CC_C_O  >> configure.ac
 echo AC_OUTPUT                          >> configure.ac
 
-if test -n "$xdir"; then
-  echo AUTOMAKE_OPTIONS = subdir-objects > Makefile.am
-fi
-cat >> Makefile.am <<END
+cat > Makefile.am <<END
 noinst_PROGRAMS = prg
 noinst_LIBRARIES = liber.a
 prg_SOURCES = ${xdir}main.c

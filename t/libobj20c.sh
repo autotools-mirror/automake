@@ -27,7 +27,6 @@ AC_LIBOBJ([foobar])
 END
 
 cat > Makefile.am << 'END'
-AUTOMAKE_OPTIONS = subdir-objects
 noinst_LIBRARIES = libtu.a
 libtu_a_SOURCES =
 libtu_a_LIBADD = $(LIBOBJS)

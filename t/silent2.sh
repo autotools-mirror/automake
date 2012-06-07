@@ -16,7 +16,7 @@
 
 # Check silent-rules mode, without libtool, non-fastdep case
 # (so that, with GCC, we also cover the other code paths in depend2).
-
+ 
 # Please keep this file in sync with silent.test.
 
 required=gcc
@@ -25,7 +25,6 @@ required=gcc
 mkdir sub
 
 cat >>configure.ac <<'EOF'
-AC_CONFIG_FILES([sub/Makefile])
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_OUTPUT
@@ -33,24 +32,12 @@ EOF
 
 cat > Makefile.am <<'EOF'
 # Need generic and non-generic rules.
-bin_PROGRAMS = foo bar
+bin_PROGRAMS = foo bar sub/baz sub/bla
 bar_CFLAGS = $(AM_CFLAGS)
-SUBDIRS = sub
+sub_bla_CFLAGS = $(AM_CFLAGS)
 EOF
 
-cat > sub/Makefile.am <<'EOF'
-AUTOMAKE_OPTIONS = subdir-objects
-# Need generic and non-generic rules.
-bin_PROGRAMS = baz bla
-bla_CFLAGS = $(AM_CFLAGS)
-EOF
-
-cat > foo.c <<'EOF'
-int main ()
-{
-  return 0;
-}
-EOF
+echo 'int main (void) { return 0; }' > foo.c
 cp foo.c bar.c
 cp foo.c sub/baz.c
 cp foo.c sub/bla.c
@@ -62,22 +49,22 @@ $AUTOCONF
 ./configure am_cv_CC_dependencies_compiler_type=gcc --enable-silent-rules
 $MAKE >stdout || { cat stdout; Exit 1; }
 cat stdout
-$EGREP ' (-c|-o)' stdout && Exit 1
-grep 'mv ' stdout && Exit 1
-grep 'CC .*foo\.' stdout
-grep 'CC .*bar\.' stdout
-grep 'CC .*baz\.' stdout
-grep 'CC .*bla\.' stdout
-grep 'CCLD .*foo' stdout
-grep 'CCLD .*bar' stdout
-grep 'CCLD .*baz' stdout
-grep 'CCLD .*bla' stdout
+$EGREP ' (-c|-o)|(mv|mkdir) '   stdout && Exit 1
+grep ' CC  *foo\.o'             stdout
+grep ' CC  *bar-bar\.o'         stdout
+grep ' CC  *sub/baz\.o'         stdout
+grep ' CC  *sub/sub_bla-bla\.o' stdout
+grep ' CCLD  *foo'              stdout
+grep ' CCLD  *bar'              stdout
+grep ' CCLD  *sub/baz'          stdout
+grep ' CCLD  *sub/bla'          stdout
 
 $MAKE clean
 $MAKE V=1 >stdout || { cat stdout; Exit 1; }
 cat stdout
 grep ' -c' stdout
 grep ' -o foo' stdout
+grep ' -o sub/baz' stdout
 $EGREP '(CC|LD) ' stdout && Exit 1
 
 :

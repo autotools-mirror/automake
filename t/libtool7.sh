@@ -29,7 +29,6 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-AUTOMAKE_OPTIONS = subdir-objects
 AM_LIBTOOLFLAGS = --silent
 lib_LTLIBRARIES = libmod1.la mod2.la
 libmod1_la_SOURCES = sub/mod1.c

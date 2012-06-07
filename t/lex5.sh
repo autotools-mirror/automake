@@ -27,10 +27,8 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-AUTOMAKE_OPTIONS  = subdir-objects
-LDADD             = @LEXLIB@
-
-bin_PROGRAMS    = foo/foo
+LDADD = @LEXLIB@
+bin_PROGRAMS = foo/foo
 foo_foo_SOURCES = foo/foo.l
 END
 
@@ -44,8 +42,7 @@ cat > foo/foo.l << 'END'
 "END"   return EOF;
 .
 %%
-int
-main ()
+int main (void)
 {
   while (yylex () != EOF)
     ;
