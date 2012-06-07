@@ -3607,6 +3607,23 @@ sub handle_data
 # Handle TAGS.
 sub handle_tags
 {
+    my @config;
+    foreach my $spec (@config_headers)
+      {
+        my ($out, @ins) = split_config_file_spec ($spec);
+	foreach my $in (@ins)
+	  {
+            # If the config header source is in this directory,
+	    # require it.
+	    push @config, basename ($in)
+              if $relative_dir eq dirname ($in);
+	   }
+      }
+
+    define_variable ('am__tagged_files',
+                     '$(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)'
+                     . "@config", INTERNAL);
+
     my @tag_deps = ();
     my @ctag_deps = ();
     my @cscope_deps = ();
@@ -3650,21 +3667,8 @@ sub handle_tags
 	|| var ('ETAGS_ARGS')
 	|| @tag_deps)
     {
-	my @config;
-	foreach my $spec (@config_headers)
-	{
-	    my ($out, @ins) = split_config_file_spec ($spec);
-	    foreach my $in (@ins)
-	      {
-		# If the config header source is in this directory,
-		# require it.
-		push @config, basename ($in)
-		  if $relative_dir eq dirname ($in);
-	      }
-	}
 	$output_rules .= &file_contents ('tags',
 					 new Automake::Location,
-					 CONFIG    => "@config",
 					 TAGSDIRS  => "@tag_deps",
 					 CTAGSDIRS => "@ctag_deps",
 					 CSCOPEDIRS => "@cscope_deps");
