@@ -39,13 +39,15 @@ grep 'required.*compile' stderr
 
 $AUTOMAKE
 
-# Look for $(COMPILE) -c in .c.o rule.
+$FGREP 'foo-foo.$(OBJEXT)' Makefile.in
+
+# Watch against "$(COMPILE) -c" in "%.o: %.c" rule.
 grep 'COMPILE. [^-]' Makefile.in && Exit 1
 
-# Look for foo-foo.o.
-grep '[^-]foo\.o' Makefile.in && Exit 1
+# Watch against "foo.$(OBJEXT)", "foo.o" and "foo.obj".
+grep '[^-]foo\.[o$]' Makefile.in && Exit 1
 
 # Regression test for missing space.
 $FGREP ')-c' Makefile.in && Exit 1
 
-Exit 0
+:

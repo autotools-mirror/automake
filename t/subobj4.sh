@@ -47,6 +47,6 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-grep '^z\.o:.* \.\./d2/z\.c *$' d1/Makefile.in
+grep '^z\.$(OBJEXT):.* \.\./d2/z\.c *$' d1/Makefile.in
 
 :

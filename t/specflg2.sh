@@ -45,15 +45,18 @@ grep 'required.*compile' stderr
 
 $AUTOMAKE
 
-# Look for $(COMPILE) -c in .c.o rule.
+$FGREP 'libfoo_a-foo.$(OBJEXT)' Makefile.in
+$FGREP 'libfoo_a-bar.$(OBJEXT)' Makefile.in
+
+# Watch against "$(COMPILE) -c" in the "%.o: %c" rule.
 grep 'COMPILE. [^-]' Makefile.in && Exit 1
 
-# Look for libfoo_a-foo.o.
+# Watch against "foo.$(OBJEXT)", "foo.o" and "foo.obj".
 grep foo Makefile.in
-grep '[^-]foo\.o' Makefile.in && Exit 1
+grep '[^-]foo\.[o$]' Makefile.in && Exit 1
 
-# Look for libfoo_a-bar.o.
+# Watch against "bar.$(OBJEXT)", "bar.o" and "bar.obj".
 grep bar Makefile.in
-grep '[^-]bar\.o' Makefile.in && Exit 1
+grep '[^-]bar\.[o$]' Makefile.in && Exit 1
 
-Exit 0
+:

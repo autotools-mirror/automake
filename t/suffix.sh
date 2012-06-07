@@ -44,15 +44,11 @@ for use_arlib in false :; do
 
   $ACLOCAL
 
-  $AUTOMAKE $am_warns -i
-  grep '%\.[co]' Makefile.in # For debugging.
-  test `grep -c '^%\.o: %\.c$' Makefile.in` -eq 1
-  test `grep -c '^%\.obj: %\.c$' Makefile.in` -eq 1
-
-  $AUTOMAKE $am_warns
-  grep '%\.[co]' Makefile.in # For debugging.
-  test `grep -c '^%\.o: %\.c$' Makefile.in` -eq 1
-  test `grep -c '^%\.obj: %\.c$' Makefile.in` -eq 1
+  for o in '' '-i'; do
+    $AUTOMAKE $am_warns $o
+    grep '%\.[co$]' Makefile.in # For debugging.
+    test $(grep -c '^%\.\$(OBJEXT): %\.c$' Makefile.in) -eq 1
+  done
 
 done
 

@@ -35,6 +35,6 @@ $ACLOCAL
 $AUTOMAKE
 $FGREP '$(OBJC)' Makefile.in
 $FGREP '$(OBJCLD)' Makefile.in
-grep '^%\.o: %\.m$' Makefile.in
+grep '^%\.$(OBJEXT): %\.m$' Makefile.in
 
 :

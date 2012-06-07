@@ -31,6 +31,6 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-grep '^z\.o: x/z\.c$' Makefile.in
+grep '^z\.\$(OBJEXT): x/z\.c$' Makefile.in
 
 :

@@ -37,6 +37,6 @@ $ACLOCAL
 $AUTOMAKE
 $FGREP '$(OBJCXX)' Makefile.in
 $FGREP '$(OBJCXXLD)' Makefile.in
-grep '^%\.o: %\.mm$' Makefile.in
+grep '^%\.$(OBJEXT): %\.mm$' Makefile.in
 
 :

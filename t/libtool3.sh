@@ -75,11 +75,11 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE --add-missing --copy
 
-# We need explicit rules to build 1.o and a.lo.  Make sure
-# Automake did not output additional rules for 1.lo and and a.lo.
-$FGREP '1.o:' Makefile.in
+# We need explicit rules to build 1.$(OBJEXT) and a.lo.  Make sure
+# Automake did not output additional rules for 1.lo and a.lo.
+$FGREP '1.$(OBJEXT):' Makefile.in
 $FGREP '1.lo:' Makefile.in && Exit 1
-$FGREP 'a.o:' Makefile.in && Exit 1
+$FGREP 'a.$(OBJEXT):' Makefile.in && Exit 1
 $FGREP 'a.lo:' Makefile.in
 
 ./configure

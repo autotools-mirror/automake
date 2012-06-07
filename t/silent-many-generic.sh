@@ -223,7 +223,7 @@ $AUTOCONF
 
 # Ensure per-target rules are used, to ensure their coverage below.
 # (We do not do an exhaustive check, that wouldn't be practical).
-$FGREP 'bar-bar.o' Makefile.in
+$FGREP 'bar-bar.$(OBJEXT)' Makefile.in
 $FGREP 'fo2-foo5.c' Makefile.in
 $FGREP 'fo2-foo6.c' Makefile.in
 
