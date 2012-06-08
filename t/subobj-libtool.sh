@@ -28,7 +28,6 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-AUTOMAKE_OPTIONS = subdir-objects
 noinst_LTLIBRARIES = libs/libfoo.la
 libs_libfoo_la_SOURCES = generic/1.c generic/2.c sub/subsub/3.c
 

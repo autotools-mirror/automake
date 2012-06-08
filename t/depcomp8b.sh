@@ -24,7 +24,7 @@ required='cc libtoolize'
 
 cat >> configure.ac << 'END'
 AC_PROG_CC
-#x AM_PROG_CC_C_O
+AM_PROG_CC_C_O
 AM_PROG_AR
 AC_PROG_LIBTOOL
 AC_OUTPUT
@@ -40,26 +40,6 @@ echo 'extern int foo = 0;' > foo.c
 echo 'extern int bar = 0;' > sub/bar.c
 
 libtoolize
-
-$ACLOCAL
-$AUTOMAKE -a
-grep include Makefile.in # For debugging.
-grep 'include.*\./\$(DEPDIR)/foo\.P' Makefile.in
-grep 'include.*\./\$(DEPDIR)/bar\.P' Makefile.in
-grep 'include.*/\./\$(DEPDIR)' Makefile.in && Exit 1
-
-$AUTOCONF
-# Don't reject slower dependency extractors, for better coverage.
-./configure --enable-dependency-tracking
-$MAKE
-DISTCHECK_CONFIGURE_FLAGS='--enable-dependency-tracking' $MAKE distcheck
-
-# Try again with subdir-objects option.
-
-sed 's/#x //' configure.ac >configure.int
-mv -f configure.int configure.ac
-echo AUTOMAKE_OPTIONS = subdir-objects >> Makefile.am
-
 $ACLOCAL
 $AUTOMAKE -a
 grep include Makefile.in # For debugging.

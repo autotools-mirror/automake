@@ -25,13 +25,10 @@
 required='c++ libtoolize'
 . ./defs || Exit 1
 
-cat > configure.ac << END
-AC_INIT([$me], [1.0])
-AM_INIT_AUTOMAKE([subdir-objects])
+cat >> configure.ac << END
 AC_PROG_CXX
 AM_PROG_AR
 AM_PROG_LIBTOOL
-AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 END
 
@@ -59,7 +56,6 @@ int doit2 (void)
    return 23;
 }
 END
-
 
 libtoolize --force
 $ACLOCAL

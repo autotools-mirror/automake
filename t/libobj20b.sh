@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Test error reporting for AC_CONFIG_LIBOBJ_DIR.
-# See also sister tests 'libobj20a.test' and 'libobj20c.test' .
+# See also sister test 'libobj20c.sh'.
 
 . ./defs || Exit 1
 
@@ -31,7 +31,6 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-AUTOMAKE_OPTIONS = subdir-objects
 noinst_LIBRARIES = libtu.a
 libtu_a_SOURCES =
 libtu_a_LIBADD = $(LIBOBJS)

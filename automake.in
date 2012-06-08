@@ -281,14 +281,6 @@ my $gen_copyright = "\
 # PARTICULAR PURPOSE.
 ";
 
-# These constants are returned by the lang_*_rewrite functions.
-# LANG_SUBDIR means that the resulting object file should be in a
-# subdir if the source file is.  In this case the file name cannot
-# have '..' components.
-use constant LANG_IGNORE  => 0;
-use constant LANG_PROCESS => 1;
-use constant LANG_SUBDIR  => 2;
-
 # These are used when keeping track of whether an object can be built
 # by two different paths.
 use constant COMPILE_LIBTOOL  => 1;
@@ -802,7 +794,7 @@ register_language ('name' => 'header',
 		   # Nothing to do.
 		   '_finish' => sub { });
 
-# Vala
+# Vala.
 register_language ('name' => 'vala',
 		   'Name' => 'Vala',
 		   'config_vars' => ['VALAC'],
@@ -810,9 +802,10 @@ register_language ('name' => 'vala',
 		   'compile' => '$(VALAC) $(AM_VALAFLAGS) $(VALAFLAGS)',
 		   'ccer' => 'VALAC',
 		   'compiler' => 'VALACOMPILE',
-		   'extensions' => ['.vala'],
-		   'output_extensions' => sub { (my $ext = $_[0]) =~ s/vala$/c/;
-						return ($ext,) },
+		   'extensions' => ['.vala', '.vapi'],
+                   # Vala compilation must be handled in a special way, so
+                   # nothing to do or return here.
+		   'output_extensions' => sub { },
 		   'rule_file' => 'vala',
 		   '_finish' => \&lang_vala_finish,
 		   '_target_hook' => \&lang_vala_target_hook,
@@ -1360,7 +1353,6 @@ sub handle_languages
 			 '-c'      => $lang->compile_flag || '',
 			 # These are not used, but they need to be defined
 			 # so &transform do not complain.
-			 SUBDIROBJ     => 0,
 			 'DERIVED-EXT' => 'BUG',
 			 DIST_SOURCE   => 1,
 			 VERBOSE   => $verbose,
@@ -1375,9 +1367,7 @@ sub handle_languages
 	    # needed.
 	    my $output_flag = $lang->output_flag || '';
 	    $output_flag = '-o'
-	      if (! $output_flag
-		  && $lang->name eq 'c'
-		  && option 'subdir-objects');
+	      if (! $output_flag && $lang->name eq 'c');
 
 	    # Compute a possible derived extension.
 	    # This is not used by depend2.am.
@@ -1400,8 +1390,7 @@ sub handle_languages
 
 			     COMPILE   => '$(' . $lang->compiler . ')',
 			     LTCOMPILE => '$(LT' . $lang->compiler . ')',
-			     -o        => $output_flag,
-			     SUBDIROBJ => !! option 'subdir-objects');
+			     -o        => $output_flag);
 	}
 
 	# Now include code for each specially handled object with this
@@ -1627,10 +1616,6 @@ sub handle_single_transform ($$$$$%)
 	  next;
 	}
 
-	# If the source file is in a subdirectory then the '.o' is put
-	# into the current directory, unless the subdir-objects option
-	# is in effect.
-
 	# Split file name into base and extension.
 	next if ! /^(?:(.*)\/)?([^\/]*?)(\.[^.]+)$/;
         prog_error ("source file '$_' missing dotted extension")
@@ -1675,19 +1660,24 @@ sub handle_single_transform ($$$$$%)
 		  }
 	      }
 
-	    # Note: computed subr call.  The language rewrite function
-	    # should return one of the LANG_* constants.  It could
-	    # also return a list whose first value is such a constant
-	    # and whose second value is a new source extension which
-	    # should be applied.  This means this particular language
-	    # generates another source file which we must then process
-	    # further.
-	    my $subr = \&{'lang_' . $lang->name . '_rewrite'};
-	    my ($r, $source_extension)
-		= &$subr ($directory, $base, $extension,
-			  $obj, $have_per_exec_flags, $var);
-	    # Skip this entry if we were asked not to process it.
-	    next if $r == LANG_IGNORE;
+            # NOTE: computed subr calls here.
+
+            # The language ignore function can ask not to preprocess
+            # a source file further.
+            my $subr_ignore = \&{'lang_' . $lang->name . '_ignore'};
+            next if defined &$subr_ignore
+                    and &$subr_ignore ($directory, $base, $extension);
+            # The language rewrite function can return a new source
+            # extension which should be applied.  This means this
+            # particular language generates another source file which
+            # we must then process further.  This happens, for example,
+            # with yacc and lex.
+            my $subr_rewrite = \&{'lang_' . $lang->name . '_rewrite'};
+            $subr_rewrite = sub { } unless defined &$subr_rewrite;
+            my $source_extension = &$subr_rewrite ($directory, $base,
+                                                   $extension, $obj,
+                                                   $have_per_exec_flags,
+                                                   $var);
 
 	    # Now extract linker and other info.
 	    $linker = $lang->linker;
@@ -1737,24 +1727,17 @@ sub handle_single_transform ($$$$$%)
 
 	    # If rewrite said it was ok, put the object into a
 	    # subdir.
-	    if ($r == LANG_SUBDIR && $directory ne '')
-	    {
-		$object = $directory . '/' . $object;
-	    }
+	    $object = $directory . '/' . $object
+	      unless $directory eq '';
 
 	    # If the object file has been renamed (because per-target
 	    # flags are used) we cannot compile the file with an
 	    # inference rule: we need an explicit rule.
 	    #
-	    # If the source is in a subdirectory and the object is in
-	    # the current directory, we also need an explicit rule.
-	    #
 	    # If both source and object files are in a subdirectory
-	    # (this happens when the subdir-objects option is used),
 	    # then the inference will work.
 	    #
 	    if ($renamed
-		|| ($directory ne '' && ! option 'subdir-objects')
 		# We must also use specific rules for a nodist_ source
 		# if its language requests it.
 		|| ($lang->nodist_specific && ! $transform{'DIST_SOURCE'}))
@@ -1802,12 +1785,6 @@ sub handle_single_transform ($$$$$%)
 		      [@specifics, %transform]);
 	    }
 	}
-        elsif ($extension eq '.vapi')
-        {
-            # Explicitly pass vala headers through.  This is a bit of an
-            # hack, but good enough FTM.
-            next;
-        }
 	else
 	{
             # Assume the user has defined a proper explicit or pattern
@@ -1823,6 +1800,8 @@ sub handle_single_transform ($$$$$%)
 	    $linker = '';
 	}
 
+        # FIXME: this is likely an internal error now that we use
+        # FIXME: subdir-objects unconditionally ...
 	err_am "object '$object' created by '$full' and '$object_map{$object}'"
 	  if (defined $object_map{$object}
 	      && $object_map{$object} ne $full);
@@ -2153,25 +2132,17 @@ sub handle_LIBOBJS_or_ALLOCA ($)
   if ($config_libobj_dir
       && $relative_dir ne $config_libobj_dir)
     {
-      if (option 'subdir-objects')
-	{
-	  # In the top-level Makefile we do not use $(top_builddir), because
-	  # we are already there, and since the targets are built without
-	  # a $(top_builddir), it helps BSD Make to match them with
-	  # dependencies.
-	  $dir = "$config_libobj_dir/" if $config_libobj_dir ne '.';
-	  $dir = "$topsrcdir/$dir" if $relative_dir ne '.';
-	  define_variable ('LIBOBJDIR', INTERNAL, $dir);
-	  $clean_files{"\$($var)"} = MOSTLY_CLEAN;
-	  # If LTLIBOBJS is used, we must also clear LIBOBJS (which might
-	  # be created by libtool as a side-effect of creating LTLIBOBJS).
-	  $clean_files{"\$($var)"} = MOSTLY_CLEAN if $var =~ s/^LT//;
-	}
-      else
-	{
-	  error ("'\$($var)' cannot be used outside '$config_libobj_dir' if"
-		 . " 'subdir-objects' is not set");
-	}
+      # In the top-level Makefile we do not use $(top_builddir), because
+      # we are already there, and since the targets are built without
+      # a $(top_builddir), it helps BSD Make to match them with
+      # dependencies.
+      $dir = "$config_libobj_dir/" if $config_libobj_dir ne '.';
+      $dir = "$topsrcdir/$dir" if $relative_dir ne '.';
+      define_variable ('LIBOBJDIR', INTERNAL, $dir);
+      $clean_files{"\$($var)"} = MOSTLY_CLEAN;
+      # If LTLIBOBJS is used, we must also clear LIBOBJS (which might
+      # be created by libtool as a side-effect of creating LTLIBOBJS).
+      $clean_files{"\$($var)"} = MOSTLY_CLEAN if $var =~ s/^LT//;
     }
 
   return $dir;
@@ -5087,190 +5058,81 @@ sub check_gnits_standards
 #
 # Functions to handle files of each language.
 
-# Each 'lang_X_rewrite($DIRECTORY, $BASE, $EXT)' function follows a
-# simple formula: Return value is LANG_SUBDIR if the resulting object
-# file should be in a subdir if the source file is, LANG_PROCESS if
-# file is to be dealt with, LANG_IGNORE otherwise.
-
 # Much of the actual processing is handled in
 # handle_single_transform.  These functions exist so that
 # auxiliary information can be recorded for a later cleanup pass.
 # Note that the calls to these functions are computed, so don't bother
 # searching for their precise names in the source.
 
-# This is just a convenience function that can be used to determine
-# when a subdir object should be used.
-sub lang_sub_obj
-{
-    return option 'subdir-objects' ? LANG_SUBDIR : LANG_PROCESS;
-}
-
 # Rewrite a single C source file.
 sub lang_c_rewrite
 {
   my ($directory, $base, $ext, $obj, $have_per_exec_flags, $var) = @_;
 
-  my $r = LANG_PROCESS;
-  if (option 'subdir-objects')
+  # libtool is always able to put the object at the proper place, so we
+  # do not have to require AM_PROG_CC_C_O when building '.lo' files.
+  if (! $seen_cc_c_o && $obj ne '.lo')
     {
-      $r = LANG_SUBDIR;
       if ($directory && $directory ne '.')
-	{
-	  $base = $directory . '/' . $base;
-
-	  # libtool is always able to put the object at the proper place,
-	  # so we do not have to require AM_PROG_CC_C_O when building .lo files.
-	  msg_var ('portability', $var,
-		   "compiling '$base.c' in subdir requires "
-		   . "'AM_PROG_CC_C_O' in '$configure_ac'",
-		   uniq_scope => US_GLOBAL,
-		   uniq_part => 'AM_PROG_CC_C_O subdir')
-	    unless $seen_cc_c_o || $obj eq '.lo';
-	}
+        {
+          msg_var ('portability', $var,
+                   "compiling '$directory/$base.c' in subdir requires"
+                   . " 'AM_PROG_CC_C_O' in '$configure_ac'",
+                   uniq_scope => US_GLOBAL,
+                   uniq_part => 'AM_PROG_CC_C_O subdir');
+        }
+      elsif ($have_per_exec_flags)
+        {
+           msg_var ('portability', $var,
+                    "compiling '$base.c' with per-target flags requires"
+                    . " 'AM_PROG_CC_C_O' in '$configure_ac'",
+                    uniq_scope => US_GLOBAL,
+                    uniq_part => 'AM_PROG_CC_C_O per-target');
+       }
     }
-
-  if (! $seen_cc_c_o
-      && $have_per_exec_flags
-      && ! option 'subdir-objects'
-      && $obj ne '.lo')
-    {
-      msg_var ('portability',
-	       $var, "compiling '$base.c' with per-target flags requires "
-	       . "'AM_PROG_CC_C_O' in '$configure_ac'",
-	       uniq_scope => US_GLOBAL,
-	       uniq_part => 'AM_PROG_CC_C_O per-target')
-    }
-
-    return $r;
+  # Not a useless use of return: the caller of this subroutine will
+  # behave differently if a value is actually returned, and since perl
+  # returns the value of the last expressions seen by default, we
+  # need to explicitly return and undefined value.
+  return undef;
 }
 
-# Rewrite a single C++ source file.
-sub lang_cxx_rewrite
-{
-    return &lang_sub_obj;
-}
+# Header files are simply ignored.
+sub lang_header_ignore { 1; }
 
-# Rewrite a single header file.
-sub lang_header_rewrite
+# Vala '.vapi' are a kind of header files as well, and should
+# not be processed into compilation rules.
+ sub lang_vala_ignore
 {
-    # Header files are simply ignored.
-    return LANG_IGNORE;
+    my ($directory, $base, $ext) = @_;
+    return ($ext =~ m/\.vapi$/ ? 1 : 0);
 }
 
 # Rewrite a single Vala source file.
 sub lang_vala_rewrite
 {
     my ($directory, $base, $ext) = @_;
-
-    (my $newext = $ext) =~ s/vala$/c/;
-    return (LANG_SUBDIR, $newext);
+    $ext =~ s/vala$/c/;
+    return $ext;
 }
 
-# Rewrite a single yacc file.
+# Rewrite a single yacc/yacc++ file.
 sub lang_yacc_rewrite
 {
     my ($directory, $base, $ext) = @_;
-
-    my $r = &lang_sub_obj;
-    (my $newext = $ext) =~ tr/y/c/;
-    return ($r, $newext);
+    $ext =~ tr/y/c/;
+    return $ext;
 }
+sub lang_yaccxx_rewrite { lang_yacc_rewrite (@_); };
 
-# Rewrite a single yacc++ file.
-sub lang_yaccxx_rewrite
-{
-    my ($directory, $base, $ext) = @_;
-
-    my $r = &lang_sub_obj;
-    (my $newext = $ext) =~ tr/y/c/;
-    return ($r, $newext);
-}
-
-# Rewrite a single lex file.
+# Rewrite a single lex/lex++ file.
 sub lang_lex_rewrite
 {
     my ($directory, $base, $ext) = @_;
-
-    my $r = &lang_sub_obj;
-    (my $newext = $ext) =~ tr/l/c/;
-    return ($r, $newext);
+    $ext =~ tr/l/c/;
+    return $ext;
 }
-
-# Rewrite a single lex++ file.
-sub lang_lexxx_rewrite
-{
-    my ($directory, $base, $ext) = @_;
-
-    my $r = &lang_sub_obj;
-    (my $newext = $ext) =~ tr/l/c/;
-    return ($r, $newext);
-}
-
-# Rewrite a single assembly file.
-sub lang_asm_rewrite
-{
-    return &lang_sub_obj;
-}
-
-# Rewrite a single preprocessed assembly file.
-sub lang_cppasm_rewrite
-{
-    return &lang_sub_obj;
-}
-
-# Rewrite a single Fortran 77 file.
-sub lang_f77_rewrite
-{
-    return &lang_sub_obj;
-}
-
-# Rewrite a single Fortran file.
-sub lang_fc_rewrite
-{
-    return &lang_sub_obj;
-}
-
-# Rewrite a single preprocessed Fortran file.
-sub lang_ppfc_rewrite
-{
-    return &lang_sub_obj;
-}
-
-# Rewrite a single preprocessed Fortran 77 file.
-sub lang_ppf77_rewrite
-{
-    return &lang_sub_obj;
-}
-
-# Rewrite a single ratfor file.
-sub lang_ratfor_rewrite
-{
-    return &lang_sub_obj;
-}
-
-# Rewrite a single Objective C file.
-sub lang_objc_rewrite
-{
-    return &lang_sub_obj;
-}
-
-# Rewrite a single Objective C++ file.
-sub lang_objcxx_rewrite
-{
-    return &lang_sub_obj;
-}
-
-# Rewrite a single Unified Parallel C file.
-sub lang_upc_rewrite
-{
-    return &lang_sub_obj;
-}
-
-# Rewrite a single Java file.
-sub lang_java_rewrite
-{
-    return LANG_SUBDIR;
-}
+sub lang_lexxx_rewrite { lang_lex_rewrite (@_); };
 
 # The lang_X_finish functions are called after all source file
 # processing is done.  Each should handle defining rules for the

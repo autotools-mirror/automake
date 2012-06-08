@@ -19,12 +19,9 @@
 required='cc lex'
 . ./defs || Exit 1
 
-mkdir sub
-
 cat >>configure.ac <<'EOF'
 AM_PROG_CC_C_O
 AC_PROG_LEX
-AC_CONFIG_FILES([sub/Makefile])
 AC_OUTPUT
 EOF
 
@@ -35,18 +32,6 @@ foo1_SOURCES = foo.l
 foo2_SOURCES = $(foo1_SOURCES)
 foo2_LFLAGS = -n
 foo2_CFLAGS = $(AM_CFLAGS)
-SUBDIRS = sub
-LDADD = $(LEXLIB)
-EOF
-
-cat > sub/Makefile.am <<'EOF'
-AUTOMAKE_OPTIONS = subdir-objects
-# Need generic and non-generic rules.
-bin_PROGRAMS = bar1 bar2
-bar1_SOURCES = bar.l
-bar2_SOURCES = $(bar1_SOURCES)
-bar2_LFLAGS = -n
-bar2_CFLAGS = $(AM_CFLAGS)
 LDADD = $(LEXLIB)
 EOF
 
@@ -62,7 +47,6 @@ cat > foo.l <<'EOF'
 int yywrap (void) { return 1; }
 int   main (void) { return 0; }
 EOF
-cp foo.l sub/bar.l
 
 $ACLOCAL
 $AUTOMAKE --add-missing
@@ -70,7 +54,6 @@ $AUTOCONF
 
 # Ensure per-target rules are used, to ensure their coverage below.
 $FGREP 'foo2-foo.c' Makefile.in || Exit 99
-$FGREP 'bar2-bar.c' sub/Makefile.in || Exit 99
 
 ./configure --enable-silent-rules
 
@@ -81,13 +64,9 @@ $EGREP ' (-c|-o)' stdout && Exit 1
 $EGREP '(mv|ylwrap) ' stdout && Exit 1
 
 grep 'LEX .*foo\.' stdout
-grep 'LEX .*bar\.' stdout
 grep ' CC .*foo\.' stdout
-grep ' CC .*bar\.' stdout
 grep 'CCLD .*foo1' stdout
-grep 'CCLD .*bar1' stdout
 grep 'CCLD .*foo2' stdout
-grep 'CCLD .*bar2' stdout
 
 # Cleaning and then rebuilding with the same V flag (and without
 # removing the generated sources in between) shouldn't trigger a
@@ -102,15 +81,12 @@ $EGREP '(mv|ylwrap) ' stdout && Exit 1
 
 # Don't look for LEX, as probably lex hasn't been re-run.
 grep ' CC .*foo\.' stdout
-grep ' CC .*bar\.' stdout
 grep 'CCLD .*foo1' stdout
-grep 'CCLD .*bar1' stdout
 grep 'CCLD .*foo2' stdout
-grep 'CCLD .*bar2' stdout
 
 # Ensure a truly clean rebuild.
 $MAKE clean
-rm -f *foo.c sub/*bar.c
+rm -f *foo.c
 
 $MAKE V=1 >stdout || { cat stdout; Exit 1; }
 cat stdout

@@ -24,11 +24,10 @@
 AUTOMAKE="$am_original_AUTOMAKE -Werror"
 
 echo AC_PROG_CC >> configure.ac
+$ACLOCAL
 
 cat > Makefile.am <<END
-AUTOMAKE_OPTIONS = subdir-objects
-## For later editing by 'set_am_opts'.
-AUTOMAKE_OPTIONS +=
+AUTOMAKE_OPTIONS = ## For later editing by 'set_am_opts'.
 noinst_PROGRAMS = foo
 foo_SOURCES = sub/foo.c
 END
@@ -36,7 +35,7 @@ END
 set_am_opts ()
 {
   set +x
-  sed <$2 >$2-t -e "s|^\\(AUTOMAKE_OPTIONS\\) *+=.*|\\1 += $1|" \
+  sed <$2 >$2-t -e "s|^\\(AUTOMAKE_OPTIONS\\) *=.*|\\1 = $1|" \
                 -e "s|^\\(AM_INIT_AUTOMAKE\\).*|\\1([$1])|"
   mv -f $2-t $2
   set -x
@@ -46,7 +45,6 @@ set_am_opts ()
 set_am_opts '-Wportability' configure.ac
 set_am_opts 'foreign' Makefile.am
 
-$ACLOCAL
 $AUTOMAKE
 
 rm -rf autom4te*.cache
@@ -58,6 +56,6 @@ set_am_opts '-Wno-portability' configure.ac
 set_am_opts 'gnu' Makefile.am
 
 AUTOMAKE_fails
-grep '^Makefile\.am:5:.*sub/foo\.c.*requires.*AM_PROG_CC_C_O' stderr
+grep '^Makefile\.am:.*sub/foo\.c.*requires.*AM_PROG_CC_C_O' stderr
 
 :

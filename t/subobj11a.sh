@@ -41,7 +41,6 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-AUTOMAKE_OPTIONS = subdir-objects
 bin_PROGRAMS = foo
 ## The './/' below is meant.
 foo_SOURCES = .//src/foo.c

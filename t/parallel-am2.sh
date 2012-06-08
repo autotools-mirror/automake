@@ -26,7 +26,6 @@ required=perl-threads
 mkdir sub
 
 cat > Makefile.am << 'END'
-AUTOMAKE_OPTIONS = subdir-objects
 bin_PROGRAMS = main
 main_SOURCES = sub/main.c
 SUBDIRS =
@@ -38,7 +37,6 @@ for i in $list; do
   echo "SUBDIRS += sub$i" >> Makefile.am
   mkdir sub$i sub$i/sub
   unindent > sub$i/Makefile.am << END
-    AUTOMAKE_OPTIONS = subdir-objects
     bin_PROGRAMS = sub$i
     sub${i}_SOURCES = sub/main$i.c
 END

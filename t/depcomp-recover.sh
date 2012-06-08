@@ -55,7 +55,6 @@ echo 'int foo (void);' > foo.h
 
 mkdir sub sub/src
 cat > sub/Makefile.am <<'END'
-AUTOMAKE_OPTIONS = subdir-objects
 noinst_PROGRAMS = foo
 foo_SOURCES = src/main.c src/foo.c src/foo.h
 END

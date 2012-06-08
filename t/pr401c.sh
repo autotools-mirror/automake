@@ -105,16 +105,6 @@ $AUTOMAKE
 test ! -d lib/lib
 $MAKE distcheck
 
-## -------------------------------------------- ##
-## Error message with usage in wrong directory. ##
-## -------------------------------------------- ##
-
-mv -f src/Makefile.am src/t
-sed 's/LDADD = .*/LDADD = @ALLOCA@/' src/t > src/Makefile.am
-AUTOMAKE_fails
-grep 'cannot be used outside.*lib' stderr
-mv -f src/t src/Makefile.am
-
 
 ## ------------------------------------------- ##
 ## Test using ALLOCA from a sibling directory. ##
@@ -128,8 +118,6 @@ SUBDIRS = src
 EOF
 
 cat > src/Makefile.am <<'EOF'
-AUTOMAKE_OPTIONS = subdir-objects
-
 noinst_LIBRARIES = libfeep.a
 libfeep_a_SOURCES =
 libfeep_a_LIBADD = $(ALLOCA) $(LIBOBJS) # Add LIBOBJS for fun.
@@ -161,8 +149,6 @@ sed 's/^.*src\/Makefile.*$//' configure.ac >configure.int
 mv -f configure.int configure.ac
 
 cat >Makefile.am <<'EOF'
-AUTOMAKE_OPTIONS = subdir-objects
-
 noinst_LIBRARIES = lib/libfeep.a
 lib_libfeep_a_SOURCES =
 lib_libfeep_a_LIBADD = $(ALLOCA)

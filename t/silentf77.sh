@@ -24,25 +24,17 @@ mkdir sub
 
 cat >>configure.ac <<'EOF'
 AC_PROG_F77
-AC_CONFIG_FILES([sub/Makefile])
 AC_OUTPUT
 EOF
 
 cat > Makefile.am <<'EOF'
 # Need generic and non-generic rules.
-bin_PROGRAMS = foo1 foo2
+bin_PROGRAMS = foo1 foo2 sub/bar1 bar2
 foo1_SOURCES = foo.f
 foo2_SOURCES = $(foo1_SOURCES)
 foo2_FFLAGS = $(AM_FFLAGS)
-SUBDIRS = sub
-EOF
-
-cat > sub/Makefile.am <<'EOF'
-AUTOMAKE_OPTIONS = subdir-objects
-# Need generic and non-generic rules.
-bin_PROGRAMS = bar1 bar2
-bar1_SOURCES = bar.f
-bar2_SOURCES = $(bar1_SOURCES)
+sub_bar1_SOURCES = sub/bar.f
+bar2_SOURCES = $(sub_bar1_SOURCES)
 bar2_FFLAGS = $(AM_FFLAGS)
 EOF
 
@@ -68,12 +60,14 @@ cat stdout
 $EGREP ' (-c|-o)' stdout && Exit 1
 grep 'mv ' stdout && Exit 1
 
-grep 'F77 .*foo\.'  stdout
-grep 'F77 .*bar\.'  stdout
-grep 'F77LD .*foo1' stdout
-grep 'F77LD .*bar1' stdout
-grep 'F77LD .*foo2' stdout
-grep 'F77LD .*bar2' stdout
+grep ' F77  *foo\.'          stdout
+grep ' F77  *foo2-foo\.'     stdout
+grep ' F77  *sub/bar\.'      stdout
+grep ' F77  *sub/bar2-bar\.' stdout
+grep ' F77LD  *foo1'         stdout
+grep ' F77LD  *foo2'         stdout
+grep ' F77LD  *sub/bar1'     stdout
+grep ' F77LD  *bar2'         stdout
 
 $EGREP '(FC|FCLD) ' stdout && Exit 1
 

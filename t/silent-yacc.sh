@@ -20,12 +20,9 @@
 required='cc yacc'
 . ./defs || Exit 1
 
-mkdir sub
-
 cat >>configure.ac <<'EOF'
 AM_PROG_CC_C_O
 AC_PROG_YACC
-AC_CONFIG_FILES([sub/Makefile])
 AC_OUTPUT
 EOF
 
@@ -36,17 +33,6 @@ foo1_SOURCES = foo.y
 foo2_SOURCES = $(foo1_SOURCES)
 foo2_YFLAGS = -v
 foo2_CFLAGS = $(AM_CPPFLAGS)
-SUBDIRS = sub
-EOF
-
-cat > sub/Makefile.am <<'EOF'
-AUTOMAKE_OPTIONS = subdir-objects
-# Need generic and non-generic rules.
-bin_PROGRAMS = bar1 bar2
-bar1_SOURCES = bar.y
-bar2_SOURCES = $(bar1_SOURCES)
-bar2_YFLAGS = -v
-bar2_CFLAGS = $(AM_CPPFLAGS)
 EOF
 
 cat > foo.y <<'EOF'
@@ -59,7 +45,6 @@ int main (void) { return 0; }
 %%
 fubar : 'f' 'o' 'o' 'b' 'a' 'r' EOF {};
 EOF
-cp foo.y sub/bar.y
 
 $ACLOCAL
 $AUTOMAKE --add-missing
@@ -67,7 +52,6 @@ $AUTOCONF
 
 # Ensure per-target rules are used, to ensure their coverage below.
 $FGREP 'foo2-foo.c' Makefile.in || Exit 99
-$FGREP 'bar2-bar.c' sub/Makefile.in || Exit 99
 
 ./configure --enable-silent-rules
 
@@ -78,13 +62,9 @@ $EGREP ' (-c|-o)' stdout && Exit 1
 $EGREP '(mv|ylwrap) ' stdout && Exit 1
 
 grep 'YACC .*foo\.' stdout
-grep 'YACC .*bar\.' stdout
-grep ' CC .*foo\.' stdout
-grep ' CC .*bar\.' stdout
-grep 'CCLD .*foo1' stdout
-grep 'CCLD .*bar1' stdout
-grep 'CCLD .*foo2' stdout
-grep 'CCLD .*bar2' stdout
+grep '  CC .*foo\.' stdout
+grep 'CCLD .*foo1'  stdout
+grep 'CCLD .*foo2'  stdout
 
 # Cleaning and then rebuilding with the same V flag (and without
 # removing the generated sources in between) shouldn't trigger a
@@ -98,16 +78,13 @@ $EGREP ' (-c|-o)' stdout && Exit 1
 $EGREP '(mv|ylwrap) ' stdout && Exit 1
 
 # Don't look for YACC, as probably yacc hasn't been re-run.
-grep ' CC .*foo\.' stdout
-grep ' CC .*bar\.' stdout
-grep 'CCLD .*foo1' stdout
-grep 'CCLD .*bar1' stdout
-grep 'CCLD .*foo2' stdout
-grep 'CCLD .*bar2' stdout
+grep '  CC .*foo\.' stdout
+grep 'CCLD .*foo1'  stdout
+grep 'CCLD .*foo2'  stdout
 
 # Ensure a truly clean rebuild.
 $MAKE clean
-rm -f *foo.[ch] sub/*bar.[ch]
+rm -f *foo.[ch]
 
 $MAKE V=1 >stdout || { cat stdout; Exit 1; }
 cat stdout

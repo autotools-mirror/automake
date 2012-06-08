@@ -114,7 +114,6 @@ write_main parse.hpp > bar/main.cpp
 
 # Try with -d in $(AM_YFLAGS), and a subdir parser.
 cat >> baz/Makefile.am <<END
-AUTOMAKE_OPTIONS = subdir-objects
 bin_PROGRAMS = joe
 joe_SOURCES = sub/parse.y++ sub/main.c++
 BUILT_SOURCES = sub/parse.h++

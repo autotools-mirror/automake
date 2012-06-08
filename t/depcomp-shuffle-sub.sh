@@ -16,7 +16,7 @@
 
 # Dependency tracking in the face of added/removed/renamed files.
 #  - in-tree build
-#  - use of subdir-objects
+#  - use of subdir objects
 
 . ./defs-static || exit '99'
 xdir='sub' vpath='no'

@@ -38,7 +38,6 @@ AC_OUTPUT
 END
 
 cat > Makefile.am <<END
-AUTOMAKE_OPTIONS = subdir-objects
 include automake-options.am
 noinst_PROGRAMS = foo
 foo_SOURCES = sub/foo.c
@@ -49,7 +48,7 @@ rm -rf autom4te*.cache
 echo 'AM_INIT_AUTOMAKE' > am-init-automake.m4
 $ACLOCAL
 AUTOMAKE_fails -Werror -Wall --foreign
-grep '^Makefile\.am:4:.*sub/foo\.c.*requires.*AM_PROG_CC_C_O' stderr
+grep '^Makefile\.am:3:.*sub/foo\.c.*requires.*AM_PROG_CC_C_O' stderr
 
 rm -rf autom4te*.cache
 : > automake-options.am
@@ -58,7 +57,7 @@ $ACLOCAL
 $AUTOMAKE
 
 rm -rf autom4te*.cache
-echo 'AUTOMAKE_OPTIONS += -Werror -Wnone gnits' > automake-options.am
+echo 'AUTOMAKE_OPTIONS = -Werror -Wnone gnits' > automake-options.am
 echo 'AM_INIT_AUTOMAKE' > am-init-automake.m4
 $ACLOCAL
 $AUTOMAKE

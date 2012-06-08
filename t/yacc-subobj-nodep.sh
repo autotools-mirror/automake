@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Ensure subdirs for subdir parsers are generated when subdir-objects
+# Ensure subdirs for subdir parsers are generated when subdir objects
 # are used, even when dependency tracking is disabled.
 
 required='cc yacc'
@@ -22,7 +22,7 @@ required='cc yacc'
 
 cat >configure.ac <<END
 AC_INIT([$me], [1.0])
-AM_INIT_AUTOMAKE([no-dependencies subdir-objects])
+AM_INIT_AUTOMAKE([no-dependencies])
 AC_CONFIG_FILES([Makefile])
 AC_PROG_CC
 AM_PROG_CC_C_O

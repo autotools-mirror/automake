@@ -23,7 +23,8 @@ mkdir m4
 
 cat >m4/foo.m4 <<'EOF'
 AC_DEFUN([FOO],[
-  AC_PROG_CC
+  AC_REQUIRE([AC_PROG_CC])
+  AC_REQUIRE([AM_PROG_CC_C_O])
   AC_OUTPUT
 ])
 EOF
@@ -92,6 +93,8 @@ int lib (void)
 }
 EOF
 
+cp "$am_scriptdir"/compile .
+
 $ACLOCAL -I m4
 $AUTOCONF
 $AUTOMAKE -Wno-override
@@ -104,7 +107,10 @@ $AUTOHEADER
 $AUTOMAKE -Wno-override --add-missing
 cd ..
 
-./configure
+./configure >stdout || { cat stdout; Exit 1; }
+cat stdout
+grep '^checking whether cc understands -c and -o together' stdout
+
 $MAKE
 $MAKE distcheck
 test ! -d subpack-1 # Make sure distcheck cleans up after itself.

@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Ensure subdirs for subdir scanners are generated when subdir-objects
-# are used, even when dependency tracking is disabled.
+# Ensure subdirs for subdir scanners are generated, even when dependency
+# tracking is disabled.
 
 required='cc lex'
 . ./defs || Exit 1
@@ -28,7 +28,6 @@ AC_OUTPUT
 END
 
 cat >Makefile.am <<\END
-AUTOMAKE_OPTIONS = subdir-objects
 bin_PROGRAMS = p1 p2
 p1_SOURCES = sub1/s1.l
 p2_SOURCES = sub2/s2.l

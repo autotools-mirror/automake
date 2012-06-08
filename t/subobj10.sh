@@ -14,28 +14,35 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# PR 492: Test asm subdir-objects.
+# PR 492: Test asm subdir objects.
 
 required=gcc
 . ./defs || Exit 1
 
-cat > configure.ac << END
-AC_INIT([$me], [1.0])
-AM_INIT_AUTOMAKE([subdir-objects])
-
+cat >> configure.ac << 'END'
 AM_PROG_AS
 AM_PROG_AR
 AC_PROG_RANLIB
-
-AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
 noinst_LIBRARIES = libfoo.a libbar.a
+
 libfoo_a_SOURCES = src/a.s b.s
 libbar_a_SOURCES = src/c.s d.s
 libbar_a_CCASFLAGS =
+
+.PHONY: test-objs
+check-local: test-objs
+test-objs:
+	find -name '*.$(OBJEXT)' > o.lst && cat o.lst
+	test -f src/a.$(OBJEXT)
+	test -f b.$(OBJEXT)
+	test -f src/libbar_a-c.$(OBJEXT)
+	test -f libbar_a-d.$(OBJEXT)
+	test $$(wc -l <o.lst) -eq 4
+	rm -f o.lst
 END
 
 mkdir src
@@ -50,6 +57,7 @@ $AUTOMAKE -a
 
 ./configure
 $MAKE
+$MAKE test-objs
 $MAKE distcheck
 
 :

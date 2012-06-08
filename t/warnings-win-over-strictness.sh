@@ -38,7 +38,7 @@ ko ()
 set_am_opts ()
 {
   set +x
-  sed <$2 >$2-t -e "s|^\\(AUTOMAKE_OPTIONS\\) *+=.*|\\1 += $1|" \
+  sed <$2 >$2-t -e "s|^\\(AUTOMAKE_OPTIONS\\) *=.*|\\1 = $1|" \
                 -e "s|^\\(AM_INIT_AUTOMAKE\\).*|\\1([$1])|"
   mv -f $2-t $2
   set -x
@@ -49,16 +49,13 @@ set_am_opts ()
 touch README INSTALL NEWS AUTHORS ChangeLog COPYING
 
 echo AC_PROG_CC >> configure.ac
+$ACLOCAL
 
 cat > Makefile.am <<END
-AUTOMAKE_OPTIONS = subdir-objects
-## For later editing by 'set_am_opts'.
-AUTOMAKE_OPTIONS +=
+AUTOMAKE_OPTIONS = ## For later editing by 'set_am_opts'.
 noinst_PROGRAMS = foo
 foo_SOURCES = sub/foo.c
 END
-
-$ACLOCAL
 
 ko --foreign -Wportability
 ko -Wportability --foreign

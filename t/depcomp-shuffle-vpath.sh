@@ -16,7 +16,7 @@
 
 # Dependency tracking in the face of added/removed/renamed files.
 #  - VPATH build
-#  - no use of subdir-objects
+#  - no use of subdir objects
 
 . ./defs-static || exit '99'
 xdir='' vpath='yes'

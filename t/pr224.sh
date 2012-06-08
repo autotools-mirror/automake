@@ -36,7 +36,6 @@ int main (void)
 EOF
 
 cat >Makefile.am <<'EOF'
-AUTOMAKE_OPTIONS = subdir-objects
 bin_PROGRAMS = bar
 bar_SOURCES = foo/main.c
 EOF

@@ -16,6 +16,7 @@
 
 # Check that AUTOMAKE_OPTIONS support variable expansion.
 
+am_create_testdir=empty
 . ./defs || Exit 1
 
 # We want complete control over automake options.
@@ -30,12 +31,12 @@ END
 
 cat > Makefile.am <<'END'
 # The following should expand to:
-#   subdir-objects -Wnone -Wno-error foreign -Wportability
+#   no-dist -Wnone -Wno-error foreign -Wextra-portability
 AUTOMAKE_OPTIONS = $(foo) foreign
 AUTOMAKE_OPTIONS += ${bar}
 foo = $(foo1)
 foo1 = ${foo2}
-foo2 = subdir-objects -Wnone
+foo2 = no-dist -Wnone
 foo2 += $(foo3)
 foo3 = -Wno-error
 bar = -Wportability
@@ -46,10 +47,16 @@ foo_SOURCES = sub/foo.c
 install:
 END
 
+: > compile
+: > missing
+: > depcomp
+: > install-sh
+
 $ACLOCAL
 AUTOMAKE_run
 grep '^Makefile\.am:.*sub/foo\.c.*requires.*AM_PROG_CC_C_O' stderr
 grep README stderr && Exit 1
 $EGREP '(install|override)' stderr && Exit 1
+$EGREP 'distdir|\.tar' Makefile.in && Exit 1
 
 :

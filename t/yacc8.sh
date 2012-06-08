@@ -28,7 +28,6 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-AUTOMAKE_OPTIONS = subdir-objects
 bin_PROGRAMS = foo/foo
 foo_foo_SOURCES = foo/parse.y
 AM_YFLAGS = -d

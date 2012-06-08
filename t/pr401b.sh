@@ -104,15 +104,6 @@ $AUTOMAKE -a
 test ! -d lib/lib
 $MAKE distcheck
 
-## -------------------------------------------- ##
-## Error message with usage in wrong directory. ##
-## -------------------------------------------- ##
-
-mv -f src/Makefile.am src/t
-sed 's/LDADD = .*/LDADD = @LTLIBOBJS@/' src/t > src/Makefile.am
-AUTOMAKE_fails
-grep 'cannot be used outside.*lib' stderr
-mv -f src/t src/Makefile.am
 
 ## ---------------------------------------------- ##
 ## Test using LTLIBOBJS from a sibling directory. ##
@@ -126,8 +117,6 @@ SUBDIRS = src
 EOF
 
 cat > src/Makefile.am <<'EOF'
-AUTOMAKE_OPTIONS = subdir-objects
-
 noinst_LTLIBRARIES = libfeep.la
 libfeep_la_SOURCES =
 libfeep_la_LIBADD = $(LTLIBOBJS)
@@ -159,8 +148,6 @@ sed 's/^.*src\/Makefile.*$//' configure.ac >configure.int
 mv -f configure.int configure.ac
 
 cat >Makefile.am <<'EOF'
-AUTOMAKE_OPTIONS = subdir-objects
-
 noinst_LTLIBRARIES = lib/libfeep.la
 lib_libfeep_la_SOURCES =
 lib_libfeep_la_LIBADD = $(LTLIBOBJS)

@@ -14,7 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test of subdir objects with C.
+# Test subdir objects with C, building both a library and an executable.
+# Keep in sync with sister test 'subobj-cxx.sh'.
 
 required=cc
 . ./defs || Exit 1
@@ -28,7 +29,6 @@ AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
-AUTOMAKE_OPTIONS = subdir-objects
 bin_PROGRAMS = progs/wish
 lib_LIBRARIES = libs/libhope.a
 progs_wish_SOURCES = generic/a.c generic/b.c
@@ -51,6 +51,7 @@ remake-single-object:
 END
 
 mkdir generic sub sub/sub2
+
 cat > generic/a.c <<END
 int main (void)
 {

@@ -16,21 +16,50 @@
 
 # Test of compiled java.
 
+required='gcc gcj'
 . ./defs || Exit 1
 
 cat >> configure.ac << 'END'
-_AM_DEPENDENCIES([GCJ])
-AC_SUBST([GCJ])
+# FIXME: AM_PROG_GCJ should cause OBJEXT and EXEEXT to be set, but
+# FIXME: it currently does not.  See also xfailing test 'gcj6.sh'.
+AC_PROG_CC
+AM_PROG_GCJ
+AC_OUTPUT
 END
 
 cat > Makefile.am << 'END'
 bin_PROGRAMS = convert
-convert_SOURCES = x/y/convert.java
+convert_SOURCES = $(my-java-source)
+convert_LDFLAGS = --main=convert
+my-java-source = x/y/convert.java
+$(my-java-source):
+	rm -f $@-t $@
+	test -d $(@D) || $(MKDIR_P) $(@D)
+	echo 'public class convert {'                      >> $@-t
+	echo '  public static void main (String[] args) {' >> $@-t
+	echo '    System.out.println("Hello, World!");'    >> $@-t
+	echo '  }'                                         >> $@-t
+	echo '}'                                           >> $@-t
+	chmod a-w $@-t && mv -f $@-t $@
+.PHONY: test-obj
+check-local: test-obj
+test-obj:
+	test -f x/y/convert.$(OBJEXT)
 END
 
 $ACLOCAL
 $AUTOMAKE
+$FGREP 'x/y/convert.$(OBJEXT)' Makefile.in
 
-grep '^x/y/convert' Makefile.in
+$AUTOCONF
+./configure
+
+$MAKE
+$MAKE test-obj
+if ! cross_compiling; then
+  ./convert
+  test "$(./convert)" = 'Hello, World!'
+fi
+$MAKE distcheck
 
 :
