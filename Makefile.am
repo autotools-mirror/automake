@@ -462,7 +462,7 @@ $(versioned_mans): doc/%-$(APIVERSION).1: % lib/Automake/Config.pm
 	 $(AM_V_GEN)$(MKDIR_P) doc \
 	    && PATH="$(abs_builddir)/t/wrap$(PATH_SEPARATOR)$$PATH" \
 	    && export PATH \
-	    && $(PERL) $(srcdir)/doc/help2man --output=$@ $*
+	    && $(PERL) $(srcdir)/doc/help2man --output=$@ $*-$(APIVERSION)
 
 
 ## ---------------------------- ##
