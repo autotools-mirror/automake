@@ -332,6 +332,8 @@ t/cscope3.sh \
 t/cxx.sh \
 t/cxx2.sh \
 t/cxxcpp.sh \
+t/cxx-demo.sh \
+t/cxx-lt-demo.sh \
 t/cxxlibobj.sh \
 t/cxxlink.sh \
 t/cxxnoc.sh \
