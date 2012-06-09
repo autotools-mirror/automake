@@ -17,6 +17,7 @@
 # Stress test on Objective C/C++.
 
 required=libtoolize
+am_create_testdir=empty
 . ./defs || Exit 1
 
 ## Autotools Input Files.
