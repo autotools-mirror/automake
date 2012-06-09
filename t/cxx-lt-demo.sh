@@ -53,7 +53,7 @@ TESTS = try.sh
 check-local: test-objs
 test-objs:
 	test -f src/main.$(OBJEXT)
-	test -f lib/libfoo.$(OBJEXT)
+	test -f lib/libfoo.lo
 END
 
 cat > src/Makefile.am << 'END'
