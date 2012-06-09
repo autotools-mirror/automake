@@ -341,7 +341,6 @@ t/cxx-lt-demo.sh \
 t/cxxlibobj.sh \
 t/cxxlink.sh \
 t/cxxnoc.sh \
-t/cxxo.sh \
 t/cygnus-deprecation.sh \
 t/cygnus-check-without-all.sh \
 t/cygnus-dependency-tracking.sh \
@@ -428,10 +427,8 @@ t/dollarvar2.sh \
 t/double.sh \
 t/dup2.sh \
 t/else.sh \
-t/empty.sh \
-t/empty2.sh \
-t/empty3.sh \
-t/empty4.sh \
+t/empty-data-primary.sh \
+t/empty-sources-primary.tap \
 t/exdir.sh \
 t/exdir2.sh \
 t/exdir3.sh \
@@ -467,7 +464,6 @@ t/flibs.sh \
 t/fn99.sh \
 t/fn99subdir.sh \
 t/fnoc.sh \
-t/fo.sh \
 t/forcemiss.sh \
 t/forcemiss2.sh \
 t/fort1.sh \
@@ -701,7 +697,6 @@ t/mmode.sh \
 t/mmodely.sh \
 t/multlib.sh \
 t/no-extra-makefile-code.sh \
-t/no-outdir-option.sh \
 t/no-spurious-install-recursive.sh \
 t/nobase.sh \
 t/nobase-libtool.sh \
@@ -832,6 +827,7 @@ t/test-extensions-cond.sh \
 t/parse.sh \
 t/percent.sh \
 t/percent2.sh \
+t/per-target-flags.sh \
 t/phony.sh \
 t/pluseq.sh \
 t/pluseq2.sh \
@@ -991,9 +987,6 @@ t/silent-yacc-headers.sh \
 t/src-acsubst.sh \
 t/sourcefile-in-subdir.sh \
 t/space.sh \
-t/specflg.sh \
-t/specflg2.sh \
-t/specflg3.sh \
 t/specflg6.sh \
 t/specflg7.sh \
 t/specflg8.sh \
