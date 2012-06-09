@@ -36,7 +36,7 @@ libbar_a_CCASFLAGS =
 .PHONY: test-objs
 check-local: test-objs
 test-objs:
-	find -name '*.$(OBJEXT)' > o.lst && cat o.lst
+	find . -name '*.$(OBJEXT)' > o.lst && cat o.lst
 	test -f src/a.$(OBJEXT)
 	test -f b.$(OBJEXT)
 	test -f src/libbar_a-c.$(OBJEXT)
