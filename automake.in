@@ -1290,7 +1290,7 @@ sub handle_languages
     {
 	# Include auto-dep code.  Don't include it if DEP_FILES would
 	# be empty.
-	if (&saw_sources_p (0) && keys %dep_files)
+	if (keys %extension_seen && keys %dep_files)
 	{
 	    # Set location of depcomp.
             define_variable ('depcomp', INTERNAL,
@@ -3380,6 +3380,23 @@ sub handle_data
 # Handle TAGS.
 sub handle_tags
 {
+    my @config;
+    foreach my $spec (@config_headers)
+      {
+        my ($out, @ins) = split_config_file_spec ($spec);
+	foreach my $in (@ins)
+	  {
+            # If the config header source is in this directory,
+	    # require it.
+	    push @config, basename ($in)
+              if $relative_dir eq dirname ($in);
+	   }
+      }
+
+    define_variable ('am__tagged_files', INTERNAL,
+                     qw/$(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)/,
+                     @config);
+
     my @tag_deps = ();
     my @ctag_deps = ();
     my @cscope_deps = ();
@@ -3416,25 +3433,11 @@ sub handle_tags
 	&depend ('.PHONY', 'cscopelist-recursive');
     }
 
-    if (&saw_sources_p (1)
-	|| var ('ETAGS_ARGS')
-	|| @tag_deps)
+    if (rvar('am__tagged_files')->value_as_list_recursive
+          || var ('ETAGS_ARGS') || @tag_deps)
     {
-	my @config;
-	foreach my $spec (@config_headers)
-	{
-	    my ($out, @ins) = split_config_file_spec ($spec);
-	    foreach my $in (@ins)
-	      {
-		# If the config header source is in this directory,
-		# require it.
-		push @config, basename ($in)
-		  if $relative_dir eq dirname ($in);
-	      }
-	}
 	$output_rules .= &file_contents ('tags',
 					 new Automake::Location,
-					 CONFIG    => "@config",
 					 TAGSDIRS  => "@tag_deps",
 					 CTAGSDIRS => "@ctag_deps",
 					 CSCOPEDIRS => "@cscope_deps");
@@ -5375,75 +5378,8 @@ sub resolve_linker
 sub saw_extension
 {
     my ($ext) = @_;
-    if (! defined $extension_seen{$ext})
-    {
-	$extension_seen{$ext} = 1;
-    }
-    else
-    {
-	++$extension_seen{$ext};
-    }
+    $extension_seen{$ext} = 1;
 }
-
-# Return the number of files seen for a given language.  Knows about
-# special cases we care about.  FIXME: this is hideous.  We need
-# something that involves real language objects.  For instance yacc
-# and yaccxx could both derive from a common yacc class which would
-# know about the strange ylwrap requirement.  (Or better yet we could
-# just not support legacy yacc!)
-sub count_files_for_language
-{
-    my ($name) = @_;
-
-    my @names;
-    if ($name eq 'yacc' || $name eq 'yaccxx')
-    {
-	@names = ('yacc', 'yaccxx');
-    }
-    elsif ($name eq 'lex' || $name eq 'lexxx')
-    {
-	@names = ('lex', 'lexxx');
-    }
-    else
-    {
-	@names = ($name);
-    }
-
-    my $r = 0;
-    foreach $name (@names)
-    {
-	my $lang = $languages{$name};
-	foreach my $ext (@{$lang->extensions})
-	{
-	    $r += $extension_seen{$ext}
-		if defined $extension_seen{$ext};
-	}
-    }
-
-    return $r
-}
-
-# Called to ask whether source files have been seen . If HEADERS is 1,
-# headers can be included.
-sub saw_sources_p
-{
-    my ($headers) = @_;
-
-    # count all the sources
-    my $count = 0;
-    foreach my $val (values %extension_seen)
-    {
-	$count += $val;
-    }
-
-    if (!$headers)
-    {
-	$count -= count_files_for_language ('header');
-    }
-
-    return $count > 0;
-}
-
 
 # register_language (%ATTRIBUTE)
 # ------------------------------
