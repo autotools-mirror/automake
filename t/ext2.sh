@@ -35,7 +35,7 @@ EOF
 $ACLOCAL
 $AUTOMAKE
 
-grep '\.o:' Makefile.in > rules
+grep '\.$(OBJEXT):' Makefile.in > rules
 cat rules
 
 # Here is an example of bogus output.  The rules are output several

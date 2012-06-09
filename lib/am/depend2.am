@@ -38,47 +38,28 @@ am__depdir = $(dir $@)/$(DEPDIR)
 am__depbase = $(am__depdir)/$(basename $(notdir $@))
 ## Avoid useless forks when possible.
 am__ensure_depdir = $(call am__ensure_dir_exists,$(am__depdir))
+am__o_src = $(if $(filter .obj,$(suffix $@)),`$(CYGPATH_W) $<`,$<)
 endif %?FIRST%
 
 if %?NONLIBTOOL%
-?GENERIC?%.o: %%EXT%
-?!GENERIC?%OBJ%: %SOURCE%
+?GENERIC?%.$(OBJEXT): %%EXT%
+?!GENERIC?%BASE%.$(OBJEXT): %SOURCE%
 if %FASTDEP%
 	%SILENT%$(am__ensure_depdir)
 ## In fast-dep mode, we can always use -o.
 	%VERBOSE%%COMPILE% -MT $@ -MD -MP -MF $(am__depbase).Tpo \
-		 %-c% -o $@ %SOURCEFLAG%$<
+		 %-c% -o $@ %SOURCEFLAG%$(am__o_src)
 	%SILENT%$(am__mv) $(am__depbase).Tpo $(am__depbase).Po
 else !%FASTDEP%
 if !%AMDEP%
 	%SILENT%$(am__ensure_target_dir_exists)
 else %AMDEP%
 	%SILENT%$(am__ensure_depdir)
-	%VERBOSE%source='%SOURCE%' object='%OBJ%' libtool=no @AMDEPBACKSLASH@
+	%VERBOSE%object=$@ libtool=no @AMDEPBACKSLASH@
 	DEPDIR=$(DEPDIR) $(%FPFX%DEPMODE) $(depcomp) @AMDEPBACKSLASH@
 endif %AMDEP%
-?-o?	%VERBOSE-NODEP%%COMPILE% %-c% %-o% %OBJ% %SOURCEFLAG%$<
-?!-o?	%VERBOSE-NODEP%%COMPILE% %-c% %SOURCEFLAG%$<
-endif !%FASTDEP%
-
-?GENERIC?%.obj: %%EXT%
-?!GENERIC?%OBJOBJ%: %SOURCE%
-if %FASTDEP%
-	%SILENT%$(am__ensure_depdir)
-## In fast-dep mode, we can always use -o.
-	%VERBOSE%%COMPILE% -MT $@ -MD -MP -MF $(am__depbase).Tpo \
-		 %-c% -o $@ %SOURCEFLAG%`$(CYGPATH_W) $<`
-	%SILENT%$(am__mv) $(am__depbase).Tpo $(am__depbase).Po
-else !%FASTDEP%
-if !%AMDEP%
-	%SILENT%$(am__ensure_target_dir_exists)
-else %AMDEP%
-	%SILENT%$(am__ensure_depdir)
-	%VERBOSE%source='%SOURCE%' object='%OBJOBJ%' libtool=no @AMDEPBACKSLASH@
-	DEPDIR=$(DEPDIR) $(%FPFX%DEPMODE) $(depcomp) @AMDEPBACKSLASH@
-endif %AMDEP%
-?-o?	%VERBOSE-NODEP%%COMPILE% %-c% %-o% %OBJOBJ% %SOURCEFLAG%`$(CYGPATH_W) $<`
-?!-o?	%VERBOSE-NODEP%%COMPILE% %-c% %SOURCEFLAG%`$(CYGPATH_W) $<`
+?-o?	%VERBOSE-NODEP%%COMPILE% %-c% %-o% $@ %SOURCEFLAG%$(am__o_src)
+?!-o?	%VERBOSE-NODEP%%COMPILE% %-c% %SOURCEFLAG%$(am__o_src)
 endif !%FASTDEP%
 endif %?NONLIBTOOL%
 
@@ -96,10 +77,10 @@ if !%AMDEP%
 	%SILENT%$(am__ensure_target_dir_exists)
 else %AMDEP%
 	%SILENT%$(am__ensure_depdir)
-	%VERBOSE%source='%SOURCE%' object='%LTOBJ%' libtool=yes @AMDEPBACKSLASH@
+	%VERBOSE%object=$@ libtool=yes @AMDEPBACKSLASH@
 	DEPDIR=$(DEPDIR) $(%FPFX%DEPMODE) $(depcomp) @AMDEPBACKSLASH@
 endif %AMDEP%
 ## We can always use '-o' with Libtool.
-	%VERBOSE-NODEP%%LTCOMPILE% %-c% -o %LTOBJ% %SOURCEFLAG%$<
+	%VERBOSE-NODEP%%LTCOMPILE% %-c% -o $@ %SOURCEFLAG%$<
 endif !%FASTDEP%
 endif %?LIBTOOL%

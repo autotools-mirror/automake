@@ -34,11 +34,11 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-$FGREP '%.o' Makefile.in  # For debugging.
+$FGREP '%.$(OBJEXT)' Makefile.in  # For debugging.
 
 for ext in f for f90 f95 F F90 F95 r m mm upc; do
    grep "%.*: %$ext" Makefile.in && Exit 1
-   grep "^%\.o: %\.$ext$" Makefile.in
+   grep "^%\.\$(OBJEXT): %\.$ext$" Makefile.in
 done
 
 :

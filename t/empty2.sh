@@ -31,5 +31,6 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-grep 'pavel\.[co]' Makefile.in && Exit 1
-Exit 0
+grep 'pavel\.' Makefile.in && Exit 1
+
+:

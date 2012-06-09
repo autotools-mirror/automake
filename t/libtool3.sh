@@ -77,7 +77,7 @@ $AUTOCONF
 $AUTOMAKE --add-missing --copy
 
 # We shouldn't need explicit rules.
-$EGREP '[^%]\.(o|obj|lo) *:' Makefile.in && Exit 1
+$EGREP '[^%]\.(o|obj|lo|\$\(OBJEXT\)) *:' Makefile.in && Exit 1
 
 ./configure
 

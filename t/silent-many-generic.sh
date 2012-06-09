@@ -197,7 +197,7 @@ $AUTOCONF
 
 # Ensure per-target rules are used, to ensure their coverage below.
 # (We do not do an exhaustive check, that wouldn't be practical).
-$FGREP 'bar-bar.o'  Makefile.in || Exit 99
+$FGREP 'bar-bar.$(OBJEXT)'  Makefile.in || Exit 99
 $FGREP 'baz-foo5.c' Makefile.in || Exit 99
 $FGREP 'baz-foo6.c' Makefile.in || Exit 99
 

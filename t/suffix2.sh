@@ -40,14 +40,11 @@ END
 
 $ACLOCAL
 
-$AUTOMAKE -a
-grep '%\.[co]' Makefile.in # For debugging.
-test `grep -c '^%\.o: %\.c$' Makefile.in` -eq 1
-test `grep -c '^%\.obj: %\.c$' Makefile.in` -eq 1
-
-$AUTOMAKE -i
-grep '%.[co]' Makefile.in # For debugging.
-test `grep -c '^%\.o: %\.c$' Makefile.in` -eq 1
-test `grep -c '^%\.obj: %\.c$' Makefile.in` -eq 1
+for o in -a -i; do
+  $AUTOMAKE $o
+  grep '%\.[lco$]' Makefile.in # For debugging.
+  test `grep -c '^%\.$(OBJEXT): %\.c$' Makefile.in` -eq 1
+  test `grep -c '^%\.lo: %\.c$' Makefile.in` -eq 1
+done
 
 :

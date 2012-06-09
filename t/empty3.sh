@@ -29,4 +29,6 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-grep 'pavel\.[co]' Makefile.in
+$FGREP ' pavel.c' Makefile.in
+
+:

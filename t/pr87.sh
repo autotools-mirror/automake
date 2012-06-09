@@ -55,19 +55,6 @@ $ACLOCAL
 $AUTOCONF
 $AUTOMAKE -a
 
-# Regression test for bug where '.c.o:' is followed by blank line.
-(while read line; do
-    if test "$line" = ".c.o:"; then
-       read next
-       if test -z "$next"; then
-	  Exit 1
-       else
-          : # For shells with broken 'set -e'.
-       fi
-       break
-    fi
- done) < foo/Makefile.in || Exit 1
-
 cd build
 ../configure
 $MAKE distcheck
