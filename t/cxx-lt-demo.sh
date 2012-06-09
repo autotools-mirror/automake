@@ -122,12 +122,12 @@ std::string target (void)
 END
 
 ./configure
-CC=false $MAKE -e
+$MAKE CC=false
 ls -l . src lib # For debugging.
 $MAKE test-objs
 VERBOSE=yes $MAKE check-TESTS
 grep 'Howdy.*Testsuite' try.log || grep 'Skip:.*cross-compiled' try.log
 
-$MAKE -e CC=false distcheck
+$MAKE CC=false distcheck
 
 :
