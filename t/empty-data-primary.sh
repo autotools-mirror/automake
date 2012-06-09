@@ -1,5 +1,5 @@
 #! /bin/sh
-# Copyright (C) 1999-2012 Free Software Foundation, Inc.
+# Copyright (C) 1996-2012 Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,23 +14,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test to make sure empty _SOURCES suppresses assumption about default
-# name.  Report from Pavel Roskin.
+# Test for bug where if the list of installables is empty, invalid sh
+# code is generated.
 
 . ./defs || Exit 1
 
-cat >> configure.ac << 'END'
-AC_PROG_CC
-END
-
-cat > Makefile.am << 'END'
-bin_PROGRAMS = pavel
-pavel_SOURCES =
-END
+echo AC_OUTPUT >>configure.ac
+echo 'data_DATA =' >Makefile.am
 
 $ACLOCAL
+$AUTOCONF
 $AUTOMAKE
-
-grep 'pavel\.' Makefile.in && Exit 1
+./configure --prefix "`pwd`/inst"
+$MAKE install
 
 :

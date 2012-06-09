@@ -27,4 +27,6 @@ END
 $ACLOCAL
 $AUTOMAKE
 
-grep '^CXXCPP' Makefile.in
+grep '^CXXCPP =' Makefile.in
+
+:
