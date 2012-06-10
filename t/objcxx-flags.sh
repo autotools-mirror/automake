@@ -58,6 +58,6 @@ grep '\$(OBJCXXFLAGS).*\$(foo.*_OBJCXXFLAGS)'    Makefile.in && Exit 1
 grep '\$(foo.*_OBJCXXFLAGS).*\$(AM_OBJCXXFLAGS)' Makefile.in && Exit 1
 
 ./configure OBJCXXFLAGS=-UERROR
-$MAKE 
+$MAKE
 
 :

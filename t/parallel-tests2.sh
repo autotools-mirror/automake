@@ -132,7 +132,7 @@ test ! -f baz.log
 test -f mylog.html
 
 $MAKE clean
-$MAKE recheck-html TESTS=foo.test 
+$MAKE recheck-html TESTS=foo.test
 test -f bla
 test ! -f foo.log
 test -f mylog.html

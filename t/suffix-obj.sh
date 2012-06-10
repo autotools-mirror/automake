@@ -77,7 +77,7 @@ cat > foo.exp <<'END'
 %THREE%
 END
 echo %THREE% > foo.zoo
-$MAKE OBJEXT=obj 
+$MAKE OBJEXT=obj
 cat foo.obj
 cat foo.XxX
 diff foo.XxX foo.exp

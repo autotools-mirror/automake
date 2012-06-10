@@ -19,7 +19,7 @@
 # Keep in sync with sister test 'txinfo21.sh'.
 # FIXME: in the long term, the best thing to do is probably to
 # FIXME: convert this test and the sister test 'txinfo21b.sh' to
-# FIXME: TAP, and merge them. 
+# FIXME: TAP, and merge them.
 
 required='makeinfo-html tex texi2dvi'
 . ./defs || Exit 1

@@ -88,7 +88,7 @@ PATH="`pwd`$PATH_SEPARATOR$PATH"
 $MAKE maintainer-clean
 ./configure
 $MAKE zardoz.c joe.c YACC="myyacc.sh" LEX="mylex.sh" \
-                     LEX_OUTPUT_ROOT='lex.yy' 
+                     LEX_OUTPUT_ROOT='lex.yy'
 grep zardoz.y zardoz.c
 grep joe.l joe.c
 

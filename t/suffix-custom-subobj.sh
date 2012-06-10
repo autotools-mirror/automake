@@ -50,7 +50,7 @@ $AUTOMAKE -a
 
 ./configure
 
-$MAKE test-fake OBJEXT=quux 
+$MAKE test-fake OBJEXT=quux
 $MAKE test-real
 
 :

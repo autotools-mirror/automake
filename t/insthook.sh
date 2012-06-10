@@ -59,7 +59,7 @@ test -f ok
 ./configure "--bindir=`pwd`/bin"
 $MAKE install
 echo 2 > foo
-$MAKE install VERSION=2.0 
+$MAKE install VERSION=2.0
 grep 1 bin/foo-1.0
 grep 2 bin/foo-2.0
 grep 2 bin/foo

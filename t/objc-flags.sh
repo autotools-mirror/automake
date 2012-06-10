@@ -57,6 +57,6 @@ grep '\$(OBJCFLAGS).*\$(foo.*_OBJCFLAGS)'    Makefile.in && Exit 1
 grep '\$(foo.*_OBJCFLAGS).*\$(AM_OBJCFLAGS)' Makefile.in && Exit 1
 
 ./configure OBJCFLAGS=-UERROR
-$MAKE 
+$MAKE
 
 :

@@ -83,6 +83,6 @@ chmod u+w .
 $MAKE all YACC=false
 ls -l sub/*.[ch] && Exit 1
 
-$MAKE distcheck YACC=false DISTCHECK_CONFIGURE_FLAGS='YACC=false' 
+$MAKE distcheck YACC=false DISTCHECK_CONFIGURE_FLAGS='YACC=false'
 
 :
