@@ -31,7 +31,7 @@ AM_RECURSIVE_TARGETS += $(RECURSIVE_TARGETS:-recursive=) \
 #     (which will cause the Makefiles to be regenerated when you run 'make');
 # (2) otherwise, pass the desired values on the 'make' command line.
 
-$(RECURSIVE_TARGETS) $(RECURSIVE_CLEAN_TARGETS):
+$(RECURSIVE_TARGETS) $(RECURSIVE_CLEAN_TARGETS): %-recursive:
 ## Using $failcom allows "-k" to keep its natural meaning when running a
 ## recursive rule.
 	@fail= failcom='exit 1'; \
@@ -42,7 +42,6 @@ $(RECURSIVE_TARGETS) $(RECURSIVE_CLEAN_TARGETS):
 	  esac; \
 	done; \
 	dot_seen=no; \
-	target=`echo $@ | sed s/-recursive//`; \
 ## For distclean and maintainer-clean we make sure to use the full
 ## list of subdirectories.  We do this so that 'configure; make
 ## distclean' really is a no-op, even if SUBDIRS is conditional.
@@ -51,17 +50,17 @@ $(RECURSIVE_TARGETS) $(RECURSIVE_CLEAN_TARGETS):
 	  *) list='$(SUBDIRS)' ;; \
 	esac; \
 	for subdir in $$list; do \
-	  echo "Making $$target in $$subdir"; \
+	  echo "Making $* in $$subdir"; \
 	  if test "$$subdir" = "."; then \
 	    dot_seen=yes; \
-	    local_target="$$target-am"; \
+	    local_target=$*-am; \
 	  else \
-	    local_target="$$target"; \
+	    local_target=$*; \
 	  fi; \
 	  $(MAKE) -C "$$subdir" $$local_target || eval $$failcom; \
 	done; \
 	if test "$$dot_seen" = "no"; then \
-	  $(MAKE) "$$target-am" || exit 1; \
+	  $(MAKE) $*-am || exit 1; \
 	fi; test -z "$$fail"
 
 
