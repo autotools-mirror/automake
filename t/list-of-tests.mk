@@ -1043,6 +1043,8 @@ t/subobj11a.sh \
 t/subobj11b.sh \
 t/subobj11c.sh \
 t/subobjname.sh \
+t/subobj-clean-pr10697.sh \
+t/subobj-clean-lt-pr10697.sh \
 t/subpkg.sh \
 t/subpkg2.sh \
 t/subpkg3.sh \
