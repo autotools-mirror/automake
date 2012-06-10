@@ -1027,6 +1027,7 @@ t/subdir7.sh \
 t/subdir8.sh \
 t/subdir9.sh \
 t/subdir10.sh \
+t/subdir-distclean.sh \
 t/subdirbuiltsources.sh \
 t/subcond.sh \
 t/subcond2.sh \
