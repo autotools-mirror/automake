@@ -329,6 +329,7 @@ t/copy.sh \
 t/cscope.tap \
 t/cscope2.sh \
 t/cscope3.sh \
+t/c-demo.sh \
 t/cxx.sh \
 t/cxx2.sh \
 t/cxxcpp.sh \
