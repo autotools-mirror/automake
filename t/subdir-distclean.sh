@@ -87,7 +87,7 @@ test -f sub1/subsub/Makefile
 test -f sub1/run
 touch sub2/oops sub1/subsub/oops
 
-$MAKE -j4 maintainer-clean
+$MAKE maintainer-clean
 test ! -f sub1/run
 test ! -f sub2/oops
 test ! -f sub1/subsub/oops

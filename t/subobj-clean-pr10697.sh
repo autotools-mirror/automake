@@ -129,6 +129,8 @@ $MAKE
 test -f sub1/a.$OBJEXT
 test -f sub2/d.$OBJEXT
 
+$sleep
+
 mv -f sub2/d.c sub2/x.c
 rm -f sub1/a.c
 
