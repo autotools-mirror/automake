@@ -322,6 +322,7 @@ t/copy.sh \
 t/cscope.tap \
 t/cscope2.sh \
 t/cscope3.sh \
+t/c-demo.sh \
 t/cxx.sh \
 t/cxx2.sh \
 t/cxxcpp.sh \
@@ -1008,6 +1009,7 @@ t/subdir7.sh \
 t/subdir8.sh \
 t/subdir9.sh \
 t/subdir10.sh \
+t/subdir-distclean.sh \
 t/subdirbuiltsources.sh \
 t/subcond.sh \
 t/subcond2.sh \
@@ -1025,6 +1027,8 @@ t/subobj11a.sh \
 t/subobj11b.sh \
 t/subobj11c.sh \
 t/subobjname.sh \
+t/subobj-clean-pr10697.sh \
+t/subobj-clean-lt-pr10697.sh \
 t/subpkg.sh \
 t/subpkg2.sh \
 t/subpkg3.sh \
