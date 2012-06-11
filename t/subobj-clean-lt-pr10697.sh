@@ -112,7 +112,7 @@ OBJEXT=lo
 $MAKE
 
 # This must go after configure, since that will invoke rm many times.
-PATH=$ocwd/rm-wrap:$PATH; export PATH
+PATH=$ocwd/rm-wrap$PATH_SEPARATOR$PATH; export PATH
 $MAKE sanity-check-rm || fatal_ "rm wrapper doesn't work as expected"
 
 $MAKE mostlyclean
