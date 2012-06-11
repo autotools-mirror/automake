@@ -1206,7 +1206,6 @@ sub define_verbose_tagvar ($)
     if (option 'silent-rules')
       {
 	define_verbose_var ($name, '@echo "  '. $name . ' ' x (8 - length ($name)) . '" $@;');
-	define_verbose_var ('at', '@');
       }
 }
 
@@ -1231,6 +1230,14 @@ sub define_verbose_libtool ()
 {
     define_verbose_var ('lt', '--silent');
     return verbose_flag ('lt');
+}
+
+sub handle_silent ()
+{
+    return unless option 'silent-rules';
+    # *Always* provide the user with 'AM_V_GEN' for 'silent-rules' mode.
+    define_verbose_tagvar ('GEN');
+    define_verbose_var ('at', '@');
 }
 
 
@@ -1590,9 +1597,6 @@ sub handle_languages
 	  unless defined $done{$languages{'c'}};
 	define_linker_variable ($languages{'c'});
       }
-
-    # Always provide the user with 'AM_V_GEN' for 'silent-rules' mode.
-    define_verbose_tagvar ('GEN');
 }
 
 
@@ -8152,6 +8156,8 @@ sub generate_makefile ($$)
   handle_ltlibraries;
   handle_programs;
   handle_scripts;
+
+  handle_silent;
 
   # These must be run after all the sources are scanned.  They
   # use variables defined by &handle_libraries, &handle_ltlibraries,
