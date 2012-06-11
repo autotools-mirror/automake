@@ -10966,15 +10966,31 @@ limitation should go away with time.
 @vindex @code{AM_DEFAULT_VERBOSITY}
 @vindex @code{AM_V}
 @vindex @code{AM_DEFAULT_V}
-To extend the silent mode to your own rules, you have two choices:
+To extend the silent mode to your own rules, you have few choices:
 
 @itemize @bullet
+
 @item
 You can use the predefined variable @code{AM_V_GEN} as a prefix to
 commands that should output a status line in silent mode, and
 @code{AM_V_at} as a prefix to commands that should not output anything
 in silent mode.  When output is to be verbose, both of these variables
 will expand to the empty string.
+
+@item
+You can silence a recipe unconditionally with @code{@@}, and then use
+the predefined variable @code{AM_V_P} to know whether make is being run
+in silent or verbose mode, adjust the verbose information your recipe
+displays accordingly:
+
+@example
+generate-headers:
+        @set -e; \
+        ... [commands defining a shell variable '$headers'] ...; \
+        if $(AM_V_P); then set -x; else echo " GEN   [headers]"; fi; \
+        rm -f $$headers && generate-header --flags $$headers
+@end example
+
 @item
 You can add your own variables, so strings of your own choice are shown.
 The following snippet shows how you would define your own equivalent of

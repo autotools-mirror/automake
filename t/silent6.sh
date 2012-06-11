@@ -20,15 +20,33 @@
 
 cat >>configure.ac <<'EOF'
 AM_SILENT_RULES
+AC_CONFIG_FILES([sub/Makefile])
 AC_OUTPUT
 EOF
 
-cat > Makefile.am <<'EOF'
+# We delegate all the work to the subdir makefile.  This is done
+# to ensure any command-line setting of $(V) gets correctly passed
+# down to recursive make invocations.
+echo SUBDIRS = sub > Makefile.am
+
+mkdir sub
+cat > sub/Makefile.am <<'EOF'
 my_verbose = $(my_verbose_$(V))
 my_verbose_ = $(my_verbose_$(AM_DEFAULT_VERBOSITY))
-my_verbose_0 = @echo GEN $@;
+my_verbose_0 = @echo " XGEN    $@";
 
-all-local: foo
+all-local: foo gen-headers
+
+list = 0 1 2
+.PHONY: gen-headers
+gen-headers:
+	@headers=`for i in $(list); do echo sub/$$i.h; done`; \
+	if $(AM_V_P); then set -x; else \
+	  echo " GEN     [headers]"; \
+	fi; \
+	rm -f $$headers || exit 1; \
+## Only fake header generation.
+	: generate-header --flags $$headers
 
 foo: foo.in
 	$(my_verbose)cp $(srcdir)/foo.in $@
@@ -36,72 +54,48 @@ EXTRA_DIST = foo.in
 CLEANFILES = foo
 EOF
 
-: >foo.in
+: > sub/foo.in
 
 $ACLOCAL
 $AUTOMAKE --add-missing
 $AUTOCONF
 
-./configure --enable-silent-rules
-$MAKE >stdout || { cat stdout; Exit 1; }
-cat stdout
-grep '^ *GEN foo *$' stdout
-grep 'cp ' stdout && Exit 1
+do_check ()
+{
+  case ${1-} in
+    --silent) silent=:;;
+    --verbose) silent=false;;
+    *) fatal_ "do_check(): incorrect usage";;
+  esac
+  shift
+  $MAKE clean
+  $MAKE ${1+"$@"} >output 2>&1 || { cat output; Exit 1; }
+  sed 's/^/  /' output
+  if $silent; then
+    $FGREP 'cp ' output && Exit 1
+    $FGREP 'generate-header' output && Exit 1
+    $FGREP 'rm -f' output && Exit 1
+    grep '[012]\.h' output && Exit 1
+    grep '^ XGEN    foo$' output
+    grep '^ GEN     \[headers\]$' output
+  else
+    $FGREP 'GEN ' output && Exit 1
+    $FGREP 'cp ./foo.in foo' output
+    $FGREP "rm -f sub/0.h sub/1.h sub/2.h" output
+    $FGREP "generate-header --flags sub/0.h sub/1.h sub/2.h" output
+  fi
+}
 
-$MAKE clean
-$MAKE V=1 >stdout || { cat stdout; Exit 1; }
-cat stdout
-grep 'GEN ' stdout && Exit 1
-grep 'cp \.*/foo\.in foo' stdout
+./configure --enable-silent-rules
+do_check --silent
+do_check --verbose V=1
 
 $MAKE distclean
 
 ./configure --disable-silent-rules
-$MAKE >stdout || { cat stdout; Exit 1; }
-cat stdout
-grep 'GEN ' stdout && Exit 1
-grep 'cp \.*/foo\.in foo' stdout
-
-$MAKE clean
-$MAKE V=0 >stdout || { cat stdout; Exit 1; }
-cat stdout
-grep '^ *GEN foo *$' stdout
-grep 'cp ' stdout && Exit 1
+do_check --verbose
+do_check --silent V=0
 
 $MAKE distclean
-
-$sleep
-# Things should also work with -Wall in AM_INIT_AUTOMAKE.
-cat > configure.ac <<'END'
-AC_INIT([silent6], [1.0])
-AM_INIT_AUTOMAKE([-Wall])
-AC_CONFIG_FILES([Makefile])
-END
-
-$ACLOCAL
-AUTOMAKE_fails
-$AUTOMAKE -Wno-error
-
-# AM_SILENT_RULES should turn off the warning.
-$sleep
-echo 'AM_SILENT_RULES' >> configure.ac
-$ACLOCAL
-$AUTOMAKE
-grep 'AM_V_GEN' Makefile.in
-$AUTOMAKE --force -Wno-all -Wportability
-grep 'AM_V_GEN' Makefile.in
-
-# The 'silent-rules' option to AM_INIT_AUTOMAKE should work likewise.
-$sleep
-cat > configure.ac <<'END'
-AC_INIT([silent6], [1.0])
-AM_INIT_AUTOMAKE([silent-rules])
-AC_CONFIG_FILES([Makefile])
-END
-$ACLOCAL
-$AUTOMAKE
-grep 'AM_V_GEN' Makefile.in
-$AUTOMAKE --force -Wno-all -Wportability
-grep 'AM_V_GEN' Makefile.in
 
 :
