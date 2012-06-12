@@ -128,6 +128,6 @@ $MAKE test-objs
 VERBOSE=yes $MAKE check-TESTS
 grep 'Howdy.*Testsuite' try.log || grep 'Skip:.*cross-compiled' try.log
 
-$MAKE CC=false distcheck
+$MAKE distcheck
 
 :

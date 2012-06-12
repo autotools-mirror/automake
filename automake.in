@@ -1860,18 +1860,22 @@ sub handle_single_transform ($$$$$%)
 		    err_am "'$full' should not contain a '..' component";
 		  }
 
-		# Make sure object is removed by 'make mostlyclean'.
-		$compile_clean_files{$object} = MOSTLY_CLEAN;
-		# If we have a libtool object then we also must remove
-		# the ordinary .o.
-		if ($object =~ /\.lo$/)
-		{
-		    (my $xobj = $object) =~ s,lo$,\$(OBJEXT),;
-		    $compile_clean_files{$xobj} = MOSTLY_CLEAN;
-
-		    # Remove any libtool object in this directory.
-		    $libtool_clean_directories{$directory} = 1;
-		}
+                # Make sure *all* objects files in the subdirectory are
+                # removed by "make mostlyclean".  Not only this is more
+                # efficient than listing the object files to be removed
+                # individually (which would cause an 'rm' invocation for
+                # each of them -- very inefficient, see bug#10697), it
+                # would also leave stale object files in the subdirectory
+                # whenever a source file there is removed or renamed.
+                $compile_clean_files{"$directory/*.\$(OBJEXT)"} = MOSTLY_CLEAN;
+                if ($object =~ /\.lo$/)
+                  {
+                    # If we have a libtool object, then we also must remove
+                    # any '.lo' objects in its same subdirectory.
+                    $compile_clean_files{"$directory/*.lo"} = MOSTLY_CLEAN;
+                    # Remember to cleanup .libs/ in this directory.
+                    $libtool_clean_directories{$directory} = 1;
+                  }
 	    }
 	}
 
