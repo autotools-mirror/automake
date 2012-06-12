@@ -1,0 +1,17 @@
+# AM_EXTRA_RECURSIVE_TARGETS                                -*- Autoconf -*-
+
+# Copyright (C) 2012 Free Software Foundation, Inc.
+#
+# This file is free software; the Free Software Foundation
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+
+# AM_EXTRA_RECURSIVE_TARGETS
+# --------------------------
+# Define the list of user recursive targets.  This macro exists only to
+# be traced by Automake, which will ensure that a proper definition of
+# user-defined recursive targets (and associated rules) is propagated
+# into all the generated Makefiles.
+AC_DEFUN([AM_EXTRA_RECURSIVE_TARGETS], [_$0(m4_flatten([$1]))])
+# TODO: We should really reject non-literal arguments here...
+m4_define([_AM_EXTRA_RECURSIVE_TARGETS], [])

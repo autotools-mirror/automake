@@ -884,6 +884,17 @@ t/python-dist.sh \
 t/python-vars.sh \
 t/python-virtualenv.sh \
 t/python-pr10995.sh \
+t/recurs-user.sh \
+t/recurs-user2.sh \
+t/recurs-user-deeply-nested.sh \
+t/recurs-user-indir.sh \
+t/recurs-user-keep-going.sh \
+t/recurs-user-many.sh \
+t/recurs-user-no-subdirs.sh \
+t/recurs-user-no-top-level.sh \
+t/recurs-user-override.sh \
+t/recurs-user-phony.sh \
+t/recurs-user-wrap.sh \
 t/relativize.tap \
 t/remake.sh \
 t/remake1a.sh \
@@ -907,6 +918,7 @@ t/remake11.sh \
 t/remake12.sh \
 t/remake-all-1.sh \
 t/remake-all-2.sh \
+t/remake-recurs-user.sh \
 t/remake-subdir-from-subdir.sh \
 t/remake-subdir-gnu.sh \
 t/remake-subdir.sh \

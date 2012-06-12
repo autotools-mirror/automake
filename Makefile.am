@@ -266,6 +266,7 @@ dist_automake_ac_DATA = \
   m4/depend.m4 \
   m4/depout.m4 \
   m4/dmalloc.m4 \
+  m4/extra-recurs.m4 \
   m4/gcj.m4 \
   m4/init.m4 \
   m4/install-sh.m4 \
