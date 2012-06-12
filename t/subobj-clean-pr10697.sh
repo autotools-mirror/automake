@@ -140,7 +140,6 @@ mv -f t main.c
 sed -e '/sub1\/a\.c/d' -e 's|sub2/d\.c|sub2/x.c|' Makefile.am > t
 mv -f t Makefile.am
 
-using_gmake || $MAKE Makefile
 $MAKE
 test -f sub2/x.$OBJEXT
 
