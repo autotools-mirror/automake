@@ -98,7 +98,6 @@ for vpath in : false; do
   test ! -r a.run
   test ! -r b.run
   test ! -r c.run
-  unset var
 
   : a.test was successful the first time, no need to re-run it.
   $MAKE TESTS=a.test recheck >stdout || { cat stdout; Exit 1; }
