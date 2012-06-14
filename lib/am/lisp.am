@@ -83,8 +83,13 @@ $(am__ELCFILES): elc-stamp
 
 if %?INSTALL%
 am__installdirs += "$(DESTDIR)$(%NDIR%dir)"
-%DIR%LISP_INSTALL = %BASE?$(INSTALL_DATA):$(install_sh_DATA)%
-.PHONY install-%EXEC?exec:data%-am: install-%DIR%LISP
+
+?BASE?%DIR%LISP_INSTALL = $(INSTALL_DATA)
+?!BASE?%DIR%LISP_INSTALL = $(install_sh_DATA)
+
+?EXEC?.PHONY install-exec-am: install-%DIR%LISP
+?!EXEC?.PHONY install-data-am: install-%DIR%LISP
+
 install-%DIR%LISP: $(%DIR%_LISP) $(ELCFILES)
 	@$(NORMAL_INSTALL)
 ## Do not install anything if EMACS was not found.
@@ -100,7 +105,8 @@ install-%DIR%LISP: $(%DIR%_LISP) $(ELCFILES)
 	  for p in $$list; do \
 ## A lisp file can be in the source directory or the build directory.
 	    if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	    %BASE?$(am__strip_dir):$(am__vpath_adj)% \
+?BASE?	    $(am__strip_dir) \
+?!BASE?	    $(am__vpath_adj) \
 	    echo " $(%DIR%LISP_INSTALL) '$$d$$p' '$(DESTDIR)$(%NDIR%dir)/$$f'"; \
 	    $(%DIR%LISP_INSTALL) "$$d$$p" "$(DESTDIR)$(%NDIR%dir)/$$f" || exit $$?; \
 ## Only install .elc file if it exists.

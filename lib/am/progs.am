@@ -20,7 +20,8 @@
 
 if %?INSTALL%
 am__installdirs += "$(DESTDIR)$(%NDIR%dir)"
-.PHONY install-%EXEC?exec:data%-am: install-%DIR%PROGRAMS
+?EXEC?.PHONY install-exec-am: install-%DIR%PROGRAMS
+?!EXEC?.PHONY install-data-am: install-%DIR%PROGRAMS
 install-%DIR%PROGRAMS: $(%DIR%_PROGRAMS)
 	@$(NORMAL_INSTALL)
 ## Funny invocation because Makefile variable can be empty, leading to
@@ -34,13 +35,16 @@ install-%DIR%PROGRAMS: $(%DIR%_PROGRAMS)
 ## On Cygwin with libtool test won't see 'foo.exe' but instead 'foo'.
 ## So we check for both.
 	sed 's/$(EXEEXT)$$//' | \
-	while read p p1; do if test -f $$p%LIBTOOL? || test -f $$p1%; \
-	  then echo "$$p"; echo "$$p"; else :; fi; \
+	while read p p1; do if test -f $$p \
+?LIBTOOL?	 || test -f $$p1 \
+	  ; then echo "$$p"; echo "$$p"; else :; fi; \
 	done | \
 ## We now have a list of sourcefile pairs, separated by newline.
 ## Turn that into "sourcefile source_base target_dir xformed_target_base",
 ## with newlines being turned into spaces in a second step.
-	sed -e 'p;s,.*/,,;n;h' -e '%BASE?s|.*|.|:s|[^/]*$$||; s|^$$|.|%' \
+	sed -e 'p;s,.*/,,;n;h' \
+?BASE?	    -e 's|.*|.|' \
+?!BASE?	    -e 's|[^/]*$$||; s|^$$|.|' \
 	    -e 'p;x;s,.*/,,;s/$(EXEEXT)$$//;$(transform);s/$$/$(EXEEXT)/' | \
 	sed 'N;N;N;s,\n, ,g' | \
 ## The following awk script turns that into one line containing directories
@@ -86,7 +90,9 @@ uninstall-%DIR%PROGRAMS:
 ## but keep the directory part in the hold buffer, in order to
 ## reapply it again afterwards in the nobase case.  Append $(EXEEXT).
 	  sed -e 'h;s,^.*/,,;s/$(EXEEXT)$$//;$(transform)' \
-	      -e 's/$$/$(EXEEXT)/'%BASE? : -e 'x;s,[^/]*$$,,;G;s,\n,,'%`; \
+	      -e 's/$$/$(EXEEXT)/' \
+?!BASE?	      -e 'x;s,[^/]*$$,,;G;s,\n,,' \
+	`; \
 	test -n "$$list" || exit 0; \
 	echo " ( cd '$(DESTDIR)$(%NDIR%dir)' && rm -f" $$files ")"; \
 	cd "$(DESTDIR)$(%NDIR%dir)" && rm -f $$files
